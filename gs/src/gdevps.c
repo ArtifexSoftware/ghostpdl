@@ -66,7 +66,7 @@ typedef struct psw_path_state_s {
     int num_points;		/* # of points since last non-lineto */
     int move;			/* 1 iff last non-lineto was moveto, else 0 */
     gs_point dprev[2];		/* line deltas before previous point, */
-    /* if num_points - move >= 2 */
+				/* if num_points - move >= 2 */
 } psw_path_state_t;
 
 typedef struct psw_image_params_s {
@@ -529,13 +529,12 @@ psw_put_matrix(stream * s, const gs_matrix * pmat)
 
 /* ---------------- Vector device implementation ---------------- */
 
-#define pdev ((gx_device_pswrite *)vdev)
-
 private int
 psw_beginpage(gx_device_vector * vdev)
 {
     stream *s = vdev->strm;
     long page = vdev->PageCount + 1;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
     if (pdev->first_page) {
 	psw_put_lines(s,
@@ -683,19 +682,24 @@ psw_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
  * we only need to write coordinates with 2 decimals of precision,
  * since this is 10 times more precise than any existing output device.
  */
-#define round_coord(v) (floor((v) * 100 + 0.5) / 100.0)
+inline private double
+round_coord2(floatp v)
+{
+    return floor(v * 100 + 0.5) / 100.0;
+}
 private void
 print_coord2(stream * s, floatp x, floatp y, const char *str)
 {
-    pprintg2(s, "%g %g ", round_coord(x), round_coord(y));
+    pprintg2(s, "%g %g ", round_coord2(x), round_coord2(y));
     if (str != 0)
 	pputs(s, str);
 }
-#undef round_coord
 
 private int
 psw_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 {
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
+
     pdev->path_state.num_points = 0;
     pdev->path_state.move = 0;
     return 0;
@@ -706,6 +710,7 @@ psw_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 	   gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
     if (pdev->path_state.num_points > pdev->path_state.move)
 	pputs(s, (pdev->path_state.move ? "P\n" : "p\n"));
@@ -734,6 +739,7 @@ psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
      */
     if (dx != 0 || dy != 0) {
 	stream *s = gdev_vector_stream(vdev);
+	gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
 	if (pdev->path_state.num_points - pdev->path_state.move >= 2 &&
 	    dx == -pdev->path_state.dprev[1].x &&
@@ -759,6 +765,7 @@ psw_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
     double dx1 = x1 - x0, dy1 = y1 - y0;
     double dx2 = x2 - x0, dy2 = y2 - y0;
     double dx3 = x3 - x0, dy3 = y3 - y0;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
     if (pdev->path_state.num_points > 0)
 	pputs(s, (pdev->path_state.move ?
@@ -784,6 +791,8 @@ private int
 psw_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
 	      floatp x_start, floatp y_start, gx_path_type_t type)
 {
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
+
     pputs(gdev_vector_stream(vdev),
 	  (pdev->path_state.num_points > 0 && pdev->path_state.move ?
 	   "H\n" : "h\n"));
@@ -797,6 +806,7 @@ psw_endpath(gx_device_vector * vdev, gx_path_type_t type)
 {
     stream *s = vdev->strm;
     const char *star = (type & gx_path_type_even_odd ? "*" : "");
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
     if (pdev->path_state.num_points > 0 && !pdev->path_state.move)
 	pputs(s, "p ");
@@ -817,12 +827,7 @@ psw_endpath(gx_device_vector * vdev, gx_path_type_t type)
     return 0;
 }
 
-#undef pdev
-
 /* ---------------- Driver procedures ---------------- */
-
-#define vdev ((gx_device_vector *)dev)
-#define pdev ((gx_device_pswrite *)dev)
 
 /* ------ Open/close/page ------ */
 
@@ -831,6 +836,8 @@ private int
 psw_open(gx_device * dev)
 {
     gs_memory_t *mem = gs_memory_stable(dev->memory);
+    gx_device_vector *const vdev = (gx_device_vector *)dev;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
     vdev->v_memory = mem;
     vdev->vec_procs = &psw_vector_procs;
@@ -858,6 +865,7 @@ psw_open(gx_device * dev)
 private void
 psw_write_page_trailer(gx_device *dev, int num_copies, int flush)
 {
+    gx_device_vector *const vdev = (gx_device_vector *)dev;
     FILE *f = vdev->file;
 
     if (num_copies != 1)
@@ -870,6 +878,8 @@ psw_write_page_trailer(gx_device *dev, int num_copies, int flush)
 private int
 psw_output_page(gx_device * dev, int num_copies, int flush)
 {
+    gx_device_vector *const vdev = (gx_device_vector *)dev;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
     stream *s = gdev_vector_stream(vdev);
 
     sflush(s);			/* sync stream and file */
@@ -890,6 +900,8 @@ private void psw_print_bbox(P2(FILE *, const gs_rect *));
 private int
 psw_close(gx_device * dev)
 {
+    gx_device_vector *const vdev = (gx_device_vector *)dev;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
     FILE *f = vdev->file;
 
     /* If there is an incomplete page, complete it now. */
@@ -944,6 +956,7 @@ psw_print_bbox(FILE *f, const gs_rect *pbbox)
 private int
 psw_get_params(gx_device * dev, gs_param_list * plist)
 {
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)dev;
     int code = gdev_psdf_get_params(dev, plist);
     int ecode;
 
@@ -961,6 +974,7 @@ psw_put_params(gx_device * dev, gs_param_list * plist)
     int ecode = 0;
     int code;
     gs_param_name param_name;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)dev;
     float ll = pdev->LanguageLevel;
     psdf_version save_version = pdev->version;
 
@@ -1009,6 +1023,8 @@ psw_copy_mono(gx_device * dev, const byte * data,
 	int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
 	      gx_color_index zero, gx_color_index one)
 {
+    gx_device_vector *const vdev = (gx_device_vector *)dev;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
     gx_drawing_color color;
     const char *op;
     int code = 0;
@@ -1055,6 +1071,8 @@ psw_copy_color(gx_device * dev,
     const byte *bits = data + data_x * 3;
     char op[6];
     int code;
+    gx_device_vector *const vdev = (gx_device_vector *)dev;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
     if (w <= 0 || h <= 0)
 	return 0;
@@ -1093,6 +1111,8 @@ psw_stroke_path(gx_device * dev, const gs_imager_state * pis,
 		gx_path * ppath, const gx_stroke_params * params,
 		const gx_device_color * pdcolor, const gx_clip_path * pcpath)
 {
+    gx_device_vector *const vdev = (gx_device_vector *)dev;
+
     if (gx_path_is_void(ppath) &&
 	(gx_path_is_null(ppath) ||
 	 gs_currentlinecap((const gs_state *)pis) != gs_cap_round)
@@ -1100,6 +1120,7 @@ psw_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	return 0;
     /* Do the right thing for oddly transformed coordinate systems.... */
     {
+	gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 	stream *s;
 	int code;
 	double scale;
@@ -1145,6 +1166,9 @@ psw_fill_mask(gx_device * dev,
 	      const gx_drawing_color * pdcolor, int depth,
 	      gs_logical_operation_t lop, const gx_clip_path * pcpath)
 {
+    gx_device_vector *const vdev = (gx_device_vector *)dev;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
+
     if (w <= 0 || h <= 0)
 	return 0;
     if (depth > 1 ||
@@ -1178,6 +1202,8 @@ psw_begin_image(gx_device * dev,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
 		gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
 {
+    gx_device_vector *const vdev = (gx_device_vector *)dev;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
     gdev_vector_image_enum_t *pie =
 	gs_alloc_struct(mem, gdev_vector_image_enum_t,
 			&st_vector_image_enum, "psw_begin_image");
@@ -1320,6 +1346,7 @@ psw_image_plane_data(gx_image_enum_common_t * info,
 		     int *rows_used)
 {
     gx_device *dev = info->dev;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)dev;
     gdev_vector_image_enum_t *pie = (gdev_vector_image_enum_t *) info;
     int code =
 	gx_image_plane_data_rows(pie->bbox_info, planes, height, rows_used);
@@ -1340,6 +1367,8 @@ private int
 psw_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     gx_device *dev = info->dev;
+    gx_device_vector *const vdev = (gx_device_vector *)dev;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
     gdev_vector_image_enum_t *pie = (gdev_vector_image_enum_t *) info;
     int code;
 
