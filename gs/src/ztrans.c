@@ -19,6 +19,7 @@
 /*$Id$ */
 /* Transparency operators */
 #include "string_.h"
+#include "memory_.h"
 #include "ghost.h"
 #include "oper.h"
 #include "gscspace.h"		/* for gscolor2.h */
