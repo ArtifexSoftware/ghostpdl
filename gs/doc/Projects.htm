@@ -277,6 +277,11 @@ geometry and canned control strings, but we think this problem deserves
 another pass, especially in the hope of consolidating these drivers into a
 single family.
 
+<h3>Download glyph bitmaps (with glyph decaching notification).</h3>
+
+<p>
+See below under "Notification for glyph decaching."
+
 <h1><a name="Graphics"></a>Graphics</h1>
 
 <h2><a name="Graphics_functionality"></a>Functionality</h2>
@@ -441,6 +446,58 @@ larger-grain partitioning) and execute several partitions simultaneously.
 We would want these facilities implemented so that no conditional
 compilation was involved: on uniprocessor systems, the locking API would
 simply have a vacuous implementation.
+
+<h3>Notification for glyph decaching.</h3>
+
+<p>
+Currently, drivers can't do a very good job of downloading rendered
+character bitmaps to the device they manage, because they can't find out
+when a bitmap is being deleted from Ghostscript's cache and therefore will
+never be referenced again.  Here is a sketch of how we would add this
+capability to the graphics library:
+
+<ul>
+
+<li>The driver would implement the <b><tt>text_begin</tt></b> call, simply
+to get access to a <b><tt>gs_imager_state</tt></b> that references the
+rendered character cache.  (The driver could always simply call the default
+implementation of <b><tt>text_begin</tt></b>.)
+
+<li>In the <b><tt>text_begin</tt></b> procedure, the driver would call
+
+<blockquote><pre>
+gs_glyph_decache_register(imager_state, notify_proc, proc_data)
+</pre></blockquote>
+
+<p>
+where <b><tt>proc_data</tt></b> was, or pointed to a structure that
+included, a pointer to the driver.
+
+<li><b><tt>gs_glyph_decache_register</tt></b> would use the general
+notification mechanism defined in <b><tt>gsnotify.h</tt></b> to call
+
+<blockquote><pre>
+notify_proc(proc_data, pchar_data)
+</pre></blockquote>
+
+<p>
+whenever a bitmap was removed from the character cache.
+<b><tt>pchar_data</tt></b> would point to some identification of the
+character; perhaps just the bitmap ID, but possibly a
+<b><tt>gx_cached_bits_common</tt></b> or even a <b><tt>cached_char</tt></b>.
+
+<li>The <b><tt>char_cache</tt></b> structure would be need an additional
+member, a <b><tt>gs_notify_list_t</tt></b>.  It would also need to add
+finalization so that when it was freed, it would notify and unregister all
+clients, using <b><tt>gs_notify_all(list, NULL)</tt></b> and then
+<b><tt>gs_notify_release</tt></b>.
+
+</ul>
+
+<p>
+<I>This facility was requested by the Display Ghostscript project, but it
+could also be used to improve the output of the PCL XL driver and possibly
+the X and PCL5 drivers.</I>
 
 <h1><a name="Other_topics"></a>Other topics</h1>
 
