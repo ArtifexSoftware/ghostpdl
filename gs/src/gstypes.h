@@ -110,4 +110,13 @@ typedef struct gs_int_rect_s {
     gs_int_point p, q;
 } gs_int_rect;
 
+/*
+ * Define a type for a floating-point parameter range.  Note that unlike
+ * the intervals for gs_rect and gs_int_rect, these intervals are closed
+ * (i.e., they represent rmin <= x <= rmax, not rmin <= x < rmax).
+ */
+typedef struct gs_range_s {
+    float rmin, rmax;
+} gs_range_t;
+
 #endif /* gstypes_INCLUDED */

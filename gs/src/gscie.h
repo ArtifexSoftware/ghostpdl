@@ -24,6 +24,7 @@
 #include "gconfigv.h"		/* for USE_FPU */
 #include "gsrefct.h"
 #include "gsstype.h"		/* for extern_st */
+#include "gstypes.h"		/* for gs_range_t */
 #include "gxctable.h"
 
 /* ---------------- Configuration parameters ---------------- */
@@ -184,9 +185,8 @@ typedef struct gs_matrix3_s {
 } gs_matrix3;
 
 /* 3- and 4-element vectors of ranges. */
-typedef struct gs_range_s {
-    float rmin, rmax;
-} gs_range;
+/* NOTE: gs_range is deprecated for new code in favor of gs_range_t. */
+typedef gs_range_t gs_range;
 typedef struct gs_range3_s {
     gs_range ranges[3];
 } gs_range3;
