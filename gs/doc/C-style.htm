@@ -652,22 +652,6 @@ platforms.  Any code that uses this type should be surrounded by
 
 </dl>
 
-<h3>Procedures</h3>
-
-<dl>
-
-<dt><b><tt>P0(), P1(p1), ..., P16(p1, ..., p16)</tt></b> [deprecated]
-
-<dd>Nearly all existing code uses these macros for the parameter lists of
-procedure prototypes, e.g.,
-<b><tt>int&nbsp;proc(P2(int&nbsp;a,&nbsp;int&nbsp;b))</tt></b>, to provide
-compatibility with pre-ANSI, a.k.a. "traditional" or "K &amp; R", compilers.
-Since only ANSI compilers are now supported, don't use these macros in new
-code: use the ANSI standard syntax
-<b><tt>int&nbsp;proc(int&nbsp;a,&nbsp;int&nbsp;b)</tt></b>.
-
-</dl>
-
 <hr>
 
 <h2><a name="Stylistic_conventions"></a>Stylistic conventions</h2>
