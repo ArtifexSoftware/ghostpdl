@@ -346,7 +346,7 @@ done
 #CLASSICLIBS="MSL\ C.PPC.Lib InterfaceLib FontManager MathLib"
 
 # libs for codewarrior 7
-LIBS="console.stubs.c"
+LIBS=""
 CARBONLIBS="MSL_All_Carbon.Lib CarbonLib"
 CLASSICLIBS="MSL_All_PPC.Lib InterfaceLib FontManager MathLib"
 CLASSICLIBS="$CLASSICLIBS TextCommon UnicodeConverter UTCUtils"
