@@ -208,7 +208,12 @@ pdfdict begin
 	% end of the file, and the file will get closed.
    5 sub 2 copy setfileposition
    1 index (xxxxxx) readstring pop
-   dup (\015%%EOF) eq exch (\012%%EOF) eq or not   
+   dup
+   dup (\015%%EOF) eq exch (\012%%EOF) eq or
+   exch 1 5 getinterval
+   dup (\015%%EO) eq exch (\012%%EO) eq or
+   or
+   not
     { /pdfopen cvx /syntaxerror signalerror } if
    1 add setfileposition
    prevline token pop dup type /integertype eq 
@@ -367,8 +372,9 @@ pdfdict begin
  { aload pop exch 3 index sub exch 2 index sub
  } bind def
 /resolvedest {		% <name|string|other> resolvedest <other|null>
+  (resolvedest, type = ) print dup type =only (, value = ) print dup ==
   dup type /nametype eq {
-    Trailer /Root oget /Dests oget exch knownoget not { null } if
+    Trailer /Root oget /Dests knownoget { exch knownoget not { null } if } { null } ifelse
   } {
     dup type /stringtype eq {
       Trailer /Root oget /Names oget /Dests knownoget {
