@@ -35,7 +35,7 @@ above syntax (such as a macro or function call).
      - Some macros that tinker with the syntax of the function header.
 .br
      - String literals whose concatenation requires rewriting
-their contents; e.g. "ab\0" "07c" is concatenated to "ab\007c",
+their contents; e.g. "ab\e0" "07c" is concatenated to "ab\e007c",
 which is not correct.
 .sp
 The --varargs switch is obsolete, and is recognized only for
@@ -43,8 +43,7 @@ backwards compatibility.  The present version of
 \fBansi2knr\fR
 will always attempt to convert a ... argument to va_alist and va_dcl.
 .SH AUTHOR
-L. Peter Deutsch <ghost@aladdin.com> wrote the original ansi2knr and
-continues to maintain the current version; most of the code in the current
-version is his work.  ansi2knr also includes contributions by Francois
-Pinard <pinard@iro.umontreal.ca>, Jim Avera <jima@netcom.com>, and Paul
-Eggert <eggert@twinsun.com>.
+L. Peter Deutsch <ghost@aladdin.com> wrote the original ansi2knr; most of
+the code in the current version is his work.  ansi2knr also includes
+contributions by Francois Pinard <pinard@iro.umontreal.ca>, Jim Avera
+<jima@netcom.com>, and Paul Eggert <eggert@twinsun.com>.
