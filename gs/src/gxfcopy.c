@@ -1416,6 +1416,25 @@ copied_cid0_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 
     if (code < 0)
 	return code;
+    if (members & GLYPH_INFO_WIDTH1) {
+	/* Hack : There is no way to pass WMode from font to glyph_info,
+	 * and usually CID font has no metrics for WMode 1.
+	 * Therefore we use FontBBox as default size.
+	 * Warning : this incompletely implements the request :
+	 * other requested members are not retrieved.
+	 */ 
+	gs_font_info_t finfo;
+	int code = subfont1->procs.font_info(font, NULL, FONT_INFO_BBOX, &finfo);
+
+	if (code < 0)
+	    return code;
+	info->width[1].x = 0;
+	info->width[1].y = -finfo.BBox.q.x; /* Sic! */
+	info->v.x = finfo.BBox.q.x / 2;
+	info->v.y = finfo.BBox.q.y;
+	info->members = GLYPH_INFO_WIDTH1;
+	return 0;
+    }
     return subfont1->procs.glyph_info((gs_font *)subfont1, glyph, pmat,
 				      members, info);
 }

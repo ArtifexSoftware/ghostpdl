@@ -152,7 +152,7 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
  * Estimate text bbox.
  */
 private int
-process_text_estimate_bbox(gs_text_enum_t *pte, gs_font_base *font,
+process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
 			  const gs_const_string *pstr,
 			  const gs_matrix *pfmat,
 			  gs_rect *text_bbox, gs_point *pdpt)
@@ -242,12 +242,7 @@ process_text_estimate_bbox(gs_text_enum_t *pte, gs_font_base *font,
  * necessary glyphs.  penum->current_font provides the gs_font for getting
  * glyph metrics, but this font's Encoding is not used.
  */
-private int process_text_return_width(const gs_text_enum_t *pte,
-				      gs_font_base *font,
-				      pdf_text_process_state_t *ppts,
-				      const gs_const_string *pstr,
-				      gs_point *pdpt);
-private int process_text_modify_width(gs_text_enum_t *pte,
+private int process_text_return_width(const pdf_text_enum_t *pte,
 				      gs_font_base *font,
 				      pdf_text_process_state_t *ppts,
 				      const gs_const_string *pstr,
@@ -257,10 +252,9 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 		   pdf_font_resource_t *pdfont, const gs_matrix *pfmat,
 		   pdf_text_process_state_t *ppts)
 {
-    gs_text_enum_t *const pte = (gs_text_enum_t *)penum;
     gx_device_pdf *const pdev = (gx_device_pdf *)penum->dev;
     gs_font_base *font = (gs_font_base *)penum->current_font;
-    const gs_text_params_t *text = &pte->text;
+    const gs_text_params_t *text = &penum->text;
     int i;
     int code = 0, mask;
     gs_point width_pt;
@@ -269,7 +263,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
     if (pfmat == 0)
 	pfmat = &font->FontMatrix;
     if (text->operation & TEXT_RETURN_WIDTH) {
-	code = gx_path_current_point(pte->path, &penum->origin);
+	code = gx_path_current_point(penum->path, &penum->origin);
 	if (code < 0)
 	    return code;
     }
@@ -278,20 +272,22 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
      * Acrobat Reader can't handle text with huge coordinates,
      * so skip the text if it is outside the clip bbox.
      */
-    code = process_text_estimate_bbox(pte, font, (gs_const_string *)pstr, pfmat, 
+    code = process_text_estimate_bbox(penum, font, (gs_const_string *)pstr, pfmat, 
 				      &text_bbox, &width_pt);
     if (code == 0) {
 	gs_fixed_rect clip_bbox;
 	gs_rect rect;
 
-	gx_cpath_outer_box(pte->pcpath, &clip_bbox);
+	gx_cpath_outer_box(penum->pcpath, &clip_bbox);
 	rect.p.x = fixed2float(clip_bbox.p.x);
 	rect.p.y = fixed2float(clip_bbox.p.y);
 	rect.q.x = fixed2float(clip_bbox.q.x);
 	rect.q.y = fixed2float(clip_bbox.q.y);
 	rect_intersect(rect, text_bbox);
-	if (rect.p.x > rect.q.x || rect.p.y > rect.q.y)
+	if (rect.p.x > rect.q.x || rect.p.y > rect.q.y) {
+	    penum->index += pstr->size;
 	    goto finish;
+	}
     }
 
     /*
@@ -302,7 +298,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
     if (code > 0) {
 	/* Try not to emulate ADD_TO_WIDTH if we don't have to. */
 	if (code & TEXT_ADD_TO_SPACE_WIDTH) {
-	    if (!memchr(pstr->data, pte->text.space.s_char, pstr->size))
+	    if (!memchr(pstr->data, penum->text.space.s_char, pstr->size))
 		code &= ~TEXT_ADD_TO_SPACE_WIDTH;
 	}
     }
@@ -339,7 +335,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	 */
 	if (!(text->operation & (TEXT_DO_DRAW | TEXT_RETURN_WIDTH)))
 	    return 0;
-	code = process_text_return_width(pte, font, ppts,
+	code = process_text_return_width(penum, font, ppts,
 					 (gs_const_string *)pstr,
 					 &width_pt);
 	if (code < 0)
@@ -348,9 +344,10 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	    /* No characters with redefined widths -- the fast case. */
 	    if (text->operation & TEXT_DO_DRAW) {
 		code = pdf_append_chars(pdev, pstr->data, pstr->size,
-					width_pt.x, width_pt.y);
+					width_pt.x, width_pt.y, false);
 		if (code < 0)
 		    return code;
+		penum->index += pstr->size;
 	    }
 	} else {
 	    /* Use the slow case.  Set mask to any non-zero value. */
@@ -358,7 +355,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	}
     }
     if (mask) {
-	code = process_text_modify_width(pte, font, ppts,
+	code = process_text_modify_width(penum, (gs_font *)font, ppts,
 					 (gs_const_string *)pstr,
 					 &width_pt);
 	if (code < 0)
@@ -366,12 +363,12 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
     }
 
 
+finish:
     /* Finally, return the total width if requested. */
     if (!(text->operation & TEXT_RETURN_WIDTH))
 	return 0;
-finish:
-    pte->returned.total_width = width_pt;
-    return gx_path_add_point(pte->path,
+    penum->returned.total_width = width_pt;
+    return gx_path_add_point(penum->path,
 			     penum->origin.x + float2fixed(width_pt.x),
 			     penum->origin.y + float2fixed(width_pt.y));
 }
@@ -407,7 +404,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	/* Might be an unused char, or just not cached. */
 	gs_glyph glyph = pdfont->u.simple.Encoding[ch].glyph;
 
-	code = pdf_glyph_widths(pdfont, glyph, font, pwidths);
+	code = pdf_glyph_widths(pdfont, glyph, (gs_font *)font, pwidths);
 	if (code < 0)
 	    return code;
 	pdfont->u.simple.v[ch] = pwidths->v;
@@ -423,7 +420,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	    int save_WMode = font->WMode;
 	    font->WMode = 0; /* Temporary patch font because font->procs.glyph_info
 	                        has no WMode argument. */
-	    code = pdf_glyph_widths(pdfont, glyph, font, pwidths);
+	    code = pdf_glyph_widths(pdfont, glyph, (gs_font *)font, pwidths);
 	    font->WMode = save_WMode;
 	}
 	if (code == 0) {
@@ -455,7 +452,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
  * character had real_width != Width, otherwise 0.
  */
 private int
-process_text_return_width(const gs_text_enum_t *pte, gs_font_base *font,
+process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
 			  pdf_text_process_state_t *ppts,
 			  const gs_const_string *pstr,
 			  gs_point *pdpt)
@@ -535,24 +532,26 @@ pdf_glyph_origin(pdf_font_resource_t *pdfont, int ch, int WMode, gs_point *p)
 /*
  * Emulate TEXT_ADD_TO_ALL_WIDTHS and/or TEXT_ADD_TO_SPACE_WIDTH,
  * and implement TEXT_REPLACE_WIDTHS if requested.
- * We know that the Tw and Tc values are zero.  Uses and updates
- * ppts->values.matrix; uses ppts->values.pdfont.
+ * Uses and updates ppts->values.matrix; uses ppts->values.pdfont.
  */
-private int
-process_text_modify_width(gs_text_enum_t *pte, gs_font_base *font,
+int
+process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 			  pdf_text_process_state_t *ppts,
 			  const gs_const_string *pstr,
 			  gs_point *pdpt)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
-    int i;
     double scale = 0.001 * ppts->values.size;
     int space_char =
 	(pte->text.operation & TEXT_ADD_TO_SPACE_WIDTH ?
 	 pte->text.space.s_char : -1);
     int code = 0;
     gs_point start, total;
+    bool composite = (ppts->values.pdfont->FontType == ft_composite);
 
+    pte->text.data.bytes = pstr->data;
+    pte->text.size = pstr->size;
+    pte->index = 0;
     start.x = ppts->values.matrix.tx;
     start.y = ppts->values.matrix.ty;
     total.x = total.y = 0;	/* user space */
@@ -561,17 +560,28 @@ process_text_modify_width(gs_text_enum_t *pte, gs_font_base *font,
      * values and the width value returned in *pdpt are in user space,
      * and the width values for pdf_append_chars are in device space.
      */
-    for (i = 0; i < pstr->size; ++i) {
+    for (;;) {
 	pdf_glyph_widths_t cw;	/* design space */
-	int code = pdf_char_widths((gx_device_pdf *)pte->dev,
-	                           ppts->values.pdfont, pstr->data[i], font,
-				   &cw);
 	gs_point did, wanted, tpt;	/* user space */
 	gs_point v; /* design space */
+	gs_char chr;
+	gs_glyph glyph;
+	int code, index = pte->index;
 
+	code = pte->orig_font->procs.next_char_glyph((gs_text_enum_t *)pte, &chr, &glyph);
+	if (code == 2) /* end of string */
+	    break;
 	if (code < 0)
 	    return code;
-	pdf_glyph_origin(ppts->values.pdfont, pstr->data[i], font->WMode, &v);
+	if (composite) /* from process_cmap_text */
+	    code = pdf_glyph_widths(ppts->values.pdfont->u.type0.DescendantFont, glyph, font, &cw);
+	else /* must be a base font */
+	    code = pdf_char_widths((gx_device_pdf *)pte->dev,
+	                           ppts->values.pdfont, chr, (gs_font_base *)font,
+				   &cw);
+	if (code < 0)
+	    return code;
+	pdf_glyph_origin(ppts->values.pdfont, chr, font->WMode, &v);
 	if (v.x != 0 || v.y != 0) {
 	    gs_point glyph_origin_shift;
 
@@ -594,14 +604,14 @@ process_text_modify_width(gs_text_enum_t *pte, gs_font_base *font,
 				  &ppts->values.matrix, &tpt);
 	    did.x += tpt.x;
 	    did.y += tpt.y;
-	    if (pstr->data[i] == space_char) {
+	    if (chr == space_char) {
 		gs_distance_transform((font->WMode ? 0 : ppts->values.word_spacing),
 				      (font->WMode ? ppts->values.word_spacing : 0),
 				      &ppts->values.matrix, &tpt);
 		did.x += tpt.x;
 		did.y += tpt.y;
 	    }
-	    code = pdf_append_chars(pdev, &pstr->data[i], 1, did.x, did.y);
+	    code = pdf_append_chars(pdev, pstr->data + index, pte->index - index, did.x, did.y, composite);
 	    if (code < 0)
 		break;
 	} else
@@ -622,7 +632,7 @@ process_text_modify_width(gs_text_enum_t *pte, gs_font_base *font,
 		wanted.x += tpt.x;
 		wanted.y += tpt.y;
 	    }
-	    if (pstr->data[i] == space_char) {
+	    if (chr == space_char) {
 		gs_distance_transform(pte->text.delta_space.x,
 				      pte->text.delta_space.y,
 				      &ctm_only(pte->pis), &tpt);
@@ -754,7 +764,5 @@ process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	str.size = count;
 	code = pdf_encode_process_string(penum, &str, NULL, &text_state);
     }
-    if (code >= 0)
-	pte->index += str.size;
     return code;
 }

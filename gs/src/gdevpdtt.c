@@ -1154,11 +1154,15 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     /* Check for spacing parameters we can handle, and transform them. */
 
     if (penum->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
-	gs_point pt;
+	if (penum->current_font->WMode == 0) {
+	    gs_point pt;
 
-	code = transform_delta_inverse(&penum->text.delta_all, &smat, &pt);
-	if (code >= 0 && pt.y == 0)
-	    c_s = pt.x * size;
+	    code = transform_delta_inverse(&penum->text.delta_all, &smat, &pt);
+	    if (code >= 0 && pt.y == 0)
+		c_s = pt.x * size;
+	    else
+		mask |= TEXT_ADD_TO_ALL_WIDTHS;
+	}
 	else
 	    mask |= TEXT_ADD_TO_ALL_WIDTHS;
     }
@@ -1262,10 +1266,11 @@ private int store_glyph_width(pdf_glyph_width_t *pwidth, int wmode,
 			      double scale, const gs_glyph_info_t *pinfo);
 int
 pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
-		 gs_font_base *ofont, pdf_glyph_widths_t *pwidths)
+		 gs_font *orig_font, pdf_glyph_widths_t *pwidths)
 {
     gs_font_base *cfont = pdf_font_resource_font(pdfont);
-    int wmode = ofont->WMode;
+    int wmode = orig_font->WMode;
+    gs_font *ofont = orig_font;
     gs_glyph_info_t info;
     /*
      * orig_scale is 1.0 for TrueType, 0.001 or 1.0/2048 for Type 1.
@@ -1274,10 +1279,15 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
     double scale_c, scale_o;
     int code, rcode = 0;
 
+    if (ofont->FontType == ft_composite) {
+	gs_font_type0 *const pfont = (gs_font_type0 *)ofont;
+	
+	ofont = pfont->data.FDepVector[0];
+    }
     code = font_orig_scale((const gs_font *)cfont, &sxc);
     if (code < 0)
 	return code;
-    code = font_orig_scale((const gs_font *)ofont, &sxo);
+    code = font_orig_scale(ofont, &sxo);
     if (code < 0)
 	return code;
     scale_c = sxc * 1000.0;
@@ -1298,7 +1308,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 	    return code;
 	v = info.v;
 	rcode |= code;
-	if ((code = ofont->procs.glyph_info((gs_font *)ofont, glyph, NULL,
+	if ((code = ofont->procs.glyph_info(ofont, glyph, NULL,
 					    GLYPH_INFO_WIDTH0 << wmode,
 					    &info)) != gs_error_undefined
 	    ) {

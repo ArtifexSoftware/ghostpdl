@@ -113,6 +113,12 @@ void pdf_get_text_state_values(gx_device_pdf *pdev,
 			       pdf_text_state_values_t *ptsv);
 
 /*
+ * Set wmode to text state.
+ */
+void pdf_set_text_wmode(gx_device_pdf *pdev, int wmode);
+
+
+/*
  * Set the stored client view of text state values.
  */
 int pdf_set_text_state_values(gx_device_pdf *pdev,
@@ -137,6 +143,6 @@ void pdf_text_position(const gx_device_pdf *pdev, gs_point *ppt);
  * in device space.
  */
 int pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
-		     floatp wx, floatp wy);
+		     floatp wx, floatp wy, bool nobreak);
 
 #endif /* gdevpdts_INCLUDED */

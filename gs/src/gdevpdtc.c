@@ -44,10 +44,20 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     int code = 0;
     gs_string str;
     pdf_text_process_state_t text_state;
-    pdf_text_enum_t curr, prev;
+    pdf_text_enum_t curr, prev, out;
     gs_point total_width;
+    const gs_matrix *psmat = 0;
+    gs_font *prev_font = 0;
+    gs_char chr, char_code, space_char = ~0;
+    int buf_index = 0;
+    bool return_width = (penum->text.operation & TEXT_RETURN_WIDTH);
 
     str.data = buf;
+    if (return_width) {
+	code = gx_path_current_point(penum->path, &penum->origin);
+	if (code < 0)
+	    return code;
+    }
     if (pte->text.operation &
 	(TEXT_FROM_ANY - (TEXT_FROM_STRING | TEXT_FROM_BYTES))
 	)
@@ -59,14 +69,16 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     total_width.x = total_width.y = 0;
     curr = *penum;
     prev = curr;
-    prev.current_font = 0;
+    out = curr;
+    out.current_font = 0;
     /* Scan runs of characters in the same leaf font. */
     for ( ; ; ) {
-	int font_code, buf_index;
+	int font_code;
 	gs_font *new_font = 0;
 
-	for (buf_index = 0; ; ++buf_index) {
-	    gs_char chr;
+	gs_text_enum_copy_dynamic((gs_text_enum_t *)&out,
+				  (gs_text_enum_t *)&curr, false);
+	for (;;) {
 	    gs_glyph glyph;
 
 	    gs_text_enum_copy_dynamic((gs_text_enum_t *)&prev,
@@ -81,12 +93,19 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	    switch (font_code) {
 	    case 0:		/* no font change */
 	    case 1:		/* font change */
+		curr.returned.current_char = chr;
+		char_code = gx_current_char(&curr);
 		new_font = curr.fstack.items[curr.fstack.depth].font;
-		if (new_font != prev.current_font)
+		if (new_font != prev_font)
 		    break;
 		if (chr != (byte)chr)	/* probably can't happen */
 		    return_error(gs_error_rangecheck);
 		buf[buf_index] = (byte)chr;
+		buf_index++;
+		prev_font = new_font;
+		psmat = &curr.fstack.items[curr.fstack.depth - 1].font->FontMatrix;
+		if (pte->text.space.s_char == char_code)
+		    space_char = chr;
 		continue;
 	    case 2:		/* end of string */
 		break;
@@ -96,41 +115,47 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	    break;
 	}
 	str.size = buf_index;
-	gs_text_enum_copy_dynamic((gs_text_enum_t *)&curr,
-				  (gs_text_enum_t *)&prev, false);
 	if (buf_index) {
 	    /* buf_index == 0 is only possible the very first time. */
 	    /*
 	     * The FontMatrix of leaf descendant fonts is not updated
 	     * by scalefont.  Compute the effective FontMatrix now.
 	     */
-	    const gs_matrix *psmat =
-		&curr.fstack.items[curr.fstack.depth - 1].font->FontMatrix;
 	    gs_matrix fmat;
 
-	    gs_matrix_multiply(&curr.current_font->FontMatrix, psmat, &fmat);
-	    code = pdf_encode_process_string(&curr, &str, &fmat, &text_state);
+	    /* set up the base font : */
+	    out.fstack.depth = 0;
+	    out.fstack.items[out.fstack.depth].font = out.current_font = prev_font;
+
+	    /* Provide the decoded space character : */
+	    out.text.space.s_char = space_char;
+
+	    gs_matrix_multiply(&prev_font->FontMatrix, psmat, &fmat);
+	    code = pdf_encode_process_string(&out, &str, &fmat, &text_state);
 	    if (code < 0)
 		return code;
-	    gs_text_enum_copy_dynamic(pte, (gs_text_enum_t *)&curr, true);
-	    if (pte->text.operation & TEXT_RETURN_WIDTH) {
+	    curr.xy_index = out.xy_index; /* pdf_encode_process_string advanced it. */
+	    gs_text_enum_copy_dynamic(pte, (gs_text_enum_t *)&prev, true);
+	    if (return_width) {
 		pte->returned.total_width.x = total_width.x +=
-		    curr.returned.total_width.x;
+		    out.returned.total_width.x;
 		pte->returned.total_width.y = total_width.y +=
-		    curr.returned.total_width.y;
+		    out.returned.total_width.y;
 	    }
 	}
 	if (font_code == 2)
 	    break;
-	/*
-	 * Some compilers may complain that new_font might not be
-	 * initialized at this point.  However, control can only reach
-	 * here if the for (buf_index) loop terminated with font_code =
-	 * 0 or 1, in which case new_font is definitely initialized.
-	 */
-	curr.current_font = new_font;
+	buf[0] = (byte)chr;
+	buf_index = 1;
+	space_char = (pte->text.space.s_char == char_code ? chr : ~0);
+	psmat = &curr.fstack.items[curr.fstack.depth - 1].font->FontMatrix;
+	prev_font = new_font;
     }
-    return code;
+    if (!return_width)
+	return 0;
+    return gx_path_add_point(penum->path,
+			     penum->origin.x + float2fixed(total_width.x),
+			     penum->origin.y + float2fixed(total_width.y));
 }
 
 /* ---------------- CMap-based composite font ---------------- */
@@ -182,16 +207,14 @@ private const char *const standard_cmap_names[] = {
 private int
 scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 	       pdf_font_resource_t *pdsubf /*CIDFont*/,
-	       gs_font_base *subfont /*CIDFont*/, gs_point *pwxy)
+	       gs_font_base *subfont /*CIDFont*/)
 {
     pdf_font_descriptor_t *pfd = pdsubf->FontDescriptor;
     gs_text_enum_t scan = *pte;
-    gs_point w;
     pdf_font_resource_t *pdfont;
 
     pdf_attached_font_resource((gx_device_pdf *)pte->dev, (gs_font *)font, &pdfont, 
 				NULL, NULL, NULL);
-    w.x = w.y = 0;
     for ( ; ; ) {
 	gs_char chr;
 	gs_glyph glyph;
@@ -221,15 +244,18 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 	    if (code == 0 /* just copied */ || pdsubf->Widths[cid] == 0) {
 		pdf_glyph_widths_t widths;
 
-		code = pdf_glyph_widths(pdsubf, glyph, subfont, &widths);
+		code = pdf_glyph_widths(pdsubf, glyph, (gs_font *)subfont, &widths);
 		if (code < 0)
 		    return code;
+		/* Taking the width for WMode 0 (even if 'font' has different), 
+		 * because pdf_write_CIDFont_widths wants so.
+		 * (it doesn't implement DW2).
+		 * fixme: to be improved.
+		 */
 		if (code == 0) { /* OK to cache */
 		    pdsubf->Widths[cid] = widths.Width.w;
 		    real_widths[cid] = widths.real_width.w;
 		}
-		w.x += widths.real_width.xy.x;
-		w.y += widths.real_width.xy.y;
 		if (pdsubf->u.cidfont.CIDToGIDMap != 0) {
 		    gs_font_cid2 *subfont2 = (gs_font_cid2 *)subfont;
 
@@ -237,15 +263,10 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 			subfont2->cidata.CIDMap_proc(subfont2, glyph);
 		}
 	    } else {
-		if (font->WMode)
-		    w.y += real_widths[cid];
-		else
-		    w.x += real_widths[cid];
 	    }
 	    pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
 	}
     }
-    *pwxy = w;
     return 0;
 }
 
@@ -267,7 +288,10 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
     gs_point wxy;
     int code;
     bool is_identity = false;
+    gs_const_string str;
+    bool return_width = (penum->text.operation & TEXT_RETURN_WIDTH);
 
+    pdf_set_text_wmode(pdev, font->WMode);
     code = pdf_obtain_font_resource(pte, NULL, &pdfont);
     if (code < 0)
 	return code;
@@ -295,32 +319,6 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
 				 &font->FontMatrix);
     if (code < 0)
 	return code;
-    if (code > 0)		/* can't emulate ADD_TO_*_WIDTH */
-	return_error(gs_error_rangecheck);
-    /******
-	   PATCH: We don't implement ADD_TO_*_WIDTH at all, because
-	   it's too much trouble to calculate the width to pass to
-	   pdf_append_chars.
-    ******/
-    if (text_state.values.character_spacing != 0 ||
-	text_state.values.word_spacing != 0
-	) {
-	/*
-	 * We could allow to write the text with CID font and Tc/Tw commants, 
-	 * just removing this check. Perhaps if the source CID font 
-	 * replaces widths with Metrics/Metrics2, glyph positions
-	 * become imprecise, because we ignore the replaced widths. 
-	 * This happens re-distilling a PDF file, which substituted a CID font
-	 * and took widths from an original font.
-	 * -r72 comparefiles\RodinCIDEmbed.pdf, page 2 is an example :
-	 * it gives overlapping glyphs.
-	 *
-	 * Also note that Tc assumes that the space character code is 32,
-	 * but it isn't so with many CMaps.
-	 */
-	return_error(gs_error_rangecheck); /* Will fall back to default implementation */
-    }
-	    
     if (!pdfont->u.type0.Encoding_name[0]) {
 	/*
 	 * If the CMap isn't standard, write it out if necessary.
@@ -400,48 +398,31 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
 	}
 	pdfont->u.type0.WMode = pcmap->WMode;
     }
-
-    code = scan_cmap_text(pte, pfont, pdsubf, (gs_font_base *)subfont, &wxy);
+    code = scan_cmap_text(pte, pfont, pdsubf, (gs_font_base *)subfont);
     if (code < 0)
 	return code;
-
     /*
-     * Let the default implementation do the rest of the work, but don't
-     * allow it to draw anything in the output; instead, append the
-     * characters to the output now.
+     * If code == 0 (it's a mask), we could do it few faster,
+     * simply copying the text to the output. Perhaps doing so
+     * we could miss differences in v-vectors (glyph origin).
      */
-
-    {
-	gs_text_params_t text;
-	gs_text_enum_t *pte_default;
-	gs_const_string str;
-	int acode;
-	gs_point dist;
-	double scale = 0.001 * text_state.values.size;
-
-	text = pte->text;
-	if (text.operation & TEXT_DO_DRAW)
-	    text.operation =
-		(text.operation - TEXT_DO_DRAW) | TEXT_DO_CHARWIDTH;
-	code = pdf_default_text_begin(pte, &text, &pte_default);
+    if (return_width) {
+	code = gx_path_current_point(penum->path, &penum->origin);
 	if (code < 0)
 	    return code;
-	str.data = vdata;
-	str.size = size;
-	if ((acode = pdf_set_text_process_state(pdev, pte, &text_state)) < 0 ||
-	    (acode = pdf_text_distance_transform(wxy.x * scale, wxy.y * scale,
-						 pdev->text->text_state,
-						 &dist)) < 0 ||
-	    (acode = pdf_append_chars(pdev, str.data, str.size, dist.x, dist.y)) < 0
-	    ) {
-	    gs_text_release(pte_default, "process_cmap_text");
-	    return acode;
-	}
-	/* Let the caller (pdf_text_process) handle pte_default. */
-	gs_text_enum_copy_dynamic(pte_default, pte, false);
-	penum->pte_default = pte_default;
+    }
+    str.data = vdata;
+    str.size = size;
+    code = process_text_modify_width((pdf_text_enum_t *)pte, font,
+			  &text_state, &str, &wxy);
+    if (code < 0)
 	return code;
-    }	
+    penum->returned.total_width = wxy;
+    if (!return_width)
+	return 0;
+    return gx_path_add_point(penum->path,
+			     penum->origin.x + float2fixed(wxy.x),
+			     penum->origin.y + float2fixed(wxy.y));
 }
 
 /* ---------------- CIDFont ---------------- */
@@ -516,7 +497,7 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     /* Now handle the glyphshow as a show in the Type 0 font. */
 
     save = *pte;
-    pte->current_font = (gs_font *)font0;
+    pte->current_font = pte->orig_font = (gs_font *)font0;
     /* Patch the operation temporarily for init_fstack. */
     pte->text.operation = (operation & ~TEXT_FROM_ANY) | TEXT_FROM_BYTES;
     /* Patch the data for process_cmap_text. */
@@ -526,6 +507,7 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     gs_type0_init_fstack(pte, pte->current_font);
     code = process_cmap_text(pte, vbuf, vbuf, pte->text.size);
     pte->current_font = scaled_font;
+    pte->orig_font = save.orig_font;
     pte->text = save.text;
     pte->index = save.index + pte->index / 2;
     pte->fstack = save.fstack;

@@ -725,6 +725,35 @@ show_fast_move(gs_state * pgs, gs_fixed_point * pwxy)
 	code = 0;
     return code;
 }
+
+/* Get the current character code. */
+int gx_current_char(const gs_text_enum_t * pte)
+{
+    const gs_show_enum *penum = (const gs_show_enum *)pte;
+    gs_char chr = CURRENT_CHAR(penum) & 0xff;
+    int fdepth = penum->fstack.depth;
+
+    if (fdepth > 0) {
+	/* Add in the shifted font number. */
+	uint fidx = penum->fstack.items[fdepth].index;
+
+	switch (((gs_font_type0 *) (penum->fstack.items[fdepth - 1].font))->data.FMapType) {
+	case fmap_1_7:
+	case fmap_9_7:
+	    chr += fidx << 7;
+	    break;
+	case fmap_CMap:
+	    chr = CURRENT_CHAR(penum);  /* the full character */
+	    if (!penum->cmap_code)
+		break;
+	    /* falls through */
+	default:
+	    chr += fidx << 8;
+	}
+    }
+    return chr;
+}
+
 private int
 show_move(gs_show_enum * penum)
 {
@@ -739,27 +768,8 @@ show_move(gs_show_enum * penum)
 	double dx = 0, dy = 0;
 
 	if (SHOW_IS_ADD_TO_SPACE(penum)) {
-	    gs_char chr = CURRENT_CHAR(penum) & 0xff;
-	    int fdepth = penum->fstack.depth;
+	    gs_char chr = gx_current_char((const gs_text_enum_t *)penum);
 
-	    if (fdepth > 0) {
-		/* Add in the shifted font number. */
-		uint fidx = penum->fstack.items[fdepth].index;
-
-		switch (((gs_font_type0 *) (penum->fstack.items[fdepth - 1].font))->data.FMapType) {
-		case fmap_1_7:
-		case fmap_9_7:
-		    chr += fidx << 7;
-		    break;
-		case fmap_CMap:
-		    chr = CURRENT_CHAR(penum);  /* the full character */
-		    if (!penum->cmap_code)
-			break;
-		    /* falls through */
-		default:
-		    chr += fidx << 8;
-		}
-	    }
 	    if (chr == penum->text.space.s_char) {
 		dx = penum->text.delta_space.x;
 		dy = penum->text.delta_space.y;

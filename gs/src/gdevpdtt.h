@@ -191,7 +191,7 @@ int pdf_set_text_process_state(gx_device_pdf *pdev,
  * for some other reason, return 1.
  */
 int pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
-		     gs_font_base *font, pdf_glyph_widths_t *pwidths);
+		     gs_font *font, pdf_glyph_widths_t *pwidths);
 
 /*
  * Fall back to the default text processing code when needed.
@@ -225,5 +225,15 @@ PROCESS_TEXT_PROC(process_plain_text);
 int pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 			      const gs_matrix *pfmat,
 			      pdf_text_process_state_t *ppts);
+
+/*
+ * Emulate TEXT_ADD_TO_ALL_WIDTHS and/or TEXT_ADD_TO_SPACE_WIDTH,
+ * and implement TEXT_REPLACE_WIDTHS if requested.
+ * Uses and updates ppts->values.matrix; uses ppts->values.pdfont.
+ */
+int process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
+			  pdf_text_process_state_t *ppts,
+			  const gs_const_string *pstr,
+			  gs_point *pdpt);
 
 #endif /* gdevpdtt_INCLUDED */

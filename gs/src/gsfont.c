@@ -687,6 +687,13 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 	info->Flags_returned = 0;
     if (font->FontType == ft_composite)
 	return 0;		/* nothing available */
+    if (members & FONT_INFO_BBOX) {
+	info->BBox.p.x = (int)bfont->FontBBox.p.x;
+	info->BBox.p.y = (int)bfont->FontBBox.p.y;
+	info->BBox.q.x = (int)bfont->FontBBox.q.x;
+	info->BBox.q.y = (int)bfont->FontBBox.q.y;
+	info->Flags_returned |= FONT_INFO_BBOX;
+    }
     if ((members & FONT_INFO_FLAGS) &&
 	(info->Flags_requested & FONT_IS_FIXED_WIDTH)
 	) {

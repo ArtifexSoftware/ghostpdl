@@ -42,6 +42,12 @@ typedef struct cached_fm_pair_s cached_fm_pair;
 typedef struct gs_font_s gs_font;
 #endif
 
+/* The type of text enum objects is opaque. */
+#ifndef gs_text_enum_DEFINED
+#  define gs_text_enum_DEFINED
+typedef struct gs_text_enum_s gs_text_enum_t;
+#endif
+
 /* The types of memory and null devices may be opaque. */
 #ifndef gx_device_memory_DEFINED
 #  define gx_device_memory_DEFINED
@@ -106,6 +112,9 @@ struct gs_show_enum_s {
   gs_public_st_composite(st_gs_show_enum, gs_show_enum, "gs_show_enum",\
     show_enum_enum_ptrs, show_enum_reloc_ptrs)
 
+/* Get the current character code. */
+int gx_current_char(const gs_text_enum_t * pte);
+
 /* Cached character procedures (in gxccache.c and gxccman.c) */
 #ifndef gs_font_dir_DEFINED
 #  define gs_font_dir_DEFINED
@@ -126,5 +135,6 @@ int gx_image_cached_char(gs_show_enum *, cached_char *);
 void gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont,
 				  int alpha_bits, gs_log2_scale_point *p_log2_scale);
 int set_char_width(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy);
+
 
 #endif /* gxchar_INCLUDED */

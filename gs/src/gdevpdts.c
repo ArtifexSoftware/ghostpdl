@@ -468,6 +468,18 @@ pdf_get_text_state_values(gx_device_pdf *pdev, pdf_text_state_values_t *ptsv)
 }
 
 /*
+ * Set wmode to text state.
+ */
+void
+pdf_set_text_wmode(gx_device_pdf *pdev, int wmode)
+{
+    pdf_text_state_t *pts = pdev->text->text_state;
+
+    pts->wmode = wmode;
+}
+
+
+/*
  * Set the stored client view of text state values.
  */
 int
@@ -532,7 +544,7 @@ pdf_text_position(const gx_device_pdf *pdev, gs_point *ppt)
  */
 int
 pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
-		 floatp wx, floatp wy)
+		 floatp wx, floatp wy, bool nobreak)
 {
     pdf_text_state_t *pts = pdev->text->text_state;
     const byte *p = str;
@@ -543,7 +555,8 @@ pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
 	pts->out_pos.y = pts->start.y = pts->in.matrix.ty;
     }
     while (left)
-	if (pts->buffer.count_chars == MAX_TEXT_BUFFER_CHARS) {
+	if (pts->buffer.count_chars == MAX_TEXT_BUFFER_CHARS ||
+	    nobreak && pts->buffer.count_chars + left > MAX_TEXT_BUFFER_CHARS) {
 	    int code = sync_text_state(pdev);
 
 	    if (code < 0)
