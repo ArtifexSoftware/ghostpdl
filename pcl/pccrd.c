@@ -365,24 +365,25 @@ pcl_crd_set_view_illuminant(
                                            NULL
                                            );
     }
-    code = gs_cie_render1_initialize( pcrd->pgscrd,
-                                      NULL,     /* for now */
-                                      pwht_pt,
-                                      &(pold->pgscrd->points.BlackPoint),
-                                      &(pold->pgscrd->MatrixPQR),
-                                      &(pold->pgscrd->RangePQR),
-                                      &(pold->pgscrd->TransformPQR),
-                                      &(pold->pgscrd->MatrixLMN),
-                                      &(pold->pgscrd->EncodeLMN),
-                                      &(pold->pgscrd->RangeLMN),
-                                      &(pold->pgscrd->MatrixABC),
-                                      &(pold->pgscrd->EncodeABC),
-                                      &(pold->pgscrd->RangeABC),
-                                      &(pold->pgscrd->RenderTable)
-                                      );
+    code = gs_cie_render1_init_from( pcrd->pgscrd,
+                                     NULL,     /* for now */
+				     pold->pgscrd,
+                                     pwht_pt,
+                                     &(pold->pgscrd->points.BlackPoint),
+                                     &(pold->pgscrd->MatrixPQR),
+                                     &(pold->pgscrd->RangePQR),
+                                     &(pold->pgscrd->TransformPQR),
+                                     &(pold->pgscrd->MatrixLMN),
+                                     &(pold->pgscrd->EncodeLMN),
+                                     &(pold->pgscrd->RangeLMN),
+                                     &(pold->pgscrd->MatrixABC),
+                                     &(pold->pgscrd->EncodeABC),
+                                     &(pold->pgscrd->RangeABC),
+                                     &(pold->pgscrd->RenderTable)
+                                     );
 
     if (pcrd != pold)
-        rc_decrement(pold, "pcl set viewing illuminant");
+	rc_decrement(pold, "pcl set viewing illuminant");
     return code;
 }
 
