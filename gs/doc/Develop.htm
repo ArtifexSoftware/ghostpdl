@@ -50,18 +50,19 @@ Information for Ghostscript developers
 <ul>
 <li><a href="#Memory_manager_architecture">Memory manager architecture</a>
 <ul>
-<li><a href="#Allocator_objects">Allocator objects</a>,
-    <a href="#Objects_vs_strings">Objects vs strings</a>,
+<li><a href="#Objects_vs_strings">Objects vs strings</a>,
     <a href="#Movability_and_GC">Movability and GC</a>,
-    <a href="#Stable_allocators">Stable_allocators</a>
+    <a href="#Stable_allocators">Stable_allocators</a>,
+    <a href="#Parent_hierarchy">Parent hierarchy</a>,
+    <a href="#Allocator_API">Allocator API</a>,
 </ul>
-<li><a href="#Standard_implementation">Standard implementation</a>
 <li><a href="#Special_implementations">Special implementations</a>
 <ul>
 <li><a href="#malloc">malloc</a>,
     <a href="#Locking">Locking</a>,
     <a href="#Retrying">Retrying</a>
 </ul>
+<li><a href="#Standard_implementation">Standard implementation</a>
 <li><a href="#Modalities_of_freeing">Modalities of freeing</a>
 <ul>
 <li><a href="#Explicit_freeing">Explicit freeing</a>,
@@ -237,25 +238,177 @@ Miscellaneous
 
 <h1><a name="Memory_management"></a>Memory management</h1>
 
-<p>
-This section of the document covers the design and coding of the memory
-managers.
-
 <h2><a name="Memory_manager_architecture"></a>Memory manager architecture</h2>
 
-<h3><a name="Allocator_objects"></a>Allocator objects</h3>
-
 <p>
-Can be cascaded
+In many environments, the memory manager is a set of library facilities that
+implicitly manage the entire address space in a homogenous manner.
+Ghostscript's memory manager architecture has none of these properties:
+
+<ul>
+
+<li>Rather than a single library accessed as procedures, Ghostscript
+includes multiple allocator types, each of which in turn may have multiple
+instances (allocators).  Allocators are 'objects' with a substantial set of
+virtual functions.
+
+<li>Rather than managing the entire address space, each allocator manages a
+storage pool, which it may or may not be able to expand or reduce by calling
+on a 'parent' allocator.
+
+<li>Rather than a single genus of untyped storage blocks, Ghostscript's
+allocators provide two genera -- type-tagged 'objects', and 'strings' --
+with substantially different properties.
+
+</ul>
 
 <h3><a name="Objects_vs_strings"></a>Objects vs strings</h3>
 
 <p>
-    Type + size tagging
+As noted above, allocators provide two different storage genera.
+
+<p>
+Objects:
+
+<ul>
+<li>Are aligned in storage to satisfy the most stringent alignment
+requirement imposed by the CPU or compiler;
+<li>Can be referenced only by pointers to their start, not to any internal
+location, unless special arrangements are made (see <a
+href="Movability_and_GC">below</a>);
+<li>May contain pointers to other objects, or to strings;
+<li>Have an associated <em>structure descriptor</em> that specifies their
+size (usually) and the location of any pointers contained within them.
+</ul>
+
+<p>
+Given a pointer to an object, the allocator that allocated it must be able
+to return the object's size and the pointer to its structure descriptor.
+(It is up to the client to know what allocator allocated an object.)
+
+<p>
+Strings:
+
+<ul>
+<li>Are not aligned in storage;
+<li>Can be referenced by pointers (consisting of a starting address and a
+length) to any substring, starting anywhere within the string;
+<li>May not contain pointers;
+<li>Do not have a structure descriptor.
+</ul>
+
+<p>
+The object/string distinction reflects a space/capability tradeoff.  The
+per-object space overhead of the standard type of allocator is typically 12
+bytes; this is too much to impose on every string of a few bytes.  On the
+other hand, restricting object pointers to reference the start of the object
+currently makes object garbage collection and compaction more
+space-efficient.  If we were to redesign the standard allocator, we would
+probably opt for a different design in which strings were allocated within
+container objects of a few hundred bytes, and pointers into the middle of
+all objects were allowed.
 
 <h3><a name="Movability_and_GC"></a>Movability + GC</h3>
 
+<p>
+The allocator architecture is designed to support compacting garbage
+collection.  Every object must be able to enumerate all the pointers it
+contains, both for tracing and for relocation.
+
+<p>
+Objects are normally movable by the garbage collector.  However, some
+objects must be immovable, usually because some other piece of software must
+retain pointers to them.  The allocator API includes procedures for
+allocating both movable (default) and immovable objects.
+
 <h3><a name="Stable_allocators"></a>Stable allocators</h3>
+
+<p>
+Even though <b><tt>save</tt></b> and <b><tt>restore</tt></b> are concepts
+from the PostScript interpreter, the allocator architecture includes a
+feature to support them, called <em>stable</em> allocators, which are
+described in detail <a href="save_forgetsave_restore">below</a>
+
+<h3><a name="Parent_hierarchy">Parent hierarchy</h3>
+
+<p>
+When an allocator needs to add memory to the pool that it manages, it
+requests the memory from its <em>parent</em> allocator.  Every allocator has
+a pointer to its parent; multiple allocators may share a single parent.  The
+ultimate ancestor of all allocators that can expand their pool dynamically
+is an allocator that calls <b><tt>malloc</tt></b>.  However, especially in
+embedded environments, an allocator may be limited to a fixed-size pool
+assigned to it when it is created.
+
+<h3><a name="Allocator_API"></a>Allocator API</h3>
+
+In summary, the allocator API provides the following principal operations:
+
+<ul>
+<li>Allocate and free movable (default) or immovable objects and strings.
+<li>Return the structure type and size of an object.
+<li>Resize (shrink or grow) movable objects and strings, preserving
+the contents insofar as possible.
+<li>Report the size of the managed pool, and how much of it is in use.
+<li>Register and unregister root pointers for the garbage collector.
+<li>Free the allocator itself.
+<li>Consolidate adjacent free blocks to reduce fragmentation.
+</ul>
+
+<p>
+For details, see <a href="../src/gsmemory.h">src/gsmemory.h</a>.
+
+<p>
+Files:
+<a href="../src/gsmemraw.h">src/gsmemraw.h</a>,
+<a href="../src/gsmemory.h">src/gsmemory.h</a>,
+<a href="../src/gsstruct.h">src/gsstruct.h</a>,
+<a href="../src/gsstype.h">src/gsstype.h</a>.
+
+<h2><a name="Special_implementations"></a>Special implementations</h2>
+
+<h3><a name="malloc"></a>malloc</h3>
+
+<p>
+As mentioned <a href="Parent_hierarchy">above</a>, the ultimate ancestor of
+all allocators with an expandable pool is one that calls
+<b><tt>malloc</tt></b>.
+
+<p>
+Files:
+<a href="../src/gsmalloc.h">src/gsmalloc.h</a>,
+<a href="../src/gsmalloc.c">src/gsmalloc.c</a>.
+
+<h3><a name="Locking"></a>Locking</h3>
+
+<p>
+In a multi-threaded environment, if an allocator must be callable from
+multiple threads (for example, if it is used to allocate structures in one
+thread that are passed to, and freed by, another thread), the allocator must
+provide mutex protection.  Ghostscript provides this capability in the form
+of a <em>wrapper</em> allocator, that simply forwards all calls to a
+<em>target</em> allocator under protection of a mutex.  Using the wrapper
+technique, any allocator can be made thread-safe.
+
+<p>
+Files:
+<a href="../src/gsmemlok.h">src/gsmemlok.h</a>,
+<a href="../src/gsmemlok.c">src/gsmemlok.c</a>.
+
+<h3><a name="Retrying"></a>Retrying</h3>
+
+<p>
+In an embedded environment, job failure due to memory exhaustion is very
+undesirable.  Ghostscript provides a wrapper allocator that, when an
+allocation attempt fails, calls a client-provided procedure that can attempt
+to free memory, then ask for the original allocation to be retried.  For
+example, such a procedure can wait for a queue to empty, or can free memory
+occupied by caches.
+
+<p>
+Files:
+<a href="../src/gsmemret.h">src/gsmemret.h</a>,
+<a href="../src/gsmemret.c">src/gsmemret.c</a>.
 
 <h2><a name="Standard_implementation"></a>Standard implementation</h2>
 
@@ -264,14 +417,6 @@ Chunks
 
 <p>
 Free list management
-
-<h2><a name="Special_implementations"></a>Special implementations</h2>
-
-<h3><a name="malloc"></a>malloc</h3>
-
-<h3><a name="Locking"></a>Locking</h3>
-
-<h3><a name="Retrying"></a>Retrying</h3>
 
 <h2><a name="Modalities_of_freeing"></a>Modalities of freeing</h2>
 
@@ -282,8 +427,7 @@ Explicit
 Reference-counted
 
 <p>
-GC (interpreter only)
-	Merge-only "GC"
+GC (interpreter only); Merge-only "GC"
 
 <p>
 When to use which one
@@ -373,12 +517,12 @@ Files:
 <a href="../src/x_.h">src/x_.h</a>.
 
 <p>
-(It has been suggested that the GNU 'configure' scripts do the above better
-than Ghostscript's current system.  While this is probably true, we've
-consciously chosen not to include the incomprehensible multi-thousand-line
-'configure' scripts in our source code, especially since the scripts require
-a specific shell for interpretation may not be portable even to all
-Unix-family systems.)
+It has been suggested that the GNU 'configure' scripts do the above better,
+for Unix systems, than Ghostscript's current methods.  While this may be
+true, we have found configure scripts difficult to write, understand, and
+maintain; and the 'autoconf' tool for generating configure scripts, which we
+found easy to use, covers very little of the ground that Ghostscript
+requires.
 
 <h3><a name="Cross_platform_APIs"></a>Cross-platform APIs</h3>
 
