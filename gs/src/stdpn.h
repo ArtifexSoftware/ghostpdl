@@ -15,7 +15,7 @@
 */
 
 /* $Id$ */
-/* Pn macros for pre-ANSI compiler compatibility
+/* Pn macros for pre-ANSI compiler compatibility */
 
 #ifndef stdpn_INCLUDED
 #  define stdpn_INCLUDED
