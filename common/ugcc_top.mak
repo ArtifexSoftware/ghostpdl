@@ -31,9 +31,9 @@ pg-nofp:
 nofp:
 	make GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O0 -msoft-float $(GCFLAGS) $(XCFLAGS)' FPU_TYPE=-1 CCLEAF='$(CC_)' XOBJS='$(GLOBJDIR)/gsfemu.o'
 
-# Configure for optimization and no FPU (product configuration)
+# Configure for optimization.
 product:
-	make GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-O2 -msoft-float $(GCFLAGS) $(XCFLAGS)' FPU_TYPE=-1 CCLEAF='$(CC_)' XOBJS='$(GLOBJDIR)/gsfemu.o'
+	make GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)' CCLEAF='$(CC_)'
 
 # Build the required GS library files.
 # It's simplest always to build the floating point emulator,
@@ -44,7 +44,8 @@ $(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE)
 	make \
 	  GCFLAGS='$(GCFLAGS)' FPU_TYPE='$(FPU_TYPE)'\
 	  CONFIG='$(CONFIG)' FEATURE_DEVS='$(FEATURE_DEVS)' \
-	  DEVICE_DEVS='$(DEVICE_DEVS) bbox.dev' \
+	  XINCLUDE='$(XINCLUDE)' XLIBDIRS='$(XLIBDIRS)' XLIBDIR='$(XLIBDIR)' XLIBS='$(XLIBS)' \
+          DEVICE_DEVS='$(DEVICE_DEVS) bbox.dev' \
 	  BAND_LIST_STORAGE=memory BAND_LIST_COMPRESSOR=zlib \
 	  GLSRCDIR='$(GLSRCDIR)' \
 	  GLGENDIR='$(GLGENDIR)' GLOBJDIR='$(GLOBJDIR)' \
