@@ -10,7 +10,7 @@
 
 set DIFFFILE t
 set GREPFILE t1
-set CHECKFILE /gs/master/pre.chk
+set CHECKFILE /gs/toolbin/pre.chk
 set GSINIT lib/gs_init.ps
 set NEWS doc/News.htm
 
@@ -191,9 +191,9 @@ check_version src/version.mak
 ################ Check that the set of files in the directories is the
 ################ same as the set of files registered with CVS.
 
-catch {unset Entries}
-catch {unset Files}
 foreach d {examples doc lib man src} {
+    catch {unset Entries}
+    catch {unset Files}
     set in [open $d/CVS/Entries]
     while {[gets $in l] >= 0} {
 	if {[regexp {^/([^/]+)/} $l skip file]} {
@@ -201,7 +201,7 @@ foreach d {examples doc lib man src} {
 	}
     }
     close $in
-    foreach f [glob $d/*] {
+    foreach f [glob -nocomplain $d/* {$d/.[a-zA-Z0-9_-]*}] {
 	if {![regexp {\.mak\.tcl$} $f]} {
 	    set Files([file tail $f]) 1
 	}
@@ -245,8 +245,10 @@ foreach doc $manlist {
     set idline [gets $in]
     set thline [gets $in]
     close $in
-    if {![regexp {^\.\\" \$Id$idline skip file idrevision idyear idmonth idday]} {
-	message "In $doc, can't parse \$Id$idline"
+    # We must be careful not to include the string $,I,d,: in any pattern,
+    # since CVS/RCS will substitute for it!
+    if {![regexp {^\.\\" [$]Id: ([^,]+),v ([0-9.]+) ([0-9][0-9][0-9][0-9])/([0-9][0-9])/([0-9][0-9])} $idline skip file idrevision idyear idmonth idday]} {
+	message "In $doc, can't parse $Id line: $idline"
 	continue
     }
     if {$file != [file tail $doc]} {
@@ -267,7 +269,7 @@ foreach doc $manlist {
 	continue
     }
     # The first requirement we enforce is that the change date in
-    # the $Id: line match the one in the .TH line.  If they don't
+    # the Id: line match the one in the .TH line.  If they don't
     # match, we also check the version # at the top and bottom of
     # the file.  We make a special exception if the revision # is 1.1
     # and the Ghostscript version # is 6.0, because the very first
