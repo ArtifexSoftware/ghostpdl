@@ -206,7 +206,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
     ref *ppp;
     bool internal_accum = true;
 
-    check_estack(5);
+    check_estack(6);
 #   if PATTERN_STREAM_ACCUMULATION
     code = dev_proc(cdev, pattern_manage)(cdev, pinst->id, pinst, 
 			    pattern_manage__can_accum);
@@ -269,6 +269,9 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
     push_mark_estack(es_other, pattern_paint_cleanup);
     ++esp;
     make_istruct(esp, 0, pdev);
+    ++esp;
+    /* Save operator stack depth in case PaintProc leaves junk on ostack. */
+    make_int(esp, ref_stack_count(&o_stack));
     push_op_estack(pattern_paint_finish);
     dict_find_string(pdict, "PaintProc", &ppp);		/* can't fail */
     *++esp = *ppp;
@@ -279,7 +282,8 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
 private int
 pattern_paint_finish(i_ctx_t *i_ctx_p)
 {
-    gx_device_pattern_accum *pdev = r_ptr(esp, gx_device_pattern_accum);
+    int o_stack_adjust = ref_stack_count(&o_stack) - esp->value.intval;
+    gx_device_pattern_accum *pdev = r_ptr(esp - 1, gx_device_pattern_accum);
 
     if (pdev != NULL) {
 	gx_color_tile *ctile;
@@ -288,7 +292,13 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
 	if (code < 0)
 	    return code;
     }
-    esp -= 2;
+    if (o_stack_adjust > 0) {
+#if 0
+	dlprintf1("PaintProc left %d extra on operator stack!\n", o_stack_adjust);
+#endif
+	pop(o_stack_adjust);
+    }
+    esp -= 3;
     pattern_paint_cleanup(i_ctx_p);
     return o_pop_estack;
 }
