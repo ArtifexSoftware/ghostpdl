@@ -204,7 +204,7 @@ AC_SUBST(IJSDIR)
 AC_SUBST(IJSDEVS)
 
 dnl look for jbig2dec
-AC_ARG_WITH(jbig2dec, AC_HELP_STRING([---with-jbig2dec],[include JBIG2 decode support]))
+AC_ARG_WITH(jbig2dec, AC_HELP_STRING([--with-jbig2dec],[include JBIG2 decode support]))
 JBIG2DEVS=''
 if test x$with_jbig2dec != xno; then
     AC_CHECK_LIB([jbig2dec], [jbig2_page_out], [
