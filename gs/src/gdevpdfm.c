@@ -1577,7 +1577,10 @@ private int
 pdfmark_NI(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 	   const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;			/****** NOT IMPLEMENTED YET ******/
+    cos_object_t *pco;
+
+    /* NOT FULLY IMPLEMENTED YET. Create dictionary object as workaround. */
+    return pdf_make_named(pdev, objname, cos_type_dict, &pco, true);
 }
 
 /* ---------------- Named content pdfmarks ---------------- */
