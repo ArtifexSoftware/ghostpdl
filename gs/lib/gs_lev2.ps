@@ -69,20 +69,10 @@ level2dict begin
 
 % currentuser/systemparams creates and returns a dictionary in the
 % current VM.  The easiest way to make this work is to copy any composite
-% PostScript-level parameters to global VM.  Currently we have strings
-% as well as arrays. For arrays, we also need to copy any contents that
-% are in VM. Also copying string parameters insures the contents won't
-% be changed.
+% PostScript-level parameters to global VM.  Currently, the only such
+% parameters are strings.  In fact, we always copy string parameters,
+% so that we can be sure the contents won't be changed.
 /.copyparam {			% <value> .copyparam <value'>
-  dup type /arraytype eq {
-    .currentglobal true .setglobal exch 
-    [ exch {
-      dup type dup /arraytype eq exch /stringtype eq or {
-        .copyparam	% recurse to handle composite array elements
-      } if
-    } forall ]
-    exch .setglobal
-  } if
   dup type /stringtype eq {
     .currentglobal true .setglobal
     1 index length string exch .setglobal
