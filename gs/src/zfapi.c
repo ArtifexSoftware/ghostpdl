@@ -66,6 +66,10 @@ private inline int import_shift(int x, int n)
 {   return n > 0 ? x << n : x >> -n;
 }
 
+private inline int export_shift(int x, int n)
+{   return n > 0 ? x >> n : x << -n;
+}
+
 private inline int fapi_round(double x)
 {   return (int)(x + 0.5);
 }
@@ -1448,7 +1452,7 @@ retry_oversampling:
 	    if (pbfont->FontType == 2) {
 		gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
 
-		cr.aw_x = pfont1->data.defaultWidthX << (I->frac_shift - _fixed_shift);
+		cr.aw_x = export_shift(pfont1->data.defaultWidthX, _fixed_shift - I->frac_shift);
 		cr.metrics_scale = 1000;
 		cr.metrics_type = FAPI_METRICS_ADD;
 	    }
