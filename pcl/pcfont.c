@@ -269,9 +269,7 @@ pcl_font_selection_id(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 	  default:		/* error */
 	    return code;
 	  case 0:
-	    if ( pcs->font_selected == set )
-	      pcs->font = pfs->font;
-	    pcl_decache_font(pcs, set);
+	    pcl_decache_font(pcs, -1);
 	  case 1:		/* not found */
 	    return 0;
 	  }
