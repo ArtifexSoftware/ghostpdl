@@ -123,6 +123,11 @@ param_list_copy(gs_param_list *plto, gs_param_list *plfrom)
 {
     gs_param_enumerator_t key_enum;
     gs_param_key_t key;
+    /*
+     * If plfrom and plto use different allocators, we must copy
+     * aggregate values even if they are "persistent".
+     */
+    bool copy_persists = plto->memory == plfrom->memory;
     int code;
 
     param_init_enumerator(&key_enum);
@@ -165,6 +170,17 @@ param_list_copy(gs_param_list *plto, gs_param_list *plfrom)
 	    code = param_end_read_collection(plfrom, string_key,
 					     &value.value.d);
 	    break;
+	case gs_param_type_string:
+	    value.value.s.persistent &= copy_persists; goto ca;
+	case gs_param_type_name:
+	    value.value.n.persistent &= copy_persists; goto ca;
+	case gs_param_type_int_array:
+	    value.value.ia.persistent &= copy_persists; goto ca;
+	case gs_param_type_float_array:
+	    value.value.fa.persistent &= copy_persists; goto ca;
+	case gs_param_type_string_array:
+	    value.value.sa.persistent &= copy_persists;
+	ca:
 	default:
 	    code = param_write_typed(plto, string_key, &value);
 	}
