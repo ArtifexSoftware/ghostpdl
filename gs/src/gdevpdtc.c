@@ -435,6 +435,8 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	if (break_index > index) {
 	    pdf_font_resource_t *pdfont;
 	    gs_matrix m0, m1, m2, m3;
+	    int xy_index_step = (pte->text.x_widths != NULL && /* see gs_text_replaced_width */
+				 pte->text.x_widths == pte->text.y_widths ? 2 : 1);
 
 	    code = pdf_font_orig_matrix(subfont0, &m0);
 	    if (code < 0)
@@ -470,16 +472,16 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    str.data = scan.text.data.bytes + index;
 	    str.size = break_index - index;
 	    if (pte->text.x_widths != NULL)
-		pte->text.x_widths += xy_index;
+		pte->text.x_widths += xy_index * xy_index_step;
 	    if (pte->text.y_widths != NULL)
-		pte->text.y_widths += xy_index;
+		pte->text.y_widths += xy_index * xy_index_step;
 	    pte->xy_index = 0;
 	    code = process_text_modify_width((pdf_text_enum_t *)pte, (gs_font *)font,
 				  &text_state, &str, &wxy);
 	    if (pte->text.x_widths != NULL)
-		pte->text.x_widths -= xy_index;
+		pte->text.x_widths -= xy_index * xy_index_step;
 	    if (pte->text.y_widths != NULL)
-		pte->text.y_widths -= xy_index;
+		pte->text.y_widths -= xy_index * xy_index_step;
 	    if (code < 0) {
 		pte->index = index;
 		pte->xy_index = xy_index;
