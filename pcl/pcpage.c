@@ -883,7 +883,7 @@ pcpage_do_init(
     return 0;
 }
 
-  private pcl_paper_size_t *
+ private const pcl_paper_size_t *
 get_default_paper(
     pcl_state_t *      pcs
 )

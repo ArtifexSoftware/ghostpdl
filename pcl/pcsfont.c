@@ -141,7 +141,7 @@ private int /* ESC ) s <count> W */
 pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 {	uint count = uint_arg(pargs);
 	const byte *data = arg_data(pargs);
-	pcl_font_header_t *pfh = (const pcl_font_header_t *)data;
+	pcl_font_header_t *pfh = (pcl_font_header_t *)data;
 	uint desc_size;
 	pl_font_scaling_technology_t fst;
 	gs_memory_t *mem = pcls->memory;
