@@ -1350,6 +1350,7 @@ private cmap_proc_cmyk(pdf14_cmap_cmyk_direct);
 private cmap_proc_rgb_alpha(pdf14_cmap_rgb_alpha_direct);
 private cmap_proc_separation(pdf14_cmap_separation_direct);
 private cmap_proc_devicen(pdf14_cmap_devicen_direct);
+private cmap_proc_is_halftoned(pdf14_cmap_is_halftoned);
 
 private const gx_color_map_procs pdf14_cmap_many = {
      pdf14_cmap_gray_direct,
@@ -1357,7 +1358,8 @@ private const gx_color_map_procs pdf14_cmap_many = {
      pdf14_cmap_cmyk_direct,
      pdf14_cmap_rgb_alpha_direct,
      pdf14_cmap_separation_direct,
-     pdf14_cmap_devicen_direct
+     pdf14_cmap_devicen_direct,
+     pdf14_cmap_is_halftoned
     };
 
 /**
@@ -1567,6 +1569,12 @@ pdf14_cmap_devicen_direct(const frac * pcc,
     /* check if the encoding was successful; we presume failure is rare */
     if (color != gx_no_color_index)
         color_set_pure(pdc, color);
+}
+
+private bool
+pdf14_cmap_is_halftoned(const gs_imager_state * pis, gx_device * dev)
+{
+    return false;
 }
 
 private const gx_color_map_procs *
