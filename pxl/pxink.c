@@ -387,7 +387,7 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
 /* Check parameters and execute SetBrushSource or SetPenSource: */
 /* pxaRGBColor, pxaGrayLevel, pxaNullBrush/Pen, pxaPatternSelectID, */
 /* pxaPatternOrigin, pxaNewDestinationSize */
-private ulong near
+private ulong
 int_type_max(px_data_type_t type)
 {	return
 	  (type & pxd_ubyte ? 255 :
@@ -396,7 +396,7 @@ int_type_max(px_data_type_t type)
 	   type & pxd_uint32 ? (ulong)0xffffffff :
 	   /* type & pxd_sint32 */ 0x7fffffff);
 }
-private real near
+private real
 fraction_value(const px_value_t *pv, int i)
 {	px_data_type_t type = pv->type;
 	real v;
@@ -406,7 +406,7 @@ fraction_value(const px_value_t *pv, int i)
 	v = pv->value.ia[i];
 	return (v < 0 ? 0 : v / int_type_max(type));
 }
-private int near
+private int
 set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 {	px_gstate_t *pxgs = pxs->pxgs;
 	int code = 0;

@@ -15,7 +15,7 @@ typedef struct pl_glyph_mapping_s {
 } pl_glyph_mapping_t;
 
 /* Map from MSL to Unicode. */
-private const far_data pl_glyph_mapping_t pl_map_m2u[] = {
+private const pl_glyph_mapping_t pl_map_m2u[] = {
   /*{0, 0x0020},*/		/* MSL space semantics are different */
   {1, 0x0021},
   {2, 0x0022},

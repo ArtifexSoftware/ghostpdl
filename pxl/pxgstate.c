@@ -341,7 +341,7 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
   const px_bitmap_params_t *params, const gs_const_string *palette,
   const gs_state *pgs)
 {	int depth = params->depth;
-	const gs_color_space_type _ds *pcst;
+	const gs_color_space_type *pcst;
 
 	switch ( params->color_space )
 	  {
@@ -378,7 +378,7 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
     return_error(errorClipModeMismatch)
 
 /* Record the most recent character transformation. */
-private void near
+private void
 add_char_transform(px_gstate_t *pxgs, px_char_transform_t trans)
 {	/* Promote this transformation to the head of the list. */
 	if ( pxgs->char_transforms[2] == trans )
