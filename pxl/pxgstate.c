@@ -655,6 +655,7 @@ pxSetLineDash(px_args_t *par, px_state_t *pxs)
 	      return_error(errorIllegalAttributeCombination);
 	    if ( size > MAX_DASH_ELEMENTS )
 	      return_error(errorIllegalArraySize);
+
 	    /*
 	     * The H-P documentation gives no clue about what a negative
 	     * dash pattern element is supposed to do.  The H-P printers
@@ -749,7 +750,22 @@ shrink:		  if ( inext == 0 )
 	    code = gs_setdash(pgs, pattern, size, offset);
 	    if ( code < 0 )
 	      return code;
-	    pxgs->dashed = size != 0;
+	    /* patterns with 0 total skip length are treated as solid
+               line pattern on the LJ6 */
+	    { 
+		bool skips_have_length = false;
+		int i;
+		for ( i = 0; i < size; i += 2 )
+		    if ( pattern[i + 1] != 0 ) {
+			skips_have_length = true;
+			break;
+		    }
+		if ( skips_have_length == false ) {
+		    pxgs->dashed = false;
+		    return gs_setdash(pgs, NULL, 0, 0.0);
+		}
+		pxgs->dashed = (size != 0);
+	    }
 	    gs_currentmatrix(pgs, &pxgs->dash_matrix);
 	    return 0;
 	  }
