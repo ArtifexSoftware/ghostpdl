@@ -188,9 +188,17 @@ aren't appropriate.
 
 <dl>
 <dt><a href="../toolbin/tests/gsconf.py"><tt>gsconf.py</tt></a>
-<dd>This is the master configuration for the scripts above.  It controls
+<dd>This is the configuration framework for the scripts above.  It reads
+configuration files and makes available those configuration options to
+the rest of the testing framework.
+</dl>
+
+<dl>
+<dt><a href="../toolbin/tests/testing.cfg.example"><tt>testing.cfg.example</tt></a>
+<dd>This is an example configuration file for the scripts above.  It controls
 where files are found, where Ghostscript executables are and the location of
-the test database.  Most test configuration will be in this file.
+the test database.  Most test configuration will be in this file.  It must
+be renamed to testing.cfg in order for the tests to find it.
 </dl>
 
 <dl>
