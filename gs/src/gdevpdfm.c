@@ -49,6 +49,8 @@ private_st_pdf_article();
 				/* in 1st argument */
 #define PDFMARK_NO_REFS 8	/* don't substitute references for names */
 				/* anywhere */
+#define PDFMARK_TRUECTM 16	/* pass the true CTM to the procedure, */
+				/* not the one transformed to reflect the default user space */
 typedef struct pdfmark_name_s {
     const char *mname;
     pdfmark_proc((*proc));
@@ -1360,16 +1362,18 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     gs_rect bbox;
     cos_stream_t *pcs;
     int code;
-    double xscale = pdev->HWResolution[0] / 72.0,
-	yscale = pdev->HWResolution[1] / 72.0;
-    byte bbox_str[6 + 4 * 12];
+    gs_matrix ictm;
+    byte bbox_str[6 + 6 * 15], matrix_str[6 + 6 * 15];
+    int bbox_str_len, matrix_str_len;
     stream s;
 
     if (objname == 0 || count != 2 || !pdf_key_eq(&pairs[0], "/BBox"))
 	return_error(gs_error_rangecheck);
+    code = gs_matrix_invert(pctm, &ictm);
+    if (code < 0)
+	return code;
     if (sscanf((const char *)pairs[1].data, "[%lg %lg %lg %lg]",
-	       &bbox.p.x, &bbox.p.y, &bbox.q.x, &bbox.q.y) != 4
-	)
+	       &bbox.p.x, &bbox.p.y, &bbox.q.x, &bbox.q.y) != 4)
 	return_error(gs_error_rangecheck);
     if ((pdev->used_mask << 1) == 0)
 	return_error(gs_error_limitcheck);
@@ -1398,14 +1402,19 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     gs_bbox_transform(&bbox, pctm, &bbox);
     swrite_string(&s, bbox_str, sizeof(bbox_str));
     pprintg4(&s, "[%g %g %g %g]",
-	    bbox.p.x * xscale, bbox.p.y * yscale,
-	    bbox.q.x * xscale, bbox.q.y * yscale);
+	    bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
+    bbox_str_len = stell(&s);
+    swrite_string(&s, matrix_str, sizeof(bbox_str));
+    pprintg6(&s, "[%g %g %g %g %g %g]",
+	    ictm.xx, ictm.xy, ictm.yx, ictm.yy, ictm.tx, ictm.tx);
+    matrix_str_len = stell(&s);
     if ((code = cos_stream_put_c_strings(pcs, "/Type", "/XObject")) < 0 ||
 	(code = cos_stream_put_c_strings(pcs, "/Subtype", "/Form")) < 0 ||
 	(code = cos_stream_put_c_strings(pcs, "/FormType", "1")) < 0 ||
-	(code = cos_stream_put_c_strings(pcs, "/Matrix", "[1 0 0 1 0 0]")) < 0 ||
 	(code = cos_dict_put_c_key_string(cos_stream_dict(pcs), "/BBox",
-					  (byte *)bbox_str, stell(&s))) < 0 ||
+					  bbox_str, bbox_str_len)) < 0 ||
+	(code = cos_dict_put_c_key_string(cos_stream_dict(pcs), "/Matrix",
+				      matrix_str, matrix_str_len)) < 0 ||
  	(code = cos_dict_put_c_key_object(cos_stream_dict(pcs), "/Resources", 
  					  COS_OBJECT(pdev->substream_Resources))) < 0
 	)
@@ -1435,7 +1444,6 @@ pdfmark_SP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	   const gs_matrix * pctm, const gs_param_string * no_objname)
 {
     cos_object_t *pco;		/* stream */
-    gs_matrix ctm;
     int code;
 
     if (count != 1)
@@ -1447,10 +1455,7 @@ pdfmark_SP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     code = pdf_open_contents(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
-    ctm = *pctm;
-    ctm.tx *= pdev->HWResolution[0] / 72.0;
-    ctm.ty *= pdev->HWResolution[1] / 72.0;
-    pdf_put_matrix(pdev, "q ", &ctm, "cm");
+    pdf_put_matrix(pdev, "q ", pctm, "cm");
     pprintld1(pdev->strm, "/R%ld Do Q\n", pco->id);
     pco->pres->where_used |= pdev->used_mask;
     return 0;
@@ -1830,9 +1835,9 @@ private const pdfmark_name mark_names[] =
     {"DOCINFO",      pdfmark_DOCINFO,     0},
     {"DOCVIEW",      pdfmark_DOCVIEW,     0},
 	/* Named objects. */
-    {"BP",           pdfmark_BP,          PDFMARK_NAMEABLE},
+    {"BP",           pdfmark_BP,          PDFMARK_NAMEABLE | PDFMARK_TRUECTM},
     {"EP",           pdfmark_EP,          0},
-    {"SP",           pdfmark_SP,          PDFMARK_ODD_OK | PDFMARK_KEEP_NAME},
+    {"SP",           pdfmark_SP,          PDFMARK_ODD_OK | PDFMARK_KEEP_NAME | PDFMARK_TRUECTM},
     {"OBJ",          pdfmark_OBJ,         PDFMARK_NAMEABLE},
     {"PUT",          pdfmark_PUT,         PDFMARK_ODD_OK | PDFMARK_KEEP_NAME},
     {".PUTDICT",     pdfmark_PUTDICT,     PDFMARK_ODD_OK | PDFMARK_KEEP_NAME},
@@ -1886,18 +1891,6 @@ pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 	       &ctm.xx, &ctm.xy, &ctm.yx, &ctm.yy, &ctm.tx, &ctm.ty) != 6
 	)
 	return_error(gs_error_rangecheck);
-    /*
-     * Our coordinate system is scaled so that user space is always
-     * default user space.  Adjust the CTM to match this.
-     */
-    {
-	double xscale = 72.0 / pdev->HWResolution[0],
-	    yscale = 72.0 / pdev->HWResolution[1];
-
-	ctm.xx *= xscale, ctm.xy *= yscale;
-	ctm.yx *= xscale, ctm.yy *= yscale;
-	ctm.tx *= xscale, ctm.ty *= yscale;
-    }
     size -= 2;			/* remove CTM & pdfmark name */
     for (pmn = mark_names; pmn->mname != 0; ++pmn)
 	if (pdf_key_eq(pts, pmn->mname)) {
@@ -1906,6 +1899,20 @@ pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 	    gs_param_string *pairs;
 	    int j;
 
+	    /*
+	     * Our coordinate system is scaled so that user space is always
+	     * default user space.  Adjust the CTM to match this, except if this
+	     * particular pdfmark requires the "true" CTM.
+	     */
+	    if (pmn->options & PDFMARK_TRUECTM)
+		DO_NOTHING;
+	    else {
+		double xscale = 72.0 / pdev->HWResolution[0],
+		       yscale = 72.0 / pdev->HWResolution[1];
+		ctm.xx *= xscale, ctm.xy *= yscale;
+		ctm.yx *= xscale, ctm.yy *= yscale;
+		ctm.tx *= xscale, ctm.ty *= yscale;
+	    }
 	    if (size & !odd_ok)
 		return_error(gs_error_rangecheck);
 	    if (pmn->options & PDFMARK_NAMEABLE) {
