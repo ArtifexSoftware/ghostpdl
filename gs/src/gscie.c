@@ -33,6 +33,12 @@
 #include "gzstate.h"
 #include "gsicc.h"
 
+/*
+ * Define whether to optimize the CIE mapping process by combining steps.
+ * This should only be disabled (commented out) for debugging.
+ */
+#define OPTIMIZE_CIE_MAPPING
+
 /* Forward references */
 private int cie_joint_caches_init(P3(gx_cie_joint_caches *,
 				     const gs_cie_common *,
@@ -80,6 +86,22 @@ extern_st(st_imager_state);
 	}\
   END
 
+/* Define cache interpolation threshold values. */
+#ifdef CIE_CACHE_INTERPOLATE
+#  ifdef CIE_INTERPOLATE_THRESHOLD
+#    define CACHE_THRESHOLD CIE_INTERPOLATE_THRESHOLD
+#  else
+#    define CACHE_THRESHOLD 0	/* always interpolate */
+#  endif
+#else
+#  define CACHE_THRESHOLD 1.0e6	/* never interpolate */
+#endif
+#ifdef CIE_RENDER_TABLE_INTERPOLATE
+#  define RENDER_TABLE_THRESHOLD 0
+#else
+#  define RENDER_TABLE_THRESHOLD 1.0e6
+#endif
+
 /*
  * Determine whether a function is a linear transformation of the form
  * f(x) = scale * x + origin.
@@ -97,7 +119,8 @@ cache_is_linear(cie_linear_params_t *params, const cie_cache_floats *pcf)
 	if (fabs(pcf->values[i] - test) >= 0.5 / countof(pcf->values))
 	    return (params->is_linear = false);
     params->origin = origin - pcf->params.base;
-    params->scale = diff * pcf->params.factor / (countof(pcf->values) - 1);
+    params->scale =
+	diff * pcf->params.factor / (countof(pcf->values) - 1);
     return (params->is_linear = true);
 }
 
@@ -105,7 +128,7 @@ private void
 cache_set_linear(cie_cache_floats *pcf)
 {
 	if (pcf->params.is_identity) {
-	    if_debug1('c', "[c]linear(0x%lx) = true (is_identity)\n",
+	    if_debug1('c', "[c]is_linear(0x%lx) = true (is_identity)\n",
 		      (ulong)pcf);
 	    pcf->params.linear.is_linear = true;
 	    pcf->params.linear.origin = 0;
@@ -115,7 +138,7 @@ cache_set_linear(cie_cache_floats *pcf)
 		fabs(pcf->params.linear.scale - 1) < 0.00001)
 		pcf->params.is_identity = true;
 	    if_debug4('c',
-		      "[c]linear(0x%lx) = true, origin = %g, scale = %g%s\n",
+		      "[c]is_linear(0x%lx) = true, origin = %g, scale = %g%s\n",
 		      (ulong)pcf, pcf->params.linear.origin,
 		      pcf->params.linear.scale,
 		      (pcf->params.is_identity ? " (=> is_identity)" : ""));
@@ -126,11 +149,11 @@ cache_set_linear(cie_cache_floats *pcf)
 #endif
 }
 private void
-cache3_set_linear(gx_cie_vector_cache *caches /*[3]*/)
+cache3_set_linear(gx_cie_vector_cache3_t *pvc)
 {
-    cache_set_linear(&caches[0].floats);
-    cache_set_linear(&caches[1].floats);
-    cache_set_linear(&caches[2].floats);
+    cache_set_linear(&pvc->caches[0].floats);
+    cache_set_linear(&pvc->caches[1].floats);
+    cache_set_linear(&pvc->caches[2].floats);
 }
 
 #ifdef DEBUG
@@ -175,17 +198,17 @@ abc_identity(floatp in, const gs_cie_abc * pcie)
 private float
 abc_from_cache_0(floatp in, const gs_cie_abc * pcie)
 {
-    return gs_cie_cached_value(in, &pcie->caches.DecodeABC[0].floats);
+    return gs_cie_cached_value(in, &pcie->caches.DecodeABC.caches[0].floats);
 }
 private float
 abc_from_cache_1(floatp in, const gs_cie_abc * pcie)
 {
-    return gs_cie_cached_value(in, &pcie->caches.DecodeABC[1].floats);
+    return gs_cie_cached_value(in, &pcie->caches.DecodeABC.caches[1].floats);
 }
 private float
 abc_from_cache_2(floatp in, const gs_cie_abc * pcie)
 {
-    return gs_cie_cached_value(in, &pcie->caches.DecodeABC[2].floats);
+    return gs_cie_cached_value(in, &pcie->caches.DecodeABC.caches[2].floats);
 }
 
 private float
@@ -377,17 +400,17 @@ gx_restrict_CIEA(gs_client_color * pcc, const gs_color_space * pcs)
 
 /* ------ Install a CIE color space ------ */
 
-private void cie_cache_mult(P3(gx_cie_vector_cache *, const gs_vector3 *,
-			       const cie_cache_floats *));
-private bool cie_cache_mult3(P2(gx_cie_vector_cache *,
-				const gs_matrix3 *));
+private void cie_cache_mult(P4(gx_cie_vector_cache *, const gs_vector3 *,
+			       const cie_cache_floats *, floatp));
+private bool cie_cache_mult3(P3(gx_cie_vector_cache3_t *,
+				const gs_matrix3 *, floatp));
 
 private int
 gx_install_cie_abc(gs_cie_abc *pcie, gs_state * pgs)
 {
     if_debug_matrix3("[c]CIE MatrixABC =", &pcie->MatrixABC);
     cie_matrix_init(&pcie->MatrixABC);
-    CIE_LOAD_CACHE_BODY(pcie->caches.DecodeABC, pcie->RangeABC.ranges,
+    CIE_LOAD_CACHE_BODY(pcie->caches.DecodeABC.caches, pcie->RangeABC.ranges,
 			&pcie->DecodeABC, DecodeABC_default, pcie,
 			"DecodeABC");
     gx_cie_load_common_cache(&pcie->common, pgs);
@@ -517,9 +540,10 @@ gs_cie_def_complete(gs_cie_def * pcie)
 void
 gs_cie_abc_complete(gs_cie_abc * pcie)
 {
-    cache3_set_linear(pcie->caches.DecodeABC);
+    cache3_set_linear(&pcie->caches.DecodeABC);
     pcie->caches.skipABC =
-	cie_cache_mult3(pcie->caches.DecodeABC, &pcie->MatrixABC);
+	cie_cache_mult3(&pcie->caches.DecodeABC, &pcie->MatrixABC,
+			CACHE_THRESHOLD);
     gx_cie_common_complete((gs_cie_common *)pcie);
 }
 
@@ -529,18 +553,79 @@ void
 gs_cie_a_complete(gs_cie_a * pcie)
 {
     cie_cache_mult(&pcie->caches.DecodeA, &pcie->MatrixA,
-		   &pcie->caches.DecodeA.floats);
+		   &pcie->caches.DecodeA.floats,
+		   CACHE_THRESHOLD);
     cache_set_linear(&pcie->caches.DecodeA.floats);
     gx_cie_common_complete((gs_cie_common *)pcie);
 }
 
-/* Convert a scalar cache to a vector cache by multiplying */
-/* the scalar values by a vector. */
-/* This procedure is idempotent. */
+/*
+ * Set the ranges where interpolation is required in a vector cache.
+ * This procedure is idempotent.
+ */
+typedef struct cie_cache_range_temp_s {
+    cie_cached_value prev;
+    int imin, imax;
+} cie_cache_range_temp_t;
+private void
+check_interpolation_required(cie_cache_range_temp_t *pccr,
+			     cie_cached_value cur, int i, floatp threshold)
+{
+    cie_cached_value prev = pccr->prev;
+
+    if (any_abs(cur - prev) > threshold * min(any_abs(prev), any_abs(cur))) {
+	if (i - 1 < pccr->imin)
+	    pccr->imin = i - 1;
+	if (i > pccr->imax)
+	    pccr->imax = i;
+    }
+    pccr->prev = cur;
+}
+private void
+cie_cache_set_interpolation(gx_cie_vector_cache *pcache, floatp threshold)
+{
+    cie_cached_value base = pcache->vecs.params.base;
+    cie_cached_value factor = pcache->vecs.params.factor;
+    cie_cache_range_temp_t temp[3];
+    int i, j;
+
+    for (j = 0; j < 3; ++j)
+	temp[j].imin = gx_cie_cache_size, temp[j].imax = -1;
+    temp[0].prev = pcache->vecs.values[0].u;
+    temp[1].prev = pcache->vecs.values[0].v;
+    temp[2].prev = pcache->vecs.values[0].w;
+
+    for (i = 0; i < gx_cie_cache_size; ++i) {
+	check_interpolation_required(&temp[0], pcache->vecs.values[i].u, i,
+				     threshold);
+	check_interpolation_required(&temp[1], pcache->vecs.values[i].v, i,
+				     threshold);
+	check_interpolation_required(&temp[2], pcache->vecs.values[i].w, i,
+				     threshold);
+    }
+
+    for (j = 0; j < 3; ++j) {
+	pcache->vecs.params.interpolation_ranges[j].rmin =
+	    base + (cie_cached_value)((double)temp[j].imin / factor);
+	pcache->vecs.params.interpolation_ranges[j].rmax =
+	    base + (cie_cached_value)((double)temp[j].imax / factor);
+	if_debug3('c', "[c]interpolation_ranges[%d] = %g, %g\n", j,
+		  cie_cached2float(pcache->vecs.params.interpolation_ranges[j].rmin),
+		  cie_cached2float(pcache->vecs.params.interpolation_ranges[j].rmax));
+    }
+
+}
+
+/*
+ * Convert a scalar cache to a vector cache by multiplying the scalar
+ * values by a vector.  Also set the range where interpolation is needed.
+ * This procedure is idempotent.
+ */
 private void
 cie_cache_mult(gx_cie_vector_cache * pcache, const gs_vector3 * pvec,
-	       const cie_cache_floats * pcf)
+	       const cie_cache_floats * pcf, floatp threshold)
 {
+    float u = pvec->u, v = pvec->v, w = pvec->w;
     int i;
 
     pcache->vecs.params.base = float2cie_cached(pcf->params.base);
@@ -551,22 +636,59 @@ cie_cache_mult(gx_cie_vector_cache * pcache, const gs_vector3 * pvec,
     for (i = 0; i < gx_cie_cache_size; ++i) {
 	float f = pcf->values[i];
 
-	pcache->vecs.values[i].u = float2cie_cached(f * pvec->u);
-	pcache->vecs.values[i].v = float2cie_cached(f * pvec->v);
-	pcache->vecs.values[i].w = float2cie_cached(f * pvec->w);
+	pcache->vecs.values[i].u = float2cie_cached(f * u);
+	pcache->vecs.values[i].v = float2cie_cached(f * v);
+	pcache->vecs.values[i].w = float2cie_cached(f * w);
+    }
+    cie_cache_set_interpolation(pcache, threshold);
+}
+
+/*
+ * Set the interpolation ranges in a 3-vector cache, based on the ranges in
+ * the individual vector caches.  This procedure is idempotent.
+ */
+private void
+cie_cache3_set_interpolation(gx_cie_vector_cache3_t * pvc)
+{
+    int j, k;
+
+    /* Iterate over output components. */
+    for (j = 0; j < 3; ++j) {
+	cie_cached_value rmin, rmax;
+
+	/* Iterate over sub-caches. */
+	for (k = 0; k < 3; ++k) {
+	    cie_interpolation_range_t *p =
+		&pvc->caches[k].vecs.params.interpolation_ranges[j];
+
+	    if (k == 0)
+		rmin = p->rmin, rmax = p->rmax;
+	    else
+		rmin = min(rmin, p->rmin), rmax = max(rmax, p->rmax);
+	}
+	pvc->interpolation_ranges[j].rmin = rmin;
+	pvc->interpolation_ranges[j].rmax = rmax;
+	if_debug3('c', "[c]Merged interpolation_ranges[%d] = %g, %g\n",
+		  j, rmin, rmax);
     }
 }
 
-/* Convert 3 scalar caches to vector caches by multiplying by a matrix. */
-/* Return true iff the resulting cache is an identity transformation. */
+/*
+ * Convert 3 scalar caches to vector caches by multiplying by a matrix.
+ * Return true iff the resulting cache is an identity transformation.
+ * This procedure is idempotent.
+ */
 private bool
-cie_cache_mult3(gx_cie_vector_cache * pc /*[3] */ , const gs_matrix3 * pmat)
+cie_cache_mult3(gx_cie_vector_cache3_t * pvc, const gs_matrix3 * pmat,
+		floatp threshold)
 {
-    cie_cache_mult(pc, &pmat->cu, &pc->floats);
-    cie_cache_mult(pc + 1, &pmat->cv, &pc[1].floats);
-    cie_cache_mult(pc + 2, &pmat->cw, &pc[2].floats);
-    return pmat->is_identity & pc[0].floats.params.is_identity &
-	pc[1].floats.params.is_identity & pc[2].floats.params.is_identity;
+    cie_cache_mult(&pvc->caches[0], &pmat->cu, &pvc->caches[0].floats, threshold);
+    cie_cache_mult(&pvc->caches[1], &pmat->cv, &pvc->caches[1].floats, threshold);
+    cie_cache_mult(&pvc->caches[2], &pmat->cw, &pvc->caches[2].floats, threshold);
+    cie_cache3_set_interpolation(pvc);
+    return pmat->is_identity & pvc->caches[0].floats.params.is_identity &
+	pvc->caches[1].floats.params.is_identity &
+	pvc->caches[2].floats.params.is_identity;
 }
 
 /* ------ Install a rendering dictionary ------ */
@@ -731,9 +853,9 @@ gs_cie_render_sample(gs_cie_render * pcrd)
     code = gs_cie_render_init(pcrd);
     if (code < 0)
 	return code;
-    CIE_LOAD_CACHE_BODY(pcrd->caches.EncodeLMN, pcrd->DomainLMN.ranges,
+    CIE_LOAD_CACHE_BODY(pcrd->caches.EncodeLMN.caches, pcrd->DomainLMN.ranges,
 			&pcrd->EncodeLMN, Encode_default, pcrd, "EncodeLMN");
-    cache3_set_linear(pcrd->caches.EncodeLMN);
+    cache3_set_linear(&pcrd->caches.EncodeLMN);
     CIE_LOAD_CACHE_BODY(pcrd->caches.EncodeABC, pcrd->DomainABC.ranges,
 			&pcrd->EncodeABC, Encode_default, pcrd, "EncodeABC");
     if (pcrd->RenderTable.lookup.table != 0) {
@@ -840,7 +962,7 @@ gs_cie_render_complete(gs_cie_render * pcrd)
 	for (c = 0; c < 3; c++) {
 	    gx_cie_float_fixed_cache *pcache = &pcrd->caches.EncodeABC[c];
 
-	    cie_cache_restrict(&pcrd->caches.EncodeLMN[c].floats,
+	    cie_cache_restrict(&pcrd->caches.EncodeLMN.caches[c].floats,
 			       &pcrd->RangeLMN.ranges[c]);
 	    cie_cache_restrict(&pcrd->caches.EncodeABC[c].floats,
 			       &pcrd->RangeABC.ranges[c]);
@@ -904,7 +1026,8 @@ gs_cie_render_complete(gs_cie_render * pcrd)
 #undef MABC
 	pcrd->MatrixABCEncode.is_identity = 0;
     }
-    cie_cache_mult3(pcrd->caches.EncodeLMN, &pcrd->MatrixABCEncode);
+    cie_cache_mult3(&pcrd->caches.EncodeLMN, &pcrd->MatrixABCEncode,
+		    CACHE_THRESHOLD);
     pcrd->status = CIE_RENDER_STATUS_COMPLETED;
     return 0;
 }
@@ -1073,7 +1196,7 @@ cie_joint_caches_init(gx_cie_joint_caches * pjc,
 	int i;
 	gs_for_loop_params lp;
 
-	gs_cie_cache_init(&pjc->TransformPQR[j].floats.params, &lp,
+	gs_cie_cache_init(&pjc->TransformPQR.caches[j].floats.params, &lp,
 			  &pcrd->RangePQR.ranges[j], "TransformPQR");
 	for (i = 0; i < gx_cie_cache_size; lp.init += lp.step, i++) {
 	    float out;
@@ -1083,11 +1206,11 @@ cie_joint_caches_init(gx_cie_joint_caches * pjc,
 
 	    if (code < 0)
 		return code;
-	    pjc->TransformPQR[j].floats.values[i] = out;
+	    pjc->TransformPQR.caches[j].floats.values[i] = out;
 	    if_debug4('C', "[C]TransformPQR[%d,%d] = %g => %g\n",
 		      j, i, lp.init, out);
 	}
-	pjc->TransformPQR[j].floats.params.is_identity = is_identity;
+	pjc->TransformPQR.caches[j].floats.params.is_identity = is_identity;
     }
     return 0;
 }
@@ -1102,11 +1225,12 @@ cie_joint_caches_complete(gx_cie_joint_caches * pjc,
 			  const gs_cie_abc * pabc /* NULL if CIEA */,
 			  const gs_cie_render * pcrd)
 {
-    gs_matrix3 mat3, mat2, mat1;
+    gs_matrix3 mat3, mat2;
     gs_matrix3 MatrixLMN_PQR;
     int j;
 
     pjc->remap_finish = gx_cie_real_remap_finish;
+
     /*
      * We number the pipeline steps as follows:
      *   1 - DecodeABC/MatrixABC
@@ -1119,70 +1243,105 @@ cie_joint_caches_complete(gx_cie_joint_caches * pjc,
      * transform, but we could do it whenever the procedure is linear.
      * A project for another day....
      */
-    /* Step 4 */
-    if (pcrd->caches.EncodeLMN[0].floats.params.is_identity &&
-	pcrd->caches.EncodeLMN[1].floats.params.is_identity &&
-	pcrd->caches.EncodeLMN[2].floats.params.is_identity) {
+
+	/* Step 4 */
+
+#ifdef OPTIMIZE_CIE_MAPPING
+    if (pcrd->caches.EncodeLMN.caches[0].floats.params.is_identity &&
+	pcrd->caches.EncodeLMN.caches[1].floats.params.is_identity &&
+	pcrd->caches.EncodeLMN.caches[2].floats.params.is_identity
+	) {
 	/* Fold step 4 into step 3. */
+	if_debug0('c', "[c]EncodeLMN is identity, folding MatrixABC(Encode) into MatrixPQR'+LMN.\n");
 	cie_matrix_mult3(&pcrd->MatrixABCEncode, &pcrd->MatrixPQR_inverse_LMN,
 			 &mat3);
 	pjc->skipEncodeLMN = true;
-    } else {
+    } else
+#endif /* OPTIMIZE_CIE_MAPPING */
+    {
+	if_debug0('c', "[c]EncodeLMN is not identity.\n");
 	mat3 = pcrd->MatrixPQR_inverse_LMN;
 	pjc->skipEncodeLMN = false;
     }
-    /* Step 3 */
-    cache3_set_linear(pjc->TransformPQR);
+
+	/* Step 3 */
+
+    cache3_set_linear(&pjc->TransformPQR);
     cie_matrix_mult3(&pcrd->MatrixPQR, &pcie->MatrixLMN,
 		     &MatrixLMN_PQR);
-    if (pjc->TransformPQR[0].floats.params.is_identity &
-	pjc->TransformPQR[1].floats.params.is_identity &
-	pjc->TransformPQR[2].floats.params.is_identity) {
+
+#ifdef OPTIMIZE_CIE_MAPPING
+    if (pjc->TransformPQR.caches[0].floats.params.is_identity &
+	pjc->TransformPQR.caches[1].floats.params.is_identity &
+	pjc->TransformPQR.caches[2].floats.params.is_identity
+	) {
 	/* Fold step 3 into step 2. */
+	if_debug0('c', "[c]TransformPQR is identity, folding MatrixPQR'+LMN into MatrixLMN+PQR.\n");
 	cie_matrix_mult3(&mat3, &MatrixLMN_PQR, &mat2);
 	pjc->skipPQR = true;
-    } else {
+    } else
+#endif /* OPTIMIZE_CIE_MAPPING */
+    {
+	if_debug0('c', "[c]TransformPQR is not identity.\n");
 	mat2 = MatrixLMN_PQR;
 	for (j = 0; j < 3; j++) {
-	    cie_cache_restrict(&pjc->TransformPQR[j].floats,
+	    cie_cache_restrict(&pjc->TransformPQR.caches[j].floats,
 			       &pcrd->RangePQR.ranges[j]);
 	}
-	cie_cache_mult3(pjc->TransformPQR, &mat3);
+	cie_cache_mult3(&pjc->TransformPQR, &mat3, CACHE_THRESHOLD);
 	pjc->skipPQR = false;
     }
-    /* Steps 2 & 1 */
+
+	/* Steps 2 & 1 */
+
+#ifdef OPTIMIZE_CIE_MAPPING
     if (pcie->caches.DecodeLMN[0].floats.params.is_identity &
 	pcie->caches.DecodeLMN[1].floats.params.is_identity &
-	pcie->caches.DecodeLMN[2].floats.params.is_identity) {
+	pcie->caches.DecodeLMN[2].floats.params.is_identity
+	) {
+	if_debug0('c', "[c]DecodeLMN is identity, folding MatrixLMN+PQR into MatrixABC.\n");
 	if (!pabc) {
 	    pjc->skipDecodeLMN = mat2.is_identity;
 	    pjc->skipDecodeABC = false;
-	    if (!pjc->skipDecodeLMN)
+	    if (!pjc->skipDecodeLMN) {
 		for (j = 0; j < 3; j++) {
-		    cie_cache_mult(&pjc->DecodeLMN[j], &mat2.cu + j,
-				   &pcie->caches.DecodeLMN[j].floats);
+		    cie_cache_mult(&pjc->DecodeLMN.caches[j], &mat2.cu + j,
+				   &pcie->caches.DecodeLMN[j].floats,
+				   CACHE_THRESHOLD);
 		}
+		cie_cache3_set_interpolation(&pjc->DecodeLMN);
+	    }
 	} else {
 	    /*
 	     * Fold step 2 into step 1.  This is a little different because
 	     * the data for step 1 are in the color space structure.
 	     */
+	    gs_matrix3 mat1;
+
 	    cie_matrix_mult3(&mat2, &pabc->MatrixABC, &mat1);
 	    for (j = 0; j < 3; j++) {
-		cie_cache_mult(&pjc->DecodeLMN[j], &mat1.cu + j,
-			       &pabc->caches.DecodeABC[j].floats);
+		cie_cache_mult(&pjc->DecodeLMN.caches[j], &mat1.cu + j,
+			       &pabc->caches.DecodeABC.caches[j].floats,
+			       CACHE_THRESHOLD);
 	    }
+	    cie_cache3_set_interpolation(&pjc->DecodeLMN);
 	    pjc->skipDecodeLMN = false;
 	    pjc->skipDecodeABC = true;
 	}
-    } else {
+    } else
+#endif /* OPTIMIZE_CIE_MAPPING */
+    {
+	if_debug0('c', "[c]DecodeLMN is not identity.\n");
 	for (j = 0; j < 3; j++) {
-	    cie_cache_mult(&pjc->DecodeLMN[j], &mat2.cu + j,
-			   &pcie->caches.DecodeLMN[j].floats);
+	    cie_cache_mult(&pjc->DecodeLMN.caches[j], &mat2.cu + j,
+			   &pcie->caches.DecodeLMN[j].floats,
+			   CACHE_THRESHOLD);
 	}
+	cie_cache3_set_interpolation(&pjc->DecodeLMN);
 	pjc->skipDecodeLMN = false;
 	pjc->skipDecodeABC = pabc != 0 && pabc->caches.skipABC;
     }
+
 }
 
 /*
@@ -1222,9 +1381,11 @@ gx_cie_to_xyz_alloc(gs_imager_state **ppis, const gs_color_space *pcs,
      * Don't bother with any optimizations.
      */
     for (j = 0; j < 3; j++) {
-	cie_cache_mult(&pjc->DecodeLMN[j], &pcie->MatrixLMN.cu + j,
-		       &pcie->caches.DecodeLMN[j].floats);
+	cie_cache_mult(&pjc->DecodeLMN.caches[j], &pcie->MatrixLMN.cu + j,
+		       &pcie->caches.DecodeLMN[j].floats,
+		       CACHE_THRESHOLD);
     }
+    cie_cache3_set_interpolation(&pjc->DecodeLMN);
     pjc->skipDecodeLMN = false;
     pjc->skipDecodeABC = pabc != 0 && pabc->caches.skipABC;
     /* Mark the joint caches as completed. */

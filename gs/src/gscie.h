@@ -45,16 +45,31 @@
 /* If we are using fixed-point values, define the number of fraction bits. */
 #define CIE_FIXED_FRACTION_BITS 12
 
-/* Define whether to interpolate between cached values. */
+/*
+ * Interpolation between adjacent cached values is computationally very
+ * expensive, but it is necessary in numerically sensitive areas.  We
+ * characterize this by a threshold value V >= 0: we interpolate
+ * between adjacent cache values A = C[i] and B = C[i+1] if |B-A| >= V *
+ * min(|A|,|B|).  V = 0 means always interpolate; if V is undefined,
+ * we never interpolate.
+ */
+
+/*
+ * Define whether to interpolate between cached values.
+ */
 #define CIE_CACHE_INTERPOLATE
 
-/* Define whether to interpolate at all intermediate lookup steps. */
-/* This is computationally expensive and doesn't seem to improve */
-/* the accuracy of the result. */
-/*#define CIE_INTERPOLATE_INTERMEDIATE */
+/*
+ * Define the threshold for interpolating.
+ * This is computationally expensive.
+ */
+#define CIE_INTERPOLATE_THRESHOLD 0.01
 
-/* Define whether to interpolate in the RenderTable. */
-/* This is computationally very expensive, so it is normally disabled. */
+/*
+ * Define whether to interpolate in the RenderTable.  Currently this is a
+ * Boolean rather than a threshold.  This is computationally very expensive,
+ * but unfortunately it seems to be necessary.
+ */
 #define CIE_RENDER_TABLE_INTERPOLATE
 
 /* ------ Derived values ------ */
@@ -302,7 +317,7 @@ typedef struct gs_cie_wb_s {
  */
 typedef struct cie_linear_params_s {
     bool is_linear;
-    float scale, origin;
+    float scale, origin;	/* if is_linear = true */
 } cie_linear_params_t;
 typedef struct cie_cache_params_s {
     bool is_identity;		/* must come first */
@@ -330,8 +345,12 @@ typedef union gx_cie_scalar_cache_s {
 typedef struct cie_cached_vector3_s {
     cie_cached_value u, v, w;
 } cie_cached_vector3;
+typedef struct cie_interpolation_range_s {
+    cie_cached_value rmin, rmax;
+} cie_interpolation_range_t;
 typedef struct cie_vector_cache_params_s {
     cie_cached_value base, factor, limit;
+    cie_interpolation_range_t interpolation_ranges[3];  /* if this cache has an interpolation threshold */
 } cie_vector_cache_params;
 typedef struct cie_cache_vectors_s {
     cie_vector_cache_params params;
@@ -341,6 +360,10 @@ typedef struct gx_cie_vector_cache_s {
     cie_cache_floats floats;
     cie_cache_vectors vecs;
 } gx_cie_vector_cache;
+typedef struct gx_cie_vector_cache3_s {
+    gx_cie_vector_cache caches[3];
+    cie_interpolation_range_t interpolation_ranges[3];  /* indexed by output component */
+} gx_cie_vector_cache3_t;
 
 /* ------ Color space dictionaries ------ */
 
@@ -409,7 +432,7 @@ struct gs_cie_a_s {
 		/* Following are computed when structure is initialized. */\
 	struct {\
 		bool skipABC;\
-		gx_cie_vector_cache DecodeABC[3];  /* mult. by MatrixABC */\
+		gx_cie_vector_cache3_t DecodeABC;  /* mult. by MatrixABC */\
 	} caches
 
 /* A CIEBasedABC dictionary. */
@@ -542,7 +565,7 @@ struct gs_cie_render_s {
     gs_matrix3 MatrixPQR_inverse_LMN;
     gs_vector3 wdpqr, bdpqr;
     struct {
-	gx_cie_vector_cache EncodeLMN[3];	/* mult. by M'ABCEncode */
+	gx_cie_vector_cache3_t EncodeLMN;	/* mult. by M'ABCEncode */
 	gx_cie_float_fixed_cache EncodeABC[3];
 	gx_cie_scalar_cache RenderTableT[4];
 	bool RenderTableT_is_identity;
@@ -608,10 +631,10 @@ typedef struct gx_cie_joint_caches_s {
     GX_CIE_REMAP_FINISH_PROC((*remap_finish));
     bool skipDecodeABC;
     bool skipDecodeLMN;
-    gx_cie_vector_cache DecodeLMN[3];	/* mult. by dLMN_PQR */
+    gx_cie_vector_cache3_t DecodeLMN;	/* mult. by dLMN_PQR */
     gs_cie_wbsd points_sd;
     bool skipPQR;
-    gx_cie_vector_cache TransformPQR[3];	/* mult. by PQR_inverse_LMN */
+    gx_cie_vector_cache3_t TransformPQR;	/* mult. by PQR_inverse_LMN */
     bool skipEncodeLMN;
 } gx_cie_joint_caches;
 

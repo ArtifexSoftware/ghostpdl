@@ -109,17 +109,17 @@ EncodeABC_cached_C(floatp in, const gs_cie_render * pcrd)
 private float
 EncodeLMN_cached_L(floatp in, const gs_cie_render * pcrd)
 {
-    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN[0].floats);
+    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN.caches[0].floats);
 }
 private float
 EncodeLMN_cached_M(floatp in, const gs_cie_render * pcrd)
 {
-    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN[1].floats);
+    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN.caches[1].floats);
 }
 private float
 EncodeLMN_cached_N(floatp in, const gs_cie_render * pcrd)
 {
-    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN[2].floats);
+    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN.caches[2].floats);
 }
 
 private frac
@@ -311,7 +311,7 @@ gs_cie_render1_init_from(gs_cie_render * pcrd, void *client_data,
 	!memcmp(&pcrd->EncodeLMN, &EncodeLMN_from_cache,
 		sizeof(EncodeLMN_from_cache))
 	)
-	memcpy(pcrd->caches.EncodeLMN, pfrom_crd->caches.EncodeLMN,
+	memcpy(&pcrd->caches.EncodeLMN, &pfrom_crd->caches.EncodeLMN,
 	       sizeof(pcrd->caches.EncodeLMN));
     pcrd->RangeLMN = *(RangeLMN ? RangeLMN : &Range3_default);
     pcrd->MatrixABC = *(MatrixABC ? MatrixABC : &Matrix3_default);

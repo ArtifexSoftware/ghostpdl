@@ -261,7 +261,7 @@ cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
 
     if (code < 0 ||
 	(code = cie_cache_push_finish(i_ctx_p, cie_cache_render_finish, imem, pcrd)) < 0 ||
-	(code = cie_prepare_cache3(i_ctx_p, &pcrd->DomainLMN, pcrprocs->EncodeLMN.value.const_refs, &pcrd->caches.EncodeLMN[0], pcrd, imem, "Encode.LMN")) < 0 ||
+	(code = cie_prepare_cache3(i_ctx_p, &pcrd->DomainLMN, pcrprocs->EncodeLMN.value.const_refs, pcrd->caches.EncodeLMN.caches, pcrd, imem, "Encode.LMN")) < 0 ||
 	(code = cie_prepare_cache3(i_ctx_p, &pcrd->DomainABC, pcrprocs->EncodeABC.value.const_refs, &pcrd->caches.EncodeABC[0], pcrd, imem, "Encode.ABC")) < 0
 	) {
 	esp = ep;
@@ -376,7 +376,7 @@ cie_cache_joint(i_ctx_t *i_ctx_p, const ref_cie_render_procs * pcrprocs,
     }
     return cie_prepare_cache3(i_ctx_p, &pcrd->RangePQR,
 			      pqr_procs.value.const_refs,
-			      &pjc->TransformPQR[0],
+			      pjc->TransformPQR.caches,
 			      pjc, imem, "Transform.PQR");
 }
 

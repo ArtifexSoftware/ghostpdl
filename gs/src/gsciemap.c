@@ -28,17 +28,37 @@
 #include "gxcmap.h"
 #include "gxistate.h"
 
-/* Compute a cache index as (vin - base) * factor. */
-/* vin, base, factor, and the result are cie_cached_values. */
-/* We know that the result doesn't exceed (gx_cie_cache_size - 1) << fbits. */
-#define LOOKUP_INDEX(vin, pcache, fbits)\
+/*
+ * Compute a cache index as (vin - base) * factor.
+ * vin, base, factor, and the result are cie_cached_values.
+ * We know that the result doesn't exceed (gx_cie_cache_size - 1) << fbits.
+ *
+ * Since this operation is extremely time-critical, we don't rely on the
+ * compiler providing 'inline'.
+ */
+#define LOOKUP_INDEX_(vin, pcache, fbits)\
   ((vin) <= (pcache)->vecs.params.base ? 0 :\
    (vin) >= (pcache)->vecs.params.limit ? (gx_cie_cache_size - 1) << (fbits) :\
    cie_cached_product2int( ((vin) - (pcache)->vecs.params.base),\
 			   (pcache)->vecs.params.factor, fbits ))
-#define LOOKUP_VALUE(vin, pcache)\
-  ((pcache)->vecs.values[LOOKUP_INDEX(vin, pcache, 0)])
-
+#define LOOKUP_ENTRY_(vin, pcache)\
+  (&(pcache)->vecs.values[(int)LOOKUP_INDEX(vin, pcache, 0)])
+#ifdef DEBUG
+private cie_cached_value
+LOOKUP_INDEX(cie_cached_value vin, const gx_cie_vector_cache *pcache,
+	     int fbits)
+{
+    return LOOKUP_INDEX_(vin, pcache, fbits);
+}
+private const cie_cached_vector3 *
+LOOKUP_ENTRY(cie_cached_value vin, const gx_cie_vector_cache *pcache)
+{
+    return LOOKUP_ENTRY_(vin, pcache);
+}
+#else  /* !DEBUG */
+#  define LOOKUP_INDEX(vin, pcache, fbits)  LOOKUP_INDEX_(vin, pcache, fbits)
+#  define LOOKUP_ENTRY(vin, pcache)         LOOKUP_ENTRY_(vin, pcache)
+#endif /* DEBUG */
 
 /*
  * Call the remap_finish procedure in the structure without going through
@@ -54,12 +74,12 @@
 
 /* Forward references */
 private void cie_lookup_mult3(P2(cie_cached_vector3 *,
-				 const gx_cie_vector_cache *));
+				 const gx_cie_vector_cache3_t *));
 
 #ifdef DEBUG
 private void
 cie_lookup_map3(cie_cached_vector3 * pvec,
-		const gx_cie_vector_cache * pc /*[3] */ , const char *cname)
+		const gx_cie_vector_cache3_t * pc, const char *cname)
 {
     if_debug5('c', "[c]lookup %s 0x%lx [%g %g %g]\n",
 	      (const char *)cname, (ulong) pc,
@@ -127,7 +147,7 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
     vec3.w = SCALE_TO_RANGE(pcie->RangeABC.ranges[2], abc[2]); 
     /* Apply DecodeABC and MatrixABC. */
     if (!pis->cie_joint_caches->skipDecodeABC)
-	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
+	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
 			"Decode/MatrixABC");
     GX_CIE_REMAP_FINISH(vec3, pconc, pis, pcs);
     return 0;
@@ -181,7 +201,7 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
     vec3.w = SCALE_TO_RANGE(pcie->RangeABC.ranges[2], abc[2]); 
     /* Apply DecodeABC and MatrixABC. */
     if (!pis->cie_joint_caches->skipDecodeABC)
-	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
+	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
 			"Decode/MatrixABC");
     GX_CIE_REMAP_FINISH(vec3, pconc, pis, pcs);
     return 0;
@@ -211,7 +231,7 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     if (!pis->cie_joint_caches->skipDecodeABC) {
 	const gs_cie_abc *pcie = pcs->params.abc;
 
-	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
+	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
 			"Decode/MatrixABC");
     }
     switch (GX_CIE_REMAP_FINISH(vec3 /* LMN */, conc, pis, pcs)) {
@@ -251,7 +271,7 @@ gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     vec3.v = float2cie_cached(pc->paint.values[1]);
     vec3.w = float2cie_cached(pc->paint.values[2]);
     if (!pis->cie_joint_caches->skipDecodeABC)
-	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
+	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
 			"Decode/MatrixABC");
     GX_CIE_REMAP_FINISH(vec3, pconc, pis, pcs);
     return 0;
@@ -271,7 +291,7 @@ gx_concretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
 
     /* Apply DecodeA and MatrixA. */
     if (!pis->cie_joint_caches->skipDecodeABC)
-	vlmn = LOOKUP_VALUE(a, &pcie->caches.DecodeA);
+	vlmn = *LOOKUP_ENTRY(a, &pcie->caches.DecodeA);
     else
 	vlmn.u = vlmn.v = vlmn.w = a;
     GX_CIE_REMAP_FINISH(vlmn, pconc, pis, pcs);
@@ -302,17 +322,17 @@ gx_cie_real_remap_finish(cie_cached_vector3 vec3, frac * pconc,
 
     /* Apply DecodeLMN, MatrixLMN(decode), and MatrixPQR. */
     if (!pjc->skipDecodeLMN)
-	cie_lookup_map3(&vec3 /* LMN => PQR */, &pjc->DecodeLMN[0],
+	cie_lookup_map3(&vec3 /* LMN => PQR */, &pjc->DecodeLMN,
 			"Decode/MatrixLMN+MatrixPQR");
 
     /* Apply TransformPQR, MatrixPQR', and MatrixLMN(encode). */
     if (!pjc->skipPQR)
-	cie_lookup_map3(&vec3 /* PQR => LMN */, &pjc->TransformPQR[0],
+	cie_lookup_map3(&vec3 /* PQR => LMN */, &pjc->TransformPQR,
 			"Transform/Matrix'PQR+MatrixLMN");
 
     /* Apply EncodeLMN and MatrixABC(encode). */
     if (!pjc->skipEncodeLMN)
-	cie_lookup_map3(&vec3 /* LMN => ABC */, &pcrd->caches.EncodeLMN[0],
+	cie_lookup_map3(&vec3 /* LMN => ABC */, &pcrd->caches.EncodeLMN,
 			"EncodeLMN+MatrixABC");
 
     /* MatrixABCEncode includes the scaling of the EncodeABC */
@@ -459,7 +479,7 @@ gx_cie_xyz_remap_finish(cie_cached_vector3 vec3, frac * pconc,
      * vec3 is LMN values.  Just apply DecodeLMN/MatrixLMN.
      */
     if (!pjc->skipDecodeLMN)
-	cie_lookup_map3(&vec3 /* LMN => XYZ */, &pjc->DecodeLMN[0],
+	cie_lookup_map3(&vec3 /* LMN => XYZ */, &pjc->DecodeLMN,
 			"Decode/MatrixLMN");
 
 
@@ -472,67 +492,108 @@ gx_cie_xyz_remap_finish(cie_cached_vector3 vec3, frac * pconc,
 /* Look up 3 values in a cache, with cached post-multiplication. */
 private void
 cie_lookup_mult3(cie_cached_vector3 * pvec,
-		 const gx_cie_vector_cache * pc /*[3] */ )
+		 const gx_cie_vector_cache3_t * pc)
 {
-/****** Interpolating at intermediate stages doesn't seem to ******/
-/****** make things better, and slows things down, so....    ******/
-#ifdef CIE_INTERPOLATE_INTERMEDIATE
-    /* Interpolate between adjacent cache entries. */
-    /* This is expensive! */
+#ifdef CIE_CACHE_INTERPOLATE
+    cie_cached_value u, v, w;
+
 #ifdef CIE_CACHE_USE_FIXED
-#  define lookup_interpolate_between(v0, v1, i, ftemp)\
+#  define LOOKUP_INTERPOLATE_BETWEEN(v0, v1, i, ftemp)\
      cie_interpolate_between(v0, v1, i)
 #else
-    float ftu, ftv, ftw;
+    float ftemp;
 
-#  define lookup_interpolate_between(v0, v1, i, ftemp)\
+#  define LOOKUP_INTERPOLATE_BETWEEN(v0, v1, i)\
      ((v0) + ((v1) - (v0)) *\
       ((ftemp = float_rshift(i, _cie_interpolate_bits)), ftemp - (int)ftemp))
 #endif
 
-    cie_cached_value iu =
-	 LOOKUP_INDEX(pvec->u, pc, _cie_interpolate_bits);
-    const cie_cached_vector3 *pu =
-	&pc[0].vecs.values[(int)cie_cached_rshift(iu,
-						  _cie_interpolate_bits)];
-    const cie_cached_vector3 *pu1 =
-	(iu >= (gx_cie_cache_size - 1) << _cie_interpolate_bits ?
-	 pu : pu + 1);
+	 /*
+	  * Defining a macro for the entire component calculation would
+	  * minimize source code, but it would make the result impossible
+	  * to trace or debug.  We use smaller macros instead, and run
+	  * the usual risks associated with having 3 copies of the code.
+	  * Note that pvec and pc are free variables in these macros.
+	  */
 
-    cie_cached_value iv =
-	LOOKUP_INDEX(pvec->v, pc + 1, _cie_interpolate_bits);
-    const cie_cached_vector3 *pv =
-	&pc[1].vecs.values[(int)cie_cached_rshift(iv,
-						  _cie_interpolate_bits)];
-    const cie_cached_vector3 *pv1 =
-	(iv >= (gx_cie_cache_size - 1) << _cie_interpolate_bits ?
-	 pv : pv + 1);
+#define I_IN_RANGE(j, n)\
+  (pvec->n >= pc->interpolation_ranges[j].rmin &&\
+   pvec->n < pc->interpolation_ranges[j].rmax)
+#define I_INDEX(j, n)\
+  LOOKUP_INDEX(pvec->n, &pc->caches[j], _cie_interpolate_bits)
+#define I_ENTRY(i, j)\
+  &pc->caches[j].vecs.values[(int)cie_cached_rshift(i, _cie_interpolate_bits)]
+#define I_ENTRY1(i, p)\
+  (i >= (gx_cie_cache_size - 1) << _cie_interpolate_bits ? p : p + 1)
 
-    cie_cached_value iw =
-	LOOKUP_INDEX(pvec->w, pc + 2, _cie_interpolate_bits);
-    const cie_cached_vector3 *pw =
-	&pc[2].vecs.values[(int)cie_cached_rshift(iw,
-						  _cie_interpolate_bits)];
-    const cie_cached_vector3 *pw1 =
-	(iw >= (gx_cie_cache_size - 1) << _cie_interpolate_bits ?
-	 pw : pw + 1);
+    if (I_IN_RANGE(0, u)) {
+	cie_cached_value i = I_INDEX(0, u);
+	const cie_cached_vector3 *p = I_ENTRY(i, 0);
+	const cie_cached_vector3 *p1 = I_ENTRY1(i, p);
 
-    pvec->u = lookup_interpolate_between(pu->u, pu1->u, iu, ftu) +
-	lookup_interpolate_between(pv->u, pv1->u, iv, ftv) +
-	lookup_interpolate_between(pw->u, pw1->u, iw, ftw);
-    pvec->v = lookup_interpolate_between(pu->v, pu1->v, iu, ftu) +
-	lookup_interpolate_between(pv->v, pv1->v, iv, ftv) +
-	lookup_interpolate_between(pw->v, pw1->v, iw, ftw);
-    pvec->w = lookup_interpolate_between(pu->w, pu1->w, iu, ftu) +
-	lookup_interpolate_between(pv->w, pv1->w, iv, ftv) +
-	lookup_interpolate_between(pw->w, pw1->w, iw, ftw);
-#else
-    const cie_cached_vector3 *pu = &LOOKUP_VALUE(pvec->u, pc);
-    const cie_cached_vector3 *pv = &LOOKUP_VALUE(pvec->v, pc + 1);
-    const cie_cached_vector3 *pw = &LOOKUP_VALUE(pvec->w, pc + 2);
+	if_debug0('C', "[c]Interpolating u.\n");
+	u = LOOKUP_INTERPOLATE_BETWEEN(p->u, p1->u, i);
+	v = LOOKUP_INTERPOLATE_BETWEEN(p->v, p1->v, i);
+	w = LOOKUP_INTERPOLATE_BETWEEN(p->w, p1->w, i);
+    } else {
+	const cie_cached_vector3 *p = LOOKUP_ENTRY(pvec->u, &pc->caches[0]);
+
+	if_debug0('C', "[c]Not interpolating u.\n");
+	u = p->u, v = p->v, w = p->w;
+    }
+
+    if (I_IN_RANGE(1, v)) {
+	cie_cached_value i = I_INDEX(1, v);
+	const cie_cached_vector3 *p = I_ENTRY(i, 1);
+	const cie_cached_vector3 *p1 = I_ENTRY1(i, p);
+
+	if_debug0('C', "[c]Interpolating v.\n");
+	u += LOOKUP_INTERPOLATE_BETWEEN(p->u, p1->u, i);
+	v += LOOKUP_INTERPOLATE_BETWEEN(p->v, p1->v, i);
+	w += LOOKUP_INTERPOLATE_BETWEEN(p->w, p1->w, i);
+    } else {
+	const cie_cached_vector3 *p = LOOKUP_ENTRY(pvec->v, &pc->caches[1]);
+
+	if_debug0('C', "[c]Not interpolating v.\n");
+	u += p->u, v += p->v, w += p->w;
+    }
+
+    if (I_IN_RANGE(2, w)) {
+	cie_cached_value i = I_INDEX(2, w);
+	const cie_cached_vector3 *p = I_ENTRY(i, 2);
+	const cie_cached_vector3 *p1 = I_ENTRY1(i, p);
+
+	if_debug0('C', "[c]Interpolating w.\n");
+	u += LOOKUP_INTERPOLATE_BETWEEN(p->u, p1->u, i);
+	v += LOOKUP_INTERPOLATE_BETWEEN(p->v, p1->v, i);
+	w += LOOKUP_INTERPOLATE_BETWEEN(p->w, p1->w, i);
+    } else {
+	const cie_cached_vector3 *p = LOOKUP_ENTRY(pvec->w, &pc->caches[2]);
+
+	if_debug0('C', "[c]Not interpolating w.\n");
+	u += p->u, v += p->v, w += p->w;
+    }
+
+#undef I_IN_RANGE
+#undef I_INDEX
+#undef I_ENTRY
+#undef I_ENTRY1
+
+    pvec->u = u;
+    pvec->v = v;
+    pvec->w = w;
+
+#else  /* no interpolation */
+
+    const cie_cached_vector3 *pu = LOOKUP_ENTRY(pvec->u, &pc->caches[0]);
+    const cie_cached_vector3 *pv = LOOKUP_ENTRY(pvec->v, &pc->caches[1]);
+    const cie_cached_vector3 *pw = LOOKUP_ENTRY(pvec->w, &pc->caches[2]);
+
+    if_debug0('C', "[c]Not interpolating.\n");
 
     pvec->u = pu->u + pv->u + pw->u;
     pvec->v = pu->v + pv->v + pw->v;
     pvec->w = pu->w + pv->w + pw->w;
-#endif
+
+#endif /* (no) interpolation */
 }

@@ -522,11 +522,11 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	pciec = (const gs_cie_common *)pcie;
 	if (pcie->common.MatrixLMN.is_identity &&
 	    CIE_CACHE3_IS_IDENTITY(pcie->common.caches.DecodeLMN) &&
-	    CIE_VECTOR3_CACHE_IS_EXPONENTIAL(pcie->caches.DecodeABC, expts)
+	    CIE_VECTOR3_CACHE_IS_EXPONENTIAL(pcie->caches.DecodeABC.caches, expts)
 	    )
 	    pmat = &pcie->MatrixABC;
 	else if (pcie->MatrixABC.is_identity &&
-		 CIE_CACHE3_IS_IDENTITY(pcie->caches.DecodeABC) &&
+		 CIE_CACHE3_IS_IDENTITY(pcie->caches.DecodeABC.caches) &&
 		 CIE_SCALAR3_CACHE_IS_EXPONENTIAL(pcie->common.caches.DecodeLMN, expts)
 		 )
 	    pmat = &pcie->common.MatrixLMN;

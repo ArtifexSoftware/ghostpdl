@@ -511,7 +511,7 @@ cache_abc_common(i_ctx_t *i_ctx_p, gs_cie_abc * pcie,
     int code =
 	cie_prepare_cache3(i_ctx_p, &pcie->RangeABC,
 			   pcprocs->Decode.ABC.value.const_refs,
-			   &pcie->caches.DecodeABC[0], pcie, imem,
+			   pcie->caches.DecodeABC.caches, pcie, imem,
 			   "Decode.ABC");
 
     return (code < 0 ? code :
