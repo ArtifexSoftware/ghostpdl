@@ -659,7 +659,6 @@ currentdict end readonly def
   1 index exch /Context exch put			% id obj
   dup /ImmediateExec true put
   dup /IsPage true put
-  dup { pop =} forall
   dup /Context get //SetupPageView exec
 } bind def
 
@@ -689,6 +688,11 @@ currentdict end readonly def
   //PDFR_DEBUG {
     (Executing FontDescriptorDaemon for ) print 2 index =
   } if							% id obj fr
+  %HACK BEG assuming an own font for each font descriptor
+          % to provide an access to PDFEncoding
+          % from MakeType42, ComposeCharStrings.
+    2 copy /FontResource exch put
+  %HACK END
   /Subtype get 1 index exch /FontFileType exch put
 } bind def
 
@@ -835,7 +839,15 @@ end
     /FontName 1 index /FontName get def
     /FontType 42 def
     /FontMatrix [1 0 0 1 0 0] def
-    /FontBBox 1 index /FontBBox get def
+    /FontBBox 1 index /FontBBox get def          % fo fd
+    dup /FontResource get                        % fo fd fr
+    dup /Encoding known {                        % fo fd fr
+       //PDFReader /ObtainEncoding get exec      % fo fd fr
+       /Encoding get                             % fo fd e
+    } {
+      pop null
+    } ifelse 
+    /PDFEncoding exch def                        % fo fd
     /CharStrings 2 index //PDFReader /MakeTTCharStrings get exec def
     /sfnts [ 3 index //MakeStreamReader exec 65535 string readstring ] def
     /Encoding StandardEncoding def % A stub - will be replaced by font resource.
@@ -1599,23 +1611,34 @@ end
   } if
 } bind def
 
+/InverseEncoding % <encoding> InverseEncoding <dict>
+{
+  256 dict begin
+    dup length 1 sub -1 0 {
+      2 copy get
+      dup currentdict exch //knownget exec {
+        dup type /arraytype eq {
+          aload length 1 add array astore
+        } {
+          2 array astore
+        } ifelse
+      } if
+      exch def
+    } for
+    pop
+    //PDFReader /MacRomanEncodingInverse currentdict put
+   currentdict end
+} bind def
+
 /GetMacRomanEncodingInverse
 { //PDFReader /MacRomanEncodingInverse get 
   dup null eq {
     pop
-    256 dict begin
-      MacRomanEncoding
-      dup length 1 sub -1 0 {
-        2 copy get
-	exch def
-      } for
-      pop
-      //PDFReader /MacRomanEncodingInverse currentdict put
-    currentdict end
+    MacRomanEncoding //InverseEncoding exec
   } if
 } bind def
 
-/PutCharString	% <cmap_array> <glyph_name> <char_code> PutCharString  <cmap_array>
+/PutCharStringSingle	% <cmap_array> <glyph_name> <char_code> PutCharStringSingle  <cmap_array>
 {
   dup 3 index length lt {				% cmap name code
     2 index exch get					% cmap name glyphindex
@@ -1629,8 +1652,24 @@ end
   } ifelse
 } bind def
 
+/PutCharString	% <cmap_array> <glyph_name> <char_code> PutCharString  <cmap_array>
+{ dup type /arraytype eq {
+    {                                                   % cmap name code
+      3 copy //PutCharStringSingle exec                 % cmap name code cmap
+      pop pop                                           % cmap name
+    } forall
+    pop                                                 % cmap
+  } {
+    //PutCharStringSingle exec
+  } ifelse
+} bind def
+
 /ComposeCharStrings % <cmaparray> <dict> ComposeCharStrings <dict>
-{ 1 index length 1 add dict begin			% cmap d
+{ 
+  //PDFR_DEBUG {
+    (ComposeCharStrings beg) =
+  } if
+  1 index length 1 add dict begin			% cmap d
   % fixme : the dict length estimation doesn't account 'post'.
   /.notdef 0 def
   exch							% d cmap
@@ -1652,6 +1691,9 @@ end
   } forall						% cmap
   pop							%
   currentdict end
+  //PDFR_DEBUG {
+    (ComposeCharStrings end) =
+  } if
 } bind def
 
 /ParseTTpost   % <file> <TableDirectory> ParseTTpost -
@@ -1718,7 +1760,11 @@ end
         (Using the TT cmap encoding for Macintosh Roman.) =
       } if
       16#00010000 //GetTTEncoding exec 
-      //GetMacRomanEncodingInverse exec
+      PDFEncoding dup null eq {
+        pop //GetMacRomanEncodingInverse exec
+      } {
+        //InverseEncoding exec
+      } ifelse
       //ComposeCharStrings exec
       exit
     } if
