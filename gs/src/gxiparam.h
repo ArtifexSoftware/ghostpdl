@@ -24,10 +24,11 @@
 
 #include "gxdevcli.h"
 
+/* ---------------- Image enumerators ---------------- */
+
 #ifndef gx_image_enum_common_t_DEFINED
 #  define gx_image_enum_common_t_DEFINED
 typedef struct gx_image_enum_common_s gx_image_enum_common_t;
-
 #endif
 
 /*
@@ -112,17 +113,26 @@ int gx_image_enum_common_init(P7(gx_image_enum_common_t * piec,
 				 int bits_per_component, int num_components,
 				 gs_image_format_t format));
 
-/*
- * Define the structure for defining image types.  An image type includes
- * not only the ImageType index, but also the default implementation of
- * begin_typed_image.
- */
+/* ---------------- Image types ---------------- */
+
+/* Define the structure for image types. */
+#ifndef stream_DEFINED
+#  define stream_DEFINED
+typedef struct stream_s stream;
+
+#endif
+
 #ifndef gx_image_type_DEFINED
 #  define gx_image_type_DEFINED
 typedef struct gx_image_type_s gx_image_type_t;
 #endif
+
 struct gx_image_type_s {
 
+    /*
+     * Provide the default implementation of begin_typed_image for this
+     * type.
+     */
     dev_proc_begin_typed_image((*begin_typed_image));
 
     /*
@@ -131,10 +141,38 @@ struct gx_image_type_s {
      * structure, but ImageType 2 images must compute it.
      */
 #define image_proc_source_size(proc)\
-  int proc(P3(const gs_imager_state *pis, const gs_image_common_t *pim,\
+  int proc(P3(const gs_imager_state *pis, const gs_image_common_t *pic,\
     gs_int_point *psize))
 
     image_proc_source_size((*source_size));
+
+    /*
+     * Write image parameters on a stream.  Currently this is used
+     * only for banding.
+     */
+#define image_proc_write(proc)\
+  int proc(P2(const gs_image_common_t *pic, stream *s))
+
+    image_proc_write((*write));
+
+    /*
+     * Read image parameters from a stream.  Currently this is used
+     * only for banding.
+     */
+#define image_proc_read(proc)\
+  int proc(P3(gs_image_common_t **ppic, stream *s, gs_memory_t *mem))
+
+    image_proc_read((*read));
+
+    /*
+     * Release any parameters allocated by read.
+     * Currently this only releases non-standard color spaces,
+     * in addition to the parameter structure itself.
+     */
+#define image_proc_release(proc)\
+  void proc(P2(gs_image_common_t *pic, gs_memory_t *mem))
+
+    image_proc_release((*release));
 
     /*
      * We put index last so that if we add more procedures and some
@@ -159,8 +197,16 @@ image_enum_proc_end_image(gx_ignore_end_image);
  * which are always included.
  */
 dev_proc_begin_typed_image(gx_begin_image1);
+image_proc_write(gx_image1_write);
+image_proc_read(gx_image1_read);
 image_enum_proc_plane_data(gx_image1_plane_data);
 image_enum_proc_end_image(gx_image1_end_image);
 image_enum_proc_flush(gx_image1_flush);
+/*
+ * Define write/read/release procedures for generic pixel images.
+ */
+image_proc_write(gx_pixel_image_write);
+image_proc_read(gx_pixel_image_read);
+image_proc_release(gx_pixel_image_release);
 
 #endif /* gxiparam_INCLUDED */
