@@ -567,6 +567,9 @@ pcl_show_chars(
                 code = show_char_foreground(pcs, buff);
             if (code < 0)
                 break;
+	    /* Here we have data on the page unless it has been
+               clipped in device space - we don't handle that properly */
+	    pcs->have_page = true;
         }
 
         /* 
@@ -727,7 +730,6 @@ pcl_text(
     if (code > 0)		/* shouldn't happen */
 	code = gs_note_error(gs_error_invalidfont);
 
-    pcs->have_page = true;
     return code;
 }
 

@@ -194,7 +194,7 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	switch( op )
 	  {
 	  case 0 :
-	    /* clear the current path if there is one */
+	    /* draw the current path if there is one */
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    /* clear the polygon buffer as well */
             gx_path_new(&pgls->g.polygon.buffer.path);

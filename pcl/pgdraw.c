@@ -1159,7 +1159,12 @@ hpgl_draw_current_path(
     gs_state *              pgs = pgls->pgs;
     pcl_pattern_set_proc_t  set_proc;
     int                     code = 0;
+    gx_path *               cur_path =
+	gx_current_path(pgls->pgs)->current_subpath;
 
+    /* we cannot just check for a current path since the gl/2
+       character routines use just a moveto to guantee the matrix
+       machinery is set up correctly */
     if (gx_path_is_null(gx_current_path(pgs)))
 	return 0;
 
@@ -1257,8 +1262,11 @@ hpgl_draw_current_path(
         dprintf("unknown render mode\n");
     }
 
-    /* the page has been marked */
-    pgls->have_page = true;
+    /* the page has been marked.  NB if we had a current subpath when
+       we start and reached this point we assume data has been
+       rendered */
+    if ( cur_path )
+	pgls->have_page = true;
     return 0;
 }
 
