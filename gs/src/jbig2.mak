@@ -14,6 +14,7 @@
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 # $Id$
+
 # makefile for jbig2dec library code.
 # Users of this makefile must define the following:
 #	SHARE_JBIG2 - whether to compile in or link to the library
@@ -34,7 +35,8 @@ JBIG2_MAK=$(GLSRC)jbig2.mak
 JBIG2SRC=$(JBIG2SRCDIR)$(D)
 JBIG2GEN=$(JBIG2OBJDIR)$(D)
 JBIG2OBJ=$(JBIG2OBJDIR)$(D)
-# This list is only good for jbig2dec v0.2
+
+# This list is only known good for jbig2dec v0.2-0.3
 
 libjbig2_OBJS1=\
 	$(JBIG2OBJ)jbig2.$(OBJ) \
