@@ -27,7 +27,7 @@ dev_proc_get_params(devicen_get_params);
  * Type definitions associated with the fixed color model names.
  */
 typedef const char * fixed_colorant_name;
-typedef fixed_colorant_name fixed_colorant_names_list[];
+typedef fixed_colorant_name * fixed_colorant_names_list;
 
 /*
  * Define the maximum number of separations supported by this device.
@@ -41,7 +41,7 @@ typedef fixed_colorant_name fixed_colorant_names_list[];
  */
 typedef struct gs_separations_s {
     int num_separations;
-    gs_param_string * names[GX_DEVICE_MAX_SEPARATIONS];
+    const gs_param_string * names[GX_DEVICE_MAX_SEPARATIONS];
 } gs_separations;
 
 /*
@@ -70,7 +70,7 @@ typedef struct gs_devn_params_s {
      * names are those in this list plus those in the separation[i].info.name
      * list (below).
      */
-    const fixed_colorant_names_list * std_colorant_names;
+    fixed_colorant_names_list std_colorant_names;
     int num_std_colorant_names;	/* Number of names in list */
 
     /*
@@ -91,7 +91,7 @@ typedef struct gs_devn_params_s {
 
 typedef gs_devn_params_t gs_devn_params;
 
-extern const fixed_colorant_names_list DeviceCMYKComponents;
+extern fixed_colorant_name DeviceCMYKComponents[];
 
 /*
  * Put the DeviceN related parameters.

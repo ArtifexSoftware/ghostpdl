@@ -153,12 +153,12 @@ typedef struct psd_device_s {
 }
 
 
-private const fixed_colorant_names_list DeviceGrayComponents = {
+private fixed_colorant_name DeviceGrayComponents[] = {
 	"Gray",
 	0		/* List terminator */
 };
 
-private const fixed_colorant_names_list DeviceRGBComponents = {
+private fixed_colorant_name DeviceRGBComponents[] = {
 	"Red",
 	"Green",
 	"Blue",
@@ -185,8 +185,7 @@ const psd_device gs_psdrgb_device =
 	 psd_print_page),	/* Printer page print routine */
     /* devn_params specific parameters */
     { 8,			/* Bits per color - must match ncomp, depth, etc. above */
-      /* Names of color model colorants */
-      (fixed_colorant_names_list *) &DeviceRGBComponents,
+      DeviceRGBComponents,	/* Names of color model colorants */
       3,			/* Number colorants for RGB */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
@@ -214,8 +213,7 @@ const psd_device gs_psdcmyk_device =
 	 psd_print_page),	/* Printer page print routine */
     /* devn_params specific parameters */
     { 8,			/* Bits per color - must match ncomp, depth, etc. above */
-      /* Names of color model colorants */
-      (fixed_colorant_names_list *) &DeviceCMYKComponents,
+      DeviceCMYKComponents,	/* Names of color model colorants */
       4,			/* Number colorants for CMYK */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
@@ -690,22 +688,22 @@ psd_set_color_model(psd_device *xdev, psd_color_model color_model)
 {
     xdev->color_model = color_model;
     if (color_model == psd_DEVICE_GRAY) {
-	xdev->devn_params.std_colorant_names = &DeviceGrayComponents;
+	xdev->devn_params.std_colorant_names = DeviceGrayComponents;
 	xdev->devn_params.num_std_colorant_names = 1;
 	xdev->color_info.cm_name = "DeviceGray";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
     } else if (color_model == psd_DEVICE_RGB) {
-	xdev->devn_params.std_colorant_names = &DeviceRGBComponents;
+	xdev->devn_params.std_colorant_names = DeviceRGBComponents;
 	xdev->devn_params.num_std_colorant_names = 3;
 	xdev->color_info.cm_name = "DeviceRGB";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
     } else if (color_model == psd_DEVICE_CMYK) {
-	xdev->devn_params.std_colorant_names = &DeviceCMYKComponents;
+	xdev->devn_params.std_colorant_names = DeviceCMYKComponents;
 	xdev->devn_params.num_std_colorant_names = 4;
 	xdev->color_info.cm_name = "DeviceCMYK";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
     } else if (color_model == psd_DEVICE_N) {
-	xdev->devn_params.std_colorant_names = &DeviceCMYKComponents;
+	xdev->devn_params.std_colorant_names = DeviceCMYKComponents;
 	xdev->devn_params.num_std_colorant_names = 4;
 	xdev->color_info.cm_name = "DeviceN";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;

@@ -128,7 +128,7 @@ update_Separation_spot_equivalent_cmyk_colors(gx_device * pdev,
      */
     for (i = 0; i < pdevn_params->separations.num_separations; i++) {
 	if (pparams->color[i].color_info_valid == false) {
-	    gs_param_string * dev_sep_name =
+	    const gs_param_string * dev_sep_name =
 			    pdevn_params->separations.names[i];
 	    unsigned int cs_sep_name_size;
 	    unsigned char * pcs_sep_name;
@@ -170,7 +170,7 @@ update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
      */
     for (i = 0; i < pdevn_params->separations.num_separations; i++) {
 	if (pparams->color[i].color_info_valid == false) {
-	    gs_param_string * dev_sep_name =
+	    const gs_param_string * dev_sep_name =
 			    pdevn_params->separations.names[i];
 
 	    for (j = 0; j < pcs->params.device_n.num_components; j++) {
@@ -183,12 +183,13 @@ update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
 	        if (compare_color_names(dev_sep_name->data, dev_sep_name->size,
 			    pcs_sep_name, cs_sep_name_size)) {
 		    gs_color_space temp_cs = *pcs;
-		    gs_client_color client_color = {0};
+		    gs_client_color client_color;
 
 		    /*
 	             * Create a copy of the color space and then modify it
 		     * to force the use of the alternate color space.
 	             */
+		    memset(&client_color, 0, sizeof(client_color));
 		    temp_cs.params.device_n.use_alt_cspace = true;
 		    client_color.paint.values[j] = 1.0;
 		    capture_spot_equivalent_cmyk_colors(pdev, pgs, &client_color,
@@ -200,7 +201,7 @@ update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
     }
 }
 
-bool check_all_colors_known(int num_spot,
+private bool check_all_colors_known(int num_spot,
 		equivalent_cmyk_color_params * pparams)
 {
     for (num_spot--; num_spot >= 0; num_spot--)
@@ -384,7 +385,7 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     const gs_client_color * pcc, const gs_color_space * pcs,
     int sep_num, equivalent_cmyk_color_params * pparams)
 {
-    gs_imager_state temp_state = *((gs_imager_state *)pgs);
+    gs_imager_state temp_state = *((const gs_imager_state *)pgs);
     color_capture_device temp_device = { 0 };
     gx_device_color dev_color;
 

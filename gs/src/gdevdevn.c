@@ -114,7 +114,7 @@ typedef struct spotcmyk_device_s {
 	spotcmyk_decode_color		/* decode_color */\
 }
 
-const fixed_colorant_names_list DeviceCMYKComponents = {
+fixed_colorant_name DeviceCMYKComponents[] = {
 	"Cyan",
 	"Magenta",
 	"Yellow",
@@ -144,7 +144,7 @@ const spotcmyk_device gs_spotcmyk_device =
 
     /* DeviceN device specific parameters */
     { 1,			/* Bits per color - must match ncomp, depth, etc. above */
-      &DeviceCMYKComponents,	/* Names of color model colorants */
+      DeviceCMYKComponents,	/* Names of color model colorants */
       4,			/* Number colorants for CMYK */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
@@ -537,11 +537,10 @@ devicen_get_params(gx_device * pdev, gs_param_list * plist)
  * color component names.
  */
 private bool
-check_process_color_names(const fixed_colorant_names_list * pcomp_list,
+check_process_color_names(fixed_colorant_names_list plist,
 			  const gs_param_string * pstring)
 {
-    if (pcomp_list) {
-        const fixed_colorant_name * plist = *pcomp_list;
+    if (plist) {
         uint size = pstring->size;
     
 	while( *plist) {
@@ -649,7 +648,7 @@ devicen_put_params_no_sep_order(gx_device * pdev, gs_devn_params * pparams,
         if (scna.data != 0) {
 	    int i;
 	    int num_names = scna.size;
-	    const fixed_colorant_names_list * pcomp_names = 
+	    fixed_colorant_names_list pcomp_names = 
 	        pparams->std_colorant_names;
 
 	    for (i = num_spot = 0; i < num_names; i++) {
@@ -825,8 +824,7 @@ check_pcm_and_separation_names(const gx_device * dev,
 		const gs_devn_params * pparams, const char * pname,
 		int name_size, int component_type)
 {
-    fixed_colorant_names_list * list = pparams->std_colorant_names;
-    fixed_colorant_name * pcolor = *list;
+    fixed_colorant_name * pcolor = pparams->std_colorant_names;
     int color_component_number = 0;
     int i;
 
