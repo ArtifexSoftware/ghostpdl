@@ -326,6 +326,7 @@ gx_dc_ht_binary_load_cache(const gx_device_color * pdevc)
 	if (code < 0)
 	    return_error(gs_error_Fatal);
     }
+    ((gx_device_color *)pdevc)->colors.binary.b_tile = bt;
     return 0;
 }
 
