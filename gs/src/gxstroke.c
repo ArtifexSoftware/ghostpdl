@@ -524,10 +524,10 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		if ((udx | udy) == 0) {
 		    if (is_fzero(pgs_lp->dot_orientation.xy)) {
 			/* Portrait orientation, dot length = X */
-			udy = fixed_1;
+			udx = fixed_1;
 		    } else {
 			/* Landscape orientation, dot length = Y */
-			udx = fixed_1;
+			udy = fixed_1;
 		    }
 		}
 		{
