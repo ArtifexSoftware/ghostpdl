@@ -1828,7 +1828,7 @@ $(PSOBJ)fapiufst.$(OBJ) : $(PSSRC)fapiufst.c $(AK)\
  $(UFST_ROOT)$(D)rts$(D)psi$(D)t1isfnt.h\
  $(UFST_ROOT)$(D)rts$(D)tt$(D)sfntenum.h\
  $(UFST_ROOT)$(D)rts$(D)tt$(D)ttpcleo.h
-	$(PSCC) $(UFST_CFLAG) $(UFST_INC) $(PSO_)fapiufst.$(OBJ) $(C_) $(PSSRC)fapiufst.c
+	$(PSCC) $(UFST_CFLAGS) $(UFST_INC) $(PSO_)fapiufst.$(OBJ) $(C_) $(PSSRC)fapiufst.c
 
 # stub for UFST bridge :
 

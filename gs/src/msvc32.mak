@@ -525,7 +525,7 @@ DEVICE_DEVS21= $(DD)spotrgb.dev $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.
 !endif
 
 # FAPI compilation options :
-UFST_CFLAG=-DMSVC
+UFST_CFLAGS=-DMSVC
 
 # ---------------------------- End of options ---------------------------- #
 

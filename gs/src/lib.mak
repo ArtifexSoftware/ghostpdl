@@ -2443,7 +2443,7 @@ $(GLOBJ)gxfapi.$(OBJ) : $(GLSRC)gxfapi.c \
  $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
  $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
  $(UFST_ROOT)$(D)sys$(D)inc$(D)port.h
-	$(GLCC) $(UFST_CFLAG) $(UFST_INC_) $(GLO_)gxfapi.$(OBJ) $(C_) $(GLSRC)gxfapi.c
+	$(GLCC) $(UFST_CFLAGS) $(UFST_INC_) $(GLO_)gxfapi.$(OBJ) $(C_) $(GLSRC)gxfapi.c
 
 
 # stub for UFST bridge support	:
