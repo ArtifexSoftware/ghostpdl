@@ -561,7 +561,8 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	long page_id = pdf_page_id(pdev, pdev->next_page + 1);
 
 	sprintf(dstr, "[%ld 0 R /XYZ null null null]", page_id);
-	cos_dict_put_c_key_string(pcd, "/Dest", dstr, strlen(dstr));
+	cos_dict_put_c_key_string(pcd, "/Dest", (const unsigned char*) dstr,
+				  strlen(dstr));
     }
     if (File)
 	pdfmark_put_pair(pcd, File);
