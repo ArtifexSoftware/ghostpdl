@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run this to set up the build system: configure, makefiles, etc.
 
-# $Id: autogen.sh,v 1.5 2003/03/04 16:52:48 giles Exp $
+# $Id$
 
 package="jbig2dec"
 AUTOMAKE_FLAGS="$AUTOMAKE_FLAGS"
@@ -11,6 +11,7 @@ test -z "$srcdir" && srcdir=.
 
 cd "$srcdir"
 
+echo "checking for autoconf... "
 (autoconf --version) < /dev/null > /dev/null 2>&1 || {
         echo
         echo "You must have autoconf installed to compile $package."
@@ -25,7 +26,7 @@ VERSIONGREP="sed -e s/.*[^0-9\.]\([0-9]\.[0-9]\).*/\1/"
 if test -r Makefile.am; then
   AM_NEEDED=`fgrep AUTOMAKE_OPTIONS Makefile.am | $VERSIONGREP`
   if test -z $AM_NEEDED; then
-    echo -n "checking for automake..."
+    echo -n "checking for automake... "
     AUTOMAKE=automake
     ACLOCAL=aclocal
     if ($AUTOMAKE --version < /dev/null > /dev/null 2>&1); then
@@ -35,7 +36,7 @@ if test -r Makefile.am; then
       echo "yes"
     fi
   else
-    echo -n "checking for automake $AM_NEEDED or later..."
+    echo -n "checking for automake $AM_NEEDED or later... "
     for am in automake-$AM_NEEDED automake$AM_NEEDED automake; do
       ($am --version < /dev/null > /dev/null 2>&1) || continue
       ver=`$am --version < /dev/null | head -1 | $VERSIONGREP`
@@ -46,7 +47,7 @@ if test -r Makefile.am; then
       fi
     done
     test -z $AUTOMAKE &&  echo "no"
-    echo -n "checking for aclocal $AM_NEEDED or later..."
+    echo -n "checking for aclocal $AM_NEEDED or later... "
     for ac in aclocal-$AM_NEEDED aclocal$AM_NEEDED aclocal; do
       ($ac --version < /dev/null > /dev/null 2>&1) || continue
       ver=`$ac --version < /dev/null | head -1 | $VERSIONGREP`
@@ -101,8 +102,8 @@ EOF
     
 echo "  $AUTOMAKE --add-missing $AUTOMAKE_FLAGS"
 $AUTOMAKE --add-missing $AUTOMAKE_FLAGS 
-echo "  running autoconf"
 
+echo "  autoconf"
 autoconf
 
 if test -z "$*"; then
