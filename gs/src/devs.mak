@@ -240,6 +240,8 @@ gdevpccm_h=$(GLSRC)gdevpccm.h
 gdevpcfb_h=$(GLSRC)gdevpcfb.h $(dos__h)
 gdevpcl_h=$(GLSRC)gdevpcl.h
 gdevsvga_h=$(GLSRC)gdevsvga.h
+# Out of order
+gdevdljm_h=$(GLSRC)gdevdljm.h $(gdevpcl_h)
 
 ###### ----------------------- Device support ----------------------- ######
 
@@ -497,12 +499,16 @@ $(GLOBJ)gdevxalt.$(OBJ) : $(GLSRC)gdevxalt.c $(GDEVX) $(math__h) $(memory__h)\
 ### Peter Schildmann (peter.schildmann@etechnik.uni-rostock.de).          ###
 
 HPPCL=$(GLOBJ)gdevpcl.$(OBJ)
-HPMONO=$(GLOBJ)gdevdjet.$(OBJ) $(HPPCL)
+HPDLJM=$(GLOBJ)gdevdljm.$(OBJ) $(HPPCL)
+HPMONO=$(GLOBJ)gdevdjet.$(OBJ) $(HPDLJM)
 
 $(GLOBJ)gdevpcl.$(OBJ) : $(GLSRC)gdevpcl.c $(PDEVH) $(gdevpcl_h)
 	$(GLCC) $(GLO_)gdevpcl.$(OBJ) $(C_) $(GLSRC)gdevpcl.c
 
-$(GLOBJ)gdevdjet.$(OBJ) : $(GLSRC)gdevdjet.c $(PDEVH) $(gdevpcl_h)
+$(GLOBJ)gdevdljm.$(OBJ) : $(GLSRC)gdevdljm.c $(PDEVH) $(gdevdljm_h)
+	$(GLCC) $(GLO_)gdevdljm.$(OBJ) $(C_) $(GLSRC)gdevdljm.c
+
+$(GLOBJ)gdevdjet.$(OBJ) : $(GLSRC)gdevdjet.c $(PDEVH) $(gdevdljm_h)
 	$(GLCC) $(GLO_)gdevdjet.$(OBJ) $(C_) $(GLSRC)gdevdjet.c
 
 $(DD)deskjet.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
