@@ -436,11 +436,17 @@ bind def
 } bind def
 currentdict /.pdf_hook_DSC_Creator undef
 /.initialize_dsc_parser where {
-  pop 2 dict dup .initialize_dsc_parser readonly
-  currentuserparams /ProcessDSCComment get
-  1 array astore	% in case the value is executable
-  //.pdfdsc /exec load 4 array astore cvx readonly
-  << /ProcessDSCComment 3 -1 roll >> setuserparams
+  pop
+  3000 % priority 
+  {
+    currentglobal true setglobal
+    2 dict dup .initialize_dsc_parser readonly
+    currentuserparams /ProcessDSCComment get
+    1 array astore	% in case the value is executable
+    //.pdfdsc /exec load 4 array astore cvx readonly
+    << /ProcessDSCComment 3 -1 roll >> setuserparams
+    setglobal
+  } bind .schedule_init
 } if
 
 % ---------------- {set,current}distillerparams ---------------- %
