@@ -287,7 +287,7 @@ archive: zip $(PSOBJ)gswin16.ico $(ECHOGS_XE)
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -t -s $(PSOBJ)dialog.txt
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -c -s $(SETUP_XE_NAME)
 	$(ECHOGS_XE) -w $(PSOBJ)about.txt "AFPL Ghostscript is Copyright " -x A9 " 2004 artofcode LLC."
-	$(ECHOGS_XE) -a $(PSOBJ)about.txt See license in gs$(GS_DOT_VERSION)\doc\PUBLIC.
+	$(ECHOGS_XE) -a $(PSOBJ)about.txt See license in gs$(GS_DOT_VERSION)\doc\Public.htm.
 	$(ECHOGS_XE) -a $(PSOBJ)about.txt See gs$(GS_DOT_VERSION)\doc\Commprod.htm regarding commercial distribution.
 	$(ECHOGS_XE) -w $(PSOBJ)dialog.txt This installs AFPL Ghostscript $(GS_DOT_VERSION).
 	$(ECHOGS_XE) -a $(PSOBJ)dialog.txt AFPL Ghostscript displays, prints and converts PostScript and PDF files.
