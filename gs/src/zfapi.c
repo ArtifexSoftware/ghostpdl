@@ -40,6 +40,7 @@
 #include "ichar.h"
 #include "idict.h"
 #include "iddict.h"
+#include "idparam.h"
 #include "iname.h"
 #include "ifont.h"
 #include "igstate.h"
@@ -372,7 +373,7 @@ private ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int ind
         case FAPI_FONT_FEATURE_IsFixedPitch: return 0; /* wrong */
         case FAPI_FONT_FEATURE_UnderLinePosition: return 0; /* wrong */
         case FAPI_FONT_FEATURE_UnderlineThickness: return 0; /* wrong */
-        case FAPI_FONT_FEATURE_FontType: return pfont->FontType;
+        case FAPI_FONT_FEATURE_FontType: return (pfont->FontType == 2 ? 2 : 1);
         case FAPI_FONT_FEATURE_FontBBox: 
             switch (index) {
                 case 0 : return (ushort)pfont->FontBBox.p.x;
@@ -401,12 +402,19 @@ private ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int ind
         case FAPI_FONT_FEATURE_LanguageGroup: return pfont->data.LanguageGroup;
         case FAPI_FONT_FEATURE_lenIV: return (ff->need_decrypt ? 0 : pfont->data.lenIV);
         case FAPI_FONT_FEATURE_Subrs_count: 
-            {   ref *Private, *Subrs;
+            {   ref *Private, *Subrs, *GlobalSubrs;
+                int n1, n2;
                 if (dict_find_string(pdr, "Private", &Private) <= 0)
                     return 0;
                 if (dict_find_string(Private, "Subrs", &Subrs) <= 0)
-                    return 0;
-                return r_size(Subrs);
+                    Subrs = NULL;
+                if (dict_find_string(Private, "GlobalSubrs", &GlobalSubrs) <= 0)
+                    GlobalSubrs = NULL;
+                n1 = (Subrs != NULL ? r_size(Subrs) : 0);
+                n2 = (GlobalSubrs != NULL ? r_size(GlobalSubrs) : 0);
+                /* trick : we return twice maximum of n1, n2 to pass both Subrs and GlobalSubrs in same array.
+                */
+                return (n1 < n2 ? n2 : n1) * 2;
             }
             return 0;
     }
@@ -421,16 +429,18 @@ private ulong FAPI_FF_get_long(FAPI_font *ff, fapi_font_feature var_id, int inde
         case FAPI_FONT_FEATURE_BlueScale: return (ulong)(pfont->data.BlueScale * 65536); 
         case FAPI_FONT_FEATURE_Subrs_total_size :
             {   ref *Private, *Subrs, v;
-                int lenIV = max(pfont->data.lenIV, 0);
+                int lenIV = max(pfont->data.lenIV, 0), k;
                 ulong size = 0;
-                long i = 0;
+                long i;
+                char *name[2] = {"Subrs", "GlobalSubrs"};
                 if (dict_find_string(pdr, "Private", &Private) <= 0)
                     return 0;
-                if (dict_find_string(Private, "Subrs", &Subrs) <= 0)
-                    return 0;
-                for (i = r_size(Subrs) - 1; i >= 0; i--) {
-                    array_get(Subrs, i, &v);
-                    size += r_size(&v) - (ff->need_decrypt ? 0 : lenIV);
+                for (k = 0; k < 2; k++) {
+                    if (dict_find_string(Private, name[k], &Subrs) > 0)
+                        for (i = r_size(Subrs) - 1; i >= 0; i--) {
+                            array_get(Subrs, i, &v);
+                            size += r_size(&v) - (ff->need_decrypt ? 0 : lenIV);
+                        }
                 }
                 return size;
             }
@@ -489,12 +499,26 @@ private ushort get_type1_data(FAPI_font *ff, ref *type1string, byte *buf, ushort
 
 private ushort FAPI_FF_get_subr(FAPI_font *ff, int index, byte *buf, ushort buf_length)
 {   ref *pdr = (ref *)ff->client_font_data2;
-    ref *Private, *Subrs, subr;
+    ref *Private, *Subrs, *GlobalSubrs, subr;
+    int n1, n2, n;
     if (dict_find_string(pdr, "Private", &Private) <= 0)
         return 0;
     if (dict_find_string(Private, "Subrs", &Subrs) <= 0)
-        return 0;
-    if (array_get(Subrs, index, &subr) < 0)
+        Subrs = NULL;
+    if (dict_find_string(Private, "GlobalSubrs", &GlobalSubrs) <= 0)
+        GlobalSubrs = NULL;
+    n1 = (Subrs != NULL ? r_size(Subrs) : 0);
+    n2 = (GlobalSubrs != NULL ? r_size(GlobalSubrs) : 0);
+    /* trick : we use the maximum of n1, n2 to pass both Subrs and GlobalSubrs in same array.
+    */
+    n = (n1 < n2 ? n2 : n1);
+    if (index < n && Subrs != NULL) {
+        if (array_get(Subrs, index, &subr) < 0)
+            return 0;
+    } else if (index >= n && GlobalSubrs != NULL) {
+        if (array_get(GlobalSubrs, index - n, &subr) < 0)
+            return 0;
+    } else
         return 0;
     return get_type1_data(ff, &subr, buf, buf_length);
 }
@@ -720,8 +744,6 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
         ff.is_type1 = true;
         for (i = 0; i < n; i++) {
             gs_font_type1 *pbfont1 = FDArray[i];
-            if (pbfont1->FontType != ft_encrypted && pbfont1->FontType != ft_TrueType)
-                return_error(e_invalidfont); /* fixme : this can be FontType 2 */
             pbfont1->FontBBox = pbfont->FontBBox; /* Inherit FontBBox from the type 9 font. */
             if(array_get(rFDArray, i, &f) < 0 || r_type(&f) != t_dictionary)
                 return_error(e_invalidfont);
@@ -870,6 +892,10 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
 {   gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_show_enum *penum_s = (gs_show_enum *)penum;
     gs_state *pgs = penum_s->pgs;
+    /*  fixme: PDF reader sometimes sets pdf14 device,
+        which uses pdf14_text_enum instead gs_show_enum.
+        In this case this code crashes with access violation accessing penum_s->pgs.
+    */
     gx_device *dev1 = gs_currentdevice_inline(pgs); /* Possibly changed by zchar_set_cache. */
     gx_device *dev = penum_s->dev;
     const int import_shift_v = _fixed_shift - I->frac_shift;
@@ -1145,8 +1171,18 @@ retry_oversampling:
     code = zchar_get_metrics(pbfont, &char_name, sbw);
     CheckRET(code);
     if (code == metricsNone) {
-        sbw[2] = metrics.escapement / em_scale_x;
-        sbw[3] = 0;
+        if (pbfont->FontType == 2 && font_file_path == NULL) {
+            ref *nominalWidthX, *Private;
+            float v;
+            if (dict_find_string(osp - 1, "Private", &Private) <= 0 || !r_has_type(Private, t_dictionary))
+                return_error(e_invalidfont);
+            CheckRET(dict_float_param(Private, "nominalWidthX", 0, &v));
+            sbw[2] = metrics.escapement / em_scale_x + (int)v;
+            sbw[3] = 0;
+        } else {
+            sbw[2] = metrics.escapement / em_scale_x;
+            sbw[3] = 0;
+        }
     } else {
 	CheckRET(zchar_get_metrics(pbfont, op, sbw));
     }

@@ -374,7 +374,7 @@ private void pack_pseo_word_array(fapi_ufst_server *r, FAPI_font *ff, UB8 **p, U
 }
 
 private void pack_pseo_fhdr(fapi_ufst_server *r, FAPI_font *ff, UB8 *p)
-{   ushort j, n;
+{   ushort j, n, skip = 0;
     while ((UL32)p & 0x03) /* align to QUADWORD */
 	PACK_ZERO(p);
     pack_long(&p, 1);  /* format = 1 */
@@ -421,8 +421,11 @@ private void pack_pseo_fhdr(fapi_ufst_server *r, FAPI_font *ff, UB8 *p)
             PACK_BYTE(p, 1); /* is_decrypted */
             ff->get_subr(ff, j, p, subr_len);
             p += subr_len;
-        }
+        } else
+            skip = 1;
     }
+    if (skip)
+        pack_word(&p, 0xFFFF);
 }
 
 private void enumerate_fco(fapi_ufst_server *r, const char *font_file_path)
@@ -506,7 +509,7 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
             int subrs_count  = ff->get_word(ff, FAPI_FONT_FEATURE_Subrs_count, 0);
             int subrs_length = ff->get_long(ff, FAPI_FONT_FEATURE_Subrs_total_size, 0);
             int lenIV = ff->get_long(ff, FAPI_FONT_FEATURE_lenIV, 0);
-            int subrs_area_size = subrs_count * (5 - (lenIV == 0xFFFF ? 0 : lenIV)) + subrs_length;
+            int subrs_area_size = subrs_count * 5 + subrs_length + 2;
             area_length += 360 + subrs_area_size; /* some inprecise - see pack_pseo_fhdr */
         } else {
             tt_size  = ff->get_long(ff, FAPI_FONT_FEATURE_TT_size, 0);
