@@ -455,7 +455,10 @@ pdf_close_contents(gx_device_pdf * pdev, bool last)
     if (pdev->context == PDF_IN_NONE)
 	return 0;
     if (last) {			/* Exit from the clipping path gsave. */
-	pdf_open_contents(pdev, PDF_IN_STREAM);
+	int code = pdf_open_contents(pdev, PDF_IN_STREAM);
+
+	if (code < 0)
+	    return code;
 	stream_puts(pdev->strm, "Q\n");	/* See none_to_stream. */
 	pdf_close_text_contents(pdev);
     }

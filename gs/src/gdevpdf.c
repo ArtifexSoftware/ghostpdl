@@ -907,6 +907,12 @@ pdf_close_page(gx_device_pdf * pdev)
      */
 
     pdf_open_document(pdev);
+    if (PS2WRITE && pdev->OrderResources && pdev->context == PDF_IN_NONE) {
+	/* Must create a context stream for empty pages. */
+	code = pdf_open_contents(pdev, PDF_IN_STREAM);
+	if (code < 0)
+	    return code;
+    }
     pdf_close_contents(pdev, true);
 
     /*
