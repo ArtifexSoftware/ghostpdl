@@ -588,7 +588,7 @@ copied_char_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph)
 
     if (Encoding == 0)
 	return_error(gs_error_invalidaccess);
-    if (chr < 0 || chr >= 256 || glyph >= GS_MIN_CID_GLYPH)
+    if (chr >= 256 || glyph >= GS_MIN_CID_GLYPH)
 	return_error(gs_error_rangecheck);
     code = copied_glyph_slot(cfdata, glyph, &pslot);
     if (code < 0)
@@ -624,7 +624,7 @@ copied_encode_char(gs_font *copied, gs_char chr, gs_glyph_space_t glyph_space)
     gs_copied_font_data_t *const cfdata = cf_data(copied);
     const gs_glyph *Encoding = cfdata->Encoding;
 
-    if (chr < 0 || chr >= 256 || Encoding == 0)
+    if (chr >= 256 || Encoding == 0)
 	return GS_NO_GLYPH;
     return Encoding[chr];
 }
@@ -671,7 +671,7 @@ copied_build_char(gs_text_enum_t *pte, gs_state *pgs, gs_font *font,
     int wmode = font->WMode;
     int code;
     gs_glyph_info_t info;
-    double wxy[2];
+    double wxy[6];
 
     if (glyph == GS_NO_GLYPH) {
 	glyph = font->procs.encode_char(font, chr, GLYPH_SPACE_INDEX);
@@ -1311,7 +1311,7 @@ copied_type42_encode_char(gs_font *copied, gs_char chr,
     const gs_glyph *Encoding = cfdata->Encoding;
     gs_glyph glyph;
 
-    if (chr < 0 || chr >= 256 || Encoding == 0)
+    if (chr >= 256 || Encoding == 0)
 	return GS_NO_GLYPH;
     glyph = Encoding[chr];
     if (glyph_space == GLYPH_SPACE_INDEX) {
