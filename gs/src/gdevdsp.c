@@ -142,13 +142,28 @@ public_st_device_display();
 
 private 
 ENUM_PTRS_WITH(display_enum_ptrs, gx_device_display *ddev) return 0;
-    case 0: return ENUM_OBJ(gx_device_enum_ptr((gx_device *)ddev->mdev));
+    case 0: 
+	if (ddev->mdev) {
+	    return ENUM_OBJ(gx_device_enum_ptr((gx_device *)ddev->mdev));
+	}
+	return 0;	/* if mdev is NULL, then pBitmap will be also */
+    case 1: 
+        if (ddev->callback && 
+	    !ddev->callback->display_memalloc && 
+	    !ddev->callback->display_memfree &&
+	    ddev->pBitmap) {
+	    /* we allocated the bitmap */
+	    return ENUM_OBJ(ddev->pBitmap);
+	}
+	return 0;
 ENUM_PTRS_END
 
 private 
 RELOC_PTRS_WITH(display_reloc_ptrs, gx_device_display *ddev)
-    ddev->mdev = (gx_device_memory *)
-	gx_device_reloc_ptr((gx_device *)ddev->mdev, gcst);
+    if (ddev->mdev) {
+	ddev->mdev = (gx_device_memory *)
+	    gx_device_reloc_ptr((gx_device *)ddev->mdev, gcst);
+    }
 RELOC_PTRS_END
 
 
@@ -853,11 +868,8 @@ display_free_bitmap(gx_device_display * ddev)
 	    ddev->mdev->base = NULL;
     }
     if (ddev->mdev) {
-	/* don't use ddev->mdev->is_open because it is always false */
-        /* if (ddev->mdev->is_open) */
 	dev_proc(ddev->mdev, close_device)((gx_device *)ddev->mdev);
-	gs_free_object(gs_memory_stable(ddev->memory), 
-	    ddev->mdev, "display_free_bitmap");
+        gx_device_retain(ddev->mdev, false);
 	ddev->mdev = NULL;
     }
 }
@@ -878,15 +890,20 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     mdproto = gdev_mem_device_for_bits(ddev->color_info.depth);
     if (mdproto == 0)
 	return_error(gs_error_rangecheck);
-    ddev->mdev = gs_alloc_struct(gs_memory_stable(ddev->memory), 
-	gx_device_memory, &st_device_memory, "display_mem_device");
-    if (ddev->mdev == 0)
-	return_error(gs_error_VMerror);
-
-    /* make a new memory device with new settings */
-    gs_make_mem_device(ddev->mdev, 
-	gdev_mem_device_for_bits(ddev->color_info.depth), 
-	gs_memory_stable(ddev->memory), 0, (gx_device *) ddev);
+    
+    ccode = gs_copydevice((gx_device **)&(ddev->mdev),
+			     (const gx_device *)mdproto,
+			     gs_memory_stable(ddev->memory));
+    if (ccode < 0)
+	return ccode;
+    gs_make_mem_device(ddev->mdev, mdproto, gs_memory_stable(ddev->memory), 
+	0, (gx_device *) NULL);
+    gx_device_fill_in_procs((gx_device *)(ddev->mdev));
+    /* Mark the memory device as retained.  When the bitmap is closed,
+     * we will clear this and the memory device will be then be freed.
+     */
+    gx_device_retain(ddev->mdev, true);
+    
     ddev->mdev->width = param_dev->width;
     ddev->mdev->height = param_dev->height;
     ddev->ulBitmapSize = gdev_mem_bitmap_size(ddev->mdev);

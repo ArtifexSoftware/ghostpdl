@@ -39,8 +39,9 @@ struct gx_device_display_s {
 
 extern_st(st_device_display);
 #define public_st_device_display()	/* in gdevdsp.c */\
-  gs_public_st_composite(st_device_display, gx_device_display,\
-    "gx_device_display", display_enum_ptrs, display_reloc_ptrs)
+  gs_public_st_composite_use_final(st_device_display, gx_device_display,\
+    "gx_device_display", display_enum_ptrs, display_reloc_ptrs,\
+    gx_device_finalize)
 
 
 #endif
