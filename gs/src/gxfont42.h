@@ -86,6 +86,9 @@ int gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
 			  float psbw[4]);
 int gs_type42_wmode_metrics(gs_font_type42 * pfont, uint glyph_index,
 			    int wmode, float psbw[4]);
+/* Export the default get_metrics procedure. */
+int gs_type42_default_get_metrics(gs_font_type42 *pfont, uint glyph_index,
+				  int wmode, float sbw[4]);
 
 /* Export the font procedures so they can be called from the interpreter. */
 font_proc_enumerate_glyph(gs_type42_enumerate_glyph);

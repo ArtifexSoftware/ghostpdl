@@ -41,8 +41,6 @@ private int append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 private uint default_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph);
 private int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
 				gs_glyph_data_t *pgd);
-private int default_get_metrics(gs_font_type42 *pfont, uint glyph_index,
-				int wmode, float sbw[4]);
 
 /* Set up a pointer to a substring of the font data. */
 /* Free variables: pfont, string_proc. */
@@ -156,7 +154,7 @@ gs_type42_font_init(gs_font_type42 * pfont)
     }
     pfont->data.get_glyph_index = default_get_glyph_index;
     pfont->data.get_outline = default_get_outline;
-    pfont->data.get_metrics = default_get_metrics;
+    pfont->data.get_metrics = gs_type42_default_get_metrics;
     pfont->procs.glyph_outline = gs_type42_glyph_outline;
     pfont->procs.glyph_info = gs_type42_glyph_info;
     pfont->procs.enumerate_glyph = gs_type42_enumerate_glyph;
@@ -517,9 +515,9 @@ simple_glyph_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 }
 
 /* Get the metrics of a glyph. */
-private int
-default_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
-		    float sbw[4])
+int
+gs_type42_default_get_metrics(gs_font_type42 * pfont, uint glyph_index,
+			      int wmode, float sbw[4])
 {
     gs_glyph_data_t glyph_data;
     int code = pfont->data.get_outline(pfont, glyph_index, &glyph_data);
@@ -547,7 +545,7 @@ default_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
     }
     result = simple_glyph_metrics(pfont, glyph_index, wmode, sbw);
  done:
-    gs_glyph_data_free(&glyph_data, "default_get_metrics");
+    gs_glyph_data_free(&glyph_data, "gs_type42_default_get_metrics");
     return result;
 }
 int
