@@ -92,7 +92,7 @@ int pdf_from_string_to_text(gx_device_pdf *pdev);
  */
 void pdf_close_text_contents(gx_device_pdf *pdev); /* gdevpdts.h */
 
-/* Used only within the text code */
+/* ------ Used only within the text code ------ */
 
 /*
  * Test whether a change in render_mode requires resetting the stroke

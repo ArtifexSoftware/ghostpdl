@@ -276,9 +276,7 @@ pdf_reset_text_state(pdf_text_data_t *ptd)
 {
     pdf_text_state_t *pts = ptd->text_state;
 
-    pts->in = ts_default.in;
     pts->out = ts_default.out;
-    pts->members = 0;
 }
 
 /*
@@ -299,8 +297,8 @@ pdf_from_stream_to_text(gx_device_pdf *pdev)
 /*
  * Transition from string context to text context.
  */
-int
-pdf_from_string_to_text(gx_device_pdf *pdev)
+private int
+sync_text_state(gx_device_pdf *pdev)
 {
     pdf_text_state_t *pts = pdev->text->text_state;
     int count_chars = pts->buffer.count_chars;
@@ -341,8 +339,7 @@ pdf_from_string_to_text(gx_device_pdf *pdev)
 		pts->wmode =
 		    (pdfont->FontType == ft_composite ?
 		     pdfont->u.type0.WMode : 0);
-		((pdf_resource_t *)pts->out.pdfont)->where_used |=
-		    pdev->used_mask;
+		((pdf_resource_t *)pdfont)->where_used |= pdev->used_mask;
 	    }
 	    pts->members -= TEXT_STATE_SET_FONT_AND_SIZE;
 	}
@@ -395,6 +392,11 @@ pdf_from_string_to_text(gx_device_pdf *pdev)
     pts->buffer.count_moves = 0;
     return 0;
 }
+int
+pdf_from_string_to_text(gx_device_pdf *pdev)
+{
+    return sync_text_state(pdev);
+}
 
 /*
  * Close the text aspect of the current contents part.
@@ -433,6 +435,26 @@ pdf_set_text_state_values(gx_device_pdf *pdev,
 			  const pdf_text_state_values_t *ptsv, int members)
 {
     pdf_text_state_t *pts = pdev->text->text_state;
+    int skip = 0;
+
+    if (pts->in.character_spacing == ptsv->character_spacing)
+	skip |= TEXT_STATE_SET_CHARACTER_SPACING;
+    if (pts->in.pdfont == ptsv->pdfont && pts->in.size == ptsv->size)
+	skip |= TEXT_STATE_SET_FONT_AND_SIZE;
+    if (!memcmp(&pts->in.matrix, &ptsv->matrix, sizeof(gs_matrix)))
+	skip |= TEXT_STATE_SET_MATRIX;
+    if (pts->in.render_mode == ptsv->render_mode)
+	skip |= TEXT_STATE_SET_RENDER_MODE;
+    if (pts->in.word_spacing == ptsv->word_spacing)
+	skip |= TEXT_STATE_SET_WORD_SPACING;
+    members &= ~(skip & pts->members);
+
+    if (pts->buffer.count_chars > 0 && (members & pts->members) != 0) {
+	int code = sync_text_state(pdev);
+
+	if (code < 0)
+	    return code;
+    }
 
     if (members & TEXT_STATE_SET_CHARACTER_SPACING)
 	pts->in.character_spacing = ptsv->character_spacing;
@@ -444,6 +466,7 @@ pdf_set_text_state_values(gx_device_pdf *pdev,
 	pts->in.render_mode = ptsv->render_mode;
     if (members & TEXT_STATE_SET_WORD_SPACING)
 	pts->in.word_spacing = ptsv->word_spacing;
+
     pts->members |= members;
     return 0;
 }

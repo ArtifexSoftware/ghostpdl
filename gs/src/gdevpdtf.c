@@ -115,7 +115,8 @@ private const pdf_standard_font_info_t pdf_standard_font_info[] = {
  */
 private int
 font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-		    gs_id rid, font_type ftype, int chars_count,
+		    pdf_resource_type_t rtype, gs_id rid, font_type ftype,
+		    int chars_count,
 		    pdf_font_write_contents_proc_t write_contents)
 {
     gs_memory_t *mem = pdev->pdf_memory;
@@ -140,8 +141,7 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	}
 	memset(used, 0, size);
     }
-    code = pdf_alloc_resource(pdev, resourceFont, rid,
-			      (pdf_resource_t **)&pfres, 0L);
+    code = pdf_alloc_resource(pdev, rtype, rid, (pdf_resource_t **)&pfres, 0L);
     if (code < 0)
 	goto fail;
     memset((byte *)pfres + sizeof(pdf_resource_t), 0,
@@ -166,8 +166,8 @@ font_resource_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			   pdf_font_write_contents_proc_t write_contents)
 {
     pdf_font_resource_t *pfres;
-    int code = font_resource_alloc(pdev, &pfres, rid, ftype, chars_count,
-				   write_contents);
+    int code = font_resource_alloc(pdev, &pfres, resourceFont, rid, ftype,
+				   chars_count, write_contents);
 
     if (code < 0)
 	return code;
@@ -522,8 +522,8 @@ int
 pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 		     gs_id rid, pdf_font_resource_t *DescendantFont)
 {
-    int code = font_resource_alloc(pdev, ppfres, rid, ft_composite,
-				   0, pdf_write_contents_type0);
+    int code = font_resource_alloc(pdev, ppfres, resourceFont, rid,
+				   ft_composite, 0, pdf_write_contents_type0);
 
     if (code >= 0) {
 	(*ppfres)->u.type0.DescendantFont = DescendantFont;
@@ -550,8 +550,8 @@ int
 pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 		   gs_id rid, gs_font_base *pfont)
 {
-    int code = font_resource_alloc(pdev, ppfres, rid, pfont->FontType,
-				   0, pdf_write_contents_std);
+    int code = font_resource_alloc(pdev, ppfres, resourceFont, rid,
+				   pfont->FontType, 0, pdf_write_contents_std);
 
     if (code < 0)
 	return code;
@@ -630,7 +630,7 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     default:
 	return_error(gs_error_rangecheck);
     }
-    code = font_resource_alloc(pdev, &pdfont, rid, FontType,
+    code = font_resource_alloc(pdev, &pdfont, resourceCIDFont, rid, FontType,
 			       chars_count, write_contents);
     if (code < 0)
 	return code;
