@@ -233,8 +233,13 @@ bitmap:	    pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
 	        plfont->resolution.y = pl_get_uint16(pfhx->YResolution);
 #undef pfhx
 	      }
-	    else
-	      plfont->resolution.x = plfont->resolution.y = 300;
+	    /* note that we jump to the bitmap label for type 16 - so
+               called truetype large which can also be bitmap but its
+               resolution field is filled in when scanning the
+               segments (see pl_font_scan_segments() the resolution
+               does not show up in the font header. */
+	    else if ( pfh->HeaderFormat == pcfh_bitmap )
+		plfont->resolution.x = plfont->resolution.y = 300;
 	    { ulong pitch_1024th_dots =
 		((ulong)pl_get_uint16(pfh->Pitch) << 8) + pfh->PitchExtended;
 	      uint pitch_cp = (uint)
