@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id$
+# 
 # "Distill" PostScript.
 
 OPTIONS=""

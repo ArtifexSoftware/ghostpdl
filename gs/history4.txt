@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-$Id$
+
 This file, history4.txt, describes the changes in older releases of
 Ghostscript numbered 4.n.  For more recent changes, see the NEWS file.
 

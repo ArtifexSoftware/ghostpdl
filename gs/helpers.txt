@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-$Id$
+
 This file, helpers.txt, is a note of thanks to all the people who
 have helped in the development of Ghostscript.
 

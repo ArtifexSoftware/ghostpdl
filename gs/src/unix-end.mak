@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# $Id$
+# 
 # Partial makefile common to all Unix and Desqview/X configurations.
 # This is the next-to-last part of the makefile for these configurations.
 

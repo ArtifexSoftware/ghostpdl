@@ -1,7 +1,7 @@
 #!/usr/bin/perl
-# $Id$
+# 
 
-# $Id$
+# 
 
 #   (C) 1997 Anthony Shipman
 # 

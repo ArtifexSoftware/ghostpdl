@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# $Id$
+# 
 # makefile for Unix/gcc/X11 configuration.
 
 # ------------------------------- Options ------------------------------- #

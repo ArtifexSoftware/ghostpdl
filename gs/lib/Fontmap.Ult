@@ -17,7 +17,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
-% $Id$
+% 
 % Fontmap.Ult is derived from the standard Fontmap file distributed with
 % ghostscript; for credits and sources see that file.  The modifications here
 % are valid for ULTRIX 4.3, and consist of defining some fonts and font

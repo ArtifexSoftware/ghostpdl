@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-$Id$
+
 This file, make.txt, describes how to build Ghostscript executables from
 source.
 

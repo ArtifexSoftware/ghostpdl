@@ -17,7 +17,7 @@
  */
 
 
-// $Id$
+// 
 // Text Window class
 
 

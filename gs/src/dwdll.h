@@ -17,7 +17,7 @@
  */
 
 
-// $Id$
+// 
 
 // gsdll_class for MS-Windows
 

@@ -17,7 +17,7 @@
  */
 
 
-// $Id$
+// 
 
 class ImageWindow {
     static ImageWindow *first;

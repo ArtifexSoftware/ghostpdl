@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# $Id$
+# 
 # makefile for OpenVMS VAX and Alpha
 #
 # Please contact Jim Dunham (dunham@omtool.com) if you have questions.

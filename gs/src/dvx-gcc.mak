@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# $Id$
+# 
 # makefile for DesqView/X/gcc/X11 configuration.
 
 #include $(COMMONDIR)/gccdefs.mak

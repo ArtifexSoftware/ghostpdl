@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-$Id$
+
 This file, current.txt, describes problems and new features in the current
 release of Ghostscript.  This file describes version 5.31 of Ghostscript.
 

@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-$Id$
+
 This file, lib.txt, describes the Ghostscript library, a collection of C
 procedures that implement the primitive graphic operations of the
 Ghostscript language.

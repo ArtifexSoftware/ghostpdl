@@ -17,7 +17,7 @@
 */
 
 
-// $Id$
+// 
 
 
 // Microsoft Windows 3.n text window for Ghostscript.

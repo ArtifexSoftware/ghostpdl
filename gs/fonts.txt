@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-$Id$
+
 This file, fonts.txt, describes the fonts and font facilities supplied
 with Ghostscript.
 

@@ -17,7 +17,7 @@
 */
 
 
-// $Id$
+// 
 // Ghostscript DLL loader for Windows
 
 #define STRICT

@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# $Id$
+# 
 # watcw32.mak
 # makefile for Watcom C++ v??, Windows NT or Windows 95 platform.
 #   Does NOT build gs16spl.exe, which is 16-bit and is used under Win32s.

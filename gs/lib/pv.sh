@@ -1,5 +1,5 @@
 #!/bin/sh -f
-# $Id$
+# 
 #
 # pv - preview a specified page of a dvi file in a Ghostscript window
 # usage: pv page file

@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# $Id$
+# 
 # makefile for MS-DOS / Watcom C/C++ library testing.
 
 libdefault: $(GLOBJ)gslib.exe

@@ -1,2 +1,2 @@
-@rem $Id$
+@rem 
 @rename %1 %2

@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-$Id$
+
 This file, new-user.txt, provides background information for new users.
 
 For an overview of Ghostscript and a list of the documentation files, see

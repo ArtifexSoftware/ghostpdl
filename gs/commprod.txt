@@ -6,7 +6,7 @@ copyright notice and this permission notice appear in all copies.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-$Id$
+
 This file, commprod.txt, sets forth the conditions under which Ghostscript
 may be distributed in a commercial context: under a written license from
 Artifex Software Inc., Aladdin Enterprises' exclusive commercial licensing

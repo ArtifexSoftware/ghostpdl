@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-$Id$
+
 This file, ps2pdf.txt, contains some information about Ghostscript's
 PostScript to PDF converter.
 

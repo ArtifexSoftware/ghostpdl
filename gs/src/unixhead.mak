@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# $Id$
+# 
 # Partial makefile common to all Unix configurations.
 
 # This part of the makefile gets inserted after the compiler-specific part

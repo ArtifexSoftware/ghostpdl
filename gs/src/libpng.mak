@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# $Id$
+# 
 # makefile for PNG (Portable Network Graphics) code.
 # Users of this makefile must define the following:
 #	ZSRCDIR - the zlib source directory
