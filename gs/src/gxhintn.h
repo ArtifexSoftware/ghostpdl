@@ -151,30 +151,22 @@ int  t1_hinter__init(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox
 int  t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, 
 			bool charpath_flag, fixed origin_x, fixed origin_y);
 
-int  t1_hinter__sbw(t1_hinter * this, t1_glyph_space_coord sbx, t1_glyph_space_coord sby
-                                    , t1_glyph_space_coord wx,  t1_glyph_space_coord wy);
-int  t1_hinter__sbw_seac(t1_hinter * this, t1_glyph_space_coord sbx, t1_glyph_space_coord sby);
-int  t1_hinter__rmoveto(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space_coord yy);
-int  t1_hinter__rlineto(t1_hinter *, t1_glyph_space_coord xx, t1_glyph_space_coord yy);
-int  t1_hinter__rcurveto(t1_hinter * this, t1_glyph_space_coord xx0, t1_glyph_space_coord yy0
-                                         , t1_glyph_space_coord xx1, t1_glyph_space_coord yy1
-                                         , t1_glyph_space_coord xx2, t1_glyph_space_coord yy2);
-void t1_hinter__setcurrentpoint(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space_coord yy);
+int  t1_hinter__sbw(t1_hinter * this, fixed sbx, fixed sby, fixed wx,  fixed wy);
+int  t1_hinter__sbw_seac(t1_hinter * this, fixed sbx, fixed sby);
+int  t1_hinter__rmoveto(t1_hinter * this, fixed xx, fixed yy);
+int  t1_hinter__rlineto(t1_hinter *, fixed xx, fixed yy);
+int  t1_hinter__rcurveto(t1_hinter * this, fixed xx0, fixed yy0, fixed xx1, fixed yy1, fixed xx2, fixed yy2);
+void t1_hinter__setcurrentpoint(t1_hinter * this, fixed xx, fixed yy);
 int  t1_hinter__closepath(t1_hinter * this);
 
 int  t1_hinter__hint_mask(t1_hinter * this, byte *mask);
 int  t1_hinter__drop_hints(t1_hinter * this);
 int  t1_hinter__dotsection(t1_hinter * this);
-int  t1_hinter__hstem(t1_hinter * this, t1_glyph_space_coord x0, t1_glyph_space_coord x1);
-int  t1_hinter__vstem(t1_hinter * this, t1_glyph_space_coord y0, t1_glyph_space_coord y1);
-int  t1_hinter__hstem3(t1_hinter * this, t1_glyph_space_coord x0, t1_glyph_space_coord y1
-                                       , t1_glyph_space_coord x2, t1_glyph_space_coord y3
-                                       , t1_glyph_space_coord x4, t1_glyph_space_coord y5);
-int  t1_hinter__vstem3(t1_hinter * this, t1_glyph_space_coord y0, t1_glyph_space_coord y1
-                                       , t1_glyph_space_coord y2, t1_glyph_space_coord y3
-                                       , t1_glyph_space_coord y4, t1_glyph_space_coord y5);
+int  t1_hinter__hstem(t1_hinter * this, fixed x0, fixed x1);
+int  t1_hinter__vstem(t1_hinter * this, fixed y0, fixed y1);
+int  t1_hinter__hstem3(t1_hinter * this, fixed x0, fixed y1, fixed x2, fixed y3, fixed x4, fixed y5);
+int  t1_hinter__vstem3(t1_hinter * this, fixed y0, fixed y1, fixed y2, fixed y3, fixed y4, fixed y5);
 
-void t1_hinter__round_to_pixels(t1_hinter * this, t1_glyph_space_coord * gx, t1_glyph_space_coord * gy);
 int  t1_hinter__endchar(t1_hinter * this, bool seac_flag);
 int  t1_hinter__endglyph(t1_hinter * this, gs_op1_state * s);
 

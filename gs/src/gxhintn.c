@@ -565,7 +565,7 @@ int t1_hinter__init(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox,
     }
     {	/* Enable grid fitting setarately for axes : */
 	this->grid_fit_x = (any_abs(this->ctmf.xy) * 10 < any_abs(this->ctmf.xx)) ||
-			   (any_abs(this->ctmf.xx) * 10 < any_abs(this->ctmf.xy));
+			   (any_abs(this->ctmf.xx) * 10 < any_abs(this->ctmf.xy)); 
 	this->grid_fit_y = (any_abs(this->ctmf.yx) * 10 < any_abs(this->ctmf.yy)) ||
 			   (any_abs(this->ctmf.yy) * 10 < any_abs(this->ctmf.yx));
     }
@@ -732,26 +732,21 @@ private inline int t1_hinter__add_pole(t1_hinter * this, t1_glyph_space_coord xx
     return 0;
 }
 
-int t1_hinter__sbw(t1_hinter * this, t1_glyph_space_coord sbx, t1_glyph_space_coord sby
-                                   , t1_glyph_space_coord wx,  t1_glyph_space_coord wy)
-{   
-    t1_glyph_space_coord sbx1 = sbx, sby1 = sby;
-
-    /*t1_hinter__round_to_pixels(this, &sbx1, &sby1);*/
-    this->cx = this->orig_gx = this->subglyph_orig_gx = import_shift(sbx1, this->import_shift);
-    this->cy = this->orig_gy = this->subglyph_orig_gy = import_shift(sby1, this->import_shift);
+int t1_hinter__sbw(t1_hinter * this, fixed sbx, fixed sby, fixed wx,  fixed wy)
+{   this->cx = this->orig_gx = this->subglyph_orig_gx = import_shift(sbx, this->import_shift);
+    this->cy = this->orig_gy = this->subglyph_orig_gy = import_shift(sby, this->import_shift);
     this->width_gx = wx;
     this->width_gy = wy;
     return 0;
 }
 
-int t1_hinter__sbw_seac(t1_hinter * this, t1_glyph_space_coord sbx, t1_glyph_space_coord sby)
+int t1_hinter__sbw_seac(t1_hinter * this, fixed sbx, fixed sby)
 {   this->cx = this->subglyph_orig_gx = this->orig_gx + import_shift(sbx, this->import_shift);
     this->cy = this->subglyph_orig_gy = this->orig_gy + import_shift(sby, this->import_shift);
     return 0;
 }
 
-int t1_hinter__rmoveto(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space_coord yy)
+int t1_hinter__rmoveto(t1_hinter * this, fixed xx, fixed yy)
 {   int code;
 
     if (this->pole_count > 0 && this->pole[this->pole_count - 1].type == moveto)
@@ -781,7 +776,7 @@ private inline void t1_hinter__skip_degenerate_segnment(t1_hinter * this, int np
     this->pole_count -= npoles;
 }
 
-int t1_hinter__rlineto(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space_coord yy)
+int t1_hinter__rlineto(t1_hinter * this, fixed xx, fixed yy)
 {   int code = t1_hinter__add_pole(this, xx, yy, oncurve);
     
     if (code < 0)
@@ -791,9 +786,7 @@ int t1_hinter__rlineto(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space
     return 0;
 }
 
-int t1_hinter__rcurveto(t1_hinter * this, t1_glyph_space_coord xx0, t1_glyph_space_coord yy0
-                                            , t1_glyph_space_coord xx1, t1_glyph_space_coord yy1
-                                            , t1_glyph_space_coord xx2, t1_glyph_space_coord yy2)
+int t1_hinter__rcurveto(t1_hinter * this, fixed xx0, fixed yy0, fixed xx1, fixed yy1, fixed xx2, fixed yy2)
 {   int code;
 
     code = t1_hinter__add_pole(this, xx0, yy0, offcurve);
@@ -812,7 +805,7 @@ int t1_hinter__rcurveto(t1_hinter * this, t1_glyph_space_coord xx0, t1_glyph_spa
     return 0;
 }
 
-void t1_hinter__setcurrentpoint(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space_coord yy)
+void t1_hinter__setcurrentpoint(t1_hinter * this, fixed xx, fixed yy)
 {   this->cx += import_shift(xx, this->import_shift);
     this->cy += import_shift(yy, this->import_shift);
 }
@@ -955,17 +948,15 @@ int t1_hinter__dotsection(t1_hinter * this)
 }
 
 
-int t1_hinter__hstem(t1_hinter * this, t1_glyph_space_coord x0, t1_glyph_space_coord x1)
+int t1_hinter__hstem(t1_hinter * this, fixed x0, fixed x1)
 {   return t1_hinter__stem(this, hstem, 0, x0, x1);
 }
 
-int t1_hinter__vstem(t1_hinter * this, t1_glyph_space_coord y0, t1_glyph_space_coord y1)
+int t1_hinter__vstem(t1_hinter * this, fixed y0, fixed y1)
 {   return t1_hinter__stem(this, vstem, 0, y0, y1);
 }
 
-int t1_hinter__hstem3(t1_hinter * this, t1_glyph_space_coord x0, t1_glyph_space_coord x1
-                                      , t1_glyph_space_coord x2, t1_glyph_space_coord x3
-                                      , t1_glyph_space_coord x4, t1_glyph_space_coord x5)
+int t1_hinter__hstem3(t1_hinter * this, fixed x0, fixed x1, fixed x2, fixed x3, fixed x4, fixed x5)
 {   int code;
 
     code = t1_hinter__stem(this, hstem, 1, x0, x1);
@@ -977,9 +968,7 @@ int t1_hinter__hstem3(t1_hinter * this, t1_glyph_space_coord x0, t1_glyph_space_
     return t1_hinter__stem(this, hstem, 3, x4, x5);
 }
 
-int t1_hinter__vstem3(t1_hinter * this, t1_glyph_space_coord y0, t1_glyph_space_coord y1
-                                      , t1_glyph_space_coord y2, t1_glyph_space_coord y3
-                                      , t1_glyph_space_coord y4, t1_glyph_space_coord y5)
+int t1_hinter__vstem3(t1_hinter * this, fixed y0, fixed y1, fixed y2, fixed y3, fixed y4, fixed y5)
 {   int code;
 
     code = t1_hinter__stem(this, vstem, 1, y0, y1);
@@ -1251,10 +1240,6 @@ private void t1_hinter__align_to_grid(t1_hinter * this, long div, t1_glyph_space
 		*y = (*y + 7) & ~15;
         }
     }
-}
-
-void t1_hinter__round_to_pixels(t1_hinter * this, t1_glyph_space_coord * gx, t1_glyph_space_coord * gy)
-{   t1_hinter__align_to_grid(this, this->g2o_fraction, gx, gy);
 }
 
 private inline t1_hinter_space_coord g2o_dist_blue(t1_hinter * h, t1_glyph_space_coord gw)
