@@ -86,8 +86,10 @@ typedef struct px_bitmap_enum_s {
     uint data_per_row;		 /* ditto minus possible trailing padding */
     bool initialized;
     stream_RLD_state rld_stream_state;	/* decompressor states */
+#ifdef PXL2_0
     stream_DCT_state dct_stream_state;
     jpeg_decompress_data jdd;
+#endif
 } px_bitmap_enum_t;
 
 /* Define our image enumerator. */
