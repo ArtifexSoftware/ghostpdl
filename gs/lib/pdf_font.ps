@@ -534,25 +534,25 @@ readonly def
   .currentglobal true .setglobal 3 1 roll
   /CIDInit /ProcSet findresource begin
   12 dict begin
+    begincmap
     /WMode exch def
     /CMapName exch def
-    begincmap
     /CIDSystemInfo 3 dict dup begin
       /Registry (Adobe) def
       /Ordering (Japan1) def
       /Supplement 0 def
     end def
-    %/CMapName ... def
+    %/CMapName (see above)
     /CMapVersion 1 def
     /CMapType 1 def
-    %/WMode ... def
+    %WMode (see above)
 	% The PDF documentation says that these CMaps map CIDs
-	% "1 to 65,536".  We think this is a misprint for 0 to 65,535.
-    2 begincodespacerange
+	% "1 to 65,536".  This is a misprint for 0 to 65,535.
+    1 begincodespacerange
 	% <0001> <00ff>  <0100> <ffff>
       <0000> <ffff>
     endcodespacerange
-    2 begincidrange
+    1 begincidrange
 	% <0001> <00ff> 1   <0100> <ffff> 256
       <0000> <ffff> 0
     endcidrange
@@ -564,31 +564,31 @@ readonly def
   exch .setglobal
 } bdef
 
-/buildType0		% <Type0-font-resource> buildType0 <font>
-{ 10 dict begin
-  /FontType 0 def
-  /FontMatrix 1 index /FontMatrix knownoget not { matrix } if def
-  /FontName 1 index /BaseFont get def
-  /FMapType 9 def
-  /Encoding [
-    0 1 4 index /DescendantFonts oget length 1 sub { } for
-  ] def
-  /FDepVector [
-    2 index /DescendantFonts oget { exec resourcefont } forall
-  ] def
-  /CMap 1 index /Encoding oget
-    dup type /nametype eq {
-      dup /CMap resourcestatus {
+/buildType0 {		% <Type0-font-resource> buildType0 <font>
+  dup /BaseFont get	% FontName
+  1 index /Encoding oget
+  dup type /nametype eq {
+    dup /CMap resourcestatus {
 	pop pop /CMap findresource
-      } {
+    } {
 	knownCMaps 1 index .knownget
 	  { exch pop exec } { /undefined signalerror } ifelse
-      } ifelse
-    } {
-      resolvestream
     } ifelse
-  def
-  FontName currentdict end definefont exch pop
+  } {
+    resolvestream
+  } ifelse		% CMap
+  [
+    3 index /DescendantFonts oget { exec resourcefont } forall
+  ]			% subfonts
+  composefont
+		% Stack: fontres font
+  1 index /FontMatrix knownoget {
+    dup aload pop true {0 0 1 0 0 1} {3 -1 roll eq and} forall {
+      1 index exch makefont exch /FontName get exch definefont
+    } {
+      pop
+    } ifelse
+  } if exch pop
 } bdef
 
 % ---------------- CIDFontType0/2 fonts ---------------- %
