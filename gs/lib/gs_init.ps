@@ -1615,7 +1615,14 @@ readonly def
     >> setuserparams
   }
   if
-  mark /.LockSafetyParams true currentdevice .putdeviceprops pop pop
+  % Pretty much the same as "<< /.LockSafetyParams true >> setpagedevice"
+  % but without some of the side effects.
+  mark currentdevice null true mark /.LockSafetyParams true .putdeviceparamsonly
+  counttomark 2 eq 
+  { cleartomark }
+  { cleartomark cleartomark pop pop pop
+    /invalidaccess /.locksafe signalerror
+  } ifelse
   //SAFETY /safe //true .forceput % overrides readonly
 } .bind executeonly odef
 
