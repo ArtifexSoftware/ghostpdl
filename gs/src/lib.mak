@@ -826,6 +826,7 @@ libx.dev: $(LIB_MAK) $(ECHOGS_XE) $(LIBx)
 	$(ECHOGS_XE) -a libx.dev $(LIB6x)
 	$(ECHOGS_XE) -a libx.dev $(LIB7x)
 	$(ADDMOD) libx -init gxcht gxifast gximono
+	$(ADDMOD) libx -imagetype 1 mask1
 
 libd.dev: $(LIB_MAK) $(ECHOGS_XE) $(LIBd)
 	$(ECHOGS_XE) -w libd.dev $(LIB1d)
@@ -1432,7 +1433,7 @@ $(GLOBJ)gximage4.$(OBJ): $(GLSRC)gximage4.c $(memory__h) $(GXERR)\
 
 imasklib_=$(GLOBJ)gxclipm.$(OBJ) $(GLOBJ)gximage3.$(OBJ) $(GLOBJ)gximage4.$(OBJ) $(GLOBJ)gxmclip.$(OBJ)
 imasklib.dev: $(LIB_MAK) $(ECHOGS_XE) $(imasklib_)
-	$(SETMOD) imasklib $(imasklib_)
+	$(SETMOD) imasklib $(imasklib_) -imagetype 3 4
 
 # ---------------- Pattern color ---------------- #
 
@@ -1739,7 +1740,7 @@ gsdps_h=$(GLSRC)gsdps.h $(gsiparm2_h)
 # the PixelCopy option of ImageType 2 images.
 dpslib_=$(GLOBJ)gsdps.$(OBJ) $(GLOBJ)gximage2.$(OBJ)
 dpslib.dev: $(LIB_MAK) $(ECHOGS_XE) $(dpslib_) cspixlib.dev
-	$(SETMOD) dpslib $(dpslib_)
+	$(SETMOD) dpslib $(dpslib_) -imagetype 2
 	$(ADDMOD) dpslib -include cspixlib
 
 $(GLOBJ)gsdps.$(OBJ): $(GLSRC)gsdps.c $(GX)\

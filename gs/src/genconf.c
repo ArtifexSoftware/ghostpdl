@@ -588,15 +588,16 @@ add_entry(config * pconf, char *category, const char *item, int file_index)
 		}
 		goto err;
 	    case 'i':
-		if (is_cat("include")) {
+		if (is_cat("imagetype")) {
+		    pat = "image_type_(%simage_type_%%s)";
+		} else if (is_cat("include")) {
 		    int len = strlen(item);
 
 		    strcpy(str, item);
 		    if (len < 5 || strcmp(str + len - 4, ".dev"))
 			strcat(str, ".dev");
 		    return read_dev(pconf, str);
-		}
-		if (is_cat("init")) {
+		} else if (is_cat("init")) {
 		    pat = "init_(%s%%s_init)";
 		} else if (is_cat("iodev")) {
 		    pat = "io_device_(%siodev_%%s)";
