@@ -160,6 +160,21 @@ init_patch_fill_state(patch_fill_state_t *pfs)
 }
 #endif
 
+/* Resolve a patch color using the Function if necessary. */
+inline private void
+patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t * pfs)
+{
+    if (pfs->Function) {
+	gs_function_evaluate(pfs->Function, &ppcr->t, ppcr->cc.paint.values);
+#	if NEW_SHADINGS
+	{   const gs_color_space *pcs = pfs->direct_space;
+
+	    pcs->type->restrict_color(&ppcr->cc, pcs);
+	}
+#	endif
+    }
+}
+
 /*
  * Calculate the interpolated color at a given point.
  * Note that we must do this twice for bilinear interpolation.
@@ -172,9 +187,10 @@ patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
 {
 #if NEW_SHADINGS
     /* The old code gives -IND on Intel. */
-    if (pfs->Function)
+    if (pfs->Function) {
 	ppcr->t = ppc0->t * (1 - t) + t * ppc1->t;
-    else {
+	patch_resolve_color(ppcr, pfs);
+    } else {
 	int ci;
 
 	for (ci = pfs->num_components - 1; ci >= 0; --ci)
@@ -193,21 +209,6 @@ patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
 		t * (ppc1->cc.paint.values[ci] - ppc0->cc.paint.values[ci]);
     }
 #endif
-}
-
-/* Resolve a patch color using the Function if necessary. */
-inline private void
-patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t * pfs)
-{
-    if (pfs->Function) {
-	gs_function_evaluate(pfs->Function, &ppcr->t, ppcr->cc.paint.values);
-#	if NEW_SHADINGS
-	{   const gs_color_space *pcs = pfs->direct_space;
-
-	    pcs->type->restrict_color(&ppcr->cc, pcs);
-	}
-#	endif
-    }
 }
 
 /* ================ Specific shadings ================ */
@@ -1054,24 +1055,11 @@ color_span(const patch_fill_state_t * pfs, const patch_color_t *c0, const patch_
     int n = pfs->num_components, i;
     double m;
 
-    if (pfs->Function) {
-	patch_color_t cc0, cc1;
-
-	cc0.t = c0->t;
-	cc1.t = c1->t;
-	patch_resolve_color(&cc0, pfs);
-	patch_resolve_color(&cc1, pfs);
-	m = any_abs(cc1.cc.paint.values[0] - cc0.cc.paint.values[0]) / pfs->color_domain.paint.values[0];
-	for (i = 1; i < n; i++)
-	    m = max(m, any_abs(cc1.cc.paint.values[i] - cc0.cc.paint.values[i]) / pfs->color_domain.paint.values[i]);
-	return m;
-    } else {
-	/* Dont want to copy colors, which are big things. */
-	m = any_abs(c1->cc.paint.values[0] - c0->cc.paint.values[0]) / pfs->color_domain.paint.values[0];
-	for (i = 1; i < n; i++)
-	    m = max(m, any_abs(c1->cc.paint.values[i] - c0->cc.paint.values[i]) / pfs->color_domain.paint.values[i]);
-	return m;
-    }
+    /* Dont want to copy colors, which are big things. */
+    m = any_abs(c1->cc.paint.values[0] - c0->cc.paint.values[0]) / pfs->color_domain.paint.values[0];
+    for (i = 1; i < n; i++)
+	m = max(m, any_abs(c1->cc.paint.values[i] - c0->cc.paint.values[i]) / pfs->color_domain.paint.values[i]);
+    return m;
 }
 
 private inline void
@@ -1079,24 +1067,12 @@ color_diff(const patch_fill_state_t * pfs, const patch_color_t *c0, const patch_
 {
     int n = pfs->num_components, i;
 
-    if (pfs->Function) {
-	patch_color_t cc0, cc1;
-
-	cc0.t = c0->t;
-	cc1.t = c1->t;
-	patch_resolve_color(&cc0, pfs);
-	patch_resolve_color(&cc1, pfs);
-	for (i = 0; i < n; i++)
-	    d->cc.paint.values[i] = cc1.cc.paint.values[i] - cc0.cc.paint.values[i];
-    } else {
-	/* Dont want to copy colors, which are big things. */
-	for (i = 0; i < n; i++)
-	    d->cc.paint.values[i] = c1->cc.paint.values[i] - c0->cc.paint.values[i];
-    }
+    for (i = 0; i < n; i++)
+	d->cc.paint.values[i] = c1->cc.paint.values[i] - c0->cc.paint.values[i];
 }
 
 private inline double
-resolved_color_norm(const patch_fill_state_t * pfs, const patch_color_t *c)
+color_norm(const patch_fill_state_t * pfs, const patch_color_t *c)
 {
     int n = pfs->num_components, i;
     double m;
@@ -1135,7 +1111,6 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
 	    vd_trace1 = NULL;
 #   endif
 
-    patch_resolve_color(&c1, pfs);
     patch_color_to_device_color(pfs, &c1, &dc);
 #   if VD_DRAW_CIRCLES
     if (swap_axes)
@@ -1648,7 +1623,6 @@ ordered_triangle(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
     gs_fixed_edge ue;
     int code;
     gx_device_color dc;
-    patch_color_t cc = *c;
 #   if VD_TRACE
 	vd_trace_interface * vd_trace_save = vd_trace1;
 
@@ -1656,8 +1630,7 @@ ordered_triangle(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
 	    vd_trace1 = NULL;
 #   endif
 
-    patch_resolve_color(&cc, pfs);
-    patch_color_to_device_color(pfs, &cc, &dc);
+    patch_color_to_device_color(pfs, c, &dc);
     if (le->end.y < re->end.y) {
 	code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
 	    le, re, le->start.y, le->end.y, false, &dc, pfs->pis->log_op);
@@ -1742,7 +1715,6 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bo
     patch_interpolate_color(&c1, &p->p[0][0]->c, &p->p[0][1]->c, pfs, 0.5);
     patch_interpolate_color(&c2, &p->p[1][0]->c, &p->p[1][1]->c, pfs, 0.5);
     patch_interpolate_color(&c, &c1, &c2, pfs, 0.5);
-    patch_resolve_color(&c1, pfs);
     patch_color_to_device_color(pfs, &c, &dc);
 #   if VD_DRAW_CIRCLES
     vd_circle((p->p[0][0].x + p->p[0][1].x + p->p[1][0].x + p->p[1][1].x) / 4,
@@ -1977,11 +1949,11 @@ is_quadrangle_color_linear(const patch_fill_state_t * pfs, const quadrangle_patc
     color_diff(pfs, &p->p[0][0]->c, &p->p[0][1]->c, &d0001);
     color_diff(pfs, &p->p[1][0]->c, &p->p[1][1]->c, &d1011);
     color_diff(pfs, &d0001, &d1011, &d);
-    D = resolved_color_norm(pfs, &d);
+    D = color_norm(pfs, &d);
     if (D < pfs->smoothness)
 	return true;
-    {	double D0001 = resolved_color_norm(pfs, &d0001);
-	double D1011 = resolved_color_norm(pfs, &d1011);
+    {	double D0001 = color_norm(pfs, &d0001);
+	double D1011 = color_norm(pfs, &d1011);
 	double Du = max(D0001, D1011);
      	double D0010 = color_span(pfs, &p->p[0][0]->c, &p->p[1][0]->c);
 	double D0111 = color_span(pfs, &p->p[0][1]->c, &p->p[1][1]->c);
@@ -2058,22 +2030,24 @@ divide_bar(patch_fill_state_t *pfs,
 
 private int 
 triangle_by_4(patch_fill_state_t *pfs, 
-	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
+	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2, 
+	double cd, fixed sd)
 {
-    double d01, d12, d20;
     shading_vertex_t p01, p12, p20;
     int code;
         
-    if (any_abs(p1->p.x - p0->p.x) < fixed_1 && any_abs(p1->p.y - p0->p.y) < fixed_1 &&
-	any_abs(p2->p.x - p1->p.x) < fixed_1 && any_abs(p2->p.y - p1->p.y) < fixed_1 &&
-	any_abs(p0->p.x - p2->p.x) < fixed_1 && any_abs(p0->p.y - p2->p.y) < fixed_1)
+    if (sd < fixed_1)
 	return constant_color_triangle(pfs, p2, p0, p1);
-    d01 = color_span(pfs, &p1->c, &p0->c);
-    d12 = color_span(pfs, &p2->c, &p1->c);
-    d20 = color_span(pfs, &p0->c, &p2->c);
-    if (d01 < pfs->smoothness / COLOR_CONTIGUITY && 
-	d12 < pfs->smoothness / COLOR_CONTIGUITY && 
-	d20 < pfs->smoothness / COLOR_CONTIGUITY)
+    if (pfs->Function != NULL) {
+	double d01 = color_span(pfs, &p1->c, &p0->c);
+	double d12 = color_span(pfs, &p2->c, &p1->c);
+	double d20 = color_span(pfs, &p0->c, &p2->c);
+
+	if (d01 < pfs->smoothness / COLOR_CONTIGUITY && 
+	    d12 < pfs->smoothness / COLOR_CONTIGUITY && 
+	    d20 < pfs->smoothness / COLOR_CONTIGUITY)
+	    return constant_color_triangle(pfs, p2, p0, p1);
+    } else if (cd < pfs->smoothness / COLOR_CONTIGUITY)
 	return constant_color_triangle(pfs, p2, p0, p1);
     divide_bar(pfs, p0, p1, 2, &p01);
     divide_bar(pfs, p1, p2, 2, &p12);
@@ -2087,16 +2061,16 @@ triangle_by_4(patch_fill_state_t *pfs,
     code = fill_triangle_wedge(pfs, p2, p0, &p20);
     if (code < 0)
 	return code;
-    code = triangle_by_4(pfs, p0, &p01, &p20);
+    code = triangle_by_4(pfs, p0, &p01, &p20, cd / 2, sd / 2);
     if (code < 0)
 	return code;
-    code = triangle_by_4(pfs, p1, &p12, &p01);
+    code = triangle_by_4(pfs, p1, &p12, &p01, cd / 2, sd / 2);
     if (code < 0)
 	return code;
-    code = triangle_by_4(pfs, p2, &p20, &p12);
+    code = triangle_by_4(pfs, p2, &p20, &p12, cd / 2, sd / 2);
     if (code < 0)
 	return code;
-    return triangle_by_4(pfs, &p01, &p12, &p20);
+    return triangle_by_4(pfs, &p01, &p12, &p20, cd / 2, sd / 2);
 
 }
 
@@ -2223,8 +2197,24 @@ triangle(patch_fill_state_t *pfs,
 	if (d20 >= d12 && d20 >= d01 && d20 > pfs->smoothness / COLOR_CONTIGUITY)
 	    return divide_triangle(pfs, p2, p0, p1, d20, d01, d12);
 	return constant_color_triangle(pfs, p0, p1, p2);
-    } else
-	return triangle_by_4(pfs, p0, p1, p2);
+    } else {
+	fixed sd01 = max(any_abs(p1->p.x - p0->p.x), any_abs(p1->p.y - p0->p.y));
+	fixed sd12 = max(any_abs(p2->p.x - p1->p.x), any_abs(p2->p.y - p1->p.y));
+	fixed sd20 = max(any_abs(p0->p.x - p2->p.x), any_abs(p0->p.y - p2->p.y));
+	fixed sd1 = max(sd01, sd12);
+	fixed sd = max(sd1, sd20);
+	double cd = 0;
+
+	if (pfs->Function == NULL) {
+    	    double d01 = color_span(pfs, &p1->c, &p0->c);
+	    double d12 = color_span(pfs, &p2->c, &p1->c);
+	    double d20 = color_span(pfs, &p0->c, &p2->c);
+	    double cd1 = max(d01, d12);
+	    
+	    cd = max(cd1, d20);
+	}
+	return triangle_by_4(pfs, p0, p1, p2, cd, sd);
+    }
 }
 
 #if DIVIDE_BY_PARALLELS
@@ -2265,16 +2255,16 @@ triangles(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argumen
     divide_bar(pfs, p->p[0][0], p->p[0][1], 2, &p0001);
     divide_bar(pfs, p->p[1][0], p->p[1][1], 2, &p1011);
     divide_bar(pfs, &p0001, &p1011, 2, &q);
-    code = triangle_by_4(pfs, p->p[0][0], p->p[0][1], &q);
+    code = triangle(pfs, p->p[0][0], p->p[0][1], &q);
     if (code < 0)
 	return code;
-    code = triangle_by_4(pfs, p->p[0][1], p->p[1][1], &q);
+    code = triangle(pfs, p->p[0][1], p->p[1][1], &q);
     if (code < 0)
 	return code;
-    code = triangle_by_4(pfs, p->p[1][1], p->p[1][0], &q);
+    code = triangle(pfs, p->p[1][1], p->p[1][0], &q);
     if (code < 0)
 	return code;
-    return triangle_by_4(pfs, p->p[1][0], p->p[0][0], &q);
+    return triangle(pfs, p->p[1][0], p->p[0][0], &q);
 }
 
 #endif
@@ -2689,6 +2679,10 @@ make_tensor_patch(const patch_fill_state_t * pfs, tensor_patch *p, const patch_c
     patch_set_color(pfs, &p->c[0][1], curve[1].vertex.cc);
     patch_set_color(pfs, &p->c[1][1], curve[2].vertex.cc);
     patch_set_color(pfs, &p->c[1][0], curve[3].vertex.cc);
+    patch_resolve_color(&p->c[0][0], pfs);
+    patch_resolve_color(&p->c[0][1], pfs);
+    patch_resolve_color(&p->c[1][0], pfs);
+    patch_resolve_color(&p->c[1][1], pfs);
     if (!pfs->Function) {
 	pcs->type->restrict_color(&p->c[0][0].cc, pcs);
 	pcs->type->restrict_color(&p->c[0][1].cc, pcs);
