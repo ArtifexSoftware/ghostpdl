@@ -818,15 +818,7 @@ pcl_text(
     scale.y *= scale_sign;
     gs_scale(pgs, scale.x, scale.y);
     /* Print remaining characters, restore the ctm */
-    if ( (pcs->cap.x <= pcs->margins.right) && 
-	 (pcs->source_transparent) &&
-	 (!pcs->last_was_BS) &&
-	 (!pcs->end_of_line_wrap) &&
-	 (pcl_tpm_is_single_byte(pcs->text_parsing_method)) &&
-         (false))
-	code = pcl_show_chars_fast(pcs, &scale, str, size, literal);
-    else 
-	code = pcl_show_chars_slow(pcs, &scale, str, size, literal);
+    code = pcl_show_chars_slow(pcs, &scale, str, size, literal);
     gs_setmatrix(pgs, &user_ctm);
     if (code > 0)		/* shouldn't happen */
 	code = gs_note_error(gs_error_invalidfont);

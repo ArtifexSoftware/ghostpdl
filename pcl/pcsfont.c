@@ -201,11 +201,6 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
           case pcfh_truetype:
           case pcfh_truetype_large:
             fst = plfst_TrueType;
-#ifdef FT_FONTSCALER
-            dprintf( "downloaded truetype fonts are not yet supported with the freetype scaler.");
-            dprintf( "Currently ghostpcl must be configured with the artifex or ufst scaler to use these fonts\n");
-            return_error(gs_error_invalidfont);
-#endif
             break;
           default:
             return_error(gs_error_invalidfont);
