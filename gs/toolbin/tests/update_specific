@@ -201,9 +201,9 @@ pdfset = []
 for line in sys.stdin.readlines():
     line = string.strip(line)
     if line[0] == 'N' and line[1] == ' ':
-        normset.append(line[2:])
+        normset.append(string.replace(line[2:], '"', ''))
     elif line[0] == 'P' and line[1] == ' ':
-        pdfset.append(line[2:])
+        pdfset.append(string.replace(line[2:], '"', ''))
     else:
         print "Wrong format of arguments given:", line
         sys.exit(1)
