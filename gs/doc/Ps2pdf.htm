@@ -139,13 +139,11 @@ useful:
 <dd>Sets the resolution for pattern fills and for fonts that must be
 converted to bitmaps.
 
-<dt><b><tt>-dProcessColorModel=</tt></b><em>device_color_space</em>
-<dd>Sets the color space used for fill, stroke, text, and imagemask.
-<em>device_color_space</em> may be <b><tt>/DeviceGray</tt></b>,
+<dt><b><tt>-dProcessColorModel=</tt></b><em>device_color_space</em> <dd>Sets
+the color space to be used for device-dependent colors in the
+output. <em>device_color_space</em> may be <b><tt>/DeviceGray</tt></b>,
 <b><tt>/DeviceRGB</tt></b>, or <b><tt>/DeviceCMYK</tt></b>; the default
-value is <b><tt>/DeviceRGB</tt></b>. (Eventually this will be unnecessary,
-since colors specified in any color space will always be written out in that
-color space rather than being converted.)
+value is <b><tt>/DeviceRGB</tt></b>.
 
 </dl>
 
@@ -305,6 +303,18 @@ effect:
 <p>
 (note 5) Optimization (linearization) is implemented with a separate
 program, <b><tt>pdfopt</tt></b> <em>input.pdf</em> <em>output.pdf</em>.
+
+<p>
+(note 6) Currently, colors for images and shadings are left in the color
+space specified in the PostScript input, except for
+<b><tt>ConvertCMYKImagesToRGB</tt></b>; the current color in the graphics
+state (used for fill, stroke, text, and imagemask) is always converted to
+the color space specified by the current value of
+<b><tt>ProcessColorModel</tt></b>. The intended behavior is the same as for
+Acrobat Distiller, except that if <b><tt>ColorConversionStrategy</tt></b> is
+set to <b><tt>/UseDeviceDependentColor</tt></b>, colors are converted to the
+color space specified by <b><tt>ProcessColorModel</tt></b> rather than
+always to <b><tt>/DeviceRGB</tt></b>.
 
 <p>
 The following "job control" parameters are recognized, but have no effect:
