@@ -41,6 +41,11 @@ extern FILE *gs_stdio[3];
 #define stdout stdout_not_available
 #undef stderr
 #define stderr stderr_not_available
+/* However, for the moment, lprintf must be able to reference stderr. */
+#undef dstderr
+#define dstderr gs_stderr
+#undef estderr
+#define estderr gs_stderr
 
 /*
  * Redefine all the relevant stdio functions to reference stdin/out/err
