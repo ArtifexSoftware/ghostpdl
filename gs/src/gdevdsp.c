@@ -783,8 +783,12 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 	display_free_bitmap(ddev);
 
 	code = display_alloc_bitmap(ddev, dev);
-	if (code < 0)
+	if (code < 0) {
+	    /* No bitmap, so tell the caller it is zero size */
+	    (*ddev->callback->display_size)(ddev->pHandle, dev, 
+	        0, 0, 0, ddev->nFormat, NULL);
 	    return_error(code);
+        }
     
 	/* tell caller about the new size */
 	if ((*ddev->callback->display_size)(ddev->pHandle, dev, 
@@ -869,7 +873,7 @@ display_free_bitmap(gx_device_display * ddev)
     }
     if (ddev->mdev) {
 	dev_proc(ddev->mdev, close_device)((gx_device *)ddev->mdev);
-        gx_device_retain(ddev->mdev, false);
+        gx_device_retain((gx_device *)(ddev->mdev), false);
 	ddev->mdev = NULL;
     }
 }
@@ -902,7 +906,7 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     /* Mark the memory device as retained.  When the bitmap is closed,
      * we will clear this and the memory device will be then be freed.
      */
-    gx_device_retain(ddev->mdev, true);
+    gx_device_retain((gx_device *)(ddev->mdev), true);
     
     ddev->mdev->width = param_dev->width;
     ddev->mdev->height = param_dev->height;
@@ -919,8 +923,11 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
 		(uint)ddev->ulBitmapSize, "display_alloc_bitmap");
     }
 
-    if (ddev->pBitmap == NULL)
+    if (ddev->pBitmap == NULL) {
+	ddev->mdev->width = 0;
+	ddev->mdev->height = 0;
 	return_error(gs_error_VMerror);
+    }
 
     ddev->mdev->base = (byte *) ddev->pBitmap;
     ddev->mdev->foreign_bits = true;
