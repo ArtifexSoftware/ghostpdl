@@ -29,6 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Version8.33">Version 8.33 (2004-11-20)</a>
 <li><a href="#Version8.32">Version 8.32 (2004-10-26)</a>
 <li><a href="#Version8.31">Version 8.31 (2004-08-28)</a>
 <li><a href="#Version8.30">Version 8.30 (2004-05-29)</a>
@@ -78,62 +79,939 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html>
-<head>
-<title>Recent changes in Ghostscript</title>
-<!-- $Id$ -->
-<!-- Originally: NEWS -->
-<!--
-	WARNING: do not use Pete Kaiser's emacs function "gs-toc" alone to
-	re-create the table of contents here, because it will replace the
-	hand-edited TOC subheads with a separate subhead for each H2 in
-	the body of the file.  Or if you do, first look at the original
-	TOC to see how to edit it for visual conciseness.
--->
-<link rel="stylesheet" type="text/css" href="gs.css">
-</head>
+<h2><a name="Version8.33"></a>Version 8.33 (2004-11-20)</h2>
 
-<body>
-<!-- [1.0 begin visible header] ============================================ -->
+<p><strong>This is a release candidate for the next stable 
+version of Ghostscript.</strong>
 
-<!-- [1.1 begin headline] ================================================== -->
+<p> 
+New features since the last stable release:
 
-<h1>Changes in the most recent release of Ghostscript</h1>
+<ul>
+<li><p>
+Topological grid fitting,
+an original method developed for Ghostscript by Dr. Igor V. Melichev, improves 
+the rendering of True Type fonts at small resolutions.
+See the documentation for <a href="Language.htm#GridFitTT">GridFitTT</a> for information on this
+feature.
 
-<!-- [1.1 end headline] ==================================================== -->
+<li><p>
+The PDF writer now implements PDF 1.4 encryption.
+See the <a href="Ps2pdf.htm#Encryption">encryption parameter</a> documentation for more
+information.
 
-<!-- [1.2 begin table of contents] ========================================= -->
+<li><p>
+A new rendering method for shadings, developed for Ghostscript by 
+Dr. Igor V. Melichev, improves the quality and performance of 
+rasterization on continuous tone devices.
+The new method allows hardware or software acceleration with help of
+customizable routines for filling areas with a linearly varying color.
+functions.
 
-<!-- [1.2 end table of contents] =========================================== -->
+<li><p>
+This version contains the first release of Rinkj, an
+experimental new driver for some inkjet printers using ETS screening.
+See the <a href="Devices.htm#Rinkj">Rinkj</a> section for more information.
 
-<!-- [1.3 begin hint] ====================================================== -->
+<li><p>
+We now support PDF 1.5 files, including the new compression
+and encryption modes.
+
+<li><p>
+We have beta support for JPEG 2000 compressed images, using the JasPer
+compression library. This is only enabled as part of the default build
+in the autoconf (POSIX) build system in this release.
+
+</ul>
 
 <p>
-This document is news about the most recent Ghostscript release.  For
-earlier versions, see the history documents:
-
+The following <a href="http://bugs.ghostscript.com/">bug</a> numbers were open at
+the time of the last release:
 <blockquote>
-<a href="History8.htm">History of Ghostscript versions 8.n</a><br>
-<a href="History7.htm">History of Ghostscript versions 7.n</a><br>
-<a href="History6.htm">History of Ghostscript versions 6.n</a><br>
-<a href="History5.htm">History of Ghostscript versions 5.n</a><br>
-<a href="History4.htm">History of Ghostscript versions 4.n</a><br>
-<a href="History3.htm">History of Ghostscript versions 3.n</a><br>
-<a href="History2.htm">History of Ghostscript versions 2.n</a><br>
-<a href="History1.htm">History of Ghostscript versions 1.n</a>
+405501,
+430175,
+446344,
+458780,
+463688,
+465936,
+487953,
+493348,
+526099,
+526491,
+530011,
+535366,
+535932,
+578865,
+592160,
+603934,
+610478,
+614298,
+626295,
+645316,
+674418,
+677324,
+685335,
+686747,
+686750,
+686816,
+686819,
+686824,
+686841,
+686842,
+686843,
+686853,
+686865,
+686867,
+686919,
+686980,
+686996,
+687011,
+687012,
+687013,
+687039,
+687063,
+687084,
+687086,
+687095,
+687105,
+687108,
+687110,
+687122,
+687125,
+687146,
+687157,
+687168,
+687174,
+687193,
+687196,
+687203,
+687219,
+687221,
+687229,
+687231,
+687243,
+687251,
+687257,
+687259,
+687271,
+687280,
+687295,
+687297,
+687298,
+687303,
+687314,
+687316,
+687324,
+687327,
+687341,
+687342,
+687345,
+687346,
+687360,
+687373,
+687375,
+687394,
+687397,
+687399,
+687401,
+687410,
+687414,
+687434,
+687435,
+687445,
+687460,
+687468,
+687473,
+687474,
+687475,
+687480,
+687484,
+687485,
+687492,
+687497,
+687498,
+687514,
+687518,
+687520,
+687523,
+687525,
+687529,
+687531,
+687535,
+687536,
+687537,
+687539,
+687541,
+687545,
+687551,
+687558,
+687559,
+687560,
+687561,
+687575,
+687583,
+687593,
+687595,
+687600,
+687608,
+687611,
+687621,
+687622,
+687628,
+687630,
+687633,
+687637,
+687642,
+687643,
+687644,
+687650,
+687654,
+687657,
+687661,
+687663,
+687666,
+687669,
+687674,
+687676,
+687677,
+687678,
+687679,
+687680,
+687682,
+687684,
+687686,
+687694,
+687695,
+687696,
+687697,
+687702,
+687707,
+687712,
+687715,
+687717,
+687721,
+687727,
+687728,
+687729,
+687731,
+687732,
+687735,
+687738,
+687754,
+687756,
+687769,
+687772,
+687775,
+687778,
+687780,
+687782,
+687783,
+687786,
+687791,
+687793,
+687795,
+687796,
+687798,
+687799,
+687800,
+687801,
+687802,
+687803,
+687804,
+687805,
+687806.
 </blockquote>
 
-<p>For other information, see the <a href="Readme.htm">Ghostscript
-overview</a>.
+<h3><a name="8.33_Incompatible_changes"></a>Incompatible changes</h3>
 
-<!-- [1.3 end hint] ======================================================== -->
+<p>
+No known incompatible changes at this point
+
+<h3><a name="8.33_changelog"></a>Changelog</h3>
+
+<!-- generated by split_changelog.py from the output of cvs2cl.pl -->
+
+<p><strong><a name="2004-11-20_0444"></a>
+2004-11-20 04:44 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Propagate release date to all documentation.</pre>
+<p>[doc/API.htm 1.47, doc/Bug-form.htm 1.43, doc/Bug-info.htm 1.42, doc/C-style.htm 1.49, doc/Commprod.htm 1.35, doc/Copying.htm 1.33, doc/DLL.htm 1.37, doc/Deprecated.htm 1.14, doc/Details8.htm 1.13, doc/Develop.htm 1.142, doc/Devices.htm 1.83, doc/Drivers.htm 1.51, doc/Fonts.htm 1.44, doc/Helpers.htm 1.37, doc/History1.htm 1.33, doc/History2.htm 1.33, doc/History3.htm 1.33, doc/History4.htm 1.33, doc/History5.htm 1.35, doc/History6.htm 1.50, doc/History7.htm 1.38, doc/History8.htm 1.18, doc/Htmstyle.htm 1.38, doc/Install.htm 1.48, doc/Issues.htm 1.45, doc/Language.htm 1.89, doc/Lib.htm 1.37, doc/Maintain.htm 1.44, doc/Make.htm 1.82, doc/New-user.htm 1.54, doc/Projects.htm 1.61, doc/Ps-style.htm 1.31, doc/Ps2epsi.htm 1.35, doc/Ps2pdf.htm 1.73, doc/Psfiles.htm 1.56, doc/Readme.htm 1.60, doc/Release.htm 1.88, doc/Source.htm 1.33, doc/Tester.htm 1.33, doc/Testing.htm 1.31, doc/Unix-lpr.htm 1.33, doc/Use.htm 1.123, doc/Xfonts.htm 1.33, doc/gs-vms.hlp 1.31, man/dvipdf.1 1.31, man/font2c.1 1.31, man/gs.1 1.32, man/gslp.1 1.31, man/gsnd.1 1.31, man/pdf2dsc.1 1.30, man/pdf2ps.1 1.32, man/pdfopt.1 1.30, man/pf2afm.1 1.31, man/pfbtopfa.1 1.32, man/printafm.1 1.31, man/ps2ascii.1 1.30, man/ps2epsi.1 1.29, man/ps2pdf.1 1.36, man/ps2pdfwr.1 1.35, man/ps2ps.1 1.38, man/wftopfa.1 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-20_0441"></a>
+2004-11-20 04:41 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct a typo in the reference to the cmpi script.</pre>
+<p>[doc/Testing.htm 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-20_0440"></a>
+2004-11-20 04:40 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update release date and product name.</pre>
+<p>[doc/News.htm 1.155, src/gscdef.c 1.49, src/version.mak 1.77]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-20_0433"></a>
+2004-11-20 04:33 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Define SHARE_JASPER=0 by default in the windows build. This doesn't
+enable anything, but makes it easier to get going.</pre>
+<p>[src/winlib.mak 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-19_1956"></a>
+2004-11-19 19:56 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Due to an oversight, JBIG2Decode was omitted from the windows build.
+Now it is included in the default FEATURE_DEVS although in the future
+this should probably be moved to the pdf.dev</pre>
+<p>[src/msvc32.mak 1.66]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-19_0439"></a>
+2004-11-19 04:39 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add some missing initializers for glyph_data_t->memory. Related to the
+687459 fix.</pre>
+<p>[src/gdevpsf1.c 1.18, src/gdevpsf2.c 1.33, src/gdevpsfu.c 1.12, src/gsfcid.c 1.13, src/gstype42.c 1.48, src/gxfcopy.c 1.54, src/gxtype1.c 1.41, src/zchar1.c 1.42, src/zfcid0.c 1.25, src/zfcid1.c 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-19_0144"></a>
+2004-11-19 01:44 Raph Levien</strong></p>
+<blockquote>
+<pre>
+Copies over new-style color procs when making a null device with a
+target, to avoid inconsistent states. Fixes bug #687770.
+
+DETAILS
+
+The problem was a null device (for implementing stringwidth) with
+inconsistent color info; the color_info struct specified 4 components,
+but the get_color_mapping_procs was
+gx_default_DevGray_get_color_mapping_procs, which is the desired value
+for null devices instantiated through gs_copydevice
+(i.e. -sDEVICE=null). As a result, cm_comps[1] through [3] were left
+uninitialized, and, when negative, would crash the halftone logic.
+
+This patch copies over the new-style color mapping procs (the
+old-style were already copied) in the gs_make_null_device routine. A
+strong argument could be made for changing the logic in
+gx_device_copy_color_procs() instead, but it was felt that this change
+was more localized.
+
+Dan reviewed this patch during a phone conversation, so I am going ahead
+and committing. I'm also opening a new bug to encourage a closer look
+at other uses of gx_device_copy_color_procs() to see whether a change
+there is beneficial or harmful.</pre>
+<p>[src/gsdevice.c 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-18_1709"></a>
+2004-11-18 17:09 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix regression created by previous patch for bug 687752.</pre>
+<p>[lib/pdf_draw.ps 1.88]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-18_1104"></a>
+2004-11-18 11:04 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Update Windows installer to use the current name for the license file,
+Public.htm not the older PUBLIC.</pre>
+<p>[src/winint.mak 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-18_0648"></a>
+2004-11-18 06:48 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Add utility mkcidfm.ps to create a cidfmap file based on fonts
+found in a directory.
+Change MS-Windows installer to optionally update lib/cidfmap
+with the CJK fonts found in the Windows font directory.
+
+DETAILS:
+Ghostscript does not ship with CJK fonts.
+If support for Chinese, Japanese or Korean is added to MS-Windows,
+CJK TrueType fonts and font collections are added to the MS-Windows
+fonts directory.  These can be used by ghostscript by specifying
+mapping and aliases in the lib/cidfmap file.
+This patch looks in the MS-Windows fonts directory for known
+CJK fonts, and if present it appends appropriate mappings or
+aliases to the lib/cidfmap file.
+The font names and aliases are currently fixed, but can
+be changed by editing mkcidfm.ps.
+
+A new checkbox is added to the installer dialog
+"Use Windows TrueType fonts for Chinese, Japanese and Korean"
+Only if the user selects this will lib/cidfmap will be updated.
+The default behavior is that lib/cidfmap is unchanged.</pre>
+<p>[doc/Psfiles.htm 1.55, lib/mkcidfm.ps 1.1, src/dwinst.cpp 1.6, src/dwinst.h 1.7, src/dwsetup.cpp 1.9, src/dwsetup.h 1.6, src/dwsetup.rc 1.12, src/dwuninst.cpp 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-18_0220"></a>
+2004-11-18 02:20 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix a missing part of the JOBSERVER implementation that makes the ^D a
+self-delimitting token. Fixes bug 687779.</pre>
+<p>[src/iscan.c 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-18_0144"></a>
+2004-11-18 01:44 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix for unlimited recursion in 'cs/CS' implementation (actually in a
+certain path in 'resolvecolorspace'. Fixes bug 687752 for Artifex
+customer 190.</pre>
+<p>[lib/pdf_draw.ps 1.87]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-17_1948"></a>
+2004-11-17 19:48 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix bug 687777 to remove the makefile dependency of dscparse from the
+pdfwrite device. This allows non-PS to include the pdfwrite.dev in the
+build. Also updated zdscpars.c to add needed 'mem' pointer.</pre>
+<p>[src/devs.mak 1.119, src/int.mak 1.131, src/zdscpars.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-16_0253"></a>
+2004-11-16 02:53 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Page context stream was not properly formed when starts with an invisible text.
+
+DETAILS :
+
+Bug 687797 "pdfwrite generates invalid pdf".
+The improved condition made consistent with gdevpdte.c ln 501.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdtt.c 1.94]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-15_0112"></a>
+2004-11-15 01:12 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix for Bug 687459 (SEGV) addressing several problems: (i) Elements
+fetched from a font dictionary have to be dereferenced into a ref
+since pointers change if the dictionary is resized (to add entries);
+(ii) The glyph_cache used by gs_font_cid2 fonts needs to be in stable
+memory since elements might be added after a 'save' and the list will
+still be refereced by the font, so cannot be freed by 'restore';
+(iii) The gs_glyph_cache__release was never being called so creating
+a memory leak -- font notification (called by gs_font_finalize) is
+now used to free the cache list; (iv) The gs_glyph_cache__release
+did not work (probably was never tested since it was not being used).
+
+DETAILS:
+
+Using stable_memory means that the objects created need to be freed
+properly, that's why the font_notify mechanism was used. This fixes
+the problem reported by the bug and doesn't seem to have created
+any other problems (regression test passed).
+
+A 'memory' element was added to the gs_glyph_data_s structure so
+that the 'bits' can be allocated using the desired memory (stable
+memory in the case that we are using the cache). This was deemed
+preferable to always using the pfont->memory->stable_memory since
+changing to this might cause other problems. This did create a
+fair number of changes since every place the get_outline was used,
+the glyph_data structure needed to have the 'memory' element set.
+We could have used 'NULL' to signal pfont->memory, but this might
+have masked uninitialized memory issues that can be tracked with
+tools such as valgrind.
+
+The gs_glyph_cache__release was totally broken, and since it was
+not previously used, fixing and testing it presents no risk of
+other clients relying on broken behaviour.
+
+The implementation of the cache is VERY RUDIMENTARY -- a linked
+list of elements with a hard-coded number (32767) limit to the
+size of the cache. The size is too small to be useful for Asian
+fonts, but making it bigger will result in a lot of time spent
+finding a 'miss' condition. At least the current logic has LRU
+slot re-use behaviour (which should be retained). Fixing this,
+and making the cache limit larger are left for a later change
+(post 8.50 release).
+
+EXPECTED DIFFERENCES:
+
+None.</pre>
+<p>[src/gdevpsft.c 1.33, src/gsgcache.c 1.3, src/gsgcache.h 1.2, src/gsgdata.h 1.5, src/gstype42.c 1.47, src/gxfcopy.c 1.53, src/gxttfb.c 1.36, src/zbfont.c 1.28, src/zfcid0.c 1.24, src/zfcid1.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-14_0141"></a>
+2004-11-14 01:41 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Add missing header include for setting the display device callback.</pre>
+<p>[src/imain.c 1.41]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-13_2208"></a>
+2004-11-13 22:08 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : toolbin/pdfinflt.ps did not decompress some streams (continued).
+
+DETAILS :
+
+The 2nd Patch from SaGS for the bug 687746
+"gs\toolbin\pdfinflt.ps doesn't unpack a stream"
+
+The previous patch contained on over-optimization that leaded to a corrupted
+operand stack. "{ [ {proc} {proc} ] }" (note: 2 identical inner procs)
+can be optimized:
+either as "{ [ {proc} dup    ] }" - use VM for only 1 copy of "{proc}"
+or as	  "{ { {proc} {proc} } }" - the 2-element array is allocated
+				    only once, by the parser, not at
+				    each execution of the enclosing proc
+but we cannot apply both these optimizations at the same time.
+
+This error affects PDF files that include a /Filter and/or /DecodeParams
+specified as 1-element arrays. PDFs for which these entries are a single
+name (for /Filter) or dict (for /DecodeParams) or arrays with 2 or more
+elements are not affected.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[toolbin/pdfinflt.ps 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-12_2128"></a>
+2004-11-12 21:28 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Spelling corrections.</pre>
+<p>[doc/Use.htm 1.122]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-08_1656"></a>
+2004-11-08 16:56 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add the new image comparison tool to the file index in the documentation.</pre>
+<p>[doc/Testing.htm 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-07_2109"></a>
+2004-11-07 21:09 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : Improve the resource path customization and the related documentation (continued).
+
+DETAILS :
+
+This fixes some minor ambiguities.</pre>
+<p>[doc/Use.htm 1.121]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-07_1957"></a>
+2004-11-07 19:57 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+fuzzy.c : Implementing multipage image files.
+
+DETAILS:
+
+Report will contain a line per different page.
+Thus the report file may contain multiple lines.
+
+The output image file contains only the the first page difference
+due to a restricted capability of available viewers.
+
+Bug 687765 "fuzzy.c : multipage documents unsupported.".</pre>
+<p>[toolbin/tests/fuzzy.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-07_1925"></a>
+2004-11-07 19:25 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : Cygwin/gcc warnings.
+
+DETAILS :
+
+Cygwin/gcc claims an undefined result in spdiff.c
+due to possibly undefined order of evaluation of operands of a binary operation.
+The hunk #2 now sets 'ti', rather the old code does not.
+But we believe that the change is algorithmically equivalent.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gxdevndi.c 1.5, src/spdiff.c 1.8, src/ttinterp.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-06_2220"></a>
+2004-11-06 22:20 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove some obsolete assert calls which caused problems on some
+platforms due to incorrect string quoting in assert.h.</pre>
+<p>[src/gxhintn.c 1.55]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-06_1930"></a>
+2004-11-06 19:30 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix: Python opens files in text mode unless "rb" is needed.</pre>
+<p>[toolbin/tests/cmpi.py 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-06_0638"></a>
+2004-11-06 06:38 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add an interactive image compare tool written in Python by a Python
+neophyte. Not quite ready for prime-time, but an interesting enough start
+to commit. Even though there are bugs in the differencing, responsiveness
+and memory usage, it is still sometimes useful. If a version # were to be
+applied to this, I would call it 0.1 (at least it is a positive number).</pre>
+<p>[toolbin/tests/cmpi.py 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-05_1703"></a>
+2004-11-05 17:03 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update the MacOS X platform-specific makefile. Remove -traditional-cpp.
+This was added to work around bugs in earlier releases of Apple's gcc,
+but it is not necessary with more recent releases, and conflicts with
+newer cpp features used by more recent Ghostscript code. Partial fix
+for bug 687787.</pre>
+<p>[src/macosx.mak 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-04_2031"></a>
+2004-11-04 20:31 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Improve documentation for CID fonts.</pre>
+<p>[doc/Use.htm 1.120]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-03_1746"></a>
+2004-11-03 17:46 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Include stdio_.h instead of the system header according to C style.</pre>
+<p>[src/gslibctx.h 1.5, src/lib.mak 1.203]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-03_0823"></a>
+2004-11-03 08:23 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add handling for missing EOL following the %PDF-#.## string in the header.
+Yet another bad file that Acrobat Reader handles. Bug 687781.
+
+DETAILS:
+
+If we get an error doing the 'cvr' to get the version #, trim a character
+from the end of the string and try again. Stop if the string becomes empty.</pre>
+<p>[lib/pdf_main.ps 1.88]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-03_0734"></a>
+2004-11-03 07:34 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add missing opening quotes to the error printouts. This typo came in
+as part of an earlier bug fix and prevented compilation. Bug 687784.</pre>
+<p>[src/gdevsppr.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-01_2121"></a>
+2004-11-01 21:21 Jack Moffitt</strong></p>
+<blockquote>
+<pre>
+Fixes Bug#687762.  Includes the date specification of the CVS checkout
+in the baseline update log.  This then gets propagated to the daily
+reports.</pre>
+<p>[toolbin/tests/update_specific 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-01_2109"></a>
+2004-11-01 21:09 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Forget cancelled resources.
+
+DETAILS :
+
+Bug 687749 "PS to PDF generates very large PDF document"
+
+1. An indeterministic bug fixed in gdevpdfi.c, hunk #1.
+
+2. Implemented a recognition of equal patterns in gdevpdfi.c
+and provided a PDF pattern substitution.
+We caould not provide a substitution in the PS interpreter
+because an accumulated pattern instance doesn't point
+to the corresponding client color.
+
+3. pdf_forget_resource is applied when a resource is cancelled and
+is not longer needed. This applies to all redundant resources except patterns,
+because patterns keep the substitution data.
+We would like to save memory from substitured patterns with
+a special substitution table,
+but we have no time for such optimization now.
+
+4. The function pdf_forget_resource is some slow
+because the data structure was not designed for
+removing resources from lists.
+We would like to implement dual linked lists,
+but we have no time for such optimization now.
+
+5. Since pdf_forget_resource is not applied to patters,
+we need to prevent a big growth of the number of stored patterns.
+We implemented pdf_drop_resources for that purpose
+and drop all substitured pattrens after 300 ones
+have been accumulated, but not frequenter than once per page.
+This solution isn't perfect, but should work for most cases.
+If a substituted pattern is dropped erroneusely,
+it will be accumulated again, maybe causing some slowdown.
+
+6. Implemented a new device parameter PrintStatistics.
+The new function pdf_print_resource_statistics
+prints a statistics to stdout.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdf.c 1.101, src/gdevpdfg.c 1.59, src/gdevpdfg.h 1.34, src/gdevpdfi.c 1.57, src/gdevpdfj.c 1.32, src/gdevpdfp.c 1.40, src/gdevpdfu.c 1.61, src/gdevpdfv.c 1.37, src/gdevpdfx.h 1.103, src/gdevpdti.c 1.39, src/gdevpdtt.c 1.93]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-01_1821"></a>
+2004-11-01 18:21 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Exempt three new files from the multiple-include protect check. Like the
+previous exemptions, these are templates that must be instantiated multiple
+times to function properly.</pre>
+<p>[toolbin/tests/check_source.py 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-01_0915"></a>
+2004-11-01 09:15 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+We now implement job server behavior. This is no longer an open issue.</pre>
+<p>[doc/Issues.htm 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2004-11-01_0915"></a>
+2004-11-01 09:15 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Mention the issue with polygon overlap in antialiased rendering.
+Closes bug 687742.</pre>
+<p>[doc/Use.htm 1.119]</p>
+</blockquote>
+
+<p><strong><a name="2004-10-29_0104"></a>
+2004-10-29 01:04 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Documentation update to fix some dead links.</pre>
+<p>[doc/Readme.htm 1.59]</p>
+</blockquote>
+
+<p><strong><a name="2004-10-29_0007"></a>
+2004-10-29 00:07 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Documentation fixes, due to changes in iapi.h.</pre>
+<p>[doc/API.htm 1.46, doc/Lib.htm 1.36]</p>
+</blockquote>
+
+<p><strong><a name="2004-10-28_1734"></a>
+2004-10-28 17:34 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Font size was wrong when definefont applied to a scaled font.
+
+DETAILS :
+
+Bug 687615 "ps2pdf squeezes glyph strings".
+
+This continues the patch
+http://www.ghostscript.com/pipermail/gs-cvs/2003-August/003487.html (igor486).
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdtd.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-10-28_1158"></a>
+2004-10-28 11:58 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (vdtrace.c) : Fix gcc warnings and improve C-style.
+
+DETAILS :
+
+This change is algorithmically equivalent.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/vdtrace.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-10-28_0926"></a>
+2004-10-28 09:26 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (gswin32) : Opened a window outside the desctop area.
+
+DETAILS :
+
+When the Tracer window was opened with a clean Registry
+(particularly at a first run after the operating system instalaton),
+the window placement got big negative coordinates.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/dwimg.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-10-28_0839"></a>
+2004-10-28 08:39 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (type 1 interpreter) : Replaced Metrics was missed.
+
+DETAILS :
+
+Bug 687614 "mirrored glyph is rendered at incorrect position".
+
+This patch fixes the problem for raster devices.
+Without -dNOCACHE the behavior was indeterministic due to
+uninitialized cxs.use_FontBBox_as_Metrics2 in zchar1.c.
+
+We ported the change from gstype1.c to gstype2.c with no special testing
+because we have no practical examples of Type 2 with a replaced lsb.
+It happens so because Type 2 only appears in PDF, which doesn't replace lsb.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gstype1.c 1.32, src/gstype2.c 1.36, src/zchar1.c 1.41]</p>
+</blockquote>
+
+<p><strong><a name="2004-10-28_0725"></a>
+2004-10-28 07:25 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Glyph positions were wrong for vertical CID fonts (continued 2).
+
+DETAILS :
+
+Bug 687614 "mirrored glyph is rendered at incorrect position".
+
+The new code implements the improved logics :
+
+    /* With WMode 1 v-vector is (WMode 1 origin) - (WMode 0 origin).
+       The glyph shifts in the opposite direction.  */
+    /* With WMode 0 v-vector is (Metrics sb) - (native sb).
+       The glyph shifts in same direction.  */
+
+Also improved the related comments.
+
+EXPECTED DIFFERENCES :
+
+pdfwrite 093-01.ps .</pre>
+<p>[src/gdevpdte.c 1.65]</p>
+</blockquote>
+
+<p><strong><a name="2004-10-27_1056"></a>
+2004-10-27 10:56 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (resource machinery) : Improve the resource path customization and the related documentation (continued).
+
+DETAILS :
+
+A wrong paragraph removed form the documentation.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[doc/Use.htm 1.118]</p>
+</blockquote>
+
+<p><strong><a name="2004-10-26_1728"></a>
+2004-10-26 17:28 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Bump the version info after the 8.32 release.</pre>
+<p>[doc/News.htm 1.154, lib/gs_init.ps 1.113, src/gscdef.c 1.48, src/version.mak 1.76]</p>
+</blockquote>
+
+<p><strong><a name="2004-10-26_1707"></a>
+2004-10-26 17:07 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (resource machinery) : Improve the resource path customization and the related documentation.
+
+DETAILS :
+
+1. Explained the resource locator's logics in Use.htm .
+Bug 687767 "Adding -Ic:\windows\fonts breaks CJK fonts".
+
+2. The old code missed some directories when the user specifies a non-absolute
+path as GenericResourcePath.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[doc/Use.htm 1.117, lib/gs_res.ps 1.38]</p>
+</blockquote>
+
+<p><strong><a name="2004-10-26_0944"></a>
+2004-10-26 09:44 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (PDF interpreter) : Improve the font substitution and the CID font substitution.
+
+DETAILS :
+
+1. A new procedure .remove_font_name_prefix removes the subset font name prefix
+   when computing a substitute font name.
+2. Improved a warning when substituting a CID font resource.
+3. Improved the documentation about CID font substitution if the PDF interpreter
+
+Bug 687747 "PDF tries substituting but throws /undefinedresource in --findresource--".
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[doc/Use.htm 1.116, lib/pdf_font.ps 1.71]</p>
+</blockquote>
+
 
 <hr>
-
-<!-- [1.0 end visible header] ============================================== -->
-
-<!-- [2.0 begin contents] ================================================== -->
 
 <h2><a name="Version8.32"></a>Version 8.32 (2004-10-26)</h2>
 
@@ -378,7 +1256,7 @@ the time of the last release:
 <p>
 No known incompatible changes at this point
 
-<h3><a name="8.31_changelog"></a>Changelog</h3>
+<h3><a name="8.32_changelog"></a>Changelog</h3>
 
 <!-- generated by split_changelog.py from the output of cvs2cl.pl -->
 
