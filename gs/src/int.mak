@@ -808,21 +808,6 @@ $(PSOBJ)zfont42.$(OBJ) : $(PSSRC)zfont42.c $(OP) $(memory__h)\
  $(store_h)
 	$(PSCC) $(PSO_)zfont42.$(OBJ) $(C_) $(PSSRC)zfont42.c
 
-# ---------------- Font copying (debugging only) ---------------- #
-
-# Testing-specific operators for fcopy.  This should only be included in
-# debugging builds.
-fctest_=$(PSOBJ)zfctest.$(OBJ)
-$(PSD)fctest.dev : $(DEVS_MAK) $(ECHOGS_XE) $(fctest_) $(GLD)fcopy.dev
-	$(SETMOD) $(PSD)fctest $(fctest_)
-	$(ADDMOD) $(PSD)fctest -oper zfctest
-	$(ADDMOD) $(PSD)fctest -include $(GLD)fcopy
-
-$(PSOBJ)zfctest.$(OBJ) : $(PSSRC)zfctest.c $(OP)\
- $(gsccode_h) $(gxfcopy_h) $(gxfont_h)\
- $(ialloc_h) $(ifont_h) $(igstate_h) $(iname_h)
-	$(PSCC) $(PSO_)zfctest.$(OBJ) $(C_) $(PSSRC)zfctest.c
-
 # ======================== Precompilation options ======================== #
 
 # ---------------- Precompiled fonts ---------------- #
