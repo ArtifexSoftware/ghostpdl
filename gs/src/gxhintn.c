@@ -29,6 +29,9 @@
 #include "gxmatrix.h"
 #include "gxop1.h"
 #include "gxpath.h"
+#include "gxfont.h"
+#include "gxfont1.h"
+#include "gxtype1.h"
 #include "gxhintn.h"
 #include "gserrors.h"
 #include "vdtrace.h"
@@ -112,6 +115,11 @@
     They are handled by the type 1 interpreter (gstype1.c).
  */
 
+#define VD_DRAW_IMPORT 0 /* CAUTION: with 1 can't close DC on import error */
+#define VD_SCALE  (0.2 / 4096.0)
+#define VD_SHIFT_X 50
+#define VD_SHIFT_Y 100
+
 #define ADOBE_OVERSHOOT_COMPATIBILIY 0
 #define ADOBE_SHIFT_CHARPATH 0
 
@@ -119,6 +127,7 @@ static const char *s_pole_array = "t1_hinter pole array";
 static const char *s_zone_array = "t1_hinter zone array";
 static const char *s_hint_array = "t1_hinter hint array";
 static const char *s_contour_array = "t1_hinter contour array";
+static const char *s_hint_range_array = "t1_hinter hint_range array";
 
 #define member_prt(type, ptr, offset) (type *)((char *)(ptr) + (offset))
 
@@ -308,13 +317,13 @@ private inline void o2g_float(t1_hinter * h, t1_hinter_space_coord ox, t1_hinter
 
 /* --------------------- t1_hint class members ---------------------*/
 
-private void t1_hint__set_aligned_coord(t1_hint * this, t1_glyph_space_coord gc, t1_pole * pole, bool aligned)
+private void t1_hint__set_aligned_coord(t1_hint * this, t1_glyph_space_coord gc, t1_pole * pole, enum t1_align_type align)
 {   if (this->g0 == (this->type == hstem ? pole->gy : pole->gx)) {
-        if (!this->aligned0 || aligned)
-            this->ag0 = gc, this->aligned0 = aligned;
+        if (this->aligned0 < align)
+            this->ag0 = gc, this->aligned0 = align;
     } else {
-        if (!this->aligned1 || aligned)
-            this->ag1 = gc, this->aligned1 = aligned;
+        if (this->aligned1 < align)
+            this->ag1 = gc, this->aligned1 = align;
     }
 }
 
@@ -332,7 +341,9 @@ private void t1_hinter__paint_glyph(t1_hinter * this, bool aligned)
     int i, j;
     char buf[15];
 
-    for(i=0; i<this->contour_count; i++) {
+    if (!vd_enabled)
+	return;
+    for(i = 0; i < this->contour_count; i++) {
         int beg_pole = this->contour[i];
         int end_pole = this->contour[i + 1] - 2;
 
@@ -345,7 +356,7 @@ private void t1_hinter__paint_glyph(t1_hinter * this, bool aligned)
         }
     }
     vd_setcolor(aligned ? RGB(0,255,0) : RGB(0,0,255));
-    for(i=0; i<this->contour_count; i++) {
+    for(i = 0; i < this->contour_count; i++) {
         int beg_pole = this->contour[i];
         int end_pole = this->contour[i + 1] - 2;
 
@@ -370,11 +381,14 @@ private void  t1_hinter__paint_raster_grid(t1_hinter * this)
 {
 #ifdef VD_TRACE
     int i;
+    double j; /* 'long' can overflow */
     unsigned long c = RGB(192,192,192);
     t1_hinter_space_coord min_ox, max_ox, min_oy, max_oy;
     long div = this->g2o_fraction; 
     long ext = div * 5;
 
+    if (!vd_enabled)
+	return;
     g2o(this, this->pole[0].gx, this->pole[0].gy, &min_ox, &min_oy);
     max_ox = min_ox, max_oy = min_oy;
     /* Compute BBox in outliner's space : */
@@ -392,19 +406,19 @@ private void  t1_hinter__paint_raster_grid(t1_hinter * this)
     max_ox += ext;
     max_oy += ext;
     /* Paint columns : */
-    for (i = min_ox / div * div; i < max_ox + div; i += div) {
+    for (j = min_ox / div * div; j < (double)max_ox + div; j += div) {
         t1_glyph_space_coord gx0, gy0, gx1, gy1;
 
-        o2g_float(this, i, min_oy, &gx0, &gy0); /* o2g may overflow here due to ext. */
-        o2g_float(this, i, max_oy, &gx1, &gy1);
-        vd_bar(gx0, gy0, gx1, gy1, 1, (!i ? 0 : c));
+        o2g_float(this, (int)j, min_oy, &gx0, &gy0); /* o2g may overflow here due to ext. */
+        o2g_float(this, (int)j, max_oy, &gx1, &gy1);
+        vd_bar(gx0, gy0, gx1, gy1, 1, (!j ? 0 : c));
     }
     /* Paint rows : */
-    for (i = min_oy / div * div; i < max_oy + div; i += div) {
+    for (j = min_oy / div * div; j < max_oy + div; j += div) {
         t1_glyph_space_coord gx0, gy0, gx1, gy1;
-        o2g_float(this, min_ox, i, &gx0, &gy0);
-        o2g_float(this, max_ox, i, &gx1, &gy1);
-        vd_bar(gx0, gy0, gx1, gy1, 1, (!i ? 0 : c));
+        o2g_float(this, min_ox, (int)j, &gx0, &gy0);
+        o2g_float(this, max_ox, (int)j, &gx1, &gy1);
+        vd_bar(gx0, gy0, gx1, gy1, 1, (!j ? 0 : c));
     }
 #endif
 }
@@ -416,18 +430,23 @@ void t1_hinter__reset(t1_hinter * this, gs_memory_t * mem)
     this->stem_snap[0][0] = this->stem_snap[1][0] = 100;
     this->zone_count = 0;
     this->pole_count = 0;
+    this->hint_count = 0;
     this->contour_count = 0;
+    this->hint_range_count = 0;
 
     this->max_contour_count = count_of(this->contour0);
     this->max_zone_count = count_of(this->zone0);
     this->max_pole_count = count_of(this->pole0);
     this->max_hint_count = count_of(this->hint0);
+    this->max_hint_range_count = count_of(this->hint_range0);
 
     this->pole = this->pole0;
     this->hint = this->hint0;
     this->zone = this->zone0;
     this->contour = this->contour0;
+    this->hint_range = this->hint_range0;
 
+    this->FontType = 1;
     this->ForceBold = false;
     this->base_font_scale = 0;
     this->resolution = 0;
@@ -437,8 +456,6 @@ void t1_hinter__reset(t1_hinter * this, gs_memory_t * mem)
     this->cx = this->cy = 0;
     this->contour[0] = 0;
     this->seac_flag = 0;
-    this->italic_x = 0;
-    this->italic_y = 1;
     this->keep_stem_width = false;
     this->charpath_flag = false;
     this->disable_hinting = false;
@@ -455,10 +472,13 @@ private void t1_hinter__free_arrays(t1_hinter * this)
 	gs_free_object(this->memory, this->zone, s_zone_array);
     if (this->contour != this->contour0)
 	gs_free_object(this->memory, this->contour, s_contour_array);
+    if (this->hint_range != this->hint_range0)
+	gs_free_object(this->memory, this->hint_range, s_hint_range_array);
     this->pole = 0;
     this->hint = 0;
     this->zone = 0;
     this->contour = 0;
+    this->hint_range = 0;
 }
 
 void t1_hinter__reset_outline(t1_hinter * this)
@@ -471,7 +491,8 @@ void t1_hinter__reset_outline(t1_hinter * this)
     this->suppress_overshoots = false;
 }
 
-int t1_hinter__set_transform(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, gs_matrix * FontMatrix, gs_matrix * baseFontMatrix)
+int t1_hinter__init(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, 
+		    gs_matrix * FontMatrix, gs_matrix * baseFontMatrix)
 {   float axx = fabs(ctm->xx), axy = fabs(ctm->xy);
     float ayx = fabs(ctm->xx), ayy = fabs(ctm->xy);
     float scale = max(axx + axy, ayx + ayy);
@@ -541,30 +562,17 @@ int t1_hinter__set_transform(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * 
         this->font_size =  floor(d1 / d0 * 10000 + 0.5) / 10000;
         this->resolution = floor(d2 / (1 << this->import_shift) / d1 * 10000000 + 0.5) / 10000000;
     }
+#   if VD_DRAW_IMPORT
+    vd_get_dc('h');
+    vd_set_shift(VD_SHIFT_X, VD_SHIFT_Y);
+    vd_set_scale(VD_SCALE);
+    vd_set_origin(0,0);
+    vd_erase(RGB(255, 255, 255));
+    t1_hinter__paint_raster_grid(this);
+    vd_setcolor(RGB(255, 0, 0));
+    vd_setlinewidth(0);
+#   endif
     return 0;
-}
-
-void t1_hinter__set_blue_values(t1_hinter * this, double BlueScale, double BlueShift, double BlueFuzz)
-{   this->BlueScale = BlueScale;
-    this->blue_shift = float2fixed(BlueShift);
-    this->blue_fuzz  = import_shift(float2fixed(BlueFuzz), this->import_shift);
-    this->suppress_overshoots = (this->BlueScale > this->heigt_transform_coef / (1 << this->import_shift) - 0.00020417);
-    this->overshoot_threshold = (this->heigt_transform_coef != 0 ? (t1_glyph_space_coord)(fixed_half / this->heigt_transform_coef) : 0);
-    this->blue_rounding = (t1_hinter_space_coord)((this->BlueScale * 240) * (this->resolution * this->base_font_scale) * this->g2o_fraction);
-}
-
-void t1_hinter__set_bold(t1_hinter * this, bool ForceBold)
-{   this->ForceBold = ForceBold;
-}
-
-void t1_hinter__set_italic(t1_hinter * this, double ItalicAngle)
-{   this->italic_y = 1023;
-    this->italic_x = (long)(this->italic_y * tan(ItalicAngle));
-}
-
-void t1_hinter__set_charpath_flag(t1_hinter * this, bool charpath)
-{   this->disable_hinting |= charpath;
-    this->charpath_flag = charpath;
 }
 
 private void t1_hinter__make_zone(t1_hinter * this, t1_zone *zone, float * blues, enum t1_zone_type type, t1_glyph_space_coord blue_fuzz)
@@ -594,7 +602,7 @@ private bool t1_hinter__realloc_array(gs_memory_t *mem, void **a, void *a0, int 
     return false;
 }
 
-int t1_hinter__set_alignment_zones(t1_hinter * this, float * blues, int count, enum t1_zone_type type, bool family)
+private int t1_hinter__set_alignment_zones(t1_hinter * this, float * blues, int count, enum t1_zone_type type, bool family)
 {   int count2 = count / 2, i, j;
 
     if (!family) {
@@ -622,7 +630,7 @@ int t1_hinter__set_alignment_zones(t1_hinter * this, float * blues, int count, e
     return 0;
 }
 
-int t1_hinter__set_stem_snap(t1_hinter * this, float * value, int count, unsigned short hv)
+private int t1_hinter__set_stem_snap(t1_hinter * this, float * value, int count, unsigned short hv)
 {   int count0 = this->stem_snap_count[hv], i;
 
     if (count + count0 >= T1_MAX_STEM_SNAPS)
@@ -631,6 +639,65 @@ int t1_hinter__set_stem_snap(t1_hinter * this, float * value, int count, unsigne
         this->stem_snap[hv][count0 + i] = import_shift(float2fixed(value[i]), this->import_shift);
     this->stem_snap_count[hv] += count;
     return 0;
+}
+
+private void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy)
+{   this->orig_dx = dx;
+    this->orig_dy = dy;
+#   if ADOBE_SHIFT_CHARPATH
+        /*  Adobe CPSI rounds coordinates for 'charpath' :
+            X to trunc(x+0.5)
+            Y to trunc(y)+0.5
+        */
+        if (this->charpath_flag) {
+            this->orig_dx += fixed_half;
+            this->orig_dx &= ~(fixed_1 - 1);
+            this->orig_dy &= ~(fixed_1 - 1);
+            this->orig_dy += fixed_half;
+        } else {
+            this->orig_dy += fixed_1;
+	    /* Adobe CPSI does this, not sure why. */
+            /* fixme : check bbox of cached bitmap. */
+        }
+#   endif
+}
+
+int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, bool charpath_flag, fixed origin_x, fixed origin_y)
+{   int code;
+
+    t1_hinter__reset_outline(this);
+    this->FontType = FontType;
+    this->BlueScale = pdata->BlueScale;
+    this->blue_shift = float2fixed(pdata->BlueShift);
+    this->blue_fuzz  = import_shift(float2fixed(pdata->BlueFuzz), this->import_shift);
+    this->suppress_overshoots = (this->BlueScale > this->heigt_transform_coef / (1 << this->import_shift) - 0.00020417);
+    this->overshoot_threshold = (this->heigt_transform_coef != 0 ? (t1_glyph_space_coord)(fixed_half / this->heigt_transform_coef) : 0);
+    this->blue_rounding = (t1_hinter_space_coord)((this->BlueScale * 240) * (this->resolution * this->base_font_scale) * this->g2o_fraction);
+    this->ForceBold = pdata->ForceBold;
+    this->disable_hinting |= charpath_flag;
+    this->charpath_flag = charpath_flag;
+    code = t1_hinter__set_alignment_zones(this, pdata->OtherBlues.values, pdata->OtherBlues.count, botzone, false);
+    if (code >= 0)
+	code = t1_hinter__set_alignment_zones(this, pdata->BlueValues.values, min(2, pdata->BlueValues.count), botzone, false);
+    if (code >= 0)
+	code = t1_hinter__set_alignment_zones(this, pdata->BlueValues.values + 2, pdata->BlueValues.count - 2, topzone, false);
+    if (code >= 0)
+	code = t1_hinter__set_alignment_zones(this, pdata->FamilyOtherBlues.values, pdata->FamilyOtherBlues.count, botzone, true);
+    if (code >= 0)
+	code = t1_hinter__set_alignment_zones(this, pdata->FamilyBlues.values, min(2, pdata->FamilyBlues.count), botzone, true);
+    if (code >= 0)
+	code = t1_hinter__set_alignment_zones(this, pdata->FamilyBlues.values + 2, pdata->FamilyBlues.count - 2, topzone, true);
+    if (code >= 0)
+	code = t1_hinter__set_stem_snap(this, pdata->StdHW.values, pdata->StdHW.count, 0);
+    if (code >= 0)
+	code = t1_hinter__set_stem_snap(this, pdata->StdVW.values, pdata->StdVW.count, 1);
+    if (code >= 0)
+	code = t1_hinter__set_stem_snap(this, pdata->StemSnapH.values, pdata->StemSnapH.count, 0);
+    if (code >= 0)
+	code = t1_hinter__set_stem_snap(this, pdata->StemSnapV.values, pdata->StemSnapV.count, 1);
+    if (code >= 0)
+	t1_hinter__set_origin(this, origin_x, origin_y);
+    return code;
 }
 
 private inline int t1_hinter__can_add_pole(t1_hinter * this, t1_pole **pole)
@@ -653,30 +720,9 @@ private inline int t1_hinter__add_pole(t1_hinter * this, t1_glyph_space_coord xx
     pole->ox = pole->oy = 0;
     pole->type = type;
     pole->contour_index = this->contour_count;
-    pole->aligned_x = pole->aligned_y = false;
+    pole->aligned_x = pole->aligned_y = unaligned;
     this->pole_count++;
     return 0;
-}
-
-void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy)
-{   this->orig_dx = dx;
-    this->orig_dy = dy;
-#   if ADOBE_SHIFT_CHARPATH
-        /*  Adobe CPSI rounds coordinates for 'charpath' :
-            X to trunc(x+0.5)
-            Y to trunc(y)+0.5
-        */
-        if (this->charpath_flag) {
-            this->orig_dx += fixed_half;
-            this->orig_dx &= ~(fixed_1 - 1);
-            this->orig_dy &= ~(fixed_1 - 1);
-            this->orig_dy += fixed_half;
-        } else {
-            this->orig_dy += fixed_1;
-	    /* Adobe CPSI does this, not sure why. */
-            /* fixme : check bbox of cached bitmap. */
-        }
-#   endif
 }
 
 int t1_hinter__sbw(t1_hinter * this, t1_glyph_space_coord sbx, t1_glyph_space_coord sby
@@ -699,16 +745,21 @@ int t1_hinter__sbw_seac(t1_hinter * this, t1_glyph_space_coord sbx, t1_glyph_spa
 }
 
 int t1_hinter__rmoveto(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space_coord yy)
-{   if (this->pole_count > 0 && this->pole[this->pole_count - 1].type == moveto)
+{   int code;
+
+    if (this->pole_count > 0 && this->pole[this->pole_count - 1].type == moveto)
         this->pole_count--;
     if (this->pole_count > 0 && this->pole[this->pole_count - 1].type != closepath) {
-	int code; 
-
-        code = t1_hinter__add_pole(this, 0, 0, closepath);
+	code = t1_hinter__closepath(this);
 	if (code < 0)
 	    return code;
     }
-    return t1_hinter__add_pole(this, xx, yy, moveto);
+    code = t1_hinter__add_pole(this, xx, yy, moveto);
+    vd_circle(this->cx, this->cy, 2, RGB(255, 0, 0));
+    vd_moveto(this->cx, this->cy);
+    this->bx = this->cx;
+    this->by = this->cy;
+    return code;
 }
 
 private inline void t1_hinter__skip_degenerate_segnment(t1_hinter * this, int npoles)
@@ -728,6 +779,7 @@ int t1_hinter__rlineto(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space
     
     if (code < 0)
 	return code;
+    vd_lineto(this->cx, this->cy);
     t1_hinter__skip_degenerate_segnment(this, 1);
     return 0;
 }
@@ -746,6 +798,9 @@ int t1_hinter__rcurveto(t1_hinter * this, t1_glyph_space_coord xx0, t1_glyph_spa
     code = t1_hinter__add_pole(this, xx2, yy2, oncurve);
     if (code < 0)
 	return code;
+    vd_curveto(this->pole[this->pole_count - 3].gx, this->pole[this->pole_count - 3].gy,
+	       this->pole[this->pole_count - 2].gx, this->pole[this->pole_count - 2].gy,
+	       this->cx, this->cy);
     t1_hinter__skip_degenerate_segnment(this, 3);
     return 0;
 }
@@ -757,26 +812,29 @@ void t1_hinter__setcurrentpoint(t1_hinter * this, t1_glyph_space_coord xx, t1_gl
 
 int t1_hinter__closepath(t1_hinter * this)
 {   int contour_beg = this->contour[this->contour_count], code;
-    t1_pole *pole;
 
     if (contour_beg == this->pole_count)
-	return_error(gs_error_invalidfont);
-    if (any_abs(this->pole[contour_beg].gx - this->cx) <= 1 && /* Was 0.1 pixel in the old code. */
-        any_abs(this->pole[contour_beg].gy - this->cy) <= 1) {
-        /* Eliminate microscopic segment : */ 
-        this->pole_count --;
-	pole = &this->pole[this->pole_count];
+	return 0; /* maybe a single trailing moveto */
+#if VD_DRAW_IMPORT
+    vd_setcolor(RGB(255, 0, 0));
+    vd_setlinewidth(0);
+    vd_lineto(this->bx, this->by);
+    vd_closepath;
+#endif
+    if (this->bx == this->cx && this->by == this->cy) {
+        /* Don't create degenerate segment */ 
+	this->pole[this->pole_count - 1].type = closepath;
     } else {
-	code = t1_hinter__can_add_pole(this, &pole);
+	t1_glyph_space_coord cx = this->cx, cy = this->cy;
+
+	this->cx = this->bx;
+	this->cy = this->by;
+	code = t1_hinter__add_pole(this, 0, 0, closepath);
 	if (code < 0)
 	    return code;
+	this->cx = cx;
+	this->cy = cy;
     }
-    pole->type = closepath;
-    pole->gx = this->pole[contour_beg].gx;
-    pole->gy = this->pole[contour_beg].gy;
-    pole->contour_index = this->contour_count;
-    pole->aligned_x = pole->aligned_y = false;
-    this->pole_count++;
     this->contour_count++;
     if (this->contour_count >= this->max_contour_count)
         if(t1_hinter__realloc_array(this->memory, &this->contour, this->contour0, &this->max_contour_count, 
@@ -795,6 +853,15 @@ private inline int t1_hinter__can_add_hint(t1_hinter * this, t1_hint **hint)
     return 0;
 }
 
+private inline int t1_hinter__can_add_hint_range(t1_hinter * this, t1_hint_range **hint_range)
+{   if (this->hint_range_count >= this->max_hint_range_count)
+        if(t1_hinter__realloc_array(this->memory, &this->hint_range, this->hint_range0, &this->max_hint_range_count, 
+				    sizeof(this->hint_range0) / count_of(this->hint_range0), T1_MAX_HINTS, s_hint_range_array))
+	    return_error(gs_error_VMerror);
+    *hint_range = &this->hint_range[this->hint_range_count];
+    return 0;
+}
+
 int t1_hinter__drop_hints(t1_hinter * this)
 {   t1_hint *hint;
     int code =t1_hinter__can_add_hint(this, &hint);
@@ -803,13 +870,51 @@ int t1_hinter__drop_hints(t1_hinter * this)
 	return code;
     hint->type = replace;
     hint->g0 = hint->g1 = hint->ag0 = hint->ag1 = 0;
-    hint->aligned0 = hint->aligned1 = false;
+    hint->aligned0 = hint->aligned1 = unaligned;
     hint->start_pole = this->pole_count;
     hint->beg_pole = hint->end_pole = -1;
     hint->stem3_index = 0;
     hint->complex_link = -1;
     hint->contour_index = this->contour_count;
     this->hint_count++;
+    return 0;
+}
+
+int t1_hinter__hint_mask(t1_hinter * this, byte *mask)
+{   int hint_count = this->hint_count, i;
+
+    for(i = 0; i < hint_count; i++) {
+	bool activate = (mask[i >> 3] & (0x80 >> (i & 7))) != 0;
+	t1_hint *hint = &this->hint[i];
+
+	if (activate) {
+	    if (hint->range_index != -1 &&
+		(this->hint_range[hint->range_index].end_pole == -1 ||
+		 this->hint_range[hint->range_index].end_pole == this->pole_count)) {
+		 /* continie the range */
+		this->hint_range[hint->range_index].end_pole = -1;
+	    } else {
+		/* add new range */
+		t1_hint_range *hint_range;
+		int code = t1_hinter__can_add_hint_range(this, &hint_range);
+
+		if (code < 0)
+		   return code;
+		hint_range->next = hint->range_index;
+		hint->range_index = this->hint_range_count;
+		hint_range->beg_pole = (hint->range_index == -1 ? hint->start_pole : this->pole_count);
+		hint_range->end_pole = -1;
+		this->hint_range_count++;
+	    }
+	} else { 
+	    if (hint->range_index != -1 &&
+		this->hint_range[hint->range_index].end_pole == -1) {
+		/* deactivate */
+		this->hint_range[hint->range_index].end_pole = this->pole_count;
+	    } else
+		DO_NOTHING;
+	}
+    }
     return 0;
 }
 
@@ -824,12 +929,13 @@ private inline int t1_hinter__stem(t1_hinter * this, enum t1_hint_type type, uns
     hint->type = type;
     hint->g0 = hint->ag0 = s + import_shift(g0, this->import_shift);
     hint->g1 = hint->ag1 = s + import_shift(g0 + g1, this->import_shift);
-    hint->aligned0 = hint->aligned1 = false;
+    hint->aligned0 = hint->aligned1 = unaligned;
     hint->start_pole = this->pole_count;
     hint->beg_pole = hint->end_pole = -1;
     hint->stem3_index = stem3_index;
     hint->complex_link = -1;
     hint->contour_index = this->contour_count;
+    hint->range_index = -1;
     hint->completed = false;
     this->hint_count++;
     return 0;
@@ -917,13 +1023,15 @@ private void t1_hinter__simplify_representation(t1_hinter * this)
     for (i = 0; i < this->contour_count; i++)
         if (this->pole[this->contour[i]].type == moveto)
             this->pole[this->contour[i]].type = oncurve;
-    /*  After the decoding hint commands refer to the last pole before HR occures.
-        Move pointers to the beginning segment pole, so as they
-        rerer to oncurve pole :
-    */
-    for (i = 0; i < this->hint_count; i++)
-        if (this->hint[i].start_pole > this->contour[this->hint[i].contour_index])
-            this->hint[i].start_pole = t1_hinter__segment_beg(this, this->hint[i].start_pole);
+    if (this->FontType == 1) {
+	/*  After the decoding, hint commands refer to the last pole before HR occures.
+	    Move pointers to the beginning segment pole, so as they
+	    rerer to oncurve pole :
+	*/
+	for (i = 0; i < this->hint_count; i++)
+	    if (this->hint[i].start_pole > this->contour[this->hint[i].contour_index])
+		this->hint[i].start_pole = t1_hinter__segment_beg(this, this->hint[i].start_pole);
+    }
 }
 
 private void t1_hinter__make_complexes(t1_hinter * this)
@@ -1036,6 +1144,36 @@ private void t1_hinter__compute_stem_ranges(t1_hinter * this)
     */
 }
 
+private int t1_hinter__distribute_hints(t1_hinter * this)
+{   int hint_count = this->hint_count, i, j;
+
+    for (i = 0; i < hint_count; i++) {
+	if (this->hint[i].range_index == -1) {
+	    /* not sure, but old code does it, and some fonts use it. */
+	    this->hint[i].beg_pole = this->hint[i].start_pole;
+	    this->hint[i].end_pole = this->pole_count - 2;
+	} else {
+	    for(j = this->hint[i].range_index; j >= 0; j = this->hint_range[j].next) {
+		t1_hint *hint1 = &this->hint[i]; /* don't move outside - 'can_add_hint' may change */
+
+		if (j != hint1->range_index) {
+		    int code = t1_hinter__can_add_hint(this, &hint1);
+
+		    if (code < 0)
+			return code;
+		    *hint1 = this->hint[i];
+		    this->hint_count++;
+		}
+		hint1->beg_pole = this->hint_range[j].beg_pole;
+		hint1->end_pole = this->hint_range[j].end_pole;
+		if (hint1->end_pole == -1)
+		    hint1->end_pole = this->pole_count - 2;
+	    }
+	}
+    }
+    return 0;
+}
+
 private bool t1_hinter__is_stem_hint_applicable(t1_hinter * this, t1_hint *hint, int pole_index)
 {   if (hint->type == hstem 
             && (this->pole[pole_index].gy == hint->g0 || this->pole[pole_index].gy == hint->g1)
@@ -1115,10 +1253,10 @@ private void t1_hinter__add_overshoot(t1_hinter * this, t1_zone * zone, t1_glyph
     *y = zone->y + (zone->type == topzone ? gw1 : -gw1);
 }
 
-private bool t1_hinter__compute_aligned_coord(t1_hinter * this, t1_glyph_space_coord * gc, int segment_index, fixed t, bool horiz)
+private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, t1_glyph_space_coord * gc, int segment_index, fixed t, bool horiz)
 {   /* Returns true, if alignment zone is applied. */
     /* t is 0 or 0.5, and it is always 0 for curves. */
-    bool aligned = false;
+    enum t1_align_type align = unaligned;
     t1_glyph_space_coord gx = this->pole[segment_index].gx;
     t1_glyph_space_coord gy = this->pole[segment_index].gy;
 
@@ -1182,7 +1320,7 @@ private bool t1_hinter__compute_aligned_coord(t1_hinter * this, t1_glyph_space_c
                         }
 		    }
                 }
-                aligned = true;
+                align = (zone->type == topzone ? topzn : botzn);
             }
         }
     }
@@ -1190,7 +1328,7 @@ private bool t1_hinter__compute_aligned_coord(t1_hinter * this, t1_glyph_space_c
     t1_hinter__align_to_grid(this, this->g2o_fraction, &gx, &gy);
     vd_circle(gx, gy, 7, RGB(0,0,255));
     *gc = (horiz ? gy : gx);
-    return aligned;
+    return (align == unaligned ? aligned : align);
 }
 
 private int t1_hinter__find_stem_middle(t1_hinter * this, fixed *t, int pole_index, bool horiz)
@@ -1236,12 +1374,12 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
                     fixed t; /* Type 1 spec implies that it is 0 for curves, 0.5 for bars */
                     int segment_index = t1_hinter__find_stem_middle(this, &t, j, horiz);
                     t1_glyph_space_coord gc;
-                    bool aligned = t1_hinter__compute_aligned_coord(this, &gc, segment_index, t, horiz);
+                    enum t1_align_type align = t1_hinter__compute_aligned_coord(this, &gc, segment_index, t, horiz);
 
                     vd_square(this->pole[segment_index].gx, this->pole[segment_index].gy, 
                                 (horiz ? 7 : 9), (i < this->primary_hint_count ? RGB(0,0,255) : RGB(0,255,0)));
                     /* todo: optimize: primary commands don't need to align, if suppressed by secondary ones. */
-                    t1_hint__set_aligned_coord(&this->hint[i], gc, &this->pole[j], aligned);
+                    t1_hint__set_aligned_coord(&this->hint[i], gc, &this->pole[j], align);
                     jj = j;
                     j = t1_hinter__skip_stem(this, j, horiz);
                     if (j < jj) { /* Rolled over contour end ? */
@@ -1252,7 +1390,7 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
                 {   /* Step to the next pole in the range : */
                     jj = j;
                     j = t1_hinter__segment_end(this, j);
-                    if (j < jj) /* Rolled over contour end ? */
+                    if (j <= jj) /* Rolled over contour end ? */
                         j = this->contour[this->pole[j].contour_index + 1]; /* Go to the next contour. */
                 }
             }
@@ -1287,24 +1425,20 @@ private void t1_hinter__compute_opposite_stem_coords(t1_hinter * this)
             t1_glyph_space_coord pixel_g = (horiz ? pixel_gh : pixel_gw);
             t1_glyph_space_coord ag0 = this->hint[i].ag0;
             t1_glyph_space_coord ag1 = this->hint[i].ag1;
-            bool aligned0 = this->hint[i].aligned0;
-            bool aligned1 = this->hint[i].aligned1;
+            enum t1_align_type aligned0 = this->hint[i].aligned0;
+            enum t1_align_type aligned1 = this->hint[i].aligned1;
             t1_glyph_space_coord gw;
             int19 cf = (horiz ? this->heigt_transform_coef_rat : this->width_transform_coef_rat);
             int19 ci = (horiz ? this->heigt_transform_coef_inv : this->width_transform_coef_inv);
-            bool weak_align0 = (this->hint[i].g0 != this->hint[i].ag0);
-            bool weak_align1 = (this->hint[i].g1 != this->hint[i].ag1);
 
             for (j = this->hint[i].complex_link; j != -1; j = this->hint[j].complex_link) {
-                weak_align0 |= (this->hint[j].g0 != this->hint[j].ag0);
-                weak_align1 |= (this->hint[j].g1 != this->hint[j].ag1);
-                if (this->hint[j].aligned0)
-                    ag0 = this->hint[j].ag0, aligned0 = true;
-                else if (!aligned0 && this->hint[j].ag0 != this->hint[j].g0)
+                if (this->hint[j].aligned0 > aligned0)
+                    ag0 = this->hint[j].ag0, aligned0 = this->hint[j].aligned0;
+                else if (aligned0 == unaligned && this->hint[j].ag0 != this->hint[j].g0)
                     ag0 = this->hint[j].ag0;
-                if (this->hint[j].aligned1)
-                    ag1 = this->hint[j].ag1, aligned1 = true;
-                else if (!aligned0 && this->hint[j].ag1 != this->hint[j].g1)
+                if (this->hint[j].aligned1 > aligned1)
+                    ag1 = this->hint[j].ag1, aligned1 = this->hint[j].aligned1;
+                else if (aligned0 == unaligned && this->hint[j].ag1 != this->hint[j].g1)
                     ag1 = this->hint[j].ag1;
             }
             gw = any_abs(this->hint[i].g1 - this->hint[i].g0);
@@ -1360,52 +1494,38 @@ private void t1_hinter__compute_opposite_stem_coords(t1_hinter * this)
             }
             if (this->hint[i].g1 - this->hint[i].g0 < 0)
                 gw = -gw;
-            if (aligned0 && !aligned1)
+            if (aligned0 > aligned1)
                 ag1 = ag0 + gw;
-            else if (!aligned0 && aligned1)
-                ag0 = ag1 - gw;
-            else if (!aligned0 && !aligned1 && weak_align0 && !weak_align1)
-                ag1 = ag0 + gw;
-            else if (!aligned0 && !aligned1 && !weak_align0 && weak_align1)
+            else if (aligned0 < aligned1)
                 ag0 = ag1 - gw;
             else {
                 t1_glyph_space_coord d0 = any_abs(ag0 - this->hint[i].g0);
                 t1_glyph_space_coord d1 = any_abs(ag1 - this->hint[i].g1);
 
-                if (d0 < d1)
-                    ag1 = ag0 + gw;
-                else
-                    ag0 = ag1 - gw;
+		if (aligned0 == topzn || aligned1 == topzn)
+		    if (gw > 0)
+			ag0 = ag1 - gw;
+		    else
+			ag1 = ag0 + gw;
+		else if (aligned0 == botzn || aligned1 == botzn)
+		    if (gw < 0)
+			ag0 = ag1 - gw;
+		    else
+			ag1 = ag0 + gw;
+		else {
+		    if (d0 < d1)
+			ag1 = ag0 + gw;
+		    else
+			ag0 = ag1 - gw;
+		}
             }
             for (j = i; j != -1; j = this->hint[j].complex_link) {
                 this->hint[j].ag0 = ag0;
                 this->hint[j].ag1 = ag1;
+		/*this->hint[j].aligned0 = this->hint[j].aligned1 = max(aligned0, aligned1);*/
                 this->hint[j].completed = true; /* Prevents redundant processing. */
             }
         }
-#   if 0
-    {   /*  hack : Norrow the stem for better Adobe RIP compatibility for curved stems.
-            Probably Adobe thinks that pixel center must be about 0.1 pixel far from boundary.
-        */
-        double s = this->resolution * this->font_size;
-        /* double e = (s < 26.5 ? 0.125 : s < 55 ? 0.09 : s < 110 ? 0.03 : 0); */
-        double e = Maxd(0.125 - 0.08 * s / 110, 0);
-        t1_glyph_space_coord eh = (t1_glyph_space_coord)(pixel_gh * e);
-        t1_glyph_space_coord ew = (t1_glyph_space_coord)(pixel_gw * e);
-
-        for (i = 0; i < this->hint_count; i++)
-            if (this->hint[i].type == vstem || this->hint[i].type == hstem) {
-                bool horiz = (this->hint[i].type == hstem);
-                t1_glyph_space_coord h = (horiz ? eh : ew);
-                t1_glyph_space_coord gw = this->hint[i].ag1 - this->hint[i].ag0;
-
-                if (gw < 0)
-                    h = -h;
-                this->hint[i].ag0 += h;
-                this->hint[i].ag1 -= h;
-            }
-    }
-#   endif
 }
 
 private void t1_hinter__align_stem_poles(t1_hinter * this)
@@ -1416,40 +1536,41 @@ private void t1_hinter__align_stem_poles(t1_hinter * this)
             t1_hint * hint = &this->hint[i];
             int beg_range_pole = hint->beg_pole;        
             int end_range_pole = hint->end_pole;
-            bool horiz = (this->hint[i].type == hstem);
+            bool horiz = (hint->type == hstem);
             t1_glyph_space_coord ag0 = this->hint[i].ag0, ag1 = this->hint[i].ag1;
+	    enum t1_align_type aligned0 = hint->aligned0, aligned1 = hint->aligned1;
 
             for (j = beg_range_pole; j <= end_range_pole; j++) {
                 t1_pole * pole = &this->pole[j];
 
                 if (pole->type != oncurve)
                     continue;
-                if (!horiz && pole->aligned_x && pole->gx == hint->g0)
-                    ag0 = pole->ax;
-                else if (!horiz && pole->aligned_x && pole->gx == hint->g1)
-                    ag1 = pole->ax;
-                else if ( horiz && pole->aligned_y && pole->gy == hint->g0)
-                    ag0 = pole->ay;
-                else if ( horiz && pole->aligned_y && pole->gy == hint->g1)
-                    ag1 = pole->ay;
+                if (!horiz && pole->aligned_x > aligned0 && pole->gx == hint->g0)
+                    ag0 = pole->ax, aligned0 = pole->aligned_x;
+                else if (!horiz && pole->aligned_x > aligned1 && pole->gx == hint->g1)
+                    ag1 = pole->ax, aligned1 = pole->aligned_x;
+                else if ( horiz && pole->aligned_y > aligned0 && pole->gy == hint->g0)
+                    ag0 = pole->ay, aligned0 = pole->aligned_y;
+                else if ( horiz && pole->aligned_y > aligned1 && pole->gy == hint->g1)
+                    ag1 = pole->ay, aligned1 = pole->aligned_y;
             }
-            if (ag0 == this->hint[i].ag0 || ag1 == this->hint[i].ag1) {
-                if (ag0 != this->hint[i].ag0)
-                    ag1 += ag0 - this->hint[i].ag0;
+            if (ag0 == hint->ag0 || ag1 == hint->ag1) {
+                if (ag0 != hint->ag0)
+                    ag1 += ag0 - hint->ag0;
                 else 
-                    ag0 += ag1 - this->hint[i].ag1;
+                    ag0 += ag1 - hint->ag1;
             }
             for (j = beg_range_pole; j <= end_range_pole; j++) {
                 t1_pole * pole = &this->pole[j];
 
                 if (!horiz && pole->gx == hint->g0)
-                    pole->ax = ag0, pole->aligned_x = true;
+                    pole->ax = ag0, pole->aligned_x = aligned0;
                 else if (!horiz && pole->gx == hint->g1)
-                    pole->ax = ag1, pole->aligned_x = true;
+                    pole->ax = ag1, pole->aligned_x = aligned1;
                 else if ( horiz && pole->gy == hint->g0)
-                    pole->ay = ag0, pole->aligned_y = true;
+                    pole->ay = ag0, pole->aligned_y = aligned0;
                 else if ( horiz && pole->gy == hint->g1)
-                    pole->ay = ag1, pole->aligned_y = true;
+                    pole->ay = ag1, pole->aligned_y = aligned1;
             }
         }
 }
@@ -1682,17 +1803,19 @@ private void t1_hinter__interpolate_other_poles(t1_hinter * this)
 
 private int t1_hinter__export(t1_hinter * this, gs_op1_state * s)
 {   int i, j, code;
+    fixed fx, fy;
 
-    for(i = 0; i < this->contour_count; i++) {
+    for(i = 0; ; i++) {
         int beg_pole = this->contour[i];
         int end_pole = this->contour[i + 1] - 2;
         t1_pole *pole = & this->pole[beg_pole];
-        fixed fx, fy;
 
         g2d(this, pole->ax, pole->ay, &fx, &fy);
         code = gx_path_add_point(s->ppath, fx, fy);
 	if (code < 0)
 	    return code;
+	if (i >= this->contour_count)
+	    break;
 	/* vd_setcolor(RGB(255,0,0)); 
            vd_moveto(fx,fy);
 	*/
@@ -1728,11 +1851,11 @@ private int t1_hinter__export(t1_hinter * this, gs_op1_state * s)
     return 0;
 }
 
-private void t1_hinter__add_trailing_moveto(t1_hinter * this)
+private int t1_hinter__add_trailing_moveto(t1_hinter * this)
 {   t1_glyph_space_coord gx = this->width_gx, gy = this->width_gy;
 
     t1_hinter__align_to_grid(this, this->g2o_fraction, &gx, &gy);
-    t1_hinter__rmoveto(this, gx - this->cx, gy - this->cy);
+    return t1_hinter__rmoveto(this, gx - this->cx, gy - this->cy);
 }
 
 private void t1_hinter__add_full_width_hint(t1_hinter * this)
@@ -1779,20 +1902,29 @@ private void t1_hinter__add_full_width_hint(t1_hinter * this)
 int t1_hinter__endglyph(t1_hinter * this, gs_op1_state * s)
 {   int code;
 
-    vd_get_dc('h');
-    vd_set_central_shift;
-    vd_set_scale(0.2/4096.0);
-    vd_set_origin(0,0);
-    vd_get_dc('h');
-    vd_erase(RGB(255,255,255));
+    if (!vd_enabled) { /* Maybe enabled in t1_hinter__init. */
+	vd_get_dc('h');
+	vd_set_shift(VD_SHIFT_X, VD_SHIFT_Y);
+	vd_set_scale(VD_SCALE);
+	vd_set_origin(0, 0);
+	vd_erase(RGB(255, 255, 255));
+    }
     t1_hinter__paint_raster_grid(this);
     t1_hinter__simplify_representation(this);
+    code = t1_hinter__add_trailing_moveto(this);
+    if (code < 0)
+	goto exit;
     t1_hinter__paint_glyph(this, false);
-    t1_hinter__add_trailing_moveto(this);
     if (!this->disable_hinting) {
         /* t1_hinter__add_full_width_hint(this); Gives worse results. */
         t1_hinter__make_complexes(this);
-        t1_hinter__compute_stem_ranges(this);
+	if (this->FontType == 1)
+	    t1_hinter__compute_stem_ranges(this);
+	else {
+	    code = t1_hinter__distribute_hints(this);
+	    if (code < 0)
+		goto exit;
+	}
         t1_hinter__align_stem_commands(this);
         t1_hinter__compute_opposite_stem_coords(this);
         /* todo :  t1_hinter__align_stem3(this); */
@@ -1812,8 +1944,8 @@ int t1_hinter__endglyph(t1_hinter * this, gs_op1_state * s)
 	*/
     }
     code = t1_hinter__export(this, s);
+exit:
     t1_hinter__free_arrays(this);
     vd_release_dc;
     return code;
 }
-

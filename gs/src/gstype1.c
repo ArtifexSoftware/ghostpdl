@@ -93,53 +93,21 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 
     switch (pcis->init_done) {
 	case -1:
-            NEW(t1_hinter__reset(h, pcis->pis->memory));
-#	    if NEW_TYPE1_HINTER
-            code = t1_hinter__set_transform(h, &pcis->pis->ctm, 
-		    &pfont->FontBBox, &pfont->FontMatrix, &pfont->base->FontMatrix);
-	    if (code < 0)
-	    	return code;
-#	    endif
+	    NEW(t1_hinter__reset(h, pcis->pis->memory));
 	    break;
 	case 0:
 	    gs_type1_finish_init(pcis, &s);	/* sets sfc, ptx, pty, origin */
+	    ftx = pcis->origin.x, fty = pcis->origin.y;
 #	    if NEW_TYPE1_HINTER
-            t1_hinter__reset_outline(h);
-
-            t1_hinter__set_blue_values(h, pdata->BlueScale, pdata->BlueShift, pdata->BlueFuzz);
-            t1_hinter__set_bold(h, pdata->ForceBold);
-            t1_hinter__set_italic(h,0/*ItalicAngle*/); /*fixme : need ItalicAngle from FontInfo */
-            t1_hinter__set_charpath_flag(h, pcis->charpath_flag);
-            code = t1_hinter__set_alignment_zones(h, pdata->OtherBlues.values, pdata->OtherBlues.count, botzone, false);
-	    if (code >= 0)
-		code = t1_hinter__set_alignment_zones(h, pdata->BlueValues.values, min(2, pdata->BlueValues.count), botzone, false);
-	    if (code >= 0)
-		code = t1_hinter__set_alignment_zones(h, pdata->BlueValues.values + 2, pdata->BlueValues.count - 2, topzone, false);
-	    if (code >= 0)
-		code = t1_hinter__set_alignment_zones(h, pdata->FamilyOtherBlues.values, pdata->FamilyOtherBlues.count, botzone, true);
-	    if (code >= 0)
-		code = t1_hinter__set_alignment_zones(h, pdata->FamilyBlues.values, min(2, pdata->FamilyBlues.count), botzone, true);
-	    if (code >= 0)
-		code = t1_hinter__set_alignment_zones(h, pdata->FamilyBlues.values + 2, pdata->FamilyBlues.count - 2, topzone, true);
-	    if (code >= 0)
-		code = t1_hinter__set_stem_snap(h, pdata->StdHW.values, pdata->StdHW.count, 0);
-	    if (code >= 0)
-		code = t1_hinter__set_stem_snap(h, pdata->StdVW.values, pdata->StdVW.count, 1);
-	    if (code >= 0)
-		code = t1_hinter__set_stem_snap(h, pdata->StemSnapH.values, pdata->StemSnapH.count, 0);
-	    if (code >= 0)
-		code = t1_hinter__set_stem_snap(h, pdata->StemSnapV.values, pdata->StemSnapV.count, 1);
+            code = t1_hinter__init(h, &pcis->pis->ctm, &pfont->FontBBox, 
+			    &pfont->FontMatrix, &pfont->base->FontMatrix);
 	    if (code < 0)
 	    	return code;
-	    {	gs_fixed_point p;
-
-		code = gx_path_current_point(pcis->path, &p);
-		if (code < 0)
-	    	    return code;
-		t1_hinter__set_origin(h, p.x, p.y);
-	    }
+	    code = t1_hinter__set_font_data(h, 1, pdata, pcis->charpath_flag, 
+			    pcis->origin.x, pcis->origin.y);
+	    if (code < 0)
+	    	return code;
 #	    endif
-	    ftx = pcis->origin.x, fty = pcis->origin.y;
 	    break;
 	default /*case 1 */ :
 	    ptx = pcis->position.x;

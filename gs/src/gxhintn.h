@@ -20,6 +20,11 @@
 #ifndef gxhintn_INCLUDED
 #  define gxhintn_INCLUDED
 
+#ifndef gs_type1_data_s_DEFINED
+struct gs_type1_data_s;
+#endif
+typedef struct gs_type1_data_s gs_type1_data;
+
 #define T1_MAX_STEM_SNAPS 12
 #define T1_MAX_ALIGNMENT_ZONES 6
 #define T1_MAX_CONTOURS 10
@@ -43,6 +48,10 @@ enum t1_zone_type
 {   topzone, botzone
 };
 
+enum t1_align_type
+{   unaligned, aligned, topzn, botzn
+};
+
 typedef struct {
     double xx, xy, yx, yy;
 } double_matrix;
@@ -59,21 +68,27 @@ typedef struct t1_pole_s /* a pole of outline */
     t1_hinter_space_coord ox,oy;
     enum t1_pole_type type;
     int contour_index;
-    bool aligned_x, aligned_y;
+    enum t1_align_type aligned_x, aligned_y;
 } t1_pole;
 
 typedef struct t1_hint_s
 {   enum t1_hint_type type;
     t1_glyph_space_coord g0, g1; /* starting and ending transversal coord of the stem */
     t1_glyph_space_coord ag0, ag1; /* starting and ending transversal aligned coord of the stem */
-    bool aligned0, aligned1; /* ag0, ag1 is aligned */
+    enum t1_alignment_type aligned0, aligned1; /* ag0, ag1 is aligned */
     short start_pole; /* outline pole to search for stem the stem from */
     short beg_pole, end_pole; /* outline interval of the stem */
-    unsigned int stem3_index; /* 1,2,3 for stem3, 0 for other types */
+    unsigned int stem3_index; /* 1,2,3 for stem3 (not used yet), 0 for other types */
     short complex_link; /* the index of next member of same complex */
     int contour_index;
+    int range_index; /* type 2 only */
     bool completed;
 } t1_hint;
+
+typedef struct t1_hint_range_s
+{   short beg_pole, end_pole;
+    int next;
+} t1_hint_range; /* type 2 only */
 
 typedef struct t1_zone_s /* alignment zone */
 {   enum t1_zone_type type;
@@ -82,8 +97,7 @@ typedef struct t1_zone_s /* alignment zone */
 } t1_zone;
 
 typedef struct t1_hinter_s
-{   long italic_x, italic_y; /* tan(ItalicAngle) */
-    fraction_matrix ctmf;
+{   fraction_matrix ctmf;
     fraction_matrix ctmi;
     unsigned int g2o_fraction_bits;
     unsigned int import_shift;
@@ -93,6 +107,7 @@ typedef struct t1_hinter_s
     fixed orig_dx, orig_dy; /* glyph origin in device space */
     t1_glyph_space_coord width_gx, width_gy; /* glyph space coords of the glyph origin */
     t1_glyph_space_coord cx, cy; /* current point */
+    t1_glyph_space_coord bx, by; /* starting point of a contour */
     double BlueScale;
     t1_glyph_space_coord blue_shift, blue_fuzz;
     t1_pole pole0[T1_MAX_POLES], *pole;
@@ -100,12 +115,15 @@ typedef struct t1_hinter_s
     t1_zone zone0[T1_MAX_ALIGNMENT_ZONES], *zone;
     int contour0[T1_MAX_CONTOURS], *contour;
     t1_glyph_space_coord stem_snap[2][T1_MAX_STEM_SNAPS + 1]; /* StdWH + StemSnapH, StdWV + StemSnapV */
+    t1_hint_range hint_range0[T1_MAX_HINTS], *hint_range;
     int stem_snap_count[2]; /* H, V */
     int contour_count, max_contour_count;
     int zone_count, max_zone_count;
     int pole_count, max_pole_count;
     int hint_count, max_hint_count;
+    int hint_range_count, max_hint_range_count;
     int primary_hint_count;
+    int FontType; /* 1 or 2 */
     bool ForceBold;
     bool seac_flag;
     bool keep_stem_width;
@@ -127,15 +145,11 @@ typedef struct t1_hinter_s
 } t1_hinter;
 
 void t1_hinter__reset(t1_hinter * this, gs_memory_t * mem);
+int  t1_hinter__init(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, 
+			gs_matrix * FontMatrix, gs_matrix * baseFontMatrix);
+int  t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, 
+			bool charpath_flag, fixed origin_x, fixed origin_y);
 void t1_hinter__reset_outline(t1_hinter * this);
-int  t1_hinter__set_transform(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, gs_matrix * FontMatrix, gs_matrix * baseFontMatrix);
-int  t1_hinter__set_alignment_zones(t1_hinter * this, float * blues, int count, enum t1_zone_type type, bool family);
-int  t1_hinter__set_stem_snap(t1_hinter * this, float * value, int count, unsigned short hv);
-void t1_hinter__set_blue_values(t1_hinter * this, double BlueScale, double BlueShift, double BlueFuzz);
-void t1_hinter__set_bold(t1_hinter * this, bool ForceBold);
-void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy);
-void t1_hinter__set_italic(t1_hinter * this, double ItalicAngle);
-void t1_hinter__set_charpath_flag(t1_hinter * this, bool charpath);
 
 int  t1_hinter__sbw(t1_hinter * this, t1_glyph_space_coord sbx, t1_glyph_space_coord sby
                                     , t1_glyph_space_coord wx,  t1_glyph_space_coord wy);
@@ -148,6 +162,7 @@ int  t1_hinter__rcurveto(t1_hinter * this, t1_glyph_space_coord xx0, t1_glyph_sp
 void t1_hinter__setcurrentpoint(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space_coord yy);
 int  t1_hinter__closepath(t1_hinter * this);
 
+int  t1_hinter__hint_mask(t1_hinter * this, byte *mask);
 int  t1_hinter__drop_hints(t1_hinter * this);
 int  t1_hinter__dotsection(t1_hinter * this);
 int  t1_hinter__hstem(t1_hinter * this, t1_glyph_space_coord x0, t1_glyph_space_coord x1);
