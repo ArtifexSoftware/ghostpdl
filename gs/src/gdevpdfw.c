@@ -66,24 +66,6 @@ pdf_write_Widths(gx_device_pdf *pdev, int first, int last,
     return 0;
 }
 
-/* Write a FontBBox dictionary element. */
-private int
-pdf_write_font_bbox(gx_device_pdf *pdev, const gs_int_rect *pbox)
-{
-    stream *s = pdev->strm;
-    /* AR 4 doesn't like fonts with empty FontBBox which
-     * happens when the font contains only space characters.
-     * Small bbox causes AR 4 to display a hairline. So we use
-     * the full BBox.
-     */ 
-    int x= pbox->q.x + ((pbox->p.x == pbox->q.x) ? 1000 : 0);
-    int y= pbox->q.y + ((pbox->p.y == pbox->q.y) ? 1000 : 0);
-
-    pprintd4(s, "/FontBBox[%d %d %d %d]",
-	     pbox->p.x, pbox->p.y, x, y);
-    return 0;
-}
-
 /* Write a synthesized bitmap font resource. */
 private int
 pdf_write_synthesized_type3(gx_device_pdf *pdev, const pdf_font_t *pef)

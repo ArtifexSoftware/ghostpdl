@@ -717,6 +717,11 @@ int pdf_function_scaled(gx_device_pdf *pdev, const gs_function_t *pfn,
 int pdf_write_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 		       long *pid);
 
+/* ------ Fonts ------ */
+
+/* Write a FontBBox dictionary element. */
+int pdf_write_font_bbox(gx_device_pdf *pdev, const gs_int_rect *pbox);
+
 /* ---------------- Exported by gdevpdfm.c ---------------- */
 
 /*
