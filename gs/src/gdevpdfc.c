@@ -882,8 +882,12 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 	discard(COS_RESOURCE_VALUE(pvalue, pca));
     } else
 	discard(COS_OBJECT_VALUE(pvalue, pca));
-    if (pres != NULL)
+    if (pres != NULL) {
 	pres->where_used |= pdev->used_mask;
+	code = pdf_add_resource(pdev, pdev->substream_Resources, "/ColorSpace", pres);
+	if (code < 0)
+	    return code;
+    }
     return 0;
 }
 pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
