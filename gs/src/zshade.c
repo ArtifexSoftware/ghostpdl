@@ -238,7 +238,7 @@ build_shading_function(const ref * op, gs_function_t ** ppfn, int num_inputs,
 	for (i = 0; i < size; ++i) {
 	    ref rsubfn;
 
-	    array_get(op, (long)i, &rsubfn);
+	    array_get(pFunction, (long)i, &rsubfn);
 	    code = fn_build_function(&rsubfn, &Functions[i], mem);
 	    if (code < 0)
 		break;
