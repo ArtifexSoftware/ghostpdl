@@ -101,14 +101,31 @@ pdfdict begin
   } ifelse
 } bdef
 
-/find_in_diff     % <Differences> <index> find_in_diff <bool>
-{ false exch 0 4 3 roll
-  { dup type /nametype ne { exch pop } { pop 1 add } ifelse
-    2 copy eq {
-      pop pop pop true 0 0 exit
-    } if
+% Returns true if the current glyph is in the Differences array at
+% the specified index value. This is needed because the Widths
+% array may map to the same glyph at different positions from the
+% Encoding. We want to use the Width that was associated with the
+% one specified in the Encoding::Differences list.
+/match_in_diff     % <Differences> <index> <glyphname> match_in_diff <bool>
+{ false 4 1 roll 0 4 -1 roll	% stack: false index glyphname at_index==0 Differences
+  { exch 1 index type /nametype ne {
+      % stack: false index glyphname Diff_element at_index 
+      pop	% Diff_element is new at_index
+    } {
+      % stack: false index glyphname Diff_element at_index 
+      exch 2 index eq {
+        % stack: false index glyphname at_index 
+	dup 3 index eq {
+          true 5 1 roll	% stack: true false index glyphname at_index
+          pop exit
+        } if
+      } if
+      1 add		% at_index++ stack: false index glyphname at_index' 
+    } ifelse
   } forall
-  pop pop
+  % stack: true  false index     glyphname
+  %  or  : false index glyphname at_index
+  pop pop pop
 } bdef
 
 % Get the metrics of a font, if specified.
@@ -141,14 +158,10 @@ pdfdict begin
 	 Widths 2 index 4 index sub dup 2 index length ge {
            (   **** Warning: Font Widths array size is smaller than character range.\n)
            pdfformaterror
+           % use MissingWidth if it's available, if not, default to 1000 (full width)
 	   pop pop 4 index /FontDescriptor knownoget {
-	     /MissingWidth knownoget not {	% use MissingWidth if it's available
-	       1000	% default to full width
-	     }
-	     if
-	   } {
-	     1000	% default to full width
-	   }
+	     /MissingWidth knownoget not { 1000	} if
+	   } { 1000 } ifelse
 	   ifelse
          } {
 	   get
@@ -164,13 +177,15 @@ pdfdict begin
 		% same character appears more than once, because the Metrics
 		% dictionary works by character name, not by character code.
 		% We prefer to take (1) non-zero width, and (2) width for 
-		% the character code which appears in Differences.
+		% the character name which appears in Differences. If the
+		% character name appears in Differences, use the Width that
+		% corresponds to the index in differences.
 	   dup 0 eq { exit } if
 	   Metrics 2 index .knownget not { 0 } if 0 ne {
 	     5 index /Encoding knownoget not { exit } if
 	     dup type /dicttype ne { pop exit } if
 	     /Differences knownoget not { exit } if
-	     3 index //find_in_diff exec not { exit } if
+	     3 index 3 index //match_in_diff exec not { exit } if
 	   } if
 	   2 copy Metrics 3 1 roll put
 	   exit
@@ -204,7 +219,7 @@ pdfdict begin
   } ifelse
 } bdef
 
-currentdict /find_in_diff undef
+currentdict /match_in_diff undef
 
 % ---------------- Descriptors ---------------- %
 
