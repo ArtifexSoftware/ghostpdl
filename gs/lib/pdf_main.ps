@@ -115,14 +115,25 @@ currentdict /runpdfstring .undef
     { mark /CropBox 3 -1 roll /PAGES pdfmark
     }
    if
-   /FirstPage where { pop FirstPage } { 1 } ifelse
+   /FirstPage where 
+    { pop FirstPage dup pdfpagecount gt
+      { (\nRequested FirstPage is greater than the number of pages in the file: ) print
+        pdfpagecount = flush
+      } if
+    } {
+      1
+    } ifelse
    1
-   /LastPage where { pop LastPage } { pdfpagecount } ifelse
-   QUIET not
-    { (Processing pages ) print 2 index =only ( through ) print dup =only
-      (.) = flush
+   /LastPage where { pop LastPage pdfpagecount .min } { pdfpagecount } ifelse
+   2 index 1 index gt
+    { (   No pages will be processed \(FirstPage > LastPage\).) = flush }
+    { QUIET not
+      { (Processing pages ) print 2 index =only ( through ) print dup =only
+        (.) = flush
+      }
+     if
     }
-   if
+   ifelse
     { dup /Page# exch store
       QUIET not { (Page ) print dup == flush } if
       pdfgetpage pdfshowpage
