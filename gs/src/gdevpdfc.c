@@ -570,20 +570,20 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	/* Check that we can represent this as a CalGray space. */
 	const gs_cie_a *pcie = pcs->params.a;
 	bool unitary = cie_ranges_are_0_1(&pcie->RangeA, 1);
+	bool identityA = (pcie->MatrixA.u == 1 && pcie->MatrixA.v == 1 && 
+	                  pcie->MatrixA.w == 1);
 	gs_vector3 expts;
 
 	pciec = (const gs_cie_common *)pcie;
-	if (!(pcie->MatrixA.u == 1 && pcie->MatrixA.v == 1 &&
-	      pcie->MatrixA.w == 1 &&
-	      pcie->common.MatrixLMN.is_identity))
+	if (!pcie->common.MatrixLMN.is_identity)
 	    return_error(gs_error_rangecheck);
-	if (unitary &&
+	if (unitary && identityA &&
 	    CIE_CACHE_IS_IDENTITY(&pcie->caches.DecodeA) &&
 	    CIE_SCALAR3_CACHE_IS_EXPONENTIAL(pcie->common.caches.DecodeLMN, expts) &&
 	    expts.v == expts.u && expts.w == expts.u
 	    ) {
 	    DO_NOTHING;
-	} else if (unitary &&
+	} else if (unitary && identityA &&
 		   CIE_CACHE3_IS_IDENTITY(pcie->common.caches.DecodeLMN) &&
 		   cie_vector_cache_is_exponential(&pcie->caches.DecodeA, &expts.u)
 		   ) {
