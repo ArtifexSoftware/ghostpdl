@@ -70,9 +70,14 @@ shade_fill_device_rectangle(const shading_fill_state_t * pfs,
     else
 	ymin = p1->y, ymax = p0->y;
 
+    /* See gx_default_fill_path for an explanation of the tweak below. */
     xmin -= pis->fill_adjust.x;
+    if (pis->fill_adjust.x == fixed_half)
+	xmin += fixed_epsilon;
     xmax += pis->fill_adjust.x;
     ymin -= pis->fill_adjust.y;
+    if (pis->fill_adjust.y == fixed_half)
+	ymin += fixed_epsilon;
     ymax += pis->fill_adjust.y;
     x = fixed2int_var_pixround(xmin);
     y = fixed2int_var_pixround(ymin);
