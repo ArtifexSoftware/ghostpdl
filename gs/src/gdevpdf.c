@@ -497,13 +497,13 @@ pdf_open(gx_device * dev)
 	    )
 	    fclose(rfile);
 	else {
-	    /* Hope that the nanosecond clock is random enough. */
+	    /* Hope that the clock is random enough. */
 	    long tm[2];
 
 	    if (rfile)
 		fclose(rfile);
 	    gp_get_realtime(tm);
-	    pdev->random_offset = tm[1];
+	    pdev->random_offset = tm[0] + tm[1];
 	}
     }
 
