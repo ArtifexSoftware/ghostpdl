@@ -65,28 +65,30 @@ bind def
         % Try a FunctionType 4 function first; build the function dictionary
         % in local VM.
         .currentglobal exch //false .setglobal
+	% Make the dictionary a couple of elements large in case this fails
+	% and we need the dictionary to build a sampled function.
         6 dict begin
         /FunctionType 4 def
         /Function exch def
         /Domain 2 index //.cs_get_range exec def
         /Range 2 index 2 get //.cs_get_range exec def
         currentdict end
-
-        % see if this qualifies as a function
-          { .buildfunction }
-        .internalstopped
-          {
-            % no luck, try a sampled function
-            dup /Order 3 put
-            dup /BitsPerSample 16 put
-              { .buildsampledfunction }
-            .internalstopped
-          }
-          { //false }
-        ifelse
-          { /Function get }     % still no luck; use the original procedure
-        if
-
+        { .buildfunction }
+        .internalstopped	% If .buildfunction fails then not type 4 func.
+        {			% If not then try building a sampled (type 0) func.
+	  % We are using the dictionary which was created before .buildfunction
+          dup /Order 3 put
+          dup /BitsPerSample 16 put
+          { .buildsampledfunction }
+          .internalstopped	% If .buildsamplefunction fails then invalid func.
+          {			% Failed - Create a dummy tint transform function
+	    % We are using the dictionary which was created before .buildfunction
+    	    dup /Function {} put    % Replace invalid tint transform with dummy
+    	    .buildfunction
+    	  }
+          if		% Check status from .buildsamplefunction/.internalstopped
+	}
+	if		% check status from .buildfunction/.intermalstopped
         % restore the VM mode
         exch .setglobal
       }

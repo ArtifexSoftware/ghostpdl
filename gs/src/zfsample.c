@@ -52,6 +52,7 @@
  */
 struct gs_sampled_data_enum_s {
     int indexes[MAX_NUM_INPUTS];
+    int o_stack_depth;		/* used to verify stack while sampling */
     gs_function_t * pfn;
 };
 
@@ -245,7 +246,7 @@ increment_cube_indexes(gs_function_Sd_params_t * params, int indexes[])
 	if (indexes[i] < params->Size[i])
 	    /*
 	     * We have not reached the end of the edge.  Exit but
-	     * indicate that we are done done with the hypercube.
+	     * indicate that we are not done with the hypercube.
 	     */
 	    return false;
 	/*
@@ -371,6 +372,15 @@ fail:
 #define esp_finish_proc (*real_opproc(esp - 2))
 #define sample_proc esp[-1]
 #define senum r_ptr(esp, gs_sampled_data_enum)
+/*
+ * Sone invalid tint transform functions pop more items off of the stack
+ * then they are supposed to use.  This is a violation of the PLRM however
+ * this is done by Adobe and we have to handle the situation.  This is
+ * a kludge but we set aside some unused stack space below the input
+ * variables.  The tint transform can trash this without causing any
+ * real problems.
+ */
+#define O_STACK_PAD 3
 
 /*
  * Set up to collect the data for the sampled function.  This is used for
@@ -381,13 +391,14 @@ private int
 sampled_data_setup(i_ctx_t *i_ctx_p, gs_function_t *pfn,
 	const ref * pproc, int (*finish_proc)(i_ctx_t *), gs_memory_t * mem)
 {
+    os_ptr op = osp;
     gs_sampled_data_enum *penum;
     int i;
     gs_function_Sd_params_t * params = (gs_function_Sd_params_t *)&pfn->params;
 
     check_estack(estack_storage + 1);		/* Verify space on estack */
-    check_ostack(params->m);			/* and the operand stack */
-    check_ostack(params->n);
+    check_ostack(params->m + O_STACK_PAD);	/* and the operand stack */
+    check_ostack(params->n + O_STACK_PAD);
 
     /*
      * Allocate space for the enumerator data structure.
@@ -401,6 +412,21 @@ sampled_data_setup(i_ctx_t *i_ctx_p, gs_function_t *pfn,
     penum->pfn = pfn;
     for(i=0; i< params->m; i++)
         penum->indexes[i] = 0;
+    /*
+     * Save stack depth for checking the correct number of values on stack
+     * after the function, which is being sampled, is called.
+     */
+    penum->o_stack_depth = ref_stack_count(&o_stack);
+    /*
+     * Note:  As previously mentioned, we are putting some spare (unused) stack
+     * space under the input values in case the function unbalances the stack.
+     * It is possible for the function to pop or change values on the stack
+     * outside of the input values.  (This has been found to happen with some
+     * proc sets from Adobe.)
+     */
+    push(O_STACK_PAD);
+    for (i = 0; i < O_STACK_PAD; i++) 		/* Set space = null */
+	make_null(op - i);
 
     /* Push everything on the estack */
 
@@ -426,9 +452,7 @@ sampled_data_sample(i_ctx_t *i_ctx_p)
     int num_inputs = params->m;
     int i;
 
-    /*
-     * Put set of input values onto the stack.
-     */
+    /* Put set of input values onto the stack. */
     push(num_inputs);
     for (i = 0; i < num_inputs; i++) {
 	double dmin = params->Domain[2 * i];
@@ -460,9 +484,33 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
     double sampled_data_value_max = (double)((1 << params->BitsPerSample) - 1);
     int bps = bits2bytes(params->BitsPerSample);
 
+    /*
+     * Check to make sure that the procedure produced the correct number of
+     * values.  If not, move the stack back to where it belongs and abort
+     */
+    if (num_out + O_STACK_PAD + penum->o_stack_depth != ref_stack_count(&o_stack)) {
+	int stack_depth_adjust = ref_stack_count(&o_stack) - penum->o_stack_depth;
+	
+	if (stack_depth_adjust >= 0)
+	    pop(stack_depth_adjust);
+	else {
+	    /*
+	     * If we get to here then there were major problems.  The function
+	     * removed too many items off of the stack.  We had placed extra
+	     * (unused) stack stack space to allow for this but the function
+	     * exceeded even that.  Data on the stack may have been lost.
+	     * The only thing that we can do is move the stack pointer back and
+	     * hope.  (We have not seen real Postscript files that have this
+	     * problem.)
+	     */
+	    push(-stack_depth_adjust);
+	}
+	ifree_object(penum->pfn, "sampled_data_continue(pfn)");
+	ifree_object(penum, "sampled_data_continue((enum)");
+	return_error(e_undefinedresult);
+    }
+    
     /* Save data from the given function */
-
-    check_op(num_out);
     data_ptr = cube_ptr_from_index(params, penum->indexes);
     for (i=0; i < num_out; i++) {
 	ulong cv;
@@ -487,7 +535,7 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
     /* Check if we are done collecting data. */
 
     if (increment_cube_indexes(params, penum->indexes)) {
-
+	pop(O_STACK_PAD);	    /* Remove spare stack space */
 	/* Execute the closing procedure, if given */
 	code = 0;
 	if (esp_finish_proc != 0)
