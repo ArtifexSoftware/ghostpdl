@@ -376,6 +376,7 @@ pdf_initialize_ids(gx_device_pdf * pdev)
 void
 pdf_set_process_color_model(gx_device_pdf * pdev)
 {
+    gx_color_index color = 0; /* black */
     switch (pdev->color_info.num_components) {
     case 1:
 	set_dev_proc(pdev, map_rgb_color, gx_default_gray_map_rgb_color);
@@ -391,10 +392,15 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
 	set_dev_proc(pdev, map_rgb_color, NULL);
 	set_dev_proc(pdev, map_color_rgb, cmyk_8bit_map_color_rgb);
 	set_dev_proc(pdev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
+        color = gx_map_cmyk_color((gx_device *)pdev,
+		      frac2cv(frac_0), frac2cv(frac_0),
+		      frac2cv(frac_0), frac2cv(frac_1));
 	break;
     default:			/* can't happen */
 	DO_NOTHING;
     }
+    color_set_pure(&pdev->fill_color, color);
+    color_set_pure(&pdev->stroke_color, color);
 }
 
 /*
