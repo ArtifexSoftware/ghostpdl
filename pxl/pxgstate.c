@@ -478,7 +478,7 @@ SetFillMode
 */
 
 /* assembled (little endian) stream */
-static byte pxSetDefaultGSstr[] = {
+private const byte pxSetDefaultGSstr[] = {
     192,2,248,3,106,200,193,3,0,0,0,0,248,11,99,193,
     0,0,248,161,100,116,200,193,3,0,0,0,0,248,11,121,192,1,248,75,122,192,
     0,248,45,124,192,0,248,45,120,192,252,248,44,123,192,0,248,71,113,192,
