@@ -1214,12 +1214,12 @@ Examples :
 </tt></b></blockquote>
 
 <p>
-Note that the font file path uses Postcript syntax for strings.
+Note that the font file path uses Postscript syntax for strings.
 Due to that backslashes must be represented as a double backslash each.
 
 <p>
 Note that loading truetype fonts directly from 
-><tt>/Resources/CIDFont</tt></b> is no longer supported. 
+<b>><tt>/Resources/CIDFont</tt></b> is no longer supported. 
 There is no reliable way to generate a character ordering for truetype
 fonts. The 7.0x versions of Ghostscript supported this by assuming a Japanese
 character ordering. This is replaced in the 8.0x and later releases with the more
@@ -1258,7 +1258,7 @@ In the latter case add individual records for specific CID font names used in th
 Consequently, if you want to handle any PDF document with 
 non-embedded CID fonts (which isn't a correct PDF),
 you need to create a suitable <b><tt>lib/cidfmap</tt></b> by hand,
-posibly a spcific one for each document.
+possibly a specific one for each document.
 
 <h3><a name="Temp_files"></a>Temporary files</h3>
 
