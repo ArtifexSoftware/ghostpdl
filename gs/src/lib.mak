@@ -139,7 +139,6 @@ GXERR=$(GX) $(gserrors_h)
 
 ### Include files
 
-gpmisc_h=$(GLSRC)gpmisc.h
 gsbitmap_h=$(GLSRC)gsbitmap.h $(gsstype_h)
 gsbitops_h=$(GLSRC)gsbitops.h
 gsbittab_h=$(GLSRC)gsbittab.h
