@@ -31,8 +31,8 @@ int pcl_select_font_by_id(P3(pcl_font_selection_t *pfs, uint id,
 
 /* set font parameters after an id selection */
 void
-pcl_set_id_parameters(P3(const pcl_state_t *pcs, 
-		      pcl_font_selection_t *pfs, pl_font_t *fp));
+pcl_set_id_parameters(P4(const pcl_state_t *pcs, 
+		      pcl_font_selection_t *pfs, pl_font_t *fp, uint id));
 
 
 #endif				/* pcfsel_INCLUDED */

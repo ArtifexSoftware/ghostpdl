@@ -45,10 +45,13 @@ pcl_decache_font(pcl_state_t *pcs, int set)
 	else
 	  {
 	    pcs->font_selection[set].font = NULL;
+	    pcs->g.font_selection[set].font = NULL;
 	    if ( pcs->font_selected == set )
 	      {
 	        pcs->font = NULL;
 		pcs->map = NULL;
+		pcs->g.font = NULL;
+		pcs->g.map = NULL;
 		pcl_decache_hmi(pcs);
 	      }
 	  }
@@ -153,7 +156,7 @@ pcl_pitch(floatp cpi, pcl_state_t *pcs, int set)
 	if ( pitch_cp != pl_fp_pitch_cp(&pfs->params) )
 	  {
 	    pl_fp_set_pitch_cp(&pfs->params, pitch_cp);
-	    if ( !pfs->selected_by_id )
+	    if ( !pfs->selected_id )
 	      pcl_decache_font(pcs, set);
 	  }
 	return 0;
@@ -177,7 +180,7 @@ pcl_height(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 	if ( height_4ths != pfs->params.height_4ths )
 	  {
 	    pfs->params.height_4ths = height_4ths;
-	    if ( !pfs->selected_by_id )
+	    if ( !pfs->selected_id )
 	      pcl_decache_font(pcs, set);
 	  }
 	return 0;

@@ -259,7 +259,35 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 	        dprint_font_params_t(&pfs->params);
 	      }
 #endif
+	    /* if the font table is set up to select character by id
+               we attempt to reselect the font by id.  As a fallback
+               we use family selection.  NB We do not correctly handle
+               the fonts with alphanumeric id's */
+	    if ( pfs->selected_id ) {
+		byte id_key[2];
+		void *value;
+		id_key[0] = pfs->selected_id >> 8;
+		id_key[1] = (byte)(pfs->selected_id);
+		if ( pl_dict_find(&pcs->soft_fonts, id_key, 2, &value) ) {
 
+		    pfs->font = (pl_font_t *)value;
+		    /* probably not necessary */
+		    if ( !pl_font_is_bound(pfs->font) ) { 
+			if ( check_support(pcs, pfs->params.symbol_set, pfs->font, &pfs->map) )
+			    DO_NOTHING;
+			else if ( check_support(pcs, pcs->default_symbol_set_value,
+						pfs->font, &pfs->map)
+				  )
+			    DO_NOTHING;
+			else { /*
+				* This font doesn't support the required symbol set.
+				* Punt -- map 1-for-1.
+				*/
+			}
+		    }
+		    return 0;
+		}
+	    }
 	    /* Initialize the best match to be worse than any real font. */
 	    best_match[0] = -1;
 	    pl_dict_enum_begin(&pcs->soft_fonts, &dictp);
@@ -287,7 +315,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 	    pfs->font = best_font;
 	    pfs->map = best_map;
 	  }
-	pfs->selected_by_id = false;
+	pfs->selected_id = 0;
 	return 0;
 }
 
@@ -347,19 +375,19 @@ pcl_reselect_substitute_font(pcl_font_selection_t *pfs,
 	    pfs->font = best_font;
 	    pfs->map = best_map;
 	  }
-	pfs->selected_by_id = false;
+	pfs->selected_id = 0;
 	return 0;
 }
 
 /* set font parameters after an id selection */
 void
 pcl_set_id_parameters(const pcl_state_t *pcs, 
-		      pcl_font_selection_t *pfs, pl_font_t *fp)
+		      pcl_font_selection_t *pfs, pl_font_t *fp, uint id)
 {
 	/* Transfer parameters from the selected font into the selection
 	 * parameters, being careful with the softer parameters. */
 	pfs->font = fp;
-	pfs->selected_by_id = true;
+	pfs->selected_id = id;
 	pfs->map = 0;
 	if ( pl_font_is_bound(fp) )
 	  pfs->params.symbol_set = fp->params.symbol_set;
@@ -401,6 +429,6 @@ pcl_select_font_by_id(pcl_font_selection_t *pfs, uint id, pcl_state_t *pcs)
 	if ( !pl_dict_find(&pcs->soft_fonts, id_key, 2, &value) )
 	  return 1;		/* font not found */
 	fp = (pl_font_t *)value;
-	pcl_set_id_parameters(pcs, pfs, fp);
+	pcl_set_id_parameters(pcs, pfs, fp, id);
 	return 0;
 }

@@ -21,7 +21,7 @@ typedef struct pcl_font_selection_s {
 
     /* Font found by matching or by ID */
     pl_font_t *         font;
-    bool                selected_by_id;
+    uint                selected_id;
 
     /* The symbol map that goes with it. */
     pl_symbol_map_t *   map;
