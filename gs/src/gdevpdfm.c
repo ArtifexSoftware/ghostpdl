@@ -1362,7 +1362,8 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     int code;
     double xscale = pdev->HWResolution[0] / 72.0,
 	yscale = pdev->HWResolution[1] / 72.0;
-    char bbox_str[6 + 4 * 12];
+    byte bbox_str[6 + 4 * 12];
+    stream s;
 
     if (objname == 0 || count != 2 || !pdf_key_eq(&pairs[0], "/BBox"))
 	return_error(gs_error_rangecheck);
@@ -1395,7 +1396,8 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     }
     pcs->is_graphics = true;
     gs_bbox_transform(&bbox, pctm, &bbox);
-    sprintf(bbox_str, "[%.8g %.8g %.8g %.8g]",
+    swrite_string(&s, bbox_str, sizeof(bbox_str));
+    pprintg4(&s, "[%g %g %g %g]",
 	    bbox.p.x * xscale, bbox.p.y * yscale,
 	    bbox.q.x * xscale, bbox.q.y * yscale);
     if ((code = cos_stream_put_c_strings(pcs, "/Type", "/XObject")) < 0 ||
@@ -1403,7 +1405,7 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	(code = cos_stream_put_c_strings(pcs, "/FormType", "1")) < 0 ||
 	(code = cos_stream_put_c_strings(pcs, "/Matrix", "[1 0 0 1 0 0]")) < 0 ||
 	(code = cos_dict_put_c_key_string(cos_stream_dict(pcs), "/BBox",
-					  (byte *)bbox_str, strlen(bbox_str))) < 0 ||
+					  (byte *)bbox_str, stell(&s))) < 0 ||
  	(code = cos_dict_put_c_key_object(cos_stream_dict(pcs), "/Resources", 
  					  COS_OBJECT(pdev->substream_Resources))) < 0
 	)
