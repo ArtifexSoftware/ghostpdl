@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -336,19 +336,16 @@ paint_path(px_state_t *pxs, bool reset)
 	    if ( save_path == 0 )
 	      return_error(errorInsufficientMemory);
 	    gx_path_assign_preserve(save_path, ppath);
-	    gx_path_alloc_shared(ppath, pxs->memory, "paint_path(ppath)");
 	    code = (*fill_proc)(pgs);
 	    if ( code < 0 )
 	      goto rx;
 	    if ( !will_stroke )
 	      goto rx;
-	    gx_path_assign_preserve(ppath, save_path);
 	    if ( save_for_stroke )
-	      gx_path_alloc_shared(ppath, pxs->memory, "paint_path(ppath)");
-	    else
-	      { gs_currentpoint(pgs, &cursor);
-	        gs_free_object(pxs->memory, save_path,
-			       "paint_path(save_path)");
+		gx_path_assign_preserve(ppath, save_path);
+	    else {
+		gs_currentpoint(pgs, &cursor);
+	        gx_path_assign_free(ppath, save_path);
 	        save_path = 0;
 	      }
 	  }
@@ -430,11 +427,9 @@ paint_path(px_state_t *pxs, bool reset)
 	  gs_setfilladjust(pgs, 0.0, 0.0);
 	}
 rx:	if ( save_path )
-	  { gx_path_assign_preserve(ppath, save_path);
-	    gs_free_object(pxs->memory, save_path, "paint_path(save_path)");
-	  }
+	    gx_path_assign_free(ppath, save_path);
 	else
-	  gs_moveto(pgs, cursor.x, cursor.y);
+	    gs_moveto(pgs, cursor.x, cursor.y);
 	return code;
 }
 
@@ -797,3 +792,4 @@ int
 pxTextPath(px_args_t *par, px_state_t *pxs)
 {	return px_text(par, pxs, true);
 }
+

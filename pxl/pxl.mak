@@ -59,16 +59,22 @@ pxparse_h=$(PXLSRC)pxparse.h $(pxoper_h)
 pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h)
 
 # To avoid having to build the Ghostscript interpreter to generate pxbfont.c,
-# we normally ship a pre-constructed pxbfont.c with the source code.
+# we normally ship a pre-constructed pxbfont.psc with the source code.
 # If the following rule doesn't work, try:
 #    /usr/bin/gs -I/usr/lib/ghostscript -q -dNODISPLAY pxbfont.ps >pxbfont.psc
-# .psc is an intermediate .c file created by postscript
+# .psc is an intermediate .c file created by executing PostScript code.
+# In order to avoid creating a partial or empty file, we create this file
+# under a different name and then rename it (by copying and deleting,
+# since non-Unix operating systems typically don't support rename on files
+# with directory names included).  Normally 'make' would delete the file
+# if the rule fails, but in this case for some reason it doesn't.
 $(PXLSRC)pxbfont.psc: $(PXLSRC)pxbfont.ps
-	$(GS_XE) -q -dNODISPLAY $(PXLSRC)pxbfont.ps >$(PXLSRC)pxbfont.psc
+	$(GS_XE) -q -dNODISPLAY $(PXLSRC)pxbfont.ps >$(PXLGEN)pxbfont_.psc
+	$(CP_) $(PXLGEN)pxbfont_.psc $(PXLSRC)pxbfont.psc
+	$(RM_) $(PXLGEN)pxbfont_.psc
 	
 $(PXLGEN)pxbfont.c: $(PXLSRC)pxbfont.psc
 	$(CP_) $(PXLSRC)pxbfont.psc $(PXLGEN)pxbfont.c
-	$(RM_) $(PXLSRC)pxbfont.psc
 
 $(PXLOBJ)pxbfont.$(OBJ): $(PXLGEN)pxbfont.c $(AK) $(stdpre_h)\
  $(pxbfont_h)
@@ -96,23 +102,23 @@ $(PXLOBJ)pxstate.$(OBJ): $(PXLSRC)pxstate.c $(AK) $(stdio__h)\
 
 # See the comment above under pxbfont.c.
 #    /usr/bin/gs -I/usr/lib/ghostscript -q -dNODISPLAY -dHEADER pxsymbol.ps >pxsymbol.psh
-# .psh is an intermediate .h file file created by postscript.
 $(PXLSRC)pxsymbol.psh: $(PXLSRC)pxsymbol.ps
-	$(GS_XE) -q -dNODISPLAY -dHEADER $(PXLSRC)pxsymbol.ps >$(PXLSRC)pxsymbol.psh
+	$(GS_XE) -q -dNODISPLAY -dHEADER $(PXLSRC)pxsymbol.ps >$(PXLGEN)pxsym_.psh
+	$(CP_) $(PXLGEN)pxsym_.psh $(PXLSRC)pxsymbol.psh
+	$(RM_) $(PXLGEN)pxsym_.psh
 
 $(PXLGEN)pxsymbol.h: $(PXLSRC)pxsymbol.psh
 	$(CP_) $(PXLSRC)pxsymbol.psh $(PXLGEN)pxsymbol.h
-	$(RM_) $(PXLSRC)pxsymbol.psh
 
 # See the comment above under pxbfont.c.
 #    /usr/bin/gs -I/usr/lib/ghostscript -q -dNODISPLAY pxsymbol.ps >pxsymbol.psc
-# .psc is an intermediate .c file created by postscript
 $(PXLSRC)pxsymbol.psc: $(PXLSRC)pxsymbol.ps
-	$(GS_XE) -q -dNODISPLAY $(PXLSRC)pxsymbol.ps >$(PXLSRC)pxsymbol.psc
+	$(GS_XE) -q -dNODISPLAY $(PXLSRC)pxsymbol.ps >$(PXLGEN)pxsym_.psc
+	$(CP_) $(PXLGEN)pxsym_.psc $(PXLSRC)pxsymbol.psc
+	$(RM_) $(PXLGEN)pxsym_.psc
 
 $(PXLGEN)pxsymbol.c: $(PXLSRC)pxsymbol.psc
 	$(CP_) $(PXLSRC)pxsymbol.psc $(PXLGEN)pxsymbol.c
-	$(RM_) $(PXLSRC)pxsymbol.psc
 
 $(PXLOBJ)pxsymbol.$(OBJ): $(PXLGEN)pxsymbol.c $(AK) $(pxsymbol_h)
 	$(PXLCCC) $(PXLGEN)pxsymbol.c $(PXLO_)pxsymbol.$(OBJ)
@@ -202,3 +208,4 @@ $(PXLOBJ)pxl.dev: $(PXL_MAK) $(ECHOGS_XE) $(pxl_other_obj) $(pxl_ops_obj)\
 	$(ADDMOD) $(PXLOBJ)pxl $(pxl_ops_obj2)
 	$(ADDMOD) $(PXLOBJ)pxl -include $(PLOBJ)pl $(PLOBJ)pjl
 	$(ADDMOD) $(PXLOBJ)pxl -init pxfont pxerrors
+
