@@ -214,8 +214,10 @@ high_level_device(gx_device *device)
    on memory owned by the language possibly freed before the high
    level device requires the memory */
 private int
-close_job(pl_main_universe_t *universe)
+close_job(pl_main_universe_t *universe, pl_main_instance_t *pti)
 {	
+    if ( pti->print_page_count )
+        dlprintf1("%%%%%PageCount: %d\n", pti->page_count);
     if ( high_level_device(universe->curr_device) ) {
 	 if (gs_closedevice(universe->curr_device) < 0)
 	     return -1;
@@ -390,7 +392,7 @@ pl_main(
 		code = pl_process(curr_instance, &r.cursor);
     	        if (code == e_ExitLanguage) {
     	            in_pjl = true;
-                    if ( close_job(&universe) < 0 ) {
+                    if ( close_job(&universe, &inst) < 0 ) {
 			fprintf(gs_stderr, "Unable to deinit PDL job.\n");
 			return -1;
 		    }
@@ -425,19 +427,19 @@ next:	if (code < 0)
 	    pl_process_eof(curr_instance);
 	    pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
 			     inst.error_report > 0, gs_stdout);
-	    if ( close_job(&universe) < 0 ) {
+	    if ( close_job(&universe, &inst) < 0 ) {
 		fprintf(gs_stderr, "Unable to deinit PDL job.\n");
 		return -1;
 	    }
         } else {
 	    pl_process_eof(pjl_instance);
-	    if ( close_job(&universe) < 0 ) {
+	    if ( close_job(&universe, &inst) < 0 ) {
 		fprintf(gs_stderr, "Unable to deinit PJL.\n");
 		return -1;
 	    }
         }
         /* close input file */
-        close_job(&universe);
+        close_job(&universe, &inst);
         pl_main_cursor_close(&r);
     }
 
@@ -681,6 +683,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
 {	pti->memory = mem;
 	pti->error_report = -1;
 	pti->pause = true;
+        pti->print_page_count = false;
 	pti->device = 0;
 	pti->implementation = 0;
 	gp_get_usertime(pti->base_time);
@@ -740,6 +743,10 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 	case '\0':
 	    /* read from stdin - must be last arg */
 	    continue;
+        case 'c':
+        case 'C':
+            pmi->print_page_count = true;
+            break;
 	case 'd':
 	case 'D':
 	    if ( !strcmp(arg, "BATCH") )
