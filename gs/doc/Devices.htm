@@ -130,6 +130,10 @@
 <li><a href="#SPARC_problems">Problems</a>
 </ul>
 <li><a href="#Apple">Apple dot matrix printer</a>
+<li><a href="#Test">Test devices
+<ul>
+<li><a href="#Permute">Permutation (DeviceN color model)</a>
+</ul>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -6359,13 +6363,50 @@ Finally, you can search <b><tt>devdemp.c</tt></b> for
 initialize the printer and reset things when finished, and change them to
 meet your needs.
 
+<h2><a name="Test"></a>Test devices</h2>
+
+<p>
+The devices in this section are intended primarily for testing. They may
+be interesting as code examples, as well.
+
+<h3><a name="Permute"></a>Permutation (DeviceN color model)</h3>
+
+<p>
+With no additional parameters, the device named "permute" looks
+to Ghostscript like a standard CMYK contone device, and outputs a
+PPM file, using a simple CMYK-&gt;RGB transform. This should be the
+baseline for regression testing.
+
+<p>
+With the addition of <tt><b>-dPermute=1</b></tt>, the internal behavior changes
+somewhat, but in most cases the resulting rendered file should be the
+same. In this mode, the color model becomes "DeviceN" rather than
+"DeviceCMYK", the number of components goes to six, and the color
+model is considered to be the (yellow, cyan, cyan, magenta, 0, black)
+tuple. This is what's rendered into the memory buffer. Finally, on
+conversion to RGB for output, the colors are permuted back.
+
+<p>
+As such, this code should check that all imaging code paths are
+64-bit clean. Additionally, it should find incorrect code that assumes
+that the color model is one of DeviceGray, DeviceRGB, or DeviceCMYK.
+
+<p>
+Currently, the code has the limitation of 8-bit continuous tone
+rendering only. An enhancement to do halftones is planned as well. Note,
+however, that when testing permuted halftones for consistency, it is
+important to permute the planes of the default halftone accordingly, and
+that any file which sets halftones explicitly will fail a consistency
+check.
+
+
 <!-- [2.0 end contents] ==================================================== -->
 
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
 <p>
-<small>Copyright &copy; 1996, 2000 Aladdin Enterprises.
+<small>Copyright &copy; 1996-2002 artofcode LLC.
 All rights reserved.</small>
 
 <p>
