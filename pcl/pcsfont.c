@@ -10,6 +10,7 @@
 #include "gdebug.h"
 #include "pcommand.h"
 #include "pcfont.h"
+#include "pcpage.h"
 #include "pcstate.h"
 #include "pcfsel.h"
 #include "pcparse.h"
@@ -749,6 +750,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
 	      pl_dict_undef(&pcs->macros, current_macro_id, current_macro_id_size);
 	    break;
 	  case 100:
+	      pcl_end_page_if_marked(pcs);
 	    /* media select */
 	    /* this is not sufficiently specified in the PCL
                comparison guide and interacts with the control panel
