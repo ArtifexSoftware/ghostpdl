@@ -20,6 +20,7 @@
 /* %stdxxx IODevice implementation for PostScript interpreter */
 #include "stdio_.h"
 #include "ghost.h"
+#include "gp.h"
 #include "gpcheck.h"
 #include "oper.h"
 #include "stream.h"
@@ -97,17 +98,12 @@ s_stdin_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     int wcount = (int)(pw->limit - pw->ptr);
     int count;
 
-    if (wcount > 0) {
-	if (gs_stdin_is_interactive)
-	    wcount = 1;
-	count = fread(pw->ptr + 1, 1, wcount, file);
-	if (count < 0)
-	    count = 0;
-	pw->ptr += count;
-    } else
-	count = 0;		/* return 1 if no error/EOF */
-    process_interrupts();
-    return (ferror(file) ? ERRC : feof(file) ? EOFC : count == wcount ? 1 : 0);
+    if (wcount <= 0)
+	return 0;
+    count = gp_stdin_read(pw->ptr + 1, wcount, gs_stdin_is_interactive, 
+		fileno(file));
+    pw->ptr += (count < 0) ? 0 : count;
+    return ((count < 0) ? ERRC : (count == 0) ? EOFC : count);
 }
 
 private int

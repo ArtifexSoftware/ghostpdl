@@ -29,13 +29,16 @@
 
 ## The Desqview/X platform
 
-dvx__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_dvx.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ)
+dvx__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_dvx.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ) gp_stdin.$(OBJ)
 $(GLGEN)dvx_.dev: $(dvx__) nosync.dev
 	$(SETMOD) $(GLGEN)dvx_ $(dvx__) -include nosync
 
 $(GLOBJ)gp_dvx.$(OBJ): $(GLSRC)gp_dvx.c $(AK) $(string__h) $(gx_h) $(gsexit_h) $(gp_h) \
   $(time__h) $(dos__h)
 	$(CC_) -D__DVX__ -c $(GLSRC)gp_dvx.c -o $(GLOBJ)gp_dvx.$(OBJ)
+
+$(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK) $(stdio__h) $(unistd__h) $(fcntl__h) $(gx_h) $(gp_h) $(errors_h)
+	$(GLCC) $(GLO_)gp_stdin.$(OBJ) $(C_) $(GLSRC)gp_stdin.c
 
 # -------------------------- Auxiliary programs --------------------------- #
 

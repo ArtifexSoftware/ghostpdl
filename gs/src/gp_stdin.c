@@ -1,4 +1,4 @@
-/* Copyright (C) 2000 Artifex Software, Inc. All rights reserved.
+/* Copyright (C) 2001 artofcode LLC.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -17,29 +17,22 @@
 */
 
 /*$Id$ */
-/* Generic substitute for Unix unistd.h */
+/* Read stdin on platforms that do not support non-blocking reads */
 
-#ifndef unistd__INCLUDED
-#  define unistd__INCLUDED
+#include "stdio_.h"
+#include "gx.h"
+#include "gp.h"
 
-/* We must include std.h before any file that includes sys/types.h. */
-#include "std.h"
+/* Configure stdin for non-blocking reads if possible. */
+int gp_stdin_init(int fd)
+{
+    /* do nothing */
+    return 0;
+}
 
-/*
- * It's likely that you will have to edit the next lines on some Unix
- * and most non-Unix platforms, since there is no standard (ANSI or
- * otherwise) for where to find these definitions.
- */
+/* Read bytes from stdin, using non-blocking if possible. */
+int gp_stdin_read(char *buf, int len, int interactive, int fd)
+{
+    return read(buf, 1, interactive ? 1 : len, fd);
+}
 
-#ifdef __OS2__
-#  include <io.h>
-#endif
-
-#if defined(_MSC_VER) && defined(__WIN32__)
-#  include <io.h>
-#  define fsync(handle) _commit(handle)
-#else
-#  include <unistd.h>
-#endif
-
-#endif   /* unistd__INCLUDED */

@@ -32,7 +32,7 @@ UNIX_AUX_MAK=$(GLSRC)unix-aux.mak
 
 # Unix platforms other than System V, and also System V Release 4
 # (SVR4) platforms.
-unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ)
+unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 $(GLGEN)unix_.dev: $(unix__) $(GLD)nosync.dev
 	$(SETMOD) $(GLGEN)unix_ $(unix__) -include $(GLD)nosync
 
@@ -40,6 +40,12 @@ $(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
  $(pipe__h) $(string__h) $(time__h)\
  $(gx_h) $(gsexit_h) $(gp_h)
 	$(GLCC) $(GLO_)gp_unix.$(OBJ) $(C_) $(GLSRC)gp_unix.c
+
+# assume all Unix platforms support async IO using read/select
+$(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
+ $(stdio__h) $(unistd__h) $(fcntl__h) $(errno__h)\
+ $(gx_h) $(gp_h) $(errors_h)
+	$(GLCC) $(GLO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
 
 # System V platforms other than SVR4, which lack some system calls,
 # but have pipes.

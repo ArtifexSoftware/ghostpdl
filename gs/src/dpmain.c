@@ -36,6 +36,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <io.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/select.h>
 #include "gscdefs.h"
 #define GS_REVISION gs_revision
 #include "errors.h"
@@ -288,23 +292,41 @@ gs_load_dll(void)
 
 /*********************************************************************/
 /* stdio functions */
+
+/* Configure stdin for non-blocking reads if possible. */
+int gp_stdin_init(int fd)
+{
+    /* set file to non-blocking */
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK))
+	return -1;
+    return 0;
+}
+
+/* Read bytes from stdin, using non-blocking if possible. */
+int gp_stdin_read(char *buf, int len, int interactive, int fd)
+{
+    fd_set rfds;
+    int count;
+    for (;;) {
+	count = read(fd, buf, len);
+	if (count >= 0)
+	    break;
+	if (errno == EAGAIN || errno == EWOULDBLOCK) {
+	    FD_ZERO(&rfds);
+	    FD_SET(fd, &rfds);
+	    select(1, &rfds, NULL, NULL, NULL);
+	} else if (errno != EINTR) {
+	    break;
+	}
+    }
+    return count;
+}
+
 static int 
 gsdll_stdin(void *instance, char *buf, int len)
 {
-    int ch;
-    int count = 0;
-    while (count < len) {
-	ch = fgetc(stdin);
-	if (ch == EOF)
-	    return count;
-	*buf++ = ch;
-	count++;
-	if (ch == '\r')
-	    break;
-	if (ch == '\n')
-	    break;
-    }
-    return count;
+    return gp_stdin_read(buf, len, 1, fileno(stdin));
 }
 
 static int 
@@ -1000,6 +1022,7 @@ main(int argc, char *argv[])
     ULONG version[3];
     gs_main_instance *instance;
 
+    gp_stdin_init(fileno(stdin));
     if (DosQuerySysInfo(QSV_VERSION_MAJOR, QSV_VERSION_REVISION, 
 	    &version, sizeof(version)))
 	os_version = 201000;	/* a guess */

@@ -112,6 +112,7 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     /* because it detects attempts to run 80N86 executables (N>0) */
     /* on incompatible processors. */
     gp_init();
+    gp_stdin_init(fileno(in));
     gp_get_usertime(minst->base_time);
     /* Initialize the imager. */
     heap = gs_lib_init0(gs_stdout);
@@ -273,13 +274,12 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 	     *  esp[-1] = file, stdin stream
 	     * We read from stdin then pop these 2 items.
 	     */
-	    if (gs_stdin_is_interactive)
-		count = 1;
 	    if (minst->stdin_fn)
 		count = (*minst->stdin_fn)(minst->caller_handle, 
 			minst->stdin_buf, count);
 	    else
-		count = fread(minst->stdin_buf, 1, count, minst->fstdin);
+		count = gp_stdin_read(minst->stdin_buf, count, 
+		    minst->stdin_is_interactive, fileno(minst->fstdin));
 	    if (count < 0)
 	        return_error(e_ioerror);
 

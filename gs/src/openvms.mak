@@ -428,12 +428,15 @@ $(GS_XE) : openvms $(GLOBJDIR)gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
 
 # OpenVMS.dev
 
-openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_vms.$(OBJ)
+openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_vms.$(OBJ) $(GLOBJ)gp_stdin.$(OBJ)
 $(GLGEN)openvms_.dev : $(openvms__) $(GLGEN)nosync.dev
 	$(SETMOD) $(GLGEN)openvms_ $(openvms__) -include $(GLGEN)nosync
 
 $(GLOBJ)gp_vms.$(OBJ) : $(GLSRC)gp_vms.c
 	$(CC_)/include=($(GLGENDIR),$(GLSRCDIR))/obj=$(GLOBJ)gp_vms.$(OBJ) $(GLSRC)gp_vms.c
+
+$(GLOBJ)gp_stdin.$(OBJ) : $(GLSRC)gp_stdin.c $(AK) $(stdio__h) $(unistd__h) $(fcntl__h) $(gx_h) $(gp_h) $(errors_h)
+	$(CC_)/obj=$(GLOBJ)gp_stdin.$(OBJ) $(GLSRC)gp_stdin.c
 
 # Interpreter AUX programs
 

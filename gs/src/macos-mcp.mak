@@ -330,6 +330,7 @@ sysstat_h=$(GLOBJ)sys\:stat.h
 
 $(GLOBJ)gp_mac.$(OBJ): $(GLSRC)gp_mac.c
 $(GLOBJ)gp_macio.$(OBJ): $(GLSRC)gp_macio.c
+$(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c
 
 # does not work for systime_h?!?!
 #$(systypes_h):
@@ -341,7 +342,7 @@ $(GLOBJ)gp_macio.$(OBJ): $(GLSRC)gp_macio.c
 
 # ------------------------------------------------------------------- #
 
-MAC1=$(GLOBJ)gp_macio.$(OBJ) $(GLOBJ)gp_mac.$(OBJ) $(GLOBJ)gdevmacxf.$(OBJ)
+MAC1=$(GLOBJ)gp_macio.$(OBJ) $(GLOBJ)gp_mac.$(OBJ) $(GLOBJ)gdevmacxf.$(OBJ) $(GLOBJ)gp_stdin.$(OBJ)
 MAC2=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nsync.$(OBJ) $(GLOBJ)gdevemap.$(OBJ) $(GLOBJ)gsdll.$(OBJ)
 
 $(GLD)macos_.dev: $(MAC1)

@@ -282,7 +282,7 @@ GLCCWIN=$(GLCC)
 
 # The Watcom C platform
 
-watc_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ)
+watc_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_stdin.$(OBJ)
 watc_2=$(GLOBJ)gp_mktmp.$(OBJ)
 !ifeq WAT32 0
 watc_3=$(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
@@ -304,6 +304,12 @@ $(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
 
 $(GLOBJ)gp_mktmp.$(OBJ): $(GLSRC)gp_mktmp.c $(stat__h) $(string__h)
 	$(GLCC) $(GLO_)gp_mktmp.$(OBJ) $(C_) $(GLSRC)gp_mktmp.c
+
+$(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK)\
+ $(stdio__h) $(unistd__h) $(fcntl__h)\
+ $(gx_h) $(gp_h) $(errors_h)
+	$(GLCC) $(GLO_)gp_stdin.$(OBJ) $(C_) $(GLSRC)gp_stdin.c
+
 
 # ----------------------------- Main program ------------------------------ #
 
