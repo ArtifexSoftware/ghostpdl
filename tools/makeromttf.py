@@ -130,7 +130,7 @@ if __name__ == '__main__':
         fp.write(tmp_str)
         
     # table terminator
-    fp.write("{\"\", 0}};")
+    fp.write("{\"\", 0}};\n")
     fp.close()
 
     # compile the code
