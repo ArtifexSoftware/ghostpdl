@@ -168,6 +168,31 @@ running <b><tt>ps2pdf</tt></b>, and provide an equivalent way to set these
 parameters from within the PostScript input file.
 
 <p>
+<b><tt>ps2pdf</tt></b> also recognizes the following switches:
+
+<dl>
+<dt><b><tt>-dPDFSETTINGS=</tt></b><em>configuration</em>
+<dd>Presets the "distiller parameters" to one of four predefined settings:
+
+<ul>
+
+<li><b><tt>/screen</tt></b> selects low-resolution output similar to the
+Acrobat Distiller "Screen Optimized" setting.
+
+<li><b><tt>/printer</tt></b> selects output similar to the Acrobat Distiller
+"Print Optimized" setting.
+
+<li><b><tt>/prepress</tt></b> selects output similar to Acrobat Distiller
+"Prepress Optimized" setting.
+
+<li><b><tt>/default</tt></b> selects output intended to be useful across a
+wide variety of uses, possibly at the expense of a larger output file.
+
+</ul>
+
+</dl>
+
+<p>
 <b><tt>ps2pdf</tt></b> recognizes all of the Acrobat Distiller 4 parameters
 documented in
 <a href="http://partners.adobe.com/asn/developer/acrosdk/DOCS/distparm.pdf">

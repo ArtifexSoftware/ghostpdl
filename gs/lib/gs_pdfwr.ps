@@ -21,6 +21,163 @@
 % This file should be included iff the pdfwrite "device" is included
 % in the executable.
 
+% ---------------- Predefined configurations ---------------- %
+
+% These correspond to the 3 predefined settings in Acrobat Distiller 4,
+% plus a "default" setting.
+
+% Parameters common to all configurations.
+% Note that we don't set AlwaysEmbed or NeverEmbed, since the default values
+% depend on the CompatibilityLevel and are initialized internally.
+/.defaultImageDict mark
+  /QFactor 0.9 /Blend 1
+  /HSamples [2 1 1 2] /VSamples [2 1 1 2]
+.dicttomark readonly def
+/.distillercommon mark
+  /ASCII85EncodePages false
+  /AntiAliasColorImages false
+  /AntiAliasGrayImages false
+  /AntiAliasMonoImages false
+  /AutoFilterColorImages true
+  /AutoFilterGrayImages true
+  /AutoFilterMonoImages true
+  /AutoPositionEPSFiles true
+  /Binding /Left
+	% What to do about the CalxxxProfiles?
+  /ColorImageDepth -1
+  /ColorImageDict .defaultImageDict
+  /ColorImageDownsampleThreshold 1.5
+  /ColorImageFilter /DCTEncode
+  /CompressPages true
+  /ConvertImagesToIndexed true
+  /DefaultRenderingIntent /Default
+  /DetectBlends true
+  /DownsampleColorImages true
+  /DownsampleGrayImages true
+  /DownsampleMonoImages true
+  /EmitDSCWarnings false
+  /EncodeColorImages true
+  /EncodeGrayImages true
+  /EncodeMonoImages true
+  /EndPage -1
+  /GrayImageDepth -1
+  /GrayImageDict .defaultImageDict
+  /GrayImageDownsampleThreshold 1.5
+  /GrayImageFilter /DCTEncode
+  /ImageMemory 500000
+  /LockDistillerParams false
+  /MaxSubsetPct 100
+  /MonoImageDepth -1
+  /MonoImageDict mark
+    /K -1
+  .dicttomark readonly
+  /MonoImageDownsampleThreshold 1.5
+  /MonoImageFilter /CCITTFaxEncode
+  /OPM 1
+  /Optimize true
+  /ParseDSCComments true
+  /PreserveCopyPage true
+  /PreserveEPSInfo true
+  /PreserveHalftoneInfo false
+  /StartPage 1
+  /SubsetFonts true
+  /TransferFunctionInfo /Preserve
+  /UseFlateCompression true
+  /UsePrologue false
+.dicttomark readonly def
+
+/.distillersettings mark
+
+/default mark
+  /AutoRotatePages /PageByPage
+  /CannotEmbedFontPolicy /Warning
+  /DownsampleColorImages false
+  /DownsampleGrayImages false
+  /DownsampleMonoImages false
+  /Optimize false
+.dicttomark readonly
+
+/screen mark
+  /AutoRotatePages /PageByPage
+  /CannotEmbedFontPolicy /Warning
+  /ColorACSImageDict .defaultImageDict
+  /ColorConversionStrategy /sRGB
+  /ColorImageDownsampleType /Average
+  /ColorImageResolution 72
+  /CompatibilityLevel 1.2
+  /CreateJobTicket false
+  /DoThumbnails false
+  /DownsampleColorImages true
+  /DownsampleGrayImages true
+  /DownsampleMonoImages true
+  /EmbedAllFonts false
+  /GrayACSImageDict .defaultImageDict
+  /GrayImageDownsampleType /Average
+  /GrayImageResolution 72
+  /MonoImageDownsampleType /Average
+  /MonoImageResolution 300
+  /ParseDSCCommentsForDocInfo false
+  /PreserveOPIComments false
+  /PreserveOverprintSettings false
+  /UCRandBGInfo /Remove
+.dicttomark readonly
+
+/.printerACSImageDict mark
+  /QFactor 0.55 /Blend 1
+  /HSamples [2 1 1 2] /VSamples [2 1 1 2]
+.dicttomark readonly def
+/printer mark
+  /AutoRotatePages /None
+  /CannotEmbedFontPolicy /Warning
+  /ColorACSImageDict .printerACSImageDict
+  /ColorConversionStrategy /UseDeviceIndependentColor
+  /ColorImageDownsampleType /Bicubic
+  /ColorImageResolution 300
+  /CompatibilityLevel 1.3
+  /CreateJobTicket true
+  /DoThumbnails false
+  /EmbedAllFonts true
+  /GrayACSImageDict .printerACSImageDict
+  /GrayImageDownsampleType /Bicubic
+  /GrayImageResolution 300
+  /MonoImageDownsampleType /Bicubic
+  /MonoImageResolution 1200
+  /ParseDSCCommentsForDocInfo true
+  /PreserveOPIComments true
+  /PreserveOverprintSettings true
+  /UCRandBGInfo /Preserve
+.dicttomark readonly
+
+/.prepressACSImageDict mark
+  /QFactor 0.25
+  /HSamples [1 1 1 1] /VSamples [1 1 1 1]
+.dicttomark readonly def
+/prepress mark
+  /AutoRotatePages /None
+  /CannotEmbedFontPolicy /Error
+  /ColorACSImageDict .prepressACSImageDict
+  /ColorConversionStrategy /LeaveColorUnchanged
+  /ColorImageDownsampleType /Bicubic
+  /ColorImageResolution 300
+  /CompatibilityLevel 1.3
+  /CreateJobTicket true
+  /DoThumbnails true
+  /EmbedAllFonts true
+  /GrayACSImageDict .prepressACSImageDict
+  /GrayImageDownsampleType /Bicubic
+  /GrayImageResolution 300
+  /MonoImageDownsampleType /Bicubic
+  /MonoImageResolution 1200
+  /ParseDSCCommentsForDocInfo true
+  /PreserveOPIComments true
+  /PreserveOverprintSettings true
+  /UCRandBGInfo /Preserve
+.dicttomark readonly
+
+.dicttomark readonly def
+
+% ---------------- End of predefined configurations ---------------- %
+
 % Set optimizations for converting PostScript to PDF.
 % The ps2pdf* scripts invoke this.
 /.setpdfwrite {		% - .setpdfwrite -
@@ -279,3 +436,15 @@ currentdict /.pdfmarkparams .undef
   } ifelse
 } bind put
 .wheredict /setdistillerparams .wheredict /currentdistillerparams get put
+
+% Set a predefined configuration if PDFSETTINGS is defined.
+/PDFSETTINGS where { pop /PDFSETTINGS load } { /default } ifelse
+.distillersettings exch get
+% Don't override parameters defined on the command line.
+dup length .distillercommon length add dict begin
+.distillercommon 2 {
+  {
+    systemdict 2 index known { pop pop } { def } ifelse
+  } forall
+} repeat
+currentdict end setdistillerparams
