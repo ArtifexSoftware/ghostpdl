@@ -310,7 +310,7 @@ top:
 	/****** WRONG FOR MULTI-PLANE HALFTONES ******/
 	num_colors *= pis->dev_ht->order.num_levels;
     }
-    if (psh->head.type < 4) {
+    if (psh->head.type == 2 || psh->head.type == 3) {
 	max_error *= 0.25;
 	num_colors *= 2.0;
     }
