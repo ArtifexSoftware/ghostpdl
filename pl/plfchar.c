@@ -1550,7 +1550,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  code = image_bitmap_char(ienum, &image, mdev.base,
 				   bitmap_raster(mdev.width), 0, false,
                                    bold_added, bold_lines, pgs);
-out:	  gs_free_object(pgs->memory, bold_lines, "pl_tt_build_char(bold_lines)")
+        out:	  gs_free_object(pgs->memory, bold_lines, "pl_tt_build_char(bold_lines)");
 	  gs_free_object(pgs->memory, ienum, "pl_tt_build_char(image enum)");
 	  gs_free_object(pgs->memory, mdev.base, "pl_tt_build_char(bitmap)");
 	}
