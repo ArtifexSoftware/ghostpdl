@@ -271,7 +271,8 @@ private int
 string_to_text(gx_device_pdf * pdev)
 {
     pdf_put_string(pdev, pdev->text.buffer, pdev->text.buffer_count);
-    pputs(pdev->strm, "Tj\n");
+    pputs(pdev->strm, (pdev->text.use_leading ? "'\n" : "Tj\n"));
+    pdev->text.use_leading = false;
     pdev->text.buffer_count = 0;
     return PDF_IN_TEXT;
 }

@@ -1169,8 +1169,10 @@ pdf_set_font_and_size(gx_device_pdf * pdev, pdf_font_t * font, floatp size)
  * Set the text matrix for writing text.
  * The translation component of the matrix is the text origin.
  * If the non-translation components of the matrix differ from the
- * current ones, write a Tm command; otherwise, write either a Td command
- * or a Tj command using space pseudo-characters.
+ * current ones, write a Tm command; if there is only a Y translation
+ * and it matches the leading, set use_leading so the next text string
+ * will be written with ' rather than Tj; otherwise, write either a TL
+ * command or a Tj command using space pseudo-characters.
  */
 private int
 set_text_distance(gs_point *pdist, const gs_point *ppt, const gs_matrix *pmat)
@@ -1204,7 +1206,7 @@ pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
      */
 	(pdev->context == PDF_IN_TEXT || pdev->context == PDF_IN_STRING)
 	) {
-	/* Use Td or a pseudo-character. */
+	/* Use leading, Td or a pseudo-character. */
 	gs_point dist;
 
 	set_text_distance(&dist, &pdev->text.current, pmat);
@@ -1219,13 +1221,11 @@ pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 
 	    if (space_char == 0) {
 		if (pdev->text.font != pdev->open_font)
-		    goto td;
+		    goto not_spaces;
 		code = assign_char_code(pdev);
 		if (code <= 0)
-		    goto td;
-		space_char =
-		    pdev->open_font->spaces[dx_i] =
-		    (byte) code;
+		    goto not_spaces;
+		space_char = pdev->open_font->spaces[dx_i] = (byte)code;
 		if (pdev->space_char_ids[dx_i] == 0) {
 		    /* Create the space char_proc now. */
 		    char spstr[3 + 14 + 1];
@@ -1241,14 +1241,28 @@ pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 	    }
 	    pdf_append_chars(pdev, &space_char, 1);
 	    pdev->text.current.x += dist.x * pmat->xx;
+	    pdev->text.use_leading = false;
 	    return 0;
 	}
-      td:			/* Use Td. */
+      not_spaces:
 	code = pdf_open_page(pdev, PDF_IN_TEXT);
 	if (code < 0)
 	    return code;
+	if (dist.x == 0 && dist.y < 0) {
+	    /* Use TL, if needed, + '. */
+	    float dist_y = (float)-dist.y;
+
+	    if (fabs(pdev->text.leading - dist_y) > 0.0005) {
+		pprintg1(s, "%g TL\n", dist_y);
+		pdev->text.leading = dist_y;
+	    }
+	    pdev->text.use_leading = true;
+	} else {
+	    /* Use Td. */
+	    pprintg2(s, "%g %g Td\n", dist.x, dist.y);
+	    pdev->text.use_leading = false;
+	}
 	set_text_distance(&dist, &pdev->text.line_start, pmat);
-	pprintg2(s, "%g %g Td\n", dist.x, dist.y);
     } else {			/* Use Tm. */
 	code = pdf_open_page(pdev, PDF_IN_TEXT);
 	if (code < 0)
@@ -1262,6 +1276,7 @@ pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 		 pmat->yx * sx, pmat->yy * sy,
 		 pmat->tx * sx, pmat->ty * sy);
 	pdev->text.matrix = *pmat;
+	pdev->text.use_leading = false;
     }
     pdev->text.line_start.x = pmat->tx;
     pdev->text.line_start.y = pmat->ty;

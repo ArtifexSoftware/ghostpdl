@@ -57,6 +57,8 @@ pdf_reset_graphics(gx_device_pdf * pdev)
     pdev->text.font = NULL;
     pdev->text.size = 0;
     pdev->text.word_spacing = 0;
+    pdev->text.leading = 0;
+    pdev->text.use_leading = false;
 }
 
 /* Set the fill or stroke color. */

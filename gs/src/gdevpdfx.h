@@ -228,6 +228,8 @@ typedef struct pdf_text_state_s {
     pdf_font_t *font;
     floatp size;
     float word_spacing;
+    float leading;
+    bool use_leading;		/* true => use ', false => use Tj */
     /* Bookkeeping */
     gs_matrix matrix;		/* relative to device space, not user space */
     gs_point line_start;
@@ -238,7 +240,7 @@ typedef struct pdf_text_state_s {
 } pdf_text_state_t;
 
 #define pdf_text_state_default\
-  0, NULL, 0, 0,\
+  0, NULL, 0, 0, 0, 0 /*false*/,\
   { identity_matrix_body }, { 0, 0 }, { 0, 0 }, { 0 }, 0
 
 /* Resource lists */
