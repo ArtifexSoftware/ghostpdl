@@ -787,6 +787,8 @@ pdf_write_value(const gx_device_pdf * pdev, const byte * vstr, uint size)
 {
     if (size > 0 && vstr[0] == '/')
 	pdf_put_name(pdev, vstr + 1, size - 1);
+    else if (size > 3 && vstr[0] == 0 && vstr[1] == 0 && vstr[size - 1] == 0)
+	pdf_put_name(pdev, vstr + 3, size - 4);
     else
 	stream_write(pdev->strm, vstr, size);
 }
