@@ -92,8 +92,5 @@ typedef enum {
     return(e_invalidaccess)
 #define store_check_dest(rpdest,rpnew)\
   store_check_space(r_space(rpdest), rpnew)
-/* BACKWARD COMPATIBILITY (not used by any Ghostscript code per se) */
-/* #define check_store_space(rdest,rnewcont)\
- *  store_check_dest(&(rdest),&(rnewcont))
- */
+
 #endif /* ivmspace_INCLUDED */
