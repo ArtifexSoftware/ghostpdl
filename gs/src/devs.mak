@@ -648,6 +648,53 @@ $(GLOBJ)gdevijs.$(OBJ) : $(GLSRC)gdevijs.c $(PDEVH) $(unistd__h) $(gp_h)\
 # library.
 
 
+### -------------------------- The rinkj device ------------------------ ###
+
+RINKJ_SRCDIR=$(GLSRC)rinkj
+RINKJ_SRC=$(RINKJ_SRCDIR)$(D)
+RINKJ_OBJ=$(GLOBJ)
+RINKJ_O_=$(O_)$(RINKJ_OBJ)
+
+RINKJ_INCL=$(I_)$(RINKJ_SRCDIR)$(_I)
+RINKJ_CC=$(CC_) $(RINKJ_INCL)
+
+rinkj_core=$(RINKJ_OBJ)evenbetter-rll.$(OBJ) \
+ $(RINKJ_OBJ)rinkj-byte-stream.$(OBJ) $(RINKJ_OBJ)rinkj-device.$(OBJ) \
+ $(RINKJ_OBJ)rinkj-config.$(OBJ) $(RINKJ_OBJ)rinkj-dither.$(OBJ) \
+ $(RINKJ_OBJ)rinkj-epson870.$(OBJ) $(RINKJ_OBJ)rinkj-screen-eb.$(OBJ)
+
+$(RINKJ_OBJ)evenbetter-rll.$(OBJ): $(RINKJ_SRC)evenbetter-rll.c
+	$(RINKJ_CC) $(RINKJ_O_)evenbetter-rll.$(OBJ) $(C_) $(RINKJ_SRC)evenbetter-rll.c
+
+$(RINKJ_OBJ)rinkj-byte-stream.$(OBJ): $(RINKJ_SRC)rinkj-byte-stream.c
+	$(RINKJ_CC) $(RINKJ_O_)rinkj-byte-stream.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-byte-stream.c
+
+$(RINKJ_OBJ)rinkj-device.$(OBJ): $(RINKJ_SRC)rinkj-device.c
+	$(RINKJ_CC) $(RINKJ_O_)rinkj-device.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-device.c
+
+$(RINKJ_OBJ)rinkj-config.$(OBJ): $(RINKJ_SRC)rinkj-config.c
+	$(RINKJ_CC) $(RINKJ_O_)rinkj-config.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-config.c
+
+$(RINKJ_OBJ)rinkj-dither.$(OBJ): $(RINKJ_SRC)rinkj-dither.c
+	$(RINKJ_CC) $(RINKJ_O_)rinkj-dither.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-dither.c
+
+$(RINKJ_OBJ)rinkj-epson870.$(OBJ): $(RINKJ_SRC)rinkj-epson870.c
+	$(RINKJ_CC) $(RINKJ_O_)rinkj-epson870.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-epson870.c
+
+$(RINKJ_OBJ)rinkj-screen-eb.$(OBJ): $(RINKJ_SRC)rinkj-screen-eb.c
+	$(RINKJ_CC) $(RINKJ_O_)rinkj-screen-eb.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-screen-eb.c
+
+rinkj_=$(GLOBJ)gdevrinkj.$(OBJ) $(rinkj_core)
+
+$(DD)rinkj.dev : $(DEVS_MAK) $(rinkj_) $(GLD)page.dev
+	$(SETDEV) $(DD)rinkj $(rinkj_)
+
+$(GLOBJ)gdevrinkj.$(OBJ) : $(GLSRC)gdevrinkj.c $(PDEVH) $(math__h)\
+ $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)\
+ $(gxdcconv_h)
+	$(GLICCCC) $(GLO_)gdevrinkj.$(OBJ) $(C_) $(GLSRC)gdevrinkj.c
+
+
 ###### ------------------- High-level file formats ------------------- ######
 
 # Support for PostScript and PDF
