@@ -16,6 +16,8 @@
 % $Id$
 % DefaultGray color space resource.
 
+currentglobal true setglobal
+
 /DefaultGray
 [ /CIEBasedA
   3 dict begin
@@ -25,3 +27,5 @@
   currentdict end
 ]
 /ColorSpace defineresource pop
+
+setglobal

@@ -16,6 +16,8 @@
 % $Id$
 % DefaultCMYK color space resource.
 
+currentglobal true setglobal
+
 /DefaultCMYK
 [ /CIEBasedDEFG
   4 dict begin
@@ -43,3 +45,5 @@
   currentdict end
 ]
 /ColorSpace defineresource pop
+
+setglobal
