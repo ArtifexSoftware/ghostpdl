@@ -539,9 +539,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     ctile->step_matrix = pinst->step_matrix;
     ctile->bbox = pinst->bbox;
     ctile->is_simple = pinst->is_simple;
-#   if PATTERN_STREAM_ACCUMULATION
     ctile->is_dummy = false;
-#   endif
     if (mbits != 0) {
 	make_bitmap(&ctile->tbits, mbits, gs_next_ids(1));
 	mbits->bitmap_memory = 0;	/* don't free the bits */
@@ -581,9 +579,7 @@ gx_pattern_cache_add_dummy_entry(gs_imager_state *pis,
     ctile->step_matrix = pinst->step_matrix;
     ctile->bbox = pinst->bbox;
     ctile->is_simple = pinst->is_simple;
-#   if PATTERN_STREAM_ACCUMULATION
     ctile->is_dummy = true;
-#   endif
     memset(&ctile->tbits, 0 , sizeof(ctile->tbits));
     ctile->tbits.size = pinst->size;
     ctile->tbits.id = gs_no_bitmap_id;

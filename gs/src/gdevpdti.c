@@ -497,9 +497,7 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->sbstack_depth++;
     pdev->procsets = 0;
     pdev->context = PDF_IN_STREAM;
-#   if PATTERN_STREAM_ACCUMULATION
     pdf_reset_graphics(pdev);
-#   endif
     *ppres = pres;
     return 0;
 }

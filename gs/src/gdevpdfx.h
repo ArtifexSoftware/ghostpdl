@@ -174,27 +174,6 @@ typedef struct pdf_char_proc_s pdf_char_proc_t;	/* gdevpdff.h */
 typedef struct pdf_font_s pdf_font_t;  /* gdevpdff.h */
 typedef struct pdf_text_data_s pdf_text_data_t;  /* gdevpdft.h */
 
-/* ------ Named objects ------ */
-
-/* Define an element of the graphics object accumulation (BP/EP) stack. */
-typedef struct pdf_graphics_save_s pdf_graphics_save_t;
-#   if !PATTERN_STREAM_ACCUMULATION
-struct pdf_graphics_save_s {
-    pdf_graphics_save_t *prev;
-    cos_stream_t *object;
-    long position;
-    pdf_context_t save_context;
-    pdf_procset_t save_procsets;
-    long save_contents_id;
-};
-/* We don't disable pdf_graphics_save_t due to st_device_pdfwrite references it. */
-#   endif
-
-#define private_st_pdf_graphics_save()	/* in gdevpdfm.c */\
-  gs_private_st_ptrs2(st_pdf_graphics_save, pdf_graphics_save_t,\
-    "pdf_graphics_save_t", pdf_graphics_save_enum_ptrs,\
-    pdf_graphics_save_reloc_ptrs, prev, object)
-
 /* ---------------- Other auxiliary structures ---------------- */
 
 /* Outline nodes and levels */
@@ -504,7 +483,6 @@ struct gx_device_pdf_s {
      * but it was confirmed by them.)
      */
     cos_array_t *Namespace_stack;
-    pdf_graphics_save_t *open_graphics;
     pdf_font_cache_elem_t *font_cache;
     /* 
      * char_width is used by pdf_text_set_cache to communicate 
@@ -568,10 +546,10 @@ struct gx_device_pdf_s {
  m(17,last_resource)\
  m(18,articles) m(19,Dests) m(20,global_named_objects)\
  m(21, local_named_objects) m(22,NI_stack) m(23,Namespace_stack)\
- m(24,open_graphics) m(25,font_cache) m(26,clip_path)\
- m(27,PageLabels) m(28,PageLabels_current_label)\
- m(29,sbstack) m(30,substream_Resources)
-#define gx_device_pdf_num_ptrs 31
+ m(24,font_cache) m(25,clip_path)\
+ m(26,PageLabels) m(27,PageLabels_current_label)\
+ m(28,sbstack) m(29,substream_Resources)
+#define gx_device_pdf_num_ptrs 30
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\

@@ -166,10 +166,8 @@ struct gx_color_tile_s {
     gx_strip_bitmap tmask;	/* data = 0 if no mask */
     /* (i.e., the mask is all 1's) */
     bool is_simple;		/* true if xstep/ystep = tile size */
-    #if PATTERN_STREAM_ACCUMULATION
     bool is_dummy;		/* if true, the device manages the pattern, 
                                    and the content of the tile is empty. */
-    #endif
     /* The following is neither key nor value. */
     uint index;			/* the index of the tile within */
     /* the cache (for GC) */
