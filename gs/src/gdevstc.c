@@ -3453,7 +3453,7 @@ stc_hscmyk(stcolor_device *sdev,int npixel,byte *in,byte *buf,byte *out)
             v    -= 1023;
             pixel = BLACK;
 
-            errv[3-(step<<2)] += ((3*v+8)>>4);        /* 3/16 */
+            errv[3-(step<<2)] += ((3*t+8)>>4);        /* 3/16 */
             errv[3]            = ((5*v+errc[3]+8)>>4);/* 5/16 +1/16 (rest) */
             errc[3]            = v;
 

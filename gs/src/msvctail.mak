@@ -24,15 +24,31 @@
 
 # -------------------------- Auxiliary programs --------------------------- #
 
-ccf32.tr: $(MAKEFILE)
-	echo $(GENOPT) /I$(INCDIR) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ > ccf32.tr
+$(GLGENDIR)\ccf32.tr: $(MAKEFILE)
+	echo $(GENOPT) /I$(INCDIR) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ > $(GLGENDIR)\ccf32.tr
+
+$(ECHOGS_XE): $(GLSRC)echogs.c
+	$(CCAUX_SETUP)
+	$(CCAUX) $(GLSRC)echogs.c /Fo$(GLOBJ)echogs.obj /Fe$(ECHOGS_XE) $(CCAUX_TAIL)
 
 # Don't create genarch if it's not needed
 !ifdef GENARCH_XE
-$(GENARCH_XE): $(GSLRC)genarch.c $(stdpre_h) $(iref_h) ccf32.tr
+$(GENARCH_XE): $(GLSRC)genarch.c $(stdpre_h) $(iref_h) $(GLGENDIR)\ccf32.tr
 	$(CCAUX_SETUP)
-	$(CCAUX) @ccf32.tr $(GLSRC)genarch.c $(CCAUX_TAIL)
+	$(CCAUX) @$(GLGENDIR)\ccf32.tr /Fo$(GLOBJ)genarch.obj /Fe$(GENARCH_XE) $(GLSRC)genarch.c $(CCAUX_TAIL)
 !endif
+
+$(GENCONF_XE): $(GLSRC)genconf.c $(stdpre_h)
+	$(CCAUX_SETUP)
+	$(CCAUX) $(GLSRC)genconf.c /Fo$(GLOBJ)genconf.obj /Fe$(GENCONF_XE) $(CCAUX_TAIL)
+
+$(GENDEV_XE): $(GLSRC)gendev.c $(stdpre_h)
+	$(CCAUX_SETUP)
+	$(CCAUX) $(GLSRC)gendev.c /Fo$(GLOBJ)gendev.obj /Fe$(GENDEV_XE) $(CCAUX_TAIL)
+
+$(GENINIT_XE): $(PSSRC)geninit.c $(stdio__h) $(string__h)
+	$(CCAUX_SETUP)
+	$(CCAUX) $(PSSRC)geninit.c /Fo$(GLOBJ)geninit.obj /Fe$(GENINIT_XE) $(CCAUX_TAIL)
 
 # -------------------------------- Library -------------------------------- #
 
@@ -40,7 +56,7 @@ $(GENARCH_XE): $(GSLRC)genarch.c $(stdpre_h) $(iref_h) ccf32.tr
 
 # ----------------------------- Main program ------------------------------ #
 
-LIBCTR=libc32.tr
+LIBCTR=$(GLGEN)libc32.tr
 
 $(LIBCTR): $(MAKEFILE)
         echo $(LIBDIR)\shell32.lib >$(LIBCTR)

@@ -1,7 +1,7 @@
 1 gs
  gs - Aladdin Ghostscript interpreter/previewer
 
-! Ghostscript version 5.40, 10 September 1998
+! Ghostscript version 5.50, 16 September 1998
   Usage:
    $ gs [options] [file ...]
 
@@ -160,7 +160,7 @@
   Determines whether backing store is to be used for saving display
   window (default = true).
 
- See the file `use.txt' for a more complete list of resources.
+ See the file `Use.htm' for a more complete list of resources.
 
  To set these resources, put them in a file (such as
  SYS$Login:ghostscript.dat) in the following form:

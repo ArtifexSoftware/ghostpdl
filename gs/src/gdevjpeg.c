@@ -182,6 +182,8 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     jcdp->template = s_DCTE_template;
     state.template = &jcdp->template;
     state.memory = 0;
+    if (state.template->set_defaults)
+	(*state.template->set_defaults) ((stream_state *) & state);
     state.QFactor = 1.0;	/* disable quality adjustment in zfdcte.c */
     state.ColorTransform = 1;	/* default for RGB */
     /* We insert no markers, allowing the IJG library to emit */
@@ -190,8 +192,6 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     state.Markers.data = 0;
     state.Markers.size = 0;
     state.data.compress = jcdp;
-    if (state.template->set_defaults)
-	(*state.template->set_defaults) ((stream_state *) & state);
     jcdp->memory = state.jpeg_memory = mem;
     if ((code = gs_jpeg_create_compress(&state)) < 0)
 	goto fail;

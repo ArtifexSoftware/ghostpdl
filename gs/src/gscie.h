@@ -122,7 +122,6 @@ typedef long cie_cached_value;
 #  define cie_cached_rshift(v, n) arith_rshift(v, n)
 #else
 typedef float cie_cached_value;
-
 #  define float2cie_cached(v) (v)
 #  define cie_cached2float(v) (v)
 #  define cie_cached2int(v, fbits)\
@@ -273,7 +272,7 @@ typedef struct gs_cie_wb_s {
  rendering      TransformPQR    RangePQR
  (but depends on color space White/BlackPoints)
  rendering      EncodeLMN       RangePQR transformed by the inverse of
- MatrixPQR and then by MatrixLMN
+				MatrixPQR and then by MatrixLMN
  rendering      EncodeABC       RangeLMN transformed by MatrixABC
  rendering      RenderTable.T   [0..1]*m
 
@@ -381,9 +380,9 @@ struct gs_cie_a_s {
 
 #define private_st_cie_a()	/* in gscscie.c */\
   gs_private_st_suffix_add0_local(st_cie_a, gs_cie_a, "gs_cie_a",\
-				   cie_common_enum_ptrs,\
-				   cie_common_reloc_ptrs,\
-				   st_cie_common_elements_t)
+				  cie_common_enum_ptrs,\
+				  cie_common_reloc_ptrs,\
+				  st_cie_common_elements_t)
 
 /* Common elements for CIEBasedABC, DEF, and DEFG dictionaries. */
 #define gs_cie_abc_elements\
@@ -611,11 +610,13 @@ int gs_cie_render_complete(P1(gs_cie_render *));
  */
 extern int
     gs_cspace_build_CIEA(P3(gs_color_space ** ppcspace, void *client_data,
-			    gs_memory_t * pmem)), gs_cspace_build_CIEABC(P3(gs_color_space ** ppcspace, void *client_data,
-						       gs_memory_t * pmem)),
-     gs_cspace_build_CIEDEF(P3(gs_color_space ** ppcspace, void *client_data,
-			       gs_memory_t * pmem)), gs_cspace_build_CIEDEFG(P3(gs_color_space ** ppcspace, void *client_data,
-						       gs_memory_t * pmem));
+			    gs_memory_t * pmem)),
+    gs_cspace_build_CIEABC(P3(gs_color_space ** ppcspace, void *client_data,
+			      gs_memory_t * pmem)),
+    gs_cspace_build_CIEDEF(P3(gs_color_space ** ppcspace, void *client_data,
+			      gs_memory_t * pmem)),
+    gs_cspace_build_CIEDEFG(P3(gs_color_space ** ppcspace, void *client_data,
+			       gs_memory_t * pmem));
 
 /* ------ Accessors ------ */
 
@@ -660,7 +661,7 @@ extern int
  * CIEBasedDEF[G] color lookup table structure. It is doubtful any
  * high-level clients will ever need to get this information.
  *
- * The caller must make sure the numder of dimensions and strings provided
+ * The caller must make sure the number of dimensions and strings provided
  * are the number expected given the number of components in the color space.
  * The procedure gs_color_space_num_components is available for this purpose.
  *

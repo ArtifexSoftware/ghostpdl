@@ -30,6 +30,17 @@ Changes in the most recent releases of Ghostscript
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Version5.50">Version 5.50 (beta) (9/16/98)</a>
+<ul>
+<li><a href="#5.50_Documentation">Documentation</a>,
+    <a href="#5.50_Procedures">Procedures</a>,
+    <a href="#5.50_Utilities">Utilities</a>,
+    <a href="#5.50_Drivers">Drivers</a>,
+    <a href="#5.50_Platforms">Platforms</a>,
+    <a href="#5.50_Interpreter">Interpreter</a>,
+    <a href="#5.50_Interpreter_PDF">Interpreter (PDF)</a>,
+    <a href="#5.50_Library">Library</a>
+</ul>
 <li><a href="#Version5.40">Version 5.40 (beta) (9/10/98)</a>
 <ul>
 <li><a href="#5.40_Documentation">Documentation</a>,
@@ -343,6 +354,137 @@ with a * were made available as patches to a previous release.
 
 <hr>
 
+<h1><a name="Version5.50"></a>Version 5.50 (9/16/98)</h1>
+
+This is the first public release since 5.10.  See <a href="Current.htm">the release summary</a>
+for a list of major additions and changes.
+
+<h2><a name="5.50_Documentation"></a>Documentation</h2>
+
+Fixes problems:
+	- Many files still referred to .txt rather than .htm files.
+(DLL.htm, Make.htm, New-user.htm, Readme.htm, bcwin32.mak, cfonts.mak,
+devs.mak, dvx-gcc.mak, dwmainc.cpp, gs-vms.hlp, gxdevcli.h, gxdevice.h,
+int.mak, jpeg.mak, libpng.mak, msvc32.mak, msvclib.mak, openvms.mak,
+os2.mak, unix-cc.mak, unix-gcc.mak, unixansi.mak, watc.mak, watcw32.mak,
+wccommon.mak, zlib.mak)
+
+Notes that ps2epsi.1 and ps2epsi.txt may be inconsistent or obsolete.
+(ps2epsi.1, ps2epsi.txt)
+
+Adds a reference to Thomas Merz's Ghostscript manual.  (Readme.htm)
+
+Adds instructions for making RPMs.  (Install.htm, Make.htm)
+
+Changes the URL for post-release notes.  (Bug-form.htm, Make.htm,
+New-user.htm)
+
+Notes problems with Watcom compilation.  (Make.htm)
+
+<h2><a name="5.50_Procedures"></a>Procedures</h2>
+
+Fixes problems:
+	- On Unix systems, the documentation files didn't get installed by
+`make install'.  (unixinst.mak)
+	- $() was missing around MAKEFILE in a Windows makefile.
+(msvc32.mak)
+	- The dfax drivers didn't include all the necessary files in the
+linker list.  (contrib.mak)
+	- The MSVC makefiles didn't allow building the executable in a
+different directory.  (bcwin32.mak, gs.mak, lib.mak, msvc32.mak,
+msvccmd.mak, msvclib.mak, msvctail.mak, os2.mak, watcw32.mak, winint.mak,
+winlib.mak)
+	- The default build directory for the Borland compiler was debugobj
+rather than obj.  (bcwin32.mak)
+
+Adds a patch file and some specification files for making RPMs.  (gs.rps,
+gs-fonts.rps, rpm-conf.dif)
+
+Removes the docs target in the makefile, since this function is now
+performed by another program.  (unix-end.mak)
+
+<h2><a name="5.50_Drivers"></a>Drivers</h2>
+
+Fixes problems:
+	- The jpeg drivers caused a memory access error.  (bug introduced in
+5.20 by an incorrectly made fix) (gdevjpeg.c)
+	- The x11cmyk driver implemented map_rgb_color, which it should not
+do.  (gdevxalt.c)
+
+<h2><a name="5.50_Utilities"></a>Utilities</h2>
+
+Fixes problems:
+	- echogs -h didn't work in environments where char is signed.
+(echogs.c)
+
+<h2><a name="5.50_Platforms"></a>Platforms</h2>
+
+Fixes problems:
+	- MSVC++ 5.0 produced incorrect code with TDEBUG=0.  We "fixed" this
+problem by noting in the makefile that TDEBUG must be left set to 1.
+(msvc32.mak, msvclib.mak)
+
+Updates the icons for the MS Windows and OS/2 platforms.  (gsgraph.icx,
+gsos2.icx, gspmdrv.icx, gstext.icx)
+
+<h2><a name="5.50_Interpreter"></a>Interpreter</h2>
+
+Fixes problems:
+	- setpagedevice didn't update the state correctly when switching to
+a new type of device (different OutputDevice value).  (gs_setpd.ps)
+	- The interpreter's initialization depended on BSS being initialized
+to 0.  (files.h, zfile.c)
+
+Removes all references to reloc_struct_ptr other than in gsstruct.h.
+(igcref.c)
+
+Adds DEBUG tracing for pdfmarks.  (gs_pdfwr.ps)
+
+Disables TEST code for release.  (zcrd.c, zfdcte.c)
+
+<h2><a name="5.50_Interpreter_PDF"></a>Interpreter (PDF)</h2>
+
+Fixes problems:
+	- Some third-party software still referred to the obsolete #?
+procedure.  (pdf_main.ps)
+	- Destinations with string names weren't properly converted to
+pdfmarks.  (pdf_main.ps)
+	- Destinations with S = /Named weren't supported.  (pdf_main.ps)
+
+<h2><a name="5.50_Library"></a>Library</h2>
+
+Fixes problems:
+	- Dropout prevention wasn't applied to landscape image masks.
+(gximono.c)
+	- When using async rendering, the renderer's allocator was allocated
+with the wrong allocator.  (gdevprna.c)
+	- gx_strip_bitmap and gx_device_mask_clip didn't have proper GC
+descriptors, causing crashes if a GC occurred while rendering an ImageType 3
+or 4 image.  (gsstruct.h, gxbitmap.h, gxclip2.h, gxclipm.h, gxmclip.h,
+gspcolor.c, gxclipm.c, gxmclip.c)
+	- The buffer for printer devices wasn't reallocated properly for
+async devices when the page size changed.  We aren't entirely comfortable
+with the fix, but it's the best we've got right now.  (gdevprn.c)
+	- Some files wouldn't compile with -dNOPRIVATE.  (gxcspace.h,
+gscdevn.c, gscolor2.c, gscscie.c, gscsepr.c)
+	- gp_semaphore_close and gp_monitor_close were defined as not
+returning an error code.  (gpsync.h, gp_nsync.c, gp_posem.c, gp_semon.c,
+gp_win32.c)
+	- Initialization code depended on BSS being initialized to 0.
+(gsiodev.c)
+	- The special PCL color mapping device didn't handle CMYK devices
+correctly in other than "identity" mode.  (gdevcmap.c)
+
+Cleans up a little formatting.  (gscie.h, gscpixel.c, gxmclip.c)
+
+Removes all references to reloc_struct_ptr other than in gsstruct.h.
+(gsstruct.h, gsalloc.c, gsdevice.c, gsfont.c, gxcpath.c)
+
+Patches the async code so that it allocates twice as much space for the
+renderer as should be needed, to deal with sandbars.  (gdevprna.c)
+
+<hr>
+
 <h1><a name="Version5.40"></a>Version 5.40 (beta) (9/10/98)</h1>
 
 A few more fixes.  This is intended as the candidate fileset for the 5.50
@@ -549,8 +691,6 @@ Fixes problems:
 zchar32.c, zfont32.c)
 	- When recovering from an error in an operator procedure, the
 interpreter didn't update the dictionary stack caches.  (interp.c)
-	- The reader side of overlapped band devices was confused about its
-open/closed status.  (gdevprna.c)
 	- startjob didn't reinitialize the stacks or VM space.  (gs_lev2.ps)
 	- Encoding filters with a Predictor always caused an error.
 (zfilter2.c)
@@ -618,6 +758,8 @@ functions or threshold arrays), but wasn't consistent with either the Adobe
 specification or the user's intentions.  (gxcht.c)
 	- The phase of mask Patterns wasn't always set correctly.
 (gxp1fill.c)
+	- The reader side of overlapped band devices was confused about its
+open/closed status.  (gdevprna.c)
 
 Renames Type 32 fonts from ft_bitmap to ft_CID_bitmap.  (gxftype.h)
 
@@ -5658,7 +5800,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.40, 10 September 1998
+Ghostscript version 5.50, 16 September 1998
 
 </font>
 

@@ -41,7 +41,7 @@ PSCCWIN=$(CC_WX) $(CCWINFLAGS) $(I_)$(PSI_)$(_I) $(PSF_)
 ICONS=gsgraph.ico gstext.ico
 
 GS_ALL=$(INT_ALL) $(INTASM)\
-  $(LIB_ALL) $(LIBCTR) lib.tr $(ld_tr) $(GSDLL_OBJ).res $(GSDLL).def $(ICONS)
+  $(LIB_ALL) $(LIBCTR) $(GLGEN)lib.tr $(ld_tr) $(GSDLL_OBJ).res $(GLSRC)$(GSDLL).def $(ICONS)
 
 dwdll_h=$(GLSRC)dwdll.h
 dwimg_h=$(GLSRC)dwimg.h

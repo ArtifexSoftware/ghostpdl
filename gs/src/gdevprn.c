@@ -633,6 +633,8 @@ label:\
     ppdev->space_params = sp;
 
     /* If necessary, free and reallocate the printer memory. */
+    /* Formerly, would not reallocate if device is not open: */
+    /* we had to patch this out (see News for 5.50). */
     code = gdev_prn_maybe_reallocate_memory(ppdev, &save_sp, width, height);
     if (code < 0)
 	return code;
@@ -883,8 +885,9 @@ gdev_prn_maybe_reallocate_memory(gx_device_printer *prdev,
 {
     int code = 0;
     gx_device *const pdev = (gx_device *)prdev;
-    gx_device_memory * mdev = (gx_device_memory *)prdev;
-
+    gx_device_memory * const mdev = (gx_device_memory *)prdev;
+	
+    /* The first test here used to be prdev->open.  See News for 5.50. */
     if (mdev->base != 0 &&
 	(memcmp(&prdev->space_params, old_sp, sizeof(*old_sp)) != 0 ||
 	 prdev->width != old_width || prdev->height != old_height )

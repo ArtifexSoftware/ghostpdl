@@ -1,0 +1,33 @@
+#
+
+# Spec file for fonts for Aladdin Ghostscript 5.50
+#
+# Based on RPM Spec file by RedHat for GNU Ghostscript 3.33
+#
+Summary: Fonts for the GhostScript interpreter
+Name: ghostscript-fonts
+Version: 5.50
+Release: 1
+Copyright: Aladdin Enterprises Free Public Licence
+#Icon: ghost.gif
+Group: Applications/Graphics
+BuildRoot: /var/tmp/gsfonts
+Source0: ftp://ftp.cs.wisc.edu/ghost/aladdin/fonts/ghostscript-fonts-std-5.10a.tar.gz
+Requires: ghostscript
+BuildArchitectures: noarch
+
+%description
+These fonts are used by the GhostScript interpreter during text rendering. 
+
+%install
+rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/usr/share/ghostscript/fonts
+cd $RPM_BUILD_ROOT/usr/share/ghostscript
+tar xvzf $RPM_SOURCE_DIR/ghostscript-fonts-std-5.10a.tar.gz
+chown -R 0.0 fonts
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+/usr/share/ghostscript/fonts

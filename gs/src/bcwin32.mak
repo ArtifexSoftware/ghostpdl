@@ -39,7 +39,7 @@ GS_LIB_DEFAULT=.;c:/gs\;c:/gs/fonts
 # look in the current directory first.  This leads to well-known security
 # and confusion problems, but users insist on it.
 # NOTE: this also affects searching for files named on the command line:
-# see the "File searching" section of use.txt for full details.
+# see the "File searching" section of Use.htm for full details.
 # Because of this, setting SEARCH_HERE_FIRST to 0 is not recommended.
 
 SEARCH_HERE_FIRST=1
@@ -90,11 +90,11 @@ MULTITHREAD=1
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
 GLSRCDIR=.
-GLGENDIR=debugobj
-GLOBJDIR=debugobj
+GLGENDIR=obj
+GLOBJDIR=obj
 PSSRCDIR=.
-PSGENDIR=debugobj
-PSOBJDIR=debugobj
+PSGENDIR=obj
+PSOBJDIR=obj
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -240,7 +240,7 @@ SHP=
 
 # Define the arguments for genconf.
 
-CONFILES=-p %s+ -l lib.tr
+CONFILES=-p %s+ -l $(GLGENDIR)\lib.tr
 CONFLDTR=-o
 
 # Define the generic compilation flags.
@@ -330,8 +330,8 @@ GENOPT=$(CP) $(CD) $(CT) $(CS) $(CMT)
 
 CCFLAGS0=$(GENOPT) $(PLATOPT) $(CPFLAGS) $(FPFLAGS) $(CFLAGS) $(XCFLAGS)
 CCFLAGS=$(CCFLAGS0)
-CC=$(COMP) @ccf32.tr
-CPP=$(COMPCPP) @ccf32.tr
+CC=$(COMP) @$(GLGENDIR)\ccf32.tr
+CPP=$(COMPCPP) @$(GLGENDIR)\ccf32.tr
 !if $(MAKEDLL)
 WX=$(COMPILE_FOR_DLL)
 !else
@@ -365,18 +365,30 @@ BEGINFILES2=$(GLOBJDIR)\gs16spl.exe *.tr *.map
 CCAUX=$(COMPAUX) -ml -I$(INCDIR) -L$(LIBDIR) -n$(AUXGENDIR) -O
 CCAUX_TAIL=
 
-ccf32.tr: $(MAKEFILE) makefile
-	echo -a1 -d -r -G -N -X -I$(INCDIR) $(CCFLAGS0) -DCHECK_INTERRUPTS > ccf32.tr
+$(GLGENDIR)\ccf32.tr: $(MAKEFILE) makefile
+	echo -a1 -d -r -G -N -X -I$(INCDIR) $(CCFLAGS0) -DCHECK_INTERRUPTS > $(GLGENDIR)\ccf32.tr
+
+$(ECHOGS_XE): $(GLSRC)echogs.c
+	$(CCAUX) $(GLSRC)echogs.c $(CCAUX_TAIL)
 
 # Since we are running in a Windows environment with a different compiler
 # for the DOS utilities, we have to invoke genarch by hand.
 # For unfathomable reasons, the 'win' program requires /, not \,
 # in the name of the program to be run, and apparently also in any
 # file names passed on the command line (?!).
-$(GENARCH_XE): $(GLSRC)genarch.c $(stdpre_h) $(iref_h) ccf32.tr
+$(GENARCH_XE): $(GLSRC)genarch.c $(stdpre_h) $(iref_h) $(GLGENDIR)\ccf32.tr
 	$(COMP) -I$(INCDIR) -L$(LIBDIR) -n$(AUXGENDIR) -O $(GLSRC)genarch.c
 	echo win $(AUXGENDIR)/genarch $(GLGENDIR)/arch.h >_genarch.bat
 	echo ***** Run "_genarch.bat", then continue make. *****
+
+$(GENCONF_XE): $(GLSRC)genconf.c $(stdpre_h)
+	$(CCAUX) $(GLSRC)genconf.c $(CCAUX_TAIL)
+
+$(GENDEV_XE): $(GLSRC)gendev.c $(stdpre_h)
+	$(CCAUX) $(GLSRC)gendev.c $(CCAUX_TAIL)
+
+$(GENINIT_XE): $(PSSRC)geninit.c $(stdio__h) $(string__h)
+	$(CCAUX) $(PSSRC)geninit.c $(CCAUX_TAIL)
 
 # -------------------------------- Library -------------------------------- #
 
@@ -422,7 +434,7 @@ $(GSDLL_OBJ).dll: $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ)\
 	-del gswin32.tr
 	copy $(ld_tr) gswin32.tr
 	echo $(LIBDIR)\c0d32 $(GLOBJ)gsdll + >> gswin32.tr
-	$(LINK) $(LCT) /Tpd @gswin32.tr $(INTASM) ,$(GSDLL_OBJ).dll,$(GSDLL),@lib.tr @$(LIBCTR),$(GSDLL_SRC).def,$(GSDLL_OBJ).res
+	$(LINK) $(LCT) /Tpd @gswin32.tr $(INTASM) ,$(GSDLL_OBJ).dll,$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GSDLL_SRC).def,$(GSDLL_OBJ).res
 
 !else
 # The big graphical EXE
@@ -432,7 +444,7 @@ $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
 	copy $(ld_tr) gswin32.tr
 	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> gswin32.tr
 	echo $(DWOBJNO) $(INTASM) >> gswin32.tr
-	$(LINK) $(LCT) /Tpe @gswin32.tr ,$(GS_XE),$(GS),@lib.tr @$(LIBCTR),$(GLSRC)dwmain32.def,$(GS_OBJ).res
+	$(LINK) $(LCT) /Tpe @gswin32.tr ,$(GS_XE),$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRC)dwmain32.def,$(GS_OBJ).res
 	-del gswin32.tr
 
 # The big console mode EXE
@@ -442,7 +454,7 @@ $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
 	copy $(ld_tr) gswin32.tr
 	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> gswin32.tr
 	echo $(OBJCNO) $(INTASM) >> gswin32.tr
-	$(LINK) $(LCT) /Tpe /ap @gswin32.tr ,$(GSCONSOLE_XE),$(GSCONSOLE),@lib.tr @$(LIBCTR),$(GLSRC)dw32c.def,$(GS_OBJ).res
+	$(LINK) $(LCT) /Tpe /ap @gswin32.tr ,$(GSCONSOLE_XE),$(GSCONSOLE),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRC)dw32c.def,$(GS_OBJ).res
 	-del gswin32.tr
 !endif
 

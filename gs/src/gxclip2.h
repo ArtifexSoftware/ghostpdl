@@ -28,7 +28,9 @@
 typedef gx_device_mask_clip gx_device_tile_clip;
 
 #define private_st_device_tile_clip() /* in gxclip2.c */\
-  gx_private_st_device_mask_clip(st_device_tile_clip, "gx_device_tile_clip")
+  gs_private_st_suffix_add0(st_device_tile_clip, gx_device_tile_clip,\
+    "gx_device_tile_clip", device_tile_clip_enum_ptrs,\
+    device_tile_clip_reloc_ptrs, st_device_mask_clip)
 
 /*
  * Initialize a tile clipping device from a mask.

@@ -48,7 +48,7 @@ gp_monitor_open(gp_monitor * mon)
     return gp_semaphore_signal(&semon->sem);
 }
 
-void
+int
 gp_monitor_close(gp_monitor * mon)
 {
     semaphore_monitor_t * const semon = (semaphore_monitor_t *)mon;

@@ -24,10 +24,6 @@
 
 #include "gxmclip.h"
 
-extern_st(st_device_mask_clip);
-#define public_st_device_mask_clip()	/* in gxclipm.c */\
-  gx_public_st_device_mask_clip(st_device_mask_clip, "gx_device_mask_clip")
-
 extern const gx_device_mask_clip gs_mask_clip_device;
 
 #endif /* gxclipm_INCLUDED */

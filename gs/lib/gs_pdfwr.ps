@@ -58,11 +58,11 @@
     }
    ifelse
  } bind def
-/.pdfputparams		% -mark- <key1> <value1> ... .pdfputparams <result...>
- { currentdevice null false counttomark 1 add 3 roll
+/.pdfputparams {	% -mark- <key1> <value1> ... .pdfputparams <result...>
+  currentdevice null false counttomark 1 add 3 roll
 		% Don't allow the page device to get cleared....
-   {.putdeviceparams} .currentpagedevice pop {.setpagedevice} 3 .execn
- } bind def
+  {.putdeviceparams} .currentpagedevice pop {.setpagedevice} 3 .execn
+} bind def
 % The procedures in the following dictionary are called with the entire
 % pdfmark operand list (including the pdfmark name) on the stack;
 % they may modify this ad lib.  They should return true if all operands

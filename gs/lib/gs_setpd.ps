@@ -639,10 +639,22 @@ DEBUG { (Installing.\n) print pstack flush } if
    .setdevice pop
    .setpagedevice
 
-		% Merge the request into the current page device.
+		% Merge the request into the current page device,
+		% unless we're changing the OutputDevice.
 		% Stack: mark ... <merged> <failed>
    exch currentpagedevice dup length 2 index length add dict
-   .copydict .copydict
+		% Stack: mark ... <failed> <merged> <current> <newdict>
+   2 index /OutputDevice .knownget {
+     2 index /OutputDevice .knownget not { null } if eq
+   } {
+     true
+   } ifelse {
+		% Same OutputDevice, merge the dictionaries.
+     .copydict
+   } {
+		% Different OutputDevice, discard the old dictionary.
+     exch pop
+   } ifelse .copydict
 		% Initialize the default matrix, taking media matching
 		% into account.
    .computemediasize pop initmatrix concat

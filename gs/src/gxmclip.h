@@ -45,7 +45,7 @@ typedef struct gx_device_mask_clip_s {
     gx_strip_bitmap tiles;
     gx_device_memory mdev;	/* for tile buffer for copy_mono */
     gs_int_point phase;		/* device space origin relative */
-    /* to tile (backwards from gstate phase) */
+				/* to tile (backwards from gstate phase) */
     /* Ensure that the buffer is long-aligned. */
     union _b {
 	byte bytes[tile_clip_buffer_size];
@@ -53,10 +53,11 @@ typedef struct gx_device_mask_clip_s {
     } buffer;
 } gx_device_mask_clip;
 
-#define gx_private_st_device_mask_clip(stname, sname)\
-  gs_private_st_simple(stname, gx_device_mask_clip, sname)
-#define gx_public_st_device_mask_clip(stname, sname)\
-  gs_public_st_simple(stname, gx_device_mask_clip, sname)
+extern_st(st_device_mask_clip);
+#define public_st_device_mask_clip()	/* in gxmclip.c */\
+  gs_public_st_composite(st_device_mask_clip, gx_device_mask_clip,\
+    "gx_device_mask_clip", device_mask_clip_enum_ptrs,\
+    device_mask_clip_reloc_ptrs)
 
 /*
  * Internal routine to initialize a mask clipping device.

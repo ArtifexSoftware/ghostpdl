@@ -47,7 +47,7 @@ GS_LIB_DEFAULT=.;c:/gs/lib;c:/gs/fonts
 # look in the current directory first.  This leads to well-known security
 # and confusion problems, but users insist on it.
 # NOTE: this also affects searching for files named on the command line:
-# see the "File searching" section of use.txt for full details.
+# see the "File searching" section of Use.htm for full details.
 # Because of this, setting SEARCH_HERE_FIRST to 0 is not recommended.
 
 !ifndef SEARCH_HERE_FIRST
@@ -72,8 +72,11 @@ DEBUG=0
 # Setting TDEBUG=1 includes symbol table information for the debugger,
 # and also enables stack checking.  Code is substantially slower and larger.
 
+# NOTE: The MSVC++ 5.0 compiler produces incorrect output code with TDEBUG=0.
+# Leave TDEBUG set to 1.
+
 !ifndef TDEBUG
-TDEBUG=0
+TDEBUG=1
 !endif
 
 # Setting NOPRIVATE=1 makes private (static) procedures and variables public,
@@ -94,9 +97,15 @@ GS=gslib
 # for the graphics library (GL).
 
 # This is a bad joke.  This makefile won't work with any other values!
+!ifndef GLSRCDIR
 GLSRCDIR=.
+!endif
+!ifndef GLGENDIR
 GLGENDIR=.
+!endif
+!ifndef GLOBJDIR
 GLOBJDIR=.
+!endif
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -225,7 +234,7 @@ FPU_TYPE=0
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=dps2lib.dev psl2cs.dev cielib.dev imasklib.dev patlib.dev htxlib.dev roplib.dev devcmap.dev
+FEATURE_DEVS=dps2lib.dev psl2cs.dev cielib.dev imasklib.dev patlib.dev htxlib.dev roplib.dev devcmap.dev bbox.dev
 !endif
 
 # Choose whether to compile the .ps initialization files into the executable.
@@ -296,25 +305,25 @@ FPU_TYPE=1
 # Define the name of the makefile -- used in dependencies.
 
 # The use of multiple file names here is garbage!
-MAKEFILE=msvclib.mak msvccmd.mak msvctail.mak winlib.mak
+MAKEFILE=$(GLSRCDIR)\msvclib.mak $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLSRCDIR)\winlib.mak
 
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
-BEGINFILES2=$(GS).ilk $(GS).pdb
+BEGINFILES2=$(GLOBJDIR)\$(GS).ilk $(GLOBJDIR)\$(GS).pdb
 
 # Define these right away because they modify the behavior of
 # msvccmd.mak, msvctail.mak & winlib.mak.
 
-LIB_ONLY=$(GLOBJ)gslib.obj $(GLOBJ)gsnogc.obj $(GLOBJ)gconfig.obj $(GLOBJ)gscdefs.obj
+LIB_ONLY=$(GLOBJDIR)\gslib.obj $(GLOBJDIR)\gsnogc.obj $(GLOBJDIR)\gconfig.obj $(GLOBJDIR)\gscdefs.obj
 MAKEDLL=0
 PLATFORM=mslib32_
 
 
-!include msvccmd.mak
-!include winlib.mak
-!include msvctail.mak
+!include $(GLSRCDIR)\msvccmd.mak
+!include $(GLSRCDIR)\winlib.mak
+!include $(GLSRCDIR)\msvctail.mak
 
 # -------------------------------- Library -------------------------------- #
 
@@ -336,13 +345,13 @@ mslib32_.dev: $(mslib32__) $(ECHOGS_XE) msw32nc_.dev
 
 # The library tester EXE
 $(GS_XE):  $(GS_ALL) $(DEVS_ALL) $(LIB_ONLY) $(LIBCTR)
-	copy $(ld_tr) gslib32.tr
-	echo $(GLOBJ)gsnogc.obj >> gslib32.tr
-	echo $(GLOBJ)gconfig.obj >> gslib32.tr
-	echo $(GLOBJ)gscdefs.obj >> gslib32.tr
-	echo  /SUBSYSTEM:CONSOLE > gslib32.rsp
-	echo  /OUT:$(GS_XE) >> gslib32.rsp
+	copy $(ld_tr) $(GLGENDIR)\gslib32.tr
+	echo $(GLOBJ)gsnogc.obj >> $(GLGENDIR)\gslib32.tr
+	echo $(GLOBJ)gconfig.obj >> $(GLGENDIR)\gslib32.tr
+	echo $(GLOBJ)gscdefs.obj >> $(GLGENDIR)\gslib32.tr
+	echo  /SUBSYSTEM:CONSOLE > $(GLGENDIR)\gslib32.rsp
+	echo  /OUT:$(GS_XE) >> $(GLGENDIR)\gslib32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @gslib32.rsp gslib @gslib32.tr @$(LIBCTR) $(INTASM) @lib.tr
-	-del gslib32.rsp
-	-del gslib32.tr
+        $(LINK) $(LCT) @$(GLGENDIR)\gslib32.rsp $(GLOBJ)gslib @$(GLGENDIR)\gslib32.tr @$(LIBCTR) $(INTASM) @$(GLGENDIR)\lib.tr
+	-del $(GLGENDIR)\gslib32.rsp
+	-del $(GLGENDIR)\gslib32.tr

@@ -40,7 +40,7 @@ GS_LIB_DEFAULT=c:/gs;c:/gs/fonts
 # look in the current directory first.  This leads to well-known security
 # and confusion problems, but users insist on it.
 # NOTE: this also affects searching for files named on the command line:
-# see the "File searching" section of use.txt for full details.
+# see the "File searching" section of Use.htm for full details.
 # Because of this, setting SEARCH_HERE_FIRST to 0 is not recommended.
 
 SEARCH_HERE_FIRST=1
@@ -266,9 +266,9 @@ RMN_=rm.cmd
 # Define the arguments for genconf.
 
 !if $(MAKEDLL)
-CONFILES=-p %%s+ -l lib.tr
+CONFILES=-p %%s+ -l $(GLGENDIR)\lib.tr
 !else
-CONFILES=-l lib.tr
+CONFILES=-l $(GLGENDIR)\lib.tr
 !endif
 CONFLDTR=-o
 
@@ -527,7 +527,7 @@ ICONS=gsos2.ico gspmdrv.ico
 !if $(MAKEDLL)
 #making a DLL
 GS_ALL=$(GLOBJ)gsdll.$(OBJ) $(INT_ALL) $(INTASM)\
-  $(LIB_ALL) $(LIBCTR) $(ld_tr) lib.tr $(GS).res $(ICONS)
+  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(GS).res $(ICONS)
 
 $(GS_XE): $(GSDLL).dll dpmainc.c $(gsdll_h) gsos2.rc gscdefs.$(OBJ)
 !if $(EMX)
@@ -552,7 +552,7 @@ $(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) $(GLOBJ)gsdll.$(OBJ)
 !else
 #making an EXE
 GS_ALL=$(GLOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM)\
-  $(LIB_ALL) $(LIBCTR) $(ld_tr) lib.tr $(GS).res $(ICONS)
+  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(GS).res $(ICONS)
 
 $(GS_XE): $(GS_ALL) $(ALL_DEVS)
 	$(COMPDIR)\gcc $(CGDB) -o $(GS) $(GLOBJ)gs.$(OBJ) @$(ld_tr) $(INTASM) -lm

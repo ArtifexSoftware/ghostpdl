@@ -35,7 +35,7 @@ zsettrapparams(os_ptr op)
     dict_param_list list;
     int code;
 
-    cheak_type(*op, t_dictionary);
+    check_type(*op, t_dictionary);
     code = dict_param_list_read(&list, op, NULL, false);
     if (code < 0)
 	return code;

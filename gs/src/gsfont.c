@@ -119,8 +119,7 @@ private RELOC_PTRS_BEGIN(font_dir_reloc_ptrs);
 	if (cc != 0)
 	    cc_set_pair_only(cc,
 			     (cached_fm_pair *)
-			     (*gc_proc(gcst, reloc_struct_ptr))
-			     (cc_pair(cc) - cc->pair_index, gcst) +
+			     RELOC_OBJ(cc_pair(cc) - cc->pair_index) +
 			     cc->pair_index);
     }
 }

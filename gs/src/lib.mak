@@ -378,6 +378,7 @@ gconfig=gconfig$(CONFIG)
 $(GLOBJ)$(gconfig).$(OBJ): $(GLSRC)gconf.c $(GX)\
  $(gscdefs_h) $(gconf_h) $(gxdevice_h) $(gxiodev_h) $(MAKEFILE)
 	$(RM_) $(GLGEN)$(gconfig).c
+	$(RM_) $(GLGEN)$(gconfig).h
 	$(CP_) $(gconfig_h) $(GLGEN)gconfig.h
 	$(CP_) $(GLSRC)gconf.c $(GLGEN)$(gconfig).c
 	$(GLCC) $(GLO_)$(gconfig).$(OBJ) $(C_) $(GLGEN)$(gconfig).c
@@ -386,6 +387,7 @@ gscdefs=gscdefs$(CONFIG)
 $(GLOBJ)$(gscdefs).$(OBJ): $(GLSRC)gscdef.c\
  $(stdpre_h) $(gscdefs_h) $(gconf_h) $(MAKEFILE)
 	$(RM_) $(GLGEN)$(gscdefs).c
+	$(RM_) $(GLGEN)$(gconfig).h
 	$(CP_) $(gconfig_h) $(GLGEN)gconfig.h
 	$(CP_) $(GLSRC)gscdef.c $(GLGEN)$(gscdefs).c
 	$(GLCC) $(GLO_)$(gscdefs).$(OBJ) $(C_) $(GLGEN)$(gscdefs).c

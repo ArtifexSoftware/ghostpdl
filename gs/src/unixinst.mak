@@ -85,12 +85,14 @@ gs_pdfwr.ps ;\
 	done'
 	-mkdir $(docdir)
 	sh -c 'for f in \
-COPYING NEWS PUBLIC README \
-bug-form.txt c-style.txt current.txt devices.txt drivers.txt fonts.txt \
-helpers.txt hershey.txt history1.txt history2.txt history3.txt humor.txt \
-install.txt language.txt lib.txt make.txt new-user.txt \
-ps2epsi.txt ps2pdf.txt psfiles.txt public.txt \
-unix-lpr.txt use.txt xfonts.txt ;\
+PUBLIC README \
+ps2epsi.txt \
+Bug-form.htm C-style.htm Commprod.htm Copying.htm Current.htm \
+DLL.htm Devices.htm Drivers.htm Fonts.htm \
+Helpers.htm Hershey.htm History1.htm History2.htm History3.htm History4.htm \
+Htmstyle.htm Humor.htm Install.htm Language.htm Lib.htm Make.htm New-user.htm \
+News.htm Ps2pdf.htm Psfiles.htm Public.htm \
+Readme.htm Source.htm Unix-lpr.htm Use.htm Xfonts.htm ;\
 	do if ( test -f $$f ); then $(INSTALL_DATA) $$f $(docdir)/$$f; fi;\
 	done'
 	-mkdir $(exdir)

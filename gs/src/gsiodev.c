@@ -226,14 +226,6 @@ gs_getiodevice(int index)
 {
     if (index < 0 || index >= gx_io_device_table_count)
 	return 0;		/* index out of range */
-    /*
-     * HACK: the default device may be referenced before the table
-     * of copies is created, for opening files referenced from the
-     * command line.  For this case only, return a pointer to the
-     * const prototype.
-     */
-    if (io_device_table == 0)
-	return (index == 0 ? (gx_io_device *) gx_io_device_table[0] : 0);
     return io_device_table[index];
 }
 

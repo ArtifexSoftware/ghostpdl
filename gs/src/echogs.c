@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -89,14 +89,12 @@ main(int argc, char *argv[])
     FILE *in;
     char *extn = "";
     char fmode[4];
-
 #define FNSIZE 100
     char *fnparam;
     char fname[FNSIZE];
     int newline = 1;
     int interact = 0;
-    int (*eputc) () = fputc, (*eputs) () = fputs;
-
+    int (*eputc)() = fputc, (*eputs)() = fputs;
 #define LINESIZE 1000
     char line[LINESIZE];
     char sw = 0, sp = 0, hexx = 0;
@@ -310,7 +308,8 @@ hputc(int ch, FILE * out)
 {
     static char *hex = "0123456789abcdef";
 
-    putc(hex[ch >> 4], out);
+    /* In environments where char is signed, ch may be negative (!). */
+    putc(hex[(ch >> 4) & 0xf], out);
     putc(hex[ch & 0xf], out);
     return 0;
 }

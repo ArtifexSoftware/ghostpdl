@@ -1,0 +1,101 @@
+*** ../Makefile	Wed Sep  9 10:06:53 1998
+--- ./Makefile	Wed Sep  9 10:07:03 1998
+***************
+*** 53,59 ****
+  INSTALL_PROGRAM = $(INSTALL) -m 755
+  INSTALL_DATA = $(INSTALL) -m 644
+  
+! prefix = /usr/local
+  exec_prefix = $(prefix)
+  bindir = $(exec_prefix)/bin
+  scriptdir = $(bindir)
+--- 53,60 ----
+  INSTALL_PROGRAM = $(INSTALL) -m 755
+  INSTALL_DATA = $(INSTALL) -m 644
+  
+! #prefix = /usr/local
+! prefix = /usr
+  exec_prefix = $(prefix)
+  bindir = $(exec_prefix)/bin
+  scriptdir = $(bindir)
+***************
+*** 64,70 ****
+  gsdir = $(datadir)/ghostscript
+  gsdatadir = $(gsdir)/$(GS_DOT_VERSION)
+  
+! docdir=$(gsdatadir)/doc
+  exdir=$(gsdatadir)/examples
+  GS_DOCDIR=$(docdir)
+  
+--- 65,72 ----
+  gsdir = $(datadir)/ghostscript
+  gsdatadir = $(gsdir)/$(GS_DOT_VERSION)
+  
+! #docdir=$(gsdatadir)/doc
+! docdir=$(prefix)/doc/ghostscript-$(GS_DOT_VERSION)
+  exdir=$(gsdatadir)/examples
+  GS_DOCDIR=$(docdir)
+  
+***************
+*** 184,194 ****
+  # the 2.7.0-2.7.2 optimizer bug, either "-Dconst=" or
+  # "-Wcast-qual -Wwrite-strings" is automatically included.
+  
+! GCFLAGS=-Wall -Wcast-align -Wstrict-prototypes -Wwrite-strings -fno-common
+  
+  # Define the added flags for standard, debugging, and profiling builds.
+  
+! CFLAGS_STANDARD=-O2
+  CFLAGS_DEBUG=-g -O
+  CFLAGS_PROFILE=-pg -O2
+  
+--- 186,198 ----
+  # the 2.7.0-2.7.2 optimizer bug, either "-Dconst=" or
+  # "-Wcast-qual -Wwrite-strings" is automatically included.
+  
+! #GCFLAGS=-Wall -Wcast-align -Wstrict-prototypes -Wwrite-strings -fno-common
+! GCFLAGS=$(RPM_OPT_FLAGS) -Wall -Wcast-align -Wstrict-prototypes -Wwrite-strings -fno-common
+  
+  # Define the added flags for standard, debugging, and profiling builds.
+  
+! #CFLAGS_STANDARD=-O2
+! CFLAGS_STANDARD=
+  CFLAGS_DEBUG=-g -O
+  CFLAGS_PROFILE=-pg -O2
+  
+***************
+*** 234,240 ****
+  # Note that x_.h expects to find the header files in $(XINCLUDE)/X11,
+  # not in $(XINCLUDE).
+  
+! XINCLUDE=-I/usr/local/X/include
+  
+  # Define the directory/ies and library names for the X11 library files.
+  # XLIBDIRS is for ld and should include -L; XLIBDIR is for LD_RUN_PATH
+--- 238,245 ----
+  # Note that x_.h expects to find the header files in $(XINCLUDE)/X11,
+  # not in $(XINCLUDE).
+  
+! #XINCLUDE=-I/usr/local/X/include
+! XINCLUDE=-I/usr/X11R6/include
+  
+  # Define the directory/ies and library names for the X11 library files.
+  # XLIBDIRS is for ld and should include -L; XLIBDIR is for LD_RUN_PATH
+***************
+*** 249,255 ****
+  #XLIBS=Xt SM ICE Xext X11
+  
+  #XLIBDIRS=-L/usr/local/X/lib
+! XLIBDIRS=-L/usr/X11/lib
+  XLIBDIR=
+  XLIBS=Xt Xext X11
+  
+--- 254,261 ----
+  #XLIBS=Xt SM ICE Xext X11
+  
+  #XLIBDIRS=-L/usr/local/X/lib
+! #XLIBDIRS=-L/usr/X11/lib
+! XLIBDIRS=-L/usr/X11R6/lib
+  XLIBDIR=
+  XLIBS=Xt Xext X11
+  

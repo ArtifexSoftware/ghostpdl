@@ -268,7 +268,7 @@ $(PSOBJ)zdict.$(OBJ): $(PSSRC)zdict.c $(OP)\
 	$(PSCC) $(PSO_)zdict.$(OBJ) $(C_) $(PSSRC)zdict.c
 
 $(PSOBJ)zfile.$(OBJ): $(PSSRC)zfile.c $(OP) $(memory__h) $(string__h) $(gp_h)\
- $(gsstruct_h) $(gxalloc_h) $(gxiodev_h)\
+ $(gscdefs_h) $(gsstruct_h) $(gxalloc_h) $(gxiodev_h)\
  $(ialloc_h) $(estack_h) $(files_h) $(fname_h) $(ilevel_h) $(interp_h) $(iutil_h)\
  $(isave_h) $(main_h) $(sfilter_h) $(stream_h) $(strimpl_h) $(store_h)
 	$(PSCC) $(PSO_)zfile.$(OBJ) $(C_) $(PSSRC)zfile.c
@@ -708,7 +708,7 @@ $(PSOBJ)zfont42.$(OBJ): $(PSSRC)zfont42.c $(OP) $(memory__h)\
 # ======================== Precompilation options ======================== #
 
 # ---------------- Precompiled fonts ---------------- #
-# See fonts.txt for more information.
+# See Fonts.htm for more information.
 
 ccfont_h=$(PSSRC)ccfont.h $(std_h) $(gsmemory_h) $(iref_h) $(ivmspace_h) $(store_h)
 

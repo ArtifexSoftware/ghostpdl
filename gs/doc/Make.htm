@@ -463,7 +463,7 @@ Before making any changes for your particular environment, check the
 post-release "known bugs" notice at
 
 <blockquote>
-<a href="http://www.cs.wisc.edu/~ghost/aladdin/post510/post510.html">http://www.cs.wisc.edu/~ghost/</a>post###/post###.html
+<a href="http://www.cs.wisc.edu/~ghost/aladdin/relnotes/">http://www.cs.wisc.edu/~ghost/aladdin/relnotes/</a>gs###/index.html
 </blockquote>
 
 <p>
@@ -904,13 +904,23 @@ with 80386 processors.
 produce a working executable of Ghostscript 5.03.  We can't test this,
 since we no longer have this compiler.
 
+<li>Borland C++ 4.5 has a bug or bugs that cause(s) the 32-bit Windows
+executable to crash if you give any @-files on the command line.  Among
+other things, this makes the uniprint driver unusable, because it references
+the .upp configuration files this way.  This problem may possibly be fixed
+by one or more of the patch files on
+
+<blockquote>
+<a href="ftp://ftp.borland.com/pub/borlandcpp/devsupport/patches/bc4_5/">ftp://ftp.borland.com/pub/borlandcpp/devsupport/patches/bc4_5/</a>
+</blockquote>
+
 <li>Borland C++ 4.52 has a bug that causes the 32-bit Windows executable to
 fail during startup.  Borland (now Inprise) provides a patch for this bug
 in
 
-<p>
+<blockquote>
 <a href="ftp://ftp.borland.com/pub/borlandcpp/devsupport/patches/bc4_5/bc45xp1.zip">ftp://ftp.borland.com/pub/borlandcpp/devsupport/patches/bc4_5/bc45xp1.zip</a>
-<br>&nbsp;
+</blockquote>
 
 <li>Borland C++ 5.0 and 5.01 have a code generator bug that generates
 incorrect code for the construct <b><tt>!file_is_valid()</tt></b>.  Do not
@@ -960,7 +970,20 @@ The Microsoft VC++ 5.0 compiler locks up when compiling
 <b><tt>gxi12bit.c</tt></b> with <b><tt>/O2</tt></b>.  Compile this file
 without <b><tt>/O2</tt></b>.
 
+<p>
+The Microsoft VC++ 5.0 compiler produces a non-working executable if
+compiling without stack checking.  Don't change the setting
+<b><tt>TDEBUG=1</tt></b> in <b><tt>msvc32.mak</tt></b>.
+
 <h2><a name="Watcom_build"></a>Watcom environment</h2>
+
+<p>
+<b>NOTE:</b> The Watcom compiler is unusable, because Watcom's
+<b><tt>wmake</tt></b> and <b><tt>wmakel</tt></b> programs have severe size
+limitations that cause them to run out of memory when processing the
+Ghostscript makefiles.  If enough people call Watcom (now PowerSoft)
+technical support, maybe they will do something about this.  If you have
+suggestions for how to get around this limitation, please let us know.
 
 <p>
 On DOS or MS Windows with the Watcom compiler, add to
@@ -1074,7 +1097,7 @@ However, if you like you can set up all these files in this hierarchy:
 <tr valign=top>	<td>&nbsp;&nbsp;&nbsp;&nbsp;
 	<td><b><tt>files</tt></b>
 	<td>&nbsp;
-	<td>(All *<b><tt>.ps</tt></b>, *<b><tt>.txt</tt></b>, and other non-build files)
+	<td>(All *<b><tt>.ps</tt></b>, *<b><tt>.htm</tt></b>, and other non-build files)
 <tr valign=top>	<td>&nbsp;
 	<td><b><tt>fonts</tt></b>
 	<td>&nbsp;
@@ -1471,6 +1494,46 @@ PLATFORM=sysv_</tt></b><br>&nbsp;
 </ul>
 
 <h3><a name="Linux"></a>Linux</h3>
+
+<p>
+To create <a href="http://www.rpm.org">RPM</a> 
+(<b>R</b>ed Hat <b>P</b>ackage <b>M</b>anager) 
+files for Ghostscript N.NN: 
+
+<ul>
+<li>Change to your source directory (<b><tt>/usr/src/redhat</tt></b> for Red Hat 
+   Linux 5.1).
+<li>Copy <b><tt>ghostscript-N.NN*.tar.gz</tt></b> (4 source files) to the 
+<b><tt>SOURCES</tt></b> subdirectory.
+<li>Copy <b><tt>ghostscript-fonts-5.10a.tar.gz</tt></b> to the 
+<b><tt>SOURCES</tt></b> subdirectory.
+<li>From <b><tt>SOURCES/ghostscript-N.NN.tar.gz</tt></b>, 
+<ul>
+<li>extract <b><tt>rpm-conf.dif</tt></b> and copy to 
+<b><tt>SOURCES/ghostscript-N.NN-config.patch</tt></b>
+<li>extract <b><tt>gs.rps</tt></b> and copy to 
+<b><tt>SPECS/ghostscript-N.NN.spec</tt></b>
+<li>extract <b><tt>gs-fonts.rps</tt></b> and copy to 
+<b><tt>SPECS/ghostscript-fonts-N.NN.spec</tt></b>
+</ul>
+If the contents of these files have become out of date, you
+will need to update the version number N.NN in the spec files, 
+and update the patch file.
+<li> Change to the SPECS subdirectory and then execute the commands
+<blockquote><b><tt>
+rpm -ba ghostscript-N.NN.spec<br>
+rpm -ba ghostscript-fonts-N.NN.spec 
+</tt></b></blockquote>
+This will create the RPM files
+<blockquote><b><tt>
+RPMS/i386/ghostscript-N.NN-1.i386.rpm<br>
+RPMS/noarch/ghostscript-fonts-N.NN-1.noarch.rpm<br>
+SRPMS/ghostscript-N.NN-1.src.rpm<br>
+SRPMS/ghostscript-fonts-N.NN-1.src.rpm<br>
+</tt></b></blockquote>
+<li> See instructions on how to <a href="Install.htm#Install_Unix">install
+ Ghostscript under Unix</a>.
+</ul>
 
 <p>
 Bruce Babcock
@@ -2092,7 +2155,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.40, 10 September 1998
+Ghostscript version 5.50, 16 September 1998
 
 </font>
 

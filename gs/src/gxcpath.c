@@ -81,8 +81,7 @@ ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(device_clip_reloc_ptrs)
 {
     if (cptr->current == &cptr->list.single)
-	cptr->current =
-	    &((gx_device_clip *) (*gc_proc(gcst, reloc_struct_ptr)) (vptr, gcst))->list.single;
+	cptr->current = &((gx_device_clip *)RELOC_OBJ(vptr))->list.single;
     else
 	RELOC_PTR(gx_device_clip, current);
     RELOC_USING(st_clip_list, &cptr->list, sizeof(gx_clip_list));

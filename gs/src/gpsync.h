@@ -43,7 +43,7 @@ uint gp_semaphore_sizeof(P0());
  * to move a gp_semaphore in memory.
  */
 int gp_semaphore_open(P1(gp_semaphore * sema));
-void gp_semaphore_close(P1(gp_semaphore * sema));
+int gp_semaphore_close(P1(gp_semaphore * sema));
 int gp_semaphore_wait(P1(gp_semaphore * sema));
 int gp_semaphore_signal(P1(gp_semaphore * sema));
 
@@ -61,7 +61,7 @@ uint gp_monitor_sizeof(P0());
  * to move a gp_monitor in memory.
  */
 int gp_monitor_open(P1(gp_monitor * mon));
-void gp_monitor_close(P1(gp_monitor * mon));
+int gp_monitor_close(P1(gp_monitor * mon));
 int gp_monitor_enter(P1(gp_monitor * mon));
 int gp_monitor_leave(P1(gp_monitor * mon));
 

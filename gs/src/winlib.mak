@@ -39,7 +39,7 @@ PLATFORM=mswin32_
 # Watcom C all accept ANSI syntax, but we need to preconstruct ccf32.tr 
 # to get around the limit on the maximum length of a command line.
 
-AK=ccf32.tr
+AK=$(GLGENDIR)\ccf32.tr
 
 # Define the syntax for command, object, and executable files.
 
@@ -48,7 +48,7 @@ C_=-c
 I_=-I
 II=-I
 _I=
-# O_ is defined separately for each compiler.
+# O_ and XE_ are defined separately for each compiler.
 OBJ=obj
 XE=.exe
 XEAUX=.exe
@@ -57,9 +57,9 @@ XEAUX=.exe
 
 # We have to use a batch file for the equivalent of cp,
 # because the DOS COPY command copies the file write time, like cp -p.
-CP_=call cp.bat
+CP_=call $(GLSRCDIR)\cp.bat
 RM_=erase
-RMN_=call rm.bat
+RMN_=call $(GLSRCDIR)\rm.bat
 
 # Define the generic compilation flags.
 
@@ -73,7 +73,7 @@ PCFBASM=
 # so this must precede the !include statements.
 
 # ****** WRONG ****** NEED GLOBJ PREFIX ******
-BEGINFILES=gs*.res gs*.ico ccf32.tr\
+BEGINFILES=gs*.res gs*.ico $(GLGENDIR)\ccf32.tr\
    $(GSDLL).dll $(GSCONSOLE).exe\
    $(BEGINFILES2)
 
@@ -101,25 +101,7 @@ GS_OBJ=$(GLOBJ)$(GS)
 GSDLL_SRC=$(GLSRC)$(GSDLL)
 GSDLL_OBJ=$(GLOBJ)$(GSDLL)
 
-# -------------------------- Auxiliary programs --------------------------- #
-
-$(ECHOGS_XE): $(GLSRC)echogs.c
-	$(CCAUX_SETUP)
-	$(CCAUX) $(GLSRC)echogs.c $(CCAUX_TAIL)
-
-# $(GENARCH_XE) is in individual (compiler-specific) makefiles.
-
-$(GENCONF_XE): $(GLSRC)genconf.c $(stdpre_h)
-	$(CCAUX_SETUP)
-	$(CCAUX) $(GLSRC)genconf.c $(CCAUX_TAIL)
-
-$(GENDEV_XE): $(GLSRC)gendev.c $(stdpre_h)
-	$(CCAUX_SETUP)
-	$(CCAUX) $(GLSRC)gendev.c $(CCAUX_TAIL)
-
-$(GENINIT_XE): $(PSSRC)geninit.c $(stdio__h) $(string__h)
-	$(CCAUX_SETUP)
-	$(CCAUX) $(PSSRC)geninit.c $(CCAUX_TAIL)
+# -------------------------- Auxiliary files --------------------------- #
 
 # No special gconfig_.h is needed.
 # Assume `make' supports output redirection.

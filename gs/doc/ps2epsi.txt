@@ -1,6 +1,10 @@
 	NOTE: this file was contributed by a user: please contact
 	George Cameron <george@bio-medical-physics.aberdeen.ac.uk>
 	if you have questions.
+	
+	Since the software described here is no longer being maintained, the
+	content of this document may be obsolete, or inconsistent with
+	ps2epsi.1.
 
 OVERVIEW:
 

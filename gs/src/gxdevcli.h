@@ -37,7 +37,7 @@
 #include "gxfixed.h"
 #include "gxtext.h"
 
-/* See drivers.txt for documentation of the driver interface. */
+/* See Drivers.htm for documentation of the driver interface. */
 
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED

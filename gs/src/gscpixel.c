@@ -54,7 +54,7 @@ gs_cs_init_DevicePixel(gs_color_space * pcs, int depth)
 private void
 gx_restrict_DevicePixel(gs_client_color * pcc, const gs_color_space * pcs)
 {
-/****** NOT ENOUGH BITS IN float OR frac ******/
+    /****** NOT ENOUGH BITS IN float OR frac ******/
     floatp pixel = pcc->paint.values[0];
     ulong max_value = (1L << pcs->params.pixel.depth) - 1;
 
@@ -68,7 +68,7 @@ private int
 gx_concretize_DevicePixel(const gs_client_color * pc, const gs_color_space * pcs,
 			  frac * pconc, const gs_imager_state * pis)
 {
-/****** NOT ENOUGH BITS IN float OR frac ******/
+    /****** NOT ENOUGH BITS IN float OR frac ******/
     pconc[0] = (frac) (ulong) pc->paint.values[0];
     return 0;
 }

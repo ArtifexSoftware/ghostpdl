@@ -30,7 +30,7 @@
 #   http://www.cdrom.com/infozip/zlib/
 #   ftp://ftp.cdrom.com/pub/infozip/zlib/
 #	zlib-#.#.#.tar.gz or zlib###.zip
-# Please see Ghostscript's `make.txt' file for instructions about how to
+# Please see Ghostscript's `Make.htm' file for instructions about how to
 # unpack these archives.
 #
 # When each version of Ghostscript is released, we copy the associated

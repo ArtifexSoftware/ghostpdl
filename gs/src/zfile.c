@@ -21,6 +21,7 @@
 #include "memory_.h"
 #include "string_.h"
 #include "ghost.h"
+#include "gscdefs.h"		/* for gx_io_device_table */
 #include "gp.h"
 #include "gsstruct.h"		/* for registering root */
 #include "gxalloc.h"		/* for streams */
@@ -43,6 +44,9 @@
 
 /* Import the file_open routine for %os%, which is the default. */
 extern iodev_proc_open_file(iodev_os_open_file);
+
+/* Import the IODevice table. */
+extern_gx_io_device_table();
 
 /* Forward references: file opening. */
 int file_open(P6(const byte *, uint, const char *, uint, ref *, stream **));
@@ -572,12 +576,16 @@ FILE *
 lib_fopen(const char *bname)
 {
     FILE *file = NULL;
-
     /* We need a buffer to hold the expanded file name. */
     char buffer[gp_file_name_sizeof];
-    int code = lib_file_fopen(iodev_default, bname, "r", &file,
-			      buffer, gp_file_name_sizeof);
+    /* We can't count on the IODevice table to have been initialized yet. */
+    /* Allocate a copy of the default IODevice. */
+    gx_io_device iodev_default_copy;
+    int code;
 
+    iodev_default_copy = *gx_io_device_table[0];
+    code = lib_file_fopen(&iodev_default_copy, bname, "r", &file,
+			  buffer, gp_file_name_sizeof);
     return (code < 0 ? NULL : file);
 }
 

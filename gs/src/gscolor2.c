@@ -132,11 +132,12 @@ gs_private_st_composite(st_color_space_Indexed, gs_paint_color_space,
 /* ------ Color space ------ */
 
 /* Define the Indexed color space type. */
-cs_declare_procs(private, gx_concretize_Indexed, gx_install_Indexed,
-		 gx_adjust_cspace_Indexed);
 private cs_proc_base_space(gx_base_space_Indexed);
 private cs_proc_restrict_color(gx_restrict_Indexed);
 private cs_proc_concrete_space(gx_concrete_space_Indexed);
+private cs_proc_concretize_color(gx_concretize_Indexed);
+private cs_proc_install_cspace(gx_install_Indexed);
+private cs_proc_adjust_cspace_count(gx_adjust_cspace_Indexed);
 const gs_color_space_type gs_color_space_type_Indexed = {
     gs_color_space_index_Indexed, false, false,
     &st_color_space_Indexed, gx_num_components_1,

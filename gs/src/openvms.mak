@@ -54,7 +54,7 @@ GS_LIB_DEFAULT=GS_LIB
 # look in the current directory first.  This leads to well-known security
 # and confusion problems, but users insist on it.
 # NOTE: this also affects searching for files named on the command line:
-# see the "File searching" section of use.txt for full details.
+# see the "File searching" section of Use.htm for full details.
 # Because of this, setting SEARCH_HERE_FIRST to 0 is not recommended.
 
 SEARCH_HERE_FIRST=1

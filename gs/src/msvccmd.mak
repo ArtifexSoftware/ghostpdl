@@ -68,7 +68,7 @@ O_=-Fo
 
 # Define the arguments for genconf.
 
-CONFILES=-p %%s -l lib.tr
+CONFILES=-p %%s -l $(GLGENDIR)\lib.tr
 CONFLDTR=-o
 
 # Define the generic compilation flags.
@@ -137,7 +137,9 @@ CD=
 !endif
 
 !if $(TDEBUG)!=0
-CT=/Zi /Od
+# /Fd designates the directory for the .pdb file.
+# Note that it must be followed by a space.
+CT=/Zi /Od /Fd$(GLOBJDIR) $(NULL)
 LCT=/DEBUG $(LINK_LIB_SWITCH)
 COMPILE_FULL_OPTIMIZED=    # no optimization when debugging
 COMPILE_WITH_FRAMES=    # no optimization when debugging
@@ -170,8 +172,8 @@ COMPILE_FOR_CONSOLE_EXE=
 GENOPT=$(CP) $(CD) $(CT) $(CS) /W2 /nologo /MT
 
 CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS)
-CC=$(COMP) /c $(CCFLAGS) @ccf32.tr
-CPP=$(COMPCPP) /c $(CCFLAGS) @ccf32.tr
+CC=$(COMP) /c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
+CPP=$(COMPCPP) /c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
 !if $(MAKEDLL)
 WX=$(COMPILE_FOR_DLL)
 !else

@@ -481,8 +481,7 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 		case t_name:
 		    {
 			void *psub = name_ref_sub_table(pref);
-			void *rsub =
-			(*gc_proc(gcst, reloc_struct_ptr)) (psub, gcst);
+			void *rsub = RELOC_OBJ(psub); /* gcst implicit */
 
 			pref->value.pname = (name *)
 			    ((char *)rsub + ((char *)pref->value.pname - (char *)psub));

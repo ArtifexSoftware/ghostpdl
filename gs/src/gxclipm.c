@@ -24,8 +24,6 @@
 #include "gxdevmem.h"
 #include "gxclipm.h"
 
-public_st_device_mask_clip();
-
 /* Device procedures */
 private dev_proc_fill_rectangle(mask_clip_fill_rectangle);
 private dev_proc_copy_mono(mask_clip_copy_mono);

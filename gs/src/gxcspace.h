@@ -210,19 +210,11 @@ cs_proc_install_cspace(gx_no_install_cspace);
 cs_proc_adjust_cspace_count(gx_no_adjust_cspace_count);
 cs_proc_adjust_color_count(gx_no_adjust_color_count);
 
-/* Macros for declaring color space procedures. */
-#define cs_declare_render_procs(scope, concretize, install)\
-  scope cs_proc_concretize_color(concretize);\
-  scope cs_proc_install_cspace(install)
-#define cs_declare_memory_procs(scope, adjust)\
-  scope cs_proc_adjust_cspace_count(adjust)
-#define cs_declare_procs(scope, concretize, install, adjust)\
-  cs_declare_render_procs(scope, concretize, install);\
-  cs_declare_memory_procs(scope, adjust)
-
 /* Standard color space types */
 extern const gs_color_space_type
-      gs_color_space_type_DeviceGray, gs_color_space_type_DeviceRGB, gs_color_space_type_DeviceCMYK;
+    gs_color_space_type_DeviceGray,
+    gs_color_space_type_DeviceRGB,
+    gs_color_space_type_DeviceCMYK;
 
 /* Define the allocator type for color spaces. */
 extern_st(st_color_space);

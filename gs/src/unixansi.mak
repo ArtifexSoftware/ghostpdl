@@ -77,7 +77,7 @@ GS_LIB_DEFAULT=$(gsdatadir):$(gsdir)/fonts
 # look in the current directory first.  This leads to well-known security
 # and confusion problems, but users insist on it.
 # NOTE: this also affects searching for files named on the command line:
-# see the "File searching" section of use.txt for full details.
+# see the "File searching" section of Use.htm for full details.
 # Because of this, setting SEARCH_HERE_FIRST to 0 is not recommended.
 
 SEARCH_HERE_FIRST=1
@@ -122,7 +122,7 @@ JVERSION=6
 # DON'T DO THIS. If you do, the resulting executable will not be able to
 # read some PostScript files containing JPEG data, because Adobe chose to
 # define PostScript's JPEG capabilities in a way that is slightly
-# incompatible with the JPEG standard.  See make.txt for more details.
+# incompatible with the JPEG standard.  See Make.htm for more details.
 
 # DON'T SET THIS TO 1!  See the comment just above.
 SHARE_JPEG=0
@@ -138,7 +138,7 @@ PVERSION=96
 
 # Choose whether to use a shared version of the PNG library, and if so,
 # what its name is.
-# See gs.mak and make.txt for more information.
+# See gs.mak and Make.htm for more information.
 
 SHARE_LIBPNG=0
 LIBPNG_NAME=png
@@ -150,7 +150,7 @@ ZSRCDIR=zlib
 
 # Choose whether to use a shared version of the zlib library, and if so,
 # what its name is (usually libz, but sometimes libgz).
-# See gs.mak and make.txt for more information.
+# See gs.mak and Make.htm for more information.
 
 SHARE_ZLIB=0
 #ZLIB_NAME=gz

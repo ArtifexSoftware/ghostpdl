@@ -150,7 +150,7 @@ gp_semaphore_open(
 	return 0;		/* Win32 semaphores handles may be moved */
 }
 
-void
+int
 gp_semaphore_close(
 		   gp_semaphore * sema	/* semaphore to affect */
 )
@@ -160,6 +160,7 @@ gp_semaphore_close(
     if (winSema->handle != NULL)
 	CloseHandle(winSema->handle);
     winSema->handle = NULL;
+    return 0;
 }
 
 int				/* rets 0 ok, -ve error */
@@ -213,7 +214,7 @@ gp_monitor_open(
 	return 1;		/* Win32 critical sections mutsn't be moved */
 }
 
-void
+int
 gp_monitor_close(
 		 gp_monitor * mon	/* monitor to affect */
 )
@@ -221,6 +222,7 @@ gp_monitor_close(
     win32_monitor *const winMon = (win32_monitor *)mon;
 
     DeleteCriticalSection(&winMon->lock);	/* rets no status */
+    return 0;
 }
 
 int				/* rets 0 ok, -ve error */

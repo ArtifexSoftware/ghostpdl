@@ -22,6 +22,8 @@
 #include "gserrors.h"
 #include "gxdevice.h"
 #include "gxlum.h"
+#include "gxfrac.h"
+#include "gxdcconv.h"
 #include "gdevcmap.h"
 
 /*
@@ -35,11 +37,11 @@ public_st_device_cmap();
 /* Device procedures */
 private dev_proc_map_rgb_color(cmap_map_rgb_color);
 private dev_proc_map_rgb_alpha_color(cmap_map_rgb_alpha_color);
+private dev_proc_map_cmyk_color(cmap_map_cmyk_color);
 private dev_proc_put_params(cmap_put_params);
 private dev_proc_begin_typed_image(cmap_begin_typed_image);
 
-private const gx_device_cmap gs_cmap_device =
-{
+private const gx_device_cmap gs_cmap_device = {
     std_device_dci_body(gx_device_cmap, 0, "special color mapper",
 			0, 0, 1, 1,
 			3, 24, 255, 255, 256, 256),
@@ -53,7 +55,7 @@ private const gx_device_cmap gs_cmap_device =
 	gx_forward_copy_color,
 	0, 0, 0,
 	cmap_put_params,
-	gx_default_map_cmyk_color,
+	cmap_map_cmyk_color,
 	0, 0,
 	cmap_map_rgb_alpha_color,
 	0, 0, 0, 0, 0,
@@ -126,38 +128,57 @@ gdev_cmap_set_method(gx_device_cmap * cmdev,
     return 0;
 }
 
-/* Map RGB colors. */
-typedef struct cmap_rgb_s {
-    gx_color_value red, green, blue;
-} cmap_rgb_t;
-private void
-cmap_convert_rgb_color(const gx_device_cmap * cmdev, cmap_rgb_t * rgb)
+/* Map RGB colors, and convert to the target's native color model. */
+/* Return true if the target is an RGB device, false if CMYK. */
+private bool
+cmap_convert_rgb_color(const gx_device_cmap * cmdev, gx_color_value red,
+		       gx_color_value green, gx_color_value blue,
+		       gx_color_value cv[4])
 {
+    gx_color_value red_out, green_out, blue_out;
+
     switch (cmdev->mapping_method) {
 
 	case device_cmap_snap_to_primaries:
 	    /* Snap each RGB primary component to 0 or 1 individually. */
-	    rgb->red =
-		(rgb->red <= gx_max_color_value / 2 ? 0 : gx_max_color_value);
-	    rgb->green =
-		(rgb->green <= gx_max_color_value / 2 ? 0 : gx_max_color_value);
-	    rgb->blue =
-		(rgb->blue <= gx_max_color_value / 2 ? 0 : gx_max_color_value);
+	    red_out =
+		(red <= gx_max_color_value / 2 ? 0 : gx_max_color_value);
+	    green_out =
+		(green <= gx_max_color_value / 2 ? 0 : gx_max_color_value);
+	    blue_out =
+		(blue <= gx_max_color_value / 2 ? 0 : gx_max_color_value);
 	    break;
 
 	case device_cmap_color_to_black_over_white:
 	    /* Snap black to white, other colors to black. */
-	    rgb->red = rgb->green = rgb->blue =
-		((rgb->red | rgb->green | rgb->blue) == 0 ?
-		 gx_max_color_value : 0);
+	    red_out = green_out = blue_out =
+		((red | green | blue) == 0 ? gx_max_color_value : 0);
 	    break;
 
 	case device_cmap_identity:
 	case device_cmap_monochrome:
 	default:
+	    red_out = red, green_out = green, blue_out = blue;
 	    break;
 
     }
+
+    /* Check for a CMYK device. */
+    if (cmdev->target->color_info.num_components <= 3) {
+	cv[0] = red_out, cv[1] = green_out, cv[2] = blue_out;
+	return true;
+    }
+
+    /*
+     * Convert RGB to CMYK using default (null) black generation and
+     * undercolor removal.  This isn't right, but we don't have access to an
+     * imager state to provide the correct procedures.
+     */
+    cv[0] = gx_max_color_value - red_out;
+    cv[1] = gx_max_color_value - green_out;
+    cv[2] = gx_max_color_value - blue_out;
+    cv[3] = 0;
+    return false;
 }
 
 private gx_color_index
@@ -166,14 +187,14 @@ cmap_map_rgb_color(gx_device * dev, gx_color_value red,
 {
     const gx_device_cmap *const cmdev = (const gx_device_cmap *)dev;
     gx_device *target = cmdev->target;
-    cmap_rgb_t rgb;
+    gx_color_value cv[4];
+    bool is_rgb = cmap_convert_rgb_color(cmdev, red, green, blue, cv);
 
-    rgb.red = red;
-    rgb.green = green;
-    rgb.blue = blue;
-    cmap_convert_rgb_color(cmdev, &rgb);
-    return target->procs.map_rgb_color(target, rgb.red, rgb.green, rgb.blue);
+    return
+	(is_rgb ? target->procs.map_rgb_color(target, cv[0], cv[1], cv[2]) :
+	 target->procs.map_cmyk_color(target, cv[0], cv[1], cv[2], cv[3]));
 }
+
 private gx_color_index
 cmap_map_rgb_alpha_color(gx_device * dev, gx_color_value red,
 			 gx_color_value green, gx_color_value blue,
@@ -181,14 +202,31 @@ cmap_map_rgb_alpha_color(gx_device * dev, gx_color_value red,
 {
     const gx_device_cmap *const cmdev = (const gx_device_cmap *)dev;
     gx_device *target = cmdev->target;
-    cmap_rgb_t rgb;
+    gx_color_value cv[4];
+    bool is_rgb = cmap_convert_rgb_color(cmdev, red, green, blue, cv);
 
-    rgb.red = red;
-    rgb.green = green;
-    rgb.blue = blue;
-    cmap_convert_rgb_color(cmdev, &rgb);
-    return target->procs.map_rgb_alpha_color(target, rgb.red, rgb.green,
-					     rgb.blue, alpha);
+    return
+	(is_rgb ? target->procs.map_rgb_alpha_color(target, cv[0], cv[1],
+						    cv[2], alpha) :
+	 /****** CMYK DISREGARDS ALPHA ******/
+	 target->procs.map_cmyk_color(target, cv[0], cv[1], cv[2], cv[3]));
+}
+
+private gx_color_index
+cmap_map_cmyk_color(gx_device * dev, gx_color_value c,
+		    gx_color_value m, gx_color_value y, gx_color_value k)
+{
+    const gx_device_cmap *const cmdev = (const gx_device_cmap *)dev;
+    gx_device *target = cmdev->target;
+    frac frac_rgb[3];
+
+    if (cmdev->mapping_method == device_cmap_identity)
+	return target->procs.map_cmyk_color(target, c, m, y, k);
+    color_cmyk_to_rgb(cv2frac(c), cv2frac(m), cv2frac(y), cv2frac(k),
+		      NULL, frac_rgb);
+    return cmap_map_rgb_color(dev, frac2cv(frac_rgb[0]),
+			      frac2cv(frac_rgb[1]),
+			      frac2cv(frac_rgb[2]));
 }
 
 /* Update parameters; copy the device information back afterwards. */

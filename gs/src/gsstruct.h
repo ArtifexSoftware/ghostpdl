@@ -454,12 +454,14 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
 
     /* Relocate elements */
 
+#define RELOC_OBJ(ptr)\
+  (gc_proc(gcst, reloc_struct_ptr)((const void *)(ptr), gcst))
 #define RELOC_OBJ_VAR(ptrvar)\
-  ptrvar = (*gc_proc(gcst, reloc_struct_ptr))((const void *)(ptrvar), gcst)
+  (ptrvar = RELOC_OBJ(ptrvar))
 #define RELOC_STRING_VAR(ptrvar)\
-  (*gc_proc(gcst, reloc_string))(&(ptrvar), gcst)
+  (gc_proc(gcst, reloc_string)(&(ptrvar), gcst))
 #define RELOC_CONST_STRING_VAR(ptrvar)\
-  (*gc_proc(gcst, reloc_const_string))(&(ptrvar), gcst)
+  (gc_proc(gcst, reloc_const_string)(&(ptrvar), gcst))
 
 #define RELOC_OBJ_ELT(typ, elt)\
   RELOC_VAR(((typ *)vptr)->elt)
@@ -472,11 +474,10 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
 /* OFFSET is for byte offsets, TYPED_OFFSET is for element offsets. */
 #define RELOC_OFFSET_ELT(typ, elt, offset)\
   ((typ *)vptr)->elt = (void *)\
-    ((char *)(*gc_proc(gcst, reloc_struct_ptr))((char *)((typ *)vptr)->elt - (offset), gcst) +\
+    ((char *)RELOC_OBJ((char *)((typ *)vptr)->elt - (offset)) +\
      (offset))
 #define RELOC_TYPED_OFFSET_ELT(typ, elt, offset)\
-  (((typ *)vptr)->elt = (void *)\
-    (*gc_proc(gcst, reloc_struct_ptr))(((typ *)vptr)->elt - (offset), gcst),\
+  (((typ *)vptr)->elt = (void *)RELOC_OBJ(((typ *)vptr)->elt - (offset)),\
    ((typ *)vptr)->elt += (offset))
 
     /* Backward compatibility */

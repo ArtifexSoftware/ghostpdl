@@ -33,7 +33,7 @@
 #include "ifilter.h"
 #include "iparam.h"
 
-#define TEST
+/*#define TEST*/
 
 /* Import the parameter processing procedure from sdeparam.c */
 stream_state_proc_put_params(s_DCTE_put_params, stream_DCT_state);

@@ -34,7 +34,7 @@
 #include "ivmspace.h"
 #include "store.h"		/* for make_null */
 
-#define TEST
+/*#define TEST*/
 
 /* Forward references */
 private int zcrd1_proc_params(P2(os_ptr op, ref_cie_render_procs * pcprocs));

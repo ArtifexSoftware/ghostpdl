@@ -41,9 +41,10 @@ gp_semaphore_open(gp_semaphore * sema)
     return 0;
 }
 
-void
+int
 gp_semaphore_close(gp_semaphore * sema)
 {
+    return 0;
 }
 
 int
@@ -78,9 +79,10 @@ gp_monitor_open(gp_monitor * mon)
     return 0;
 }
 
-void
+int
 gp_monitor_close(gp_monitor * mon)
 {
+    return 0;
 }
 
 int

@@ -230,7 +230,7 @@ char buf[256];
 		fputs("\n\
 The mswindll device is not supported by the command line version of\n\
 Ghostscript.  Select a different device using -sDEVICE= as described\n\
-in use.txt.\n", stdout);
+in Use.htm.\n", stdout);
 	    }
 	    break;
 	case GSDLL_SYNC:

@@ -45,7 +45,7 @@ GS_LIB_DEFAULT=.;c:/gs\;c:/gs/fonts
 # look in the current directory first.  This leads to well-known security
 # and confusion problems, but users insist on it.
 # NOTE: this also affects searching for files named on the command line:
-# see the "File searching" section of use.txt for full details.
+# see the "File searching" section of Use.htm for full details.
 # Because of this, setting SEARCH_HERE_FIRST to 0 is not recommended.
 
 SEARCH_HERE_FIRST=1
@@ -233,7 +233,7 @@ SHP=command /c
 
 # Define the arguments for genconf.
 
-CONFILES=-p %%s, -l lib.tr
+CONFILES=-p %%s, -l $(GLGENDIR)\lib.tr
 CONFLDTR=-o
 
 # Define the generic compilation flags.
@@ -319,8 +319,8 @@ COMPILE_FOR_CONSOLE_EXE=
 GENOPT=$(CP) $(CD) $(CT) $(CS) -zq
 
 CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS)
-CC=$(COMP) -c $(CCFLAGS) @ccf32.tr
-CPP=$(COMPCPP) -c $(CCFLAGS) @ccf32.tr
+CC=$(COMP) -c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
+CPP=$(COMPCPP) -c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
 !ifneq MAKEDLL 0
 WX=$(COMPILE_FOR_DLL)
 !else
@@ -352,12 +352,8 @@ BEGINFILES2=gsdll32.rex gswin32.rex gswin32c.rex
 
 # -------------------------- Auxiliary programs --------------------------- #
 
-ccf32.tr: $(MAKEFILE) makefile
-	echo $(GENOPT) -I$(INCDIR) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ -D_WATCOM_ > ccf32.tr
-
-$(GENARCH_XE): $(GLSRC)genarch.c $(stdpre_h) $(iref_h) ccf32.tr
-	$(CCAUX_SETUP)
-	$(CCAUX) @ccf32.tr $(GLSRC)genarch.c $(CCAUX_TAIL)
+$(GLGENDIR)\ccf32.tr: $(MAKEFILE) makefile
+	echo $(GENOPT) -I$(INCDIR) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ -D_WATCOM_ > $(GLGENDIR)\ccf32.tr
 
 # -------------------------------- Library -------------------------------- #
 

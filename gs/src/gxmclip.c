@@ -23,17 +23,63 @@
 #include "gxdevmem.h"
 #include "gxmclip.h"
 
+/* Structure descriptor */
+public_st_device_mask_clip();
+
+/* GC procedures */
+#define mcdev ((gx_device_mask_clip *)vptr)
+
+private ENUM_PTRS_BEGIN(device_mask_clip_enum_ptrs)
+{
+    if (index < st_gx_strip_bitmap_max_ptrs) {
+	return ENUM_USING(st_gx_strip_bitmap, &mcdev->tiles,
+			  sizeof(mcdev->tiles), index);
+    }
+    index -= st_gx_strip_bitmap_max_ptrs;
+    if (index < st_device_memory_max_ptrs) {
+	return ENUM_USING(st_device_memory, &mcdev->mdev,
+			  sizeof(mcdev->mdev), index);
+    }
+    ENUM_PREFIX(st_device_forward, st_device_memory_max_ptrs);
+}
+ENUM_PTRS_END
+
+private RELOC_PTRS_BEGIN(device_mask_clip_reloc_ptrs)
+{
+    RELOC_PREFIX(st_device_forward);
+    RELOC_USING(st_gx_strip_bitmap, &mcdev->tiles, sizeof(mcdev->tiles));
+    RELOC_USING(st_device_memory, &mcdev->mdev, sizeof(mcdev->mdev));
+    if (mcdev->mdev.base != 0) {
+	/*
+	 * Update the line pointers specially, since they point into the
+	 * buffer that is part of the mask clipping device itself.
+	 */
+	long diff = (char *)RELOC_OBJ(mcdev) - (char *)mcdev;
+	int i;
+
+	for (i = 0; i < mcdev->mdev.height; ++i)
+	    mcdev->mdev.line_ptrs[i] += diff;
+	mcdev->mdev.base = mcdev->mdev.line_ptrs[0];
+	mcdev->mdev.line_ptrs =
+	    (void *)((char *)(mcdev->mdev.line_ptrs) + diff);
+    }
+}
+RELOC_PTRS_END
+
+#undef mcdev
+
 /* Initialize a mask clipping device. */
 int
 gx_mask_clip_initialize(gx_device_mask_clip * cdev,
-		  const gx_device_mask_clip * proto, const gx_bitmap * bits,
-			gx_device * tdev, int tx, int ty)
+			const gx_device_mask_clip * proto,
+			const gx_bitmap * bits, gx_device * tdev,
+			int tx, int ty)
 {
     int buffer_width = bits->size.x;
     int buffer_height =
-    tile_clip_buffer_size / (bits->raster + sizeof(byte *));
+	tile_clip_buffer_size / (bits->raster + sizeof(byte *));
 
-    gx_device_init((gx_device *) cdev, (const gx_device *)proto,
+    gx_device_init((gx_device *)cdev, (const gx_device *)proto,
 		   NULL, true);
     cdev->width = tdev->width;
     cdev->height = tdev->height;
@@ -45,10 +91,11 @@ gx_mask_clip_initialize(gx_device_mask_clip * cdev,
 	buffer_height = bits->size.y;
     gs_make_mem_mono_device(&cdev->mdev, 0, 0);
     for (;;) {
-	if (buffer_height <= 0) {	/*
-					 * The tile is too wide to buffer even one scan line.
-					 * We could do copy_mono in chunks, but for now, we punt.
-					 */
+	if (buffer_height <= 0) {
+	    /*
+	     * The tile is too wide to buffer even one scan line.
+	     * We could do copy_mono in chunks, but for now, we punt.
+	     */
 	    cdev->mdev.base = 0;
 	    return 0;
 	}
@@ -59,5 +106,5 @@ gx_mask_clip_initialize(gx_device_mask_clip * cdev,
 	buffer_height--;
     }
     cdev->mdev.base = cdev->buffer.bytes;
-    return (*dev_proc(&cdev->mdev, open_device)) ((gx_device *) & cdev->mdev);
+    return (*dev_proc(&cdev->mdev, open_device))((gx_device *)&cdev->mdev);
 }

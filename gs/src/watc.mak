@@ -17,7 +17,7 @@
 
 
 # makefile for MS-DOS/Watcom C386 platform.
-# We strongly recommend that you read the Watcom section of make.txt
+# We strongly recommend that you read the Watcom section of Make.htm
 # before attempting to build Ghostscript with the Watcom compiler.
 
 # ------------------------------- Options ------------------------------- #
@@ -40,7 +40,7 @@ GS_LIB_DEFAULT=.;c:/gs\;c:/gs/fonts
 # look in the current directory first.  This leads to well-known security
 # and confusion problems, but users insist on it.
 # NOTE: this also affects searching for files named on the command line:
-# see the "File searching" section of use.txt for full details.
+# see the "File searching" section of Use.htm for full details.
 # Because of this, setting SEARCH_HERE_FIRST to 0 is not recommended.
 
 SEARCH_HERE_FIRST=1

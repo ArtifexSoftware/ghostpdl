@@ -82,8 +82,7 @@ private RELOC_PTRS_BEGIN(ref_memory_reloc_ptrs)
     RELOC_PTR(gs_ref_memory_t, streams);
     RELOC_PTR(gs_ref_memory_t, changes);
     /* Don't relocate the saved pointer now -- see igc.c for details. */
-    mptr->reloc_saved =
-	(*gc_proc(gcst, reloc_struct_ptr)) (mptr->saved, gcst);
+    mptr->reloc_saved = RELOC_OBJ(mptr->saved);
 }
 RELOC_PTRS_END
 

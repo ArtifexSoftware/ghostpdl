@@ -285,7 +285,7 @@ vga.dev: $(EGAVGA)
 # glorified VGA's, so we can handle them all with a single driver.
 # The way to select them on the command line is with
 #	-sDEVICE=svga16 -dDisplayMode=NNN
-# where NNN is the display mode in decimal.  See use.txt for the modes
+# where NNN is the display mode in decimal.  See Use.htm for the modes
 # for some popular display chipsets.
 
 svga16.dev: $(EGAVGA)

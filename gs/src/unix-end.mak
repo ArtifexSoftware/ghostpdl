@@ -81,17 +81,3 @@ $(gconfigv_h): $(GLSRC)unix-end.mak $(MAKEFILE) $(ECHOGS_XE)
 
 TAGS:
 	etags -t $(GLSRC)*.[ch] $(PSSRC)*.[ch]
-
-# Documentation maintenance.
-
-docs: PUBLIC
-
-PUBLIC: Public.htm
-	if (ps aux | egrep -w "(net)(scape)"); then true; else (netscape -iconic -ncols 16 &); sleep 10; fi
-	cp -p Public.htm /tmp/$$.htm
-	netscape -remote "openURL(file:/tmp/$$.htm)"
-	sleep 5
-	netscape -remote "saveAs(/tmp/$$.txt,Text)"
-	sleep 5
-	cp -p /tmp/$$.txt PUBLIC
-	rm -f /tmp/$$.htm /tmp/$$.txt

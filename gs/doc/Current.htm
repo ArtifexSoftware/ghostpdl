@@ -12,7 +12,7 @@
 
 <p><table width="100%" border="0">
 <tr><th align="center" bgcolor="#CCCC00"><font size=6>
-Problems and new features in Ghostscript 5.40
+Problems and new features in Ghostscript 5.50
 </font>
 </table>
 
@@ -111,8 +111,17 @@ necessary.  Users should now edit the <b><tt>unix*.mak</tt></b> makefiles.
 <h1><a name="Known_problems"></a>Known problems</h1>
 
 <p>
-(This is not a complete list of known problems: see <a href="News.htm">the
-news</a> for details.)
+On MS Windows, trying to execute <b><tt>setfileposition</tt></b> or
+<b><tt>bytesavailable</tt></b> on the standard input file crashes
+Ghostscript.
+
+<p>
+On 16-bit-deep X Windows systems, the <b><tt>x11cmyk</tt></b> device doesn't
+work.
+
+<p>
+(This is not a complete list of known problems: see the <a href="News.htm">
+release news</a> for details.)
 
 <h2><a name="Usage"></a>Usage</h2>
 
@@ -127,7 +136,7 @@ restore the display mode.
 
 <p>
 Some floating point exceptions terminate the interpreter, rather than
-producing a limitcheck error.
+producing a <b><tt>limitcheck</tt></b> error.
 
 <p>
 The <b><tt>DCTEncode</tt></b> filter disregards the <b><tt>Blend</tt></b>
@@ -146,10 +155,12 @@ The size of the execution stack cannot be changed dynamically.  (However,
 the sizes of the operand and dictionary stacks can be changed.)
 
 <p>
-Separation color spaces are implemented, but devices that actually produce
-color separations are not supported: Separation color spaces always use
-the alternate space.  The special color separations All and None,
-and the primary separations (Red, Green, etc.), are not supported.
+<b><tt>Separation</tt></b> color spaces are implemented, but devices that
+actually produce color separations are not supported:
+<b><tt>Separation</tt></b> color spaces always use the alternate space.  The
+special color separations <b><tt>All</tt></b> and <b><tt>None</tt></b>, and
+the primary separations (<b><tt>Red</tt></b>, <b><tt>Green</tt></b>, etc.),
+are not supported.
 
 <p>
 <b><tt>execform</tt></b> and <b><tt>ucache</tt></b> are implemented, but
@@ -168,7 +179,7 @@ rotation, skewing, or X-reflection; <b><tt>imagemask</tt></b> doesn't honor
 Some path-building operations that would generate a device coordinate
 larger than +/-2^<small><sup>19</sup></small> will cause a
 limitcheck.  However, the common ones (<b><tt>[r]moveto</tt></b>,
-<b><tt>[r]lineto</tt></b>, <b><tt>[r]curveto</tt></b>, closepath) will not.
+<b><tt>[r]lineto</tt></b>, <b><tt>[r]curveto</tt></b>, <b><tt>closepath</tt></b>) will not.
 
 <h2><a name="Graphics_bugs"></a>Graphics bugs</h2>
 
@@ -204,7 +215,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.40, 10 September 1998
+Ghostscript version 5.50, 16 September 1998
 
 </font>
 

@@ -331,6 +331,7 @@ public_st_gs_bitmap();
 public_st_gs_tile_bitmap();
 public_st_gs_depth_bitmap();
 public_st_gs_tile_depth_bitmap();
+public_st_gx_strip_bitmap();
 
 /*
  *  Structure for holding a gs_depth_bitmap and the corresponding depth and

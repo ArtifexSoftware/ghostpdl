@@ -117,4 +117,11 @@ typedef struct gx_strip_bitmap_s {
     gx_strip_bitmap_common;
 } gx_strip_bitmap;
 
+extern_st(st_gx_strip_bitmap);
+#define public_st_gx_strip_bitmap()	/* in gspcolor.c */\
+  gs_public_st_suffix_add0_local(st_gx_strip_bitmap, gx_strip_bitmap,\
+    "gx_strip_bitmap", bitmap_enum_ptrs, bitmap_reloc_ptrs,\
+    st_gs_tile_bitmap)
+#define st_gx_strip_bitmap_max_ptrs 1
+
 #endif /* gxbitmap_INCLUDED */

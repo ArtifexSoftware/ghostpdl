@@ -37,7 +37,7 @@
 #	ftp://ftp.uu.net/graphics/jpeg/jpegsrc.v*.tar.gz
 #   MS-DOS archive (PKZIP a.k.a. zip format, MS-DOS end-of-line):
 #	ftp://ftp.simtel.net/pub/simtelnet/msdos/graphics/jpegsr*.zip
-# Please see Ghostscript's `make.txt' file for instructions about how to
+# Please see Ghostscript's `Make.htm' file for instructions about how to
 # unpack these archives.
 #
 # When each version of Ghostscript is released, we copy the associated

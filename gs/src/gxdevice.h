@@ -275,7 +275,7 @@ dev_proc_get_clipping_box(gx_forward_get_clipping_box);
 dev_proc_begin_typed_image(gx_forward_begin_typed_image);
 dev_proc_get_bits_rectangle(gx_forward_get_bits_rectangle);
 dev_proc_map_color_rgb_alpha(gx_forward_map_color_rgb_alpha);
-/* There is no forward_create_compositor (see drivers.txt). */
+/* There is no forward_create_compositor (see Drivers.htm). */
 dev_proc_get_hardware_params(gx_forward_get_hardware_params);
 dev_proc_text_begin(gx_forward_text_begin);
 

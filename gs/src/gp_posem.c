@@ -49,7 +49,7 @@ gp_semaphore_open(gp_semaphore * sema)
     return SEM_ERROR_CODE(scode);
 }
 
-void
+int
 gp_semaphore_close(gp_semaphore * sema)
 {
     sem_t * const sem = (sem_t *)sema;

@@ -24,6 +24,9 @@
 /pdfdict where { pop } { /pdfdict 100 dict def } ifelse
 pdfdict begin
 
+% Patch in an obsolete variable used by some third-party software.
+/#? false def
+
 % For simplicity, we use a single interpretation dictionary for all
 % PDF graphics execution, even though this is too liberal.
 /pdfopdict mark
@@ -357,17 +360,24 @@ pdfdict begin
 /boxrect		% [<llx> <lly> <urx> <ury>] boxrect <x> <y> <w> <h>
  { aload pop exch 3 index sub exch 2 index sub
  } bind def
-/linkdest		% <link|outline> linkdest
+/resolvedest {		% <name|string|other> resolvedest <other|null>
+  dup type /nametype eq {
+    Trailer /Root oget /Dests oget exch knownoget not { null } if
+  } {
+    dup type /stringtype eq {
+      Trailer /Root oget /Names oget /Dests knownoget {
+	exch nameoget
+      } {
+	pop null
+      } ifelse
+    } if
+  } ifelse
+} bind def
+/linkdest {		% <link|outline> linkdest
 			%   ([/Page <n>] /View <view> | ) <link|outline>
- { dup /Dest knownoget
-    {		% Check for a name, to be looked up in Dests.
-      dup type /nametype eq
-       { Trailer /Root oget /Dests oget exch knownoget
-	  { dup type /dicttype eq { /D get } if }
-	  { null }
-	 ifelse
-       }
-      if
+  dup /Dest knownoget
+    { resolvedest
+      dup type /dicttype eq { /D get } if
       dup null eq
        { pop }
        { dup 0 oget
@@ -382,21 +392,46 @@ pdfdict begin
       ifelse
     }
    if
- } bind def
+} bind def
+% <pagedict> mark ... -proc- -
+/namedactions 8 dict dup begin
+  /FirstPage {
+    /Page 1 3 -1 roll
+  } def
+  /LastPage {
+    counttomark 2 add index pdfpagecount /Page exch 3 -1 roll
+  } def
+  /NextPage {
+    counttomark 2 add index pdfpagenumber 1 add /Page exch 3 -1 roll
+  } def
+  /PrevPage {
+    counttomark 2 add index pdfpagenumber 1 sub /Page exch 3 -1 roll
+  } def
+end readonly def
+% <pagedict> <annotdict> -proc- -
 /annottypes 5 dict dup begin
-  /Text
-    { mark exch
-       { /Rect /Open /Contents }
-       { 2 copy knownoget { 3 -1 roll } { pop } ifelse }
-      forall pop /ANN pdfmark
-    } bind def
-  /Link
-    { mark exch
-       { /Rect /Border }
-       { 2 copy knownoget { 3 -1 roll } { pop } ifelse }
-      forall linkdest pop /LNK pdfmark
-    } bind def
-end def
+  /Text {
+    mark exch
+     { /Rect /Open /Contents }
+     { 2 copy knownoget { 3 -1 roll } { pop } ifelse }
+    forall pop /ANN pdfmark
+  } bind def
+  /Link {
+    mark exch
+     { /Rect /Border }
+     { 2 copy knownoget { 3 -1 roll } { pop } ifelse }
+    forall dup /A knownoget {
+      dup /D knownoget {
+	exch pop exch dup length dict copy dup /Dest 4 -1 roll put
+      } {
+	/N knownoget {		% Assume /S /Named
+	  namedactions exch .knownget { exec } if
+	} if
+      } ifelse
+    } if
+    linkdest pop /LNK pdfmark
+  } bind def
+end readonly def
 
 /pdfshowpage		% <pagedict> pdfshowpage -
  { dup /Page exch store

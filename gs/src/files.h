@@ -111,10 +111,10 @@ int file_switch_to_write(P1(const ref *));
 extern const uint file_default_buffer_size;
 
 /* Procedures exported by zfile.c. */
-	/* for gs.c */
+	/* for imainarg.c */
 FILE *lib_fopen(P1(const char *));
 
-	/* for gsmain.c */
+	/* for imain.c */
 int lib_file_open(P6(const char *, uint, byte *, uint, uint *, ref *));
 
 	/* for iccinit.c */

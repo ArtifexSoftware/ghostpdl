@@ -28,14 +28,15 @@ gs_private_st_composite(st_color_space_DeviceN, gs_paint_color_space,
      "gs_color_space_DeviceN", cs_DeviceN_enum_ptrs, cs_DeviceN_reloc_ptrs);
 
 /* Define the DeviceN color space type. */
-cs_declare_procs(private, gx_concretize_DeviceN, gx_install_DeviceN,
-		 gx_adjust_cspace_DeviceN);
 private cs_proc_num_components(gx_num_components_DeviceN);
 private cs_proc_base_space(gx_alt_space_DeviceN);
+private cs_proc_init_color(gx_init_DeviceN);
 private cs_proc_restrict_color(gx_restrict_DeviceN);
 private cs_proc_concrete_space(gx_concrete_space_DeviceN);
+private cs_proc_concretize_color(gx_concretize_DeviceN);
 private cs_proc_remap_concrete_color(gx_remap_concrete_DeviceN);
-private cs_proc_init_color(gx_init_DeviceN);
+private cs_proc_install_cspace(gx_install_DeviceN);
+private cs_proc_adjust_cspace_count(gx_adjust_cspace_DeviceN);
 const gs_color_space_type gs_color_space_type_DeviceN = {
     gs_color_space_index_DeviceN, true, false,
     &st_color_space_DeviceN, gx_num_components_DeviceN,

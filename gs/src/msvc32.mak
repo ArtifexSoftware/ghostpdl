@@ -53,7 +53,7 @@ GS_LIB_DEFAULT=.;c:/gs;c:/gs/fonts
 # look in the current directory first.  This leads to well-known security
 # and confusion problems, but users insist on it.
 # NOTE: this also affects searching for files named on the command line:
-# see the "File searching" section of use.txt for full details.
+# see the "File searching" section of Use.htm for full details.
 # Because of this, setting SEARCH_HERE_FIRST to 0 is not recommended.
 
 !ifndef SEARCH_HERE_FIRST
@@ -71,7 +71,7 @@ GS_INIT=gs_init.ps
 
 # Setting DEBUG=1 includes debugging features (-Z switch) in the code.
 # Code runs substantially slower even if no debugging switches are set,
-# and also takes about another 25K of memory.
+# and is also substantially larger.
 
 !ifndef DEBUG
 DEBUG=0
@@ -80,8 +80,11 @@ DEBUG=0
 # Setting TDEBUG=1 includes symbol table information for the debugger,
 # and also enables stack checking.  Code is substantially slower and larger.
 
+# NOTE: The MSVC++ 5.0 compiler produces incorrect output code with TDEBUG=0.
+# Leave TDEBUG set to 1.
+
 !ifndef TDEBUG
-TDEBUG=0
+TDEBUG=1
 !endif
 
 # Setting NOPRIVATE=1 makes private (static) procedures and variables public,
@@ -114,13 +117,24 @@ MAKEDLL=1
 # Define the source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-# This is a bad joke.  This makefile won't work with any other values!
+!ifndef GLSRCDIR
 GLSRCDIR=.
-GLGENDIR=.
-GLOBJDIR=.
+!endif
+!ifndef GLGENDIR
+GLGENDIR=.\obj
+!endif
+!ifndef GLOBJDIR
+GLOBJDIR=.\obj
+!endif
+!ifndef PSSRCDIR
 PSSRCDIR=.
-PSGENDIR=.
-PSOBJDIR=.
+!endif
+!ifndef PSGENDIR
+PSGENDIR=.\obj
+!endif
+!ifndef PSOBJDIR
+PSOBJDIR=.\obj
+!endif
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -163,7 +177,8 @@ CFLAGS=
 
 # ------ Platform-specific options ------ #
 
-# Define which major version of MSVC is being used (currently, 4 & 5 supported)
+# Define which major version of MSVC is being used
+# (currently, 4 & 5 are supported).
 
 !ifndef MSVC_VERSION 
 MSVC_VERSION = 5
@@ -322,73 +337,76 @@ FPU_TYPE=1
 # Define the name of the makefile -- used in dependencies.
 
 # The use of multiple file names here is garbage!
-MAKEFILE=msvc32.mak msvccmd.mak msvctail.mak winlib.mak winint.mak
+MAKEFILE=$(GLSRCDIR)\msvc32.mak $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLSRCDIR)\winlib.mak $(GLSRCDIR)\winint.mak
 
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
-BEGINFILES2=gs*32*.exp gs*32*.ilk gs*32*.pdb gs*32*.lib lib32.rsp
+BEGINFILES2=$(GLOBJDIR)\gs*32*.exp $(GLOBJDIR)\gs*32*.ilk $(GLOBJDIR)\gs*32*.pdb $(GLOBJDIR)\gs*32*.lib $(GLGENDIR)\lib32.rsp
 
-!include msvccmd.mak
-!include winlib.mak
-!include msvctail.mak
-!include winint.mak
+!include $(GLSRCDIR)\msvccmd.mak
+!include $(GLSRCDIR)\winlib.mak
+!include $(GLSRCDIR)\msvctail.mak
+!include $(GLSRCDIR)\winint.mak
 
 # ----------------------------- Main program ------------------------------ #
 
-lib32.rsp: MAKEFILE
-	echo /NODEFAULTLIB:LIBC.lib > lib32.rsp
-	echo $(LIBDIR)\libcmt.lib >> lib32.rsp
+GSCONSOLE_XE=$(GLOBJ)$(GSCONSOLE).exe
+GSDLL_DLL=$(GLOBJ)$(GSDLL).dll
+
+$(GLGEN)lib32.rsp: $(MAKEFILE)
+	echo /NODEFAULTLIB:LIBC.lib > $(GLGEN)lib32.rsp
+	echo $(LIBDIR)\libcmt.lib >> $(GLGEN)lib32.rsp
 
 !if $(MAKEDLL)
 # The graphical small EXE loader
-$(GS_XE): $(GSDLL).dll  $(DWOBJ) $(GSCONSOLE).exe
-	echo /SUBSYSTEM:WINDOWS > gswin32.rsp
-	echo /DEF:dwmain32.def /OUT:$(GS_XE) >> gswin32.rsp
-        $(LINK) $(LCT) @gswin32.rsp $(DWOBJ) @$(LIBCTR) $(GS).res
-	del gswin32.rsp
+$(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE)
+	echo /SUBSYSTEM:WINDOWS > $(GLGEN)gswin32.rsp
+	echo /DEF:$(GLSRC)dwmain32.def /OUT:$(GS_XE) >> $(GLGEN)gswin32.rsp
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(DWOBJ) @$(LIBCTR) $(GS).res
+	del $(GLGEN)gswin32.rsp
 
 # The console mode small EXE loader
-$(GSCONSOLE).exe: $(OBJC) $(GS).res dw32c.def
-	echo /SUBSYSTEM:CONSOLE > gswin32.rsp
-	echo  /DEF:dw32c.def /OUT:$(GSCONSOLE).exe >> gswin32.rsp
+$(GSCONSOLE_XE): $(OBJC) $(GS).res $(GLSRC)dw32c.def
+	echo /SUBSYSTEM:CONSOLE > $(GLGEN)gswin32.rsp
+	echo  /DEF:$(GLSRC)dw32c.def /OUT:$(GSCONSOLE_XE) >> $(GLGEN)gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @gswin32.rsp $(OBJC) @$(LIBCTR) $(GS).res
-	del gswin32.rsp
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(OBJC) @$(LIBCTR) $(GS).res
+	del $(GLGEN)gswin32.rsp
 
 # The big DLL
-$(GSDLL).dll: $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(GSDLL).res lib32.rsp
-	echo /DLL /DEF:gsdll32.def /OUT:$(GSDLL).dll > gswin32.rsp
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GSDLL).res $(GLGEN)lib32.rsp
+	echo /DLL /DEF:$(GLSRC)gsdll32.def /OUT:$(GSDLL_DLL) > $(GLGEN)gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @gswin32.rsp gsdll @$(ld_tr) $(INTASM) @lib.tr @lib32.rsp @$(LIBCTR) $(GSDLL).res
-	del gswin32.rsp
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(ld_tr) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp @$(LIBCTR) $(GSDLL).res
+	del $(GLGEN)gswin32.rsp
 
 !else
 # The big graphical EXE
-$(GS_XE): $(GSCONSOLE).exe $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(DWOBJNO) $(GS).res dwmain32.def lib32.rsp
-	copy $(ld_tr) gswin32.tr
-	echo $(GLOBJ)dwnodll.obj >> gswin32.tr
-	echo $(GLOBJ)dwimg.obj >> gswin32.tr
-	echo $(GLOBJ)dwmain.obj >> gswin32.tr
-	echo $(GLOBJ)dwtext.obj >> gswin32.tr
-	echo /DEF:dwmain32.def /OUT:$(GS_XE) > gswin32.rsp
+$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(DWOBJNO) $(GS).res $(GLSRC)dwmain32.def $(GLGEN)lib32.rsp
+	copy $(ld_tr) $(GLGEN)gswin32.tr
+	echo $(GLOBJ)dwnodll.obj >> $(GLGEN)gswin32.tr
+	echo $(GLOBJ)dwimg.obj >> $(GLGEN)gswin32.tr
+	echo $(GLOBJ)dwmain.obj >> $(GLGEN)gswin32.tr
+	echo $(GLOBJ)dwtext.obj >> $(GLGEN)gswin32.tr
+	echo /DEF:$(GLSRC)dwmain32.def /OUT:$(GS_XE) > $(GLGEN)gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @gswin32.rsp gsdll @gswin32.tr @$(LIBCTR) $(INTASM) @lib.tr @lib32.rsp $(GSDLL).res
-	del gswin32.tr
-	del gswin32.rsp
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp gsdll @$(GLGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GSDLL).res
+	del $(GLGEN)gswin32.tr
+	del $(GLGEN)gswin32.rsp
 
 # The big console mode EXE
-$(GSCONSOLE).exe: $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(OBJCNO) $(GS).res dw32c.def lib32.rsp
-	copy $(ld_tr) gswin32c.tr
-	echo $(GLOBJ)dwnodllc.obj >> gswin32c.tr
-	echo $(GLOBJ)dwmainc.obj >> gswin32c.tr
-	echo  /SUBSYSTEM:CONSOLE > gswin32.rsp
-	echo  /DEF:dw32c.def /OUT:$(GSCONSOLE).exe  >> gswin32.rsp
+$(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(OBJCNO) $(GS).res $(GLSRC)dw32c.def $(GLGEN)lib32.rsp
+	copy $(ld_tr) $(GLGEN)gswin32c.tr
+	echo $(GLOBJ)dwnodllc.obj >> $(GLGEN)gswin32c.tr
+	echo $(GLOBJ)dwmainc.obj >> $(GLGEN)gswin32c.tr
+	echo /SUBSYSTEM:CONSOLE > $(GLGEN)gswin32.rsp
+	echo /DEF:$(GLSRC)dw32c.def /OUT:$(GSCONSOLE_XE) >> $(GLGEN)gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @gswin32.rsp gsdll @gswin32c.tr @$(LIBCTR) $(INTASM) @lib.tr @lib32.rsp $(GS).res
-	del gswin32.rsp
-	del gswin32c.tr
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp gsdll @$(GLGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GS).res
+	del $(GLGEN)gswin32.rsp
+	del $(GLGEN)gswin32c.tr
 !endif
 
 # end of makefile

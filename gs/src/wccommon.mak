@@ -18,7 +18,7 @@
 
 # wccommon.mak
 # Section of Watcom C/C++ makefile common to MS-DOS and MS Windows.
-# We strongly recommend that you read the Watcom section of make.txt
+# We strongly recommend that you read the Watcom section of Make.htm
 # before attempting to build Ghostscript with the Watcom compiler.
 
 # This file is used by watc.mak, watcwin.mak, and watclib.mak.

@@ -35,12 +35,13 @@ gs_private_st_composite(st_color_space_Separation, gs_paint_color_space,
 			cs_Separation_enum_ptrs, cs_Separation_reloc_ptrs);
 
 /* Define the Separation color space type. */
-cs_declare_procs(private, gx_concretize_Separation, gx_install_Separation,
-		 gx_adjust_cspace_Separation);
 private cs_proc_base_space(gx_alt_space_Separation);
-private cs_proc_concrete_space(gx_concrete_space_Separation);
-private cs_proc_remap_concrete_color(gx_remap_concrete_Separation);
 private cs_proc_init_color(gx_init_Separation);
+private cs_proc_concrete_space(gx_concrete_space_Separation);
+private cs_proc_concretize_color(gx_concretize_Separation);
+private cs_proc_remap_concrete_color(gx_remap_concrete_Separation);
+private cs_proc_install_cspace(gx_install_Separation);
+private cs_proc_adjust_cspace_count(gx_adjust_cspace_Separation);
 const gs_color_space_type gs_color_space_type_Separation = {
     gs_color_space_index_Separation, true, false,
     &st_color_space_Separation, gx_num_components_1,

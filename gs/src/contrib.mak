@@ -709,15 +709,15 @@ $(GLOBJ)gdevxes.$(OBJ): $(GLSRC)gdevxes.c $(PDEVH)
 ### Note: this driver was contributed by a user: please contact           ###
 ###       Rick Richardson (rick@digibd.com) if you have questions.        ###
 
-dfax_=$(GLOBJ)gdevdfax.$(OBJ) $(GLOBJ)gdevtfax.$(OBJ)
+dfax_=$(GLOBJ)gdevdfax.$(OBJ)
 
-dfaxlow.dev: $(dfax_) page.dev
-	$(SETPDEV) dfaxlow $(dfax_)
-	$(ADDMOD) dfaxlow -include cfe
+dfaxlow.dev: $(dfax_) tfax.dev
+	$(SETDEV) dfaxlow $(dfax_)
+	$(ADDMOD) dfaxlow -include tfax
 
-dfaxhigh.dev: $(dfax_) page.dev
-	$(SETPDEV) dfaxhigh $(dfax_)
-	$(ADDMOD) dfaxhigh -include cfe
+dfaxhigh.dev: $(dfax_) tfax.dev
+	$(SETDEV) dfaxhigh $(dfax_)
+	$(ADDMOD) dfaxhigh -include tfax
 
 $(GLOBJ)gdevdfax.$(OBJ): $(GLSRC)gdevdfax.c $(PDEVH) $(scfx_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevdfax.$(OBJ) $(C_) $(GLSRC)gdevdfax.c

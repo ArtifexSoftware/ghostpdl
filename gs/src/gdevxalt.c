@@ -290,9 +290,21 @@ x_wrap_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
 		pixel = (pixel << 8) + *sptr;
 	}
 	if (pixel != pixel_in) {
-	    (*dev_proc(tdev, map_color_rgb)) (tdev, pixel, rgb);
+	    (*dev_proc(tdev, map_color_rgb))(tdev, pixel, rgb);
 	    pixel_in = pixel;
-	    pixel_out = (*dev_proc(dev, map_rgb_color)) (dev, rgb[0], rgb[1], rgb[2]);
+	    if (tdev->color_info.num_components <= 3)
+		pixel_out = (*dev_proc(dev, map_rgb_color))
+		    (dev, rgb[0], rgb[1], rgb[2]);
+	    else {
+		/* Convert RGB to CMYK. */
+		gx_color_value c = gx_max_color_value - rgb[0];
+		gx_color_value m = gx_max_color_value - rgb[1];
+		gx_color_value y = gx_max_color_value - rgb[2];
+		gx_color_value k = (c < m ? min(c, y) : min(m, y));
+
+		pixel_out = (*dev_proc(dev, map_cmyk_color))
+		    (dev, c - k, m - k, y - k, k);
+	    }
 	}
 	line_accum(pixel_out, depth);
     }
@@ -461,7 +473,6 @@ x_alt_map_color(gx_device * dev, gx_color_index color)
 /* ---------------- CMYK procedures ---------------- */
 
 /* Device procedures */
-private dev_proc_map_rgb_color(x_cmyk_map_rgb_color);
 private dev_proc_map_cmyk_color(x_cmyk_map_cmyk_color);
 
 /* The device descriptor */
@@ -472,7 +483,7 @@ private const gx_device_procs x_cmyk_procs =
     x_forward_sync_output,
     x_forward_output_page,
     x_wrap_close,
-    x_cmyk_map_rgb_color,
+    NULL,			/* map_rgb_color */
     x_wrap_map_color_rgb,
     x_wrap_fill_rectangle,
     gx_default_tile_rectangle,
@@ -526,21 +537,6 @@ const gx_device_X_wrapper gs_x11cmyk8_device = {
 };
 
 /* Device procedures */
-
-private gx_color_index
-x_cmyk_map_rgb_color(gx_device * dev,
-		     gx_color_value r, gx_color_value g, gx_color_value b)
-{	/*
-	 * Under normal circumstances, this is never called, but it may be
-	 * called from x_wrap_get_bits.
-	 */
-    gx_color_value c = gx_max_color_value - r;
-    gx_color_value m = gx_max_color_value - g;
-    gx_color_value y = gx_max_color_value - b;
-    gx_color_value k = (c < m ? min(c, y) : min(m, y));
-
-    return (*dev_proc(dev, map_cmyk_color)) (dev, c - k, m - k, y - k, k);
-}
 
 private gx_color_index
 x_cmyk_map_cmyk_color(gx_device * dev,

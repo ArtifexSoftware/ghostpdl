@@ -368,7 +368,7 @@ $(devs_tr): $(GS_MAK) $(MAKEFILE) $(ECHOGS_XE)
 GCONFIG_EXTRAS=
 
 ld_tr=$(GLGEN)ld$(CONFIG).tr
-$(gconfig_h) $(ld_tr) lib.tr: \
+$(gconfig_h) $(ld_tr) $(GLGEN)lib.tr: \
   $(GS_MAK) $(MAKEFILE) $(GLSRC)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(DEVS_ALL) libcore.dev
 	$(GENCONF_XE) $(devs_tr) libcore.dev -h $(gconfig_h) $(CONFILES) $(CONFLDTR) $(ld_tr)
 	$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_LIB_DEFAULT -x 2022 $(GS_LIB_DEFAULT) -x 22

@@ -1,4 +1,4 @@
-#    Copyright (C) 1992, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1992, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -18,7 +18,7 @@
 
 # Makefile for compiling PostScript Type 1 fonts into C.
 # For more information about fonts, consult the Fontmap file,
-# and also fonts.txt.
+# and also Fonts.htm.
 
 # Edit the following 2 lines to reflect your environment.
 OBJ=o
