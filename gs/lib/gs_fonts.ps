@@ -350,7 +350,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 % returns an array of arrays, each containing a pair
 % of strings: what the system thinks is the ps name,
 % and the access path.
-/.nativefontmapbuilt [ false ] def % use an array to avoid vm issues
+userdict /.nativefontmapbuilt false put
 /.buildnativefontmap {
   QUIET not {
     (Querying operating system for font files...\n)
@@ -376,7 +376,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
       } ifelse
     } forall
     % record that we've been run
-    .nativefontmapbuilt 0 true put 
+    userdict /.nativefontmapbuilt true put 
   } if
 } bind def
 
@@ -820,7 +820,7 @@ $error /SubstituteFont { } put
     } {
                         % No more directories to scan. Try building the native
                         % font map entries if we haven't already done so.
-      .nativefontmapbuilt 0 get not {
+      userdict /.nativefontmapbuilt get not {
         .buildnativefontmap
         .dofindfont     % start over
       } {
