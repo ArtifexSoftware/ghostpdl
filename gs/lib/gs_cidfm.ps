@@ -45,11 +45,10 @@ languagelevel 2 .setlanguagelevel
 
   /GetSize   % <Name> <record> GetSize <size>
   { % We know that currentdict is the category.
-    exch pop
     /Substitute get ResourceStatus {
-      exch pop
+      exch pop exch pop
     } {
-      /GetSize cvx /undefinedresource signalerror
+      /undefinedresource signalerror
     } ifelse
   } bind def
 
