@@ -277,6 +277,9 @@ void *gs_raw_alloc_struct_immovable(P3(gs_raw_memory_t * rmem,
 				       gs_memory_type_ptr_t pstype,
 				       client_name_t cname));
 
+
+typedef struct pl_mem_node_s pl_mem_node_t;
+
 /*
  * Define an abstract allocator instance.
  * Subclasses may have state as well.
@@ -284,7 +287,9 @@ void *gs_raw_alloc_struct_immovable(P3(gs_raw_memory_t * rmem,
  */
 #define gs_memory_common\
 	gs_memory_t *stable_memory;\
-	gs_memory_procs_t procs
+	gs_memory_procs_t procs;\
+        pl_mem_node_t *head;
+
 struct gs_memory_s {
     gs_memory_common;
 };
