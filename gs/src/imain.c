@@ -826,7 +826,8 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     /* Flush stdout and stderr */
     if (minst->init_done >= 2)
       gs_main_run_string(minst, 
-	"(%stdout) (w) file closefile (%stderr) (w) file closefile /quit .systemvar exec",
+	"(%stdout) (w) file closefile (%stderr) (w) file closefile "
+        "serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemvar exec",
 	0 , &exit_code, &error_object);
     gp_readline_finit(minst->readline_data);
     if (gs_debug_c(':'))
