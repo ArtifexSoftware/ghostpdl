@@ -1224,25 +1224,71 @@ scavenge_low_free(gs_ref_memory_t *mem, unsigned request_size)
 private void
 remove_range_from_freelist(gs_ref_memory_t *mem, void* bottom, void* top)
 {
+    int num_free[num_freelists];
+    int smallest = num_freelists, largest = -1;
+    const obj_header_t *cur;
+    uint size;
     int i;
     uint removed = 0;
+
+    /*
+     * Scan from bottom to top, a range containing only free objects,
+     * counting the number of objects of each size.
+     */
+
+    for (cur = bottom; cur != top;
+	 cur = (const obj_header_t *)
+	     ((const byte *)cur + obj_size_round(size))
+	) {
+	size = cur->o_size;
+	i = (size > max_freelist_size ? LARGE_FREELIST_INDEX :
+	     (size + obj_align_mask) >> log2_obj_align_mod);
+	if (i < smallest) {
+	    /*
+	     * 0-length free blocks aren't kept on any list, because
+	     * they don't have room for a pointer.
+	     */
+	    if (i == 0)
+		continue;
+	    if (smallest < num_freelists)
+		memset(&num_free[i], 0, (smallest - i) * sizeof(int));
+	    else
+		num_free[i] = 0;
+	    smallest = i;
+	}
+	if (i > largest) {
+	    if (largest >= 0)
+		memset(&num_free[largest + 1], 0, (i - largest) * sizeof(int));
+	    largest = i;
+	}
+	num_free[i]++;
+    }
 
     /*
      * Remove free objects from the freelists, adjusting lost.objects by
      * subtracting the size of the region being processed minus the amount
      * of space reclaimed.
      */
-    for (i = 0; i < num_freelists; i++) {
-        obj_header_t *pfree;
-	obj_header_t **ppfprev = &mem->freelists[i];
 
-	while ((pfree = *ppfprev) != 0)
+    for (i = smallest; i <= largest; i++) {
+	int count = num_free[i];
+        obj_header_t *pfree;
+	obj_header_t **ppfprev;
+
+	if (!count)
+	    continue;
+	ppfprev = &mem->freelists[i];
+	for (;;) {
+	    pfree = *ppfprev;
 	    if (PTR_GE(pfree, bottom) && PTR_LT(pfree, top)) {
 		/* We're removing an object. */
 		*ppfprev = *(obj_header_t **) pfree;
 		removed += obj_align_round(pfree[-1].o_size);
+		if (!--count)
+		    break;
 	    } else
 		ppfprev = (obj_header_t **) pfree;
+	}
     }
     mem->lost.objects -= (char*)top - (char*)bottom - removed;
 }
