@@ -248,7 +248,10 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 					flags |= ftf_peak0;
 
 				    vd_quad(le.start.x, ybot, re.start.x, ybot, re.end.x, ytop, le.end.x, ytop, 1, VD_TRAP_COLOR);
-				    code = gx_fill_trapezoid_narrow(fo.dev, &le, &re, ybot, ytop, flags, fo.pdevc, fo.lop);
+				    if (FILL_DIRECT)
+					code = gx_fill_trapezoid_cf_fd(fo.dev, &le, &re, ybot, ytop, flags, fo.pdevc, fo.lop);
+				    else
+					code = gx_fill_trapezoid_cf_nd(fo.dev, &le, &re, ybot, ytop, flags, fo.pdevc, fo.lop);
 				} else
 				    code = 0;
 			    } else

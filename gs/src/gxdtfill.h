@@ -18,13 +18,15 @@
 /* Configurable algorithm for filling a trapezoid */
 
 /*
- * Since we need 3 statically defined variants of this agorithm,
- * we store it in .h file and include 3 times into gdevddrw.c and 
+ * Since we need several statically defined variants of this agorithm,
+ * we store it in .h file and include several times into gdevddrw.c and 
  * into gxfill.h . Configuration flags (macros) are :
  * 
  *   GX_FILL_TRAPEZOID - a name of method
  *   CONTIGUOUS_FILL   - prevent dropouts in narrow trapezoids
  *   SWAP_AXES         - assume swapped axes
+ *   STATIC_FILL_DIRECT - FILL_DIRECT is statically defined.
+ *   FILL_DIRECT       - See LOOP_FILL_RECTANGLE_DIRECT.
  */
 
 /*
@@ -56,7 +58,6 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	const fixed	/* partial pixel offset to first line to sample */
 	    ysl = ymin - left->start.y, ysr = ymin - right->start.y;
 	fixed fxl;
-	bool fill_direct = color_writes_pure(pdevc, lop);
 	int max_rect_height = 1;  /* max height to do fill as rectangle */
 	int code;
 #if CONTIGUOUS_FILL
@@ -80,19 +81,14 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
  * Free variables of FILL_TRAP_RECT_DIRECT:
  *	SWAP_AXES, fill_rect, dev, cindex
  */
-#if SWAP_AXES
-#define FILL_TRAP_RECT(x,y,w,h)\
+#define FILL_TRAP_RECT_INDIRECT(x,y,w,h)\
   (SWAP_AXES ? gx_fill_rectangle_device_rop(y, x, h, w, pdevc, dev, lop) :\
    gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop))
 #define FILL_TRAP_RECT_DIRECT(x,y,w,h)\
   (SWAP_AXES ? (*fill_rect)(dev, y, x, h, w, cindex) :\
    (*fill_rect)(dev, x, y, w, h, cindex))
-#else
 #define FILL_TRAP_RECT(x,y,w,h)\
-   gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop)
-#define FILL_TRAP_RECT_DIRECT(x,y,w,h)\
-   (*fill_rect)(dev, x, y, w, h, cindex)
-#endif
+    (FILL_DIRECT ? FILL_TRAP_RECT_DIRECT(x,y,w,h) : FILL_TRAP_RECT_INDIRECT(x,y,w,h))
 
 #define VD_RECT_SWAPPED(rxl, ry, rxr, iy)\
     vd_rect(int2fixed(SWAP_AXES ? ry : rxl), int2fixed(SWAP_AXES ? rxl : ry),\
@@ -210,31 +206,11 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 #define SET_MINIMAL_WIDTH(ixl, ixr, l, r) DO_NOTHING
 #define CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, adj1, adj2, fill) DO_NOTHING
 #endif
-	if (fill_direct) {
+	{
 	    gx_color_index cindex = pdevc->colors.pure;
 	    dev_proc_fill_rectangle((*fill_rect)) =
 		dev_proc(dev, fill_rectangle);
 
-	    SET_MINIMAL_WIDTH(rxl, rxr, l, r);
-	    while (++iy != iy1) {
-		register int ixl, ixr;
-
-		STEP_LINE(ixl, l);
-		STEP_LINE(ixr, r);
-		SET_MINIMAL_WIDTH(ixl, ixr, l, r);
-		if (ixl != rxl || ixr != rxr) {
-		    CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, rxr, ixl, FILL_TRAP_RECT_DIRECT);
-		    CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, ixr, rxl, FILL_TRAP_RECT_DIRECT);
-		    VD_RECT_SWAPPED(rxl, ry, rxr, iy);
-		    code = FILL_TRAP_RECT_DIRECT(rxl, ry, rxr - rxl, iy - ry);
-		    if (code < 0)
-			goto xit;
-		    rxl = ixl, rxr = ixr, ry = iy;
-		}
-	    }
-	    VD_RECT_SWAPPED(rxl, ry, rxr, iy);
-	    code = FILL_TRAP_RECT_DIRECT(rxl, ry, rxr - rxl, iy - ry);
-	} else {
 	    SET_MINIMAL_WIDTH(rxl, rxr, l, r);
 	    while (++iy != iy1) {
 		register int ixl, ixr;
@@ -254,15 +230,16 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	    }
 	    VD_RECT_SWAPPED(rxl, ry, rxr, iy);
 	    code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
-	}
+	} 
 #undef STEP_LINE
 #undef SET_MINIMAL_WIDTH
 #undef CONNECT_RECTANGLES
 #undef FILL_TRAP_RECT
 #undef FILL_TRAP_RECT_DIRECT
+#undef FILL_TRAP_RECT_INRECT
 #undef YMULT_QUO
 #undef VD_RECT_SWAPPED
-xit:	if (code < 0 && fill_direct)
+xit:	if (code < 0 && FILL_DIRECT)
 	    return_error(code);
 	return_if_interrupt();
 	return code;
