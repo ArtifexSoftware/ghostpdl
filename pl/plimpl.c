@@ -21,10 +21,20 @@
 extern pl_interp_implementation_t pcl_implementation;
 extern pl_interp_implementation_t pxl_implementation;
 
+#ifdef PSI_INCLUDED
+extern pl_interp_implementation_t ps_implementation;
+#endif
+
 /* Zero-terminated list of pointers to implementations */
 pl_interp_implementation_t const * const pdl_implementation[] = {
 	&pcl_implementation,
 	&pxl_implementation,
+#ifdef PSI_INCLUDED
+	&ps_implementation,
+#else
+	0,
+#endif
 	0
 };
+
 

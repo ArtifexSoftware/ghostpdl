@@ -196,7 +196,7 @@ get_device_index(char *value)
 }
 
 /* determine if the device is a high level device */
-private bool
+bool
 high_level_device(gx_device *device)
 {
     /* this is a hack, there is not a nice way to determine if the
@@ -901,7 +901,12 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
         return -1;
     }
     gs_c_param_list_read(params);
+#ifndef PSI_INCLUDED  /* ps has a default device */  
     pl_top_create_device(pmi, 0, true); /* create default device if needed */
+#else
+    /* hack and pull the device out of postscript */
+    pmi->device = impl_array[2]->device;
+#endif
     /* The last argument wasn't a switch, so push it back. */
     if (arg)
 	arg_push_string(pal, arg);

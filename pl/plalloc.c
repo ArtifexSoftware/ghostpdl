@@ -361,19 +361,43 @@ const gs_malloc_memory_t pl_malloc_memory = {
 private gs_memory_t *
 pl_malloc_init(void)
 {
-    return gs_malloc_memory_default;
+    return &pl_malloc_memory;
 }
 
 gs_memory_t *
 pl_alloc_init(void)
 {
+
+#ifndef PSI_INCLUDED
     if ( pl_malloc_init() == NULL )
 	return NULL;
     return &pl_mem;
+#else
+
+    /* foo hack gag 
+     * looks like local variables,
+     * should be universe scoped
+     * actually is setting globals in ps!
+     */
+    gs_memory_t *local_memory_t_default = 0;
+
+# ifndef NO_GS_MEMORY_GLOBALS_BIND
+    /* foo have globals so if it is already initialized
+     * point to the same memory manager.
+     */
+    if (gs_memory_t_default != 0 )
+	local_memory_t_default = gs_memory_t_default;
+# endif
+
+    if (gs_malloc_init(&local_memory_t_default))
+	return_error(e_VMerror);
+    return local_memory_t_default;
+#endif
 }
 
+#ifndef PSI_INCLUDED
 /* Define the default allocator. */
     
-gs_malloc_memory_t *gs_malloc_memory_default = &pl_malloc_memory;
 gs_memory_t *gs_memory_t_default = &pl_mem;
 
+#endif
