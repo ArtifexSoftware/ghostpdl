@@ -390,8 +390,10 @@ pdf_char_widths(gx_device_pdf *const pdev,
     int char_cache_size, width_cache_size;
     pdf_font_resource_t *pdfont1;
 
-    pdf_attached_font_resource(pdev, (gs_font *)font, &pdfont1, 
+    code = pdf_attached_font_resource(pdev, (gs_font *)font, &pdfont1, 
 				&glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+    if (code < 0)
+	return code;
     if (pdfont1 != pdfont)
 	return_error(gs_error_unregistered); /* Must not happen. */
     if (ch < 0 || ch > 255)

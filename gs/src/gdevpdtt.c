@@ -334,7 +334,7 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
     e->real_widths = (num_widths > 0 ? (double *)gs_alloc_bytes(pdev->pdf_memory, 
 			num_widths * sizeof(*e->real_widths), 
 			"alloc_font_cache_elem_arrays") : NULL);
-    if (e->glyph_usage == NULL || e->real_widths == NULL) {
+    if (e->glyph_usage == NULL || (num_widths !=0 && e->real_widths == NULL)) {
 	gs_free_object(pdev->pdf_memory, e->glyph_usage, 
 			    "pdf_attach_font_resource");
 	gs_free_object(pdev->pdf_memory, e->real_widths, 
@@ -930,8 +930,10 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	}
     }
     /* Get attached font resource (maybe NULL) */
-    pdf_attached_font_resource(pdev, font, ppdfont,
+    code = pdf_attached_font_resource(pdev, font, ppdfont,
 			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+    if (code < 0)
+	return code;
     /* Allocate memory for the glyph set : */
     if (glyphs_offset * buf_elem_size > sizeof(glyphs0)) {
 	glyphs = (gs_glyph *)gs_alloc_bytes(pdev->memory, 
@@ -1042,8 +1044,10 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 		goto out;
 	}
     }
-    pdf_attached_font_resource(pdev, font, ppdfont, 
+    code = pdf_attached_font_resource(pdev, font, ppdfont, 
 			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+    if (code < 0)
+	return code;
     /* Mark glyphs used in the text with the font resources. */
     scan = *penum;
     if (pstr != NULL) {

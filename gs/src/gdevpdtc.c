@@ -237,8 +237,10 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 	    double *real_widths, *w, *v;
 	    int char_cache_size, width_cache_size;
 
-	    pdf_attached_font_resource(pdev, (gs_font *)subfont, &pdsubf1, 
+	    code = pdf_attached_font_resource(pdev, (gs_font *)subfont, &pdsubf1, 
 				       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+	    if (code < 0)
+		return code;
 	    /* We can't check pdsubf->used[cid >> 3] here,
 	       because it mixed data for different values of WMode. 
 	       Perhaps pdf_font_used_glyph returns fast with reused glyphs.
