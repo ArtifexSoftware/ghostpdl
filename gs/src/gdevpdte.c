@@ -793,7 +793,10 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	    return code;
 	}
 	gs_text_enum_copy_dynamic((gs_text_enum_t *)pte, &pte1, true);
-	if (composite) {
+	if ((pte->text.operation & TEXT_FROM_SINGLE_GLYPH) ||
+	    (pte->text.operation & TEXT_FROM_GLYPHS)) {
+	    v.x = v.y = 0;
+	} else if (composite) {
 	    if (cw.replaced_v) {
 		v.x = cw.Width.v.x - cw.real_width.v.x;
 		v.y = cw.Width.v.y - cw.real_width.v.y;
