@@ -28,8 +28,10 @@
  *  gsapi_init_with_args(minst, argc, argv);
  *
  * Supported parameters and default values are:
- * -dDisplayHandle=0                      long
- *    Caller supplied handle.
+ * -sDisplayHandle=16#04d2 or 1234        string
+ *    Caller supplied handle as a decimal or hexadecimal number
+ *    in a string.  On 32-bit platforms, it may be set
+ *    using -dDisplayHandle=1234 for backward compatibility.
  *    Included as first parameter of all callback functions.
  *
  * -dDisplayFormat=0                      long
