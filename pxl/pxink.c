@@ -273,7 +273,6 @@ px_paint_pattern(const gs_client_color *pcc, gs_state *pgs)
 	  { int y;
 
 	    image.ImageMatrix.tx = -x;
-
 	    code = gs_image_init(penum, &image, false, pgs);
 	    if ( code < 0 )
 	      break;
@@ -378,6 +377,12 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
 	    pxgs->brush.type = pxgs->pen.type = pxpNull;
 	    gs_newpath(pgs);
 	    gs_initclip(pgs);
+	    /* 
+	     * Since the PaintProcs don't reference the saved color space or
+	     * color, reset these so that there isn't an extra retained
+	     * reference to the Pattern object.
+	     */
+	    gs_setcolorspace(pgs, gs_cspace_DeviceGray((const gs_imager_state *)(pgs)));
 	  }
 	  code = gs_makepattern(pcc, &template, &mat, pgs, NULL);
 	  gs_grestore(pgs);
