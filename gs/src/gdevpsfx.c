@@ -100,9 +100,9 @@ type1_callsubr(gs_type1_state *pcis, int index)
 /* Add 1 or 3 stem hints. */
 private int
 type1_stem1(gs_type1_state *pcis, stem_hint_table *psht, const fixed *pv,
-	    byte *active_hints)
+	    fixed lsb, byte *active_hints)
 {
-    fixed v0 = pv[0], v1 = v0 + pv[1];
+    fixed v0 = pv[0] + lsb, v1 = v0 + pv[1];
     stem_hint *bot = &psht->data[0];
     stem_hint *orig_top = bot + psht->count;
     stem_hint *top = orig_top;
@@ -132,11 +132,11 @@ type1_stem1(gs_type1_state *pcis, stem_hint_table *psht, const fixed *pv,
 }
 private void
 type1_stem3(gs_type1_state *pcis, stem_hint_table *psht, const fixed *pv3,
-	    byte *active_hints)
+	    fixed lsb, byte *active_hints)
 {
-    type1_stem1(pcis, psht, pv3, active_hints);
-    type1_stem1(pcis, psht, pv3 + 2, active_hints);
-    type1_stem1(pcis, psht, pv3 + 4, active_hints);
+    type1_stem1(pcis, psht, pv3, lsb, active_hints);
+    type1_stem1(pcis, psht, pv3 + 2, lsb, active_hints);
+    type1_stem1(pcis, psht, pv3 + 4, lsb, active_hints);
 }
 
 /*
@@ -429,7 +429,10 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
     }\
   END
 
-    /* Do a first pass to collect hints. */
+    /*
+     * Do a first pass to collect hints.  Note that we must also process
+     * [h]sbw, because the hint coordinates are relative to the lsb.
+     */
     reset_stem_hints(&cis);
     type1_next_init(&cis, pgd, pfont);
     for (;;) {
@@ -442,17 +445,24 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 		return c;
 	    type1_clear(&cis);
 	    continue;
+	case c1_hsbw:
+	    gs_type1_sbw(&cis, cis.ostack[0], fixed_0, cis.ostack[1], fixed_0);
+	    goto clear;
 	case cx_hstem:
-	    type1_stem1(&cis, &cis.hstem_hints, csp - 1, NULL);
+	    type1_stem1(&cis, &cis.hstem_hints, csp - 1, cis.lsb.y, NULL);
 	    goto clear;
 	case cx_vstem:
-	    type1_stem1(&cis, &cis.vstem_hints, csp - 1, NULL);
+	    type1_stem1(&cis, &cis.vstem_hints, csp - 1, cis.lsb.x, NULL);
+	    goto clear;
+	case CE_OFFSET + ce1_sbw:
+	    gs_type1_sbw(&cis, cis.ostack[0], cis.ostack[1],
+			 cis.ostack[2], cis.ostack[3]);
 	    goto clear;
 	case CE_OFFSET + ce1_vstem3:
-	    type1_stem3(&cis, &cis.vstem_hints, csp - 5, NULL);
+	    type1_stem3(&cis, &cis.vstem_hints, csp - 5, cis.lsb.x, NULL);
 	    goto clear;
 	case CE_OFFSET + ce1_hstem3:
-	    type1_stem3(&cis, &cis.hstem_hints, csp - 5, NULL);
+	    type1_stem3(&cis, &cis.hstem_hints, csp - 5, cis.lsb.y, NULL);
 	clear:
 	    type1_clear(&cis);
 	    continue;
@@ -519,19 +529,19 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    type1_clear(&cis);
 	    continue;
 	case cx_hstem:
-	    type1_stem1(&cis, &cis.hstem_hints, csp - 1, active_hints);
+	    type1_stem1(&cis, &cis.hstem_hints, csp - 1, cis.lsb.y, active_hints);
 	hint:
 	    HINTS_CHANGED();
 	    type1_clear(&cis);
 	    continue;
 	case cx_vstem:
-	    type1_stem1(&cis, &cis.vstem_hints, csp - 1, active_hints);
+	    type1_stem1(&cis, &cis.vstem_hints, csp - 1, cis.lsb.x, active_hints);
 	    goto hint;
 	case CE_OFFSET + ce1_vstem3:
-	    type1_stem3(&cis, &cis.vstem_hints, csp - 5, active_hints);
+	    type1_stem3(&cis, &cis.vstem_hints, csp - 5, cis.lsb.x, active_hints);
 	    goto hint;
 	case CE_OFFSET + ce1_hstem3:
-	    type1_stem3(&cis, &cis.hstem_hints, csp - 5, active_hints);
+	    type1_stem3(&cis, &cis.hstem_hints, csp - 5, cis.lsb.y, active_hints);
 	    goto hint;
 	case CE_OFFSET + ce1_dotsection:
 	    if (cis.dotsection_flag == dotsection_out) {
