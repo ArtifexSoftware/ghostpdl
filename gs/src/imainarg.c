@@ -399,7 +399,8 @@ run_stdin:
 		long width, height;
 		ref value;
 
-		gs_main_init1(minst);
+		if ((code = gs_main_init1(minst)) < 0)
+		    return code;
 		if (sscanf((const char *)arg, "%ldx%ld", &width, &height) != 2) {
 		    puts("-g must be followed by <width>x<height>");
 		    return e_Fatal;
@@ -475,7 +476,8 @@ run_stdin:
 	    }
 	    break;
 	case 'q':		/* quiet startup */
-	    gs_main_init1(minst);
+	    if ((code = gs_main_init1(minst)) < 0)
+		return code;
 	    initial_enter_name("QUIET", &vtrue);
 	    break;
 	case 'r':		/* define device resolution */
@@ -483,7 +485,8 @@ run_stdin:
 		float xres, yres;
 		ref value;
 
-		gs_main_init1(minst);
+		if ((code = gs_main_init1(minst)) < 0)
+		    return code;
 		switch (sscanf((const char *)arg, "%fx%f", &xres, &yres)) {
 		    default:
 			puts("-r must be followed by <res> or <xres>x<yres>");
@@ -517,7 +520,8 @@ run_stdin:
 		    eqp = strchr(adef, '#');
 		/* Initialize the object memory, scanner, and */
 		/* name table now if needed. */
-		gs_main_init1(minst);
+		if ((code = gs_main_init1(minst)) < 0)
+		    return code;
 		if (eqp == adef) {
 		    puts("Usage: -dname, -dname=token, -sname=string");
 		    return e_Fatal;
@@ -595,7 +599,8 @@ run_stdin:
 		puts("-u requires a name to undefine.");
 		return e_Fatal;
 	    }
-	    gs_main_init1(minst);
+	    if ((code = gs_main_init1(minst)) < 0)
+		return code;
 	    i_initial_remove_name(minst->i_ctx_p, arg);
 	    break;
 	case 'v':		/* print revision */

@@ -200,9 +200,11 @@ gs_server_initialize(int fno_stdin, int fno_stdout, int fno_stderr,
     if (c_stderr == NULL)
 	return -1;
     /* Initialize the Ghostscript interpreter. */
-    gs_init0(c_stdin, c_stdout, c_stderr, 0);
-    gs_init1();
-    gs_init2();
+    if ((code = gs_init0(c_stdin, c_stdout, c_stderr, 0)) < 0 ||
+	(code = gs_init1()) < 0 ||
+	(code = gs_init2()) < 0
+	)
+	return code;
     code = gs_server_run_string("/QUIET true def /NOPAUSE true def",
 				&exit_code,
 				(char *)0, 0, &errstr_len);
