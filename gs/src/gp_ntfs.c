@@ -81,69 +81,6 @@ const char gp_fmode_binary_suffix[] = "b";
 const char gp_fmode_rb[] = "rb";
 const char gp_fmode_wb[] = "wb";
 
-#if !NEW_COMBINE_PATH
-/* Answer whether a path_string can meaningfully have a prefix applied */
-bool
-gp_pathstring_not_bare(const char *fname, unsigned len)
-{   /* A file name is not bare if it contains a drive specifications	*/
-    /* (second character is a :) or if it starts with a '.', '/' or '\\'*/
-    /* or it contains '/../' (parent reference)				*/
-    if ((len > 0) && ((*fname == '/') || (*fname == '\\') ||
-	  (*fname == '.') || ((len > 2) && (fname[1] == ':'))))
-	return true;
-    while (len-- > 3) {
-        int c = *fname++;
-
-	if (((c == '/') || (c == '\\')) &&
-	    ((len >= 3) && (bytes_compare(fname, 2, "..", 2) == 0) &&
-			((fname[2] == '/') || (fname[2] == '\\'))))
-	    return true;
-    }
-    return false;
-}
-
-/* Answer whether the file_name references the directory	*/
-/* containing the specified path (parent). 			*/
-bool
-gp_file_name_references_parent(const char *fname, unsigned len)
-{
-    int i = 0, last_sep_pos = -1;
-
-    /* A file name references its parent directory if it starts */
-    /* with ../ or ..\  or if one of these strings follows / or \ */
-    while (i < len) {
-	if (fname[i] == '/' || fname[i] == '\\') {
-	    last_sep_pos = i++;
-	    continue;
-	}
-	if (fname[i++] != '.')
-	    continue;
-        if (i > last_sep_pos + 2 || (i < len && fname[i] != '.'))
-	    continue;
-	i++;
-	/* have separator followed by .. */
-	if (i < len && (fname[i] == '/' || fname[i++] == '\\'))
-	    return true;
-    }
-    return false;
-}
-
-/* Answer the string to be used for combining a directory/device prefix */
-/* with a base file name.  The file name is known to not be absolute. */
-const char *
-gp_file_name_concat_string(const char *prefix, uint plen)
-{
-    if (plen > 0)
-	switch (prefix[plen - 1]) {
-	    case ':':
-	    case '/':
-	    case '\\':
-		return "";
-	};
-    return "/";
-}
-#endif
-
 /* ------ File enumeration ------ */
 
 struct file_enum_s {

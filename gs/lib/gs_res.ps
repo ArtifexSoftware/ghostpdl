@@ -223,98 +223,76 @@ odef
 % ResourceFileName.
 systemdict begin
 
-% The check below for the presence of /.filenamedirseparator
-% is a temporary switch to NEW_COMBINE_PATH logics.
-% It should be removed after alpha testing the new logic.
-systemdict /.filenamedirseparator known not {
-  %     - .default_resource_dir <string>
-  /.default_resource_dir {
-    .file_name_parent .file_name_directory_separator concatstrings
-    (Resource) concatstrings
-    /LIBPATH .systemvar {
-      dup .file_name_current eq {
-        pop
+%     - .default_resource_dir <string>
+/.default_resource_dir {
+  .file_name_parent .file_name_directory_separator concatstrings
+  (Resource) concatstrings
+  /LIBPATH .systemvar {
+    dup .file_name_current eq {
+      pop
+    } {
+      1 index false .file_name_combine {
+        exch pop exit
       } {
-        1 index false .file_name_combine {
-          exch pop exit
-        } {
-          pop pop
-        } ifelse
+        pop pop
       } ifelse
-    } forall
-  } bind def
-
-  %  <path> <name> <string> .resource_dir_name <path> <name> <string>
-  /.resource_dir_name
-  {  systemdict 2 index .knownget {
-       exch pop
-       systemdict 1 index undef
-     } {
-      dup () ne {
-        .file_name_directory_separator concatstrings
-      } if
-      2 index exch false .file_name_combine not {
-        (Error: .default_resource_dir returned ) print exch print ( that can't combine with ) print =
-        /.default_resource_dir /configurationerror .signalerror
-      } if
     } ifelse
-  } bind def
-} if
+  } forall
+} bind def
+
+%  <path> <name> <string> .resource_dir_name <path> <name> <string>
+/.resource_dir_name
+{  systemdict 2 index .knownget {
+     exch pop
+     systemdict 1 index undef
+   } {
+     dup () ne {
+     .file_name_directory_separator concatstrings
+    } if
+    2 index exch false .file_name_combine not {
+      (Error: .default_resource_dir returned ) print exch print ( that can't combine with ) print =
+      /.default_resource_dir /configurationerror .signalerror
+    } if
+  } ifelse
+} bind def
 
 currentdict /pssystemparams known not {
   /pssystemparams 10 dict readonly def
 } if
 pssystemparams begin
-  % The check below for the presence of /.filenamedirseparator
-  % is a temporary switch to NEW_COMBINE_PATH logics.
-  % It should be removed after alpha testing the new logic.
-  systemdict /.filenamedirseparator known {
-    /FontResourceDir (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
-    /GenericResourceDir (/Resource/) readonly .forcedef	% pssys'params is r-o
-    /GenericResourcePathSep (/) readonly .forcedef	% pssys'params is r-o
-    (%diskFontResourceDir) cvn (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
-    (%diskGenericResourceDir) cvn (/Resource/) readonly .forcedef	% pssys'params is r-o
-  } {
-    .default_resource_dir
-    /FontResourceDir (Font) .resource_dir_name
-       readonly .forcedef	% pssys'params is r-o
-    /GenericResourceDir () .resource_dir_name
-       readonly .forcedef	% pssys'params is r-o
-    pop % .default_resource_dir
-    /GenericResourcePathSep
-    	.file_name_separator readonly .forcedef		% pssys'params is r-o
-    (%diskFontResourceDir) cvn (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
-    (%diskGenericResourceDir) cvn (/Resource/) readonly .forcedef	% pssys'params is r-o
-  } ifelse
+  .default_resource_dir
+  /FontResourceDir (Font) .resource_dir_name
+     readonly .forcedef	% pssys'params is r-o
+  /GenericResourceDir () .resource_dir_name
+     readonly .forcedef	% pssys'params is r-o
+  pop % .default_resource_dir
+  /GenericResourcePathSep
+  	.file_name_separator readonly .forcedef		% pssys'params is r-o
+  (%diskFontResourceDir) cvn (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
+  (%diskGenericResourceDir) cvn (/Resource/) readonly .forcedef	% pssys'params is r-o
 end
 end
 
-% The check below for the presence of /.filenamedirseparator
-% is a temporary switch to NEW_COMBINE_PATH logics.
-% It should be removed after alpha testing the new logic.
-systemdict /.filenamedirseparator known not {
+% Check if GenericResourceDir presents in LIBPATH.
 
-  % Check if GenericResourceDir presents in LIBPATH.
-
-  % The value of GenericResourceDir must end with directory separator.
-  % We use .file_name_combine to check it. 
-  % Comments use OpenVMS syntax, because it is the most complicated case.
-  (x) pssystemparams /GenericResourcePathSep get
-  (y) concatstrings concatstrings dup length              % (x]y) l1
-  pssystemparams /GenericResourceDir get dup length exch  % (x]y) l1 l2 (dir)
-  3 index true .file_name_combine not {
-    exch
-    (File name ) print print ( cant combine with ) print =
-    /GenericResourceDir cvx /configurationerror signalerror
-  } if
-  dup length                                              % (x]y) l1 l2 (dir.x]y) l
-  4 2 roll add                                            % (x]y) (dir.x]y) l ll
-  ne {
-    (GenericResourceDir value does not end with directory separator.\n) =
-    /GenericResourceDir cvx /configurationerror signalerror
-  } if
-  pop pop
+% The value of GenericResourceDir must end with directory separator.
+% We use .file_name_combine to check it. 
+% Comments use OpenVMS syntax, because it is the most complicated case.
+(x) pssystemparams /GenericResourcePathSep get
+(y) concatstrings concatstrings dup length              % (x]y) l1
+pssystemparams /GenericResourceDir get dup length exch  % (x]y) l1 l2 (dir)
+3 index true .file_name_combine not {
+  exch
+  (File name ) print print ( cant combine with ) print =
+  /GenericResourceDir cvx /configurationerror signalerror
 } if
+dup length                                              % (x]y) l1 l2 (dir.x]y) l
+4 2 roll add                                            % (x]y) (dir.x]y) l ll
+ne {
+  (GenericResourceDir value does not end with directory separator.\n) =
+  /GenericResourceDir cvx /configurationerror signalerror
+} if
+pop pop
 
 % Define the generic algorithm for computing resource file names.
 /.rfnstring 8192 string def
@@ -472,66 +450,39 @@ systemdict /.filenamedirseparator known not {
 	//.globalresourceforall {exec} 0 get 3 .localpackedarray cvx
 	.Instances exch cvx {forall} 0 get 1 index 0 get
 	currentdict end 3 .execn begin
+        mark                                             % args [
+        Category .namestring .file_name_separator concatstrings
+        2 index 0 get                                    % args [ (c/) (t)
+        dup length 3 1 roll                              % args [ l (c/) (t)
+        concatstrings                                    % args [ l (c/t)
+	[ exch
+	  /LIBPATH .systemvar exch
+	  .generate_dir_list_templates ]                 % args [ l [(pt)]
+	{                                                % args [ l (pt)
+	  dup length 2 index sub exch                    % args [ l Lp (pt)
 
-        % The check below for the presence of /.filenamedirseparator
-        % is a temporary switch to NEW_COMBINE_PATH logics.
-        % It should be removed after alpha testing the new logic.
-        systemdict /.filenamedirseparator known {
-
-          currentdict /ResourceFileName known {
-		% Finally, do instances stored on files.
-	    dup 0 get 8192 string ResourceFileName
-	    dup length 2 index 0 get length sub 3 -1 roll
-	    //.externalresourceforall {exec} 0 get 4 .localpackedarray cvx
-	    8192 string {filenameforall} 0 get
-	    currentdict end 2 .execn begin null	% for pop
-	  } if pop
-
-	} {
-	  mark                                             % args [
-          Category .namestring .file_name_separator concatstrings
-          2 index 0 get                                    % args [ (c/) (t)
-          dup length 3 1 roll                              % args [ l (c/) (t)
-          concatstrings                                    % args [ l (c/t)
-	  [ exch
-	    /LIBPATH .systemvar exch
-	    .generate_dir_list_templates ]                 % args [ l [(pt)]
-	  {                                                % args [ l (pt)
-	    dup length 2 index sub exch                    % args [ l Lp (pt)
-
-	    {                                              % args [ l Lp (pf)
-	      dup length                                   % args [ l Lp (pf) Lpf
-	      2 index sub                                  % args [ l Lp (pf) Lf
-	      2 index exch                                 % args [ l Lp (pf) Lp Lf
-	      getinterval cvn dup                          % args [ l Lp /n /n
-	      4 2 roll                                     % args [ /n /n l Lp
-	    } //.rfnstring filenameforall
-	    pop                                            % args [ l /n1 /n1 ... /nN /nN l
-	  } forall                                         % args [ l /n1 /n1 ... /nN /nN
-	  pop
-	  .dicttomark % An easy way to exclude duplicates. % args <</n/n>>
-	    % {
-	    { pop } 0 get
-            2 index 2 get { cvs 0 } aload pop 5 index
-            //.externalresourceforall {exec} 0 get
-            % }
-          7 .localpackedarray cvx
-          3 2 roll pop % args
-	  { forall } 0 get
-  	  currentdict end 2 .execn begin
-	} ifelse
+	  {                                              % args [ l Lp (pf)
+	    dup length                                   % args [ l Lp (pf) Lpf
+	    2 index sub                                  % args [ l Lp (pf) Lf
+	    2 index exch                                 % args [ l Lp (pf) Lp Lf
+	    getinterval cvn dup                          % args [ l Lp /n /n
+	    4 2 roll                                     % args [ /n /n l Lp
+	  } //.rfnstring filenameforall
+	  pop                                            % args [ l /n1 /n1 ... /nN /nN l
+	} forall                                         % args [ l /n1 /n1 ... /nN /nN
+	pop
+	.dicttomark % An easy way to exclude duplicates. % args <</n/n>>
+	  % {
+	  { pop } 0 get
+          2 index 2 get { cvs 0 } aload pop 5 index
+          //.externalresourceforall {exec} 0 get
+          % }
+        7 .localpackedarray cvx
+        3 2 roll pop % args
+	{ forall } 0 get
+  	currentdict end 2 .execn begin
 } bind
 /ResourceFileName
-% The check below for the presence of /.filenamedirseparator
-% is a temporary switch to NEW_COMBINE_PATH logics.
-% It should be removed after alpha testing the new logic.
-systemdict /.filenamedirseparator known {
-	  { /GenericResourceDir getsystemparam 
-	    Category .namestring concatstrings
-  	    /GenericResourcePathSep getsystemparam concatstrings
-	    .genericrfn
-	  } bind
-        } {
 	  {                                             % /in (scr)
 	    exch //.rfnstring cvs                       % (scr) (n)
             /GenericResourcePathSep getsystemparam exch % (scr) (/) (n)
@@ -560,7 +511,6 @@ systemdict /.filenamedirseparator known {
               add 0 exch getinterval                    % (scr''[0:Ld+Lcn])
 	    } if
 	  } bind
-        } ifelse
 
 		% Additional entries
 
@@ -627,26 +577,6 @@ systemdict /.filenamedirseparator known {
 	 ifelse
 	} bind
 /.ResourceFile
-
-  % The check below for the presence of /.filenamedirseparator
-  % is a temporary switch to NEW_COMBINE_PATH logics.
-  % It should be removed after alpha testing the new logic.
-  systemdict /.filenamedirseparator known {
-	{ currentdict /ResourceFileName known
-	   { mark 1 index 8192 string { ResourceFileName }
-	     .internalstopped
-	      { cleartomark false }
-	      { exch pop findlibfile
-		 { exch pop exch pop true }
-		 { pop false }
-		ifelse
-	      }
-	     ifelse
-	   }
-	   { false }
-	  ifelse
-	} bind
-  } {
         {
           Category //.rfnstring cvs length                      % key l
           dup //.rfnstring dup length 2 index sub               % key l l (buf) L-l
@@ -677,7 +607,6 @@ systemdict /.filenamedirseparator known {
 	     } ifelse
           } ifelse
 	} bind
-  } ifelse
 
 
 

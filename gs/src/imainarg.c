@@ -690,9 +690,6 @@ argproc(gs_main_instance * minst, const char *arg)
     filearg = arg_heap_copy(arg);
     if (filearg == NULL)
         return e_Fatal;
-#if !NEW_COMBINE_PATH
-    minst->i_ctx_p->filearg = filearg;	/* allow reading this file if SAFER set */
-#endif
     if (minst->run_buffer_size) {
 	/* Run file with run_string. */
 	return run_buffered(minst, filearg);
@@ -762,13 +759,9 @@ runarg(gs_main_instance * minst, const char *pre, const char *arg,
     strcpy(line, pre);
     esc_strcat(line, arg);
     strcat(line, post);
-#if NEW_COMBINE_PATH
     minst->i_ctx_p->starting_arg_file = true;
-#endif
     code = run_string(minst, line, options);
-#if NEW_COMBINE_PATH
     minst->i_ctx_p->starting_arg_file = false;
-#endif
     return code;
 }
 private int

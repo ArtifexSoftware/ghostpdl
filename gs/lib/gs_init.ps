@@ -1841,29 +1841,13 @@ readonly def
     <<
       /PermitFileReading [
         currentuserparams /PermitFileReading get aload pop
-
-	% The check below for the presence of /.filenamedirseparator
-	% is a temporary switch to NEW_COMBINE_PATH logics.
-	% It should be removed after alpha testing the new logic.
-	systemdict /.filenamedirseparator known {
-	  { .makepathtemplate
-            dup .filenamedirseparator concatstrings (*) concatstrings
-	    exch		% put string below this procedure
-	  }
-          /LIBPATH .systemvar { 1 index exec } forall
-          /FONTPATH .systemvar  { 1 index exec } forall
-	  currentsystemparams /GenericResourceDir get 1 index exec 
-	  currentsystemparams /FontResourceDir get exch exec
-	} {
-          /FONTPATH .systemvar (*) .generate_dir_list_templates
-            % Library files : 
-          /LIBPATH  .systemvar (*) .generate_dir_list_templates       
-            % Resource files on OpenVMS requires a separate template (gs:[dir.*]*)
-            % because the (gs:[dir]*) doesn't cover them.
-          /LIBPATH  .systemvar (*) .file_name_separator (*)
-             concatstrings concatstrings .generate_dir_list_templates
-             
-	} ifelse
+        /FONTPATH .systemvar (*) .generate_dir_list_templates
+          % Library files : 
+        /LIBPATH  .systemvar (*) .generate_dir_list_templates       
+          % Resource files on OpenVMS requires a separate template (gs:[dir.*]*)
+          % because the (gs:[dir]*) doesn't cover them.
+        /LIBPATH  .systemvar (*) .file_name_separator (*)
+          concatstrings concatstrings .generate_dir_list_templates
       ] /LockFilePermissions true
     >> setuserparams
   }

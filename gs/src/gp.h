@@ -21,9 +21,6 @@
 #ifndef gp_INCLUDED
 #  define gp_INCLUDED
 
-/* A temporary switch for the new logics of file path concatenation : */
-#define NEW_COMBINE_PATH 1 /* 0 = old, 1 = new. */
-
 #include "gstypes.h"
 /*
  * This file defines the interface to ***ALL*** platform-specific routines,
@@ -195,35 +192,6 @@ FILE *gp_fopen(const char *fname, const char *mode);
 /* Force given file into binary mode (no eol translations, etc) */
 /* if 2nd param true, text mode if 2nd param false */
 int gp_setmode_binary(FILE * pfile, bool mode);
-
-#if !NEW_COMBINE_PATH
-/* Answer whether a path string is not "bare" (returns true) i.e.,	*/
-/* contains an absolute reference, an initial 'current directory' ref	*/
-/* or some form of relative reference to the parent directory. The	*/
-/* "non_bare" pathstrings are those for	which it is not valid to prefix	*/
-/* a path (and expect the result to still be meaningful/valid).		*/
-/*									*/
-/* Some examples of non-bare pathstrings platform variants are:		*/
-/*	unix:	starts with '/' or './', or contains '../'		*/
-/*	mac:	starts with ':', or contains '::'			*/
-/*	VMS:	contains (starts with) directory '[  ]' spec.		*/
-/*	Win:	contains initial drive letter, initial '.', '/' or '\'	*/
-/*		or contains '../' or '..\'				*/
-bool gp_pathstring_not_bare(const char *fname, uint len);
-
-/* Answer whether a file name contains a parent directory reference,	*/
-/* e.g., "../somefile". Currently used for security purposes.		*/
-/* Some example platform variants of this are:				*/
-/*	unix:	contains '../'	Windows: contains '..\' or '../'	*/
-/*	mac:	contains '::'	VMS:	'[ ]' contains '-.'		*/
-bool gp_file_name_references_parent(const char *fname, uint len);
-
-/* Answer the string to be used for combining a directory/device prefix */
-/* with a base file name. The prefix directory/device is examined to	*/
-/* determine if a separator is needed and may return an empty string	*/
-/* in some cases (platform dependent).					*/
-const char *gp_file_name_concat_string(const char *prefix, uint plen);
-#endif
 
 typedef enum {
     gp_combine_small_buffer = -1,

@@ -278,14 +278,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
    QUIET not { (Scanning ) print dup print ( for fonts...) print flush } if
    (*) 1 index
 
-   % The check below for the presence of /.filenamedirseparator
-   % is a temporary switch to NEW_COMBINE_PATH logics.
-   % It should be removed after alpha testing the new logic.
-   systemdict /.filenamedirseparator known {
-     .filenamedirseparator
-   } {
-     .file_name_separator
-   } ifelse
+   .file_name_separator
    dup (\\) eq { pop (\\\\) } if        % double \ for pattern match
    concatstrings exch concatstrings
    0 0 0 4 -1 roll      % found scanned files
@@ -1111,15 +1104,7 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
           }
           { LIBPATH
              { defaultfontmap
-               % The check below for the presence of /.filenamedirseparator
-               % is a temporary switch to NEW_COMBINE_PATH logics.
-               % It should be removed after alpha testing the new logic.
-               systemdict /.filenamedirseparator known {
-                   1 index .filenamedirseparator
-                   exch concatstrings concatstrings true
-                 } {
-                   false .file_name_combine
-                 } ifelse
+               false .file_name_combine
                {
                  dup VMDEBUG
                  (r) { file } .internalstopped {
