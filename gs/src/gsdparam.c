@@ -99,7 +99,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
 	/* We might have an uninitialized device with */
 	/* color_info.num_components = 0.... */
-	if (*cms != 0)
+	if ((cms != NULL) && (*cms != '\0'))
 	    param_string_from_string(pcms, cms);
 	else
 	    pcms.data = 0;
@@ -387,7 +387,8 @@ private int param_check_long(gs_param_list *, gs_param_name, long, bool);
 private int param_check_bytes(gs_param_list *, gs_param_name, const byte *,
 			      uint, bool);
 #define param_check_string(plist, pname, str, is_defined)\
-  param_check_bytes(plist, pname, (const byte *)(str), strlen(str), is_defined)
+  param_check_bytes(plist, pname, (const byte *)(str), \
+                    (is_defined) ? strlen(str) : 0, is_defined)
 
 /* Set the device parameters. */
 /* If the device was open and the put_params procedure closed it, */
@@ -634,7 +635,7 @@ nce:
     /* Separation, DeviceN Color, and ProcessColorModel related parameters. */
     {
 	const char * pcms = get_process_color_model_name(dev);
-
+        /* the device should have set a process model name at this point */
 	if ((code = param_check_string(plist, "ProcessColorModel", pcms, (pcms != NULL))) < 0)
 	    ecode = code;
     }
