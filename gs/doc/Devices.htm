@@ -361,11 +361,11 @@ driver, but it does not update the PostScript clipping path.
 
 <p>
 If a Windows printer name is specified in <b><tt>-sOutputFile</tt></b> using
-the format <tt>"\\spool\printer_name"</tt>, for instance
+the format <tt>"%printer%printer_name"</tt>, for instance
 </p>
 
 <blockquote><b><tt>
-gs ... -sOutputFile="\\spool\Apple LaserWriter II NT"
+gs ... -sOutputFile="%spool%Apple LaserWriter II NT"
 </tt></b></blockquote>
 
 <p>
@@ -419,7 +419,7 @@ already processed and also provides a <em>cancel</em> button. This option
 is useful if GS is intended to print pages in the background, without any
 user intervention.</dd>
 
-<dt><b><tt>-sOutputFile=</tt></b><b>"\\spool\<em>printer_name</em>"</b></dt>
+<dt><b><tt>-sOutputFile=</tt></b><b>"%printer%<em>printer_name</em>"</b></dt>
 <dd>Specifies which printer should be used. The <em>printer_name</em> should be
 typed exactly as it appears in the Printers control panel, including spaces.</dd>
 
@@ -481,7 +481,7 @@ show the progress dialog if not set or set to <em><tt>false</tt></em>.</dd>
 
 <dt><b><tt>/OutputFile <em>string</em></tt></b></dt>
 <dd>Specifies which printer should be used. The string should be of the form
-<tt><b>\\spool\<em>printer_name</em></b></tt>, where the <em>printer_name</em> should be
+<tt><b>%printer%<em>printer_name</em></b></tt>, where the <em>printer_name</em> should be
 typed exactly as it appears in the Printers control panel, including spaces.</dd>
 
 <dt><b><tt>/QueryUser <em>integer</em></tt></b></dt>
