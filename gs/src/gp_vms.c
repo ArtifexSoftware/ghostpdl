@@ -597,7 +597,7 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
 		    bool no_sibling, char *buffer, uint *blen)
 {
     /*
-     * Reduce it to the MacOS case.
+     * Reduce it to the general case.
      *
      * Implementation restriction : fname must not contain a part of 
      * "device:[root.]["
@@ -638,15 +638,24 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
 	return gp_combine_success;
     }
    if ( memchr( prefix , '[' , plen ) == 0 &&
-	memchr( fname , '.' , flen ) != 0 )
+	memchr( prefix , '.' , plen ) == 0 )
      {
 	if (plen + flen + 2 > *blen)
 	    return gp_combine_small_buffer;
 	memcpy(buffer, prefix, plen);
 	memcpy(buffer + plen , ":" , 1 );
 	memcpy(buffer + plen + 1, fname, flen);
-	buffer[plen + flen + 1] = 0;
-	*blen = plen + flen + 1;
+	if ( memchr( fname , '.' , flen ) != 0 )
+	  {
+	     buffer[plen + flen + 1] = 0;
+	     *blen = plen + flen + 1;
+	  }
+	else
+	  {
+	     memcpy(buffer + plen + flen + 1 , "." , 1 );
+	     buffer[plen + flen + 2] = 0;
+	     *blen = plen + flen + 2;
+	  }
 	return gp_combine_success;
      }
     if (prefix[plen - 1] != ']' && fname[0] == '[')
