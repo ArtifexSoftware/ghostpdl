@@ -181,7 +181,9 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 	    /* malloc must align at least as strictly as the compiler! */
 	    if (ALIGNMENT_MOD(ptr, arch_align_memory_mod) != 0)
 		set_msg("malloc alignment failed!");
+	    else
 #endif
+		set_msg(ok_msg);
 	    if (mmem->allocated)
 		mmem->allocated->prev = bp;
 	    bp->next = mmem->allocated;
@@ -190,7 +192,6 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 	    bp->type = &st_bytes;
 	    bp->cname = cname;
 	    mmem->allocated = bp;
-	    set_msg(ok_msg);
 	    ptr = (byte *) (bp + 1);
 	    gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
 	    mmem->used += size + sizeof(gs_malloc_block_t);
