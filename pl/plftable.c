@@ -490,7 +490,7 @@ const font_resident_t resident_table[] = {
     },
  
     {
-        fontnames("Symbol", "StandarSymL"),
+        fontnames("Symbol", "StandardSymL"),
         {'S','y','m','b','o','l',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
         {621, 1, {25, 28800}, 0, REGULAR, NOBOLD, 16686},
         cc_symbol
@@ -500,12 +500,11 @@ const font_resident_t resident_table[] = {
        confusion AGFA has 2 different fonts presumably Symbol and
        SymbolPS, each called Symbol. */
     {
-        fontnames("SymbPS", "StandarSymL"),
+        fontnames("SymbPS", "StandardSymL"),
         {'S','y','m','b','o','l','P','S',' ',' ',' ',' ',' ',' ',' ',' '},
         {621, 1, {25, 28800}, 0, REGULAR, NOBOLD, 16686},
         cc_symbol
     },
-
 
     /* NB no Wingdings 
     {"Dingbats", {'W','i','n','g','d','i','n','g','s',' ',' ',' ',' ',' ',' ',' '},
