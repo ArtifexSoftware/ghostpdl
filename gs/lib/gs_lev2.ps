@@ -155,7 +155,9 @@ end
 /setsystemparams {		% <dict> setsystemparams -
 	% Check that we will be able to set the PostScript-level
 	% system parameters.
-   /setsystemparams //pssystemparams .checksetparams
+   /setsystemparams //pssystemparams mark exch {
+     type cvlit /.checkparamtype cvx 2 packedarray cvx
+   } forall .dicttomark .checksetparams
 	% Set the C-level system params.  If this succeeds, we know that
 	% the password check succeeded.
    dup .setsystemparams
