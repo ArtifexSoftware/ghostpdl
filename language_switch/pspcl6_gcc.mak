@@ -86,7 +86,6 @@ COMPILE_INITS=1
 # it to work properly.
 
 # ufst - Agfa universal font scaler.
-# fts - freetype font system.
 # afs - artifex font scaler.
 # 3 mutually exclusive choices follow, pick one.
 
@@ -100,14 +99,6 @@ XLDFLAGS=-Xlinker -L../pl/agfa/rts/lib/
 # agfa's if_lib.a)
 EXTRALIBS=-lif -lfco -ltt
 AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ -I../pl/agfa/rts/gray/ -DAGFA_FONT_TABLE
-endif
-
-ifeq ($(PL_SCALER), fts)
-XLDFLAGS=
-EXTRALIBS=-lfreetype
-# the second include is to find ftbuild.h referenced in the FT
-# tutorial.
-FT_INCLUDES=-I/usr/include/freetype2 -I/usr/include/freetype2/freetype/config/
 endif
 
 ifeq ($(PL_SCALER), afs)
@@ -141,8 +132,10 @@ DD='$(GLGENDIR)$(D)'
 DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
  $(DD)ljet4.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
  $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev\
- $(DD)pxlmono.dev $(DD)pxlcolor.dev\
- $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)jpeg.dev
+ $(DD)pxlmono.dev $(DD)pxlcolor.dev  $(DD)bitcmyk.dev \
+ $(DD)bmpmono.dev $(DD)bmpamono.dev \
+ $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)pkmraw.dev\
+ $(DD)jpeg.dev
 
 FEATURE_DEVS    = \
 		  $(DD)psl3.dev		\
