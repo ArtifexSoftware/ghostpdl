@@ -307,6 +307,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 
     /* get rid of this should be keyed by pjl font number */
     byte key[3];
+    bool one_font_found = false;
 
     if ( pathname == NULL ) {
 	/* no font pathname */
@@ -443,6 +444,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 		}
 		/* mark the font as found */
 		font_found[residentp - resident_table] = plfont;
+                one_font_found = true;
 	    } /* next file */
 	} /* next directory */
 	/* error message if font is missing. */
@@ -451,7 +453,10 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 		dprintf1( "Could not load resident font: %s\n", residentp->full_font_name );
 	    }
     }
-    return true;
+    if ( one_font_found )
+        return true;
+    else
+        return false;
 }
 
 /* These are not implemented */
