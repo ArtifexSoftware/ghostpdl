@@ -218,9 +218,10 @@ sdecodefloat(const byte * p, int format)
 	    }
 	    if (sign_expt & 0x100)
 		fnum = -fnum;
-	} else
-#endif
+	}
+#else
 	    fnum = *(float *)&lnum;
+#endif
     }
     return fnum;
 }
