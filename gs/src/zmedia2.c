@@ -276,21 +276,25 @@ zmatch_page_size(const ref * pvreq, const ref * pvmed,
 		 float *best_mismatch, gs_matrix * pmat, gs_point * pmsize)
 {
     uint nr, nm;
+    int code;
+    ref rv[6];
 
-    check_array(*pvreq);
+    /* array_get checks array types and size. */
+    /* This allows normal or packed arrays to be used */
+    if ((code = array_get(pvreq, 1, &rv[1])) < 0)
+        return_error(code);
     nr = r_size(pvreq);
-    check_array(*pvmed);
+    if ((code = array_get(pvmed, 1, &rv[3])) < 0)
+        return_error(code);
     nm = r_size(pvmed);
     if (!((nm == 2 || nm == 4) && (nr == 2 || nr == nm)))
 	return_error(e_rangecheck);
     {
-	ref rv[6];
 	uint i;
 	double v[6];
 	int code;
 
 	array_get(pvreq, 0, &rv[0]);
-	array_get(pvreq, 1, &rv[1]);
 	for (i = 0; i < 4; ++i)
 	    array_get(pvmed, i % nm, &rv[i + 2]);
 	if ((code = num_params(rv + 5, 6, v)) < 0)
