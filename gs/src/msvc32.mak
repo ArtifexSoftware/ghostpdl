@@ -296,14 +296,37 @@ PSD=$(PSGENDIR)\$(NUL)
 
 # Define which major version of MSVC is being used
 # (currently, 4, 5, 6, 7, and 8 are supported).
+# Define the minor version of MSVC, currently only
+# used for Microsoft Visual Studio .NET 2003 (7.1)
 
-!ifndef MSVC_VERSION 
+#MSVC_VERSION=6
+#MSVC_MINOR_VERSION=0
+
+# Make a guess at the version of MSVC in use
+# This will not work if service packs change the version numbers.
+
+!if defined(_NMAKE_VER) && !defined(MSVC_VERSION)
+!if "$(_NMAKE_VER)" == "162"
+MSVC_VERSION=5
+!endif
+!if "$(_NMAKE_VER)" == "6.00.8168.0"
 MSVC_VERSION=6
 !endif
+!if "$(_NMAKE_VER)" == "7.00.9466"
+MSVC_VERSION=7
+!endif
+!if "$(_NMAKE_VER)" == "7.10.3077"
+MSVC_VERSION=7
+MSVC_MINOR_VERSION=1
+!endif
+!if "$(_NMAKE_VER)" == "8.00.40607.16"
+MSVC_VERSION=8
+!endif
+!endif
 
-# For Microsoft Visual Studio .NET 2003 (7.1)
-# use MSVC_VERSION=7 MSVC_MINOR_VERSION=1
-
+!ifndef MSVC_VERSION
+MSVC_VERSION=6
+!endif
 !ifndef MSVC_MINOR_VERSION
 MSVC_MINOR_VERSION=0
 !endif

@@ -1282,9 +1282,13 @@ significantly misleading. For general MSVC users we recommend TDEBUG=1.
 <p>Ghostscript can be made using either the DOS shell or one one of the various 
   command line shells made for Windows.
 <p>In order for the makefiles to work properly, two items may have to be changed. 
+  An attempt is made to select the correct version of Microsoft Visual C++
+  based on the version of nmake.  If this doesn't work it will default
+  to version 6.x.  
   If you are not using version 6.x then before building, in <b><tt>src\msvc32.mak</tt></b> 
-  find the line "<b><tt>MSVC_VERSION=6</tt></b>" and change it to "<b><tt>MSVC_VERSION=4</tt></b>", 
-  "<b><tt>MSVC_VERSION=5</tt></b>" or "<b><tt>MSVC_VERSION=7</tt></b>". 
+  find the line "<b><tt>#MSVC_VERSION=6</tt></b>" and change it to "<b><tt>MSVC_VERSION=4</tt></b>", 
+  "<b><tt>MSVC_VERSION=5</tt></b>", "<b><tt>MSVC_VERSION=7</tt></b>"
+  or "<b><tt>MSVC_VERSION=8</tt></b>". . 
 <p>In some cases the location of the Microsoft Developer Studio, needs to be changed. 
   The location of Microsoft Developer Studio is defined by the value of <b><tt>DEVSTUDIO</tt></b>. 
   There are several different definitions of <b><tt>DEVSTUDIO</tt></b> in src\msvc32.mak. 
