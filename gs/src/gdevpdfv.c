@@ -690,15 +690,11 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 	if (pmp->Function)
 	    data_params.ranges = 0; /* don't scale function parameter */
     } else {
-	byte buf[100];		/* arbitrary */
-	uint num_read;
-
 	/****** SCALE Decode ******/
 	code = cos_dict_put_c_key_floats(pscd, "/Decode", pmp->Decode,
 					 4 + num_comp * 2);
-	while (sgets(cs.s, buf, sizeof(buf), &num_read), num_read > 0)
-	    if ((code = cos_stream_add_bytes(pscs, buf, num_read)) < 0)
-		return code;
+	if (code >= 0)
+	    code = cos_stream_add_stream_contents(pscs, cs.s);
 	bits_per_coordinate = pmp->BitsPerCoordinate;
 	bits_per_component = pmp->BitsPerComponent;
 	bits_per_flag = -1;

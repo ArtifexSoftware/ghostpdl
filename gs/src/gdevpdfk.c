@@ -729,15 +729,7 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	return code;
 
     /* Transfer the profile stream. */
-    while (code >= 0) {
-	byte sbuff[256];	/* arbitrary */
-	uint cnt;
-
-	sgets(picc_info->instrp, sbuff, sizeof(sbuff), &cnt);
-	if (cnt == 0)
-	    break;
-	code = cos_stream_add_bytes(pcstrm, sbuff, cnt);
-    }
+    code = cos_stream_add_stream_contents(pcstrm, picc_info->instrp);
     if (code >= 0)
 	code = pdf_finish_iccbased(pcstrm);
     /*

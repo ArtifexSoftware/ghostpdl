@@ -1184,6 +1184,26 @@ cos_stream_add_bytes(cos_stream_t *pcs, const byte *data, uint size)
     return cos_stream_add(pcs, size);
 }
 
+/* Add the contents of a stream to a stream object. */
+int
+cos_stream_add_stream_contents(cos_stream_t *pcs, stream *s)
+{
+    int code = 0;
+    byte sbuff[200];	/* arbitrary */
+    uint cnt;
+
+    do {
+	int status = sgets(s, sbuff, sizeof(sbuff), &cnt);
+
+	if (cnt == 0) {
+	    if (status == EOFC)
+		break;
+	    return_error(gs_error_ioerror);
+	}
+    } while ((code = cos_stream_add_bytes(pcs, sbuff, cnt)) >= 0);
+    return code;
+}
+
 /* Create a stream that writes into a Cos stream. */
 /* Closing the stream will free it. */
 /* Note that this is not a filter. */
