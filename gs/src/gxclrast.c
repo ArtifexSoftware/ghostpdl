@@ -189,7 +189,7 @@ private int read_set_misc2(P3(command_buf_t *pcb, gs_imager_state *pis,
 			      segment_notes *pnotes));
 private int read_begin_image(P3(command_buf_t *pcb, gs_image_common_t *pic,
 				const gs_color_space *pcs));
-private int read_put_params(P3(command_buf_t *pcb,
+private int read_put_params(P4(command_buf_t *pcb, gs_imager_state *pis,
 			       gx_device_clist_reader *cdev,
 			       gs_memory_t *mem));
 
@@ -1223,7 +1223,8 @@ idata:			data_size = 0;
 			goto set_phase;
 		    case cmd_opv_put_params:
 			cbuf.ptr = cbp;
-			code = read_put_params(&cbuf, cdev, mem);
+			code = read_put_params(&cbuf, &imager_state, cdev,
+						mem);
 			cbp = cbuf.ptr;
 			if (code > 0)
 			    break; /* empty list */
@@ -1973,8 +1974,8 @@ read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
 }
 
 private int
-read_put_params(command_buf_t *pcb, gx_device_clist_reader *cdev,
-		gs_memory_t *mem)
+read_put_params(command_buf_t *pcb, gs_imager_state *pis,
+		gx_device_clist_reader *cdev, gs_memory_t *mem)
 {
     const byte *cbp = pcb->ptr;
     gs_c_param_list param_list;
@@ -2030,8 +2031,8 @@ read_put_params(command_buf_t *pcb, gx_device_clist_reader *cdev,
 	code = gs_error_unknownerror;  /* must match */
     if (code >= 0) {
 	gs_c_param_list_read(&param_list);
-	code = (*dev_proc(cdev, put_params))
-	    ((gx_device *)cdev, (gs_param_list *)&param_list);
+	code = gs_imager_putdeviceparams(pis, (gx_device *)cdev,
+					 (gs_param_list *)&param_list);
     }
     gs_c_param_list_release(&param_list);
     if (alloc_data_on_heap)
