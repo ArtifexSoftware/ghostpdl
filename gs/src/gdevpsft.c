@@ -417,27 +417,24 @@ private uint
 size_mtx(gs_font_type42 *pfont, gs_type42_mtx_t *pmtx, uint max_glyph,
 	 int wmode)
 {
-    int prev_lsb = min_int, prev_width = min_int;
-    uint last_lsb = 0, last_width = 0; /* pacify compilers */
+    int prev_width = min_int;
+    uint last_width = 0; /* pacify compilers */
     double factor = pfont->data.unitsPerEm * (wmode ? -1 : 1);
     uint i;
 
     for (i = 0; i <= max_glyph; ++i) {
 	float sbw[4];
 	int code = pfont->data.get_metrics(pfont, i, wmode, sbw);
-	int lsb, width;
+	int width;
 
 	if (code < 0)
 	    continue;
-	lsb = (int)(sbw[wmode] * factor);
 	width = (int)(sbw[wmode + 2] * factor);
-	if (lsb != prev_lsb)
-	    prev_lsb = lsb, last_lsb = i;
 	if (width != prev_width)
-	    prev_width = width, last_width = last_lsb = i;
+	    prev_width = width, last_width = i;
     }
     pmtx->numMetrics = last_width + 1;
-    pmtx->length = pmtx->numMetrics * 4 + (last_lsb - last_width) * 2;
+    pmtx->length = pmtx->numMetrics * 4 + (max_glyph - last_width) * 2;
     return pmtx->length;
 }
 
