@@ -269,12 +269,9 @@ unsigned char digest[SHA1_DIGEST_SIZE], buffer[16384];
 FILE* file;
 
     if (argc > 2) {
-        puts("Public domain SHA-1 implementation - by Steve Reid
-<sreid@sea-to-sky.net>");
-        puts("Modified for 16 bit environments 7/98 - by James H. Brown
-<jbrown@burgoyne.com>");	/* JHB */
-        puts("Produces the SHA-1 hash of a file, or stdin if no file is
-specified.");
+        puts("Public domain SHA-1 implementation - by Steve Reid <sreid@sea-to-sky.net>");
+        puts("Modified for 16 bit environments 7/98 - by James H. Brown <jbrown@burgoyne.com>");	/* JHB */
+        puts("Produces the SHA-1 hash of a file, or stdin if no file is specified.");
         return(0);
     }
     if (argc < 2) {
