@@ -272,7 +272,7 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target)
 	set_dev_proc(dev, decode_color, gx_forward_decode_color);
 	gx_device_set_target((gx_device_forward *)dev, target);
     } else {
-	gx_device_fill_in_procs(dev);
+	gx_device_fill_in_procs((gx_device *)dev);
         gx_device_forward_fill_in_procs((gx_device_forward *) dev);
     }
     dev->box_procs = box_procs_default;

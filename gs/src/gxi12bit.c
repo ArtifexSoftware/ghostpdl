@@ -113,7 +113,7 @@ gs_image_class_2_fracs(gx_image_enum * penum)
 		    bits2frac(penum->mask_color.values[i], 12);
 	}
 	if_debug0('b', "[b]render=frac\n");
-	return image_render_frac;
+	return &image_render_frac;
     }
     return 0;
 }

@@ -62,7 +62,6 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
     const gs_color_space * pacs;
     ref_colorspace cspace_old;
     ref sname, name_none, name_all;
-    gs_separation_name *names = NULL;
     gs_device_n_map *pmap = NULL;
     gs_function_t *pfn = NULL;
     separation_type sep_type;

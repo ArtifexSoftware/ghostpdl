@@ -165,7 +165,7 @@ private int
 psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
-    int code, lnum;
+    int lnum;
     byte *line = gs_alloc_bytes(pdev->memory, line_size, "psmono_print_page");
     byte invert = (pdev->color_info.depth == 1 ? 0xff : 0);
     gx_device_pswrite_common_t pswrite_common;
@@ -342,7 +342,6 @@ static const gx_device_pswrite_common_t psrgb_values =
 private int
 psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
-    int code;
     gs_memory_t *mem = pdev->memory;
     int width = pdev->width;
     byte *lbuf = gs_alloc_bytes(mem, width * 3,

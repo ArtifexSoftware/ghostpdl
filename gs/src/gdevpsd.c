@@ -969,7 +969,7 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     int chan_idx;
     int chan_names_len = 0;
 
-    psd_write(xc, "8BPS", 4); /* Signature */
+    psd_write(xc, (const byte *)"8BPS", 4); /* Signature */
     psd_write_16(xc, 1); /* Version - Always equal to 1*/
     /* Reserved 6 Bytes - Must be zero */
     psd_write_32(xc, 0);
@@ -994,7 +994,7 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     }    
     psd_write_32(xc, 12 + (chan_names_len + (chan_names_len % 2))
 			+ (12 + (14*xc->n_extra_channels))); 
-    psd_write(xc, "8BIM", 4);
+    psd_write(xc, (const byte *)"8BIM", 4);
     psd_write_16(xc, 1006); /* 0x03EE */
     psd_write_16(xc, 0); /* PString */
     psd_write_32(xc, chan_names_len + (chan_names_len % 2));
@@ -1009,7 +1009,7 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
 	psd_write_8(xc, 0); /* pad */
 
     /* DisplayInfo - Colors for each spot channels */
-    psd_write(xc, "8BIM", 4);
+    psd_write(xc, (const byte *)"8BIM", 4);
     psd_write_16(xc, 1007); /* 0x03EF */
     psd_write_16(xc, 0); /* PString */
     psd_write_32(xc, 14 * xc->n_extra_channels); /* Length */

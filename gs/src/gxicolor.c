@@ -84,7 +84,7 @@ gs_image_class_4_color(gx_image_enum * penum)
 	penum->mask_color.mask = 0;
 	penum->mask_color.test = ~0;
     }
-    return image_render_color;
+    return &image_render_color;
 }
 
 /* ------ Rendering procedures ------ */

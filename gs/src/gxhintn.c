@@ -2042,48 +2042,6 @@ private int t1_hinter__add_trailing_moveto(t1_hinter * this)
     return t1_hinter__rmoveto(this, gx - this->cx, gy - this->cy);
 }
 
-private int t1_hinter__add_full_width_hint(t1_hinter * this)
-{   /*  This is a hewristic.
-        This adds full width vstem being useful for characters like 'c', 'A',
-        to fit their sloped tails to the rater. 
-    */
-    t1_glyph_space_coord min_gx, min_gy, max_gx, max_gy;
-    t1_glyph_space_coord s = this->subglyph_orig_gx;
-    t1_glyph_space_coord gx0, gx1;
-    t1_hint hint;
-    int i, code;
-
-    if (this->pole_count == 0)
-        return 0;
-    /* Compute BBox : */
-    min_gx = this->pole[0].gx, min_gy = this->pole[0].gy;
-    max_gx = min_gx, max_gy = min_gy;
-    for (i = 1; i < this->pole_count - 1; i++) {
-        t1_hinter_space_coord gx = this->pole[i].gx, gy = this->pole[i].gy;
-
-        min_gx = min(min_gx, gx);
-        min_gy = min(min_gy, gy);
-        max_gx = max(max_gx, gx);
-        max_gy = max(max_gy, gy);
-    }
-    gx0 = min_gx - s, gx1 = max_gx - s;
-    /* Check if such hint already presents : */
-    for (i = 0; i < this->hint_count; i++)
-        if (this->hint[i].type == vstem &&
-            ((this->hint[i].g0 == gx0 && this->hint[i].g1 == gx1) || 
-             (this->hint[i].g0 == gx1 && this->hint[i].g1 == gx0)))
-            return 0;
-    /* Insert new hint in very beginning : */
-    code = t1_hinter__stem(this, vstem, 0, gx0, gx1);
-    if (code < 0)
-	return code;
-    hint = this->hint[this->hint_count - 1];
-    for (i = this->hint_count - 1; i > 0; i--)
-        this->hint[i] = this->hint[i - 1];
-    this->hint[0] = hint;
-    return 0;
-}
-
 int t1_hinter__endglyph(t1_hinter * this)
 {   int code;
 
@@ -2103,7 +2061,6 @@ int t1_hinter__endglyph(t1_hinter * this)
 	goto exit;
     t1_hinter__paint_glyph(this, false);
     if (!this->disable_hinting && (this->grid_fit_x || this->grid_fit_y)) {
-        /* t1_hinter__add_full_width_hint(this); Gives worse results. */
 	if (this->FontType == 1)
 	    t1_hinter__compute_type1_stem_ranges(this);
 	else

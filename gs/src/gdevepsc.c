@@ -259,7 +259,7 @@ epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
 		if (gx_device_has_color(pdev))
 			{
-			register i,j;
+			register int i,j;
 			register byte *outbuf, *realbuf;
 			byte current_color;
 			int end_next_bits = whole_bits;
@@ -433,7 +433,7 @@ epsc_output_run(byte *data, int count, int y_mult,
 {	int xcount = count / y_mult;
 	fputc(033, prn_stream);
 	if ( !(start_graphics & ~3) )
-	   {	fputc("KLYZ"[start_graphics], prn_stream);
+	   {	fputc("KLYZ"[(int)start_graphics], prn_stream);
 	   }
 	else
 	   {	fputc('*', prn_stream);
