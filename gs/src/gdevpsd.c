@@ -294,7 +294,7 @@ cmyk_cs_to_spotrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[
     color_cmyk_to_rgb(c, m, y, k, NULL, out);
     for(; i>0; i--)			/* Clear spot colors */
         out[2 + i] = 0;
-};
+}
 
 private void
 gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
@@ -336,7 +336,7 @@ cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out
     out[3] = k;
     for(i = 0; i < n; i++)			/* Clear spot colors */
 	out[4 + i] = 0;
-};
+}
 
 private void
 cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
@@ -370,7 +370,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 	for(i = 0; i < n; i++)			/* Clear spot colors */
 	    out[4 + i] = 0;
     }
-};
+}
 
 private void
 gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])

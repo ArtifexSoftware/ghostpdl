@@ -119,7 +119,6 @@ typedef struct image3x_channel_values_s {
     gs_int_rect rect;
     gs_image_t image;
 } image3x_channel_values_t;
-private bool is_multiple(int x, int y);
 private int check_image3x_mask(const gs_image3x_t *pim,
 			       const gs_image3x_mask_t *pimm,
 			       const image3x_channel_values_t *ppcv,
@@ -355,11 +354,6 @@ gx_begin_image3x_generic(gx_device * dev,
     return code;
 }
 private bool
-is_multiple(int x, int y)
-{
-    return (x % y == 0 || y % x == 0);
-}
-private bool
 check_image3x_extent(floatp mask_coeff, floatp data_coeff)
 {
     if (mask_coeff == 0)
@@ -402,9 +396,6 @@ check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
 		)
 		return_error(gs_error_rangecheck);
 	    break;
-	    if (!is_multiple(mask_height, pim->Height))
-		return_error(gs_error_rangecheck);
-	    /* falls through */
 	case interleave_separate_source:
 	    switch (pimm->MaskDict.BitsPerComponent) {
 	    case 1: case 2: case 4: case 8:

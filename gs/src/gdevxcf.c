@@ -292,7 +292,7 @@ cmyk_cs_to_spotrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[
     color_cmyk_to_rgb(c, m, y, k, NULL, out);
     for(; i>0; i--)			/* Clear spot colors */
         out[2 + i] = 0;
-};
+}
 
 private void
 gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
@@ -334,7 +334,7 @@ cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out
     out[3] = k;
     for(i = 0; i < n; i++)			/* Clear spot colors */
 	out[4 + i] = 0;
-};
+}
 
 private void
 cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
@@ -368,7 +368,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 	for(i = 0; i < n; i++)			/* Clear spot colors */
 	    out[4 + i] = 0;
     }
-};
+}
 
 private void
 gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
@@ -1107,7 +1107,7 @@ xcf_write_header(xcf_write_ctx *xc, xcf_device *pdev)
     int bytes_pp = xc->base_bytes_pp + n_extra_channels;
     int channel_idx;
 
-    xcf_write(xc, "gimp xcf file", 14);
+    xcf_write(xc, (const byte *)"gimp xcf file", 14);
     xcf_write_32(xc, xc->width);
     xcf_write_32(xc, xc->height);
     xcf_write_32(xc, 0);
@@ -1135,7 +1135,7 @@ xcf_write_header(xcf_write_ctx *xc, xcf_device *pdev)
     xcf_write_32(xc, xc->height);
     xcf_write_32(xc, 0);
     xcf_write_32(xc, strlen(layer_name) + 1);
-    xcf_write(xc, layer_name, strlen(layer_name) + 1);
+    xcf_write(xc, (const byte *)layer_name, strlen(layer_name) + 1);
 
     /* layer props */
     xcf_write_32(xc, 0);

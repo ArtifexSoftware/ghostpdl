@@ -231,7 +231,7 @@ psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
 	switch (vdev->color_info.num_components) {
 	case 4:
 	    /* if (v0 == 0 && v1 == 0 && v2 == 0 && ...) */
-	    if ((color & (0xffffff << 8)) == 0 && ppscc->setgray != 0) {
+	    if ((color & 0xffffff00) == 0 && ppscc->setgray != 0) {
 		v3 = 1.0 - v3;
 		goto g;
 	    }

@@ -636,8 +636,5 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	gs_free_object(mem, lin, "copy_alpha(lin)");
 	return code;
     }
-
-    /* shouldn't reach */
-    return_error(gs_error_unknownerror);
 }
 

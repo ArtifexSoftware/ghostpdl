@@ -571,7 +571,7 @@ gsijs_open(gx_device *dev)
 	code = gsijs_set_margin_params(ijsdev);
 
     return code;
-};
+}
 
 /* Close the gsijs driver */
 private int

@@ -98,7 +98,7 @@ private ttfPtrElem *ttfFont__get_table_ptr(ttfFont *f, char *id)
     if (!memcmp(id, "cmap", 4))
 	return &f->t_cmap;
     return 0;
-  };
+}
 
 /*-------------------------------------------------------------------*/
 

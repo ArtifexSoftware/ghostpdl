@@ -19,7 +19,7 @@
 #include "memory_.h"
 #include "std.h"
 #include "gsmemory.h"
-#include "gsmalloc.h"		/* for gs_memory_default */
+#include "gsmalloc.h"	    /* for gs_memory_default */
 #include "strimpl.h"
 #include "szlibxx.h"
 

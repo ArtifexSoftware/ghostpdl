@@ -235,7 +235,7 @@ cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out
         out[i] = y;
     if ((i = map[3]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
         out[i] = k;
-};
+}
 
 private const gx_cm_color_map_procs spotCMYK_procs = {
     gray_cs_to_spotcmyk_cm, rgb_cs_to_spotcmyk_cm, cmyk_cs_to_spotcmyk_cm

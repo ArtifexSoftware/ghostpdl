@@ -310,7 +310,7 @@ struct pdf_font_cache_elem_s {
     gs_private_st_ptrs5(st_pdf_font_cache_elem, pdf_font_cache_elem_t,\
 	"pdf_font_cache_elem_t", pdf_font_cache_elem_enum,\
 	pdf_font_cache_elem_reloc, next, pdfont,\
-	glyph_usage, real_widths, pdev);\
+	glyph_usage, real_widths, pdev)
 
 /*
  * pdf_viewer_state tracks the graphic state of a viewer,
@@ -359,7 +359,7 @@ typedef struct pdf_substream_save_s {
     gs_private_st_ptrs5(st_pdf_substream_save, pdf_substream_save,\
 	"pdf_substream_save", pdf_substream_save_enum,\
 	pdf_substream_save_reloc, text_state, clip_path, strm, \
-	substream_Resources, font3);
+	substream_Resources, font3)
 #define private_st_pdf_substream_save_element()\
   gs_private_st_element(st_pdf_substream_save_element, pdf_substream_save,\
     "pdf_substream_save[]", pdf_substream_save_elt_enum_ptrs,\

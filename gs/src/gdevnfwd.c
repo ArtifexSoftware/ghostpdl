@@ -657,7 +657,7 @@ fwd_map_cmyk_cs(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
         cmyk_cs_to_cmyk_cm(tdev, c, m, y, k, out);   /* if all else fails */
     else
         pprocs->map_cmyk(tdev, c, m, y, k, out);
-};
+}
 
 static const gx_cm_color_map_procs FwdDevice_cm_map_procs = {
     fwd_map_gray_cs, fwd_map_rgb_cs, fwd_map_cmyk_cs
