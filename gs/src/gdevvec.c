@@ -316,7 +316,7 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
      */
     vdev->strm->procs.close = vdev->strm->procs.flush;
     if (vdev->bbox_device) {
-	gx_device_bbox_init(vdev->bbox_device, NULL);
+	gx_device_bbox_init(vdev->bbox_device, NULL, vdev->v_memory);
 	gx_device_set_resolution((gx_device *) vdev->bbox_device,
 				 vdev->HWResolution[0],
 				 vdev->HWResolution[1]);

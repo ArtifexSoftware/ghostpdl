@@ -255,10 +255,10 @@ bbox_close_device(gx_device * dev)
 
 /* Initialize a bounding box device. */
 void
-gx_device_bbox_init(gx_device_bbox * dev, gx_device * target)
+gx_device_bbox_init(gx_device_bbox * dev, gx_device * target, gs_memory_t *mem)
 {
     gx_device_init((gx_device *) dev, (const gx_device *)&gs_bbox_device,
-		   (target ? target->memory : NULL), true);
+		   (target ? target->memory : mem), true);
     if (target) {
         gx_device_forward_fill_in_procs((gx_device_forward *) dev);
 	set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
@@ -1201,7 +1201,7 @@ bbox_create_compositor(gx_device * dev,
 	    (*dev_proc(cdev, close_device)) (cdev);
 	    return_error(gs_error_VMerror);
 	}
-	gx_device_bbox_init(bbcdev, target);
+	gx_device_bbox_init(bbcdev, target, memory);
 	gx_device_set_target((gx_device_forward *)bbcdev, cdev);
 	bbcdev->box_procs = box_procs_forward;
 	bbcdev->box_proc_data = bdev;
