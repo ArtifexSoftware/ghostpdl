@@ -33,6 +33,7 @@
 				/* (should only be gsstate.h) */
 #include "gspaint.h"		/* for gs_fill, gs_stroke */
 #include "gspath.h"
+#include "gsrect.h"
 #include "estack.h"
 #include "ialloc.h"
 #include "ichar.h"
@@ -42,6 +43,8 @@
 #include "igstate.h"
 #include "iname.h"
 #include "store.h"
+
+/* ---------------- Inline utilities ---------------- */
 
 /* Test whether a font is Type 1 compatible. */
 inline private bool
@@ -84,8 +87,11 @@ gs_private_st_suffix_add0(st_gs_type1exec_state, gs_type1exec_state,
 /* Forward references */
 private int bbox_continue(P1(os_ptr));
 private int nobbox_continue(P1(os_ptr));
+private int type1_push_OtherSubr(P3(const gs_type1exec_state *,
+				    int (*)(P1(os_ptr)), const ref *));
 private int type1_call_OtherSubr(P3(const gs_type1exec_state *,
 				    int (*)(P1(os_ptr)), const ref *));
+private int type1_callout_dispatch(P3(os_ptr, int (*)(P1(os_ptr)), int));
 private int type1_continue_dispatch(P4(gs_type1exec_state *, const ref *,
 				       ref *, int));
 private int op_type1_cleanup(P1(os_ptr));
@@ -94,9 +100,12 @@ private void
      type1_cis_get_metrics(P2(const gs_type1_state * pcis, double psbw[4]));
 private int bbox_getsbw_continue(P1(os_ptr));
 private int type1exec_bbox(P3(os_ptr, gs_type1exec_state *, gs_font *));
+private int bbox_finish_fill(P1(os_ptr));
+private int bbox_finish_stroke(P1(os_ptr));
 private int bbox_fill(P1(os_ptr));
 private int bbox_stroke(P1(os_ptr));
 private int nobbox_finish(P2(os_ptr, gs_type1exec_state *));
+private int nobbox_draw(P2(os_ptr, int (*)(P1(gs_state *))));
 private int nobbox_fill(P1(os_ptr));
 private int nobbox_stroke(P1(os_ptr));
 
@@ -120,8 +129,8 @@ ztype1execchar(register os_ptr op)
     pdata = &pfont1->data;
     /*
      * Any reasonable implementation would execute something like
-     *  1 setmiterlimit 0 setlinejoin 0 setlinecap
-     * here, but apparently the Adobe implementations aren't reasonable.
+     *    1 setmiterlimit 0 setlinejoin 0 setlinecap
+     * here, but the Adobe implementations don't.
      *
      * If this is a stroked font, set the stroke width.
      */
@@ -163,7 +172,7 @@ ztype1execchar(register os_ptr op)
     if (pfont1->FontBBox.q.x > pfont1->FontBBox.p.x &&
 	pfont1->FontBBox.q.y > pfont1->FontBBox.p.y
 	) {
-	/* The FontBBox is valid. */
+	/* The FontBBox appears to be valid. */
 	cxs.char_bbox = pfont1->FontBBox;
 	return type1exec_bbox(op, &cxs, pfont);
     } else {
@@ -204,6 +213,9 @@ ztype1execchar(register os_ptr op)
 	}
     }
 }
+
+/* -------- bbox case -------- */
+
 /* Do all the work for the case where we have a bounding box. */
 private int
 type1exec_bbox(os_ptr op, gs_type1exec_state * pcxs, gs_font * pfont)
@@ -212,10 +224,9 @@ type1exec_bbox(os_ptr op, gs_type1exec_state * pcxs, gs_font * pfont)
     gs_font_base *const pbfont = (gs_font_base *) pfont;
 
     /*
-     * We have a valid bounding box.  If we don't have Metrics
-     * for this character, start interpreting the CharString;
-     * do the setcachedevice as soon as we know the
-     * (side bearing and) width.
+     * We appear to have a valid bounding box.  If we don't have Metrics for
+     * this character, start interpreting the CharString; do the
+     * setcachedevice as soon as we know the (side bearing and) width.
      */
     if (pcxs->present == metricsNone) {
 	/* Get the width from the CharString, */
@@ -244,7 +255,7 @@ type1exec_bbox(os_ptr op, gs_type1exec_state * pcxs, gs_font * pfont)
 	return zchar_set_cache(op, pbfont, &cnref,
 			       NULL, pcxs->sbw + 2,
 			       &pcxs->char_bbox,
-			       bbox_fill, bbox_stroke);
+			       bbox_finish_fill, bbox_finish_stroke);
     } else {
 	/* We have the width and bounding box: */
 	/* set up the cache device now. */
@@ -254,10 +265,218 @@ type1exec_bbox(os_ptr op, gs_type1exec_state * pcxs, gs_font * pfont)
 				pcxs->sbw : NULL),
 			       pcxs->sbw + 2,
 			       &pcxs->char_bbox,
-			       bbox_fill, bbox_stroke);
+			       bbox_finish_fill, bbox_finish_stroke);
     }
 }
 
+/* Continue from an OtherSubr callout while getting metrics. */
+private int
+bbox_getsbw_continue(os_ptr op)
+{
+    ref other_subr;
+    gs_type1exec_state *pcxs = r_ptr(esp, gs_type1exec_state);
+    gs_type1_state *const pcis = &pcxs->cis;
+    int code;
+
+    code = type1_continue_dispatch(pcxs, NULL, &other_subr, 4);
+    op = osp;			/* in case z1_push/pop_proc was called */
+    switch (code) {
+	default:		/* code < 0 or done, error */
+	    op_type1_free(op);
+	    return ((code < 0 ? code : gs_note_error(e_invalidfont)));
+	case type1_result_callothersubr:	/* unknown OtherSubr */
+	    return type1_push_OtherSubr(pcxs, bbox_getsbw_continue,
+					&other_subr);
+	case type1_result_sbw: {	/* [h]sbw, done */
+	    double sbw[4];
+	    const gs_font_base *const pbfont =
+		(const gs_font_base *)pcis->pfont;
+	    gs_rect bbox;
+
+	    /* Get the metrics before freeing the state. */
+	    type1_cis_get_metrics(pcis, sbw);
+	    bbox = pcxs->char_bbox;
+	    op_type1_free(op);
+	    return zchar_set_cache(op, pbfont, op, sbw, sbw + 2, &bbox,
+				   bbox_finish_fill, bbox_finish_stroke);
+	}
+    }
+}
+
+/* <font> <code|name> <name> <charstring> <sbx> <sby> %bbox_{fill|stroke} - */
+/* <font> <code|name> <name> <charstring> %bbox_{fill|stroke} - */
+private int bbox_finish(P2(os_ptr, int (*)(P1(os_ptr))));
+private int
+bbox_finish_fill(os_ptr op)
+{
+    return bbox_finish(op, bbox_fill);
+}
+private int
+bbox_finish_stroke(os_ptr op)
+{
+    return bbox_finish(op, bbox_stroke);
+}
+private int
+bbox_finish(os_ptr op, int (*cont) (P1(os_ptr)))
+{
+    gs_font *pfont;
+    int code;
+    gs_show_enum *penum = op_show_find();
+    gs_type1exec_state cxs;	/* stack allocate to avoid sandbars */
+    gs_type1_state *const pcis = &cxs.cis;
+    double sbxy[2];
+    gs_point sbpt;
+    gs_point *psbpt = 0;
+    os_ptr opc = op;
+    const ref *opstr;
+    ref other_subr;
+
+    if (!r_has_type(opc, t_string)) {
+	check_op(3);
+	code = num_params(op, 2, sbxy);
+	if (code < 0)
+	    return code;
+	sbpt.x = sbxy[0];
+	sbpt.y = sbxy[1];
+	psbpt = &sbpt;
+	opc -= 2;
+	check_type(*opc, t_string);
+    }
+    code = font_param(opc - 3, &pfont);
+    if (code < 0)
+	return code;
+    if (penum == 0 || !font_is_type1_compatible(pfont))
+	return_error(e_undefined);
+    {
+	gs_font_type1 *const pfont1 = (gs_font_type1 *) pfont;
+	int lenIV = pfont1->data.lenIV;
+
+	if (lenIV > 0 && r_size(opc) <= lenIV)
+	    return_error(e_invalidfont);
+	check_estack(5);	/* in case we need to do a callout */
+	code = gs_type1_init(pcis, penum, psbpt,
+			     gs_show_in_charpath(penum) != cpm_show,
+			     pfont1->PaintType, pfont1);
+	if (code < 0)
+	    return code;
+    }
+    opstr = opc;
+  icont:
+    code = type1_continue_dispatch(&cxs, opstr, &other_subr, (psbpt ? 6 : 4));
+    op = osp;		/* OtherSubrs might have altered it */
+    switch (code) {
+	case 0:		/* all done */
+	    /* Call the continuation now. */
+	    if (psbpt)
+		pop(2);
+	    return (*cont)(osp);
+	case type1_result_callothersubr:	/* unknown OtherSubr */
+	    push_op_estack(cont);	/* call later */
+	    return type1_call_OtherSubr(&cxs, bbox_continue, &other_subr);
+	case type1_result_sbw:	/* [h]sbw, just continue */
+	    opstr = 0;
+	    goto icont;
+	default:		/* code < 0, error */
+	    return code;
+    }
+}
+
+private int
+bbox_continue(os_ptr op)
+{
+    int npop = (r_has_type(op, t_string) ? 4 : 6);
+    int code = type1_callout_dispatch(op, bbox_continue, npop);
+
+    if (code == 0) {
+	op = osp;		/* OtherSubrs might have altered it */
+	npop -= 4;		/* nobbox_fill/stroke handles the rest */
+	pop(npop);
+	op -= npop;
+	op_type1_free(op);
+    }
+    return code;
+}
+
+/*
+ * Check the path against FontBBox before drawing.  The original operands
+ * of type1execchar are still on the o-stack.
+ */
+private int
+bbox_draw(os_ptr op, int (*draw)(P1(gs_state *)))
+{
+    gs_rect bbox;
+    gs_font *pfont;
+    gs_show_enum *penum;
+    gs_font_base * pbfont;
+    gs_font_type1 * pfont1;
+    gs_type1exec_state cxs;
+    int code;
+
+    if (igs->in_cachedevice < 2)	/* not caching */
+	return nobbox_draw(op, draw);
+    if ((code = gs_pathbbox(igs, &bbox)) < 0 ||
+	(code = font_param(op - 3, &pfont)) < 0
+	)
+	return code;
+    penum = op_show_find();
+    if (penum == 0 || !font_is_type1_compatible(pfont))
+	return_error(e_undefined);
+    if (draw == gs_stroke) {
+	/* Expand the bounding box by the line width. */
+	float width = gs_currentlinewidth(igs) * 1.41422;
+
+	bbox.p.x -= width, bbox.p.y -= width;
+	bbox.q.x += width, bbox.q.y += width;
+    }
+    pbfont = (gs_font_base *)pfont;
+    if (rect_within(bbox, pbfont->FontBBox))	/* within bounds */
+	return nobbox_draw(op, draw);
+    /* Enlarge the FontBBox to save work in the future. */
+    rect_merge(pbfont->FontBBox, bbox);
+    /* Dismantle everything we've done, and start over. */
+    if (penum->cc) {
+	gx_free_cached_char(pfont->dir, penum->cc);
+	penum->cc = 0;
+    }
+    gs_grestore(penum->pgs);
+    penum->width_status = sws_none;
+    penum->log2_current_scale.x = penum->log2_current_scale.y = 0;
+    pfont1 = (gs_font_type1 *) pfont;
+    code = zchar_get_metrics(pbfont, op - 1, cxs.sbw);
+    if (code < 0)
+	return code;
+    cxs.present = code;
+    code = gs_type1_init(&cxs.cis, penum, NULL,
+			 gs_show_in_charpath(penum) != cpm_show,
+			 pfont1->PaintType, pfont1);
+    if (code < 0)
+	return code;
+    cxs.char_bbox = pfont1->FontBBox;
+    return type1exec_bbox(op, &cxs, pfont);
+}
+private int
+bbox_fill(os_ptr op)
+{
+    /* See nobbox_fill for why we use eofill here. */
+    return bbox_draw(op, gs_eofill);
+}
+private int
+bbox_stroke(os_ptr op)
+{
+    return bbox_draw(op, gs_stroke);
+}
+
+/* -------- Common code -------- */
+
+/* Get the metrics (l.s.b. and width) from the Type 1 interpreter. */
+private void
+type1_cis_get_metrics(const gs_type1_state * pcis, double psbw[4])
+{
+    psbw[0] = fixed2float(pcis->lsb.x);
+    psbw[1] = fixed2float(pcis->lsb.y);
+    psbw[2] = fixed2float(pcis->width.x);
+    psbw[3] = fixed2float(pcis->width.y);
+}
 
 /* Handle the results of gs_type1_interpret. */
 /* pcref points to a t_string ref. */
@@ -330,8 +549,10 @@ type1_push_OtherSubr(const gs_type1exec_state *pcxs, int (*cont)(P1(os_ptr)),
     return o_push_estack;
 }
 
-/* Do a callout to an OtherSubr implemented in PostScript. */
-/* The caller must have done a check_estack(4 + num_args). */
+/*
+ * Do a callout to an OtherSubr implemented in PostScript.
+ * The caller must have done a check_estack(4 + num_args).
+ */
 private int
 type1_call_OtherSubr(const gs_type1exec_state * pcxs, int (*cont) (P1(os_ptr)),
 		     const ref * pos)
@@ -348,118 +569,6 @@ type1_call_OtherSubr(const gs_type1exec_state * pcxs, int (*cont) (P1(os_ptr)),
     ++esp;
     make_istruct(esp, 0, hpcxs);
     return type1_push_OtherSubr(pcxs, cont, pos);
-}
-
-/* Continue from an OtherSubr callout while getting metrics. */
-private int
-bbox_getsbw_continue(os_ptr op)
-{
-    ref other_subr;
-    gs_type1exec_state *pcxs = r_ptr(esp, gs_type1exec_state);
-    gs_type1_state *const pcis = &pcxs->cis;
-    int code;
-
-    code = type1_continue_dispatch(pcxs, NULL, &other_subr, 4);
-    op = osp;			/* in case z1_push/pop_proc was called */
-    switch (code) {
-	default:		/* code < 0 or done, error */
-	    op_type1_free(op);
-	    return ((code < 0 ? code : gs_note_error(e_invalidfont)));
-	case type1_result_callothersubr:	/* unknown OtherSubr */
-	    return type1_push_OtherSubr(pcxs, bbox_getsbw_continue,
-					&other_subr);
-	case type1_result_sbw: {	/* [h]sbw, done */
-	    double sbw[4];
-	    const gs_font_base *const pbfont =
-		(const gs_font_base *)pcis->pfont;
-	    gs_rect bbox;
-
-	    /* Get the metrics before freeing the state. */
-	    type1_cis_get_metrics(pcis, sbw);
-	    bbox = pcxs->char_bbox;
-	    op_type1_free(op);
-	    return zchar_set_cache(op, pbfont, op, sbw, sbw + 2, &bbox,
-				   bbox_fill, bbox_stroke);
-	}
-    }
-}
-
-/* <font> <code|name> <name> <charstring> <sbx> <sby> %bbox_{fill|stroke} - */
-/* <font> <code|name> <name> <charstring> %bbox_{fill|stroke} - */
-private int bbox_finish(P2(os_ptr, int (*)(P1(os_ptr))));
-private int
-bbox_fill(os_ptr op)
-{
-    return bbox_finish(op, nobbox_fill);
-}
-private int
-bbox_stroke(os_ptr op)
-{
-    return bbox_finish(op, nobbox_stroke);
-}
-private int
-bbox_finish(os_ptr op, int (*cont) (P1(os_ptr)))
-{
-    gs_font *pfont;
-    int code;
-    gs_show_enum *penum = op_show_find();
-    gs_type1exec_state cxs;	/* stack allocate to avoid sandbars */
-    gs_type1_state *const pcis = &cxs.cis;
-    double sbxy[2];
-    gs_point sbpt;
-    gs_point *psbpt = 0;
-    os_ptr opc = op;
-    const ref *opstr;
-    ref other_subr;
-
-    if (!r_has_type(opc, t_string)) {
-	check_op(3);
-	code = num_params(op, 2, sbxy);
-	if (code < 0)
-	    return code;
-	sbpt.x = sbxy[0];
-	sbpt.y = sbxy[1];
-	psbpt = &sbpt;
-	opc -= 2;
-	check_type(*opc, t_string);
-    }
-    code = font_param(opc - 3, &pfont);
-    if (code < 0)
-	return code;
-    if (penum == 0 || !font_is_type1_compatible(pfont))
-	return_error(e_undefined);
-    {
-	gs_font_type1 *const pfont1 = (gs_font_type1 *) pfont;
-	int lenIV = pfont1->data.lenIV;
-
-	if (lenIV > 0 && r_size(opc) <= lenIV)
-	    return_error(e_invalidfont);
-	check_estack(5);	/* in case we need to do a callout */
-	code = gs_type1_init(pcis, penum, psbpt,
-			     gs_show_in_charpath(penum) != cpm_show,
-			     pfont1->PaintType, pfont1);
-	if (code < 0)
-	    return code;
-    }
-    opstr = opc;
-  icont:
-    code = type1_continue_dispatch(&cxs, opstr, &other_subr, (psbpt ? 6 : 4));
-    op = osp;		/* OtherSubrs might have altered it */
-    switch (code) {
-	case 0:		/* all done */
-	    /* Call the continuation now. */
-	    if (psbpt)
-		pop(2);
-	    return (*cont)(osp);
-	case type1_result_callothersubr:	/* unknown OtherSubr */
-	    push_op_estack(cont);	/* call later */
-	    return type1_call_OtherSubr(&cxs, bbox_continue, &other_subr);
-	case type1_result_sbw:	/* [h]sbw, just continue */
-	    opstr = 0;
-	    goto icont;
-	default:		/* code < 0, error */
-	    return code;
-    }
 }
 
 /* Continue from an OtherSubr callout while building the path. */
@@ -485,38 +594,6 @@ type1_callout_dispatch(os_ptr op, int (*cont)(P1(os_ptr)), int num_args)
 	    goto icont;
     }
 }
-private int
-bbox_continue(os_ptr op)
-{
-    int npop = (r_has_type(op, t_string) ? 4 : 6);
-    int code = type1_callout_dispatch(op, bbox_continue, npop);
-
-    if (code == 0) {
-	op = osp;		/* OtherSubrs might have altered it */
-	npop -= 4;		/* nobbox_fill/stroke handles the rest */
-	pop(npop);
-	op -= npop;
-	op_type1_free(op);
-    }
-    return code;
-}
-private int
-nobbox_continue(os_ptr op)
-{
-    int code = type1_callout_dispatch(op, nobbox_continue, 4);
-
-    if (code)
-	return code;
-    {
-	gs_type1exec_state cxs;
-	gs_type1exec_state *pcxs = r_ptr(esp, gs_type1exec_state);
-
-	op = osp;		/* OtherSubrs might have altered it */
-	cxs = *pcxs;
-	op_type1_free(op);
-	return nobbox_finish(op, &cxs);
-    }
-}
 
 /* Clean up after a Type 1 callout. */
 private int
@@ -537,6 +614,26 @@ op_type1_free(os_ptr op)
      */
     make_empty_const_array(esp - 1, a_readonly + a_executable);
     make_empty_const_array(esp, a_readonly + a_executable);
+}
+
+/* -------- no-bbox case -------- */
+
+private int
+nobbox_continue(os_ptr op)
+{
+    int code = type1_callout_dispatch(op, nobbox_continue, 4);
+
+    if (code)
+	return code;
+    {
+	gs_type1exec_state cxs;
+	gs_type1exec_state *pcxs = r_ptr(esp, gs_type1exec_state);
+
+	op = osp;		/* OtherSubrs might have altered it */
+	cxs = *pcxs;
+	op_type1_free(op);
+	return nobbox_finish(op, &cxs);
+    }
 }
 
 /* Finish the no-FontBBox case after constructing the path. */
@@ -589,9 +686,17 @@ nobbox_finish(os_ptr op, gs_type1exec_state * pcxs)
 }
 /* Finish by popping the operands and filling or stroking. */
 private int
+nobbox_draw(os_ptr op, int (*draw)(P1(gs_state *)))
+{
+    int code = draw(igs);
+
+    if (code >= 0)
+	pop(4);
+    return code;
+}
+private int
 nobbox_fill(os_ptr op)
 {
-    pop(4);
     /*
      * Properly designed fonts, which have no self-intersecting outlines
      * and in which outer and inner outlines are drawn in opposite
@@ -599,25 +704,12 @@ nobbox_fill(os_ptr op)
      * badly designed fonts in the Genoa test suite seem to require
      * using the even-odd rule to match Adobe interpreters.
      */
-    return gs_eofill(igs);
+    return nobbox_draw(op, gs_eofill);
 }
 private int
 nobbox_stroke(os_ptr op)
 {
-    pop(4);
-    return gs_stroke(igs);
-}
-
-/* ------ Internal procedures ------ */
-
-/* Get the metrics (l.s.b. and width) from the Type 1 interpreter. */
-private void
-type1_cis_get_metrics(const gs_type1_state * pcis, double psbw[4])
-{
-    psbw[0] = fixed2float(pcis->lsb.x);
-    psbw[1] = fixed2float(pcis->lsb.y);
-    psbw[2] = fixed2float(pcis->width.x);
-    psbw[3] = fixed2float(pcis->width.y);
+    return nobbox_draw(op, gs_stroke);
 }
 
 /* ------ Initialization procedure ------ */
@@ -626,13 +718,13 @@ const op_def zchar1_op_defs[] =
 {
     {"4.type1execchar", ztype1execchar},
 		/* Internal operators */
+    {"4%bbox_getsbw_continue", bbox_getsbw_continue},
+    {"4%bbox_continue", bbox_continue},
+    {"4%bbox_finish_fill", bbox_finish_fill},
+    {"4%bbox_finish_stroke", bbox_finish_stroke},
     {"4%nobbox_continue", nobbox_continue},
     {"4%nobbox_fill", nobbox_fill},
     {"4%nobbox_stroke", nobbox_stroke},
-    {"4%bbox_getsbw_continue", bbox_getsbw_continue},
-    {"4%bbox_continue", bbox_continue},
-    {"4%bbox_fill", bbox_fill},
-    {"4%bbox_stroke", bbox_stroke},
     op_def_end(0)
 };
 
