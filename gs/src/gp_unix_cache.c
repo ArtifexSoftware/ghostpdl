@@ -78,7 +78,8 @@ private char *gp_cache_prefix(void)
     /* substitute $HOME for '~' */
     if (plen > 1 && prefix[0] == '~') {
         char *home, *path;
-        int hlen = 0, pathlen = 0;
+        int hlen = 0;
+	unsigned int pathlen = 0;
         gp_file_name_combine_result result;
         
         if (gp_getenv("HOME", (char *)NULL, &hlen) < 0) {
@@ -117,7 +118,7 @@ gp_cache_indexfilename(const char *prefix)
 {
     const char *fn = "gs_cache";
     char *path;
-    int len;
+    unsigned int len;
     gp_file_name_combine_result result;
     
     len = strlen(prefix) + strlen(fn) + 2;
@@ -176,7 +177,7 @@ private char *gp_cache_itempath(const char *prefix, gp_cache_entry *item)
     const char *fn = item->filename;
     gp_file_name_combine_result result;
     char *path;
-    int len;
+    unsigned int len;
     
     len = strlen(prefix) + strlen(fn) + 2;
     path = malloc(len);
