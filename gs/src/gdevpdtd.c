@@ -550,14 +550,23 @@ int
 pdf_finish_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 {
     int code = 0;
+    cos_dict_t *pcd;
 
     if (!pfd->common.object->written &&
 	(code = pdf_compute_font_descriptor(pfd)) >= 0 &&
 	(!pfd->embed ||
 	 (code = pdf_write_embedded_font(pdev, pfd->base_font, 
-				&pfd->common.values.FontBBox, pfd->common.rid)) >= 0)
-	)
-	DO_NOTHING;
+				&pfd->common.values.FontBBox, 
+				pfd->common.rid
+#				if PDFW_DELAYED_STREAMS
+				    , &pcd
+#				endif
+				)) >= 0)
+	) {
+#	if PDFW_DELAYED_STREAMS
+	    pdf_set_FontFile_object(pfd->base_font, pcd);
+#	endif
+    }
     return code;
 }
 
@@ -633,5 +642,10 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     stream_puts(s, ">>\n");
     pdf_end_separate(pdev);
     pfd->common.object->written = true;
+#   if PDFW_DELAYED_STREAMS
+	code = COS_WRITE_OBJECT(pdf_get_FontFile_object(pfd->base_font), pdev);
+	if (code < 0)
+	    return code;
+#   endif
     return 0;
 }
