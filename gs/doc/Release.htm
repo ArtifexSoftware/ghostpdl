@@ -29,7 +29,7 @@ How to prepare an Aladdin Ghostscript release
 <li><a href="#Development_files">Development sources and bug reports</a>
 <li><a href="#Distributions">Distributions</a>
 </ul>
-<li><a href="#Adding_or_deleting_files">Adding or deleting files</a>
+<li><a href="#Adding_or_removing_files">Adding or removing files</a>
 <li><a href="#Making_distributions">Making distributions</a>
 <ul>
 <li><a href="#Source_distributions">Source distributions</a>
@@ -45,6 +45,7 @@ How to prepare an Aladdin Ghostscript release
 <ul>
 <li><a href="#Tester_or_beta">Tester or beta distributions</a>
 <li><a href="#Public_releases">Public releases</a>
+<li><a href="#After_releasing">After releasing</a>
 </ul>
 </ul>
 </ul></blockquote>
@@ -71,8 +72,8 @@ Ghostscript</a>.
 This document is a rough set of internal notes that Aladdin Enterprises uses
 to manage the process of making new Ghostscript releases.  As time goes on,
 it will become a more suitable document for others wishing to prepare
-releases for distribution.  The <a href="Public.htm">Aladdin Free Public
-License</a> allows anyone to prepare and distribute releases; however, this
+releases for distribution.  Although the <a href="Public.htm">Aladdin Free
+Public License</a> allows anyone to prepare and distribute releases, this
 document is really meant only for developers working closely with Aladdin
 Enterprises.
 
@@ -148,7 +149,7 @@ Tester releases are distributed from
 <a href="ftp://www.aladdin.com/ghost/aladdin/test/">ftp://www.aladdin.com/ghost/aladdin/test/</a>
 </blockquote>
 
-<h1><a name="Adding_or_deleting_files"></a>Adding files</h1>
+<h1><a name="Adding_or_removing_files"></a>Adding or removing files</h1>
 
 <p>
 When adding or removing files, don't forget to invoke <b><tt>cvs
@@ -160,15 +161,15 @@ in the fileset (i.e., not just support files), check the install list in
 <b><tt>unixinst.mak</tt></b>.
 
 <p>
-When adding .c files, remember to update the relevant <b><tt>.mak</tt></b>
-file (usually <b><tt>devs.mak</tt></b>, <b><tt>int.mak</tt></b>, or
+When adding .c files, update the relevant <b><tt>.mak</tt></b> file (usually
+<b><tt>devs.mak</tt></b>, <b><tt>int.mak</tt></b>, or
 <b><tt>lib.mak</tt></b>).
 
 <p>
 When adding operators, update <b><tt>doc/Language.htm</tt></b> if desired.
 
 <p>
-When adding .h files, remember to add a _h definition in the appropriate
+When adding .h files, add a _h definition in the appropriate
 <b><tt>.mak</tt></b> file.
 
 <p>
@@ -189,9 +190,16 @@ There are two different components of Aladdin Ghostscript distributions:
 source distributions, and Windows executables.  Source distributions
 currently can only be made on Linux systems (but it probably wouldn't take
 much work to support other Unix systems); Windows executables require
-Windows 95 or 98.  A few of the tools are designed specifically for
-dual-boot environments that normally run Linux but can mount and boot a
-Windows partition.
+Windows 95 or 98.
+
+<p>
+A few of the tools described below are designed specifically for dual-boot
+environments that normally run Linux but can mount and boot a Windows
+partition.  Note that a dual-boot environment is currently required to
+create a complete release: the files
+<em>{work}</em><b><tt>\gs###src.zip</tt></b> and
+<em>{work}</em><b><tt>\gs###lib.zip</tt></b> are required for the Windows
+environment, but currently can only be generated in the Linux environment.
 
 <h2><a name="Source_distributions"></a>Source distributions</h2>
 
@@ -322,20 +330,6 @@ rm -f src/*~ src/*.bak src/*.orig src/*.mak.tcl doc/*~ doc/*.orig lib/*~ lib/*.o
 
 <p>
 Run <b><tt>cvs commit</tt></b> to ensure the repository is up to date.
-
-<p>
-Determine the date and time of the previous release, <em>{date}</em>, for
-input to the <b><tt>cvs2hist</tt></b> program.  (Currently this must be done
-manually, but the program could do it automatically, and a future version
-should do so.)  Execute
-
-<blockquote><pre>
-cvs2hist -d <em>{date}</em> -v #.#[#]
-</pre></blockquote>
-
-<p>
-This updates <b><tt>doc/Changes.htm</tt></b>.  Run <b><tt>cvs
-commit</tt></b> again.
 
 <p>
 Make the source archives with
@@ -542,8 +536,13 @@ This creates
 </pre></blockquote>
 
 <p>
-These two files are the output of this process, and are what should be
-uploaded to the distribution directories.
+These two files are the output of this process, and should be uploaded to
+the distribution directories along with the source archives
+
+<blockquote><pre>
+<em>{work}</em><b><tt>\gs###src.zip</tt></b>
+<em>{work}</em><b><tt>\gs###lib.zip</tt></b>
+</pre></blockquote>
 
 <h3><a name="Dual_boot_environments"></a>Dual-boot environments</h3>
 
@@ -600,6 +599,44 @@ the consistency of the source code."</a>
 
 <h3><a name="Finishing_up"></a>Finishing up</h3>
 
+<p>
+Determine the date and time of the previous release, <em>{date}</em>, for
+input to the <b><tt>cvs2hist</tt></b> program.  (Currently this must be done
+manually, but the program could do it automatically, and a future version
+should do so.)  Execute
+
+<blockquote><pre>
+cvs2hist -d <em>{date}</em> -v #.#[#] > doc/Changes.htm
+</pre></blockquote>
+
+<p>
+Edit the contents of <b><tt>doc/News.htm</tt></b> and
+<b><tt>doc/Changes.htm</tt></b> into <b><tt>doc/History#.htm</tt></b>.
+(This too could and should be done by a program.)  Then run:
+
+<blockquote><pre>
+cvs commit
+master/maketars
+master/makezips
+</pre></blockquote>
+
+<p>
+Boot into Windows and execute
+
+<blockquote><pre>
+cd <em>{work}</em>
+unzip -oq gs###lib.zip
+cd gs#.##
+nmake archive
+</pre></blockquote>
+
+<p>
+Boot back into Linux.  (Yes, this is a major pain.  I see no way around it
+if we're going to use self-extracting executables, because WinZipSE doesn't
+run on Linux and Windows is too brain-damaged to use as a general
+development environment.)
+
+<p>
 If you are maintaining local master copies, execute
 
 <blockquote><pre>
@@ -611,8 +648,16 @@ This creates <b><tt>master/###</tt></b> if necessary, and moves the archives
 to it.
 
 <p>
-Upload <b><tt>ghostscript-#.##.tar.*</tt></b> and <b><tt>gs###w32.*</tt></b>
-using the "Release files" facility on SourceForge.
+Tag the source files with the release number by executing
+
+<blockquote><pre>
+cvs tag gs#_#[#]
+</pre></blockquote
+
+<p>
+Upload <b><tt>ghostscript-#.##.tar.*</tt></b> and
+<b><tt>/c/work/gs###*.*</tt></b> using the "Release files" facility on
+SourceForge.
 
 <h2><a name="Tester_or_beta"></a>Tester or beta distributions</h2>
 
@@ -620,8 +665,9 @@ using the "Release files" facility on SourceForge.
 Do the steps for distributions in general.
 
 <p>
-Upload <b><tt>ghostscript-#.##.tar.*</tt></b> and <b><tt>gs###w32.*</tt></b>
-to <b><tt>ftp://ftp.cs.wisc.edu/ghost/aladdin/test</tt></b>.
+Upload <b><tt>ghostscript-#.##.tar.*</tt></b> and
+<b><tt>/c/work/gs###*.*</tt></b> to
+<b><tt>ftp://ftp.cs.wisc.edu/ghost/aladdin/test</tt></b>.
 
 <p>
 Copy the same files from there to
@@ -638,9 +684,9 @@ If <b><tt>doc/C-style.htm</tt></b> has changed, put it on
 <p>
 Construct the e-mail announcement by editing <b><tt>beta.msg</tt></b>;
 include the News section for this release.  Mail using:
-<blockquote>
+<blockquote><pre>
 To: gs-test
-</blockquote>
+</pre></blockquote>
 
 <h2><a name="Public_releases"></a>Public releases</h2>
 
@@ -654,12 +700,17 @@ Do the steps for distributions in general.
 
 <p>
 E-mail the release announcement using:
-<blockquote>
+<blockquote><pre>
 To: gs-announce
-</blockquote>
+</pre></blockquote>
 
 <p>
 Edit the Web pages on the Wisconsin server to reflect the new release.
+
+<h2><a name="After_releasing"></a>After releasing</h2>
+
+<p>
+Edit <b><tt>doc/News.htm</tt></b> to remove all content.
 
 <!-- [2.0 end contents] ==================================================== -->
 
@@ -670,9 +721,9 @@ Edit the Web pages on the Wisconsin server to reflect the new release.
 
 <p>Copyright &copy; 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
-<p>This file is part of Aladdin Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
+<p>This file is part of Aladdin Ghostscript.  See the <a
+href="Public.htm">Aladdin Free Public License</a> (the "License") for full
+details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
