@@ -181,7 +181,7 @@ build_default_palette(
     int             code = 0;
 
     if (pdflt_palette == 0) {
-        code = alloc_palette(&ppalet, pcs->memory);
+        code = alloc_palette(&ppalet, pmem);
         if (code == 0)
             code = pcl_cs_indexed_build_default_cspace( &(ppalet->pindexed),
                                                         pmem
@@ -201,11 +201,9 @@ build_default_palette(
     } else
         pcl_palette_init_from(ppalet, pdflt_palette);
 
-    id_set_value(key, pcs->sel_palette_id);
-    pl_dict_undef(&palette_store, id_key(key), 2);
-    pcs->ppalet = 0;
 
     /* NB: definitions do NOT record a referece */
+    id_set_value(key, pcs->sel_palette_id);
     code = pl_dict_put(&palette_store, id_key(key), 2, ppalet);
     if (code < 0)
         return e_Memory;
@@ -251,6 +249,7 @@ clear_palette_stack(
         gs_free_object(pmem, pentry, "clear palette stack");
         pentry = pnext;
     }
+    palette_stack = 0;
 }
 
 /*
@@ -299,8 +298,8 @@ push_pop_palette(
 
             palette_stack = pentry->pnext;
 
-            /* NB: USE INIT RATHER THAN COPY - pcs->ppalet is not a reference */
-            pcl_palette_init_from(pcs->ppalet, pentry->ppalet);
+            /* NB: just set - pcs->ppalet is not a reference */
+            pcs->ppalet = pentry->ppalet;
 
             /* the dictionary gets the stack reference on the palette */
             id_set_value(key, pcs->sel_palette_id);
@@ -554,8 +553,11 @@ pcl_palette_PW(
         ppalet = pcs->ppalet;
         ppalet->id = palette_id;
 
-    } else if ((code = unshare_palette(pcs)) < 0)
-        return code;
+    } else {
+        if ((code = unshare_palette(pcs)) < 0)
+            return code;
+        ppalet = pcs->ppalet;
+    }
 
     return pcl_cs_indexed_set_pen_width(&(ppalet->pindexed), pen, width);
 }
@@ -743,6 +745,10 @@ set_ctrl_palette_id(
 /*
  * Clear the palette store. This will delete the current palette, but will
  * NOT build the default palette in its place.
+ *
+ * If the current palette id. already has the default palette assigned, don't
+ * bother removing it. This is helpful when working with memory leak detection
+ * tools.
  */
   private void
 clear_palette_store(
@@ -752,11 +758,18 @@ clear_palette_store(
     pl_dict_enum_t  denum;
     void *          pvalue;
     gs_const_string plkey;
+    int             sel_id = pcs->sel_palette_id;
 
     pl_dict_enum_begin(&palette_store, &denum);
-    while (pl_dict_enum_next(&denum, &plkey, &pvalue))
-        pl_dict_undef(&palette_store, plkey.data, plkey.size);
-    pcs->ppalet = 0;
+    while (pl_dict_enum_next(&denum, &plkey, &pvalue)) {
+        int     id = (((int)plkey.data[0]) << 8) + plkey.data[1];
+
+        if (id == sel_id) {
+	    if (pvalue != pdflt_palette)
+                build_default_palette(pcs);     /* will redefine sel_id */
+        } else
+            pl_dict_undef(&palette_store, plkey.data, plkey.size);
+    }
 }
 
 /*
@@ -776,7 +789,6 @@ palette_control(
 
       case 0:
         clear_palette_store(pcs);
-        build_default_palette(pcs);
         break;
 
       case 1:
@@ -784,9 +796,10 @@ palette_control(
         break;
 
       case 2:
-        if (pcs->ctrl_palette_id == pcs->sel_palette_id)
-            build_default_palette(pcs);
-        else {
+        if (pcs->ctrl_palette_id == pcs->sel_palette_id) {
+            if ((pcs->ppalet == 0) || (pcs->ppalet != pdflt_palette))
+                build_default_palette(pcs);
+        } else {
             pcl_id_t  key;
 
             id_set_value(key, pcs->ctrl_palette_id);
