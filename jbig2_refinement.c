@@ -31,9 +31,7 @@
 #include <stddef.h>
 #include <string.h> /* memcpy(), memset() */
 
-#ifdef OUTPUT_PBM
 #include <stdio.h>
-#endif
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
@@ -53,6 +51,99 @@ jbig2_decode_refinement_template0(Jbig2Ctx *ctx,
     "refinement region template 0 NYI");
 }
 
+/* look up a pixel value in an image.
+   returns 0 outside the image frame for the convenience of
+   the template code
+*/
+static int
+jbig2_image_get_pixel(Jbig2Image *image, int x, int y)
+{
+  const int w = image->width;
+  const int h = image->height;
+  const int byte = (x >> 3) + y*image->stride;
+  const int bit = x & 7;
+
+  if ((x < 0) || (x > w)) return 0;
+  if ((y < 0) || (y > h)) return 0;
+  
+  return ((image->data[byte]>>bit) & 1);
+}
+
+static int
+jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value)
+{
+  const int w = image->width;
+  const int h = image->height;
+  int i, scratch, mask;
+  int bit, byte;
+
+  if ((x < 0) || (x > w)) return 0;
+  if ((y < 0) || (y > h)) return 0;
+
+  fprintf(stderr, "set pixel called for image 0x%x (%d x %d) stride %d\n",
+    image, w, h, image->stride);
+
+  byte = (x >> 3) + y*image->stride;
+  bit = x & 7;
+  mask = (1 << bit) ^ 0xff;
+
+  fprintf(stderr, "set pixel mask for bit %d of byte %d (%d,%d) is 0x%02x\n", 
+    bit, byte, x, y, mask);
+
+  scratch = image->data[byte] & mask;
+  image->data[byte] = scratch | (value << bit);
+
+  return 1;
+}
+
+static int
+jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
+                              Jbig2Segment *segment,
+                              const Jbig2RefinementRegionParams *params,
+                              Jbig2ArithState *as,
+                              Jbig2Image *image,
+                              Jbig2ArithCx *GB_stats)
+{
+  const int GBW = image->width;
+  const int GBH = image->height;
+  const int dx = params->DX;
+  const int dy = params->DY;
+  Jbig2Image *ref = params->reference;
+  uint32_t CONTEXT;
+  int x,y;
+  bool bit;
+
+  for (y = 0; y < GBH; y++) {
+    for (x = 0; x < GBH; x++) {
+      CONTEXT = 0;
+      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y + 0) << 0; 
+      CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 1; 
+      CONTEXT |= jbig2_image_get_pixel(image, x + 0, y - 1) << 2; 
+      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 1) << 3; 
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx+1, y-dy+1) << 4;
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy+1) << 5;
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx+1, y-dy+0) << 6;
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy+0) << 7;
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx-1, y-dy+0) << 8;
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy-1) << 9;
+      bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
+      jbig2_image_set_pixel(image, x, y, bit);
+    }
+  }
+
+  {
+    static count = 0;
+    char name[32];
+    snprintf(name, 32, "refin-%d.pbm", count);
+    jbig2_image_write_pbm_file(ref, name);
+    snprintf(name, 32, "refout-%d.pbm", count);
+    jbig2_image_write_pbm_file(image, name);
+    count++;
+  }
+
+  return 0;
+}
+
 static int
 jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
                               Jbig2Segment *segment,
@@ -65,6 +156,8 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
   const int GBH = image->height;
   const int stride = image->stride;
   const int refstride = params->reference->stride;
+  const int dx = params->DX;
+  const int dy = params->DY;
   byte *grreg_line = (byte *)image->data;
   byte *grref_line = (byte *)params->reference->data;
   int x,y;
@@ -78,9 +171,9 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
     uint32_t line_m1;    /* previous line of the decoded bitmap */
 
     line_m1 = (y >= 1) ? grreg_line[-stride] : 0;
-    refline_m1 = (y >= 1) ? grref_line[-stride] << 2: 0;
-    refline_0  = grref_line[0] << 4;
-    refline_1  = (y < GBW - 1) ? grref_line[+stride] << 7 : 0;
+    refline_m1 = ((y-dy) >= 1) ? grref_line[(-1-dy)*stride] << 2: 0;
+    refline_0  = (((y-dy) > 0) && ((y-dy) < GBH)) ? grref_line[(0-dy)*stride] << 4 : 0;
+    refline_1  = (y < GBW - 1) ? grref_line[(+1-dy)*stride] << 7 : 0;
     CONTEXT = ((line_m1 >> 5) & 0x00e) |
 	      ((refline_1 >> 5) & 0x030) |
 	      ((refline_0 >> 5) & 0x1c0) |
@@ -170,7 +263,7 @@ jbig2_decode_refinement_region(Jbig2Ctx *ctx,
     return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "decode_refinement_region: typical prediction coding NYI");
   if (params->GRTEMPLATE)
-    return jbig2_decode_refinement_template1(ctx, segment, params, 
+    return jbig2_decode_refinement_template1_unopt(ctx, segment, params, 
                                              as, image, GB_stats);
   else
     return jbig2_decode_refinement_template0(ctx, segment, params,
