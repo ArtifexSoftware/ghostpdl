@@ -85,12 +85,16 @@ dsc_private void dsc_reset(CDSC *dsc);
 dsc_private void dsc_section_join(DSC_OFFSET begin, DSC_OFFSET *pend, DSC_OFFSET **pplast);
 dsc_private int dsc_read_line(CDSC *dsc);
 dsc_private int dsc_read_doseps(CDSC *dsc);
+dsc_private int dsc_read_macbin(CDSC *dsc);
+dsc_private int dsc_read_applesingle(CDSC *dsc);
 dsc_private char * dsc_alloc_string(CDSC *dsc, const char *str, int len);
 dsc_private char * dsc_add_line(CDSC *dsc, const char *line, unsigned int len);
 dsc_private char * dsc_copy_string(char *str, unsigned int slen, 
     char *line, unsigned int len, unsigned int *offset);
 dsc_private GSDWORD dsc_get_dword(const unsigned char *buf);
 dsc_private GSWORD dsc_get_word(const unsigned char *buf);
+dsc_private GSDWORD dsc_get_bigendian_dword(const unsigned char *buf);
+dsc_private GSWORD dsc_get_bigendian_word(const unsigned char *buf);
 dsc_private int dsc_get_int(const char *line, unsigned int len, unsigned int *offset);
 dsc_private float dsc_get_real(const char *line, unsigned int len, 
     unsigned int *offset);
@@ -357,7 +361,9 @@ dsc_scan_data(CDSC *dsc, const char *data, int length)
 	    }
 	    if (dsc->doseps_end && 
 		(dsc->data_offset + dsc->data_index > dsc->doseps_end)) {
-		/* have read past end of DOS EPS PostScript section */
+		/* have read past end of DOS EPS or Mac Binary 
+		 * PostScript section
+		 */
 		return CDSC_OK;	/* ignore */
 	    }
 	    if (dsc->eof)
@@ -955,6 +961,10 @@ dsc_reset(CDSC *dsc)
 	}
 	dsc->colours = NULL;
     }
+
+    if (dsc->macbin)
+	dsc_memfree(dsc, dsc->macbin);
+    dsc->macbin = NULL;
 }
 
 /* 
@@ -1214,7 +1224,7 @@ dsc_is_section(char *line)
     return FALSE;
 }
 
-
+/* Get little-endian DWORD, used for DOS EPS files */
 dsc_private GSDWORD
 dsc_get_dword(const unsigned char *buf)
 {
@@ -1232,6 +1242,27 @@ dsc_get_word(const unsigned char *buf)
     GSWORD w;
     w = (GSWORD)buf[0];
     w |= (GSWORD)(buf[1]<<8);
+    return w;
+}
+
+/* Get big-endian DWORD, used for Mac Binary files */
+dsc_private GSDWORD
+dsc_get_bigendian_dword(const unsigned char *buf)
+{
+    GSDWORD dw;
+    dw = (GSDWORD)buf[3];
+    dw += ((GSDWORD)buf[2])<<8;
+    dw += ((GSDWORD)buf[1])<<16;
+    dw += ((GSDWORD)buf[0])<<24;
+    return dw;
+}
+
+dsc_private GSWORD
+dsc_get_bigendian_word(const unsigned char *buf)
+{
+    GSWORD w;
+    w = (GSWORD)buf[1];
+    w |= (GSWORD)(buf[0]<<8);
     return w;
 }
 
@@ -1279,6 +1310,97 @@ dsc_read_doseps(CDSC *dsc)
 }
 
 
+dsc_private int
+dsc_read_macbin(CDSC *dsc)
+{
+    unsigned char *line = (unsigned char *)dsc->line;
+    if ((dsc->macbin = 
+	(CDSCMACBIN *)dsc_memalloc(dsc, sizeof(CDSCMACBIN))) == NULL)
+	return CDSC_ERROR;	/* no memory */
+	
+    dsc->macbin->data_begin = 128;
+    dsc->macbin->data_length = dsc_get_bigendian_dword(line+83);
+    dsc->macbin->resource_begin = 
+	(dsc->macbin->data_begin + dsc->macbin->data_length + 127 ) & ~127;
+    dsc->macbin->resource_length = dsc_get_bigendian_dword(line+87);
+
+    if (dsc->file_length && 
+	(((dsc->macbin->resource_begin + dsc->macbin->resource_length 
+	  + 127) & ~127) > dsc->file_length)) {
+	return CDSC_ERROR;
+    }
+
+    dsc->doseps_end = dsc->macbin->data_begin + dsc->macbin->data_length;
+
+    /* move data_index to byte after Mac Binary header */
+    dsc->data_index -= dsc->line_length - 128;
+    /* we haven't read a line of PostScript code yet */
+    dsc->line_count = 0;
+
+    dsc->preview = CDSC_PICT;
+
+    return CDSC_OK;
+}
+
+
+dsc_private int
+dsc_read_applesingle(CDSC *dsc)
+{
+    GSDWORD EntryID;
+    GSDWORD Offset;
+    GSDWORD Length;
+    GSWORD entries;
+    int index;
+    int header;
+    int i;
+
+    unsigned char *line = (unsigned char *)dsc->line;
+    if ((dsc->macbin = 
+	(CDSCMACBIN *)dsc_memalloc(dsc, sizeof(CDSCMACBIN))) == NULL)
+	return CDSC_ERROR;	/* no memory */
+    entries = dsc_get_bigendian_word(line+24);
+    for (i=0; i<(int)entries; i++) {
+	index = 26 + i * 12;
+	EntryID = dsc_get_bigendian_dword(line+index);
+	Offset = dsc_get_bigendian_dword(line+index+4);
+	Length = dsc_get_bigendian_dword(line+index+8);
+	if (EntryID == 1) {
+	    /* data fork */
+	    dsc->macbin->data_begin = Offset;
+	    dsc->macbin->data_length = Length;
+	}
+	else if (EntryID == 2) {
+	    /* resource fork */
+	    dsc->macbin->resource_begin = Offset;
+	    dsc->macbin->resource_length = Length;
+	}
+    }
+	
+    if (dsc->file_length && 
+	(dsc->macbin->resource_begin + dsc->macbin->resource_length
+	  > dsc->file_length)) {
+	return CDSC_ERROR;
+    }
+    if (dsc->file_length && 
+	(dsc->macbin->data_begin + dsc->macbin->data_length 
+	  > dsc->file_length)) {
+	return CDSC_ERROR;
+    }
+
+    dsc->doseps_end = dsc->macbin->data_begin + dsc->macbin->data_length;
+
+    header = 26 + entries * 12;
+    /* move data_index to byte after AppleSingle/AppleDouble header */
+    dsc->data_index -= dsc->line_length - header;
+    /* we haven't read a line of PostScript code yet */
+    dsc->line_count = 0;
+    /* skip from current position to start of PostScript section */
+    dsc->skip_bytes = dsc->macbin->data_begin - header;
+
+    dsc->preview = CDSC_PICT;
+
+    return CDSC_OK;
+}
 
 dsc_private int 
 dsc_parse_pages(CDSC *dsc)
@@ -1950,8 +2072,15 @@ dsc_scan_type(CDSC *dsc)
 	}
     }
 
+    if ((line[0]==0x0) && (length < 2))
+	return CDSC_NEEDMORE;	/* Could be Mac Binary EPSF */
+    if ((line[0]==0x0) && (line[1] >= 1) && (line[1] <= 63) && (length < 128))
+	return CDSC_NEEDMORE;	/* Could be Mac Binary EPSF */
+    if ((line[0]==0x0) && (line[1] == 0x5) && (length < 4))
+	return CDSC_NEEDMORE;	/* Could be Mac AppleSingle/AppleDouble */
     if ((line[0]==0xc5) && (length < 4))
-	return CDSC_NEEDMORE;
+	return CDSC_NEEDMORE;	/* Could be DOS EPS */
+
     if ((line[0]==0xc5) && (line[1]==0xd0) && 
 	 (line[2]==0xd3) && (line[3]==0xc6) ) {
 	/* id is "EPSF" with bit 7 set */
@@ -1960,6 +2089,33 @@ dsc_scan_type(CDSC *dsc)
 	    return CDSC_NEEDMORE;
 	dsc->line = (char *)line;
 	if (dsc_read_doseps(dsc))
+	    return CDSC_ERROR;
+    }
+    else if ((line[0]==0x0) && (line[1]==0x05) && 
+	 (line[2]==0x16) && ((line[3]==0x0) || (line[3] == 0x07))) {
+	/* Mac AppleSingle or AppleDouble */
+	GSDWORD version;
+	GSWORD entries;
+	if (length < 26)
+	    return CDSC_NEEDMORE;
+	version = dsc_get_bigendian_dword(line+4);
+	entries = dsc_get_bigendian_word(line+24);
+	if ((version == 0x00010000) || (version == 0x00020000)) {
+	    if (length < (int)(26 + entries * 12))
+		return CDSC_NEEDMORE;
+	    dsc->line = (char *)line;
+	    if (dsc_read_applesingle(dsc))
+		return CDSC_ERROR;
+	}
+    }
+    else if ((line[0]==0x0) && 
+	(line[1] >= 1) && (line[1] <= 63) && 
+        (line[74]==0x0) && 
+        (line[65]=='E') && (line[66]=='P') && 
+        (line[67]=='S') && (line[68]=='F')) {
+	/* Mac Binary EPSF */
+	dsc->line = (char *)line;
+	if (dsc_read_macbin(dsc))
 	    return CDSC_ERROR;
     }
     else {
@@ -2860,7 +3016,7 @@ dsc_scan_page(CDSC *dsc)
 	    if (dsc->file_length) {
 		if ((!dsc->doseps && 
 			((DSC_END(dsc) + 32768) < dsc->file_length)) ||
-		     ((dsc->doseps) && 
+		     ((dsc->doseps_end) && 
 			((DSC_END(dsc) + 32768) < dsc->doseps_end))) {
 		    int rc = dsc_error(dsc, CDSC_MESSAGE_EARLY_TRAILER, 
 			dsc->line, dsc->line_length);
@@ -2897,7 +3053,7 @@ dsc_scan_page(CDSC *dsc)
 		dsc->page[dsc->page_count-1].end = DSC_START(dsc);
 	    if (dsc->file_length) {
 		if ((DSC_END(dsc)+100 < dsc->file_length) ||
-		    (dsc->doseps && (DSC_END(dsc) + 100 < dsc->doseps_end))) {
+		  (dsc->doseps_end && (DSC_END(dsc) + 100 < dsc->doseps_end))) {
 		    int rc = dsc_error(dsc, CDSC_MESSAGE_EARLY_EOF, 
 			dsc->line, dsc->line_length);
 		    switch (rc) {
@@ -3722,6 +3878,17 @@ dsc_dcs2_fixup(CDSC *dsc)
 	/* end of composite is start of first separation */
 	if (end != 0)
 	    *pend = end;
+	/* According to the DCS2 specification, the size of the composite 
+	 * section can be determined by the smallest #offset.
+	 * Some incorrect DCS2 files don't put the separations inside
+	 * the DOS EPS PostScript section, and have a TIFF separation
+	 * between the composite and the first separation.  This
+	 * contravenes the DCS2 specification.  If we see one of these 
+ 	 * files, bring the end of the composite back to the end of 
+	 * the DOS EPS PostScript section.
+	 */
+	if (dsc->doseps_end && (*pend > dsc->doseps_end))
+	    *pend = dsc->doseps_end;
     }
     return 0;
 }
@@ -4009,6 +4176,41 @@ dsc_parse_process_colours(CDSC *dsc)
 		    }
 		}
 	        pcolour->type = CDSC_COLOUR_PROCESS;
+		if (dsc_stricmp(colourname, "Cyan")==0) {
+		    pcolour->custom = CDSC_CUSTOM_COLOUR_CMYK;
+		    pcolour->cyan = 1.0;
+		    pcolour->magenta = pcolour->yellow = pcolour->black = 0.0;
+		}
+		else if (dsc_stricmp(colourname, "Magenta")==0) {
+		    pcolour->custom = CDSC_CUSTOM_COLOUR_CMYK;
+		    pcolour->magenta = 1.0;
+		    pcolour->cyan = pcolour->yellow = pcolour->black = 0.0;
+		}
+		else if (dsc_stricmp(colourname, "Yellow")==0) {
+		    pcolour->custom = CDSC_CUSTOM_COLOUR_CMYK;
+		    pcolour->yellow = 1.0;
+		    pcolour->cyan = pcolour->magenta = pcolour->black = 0.0;
+		}
+		else if (dsc_stricmp(colourname, "Black")==0) {
+		    pcolour->custom = CDSC_CUSTOM_COLOUR_CMYK;
+		    pcolour->black = 1.0;
+		    pcolour->cyan = pcolour->magenta = pcolour->yellow = 0.0;
+		}
+		else if (dsc_stricmp(colourname, "Red")==0) {
+		    pcolour->custom = CDSC_CUSTOM_COLOUR_RGB;
+		    pcolour->red = 1.0;
+		    pcolour->green = pcolour->blue = 0.0;
+		}
+		else if (dsc_stricmp(colourname, "Green")==0) {
+		    pcolour->custom = CDSC_CUSTOM_COLOUR_RGB;
+		    pcolour->green = 1.0;
+		    pcolour->red = pcolour->blue = 0.0;
+		}
+		else if (dsc_stricmp(colourname, "Blue")==0) {
+		    pcolour->custom = CDSC_CUSTOM_COLOUR_RGB;
+		    pcolour->blue = 1.0;
+		    pcolour->red = pcolour->green = 0.0;
+		}
 	    }
 	} while (i != 0);
     }
