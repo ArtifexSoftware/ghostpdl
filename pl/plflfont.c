@@ -30,9 +30,9 @@
 #include "pllfont.h"
 #include "plvalue.h"
 /* prescribed freetype include file setup */
-#include <ftbuild.h>
+#include <ft2build.h>
 #include FT_FREETYPE_H
-#include <freetype/ftnames.h>
+#include <freetype/ftsnames.h>
 
 /* NB a global */
 FT_Library library;
