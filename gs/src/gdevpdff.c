@@ -1,4 +1,4 @@
-/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -35,6 +35,7 @@
 #include "gdevpdfx.h"
 #include "gdevpdff.h"
 #include "gdevpdfo.h"
+#include "gdevpsf.h"
 #include "scommon.h"
 
 /*
@@ -805,7 +806,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
      * and the fixed width if any.  Avoid computing the bounding box of
      * letters a second time.
      */
-    num_letters = psdf_sort_glyphs(letters, num_letters);
+    num_letters = psf_sort_glyphs(letters, num_letters);
     desc.Ascent = desc.FontBBox.q.y;
     notdef = gs_no_glyph;
     for (index = 0;
@@ -815,7 +816,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
 	gs_glyph_info_t info;
 	gs_const_string gnstr;
 
-	if (psdf_sorted_glyphs_include(letters, num_letters, glyph)) {
+	if (psf_sorted_glyphs_include(letters, num_letters, glyph)) {
 	    /* We don't need the bounding box. */
 	    code = font->procs.glyph_info(font, glyph, pmat,
 					  members - GLYPH_INFO_BBOX, &info);

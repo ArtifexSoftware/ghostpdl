@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,9 +28,33 @@
 #include "gxfont1.h"
 #include "stream.h"
 #include "sfilter.h"
+#include "spsdf.h"
 #include "sstring.h"
 #include "spprint.h"
-#include "gdevpsdf.h"
+#include "gdevpsf.h"
+
+/* ------ Utilities shared with CFF writer ------ */
+
+/* Gather glyph information for a Type 1 or Type 2 font. */
+int
+psf_type1_glyph_data(gs_font_base *pbfont, gs_glyph glyph,
+		     gs_const_string *pstr, gs_font_type1 **ppfont)
+{
+    gs_font_type1 *const pfont = (gs_font_type1 *)pbfont;
+
+    *ppfont = pfont;
+    return pfont->data.procs->glyph_data(pfont, glyph, pstr);
+}
+int
+psf_get_type1_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_type1 *pfont,
+		     gs_glyph *subset_glyphs, uint subset_size)
+{
+    return psf_get_outline_glyphs(pglyphs, (gs_font_base *)pfont,
+				  subset_glyphs, subset_size,
+				  psf_type1_glyph_data);
+}
+
+/* ------ Main program ------ */
 
 /* Write a (named) array of floats. */
 private int
@@ -110,7 +134,7 @@ write_Encoding(stream *s, gs_font_type1 *pfont, int options,
 			 * subset.  Use binary search to check each glyph,
 			 * since subset_glyphs are sorted.
 			 */
-			if (!psdf_sorted_glyphs_include(subset_glyphs,
+			if (!psf_sorted_glyphs_include(subset_glyphs,
 							subset_size, glyph))
 			    continue;
 		    }
@@ -240,22 +264,22 @@ write_Private(stream *s, gs_font_type1 *pfont,
     {
 	int num_chars = 0;
 	gs_glyph glyph;
-	psdf_glyph_enum_t genum;
+	psf_glyph_enum_t genum;
 	gs_const_string gdata;
 	int code;
 
-	psdf_enumerate_glyphs_begin(&genum, (gs_font *)pfont, subset_glyphs,
+	psf_enumerate_glyphs_begin(&genum, (gs_font *)pfont, subset_glyphs,
 				    (subset_glyphs ? subset_size : 0),
 				    GLYPH_SPACE_NAME);
 	for (glyph = gs_no_glyph;
-	     (code = psdf_enumerate_glyphs_next(&genum, &glyph)) != 1;
+	     (code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1;
 	     )
 	    if (code == 0 && (*pdata->procs->glyph_data)(pfont, glyph, &gdata) >= 0)
 		++num_chars;
 	pprintd1(s, "2 index /CharStrings %d dict dup begin\n", num_chars);
-	psdf_enumerate_glyphs_reset(&genum);
+	psf_enumerate_glyphs_reset(&genum);
 	for (glyph = gs_no_glyph;
-	     (code = psdf_enumerate_glyphs_next(&genum, &glyph)) != 1;
+	     (code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1;
 	    )
 	    if (code == 0 && (*pdata->procs->glyph_data)(pfont, glyph, &gdata) >= 0) {
 		uint gssize;
@@ -291,7 +315,7 @@ write_font_info(stream *s, const char *key, const gs_const_string *pvalue,
 
 /* Write the definition of a Type 1 font. */
 int
-psdf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
+psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 		      gs_glyph *orig_subset_glyphs, uint orig_subset_size,
 		      const gs_const_string *alt_font_name, int lengths[3])
 {
@@ -306,100 +330,12 @@ psdf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
     stream exE_stream;
     stream_exE_state exE_state;
     byte exE_buf[200];		/* arbitrary */
-    gs_glyph notdef = gs_no_glyph;
-    gs_glyph subset_data[256 * 3 + 1]; /* *3 for seac, +1 for .notdef */
-    gs_glyph *subset_glyphs = orig_subset_glyphs;
-    uint subset_size = orig_subset_size;
-    int code;
+    psf_outline_glyphs_t glyphs;
+    int code = psf_get_type1_glyphs(&glyphs, pfont, orig_subset_glyphs,
+				     orig_subset_size);
 
-    if (subset_glyphs) {
-	memcpy(subset_data, orig_subset_glyphs,
-	       sizeof(gs_glyph) * subset_size);
-	subset_glyphs = subset_data;
-    }
-
-    /*
-     * Before doing anything else, make sure that this font is writable.
-     * In particular, it must have no CharStrings defined by PostScript
-     * procedures, no non-standard OtherSubrs, and no CDevProc.
-     */
-
-    {
-	gs_glyph glyph;
-	psdf_glyph_enum_t genum;
-	gs_glyph_info_t info;
-	gs_const_string gdata;
-	uint members = GLYPH_INFO_WIDTH0 << pfont->WMode;
-	int code;
-
-	psdf_enumerate_glyphs_begin(&genum, (gs_font *)pfont, subset_glyphs,
-				    (subset_glyphs ? subset_size : 0),
-				    GLYPH_SPACE_NAME);
-	while ((code = psdf_enumerate_glyphs_next(&genum, &glyph)) != 1) {
-	    if (code < 0)
-		return code;
-	    code = (*pfont->data.procs->glyph_data)(pfont, glyph, &gdata);
-	    /*
-	     * If the glyph isn't defined by a CharString, glyph_data will
-	     * return a typecheck error.  But if there's merely a glyph in
-	     * in the Encoding that isn't defined, glyph_data will return an
-	     * undefined error, which is OK.
-	     */
-	    if (code < 0) {
-		if (code == gs_error_undefined)
-		    continue;
-		return code;
-	    }
-	    /*
-	     * If the font has a CDevProc or calls a non-standard OtherSubr,
-	     * glyph_info will return a rangecheck error.
-	     */
-	    code = pfont->procs.glyph_info((gs_font *)pfont, glyph, NULL,
-					   members, &info);
-	    if (code < 0)
-		return code;
-	}
-    }
-
-    {
-	/*
-	 * Detect the .notdef glyph, needed for subset fonts and to
-	 * eliminate unnecessary Encoding assignments.
-	 */
-	psdf_glyph_enum_t genum;
-	gs_glyph glyph;
-
-	psdf_enumerate_glyphs_begin(&genum, (gs_font *)pfont, NULL, 0,
-				    GLYPH_SPACE_NAME);
-	while ((code = psdf_enumerate_glyphs_next(&genum, &glyph)) != 1) {
-	    uint namelen;
-	    const char *namestr =
-		(*pfont->procs.callbacks.glyph_name)(glyph, &namelen);
-
-	    if (namestr && namelen == 7 && !memcmp(namestr, ".notdef", 7)) {
-		notdef = glyph;
-		break;
-	    }
-	}
-    }
-    if (subset_glyphs) {
-	/*
-	 * For subset fonts, we must ensure that characters referenced
-	 * by seac are also included.  Note that seac creates at most
-	 * 2 pieces.
-	 */
-	code = psdf_add_subset_pieces(subset_glyphs, &subset_size,
-				      countof(subset_data) - 1, 2,
-				      (gs_font *)pfont);
-	if (code < 0)
-	    return code;
-	/* Subset fonts require .notdef. */
-	if (notdef == gs_no_glyph)
-	    return_error(gs_error_rangecheck);
-	/* Sort the glyphs now.  Make sure .notdef is included. */
-	subset_glyphs[subset_size++] = notdef;
-	subset_size = psdf_sort_glyphs(subset_glyphs, subset_size);
-    }
+    if (code < 0)
+	return code;
 
     /* Initialize the parameter printer. */
 
@@ -446,8 +382,8 @@ psdf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
     pputs(s, "/FontName /");
     write_font_name(s, pfont, alt_font_name);
     pputs(s, " def\n");
-    code = write_Encoding(s, pfont, options, subset_glyphs, subset_size,
-			  notdef);
+    code = write_Encoding(s, pfont, options, glyphs.subset_glyphs,
+			  glyphs.subset_size, glyphs.notdef);
     if (code < 0)
 	return code;
     pprintg6(s, "/FontMatrix [%g %g %g %g %g %g] readonly def\n",
@@ -502,7 +438,8 @@ psdf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 		      exE_buf, sizeof(exE_buf), es);
 	es = &exE_stream;
     }
-    code = write_Private(es, pfont, subset_glyphs, subset_size, notdef, &ppp);
+    code = write_Private(es, pfont, glyphs.subset_glyphs, glyphs.subset_size,
+			 glyphs.notdef, &ppp);
     if (code < 0)
 	return code;
     pputs(es, "dup/FontName get exch definefont pop\n");

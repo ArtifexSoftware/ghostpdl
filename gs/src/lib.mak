@@ -1723,6 +1723,7 @@ $(GLD)ttflib.dev : $(LIB_MAK) $(ECHOGS_XE) $(ttflib_)
 	$(SETMOD) $(GLD)ttflib $(ttflib_)
 
 gxfont42_h=$(GLSRC)gxfont42.h
+gxttf_h=$(GLSRC)gxttf.h
 
 $(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(GXERR) $(memory__h)\
  $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\

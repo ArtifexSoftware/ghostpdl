@@ -625,8 +625,8 @@ gdevpsdf_h=$(GLSRC)gdevpsdf.h $(gdevvec_h) $(gsparam_h)\
  $(sa85x_h) $(scfx_h) $(spsdf_h) $(strimpl_h)
 gdevpsds_h=$(GLSRC)gdevpsds.h $(strimpl_h)
 
-psdf_1=$(GLOBJ)gdevpsd1.$(OBJ) $(GLOBJ)gdevpsdf.$(OBJ) $(GLOBJ)gdevpsdi.$(OBJ)
-psdf_2=$(GLOBJ)gdevpsdp.$(OBJ) $(GLOBJ)gdevpsds.$(OBJ) $(GLOBJ)gdevpsdt.$(OBJ)
+psdf_1=$(GLOBJ)gdevpsdf.$(OBJ) $(GLOBJ)gdevpsdi.$(OBJ)
+psdf_2=$(GLOBJ)gdevpsdp.$(OBJ) $(GLOBJ)gdevpsds.$(OBJ)
 psdf_3=$(GLOBJ)scfparam.$(OBJ) $(GLOBJ)sdcparam.$(OBJ) $(GLOBJ)sdeparam.$(OBJ)
 psdf_4=$(GLOBJ)spprint.$(OBJ) $(GLOBJ)spsdf.$(OBJ) $(GLOBJ)sstring.$(OBJ)
 psdf_=$(psdf_1) $(psdf_2) $(psdf_3) $(psdf_4)
@@ -640,12 +640,6 @@ $(DD)psdf.dev : $(DEVS_MAK) $(ECHOGS_XE) $(psdf_) $(psdf_inc)
 	$(ADDMOD) $(DD)psdf -obj $(psdf_4)
 	$(ADDMOD) $(DD)psdf -include $(psdf_inc1)
 	$(ADDMOD) $(DD)psdf -include $(psdf_inc2)
-
-$(GLOBJ)gdevpsd1.$(OBJ) : $(GLSRC)gdevpsd1.c $(GXERR) $(memory__h)\
- $(gsccode_h) $(gsmatrix_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
- $(sfilter_h) $(stream_h) $(sstring_h)\
- $(gdevpsdf_h) $(spprint_h)
-	$(GLCC) $(GLO_)gdevpsd1.$(OBJ) $(C_) $(GLSRC)gdevpsd1.c
 
 $(GLOBJ)gdevpsdf.$(OBJ) : $(GLSRC)gdevpsdf.c $(GXERR) $(memory__h)\
  $(gxfont_h)\
@@ -671,11 +665,47 @@ $(GLOBJ)gdevpsds.$(OBJ) : $(GLSRC)gdevpsds.c $(GX) $(memory__h)\
  $(gdevpsds_h) $(gserrors_h) $(gxdcconv_h)
 	$(GLCC) $(GLO_)gdevpsds.$(OBJ) $(C_) $(GLSRC)gdevpsds.c
 
-$(GLOBJ)gdevpsdt.$(OBJ) : $(GLSRC)gdevpsdt.c $(GXERR) $(memory__h)\
- $(gsmatrix_h) $(gsutil_h) $(gxfont_h) $(gxfont42_h)\
+# Support for PostScript and PDF font writing
+
+gdevpsf_h=$(GLSRC)gdevpsf.h $(gsccode_h)
+
+psf_1=$(GLOBJ)gdevpsf1.$(OBJ) $(GLOBJ)gdevpsf2.$(OBJ)
+psf_2=$(GLOBJ)gdevpsft.$(OBJ) $(GLOBJ)gdevpsfu.$(OBJ) $(GLOBJ)gdevpsfx.$(OBJ)
+psf_=$(psf_1) $(psf_2)
+$(DD)psf.dev : $(DEVS_MAK) $(ECHOGS_XE) $(psf_)
+	$(SETMOD) $(DD)psf $(psf_1)
+	$(ADDMOD) $(DD)psf -obj $(psf_2)
+
+$(GLOBJ)gdevpsf1.$(OBJ) : $(GLSRC)gdevpsf1.c $(GXERR) $(memory__h)\
+ $(gsccode_h) $(gsmatrix_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
+ $(sfilter_h) $(stream_h) $(sstring_h)\
+ $(gdevpsf_h) $(spprint_h) $(spsdf_h)
+	$(GLCC) $(GLO_)gdevpsf1.$(OBJ) $(C_) $(GLSRC)gdevpsf1.c
+
+$(GLOBJ)gdevpsf2.$(OBJ) : $(GLSRC)gdevpsf2.c $(GXERR)\
+ $(math__h) $(memory__h)\
+ $(gsccode_h) $(gscrypt1_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gxfcid_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
+ $(sfilter_h) $(stream_h)\
+ $(gdevpsf_h)
+	$(GLCC) $(GLO_)gdevpsf2.$(OBJ) $(C_) $(GLSRC)gdevpsf2.c
+
+$(GLOBJ)gdevpsft.$(OBJ) : $(GLSRC)gdevpsft.c $(GXERR) $(memory__h)\
+ $(gsmatrix_h) $(gsutil_h) $(gxfont_h) $(gxfont42_h) $(gxttf_h)\
  $(spprint_h) $(stream_h)\
- $(gdevpsdf_h)
-	$(GLCC) $(GLO_)gdevpsdt.$(OBJ) $(C_) $(GLSRC)gdevpsdt.c
+ $(gdevpsf_h)
+	$(GLCC) $(GLO_)gdevpsft.$(OBJ) $(C_) $(GLSRC)gdevpsft.c
+
+$(GLOBJ)gdevpsfu.$(OBJ) : $(GLSRC)gdevpsfu.c $(GXERR) $(memory__h)\
+ $(gsmatrix_h) $(gxfont_h) $(gdevpsf_h)
+	$(GLCC) $(GLO_)gdevpsfu.$(OBJ) $(C_) $(GLSRC)gdevpsfu.c
+
+$(GLOBJ)gdevpsfx.$(OBJ) : $(GLSRC)gdevpsfx.c $(GXERR)\
+ $(math__h) $(memory__h)\
+ $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxmatrix_h) $(gxtype1_h)\
+ $(stream_h)\
+ $(gdevpsf_h)
+	$(GLCC) $(GLO_)gdevpsfx.$(OBJ) $(C_) $(GLSRC)gdevpsfx.c
 
 # PostScript and EPS writers
 
@@ -708,8 +738,9 @@ pdfwrite5_=$(GLOBJ)gsflip.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
 pdfwrite6_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
 pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_) $(pdfwrite5_) $(pdfwrite6_)
 $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
- $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev $(GLD)rle.dev\
- $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)szlibe.dev $(GLD)psdf.dev
+ $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
+ $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev\
+ $(GLD)szlibe.dev $(GLD)psdf.dev $(GLD)psf.dev
 	$(SETDEV2) $(DD)pdfwrite $(pdfwrite1_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite2_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite3_)
@@ -721,7 +752,7 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite -ps gs_mgl_e gs_mro_e gs_wan_e
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)cmyklib $(GLD)cfe $(GLD)lzwe
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)rle $(GLD)sdcte $(GLD)sdeparam
-	$(ADDMOD) $(DD)pdfwrite -include $(GLD)szlibe $(GLD)psdf
+	$(ADDMOD) $(DD)pdfwrite -include $(GLD)szlibe $(GLD)psdf $(GLD)psf
 
 gdevpdff_h=$(GLSRC)gdevpdff.h
 gdevpdfo_h=$(GLSRC)gdevpdfo.h
@@ -742,7 +773,7 @@ $(GLOBJ)gdevpdfd.$(OBJ) : $(GLSRC)gdevpdfd.c $(math__h)\
 
 $(GLOBJ)gdevpdff.$(OBJ) : $(GLSRC)gdevpdff.c\
  $(ctype__h) $(math__h) $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdff_h) $(gdevpdfo_h) $(gdevpdfx_h)\
+ $(gdevpdff_h) $(gdevpdfo_h) $(gdevpdfx_h) $(gdevpsf_h)\
  $(gserrors_h) $(gsmalloc_h) $(gsmatrix_h) $(gspath_h) $(gsutil_h)\
  $(gxfcache_h) $(gxfixed_h) $(gxfont_h) $(gxpath_h)\
  $(scommon_h)
@@ -797,7 +828,7 @@ $(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GDEVH)\
 
 $(GLOBJ)gdevpdfw.$(OBJ) : $(GLSRC)gdevpdfw.c\
  $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdff_h) $(gdevpdfx_h)\
+ $(gdevpdff_h) $(gdevpdfx_h) $(gdevpsf_h)\
  $(gserrors_h) $(gsmalloc_h) $(gsmatrix_h) $(gsutil_h) $(gxfont_h)\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdfw.$(OBJ) $(C_) $(GLSRC)gdevpdfw.c

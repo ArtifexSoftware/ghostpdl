@@ -1,4 +1,4 @@
-/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,6 +28,7 @@
 #include "gxfont.h"
 #include "gdevpdfx.h"
 #include "gdevpdff.h"
+#include "gdevpsf.h"
 #include "scommon.h"
 
 /* Get the ID of various kinds of resources, with type checking. */
@@ -100,8 +101,8 @@ pdf_embed_font_type1(gx_device_pdf *pdev, gs_font_type1 *font,
      * the stack.
      */
 #define TYPE1_OPTIONS (WRITE_TYPE1_EEXEC | WRITE_TYPE1_EEXEC_MARK)
-    code = psdf_write_type1_font(&poss, font, TYPE1_OPTIONS,
-				 subset_glyphs, subset_size, pfname, lengths);
+    code = psf_write_type1_font(&poss, font, TYPE1_OPTIONS,
+				subset_glyphs, subset_size, pfname, lengths);
     if (code < 0)
 	return code;
     pdf_open_separate(pdev, FontFile_id);
@@ -116,9 +117,9 @@ pdf_embed_font_type1(gx_device_pdf *pdev, gs_font_type1 *font,
     {
 	int check_lengths[3];
 
-	psdf_write_type1_font(writer.strm, font, TYPE1_OPTIONS,
-			      subset_glyphs, subset_size, pfname,
-			      check_lengths);
+	psf_write_type1_font(writer.strm, font, TYPE1_OPTIONS,
+			     subset_glyphs, subset_size, pfname,
+			     check_lengths);
 	if (writer.strm == pdev->strm &&
 	    (check_lengths[0] != lengths[0] ||
 	     check_lengths[1] != lengths[1] ||
@@ -130,9 +131,9 @@ pdf_embed_font_type1(gx_device_pdf *pdev, gs_font_type1 *font,
 	}
     }
 #else
-    psdf_write_type1_font(writer.strm, font, TYPE1_OPTIONS,
-			  subset_glyphs, subset_size, pfname,
-			  lengths /*ignored*/);
+    psf_write_type1_font(writer.strm, font, TYPE1_OPTIONS,
+			 subset_glyphs, subset_size, pfname,
+			 lengths /*ignored*/);
 #endif
 #undef TYPE1_OPTIONS
     psdf_end_binary(&writer);
@@ -158,8 +159,8 @@ pdf_embed_font_type42(gx_device_pdf *pdev, gs_font_type42 *font,
 	 WRITE_TRUETYPE_NO_TRIMMED_TABLE : 0);
 
     swrite_position_only(&poss);
-    code = psdf_write_truetype_font(&poss, font, options,
-				    subset_glyphs, subset_size, pfname);
+    code = psf_write_truetype_font(&poss, font, options,
+				   subset_glyphs, subset_size, pfname);
     if (code < 0)
 	return code;
     length = stell(&poss);
@@ -170,8 +171,8 @@ pdf_embed_font_type42(gx_device_pdf *pdev, gs_font_type42 *font,
     code = psdf_begin_binary((gx_device_psdf *)pdev, &writer);
     if (code < 0)
 	return code;
-    psdf_write_truetype_font(writer.strm, font, options,
-			     subset_glyphs, subset_size, pfname);
+    psf_write_truetype_font(writer.strm, font, options,
+			    subset_glyphs, subset_size, pfname);
     psdf_end_binary(&writer);
     pdf_end_fontfile(pdev, start, length_id);
     return 0;
@@ -318,8 +319,8 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev,
 	if (pdf_has_subset_prefix(pfd->FontName.chars, pfd->FontName.size)) {
 	    gs_font *font = pfd->base_font;
 	    gs_glyph subset_glyphs[256];
-	    uint subset_size = psdf_subset_glyphs(subset_glyphs, font,
-						  pfd->chars_used);
+	    uint subset_size = psf_subset_glyphs(subset_glyphs, font,
+						 pfd->chars_used);
 	    int i;
 
 	    pputs(s, "/CharSet(");
@@ -474,8 +475,8 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	if ((double)used / total > pdev->params.MaxSubsetPct / 100.0)
 	    do_subset = false;
 	else {
-	    subset_size = psdf_subset_glyphs(subset_glyphs, font,
-					     pfd->chars_used);
+	    subset_size = psf_subset_glyphs(subset_glyphs, font,
+					    pfd->chars_used);
 	    glyph_subset = subset_glyphs;
 	}
     }

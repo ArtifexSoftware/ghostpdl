@@ -1,4 +1,4 @@
-/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,9 +26,12 @@
 #include "gsutil.h"
 #include "gxfont.h"
 #include "gxfont42.h"
+#include "gxttf.h"
 #include "stream.h"
 #include "spprint.h"
-#include "gdevpsdf.h"
+#include "gdevpsf.h"
+
+/* ---------------- Utilities ---------------- */
 
 #define ACCESS(base, length, vptr)\
   BEGIN\
@@ -164,6 +167,10 @@ mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr)
     }
     return -1;
 }
+
+/* ---------------- Individual tables ---------------- */
+
+/* ------ cmap ------ */
 
 /* Write a generated cmap table. */
 static const byte cmap_initial_0[] = {
@@ -317,6 +324,8 @@ size_cmap(gs_font *font, uint first_code, int num_glyphs, gs_glyph max_glyph,
     return stell(&poss);
 }
 
+/* ------ name ------ */
+
 /* Write a generated name table. */
 static const byte name_initial[] = {
     0, 0,			/* format */
@@ -347,43 +356,12 @@ write_name(stream *s, const gs_const_string *font_name)
     put_pad(s, size_name(font_name));
 }
 
+/* ------ OS/2 ------ */
+
 /* Write a generated OS/2 table. */
-typedef struct OS_2_s {
-    byte
-	version[2],		/* version 1 */
-	xAvgCharWidth[2],
-	usWeightClass[2],
-	usWidthClass[2],
-	fsType[2],
-	ySubscriptXSize[2],
-	ySubscriptYSize[2],
-	ySubscriptXOffset[2],
-	ySubscriptYOffset[2],
-	ySuperscriptXSize[2],
-	ySuperscriptYSize[2],
-	ySuperscriptXOffset[2],
-	ySuperscriptYOffset[2],
-	yStrikeoutSize[2],
-	yStrikeoutPosition[2],
-	sFamilyClass[2],
-	/*panose:*/
-	    bFamilyType, bSerifStyle, bWeight, bProportion, bContrast,
-	    bStrokeVariation, bArmStyle, bLetterform, bMidline, bXHeight,
-	ulUnicodeRanges[16],
-	achVendID[4],
-	fsSelection[2],
-	usFirstCharIndex[2],
-	usLastCharIndex[2],
-	sTypoAscender[2],
-	sTypoDescender[2],
-	sTypoLineGap[2],
-	usWinAscent[2],
-	usWinDescent[2],
-	ulCodePageRanges[8];
-} OS_2_t;
-#define OS_2_LENGTH sizeof(OS_2_t)
+#define OS_2_LENGTH sizeof(ttf_OS_2_t)
 private void
-update_OS_2(OS_2_t *pos2, uint first_glyph, int num_glyphs)
+update_OS_2(ttf_OS_2_t *pos2, uint first_glyph, int num_glyphs)
 {
     put_u16(pos2->usFirstCharIndex, first_glyph);
     put_u16(pos2->usLastCharIndex, first_glyph + num_glyphs - 1);
@@ -391,7 +369,7 @@ update_OS_2(OS_2_t *pos2, uint first_glyph, int num_glyphs)
 private void
 write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
 {
-    OS_2_t os2;
+    ttf_OS_2_t os2;
 
     /*
      * We don't bother to set most of the fields.  The really important
@@ -409,6 +387,8 @@ write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
     pwrite(s, &os2, sizeof(os2));
     put_pad(s, sizeof(os2));
 }
+
+/* ------ post ------ */
 
 /* Construct and then write the post table. */
 typedef struct post_glyph_s {
@@ -532,7 +512,7 @@ compare_table_tags(const void *pt1, const void *pt2)
     return (t1 < t2 ? -1 : t1 > t2 ? 1 : 0);
 }
 int
-psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
+psf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 			 gs_glyph *orig_subset_glyphs, uint orig_subset_size,
 			 const gs_const_string *alt_font_name)
 {
@@ -545,7 +525,7 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 #define MAX_NUM_TABLES 40
     byte tables[MAX_NUM_TABLES * 16];
     uint i;
-    psdf_glyph_enum_t genum;
+    psf_glyph_enum_t genum;
     ulong offset;
     gs_glyph glyph, glyph_prev;
     ulong max_glyph;
@@ -581,13 +561,13 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 	memcpy(subset_data, orig_subset_glyphs,
 	       sizeof(gs_glyph) * subset_size);
 	subset_glyphs = subset_data;
-	code = psdf_add_subset_pieces(subset_glyphs, &subset_size,
+	code = psf_add_subset_pieces(subset_glyphs, &subset_size,
 				      countof(subset_data),
 				      countof(subset_data),
 				      font);
 	if (code < 0)
 	    return code;
-	subset_size = psdf_sort_glyphs(subset_glyphs, subset_size);
+	subset_size = psf_sort_glyphs(subset_glyphs, subset_size);
     }
 
     /*
@@ -648,11 +628,11 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
      */
 
     /****** NO CHECKSUMS YET ******/
-    psdf_enumerate_glyphs_begin(&genum, font, subset_glyphs,
+    psf_enumerate_glyphs_begin(&genum, font, subset_glyphs,
 				(subset_glyphs ? subset_size : 0),
 				GLYPH_SPACE_INDEX);
     for (max_glyph = 0, glyf_length = 0;
-	 (code = psdf_enumerate_glyphs_next(&genum, &glyph)) != 1;
+	 (code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1;
 	 ) {
 	uint glyph_index;
 	gs_const_string glyph_string;
@@ -811,10 +791,10 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 
     /* Write glyf. */
 
-    psdf_enumerate_glyphs_begin(&genum, font, subset_glyphs,
+    psf_enumerate_glyphs_begin(&genum, font, subset_glyphs,
 				(subset_glyphs ? subset_size : max_glyph + 1),
 				GLYPH_SPACE_INDEX);
-    for (offset = 0; psdf_enumerate_glyphs_next(&genum, &glyph) != 1; ) {
+    for (offset = 0; psf_enumerate_glyphs_next(&genum, &glyph) != 1; ) {
 	gs_const_string glyph_string;
 
 	if (pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
@@ -830,9 +810,9 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 
     /* Write loca. */
 
-    psdf_enumerate_glyphs_reset(&genum);
+    psf_enumerate_glyphs_reset(&genum);
     glyph_prev = gs_min_cid_glyph;
-    for (offset = 0; psdf_enumerate_glyphs_next(&genum, &glyph) != 1; ) {
+    for (offset = 0; psf_enumerate_glyphs_next(&genum, &glyph) != 1; ) {
 	gs_const_string glyph_string;
 
 	for (; glyph_prev <= glyph; ++glyph_prev)
@@ -861,7 +841,7 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 	 * to reflect the values in the generated cmap.
 	 */
 	const byte *pos2;
-	OS_2_t os2;
+	ttf_OS_2_t os2;
 
 	ACCESS(OS_2_start, OS_2_length, pos2);
 	memcpy(&os2, pos2, min(OS_2_length, sizeof(os2)));
