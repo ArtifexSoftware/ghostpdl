@@ -36,7 +36,7 @@
  */
 int
 scan_number(const byte * str, const byte * end, int sign,
-	    ref * pref, const byte ** psp)
+	    ref * pref, const byte ** psp, const bool PDFScanRules)
 {
     const byte *sp = str;
 #define GET_NEXT(cvar, sp, end_action)\
@@ -270,7 +270,22 @@ l2d:
     /* We saw a '.' while accumulating an integer in ival. */
 i2r:
     exp10 = 0;
-    while (IS_DIGIT(d, c)) {
+    while (IS_DIGIT(d, c) || c == '-') {
+	/*
+	 * PostScript gives an error on numbers with a '-' following a '.'
+	 * Adobe Acrobat Reader (PDF) apparently doesn't treat this as an
+	 * error. Experiments show that the numbers following the '-' are
+	 * ignored, so we swallow the fractional part. PDFScanRules enables
+	 * this compatibility kloodge.
+	 */
+	if (c == '-') {
+	    if (!PDFScanRules)
+		break;
+	    do {
+		GET_NEXT(c, sp, c = EOFC);
+	    } while (IS_DIGIT(d, c));
+	    break;
+	}
 	if (WOULD_OVERFLOW(ival, d, max_int)) {
 	    lval = ival;
 	    goto l2r;
@@ -293,7 +308,16 @@ i2r:
 
     /* We saw a '.' while accumulating a long in lval. */
 l2r:
-    while (IS_DIGIT(d, c)) {
+    while (IS_DIGIT(d, c) || c == '-') {
+	/* Handle bogus '-' following '.' as in i2r above.	*/
+	if (c == '-') {
+	    if (!PDFScanRules)
+		break;
+	    do {
+		GET_NEXT(c, sp, c = EOFC);
+	    } while (IS_DIGIT(d, c));
+	    break;
+	}
 	if (WOULD_OVERFLOW(lval, d, max_long)) {
 	    dval = lval;
 	    goto fd;

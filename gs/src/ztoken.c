@@ -338,9 +338,10 @@ ztoken_scanner_options(const ref *upref, int old_options)
 	const char *pname;
 	int option;
     } named_scanner_option_t;
-    static const named_scanner_option_t named_options[2] = {
+    static const named_scanner_option_t named_options[3] = {
 	{"ProcessComment", SCAN_PROCESS_COMMENTS},
-	{"ProcessDSCComment", SCAN_PROCESS_DSC_COMMENTS}
+	{"ProcessDSCComment", SCAN_PROCESS_DSC_COMMENTS},
+	{"PDFScanRules", SCAN_PDF_RULES}
     };
     int options = old_options;
     int i;

@@ -111,9 +111,12 @@ extern_st(st_scanner_state);
 				/* (for Level 1 `\' handling) */
 #define SCAN_CHECK_ONLY 2	/* true if just checking for syntax errors */
 				/* and complete statements (no value) */
-#define SCAN_PROCESS_COMMENTS 4  /* return scan_Comment for comments */
+#define SCAN_PROCESS_COMMENTS 4	/* return scan_Comment for comments */
 				/* (all comments or only non-DSC) */
 #define SCAN_PROCESS_DSC_COMMENTS 8  /* return scan_DSC_Comment */
+#define SCAN_PDF_RULES 16	/* Special PDF scanning rules used */
+				/* This is for compatibility with Adobe */
+				/* Acrobat Reader			*/
 void scanner_state_init_options(P2(scanner_state *sstate, int options));
 #define scanner_state_init_check(pstate, from_string, check_only)\
   scanner_state_init_options(pstate,\
