@@ -28,6 +28,7 @@
 <li><a href="#JFIF">JPEG file format (JFIF)</a>
 <li><a href="#TIFF">TIFF file formats</a>
 </ul>
+<li><a href="#HP_ijs">HP Deskjet official drivers
 <li><a href="#HP8_color_inkjet">H-P 8xx, 1100, and 1600 color inkjet printers</a>
 <ul>
 <li><a href="#HP8_gdevcd8">Drivers contained in <b><tt>gdevcd8.c</tt></b></a>
@@ -566,6 +567,51 @@ which must start over for each strip.
 <p>
 If the value of MaxStripSize is 0 (the default), then the entire image will
 be a single strip.
+
+<hr>
+
+<h2><a name="HP_ijs"></a>HP Deskjet official drivers</h2>
+
+<p>
+HP provides official drivers for many of their Deskjet printer models.
+In order to use these drivers, you will need the HP Inkjet Server as
+well as Ghostscript, available from <a
+href="http://hpinkjet.sourceforge.net">http://hpinkjet.sourceforge.net</a>.
+This version of Ghostscript includes the patch from version 0.94 of
+the hpijs software. If you are installing hpijs from an RPM, you will
+only need the hpijs RPM, not the ghostscript-hpijs one, as the code
+needed to work with hpijs is already included.
+
+<p>
+As of the 0.94 version, hpijs supports the following printer models:
+
+<dl><dt><b>e-Series:</b>
+ <dd>e-20
+<dt><b>DeskJet 600C Series:</b>
+ <dd>600C, 660C, 670/672C, 670TV, 680/682C
+<dt><b>DeskJet 600C Series Photo:</b>
+ <dd>610/612C, 640/648C, 690/692/693/694/695/697C
+<dt><b>DeskJet 630C Series:</b>
+ <dd>630/632C
+<dt><b>DeskJet 800C Series:</b>
+ <dd>810/812C, 830/832C, 840/842/843C, 880/882C, 895C
+<dt><b>DeskJet 900C Series:</b>
+ <dd>930/932C, 950/952C, 970C
+<dt><b>DeskJet 990C</b>
+</ul>
+
+<p>You will need to add the following line to your makefile:
+
+<blockquote>
+DEVICE_DEVS2=DJ630.dev DJ6xx.dev DJ6xxP.dev DJ8xx.dev DJ9xx.dev DJ9xxVIP.dev AP21xx.dev
+</blockquote>
+
+<p>
+Please see <a
+href="http://hpinkjet.sourceforge.net">http://hpinkjet.sourceforge.net</a>
+for more information about this driver. Thanks to the folks at HP,
+especially David Suffield for making this driver available and working to
+integrate it with Ghostscript.
 
 <hr>
 
