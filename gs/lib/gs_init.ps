@@ -31,7 +31,7 @@
 
 % Check the interpreter revision.  NOTE: the interpreter code requires
 % that the first non-comment token in this file be an integer.
-700
+701
 dup revision ne
  { (gs: Interpreter revision \() print revision 10 string cvs print
    (\) does not match gs_init.ps revision \() print 10 string cvs print
@@ -199,7 +199,7 @@ userdict /=string 256 string put
    revisiondate 100 idiv 10 mod revisiondate 1000 idiv 10 mod (-)
    revisiondate 10000 idiv ( \()
    revision 10 mod
-   revision 100 mod dup 0 ne { 10 idiv } { pop } ifelse (.)
+   revision 100 mod 10 idiv (.)
    revision 100 idiv ( )
    product
    counttomark
