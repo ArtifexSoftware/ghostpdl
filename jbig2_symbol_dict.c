@@ -359,7 +359,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		  if (params->SDHUFF) {
 		      /* todo */
 		  } else {
-		      code = jbig2_arith_int_decode(IAAI, as, &REFAGGNINST);
+		      code = jbig2_arith_int_decode(IAAI, as, (int32_t*)&REFAGGNINST);
 		  }
 		  if (code || (int32_t)REFAGGNINST <= 0)
 		      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
