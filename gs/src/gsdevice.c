@@ -19,7 +19,7 @@
 /*$Id$ */
 /* Device operators for Ghostscript library */
 #include "ctype_.h"
-#include "memory_.h"		/* for memcpy */
+#include "memory_.h"		/* for memchr, memcpy */
 #include "string_.h"
 #include "gx.h"
 #include "gp.h"
@@ -635,7 +635,7 @@ int
 gx_parse_output_file_name(gs_parsed_file_name_t *pfn, const char **pfmt,
 			  const char *fname, uint fnlen)
 {
-    int code = gs_parse_file_name(pfn, fname, fnlen);
+    int code;
     bool have_format = false, field = 0;
     int width[2], int_width = sizeof(int) * 3, w = 0;
     uint i;
@@ -648,8 +648,21 @@ gx_parse_output_file_name(gs_parsed_file_name_t *pfn, const char **pfmt,
 	pfn->len = 0;
 	return 0;
     }
-    if (code < 0)
-	return code;
+    /*
+     * If the file name begins with a %, it might be either an IODevice
+     * or a %nnd format.  Distinguish the two by searching for a second %.
+     */
+    if (fname[0] == '%' && !memchr(fname + 1, '%', fnlen - 1)) {
+	/* This is a file name starting with a format. */
+	pfn->memory = 0;
+	pfn->iodev = NULL;
+	pfn->fname = fname;
+	pfn->len = fnlen;
+    } else {
+	code = gs_parse_file_name(pfn, fname, fnlen);
+	if (code < 0)
+	    return code;
+    }
     if (!pfn->iodev) {
 	if (!strcmp(pfn->fname, "-")) {
 	    pfn->iodev = gs_findiodevice((const byte *)"%stdout", 7);
