@@ -21,7 +21,7 @@
 
 # hrefcov.tcl - check that the hrefs in an HTML document mention all of a
 # set of files.  The requirement is that the union of all the docfiles
-# must somewhere reference all the files directories.  Usage:
+# must somewhere reference all the files.  Usage:
 set USAGE {Usage:
     hrefcov (+src | +lib | [+-]from <docfile> | [+-]to (<directory> | <file>))*
 }
@@ -34,7 +34,8 @@ set SRC_LIST [list\
 	+to lib src\
 	-to lib/CVS src/CVS\
 	-to src/*.mak.tcl\
-	-to lib/*.ps +to lib/pdf_*.ps
+	-to lib/*.upp\
+	-to lib/*.ps +to lib/gs_*.ps lib/pdf_*.ps
 ]
 set LIB_LIST [list\
 	+from doc/Psfiles.htm\
