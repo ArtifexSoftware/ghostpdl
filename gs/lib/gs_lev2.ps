@@ -76,13 +76,14 @@ level2dict begin
 /.copyparam {			% <value> .copyparam <value'>
   dup type /arraytype eq {
     .currentglobal true .setglobal exch 
-    dup xcheck exch		% original executable state
-    [ exch {
+    dup wcheck exch dup xcheck exch		% original attributes
+    dup {
       dup type dup /arraytype eq exch /stringtype eq or {
         .copyparam	% recurse to handle composite array elements
-      } if
-    } forall ]
+      } if exch		% keep oroiginal array on top
+    } forall length array astore
     exch { cvx } if		% set executable state
+    exch { readonly } if	% set readonly attribute as original
     exch .setglobal
   } if
   dup type /stringtype eq {
@@ -243,8 +244,13 @@ end
     type /arraytype eq {
       currentuserparams /LockFilePermissions get {
         5 { pop } repeat /setuserparams /invalidaccess signalerror
+      }{
+        % in addition to validating the value, ensure the value is read/only
+        dup { readonly exch } forall
+        .currentglobal exch dup gcheck .setglobal length array exch .setglobal
+	astore readonly
       }
-      if
+      ifelse
     } {
       5 { pop } repeat /setuserparams /typecheck signalerror
     }
