@@ -478,8 +478,12 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		    pgls->g.relative_coords = hpgl_plot_relative;
 		hpgl_args_set_real2(&args, pe_fixed2float(xy[0], fbits),
 				           pe_fixed2float(xy[1], fbits));
-		if ( pargs->phase & pe_pen_up )
+		if ( pargs->phase & pe_pen_up ) {
+		    /* prevent paths from getting excessively large */
+		    if ( !pgls->g.polygon_mode )
+			hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 		    hpgl_PU(&args, pgls);
+		}
 		else
 		    hpgl_PD(&args, pgls);
 	    }
