@@ -1418,7 +1418,7 @@ devicedict /Default devicedict .defaultdevicename get put
 %			      false			
 /.getdefaulthalftone {
   % try the device to see if it has a default halftone
-  { currentdevice /HalftoneDefault gsgetdeviceprop } stopped
+  { currentdevice /HalftoneDefault gsgetdeviceprop } .internalstopped
   { pop pop false }		% no device property
   { dup type /dicttype eq { true } { pop false } ifelse }
   ifelse
@@ -1426,7 +1426,7 @@ devicedict /Default devicedict .defaultdevicename get put
   %         false		  not found
   dup not
   { % device did not provide a default, try Resource
-    pop { /Default /Halftone /findresource .systemvar exec } stopped 
+    pop { /Default /Halftone /findresource .systemvar exec } .internalstopped 
     { pop pop false } { true } ifelse
   }
   if
