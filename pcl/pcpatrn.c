@@ -873,10 +873,9 @@ pattern_set_pen(
 
     /* check if the current pen is white; if so, use the "unsolid" pattern */
     if (pcl_cs_indexed_is_white(pindexed, pen))
-        return pattern_set_shade_gl(pcs, 1, pen);
-
-    /* set halftone and crd from the palette */
-    code = set_ht_crd_from_palette(pcs);
+	code = pattern_set_shade_gl(pcs, 1, pen);
+    else
+	code = set_ht_crd_from_palette(pcs);
 
     if (code >= 0) {
         gs_paint_color  paint;

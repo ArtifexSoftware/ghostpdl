@@ -117,6 +117,18 @@ build_cid_dev_long(
     return 0;
 }
 
+/* The documentation is not clear if these are specified 0..255 or 0..1
+   all cid long examples in the ats tests use 0..255.  We use 0..1 for
+   the short form */
+ private void
+normalize_cid_minmax_valrange_long(float *minmax)
+{
+    int i;
+    for ( i = 0; i < 6; i++ ) {
+	minmax[i] /= 255;
+    }
+}
+
   private int
 build_cid_col_long(
     pcl_cid_data_t *        pcid,
@@ -130,6 +142,7 @@ build_cid_col_long(
     convert_float_array(8, pbuff + 6, (float *)(pcol->colmet.chroma));
     convert_float_array(6, pbuff + 38, (float *)(pcol->colmet.nonlin));
     convert_float_array(6, pbuff + 62, (float *)(pcol->minmax.val_range));
+    normalize_cid_minmax_valrange_long((float *)(pcol->minmax.val_range));
     return 0;
 }
 
@@ -144,6 +157,7 @@ build_cid_lab_long(
     if (pcid->len != 30)
         return e_Range;
     convert_float_array(6, pbuff + 6, (float *)(plab->minmax.val_range));
+    normalize_cid_minmax_valrange_long((float *)(plab->minmax.val_range));
     return 0;
 }
 
@@ -159,6 +173,7 @@ build_cid_lum_long(
         return e_Range;
     convert_float_array(9, pbuff + 6, plum->matrix);
     convert_float_array(6, pbuff + 42, (float *)(plum->minmax.val_range));
+    normalize_cid_minmax_valrange_long((float *)(plum->minmax.val_range));
     convert_float_array(8, pbuff + 66, (float *)(plum->colmet.chroma));
     convert_float_array(6, pbuff + 98, (float *)(plum->colmet.nonlin));
     return 0;

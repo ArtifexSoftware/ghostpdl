@@ -434,7 +434,7 @@ update_lookup_tbls(
                                                                             \
         convert_val( val,                                                   \
                      pdata->min_val[indx],                                  \
-                     pdata->range[indx] / 255.0,                            \
+                     pdata->range[indx],                                    \
                      pcl_lookup_tbl_get_tbl(pdata->plktbl1, indx)           \
                      );                                                     \
         if (val < 0.0)                                                      \
@@ -658,7 +658,7 @@ finish_colmet_cspace(
                                                                             \
         convert_val( val,                                                   \
                      pdata->min_val[indx],                                  \
-                     pdata->range[indx] / 255.0,                            \
+                     pdata->range[indx],                                    \
                      pcl_lookup_tbl_get_tbl(pdata->plktbl1, indx)           \
                      );                                                     \
         conv_code;                                                          \
@@ -774,7 +774,7 @@ finish_lab_cspace(
                                                                             \
         convert_val( val,                                                   \
                      pdata->min_val[indx],                                  \
-                     pdata->range[indx] / 255.0,                            \
+                     pdata->range[indx],                                    \
                      pcl_lookup_tbl_get_tbl(pdata->plktbl1, indx)           \
                    );                                                       \
         return val;                                                         \
