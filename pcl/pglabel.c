@@ -91,8 +91,8 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
    be reworked. */
 private int
 hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr)
-{	const pcl_state_t *pcls = gs_state_client_data(penum->pgs);
-#define pgls pcls		/****** NOTA BENE ******/
+{	const pcl_state_t *pcs = gs_state_client_data(penum->pgs);
+#define pgls pcs		/****** NOTA BENE ******/
 	int code = hpgl_next_char(penum, pgls, pchr);
 	if ( code )
 	  return code;
@@ -184,7 +184,7 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 
 /* Check whether the stick font supports a given symbol set. */
 private bool
-hpgl_stick_font_supports(const pcl_state_t *pcls, uint symbol_set)
+hpgl_stick_font_supports(const pcl_state_t *pcs, uint symbol_set)
 {	pl_glyph_vocabulary_t gv = (pl_glyph_vocabulary_t)
                                    (~stick_character_complement[7] & 07);
 	byte id[2];
@@ -192,7 +192,7 @@ hpgl_stick_font_supports(const pcl_state_t *pcls, uint symbol_set)
 
 	id[0] = symbol_set >> 8;
 	id[1] = symbol_set;
-	if ( (map = pcl_find_symbol_map(pcls, id, gv)) == 0 )
+	if ( (map = pcl_find_symbol_map(pcs, id, gv)) == 0 )
 	  return false;
 	return pcl_check_symbol_support(map->character_requirements,
 					stick_character_complement);
@@ -961,8 +961,8 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 
 		gs_currentmatrix(pgls->pgs, &save_ctm);
 		pcl_set_ctm(pgls, false);
-		hpgl_call(gs_transform(pgls->pgs, (floatp)pcl_cap.x,
-				       (floatp)pcl_cap.y, &pcl_pos_dev));
+		hpgl_call(gs_transform(pgls->pgs, (floatp)pgls->cap.x,
+				       (floatp)pgls->cap.y, &pcl_pos_dev));
 		gs_setmatrix(pgls->pgs, &save_ctm);
 		hpgl_call(gs_itransform(pgls->pgs, (floatp)pcl_pos_dev.x,
 					(floatp)pcl_pos_dev.y, &label_origin));

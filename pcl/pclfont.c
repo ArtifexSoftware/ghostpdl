@@ -27,7 +27,7 @@
  */
 
  int
-pcl_load_built_in_fonts(pcl_state_t *pcls, const char *pathname)
+pcl_load_built_in_fonts(pcl_state_t *pcs, const char *pathname)
 {	
     typedef struct font_resident {
 	const char *ext_name;
@@ -173,7 +173,7 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *pathname)
     byte key[3];
 
     /* don't load fonts more than once */
-    if (pl_dict_length(&pcls->built_in_fonts, true) > 0 )
+    if (pl_dict_length(&pcs->built_in_fonts, true) > 0 )
 	return true;
     /* Load only those fonts we know about. */
     memset(font_found, 0, sizeof(font_found));
@@ -190,7 +190,7 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *pathname)
 	    strcat(fname, ".ttf");
 	    if ( (fnp=fopen(fname, gp_fmode_rb)) == NULL )
 		continue;
-	    if ( pl_load_tt_font(fnp, pcls->font_dir, pcls->memory,
+	    if ( pl_load_tt_font(fnp, pcs->font_dir, pcs->memory,
 				 gs_next_ids(1), &plfont) < 0 )  {
 #ifdef DEBUG
 		lprintf1("Failed loading font %s\n", fname);
@@ -213,7 +213,7 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *pathname)
 	    memcpy(plfont->character_complement,
 		   residentp->character_complement, 8);
 	    plfont->params.pjl_font_number = pjl_get_pcl_internal_font_number(residentp->ext_name);
-	    pl_dict_put(&pcls->built_in_fonts, key, sizeof(key), plfont);
+	    pl_dict_put(&pcs->built_in_fonts, key, sizeof(key), plfont);
 	    key[sizeof(key) - 1]++;
 	    font_found[residentp - resident_table] = plfont;
 	    found_some = true;
@@ -235,14 +235,14 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *pathname)
 
 /* load simm fonts given a path */
  int
-pcl_load_simm_fonts(pcl_state_t *pcls, const char *pathname)
+pcl_load_simm_fonts(pcl_state_t *pcs, const char *pathname)
 {
     return 0;
 }
 
 /* load simm fonts given a path */
  int
-pcl_load_cartridge_fonts(pcl_state_t *pcls, const char *pathname)
+pcl_load_cartridge_fonts(pcl_state_t *pcs, const char *pathname)
 {
     return 0;
 }

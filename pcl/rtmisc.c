@@ -26,17 +26,17 @@ extern  const pcl_init_t *  pcl_init_table[];
   private int
 rtl_printer_reset(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
     /* Print any partial page. */
-    int     code = pcl_end_page_if_marked(pcls);
+    int     code = pcl_end_page_if_marked(pcs);
 
     if (code < 0)
 	return code;
 
     /* Reset to user default state. */
-    return pcl_do_resets(pcls, pcl_reset_printer);
+    return pcl_do_resets(pcs, pcl_reset_printer);
 }
 
 /*
@@ -45,14 +45,14 @@ rtl_printer_reset(
   private int
 rtl_exit_language(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
     int             code;
 
     if (int_arg(pargs) != -12345)
 	return e_Range;
-    code = rtl_printer_reset(pargs, pcls);
+    code = rtl_printer_reset(pargs, pcs);
     return (code < 0 ? code : e_ExitLanguage);
 }
 
@@ -64,7 +64,7 @@ rtl_exit_language(
   private int
 rtl_enter_hpgl_mode(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
     int             i = int_arg(pargs);
@@ -76,17 +76,17 @@ rtl_enter_hpgl_mode(
 	return 0;
 
     /**** PARTIAL IMPLEMENTATION ****/
-    if (pcls->parse_data != 0)
+    if (pcs->parse_data != 0)
 	return 0;		/* already in HP-GL/2 mode */
 
-    pcls->parse_data = gs_alloc_bytes( pcls->memory,
+    pcs->parse_data = gs_alloc_bytes( pcs->memory,
                                        sizeof(hpgl_parser_state_t),
 			               "hpgl parser data(enter hpgl mode)"
                                        );
-    if (pcls->parse_data == 0)
+    if (pcs->parse_data == 0)
 	return_error(e_Memory);
-    hpgl_process_init(pcls->parse_data);
-    pcls->parse_other = ( int (*)( void *,
+    hpgl_process_init(pcs->parse_data);
+    pcs->parse_other = ( int (*)( void *,
                                    pcl_state_t *,
                                    stream_cursor_read *
                                    ) ) hpgl_process;
@@ -95,10 +95,10 @@ rtl_enter_hpgl_mode(
     if (i == 1) {
 	gs_point    pcl_pt;
 
-	pcl_pt.x = (hpgl_real_t)pcl_cap.x;
-	pcl_pt.y = (hpgl_real_t)pcl_cap.y;
-        hpgl_add_pcl_point_to_path(pcls, &pcl_pt);
-	hpgl_update_carriage_return_pos(pcls);
+	pcl_pt.x = (hpgl_real_t)pcs->cap.x;
+	pcl_pt.y = (hpgl_real_t)pcs->cap.y;
+        hpgl_add_pcl_point_to_path(pcs, &pcl_pt);
+	hpgl_update_carriage_return_pos(pcs);
     }
     return 0;
 }
@@ -112,12 +112,12 @@ rtl_enter_hpgl_mode(
   int
 rtl_enter_pcl_mode(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
     int             b = int_arg(pargs) & 1;
 
-    if (pcls->parse_data != 0) {
+    if (pcs->parse_data != 0) {
         /* 
          * We were in HP-GL/2 mode.  Destroy the gl/2 polygon path
 	 * and conditionally copy back the cursor position.
@@ -126,28 +126,28 @@ rtl_enter_pcl_mode(
             /* the usual user -> device -> user dance. */
 	    gs_point    pt, dev_pt;
 
-	    hpgl_call(hpgl_set_ctm(pcls));
-	    hpgl_call(hpgl_get_current_position(pcls, &pt));
-	    hpgl_call(gs_transform(pcls->pgs, pt.x, pt.y, &dev_pt));
-	    hpgl_call(pcl_set_ctm(pcls, false));
-	    hpgl_call(gs_itransform(pcls->pgs, dev_pt.x, dev_pt.y, &pt));
+	    hpgl_call(hpgl_set_ctm(pcs));
+	    hpgl_call(hpgl_get_current_position(pcs, &pt));
+	    hpgl_call(gs_transform(pcs->pgs, pt.x, pt.y, &dev_pt));
+	    hpgl_call(pcl_set_ctm(pcs, false));
+	    hpgl_call(gs_itransform(pcs->pgs, dev_pt.x, dev_pt.y, &pt));
 
 	    /* HPGL/2 uses floats for coordinates */
 #define round(x)    (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
-	    pcl_cap.x = round(pt.x);
-	    pcl_cap.y = round(pt.y);
+	    pcs->cap.x = round(pt.x);
+	    pcs->cap.y = round(pt.y);
 #undef round
 	}
-        gs_free_object( pcls->memory,
-                        pcls->parse_data,
+        gs_free_object( pcs->memory,
+                        pcs->parse_data,
 			"hpgl parser data(enter pcl mode)"
                         );
-        pcls->parse_data = 0;
+        pcs->parse_data = 0;
 
     } else
 	  b = 0;
 
-    pcls->parse_other = 0;
+    pcs->parse_other = 0;
     return b;		/* not 0, see comment above */
 }
 
@@ -161,7 +161,7 @@ rtl_enter_pcl_mode(
   private int
 pcl_appletalk_configuration(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
     const byte *    data = arg_data(pargs);
@@ -176,9 +176,9 @@ pcl_appletalk_configuration(
 	if (i == count - 1)
 	    return e_Range;
     }
-    if (pcls->configure_appletalk == 0)
+    if (pcs->configure_appletalk == 0)
 	return 0;
-    return (*pcls->configure_appletalk)(data, i, data + i + 1, count - (i + 1));
+    return (*pcs->configure_appletalk)(data, i, data + i + 1, count - (i + 1));
 }
 
 /* (From PCL5 Comparison Guide, p. 1-100) */
@@ -189,7 +189,7 @@ pcl_appletalk_configuration(
   private int
 pcl_negative_motion(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
     int             motion = int_arg(pargs);
@@ -275,7 +275,7 @@ rtmisc_do_init(
  */
   private void
 rtmisc_do_reset(
-    pcl_state_t *       pcls,
+    pcl_state_t *       pcs,
     pcl_reset_type_t    type
 )
 {
@@ -283,21 +283,21 @@ rtmisc_do_reset(
                                 | pcl_reset_cold
                                 | pcl_reset_printer );
 
-    if (pcls->configure_appletalk == 0)
+    if (pcs->configure_appletalk == 0)
         return;
 
     if ((type & mask) != 0)
-        pcls->configure_appletalk("JOB", 3, "", 0);
+        pcs->configure_appletalk("JOB", 3, "", 0);
     if ((type & pcl_reset_cold) != 0) {
         static const byte   prntr_name[] = "HP Color LaserJet 5M";
         static const byte   dev_type[] = "HP LaserJet 4";
 
-        pcls->configure_appletalk( "RENAME",
+        pcs->configure_appletalk( "RENAME",
                                    6,
                                    prntr_name,
                                    sizeof(prntr_name) - 1
                                    );
-        pcls->configure_appletalk("TYPE", 4, dev_type, sizeof(dev_type) - 1);
+        pcs->configure_appletalk("TYPE", 4, dev_type, sizeof(dev_type) - 1);
     }
 }
 

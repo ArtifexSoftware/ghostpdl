@@ -46,27 +46,27 @@ hpgl_default_font_params(
  */
   private void
 hpgl_default_coordinate_system(
-    hpgl_state_t *  pcls
+    hpgl_state_t *  pcs
 )
 {
-    pcls->g.plot_width = pcls->g.picture_frame_width
-                       = pcls->xfm_state.lp_size.x;
-    pcls->g.plot_height = pcls->g.picture_frame_height 
-	                = pcls->xfm_state.lp_size.y - inch2coord(1.0);
-    pcls->g.picture_frame.anchor_point.x = pcls->margins.left;
-    pcls->g.picture_frame.anchor_point.y = pcls->margins.top;
-    pcls->g.plot_size_vertical_specified = false;
-    pcls->g.plot_size_horizontal_specified = false;
+    pcs->g.plot_width = pcs->g.picture_frame_width
+                       = pcs->xfm_state.lp_size.x;
+    pcs->g.plot_height = pcs->g.picture_frame_height 
+	                = pcs->xfm_state.lp_size.y - inch2coord(1.0);
+    pcs->g.picture_frame.anchor_point.x = pcs->margins.left;
+    pcs->g.picture_frame.anchor_point.y = pcs->margins.top;
+    pcs->g.plot_size_vertical_specified = false;
+    pcs->g.plot_size_horizontal_specified = false;
     /* The default coordinate system is absolute with the origin at 0,0 */
-    pcls->g.move_or_draw = hpgl_plot_move;
-    pcls->g.relative_coords = hpgl_plot_absolute;
+    pcs->g.move_or_draw = hpgl_plot_move;
+    pcs->g.relative_coords = hpgl_plot_absolute;
     {
 	gs_point pos;
 	pos.x = 0.0;
 	pos.y = 0.0;
-	(void)hpgl_set_current_position(pcls, &pos);
+	(void)hpgl_set_current_position(pcs, &pos);
     }
-    pcls->g.scaling_type = hpgl_scaling_none;
+    pcs->g.scaling_type = hpgl_scaling_none;
     return;
 }
 
@@ -86,7 +86,7 @@ hpgl_default_all_fill_patterns(
 
   void
 hpgl_do_reset(
-    pcl_state_t *       pcls,
+    pcl_state_t *       pcs,
     pcl_reset_type_t    type
 )
 {
@@ -95,8 +95,8 @@ hpgl_do_reset(
 
     if ((type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_cold)) != 0 ) {
         if ((type & (pcl_reset_initial | pcl_reset_cold)) != 0) {
-            gx_path_alloc_contained( &pcls->g.polygon.buffer.path,
-                                     pcls->memory,
+            gx_path_alloc_contained( &pcs->g.polygon.buffer.path,
+                                     pcs->memory,
                                      "hpgl_do_reset"
                                      );
 
@@ -104,36 +104,36 @@ hpgl_do_reset(
              * HAS This is required for GL/2 but probably should
              * be maintained locally in gl/2's state machinery
              */
-	    gs_setlimitclamp(pcls->pgs, true);
+	    gs_setlimitclamp(pcs->pgs, true);
 	} else
-            gx_path_new(&pcls->g.polygon.buffer.path);
+            gx_path_new(&pcs->g.polygon.buffer.path);
 
 	/* provide default anchor point, plot size and picture frame size */
-	hpgl_default_coordinate_system(pcls);
+	hpgl_default_coordinate_system(pcs);
 
 	/* we should not have a path at this point but we make sure */
-	hpgl_clear_current_path(pcls);
+	hpgl_clear_current_path(pcs);
 
 	/* Initialize stick/arc font instances */
-	pcls->g.stick_font[0][0].pfont =
-	  pcls->g.stick_font[0][1].pfont =
-	  pcls->g.stick_font[1][0].pfont =
-	  pcls->g.stick_font[1][1].pfont = 0;
+	pcs->g.stick_font[0][0].pfont =
+	  pcs->g.stick_font[0][1].pfont =
+	  pcs->g.stick_font[1][0].pfont =
+	  pcs->g.stick_font[1][1].pfont = 0;
 
 	/* execute only the implicit portion of IN */
-	hpgl_IN_implicit(pcls);
+	hpgl_IN_implicit(pcs);
     }
 
     /* NB check all of these */
     if ((type & pcl_reset_page_params) != 0) {
 	/* provide default anchor point, plot size and picture frame size */
-	hpgl_default_coordinate_system(pcls);
+	hpgl_default_coordinate_system(pcs);
 	hpgl_args_setup(&hpgl_args);
-	hpgl_IW(&hpgl_args, pcls);
+	hpgl_IW(&hpgl_args, pcs);
 	hpgl_args_set_int(&hpgl_args,0);
-	hpgl_PM(&hpgl_args, pcls);
+	hpgl_PM(&hpgl_args, pcs);
 	hpgl_args_set_int(&hpgl_args,2);
-	hpgl_PM(&hpgl_args, pcls);
+	hpgl_PM(&hpgl_args, pcs);
     }
 
     if ((type & pcl_reset_picture_frame) != 0) {
@@ -143,7 +143,7 @@ hpgl_do_reset(
     }
 
     if ((type & pcl_reset_overlay) != 0) 
-        hpgl_reset_overlay(pcls);
+        hpgl_reset_overlay(pcs);
 
     if ((type & (pcl_reset_plot_size)) != 0) {
 	/* this shouldn't happen.  Plot size side effects are handled
@@ -159,12 +159,12 @@ hpgl_do_reset(
   private int
 hpgl_do_copy(
     pcl_state_t *           psaved,
-    const pcl_state_t *     pcls,
+    const pcl_state_t *     pcs,
     pcl_copy_operation_t    operation
 )
 {
     if ((operation & pcl_copy_after) != 0) {
-         /* Don't restore the polygon buffer. (Copy from pcls to psaved.) */
+         /* Don't restore the polygon buffer. (Copy from pcs to psaved.) */
     }
     return 0;
 }

@@ -17,58 +17,58 @@
 /* Commands */
 
 private int /* ESC E */
-pcl_printer_reset(pcl_args_t *pargs, pcl_state_t *pcls)
-{	if ( pcls->macro_level )
+pcl_printer_reset(pcl_args_t *pargs, pcl_state_t *pcs)
+{	if ( pcs->macro_level )
 	  return e_Range;	/* not allowed inside macro */
 	/* Print any partial page. */
-	{ int code = pcl_end_page_if_marked(pcls);
+	{ int code = pcl_end_page_if_marked(pcs);
 	  if ( code < 0 )
 	    return code;
 	}
 	/* Reset to user default state. */
-	return pcl_do_resets(pcls, pcl_reset_printer);
+	return pcl_do_resets(pcs, pcl_reset_printer);
 }
 
 private int /* ESC % -12345 X */
-pcl_exit_language(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_exit_language(pcl_args_t *pargs, pcl_state_t *pcs)
 {	if ( int_arg(pargs) != -12345 )
 	   return e_Range;
-	{ int code = pcl_printer_reset(pargs, pcls);
+	{ int code = pcl_printer_reset(pargs, pcs);
 	  return (code < 0 ? code : e_ExitLanguage);
 	}
 }
 
 private int /* ESC & l <num_copies> X */
-pcl_number_of_copies(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_number_of_copies(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int i = int_arg(pargs);
 	if ( i < 1 )
 	  return 0;
-	pcls->num_copies = i;
-	return put_param1_int(pcls, "NumCopies", i);
+	pcs->num_copies = i;
+	return put_param1_int(pcs, "NumCopies", i);
 }
 
 private int /* ESC & l <sd_enum> S */
-pcl_simplex_duplex_print(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_simplex_duplex_print(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int code;
 	bool reopen = false;
 
 	switch ( int_arg(pargs) )
 	  {
 	  case 0:
-	    pcls->duplex = false;
+	    pcs->duplex = false;
 	    break;
 	  case 1:
-	    pcls->duplex = true;
-	    pcls->bind_short_edge = false;
+	    pcs->duplex = true;
+	    pcs->bind_short_edge = false;
 	    break;
 	  case 2:
-	    pcls->duplex = true;
-	    pcls->bind_short_edge = false;
+	    pcs->duplex = true;
+	    pcs->bind_short_edge = false;
 	    break;
 	  default:
 	    return 0;
 	  }
-	code = put_param1_bool(pcls, "Duplex", pcls->duplex);
+	code = put_param1_bool(pcs, "Duplex", pcs->duplex);
 	switch ( code )
 	  {
 	  case 1:		/* reopen device */
@@ -81,7 +81,7 @@ pcl_simplex_duplex_print(pcl_args_t *pargs, pcl_state_t *pcls)
 	    if ( code < 0 )
 	      return code;
 	  }
-	code = put_param1_bool(pcls, "BindShortEdge", pcls->bind_short_edge);
+	code = put_param1_bool(pcs, "BindShortEdge", pcs->bind_short_edge);
 	switch ( code )
 	  {
 	  case 1:		/* reopen device */
@@ -93,13 +93,13 @@ pcl_simplex_duplex_print(pcl_args_t *pargs, pcl_state_t *pcls)
 	    if ( code < 0 )
 	      return code;
 	  }
-	return (reopen ? gs_setdevice_no_erase(pcls->pgs,
-					       gs_currentdevice(pcls->pgs)) :
+	return (reopen ? gs_setdevice_no_erase(pcs->pgs,
+					       gs_currentdevice(pcs->pgs)) :
 		0);
 }
 
 private int /* ESC & a <side_enum> G */
-pcl_duplex_page_side_select(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_duplex_page_side_select(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint i = uint_arg(pargs);
 	int code;
 
@@ -107,16 +107,16 @@ pcl_duplex_page_side_select(pcl_args_t *pargs, pcl_state_t *pcls)
 	  return 0;
 	/* According to H-P documentation, this command ejects the page */
 	/* even if nothing has been printed on it. */
-	code = pcl_end_page_always(pcls);
+	code = pcl_end_page_always(pcs);
 	if ( code < 0 )
 	  return code;
-	if ( i > 0 && pcls->duplex )
-	  put_param1_bool(pcls, "FirstSide", i == 1);
+	if ( i > 0 && pcs->duplex )
+	  put_param1_bool(pcs, "FirstSide", i == 1);
 	return 0;
 }
 
 private int /* ESC & l 1 T */
-pcl_job_separation(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_job_separation(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int i = int_arg(pargs);
 	if ( i != 1 )
 	  return 0;
@@ -125,15 +125,15 @@ pcl_job_separation(pcl_args_t *pargs, pcl_state_t *pcls)
 }
 
 private int /* ESC & l <bin_enum> G */
-pcl_output_bin_selection(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_output_bin_selection(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint i = uint_arg(pargs);
 	if ( i < 1 || i > 2 )
 	  return e_Range;
-	return put_param1_int(pcls, "OutputBin", i);
+	return put_param1_int(pcs, "OutputBin", i);
 }
 
 private int /* ESC & u <upi> B */
-pcl_set_unit_of_measure(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_set_unit_of_measure(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int num = int_arg(pargs);
 
 	if ( num <= 96 )
@@ -156,7 +156,7 @@ pcl_set_unit_of_measure(pcl_args_t *pargs, pcl_state_t *pcls)
 		  p++;
 		num = *p;
 	}
-	pcls->uom_cp = pcl_coord_scale / num;
+	pcs->uom_cp = pcl_coord_scale / num;
 	return 0;
 }
 
@@ -192,20 +192,20 @@ pcjob_do_init(gs_memory_t *mem)
 	return 0;
 }
 private void
-pcjob_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
+pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
-	  { pcls->num_copies = pjl_vartoi(pjl_get_envvar(pcls->pjls, "copies"));
-	    pcls->duplex =
-		!pjl_compare(pjl_get_envvar(pcls->pjls, "duplex"), "off") ? false : true;
-	    pcls->bind_short_edge =
-		!pjl_compare(pjl_get_envvar(pcls->pjls, "binding"), "longedge") ? false : true;
-	    pcls->back_side = false;
-	    pcls->output_bin = 1;
+	  { pcs->num_copies = pjl_vartoi(pjl_get_envvar(pcs->pjls, "copies"));
+	    pcs->duplex =
+		!pjl_compare(pjl_get_envvar(pcs->pjls, "duplex"), "off") ? false : true;
+	    pcs->bind_short_edge =
+		!pjl_compare(pjl_get_envvar(pcs->pjls, "binding"), "longedge") ? false : true;
+	    pcs->back_side = false;
+	    pcs->output_bin = 1;
           }
         if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
 	  { pcl_args_t args;
 	    arg_set_uint(&args, 300);
-	    pcl_set_unit_of_measure(&args, pcls);
+	    pcl_set_unit_of_measure(&args, pcs);
 	  }
 }
 const pcl_init_t pcjob_init = {

@@ -9,25 +9,25 @@
 #include "pcstate.h"
 
 private int /* ESC & s <bool> C */
-pcl_end_of_line_wrap(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_end_of_line_wrap(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint i = uint_arg(pargs);
 
 	if ( i > 1 )
 	  return e_Range;
-	pcls->end_of_line_wrap = i == 0;
+	pcs->end_of_line_wrap = i == 0;
 	return 0;
 }
 
 private int /* ESC Y */
-pcl_enable_display_functions(pcl_args_t *pargs, pcl_state_t *pcls)
-{	pcls->display_functions = true;
+pcl_enable_display_functions(pcl_args_t *pargs, pcl_state_t *pcs)
+{	pcs->display_functions = true;
 	return 0;
 }
 
 /* We export this procedure so we can detect the end of display fns mode. */
 int /* ESC Z */
-pcl_disable_display_functions(pcl_args_t *pargs, pcl_state_t *pcls)
-{	pcls->display_functions = false;
+pcl_disable_display_functions(pcl_args_t *pargs, pcl_state_t *pcs)
+{	pcs->display_functions = false;
 	return 0;
 }
 
@@ -45,10 +45,10 @@ pcmisc_do_init(gs_memory_t *mem)
 	return 0;
 }
 private void
-pcmisc_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
+pcmisc_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
-	  { pcls->end_of_line_wrap = false;
-	    pcls->display_functions = false;
+	  { pcs->end_of_line_wrap = false;
+	    pcs->display_functions = false;
 	  }
 }
 const pcl_init_t pcmisc_init = {

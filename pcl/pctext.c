@@ -472,7 +472,7 @@ pcl_show_chars(
     bool                    opaque = !pcs->source_transparent;
     bool                    wrap = pcs->end_of_line_wrap;
     bool                    is_space = false;
-    bool                    use_limit1 = (pcl_cap.x <= limit1);
+    bool                    use_limit1 = (pcs->cap.x <= limit1);
     gs_char                 chr;
     int                     code = 0;
     floatp                  width;
@@ -483,8 +483,8 @@ pcl_show_chars(
     pcl_font_selection_t *  pfp = &(pcs->font_selection[pcs->font_selected]);
     pcl_font_selection_t    saved_font = *pfp;
 
-    cpt.x = pcl_cap.x;
-    cpt.y = pcl_cap.y;
+    cpt.x = pcs->cap.x;
+    cpt.y = pcs->cap.y;
     while (get_next_char(pcs, &str, &size, &chr, &is_space, literal) == 0) {
         floatp  tmp_x;
 
@@ -530,8 +530,8 @@ pcl_show_chars(
                      (cpt.x + width > limit2)                   ) {
 	            pcl_do_CR(pcs);
                     pcl_do_LF(pcs);
-                    cpt.x = pcl_cap.x;
-                    cpt.y = pcl_cap.y;
+                    cpt.x = pcs->cap.x;
+                    cpt.y = pcs->cap.y;
                     use_limit1 = true;
 		}
             } else {
@@ -608,8 +608,8 @@ pcl_show_chars(
     pcs->last_width = width;
 
     /* update the current position */
-    pcl_cap.x = cpt.x;
-    pcl_cap.y = cpt.y;
+    pcs->cap.x = cpt.x;
+    pcs->cap.y = cpt.y;
 
     return code;
 }
@@ -747,7 +747,7 @@ pcl_do_underline(
     pcl_state_t *   pcs
 )
 {
-    if (pcs->underline_start.x != pcl_cap.x) {
+    if (pcs->underline_start.x != pcs->cap.x) {
 	gs_state *  pgs = pcs->pgs;
         float       y = pcs->underline_start.y + pcs->underline_position;
         int         code;
@@ -769,7 +769,7 @@ pcl_do_underline(
          */
 	gs_setlinewidth(pgs, dots(3));
 	gs_moveto(pgs, pcs->underline_start.x, y);
-	gs_lineto(pgs, pcl_cap.x, y);
+	gs_lineto(pgs, pcs->cap.x, y);
 	gs_stroke(pgs);
     }
 
@@ -777,7 +777,7 @@ pcl_do_underline(
      * Fixed underline is 5 "dots" (actually 5/300") down.  Floating
      * will be determined on the fly.
      */
-    pcs->underline_start = pcl_cap;
+    pcs->underline_start = pcs->cap;
     pcs->underline_position = pcs->underline_floating ? 0.0 : dots(5);
 }
 
@@ -827,7 +827,7 @@ pcl_enable_underline(
 	return 0;
 
     pcs->underline_enabled = true;
-    pcs->underline_start = pcl_cap;
+    pcs->underline_start = pcs->cap;
     return 0;
 }
 

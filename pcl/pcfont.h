@@ -15,18 +15,18 @@
  * downloaded symbol set, or changing orientations--can cause this.
  * set == -1 means all.
  */
-extern  void    pcl_decache_font( pcl_state_t * pcls, int set );
+extern  void    pcl_decache_font( pcl_state_t * pcs, int set );
 
 /*
  * Recompute the font if necessary. This is exported for resetting HMI.
  */
-extern  int     pcl_recompute_font( pcl_state_t * pcls );
+extern  int     pcl_recompute_font( pcl_state_t * pcs );
 
 /*
  * Recompute the font if the glyph is not found at the time of rendering
  */
 extern  int     pcl_recompute_substitute_font(
-    pcl_state_t *   pcls,
+    pcl_state_t *   pcs,
     const uint      chr
 );
 
@@ -34,20 +34,20 @@ extern  int     pcl_recompute_substitute_font(
  * Do any underlining just before a break in motion (vertical motion or
  * negative horizontal motion)...
  */
-#define	pcl_break_underline(pcls)   \
+#define	pcl_break_underline(pcs)   \
     BEGIN                           \
-    if (pcls->underline_enabled)    \
-	pcl_do_underline(pcls);     \
+    if (pcs->underline_enabled)    \
+	pcl_do_underline(pcs);     \
     END
 
 /* ...and then, after repositioning, restart underlining if necessary... */
-#define	pcl_continue_underline(pcls)        \
+#define	pcl_continue_underline(pcs)        \
     BEGIN                                   \
-    if (pcls->underline_enabled)            \
-        pcls->underline_start = pcl_cap;    \
+    if (pcs->underline_enabled)            \
+        pcs->underline_start = pcs->cap;    \
     END
 
-extern  void    pcl_do_underline(P1(pcl_state_t *pcls));
+extern  void    pcl_do_underline(P1(pcl_state_t *pcs));
 
 /* Define the common structure of downloaded font headers. */
 typedef struct pcl_font_header_s {

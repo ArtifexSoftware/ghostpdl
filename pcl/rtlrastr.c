@@ -17,13 +17,13 @@
   private int
 set_line_path(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
     uint            i = uint_arg(pargs);
 
     if (i <= 1)
-	pcls->raster_state.y_advance = (i == 1 ? -1 : 1);
+	pcs->raster_state.y_advance = (i == 1 ? -1 : 1);
     return 0;
 }
 

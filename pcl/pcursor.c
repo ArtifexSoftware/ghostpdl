@@ -15,15 +15,6 @@
 #include "pcpage.h"
 #include "gscoord.h"
 
-
-/*
- * The PCL current addressable position. This is NOT part of the PCL state,
- * even though it was previously implemented that way.
- *
- * This point is in "pseudo print direction" space.
- */
-coord_point pcl_cap;
-
 /*
  * Hoizontal and vertical movement.
  *
@@ -179,10 +170,10 @@ pcl_set_cap_x(
     bool            use_margins
 )
 {
-    coord               old_x = pcl_cap.x;
+    coord               old_x = pcs->cap.x;
 
     if (relative)
-        x += pcl_cap.x;
+        x += pcs->cap.x;
 
     /* the horizontal text margins are only interesting in transition */
     if (use_margins) {
@@ -202,10 +193,10 @@ pcl_set_cap_x(
     /* leftward motion "breaks" an underline */
     if (x < old_x) {
         pcl_break_underline(pcs);
-        pcl_cap.x = x;
+        pcs->cap.x = x;
         pcl_continue_underline(pcs);
     } else
-        pcl_cap.x = x;
+        pcs->cap.x = x;
 }
 
   int
@@ -223,7 +214,7 @@ pcl_set_cap_y(
 
     /* adjust the vertical position provided */
     if (relative)
-        y += pcl_cap.y;
+        y += pcs->cap.y;
     else
         y += (by_row ? HOME_Y(pcs) : pcs->margins.top);
 
@@ -232,14 +223,14 @@ pcl_set_cap_y(
 
     max_y = (use_margins ? max_y : lim_y);
     if (y < 0L)
-        pcl_cap.y = 0L;
+        pcs->cap.y = 0L;
     if (y <= max_y)
-        pcl_cap.y = y;
+        pcs->cap.y = y;
     else if (!page_eject)
-        pcl_cap.y = (y <= lim_y ? y : lim_y);
+        pcs->cap.y = (y <= lim_y ? y : lim_y);
     else {
         coord   vmi_cp = pcs->vmi_cp;
-        coord   y0 = pcl_cap.y;
+        coord   y0 = pcs->cap.y;
 
         while (y > max_y) {
             int    code = pcl_end_page_always(pcs);
@@ -259,7 +250,7 @@ pcl_set_cap_y(
             y += y0 - 1 - ((y - 1) % vmi_cp);
         }
 
-        pcl_cap.y = y;
+        pcs->cap.y = y;
     }
 
     pcl_continue_underline(pcs);
@@ -530,7 +521,7 @@ cmd_HT(
     pcl_state_t *   pcs
 )
 {
-    coord           x = pcl_cap.x - pcs->margins.left;
+    coord           x = pcs->cap.x - pcs->margins.left;
     coord           tab;
 
     if (x < 0)
@@ -626,10 +617,6 @@ cmd_FF(
 }
 
 
-/* the cursor stack */
-private gs_point    cursor_stk[20];
-private int         cursor_stk_size;
-
 /*
  * ESC & f <pp_enum> S
  *
@@ -645,15 +632,15 @@ push_pop_cursor(
 {
     int             type = uint_arg(pargs);
 
-    if ((type == 0) && (cursor_stk_size < countof(cursor_stk))) {
-        gs_point *  ppt = &(cursor_stk[cursor_stk_size++]);
+    if ((type == 0) && (pcs->cursor_stk_size < countof(pcs->cursor_stk))) {
+        gs_point *  ppt = &(pcs->cursor_stk[pcs->cursor_stk_size++]);
 
-        ppt->x = (double)pcl_cap.x;
-        ppt->y = (double)pcl_cap.y;
+        ppt->x = (double)pcs->cap.x;
+        ppt->y = (double)pcs->cap.y;
         gs_point_transform( ppt->x, ppt->y, &(pcs->xfm_state.pd2lp_mtx), ppt);
 
-    } else if ((type == 1) && (cursor_stk_size > 0)) {
-        gs_point *  ppt = &(cursor_stk[--cursor_stk_size]);
+    } else if ((type == 1) && (pcs->cursor_stk_size > 0)) {
+        gs_point *  ppt = &(pcs->cursor_stk[--pcs->cursor_stk_size]);
         gs_matrix   lp2pd;
 
         pcl_invert_mtx(&(pcs->xfm_state.pd2lp_mtx), &lp2pd);
@@ -790,7 +777,7 @@ pcursor_do_reset(
     pcs->vmi_cp = pcs->margins.length / pjl_vartoi(pjl_get_envvar(pcs->pjls, "formlines"));
 
     if ( (type & pcl_reset_overlay) == 0 ) {
-        cursor_stk_size = 0;
+        pcs->cursor_stk_size = 0;
 
         /* 
          * If this is an initial reset, make sure underlining is disabled

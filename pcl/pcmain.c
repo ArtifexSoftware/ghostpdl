@@ -62,14 +62,14 @@ extern  bool    pcl_load_built_in_symbol_sets( pcl_state_t * );
  */
   private int
 pause_end_page(
-    pcl_state_t *           pcls,
+    pcl_state_t *           pcs,
     int                     num_copies,
     int                     flush
 )
 {
-    pl_main_instance_t *    pmi = pcls->client_data;
+    pl_main_instance_t *    pmi = pcs->client_data;
 
-    return pl_finish_page(pmi, pcls->pgs, num_copies, flush);
+    return pl_finish_page(pmi, pcs->pgs, num_copies, flush);
 }
 
 /*
@@ -141,7 +141,7 @@ main(
 #define mem ((gs_memory_t *)imem)
     pl_main_instance_t  inst;
     gs_state *          pgs;
-    pcl_state_t *       pcls;
+    pcl_state_t *       pcs;
     pcl_parser_state_t  pstate;
     arg_list            args;
     const char *        arg;
@@ -159,18 +159,18 @@ main(
     pl_main_init(&inst, mem);
     pl_main_process_options(&inst, &args, argv, argc, PCLVERSION, PCLBUILDDATE);
     /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
-    pcls = (pcl_state_t *)gs_alloc_bytes( mem,
+    pcs = (pcl_state_t *)gs_alloc_bytes( mem,
                                           sizeof(pcl_state_t),
     				          "main(pcl_state_t)"
                                           );
     /* start off setting everything to 0.  NB this should not be here
        at all, but I don't have time to analyze the consequences of
        removing it. */
-    memset(pcls, 0, sizeof(pcl_state_t));
+    memset(pcs, 0, sizeof(pcl_state_t));
 
     /* call once to set up the free list handlers */
     gs_reclaim(&inst.spaces, true);
-    pcl_set_target_device(pcls, inst.device);
+    pcl_set_target_device(pcs, inst.device);
     /* Insert a bounding box device so we can detect empty pages. */
     {
         gx_device_bbox *    bdev = gs_alloc_struct_immovable(
@@ -185,8 +185,8 @@ main(
         inst.device = (gx_device *)bdev;
     }
     pl_main_make_gstate(&inst, &pgs);
-    pcl_init_state(pcls, mem);
-    gs_state_set_client(pgs, pcls, &pcl_gstate_procs);
+    pcl_init_state(pcs, mem);
+    gs_state_set_client(pgs, pcs, &pcl_gstate_procs);
 
     /* PCL no longer uses the graphic library transparency mechanism */
     gs_setsourcetransparent(pgs, false);
@@ -195,14 +195,14 @@ main(
     gs_gsave(pgs);
 
     gs_erasepage(pgs);
-    pcls->client_data = &inst;
-    pcls->pgs = pgs;
+    pcs->client_data = &inst;
+    pcs->pgs = pgs;
 
     /* assume no appletalk configuration routine */
-    pcls->configure_appletalk = 0;
+    pcs->configure_appletalk = 0;
 
     /* initialize pjl */
-    pcls->pjls = pjl_process_init(mem);
+    pcs->pjls = pjl_process_init(mem);
 
     /* Run initialization code. */
     {
@@ -219,12 +219,12 @@ main(
     	        }
             }
         }
-        pcl_do_resets(pcls, pcl_reset_initial);
+        pcl_do_resets(pcs, pcl_reset_initial);
     }
 
     pcl_set_end_page(pause_end_page);
 
-    pcl_load_built_in_symbol_sets(pcls);
+    pcl_load_built_in_symbol_sets(pcs);
 
 #ifdef DEBUG
     if (gs_debug_c(':'))
@@ -232,7 +232,7 @@ main(
 #endif
 
     /* provide a graphic state we can return to */
-    pcl_gsave(pcls);
+    pcl_gsave(pcs);
 
     /* call once more to get rid of any temporary objects */
     gs_reclaim(&inst.spaces, true);
@@ -269,7 +269,7 @@ main(
             r.limit += len;
 process:
             if (in_pjl) {
-                code = pjl_process(pcls->pjls, NULL, &r);
+                code = pjl_process(pcs->pjls, NULL, &r);
     	        if (code < 0)
     	            break;
     	        else if (code > 0) {
@@ -278,7 +278,7 @@ process:
     	            goto process;
     	        }
     	    } else {
-                code = pcl_process(&pstate, pcls, &r);
+                code = pcl_process(&pstate, pcs, &r);
     	        if (code == e_ExitLanguage)
     	            in_pjl = true;
     	        else if (code < 0)
@@ -297,7 +297,7 @@ process:
             dprintf3( "Final file position = %ld, exit code = %d, mode = %s\n",
     	              (long)ftell(in) - (r.limit - r.ptr),
                       code,
-    	              (in_pjl ? "PJL" : pcls->parse_other ? "HP-GL/2" : "PCL")
+    	              (in_pjl ? "PJL" : pcs->parse_other ? "HP-GL/2" : "PCL")
                       );
 #endif
 #endif
@@ -308,7 +308,7 @@ process:
             byte    buf[200];
             uint    count;
 
-            while ( (count = pcl_status_read(buf, sizeof(buf), pcls)) != 0 )
+            while ( (count = pcl_status_read(buf, sizeof(buf), pcs)) != 0 )
                 fwrite(buf, 1, count, gs_stdout);
             fflush(gs_stdout);
         }
@@ -317,12 +317,12 @@ process:
     }
 
     /* to help with memory leak detection, issue a reset */
-    pcl_do_resets(pcls, pcl_reset_printer);
+    pcl_do_resets(pcs, pcl_reset_printer);
 
     /* return to the original graphic state, reclaim memory once more */
-    pcl_grestore(pcls);
+    pcl_grestore(pcs);
     gs_reclaim(&inst.spaces, true);
-    pjl_process_destroy(pcls->pjls, mem);
+    pjl_process_destroy(pcs->pjls, mem);
 
 #ifdef DEBUG
     if ( gs_debug_c(':') ) {
@@ -341,7 +341,7 @@ process:
     }
 #endif
 
-    gs_closedevice(pcl_get_target_device(pcls));
+    gs_closedevice(pcl_get_target_device(pcs));
     gs_closedevice(gs_currentdevice(pgs));
     gs_lib_finit(0, 0);
     exit(0);

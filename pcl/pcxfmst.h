@@ -113,8 +113,8 @@ typedef struct pcl_xfm_state_s {
     gs_matrix                   pd2dev_mtx;
 
     /* height and width of logical page, in centipoints */
-    coord_point                 lp_size;
-    coord_point                 pd_size;
+    coord_point_t                 lp_size;
+    coord_point_t                 pd_size;
 
     /* printable region in logical page and device space */
     gs_rect                     lp_print_rect;

@@ -49,13 +49,13 @@ adjust_render_rectangle(
     int                     code = 0;
 
     /* adjust the width and height to reflect the logical page boundaries */
-    if (pcl_cap.x + w > pxfmst->pd_size.x)
-        w = pxfmst->pd_size.x - pcl_cap.x;
-    if (pcl_cap.y + h > pxfmst->pd_size.y)
-        h = pxfmst->pd_size.y - pcl_cap.y;
+    if (pcs->cap.x + w > pxfmst->pd_size.x)
+        w = pxfmst->pd_size.x - pcs->cap.x;
+    if (pcs->cap.y + h > pxfmst->pd_size.y)
+        h = pxfmst->pd_size.y - pcs->cap.y;
 
     /* move the current point to an integral pixel location */
-    gs_transform(pgs, (floatp)pcl_cap.x, (floatp)pcl_cap.y, &(rect.p));
+    gs_transform(pgs, (floatp)pcs->cap.x, (floatp)pcs->cap.y, &(rect.p));
     rect.p.x = floor(rect.p.x + 0.5);
     rect.p.y = floor(rect.p.y + 0.5);
 

@@ -28,7 +28,7 @@ bool pcl_check_symbol_support(P2(const byte *symset_req,
 				 const byte *font_sup));
 
 /* Find a symbol map, given its ID and glyph vocabulary. */
-pl_symbol_map_t *pcl_find_symbol_map(P3(const pcl_state_t *pcls,
+pl_symbol_map_t *pcl_find_symbol_map(P3(const pcl_state_t *pcs,
 					const byte *id,
 					pl_glyph_vocabulary_t gv));
 

@@ -30,15 +30,15 @@ private int status_add_symbol_id(ushort *, int, ushort);
 /* Read out from the status buffer. */
 /* Return the number of bytes read. */
 uint
-pcl_status_read(byte *data, uint max_data, pcl_state_t *pcls)
+pcl_status_read(byte *data, uint max_data, pcl_state_t *pcs)
 {	uint count = min(max_data,
-			 pcls->status.write_pos - pcls->status.read_pos);
+			 pcs->status.write_pos - pcs->status.read_pos);
 	if ( count )
-	  memcpy(data, pcls->status.buffer + pcls->status.read_pos, count);
-	pcls->status.read_pos += count;
-	if ( pcls->status.read_pos == pcls->status.write_pos )
-	  { gs_free_object(pcls->memory, pcls->status.buffer, "status buffer");
-	    pcls->status.write_pos = pcls->status.read_pos = 0;
+	  memcpy(data, pcs->status.buffer + pcs->status.read_pos, count);
+	pcs->status.read_pos += count;
+	if ( pcs->status.read_pos == pcs->status.write_pos )
+	  { gs_free_object(pcs->memory, pcs->status.buffer, "status buffer");
+	    pcs->status.write_pos = pcs->status.read_pos = 0;
 	  }
 	return count;
 }
@@ -65,26 +65,26 @@ stprintf(stream *s, const char *fmt, ...)
 
 /* Set up a stream for writing into the status buffer. */
 private void
-status_begin(stream *s, pcl_state_t *pcls)
-{	byte *buffer = pcls->status.buffer;
+status_begin(stream *s, pcl_state_t *pcs)
+{	byte *buffer = pcs->status.buffer;
 
-	if ( pcls->status.read_pos > 0 )
-	  { memmove(buffer, buffer + pcls->status.read_pos,
-		    pcls->status.write_pos - pcls->status.read_pos);
-	    pcls->status.write_pos -= pcls->status.read_pos;
-	    pcls->status.read_pos = 0;
+	if ( pcs->status.read_pos > 0 )
+	  { memmove(buffer, buffer + pcs->status.read_pos,
+		    pcs->status.write_pos - pcs->status.read_pos);
+	    pcs->status.write_pos -= pcs->status.read_pos;
+	    pcs->status.read_pos = 0;
 	  }
 	if ( buffer == 0 )
-	  { buffer = gs_alloc_bytes(pcls->memory, STATUS_BUFFER_SIZE,
+	  { buffer = gs_alloc_bytes(pcs->memory, STATUS_BUFFER_SIZE,
 				    "status buffer");
-	    pcls->status.buffer = buffer;
+	    pcs->status.buffer = buffer;
 	  }
 	if ( buffer == 0 )
-	  swrite_string(s, pcls->status.internal_buffer,
-			sizeof(pcls->status.internal_buffer));
+	  swrite_string(s, pcs->status.internal_buffer,
+			sizeof(pcs->status.internal_buffer));
 	else
-	  swrite_string(s, buffer, gs_object_size(pcls->memory, buffer));
-	sseek(s, pcls->status.write_pos);
+	  swrite_string(s, buffer, gs_object_size(pcs->memory, buffer));
+	sseek(s, pcs->status.write_pos);
 	stputs(s, "PCL\r\n");
 }
 
@@ -146,7 +146,7 @@ status_put_floating(stream *s, double v)
 /* Print font status information. */
 /* font_set = -1 for font list, 0 or 1 for current font. */
 private int
-status_put_font(stream *s, pcl_state_t *pcls,
+status_put_font(stream *s, pcl_state_t *pcs,
   uint font_id, uint internal_id,
   pl_font_t *plfont, int font_set, bool extended)
 {	char paren = (font_set > 0 ? ')' : '(');
@@ -157,7 +157,7 @@ status_put_font(stream *s, pcl_state_t *pcls,
 	if ( pl_font_is_bound(plfont) || font_set > 0 )
 	  { /* Bound or current font, put out the symbol set. */
 	    uint symbol_set = font_set > 0?
-	      pcls->font_selection[font_set].params.symbol_set:
+	      pcs->font_selection[font_set].params.symbol_set:
 	      plfont->params.symbol_set;
 	    stprintf(s, "<Esc>%c%u%c", paren, symbol_set >> 5,
 		     (symbol_set & 31) + 'A' - 1);
@@ -179,12 +179,12 @@ status_put_font(stream *s, pcl_state_t *pcls,
 		 * plfont is below where the scaled values exist. */
 		if ( proportional )
 		  { status_put_floating(s,
-		      pcls->font_selection[font_set].params.height_4ths / 4.0);
+		      pcs->font_selection[font_set].params.height_4ths / 4.0);
 		    stputs(s, "h");
 		  }
 		else
 		  { status_put_floating(s,
-		      pl_fp_pitch_per_inch(&pcls->font_selection[font_set].
+		      pl_fp_pitch_per_inch(&pcs->font_selection[font_set].
 					   params));
 		    stputs(s, "v");
 		  }
@@ -206,9 +206,9 @@ status_put_font(stream *s, pcl_state_t *pcls,
 	    gs_const_string key;
 	    void *value;
 
-	    idlist = (ushort *)gs_alloc_bytes(pcls->memory,
-		pl_dict_length(&pcls->soft_symbol_sets, false) +
-		pl_dict_length(&pcls->built_in_symbol_sets, false),
+	    idlist = (ushort *)gs_alloc_bytes(pcs->memory,
+		pl_dict_length(&pcs->soft_symbol_sets, false) +
+		pl_dict_length(&pcs->built_in_symbol_sets, false),
 		"status_fonts(idlist)");
 	    if ( idlist == NULL )
 	      return e_Memory;
@@ -217,9 +217,9 @@ status_put_font(stream *s, pcl_state_t *pcls,
 
 	    /* NOTE: Temporarily chain soft, built-in symbol sets.  DON'T
 	     * exit this section without unchaining them. */
-	    pl_dict_set_parent(&pcls->soft_symbol_sets,
-		&pcls->built_in_symbol_sets);
-	    pl_dict_enum_begin(&pcls->soft_symbol_sets, &denum);
+	    pl_dict_set_parent(&pcs->soft_symbol_sets,
+		&pcs->built_in_symbol_sets);
+	    pl_dict_enum_begin(&pcs->soft_symbol_sets, &denum);
 	    while ( pl_dict_enum_next(&denum, &key, &value) )
 	      { pcl_symbol_set_t *ssp = (pcl_symbol_set_t *)value;
 		pl_glyph_vocabulary_t gx;
@@ -235,10 +235,10 @@ status_put_font(stream *s, pcl_state_t *pcls,
 		      break;	/* one will suffice */
 		    }
 	      }
-	    pl_dict_set_parent(&pcls->soft_symbol_sets, NULL);
+	    pl_dict_set_parent(&pcs->soft_symbol_sets, NULL);
 	    /* Symbol sets are back to normal. */
 
-	    gs_free_object(pcls->memory, (void*)idlist,
+	    gs_free_object(pcs->memory, (void*)idlist,
 		"status_fonts(idlist)");
 	  }
 	if ( extended )
@@ -292,17 +292,17 @@ status_put_font(stream *s, pcl_state_t *pcls,
 /* Finish writing status. */
 /* If we overflowed the buffer, store an error message. */
 private void
-status_end(stream *s, pcl_state_t *pcls)
+status_end(stream *s, pcl_state_t *pcs)
 {	if ( sendwp(s) )
 	  { /* Overrun.  Scan back to the last EOL that leaves us */
 	    /* enough room for the error line. */
 	    static const char *error_line = "ERROR=INTERNAL ERROR\r\n";
 	    int error_size = strlen(error_line) + 1;
-	    uint limit = gs_object_size(pcls->memory, pcls->status.buffer);
+	    uint limit = gs_object_size(pcs->memory, pcs->status.buffer);
 	    uint wpos = stell(s);
 	    
 	    while ( limit - wpos < error_size ||
-		    pcls->status.buffer[wpos - 1] != '\n'
+		    pcs->status.buffer[wpos - 1] != '\n'
 		  )
 	      --wpos;
 	    s->end_status = 0;	/**** SHOULDN'T BE NECESSARY ****/
@@ -310,28 +310,28 @@ status_end(stream *s, pcl_state_t *pcls)
 	    stputs(s, error_line);
 	  }
 	sputc(s, FF);
-	pcls->status.write_pos = stell(s);
+	pcs->status.write_pos = stell(s);
 }
 
 /* Status readouts */
 /* storage = 0 means currently selected, otherwise it is a mask. */
 
 private int
-status_do_fonts(stream *s, pcl_state_t *pcls,
+status_do_fonts(stream *s, pcl_state_t *pcs,
   pcl_data_storage_t storage, bool extended)
 {	gs_const_string key;
 	void *value;
 	pl_dict_enum_t denum;
 	int res;
 
-	pl_dict_enum_begin(&pcls->soft_fonts, &denum);
+	pl_dict_enum_begin(&pcs->soft_fonts, &denum);
 	while ( pl_dict_enum_next(&denum, &key, &value) )
 	  { uint id = (key.data[0] << 8) + key.data[1];
 	    if ( (((pl_font_t *)value)->storage & storage) != 0 ||
-		 (storage == 0 && pcls->font == (pl_font_t *)value)
+		 (storage == 0 && pcs->font == (pl_font_t *)value)
 	       )
-	      res = status_put_font(s, pcls, id, id, (pl_font_t *)value,
-		  (storage != 0 ? -1 : pcls->font_selected),  extended);
+	      res = status_put_font(s, pcs, id, id, (pl_font_t *)value,
+		  (storage != 0 ? -1 : pcs->font_selected),  extended);
 	      if ( res != 0 )
 		return res;
 	  }
@@ -339,13 +339,13 @@ status_do_fonts(stream *s, pcl_state_t *pcls,
 }
 
 private int
-status_fonts(stream *s, pcl_state_t *pcls,
+status_fonts(stream *s, pcl_state_t *pcs,
   pcl_data_storage_t storage)
-{	return status_do_fonts(s, pcls, storage, false);
+{	return status_do_fonts(s, pcs, storage, false);
 }
 
 private int
-status_macros(stream *s, pcl_state_t *pcls,
+status_macros(stream *s, pcl_state_t *pcs,
   pcl_data_storage_t storage)
 {	gs_const_string key;
 	void *value;
@@ -353,7 +353,7 @@ status_macros(stream *s, pcl_state_t *pcls,
 
 	if ( storage == 0 )
 	  return 0;		/* no "currently selected" macro */
-	pl_dict_enum_begin(&pcls->macros, &denum);
+	pl_dict_enum_begin(&pcs->macros, &denum);
 	while ( pl_dict_enum_next(&denum, &key, &value) )
 	  if ( ((pcl_entity_t *)value)->storage & storage )
 	    { char id_string[6];
@@ -372,15 +372,15 @@ status_macros(stream *s, pcl_state_t *pcls,
   private int
 status_patterns(
     stream *             s,
-    pcl_state_t *        pcls,
+    pcl_state_t *        pcs,
     pcl_data_storage_t   storage
 )
 {
     if (storage == 0) {
-        int             id = pcls->current_pattern_id;
-        pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(pcls, id);
+        int             id = pcs->current_pattern_id;
+        pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(pcs, id);
 
-        if ((pptrn != 0) && (pcls->pattern_type == pcl_pattern_user_defined)) {
+        if ((pptrn != 0) && (pcs->pattern_type == pcl_pattern_user_defined)) {
             char    id_string[6];
 
 	    sprintf(id_string, "%u", id);
@@ -390,7 +390,7 @@ status_patterns(
         int     id;
 
         for (id = 0; id < (1L << 15) - 1; id++) {
-            pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(pcls, id);
+            pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(pcs, id);
  
             if (pptrn != 0) {
                 char    id_string[6];
@@ -406,13 +406,13 @@ status_patterns(
 
 
 private bool	/* Is this symbol map supported by any relevant font? */
-status_check_symbol_set(pcl_state_t *pcls, pl_symbol_map_t *mapp,
+status_check_symbol_set(pcl_state_t *pcs, pl_symbol_map_t *mapp,
   pcl_data_storage_t storage)
 {	gs_const_string key;
 	void *value;
 	pl_dict_enum_t fenum;
 
-	pl_dict_enum_begin(&pcls->soft_fonts, &fenum);
+	pl_dict_enum_begin(&pcs->soft_fonts, &fenum);
 	while ( pl_dict_enum_next(&fenum, &key, &value) )
 	  { pl_font_t *fp = (pl_font_t *)value;
 
@@ -448,7 +448,7 @@ status_add_symbol_id(ushort *idlist, int nid, ushort new_id)
 }
 
 private int
-status_symbol_sets(stream *s, pcl_state_t *pcls, pcl_data_storage_t storage)
+status_symbol_sets(stream *s, pcl_state_t *pcs, pcl_data_storage_t storage)
 {	gs_const_string key;
 	void *value;
 	pl_dict_enum_t denum;
@@ -463,9 +463,9 @@ status_symbol_sets(stream *s, pcl_state_t *pcls, pcl_data_storage_t storage)
 	 * the "storage" value refers to the location of fonts. */
 
 	/* total up built-in symbol sets, downloaded ones */
-	nid = pl_dict_length(&pcls->soft_symbol_sets, false) +
-	    pl_dict_length(&pcls->built_in_symbol_sets, false);
-	idlist = (ushort *)gs_alloc_bytes(pcls->memory, nid * sizeof(ushort),
+	nid = pl_dict_length(&pcs->soft_symbol_sets, false) +
+	    pl_dict_length(&pcs->built_in_symbol_sets, false);
+	idlist = (ushort *)gs_alloc_bytes(pcs->memory, nid * sizeof(ushort),
 	    "status_symbol_sets(idlist)");
 	if ( idlist == NULL )
 	  return e_Memory;
@@ -478,38 +478,38 @@ status_symbol_sets(stream *s, pcl_state_t *pcls, pcl_data_storage_t storage)
 
 	/* NOTE: Temporarily chain soft, built-in symbol sets.  DON'T
 	 * exit this section without unchaining them. */
-	pl_dict_set_parent(&pcls->soft_symbol_sets,
-	    &pcls->built_in_symbol_sets);
-	pl_dict_enum_begin(&pcls->soft_symbol_sets, &denum);
+	pl_dict_set_parent(&pcs->soft_symbol_sets,
+	    &pcs->built_in_symbol_sets);
+	pl_dict_enum_begin(&pcs->soft_symbol_sets, &denum);
 	while ( pl_dict_enum_next(&denum, &key, &value) )
 	  { pcl_symbol_set_t *ssp = (pcl_symbol_set_t *)value;
 	    pl_glyph_vocabulary_t gx;
 
 	    for ( gx = plgv_MSL; gx < plgv_next; gx++ )
 	      if ( ssp->maps[gx] != NULL &&
-		  status_check_symbol_set(pcls, ssp->maps[gx], storage) )
+		  status_check_symbol_set(pcs, ssp->maps[gx], storage) )
 		{
 		  nid = status_add_symbol_id(idlist, nid,
 		      (ssp->maps[gx]->id[0] << 8) + ssp->maps[gx]->id[1]);
 		  break;	/* one will suffice */
 		}
 	  }
-	pl_dict_set_parent(&pcls->soft_symbol_sets, NULL);
+	pl_dict_set_parent(&pcs->soft_symbol_sets, NULL);
 	/* Symbol sets are back to normal. */
 
 	status_print_idlist(s, idlist, nid, "IDLIST");
-	gs_free_object(pcls->memory, (void*)idlist,
+	gs_free_object(pcs->memory, (void*)idlist,
 	    "status_symbol_sets(idlist)");
 	return 0;
 }
 
 private int
-status_fonts_extended(stream *s, pcl_state_t *pcls,
+status_fonts_extended(stream *s, pcl_state_t *pcs,
   pcl_data_storage_t storage)
-{	return status_do_fonts(s, pcls, storage, true);
+{	return status_do_fonts(s, pcs, storage, true);
 }
 
-private int (*const status_write[])(P3(stream *s, pcl_state_t *pcls,
+private int (*const status_write[])(P3(stream *s, pcl_state_t *pcs,
 				 pcl_data_storage_t storage)) = {
   status_fonts, status_macros, status_patterns, status_symbol_sets,
   status_fonts_extended
@@ -518,21 +518,21 @@ private int (*const status_write[])(P3(stream *s, pcl_state_t *pcls,
 /* Commands */
 
 private int /* ESC * s <enum> T */
-pcl_set_readback_loc_type(pcl_args_t *pargs, pcl_state_t *pcls)
-{	pcls->location_type = uint_arg(pargs);
+pcl_set_readback_loc_type(pcl_args_t *pargs, pcl_state_t *pcs)
+{	pcs->location_type = uint_arg(pargs);
 	return 0;
 }
 
 private int /* ESC * s <enum> U */
-pcl_set_readback_loc_unit(pcl_args_t *pargs, pcl_state_t *pcls)
-{	pcls->location_unit = uint_arg(pargs);
+pcl_set_readback_loc_unit(pcl_args_t *pargs, pcl_state_t *pcs)
+{	pcs->location_unit = uint_arg(pargs);
 	return 0;
 }
 
 private int /* ESC * s <enum> I */
-pcl_inquire_readback_entity(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_inquire_readback_entity(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint i = uint_arg(pargs);
-	int unit = pcls->location_unit;
+	int unit = pcs->location_unit;
 	stream st;
 	static const char *entity_types[] = {
 	  "FONTS", "MACROS", "PATTERNS", "SYMBOLSETS", "FONTS EXTENDED"
@@ -543,9 +543,9 @@ pcl_inquire_readback_entity(pcl_args_t *pargs, pcl_state_t *pcls)
 
 	if ( i > 4 )
 	  return e_Range;
-	status_begin(&st, pcls);
+	status_begin(&st, pcs);
 	stprintf(&st, "INFO %s\r\n", entity_types[i]);
-	switch ( pcls->location_type )
+	switch ( pcs->location_type )
 	  {
 	  case 0:		/* invalid location */
 	    code = -1;
@@ -596,13 +596,13 @@ pcl_inquire_readback_entity(pcl_args_t *pargs, pcl_state_t *pcls)
 	  }
 	if ( code >= 0 )
 	  { pos = stell(&st);
-	    code = (*status_write[i])(&st, pcls, storage);
+	    code = (*status_write[i])(&st, pcs, storage);
 	    if ( code >= 0 )
 	      { if ( stell(&st) == pos )
 		  stputs(&st, "ERROR=NONE\r\n");
 	        else if ( storage == 0 )	/* currently selected */
 		  stprintf(&st, "LOCTYPE=%d\r\nLOCUNIT=%d\r\n",
-			   pcls->location_type, unit);
+			   pcs->location_type, unit);
 	      }
 	  }
 	if ( code < 0 )
@@ -612,22 +612,22 @@ pcl_inquire_readback_entity(pcl_args_t *pargs, pcl_state_t *pcls)
 	    else
 	      stputs(&st, "ERROR=INVALID LOCATION\r\n");
 	  }
-	status_end(&st, pcls);
+	status_end(&st, pcs);
 	return 0;
 }
 
 private int /* ESC * s 1 M */
-pcl_free_space(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_free_space(pcl_args_t *pargs, pcl_state_t *pcs)
 {	stream st;
 
-	status_begin(&st, pcls);
+	status_begin(&st, pcs);
 	stprintf(&st, "INFO MEMORY\r\n");
 	if ( int_arg(pargs) != 1 )
 	  stprintf(&st, "ERROR=INVALID UNIT\r\n");
 	else
 	  { gs_memory_status_t mstat;
-	    gs_memory_status(pcls->memory, &mstat);
-	    if ( pcls->memory != &gs_memory_default )
+	    gs_memory_status(pcs->memory, &mstat);
+	    if ( pcs->memory != &gs_memory_default )
 	      { gs_memory_status_t dstat;
 	        gs_memory_status(&gs_memory_default, &dstat);
 		mstat.allocated += dstat.allocated;
@@ -640,12 +640,12 @@ pcl_free_space(pcl_args_t *pargs, pcl_state_t *pcls)
 	    stprintf(&st, "LARGEST=%ld\r\n",
 		     (mstat.allocated - mstat.used) >> 2);
 	  }
-	status_end(&st, pcls);
+	status_end(&st, pcs);
 	return 0;
 }
 
 private int /* ESC & r <bool> F */
-pcl_flush_all_pages(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_flush_all_pages(pcl_args_t *pargs, pcl_state_t *pcs)
 {	switch ( uint_arg(pargs) )
 	  {
 	  case 0:
@@ -655,10 +655,10 @@ pcl_flush_all_pages(pcl_args_t *pargs, pcl_state_t *pcls)
 	    }
 	  case 1:
 	    { /* Flush all pages, including an incomplete one. */
-	      int code = pcl_end_page_if_marked(pcls);
+	      int code = pcl_end_page_if_marked(pcs);
 
               if (code >= 0)
-                  pcl_home_cursor(pcls);
+                  pcl_home_cursor(pcs);
 	      return code;
 	    }
 	  default:
@@ -667,12 +667,12 @@ pcl_flush_all_pages(pcl_args_t *pargs, pcl_state_t *pcls)
 }
 
 private int /* ESC * s <int_id> X */
-pcl_echo(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_echo(pcl_args_t *pargs, pcl_state_t *pcs)
 {	stream st;
 
-	status_begin(&st, pcls);
+	status_begin(&st, pcs);
 	stprintf(&st, "ECHO %d\r\n", int_arg(pargs));
-	status_end(&st, pcls);
+	status_end(&st, pcs);
 	return 0;
 }
 
@@ -705,15 +705,15 @@ pcstatus_do_init(gs_memory_t *mem)
 	return 0;
 }
 private void
-pcstatus_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
+pcstatus_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { if ( type & pcl_reset_initial )
-	      { pcls->status.buffer = 0;
-	        pcls->status.write_pos = 0;
-		pcls->status.read_pos = 0;
+	      { pcs->status.buffer = 0;
+	        pcs->status.write_pos = 0;
+		pcs->status.read_pos = 0;
 	      }
-	    pcls->location_type = 0;
-	    pcls->location_unit = 0;
+	    pcs->location_type = 0;
+	    pcs->location_unit = 0;
 	  }
 }
 

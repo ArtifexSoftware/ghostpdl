@@ -49,8 +49,8 @@ preserve_cap_and_margins(
     gs_rect *            ptext_rect
 )
 {
-    pcur_pt->x = (double)pcl_cap.x;
-    pcur_pt->y = (double)pcl_cap.y;
+    pcur_pt->x = (double)pcs->cap.x;
+    pcur_pt->y = (double)pcs->cap.y;
     gs_point_transform( pcur_pt->x,
                         pcur_pt->y,
                         &(pcs->xfm_state.pd2lp_mtx),
@@ -80,8 +80,8 @@ restore_cap_and_margins(
 
     pcl_invert_mtx(&(pcs->xfm_state.pd2lp_mtx), &lp2pd);
     gs_point_transform(pcur_pt->x, pcur_pt->y, &lp2pd, &tmp_pt);
-    pcl_cap.x = (coord)tmp_pt.x;
-    pcl_cap.y = (coord)tmp_pt.y;
+    pcs->cap.x = (coord)tmp_pt.x;
+    pcs->cap.y = (coord)tmp_pt.y;
     pcl_transform_rect(ptext_rect, &tmp_rect, &lp2pd);
     pcs->margins.left = (coord)tmp_rect.p.x;
     pcs->margins.top = (coord)tmp_rect.p.y;
@@ -630,7 +630,7 @@ set_left_margin(
 
     if (lmarg < pcs->margins.right) {
         pcs->margins.left = lmarg;
-        if (pcl_cap.x < lmarg)
+        if (pcs->cap.x < lmarg)
             pcl_set_cap_x(pcs, lmarg, false, false);
     }
     return 0;
@@ -654,7 +654,7 @@ set_right_margin(
 	rmarg = pcs->xfm_state.pd_size.x;
     if (rmarg > pcs->margins.left) {
         pcs->margins.right = rmarg;
-        if (pcl_cap.x > rmarg)
+        if (pcs->cap.x > rmarg)
             pcl_set_cap_x(pcs, rmarg, false, false);
     }
 

@@ -69,7 +69,7 @@ dprint_font_t(const pl_font_t *pfont)
    if it is available. 2 is returned for no matching symbol set, 1 for
    mismatched vocabulary and 0 if the sets match. */
 private int
-check_support(const pcl_state_t *pcls, uint symbol_set, const pl_font_t *fp,
+check_support(const pcl_state_t *pcs, uint symbol_set, const pl_font_t *fp,
     pl_symbol_map_t **mapp)
 {
 	pl_glyph_vocabulary_t gv = (pl_glyph_vocabulary_t)
@@ -77,12 +77,12 @@ check_support(const pcl_state_t *pcls, uint symbol_set, const pl_font_t *fp,
 	byte id[2];
 	id[0] = symbol_set >> 8;
 	id[1] = symbol_set;
-	*mapp = pcl_find_symbol_map(pcls, id, gv);
+	*mapp = pcl_find_symbol_map(pcs, id, gv);
 	if ( *mapp == 0 )
 	  {
-	    id[0] = pcls->default_symbol_set_value >> 8;
-	    id[1] = (byte)(pcls->default_symbol_set_value);
-	    *mapp = pcl_find_symbol_map(pcls, id, gv);
+	    id[0] = pcs->default_symbol_set_value >> 8;
+	    id[1] = (byte)(pcs->default_symbol_set_value);
+	    *mapp = pcl_find_symbol_map(pcs, id, gv);
 	    return 0; /* worst */
 	  }
 	if ( pcl_check_symbol_support((*mapp)->character_requirements,
@@ -95,7 +95,7 @@ check_support(const pcl_state_t *pcls, uint symbol_set, const pl_font_t *fp,
 /* Compute a font's score against selection parameters.  TRM 8-27.
  * Also set *mapp to the symbol map to be used if this font wins. */
 private void
-score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
+score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
     const pl_font_t *fp, pl_symbol_map_t **mapp, match_score_t score)
 {
 	int tscore;
@@ -106,11 +106,11 @@ score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
 	  {
 	    score[score_symbol_set] =
 		pfs->params.symbol_set == fp->params.symbol_set? 2:
-		    (fp->params.symbol_set == pcls->default_symbol_set_value);
+		    (fp->params.symbol_set == pcs->default_symbol_set_value);
 	    *mapp = 0;		/* bound fonts have no map */
 	  }
 	else
-	  score[score_symbol_set] = check_support(pcls, pfs->params.symbol_set, fp, mapp);
+	  score[score_symbol_set] = check_support(pcs, pfs->params.symbol_set, fp, mapp);
 	/* 2.  Spacing. */
 	score[score_spacing] =
 	  pfs->params.proportional_spacing == fp->params.proportional_spacing;
@@ -221,7 +221,7 @@ score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
 	  { pcl_font_header_t *fhp = (pcl_font_header_t *)(fp->header);
 
 	    score[score_orientation] = fhp?
-	        fhp->Orientation == pcls->xfm_state.lp_orient :
+	        fhp->Orientation == pcs->xfm_state.lp_orient :
 		0;
 	  }
 
@@ -243,7 +243,7 @@ score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
 /* Recompute the current font from the descriptive parameters. */
 /* This is used by both PCL and HP-GL/2. */
 int
-pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcls)
+pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 {	if ( pfs->font == 0 )
 	  { pl_dict_enum_t dictp;
 	    gs_const_string key;
@@ -262,12 +262,12 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcls)
 
 	    /* Initialize the best match to be worse than any real font. */
 	    best_match[0] = -1;
-	    pl_dict_enum_begin(&pcls->soft_fonts, &dictp);
+	    pl_dict_enum_begin(&pcs->soft_fonts, &dictp);
 	    while ( pl_dict_enum_next(&dictp, &key, &value) )
 	      { pl_font_t *fp = (pl_font_t *)value;
 		match_score_t match;
 		score_index_t i;
-		score_match(pcls, pfs, fp, &mapp, match);
+		score_match(pcs, pfs, fp, &mapp, match);
 		for (i=(score_index_t)0; i<score_limit; i++)
 		  if ( match[i] != best_match[i] )
 		    {
@@ -299,7 +299,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcls)
 /* This is used by both PCL and HP-GL/2. */
 int
 pcl_reselect_substitute_font(pcl_font_selection_t *pfs,
-			     const pcl_state_t *pcls, const uint chr)
+			     const pcl_state_t *pcs, const uint chr)
 {
 	if ( pfs->font == 0 )
 	  {
@@ -319,7 +319,7 @@ pcl_reselect_substitute_font(pcl_font_selection_t *pfs,
 
 	    /* Initialize the best match to be worse than any real font. */
 	    best_match[0] = -1;
-	    pl_dict_enum_begin(&pcls->soft_fonts, &dictp);
+	    pl_dict_enum_begin(&pcs->soft_fonts, &dictp);
 	    while ( pl_dict_enum_next(&dictp, &key, &value) )
 	      { pl_font_t *fp = (pl_font_t *)value;
 		match_score_t match;
@@ -327,7 +327,7 @@ pcl_reselect_substitute_font(pcl_font_selection_t *pfs,
 		gs_matrix ignore_mat;
 		if ( !pl_font_includes_char(fp, NULL, &ignore_mat, chr) )
 		  continue;
-		score_match(pcls, pfs, fp, &mapp, match);
+		score_match(pcs, pfs, fp, &mapp, match);
 		for (i=(score_index_t)0; i<score_limit; i++)
 		  if ( match[i] != best_match[i] )
 		    {
@@ -353,7 +353,7 @@ pcl_reselect_substitute_font(pcl_font_selection_t *pfs,
 
 /* set font parameters after an id selection */
 void
-pcl_set_id_parameters(const pcl_state_t *pcls, 
+pcl_set_id_parameters(const pcl_state_t *pcs, 
 		      pcl_font_selection_t *pfs, pl_font_t *fp)
 {
 	/* Transfer parameters from the selected font into the selection
@@ -364,9 +364,9 @@ pcl_set_id_parameters(const pcl_state_t *pcls,
 	if ( pl_font_is_bound(fp) )
 	  pfs->params.symbol_set = fp->params.symbol_set;
 	else
-	  { if ( check_support(pcls, pfs->params.symbol_set, fp, &pfs->map) )
+	  { if ( check_support(pcs, pfs->params.symbol_set, fp, &pfs->map) )
 	      DO_NOTHING;
-	    else if ( check_support(pcls, pcls->default_symbol_set_value,
+	    else if ( check_support(pcs, pcs->default_symbol_set_value,
 				    fp, &pfs->map)
 		    )
 	      DO_NOTHING;
@@ -391,16 +391,16 @@ pcl_set_id_parameters(const pcl_state_t *pcls,
 /* Select a font by ID, updating the selection parameters. */
 /* Return 0 normally, 1 if no font was found, or an error code. */
 int
-pcl_select_font_by_id(pcl_font_selection_t *pfs, uint id, pcl_state_t *pcls)
+pcl_select_font_by_id(pcl_font_selection_t *pfs, uint id, pcl_state_t *pcs)
 {	byte id_key[2];
 	void *value;
 	pl_font_t *fp;
 
 	id_key[0] = id >> 8;
 	id_key[1] = (byte)id;
-	if ( !pl_dict_find(&pcls->soft_fonts, id_key, 2, &value) )
+	if ( !pl_dict_find(&pcs->soft_fonts, id_key, 2, &value) )
 	  return 1;		/* font not found */
 	fp = (pl_font_t *)value;
-	pcl_set_id_parameters(pcls, pfs, fp);
+	pcl_set_id_parameters(pcs, pfs, fp);
 	return 0;
 }

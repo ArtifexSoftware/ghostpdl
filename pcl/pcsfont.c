@@ -33,43 +33,43 @@ typedef enum {
 /* Delete a soft font.  If it is the currently selected font, or the */
 /* current primary or secondary font, cause a new one to be chosen. */
 private void
-pcl_delete_soft_font(pcl_state_t *pcls, const byte *key, uint ksize,
+pcl_delete_soft_font(pcl_state_t *pcs, const byte *key, uint ksize,
   void *value)
 {
     if ( value == NULL ) {
-	if ( !pl_dict_find(&pcls->soft_fonts, key, ksize, &value) )
+	if ( !pl_dict_find(&pcs->soft_fonts, key, ksize, &value) )
 	    return;		/* not a defined font */
     }
     {
 	pl_font_t *plfontp = (pl_font_t *)value;
-	if ( pcls->font_selection[0].font == plfontp )
-	    pcls->font_selection[0].font = 0;
-	if ( pcls->font_selection[1].font == plfontp )
-	    pcls->font_selection[1].font = 0;
+	if ( pcs->font_selection[0].font == plfontp )
+	    pcs->font_selection[0].font = 0;
+	if ( pcs->font_selection[1].font == plfontp )
+	    pcs->font_selection[1].font = 0;
 	/* if this is permanent font we need to tell PJL we are
            removing it */
 	if ( plfontp->storage & pcds_permanent )
-	    if ( pjl_register_permanent_soft_font_deletion(pcls->pjls,
+	    if ( pjl_register_permanent_soft_font_deletion(pcs->pjls,
 		       plfontp->params.pjl_font_number) > 0 )
-		pcl_set_current_font_environment(pcls);
-	pcls->font = pcls->font_selection[pcls->font_selected].font;
-	pl_dict_undef_purge_synonyms(&pcls->soft_fonts, key, ksize);
+		pcl_set_current_font_environment(pcs);
+	pcs->font = pcs->font_selection[pcs->font_selected].font;
+	pl_dict_undef_purge_synonyms(&pcs->soft_fonts, key, ksize);
     }
 }
 
 /* ------ Commands ------ */
 
 private int /* ESC * c <id> D */
-pcl_assign_font_id(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_assign_font_id(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint id = uint_arg(pargs);
-	id_set_value(pcls->font_id, id);
+	id_set_value(pcs->font_id, id);
 	/* set state to use id's not strings */
-	pcls->font_id_type = numeric_id;
+	pcs->font_id_type = numeric_id;
 	return 0;
 }
 
 private int /* ESC * c <fc_enum> F */
-pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
 {	
     gs_const_string key;
     void *value;
@@ -78,65 +78,65 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcls)
     switch ( uint_arg(pargs) ) {
     case 0:
 	/* Delete all soft fonts. */
-	pcls->font = pcls->font_selection[pcls->font_selected].font;
-	    pl_dict_enum_stack_begin(&pcls->soft_fonts, &denum, false);
+	pcs->font = pcs->font_selection[pcs->font_selected].font;
+	    pl_dict_enum_stack_begin(&pcs->soft_fonts, &denum, false);
 	    while ( pl_dict_enum_next(&denum, &key, &value) )
-		pcl_delete_soft_font(pcls, key.data, key.size, value);
-	    pl_dict_release(&pcls->soft_fonts);
+		pcl_delete_soft_font(pcs, key.data, key.size, value);
+	    pl_dict_release(&pcs->soft_fonts);
 	break;
     case 1:
 	/* Delete all temporary soft fonts. */
-	    pl_dict_enum_stack_begin(&pcls->soft_fonts, &denum, false);
+	    pl_dict_enum_stack_begin(&pcs->soft_fonts, &denum, false);
 	    while ( pl_dict_enum_next(&denum, &key, &value) )
 		if ( ((pl_font_t *)value)->storage == pcds_temporary )
-		    pcl_delete_soft_font(pcls, key.data, key.size, value);
+		    pcl_delete_soft_font(pcs, key.data, key.size, value);
 	break;
     case 2:
 	 /* Delete soft font <font_id>. */
-	    pcl_delete_soft_font(pcls, current_font_id, current_font_id_size, NULL);
+	    pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
 	
 	break;
     case 3:
 	 /* Delete character <font_id, character_code>. */
-	    if ( pl_dict_find(&pcls->soft_fonts, current_font_id, current_font_id_size, &value) )
-		pl_font_remove_glyph((pl_font_t *)value, pcls->character_code);
+	    if ( pl_dict_find(&pcs->soft_fonts, current_font_id, current_font_id_size, &value) )
+		pl_font_remove_glyph((pl_font_t *)value, pcs->character_code);
 	    return 0;
 	
 	break;
     case 4:
 	 /* Make soft font <font_id> temporary. */
-	    if ( pl_dict_find(&pcls->soft_fonts, current_font_id, current_font_id_size, &value) )
+	    if ( pl_dict_find(&pcs->soft_fonts, current_font_id, current_font_id_size, &value) )
 		((pl_font_t *)value)->storage = pcds_temporary;
 	
 	break;
     case 5:
 	 /* Make soft font <font_id> permanent. */
-	    if ( pl_dict_find(&pcls->soft_fonts, current_font_id, current_font_id_size, &value) ) {
+	    if ( pl_dict_find(&pcs->soft_fonts, current_font_id, current_font_id_size, &value) ) {
 		((pl_font_t *)value)->storage = pcds_permanent;
 		((pl_font_t *)value)->params.pjl_font_number = 
-		    pjl_register_permanent_soft_font_addition(pcls->pjls);
+		    pjl_register_permanent_soft_font_addition(pcs->pjls);
 	    }
 	break;
     case 6:
 	{
 	    int code;
-	    if ( pcls->font == 0 ) { 
-		code = pcl_recompute_font(pcls);
+	    if ( pcs->font == 0 ) { 
+		code = pcl_recompute_font(pcs);
 		if ( code < 0 )
 		    return code;
 	    }
 	    {
-		pl_font_t *plfont = pl_clone_font(pcls->font,
-						  pcls->memory,
+		pl_font_t *plfont = pl_clone_font(pcs->font,
+						  pcs->memory,
 						  "pcl_font_control()");
 		if ( plfont == 0 )
 		    return_error(e_Memory);
-		code = gs_definefont(pcls->font_dir, plfont->pfont);
+		code = gs_definefont(pcs->font_dir, plfont->pfont);
 		if ( code < 0 )
 		    return code;
-		pcl_delete_soft_font(pcls, current_font_id, current_font_id_size, NULL);
+		pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
 		plfont->storage = pcds_temporary;
-		pl_dict_put(&pcls->soft_fonts, current_font_id, current_font_id_size, plfont);
+		pl_dict_put(&pcs->soft_fonts, current_font_id, current_font_id_size, plfont);
 	    }
 	}
 	break;
@@ -147,13 +147,13 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcls)
 }
 
 private int /* ESC ) s <count> W */
-pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint count = uint_arg(pargs);
 	const byte *data = arg_data(pargs);
 	pcl_font_header_t *pfh = (pcl_font_header_t *)data;
 	uint desc_size;
 	pl_font_scaling_technology_t fst;
-	gs_memory_t *mem = pcls->memory;
+	gs_memory_t *mem = pcs->memory;
 	pl_font_t *plfont;
 	byte *header;
 	int code;
@@ -181,7 +181,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	    return_error(gs_error_invalidfont);
 	  }
 	/* Delete any previous font with this ID. */
-	pcl_delete_soft_font(pcls, current_font_id, current_font_id_size, NULL);
+	pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
 	/* Create the generic font information. */
 	plfont = pl_alloc_font(mem, "pcl_font_header(pl_font_t)");
 	header = gs_alloc_bytes(mem, count, "pcl_font_header(header)");
@@ -208,7 +208,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 
 	    if ( pfont == 0 )
 	      return_error(e_Memory);
-	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcls->font_dir,
+	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcs->font_dir,
 				   mem);
 	    if ( code < 0 )
 	      return code;
@@ -269,7 +269,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	      if ( code < 0 )
 		return code;
 	    }
-	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcls->font_dir,
+	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcs->font_dir,
 				   mem);
 	    if ( code < 0 )
 	      return code;
@@ -289,7 +289,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 
 	    if ( pfont == 0 )
 	      return_error(e_Memory);
-	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcls->font_dir,
+	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcs->font_dir,
 				   mem);
 	    if ( code < 0 )
 	      return code;
@@ -324,20 +324,20 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	  (int)(pfh->StrokeWeight ^ 0x80) - 0x80;
 	plfont->params.typeface_family =
 	  (pfh->TypefaceMSB << 8) + pfh->TypefaceLSB;
-	pl_dict_put(&pcls->soft_fonts, current_font_id,
+	pl_dict_put(&pcs->soft_fonts, current_font_id,
 		    current_font_id_size, plfont);
 	plfont->pfont->procs.define_font = gs_no_define_font;
-	return gs_definefont(pcls->font_dir, plfont->pfont);
+	return gs_definefont(pcs->font_dir, plfont->pfont);
 }
 
 private int /* ESC * c <char_code> E */
-pcl_character_code(pcl_args_t *pargs, pcl_state_t *pcls)
-{	pcls->character_code = uint_arg(pargs);
+pcl_character_code(pcl_args_t *pargs, pcl_state_t *pcs)
+{	pcs->character_code = uint_arg(pargs);
 	return 0;
 }
 
 private int /* ESC ( s <count> W */
-pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint count = uint_arg(pargs);
 	const byte *data = arg_data(pargs);
 	void *value;
@@ -345,7 +345,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	pcl_font_header_format_t format;
 	byte *char_data = 0;
 
-	if ( !pl_dict_find(&pcls->soft_fonts, current_font_id,
+	if ( !pl_dict_find(&pcs->soft_fonts, current_font_id,
 			   current_font_id_size, &value) )
 	  return 0;		/* font not found */
 	if ( count < 4 || data[2] > count - 2 )
@@ -382,7 +382,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 		    byte *row;
 
 		    char_data =
-		      gs_alloc_bytes(pcls->memory, 16 + width_bytes * height,
+		      gs_alloc_bytes(pcs->memory, 16 + width_bytes * height,
 				     "pcl_character_data(compressed bitmap)");
 		    if ( char_data == 0 )
 		      return_error(e_Memory);
@@ -488,13 +488,13 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	/* Compressed bitmaps have already allocated and filled in */
 	/* the character data structure. */
 	if ( char_data == 0 )
-	  { char_data = gs_alloc_bytes(pcls->memory, count,
+	  { char_data = gs_alloc_bytes(pcs->memory, count,
 				       "pcl_character_data");
 	    if ( char_data == 0 )
 	      return_error(e_Memory);
 	    memcpy(char_data, data, count);
 	  }
-	return pl_font_add_glyph(plfont, pcls->character_code, char_data);
+	return pl_font_add_glyph(plfont, pcs->character_code, char_data);
 #undef plfont
 }
 
@@ -505,7 +505,7 @@ typedef struct alphanumeric_data_s {
 } alphanumeric_data_t;
 
 private int /* ESC & n <count> W [operation][string ID] */
-pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
 {
 	uint count = uint_arg(pargs);
 	const alphanumeric_data_t *alpha_data = 
@@ -520,22 +520,22 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	  case 0:
 	    /* Set the current font id to the given string id. */
 	    {
-	      char *new_id = (char *)gs_alloc_bytes(pcls->memory, string_id_size,
+	      char *new_id = (char *)gs_alloc_bytes(pcs->memory, string_id_size,
 					    "pcl_alphanumeric_id_data");
 	      if ( new_id == 0 ) 
 		return_error(e_Memory);
 	      /* release the previous id, if necessary */
-	      if ( pcls->alpha_font_id.id )
-		gs_free_object( pcls->memory,
-				pcls->alpha_font_id.id,
+	      if ( pcs->alpha_font_id.id )
+		gs_free_object( pcs->memory,
+				pcs->alpha_font_id.id,
 				"pcl_free_string_id" );
 	      /* copy in the new id from the data */
 	      memcpy(new_id, alpha_data->string_id, string_id_size);
 	      /* set new id and size */
-	      pcls->alpha_font_id.id = (byte *)new_id;
-	      pcls->alpha_font_id.size = string_id_size;
+	      pcs->alpha_font_id.id = (byte *)new_id;
+	      pcs->alpha_font_id.size = string_id_size;
 	      /* now set up the state to use string id's */
-	      pcls->font_id_type = string_id;
+	      pcs->font_id_type = string_id;
 	    }
 	  break;
 	  case 1:
@@ -544,12 +544,12 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcls)
 		 with the string id.  We simply create an alias entry
 		 for the current font id entry.  HAS - FIXME. ... */
 	      void *value;
-	      if ( !pl_dict_find(&pcls->soft_fonts,
+	      if ( !pl_dict_find(&pcs->soft_fonts,
 				 alpha_data->string_id,
 				 string_id_size,
 				 &value) )
 		return 0;
-	      pl_dict_put_synonym(&pcls->soft_fonts, alpha_data->string_id,
+	      pl_dict_put_synonym(&pcs->soft_fonts, alpha_data->string_id,
 			       string_id_size, current_font_id,
 			       current_font_id_size);
 	    }
@@ -560,72 +560,72 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcls)
 		 primary.  Same as font id selection but uses the
 		 string key instead of a numerical key */
 	      void *value;
-	      pcl_font_selection_t *pfs = &pcls->font_selection[primary];
-	      if ( !pl_dict_find(&pcls->soft_fonts,
+	      pcl_font_selection_t *pfs = &pcs->font_selection[primary];
+	      if ( !pl_dict_find(&pcs->soft_fonts,
 				 alpha_data->string_id,
 				 string_id_size,
 				 &value) )
 		return 1;
-	      pcl_set_id_parameters(pcls, pfs, (pl_font_t *)value);
-	      pcls->font = pfs->font;
+	      pcl_set_id_parameters(pcs, pfs, (pl_font_t *)value);
+	      pcs->font = pfs->font;
 	    }
 	  break;
 	  case 3:
 	    {
 	      /* same as case 2 but sets secondary font */
 	      void *value;
-	      pcl_font_selection_t *pfs = &pcls->font_selection[secondary];
-	      if ( !pl_dict_find(&pcls->soft_fonts,
+	      pcl_font_selection_t *pfs = &pcs->font_selection[secondary];
+	      if ( !pl_dict_find(&pcs->soft_fonts,
 				 alpha_data->string_id,
 				 string_id_size,
 				 &value) )
 		return 1;
-	      pcl_set_id_parameters(pcls, pfs, (pl_font_t *)value);
+	      pcl_set_id_parameters(pcs, pfs, (pl_font_t *)value);
 	    }
 	  break;
 	  case 4:
 	    {
 	      /* sets the current macro id to the string id */
-	      char *new_id = (char *)gs_alloc_bytes(pcls->memory, string_id_size,
+	      char *new_id = (char *)gs_alloc_bytes(pcs->memory, string_id_size,
 					    "pcl_alphanumeric_id_data");
 	      if ( new_id == 0 ) 
 		return_error(e_Memory);
 	      /* release the previous id, if necessary */
-	      if ( pcls->alpha_macro_id.id )
-		gs_free_object( pcls->memory,
-				pcls->alpha_macro_id.id,
+	      if ( pcs->alpha_macro_id.id )
+		gs_free_object( pcs->memory,
+				pcs->alpha_macro_id.id,
 				"pcl_free_string_id" );
 	      /* copy in the new id from the data */
 	      memcpy(new_id, alpha_data->string_id, string_id_size);
 	      /* set new id and size */
-	      pcls->alpha_macro_id.id = (byte *)new_id;
-	      pcls->alpha_macro_id.size = string_id_size;
+	      pcs->alpha_macro_id.id = (byte *)new_id;
+	      pcs->alpha_macro_id.size = string_id_size;
 	      /* now set up the state to use string id's */
-	      pcls->macro_id_type = string_id;
+	      pcs->macro_id_type = string_id;
 	    }
 	    break;
 	  case 5:
 	    /* associates current macro id to the supplied string id */
 	    {
 	      void *value;
-	      if ( !pl_dict_find(&pcls->macros,
+	      if ( !pl_dict_find(&pcs->macros,
 				 alpha_data->string_id,
 				 string_id_size,
 				 &value) )
 		return 0;
-	      pl_dict_put_synonym(&pcls->macros, alpha_data->string_id, string_id_size,
+	      pl_dict_put_synonym(&pcs->macros, alpha_data->string_id, string_id_size,
 			       current_macro_id, current_macro_id_size );
 	    }
 	    break;
 	  case 20:
 	    /* deletes the font association named by the current Font ID */
-	    if ( pcls->font_id_type == string_id )
-	      pcl_delete_soft_font(pcls, current_font_id, current_font_id_size, NULL);
+	    if ( pcs->font_id_type == string_id )
+	      pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
 	    break;
 	  case 21:
 	    /* deletes the macro association named the the current macro id */
-	    if ( pcls->macro_id_type == string_id )
-	      pl_dict_undef(&pcls->macros, current_macro_id, current_macro_id_size);
+	    if ( pcs->macro_id_type == string_id )
+	      pl_dict_undef(&pcs->macros, current_macro_id, current_macro_id_size);
 	    break;
 	  case 100:
 	    /* media select */
@@ -662,31 +662,31 @@ pcsfont_do_init(gs_memory_t *mem)
 	return 0;
 }
 private void
-pcsfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
+pcsfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
 	  { 
-	    id_set_value(pcls->font_id, 0);
-	    pcls->character_code = 0;
-	    pcls->font_id_type = numeric_id;
+	    id_set_value(pcs->font_id, 0);
+	    pcs->character_code = 0;
+	    pcs->font_id_type = numeric_id;
 	    if ( (type & pcl_reset_printer) != 0 )
 	      { pcl_args_t args;
 	        arg_set_uint(&args, 1); /* delete temporary fonts */
-		pcl_font_control(&args, pcls);
-		if ( pcls->alpha_font_id.id != 0 )
-		  gs_free_object(pcls->memory,
-				 pcls->alpha_font_id.id,
+		pcl_font_control(&args, pcs);
+		if ( pcs->alpha_font_id.id != 0 )
+		  gs_free_object(pcs->memory,
+				 pcs->alpha_font_id.id,
 				 "pcsfont_do_reset");
 	      }
-	    pcls->alpha_font_id.id = 0;
+	    pcs->alpha_font_id.id = 0;
 	  }
 }
 private int
-pcsfont_do_copy(pcl_state_t *psaved, const pcl_state_t *pcls,
+pcsfont_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
   pcl_copy_operation_t operation)
 {	if ( operation & pcl_copy_after )
 	  { /* Don't restore the soft font set. */
 	    /**** MUST HANDLE POSSIBILITY THAT CURRENT FONT WAS DELETED. ****/
-	    psaved->soft_fonts = pcls->soft_fonts;
+	    psaved->soft_fonts = pcs->soft_fonts;
 	  }
 	return 0;
 }

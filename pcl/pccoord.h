@@ -23,15 +23,6 @@ typedef int     coord;
 
 typedef struct coord_point_s {
     coord   x, y;
-} coord_point;
-
-/*
- * The current PCL addressable position (in pcursor.c). This is NOT part of
- * the PCL state, though it previously was implmented as such. For this
- * reason, it is declared here.
- *
- * This point is in "pseudo print direction" space.
- */
-extern  coord_point pcl_cap;
+} coord_point_t;
 
 #endif			/* pccoord_INCLUDED */

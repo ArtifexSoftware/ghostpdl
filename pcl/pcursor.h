@@ -23,7 +23,7 @@
  *
  * NB: absolute vertical positions passed to pcl_set_cap_y are in full
  *     page direction space, not the "pseudo" page directions space in
- *     which the pcl_cap is maintained. If passing coordinates in the
+ *     which the pcs->cap is maintained. If passing coordinates in the
  *     latter space, BE SURE TO SUBTRACT THE CURRENT TOP MARGIN.
  */
 extern  void    pcl_set_cap_x(

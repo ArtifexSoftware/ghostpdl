@@ -44,11 +44,11 @@ pcl_parser_state_t *pcl_process_alloc(P1(gs_memory_t *memory));
 void pcl_process_init(P1(pcl_parser_state_t *pst));
 
 /* Process a buffer of PCL commands. */
-int pcl_process(P3(pcl_parser_state_t *pst, pcl_state_t *pcls,
+int pcl_process(P3(pcl_parser_state_t *pst, pcl_state_t *pcs,
 		   stream_cursor_read *pr));
 
 /* Execute a macro (in pcmacros.c). */
-int pcl_execute_macro(P5(const pcl_macro_t *pmac, pcl_state_t *pcls,
+int pcl_execute_macro(P5(const pcl_macro_t *pmac, pcl_state_t *pcs,
 			 pcl_copy_operation_t before, pcl_reset_type_t reset,
 			 pcl_copy_operation_t after));
 

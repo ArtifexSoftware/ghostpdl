@@ -88,9 +88,9 @@ typedef pcl_command_proc((*pcl_command_proc_t));
 
 /* Define a few exported processing procedures. */
 pcl_command_proc(pcl_disable_display_functions);
-uint pcl_status_read(P3(byte *data, uint max_data, pcl_state_t *pcls));
+uint pcl_status_read(P3(byte *data, uint max_data, pcl_state_t *pcs));
 /* Process a string of plain (printable) text. */
-int pcl_text(P4(const byte *str, uint size, pcl_state_t *pcls, bool literal));
+int pcl_text(P4(const byte *str, uint size, pcl_state_t *pcs, bool literal));
 /* Process a single text character.  This is almost never called. */
 pcl_command_proc(pcl_plain_char);
 
@@ -212,15 +212,15 @@ typedef struct pcl_init_s {
 	/* Register commands and do true one-time initialization. */
   int (*do_init)(P1(gs_memory_t *mem));
 	/* Initialize state at startup, printer reset, and other times. */
-  void (*do_reset)(P2(pcl_state_t *pcls, pcl_reset_type_t type));
+  void (*do_reset)(P2(pcl_state_t *pcs, pcl_reset_type_t type));
 	/* Partially copy the state for macro call, overlay, and exit. */
-  int (*do_copy)(P3(pcl_state_t *psaved, const pcl_state_t *pcls,
+  int (*do_copy)(P3(pcl_state_t *psaved, const pcl_state_t *pcs,
 		    pcl_copy_operation_t operation));
 } pcl_init_t;
 /* Define the table of pointers to init structures (in pcjob.c). */
 extern const pcl_init_t *pcl_init_table[];
 /* Run the reset code of all the modules. */
-int pcl_do_resets(P2(pcl_state_t *pcls, pcl_reset_type_t type));
+int pcl_do_resets(P2(pcl_state_t *pcs, pcl_reset_type_t type));
 
 /* Define stored entity storage status. */
 /* Note that this is a mask, not an ordinal. */

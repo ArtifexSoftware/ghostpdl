@@ -173,8 +173,8 @@ pcl_enter_graphics_mode(
      * Since this is a discontinuous effect, the equality checks below
      * should be made while still in centipoings.
      */
-    prstate->clip_all = ( (pcl_cap.x == pxfmst->pd_size.x) ||
-                          (pcl_cap.y == pxfmst->pd_size.y)   );
+    prstate->clip_all = ( (pcs->cap.x == pxfmst->pd_size.x) ||
+                          (pcs->cap.y == pxfmst->pd_size.y)   );
 
     /* create to raster space to logical page space transformation */
     rot = pxfmst->lp_orient + pxfmst->print_dir;
@@ -187,8 +187,8 @@ pcl_enter_graphics_mode(
     pcl_invert_mtx(&rst2lp, &lp2rst);
 
     /* convert the current point to raster space */
-    cur_pt.x = (double)pcl_cap.x;
-    cur_pt.y = (double)pcl_cap.y;
+    cur_pt.x = (double)pcs->cap.x;
+    cur_pt.y = (double)pcs->cap.y;
     pcl_xfm_to_logical_page_space(pcs, &cur_pt);
     gs_point_transform(cur_pt.x, cur_pt.y, &lp2rst, &cur_pt);
 

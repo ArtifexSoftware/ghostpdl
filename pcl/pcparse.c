@@ -251,27 +251,27 @@ pcl_adjust_arg(pcl_args_t *pargs, const pcl_command_definition_t *pdefn)
 
 /* Append some just-scanned input data to the macro being defined. */
 private int
-append_macro(const byte *from, const byte *to, pcl_state_t *pcls)
+append_macro(const byte *from, const byte *to, pcl_state_t *pcs)
 {	uint count = to - from;
-	uint size = gs_object_size(pcls->memory, pcls->macro_definition);
+	uint size = gs_object_size(pcs->memory, pcs->macro_definition);
 	byte *new_defn =
-	  gs_resize_object(pcls->memory, pcls->macro_definition, size + count,
+	  gs_resize_object(pcs->memory, pcs->macro_definition, size + count,
 			   "append_macro");
 
 	if ( new_defn == 0 )
 	  return_error(e_Memory);
 	memcpy(new_defn + size, from + 1, count);
-	pcls->macro_definition = new_defn;
+	pcs->macro_definition = new_defn;
 	return 0;
 }
 
 /* Process a buffer of PCL commands. */
 int
-pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
+pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 {	const byte *p = pr->ptr;
 	const byte *rlimit = pr->limit;
 	int code = 0;
-	bool in_macro = pcls->defining_macro;
+	bool in_macro = pcs->defining_macro;
 	/* Record how much of the input we've copied into a macro */
 	/* in the process of being defined. */
 	const byte *macro_p = p;
@@ -328,23 +328,23 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 			     )
 			    { if ( do_display_functions() )
 			        { pst->args.command = chr;
-				  code = pcl_plain_char(&pst->args, pcls);
+				  code = pcl_plain_char(&pst->args, pcs);
 				  if ( code < 0 )
 				    goto x;
 				}
 			      pst->args.command = chr = *++p;
-			      pcl_disable_display_functions(&pst->args, pcls);
+			      pcl_disable_display_functions(&pst->args, pcs);
 			      pst->scan_type = scanning_none;
 			    }
 			}
 		      if ( do_display_functions() )
 			{ if ( chr == CR )
-			    { pcl_do_CR(pcls);
-			      code = pcl_do_LF(pcls);
+			    { pcl_do_CR(pcs);
+			      code = pcl_do_LF(pcs);
 			    }
 			  else
 			    { pst->args.command = chr;
-			      code = pcl_plain_char(&pst->args, pcls);
+			      code = pcl_plain_char(&pst->args, pcs);
 			    }
 			  if ( code < 0 )
 			    goto x;
@@ -428,7 +428,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 			        if ( rlimit - p <= count )
 				  { /* Allocate a buffer for the data. */
 				    pst->args.data =
-				      gs_alloc_bytes(pcls->memory, count,
+				      gs_alloc_bytes(pcs->memory, count,
 						     "command data");
 				    if ( pst->args.data == 0 )
 				      { --p;
@@ -450,16 +450,16 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 			param_init();
 			continue;
 		  case scanning_none:
-			if ( pcls->parse_other )
+			if ( pcs->parse_other )
 			  { /*
 			     * Hand off the data stream
 			     * to another parser (HP-GL/2).
 			     */
 			    pr->ptr = p;
-			    code = (*pcls->parse_other)
-			      (pcls->parse_data, pcls, pr);
+			    code = (*pcs->parse_other)
+			      (pcs->parse_data, pcs, pr);
 			    p = pr->ptr;
-			    if ( code < 0 || (code == 0 && pcls->parse_other) )
+			    if ( code < 0 || (code == 0 && pcs->parse_other) )
 			      goto x;
 			  }
 			chr = *++p;
@@ -476,8 +476,8 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 				if ( (cdefn == 0 ||
 				      cdefn->proc == pcl_plain_char) &&
 				     !in_macro &&
-				     !pcls->parse_other &&
-				     !pcls->raster_state.graphics_mode
+				     !pcs->parse_other &&
+				     !pcs->raster_state.graphics_mode
 				   )
 				  { /*
 				     * Look ahead for a run of plain text.
@@ -494,7 +494,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 				      }
 				    if_debug0('i', "\n");
 				    code = pcl_text(str, (uint)(p + 1 - str),
-						    pcls, false);
+						    pcs, false);
 				    if ( code < 0 )
 				      goto x;
 				    cdefn = NULL;
@@ -551,24 +551,24 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 		    /* Make sure all the data through this point */
 		    /* has been captured in the macro definition. */
 		    if ( in_macro )
-		      { code = append_macro(macro_p, p, pcls);
+		      { code = append_macro(macro_p, p, pcs);
 		        macro_p = p;
 			if ( code < 0 )
 			  goto x;
 		      }
 		    pst->args.command = chr;
-		    if ( !pcls->raster_state.graphics_mode ||
+		    if ( !pcs->raster_state.graphics_mode ||
 			 (cdefn->actions & pca_raster_graphics) ||
-			 (code = pcl_end_graphics_mode(pcls)) >= 0
+			 (code = pcl_end_graphics_mode(pcs)) >= 0
 		       )
-		      code = (*cdefn->proc)(&pst->args, pcls);
+		      code = (*cdefn->proc)(&pst->args, pcs);
 		    /*
 		     * If we allocated a buffer for command data,
 		     * and the command didn't take possession of it,
 		     * free it now.
 		     */
 		    if ( pst->args.data_on_heap && pst->args.data )
-		      { gs_free_object(pcls->memory, pst->args.data,
+		      { gs_free_object(pcs->memory, pst->args.data,
 				       "command data");
 		        pst->args.data = 0;
 		      }
@@ -580,15 +580,15 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 		      }
 		    else if ( code < 0 )
 		      break;
-		    if ( pcls->display_functions )
+		    if ( pcs->display_functions )
 		      { /* This calls for a special parsing state. */
 			pst->scan_type = scanning_display;
 		      }
-		    if ( pcls->defining_macro && !in_macro )
+		    if ( pcs->defining_macro && !in_macro )
 		      { /* We just started a macro definition. */
 			macro_p = p;
 		      }
-		    in_macro = pcls->defining_macro;
+		    in_macro = pcs->defining_macro;
 		  }
 		else
 		  { /*
@@ -596,7 +596,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 		     * free it now.
 		     */
 		    if ( pst->args.data_on_heap && pst->args.data )
-		      { gs_free_object(pcls->memory, pst->args.data,
+		      { gs_free_object(pcs->memory, pst->args.data,
 				       "command data");
 		        pst->args.data = 0;
 		      }
@@ -606,7 +606,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 x:	pr->ptr = p;
 	/* Append the last bit of data to the macro, if defining. */
 	if ( in_macro )
-	  { int mcode = append_macro(macro_p, p, pcls);
+	  { int mcode = append_macro(macro_p, p, pcs);
 	    if ( mcode < 0 && code >= 0 )
 	      code = mcode;
 	  }
@@ -616,16 +616,16 @@ x:	pr->ptr = p;
 /* ---------------- Initialization ---------------- */
 
 private void
-pcparse_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
+pcparse_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { /* Return to PCL mode. */
             if ( type & pcl_reset_initial )
                 pcl_command_next_index = 0;
-	    if ( !(type & pcl_reset_initial) && pcls->parse_data )
-	      gs_free_object(pcls->memory, pcls->parse_data,
+	    if ( !(type & pcl_reset_initial) && pcs->parse_data )
+	      gs_free_object(pcs->memory, pcs->parse_data,
 			     "secondary parser data(reset)");
-	    pcls->parse_data = 0;
-	    pcls->parse_other = 0;
+	    pcs->parse_data = 0;
+	    pcs->parse_other = 0;
 	  }
 }
 const pcl_init_t pcparse_init = {

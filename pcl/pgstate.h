@@ -130,14 +130,14 @@ typedef struct pcl_hpgl_state_s {
 		/* Chapter 18 (pgframe.c) */
 
 	struct pf_ {
-	  coord_point size;
-	  coord_point anchor_point;
+	  coord_point_t size;
+	  coord_point_t anchor_point;
 	} picture_frame;
 
 #define picture_frame_width picture_frame.size.x
 #define picture_frame_height picture_frame.size.y
 
-	coord_point plot_size;
+	coord_point_t plot_size;
 
 #define plot_width plot_size.x
 #define plot_height plot_size.y

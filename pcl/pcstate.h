@@ -93,7 +93,7 @@ struct pcl_state_s {
 
     /* Define an optional procedure for parsing non-ESC data. */
     int             (*parse_other)(P3( void *                  parse_data,
-                                       pcl_state_t *           pcls,
+                                       pcl_state_t *           pcs,
 			               stream_cursor_read *    pr
                                        ));
     void *          parse_data;	        /* closure data for parse_other */
@@ -116,6 +116,9 @@ struct pcl_state_s {
     coord           hmi_cp;
     coord           vmi_cp;
     int             line_termination;
+    coord_point_t   cap;
+    gs_point        cursor_stk[20];
+    int             cursor_stk_size;
 
     /* Chapter 8 (pcfont.c) */
     pcl_font_selection_t    font_selection[2];
@@ -141,7 +144,7 @@ struct pcl_state_s {
 
     /* Internal variables */
     float           last_width;		/* escapement of last char (for BS) */
-    coord_point     underline_start;	/* start point of underline */
+    coord_point_t   underline_start;	/* start point of underline */
     bool            last_was_BS;	/* no printable chars since last BS */
     gs_show_enum *  penum;              /* enumeration structure for
                                          * printing text */
@@ -162,11 +165,11 @@ struct pcl_state_s {
     id_type_t                   font_id_type;
 
 #define current_font_id                                                 \
-    ( ((pcls->font_id_type == string_id) ? (pcls->alpha_font_id.id)     \
-                                         : (id_key(pcls->font_id))) )
+    ( ((pcs->font_id_type == string_id) ? (pcs->alpha_font_id.id)     \
+                                         : (id_key(pcs->font_id))) )
 
 #define current_font_id_size                                                  \
-    ( ((pcls->font_id_type == string_id) ? (pcls->alpha_font_id.size) : (2)) )
+    ( ((pcs->font_id_type == string_id) ? (pcs->alpha_font_id.size) : (2)) )
 
     /* Chapter 12 (pcmacros.c) */
     pcl_id_t        macro_id;
@@ -184,11 +187,11 @@ struct pcl_state_s {
     id_type_t       macro_id_type;
 
 #define current_macro_id                                                \
-    ( ((pcls->macro_id_type == string_id) ? (pcls->alpha_macro_id.id)   \
-                                          : (id_key(pcls->macro_id))) )
+    ( ((pcs->macro_id_type == string_id) ? (pcs->alpha_macro_id.id)   \
+                                          : (id_key(pcs->macro_id))) )
 
 #define current_macro_id_size                                                   \
-    ( ((pcls->macro_id_type == string_id) ? (pcls->alpha_macro_id.size) : (2)) )
+    ( ((pcs->macro_id_type == string_id) ? (pcs->alpha_macro_id.size) : (2)) )
 
     /* Chapter 13 (pcprint.c) */
     gs_point            pat_ref_pt;     /* active pattern reference point,
@@ -219,7 +222,7 @@ struct pcl_state_s {
 
 
     /* Chapter 14 (pcrect.c) */
-    coord_point     rectangle;
+    coord_point_t     rectangle;
 
     /* Chapter 15 &  Chapter C6 (pcgmode.c) */
     pcl_raster_state_t  raster_state;
@@ -274,9 +277,9 @@ struct pcl_state_s {
    pcmain.c for now */
 void pcl_set_target_device(P2(pcl_state_t *pcs, gx_device *pdev));
 gx_device *pcl_get_target_device(P1(pcl_state_t *pcs));
-int pcl_load_cartridge_fonts(P2(pcl_state_t *pcls, const char *pathname));
-int pcl_load_simm_fonts(P2(pcl_state_t *pcls, const char *pathname));
-int pcl_load_built_in_fonts(P2(pcl_state_t *pcls, const char *pathname));
-int pcl_set_current_font_environment(P1(pcl_state_t *pcls));
+int pcl_load_cartridge_fonts(P2(pcl_state_t *pcs, const char *pathname));
+int pcl_load_simm_fonts(P2(pcl_state_t *pcs, const char *pathname));
+int pcl_load_built_in_fonts(P2(pcl_state_t *pcs, const char *pathname));
+int pcl_set_current_font_environment(P1(pcl_state_t *pcs));
 
 #endif 						/* pcstate_INCLUDED */

@@ -302,8 +302,8 @@ set_pat_ref_pt(
 
     if (rotate <= 1) {
         pcl_break_underline(pcs);
-        gs_point_transform( (floatp)pcl_cap.x,
-                            (floatp)pcl_cap.y,
+        gs_point_transform( (floatp)pcs->cap.x,
+                            (floatp)pcs->cap.y,
                             &(pcs->xfm_state.pd2lp_mtx),
                             &(pcs->pcl_pat_ref_pt)
                             );

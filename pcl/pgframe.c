@@ -25,23 +25,23 @@ extern pcl_command_proc(rtl_enter_pcl_mode);
 /* side effects resulting from a change in picture frame size or
    anchor point position */
  private int
-pcl_set_picture_frame_side_effects(pcl_state_t *pcls)
+pcl_set_picture_frame_side_effects(pcl_state_t *pcs)
 {
     hpgl_args_t args;
     /* default P1 and P2 */
     hpgl_args_setup(&args);
-    hpgl_IP(&args, pcls);
+    hpgl_IP(&args, pcs);
     
     /* default the clipping window */
     hpgl_args_setup(&args);
-    hpgl_IW(&args, pcls);
+    hpgl_IW(&args, pcs);
     
     /* clear the polygon buffer */
     hpgl_args_set_int(&args,0);
-    hpgl_PM(&args, pcls);
+    hpgl_PM(&args, pcs);
     
     hpgl_args_set_int(&args,2);
-    hpgl_PM(&args, pcls);
+    hpgl_PM(&args, pcs);
 
     /* NB according to spec should move pen to P1. */
     return 0;
@@ -49,27 +49,27 @@ pcl_set_picture_frame_side_effects(pcl_state_t *pcls)
     
 
 int /* ESC * c <w_dp> X */ 
-pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcs)
 {
 	coord size = (coord)(float_arg(pargs) * 10.0); /* --> centipoints */
 	
 	if ( size == 0 )
-	  size = pcls->xfm_state.lp_size.x;
-	pcls->g.picture_frame_width = size;
-	pcl_set_picture_frame_side_effects(pcls);
+	  size = pcs->xfm_state.lp_size.x;
+	pcs->g.picture_frame_width = size;
+	pcl_set_picture_frame_side_effects(pcs);
 	return 0;
 }
 
 int /* ESC * c <h_dp> Y */ 
-pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcs)
 {	
     coord size = (coord)(float_arg(pargs) * 10.0); /* --> centipoints */
 	
     /* default to pcl logical page */
     if ( size == 0 )
-	size = pcls->xfm_state.lp_size.y - inch2coord(1.0);
-    pcls->g.picture_frame_height = size;
-    pcl_set_picture_frame_side_effects(pcls);
+	size = pcs->xfm_state.lp_size.y - inch2coord(1.0);
+    pcs->g.picture_frame_height = size;
+    pcl_set_picture_frame_side_effects(pcs);
     return 0;
 }
 
@@ -79,7 +79,7 @@ pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
   int
 pcl_set_pic_frame_anchor_point(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
     uint            i = uint_arg(pargs);
@@ -89,61 +89,61 @@ pcl_set_pic_frame_anchor_point(
         return 0;
 
     /* The anchor point is in logical page space */
-    tmp_pt.x = pcl_cap.x;
-    tmp_pt.y = pcl_cap.y;
-    pcl_xfm_to_logical_page_space(pcls, &tmp_pt);
-    pcls->g.picture_frame.anchor_point.x = tmp_pt.x;
-    pcls->g.picture_frame.anchor_point.y = tmp_pt.y;
-    pcl_set_picture_frame_side_effects(pcls);
+    tmp_pt.x = pcs->cap.x;
+    tmp_pt.y = pcs->cap.y;
+    pcl_xfm_to_logical_page_space(pcs, &tmp_pt);
+    pcs->g.picture_frame.anchor_point.x = tmp_pt.x;
+    pcs->g.picture_frame.anchor_point.y = tmp_pt.y;
+    pcl_set_picture_frame_side_effects(pcs);
     return 0;
 }
 
 int /* ESC * c <w_in> K */ 
-pcl_hpgl_plot_horiz_size(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_hpgl_plot_horiz_size(pcl_args_t *pargs, pcl_state_t *pcs)
 {	
     /* convert to centipoints as to match the picture frame */
     float size = float_arg(pargs) * 7200.0;
 	
     if ( (coord)size == 0 ) {
-	size = pcls->g.picture_frame_width;
-	pcls->g.plot_size_horizontal_specified = false;
+	size = pcs->g.picture_frame_width;
+	pcs->g.plot_size_horizontal_specified = false;
     }
     else
-	pcls->g.plot_size_horizontal_specified = true;
+	pcs->g.plot_size_horizontal_specified = true;
 
-    pcls->g.plot_width = (coord)size;
+    pcs->g.plot_width = (coord)size;
     return 0;
 }
 
 int /* ESC * c <h_in> L */ 
-pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcs)
 {	
     /* convert to centipoints as to match the picture frame */
     float size = float_arg(pargs) * 7200.0;
     if ( (coord)size == 0 ) {
-	size = pcls->g.picture_frame_height;
-	pcls->g.plot_size_vertical_specified = false;
+	size = pcs->g.picture_frame_height;
+	pcs->g.plot_size_vertical_specified = false;
     }
     else
-	pcls->g.plot_size_vertical_specified = true;
-    pcls->g.plot_height = (coord)size;
+	pcs->g.plot_size_vertical_specified = true;
+    pcs->g.plot_height = (coord)size;
     return 0;
 }
 
 /* We redefine this command so we can draw the current GL path */
 /* and, if appropriate, reset the underline bookkeeping. */
 private int /* ESC % <enum> A */ 
-pcl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
+pcl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int code;
 
-	hpgl_call(hpgl_draw_current_path(pcls, hpgl_rm_vector));
-	code = rtl_enter_pcl_mode(pargs, pcls);
+	hpgl_call(hpgl_draw_current_path(pcs, hpgl_rm_vector));
+	code = rtl_enter_pcl_mode(pargs, pcs);
 	switch ( code )
 	  {
 	  default:		/* error */
 	    return code;
 	  case 1:		/* CAP changed */
-	    pcl_continue_underline(pcls);
+	    pcl_continue_underline(pcs);
 	  case 0:		/* CAP not changed */
 	    break;
 	  }

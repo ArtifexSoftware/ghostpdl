@@ -151,7 +151,7 @@ typedef struct pcl_cid_data_s {
  * Implement the GL/2 IN command. This is probably better done via a reset flag,
  * but currently there are no reset flags that propagate out of GL/2.
  */
-extern  int     pcl_cid_IN( pcl_state_t * pcls );
+extern  int     pcl_cid_IN( pcl_state_t * pcs );
 
 /*
  * Entry point for the configure image data code.
