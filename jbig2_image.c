@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image.c,v 1.1 2001/08/10 23:29:28 giles Exp $
+    $Id: jbig2_image.c,v 1.2 2001/08/13 20:31:59 giles Exp $
 */
 
 #include <stdio.h>
@@ -30,7 +30,7 @@ Jbig2Image* jbig2_image_new(int width, int height)
 		return NULL;
 	}
 	
-	stride = ((width - 1) >> 5) + 1;	/* generate a word-aligned stride */
+	stride = (((width - 1) >> 5) + 1) << 2;	/* generate a word-aligned stride */
 	image->data = malloc(stride*height);
 	if (image->data == NULL) {
 		fprintf(stderr, "jbig2dec error: could not allocate image data buffer!\n");

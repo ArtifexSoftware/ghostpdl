@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: png_image.c,v 1.2 2001/08/11 06:46:15 giles Exp $
+    $Id: png_image.c,v 1.3 2001/08/13 20:31:59 giles Exp $
 */
 
 #include <stdio.h>
@@ -94,16 +94,17 @@ int main(int argc, char *argv[])
 	uint32		*data;
 	char		*filename = "test.png";
 	
-	image = jbig2_image_new(256,128);
+	image = jbig2_image_new(400,400);
 	if (image == NULL) {
 		fprintf(stderr, "failed to create jbig2 image structure!\n");
 		exit(1);
 	}
 	
+	fprintf(stderr, "creating checkerboard test image '%s'\n", filename);
 	data = image->data;
-	for (j = 0; j < image->stride; j++) {
-		for (i = 0; i < image->height; i++) {
-			*data++ = (i+j % 2) * 0xF0F0F0F0;
+	for (j = 0; j < image->height; j++) {
+		for (i = 0; i < image->stride >> 2; i++) {
+			*data++ = ((j & 16) >> 4) ? 0x0000FFFF: 0xFFFF0000;
 		}
 	}
 	
