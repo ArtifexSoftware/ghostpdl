@@ -216,6 +216,10 @@ pdfdict begin
    15 dict begin
    /LocalResources 0 dict def
    /DefaultMatrix null def	% establish binding
+   /Printed where { pop } {
+		% Guess whether the output device is a printer.
+     /Printed currentpagedevice /OutputFile known def
+   } ifelse
    /PSLevel1 where { pop } { /PSLevel1 false def } ifelse
    cvlit /PDFfile exch def
    /PDFsource PDFfile def
