@@ -87,17 +87,6 @@ private RELOC_PTRS_WITH(gs_type1_state_reloc_ptrs, gs_type1_state *pcis)
 
 #define s (*ps)
 
-/* We export this for the Type 2 charstring interpreter. */
-void
-accum_xy_proc(register is_ptr ps, fixed dx, fixed dy)
-{
-    ptx += c_fixed(dx, xx),
-	pty += c_fixed(dy, yy);
-    if (sfc.skewed)
-	ptx += c_fixed(dy, yx),
-	    pty += c_fixed(dx, xy);
-}
-
 /* Initialize a Type 1 interpreter. */
 /* The caller must supply a string to the first call of gs_type1_interpret. */
 int
@@ -170,103 +159,30 @@ gs_type1_set_width(gs_type1_state * pcis, const gs_point * pwpt)
 /* Finish initializing the interpreter if we are actually rasterizing */
 /* the character, as opposed to just computing the side bearing and width. */
 void
-gs_type1_finish_init(gs_type1_state * pcis, gs_op1_state * ps)
+gs_type1_finish_init(gs_type1_state * pcis)
 {
     gs_imager_state *pis = pcis->pis;
+    const int max_coeff_bits = 11;	/* max coefficient in char space */
 
     /* Set up the fixed version of the transformation. */
     gx_matrix_to_fixed_coeff(&ctm_only(pis), &pcis->fc, max_coeff_bits);
-    sfc = pcis->fc;
 
     /* Set the current point of the path to the origin, */
-    /* in anticipation of the initial [h]sbw. */
-    {
-	gx_path *ppath = pcis->path;
-
-	ptx = pcis->origin.x = ppath->position.x;
-	pty = pcis->origin.y = ppath->position.y;
-    }
+    pcis->origin.x = pcis->path->position.x;
+    pcis->origin.y = pcis->path->position.y;
 
     /* Initialize hint-related scalars. */
     pcis->asb_diff = pcis->adxy.x = pcis->adxy.y = 0;
     pcis->flex_count = flex_max;	/* not in Flex */
-    pcis->dotsection_flag = dotsection_out;
-    pcis->vstem3_set = false;
     pcis->vs_offset.x = pcis->vs_offset.y = 0;
+
 
     /* Compute the flatness needed for accurate rendering. */
     pcis->flatness = gs_char_flatness(pis, 0.001);
 
-    /* Move to the side bearing point. */
-    accum_xy(pcis->lsb.x, pcis->lsb.y);
-    pcis->position.x = ptx;
-    pcis->position.y = pty;
-
     pcis->init_done = 1;
 }
 
-/* ------ Operator procedures ------ */
-
-int
-gs_op1_closepath(register is_ptr ps)
-{				/* Note that this does NOT reset the current point! */
-    gx_path *ppath = sppath;
-    subpath *psub;
-    segment *pseg;
-    fixed dx, dy;
-    int code;
-
-    /* Check for and suppress a microscopic closing line. */
-    if (ppath->segments != 0) {
-	if ((psub = ppath->current_subpath) != 0 &&
-	    (pseg = psub->last) != 0 &&
-	    (dx = pseg->pt.x - psub->pt.x,
-	     any_abs(dx) < float2fixed(0.1)) &&
-	    (dy = pseg->pt.y - psub->pt.y,
-	     any_abs(dy) < float2fixed(0.1))
-	    )
-	    switch (pseg->type) {
-		case s_line:
-		    code = gx_path_pop_close_subpath(sppath);
-		    break;
-		case s_curve:
-		    /*
-		     * Unfortunately, there is no "s_curve_close".  (Maybe there
-		     * should be?)  Just adjust the final point of the curve so it
-		     * is identical to the closing point.
-		     */
-		    pseg->pt = psub->pt;
-#define pcseg ((curve_segment *)pseg)
-		    pcseg->p2.x -= dx;
-		    pcseg->p2.y -= dy;
-#undef pcseg
-		    /* falls through */
-		default:
-		    /* What else could it be?? */
-		    code = gx_path_close_subpath(sppath);
-	} else
-	    code = gx_path_close_subpath(sppath);
-	if (code < 0)
-	    return code;
-    }
-    return gx_path_add_point(ppath, ptx, pty);	/* put the point where it was */
-}
-
-int
-gs_op1_rrcurveto(register is_ptr ps, fixed dx1, fixed dy1,
-		 fixed dx2, fixed dy2, fixed dx3, fixed dy3)
-{
-    gs_fixed_point pt1, pt2;
-    fixed ax0 = sppath->position.x - ptx;
-    fixed ay0 = sppath->position.y - pty;
-
-    accum_xy(dx1, dy1);
-    pt1.x = ptx + ax0, pt1.y = pty + ay0;
-    accum_xy(dx2, dy2);
-    pt2.x = ptx, pt2.y = pty;
-    accum_xy(dx3, dy3);
-    return gx_path_add_curve(sppath, pt1.x, pt1.y, pt2.x, pt2.y, ptx, pty);
-}
 
 #undef s
 
@@ -360,25 +276,14 @@ gs_type1_endchar(gs_type1_state * pcis)
     if (pcis->seac_accent >= 0) {	/* We just finished the base character of a seac. */
 	/* Do the accent. */
 	gs_font_type1 *pfont = pcis->pfont;
-	gs_op1_state s;
 	gs_glyph_data_t agdata;
 	int achar = pcis->seac_accent;
 	int code;
 
 	pcis->seac_accent = -1;
 	/* Reset the coordinate system origin */
-	sfc = pcis->fc;
-	ptx = pcis->origin.x, pty = pcis->origin.y;
 	pcis->asb_diff = pcis->save_asb - pcis->save_lsb.x;
 	pcis->adxy = pcis->save_adxy;
-	/*
-	 * We're going to add in the lsb of the accented character
-	 * (*not* the lsb of the accent) when we encounter the
-	 * [h]sbw of the accent, so ignore the lsb for now.
-	 */
-	accum_xy(pcis->adxy.x, pcis->adxy.y);
-	ppath->position.x = pcis->position.x = ptx;
-	ppath->position.y = pcis->position.y = pty;
 	pcis->os_count = 0;	/* clear */
 	/* Clear the ipstack, in case the base character */
 	/* ended inside a subroutine. */

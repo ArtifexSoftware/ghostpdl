@@ -23,7 +23,6 @@
 #include "gscrypt1.h"
 #include "gsgdata.h"
 #include "gstype1.h"
-#include "gxop1.h"
 #include "gxhintn.h"
 
 /* This file defines the structures for the state of a Type 1 / */
@@ -128,8 +127,6 @@ struct gs_type1_state_s {
 				/* needed to adjust Flex endpoint */
     gs_fixed_point adxy;	/* seac accent displacement, */
 				/* needed to adjust currentpoint */
-    gs_fixed_point position;	/* save unadjusted position */
-				/* when returning temporarily to caller */
     int flex_path_state_flags;	/* record whether path was open */
 				/* at start of Flex section */
 #define flex_max 8
@@ -137,11 +134,6 @@ struct gs_type1_state_s {
     int ignore_pops;		/* # of pops to ignore (after */
 				/* a known othersubr call) */
     /* The following are set dynamically. */
-#define dotsection_in 0
-#define dotsection_out (-1)
-    int dotsection_flag;	/* 0 if inside dotsection, */
-    /* -1 if outside */
-    bool vstem3_set;		/* true if vstem3 seen */
     gs_fixed_point vs_offset;	/* device space offset for centering */
 				/* middle stem of vstem3 */
 				/* of subpath */
@@ -242,7 +234,7 @@ typedef fixed *cs_ptr;
 
 /* ------ Shared Type 1 / Type 2 charstring utilities ------ */
 
-void gs_type1_finish_init(gs_type1_state * pcis, is_ptr ps);
+void gs_type1_finish_init(gs_type1_state * pcis);
 
 int gs_type1_sbw(gs_type1_state * pcis, fixed sbx, fixed sby,
 		 fixed wx, fixed wy);
@@ -254,7 +246,5 @@ int gs_type1_seac(gs_type1_state * pcis, const fixed * cstack,
 		  fixed asb_diff, ip_state_t * ipsp);
 
 int gs_type1_endchar(gs_type1_state * pcis);
-
-/* ----- Interface between main Type 1 interpreter and hint routines ----- */
 
 #endif /* gxtype1_INCLUDED */

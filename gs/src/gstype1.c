@@ -57,7 +57,6 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
     gs_type1_data *pdata = &pfont->data;
     t1_hinter *h = &pcis->h;
     bool encrypted = pdata->lenIV >= 0;
-    gs_op1_state s;
     fixed cstack[ostack_size];
 
 #define cs0 cstack[0]
@@ -86,7 +85,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    t1_hinter__init(h, pcis->path);
 	    break;
 	case 0:
-	    gs_type1_finish_init(pcis, &s);	/* sets sfc, ptx, pty, origin */
+	    gs_type1_finish_init(pcis);	/* sets origin */
 	    ftx = pcis->origin.x, fty = pcis->origin.y;
             code = t1_hinter__set_mapping(h, &pcis->pis->ctm, &pfont->FontBBox, 
 			    &pfont->FontMatrix, &pfont->base->FontMatrix,
@@ -102,12 +101,8 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    	return code;
 	    break;
 	default /*case 1 */ :
-	    ptx = pcis->position.x;
-	    pty = pcis->position.y;
-	    sfc = pcis->fc;
+	    break;
     }
-    sppath = pcis->path;
-    s.pcis = pcis;
     INIT_CSTACK(cstack, csp, pcis);
 
     if (pgd == 0)
@@ -235,27 +230,21 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    case cx_vmoveto:
 		cs1 = cs0;
 		cs0 = 0;
-		accum_y(cs1);
 	      move:		/* cs0 = dx, cs1 = dy for hint checking. */
                 code = t1_hinter__rmoveto(h, cs0, cs1);
 		goto cc;
 	    case cx_rlineto:
-		accum_xy(cs0, cs1);
 	      line:		/* cs0 = dx, cs1 = dy for hint checking. */
                 code = t1_hinter__rlineto(h, cs0, cs1);
 	      cc:if (code < 0)
 		    return code;
-	      pp:if_debug2('1', "[1]pt=(%g,%g)\n",
-			  fixed2float(ptx), fixed2float(pty));
 		cnext;
 	    case cx_hlineto:
-		accum_x(cs0);
 		cs1 = 0;
 		goto line;
 	    case cx_vlineto:
 		cs1 = cs0;
 		cs0 = 0;
-		accum_y(cs1);
 		goto line;
 	    case cx_rrcurveto:
                 code = t1_hinter__rcurveto(h, cs0, cs1, cs2, cs3, cs4, cs5);
@@ -269,17 +258,14 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		code = gs_type1_endchar(pcis);
 		if (code == 1) {
 		    /* do accent of seac */
-		    spt = pcis->position;
 		    ipsp = &pcis->ipstack[pcis->ips_count - 1];
 		    cip = ipsp->cs_data.bits.data;
 		    goto call;
 		}
 		return code;
 	    case cx_rmoveto:
-		accum_xy(cs0, cs1);
 		goto move;
 	    case cx_hmoveto:
-		accum_x(cs0);
 		cs1 = 0;
 		goto move;
 	    case cx_vhcurveto:
@@ -330,16 +316,12 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			fixed dsby = cs1 - pcis->save_lsb.y;
 
 			if (dsbx | dsby) {
-			    accum_xy(dsbx, dsby);
 			    pcis->lsb.x += dsbx;
 			    pcis->lsb.y += dsby;
 			    pcis->save_adxy.x -= dsbx;
 			    pcis->save_adxy.y -= dsby;
 			}
-		    } else
-			accum_xy(pcis->lsb.x, pcis->lsb.y);
-		    pcis->position.x = ptx;
-		    pcis->position.y = pty;
+		    }
 		}
 		return type1_result_sbw;
 	    case cx_escape:
@@ -362,20 +344,11 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                         code = t1_hinter__dotsection(h);
 			if (code < 0)
 			    return code;
-			pcis->dotsection_flag ^=
-			    (dotsection_in ^ dotsection_out);
 			cnext;
 		    case ce1_vstem3:
                         code = t1_hinter__vstem3(h, cs0, cs1, cs2, cs3, cs4, cs5);
 			if (code < 0)
 			    return code;
-			if (!pcis->vstem3_set && t1_hinter__is_x_fitting(h)) {
-			    /* Adjust the current point */
-			    /* (center_vstem handles everything else). */
-			    ptx += pcis->vs_offset.x;
-			    pty += pcis->vs_offset.y;
-			    pcis->vstem3_set = true;
-			}
 			cnext;
 		    case ce1_hstem3:
                         code = t1_hinter__hstem3(h, cs0, cs1, cs2, cs3, cs4, cs5);
@@ -501,8 +474,6 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    if (code < 0)
 				return_error(code);
 			    scount -= n + 1;
-			    pcis->position.x = ptx;
-			    pcis->position.y = pty;
 			    /* Exit to caller */
 			    ipsp->ip = cip, ipsp->dstate = state;
 			    pcis->os_count = scount;
@@ -527,12 +498,9 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			goto pushed;
 		    case ce1_setcurrentpoint:
 			t1_hinter__setcurrentpoint(h, cs0, cs1);
-			ptx = ftx + pcis->vs_offset.x; 
-			pty = fty + pcis->vs_offset.y;
 			cs0 += pcis->adxy.x;
 			cs1 += pcis->adxy.y;
-			accum_xy(cs0, cs1);
-			goto pp;
+			cnext;
 		    default:
 			return_error(gs_error_invalidfont);
 		}

@@ -83,7 +83,6 @@ type1_next_init(gs_type1_state *pcis, const gs_glyph_data_t *pgd,
 {
     gs_type1_interp_init(pcis, NULL, NULL, NULL, NULL, false, 0, pfont);
     pcis->flex_count = flex_max;
-    pcis->dotsection_flag = dotsection_out;
     pcis->ipstack[0].cs_data = *pgd;
     skip_iv(pcis);
 }
@@ -399,6 +398,7 @@ type2_put_hintmask(stream *s, const byte *mask, uint size)
 
 /* ------ Main program ------ */
 
+
 /*
  * Convert a Type 1 Charstring to (unencrypted) Type 2.
  * For simplicity, we expand all Subrs in-line.
@@ -419,6 +419,10 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
     bool first = true;
     bool replace_hints = false;
     bool hints_changed = false;
+    enum {
+	dotsection_in = 0,
+	dotsection_out = -1
+    } dotsection_flag = dotsection_out;
     byte active_hints[(max_total_stem_hints + 7) / 8];
     byte dot_save_hints[(max_total_stem_hints + 7) / 8];
     uint hintmask_size;
@@ -569,13 +573,13 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    type1_stem3(&cis, &hstem_hints, csp - 5, cis.lsb.y, active_hints);
 	    goto hint;
 	case CE_OFFSET + ce1_dotsection:
-	    if (cis.dotsection_flag == dotsection_out) {
+	    if (dotsection_flag == dotsection_out) {
 		memcpy(dot_save_hints, active_hints, hintmask_size);
 		memset(active_hints, 0, hintmask_size);
-		cis.dotsection_flag = dotsection_in;
+		dotsection_flag = dotsection_in;
 	    } else {
 		memcpy(active_hints, dot_save_hints, hintmask_size);
-		cis.dotsection_flag = dotsection_out;
+		dotsection_flag = dotsection_out;
 	    }
 	    HINTS_CHANGED();
 	    continue;
