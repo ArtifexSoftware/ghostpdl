@@ -385,6 +385,7 @@ size_cmap(gs_font *font, uint first_code, int num_glyphs, gs_glyph max_glyph,
 {
     stream poss;
 
+    s_init(&poss, NULL);
     swrite_position_only(&poss);
     write_cmap(&poss, font, first_code, num_glyphs, max_glyph, options, 0);
     return stell(&poss);

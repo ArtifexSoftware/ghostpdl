@@ -817,6 +817,7 @@ cff_write_CharStrings_offsets(cff_writer_t *pcw, psf_glyph_enum_t *penum,
     stream poss;
     int code;
 
+    s_init(&poss, NULL);
     psf_enumerate_glyphs_reset(penum);
     for (glyph = gs_no_glyph, count = 0, offset = 1;
 	 (code = psf_enumerate_glyphs_next(penum, &glyph)) != 1;
@@ -1176,6 +1177,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 	    pfont->data.defaultWidthX = pfont->data.nominalWidthX = 0;
     }
     writer.options = options;
+    s_init(&poss, NULL);
     swrite_position_only(&poss);
     writer.strm = &poss;
     writer.pfont = pbfont;
@@ -1556,6 +1558,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 	return_error(gs_error_rangecheck);
 
     writer.options = options;
+    s_init(&poss, NULL);
     swrite_position_only(&poss);
     writer.strm = &poss;
     writer.pfont = pbfont;

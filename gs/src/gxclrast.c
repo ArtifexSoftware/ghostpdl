@@ -1952,6 +1952,7 @@ read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
 
     /* This is sloppy, but we don't have enough information to do better. */
     pcb->ptr = top_up_cbuf(pcb, pcb->ptr);
+    s_init(&s, NULL);
     sread_string(&s, pcb->ptr, pcb->end - pcb->ptr);
     code = image_type->sget(pic, &s, pcs);
     pcb->ptr = sbufptr(&s);
@@ -2150,6 +2151,7 @@ cmd_read_matrix(gs_matrix * pmat, const byte * cbp)
 {
     stream s;
 
+    s_init(&s, NULL);
     sread_string(&s, cbp, 1 + sizeof(*pmat));
     sget_matrix(&s, pmat);
     return cbp + stell(&s);

@@ -1221,6 +1221,7 @@ copy_font_type42(gs_font *font, gs_font *copied)
     code = copied_Encoding_alloc(copied);
     if (code < 0)
 	return code;
+    s_init(&fs, font->memory);
     swrite_position_only(&fs);
     code = (font->FontType == ft_TrueType ? psf_write_truetype_stripped(&fs, font42)
 					  : psf_write_cid2_stripped(&fs, (gs_font_cid2 *)font42));

@@ -16,6 +16,7 @@
 
 /* $Id$ */
 /* Common support for interpreter front ends */
+#include "malloc_.h"
 #include "memory_.h"
 #include "string_.h"
 #include "ghost.h"

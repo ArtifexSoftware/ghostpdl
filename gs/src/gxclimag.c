@@ -1305,6 +1305,7 @@ begin_image_command(byte *buf, uint buf_size, const gs_image_common_t *pic)
 	    break;
     if (i >= gx_image_type_table_count)
 	return_error(gs_error_rangecheck);
+    s_init(&s, NULL);
     swrite_string(&s, buf, buf_size);
     sputc(&s, (byte)i);
     code = pic->type->sput(pic, &s, &ignore_pcs);

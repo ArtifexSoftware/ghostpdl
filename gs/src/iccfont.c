@@ -329,6 +329,7 @@ cfont_ref_from_string(i_ctx_t *i_ctx_p, ref * pref, const char *str, uint len)
     int code;
 
     scanner_state_init(&sstate, false);
+    s_init(&s, i_ctx_p->memory);
     sread_string(&s, (const byte *)str, len);
     code = scan_token(i_ctx_p, &s, pref, &sstate);
     return (code <= 0 ? code : gs_note_error(e_Fatal));

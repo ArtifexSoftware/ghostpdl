@@ -552,6 +552,7 @@ run_stdin:
 			stream astream;
 			scanner_state state;
 
+			s_init(&astream, NULL);
 			sread_string(&astream,
 				     (const byte *)eqp, strlen(eqp));
 			scanner_state_init(&state, false);

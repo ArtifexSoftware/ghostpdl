@@ -507,11 +507,11 @@ clist_playback_file_bands(clist_playback_action action,
 	};
 
 	s_band_read_init((stream_state *)&rs);
+	  /* The stream doesn't need a memory, but we'll need to access s.memory->gs_lib_ctx. */
+	s_init(&s, mem);
 	s_std_init(&s, sbuf, cbuf_size, &no_procs, s_mode_read);
 	s.foreign = 1;
 	s.state = (stream_state *)&rs;
-	s.memory = mem; /* The stream doesn't need a memory,
-	                   but we'll need to access s.memory->gs_lib_ctx. */
 	code = clist_playback_band(action, cdev, &s, target, x0, y0, mem);
     }
 

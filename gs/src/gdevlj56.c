@@ -83,6 +83,7 @@ ljet5_open(gx_device * pdev)
 	stream *const s = &fs;
 	byte buf[50];		/* arbitrary */
 
+	s_init(s, pdev->memory);
 	swrite_file(s, ppdev->file, buf, sizeof(buf));
 	px_write_file_header(s, pdev);
 	sflush(s);		/* don't close */
@@ -123,6 +124,7 @@ ljet5_print_page(gx_device_printer * pdev, FILE * prn_stream)
 	code = gs_note_error(gs_error_VMerror);
 	goto done;
     }
+    s_init(s, mem);
     swrite_file(s, prn_stream, buf, sizeof(buf));
 
     /* Write the page header. */

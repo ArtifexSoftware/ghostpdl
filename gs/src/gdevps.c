@@ -590,6 +590,7 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 	 */
 	stream poss;
 
+	s_init(s, pdev->memory);
 	swrite_position_only(&poss);
 	pdev->strm = &poss;
 	code = psw_put_image(pdev, op, encode, data, data_x, raster,

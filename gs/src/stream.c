@@ -329,7 +329,8 @@ s_filter_write_flush(register stream * s)
 int
 s_filter_close(register stream * s)
 {
-    int status, close=s->close_strm;
+    int status;
+    bool close = s->close_strm;
     stream *stemp = s->strm;
 
     if (s_is_writing(s)) {

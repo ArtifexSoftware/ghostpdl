@@ -662,6 +662,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	     WRITE_TRUETYPE_CMAP : 0);
 	stream poss;
 
+	s_init(&poss, pdev->memory);
 	swrite_position_only(&poss);
 	code = psf_write_truetype_font(&poss, pfont, options, NULL, 0, &fnstr);
 	if (code < 0)

@@ -60,6 +60,7 @@ psw_print_procset_name(FILE *f, const gx_device *dev,
     byte buf[100];		/* arbitrary */
     stream s;
 
+    s_init(&s, dev->memory);
     swrite_file(&s, f, buf, sizeof(buf));
     psw_put_procset_name(&s, dev, pdpc);
     sflush(&s);

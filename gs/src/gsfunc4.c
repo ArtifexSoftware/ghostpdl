@@ -689,6 +689,7 @@ fn_PtCr_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
     {
 	stream s;
 
+	s_init(&s, NULL);
 	swrite_position_only(&s);
 	calc_put(&s, pfn);
 	pfi->data_size = stell(&s);

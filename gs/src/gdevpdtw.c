@@ -683,6 +683,7 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 			buf, pcmap->CMapName.size + 1);
 	if (code < 0)
 	    return code;
+	s_init(&s, pdev->memory);
 	swrite_string(&s, buf, sizeof(buf));
 	code = pdf_write_cid_system_info_to_stream(pdev, &s, pcmap->CIDSystemInfo, 
 		writer.pres->object->id);

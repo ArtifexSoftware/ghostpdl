@@ -227,11 +227,12 @@ pdfmark_make_rect(char str[MAX_RECT_STRING], const gs_rect * prect)
 {
     /*
      * We have to use a stream and pprintf, rather than sprintf,
-     * because printf formats can't express the PDF restriction son
+     * because printf formats can't express the PDF restrictions on
      * the form of the output.
      */
     stream s;
 
+    s_init(&s, NULL);
     swrite_string(&s, (byte *)str, MAX_RECT_STRING - 1);
     pprintg4(&s, "[%g %g %g %g]",
 	     prect->p.x, prect->p.y, prect->q.x, prect->q.y);
@@ -483,6 +484,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	    char bstr[MAX_BORDER_STRING + 1];
 	    int code;
 
+	    s_init(&s, NULL);
 	    swrite_string(&s, (byte *)bstr, MAX_BORDER_STRING + 1);
 	    code = pdfmark_write_border(&s, pair + 1, pctm);
 	    if (code < 0)
@@ -1432,6 +1434,7 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	return code;
     pcs->is_graphics = true;
     gs_bbox_transform(&bbox, pctm, &bbox);
+    s_init(&s, NULL);
     swrite_string(&s, bbox_str, sizeof(bbox_str));
     pprintg4(&s, "[%g %g %g %g]",
 	    bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
