@@ -1003,10 +1003,6 @@ const gx_device_color * pdevc, gx_device * dev, const gs_imager_state * pis,
 	if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
 	    return code;
 	code = add_round_cap(ppath, &plp->e);
-	ASSIGN_POINT(&points[npoints], plp->e.ce);
-	++npoints;
-	if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
-	    return code;
 	goto done;
     } else if (nplp->thin)	/* no join */
 	code = cap_points(gs_cap_butt, &plp->e, points + npoints);
@@ -1297,7 +1293,8 @@ add_round_cap(gx_path * ppath, const_ep_ptr endp)
 			      xe - cdx, ye - cdy, quarter_arc_fraction)) < 0 ||
 	(code = gx_path_add_partial_arc(ppath, xo, yo,
 			      xo - cdx, yo - cdy, quarter_arc_fraction)) < 0 ||
-	(code = gx_path_add_point(ppath, xe, ye))
+	/* The final point must be (xe,ye) */ 
+	(code = gx_path_add_line(ppath, xe, ye))
 	)
 	return code;
     return 0;
