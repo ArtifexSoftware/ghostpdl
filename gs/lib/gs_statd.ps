@@ -120,10 +120,19 @@ statusdict begin
 % Define the pagetype values for the known page formats.
 % The values for all but letter and note are arbitrary.
 /.pagetypenames
- { /letter /note /legal 
-   /a0 /a1 /a2 /a3 /a4 /a5 /a6 /a7 /a8 /a9 /a10
-   /b0 /b1 /b2 /b3 /b4 /b5 /b6 /archE /archD /archC /archB /archA
-   /flsa /flse /halfletter /11x17 /ledger
+ { /letter /note	%do not change this line, needed by 'setpagetype'
+   /legal /lettersmall
+   /11x17 /ledger
+   /a4small /a3 /a4
+STRICT { (%END SIZES) .skipeof } if
+   /a0 /a1 /a2 /a5 /a6 /a7 /a8 /a9 /a10
+   /archA /archB /archC /archD /archE
+   /b0 /b1 /b2 /b3 /b4 /b5 /b6
+   /c0 /c1 /c2 /c3 /c4 /c5 /c6
+   /flsa /flse /halfletter
+   /isob0 /isob1 /isob2 /isob3 /isob4 /isob5 /isob6
+   /jisb0 /jisb1 /jisb2 /jisb3 /jisb4 /jisb5 /jisb6
+%END SIZES
  } cvlit readonly def
 
 %%%%%% The following items were suggested by a user as useful.
