@@ -477,7 +477,6 @@ gs_state_copy(gs_state * pgs, gs_memory_t * mem)
     pgs->view_clip = view_clip;
     if (pnew == 0)
 	return 0;
-    pnew->saved = 0;
     /*
      * Prevent dangling references from the show_gstate pointer.  If
      * this context is its own show_gstate, set the pointer in the clone
