@@ -906,13 +906,6 @@ end_x_line(active_line *alp, bool update)
     return false;
 }
 
-private inline const segment * PrevSeg(const segment *pseg)
-{   return pseg->type == s_start ? ((const subpath *)pseg)->last->prev : pseg->prev;
-}
-private inline const segment * NextSeg(const segment *pseg)
-{   return pseg->type == s_line_close ? ((const line_close_segment *)pseg)->sub->next : pseg->next;
-}
-
 private inline int 
 add_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
 {   vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(255, 255, 255));
@@ -932,10 +925,6 @@ complete_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, 
     return continue_margin_common(ll, &ll->margin_set1, flp, alp, y0, y1);
 }
 
-
-/* ---------------- Trapezoid filling loop helpers ---------------- */
-
-/* Forward references */
 /*
  * Handle the case of a slanted trapezoid with adjustment.
  * To do this exactly right requires filling a central trapezoid
