@@ -56,17 +56,21 @@
 /* The device descriptors */
 private dev_proc_print_page(atx_print_page);
 
+#define ATX_DEVICE(dname, w10, h10, dpi, lrm, btm)\
+  prn_device_margins(prn_std_procs, dname, w10, h10, dpi, dpi, 0, 0,\
+		     lrm, btm, lrm, btm, 1, atx_print_page)
+
 const gx_device_printer gs_atx23_device = /* real width = 576 pixels */
-prn_device(prn_std_procs, "atx23", 28 /* 2.84" */, 35 /* (minimum) */,
-	   203, 203, 0, 0, 0, 0, 1, atx_print_page);
+ATX_DEVICE("atx23", 28 /* 2.84" */, 35 /* (minimum) */,
+	   203, 0.25, 0.125);
 
 const gx_device_printer gs_atx24_device = /* real width = 832 pixels */
-prn_device(prn_std_procs, "atx24", 41 /* 4.1" */, 35 /* (minimum) */,
-	   203, 203, 0, 0, 0, 0, 1, atx_print_page);
+ATX_DEVICE("atx24", 41 /* 4.1" */, 35 /* (minimum) */,
+	   203, 0.193, 0.125);
 
 const gx_device_printer gs_atx38_device = /* real width = 2400 pixels */
-prn_device(prn_std_procs, "atx38", 80 /* 8.0" */, 35 /* (minimum) */,
-	   300, 300, 0, 0, 0, 0, 1, atx_print_page);
+ATX_DEVICE("atx38", 80 /* 8.0" */, 35 /* (minimum) */,
+	   300, 0.25, 0.125);
 
 #define MAX_RASTER 300		/* 2400 pixels, see above */
 
@@ -164,10 +168,11 @@ atx_print_page(gx_device_printer *pdev, FILE *f)
      * 655.35", including the unprintable top and bottom margins.
      * Compute the maximum height of the printable area in pixels.
      */
-    int max_height = (int)(pdev->HWResolution[1] * 655) - 25;
+    float top_bottom_skip = (pdev->HWMargins[1] + pdev->HWMargins[3]) / 72.0;
+    int max_height = (int)(pdev->HWResolution[1] * 655 - top_bottom_skip);
     int height = min(pdev->height, max_height);
     int page_length_100ths =
-	(int)ceil((height / pdev->HWResolution[1] + 0.25) * 100);
+	(int)ceil((height / pdev->HWResolution[1] + top_bottom_skip) * 100);
     gs_memory_t *mem = pdev->memory;
     int raster = gx_device_raster((gx_device *)pdev, true);
     byte *buf;
