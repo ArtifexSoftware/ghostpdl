@@ -435,6 +435,18 @@ cdeskjet8_=$(GLOBJ)gdevcd8.$(OBJ) $(HPPCL)
 cdj850.dev: $(cdeskjet8_) page.dev
 	$(SETPDEV) cdj850 $(cdeskjet8_)
 
+### ------------ Color Laserjet 5m ------------------------------------- ###
+### TODO - docs.
+###
+
+CLJ=$(GLOBJ)gdevclj.$(OBJ) $(HPPCL)
+
+$(GLOBJ)gdevclj.$(OBJ): $(GLSRC)gdevclj.c $(PDEVH) $(gdevpcl_h)
+	$(GLCC) $(GLO_)gdevclj.$(OBJ) $(C_) $(GLSRC)gdevclj.c
+
+cljet.dev: $(CLJ) page.dev
+	$(SETPDEV) cljet $(CLJ)
+
 ### ------------ The H-P PaintJet color printer device ----------------- ###
 ### Note: this driver also supports the DEC LJ250 color printer, which   ###
 ###       has a PaintJet-compatible mode, and the PaintJet XL.           ###
