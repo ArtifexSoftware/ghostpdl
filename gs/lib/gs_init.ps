@@ -1665,7 +1665,7 @@ readonly def
   % after a restore that changes the value to false.
   currentglobal currentpagedevice gcheck setglobal % use correct VM space
   << /.LockSafetyParams true >> setpagedevice
-  currentglobal
+  setglobal
   //SAFETY /safe //true .forceput % overrides readonly
 } .bind executeonly odef
 
