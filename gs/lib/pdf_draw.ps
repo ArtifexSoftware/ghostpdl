@@ -33,6 +33,9 @@ pdfdict begin
 
 % ---------------- Functions ---------------- %
 
+% Note that resolvefunction converts a PDF Function to a PostScript Function;
+% resolve*fnproc converts a PDF function to a PostScript procedure.
+
 /fnrdict mark
   0 { .resolvefn0 }
   2 { }
@@ -90,15 +93,18 @@ currentdict /tfopdict undef
 /resolvefunction {	% <fndict> resolvefunction <function>
   .resolvefn
   DEBUG { (%Function: ) print dup === flush } if
-  .buildfunction
 } bdef
 
-/resolveidfunction {
-  dup /Identity eq { pop { } } { resolvefunction } ifelse
+/resolvefnproc {	% <fndict> resolvefnproc <proc>
+  resolvefunction .buildfunction
 } bdef
 
-/resolvedefaultfunction {	% <fndict> <default> resolved'f'n <function>
-  1 index /Default eq { exch pop } { pop resolveidfunction } ifelse
+/resolveidfnproc {	% <fndict> resolveidfnproc <proc>
+  dup /Identity eq { pop { } } { resolvefnproc } ifelse
+} bdef
+
+/resolvedefaultfnproc {	% <fndict> <default> resolved'fnproc <proc>
+  1 index /Default eq { exch pop } { pop resolveidfnproc } ifelse
 } bdef
 
 % ---------------- Shadings ---------------- %
@@ -195,11 +201,11 @@ currentdict /tfopdict undef
     oforce
     1 index /SpotFunction eq {
       dup type /nametype eq
-	{ //spotfunctions exch get } { resolvefunction }
+	{ //spotfunctions exch get } { resolvefnproc }
       ifelse
     } {
       1 index /TransferFunction eq {
-	resolveidfunction
+	resolveidfnproc
       } if
     } ifelse
   } forall .dicttomark
@@ -235,10 +241,10 @@ end
 
 % Each entry in this dictionary is
 %	<gsres> <value> -proc- <gsres>
-/gsbg { /BGDefault load resolvedefaultfunction setblackgeneration } bdef
-/gsucr { /UCRDefault load resolvedefaultfunction setundercolorremoval } bdef
+/gsbg { /BGDefault load resolvedefaultfnproc setblackgeneration } bdef
+/gsucr { /UCRDefault load resolvedefaultfnproc setundercolorremoval } bdef
 	%****** DOESN'T IMPLEMENT THE ARRAY (colortransfer) CASE YET ******
-/gstr { /TRDefault load resolvedefaultfunction settransfer } bdef
+/gstr { /TRDefault load resolvedefaultfnproc settransfer } bdef
 /gsparamdict mark
   /SA { setstrokeadjust }
   /op {
@@ -378,13 +384,13 @@ end
     } ifelse resolvecolorspace
   }
   /Separation {
-    aload pop exch oforce resolvecolorspace exch oforce resolvefunction
+    aload pop exch oforce resolvecolorspace exch oforce resolvefnproc
     4 array astore
   }
   /DeviceN {
     aload pop 3 -1 roll oforce
     3 -1 roll oforce resolvecolorspace
-    3 -1 roll oforce resolvefunction
+    3 -1 roll oforce resolvefnproc
     4 array astore
   }
   /Indexed {
