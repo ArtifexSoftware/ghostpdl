@@ -11,6 +11,7 @@
 #include "gdebug.h"
 #include "gp.h"
 #include "pjparse.h"
+#include "plfont.h"
 #include <ctype.h> 		/* for toupper() */
 #include <stdlib.h>             /* for atoi() */
 
@@ -270,7 +271,6 @@ pjl_get_token(pjl_parser_state_t *pst, char token[])
     {
 	int slength = pst->pos - start_pos;
 	int i;
-
 	/* we allow = to special case for allowing 
 	   token doesn't fit or is empty */
 	if (( slength > PJL_STRING_LENGTH) || slength == 0)
@@ -1014,6 +1014,132 @@ pjl_vartof(const pjl_envvar_t *s)
     return atof(s);
 }
 
+/* we build a table of 45 font entries whose index corresponds with
+   the fonts pjl_number.  We use the postscript name since this seems
+   to be widely accepted in the truetype universe.  A parallel array
+   of font file name is built up and stored on the heap so clients can
+   open the resident font files. */
+const char *pjl_font_name[47] = { /* NB fix the number of fonts - see agfa stuff */
+    "CourierNewPSMT",                /* 0 */
+    "CGTimes-Regular",               /* 1 */
+    "CGTimes-Bold",                  /* 2 */
+    "CGTimes-Italic",                /* 3 */
+    "CGTimes-BoldItalic",            /* 4 */
+    "CGOmega-Regular",               /* 5 */
+    "CGOmega-Bold",                  /* 6 */
+    "CGOmega-Italic",                /* 7 */
+    "CGOmega-BoldItalic",            /* 8 */
+    "Coronet",                       /* 9 */
+    "ClarendonCondensed-Bold",       /* 10 */
+    "Univers-Medium",                /* 11 */
+    "Univers-Bold",                  /* 12 */
+    "Univers-MediumItalic",          /* 13 */
+    "Univers-BoldItalic",            /* 14 */
+    "UniversCondensed-Medium",       /* 15 */
+    "UniversCondensed-Bold",         /* 16 */
+    "UniversCondensed-MediumItalic", /* 17 */
+    "UniversCondensed-BoldItalic",   /* 18 */
+    "AntiqueOlive-Regular",          /* 19 */
+    "AntiqueOlive-Bold",             /* 20 */
+    "AntiqueOlive-Italic",           /* 21 */
+    "Garamond-Antiqua",              /* 22 */
+    "Garamond-Halbfett",             /* 23 */
+    "Garamond-Kursiv",               /* 24 */
+    "Garamond-KursivHalbfett",       /* 25 */
+    "Marigold",                      /* 26 */
+    "AlbertusMedium-Regular",        /* 27 */
+    "AlbertusExtraBold-Regular",     /* 28 */
+    "AlbertusMedium-Italic",         /* 29 */
+    "ArialMT",                       /* 30 */
+    "Arial-BoldMT",                  /* 31 */
+    "Arial-ItalicMT",                /* 32 */
+    "Arial-BoldItalicMT",            /* 33 */
+    "TimesNewRomanPSMT",             /* 34 */
+    "TimesNewRomanPS-BoldMT",        /* 35 */
+    "TimesNewRomanPS-ItalicMT",      /* 36 */
+    "TimesNewRomanPS-BoldItalicMT",  /* 37 */
+    "SymbolMT",                      /* 38 */
+    "Wingdings-Regular",             /* 39 */
+    "CourierNewPS-BoldMT",           /* 40 */
+    "CourierNewPS-ItalicMT",         /* 41 */
+    "CourierNewPS-BoldItalicMT",     /* 42 */
+    "LetterGothic-Regular",          /* 43 */
+    "LetterGothic-Bold",             /* 44 */
+    "LetterGothic-Italic",           /* 45 */
+    "LetterGothic-BoldItalic",       /* 46 */  /* NB fix */
+};
+
+private int
+get_next_file_clear_buffer(file_enum *pfen, char *ptr, uint maxlen)
+{
+    memset(ptr, '\0', maxlen);
+    return gp_enumerate_files_next(pfen, ptr, maxlen);
+}
+int
+pjl_build_resident_tt_font_table(pjl_parser_state *pst, gs_memory_t *mem)
+{
+    /* get the path and set up tt file extension pattern.  Set up a temporary pathname */
+    char *path = pst->environment_font_path ?
+	pst->environment_font_path : pst->font_envir[0].pathname;
+    const char pattern[] = "*.ttf";
+    /* allocate a table parallel to the postscript name table
+       "pjl_font_names", filled with directory and filenames for the
+       45 resident fonts. */
+    /* make a copy of the path limited to 1024 characters.  strtok()
+       steps on it's arguments */
+    char tmp_path_copy[1024+1];
+    char *tmp_pathp;
+    int code = -2; /* fail if we don't find any fonts */
+    tmp_path_copy[1024] = '\0'; /* if path length exeeds 1024 */
+    strncpy(tmp_path_copy, path, 1024);
+    /* enumerate through all truetype fonts on the path, NB identify
+       truetype by extension only.  If we find a file whose postscript
+       name is in the table, record the file name.  NB Substitution */
+    for (tmp_pathp = tmp_path_copy; (tmp_pathp = strtok(tmp_pathp, ";")) != NULL; tmp_pathp = NULL) {
+	char tmp_path_and_pattern[1024 + 6]; /* 6 for *.ttf */
+	char fontfilename[1024 + 6 + 8 - 1]; /* 8.3 - '*' */
+	int len;
+	file_enum *fe;
+	/* concatenate directory and *.ttf */
+	strcpy(tmp_path_and_pattern, tmp_pathp);
+	strcat(tmp_path_and_pattern, pattern);
+	fe = gp_enumerate_files_init(tmp_path_and_pattern,
+				     strlen(tmp_path_and_pattern), mem);
+	/* loop through the files */
+	len = sizeof(fontfilename);
+	while ( (code = get_next_file_clear_buffer(fe, fontfilename, len)) >= 0 ) {
+	    if ( code > len ) {
+		dprintf("filename exceeds file name storage buffer length\n");
+	    } else {
+		/* open the file */
+		FILE *in = fopen(fontfilename, "rb");
+		if ( in == NULL ) /* shouldn't happen */
+		    dprintf1("cannot open file %s\n", fontfilename);
+		/* check if we have this fontfilename in the list, if so
+		   add it to the table */
+		{
+		    byte *datap;
+		    ulong size; /* not used */
+		    /* NB we want to only exit for a VM error */
+		    pl_alloc_tt_fontfile_buffer(in, mem, &datap, &size);
+		    if ( code < 0 )
+			return code;
+		    /* lookup name in file and table */
+		    /* free the buffer */
+		    pl_free_tt_fontfile_buffer(mem, datap);
+		}
+	    }
+	}
+	/* end of enumeration of file in current directory - on to the next path */
+	/* close out the enumeration */
+	/* gp_enumerate_files_close(fe); */
+    } /* end of ; delimited path */
+    /* enum next returns -1 when exhasts files NB we should handle
+       this better */
+    return ( code == -1 ? 0 : code );
+}
+
+
 /* convert a pjl font source to a pathname */
  char *
 pjl_fontsource_to_path(const pjl_parser_state *pjls, const pjl_envvar_t *fontsource)
@@ -1097,6 +1223,10 @@ pjl_process_init(gs_memory_t *mem)
 	for (i = 0; i < countof(pjl_permanent_soft_fonts); i++)
 	    pjl_permanent_soft_fonts[i] = 0;
     }
+    /* finally initialize the table of fonts - this should not
+       fail... but we check anyway. */
+    if ( pjl_build_resident_tt_font_table(pjlstate, mem) < 0 )
+	return (pjl_parser_state *)NULL;
     return (pjl_parser_state *)pjlstate;
 }
 
@@ -1121,76 +1251,6 @@ pjl_process_destroy(pjl_parser_state *pst, gs_memory_t *mem)
     if ( pst->environment_font_path )
 	gs_free_object(mem, pst->environment_font_path, "pjl_state");
     gs_free_object(mem, pst, "pjl_state");
-}
-
-/* Convert font file name to fontnumber.  This table is hardwired here
-   so that PJL can have a numbering for the fonts.  Presumably these
-   font files would be burned into ROM in PJL font number order, PJL
-   would enumerate the fonts and hand them to pcl.  The table entries
-   and their order are device dependant and vary on different HP
-   devices.  This is the setup on an LJ4 modulo a few new fonts that
-   are not supported on that device. */
- int
-pjl_get_pcl_internal_font_number(const char *filename)
-{
-    /* font file names - indices are the pjl font numbers */
-    static const char *font_table[] = {
-	"cour",                             /* 0 */
-	"cgti",                   	    /* 1 */
-	"cgtib",			    /* 2 */
-	"cgtii",			    /* 3 */
-	"cgtibi",			    /* 4 */
-	"cgom",                   	    /* 5 */
-	"cgomb",                  	    /* 6 */
-	"cgomi",                  	    /* 7 */
-	"cgombi",                 	    /* 8 */
-	"coro",                   	    /* 9 */
-	"clarbc",                 	    /* 10 */
-	"univm",                  	    /* 11 */
-	"univb",                  	    /* 12 */
-	"univmi",                 	    /* 13 */
-	"univbi",                 	    /* 14 */
-	"univmc",                 	    /* 15 */
-	"univcb",                 	    /* 16 */
-	"univmci",                	    /* 17 */
-	"univcbi",                	    /* 18 */
-	"anto",                   	    /* 19 */
-	"antob",                  	    /* 20 */
-	"antoi",                  	    /* 21 */
-	"garaa",                  	    /* 22 */
-	"garrah",                 	    /* 23 */
-	"garak",                  	    /* 24 */
-	"garrkh",                 	    /* 25 */
-	"mari",                   	    /* 26 */
-	"albrmd",                 	    /* 27 */
-	"albrxb",                 	    /* 28 */
-	"albrmdi",                	    /* 29 */
-	"arial",                  	    /* 30 */
-	"arialbd",                	    /* 31 */
-	"ariali",                 	    /* 32 */
-	"arialbi",                	    /* 33 */
-	"times",                  	    /* 34 */
-	"timesbd",                	    /* 35 */
-	"timesi",                 	    /* 36 */
-	"timesbi",                	    /* 37 */
-	"symbol",                 	    /* 38 */
-	"wingding",               	    /* 39 */
-	"courbd",                 	    /* 40 */
-	"couri",                  	    /* 41 */
-	"courbi",                 	    /* 42 */
-	"letr",                   	    /* 43 */
-	"letrb",                  	    /* 44 */
-	"letri",                  	    /* 45 */
-	"letrbi",                 	    /* 46 */
-	""
-    };
-    int i;
-    for ( i = 0; font_table[i]; i++ )
-	if ( !strcmp(font_table[i], filename) )
-	    return i;
-
-    dprintf1("pjparse.c:pjl_get_pcl_internal_font_number() font not found %s\n", filename);
-    return 0;
 }
 
 /* delete a permanent soft font */

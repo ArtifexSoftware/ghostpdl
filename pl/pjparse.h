@@ -73,15 +73,6 @@ floatp pjl_vartof(P1(const pjl_envvar_t *s));
 char *pjl_fontsource_to_path(P2(const pjl_parser_state *pjls,
 				const pjl_envvar_t *fontsource));
 
-/* get a pjl fontnumber for an internal pcl font.  This must be
-   handled differently in the future.  PJL should enumerate the fonts
-   and give the fonts to pcl.  We cannot do this now because pcl
-   depends on the ordering of the font table for proper font
-   selection.  It also adds attributes that should be acquired from
-   the font itselft.  Consequently, pcl enumerates the fonts and asks
-   pjl for a font number to associate with each file font file read.  */
-int pjl_get_pcl_internal_font_number(P1(const char *filename));
-
 /* Change to next highest priority font source.  The following events
    automatically change the value of the FONTSOURCE variable to the
    next highest priority font source containing a default-marked font:
