@@ -1464,8 +1464,9 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, t1
 {   /* Returns true, if alignment zone is applied. */
     /* t is 0 or 0.5, and it is always 0 for curves. */
     enum t1_align_type align = unaligned;
-    t1_glyph_space_coord gx = this->pole[segment_index].gx;
-    t1_glyph_space_coord gy = this->pole[segment_index].gy;
+    t1_glyph_space_coord gx = this->pole[segment_index].gx, gx0;
+    t1_glyph_space_coord gy = this->pole[segment_index].gy, gy0;
+    t1_glyph_space_coord gc0 = (horiz ? gy : gx);
 
     /*  Compute point of specified segment by parameter t : */
     if (t) {
@@ -1476,6 +1477,8 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, t1
         gx = (gx + gx1) / 2;
         gy = (gy + gy1) / 2;
     }
+    gx0 = gx;
+    gy0 = gy;
     vd_circle(gx, gy, 7, RGB(255,0,0));
     if (horiz) {
         t1_pole * pole = &this->pole[segment_index];
@@ -1532,7 +1535,7 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, t1
     t1_hinter__align_to_grid(this, this->g2o_fraction, &gx, &gy, 
 			    CONTRAST_STEMS || this->align_to_pixels);
     vd_circle(gx, gy, 7, RGB(0,0,255));
-    *gc = (horiz ? gy : gx);
+    *gc = gc0 + (horiz ? gy - gy0 : gx - gx0);
     return (align == unaligned ? aligned : align);
 }
 
