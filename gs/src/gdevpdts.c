@@ -163,7 +163,7 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
     pdf_text_state_t *const pts = pdev->text->text_state;
 
     if (matrix_is_compatible(pmat, &pts->in.matrix)) {
-	pdf_font_resource_t *const pdfont = pts->in.pdfont; /* == out.pdfont, see above */
+	pdf_font_resource_t *const pdfont = pts->in.pdfont;
 	gs_point dist;
 	double dw, dnotw, tdw;
 
@@ -482,7 +482,7 @@ pdf_set_text_state_values(gx_device_pdf *pdev,
 	skip |= TEXT_STATE_SET_WORD_SPACING;
     members &= ~(skip & pts->members);
 
-    if (pts->buffer.count_chars > 0 && (members & pts->members) != 0) {
+    if (pts->buffer.count_chars > 0 && members != 0) {
 	int code = sync_text_state(pdev);
 
 	if (code < 0)
