@@ -126,6 +126,7 @@ private inline void release_char_data_inline(fapi_ufst_server *r)
 private FAPI_retcode open_UFST(fapi_ufst_server *r)
 {   IFCONFIG   config_block;
     CheckRET(CGIFinit(&r->IFS));
+    r->IFS.mem_avail[BUFFER_POOL]  = 6000000L; /* For Asian TT fonts with vertical writing mode. */
     config_block.num_files = 10;
     config_block.bit_map_width = 1;
     CheckRET(CGIFconfig(&r->IFS, &config_block));
@@ -623,7 +624,7 @@ private void prepare_typeface(fapi_ufst_server *r, ufst_common_font_data *d)
         r->fc.format |= FC_EXTERN_TYPE;
 }
 
-private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap)
+private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap, bool bVertical)
 {   fapi_ufst_server *r = If_to_I(server);
     FONTCONTEXT *fc = &r->fc;
     /*  Note : UFST doesn't provide handles for opened fonts,
@@ -684,6 +685,8 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
     fc->user_platID = d->platformId;
     fc->user_specID = d->specificId;
     fc->ExtndFlags |= EF_TT_CMAPTABL;
+    if (bVertical)
+        fc->ExtndFlags |= EF_UFSTVERT_TYPE;
     fc->dl_ssnum = (d->specificId << 4) | d->platformId;
     fc->ttc_index   = subfont;
     r->callback_error = 0;

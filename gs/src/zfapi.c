@@ -683,7 +683,7 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
     ff.client_font_data2 = pdr;
     ff.server_font_data = pbfont->FAPI_font_data; /* Possibly pass it from zFAPIpassfont. */
     ff.is_cid = IsCIDFont(pbfont);
-    CheckRET(renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, subfont, matrix, HWResolution, xlatmap)));
+    CheckRET(renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, subfont, matrix, HWResolution, xlatmap, false)));
     pbfont->FAPI_font_data = ff.server_font_data; /* Save it back to GS font. */
     CheckRET(renderer_retcode(i_ctx_p, I, I->get_font_bbox(I, &ff, BBox)));
     CheckRET(renderer_retcode(i_ctx_p, I, I->get_decodingID(I, &ff, &decodingID)));
@@ -751,7 +751,7 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
             ff.client_font_data2 = &f;
             ff.server_font_data = pbfont1->FAPI_font_data;
             ff.is_cid = true;
-            CheckRET(renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, 0, matrix, HWResolution, NULL)));
+            CheckRET(renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, 0, matrix, HWResolution, NULL, false)));
             pbfont1->FAPI_font_data = ff.server_font_data; /* Save it back to GS font. */
         }
     }
@@ -1038,7 +1038,7 @@ retry_oversampling:
     ff.client_font_data = pbfont;
     ff.client_font_data2 = op - 1;
     ff.server_font_data = pbfont->FAPI_font_data;
-    CheckRET(renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, subfont, matrix, HWResolution, NULL)));
+    CheckRET(renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, subfont, matrix, HWResolution, NULL, bVertical)));
     /* fixme : it would be nice to call get_scaled_font at once for entire 'show' string. */
 
     /* Obtain the character name : */
@@ -1300,7 +1300,7 @@ private int do_FAPIpassfont(i_ctx_t *i_ctx_p, bool *success)
         CheckRET(renderer_retcode(i_ctx_p, I, I->ensure_open(I)));
 	HWResolution[0] = HWResolution[1] = 72 << I->frac_shift;
 	matrix[0] = matrix[3] = 1 << I->frac_shift;
-	if(I->get_scaled_font(I, &ff, subfont, matrix, HWResolution, xlatmap)) {
+	if(I->get_scaled_font(I, &ff, subfont, matrix, HWResolution, xlatmap, false)) {
             if (pbfont->FAPI_font_data != 0)
                 I->release_typeface(I, ff.server_font_data);
             ff.server_font_data = 0;
