@@ -234,6 +234,7 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* Pages */
  0,				/* outlines_id */
  0,				/* next_page */
+ -1,				/* max_referred_page */
  0,				/* contents_id */
  PDF_IN_NONE,			/* context */
  0,				/* contents_length_id */
@@ -1339,5 +1340,15 @@ pdf_close(gx_device * dev)
     code1 = gdev_vector_close_file((gx_device_vector *) pdev);
     if (code >= 0)
 	code = code1;
+    if (pdev->max_referred_page >= pdev->next_page + 1) {
+        /* Note : pdev->max_referred_page counts from 1, 
+	   and pdev->next_page counts from 0. */
+	eprintf2("ERROR: A pdfmark destination page %d points beyond the last page %d.\n",
+		pdev->max_referred_page, pdev->next_page);
+#if 0 /* Temporary disabled due to Bug 687686. */
+	if (code >= 0)
+	    code = gs_note_error(gs_error_rangecheck);
+#endif
+    }
     return pdf_close_files(pdev, code);
 }

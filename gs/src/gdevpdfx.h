@@ -516,6 +516,7 @@ struct gx_device_pdf_s {
 #define pdf_num_initial_ids 3
     long outlines_id;
     int next_page;
+    int max_referred_page;
     long contents_id;
     pdf_context_t context;
     long contents_length_id;

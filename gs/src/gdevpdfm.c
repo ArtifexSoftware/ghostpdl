@@ -119,6 +119,8 @@ pdfmark_page_number(gx_device_pdf * pdev, const gs_param_string * pnstr)
 	--page;
     else if (pdfmark_scan_int(pnstr, &page) < 0)
 	page = 0;
+    if (pdev->max_referred_page < page)
+	pdev->max_referred_page = page;
     return page;
 }
 
