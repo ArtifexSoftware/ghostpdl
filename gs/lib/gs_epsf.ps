@@ -150,9 +150,13 @@
 
 /.runEPS { % file OR string --
   /runEPS_save save def
+  /runEPS_dict_count countdictstack def
+  /runEPS_op_count count 2 sub def
   //systemdict /EPSBoundingBoxState 0 .forceput
   .runNoEPS
   currentpagedevice /PageCount get 0 eq { showpage } if
+  count runEPS_op_count sub {pop} repeat
+  countdictstack runEPS_dict_count sub {end} repeat
   runEPS_save restore
 } bind def
 
