@@ -2199,12 +2199,8 @@ pcl_ht_set_halftone(
     }
     pinfo_new = get_rendering_info(pcs, pht->render_method, cstype, for_image);
     if ((pdev = pinfo_new->pdev) != old_pdev) {
-        long    ref_count = pdev->rc.ref_count; /* HACK ALERT */
-
-        if (ref_count == 0)     /* HACK ALERT */
-            ref_count = 1;
         gdev_cmap_init(pdev, pdev->target, pdev->mapping_method);
-        pdev->rc.ref_count = ref_count; /* HACK ALERT */
+	gx_device_retain(&pcs->cmap_device_identity, true);	
         gs_setdevice_no_init(pcs->pgs, (gx_device *)pdev);
     }
     ncomps = pdev->color_info.num_components;
