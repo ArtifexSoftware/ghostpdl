@@ -316,6 +316,8 @@ build_directional_shading(i_ctx_t *i_ctx_p, const ref * op, float *Coords, int n
 	(code = build_shading_function(i_ctx_p, op, pFunction, 1, mem)) < 0
 	)
 	return code;
+    if (!*pFunction)
+	    return_error(e_undefined);
     if (dict_find_string(op, "Extend", &pExtend) <= 0)
 	Extend[0] = Extend[1] = false;
     else {
