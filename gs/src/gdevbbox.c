@@ -1170,8 +1170,11 @@ bbox_create_compositor(gx_device * dev,
 	int code = (*dev_proc(target, create_compositor))
 	    (target, &cdev, pcte, pis, memory);
 
-	if (code < 0)
+	/* If the target did not create a new compositor then we are done. */
+	if (code < 0 || target == cdev) {
+	    *pcdev = dev;
 	    return code;
+	}
 	bbcdev = gs_alloc_struct_immovable(memory, gx_device_bbox,
 					   &st_device_bbox,
 					   "bbox_create_compositor");
