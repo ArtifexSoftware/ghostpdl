@@ -21,11 +21,6 @@
 #include "memory_.h"
 #include "strimpl.h"
 #include "smd5.h"
-/*
- * In order to get the benefit of the Ghostscript definitions, we
- * include the executable code of the MD5 package here.
- */
-#include "md5.c"
 
 /* ------ MD5Encode ------ */
 

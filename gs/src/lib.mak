@@ -246,10 +246,15 @@ $(GLOBJ)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
 
 # MD5 digest
 md5_h=$(GLSRC)md5.h
-
+# We have to use a slightly different compilation approach in order to
+# get std.h included when compiling md5.c.
 md5_=$(GLOBJ)md5.$(OBJ)
-$(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(md5_h)
-	$(GLCC) $(GLO_)md5.$(OBJ) $(C_) $(GLSRC)md5.c
+$(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(memory__h) $(md5_h)
+	$(EXP)$(ECHOGS_XE) -w $(GLGEN)md5.h -x 23 include -x 2022 memory_.h -x 22
+	$(EXP)$(ECHOGS_XE) -a $(GLGEN)md5.h -+R $(GLSRC)md5.h
+	$(CP_) $(GLSRC)md5.c $(GLGEN)md5.c
+	$(GLCC) $(GLO_)md5.$(OBJ) $(C_) $(GLGEN)md5.c
+	$(RM_) $(GLGEN)md5.c
 
 ###### Low-level facilities and utilities
 
@@ -1165,8 +1170,8 @@ $(GLOBJ)slzwd.$(OBJ) : $(GLSRC)slzwd.c $(AK) $(stdio__h) $(gdebug_h)\
 # ---------------- MD5 digest filter ---------------- #
 
 smd5_=$(GLOBJ)smd5.$(OBJ)
-$(GLD)smd5.dev : $(LIB_MAK) $(ECHOGS_XE) $(smd5_)
-	$(SETMOD) $(GLD)smd5 $(smd5_)
+$(GLD)smd5.dev : $(LIB_MAK) $(ECHOGS_XE) $(smd5_) $(md5_)
+	$(SETMOD) $(GLD)smd5 $(smd5_) $(md5_)
 
 $(GLOBJ)smd5.$(OBJ) : $(GLSRC)smd5.c $(AK) $(memory__h)\
  $(smd5_h) $(strimpl_h) $(GLSRC)md5.c
