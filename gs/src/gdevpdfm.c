@@ -1382,7 +1382,9 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	if (code < 0)
 	    return code;
 	pcs = (cos_stream_t *)pres->object;
-	pdev->substream_Resources = cos_stream_dict(pcs);
+ 	pdev->substream_Resources = cos_dict_alloc(pdev, "pdfmark_BP");
+ 	if (!pdev->substream_Resources)
+	    return_error(gs_error_VMerror);
 	code = cos_dict_put(pdev->local_named_objects, objname->data,
 				objname->size, cos_object_value(&value, pres->object));
 	if (code < 0)
@@ -1401,8 +1403,9 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	(code = cos_stream_put_c_strings(pcs, "/FormType", "1")) < 0 ||
 	(code = cos_stream_put_c_strings(pcs, "/Matrix", "[1 0 0 1 0 0]")) < 0 ||
 	(code = cos_dict_put_c_key_string(cos_stream_dict(pcs), "/BBox",
-					  (byte *)bbox_str,
-					  strlen(bbox_str))) < 0
+					  (byte *)bbox_str, strlen(bbox_str))) < 0 ||
+ 	(code = cos_dict_put_c_key_object(cos_stream_dict(pcs), "/Resources", 
+ 					  COS_OBJECT(pdev->substream_Resources))) < 0
 	)
 	return code;
     return 0;
