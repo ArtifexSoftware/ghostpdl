@@ -645,12 +645,13 @@ public class Gview
            drag = false;
 	   setCursor( Cursor.getDefaultCursor() );
 	} 
+	else if ( (e.getModifiers() & (e.BUTTON2_MASK | e.BUTTON3_MASK)) != 0 ) {
+	    if ( popupMenuAllowed ) 
+		popup.show(this, e.getX(), e.getY());
+	}
     }
 
     public void mouseClicked(MouseEvent e) {
-	if ( (e.getModifiers() & (e.BUTTON2_MASK | e.BUTTON3_MASK)) != 0 ) {
-	    popup.show(this, e.getX(), e.getY());
-	}
     }
 
     public void mouseEntered(MouseEvent e) {
