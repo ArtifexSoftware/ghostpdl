@@ -206,9 +206,12 @@ s_SFD_process(stream_state * st, stream_cursor_read * pr,
 	    return stream_move(pr, pw);
 	} else {		/* We're going to reach EOD. */
 	    count = ss->count;
-	    memcpy(q + 1, p + 1, count);
-	    pr->ptr = p + count;
-	    pw->ptr = q + count;
+	    if (count > 0) {
+		memcpy(q + 1, p + 1, count);
+		pr->ptr = p + count;
+		pw->ptr = q + count;
+	    }
+	    ss->count = -1;
 	    return EOFC;
 	}
     } else {			/* Read looking for an EOD pattern. */
@@ -248,7 +251,7 @@ cp:
 		     * is long, which is not supported as a switch value in
 		     * pre-ANSI C.
 		     */
-		    if (ss->count == 0) {
+		    if (ss->count <= 0) {
 			status = EOFC;
 			goto xit;
 		    } else if (ss->count == 1) {

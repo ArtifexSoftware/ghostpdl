@@ -49,10 +49,14 @@ languagelevel dup 2 max .setlanguagelevel
     3 -1 roll pop exch filter
     exch pop true exch		% set CloseSource for further filters
   } for
-		% See if we can create the filter directly.
-		% Stack: dict filters parms CloseSource file
-  null 2 index { .reusablestream } .internalstopped {
-    pop pop
+		% If AsyncRead is true, try to create the filter directly.
+		% Stack: dict filters parms CloseSource source
+  4 index /AsyncRead .knownget not { false } if {
+    1 index { .reusablestream } .internalstopped
+  } {
+    null true
+  } ifelse {
+    pop
 		% No luck.  Read the entire contents of the stream now.
     dup type /filetype ne {
 		% Make a stream from a procedure or string data source.
@@ -71,7 +75,7 @@ languagelevel dup 2 max .setlanguagelevel
       exch 1000 mul exch 2 index 3 1 roll putinterval
     } forall
 		% Now create the stream on the string.
-    null 2 index .reusablestream
+    1 index .reusablestream
   } if
 		% We created the stream successfully: clean up.
   4 { exch pop } repeat

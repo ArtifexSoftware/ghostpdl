@@ -627,20 +627,21 @@ zfilename(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     stream *s;
+    gs_const_string fname;
     byte *str;
 
     check_file(s, op);
-    if (s->file_name.data == 0) {
+    if (sfilename(s, &fname) < 0) {
 	make_false(op);
 	return 0;
     }
     check_ostack(1);
-    str = ialloc_string(s->file_name.size, "filename");
+    str = ialloc_string(fname.size, "filename");
     if (str == 0)
 	return_error(e_VMerror);
-    memcpy(str, s->file_name.data, s->file_name.size);
+    memcpy(str, fname.data, fname.size);
     push(1);			/* can't fail */
-    make_const_string(op - 1, a_all, s->file_name.size, str);
+    make_const_string(op - 1, a_all, fname.size, str);
     make_true(op);
     return 0;
 }

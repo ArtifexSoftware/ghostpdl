@@ -169,16 +169,20 @@ struct stream_s {
     stream *prev, *next;	/* keep track of all files */
     bool close_strm;		/* CloseSource/CloseTarget */
     bool close_at_eod;		/*(default is true, only false if "reusable")*/
+    int (*save_close)(P1(stream *));	/* save original close proc */
     /*
      * In order to avoid allocating a separate stream_state for
      * file streams, which are the most heavily used stream type,
      * we put their state here.
      */
     FILE *file;			/* file handle for C library */
-    gs_const_string file_name;	/* file name (optional) */
+    gs_const_string file_name;	/* file name (optional) -- clients must */
+				/* access only through procedures */
     uint file_modes;		/* access modes for the file, */
 				/* may be a superset of modes */
-    int (*save_close)(P1(stream *));	/* save original close proc */
+    /* Clients must only set the following through sread_subfile. */
+    long file_offset;		/* starting point in file (reading) */
+    long file_limit;		/* ending point in file (reading) */
 };
 
 /* The descriptor is only public for subclassing. */
@@ -335,9 +339,16 @@ void sread_file(P4(stream *, FILE *, byte *, uint)),
     swrite_file(P4(stream *, FILE *, byte *, uint)),
     sappend_file(P4(stream *, FILE *, byte *, uint));
 
+/* Confine reading to a subfile.  This is primarily for reusable streams. */
+int sread_subfile(P3(stream *s, long start, long length));
+
 /* Set the file name of a stream, copying the name. */
 /* Return <0 if the copy could not be allocated. */
 int ssetfilename(P3(stream *, const byte *, uint));
+
+/* Return the file name of a stream, if any. */
+/* There is a guaranteed 0 byte after the string. */
+int sfilename(P2(stream *, gs_const_string *));
 
 /* Create a stream that tracks the position, */
 /* for calculating how much space to allocate when actually writing. */

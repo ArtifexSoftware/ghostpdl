@@ -20,6 +20,7 @@
 /* ReusableStreamDecode filter support */
 #include "memory_.h"
 #include "ghost.h"
+#include "gxiodev.h"
 #include "oper.h"
 #include "stream.h"
 #include "strimpl.h"
@@ -38,7 +39,7 @@
  */
 
 /* <dict|null> .rsdparams <filters> <decodeparms|null> */
-/* filters is always an array, and decodeparms is always either an array */
+/* filters is always an array; decodeparms is always either an array */
 /* of the same length as filters, or null. */
 private int
 zrsdparams(i_ctx_t *i_ctx_p)
@@ -105,34 +106,31 @@ zrsdparams(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <file|string> <length|null> <CloseSource> .reusablestream <filter> */
+/* <file|string> <CloseSource> .reusablestream <filter> */
 /*
  * The file|string operand must be a "reusable source", either:
  *      - A string or bytestring;
  *      - A readable, positionable file stream;
+ *      - A readable string stream;
  *      - A SubFileDecode filter with an empty EODString and a reusable
- *      source;
- *      - A reusable stream.
+ *      source.
+ * Reusable streams are also reusable sources, but they look just like
+ * ordinary file or string streams.
  */
 private int make_rss(P8(i_ctx_t *i_ctx_p, os_ptr op, const byte * data,
-			uint size, long offset,	long length,
-			bool is_bytestring, bool close_source));
+			uint size, int space, long offset, long length,
+			bool is_bytestring));
+private int make_rfs(P5(i_ctx_t *i_ctx_p, os_ptr op, stream *fs,
+			long offset, long length));
 private int
 zreusablestream(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    os_ptr source_op = op - 2;
-    os_ptr length_op = op - 1;
-    long length;
+    os_ptr source_op = op - 1;
+    long length = max_long;
     bool close_source;
     int code;
 
-    if (r_has_type(length_op, t_integer)) {
-	length = length_op->value.intval;
-	if (length < 0)
-	    return_error(e_rangecheck);
-    } else
-	length = -1;
     check_type(*op, t_boolean);
     close_source = op->value.boolval;
     if (r_has_type(source_op, t_string)) {
@@ -140,8 +138,7 @@ zreusablestream(i_ctx_t *i_ctx_p)
 
 	check_read(*source_op);
 	code = make_rss(i_ctx_p, source_op, source_op->value.const_bytes,
-			size, 0L, (length < 0 ? size : length), false,
-			close_source);
+			size, r_space(source_op), 0L, size, false);
     } else if (r_has_type(source_op, t_astruct)) {
 	uint size = gs_object_size(imemory, source_op->value.pstruct);
 
@@ -149,70 +146,102 @@ zreusablestream(i_ctx_t *i_ctx_p)
 	    return_error(e_rangecheck);
 	check_read(*source_op);
 	code = make_rss(i_ctx_p, source_op,
-			(const byte *)source_op->value.pstruct, size, 0L,
-			(length < 0 ? size : length), true, close_source);
+			(const byte *)source_op->value.pstruct, size,
+			r_space(source_op), 0L, size, true);
     } else {
 	long offset = 0;
 	stream *source;
+	stream *s;
 
 	check_read_file(source, source_op);
+	s = source;
 rs:
-	if (source->cbuf_string.data != 0) {
-	    /* The data source is a string. */
-	    long avail;
+	if (s->cbuf_string.data != 0) {	/* string stream */
+	    long pos = stell(s);
+	    long avail = sbufavailable(s) + pos;
 
-	    offset += stell(source);
-	    savailable(source, &avail);
-	    if (avail < 0)
-		avail = 0;
-	    code = make_rss(i_ctx_p, source_op, source->cbuf_string.data,
-			    source->cbuf_string.size, offset, avail, false,
-			    close_source);
-	} else if (source->file != 0) {
-	    /* The data source is a file. */
-	    /****** NYI ******/
-	    return_error(e_rangecheck);
-	} else if (source->state->template == &s_SFD_template) {
-	    /* The data source is a SubFileDecode filter. */
+	    offset += pos;
+	    code = make_rss(i_ctx_p, source_op, s->cbuf_string.data,
+			    s->cbuf_string.size,
+			    imemory_space((const gs_ref_memory_t *)s->memory),
+			    offset, min(avail, length), false);
+	} else if (s->file != 0) { /* file stream */
+	    if (~s->modes & (s_mode_read | s_mode_seek))
+		return_error(e_ioerror);
+	    code = make_rfs(i_ctx_p, source_op, s, offset + stell(s), length);
+	} else if (s->state->template == &s_SFD_template) {
+	    /* SubFileDecode filter */
 	    const stream_SFD_state *const sfd_state =
-	    (const stream_SFD_state *)source->state;
+		(const stream_SFD_state *)s->state;
 
 	    if (sfd_state->eod.size != 0)
 		return_error(e_rangecheck);
+	    offset += sfd_state->skip_count - sbufavailable(s);
 	    if (sfd_state->count != 0) {
-		long left = sfd_state->count + sbufavailable(source);
+		long left = max(sfd_state->count, 0) + sbufavailable(s);
 
 		if (left < length)
 		    length = left;
 	    }
-	    source = source->strm;
+	    s = s->strm;
 	    goto rs;
 	}
-	else {
-	    /****** REUSABLE CASE IS NYI ******/
+	else			/* some other kind of stream */
 	    return_error(e_rangecheck);
+	if (close_source) {
+	    stream *rs = fptr(source_op);
+
+	    rs->strm = source;	/* only for close_source */
+	    rs->close_strm = true;
 	}
     }
     if (code >= 0)
-	pop(2);
+	pop(1);
     return code;
 }
 
 /* Make a reusable string stream. */
 private int
 make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data, uint size,
-	 long offset, long length, bool is_bytestring, bool close_source)
+	 int string_space, long offset, long length, bool is_bytestring)
 {
     stream *s;
+    long left = min(length, size - offset);
 
-    /****** SELECT CORRECT VM FOR ALLOCATION ******/
+    if (icurrent_space < string_space)
+	return_error(e_invalidaccess);
     s = file_alloc_stream(imemory, "make_rss");
     if (s == 0)
 	return_error(e_VMerror);
-    sread_string_reusable(s, data + offset, min(length, size - offset));
+    sread_string_reusable(s, data + offset, max(left, 0));
     if (is_bytestring)
 	s->cbuf_string.data = 0;	/* byte array, not string */
-    /****** DO WHAT WITH close_source ? ******/
+    make_stream_file(op, s, "r");
+    return 0;
+}
+
+/* Make a reusable file stream. */
+private int
+make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs, long offset, long length)
+{
+    gs_const_string fname;
+    stream *s;
+    int code;
+
+    if (sfilename(fs, &fname) < 0)
+	return_error(e_ioerror);
+    if (fname.data[0] == '%')
+	return_error(e_invalidfileaccess); /* can't reopen */
+    /* Open the file again, to be independent of the source. */
+    code = file_open_stream(fname.data, fname.size, "r", fs->cbsize,
+			    &s, iodev_default->procs.fopen, imemory);
+    if (code < 0)
+	return code;
+    if (sread_subfile(s, offset, length) < 0) {
+	sclose(s);
+	return_error(e_ioerror);
+    }
+    s->close_at_eod = false;
     make_stream_file(op, s, "r");
     return 0;
 }

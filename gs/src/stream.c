@@ -180,19 +180,34 @@ s_std_init(register stream * s, byte * ptr, uint len, const stream_procs * pp,
 int
 ssetfilename(stream *s, const byte *data, uint size)
 {
-    byte *fname =
+    byte *str =
 	(s->file_name.data == 0 ?
-	 gs_alloc_string(s->memory, size, "ssetfilename") :
+	 gs_alloc_string(s->memory, size + 1, "ssetfilename") :
 	 gs_resize_string(s->memory,
 			  (byte *)s->file_name.data,	/* break const */
 			  s->file_name.size,
-			  size, "ssetfilename"));
+			  size + 1, "ssetfilename"));
 
-    if (fname == 0)
+    if (str == 0)
 	return -1;
-    memcpy(fname, data, size);
-    s->file_name.data = fname;
-    s->file_name.size = size;
+    memcpy(str, data, size);
+    str[size] = 0;
+    s->file_name.data = str;
+    s->file_name.size = size + 1;
+    return 0;
+}
+
+/* Return the file name of a stream, if any. */
+/* There is a guaranteed 0 byte after the string. */
+int
+sfilename(stream *s, gs_const_string *pfname)
+{
+    pfname->data = s->file_name.data;
+    if (pfname->data == 0) {
+	pfname->size = 0;
+	return -1;
+    }
+    pfname->size = s->file_name.size - 1; /* omit terminator */
     return 0;
 }
 
@@ -992,19 +1007,24 @@ private void
 s_string_reusable_reset(stream *s)
 {
     s->srptr = s->cbuf - 1;	/* just reset to the beginning */
+    s->srlimit = s->srptr + s->bsize;  /* might have gotten reset */
 }
 private int
 s_string_reusable_flush(stream *s)
 {
-    s->srptr = s->srlimit;	/* just set to the end */
+    s->srptr = s->srlimit = s->cbuf + s->bsize - 1;  /* just set to the end */
     return 0;
 }
 void
 sread_string_reusable(stream *s, const byte *ptr, uint len)
 {
+    static const stream_procs p = {
+	 s_string_available, s_string_read_seek, s_string_reusable_reset,
+	 s_string_reusable_flush, s_std_null, s_string_read_process
+    };
+
     sread_string(s, ptr, len);
-    s->procs.reset = s_string_reusable_reset;
-    s->procs.flush = s_string_reusable_flush;
+    s->procs = p;
     s->close_at_eod = false;
 }
 
@@ -1025,6 +1045,8 @@ s_string_read_seek(register stream * s, long pos)
     if (pos < 0 || pos > s->bsize)
 	return ERRC;
     s->srptr = s->cbuf + pos - 1;
+    /* We might be seeking after a reusable string reached EOF. */
+    s->srlimit = s->cbuf + s->bsize - 1;
     return 0;
 }
 
