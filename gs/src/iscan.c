@@ -308,7 +308,7 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
 #ifdef DEBUG
 	if (gs_debug_c('%')) {
 	    dlprintf2("[%%%%%s%c]", sstr, (len >= 3 ? '+' : '-'));
-	    fwrite(base, 1, len, dstderr);
+	    debug_print_string(base, len);
 	    dputs("\n");
 	}
 #endif
@@ -326,7 +326,7 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
     else {
 	if (gs_debug_c('%')) {
 	    dlprintf2("[%% %s%c]", sstr, (len >= 2 ? '+' : '-'));
-	    fwrite(base, 1, len, dstderr);
+	    debug_print_string(base, len);
 	    dputs("\n");
 	}
     }
@@ -744,16 +744,14 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 #define comment_line da.buf
 		--sptr;
 		comment_line[1] = 0;
-		if (scan_comment_proc != NULL ||
-		    ((sptr == base || base[1] == '%') &&
-		     scan_dsc_proc != NULL)
-		    ) {		/* Could be an externally processable comment. */
+		{
+		    /* Could be an externally processable comment. */
 		    uint len = sptr + 1 - base;
+		    if (len > sizeof(comment_line))
+			len = sizeof(comment_line);
 
 		    memcpy(comment_line, base, len);
 		    daptr = comment_line + len;
-		} else {	/* Not a DSC comment. */
-		    daptr = comment_line + (max_comment_line + 1);
 		}
 		da.base = comment_line;
 		da.is_dynamic = false;
