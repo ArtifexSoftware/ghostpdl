@@ -517,7 +517,7 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
       if (out_buf) {
         if (image_out->super.seek(&image_out->super, y))
 	  {
-	    printf ("I/O Error seeking to the output image position.");
+	    printf ("I/O Error seeking to the output image position.\n");
 	    free(out_buf);
 	    out_buf = NULL;
 	  }
@@ -635,12 +635,12 @@ main (int argc, char **argv)
   { 
     if (image1->feof_(image1)) 
     {
-      printf ("Extra data (maybe pages) in the image file 2.");
+      printf ("Extra data (maybe pages) in the image file 2.\n");
       return 1;
     }
     if (image2->feof_(image2)) 
     {
-      printf ("Extra data (maybe pages) in the image file 1.");
+      printf ("Extra data (maybe pages) in the image file 1..\n");
       return 1;
     }
     fuzzy_diff_images (image1, image2, &fparams, &freport, image_out);
