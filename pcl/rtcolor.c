@@ -27,7 +27,7 @@ private const int32 palette_simple_RGB[8*3] =
 
 private int /* ESC * r <cs_enum> U */
 pcl_simple_color(pcl_args_t *pargs, pcl_state_t *pcls)
-{	const int32 *pdata;
+{	int32 *pdata;
 	uint psize;
 
 	switch ( int_arg(pargs) )
