@@ -81,6 +81,11 @@ clist_fill_mask(gx_device * dev,
 	cmd_slow_rop(dev, lop_know_S_0(lop), pdcolor) ||
 	cmd_slow_rop(dev, lop_know_S_1(lop), pdcolor);
 
+    /* If depth > 1, this call will be translated to a copy_alpha call. */
+    /* if the target device can't perform copy_alpha, exit now. */
+    if (depth > 1 && (cdev->disable_mask & clist_disable_copy_alpha) != 0)
+	return_error(gs_error_unknownerror);
+
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     y0 = y;			/* must do after fit_copy */
 
@@ -88,14 +93,18 @@ clist_fill_mask(gx_device * dev,
     /* Also default for uncached bitmap or non-defaul lop; */
     /* We could handle more RasterOp cases here directly, but it */
     /* doesn't seem worth the trouble right now. */
+    /* Lastly, the command list will translate calls with depth > 1 to */
+    /* copy_alpha calls, so the device color must be pure */
     if (((cdev->disable_mask & clist_disable_complex_clip) &&
 	 !check_rect_for_trivial_clip(pcpath, x, y, x + width, y + height)) ||
-	gs_debug_c('`') || id == gx_no_bitmap_id || lop != lop_default
+	gs_debug_c('`') || id == gx_no_bitmap_id || lop != lop_default ||
+	(depth > 1 && !color_writes_pure(pdcolor, lop))
 	)
   copy:
 	return gx_default_fill_mask(dev, data, data_x, raster, id,
 				    x, y, width, height, pdcolor, depth,
 				    lop, pcpath);
+
     if (cmd_check_clip_path(cdev, pcpath))
 	cmd_clear_known(cdev, clip_path_known);
     data_x_bit = data_x << log2_depth;
@@ -122,6 +131,8 @@ clist_fill_mask(gx_device * dev,
 	} HANDLE_RECT(code);
 	TRY_RECT {
 	    code = cmd_put_drawing_color(cdev, pcls, pdcolor);
+	    if (depth > 1 && code >= 0)
+		code = cmd_set_color1(cdev, pcls, pdcolor->colors.pure);
 	} HANDLE_RECT(code);
 	pcls->colors_used.slow_rop |= slow_rop;
 

@@ -253,6 +253,7 @@ typedef struct gx_device_clist_writer_s {
 #define clist_disable_complex_clip (1 << 3)
 #define clist_disable_nonrect_hl_image (1 << 4)
 #define clist_disable_pass_thru_params (1 << 5)	/* disable EXCEPT at top of page */
+#define clist_disable_copy_alpha (1 << 6) /* target does not support copy_alpha */
 
 /* Define the state of a band list when reading. */
 /* For normal rasterizing, pages and num_pages are both 0. */

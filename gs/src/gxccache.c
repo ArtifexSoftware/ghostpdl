@@ -269,6 +269,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	(*dev_proc(imaging_dev, open_device)) (imaging_dev);
 	if_debug0('K', "[K](clipping)\n");
     }
+    gx_set_dev_color(pgs);
     /* If an xfont can render this character, use it. */
     if (xg != gx_no_xglyph && (xf = cc_pair(cc)->xfont) != 0) {
 	int cx = x + fixed2int(cc->offset.x);
@@ -330,7 +331,6 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	gx_clip_path *pcpath;
 
 	code = gx_effective_clip_path(pgs, &pcpath);
-	gx_set_dev_color(pgs);
 	if (code >= 0) {
 	    code = (*dev_proc(orig_dev, fill_mask))
 		(orig_dev, bits, 0, cc_raster(cc), cc->id,
@@ -353,8 +353,8 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 		return 1;	/* VMerror, but recoverable */
 	}
 	code = (*dev_proc(imaging_dev, copy_mono))
-	    (imaging_dev, bits, 0, cc_raster(cc), cc->id,
-	     x, y, w, h, gx_no_color_index, pdevc->colors.pure);
+	    (imaging_dev, bits, 0, bitmap_raster(w), gs_no_id,
+	     x, y, w, h, gx_no_color_index, color);
 	goto done;
     }
     if (depth > 1) {		/* Complex color or fill_mask / copy_alpha failed, */
@@ -369,7 +369,8 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	    gs_image_enum_alloc(mem, "image_char(image_enum)");
 	gs_image_t image;
 	int iy;
-	uint used;
+	uint used, raster = (bits == cc_bits(cc) ? cc_raster(cc)
+			     : bitmap_raster(cc->width) );
 	int code1;
 
 	if (pie == 0) {
@@ -396,7 +397,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 		break;
 	    case 0:
 		for (iy = 0; iy < h && code >= 0; iy++)
-		    code = gs_image_next(pie, bits + iy * cc_raster(cc),
+		    code = gs_image_next(pie, bits + iy * raster,
 					 (w + 7) >> 3, &used);
 		code1 = gs_image_cleanup(pie);
 		if (code >= 0 && code1 < 0)
@@ -423,10 +424,9 @@ compress_alpha_bits(const cached_char * cc, gs_memory_t * mem)
     const byte *data = cc_const_bits(cc);
     uint width = cc->width;
     uint height = cc->height;
-    int log2_scale = cc_depth(cc);
-    int scale = 1 << log2_scale;
+    int depth = cc_depth(cc);
     uint sraster = cc_raster(cc);
-    uint sskip = sraster - ((width * scale + 7) >> 3);
+    uint sskip = sraster - ((width * depth + 7) >> 3);
     uint draster = bitmap_raster(width);
     uint dskip = draster - ((width + 7) >> 3);
     byte *mask = gs_alloc_bytes(mem, draster * height,
@@ -446,15 +446,19 @@ compress_alpha_bits(const cached_char * cc, gs_memory_t * mem)
 	for (w = width; w; --w) {
 	    if (*sptr & sbit)
 		d += dbit;
-	    if (!(sbit >>= log2_scale))
+	    if (!(sbit >>= depth))
 		sbit = 0x80, sptr++;
-	    if (!(dbit >>= 1))
-		dbit = 0x80, dptr++, d = 0;
+	    if (!(dbit >>= 1)) {
+		*dptr++ = d;
+		dbit = 0x80, d = 0;
+	    }
 	}
 	if (dbit != 0x80)
 	    *dptr++ = d;
 	for (w = dskip; w != 0; --w)
 	    *dptr++ = 0;
+	if (sbit != 0x80)
+	    ++sptr;
 	sptr += sskip;
     }
     return mask;

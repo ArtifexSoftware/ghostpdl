@@ -429,6 +429,10 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
     int y0;
     int data_x_bit;
 
+    /* If the target can't perform copy_alpha, exit now */
+    if (depth > 1 && (cdev->disable_mask & clist_disable_copy_alpha) != 0)
+	return_error(gs_error_unknownerror);
+
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     y0 = y;
     data_x_bit = data_x << log2_depth;

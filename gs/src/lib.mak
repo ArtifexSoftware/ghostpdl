@@ -1532,7 +1532,7 @@ $(GLOBJ)gxclrast.$(OBJ) : $(GLSRC)gxclrast.c $(GXERR)\
  $(gxhttile_h) $(gxiparam_h) $(gxpaint_h)\
  $(gzacpath_h) $(gzcpath_h) $(gzpath_h)\
  $(stream_h) $(strimpl_h) $(gxcomp_h)\
- $(gsserial_h) $(gxdhtserial_h)
+ $(gsserial_h) $(gxdhtserial_h) $(gzht_h)
 	$(GLCC) $(GLO_)gxclrast.$(OBJ) $(C_) $(GLSRC)gxclrast.c
 
 $(GLOBJ)gxclread.$(OBJ) : $(GLSRC)gxclread.c $(GXERR)\

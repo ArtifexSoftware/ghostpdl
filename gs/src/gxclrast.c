@@ -49,6 +49,7 @@
 #include "gxcomp.h"
 #include "gsserial.h"
 #include "gxdhtserial.h"
+#include "gzht.h"
 
 extern_gx_device_halftone_list();
 extern_gx_image_type_table();

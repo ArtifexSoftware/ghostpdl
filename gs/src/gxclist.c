@@ -297,6 +297,10 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 
     /* Call create_buf_device to get the memory planarity set up. */
     cdev->buf_procs.create_buf_device(&pbdev, target, NULL, NULL, true);
+    /* HACK - if the buffer device can't do copy_alpha, disallow */
+    /* copy_alpha in the commmand list device as well. */
+    if (dev_proc(pbdev, copy_alpha) == gx_no_copy_alpha)
+	cdev->disable_mask |= clist_disable_copy_alpha;
     if (band_height) {
 	/*
 	 * The band height is fixed, so the band buffer requirement
