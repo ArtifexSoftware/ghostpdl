@@ -100,10 +100,25 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
 		p--;
 		break;
 	    }
-	    if (*++p != '>') {
+
+	    /* According to PLRM 3rd, if the A85 filter encounters '~',
+	     * the next character must be '>'.
+	     * And any other characters should raise an ioerror.
+	     * But Adobe Acrobat allows CR/LF between ~ and >.
+	     * So we allow CR/LF between them. */
+	    ++p;
+	    while (*p == 13 || *p == 10) {
+		if (p < rlimit) {
+		    ++p;
+		} else {
+		    break;
+		}
+	    }
+	    if (p == rlimit || *p != '>') {
 		status = ERRC;
 		break;
 	    }
+
 	    pw->ptr = q;
 	    status = a85d_finish(ccount, word, pw);
 	    q = pw->ptr;
