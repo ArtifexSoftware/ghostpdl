@@ -34,6 +34,11 @@ proc grep1 {pattern file linevar} {
     return 1
 }
 
+# Define a 1-origin array of month names.
+set monthnames1 [list ?\
+	January February March April May June\
+	July August September October November December]
+
 # ---------------- Main program ---------------- #
 
 ################ Check the arguments
@@ -223,23 +228,28 @@ foreach d {examples doc lib man src} {
 ################ Check dates and version #s in documentation files
 
 foreach doc $doclist {
-    set idline {^(! |)(Aladdin |GNU |)Ghostscript version ([0-9.]+), ([0-9]+ [A-Z][a-z]+ [0-9]+)$}
-    if {![grep1 $idline $doc dstr]} {
+    set dateline {^(! |)(Aladdin |GNU |)Ghostscript version ([0-9.]+), ([0-9]+ [A-Z][a-z]+ [0-9]+)$}
+    set idline {[$]Id: [^,]+,v [^ ]+ ([0-9][0-9][0-9][0-9])/([0-9][0-9])/([0-9][0-9]) }
+    if {![grep1 $dateline $doc dstr]} {
 	message "Can't find version # and date in $doc"
+    } elseif {![grep1 $idline $doc idstr]} {
+	message "Can't find Id line in $doc"
     } else {
-	regexp $idline $dstr skip skip2 skip3 dver ddate
+	regexp $dateline $dstr skip skip2 skip3 dver ddate
+	regexp $idline $idstr skip year month1 day
 	set ddate [exec date +$dateformat -d $ddate]
-	if {$dver != $vcurdot || $ddate != $curdate} {
-	    message "$doc shows version $dver, $ddate;\n\tcurrent is $vcurdot, $curdate"
+	# Strip leading 0 from month and day.
+	set day [expr 1$day - 100]
+	set month1 [expr 1$month1 - 100]
+	set idate "[$day [lindex $monthnames1 $month1] $year"
+	if {$dver != $vcurdot || $ddate != $idate} {
+	    message "$doc shows version $dver, $ddate;\n\tcurrent is $vcurdot, last updated $idate"
 	}
     }
 }
 
 ################ Check dates and version #s in man pages
 
-set monthnames1 [list ?\
-	January February March April May June\
-	July August September October November December]
 foreach doc $manlist {
     set in [open $doc]
     set idline [gets $in]
