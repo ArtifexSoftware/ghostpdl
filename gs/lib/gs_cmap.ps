@@ -269,7 +269,6 @@
 
 /.endmapranges {	% -mark- <code_lo> <code_hi> <cid_base> ... <map#>
 			%   .endmapranges -
-  2 dict begin /merge false def
   counttomark 1 add 1 roll
   counttomark 3 idiv {
     counttomark -3 roll		% process in correct order
@@ -282,39 +281,41 @@
 	3 index .endmapvalue
 	6 -1 roll 1 add
       } for pop
-      /merge false def
     } {
+		% Stack: cid_base code_lo code_hi
 		% Hack: handle 16-bit single-range mappings specially.
       counttomark 3 eq 1 index length 2 eq and {
 	() 3 1 roll	% prefix
 	<02 01 00 02>	% params
 	3 1 roll	% keys
 	concatstrings 4 -1 roll .endmapvalue
-	/merge false def
       } {
 	exch dup dup length 1 sub 0 exch getinterval	% prefix
+			% Stack: cid_base code_hi code_lo prefix
 	<01 01 00 02>	% params
 	3 -1 roll dup length 1 sub 1 getinterval	% key_lo
 	4 -1 roll dup length 1 sub 1 getinterval	% key_hi
-	concatstrings 4 -1 roll .endmapvalue
+	concatstrings
+	4 -1 roll .endmapvalue
 		% See if we can merge with the previous value.
+		% The prefix, params, and font index must match.
 		% Stack: prefix params keys value fontindex
-	merge {
-	  4 index 10 index eq 1 index 7 index eq and {
-	    pop 4 2 roll pop pop
+	4 index 10 index eq		% prefix
+	4 index 10 index eq and	% params
+	1 index 7 index eq and	% fontindex
+	{
+	  pop 4 2 roll pop pop
 		% Stack: prefix params keys value fontindex keys2 value2
-	    5 -1 roll 3 -1 roll concatstrings
+	  5 -1 roll 3 -1 roll concatstrings
 		% Stack: prefix params value fontindex value2 keys'
-	    4 -1 roll 3 -1 roll concatstrings
+	  4 -1 roll 3 -1 roll concatstrings
 		% Stack: prefix params fontindex keys' values'
-	    3 -1 roll
-	  } if
+	  3 -1 roll
 	} if
-	/merge true def
       } ifelse
     } ifelse
   } repeat
-  counttomark 2 add -1 roll .appendmap end
+  counttomark 2 add -1 roll .appendmap
 } bind def
 
 /.endmapvalue {		% <cid> .endmapvalue (hi,lo) .FontIndex
@@ -349,7 +350,7 @@ languagelevel exch 2 .setlanguagelevel
 dup /InstanceType /dicttype put
 dup /DefineResource {
 		% The AdobePS5 Windows driver emits code that attempts to
-		% create CMaps without the require CMapName entry.
+		% create CMaps without the required CMapName entry.
 		% Work around this here.
   dup /CMapName known not {
     dup wcheck not {
