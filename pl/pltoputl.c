@@ -49,7 +49,7 @@ pl_top_cursor_next(
 	int len;
 
 	/* Declare EOF even if chars left in buffer if no chars were consumed */
-	if (cursor->status <= 0 && cursor->cursor.ptr == cursor->buffer)
+	if (cursor->status <= 0 && cursor->cursor.ptr <= cursor->buffer)
 	  return cursor->status;
 
 	/* Copy any remaining bytes to head of buffer */
