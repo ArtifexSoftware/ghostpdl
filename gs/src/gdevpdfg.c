@@ -1054,12 +1054,11 @@ pdf_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
 int
 pdf_prepare_image(gx_device_pdf *pdev, const gs_imager_state *pis)
 {
-    pdf_resource_t *pres = 0;
-    int code = pdf_prepare_drawing(pdev, pis, "/ca %g", &pres);
-
-    if (code < 0)
-	return code;
-    return pdf_end_gstate(pdev, pres);
+    /*
+     * As it turns out, this requires updating the same parameters as for
+     * filling.
+     */
+    return pdf_prepare_fill(pdev, pis);
 }
 
 /* Update the graphics state for an ImageType 1 mask. */
