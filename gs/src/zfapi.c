@@ -1067,7 +1067,7 @@ private int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev,
     int oversampling_x, oversampling_y;
     double FontMatrix_div = (bCID && bIsType1GlyphData && font_file_path == NULL ? 1000 : 1);
     bool bVertical = (gs_rootfont(igs)->WMode != 0);
-    double sbw[4] = {0, 0}, vsbw[4], *pvsbw = NULL;
+    double sbw[4] = {0, 0};
     double em_scale_x, em_scale_y;
     gs_rect char_bbox;
     int code;
@@ -1257,34 +1257,47 @@ retry_oversampling:
         }
     }
     compute_em_scale(pbfont, &metrics, FontMatrix_div, &em_scale_x, &em_scale_y);
-    code = zchar_get_metrics(pbfont, &char_name, sbw);
-    if ((code = code) < 0)
-	return code;
-    if (code == metricsNone) {
-        sbw[2] = metrics.escapement / em_scale_x;
-        sbw[3] = 0;
-        if (pbfont->FontType == 2) {
-            gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
-            sbw[2] += fixed2float(pfont1->data.defaultWidthX);
-        }
-    } else {
-	if ((code = zchar_get_metrics(pbfont, op, sbw)) < 0)
-	    return code;
-    }
     char_bbox.p.x = metrics.bbox_x0 / em_scale_x;
     char_bbox.p.y = metrics.bbox_y0 / em_scale_y;
     char_bbox.q.x = metrics.bbox_x1 / em_scale_x;
     char_bbox.q.y = metrics.bbox_y1 / em_scale_y;
+
     if (bVertical) {
-        vsbw[0] = sbw[2] / 2;
-        vsbw[1] = pbfont->FontBBox.q.y;
-        vsbw[2] = 0;
-        vsbw[3] = - pbfont->FontBBox.q.x; /* Sic ! */
-        pvsbw = vsbw;
+	double pwv[4];
+	code = zchar_get_metrics2(pbfont, &char_name, pwv);
+	if (code < 0)
+	    return code;
+	if (code == metricsNone) {
+	    if (bCID) {
+		sbw[0] = sbw[2] / 2;
+		sbw[1] = pbfont->FontBBox.q.y;
+		sbw[2] = 0;
+		sbw[3] = - pbfont->FontBBox.q.x; /* Sic ! */
+	    } else
+		bVertical = false;
+	} else {
+	    sbw [0] = pwv[2];
+	    sbw [1] = pwv[3];
+	    sbw [2] = pwv[0];
+	    sbw [3] = pwv[1];
+	}
+    }
+    if (!bVertical) {
+	code = zchar_get_metrics(pbfont, &char_name, sbw);
+	if (code < 0)
+	    return code;
+	if (code == metricsNone) {
+	    sbw[2] = metrics.escapement / em_scale_x;
+	    sbw[3] = 0;
+	    if (pbfont->FontType == 2) {
+		gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
+		sbw[2] += fixed2float(pfont1->data.defaultWidthX);
+	    }
+	} 
     }
     code = zchar_set_cache(i_ctx_p, pbfont, &char_name,
 		           NULL, sbw + 2, &char_bbox,
-			   fapi_finish_render, fapi_finish_render, pvsbw);
+			   fapi_finish_render, fapi_finish_render, sbw);
     if (code != 0) {
         if (code < 0) {
             /* An error */
