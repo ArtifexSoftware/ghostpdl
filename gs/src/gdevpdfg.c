@@ -775,7 +775,9 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
     return 0;
 }
 
-/* Update the graphics subset common to all drawing operations. */
+/*
+ * Update the graphics subset common to all high-level drawing operations.
+ */
 private int
 pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 		    const char *ca_format, pdf_resource_t **ppres)
@@ -795,6 +797,16 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 	code = pdf_update_alpha(pdev, pis, ca_format, ppres);
 	if (code < 0)
 	    return code;
+    } else {
+	/*
+	 * If the graphics state calls for any transparency functions,
+	 * we can't represent them, so return a rangecheck.
+	 */
+	if (pis->opacity.alpha != 1 || pis->opacity.mask != 0 ||
+	    pis->shape.alpha != 1 || pis->shape.mask != 0 ||
+	    pis->transparency_stack != 0
+	    )
+	    return_error(gs_error_rangecheck);
     }
     return 0;
 }
