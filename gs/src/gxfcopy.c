@@ -854,7 +854,7 @@ copy_font_type42(gs_font *font, gs_font *copied)
      * structure, and access it from there.
      * We allocate room at the end of the copied data for fake hmtx/vmtx.
      */
-    uint extra = font42->data.numGlyphs * 8;
+    uint extra = font42->data.trueNumGlyphs * 8;
     stream fs;
     int code;
 
@@ -886,6 +886,7 @@ copy_font_type42(gs_font *font, gs_font *copied)
     copied42->data.get_metrics = copied_type42_get_metrics;
     copied42->data.get_glyph_index = copied_type42_get_glyph_index;
     copied42->data.numGlyphs = font42->data.numGlyphs;
+    copied42->data.trueNumGlyphs = font42->data.trueNumGlyphs;
     return 0;
  fail2:
     gs_free_object(copied->memory, cfdata->data,
@@ -940,10 +941,34 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
     return (code < 0 ? code : rcode);
 }
 
+private gs_glyph
+copied_type42_encode_char(gs_font *copied, gs_char chr,
+			  gs_glyph_space_t glyph_space)
+{
+    gs_copied_font_data_t *const cfdata = cf_data(copied);
+    const gs_glyph *Encoding = cfdata->Encoding;
+    gs_glyph glyph;
+
+    if (chr < 0 || chr >= 256 || Encoding == 0)
+	return GS_NO_GLYPH;
+    glyph = Encoding[chr];
+    if (glyph_space == GLYPH_SPACE_INDEX) {
+	/* Search linearly for the glyph by name. */
+	gs_copied_glyph_t *pcg;
+	int code = named_glyph_slot_linear(cfdata, glyph, &pcg);
+
+	if (code < 0 || !pcg->used)
+	    return GS_NO_GLYPH;
+	return GS_MIN_CID_GLYPH + (pcg - cfdata->glyphs);
+    }
+    return glyph;
+}
+
+
 private const gs_copied_font_procs_t copied_procs_type42 = {
     copy_font_type42, copy_glyph_type42, copied_char_add_encoding,
     named_glyph_slot_linear,
-    copied_encode_char, gs_type42_glyph_info, gs_type42_glyph_outline
+    copied_type42_encode_char, gs_type42_glyph_info, gs_type42_glyph_outline
 };
 
 /* ------ CIDFont shared ------ */
@@ -1245,7 +1270,7 @@ gs_copy_font(gs_font *font, gs_memory_t *mem, gs_font **pfont_new)
     switch (font->FontType) {
     case ft_TrueType:
 	procs = &copied_procs_type42;
-	glyphs_size = ((gs_font_type42 *)font)->data.numGlyphs;
+	glyphs_size = ((gs_font_type42 *)font)->data.trueNumGlyphs;
 	have_names = true;
 	break;
     case ft_encrypted:
@@ -1279,7 +1304,7 @@ gs_copy_font(gs_font *font, gs_memory_t *mem, gs_font **pfont_new)
     case ft_CID_TrueType:
 	procs = &copied_procs_cid2;
 	/* Glyphs are indexed by GID, not by CID. */
-	glyphs_size = ((gs_font_cid2 *)font)->data.numGlyphs;
+	glyphs_size = ((gs_font_cid2 *)font)->data.trueNumGlyphs;
 	break;
     default:
 	return_error(gs_error_rangecheck);
