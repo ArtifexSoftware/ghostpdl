@@ -356,7 +356,8 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 				   pcm_names, ecode);
 	    if (pcm >= 0) {
 		pdf_set_process_color_model(pdev, pcm);
-		pdf_set_initial_color(pdev, &pdev->saved_fill_color, &pdev->saved_stroke_color);
+		pdf_set_initial_color(pdev, &pdev->saved_fill_color, &pdev->saved_stroke_color,
+				&pdev->fill_used_process_color, &pdev->stroke_used_process_color);
 	    }
 	}
     }

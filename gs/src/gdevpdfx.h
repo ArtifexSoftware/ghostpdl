@@ -332,6 +332,8 @@ typedef struct pdf_viewer_state_s {
     bool fill_overprint;
     bool stroke_overprint;
     bool stroke_adjust; /* state.stroke_adjust */
+    bool fill_used_process_color;
+    bool stroke_used_process_color;
     gx_hl_saved_color saved_fill_color;
     gx_hl_saved_color saved_stroke_color;
     gx_line_params line_params;

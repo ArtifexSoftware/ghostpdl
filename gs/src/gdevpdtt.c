@@ -313,9 +313,11 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
 
 	if ((code =
 	     pdf_set_drawing_color(pdev, pis, pdcolor, &pdev->saved_stroke_color,
+				   &pdev->stroke_used_process_color,
 				   &psdf_set_stroke_color_commands)) < 0 ||
 	    (code =
 	     pdf_set_drawing_color(pdev, pis, pdcolor, &pdev->saved_fill_color,
+				   &pdev->fill_used_process_color,
 				   &psdf_set_fill_color_commands)) < 0
 	    )
 	    return code;

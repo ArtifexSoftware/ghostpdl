@@ -164,6 +164,8 @@ int gdev_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0,
 		/* Graphics state */\
 	gs_imager_state state;\
 	float dash_pattern[max_dash];\
+	bool fill_used_process_color;\
+	bool stroke_used_process_color;\
 	gx_hl_saved_color saved_fill_color;\
 	gx_hl_saved_color saved_stroke_color;\
 	gs_id no_clip_path_id;	/* indicates no clipping */\
@@ -188,6 +190,8 @@ int gdev_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0,
 	0,		/* open_options */\
 	 { 0 },		/* state */\
 	 { 0 },		/* dash_pattern */\
+	true,		/* fill_used_process_color */\
+	true,		/* stroke_used_process_color */\
 	 { 0 },		/* fill_color ****** WRONG ****** */\
 	 { 0 },		/* stroke_color ****** WRONG ****** */\
 	gs_no_id,	/* clip_path_id */\

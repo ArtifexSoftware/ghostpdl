@@ -120,17 +120,20 @@ void pdf_reset_graphics(gx_device_pdf *pdev);
 
 /* Set initial color. */
 void pdf_set_initial_color(gx_device_pdf * pdev, gx_hl_saved_color *saved_fill_color,
-		    gx_hl_saved_color *saved_stroke_color);
+		    gx_hl_saved_color *saved_stroke_color,
+		    bool *fill_used_process_color, bool *stroke_used_process_color);
 
 /* Set the fill or stroke color. */
 /* pdecolor is &pdev->fill_color or &pdev->stroke_color. */
-int pdf_set_pure_color(gx_device_pdf *pdev, gx_color_index color,
-		       gx_hl_saved_color * psc,
-		       const psdf_set_color_commands_t *ppscc);
-int pdf_set_drawing_color(gx_device_pdf *pdev, const gs_imager_state * pis,
-			  const gx_drawing_color *pdc,
-			  gx_hl_saved_color * psc,
-			  const psdf_set_color_commands_t *ppscc);
+int pdf_set_pure_color(gx_device_pdf * pdev, gx_color_index color,
+		   gx_hl_saved_color * psc,
+    		   bool *used_process_color,
+		   const psdf_set_color_commands_t *ppscc);
+int pdf_set_drawing_color(gx_device_pdf * pdev, const gs_imager_state * pis,
+		      const gx_drawing_color *pdc,
+		      gx_hl_saved_color * psc,
+		      bool *used_process_color,
+		      const psdf_set_color_commands_t *ppscc);
 
 /*
  * Bring the graphics state up to date for a drawing operation.

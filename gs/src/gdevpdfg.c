@@ -65,6 +65,8 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
     pdev->vgstack[i].fill_overprint = pdev->fill_overprint;
     pdev->vgstack[i].stroke_overprint = pdev->stroke_overprint;
     pdev->vgstack[i].stroke_adjust = pdev->state.stroke_adjust;
+    pdev->vgstack[i].fill_used_process_color = pdev->fill_used_process_color;
+    pdev->vgstack[i].stroke_used_process_color = pdev->stroke_used_process_color;
     pdev->vgstack[i].saved_fill_color = pdev->saved_fill_color;
     pdev->vgstack[i].saved_stroke_color = pdev->saved_stroke_color;
     pdev->vgstack[i].line_params = pdev->state.line_params;
@@ -98,6 +100,8 @@ pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
     pdev->fill_overprint = s->fill_overprint;
     pdev->stroke_overprint = s->stroke_overprint;
     pdev->state.stroke_adjust = s->stroke_adjust;
+    pdev->fill_used_process_color = s->fill_used_process_color;
+    pdev->stroke_used_process_color = s->stroke_used_process_color;
     pdev->saved_fill_color = s->saved_fill_color;
     pdev->saved_stroke_color = s->saved_stroke_color;
     pdev->state.line_params = s->line_params;
@@ -122,15 +126,18 @@ pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s)
 /* Set initial color. */
 void
 pdf_set_initial_color(gx_device_pdf * pdev, gx_hl_saved_color *saved_fill_color,
-		    gx_hl_saved_color *saved_stroke_color)
+		    gx_hl_saved_color *saved_stroke_color,
+		    bool *fill_used_process_color, bool *stroke_used_process_color)
 {
     gx_device_color black;
 
     pdev->black = gx_device_black((gx_device *)pdev);
     pdev->white = gx_device_white((gx_device *)pdev);
     set_nonclient_dev_color(&black, pdev->black);
-    gx_hld_save_color(NULL, &black, &pdev->vg_initial.saved_fill_color);
-    gx_hld_save_color(NULL, &black, &pdev->vg_initial.saved_stroke_color);
+    gx_hld_save_color(NULL, &black, saved_fill_color);
+    gx_hld_save_color(NULL, &black, saved_stroke_color);
+    *fill_used_process_color = true;
+    *stroke_used_process_color = true;
 }
 
 /* Prepare intitial values for viewer's graphics state parameters. */
@@ -195,7 +202,8 @@ pdf_prepare_initial_viewer_state(gx_device_pdf * pdev, const gs_imager_state *pi
      * and skip initial values.
      */
 
-    pdf_set_initial_color(pdev, &pdev->vg_initial.saved_fill_color, &pdev->vg_initial.saved_stroke_color);
+    pdf_set_initial_color(pdev, &pdev->vg_initial.saved_fill_color, &pdev->vg_initial.saved_stroke_color,
+	    &pdev->vg_initial.fill_used_process_color, &pdev->vg_initial.stroke_used_process_color);
     pdf_viewer_state_from_imager_state_aux(&pdev->vg_initial, pis);
     pdev->vg_initial_set = true;
     /*
@@ -211,7 +219,8 @@ private void
 pdf_reset_graphics_old(gx_device_pdf * pdev)
 {
 
-    pdf_set_initial_color(pdev, &pdev->saved_fill_color, &pdev->saved_stroke_color);
+    pdf_set_initial_color(pdev, &pdev->saved_fill_color, &pdev->saved_stroke_color, 
+				&pdev->fill_used_process_color, &pdev->stroke_used_process_color);
     pdev->state.flatness = -1;
     {
 	static const gx_line_params lp_initial = {
@@ -255,6 +264,7 @@ pdf_write_ccolor(gx_device_pdf * pdev, const gs_imager_state * pis,
 private int
 pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis, 
 	        const gx_drawing_color *pdc, gx_hl_saved_color * psc,
+		bool *used_process_color,
 		const psdf_set_color_commands_t *ppscc)
 {
     int code;
@@ -313,9 +323,11 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 			if (code < 0)
 			    return code;
 			pprints1(pdev->strm, " %s\n", ppscc->setcolorspace);
-		    }
+		    } else if (*used_process_color)
+			goto write_process_color;
 		    break;
 	    }
+	    *used_process_color = false;
 	    code = pdf_write_ccolor(pdev, pis, pcc);
 	    if (code < 0)
 		return code;
@@ -346,6 +358,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		if (code < 0)
 		    return code;
 	    }
+	    *used_process_color = false;
 	    break;
 	default: /* must not happen. */
 	case use_process_color:
@@ -353,6 +366,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 	    code = psdf_set_color((gx_device_vector *)pdev, pdc, ppscc);
 	    if (code < 0)
 		return code;
+	    *used_process_color = true;
     }
     *psc = temp;
     return code1;
@@ -361,19 +375,21 @@ int
 pdf_set_drawing_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		      const gx_drawing_color *pdc,
 		      gx_hl_saved_color * psc,
+		      bool *used_process_color,
 		      const psdf_set_color_commands_t *ppscc)
 {
-    return pdf_reset_color(pdev, pis, pdc, psc, ppscc);
+    return pdf_reset_color(pdev, pis, pdc, psc, used_process_color, ppscc);
 }
 int
 pdf_set_pure_color(gx_device_pdf * pdev, gx_color_index color,
 		   gx_hl_saved_color * psc,
+    		   bool *used_process_color,
 		   const psdf_set_color_commands_t *ppscc)
 {
     gx_drawing_color dcolor;
 
     set_nonclient_dev_color(&dcolor, color);
-    return pdf_reset_color(pdev, NULL, &dcolor, psc, ppscc);
+    return pdf_reset_color(pdev, NULL, &dcolor, psc, used_process_color, ppscc);
 }
 
 /*
@@ -1442,6 +1458,7 @@ pdf_prepare_imagemask(gx_device_pdf *pdev, const gs_imager_state *pis,
     if (code < 0)
 	return code;
     return pdf_set_drawing_color(pdev, pis, pdcolor, &pdev->saved_fill_color,
+				 &pdev->fill_used_process_color,
 				 &psdf_set_fill_color_commands);
 }
 

@@ -167,17 +167,20 @@ pdf_copy_mono(gx_device_pdf *pdev,
 		/* We're under pdf_text_process. It set a high level color. */
 	    } else
 		pdf_set_pure_color(pdev, one, &pdev->saved_fill_color,
+				   &pdev->fill_used_process_color,
 				   &psdf_set_fill_color_commands);
 	    pdf_make_bitmap_matrix(&image.ImageMatrix, x, y, w, h, h);
 	    goto rx;
 	}
 	pdf_set_pure_color(pdev, one, &pdev->saved_fill_color,
+			   &pdev->fill_used_process_color,
 			   &psdf_set_fill_color_commands);
 	gs_image_t_init_mask(&image, false);
 	invert = 0xff;
     } else if (one == gx_no_color_index) {
 	gs_image_t_init_mask(&image, false);
 	pdf_set_pure_color(pdev, zero, &pdev->saved_fill_color,
+			   &pdev->fill_used_process_color,
 			   &psdf_set_fill_color_commands);
     } else if (zero == pdev->black && one == pdev->white) {
 	gs_cspace_init_DeviceGray(&cs);

@@ -51,6 +51,7 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     if (code < 0)
 	return code;
     pdf_set_pure_color(pdev, color, &pdev->saved_fill_color,
+		       &pdev->fill_used_process_color,
 		       &psdf_set_fill_color_commands);
     pprintd4(pdev->strm, "%d %d %d %d re f\n", x, y, w, h);
     return 0;
@@ -83,6 +84,7 @@ pdf_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis,
     const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
 
     return pdf_set_drawing_color(pdev, pis_for_hl_color, pdc, &pdev->saved_fill_color,
+				 &pdev->fill_used_process_color,
 				 &psdf_set_fill_color_commands);
 }
 
@@ -95,6 +97,7 @@ pdf_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis,
     const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
 
     return pdf_set_drawing_color(pdev, pis_for_hl_color, pdc, &pdev->saved_stroke_color,
+				 &pdev->stroke_used_process_color,
 				 &psdf_set_stroke_color_commands);
 }
 
