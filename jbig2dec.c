@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.37 2002/07/20 17:23:15 giles Exp $
+    $Id: jbig2dec.c,v 1.38 2002/08/05 21:43:26 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -193,7 +193,7 @@ static int
 error_callback(void *error_callback_data, const char *buf, Jbig2Severity severity,
 	       int32_t seg_idx)
 {
-    jbig2dec_params_t *params = error_callback_data;
+    const jbig2dec_params_t *params = error_callback_data;
     char *type;
     char segment[22];
     
@@ -396,7 +396,7 @@ main (int argc, char **argv)
     {
       Jbig2GlobalCtx *global_ctx = jbig2_make_global_ctx(ctx);
       ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, global_ctx,
-			 error_callback, NULL);
+			 error_callback, &params);
       for (;;)
 	{
 	  int n_bytes = fread(buf, 1, sizeof(buf), f_page);
