@@ -84,6 +84,13 @@ browser, but not as a plug-in; the latter would integrate it more closely
 with the browser.  We aren't sure what doing this would involve; we've also
 heard by rumor that it's already been done.
 
+<h3>Ghostscript as an Active-X COM Object.</h3>
+
+<p>
+In order to integrate Ghostscript into XMetaL and other applications it
+would be convenient for Ghostscript to be distributed as a COM object
+along with the current gswin32.exe, gswin32c.exe and gsdll32.dll files.
+
 <hr>
 
 <h2><a name="Driver_architecture"></a>Driver Architecture</h2>
@@ -183,7 +190,7 @@ protocols, but we don't have references to it.)
 We would like to improve the high-level PostScript-writing
 <b><tt>pswrite</tt></b> driver to bring it up to parity with the PDF-writing
 driver (including the many improvements in the latter being implemented in
-Ghostscript 6.xx).  Specifically, we want it to write text as text rather
+Ghostscript 7.xx).  Specifically, we want it to write text as text rather
 than bitmaps, and to consistently write images in their original high-level
 form.  <I>We have already started to factor out code that
 should be common to these two drivers, specifically for writing embedded
@@ -197,19 +204,9 @@ compresses character bitmaps, and doesn't compress other images at all.
 <I>It should use the <b><tt>CCITTFaxEncode</tt></b> filter for 1-bit-deep
 images, and plane-separated <b><tt>LZWEncode</tt></b> compression for color
 images, using the <b><tt>miGIF</tt></b> algorithms that are believed to be
-free of the Welch patent for the latter.  Even better, it should try several
-methods on each image and use the one that works best.</I>
-
-<h3>DSC comment processing for PS to PDF conversion (Distiller).</h3>
-
-<p>
-The PDF-writing driver needs to look at some of the DSC comments in the
-PostScript input.  We have a plan and design for a general DSC-reading
-capability, but we need help implementing a full DSC parser and also help
-implementing the specific set of DSC comments that the PDF writer will need
-to consider.  <I>This set is currently specified very poorly in
-the Adobe Acrobat Distiller Parameters documentation: we are working with
-Adobe to find out the details.</I>
+free of the Welch patent for the latter.  When generating LL3 PS, the
+<b><tt>Flate</tt></b> compression will work better than miGIF. It may be
+worth trying several methods on each image and use the one that works best.</I>
 
 <h3>High level graphics and text for PCL 5 and PCL XL drivers.</h3>
 
@@ -318,19 +315,21 @@ platform facilities such as the X and MS Windows font capabilities.  This is
 a device-level interface and not the best place to do this: we would rather
 have the graphics library interface to FreeType directly.</I>
 
-<h3>ICC color space and ICC profile support.</h3>
+<h3>ICC profile support for output.</h3>
 
 <p>
-PDF 1.3 requires direct support for ICC color profiles in the form of a new
-ICCBased color space family; we believe Adobe will add such support to
-PostScript as well.  We would like to integrate such support into the
-graphics library.  One possible approach is to interface with the existing
-CS/CRD library code so that optimizations and improvements would carry into
-ICC color as well as CIE color.  However, we've been told that the icclib
-package at <a href="http://web.access.net.au/argyll/color.html
-">http://web.access.net.au/argyll/color.html</a> is a good one, and it
-handles all of its own color mapping.  We would suggest that anyone working
-on this project start by examining that package.
+Ghostscript 7.00 and later supports ICCBased color spaces of PDF
+using the icclib package from
+<a href="http://web.access.net.au/argyll/color.html ">
+http://web.access.net.au/argyll/color.html</a> 
+but there is no facility to use ICC output (printer) profiles that
+may be embedded in the PDF. Also it would be useful for PostScript
+to be able to directly use a specific Intent from ICC profile to
+convert output colors (as CRD's are now used).
+<I>The primary difficulty is that the graphics library and PostScript
+always use CIE XYZ as the connection space, but ICC profiles may
+use CIELAB as the connection space, requiring conversion for use
+with the graphics library. </I>
 
 <h3>Making halftones into "objects" and adding new types.</h3>
 
