@@ -53,7 +53,7 @@
 /* 0 false lets ufst render downloaded truetype
  * 1 true lets artifex font scaler render downloaded truetype
  */
-#define AFS_FOR_DOWNLOADED_TRUETYPE 0
+#define AFS_FOR_DOWNLOADED_TRUETYPE 1
 #ifndef AFS_FOR_DOWNLOADED_TRUETYPE 
 #error
 #endif
@@ -689,11 +689,16 @@ pl_ufst_make_char(
         wbox[4] = scale * pols->right;
         wbox[5] = scale * pols->top;
 
-	if ((code = gs_setcachedevice(penum, pgs, wbox)) < 0) {
+        if (status == ERR_fixed_space) {
             MEMfree(FSA CACHE_POOL, memhdl);
-            gs_setmatrix(pgs, &sv_ctm);
-            return code;
-        }
+             code = gs_setcharwidth(penum, pgs, wbox[0], wbox[1]);
+             gs_setmatrix(pgs, &sv_ctm);
+             return code;
+         } else if ((code = gs_setcachedevice(penum, pgs, wbox)) < 0) {
+             MEMfree(FSA CACHE_POOL, memhdl);
+             gs_setmatrix(pgs, &sv_ctm);
+             return code;
+         }
 
         code = image_outline_char(pols, &pis->ctm, pgs->path, pfont);
         if (code >= 0) {
