@@ -408,4 +408,10 @@ gs_font_base *
 			const gs_font_procs *procs, gs_font_dir *dir,
 			client_name_t cname));
 
+/*
+ * Test whether a glyph is the notdef glyph for a base font.
+ * The test is somewhat adhoc: perhaps this should be a virtual procedure.
+ */
+bool gs_font_glyph_is_notdef(P2(gs_font_base *bfont, gs_glyph glyph));
+
 #endif /* gxfont_INCLUDED */

@@ -689,21 +689,16 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 		 index != 0;
 	     ) {
 	    gs_glyph_info_t glyph_info;
-	    gs_const_string gnstr;
 
 	    code = font->procs.glyph_info(font, glyph, pmat,
 					  (GLYPH_INFO_WIDTH0 << wmode),
 					  &glyph_info);
 	    if (code < 0)
 		return code;
-	    if (notdef == gs_no_glyph) {
-		gnstr.data = (const byte *)
-		    bfont->procs.callbacks.glyph_name(glyph, &gnstr.size);
-		if (gnstr.size == 7 && !memcmp(gnstr.data, ".notdef", 7)) {
-		    notdef = glyph;
-		    info->MissingWidth = glyph_info.width[wmode].x;
-		    info->members |= FONT_INFO_MISSING_WIDTH;
-		}
+	    if (notdef == gs_no_glyph && gs_font_glyph_is_notdef(bfont, glyph)) {
+		notdef = glyph;
+		info->MissingWidth = glyph_info.width[wmode].x;
+		info->members |= FONT_INFO_MISSING_WIDTH;
 	    }
 	    if (glyph_info.width[wmode].y != 0)
 		fixed_width = min_int;
@@ -733,17 +728,8 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 	     * If this is a CIDFont or TrueType font that uses integers as
 	     * glyph names, check for glyph 0; otherwise, check for .notdef.
 	     */
-	    if (glyph >= gs_min_cid_glyph) {
-		if (glyph != gs_min_cid_glyph)
-		    continue;
-	    } else {
-		gs_const_string gnstr;
-
-		gnstr.data = (const byte *)
-		    bfont->procs.callbacks.glyph_name(glyph, &gnstr.size);
-		if (gnstr.size != 7 || memcmp(gnstr.data, ".notdef", 7))
-		    continue;
-	    }
+	    if (!gs_font_glyph_is_notdef(bfont, glyph))
+		continue;
 	    {
 		gs_glyph_info_t glyph_info;
 		int code = font->procs.glyph_info(font, glyph, pmat,
@@ -796,6 +782,24 @@ gs_base_same_font(const gs_font *font, const gs_font *ofont, int mask)
 }
 
 /* ------ Glyph-level procedures ------ */
+
+/*
+ * Test whether a glyph is the notdef glyph for a base font.
+ * The test is somewhat adhoc: perhaps this should be a virtual procedure.
+ */
+bool
+gs_font_glyph_is_notdef(gs_font_base *bfont, gs_glyph glyph)
+{
+    gs_const_string gnstr;
+
+    if (glyph == gs_no_glyph)
+	return false;
+    if (glyph >= gs_min_cid_glyph)
+	return (glyph == gs_min_cid_glyph);
+    gnstr.data = (const byte *)
+	bfont->procs.callbacks.glyph_name(glyph, &gnstr.size);
+    return (gnstr.size == 7 && !memcmp(gnstr.data, ".notdef", 7));
+}
 
 /* Dummy character encoding procedure */
 gs_glyph
