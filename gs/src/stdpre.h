@@ -250,6 +250,27 @@ typedef unsigned short ushort;
 typedef unsigned int uint;
 typedef unsigned long ulong;
 
+/* Since sys/types.h may define one or more of these (depending on
+ * the platform), we have to take steps to prevent name clashes.
+ * Unfortunately this can clobber valid definitions for the size-
+ * specific types, but there's no simple solution.
+ *
+ * NOTE: This requires that you include std.h *before* any other
+ * header file that includes sys/types.h.
+ *
+ */
+#define bool bool_		/* (maybe not needed) */
+#define uchar uchar_
+#define uint uint_
+#define ushort ushort_
+#define ulong ulong_
+#include <sys/types.h>
+#undef bool
+#undef uchar
+#undef uint
+#undef ushort
+#undef ulong
+
 /* Some systems are guaranteed to have stdint.h
  * but don't use the autoconf detection
  */
@@ -283,36 +304,16 @@ typedef unsigned long ulong;
 # endif
 # if defined(__CYGWIN__)
    /* Cygwin defines the signed versions in sys/types.h */
-   typedef unsigned char           uint8_t;
-   typedef unsigned short          uint16_t;
-   typedef unsigned int            uint32_t;
-   typedef unsigned long long      uint64_t;
+   /* but uses a u_ prefix for the unsigned versions */
+   typedef u_int8_t                uint8_t;
+   typedef u_int16_t               uint16_t;
+   typedef u_int32_t               uint32_t;
+   typedef u_int64_t               uint64_t;
 #  define STDINT_TYPES_DEFINED
 # endif
    /* other archs may want to add defines here, 
       or use the fallbacks in std.h */
 #endif /* STDINT_H */
-
-/* Since sys/types.h may define one or more of these (depending on
- * the platform), we have to take steps to prevent name clashes.
- * Unfortunately this can clobber valid definitions for the size-
- * specific types, but there's no simple solution.
- *
- * NOTE: This requires that you include std.h *before* any other
- * header file that includes sys/types.h.
- *
- */
-#define bool bool_		/* (maybe not needed) */
-#define uchar uchar_
-#define uint uint_
-#define ushort ushort_
-#define ulong ulong_
-#include <sys/types.h>
-#undef bool
-#undef uchar
-#undef uint
-#undef ushort
-#undef ulong
 
 /*
  * Define a Boolean type.  Even though we would like it to be
