@@ -56,7 +56,7 @@
 <li><a href="#Cygwin32_build">Cygwin32 gcc</a>
 <li><a href="#IntelWin32_build">Intel C/C++ compiler</a>
 </ul>
-<li><a href="#Mac_build">How to build Ghostscript from source (Mac version)</a>
+<li><a href="#Mac_build">How to build Ghostscript from source (MacOS version)</a>
 <ul>
 <li><a href="#MacOS">Traditional MacOS</a>
 <li><a href="#MacOSX">MacOS X</a>
@@ -284,6 +284,10 @@ version from the Net if you can.
 Although the zip archives of an old version of the PNG library may not be
 named <b><tt>lpng</tt></b>###<b><tt>.zip</tt></b>, we refer to it as
 <b><tt>lpng</tt></b>###<b><tt>.zip</tt></b>.
+
+<p>
+On MacOS, the .sit source archive includes the appropriate source versions
+of these libraries, so no additional downloads are necessary.
 
 <hr>
 
@@ -1409,122 +1413,80 @@ compiler from Intel's Software Performance Tools web site:
 
 <hr>
 
-<h2><a name="Mac_build"></a>How to build Ghostscript from source (Mac version)</h2>
+<h2><a name="Mac_build"></a>How to build Ghostscript from source (MacOS version)</h2>
 
 <h3><a name="MacOS"></a>Traditional MacOS</h3>
 
 <p>
-The macintosh port is being revamped for the 7.0 release and will come out
-somewhat later than the other platforms. In the meantime, the last stable release of
-ghostscript for the classic enviromnent is version 5.50 available from
+The Macintosh version of Ghostscript requires the <a href="http://www.metrowerks.com/"
+class="offsite">Metrowerks Codewarrior</a> development suite. Download the 
+<tt>macgs-700-src.sit</tt> source archive from the location listed
+below. This includes a Codewarrior .mcp project file than can be used to build both 
+Carbon and CFM versions of the ghostscript shared library component.
 
 <blockquote>
-<a href="ftp://ftp.cs.wisc.edu/pub/ghost/aladdin/mac/"
- class="offsite">ftp://ftp.cs.wisc.edu/pub/ghost/aladdin/mac/</a>
+<a href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/gs700/"
+ class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/gs700/</a>
 </blockquote>
 
 <p>
-There are also some experimental 6.x releases available in the 'test' directories
-on the same site.
-
-<!-- obsolete material commented out pending the macgs 7.0 release
-
-<p>
-There are additional Mac-specific source files in a distribution
-separate from the rest of Ghostscript.  In addition to the standard Ghostscript
-sources, you will need the following files:
-
-<blockquote><dl>
-<dt><a href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/mac/" 
-class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/mac/</a>macgs-###-src.sit.bin
-<dd>Source files as a StuffIt archive
-<dt><a href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/mac/manual.htm" 
-class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/mac/manual.htm</a>
-<dd>How to use and build MacGS
-<dt><a href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/mac/" 
-class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/mac/</a>macgs-###-fonts*.sit.bin
-<dd>Fonts (properly not to build MacGS but to install it)
-</dl></blockquote>
+If your system doesn't automatically unpack the source archive, you can
+download the free <a href="http://stuffit.com/download.html"
+class="offsite">Stuffit Expander</a> to open it.
 
 <p>
-If you don't have a program to expand and unpack these files, get the free
-<b>StuffIt Expander</b> program from your favorite Macintosh archive.
+This archive includes appropriate versions of the jpeg, zlib and libpng 3rd party
+library source for convenience. You must still download the fonts and place them in an
+appropriate location, along with the contents of the <tt>lib</tt> directory from the source
+archive.
 
 <p>
-In the standard method of building Ghostscript, these files except the JPEG
-are unpacked into one big directory; the JPEG stuff is unpacked into a
-directory called <b><tt>jpeg-6</tt></b> under the main directory.  The Macintosh
-stuff is also unpacked into its own directory, called "Mac Specific".
-However, if you like you can set up all these files in this hierarchy:
+Note that since this is just a library component, you will need a front-end application, such as
+MacGSView, to actually view or convert postscript and pdf documents.
 
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr><th colspan=4 bgcolor="#CCCC00"><hr><font size="+1">Suggested Macintosh hierarchy</font><hr>
-<tr valign=bottom>
-	<th align=left colspan=4><b><tt>Ghost&nbsp;Dev</tt></b>
-<tr valign=top>	<td>&nbsp;&nbsp;&nbsp;&nbsp;
-	<td><b><tt>files</tt></b>
-	<td>&nbsp;
-	<td>(All *<b><tt>.ps</tt></b>, *<b><tt>.htm</tt></b>, and other non-build files)
-<tr valign=top>	<td>&nbsp;
-	<td><b><tt>fonts</tt></b>
-	<td>&nbsp;
-	<td>(Fonts)
-<tr valign=top>	<td>&nbsp;
-	<td><b><tt>src</tt></b>
-	<td>&nbsp;
-	<td>(*<b><tt>.c</tt></b>, *<b><tt>.h</tt></b>, *<b><tt>.mak</tt></b>)
-<tr valign=top>	<td>&nbsp;
-	<td><b><tt>jpeg-6</tt></b>
-	<td>&nbsp;
-	<td>(JPEG files)
-<tr valign=top>	<td>&nbsp;
-	<td><b><tt>Mac&nbsp;Specific</tt></b>
-	<td>&nbsp;
-	<td>(Mac files)
-<tr valign=top>	<td>&nbsp;
-	<td><b><tt>MPW&nbsp;Build</tt></b>
-	<td>&nbsp;
-	<td>(Empty directory used for building under MPW)
-</table></blockquote>
-
-<p>
-Once everything is laid out, look at the file <b><tt>Worksheet</tt></b> in
-the "<b><tt>Mac Specific</tt></b>" folder for complete steps to build the
-system with either MPW or CodeWarrior.
-
-<p>
-Some versions of CodeWarrior on the PowerPC have a code generation bug that
-causes the compiled Ghostscript to occasionally produce bad output.  To
-avoid triggering this bug, do not use the "Use FMADD &amp; FMSUB" Code Gen
-option.  We recommend using the following options (for CodeWarrior 4, all
-patches applied):
-
-<blockquote><b><tt>
-Code Gen:
-<br>Struct alignment: PowerPC
-<br>Traceback Tables: Inline
-<br>Target Processor: 750 (or as appropriate for your system)
-<br>Store Static Data in TOC
-<br>Schedule Instructions
-<br>Peephole Optimization
-<br>
-<br>Global Optimizations:
-<br>Level 3
-</tt></b></blockquote>
-
--->
 
 <h3><a name="MacOSX"></a>MacOS X</h3>
 
 <p>
-Currently, building on MacOS X/Darwin is only supported with non-display
-devices, such as <b><tt>pdfwrite</tt></b> for converting PostScript to PDF,
-raster file devices such as <b><tt>png16m</tt></b>, and printers. You can
-generally use the unix-gcc or unixansi makefiles. For this
-environment, build with these additional
-definitions in the <b><tt>make</tt></b> command line: <b><tt>SYNC=nosync
-STDLIBS= DEVICE_DEVS= </tt></b> (yes, there is really just a space after the
-second and third '=') or modify the makefile to set them directly.
+The unix source distribution (.tar.gz) builds fine on Darwin/MacOS X,
+albeit without a display device. You can generally follow the instructions
+for building on unix in the next section, using <tt>unixansi.mak</tt> as
+your top-level makefile. You must, however, remove the X11 devices from
+the DEVICE_DEVS define near the end of the file. This will allow you to 
+use Ghostscript from the command line as a BSD-layer tool to rasterize 
+postscript and pdf to image files, and convert between the formats 
+supported by Ghostscript.
+
+<p>
+Additionally, there is a <tt>macos-mcp.mak</tt> makefile that can be
+used to set up the Codewarrior shared library component build described
+in the section on <a href="#MacOS">Classic MacOS</a> above. Currently
+this makefile is distributed only with the MacOS-specific <tt>.sit</tt>
+source archive, but with be included generally in future releases.
+
+<p>
+To set up the shlib build, download and uncompress the Ghostscript source.
+If the archive doesn't contain the 3rd party jpeg, png, and zlib source,
+you must download them as described at the beginning of this document and
+unpack them under the macgs-###-src directory under the specific names
+<tt>jpeg</tt>, <tt>zlib</tt> and <tt>libpng</tt>. You cannot use symlinks as
+Codewarrior will not be able to follow them for some of the needed header
+files.
+
+<p>
+Copy <tt>src/macos-mcp.mak</tt> to the top-level directory and rename
+it <tt>makefile</tt>. Then run 'make' in that directory, either from
+within Terminal.app or through Project Builder. This will set up the
+generated code required for the build and run a shell script to generate
+<tt>ghostscript.mcp.xml</tt>. Launch Metrowerks Codewarrior, and select
+'Import Project...' from the File menu, and open the xml project file.
+When asked, save the results as <tt>ghostscript.mcp</tt> in the same 
+directory and you should be ready to build the shared library component.
+
+</p>
+Tradtional ('PPC') applications based on the Code Fragment Manager
+will not be able to open the shlib linked with CarbonLib, so two
+targets are provided, one with carbon and one without.
 
 <hr>
 
