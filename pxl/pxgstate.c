@@ -31,6 +31,7 @@
 #include "gspath.h"
 #include "gspath2.h"
 #include "gsrop.h"
+#include "gxpath.h"
 #include "gxstate.h"
 #include "gscolor2.h"
 

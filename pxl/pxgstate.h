@@ -181,6 +181,9 @@ void px_gstate_init(P2(px_gstate_t *, gs_state *));
 /* Note that this takes a px_state_t, not a px_gstate_t. */
 int px_initgraphics(P1(px_state_t *));
 
+/* initialize the clipping region */
+int px_initclip(P1(px_state_t *pxs));
+
 /* Reset a px_gstate_t, initially or at the beginning of a page. */
 void px_gstate_reset(P1(px_gstate_t *));
 

@@ -192,7 +192,10 @@ px_set_halftone(px_state_t *pxs)
 		ht.params.threshold.width = pxgs->halftone.height;
 		ht.params.threshold.height = pxgs->halftone.width;
 		break;
-	      }
+	      default:
+		return -1;
+	       }
+	    
 	    /* Stupid C compilers don't allow structure assignment where */
 	    /* the only incompatibility is an assignment of a T * to a */
 	    /* const T * (which *is* allowed as a simple assignment): */
@@ -549,7 +552,6 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	px_paint_rc_adjust(ppt, -1, pxs->memory);
 	ppt->type = pxpNull;
     } else if ( par->pv[aPrimaryDepth] && par->pv[aPrimaryArray] ) {
-	int i;
 	px_paint_rc_adjust(ppt, -1, pxs->memory);
 	if ( pxgs->color_space == eRGB )
 	    ppt->type = pxpRGB;
@@ -882,7 +884,7 @@ pxSetHalftoneMethod(px_args_t *par, px_state_t *pxs)
 		      {
 		      case ePortraitOrientation:
 			dest += source_y * width + source_x;
-		skip = 1;
+			skip = 1;
 			break;
 		      case eLandscapeOrientation:
 			dest += (width - 1 - source_x) * height + source_y;
@@ -897,6 +899,8 @@ pxSetHalftoneMethod(px_args_t *par, px_state_t *pxs)
 			dest += source_x * height + width - 1 - source_y;
 			skip = height;
 			break;
+		      default:
+			return -1;
 		      }
 		    for ( i = 0; i < used; ++i, ++src, dest += skip )
 		      *dest = *src;

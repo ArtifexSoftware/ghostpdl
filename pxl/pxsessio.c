@@ -16,6 +16,7 @@
 
 #include "math_.h"		/* for fabs */
 #include "stdio_.h"
+#include "string_.h"
 #include "pxoper.h"
 #include "pxstate.h"
 #include "pxfont.h"
@@ -180,7 +181,6 @@ px_end_session_cleanup(px_state_t *pxs)
 {	if ( pxs->data_source_open )
 	  pxCloseDataSource(NULL, pxs);
 	gx_purge_selected_cached_chars(pxs->font_dir, purge_all, pxs);
-	px_dict_release(&pxs->font_dict);
 	px_dict_release(&pxs->session_pattern_dict);
 	px_purge_pattern_cache(pxs, eSessionPattern);
 	/* We believe that streams do *not* persist across sessions.... */
@@ -214,7 +214,11 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 {	pxs->measure = par->pv[0]->value.i;
 	pxs->units_per_measure.x = real_value(par->pv[1], 0);
 	pxs->units_per_measure.y = real_value(par->pv[1], 1);
-	pxs->error_report = (par->pv[2] ? par->pv[2]->value.i : eNoReporting);
+
+	if ( par->pv[2] )
+	     pxs->error_report = par->pv[2]->value.i;
+	else 
+	    pxs->error_report = eNoReporting;
 	px_dict_init(&pxs->session_pattern_dict, pxs->memory, px_free_pattern);
 	/* Set media parameters to device defaults, in case BeginPage */
 	/* doesn't specify valid ones. */

@@ -117,6 +117,7 @@ pxRemoveStream(px_args_t *par, px_state_t *pxs)
         gs_free_string(pxs->memory, str.data, str.size,
                        "pxRemoveStream(name)");
     }
+    return 0;
 }
 
 const byte apxExecStream[] = {

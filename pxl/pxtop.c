@@ -28,6 +28,7 @@ maybe by Artifex.
 /* Top-level API implementation of PCL/XL */
 
 #include "stdio_.h"
+#include "string_.h"
 #include "gdebug.h"
 #include "gserrors.h"
 #include "gstypes.h"
@@ -461,7 +462,6 @@ pxl_impl_flush_to_eoj(
 	stream_cursor_read   *cursor           /* data to process */
 )
 {
-	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
 	const byte *p = cursor->ptr;
 	const byte *rlimit = cursor->limit;
 
@@ -546,11 +546,9 @@ pxl_impl_dnit_job(
 	pl_interp_instance_t *instance         /* interp instance to wrap up job in */
 )
 {
-	int code;
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
 	px_stream_header_dnit(&pxli->headerState);
 	px_state_cleanup(pxli->pxs);
-
 	return 0;
 }
 
@@ -566,7 +564,9 @@ pxl_impl_remove_device(
 	/* return to original gstate  */
 	gs_grestore_only(pxli->pgs);	/* destroys gs_save stack */
 	/* Deselect device */
+	/* NB */
 	error = gs_nulldevice(pxli->pgs);
+	px_dict_release(&pxli->pxs->font_dict);
 	if (code >= 0)
 	  code = error;
 
@@ -616,21 +616,6 @@ pxl_end_page_top(
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)(pxls->client_data);
 	pl_interp_instance_t *instance = (pl_interp_instance_t *)pxli;
 	int code = 0;
-	/*
-	 * Check whether it's worth doing a garbage collection.
-	 * Note that this only works if we don't relocate pointers,
-	 * because pxs might get relocated.
-	 */
-	{ gs_memory_status_t status;
-	  gs_memory_status(pxli->memory, &status);
-	  if ( status.allocated > pxli->prev_allocated + 250000 ) {
-	    if_debug2(':', "[:]%lu > %lu + 250K, garbage collecting\n",
-		      (ulong)status.allocated, (ulong)pxli->prev_allocated);
-	    gs_nogc_reclaim(&pxli->pl.spaces, true);
-	    gs_memory_status(pxli->memory, &status);
-	    pxli->prev_allocated = status.allocated;
-	  }
-	}
 
 	/* do pre-page action */
 	if (pxli->pre_page_action)

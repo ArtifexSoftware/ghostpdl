@@ -15,6 +15,7 @@
 /* PCL XL bitmap painting operators */
 
 #include "std.h"
+#include "string_.h"
 #include "pxerrors.h"
 #include "pxoper.h"
 #include "pxstate.h"
