@@ -86,6 +86,20 @@ When CIDFont-CMap pair required by PDF file is not available GS
 fails with:
 <blockquote><pre>/undefinedresource in --findresource--</pre></blockquote>
 
+
+<h3>pswrite device generates low level PostScript.</h3>
+
+<p>
+pswrite and epswrite devices reduce everything to path, fill, stroke, clip 
+image, and imagemask operations. Although the resulting file 
+prints OK it produces unsatisfactory results when scaled,
+distilled or imported into graphic editors. 
+The file can easily exceed 4GB and hit file size limits 
+in some applications or operation systems. Handling of big files is 
+slow.
+<p>
+Bug #615165, Sep 26, 2002.
+
 <hr>
 <h2><a name="Minor_bugs"></a>Minor Bugs.</h2>
 
