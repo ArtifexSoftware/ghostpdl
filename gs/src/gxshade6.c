@@ -138,7 +138,6 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     const gs_color_space *pcs = pfs->direct_space;
     gs_client_color fcc0, fcc1;
     int n = pcs->type->num_components(pcs), i;
-    double m;
 
     for (i = 0; i < n; i++) {
 	fcc0.paint.values[i] = -1000000;
@@ -1189,6 +1188,28 @@ span_y(gs_fixed_point *p, int k)
     return ymax - ymin;
 }
 
+private inline void
+draw_wedge(gs_fixed_point *p, int n)
+{
+#ifdef DEBUG
+    int i;
+
+    if (!vd_enabled)
+	return;
+    vd_setlinewidth(4);
+    vd_setcolor(RGB(255, 0, 0));
+    vd_beg_path;
+    vd_moveto(p[0].x, p[0].y);
+    for (i = 1; i < n; i++)
+	vd_lineto(p[i].x, p[i].y);
+    vd_closepath;
+    vd_end_path;
+    vd_fill;
+    /*vd_stroke;*/
+#endif
+}
+
+
 private int
 fill_wedge(patch_fill_state_t *pfs, int ka, 
 	const gs_fixed_point pole[4], const patch_color_t *c0, const patch_color_t *c1)
@@ -1202,6 +1223,7 @@ fill_wedge(patch_fill_state_t *pfs, int ka,
     p[0] = pole[0];
     p[ka] = pole[3];
     generate_inner_vertices(p, pole, ka); /* ka >= 2, see fill_wedges */
+    draw_wedge(p, k1);
     dx = span_x(p, k1);
     dy = span_y(p, k1);
     swap_axes = (dx > dy);
@@ -1253,7 +1275,6 @@ fill_wedges(patch_fill_state_t *pfs, int k0, int k1,
 {
     /* Generate wedges between 2 variants of a curve flattening. */
     /* k0, k1 is a power of 2. */
-    int i;
     gs_fixed_point p[4];
 
     if (k0 == k1)
@@ -1314,8 +1335,7 @@ constant_color_quadrangle(patch_fill_state_t * pfs, const tensor_patch *p)
     patch_interpolate_color(&c, &c1, &c2, pfs, 0.5);
     patch_resolve_color(&c1, pfs);
     patch_color_to_device_color(pfs, &c, &dc);
-    {	fixed dx, dy;
-	gs_fixed_point qq[4];
+    {	gs_fixed_point qq[4];
 
 	make_vertices(qq, p);
 #	if 0 /* Swapping axes may improve the precision, 
@@ -1880,6 +1900,7 @@ lcp1(fixed p0, fixed p3)
 {   /* Computing the 1st pole of a 3d order besier, which applears a line. */
     return (p0 + p0 + p3) / 3;
 }
+private inline fixed
 lcp2(fixed p0, fixed p3)
 {   /* Computing the 2nd pole of a 3d order besier, which applears a line. */
     return (p0 + p3 + p3) / 3;
@@ -1967,14 +1988,14 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 			      const gs_fixed_point[4], floatp, floatp))
 {
     tensor_patch p;
-    int kv[4], kvm, vi, ku[4], kum, km;
+    int kv[4], kvm, ku[4], kum, km;
     int code = 0;
     gs_fixed_point buf[33];
     gs_memory_t *memory = pfs->pis->memory;
 
 #if NEW_TENSOR_SHADING_DEBUG
     patch_cnt++;
-    if (patch_cnt == 11)
+    /*if (patch_cnt == 11)*/
 #endif
     {
 	vd_get_dc('s');
@@ -2004,6 +2025,9 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	    return_error(gs_error_VMerror);
     } else
 	pfs->wedge_buf = buf;
+#   if NEW_TENSOR_SHADING_DEBUG
+	dbg_nofill = false;
+#   endif
     code = fill_wedges(pfs, kv[0], kvm, &p.pole[0][0], 4, &p.c[0][0], &p.c[1][0]);
     if (code >= 0)
 	code = fill_wedges(pfs, kv[3], kvm, &p.pole[0][3], 4, &p.c[0][1], &p.c[1][1]);
