@@ -118,7 +118,7 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
 {
     gs_font *font = (gs_font *)penum->current_font;
     pdf_font_resource_t *pdfont = 0;
-    gs_font_base *cfont;
+    gs_font_base *cfont, *ccfont;
     int code, i;
     bool need_ToUnicode;
    
@@ -134,9 +134,10 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
      * Any True Type need ToUnicode, because we write them as symbolic fonts.
      * Also it is needed for Type 1, which has an unknown encoding.
      */
-    need_ToUnicode = (pdfont->base_font == NULL || !pdf_is_standard_font(pdfont->base_font)) &&
-		     pdfont->u.simple.BaseEncoding == ENCODING_INDEX_UNKNOWN;
-    cfont = pdf_font_resource_font(pdfont);
+    need_ToUnicode = pdfont->u.simple.BaseEncoding == ENCODING_INDEX_UNKNOWN &&
+		    (pdfont->base_font == NULL || !pdf_is_standard_font(pdfont->base_font));
+    cfont = pdf_font_resource_font(pdfont, false);
+    ccfont = pdf_font_resource_font(pdfont, true);
     for (i = 0; i < pstr->size; ++i) {
 	int ch = pstr->data[i];
 	pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
@@ -164,6 +165,16 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
 	    continue;	/* notdef */
 	if (code < 0)
 	    return code;
+	if (pdfont->base_font == NULL && ccfont != NULL &&
+		gs_copy_glyph_options(font, glyph, (gs_font *)ccfont, COPY_GLYPH_NO_NEW) != 1) {
+	    /*
+	     * The "complete" copy of the font appears incomplete
+	     * due to incrementally added glyphs. Drop the "complete"
+	     * copy now and continue with subset font only.
+	     */
+	    ccfont = NULL;
+	    pdf_font_descriptor_drop_complete_font(pdfont->FontDescriptor);
+	}
 	if (need_ToUnicode) {
 	    code = pdf_add_ToUnicode(pdev, font, pdfont, glyph, ch);
 	    if (code < 0)

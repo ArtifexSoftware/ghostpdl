@@ -84,10 +84,15 @@ int pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 gs_string *pdf_base_font_name(pdf_base_font_t *pbfont);
 
 /*
- * Return the (copied, subset) font associated with a base font.
+ * Return the (copied, subset or complete) font associated with a base font.
  * This procedure probably shouldn't exist....
  */
-gs_font_base *pdf_base_font_font(const pdf_base_font_t *pbfont);
+gs_font_base *pdf_base_font_font(const pdf_base_font_t *pbfont, bool complete);
+
+/*
+ * Drop the copied complete font associated with a base font.
+ */
+void pdf_base_font_drop_complete(pdf_base_font_t *pbfont);
 
 /*
  * Copy a glyph (presumably one that was just used) into a saved base

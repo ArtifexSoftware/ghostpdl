@@ -93,10 +93,15 @@ bool pdf_font_descriptor_embedding(const pdf_font_descriptor_t *pfd);
 gs_string *pdf_font_descriptor_name(pdf_font_descriptor_t *pfd);
 
 /*
- * Return the (copied, subset) font associated with a FontDescriptor.
+ * Return the (copied, subset or complete) font associated with a FontDescriptor.
  * This procedure probably shouldn't exist....
  */
-gs_font_base *pdf_font_descriptor_font(const pdf_font_descriptor_t *pfd);
+gs_font_base *pdf_font_descriptor_font(const pdf_font_descriptor_t *pfd, bool complete);
+
+/*
+ * Drop the copied complete font associated with a FontDescriptor.
+ */
+void pdf_font_descriptor_drop_complete_font(const pdf_font_descriptor_t *pfd);
 
 /*
  * Return a reference to the name of a FontDescriptor's base font, per

@@ -313,11 +313,11 @@ int pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 int pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, 
 		    int wmode, double **w, double **v);
 /*
- * Return the (copied, subset) font associated with a font resource.
+ * Return the (copied, subset or complete) font associated with a font resource.
  * If this font resource doesn't have a descriptor (Type 0, Type 3, or
  * standard 14), return 0.
  */
-gs_font_base *pdf_font_resource_font(const pdf_font_resource_t *pdfont);
+gs_font_base *pdf_font_resource_font(const pdf_font_resource_t *pdfont, bool complete);
 
 /*
  * Determine the embedding status of a font.  If the font is in the base

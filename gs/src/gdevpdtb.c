@@ -296,9 +296,18 @@ pdf_base_font_name(pdf_base_font_t *pbfont)
  * This procedure probably shouldn't exist....
  */
 gs_font_base *
-pdf_base_font_font(const pdf_base_font_t *pbfont)
+pdf_base_font_font(const pdf_base_font_t *pbfont, bool complete)
 {
-    return pbfont->copied;
+    return (complete ? pbfont->complete : pbfont->copied);
+}
+
+/*
+ * Drop the copied complete font associated with a base font.
+ */
+void
+pdf_base_font_drop_complete(pdf_base_font_t *pbfont)
+{
+    pbfont->complete = NULL;
 }
 
 /*
@@ -469,7 +478,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 {
     bool do_subset = pdf_do_subset_font(pdev, pbfont, rid);
     gs_font_base *out_font =
-	(do_subset ? pbfont->copied : pbfont->complete);
+	(do_subset || pbfont->complete == NULL ? pbfont->copied : pbfont->complete);
     long FontFile_id;
     gs_const_string fnstr;
     pdf_data_writer_t writer;

@@ -271,13 +271,22 @@ gs_string *pdf_font_descriptor_name(pdf_font_descriptor_t *pfd)
 }
 
 /*
- * Return the (copied, subset) font associated with a FontDescriptor.
+ * Return the (copied, subset or complete) font associated with a FontDescriptor.
  * This procedure probably shouldn't exist....
  */
 gs_font_base *
-pdf_font_descriptor_font(const pdf_font_descriptor_t *pfd)
+pdf_font_descriptor_font(const pdf_font_descriptor_t *pfd, bool complete)
 {
-    return pdf_base_font_font(pfd->base_font);
+    return pdf_base_font_font(pfd->base_font, complete);
+}
+
+/*
+ * Drop the copied complete font associated with a FontDescriptor.
+ */
+void
+pdf_font_descriptor_drop_complete_font(const pdf_font_descriptor_t *pfd)
+{
+    pdf_base_font_drop_complete(pfd->base_font);
 }
 
 /*
@@ -304,7 +313,7 @@ pdf_font_used_glyph(pdf_font_descriptor_t *pfd, gs_glyph glyph,
 int
 pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
 {
-    gs_font_base *bfont = pdf_base_font_font(pfd->base_font);
+    gs_font_base *bfont = pdf_base_font_font(pfd->base_font, false);
     gs_glyph glyph, notdef;
     int index;
     int wmode = bfont->WMode;

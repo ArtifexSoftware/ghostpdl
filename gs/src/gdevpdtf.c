@@ -194,7 +194,7 @@ find_std_appearance(const gx_device_pdf *pdev, gs_font_base *bfont,
 
 	if (!psf->pdfont)
 	    continue;
-	cfont = pdf_font_resource_font(psf->pdfont);
+	cfont = pdf_font_resource_font(psf->pdfont, false);
 	if (has_uid) {
 	    /*
 	     * Require the UIDs to match.  The PostScript spec says this
@@ -436,13 +436,13 @@ pdf_font_id(const pdf_font_resource_t *pdfont)
  * If this font resource doesn't have one (Type 0 or Type 3), return 0.
  */
 gs_font_base *
-pdf_font_resource_font(const pdf_font_resource_t *pdfont)
+pdf_font_resource_font(const pdf_font_resource_t *pdfont, bool complete)
 {
     if (pdfont->base_font != NULL)
-	return pdf_base_font_font(pdfont->base_font);
+	return pdf_base_font_font(pdfont->base_font, complete);
     if (pdfont->FontDescriptor == 0)
 	return 0;
-    return pdf_font_descriptor_font(pdfont->FontDescriptor);
+    return pdf_font_descriptor_font(pdfont->FontDescriptor, complete);
 }
 
 /*
@@ -680,7 +680,7 @@ pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 					   pdf_write_contents_simple);
 
     pdfont->FontDescriptor = pfd;
-    set_is_MM_instance(pdfont, pdf_font_descriptor_font(pfd));
+    set_is_MM_instance(pdfont, pdf_font_descriptor_font(pfd, false));
     *ppfres = pdfont;
     return pdf_compute_BaseFont(pdev, pdfont);
 }
@@ -693,7 +693,7 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 		       gs_id rid, pdf_font_descriptor_t *pfd)
 {
     font_type FontType = pdf_font_descriptor_FontType(pfd);
-    gs_font_base *font = pdf_font_descriptor_font(pfd);
+    gs_font_base *font = pdf_font_descriptor_font(pfd, false);
     int chars_count;
     int code;
     pdf_font_write_contents_proc_t write_contents;

@@ -555,7 +555,7 @@ pdf_is_compatible_encoding(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
     case ft_CID_encrypted:
     case ft_CID_TrueType:
 	{
-	    gs_font *font1 = (gs_font *)pdf_font_resource_font(pdfont);
+	    gs_font *font1 = (gs_font *)pdf_font_resource_font(pdfont, false);
 
 	    return gs_is_CIDSystemInfo_compatible( 
 				gs_font_cid_system_info(font), 
@@ -592,11 +592,11 @@ pdf_find_font_resource(gx_device_pdf *pdev, gs_font *font,
 		gs_font_type0 *font0 = (gs_font_type0 *)font;
 
 		ofont = font0->data.FDepVector[0]; /* See pdf_make_font_resource. */
-		cfont = pdf_font_resource_font(pdfont->u.type0.DescendantFont);
+		cfont = pdf_font_resource_font(pdfont->u.type0.DescendantFont, false);
 		if (font0->data.CMap->WMode != pdfont->u.type0.WMode)
 		    continue;
 	    } else 
-		cfont = pdf_font_resource_font(pdfont);
+		cfont = pdf_font_resource_font(pdfont, false);
 	    if (chars != NULL &&
 		!pdf_is_compatible_encoding(pdev, pdfont, font, glyphs, chars, num_chars))
 		continue;
@@ -974,10 +974,10 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	if ((*ppdfont)->FontType == ft_composite) {
 	    gs_font_type0 *font0 = (gs_font_type0 *)font;
 
-	    cfont = pdf_font_resource_font((*ppdfont)->u.type0.DescendantFont);
+	    cfont = pdf_font_resource_font((*ppdfont)->u.type0.DescendantFont, false);
 	    ofont = font0->data.FDepVector[0];
 	} else 
-	    cfont = pdf_font_resource_font(*ppdfont);
+	    cfont = pdf_font_resource_font(*ppdfont, false);
 	code = gs_copied_can_copy_glyphs((gs_font *)cfont, ofont, 
 			glyphs + glyphs_offset, num_unused_chars, false);
 	if (code < 0)
@@ -1126,7 +1126,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     /* Get the original matrix of the base font. */
 
     {
-	gs_font_base *cfont = pdf_font_resource_font(pdfont);
+	gs_font_base *cfont = pdf_font_resource_font(pdfont, false);
 
 	if (cfont != 0) {
 	    /*
@@ -1278,7 +1278,7 @@ int
 pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 		 gs_font *orig_font, pdf_glyph_widths_t *pwidths)
 {
-    gs_font_base *cfont = pdf_font_resource_font(pdfont);
+    gs_font_base *cfont = pdf_font_resource_font(pdfont, false);
     gs_font *ofont = orig_font;
     gs_glyph_info_t info;
     /*
