@@ -172,6 +172,10 @@ pcl_load_built_in_fonts(pcl_state_t *pcs, const char *pathname)
     bool found_some = false;
     byte key[3];
 
+    if ( pathname == NULL ) {
+	/* no font pathname */
+	return 0;
+    }
     /* don't load fonts more than once */
     if (pl_dict_length(&pcs->built_in_fonts, true) > 0 )
 	return true;

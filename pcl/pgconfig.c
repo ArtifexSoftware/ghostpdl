@@ -532,18 +532,18 @@ pgconfig_do_registration(
 	  /* CO has special argument parsing, so it must handle skipping */
 	  /* in polygon mode itself. */
 	  HPGL_COMMAND('C', 'O', hpgl_CO, hpgl_cdf_polygon),
-	  HPGL_COMMAND('D', 'F', hpgl_DF, 0),
-	  HPGL_COMMAND('I', 'N', hpgl_IN, 0),
-	  HPGL_COMMAND('I', 'P', hpgl_IP, 0),
-	  HPGL_COMMAND('I', 'R', hpgl_IR, 0),
-	  HPGL_COMMAND('I', 'W', hpgl_IW, 0),
-	  HPGL_COMMAND('P', 'G', hpgl_PG, 0),
-	  HPGL_COMMAND('P', 'S', hpgl_PS, 0),
-	  HPGL_COMMAND('R', 'O', hpgl_RO, 0),
-	  HPGL_COMMAND('R', 'P', hpgl_RP, 0),
-	  HPGL_COMMAND('S', 'C', hpgl_SC, 0),
+	  HPGL_COMMAND('D', 'F', hpgl_DF, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('I', 'N', hpgl_IN, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('I', 'P', hpgl_IP, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('I', 'R', hpgl_IR, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('I', 'W', hpgl_IW, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('P', 'G', hpgl_PG, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('P', 'S', hpgl_PS, hpgl_cdf_rtl),
+	  HPGL_COMMAND('R', 'O', hpgl_RO, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('R', 'P', hpgl_RP, hpgl_cdf_rtl),
+	  HPGL_COMMAND('S', 'C', hpgl_SC, hpgl_cdf_pcl_rtl_both),
 #ifdef DEBUG
-	  HPGL_COMMAND('B', 'P', hpgl_BP, 0),
+	  HPGL_COMMAND('B', 'P', hpgl_BP, hpgl_cdf_pcl_rtl_both),
 #endif
 	END_HPGL_COMMANDS
 	return 0;

@@ -61,9 +61,11 @@ typedef hpgl_command_proc((*hpgl_command_proc_t));
 typedef struct hpgl_command_s {
   hpgl_command_proc_t proc;
   byte flags;
-#define hpgl_cdf_polygon 1	/* execute command even in polygon mode */
-#define hpgl_cdf_lost_mode_cleared 2 /* exectute command only if
-					lost mode cleared */
+#define hpgl_cdf_polygon 1	          /* execute command even in polygon mode */
+#define hpgl_cdf_lost_mode_cleared 2      /* exectute command only if lost mode cleared */
+#define hpgl_cdf_rtl 4                    /* execute only in rtl mode */
+#define hpgl_cdf_pcl 8                    /* execute only in pcl mode */
+#define hpgl_cdf_pcl_rtl_both (hpgl_cdf_rtl|hpgl_cdf_pcl)
 } hpgl_command_definition_t;
 
 /* Define a HP-GL/2 command argument value. */

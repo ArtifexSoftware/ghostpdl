@@ -167,9 +167,9 @@ pcjob_do_registration(
     gs_memory_t *mem
 )
 {		/* Register commands */
-	DEFINE_ESCAPE('E', "Printer Reset", pcl_printer_reset)
+	DEFINE_ESCAPE_ARGS('E', "Printer Reset", pcl_printer_reset, pca_in_rtl)
 	DEFINE_CLASS('%')
-	  {0, 'X', {pcl_exit_language, pca_neg_ok|pca_big_error}},
+	  {0, 'X', {pcl_exit_language, pca_neg_ok|pca_big_error|pca_in_rtl}},
 	END_CLASS
 	DEFINE_CLASS('&')
 	  {'l', 'X',

@@ -20,42 +20,6 @@
 /* Import the table of pointers to initialization data. */
 extern  const pcl_init_t *  pcl_init_table[];
 
-/*
- * ESC E
- */
-  private int
-rtl_printer_reset(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
-{
-    /* Print any partial page. */
-    int     code = pcl_end_page_if_marked(pcs);
-
-    if (code < 0)
-	return code;
-
-    /* Reset to user default state. */
-    return pcl_do_resets(pcs, pcl_reset_printer);
-}
-
-/*
- * ESC % -12345 X
- */
-  private int
-rtl_exit_language(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
-{
-    int             code;
-
-    if (int_arg(pargs) != -12345)
-	return e_Range;
-    code = rtl_printer_reset(pargs, pcs);
-    return (code < 0 ? code : e_ExitLanguage);
-}
-
 /* ---------------- Chapter 18 ---------------- */
 
 /*
@@ -194,29 +158,20 @@ rtmisc_do_registration(
 {
     /* Register commands */
     /* Chapter 4 */
-    DEFINE_ESCAPE('E', "Printer Reset", rtl_printer_reset)
     DEFINE_CLASS('%')
-    {
-        0, 'X',
-	 PCL_COMMAND( "Exit Language",
-                      rtl_exit_language,
-		      pca_neg_ok | pca_big_error
-                      )
-    },
-
     /* Chapter 18 */
     {
         0, 'B',
         PCL_COMMAND( "Enter HP-GL/2 Mode",
                      rtl_enter_hpgl_mode,
-		     pca_neg_ok | pca_big_ok | pca_in_macro
+		     pca_neg_ok | pca_big_ok | pca_in_macro | pca_in_rtl
                      )
     },
     {
         0, 'A',
 	PCL_COMMAND( "Enter PCL Mode",
                      rtl_enter_pcl_mode,
-		     pca_neg_ok | pca_big_ok | pca_in_macro
+		     pca_neg_ok | pca_big_ok | pca_in_macro | pca_in_rtl
                      )
     },
     END_CLASS

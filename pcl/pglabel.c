@@ -205,10 +205,12 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 {	pcl_font_selection_t *pfs =
 	  &pgls->g.font_selection[pgls->g.font_selected];
 
-	if ( (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE
+	if ( ((pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE
 	     && pfs->params.style == 0 /* upright */
 	     && hpgl_stick_font_supports(pgls /****** NOTA BENE ******/,
-					 pfs->params.symbol_set)
+					 pfs->params.symbol_set))
+	     /* rtl only has stick fonts */
+	     || ( pgls->personality == rtl )
 	   )
 	  hpgl_call(hpgl_select_stick_font(pgls));
 	else
@@ -1252,9 +1254,9 @@ pglabel_do_registration(
 )
 {		/* Register commands */
 	DEFINE_HPGL_COMMANDS
-	  HPGL_COMMAND('C', 'P', hpgl_CP, hpgl_cdf_lost_mode_cleared),
+	  HPGL_COMMAND('C', 'P', hpgl_CP, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
 	  /* LB also has special argument parsing. */
-	  HPGL_COMMAND('L', 'B', hpgl_LB, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
+	  HPGL_COMMAND('L', 'B', hpgl_LB, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
 	END_HPGL_COMMANDS
 	return 0;
 }

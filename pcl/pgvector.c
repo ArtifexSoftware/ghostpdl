@@ -307,110 +307,129 @@ enum {
 	pe_pen_up = 1,	/* next coordinate are pen-up move */
 	pe_absolute = 2,	/* next coordinates are absolute */
 	pe_7bit = 4,		/* use 7-bit encoding */
+	pe_entered = 8         /* we have entered PE once */
 };
 #define pe_fbits_shift 3	/* ... + # of fraction bits << this much */
 private bool pe_args(P3(hpgl_args_t *, int32 *, int));
 int
 hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	/*
-	 * To simplify the control structure here, we require that
-	 * the input buffer be large enough to hold 2 coordinates
-	 * in the base 32 encoding, i.e., 14 bytes.  We're counting on
-	 * there not being any whitespace within coordinate values....
-	 */
-	const byte *p = pargs->source.ptr;
-	const byte *rlimit = pargs->source.limit;
+{	
+    /*
+     * To simplify the control structure here, we require that
+     * the input buffer be large enough to hold 2 coordinates
+     * in the base 32 encoding, i.e., 14 bytes.  We're counting on
+     * there not being any whitespace within coordinate values....
+     */
+    const byte *p = pargs->source.ptr;
+    const byte *rlimit = pargs->source.limit;
 
-	while ( p < rlimit )
-	  { byte ch = *(pargs->source.ptr = ++p);
-	  switch ( ch & 127 /* per spec */ )
+    if ( pargs->phase == 0 ) {
+	/* After PE is executed, the previous plotting mode (absolute or
+	   relative) is restored.  If the finnal move is made with the pen up,
+	   the pen remains in the up position; otherwise the pen is left in
+	   the down position.  At least HP documented this bug. */
+	hpgl_save_pen_state(pgls, &pgls->g.pen_state, hpgl_pen_relative);
+	pargs->phase |= pe_entered;
+    }
+    while ( p < rlimit ) {
+	byte ch = *(pargs->source.ptr = ++p);
+	switch ( ch & 127 /* per spec */ ) {
+	case ';':
+	    hpgl_call(hpgl_update_carriage_return_pos(pgls));
+	    if ( pargs->phase & pe_entered )
+		hpgl_restore_pen_state(pgls, &pgls->g.pen_state, hpgl_pen_relative);
+	    return 0;
+	case ':':
+	    if_debug0('I', "\n  :");
 	    {
-	    case ';':
-	      hpgl_call(hpgl_update_carriage_return_pos(pgls));
-	      return 0;
-	    case ':':
-	      if_debug0('I', "\n  :");
-	      { int32 pen;
-	      if ( !pe_args(pargs, &pen, 1) )
-		{ pargs->source.ptr = p - 1;
-		break;
+		int32 pen;
+		if ( !pe_args(pargs, &pen, 1) )
+		    {
+			pargs->source.ptr = p - 1;
+			break;
+		    }
+		if ( !pgls->g.polygon_mode ) {
+		    hpgl_args_t args;
+		    hpgl_args_set_int(&args, pen);
+		    /* Note SP is illegal in polygon mode we must handle that here */
+		    hpgl_call(hpgl_SP(&args, pgls));
 		}
-	      {
-		hpgl_args_t args;
-		hpgl_args_set_int(&args, pen);
-		/* Note SP is illegal in polygon mode we must handle that here */
-		if ( !pgls->g.polygon_mode )
-		  hpgl_call(hpgl_SP(&args, pgls));
-	      }
-	      }
-	      p = pargs->source.ptr;
-	      continue;
-	    case '<':
-	      if_debug0('I', "\n  <");
-	      pargs->phase |= pe_pen_up;
-	      continue;
-	    case '>':
-	      if_debug0('I', "\n  >");
-	      { int32 fbits;
-	      if ( !pe_args(pargs, &fbits, 1) )
-		{ pargs->source.ptr = p - 1;
-		break;
-		}
-	      if ( fbits < -26 || fbits > 26 )
-		return e_Range;
-	      pargs->phase =
-		(pargs->phase & (-1 << pe_fbits_shift)) +
-		(fbits << pe_fbits_shift);
-	      }
-	      p = pargs->source.ptr;
-	      continue;
-	    case '=':
-	      if_debug0('I', "  =");
-	      pargs->phase |= pe_absolute;
-	      continue;
-	    case '7':
-	      if_debug0('I', "\n  7");
-	      pargs->phase |= pe_7bit;
-	      continue;
-	    case ESC:
-		/*
-		 * This is something of a hack.  Apparently we're supposed
-		 * to parse all PCL commands embedded in the GL/2 stream,
-		 * and simply ignore everything except the 3 that end GL/2
-		 * mode.  Instead, we simply stop parsing PE arguments as
-		 * soon as we see an ESC.
-		 */
-		if ( ch == ESC ) /* (might be ESC+128) */
-		  { pargs->source.ptr = p - 1; /* rescan ESC */
-		    hpgl_call(hpgl_update_carriage_return_pos(pgls));
-		    return 0;
-		  }
-		/* falls through */
-	    default:
-	      if ( (ch & 127) <= 32 || (ch & 127) == 127 )
-		continue;
-	      pargs->source.ptr = p - 1;
-	      {
-		int32 xy[2];
-		hpgl_plot_function_t func;
-
-		if ( !pe_args(pargs, xy, 2) )
-		  break;
-		func =
-		  (pargs->phase & pe_pen_up ? hpgl_plot_move :
-		   hpgl_plot_draw) |
-		  (pargs->phase & pe_absolute ? hpgl_plot_absolute :
-		   hpgl_plot_relative);
-		hpgl_call(hpgl_add_point_to_path(pgls, (floatp)xy[0],
-						 (floatp)xy[1], func, true));
-	      }
-	      pargs->phase &= ~(pe_pen_up | pe_absolute);
-	      p = pargs->source.ptr;
-	      continue;
 	    }
-	  break;
-	  }
-	return e_NeedData;
+	    p = pargs->source.ptr;
+	    continue;
+	case '<':
+	    if_debug0('I', "\n  <");
+	    pargs->phase |= pe_pen_up;
+	    continue;
+	case '>':
+	    if_debug0('I', "\n  >");
+	    { 
+		int32 fbits;
+		if ( !pe_args(pargs, &fbits, 1) )
+		    {
+			pargs->source.ptr = p - 1;
+			break;
+		    }
+		if ( fbits < -26 || fbits > 26 )
+		    return e_Range;
+		pargs->phase =
+		    (pargs->phase & (-1 << pe_fbits_shift)) +
+		    (fbits << pe_fbits_shift);
+	    }
+	    p = pargs->source.ptr;
+	    continue;
+	case '=':
+	    if_debug0('I', "  =");
+	    pargs->phase |= pe_absolute;
+	    continue;
+	case '7':
+	    if_debug0('I', "\n  7");
+	    pargs->phase |= pe_7bit;
+	    continue;
+	case ESC:
+	    /*
+	     * This is something of a hack.  Apparently we're supposed
+	     * to parse all PCL commands embedded in the GL/2 stream,
+	     * and simply ignore everything except the 3 that end GL/2
+	     * mode.  Instead, we simply stop parsing PE arguments as
+	     * soon as we see an ESC.
+	     */
+	    if ( ch == ESC ) /* (might be ESC+128) */ {
+		pargs->source.ptr = p - 1; /* rescan ESC */
+		if ( pargs->phase & pe_entered ) {
+		    hpgl_restore_pen_state(pgls, &pgls->g.pen_state, hpgl_pen_relative);
+		}
+		hpgl_call(hpgl_update_carriage_return_pos(pgls));
+		return 0;
+	    }
+	    /* falls through */
+	default:
+	    if ( (ch & 127) <= 32 || (ch & 127) == 127 )
+		continue;
+	    pargs->source.ptr = p - 1;
+	    {
+		int32 xy[2];
+		hpgl_args_t     args;
+		if ( !pe_args(pargs, xy, 2) )
+		    break;
+		hpgl_args_setup(&args);
+		if ( pargs->phase & pe_absolute )
+		    hpgl_PA(&args, pgls);
+		else
+		    hpgl_PR(&args, pgls);
+		hpgl_args_set_real2(&args, (floatp)xy[0], (floatp)xy[1]);
+		if ( pargs->phase & pe_pen_up )
+		    hpgl_PU(&args, pgls);
+		else
+		    hpgl_PD(&args, pgls);
+	    }
+	    pargs->phase &= ~(pe_pen_up | pe_absolute);
+	    p = pargs->source.ptr;
+	    continue;
+	}
+	break;
+    }
+    return e_NeedData;
 }
 /* Get an encoded value from the input.  Return false if we ran out of */
 /* input data.  Ignore syntax errors (!). */
@@ -502,20 +521,32 @@ pgvector_do_registration(
     gs_memory_t *mem
 )
 {	
-	/* Register commands */
-	DEFINE_HPGL_COMMANDS
-		HPGL_COMMAND('A', 'A', hpgl_AA, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
-		HPGL_COMMAND('A', 'R', hpgl_AR, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
-		HPGL_COMMAND('A', 'T', hpgl_AT, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
-		HPGL_COMMAND('B', 'R', hpgl_BR, hpgl_cdf_polygon),	/* argument pattern can repeat */
-		HPGL_COMMAND('B', 'Z', hpgl_BZ, hpgl_cdf_polygon),	/* argument pattern can repeat */
-		HPGL_COMMAND('C', 'I', hpgl_CI, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
-		HPGL_COMMAND('P', 'A', hpgl_PA, hpgl_cdf_polygon),	/* argument pattern can repeat */
-		HPGL_COMMAND('P', 'D', hpgl_PD, hpgl_cdf_polygon),	/* argument pattern can repeat */
-		HPGL_COMMAND('P', 'E', hpgl_PE, hpgl_cdf_polygon),
-		HPGL_COMMAND('P', 'R', hpgl_PR, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),	/* argument pattern can repeat */
-		HPGL_COMMAND('P', 'U', hpgl_PU, hpgl_cdf_polygon),	/* argument pattern can repeat */
-		HPGL_COMMAND('R', 'T', hpgl_RT, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
+    /* Register commands */
+    DEFINE_HPGL_COMMANDS
+	HPGL_COMMAND('A', 'A', 
+		     hpgl_AA, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
+	HPGL_COMMAND('A', 'R', 
+		     hpgl_AR, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
+	HPGL_COMMAND('A', 'T', 
+		     hpgl_AT, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
+	HPGL_COMMAND('B', 'R',
+		     hpgl_BR, hpgl_cdf_polygon|hpgl_cdf_pcl_rtl_both),	/* argument pattern can repeat */
+	HPGL_COMMAND('B', 'Z',
+		     hpgl_BZ, hpgl_cdf_polygon|hpgl_cdf_pcl_rtl_both),	/* argument pattern can repeat */
+	HPGL_COMMAND('C', 'I',
+		     hpgl_CI, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
+	HPGL_COMMAND('P', 'A',
+		     hpgl_PA, hpgl_cdf_polygon|hpgl_cdf_pcl_rtl_both),	/* argument pattern can repeat */
+	HPGL_COMMAND('P', 'D',
+		     hpgl_PD, hpgl_cdf_polygon|hpgl_cdf_pcl_rtl_both),	/* argument pattern can repeat */
+	HPGL_COMMAND('P', 'E',
+		     hpgl_PE, hpgl_cdf_polygon|hpgl_cdf_pcl_rtl_both),
+	HPGL_COMMAND('P', 'R',
+		     hpgl_PR, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),	/* argument pattern can repeat */
+	HPGL_COMMAND('P', 'U',
+		     hpgl_PU, hpgl_cdf_polygon|hpgl_cdf_pcl_rtl_both),	/* argument pattern can repeat */
+	HPGL_COMMAND('R', 'T',
+		     hpgl_RT, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
 	END_HPGL_COMMANDS
 	return 0;
 }

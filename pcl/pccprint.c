@@ -70,14 +70,14 @@ pccprint_do_registration(
         'l', 'O',
 	PCL_COMMAND( "Logical Operation",
                      pcl_logical_operation,
-		     pca_neg_ok | pca_big_error
+		     pca_neg_ok | pca_big_error | pca_in_rtl
                      )
     },
     {
         'l', 'R',
         PCL_COMMAND( "Pixel Placement",
                      pcl_pixel_placement,
-		     pca_neg_ok | pca_big_ignore
+		     pca_neg_ok | pca_big_ignore | pca_in_rtl
                      )
     },
     END_CLASS

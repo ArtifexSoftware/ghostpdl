@@ -150,19 +150,32 @@ call:	if ( pst->command )
 		   * flagged as executable even in polygon mode, and check
 		   * the render_mode themselves.
 		   */
-		  if (( pgls->g.polygon_mode ) &&
-		       !(pst->command->flags & hpgl_cdf_polygon)
-		      )
-		    pst->command = 0;
-		  else
-		    { /* similarly if we are in lost mode we do not
-			 execute the commands that are only defined to
-			 be used when lost mode is cleared. */
-		      if (( pgls->g.lost_mode == hpgl_lost_mode_entered ) &&
-			  (pst->command->flags & hpgl_cdf_lost_mode_cleared)
+		  {
+		      bool ignore_command = false;
+		      if (( pgls->g.polygon_mode ) &&
+			  !(pst->command->flags & hpgl_cdf_polygon)
 			  )
-			pst->command = 0;
-		    }
+			  ignore_command = true;
+		      else
+			  { /* similarly if we are in lost mode we do not
+			       execute the commands that are only defined to
+			       be used when lost mode is cleared. */
+			      if (( pgls->g.lost_mode == hpgl_lost_mode_entered ) &&
+				  (pst->command->flags & hpgl_cdf_lost_mode_cleared)
+				  )
+				  ignore_command = true;
+			  }
+		      /* Also, check that we have a command that can be executed
+			 with the current personality.  NB reorganize me. */
+		      if ( pgls->personality == rtl )
+			  if ( !(pst->command->flags & hpgl_cdf_rtl) ) /* not rtl pcl only */
+			      ignore_command = true;
+		      if ( (pgls->personality == pcl5c) || (pgls->personality == pcl5e) )
+			  if ( !(pst->command->flags & hpgl_cdf_pcl) ) /* not pcl rtl only */
+			      ignore_command = true;
+		      if ( ignore_command )
+			  pst->command = 0;
+		  }
 		  goto call;
 		}
 	  }

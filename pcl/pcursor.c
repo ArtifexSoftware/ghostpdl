@@ -738,14 +738,14 @@ pcursor_do_registration(
         'p', 'X',
         PCL_COMMAND( "Horizontal Cursor Position Units",
     		     horiz_cursor_pos_units,
-    		     pca_neg_ok | pca_big_ok
+    		     pca_neg_ok | pca_big_ok | pca_in_rtl
                      )
     },
     {
         'p', 'Y',
         PCL_COMMAND( "Vertical Cursor Position Units",
     	             vert_cursor_pos_units,
-    		     pca_neg_ok | pca_big_ok
+    		     pca_neg_ok | pca_big_ok  | pca_in_rtl
                      )
     },
     END_CLASS

@@ -223,35 +223,35 @@ pcrect_do_registration(
         'c', 'H',
 	PCL_COMMAND( "Horizontal Rectangle Size Decipoints",
 		     pcl_horiz_rect_size_decipoints,
-		     pca_neg_error | pca_big_error
+		     pca_neg_error | pca_big_error | pca_in_rtl
                      )
     },
     {
         'c', 'A',
 	PCL_COMMAND( "Horizontal Rectangle Size Units",
 		      pcl_horiz_rect_size_units,
-		      pca_neg_error | pca_big_error
+		      pca_neg_error | pca_big_error | pca_in_rtl
                       )
     },
     {
         'c', 'V',
 	PCL_COMMAND( "Vertical Rectangle Size Decipoint",
 		     pcl_vert_rect_size_decipoints,
-		     pca_neg_error | pca_big_error
+		     pca_neg_error | pca_big_error | pca_in_rtl
                      )
     },
     {
         'c', 'B',
 	PCL_COMMAND( "Vertical Rectangle Size Units",
 		     pcl_vert_rect_size_units,
-		     pca_neg_error | pca_big_error
+		     pca_neg_error | pca_big_error | pca_in_rtl
                      )
     },
     {
         'c', 'P',
         PCL_COMMAND( "Fill Rectangular Area",
                      pcl_fill_rect_area,
-		     pca_neg_ignore | pca_big_ignore
+		     pca_neg_ignore | pca_big_ignore | pca_in_rtl
                      )
     },
     END_CLASS

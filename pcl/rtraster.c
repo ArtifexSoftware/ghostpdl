@@ -1295,6 +1295,24 @@ raster_y_offset(
 }
 
 /*
+ * ESC * b <direction> L
+ *
+ * set raster print direction
+ */
+  private int
+set_line_path(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    uint            i = uint_arg(pargs);
+
+    if (i <= 1)
+	pcs->raster_state.y_advance = (i == 1 ? -1 : 1);
+    return 0;
+}
+
+/*
  * There is no specific copy code for this module, as both entry to and exit
  * from a macro must end graphics mode (and thus are handled by the parser).
  * There is also no explicit reset routine, as the required work is handled
@@ -1311,21 +1329,30 @@ raster_do_registration(
         'b', 'V',
         PCL_COMMAND( "Transfer Raster Plane",
                      transfer_raster_plane,
-                     pca_raster_graphics | pca_bytes
+                     pca_raster_graphics | pca_bytes | pca_in_rtl
                      )
     },
     {
         'b', 'W',
         PCL_COMMAND( "Transfer Raster Row",
                      transfer_raster_row,
-                     pca_raster_graphics | pca_bytes
+                     pca_raster_graphics | pca_bytes | pca_in_rtl
                      )
     },
     {
         'b', 'Y',
         PCL_COMMAND( "Raster Y Offset",
                      raster_y_offset,
-                     pca_raster_graphics | pca_neg_ok | pca_big_clamp
+                     pca_raster_graphics | pca_neg_ok | pca_big_clamp | pca_in_rtl
+                     )
+    },
+    {
+	/* NB this command should *only* be exectuted in rtl but we
+           use it in both rtl and pcl5 */
+        'b', 'L',
+        PCL_COMMAND( "Line Path",
+                     set_line_path,
+		     pca_neg_ok | pca_big_ignore | pca_in_rtl
                      )
     },
     END_CLASS

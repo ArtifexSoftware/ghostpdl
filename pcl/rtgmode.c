@@ -588,70 +588,70 @@ gmode_do_registration(
         't', 'R',
          PCL_COMMAND( "Raster Graphics Resolution",
                       set_graphics_resolution,
-                      pca_raster_graphics | pca_neg_ok | pca_big_clamp
+                      pca_raster_graphics | pca_neg_ok | pca_big_clamp | pca_in_rtl
                       )
     },
     {
         'r', 'F',
          PCL_COMMAND( "Raster Graphics Presentation Mode",
                       set_graphics_presentation_mode,
-                      pca_raster_graphics | pca_neg_ok | pca_big_ignore
+                      pca_raster_graphics | pca_neg_ok | pca_big_ignore | pca_in_rtl
                       )
     },
     {
         'r', 'S',
          PCL_COMMAND( "Source Raster Width",
                       set_src_raster_width,
-                      pca_raster_graphics | pca_neg_ok | pca_big_clamp
+                      pca_raster_graphics | pca_neg_ok | pca_big_clamp | pca_in_rtl
                       )
     },
     {
         'r', 'T',
         PCL_COMMAND( "Source Raster_Height",
                      set_src_raster_height,
-                     pca_raster_graphics | pca_neg_ok | pca_big_clamp
+                     pca_raster_graphics | pca_neg_ok | pca_big_clamp | pca_in_rtl
                      )
     },
     {
         'b', 'M',
         PCL_COMMAND( "Set Compresion Method",
                      set_compression_method,
-                     pca_raster_graphics | pca_neg_ok | pca_big_ignore
+                     pca_raster_graphics | pca_neg_ok | pca_big_ignore | pca_in_rtl
                      )
     },
     {
         't', 'H',
         PCL_COMMAND( "Destination Raster Width",
                      set_dest_raster_width,
-                     pca_raster_graphics | pca_neg_ok | pca_big_ignore
+                     pca_raster_graphics | pca_neg_ok | pca_big_ignore | pca_in_rtl
                      )
     },
     {
         't', 'V',
         PCL_COMMAND( "Destination Raster Height",
                      set_dest_raster_height,
-                     pca_raster_graphics | pca_neg_ok | pca_big_ignore
+                     pca_raster_graphics | pca_neg_ok | pca_big_ignore | pca_in_rtl
                      )
     },
     {
         'r', 'A',
         PCL_COMMAND( "Start Raster Graphics",
                      start_graphics_mode,
-                     pca_raster_graphics | pca_neg_ok | pca_big_clamp
+                     pca_raster_graphics | pca_neg_ok | pca_big_clamp | pca_in_rtl
                      )
     },
     {
         'r', 'B',
         PCL_COMMAND( "End Raster Graphics (Old)",
                      end_graphics_mode_B,
-                     pca_raster_graphics | pca_neg_ok | pca_big_ok
+                     pca_raster_graphics | pca_neg_ok | pca_big_ok | pca_in_rtl
                      )
     },
     {
         'r', 'C',
         PCL_COMMAND( "End Raster Graphics (New)",
                      end_graphics_mode_C,
-                     pca_raster_graphics | pca_neg_ok | pca_big_ok
+                     pca_raster_graphics | pca_neg_ok | pca_big_ok | pca_in_rtl
                      )
     },
     END_CLASS

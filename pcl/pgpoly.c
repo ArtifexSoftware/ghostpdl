@@ -269,15 +269,15 @@ pgpoly_do_registration(
     gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_HPGL_COMMANDS
-	  HPGL_COMMAND('E', 'A', hpgl_EA, hpgl_cdf_lost_mode_cleared),
-	  HPGL_COMMAND('E', 'P', hpgl_EP, 0),
-	  HPGL_COMMAND('E', 'R', hpgl_ER, hpgl_cdf_lost_mode_cleared),
-	  HPGL_COMMAND('E', 'W', hpgl_EW, hpgl_cdf_lost_mode_cleared),
-	  HPGL_COMMAND('F', 'P', hpgl_FP, 0),
-	  HPGL_COMMAND('P', 'M', hpgl_PM, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
-	  HPGL_COMMAND('R', 'A', hpgl_RA, hpgl_cdf_lost_mode_cleared),
-	  HPGL_COMMAND('R', 'R', hpgl_RR, hpgl_cdf_lost_mode_cleared),
-	  HPGL_COMMAND('W', 'G', hpgl_WG, hpgl_cdf_lost_mode_cleared),
+	  HPGL_COMMAND('E', 'A', hpgl_EA, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('E', 'P', hpgl_EP, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('E', 'R', hpgl_ER, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('E', 'W', hpgl_EW, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('F', 'P', hpgl_FP, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('P', 'M', hpgl_PM, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('R', 'A', hpgl_RA, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('R', 'R', hpgl_RR, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('W', 'G', hpgl_WG, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
 	END_HPGL_COMMANDS
 	return 0;
 }

@@ -1322,35 +1322,35 @@ pattern_do_registration(
         'c', 'G',
         PCL_COMMAND( "Pattern ID",
                      set_pattern_id,
-                     pca_neg_ignore | pca_big_ignore
+                     pca_neg_ignore | pca_big_ignore | pca_in_rtl
                      )
     },
     {
         'v', 'N',
         PCL_COMMAND( "Source Transparency Mode",
                      set_source_transparency_mode,
-                     pca_neg_ignore | pca_big_ignore
+                     pca_neg_ignore | pca_big_ignore | pca_in_rtl
                      )
     },
     {
         'v', 'O',
         PCL_COMMAND( "Pattern Transparency Mode",
                      set_pattern_transparency_mode,
-                     pca_neg_ignore | pca_big_ignore
+                     pca_neg_ignore | pca_big_ignore | pca_in_rtl
                      )
     },
     {
         'v', 'T',
         PCL_COMMAND( "Select Current Pattern",
                      select_current_pattern,
-                     pca_neg_ignore | pca_big_ignore
+                     pca_neg_ignore | pca_big_ignore | pca_in_rtl
                      )
     },
     {
         'o', 'W',
         PCL_COMMAND( "Driver Configuration Command",
                      set_driver_configuration,
-                     pca_bytes
+                     pca_bytes | pca_in_rtl
                      )
     },
     END_CLASS

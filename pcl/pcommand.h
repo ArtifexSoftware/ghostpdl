@@ -145,7 +145,9 @@ typedef enum {
   /* Indicate whether the command is allowed in raster graphics mode. */
   pca_raster_graphics = 0x20,
   /* Indicate whether the command should be called while defining a macro. */
-  pca_in_macro = 0x40
+  pca_in_macro = 0x40,
+  /* Indicate whether the command is allowed in rtl mode */
+  pca_in_rtl = 0x80
 } pcl_command_action_t;
 
 /* Define a table of command definitions. */

@@ -295,7 +295,9 @@ typedef struct pcl_hpgl_state_s {
 	uint font_id[2];
 	bool bitmap_fonts_allowed;
 	gs_point carriage_return_pos;
-
+       /* extra pen state for routines that cannot use local variables
+	  because of longjmp parser braindamage. */
+       hpgl_pen_state_t pen_state;
 } pcl_hpgl_state_t;
 
 #define hpgl_pen_relative (1)

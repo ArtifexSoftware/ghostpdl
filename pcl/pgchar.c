@@ -485,27 +485,27 @@ pgchar_do_registration(
     gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_HPGL_COMMANDS
-	  HPGL_COMMAND('A', 'D', hpgl_AD, 0),		/* kind/value pairs */
-	  HPGL_COMMAND('C', 'F', hpgl_CF, 0),
-	  HPGL_COMMAND('D', 'I', hpgl_DI, 0),
-	  HPGL_COMMAND('D', 'R', hpgl_DR, 0),
+	  HPGL_COMMAND('A', 'D', hpgl_AD, hpgl_cdf_pcl_rtl_both),		/* kind/value pairs */
+	  HPGL_COMMAND('C', 'F', hpgl_CF, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('D', 'I', hpgl_DI, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('D', 'R', hpgl_DR, hpgl_cdf_pcl_rtl_both),
 	  /* DT has special argument parsing, so it must handle skipping */
 	  /* in polygon mode itself. */
-	  HPGL_COMMAND('D', 'T', hpgl_DT, hpgl_cdf_polygon),
-	  HPGL_COMMAND('D', 'V', hpgl_DV, 0),
-	  HPGL_COMMAND('E', 'S', hpgl_ES, 0),
-	  HPGL_COMMAND('F', 'I', hpgl_FI, 0),
-	  HPGL_COMMAND('F', 'N', hpgl_FN, 0),
-	  HPGL_COMMAND('L', 'M', hpgl_LM, 0),
-	  HPGL_COMMAND('L', 'O', hpgl_LO, 0),
-	  HPGL_COMMAND('S', 'A', hpgl_SA, 0),
-	  HPGL_COMMAND('S', 'B', hpgl_SB, 0),
-	  HPGL_COMMAND('S', 'D', hpgl_SD, 0),		/* kind/value pairs */
-	  HPGL_COMMAND('S', 'I', hpgl_SI, 0),
-	  HPGL_COMMAND('S', 'L', hpgl_SL, 0),
-	  HPGL_COMMAND('S', 'R', hpgl_SR, 0),
-	  HPGL_COMMAND('S', 'S', hpgl_SS, 0),
-	  HPGL_COMMAND('T', 'D', hpgl_TD, 0),
+	  HPGL_COMMAND('D', 'T', hpgl_DT, hpgl_cdf_polygon|hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('D', 'V', hpgl_DV, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('E', 'S', hpgl_ES, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('F', 'I', hpgl_FI, hpgl_cdf_pcl),
+	  HPGL_COMMAND('F', 'N', hpgl_FN, hpgl_cdf_pcl),
+	  HPGL_COMMAND('L', 'M', hpgl_LM, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('L', 'O', hpgl_LO, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('S', 'A', hpgl_SA, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('S', 'B', hpgl_SB, hpgl_cdf_pcl),
+	  HPGL_COMMAND('S', 'D', hpgl_SD, hpgl_cdf_pcl_rtl_both),		/* kind/value pairs */
+	  HPGL_COMMAND('S', 'I', hpgl_SI, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('S', 'L', hpgl_SL, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('S', 'R', hpgl_SR, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('S', 'S', hpgl_SS, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('T', 'D', hpgl_TD, hpgl_cdf_pcl_rtl_both),
 	END_HPGL_COMMANDS
 	return 0;
 }

@@ -437,15 +437,15 @@ pcl_cid_do_registration(
     DEFINE_CLASS('*')
     {
         'v', 'W',
-        PCL_COMMAND("Configure Image Data", pcl_configure_image_data, pca_bytes)
+        PCL_COMMAND("Configure Image Data", pcl_configure_image_data, pca_bytes | pca_in_rtl)
     },
     {
         'r', 'U',
-        PCL_COMMAND("Simple Color Mode", pcl_simple_color_space, pca_neg_ok)
+        PCL_COMMAND("Simple Color Mode", pcl_simple_color_space, pca_neg_ok | pca_in_rtl)
     },
     {
         'i', 'W',
-        PCL_COMMAND("Set Viewing Illuminant", set_view_illuminant, pca_bytes)
+        PCL_COMMAND("Set Viewing Illuminant", set_view_illuminant, pca_bytes | pca_in_rtl)
     },
     END_CLASS
     return 0;

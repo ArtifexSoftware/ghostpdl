@@ -125,9 +125,9 @@ pgcolor_do_registration(
 {
     /* Register commands */
     DEFINE_HPGL_COMMANDS
-    HPGL_COMMAND('C', 'R', hpgl_CR, 0),
-    HPGL_COMMAND('N', 'P', hpgl_NP, 0),
-    HPGL_COMMAND('P', 'C', hpgl_PC, 0),
+    HPGL_COMMAND('C', 'R', hpgl_CR, hpgl_cdf_pcl_rtl_both),
+    HPGL_COMMAND('N', 'P', hpgl_NP, hpgl_cdf_pcl_rtl_both),
+    HPGL_COMMAND('P', 'C', hpgl_PC, hpgl_cdf_pcl_rtl_both),
     END_HPGL_COMMANDS
     return 0;
 }

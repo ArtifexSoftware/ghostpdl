@@ -11,33 +11,6 @@
 #	PCLGENDIR - the directory for source files generated during building
 #	PCLOBJDIR - the object / executable directory
 
-# This makefile includes support for HP RTL (both monochrome and color),
-# PCL5e, PCL5c, and HP-GL/2 (both monochrome and color).  You select
-# combinations of these by putting xxx.dev in the definition of FEATURE_DEVS,
-# where xxx is chosen from the following list:
-#	hprtl	HP RTL monochrome
-#	hprtlc	HP RTL color	
-#	hpgl2	HP-GL/2 monochrome
-#	hpgl2c	HP-GL/2 color
-#	pcl5	PCL5e (includes HP-GL/2 monochrome)
-#	pcl5c	PCL5c (includes HP-GL/2 color)
-# Any combination of these is allowed, although some are redundant: in
-# particular, the color configurations include the monochrome as a subset.
-# Currently, in order to include HP-GL/2, you must also include either
-# HP RTL or PCL5*.
-#
-# The source files for these languages are named as follows:
-#	rt*.[ch]	HP RTL and PCL5e raster commands
-#	rtc*.[ch]	HP RTL color and PCL5C raster commands
-#			  (except rtcursor.c)
-#	pc*.[ch]	PCL5e, and a few files common to multiple languages
-#	pcc*.[ch]	PCL5c extensions
-#	pg*.[ch]	HP-GL/2
-#	pgcolor.c	HP-GL/2 color
-# We haven't yet attempted to build any configuration other than PCL5e and
-# PCL5c, and we know that HP RTL-only configurations don't work, since (at
-# least) a lot of the graphics state doesn't get initialized.
-
 # PLOBJ       = $(PLOBJDIR)$(D)
 
 PCLSRC      = $(PCLSRCDIR)$(D)
@@ -58,11 +31,6 @@ pcl.clean-not-config-clean:
 pcl.config-clean: clean_gs
 	$(RM_) $(PCLOBJ)*.dev
 	$(RM_) $(PCLOBJ)devs.tr5
-
-################ Remaining task list:
-# PCL5C drawing commands
-#	crastr crastr
-# Garbage collector interface cleanup
 
 ################ PCL / RTL support ################
 
@@ -375,14 +343,6 @@ $(PCLOBJ)rtmisc.$(OBJ): $(PCLSRC)rtmisc.c   \
                         $(pcdraw_h)
 	$(PCLCCC) $(PCLSRC)rtmisc.c $(PCLO_)rtmisc.$(OBJ)
 
-# Chapter 6
-$(PCLOBJ)rtcursor.$(OBJ): $(PCLSRC)rtcursor.c   \
-                          $(std_h)              \
-                          $(pcommand_h)         \
-                          $(pcstate_h)          \
-                          $(pcdraw_h)
-	$(PCLCCC) $(PCLSRC)rtcursor.c $(PCLO_)rtcursor.$(OBJ)
-
 # Chapter 15
 $(PCLOBJ)rtraster.$(OBJ): $(PCLSRC)rtraster.c   \
 			  $(memory__h)          \
@@ -406,13 +366,12 @@ $(PCLOBJ)rtraster.$(OBJ): $(PCLSRC)rtraster.c   \
                           $(rtraster_h)
 	$(PCLCCC) $(PCLSRC)rtraster.c $(PCLO_)rtraster.$(OBJ)
 
-rtlbase_    = $(PCLOBJ)rtmisc.$(OBJ) $(PCLOBJ)rtcursor.$(OBJ)   \
-              $(PCLOBJ)rtraster.$(OBJ)
+rtlbase_    = $(PCLOBJ)rtmisc.$(OBJ) $(PCLOBJ)rtraster.$(OBJ)
 
 $(PCLOBJ)rtlbase.dev: $(PCL_MAK) $(ECHOGS_XE) $(rtlbase_) $(PCLOBJ)pcl5base.dev
 	$(SETMOD) $(PCLOBJ)rtlbase $(rtlbase_)
 	$(ADDMOD) $(PCLOBJ)rtlbase -include $(PCLOBJ)pcl5base
-	$(ADDMOD) $(PCLOBJ)rtlbase -init rtmisc rtcursor rtraster
+	$(ADDMOD) $(PCLOBJ)rtlbase -init rtmisc rtraster
 
 #### Color commands
 # These are organized by chapter # in the PCL 5 Color Technical Reference
@@ -644,28 +603,6 @@ $(PCLOBJ)rtlbasec.dev: $(PCL_MAK) $(ECHOGS_XE) $(rtlbasec_) $(PCLOBJ)rtlbase.dev
 	$(ADDMOD) $(PCLOBJ)rtlbasec -init pcl_xfm pcl_upattern
 	$(ADDMOD) $(PCLOBJ)rtlbasec -init rtgmode
 
-################ HP RTL ################
-
-# HP RTL has just a few commands that aren't in PCL5e, and also supports
-# CCITT fax compression modes.
-
-$(PCLOBJ)rtlrastr.$(OBJ): $(PCLSRC)rtlrastr.c   \
-                          $(std]h)             \
-                          $(pcommand_h)         \
-                          $(pcstate_h)          \
-                          $(rtgmode_h)
-	$(PCLCCC) $(PCLSRC)rtlrastr.c $(PCLO_)rtlrastr.$(OBJ)
-
-HPRTL_OPS   = $(PCLOBJ)rtlrastr.$(OBJ)
-
-$(PCLOBJ)hprtl.dev: $(PCL_MAK) $(ECHOGS_XE) $(HPRTL_OPS) $(PCLOBJ)rtlbase.dev
-	$(SETMOD) $(PCLOBJ)hprtl $(HPRTL_OPS)
-	$(ADDMOD) $(PCLOBJ)hprtl -include $(PCLOBJ)rtlbase
-	$(ADDMOD) $(PCLOBJ)hprtl -init rtlrastr
-
-$(PCLOBJ)hprtlc.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCLOBJ)rtlbasec.dev
-	$(SETMOD) $(PCLOBJ)hprtlc -include $(PCLOBJ)rtlbasec
-
 ################ PCL 5e/5c ################
 
 #### Shared support
@@ -732,7 +669,6 @@ $(PCLOBJ)pcpage.$(OBJ): $(PCLSRC)pcpage.c   \
 	$(PCLCCC) $(PCLSRC)pcpage.c $(PCLO_)pcpage.$(OBJ)
 
 # Chapter 6
-# Some of these replace implementations in rtcursor.c.
 $(PCLOBJ)pcursor.$(OBJ): $(PCLSRC)pcursor.c \
                          $(std_h)          \
                          $(math__h)         \

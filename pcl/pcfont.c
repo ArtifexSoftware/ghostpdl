@@ -475,8 +475,13 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 	case 'I':
 	    if (!pcl_load_built_in_fonts(pcs, 
 					 pjl_fontsource_to_path(pcs->pjls, fontsource))) {
-		dprintf("No built-in fonts found during initialization\n");
-		return -1;
+		if ( pcs->personality == rtl )
+		    /* rtl doesn't use fonts */
+		    return 0;
+		else {
+		    dprintf("No built-in fonts found during initialization\n");
+		    return -1;
+		}
 	    }
 	    pcl_data_storage = pcds_internal;
 	    break;
@@ -566,8 +571,9 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 	pl_dict_set_parent(&pcs->soft_fonts, &pcs->built_in_fonts);
     }
     if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {
-	int code;
-	code = pcl_set_current_font_environment(pcs);
+	int code = 0;
+	if ( pcs->personality != rtl )
+	    code = pcl_set_current_font_environment(pcs);
 	/* corrupt configuration */
 	if ( code != 0 )
 	    exit( 1 );

@@ -515,13 +515,15 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 		    if ( !pcs->raster_state.graphics_mode ||
 			 (cdefn->actions & pca_raster_graphics) ||
 			 (code = pcl_end_graphics_mode(pcs)) >= 0
-		       )
-		      code = (*cdefn->proc)(&pst->args, pcs);
+			 ) {
+			if ( (pcs->personality != rtl) ||
+			     ((pcs->personality == rtl) && (cdefn->actions & pca_in_rtl)) )
+			    code = (*cdefn->proc)(&pst->args, pcs);
+		    }
 		    /*
 		     * If we allocated a buffer for command data,
 		     * and the command didn't take possession of it,
-		     * free it now.
-		     */
+		     * free it now.  */
 		    if ( pst->args.data_on_heap && pst->args.data )
 		      { gs_free_object(pcs->memory, pst->args.data,
 				       "command data");

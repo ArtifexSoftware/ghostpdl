@@ -330,7 +330,7 @@ xfm_do_registration(
         'p', 'R',
         PCL_COMMAND( "Pattern Reference Point",
                      set_pat_ref_pt,
-                     pca_neg_ok | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore | pca_in_rtl
                      )
     },
     END_CLASS

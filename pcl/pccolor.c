@@ -109,28 +109,28 @@ color_do_registration(
         'v', 'A',
 	PCL_COMMAND( "Color Component 1",
                      set_color_comp_1,
-		     pca_neg_ok | pca_big_error | pca_raster_graphics
+		     pca_neg_ok | pca_big_error | pca_raster_graphics | pca_in_rtl
                      )
     },
     {
         'v', 'B',
 	PCL_COMMAND( "Color Component 2",
                      set_color_comp_2,
-		     pca_neg_ok | pca_big_error | pca_raster_graphics
+		     pca_neg_ok | pca_big_error | pca_raster_graphics | pca_in_rtl
                      )
     },
     {
         'v', 'C',
         PCL_COMMAND( "Color Component 3",
                      set_color_comp_3,
-		     pca_neg_ok | pca_big_error | pca_raster_graphics
+		     pca_neg_ok | pca_big_error | pca_raster_graphics | pca_in_rtl
                      )
     },
     {
         'v', 'I',
         PCL_COMMAND( "Assign Color Index",
                      assign_color_index,
-		     pca_neg_ok | pca_big_ignore | pca_raster_graphics
+		     pca_neg_ok | pca_big_ignore | pca_raster_graphics | pca_in_rtl
                      )
     },
     END_CLASS
