@@ -30,7 +30,7 @@ level2dict begin
 /.beginpage {		% - .beginpage -
   .currentshowpagecount {
     .currentpagedevice pop
-    dup null ne { /BeginPage .knownget } { pop false } ifelse {
+    dup //null ne { /BeginPage .knownget } { pop //false } ifelse {
 		% Stack: ... pagecount proc
        count 2 .execn
 		% Stack: ... ..???.. oldcount
@@ -45,7 +45,7 @@ level2dict begin
 /.endpage {		% <reason> .endpage <print_bool>
   .currentshowpagecount {
     1 index .currentpagedevice pop
-    dup null ne { /EndPage .knownget } { pop false } ifelse {
+    dup //null ne { /EndPage .knownget } { pop //false } ifelse {
 		% Stack: ... reason pagecount reason proc
       count 2 .execn
 		% Stack: ... ..???.. print oldcount
@@ -96,7 +96,7 @@ level2dict begin
  {	% Since setpagedevice doesn't create new device objects,
 	% we must (carefully) reinstall the old parameters in
 	% the same device.
-   .currentpagedevice pop null currentdevice null .trysetparams
+   .currentpagedevice pop //null currentdevice //null .trysetparams
    dup type /booleantype eq
     { pop pop }
     {		% This should never happen!
@@ -111,7 +111,7 @@ level2dict begin
  } bind def
 
 /.uninstallpagedevice
- { 2 .endpage { .currentnumcopies false .outputpage } if
+ { 2 .endpage { .currentnumcopies //false .outputpage } if
    nulldevice
  } bind def
 
@@ -152,10 +152,10 @@ level2dict begin
 % null and a fixed empty directionary.
 /.nullpagedevice 0 dict readonly def
 /.currentpagedevice {
-  //.currentpagedevice exch dup null eq { pop //.nullpagedevice } if exch
+  //.currentpagedevice exch dup //null eq { pop //.nullpagedevice } if exch
 } bind odef
 /.setpagedevice {
-  dup //.nullpagedevice eq { pop null } if //.setpagedevice
+  dup //.nullpagedevice eq { pop //null } if //.setpagedevice
 } bind odef
 
 % ---------------- Auxiliary definitions ---------------- %
@@ -177,7 +177,7 @@ level2dict begin
 .dicttomark readonly def
 % Note that the values of .requiredattrs are executed, not just fetched.
 /.requiredattrs mark
-  /PageDeviceName null
+  /PageDeviceName //null
   /PageOffset [0 0] readonly
 % We define InputAttributes and OutputAttributes with a single
 % dummy media type that handles pages of any size.
@@ -198,7 +198,7 @@ level2dict begin
   /BeginPage {{.callbeginpage}} bind
   /EndPage {{.callendpage}} bind
   /Policies .defaultpolicies
-  /ImagingBBox null		% default value
+  /ImagingBBox //null		% default value
   /UseCIEColor /.getuseciecolor load
 .dicttomark readonly def
 
@@ -214,7 +214,7 @@ level2dict begin
   /ColorValues dup
 .dicttomark readonly def
 /.makecurrentpagedevice {	% - .makecurrentpagedevice <dict>
-  currentdevice null .getdeviceparams
+  currentdevice //null .getdeviceparams
 	% Make the dictionary large enough to add defaulted entries.
   counttomark 2 idiv .requiredattrs length add dict
   counttomark 2 idiv { dup 4 2 roll put } repeat exch pop
@@ -255,7 +255,7 @@ level2dict begin
 		% we must update the page device dictionary.
       currentdevice //.dynamicppkeys .getdeviceparams .dicttomark {
 		% Stack: current key value
-	    2 index 2 index .knownget { 1 index ne } { true } ifelse
+	    2 index 2 index .knownget { 1 index ne } { //true } ifelse
 	     { 2 index wcheck not
 		{	% This is the first entry being updated.
 			% Copy the dictionary to make it writable.
@@ -278,7 +278,7 @@ level2dict begin
 		% too is to work around the Word Perfect bug (see above).
       dup gcheck not {
 	dup {
-	  dup type /dicttype eq { dup gcheck } { false } ifelse {
+	  dup type /dicttype eq { dup gcheck } { //false } ifelse {
 		% Copy-on-write, see above.
 	    2 index wcheck not {
 	      3 -1 roll dup length dict .copydict
@@ -320,11 +320,11 @@ level2dict begin
 %	<merged> <key> <new_value> -proc- <merged> <key> <new_value'>
 /.mergespecial mark
   /InputAttributes
-   { dup null eq
-      { pop null
+   { dup //null eq
+      { pop //null
       }
       { 3 copy pop .knownget
-	 { dup null eq
+	 { dup //null eq
 	    { pop dup length dict }
 	    { dup length 2 index length add dict .copydict }
 	   ifelse
@@ -376,42 +376,42 @@ level2dict begin
 % The procedure leaves all its operands on the stack and returns
 % true iff the key/value pair should be presented to .putdeviceparams.
 /.presentspecial mark
-  .dynamicppkeys { pop false } forall
+  .dynamicppkeys { pop //false } forall
 			% We must ignore an explicit request for .MediaSize,
 			% because media matching always handles this.
-  /.MediaSize false
-  /Name false
-  /OutputDevice false
-  /PageDeviceName false
-  /PageOffset false
-  /PageSize false		% obsolete alias for .MediaSize
-  /InputAttributes false
+  /.MediaSize //false
+  /Name //false
+  /OutputDevice //false
+  /PageDeviceName //false
+  /PageOffset //false
+  /PageSize //false		% obsolete alias for .MediaSize
+  /InputAttributes //false
   .inputattrkeys
     { dup /PageSize eq
        { pop }
-       { { 2 index /InputAttributes .knownget { null eq } { true } ifelse } }
+       { { 2 index /InputAttributes .knownget { //null eq } { //true } ifelse } }
       ifelse
     }
   forall
-  .inputselectionkeys { false } forall
-  /OutputAttributes false
+  .inputselectionkeys { //false } forall
+  /OutputAttributes //false
   .outputattrkeys
-    { { 2 index /OutputAttributes .knownget { null eq } { true } ifelse } }
+    { { 2 index /OutputAttributes .knownget { //null eq } { //true } ifelse } }
   forall
-  /Install false
-  /BeginPage false
-  /EndPage false
-  /Policies false
+  /Install //false
+  /BeginPage //false
+  /EndPage //false
+  /Policies //false
 	% Our extensions:
   /HWColorMap
     {			% HACK: don't transmit the color map, because
 			% window systems can change the color map on their own
 			% incrementally.  Someday we'll have a better
 			% solution for this....
-      false
+      //false
     }
-  /ViewerPreProcess false
-  /ImagingBBox false	% This prevents the ImagingBBox value in the setpagedevice
+  /ViewerPreProcess //false
+  /ImagingBBox //false	% This prevents the ImagingBBox value in the setpagedevice
 			% from affecting the device's ImagingBBox parameter, but
 			% does retain a 'shadow' copy at the PostScript level.
 			% This is done for Adobe compatibility since Adobe does
@@ -421,7 +421,7 @@ level2dict begin
 
 % Define access to device defaults.
 /.defaultdeviceparams
- { finddevice null .getdeviceparams
+ { finddevice //null .getdeviceparams
  } bind def
 
 % Select media (input or output).  The hard work is done in an operator:
@@ -446,8 +446,8 @@ level2dict begin
       ifelse
        {	% Stack: <orig> <request> <merged> <failed> <attrkey>
 	 3 index 1 index .knownget
-	  { 5 index 2 index .knownget { ne } { pop true } ifelse }
-	  { true }
+	  { 5 index 2 index .knownget { ne } { pop //true } ifelse }
+	  { //true }
 	 ifelse		% Stack: ... <failed> <attrkey> <report>
 	  { 2 copy /rangecheck put }
 	 if pop
@@ -538,7 +538,7 @@ DEBUG { (Rolling back.) = pstack flush } if
 % Try setting the device parameters from the merged request.
 /.trysetparams		% <merged> <(ignored)> <device> <Policies>
 			%   .trysetparams
- { true 4 index .prepareparams
+ { //true 4 index .prepareparams
 			% Add the computed .MediaSize.
 			% Stack: merged (ignored) device Policies -true-
 			%   -mark- key1 value1 ...
@@ -561,8 +561,8 @@ DEBUG { (Result of putting.) = pstack flush } if
      dup /PageSize .knownget
       { exch pop } { /PolicyNotFound get } ifelse	% PageSize policy,
 							% affects scaling
-   3 index /Orientation .knownget not { null } if
-   4 index /RollFedMedia .knownget not { false } if
+   3 index /Orientation .knownget not { //null } if
+   4 index /RollFedMedia .knownget not { //false } if
    matrix .matchpagesize not {
 		% This is a "can't happen" condition!
      /setpagedevice load /rangecheck signalerror
@@ -589,11 +589,11 @@ DEBUG { (Checking.) = pstack flush } if
       2 index /OutputDevice .knownget
        {	% A specific OutputDevice was requested.
 	 2 copy eq
-	  { pop pop null }
+	  { pop pop //null }
 	  { exch pop }
 	 ifelse
        }
-       { pop null
+       { pop //null
        }
       ifelse
     }
@@ -602,7 +602,7 @@ DEBUG { (Checking.) = pstack flush } if
       1 index /OutputDevice .knownget not { .defaultdevicename } if
     }
    ifelse
-   dup null eq
+   dup //null eq
     { pop
     }
     { exch pop .defaultdeviceparams
@@ -716,7 +716,7 @@ DEBUG { (Recovering.) = pstack flush } if
 DEBUG { (Installing.) = pstack flush } if
 
    pop 2 .endpage
-    { 1 true .outputpage
+    { 1 //true .outputpage
       (>>setpagedevice, press <return> to continue<<\n) .confirm
     }
    if
@@ -757,9 +757,9 @@ DEBUG { (Installing.) = pstack flush } if
    exch currentpagedevice dup length 2 index length add dict
 		% Stack: mark ... <failed> <merged> <current> <newdict>
    2 index /OutputDevice .knownget {
-     2 index /OutputDevice .knownget not { null } if eq
+     2 index /OutputDevice .knownget not { //null } if eq
    } {
-     true
+     //true
    } ifelse {
 		% Same OutputDevice, merge the dictionaries.
      .copydict
@@ -808,7 +808,7 @@ DEBUG { (Installing.) = pstack flush } if
    matrix currentmatrix .setdefaultmatrix
 		% Erase and initialize the page.
    initgraphics
-   currentoverprint false setoverprint 1 setcolor
+   currentoverprint //false setoverprint 1 setcolor
    .fillpage
    0 setcolor setoverprint
    .beginpage
