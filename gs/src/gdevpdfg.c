@@ -131,7 +131,7 @@ pdf_separation_name(gx_device_pdf *pdev, cos_value_t *pvalue,
     static const char *const snames[] = {
 	gs_ht_separation_name_strings
     };
-    static char buf[sizeof(ulong) * 8 / 3 + 2];	/****** BOGUS ******/
+    char buf[sizeof(ulong) * 8 / 3 + 2];	/****** BOGUS ******/
     const char *str;
     uint len;
     byte *chars;
