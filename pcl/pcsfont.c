@@ -204,6 +204,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
 	plfont->header_size = count;
 	plfont->scaling_technology = fst;
 	plfont->font_type = (pl_font_type_t)pfh->FontType;
+	plfont->font_file = (char *)0;
 	code = pl_font_alloc_glyph_table(plfont, 256, mem,
 					 "pcl_font_header(char table)");
 	if ( code < 0 )

@@ -55,7 +55,7 @@ dprint_cc(const byte *pcc)
 {	dprintf8("cc=%02x %02x %02x %02x %02x %02x %02x %02x", pcc[0],
 		 pcc[1], pcc[2], pcc[3], pcc[4], pcc[5], pcc[6], pcc[7]);
 }
-private void
+void
 dprint_font_params_t(const pl_font_params_t *pfp)
 {	dprintf7("symset=%u %s pitch=%g ht=%u style=%u wt=%d face=%u\n",
 		 pfp->symbol_set,

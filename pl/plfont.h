@@ -137,10 +137,15 @@ typedef struct gs_matrix_s gs_matrix;
 typedef struct pl_font_s pl_font_t;
 #endif
 struct pl_font_s {
-  gs_font *pfont;	/* Type 42 if TrueType, Type 3 if bitmap. */
-  int storage;		/* where the font is stored */
+  gs_font *pfont;	    /* Type 42 if TrueType, Type 3 if bitmap. */
+  int storage;		    /* where the font is stored */
   bool data_are_permanent;  /* glyph data stored in rom */
-  byte *header;	        /* downloaded header, or built-in font data */
+  char *font_file;       /* non null only if data is stored in a
+			    file only relevant to pcl resident
+			    fonts. NB this should be done
+			    dynamically */
+  bool font_file_loaded;    /* contents of the font file have be read into memory */
+  byte *header;	            /* downloaded header, or built-in font data */
   ulong header_size;
 	/* Information extracted from the font or supplied by the client. */
   pl_font_scaling_technology_t scaling_technology;
@@ -280,5 +285,11 @@ int pl_font_remove_glyph(P2(pl_font_t *plfont, gs_glyph glyph));
 
 /* Free a font.  This is the freeing procedure in the font dictionary. */
 void pl_free_font(P3(gs_memory_t *mem, void *plf, client_name_t cname));
+
+/* load resident font data to ram */
+int pl_load_resident_font_data_from_file(P2(gs_memory_t *mem, pl_font_t *plfont));
+
+/* keep resident font data in its original file */
+int pl_store_resident_font_data_in_file(P3(char *font_file, gs_memory_t *mem, pl_font_t *plfont));
 
 #endif				/* plfont_INCLUDED */

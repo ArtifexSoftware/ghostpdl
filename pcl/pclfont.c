@@ -15,6 +15,7 @@
 #include "gxfont.h"
 #include "gxfont42.h"
 #include "pcommand.h"
+#include "pcfont.h"
 #include "pcstate.h"
 
 /* Load some built-in fonts.  This must be done at initialization time, but
@@ -225,6 +226,12 @@ pcl_load_built_in_fonts(pcl_state_t *pcs, const char *pathname)
 	    key[sizeof(key) - 1]++;
 	    font_found[residentp - resident_table] = plfont;
 	    found_some = true;
+	    if ( gs_debug_c('=') ) {
+		dprintf1("%s ", fname);
+		dprint_font_params_t(&plfont->params);
+	    }
+	    if ( pl_store_resident_font_data_in_file(fname, pcs->memory, plfont) < 0 )
+		dprintf1("%s could not store data", fname );
 	}
 #ifdef DEBUG
     /* check that we have loaded everything in the resident font table */

@@ -81,7 +81,8 @@ pcl_recompute_font(pcl_state_t *pcs)
 	if ( code < 0 )
 	  return code;
 	pcl_set_font(pcs, pfs);
-	return 0;
+	/* load it if necessary */
+	return pl_load_resident_font_data_from_file(pcs->memory, pfs->font);
 }
 
 /* The font parameter commands all come in primary and secondary variants. */
@@ -567,7 +568,23 @@ purge_all(cached_char * cc, void *dummy)
     return true;
 }
 
-
+private void
+pcl_unload_resident_fonts(pcl_state_t *pcs)
+{
+    pl_dict_enum_t dictp;
+    gs_const_string key;
+    void *value;
+    /* we'll try to unload everything.  The procedure should not
+       affect soft fonts */
+    pl_dict_enum_begin(&pcs->soft_fonts, &dictp);
+    while ( pl_dict_enum_next(&dictp, &key, &value) ) {
+	pl_font_t *plfont = (pl_font_t *)value;
+	if ( plfont->font_file )
+	    if ( pl_store_resident_font_data_in_file(plfont->font_file, pcs->memory, plfont) < 0 )
+		dprintf1("%s", "could not store data" );
+	    
+    }
+}
 
 private void
 pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
@@ -585,6 +602,9 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 	/* corrupt configuration */
 	if ( code != 0 )
 	    exit( 1 );
+	if ( type & pcl_reset_printer )
+	    pcl_unload_resident_fonts(pcs);
+
     }
     if ( type & pcl_reset_permanent ) {
 	pl_dict_release(&pcs->soft_fonts);

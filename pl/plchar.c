@@ -1168,21 +1168,29 @@ pl_intelli_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4
 {
     gs_point width;
     const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
+
+    metrics[0] = metrics[1] = metrics[2] = metrics[3] = 0;
+
     if ( cdata == 0 ) { 
-	metrics[1] = metrics[3] = 0;
-	metrics[0] = metrics[1] = 0;
-	dprintf( "warning intellifont glyph not found\n" );
 	return 1;
     }
 
+    /* compound */
+    if ( cdata[3] == 4 ) {
+	dprintf( "warning compound intellifont metrics not supported" );
+	return 0;
+    }
+
+    cdata += 4;
+    
     {
 	const intelli_metrics_t *intelli_metrics =
 	    (const intelli_metrics_t *)(cdata + pl_get_uint16(cdata + 2));
 
 	/* NB probably not right */
-	/* never a vertical substitute */
-	metrics[1] = metrics[3] = 0;
+	/* never a vertical substitute, doesn't yet handle compound characters */
 	metrics[0] = (float)pl_get_int16(intelli_metrics->charSymbolBox[0]);
+	metrics[0] /= 8782.0;
 	pl_intelli_char_width(plfont, char_code, &width);
 	metrics[2] = width.x;
 	return 0;

@@ -7,6 +7,7 @@
 #include "memory_.h"
 #include "stdio_.h"
 #include "gdebug.h"
+#include "gp.h"
 #include "gserror.h"
 #include "gserrors.h"
 #include "gstypes.h"
@@ -60,6 +61,10 @@ pl_free_font(gs_memory_t *mem, void *plf, client_name_t cname)
 	  { gs_purge_font(plfont->pfont);
 	    gs_free_object(mem, plfont->pfont, cname);
 	  }
+	if ( plfont->font_file ) {
+	    gs_free_object(mem, plfont->font_file, cname);
+	    plfont->font_file = 0;
+	}
 	gs_free_object(mem, plf, cname);
 }
 
@@ -105,6 +110,7 @@ pl_alloc_font(gs_memory_t *mem, client_name_t cname)
 	    plfont->glyphs.table = 0;
 	    plfont->char_glyphs.table = 0;
 	    /* Initialize other defaults. */
+	    plfont->font_file = 0;
 	    plfont->resolution.x = plfont->resolution.y = 0;
 	    plfont->params.proportional_spacing = true;
 	    memset(plfont->character_complement, 0xff, 8);
@@ -139,6 +145,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	plfont->large_sizes = src->large_sizes;
 	plfont->resolution = src->resolution;
 	plfont->params = src->params;
+	plfont->font_file_loaded = src->font_file_loaded;
 	{
 	  int i;
 	  for (i = 0; i < sizeof(src->character_complement); i++ )
@@ -149,7 +156,16 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	if ( plfont->header == 0 )
 	  return 0;
 	memcpy(plfont->header, src->header, src->header_size);
-
+	
+	if ( src->font_file ) {
+	    plfont->font_file = gs_alloc_bytes(mem, strlen(src->font_file) + 1,
+					       "pl_clone_font");
+	    if ( plfont->font_file == 0 )
+		return 0;  /* #NB errors!!! */
+	    strcpy(plfont->font_file, src->font_file);
+	}
+	else
+	    plfont->font_file = 0;
 	/* technology specific setup */
 	switch ( plfont->scaling_technology )
 	  {
@@ -571,4 +587,69 @@ pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
 	  *pplfont = plfont;
 	}
 	return 0;
+}
+
+/* load resident font data to ram */
+int
+pl_load_resident_font_data_from_file(gs_memory_t *mem, pl_font_t *plfont)
+{
+
+    ulong len, size;
+    byte *data;
+    if (plfont->font_file && !plfont->font_file_loaded) {
+	FILE *in = fopen(plfont->font_file, gp_fmode_rb);
+	if ( in == NULL )
+	    return -1;
+	/* note this is exactly the same as the code in pl_load_tt_font */
+	len = (fseek(in, 0L, SEEK_END), ftell(in));
+	size = 6 + len;	/* leave room for segment header */
+
+	if ( size != (uint)size ) { 
+	    /*
+	     * The font is too big to load in a single piece -- punt.
+	     * The error message is bogus, but there isn't any more
+	     * appropriate one.
+	     */
+	    fclose(in);
+	    return_error(gs_error_VMerror);
+	}
+	rewind(in);
+	data = gs_alloc_bytes(mem, size, "pl_tt_load_font data");
+	if ( data == 0 ) { 
+	    fclose(in);
+	    return_error(gs_error_VMerror);
+	}
+	fread(data + 6, 1, len, in);
+	fclose(in);
+	plfont->header = data;
+	plfont->header_size = size;
+	plfont->font_file_loaded = true;
+    }
+    return 0;
+}
+
+/* Keep resident font data in (header) and deallocate the memory */
+int
+pl_store_resident_font_data_in_file(char *font_file, gs_memory_t *mem, pl_font_t *plfont)
+{
+    /* Free the header data */
+    if ( plfont->header ) {
+	gs_free_object(mem, plfont->header, "pl_store_resident_font_data_in_file");
+	plfont->header = 0;
+	plfont->header_size = 0;
+    } else {
+	/* nothing to do */
+	return 0;
+    }
+    /* we don't yet have a filename for this font object. create one
+       and store it in the font. */
+    if ( !plfont->font_file ) {
+	plfont->font_file = gs_alloc_bytes(mem, strlen(font_file) + 1, "pl_store_resident_font_data_in_file");
+	if ( plfont->font_file == 0 )
+	    return -1;
+	strcpy(plfont->font_file, font_file);
+    }
+    /* designate that the font data is not in RAM */
+    plfont->font_file_loaded = false;
+    return 0;
 }

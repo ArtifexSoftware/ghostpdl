@@ -32,6 +32,8 @@ pcl_printer_reset(pcl_args_t *pargs, pcl_state_t *pcs)
 	if ( code < 0 )
 	    return code;
     }
+    /* unload fonts */
+    
     /* Reset to user default state. */
     return pcl_do_resets(pcs, pcl_reset_printer);
 }

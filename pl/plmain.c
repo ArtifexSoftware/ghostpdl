@@ -246,6 +246,7 @@ main(
 	pl_print_usage(mem, &inst, "Start");
 #endif
 
+
     /* ------ Begin Main LOOP ------- */
     for (;;) {
 	/* Process one input file. */
@@ -279,7 +280,8 @@ main(
 
 	    exit(1);
 	}
-
+	if ( gs_debug_c('A') )
+	    dprintf( "memory allocated\n" );
 	/* Process the next file. process_options leaves next non-option on arg list*/
 	if ((arg = arg_next(&args)) == 0)
 	    break;  /* no nore files to process */
@@ -294,6 +296,7 @@ main(
         if (gs_debug_c(':'))
             dprintf1("%% Reading %s:\n", arg);
 #endif
+
 
         if ( pl_init_job(pjl_instance) < 0 ) {
             fprintf(gs_stderr, "Unable to init PJL job.\n");
@@ -410,7 +413,9 @@ next:	if (code < 0)
     gs_c_param_list_release(&params);
     arg_finit(&args);
 
-    /* pl_platform_dnit(0); */
+    if ( gs_debug_c('A') )
+	dprintf( "Final time" );
+    pl_platform_dnit(0);
     return 0;
 #undef mem
 }

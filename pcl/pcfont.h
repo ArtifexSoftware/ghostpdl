@@ -96,4 +96,8 @@ typedef struct pcl_resolution_bitmap_header_s {
     char                Copyright[1];
 } pcl_resolution_bitmap_header_t;
 
+/* debugging to to print font parameters */
+#ifdef DEBUG
+void dprint_font_params_t(P1(const pl_font_params_t *pfp));
+#endif
 #endif		/* pcfont_INCLUDED */

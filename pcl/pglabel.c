@@ -125,6 +125,7 @@ hpgl_ensure_font(hpgl_state_t *pgls)
 {
     if ( ( pgls->g.font == 0 ) || ( pgls->g.font->pfont == 0 ) )
 	hpgl_call(hpgl_recompute_font(pgls));
+    
     return 0;
 }
 
@@ -231,7 +232,7 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 	  }
 	pgls->g.font = pfs->font;
 	pgls->g.map = pfs->map;
-	return 0;
+	return pl_load_resident_font_data_from_file(pgls->memory, pfs->font);
 }
 
 /* ------ Position management ------ */
