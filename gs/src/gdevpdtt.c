@@ -601,7 +601,7 @@ pdf_find_font_resource(gx_device_pdf *pdev, gs_font *font,
 
 private int pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 		       pdf_font_resource_t **ppdfont, 
-		       gs_glyph *glyphs, int num_glyphs);
+		       gs_glyph *glyphs, gs_char *chars, int num_chars);
 
 /*
  * Create or find a CID font resource object for a glyph set.
@@ -623,7 +623,7 @@ pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font_type0 *font,
 	    return code;
 	if (*ppdsubf == NULL) {
 	    code = pdf_make_font_resource(pdev, subfont, ppdsubf, 
-					  NULL, 0);
+					  NULL, NULL, 0);
 	    if (code < 0)
 		return code;
 	}
@@ -637,6 +637,30 @@ pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font_type0 *font,
 }
 
 /*
+ * Refine index of BaseEncoding.
+ */
+private int 
+pdf_refine_encoding_index(int index, bool is_standard)
+{
+    /*
+     * Per the PDF 1.3 documentation, there are only 3 BaseEncoding
+     * values allowed for non-embedded fonts.  Pick one here.
+     */
+    switch (index) {
+    case ENCODING_INDEX_WINANSI:
+    case ENCODING_INDEX_MACROMAN:
+    case ENCODING_INDEX_MACEXPERT:
+	return index;
+    case ENCODING_INDEX_STANDARD:
+	if (is_standard)
+	    return index;
+	/* Falls through. */
+    default:
+	return ENCODING_INDEX_WINANSI;
+    }
+}
+
+/*
  * Create a font resource object for a gs_font.  Return 1 iff the
  * font was newly created (it's a roudiment, keeping reverse compatibility).
  * This procedure is only intended to be called
@@ -645,7 +669,7 @@ pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font_type0 *font,
 private int
 pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 		       pdf_font_resource_t **ppdfont, 
-		       gs_glyph *glyphs, int num_glyphs)
+		       gs_glyph *glyphs, gs_char *chars, int num_chars)
 {
     int index = -1;
     int BaseEncoding = ENCODING_INDEX_UNKNOWN;
@@ -660,15 +684,19 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	pdev->text->outline_fonts->standard_fonts;
     int code = 0;
 
-    embed = pdf_font_embed_status(pdev, base_font, &index, glyphs, num_glyphs);
+    embed = pdf_font_embed_status(pdev, base_font, &index, glyphs, num_chars);
     if (embed == FONT_EMBED_STANDARD) {
 	pdf_standard_font_t *psf = &psfa[index];
 
-	if (!psf->pdfont) {
+	if (!psf->pdfont ||
+	    !pdf_is_compatible_encoding(pdev, psf->pdfont, font,
+			glyphs, chars, num_chars)) {
 	    code = pdf_font_std_alloc(pdev, &psf->pdfont, base_font->id,
 				      (gs_font_base *)base_font, index);
 	    if (code < 0)
 		return code;
+	    psf->pdfont->u.simple.BaseEncoding = pdf_refine_encoding_index(
+		((const gs_font_base *)base_font)->nearest_encoding_index, true);
 	    code = 1;
 	}
 	*ppdfont = psf->pdfont;
@@ -703,7 +731,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    gs_font_type0 *const pfont = (gs_font_type0 *)base_font;
 	    pdf_font_resource_t *pdsubf;
 
-	    code = pdf_obtain_cidfont_resource(pdev, pfont, &pdsubf, glyphs, num_glyphs);
+	    code = pdf_obtain_cidfont_resource(pdev, pfont, &pdsubf, glyphs, num_chars);
 	    if (code < 0)
 		return code;
 	    code = pdf_font_type0_alloc(pdev, &pdfont, base_font->id, pdsubf);
@@ -748,20 +776,8 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    }
 	}
     } else {			/* embed == FONT_EMBED_NO (STD not possible) */
-	/*
-	 * Per the PDF 1.3 documentation, there are only 3 BaseEncoding
-	 * values allowed for non-embedded fonts.  Pick one here.
-	 */
-	BaseEncoding =
-	    ((const gs_font_base *)base_font)->nearest_encoding_index;
-	switch (BaseEncoding) {
-	default:
-	    BaseEncoding = ENCODING_INDEX_WINANSI;
-	case ENCODING_INDEX_WINANSI:
-	case ENCODING_INDEX_MACROMAN:
-	case ENCODING_INDEX_MACEXPERT:
-	    break;
-	}
+	BaseEncoding = pdf_refine_encoding_index(
+	    ((const gs_font_base *)base_font)->nearest_encoding_index, false);
     }
 
     if ((code = pdf_font_descriptor_alloc(pdev, &pfd,
@@ -983,7 +999,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 		goto out;
 	    if (*ppdfont == NULL) {
 		code = pdf_make_font_resource(pdev, base_font, ppdfont, 
-					      glyphs, num_all_chars);
+					      glyphs, chars, num_all_chars);
 		if (code < 0)
 		    goto out;
 	    }

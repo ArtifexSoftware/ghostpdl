@@ -48,6 +48,35 @@ pdf_write_Widths(gx_device_pdf *pdev, int first, int last, const double *widths)
     return 0;
 }
 
+/* Check strings equality. */
+private bool 
+strings_equal(const gs_const_string *str0, const gs_const_string *str1)
+{
+    return str0->size == str1->size &&
+	   !memcmp(str0->data, str1->data, str0->size);
+}
+
+/* Check if an encoding element differs from a standard one. */
+private int
+pdf_different_encoding_element(const pdf_font_resource_t *pdfont, int ch, int encoding_index)
+{
+    if (pdfont->u.simple.Encoding[ch].is_difference)
+	return 1;
+    else if (encoding_index >= 0) {
+	gs_glyph glyph0 = gs_c_known_encode(ch, encoding_index);
+	gs_glyph glyph1 = pdfont->u.simple.Encoding[ch].glyph;
+	gs_const_string str;
+	int code = gs_c_glyph_name(glyph0, &str);
+
+	if (code < 0)
+	    return code; /* Must not happen */
+	if (glyph1 != GS_NO_GLYPH)
+	    if (!strings_equal(&str, &pdfont->u.simple.Encoding[ch].str))
+		return 1;
+    }
+    return 0;
+}
+
 /* Write the Subtype and Encoding for a simple font. */
 private int
 pdf_write_simple_contents(gx_device_pdf *pdev,
@@ -60,14 +89,19 @@ pdf_write_simple_contents(gx_device_pdf *pdev,
     gs_encoding_index_t base_encoding = pdfont->u.simple.BaseEncoding;
     long diff_id = 0;
     int ch = (pdfont->u.simple.Encoding ? 0 : 256);
+    int code = 0;
 
-    for (; ch < 256; ++ch)
-	if (pdfont->u.simple.Encoding[ch].is_difference)
+    for (; ch < 256; ++ch) {
+	code = pdf_different_encoding_element(pdfont, ch, base_encoding);
+	if (code < 0)
+	    return code; /* Must not happen */
+	if (code)
 	    break;
+    }
     if (ch < 256)
 	pprintld1(s, "/Encoding %ld 0 R",
 		  (diff_id = pdf_obj_ref(pdev)));
-    else if (base_encoding >= 0)
+    else if (base_encoding > 0)
 	pprints1(s, "/Encoding/%s", encoding_names[base_encoding]);
     pprints1(s, "/Subtype/%s>>\n",
 	     (pdfont->FontType == ft_TrueType ? "TrueType" :
@@ -82,14 +116,18 @@ pdf_write_simple_contents(gx_device_pdf *pdev,
 	if (base_encoding >= 0)
 	    pprints1(s, "/BaseEncoding/%s", encoding_names[base_encoding]);
 	stream_puts(s, "/Differences[");
-	for (; ch < 256; ++ch)
-	    if (pdfont->u.simple.Encoding[ch].is_difference) {
+	for (; ch < 256; ++ch) {
+	    code = pdf_different_encoding_element(pdfont, ch, base_encoding);
+	    if (code < 0)
+		return code; /* Must not happen */
+	    if (code) {
 		if (ch != prev + 1)
 		    pprintd1(s, "\n%d", ch);
 		pdf_put_name(pdev, pdfont->u.simple.Encoding[ch].str.data,
 			     pdfont->u.simple.Encoding[ch].str.size);
 		prev = ch;
 	    }
+	}
 	stream_puts(s, "]>>\n");
 	pdf_end_separate(pdev);
     }
