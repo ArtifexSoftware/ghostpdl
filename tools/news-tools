@@ -1,3 +1,4 @@
+
    Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
 
@@ -7,6 +8,29 @@ This file, NEWS-TLS (tools), describes the changes in the most recent
 releases of Aladdin's utility tools directory in reverse chronological
 order.
 
+Version 1.35_Cyclone (07/08/2001)
+======================================
+Sun Jul  8 13:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * makerelease.sh [1.1]:
+        release script for versioning, updating the news files, and "tarring"
+        the release.
+        
+
+Fri May 11 05:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * viewer/Gpickle.java [1.1]:
+        Beginnings of the pcl java viewer.  Class provides interface to run
+        the pcl interpreter and store bit output in a buffer - currently
+        dumped to the screen.  Require pcl6 interpreter and fonts in the
+        current working directory.
+        
+
+Mon Oct 30 11:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * NEWS-TOOLS [1.10]:
+        pcl 134 (sleet) alpha release.
+        
 Version 1.34_alpha_sleet (10/30/2000)
 =====================================
 

@@ -1,4 +1,4 @@
-#! /bin/bash -x
+#! /bin/bash
 
 # intertactive or automatic
 
@@ -66,19 +66,23 @@ then
             then
                 # read old header the header is delimited by ^Version
                 HEADER=""
+                # preserve leading whitespace in the reads
+                IFS="
+"
                 cat $NEWS_FILE | while read LINE
                 do
                     if echo "$LINE" | grep "^Version" > /dev/null
                     then
                         # print the previous header, new header and
                         # log to a temporary file
-                        echo "$HEADER"
-                        echo "Version $VERSION ($(date '+%m/%d/%Y'))"
-                        echo "======================================"
-                        echo "$LOG"
+                        printf "$HEADER" > "$NEWS_FILE.tmp"
+                        echo "" >> "$NEWS_FILE.tmp"
+                        echo "Version $VERSION ($(date '+%m/%d/%Y'))" >> "$NEWS_FILE.tmp"
+                        echo "======================================" >> "$NEWS_FILE.tmp"
+                        echo "$LOG" >> "$NEWS_FILE.tmp"
                         # print the old logs.
                         PRINT_LINE=""
-                        cat $NEW_FILE | while read LINE
+                        cat $NEWS_FILE | while read LINE
                         do
                             if echo "$LINE" | grep "^Version" > /dev/null
                             then
@@ -86,15 +90,16 @@ then
                             fi
                             if test ! -z "$PRINT_LINE"
                             then
-                                echo "$LINE"
+                                echo "$LINE" >> "$NEWS_FILE.tmp"
                             fi
                         done
                         break
                     else
-                        HEADER="$HEADER$LINE"
+                        HEADER="$HEADER\n$LINE"
                     fi
                 done
-            fi
+                cp $NEWS_FILE.tmp $NEWS_FILE
+            fi # merge logs - yes
         fi # LOG not null case.
         # back to release directory and continue.
         cd -
