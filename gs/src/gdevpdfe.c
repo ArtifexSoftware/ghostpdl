@@ -108,12 +108,12 @@ pdf_embed_font_as_type1(gx_device_pdf *pdev, gs_font_type1 *font,
 			      &writer);
     if (code < 0)
 	return code;
-    psf_write_type1_font(writer.binary.strm, font, TYPE1_OPTIONS,
-			 subset_glyphs, subset_size, pfname,
-			 lengths /*ignored*/);
+    code = psf_write_type1_font(writer.binary.strm, font, TYPE1_OPTIONS,
+				subset_glyphs, subset_size, pfname,
+				lengths /*ignored*/);
 #undef TYPE1_OPTIONS
     pdf_end_fontfile(pdev, &writer);
-    return 0;
+    return code;
 }
 
 /* Embed a font as Type 2. */
@@ -134,7 +134,7 @@ pdf_embed_font_as_type2(gx_device_pdf *pdev, gs_font_type1 *font,
     code = psf_write_type2_font(writer.binary.strm, font, options,
 				subset_glyphs, subset_size, pfname);
     pdf_end_fontfile(pdev, &writer);
-    return 0;
+    return code;
 }
 
 /* Embed a Type 1 or Type 2 font. */
@@ -175,7 +175,7 @@ pdf_embed_font_cid0(gx_device_pdf *pdev, gs_font_cid0 *font,
     code = psf_write_cid0_font(writer.binary.strm, font, TYPE2_OPTIONS,
 			       subset_cids, subset_size, pfname);
     pdf_end_fontfile(pdev, &writer);
-    return 0;
+    return code;
 }
 
 /* ------ TrueType family ------ */
