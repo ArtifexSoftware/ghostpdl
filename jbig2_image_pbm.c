@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image_pbm.c,v 1.5 2002/06/21 19:10:02 giles Exp $
+    $Id: jbig2_image_pbm.c,v 1.6 2002/07/03 19:43:21 giles Exp $
 */
 
 #include <stdio.h>
@@ -38,24 +38,16 @@ int jbig2_image_write_pbm_file(Jbig2Image *image, char *filename)
 
 int jbig2_image_write_pbm(Jbig2Image *image, FILE *out)
 {
-        int i, short_stride, extra_bits;
+        int i;
         char *p = (char *)image->data;
         
         // pbm header
         fprintf(out, "P4\n%d %d\n", image->width, image->height);
         
-        // pbm format pads only to the next byte boundary
-        // so we figure our output byte stride and fixup
-        short_stride = image->width >> 3;
-        extra_bits = image->width - (short_stride << 3);
-        fprintf(stderr, "creating %dx%d pbm image, short_stride %d, extra_bits %d\n",
-            image->width, image->height, short_stride, extra_bits);
-        // write out each row
-        for(i = 0; i < image->height; i++) {
-            fwrite(p, sizeof(*p), short_stride, out);
-            if (extra_bits) fwrite(p + short_stride, sizeof(*p), 1, out);
-            p += image->stride;
-        }
+        // pbm format pads to a byte boundary, so we can
+        // just write out the whole data buffer
+        // NB: this assumes minimal stride for the width
+        fwrite(image->data, 1, image->height*image->stride, out);
         
         /* success */
 	return 0;
@@ -127,23 +119,17 @@ Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
     // allocate image structure
     image = jbig2_image_new(ctx, dim[0], dim[1]);
     if (image == NULL) {
-        fprintf(stderr, "could not allocate %dx%d image structure\n", dim[0], dim[1]);
+        fprintf(stderr, "could not allocate %dx%d image for pbm file\n", dim[0], dim[1]);
         return NULL;
     }
-    // the pbm data is byte-aligned, and our image struct is word-aligned,
-    // so we have to index each line separately
-    pbm_stride = (dim[0] + 1) >> 3;
-    data = (char *)image->data;
-    for (i = 0; i < dim[1]; i++) {
-        fread(data, sizeof(*data), pbm_stride, in);
-        if (feof(in)) {
-            fprintf(stderr, "unexpected end of pbm file.\n");
-            jbig2_image_free(ctx, image);
-            return NULL;
-        }
-        data += image->stride;
-    }
-    
+    // the pbm data is byte-aligned, so we can
+    // do a simple block read
+    fread(image->data, 1, image->height*image->stride, in);
+    if (feof(in)) {
+        fprintf(stderr, "unexpected end of pbm file.\n");
+        jbig2_image_free(ctx, image);
+        return NULL;
+    }    
     // success
     return image;
 }
