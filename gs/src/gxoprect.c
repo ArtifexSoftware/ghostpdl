@@ -457,7 +457,7 @@ gx_overprint_sep_fill_rectangle_1(
     byte *                  gb_buff = 0;
     gs_get_bits_params_t    gb_params;
     gs_int_rect             gb_rect;
-    int                     code, bit_w, depth = tdev->color_info.depth;
+    int                     code = 0, bit_w, depth = tdev->color_info.depth;
     int                     raster;
     mono_fill_chunk         rep_color, rep_mask;
 
@@ -545,7 +545,7 @@ gx_overprint_sep_fill_rectangle_2(
     byte *                  gb_buff = 0;
     gs_get_bits_params_t    gb_params;
     gs_int_rect             gb_rect;
-    int                     code, byte_w, raster;
+    int                     code = 0, byte_w, raster;
     int                     byte_depth = tdev->color_info.depth >> 3;
     byte *                  pcolor;
     byte *                  pmask;
@@ -563,7 +563,7 @@ gx_overprint_sep_fill_rectangle_2(
 
     /* allocate a buffer for the returned data */
     raster = bitmap_raster(w * (byte_depth << 3));
-    gb_buff = gs_alloc_bytes(mem, raster, "overprint sep fill rectangle 1");
+    gb_buff = gs_alloc_bytes(mem, raster, "overprint sep fill rectangle 2");
     if (gb_buff == 0)
         return gs_note_error(gs_error_VMerror);
 

@@ -127,6 +127,11 @@ colorspacedict
     % that base/alternative color space to be the current color space
     % before attempting to set the original color space.
     %
+    % Beginning with Acrobat 5, PDF apparently supports 1-component
+    % DeviceN color spaces with the single component "All" (the "PDF
+    % Reference", 3rd ed., p. 206 still describes this as illegal).
+    % We translate such calls to Separation color spaces.
+    %
     /cs_install
       {
         % save the current color space
@@ -137,7 +142,15 @@ colorspacedict
 
         % set the indexed color space; restore the earlier space on error
         mark 2 index
-          { .setdevicenspace }
+        dup 1 get dup length 1 eq exch 0 get /All eq and
+          {
+            dup length array copy
+            dup 0 /Separation put
+            dup 1 /All put
+              { .setseparationspace }
+          }
+          { { .setdevicenspace } }
+        ifelse
         stopped
           { cleartomark setcolorspace stop }
           { pop pop pop }
