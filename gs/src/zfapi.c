@@ -1261,18 +1261,11 @@ retry_oversampling:
     if ((code = code) < 0)
 	return code;
     if (code == metricsNone) {
-        if (pbfont->FontType == 2 && font_file_path == NULL) {
-            ref *nominalWidthX, *Private;
-            float v;
-            if (dict_find_string(osp - 1, "Private", &Private) <= 0 || !r_has_type(Private, t_dictionary))
-                return_error(e_invalidfont);
-            if ((code = dict_float_param(Private, "nominalWidthX", 0, &v)) < 0)
-		return code;
-            sbw[2] = metrics.escapement / em_scale_x + (int)v;
-            sbw[3] = 0;
-        } else {
-            sbw[2] = metrics.escapement / em_scale_x;
-            sbw[3] = 0;
+        sbw[2] = metrics.escapement / em_scale_x;
+        sbw[3] = 0;
+        if (pbfont->FontType == 2) {
+            gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
+            sbw[2] += fixed2float(pfont1->data.defaultWidthX);
         }
     } else {
 	if ((code = zchar_get_metrics(pbfont, op, sbw)) < 0)
