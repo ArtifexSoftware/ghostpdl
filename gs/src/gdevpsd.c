@@ -224,7 +224,8 @@ const psd_device gs_psdrgb_device =
     /* DeviceN device specific parameters */
     psd_DEVICE_RGB,		/* Color model */
     8,				/* Bits per color - must match ncomp, depth, etc. above */
-    (&DeviceRGBComponents),/* Names of color model colorants */
+    				/* Names of color model colorants */
+    (const fixed_colorant_names_list *) &DeviceRGBComponents,
     3,				/* Number colorants for RGB */
     {0},			/* SeparationNames */
     {0}				/* SeparationOrder names */
@@ -248,7 +249,8 @@ const psd_device gs_psdcmyk_device =
     /* DeviceN device specific parameters */
     psd_DEVICE_CMYK,		/* Color model */
     8,				/* Bits per color - must match ncomp, depth, etc. above */
-    (&DeviceCMYKComponents),/* Names of color model colorants */
+    				/* Names of color model colorants */
+    (const fixed_colorant_names_list *) &DeviceCMYKComponents,
     4,				/* Number colorants for RGB */
     {0},			/* SeparationNames */
     {0}				/* SeparationOrder names */
@@ -375,7 +377,7 @@ gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
 
-    cmyk_cs_to_spotn_cm(dev, 0, 0, 0, frac_1 - gray, out);
+    cmyk_cs_to_spotn_cm(dev, 0, 0, 0, (frac)(frac_1 - gray), out);
 }
 
 private void
@@ -487,7 +489,7 @@ psd_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
     int ncomp = dev->color_info.num_components;
 
     for (; i<ncomp; i++) {
-        out[ncomp - i - 1] = (color & mask) << drop;
+        out[ncomp - i - 1] = (gx_color_value) ((color & mask) << drop);
 	color >>= bpc;
     }
     return 0;
@@ -700,22 +702,26 @@ psd_set_color_model(psd_device *xdev, psd_color_model color_model)
 {
     xdev->color_model = color_model;
     if (color_model == psd_DEVICE_GRAY) {
-	xdev->std_colorant_names = &DeviceGrayComponents;
+	xdev->std_colorant_names =
+	    (const fixed_colorant_names_list *) &DeviceGrayComponents;
 	xdev->num_std_colorant_names = 1;
 	xdev->color_info.cm_name = "DeviceGray";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
     } else if (color_model == psd_DEVICE_RGB) {
-	xdev->std_colorant_names = &DeviceRGBComponents;
+	xdev->std_colorant_names =
+	    (const fixed_colorant_names_list *) &DeviceRGBComponents;
 	xdev->num_std_colorant_names = 3;
 	xdev->color_info.cm_name = "DeviceRGB";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
     } else if (color_model == psd_DEVICE_CMYK) {
-	xdev->std_colorant_names = &DeviceCMYKComponents;
+	xdev->std_colorant_names =
+	    (const fixed_colorant_names_list *) &DeviceCMYKComponents;
 	xdev->num_std_colorant_names = 4;
 	xdev->color_info.cm_name = "DeviceCMYK";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
     } else if (color_model == psd_DEVICE_N) {
-	xdev->std_colorant_names = &DeviceCMYKComponents;
+	xdev->std_colorant_names =
+	    (const fixed_colorant_names_list *) &DeviceCMYKComponents;
 	xdev->num_std_colorant_names = 4;
 	xdev->color_info.cm_name = "DeviceN";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
@@ -974,11 +980,11 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     /* Reserved 6 Bytes - Must be zero */
     psd_write_32(xc, 0);
     psd_write_16(xc, 0);
-    psd_write_16(xc, bytes_pp); /* Channels (2 Bytes) - Supported range is 1 to 24 */
+    psd_write_16(xc, (bits16) bytes_pp); /* Channels (2 Bytes) - Supported range is 1 to 24 */
     psd_write_32(xc, xc->height); /* Rows */
     psd_write_32(xc, xc->width); /* Columns */
     psd_write_16(xc, 8); /* Depth - 1, 8 and 16 */
-    psd_write_16(xc, xc->base_bytes_pp); /* Mode - RGB=3, CMYK=4 */
+    psd_write_16(xc, (bits16) xc->base_bytes_pp); /* Mode - RGB=3, CMYK=4 */
     
     /* Color Mode Data */
     psd_write_32(xc, 0); 
@@ -1002,7 +1008,7 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
 	const gs_param_string *separation_name =
 	    pdev->separation_names.names[chan_idx];
 
-	psd_write_8(xc, separation_name->size);
+	psd_write_8(xc, (byte) separation_name->size);
 	psd_write(xc, separation_name->data, separation_name->size);
     }    
     if (chan_names_len % 2) 

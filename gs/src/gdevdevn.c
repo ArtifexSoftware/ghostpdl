@@ -210,7 +210,8 @@ const devicen_device gs_spotcmyk_device =
 
     /* DeviceN device specific parameters */
     1,				/* Bits per color - must match ncomp, depth, etc. above */
-    (&DeviceCMYKComponents),	/* Names of color model colorants */
+    				/* Names of color model colorants */
+    (const fixed_colorant_names_list *) &DeviceCMYKComponents,
     4,				/* Number colorants for CMYK */
     {0},			/* SeparationNames */
     {0},			/* SeparationOrder names */
@@ -250,7 +251,7 @@ private void
 gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
 {
     int i = dev->color_info.num_components;
-    int * map = &((devicen_device *) dev)->separation_order_map;
+    int * map = (int *)(&((devicen_device *) dev)->separation_order_map);
 
     for(; i>0; i--)			/* Clear colors */
         out[i] = frac_0;
@@ -263,7 +264,7 @@ rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_imager_state *pis,
 				   frac r, frac g, frac b, frac out[])
 {
     int i = dev->color_info.num_components;
-    int * map = &((devicen_device *) dev)->separation_order_map;
+    int * map = (int *)(&((devicen_device *) dev)->separation_order_map);
     frac cmyk[4];
 
     for(; i>0; i--)			/* Clear colors */
@@ -283,7 +284,7 @@ private void
 cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     int i = dev->color_info.num_components;
-    int * map = &((devicen_device *) dev)->separation_order_map;
+    int * map = (int *)(&((devicen_device *) dev)->separation_order_map);
 
     for(; i>0; i--)			/* Clear colors */
         out[i] = frac_0;
@@ -731,7 +732,7 @@ devicen_put_params(gx_device * pdev, gs_param_list * plist)
 	         * SeparationColorNames.  If not then error.
 	         */
 	        if ((comp_num = check_pcm_and_separation_names(pdev,
-			(const byte *)sona.data[i].data, sona.data[i].size, 0)) < 0) {
+			(const char *)sona.data[i].data, sona.data[i].size, 0)) < 0) {
 		    gs_note_error(ecode = gs_error_rangecheck);
 		    break;
 		}
