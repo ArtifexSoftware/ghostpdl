@@ -21,6 +21,7 @@
 #include "gsmatrix.h"		/* for gsfont.h */
 #include "gsstruct.h"
 #include "gxfcid.h"
+#include "gserrors.h"
 
 /* CIDSystemInfo structure descriptors */
 public_st_cid_system_info();
@@ -173,4 +174,18 @@ gs_font_cid0_enumerate_glyph(gs_font *font, int *pindex,
     }
     *pindex = 0;
     return 0;
+}
+/* Get the FontMatrix for the current type0 font 	*/
+/* Assumes that the glyph has already been accessed and	*/
+/* the index is valid.					*/
+const gs_font *
+gs_cid0_indexed_font(const gs_font *font, int fidx)
+{
+    gs_font_cid0 *const pfont = (gs_font_cid0 *)font;
+
+    if (font->FontType != ft_CID_encrypted) {
+	eprintf1("Unexpected font type: %d\n", font->FontType);
+        return 0;
+    }
+    return (pfont->cidata.FDArray[fidx]);
 }

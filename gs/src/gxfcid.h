@@ -166,4 +166,6 @@ font_proc_enumerate_glyph(gs_font_cid0_enumerate_glyph);
 bool gs_is_CIDSystemInfo_compatible(const gs_cid_system_info_t *info0, 
 				    const gs_cid_system_info_t *info1);
 
+/* Return the font from the FDArray at the given index */
+const gs_font *gs_cid0_indexed_font(const gs_font *, int);
 #endif /* gxfcid_INCLUDED */

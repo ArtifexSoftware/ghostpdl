@@ -76,7 +76,8 @@ gs_type0_init_fstack(gs_text_enum_t *pte, gs_font * pfont)
   if (fdepth == MAX_FONT_STACK)\
     return_error(gs_error_invalidfont);\
   pfont = pdata->FDepVector[pdata->Encoding[fidx]];\
-  if (++fdepth > orig_depth || pfont != pte->fstack.items[fdepth].font)\
+  if (++fdepth > orig_depth || pfont != pte->fstack.items[fdepth].font ||\
+      orig_index != fidx)\
     pte->fstack.items[fdepth].font = pfont, changed = 1;\
   pte->fstack.items[fdepth].index = fidx
 
@@ -101,6 +102,7 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
     const byte *end = str + pte->text.size;
     int fdepth = pte->fstack.depth;
     int orig_depth = fdepth;
+    int orig_index = pte->fstack.items[fdepth].index;
     gs_font *pfont;
 
 #define pfont0 ((gs_font_type0 *)pfont)
@@ -410,7 +412,6 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 		    /****** RESCAN chr IF DESCENDANT IS CMAP'ED ******/
 		    break;
 		}
-
 	}
 
 	select_descendant(pfont, pdata, fidx, fdepth);
@@ -438,5 +439,5 @@ done:
 	      fdepth, (ulong) pte->fstack.items[fdepth].font,
 	      pte->fstack.items[fdepth].index, changed);
     return changed;
-#undef pfont0
 }
+#undef pfont0

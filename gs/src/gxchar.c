@@ -34,6 +34,7 @@
 #include "gxfcache.h"
 #include "gspath.h"
 #include "gzpath.h"
+#include "gxfcid.h"
 
 /* Define whether or not to cache characters rotated by angles other than */
 /* multiples of 90 degrees. */
@@ -1185,6 +1186,11 @@ show_state_setup(gs_show_enum * penum)
 	pfont = pfsi->font;
 	gs_matrix_multiply(&pfont->FontMatrix,
 			   &pfsi[-1].font->FontMatrix, &mat);
+	if (pfont->FontType == ft_CID_encrypted) {
+	    /* concatenate the Type9 leaf's matrix */
+	    gs_matrix_multiply(&mat,
+		&(gs_cid0_indexed_font(pfont, pfsi->index)->FontMatrix), &mat);
+	}
 	gs_setcharmatrix(pgs, &mat);
     }
     penum->current_font = pfont;
