@@ -48,18 +48,6 @@ pdf_write_Widths(gx_device_pdf *pdev, int first, int last, const int *widths)
     return 0;
 }
 
-/* Check whether a simple font has a replaced glyph width. */
-private bool
-pfd_simple_replaced_width(const pdf_font_resource_t *pdfont)
-{
-    int i;
-
-    for (i = pdfont->u.simple.FirstChar; i <= pdfont->u.simple.LastChar; ++i)
-	if (pdfont->Widths[i] != pdfont->real_widths[i])
-	    return true;
-    return false;
-}
-
 /* Write the Subtype and Encoding for a simple font. */
 private int
 pdf_write_simple_contents(gx_device_pdf *pdev,
@@ -140,7 +128,7 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
 
 	memset(counts, 0, sizeof(counts));
 	while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
-	    int width = pdfont->real_widths[glyph - GS_MIN_CID_GLYPH];
+	    int width = pdfont->Widths[glyph - GS_MIN_CID_GLYPH];
 
 	    counts[min(width, countof(counts) - 1)]++;
 	}
@@ -162,7 +150,7 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
 
 	while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
 	    int cid = glyph - GS_MIN_CID_GLYPH;
-	    int width = pdfont->real_widths[cid];
+	    int width = pdfont->Widths[cid];
 
 	    if (cid == prev + 1)
 		pprintd1(s, "\n%d", width);
@@ -216,7 +204,7 @@ pdf_finish_write_contents_type3(gx_device_pdf *pdev,
     stream *s = pdev->strm;
 
     pdf_write_font_bbox(pdev, &pdfont->u.simple.s.type3.FontBBox);
-    pdf_write_Widths(pdev, 0, pdfont->u.simple.LastChar, pdfont->real_widths);
+    pdf_write_Widths(pdev, 0, pdfont->u.simple.LastChar, pdfont->Widths);
     stream_puts(s, "/Subtype/Type3>>\n");
     pdf_end_separate(pdev);
     return 0;
@@ -226,9 +214,6 @@ pdf_finish_write_contents_type3(gx_device_pdf *pdev,
 int
 pdf_write_contents_std(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
-    if (pfd_simple_replaced_width(pdfont))
-	pdf_write_Widths(pdev, pdfont->u.simple.FirstChar, 
-			 pdfont->u.simple.LastChar, pdfont->real_widths);
     return pdf_write_simple_contents(pdev, pdfont);
 }
 
@@ -237,7 +222,7 @@ int
 pdf_write_contents_simple(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     pdf_write_Widths(pdev, pdfont->u.simple.FirstChar,
-		     pdfont->u.simple.LastChar, pdfont->real_widths);
+		     pdfont->u.simple.LastChar, pdfont->Widths);
     return pdf_write_simple_contents(pdev, pdfont);
 }
 
