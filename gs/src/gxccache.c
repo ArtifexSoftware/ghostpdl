@@ -369,6 +369,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	gs_image_t image;
 	int iy;
 	uint used;
+	int code1;
 
 	if (pie == 0) {
 	    if (bits != cc_bits(cc))
@@ -396,7 +397,9 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 		for (iy = 0; iy < h && code >= 0; iy++)
 		    code = gs_image_next(pie, bits + iy * cc_raster(cc),
 					 (w + 7) >> 3, &used);
-		gs_image_cleanup(pie);
+		code1 = gs_image_cleanup(pie);
+		if (code >= 0 && code1 < 0)
+		    code = code1;
 	}
 	gs_free_object(mem, pie, "image_char(image_enum)");
     }

@@ -252,10 +252,13 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 	return_error(e_VMerror);
     code = gs_image_enum_init(penum, pie, (const gs_data_image_t *)pim, igs);
     if (code != 0) {		/* error, or empty image */
-	gs_image_cleanup(penum);
+	int code1 = gs_image_cleanup(penum);
+
 	ifree_object(penum, "image_setup");
 	if (code >= 0)		/* empty image */
 	    pop(npop);
+	if (code >= 0 && code1 < 0)
+	    code = code1;
 	return code;
     }
     push_mark_estack(es_other, image_cleanup);
@@ -447,9 +450,11 @@ image_file_continue(i_ctx_t *i_ctx_p)
 	if (at_eof)
 	    code = 1;
 	if (code) {
+	    int code1;
+
 	    esp = zimage_pop_estack(esp);
-	    image_cleanup(i_ctx_p);
-	    return (code < 0 ? code : o_pop_estack);
+	    code1 = image_cleanup(i_ctx_p);
+	    return (code < 0 ? code : code1 < 0 ? code1 : o_pop_estack);
 	}
     }
 }
@@ -499,10 +504,10 @@ image_cleanup(i_ctx_t *i_ctx_p)
 {
     es_ptr ep_top = esp + NUM_PUSH(EBOT_NUM_SOURCES(esp)->value.intval);
     gs_image_enum *penum = r_ptr(ep_top, gs_image_enum);
+    int code = gs_image_cleanup(penum);
 
-    gs_image_cleanup(penum);
     ifree_object(penum, "image_cleanup");
-    return 0;
+    return code;
 }
 
 /* ------ Initialization procedure ------ */

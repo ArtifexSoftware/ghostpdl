@@ -536,11 +536,14 @@ gs_image_next_planes(gs_image_enum * penum,
 }
 
 /* Clean up after processing an image. */
-void
+int
 gs_image_cleanup(gs_image_enum * penum)
 {
+    int code = 0;
+
     free_row_buffers(penum, penum->num_planes, "gs_image_cleanup(row)");
     if (penum->dev != 0)
-	gx_image_end(penum->info, !penum->error);
+	code = gx_image_end(penum->info, !penum->error);
     /* Don't free the local enumerator -- the client does that. */
+    return code;
 }
