@@ -31,12 +31,6 @@ pcl.config-clean: clean_gs
 	$(RM_) $(PCLOBJ)*.dev
 	$(RM_) $(PCLOBJ)devs.tr5
 
-################ PCL / RTL support ################
-
-#### Miscellaneous
-
-PCLVERSION=1.33
-
 # pgstate.h is out of order because pcstate.h includes it.
 pclver_h    = $(PCLSRC)pclver.h
 pgstate_h   = $(PCLSRC)pgstate.h  \
@@ -258,13 +252,6 @@ rtraster_h  = $(PCLSRC)rtraster.h \
 rtrstcmp_h  = $(PCLSRC)rtrstcmp.h \
               $(gx_h)             \
               $(gsstruct_h)
-
-
-$(PCLSRC)pclver.h:
-	$(PCLGEN)echogs$(XE) -e .h -w $(PCLSRC)pclver -n -x 23 "define PCLVERSION"
-	$(PCLGEN)echogs$(XE) -e .h -a $(PCLSRC)pclver -s -x 22 $(PCLVERSION) -x 22
-	$(PCLGEN)echogs$(XE) -e .h -a $(PCLSRC)pclver -n -x 23 "define PCLBUILDDATE"
-	$(PCLGEN)echogs$(XE) -e .h -a $(PCLSRC)pclver -s -x 22 -d -x 22
 
 
 $(PCLOBJ)pcommand.$(OBJ): $(PCLSRC)pcommand.c   \
@@ -860,6 +847,17 @@ $(PCLOBJ)pcmisc.$(OBJ): $(PCLSRC)pcmisc.c   \
                         $(pcstate_h)
 	$(PCLCCC) $(PCLSRC)pcmisc.c $(PCLO_)pcmisc.$(OBJ)
 
+# font page
+# Chapter 24
+$(PCLOBJ)pcfontpg.$(OBJ): $(PCLSRC)pcfontpg.c \
+                          $(std_h)            \
+                          $(gstypes_h)        \
+                          $(pldict_h)         \
+                          $(pcommand_h)       \
+                          $(pcursor_h)        \
+                          $(pcstate_h)
+	$(PCLCCC) $(PCLSRC)pcfontpg.c $(PCLO_)pcfontpg.$(OBJ)
+
 PCL5_OPS1   = $(PCLOBJ)pcjob.$(OBJ) $(PCLOBJ)pcpage.$(OBJ)      \
               $(PCLOBJ)pcursor.$(OBJ)
 
@@ -871,7 +869,7 @@ PCL5_OPS3   = $(PCLOBJ)pcsymbol.$(OBJ)
 PCL5_OPS4   = $(PCLOBJ)pcsfont.$(OBJ) $(PCLOBJ)pcmacros.$(OBJ)
 
 PCL5_OPS5   = $(PCLOBJ)pcrect.$(OBJ) $(PCLOBJ)pcstatus.$(OBJ)   \
-              $(PCLOBJ)pcmisc.$(OBJ)
+              $(PCLOBJ)pcmisc.$(OBJ) $(PCLOBJ)pcfontpg.$(OBJ)
 
 PCL5_OPS    = $(PCL5_OPS1) $(PCL5_OPS2) $(PCL5_OPS3) $(PCL5_OPS4) $(PCL5_OPS5)
 
@@ -890,7 +888,7 @@ $(PCLOBJ)pcl5.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL_COMMON) $(PCL5_OPS) \
 	$(ADDMOD) $(PCLOBJ)pcl5 -init pcsymbol pcsfont pcmacros
 	$(ADDMOD) $(PCLOBJ)pcl5 -init pcrect rtraster pcstatus
 	$(ADDMOD) $(PCLOBJ)pcl5 -init pcmisc
-	$(ADDMOD) $(PCLOBJ)pcl5 -init   pcursor
+	$(ADDMOD) $(PCLOBJ)pcl5 -init pcursor
 
 #### PCL5c commands
 # These are organized by chapter # in the PCL 5 Color Technical Reference

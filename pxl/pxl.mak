@@ -44,8 +44,6 @@ pxl.config-clean:
 #### Other stuff:
 #	Free subsidiary objects when freeing patterns
 
-PXLVERSION=1.33
-
 pxattr_h=$(PXLSRC)pxattr.h $(gdevpxat_h)
 pxbfont_h=$(PXLSRC)pxbfont.h
 pxenum_h=$(PXLSRC)pxenum.h $(gdevpxen_h)
@@ -77,7 +75,7 @@ $(PXLSRC)pxbfont.psc: $(PXLSRC)pxbfont.ps
 	$(GS_XE) -q -dNODISPLAY $(PXLSRC)pxbfont.ps >$(PXLGEN)pxbfont_.psc
 	$(CP_) $(PXLGEN)pxbfont_.psc $(PXLSRC)pxbfont.psc
 	$(RM_) $(PXLGEN)pxbfont_.psc
-	
+
 $(PXLGEN)pxbfont.c: $(PXLSRC)pxbfont.psc
 	$(CP_) $(PXLSRC)pxbfont.psc $(PXLGEN)pxbfont.c
 
@@ -92,12 +90,6 @@ $(PXLOBJ)pxerrors.$(OBJ): $(PXLSRC)pxerrors.c $(AK)\
  $(gxchar_h) $(gxfixed_h) $(gxfont_h) $(scommon_h)\
  $(pxbfont_h) $(pxerrors_h) $(pxfont_h) $(pxparse_h) $(pxptable_h) $(pxstate_h)
 	$(PXLCCC) $(PXLSRC)pxerrors.c $(PXLO_)pxerrors.$(OBJ)
-
-$(PXLSRC)pxlver.h:
-	$(PXLGEN)echogs$(XE) -e .h -w $(PXLSRC)pxlver -n -x 23 "define PXLVERSION"
-	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -s -x 22 $(PXLVERSION) -x 22
-	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -n -x 23 "define PXLBUILDDATE"
-	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -s -x 22 -d -x 22
 
 $(PXLOBJ)pxparse.$(OBJ): $(PXLSRC)pxparse.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h) $(gserror_h) $(gstypes_h)\
