@@ -53,6 +53,9 @@ NOPRIVATE=0
 CPU_TYPE=586
 FPU_TYPE=0
 
+BAND_LIST_STORAGE=file
+BAND_LIST_COMPRESSOR=zlib
+
 # Define which major version of MSVC is being used (currently, 4, 5, & 6 supported)
 #       default to the latest version
 MSVC_VERSION=6
