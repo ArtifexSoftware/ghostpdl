@@ -193,7 +193,6 @@ typedef struct pcl_interp_instance_s {
     gs_memory_t               *memory;           /* memory allocator to use */
     pcl_state_t               pcs;              /* pcl state */
     pcl_parser_state_t        pst;               /* parser state */
-    gx_device_bbox            *bbox_device;      /* device used to detect blank pages */
     pl_page_action_t          pre_page_action;   /* action before page out */
     void                      *pre_page_closure; /* closure to call pre_page_action with */
     pl_page_action_t          post_page_action;  /* action before page out */
@@ -249,29 +248,18 @@ pcl_impl_allocate_interp_instance(
 						   sizeof(pcl_interp_instance_t),
 						   "pcl_allocate_interp_instance(pcl_interp_instance_t)"
 						   );
-    gx_device_bbox *bbox = gs_alloc_struct_immovable(
-						     mem,
-						     gx_device_bbox,
-						     &st_device_bbox,
-						     "pcl_allocate_interp_intance(bbox device)"
-						     );
     gs_state *pgs = gs_state_alloc(mem);
     /* If allocation error, deallocate & return */
     /* HS freeing null, perhaps if one of these is null the others should be freed.  Was that the intent? */
-    if (!pcli || !bbox || !pgs) {
+    if (!pcli || !pgs) {
 	if (!pcli)
 	    gs_free_object(mem, pcli, "pcl_allocate_interp_instance(pcl_interp_instance_t)");
-	if (!bbox)
-	    gs_free_object(mem, bbox, "pcl_allocate_interp_intance(bbox device)");
 	if (!pgs)
 	    gs_state_free(pgs);
 	return gs_error_VMerror;
     }
 
-    /* Setup pointers to allocated mem within instance */
-    pcli->bbox_device = bbox;
     pcli->memory = mem;
-
     /* zero-init pre/post page actions for now */
     pcli->pre_page_action = 0;
     pcli->post_page_action = 0;
@@ -360,86 +348,90 @@ pcl_impl_set_device(
   gx_device              *device        /* device to set (open or closed) */
 )
 {
-	int code;
-	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
-	enum {Sbegin, Ssetdevice, Sgsave1, Serase, Sreset, Sload, Sgsave2, Sdone} stage;
+    int code;
+    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
+    enum {Sbegin, Ssetdevice, Sgsave1, Serase, Sreset, Sload, Sgsave2, Sdone} stage;
 
-	/* Init the bbox device & wrap it around the real device */
-	stage = Sbegin;
-	gx_device_bbox_init(pcli->bbox_device, device);
-	rc_increment(pcli->bbox_device);	/* prevent refcnt-delete from deleting this */
+    /* Init the bbox device & wrap it around the real device */
+    gx_device_bbox *bbox;
 
-	/* set personality - pcl5c, pcl5e, or rtl */
-	pcli->pcs.personality = pcl_set_personality(instance, device);
-	/* Set the device into the pcl_state & gstate */
-	stage = Ssetdevice;
-	pcl_set_target_device(&pcli->pcs, device);
-	code = gs_setdevice_no_erase(pcli->pcs.pgs, (gx_device *)pcli->bbox_device);
-	if (code < 0 )	/* can't erase yet */
-	  goto pisdEnd;
+    stage = Sbegin;
+    /* set personality - pcl5c, pcl5e, or rtl */
+    pcli->pcs.personality = pcl_set_personality(instance, device);
+    /* Set the device into the pcl_state & gstate */
+    stage = Ssetdevice;
+    bbox = gs_alloc_struct_immovable(pcli->memory,
+				     gx_device_bbox,
+				     &st_device_bbox,
+				     "pcl_allocate_interp_intance(bbox device)"
+				     );
+    if ( !bbox )      /* can't erase yet */
+	goto pisdEnd;
 
-	/* Save a gstate with the original device == bbox config */
-	stage = Sgsave1;
-	if ( (code = gs_gsave(pcli->pcs.pgs)) < 0 )
-	  goto pisdEnd;
-	stage = Serase;
-	if ( (code = gs_erasepage(pcli->pcs.pgs)) < 0 )
-		goto pisdEnd;
+    gx_device_bbox_init(bbox, device);
+    pcl_set_target_device(&pcli->pcs, device);
+    /* NB prevent static null device from being freed... */
+    rc_increment(gs_currentdevice(pcli->pcs.pgs));
+    code = gs_setdevice_no_erase(pcli->pcs.pgs, (gx_device *)bbox);
+    if (code < 0 )	/* can't erase yet */
+	goto pisdEnd;
 
-	/* Do inits of gstate that may be reset by setdevice */
-	/* PCL no longer uses the graphic library transparency mechanism */
-	gs_setsourcetransparent(pcli->pcs.pgs, false);
-	gs_settexturetransparent(pcli->pcs.pgs, false);
-	gs_setaccuratecurves(pcli->pcs.pgs, true);	/* All H-P languages want accurate curves. */
+    /* Save a gstate with the original device == bbox config */
+    stage = Sgsave1;
+    if ( (code = gs_gsave(pcli->pcs.pgs)) < 0 )
+	goto pisdEnd;
+    if ( (code = gs_erasepage(pcli->pcs.pgs)) < 0 )
+	goto pisdEnd;
 
-	/* Do device-dependent pcl inits */
-	/* One of these resets will also install an extra color-mapper device */
-	stage = Sreset;
-	if ((code = pcl_do_resets(&pcli->pcs, pcl_reset_initial)) < 0 )
-	  goto pisdEnd;
-	stage = Sload;
+    /* Do inits of gstate that may be reset by setdevice */
+    /* PCL no longer uses the graphic library transparency mechanism */
+    gs_setsourcetransparent(pcli->pcs.pgs, false);
+    gs_settexturetransparent(pcli->pcs.pgs, false);
+    gs_setaccuratecurves(pcli->pcs.pgs, true);	/* All H-P languages want accurate curves. */
 
-	/* provide a PCL graphic state we can return to */
-	stage = Sgsave2;
-	if ( (code = pcl_gsave(&pcli->pcs)) < 0 )
-	  goto pisdEnd;
-	stage = Sdone;	/* success */
+    /* Do device-dependent pcl inits */
+    /* One of these resets will also install an extra color-mapper device */
+    stage = Sreset;
+    if ((code = pcl_do_resets(&pcli->pcs, pcl_reset_initial)) < 0 )
+	goto pisdEnd;
+    stage = Sload;
 
-	/* Unwind any errors */
-pisdEnd:
-	switch (stage) {
-	case Sdone:	/* don't undo success */
-	  break;
+    /* provide a PCL graphic state we can return to */
+    stage = Sgsave2;
+    if ( (code = pcl_gsave(&pcli->pcs)) < 0 )
+	goto pisdEnd;
+    stage = Sdone;	/* success */
+    /* Unwind any errors */
+ pisdEnd:
+    switch (stage) {
+    case Sdone:	/* don't undo success */
+	break;
 
-	case Sgsave2:	/* 2nd gsave failed */
-	  /*@@@ unload built-in sym sets  */
-	  /* fall thru to next */
+    case Sgsave2:	/* 2nd gsave failed */
+	/*@@@ unload built-in sym sets  */
+	/* fall thru to next */
 
-	case Sload:		/* load_built_in_symbol_sets failed */
-	  /*@@@ undo do_resets */
-	  /* fall thru to next */
+    case Sload:		/* load_built_in_symbol_sets failed */
+	/*@@@ undo do_resets */
+	/* fall thru to next */
 
-	case Sreset:	/* pcl_do_resets failed */
-	case Serase:	/* gs_erasepage failed */
-	  /* undo 1st gsave */
-	  gs_grestore_only(pcli->pcs.pgs);	/* destroys gs_save stack */
-	  /* fall thru to next */
+    case Sreset:	/* pcl_do_resets failed */
+    case Serase:	/* gs_erasepage failed */
+	/* undo 1st gsave */
+	gs_grestore_only(pcli->pcs.pgs);	/* destroys gs_save stack */
+	/* fall thru to next */
 
-	case Sgsave1:	/* 1st gsave failed */
-	  /* undo setdevice */
-	  gs_nulldevice(pcli->pcs.pgs);
-	  /* fall thru to next */
+    case Sgsave1:	/* 1st gsave failed */
+	/* undo setdevice */
+	gs_nulldevice(pcli->pcs.pgs);
+	/* fall thru to next */
 
-	case Ssetdevice:	/* gs_setdevice failed */
-	  /* undo bbox device init */
-	  gs_closedevice((gx_device *)(pcli->bbox_device));
-	  gx_device_bbox_release(pcli->bbox_device);	/* also removes target from bbox */
-	  /* fall thru to next */
-
-	case Sbegin:	/* nothing left to undo */
-	  break;
-	}
-	return code;
+    case Ssetdevice:	/* gs_setdevice failed */
+	/* undo bbox device init */
+    case Sbegin:	/* nothing left to undo */
+	break;
+    }
+    return code;
 }
 
 /* Prepare interp instance for the next "job" */
@@ -473,7 +465,6 @@ pcl_impl_flush_to_eoj(
 	stream_cursor_read   *cursor           /* data to process */
 )
 {
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
     const byte *p = cursor->ptr;
     const byte *rlimit = cursor->limit;
 
@@ -536,7 +527,6 @@ pcl_impl_dnit_job(
 	pl_interp_instance_t *instance         /* interp instance to wrap up job in */
 )
 {
-	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
 	return 0;
 }
 
@@ -546,27 +536,24 @@ pcl_impl_remove_device(
   pl_interp_instance_t   *instance     /* interp instance to use */
 )
 {
-	int code = 0;	/* first error status encountered */
-	int error;
+        int code;
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
 	/* prevent freeing the color mapper which is static */
 	rc_increment(gs_currentdevice(pcli->pcs.pgs));
 	/* return to the original graphic state w/color mapper, bbox, target */
-	error = pcl_grestore(&pcli->pcs);
-	if (code >= 0)
-	  code = error;
-	/* prevent freeing the color mapper which is static */
-	rc_increment(gs_currentdevice(pcli->pcs.pgs));
+	code = pcl_grestore(&pcli->pcs);
+	if (code < 0 )
+	    dprintf1( "error code %d restoring gstate, continuing\n", code );
 	/* return to original gstate w/bbox, target */
-	gs_grestore_only(pcli->pcs.pgs);	/* destroys gs_save stack */
+	code = gs_grestore_only(pcli->pcs.pgs);	/* destroys gs_save stack */
+	if (code < 0 )
+	    dprintf1( "error code %d destroying gstate, continuing\n", code );
+
 	/* Deselect bbox. Bbox has been prevented from auto-closing/deleting */
-	if ( pcl_do_resets(&pcli->pcs, pcl_reset_permanent) < 0 )
-	    return -1;
-	error = gs_nulldevice(pcli->pcs.pgs);
-	if (code >= 0)
-	    code = error;
-	gx_device_bbox_release(pcli->bbox_device);	/* also removes target from bbox */
-	return code;
+	code = gs_nulldevice(pcli->pcs.pgs);
+	if ( code < 0 )
+	    dprintf1( "error code %d installing nulldevice, continuing\n", code );
+	return pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
 }
 
 /* Deallocate a interpreter instance */
@@ -578,10 +565,10 @@ pcl_impl_deallocate_interp_instance(
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
 	gs_memory_t *mem = pcli->memory;
 	gs_state_free(pcli->pcs.pgs);
-	gs_closedevice((gx_device *)(pcli->bbox_device));
-	gx_device_bbox_release(pcli->bbox_device);	/* also removes target from bbox */
-	gs_free_object(mem, pcli, "pcl_deallocate_interp_instance(pcl_interp_instance_t)");
-
+	/* remove pcl's gsave grestore stack */
+	pcl_free_gstate_stk(&pcli->pcs);
+	gs_free_object(mem, pcli,
+		       "pcl_deallocate_interp_instance(pcl_interp_instance_t)");
 	return 0;
 }
 
@@ -591,10 +578,7 @@ pcl_impl_deallocate_interp(
   pl_interp_t        *interp       /* interpreter to deallocate */
 )
 {
-	pcl_interp_t *pi = (pcl_interp_t *)interp;
 	/* Deinit interp */
-	/*@@@ free memory */
-
 	return 0;
 }
 
