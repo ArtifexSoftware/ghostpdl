@@ -240,6 +240,11 @@ pcl_xfm_reset_pcl_pat_ref_pt(
 {
     pcs->pcl_pat_ref_pt.x = 0.0;
     pcs->pcl_pat_ref_pt.y = 0.0;
+    /* initialize the device coordinates to bogus values to guarantee
+       the pattern is reset. */
+    pcs->pat_ref_pt.x = -1;
+    pcs->pat_ref_pt.y = -1;
+    pcs->pat_orient = -1;
     pcs->rotate_patterns = true;
 }
 
