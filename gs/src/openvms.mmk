@@ -138,9 +138,9 @@ JVERSION=6
 .ifdef SYSLIB
 PSRCDIR=sys$library:
 .else
-PSRCDIR=[--.libpng-1_2_5]
+PSRCDIR=[--.libpng-1_2_7]
 .endif
-PVERSION=10205
+PVERSION=10207
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
