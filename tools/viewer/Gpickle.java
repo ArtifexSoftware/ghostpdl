@@ -20,7 +20,7 @@ import com.sun.image.codec.jpeg.*;
 
 public class Gpickle {
     /** debug printf control */
-    private static boolean debug = false;
+    private static boolean debug = true;
 
     /** Render resolution */
     private double xRes = 75f;
@@ -37,6 +37,9 @@ public class Gpickle {
     /** RTL PS command override */
     private double plotsize1 = 1.0;
     private double plotsize2 = 1.0;
+
+    /** Tray orientation */
+    private int trayOrientation = 0;
 
     private String jobList = "startpage.pcl";
     protected int pageToDisplay = 1;
@@ -79,38 +82,40 @@ public class Gpickle {
     /** GhostPrinter application path */
     private String ghostAppStr;
 
-    /** look for relative path executable first */
-    private String ghostAppRelStr =  "../../language_switch/obj/pspcl6";
-    //private String ghostAppRelStr =  "../../main/obj/pcl6";
+
+    /** langSwitch add postscript using pspcl6 */
+    private int langSwitch = 0;
+
+    /** look for relative path to executable first 
+     */
+    private String[] ghostAppPathStr =  { 
+	"../../main/obj/pcl6", 
+	"../../language_switch/obj/pspcl6",
+	"pcl6", 
+	"pspcl6" 
+    };
 
     /** look for executable in path next */
-    private String ghostAppPathStr =  "pspcl6";
-    //private String ghostAppPathStr =  "pcl6";
 
     /** find the GhostPrinter application
      * first relative path
-     * then system path
-     * adds .exe for windows executables
+     * then local directory 
+     * default adds .exe for windows executables in search path
      */
-    private void setGhostApp() {
-        ghostAppStr = ghostAppRelStr; 
+    public void setGhostApp() {
+        ghostAppStr = ghostAppPathStr[0 + langSwitch]; 
         File testIt = new File(ghostAppStr);
         if (!testIt.exists()) {
-            ghostAppStr = ghostAppRelStr + ".exe";
+            ghostAppStr = ghostAppPathStr[0 + langSwitch] + ".exe";
             testIt = new File(ghostAppStr);
             if (!testIt.exists()) {
-                ghostAppStr = ghostAppPathStr;
+		// looking for current directory application.
+                ghostAppStr = ghostAppPathStr[2 + langSwitch];
                 testIt = new File(ghostAppStr);
                 if (!testIt.exists()) {
-                    ghostAppStr = ghostAppPathStr + ".exe";
-		    // defaults to pcl6.exe, windows requires extension foo 
-		    /*
-                    testIt = new File(ghostAppStr);
-                    if (!testIt.exists()) {
-                        System.out.println("Missing file " + ghostAppStr);
-                        System.exit(1);
-                    }
-		    */
+                    ghostAppStr = ghostAppPathStr[2 + langSwitch] + ".exe";
+		    // defaults to pcl6.exe, windows requires extension foo
+		    // NB really should do a platform test on extension adding.
                 }
             }
         }
@@ -123,7 +128,7 @@ public class Gpickle {
     private String[] runString( int page )
     {
 	int i = 0;
-	int numCommands = 14;
+	int numCommands = 15;
 	if ( bTextAlpha )
 	    ++numCommands;
 	if (bRtl)
@@ -144,6 +149,7 @@ public class Gpickle {
         commandArr[i++] = "-dNOPAUSE";
 	commandArr[i++] = "-J@PJL SET USECIECOLOR=ON";
 	commandArr[i++] = "-J@PJL SET VIEWER=ON";
+	commandArr[i++] = "-dTrayOrientation=" + Integer.toString(trayOrientation);
 	if (bRtl) {
 	    commandArr[i++] = cRTLstr;
 	    commandArr[i++] = "-J@PJL SET PLOTSIZEOVERRIDE=OFF";
@@ -365,6 +371,30 @@ public class Gpickle {
     public int getImgWidth()
     {
         return width;
+    }
+    /** Accessor of TrayOrientation */
+    public int getTrayOrientation()
+    {
+	return trayOrientation;
+    }
+    public void setTrayOrientation(int angle)
+    {
+	if ( angle == 0 ||
+	     angle == 90 ||
+	     angle == 180 ||
+	     angle == 270 )
+	    trayOrientation = angle;
+    }
+    public boolean getLangSwitch()
+    {
+	return( langSwitch == 1 );
+    }
+    public void setLangSwitch(boolean useLangSwitch)
+    {
+	if (useLangSwitch)
+	    langSwitch = 1;
+	else
+	    langSwitch = 0;
     }
 
     public Gpickle()

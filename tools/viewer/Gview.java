@@ -87,6 +87,7 @@ public class Gview
     private java.awt.MenuItem             menuOptResMinus;
     private java.awt.MenuItem             menuOptResPlus;
     private java.awt.CheckboxMenuItem   menuOptTextAntiAlias;
+    private java.awt.CheckboxMenuItem   menuOptPSandPCL;
     private java.awt.CheckboxMenuItem   menuOptRTLMode;
     private java.awt.MenuItem         menuDPI;
     private java.awt.MenuItem         menuZoomIn;
@@ -218,6 +219,22 @@ public class Gview
 	    }
 				       );
 	menuOpt.add(menuOptTextAntiAlias);
+
+	menuOptPSandPCL = new java.awt.CheckboxMenuItem();
+	
+	menuOptPSandPCL.setState(pickle.getLangSwitch());
+	menuOptPSandPCL.setLabel("Language Switching pspcl6");
+        menuOptPSandPCL.addItemListener(new java.awt.event.ItemListener() {
+		public void itemStateChanged(java.awt.event.ItemEvent evt) {
+		    pickle.setLangSwitch( ! pickle.getLangSwitch() );
+		    pickle.setGhostApp();
+		}
+	    }
+				       );
+	menuOpt.add(menuOptPSandPCL);
+
+
+
 
 	if ( enableRTL ) {
 	    menuOptRTLMode = new java.awt.CheckboxMenuItem();
@@ -510,7 +527,7 @@ public class Gview
 	    prevPage();
 	    return;
 	}
-	else if ( key == KeyEvent.VK_Q ) {
+ 	else if ( key == KeyEvent.VK_Q ) {
 	    System.exit(1);
 	}
         else if ( key == KeyEvent.VK_Z ) {
@@ -532,6 +549,9 @@ public class Gview
 	    zoomWindowRatio = 4;
             pickle.setRTL(!pickle.getRTL());  // toggle
         }
+        else if ( key == KeyEvent.VK_T ) {
+	    pickle.setTrayOrientation((pickle.getTrayOrientation() + 90 ) % 360);
+	}
         else if ( key == KeyEvent.VK_O ) {
 	    fileOpen();
 	    return;
