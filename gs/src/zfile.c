@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -55,6 +55,9 @@ private int parse_real_file_name(P4(const ref * op,
 				    gs_memory_t *mem, client_name_t cname));
 
 /* Forward references: other. */
+private int zopen_file(P4(const gs_parsed_file_name_t *pfn,
+			  const char *file_access, stream **ps,
+			  gs_memory_t *mem));
 private iodev_proc_open_file(iodev_os_open_file);
 private int execfile_finish(P1(i_ctx_t *));
 private int execfile_cleanup(P1(i_ctx_t *));
@@ -182,18 +185,7 @@ zfile(i_ctx_t *i_ctx_p)
     } else {
 	if (pname.iodev == NULL)
 	    pname.iodev = iodev_default;
-	if (pname.fname == NULL)	/* just a device */
-	    code = (*pname.iodev->procs.open_device)(pname.iodev,
-						     file_access, &s, imemory);
-	else {			/* file */
-	    iodev_proc_open_file((*open_file)) =
-		pname.iodev->procs.open_file;
-
-	    if (open_file == 0)
-		open_file = iodev_os_open_file;
-	    code = (*open_file)(pname.iodev, pname.fname, pname.len,
-				file_access, &s, imemory);
-	}
+	code = zopen_file(&pname, file_access, &s, imemory);
     }
     if (code < 0)
 	return code;
@@ -479,13 +471,7 @@ zfindlibfile(i_ctx_t *i_ctx_p)
     if (pname.iodev == NULL)
 	pname.iodev = iodev_default;
     if (pname.iodev != iodev_default) {		/* Non-OS devices don't have search paths (yet). */
-	code =
-	    (pname.fname == NULL ?
-	     (*pname.iodev->procs.open_device)(pname.iodev, "r",
-					       &s, imemory) :
-	     (*pname.iodev->procs.open_file)(pname.iodev,
-					     pname.fname, pname.len, "r",
-					     &s, imemory));
+	code = zopen_file(&pname, "r", &s, imemory);
 	if (code < 0) {
 	    push(1);
 	    make_false(op);
@@ -559,6 +545,27 @@ parse_real_file_name(const ref *op, gs_parsed_file_name_t *pfn,
 }
 
 /* ------ Stream opening ------ */
+
+/*
+ * Open a file specified by a parsed file name (which may be only a
+ * device).
+ */
+private int
+zopen_file(const gs_parsed_file_name_t *pfn, const char *file_access,
+	   stream **ps, gs_memory_t *mem)
+{
+    gx_io_device *const iodev = pfn->iodev;
+
+    if (pfn->fname == NULL)	/* just a device */
+	return iodev->procs.open_device(iodev, file_access, ps, mem);
+    else {			/* file */
+	iodev_proc_open_file((*open_file)) = iodev->procs.open_file;
+
+	if (open_file == 0)
+	    open_file = iodev_os_open_file;
+	return open_file(iodev, pfn->fname, pfn->len, file_access, ps, mem);
+    }
+}
 
 /*
  * Define the file_open procedure for the %os% IODevice (also used, as the
