@@ -78,7 +78,7 @@ dosdefault: default
 
 # MSVC 8 (2005) warns about deprecated unsafe common functions like strcpy.
 !if $(MSVC_VERSION) == 8
-VC8WARN=/wd4996
+VC8WARN=/wd4996 /wd4224
 !else
 VC8WARN=
 !endif
