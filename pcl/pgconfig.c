@@ -237,6 +237,8 @@ hpgl_picture_frame_coords(hpgl_state_t *pgls, gs_int_rect *gl2_win)
 	  set_round(q.y);
 #undef set_round
 	}
+	/* restore the ctm */
+	hpgl_call(hpgl_set_ctm(pgls));
 	return 0;
 }
 
@@ -438,7 +440,6 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	gs_point point, dev_pt;
 
 	scale_params = pgls->g.scaling_params;
-	hpgl_call(hpgl_set_ctm(pgls));
 	hpgl_call(hpgl_get_current_position(pgls, &point));
 	hpgl_call(gs_transform(pgls->pgs, point.x, point.y, &dev_pt));
 
