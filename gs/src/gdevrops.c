@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -93,7 +93,8 @@ private const gx_device_rop_texture gs_rop_texture_device = {
      gx_forward_map_color_rgb_alpha,
      NULL,				/* create_compositor */
      gx_forward_get_hardware_params,
-     NULL				/* text_begin */
+     NULL,				/* text_begin */
+     NULL				/* finish_copydevice */
     },
     0,				/* target */
     lop_default			/* log_op */

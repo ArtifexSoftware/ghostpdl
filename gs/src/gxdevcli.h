@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -685,6 +685,13 @@ typedef struct gs_param_list_s gs_param_list;
 
      /* ... text_begin ... see gxtext.h for definition */
 
+		/* Added in release 6.23 */
+
+#define dev_t_proc_finish_copydevice(proc, dev_t)\
+  int proc(P2(dev_t *dev, const gx_device *from_dev))
+#define dev_proc_finish_copydevice(proc)\
+  dev_t_proc_finish_copydevice(proc, gx_device)
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -731,6 +738,7 @@ typedef struct gs_param_list_s gs_param_list;
 	dev_t_proc_create_compositor((*create_compositor), dev_t);\
 	dev_t_proc_get_hardware_params((*get_hardware_params), dev_t);\
 	dev_t_proc_text_begin((*text_begin), dev_t);\
+	dev_t_proc_finish_copydevice((*finish_copydevice), dev_t);\
 }
 /*
  * Provide procedures for passing image data.  image_data and end_image

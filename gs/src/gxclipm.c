@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -80,7 +80,8 @@ const gx_device_mask_clip gs_mask_clip_device =
   gx_forward_map_color_rgb_alpha,
   gx_no_create_compositor,
   gx_forward_get_hardware_params,
-  gx_default_text_begin
+  gx_default_text_begin,
+  gx_default_finish_copydevice
  }
 };
 

@@ -243,16 +243,17 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
     gx_device *new_dev;
     const gs_memory_struct_type_t *std = dev->stype;
     const gs_memory_struct_type_t *new_std;
+    gs_memory_struct_type_t *a_std = 0;
+    int code;
 
     if (dev->stype_is_dynamic) {
 	/*
 	 * We allocated the stype for this device previously.
 	 * Just allocate a new stype and copy the old one into it.
 	 */
-	gs_memory_struct_type_t *a_std = (gs_memory_struct_type_t *)
+	a_std = (gs_memory_struct_type_t *)
 	    gs_alloc_bytes_immovable(&gs_memory_default, sizeof(*std),
 				     "gs_copydevice(stype)");
-
 	if (!a_std)
 	    return_error(gs_error_VMerror);
 	*a_std = *std;
@@ -262,10 +263,9 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
 	new_std = std;
     } else {
 	/* We need to figure out or adjust the stype. */
-	gs_memory_struct_type_t *a_std = (gs_memory_struct_type_t *)
+	a_std = (gs_memory_struct_type_t *)
 	    gs_alloc_bytes_immovable(&gs_memory_default, sizeof(*std),
 				     "gs_copydevice(stype)");
-
 	if (!a_std)
 	    return_error(gs_error_VMerror);
 	gx_device_make_struct_type(a_std, dev);
@@ -283,14 +283,21 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
     new_dev->stype = new_std;
     new_dev->stype_is_dynamic = new_std != std;
     /*
-     * keep_open is very dangerous.  On the other hand, so is copydevice at
-     * present, since it just copies the bits without any regard to pointers
-     * (including self-pointers) that they may contain.  We will take care
-     * of this shortly, by forbidding copying of anything other than the
-     * device prototype unless the device is prepared to deal with the
-     * consequences.
+     * keep_open is very dangerous.  On the other hand, so is copydevice in
+     * general, since it just copies the bits without any regard to pointers
+     * (including self-pointers) that they may contain.  We handle this by
+     * making the default finish_copydevice forbid copying of anything other
+     * than the device prototype.
      */
     new_dev->is_open = dev->is_open && keep_open;
+    fill_dev_proc(new_dev, finish_copydevice, gx_default_finish_copydevice);
+    code = dev_proc(new_dev, finish_copydevice)(new_dev, dev);
+    if (code < 0) {
+	gs_free_object(mem, new_dev, "gs_copydevice(device)");
+	if (a_std)
+	    gs_free_object(&gs_memory_default, a_std, "gs_copydevice(stype)");
+	return code;
+    }
     *pnew_dev = new_dev;
     return 0;
 }

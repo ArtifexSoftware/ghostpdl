@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -125,7 +125,8 @@ private const gx_device_pattern_accum gs_pattern_accum_device =
      NULL,
      NULL,
      NULL,
-     gx_default_text_begin
+     gx_default_text_begin,
+     gx_default_finish_copydevice
  },
  0,				/* target */
  0, 0, 0, 0			/* bitmap_memory, bits, mask, instance */

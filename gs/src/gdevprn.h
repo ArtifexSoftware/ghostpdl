@@ -336,7 +336,8 @@ prn_dev_proc_buffer_page(gx_default_buffer_page); /* returns an error */
 	NULL,	/* map_color_rgb_alpha */\
 	NULL,	/* create_compositor */\
 	NULL,	/* get_hardware_params */\
-	NULL	/* text_begin */\
+	NULL,	/* text_begin */\
+	NULL	/* finish_copydevice */\
 }
 
 /* The standard printer device procedures */

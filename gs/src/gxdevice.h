@@ -258,6 +258,7 @@ dev_proc_create_compositor(gx_default_create_compositor);
 dev_proc_create_compositor(gx_null_create_compositor);
 dev_proc_get_hardware_params(gx_default_get_hardware_params);
 dev_proc_text_begin(gx_default_text_begin);
+dev_proc_finish_copydevice(gx_default_finish_copydevice);
 /* BACKWARD COMPATIBILITY */
 #define gx_non_imaging_create_compositor gx_null_create_compositor
 
