@@ -21,6 +21,10 @@
 /* pcuptrn.c - code for PCL and GL/2 user defined patterns */
 
 #include "gx.h"
+#include "gsuid.h"
+#include "gscsel.h"
+#include "gxdevice.h"
+#include "gxpcolor.h"
 #include "pldict.h"
 #include "pcindexed.h"
 #include "pcpatrn.h"
@@ -117,9 +121,13 @@ free_pattern_rendering(
     pcl_pattern_t * pptrn
 )
 {
-    if (pptrn->pccolor != 0) {
-        pcl_ccolor_release(pptrn->pccolor);
-        pptrn->pccolor = 0;
+    if (pptrn->pcol_ccolor != 0) {
+        pcl_ccolor_release(pptrn->pcol_ccolor);
+        pptrn->pcol_ccolor = 0;
+    }
+    if (pptrn->pmask_ccolor != 0) {
+        pcl_ccolor_release(pptrn->pmask_ccolor);
+        pptrn->pmask_ccolor = 0;
     }
 }
 
@@ -173,7 +181,8 @@ pcl_pattern_build_pattern(
     if (pptrn == 0)
         return e_Memory;
 
-    pptrn->pccolor = 0;
+    pptrn->pcol_ccolor = 0;
+    pptrn->pmask_ccolor = 0;
     code = build_pattern_data( &(pptrn->ppat_data),
                                ppixinfo,
                                type,
@@ -517,6 +526,18 @@ pattern_control(
 }
 
 /*
+ * Stub routine to be used for clearing the pattern cache.
+ */
+  private bool
+delete_cached_patterns_stub(
+    gx_color_tile * ctile,      /* ignored */
+    void *          pcls_data   /* ignored */
+)
+{
+    return true;
+}
+
+/*
  * Initialization and reset routines.
  */ 
   private int
@@ -555,6 +576,13 @@ upattern_do_reset(
         plast_gl2_uptrn = 0;
 
     } else if ((type & (pcl_reset_cold | pcl_reset_printer)) != 0) {
+
+        /* HACK - purge the pattern cache to try to avoid fragmentation */
+        gx_pattern_cache_winnow( gstate_pattern_cache(pcs->pgs),
+                                 delete_cached_patterns_stub,
+                                 NULL
+                                 );
+
         delete_all_pcl_ptrns(true, true, pcs);
         pcl_pattern_clear_bi_patterns();
         /* GL's IN command takes care of the GL patterns */
