@@ -169,6 +169,10 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 		      scale_y = scale_x;
 		    }
 		}
+	      /* looks like HP keeps 6 digits of accuracy here.  This
+                 was derived empirically */
+	      scale_x -= fmod(scale_x, 1.0E-6);
+	      scale_y -= fmod(scale_y, 1.0E-6);
 	      hpgl_call(gs_make_translation(origin_x, origin_y, pmat));
 	      hpgl_call(gs_matrix_scale(pmat, scale_x, scale_y, pmat));
 	      hpgl_call(gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
