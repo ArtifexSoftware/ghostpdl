@@ -684,15 +684,30 @@ in taking patches from people who have ported it to non-mainstream
 platforms. And once it's built, you won't have to recompile Ghostscript
 to support new drivers!
 
-<h2><a name="Rinkj"></a>Rinkj - Resplendent inkjet driver
+<h2><a name="Rinkj"></a>Rinkj - Resplendent inkjet driver</h2>
 
 <p>The Rinkj driver is an experimental new driver, capable of driving
 some Epson printers at a very high level of quality. It is not
 currently recommended for the faint of heart.</p>
 
+<p>You will need to add the following line to your makefile:
+
+<blockquote>
+DEVICE_DEVS2=$(DD)rinkj.dev
+</blockquote>
+
 <p>Most of the configuration parameters, including resolution, choice
 of printer model, and linearization curves, are in a separate setup
-file. In addition, we rely heavily on an ICC profile for </p>
+file. In addition, we rely heavily on an ICC profile for mapping
+document colors to actual device colors.</p>
+
+<p>A typical command line invocation is:</p>
+
+<blockquote><tt>
+gs -r1440x720 -sDEVICE=rinkj -sOutputFile=/dev/usb/lp0
+  -sSetupFile=lib/rinkj-2200-setup -sProfileOut=2200-cmyk.icm
+  -dNOPAUSE -dBATCH file.ps
+</tt></blockquote>
 
 <p>
 Individual Rinkj command line parameters are as follows:
