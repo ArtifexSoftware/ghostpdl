@@ -1504,7 +1504,6 @@ hpgl_draw_current_path(
 		/* the fill has already been done if the fill type is
                    hpgl/2 vector fills.  This was handled when we set
                    the drawing color */
-                pcl_mark_page_for_path(pgls);
 		if ((pgls->g.fill.type != hpgl_FT_pattern_one_line) &&
 		    (pgls->g.fill.type != hpgl_FT_pattern_two_lines))
 		    hpgl_call((*fill)(pgs));
@@ -1523,7 +1522,6 @@ hpgl_draw_current_path(
 		    hpgl_call(hpgl_gsave(pgls));
 		    /* all character fills appear to have 0 fill adjustment */
 		    gs_setfilladjust(pgls->pgs, 0, 0);
-                    pcl_mark_page_for_path(pgls);
 		    hpgl_call((*fill)(pgs));
 		    hpgl_call(hpgl_grestore(pgls));
 		}
@@ -1536,7 +1534,6 @@ hpgl_draw_current_path(
 		hpgl_call(gs_setrasterop(pgls->pgs, (gs_rop3_t)252));
 		hpgl_call(gs_setlinewidth(pgls->pgs,
 			  pgls->g.font_selection[pgls->g.font_selected].params.height_4ths * 0.0375));
-                pcl_mark_page_for_path(pgls);
 		hpgl_call(gs_stroke(pgls->pgs));
 		break;
 	    }
