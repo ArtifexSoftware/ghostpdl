@@ -88,7 +88,6 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
     register cached_fm_pair *pair =
     dir->fmcache.mdata + dir->fmcache.mnext;
     int count = dir->fmcache.mmax;
-    bool design_grid1 = (font->FontType == ft_composite || font->PaintType != 0 ? design_grid : false);
     gs_uid uid;
 
     gx_compute_ccache_key(pfont, char_tm, log2_scale, design_grid,

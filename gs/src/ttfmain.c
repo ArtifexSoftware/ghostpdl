@@ -460,47 +460,6 @@ void ttfOutliner__init(ttfOutliner *this, ttfFont *f, ttfReader *r, ttfExport *e
     this->exp = exp;
 }
 
-private int ttfOutliner__SeekGlyph(ttfOutliner *this, unsigned int nGlyphIndex, unsigned int *nNextGlyphPtr)
-{   ttfFont *pFont = this->pFont;
-    ttfReader *r = this->r;
-    int nLoc, nMul, p, q;
-    bool bBeg;
-    
-    if (nGlyphIndex > pFont->nNumGlyphs)
-	return 0;
-    if (!nGlyphIndex)
-	return 1; /* empty glyph */
-    nLoc = pFont->t_glyf.nPos;
-    nMul = ((pFont->nIndexToLocFormat == SHORT_INDEX_TO_LOC_FORMAT) ? 2 : 4);
-    r->Seek(r, pFont->t_loca.nPos + nMul * nGlyphIndex);
-    p = ((nMul == 2) ? (int)ttfReader__UShort(r) <<1  : (int)ttfReader__UInt(r));
-    if (p < 0 || p > pFont->t_glyf.nLen)
-	return 0;
-    bBeg = TRUE;
-    if (p == 0) {
-	int i;
-	for (i = nGlyphIndex - 1; i >= 0; i--) {
-	    r->Seek(r, pFont->t_loca.nPos + nMul * nGlyphIndex);
-	    q = ((nMul == 2) ? (int)ttfReader__UShort(r) << 1 : (int)ttfReader__UInt(r));
-	    if (q > 0)
-		return 1;
-        }
-	bBeg = (i <=0 );
-	r->Seek(r, pFont->t_loca.nPos + nMul * (nGlyphIndex + 1));
-    }
-    q = 0;
-    for (nGlyphIndex++; nGlyphIndex <= pFont->nNumGlyphs; nGlyphIndex++) {
-	q = ((nMul ==2 ) ? (int)ttfReader__UShort(r) << 1 : (int)ttfReader__UInt(r));
-	if(q || bBeg) 
-	    break;
-    }
-    if(p == q)
-	return 1; /* empty glyph */
-    *nNextGlyphPtr = ((q <p ) ? 0 : q + nLoc);
-    r->Seek(r, p + nLoc);
-    return 2;
-}
-
 private void MoveGlyphOutline(TGlyph_Zone *pts, int nOffset, ttfGlyphOutline *out, FixMatrix *m)
 {   F26Dot6* x = pts->org_x + nOffset;
     F26Dot6* y = pts->org_y + nOffset;

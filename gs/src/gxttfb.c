@@ -217,7 +217,7 @@ private void WarnPatented(gs_font_type42 *pfont, ttfFont *ttf, const char *txt)
 {
 #if NEW_TT_INTERPRETER
     if (!ttf->design_grid) {
-	char buf[100];
+	char buf[gs_font_name_max + 1];
 	int l;
 	gs_font_type42 *base_font = pfont;
 
