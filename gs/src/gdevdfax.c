@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -25,6 +25,7 @@
 #include "gdevprn.h"
 #include "strimpl.h"
 #include "scfx.h"
+#include "gdevfax.h"
 #include "gdevtfax.h"
 
 /* Define the device parameters. */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,6 +30,7 @@
    Frauenstuhlweg 31     | /  |\  /     \ |ludger.kunz@fernuni-hagen.de
    58644 Iserlohn        |/___|_\/_______\|
  */
+#include "memory_.h"
 #include "gx.h"
 #include "gxdevice.h"
 #include "gserrors.h"
