@@ -1958,6 +1958,12 @@ set_x_next(active_line *endp, active_line *alp, fixed x)
     }
 }
 
+private inline int
+coord_weight(const active_line *alp)
+{
+    return 1 + (int)min(any_abs(alp->diff.y * 8.0 / alp->diff.x), 256.0);
+}
+
 
 /* Find intersections of active lines within the band. 
    Intersect and reorder them, and correct the bund top. */
@@ -2008,12 +2014,14 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 		    else if (alp->diff.x == 0)
 			nx = alp->start.x;
 		    else {
-			fixed nx1 = AL_X_AT_Y(endp, y1);
+			fixed nx0 = AL_X_AT_Y(endp, y1);
+			fixed nx1 = AL_X_AT_Y(alp, y1);
+			double w0 = coord_weight(endp);
+			double w1 = coord_weight(alp);
 
-			nx = AL_X_AT_Y(alp, y1);
-			nx = (nx + nx1) / 2; /* Ensure same X. */
+			nx = (fixed)((w0 * nx0 + w1 * nx1) / (w0 + w1) + 0.5);
 		    }
-		    endp->x_next = alp->x_next = nx;
+		    endp->x_next = alp->x_next = nx;  /* Ensure same X. */
 		    draw = 0;
 		    /* Can't guarantee same x for triple intersections here. 
 		       Will take care below */
@@ -2049,7 +2057,7 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 				k = -1;
 				sx = x1;
 			    } else {
-				k = 1 + (int)min(any_abs(endp->diff.y * 8.0 / endp->diff.x), 256.0);
+				k = coord_weight(endp);
 				sx = (double)x1 * k;
 			    }
 			    n = 1;
@@ -2065,7 +2073,7 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 				sx = x;
 			    }
 			} else if (k > 0) {
-			    int w = 1 + (int)min(any_abs(alp->diff.y * 8.0 / alp->diff.x), 256.0);
+			    int w = coord_weight(alp);
 
 			    sx += (double)x * w;
 			    k += w;
@@ -2271,7 +2279,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 
 	    for (alp = ll->x_list; alp != 0; alp = alp->next) {
 		fixed xbot = alp->x_current;
-		fixed xtop = alp->x_current = alp->x_next;
+		fixed xtop = alp->x_next;
 		int code;
 
 		print_al("step", alp);
@@ -2329,8 +2337,6 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		int inside = 0;
 
 		for (alp = ll->x_list; alp != 0; alp = alp->next) {
-		    alp->x_current = alp->x_next;
-
 		    if (!INSIDE_PATH_P(inside, rule)) {		/* i.e., outside */
 			inside += alp->direction;
 			if (INSIDE_PATH_P(inside, rule))	/* about to go in */
