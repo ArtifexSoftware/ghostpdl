@@ -197,7 +197,7 @@ get_next_char(
         len--;
         *pis_space = false;
     } else
-        *pis_space = (chr == ' ');
+	*pis_space = (chr == ' ' &&  pcs->font->storage == pcds_internal);
     *ppb = pb;
     *plen = len;
 
