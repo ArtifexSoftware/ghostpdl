@@ -128,11 +128,12 @@ for k in end_db.keys():
 
 for k in keys:
     if k not in start_db.keys():
-        if end_db[k] != baseline_db[k]:
+        if k in baseline_db.keys() and end_db[k] != baseline_db[k]:
             diffs.append(k)
     elif k not in end_db.keys():
         diffs.append(k)
-    elif start_db[k] != end_db[k] and end_db[k] != baseline_db[k]:
+    elif start_db[k] != end_db[k] and (k not in baseline_db.keys() or
+                                       end_db[k] != baseline_db[k]):
         diffs.append(k)
 
 list = []
