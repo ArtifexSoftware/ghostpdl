@@ -438,7 +438,7 @@ gs_interpret(i_ctx_t **pi_ctx_p, ref * pref, int user_errors, int *pexit_code,
 {
     i_ctx_t *i_ctx_p = *pi_ctx_p;
     gs_gc_root_t error_root;
-    int code, code1;
+    int code;
 
     gs_register_ref_root(imemory_system, &error_root,
 			 (void **)&perror_object, "gs_interpret");

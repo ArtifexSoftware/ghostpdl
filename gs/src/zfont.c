@@ -434,6 +434,8 @@ purge_if_name_removed(cached_char * cc, void *vsave)
 {
     return alloc_name_index_is_since_save(cc->code, vsave);
 }
+
+/* Remove entries from font and character caches. */
 void
 font_restore(const alloc_save_t * save)
 {

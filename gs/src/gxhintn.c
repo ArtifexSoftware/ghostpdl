@@ -162,7 +162,7 @@ private inline int32 mul_shift(int24 a, int19 b, unsigned int s)
     } else if (sizeof(int32) == 8) {
         return (a * b) >> s; /* unrounded result */
     } else
-        assert(("Unsupported platform.",0));
+        assert(("Unsupported platform." == 0));
 }
 
 private inline int32 mul_shift_round(int24 a, int19 b, unsigned int s) 
@@ -174,7 +174,7 @@ private inline int32 mul_shift_round(int24 a, int19 b, unsigned int s)
     } else if (sizeof(int32) == 8) {
         return (((a * b) >> (s -1)) + 1) >> 1; /* rounded result */
     } else
-        assert(("Unsupported platform.",0));
+        assert(("Unsupported platform." == 0));
 }
 
 private inline int32 shift_rounded(int32 v, unsigned int s)

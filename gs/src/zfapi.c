@@ -1600,8 +1600,6 @@ private int FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
     return code;
 }
 
-extern int ztype9mapcid(i_ctx_t *);
-
 private int FAPIBuildGlyph9aux(i_ctx_t *i_ctx_p)
 {   os_ptr op = osp;                  /* <font0> <cid> <font9> <cid> */
     ref font9 = *pfont_dict(gs_currentfont(igs));

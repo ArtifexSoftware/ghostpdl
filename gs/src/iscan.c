@@ -47,15 +47,6 @@
 #define recognize_btokens()\
   (ref_binary_object_format.value.intval != 0 && level2_enabled)
 
-#ifdef DEBUG
-/* Dummy comment processing procedure for testing. */
-private int
-no_comment_proc(const byte * str, uint len)
-{
-    return 0;
-}
-#endif
-
 /* Procedure for handling DSC comments if desired. */
 /* Set at initialization if a DSC handling module is included. */
 int (*scan_dsc_proc) (const byte *, uint) = NULL;

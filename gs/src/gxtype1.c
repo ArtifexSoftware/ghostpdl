@@ -17,6 +17,7 @@
 /* $Id$ */
 /* Adobe Type 1 font interpreter support */
 #include "math_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsccode.h"

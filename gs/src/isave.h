@@ -113,4 +113,7 @@ void alloc_set_in_save(gs_dual_memory_t *);
 /* Record that we are not in a save. */
 void alloc_set_not_in_save(gs_dual_memory_t *);
 
+/* Remove entries from font and character caches. */
+void font_restore(const alloc_save_t * save);
+
 #endif /* isave_INCLUDED */

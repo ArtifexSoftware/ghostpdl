@@ -32,8 +32,6 @@
 #include "ivmspace.h"
 #include "gsutil.h"		/* gs_next_ids prototype */
 
-/* Imported save/restore routines */
-extern void font_restore(const alloc_save_t *);
 
 /* Structure descriptor */
 private_st_alloc_save();

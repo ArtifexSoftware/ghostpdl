@@ -15,7 +15,7 @@
 */
 
 /* $Id$ */
-/* Interface to zcid.c */
+/* Interface to zcid.c, zfcid0.c */
 
 #ifndef icid_INCLUDED
 #  define icid_INCLUDED
@@ -36,5 +36,8 @@ int cid_to_TT_charcode(const ref *Decoding, const ref *TT_cmap,  const ref *Subs
 /* Create a CIDMap from a True Type cmap array, Decoding and SubstNWP. */
 int cid_fill_CIDMap(const ref *Decoding, const ref *TT_cmap, const ref *SubstNWP, 
                     int GDBytes, ref *CIDMap);
+
+/* <cid9font> <cid> .type9mapcid <charstring> <font_index> */
+int ztype9mapcid(i_ctx_t *i_ctx_p);
 
 #endif /* icid_INCLUDED */

@@ -28,6 +28,7 @@
 #include "gxfcmap.h"
 #include "gxpath.h"		/* for getting current point */
 #include "gxchar.h"		
+#include "gxstate.h"		
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdtx.h"

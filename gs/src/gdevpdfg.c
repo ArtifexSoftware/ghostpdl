@@ -571,9 +571,9 @@ HT_FUNC(ht_InvertedEllipseA, x * x + 0.9 * y * y - 1)
 HT_FUNC(ht_EllipseB, 1 - sqrt(x * x + 0.625 * y * y))
 HT_FUNC(ht_EllipseC, 1 - (0.9 * x * x + y * y))
 HT_FUNC(ht_InvertedEllipseC, 0.9 * x * x + y * y - 1)
-HT_FUNC(ht_Line, -fabs(y))
-HT_FUNC(ht_LineX, x)
-HT_FUNC(ht_LineY, y)
+HT_FUNC(ht_Line, -fabs((x - x) + y)) /* quiet compiler (unused variable x) */
+HT_FUNC(ht_LineX, (y - y) + x) /* quiet compiler (unused variable y) */
+HT_FUNC(ht_LineY, (x - x) + y) /* quiet compiler (unused variable x) */
 HT_FUNC(ht_Square, -max(fabs(x), fabs(y)))
 HT_FUNC(ht_Cross, -min(fabs(x), fabs(y)))
 HT_FUNC(ht_Rhomboid, (0.9 * fabs(x) + fabs(y)) / 2)
