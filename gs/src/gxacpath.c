@@ -129,10 +129,15 @@ gx_cpath_accum_end(const gx_device_cpath_accum * padev, gx_clip_path * pcpath)
 	return code;
     gx_cpath_init_local(&apath, padev->list_memory);
     apath.rect_list->list = padev->list;
-    apath.path.bbox.p.x = int2fixed(padev->bbox.p.x);
-    apath.path.bbox.p.y = int2fixed(padev->bbox.p.y);
-    apath.path.bbox.q.x = int2fixed(padev->bbox.q.x);
-    apath.path.bbox.q.y = int2fixed(padev->bbox.q.y);
+    if (padev->list.count == 0)
+	apath.path.bbox.p.x = apath.path.bbox.p.y =
+	apath.path.bbox.q.x = apath.path.bbox.q.y = 0;
+    else {
+	apath.path.bbox.p.x = int2fixed(padev->bbox.p.x);
+	apath.path.bbox.p.y = int2fixed(padev->bbox.p.y);
+	apath.path.bbox.q.x = int2fixed(padev->bbox.q.x);
+	apath.path.bbox.q.y = int2fixed(padev->bbox.q.y);
+    }
     /* indicate that the bbox is accurate */
     apath.path.bbox_accurate = 1;
     /* Note that the result of the intersection might be */
