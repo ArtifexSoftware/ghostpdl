@@ -43,7 +43,7 @@ ls_fonts:
 	touch fonts
 
 ls_install:
-	install main/obj/pspcl6 /usr/local/bin
+	install language_switch/obj/pspcl6 /usr/local/bin
 
 ls_test:
 	cd tools; ../main/obj/pcl6 -dTextAlphaBits=4 owl.pcl tiger.px3 # test with PCL and PXL test file 
@@ -57,4 +57,4 @@ ls_clean:
 	rm -rf fonts main/obj /usr/local/bin/pspcl6
 
 
-PHONY: clean test install pcl6
+PHONY: clean test install product profile ls_clean ls_test ls_install ls_product ls_profile 
