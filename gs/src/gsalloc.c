@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,6 +21,7 @@
 #include "gx.h"
 #include "memory_.h"
 #include "gserrors.h"
+#include "gsexit.h"
 #include "gsmdebug.h"
 #include "gsstruct.h"
 #include "gxalloc.h"
@@ -41,7 +42,7 @@
 private int
 alloc_trace_space(const gs_ref_memory_t *imem)
 {
-    return imem->space + (imem->stable_memory == (gs_memory_t *)imem);
+    return imem->space + (imem->stable_memory == (const gs_memory_t *)imem);
 }
 private void
 alloc_trace(const char *chars, gs_ref_memory_t * imem, client_name_t cname,
