@@ -616,28 +616,17 @@ pdf_put_matrix(gx_device_pdf * pdev, const char *before,
  * no choice but to replace these characters with '?'; in PDF 1.2, we can
  * use an escape sequence for anything except a null <00>.
  */
-void
-pdf_put_name_escaped(stream *s, const byte *nstr, uint size, bool escape)
+private int
+pdf_put_name_chars_1_1(stream *s, const byte *nstr, uint size)
 {
     uint i;
 
-    pputc(s, '/');
     for (i = 0; i < size; ++i) {
 	uint c = nstr[i];
-	char hex[4];
 
 	switch (c) {
-	    case '#':
-		/* These are valid in 1.1, but must be escaped in 1.2. */
-		if (escape) {
-		    sprintf(hex, "#%02x", c);
-		    pputs(s, hex);
-		    break;
-		}
-		/* falls through */
 	    default:
 		if (c >= 0x21 && c <= 0x7e) {
-		    /* These are always valid. */
 		    pputc(s, c);
 		    break;
 		}
@@ -648,25 +637,60 @@ pdf_put_name_escaped(stream *s, const byte *nstr, uint size, bool escape)
 	    case '[': case ']':
 	    case '{': case '}':
 	    case '/':
-		/* These characters are invalid in both 1.1 and 1.2, */
-		/* but can be escaped in 1.2. */
-		if (escape) {
-		    sprintf(hex, "#%02x", c);
-		    pputs(s, hex);
-		    break;
-		}
-		/* falls through */
 	    case 0:
-		/* This is invalid in 1.1 and 1.2, and cannot be escaped. */
 		pputc(s, '?');
 	}
     }
+    return 0;
+}
+private int
+pdf_put_name_chars_1_2(stream *s, const byte *nstr, uint size)
+{
+    uint i;
+
+    for (i = 0; i < size; ++i) {
+	uint c = nstr[i];
+	char hex[4];
+
+	switch (c) {
+	    default:
+		if (c >= 0x21 && c <= 0x7e) {
+		    pputc(s, c);
+		    break;
+		}
+		/* falls through */
+	    case '#':
+	    case '%':
+	    case '(': case ')':
+	    case '<': case '>':
+	    case '[': case ']':
+	    case '{': case '}':
+	    case '/':
+		sprintf(hex, "#%02x", c);
+		pputs(s, hex);
+		break;
+	    case 0:
+		pputc(s, '?');
+	}
+    }
+    return 0;
+}
+pdf_put_name_chars_proc_t
+pdf_put_name_chars_proc(const gx_device_pdf *pdev)
+{
+    return (pdev->CompatibilityLevel >= 1.2 ? pdf_put_name_chars_1_2 :
+	    pdf_put_name_chars_1_1);
+}
+void
+pdf_put_name_chars(const gx_device_pdf *pdev, const byte *nstr, uint size)
+{
+    DISCARD(pdf_put_name_chars_proc(pdev)(pdev->strm, nstr, size));
 }
 void
 pdf_put_name(const gx_device_pdf *pdev, const byte *nstr, uint size)
 {
-    pdf_put_name_escaped(pdev->strm, nstr, size,
-			 pdev->CompatibilityLevel >= 1.2);
+    pputc(pdev->strm, '/');
+    pdf_put_name_chars(pdev, nstr, size);
 }
 
 /*
@@ -807,11 +831,12 @@ pdf_flate_binary(gx_device_pdf *pdev, psdf_binary_writer *pbw)
 }
 
 /*
- * Begin a Function or halftone data stream.  The client has opened the
- * object and written the << and any desired dictionary keys.
+ * Begin a data stream.  The client has opened the object and written
+ * the << and any desired dictionary keys.
  */
 int
-pdf_begin_data(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
+pdf_begin_data_binary(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
+		      bool data_is_binary)
 {
     long length_id = pdf_obj_ref(pdev);
     stream *s = pdev->strm;
@@ -824,10 +849,12 @@ pdf_begin_data(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
     int filters = 0;
     int code;
 
-    if (!pdev->binary_ok)
-	filters |= USE_ASCII85;
-    if (pdev->CompatibilityLevel >= 1.2)
+    if (pdev->CompatibilityLevel >= 1.2) {
 	filters |= USE_FLATE;
+	data_is_binary = true;
+    }
+    if (data_is_binary && !pdev->binary_ok)
+	filters |= USE_ASCII85;
     pputs(s, fnames[filters]);
     pprintld1(s, "/Length %ld 0 R>>stream\n", length_id);
     code = psdf_begin_binary((gx_device_psdf *)pdev, &pdw->binary);

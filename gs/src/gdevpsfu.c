@@ -120,7 +120,7 @@ psf_subset_glyphs(gs_glyph glyphs[256], gs_font *font, const byte used[32])
     int i, n;
 
     for (i = n = 0; i < 256; ++i)
-	if (used[i >> 3] & (1 << (i & 7))) {
+	if (used[i >> 3] & (0x80 >> (i & 7))) {
 	    gs_glyph glyph = font->procs.encode_char(font, (gs_char)i,
 						     GLYPH_SPACE_INDEX);
 

@@ -85,7 +85,7 @@ cmap_put_system_info(stream *s, const gs_cid_system_info_t *pcidsi)
 private int
 cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 		  const gs_cmap_t *pcmap, const cmap_operators_t *pcmo,
-		  psf_put_name_proc_t put_name, int *pfont_index)
+		  psf_put_name_chars_proc_t put_name_chars, int *pfont_index)
 {
     /* For simplicity, produce one entry for each lookup range. */
     const gx_code_lookup_range_t *pclr = pccmap->lookup;
@@ -151,7 +151,8 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 
 		    if (code < 0)
 			return code;
-		    code = put_name(s, str.data, str.size);
+		    pputc(s, '/');
+		    code = put_name_chars(s, str.data, str.size);
 		    if (code < 0)
 			return code;
 		}
@@ -172,7 +173,7 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 /* Write a CMap in its standard (source) format. */
 int
 psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
-	       psf_put_name_proc_t put_name,
+	       psf_put_name_chars_proc_t put_name_chars,
 	       const gs_const_string *alt_cmap_name)
 {
     const gs_const_string *const cmap_name =
@@ -189,8 +190,8 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
     /* Write the header. */
 
     pputs(s, "%!PS-Adobe-3.0 Resource-CMap\n");
-    pputs(s, "%%DocumentNeededResources: procset CIDInit\n");
-    pputs(s, "%%IncludeResource: procset CIDInit\n");
+    pputs(s, "%%DocumentNeededResources: ProcSet (CIDInit)\n");
+    pputs(s, "%%IncludeResource: ProcSet (CIDInit)\n");
     pput_string_entry(s, "%%BeginResource: CMap (", cmap_name);
     pput_string_entry(s, ")\n%%Title: (", cmap_name);
     pput_string_entry(s, " ", &pcidsi->Registry);
@@ -203,8 +204,8 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
     /* Write the fixed entries. */
 
     pprintd1(s, "/CMapType %d def\n", pcmap->CMapType);
-    pputs(s, "/CMapName ");
-    put_name(s, cmap_name->data, cmap_name->size);
+    pputs(s, "/CMapName/");
+    put_name_chars(s, cmap_name->data, cmap_name->size);
     pputs(s, " def\n/CIDSystemInfo");
     if (pcmap->num_fonts == 1) {
 	cmap_put_system_info(s, pcidsi);
@@ -258,9 +259,9 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 	int font_index = (pcmap->num_fonts <= 1 ? 0 : -1);
 
 	cmap_put_code_map(s, &pcmap->notdef, pcmap, &cmap_notdef_operators,
-			  put_name, &font_index);
+			  put_name_chars, &font_index);
 	cmap_put_code_map(s, &pcmap->def, pcmap, &cmap_cid_operators,
-			  put_name, &font_index);
+			  put_name_chars, &font_index);
     }
 
     /* Write the trailer. */

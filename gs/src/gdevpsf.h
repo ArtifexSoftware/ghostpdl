@@ -216,14 +216,15 @@ int psf_write_cid0_font(P6(stream *s, gs_font_cid0 *pfont, int options,
 
 /*
  * Write out a CMap in its customary (source) form.
+ * This procedure does not allocate or free any data.
  */
 #ifndef gs_cmap_DEFINED
 #  define gs_cmap_DEFINED
 typedef struct gs_cmap_s gs_cmap_t;
 #endif
-typedef int (*psf_put_name_proc_t)(P3(stream *, const byte *, uint));
+typedef int (*psf_put_name_chars_proc_t)(P3(stream *, const byte *, uint));
 int psf_write_cmap(P4(stream *s, const gs_cmap_t *pcmap,
-		      psf_put_name_proc_t put_name,
+		      psf_put_name_chars_proc_t put_name_chars,
 		      const gs_const_string *alt_cmap_name));
 
 /* ------ Exported by gdevpsft.c ------ */
@@ -250,14 +251,21 @@ typedef struct gs_font_cid2_s gs_font_cid2;
 #endif
 
 /*
- * Write out a CIDFontType 2 font definition.  This procedure is identical
- * to psf_write_truetype_font except that the subset, if any, is specified
+ * Write out a CIDFontType 2 font definition.  This differs from
+ * psf_write_truetype_font in that the subset, if any, is specified
  * as a bit vector (as for psf_write_cid0_font) rather than a list of glyphs.
+ * Also, none of the options currently have any effect.  The only tables
+ * written are:
+ *	- The "required" tables: head, hhea, loca, maxp, cvt_, prep, glyf,
+ *	  hmtx, fpgm.
+ *	- If present in the font: post, gasp, kern, vhea, vmtx.
+ * Note that in particular, the cmap, name, and OS/2 tables are omitted.
  * NOTE: it is the client's responsibility to ensure that if the subset
  * contains any composite glyphs, the components of the composites are
  * included explicitly in the subset.
  * This procedure does not allocate or free any data.
  */
+#define WRITE_TRUETYPE_CID 0x1000 /* internal */
 int psf_write_cid2_font(P6(stream *s, gs_font_cid2 *pfont, int options,
 			   const byte *subset_glyphs, uint subset_size,
 			   const gs_const_string *alt_font_name));

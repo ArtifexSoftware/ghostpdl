@@ -33,6 +33,7 @@
 #include "gxfcache.h"		/* for orig_fonts list */
 #include "gxfcid.h"
 #include "gxfont1.h"
+#include "gxfont42.h"
 #include "gxpath.h"		/* for getting current point */
 #include "gdevpdfx.h"
 #include "gdevpdff.h"
@@ -346,8 +347,62 @@ pdf_find_orig_font(gx_device_pdf *pdev, gs_font *font, gs_matrix *pfmat)
 }
 
 /*
+ * Determine the resource type (resourceFont or resourceCIDFont) for
+ * a font.
+ */
+pdf_resource_type_t
+pdf_font_resource_type(const gs_font *font)
+{
+    switch (font->FontType) {
+    case ft_CID_encrypted:	/* CIDFontType 0 */
+    case ft_CID_user_defined:	/* CIDFontType 1 */
+    case ft_CID_TrueType:	/* CIDFontType 2 */
+    case ft_CID_bitmap:		/* CIDFontType 4 */
+	return resourceCIDFont;
+    default:
+	return resourceFont;
+    }
+}
+
+/*
+ * Determine the chars_count (number of entries in chars_used and Widths)
+ * for a font.  For CIDFonts, this is CIDCount.
+ */
+private int
+pdf_font_chars_count(const gs_font *font)
+{
+    switch (font->FontType) {
+    case ft_composite:
+	/* Composite fonts don't use chars_used or Widths. */
+	return 0;
+    case ft_CID_encrypted:
+	return ((const gs_font_cid0 *)font)->cidata.common.CIDCount;
+    case ft_CID_TrueType:
+	return ((const gs_font_cid2 *)font)->cidata.common.CIDCount;
+    default:
+	return 256;		/* Encoding size */
+    }
+}
+
+/*
+ * Determine the glyphs_count (number of entries in glyphs_used) for a font.
+ * This is only non-zero for TrueType-based fonts.
+ */
+private int
+pdf_font_glyphs_count(const gs_font *font)
+{
+    switch (font->FontType) {
+    case ft_TrueType:
+    case ft_CID_TrueType:
+	return ((const gs_font_type42 *)font)->data.numGlyphs;
+    default:
+	return 0;
+    }
+}
+
+/*
  * Allocate a font resource.  If pfd != 0, a FontDescriptor is allocated,
- * with its id, values, and chars_used.size taken from *pfd.
+ * with its id, values, and chars_count taken from *pfd_in.
  * If font != 0, its FontType is used to determine whether the resource
  * is of type Font or of (pseudo-)type CIDFont; in this case, pfres->font
  * and pfres->FontType are also set.
@@ -360,24 +415,40 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
     pdf_font_descriptor_t *pfd = 0;
     pdf_resource_type_t rtype = resourceFont;
     gs_string chars_used, glyphs_used;
+    int *Widths = 0;
+    byte *widths_known = 0;
+    ushort *CIDToGIDMap = 0;
     int code;
     pdf_font_t *pfres;
 
     chars_used.data = 0;
     glyphs_used.data = 0;
-    if (pfd_in != 0) {
+    if (pfd_in) {
+	uint chars_count = pfd_in->chars_count;
+	uint glyphs_count = pfd_in->glyphs_count;
+
 	code = pdf_alloc_resource(pdev, resourceFontDescriptor,
 				  pfd_in->rid, (pdf_resource_t **)&pfd, 0L);
 	if (code < 0)
 	    return code;
-	chars_used.size = pfd_in->chars_used.size;
+	chars_used.size = (chars_count + 7) >> 3;
 	chars_used.data = gs_alloc_string(mem, chars_used.size,
 					  "pdf_alloc_font(chars_used)");
 	if (chars_used.data == 0)
-	    goto fail;
+	    goto vmfail;
+	if (glyphs_count) {
+	    glyphs_used.size = (glyphs_count + 7) >> 3;
+	    glyphs_used.data = gs_alloc_string(mem, glyphs_used.size,
+					       "pdf_alloc_font(glyphs_used)");
+	    if (glyphs_used.data == 0)
+		goto vmfail;
+	    memset(glyphs_used.data, 0, glyphs_used.size);
+	}
 	memset(chars_used.data, 0, chars_used.size);
 	pfd->values = pfd_in->values;
+	pfd->chars_count = chars_count;
 	pfd->chars_used = chars_used;
+	pfd->glyphs_count = glyphs_count;
 	pfd->glyphs_used = glyphs_used;
 	pfd->do_subset = FONT_SUBSET_OK;
 	pfd->FontFile_id = 0;
@@ -386,15 +457,25 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
 	pfd->written = false;
     }
     if (font) {
-	switch (font->FontType) {
-	case ft_CID_encrypted:		/* CIDFontType 0 */
-	case ft_CID_user_defined:	/* CIDFontType 1 */
-	case ft_CID_TrueType:		/* CIDFontType 2 */
-	case ft_CID_bitmap:		/* CIDFontType 4 */
-	    rtype = resourceCIDFont;
-	default:
-	    break;
+	uint chars_count = pdf_font_chars_count(font);
+	uint widths_known_size = (chars_count + 7) >> 3;
+
+	Widths = (void *)gs_alloc_byte_array(mem, chars_count, sizeof(*Widths),
+					     "pdf_alloc_font(Widths)");
+	widths_known = gs_alloc_bytes(mem, widths_known_size,
+				      "pdf_alloc_font(widths_known)");
+	if (Widths == 0 || widths_known == 0)
+	    goto vmfail;
+	if (font->FontType == ft_CID_TrueType) {
+	    CIDToGIDMap = (void *)
+		gs_alloc_byte_array(mem, chars_count, sizeof(*CIDToGIDMap),
+				    "pdf_alloc_font(CIDToGIDMap)");
+	    if (CIDToGIDMap == 0)
+		goto vmfail;
+	    memset(CIDToGIDMap, 0, chars_count * sizeof(*CIDToGIDMap));
 	}
+	memset(widths_known, 0, widths_known_size);
+	rtype = pdf_font_resource_type(font);
     }
     code = pdf_alloc_resource(pdev, rtype, rid, (pdf_resource_t **)ppfres, 0L);
     if (code < 0)
@@ -408,14 +489,24 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
 	pfres->FontType = font->FontType;
     pfres->index = -1;
     pfres->is_MM_instance = false;
-    pfres->BaseEncoding = ENCODING_INDEX_UNKNOWN;
-    pfres->Differences = 0;
+    pfres->skip = false;
     pfres->FontDescriptor = pfd;
     pfres->write_Widths = false;
+    pfres->Widths = Widths;
+    pfres->widths_known = widths_known;
+    pfres->BaseEncoding = ENCODING_INDEX_UNKNOWN;
+    pfres->Differences = 0;
+    pfres->DescendantFont = 0;
+    pfres->glyphshow_font = 0;
+    pfres->CIDToGIDMap = CIDToGIDMap;
     pfres->char_procs = 0;
-    pfres->skip = false;
     return 0;
+ vmfail:
+    code = gs_note_error(gs_error_VMerror);
  fail:
+    gs_free_object(mem, CIDToGIDMap, "pdf_alloc_font(CIDToGIDMap)");
+    gs_free_object(mem, widths_known, "pdf_alloc_font(widths_known)");
+    gs_free_object(mem, Widths, "pdf_alloc_font(Widths)");
     if (glyphs_used.data)
 	gs_free_string(mem, glyphs_used.data, glyphs_used.size,
 		       "pdf_alloc_font(glyphs_used)");
@@ -428,14 +519,15 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
 
 /*
  * Create a new pdf_font for a gs_font.  This procedure is only intended
- * to be called from one place in gdevpdft.c.
+ * to be called from a few places in gdevpdft.c.
  */
 int
 pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 		    pdf_font_t **pppf)
 {
     int index = -1;
-    pdf_font_t ftemp;
+    int ftemp_Widths[256];
+    byte ftemp_widths_known[256/8];
     int BaseEncoding = ENCODING_INDEX_UNKNOWN;
     int same = 0, base_same = 0;
     pdf_font_embed_t embed =
@@ -493,6 +585,20 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	    }
     }
 	 
+    /* Composite fonts don't have descriptors. */
+    if (font->FontType == ft_composite) {
+	code = pdf_alloc_font(pdev, font->id, &ppf, NULL, font);
+	if (code < 0)
+	    return code;
+	if_debug2('_',
+		  "[_]created ft_composite pdf_font_t 0x%lx, id %ld\n",
+		  (ulong)ppf, pdf_resource_id((pdf_resource_t *)ppf));
+	ppf->index = -1;
+	code = pdf_register_font(pdev, font, ppf);
+	*pppf = ppf;
+	return code;
+    }
+
     /* See if we already have a descriptor for this base font. */
     pfd = (pdf_font_descriptor_t *)
 	pdf_find_resource_by_gs_id(pdev, resourceFontDescriptor,
@@ -511,7 +617,8 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	 * referenced by the Encoding have numbers 0-255.  Check for
 	 * this now.
 	 */
-	if (font->FontType == ft_TrueType &&
+	if ((font->FontType == ft_TrueType ||
+	     font->FontType == ft_CID_TrueType) &&
 	    pdev->CompatibilityLevel <= 1.2
 	    ) {
 	    int i;
@@ -564,17 +671,30 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
     if (~same & (FONT_SAME_METRICS | FONT_SAME_ENCODING)) {
 	/*
 	 * Before allocating the font resource, check that we can
-	 * get all the widths.
+	 * get all the widths for non-CID-keyed fonts.
 	 */
-	int i;
+	switch (font->FontType) {
+	case ft_composite:
+	case ft_CID_encrypted:
+	case ft_CID_TrueType:
+	    break;
+	default:
+	    {
+		pdf_font_t ftemp;
+		int i;
 
-	memset(&ftemp, 0, sizeof(ftemp));
-	for (i = 0; i <= 255; ++i) {
-	    code = pdf_char_width(&ftemp, i, font, NULL);
-	    if (code < 0 && code != gs_error_undefined)
-		return code;
+		memset(&ftemp, 0, sizeof(ftemp));
+		ftemp.Widths = ftemp_Widths;
+		ftemp.widths_known = ftemp_widths_known;
+		memset(ftemp.widths_known, 0, sizeof(ftemp_widths_known));
+		for (i = 0; i <= 255; ++i) {
+		    code = pdf_char_width(&ftemp, i, font, NULL);
+		    if (code < 0 && code != gs_error_undefined)
+			return code;
+		}
+		have_widths = true;
+	    }
 	}
-	have_widths = true;
     }
     if (pfd) {
 	code = pdf_alloc_font(pdev, font->id, &ppf, NULL, font);
@@ -589,20 +709,8 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	int name_index = index;
 
 	fdesc.rid = base_font->id;
-	switch (base_font->FontType) {
-	case ft_CID_encrypted:
-	    fdesc.chars_used.size =
-		(((const gs_font_cid0 *)base_font)->
-		 cidata.common.CIDCount + 7) >> 3;
-	    break;
-	case ft_CID_TrueType:
-	    fdesc.chars_used.size =
-		(((const gs_font_cid2 *)base_font)->
-		 cidata.common.CIDCount + 7) >> 3;
-	    break;
-	default:
-	    fdesc.chars_used.size = 256/8; /* Encoding size */
-	}
+	fdesc.chars_count = pdf_font_chars_count(base_font);
+	fdesc.glyphs_count = pdf_font_glyphs_count(base_font);
 	code = pdf_alloc_font(pdev, font->id, &ppf, &fdesc, font);
 	if (code < 0)
 	    return code;
@@ -613,10 +721,13 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 		  (ulong)pfd, pdf_resource_id((pdf_resource_t *)pfd));
 	if (index < 0) {
 	    int ignore_same;
+	    const gs_font_name *pfname = &base_font->font_name;
 
-	    memcpy(pfd->FontName.chars, base_font->font_name.chars,
-		   base_font->font_name.size);
-	    pfd->FontName.size = base_font->font_name.size;
+	    /* CIDFonts may have a key_name but no font_name. */
+	    if (pfname->size == 0)
+		pfname = &base_font->key_name;
+	    memcpy(pfd->FontName.chars, pfname->chars, pfname->size);
+	    pfd->FontName.size = pfname->size;
 	    pfd->FontFile_id = ffid;
 	    pfd->base_font = base_font;
 	    pfd->orig_matrix = *pomat;
@@ -640,14 +751,30 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	}
     } /* end else (!pfd) */
     ppf->index = index;
+
     switch (font->FontType) {
     case ft_encrypted:
     case ft_encrypted2:
 	ppf->is_MM_instance =
 	    ((const gs_font_type1 *)font)->data.WeightVector.count > 0;
+	break;
+    case ft_CID_encrypted:
+    case ft_CID_TrueType:
+	/*
+	 * Write the CIDSystemInfo now, so we don't try to access it after
+	 * the font may no longer be available.
+	 */
+	{
+	    long cidsi_id = pdf_begin_separate(pdev);
+
+	    pdf_write_CIDFont_system_info(pdev, font);
+	    pdf_end_separate(pdev);
+	    ppf->CIDSystemInfo_id = cidsi_id;
+	}
     default:
 	DO_NOTHING;
     }
+
     ppf->BaseEncoding = BaseEncoding;
     ppf->fname = pfd->FontName;
     if (~same & FONT_SAME_METRICS) {
@@ -676,14 +803,9 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	pdf_find_char_range(font, &ppf->FirstChar, &ppf->LastChar);
     }
     if (have_widths) {
-	/*
-	 * C's bizarre coercion rules make us use memcpy here
-	 * rather than direct assignments, even though sizeof()
-	 * gives the correct value....
-	     */
-	memcpy(ppf->Widths, ftemp.Widths, sizeof(ppf->Widths));
-	memcpy(ppf->widths_known, ftemp.widths_known,
-	       sizeof(ppf->widths_known));
+	memcpy(ppf->Widths, ftemp_Widths, sizeof(ftemp_Widths));
+	memcpy(ppf->widths_known, ftemp_widths_known,
+	       sizeof(ftemp_widths_known));
     }
     code = pdf_register_font(pdev, font, ppf);
 
@@ -829,9 +951,9 @@ pdf_add_encoding_difference(gx_device_pdf *pdev, pdf_font_t *ppf, int chr,
 	bfont->procs.callbacks.glyph_name(glyph, &pdiff[chr].str.size);
     ppf->Widths[chr] = width;
     if (code == 0)
-	ppf->widths_known[chr >> 3] |= 1 << (chr & 7);
+	ppf->widths_known[chr >> 3] |= 0x80 >> (chr & 7);
     else
-	ppf->widths_known[chr >> 3] &= ~(1 << (chr & 7));
+	ppf->widths_known[chr >> 3] &= ~(0x80 >> (chr & 7));
     return 0;
 }
 
@@ -845,18 +967,18 @@ pdf_char_width(pdf_font_t *ppf, int ch, gs_font *font,
 {
     if (ch < 0 || ch > 255)
 	return_error(gs_error_rangecheck);
-    if (!(ppf->widths_known[ch >> 3] & (1 << (ch & 7)))) {
+    if (!(ppf->widths_known[ch >> 3] & (0x80 >> (ch & 7)))) {
 	gs_font_base *bfont = (gs_font_base *)font;
 	gs_glyph glyph = bfont->procs.encode_char(font, (gs_char)ch,
 						  GLYPH_SPACE_INDEX);
-	int width;
+	int width = 0;
 	int code = pdf_glyph_width(ppf, glyph, font, &width);
 
 	if (code < 0)
 	    return code;
 	ppf->Widths[ch] = width;
 	if (code == 0)
-	    ppf->widths_known[ch >> 3] |= 1 << (ch & 7);
+	    ppf->widths_known[ch >> 3] |= 0x80 >> (ch & 7);
     }
     if (pwidth)
 	*pwidth = ppf->Widths[ch];
@@ -873,7 +995,17 @@ pdf_glyph_width(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
 {
     int wmode = font->WMode;
     gs_glyph_info_t info;
+    bool use_tt_scale;
     int code;
+
+    switch(font->FontType) {
+    case ft_TrueType:
+    case ft_CID_TrueType:
+	/* TrueType fonts have 1 unit per em, we want 1000. */
+	use_tt_scale = true; break;
+    default:
+	use_tt_scale = false;
+    }
 
     if (glyph != gs_no_glyph &&
 	(code = font->procs.glyph_info(font, glyph, NULL,
@@ -881,7 +1013,6 @@ pdf_glyph_width(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
 				       &info)) >= 0
 	) {
 	double w, v;
-	gs_const_string gnstr;
 
 	if (wmode && (w = info.width[wmode].y) != 0)
 	    v = info.width[wmode].x;
@@ -889,28 +1020,22 @@ pdf_glyph_width(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
 	    w = info.width[wmode].x, v = info.width[wmode].y;
 	if (v != 0)
 	    return_error(gs_error_rangecheck);
-	if (font->FontType == ft_TrueType) {
-	    /* TrueType fonts have 1 unit per em, we want 1000. */
+	if (use_tt_scale)
 	    w *= 1000;
-	}
 	*pwidth = (int)w;
 	/*
 	 * If the character is .notdef, don't cache the width,
 	 * just in case this is an incrementally defined font.
 	 */
-	gnstr.data = (const byte *)
-	    font->procs.callbacks.glyph_name(glyph, &gnstr.size);
-	return (gnstr.size == 7 && !memcmp(gnstr.data, ".notdef", 7));
+	return (gs_font_glyph_is_notdef((gs_font_base *)font, glyph) ? 1 : 0);
     } else {
 	/* Try for MissingWidth. */
 	static const gs_point tt_scale = {1000, 1000};
 	const gs_point *pscale = 0;
 	gs_font_info_t finfo;
 
-	if (font->FontType == ft_TrueType) {
-	    /* TrueType fonts have 1 unit per em, we want 1000. */
+	if (use_tt_scale)
 	    pscale = &tt_scale;
-	}
 	code = font->procs.font_info(font, pscale, FONT_INFO_MISSING_WIDTH,
 				     &finfo);
 	if (code < 0)
@@ -947,13 +1072,10 @@ pdf_find_char_range(gs_font *font, int *pfirst, int *plast)
 	    gs_glyph glyph =
 		font->procs.encode_char(font, (gs_char)ch,
 					GLYPH_SPACE_INDEX);
-	    gs_const_string gnstr;
 
 	    if (glyph == gs_no_glyph)
 		continue;
-	    gnstr.data = (const byte *)
-		bfont->procs.callbacks.glyph_name(glyph, &gnstr.size);
-	    if (gnstr.size == 7 && !memcmp(gnstr.data, ".notdef", 7)) {
+	    if (gs_font_glyph_is_notdef(bfont, glyph)) {
 		notdef = glyph;
 		break;
 	    }
@@ -1165,7 +1287,6 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
 	     index != 0;
 	 ) {
 	gs_glyph_info_t info;
-	gs_const_string gnstr;
 
 	if (psf_sorted_glyphs_include(letters, num_letters, glyph)) {
 	    /* We don't need the bounding box. */
@@ -1181,13 +1302,9 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
 	    if (!info.num_pieces)
 		desc.Ascent = max(desc.Ascent, info.bbox.q.y);
 	}
-	if (notdef == gs_no_glyph) {
-	    gnstr.data = (const byte *)
-		bfont->procs.callbacks.glyph_name(glyph, &gnstr.size);
-	    if (gnstr.size == 7 && !memcmp(gnstr.data, ".notdef", 7)) {
-		notdef = glyph;
-		desc.MissingWidth = info.width[wmode].x;
-	    }
+	if (notdef == gs_no_glyph && gs_font_glyph_is_notdef(bfont, glyph)) {
+	    notdef = glyph;
+	    desc.MissingWidth = info.width[wmode].x;
 	}
 	if (info.width[wmode].y != 0)
 	    fixed_width = min_int;

@@ -162,7 +162,7 @@ $(PSOBJ)idebug.$(OBJ) : $(PSSRC)idebug.c $(GH) $(string__h)\
  $(opdef_h) $(ipacked_h)
 	$(PSCC) $(PSO_)idebug.$(OBJ) $(C_) $(PSSRC)idebug.c
 
-$(PSOBJ)idict.$(OBJ) : $(PSSRC)idict.c $(GH) $(string__h)\
+$(PSOBJ)idict.$(OBJ) : $(PSSRC)idict.c $(GH) $(math__h) $(string__h)\
  $(errors_h)\
  $(gxalloc_h)\
  $(iddstack_h) $(idebug_h) $(idict_h) $(idictdef_h)\
@@ -593,7 +593,7 @@ dscparse_h=$(PSSRC)dscparse.h
 
 $(PSOBJ)zdscpars.$(OBJ) : $(PSSRC)zdscpars.c $(GH) $(memory__h) $(string__h)\
  $(dscparse_h) $(estack_h) $(ialloc_h) $(idict_h) $(iddict_h) $(iname_h)\
- $(ivmspace_h) $(oper_h) $(store_h)\
+ $(iparam_h) $(istack_h) $(ivmspace_h) $(oper_h) $(store_h)\
  $(gsstruct_h)
 	$(PSCC) $(PSO_)zdscpars.$(OBJ) $(C_) $(PSSRC)zdscpars.c
 

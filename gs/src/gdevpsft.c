@@ -206,14 +206,14 @@ static const byte cmap_initial_6[] = {
     0, 3,		/* platform ID = Microsoft */
     0, 0,		/* platform encoding ID = unknown */
     0, 0, 0, 4+8+8+10,	/* offset to table start */
-			/****** VARIABLE, add 2 x # of entries ******/
+			/* *VARIABLE*, add 2 x # of entries */
 
 	/* Start of Macintosh format 6 table */
     0, 6,		/* format = 6, trimmed table mapping */
-    0, 10,		/* length ****** VARIABLE, add 2 x # of entries ******/
+    0, 10,		/* length *VARIABLE*, add 2 x # of entries */
     0, 0,		/* version number */
     0, 0,		/* first character code */
-    0, 0		/* # of entries ****** VARIABLE ****** */
+    0, 0		/* # of entries *VARIABLE* */
 };
 static const byte cmap_initial_4[] = {
     0, 0,		/* table version # = 0 */
@@ -339,7 +339,7 @@ static const byte name_initial[] = {
     0, 2,			/* encoding ID = ISO 8859-1 */
     0, 0,			/* language ID (none) */
     0, 6,			/* name ID = PostScript name */
-    0, 0,			/* length ****** VARIABLE ****** */
+    0, 0,			/* length *VARIABLE* */
     0, 0			/* start of string within string storage */
 };
 private uint
@@ -531,17 +531,19 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     ulong offset;
     gs_glyph glyph, glyph_prev;
     ulong max_glyph;
-    uint glyf_length, glyf_checksum = 0 /****** BOGUS ******/;
+    uint glyf_length, glyf_checksum = 0 /****** NO CHECKSUM ******/;
     uint loca_length, loca_checksum[2];
     uint numGlyphs;		/* original value from maxp */
     byte head[56];		/* 0 mod 4 */
     post_t post;
     ulong head_checksum, file_checksum = 0;
     int indexToLocFormat;
-    bool have_cmap = false,
+    bool
+	writing_cid = (options & WRITE_TRUETYPE_CID) != 0,
+	have_cmap = writing_cid,
 	have_name = !(options & WRITE_TRUETYPE_NAME),
-	have_OS_2 = false,
-	have_post = false;
+	have_OS_2 = writing_cid,
+	have_post = writing_cid;
     uint cmap_length;
     ulong OS_2_start;
     uint OS_2_length = OS_2_LENGTH;
@@ -567,42 +569,73 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	ulong start;
 	uint length;
 
+	if (numTables == MAX_NUM_TABLES)
+	    return_error(gs_error_limitcheck);
 	ACCESS(12 + i * 16, 16, tab);
 	start = u32(tab + 8);
 	length = u32(tab + 12);
-	if (!memcmp(tab, "head", 4)) {
+	/* Copy the table data now, since another ACCESS may invalidate it. */
+	memcpy(&tables[numTables * 16], tab, 16);
+
+#define W(a,b,c,d)\
+  ( ((a) << 24) + ((b) << 16) + ((c) << 8) + (d))
+
+	switch (W(tab[0], tab[1], tab[2], tab[3])) {
+	case W('h','e','a','d'):
 	    if (length != 54)
 		return_error(gs_error_invalidfont);
 	    ACCESS(start, length, data);
 	    memcpy(head, data, length);
-	} else if (
-	    !memcmp(tab, "gly", 3) /*glyf=synthesized, glyx=Adobe bogus*/ ||
-	    !memcmp(tab, "loc", 3) /*loca=synthesized, locx=Adobe bogus*/ ||
-	    !memcmp(tab, "gdir", 4) /*Adobe marker*/ ||
-	    ((options & WRITE_TRUETYPE_CMAP) && !memcmp(tab, "cmap", 4))
-	    )
-	    DO_NOTHING;
-	else {
-	    if (numTables == MAX_NUM_TABLES)
-		return_error(gs_error_limitcheck);
-	    if (!memcmp(tab, "cmap", 4))
-		have_cmap = true;
-	    else if (!memcmp(tab, "maxp", 4)) {
-		ACCESS(start, length, data);
-		numGlyphs = U16(data + 4);
-	    } else if (!memcmp(tab, "name", 4))
-		have_name = true;
-	    else if (!memcmp(tab, "OS/2", 4)) {
-		have_OS_2 = true;
-		if (length > OS_2_LENGTH)
-		    return_error(gs_error_invalidfont);
-		OS_2_start = start;
-		OS_2_length = length;
+	    continue;
+	case W('g','l','y','f'): /* synthesized */
+	case W('g','l','y','x'): /* Adobe bogus */
+	case W('l','o','c','a'): /* synthesized */
+	case W('l','o','c','x'): /* Adobe bogus */
+	case W('g','d','i','r'): /* Adobe marker */
+	    continue;
+	case W('c','m','a','p'):
+	    if (options & (WRITE_TRUETYPE_CMAP | WRITE_TRUETYPE_CID))
 		continue;
-	    } else if (!memcmp(tab, "post", 4))
-		have_post = true;
-	    memcpy(&tables[numTables++ * 16], tab, 16);
+	    have_cmap = true;
+	    break;
+	case W('m','a','x','p'):
+	    ACCESS(start, length, data);
+	    numGlyphs = U16(data + 4);
+	    break;
+	case W('n','a','m','e'):
+	    if (writing_cid)
+		continue;
+	    have_name = true;
+	    break;
+	case W('O','S','/','2'):
+	    if (writing_cid)
+		continue;
+	    have_OS_2 = true;
+	    if (length > OS_2_LENGTH)
+		return_error(gs_error_invalidfont);
+	    OS_2_start = start;
+	    OS_2_length = length;
+	    continue;
+	case W('p','o','s','t'):
+	    have_post = true;
+	    break;
+	case W('h','h','e','a'):
+	case W('c','v','t',' '):
+	case W('p','r','e','p'):
+	case W('h','m','t','x'):
+	case W('f','p','g','m'):
+	case W('g','a','s','p'):
+	case W('k','e','r','n'):
+	case W('v','h','e','a'):
+	case W('v','m','t','x'):
+	    break;		/* always copy these if present */
+	default:
+	    if (writing_cid)
+		continue;
+	    break;
 	}
+#undef W
+	numTables++;
     }
 
     /*
@@ -672,8 +705,11 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
      * Note that the existing directory is already sorted by tag.
      */
 
-    numTables_out = numTables + 4 +
-	!have_cmap + !have_name + !have_post;
+    numTables_out = numTables + 3 /* head, glyf, loca */
+	+ !writing_cid		/* OS/2 */
+	+ !have_cmap + !have_name + !have_post;
+    if (numTables_out >= MAX_NUM_TABLES)
+	return_error(gs_error_limitcheck);
     offset = 12 + numTables_out * 16;
     for (i = 0; i < numTables; ++i) {
 	byte *tab = &tables[i * 16];
@@ -708,9 +744,11 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    tab += 16;
 	}
 
-	offset = put_table(tab, "OS/2", 0L /****** NO CHECKSUM ******/,
-			   offset, OS_2_length);
-	tab += 16;
+	if (!writing_cid) {
+	    offset = put_table(tab, "OS/2", 0L /****** NO CHECKSUM ******/,
+			       offset, OS_2_length);
+	    tab += 16;
+	}
 
 	if (!have_post) {
 	    offset = put_table(tab, "post", 0L /****** NO CHECKSUM ******/,
@@ -850,7 +888,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	update_OS_2(&os2, 0xf000, 256);
 	pwrite(s, &os2, OS_2_length);
 	put_pad(s, OS_2_length);
-    } else {
+    } else if (!writing_cid) {
 	/* Just copy the existing OS/2 table. */
 	write_range(s, pfont, OS_2_start, OS_2_length);
 	put_pad(s, OS_2_length);
@@ -921,8 +959,8 @@ psf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
     psf_enumerate_glyphs_begin(&genum, font, subset_glyphs,
 			       (subset_glyphs ? subset_size : 0),
 			       GLYPH_SPACE_INDEX);
-    return psf_write_truetype_data(s, pfont, options, &genum,
-				   subset_glyphs != 0, alt_font_name);
+    return psf_write_truetype_data(s, pfont, options & ~WRITE_TRUETYPE_CID,
+				   &genum, subset_glyphs != 0, alt_font_name);
 }
 
 /* Write a CIDFontType 2 font. */
@@ -937,6 +975,7 @@ psf_write_cid2_font(stream *s, gs_font_cid2 *pfont, int options,
     psf_enumerate_bits_begin(&genum, font, subset_bits,
 			     (subset_bits ? subset_size : 0),
 			     GLYPH_SPACE_INDEX);
-    return psf_write_truetype_data(s, (gs_font_type42 *)font, options, &genum,
+    return psf_write_truetype_data(s, (gs_font_type42 *)font,
+				   WRITE_TRUETYPE_CID, &genum,
 				   subset_bits != 0, alt_font_name);
 }

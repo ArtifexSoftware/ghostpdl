@@ -155,6 +155,12 @@ pop		% .cidfonttypes
 		% doesn't seem to be used in practice, we no longer bother.
     2 index (Binary) ne { stop } if
     currentfile .currentresourcefile ne { stop } if
+		% Hack: the pdfwrite driver relies on finalization to write
+		% out fonts.  However, the font may be finalized after the
+		% resource file, in which case the resource file will be
+		% closed.  So if the current output device is pdfwrite,
+		% don't use incremental loading.
+    currentdevice .devicename /pdfwrite eq { stop } if
     currentfile fileposition
   } .internalstopped {
 		% File is not positionable, or uses hex data.

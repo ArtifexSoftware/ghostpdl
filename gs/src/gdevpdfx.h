@@ -84,6 +84,7 @@ typedef enum {
      */
     resourceCharProc,
     resourceCIDFont,
+    resourceCMap,
     resourceFontDescriptor,
     resourceFunction,
     NUM_RESOURCE_TYPES
@@ -91,7 +92,7 @@ typedef enum {
 
 #define pdf_resource_type_names\
   "ColorSpace", "ExtGState", "Pattern", "Shading", "XObject", "Font",\
-  0, "Font", "FontDescriptor", 0
+  0, "Font", "CMap", "FontDescriptor", 0
 #define pdf_resource_type_structs\
   &st_pdf_resource,		/* see below */\
   &st_pdf_resource,\
@@ -101,6 +102,7 @@ typedef enum {
   &st_pdf_font,			/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_char_proc,		/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_font,			/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_resource,\
   &st_pdf_font_descriptor,	/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_resource
 
@@ -630,8 +632,11 @@ void pdf_put_matrix(P4(gx_device_pdf *pdev, const char *before,
 		       const gs_matrix *pmat, const char *after));
 
 /* Write a name, with escapes for unusual characters. */
-void pdf_put_name_escaped(P4(stream *s, const byte *nstr, uint size,
-			     bool escape));
+typedef int (*pdf_put_name_chars_proc_t)(P3(stream *, const byte *, uint));
+pdf_put_name_chars_proc_t
+    pdf_put_name_chars_proc(P1(const gx_device_pdf *pdev));
+void pdf_put_name_chars(P3(const gx_device_pdf *pdev, const byte *nstr,
+			   uint size));
 void pdf_put_name(P3(const gx_device_pdf *pdev, const byte *nstr, uint size));
 
 /* Write a string in its shortest form ( () or <> ). */
@@ -651,10 +656,12 @@ typedef struct pdf_data_writer_s {
     long length_id;
 } pdf_data_writer_t;
 /*
- * Begin a Function or halftone data stream.  The client has opened the
- * object and written the << and any desired dictionary keys.
+ * Begin a data stream.  The client has opened the object and written
+ * the << and any desired dictionary keys.
  */
-int pdf_begin_data(P2(gx_device_pdf *pdev, pdf_data_writer_t *pdw));
+int pdf_begin_data_binary(P3(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
+			     bool data_is_binary));
+#define pdf_begin_data(pdev, pdw) pdf_begin_data_binary(pdev, pdw, true)
 
 /* End a data stream. */
 int pdf_end_data(P1(pdf_data_writer_t *pdw));

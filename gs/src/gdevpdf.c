@@ -790,6 +790,7 @@ pdf_close(gx_device * dev)
     /* Write the font resources and related resources. */
 
     pdf_write_font_resources(pdev);
+    pdf_write_resource_objects(pdev, resourceCMap);
 
     /* Create the Pages tree. */
 

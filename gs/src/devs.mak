@@ -698,7 +698,7 @@ pdfwrite3_=$(GLOBJ)gdevpdff.$(OBJ) $(GLOBJ)gdevpdfg.$(OBJ)
 pdfwrite4_=$(GLOBJ)gdevpdfi.$(OBJ) $(GLOBJ)gdevpdfj.$(OBJ)
 pdfwrite5_=$(GLOBJ)gdevpdfm.$(OBJ)
 pdfwrite6_=$(GLOBJ)gdevpdfo.$(OBJ) $(GLOBJ)gdevpdfp.$(OBJ)
-pdfwrite7_=$(GLOBJ)gdevpdfr.$(OBJ) $(GLOBJ)gdevpdft.$(OBJ)
+pdfwrite7_=$(GLOBJ)gdevpdfr.$(OBJ) $(GLOBJ)gdevpdfs.$(OBJ) $(GLOBJ)gdevpdft.$(OBJ)
 pdfwrite8_=$(GLOBJ)gdevpdfu.$(OBJ) $(GLOBJ)gdevpdfv.$(OBJ) $(GLOBJ)gdevpdfw.$(OBJ)
 pdfwrite9_=
 pdfwrite10_=$(GLOBJ)gsflip.$(OBJ)
@@ -822,12 +822,19 @@ $(GLOBJ)gdevpdfr.$(OBJ) : $(GLSRC)gdevpdfr.c $(memory__h) $(string__h)\
  $(scanchar_h) $(sstring_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpdfr.$(OBJ) $(C_) $(GLSRC)gdevpdfr.c
 
+$(GLOBJ)gdevpdfs.$(OBJ) : $(GLSRC)gdevpdfs.c\
+ $(math__h) $(memory__h) $(string__h) $(gx_h)\
+ $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h) $(gdevpsf_h)\
+ $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gxfcache_h) $(gxfcid_h) $(gxfcmap_h) $(gxfixed_h) $(gxfont_h)\
+ $(gxfont0_h) $(gxfont1_h) $(gxfont42_h) $(gxpath_h)\
+ $(scommon_h)
+	$(GLCC) $(GLO_)gdevpdfs.$(OBJ) $(C_) $(GLSRC)gdevpdfs.c
+
 $(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c\
  $(math__h) $(memory__h) $(string__h) $(gx_h)\
  $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfx_h)\
- $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
- $(gxfcache_h) $(gxfcid_h) $(gxfixed_h) $(gxfont_h) $(gxfont0_h) $(gxfont1_h)\
- $(gxfont42_h) $(gxpath_h)\
+ $(gserrors_h) $(gxpath_h)\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdft.$(OBJ) $(C_) $(GLSRC)gdevpdft.c
 
@@ -849,8 +856,8 @@ $(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
 $(GLOBJ)gdevpdfw.$(OBJ) : $(GLSRC)gdevpdfw.c\
  $(memory__h) $(string__h) $(gx_h)\
  $(gdevpdff_h) $(gdevpdfx_h) $(gdevpsf_h)\
- $(gsbittab_h) $(gserrors_h) $(gsmalloc_h) $(gsmatrix_h) $(gsutil_h)\
- $(gxfcid_h) $(gxfont_h) $(gxfont0_h)\
+ $(gsalloc_h) $(gsbittab_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gxfcid_h) $(gxfcmap_h) $(gxfont_h) $(gxfont0_h)\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdfw.$(OBJ) $(C_) $(GLSRC)gdevpdfw.c
 

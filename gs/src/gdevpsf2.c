@@ -987,8 +987,11 @@ cff_write_cidset(cff_writer_t *pcw, psf_glyph_enum_t *penum)
 
     sputc(pcw->strm, 0);
     psf_enumerate_glyphs_reset(penum);
-    while ((code = psf_enumerate_glyphs_next(penum, &glyph)) == 0)
-	put_card16(pcw, (uint)(glyph - gs_min_cid_glyph));
+    while ((code = psf_enumerate_glyphs_next(penum, &glyph)) == 0) {
+	/* Skip glyph 0 (the .notdef glyph), which is always first. */
+	if (glyph != gs_min_cid_glyph)
+	    put_card16(pcw, (uint)(glyph - gs_min_cid_glyph));
+    }
     return min(code, 0);
 }
 
@@ -996,68 +999,80 @@ cff_write_cidset(cff_writer_t *pcw, psf_glyph_enum_t *penum)
 
 /* Determine the size of FDSelect. */
 private uint
-cff_FDSelect_size(cff_writer_t *pcw)
+cff_FDSelect_size(cff_writer_t *pcw, psf_glyph_enum_t *penum, int *pformat)
 {
     gs_font_cid0 *const pfont = (gs_font_cid0 *)pcw->pfont;
     gs_font_base *const pbfont = (gs_font_base *)pfont;
-    int cid_count = pfont->cidata.common.CIDCount;
-    int i, prev, num_ranges;
+    gs_glyph glyph;
+    int prev = -1;
+    uint linear_size = 1, range_size = 5;
+    int code;
 
     /* Determine whether format 0 or 3 is more efficient. */
-    for (i = 0, prev = -1, num_ranges = 0; i < cid_count; ++i) {
+    psf_enumerate_glyphs_reset(penum);
+    while ((code = psf_enumerate_glyphs_next(penum, &glyph)) == 0) {
 	int font_index;
-	int code = pfont->cidata.glyph_data(pbfont,
-					    (gs_glyph)(i + gs_min_cid_glyph),
-					    NULL, &font_index);
 
+	code = pfont->cidata.glyph_data(pbfont, glyph, NULL, &font_index);
 	if (code >= 0) {
 	    if (font_index != prev)
-		++num_ranges, prev = font_index;
+		range_size += 3, prev = font_index;
+	    ++linear_size;
 	}
     }
-    return min(1 + cid_count, 5 + num_ranges * 3);
+    if (range_size < linear_size) {
+	*pformat = 3;
+	return range_size;
+    } else {
+	*pformat = 0;
+	return linear_size;
+    }
 }
 
-/* Write FDSelect.  size is the value returned by cff_FDSelect_size. */
+/* Write FDSelect.  size and format were returned by cff_FDSelect_size. */
 private int
-cff_write_FDSelect(cff_writer_t *pcw, uint size)
+cff_write_FDSelect(cff_writer_t *pcw, psf_glyph_enum_t *penum, uint size,
+		   int format)
 {
     stream *s = pcw->strm;
     gs_font_cid0 *const pfont = (gs_font_cid0 *)pcw->pfont;
     gs_font_base *const pbfont = (gs_font_base *)pfont;
-    int cid_count = pfont->cidata.common.CIDCount;
-    int i, prev;
+    gs_glyph glyph;
+    int prev = -1;
+    uint cid_count = 0;
+    int code;
 
-    if (size < 1 + cid_count) {
-	/* Use format 3 (ranges). */
-	spputc(s, 3);
+    spputc(s, format);
+    psf_enumerate_glyphs_reset(penum);
+    switch (format) {
+    case 3:			/* ranges */
 	put_card16(pcw, (size - 5) / 3);
-	for (i = 0, prev = -1; i < cid_count; ++i) {
+	while ((code = psf_enumerate_glyphs_next(penum, &glyph)) == 0) {
 	    int font_index;
-	    int code = pfont->cidata.glyph_data(pbfont,
-					(gs_glyph)(i + gs_min_cid_glyph),
-						NULL, &font_index);
 
+	    code = pfont->cidata.glyph_data(pbfont, glyph, NULL, &font_index);
 	    if (code >= 0) {
 		if (font_index != prev) {
-		    put_card16(pcw, i);
+		    put_card16(pcw, cid_count);
 		    sputc(s, (byte)font_index);
 		    prev = font_index;
 		}
+		++cid_count;
 	    }
 	}
 	put_card16(pcw, cid_count);
-    } else {
-	/* Use format 0 (linear table). */
-	spputc(s, 0);
-	for (i = 0; i < cid_count; ++i) {
-	    int font_index = 0;	/* in case of error */
+	break;
+    case 0:			/* linear table */
+	while ((code = psf_enumerate_glyphs_next(penum, &glyph)) == 0) {
+	    int font_index;
 
-	    pfont->cidata.glyph_data(pbfont,
-				     (gs_glyph)(i + gs_min_cid_glyph),
-				     NULL, &font_index);
-	    sputc(s, (byte)font_index);
+	    code = pfont->cidata.glyph_data(pbfont, glyph, NULL, &font_index);
+	    if (code >= 0)
+		sputc(s, (byte)font_index);
 	}
+	break;
+    default:			/* not possible */
+	return_error(gs_error_rangecheck);
     }
     return 0;
 }
@@ -1423,7 +1438,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     gs_const_string font_name;
     stream poss;
     uint charstrings_count, charstrings_size;
-    uint charset_size, fdselect_size;
+    uint charset_size, fdselect_size, fdselect_format;
     uint subrs_count[256], subrs_size[256];
     /*
      * Set the offsets and sizes to the largest reasonable values
@@ -1457,6 +1472,9 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 				    cid0_glyph_data);
     if (code < 0)
 	return code;
+    /* The .notdef glyph (glyph 0) must be included. */
+    if (subset_cids && subset_size > 0 && !(subset_cids[0] & 0x80))
+	return_error(gs_error_rangecheck);
 
     writer.options = options;
     swrite_position_only(&poss);
@@ -1511,7 +1529,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     charset_size = stell(&poss);
 
     /* Compute the size of the FDSelect strucure. */
-    fdselect_size = cff_FDSelect_size(&writer);
+    fdselect_size = cff_FDSelect_size(&writer, &genum, &fdselect_format);
 
     /* Compute the size of the CharStrings Index. */
     charstrings_size =
@@ -1599,7 +1617,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     if (offset > FDSelect_offset)
 	return_error(offset_error("FDselect"));
     FDSelect_offset = offset;
-    cff_write_FDSelect(&writer, fdselect_size);
+    cff_write_FDSelect(&writer, &genum, fdselect_size, fdselect_format);
 
     /* Write the CharStrings Index, checking the offset. */
     offset = stell(writer.strm) - start_pos;

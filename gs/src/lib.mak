@@ -1667,7 +1667,7 @@ $(GLD)cmaplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cmaplib_) $(GLD)cidlib.dev
 	$(ADDMOD) $(GLD)cmaplib -include $(GLD)cidlib
 
 $(GLOBJ)gsfcmap.$(OBJ) : $(GLSRC)gsfcmap.c $(GXERR) $(memory__h)\
- $(gsstruct_h) $(gxfcmap_h)
+ $(gsstruct_h) $(gsutil_h) $(gxfcmap_h)
 	$(GLCC) $(GLO_)gsfcmap.$(OBJ) $(C_) $(GLSRC)gsfcmap.c
 
 psf0lib_=$(GLOBJ)gschar0.$(OBJ) $(GLOBJ)gsfont0.$(OBJ)
@@ -1821,7 +1821,8 @@ $(DD)psf.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf_)
 	$(ADDMOD) $(DD)psf -obj $(psf_2)
 
 $(GLOBJ)gdevpsf1.$(OBJ) : $(GLSRC)gdevpsf1.c $(GXERR) $(memory__h)\
- $(gsccode_h) $(gsmatrix_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
+ $(gsccode_h) $(gsmatrix_h)\
+ $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxmatrix_h) $(gxtype1_h)\
  $(sfilter_h) $(sstring_h) $(stream_h) $(strimpl_h)\
  $(gdevpsf_h) $(spprint_h) $(spsdf_h)
 	$(GLCC) $(GLO_)gdevpsf1.$(OBJ) $(C_) $(GLSRC)gdevpsf1.c
