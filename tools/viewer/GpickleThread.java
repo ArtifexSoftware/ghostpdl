@@ -23,7 +23,7 @@ import java.awt.image.*;
 public class GpickleThread extends Gpickle implements Runnable {
 
   /** debug printf control */
-  private final static boolean debug = true;
+  private final static boolean debug = false;
   private final static boolean debugPerformance = debug && true;
   private final static boolean debugSpew = debug && false;
 
