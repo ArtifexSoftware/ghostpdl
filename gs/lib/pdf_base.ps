@@ -544,9 +544,9 @@ pdfdict begin
 /resolvestream {	% <streamdict> <readdata?> resolvestream <stream>
   1 index /F .knownget {
 		% This stream is stored on an external file.
-    (r) file exch
+    (r) file 3 -1 roll
     /FDecodeParms /FFilter filterparms
-		% Stack: readdata? dict parms filternames
+		% Stack: readdata? file dict parms filternames
     4 -1 roll exch
     pdf_decrypt_stream
     applyfilters
