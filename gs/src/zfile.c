@@ -1045,7 +1045,12 @@ lib_fopen_with_libpath(i_ctx_t *i_ctx_p, gx_io_device *iodev,
 		const char *fname, uint flen, char fmode[4], char *buffer, int blen)
 {   /* i_ctx_p is NULL running init files. */
     FILE *file = NULL;
+    bool starting_arg_file = false;
 
+    if (i_ctx_p != NULL) {
+	starting_arg_file = i_ctx_p->starting_arg_file;
+	i_ctx_p->starting_arg_file = false;
+    }
     if (
 #if !NEW_COMBINE_PATH
 	gp_pathstring_not_bare(fname, flen)
@@ -1072,15 +1077,16 @@ lib_fopen_with_libpath(i_ctx_t *i_ctx_p, gx_io_device *iodev,
 	    uint plen = r_size(prdir), blen1 = blen;
 
 	    gp_file_name_combine_result r = gp_file_name_combine_patch(pstr, plen, 
-		    fname, flen, true, buffer, &blen1);
+		    fname, flen, false, buffer, &blen1);
 	    if (r != gp_combine_success)
 		continue;
-#if NEW_COMBINE_PATH
+#if 0 /*NEW_COMBINE_PATH*/
 	    if (gp_file_name_parents(buffer, blen1) > 
 	        gp_file_name_parents(pstr, plen))
 		continue;
 #endif
-	    if (check_file_permissions_aux(i_ctx_p, buffer, blen) < 0)
+	    if (!starting_arg_file &&
+	        check_file_permissions_aux(i_ctx_p, buffer, blen) < 0)
 		continue;
 	    if (iodev->procs.fopen(iodev, buffer, fmode, &file,
 					 buffer, blen) == 0)

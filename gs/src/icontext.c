@@ -147,6 +147,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
     }
     pcst->scanner_options = 0;
     pcst->LockFilePermissions = false;
+    pcst->starting_arg_file = false;
     pcst->filearg = NULL;
     /* The initial stdio values are bogus.... */
     make_file(&pcst->stdio[0], a_readonly | avm_invalid_file_entry, 1,

@@ -864,9 +864,9 @@ mark
 % Defines cmapsub, cmaptab
 /.pickcmap_with_xlatmap {
   .xlatmap_dict /TrueType known not {
-    (Configuration error : Emulating a CID font with a True Type file, ) print
+    (Emulating a CID font with a True Type file, ) print
     (the file gs/lib/xlatmap must contain /TrueType key.) =
-    /.pickcmap_with_xlatmap cvx /invalidfont signalerror
+    /.pickcmap_with_xlatmap cvx /configurationerror signalerror
   } if
   false
   .xlatmap_dict /TrueType get 
@@ -875,8 +875,8 @@ mark
     (.) search {                                         % bool [] i post match pre
       cvi exch pop exch cvi                              % bool [] i PlatID SpecID
     } {
-      (Configuration error : gs/lib/xlatmap containg a record with an invalid (PlatformID.SpecificID)) =
-      /.pickcmap_with_xlatmap cvx /invalidfont signalerror
+      (gs/lib/xlatmap containg a record with an invalid (PlatformID.SpecificID)) =
+      /.pickcmap_with_xlatmap cvx /configurationerror signalerror
     } ifelse
     DEBUG {
       (Seeking a cmap for platform=) print 1 index =only ( encoding=) print dup =

@@ -1420,6 +1420,118 @@ devicedict /Default devicedict .defaultdevicename get put
 
 (END IMAGE) VMDEBUG
 
+% Auxiliary procedures for generating file name templates.
+
+% Convert a path name into a string suitable for filenameforall
+% For example: (a\\b*?c) to (a\\\\b\\*\\?c)
+/.makepathtemplate {	% str1 -- str2
+   dup length dup add string 0	% result string up to twice the size
+   0 1 4 index length 1 sub {
+     3 index exch get
+     dup 92 eq {		% \ -> \\
+        2 index 2 index 92
+        put
+        exch 1 add exch
+     } 
+     if
+     dup 42 eq {		% * -> \*
+        2 index 2 index 92
+        put
+        exch 1 add exch
+     } 
+     if
+     dup 63 eq {		% ? -> \?
+        2 index 2 index 92
+        put
+        exch 1 add exch
+     } 
+     if
+     2 index 2 index 3 -1 roll put 1 add
+   } for
+   0 exch getinterval exch pop
+} bind def
+
+%   <dir_list> <template> .generate_dir_list_templates <t1> ... <tN>
+%
+% Generates various valid templates combining a directory list with a given template.
+%
+% Example1 (DOS, Windows) :
+%       [(/gs/lib) (/gs/Resource/) (\gs8.00\Resource)] (*/*) -->
+%       (/gs/lib/*/*) (/gs/Resource/*/*) (\\gs8.00\\Resource/*/*)
+%
+% Example2 (OpenVMS) :
+%       [(gs:[lib]) (gs:[Resource]) (gs800:[Resource)] (*]*) -->
+%       ((gs:[lib.*]*) [gs:[Resource.*]*) ([gs800:[Resource.*]*)
+%
+/.generate_dir_list_templates
+{                                                  % [dl] (templ)
+  % We need to convert paths into templates,
+  % because it can include '\' on DOS.
+  % In same time, the <template> must not convert,
+  % because it is already a template.
+  % Besides that, we cannot combine template using .file_name_combine,
+  % because template syntax breaks the platform path syntax.
+  % To resolve this, we first convert the <template> into 
+  % a fake filename, and combine it with path,
+  % obtaining a correct separator. Then we replace
+  % the fake file name with the given template.
+  %
+
+  % Create the fake file name :
+  dup dup length string copy                       % [dl] (templ) (ffn)
+  (*) 0 get (?) 0 get (\\) 0 get (x) 0 get 0 0     % [dl] (templ) (ffn) * ? \ x i j
+  { 1 index 7 index length ge { exit } if
+    6 index 2 index get                            % [dl] (templ) (ffn) * ? \ x i j c
+    dup 7 index eq                                 % [dl] (templ) (ffn) * ? \ x i j c bool
+    1 index 7 index eq or { % *?
+      pop 2 index
+    } if                                           % [dl] (templ) (ffn) * ? \ x i j C
+    dup 5 index eq {        % \
+      3 2 roll 1 add 3 1 roll                      % [dl] (templ) (ffn) * ? \ x i' j C
+      2 index 8 index length ge { pop exit } if
+      pop 6 index 2 index get                      % [dl] (templ) (ffn) * ? \ x i' j C'
+    } if
+    7 index 2 index 3 2 roll put                   % [dl] (templ) (ffn) * ? \ x i' j
+    1 add exch 1 add exch                          % [dl] (templ) (ffn) * ? \ x i'' j'
+  } loop                                           % [dl] (templ) (ffn) * ? \ x i j
+  6 1 roll pop                                     % [dl] (templ) (ffn) j * ? \ x
+  exch pop exch pop exch pop exch                  % [dl] (templ) (ffn) x j
+  { dup 3 index length ge { exit } if
+    3 copy exch put
+    1 add
+  } loop
+  pop pop                                          % [dl] (templ) (ffn)
+
+  % An internal procedure : 
+  {                                 % {} [dl] (templ) (ffn) (dffn)
+    .makepathtemplate               % {} [dl] (templ) (ffn) (Dffn)
+    dup                             % {} [dl] (templ) (ffn) (Dffn) (Dffn)
+    3 index length dup              % {} [dl] (templ) (ffn) (Dffn) (Dffn) templL templL
+    2 index length                  % {} [dl] (templ) (ffn) (Dffn) (Dffn) templL templL DffnL
+    exch sub                        % {} [dl] (templ) (ffn) (Dffn) (Dffn) templL i
+    exch getinterval                % {} [dl] (templ) (ffn) (Dffn) (suffix)
+    3 index exch copy pop           % {} [dl] (templ) (ffn) (dt)
+    5 1 roll                        % (dt) {} [dl] (templ) (ffn)
+  }
+  4 1 roll                                         % {} [dl] (templ) (ffn)
+
+  % Generate templates :
+  dup .file_name_is_absolute {
+    dup                                            % {} [dl] (templ) (ffn) (ffn)
+    4 index exec                                   % (t1) {} [dl] (templ) (ffn)
+  } {
+    2 index {                                      % {} [dl] (templ) (ffn) (d)
+      1 index                                      % {} [dl] (templ) (ffn) (d) (ffn)
+      false .file_name_combine {                   % {} [dl] (templ) (ffn) (dffn)
+        4 index exec                               % (t1) {} [dl] (templ) (ffn)
+      } {                                          % {} [dl] (templ) (ffn) (d) (ffn)
+        pop pop                                    % {} [dl] (templ) (ffn)
+      } ifelse
+    } forall
+  } ifelse                                         % (t1) (t2) ... (tN) {} [dl] (templ) (ffn)
+  pop pop pop pop                                  % (t1) (t2) ... (tN)
+} bind def
+
 % Load the initialization files for optional features.
 %% Replace 4 INITFILES
 systemdict /INITFILES known
@@ -1675,38 +1787,8 @@ systemdict /EPSBoundingBoxInit known { EPSBoundingBoxInit } if
 readonly def
 .setglobal
 
-% Convert a path name into a string suitable for filenameforall
-% For example: (a\\b*?c) to (a\\\\b\\*\\?c)
-/.makepathtemplate {	% str1 -- str2
-   dup length dup add string 0	% result string up to twice the size
-   0 1 4 index length 1 sub {
-     3 index exch get
-     dup 92 eq {		% \ -> \\
-        2 index 2 index 92
-        put
-        exch 1 add exch
-     } 
-     if
-     dup 42 eq {		% * -> \*
-        2 index 2 index 92
-        put
-        exch 1 add exch
-     } 
-     if
-     dup 63 eq {		% ? -> \?
-        2 index 2 index 92
-        put
-        exch 1 add exch
-     } 
-     if
-     2 index 2 index 3 -1 roll put 1 add
-   } for
-   0 exch getinterval exch pop
-} bind def
-
 /.locksafe {
   SAFETY /safe get not {
-    (lock)=
     <<
       /PermitFileReading [
         currentuserparams /PermitFileReading get aload pop
@@ -1724,44 +1806,14 @@ readonly def
 	  currentsystemparams /GenericResourceDir get 1 index exec 
 	  currentsystemparams /FontResourceDir get exch exec
 	} {
-	  {
-	    % Can't combine with '*', because .makepathtemplate
-	    % encloses it with escape.
-	    (x) true .file_name_combine not {
-	      /.locksafe cvx /unregistered signalerror % must not happen
-	    } if
-            .makepathtemplate
-            dup dup length 1 sub (*) 0 get put
-          }
-          [ /LIBPATH /FONTPATH] {
-            .systemvar {                             % proc path
-              dup 2 index exec 3 1 roll              % templ proc path
-              [/GenericResourceDir /FontResourceDir] {
-                currentsystemparams exch get         % templ proc path relpath
-                1 index exch                         % templ proc path path relpath
-                true .file_name_combine not {   
-                  % The platform can't handle it.  
-                  pop pop                            % templ proc path
-                } {                                  % templ proc path nparent path'
-                  2 index exec                       % templ proc path templ'
-                  % Skip redundant tremplates :
-                  true                               % templ proc path templ' true
-                  counttomark 1 sub -1 4 {
-                    index 2 index eq {
-                      pop false exit 
-                    } if
-                  } for
-                  {
-                    3 1 roll                         % templ templ' proc path
-                  } {
-                    pop
-                  } ifelse
-                } ifelse
-              } forall
-              pop                                    % templ templ' proc
-            } forall
-          } forall                                   % templ1 .... templN proc
-          pop                                        % templ1 .... templN
+          /FONTPATH .systemvar (*) .generate_dir_list_templates
+            % Library files : 
+          /LIBPATH  .systemvar (*) .generate_dir_list_templates       
+            % Resource files on OpenVMS requires a separate template (gs:[dir.*]*)
+            % because the (gs:[dir]*) doesn't cover them.
+          /LIBPATH  .systemvar (*) .file_name_separator (*)
+             concatstrings concatstrings .generate_dir_list_templates
+             
 	} ifelse
       ] /LockFilePermissions true
     >> setuserparams

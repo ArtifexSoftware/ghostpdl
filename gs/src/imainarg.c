@@ -741,10 +741,11 @@ runarg(gs_main_instance * minst, const char *pre, const char *arg,
        const char *post, int options)
 {
     int len = strlen(pre) + esc_strlen(arg) + strlen(post) + 1;
+    int code;
     char *line;
 
     if (options & runInit) {
-	int code = gs_main_init2(minst);	/* Finish initialization */
+	code = gs_main_init2(minst);	/* Finish initialization */
 
 	if (code < 0)
 	    return code;
@@ -757,7 +758,10 @@ runarg(gs_main_instance * minst, const char *pre, const char *arg,
     strcpy(line, pre);
     esc_strcat(line, arg);
     strcat(line, post);
-    return run_string(minst, line, options);
+    minst->i_ctx_p->starting_arg_file = true;
+    code = run_string(minst, line, options);
+    minst->i_ctx_p->starting_arg_file = false;
+    return code;
 }
 private int
 run_string(gs_main_instance * minst, const char *str, int options)

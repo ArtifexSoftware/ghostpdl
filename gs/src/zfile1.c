@@ -104,10 +104,10 @@ zfile_name_directory_separator(i_ctx_t *i_ctx_p)
 {   return push_string(i_ctx_p, gp_file_name_directory_separator());
 }
 
-/* - .file_name_parent <string> */
+/* - .file_name_current <string> */
 private int
-zfile_name_parent(i_ctx_t *i_ctx_p)
-{   return push_string(i_ctx_p, gp_file_name_parent());
+zfile_name_current(i_ctx_t *i_ctx_p)
+{   return push_string(i_ctx_p, gp_file_name_current());
 }
 
 #endif
@@ -119,7 +119,7 @@ const op_def zfile1_op_defs[] =
     {"0.file_name_is_absolute", zfile_name_is_absolute},
     {"0.file_name_separator", zfile_name_separator},
     {"0.file_name_directory_separator", zfile_name_directory_separator},
-    {"0.file_name_parent", zfile_name_parent},
+    {"0.file_name_current", zfile_name_current},
 #endif
     op_def_end(0)
 };

@@ -50,6 +50,7 @@ struct gs_context_state_s {
     ref userparams;		/* t_dictionary */
     int scanner_options;	/* derived from userparams */
     bool LockFilePermissions;	/* accessed from userparams */
+    bool starting_arg_file;	/* starting a file specified in command line. */
     char *filearg;		/* C string of the file being run */
 				/* (allocated on the C heap, no gc needed) */
     ref stdio[3];		/* t_file */

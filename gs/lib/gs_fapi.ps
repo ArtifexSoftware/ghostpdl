@@ -75,8 +75,8 @@ currentdict /super.complete_instance currentdict /complete_instance get put
   /Path exch
   Path false .file_name_combine not {
     exch
-    (Configuration error : Can't combine paths ) print print ( and ) print =
-    /RefinePath /invalidfileaccess signalerror
+    (Can't combine paths ) print print ( and ) print =
+    /RefinePath /configurationerror signalerror
   } ifelse
   def
   currentdict end
