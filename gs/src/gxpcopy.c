@@ -128,8 +128,13 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 				flat = min(flat_x, flat_y);
 			    }
 			}
-			k = (options & pco_small_curves ? -1 
-				: gx_curve_log2_samples(x0, y0, pc, flat));
+#			if !SCANLINE_USES_ITERATOR
+			    k = (options & pco_small_curves ? -1 
+				    : gx_curve_log2_samples(x0, y0, pc, flat));
+			    /* fixme : should the condition be fixed_flatness == max_fixed ? */
+#			else
+			    k = gx_curve_log2_samples(x0, y0, pc, flat);
+#			endif
 			if (options & pco_accurate) {
 			    segment *start;
 			    segment *end;
@@ -279,6 +284,8 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
 }
 
 /* ---------------- Curve flattening ---------------- */
+
+#if !SCANLINE_USES_ITERATOR
 
 #define x1 pc->p1.x
 #define y1 pc->p1.y
@@ -575,6 +582,9 @@ gx_curve_x_at_y(curve_cursor * prc, fixed y)
 #undef y2
 #undef x3
 #undef y3
+
+#endif /*!SCANLINE_USES_ITERATOR*/
+
 
 /* ---------------- Monotonic curves ---------------- */
 

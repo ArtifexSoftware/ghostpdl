@@ -432,15 +432,23 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     gx_path_init_local(&ffpath, ppath->memory);
     if (!gx_path_has_curves(ppath))	/* don't need to flatten */
 	pfpath = ppath;
-    else if (gx_path__check_curves(ppath, (!fill_by_trapezoids ? pco_monotonize : pco_none)
-					| pco_small_curves, lst.fixed_flat))
+    else if (gx_path__check_curves(ppath, 
+#		if !SCANLINE_USES_ITERATOR
+		    (!fill_by_trapezoids ? pco_monotonize : pco_none) |
+#		endif
+					pco_small_curves, lst.fixed_flat))
 	pfpath = ppath;
     else {
 	if (is_spotan_device(dev))
 	    return_error(gs_error_unregistered); /* Must not happen. */
 	gx_path_init_local(&ffpath, ppath->memory);
+#	if !SCANLINE_USES_ITERATOR
 	code = gx_path_copy_reducing(ppath, &ffpath, max_fixed, NULL, 
 			    (fill_by_trapezoids ? pco_small_curves : pco_monotonize));
+#	else
+	code = gx_path_copy_reducing(ppath, &ffpath, lst.fixed_flat, NULL, 
+			    pco_small_curves);
+#	endif
 	if (code < 0)
 	    return code;
 	pfpath = &ffpath;
@@ -771,7 +779,7 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 	fixed ymax = max(max(q->prev->pt.y, s->p1.y), max(s->p2.y, s->pt.y));
 	bool in_band = ymin <= ll->ymax && ymax >= ll->ymin;
 	q->crossing = ymin < ll->ymin && ymax >= ll->ymin;
-	q->monotonic = !ll->fill_by_trapezoids ||
+	q->monotonic = (!ll->fill_by_trapezoids && !SCANLINE_USES_ITERATOR) ||
 	    !in_band ||
 	    (!q->crossing &&
 	    ((q->prev->pt.y <= s->p1.y && s->p1.y <= s->p2.y && s->p2.y <= s->pt.y) ||
@@ -818,7 +826,8 @@ scan_contour(line_list *ll, contour_cursor *q)
 	q->more_flattened = false;
 	ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
 			q->dir == DIR_UP ? DIR_UP : ll->main_dir);
-	if (!fill_by_trapezoids || ll->main_dir != DIR_HORIZONTAL) {
+	if ((!fill_by_trapezoids && !SCANLINE_USES_ITERATOR) 
+		|| ll->main_dir != DIR_HORIZONTAL) {
 	    only_horizontal = false;
 	    break;
 	}
@@ -863,25 +872,25 @@ scan_contour(line_list *ll, contour_cursor *q)
 		if (code < 0)
 		    return code;
 	    } 
-	    if (fill_by_trapezoids && 
+	    if ((fill_by_trapezoids || SCANLINE_USES_ITERATOR) && 
 		    p.fi->gy0 >= ll->ymin && p.dir == DIR_UP && ll->main_dir == DIR_DOWN) {
 		code = start_al_pair(ll, q, &p);
 		if (code < 0)
 		    return code;
 	    }
-	    if (!fill_by_trapezoids && 
+	    if (!fill_by_trapezoids && !SCANLINE_USES_ITERATOR && 
 		    p.fi->gy0 >= ll->ymin && p.dir == DIR_UP && q->dir == DIR_DOWN) {
 		code = start_al_pair(ll, q, &p);
 		if (code < 0)
 		    return code;
 	    }
-	    if (!fill_by_trapezoids && 
+	    if (!fill_by_trapezoids && !SCANLINE_USES_ITERATOR &&
 		    p.fi->gy0 >= ll->ymin && p.dir == DIR_UP && q->dir == DIR_HORIZONTAL) {
 		code = add_y_line(p.prev, p.pseg, p.dir, ll);
 		if (code < 0)
 		    return code;
 	    }
-	    if (!fill_by_trapezoids && 
+	    if (!fill_by_trapezoids && !SCANLINE_USES_ITERATOR &&
 		    q->fi->gy1 >= ll->ymin && q->dir == DIR_DOWN && p.dir == DIR_HORIZONTAL) {
 		code = add_y_line(q->prev, q->pseg, q->dir, ll);
 		if (code < 0)
@@ -913,7 +922,8 @@ scan_contour(line_list *ll, contour_cursor *q)
 		    return code;
 	    }
 	    if (p.dir == DIR_DOWN || 
-		    p.dir == DIR_HORIZONTAL || !fill_by_trapezoids) {
+		    p.dir == DIR_HORIZONTAL || 
+		    (!fill_by_trapezoids && !SCANLINE_USES_ITERATOR)) {
 		gx_flattened_iterator *fi1 = q->fi;
 		q->prev = p.prev;
 		q->pseg = p.pseg;
@@ -1037,8 +1047,7 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
 		more = gx_flattened_iterator__next_filtered(&alp->fi);
 		alp->more_flattened |= more;
 	    } while(more);
-	    if (alp->more_flattened)
-		gx_flattened_iterator__switch_to_backscan(&alp->fi, alp->more_flattened);
+	    gx_flattened_iterator__switch_to_backscan(&alp->fi, alp->more_flattened);
 	    step_al(alp, false);
 	}
     } else {
@@ -1057,13 +1066,14 @@ add_y_line_aux(const segment * prev_lp, const segment * lp,
 	    const gs_fixed_point *curr, const gs_fixed_point *prev, int dir, line_list *ll)
 {
     active_line *alp = make_al(ll);
+    bool use_iter = SCANLINE_USES_ITERATOR || ll->fill_by_trapezoids;
 
     if (alp == NULL)
 	return_error(gs_error_VMerror);
     alp->more_flattened = false;
     switch ((alp->direction = dir)) {
 	case DIR_UP:
-	    if (ll->fill_by_trapezoids) {
+	    if (use_iter) {
 		init_al(alp, prev_lp, lp, ll->fixed_flat);
 		assert(alp->start.y <= alp->end.y);
 	    } else {
@@ -1072,7 +1082,7 @@ add_y_line_aux(const segment * prev_lp, const segment * lp,
 	    }
 	    break;
 	case DIR_DOWN:
-	    if (ll->fill_by_trapezoids) {
+	    if (use_iter) {
 		init_al(alp, lp, prev_lp, ll->fixed_flat);
 		assert(alp->start.y <= alp->end.y);
 	    } else {
@@ -1186,7 +1196,7 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
     gs_fixed_point npt;
     const bool fill_by_trapezoids = ll->fill_by_trapezoids;
 
-    if (fill_by_trapezoids) {
+    if (fill_by_trapezoids || SCANLINE_USES_ITERATOR) {
 	if (alp->end.y < alp->start.y) {
 	    /* fixme: The condition above causes a horizontal
 	       part of a curve near an Y maximum to process twice :
@@ -1202,7 +1212,7 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
 	} else if (alp->more_flattened)
 	    return false;
     }
-    if (!fill_by_trapezoids) {
+    if (!fill_by_trapezoids && !SCANLINE_USES_ITERATOR) {
 	npt.y = next->pt.y;
 	if (!update) {
 	    return npt.y <= pseg->pt.y;
@@ -1211,12 +1221,12 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
     if_debug5('F', "[F]ended 0x%lx: pseg=0x%lx y=%f next=0x%lx npt.y=%f\n",
 	      (ulong) alp, (ulong) pseg, fixed2float(pseg->pt.y),
 	      (ulong) next, fixed2float(npt.y));
-    if (!fill_by_trapezoids)
+    if (!fill_by_trapezoids && !SCANLINE_USES_ITERATOR)
 	if (npt.y <= pseg->pt.y) {	/* End of a line sequence */
 	    remove_al(ll, alp);
 	    return true;
 	}
-    if (fill_by_trapezoids) {
+    if (fill_by_trapezoids || SCANLINE_USES_ITERATOR) {
 	init_al(alp, pseg, next, ll->fixed_flat);
 	if (alp->start.y > alp->end.y) {
 	    /* See comment above. */
@@ -1394,7 +1404,7 @@ resort_x_line(active_line * alp)
 
 /* Move active lines by Y. */
 private inline void
-move_al_by_y(line_list *ll, fixed y1, fixed y)
+move_al_by_y(line_list *ll, fixed y1)
 {
     fixed x;
     active_line *alp, *nlp;
@@ -1999,7 +2009,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	    code = process_h_segments(ll, y);
 	    if (code < 0)
 		return code;
-	    move_al_by_y(ll, y1, y);
+	    move_al_by_y(ll, y1);
 	    if (code > 0) {
 		yll = ll->y_list; /* add_y_line_aux in process_h_segments changes it. */
 		continue;
@@ -2115,7 +2125,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	    if (code < 0)
 		return code;
 	}
-	move_al_by_y(ll, y1, y);
+	move_al_by_y(ll, y1);
 	ll->h_list1 = ll->h_list0;
 	ll->h_list0 = 0;
 	y = y1;
@@ -2360,7 +2370,9 @@ range_list_add(coord_range_list_t *pcrl, coord_value_t rmin, coord_value_t rmax)
 private int merge_ranges(coord_range_list_t *pcrl, line_list *ll,
 			 fixed y_min, fixed y_top,
 			 fixed adjust_left, fixed adjust_right);
+#if !SCANLINE_USES_ITERATOR
 private void set_scan_line_points(active_line *, fixed);
+#endif
 
 /* Main filling loop. */
 private int
@@ -2394,6 +2406,7 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
     int y0 = fixed2int(min_fixed);
     fixed y_bot = min_fixed;	/* normally int2fixed(y0) + y_frac_min */
     fixed y_top = min_fixed;	/* normally int2fixed(y0) + y_frac_max */
+    fixed y = min_fixed;
     coord_range_list_t rlist;
     coord_range_t rlocal[MAX_LOCAL_ACTIVE];
     int code = 0;
@@ -2407,11 +2420,12 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
     ll->x_head.x_current = min_fixed;	/* stop backward scan */
     while (code >= 0) {
 	active_line *alp, *nlp;
-	fixed y, x;
+	fixed x;
 	bool new_band;
 
 	INCR(iter);
 
+	move_al_by_y(ll, y);
 	/*
 	 * Find the next sampling point, either the bottom of a sampling
 	 * band or a line start.
@@ -2424,7 +2438,9 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 	    if (yll != 0)
 		y = min(y, yll->start.y);
 	    for (alp = ll->x_list; alp != 0; alp = alp->next)
+#		if !SCANLINE_USES_ITERATOR
 		if (!end_x_line(alp, ll, false))
+#		endif
 		    y = min(y, alp->end.y);
 	}
 
@@ -2437,7 +2453,9 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 		/* Ignore for now. */
 	    } else {
 		insert_x_new(yll, ll);
-		set_scan_line_points(yll, ll->fixed_flat);
+#		if !SCANLINE_USES_ITERATOR
+		    set_scan_line_points(yll, ll->fixed_flat);
+#		endif
 	    }
 	    yll = ynext;
 	}
@@ -2449,17 +2467,26 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 	    fixed nx;
 
 	    nlp = alp->next;
-	  e:if (alp->end.y <= y) {
+	  e:if (alp->end.y <= y || alp->start.y == alp->end.y) {
 		if (end_x_line(alp, ll, true))
 		    continue;
-		set_scan_line_points(alp, ll->fixed_flat);
+#		if !SCANLINE_USES_ITERATOR
+		    set_scan_line_points(alp, ll->fixed_flat);
+#		else
+		    if (alp->more_flattened)
+			step_al(alp, true);
+#		endif
 		goto e;
 	    }
 	    nx = alp->x_current =
 		(alp->start.y >= y ? alp->start.x :
+#		if !SCANLINE_USES_ITERATOR
 		 alp->curve_k < 0 ?
 		 AL_X_AT_Y(alp, y) :
 		 gx_curve_x_at_y(&alp->cursor, y));
+#		else
+		 AL_X_AT_Y(alp, y));
+#		endif
 	    if (nx < x) {
 		/* Move this line backward in the list. */
 		active_line *ilp = alp;
@@ -2590,10 +2617,15 @@ merge_ranges(coord_range_list_t *pcrl, line_list *ll, fixed y_min, fixed y_top,
 	    continue;
 	if (alp->end.y < y_top)
 	    x1 = alp->end.x;
-	else if (alp->curve_k < 0)
-	    x1 = AL_X_AT_Y(alp, y_top);
-	else
-	    x1 = gx_curve_x_at_y(&alp->cursor, y_top);
+#	if !SCANLINE_USES_ITERATOR
+	    else if (alp->curve_k < 0)
+		x1 = AL_X_AT_Y(alp, y_top);
+	    else
+		x1 = gx_curve_x_at_y(&alp->cursor, y_top);
+#	else
+	    else
+		x1 = AL_X_AT_Y(alp, y_top);
+#	endif
 	if (x0 > x1)
 	    xt = x0, x0 = x1, x1 = xt;
 	code = range_list_add(pcrl,
@@ -2602,6 +2634,8 @@ merge_ranges(coord_range_list_t *pcrl, line_list *ll, fixed y_min, fixed y_top,
     }
     return code;
 }
+
+#if !SCANLINE_USES_ITERATOR
 
 /*
  * Set curve_k and, if necessary, the curve rendering parameters for
@@ -2639,3 +2673,4 @@ set_scan_line_points(active_line * alp, fixed fixed_flat)
 			     alp->curve_k);
     }
 }
+#endif

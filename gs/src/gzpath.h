@@ -173,6 +173,7 @@ int gx_subdivide_curve(gx_path *, int, curve_segment *, segment_notes);
  */
 #define k_sample_max min((size_of(int) * 8 - 1) / 3, 10)
 
+#if !SCANLINE_USES_ITERATOR
 /* Initialize a cursor for rasterizing a monotonic curve. */
 typedef struct curve_cursor_s {
     /* Following are set at initialization */
@@ -195,6 +196,7 @@ void gx_curve_cursor_init(curve_cursor * prc, fixed x0, fixed y0,
 /* Return the value of X at a given Y value on a monotonic curve. */
 /* y must lie between prc->p0.y and prc->pt.y. */
 fixed gx_curve_x_at_y(curve_cursor * prc, fixed y);
+#endif
 
 /*
  * The path state flags reflect the most recent operation on the path

@@ -75,9 +75,11 @@ struct active_line_s {
 #define DIR_UP 1
 #define DIR_HORIZONTAL 0	/* (these are handled specially) */
 #define DIR_DOWN (-1)
+#if !SCANLINE_USES_ITERATOR
     int curve_k;		/* # of subdivisions for curves,-1 for lines */
     curve_cursor cursor;	/* cursor for curves, unused for lines */
     /* fixme : use an union {cursor, {fi, last}}, because they are used exclusively. */
+#endif
     gx_flattened_iterator fi;
     bool more_flattened;
 /*
