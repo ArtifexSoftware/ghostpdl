@@ -16,6 +16,7 @@
 
 /* $Id$ */
 /* Path flattening algorithms */
+#include "string_.h"
 #include "gx.h"
 #include "gxarith.h"
 #include "gxfixed.h"

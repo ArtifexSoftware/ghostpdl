@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000-2004 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -18,6 +18,7 @@
 /* PostScript-writing driver */
 #include "math_.h"
 #include "memory_.h"
+#include "string_.h"
 #include "time_.h"
 #include "gx.h"
 #include "gserrors.h"
