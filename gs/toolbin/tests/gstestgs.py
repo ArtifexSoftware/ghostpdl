@@ -17,15 +17,13 @@
 
 # $Id$
 
-# gstest.py
+# gstestgs.py
 #
 # base classes for regression testing
 
 import os
-import unittest
-import traceback
 import string
-import gsconf
+from gstestutils import GSTestCase
 
 class Ghostscript:
 	def __init__(self):
@@ -34,19 +32,14 @@ class Ghostscript:
 		self.band = 0
 		self.device = ''
 		self.infile = 'input'
-		if os.name == 'nt':
-			self.nullfile = 'nul'
-		else:
-			self.nullfile = '/dev/null'
-		self.outfile = self.nullfile
+		self.outfile = '/dev/null'
 
 	def process(self):
 		bandsize = 10000
 		if (self.band): bandsize = 30000000
 		
 		cmd = self.command
-		cmd = cmd + self.gsoptions 
-		cmd = cmd + ' -dQUIET -dNOPAUSE -dBATCH -K100000 '
+		cmd = cmd + ' -dQUIET -dNOPAUSE -dBATCH -K50000 '
 		cmd = cmd + '-r%d ' % (self.dpi,)
 		cmd = cmd + '-dMaxBitmap=%d ' % (bandsize,)
 		cmd = cmd + '-sDEVICE=%s ' % (self.device,)
@@ -59,27 +52,26 @@ class Ghostscript:
 		else:
 			cmd = cmd + '- < '
 
-		cmd = cmd + ' %s > %s 2> %s' % (self.infile, self.nullfile, self.nullfile)
+		cmd = cmd + ' %s > /dev/null 2> /dev/null' % (self.infile,)
 
 		ret = os.system(cmd)
-
 		if ret == 0:
 			return 1
 		else:
 			return 0
 
 		
-class GSTestCase(unittest.TestCase):
+class _GhostscriptTestCase(GSTestCase):
 	def __init__(self, gs='gs', dpi=72, band=0, file='test.ps', device='pdfwrite'):
 		self.gs = gs
 		self.file = file
 		self.dpi = dpi
 		self.band = band
 		self.device = device
-		unittest.TestCase.__init__(self)
+		GSTestCase.__init__(self)
 
 
-class GSCrashTestCase(GSTestCase):
+class GSCrashTestCase(_GhostscriptTestCase):
 	def runTest(self):
 		gs = Ghostscript()
 		gs.command = self.gs
@@ -90,7 +82,7 @@ class GSCrashTestCase(GSTestCase):
 
 		self.assert_(gs.process(), 'ghostscript failed to render file: ' + self.file)
 
-class GSCompareTestCase(GSTestCase):
+class GSCompareTestCase(_GhostscriptTestCase):
 	def shortDescription(self):
 		file = "%s.%s.%d.%d" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
 
@@ -117,18 +109,3 @@ class GSCompareTestCase(GSTestCase):
 		os.unlink(file)
 		
 		self.assertEqual(sum, gssum.get_sum(file), 'md5sum did not match baseline (' + file + ') for file: ' + self.file)
-
-class GSTestResult(unittest._TextTestResult):
-	def printErrorList(self, flavour, errors):
-		if flavour == 'ERROR':
-			for test, err in errors:
-				self.stream.writeln(self.separator1)
-				self.stream.writeln("%s: %s" % (flavour, self.getDescription(test)))
-				self.stream.writeln(self.separator2)
-				for line in apply(traceback.format_exception, err):
-					for l in string.split(line, "\n")[:-1]:
-						self.stream.writeln("%s" % l)
-
-class GSTestRunner(unittest.TextTestRunner):
-	def _makeResult(self):
-		return GSTestResult(self.stream, self.descriptions, self.verbosity)

@@ -26,7 +26,7 @@
 # one from baseline, and one from head
 # these are appropriate for a visual diff
 
-import gstest
+import gstestgs
 import gsconf
 import os, sys
 import string
@@ -43,26 +43,24 @@ else:
 
 ofile = "%s.%s.baseline.pnm" % (file, device)
 
-gs = gstest.Ghostscript()
+gs = gstestgs.Ghostscript()
 gs.command = gsconf.baselinegs
 gs.infile = gsconf.comparefiledir + file
 gs.outfile = ofile
 gs.device = device
 gs.dpi = res
 gs.band = 0
-gs.gsoptions = gsconf.baselineoptions
 
 gs.process()
 
 ofile = "%s.%s.compare.pnm" % (file, device)
 
-gs = gstest.Ghostscript()
+gs = gstestgs.Ghostscript()
 gs.command = gsconf.comparegs
 gs.infile = gsconf.comparefiledir + file
 gs.outfile = ofile
 gs.device = device
 gs.dpi = res
 gs.band = 0
-gs.gsoptions = gsconf.compareoptions
 
 gs.process()

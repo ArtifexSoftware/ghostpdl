@@ -1,5 +1,5 @@
 /**
- * Fuzzy comparison utility. Copyright 2001-2002 artofcode LLC.
+ * Fuzzy comparison utility. Copyright 2001 artofcode LLC.
  **/
 
 #include <stdio.h>
@@ -20,7 +20,6 @@ struct _Image {
   int height;
   int n_chan;
   int bpp; /* bits per pixel */
-  int depth;
 };
 
 typedef struct _FuzzyParams FuzzyParams;
@@ -43,11 +42,10 @@ image_get_rgb_scan_line (Image *image, uchar *buf)
 {
   uchar *image_buf;
   int width = image->width;
-  int depth = image->depth;
   int code;
   int x;
 
-  if (image->n_chan == 3 && image->bpp == 8 && depth == 256)
+  if (image->n_chan == 3 && image->bpp == 8)
     return image->get_scan_line (image, buf);
 
   image_buf = malloc (image->n_chan * ((width * image->bpp + 7) >> 3));
@@ -61,10 +59,6 @@ image_get_rgb_scan_line (Image *image, uchar *buf)
       for (x = 0; x < width; x++)
 	{
 	  uchar g = image_buf[x];
-	  if (depth != 256)
-	    {
-	      g = (((int)g) * 255) / depth;
-	    }
 	  buf[x * 3] = g;
 	  buf[x * 3 + 1] = g;
 	  buf[x * 3 + 2] = g;
@@ -78,16 +72,6 @@ image_get_rgb_scan_line (Image *image, uchar *buf)
 	  buf[x * 3] = g;
 	  buf[x * 3 + 1] = g;
 	  buf[x * 3 + 2] = g;
-	}
-    }
-  else if (image->n_chan == 3 && image->bpp == 8)
-    {
-      for (x = 0; x < width * 3; x++)
-	{
-	  uchar g = image_buf[x];
-
-	  g = (((int)g) * 255) / depth;
-	  buf[x] = g;
 	}
     }
   else
@@ -136,7 +120,7 @@ open_pnm_image (const char *fn)
 {
   FILE *f = fopen (fn, "rb");
   int width, height;
-  int n_chan, bpp, depth;
+  int n_chan, bpp;
   char linebuf[256];
   ImagePnm *image;
 
@@ -156,17 +140,14 @@ open_pnm_image (const char *fn)
     case '4':
       n_chan = 1;
       bpp = 1;
-      depth = 1;
       break;
     case '5':
       n_chan = 1;
       bpp = 8;
-      depth = -1;
       break;
     case '6':
       n_chan = 3;
       bpp = 8;
-      depth = -1;
       break;
     default:
       fclose (f);
@@ -197,11 +178,6 @@ open_pnm_image (const char *fn)
 	    }
 	}
       while (linebuf[0] == '#');
-      if (sscanf (linebuf, "%d", &depth) != 1)
-	{
-	  fclose (f);
-	  return NULL;
-	}
     }
   image->super.close = image_pnm_close;
   image->super.get_scan_line = image_pnm_get_scan_line;
@@ -209,7 +185,6 @@ open_pnm_image (const char *fn)
   image->super.height = height;
   image->super.n_chan = n_chan;
   image->super.bpp = bpp;
-  image->super.depth = depth;
   return &image->super;
 }
 

@@ -20,13 +20,13 @@
 # $Id$
 
 #
-# revert_baseline <file>
+# make_testdb <dir>
 #
-# this script updates the testdata database with a new baseline sum
-# for all versions of file <file>.  use this when you've accidentally
-# updated a baseline you shouldn't have.
+# this script creates the gstestdb database and intializes it
+# with the md5sums of the test data files run through the
+# baseline ghostscript
 
-import gstest
+import gstestgs
 import gsconf
 import gssum
 import gsparamsets
@@ -36,31 +36,36 @@ import string
 
 def make_entry(ifile, device, dpi, band):
     ofile = "%s.%s.%d.%d" % (ifile, device, dpi, band)
-    print "reverting entry: " + ofile + "...",
+    print "creating entry: " + ofile + "...",
     sys.stdout.flush()
     
-    gs = gstest.Ghostscript()
+    gs = gstestgs.Ghostscript()
     gs.command = gsconf.baselinegs
     gs.infile = gsconf.comparefiledir + ifile
     gs.outfile = ofile
     gs.device = device
     gs.dpi = dpi
     gs.band = band
-    gs.gsoptions = gsconf.compareoptions
 
-    if gs.process():
-        try:
-            gssum.add_file(ofile)
-            os.unlink(ofile)
-            print "done."
-        except OSError:
-            print "no output produced."
+    if not gssum.exists(ofile):
+        if gs.process():
+	    try:
+       	        gssum.add_file(ofile)
+    	        os.unlink(ofile)
+    	        print "done."
+            except OSError:
+                print "no output produced."
+        else:
+	    print "error."
     else:
-	print "error."
+	print "exists."
 
+# create the testdatadb
+db = anydbm.open(gsconf.testdatadb, 'c')
+db.close()
 
-f = sys.argv[1]
-
-if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
-    for params in gsparamsets.testparamsets:
-        make_entry(f, params.device, params.resolution, params.banding)
+files = os.listdir(gsconf.comparefiledir)
+for f in files:
+    if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
+	for params in gsparamsets.testparamsets:
+            make_entry(f, params.device, params.resolution, params.banding)
