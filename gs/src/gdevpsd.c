@@ -667,7 +667,6 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
 {
     psd_device * const pdevn = (psd_device *) pdev;
     gx_device_color_info save_info;
-    int num_spot = pdevn->devn_params.separations.num_separations;
     int ecode = 0;
     int code;
     gs_param_string po;
@@ -675,7 +674,6 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
     gs_param_string pcmyk;
     gs_param_string pcm;
     psd_color_model color_model = pdevn->color_model;
-    int max_sep = pdevn->color_info.num_components;
     gs_devn_params * pparams = &(((psd_device *)pdev)->devn_params);
 
     code = psd_param_read_fn(plist, "ProfileOut", &po,
@@ -752,7 +750,6 @@ private int
 psd_get_color_comp_index(const gx_device * dev, const char * pname,
 					int name_size, int component_type)
 {
-    psd_device * pdev = (psd_device *) dev;
     gs_devn_params * pparams = &(((psd_device *)dev)->devn_params);
     int num_order = pparams->separation_order.num_names;
     int color_component_number = 0;
@@ -880,7 +877,6 @@ private int
 psd_write_header(psd_write_ctx *xc, psd_device *pdev)
 {
     int code = 0;
-    int n_extra_channels = xc->n_extra_channels;
     int bytes_pp = xc->num_channels;
     int chan_idx;
     int chan_names_len = 0;
@@ -1010,13 +1006,11 @@ psd_calib_row(psd_write_ctx *xc, byte **tile_data, const byte *row,
 private int
 psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
 {
-    psd_device * const pdevn = (psd_device *) pdev;
     int code = 0;
     int raster = gdev_prn_raster(pdev);
     int i, j;
     byte *line, *sep_line;
     int base_bytes_pp = xc->base_bytes_pp;
-    int n_extra_channels = xc->n_extra_channels;
     int bytes_pp =pdev->color_info.num_components;
     int chan_idx;
     psd_device *xdev = (psd_device *)pdev;
