@@ -40,11 +40,6 @@ pdfdict begin
   4 { .resolvefn4 }
 .dicttomark readonly def
 
-/.pdfbuildfunction {
-  DEBUG { (%Function: ) print dup === flush } if
-  .buildfunction
-} bdef
-
 /.resolvefn0 {
 		% Don't lose our place in PDFfile.
   PDFfile fileposition exch
@@ -58,14 +53,13 @@ pdfdict begin
 		% Stack: filepos fndict data
   exch dup length 1 add dict .copydict
   dup /DataSource 4 -1 roll put
-  .pdfbuildfunction
   exch PDFfile exch setfileposition
 } bdef
 
 /.resolvefn3 {
   dup length dict .copydict
   dup /Functions 2 copy oget mark exch dup {
-    oforce resolvefunction
+    oforce .resolvefn
   } forall
   counttomark -1 roll astore exch pop put
 } bdef
@@ -85,13 +79,18 @@ pdfdict begin
 		% Use .bind to avoid idiom recognition.
   .bind
   1 index /Function 3 -1 roll put
-  .pdfbuildfunction
   exch PDFfile exch setfileposition
 } bdef
 currentdict /tfopdict undef
 
-/resolvefunction {	% <fndict> resolvefunction <function>
+/.resolvefn {		% <fndict> .resolvefn <fndict'>
   dup /FunctionType oget //fnrdict exch get exec
+} bdef
+
+/resolvefunction {	% <fndict> resolvefunction <function>
+  .resolvefn
+  DEBUG { (%Function: ) print dup === flush } if
+  .buildfunction
 } bdef
 
 /resolveidfunction {
