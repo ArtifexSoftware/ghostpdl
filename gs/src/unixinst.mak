@@ -79,14 +79,6 @@ install-data: $(PSDOCDIR)/Use.htm $(PSEXDIR)/golfer.ps $(PSMANDIR)/gs.1
 	-mkdir $(gsdatadir)/lib
 	$(SH) -c 'for f in \
 Fontmap Fontmap.GS \
-gs_init.ps \
-gs_btokn.ps gs_ccfnt.ps gs_cff.ps gs_cidfn.ps gs_cmap.ps gs_cmdl.ps \
-gs_diskf.ps gs_dpnxt.ps gs_dps.ps gs_dps1.ps gs_dps2.ps gs_epsf.ps \
-gs_fform.ps gs_fonts.ps gs_kanji.ps gs_lev2.ps gs_ll3.ps \
-gs_pfile.ps gs_rdlin.ps gs_res.ps gs_setpd.ps gs_statd.ps \
-gs_trap.ps gs_ttf.ps gs_typ32.ps gs_typ42.ps gs_type1.ps \
-gs_ce_e.ps gs_dbt_e.ps gs_il1_e.ps gs_il2_e.ps gs_ksb_e.ps \
-gs_std_e.ps gs_sym_e.ps gs_wl1_e.ps gs_wl2_e.ps gs_wl5_e.ps \
 ht_ccsto.ps \
 acctest.ps addxchar.ps align.ps bdftops.ps \
 caption.ps cid2code.ps decrypt.ps docie.ps \
@@ -99,13 +91,11 @@ traceimg.ps traceop.ps type1enc.ps type1ops.ps uninfo.ps unprot.ps \
 viewcmyk.ps viewgif.ps viewjpeg.ps viewmiff.ps \
 viewpcx.ps viewpbm.ps viewps2a.ps \
 winmaps.ps wftopfa.ps wrfont.ps zeroline.ps \
-gs_l2img.ps \
-pdf2dsc.ps pdfeof.ps \
-pdf_base.ps pdf_draw.ps pdf_font.ps pdf_main.ps pdf_ops.ps pdf_sec.ps \
-gs_css_e.ps gs_lgo_e.ps gs_lgx_e.ps gs_mex_e.ps gs_mgl_e.ps gs_mro_e.ps \
-gs_pdf_e.ps gs_wan_e.ps \
-gs_pdfwr.ps ;\
+pdf2dsc.ps pdfeof.ps pdfopt.ps ;\
 	do if ( test -f $(PSLIBDIR)/$$f ); then $(INSTALL_DATA) $(PSLIBDIR)/$$f $(gsdatadir)/lib; fi;\
+	done'
+	$(SH) -c 'for f in $(PSLIBDIR)/gs_*.ps $(PSLIBDIR)/pdf_*.ps;\
+	do $(INSTALL_DATA) $$f $(gsdatadir)/lib ;\
 	done'
 	$(SH) -c 'for f in $(PSLIBDIR)/*.ppd $(PSLIBDIR)/*.upp $(PSLIBDIR)/*.xbm $(PSLIBDIR)/*.xpm;\
 	do $(INSTALL_DATA) $$f $(gsdatadir)/lib ;\
