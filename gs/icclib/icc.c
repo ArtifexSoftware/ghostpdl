@@ -4,10 +4,10 @@
  * For ICC profile version 3.4
  *
  * Author:  Graeme W. Gill
- * Date:    2002/04/18
- * Version: 2.01
+ * Date:    2002/04/22
+ * Version: 2.02
  *
- * Copyright 1997, 1998, 1999, 2000, 2001 Graeme W. Gill
+ * Copyright 1997 - 2002 Graeme W. Gill
  * See Licence.txt file for conditions of use.
  */
 
@@ -52,6 +52,12 @@
 /*
  * Change History:
  * 
+ * 2.02
+ *      Merged rename of [u]int64 to icm[Ui][I]nt64 (to work around
+ *      AIX 5.1L portability bug) from Raph Levien.
+ *
+ *      Fixed stray , in icmLookupOrder structure definition (from Dan Coby)
+ *
  * 2.01
  *		Change TextDescription code to not barf if #undef ICM_STRICT and
  *      Apple scriptcode not padded to 67 bytes.
@@ -66,9 +72,6 @@
  *		Merged Raph Levien's cleanups, to quiet gcc warnings.
  *
  *      Merged another couple of warning cleanups from Jouk Jansen.
- *
- *      Merged rename of [u]int64 to icc_[u]int64 (to work around
- *      AIX 5.1L portability bug) from Raph Levien.
  *
  * 2.00
  *      Change absolute conversion to be white point only, and use
@@ -495,7 +498,7 @@ static int write_UInt32Number(unsigned int d, char *p) {
 	return 0;
 }
 
-static void read_UInt64Number(icc_uint64 *d, char *p) {
+static void read_UInt64Number(icmUint64 *d, char *p) {
 	d->h = 16777216 * (unsigned int)((ORD8 *)p)[0]
 	     +    65536 * (unsigned int)((ORD8 *)p)[1]
 	     +      256 * (unsigned int)((ORD8 *)p)[2]
@@ -506,7 +509,7 @@ static void read_UInt64Number(icc_uint64 *d, char *p) {
 	     +            (unsigned int)((ORD8 *)p)[7];
 }
 
-static int write_UInt64Number(icc_uint64 *d, char *p) {
+static int write_UInt64Number(icmUint64 *d, char *p) {
 	((ORD8 *)p)[0] = (ORD8)(d->h >> 24);
 	((ORD8 *)p)[1] = (ORD8)(d->h >> 16);
 	((ORD8 *)p)[2] = (ORD8)(d->h >> 8);
@@ -619,7 +622,7 @@ static int write_SInt32Number(int d, char *p) {
 
 #ifdef NEVER /* Not currently used anywhere */
 
-static void read_SInt64Number(icc_int64 *d, char *p) {
+static void read_SInt64Number(icmInt64 *d, char *p) {
 	d->h = 16777216 * (int)((INR8 *)p)[0]
 	     +    65536 * (int)((ORD8 *)p)[1]
 	     +      256 * (int)((ORD8 *)p)[2]
@@ -630,7 +633,7 @@ static void read_SInt64Number(icc_int64 *d, char *p) {
 	     +            (unsigned int)((ORD8 *)p)[7];
 }
 
-static int write_SInt64Number(icc_int64 *d, char *p) {
+static int write_SInt64Number(icmInt64 *d, char *p) {
 	((INR8 *)p)[0] = (INR8)(d->h >> 24);
 	((ORD8 *)p)[1] = (ORD8)(d->h >> 16);
 	((ORD8 *)p)[2] = (ORD8)(d->h >> 8);
@@ -2256,7 +2259,7 @@ static int icmUInt64Array_allocate(
 	if (p->size != p->_size) {
 		if (p->data != NULL)
 			icp->al->free(icp->al, p->data);
-		if ((p->data = (icc_uint64 *) icp->al->malloc(icp->al, p->size * sizeof(icc_uint64))) == NULL) {
+		if ((p->data = (icmUint64 *) icp->al->malloc(icp->al, p->size * sizeof(icmUint64))) == NULL) {
 			sprintf(icp->err,"icmUInt64Array_alloc: malloc() of icmUInt64Array data failed");
 			return icp->errc = 2;
 		}
@@ -10494,6 +10497,11 @@ icmLab2XYZ(icmXYZNumber *w, double *out, double *in) {
 /* available D50 Illuminant */
 icmXYZNumber icmD50 = { 		/* Profile illuminant - D50 */
     0.9642, 1.0000, 0.8249
+};
+
+/* available D65 Illuminant */
+icmXYZNumber icmD65 = { 		/* Profile illuminant - D65 */
+	0.9505, 1.0000, 1.0890
 };
 
 /* Default black point */

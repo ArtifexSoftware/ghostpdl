@@ -184,11 +184,11 @@ typedef int icmSig;	/* Otherwise un-enumerated 4 byte signature */
 typedef struct {
 	ORD32 l;			/* High and low components of signed 64 bit */
 	INR32 h;
-} icc_int64;
+} icmInt64;
 
 typedef struct {
 	ORD32 l,h;			/* High and low components of unsigned 64 bit */
-} icc_uint64;
+} icmUint64;
 
 /* XYZ Number */
 typedef struct {
@@ -275,7 +275,7 @@ struct _icmUInt64Array {
 
 	/* Public: */
 	unsigned long	size;		/* Allocated and used size of the array */
-    icc_uint64			*data;		/* Pointer to array of hight data */ 
+    icmUint64		*data;		/* Pointer to array of hight data */ 
 }; typedef struct _icmUInt64Array icmUInt64Array;
 
 /* u16Fixed16 Array */
@@ -612,7 +612,7 @@ struct _icmDescStruct {
 	int             (*allocate)(struct _icmDescStruct *p);	/* Allocate method */
     icmSig            deviceMfg;		/* Dev Manufacturer */
     unsigned int      deviceModel;		/* Dev Model */
-    icc_uint64        attributes;		/* Dev attributes */
+    icmUint64         attributes;		/* Dev attributes */
     icTechnologySignature technology;	/* Technology sig */
 	icmTextDescription device;			/* Manufacturer text (sub structure) */
 	icmTextDescription model;			/* Model text (sub structure) */
@@ -760,11 +760,11 @@ struct _icmHeader {
 	/* Values that should be set before writing */
     icmSig                  manufacturer;	/* Dev manufacturer */
     icmSig		            model;			/* Dev model */
-    icc_uint64              attributes;		/* Device attributes.l */
+    icmUint64               attributes;		/* Device attributes.l */
     unsigned int            flags;			/* Various bits */
 
 	/* Values that may optionally be set before writing */
-    /* icc_uint64           attributes;		   Device attributes.h (see above) */
+    /* icmUint64            attributes;		   Device attributes.h (see above) */
     icmSig                  creator;		/* Profile creator */
 
 	/* Values that are not normally set, since they have defaults */
@@ -1067,6 +1067,9 @@ extern ICCLIB_API void icmLab2XYZ(icmXYZNumber *w, double *out, double *in);
 
 /* The standard D50 illuminant value */
 extern ICCLIB_API icmXYZNumber icmD50;
+
+/* The standard D65 illuminant value */
+extern ICCLIB_API icmXYZNumber icmD65;
 
 /* The default black value */
 extern ICCLIB_API icmXYZNumber icmBlack;
