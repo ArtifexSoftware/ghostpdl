@@ -51,7 +51,7 @@ awk 'F==1	{
 		}
 	' U="$USERNAME$LOGNAME"  F=1 - F=2 ${infile} >$tmpfile
 
-gs -q -dNOPAUSE -dSAFER -r72 -sDEVICE=bit -sOutputFile=/dev/null $tmpfile ps2epsi.ps $tmpfile <${infile} 1>&2
+gs -q -dNOPAUSE -dSAFER -dDELAYSAFER -r72 -sDEVICE=bit -sOutputFile=/dev/null $tmpfile ps2epsi.ps $tmpfile <${infile} 1>&2
 rm -f $tmpfile
 
 (
@@ -62,10 +62,8 @@ save countdictstack mark newpath /showpage {} def /setpagedevice {pop} def
 BEGINEPS
 
 cat ${infile} |
-sed -e '/^%%BeginPreview:/,/^%%EndPreview[
-]*$/d' -e '/^%!PS-Adobe/d'\
-	-e '/^%%[A-Za-z][A-Za-z]*[
-]*$/d' -e '/^%%[A-Za-z][A-Za-z]*: /d'
+sed -e '/^%%BeginPreview:/,/^%%EndPreview[^!-~]*$/d' -e '/^%!PS-Adobe/d'\
+-e '/^%%[A-Za-z][A-Za-z]*[^!-~]*$/d' -e '/^%%[A-Za-z][A-Za-z]*: /d'
 
 cat << ENDEPS
 %%Trailer

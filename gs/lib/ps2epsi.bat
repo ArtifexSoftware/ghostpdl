@@ -9,10 +9,10 @@ set infile=%1
 set outfile=%2
 
 rem Ghostscript uses %outfile% to define the output file
-%GSC% -q -dNOPAUSE -dSAFER -sDEVICE=bit -sOutputFile=NUL ps2epsi.ps < %infile%
+%GSC% -q -dNOPAUSE -dSAFER -dDELAYSAFER -sDEVICE=bit -sOutputFile=aaa.bit ps2epsi.ps < %infile%
 
 rem We bracket the actual file with a few commands to help encapsulation
-echo /InitDictCount countdictstack def gsave save mark newpath > %outfile%
+echo /InitDictCount countdictstack def gsave save mark newpath >> %outfile%
 
 rem Append the original onto the preview header
 copy %outfile% + %infile%
