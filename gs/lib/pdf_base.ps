@@ -254,8 +254,15 @@ pdfdict begin
 %
 %	Objects (larray): If object N is loaded, Objects[N] is the actual
 %	    object; otherwise, Objects[N] is an executable integer giving
-%	    the file offset of the object's entry in the cross-reference
-%	    table.
+%	    the file offset of the object's location in the file.  If
+%	    ObjectStream[N] is non-zero then Objects[N] contains the index
+%	    into the object stream instead of the file offset of the object.
+%
+%	ObjectStream (larray): If object N is in an object stream then
+%	    ObjectStream[N] holds the object number of the object stream.
+%	    Otherwise ObjectStream[N] contains 0.  If ObjectStream[N]
+%	    is non-zero then Objects[N] contains  the index into the object
+%	    stream.
 %
 %	GlobalObjects (dictionary): If object N has been resolved in
 %	    global VM, GlobalObjects[N] is the same as Objects[N]
@@ -268,6 +275,7 @@ pdfdict begin
 
 % Initialize the PDF object tables.
 /initPDFobjects {		% - initPDFobjects -
+  /ObjectStream larray def
   /Objects larray def
   /Generations lstring def
   .currentglobal true .setglobal
@@ -278,6 +286,9 @@ pdfdict begin
 
 % Grow the tables to a specified size.
 /growPDFobjects {		% <minsize> growPDFobjects -
+  dup ObjectStream llength gt {
+    dup ObjectStream exch lgrowto /ObjectStream exch def
+  } if
   dup Objects llength gt {
     dup Objects exch lgrowto /Objects exch def
   } if
@@ -300,21 +311,21 @@ pdfdict begin
 % whether an object has been resolved.
 /resolved? {		% <object#> resolved? <value> true
 			% <object#> resolved? false
-  Objects 1 index lget dup xcheck {
-    dup type /integertype eq {
+  Objects 1 index lget dup xcheck {	% Check if executable
+    dup type /integertype eq {		% Check if an integer
 		% Check whether the object is in GlobalObjects.
-      pop IsGlobal 1 index lget 0 eq {
-	pop false
-      } {
+      pop IsGlobal 1 index lget 0 eq {	% 0 --> Not in GlabalObjects
+	pop false			% The object is not resolved
+      } {				% The object is in GlobalObjects
 		% Update Objects from GlobalObjects
 	PDFDEBUG { (%Global=>local: ) print dup == } if
 	GlobalObjects 1 index get dup Objects 4 1 roll lput true
       } ifelse
-    } {
-      exch pop true
+    } {				% Else object is executable but not integer
+      exch pop true		% Therefore must be executable dict. (stream)
     } ifelse
-  } {
-    exch pop true
+  } {				% Else object is not executable.
+    exch pop true		% Therefore it must have been resolved.
   } ifelse
 } bind def
 /oforce /exec load def
@@ -350,22 +361,25 @@ pdfdict begin
    .pdfcount 3 lt { f } { pop pop pop null } ifelse
 } bind def
 
+% Verify the generation number for a specified object
+% Note:  The values in Generations is the generation number plus 1.
+% If the value in Generations is zero then the object is free.
 /checkgeneration {  % <object#> <generation#> checkgeneration <object#> <OK>
-  Generations 2 index lget 1 sub 1 index eq {
-    pop true
-  } {
-    QUIET not {
-      Generations 2 index lget 0 eq {
+  Generations 2 index lget 1 sub 1 index eq {	% If generation # match ...
+    pop true					% Then return true
+  } {					% Else not a match ...
+    QUIET not {				% Create warning message if not QUIET
+      Generations 2 index lget 0 eq {	% Check if object is free ...
 	(   **** Warning: reference to free object: )
       } {
 	(   **** Warning: wrong generation: )
       } ifelse
-      2 index =string cvs concatstrings ( ) concatstrings
-      exch =string cvs concatstrings ( R\n) concatstrings
-      pdfformaterror
-    } {
-      pop
-    } ifelse false
+      2 index =string cvs concatstrings ( ) concatstrings	% put obj #
+      exch =string cvs concatstrings ( R\n) concatstrings	% put gen #
+      pdfformaterror			% Output warning message
+    } {					% Else QUIET ...
+      pop				% Pop generation umber
+    } ifelse false			% Return false if gen # not match
   } ifelse
 } bind def
 /R {		% <object#> <generation#> R <object>
@@ -404,6 +418,152 @@ pdfdict begin
   } ifelse
 } bind def
 
+% When resolving an object reference in an object stream, we stop at
+% the end of file.  Note:  Objects in an object stream do not have either
+% a starting 'obj' or and ending 'endobj'.
+/resolveobjstreamopdict mark
+  valueopdict { } forall
+  (%%EOF) cvn { exit } bind
+.dicttomark readonly def
+
+% Note: This version of this function is not currently being used.
+% Resolve all objects in an object stream
+/resolveobjectstream {		% <object stream #> resolveobjectstream -
+  PDFDEBUG { (%Resolving object stream: ) print } if
+  0 resolveR	% Get the objectstream dict, all objstrms use 0 as the gen #
+  dup /First get		% Save location of first object onto the stack
+  1 index /N get		% Save number of objects onto the stack
+  2 index false resolvestream	% Convert stream dict into a stream
+  /ReusableStreamDecode filter	% We need to be able to position stream
+		% Objectstreams begin with list of object numbers and locations
+		% Create two arrays to hold object numbers and stream location
+  1 index array			% Array for holding object number
+  2 index array			% Array for holding stream object location
+		% Get the object numbers and locations.
+  0 1 5 index 1 sub {		% Loop and collect obj # and locations
+		% Stack: objstreamdict First N objectstream [obj#] [loc] index
+    2 index 1 index 		% Setup to put obj# into object number array
+    5 index token pop put	% Get stream, then get obj# and put into array
+    1 index 1 index 		% Setup to put object loc into location array
+    5 index token pop put	% Get stream, get obj loc and put into array
+    pop				% Remove loop index
+  } for
+  		% Create a bytestring big enough for reading any object data
+  		% Scan for the size of the largest object
+  0 0				% Init max object size and previous location
+  2 index {			% Loop through all object locations
+				% Stack:  ... maxsize prevloc currentloc
+    dup 4 1 roll		% Save copy of object location into stack
+    exch sub				% Object size = currentloc - prevloc
+    .max			% Determine maximum object size
+    exch			% Put max size under previous location
+  } forall
+  pop				% Remove previous location
+  .bigstring			% Create bytestring based upon max obj size
+		% Move to the start of the object data
+  3 index 6 index		% Get objectstream and start of first object
+  setfileposition		% Move to the start of the data
+  		% Read the data for all objects except the last.  We do
+		% not know the size of the last object so we need to treat
+		% it as a special case.
+  0 1 6 index 2 sub {
+    dup 4 index exch get 	% Get our current object number
+		% Stack: objstreamdict First N objectstream [obj#] [loc]
+		%        bytestring loopindex object#
+    dup resolved? {		% If we already have this object
+    	(yyy) = pstack (yyy) = flush xxx
+      pop pop			% Remove object and object number
+      1 add 2 index exch get	% Get location of next object
+      6 index add 6 index exch	% Form location of next object and get stream
+      setfileposition		% Move to the start of the next object data
+    } {				% Else this is a new object ...
+		% We are going to create a string for reading the object
+      2 index 0			% use our working string
+	  	% Determine the size of the object
+      5 index 4 index 1 add get	% Get location of the next object
+      6 index 5 index get	% Get location of this object
+      sub			% Size of object = next loc - this loc
+      getinterval		% Create string for reading object
+      6 index exch readstring pop	% Read object
+      /ReusableStreamDecode filter 	% Convert string into a stream
+      resolveobjstreamopdict .pdfrun	% Get PDF object
+      Objects exch 2 index exch lput	 % Put object into Objects array
+      pop pop			% Remove object # and loop index
+    } ifelse
+  } for
+  pop pop			% Remove our working string and loc array
+  		% Now read the last object in the object stream.  Since it
+		% is the last object, we can use the original stream and
+		% terminate when we hit the end of the stream
+		% Stack: objstreamdict First N objectstream [obj#]
+  2 index 1 sub get	 	% Get our current object number
+  dup resolved? not {		% If we do not already have this object
+    exch	 		% Get our object stream
+    resolveobjstreamopdict .pdfrun	% Get PDF object
+    Objects exch 2 index exch lput	% Put object into Objects array
+  } if
+  pop pop pop pop		% Clear stack
+} bind def
+
+% Resolve all objects in an object stream
+/resolveobjectstream {		% <object stream #> resolveobjectstream -
+  PDFDEBUG { (%Resolving object stream: ) print } if
+  0 resolveR	% Get the objectstream dict, all objstrms use 0 as the gen #
+  dup /Type get /ObjStm ne {	% Verify type is object stream
+    (   **** Incorrect Type in object stream dictionary.\n) pdfformaterror
+    /resolveobjectstream cvx /typecheck signalerror
+  } if
+  dup /N get			% Save number of objects onto the stack
+  1 index false resolvestream	% Convert stream dict into a stream
+  /ReusableStreamDecode filter	% We need to be able to position stream
+		% Objectstreams begin with list of object numbers and locations
+  1 index array			% Create array for holding object number
+		% Get the object numbers
+  0 1 4 index 1 sub {		% Loop and collect obj numbers
+		% Stack: objstreamdict N PDFDEBUG objectstream [obj#] loopindex
+    1 index 1 index 		% Setup to put obj# into object number array
+    4 index token pop put	% Get stream, then get obj# and put into array
+    2 index token pop pop pop	% Get stream, get obj loc and clear stack
+  } for
+		% Move to the start of the object data
+  1 index 4 index /First get	% Get objectstream and start of first object
+  setfileposition		% Move to the start of the data
+  		% We disable PDFDEBUG while reading the data stream.  We will
+		% print the data later
+  PDFDEBUG /PDFDEBUG false def	% Save PDFDEBUG and disable it while reading
+  		% Read the data for all objects.  We check to see if we get
+		% the number of objects that we expect.
+		% Stack: objstreamdict N objectstream [obj#] PDFDEBUG
+  mark 4 -1 roll 		% Get objectstream
+  count 5 index add		% Determine stack depth with objects
+  /PDFObjectStkCount exch def
+  resolveobjstreamopdict .pdfrun % Get PDF objects
+  PDFObjectStkCount count ne {	% Check stack depth
+    (   **** Incorrect object count in object stream.\n) pdfformaterror
+    /resolveobjectstream cvx /rangecheck signalerror
+  } if
+  		% We have the object data
+  counttomark array astore	% Put objects into an array
+  exch pop			% Remove mark
+  exch /PDFDEBUG exch def	% Restore PDFDEBUG flag
+		% Save the objects into Objects
+  0 1 2 index length 1 sub {	% Loop through all objects
+		% Stack: objstreamdict N [obj#] [objects] loopindex
+    dup 3 index exch get 	% Get our current object number
+    dup resolved? {		% If we already have this object
+      pop pop			% Remove object and object number
+    } {				% Else if we do not have this object
+      PDFDEBUG { (%Resolving compressed object: [) print dup =only ( 0]) = } if
+      Objects exch 3 index	% Put the object into Objects
+      3 index get
+      PDFDEBUG { dup === flush } if
+      lput
+    } ifelse
+    pop 			% Remove loop index
+  } for
+  pop pop pop pop		% Remove objstream, N, (obj#], and [objects]
+} bind def
+
 % When resolving an object reference, we stop at the endobj.
 /resolveopdict mark
   valueopdict { } forall
@@ -415,14 +575,15 @@ pdfdict begin
 
 /resolveR {		% <object#> <generation#> resolveR <object>
   PDFDEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
-  1 index resolved? {
-    exch pop exch pop
-  } {
-    PDFfile fileposition 3 1 roll
-    1 index Objects exch lget
-    3 1 roll checkgeneration {
+  1 index resolved? {		% If object has already been resolved ...
+    exch pop exch pop		% then clear stack and return object
+  } {				% Else if not resolved ...
+    PDFfile fileposition 3 1 roll	% Save current file position
+    1 index Objects exch lget		% Get location of object from xref
+    3 1 roll checkgeneration {		% Verify the genration number
 			% Stack: savepos objpos obj#
-	 exch PDFoffset add PDFfile exch setfileposition
+       ObjectStream 1 index lget dup 0 eq { % Check if obj in not an objstream
+	 pop exch PDFoffset add PDFfile exch setfileposition
 	 PDFfile token pop 2 copy ne
 	  { (   **** Unrecoverable error in xref!\n) pdfformaterror
 	    /resolveR cvx /rangecheck signalerror
@@ -434,11 +595,23 @@ pdfdict begin
 	  }
 	 if
 	 pdf_run_resolve	% PDFfile resolveopdict .pdfrun
-    }
-    {		% Don't cache if the generation # is wrong.
-	 pop pop null
-    } ifelse
-    exch PDFfile exch setfileposition
+      } {			% Else the object is in an ObjectStream
+	      	% Process an objectstream object.  We are going to resolve all
+	      	% of the objects in sthe stream and place them into the Objects
+	      	% array.
+		% Stack: savepos objpos obj# objectstream#
+	resolveobjectstream
+        resolved? {		% If object has already been resolved ...
+	  exch pop		% Remove object pos from stack.
+	} {
+	  pop pop null		% Pop objpos and obj#, put null for object
+	} ifelse
+      } ifelse
+    } {				% Else the generation number is wrong
+	    % Don't cache if the generation # is wrong.
+	pop pop null		% Pop objpos and obj#, put null for object
+    } ifelse			% ifelse generation number is correct
+    exch PDFfile exch setfileposition	% Return to original file position
   } ifelse
 } bind def      
 

@@ -211,25 +211,13 @@ pdfdict begin
  } bind def
 /linene { lineeq not } bind def
 
-% Read the cross-reference table.
-/readxref		% <pos> readxref <trailerdict>
+ %  Read original version (pre PDF 1.5) of the xref table.
+ %  Note:  The position is the location of 'xref'.  The current PDFfile
+ %  position is just after the 'XREF'.
+/readorigxref		% <pos> readorigxref <trailerdict>
  {
-   PDFoffset add PDFfile exch setfileposition
-		% In some PDF files, this position actually points to
-		% white space before the xref line.  Skip over this here.
-   { PDFfile fileposition PDFfile read pop 32 gt { exit } if pop
-   } loop
-   PDFfile exch setfileposition
-   0		% Initialize xref table error counter
-
-		% The PDF specification says that the 'xref' must be on a line
-		% by itself. The code here formerly used readline and linene to
-		% check this. However, Acrobat Reader only requires the line to
-		% begin with 'xref', and there are enough applications producing
-		% non-compliant PDF files that we have to do this too.
-   PDFfile pdfstring 0 4 getinterval readstring pop
-   (xref) ne { /readxref cvx /syntaxerror signalerror } if
-		% Store the xref table entry position for each object.
+   pop				% We do not need the position.
+   0				% Initialize xref table error counter
    { PDFfile token pop		% first object # or trailer
      dup /trailer eq { pop exit } if
      PDFfile pdfstring readline pop
@@ -251,7 +239,9 @@ pdfdict begin
        dup /n eq {		% xref line tag is /n
 	 pop			% pop dup of line tag
          Objects 3 index lget null eq {	% later update might have set it
-	   setxrefentry
+	   0 3 1 roll		% Set ObjectStream object number = 0
+	   setxrefentry		% Save xref entry
+	   3 -1 roll pop	% Remove ObjectStream object onumber
          } if
        }
        {			% xref line tag was not /n
@@ -276,6 +266,139 @@ pdfdict begin
      pdfformaterror
    } if
    PDFfile traileropdict .pdfrun
+ } bind def
+
+ % This dicitonary is used to read the xref dictionary.  It should work for
+ % reading any dictionary.  dictlevelcount must contain 0.
+/xrefopdict mark
+  (<<) cvn { /dictlevelcount dictlevelcount 1 add def mark } bind
+  (>>) cvn { .dicttomark /dictlevelcount dictlevelcount 1 sub def
+  	     dictlevelcount 0 eq { exit} if } bind
+  ([) cvn { mark } bind		% ditto
+  (]) cvn dup load
+%  /true true		% see .pdfexectoken in pdf_base.ps
+%  /false false		% ibid.
+%  /null null		% ibid.
+  /R { /resolveR cvx 3 packedarray cvx } bind	% see Objects below
+.dicttomark readonly def
+
+% Get a variable length positive integer value from a stream.  A value
+% of zero is returned if the count is zero.
+/getintn {	% <stream> <count> getintn int
+  0 exch { 256 mul 1 index read pop add } repeat
+  exch pop			% Discard stream
+} bind def
+
+% This array contains handlers for processing the different types of
+% entries in the XRef stream.
+% Stack: <Xrefdict> <xref stream> <Index array> <pair loc> <obj num>
+% 	 <field 2> <field 3>
+% The handlers leave the stack unchanged.
+/xref15entryhandlers [
+  {	% XRef entry type 0 - free or f type xref entry
+%    (free ) print
+%    (obj num: ) print 2 index pdfstring cvs print ( ) print
+%    (loc: ) print 1 index pdfstring cvs print ( ) print
+%    (gen: ) print dup === flush
+  } bind		% Do nothing for free xref entries
+	% XRef entry type 1 - normal or n type xref entry
+  {	% field 2 = obj loc, field 3 = gen num
+%    (normal ) print
+%    (obj num: ) print 2 index pdfstring cvs print ( ) print
+%    (loc: ) print 1 index pdfstring cvs print ( ) print
+%    (gen: ) print dup === flush
+    0 3 1 roll			% set stream number = 0
+    setxrefentry
+    3 -1 roll pop		% remove stream number
+  } bind
+	% XRef entry type 2 - compressed object type xref entry
+  {	% field 2 = object stream num, field 3 = index into object stream
+%    (Compressed objects: ) print
+%    (obj num: ) print 2 index pdfstring cvs print ( ) print
+%    (field 2: ) print 1 index pdfstring cvs print ( ) print
+%    (field 3: ) print dup === flush
+    0 setxrefentry pop		% set generation number = 0
+  } bind
+] def
+
+ %  Read the PDF 1.5 version of the xref table.
+ %  Note:  The position is the location of the start of the dictionary object
+ %  In PDF 1.5, the XRef dictionary also serves as the trailer dictionary
+/readpdf15xref		% <pos> readpdf15xref <trailerdict>
+ {
+   PDFfile exch setfileposition		% move to start of object
+   	% Get object number, revision, and 'obj' and discard
+   PDFfile token pop pop
+   PDFfile token pop pop
+   PDFfile token pop pop
+	% Get the XRef dicitionary
+   /dictlevelcount 0 def PDFfile xrefopdict .pdfrun
+	% Verify that we have an XRef dictionary
+   dup /Type get /XRef ne {
+     /readpdf15xref cvx /syntaxerror signalerror
+   } if
+   	% Ensure that we we have room in the objects array, etc.
+   dup /Size get growPDFobjects
+	% Create a stream for the XRef data
+   PDFfile token pop pop		% Skip over 'stream'
+   dup stream false resolvestream
+   	% Stack: <XRefdict> <xref stream>
+	% The Index array defines the ranges of object numbers in the
+	% XRef stream.  Each value pair is consists of starting object
+	% number and the count of consecutive objects.
+	% Get the Index array, if present
+   1 index /Index .knownget not {	% If no Index array ...
+     [ 0 3 index /Size get ]		% Default = [ 0 Size ]
+   } if
+	% Loop through the Index array
+   0 2 2 index length 1 sub {
+	% Get start and end of object range
+     2 copy get				% Start of the range
+     dup 3 index 3 index 1 add get 	% Number of entries in range
+     	% Loop through the range of object numbers
+     add 1 sub 1 exch {			% Form end of range, set increment = 1
+	% Stack: <Xrefdict> <xref stream> <Index array> <pair loc> <obj num>
+	% Get xref parameters.  Note:  The number of bytes for each parameter
+	% is defined by the entries in the W array.
+       4 index /W get aload pop		% Get W array values
+       	% The first field indicates type of entry.  Get first field value.
+	% If the num. of bytes for field 1 is 0 then default field value is 1
+       3 -1 roll dup 0 eq { pop 1 } { 6 index exch getintn } ifelse
+	% Get the handler for the xref entry type.  We will execute the
+	% handler after we get the other two field values.
+       xref15entryhandlers exch get
+       3 -1 roll 6 index exch getintn	% Get second field
+       3 -1 roll 6 index exch getintn	% Get third field
+       3 -1 roll exec			% Execute Xref entry handler
+       pop pop pop			% Remove field values and obj num
+     } for				% Loop through Xref entries
+     pop				% Remove Index array pair loc
+   } for				% Loop through Index array entries
+   pop pop				% Remove Index array and xref stream
+ } bind def
+
+% Read the cross-reference table.
+% <pos> is the position either from the startxref statement or the /Prev
+% entry in the prior trailer dictionary.
+/readxref		% <pos> readxref <trailerdict>
+ {
+   PDFoffset add PDFfile exch setfileposition
+		% In some PDF files, this position actually points to
+		% white space before the xref line.  Skip over this here.
+   { PDFfile fileposition PDFfile read pop 32 gt { exit } if pop
+   } loop
+   dup		% Make copy of the file position (before last char was read).
+   PDFfile exch setfileposition
+		% The PDF specification says that the 'xref' must be on a line
+		% by itself. The code here formerly used readline and linene to
+		% check this. However, Acrobat Reader only requires the line to
+		% begin with 'xref', and there are enough applications producing
+		% non-compliant PDF files that we have to do this too.
+   PDFfile pdfstring 0 4 getinterval readstring pop
+   (xref) eq
+   { readorigxref } 	% 'xref' -> original xref table
+   { readpdf15xref }	% otherwise assume PDF 1.5 xref stream
+   ifelse
  } bind def
 
 % Open a PDF file and read the header, trailer, and cross-reference.
@@ -344,26 +467,22 @@ pdfdict begin
    length /PDFoffset exch def pop cvr /PDFversion exch def
 	% Read the last cross-reference table.
    count /pdfemptycount exch def
+   /Trailer << >> def		% Initialize to an emptry dict.
    { initPDFobjects findxref readxref } .internalstopped {
-        % Read failed.  Attempt to recover xref data.
-     print_xref_warning 
-     count pdfemptycount sub { pop } repeat % remove anything left by readxref
-     search_objects
-     search_trailer
-   } { /Trailer exch def
+     recover_xref_data		% Read failed.  Attempt to recover xref data.
+     search_trailer		% Search for the primary trailer
+     /Trailer exch def		% Save trailer dict
+   } {
+     /Trailer exch def		% Save trailer dict after first xref table
 	% Read any previous cross-reference tables.
      Trailer
      { /Prev knownoget not { exit } if
        { readxref } .internalstopped {
-         % Read failed.  Attempt to recover xref data.
-         print_xref_warning
-         count pdfemptycount sub { pop } repeat	% remove anything left by readxref
-	 search_objects
-         search_trailer
-	 exit
-       } if
-     } loop
-   } ifelse
+         recover_xref_data	% Read failed.  Attempt to recover xref data.
+	 exit			% Exit loop since recover gets all obj data.
+       } if  			% If readxref stopped
+     } loop			% Loop to previous trailer
+   } ifelse			% Ifelse readxref stopped
    Trailer /Encrypt knownoget {
      pop
      pdf_process_Encrypt	% signal error
