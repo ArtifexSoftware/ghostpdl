@@ -401,17 +401,15 @@ DEVICE_DEVS20=
 MAKEFILE=$(GLSRCDIR)/macosx.mak
 TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)/unixhead.mak
 
-# Define the auxiliary programs dependency. There aren't any, but we use
-# this as a hook to detect whether we're running a version of gcc with   
-# the const optimization bug.
+# Define the auxiliary programs dependency. We don't use this.
 
-AK=$(GLGENDIR)/cc.tr
+AK=
 
 # Define the compilation rules and flags.
 
 CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS)
-CC_=$(CC) `cat $(AK)` $(CCFLAGS)
-CCAUX=$(CC) `cat $(AK)`
+CC_=$(CC) $(CCFLAGS)
+CCAUX=$(CC)
 CC_LEAF=$(CC_) -fomit-frame-pointer
 # gcc can't use -fomit-frame-pointer with -pg.
 CC_LEAF_PG=$(CC_)
@@ -441,6 +439,3 @@ include $(GLSRCDIR)/macos-fw.mak
 include $(GLSRCDIR)/unix-end.mak
 include $(GLSRCDIR)/unixinst.mak
 
-# This has to come last so it won't be taken as the default target.
-$(AK):
-	if ( $(CC) --version | egrep "^2\.7\.([01]|2(\.[^1-9]|$$))" >/dev/null ); then echo -Dconst= >$(AK); else echo -Wcast-qual -Wwrite-strings >$(AK); fi
