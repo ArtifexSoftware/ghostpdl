@@ -12,6 +12,11 @@ typedef int bool;
 #define FALSE 0
 #define TRUE 1
 
+#define BMP_FILE_HEADER_SIZE 14
+#define BMP_INFO_HEADER_SIZE 40
+#define BMP_HEADER_SIZE ((BMP_FILE_HEADER_SIZE) + \
+				(BMP_INFO_HEADER_SIZE))
+
 #define MIN(x,y) ((x)>(y)?(y):(x))
 #define MAX(x,y) ((x)>(y)?(x):(y))
 
@@ -154,53 +159,31 @@ create_pnm_image(Image *templ, const char *path)
   return pnm;
 }
 
-typedef short WORD;
-typedef long LONG;
-
-typedef struct tagBITMAPFILEHEADER { 
-  WORD    bfType; 
-  LONG    bfSize; 
-  WORD    bfReserved1; 
-  WORD    bfReserved2; 
-  LONG    bfOffBits; 
-} BITMAPFILEHEADER; 
-
-typedef struct tagBITMAPINFOHEADER{
-  LONG   biSize; 
-  LONG   biWidth; 
-  LONG   biHeight; 
-  WORD   biPlanes; 
-  WORD   biBitCount;
-  LONG   biCompression; 
-  LONG   biSizeImage; 
-  LONG   biXPelsPerMeter; 
-  LONG   biYPelsPerMeter; 
-  LONG   biClrUsed; 
-  LONG   biClrImportant; 
-} BITMAPINFOHEADER; 
-
-static void 
-Word(WORD *v, WORD x)
+static void
+write_int16(short v, FILE *f)
 {
-  *((uchar*)v + 0) = x & 255;
-  *((uchar*)v + 1) = x >> 8;
+  uchar val[2];
+  val[0] = (uchar)(v & 0xff);
+  val[1] = (uchar)((v >> 8) & 0xff);
+  fwrite(val, 2, 1, f);
 }
 
-static void 
-Long(LONG *v, LONG x)
+static void
+write_int32(int v, FILE *f)
 {
-  *((uchar*)v + 0) = x & 255;
-  *((uchar*)v + 1) = (x >> 8) & 255;
-  *((uchar*)v + 2) = (x >> 16) & 255;
-  *((uchar*)v + 3) = (x >> 24) & 255;
+  uchar val[4];
+  val[0] = (uchar)(v & 0xff);
+  val[1] = (uchar)((v >> 8) & 0xff);
+  val[2] = (uchar)((v >> 16) & 0xff);
+  val[3] = (uchar)((v >> 24) & 0xff);
+  fwrite(val, 4, 1, f);
 }
-
+    
 static int
 seek_bmp_image(Image *self, int y)
 {
   ImagePnm *pnm = (ImagePnm *)self;
-  int nOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-  long pos = nOffBits + self->raster * (self->height - y - 1);
+  long pos = BMP_HEADER_SIZE + self->raster * (self->height - y - 1);
   int r = fseek(pnm->f, pos, SEEK_SET);
 
   return r;
@@ -209,12 +192,9 @@ seek_bmp_image(Image *self, int y)
 static ImagePnm *
 create_bmp_image(Image *templ, const char *path)
 {
-  BITMAPFILEHEADER fh;
-  BITMAPINFOHEADER ih;
   int raster = (templ->raster + 3) & ~3;
-  int nOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
   int nImageSize = raster * templ->height;
-  int nFileSize = nOffBits + nImageSize;
+  int nFileSize = BMP_HEADER_SIZE + nImageSize;
   ImagePnm *pnm = create_pnm_image_struct(templ, path);
 
   if (pnm == NULL)
@@ -222,29 +202,40 @@ create_bmp_image(Image *templ, const char *path)
   pnm->super.seek = seek_bmp_image;
   pnm->super.raster = raster;
 
-  memset(&fh, 0, sizeof(fh));
-  memset(&ih, 0, sizeof(ih));
+  /* BMP file header */
+  fputc('B', pnm->f);
+  fputc('M', pnm->f);
+  write_int32(nFileSize, pnm->f);
+  write_int16(0, pnm->f); /* reserved fields are zero */
+  write_int16(0, pnm->f);
+  write_int32(BMP_HEADER_SIZE, pnm->f);
 
-  *((uchar*)&fh.bfType + 0) = 'B';
-  *((uchar*)&fh.bfType + 1) = 'M';
-  Long(&fh.bfSize, nFileSize);
-  Long(&fh.bfOffBits, nOffBits);
+  /* BMP info header */
+  write_int32(BMP_INFO_HEADER_SIZE, pnm->f);
+  write_int32(templ->width, pnm->f);
+  write_int32(pnm->super.height, pnm->f);
+  write_int16(1, pnm->f);	/* planes */
+  write_int16(24, pnm->f);	/* bit count */
+  write_int32(0, pnm->f);	/* compression */
+  write_int32(0, pnm->f);	/* size image */
+  write_int32(3780, pnm->f);	/* resolution in pixels per meter */
+  write_int32(3780, pnm->f);	/* use a default 96 dpi */
+  write_int32(0, pnm->f);	/* ClrUsed */
+  write_int32(0, pnm->f);	/* ClrImportant */
 
-  Long(&ih.biSize, sizeof(BITMAPINFOHEADER));
-  Long(&ih.biWidth, templ->width);
-  Long(&ih.biHeight, pnm->super.height);
-  Word(&ih.biPlanes, 1);    /* Now support this value only. */
-  Word(&ih.biBitCount, 24); /* Now support this value only. */
-  ih.biCompression = 0;     /* Now support this value only. */
-  ih.biSizeImage = 0;
-  Long(&ih.biXPelsPerMeter, 3780);
-  Long(&ih.biYPelsPerMeter, 3780);
-  ih.biClrUsed = 0;
-  ih.biClrImportant = 0;
-
-  fwrite(&fh, sizeof(fh), 1, pnm->f);
-  fwrite(&ih, sizeof(ih), 1, pnm->f);
-
+  /* fseek beyond file end doesn't work with MSVC so we pad
+     out to the size of the image data at file open time.    */
+  {
+    uchar *linebuf = malloc(raster);
+    if (linebuf == NULL) {
+        printf("Couldn't allocate dummy bmp line buffer; diff image may be corrupt.\n");
+    } else {
+        memset(linebuf, 0, raster);
+        fwrite(linebuf, raster, pnm->super.height, pnm->f);
+        free(linebuf);
+    }
+  }
+  
   return pnm;
 }
 
