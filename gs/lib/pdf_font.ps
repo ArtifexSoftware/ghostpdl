@@ -1161,36 +1161,34 @@ readonly def
 
 /resourcefont			% <font-resource> resourcefont <font>
 { dup /PSFont .knownget
-  { /FID knownoget { type /fonttype eq } { false } ifelse }
-  { false }
+  { /FID knownoget { type /fonttype eq } { //false } ifelse }
+  { //false }
   ifelse
   { /PSFont get }
   { dup dup /FontDescriptor knownoget {	% Stack: font-res font-res font-desc
       dup /FontObject .knownget {
-	3 1 roll pop pop true
+	3 1 roll pop pop
       } {
 	dup /FontFile knownoget
-	{ exch pop readtype1 true }
+	{ exch pop readtype1 }
 	{ dup /FontFile2 knownoget
-	  { exch pop readtruetype true }
+	  { exch pop readtruetype }
 	  { /FontFile3 knownoget
-	    { dup /Subtype get fontloadprocs exch get exec true }
-	    { false }
+	    { dup /Subtype get fontloadprocs exch get exec }
+            { dup /Subtype get fonttypeprocs exch get exec }
 	    ifelse
 	  }
 	  ifelse
 	}
 	ifelse
-	2 index /FontDescriptor oget
-	2 index /FontObject exch put	    % Save pointer to the font
+	1 index /FontDescriptor oget
+	1 index /FontObject exch put	    % Save pointer to the font
       }
       ifelse
     }
-    { false }
+    { dup /Subtype get fonttypeprocs exch get exec }
     ifelse
-	% Stack: font-res font-res false
-	%  -or-: font-res font true
-    not { dup /Subtype get fonttypeprocs exch get exec } if
+	% Stack: font-res font
     1 index 3 1 roll
     1 index /Subtype get
     //adjustfonttypes exch known { adjustfont } { exch pop } ifelse
