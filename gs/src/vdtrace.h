@@ -129,8 +129,8 @@ void vd_setflag(char f, char v);
 #    define vd_text(x,y,s,c)    while (vd_trace1) { vd_impl_text(x,y,s,c); break; }
 #    define vd_wait             while (vd_trace1) { vd_trace1->wait(vd_trace1); break; }
 #else
-#    define vd_get_dc(f)
-#    define vd_release_dc
+#    define vd_get_dc(f)    DO_NOTHING
+#    define vd_release_dc   DO_NOTHING
 #    define vd_enabled			0
 #    define vd_get_size_unscaled_x      100
 #    define vd_get_size_unscaled_y      100
@@ -140,32 +140,32 @@ void vd_setflag(char f, char v);
 #    define vd_get_scale_y              100
 #    define vd_get_origin_x             0
 #    define vd_get_origin_y             0
-#    define vd_set_scale(sx)
-#    define vd_set_scaleXY(sx,sy)
-#    define vd_set_origin(x,y)
-#    define vd_set_shift(x,y)
-#    define vd_set_central_shift
-#    define vd_erase(c)
-#    define vd_beg_path
-#    define vd_end_path
-#    define vd_moveto(x,y)
-#    define vd_lineto(x,y)
-#    define vd_lineto_multi(p,n)
-#    define vd_curveto(x0,y0,x1,y1,x2,y2)
-#    define vd_closepath
-#    define vd_bar(x0,y0,x1,y1,w,c)
-#    define vd_square(x0,y0,w,c)
-#    define vd_rect(x0,y0,x1,y1,w,c)
-#    define vd_quad(x0,y0,x1,y1,x2,y2,x3,y3,w,c)
-#    define vd_curve(x0,y0,x1,y1,x2,y2,x3,y3,w,c)
-#    define vd_circle(x,y,r,c)
-#    define vd_round(x,y,r,c)
-#    define vd_fill
-#    define vd_stroke
-#    define vd_setcolor(c)
-#    define vd_setlinewidth(w)
-#    define vd_text(x,y,s,c)
-#    define vd_wait
+#    define vd_set_scale(sx)	    DO_NOTHING
+#    define vd_set_scaleXY(sx,sy)   DO_NOTHING
+#    define vd_set_origin(x,y)	    DO_NOTHING
+#    define vd_set_shift(x,y)	    DO_NOTHING
+#    define vd_set_central_shift    DO_NOTHING
+#    define vd_erase(c)		    DO_NOTHING
+#    define vd_beg_path		    DO_NOTHING
+#    define vd_end_path		    DO_NOTHING
+#    define vd_moveto(x,y)	    DO_NOTHING
+#    define vd_lineto(x,y)	    DO_NOTHING
+#    define vd_lineto_multi(p,n)    DO_NOTHING
+#    define vd_curveto(x0,y0,x1,y1,x2,y2) DO_NOTHING
+#    define vd_closepath	    DO_NOTHING
+#    define vd_bar(x0,y0,x1,y1,w,c) DO_NOTHING
+#    define vd_square(x0,y0,w,c)    DO_NOTHING
+#    define vd_rect(x0,y0,x1,y1,w,c)	DO_NOTHING
+#    define vd_quad(x0,y0,x1,y1,x2,y2,x3,y3,w,c)  DO_NOTHING
+#    define vd_curve(x0,y0,x1,y1,x2,y2,x3,y3,w,c) DO_NOTHING
+#    define vd_circle(x,y,r,c)	    DO_NOTHING
+#    define vd_round(x,y,r,c)	    DO_NOTHING
+#    define vd_fill		    DO_NOTHING
+#    define vd_stroke		    DO_NOTHING
+#    define vd_setcolor(c)	    DO_NOTHING
+#    define vd_setlinewidth(w)	    DO_NOTHING
+#    define vd_text(x,y,s,c)	    DO_NOTHING
+#    define vd_wait		    DO_NOTHING
 #endif
 
 #endif /* vdtrace_INCLUDED */
