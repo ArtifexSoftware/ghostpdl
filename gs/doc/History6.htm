@@ -29,7 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
-<li><a href="#Version6.62">Version 6.62 (2001-03-16)</a>
+<li><a href="#Version6.62">Version 6.62 (2001-03-19)</a>
 <ul>
 <li><a href="#6.62_Incompatible_changes">Incompatible changes</a>,
     <a href="#6.62-Documentation">Documentation</a>,
@@ -203,7 +203,7 @@ release.
 
 <hr>
 
-<h1><a name="Version6.62"></a>Version 6.62 (2001-03-16)</h1>
+<h1><a name="Version6.62"></a>Version 6.62 (2001-03-19)</h1>
 
 <p>
 This is the first beta release for the upcoming 7.0 release. This fileset
@@ -220,8 +220,9 @@ closed, except for the following: 201955, 202735, 206652, 209350,
 228180, 228354, 228423, 228641, 228714, 228788, 228808, 229439,
 230694, 230699, 231390, 232334, 232696, 233403, 404255, 404255,
 404482, 404933, 405313, 406285, 406643, 406689, 406694, 406696,
-406699, 406979, 407342, 409105, 409133, 409244, 409245. Note that
-SourceForge has renumbered all bugs since the 6.61 release.
+406699, 406979, 407342, 409105, 409133, 409244, 409245. Note that,
+since the 6.61 release, SourceForge has renumbered all bugs in the
+1xxxxx range by adding 100000 (thus, they are now 2xxxxxx).
 
 <h3><a name="6.62_Incompatible_changes"></a>Incompatible changes</h3>
 
@@ -286,6 +287,39 @@ man/ps2ascii.1 [1.4], man/ps2epsi.1 [1.4], man/ps2pdf.1 [1.8],
 man/ps2pdfwr.1 [1.5], man/ps2ps.1 [1.11], man/wftopfa.1 [1.4]: 2001/03/17
 01:26:48 raph)
 
+Updates Changes and History6 files from cvs commit logs, in preparation for
+6.62 beta release. (doc/Changes.htm [1.22], doc/History6.htm [1.20]:
+2001/03/17 01:30:16 raph)
+
+There was a spelling error in Juan Manuel Acosta's name. His entry is also
+moved to "major contributers" section. (doc/Helpers.htm [1.11]: 2001/03/19
+16:46:05 alexcher)
+
+Updates date for 6.62 release to 2001-03-19. (doc/API.htm [1.3],
+doc/Bug-form.htm [1.16], doc/Bug-info.htm [1.12], doc/C-style.htm [1.13],
+doc/Commprod.htm [1.10], doc/Copying.htm [1.8], doc/Current.htm [1.8],
+doc/DLL.htm [1.10], doc/Develop.htm [1.34], doc/Devices.htm [1.22],
+doc/Drivers.htm [1.16], doc/Fonts.htm [1.14], doc/Helpers.htm [1.12],
+doc/History1.htm [1.8], doc/History2.htm [1.8], doc/History3.htm [1.8],
+doc/History4.htm [1.8], doc/History5.htm [1.10], doc/History6.htm [1.21],
+doc/Htmstyle.htm [1.11], doc/Install.htm [1.16], doc/Language.htm [1.27],
+doc/Lib.htm [1.8], doc/Maintain.htm [1.12], doc/Make.htm [1.24],
+doc/New-user.htm [1.21], doc/News.htm [1.79], doc/Projects.htm [1.25],
+doc/Ps-style.htm [1.8], doc/Ps2epsi.htm [1.9], doc/Ps2pdf.htm [1.26],
+doc/Psfiles.htm [1.15], doc/README [1.7], doc/Readme.htm [1.22],
+doc/Release.htm [1.30], doc/Source.htm [1.8], doc/Tester.htm [1.8],
+doc/Unix-lpr.htm [1.8], doc/Use.htm [1.24], doc/Xfonts.htm [1.8],
+doc/gs-vms.hlp [1.7], man/dvipdf.1 [1.5], man/font2c.1 [1.5],
+man/gs.1 [1.5], man/gslp.1 [1.5], man/gsnd.1 [1.5], man/pdf2dsc.1 [1.5],
+man/pdf2ps.1 [1.7], man/pdfopt.1 [1.5], man/pf2afm.1 [1.5],
+man/pfbtopfa.1 [1.6], man/printafm.1 [1.5], man/ps2ascii.1 [1.5],
+man/ps2epsi.1 [1.5], man/ps2pdf.1 [1.9], man/ps2pdfwr.1 [1.6],
+man/ps2ps.1 [1.12], man/wftopfa.1 [1.5]: 2001/03/19 17:26:17 raph)
+
+Inital version of this file that will be used to capture notes about minor
+bugs or compatibility that are identified when action will not be undertaken
+immediately. (doc/Issues.htm [1.1]: 2001/03/19 19:27:04 rayjj)
+
 </pre><h2><a name="6.62-Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
@@ -297,6 +331,11 @@ Thanks to Jouk Jansen. (devs.mak [1.44]: 2001/03/13 20:01:35 raph)
 to MSVC++ makefile that build in the debugobj and debugbin directories.
 Fixes BEGINFILES and BEGINFILES2 so that 'make clean' removes all files.
 (msvc32.mak [1.10], winlib.mak [1.7]: 2001/03/16 22:53:18 ghostgum)
+	- /None and /All separations are now supported. SourceForge bug
+#228354. (lib.mak [1.45]: 2001/03/18 19:15:50 igorm)
+	- Adds lib directory to MS-Windows distribution archive. Change
+copyright message in MS-Windows setup program to artofcode LLC. Thanks to
+Russell Lang for the patch. (winint.mak [1.7]: 2001/03/19 17:12:45 raph)
 
 Increments version number to 6.62 as part of 6.61 release process.
 (version.mak [1.27]: 2001/02/24 01:56:01 raph)
@@ -346,6 +385,18 @@ unix-gcc.mak [1.13], unixansi.mak [1.9], unixtrad.mak [1.9],
 version.mak [1.28], watc.mak [1.9], watclib.mak [1.9], watcw32.mak [1.8],
 wctail.mak [1.3], winlib.mak [1.8]: 2001/03/17 01:15:42 raph)
 
+Moves patched icclib 1.23 files into the new icclib/ subdirectory, with
+makefile changes to match. Adds missing COPYRIGHT and other documentation to
+icclib. Thanks to L. Peter Deutsch for pointing out the need.
+(bcwin32.mak [1.8], dvx-gcc.mak [1.8], msvc32.mak [1.12],
+msvclib.mak [1.10], openvms.mak [1.9], os2.mak [1.13], ugcclib.mak [1.9],
+unix-gcc.mak [1.14], unixansi.mak [1.10], unixtrad.mak [1.10],
+watc.mak [1.10], watclib.mak [1.10], watcw32.mak [1.9]: 2001/03/19 17:11:15
+raph)
+
+Updates date for 6.62 release to 2001-03-19. (version.mak [1.29]: 2001/03/19
+17:26:18 raph)
+
 </pre><h2><a name="6.62-Utilities"></a>Utilities</h2><pre>
 
 Replace many references to exit() with returns. (gp_dvx.c [1.3],
@@ -371,6 +422,11 @@ gp_os2.c [1.9], gsdll.c [1.4]: 2001/03/13 07:09:28 ghostgum)
 Integrates ICC profile input support from Jan Stoeckenius. Also includes
 slightly modified version of icclib (icc.h, icc.c, icc9809.h) by Graeme
 Gill. (icc.c [1.1]: 2001/03/17 01:15:42 raph)
+
+Moves patched icclib 1.23 files into the new icclib/ subdirectory, with
+makefile changes to match. Adds missing COPYRIGHT and other documentation to
+icclib. Thanks to L. Peter Deutsch for pointing out the need. (icc.c [1.2]:
+2001/03/19 17:11:15 raph)
 
 </pre><h2><a name="6.62-Drivers"></a>Drivers</h2><pre>
 
@@ -476,6 +532,8 @@ allocation of contents. Thanks to Masatake YAMATO for the patch.
 	- Define to DefaultGray, DefaultRGB, DefaultCMYK color spaces to
 allow UseCIEColor to work. SourceForge bugs #216461, #219676.
 (lib/gs_ll3.ps [1.8]: 2001/03/14 12:00:37 igorm)
+	- /None and /All separations are now supported. SourceForge bug
+#228354. (zcssepr.c [1.6]: 2001/03/18 19:17:50 igorm)
 
 Increments version number to 6.62 as part of 6.61 release process.
 (lib/gs_init.ps [1.30]: 2001/02/24 01:56:01 raph)
@@ -576,6 +634,8 @@ SourceForge bug #211449. (gxclpath.c [1.9], gxclrast.c [1.9]: 2001/03/13
 Fixes SourceForge bug #221715. (gxchar.c [1.3]: 2001/03/14 13:03:49 igorm)
 	- properly include unistd_.h in files that call unlink()
 (gsiodev.c [1.5], gxclfile.c [1.3]: 2001/03/16 22:12:34 giles)
+	- /None and /All separations are now supported. SourceForge bug
+#228354. (gscsepr.c [1.7]: 2001/03/18 19:17:50 igorm)
 
 Replace many references to exit() with returns. (gsargs.c [1.3],
 gsargs.h [1.4], gsexit.h [1.3], gxalloc.h [1.6]: 2001/03/12 03:50:02
@@ -610,6 +670,11 @@ Minor patch to header files so that unlink() prototype doesn't conflict when
 const is disabled through #define. (unistd_.h [1.2]: 2001/03/17 01:18:34
 raph)
 
+Moves patched icclib 1.23 files into the new icclib/ subdirectory, with
+makefile changes to match. Adds missing COPYRIGHT and other documentation to
+icclib. Thanks to L. Peter Deutsch for pointing out the need. (icc.h [1.2]:
+2001/03/19 17:11:15 raph)
+
 </pre><h2><a name="6.62-Other"></a>Other</h2><pre>
 
 Cleanup of MS-Windows and OS/2 code. Remove old 16-bit MS-Windows code.
@@ -629,6 +694,13 @@ the "x11" device. (gp_mswin.h [1.4], gsdll.h [1.3], gsdllwin.h [1.3]:
 Integrates ICC profile input support from Jan Stoeckenius. Also includes
 slightly modified version of icclib (icc.h, icc.c, icc9809.h) by Graeme
 Gill. (icc9809.h [1.1]: 2001/03/17 01:15:42 raph)
+
+Moves patched icclib 1.23 files into the new icclib/ subdirectory, with
+makefile changes to match. Adds missing COPYRIGHT and other documentation to
+icclib. Thanks to L. Peter Deutsch for pointing out the need.
+(icc9809.h [1.2], icclib/COPYRIGHT [1.1], icclib/NOTES [1.1],
+icclib/README [1.1], icclib/icc.c [1.1], icclib/icc.h [1.1],
+icclib/icc9809.h [1.1]: 2001/03/19 17:11:14 raph)
 
 <hr>
 
@@ -5185,7 +5257,7 @@ Adds .cvsignore files, to prevent bogus warnings on cvs update.
 
 Fixes problems:
 	- A couple of places in the Windows code didn't correctly handle
-Ghostscript version 6.62, 16 March 2001
+Ghostscript version 6.62, 19 March 2001
 21:45:03 lpd)
 	- Replaces a final exit() with a return, to avoid a compiler
 warning. (genconf.c [1.2]: 2000/04/05 19:53:27 lpd)
