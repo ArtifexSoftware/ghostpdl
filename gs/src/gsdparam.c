@@ -640,8 +640,8 @@ nce:
 	if ((code = param_check_string(plist, "ProcessColorModel", pcms, (pcms != NULL))) < 0)
 	    ecode = code;
     }
-#if 0
-    if ((code = param_check_int(plist, "MaxSeparations", colors, false)) < 0)
+#if 1
+    if ((code = param_check_int(plist, "MaxSeparations", colors, true)) < 0)
 	ecode = code;
 #endif
     if ((code = param_check_bool(plist, "Separations", false, true)) < 0)
