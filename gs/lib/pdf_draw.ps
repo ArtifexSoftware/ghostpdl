@@ -947,6 +947,8 @@ end
     dup length 1 add dict copy dup /FormType 1 put
   } if
 
+  % now we need to resolve any indirect objects for execform
+  << exch { oforce } forall >>
   dup [ 2 index /Resources knownoget { oforce } { 0 dict } ifelse
   3 index false /resolvestream cvx
   /.paintform cvx
