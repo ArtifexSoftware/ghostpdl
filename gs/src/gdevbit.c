@@ -178,6 +178,7 @@ bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4])
 	    }
 	    break;
 	case 4:		/* CMYK */
+	    /* Map CMYK back to RGB. */
 	    {
 		gx_color_index cshift = color;
 		uint c, m, y, k;
@@ -188,10 +189,10 @@ bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4])
 		cshift >>= bpc;
 		m = cshift & mask;
 		c = cshift >> bpc;
-		cv[0] = cvalue(c);
-		cv[1] = cvalue(m);
-		cv[2] = cvalue(y);
-		cv[3] = cvalue(k);
+		/* We use our improved conversion rule.... */
+		cv[0] = cvalue((mask - c) * (mask - k) / mask);
+		cv[1] = cvalue((mask - m) * (mask - k) / mask);
+		cv[2] = cvalue((mask - y) * (mask - k) / mask);
 	    }
 	    break;
     }
@@ -347,6 +348,9 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 		     pdev->color_info.depth == 32 ? cmyk_8bit_map_cmyk_color :
 		     bit_map_cmyk_color);
     }
+    /* Reset the sparable and linear shift, masks, bits. */
+    set_linear_color_bits_mask_shift(pdev);
+    pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     return 0;
 }
 
