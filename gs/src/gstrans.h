@@ -25,28 +25,39 @@
 #include "gstparam.h"
 
 /* Access transparency-related graphics state elements. */
-/* Note that setting or reading a mask copies the structure. */
 int gs_setblendmode(P2(gs_state *, gs_blend_mode_t));
 gs_blend_mode_t gs_currentblendmode(P1(const gs_state *));
 int gs_setopacityalpha(P2(gs_state *, floatp));
 float gs_currentopacityalpha(P1(const gs_state *));
-int gs_setopacitymask(P2(gs_state *, const gs_soft_mask_t *));
-const gs_soft_mask_t * gs_currentopacitymask(P1(const gs_state *));
 int gs_setshapealpha(P2(gs_state *, floatp));
 float gs_currentshapealpha(P1(const gs_state *));
-int gs_setshapemask(P2(gs_state *, const gs_soft_mask_t *));
-const gs_soft_mask_t * gs_currentshapemask(P1(const gs_state *));
 int gs_settextknockout(P2(gs_state *, bool));
 bool gs_currenttextknockout(P1(const gs_state *));
 
-/* Allocate/initialize a soft mask. */
-int gs_soft_mask_alloc(P3(gs_memory_t *, gs_soft_mask_t **, client_name_t));
-void gs_soft_mask_init(P1(gs_soft_mask_t *));
+/*
+ * Manage transparency group and mask rendering.  Eventually these will be
+ * driver procedures, taking dev + pis instead of pgs.
+ */
 
-/* Begin / end / discard a transparency group. */
-int gs_begintransparencygroup(P4(gs_state *pgs, bool isolated, bool knockout,
-				 const gs_rect *pbbox));
-int gs_discardtransparencygroup(P1(gs_state *));
-int gs_endtransparencygroup(P1(gs_state *));
+gs_transparency_state_type_t
+    gs_current_transparency_type(P1(const gs_state *pgs));
+
+int gs_begin_transparency_group(P3(gs_state *pgs,
+				   const gs_transparency_group_params_t *ptgp,
+				   const gs_rect *pbbox));
+
+int gs_end_transparency_group(P1(gs_state *pgs));
+
+int gs_begin_transparency_mask(P3(gs_state *pgs,
+				  const gs_transparency_mask_params_t *ptmp,
+				  const gs_rect *pbbox));
+
+int gs_end_transparency_mask(P2(gs_state *pgs,
+				gs_transparency_channel_selector_t csel));
+
+int gs_init_transparency_mask(P2(gs_state *pgs,
+				 gs_transparency_channel_selector_t csel));
+
+int gs_discard_transparency_level(P1(gs_state *pgs));
 
 #endif /* gstrans_INCLUDED */

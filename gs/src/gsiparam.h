@@ -218,18 +218,6 @@ typedef struct gs_image1_s {
      * components implied by the color space.
      */
     gs_image_alpha_t Alpha;
-    /*
-     * Define whether the image data has been preblended with a background
-     * color.  This is currently only relevant when using the transparency
-     * features; it doesn't interact with the alpha component of the image.
-     * (This is questionable and may change in the future.)  For masks,
-     * has_Matte must be false.
-     */
-    bool has_Matte;
-    /*
-     * If has_Matte is true, define the background color.
-     */
-    float Matte[GS_CLIENT_COLOR_MAX_COMPONENTS];
 } gs_image1_t;
 
 /* The descriptor is public for soft masks. */

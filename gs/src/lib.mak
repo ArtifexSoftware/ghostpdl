@@ -308,7 +308,7 @@ gsimage_h=$(GLSRC)gsimage.h $(gsiparam_h)
 gsline_h=$(GLSRC)gsline.h $(gslparam_h)
 gspath_h=$(GLSRC)gspath.h $(gspenum_h)
 gsrop_h=$(GLSRC)gsrop.h $(gsropt_h)
-gstparam_h=$(GLSRC)gstparam.h $(gsiparam_h) $(gsrefct_h) $(stream_h)
+gstparam_h=$(GLSRC)gstparam.h $(gsccolor_h) $(gsrefct_h)
 
 gxalpha_h=$(GLSRC)gxalpha.h
 gxbcache_h=$(GLSRC)gxbcache.h $(gxbitmap_h)
@@ -2136,12 +2136,19 @@ $(GLD)traplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(traplib_)
 # ---------------- Transparency ---------------- #
 
 gstrans_h=$(GLSRC)gstrans.h $(gstparam_h)
+gsipar3x_h=$(GLSRC)gsipar3x.h $(gsiparam_h) $(gsiparm3_h)
+gximag3x_h=$(GLSRC)gximag3x.h $(gsipar3x_h) $(gxiparam_h)
 
 $(GLOBJ)gstrans.$(OBJ) : $(GLSRC)gstrans.c $(GXERR)\
  $(gstrans_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gstrans.$(OBJ) $(C_) $(GLSRC)gstrans.c
 
-translib_=$(GLOBJ)gstrans.$(OBJ)
+$(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(GXERR) $(math__h) $(memory__h)\
+ $(gsbitops_h) $(gscspace_h) $(gsstruct_h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gximag3x_h) $(gxistate_h)
+	$(GLCC) $(GLO_)gximag3x.$(OBJ) $(C_) $(GLSRC)gximag3x.c
+
+translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)
 $(GLD)translib.dev : $(LIB_MAK) $(ECHOGS_XE) $(translib_)
 	$(SETMOD) $(GLD)translib $(translib_)
 

@@ -45,8 +45,9 @@
  *      color modification: alpha, rendering algorithm
  *	transparency information:
  *	    blend mode
- *	    (opacity + shape) (alpha + mask)
+ *	    (opacity + shape) (alpha + cached mask)
  *	    text knockout flag
+ *	    rendering stack
  *      overprint control: overprint flag and mode
  *      rendering tweaks: flatness, fill adjustment, stroke adjust flag,
  *        accurate curves flag, shading smoothness
@@ -63,7 +64,6 @@
  *      path
  *      clipping path and stack
  *      color specification: color, color space, substitute color spaces
- *	transparency group stack
  *      font
  *      device
  *      caches for many of the above
@@ -203,7 +203,7 @@ typedef struct gs_imager_state_shared_s {
 /* Define the imager state structure itself. */
 typedef struct gs_transparency_source_s {
     float alpha;		/* constant alpha */
-    gs_soft_mask_t *mask;
+    gs_transparency_mask_t *mask;
 } gs_transparency_source_t;
 #define gs_imager_state_common\
 	gs_memory_t *memory;\
@@ -216,6 +216,7 @@ typedef struct gs_transparency_source_s {
 	gs_blend_mode_t blend_mode;\
 	gs_transparency_source_t opacity, shape;\
 	bool text_knockout;\
+	gs_transparency_state_t *transparency_stack;\
 	bool overprint;\
 	int overprint_mode;\
 	float flatness;\
@@ -252,7 +253,7 @@ struct gs_imager_state_s {
   0, 0, 0, { gx_line_params_initial },\
    { scale, 0.0, 0.0, -(scale), 0.0, 0.0 },\
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
-   { 1.0, 0 }, { 1.0, 0 }, 0/*false*/, 0/*false*/, 0, 1.0,\
+   { 1.0, 0 }, { 1.0, 0 }, 0/*false*/, 0, 0/*false*/, 0, 1.0,\
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 1.0,\
   gx_default_get_cmap_procs
 

@@ -38,19 +38,17 @@
 #define segment_notes_known	(1<<6) /* not used in pcls->known */
 /* (flags beyond this point require an extra byte) */
 #define opacity_alpha_known	(1<<7)
-#define opacity_mask_known	(1<<8)
-#define shape_alpha_known	(1<<9)
-#define shape_mask_known	(1<<10)
-#define alpha_known		(1<<11)
-#define misc2_all_known		((1<<12)-1)
+#define shape_alpha_known	(1<<8)
+#define alpha_known		(1<<9)
+#define misc2_all_known		((1<<10)-1)
 /* End of misc2 flags. */
-#define fill_adjust_known	(1<<12)
-#define ctm_known		(1<<13)
-#define dash_known		(1<<14)
-#define clip_path_known		(1<<15)
-#define stroke_all_known	((1<<16)-1)
-#define color_space_known	(1<<16)
-/*#define all_known             ((1<<17)-1) */
+#define fill_adjust_known	(1<<10)
+#define ctm_known		(1<<11)
+#define dash_known		(1<<12)
+#define clip_path_known		(1<<13)
+#define stroke_all_known	((1<<14)-1)
+#define color_space_known	(1<<14)
+/*#define all_known             ((1<<15)-1) */
 
 /* Define the drawing color types for distinguishing different */
 /* fill/stroke command variations. */

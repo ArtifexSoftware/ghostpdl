@@ -255,32 +255,13 @@ cmd_check_clip_path(gx_device_clist_writer * cldev, const gx_clip_path * pcpath)
     return true;
 }
 
-/* Check whether we need to update an opacity or shape mask. */
-private bool
-cmd_check_transparency_mask(const gs_soft_mask_t *psm1,
-			    const gs_soft_mask_t *psm2)
-{
-    return (psm1 == 0 ? psm2 != 0 : psm2 == 0 ? true :
-	    psm1->id != psm2->id || psm1->id == gs_no_id);
-}
-
-/* Write out a transparency mask. */
-private int
-cmd_write_transparency_mask(gx_device_clist_writer *cdev,
-			    const gs_soft_mask_t *psm)
-{
-    /****** NYI ******/
-    return 0;
-}
-
 /*
  * Check the graphics state elements that need to be up to date for filling
  * or stroking.
  */
 #define FILL_KNOWN\
  (cj_ac_sa_known | flatness_known | op_bm_tk_known | opacity_alpha_known |\
-  opacity_mask_known | shape_alpha_known | shape_mask_known |\
-  fill_adjust_known | alpha_known | clip_path_known)
+  shape_alpha_known | fill_adjust_known | alpha_known | clip_path_known)
 private void
 cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
 		     floatp flatness, const gs_fixed_point *padjust,
@@ -315,21 +296,9 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
 	*punknown |= opacity_alpha_known;
 	state_update(opacity.alpha);
     }
-    if (cmd_check_transparency_mask(cdev->imager_state.opacity.mask,
-				    pis->opacity.mask)
-	) {
-	*punknown |= opacity_mask_known;
-	state_update(opacity.mask);
-    }
     if (state_neq(shape.alpha)) {
 	*punknown |= shape_alpha_known;
 	state_update(shape.alpha);
-    }
-    if (cmd_check_transparency_mask(cdev->imager_state.shape.mask,
-				    pis->shape.mask)
-	) {
-	*punknown |= shape_mask_known;
-	state_update(shape.mask);
     }
     if (cdev->imager_state.fill_adjust.x != padjust->x ||
 	cdev->imager_state.fill_adjust.y != padjust->y
@@ -419,8 +388,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	if (code < 0)
 	    return 0;
 	memcpy(cmd_put_w(misc2_unknown, dp + 1), buf, bp - buf);
-	pcls->known |= misc2_unknown &
-	    ~(opacity_mask_known | shape_mask_known);
+	pcls->known |= misc2_unknown;
     }
     if (unknown & fill_adjust_known) {
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_fill_adjust,

@@ -22,10 +22,8 @@
 #ifndef gstparam_INCLUDED
 #  define gstparam_INCLUDED
 
-#include "gsiparam.h"		/* for soft masks */
-#include "gsmatrix.h"		/* ibid. */
-#include "gsrefct.h"		/* ibid. */
-#include "stream.h"		/* ibid. */
+#include "gsccolor.h"
+#include "gsrefct.h"
 
 /* Define the names of the known blend modes. */
 typedef enum {
@@ -54,35 +52,52 @@ typedef enum {
   "HardLight", "Overlay", "SoftLight", "Luminosity", "Hue",\
   "Saturation", "Color"
 
-/*
- * Define the structure for a soft mask (opacity or shape).  A soft mask
- * consists of an ImageType 1 image plus a DataSource, which must be a
- * reusable stream (a readable, positionable stream that doesn't close
- * itself when it reaches EOD).
- *
- * Note that soft masks are reference counted, and must therefore be
- * allocate with rc_alloc_struct_#.  Normally # = 0, since setting the
- * mask in the graphics state increments the reference count.  Note also
- * that they have a unique ID, which must be updated if they are modified.
- * Normally this is not an issue, since clients normally construct them
- * and then never modify them.
- */
-typedef struct gs_soft_mask_s {
-    rc_header rc;
-    gs_id id;
-    /*
-     * In the image structure, ColorSpace must be NULL;
-     * ImageMask must be false; Alpha must be "none".
-     */
-    gs_image1_t image;
-    stream *DataSource;
-    /*
-     * The CTM is set by gs_set{opacity,shape}mask.
-     */
-    gs_matrix save_ctm;
-} gs_soft_mask_t;
-#define private_st_gs_soft_mask()	/* in gstrans.c */\
-  gs_private_st_suffix_add1(st_gs_soft_mask, gs_soft_mask_t, "gs_soft_mask_t",\
-    soft_mask_enum_ptrs, soft_mask_reloc_ptrs, st_gs_image1, DataSource)
+/* Define the common part for a transparency stack state. */
+typedef enum {
+    TRANSPARENCY_STATE_Group = 1,	/* must not be 0 */
+    TRANSPARENCY_STATE_Mask
+} gs_transparency_state_type_t;
+#define GS_TRANSPARENCY_STATE_COMMON\
+    rc_header rc;\
+    gs_transparency_state_type_t type
+typedef struct gs_transparency_state_s {
+    GS_TRANSPARENCY_STATE_COMMON;
+} gs_transparency_state_t;
+
+/* Define the common part for a cached transparency mask. */
+#define GS_TRANSPARENCY_MASK_COMMON\
+    rc_header rc
+typedef struct gs_transparency_mask_s {
+    GS_TRANSPARENCY_MASK_COMMON;
+} gs_transparency_mask_t;
+
+/* Define the parameter structure for a transparency group. */
+#ifndef gs_color_space_DEFINED
+#  define gs_color_space_DEFINED
+typedef struct gs_color_space_s gs_color_space;
+#endif
+typedef struct gs_transparency_group_params_s {
+    gs_color_space *ColorSpace;
+    bool Isolated;
+    bool Knockout;
+} gs_transparency_group_params_t;
+
+/* Define the parameter structure for a transparency mask. */
+typedef enum {
+    TRANSPARENCY_MASK_Alpha,
+    TRANSPARENCY_MASK_Luminosity
+} gs_transparency_mask_subtype_t;
+typedef struct gs_transparency_mask_params_s {
+    gs_transparency_mask_subtype_t subtype;
+    bool has_Background;
+    float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    float (*TransferFunction)(P1(floatp));
+} gs_transparency_mask_params_t;
+
+/* Select the opacity or shape parameters. */
+typedef enum {
+    TRANSPARENCY_CHANNEL_Opacity = 0,
+    TRANSPARENCY_CHANNEL_Shape = 1
+} gs_transparency_channel_selector_t;
 
 #endif /* gstparam_INCLUDED */

@@ -58,51 +58,7 @@ current_float_value(i_ctx_t *i_ctx_p,
     return 0;
 }
 
-private int
-set_mask_value(i_ctx_t *i_ctx_p, ref *pmref,
-	       int (*set_mask)(P2(gs_state *, const gs_soft_mask_t *)))
-{
-    os_ptr op = osp;
-    int code;
-
-    if (r_has_type(pmref, t_null)) {
-	code = set_mask(igs, NULL);
-    } else {
-	gs_soft_mask_t mask;
-	image_params params;
-	stream *s;
-
-	gs_soft_mask_init(&mask);
-	code = data_image_params(op, (gs_data_image_t *)&mask.image,
-				 &params, true, 1, 16);
-	if (code < 0)
-	    return code;
-	if (params.MultipleDataSources)
-	    return_error(e_rangecheck);
-	check_read_file(s, &params.DataSource[0]);
-	if (s->close_at_eod)
-	    return_error(e_invalidfileaccess); /* not reusable */
-	mask.DataSource = s;
-	code = set_mask(igs, &mask);
-    }
-    if (code < 0)
-	return code;
-    ref_assign(pmref, op);
-    pop(1);
-    return 0;
-}
-
-private int
-current_mask_value(i_ctx_t *i_ctx_p, const ref *pmref)
-{
-    os_ptr op = osp;
-
-    push(1);
-    ref_assign(op, pmref);
-    return 0;
-}
-
-/* ------ Operators ------ */
+/* ------ Graphics state operators ------ */
 
 private const char *const blend_mode_names[] = {
     GS_BLEND_MODE_NAMES, 0
@@ -162,20 +118,6 @@ zcurrentopacityalpha(i_ctx_t *i_ctx_p)
     return current_float_value(i_ctx_p, gs_currentopacityalpha);
 }
 
-/* <maskdict|null> .setopacitymask - */
-private int
-zsetopacitymask(i_ctx_t *i_ctx_p)
-{
-    return set_mask_value(i_ctx_p, &istate->opacity_mask, gs_setopacitymask);
-}
-
-/* - .currentopacitymask <maskdict|null> */
-private int
-zcurrentopacitymask(i_ctx_t *i_ctx_p)
-{
-    return current_mask_value(i_ctx_p, &istate->opacity_mask);
-}
-
 /* <0..1> .setshapealpha - */
 private int
 zsetshapealpha(i_ctx_t *i_ctx_p)
@@ -188,20 +130,6 @@ private int
 zcurrentshapealpha(i_ctx_t *i_ctx_p)
 {
     return current_float_value(i_ctx_p, gs_currentshapealpha);
-}
-
-/* <maskdict|null> .setshapemask - */
-private int
-zsetshapemask(i_ctx_t *i_ctx_p)
-{
-    return set_mask_value(i_ctx_p, &istate->shape_mask, gs_setshapemask);
-}
-
-/* - .currentshapemask <maskdict|null> */
-private int
-zcurrentshapemask(i_ctx_t *i_ctx_p)
-{
-    return current_mask_value(i_ctx_p, &istate->shape_mask);
 }
 
 /* <bool> .settextknockout - */
@@ -227,26 +155,54 @@ zcurrenttextknockout(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <isolated> <knockout> <llx> <lly> <urx> <ury> .begintransparencygroup - */
+/* ------ Rendering stack operators ------ */
+
+private int
+rect_param(gs_rect *prect, os_ptr op)
+{
+    double coords[4];
+    int code = num_params(op, 4, coords);
+
+    if (code < 0)
+	return code;
+    prect->p.x = coords[0], prect->p.y = coords[1];
+    prect->q.x = coords[2], prect->q.y = coords[3];
+    return 0;
+}
+
+private int
+mask_op(i_ctx_t *i_ctx_p,
+	int (*mask_proc)(P2(gs_state *, gs_transparency_channel_selector_t)))
+{
+    int csel;
+    int code = int_param(osp, 1, &csel);
+
+    if (code < 0)
+	return code;
+    code = mask_proc(igs, csel);
+    if (code >= 0)
+	pop(1);
+    return code;
+
+}
+
+/* <paramdict> <llx> <lly> <urx> <ury> .begintransparencygroup - */
 private int
 zbegintransparencygroup(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    double coords[4];
+    gs_transparency_group_params_t params;
     gs_rect bbox;
     int code;
 
-    check_type(op[-5], t_boolean);
-    check_type(op[-4], t_boolean);
-    code = num_params(op, 4, coords);
+    /****** NYI ******/
+    code = rect_param(&bbox, op);
     if (code < 0)
 	return code;
-    bbox.p.x = coords[0], bbox.p.y = coords[1];
-    bbox.q.x = coords[2], bbox.q.y = coords[3];
-    code = gs_begintransparencygroup(igs, op[-5].value.intval,
-				     op[-4].value.intval, &bbox);
-    if (code >= 0)
-	pop(6);
+    code = gs_begin_transparency_group(igs, &params, &bbox);
+    if (code < 0)
+	return code;
+    pop(5);
     return code;
 }
 
@@ -254,41 +210,55 @@ zbegintransparencygroup(i_ctx_t *i_ctx_p)
 private int
 zdiscardtransparencygroup(i_ctx_t *i_ctx_p)
 {
-    return gs_discardtransparencygroup(igs);
+    if (gs_current_transparency_type(igs) != TRANSPARENCY_STATE_Group)
+	return_error(e_rangecheck);
+    return gs_discard_transparency_level(igs);
 }
 
 /* - .endtransparencygroup - */
 private int
 zendtransparencygroup(i_ctx_t *i_ctx_p)
 {
-    return gs_endtransparencygroup(igs);
+    return gs_end_transparency_group(igs);
 }
 
-/* ------ Redefined operators ------ */
-
-/* We redefine .image1 to recognize the Matte key. */
-/* <dict> .image1 - */
+/* <paramdict> <llx> <lly> <urx> <ury> .begintransparencymask - */
 private int
-zimage1t(i_ctx_t *i_ctx_p)
+zbegintransparencymask(i_ctx_t *i_ctx_p)
 {
-    os_ptr op = osp;
-    gs_image1_t image;
-    image_params ip;
-    int num_components =
-	gs_color_space_num_components(gs_currentcolorspace(igs));
+    gs_transparency_mask_params_t params;
+    gs_rect bbox;
     int code;
 
-    gs_image_t_init(&image, gs_currentcolorspace(igs));
-    code = pixel_image_params(i_ctx_p, op, (gs_pixel_image_t *)&image, &ip,
-			      12);
+    /****** NYI ******/
+    code = gs_begin_transparency_mask(igs, &params, &bbox);
     if (code < 0)
 	return code;
-    code = dict_floats_param(op, "Matte", num_components, image.Matte);
-    if (code < 0)
-	return code;
-    image.has_Matte = code != 0; /* == num_components */
-    return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image, &ip.DataSource[0],
-			image.CombineWithColor, 1);
+    pop(1);
+    return code;
+}
+
+/* - .discardtransparencymask - */
+private int
+zdiscardtransparencymask(i_ctx_t *i_ctx_p)
+{
+    if (gs_current_transparency_type(igs) != TRANSPARENCY_STATE_Mask)
+	return_error(e_rangecheck);
+    return gs_discard_transparency_level(igs);
+}
+
+/* <mask#> .endtransparencymask - */
+private int
+zendtransparencymask(i_ctx_t *i_ctx_p)
+{
+    return mask_op(i_ctx_p, gs_end_transparency_mask);
+}
+
+/* <mask#> .inittransparencymask - */
+private int
+zinittransparencymask(i_ctx_t *i_ctx_p)
+{
+    return mask_op(i_ctx_p, gs_init_transparency_mask);
 }
 
 /* ------ Initialization procedure ------ */
@@ -298,17 +268,16 @@ const op_def ztrans_op_defs[] = {
     {"0.currentblendmode", zcurrentblendmode},
     {"1.setopacityalpha", zsetopacityalpha},
     {"0.currentopacityalpha", zcurrentopacityalpha},
-    {"1.setopacitymask", zsetopacitymask},
-    {"0.currentopacitymask", zcurrentopacitymask},
     {"1.setshapealpha", zsetshapealpha},
     {"0.currentshapealpha", zcurrentshapealpha},
-    {"1.setshapemask", zsetshapemask},
-    {"0.currentshapemask", zcurrentshapemask},
     {"1.settextknockout", zsettextknockout},
     {"0.currenttextknockout", zcurrenttextknockout},
-    {"6.begintransparencygroup", zbegintransparencygroup},
+    {"5.begintransparencygroup", zbegintransparencygroup},
     {"0.discardtransparencygroup", zdiscardtransparencygroup},
     {"0.endtransparencygroup", zendtransparencygroup},
-    {"1.image1", zimage1t},
+    {"5.begintransparencymask", zbegintransparencymask},
+    {"0.discardtransparencymask", zdiscardtransparencymask},
+    {"1.endtransparencymask", zendtransparencymask},
+    {"1.inittransparencymask", zinittransparencymask},
     op_def_end(0)
 };
