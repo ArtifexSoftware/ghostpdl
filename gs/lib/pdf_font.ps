@@ -127,8 +127,28 @@ pdfdict begin
 		% Stack: font font-res mscale
       1 index /FirstChar oget dup 1 4 index /LastChar oget
        {	% Stack: font font-res mscale first-char index
-	 Encoding 1 index get
-	 Widths 2 index 4 index sub oget
+	 Encoding 1 index dup 2 index length ge {
+           (   **** Warning: Font Encoding array size is smaller than character range.\n)
+           pdfformaterror
+	   pop pop /.notdef
+         } {
+	   get
+	 } ifelse
+	 Widths 2 index 4 index sub dup 2 index length ge {
+           (   **** Warning: Font Widths array size is smaller than character range.\n)
+           pdfformaterror
+	   pop pop 4 index /FontDescriptor knownoget {
+	     /MissingWidth knownoget not {	% use MissingWidth if it's available
+	       1000	% default to full width
+	     }
+	     if
+	   } {
+	     1000	% default to full width
+	   }
+	   ifelse
+         } {
+	   get
+	 } ifelse
 	 	% Stack: font font-res mscale first-char index charname width
 	 4 index mul
 		% The following 'loop' is only context for 'exit'.
