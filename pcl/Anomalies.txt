@@ -732,17 +732,10 @@ Difference in specific tests of the PCL 5c FTS
 
 2120, 2122:
 
-    Pixel placement in GL/2 for the Artifex PCL 5c interpreter is broken.
-
-2210 (second page):
-
-    The center horizontal black line is missing in the Artifex PCL 5c
-    interpreter. This problem has not yet been analyzed.
-
-2210 (third page):
-
-    Opaque line fills in GL/2 are not implemented in the Artifex PCL 5c
-    interpreter.
+    HPGL/2 pixel placement is implemented using the postscript
+    operator setfilladjust.  The HP command definition is not consistant with
+    the behavior of the implementation and different devices (Color
+    Laserjet & 6MP) produce different results for each of these test files.
 
 2210 (fourth page):
 
