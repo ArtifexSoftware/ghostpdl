@@ -655,15 +655,13 @@ zlibfile(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* A "simple" prefix is defined a nonempty string of alphanumeric,
-   underscore, and hyphen characters. */
+/* A "simple" prefix is defined as a (possibly empty) string of
+   alphanumeric, underscore, and hyphen characters. */
 private bool
 prefix_is_simple(const char *pstr)
 {
     int i;
     char c;
-
-    if (pstr[0] == 0) return false;
 
     for (i = 0; (c = pstr[i]) != 0; i++) {
 	if (!(c == '-' || c == '_' || (c >= '0' && c <= '9') ||
