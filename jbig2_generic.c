@@ -110,6 +110,52 @@ jbig2_decode_generic_template0(Jbig2Ctx *ctx,
 }
 
 static int
+jbig2_decode_generic_template0_unopt(Jbig2Ctx *ctx,
+                               Jbig2Segment *segment,
+                               const Jbig2GenericRegionParams *params,
+                               Jbig2ArithState *as,
+                               Jbig2Image *image,
+                               Jbig2ArithCx *GB_stats)
+{
+  const int GBW = image->width;
+  const int GBH = image->height;
+  uint32_t CONTEXT;
+  int x,y;
+  bool bit;
+
+  /* this version is generic and easy to understand, but very slow */
+
+  for (y = 0; y < GBH; y++) {
+    for (x = 0; x < GBW; x++) {
+      CONTEXT = 0;
+      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y) << 0;
+      CONTEXT |= jbig2_image_get_pixel(image, x - 2, y) << 1;
+      CONTEXT |= jbig2_image_get_pixel(image, x - 3, y) << 2;
+      CONTEXT |= jbig2_image_get_pixel(image, x - 4, y) << 3;
+      CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[0],
+	y + params->gbat[1]) << 4;
+      CONTEXT |= jbig2_image_get_pixel(image, x + 2, y - 1) << 5;
+      CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 6;
+      CONTEXT |= jbig2_image_get_pixel(image, x + 0, y - 1) << 7;
+      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 1) << 8;
+      CONTEXT |= jbig2_image_get_pixel(image, x - 2, y - 1) << 9;
+      CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[2],
+	y + params->gbat[3]) << 10;
+      CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[4],
+	y + params->gbat[5]) << 11;
+      CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 2) << 12;
+      CONTEXT |= jbig2_image_get_pixel(image, x + 0, y - 2) << 13;
+      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 2) << 14;
+      CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[6],
+	y + params->gbat[7]) << 15;
+      bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
+      jbig2_image_set_pixel(image, x, y, bit);
+    }
+  }
+  return 0;
+}
+
+static int
 jbig2_decode_generic_template1(Jbig2Ctx *ctx,
 			       Jbig2Segment *segment,
 			       const Jbig2GenericRegionParams *params,
@@ -438,15 +484,24 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
 			    Jbig2Image *image,
 			    Jbig2ArithCx *GB_stats)
 {
-  if (!params->MMR && params->GBTEMPLATE == 0)
-    return jbig2_decode_generic_template0(ctx, segment, params,
+  const int8_t *gbat = params->gbat;
+
+  if (!params->MMR && params->GBTEMPLATE == 0) {
+    if (gbat[0] == +3 && gbat[1] == -1 &&
+        gbat[2] == -3 && gbat[4] == -1 &&
+        gbat[4] == +2 && gbat[5] == -2 &&
+        gbat[6] == +2 && gbat[7] == -2)
+      return jbig2_decode_generic_template0(ctx, segment, params,
                                           as, image, GB_stats);
-  else if (!params->MMR && params->GBTEMPLATE == 1)
+    else
+      return jbig2_decode_generic_template0_unopt(ctx, segment, params,
+                                          as, image, GB_stats);
+  } else if (!params->MMR && params->GBTEMPLATE == 1)
     return jbig2_decode_generic_template1(ctx, segment, params,
 					  as, image, GB_stats);
   else if (!params->MMR && params->GBTEMPLATE == 2)
     {
-      if (params->gbat[0] == 3 && params->gbat[1] == -1)
+      if (gbat[0] == 3 && gbat[1] == -1)
 	return jbig2_decode_generic_template2a(ctx, segment, params,
 					       as, image, GB_stats);
       else
@@ -454,7 +509,7 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
                                               as, image, GB_stats);
     }
   else if (!params->MMR && params->GBTEMPLATE == 3) {
-   if (params->gbat[0] == 2 && params->gbat[1] == -1)
+   if (gbat[0] == 2 && gbat[1] == -1)
      return jbig2_decode_generic_template3_unopt(ctx, segment, params,
                                          as, image, GB_stats);
    else
