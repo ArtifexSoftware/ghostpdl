@@ -141,12 +141,22 @@ map_symbol(
   private bool
 is_printable(
     const pl_symbol_map_t * psm,
-    gs_char                 chr
+    gs_char                 chr,
+    bool                    literal
 )
 {
-    if ((psm == 0) || (psm->type >= 2))
+    /* NB I am not sure if there is historical significance to
+       checking if the type is >= 2 instead of just 2 */
+    if ( (psm == 0) || (literal && (psm->type >= 2)) )
         return true;
-    else if (psm->type == 1)
+    /* For type 2, we must be in transparency or display func mode to
+       print codes 0, 7-15, and 27 */
+    else if ( psm->type >= 2 ) {
+        if ( (chr == 0) || (chr == '\033') || 
+	     ((chr >= '\007') && (chr <= '\017')) )
+            return false;
+        return true;
+    } else if ( psm->type == 1 )
         chr &= 0x7f;
     return (chr >= ' ') && (chr <= '\177');
 }
@@ -203,7 +213,7 @@ get_next_char(
     *plen = len;
 
     /* check if the code is considered "printable" in the current symbol set */
-    if (!is_printable(pcs->map, chr)) {
+    if (!is_printable(pcs->map, chr, literal)) {
         *pis_space = literal;
         *pchr = 0xffff;
         return 0;
