@@ -841,7 +841,7 @@ pcl_plain_char(
     pcl_state_t *   pcs
 )
 {
-    return pcl_text((const byte *)&(pargs->command), 1, pcs, false);
+    return pcl_text((const byte *)&(pargs->command), 1, pcs, pcs->display_functions);
 }
 
 /*
