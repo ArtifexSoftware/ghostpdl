@@ -674,7 +674,20 @@ currentdict end readonly def
     dup scale
   } if
   % Now translate to the origin given in the Crop|Media Box
-  dup 0 get neg exch 1 get neg translate
+  dup dup 0 get neg exch 1 get neg translate
+  % Rotate the page to fit into PageSize
+  systemdict /RotatePages known {
+    aload 5 1 roll
+    3 -1 roll sub 3 1 roll exch sub exch 
+    2 copy gt {
+      90 rotate
+      % pop pop 0 -792 translate
+      pop 0 exch neg translate
+    } {
+      pop pop
+    } ifelse
+  } if
+  pop
 } bind def
 
 /PageContentsDaemon % <id> <obj> <node> PageContentsDaemon <id> <obj>
