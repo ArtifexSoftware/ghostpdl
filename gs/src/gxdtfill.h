@@ -204,14 +204,14 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	    compute_dx(&r, dxr, ysr);
 	    r.x += YMULT_QUO(ysr, r);
 	}
-	rxl = fixed2int_var(l.x);
-	rxr = fixed2int_var(r.x);
 	/* Compute one line's worth of dx/dy. */
 	compute_ldx(&l, ysl);
 	if (dxr == dxl && ysr == ysl && r.h == l.h)
 	    r.ldi = l.ldi, r.ldf = l.ldf, r.xf = l.xf;
 	else
 	    compute_ldx(&r, ysr);
+	rxl = fixed2int_var(l.x);
+	rxr = fixed2int_var(r.x);
 
 #define STEP_LINE(ix, tl)\
   tl.x += tl.ldi;\
