@@ -1318,6 +1318,8 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 	                              scale_c, &info)) < 0
 	    )
 	    return code;
+	if (code > 0)
+	    pwidths->Width.xy.x = pwidths->Width.xy.y = pwidths->Width.w = 0;
 	v = info.v;
 	rcode |= code;
 	if ((code = ofont->procs.glyph_info(ofont, glyph, NULL,
