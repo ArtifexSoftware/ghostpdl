@@ -100,7 +100,10 @@ def
   % <padded-key> <O> <P>
 
   % Step 5.
-  Trailer /ID oget 0 oget
+  Trailer /ID knownoget { 0 oget } {
+    ()
+    (   **** ID key in the trailer is required for encrypted files.\n) pdfformaterror
+  } ifelse
   3 { concatstrings } repeat md5
 
   % Step 6.
@@ -126,7 +129,10 @@ def
   pdf_padding_string
 
   % Step 3.
-  Trailer /ID oget 0 oget
+  Trailer /ID knownoget { 0 oget } {
+    ()
+    (   **** ID key in the trailer is required for encrypted files.\n) pdfformaterror
+  } ifelse
   concatstrings md5
 
   % Step 4.
