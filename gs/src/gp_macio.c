@@ -1,4 +1,4 @@
-/* Copyright (C) 1989-2002 artofcode, LLC.  All rights reserved.
+/* Copyright (C) 1989-2003 artofcode, LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -689,17 +689,67 @@ pclose (FILE * pipe ) {
 
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
 
-uint gp_file_name_root(const char *fname, uint len)
-{   int i;
+#ifdef __CARBON__
 
+/* compare an HFSUnitStr255 with a C string */
+static int compare_UniStr(HFSUniStr255 u, const char *c, uint len)
+{
+	int i,searchlen,unichar;
+	searchlen = min(len,u.length);
+	for (i = 0; i < searchlen; i++) {
+	  unichar = u.unicode[i];
+	  /* punt on wide characters. we should really convert */
+	  if (unichar & !0xFF) return -1;
+	  /* otherwise return the the index of the first non-matching character */
+	  if (unichar != c[i]) break;
+	}
+	/* return the offset iff we matched the whole volume name */
+	return (i == u.length) ? i : 0;
+}
+
+uint gp_file_name_root(const char *fname, uint len)
+{
+	OSErr err = noErr;
+   	HFSUniStr255 volumeName;
+   	FSRef rootDirectory;
+   	int index, match;
+   	
     if (len > 0 && fname[0] == ':')
-	return 0; /* A relative path, no root. */
-    /* Root includes the separator after the volume name : */
-    for (i = 0; i < len; i++)
-	if (fname[i] == ':')
-	    return i + 1;
+		return 0; /* A relative path, no root. */
+
+	/* iterate over mounted volumes and compare our path */
+	index = 1;
+	while (err == noErr) {
+		err = FSGetVolumeInfo (kFSInvalidVolumeRefNum, index,
+			NULL, kFSVolInfoNone, NULL, /* not interested in these fields */
+			&volumeName, &rootDirectory);
+		if (err == nsvErr) return 0; /* no more volumes */
+		if (err == noErr) {
+			match = compare_UniStr(volumeName, fname, len);
+			if (match > 0) {
+    			/* include the separator if it's present  */
+				if (fname[match] == ':') return match + 1;
+				return match;
+			}
+		}
+		index++;
+	}
+	
+	/* nothing matched */
     return 0;
 }
+
+#else /* Classic MacOS */
+
+/* FSGetVolumeInfo requires carbonlib or macos >= 9
+   we essentially leave this unimplemented on Classic */
+uint gp_file_name_root(const char *fname, uint len)
+{
+	return 0;
+}
+   
+#endif /* __CARBON__ */
+
 
 uint gs_file_name_check_separator(const char *fname, int len, const char *item)
 {   if (len > 0) {
@@ -722,7 +772,7 @@ bool gp_file_name_is_parent(const char *fname, uint len)
 }
 
 bool gp_file_name_is_current(const char *fname, uint len)
-{   return len == 0;
+{   return (len == 0) || (len == 1 && fname[0] == ':');
 }
 
 const char *gp_file_name_separator(void)
@@ -734,7 +784,7 @@ const char *gp_file_name_directory_separator(void)
 }
 
 const char *gp_file_name_parent(void)
-{   return ":";
+{   return "::";
 }
 
 const char *gp_file_name_current(void)
