@@ -1,4 +1,4 @@
-%    Copyright (C) 1991, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1991, 1995, 1996, 2002 Aladdin Enterprises.  All rights reserved.
 % 
 % This software is provided AS-IS with no warranty, either express or
 % implied.
@@ -145,17 +145,20 @@ ifelse
     } bind def
 
 % Construct the inversion of the system name table.
-   /SystemNames where
-    { pop /snit 256 dict def
-      0 1 255
-       { dup SystemNames exch get
-         dup null ne { exch snit 3 1 roll put } { pop pop } ifelse
-       }
-      for
-    }
-    { /snit 1 dict def
-    }
-   ifelse
+  (\210\001) token pop exch pop 1 eq {	% i.e., do we have binary tokens?
+    /snit 256 dict def
+    0 1 255 {
+      (\221 ) dup 1 3 index put
+      { token } stopped {
+	pop pop
+      } {
+		% Stack: char () token true
+	pop exch pop exch snit 3 1 roll put
+      } ifelse
+    } for
+  } {
+    /snit 1 dict def
+  } ifelse
 
 % Write an object, using binary tokens if requested and possible.
    /woa		% write in ascii
