@@ -526,12 +526,26 @@ private_st_function_AdOt();
 
 /* Evaluate an Arrayed Output function. */
 private int
-fn_AdOt_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
+fn_AdOt_evaluate(const gs_function_t *pfn_common, const float *in0, float *out)
 {
     const gs_function_AdOt_t *const pfn =
 	(const gs_function_AdOt_t *)pfn_common;
+    const float *in = in0;
+#define MAX_ADOT_IN 16
+    float in_buf[MAX_ADOT_IN];
     int i;
 
+    /*
+     * We have to take special care to handle the case where in and out
+     * overlap.  For the moment, handle it only for a limited number of
+     * input values.
+     */
+    if (in <= out + (pfn->params.n - 1) && out <= in + (pfn->params.m - 1)) {
+	if (pfn->params.m > MAX_ADOT_IN)
+	    return_error(gs_error_rangecheck);
+	memcpy(in_buf, in, pfn->params.m * sizeof(*in));
+	in = in_buf;
+    }
     for (i = 0; i < pfn->params.n; ++i) {
 	int code =
 	    gs_function_evaluate(pfn->params.Functions[i], in, out + i);
@@ -540,6 +554,7 @@ fn_AdOt_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 	    return code;
     }
     return 0;
+#undef MAX_ADOT_IN
 }
 
 /* Test whether an Arrayed Output function is monotonic. */
