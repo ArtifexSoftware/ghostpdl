@@ -733,8 +733,7 @@ gx_forward_pattern_manage(gx_device * dev, gx_bitmap_id id,
     if (tdev == 0)
 	return 0;
     else
-	dev_proc(tdev, pattern_manage)(tdev, id, pinst, function);
-    return 0;
+	return dev_proc(tdev, pattern_manage)(tdev, id, pinst, function);
 }
 
 int
