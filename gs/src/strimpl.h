@@ -153,7 +153,7 @@ struct stream_template_s {
 };
 
 /* Utility procedures */
-int stream_move(P2(stream_cursor_read *, stream_cursor_write *));	/* in stream.c */
+int stream_move(stream_cursor_read *, stream_cursor_write *);	/* in stream.c */
 
 /* Hex decoding utility procedure */
 typedef enum {
@@ -161,6 +161,6 @@ typedef enum {
     hex_ignore_whitespace = 1,
     hex_ignore_leading_whitespace = 2
 } hex_syntax;
-int s_hex_process(P4(stream_cursor_read *, stream_cursor_write *, int *, hex_syntax));	/* in sstring.c */
+int s_hex_process(stream_cursor_read *, stream_cursor_write *, int *, hex_syntax);	/* in sstring.c */
 
 #endif /* strimpl_INCLUDED */

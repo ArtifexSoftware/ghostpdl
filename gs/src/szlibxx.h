@@ -55,11 +55,11 @@ struct zlib_block_s {
  * Provide zlib-compatible allocation and freeing functions.
  * The mem pointer actually points to the dynamic state.
  */
-void *s_zlib_alloc(P3(void *mem, uint items, uint size));
-void s_zlib_free(P2(void *mem, void *address));
+void *s_zlib_alloc(void *mem, uint items, uint size);
+void s_zlib_free(void *mem, void *address);
 
 /* Internal procedure to allocate and free the dynamic state. */
-int s_zlib_alloc_dynamic_state(P1(stream_zlib_state *ss));
-void s_zlib_free_dynamic_state(P1(stream_zlib_state *ss));
+int s_zlib_alloc_dynamic_state(stream_zlib_state *ss);
+void s_zlib_free_dynamic_state(stream_zlib_state *ss);
 
 #endif /* szlibxx_INCLUDED */

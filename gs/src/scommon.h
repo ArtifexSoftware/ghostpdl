@@ -109,31 +109,31 @@ typedef union stream_cursor_s {
 
 /* Initialize the stream state (after the client parameters are set). */
 #define stream_proc_init(proc)\
-  int proc(P1(stream_state *))
+  int proc(stream_state *)
 
 /* Process a buffer.  See strimpl.h for details. */
 #define stream_proc_process(proc)\
-  int proc(P4(stream_state *, stream_cursor_read *,\
-    stream_cursor_write *, bool))
+  int proc(stream_state *, stream_cursor_read *,\
+    stream_cursor_write *, bool)
 
 /* Release the stream state when closing. */
 #define stream_proc_release(proc)\
-  void proc(P1(stream_state *))
+  void proc(stream_state *)
 
 /* Initialize the client parameters to default values. */
 #define stream_proc_set_defaults(proc)\
-  void proc(P1(stream_state *))
+  void proc(stream_state *)
 
 /* Reinitialize any internal stream state.  Note that this does not */
 /* affect buffered data.  We declare this as returning an int so that */
 /* it can be the same as the init procedure; however, reinit cannot fail. */
 #define stream_proc_reinit(proc)\
-  int proc(P1(stream_state *))
+  int proc(stream_state *)
 
 /* Report an error.  Note that this procedure is stored in the state, */
 /* not in the main stream structure. */
 #define stream_proc_report_error(proc)\
-  int proc(P2(stream_state *, const char *))
+  int proc(stream_state *, const char *)
 stream_proc_report_error(s_no_report_error);
 
 /*
@@ -144,9 +144,9 @@ stream_proc_report_error(s_no_report_error);
  * even if no actual stream has been created), we name them differently.
  */
 #define stream_state_proc_get_params(proc, state_type)\
-  int proc(P3(gs_param_list *plist, const state_type *ss, bool all))
+  int proc(gs_param_list *plist, const state_type *ss, bool all)
 #define stream_state_proc_put_params(proc, state_type)\
-  int proc(P2(gs_param_list *plist, state_type *ss))
+  int proc(gs_param_list *plist, state_type *ss)
 
 /*
  * Define a generic stream state.  If a processing procedure has no

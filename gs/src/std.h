@@ -168,10 +168,10 @@ typedef ulong bits32;
 /* To allow stdout and stderr to be redirected, all stdout goes 
  * though outwrite and all stderr goes through errwrite.
  */
-int outwrite(P2(const char *str, int len));
-int errwrite(P2(const char *str, int len));
-void outflush(P0());
-void errflush(P0());
+int outwrite(const char *str, int len);
+int errwrite(const char *str, int len);
+void outflush(void);
+void errflush(void);
 /* Formatted output to outwrite and errwrite.
  * The maximum string length is 1023 characters.
  */
@@ -185,14 +185,14 @@ int errprintf();
 
 /* Print the program line # for debugging. */
 #if __LINE__			/* compiler provides it */
-void dprintf_file_and_line(P2(const char *, int));
+void dprintf_file_and_line(const char *, int);
 #  define _dpl dprintf_file_and_line(__FILE__, __LINE__),
 #else
-void dprintf_file_only(P1(const char *));
+void dprintf_file_only(const char *);
 #  define _dpl dprintf_file_only(__FILE__),
 #endif
 
-void dflush(P0());		/* flush stderr */
+void dflush(void);		/* flush stderr */
 #define dputc(chr) dprintf1("%c", chr)
 #define dlputc(chr) dlprintf1("%c", chr)
 #define dputs(str) dprintf1("%s", str)
@@ -250,12 +250,10 @@ void dflush(P0());		/* flush stderr */
 #define dlprintf12(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
   (_dpl dprintf12(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12))
 
-void printf_program_ident(P2(const char *program_name,
-			     long revision_number));
-void eprintf_program_ident(P2(const char *program_name,
-			      long revision_number));
-const char *gs_program_name(P0());
-long gs_revision_number(P0());
+void printf_program_ident(const char *program_name, long revision_number);
+void eprintf_program_ident(const char *program_name, long revision_number);
+const char *gs_program_name(void);
+long gs_revision_number(void);
 
 #define _epi eprintf_program_ident(gs_program_name(), gs_revision_number()),
 
@@ -283,10 +281,10 @@ long gs_revision_number(P0());
   (_epi epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
 
 #if __LINE__			/* compiler provides it */
-void lprintf_file_and_line(P2(const char *, int));
+void lprintf_file_and_line(const char *, int);
 #  define _epl _epi lprintf_file_and_line(__FILE__, __LINE__),
 #else
-void lprintf_file_only(P1(const char *));
+void lprintf_file_only(const char *);
 #  define _epl _epi lprintf_file_only(__FILE__)
 #endif
 
@@ -322,6 +320,6 @@ void lprintf_file_only(P1(const char *));
 typedef struct gs_memory_s gs_memory_t;
 #endif
 #define init_proc(proc)\
-  int proc(P1(gs_memory_t *))
+  int proc(gs_memory_t *)
 
 #endif /* std_INCLUDED */

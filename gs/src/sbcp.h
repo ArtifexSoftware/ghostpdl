@@ -29,8 +29,8 @@ extern const stream_template s_TBCPE_template;
 typedef struct stream_BCPD_state_s {
     stream_state_common;
     /* The client sets the following before initialization. */
-    int (*signal_interrupt) (P1(stream_state *));
-    int (*request_status) (P1(stream_state *));
+    int (*signal_interrupt) (stream_state *);
+    int (*request_status) (stream_state *);
     /* The following are updated dynamically. */
     bool escaped;
     int matched;		/* TBCP only */

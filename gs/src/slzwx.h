@@ -71,7 +71,7 @@ extern const stream_template s_LZWD_template;
 extern const stream_template s_LZWE_template;
 
 /* Shared procedures */
-void s_LZW_set_defaults(P1(stream_state *));
-void s_LZW_release(P1(stream_state *));
+void s_LZW_set_defaults(stream_state *);
+void s_LZW_release(stream_state *);
 
 #endif /* slzwx_INCLUDED */

@@ -141,6 +141,6 @@ extern const stream_template s_DCTE_template;
 
 /* Define an internal procedure for setting stream defaults. */
 /* Clients do not call this. */
-void s_DCT_set_defaults(P1(stream_state * st));
+void s_DCT_set_defaults(stream_state * st);
 
 #endif /* sdct_INCLUDED */

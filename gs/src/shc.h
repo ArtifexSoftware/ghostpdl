@@ -133,7 +133,7 @@ typedef struct hce_table_s {
 	ss->bits = bits, ss->bits_left = bits_left
 
 /* Put a code on the stream. */
-void hc_put_code_proc(P3(bool, byte *, uint));
+void hc_put_code_proc(bool, byte *, uint);
 
 #define hc_put_value(ss, q, code, clen)\
   (hc_print_value_then(code, clen)\
@@ -150,7 +150,7 @@ void hc_put_code_proc(P3(bool, byte *, uint));
  * Force out the final bits to the output.
  * Note that this does a store_state, but not a load_state.
  */
-byte *hc_put_last_bits_proc(P4(stream_hc_state *, byte *, uint, int));
+byte *hc_put_last_bits_proc(stream_hc_state *, byte *, uint, int);
 
 #define hc_put_last_bits(ss, q)\
   hc_put_last_bits_proc(ss, q, bits, bits_left)

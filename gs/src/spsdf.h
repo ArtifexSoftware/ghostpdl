@@ -34,15 +34,14 @@ typedef struct stream_s stream;
 #define PRINT_BINARY_OK 1
 #define PRINT_ASCII85_OK 2
 #define PRINT_HEX_NOT_OK 4
-void s_write_ps_string(P4(stream * s, const byte * str, uint size,
-			  int print_ok));
+void s_write_ps_string(stream * s, const byte * str, uint size, int print_ok);
 
 /*
  * Create a stream that just keeps track of how much has been written
  * to it.  We use this for measuring data that will be stored rather
  * than written to an actual stream.
  */
-int s_alloc_position_stream(P2(stream ** ps, gs_memory_t * mem));
+int s_alloc_position_stream(stream ** ps, gs_memory_t * mem);
 
 /*
  * Create/release a parameter list for printing (non-default) filter
@@ -72,14 +71,13 @@ typedef struct printer_param_list_s {
 
 #define param_printer_params_default_values 0, 0, 0, "\n", 0
 extern const param_printer_params_t param_printer_params_default;
-int s_alloc_param_printer(P4(gs_param_list ** pplist,
-			     const param_printer_params_t * ppp, stream * s,
-			     gs_memory_t * mem));
-void s_free_param_printer(P1(gs_param_list * plist));
+int s_alloc_param_printer(gs_param_list ** pplist,
+			  const param_printer_params_t * ppp, stream * s,
+			  gs_memory_t * mem);
+void s_free_param_printer(gs_param_list * plist);
 /* Initialize or release a list without allocating or freeing it. */
-int s_init_param_printer(P3(printer_param_list_t *prlist,
-			    const param_printer_params_t * ppp, stream * s));
-void s_release_param_printer(P1(printer_param_list_t *prlist));
-
+int s_init_param_printer(printer_param_list_t *prlist,
+			 const param_printer_params_t * ppp, stream * s);
+void s_release_param_printer(printer_param_list_t *prlist);
 
 #endif /* spsdf_INCLUDED */
