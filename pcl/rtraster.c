@@ -387,7 +387,11 @@ create_mask_enumerator(
         gs_image4_t_init(&image, prast->mask_pindexed->pcspace);
         image.Width = prast->src_width;
         image.Height = prast->src_height;
+#ifdef PCL5EMONO
+        image.CombineWithColor = false;
+#else
         image.CombineWithColor = true;
+#endif
         image.format = gs_image_format_chunky;
         image.BitsPerComponent = 1;
         image.Decode[0] = 0.0;
