@@ -157,6 +157,8 @@ typedef int (*pl_interp_proc_deallocate_interp_t)(pl_interp_t *);
 int pl_get_device_memory(pl_interp_instance_t *, gs_memory_t **);
 typedef int (*pl_interp_proc_get_device_memory_t)(pl_interp_instance_t *, gs_memory_t **);
 
+pl_interp_instance_t *get_interpreter_from_memory( const gs_memory_t *mem );
+
 /*
  * Define a generic interpreter implementation
  */
