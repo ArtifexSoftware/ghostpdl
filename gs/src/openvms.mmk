@@ -451,6 +451,7 @@ macro :
 
 $(GS_XE) : openvms $(GLGEN)arch.h $(GLOBJDIR)gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
 	$(LINKER)/EXE=$@ $(GLOBJDIR)gs.$(OBJ),$(ld_tr)/OPTIONS,$(GLSRCDIR)OPENVMS.OPT/OPTION
+	@ Write Sys$Output "Build of GhostScript is complete!"
 
 # OpenVMS.dev
 

@@ -128,6 +128,13 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 			 GS_MAX_LIB_DIRS);
     if (code < 0)
 	return code;
+/* This first check is not needed on VMS since GS_LIB evaluates to the same
+   value as that returned by gs_lib_default_path.  Also, since GS_LIB is
+   defined as a searchlist logical and getenv only returns the first entry
+   in the searchlist, it really doesn't make sense to search that particular
+   directory twice.
+*/
+#ifndef __VMS
     {
 	int len = 0;
 	int code = gp_getenv(GS_LIB, (char *)0, &len);
@@ -139,6 +146,7 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 	    minst->lib_path.env = path;
 	}
     }
+#endif /* __VMS */
     minst->lib_path.final = gs_lib_default_path;
     code = gs_main_set_lib_paths(minst);
     if (code < 0)
