@@ -637,6 +637,7 @@ process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	str.size = count;
 	code = pdf_encode_process_string(penum, &str, NULL, &text_state);
     }
-    pte->index += str.size;
+    if (code >= 0)
+	pte->index += str.size;
     return code;
 }
