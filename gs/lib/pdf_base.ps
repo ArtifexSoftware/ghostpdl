@@ -414,6 +414,9 @@ pdfdict begin
 /resolveopdict mark
   valueopdict { } forall
   /endobj { endobj exit } bind
+                % OmniForm generates PDF file with endobj missing in some
+                % objects. AR ignores this. So we have to do it too.
+  /obj { pop pop endobj exit } bind
 .dicttomark readonly def
 /resolveR {		% <object#> <generation#> resolveR <object>
   DEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
