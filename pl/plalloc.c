@@ -2,8 +2,8 @@
    standard C allocator.  For a number of reasons the default
    allocator is not necessary for pcl or pxl.  Neither language
    supports garbage collection nor do they use relocation.  There is
-   not necessary distinction between system, global or local vm.
-   Hence a simple allocator based on malloc, realloc and free */
+   no necessary distinction between system, global or local vm.
+   Hence a simple allocator based on malloc, realloc and free. */
 /*$Id$*/
 
 #include "malloc_.h"
@@ -14,7 +14,7 @@
 #include "gsstype.h"
 
 
-/* an screwed up mess, we try to make it manageable here */
+/* a screwed up mess, we try to make it manageable here */
 extern const gs_memory_struct_type_t st_bytes;
 
 /* assume doubles are the largest primitive types and malloc alignment
@@ -28,7 +28,7 @@ round_up_to_align(uint size)
 /* aceesors to get size and type given the pointer returned to the
    client, *not* the pointer returned by malloc or realloc */
 inline private uint
-get_size(char *bptr)
+get_size(byte *bptr)
 {
     /* unpack the unsigned long we stored 2 words behind the object at
        alloc time... back up 2 */
@@ -55,13 +55,13 @@ get_type(char *bptr)
    by malloc or realloc, *not* the pointer returned by malloc or
    realloc */
 inline void
-set_size(char *bptr, uint size)
+set_size(byte *bptr, uint size)
 {
     memcpy(bptr, &size, sizeof(size));
 }
 
 inline void
-set_type(char *bptr, gs_memory_type_ptr_t type)
+set_type(byte *bptr, gs_memory_type_ptr_t type)
 {
     memcpy(&bptr[round_up_to_align(1)], &type, sizeof(type));
     return;
@@ -223,7 +223,8 @@ private void
 pl_free_string(gs_memory_t * mem, byte * data, uint nbytes,
 	      client_name_t cname)
 {
-    return pl_free_object(mem, data, cname);
+    pl_free_object(mem, data, cname);
+    return;
 }
 
 
@@ -255,13 +256,13 @@ pl_consolidate_free(gs_memory_t *mem)
 private uint
 pl_object_size(gs_memory_t * mem, const void /*obj_header_t */ *obj)
 {
-    return get_size(obj);
+    return get_size((byte *)obj);
 }
 
 private gs_memory_type_ptr_t
 pl_object_type(gs_memory_t * mem, const void /*obj_header_t */ *obj)
 {
-    return get_type(obj);
+    return get_type((byte *)obj);
 }
 
 private int
