@@ -65,7 +65,7 @@ private bool
 gx_dc_ht_colored_equal(const gx_device_color * pdevc1,
 		       const gx_device_color * pdevc2)
 {
-    uint num_comp, m, i;
+    uint m, i;
 
     if (pdevc2->type != pdevc1->type ||
 	pdevc1->colors.colored.c_ht != pdevc2->colors.colored.c_ht ||
@@ -80,6 +80,7 @@ gx_dc_ht_colored_equal(const gx_device_color * pdevc1,
             if (pdevc1->colors.colored.c_base[i]  != pdevc2->colors.colored.c_base[i] ||
                 pdevc1->colors.colored.c_level[i] != pdevc2->colors.colored.c_level[i])
                 return false;
+    return true; /* NB was missing, needs testing, or update to casper code */
 }
 
 /* Define an abbreviation for a heavily used value. */

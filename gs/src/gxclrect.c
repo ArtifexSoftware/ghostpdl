@@ -604,7 +604,6 @@ clist_strip_copy_rop(gx_device * dev,
 			 * in pieces.
 			 */
 			uint rep_height = tiles->rep_height;
-			gs_id ids;
 			gx_strip_bitmap line_tile;
 			int iy;
 

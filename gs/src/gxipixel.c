@@ -267,7 +267,6 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	lop = rop3_know_S_0(lop);
     } else {			/* This is image, not imagemask. */
 	const gs_color_space_type *pcst = pcs->type;
-	int b_w_color;
 
 	spp = cs_num_components(pcs);
 	if (spp < 0) {		/* Pattern not allowed */
