@@ -389,7 +389,7 @@ set_linear_color_bits_mask_shift(gx_device * dev)
  * is separable when it is not.  However we do not know of any real cases that
  * will fool it.
  */
-private void
+void
 check_device_separable(gx_device * dev)
 {
     int i, j;
@@ -417,13 +417,13 @@ check_device_separable(gx_device * dev)
 	!pinfo->dither_colors || pinfo->dither_colors != (pinfo->max_color + 1))
 	return;
     /*
-     * If num_gray or num_color is not a power of two then we assume that
-     * the device is not separable.  In theory this not a requirement but
-     * it has been true for all of the devices that we have seen so far.
+     * If dither_grays or dither_colors is not a power of two then we assume
+     * that the device is not separable.  In theory this not a requirement
+     * but it has been true for all of the devices that we have seen so far.
      * This assumption also makes the logic in the next section easier.
      */
-    if (!is_power_of_two(pinfo->max_gray)
-		    || !is_power_of_two(pinfo->max_color))
+    if (!is_power_of_two(pinfo->dither_grays)
+		    || !is_power_of_two(pinfo->dither_colors))
 	return;
     /*
      * Use the encode_color routine to try to verify that the device is

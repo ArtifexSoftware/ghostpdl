@@ -363,6 +363,11 @@ void gx_device_forward_fill_in_procs(gx_device_forward *);
 void gx_device_forward_color_procs(gx_device_forward *);
 
 /*
+ * Check if the device's encode_color routine uses 'separable' bit encodings
+ * for each colorant.  For more info see the routine's header.
+ */
+void check_device_separable(gx_device * dev);
+/*
  * If a device has a linear and separable encode color function then
  * set up the comp_bits, comp_mask, and comp_shift fields.
  */
