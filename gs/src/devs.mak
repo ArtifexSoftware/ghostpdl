@@ -667,7 +667,8 @@ $(GLOBJ)gdevpsdt.$(OBJ) : $(GLSRC)gdevpsdt.c $(GXERR) $(memory__h)\
 
 # PostScript and EPS writers
 
-pswrite_=$(GLOBJ)gdevps.$(OBJ) $(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
+pswrite_=$(GLOBJ)gdevps.$(OBJ) $(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)\
+	$(GLOBJ)gsparamx.$(OBJ)
 $(DD)epswrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pswrite_) $(GLD)psdf.dev
 	$(SETDEV2) $(DD)epswrite $(pswrite_)
 	$(ADDMOD) $(DD)epswrite -include $(GLD)psdf
@@ -1219,3 +1220,12 @@ $(DD)tiff24nc.dev : $(DEVS_MAK) $(tiffrgb_) $(DD)tiffs.dev
 
 $(GLOBJ)gdevtfnx.$(OBJ) : $(GLSRC)gdevtfnx.c $(PDEVH) $(gdevtifs_h)
 	$(GLCC) $(GLO_)gdevtfnx.$(OBJ) $(C_) $(GLSRC)gdevtfnx.c
+
+# BlueMega custom device driver
+
+$(GLOBJ)gdevbluemega.$(OBJ) : $(GLSRC)gdevbluemega.c $(PDEVH)
+	$(GLCC) $(GLO_)gdevbluemega.$(OBJ) $(C_) $(GLSRC)gdevbluemega.c
+
+$(DD)bluemega.dev : $(DEVS_MAK) $(GLOBJ)gdevbluemega.$(OBJ) $(GLD)page.dev
+	$(SETPDEV2) $(DD)bluemega $(GLOBJ)gdevbluemega.$(OBJ)
+
