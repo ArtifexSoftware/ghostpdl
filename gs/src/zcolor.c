@@ -36,7 +36,7 @@
 #include "idict.h"
 #include "icolor.h"
 #include "idparam.h"
-
+#include "iname.h"
 
 /* imported from gsht.c */
 extern  void    gx_set_effective_transfer(gs_state *);
@@ -127,8 +127,15 @@ zcurrentcolorspace(i_ctx_t * i_ctx_p)
     os_ptr  op = osp;   /* required by "push" macro */
 
     push(1);
-    *op = istate->colorspace.array;
-    return 0;
+    if ( igs->in_cachedevice ) {
+	int code = ialloc_ref_array(op, a_all, 1, "currentcolorspace");
+	if (code < 0)
+	    return code;
+	return name_enter_string("DeviceGray", op->value.refs);
+    } else {
+        *op = istate->colorspace.array;
+        return 0;
+    }
 }
 
 /*
