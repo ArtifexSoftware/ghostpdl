@@ -48,6 +48,10 @@ int gs_point_transform2fixed(const gs_matrix_fixed *, floatp, floatp,
 			     gs_fixed_point *);
 int gs_distance_transform2fixed(const gs_matrix_fixed *, floatp, floatp,
 				gs_fixed_point *);
+#if PRECISE_CURRENTPOINT
+int gs_point_transform2fixed_rounding(const gs_matrix_fixed * pmat,
+			 floatp x, floatp y, gs_fixed_point * ppt);
+#endif
 
 /*
  * Define the fixed-point coefficient structure for avoiding
@@ -86,5 +90,9 @@ fixed fixed_coeff_mult(fixed, long, const fixed_coeff *, int);
     ((-fixed_1 << maxb) | _fixed_fraction_v) ?	/* out of range, or has fraction */\
     fixed_coeff_mult((v), (fc).c, &(fc), maxb) : \
    arith_rshift(fixed2int_var(v) * (fc).c + (fc).round, (fc).shift))
+
+/* The following switch is for developmenty purpose only. 
+   PRECISE_CURRENTPOINT 0 must not go to production due to no clamping. */
+#define PRECISE_CURRENTPOINT 1 /* Old code compatible with dropped clamping = 0, new code = 1 */
 
 #endif /* gxmatrix_INCLUDED */

@@ -371,9 +371,15 @@ arc_add(const arc_curve_params_t * arc, bool is_quadrant)
     int code;
 
     if ((arc->action != arc_nothing &&
+#if !PRECISE_CURRENTPOINT
 	 (code = gs_point_transform2fixed(&pis->ctm, x0, y0, &p0)) < 0) ||
 	(code = gs_point_transform2fixed(&pis->ctm, xt, yt, &pt)) < 0 ||
 	(code = gs_point_transform2fixed(&pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0 ||
+#else
+	 (code = gs_point_transform2fixed_rounding(&pis->ctm, x0, y0, &p0)) < 0) ||
+	(code = gs_point_transform2fixed_rounding(&pis->ctm, xt, yt, &pt)) < 0 ||
+	(code = gs_point_transform2fixed_rounding(&pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0 ||
+#endif
 	(code =
 	 (arc->action == arc_nothing ?
 	  (p0.x = path->position.x, p0.y = path->position.y, 0) :

@@ -127,8 +127,6 @@ gs_distance_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_po
 #endif
 }
 
-#define float2fixed_rounding(f) ((fixed)floor((f)*(float)fixed_scale + 0.5))
-
 private inline int
 clamp_point_aux(bool clamp_coordinates, gs_fixed_point *ppt, floatp x, floatp y)
 {
@@ -139,8 +137,8 @@ clamp_point_aux(bool clamp_coordinates, gs_fixed_point *ppt, floatp x, floatp y)
     } else {
 	/* 181-01.ps" fails with no rounding in 
 	   "Verify as last element of a userpath and effect on setbbox." */
-	ppt->x = float2fixed_rounding(x);
-	ppt->y = float2fixed_rounding(y);
+	ppt->x = float2fixed_rounded(x);
+	ppt->y = float2fixed_rounded(y);
     }
     return 0;
 }

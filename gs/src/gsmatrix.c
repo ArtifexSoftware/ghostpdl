@@ -446,6 +446,25 @@ gs_point_transform2fixed(const gs_matrix_fixed * pmat,
     return 0;
 }
 
+#if PRECISE_CURRENTPOINT
+/* Transform a point with a fixed-point result. */
+/* Used for the best precision of the current point,
+   see comment in clamp_point_aux. */
+int
+gs_point_transform2fixed_rounding(const gs_matrix_fixed * pmat,
+			 floatp x, floatp y, gs_fixed_point * ppt)
+{
+    gs_point fpt;
+
+    gs_point_transform(x, y, (const gs_matrix *)pmat, &fpt);
+    if (!(f_fits_in_fixed(fpt.x) && f_fits_in_fixed(fpt.y)))
+	return_error(gs_error_limitcheck);
+    ppt->x = float2fixed_rounded(fpt.x);
+    ppt->y = float2fixed_rounded(fpt.y);
+    return 0;
+}
+#endif
+
 /* Transform a distance with a fixed-point result. */
 int
 gs_distance_transform2fixed(const gs_matrix_fixed * pmat,
