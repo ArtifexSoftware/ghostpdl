@@ -21,7 +21,7 @@ exec tclsh "$0" "$@"
 
 set TMAKE_ID {$Id$}
 
-# This file is intended to be a drop-in replacement for a large and
+# tmake is intended to be a drop-in replacement for a large and
 # useful subset of 'make'.  It compiles makefiles into Tcl scripts
 # (lazily) and then executes the scripts.  It requires makefiles to be
 # well-behaved:
@@ -34,42 +34,67 @@ set TMAKE_ID {$Id$}
 #	dependent of the rule, or the file is not a target of any rule.
 #
 #	- No target is the target of more than one rule.
+#
+# When tmake executes a build rule, it also optionally checks whether the
+# dependencies in the makefile are up to date.  It can also do some
+# Ghostscript-specific checks:
+#
+#	- The definition of xxx_h must be the list of files included
+#	(directly or indirectly) by xxx.h.
+#
+#	- If a rule command includes the word "-include", then for
+#	dependency checking, .dev is appended to any further words in that
+#	command.
 
 # Define the backward-compatibility version of this file.
 set TMAKE_VERSION 106
 
 #****** -j doesn't work yet ******#
 
-# The following variables are recognized when the script is executed:
-#	DEBUG - print a debugging trace
-#	DRYRUN - just print commands, don't execute them
-#	IGNORE_ERRORS - ignore errors in rule bodies
-#	KEEP_GOING - continue past errors, but don't build anything affected
-#	MAKEFLAGS - flags for recursive invocations
-#	MAX_JOBS - maximum number of concurrent rule executions
-#	MAX_LOAD - maximum load for parallel execution
-#	SILENT - don't print commands
-#	WARN_REDEFINED - warn about redefined variables
-#	WARN_MULTIPLE - warn about variables defined more than once,
-#	  even if the definitions are identical
-#	WARN_UNDEFINED - warn about undefined variables (every time)
-#	WARN_UNDEFINED_ONCE - warn about undefined variables (only once)
+# The following switches set the corresponding global variables used during
+# execution of the compiled makefile:
+set O(-d) {DEBUG o_01}		;# print a debugging trace
+set O(-i) {IGNORE_ERRORS o_01}	;# ignore errors in rule bodies
+set O(-j) {MAX_JOBS o_max}	;# maximum number of concurrent rule
+				;# executions (NYI)
+set O(-k) {KEEP_GOING o_01}	;# continue past errors, but don't build
+				;# anything affected
+set O(-l) {MAX_LOAD o_max}	;# maximum load for parallel execution
+set O(-n) {DRYRUN o_01}		;# just print commands, don't execute them
+set O(-s) {SILENT o_01}		;# don't print commands
+set O(--check-dependencies)\
+	{CHECK_DEPENDENCIES o_01};# check dependency lists against sources
+set O(--check-gs-dependencies)\
+	{CHECK_GS_DEPENDENCIES o_01};# check GS-specific dependencies
+set O(--warn-multiply-defined-variables)\
+	{WARN_MULTIPLE o_01}	;# warn about variables defined more than once,
+				;# even if the definitions are identical
+set O(--warn-redefined-variables)\
+	{WARN_REDEFINED o_01}	;# warn about redefined variables
+set O(--warn-undefined-variables)\
+	{WARN_UNDEFINED o_01}	;# warn about undefined variables (every time)
+set O(--warn-undefined-variables-once)\
+	{WARN_UNDEFINED_ONCE o_01};# warn about undefined variables (only once)
 
+# The following additional globals are defined during execution
+#	MAKEFLAGS - flags for recursive invocations
+
+set CHECKS [list\
+    CHECK_DEPENDENCIES CHECK_GS_DEPENDENCIES\
+]
 set WARNINGS [list\
     WARN_MULTIPLE WARN_REDEFINED WARN_UNDEFINED\
 ]
-set FLAGS "$WARNINGS\
-    DEBUG DRYRUN IGNORE_ERRORS KEEP_GOING SILENT\
-    WARN_UNDEFINED_ONCE\
-"
-set GLOBALS "$FLAGS\
-    MAKEFLAGS MAX_JOBS MAX_LOAD\
+set OPTIONS {}
+foreach opt [array names O] {lappend OPTIONS [lindex $O($opt) 0]}
+set GLOBALS "$OPTIONS\
+    MAKEFLAGS\
 "
 proc init_globals {} {
-    global FLAGS GLOBALS
+    global OPTIONS GLOBALS
 
     foreach v $GLOBALS {global $v}
-    foreach v $FLAGS {set $v 0}
+    foreach v $OPTIONS {set $v 0}
     set MAKEFLAGS ""
     set MAX_JOBS 1
     set MAX_LOAD 99999
@@ -96,7 +121,13 @@ proc init_globals {} {
 
 # ================ Command line processing ================ #
 
-proc limit_arg {vvar argv} {
+# Argument type handlers
+proc o_01 {vvar argv} {
+    upvar $vvar var
+    set var 1
+    return 0
+}
+proc o_max {vvar argv} {
     upvar $vvar var
     if {[llength $argv] > 1 && [regexp {^[0-9]+$} [lindex $argv 1]]} {
 	set var [lindex $argv 1]; return 1
@@ -106,7 +137,7 @@ proc limit_arg {vvar argv} {
 }
 
 proc tmake_args {args} {
-    global GLOBALS COMPILE DEFINES JOBS MAKEFILE TARGETS WARNINGS
+    global O GLOBALS CHECKS COMPILE DEFINES JOBS MAKEFILE TARGETS WARNINGS
     foreach v $GLOBALS {global $v}
 
     set argv $args
@@ -118,36 +149,36 @@ proc tmake_args {args} {
 	    -C {    # -C is not implemented
 		set copy 0
 	    }
-	    --compile-only {set COMPILE 1}
-	    -d {set DEBUG 1}
+	    --check-all {
+		foreach v $CHECKS {set $v 1}
+	    }
+	    --compile-only {	# compile-time switch only
+		set COMPILE 1
+	    }
 	    -f {set MAKEFILE [lindex $argv 1]; set n 1; set copy 0}
-	    -i {set IGNORE_ERRORS 1}
-	    -j {set n [limit_arg MAX_JOBS $argv]}
-	    -k {set KEEP_GOING 1}
-	    -l {set n [limit_arg MAX_LOAD $argv]}
 	    -m {    # -m is ignored for compatibility with GNU make;
 		    # also, because MAKEFLAGS omits the initial '-', we need a
 		    # dummy switch in case there are variable definitions (!).
 		set copy 0
 	    }
-	    -n {set DRYRUN 1}
-	    -s {set SILENT 1}
 	    --warn-all {
 		foreach v $WARNINGS {set $v 1}
 	    }
-	    --warn-multiply-defined-variables {set WARN_MULTIPLE 1}
-	    --warn-redefined-variables {set WARN_REDEFINED 1}
-	    --warn-undefined-variables {set WARN_UNDEFINED 1}
-	    --warn-undefined-variables-once {set WARN_UNDEFINED_ONCE 1}
 	    -* {
-		puts "Unknown option: $arg"
-		puts {Usage: tmake (<option> | <var>=<value> | <target>)*}
-		puts {Options:}
-		puts {	--compile-only -d -i -k -n -s --warn-all}
-		puts {	--warn-multiply-defined-variables --warn-redefined-variables}
-		puts {	--warn-undefined-variables --warn-undefined-variables-once}
-		puts {	-f <file> -j <jobs> -l <load>}
-		exit
+		if [info exists O($arg)] {
+		    set opt $O($arg)
+		    set n [[lindex $opt 1] [lindex $opt 0] $argv]
+		} else {
+		    puts "Unknown option: $arg"
+		    puts {Usage: tmake (<option> | <var>=<value> | <target>)*}
+		    puts {Options:}
+		    puts {    --check-all --check-dependencies --check-gs-dependencies}
+		    puts {    --compile-only -d -i -k -n -s}
+		    puts {    --warn-all --warn-multiply-defined-variables --warn-redefined-variables}
+		    puts {    --warn-undefined-variables --warn-undefined-variables-once}
+		    puts {    -f <file> -j <jobs> -l <load>}
+		    exit
+		}
 	    }
 	    *=* {
 		regexp {^([^=]*)=(.*)$} $arg skip lhs rhs
@@ -249,10 +280,10 @@ proc write_header {out fname} {
     global TMAKE_ID TMAKE_VERSION
 
     puts $out {#!/bin/tcl}
-    puts $out "# $fname created [exec date] with"
+    puts $out "# $fname created [exec date] by tmake with"
     puts $out "#   TMAKE_VERSION = ${TMAKE_VERSION}"
     set id $TMAKE_ID
-    regexp {^\$Id$$} $id skip id
+    regexp {^[$]Id: (.*) [$]$} $id skip id
     puts $out "#   TMAKE_ID = $id"
 }
 
@@ -367,14 +398,19 @@ proc tcompile {fname version} {
 # The R procedure numbers rules consecutively.  For rule i:
 #	C(i) is the rule body (a list of shell command lines)
 #	T(i) is the list of targets
-#	N(i) is the source line number
+#	N(target) is the source line number
+
+# Other runtime global variables:
+#	I counts the number of defined rules
+#	DEPS(file) is the implicit dependencies for a file
 
 # ---------------- Definition ---------------- #
 
 proc init_definition {} {
-    global DEBUG I
+    global DEBUG I DEPS
 
     set I 0
+    catch {unset DEPS}
     if {$DEBUG} {
 	proc ifdebug {script} {uplevel $script}
     } {
@@ -475,8 +511,172 @@ proc R {tl dl body} {
 	    set N($t) $LN
 	    proc @$t {} [list target $t $dl $I]
 	}
+	ifdebug {puts "#${I}: ${LN}: $tl <= $dl"}
     }
     R $tl $dl $body
+}
+
+# ---------------- Dependency checking ---------------- #
+
+# Normalize a file name by removing all occurrences of ./,
+# all occurrences of <dir>/../,
+# and any occurrences of ../<dir>/ that are vacuous relative to CWD.
+proc normalize_fname {fname} {
+    global CWD
+
+    set parts {}
+    set count 0
+    foreach part [split $fname /] {
+	if {$part == "" || $part == "."} continue
+	if {$part == ".."} {
+	    if {$parts == ""} {
+		incr count
+	    } else {
+		set parts [lreplace $parts end end]
+	    }
+	} else {
+	    lappend parts $part
+	}
+    }
+    if {$parts == ""} {return /}
+    set i [expr [llength $CWD] - $count]
+    if {$i >= 0} {
+	while {$count > 0 && $parts != "" && [lindex $CWD $i] == [lindex $parts 0]} {
+	    set parts [lrange $parts 1 end]
+	    incr count -1
+	    incr i
+	}
+    }
+    while {$count > 0} {
+	set parts ".. $parts"
+	incr count -1
+    }
+    if {$parts == ""} {return .}
+    return [join $parts /]
+}
+proc normalize_tail {fname} {
+    return [file tail [normalize_fname $fname]]
+}
+
+# Return the indirect dependencies of a .c / .cpp / .h file.
+set EXTDEPS(.c) c_deps
+set EXTDEPS(.cpp) c_deps
+proc c_deps {dep} {
+    global errorCode
+
+    set list ""
+    set gre {^#[ 	]*include[ 	]+\"|/\*|\*/}
+    set re {^#[\ \	]*include[\ \	]+"([^"]*)"}
+    set out ""
+    if {[catch {set out [exec egrep $gre $dep]}] != 0 && !([lindex $errorCode 0] == "CHILDSTATUS" && [lindex $errorCode 2] == 1)} {
+	tmake_error "Can't read $dep for dependency check."
+    } else {
+	set active 1
+	foreach inc [split $out "\n"] {
+	    # The handling of comment brackets isn't quite right,
+	    # but it's good enough for all likely uses.
+	    if [regexp $re $inc skip fname] {
+		if $active {lappend list $fname}
+	    } elseif {[string first */ $inc] >= 0} {
+		set active 1
+	    } elseif {[string first /* $inc] >= 0} {
+		set active 0
+	    }
+	}
+    }
+    ifdebug {puts "deps: $dep => $list"}
+    return $list
+}
+set EXTDEPS(.h) h_deps
+proc h_deps {dep} {
+    global _ CHECK_GS_DEPENDENCIES
+
+    set list [c_deps $dep]
+    set DEPS($dep) $list	;# do early for check_dep_set
+    if {$CHECK_GS_DEPENDENCIES && [regsub {\.h$} [normalize_tail $dep] _h var] != 0 && [info procs _$var] != ""} {
+	check_dep_set $var [_$var] [list $dep] "" $_($var)
+    }
+    return $list
+}
+proc deps {dep} {
+    global DEPS EXTDEPS
+
+    if [info exists DEPS($dep)] {
+	return $DEPS($dep)
+    }
+    set extn [file extension $dep]
+    if {![info exists EXTDEPS($extn)]} {
+	# No information.
+	return ""
+    }
+    return [set DEPS($dep) [$EXTDEPS($extn) $dep]]
+}
+
+# Check the dependencies of a rule or _h definition.
+proc check_dep_set {target deplist rootlist extraroots lnum} {
+    # What we require is that the set of files in the dependency list is
+    # identical (considering only the tails) to the set of files in the
+    # transitive closure, under the operation of getting indirect
+    # dependencies, of the set of root files.
+    foreach d $deplist {set isdep([normalize_tail $d]) $d}
+    foreach r $extraroots {set isroot([normalize_tail $r]) $r}
+    set roots $rootlist
+    while {$roots != ""} {
+	set root [lindex $roots 0]
+	set roots [lrange $roots 1 end]
+	set norm [normalize_tail $root]
+	set isroot($norm) $root
+	if {![info exists isdep($norm)]} {
+	    set missing($norm) 1
+	}
+	foreach inc [deps $root] {
+	    set norm [normalize_tail $inc]
+	    if [info exists isdep($norm)] {
+		lappend roots $isdep($norm)
+	    } else {
+		set missing($norm) 1
+	    }
+	}
+    }
+    if {[array size missing] > 0} {
+	puts "${lnum}: $target is missing dependencies: [array names missing]"
+    }
+    # Now the only elements left in isdep that aren't in isroot are ones
+    # that weren't in the transitive closure, which is an error.
+    if {[array size isdep] > 0} {
+	set extra ""
+	foreach d [array names isdep] {
+	    if {![info exists isroot($d)]} {lappend extra $d}
+	}
+	if {$extra != ""} {
+	    puts "${lnum}: $target has extra dependencies: $extra"
+	}
+    }
+}
+
+# Check the dependencies of a rule about to be executed.
+proc check_deps {i dl} {
+    # The root files are those files in the dependency list that are
+    # mentioned in some command in the rule body.  This is not foolproof,
+    # but it is a very good heuristic.
+    global C N T
+
+    foreach d $deplist {set isdep([normalize_tail $d]) $d}
+    set roots ""
+    foreach cmd [eval $C($i)] {
+	foreach word [split $cmd { 	'"`;}] {
+	    if [info exists isdep([normalize_tail $word])] {
+		lappend roots $word
+	    }
+	}
+    }
+    set xroots ""
+    if [regexp {^(.*):[0-9]+$} $lnum skip fname] {
+	lappend xroots $fname
+    }
+    ifdebug {puts "roots: $roots"}
+    set targets $T($i)
+    check_dep_set [string trim $targets] $roots $xroots $N([lindex $targets 0])
 }
 
 # ---------------- Execution ---------------- #
@@ -496,6 +696,12 @@ proc R {tl dl body} {
 #	PX(j) == i for some j, 0 <= j < [array size PX], iff S(i) == -1
 
 proc init_execution {} {
+    global CWD
+
+    set CWD [split [exec pwd] /]
+    if {[lindex $CWD 0] == ""} {
+	set CWD [lrange $CWD 1 end]
+    }
     foreach v {S W A PW PX} {
 	global $v
 	catch {unset $v}
@@ -603,11 +809,22 @@ proc shell_exec {cmds} {
     lappend JOBS [eval exec $args &]
 }
 
-proc rexec {i} {
-    global C T DRYRUN IGNORE_ERRORS SILENT
+# Print an error message.
+proc tmake_error {str} {
+    set level [_MAKELEVEL]
+    if {$level == 0} {set level ""} {set level "\[$level\]"}
+    puts "tmake$level: *** $str"
+}
+
+# Execute the commands in the body of rule i.
+proc rexec {i dl} {
+    global C T CHECK_DEPENDENCIES DRYRUN IGNORE_ERRORS SILENT
 
     set cmds [eval $C($i)]
     set ok 1
+    if {$CHECK_DEPENDENCIES} {
+	check_deps $i $dl
+    }
     if {$DRYRUN} {
 	foreach c $cmds {
 	    if {!$SILENT || ![regexp {^@} $c]} {puts $c}
@@ -618,13 +835,7 @@ proc rexec {i} {
 	foreach c $cmds {
 	    if {!([regsub {^@} $c "" c] || $SILENT)} {puts $c}
 	    set ignore [regsub {^-} $c "" c]
-	    if {![regexp {[][(){}*?!$|;&<>'"\=]} $c]} {
-		# We could execute these more efficiently, if we knew how
-		# to resolve the command name!
-		set status [catch {shell_exec $c}]
-	    } else {
-		set status [catch {shell_exec $c}]
-	    }
+	    set status [catch {shell_exec $c}]
 	    if {$status != 0 && !($ignore || $IGNORE_ERRORS)} {break}
 	}
 	flush stdout
@@ -632,15 +843,13 @@ proc rexec {i} {
 	    global errorCode IGNORE_ERRORS KEEP_GOING
 
 	    set info $errorCode
-	    set level [_MAKELEVEL]
-	    if {$level == 0} {set level ""} {set level "\[$level\]"}
 	    set code 255
 	    catch {
 		if {[lindex $info 0] == "CHILDSTATUS"} {
 		    set code [lindex $info 2]
 		}
 	    }
-	    puts "tmake$level: *** \[$T($i)\] Error $code"
+	    tmake_error "\[$T($i)\] Error $code"
 	    if {!$IGNORE_ERRORS} {
 		if {!$KEEP_GOING} {exit $code}
 		set ok 0
@@ -663,7 +872,7 @@ proc target {t dl i} {
     if {[catch {set mt [file mtime $t]}]} {
 	ifdebug {puts "no ttime($t)"}
 	foreach d $dl {@$d}
-	rexec $i
+	rexec $i $dl
 	return [@$t]
     }
     ifdebug {puts "ttime($t)=$mt"}
@@ -681,7 +890,7 @@ proc target {t dl i} {
 	    set do 1
 	}
     }
-    if {$do} {rexec $i; return [@$t]}
+    if {$do} {rexec $i $dl; return [@$t]}
     tset $t $mt
     ifdebug {puts "OK: $t"}
     return $mt

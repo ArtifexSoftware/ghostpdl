@@ -263,7 +263,7 @@ Check the consistency of the source code with the makefiles by
 running:
 
 <blockquote><pre>
-toolbin/gsmake.tcl check
+toolbin/gsmake check
 </pre></blockquote>
 
 <p>
@@ -271,8 +271,8 @@ Check that all source and .ps files are documented at least minimally by
 running:
 
 <blockquote><pre>
-toolbin/hrefcov.tcl +src
-toolbin/hrefcov.tcl +lib
+toolbin/hrefcov +src
+toolbin/hrefcov +lib
 </pre></blockquote>
 
 <h3><a name="Testing"></a>Testing</h3>
@@ -344,7 +344,7 @@ to ensure the repository is up to date.
 Execute
 
 <blockquote><pre>
-toolbin/cvs2hist.py -v #.## > doc/Changes.htm
+toolbin/cvs2hist -v #.## > doc/Changes.htm
 </pre></blockquote>
 
 <p>
@@ -355,9 +355,7 @@ format.
 Run
 
 <blockquote><pre>
-tclsh
-% source toolbin/makeset.tcl
-% makehist
+toolbin/makehist
 </pre></blockquote>
 
 <p>
@@ -375,9 +373,7 @@ again to check in the Changes and history files.
 Make the source archives with
 
 <blockquote><pre>
-tclsh
-% source toolbin/makeset.tcl
-% maketars
+toolbin/maketars
 </pre></blockquote>
 
 <p>
@@ -395,7 +391,8 @@ This creates the files
 For Windows testing, you will need, in addition to the files listed
 under "<a href="#Preparing_source">Preparing the source</a>" above:
 <blockquote><pre>
-<b><tt>toolbin/makewin</tt></b> (link to <b><tt>makeset.tcl</tt></b>)
+<b><tt>toolbin/makewin</tt></b>
+<b><tt>toolbin/makewin.tcl</tt></b>
 </pre></blockquote>
 
 <p>

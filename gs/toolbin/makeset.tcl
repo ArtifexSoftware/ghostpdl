@@ -425,11 +425,19 @@ proc makemaster {} {
     movelist Font [list $afonts $ofonts $agfonts $ogfonts] $todir
 }
 
-# Call the procedure selected by the link name.
-switch [file tail $argv0] {
-    maketars {eval maketars $argv}
-    makefonts {eval makefonts $argv}
-    makehist {eval makehist $argv}
-    makewin {eval makewin $argv}
-    makemaster {eval makemaster $argv}
+# Call the procedure selected by the first switch (-makexxx) if any,
+# otherwise by the link name.
+if {[llength $argv] >= 1 && [string range [lindex $argv 0] 0 4] == "-make"} {
+    set progname [string range [lindex $argv 0] 1 end]
+    set args [lreplace $argv 0 0]
+} else {
+    set progname [file tail $argv0]
+    set args $argv
+}
+switch $progname {
+    maketars {eval maketars $args}
+    makefonts {eval makefonts $args}
+    makehist {eval makehist $args}
+    makewin {eval makewin $args}
+    makemaster {eval makemaster $args}
 }
