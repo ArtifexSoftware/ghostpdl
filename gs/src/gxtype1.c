@@ -236,6 +236,7 @@ gs_type1_seac(gs_type1_state * pcis, const fixed * cstack, fixed asb,
 {
     gs_font_type1 *pfont = pcis->pfont;
     gs_glyph_data_t bgdata;
+    gs_const_string gstr;
     int code;
 
     /* Save away all the operands. */
@@ -247,7 +248,7 @@ gs_type1_seac(gs_type1_state * pcis, const fixed * cstack, fixed asb,
     pcis->os_count = 0;		/* clear */
     /* Ask the caller to provide the base character's CharString. */
     code = pfont->data.procs.seac_data
-	(pfont, fixed2int_var(cstack[2]), NULL, &bgdata);
+	(pfont, fixed2int_var(cstack[2]), NULL, &gstr, &bgdata);
     if (code < 0)
 	return code;
     /* Continue with the supplied string. */
@@ -272,6 +273,7 @@ gs_type1_endchar(gs_type1_state * pcis)
 	gs_font_type1 *pfont = pcis->pfont;
 	gs_glyph_data_t agdata;
 	int achar = pcis->seac_accent;
+	gs_const_string gstr;
 	int code;
 
 	pcis->seac_accent = -1;
@@ -283,7 +285,24 @@ gs_type1_endchar(gs_type1_state * pcis)
 	/* ended inside a subroutine. */
 	pcis->ips_count = 1;
 	/* Ask the caller to provide the accent's CharString. */
-	code = pfont->data.procs.seac_data(pfont, achar, NULL, &agdata);
+	code = pfont->data.procs.seac_data(pfont, achar, NULL, &gstr, &agdata);
+	if (code == gs_error_undefined) {
+	    /* 
+	     * The font is missing the accent's CharString (due to
+	     * bad subsetting).  Just end drawing here without error. 
+	     * This is like Acrobat Reader behaves.
+	     */
+	    char buf0[gs_font_name_max + 1], buf1[30];
+	    int l0 = min(pcis->pfont->font_name.size, sizeof(buf0) - 1);
+	    int l1 = min(gstr.size, sizeof(buf1) - 1);
+
+	    memcpy(buf0, pcis->pfont->font_name.chars, l0);
+	    buf0[l0] = 0;
+	    memcpy(buf1, gstr.data, l1);
+	    buf1[l1] = 0;
+	    eprintf2("The font '%s' misses the glyph '%s' . Continue skipping the glyph.", buf0, buf1);
+	    return 0;
+	}
 	if (code < 0)
 	    return code;
 	/* Continue with the supplied string. */
@@ -455,13 +474,14 @@ gs_type1_glyph_pieces(gs_font_type1 *pfont, const gs_glyph_data_t *pgd,
     gs_type1_data *const pdata = &pfont->data;
     gs_glyph *pieces =
 	(members & GLYPH_INFO_PIECES ? info->pieces : glyphs);
+    gs_const_string gstr;
     int acode, bcode;
 
     info->num_pieces = 0;	/* default */
     if (code <= 0)		/* no seac, possibly error */
 	return code;
-    bcode = pdata->procs.seac_data(pfont, chars[0], &pieces[0], NULL);
-    acode = pdata->procs.seac_data(pfont, chars[1], &pieces[1], NULL);
+    bcode = pdata->procs.seac_data(pfont, chars[0], &pieces[0], &gstr, NULL);
+    acode = pdata->procs.seac_data(pfont, chars[1], &pieces[1], &gstr, NULL);
     code = (bcode < 0 ? bcode : acode);
     info->num_pieces = 2;
     return code;

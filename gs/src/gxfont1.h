@@ -76,7 +76,7 @@ typedef struct gs_type1_data_procs_s {
      */
 
     int (*seac_data)(gs_font_type1 * pfont, int ccode,
-		     gs_glyph * pglyph, gs_glyph_data_t *pgd);
+		     gs_glyph * pglyph, gs_const_string *gstr, gs_glyph_data_t *pgd);
 
     /*
      * Push (a) value(s) onto the client ('PostScript') stack during

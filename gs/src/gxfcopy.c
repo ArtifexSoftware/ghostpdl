@@ -854,11 +854,14 @@ copied_type1_subr_data(gs_font_type1 * pfont, int subr_num, bool global,
 
 private int
 copied_type1_seac_data(gs_font_type1 * pfont, int ccode,
-		       gs_glyph * pglyph, gs_glyph_data_t *pgd)
+		       gs_glyph * pglyph, gs_const_string *gstr, gs_glyph_data_t *pgd)
 {
     /*
      * This can only be invoked if the components have already been
      * copied to their proper positions, so it is simple.
+     */
+    /*
+     * Retrieving the glyph name to gstr is not implemented.
      */
     gs_glyph glyph = copied_encode_char((gs_font *)pfont, (gs_char)ccode,
 					GLYPH_SPACE_NAME);

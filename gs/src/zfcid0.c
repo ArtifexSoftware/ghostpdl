@@ -279,7 +279,7 @@ z9_FDArray_glyph_data(gs_font_type1 * pfont, gs_glyph glyph,
 }
 private int
 z9_FDArray_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
-		     gs_glyph_data_t *pgd)
+		     gs_const_string *gstr, gs_glyph_data_t *pgd)
 {
     return_error(e_invalidfont);
 }

@@ -943,18 +943,17 @@ z1_subr_data(gs_font_type1 * pfont, int index, bool global,
 
 private int
 z1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
-	     gs_glyph_data_t *pgd)
+	     gs_const_string *gstr, gs_glyph_data_t *pgd)
 {
     gs_glyph glyph = gs_c_known_encode((gs_char)ccode,
 				       ENCODING_INDEX_STANDARD);
     int code;
-    gs_const_string gstr;
     ref rglyph;
 
     if (glyph == GS_NO_GLYPH)
 	return_error(e_rangecheck);
-    if ((code = gs_c_glyph_name(glyph, &gstr)) < 0 ||
-	(code = name_ref(gstr.data, gstr.size, &rglyph, 0)) < 0
+    if ((code = gs_c_glyph_name(glyph, gstr)) < 0 ||
+	(code = name_ref(gstr->data, gstr->size, &rglyph, 0)) < 0
 	)
 	return code;
     if (pglyph)
