@@ -38,6 +38,18 @@ typedef	int match_score_t[score_limit];
 
 #ifdef DEBUG
 
+const char *score_name[] = {
+    "symbol",
+    "spacing",
+    "pitch",
+    "height",
+    "style",
+    "weight",
+    "typeface",
+    "location",
+    "orientation",
+};
+
 private void
 dprint_cc(const byte *pcc)
 {	dprintf8("cc=%02x %02x %02x %02x %02x %02x %02x %02x", pcc[0],
@@ -126,11 +138,11 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 	     * the meaning of "close".  They are deliberately NOT #defined
 	     * elsewhere because they have no meaning outside this block.  */
 	    if ( pl_font_is_scalable(fp) )
-	      /* scalable; match is effectively exact */
-	      score[score_pitch] = 0x2000000;
+	      /* scalable; match is effectively worst possible */
+	      score[score_pitch] = 0;
 	    else
-	      { int delta =
-		  pl_fp_pitch_per_inch_x100(&fp->params) -
+	      { 
+		  int delta = pl_fp_pitch_per_inch_x100(&fp->params) -
 		    pl_fp_pitch_per_inch_x100(&pfs->params);
 
 		/* If within one unit, call it exact; otherwise give
@@ -143,7 +155,6 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 		  score[score_pitch] = 0x1000000 + delta;
 	      }
 	  }
-
 	/* 4.  Height. */
 	/* Closest match scores highest (no preference for + or -). Otherwise
 	 * similar to pitch, and again, values assigned have no meaning out-
@@ -233,7 +244,7 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 	    dprint_font_t(fp);
 	    dputs("   score:");
 	    for ( i = 0; i < score_limit; ++i )
-	      dprintf1(" %d", score[i]);
+	      dprintf2(" %s: %d", score_name[i], score[i]);
 	    dputs("\n");
 	  }
 #endif
@@ -305,7 +316,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 			  best_map = mapp;
 			  memcpy((void*)best_match, (void*)match,
 			      sizeof(match));
-			  if_debug0('=', "   (***best so far***)\n");
+			  if_debug1('=', "   (***best so far, better %s***)\n", score_name[i]);
 			}
 		      break;
 		    }
