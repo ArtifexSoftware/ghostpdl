@@ -30,6 +30,7 @@
 #include "gdevpsdf.h"
 
 #define PDFW_DELAYED_STREAMS (PS2WRITE & 1) /* Old code = 0, new code = 1 */
+#define CONVERT_CFF_TO_TYPE1 (PS2WRITE & 0) /* Old code = 0, new code = 1 */
 
 #ifndef stream_arcfour_state_DEFINED
 #define stream_arcfour_state_DEFINED

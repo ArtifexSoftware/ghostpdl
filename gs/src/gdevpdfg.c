@@ -329,6 +329,8 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 			    case gs_color_space_index_DeviceN:
 			    case gs_color_space_index_CIEICC:
 				goto write_process_color;
+			    default: 
+				DO_NOTHING;
 			}
 		    }
 		    goto scn;

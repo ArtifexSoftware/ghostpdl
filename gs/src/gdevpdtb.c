@@ -164,9 +164,11 @@ pdf_begin_fontfile(gx_device_pdf *pdev, long FontFile_id,
 				 (pdev->CompressFonts ?
 				  DATA_STREAM_COMPRESS : 0), FontFile_id);
 #if PDFW_DELAYED_STREAMS
-    code = cos_dict_put_c_key_int((cos_dict_t *)pdw->pres->object, "/Length1", len1);
-    if (code < 0)
-	return code;
+    if (len1 >= 0) {
+	code = cos_dict_put_c_key_int((cos_dict_t *)pdw->pres->object, "/Length1", len1);
+	if (code < 0)
+	    return code;
+    }
     if (entries != NULL) {
 	const char *p = strchr(entries + 1, '/');
 
@@ -438,7 +440,14 @@ pdf_write_FontFile_entry(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
 	FontFile_key = "/FontFile2";
 	break;
     default:			/* Type 1/2, CIDFontType 0 */
-	FontFile_key = "/FontFile3";
+	/* Hack : assuming OrderResources == true 
+	   iff we generate a ps2write output. */
+#	if PS2WRITE
+	    if (pdev->OrderResources)
+		FontFile_key = "/FontFile";
+	    else
+#	endif
+	    FontFile_key = "/FontFile3";
     }
 #if !PDFW_DELAYED_STREAMS
     if (pbfont->FontFile_id == 0)
@@ -545,24 +554,68 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	code = 0;
 	break;
 
-    case ft_encrypted:
     case ft_encrypted2:
-	/*
-	 * Since we only support PDF 1.2 and later, always write Type 1
-	 * fonts as Type1C (Type 2).  Acrobat Reader apparently doesn't
-	 * accept CFF fonts with Type 1 CharStrings, so we need to convert
-	 * them.  Also remove lenIV, so Type 2 fonts will compress better.
-	 */
-#define TYPE2_OPTIONS (WRITE_TYPE2_NO_LENIV | WRITE_TYPE2_CHARSTRINGS)
-	code = pdf_begin_fontfile(pdev, FontFile_id, "/Subtype/Type1C", -1L,
-				  &writer);
-	if (code < 0)
-	    return code;
-	code = psf_write_type2_font(writer.binary.strm,
+#	if PS2WRITE && CONVERT_CFF_TO_TYPE1
+	    /* Hack : assuming OrderResources == true 
+	       iff we generate a ps2write output. */
+	    if (pdev->OrderResources) {
+		/* Must convert to Type 1 charstrings. */
+		return_error(gs_error_unregistered); /* Not implemented yet. */
+	    }
+#	endif
+    case ft_encrypted:
+#	if PS2WRITE
+	    /* Hack : assuming OrderResources == true 
+	       iff we generate a ps2write output. */
+	    if (pdev->OrderResources) {
+		int lengths[3];
+
+		code = pdf_begin_fontfile(pdev, FontFile_id, NULL, -1L,
+					  &writer);
+		if (code < 0)
+		    return code;
+		code = psf_write_type1_font(writer.binary.strm,
 				    (gs_font_type1 *)out_font,
-				    TYPE2_OPTIONS |
-			(pdev->CompatibilityLevel < 1.3 ? WRITE_TYPE2_AR3 : 0),
-				    NULL, 0, &fnstr, FontBBox);
+				    WRITE_TYPE1_WITH_LENIV || 
+				    WRITE_TYPE1_EEXEC || 
+				    WRITE_TYPE1_EEXEC_PAD,
+				    NULL, 0, &fnstr, lengths);
+		if (lengths[0] > 0) {
+		    if (code < 0)
+			return code;
+		    code = cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object, 
+				"/Length1", lengths[0]);
+		}
+		if (lengths[1] > 0) {
+		    if (code < 0)
+			return code;
+		    code = cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object, 
+				"/Length2", lengths[1]);
+		    if (code < 0)
+			return code;
+		    code = cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object, 
+				"/Length3", lengths[2]);
+		}
+	    } else
+#	endif
+	{
+	    /*
+	     * Since we only support PDF 1.2 and later, always write Type 1
+	     * fonts as Type1C (Type 2).  Acrobat Reader apparently doesn't
+	     * accept CFF fonts with Type 1 CharStrings, so we need to convert
+	     * them.  Also remove lenIV, so Type 2 fonts will compress better.
+	     */
+#define TYPE2_OPTIONS (WRITE_TYPE2_NO_LENIV | WRITE_TYPE2_CHARSTRINGS)
+	    code = pdf_begin_fontfile(pdev, FontFile_id, "/Subtype/Type1C", -1L,
+				      &writer);
+	    if (code < 0)
+		return code;
+	    code = psf_write_type2_font(writer.binary.strm,
+					(gs_font_type1 *)out_font,
+					TYPE2_OPTIONS |
+			    (pdev->CompatibilityLevel < 1.3 ? WRITE_TYPE2_AR3 : 0),
+					NULL, 0, &fnstr, FontBBox);
+	}
 	goto finish;
 
     case ft_TrueType: {
