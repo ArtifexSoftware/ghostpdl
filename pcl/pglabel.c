@@ -107,7 +107,7 @@ hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr)
 /* Select primary (0) or alternate (1) font. */
 #define hpgl_select_font(pgls, i)\
   do {\
-    if ( (pgls)->g.font]selected != (i) )\
+    if ( (pgls)->g.font_selected != (i) )\
       (pgls)->g.font_selected = (i), (pgls)->g.font = 0;\
   } while (0)
 
@@ -513,9 +513,6 @@ hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
 private bool
 hpgl_use_show(hpgl_state_t *pgls)
 {
-    const pcl_font_selection_t *    pfs =
-	&pgls->g.font_selection[pgls->g.font_selected];
-
     /* Show cannot be used if CF is not default since the character
        may require additional processing by the line drawing code. */
     if ( (pgls->g.character.fill_mode == 0) &&
