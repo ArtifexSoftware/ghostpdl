@@ -152,7 +152,8 @@ converted to bitmaps.
 the color space to be used for device-dependent colors in the
 output. <em>device_color_space</em> may be <b><tt>/DeviceGray</tt></b>,
 <b><tt>/DeviceRGB</tt></b>, or <b><tt>/DeviceCMYK</tt></b>; the default
-value is <b><tt>/DeviceRGB</tt></b>.
+value is <b><tt>/DeviceRGB</tt></b>.  Note that this does not affect images:
+see <a href="#Limitations">Limitations</a> below.
 
 </dl>
 
@@ -225,55 +226,55 @@ containing '=' mean that the value of the parameter is the same as in the
 	<th align=left>prepress
 <tr>	<td colspan=13><hr>
 <tr valign=top><td><b><tt>AlwaysEmbed</tt></b><td><td><td><td>[]<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>AntiAliasColorImages</tt></b><td><td>(0)<td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>AntiAliasGrayImages</tt></b><td><td>(0)<td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>AntiAliasMonoImages</tt></b><td><td>(0)<td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AntiAliasColorImages</tt></b><td><td><a href="#note_0">(0)</a><td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AntiAliasGrayImages</tt></b><td><td><a href="#note_0">(0)</a><td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AntiAliasMonoImages</tt></b><td><td><a href="#note_0">(0)</a><td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>ASCII85EncodePages</tt></b><td><td><td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>AutoFilterColorImages</tt></b><td><td>(1)<td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>AutoFilterGrayImages</tt></b><td><td>(1)<td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>AutoPositionEPSFiles</tt></b><td><td>(0)<td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AutoFilterColorImages</tt></b><td><td><a href="#note_1">(1)</a><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AutoFilterGrayImages</tt></b><td><td><a href="#note_1">(1)</a><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AutoPositionEPSFiles</tt></b><td><td><a href="#note_0">(0)</a><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>AutoRotatePages</tt></b><td><td><td><td>/PageByPage<td><td>/PageByPage<td><td>/All<td><td>/None<td><td>/None
-<tr valign=top><td><b><tt>Binding</tt></b><td><td>(0)<td><td>/Left<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>CalCMYKProfile</tt></b><td><td>(0)<td><td>()<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>CalGrayProfile</tt></b><td><td>(0)<td><td>()<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>CalRGBProfile</tt></b><td><td>(0)<td><td>()<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>CannotEmbedFontPolicy</tt></b><td><td>(0)<td><td>/Warning<td><td>/Warning<td><td>/Warning<td><td>/Warning<td><td>/Error
-<tr valign=top><td><b><tt>ColorACSImageDict</tt></b><td><td><td><td>(note 7)<td><td>(note 10)<td><td>(note 10)<td><td>(note 8)<td><td>(note 9)
-<tr valign=top><td><b><tt>ColorConversionStrategy</tt></b><td><td>(0,6)<td><td>/LeaveColorUnchanged<td><td>/sRGB<td><td>/sRGB<td><td>/UseDeviceIndependentColor<td><td>/LeaveColorUnchanged
+<tr valign=top><td><b><tt>Binding</tt></b><td><td><a href="#note_0">(0)</a><td><td>/Left<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>CalCMYKProfile</tt></b><td><td><a href="#note_0">(0)</a><td><td>()<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>CalGrayProfile</tt></b><td><td><a href="#note_0">(0)</a><td><td>()<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>CalRGBProfile</tt></b><td><td><a href="#note_0">(0)</a><td><td>()<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>CannotEmbedFontPolicy</tt></b><td><td><a href="#note_0">(0)</a><td><td>/Warning<td><td>/Warning<td><td>/Warning<td><td>/Warning<td><td>/Error
+<tr valign=top><td><b><tt>ColorACSImageDict</tt></b><td><td><td><td><a href="#note_7">(note 7)</a><td><td><a href="#note_10">(note 10)</a><td><td><a href="#note_10">(note 10)</a><td><td><a href="#note_8">(note 8)</a><td><td><a href="#note_9">(note 9)</a>
+<tr valign=top><td><b><tt>ColorConversionStrategy</tt></b><td><td><a href="#note_0">(0</a>,<a href="#note_6">6)</a><td><td>/LeaveColorUnchanged<td><td>/sRGB<td><td>/sRGB<td><td>/UseDeviceIndependentColor<td><td>/LeaveColorUnchanged
 <tr valign=top><td><b><tt>ColorImageDepth</tt></b><td><td><td><td>-1<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>ColorImageDict</tt></b><td><td><td><td>(note 7)<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>ColorImageDict</tt></b><td><td><td><td><a href="#note_7">(note 7)</a><td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>ColorImageFilter</tt></b><td><td><td><td>/DCTEncode<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>ColorImageDownsampleThreshold</tt></b><td><td><td><td>1.5<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>ColorImageDownsampleType</tt></b><td><td>(3)<td><td>/Subsample<td><td>/Average<td><td>/Bicubic<td><td>/Bicubic<td><td>/Bicubic
+<tr valign=top><td><b><tt>ColorImageDownsampleType</tt></b><td><td><a href="#note_3">(3)</a><td><td>/Subsample<td><td>/Average<td><td>/Bicubic<td><td>/Bicubic<td><td>/Bicubic
 <tr valign=top><td><b><tt>ColorImageResolution</tt></b><td><td><td><td>72<td><td>72<td><td>150<td><td>300<td><td>300
 <tr valign=top><td><b><tt>CompatibilityLevel</tt></b><td><td><td><td>1.3<td><td>1.2<td><td>1.3<td><td>1.3<td><td>1.3
 <tr valign=top><td><b><tt>CompressPages</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>ConvertCMYKImagesToRGB</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>ConvertImagesToIndexed</tt></b><td><td>(0)<td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>ConvertImagesToIndexed</tt></b><td><td><a href="#note_0">(0)</a><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>CoreDistVersion</tt></b><td><td><td><td>4000<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>CreateJobTicket</tt></b><td><td>(0)<td><td>false<td><td>false<td><td>false<td><td>true<td><td>true
+<tr valign=top><td><b><tt>CreateJobTicket</tt></b><td><td><a href="#note_0">(0)</a><td><td>false<td><td>false<td><td>false<td><td>true<td><td>true
 <tr valign=top><td><b><tt>DefaultRenderingIntent</tt></b><td><td><td><td>/Default<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>DetectBlends</tt></b><td><td>(0)<td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>DoThumbnails</tt></b><td><td>(0)<td><td>false<td><td>false<td><td>false<td><td>false<td><td>true
+<tr valign=top><td><b><tt>DetectBlends</tt></b><td><td><a href="#note_0">(0)</a><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>DoThumbnails</tt></b><td><td><a href="#note_0">(0)</a><td><td>false<td><td>false<td><td>false<td><td>false<td><td>true
 <tr valign=top><td><b><tt>DownsampleColorImages</tt></b><td><td><td><td>false<td><td>true<td><td>true<td><td>false<td><td>false
 <tr valign=top><td><b><tt>DownsampleGrayImages</tt></b><td><td><td><td>false<td><td>true<td><td>true<td><td>false<td><td>false
 <tr valign=top><td><b><tt>DownsampleMonoImages</tt></b><td><td><td><td>false<td><td>true<td><td>true<td><td>false<td><td>false
 <tr valign=top><td><b><tt>EmbedAllFonts</tt></b><td><td><td><td>true<td><td>false<td><td>true<td><td>true<td><td>true
-<tr valign=top><td><b><tt>EmitDSCWarnings</tt></b><td><td>(0)<td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>EmitDSCWarnings</tt></b><td><td><a href="#note_0">(0)</a><td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>EncodeColorImages</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>EncodeGrayImages</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>EncodeMonoImages</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>EndPage</tt></b><td><td>(0)<td><td>-1<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>GrayACSImageDict</tt></b><td><td><td><td>(note 7)<td><td>(note 7)<td><td>(note 10)<td><td>(note 8)<td><td>(note 9)
+<tr valign=top><td><b><tt>EndPage</tt></b><td><td><a href="#note_0">(0)</a><td><td>-1<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>GrayACSImageDict</tt></b><td><td><td><td><a href="#note_7">(note 7)</a><td><td><a href="#note_7">(note 7)</a><td><td><a href="#note_10">(note 10)</a><td><td><a href="#note_8">(note 8)</a><td><td><a href="#note_9">(note 9)</a>
 <tr valign=top><td><b><tt>GrayImageDepth</tt></b><td><td><td><td>-1<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>GrayImageDict</tt></b><td><td><td><td>(note 7)<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>GrayImageDict</tt></b><td><td><td><td><a href="#note_7">(note 7)</a><td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>GrayImageDownsampleThreshold</tt></b><td><td><td><td>1.5<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>GrayImageDownsampleType</tt></b><td><td>(3)<td><td>/Subsample<td><td>/Average<td><td>/Bicubic<td><td>/Bicubic<td><td>/Bicubic
+<tr valign=top><td><b><tt>GrayImageDownsampleType</tt></b><td><td><a href="#note_3">(3)</a><td><td>/Subsample<td><td>/Average<td><td>/Bicubic<td><td>/Bicubic<td><td>/Bicubic
 <tr valign=top><td><b><tt>GrayImageFilter</tt></b><td><td><td><td>/DCTEncode<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>GrayImageResolution</tt></b><td><td><td><td>72<td><td>72<td><td>150<td><td>300<td><td>300
-<tr valign=top><td><b><tt>ImageMemory</tt></b><td><td>(0)<td><td>524288<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>ImageMemory</tt></b><td><td><a href="#note_0">(0)</a><td><td>524288<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>LockDistillerParams</tt></b><td><td><td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>LZWEncodePages</tt></b><td><td>(2)<td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>LZWEncodePages</tt></b><td><td><a href="#note_2">(2)</a><td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>MaxSubsetPct</tt></b><td><td><td><td>100<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>MonoImageDepth</tt></b><td><td><td><td>-1<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>MonoImageDict</tt></b><td><td><td><td><<K -1>><td><td>=<td><td>=<td><td>=<td><td>=
@@ -281,24 +282,24 @@ containing '=' mean that the value of the parameter is the same as in the
 <tr valign=top><td><b><tt>MonoImageDownsampleType</tt></b><td><td><td><td>/Subsample<td><td>/Average<td><td>/Bicubic<td><td>/Bicubic<td><td>/Bicubic
 <tr valign=top><td><b><tt>MonoImageFilter</tt></b><td><td><td><td>/CCITTFaxEncode<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>MonoImageResolution</tt></b><td><td><td><td>300<td><td>300<td><td>300<td><td>1200<td><td>1200
-<tr valign=top><td><b><tt>NeverEmbed</tt></b><td><td><td><td>(note 11)<td><td>(note 11)<td><td>(note 11)<td><td>[]<td><td>[]
+<tr valign=top><td><b><tt>NeverEmbed</tt></b><td><td><td><td><a href="#note_11">(note 11)</a><td><td><a href="#note_11">(note 11)</a><td><td><a href="#note_11">(note 11)</a><td><td>[]<td><td>[]
 <tr valign=top><td><b><tt>OffOptimizations</tt></b><td><td><td><td>0<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>OPM</tt></b><td><td><td><td>1<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>Optimize</tt></b><td><td>(0,5)<td><td>false<td><td>true<td><td>true<td><td>true<td><td>true
+<tr valign=top><td><b><tt>Optimize</tt></b><td><td><a href="#note_0">(0</a>,<a href="#note_5">5)</a><td><td>false<td><td>true<td><td>true<td><td>true<td><td>true
 <tr valign=top><td><b><tt>ParseDSCComments</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>ParseDSCCommentsForDocInfo</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>PreserveCopyPage</tt></b><td><td>(0)<td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>PreserveEPSInfo</tt></b><td><td>(0)<td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>PreserveCopyPage</tt></b><td><td><a href="#note_0">(0)</a><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>PreserveEPSInfo</tt></b><td><td><a href="#note_0">(0)</a><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>PreserveHalftoneInfo</tt></b><td><td><td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>PreserveOPIComments</tt></b><td><td>(0)<td><td>false<td><td>false<td><td>false<td><td>true<td><td>true
+<tr valign=top><td><b><tt>PreserveOPIComments</tt></b><td><td><a href="#note_0">(0)</a><td><td>false<td><td>false<td><td>false<td><td>true<td><td>true
 <tr valign=top><td><b><tt>PreserveOverprintSettings</tt></b><td><td><td><td>false<td><td>false<td><td>false<td><td>true<td><td>true
-<tr valign=top><td><b><tt>sRGBProfile</tt></b><td><td>(0)<td><td>()<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>StartPage</tt></b><td><td>(0)<td><td>1<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>sRGBProfile</tt></b><td><td><a href="#note_0">(0)</a><td><td>()<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>StartPage</tt></b><td><td><a href="#note_0">(0)</a><td><td>1<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>SubsetFonts</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>TransferFunctionInfo</tt></b><td><td>(4)<td><td>/Preserve<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>TransferFunctionInfo</tt></b><td><td><a href="#note_4">(4)</a><td><td>/Preserve<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>UCRandBGInfo</tt></b><td><td><td><td>/Remove<td><td>/Remove<td><td>/Remove<td><td>/Preserve<td><td>/Preserve
 <tr valign=top><td><b><tt>UseFlateCompression</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><b><tt>UsePrologue</tt></b><td><td>(0)<td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>UsePrologue</tt></b><td><td><a href="#note_0">(0)</a><td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
 </table></blockquote>
 
 <p>
