@@ -50,7 +50,7 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
     gs_point total_width;
     const gs_matrix *psmat = 0;
     gs_font *prev_font = 0;
-    gs_char chr, char_code, space_char = ~0;
+    gs_char chr, char_code = 0x0badf00d, space_char = ~0;
     int buf_index = 0;
     bool return_width = (penum->text.operation & TEXT_RETURN_WIDTH);
 
@@ -308,16 +308,18 @@ scan_cmap_text(pdf_text_enum_t *pte)
     int wmode = font->WMode, code, rcode = 0;
     pdf_font_resource_t *pdsubf0 = NULL;
     gs_font *subfont0 = NULL;
-    uint index = scan.index, xy_index = scan.xy_index, font_index0;
+    uint index = scan.index, xy_index = scan.xy_index;
+    uint font_index0 = 0x7badf00d;
     bool done = false;
 
     pte->returned.total_width.x = pte->returned.total_width.y = 0;;
     for (;;) {
-	uint break_index, break_xy_index, font_index;
+	uint break_index, break_xy_index;
+	uint font_index = 0x7badf00d;
 	gs_const_string str;
 	pdf_text_process_state_t text_state;
 	pdf_font_resource_t *pdsubf;
-	gs_font *subfont;
+	gs_font *subfont = NULL;
 	gs_point wxy;
 	bool font_change;
 

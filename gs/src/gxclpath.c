@@ -1044,23 +1044,23 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
      * start_side != 0):
      */
     gs_fixed_point start;
-    int start_side;
+    int start_side = 0x7badf00d; /* Initialize against indeterminizm. */
 
     /*
      * Whether any lines or curves were skipped immediately
      * following the moveto:
      */
-    bool start_skip;
+    bool start_skip = 0x7badf00d; /* Initialize against indeterminizm. */
 
     /* The side of the last point: */
-    int side;
+    int side = 0x7badf00d; /* Initialize against indeterminizm. */
 
     /* The last point with side != 0: */
     gs_fixed_point out;
 
     /* If the last out-going segment was a lineto, */
     /* its notes: */
-    segment_notes out_notes;
+    segment_notes out_notes = 0x7badf00d; /* Initialize against indeterminizm. */
 
     /*
      * The following track the emitted segments:

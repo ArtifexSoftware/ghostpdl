@@ -1072,7 +1072,7 @@ large_freelist_alloc(gs_ref_memory_t *mem, uint size)
     uint aligned_max_size =
 	aligned_min_size + obj_align_round(aligned_min_size / 8);
     obj_header_t *best_fit = 0;
-    obj_header_t **best_fit_prev;
+    obj_header_t **best_fit_prev = NULL; /* Initialize against indeteminizm. */
     uint best_fit_size = max_uint;
     obj_header_t *pfree;
     obj_header_t **ppfprev = &mem->freelists[LARGE_FREELIST_INDEX];

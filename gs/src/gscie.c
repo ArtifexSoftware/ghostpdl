@@ -654,17 +654,14 @@ cie_cache3_set_interpolation(gx_cie_vector_cache3_t * pvc)
 
     /* Iterate over output components. */
     for (j = 0; j < 3; ++j) {
-	cie_cached_value rmin, rmax;
-
 	/* Iterate over sub-caches. */
-	for (k = 0; k < 3; ++k) {
-	    cie_interpolation_range_t *p =
-		&pvc->caches[k].vecs.params.interpolation_ranges[j];
+	cie_interpolation_range_t *p = 
+		&pvc->caches[0].vecs.params.interpolation_ranges[j];
+        cie_cached_value rmin = p->rmin, rmax = p->rmax;
 
-	    if (k == 0)
-		rmin = p->rmin, rmax = p->rmax;
-	    else
-		rmin = min(rmin, p->rmin), rmax = max(rmax, p->rmax);
+	for (k = 1; k < 3; ++k) {
+	    p = &pvc->caches[k].vecs.params.interpolation_ranges[j];
+	    rmin = min(rmin, p->rmin), rmax = max(rmax, p->rmax);
 	}
 	pvc->interpolation_ranges[j].rmin = rmin;
 	pvc->interpolation_ranges[j].rmax = rmax;

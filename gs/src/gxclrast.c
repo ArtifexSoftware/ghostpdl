@@ -363,8 +363,10 @@ in:				/* Initialize for a new page. */
     }
     while (code >= 0) {
 	int op;
-	int compress, depth, raster;
-	byte *source;
+	int compress;
+	int depth = 0x7badf00d; /* Initialize against indeterminizm. */
+	int raster = 0x7badf00d; /* Initialize against indeterminizm. */
+	byte *source = NULL;  /* Initialize against indeterminizm. */
 	gx_color_index colors[2];
 	gx_color_index *pcolor;
 	gs_logical_operation_t log_op;
@@ -1059,7 +1061,7 @@ ibegin:			if_debug0('L', "\n");
 			{
 			    uint flags;
 			    int plane;
-			    uint raster;
+			    uint raster1 = 0xbaadf00d; /* Initialize against indeterminizm. */
 
 			    cmd_getw(flags, cbp);
 			    for (plane = 0;
@@ -1071,10 +1073,10 @@ ibegin:			if_debug0('L', "\n");
 					2 * cmd_max_intsize(sizeof(uint)))
 					cbp = top_up_cbuf(&cbuf, cbp);
 				    cmd_getw(planes[plane].raster, cbp);
-				    if ((raster = planes[plane].raster) != 0)
+				    if ((raster1 = planes[plane].raster) != 0)
 					cmd_getw(data_x, cbp);
 				} else {
-				    planes[plane].raster = raster;
+				    planes[plane].raster = raster1;
 				}
 				planes[plane].data_x = data_x;
 			    }

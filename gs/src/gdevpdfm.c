@@ -1268,6 +1268,8 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	uint vsize;		/* alt_pair[1].size */
 	byte *str = 0;
 
+	vsize = 0x0badf00d; /* Quiet compiler. */
+
 	if (pdf_key_eq(pairs + i, "/Producer")) {
 	    /*
 	     * If the string "Distiller" appears anywhere in the Producer,

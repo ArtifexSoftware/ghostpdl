@@ -91,8 +91,8 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
     const gs_imager_state *pis = penum->pis;
     gs_logical_operation_t lop = penum->log_op;
     const bool masked = penum->masked;
-    const gs_color_space *pcs;	/* only set for non-masks */
-    cs_proc_remap_color((*remap_color));	/* ditto */
+    const gs_color_space *pcs = NULL;	/* only set for non-masks */
+    cs_proc_remap_color((*remap_color)) = NULL;	/* ditto */
     gs_client_color cc;
     gx_device_color *pdevc = &penum->icolor1;	/* color for masking */
     bool tiles_fit;

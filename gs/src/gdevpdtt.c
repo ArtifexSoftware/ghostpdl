@@ -247,7 +247,7 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_imager_state * pis,
 	    const gx_device_color * pdcolor, const gx_clip_path * pcpath,
 	    const gs_text_params_t *text)
 {
-    bool new_clip;
+    bool new_clip = false; /* Quiet compiler. */
     int code;
 
     if (!(text->operation & TEXT_DO_NONE)) {

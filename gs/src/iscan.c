@@ -443,6 +443,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 #define name_type sstate.s_ss.s_name.s_name_type
 #define try_number sstate.s_ss.s_name.s_try_number
 
+    sptr = endptr = NULL; /* Quiet compiler */
     if (pstate->s_pstack != 0) {
 	if_not_spush1()
 	    return retcode;

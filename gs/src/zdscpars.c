@@ -405,7 +405,7 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
     const cmdlist_t *pCmdList = DSCcmdlist;
     const char * const *pBadList = BadCmdlist;
     ref * pvalue;
-    CDSC * dsc_data;
+    CDSC * dsc_data = NULL;
     dict_param_list list;
 
     /*

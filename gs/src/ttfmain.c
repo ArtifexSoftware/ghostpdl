@@ -240,14 +240,17 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
     this->design_grid = design_grid;
     r->Read(r, sVersion, 4);
     if(!memcmp(sVersion, "ttcf", 4)) {
-	unsigned int nFonts, nPos;
+	unsigned int nFonts;
+	unsigned int nPos = 0xbaadf00d; /* Quiet compiler. */
 
 	r->Read(r, sVersion, 4);
 	if(memcmp(sVersion, sVersion0, 4))
 	    return fUnimplemented;
 	nFonts = ttfReader__UInt(r);
-	if(nTTC > nFonts)
-	    nTTC = 0;
+	if (nFonts == 0)
+	    return fBadFontData;
+	if(nTTC >= nFonts)
+	    return fTableNotFound;
 	for(i = 0; i <= nTTC; i++)
 	    nPos = ttfReader__UInt(r);
 	r->Seek(r, nPos);

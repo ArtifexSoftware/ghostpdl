@@ -571,7 +571,8 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
     const byte *chars = fn->chars;
     uint size = fn->size;
     int index = pdf_find_standard_font_name(chars, size);
-    bool embed_as_standard_called = false, do_embed_as_standard;
+    bool embed_as_standard_called = false;
+    bool do_embed_as_standard = false; /* Quiet compiler. */
 
     /*
      * The behavior of Acrobat Distiller changed between 3.0 (PDF 1.2),

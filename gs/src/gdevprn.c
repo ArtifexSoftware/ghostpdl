@@ -220,9 +220,10 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
     gx_device_memory * const pmemdev = (gx_device_memory *)pdev;
     byte *the_memory = 0;
     gdev_prn_space_params save_params;
-    int save_width, save_height;
-    bool is_command_list;
-    bool save_is_command_list;
+    int save_width = 0x0badf00d; /* Quiet compiler */
+    int save_height = 0x0badf00d; /* Quiet compiler */
+    bool is_command_list = false; /* Quiet compiler */
+    bool save_is_command_list = false; /* Quiet compiler */
     int ecode = 0;
     int pass;
     gs_memory_t *buffer_memory =

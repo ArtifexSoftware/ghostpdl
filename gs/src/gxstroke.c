@@ -338,7 +338,8 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	 pgs_lp->join == gs_join_none ? gs_join_bevel : pgs_lp->join);
     float line_width = pgs_lp->half_width;	/* (*half* the line width) */
     bool always_thin;
-    double line_width_and_scale, device_line_width_scale;
+    double line_width_and_scale;
+    double device_line_width_scale = 0; /* Quiet compiler. */
     double device_dot_length = pgs_lp->dot_length * fixed_1;
     const subpath *psub;
 

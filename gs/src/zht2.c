@@ -158,9 +158,12 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 				 ".sethalftone5");
     rc_alloc_struct_0(pdht, gx_device_halftone, &st_device_halftone,
 		      imemory, pdht = 0, ".sethalftone5");
-    if (pht == 0 || phtc == 0 || pdht == 0)
+    if (pht == 0 || phtc == 0 || pdht == 0) {
+	j = 0; /* Quiet the compiler: 
+	          gs_note_error isn't necessarily identity, 
+		  so j could be left ununitialized. */
 	code = gs_note_error(e_VMerror);
-    else {
+    } else {
         dict_enum = dict_first(op);
 	for (j = 0, pc = phtc; ;) {
 	    int type;

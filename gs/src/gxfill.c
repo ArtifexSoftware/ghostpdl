@@ -719,7 +719,8 @@ add_y_list(gx_path * ppath, line_list *ll, fixed adjust_below, fixed adjust_abov
 	subpath *psub = (subpath *) pseg;
 	segment *plast = psub->last;
 	int dir = 2;		/* hack to skip first segment */
-	int first_dir, prev_dir;
+	int first_dir = 2; /* Quiet compiler. */
+	int prev_dir;
 	segment *prev;
 
 	if (plast->type != s_line_close) {
@@ -1527,7 +1528,8 @@ private void
 intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 {
     fixed x = min_fixed, y1 = *y_top;
-    active_line *alp, *stopx = NULL, *endp;
+    active_line *alp, *stopx = NULL;
+    active_line *endp = NULL;
 
     /* don't bother if no pixels with no pseudo_rasterization */
 #if CURVED_TRAPEZOID_FILL
@@ -1710,9 +1712,9 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		|| all_bands
 #	    endif
 	    ) {
-	    fixed xlbot, xltop; /* as of last "outside" line */
+	    fixed xlbot = 0xbaadf00d, xltop = 0xbaadf00d; /* as of last "outside" line */
 	    int inside = 0;
-	    active_line *flp;
+	    active_line *flp = NULL;
 
 	    INCR(band);
 
@@ -1774,7 +1776,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	    /* No trapezoids generation needed. */
 	    if (pseudo_rasterization) {
 		/* Process dropouts near trapezoids. */
-		active_line *flp;
+		active_line *flp = NULL;
 		int inside = 0;
 
 		for (alp = ll->x_list; alp != 0; alp = alp->next) {
@@ -2070,7 +2072,7 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 {
     int rule = params->rule;
     bool fill_direct = color_writes_pure(pdevc, lop);
-    dev_proc_fill_rectangle((*fill_rect));
+    dev_proc_fill_rectangle((*fill_rect)) = NULL;
     active_line *yll = ll->y_list;
     fixed y_limit = pbox->q.y;
     /*

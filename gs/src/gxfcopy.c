@@ -698,7 +698,7 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
      * We must request width explicitely because Type 42 stores widths 
      * separately from outline data. We could skip it for Type 1, which doesn't.
      */
-    int i, WMode = ofont->WMode, code;
+    int i, WMode = ofont->WMode;
     int members = (GLYPH_INFO_WIDTH0 << WMode) | GLYPH_INFO_OUTLINE_WIDTHS | GLYPH_INFO_NUM_PIECES;
     gs_matrix mat;
 
@@ -713,7 +713,7 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 	gs_glyph_info_t info0, info1;
 	int code0 = ofont->procs.glyph_info((gs_font *)ofont, glyph, &mat, members, &info0);
 	int code1 = cfont->procs.glyph_info((gs_font *)cfont, glyph, &mat, members, &info1);
-	int code2;
+	int code2, code;
 
 	if (code0 == gs_error_undefined || code1 == gs_error_undefined)
 	    continue;
@@ -747,7 +747,10 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 		code2 = memcmp(info0.pieces, info1.pieces, info0.num_pieces * sizeof(*pieces));
 		if (!code2)
 		    code = compare_glyphs(cfont, ofont, pieces, info0.num_pieces, level + 1);
-	    }
+		else
+		    code = 0; /* Quiet compiler. */
+	    } else
+		code2 = code = 0;
 	    if (pieces != pieces0)
 		gs_free_object(cfont->memory, pieces, "compare_glyphs");
 	    if (code0 == gs_error_undefined || code1 == gs_error_undefined)

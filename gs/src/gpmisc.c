@@ -333,7 +333,8 @@ gp_file_name_prefix(const char *fname, uint flen,
 		bool (*test)(const char *fname, uint flen))
 {
     uint plen = gp_file_name_root(fname, flen), slen;
-    const char *ip, *ipe, *item;
+    const char *ip, *ipe; 
+    const char *item = fname; /* plen == flen could cause an indeterminizm. */
 
     if (plen > 0)
 	return 0;

@@ -741,7 +741,8 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 	gs_glyph notdef = gs_no_glyph;
 	gs_glyph glyph;
 	int fixed_width = 0;
-	int index, code;
+	int index;
+	int code = 0; /* Quiet compiler. */
 
 	for (index = 0;
 	     fixed_width >= 0 &&

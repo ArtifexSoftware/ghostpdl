@@ -528,8 +528,8 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
     byte *mask_ptr = NULL;
     int tos_planestride = tos->planestride;
     int nos_planestride = nos->planestride;
-    int mask_planestride;
-    byte mask_bg_alpha;
+    int mask_planestride = 0x0badf00d; /* Quiet compiler. */
+    byte mask_bg_alpha = 0; /* Quiet compiler. */
     int width = x1 - x0;
     int x, y;
     int i;
@@ -543,7 +543,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
 	(tos->has_shape ? tos_planestride : 0);
     int nos_shape_offset = n_chan * nos_planestride;
     bool nos_has_shape = nos->has_shape;
-    byte *mask_tr_fn;
+    byte *mask_tr_fn = NULL; /* Quiet compiler. */
 
     if (nos == NULL)
 	return_error(gs_error_rangecheck);
@@ -1242,7 +1242,7 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     bool has_shape = buf->has_shape;
     int shape_off = buf->n_chan * planestride;
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
-    byte shape;
+    byte shape = 0; /* Quiet compiler. */
 
     src[0] = color >> 16;
     src[1] = (color >> 8) & 0xff;

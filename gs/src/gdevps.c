@@ -1401,7 +1401,7 @@ psw_begin_image(gx_device * dev,
     gdev_vector_image_enum_t *pie;
     const gs_color_space *pcs = pim->ColorSpace;
     const gs_color_space *pbcs = pcs;
-    const char *base_name;
+    const char *base_name = NULL;
     gs_color_space_index index;
     int num_components;
     bool binary = pdev->binary_ok;

@@ -416,7 +416,8 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
     FILE * spot_file[GX_DEVICE_COLOR_MAX_COMPONENTS] = {0};
     int i, code = 0;
     int first_bit;
-    int pcmlinelength, linelength[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int pcmlinelength = 0; /* Initialize against indeterminizm in case of pdev->height == 0. */
+    int linelength[GX_DEVICE_COLOR_MAX_COMPONENTS];
     byte *data;
     char spotname[gp_file_name_sizeof];
 
@@ -1001,7 +1002,7 @@ static const byte pcx_ega_palette[16 * 3] =
 private bool
 setup_pcx_header(gx_device_printer * pdev, pcx_header * phdr, int num_planes, int bits_per_plane)
 {
-    bool planar;
+    bool planar = true; /* Invalid cases could cause an indeterminizm. */
  
     *phdr = pcx_header_prototype;
     phdr->bpp = bits_per_plane;

@@ -731,9 +731,9 @@ plane_strip_copy_rop(gx_device *dev,
     long sbuf[COPY_ROP_SOURCE_BUF_SIZE / sizeof(long)];
     long tbuf[COPY_ROP_TEXTURE_BUF_SIZE / sizeof(long)];
     const byte *plane_source;
-    uint plane_raster;
+    uint plane_raster = 0xbaadf00d; /* Initialize against indeterminizm. */
     gx_strip_bitmap plane_texture;
-    const gx_strip_bitmap *plane_textures;
+    const gx_strip_bitmap *plane_textures = NULL;
     int code;
 
     /* We should do better than this on transparency.... */

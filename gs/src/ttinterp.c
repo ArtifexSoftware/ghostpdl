@@ -5080,7 +5080,7 @@ static int nInstrCount=0;
     Int          A;
     PDefRecord   WITH;
     PCallRecord  WITH1;
-    bool bFirst = true;
+    bool bFirst;
 #   ifdef DEBUG
 	ttfMemory *mem = exc->current_face->font->tti->ttf_memory;
 	F26Dot6 *save_ox, *save_oy, *save_cx, *save_cy;
@@ -5122,6 +5122,7 @@ static int nInstrCount=0;
 	CUR.error = Result;
 	goto _LExit;
     }
+    bFirst = true;
 
     do
     {
