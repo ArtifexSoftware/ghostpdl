@@ -625,7 +625,11 @@ end readonly def                % .loadttfontdict
     tables exch 16 getinterval
     TTFDEBUG { dup .printtab } if
     dup 0 4 getinterval readtables_ 1 index known {
-      tabdict exch 2 index put
+      1 index 12 4 getinterval (\0\0\0\0) eq {
+        pop pop    % Ignore zero-length table
+      } {
+        tabdict exch 2 index put
+      } ifelse
     } {
       pop pop
     } ifelse
