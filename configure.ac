@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([jbig2dec.c])
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 
-AC_REVISION([$Revision: 1.15 $])
+AC_REVISION([$Revision: 1.16 $])
 
 # Checks for programs.
 AC_PROG_CC
@@ -28,9 +28,9 @@ if test "x$ac_cv_want_libpng" != "xno"; then
     CFLAGS="$CFLAGS -I$ac_cv_want_libpng/include"
     LDFLAGS="$LDFLAGS -L$ac_cv_want_libpng/lib"
   fi
+  dnl libpng requires pow() which may be in libm
+  AC_SEARCH_LIBS([pow], [m])
   AC_CHECK_LIB([png], [png_check_sig], [
-    dnl libpng requires pow() which may be in libm
-    AC_SEARCH_LIBS([pow], [m])
     AC_CHECK_LIB([z], [deflate], [
       AC_DEFINE(HAVE_LIBPNG, 1, [Define if libpng is available (-lpng)])
       LIBS="$LIBS -lpng -lz"
