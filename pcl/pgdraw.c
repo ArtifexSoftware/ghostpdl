@@ -35,24 +35,27 @@ extern  int     abs( int );
  int
 hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
 {
-	if ( (pgls->g.picture_frame_height == 0) ||
-	     (pgls->g.picture_frame_width == 0) ||
-	     (pgls->g.plot_width == 0) ||
-	     (pgls->g.plot_height == 0) )
-	  return 1;
-	{
-	  hpgl_real_t vert_scale = (pgls->g.plot_size_vertical_specified) ?
-	    ((hpgl_real_t)pgls->g.picture_frame_height /
-	     (hpgl_real_t)pgls->g.plot_height) :
-	    1.0;
-	  hpgl_real_t horz_scale = (pgls->g.plot_size_horizontal_specified) ?
-	    ((hpgl_real_t)pgls->g.picture_frame_width /
-	     (hpgl_real_t)pgls->g.plot_width) :
-	    1.0;
-
-	  hpgl_call(gs_scale(pgls->pgs, horz_scale, vert_scale));
-	}
+    if ( (pgls->g.picture_frame_height == 0) ||
+	 (pgls->g.picture_frame_width == 0) ||
+	 (pgls->g.plot_width == 0) ||
+	 (pgls->g.plot_height == 0) ) {
+	dprintf("bad picture frame coordinates\n");
 	return 0;
+    } else {
+	hpgl_real_t vert_scale = (pgls->g.plot_size_vertical_specified) ?
+ 	    ((hpgl_real_t)pgls->g.picture_frame_height /
+ 	     (hpgl_real_t)pgls->g.plot_height) :
+ 	    1.0;
+	hpgl_real_t horz_scale = (pgls->g.plot_size_horizontal_specified) ?
+ 	    ((hpgl_real_t)pgls->g.picture_frame_width /
+ 	     (hpgl_real_t)pgls->g.plot_width) :
+ 	    1.0;
+	hpgl_call(gs_scale(pgls->pgs, horz_scale, vert_scale));
+	dprintf1("horizontal scaling -> %f\n", horz_scale);
+	dprintf1("vertical scaling scaling -> %f\n", vert_scale);
+    }
+    return 0;
+
 }
 
 /* ctm to translate from pcl space to plu space */
@@ -1245,7 +1248,7 @@ hpgl_draw_current_path(
                 if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), 0)) < 0)
                     return code;
 		hpgl_call(hpgl_set_plu_ctm(pgls));
-		gs_setlinewidth(pgs, 0.1);
+		gs_setlinewidth(pgs, 0.1); /* NB WRONG */
 		hpgl_call(gs_stroke(pgs));
 		hpgl_call(hpgl_grestore(pgls));
 		/* the fill has already been done if the fill type is
@@ -1285,12 +1288,16 @@ hpgl_draw_current_path(
     case hpgl_rm_vector_fill:
 	/*
          * we reset the ctm before stroking to preserve the line width 
-         * information
+         * information, then restore the ctm.
          */
-        hpgl_call(hpgl_set_plu_ctm(pgls));
-        hpgl_call(gs_stroke(pgls->pgs));
-        break;
-
+	{
+	    gs_matrix save_ctm;
+	    hpgl_call(gs_currentmatrix(pgs, &save_ctm));
+	    hpgl_call(hpgl_set_plu_ctm(pgls));
+	    hpgl_call(gs_stroke(pgls->pgs));
+	    gs_setmatrix(pgs, &save_ctm);
+	    break;
+	}
     default :
         dprintf("unknown render mode\n");
     }
