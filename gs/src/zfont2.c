@@ -50,14 +50,16 @@ type2_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
 {
     int code;
     float dwx, nwx;
+    ref *temp;
 
     pdata1->interpret = gs_type2_interpret;
     pdata1->lenIV = DEFAULT_LENIV_2;
     pdata1->subroutineNumberBias = subr_bias(pfr->Subrs);
     /* Get information specific to Type 2 fonts. */
-    if (dict_find_string(pfr->Private, "GlobalSubrs", &pfr->GlobalSubrs) > 0) {
-	if (!r_is_array(pfr->GlobalSubrs))
+    if (dict_find_string(pfr->Private, "GlobalSubrs", &temp) > 0) {
+	if (!r_is_array(temp))
 	    return_error(e_typecheck);
+        pfr->GlobalSubrs = temp;
     }
     pdata1->gsubrNumberBias = subr_bias(pfr->GlobalSubrs);
     if ((code = dict_uint_param(pfr->Private, "gsubrNumberBias",
