@@ -225,7 +225,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   Jbig2ArithIntCtx *IADH = NULL;
   Jbig2ArithIntCtx *IADW = NULL;
   Jbig2ArithIntCtx *IAEX = NULL;
-  int code;
+  int code = 0;
 
   /* 6.5.5 (3) */
   HCHEIGHT = 0;
