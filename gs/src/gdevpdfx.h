@@ -164,10 +164,6 @@ typedef enum {
 
 /* ------ Fonts ------ */
 
-/* Define the range of synthesized space characters. */
-#define X_SPACE_MIN 24
-#define X_SPACE_MAX 150
-
 /* Define abstract types. */
 typedef struct pdf_char_proc_s pdf_char_proc_t;	/* gdevpdff.h */
 typedef struct pdf_font_s pdf_font_t;  /* gdevpdff.h */

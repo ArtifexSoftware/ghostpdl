@@ -861,90 +861,11 @@ $(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
 # we give them their own module name and (for the new code) file name prefix.
 # However, logically they are part of pdfwrite and cannot be used separately.
 
-#### Select old vs. new text code
-# Define which pdfwrite text code to link in, pdftext (old) or pdxtext (new).
-PDTEXT=pdxtext
+$(DD)pdtext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(DD)pdxtext.dev
+	$(SETMOD) $(DD)pdtext -include $(DD)pdxtext
 
-# In order to prevent code from decaying, we would like the makefile to
-# compile both old and new code, but only link in the one we are using.
-# However, the 'project' model of Microsoft Visual C++ cannot handle this.
-# Therefore, we define which code to compile and which code to link
-# separately.
-PDTEXT_COMPILE_SINGLE=$(DD)$(PDTEXT).dev
-PDTEXT_COMPILE_BOTH=$(DD)pdftext.dev $(DD)pdxtext.dev
-
-# Define which code to compile, PDTEXT_COMPILE_BOTH or PDTEXT_COMPILE_SINGLE.
-PDTEXT_COMPILE=$(PDTEXT_COMPILE_BOTH)
-
-$(DD)pdtext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(PDTEXT_COMPILE)
-	$(SETMOD) $(DD)pdtext -include $(DD)$(PDTEXT)
-
-#### Old text code
-# The next section should be removed when the new code is fully stable.
-# The following files should also be deleted from the fileset:
-#   gdevpdf[ft].h
-#   gdevpdf[efstw].c
-
-gdevpdff_h=$(GLSRC)gdevpdff.h
-gdevpdft_h=$(GLSRC)gdevpdft.h
-
-pdftext1_=$(GLOBJ)gdevpdfe.$(OBJ) $(GLOBJ)gdevpdff.$(OBJ)
-pdftext2_=$(GLOBJ)gdevpdfs.$(OBJ) $(GLOBJ)gdevpdft.$(OBJ) $(GLOBJ)gdevpdfw.$(OBJ)
-pdftext10_=$(GLOBJ)gsfont0c.$(OBJ)
-pdftext_=$(pdftext1_) $(pdftext2_)\
- $(pdftext10_)
-$(DD)pdftext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(pdftext_)\
- $(GLD)psf.dev
-	$(SETMOD) $(DD)pdftext $(pdftext1_)
-	$(ADDMOD) $(DD)pdftext $(pdftext2_)
-	$(ADDMOD) $(DD)pdftext $(pdftext10_)
-	$(ADDMOD) $(DD)pdftext -include $(GLD)psf
-
-$(GLOBJ)gdevpdfe.$(OBJ) : $(GLSRC)gdevpdfe.c\
- $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdff_h) $(gdevpdfx_h) $(gdevpsf_h)\
- $(gserrors_h) $(gsmatrix_h)\
- $(gxfcid_h) $(gxfont_h) $(gxfont0_h)\
- $(scommon_h)
-	$(GLCC) $(GLO_)gdevpdfe.$(OBJ) $(C_) $(GLSRC)gdevpdfe.c
-
-$(GLOBJ)gdevpdff.$(OBJ) : $(GLSRC)gdevpdff.c\
- $(ctype__h) $(math__h) $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdff_h) $(gdevpdfo_h) $(gdevpdft_h) $(gdevpdfx_h) $(gdevpsf_h)\
- $(gserrors_h) $(gsmalloc_h) $(gsmatrix_h) $(gspath_h) $(gsutil_h)\
- $(gxfcache_h) $(gxfcid_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxfont42_h)\
- $(gxpath_h)\
- $(scommon_h)
-	$(GLCC) $(GLO_)gdevpdff.$(OBJ) $(C_) $(GLSRC)gdevpdff.c
-
-$(GLOBJ)gdevpdfs.$(OBJ) : $(GLSRC)gdevpdfs.c\
- $(math__h) $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdft_h) $(gdevpdfx_h) $(gdevpsf_h)\
- $(gscencs_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
- $(gxfcache_h) $(gxfcid_h) $(gxfcmap_h) $(gxfixed_h) $(gxfont_h)\
- $(gxfont0_h) $(gxfont0c_h) $(gxfont1_h) $(gxfont42_h) $(gxpath_h)\
- $(scommon_h)
-	$(GLCC) $(GLO_)gdevpdfs.$(OBJ) $(C_) $(GLSRC)gdevpdfs.c
-
-$(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c\
- $(math__h) $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdft_h) $(gdevpdfx_h)\
- $(gserrors_h) $(gxpath_h)\
- $(scommon_h)
-	$(GLCC) $(GLO_)gdevpdft.$(OBJ) $(C_) $(GLSRC)gdevpdft.c
-
-$(GLOBJ)gdevpdfw.$(OBJ) : $(GLSRC)gdevpdfw.c\
- $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdff_h) $(gdevpdft_h) $(gdevpdfx_h) $(gdevpsf_h)\
- $(gsalloc_h) $(gsbittab_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
- $(gxfcid_h) $(gxfcmap_h) $(gxfont_h) $(gxfont0_h)\
- $(scommon_h)
-	$(GLCC) $(GLO_)gdevpdfw.$(OBJ) $(C_) $(GLSRC)gdevpdfw.c
-
-#### New text code
 # For a code roadmap, see gdevpdtx.h.
 
-# gdevpdt_h will eventually be moved up and #included in gdevpdfx.h
 gdevpdt_h=$(GLSRC)gdevpdt.h
 gdevpdtx_h=$(GLSRC)gdevpdtx.h $(gdevpdt_h)
 gdevpdtb_h=$(GLSRC)gdevpdtb.h $(gdevpdtx_h)
@@ -967,7 +888,7 @@ pdxtext_uvw=$(GLOBJ)gdevpdtw.$(OBJ)
 pdxtext_xyz=
 pdxtext_=$(pdxtext_ab) $(pdxtext_cde) $(pdxtext_fgh) $(pdxtext_ijk)\
  $(pdxtext_lmn) $(pdxtext_opq) $(pdxtext_rst) $(pdxtext_uvw) $(pdxtext_xyz)\
- $(pdftext10_)
+ $(pdftext10_) $(GLOBJ)gsfont0c.$(OBJ)
 $(DD)pdxtext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(pdxtext_)\
  $(GLD)fcopy.dev $(GLD)psf.dev
 	$(SETMOD) $(DD)pdxtext $(pdxtext_ab)
@@ -980,6 +901,7 @@ $(DD)pdxtext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(pdxtext_)\
 	$(ADDMOD) $(DD)pdxtext $(pdxtext_uvw)
 	$(ADDMOD) $(DD)pdxtext $(pdxtext_xyz)
 	$(ADDMOD) $(DD)pdxtext $(pdftext10_)
+	$(ADDMOD) $(DD)pdxtext $(GLOBJ)gsfont0c.$(OBJ)
 	$(ADDMOD) $(DD)pdxtext -include $(GLD)fcopy $(GLD)psf
 
 $(GLOBJ)gdevpdt.$(OBJ) : $(GLSRC)gdevpdt.c $(gx_h) $(memory__h)\
