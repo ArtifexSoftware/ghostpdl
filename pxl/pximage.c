@@ -9,6 +9,7 @@
 #include "pxerrors.h"
 #include "pxoper.h"
 #include "pxstate.h"
+#include "gdebug.h"
 #include "gsrop.h"
 #include "gsrefct.h"
 #include "gsstruct.h"
@@ -23,6 +24,8 @@
 #include "gxbitmap.h"
 #include "gxcspace.h"
 #include "gxdevice.h"		/* for gxpcolor.h */
+#include "gxcolor2.h"
+#include "gxdcolor.h"
 #include "gxpcolor.h"
 #include "scommon.h"
 #include "strimpl.h"
