@@ -755,7 +755,7 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)szlibe $(GLD)psdf $(GLD)psf
 
 gdevpdff_h=$(GLSRC)gdevpdff.h
-gdevpdfo_h=$(GLSRC)gdevpdfo.h
+gdevpdfo_h=$(GLSRC)gdevpdfo.h $(gsparam_h)
 gdevpdfx_h=$(GLSRC)gdevpdfx.h\
  $(gsparam_h) $(gsuid_h) $(gxdevice_h) $(gxfont_h) $(gxline_h)\
  $(spprint_h) $(stream_h) $(gdevpsdf_h)
@@ -795,8 +795,8 @@ $(GLOBJ)gdevpdfm.$(OBJ) : $(GLSRC)gdevpdfm.c\
 
 $(GLOBJ)gdevpdfo.$(OBJ) : $(GLSRC)gdevpdfo.c $(memory__h) $(string__h)\
  $(gx_h)\
- $(gdevpdfo_h) $(gdevpdfx_h) $(gserrors_h) $(gsutil_h)\
- $(sstring_h) $(strimpl_h)
+ $(gdevpdfo_h) $(gdevpdfx_h) $(gserrors_h) $(gsparam_h) $(gsutil_h)\
+ $(sa85x_h) $(slzwx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
 	$(GLCC) $(GLO_)gdevpdfo.$(OBJ) $(C_) $(GLSRC)gdevpdfo.c
 
 $(GLOBJ)gdevpdfp.$(OBJ) : $(GLSRC)gdevpdfp.c $(memory__h) $(gx_h)\

@@ -218,6 +218,7 @@ ifilter2_h=$(PSSRC)ifilter2.h
 ifont_h=$(PSSRC)ifont.h $(gsccode_h) $(gsstype_h)
 ifont1_h=$(PSSRC)ifont1.h
 ifont2_h=$(PSSRC)ifont2.h
+ifont42_h=$(PSSRC)ifont42.h
 ifrpred_h=$(PSSRC)ifrpred.h
 ifwpred_h=$(PSSRC)ifwpred.h
 iht_h=$(PSSRC)iht.h
@@ -671,7 +672,7 @@ $(PSOBJ)zchar1.$(OBJ) : $(PSSRC)zchar1.c $(OP) $(memory__h)\
  $(idict_h) $(ifont_h) $(igstate_h) $(iname_h) $(store_h)
 	$(PSCC) $(PSO_)zchar1.$(OBJ) $(C_) $(PSSRC)zchar1.c
 
-$(PSOBJ)zfont1.$(OBJ) : $(PSSRC)zfont1.c $(OP)\
+$(PSOBJ)zfont1.$(OBJ) : $(PSSRC)zfont1.c $(OP) $(memory__h)\
  $(gsmatrix_h) $(gxdevice_h)\
  $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
  $(bfont_h) $(ialloc_h) $(icharout_h) $(idict_h) $(idparam_h)\
@@ -985,6 +986,7 @@ $(PSD)zfrsd.dev : $(INT_MAK) $(ECHOGS_XE) $(zfrsd_)
 	$(ADDMOD) $(PSD)zfrsd -oper zfrsd
 
 $(PSOBJ)zfrsd.$(OBJ) : $(PSSRC)zfrsd.c $(OP) $(memory__h)\
+ $(gxiodev_h)\
  $(sfilter_h) $(stream_h) $(strimpl_h)\
  $(files_h) $(idict_h) $(idparam_h) $(iname_h) $(store_h)
 	$(PSCC) $(PSO_)zfrsd.$(OBJ) $(C_) $(PSSRC)zfrsd.c
@@ -1334,7 +1336,10 @@ $(PSOBJ)zcid.$(OBJ) : $(PSSRC)zcid.c $(OP)\
 
 $(PSOBJ)zfcid.$(OBJ) : $(PSSRC)zfcid.c $(OP) $(memory__h)\
  $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gxfcid_h) $(gxfont1_h)\
- $(bfont_h) $(icid_h) $(idict_h) $(idparam_h) $(ifont1_h) $(ifont2_h) $(ifont42_h) $(store_h)
+ $(gdevpsf_h)\
+ $(stream_h)\
+ $(bfont_h) $(files_h) $(icid_h) $(idict_h) $(idparam_h)\
+ $(ifont1_h) $(ifont2_h) $(ifont42_h) $(store_h)
 	$(PSCC) $(PSO_)zfcid.$(OBJ) $(C_) $(PSSRC)zfcid.c
 
 # ---------------- CIE color ---------------- #
