@@ -1,6 +1,8 @@
-Version 0.4 (not yet released)
+Version 0.3 (not yet released)
 
- * no changes yet
+ * win32 portability fixes related to ghostscript integration
+ * generic mmr region support
+ * successfully decodes ubc test stream 042_3
 
 Version 0.2 (released 2003 April 17)
 
