@@ -218,7 +218,7 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	m.xy = cxy;
 	m.yx = cyx;
 	m.yy = cyy;
-	m.tx = m.yx = 0;
+	m.tx = m.ty = 0;
 	pair->ttr = gx_ttfReader__create(dir->memory, (gs_font_type42 *)font);
 	if (!pair->ttr)
 	    return_error(gs_error_VMerror);
