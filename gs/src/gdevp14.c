@@ -365,6 +365,9 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, gs_memory_t *memory)
 	gs_free_object(memory, result, "pdf14_ctx_new");
 	return NULL;
     }
+    if_debug3('v', "[v]base buf: %d x %d, %d channels\n",
+	      buf->rect.q.x, buf->rect.q.y, buf->n_chan);
+    memset(buf->data, 0, buf->planestride * buf->n_planes);
     buf->saved = NULL;
     result->stack = buf;
     result->n_chan = n_chan;
@@ -426,6 +429,7 @@ pdf14_push_transparency_group(pdf14_ctx *ctx, gs_int_rect *rect,
     has_shape = tos->has_shape || tos->knockout;
 
     buf = pdf14_buf_new(rect, !isolated, has_shape, ctx->n_chan, ctx->memory);
+    if_debug3('v', "[v]push buf: %d x %d, %d channels\n", buf->rect.p.x, buf->rect.p.y, buf->n_chan);
     if (buf == NULL)
 	return_error(gs_error_VMerror);
     buf->isolated = isolated;
@@ -573,6 +577,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
     }
 
     ctx->stack = nos;
+    if_debug0('v', "[v]pop buf\n");
     pdf14_buf_free(tos, ctx->memory);
     return 0;
 }
@@ -627,6 +632,7 @@ pdf14_put_image(pdf14_device *pdev, gs_state *pgs, gx_device *target)
 
     /* Set graphics state device to target, so that image can set up
        the color mapping properly. */
+    rc_increment(pdev);
     gs_setdevice_no_init(pgs, target);
 
     /* Set color space to RGB, in preparation for sending an RGB image. */
@@ -712,6 +718,7 @@ pdf14_put_image(pdf14_device *pdev, gs_state *pgs, gx_device *target)
 
     /* Restore device in graphics state.*/
     gs_setdevice_no_init(pgs, (gx_device*) pdev);
+    rc_decrement_only(pdev, "pdf_14_put_image");
 
     return code;
 }
