@@ -2208,6 +2208,8 @@ triangle(patch_fill_state_t *pfs,
 	return triangle_by_4(pfs, p0, p1, p2);
 }
 
+#if DIVIDE_BY_PARALLELS
+
 private inline int 
 triangles(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argument)
 {   /*	Assuming that self-overlapped stripes are enough narrow,
@@ -2232,6 +2234,31 @@ triangles(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argumen
 	return triangle(pfs, p->p[0][1], p->p[1][1], p->p[1][0]);
     }
 }
+
+#else
+
+private inline int 
+triangles(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argument)
+{
+    shading_vertex_t p0001, p1011, q;
+    int code;
+
+    divide_bar(pfs, p->p[0][0], p->p[0][1], 2, &p0001);
+    divide_bar(pfs, p->p[1][0], p->p[1][1], 2, &p1011);
+    divide_bar(pfs, &p0001, &p1011, 2, &q);
+    code = triangle_by_4(pfs, p->p[0][0], p->p[0][1], &q);
+    if (code < 0)
+	return code;
+    code = triangle_by_4(pfs, p->p[0][1], p->p[1][1], &q);
+    if (code < 0)
+	return code;
+    code = triangle_by_4(pfs, p->p[1][1], p->p[1][0], &q);
+    if (code < 0)
+	return code;
+    return triangle_by_4(pfs, p->p[1][0], p->p[0][0], &q);
+}
+
+#endif
 
 private inline void 
 make_quadrangle(const tensor_patch *p, shading_vertex_t qq[2][2], quadrangle_patch *q)
