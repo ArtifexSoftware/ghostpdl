@@ -100,6 +100,7 @@ AC_SUBST(SHARE_ZLIB)
 AC_SUBST(ZLIBDIR)
 
 dnl png for the png output device; it also requires zlib
+PNGDIR=src
 AC_CHECK_LIB(png, png_check_sig, [
 	SHARE_LIBPNG=1
 	PNGDEVS='$(DD)png16m.dev $(DD)pnggray.dev $(DD)pngmono.dev $(DD)png256.dev $(DD)png16.dev'
