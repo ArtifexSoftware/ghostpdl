@@ -1620,8 +1620,8 @@ $(PSD)pdffonts.dev : $(INT_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(PSD)pdffonts -ps gs_mex_e gs_mro_e gs_pdf_e gs_wan_e
 
 $(PSD)pdfread.dev : $(INT_MAK) $(ECHOGS_XE)\
- $(PSD)func4.dev $(PSD)fzlib.dev
-	$(SETMOD) $(PSD)pdfread -include $(PSD)fzlib $(PSD)func4
+ $(PSD)frsd.dev $(PSD)func4.dev $(PSD)fzlib.dev
+	$(SETMOD) $(PSD)pdfread -include $(PSD)frsd $(PSD)func4 $(PSD)fzlib
 	$(ADDMOD) $(PSD)pdfread -ps pdf_ops gs_l2img
 	$(ADDMOD) $(PSD)pdfread -ps pdf_base pdf_draw pdf_font pdf_main pdf_sec
 
