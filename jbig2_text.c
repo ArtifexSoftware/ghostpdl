@@ -107,13 +107,13 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     bool first_symbol;
     uint32_t index, max_id;
     Jbig2Image *IB;
-    Jbig2ArithState *as;
+    Jbig2ArithState *as = NULL;
     Jbig2ArithIntCtx *IADT = NULL;
     Jbig2ArithIntCtx *IAFS = NULL;
     Jbig2ArithIntCtx *IADS = NULL;
     Jbig2ArithIntCtx *IAIT = NULL;
     Jbig2ArithIaidCtx *IAID = NULL;
-    int code;
+    int code = 0;
     
     max_id = 0;
     for (index = 0; index < n_dicts; index++) {
@@ -294,7 +294,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     uint16_t flags;
     uint16_t huffman_flags = 0;
     int8_t sbrat[4];
-    int code;
+    int code = 0;
     
     /* 7.4.1 */
     if (segment->data_length < 17)
