@@ -117,6 +117,10 @@ AC_C_BIGENDIAN
 
 # Checks for library functions.
 AC_FUNC_MEMCMP
+dnl we use realloc() but don't depend on the zero-lenght behavior
+dnl tested by AC_FUNC_REALLOC
+AC_REPLACE_FUNCS([snprintf])
+
 AC_CHECK_FUNCS([memset strdup])
 
 dnl use our included getopt if the system doesn't have getopt_long()
