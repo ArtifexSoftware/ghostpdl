@@ -116,7 +116,7 @@ gsio_h=$(GLSRC)gsio.h
 gsmalloc_h=$(GLSRC)gsmalloc.h
 gsmdebug_h=$(GLSRC)gsmdebug.h
 gsmemraw_h=$(GLSRC)gsmemraw.h
-gsmemory_h=$(GLSRC)gsmemory.h $(gsmemraw_h) $(gstypes_h) $(std_h)
+gsmemory_h=$(GLSRC)gsmemory.h $(gsmemraw_h) $(gstypes_h)
 gsmemret_h=$(GLSRC)gsmemret.h $(gsmemory_h)
 gsnogc_h=$(GLSRC)gsnogc.h $(gsgc_h)
 gsrefct_h=$(GLSRC)gsrefct.h
@@ -470,7 +470,7 @@ sjpeg_h=$(GLSRC)sjpeg.h
 slzwx_h=$(GLSRC)slzwx.h
 smd5_h=$(GLSRC)smd5.h $(md5_h)
 sarc4_h=$(GLSRC)sarc4.h $(scommon_h)
-sjbig2_h=$(GLSRC)sjbig2.h
+sjbig2_h=$(GLSRC)sjbig2.h $(scommon_h)
 spdiffx_h=$(GLSRC)spdiffx.h
 spngpx_h=$(GLSRC)spngpx.h
 spprint_h=$(GLSRC)spprint.h
@@ -1346,7 +1346,8 @@ $(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjbig2.dev $(sjbig2_)
 	$(ADDMOD) $(GLD)sjbig2 -include $(GLD)libjbig2.dev
 
 $(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) \
- $(gserror_h) $(gserrors_h) $(gdebug_h) $(sjbig2_h) $(strimpl_h)
+ $(memory__h) $(stdio__h) $(gserror_h) $(gserrors_h) $(gdebug_h) \
+ $(sjbig2_h) $(strimpl_h)
 	$(GLJBIG2CC) $(GLO_)sjbig2.$(OBJ) $(C_) $(GLSRC)sjbig2.c
 
 # ---------------- Pixel-difference filters ---------------- #
