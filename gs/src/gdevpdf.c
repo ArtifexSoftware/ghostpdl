@@ -234,7 +234,10 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* open_graphics */
  0,				/* font_cache */
  {0, 0},			/* char_width */
- 0				/* clip_path */
+ 0,				/* clip_path */
+ 0,                             /* PageLabels */
+ -1,                            /* PageLabels_current_page */
+ 0                              /* PageLabels_current_label */
 };
 
 /* ---------------- Device open/close ---------------- */
@@ -534,6 +537,9 @@ pdf_open(gx_device * dev)
     pdev->articles = 0;
     pdev->Dests = 0;
     /* {global,local}_named_objects was initialized above */
+    pdev->PageLabels = 0;
+    pdev->PageLabels_current_page = 0;
+    pdev->PageLabels_current_label = 0;
     pdev->open_graphics = 0;
     pdf_reset_page(pdev);
     return 0;
@@ -875,6 +881,12 @@ pdf_close(gx_device * dev)
     if (pdev->Dests)
 	COS_WRITE_OBJECT(pdev->Dests, pdev);
 
+    /* Write the PageLabel array */
+    pdfmark_end_pagelabels(pdev);
+    if (pdev->PageLabels) {
+	COS_WRITE_OBJECT(pdev->PageLabels, pdev);
+    }
+
     /* Write the Catalog. */
 
     /*
@@ -906,12 +918,20 @@ pdf_close(gx_device * dev)
 	pprintld1(s, "/Threads %ld 0 R\n", Threads_id);
     if (pdev->Dests)
 	pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
+    if (pdev->PageLabels)
+	pprintld1(s, "/PageLabels << /Nums  %ld 0 R >>\n", 
+                  pdev->PageLabels->id);
     cos_dict_elements_write(pdev->Catalog, pdev);
     stream_puts(s, ">>\n");
     pdf_end_obj(pdev);
     if (pdev->Dests) {
 	COS_FREE(pdev->Dests, "pdf_close(Dests)");
 	pdev->Dests = 0;
+    }
+    if (pdev->PageLabels) {
+	COS_FREE(pdev->PageLabels, "pdf_close(PageLabels)");
+	pdev->PageLabels = 0;
+        pdev->PageLabels_current_label = 0;
     }
 
     /* Prevent writing special named objects twice. */

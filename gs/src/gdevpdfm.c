@@ -1141,6 +1141,111 @@ pdfmark_PAGE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     return pdfmark_put_pairs(pdf_current_page_dict(pdev), pairs, count);
 }
 
+/* Add a page label for the current page. The last label on a page 
+ * overrides all previous labels for this page. Unlabeled pages will get 
+ * empty page labels. label == NULL flushes the last label */
+private int 
+pdfmark_add_pagelabel(gx_device_pdf * pdev, const gs_param_string *label) 
+{
+    cos_value_t value;
+    cos_dict_t *dict = 0;
+    int code = 0;
+
+    /* create label dict (and page label array if not present yet) */
+    if (label != 0) {
+        if (!pdev->PageLabels) {
+            pdev->PageLabels = cos_array_alloc(pdev, 
+                    "pdfmark_add_pagelabel(PageLabels)");
+            if (pdev->PageLabels == 0)
+                return_error(gs_error_VMerror);
+            pdev->PageLabels->id = pdf_obj_ref(pdev);
+
+            /* empty label for unlabled pages before first labled page */
+            pdev->PageLabels_current_page = 0;
+            pdev->PageLabels_current_label = cos_dict_alloc(pdev,
+                                           "pdfmark_add_pagelabel(first)");
+            if (pdev->PageLabels_current_label == 0)
+                return_error(gs_error_VMerror);
+        }
+
+        dict = cos_dict_alloc(pdev, "pdfmark_add_pagelabel(dict)");
+        if (dict == 0)
+            return_error(gs_error_VMerror);
+
+        code = cos_dict_put_c_key(dict, "/P", cos_string_value(&value, 
+            label->data, label->size));
+        if (code < 0) {
+            COS_FREE(dict, "pdfmark_add_pagelabel(dict)");
+            return code;
+        }
+    }
+
+    /* flush current label */
+    if (label == 0 || pdev->next_page != pdev->PageLabels_current_page) {
+        /* handle current label */
+        if (pdev->PageLabels_current_label) {
+            if (code >= 0) {
+                code = cos_array_add_int(pdev->PageLabels, 
+                        pdev->PageLabels_current_page);
+                if (code >= 0) 
+                    code = cos_array_add(pdev->PageLabels,
+                            COS_OBJECT_VALUE(&value, 
+                                pdev->PageLabels_current_label));
+            }
+            pdev->PageLabels_current_label = 0;
+        }
+
+        /* handle unlabled pages between current labeled page and 
+         * next labeled page */
+        if (pdev->PageLabels) {
+            if (pdev->next_page - pdev->PageLabels_current_page > 1) {
+                cos_dict_t *tmp = cos_dict_alloc(pdev, 
+                        "pdfmark_add_pagelabel(tmp)");
+                if (tmp == 0)
+                    return_error(gs_error_VMerror);
+
+                code = cos_array_add_int(pdev->PageLabels, 
+                        pdev->PageLabels_current_page + 1);
+                if (code >= 0) 
+                    code = cos_array_add(pdev->PageLabels,
+                            COS_OBJECT_VALUE(&value, tmp));
+            }
+        }
+    }
+
+    /* new current label */
+    if (pdev->PageLabels_current_label)
+        COS_FREE(pdev->PageLabels_current_label, 
+                "pdfmark_add_pagelabel(current_label)");
+    pdev->PageLabels_current_label = dict;
+    pdev->PageLabels_current_page = pdev->next_page;
+
+    return code;
+}
+
+/* Close the pagelabel numtree.*/
+int 
+pdfmark_end_pagelabels(gx_device_pdf * pdev) 
+{
+    return pdfmark_add_pagelabel(pdev, 0);
+}
+
+/* [ /Label string /PlateColor string pdfmark */
+/* FIXME: /PlateColor is ignored */
+private int
+pdfmark_PAGELABEL(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+	     const gs_matrix * pctm, const gs_param_string * no_objname)
+{
+    gs_param_string key;
+
+    if (pdev->CompatibilityLevel >= 1.3) {
+        if (pdfmark_find_key("/Label", pairs, count, &key)) {
+            return pdfmark_add_pagelabel(pdev, &key); 
+        }
+    }
+    return 0;
+}
+
 /* DOCINFO pdfmark */
 private int
 pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
@@ -1241,14 +1346,6 @@ pdfmark_DOCVIEW(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	return code;
     } else
 	return pdfmark_put_pairs(pdev->Catalog, pairs, count);
-}
-
-/* [ /Label str1 /PlateColor str2 /PAGELABEL pdfmark */
-private int
-pdfmark_PAGELABEL(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
-		  const gs_matrix * pctm, const gs_param_string * no_objname)
-{
-    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* ---------------- Named object pdfmarks ---------------- */
@@ -1812,9 +1909,9 @@ private const pdfmark_name mark_names[] =
     {"PS",           pdfmark_PS,          PDFMARK_NAMEABLE},
     {"PAGES",        pdfmark_PAGES,       0},
     {"PAGE",         pdfmark_PAGE,        0},
+    {"PAGELABEL",    pdfmark_PAGELABEL,   0},
     {"DOCINFO",      pdfmark_DOCINFO,     0},
     {"DOCVIEW",      pdfmark_DOCVIEW,     0},
-    {"PAGELABEL",    pdfmark_PAGELABEL,   0},
 	/* Named objects. */
     {"BP",           pdfmark_BP,          PDFMARK_NAMEABLE},
     {"EP",           pdfmark_EP,          0},

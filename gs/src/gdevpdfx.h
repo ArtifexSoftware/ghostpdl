@@ -456,7 +456,16 @@ struct gx_device_pdf_s {
      * redundant clipping paths when PS document generates such ones.
      */
     gx_path *clip_path;
+    /*
+     * Page labels.
+     */
+    cos_array_t *PageLabels;
+    int PageLabels_current_page;
+    cos_dict_t *PageLabels_current_label;
 };
+    cos_array_t *PageLabels;
+    int PageLabels_current_page;
+    cos_dict_t *PageLabels_current_label;
 
 #define is_in_page(pdev)\
   ((pdev)->contents_id != 0)
@@ -475,8 +484,9 @@ struct gx_device_pdf_s {
  m(17,last_resource)\
  m(18,articles) m(19,Dests) m(20,global_named_objects)\
  m(21, local_named_objects) m(22,NI_stack) m(23,Namespace_stack)\
- m(24,open_graphics) m(25,font_cache) m(26,clip_path)
-#define gx_device_pdf_num_ptrs 27
+ m(24,open_graphics) m(25,font_cache) m(26,clip_path)\
+ m(27,PageLabels) m(28,PageLabels_current_label)
+#define gx_device_pdf_num_ptrs 29
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\
@@ -769,6 +779,9 @@ int pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma);
 
 /* Close the current level of the outline tree. */
 int pdfmark_close_outline(gx_device_pdf * pdev);
+
+/* Close the pagelabel numtree. */
+int pdfmark_end_pagelabels(gx_device_pdf * pdev);
 
 /* Finish writing an article. */
 int pdfmark_write_article(gx_device_pdf * pdev, const pdf_article_t * part);
