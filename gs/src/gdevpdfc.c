@@ -361,8 +361,13 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	}
 	break;
     case gs_color_space_index_CIEICC:
-        /* special early exit for unrecognized ICCBased color spaces */
-        if (pcs->params.icc.picc_info->picc == 0)
+        /*
+	 * Take a special early exit for unrecognized ICCBased color spaces,
+	 * or for PDF 1.2 output (ICCBased color spaces date from PDF 1.3).
+	 */
+        if (pcs->params.icc.picc_info->picc == 0 ||
+	    pdev->CompatibilityLevel < 1.3
+	    )
             return pdf_color_space( pdev, pvalue,
                                     (const gs_color_space *)
                                         &pcs->params.icc.alt_space,
@@ -371,7 +376,6 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     default:
 	break;
     }
-
 
     /* Space has parameters -- create an array. */
     pca = cos_array_alloc(pdev, "pdf_color_space");
