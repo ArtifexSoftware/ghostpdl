@@ -623,7 +623,9 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
 
     /* Initialize the separable status if not known. */
-    check_device_separable(dev);
+    if ( dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN ) {
+	set_linear_color_bits_mask_shift(dev);
+    }
     /*
      * If the device is known not to support overprint mode, indicate this now.
      * Note that we do not insist that a device be use a strict DeviceCMYK
