@@ -556,13 +556,14 @@ private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort
 
     if (ff->is_type1) {
         if (ff->is_cid) {
-            ref *glyph = (ref *)ff->client_char_data;
+            ref *glyph = (ref *)ff->char_data;
             glyph_length = get_type1_data(ff, glyph, buf, buf_length);
         } else {
             ref *CharStrings, char_name, *glyph;
-            if (ff->client_char_data != NULL)
-                char_name = *(ref *)ff->client_char_data;
-            else if (name_ref((const byte *)".notdef", 7, &char_name, -1) < 0)
+            if (ff->char_data != NULL) {
+                if (name_ref(ff->char_data, ff->char_data_len, &char_name, -1) < 0)
+		    return -1;
+	    }  else if (name_ref((const byte *)".notdef", 7, &char_name, -1) < 0)
                 return -1;
             if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
                 return -1;
@@ -609,7 +610,8 @@ private const FAPI_font ff_stub = {
     0, /* is_cid */
     0, /* client_font_data */
     0, /* client_font_data2 */
-    0, /* client_char_data */
+    0, /* char_data */
+    0, /* char_data_len */
     FAPI_FF_get_word,
     FAPI_FF_get_long,
     FAPI_FF_get_float,
@@ -1199,7 +1201,7 @@ retry_oversampling:
             return_error(e_invalidfont);
         cr.is_glyph_index = true;
     } else if (is_embedded_type1) {
-        /*  Since the client passes charstring by callback using ff.client_char_data,
+        /*  Since the client passes charstring by callback using ff.char_data,
             the client doesn't need to provide a good cr here.
             Perhaps since UFST uses char codes as glyph cache keys (UFST 4.2 cannot use names),
             we provide font char codes equal to document's char codes.
@@ -1234,9 +1236,13 @@ retry_oversampling:
 
     /* Render : */
     if (ff.is_type1 && ff.is_cid)
-        ff.client_char_data = charstring;
-    else
-        ff.client_char_data = &char_name;
+        ff.char_data = charstring;
+    else {
+	ref sname;
+	name_string_ref(&char_name, &sname);
+        ff.char_data = sname.value.const_bytes;
+	ff.char_data_len = r_size(&sname);
+    }
     if (SHOW_IS(penum, TEXT_DO_NONE)) {
 	if ((code = renderer_retcode(i_ctx_p, I, I->get_char_width(I, &ff, &cr, &metrics))) < 0)
 	    return code;

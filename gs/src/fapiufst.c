@@ -901,16 +901,16 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
     code = CGIFchar_with_design_bbox(&r->IFS, cc, &result, (SW16)0, design_bbox, &design_escapement);
     if (code == ERR_find_cgnum) {
         /* There is no such char in the font, try the glyph 0 (notdef) : */
-        const void *client_char_data = ff->client_char_data;
+        const void *client_char_data = ff->char_data;
         UW16 c1 = 0, ssnum = r->IFS.fcCur.ssnum;
         /* hack : Changing UFST internal data - see above. */
         r->IFS.fcCur.ssnum = RAW_GLYPH;
         r->callback_error = 0;
-        ff->client_char_data = NULL;
+        ff->char_data = NULL;
         CGIFchIdptr(&r->IFS, &c1, (char *)".notdef");
         code = CGIFchar_with_design_bbox(&r->IFS, c1, &result, (SW16)0, design_bbox, &design_escapement);
         r->IFS.fcCur.ssnum = ssnum;
-        ff->client_char_data = client_char_data;
+        ff->char_data = client_char_data;
     }
     r->ff = 0;
     release_glyphs(r, (ufst_common_font_data *)ff->server_font_data);
