@@ -73,11 +73,6 @@ Public License</a> allows anyone to prepare and distribute releases, this
 document is really meant only for developers working closely with Aladdin.
 
 <p>
-This document refers to many script files that are not currently part of the
-Ghostscript distribution.  In the course of time, these scripts will become
-part of the distribution, probably in a new subdirectory.
-
-<p>
 File names below that don't include an explicit subdirectory name are in the
 <b><tt>src</tt></b> subdirectory.
 
@@ -127,24 +122,23 @@ href="http://sourceforge.net/cvs/?group_id=1897"><tt>http://sourceforge.net/cvs/
 <h2><a name="Distributions"></a>Distributions</h2>
 
 <p>
-Both public and tester releases are available from
+Both tested and tester releases are available from
 <blockquote><pre>
 <a
 href="http://sourceforge.net/project/filelist.php?group_id=1897">http://sourceforge.net/project/filelist.php?group_id=1897</a>
 </pre></blockquote>
 
 <p>
-Public (tested) releases are distributed from
+Tested public releases are also distributed from
 <blockquote><pre>
 <a
 href="ftp://ftp.cs.wisc.edu/ghost/aladdin/">ftp://ftp.cs.wisc.edu/ghost/aladdin/</a>
 </pre></blockquote>
 
 <p>
-Tester releases are distributed from
+Tester releases are also distributed from
 <blockquote><pre>
 <a href="ftp://ftp.cs.wisc.edu/ghost/aladdin/test/">ftp://ftp.cs.wisc.edu/ghost/aladdin/test/</a>
-<a href="ftp://www.aladdin.com/ghost/aladdin/test/">ftp://www.aladdin.com/ghost/aladdin/test/</a>
 </pre></blockquote>
 
 <h1><a name="Adding_or_removing_files"></a>Adding or removing files</h1>
@@ -187,38 +181,41 @@ When adding .ps files, update <b><tt>doc/Psfiles.htm</tt></b>.
 This document only discusses source distributions.  Source distributions
 currently can only be made on Linux systems (but it probably wouldn't take
 much work to support other Unix systems).  Ghostscript as distributed also
-often includes Windows executables or other packages for the Windows
+often includes executables or other packages for the Windows and MacOS
 environment, but Aladdin does not produce these, and this document does not
-discuss them.  For more information about this topic, please contact <a
-href="mailto:bug-gswin@aladdin.com"><tt>bug-gswin@aladdin.com</tt></a> or <a
-href="mailto:gsview@ghostgum.com.au"><tt>gsview@ghostgum.com.au</tt></a>.
+discuss them.  For more information about Windows packages, please contact
+<a href="mailto:bug-gswin@aladdin.com"><tt>bug-gswin@aladdin.com</tt></a> or
+<a href="mailto:gsview@ghostgum.com.au"><tt>gsview@ghostgum.com.au</tt></a>;
+for more information about MacOS packages; please contact <a
+href="mailto:mac-gs@aladdin.com"><tt>mac-gs@aladdin.com</tt></a>.
 
 <p>
-To make a source distribution, you will need the following tools:
+To make a source distribution, you will need the scripts and data files in
+the <b><tt>toolbin/</tt></b> directory.  You will probably find it
+convenient to include this directory in the PATH, but the instructions below
+don't assume that you have done this.  To run the scripts, you will need
+reasonably current versions of Tcl, freely available from Scriptics (<a
+href="http://www.scriptics.com">http://www.scriptics.com</a>), and Python,
+freely available from <a
+href="http://www.python.org">http://www.python.org</a>
+
+<p>
+The instructions below also refer to some files that are deliberately
+omitted from the public distribution, because they are copyrighted by their
+authors and not freely redistributable.  You will need to provide similar
+files for your environment.
+
 <blockquote><pre>
-<b><tt>cvs2hist.py</tt></b> (Python script -- anywhere in the path)
-<b><tt>cvs2hist</tt></b> (link to <b><tt>cvs2hist.py</tt></b>, ibid.)
-<b><tt>../bin/precheck.tcl</tt></b> (Tcl script)
-<b><tt>master/pre</tt></b> (Tcl script)
-<b><tt>master/pre.chk</tt></b> (data file)
-<b><tt>master/gsmake.tcl</tt></b> (Tcl script)
-<b><tt>master/gsmake</tt></b> (link to <b><tt>gsmake.tcl</tt></b>)
-<b><tt>master/makeset.tcl</tt></b> (Tcl script)
-<b><tt>master/makehist</tt></b> (link to <b><tt>makeset.tcl</tt></b>)
-<b><tt>master/makefonts</tt></b> (ibid.)
-<b><tt>master/maketars</tt></b> (ibid.)
-<b><tt>master/makemaster</tt></b> (ibid.)
-<b><tt>master/smoke.ps</tt></b> (PostScript file)
 <b><tt>data/*/*.ps</tt></b> (PostScript files)
 <b><tt>beta.msg</tt></b>
 </pre></blockquote>
+
+<h2><a name="Preparing_source"></a>Preparing the source code</h2>
 
 <p>
 Make sure the release date and version number are up to date in
 <b><tt>version.mak</tt></b>, <b><tt>lib/gs_init.ps</tt></b>, and
 <b><tt>doc/News.htm</tt></b>.
-
-<h2><a name="Preparing_source"></a>Preparing the source code</h2>
 
 <p>
 Check in <b><tt>gscdef.c</tt></b> that the definition of
@@ -231,15 +228,15 @@ version/date inconsistencies, and mismatches between the working directory
 and the CVS repository by running:
 
 <blockquote><pre>
-master/pre
+toolbin/pre
 </pre></blockquote>
 
 <p>
 This program compares the result of various greps against a check file,
 writing the results of grep on one output file and the differences from the
-check file on another.  See the source code of <b><tt>master/pre</tt></b>
+check file on another.  See the source code of <b><tt>toolbin/pre</tt></b>
 for the default file names.  The important one is the check file,
-<b><tt>master/pre.chk</tt></b>.  <b><tt>pre</tt></b> also verifies that the
+<b><tt>toolbin/pre.chk</tt></b>.  <b><tt>pre</tt></b> also verifies that the
 right information is in the following places:
 <ul>
 <li>version number in <b><tt>man/*.1</tt></b>, <b><tt>doc/*.htm</tt></b>,
@@ -254,14 +251,14 @@ right information is in the following places:
 If necessary, run
 
 <blockquote><pre>
-master/pre update
+toolbin/pre update
 </pre></blockquote>
 
 <p>
 to update the version and revision date in the doc files, and then run
 
 <blockquote><pre>
-master/pre
+toolbin/pre
 </pre></blockquote>
 
 <p>
@@ -272,7 +269,7 @@ Check the consistency of the source code with the makefiles by
 running:
 
 <blockquote><pre>
-master/gsmake check
+toolbin/gsmake check
 </pre></blockquote>
 
 <p>
@@ -300,10 +297,10 @@ and look for warnings and errors in the log file.
 Do a smoke test:
 
 <blockquote><pre>
-bin/gs @b master/smoke.ps
+bin/gs @b toolbin/smoke.ps
 export TEMP=/gs/tmp
 bin/gs @b -sDEVICE=bitcmyk -sOutputFile=/dev/null -r600 -dMaxBitmap=1000000\
-  master/smoke.ps
+  toolbin/smoke.ps
 </pre></blockquote>
 
 <p>
@@ -324,7 +321,7 @@ to ensure the repository is up to date.
 Execute
 
 <blockquote><pre>
-cvs2hist -v #.#[#] > doc/Changes.htm
+toolbin/cvs2hist -v #.#[#] > doc/Changes.htm
 </pre></blockquote>
 
 <p>
@@ -335,7 +332,7 @@ format.
 Run
 
 <blockquote><pre>
-master/makehist
+toolbin/makehist
 </pre></blockquote>
 
 <p>
@@ -353,7 +350,7 @@ again.
 Make the source archives with
 
 <blockquote><pre>
-master/maketars
+toolbin/maketars
 </pre></blockquote>
 
 <p>
@@ -380,10 +377,10 @@ Do a full build and smoke test (in a separate window):
 
 <blockquote><pre>
 unset GS_LIB
-bin/gs -Ilib -I/gs/fonts -dNOPAUSE -dBATCH /gs/master/smoke.ps | tee t
+bin/gs -Ilib -I/gs/fonts -dNOPAUSE -dBATCH /gs/toolbin/smoke.ps | tee t
 export TEMP=/gs/tmp
 bin/gs -Ilib -I/gs/fonts -dNOPAUSE -dBATCH -sDEVICE=bitcmyk\
-  -sOutputFile=/dev/null -r600 -dMaxBitmap=1000000 /gs/master/smoke.ps | tee t
+  -sOutputFile=/dev/null -r600 -dMaxBitmap=1000000 /gs/toolbin/smoke.ps | tee t
 </pre></blockquote>
 
 <p>
@@ -397,9 +394,9 @@ This reads files named
 </pre></blockquote>
 
 <p>
-(Edit <b><tt>smoke.ps</tt></b> ad lib to use other test sets.)  Watch for
-crashes, unusual error messages, or anomalous displayed output.  If there
-are any problems, start over from the beginning of the process.
+(Edit <b><tt>toolbin/smoke.ps</tt></b> ad lib to use other test sets.)
+Watch for crashes, unusual error messages, or anomalous displayed output.
+If there are any problems, start over from the beginning of the process.
 
 <h2><a name="Testing_on_Windows"></a>Testing on Windows</h2>
 
@@ -407,7 +404,7 @@ are any problems, start over from the beginning of the process.
 For Windows testing, you will need, in addition to the files listed
 under <a href="Source_distributions">"Source distributions"</a> above:
 <blockquote><pre>
-<b><tt>master/makewin</tt></b> (link to <b><tt>makeset.tcl</tt></b>)
+<b><tt>toolbin/makewin</tt></b> (link to <b><tt>makeset.tcl</tt></b>)
 </pre></blockquote>
 
 <p>
@@ -423,7 +420,7 @@ Make the zip archive of all files needed for a Windows build, and copy it to
 the Windows partition:
 
 <blockquote><pre>
-master/makewin
+toolbin/makewin
 cp gs###.zip /c/work
 </pre></blockquote>
 
@@ -489,12 +486,12 @@ href="#Preparing_source">"Preparing the source code."</a>
 If you are maintaining local master copies, execute
 
 <blockquote><pre>
-master/makemaster
+toolbin/makemaster
 </pre></blockquote>
 
 <p>
-This creates <b><tt>master/###</tt></b> if necessary, and moves the archives
-to it.
+This creates a <b><tt>master/###</tt></b> directory if necessary, and moves
+the archives to it.
 
 <p>
 Tag the source files with the release number by executing
