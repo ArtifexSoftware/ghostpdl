@@ -222,9 +222,9 @@ pdf_write_ccolor(gx_device_pdf * pdev, const gs_imager_state * pis,
 {   
     int i, n = gx_hld_get_number_color_components(pis);
 
-    pprintg1(pdev->strm, "%g", psdf_round(pcc->paint.values[0], 255, 255));
+    pprintg1(pdev->strm, "%g", psdf_round(pcc->paint.values[0], 255, 8));
     for (i = 1; i < n; i++) {
-	pprintg1(pdev->strm, " %g", psdf_round(pcc->paint.values[i], 255, 255));
+	pprintg1(pdev->strm, " %g", psdf_round(pcc->paint.values[i], 255, 8));
     }
     return 0;
 }
