@@ -449,10 +449,11 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
 	/*
 	 * The resource file is positionable, so rather than use an
 	 * object reference for the length, we'll go back and fill it in
-	 * at the end of the definition.  Take 10K as the longest
-	 * definition we can handle.
+	 * at the end of the definition.  Take 1M as the longest
+	 * definition we can handle.  (This used to be 10K, but there was
+	 * a real file that exceeded this limit.)
 	 */
-	pputs(s, "<</Length     >>\nstream\n");
+	pputs(s, "<</Length       >>stream\n");
 	ppos->start_pos = stell(s);
     }
     return 0;
@@ -467,9 +468,9 @@ pdf_end_char_proc(gx_device_pdf * pdev, pdf_stream_position_t * ppos)
     long end_pos = stell(s);
     long length = end_pos - start_pos;
 
-    if (length > 9999)
+    if (length > 999999)
 	return_error(gs_error_limitcheck);
-    sseek(s, start_pos - 14);
+    sseek(s, start_pos - 15);
     pprintd1(s, "%d", length);
     sseek(s, end_pos);
     pputs(s, "endstream\n");
