@@ -1018,7 +1018,8 @@ copy_font_cid0(gs_font *font, gs_font *copied)
 
 	if (i == 0) {
 	    /* copy_subrs requires a Type 1 font, even for GSubrs. */
-	    code = copy_subrs(subfont1, true, &cfdata->subrs, copied->memory);
+	    code = copy_subrs(subfont1, true, &cfdata->global_subrs,
+			      copied->memory);
 	    if (code < 0)
 		goto fail;
 	}
