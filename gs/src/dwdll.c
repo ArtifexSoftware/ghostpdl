@@ -41,7 +41,6 @@ static const char name[] = "gsdll32.dll";
 int load_dll(GSDLL *gsdll, char *last_error, int len)
 {
 char fullname[1024];
-const char *shortname;
 char *p;
 long version;
 int length;
@@ -51,39 +50,34 @@ gsapi_revision_t rv;
     if (gsdll->hmodule)
 	return 0;
 
-    /* First try to load DLL with name in registry or environment variable */
-    gsdll->hmodule = (HINSTANCE)NULL;
-    length = sizeof(fullname);
-    if (gp_getenv("GS_DLL", fullname, &length) == 0)
-        gsdll->hmodule = LoadLibrary(fullname);
+    /* First try to load DLL from the same directory as EXE */
+    GetModuleFileName(GetModuleHandle(NULL), fullname, sizeof(fullname));
+    if ((p = strrchr(fullname,'\\')) != (char *)NULL)
+	p++;
+    else
+	p = fullname;
+    *p = '\0';
+    strcat(fullname, name);
+    gsdll->hmodule = LoadLibrary(fullname);
 
-    /* Next try to load DLL first with given path */
+    /* Next try to load DLL with name in registry or environment variable */
+    if (gsdll->hmodule < (HINSTANCE)HINSTANCE_ERROR) {
+	length = sizeof(fullname);
+	if (gp_getenv("GS_DLL", fullname, &length) == 0)
+	    gsdll->hmodule = LoadLibrary(fullname);
+    }
+
+    /* Finally try the system search path */
     if (gsdll->hmodule < (HINSTANCE)HINSTANCE_ERROR)
         gsdll->hmodule = LoadLibrary(name);
+
     if (gsdll->hmodule < (HINSTANCE)HINSTANCE_ERROR) {
-	/* failed */
-	/* try again, with path of EXE */
-	if ((shortname = strrchr((char *)name, '\\')) == (const char *)NULL)
-	    shortname = name;
-	GetModuleFileName(GetModuleHandle(NULL), fullname, sizeof(fullname));
-	if ((p = strrchr(fullname,'\\')) != (char *)NULL)
-	    p++;
-	else
-	    p = fullname;
-	*p = '\0';
-	strcat(fullname, shortname);
-        gsdll->hmodule = LoadLibrary(fullname);
-        if (gsdll->hmodule < (HINSTANCE)HINSTANCE_ERROR) {
-	    /* failed again */
-	    /* try once more, this time on system search path */
-            gsdll->hmodule = LoadLibrary(shortname);
-            if (gsdll->hmodule < (HINSTANCE)HINSTANCE_ERROR) {
-		sprintf(fullname, "Couldn't load DLL, LoadLibrary error code %d", (int)gsdll->hmodule);
-	 	strncpy(last_error, fullname, len-1);
-		gsdll->hmodule = (HINSTANCE)0;
-		return 1;
-	    }
-	}
+	/* Failed */
+	DWORD err = GetLastError();
+	sprintf(fullname, "Can't load DLL, LoadLibrary error code %ld", err);
+	strncpy(last_error, fullname, len-1);
+	gsdll->hmodule = (HINSTANCE)0;
+	return 1;
     }
 
     /* DLL is now loaded */

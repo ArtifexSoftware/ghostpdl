@@ -344,13 +344,17 @@ Win32s (that is, Windows 3.1, which doesn't support named registry
 values).
 
 <p>
-If the environment variable <b><tt>GS_DLL</tt></b> is defined,
-Ghostscript
-tries to load the Ghostscript dynamic link library (DLL) with the name
-given.  If this fails, Ghostscript tries to load
-<b><tt>GSDLL32.DLL</tt></b> from the current directory, the search path
-or
-the same directory as the Ghostscript executable.
+Ghostscript will attempt to load the Ghostscript dynamic link 
+library <b><tt>GSDLL32.DLL</tt></b> in the following order:
+<ul>
+<li> In the same directory as the Ghostscript executable.
+<li> If the environment variable <b><tt>GS_DLL</tt></b> is defined, 
+Ghostscript tries to load the Ghostscript dynamic link library (DLL) 
+with the name given.  
+<li> Using the standard Windows library search method: the directory
+from which the application loaded, the current directory, the Windows
+system directory, the Windows directory and the directories listed in
+the PATH environment variable.
 
 <p>
 The Ghostscript setup program will create registry values
