@@ -385,6 +385,7 @@ check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
 
     if (pimm->MaskDict.BitsPerComponent == 0) { /* mask missing */
 	pmcs->depth = 0;
+        pmcs->InterleaveType = 0;	/* not a valid type */
 	return 0;
     }
     if (mask_height <= 0)
