@@ -639,6 +639,7 @@ end readonly def
   dictbeginpage /DefaultMatrix 1 index store setmatrix
   dup		  % for showing annotations below
   count /pdfemptycount exch store
+  gsave
 	% If the page uses any transparency features, show it within
 	% a transparency group.
   PDFversion 1.4 lt {
@@ -665,6 +666,7 @@ end readonly def
       } ifelse
     } ifelse
   } ifelse
+  grestore
    /Annots knownoget { { oforce drawannot } forall } if
    endpage
    end			% scratch dict
