@@ -226,10 +226,14 @@ px_begin_error_page(px_state_t *pxs)
 	/* Don't call pxSetPageDefaultCTM -- we don't want rotation or */
 	/* unusual Units of Measure -- but do invert the Y axis. */
 	/*pxSetPageDefaultCTM(NULL, pxs);*/
-	gs_translate(pgs, 0.0, pxs->media_size.y);
-	gs_scale(pgs, 1.0, -1.0);
-	gs_setfont(pgs, (gs_font *)pxs->error_page_font->pfont);
-	return 90;
+	{
+	    gs_point pt;
+	    px_get_default_media_size(pxs, &pt);
+	    gs_translate(pgs, 0.0, pt.y);
+	    gs_scale(pgs, 1.0, -1.0);
+	    gs_setfont(pgs, (gs_font *)pxs->error_page_font->pfont);
+	    return 90;
+	}
 }
 
 /* Print a message on an error page. */

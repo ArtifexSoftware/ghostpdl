@@ -8,6 +8,7 @@
 #include "stdio_.h"		/* for gdebug.h */
 #include "gdebug.h"
 #include "pgmand.h"
+#include "pgdraw.h"
 #include "pginit.h"
 #include "pggeom.h"
 #include "pgmisc.h"

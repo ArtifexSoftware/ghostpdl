@@ -52,6 +52,7 @@ private const pjl_envir_var_t pjl_factory_defaults[] = {
     {"orientation", "portrait"},
     {"duplex", "off"},
     {"binding", "longedge"},
+    {"manualfeed", "off"},
     {"", ""}
 };
 
@@ -383,5 +384,18 @@ pjl_map_pjl_sym_to_pcl_sym(const char *symname)
 	    return (atoi(pcl_symbol) << 5) + chr - 64;
 	}
     return -1;
+}
+
+/* utilities */
+
+int pjl_vartoi(const char *s)
+{
+    return atoi(s);
+}
+
+/* envioronment variable to float */
+floatp pjl_vartof(const char *s)
+{
+    return atof(s);
 }
 

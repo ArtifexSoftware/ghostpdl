@@ -63,12 +63,13 @@ struct px_state_s {
 
   pxeOrientation_t orientation;
   pxeMediaSource_t media_source;
-  gs_point media_size;		/* in 1/72" units */
   bool duplex;
+  int copies;
   pxeDuplexPageMode_t duplex_page_mode;
   bool duplex_back_side;
   pxeMediaDestination_t media_destination;
   pxeMediaType_t media_type;
+  pxeMediaSize_t media_size;
   int (*end_page)(P3(px_state_t *pxs, int num_copies, int flush));
 	/* Pattern dictionary */
   px_dict_t page_pattern_dict;

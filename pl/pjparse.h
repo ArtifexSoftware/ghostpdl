@@ -2,7 +2,6 @@
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
-/* pjparse.h */
 /* NB the pjl parser and state should be separate. */
 
 /* We present a simplified version of the parser and states for
@@ -60,5 +59,13 @@ int pjl_compare(P2(const char *s1, const char *s2));
 
 /* map a pjl symbol set name to a pcl integer */
 int pjl_map_pjl_sym_to_pcl_sym(P1(const char *symname));
+
+/* convert pjl environment variables to useful data type */
+
+/* environment variable to integer */
+int pjl_vartoi(P1(const char *s));
+
+/* envioronment variable to float */
+floatp pjl_vartof(P1(const char *s));
 
 #endif				/* pjparse_INCLUDED */

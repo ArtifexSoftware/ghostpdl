@@ -42,21 +42,39 @@ typedef struct px_media_s {
 #define m_default 50, 50, 50, 50
 #define m_data(ms_enum, res, width, height)\
   {ms_enum, width * 300 / (res), height * 300 / (res), m_default},
-private const px_media_t known_media[] = {
+private px_media_t known_media[] = {
   px_enumerate_media(m_data)
   /* The list ends with a comma, so add a dummy entry */
   /* that can't be matched because its key is a duplicate. */
   {eLetterPaper}
 };
 #undef m_data
-private const px_media_t default_media =
-  {eLetterPaper, 2550, 3300, m_default};
 #undef m_default
 
 /* Define the mapping from the Measure enumeration to points. */
 private const double measure_to_points[] = pxeMeasure_to_points;
 
 /* ---------------- Internal procedures ---------------- */
+
+/* return the default media set up in the XL state */
+private px_media_t * 
+px_get_default_media(px_state_t *pxs)
+{
+    int i;
+    for (i = 0; i < countof(known_media); i++)
+	if ( known_media[i].ms_enum == pxs->media_size )
+	    return &known_media[i];
+    /* shouldn't get here but just in case we return letter. */
+    return &known_media[0];
+}
+
+ void
+px_get_default_media_size(px_state_t *pxs, gs_point *pt)
+{
+    px_media_t *media = px_get_default_media(pxs);
+    pt->x = media->width * media_size_scale;
+    pt->y = media->height * media_size_scale;
+}
 
 /* Finish putting one device parameter. */
 private int
@@ -144,13 +162,55 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 	/* Set media parameters to device defaults, in case BeginPage */
 	/* doesn't specify valid ones. */
 	/* This is obviously device-dependent. */
-	pxs->media_source = eDefaultSource;
-	pxs->media_size.x = default_media.width * media_size_scale;
-	pxs->media_size.y = default_media.height * media_size_scale;
-	pxs->duplex = false;
-	pxs->media_destination = eDefaultDestination;
-	pxs->media_type = eDefaultType;
-	px_dict_init(&pxs->font_dict, pxs->memory, px_free_font);
+	/* get the pjl state */
+	{
+	    char* pjl_psize = pjl_get_envvar(pxs->pjls, "paper");
+	    /* NB.  We are not sure about the interaction of pjl's
+               wide a4 commands so we don't attempt to implement
+               it. */
+	    /* bool pjl_widea4 = pjl_compare(pjl_get_envvar(pxs->pjls, "widea4"), "no"); */
+	    int pjl_copies = pjl_vartoi(pjl_get_envvar(pxs->pjls, "copies"));
+	    bool pjl_duplex = pjl_compare(pjl_get_envvar(pxs->pjls, "duplex"), "off");
+	    bool pjl_bindshort = pjl_compare(pjl_get_envvar(pxs->pjls, "binding"), "longedge");
+	    bool pjl_manualfeed = pjl_compare(pjl_get_envvar(pxs->pjls, "manualfeed"), "off");
+	    /* table to map pjl paper type strings to pxl enums */
+	    private const struct {
+		const char *pname;
+		pxeMediaSize_t paper_enum;
+	    } pjl_paper_sizes[] = {
+		{ "letter", eLetterPaper },
+		{ "legal", eLegalPaper },
+		{ "a4", eA4Paper },
+                { "executive", eExecPaper },
+		{ "ledger", eLedgerPaper },
+		{ "a3", eA3Paper },        
+		{ "com10", eCOM10Envelope },
+		{ "monarch", eMonarchEnvelope },
+		{ "c5", eC5Envelope },
+		{ "dl", eDLEnvelope },
+		{ "jisb4", eJB4Paper },
+		{ "jisb5", eJB5Paper },       
+		{ "b5", eB5Envelope },
+		{ "jpost", eJPostcard },
+		{ "jpostd", eJDoublePostcard },
+		{ "a5", eA5Paper },        
+		{ "a6", eA6Paper },
+		{ "jisb6", eJB6Paper },       
+	    };
+	    int i;
+	    for (i = 0; i < countof(pjl_paper_sizes); i++)
+		if ( !pjl_compare(pjl_psize, pjl_paper_sizes[i].pname) ) {
+		    pxs->media_size = pjl_paper_sizes[i].paper_enum;
+		    break;
+		}
+	    pxs->media_source = (pjl_manualfeed ? eManualFeed : eDefaultSource);
+	    pxs->duplex = pjl_duplex;
+	    pxs->duplex_page_mode = (pjl_bindshort ? eDuplexHorizontalBinding :
+				     eDuplexVerticalBinding);
+	    pxs->copies = pjl_copies;
+	    pxs->media_destination = eDefaultDestination;
+	    px_dict_init(&pxs->font_dict, pxs->memory, px_free_font);
+	}
 	return 0;
 }
 
@@ -177,6 +237,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	gx_device *dev = gs_currentdevice(pgs);
 	const px_media_t *pm;
 	gs_point page_size_pixels;
+	gs_point media_size;
 
 	/* Check parameter presence for legal combinations. */
 	if ( par->pv[2] )
@@ -220,21 +281,22 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 		break;
 	    if ( i == countof(known_media) )
 	      { /* No match, select default media. */
-		pm = &default_media;
+		pm = px_get_default_media(pxs);
 		px_record_warning("IllegalMediaSize", false, pxs);
 	      }
-	    pxs->media_size.x = pm->width * media_size_scale;
-	    pxs->media_size.y = pm->height * media_size_scale;
+	    pxs->media_size = pm->ms_enum;
+	    media_size.x = pm->width * media_size_scale;
+	    media_size.y = pm->height * media_size_scale;
 	  }
 	else
 	  { double scale = measure_to_points[par->pv[4]->value.i];
-	    pxs->media_size.x = real_value(par->pv[3], 0) * scale;
-	    pxs->media_size.y = real_value(par->pv[3], 1) * scale;
+	    media_size.x = real_value(par->pv[3], 0) * scale;
+	    media_size.y = real_value(par->pv[3], 1) * scale;
 	    /*
 	     * Assume the unprintable margins for custom media are the same
 	     * as for the default media.  This may not be right.
 	     */
-	    pm = &default_media;
+	    pm = px_get_default_media(pxs);
 	  }
 	if ( par->pv[5] )
 	  { pxs->duplex = false;
@@ -270,8 +332,8 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	  ecode = px_put1(dev, &list, ecode);
 
 	  gs_c_param_list_write(&list, mem);
-	  fv[0] = pxs->media_size.x;
-	  fv[1] = pxs->media_size.y;
+	  fv[0] = media_size.x;
+	  fv[1] = media_size.y;
 	  fa.size = 2;
 	  code = param_write_float_array(plist, ".MediaSize", &fa);
 	  ecode = px_put1(dev, &list, ecode);
@@ -352,7 +414,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	{ int code;
 
 	  px_initgraphics(pxs);
-	  gs_dtransform(pgs, pxs->media_size.x, pxs->media_size.y,
+	  gs_dtransform(pgs, media_size.x, media_size.y,
 			&page_size_pixels);
 	  { /*
 	     * Put the origin at the upper left corner of the page;
@@ -365,7 +427,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	    switch ( pxs->orientation )
 	      {
 	      case ePortraitOrientation:
-		code = gs_translate(pgs, 0.0, pxs->media_size.y);
+		code = gs_translate(pgs, 0.0, media_size.y);
 		orient.xx = 1, orient.yy = -1;
 		break;
 	      case eLandscapeOrientation:
@@ -373,11 +435,11 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 		orient.xy = 1, orient.yx = 1;
 		break;
 	      case eReversePortrait:
-		code = gs_translate(pgs, pxs->media_size.x, 0);
+		code = gs_translate(pgs, media_size.x, 0);
 		orient.xx = -1, orient.yy = 1;
 		break;
 	      case eReverseLandscape:
-		code = gs_translate(pgs, pxs->media_size.x, pxs->media_size.y);
+		code = gs_translate(pgs, media_size.x, media_size.y);
 		orient.xy = -1, orient.yx = -1;
 		break;
 	      default:			/* can't happen */
@@ -451,7 +513,7 @@ const byte apxEndPage[] = {
 int
 pxEndPage(px_args_t *par, px_state_t *pxs)
 {	px_end_page_cleanup(pxs);
-	(*pxs->end_page)(pxs, (par->pv[0] ? par->pv[0]->value.i : 1), 1);
+	(*pxs->end_page)(pxs, (par->pv[0] ? par->pv[0]->value.i : pxs->copies), 1);
 	pxs->have_page = false;
 	return 0;
 }

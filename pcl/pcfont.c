@@ -446,9 +446,9 @@ pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	pcls->default_symbol_set_value = pcls->font_selection[0].params.symbol_set =
 	    pjl_map_pjl_sym_to_pcl_sym(pjl_get_envvar(pcls->pjls, "symset"));
 	pl_fp_set_pitch_per_inch(&pcls->font_selection[0].params,
-				 atof(pjl_get_envvar(pcls->pjls, "pitch")));
+				 pjl_vartof(pjl_get_envvar(pcls->pjls, "pitch")));
 	pcls->font_selection[0].params.height_4ths = 
-	    atof(pjl_get_envvar(pcls->pjls, "ptsize")) * 4.0;
+	    pjl_vartof(pjl_get_envvar(pcls->pjls, "ptsize")) * 4.0;
 	/* NB this needs to be filled in more completely with
            information specific to the os and the implemented font
            tables */

@@ -1104,6 +1104,7 @@ $(PCLOBJ)pgchar.$(OBJ): $(PCLSRC)pgchar.c \
                         $(math__h)        \
                         $(stdio__h)       \
                         $(gdebug_h)       \
+                        $(pgdraw_h)       \
                         $(pgmand_h)       \
                         $(pginit_h)       \
                         $(pggeom_h)       \

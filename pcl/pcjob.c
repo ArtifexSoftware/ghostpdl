@@ -4,7 +4,6 @@
 
 /* pcjob.c -  PCL5 job control commands */
 #include "std.h"
-#include <stdlib.h>            /* for atoi */
 #include "gx.h"
 #include "gsmemory.h"
 #include "gsmatrix.h"		/* for gsdevice.h */
@@ -195,7 +194,7 @@ pcjob_do_init(gs_memory_t *mem)
 private void
 pcjob_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
-	  { pcls->num_copies = atoi(pjl_get_envvar(pcls->pjls, "copies"));
+	  { pcls->num_copies = pjl_vartoi(pjl_get_envvar(pcls->pjls, "copies"));
 	    pcls->duplex =
 		!pjl_compare(pjl_get_envvar(pcls->pjls, "duplex"), "off") ? false : true;
 	    pcls->bind_short_edge =

@@ -5,7 +5,6 @@
 /* pcursor.c - PCL5 cursor positioning commands */
 
 #include "std.h"
-#include <stdlib.h>        /* for atoi */
 #include "math_.h"
 #include "pcommand.h"
 #include "pcstate.h"
@@ -788,7 +787,7 @@ pcursor_do_reset(
 
     pcs->line_termination = 0;
     pcs->hmi_cp = HMI_DEFAULT;
-    pcs->vmi_cp = pcs->margins.length / atoi(pjl_get_envvar(pcs->pjls, "formlines"));
+    pcs->vmi_cp = pcs->margins.length / pjl_vartoi(pjl_get_envvar(pcs->pjls, "formlines"));
 
     if ( (type & pcl_reset_overlay) == 0 ) {
         cursor_stk_size = 0;
