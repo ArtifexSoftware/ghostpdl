@@ -792,7 +792,6 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	    pfd->FontName.size = pfname->size;
 	    pfd->FontFile_id = ffid;
 	    pfd->base_font = base_font;
-	    pfd->orig_matrix = *pomat;
 	    /* Don't allow non-standard fonts with standard names. */
 	    pdf_font_embed_status(pdev, base_font, &name_index,
 				  &ignore_same);
@@ -806,6 +805,7 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	    pfd->FontName.size = fnsize;
 	    memset(&pfd->values, 0, sizeof(&pfd->values));
 	}
+	pfd->orig_matrix = *pomat;
 	if (is_standard) {
 	    psf->pfd = pfd;
 	    if (embed == FONT_EMBED_STANDARD)
@@ -843,6 +843,7 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 
     ppf->BaseEncoding = BaseEncoding;
     ppf->fname = pfd->FontName;
+    ppf->orig_matrix = *pomat;
     if (~same & FONT_SAME_METRICS) {
 	/*
 	 * Contrary to the PDF 1.3 documentation, FirstChar and
