@@ -351,6 +351,8 @@ main(
 			    goto next;
 		    code = 0;
 		    new_job = true;
+		    /* go back to pjl */
+		    in_pjl = true;
 		}
 
 	    }
@@ -658,12 +660,18 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 
 	gs_c_param_list_write_more(params);
 	while ( (arg = arg_next(pal)) != 0 && *arg == '-' )
-	  { arg += 2;
+	  { /* just - read from stdin */
+	    if ( arg[1] == NULL )
+	      break;
+	    arg += 2;
 	    switch ( arg[-1] )
 	      {
 	      default:
 		fprintf(gs_stderr, "Unrecognized switch: %s\n", arg);
 		return -1;
+	      case '\0':
+		  /* read from stdin - must be last arg */
+		  continue;
 	      case 'd':
 	      case 'D':
 		if ( !strcmp(arg, "BATCH") )
@@ -963,7 +971,10 @@ pl_main_cursor_open(
 )
 {
 	/* try to open file */
-	cursor->strm = fopen(fname, "rb");
+        if (fname[0] == '-' && fname[1] == NULL)
+	    cursor->strm = stdin;
+	else
+	    cursor->strm = fopen(fname, "rb");
 	if (!cursor->strm)
 	  return gs_error_ioerror;
 
