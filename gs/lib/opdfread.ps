@@ -77,7 +77,6 @@ true setglobal
   counttomark 1 sub -1 0 {
 	index =only
   } for
-  (\nostack contains :) =
   cleartomark
   % Assuming ....Undefined is never defined. 
   % Use it to emit an error.
@@ -94,6 +93,10 @@ true setglobal
   } {
     pop pop false
   } ifelse
+} bind def
+
+/IsUpper  % <int> IsUpper <bool>
+{ dup (A) 0 get ge exch (Z) 0 get le and
 } bind def
 
 % ===================== Work Data =========================================
@@ -154,6 +157,17 @@ true setglobal
 
 } bind def
 
+/PrintReference % <array> PrintReference <array>
+{
+  PDFR_DEBUG {
+	({ ) print
+	dup {
+	  =only ( ) print
+	} forall
+	( }) =
+  } if
+} bind def
+
 /R % <id> <gen> R <daemon>
 { % Make a reference daemon.
   0 ne {
@@ -162,13 +176,7 @@ true setglobal
   [ % <id> proc <obj>
 	exch //GetRegistered /exec load 
   ] cvx
-  PDFR_DEBUG {
-	({ ) print
-	dup {
-	  =only ( ) print
-	} forall
-	( }) =
-  } if
+  //PrintReference exec
 } bind def
 
 /DoNothing 
@@ -230,9 +238,14 @@ true setglobal
   3 copy pop get													% <> key {} e
   dup xcheck {
 	% We've got a reference daemon, execute it :
+	PDFR_DEBUG {
+	  (Resolving ) print //PrintReference exec
+	} if
 	exec															% <> key {} val
-  } if
-  exch exec 														% <> key val
+    exch exec 														% <> key val
+  } {
+    exch pop
+  } ifelse
   dup 4 1 roll														% val <> key val
   put																% val
 } bind def
@@ -354,6 +367,81 @@ true setglobal
   } bind
 >> def
 
+% ===================== Font Management ======================
+
+/InstalledFonts 50 dict def
+
+/GetInstalledFont % <name> GetInstalledFont <font>
+{ currentglobal exch true setglobal								% g n
+  dup //InstalledFonts exch knownget {						    % g n f
+    exch pop													% g f
+  } {															% g n
+    dup findfont dup 3 1 roll									% g f n f
+	//InstalledFonts 3 1 roll put								% g f
+  } ifelse
+  exch setglobal
+} bind def
+
+/RemoveFontNamePrefix % <name> RemoveFontNamePrefix <name>
+{ =string cvs true
+  0 1 5 {
+    2 index exch get //IsUpper exec not {
+	   pop false exit
+	} if
+  } for
+  { (+) search {
+      pop pop
+    } if
+  } if
+  cvn
+} bind def
+
+/CheckFont % <key> <val> CheckFont <key> <val>
+{ dup /Type get /Font ne {
+    mark (Resource ) 3 index ( must have /Type/Font .) //error exec
+  } if
+} bind def
+
+/CheckEncoding %  <key> <val> CheckEncoding <key> <val>
+{ dup type /nametype ne {
+    dup /Type get /Encoding ne {
+      mark (Resource ) 3 index ( must have /Type/Encoding .) //error exec
+    } if
+  } if
+} bind def
+
+/ObtainEncoding % <font_resource> ObtainEncoding <font_resource>
+{ dup dup /Encoding //CheckEncoding //UnRefD exec				% fr fr er|e|n
+  dup type dup /arraytype eq exch /packedarraytype eq or {
+    % Already resolved.
+	pop pop
+  } {
+    dup type /nametype eq {
+      /Encoding findresource									% fr fr e
+    } {
+      dup /BaseEncoding //knownget exec not {
+	    /StandardEncoding
+	  } if
+	  /Encoding findresource									% fr fr er e
+	  exch														% fr fr e er
+	  /Differences //knownget exec {							% fr fr e d
+	    exch dup length array copy exch
+	    0 exch													% fr fr e 0 d
+	    {														% fr fr e i v
+	      dup type /integertype eq {
+		    exch pop
+	      } {
+		    3 copy put pop										% fr fr e i
+		    1 add
+	      } ifelse
+	    } forall
+	    pop														% fr fr e
+	  } if														% fr fr e
+    } ifelse													% fr fr e
+    /Encoding exch put											% fr
+  } ifelse
+} bind def
+
 % ===================== Interpret Data Streams ===============
 
 /TempMatrix matrix def
@@ -374,33 +462,37 @@ currentdict end def
   /InitialTextMatrix matrix def
 currentdict end def
 
-/CheckFont % key val CheckFont key val
-{ dup /Type get /Font ne {
-    mark (Resource ) 3 index ( must have /Type/Font.) //error exec
-  } if
-} bind def
-
 /SetFont  % <resource_name> <size> SetFont -
 { dup //GraphicState exch /FontSize exch put
   exch																% s n 
   //PDFReader /CurrentObject get /Context get /Resources get 
   /Font //DoNothing //UnRefD exec
   exch //CheckFont //UnRefD exec									% s fr
-  dup /Subtype get /Type3 eq {
-    (Underimplemented SetFont)=
-	pop /Courier exch 10 mul selectfont
+  dup /Font //knownget exec {										% s fr f
+    exch pop
   } {
-    /BaseFont get
     (Underimplemented SetFont)=
-    =string cvs (+) search {
-      pop pop
-    } if
-	cvn
-	PDFR_DEBUG {
-	  (Font ) print dup =
-	} if
-    exch selectfont
+    //ObtainEncoding exec
+    dup /Subtype get /Type3 eq {
+	  pop /Courier findfont exch 10 mul exch
+    } {
+      dup /BaseFont get												% s fr n
+	  //RemoveFontNamePrefix exec									% s fr n
+	  PDFR_DEBUG {
+	    (Font ) print dup =
+	  } if															% s fr n
+	  //GetInstalledFont exec										% s fr f
+	  dup length dict copy											% s fr f
+	  dup 2 index /Encoding get										% s fr f f e
+	  /Encoding exch put											% s fr f
+	  % todo: set Metrics here
+	  1 index /BaseFont get											% s fr f n
+	  exch definefont												% s fr f
+	  dup 3 1 roll													% s f fr f
+	  /Font exch put												% s f
+	} ifelse
   } ifelse
+  exch scalefont setfont
 } bind def
 
 /ShowText  % <string> ShowText -
