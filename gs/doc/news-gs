@@ -4,6 +4,222 @@ ported directly from the latest aladdin release it is not documented
 here.  We provide a reference aladdin release number and the files.
 Please see News.htm for a detailed explanation of these changes.
 
+Version 5.50e (02/24/99)
+========================
+
+Tue Feb 23 19:00:00 1999                ray@artifex.com
+
+        * gsciemap.c [1.3]:
+        Fix for unintialized caches when using CIE color space. Problem seen with
+        PCL5c fts0871.bin. CIE_CHECK_RENDERING macro was checking the wrong
+        status.
+        
+
+Fri Feb 19 05:00:00 1999                ray@artifex.com
+
+        * watc.mak [1.9]:
+        Fix non 32-bit tool make to write to $(ll_tr) before appending.
+        
+        * watclib.mak [1.7]:
+        Fix non 32-bit tool make to include the SYSTEM and OPTION STUB directives.
+        
+
+Fri Feb 19 01:00:00 1999                ray@artifex.com
+
+        * wccommon.mak [1.11]:
+        Add -zp8 flag to force alignment -- important to prevent FP errors.
+        
+
+Thu Feb 18 23:00:00 1999                ray@artifex.com
+
+        * gdevclj.c [1.5]:
+        Change paper_sizes to clj_paper_sizes to prevent conflict (with PCL code)
+        when building with NOPRIVATE=1.
+        
+        * wccommon.mak [1.10]:
+        Add missing $(GLSRCDIR) to CP_ and RMN_ definitions. Change genconf escape
+        to '~' ('^' is special in .bat files). Move .BEFORE directory creation to
+        watc.mak.
+        
+        * watclib.mak [1.6]:
+        Fix LIBPATHS syntax, put !ifndef around most definitions to allow pre-
+        definition (from pcl/pxl make). Add WAT32 section to build for NT char
+        mode executable.
+        
+        * gdevpx.c [1.6]:
+        Make 'put_bytes' into 'px_put_bytes' to prevent conflict when building
+        with NOPRIVATE.
+        
+        * watc.mak [1.8]:
+        Move .BEFORE here to make directories, add missing $(GLGENDIR) for
+        ll_tr macro assignment (for pcl/pxl make).
+        
+
+Wed Feb 17 05:00:00 1999                ray@artifex.com
+
+        * gp_ntfs.c [1.4]:
+        Add conditional for Watcom to use regluar setmode and fileno (not _setmode
+        and _fileno).
+        
+        * wccommon.mak [1.9]:
+        Add support for 32-bit build flag WAT32, add watcom/h/nt to include path.
+        Add .BEFORE section to create object and gen directories if needed.
+        
+        * watc.mak [1.7]:
+        Support build for 32-bit systems (95 or NT) as default. Don't include vga
+        and other direct devices. Make Pentium the default CPU type, and increase
+        stack size to 32k (needed for high level clist).
+        
+
+Wed Feb 17 03:00:00 1999                ray@artifex.com
+
+        * gscdefs.h [1.5], gconf.c [1.5]:
+        Prevent conflicting definitions for dynamic tables (Watcom complained).
+        
+        * zchar.c [1.4]:
+        Get rid of garbage ^H on line 419 -- caused compile error under Watcom.
+        
+
+Tue Feb 16 16:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * jpeg/Attic/libjpeg.a [1.2]:
+        removes binary.
+        
+
+Fri Feb 12 16:00:00 1999                ray@artifex.com
+
+        * gscie.c [1.7]:
+        Fix condition where cie_joint_caches would not be initialized after alloc.
+        Caused bad colors (near black), only detected with PCL5, not PS.
+        
+
+Tue Feb  2 04:00:00 1999                marcos@artifex.com
+
+        * lib.mak [1.13], gsmemlok.h [1.4], gsmemlok.c [1.5], gsmalloc.h [1.4], 
+        gsmalloc.c [1.7]:
+        Added monitor-locking to large block allocator.
+        
+        * gxclrast.c [1.8]:
+        Fixed degenerate triangle problem (using Peter's fix).
+        
+        * gsdparam.c [1.5]:
+        Removed PageCount check to allow multiple page files to correctly RIP
+        under async pcl.
+        
+
+Tue Feb  2 02:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * gxstroke.c [1.8]:
+        backs out change to check if bevel joins are colinear we now detect
+        degenerate cases in the band list machinary.
+        
+
+Mon Feb  1 20:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * gxstroke.c [1.7]:
+        update of udy and udx were backwards.
+        
+
+Mon Feb  1 19:00:00 1999                marcos@artifex.com
+
+        * gdevbmpa.c [1.14], gdevbmp.c [1.6]:
+        Peter's changes for 32 bit CMYK bmp output (outside the Microsoft
+        BMP spec. but an obvious extension).
+        
+
+Mon Feb  1 02:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * zgstate.c [1.4], gxstroke.c [1.6], gxline.h [1.4], gsstate.c [1.7], gsline.h [1.4], 
+        gsline.c [1.4]:
+        modifications to support dot orientation.  HPGL/2 dots (zero length
+        lines) are always drawn parallel to the HPGL/2 X-axis.  Also, makes
+        dot orientation independent of device space.
+        
+
+Sun Jan 31 21:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * zcrd.c [1.6], gscrdp.h [1.5], gscrdp.c [1.7], gscrd.h [1.5], gscrd.c [1.7], 
+        gsciemap.c [1.2], gscie.h [1.6], gscie.c [1.6]:
+        updates CRD from driver bookkeeping (peter)
+        
+
+Sun Jan 31 02:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * gdevcmap.h [1.4]:
+        see last gdevcmap.c entry.  These should have been checked in together.
+        
+        * gdevcmap.c [1.8]:
+        color mapping modification to properly hand snap to primaries and snap
+        black to white and other colors to white.
+        
+
+Sat Jan 30 23:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * lib.mak [1.12], genconf.c [1.5]:
+        configuration support for high level images.
+        
+
+Sat Jan 30 22:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * gdevbmpa.c [1.13], gdevbmp.c [1.5]:
+        backs out 32 bit cmyk change.
+        
+
+Fri Jan 29 22:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * gscrdp.h [1.4], gscrd.h [1.4], gscrd.c [1.6]:
+        new interface for creating crds derived from the current crd.
+        
+        * gscrdp.c [1.6]:
+        fixes render table check.
+        
+
+Thu Jan 28 04:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * gdevbmpa.c [1.12], gdevbmp.c [1.4], devs.mak [1.13]:
+        32 bit cmyk driver changes (peter).
+        
+
+Sat Jan 23 19:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * gxstroke.c [1.5]:
+        don't try to render 0 area bevels.
+        
+        * gdevbmpa.c [1.11]:
+        modification to produce multiple copies.
+        
+
+Wed Jan 20 09:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * gxalloc.h [1.9]:
+        moved debug definitions from gsalloc.c to avoid a compilation problem
+        on with Watcom C (ray).
+        
+
+Tue Jan 19 16:00:00 1999                ray@artifex.com
+
+        * gsmemraw.h [1.5]:
+        Comment change to 'Resize'. If old and new size are the same, returns the
+        original object. In any case the min(old,new) bytes of data are copied.
+        
+        * gsalloc.c [1.9]:
+        Change 'resize' operations of objects/strings to return the original if
+        the old and new size are the same. Also add logic to 'trim' the object/
+        string if the new size is smaller than the old to avoid double
+        allocations and copy step. Memory trimmed is added to free space.
+        
+        * gdevprn.c [1.11]:
+        Add optional code to avoid sandbars for async rendering. Default is to
+        free memory as in previous code. Use #define DO_NOT_REDUCE_BUFFER_SPACE 1
+        to keep initial (largest) allocation when buffer space shrinks.
+        
+        * gsmalloc.c [1.6]:
+        Make resize operations return original object/string if no size change.
+        
+        * gsmemory.h [1.5]:
+        Add comment to 'Resize' to refer to gsmemraw.h. This comment says that if
+        old and new size are the same, the original object is returned.
+
 Version 5.50d (01/01/99)
 ========================
 

@@ -10,6 +10,263 @@ generated from the revision control logs.  The dates provided for each
 entry are the dates the sources were committed to the source code
 repository.
 
+Version 1.06 (02/24/99)
+======================
+
+Wed Feb 24 11:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pcstate.h [1.11], pcsfont.c [1.10], pcpage.c [1.20], pcmain.c [1.23], 
+        pclfont.c [1.4], pcl.mak [1.23], pcfont.c [1.10]:
+        Modifications to support PJL fontsource and fontnumber environment
+        variables.
+        
+
+Fri Feb 19 00:00:00 1999                ray@artifex.com
+
+        * pcl_watc.mak [1.6]:
+        Fix problems that kept this from working. Change to make 32-bit tools and
+        target the default. Update it to work with the new directory structure.
+        This is probably the first workable version for Watcom.
+        
+        * pcindxed.h [1.3], pcindxed.c [1.3]:
+        Change cs_indexed_..._ptrs to pcl_cs_indexed_..._ptrs to prevent conflict
+        with gscolor2.c when building NOPRIVATE=1.
+        
+
+Thu Feb 18 23:00:00 1999                ray@artifex.com
+
+        * pcl_top.mak [1.13]:
+        Fix building of pclver.h to use '-x 23' instead of '#' which breaks under
+        Watcom/Dos.
+        
+        * pcl.mak [1.22]:
+        Fix PCLCCC to use $(I_) macro instead of hard coded -I which doesn't work
+        on Watcom, VMS, etc.
+        
+
+Thu Feb 18 06:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * Anomalies.txt [1.12]:
+        removes pcl clipping region bug - not actually a bug but a problem
+        with the device driver.
+        
+        * Anomalies.txt [1.11]:
+        removes clipping anomaly.
+        
+        * pgdraw.c [1.29], pcpage.c [1.19]:
+        Rounding of device clip boxes and ctm translation components.  Also,
+        modifies GL/2 to use a closed clipping region instead of the default
+        half-open region.
+        
+
+Wed Feb 17 08:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgchar.c [1.8], pcursor.c [1.8], pcl.mak [1.21], pcjob.c [1.9], pcfont.c [1.9]:
+        modifications to support PCLXL processing of PJL.
+        
+
+Tue Feb 16 00:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pglabel.c [1.14]:
+        moves SR, SI line spacing hack to cursor positioning routine.
+        
+
+Sun Feb 14 08:00:00 1999                marcos@artifex.com
+
+        * rtraster.c [1.13]:
+        Added check for adaptive compression mode in transfer_raster_row()
+        to avoid duplicating last line of raster data (fixes fts.0717).
+        
+
+Sun Feb 14 06:00:00 1999                marcos@artifex.com
+
+        * rtraster.c [1.12]:
+        Fixed problem with adaptive compression (if the last command was repeat
+        previous row it was ignored, showed up in adaptivecompression.pcl).
+        
+
+Sat Feb 13 20:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgdraw.c [1.28]:
+        hpgl/2 vector fills now support assymetric scaling properly.
+        
+        * pgconfig.c [1.9]:
+        draws the current path when IP is issued.
+        
+        * pglabel.c [1.13]:
+        corrects multiplier for cell height.
+        
+
+Sat Feb 13 06:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pglabel.c [1.12]:
+        modified to properly handle label placement with SI, SR.
+        
+
+Sat Feb 13 05:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pglfill.c [1.10]:
+        removes obsolete comment.
+        
+
+Sat Feb 13 00:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgfont.c [1.3], pgdraw.c [1.27]:
+        all labels use round caps and round joins.
+        
+
+Fri Feb 12 05:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * rtraster.c [1.11]:
+        removes optimization that prints raster as rectangle.  The code only
+        worked properly with short edge feed devices.  We might reimplement
+        this in the future if this part of the code is indeed a performance
+        bottleneck.
+        
+
+Fri Feb 12 03:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgvector.c [1.7], pgstate.h [1.6], pglfill.c [1.9], pglabel.c [1.11], 
+        pginit.c [1.10], pgdraw.c [1.26], Anomalies.txt [1.10]:
+        Improvement of fill line anchoring in gl/2.  Now use gl/2's position
+        in user space instead of tracking device space position, which
+        resulted in rounding errors when tranforming and doing comparisons.
+        Label code updated to use gl/2 line drawing instead of using gs
+        functions directly.  Also we now draw the current path when the for
+        relative/absolution mode changes in the pen.  Updates Anomalies.txt to
+        reflect changes.
+        
+
+Thu Feb 11 18:00:00 1999                ray@artifex.com
+
+        * pcl.mak [1.20]:
+        Remove the extra space after $(O_). This messes up platforms which cannot
+        have a space. Correct fix is to define O_ correctly for platforms that
+        require a space. See common/unixdefs.mak where O_=-o $(NULL).
+        
+
+Mon Feb  8 09:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pcsfont.c [1.9], pcparse.c [1.4]:
+        Quiets pcl in DEBUG mode.
+        
+
+Sun Feb  7 09:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pglfill.c [1.8], pglabel.c [1.10], pgdraw.h [1.7], pgdraw.c [1.25], pgchar.c [1.7]:
+        Addition to properly select and wrap the current pen.  Adds an
+        accessor function for getting the currently selected pen.
+        
+        * pcpatrn.c [1.15]:
+        Sample implementation of driver configuration.
+        
+        * Anomalies.txt [1.9]:
+        removes bezier problem.
+        
+
+Sun Feb  7 08:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgdraw.c [1.24]:
+        fixes a stupid typo that was messing up the clipping region in gl/2.
+        
+
+Fri Feb  5 18:00:00 1999                marcos@artifex.com
+
+        * pcl.mak [1.19]:
+        Added space for solaris gcc: $(O_) $(PCLOBJ).
+        
+
+Fri Feb  5 06:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgdraw.c [1.23]:
+        set dot orientation immediately after setting the ctm.
+        
+        * pgvector.c [1.6]:
+        a hack to clear the current path before printing bezier curves.  The
+        drawing machinery is not set up to apply line joins between lines and
+        curves.  Lines of zero length are frequently used to set up for
+        drawing a bezier.  We clear these points so they will not print as
+        "orthogonal dots".
+        
+
+Thu Feb  4 00:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgdraw.c [1.22], pcpage.c [1.18]:
+        intersect pcl's clipping region with the hardware margins.
+        
+
+Mon Feb  1 19:00:00 1999                marcos@artifex.com
+
+        * pcl_ugcc.mak [1.19]:
+        Added bmpa32b.dev device.
+        
+
+Mon Feb  1 19:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * Anomalies.txt [1.8]:
+        updates for recent fixes.
+        
+
+Mon Feb  1 02:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgdraw.c [1.21]:
+        modifications to support dot orientation.  HPGL/2 dots (zero length
+        lines) are always drawn parallel to the HPGL/2 X-axis.  Also, makes
+        dot orientation independent of device space.
+        
+
+Sun Jan 31 06:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * rtmisc.c [1.5], pgvector.c [1.5], pglabel.c [1.9], pgdraw.h [1.6], pgdraw.c [1.20], 
+        pgconfig.c [1.8], pgchar.c [1.6]:
+        Properly update carriage return position when entering HPGL/2 with the
+        the current pcl cap.  Provides a function for updating a carriage
+        return position to the current position.
+        
+
+Sat Jan 30 22:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pccrd.c [1.8]:
+        removes redundant call to initialize the crd.
+        
+
+Fri Jan 29 22:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pccrd.c [1.7]:
+        use the new interface to initialize a new crd derived from an old one.
+        
+
+Wed Jan 27 07:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pcpage.c [1.17]:
+        added warning message if the bbox is not installed properly.
+        
+
+Mon Jan 18 07:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * rtraster.c [1.10], pgdraw.c [1.19], pctext.c [1.14], pcstate.h [1.10], 
+        pcrect.c [1.7], pcpage.c [1.16], pcmain.c [1.22], pcht.c [1.11]:
+        Properly installs the bbox device and removes the "dubious" dirty page
+        optimization that avoided using the bbox device to check if a page was dirty.
+        
+
+Mon Jan 18 05:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pcdraw.c [1.9]:
+        fixes comment.
+        
+
+Sat Jan 16 07:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pcl_top.mak [1.12]:
+        updates version number.
+        
+
+Thu Jan 14 08:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * NEWS-PCL [1.13]:
+        chinook check-in.
+
 Version 1.05 (01/14/99)
 ======================
 

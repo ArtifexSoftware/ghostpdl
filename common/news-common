@@ -7,6 +7,34 @@ This file, NEWS-COM, describes the changes in the most recent releases of
 Aladdin's library code that is shared between all Aladdin products, in
 reverse chronological order.
 
+Version 1.08 (02/14/99)
+=======================
+
+Thu Feb 18 23:00:00 1999                ray@artifex.com
+
+        * watc_top.mak [1.4]:
+        Fix problems for make under Watcom. Use GLSRCDIR (not GSDIR), instead of
+        'type' to update time stamp, use >> (prevents file truncation). Use '~'
+        as the genconf escape character (special in .bat files). Increase stack
+        to 32K (needed for high level clists). Correct some missing directory
+        prefixes.
+        
+        * cp.bat [1.3]:
+        Prevent 'not_found' error on _.tmp temp file
+        
+
+Thu Feb 11 18:00:00 1999                ray@artifex.com
+
+        * unixdefs.mak [1.3]:
+        Force a space after -o for gcc make. The $(NULL) macro method is the
+        same as is used by the gs make (see comments in gs.mak)
+        
+
+Thu Jan 14 08:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * NEWS-COM [1.9]:
+        chinook check-in.
+
 Version 1.07 (01/01/99)
 =======================
 

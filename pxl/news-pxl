@@ -6,6 +6,72 @@
 This file, NEWS-XL, describes the changes in the most recent releases of
 Aladdin's PCL XL code, in reverse chronological order.
 
+Version 1.21 (02/24/99)
+======================
+
+Wed Feb 24 11:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pxsessio.c [1.4], pxl.mak [1.10]:
+        Modifications to support PJL fontsource and fontnumber environment
+        variables.
+        
+
+Thu Feb 18 23:00:00 1999                ray@artifex.com
+
+        * pxl.mak [1.9]:
+        Fix PXLCCC to use correct INCLUDE macros (instead of hard coded '-I'). Needed
+        for Watcom and VMS, etc.
+        
+
+Wed Feb 17 08:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pxstate.h [1.3], pxsessio.c [1.3], pxerrors.c [1.2]:
+        modifications to support PCLXL processing of PJL.
+        
+
+Thu Feb 11 18:00:00 1999                ray@artifex.com
+
+        * pxl.mak [1.8]:
+        Remove the extra space after $(O_). This messes up platforms which cannot
+        have a space. Correct fix is to define O_ correctly for platforms that
+        require a space. See common/unixdefs.mak where O_=-o $(NULL).
+        
+
+Mon Feb  8 08:00:00 1999                marcos@artifex.com
+
+        * pxl_top.mak [1.6]:
+        make clean now removes pclver.h
+        
+        * pxl.mak [1.7]:
+        Added space after -o to fix problem with Sparc gcc.
+        
+
+Thu Feb  4 17:00:00 1999                ray@artifex.com
+
+        * pxpaint.c [1.3]:
+        Fix for uninitialized value in 'cursor' structure causing FP Exception
+        (showed up Pentium). Change flow to call gs_currentpoint when there is
+        a valid current point.
+        
+
+Thu Feb  4 05:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pxsessio.c [1.2]:
+        changes setting of hardware margins.  We no longer will set margins
+        larger than the device's imageable region.
+        
+
+Sat Jan 23 17:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pxl_ugcc.mak [1.11]:
+        adds bmpa16m device.
+        
+
+Sat Jan 16 06:00:00 1999                marcos@artifex.com
+
+        * pxmain.c [1.5], pxl_top.mak [1.5]:
+        Added version numbering and build time/date stamp to executable.
+
 Version 1.20 (01/14/99)
 ======================
 

@@ -7,6 +7,70 @@ This file, NEWS-PL, describes the changes in the most recent releases of
 Aladdin's library code that is shared between PCL5, HP-GL/2, HP RTL, and PCL
 XL, in reverse chronological order.
 
+Version 1.25 (02/24/99)
+=======================
+
+Wed Feb 24 11:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * plfont.h [1.3], pjparse.h [1.5], pjparse.c [1.7]:
+        Modifications to support PJL fontsource and fontnumber environment
+        variables.
+
+Thu Feb 18 23:00:00 1999                ray@artifex.com
+
+        * plfont.c [1.3]:
+        Change to '***_f' version of pl_font_glyph things to prevent conflict with
+        NOPRIVATE (conflict in plchar.c)
+        
+        * pl.mak [1.8]:
+        Fix to use correct INCLUDE macros (instead of hard coded '-I'). Needed for
+        Watcom, VMS, etc.
+        
+
+Wed Feb 17 08:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pjparse.h [1.4], pjparse.c [1.6]:
+        modifications to support PCLXL processing of PJL.
+        
+
+Thu Feb 11 18:00:00 1999                ray@artifex.com
+
+        * pl.mak [1.7]:
+        Remove the extra space after $(O_). This messes up platforms which cannot
+        have a space. Correct fix is to define O_ correctly for platforms that
+        require a space. See common/unixdefs.mak where O_=-o $(NULL).
+        
+
+Mon Feb  8 09:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * plchar.c [1.3]:
+        Quiets pcl in DEBUG mode.
+        
+
+Fri Feb  5 18:00:00 1999                marcos@artifex.com
+
+        * pl.mak [1.6]:
+        Added space for solaris gcc: $(O_) $(PCLOBJ).
+        
+
+Sun Jan 31 03:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * plmain.c [1.9]:
+        reverts to previous version.  Version needs more review.
+        
+
+Sun Jan 31 02:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * plmain.c [1.8]:
+        modifies argument processing so that we don't step on argv as we parse
+        the data.
+        
+
+Thu Jan 14 08:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * NEWS-PL [1.9]:
+        chinook check-in.
+
 Version 1.24 (01/14/99)
 =======================
 
