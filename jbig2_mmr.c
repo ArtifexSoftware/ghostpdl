@@ -792,7 +792,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
 
 int
 jbig2_decode_generic_mmr(Jbig2Ctx *ctx,
-			 int32_t seg_number,
+			 Jbig2Segment *segment,
 			 const Jbig2GenericRegionParams *params,
 			 const byte *data, size_t size,
 			 Jbig2Image *image)

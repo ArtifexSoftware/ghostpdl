@@ -1,34 +1,23 @@
-void *
-jbig2_alloc (Jbig2Allocator *allocator, size_t size);
-
-void
-jbig2_free (Jbig2Allocator *allocator, void *p);
-
-void *
-jbig2_realloc (Jbig2Allocator *allocator, void *p, size_t size);
-
-#define jbig2_new(ctx, t, size) ((t *)jbig2_alloc(ctx->allocator, (size) * sizeof(t)))
-
-#define jbig2_renew(ctx, p, t, size) ((t *)jbig2_realloc(ctx->allocator, (p), (size) * sizeof(t)))
-
-int
-jbig2_error (Jbig2Ctx *ctx, Jbig2Severity severity, int32_t seg_idx,
-	     const char *fmt, ...);
+/*
+    jbig2dec
+    
+    Copyright (c) 2002 artofcode LLC.
+    
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+        
+    $Id: jbig2_priv.h,v 1.8 2002/06/22 16:05:45 giles Exp $
+    
+    shared library internals
+*/
 
 typedef uint8_t byte;
 typedef int bool;
 
 #define TRUE 1
 #define FALSE 0
-
-typedef struct _Jbig2Result Jbig2Result;
-
-/* The result of decoding a segment. See 0.1.5 */
-struct _Jbig2Result {
-  int32_t segment_number;
-  int segment_type;
-  void (*free)(const Jbig2Result *self, Jbig2Ctx *ctx);
-};
 
 typedef enum {
   JBIG2_FILE_HEADER,
@@ -56,16 +45,10 @@ struct _Jbig2Ctx {
   byte file_header_flags;
   int32_t n_pages;
 
-  int n_sh;
-  int n_sh_max;
-  Jbig2SegmentHeader **sh_list;
-  int sh_ix;
-
-  /* The map from segment numbers to decoding results, currently
-     stored as a contiguous, 0-indexed array. */
-  int n_results;
-  int n_results_max;
-  const Jbig2Result **results;
+  int n_segments;
+  int n_segments_max;
+  Jbig2Segment **segments;
+  int segment_index;
   
   /* list of decoded pages, including the one in progress,
      currently stored as a contiguous, 0-indexed array. */
@@ -80,12 +63,29 @@ jbig2_get_int32 (const byte *buf);
 int16_t
 jbig2_get_int16 (const byte *buf);
 
+/* dynamic memory management */
+void *
+jbig2_alloc (Jbig2Allocator *allocator, size_t size);
+
+void
+jbig2_free (Jbig2Allocator *allocator, void *p);
+
+void *
+jbig2_realloc (Jbig2Allocator *allocator, void *p, size_t size);
+
+#define jbig2_new(ctx, t, size) ((t *)jbig2_alloc(ctx->allocator, (size) * sizeof(t)))
+
+#define jbig2_renew(ctx, p, t, size) ((t *)jbig2_realloc(ctx->allocator, (p), (size) * sizeof(t)))
+
+int
+jbig2_error (Jbig2Ctx *ctx, Jbig2Severity severity, int32_t seg_idx,
+	     const char *fmt, ...);
+
 /* the page structure handles decoded page
    results. it's allocated by a 'page info'
    segement and marked complete by an 'end of page'
    segment.
 */
-
 typedef enum {
     JBIG2_PAGE_FREE,
     JBIG2_PAGE_NEW,
@@ -106,8 +106,8 @@ struct _Jbig2Page {
     Jbig2Image *image;
 };
 
-int jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_data);
-int jbig2_complete_page (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_data);
+int jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
+int jbig2_complete_page (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 
 int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int y);
 
@@ -122,7 +122,7 @@ typedef struct {
 } Jbig2RegionSegmentInfo;
 
 void jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info, const byte *segment_data);
-int jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_data);
+int jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 
 /* The word stream design is a compromise between simplicity and
    trying to amortize the number of method calls. Each ::get_next_word
@@ -140,10 +140,3 @@ jbig2_word_stream_buf_new(Jbig2Ctx *ctx, const byte *data, size_t size);
 
 void
 jbig2_word_stream_buf_free(Jbig2Ctx *ctx, Jbig2WordStream *ws);
-
-const Jbig2Result *
-jbig2_get_result(Jbig2Ctx *ctx, int32_t segment_number);
-
-int
-jbig2_put_result(Jbig2Ctx *ctx, const Jbig2Result *result);
-

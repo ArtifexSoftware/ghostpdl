@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.1 2002/06/20 15:42:48 giles Exp $
+    $Id: jbig2_text.c,v 1.2 2002/06/22 16:05:45 giles Exp $
 */
 
 #include <stddef.h>
@@ -25,7 +25,7 @@
  * jbig2_read_text_info: read a text region segment header
  **/
 int
-jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_data)
+jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
 {
     int offset = 0;
     Jbig2RegionSegmentInfo region_info;
@@ -66,11 +66,11 @@ jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_
     
     /* 7.4.3.1.7 */
     if (segment_flags & 0x01) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
             "symbol id huffman table decoding NYI");
     }
     
-    jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
+    jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
         "text region: %d x %d @ (%d,%d) %d symbols",
         region_info.width, region_info.height,
         region_info.x, region_info.y, num_instances);

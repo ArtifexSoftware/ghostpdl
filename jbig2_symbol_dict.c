@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.c,v 1.9 2002/06/22 09:47:31 giles Exp $
+    $Id: jbig2_symbol_dict.c,v 1.10 2002/06/22 16:05:45 giles Exp $
 */
 
 #include <stddef.h>
@@ -48,7 +48,7 @@ typedef struct {
 /* 6.5 */
 int
 jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
-			 int32_t seg_number,
+			 Jbig2Segment *segment,
 			 const Jbig2SymbolDictParams *params,
 			 const byte *data, size_t size,
 			 Jbig2ArithCx *GB_stats)
@@ -95,10 +95,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
       if (HCHEIGHT < 0)
 	/* todo: mem cleanup */
-	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, seg_number,
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			   "Invalid HCHEIGHT value");
 
-      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, seg_number,
+      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
         "HCHEIGHT = %d", HCHEIGHT);
         
       for (;;)
@@ -118,9 +118,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  TOTWIDTH = TOTWIDTH + SYMWIDTH;
 	  if (SYMWIDTH < 0)
 	    /* todo: mem cleanup */
-	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, seg_number,
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			       "Invalid SYMWIDTH value");
-	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, seg_number,
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "SYMWIDTH = %d", SYMWIDTH);
 
 	  /* 6.5.5 (4c.ii) */
@@ -143,7 +143,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 		  image = jbig2_image_new(ctx, SYMWIDTH, HCHEIGHT);
 
-		  code = jbig2_decode_generic_region(ctx, seg_number,
+		  code = jbig2_decode_generic_region(ctx, segment,
 						     &region_params,
 						     as,
 						     image, GB_stats);
@@ -157,7 +157,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 	  /* 6.5.5 (4c.iv) */
 	  NSYMSDECODED = NSYMSDECODED + 1;
-	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, seg_number,
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "%d of %d decoded", NSYMSDECODED, params->SDNUMNEWSYMS);
 	}
     }
@@ -169,7 +169,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 /* 7.4.2 */
 int
-jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
+jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 			const byte *segment_data)
 {
   Jbig2SymbolDictParams params;
@@ -178,7 +178,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
   int offset;
   Jbig2ArithCx *GB_stats = NULL;
 
-  if (sh->data_length < 10)
+  if (segment->data_length < 10)
     goto too_short;
 
   /* 7.4.2.1.1 */
@@ -189,7 +189,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
   params.SDRTEMPLATE = (flags >> 12) & 1;
 
   if (params.SDHUFF) {
-    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "symbol dictionary uses the Huffman encoding variant (NYI)");
     return 0;
   }
@@ -198,18 +198,18 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
   /* maybe #ifdef CONFORMANCE and a separate routine */
   if(!params.SDHUFF && (flags & 0x000c))
     {
-      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
 		  "SDHUFF is zero, but contrary to spec SDHUFFDH is not.");
     }
   if(!params.SDHUFF && (flags & 0x0030))
     {
-      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
 		  "SDHUFF is zero, but contrary to spec SDHUFFDW is not.");
     }
 
   if (flags & 0x0080)
     {
-      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "bitmap coding context is used (NYI) symbol data likely to be garbage!");
     }
 
@@ -221,13 +221,13 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
   /* 7.4.2.1.3 */
   if (params.SDREFAGG && !params.SDRTEMPLATE)
     {
-      if (offset + 4 > sh->data_length)
+      if (offset + 4 > segment->data_length)
 	goto too_short;
       memcpy(params.sdrat, segment_data + offset, 4);
       offset += 4;
     }
 
-  if (offset + 8 > sh->data_length)
+  if (offset + 8 > segment->data_length)
     goto too_short;
 
   /* 7.4.2.1.4 */
@@ -236,7 +236,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
   params.SDNUMNEWSYMS = jbig2_get_int32(segment_data + offset + 4);
   offset += 8;
 
-  jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
+  jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
 	      "symbol dictionary, flags=%04x, %d exported syms, %d new syms",
 	      flags, params.SDNUMEXSYMS, params.SDNUMNEWSYMS);
 
@@ -251,19 +251,19 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
 
   if (flags & 0x0100)
     {
-      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "segment marks bitmap coding context as retained (NYI)");
     }
 
-  return jbig2_decode_symbol_dict(ctx, sh->segment_number,
+  return jbig2_decode_symbol_dict(ctx, segment,
 				  &params,
 				  segment_data + offset,
-				  sh->data_length - offset,
+				  segment->data_length - offset,
 				  GB_stats);
 
   /* todo: retain or free GB_stats */
   
  too_short:
-  return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, sh->segment_number,
+  return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 		     "Segment too short");
 }

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.c,v 1.8 2002/06/18 13:40:29 giles Exp $
+    $Id: jbig2.c,v 1.9 2002/06/22 16:05:45 giles Exp $
 */
 
 #include <stdint.h>
@@ -109,17 +109,14 @@ jbig2_ctx_new (Jbig2Allocator *allocator,
     JBIG2_FILE_HEADER;
 
   result->buf = NULL;
-  result->sh_list = NULL;
-  result->n_sh = 0;
-  result->n_sh_max = 1;
-  result->sh_ix = 0;
-
-  result->n_results = 0;
-  result->n_results_max = 16;
-  result->results = (const Jbig2Result **)jbig2_alloc(allocator, result->n_results_max * sizeof(Jbig2Result *));
+  
+  result->n_segments = 0;
+  result->n_segments_max = 16;
+  result->segments = (Jbig2Segment **)jbig2_alloc(allocator, result->n_segments_max * sizeof(Jbig2Segment *));
+  result->segment_index = 0;
 
   result->current_page = 0;
-  result->max_page_index = 16;
+  result->max_page_index = 4;
   result->pages = (Jbig2Page *)jbig2_alloc(allocator, result->max_page_index * sizeof(Jbig2Page));
   {
     int index;
@@ -208,7 +205,7 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
   for (;;)
     {
       const byte jbig2_id_string[8] = { 0x97, 0x4a, 0x42, 0x32, 0x0d, 0x0a, 0x1a, 0x0a };
-      Jbig2SegmentHeader *sh;
+      Jbig2Segment *segment;
       size_t header_size;
       int code;
 
@@ -224,7 +221,7 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
           /* D.4.2 */
 	  ctx->file_header_flags = ctx->buf[ctx->buf_rd_ix + 8];
           /* D.4.3 */
-	  if (!(ctx->file_header_flags & 2))
+	  if (!(ctx->file_header_flags & 2)) /* number of pages is known */
 	    {
 	      if (ctx->buf_wr_ix - ctx->buf_rd_ix < 13)
 		return 0;
@@ -236,7 +233,10 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	      ctx->buf_rd_ix += 13;
 	    }
 	  else
-	    ctx->buf_rd_ix += 9;
+            {
+              ctx->n_pages=0;
+	      ctx->buf_rd_ix += 9;
+            }
           /* determine the file organization based on the flags - D.4.2 again */
 	  if (ctx->file_header_flags & 1)
 	    {
@@ -245,32 +245,25 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	  else
 	    {
 	      ctx->state = JBIG2_FILE_RANDOM_HEADERS;
-	      ctx->n_sh_max = 16;
-	    }
+            }
 	  break;
 	case JBIG2_FILE_SEQUENTIAL_HEADER:
 	case JBIG2_FILE_RANDOM_HEADERS:
-	  sh = jbig2_parse_segment_header(ctx, ctx->buf + ctx->buf_rd_ix,
+	  segment = jbig2_parse_segment_header(ctx, ctx->buf + ctx->buf_rd_ix,
 					  ctx->buf_wr_ix - ctx->buf_rd_ix,
 					  &header_size);
-	  if (sh == NULL)
+	  if (segment == NULL)
 	    return 0;
 	  ctx->buf_rd_ix += header_size;
 
-	  if (ctx->sh_list == NULL)
-	      ctx->sh_list = jbig2_alloc(ctx->allocator, ctx->n_sh_max *
-				     sizeof(Jbig2SegmentHeader *));
-	  else if (ctx->n_sh == ctx->n_sh_max)
-	    /* Note to rillian: I usually define a macro to make this
-	       less ungainly. */
-	    ctx->sh_list = (Jbig2SegmentHeader **)jbig2_realloc(ctx->allocator,
-								ctx->sh_list,
-								(ctx->n_sh_max <<= 2) * sizeof(Jbig2SegmentHeader *));
+	  if (ctx->n_segments == ctx->n_segments_max)
+	    ctx->segments = (Jbig2Segment **)jbig2_realloc(ctx->allocator,
+                ctx->segments, (ctx->n_segments_max <<= 2) * sizeof(Jbig2Segment *));
 
-	  ctx->sh_list[ctx->n_sh++] = sh;
+	  ctx->segments[ctx->n_segments++] = segment;
 	  if (ctx->state == JBIG2_FILE_RANDOM_HEADERS)
 	    {
-	      if ((sh->flags & 63) == 51) /* end of file */
+	      if ((segment->flags & 63) == 51) /* end of file */
 		ctx->state = JBIG2_FILE_RANDOM_BODIES;
 	    }
 	  else /* JBIG2_FILE_SEQUENTIAL_HEADER */
@@ -278,22 +271,22 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	  break;
 	case JBIG2_FILE_SEQUENTIAL_BODY:
 	case JBIG2_FILE_RANDOM_BODIES:
-	  sh = ctx->sh_list[ctx->sh_ix];
-	  if (sh->data_length > ctx->buf_wr_ix - ctx->buf_rd_ix)
+	  segment = ctx->segments[ctx->segment_index];
+	  if (segment->data_length > ctx->buf_wr_ix - ctx->buf_rd_ix)
 	    return 0;
-	  code = jbig2_write_segment(ctx, sh, ctx->buf + ctx->buf_rd_ix);
-	  ctx->buf_rd_ix += sh->data_length;
-	  jbig2_free_segment_header(ctx, sh);
-	  ctx->sh_list[ctx->sh_ix] = NULL;
+	  code = jbig2_write_segment(ctx, segment, ctx->buf + ctx->buf_rd_ix);
+	  ctx->buf_rd_ix += segment->data_length;
+	  jbig2_free_segment(ctx, segment);
+	  ctx->segments[ctx->segment_index] = NULL;
 	  if (ctx->state == JBIG2_FILE_RANDOM_BODIES)
 	    {
-	      ctx->sh_ix++;
-	      if (ctx->sh_ix == ctx->n_sh)
+	      ctx->segment_index++;
+	      if (ctx->segment_index == ctx->n_segments)
 		ctx->state = JBIG2_FILE_EOF;
 	    }
 	  else /* JBIG2_FILE_SEQUENCIAL_BODY */
 	    {
-	      ctx->n_sh = 0;
+	      ctx->n_segments = 0;
 	      ctx->state = JBIG2_FILE_SEQUENTIAL_HEADER;
 	    }
 	  if (code < 0)
@@ -320,21 +313,14 @@ jbig2_ctx_free (Jbig2Ctx *ctx)
   uint32_t seg_ix;
 
   jbig2_free(ca, ctx->buf);
-  if (ctx->sh_list != NULL)
+  if (ctx->segments != NULL)
     {
-      for (i = ctx->sh_ix; i < ctx->n_sh; i++)
-	jbig2_free_segment_header(ctx, ctx->sh_list[i]);
-      jbig2_free(ca, ctx->sh_list);
+      for (i = ctx->segment_index; i < ctx->n_segments; i++)
+	jbig2_free_segment(ctx, ctx->segments[i]);
+      jbig2_free(ca, ctx->segments);
     }
 
-  for (seg_ix = 0; seg_ix < ctx->n_results; seg_ix++)
-    {
-      const Jbig2Result *result = ctx->results[seg_ix];
-
-      if (result)
-	result->free(result, ctx);
-    }
-  jbig2_free(ca, ctx->results);
+  /* todo: free pages */
 
   jbig2_free(ca, ctx);
 }
@@ -350,56 +336,16 @@ void jbig2_global_ctx_free(Jbig2GlobalCtx *global_ctx)
 }
 
 
-const Jbig2Result *
-jbig2_get_result(Jbig2Ctx *ctx, int32_t segment_number)
-{
-  if (segment_number < 0 || segment_number >= ctx->n_results)
-    {
-      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment_number,
-		  "Attempting to get invalid segment number");
-      return NULL;
-    }
-  return ctx->results[segment_number];
-}
-
-int
-jbig2_put_result(Jbig2Ctx *ctx, const Jbig2Result *result)
-{
-  int32_t segment_number = result->segment_number;
-  int32_t i;
-
-  if (ctx->n_results_max <= segment_number)
-    {
-      const Jbig2Result **new_results;
-      do
-	ctx->n_results_max <<= 1;
-      while (ctx->n_results_max <= segment_number);
-      new_results = (const Jbig2Result **)jbig2_realloc(ctx->allocator,
-							  ctx->results,
-							  ctx->n_results_max * sizeof(Jbig2Result *));
-      if (new_results == NULL)
-	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment_number,
-			   "Allocation failure");
-      ctx->results = new_results;
-    }
-  for (i = ctx->n_results; i < segment_number; i++)
-    ctx->results[i] = NULL;
-  ctx->results[segment_number] = result;
-  if (ctx->n_results < segment_number + 1)
-    ctx->n_results = segment_number + 1;
-  return 0;
-}
+/* I'm not committed to keeping the word stream interface. It's handy
+   when you think you may be streaming your input, but if you're not
+   (as is currently the case), it just adds complexity.
+*/
 
 typedef struct {
   Jbig2WordStream super;
   const byte *data;
   size_t size;
 } Jbig2WordStreamBuf;
-
-/* I'm not committed to keeping the word stream interface. It's handy
-   when you think you may be streaming your input, but if you're not
-   (as is currently the case), it just adds complexity.
-*/
 
 static uint32_t
 jbig2_word_stream_buf_get_next_word(Jbig2WordStream *self, int offset)

@@ -8,9 +8,9 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.h,v 1.2 2002/06/15 14:12:50 giles Exp $
+    $Id: jbig2_symbol_dict.h,v 1.3 2002/06/22 16:05:45 giles Exp $
 */
 
 int
-jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
+jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 			const byte *segment_data);

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.h,v 1.8 2002/06/21 19:10:02 giles Exp $
+    $Id: jbig2.h,v 1.9 2002/06/22 16:05:45 giles Exp $
 */
 
 #ifdef __cplusplus
@@ -33,7 +33,7 @@ typedef enum {
 typedef struct _Jbig2Allocator Jbig2Allocator;
 typedef struct _Jbig2Ctx Jbig2Ctx;
 typedef struct _Jbig2GlobalCtx Jbig2GlobalCtx;
-typedef struct _Jbig2SegmentHeader Jbig2SegmentHeader;
+typedef struct _Jbig2Segment Jbig2Segment;
 typedef struct _Jbig2Image Jbig2Image;
 
 /* private structures */
@@ -90,19 +90,21 @@ int jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image);
 
 /* segment header routines */
 
-struct _Jbig2SegmentHeader {
-  int32_t segment_number;
+struct _Jbig2Segment {
+  uint32_t number;
   uint8_t flags;
-  int referred_to_segment_count;
-  int32_t page_association;
+  uint32_t page_association;
   int data_length;
+  int referred_to_segment_count;
+  int32_t *referred_to_segments;
+  void *result;
 };
 
-Jbig2SegmentHeader *jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
+Jbig2Segment *jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
 			    size_t *p_header_size);
-int jbig2_write_segment (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
+int jbig2_write_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
 			 const uint8_t *segment_data);
-void jbig2_free_segment_header (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh);
+void jbig2_free_segment (Jbig2Ctx *ctx, Jbig2Segment *segment);
 
 #ifdef __cplusplus
 }

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_generic.c,v 1.7 2002/06/22 09:47:31 giles Exp $
+    $Id: jbig2_generic.c,v 1.8 2002/06/22 16:05:45 giles Exp $
 */
 
 /**
@@ -28,7 +28,7 @@
 
 static int
 jbig2_decode_generic_template0(Jbig2Ctx *ctx,
-			       int32_t seg_number,
+			       Jbig2Segment *segment,
 			       const Jbig2GenericRegionParams *params,
 			       Jbig2ArithState *as,
 			       Jbig2Image *image,
@@ -97,7 +97,7 @@ jbig2_decode_generic_template0(Jbig2Ctx *ctx,
 
 static int
 jbig2_decode_generic_template1(Jbig2Ctx *ctx,
-			       int32_t seg_number,
+			       Jbig2Segment *segment,
 			       const Jbig2GenericRegionParams *params,
 			       Jbig2ArithState *as,
 			       Jbig2Image *image,
@@ -166,7 +166,7 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
 
 static int
 jbig2_decode_generic_template2(Jbig2Ctx *ctx,
-			       int32_t seg_number,
+			       Jbig2Segment *segment,
 			       const Jbig2GenericRegionParams *params,
 			       Jbig2ArithState *as,
 			       Jbig2Image *image,
@@ -235,7 +235,7 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
 
 static int
 jbig2_decode_generic_template2a(Jbig2Ctx *ctx,
-			       int32_t seg_number,
+			       Jbig2Segment *segment,
 			       const Jbig2GenericRegionParams *params,
 			       Jbig2ArithState *as,
 			       Jbig2Image *image,
@@ -322,40 +322,40 @@ jbig2_decode_generic_template2a(Jbig2Ctx *ctx,
  **/
 int
 jbig2_decode_generic_region(Jbig2Ctx *ctx,
-			    int32_t seg_number,
+			    Jbig2Segment *segment,
 			    const Jbig2GenericRegionParams *params,
 			    Jbig2ArithState *as,
 			    Jbig2Image *image,
 			    Jbig2ArithCx *GB_stats)
 {
   if (!params->MMR && params->GBTEMPLATE == 0)
-    return jbig2_decode_generic_template0(ctx, seg_number,
-					  params, as, image, GB_stats);
+    return jbig2_decode_generic_template0(ctx, segment, params,
+                                          as, image, GB_stats);
   else if (!params->MMR && params->GBTEMPLATE == 1)
-    return jbig2_decode_generic_template1(ctx, seg_number,
-					  params, as, image, GB_stats);
+    return jbig2_decode_generic_template1(ctx, segment, params,
+					  as, image, GB_stats);
   else if (!params->MMR && params->GBTEMPLATE == 2)
     {
       if (params->gbat[0] == 3 && params->gbat[1] == 255)
-	return jbig2_decode_generic_template2a(ctx, seg_number,
-					       params, as, image, GB_stats);
+	return jbig2_decode_generic_template2a(ctx, segment, params,
+					       as, image, GB_stats);
       else
-	return jbig2_decode_generic_template2(ctx, seg_number,
-					       params, as, image, GB_stats);
+	return jbig2_decode_generic_template2(ctx, segment, params,
+                                              as, image, GB_stats);
     }
   {
     int i;
     for (i = 0; i < 8; i++)
       printf ("gbat[%d] = %d\n", i, params->gbat[i]);
   }
-  jbig2_error(ctx, JBIG2_SEVERITY_WARNING, seg_number,
+  jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
 	      "decode_generic_region: MMR=%d, GBTEMPLATE=%d NYI",
 	      params->MMR, params->GBTEMPLATE);
   return -1;
 }
 
 int
-jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
+jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 			       const uint8_t *segment_data)
 {
   Jbig2RegionSegmentInfo rsi;
@@ -371,33 +371,32 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
   Jbig2ArithCx *GB_stats = NULL;
 
   /* 7.4.6 */
-  if (sh->data_length < 18)
-    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, sh->segment_number,
+  if (segment->data_length < 18)
+    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 		       "Segment too short");
 
   jbig2_get_region_segment_info(&rsi, segment_data);
-  jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
+  jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
 	      "generic region: %d x %d @ (%d, %d), flags = %02x",
 	      rsi.width, rsi.height, rsi.x, rsi.y, rsi.flags);
 
   /* 7.4.6.2 */
   seg_flags = segment_data[17];
-  jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
-	      "segment flags = %02x",
-	      seg_flags);
+  jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
+	      "segment flags = %02x", seg_flags);
   if ((seg_flags & 1) && (seg_flags & 6))
-    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
 		"MMR is 1, but GBTEMPLATE is not 0");
 
   /* 7.4.6.3 */
   if (!(seg_flags & 1))
     {
       gbat_bytes = (seg_flags & 6) ? 2 : 8;
-      if (18 + gbat_bytes > sh->data_length)
-	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, sh->segment_number,
+      if (18 + gbat_bytes > segment->data_length)
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			   "Segment too short");
       memcpy(gbat, segment_data + 18, gbat_bytes);
-      jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
+      jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
 		  "gbat: %d, %d", gbat[0], gbat[1]);
     }
 
@@ -411,14 +410,14 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
   memcpy (params.gbat, gbat, gbat_bytes);
 
   image = jbig2_image_new(ctx, rsi.width, rsi.height);
-  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, sh->segment_number,
+  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
     "allocated %d x %d image buffer for region decode results",
         rsi.width, rsi.height);
     
   if (params.MMR)
     {
-      code = jbig2_decode_generic_mmr(ctx, sh->segment_number, &params,
-				      segment_data + offset, sh->data_length - offset,
+      code = jbig2_decode_generic_mmr(ctx, segment, &params,
+				      segment_data + offset, segment->data_length - offset,
 				      image);
     }
   else
@@ -430,9 +429,9 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
 
       ws = jbig2_word_stream_buf_new(ctx,
 				     segment_data + offset,
-				     sh->data_length - offset);
+				     segment->data_length - offset);
       as = jbig2_arith_new(ctx, ws);
-      code = jbig2_decode_generic_region(ctx, sh->segment_number, &params,
+      code = jbig2_decode_generic_region(ctx, segment, &params,
 					 as, image, GB_stats);
     }
 

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_generic.h,v 1.5 2002/06/22 09:47:31 giles Exp $
+    $Id: jbig2_generic.h,v 1.6 2002/06/22 16:05:45 giles Exp $
 */
 
 /* Table 2 */
@@ -26,7 +26,7 @@ typedef struct {
 /* 6.2 */
 int
 jbig2_decode_generic_region(Jbig2Ctx *ctx,
-			    int32_t seg_number,
+			    Jbig2Segment *segment,
 			    const Jbig2GenericRegionParams *params,
 			    Jbig2ArithState *as,
 			    Jbig2Image *image,
@@ -34,6 +34,6 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
 
 /* 7.4 */
 int
-jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
+jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 			       const uint8_t *segment_data);
 

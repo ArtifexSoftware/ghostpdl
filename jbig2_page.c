@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_page.c,v 1.5 2002/06/21 19:10:02 giles Exp $
+    $Id: jbig2_page.c,v 1.6 2002/06/22 16:05:45 giles Exp $
 */
 
 #include <stdio.h>
@@ -23,25 +23,25 @@
 
 /* dump the page struct info */
 static void
-dump_page_info(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, Jbig2Page *page)
+dump_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, Jbig2Page *page)
 {
     if (page->x_resolution == 0) {
-        jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
             "page %d image is %dx%d (unknown res)", page->number,
             page->width, page->height);
     } else if (page->x_resolution == page->y_resolution) {
-        jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
             "page %d image is %dx%d (%d ppm)", page->number,
             page->width, page->height,
             page->x_resolution);
     } else {
-        jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
             "page %d image is %dx%d (%dx%d ppm)", page->number,
             page->width, page->height,
             page->x_resolution, page->y_resolution);
     }
     if (page->striped) {
-        jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
             "\tmaximum stripe size: %d", page->stripe_size);
     }
 }
@@ -54,7 +54,7 @@ dump_page_info(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, Jbig2Page *page)
  * buffer for the page (or the first stripe)
  **/
 int
-jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_data)
+jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
 {
     Jbig2Page *page;
 
@@ -63,7 +63,7 @@ jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment
     if ((page->number != 0) &&
             ((page->state == JBIG2_PAGE_NEW) || (page->state == JBIG2_PAGE_FREE))) {
         page->state = JBIG2_PAGE_COMPLETE;
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
             "unexpected page info segment, marking previous page finished");
     }
         
@@ -88,12 +88,12 @@ jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment
         page = &(ctx->pages[index]);
         ctx->current_page = index;
         page->state = JBIG2_PAGE_NEW;
-        page->number = sh->page_association;
+        page->number = segment->page_association;
     }
     
     // FIXME: would be nice if we tried to work around this
-    if (sh->data_length < 19) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, sh->segment_number,
+    if (segment->data_length < 19) {
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
             "segment too short");
         return NULL;
     }
@@ -118,17 +118,17 @@ jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment
         }
     }
     if (page->height == 0xFFFFFFFF && page->striped == FALSE) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
             "height is unspecified but page is not markes as striped");
         page->striped = TRUE;
     }
     
-    if (sh->data_length > 19) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+    if (segment->data_length > 19) {
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
             "extra data in segment");
     }
     
-    dump_page_info(ctx, sh, page);
+    dump_page_info(ctx, segment, page);
 
     /* allocate an approprate page image buffer */
     /* 7.4.8.2 */
@@ -138,12 +138,12 @@ jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment
         page->image = jbig2_image_new(ctx, page->width, page->height);
     }
     if (page->image == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, sh->segment_number,
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
             "failed to allocate buffer for page image");
         jbig2_free(ctx->allocator, page);
         return NULL;
     } else {
-        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, sh->segment_number,
+        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "allocated %dx%d page image (%d bytes)",
             page->image->width, page->image->height,
             page->image->stride*page->image->height);
@@ -160,18 +160,18 @@ jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment
  * of the page image will also happen from here (NYI)
  **/
 int
-jbig2_complete_page (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_data)
+jbig2_complete_page (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
 {
     uint32_t page_number = ctx->pages[ctx->current_page].number;
     
-    if (sh->page_association != page_number) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+    if (segment->page_association != page_number) {
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
             "end of page marker for page %d doesn't match current page number %d",
-            sh->page_association, page_number);
+            segment->page_association, page_number);
     }
     
     ctx->pages[ctx->current_page].state = JBIG2_PAGE_COMPLETE;
-    jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
+    jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
         "end of page %d", page_number);
 
 #ifdef OUTPUT_PBM
