@@ -67,7 +67,7 @@ $(GSSO_XE): $(GS_SO) $(GLSRC)dxmain.c
 
 # ------------------------- Recursive make targets ------------------------- #
 
-SODEFS=LDFLAGS='$(LDFLAGS) -shared -Wl,-soname,$(GS_SONAME_MAJOR)'\
+SODEFS=LDFLAGS='$(LDFLAGS) $(CFLAGS_SO) -shared -Wl,-soname,$(GS_SONAME_MAJOR)'\
  GS_XE=$(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR)\
  STDIO_IMPLEMENTATION=c\
  DISPLAY_DEV=$(DD)$(SOOBJRELDIR)/display.dev\
@@ -80,7 +80,7 @@ SODEFS=LDFLAGS='$(LDFLAGS) -shared -Wl,-soname,$(GS_SONAME_MAJOR)'\
 
 # Normal shared object
 so: SODIRS
-	$(MAKE) $(SODEFS) CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' $(GSSO)
+	$(MAKE) $(SODEFS) CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) $(GSSO)
 
 # Debug shared object
 # Note that this is in the same directory as the normal shared
