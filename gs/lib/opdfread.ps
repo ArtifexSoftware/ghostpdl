@@ -628,7 +628,7 @@ currentdict end readonly def
 
 /SetupPageView  % <obj> SetupPageView
 {
-  //GraphicState /InitialTextMatrix get setmatrix
+  //GraphicState /InitialMatrix get setmatrix
   /MediaBox get
   % stack: [<prevproc>] <pagedict> <Crop|Media Box>
   systemdict /PDFFitPage known {
