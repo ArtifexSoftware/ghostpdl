@@ -38,8 +38,7 @@ private const pcl_text_parsing_method_t pcl_tpm_0 = pcl_tpm_0_data,
 
 /*
  * Get next character procedure, to be passed to the graphic library font
- * machinery. Note that this will always parse two bytes, always assumes
- * two bytes are in the string.
+ * machinery. Always assumes two bytes are in the string.
  */
   private int
 get_gs_next_char(
@@ -49,10 +48,10 @@ get_gs_next_char(
 )
 {
     const byte *        pb = penum->text.data.bytes;
+    if ( (penum->index / 2 ) == penum->text.size )
+	return 2;
     *pglyph = gs_no_glyph;
-    if (penum->index >= 2)
-        return 2;
-    *pchr = (((uint)pb[0]) << 8) + pb[1];
+    *pchr = (((uint)pb[penum->index]) << 8) + pb[penum->index+1];
     penum->index += 2;
     return 0;
 }
@@ -234,6 +233,25 @@ get_next_char(
 }
 
 /*
+ * Draw the foreground of a character. For transparent text this is the only
+ * part that must be drawn.
+ */
+  private int
+show_char_foreground(
+    const pcl_state_t * pcs,
+    const char *        pbuff
+)
+{
+    gs_text_enum_t *   penum;
+    int                code = gs_show_begin(pcs->pgs, pbuff, 1, pcs->memory, &penum);
+
+    if (code >= 0)
+        code = gs_text_process(penum);
+    gs_text_release(penum, "show_char_foreground");
+    return code;
+}
+
+/*
  * draw the opaque background of a character.
  *
  * In the graphic library, characters are masks, hence they are always
@@ -350,25 +368,6 @@ show_char_background(
 }
 
 /*
- * Draw the foreground of a character. For transparent text this is the only
- * part that must be drawn.
- */
-  private int
-show_char_foreground(
-    const pcl_state_t * pcs,
-    const char *        pbuff
-)
-{
-    gs_text_enum_t *   penum;
-    int                code = gs_show_begin(pcs->pgs, pbuff, 2, pcs->memory, &penum);
-
-    if (code >= 0)
-        code = gs_text_process(penum);
-    gs_text_release(penum, "show_char_foreground");
-    return code;
-}
-
-/*
  * get the advance width.
  */
  private floatp
@@ -386,11 +385,18 @@ pcl_get_width(pcl_state_t *pcs, gs_point *advance_vector, const gs_point *pscale
 	width = pcl_hmi(pcs);
     else
 	width = 0.0;
+    /* round to nearest integral pcl units */
+    width += (floatp)pcs->uom_cp / 2.0;
+    width -= fmod(width, (floatp)pcs->uom_cp);
     return width;
 }
     
 /*
- * Show a string of characters.
+ * Show a string of characters.  Provide a general purpose function
+ * that can be used in all cases (pcl_show_chars_slow) and a faster
+ * function (pcl_show_chars_fast) that can be used for most
+ * circumstances.  The latter algorithm can print strings of
+ * characters the slow algorithm only prints one character at a time.
  *
  * As is the case for other parts of this code, this code is made more complex
  * by the PostScript-centric nature of the the graphics library, and by a
@@ -435,19 +441,13 @@ pcl_get_width(pcl_state_t *pcs, gs_point *advance_vector, const gs_point *pscale
  * once the find the character so that PCL-specific actions could be taken,
  * then again via the font machiner.
  *
- * The current re-implementation attempts to re-institute the distinction
- * between a font and a text parsing method. The input string is parsed only
- * once, and the resultant code stored in a sing two-byte string. The text
- * parsing routine passed to the graphics machinery is simplicity itself:
- * it resturns the value of the two-byte string. The font machinery is always
- * called for just a single character.
  *
  * The final operand is true if the text was provided via the literal
  * (transparent) text command: ESC & p <nbytes> X. This distinction is
- * important for characters that are not mapped by the current symbol set.
- */
+ * important for characters that are not mapped by the current symbol set.  */
+
   private int
-pcl_show_chars(
+pcl_show_chars_slow(
     pcl_state_t *           pcs,
     const gs_point *        pscale,
     const byte *            str,
@@ -572,6 +572,106 @@ pcl_show_chars(
     return code;
 }
 
+  private int
+pcl_show_chars_fast(
+    pcl_state_t *           pcs,
+    const gs_point *        pscale,
+    const byte *            str,
+    uint                    size,
+    bool                    literal
+)
+{
+    gs_state *              pgs = pcs->pgs;
+    floatp                  rmargin = pcs->margins.right;
+    floatp                  page_size = pcs->xfm_state.pd_size.x;
+    bool                    is_space = false;
+    int                     code = 0;
+    gs_char                 chr;
+    floatp                  width;
+    gs_point                cpt;
+    gs_point                advance_vector;
+    char                    *xyshow_buffp;
+    float                   *xyshow_fvalsp;
+    int                     xyshow_index;
+    gs_text_enum_t          *penum;
+
+    cpt.x = pcs->cap.x;
+    cpt.y = pcs->cap.y;
+    xyshow_index = 0;
+
+    /* allocate arrays of coordinates and buffer for xyshow.  Note we
+       are really doing xshow, the y displacement is alway 0.0 but the
+       graphics library only has an interface for xyshow. */
+    xyshow_fvalsp = (float *)gs_alloc_byte_array(pcs->memory, size, sizeof(float) * 2, "pcl_show_chars_fast");
+    if ( xyshow_fvalsp == 0 )
+	return_error(e_Memory);
+    xyshow_buffp = (char *)gs_alloc_byte_array(pcs->memory, size, sizeof(char) * 2, "pcl_show_chars_fast");
+    if ( xyshow_buffp == 0 ) {
+	gs_free_object(pcs->memory, xyshow_fvalsp, "pcl_show_chars_fast" );
+	return_error(e_Memory);
+    }
+    
+    while (get_next_char(pcs, &str, &size, &chr, &is_space, literal, &advance_vector) == 0) {
+        /* check if a character was found.  For an undefined character
+           backup the index to accumulate hmi in the last characters */
+	xyshow_buffp[xyshow_index * 2] = (chr >> 8);
+	xyshow_buffp[xyshow_index * 2 + 1] = (chr & 0xff);
+	/* round width to integral pcl current units */
+	width = (pcl_get_width(pcs, &advance_vector, pscale, chr, is_space));
+	/*
+         * A special case occurs in the non-wrap situation when the current
+         * position exactly equals the current margin. In that case, no
+         * character is printed.
+         */
+	if (cpt.x == rmargin)
+	    break;
+	else if (cpt.x >= page_size) {
+	    cpt.x = page_size;
+	    break;
+	}
+
+	/* store the x displacement - accumulate the displacement for
+           undefined characters which pcl treats as spaces.  We don't
+           have to set the y displacement at position (xyshow_index *
+           2 + 1) because it is always zero and the entire array was
+           initialized to zero above. */
+	xyshow_fvalsp[xyshow_index * 2] = (width / pscale->x);
+	xyshow_fvalsp[xyshow_index * 2 + 1] = 0.0;
+	xyshow_index++;
+
+	/* the pcl cap moves the width of the character */
+	cpt.x += width;
+	/* check for crossing rmargin or exceeding page boundary */
+	if (cpt.x > rmargin) {
+	    cpt.x = rmargin;
+	    break;
+	} else if (cpt.x >= page_size) {
+	    cpt.x = page_size;
+	    break;
+	}
+    }
+    /* finally move back to the original point, the start of the string */
+    gs_moveto(pgs, pcs->cap.x / pscale->x, pcs->cap.y / pscale->y);
+
+    /* start the "show" - we pass the same array of floats for
+       parameters 4 and 5 - the graphics library does the right thing */
+    code = gs_xyshow_begin(pcs->pgs, xyshow_buffp, xyshow_index,
+			   xyshow_fvalsp, xyshow_fvalsp, xyshow_index * 2,
+			   pcs->memory, &penum);
+    if (code >= 0)
+        code = gs_text_process(penum);
+    gs_text_release(penum, "pcl_show_chars_fast");
+    /* record the last width */
+    pcs->last_width = width;
+    /* update the current position in pcl's state */
+    pcs->cap.x = cpt.x;
+    pcs->cap.y = cpt.y;
+    /* free everything */
+    gs_free_object(pcs->memory, xyshow_fvalsp, "pcl_show_chars_fast" );
+    gs_free_object(pcs->memory, xyshow_buffp, "pcl_show_chars_fast" );
+    return code;
+}
+
 /*
  * Set up to handle a string of text.
  *
@@ -672,11 +772,15 @@ pcl_text(
     /* possibly invert text because HP coordinate system is inverted */
     scale.y *= scale_sign;
     gs_scale(pgs, scale.x, scale.y);
-
     /* Print remaining characters, restore the ctm */
-    code = pcl_show_chars(pcs, &scale, str, size, literal);
+    if ( (pcs->cap.x <= pcs->margins.right) && 
+	 (pcs->source_transparent) &&
+	 (!pcs->last_was_BS) &&
+	 (!pcs->end_of_line_wrap) )
+	code = pcl_show_chars_fast(pcs, &scale, str, size, literal);
+    else 
+	code = pcl_show_chars_slow(pcs, &scale, str, size, literal);
     gs_setmatrix(pgs, &user_ctm);
-
     if (code > 0)		/* shouldn't happen */
 	code = gs_note_error(gs_error_invalidfont);
 
