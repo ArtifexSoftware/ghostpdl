@@ -1268,6 +1268,22 @@ gs_show_current_font(const gs_show_enum * penum)
 
 /* ------ Internal routines ------ */
 
+private inline bool
+is_matrix_good_for_caching(const gs_matrix_fixed *m)
+{
+    /* Skewing or non-rectangular rotation are not supported,
+       but we ignore a small noise skew. */
+    const float axx = any_abs(m->xx), axy = any_abs(m->xy);
+    const float ayx = any_abs(m->yx), ayy = any_abs(m->yy);
+    const float thr = 5000; /* examples/alphabet.ps */
+
+    if (ayx * thr < axx || axy * thr < ayy)
+	return true;
+    if (axx * thr < ayx || ayy * thr < axy)
+	return true;
+    return false;
+}
+
 /* Initialize the gstate-derived parts of a show enumerator. */
 /* We do this both when starting the show operation, */
 /* and when returning from the kshow callout. */
@@ -1300,10 +1316,7 @@ show_state_setup(gs_show_enum * penum)
     }
     penum->current_font = pfont;
     /* Skewing or non-rectangular rotation are not supported. */
-    if (!CACHE_ROTATED_CHARS &&
-	(is_fzero2(pgs->char_tm.xy, pgs->char_tm.yx) ||
-	 is_fzero2(pgs->char_tm.xx, pgs->char_tm.yy))
-	)
+    if (!CACHE_ROTATED_CHARS && is_matrix_good_for_caching(&pgs->char_tm))
 	penum->can_cache = 0;
     if (penum->can_cache >= 0 &&
 	gx_effective_clip_path(pgs, &pcpath) >= 0
@@ -1363,8 +1376,7 @@ show_set_scale(const gs_show_enum * penum, gs_log2_scale_point *log2_scale)
 	SHOW_USES_OUTLINE(penum) &&
 	gx_path_is_void_inline(pgs->path) &&
     /* Oversampling rotated characters doesn't work well. */
-	(is_fzero2(pgs->char_tm.xy, pgs->char_tm.yx) ||
-	 is_fzero2(pgs->char_tm.xx, pgs->char_tm.yy))
+	is_matrix_good_for_caching(&pgs->char_tm)
 	) {
 	const gs_font_base *pfont = (gs_font_base *) pgs->font;
 	gs_fixed_point extent;
