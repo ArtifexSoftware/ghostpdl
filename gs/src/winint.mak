@@ -189,8 +189,10 @@ ZIPPROGFILE4=gs$(GS_DOT_VERSION)\bin\gs16spl.exe
 ZIPPROGFILE5=gs$(GS_DOT_VERSION)\doc
 ZIPPROGFILE6=gs$(GS_DOT_VERSION)\examples
 ZIPPROGFILE7=gs$(GS_DOT_VERSION)\lib
+# We have to copy the font files, because Windows lacks symbolic links.
 ZIPFONTDIR=fonts
 ZIPFONTFILES=$(ZIPFONTDIR)
+ORIGFONTDIR=gs$(GS_DOT_VERSION)\fonts
 
 # Make the zip archive.
 FILELIST_TXT=filelist.txt
@@ -204,8 +206,11 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	rem	doesn't have symbolic links.
 	rem
 	-mkdir $(ZIPFONTDIR)
+	-mkdir $(ZIPFONTDIR)\metrics
 	-erase $(ZIPFONTDIR)\*.?f?
-	copy /b gs$(GS_DOT_VERSION)\fonts\?0??0??l.pfb $(ZIPFONTDIR)
+	-erase $(ZIPFONTDIR)\metrics\*.?f?
+	copy /b $(ORIGFONTDIR)\?0??0??l.pfb $(ZIPFONTDIR)
+	copy /b $(ORIGFONTDIR)\metrics\?0??0??l.?fm $(ZIPFONTDIR)\metrics
 	rem
 	echo $(ZIPPROGFILE1) >  $(ZIPTEMPFILE)
 	echo $(ZIPPROGFILE2) >> $(ZIPTEMPFILE)
