@@ -718,8 +718,17 @@ set_print_direction(
     uint            i = uint_arg(pargs);
 
     if ((i <= 270) && (i % 90 == 0)) {
-        pcs->xfm_state.print_dir = i / 90;
-        update_xfm_state(pcs, 0);
+	i /= 90;
+	if (i !=  pcs->xfm_state.print_dir) {
+	    pcl_break_underline(pcs); 
+	    pcs->xfm_state.print_dir = i;
+	    update_xfm_state(pcs, 0);
+	    pcl_continue_underline(pcs); 
+	}
+	else {
+	    pcs->xfm_state.print_dir = i;
+	    update_xfm_state(pcs, 0);
+	}
     }
     return 0;
 }
