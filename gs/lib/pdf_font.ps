@@ -37,7 +37,7 @@ pdfdict begin
   % in case the incoming Encoding is null, use .notdefEncoding
   exch dup null eq { pop .notdefEncoding } if
   0 0 3 index {
-    dup type /nametype ne { exch pop } { pop 1 add } ifelse
+    dup type /nametype ne { exch pop oforce } { pop 1 add } ifelse
     % Differences list may not be in order, update the largest_index
     % stack: <Differences> <encoding> <largest_index> <at_index>
     2 copy lt { exch pop dup } if	% at_index is new largest
@@ -46,7 +46,7 @@ pdfdict begin
   exch 0 exch {
 		% Stack: enc' code element
     dup type /nametype ne
-      { exch pop }
+      { exch pop oforce }
       { 3 copy put pop 1 add }
     ifelse
   } forall pop
