@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.c,v 1.14 2002/07/08 14:54:01 giles Exp $
+    $Id: jbig2.c,v 1.15 2002/07/08 19:21:35 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -170,7 +170,7 @@ jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 
   if (ctx->buf == NULL)
     {
-      int buf_size = initial_buf_size;
+      size_t buf_size = initial_buf_size;
 
       do
 	buf_size <<= 1;
@@ -229,19 +229,23 @@ jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 			       "Not a JBIG2 file header");
           /* D.4.2 */
 	  ctx->file_header_flags = ctx->buf[ctx->buf_rd_ix + 8];
+          if (ctx->file_header_flags & 0xFC) {
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1,
+                "reserved bits (2-7) of file header flags are not zero (0x%02x)", ctx->file_header_flags);
+          }
           /* D.4.3 */
 	  if (!(ctx->file_header_flags & 2)) /* number of pages is known */
 	    {
 	      if (ctx->buf_wr_ix - ctx->buf_rd_ix < 13)
 		return 0;
 	      ctx->n_pages = jbig2_get_int32(ctx->buf + ctx->buf_rd_ix + 9);
+	      ctx->buf_rd_ix += 13;
               if (ctx->n_pages == 1)
                 jbig2_error(ctx, JBIG2_SEVERITY_INFO, -1, "file header indicates a single page document");
               else
                 jbig2_error(ctx, JBIG2_SEVERITY_INFO, -1, "file header indicates a %d page document", ctx->n_pages);
-	      ctx->buf_rd_ix += 13;
 	    }
-	  else
+	  else /* number of pages not known */
             {
               ctx->n_pages=0;
 	      ctx->buf_rd_ix += 9;
@@ -250,10 +254,13 @@ jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	  if (ctx->file_header_flags & 1)
 	    {
 	      ctx->state = JBIG2_FILE_SEQUENTIAL_HEADER;
+              jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "file header indicates sequential organization");
 	    }
 	  else
 	    {
-	      ctx->state = JBIG2_FILE_RANDOM_HEADERS;
+	      ctx->state = JBIG2_FILE_RANDOM_HEADERS; 
+              jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "file header indicates random-access organization");
+
             }
 	  break;
 	case JBIG2_FILE_SEQUENTIAL_HEADER:
@@ -285,17 +292,14 @@ jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	    return 0;
 	  code = jbig2_parse_segment(ctx, segment, ctx->buf + ctx->buf_rd_ix);
 	  ctx->buf_rd_ix += segment->data_length;
-//	  jbig2_free_segment(ctx, segment);
-//	  ctx->segments[ctx->segment_index] = NULL;
+	  ctx->segment_index++;
 	  if (ctx->state == JBIG2_FILE_RANDOM_BODIES)
 	    {
-	      ctx->segment_index++;
 	      if (ctx->segment_index == ctx->n_segments)
 		ctx->state = JBIG2_FILE_EOF;
 	    }
 	  else /* JBIG2_FILE_SEQUENCIAL_BODY */
 	    {
-	      ctx->n_segments = 0;
 	      ctx->state = JBIG2_FILE_SEQUENTIAL_HEADER;
 	    }
 	  if (code < 0)
