@@ -625,7 +625,10 @@ currentdict /.pdf_hook_DSC_Creator undef
 } .bind odef
 
 1000 % priority
-{ currentdevice .devicename /pdfwrite eq
+{
+  % Note, this may not work if the initial device is not pdfwrite
+  % and may require the use of -dProvideUnicode on the command line.
+  currentdevice .devicename /pdfwrite eq
   systemdict /ProvideUnicode .knownget not { false } if or {
     currentglobal true setglobal
     systemdict /.setupUnicodeDecoder known {
@@ -645,8 +648,7 @@ currentdict /.pdf_hook_DSC_Creator undef
 
 1010 % priority
 {
-  currentdevice .devicename /pdfwrite eq systemdict /PDFSETTINGS known or {
-    % Set a predefined configuration if PDFSETTINGS is defined.
+    % Set a predefined configuration in the distiller device (pdfwrite)
     /PDFSETTINGS where { pop /PDFSETTINGS load } { /default } ifelse
     .distillersettings exch get
     % Don't override parameters defined on the command line.
@@ -659,11 +661,10 @@ currentdict /.pdf_hook_DSC_Creator undef
     currentdict end .setdistillerparams
     .distillerdevice //null false mark .putdeviceparams 
     dup type /booleantype eq not { cleartomark pop } if pop pop
-  } if
 } bind .schedule_init
 
 2000 % priority
-{
+{ % Note, this may not work if the initial device is not pdfwrite
   currentdevice .devicename /pdfwrite eq {
     % Inform the device with initial graphic state. See gdev_pdf_fill_path.
     newpath fill
