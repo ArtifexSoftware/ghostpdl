@@ -670,7 +670,7 @@ $(GLOBJ)gxmclip.$(OBJ) : $(GLSRC)gxmclip.c $(GX)\
 	$(GLCC) $(GLO_)gxmclip.$(OBJ) $(C_) $(GLSRC)gxmclip.c
 
 $(GLOBJ)gxpaint.$(OBJ) : $(GLSRC)gxpaint.c $(GX)\
- $(gxdevice_h) $(gxhttile_h) $(gxpaint_h) $(gxpath_h) $(gzstate_h)
+ $(gxdevice_h) $(gxhttile_h) $(gxpaint_h) $(gxpath_h) $(gzstate_h) $(gxfont_h)
 	$(GLCC) $(GLO_)gxpaint.$(OBJ) $(C_) $(GLSRC)gxpaint.c
 
 $(GLOBJ)gxpath.$(OBJ) : $(GLSRC)gxpath.c $(GXERR)\
