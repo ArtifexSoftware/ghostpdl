@@ -242,6 +242,88 @@
   0 {		% Apple standard 1-to-1 mapping.
     6 256 getinterval { } forall 256 packedarray
   } bind
+  2 {		% Apple 16bit CJK (ShiftJIS etc)
+
+    % /sHK_sz		subHeaderKey_size	% 1 * uint16
+    % /sH_sz		subHeader_size		% 4 * uint16
+    % /sH_len		subHeader_length
+    % /cmapf2_tblen	total table length
+    % /cmapf2_lang	language code (not used)
+    % /sHKs		subHeaderKeys
+
+    /sHK_sz 2 def
+    /sH_sz 8 def
+    dup 2 getu16 /cmapf2_tblen exch def
+
+    dup 4 getu16 /cmapf2_lang exch def
+
+    dup 6 256 sHK_sz mul getinterval /sHKs exch def
+
+    0		% initialization value for /sH_len
+    0 1 255 {
+       sHKs exch
+       2 mul getu16
+       1 index	% get current max
+       1 index	% get current subHeaderKey
+       lt {exch} if pop
+    } for
+    /sH_len exch def
+
+    dup 6 256 sHK_sz mul add
+    cmapf2_tblen 1 index sub getinterval
+    /sH_gIA exch def
+
+    /cmapf2_glyph_array 65535 array def
+
+    /.cmapf2_putGID {
+        /cmapf2_ch cmapf2_ch_hi 8 bitshift cmapf2_ch_lo add def
+        firstCode cmapf2_ch_lo le
+        cmapf2_ch_lo firstCode entryCount add lt
+        and { % true: j is inside
+            sH_offset idRangeOffset add		% offset to gI
+            cmapf2_ch_lo firstCode sub 2 mul	% rel. pos. in range
+            add 6 add				% offset in sH_gIA
+            sH_gIA exch getu16
+            dup 0 gt { %
+                idDelta add
+                cmapf2_glyph_array exch cmapf2_ch exch put
+            } {
+                pop
+                % cmapf2_glyph_array cmapf2_ch 0 put
+            } ifelse
+        } {   % false: j is outside
+            % cmapf2_glyph_array cmapf2_ch 0 put
+        } ifelse
+    } def
+
+    16#00 1 16#ff { % hi_byte scan
+        /cmapf2_ch_hi exch def
+        sHKs cmapf2_ch_hi sHK_sz mul getu16
+        /sH_offset exch def
+        sH_gIA sH_offset sH_sz getinterval
+            dup 0 getu16 /firstCode exch def
+            dup 2 getu16 /entryCount exch def
+            dup 4 gets16 /idDelta exch def
+            dup 6 getu16 /idRangeOffset exch def
+        pop
+        sH_offset 0 eq {
+           /cmapf2_ch_lo cmapf2_ch_hi def
+           /cmapf2_ch_hi 0 def
+           .cmapf2_putGID
+        } {
+           16#00 1 16#ff { % lo_byte scan
+               /cmapf2_ch_lo exch def
+               .cmapf2_putGID
+           } for
+        } ifelse
+     } for
+     pop
+     0 1 cmapf2_glyph_array length 1 sub { % rewrite null -> 0.
+        dup cmapf2_glyph_array exch get
+        null eq { cmapf2_glyph_array exch 0 put } {pop} ifelse
+     } for
+     cmapf2_glyph_array
+  } bind
   4 {		% Microsoft/Adobe segmented mapping.
     /etab exch def
     /nseg2 etab 6 getu16 def
@@ -267,7 +349,8 @@
       /ecode endc i2 getu16 def
       numcodes scode firstcode sub
 		% Hack for fonts that have only 0x0000 and 0xf000 ranges
-      dup 16#e000 ge { 255 and } if
+      %dup 16#e000 ge { 255 and } if
+      % the previous line is obstructive to CJK fonts, so it was removed
       exch sub 0 .max ecode scode sub 1 add add
       exch 1 index add exch
       numcodes add /numcodes exch def
@@ -280,7 +363,8 @@
       /ecode endc i2 getu16 def
       numcodes scode firstcode sub
 		% Hack for fonts that have only 0x0000 and 0xf000 ranges
-      dup 16#e000 ge { 255 and } if
+      %dup 16#e000 ge { 255 and } if
+      % the previous line is obstructive to CJK fonts, so it was removed
       exch sub 0 .max dup { 0 putglyph } repeat
       ecode scode sub 1 add add numcodes add /numcodes exch def
       /delta iddelta i2 gets16 def
