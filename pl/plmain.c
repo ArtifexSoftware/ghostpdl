@@ -326,9 +326,15 @@ plmain(
 	if ( gs_debug_c('A') )
 	    dprintf( "memory allocated\n" );
 	/* Process the next file. process_options leaves next non-option on arg list*/
-	if ((arg = arg_next(&args)) == 0)
-	    break;  /* no nore files to process */
-
+        {
+            int code;
+            arg = arg_next(&args, &code);
+            /* not sure what to do about this stupidity right now */
+            if (code < 0)
+                fprintf(gs_stderr, "arg_next failed\n");
+            if (!arg)
+                break;  /* no nore files to process */
+        }
 	/* open file for reading - NB we should respec the minimum
            requirements specified by each implementation in the
            characteristics structure */
@@ -714,7 +720,9 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
     const char *arg;
 
     gs_c_param_list_write_more(params);
-    while ( (arg = arg_next(pal)) != 0 && *arg == '-' ) { /* just - read from stdin */
+    while ( (arg = arg_next(pal, &code)) != 0 && *arg == '-' ) { /* just - read from stdin */
+        if (code < 0)
+            break;
 	if ( arg[1] == '\0' )
 	    break;
 	arg += 2;
