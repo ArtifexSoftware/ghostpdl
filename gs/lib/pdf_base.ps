@@ -99,25 +99,26 @@ pdfdict begin
   BXlevel 0 le {
     (   **** Unknown operator: ') pdfformaterror
     dup =string cvs pdfformaterror 
-    % Attempt a retry scan of the element after changing to PDFScanRules
-    << /PDFScanRules true >> setuserparams
+    % Attempt a retry scan of the element after changing to PDFScanInvNum
+    << /PDFScanInvNum true >> setuserparams
     =string cvs
     token pop exch pop dup type
     dup /integertype eq exch /realtype eq or {
       exch pop exch pop
       (', processed as number, value: ) pdfformaterror
       dup =string cvs pdfformaterror (\n) pdfformaterror
+     << /PDFScanInvNum null >> setuserparams    % reset to default scanning rules
       false 	% suppress any stack cleanup
     } {
       % error was non-recoverable with modified scanning rules
-      ('\n) pdfformaterror
+    ('\n) pdfformaterror
       true
     } ifelse
   } {
     true
   } ifelse
   { % clean up the operand stack if this was non-recoverable
-    pop pop count exch sub { pop } repeat	% pop all the operands
+  pop pop count exch sub { pop } repeat	% pop all the operands
   } if
 } bind def
 /.pdfexectoken {		% <count> <opdict> <exectoken> .pdfexectoken ?

@@ -36,7 +36,7 @@
  */
 int
 scan_number(const byte * str, const byte * end, int sign,
-	    ref * pref, const byte ** psp, const bool PDFScanRules)
+	    ref * pref, const byte ** psp, const bool PDFScanInvNum)
 {
     const byte *sp = str;
 #define GET_NEXT(cvar, sp, end_action)\
@@ -275,11 +275,11 @@ i2r:
 	 * PostScript gives an error on numbers with a '-' following a '.'
 	 * Adobe Acrobat Reader (PDF) apparently doesn't treat this as an
 	 * error. Experiments show that the numbers following the '-' are
-	 * ignored, so we swallow the fractional part. PDFScanRules enables
+	 * ignored, so we swallow the fractional part. PDFScanInvNum enables
 	 * this compatibility kloodge.
 	 */
 	if (c == '-') {
-	    if (!PDFScanRules)
+	    if (!PDFScanInvNum)
 		break;
 	    do {
 		GET_NEXT(c, sp, c = EOFC);
@@ -311,7 +311,7 @@ l2r:
     while (IS_DIGIT(d, c) || c == '-') {
 	/* Handle bogus '-' following '.' as in i2r above.	*/
 	if (c == '-') {
-	    if (!PDFScanRules)
+	    if (!PDFScanInvNum)
 		break;
 	    do {
 		GET_NEXT(c, sp, c = EOFC);
