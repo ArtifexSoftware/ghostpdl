@@ -36,6 +36,7 @@
 #include "gxcolor2.h"
 #include "gxhldevc.h"
 
+
 /* Forward references */
 private image_enum_proc_plane_data(pdf_image_plane_data);
 private image_enum_proc_end_image(pdf_image_end_image);
@@ -325,6 +326,10 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     }
     case 3: {
 	const gs_image3_t *pim3 = (const gs_image3_t *)pic;
+	gs_image3_t pim3a;
+	const gs_image_common_t *pic1 = pic;
+	gs_matrix m, mi;
+	const gs_matrix *pmat1 = pmat;
 
 	if (pdev->CompatibilityLevel < 1.2 || 
 		(pdev->CompatibilityLevel < 1.3 && (!PS2WRITE || !pdev->OrderResources)))
@@ -333,11 +338,24 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 		       prect->q.x == pim3->Width &&
 		       prect->q.y == pim3->Height))
 	    goto nyi;
+	if (PS2WRITE && pdev->OrderResources && !pdev->PatternImagemask) {
+	    gs_make_identity(&m);
+	    pmat1 = &m;
+	    m.tx = floor(pis->ctm.tx + 0.5); /* Round the origin against the image size distorsions */
+	    m.ty = floor(pis->ctm.ty + 0.5);
+	    pim3a = *pim3;
+	    gs_matrix_invert(&pim3a.ImageMatrix, &mi);
+	    gs_make_identity(&pim3a.ImageMatrix);
+	    gs_matrix_multiply(&mi, &pim3a.MaskDict.ImageMatrix, &pim3a.MaskDict.ImageMatrix);
+	    pic1 = (gs_image_common_t *)&pim3a;
+	    /* Setting pdev->converting_image_matrix to communicate with pdf_image3_make_mcde. */
+	    gs_matrix_multiply(&mi, &ctm_only(pis), &pdev->converting_image_matrix);
+	}
 	/*
 	 * We handle ImageType 3 images in a completely different way:
 	 * the default implementation sets up the enumerator.
 	 */
-	return gx_begin_image3_generic((gx_device *)pdev, pis, pmat, pic,
+	return gx_begin_image3_generic((gx_device *)pdev, pis, pmat1, pic1,
 				       prect, pdcolor, pcpath, mem,
 				       pdf_image3_make_mid,
 				       pdf_image3_make_mcde, pinfo);
@@ -394,27 +412,15 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    goto nyi;
 	if (PS2WRITE && pdev->OrderResources && !pdev->PatternImagemask) {
 	    gs_matrix m, m1, mi;
-	    gs_point p;
-	    gs_int_point q;
-	    extern_st(st_pdf_lcvd_t);
 	    gs_image4_t pi4 = *(const gs_image4_t *)pic;
 
 	    gs_make_identity(&m1);
 	    gs_matrix_invert(&pic->ImageMatrix, &mi);
 	    gs_matrix_multiply(&mi, &ctm_only(pis), &m);
-	    cvd = gs_alloc_struct(mem, pdf_lcvd_t, &st_pdf_lcvd_t, "pdf_begin_typed_image");
-	    if (cvd == NULL)
-		return_error(gs_error_VMerror);
-	    gs_distance_transform_inverse(pis->ctm.tx * pdev->HWResolution[0] / 72, 
-					  pis->ctm.ty * pdev->HWResolution[0] / 72, &ctm_only(pis), &p);
-	    q.x = (int)floor(pis->ctm.tx);
-	    q.y = (int)floor(pis->ctm.ty);
-	    code = pdf_setup_masked_image_converter(pdev, mem, &m, cvd, 
+	    code = pdf_setup_masked_image_converter(pdev, mem, &m, &cvd, 
 				 true, 0, 0, pi4.Width, pi4.Height, false);
 	    if (code < 0)
 		return code;
-	    cvd->mask->target = 0; /* fixme : move the initialization out from 
-				   pdf_setup_masked_image_converter because it unuseful here. */
 	    cvd->mdev.is_open = true; /* fixme: same as above. */
 	    cvd->mask->is_open = true; /* fixme: same as above. */
 	    cvd->mask_is_empty = false;
@@ -849,7 +855,7 @@ use_image_as_pattern(gx_device_pdf *pdev, const pdf_resource_t *pres1,
 	   As a temporary hack use the offset of the image. 
 	   fixme : This isn't generally correct, 
 	   because the mask may be "transpozed" against the image. */
-	gs_matrix m = pdev->image_mask_matrix;
+	gs_matrix m = pdev->converting_image_matrix;
 
 	m.tx = pmat->tx;
 	m.ty = pmat->ty;
@@ -899,7 +905,7 @@ pdf_end_and_do_image(gx_device_pdf *pdev, pdf_image_writer *piw,
 
 	    pdev->image_mask_scale = (double)pxo->data_height / pxo->height;
 	    pdev->image_mask_id = pdf_resource_id(pres);
-	    pdev->image_mask_matrix = *mat;
+	    pdev->converting_image_matrix = *mat;
 	} else if (do_image == USE_AS_PATTERN)
 	    code = use_image_as_pattern(pdev, pres, mat, ps_bitmap_id);
     }
@@ -1020,18 +1026,16 @@ pdf_image3_make_mid(gx_device **pmidev, gx_device *dev, int width, int height,
 
     if (PS2WRITE && pdev->OrderResources && !pdev->PatternImagemask) {
 	gs_matrix m;
-	pdf_lcvd_t *cvd;
-	extern_st(st_pdf_lcvd_t);
+	pdf_lcvd_t *cvd = NULL;
 	int code;
         
 	gs_make_identity(&m);
-	cvd = gs_alloc_struct(mem, pdf_lcvd_t, &st_pdf_lcvd_t, "pdf_image3_make_mid");
-	if (cvd == NULL)
-	    return_error(gs_error_VMerror);
-	code = pdf_setup_masked_image_converter(pdev, mem, &m, cvd, 
+	code = pdf_setup_masked_image_converter(pdev, mem, &m, &cvd, 
 					true, 0, 0, width, height, true);
 	if (code < 0)
 	    return code;
+	cvd->mask->target = (gx_device *)cvd; /* Temporary, just to communicate with 
+					 pdf_image3_make_mcde. The latter will reset it. */
 	cvd->mask_is_empty = false;
 	*pmidev = (gx_device *)cvd->mask;
 	return 0;
@@ -1087,17 +1091,9 @@ pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
     if (PS2WRITE && pdev->OrderResources && !pdev->PatternImagemask) {
 	/* pdf_image3_make_mid must set midev with a pdf_lcvd_t instance.*/
 	pdf_lcvd_t *cvd = (pdf_lcvd_t *)((gx_device_memory *)midev)->target; 
-	gs_point p;
 
 	((gx_device_memory *)midev)->target = NULL;
-	cvd->m.xx = pis->ctm.xx * 72 / pdev->HWResolution[0];
-	cvd->m.xy = pis->ctm.xy * 72 / pdev->HWResolution[0];
-	cvd->m.yx = pis->ctm.yx * 72 / pdev->HWResolution[1];
-	cvd->m.yy = pis->ctm.yy * 72 / pdev->HWResolution[1];
-	gs_distance_transform_inverse(origin->x * pdev->HWResolution[0] / 72, 
-				      origin->y * pdev->HWResolution[0] / 72, &ctm_only(pis), &p);
-	cvd->m.tx = p.x;
-	cvd->m.ty = p.y;
+	cvd->m = pdev->converting_image_matrix;
 	cvd->mdev.mapped_x = origin->x;
 	cvd->mdev.mapped_y = origin->y;
 	*pmcdev = (gx_device *)&cvd->mdev;

@@ -644,7 +644,7 @@ struct gx_device_pdf_s {
        (which is being converted into a pattern)
        between 2 consecutive calls to pdf_image_end_image_data. */
     gs_id     image_mask_id;
-    gs_matrix image_mask_matrix;
+    gs_matrix converting_image_matrix;
     double    image_mask_scale;
 #endif
 };
@@ -923,8 +923,8 @@ typedef struct {
 #define pdf_lcvd_t_max_ptrs (gx_device_memory_max_ptrs + 2)
 
 
-int pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs_matrix *m, pdf_lcvd_t *cvd, 
-				 bool need_mask, int x, int y, int w, int h, bool autorelease);
+int pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs_matrix *m, pdf_lcvd_t **pcvd, 
+				 bool need_mask, int x, int y, int w, int h, bool write_on_close);
 int pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd);
 void pdf_remove_masked_image_converter(gx_device_pdf *pdev, pdf_lcvd_t *cvd, bool need_mask);
 

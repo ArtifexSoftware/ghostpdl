@@ -534,7 +534,7 @@ write_image(gx_device_pdf *pdev, gx_device_memory *mdev, gs_matrix *m)
 
     
     if (m != NULL)
-	pdf_put_matrix(pdev, "W n", m, " cm\n");
+	pdf_put_matrix(pdev, "W n ", m, " cm\n");
     code = pdf_copy_color_data(pdev, mdev->base, sourcex,  
 		mdev->raster, gx_no_bitmap_id, 0, 0, mdev->width, mdev->height,
 		&image, &writer, 2);
@@ -866,12 +866,19 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
 }
 
 int
-pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs_matrix *m, pdf_lcvd_t *cvd, 
-				 bool need_mask, int x, int y, int w, int h, bool autorelease)
+pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs_matrix *m, pdf_lcvd_t **pcvd, 
+				 bool need_mask, int x, int y, int w, int h, bool write_on_close)
 {
     int code;
     gx_device_memory *mask = 0;
+    pdf_lcvd_t *cvd = *pcvd;
 
+    if (cvd == NULL) {
+	cvd = gs_alloc_struct(mem, pdf_lcvd_t, &st_pdf_lcvd_t, "pdf_image3_make_mid");
+	if (cvd == NULL)
+	    return_error(gs_error_VMerror);
+	*pcvd = cvd;
+    }
     cvd->pdev = pdev;
     gs_make_mem_device(&cvd->mdev, gdev_mem_device_for_bits(pdev->color_info.depth),
 		mem, 0, (gx_device *)pdev);
@@ -904,7 +911,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
 	code = (*dev_proc(mask, open_device))((gx_device *)mask);
 	if (code < 0)
 	    return code;
-	if (autorelease) {
+	if (write_on_close) {
 	    code = (*dev_proc(mask, fill_rectangle))((gx_device *)mask, 
 			0, 0, mask->width, mask->height, (gx_color_index)0);
 	    if (code < 0)
@@ -913,7 +920,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     }
     cvd->std_fill_rectangle = dev_proc(&cvd->mdev, fill_rectangle);
     cvd->std_close_device = dev_proc(&cvd->mdev, close_device);
-    if (!autorelease) {
+    if (!write_on_close) {
 	/* Type 3 images will write to the mask directly. */
 	dev_proc(&cvd->mdev, fill_rectangle) = (need_mask ? lcvd_fill_rectangle_shifted2 
 							  : lcvd_fill_rectangle_shifted);
@@ -923,11 +930,10 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     dev_proc(&cvd->mdev, pattern_manage) = lcvd_pattern_manage;
     dev_proc(&cvd->mdev, fill_path) = lcvd_handle_fill_path_as_shading_coverage;
     cvd->m = *m;
-    if (autorelease) {
+    if (write_on_close) {
 	cvd->mdev.is_open = true;
 	mask->is_open = true;
 	dev_proc(&cvd->mdev, close_device) = lcvd_close_device_with_writing;
-	mask->target = (gx_device *)cvd;
     }
     return 0;
 }
@@ -990,16 +996,17 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	if (!convert_to_image) {
 	    /* Fallback to the default implermentation for handling 
 	    a shading with CompatibilityLevel<=1.2 . */
-	    code = gx_default_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
+	    return gx_default_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
 	} else {
 	    /* Convert a shading into a bitmap
 	       with CompatibilityLevel<=1.2 . */
-	    pdf_lcvd_t cvd;
+	    pdf_lcvd_t cvd, *pcvd = &cvd;
 	    int sx, sy;
 	    gs_fixed_rect bbox, bbox1;
 	    bool need_mask = gx_dc_pattern2_can_overlap(pdcolor);
 	    gs_matrix m;
 	    gs_point p;
+	    gs_int_point rect_size;
 
 	    code = gx_path_bbox(ppath, &bbox);
 	    if (code < 0)
@@ -1015,11 +1022,14 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    gs_distance_transform_inverse(sx * pdev->HWResolution[0] / 72, 
 					  sy * pdev->HWResolution[0] / 72, &ctm_only(pis), &p);
 	    gs_make_identity(&m);
+	    rect_size.x = fixed2int(bbox.q.x + fixed_half) - sx;
+	    rect_size.y = fixed2int(bbox.q.y + fixed_half) - sy;
+	    if (rect_size.x == 0 || rect_size.x == 0)
+		return 0;
 	    m.tx = p.x;
 	    m.ty = p.y;
-	    code = pdf_setup_masked_image_converter(pdev, pdev->memory, &m, &cvd, need_mask, sx, sy, 
-			    fixed2int(bbox.q.x + fixed_half) - sx, 
-			    fixed2int(bbox.q.y + fixed_half) - sy, false);
+	    code = pdf_setup_masked_image_converter(pdev, pdev->memory, &m, &pcvd, need_mask, sx, sy, 
+			    rect_size.x, rect_size.y, false);
 	    stream_puts(pdev->strm, "q\n");
 	    if (code >= 0)
 		code = gx_default_fill_path((gx_device *)&cvd.mdev, pis, ppath, params, pdcolor, pcpath);
@@ -1027,8 +1037,8 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 		code = pdf_dump_converted_image(pdev, &cvd);
 	    stream_puts(pdev->strm, "Q\n");
 	    pdf_remove_masked_image_converter(pdev, &cvd, need_mask);
+	    return code; 
 	}
-	return code; 
     }
     if (code < 0)
 	return code;
