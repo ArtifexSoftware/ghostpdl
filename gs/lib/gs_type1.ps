@@ -127,9 +127,33 @@ ifelse
     } if
   end
 } bind def
-% CCRun is an undocumented procedure provided for Type 4 fonts.
+% CCRun is an undocumented procedure provided for Type 4 and Type 0 fonts.
 1183615869 internaldict begin
+% Apparently there are two different argument lists for CCRun.
+% Handling the one with the extra Private dictionary requires fabricating
+% a Type 1 font on the fly, since we aren't currently prepared to parse the
+% dictionary any other way.
 /CCRun {	% <font> <code|name> <charstring> CCRun -
+		% <font> <code|name> <charstring> <Private> CCRun -
+  dup type /dicttype eq {
+    dup 4 index /Private .knownget { ne } { pop true } ifelse {
+		% The Private dictionary was supplied, and is different
+		% from the Private dictionary of the font.  Fabricate a
+		% Type 1 font with this Private dictionary.  Most of the
+		% font entries are arbitrary or not needed.
+      .currentglobal false .setglobal 10 dict exch .setglobal begin
+	/Private exch def
+	/FontType 1 def
+	/FontMatrix 3 index /FontMatrix get def
+	/Encoding 3 index /Encoding .knownget not { StandardEncoding } if def
+	/FontBBox 3 index /FontBBox .knownget not { {0 0 0 0} } if def
+	/PaintType 0 def
+	/CharStrings 1 dict dup /.notdef () put def
+      3 -1 roll pop () currentdict end .buildfont1 exch pop 3 1 roll
+    } {
+      pop
+    } ifelse
+  } if
   1 index dup type /integertype eq {
     3 index /Encoding get exch get
   } if exch .type1execchar
