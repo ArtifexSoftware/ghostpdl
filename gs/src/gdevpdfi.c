@@ -498,9 +498,11 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	code = psdf_setup_image_filters((gx_device_psdf *) pdev,
 				  &pie->writer.binary[1], &image[1].pixel,
 				  pmat, pis, false);
-        if (code)
-            goto fail;
-	pie->writer.alt_writer_count = 2;
+	if (code == gs_error_rangecheck) {
+	    /* setup_image_compression rejected rthe alternative compression. */
+	    pie->writer.alt_writer_count = 1;
+	} else if (code)
+	    goto fail;
     }
     for (i = 0; i < pie->writer.alt_writer_count; i++) {
 	if (pranges) {
