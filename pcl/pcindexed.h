@@ -339,8 +339,8 @@ extern  int     pcl_cs_indexed_install(
 );
 
 /*
- * Two routines to determine if the first entry of a color palette (entry 0)
- * is either white or black.
+ * Two routines to determine if an entry of a color palette is either white
+ * or black, and two macros to specialize these to the first entry (index 0).
  *
  * The determination of "whiteness" and "blackness" is made in source space.
  * This is not fully legitimate, as the HP's implementations make this
@@ -348,8 +348,20 @@ extern  int     pcl_cs_indexed_install(
  * the two give different results, and the former is much simpler to implement
  * in the current system.
  */
-extern  bool    pcl_cs_indexed_0_is_white( const pcl_cs_indexed_t * pindexed );
-extern  bool    pcl_cs_indexed_0_is_black( const pcl_cs_indexed_t * pindexed );
+extern  bool    pcl_cs_indexed_is_white(
+    const pcl_cs_indexed_t * pindexed,
+    int                      indx
+);
+
+extern  bool    pcl_cs_indexed_is_black(
+    const pcl_cs_indexed_t * pindexed,
+    int                      indx
+);
+
+#define pcl_cs_indexed_0_is_white(pindexed) \
+    pcl_cs_indexed_is_white(pindexed, 0)
+#define pcl_cs_indexed_0_is_black(pindexed) \
+    pcl_cs_indexed_is_black(pindexed, 0)
 
 /*
  * One time initialization. This exists only because of the possibility that

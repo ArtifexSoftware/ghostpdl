@@ -1121,8 +1121,8 @@ pcl_cs_indexed_install(
 }
 
 /*
- * Return true if the first entry in the color palette (index 0) represents
- * white, false otherwise.
+ * Return true if the given entry in the color palette represents white,
+ * false otherwise.
  *
  * As with many other parts of this code, the determination of what is "white"
  * is done, for practical reasons, in source color space.  HP's implementations
@@ -1132,21 +1132,24 @@ pcl_cs_indexed_install(
  * vary.
  */
   bool
-pcl_cs_indexed_0_is_white(
-    const pcl_cs_indexed_t *    pindexed
+pcl_cs_indexed_is_white(
+    const pcl_cs_indexed_t *    pindexed,
+    int                         indx
 )
 {
     const byte *                pb = 0;
 
     if (pindexed == 0)
         return true;
-    pb = pindexed->palette.data;
+    if ((indx < 0) || (indx >= pindexed->num_entries))
+        return false;
+    pb = pindexed->palette.data + 3 * indx;
     return (pb[0] == 0xff) && (pb[1] == 0xff) && (pb[2] == 0xff);
 }
 
 /*
- * Return true if the first entry in the color palette (index 0) is black,
- * false otherwise.
+ * Return true if the given entry in the color palette is black, false
+ * otherwise.
  *
  * The determination of "blackness" is made in source space, rather than in
  * device space (prior to dither). The latter would be more correct, but is
@@ -1154,15 +1157,16 @@ pcl_cs_indexed_0_is_white(
  * two produce different results.
  */
   bool
-pcl_cs_indexed_0_is_black(
-    const pcl_cs_indexed_t *    pindexed
+pcl_cs_indexed_is_black(
+    const pcl_cs_indexed_t *    pindexed,
+    int                         indx
 )
 {
     const byte *                pb = 0;
 
-    if (pindexed == 0)
+    if ((pindexed == 0) || (indx < 0) || (indx >= pindexed->num_entries))
         return false;
-    pb = pindexed->palette.data;
+    pb = pindexed->palette.data + 3 * indx;
     return (pb[0] == 0) && (pb[1] == 0) && (pb[2] == 0);
 }
 
