@@ -274,6 +274,23 @@ out:
     return 0;
 }
 
+/* Open a device if not open already.  Return 0 if the device was open, */
+/* 1 if it was closed. */
+int
+gs_opendevice(gx_device *dev)
+{
+    if (dev->is_open)
+	return 0;
+    {
+	int code = (*dev_proc(dev, open_device))(dev);
+
+	if (code < 0)
+	    return_error(code);
+	dev->is_open = true;
+	return 1;
+    }
+}
+
 /* Set the device in the graphics state */
 int
 gs_setdevice(gs_state * pgs, gx_device * dev)
@@ -287,11 +304,10 @@ gs_setdevice(gs_state * pgs, gx_device * dev)
 int
 gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
 {
-    bool was_open = dev->is_open;
-    int code;
+    int code = 0;
 
     /* Initialize the device */
-    if (!was_open) {
+    if (!dev->is_open) {
 	gx_device_fill_in_procs(dev);
 	if (gs_device_is_memory(dev)) {
 	    /* Set the target to the current device. */
@@ -302,10 +318,9 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
 	    rc_assign(((gx_device_memory *)dev)->target, odev,
 		      "set memory device(target)");
 	}
-	code = (*dev_proc(dev, open_device)) (dev);
+	code = gs_opendevice(dev);
 	if (code < 0)
-	    return_error(code);
-	dev->is_open = true;
+	    return code;
     }
     gs_setdevice_no_init(pgs, dev);
     pgs->ctm_default_set = false;
@@ -317,7 +332,7 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
     /* we aren't any longer. */
     pgs->in_cachedevice = 0;
     pgs->in_charpath = (gs_char_path_mode) 0;
-    return (was_open ? 0 : 1);
+    return code;
 }
 int
 gs_setdevice_no_init(gs_state * pgs, gx_device * dev)
