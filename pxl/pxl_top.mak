@@ -25,10 +25,10 @@ config-clean: pl.config-clean pxl.config-clean
 
 # Note: we always compile the main program with -DDEBUG.
 $(PXLOBJ)pxmain.$(OBJ): $(PXLSRC)pxmain.c $(AK)\
- $(malloc__h) $(math__h) $(memory__h) $(stdio__h) $(string__h)\
+ $(malloc__h) $(math__h) $(memory__h) $(string__h)\
  $(gdebug_h) $(gp_h)\
  $(gsargs_h) $(gscdefs_h) $(gscoord_h) $(gsdevice_h) $(gserrors_h) $(gsgc_h)\
- $(gslib_h) $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gsparam_h)\
+ $(gsio_h) $(gslib_h) $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gsparam_h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
  $(gxalloc_h) $(gxstate_h)\
  $(plmain_h) $(plparse_h) $(pjparse_h)\

@@ -79,7 +79,7 @@ $(PLOBJ)plfont.$(OBJ): $(PLSRC)plfont.c $(AK) $(memory__h) $(stdio__h)\
 	$(PLCCC) $(PLSRC)plfont.c $(PLO_)plfont.$(OBJ)
 
 $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(stdio__h) $(string__h)\
- $(gdebug_h) $(gp_h) $(gscdefs_h) $(gsdevice_h) $(gslib_h)\
+ $(gdebug_h) $(gp_h) $(gscdefs_h) $(gsdevice_h) $(gsio_h) $(gslib_h)\
  $(gsmatrix_h) $(gsmemory_h) $(gsparam_h) $(gsstate_h) $(gstypes_h)\
  $(plmain_h)
 	$(PLCCC) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)

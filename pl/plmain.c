@@ -7,8 +7,17 @@
 #undef DEBUG
 #define DEBUG			/* always enable debug output */
 #include "stdio_.h"
+/* get stdio values before they get redefined */
+ private void
+pl_get_real_stdio(FILE **in, FILE **out, FILE **err)
+{
+    *in = stdin;
+    *out = stdout;
+    *err = stderr;
+}
 #include "string_.h"
 #include "gdebug.h"
+#include "gsio.h"
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gsmalloc.h"
@@ -35,6 +44,12 @@ Options: -dNOPAUSE -E[#] -h -K<maxK> -Z...\n\
 
 /* ---------------- Public procedures ---------------- */
 
+void
+pl_main_init_standard_io()
+{
+    /* set up in, our err - not much we can do here if this fails */
+    pl_get_real_stdio(&gs_stdin, &gs_stdout, &gs_stderr);
+}
 /* Initialize the instance parameters. */
 void
 pl_main_init(pl_main_instance_t *pmi, gs_memory_t *mem)
@@ -68,7 +83,7 @@ pl_main_create_device(pl_main_instance_t *pmi, int index)
 	    gs_lib_device_list((const gx_device * const **)&list, NULL);
 	    code = gs_copydevice(&pmi->device, list[index], pmi->memory);
 	    if ( code < 0 )
-	      { fprintf(stderr, "Fatal error: gs_copydevice returned %d\n",
+	      { fprintf(gs_stderr, "Fatal error: gs_copydevice returned %d\n",
 			code);
 	        exit(1);
 	      }
@@ -101,7 +116,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 	    switch ( arg[-1] )
 	      {
 	      default:
-		fprintf(stderr, "Unrecognized switch: %s\n", arg);
+		fprintf(gs_stderr, "Unrecognized switch: %s\n", arg);
 		exit(1);
 	      case 'd':
 	      case 'D':
@@ -124,7 +139,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 		  else
 		    value = "true";
 		  if ( sscanf(value, "%d", &vi) != 1 )
-		    { fputs("Usage for -d is -d<option>=<integer>\n", stderr);
+		    { fputs("Usage for -d is -d<option>=<integer>\n", gs_stderr);
 		      exit(1);
 		    }
 		  if ( !strcmp(arg, "FirstPage") )
@@ -147,7 +162,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 
 		  if ( sscanf(arg, "%ux%u", &geom[0], &geom[1]) != 2 )
 		  { fputs("-g must be followed by <width>x<height>\n",
-			  stderr);
+			  gs_stderr);
 		    exit(1);
 		  }
 		  ia.data = geom;
@@ -163,7 +178,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 		{ int maxk;
 
 		  if ( sscanf(arg, "%d", &maxk) != 1 )
-		    { fputs("-K must be followed by a number\n", stderr);
+		    { fputs("-K must be followed by a number\n", gs_stderr);
 		      exit(1);
 		    }
 		  gs_malloc_limit = (long)maxk << 10;
@@ -177,7 +192,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 		    {
 		    default:
 		      fputs("-r must be followed by <res> or <xres>x<yres>\n",
-			    stderr);
+			    gs_stderr);
 		      exit(1);
 		    case 1:	/* -r<res> */
 		      res[1] = res[0];
@@ -199,7 +214,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 		  gs_param_string str;
 
 		  if ( !(eqp || (eqp = strchr(arg, '#'))) )
-		    { fputs("Usage for -s is -s<option>=<string>\n", stderr);
+		    { fputs("Usage for -s is -s<option>=<string>\n", gs_stderr);
 		      exit(1);
 		    }
 		  eqchar = *eqp, *eqp = 0, value = eqp + 1;
@@ -208,14 +223,14 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 
 		    if ( pmi->device )
 		      { fputs("-sDEVICE= must precede any input files\n",
-			      stderr);
+			      gs_stderr);
 		        exit(1);
 		      }
 		    for ( di = 0; di < num_devs; ++di )
 		      if ( !strcmp(gs_devicename(dev_list[di]), value) )
 			break;
 		    if ( di == num_devs )
-		      { fprintf(stderr, "Unknown device name %s.\n", value);
+		      { fprintf(gs_stderr, "Unknown device name %s.\n", value);
 		        exit(1);
 		      }
 		    pl_main_create_device(pmi, di);
@@ -238,11 +253,11 @@ out:	if ( arg == 0 || help )
 	  { int i;
 	    arg_finit(pal);
 	    gs_c_param_list_release(&params);
-	    fprintf(stderr, pl_usage, argv[0]);
-	    fputs("Devices:", stderr);
+	    fprintf(gs_stderr, pl_usage, argv[0]);
+	    fputs("Devices:", gs_stderr);
 	    for ( i = 0; i < num_devs; ++i )
-	      fprintf(stderr, " %s", gs_devicename(dev_list[i]));
-	    fputs("\n", stderr);
+	      fprintf(gs_stderr, " %s", gs_devicename(dev_list[i]));
+	    fputs("\n", gs_stderr);
 	    exit(1);
 	  }
 	gs_c_param_list_read(&params);
@@ -275,15 +290,16 @@ pl_main_make_gstate(pl_main_instance_t *pmi, gs_state **ppgs)
 void
 pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pmi,
   const char *msg)
-{	gs_memory_status_t status;
-	long utime[2];
+{	/* gs_memory_status_t status; */
+	/* long utime[2]; */
 
-	gs_memory_status(mem, &status);
-	gp_get_usertime(utime);
-	dprintf5("%% %s time = %g, pages = %d, memory allocated = %lu, used = %lu\n",
+	/* gs_memory_status(mem, &status); */
+	/* gp_get_usertime(utime); */
+	/* dprintf5("%% %s time = %g, pages = %d, memory allocated = %lu, used = %lu\n",
 		 msg, utime[0] - pmi->base_time[0] +
 		   (utime[1] - pmi->base_time[1]) / 1000000000.0,
-		 pmi->page_count, status.allocated, status.used);
+		 pmi->page_count, 0, 0);
+	*/
 }
 
 /* Finish a page, possibly printing usage statistics and/or pausing. */
@@ -301,7 +317,7 @@ pl_finish_page(pl_main_instance_t *pmi, gs_state *pgs, int num_copies,
 	      pl_print_usage(pmi->memory, pmi, "render:");
 	    code = gs_output_page(pgs, num_copies, flush);
 	    if ( pmi->pause )
-	      { fprintf(stderr, "End of page %d, press <enter> to continue.\n",
+	      { fprintf(gs_stderr, "End of page %d, press <enter> to continue.\n",
 			pmi->page_count);
 	        getchar();
 	      }

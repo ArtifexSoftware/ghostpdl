@@ -32,6 +32,10 @@ typedef struct pl_main_instance_s {
   long prev_allocated;		/* memory allocated as of startup or last GC */
 } pl_main_instance_t;
 
+/* initialize gs_stdin, gs_stdout, and gs_stderr.  Eventually the gs
+   library should provide an interface for doing this */
+void pl_main_init_standard_io(void);
+
 /* Initialize the instance parameters. */
 void pl_main_init(P2(pl_main_instance_t *pmi, gs_memory_t *memory));
 

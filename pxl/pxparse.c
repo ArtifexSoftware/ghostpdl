@@ -6,9 +6,9 @@
 /* PCL XL parser */
 
 #include "memory_.h"
-#include "stdio_.h"		/* for stderr for DEBUG */
 #include "gdebug.h"
 #include "gserror.h"
+#include "gsio.h"
 #include "gstypes.h"
 #include "plparse.h"
 #include "pxattr.h"

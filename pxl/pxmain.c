@@ -16,6 +16,7 @@
 #include "gstypes.h"
 #include "gscdefs.h"
 #include "gsgc.h"
+#include "gsio.h"
 #include "gsmemory.h"
 #include "gsmalloc.h"
 #include "gsargs.h"
@@ -122,9 +123,10 @@ main(int argc, char *argv[])
 	arg_list args;
 
 	/* Initialize the library. */
+	pl_main_init_standard_io();
 	gp_init();
-	gs_lib_init(stderr);
-	gs_debug_out = stdout;
+	gs_lib_init(gs_stderr);
+	gs_debug_out = gs_stdout;
 	imem = ialloc_alloc_state((gs_raw_memory_t *)&gs_memory_default, 20000);
 	imem->space = 0;		/****** WRONG ******/
 	pl_main_init(&inst, mem);
@@ -162,7 +164,7 @@ main(int argc, char *argv[])
 	        pl_print_usage(mem, &inst, "Start");
 	      }
 	    if ( in == 0 )
-	      { fprintf(stderr, "Unable to open %s for reading.\n", arg);
+	      { fprintf(gs_stderr, "Unable to open %s for reading.\n", arg);
 	        exit(1);
 	      }
 
@@ -244,16 +246,16 @@ err:	      if ( code < 0 )
 						     code, st, pxs)) >= 0
 			)
 		    { if ( report & eBackChannel )
-			fputs(message, stderr);
+			fputs(message, gs_stderr);
 		      if ( report & eErrorPage )
 			y = px_error_page_show(message, y, pxs);
 		    }
 		if ( report & pxeErrorReport_next )
 		  { long pos = ftell(in) - (r.limit - r.ptr);
-		    fprintf(stderr, "file position of error = %ld\n", pos);
+		    fprintf(gs_stderr, "file position of error = %ld\n", pos);
 		  }
 		  if ( report & eBackChannel )
-		    fflush(stderr);
+		    fflush(gs_stderr);
 		  if ( report & eErrorPage )
 		    { px_args_t args;
 		      args.pv[0] = 0;

@@ -4,9 +4,6 @@
 
 /* pcmain.c - PCL5c main program */
 
-/* HACK - avoid gsio redefinitions */
-#define gsio_INCLUDED
-
 #include "malloc_.h"
 #include "math_.h"
 #include "memory_.h"
@@ -152,11 +149,12 @@ main(
     arg_list            args;
     const char *        arg;
 
+    pl_main_init_standard_io();
     /* Initialize the library. */
     gp_init();
-    gs_lib_init(stdout);
+    gs_lib_init(gs_stderr);
 #ifdef DEBUG
-    gs_debug_out = stdout;
+    gs_debug_out = gs_stdout;
 #endif
 
     imem = ialloc_alloc_state((gs_raw_memory_t *)&gs_memory_default, 20000);
@@ -272,7 +270,7 @@ main(
 #endif
 
         if (in == 0) {
-            fprintf(stderr, "Unable to open %s for reading.\n", arg);
+            fprintf(gs_stderr, "Unable to open %s for reading.\n", arg);
             exit(1);
         }
 
@@ -326,8 +324,8 @@ process:
             uint    count;
 
             while ( (count = pcl_status_read(buf, sizeof(buf), pcls)) != 0 )
-                fwrite(buf, 1, count, stdout);
-            fflush(stdout);
+                fwrite(buf, 1, count, gs_stdout);
+            fflush(gs_stdout);
         }
 
         gs_reclaim(&inst.spaces, true);
