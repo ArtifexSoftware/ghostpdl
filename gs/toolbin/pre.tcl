@@ -226,38 +226,6 @@ exec touch $DIFFFILE
 
 check_version src/version.mak
 
-################ Check that the set of files in the directories is the
-################ same as the set of files registered with CVS.
-
-foreach d {examples doc lib man src} {
-    catch {unset Entries}
-    catch {unset Files}
-    set in [open $d/CVS/Entries]
-    while {[gets $in l] >= 0} {
-	if {[regexp {^/([^/]+)/} $l skip file]} {
-	    set Entries($file) $l
-	}
-    }
-    close $in
-    foreach f [glob -nocomplain $d/* {$d/.[a-zA-Z0-9_-]*}] {
-	if {![regexp {\.mak\.tcl$} $f]} {
-	    set Files([file tail $f]) 1
-	}
-    }
-    catch {unset Files(CVS)}
-    puts "In $d/, [array size Files] files, [array size Entries] CVS entries"
-    foreach f [array names Entries] {
-	if {![info exists Files($f)]} {
-	    message "$d/$f is registered with CVS, but does not exist."
-	}
-    }
-    foreach f [array names Files] {
-	if {![info exists Entries($f)]} {
-	    message "$d/$f is not registered with CVS."
-	}
-    }
-}
-
 ################ Check dates and version #s in documentation files
 
 foreach doc $doclist {
