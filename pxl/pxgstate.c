@@ -314,6 +314,8 @@ px_initgraphics(px_state_t *pxs)
 	/* we always clamp coordinates hp does not seem to report
            limit checks in paths */
 	gs_setlimitclamp(pgs, true);
+        build_crd(pxs);
+        build_sRGB_space(&pxs->pxgs->cie_color_space, pxs->memory);
 	return 0;
 }
 
@@ -333,7 +335,7 @@ px_gstate_reset(px_gstate_t *pxgs)
 	pxgs->char_transforms[2] = pxct_scale;
 	pxgs->char_sub_mode = eNoSubstitution;
 	pxgs->clip_mode = eNonZeroWinding;
-	pxgs->color_space = eRGB;
+	pxgs->color_space = eSRGB;
 	pxgs->palette.size = 0;
 	pxgs->palette.data = 0;
 	pxgs->palette_is_shared = false;

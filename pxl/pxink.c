@@ -531,10 +531,10 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	int i;
 	if ( par->pv[aGrayLevel] || par->pv[aNullBrushPen] )
 	    return_error(errorIllegalAttributeCombination);
-	if ( pxgs->color_space != eRGB )
+	if ( pxgs->color_space != eRGB && pxgs->color_space != eSRGB )
 	    return_error(errorColorSpaceMismatch);
 	px_paint_rc_adjust(ppt, -1, pxs->memory);
-	ppt->type = pxpRGB;
+	ppt->type = pxpSRGB;
 	for ( i = 0; i < 3; ++i )
 	    if ( prgb->type & pxd_any_real )
 		ppt->value.rgb[i] = real_elt(prgb, i);
@@ -556,7 +556,7 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
     } else if ( par->pv[aPrimaryDepth] && par->pv[aPrimaryArray] ) {
 	px_paint_rc_adjust(ppt, -1, pxs->memory);
 	if ( pxgs->color_space == eRGB )
-	    ppt->type = pxpRGB;
+	    ppt->type = pxpSRGB;
 	else if ( pxgs->color_space == eGray )
 	    ppt->type = pxpGray;
 	else if ( pxgs->color_space == eSRGB )
@@ -600,19 +600,18 @@ px_set_paint(const px_paint_t *ppt, px_state_t *pxs)
 	return 0;
     case pxpGray:
 	return gs_setgray(pgs, ppt->value.gray);
-    case pxpRGB:
-	return gs_setrgbcolor(pgs, ppt->value.rgb[0], ppt->value.rgb[1],
-			      ppt->value.rgb[2]);
     case pxpPattern:
 	return gs_setpattern(pgs, &ppt->value.pattern.color);
-    case pxpSRGB: {
-	gs_client_color color;
-        gs_setcolorspace(pgs, pxs->pxgs->cie_color_space);
-	color.paint.values[0] = ppt->value.rgb[0];
-	color.paint.values[1] = ppt->value.rgb[1];
-	color.paint.values[2] = ppt->value.rgb[2];
-	return gs_setcolor(pgs, &color);
-    }
+    case pxpSRGB:
+    case pxpRGB:
+        {
+            gs_client_color color;
+            gs_setcolorspace(pgs, pxs->pxgs->cie_color_space);
+            color.paint.values[0] = ppt->value.rgb[0];
+            color.paint.values[1] = ppt->value.rgb[1];
+            color.paint.values[2] = ppt->value.rgb[2];
+            return gs_setcolor(pgs, &color);
+        }
     default:		/* can't happen */
 	return_error(errorIllegalAttributeValue);
     }
@@ -636,21 +635,120 @@ const byte apxSetColorSpace[] = {
 };
 
 
-/* use this arrangement described in the postscript level 3 manual to
-   implement sRGB */
+#ifdef NEVER___THIS_IS_A_COMMENT
 
-/* [ /CIEBasedABC << 
-   /DecodeLMN [ { dup 0.03928 le { 12.92321 div} {
-   0.055 add 1.055 div 2.4 exp} ifelse } bind dup dup ] 
-   /MatrixLMN
-   [0.412457 0.212673 0.019334 0.357576 0.715152 0.119192 0.180437
-   0.072175 0.950301] 
-   /WhitePoint [0.9505 1.0 1.0890] >> ]
-   setcolorspace */
+% use this arrangement, described in the postscript level 3 manual to
+% implement sRGB
 
-/* ---------------- Utilities ---------------- */
-/* NB this should be fixed to use the new interface in gscspace.h */
-/* decode lmn procedure for srgb color space.  Unlike the other color spaces RGB and Gray this color space is built */
+/CIEBasedABC 
+    << /DecodeLMN
+         [
+             { dup 0.03928 le 
+                  { 12.92321 div}
+                  { 0.055 add 1.055 div 2.4 exp} 
+                  ifelse 
+             } bind
+             dup
+             dup
+         ] 
+         /MatrixLMN [0.412457 0.212673 0.019334
+                     0.357576 0.715152 0.119192
+                     0.180437 0.072175 0.950301] 
+         /WhitePoint [0.9505 1.0 1.0890] 
+    >> ] setcolorspace
+
+#endif /* NEVER___THIS_IS_A_COMMENT */
+
+const gs_vector3 WhitePoint = {0.9505, 1.0, 1.0890};
+
+  private int
+dflt_TransformPQR_proc(
+    int                 cmp_indx,
+    floatp              val,
+    const gs_cie_wbsd * cs_wbsd,
+    gs_cie_render *     pcrd,
+    float *             pnew_val
+)
+{
+    const float *       pcrd_wht = (float *)&(cs_wbsd->wd.pqr);
+    const float *       pcs_wht = (float *)&(cs_wbsd->ws.pqr);
+
+    *pnew_val = val * pcrd_wht[cmp_indx] / pcs_wht[cmp_indx];
+    return 0;
+}
+
+private const gs_cie_transform_proc3    dflt_TransformPQR = {
+    dflt_TransformPQR_proc,
+    NULL,
+    { NULL, 0 },
+    NULL
+};
+
+inline private float
+EncodeABC(floatp in, const gs_cie_render * pcrd)
+{
+    return pow(max(in, 0.0), 0.45);
+}
+
+private float
+EncodeABC_0(floatp in, const gs_cie_render * pcrd)
+{
+    return EncodeABC(in, pcrd);
+}
+
+private float
+EncodeABC_1(floatp in, const gs_cie_render * pcrd)
+{
+    return EncodeABC(in, pcrd);
+}
+
+private float
+EncodeABC_2(floatp in, const gs_cie_render * pcrd)
+{
+    return EncodeABC(in, pcrd);
+}
+
+
+int
+build_crd(px_state_t *pxs)
+{
+    gs_cie_render *pcrd;
+    int code;
+
+    private const gs_matrix3 dflt_MatrixABC = { {3.24063, -0.96893, 0.05571},
+                                                {-1.53721, 1.87576, -0.20402},
+                                                {-0.49863, 0.04152, 1.05700} };
+
+    const gs_range3     dflt_RangePQR = {{ {0, 0.9505}, {0, 1}, {0, 1.0890} }};
+    private const gs_cie_render_proc3 EncodeABC_procs = {
+        {EncodeABC_0, EncodeABC_1, EncodeABC_2}
+    };
+
+    /* build the color rendering dictionary if not already built NB.
+       Store colorrendering in the state and verify it is the same. */
+    code = gs_cie_render1_build(&pcrd, pxs->memory, "build_crd");
+    if ( code < 0 )
+	return code;
+    code = gs_cie_render1_initialize(pcrd,
+                                     NULL,
+                                     &WhitePoint,
+                                     NULL,
+                                     NULL,
+                                     &dflt_RangePQR,
+                                     &dflt_TransformPQR,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+				     &dflt_MatrixABC,
+                                     &EncodeABC_procs,
+                                     NULL,
+                                     NULL);
+    if ( code < 0 )
+	return code; /* should not fail */
+    return gs_setcolorrendering(pxs->pgs, pcrd);
+}
+
+/* Decode LMN procedures for srgb color spaces */
 inline private float
 DecodeLMN(floatp val, const gs_cie_common *pcie)
 {
@@ -660,31 +758,10 @@ DecodeLMN(floatp val, const gs_cie_common *pcie)
     if ( inval <= 0.03928 )
 	inval = inval / 12.92321;
     else
-	inval = (float)pow(1.0 / (inval + 0.055), 2.4);
+	inval = (float)pow((inval + 0.055) / 1.055, (double)2.4);
     return inval;
 }
 
-const gs_vector3 WhitePoint = {0.9505, 1.0, 1.0890};
-
-private int
-build_crd(px_state_t *pxs)
-{
-    gs_cie_render *pcrd;
-    int code;
-    /* build the color rendering dictionary if not already built NB.
-       Store colorrendering in the state and verify it is the same. */
-    if ( gs_currentcolorrendering(pxs->pgs) )
-	return 0;
-    code = gs_cie_render1_build(&pcrd, pxs->memory, "build_crd");
-    if ( code < 0 )
-	return code;
-    code = gs_cie_render1_initialize(pcrd, NULL, &WhitePoint, NULL,
-				     NULL, NULL, NULL, NULL, NULL, NULL,
-				     NULL, NULL, NULL, NULL);
-    if ( code < 0 )
-	return code; /* should not fail */
-    return gs_setcolorrendering(pxs->pgs, pcrd);
-}
 
 private float
 DecodeLMN_0(floatp val, const gs_cie_common *pcie)
@@ -704,15 +781,16 @@ DecodeLMN_2(floatp val, const gs_cie_common *pcie)
     return DecodeLMN(val, pcie);
 }
 
-/* NB how do these beasts get freed similar to pattern */
-private int
+/* NB how do these beasts get freed */
+int
 build_sRGB_space(gs_color_space **ppcs, gs_memory_t *mem)
 {
-    /* RangeLMN has the default value */
+    /* LMN matrix for srgb */
     private const gs_matrix3 MatrixLMN = {
 	{0.412457, 0.212673, 0.019334},
 	{0.357576, 0.715152, 0.119192},
-	{0.180437, 0.072175, 0.950301}
+	{0.180437, 0.072175, 0.950301},
+        false
     };
 
     private const gs_cie_common_proc3   DecodeLMN = {
@@ -722,13 +800,9 @@ build_sRGB_space(gs_color_space **ppcs, gs_memory_t *mem)
     int code = gs_cspace_build_CIEABC(ppcs, NULL, mem);
     if ( code < 0 )
 	return_error(errorInsufficientMemory);
-		
-    {
-        gs_cie_abc *pabc = (*ppcs)->params.abc;
-        pabc->common.DecodeLMN = DecodeLMN;
-        pabc->common.MatrixLMN = MatrixLMN;
-        pabc->common.points.WhitePoint = WhitePoint;
-    }
+    *(gs_cie_DecodeLMN(*ppcs)) = DecodeLMN;
+    *(gs_cie_MatrixLMN(*ppcs)) = MatrixLMN;
+    (gs_cie_WhitePoint(*ppcs)) = WhitePoint;
     return 0;
 }
 
@@ -803,7 +877,7 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 	pxgs->color_space = cspace;
 	/* build a color space if necessary and NB free the
 	   existing one */
-	if ( cspace == eSRGB || cspace == eCRGB ) {
+	if ( cspace == eSRGB || cspace == eCRGB || cspace == eRGB ) {
 	    /* NB free the old cie color space if necessary */
 	    build_crd(pxs);
 	    build_sRGB_space(&pxgs->cie_color_space, pxs->memory);
