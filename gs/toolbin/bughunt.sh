@@ -1,8 +1,11 @@
 #! /bin/sh
+
 # $Id$
 # NB: If your sh does not support functions, then try
 # /usr/local/bin/bash or /bin/ksh, if you have them.
-#
+
+# Note: this is a user-contributed file that has not been kept current.
+
 # Hunt down compiler bugs that break gs.
 #
 # Usage:
