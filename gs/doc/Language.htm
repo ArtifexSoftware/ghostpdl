@@ -1851,7 +1851,7 @@ for directories (folders) to allow access to all files and sub-directories
 in that directory.
 <p>
 <b>Note:</b> The strings are used for stringmatch operations similar
-to <b><tt>search</tt></b>, thus on MS Windows platforms, use the '/'
+to <b><tt>filenameforall</tt></b>, thus on MS Windows platforms, use the '/'
 character to separate directories and filenames or use '\\\\' to
 have the string contain '\\' which will match a single '\' in the
 target filename (use of '/' is strongly recommended).
@@ -1863,6 +1863,11 @@ on LIBPATH or FONTPATH or the Resource paths specified by the /FontResourceDir
 or /GenericResourceDir system params. Files cannot be opened for writing
 anywhere and cannot be deleted or renamed except for files created with the
 <a href=#Tempfile><b>.tempfile</b></a> operator).
+<p>
+<b>Note: </b>Limiting file reading as above is <b>NOT</b> compatible with
+SAFER mode in release versions before 7.11 and corresponds to the use of
+<b><tt>-dPARANOIDSAFER</tt></b> in version 7.04 (up to and not including
+version 7.10) and GPL versions 6.53 (up to and not including 6.60).
 </dl>
 
 <hr>
