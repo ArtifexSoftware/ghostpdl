@@ -1391,6 +1391,47 @@ pdf_write_text_process_state(gx_device_pdf *pdev,
 {
     int code;
 
+    /*
+     * Setting the stroke parameters may exit text mode, causing the
+     * settings of the text parameters to be lost.  Therefore, we set the
+     * stroke parameters first.
+     */
+    if (pdev->text.render_mode != ppts->mode && ppts->mode != 0) {
+	/* Write all the parameters for stroking. */
+	gs_imager_state *pis = pte->pis;
+	float save_width = pis->line_params.half_width;
+	const gs_font *font = ppts->font;
+	const gs_font *bfont = font;
+	double scaled_width = font->StrokeWidth;
+
+	/*
+	 * The font's StrokeWidth is in the character coordinate system,
+	 * which means that it should be scaled by the inverse of any
+	 * scaling in the FontMatrix.  Do the best we can with this.
+	 */
+	while (bfont != bfont->base)
+	    bfont = bfont->base;
+	scaled_width *= font_matrix_scaling(bfont) /
+	    font_matrix_scaling(font);
+	pis->line_params.half_width = scaled_width / 2;
+	code = pdf_prepare_stroke(pdev, pis);
+	if (code >= 0) {
+	    /*
+	     * See stream_to_text in gdevpdfu.c re the computation of
+	     * the scaling value.
+	     */
+	    double scale = 72.0 / pdev->HWResolution[1];
+
+	    code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
+					      pis, NULL, NULL, scale);
+	}
+	pis->line_params.half_width = save_width;
+	if (code < 0)
+	    return code;
+    }
+
+    /* Now set all the other parameters. */
+
     pdf_set_font_and_size(pdev, ppts->pdfont, ppts->size);
     code = pdf_set_text_matrix(pdev, &ppts->text_matrix);
     if (code < 0)
@@ -1422,39 +1463,6 @@ pdf_write_text_process_state(gx_device_pdf *pdev,
 	if (code < 0)
 	    return code;
 	pprintd1(pdev->strm, "%d Tr\n", ppts->mode);
-	if (ppts->mode) {
-	    /* Also write all the parameters for stroking. */
-	    gs_imager_state *pis = pte->pis;
-	    float save_width = pis->line_params.half_width;
-	    const gs_font *font = ppts->font;
-	    const gs_font *bfont = font;
-	    double scaled_width = font->StrokeWidth;
-
-	    /*
-	     * The font's StrokeWidth is in the character coordinate system,
-	     * which means that it should be scaled by the inverse of any
-	     * scaling in the FontMatrix.  Do the best we can with this.
-	     */
-	    while (bfont != bfont->base)
-		bfont = bfont->base;
-	    scaled_width *= font_matrix_scaling(bfont) /
-		font_matrix_scaling(font);
-	    pis->line_params.half_width = scaled_width / 2;
-	    code = pdf_prepare_stroke(pdev, pis);
-	    if (code >= 0) {
-		/*
-		 * See stream_to_text in gdevpdfu.c re the computation of
-		 * the scaling value.
-		 */
-		double scale = 72.0 / pdev->HWResolution[1];
-
-		code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
-						  pis, NULL, NULL, scale);
-	    }
-	    pis->line_params.half_width = save_width;
-	    if (code < 0)
-		return code;
-	}
 	pdev->text.render_mode = ppts->mode;
     }
 
