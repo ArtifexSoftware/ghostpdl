@@ -143,9 +143,9 @@ valid_cube_size(int num_inputs, int num_outputs, int sample_size, int Size[])
     int i, total_size = num_outputs * sample_size;
 
     for (i = 0; i < num_inputs; i++) {
-	total_size *= Size[i];
-	if (total_size > MAX_DATA_SIZE)
+	if (Size[i] <= 0 || Size[i] > MAX_DATA_SIZE / total_size)
 	    return false;
+	total_size *= Size[i];
     }
     return true;
 }
