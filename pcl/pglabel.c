@@ -107,7 +107,7 @@ hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr, gs_glyph *pglyph)
 
 /* Select primary (0) or alternate (1) font. */
 private void
-hpgl_select_font(hpgl_state_t *pgls, int index)
+hpgl_select_font_pri_alt(hpgl_state_t *pgls, int index)
 {
     if ( pgls->g.font_selected != index ) {
 	pgls->g.font_selected = index;
@@ -1040,10 +1040,10 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 		  width *= 5;
 		  goto acc_ht;
 		case SI :
-		  hpgl_select_font(pgls, 0);
+		  hpgl_select_font_pri_alt(pgls, 0);
 		  continue;
 		case SO :
-		  hpgl_select_font(pgls, 1);
+		  hpgl_select_font_pri_alt(pgls, 1);
 		  continue;
 		default :
 		  break;
@@ -1074,7 +1074,7 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 		    label_height = height;
 		}
 	    }
-	  hpgl_select_font(pgls, save_index);
+	  hpgl_select_font_pri_alt(pgls, save_index);
 	}
 	hpgl_call(hpgl_get_character_origin_offset(pgls, pgls->g.label.origin,
 						   label_length, label_height,
@@ -1172,10 +1172,10 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 		      spaces = 5, lines = 0;
 		      break;
 		    case SI :
-		      hpgl_select_font(pgls, 0);
+		      hpgl_select_font_pri_alt(pgls, 0);
 		      continue;
 		    case SO :
-		      hpgl_select_font(pgls, 1);
+		      hpgl_select_font_pri_alt(pgls, 1);
 		      continue;
 		    default :
 		      goto print;
