@@ -173,8 +173,25 @@ pdfdict begin
  } bind def
 
 % Open a PDF file and read the header, trailer, and cross-reference.
-/pdfopen		% <file> pdfopen <dict>
- { pdfdict readonly pop		% can't do it any earlier than this
+/pdfopen {		% <file> pdfopen <dict>
+  pdfopenfile begin
+  pdfopencache
+	% Copy bookmarks (outline) to the output.
+  Trailer /Root oget /Outlines knownoget {
+    /First knownoget {
+      { dup writeoutline /Next knownoget not { exit } if } loop
+    } if
+  } if
+  currentdict end
+} bind def
+/pdfopencache {		% - pdfopencache -
+	% Create and initialize some caches.
+  /PageCount pdfpagecount def
+  /PageNumbers PageCount dict def
+  /PageIndex PageCount array def
+} bind def
+/pdfopenfile {		% <file> pdfopenfile <dict>
+   pdfdict readonly pop		% can't do it any earlier than this
    15 dict begin
    /LocalResources 0 dict def
    /PSLevel1 where { pop } { /PSLevel1 false def } ifelse
@@ -194,16 +211,6 @@ pdfdict begin
    if
 	% Read any previous cross-reference tables.
    Trailer { /Prev .knownget not { exit } if readxref } loop
-	% Create and initialize some caches.
-   /PageCount pdfpagecount def
-   /PageNumbers PageCount dict def
-   /PageIndex PageCount array def
-	% Copy bookmarks (outline) to the output.
-   Trailer /Root oget /Outlines knownoget
-    { /First knownoget
-      { { dup writeoutline /Next knownoget not { exit } if } loop } if
-    }
-   if
    currentdict end
  } bind def
 
@@ -327,38 +334,40 @@ pdfdict begin
 
 % Find the N'th page of the document by iterating through the Pages tree.
 % The first page is numbered 1.
-/pdffindpage		% <int> pdffindpage <pagedict>
- { dup Trailer /Root oget /Pages oget
+/pdffindpageref {		% <int> pdffindpage <objref>
+  dup Trailer /Root oget /Pages get
     {		% We should be able to tell when we reach a leaf
 		% by finding a Type unequal to /Pages.  Unfortunately,
 		% some files distributed by Adobe lack the Type key
 		% in some of the Pages nodes!  Instead, we check for Kids.
-      dup /Kids knownoget not { exit } if
+      dup oforce /Kids knownoget not { exit } if
       exch pop null
-      0 1 3 index length 1 sub
-       { 2 index exch oget
-	 dup /Kids known { dup /Count oget } { 1 } ifelse
-		% Stack: index kids null node count
+      0 1 3 index length 1 sub {
+         2 index exch get
+	 dup oforce dup /Kids known { /Count oget } { pop 1 } ifelse
+		% Stack: index kids null noderef count
 	 dup 5 index ge { pop exch pop exit } if
 	 5 -1 roll exch sub 4 1 roll pop
-       }
-      for exch pop
+      } for exch pop
+		% Stack: index null|noderef
       dup null eq { pop pop 1 null exit } if
-    }
-   loop
-		% Stack: index countleft node
+    } loop
+		% Stack: index countleft noderef
    1 index 1 ne { pop pop /pdffindpage cvx /rangecheck signalerror } if
    exch pop
-   PageIndex 2 index 1 sub 2 index put
-   PageNumbers 1 index 3 index put
+   PageIndex 2 index 1 sub 2 index oforce put
+   PageNumbers 1 index oforce 3 index put
    exch pop
- } bind def
+} bind def
+/pdffindpage {		% <int> pdffindpage <pagedict>
+  pdffindpageref oforce
+} bind def
 
 % Find the N'th page of the document.
 % The first page is numbered 1.
 /pdfgetpage		% <int> pdfgetpage <pagedict>
  { PageIndex 1 index 1 sub get dup null ne
-    { exch pop }
+    { exch pop oforce }
     { pop pdffindpage }
    ifelse
  } bind def
@@ -480,6 +489,17 @@ end readonly def
  { /DSCPageCount DSCPageCount 1 add store
  } bind def
 
+/.pdfshowpage_Install {	% <pagedict> [<prevproc>] .pdfshowpage_Install -
+  exch
+	% We would like to clip to the CropBox here, but the subsequent
+	% initgraphics would override it.  Instead, we have to handle it
+	% in graphicsbeginpage.
+  dup /MediaBox pget {
+    dup 0 get neg exch 1 get neg translate
+  } if
+  pop 0 get exec
+} bind def
+
 /pdfshowpage_setpage {	% <pagedict> pdfshowpage_setpage <pagedict>
   4 dict begin		% for setpagedevice
 	% Stack: pagedict
@@ -493,31 +513,36 @@ end readonly def
 	% Stack: pagedict currentpagedict
   1 index /MediaBox pget {
 			% Set the page size.
-    boxrect [ 2 index 2 index ]
-	% Stack: pagedict currentpagedict llx lly width height pagesize
-    /PageSize exch def
-			% Set the offset on the page.
-	% Stack: pagedict currentpagedict llx lly width height
-    pop pop exch neg exch neg
-	% Stack: pagedict currentpagedict -llx -lly
-    [ 3 1 roll /translate load 4 index /Install .knownget {
-      1 array astore 0 /get load /exec load
-    } if ] cvx
-	% Stack: pagedict currentpagedict installproc
-    /Install exch def
+    boxrect 2 array astore /PageSize exch def pop pop
   } if
+  dup /Install .knownget {
+			% Don't let the Install procedure get more deeply
+			% nested after every page.
+      dup type /arraytype eq {
+	dup length 4 eq {
+	  dup 2 get /.pdfshowpage_Install load eq {
+	    1 get dup length 0 ne { 1 get } if
+	  } if
+	} if
+      } if
+      1 array astore
+  } {
+    { }
+  } ifelse
+  2 index exch /.pdfshowpage_Install load /exec load
+  4 packedarray cvx
+	% Stack: pagedict currentpagedict installproc
+  /Install exch def
 	% Stack: pagedict currentpagedict
   pop currentdict end setpagedevice
 } bind def
 
 /pdfshowpage_finish	% <pagedict> pdfshowpage_finish -
  {
-	% Copy crop box.
-   dup /CropBox pget
-    { boxrect rectclip
-      dup /CropBox knownoget { mark /CropBox 3 -1 roll /PAGE pdfmark } if
-    }
-   if
+	% Copy the crop box.
+   dup /CropBox knownoget {
+      mark /CropBox 3 -1 roll /PAGE pdfmark
+   } if
 
 	% Copy annotations and links.
    dup /Annots knownoget
@@ -536,7 +561,11 @@ end readonly def
    /UCRDefault currentundercolorremoval def
 	%****** DOESN'T HANDLE COLOR TRANSFER YET ******
    /TRDefault currenttransfer def
-   matrix currentmatrix beginpage setmatrix
+  matrix currentmatrix 2 dict
+  2 index /CropBox knownoget {
+    boxrect 4 array astore 1 index /ClipRect 3 -1 roll put
+  } if
+  dictbeginpage setmatrix
    dup /Contents knownoget not { 0 array } if
    dup type /arraytype ne { 1 array astore } if
    count 1 sub /pdfemptycount exch store
