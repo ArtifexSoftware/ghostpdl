@@ -552,6 +552,7 @@ dsc_add_page(CDSC *dsc, int ordinal, char *label)
     dsc->page[dsc->page_count].ordinal = ordinal;
     dsc->page[dsc->page_count].media = NULL;
     dsc->page[dsc->page_count].bbox = NULL;
+    dsc->page[dsc->page_count].viewing_orientation = NULL;
 
     dsc->page_count++;
     if (dsc->page_count >= dsc->page_chunk_length) {
