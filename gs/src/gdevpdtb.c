@@ -541,8 +541,11 @@ pdf_write_CIDSet(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 {
     pdf_data_writer_t writer;
     long cidset_id = pdf_begin_separate(pdev);
-    int code = pdf_begin_data(pdev, &writer);
+    int code; 
+    stream *s = pdev->strm;
 
+    stream_puts(s, "<<");
+    code = pdf_begin_data(pdev, &writer);
     if (code >= 0) {
 	stream_write(writer.binary.strm, pbfont->CIDSet,
 		     (pbfont->num_glyphs + 7) / 8);
