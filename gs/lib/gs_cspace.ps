@@ -917,6 +917,7 @@ bind def
 
 /.hsb_2_rgb
   {
+    3 { 0 max 1 min 3 1 roll } repeat
     1 2 index sub 1 index mul      % (1 - s) * br
     3 -1 roll 2 index mul 6 mul    % 6 * s * br
     4 -1 roll                      % stack: <br>  <(1 - s) * br>  <6 * s * br>  <h>
