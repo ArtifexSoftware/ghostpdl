@@ -88,9 +88,20 @@ def ChangeLogDateNameHeader(date, author, hostname, tabsize):
     return time.asctime(date) + ' GMT' + seperator1 + author_name +\
 	   seperator2 + author + '@' + hostname + '\n'
 
+def BuildPatch(revision, rcs_file):
+    import os, string
+    # NB this needs work we only handle the special cases here.
+    rev_int_str = revision[:string.find(revision, '.')]
+    rev_frac_str = revision[string.find(revision, '.')+1:]
+    prev_frac_int = string.atoi(rev_frac_str) - 1;
+    prev_revision = rev_int_str + '.' + `prev_frac_int`
+    patch_command = 'cvs diff -C2 -r' + revision + ' -r' + prev_revision + ' ' + rcs_file
+    return os.popen(patch_command, 'r').readlines()
+        
+
 # build change log entries with file name, revisions, etc. lumping
 # like descriptions together.  We assume the dictionary contains data.
-def ChangeLogFileRevDesc(entry_dict, indent, line_length):
+def ChangeLogFileRevDesc(entry_dict, indent, line_length, patch):
     leading_space = ' ' * indent
 
     change_log_entry = ''
@@ -112,8 +123,12 @@ def ChangeLogFileRevDesc(entry_dict, indent, line_length):
 	change_log_entry = change_log_entry[:-2] + ':\n'
 	# add on the current description
 	change_log_entry = change_log_entry + description + '\n'
+        # add on the patches if necessary
+        if ( patch == 1 ):
+            for revision, rcs_file in entry_dict[description]:
+                for patch_line in BuildPatch(revision, rcs_file):
+                    change_log_entry = change_log_entry + patch_line
     return change_log_entry
-
 
 # Build the cvs log.
 def BuildLog(log_date_command):
@@ -149,7 +164,7 @@ def BuildLog(log_date_command):
 def main():
     import sys, getopt, time, string, socket
     try:
-	opts, args = getopt.getopt(sys.argv[1:], "d:i:h:l:u:r:Rt:DL:",
+	opts, args = getopt.getopt(sys.argv[1:], "d:i:h:l:u:r:Rt:pL:",
 				   ["date",
                                     "indent",
 				    "hostname",
@@ -158,8 +173,9 @@ def main():
 				    "rlog_options", #### not yet supported
 				    "Recursive",    #### not yet supported
 				    "tabwidth",
-				    "Diffs",        #### not yet supported
+				    "patches",        #### not yet supported
 				    "Logfile"])
+
     except getopt.error, msg:
 	sys.stdout = sys.stderr
 	print msg
@@ -183,6 +199,7 @@ def main():
     logfile=None
     date_option = ""
     diffs=1
+    patches=0
     # override defaults if specified on the command line
     for o, a in opts:
 	if o == '-h' : hostname = a
@@ -193,8 +210,8 @@ def main():
 	elif o == '-r' : rlog_options = a
 	elif o == '-R' : recursive = 1
         elif o == '-d' : date_option = "-d " + "'" + a + "'"
-	elif o == '-D' : diffs = 0
 	elif o == '-L' : logfile = a
+        elif o == '-p' : patches = 1
 	else: print "getopt should have failed already"
 
     # set up the cvs log command arguments.  If a logfile is specified
@@ -218,7 +235,7 @@ def main():
 	    # clear out any old revisions, descriptions, and filenames
 	    # that belong with the last log.
 	    if entry_dict:
-		print ChangeLogFileRevDesc(entry_dict, indent, length)
+		print ChangeLogFileRevDesc(entry_dict, indent, length, patches)
 	    # clear the entry log for the next group of changes
 	    # if we have a new author or date we print a date, time,
 	    # author, and email address.
@@ -243,7 +260,7 @@ def main():
     # print the last entry if there is one (i.e. the last two entries
     # have the same author and date)
     if entry_dict:
-	print ChangeLogFileRevDesc(entry_dict, indent, length)
+	print ChangeLogFileRevDesc(entry_dict, indent, length, patches)
 
 if __name__ == '__main__':
     main()
