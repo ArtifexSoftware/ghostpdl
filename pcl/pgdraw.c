@@ -1276,8 +1276,10 @@ hpgl_draw_current_path(
     /* check if we have a current path - we don't need the current
        point */
     if ( gx_path_subpath_start_point(gx_current_path(pgls->pgs),
-				     &dummy_pt) < 0 )
+				     &dummy_pt) < 0 ) {
+	hpgl_call(hpgl_clear_current_path(pgls));
  	return 0;
+    }
     hpgl_call(hpgl_close_path(pgls));
     hpgl_call(hpgl_set_drawing_state(pgls, render_mode));
 
