@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -572,18 +572,18 @@ end
 % Note that the keys in defaultdecodedict are resolved (PostScript, not PDF)
 % color space names.
 /defaultdecodedict mark
-  /DeviceGray { pop //01_1 }
-  /DeviceRGB { pop //01_3 }
-  /DeviceCMYK { pop //01_4 }
-  /CIEBasedA { 1 get /RangeA .knownget not { //01_1 } if }
-  /CIEBasedABC { 1 get /RangeABC .knownget not { //01_3 } if }
-  /Separation { pop //01_1 }
+  /DeviceGray { pop //01_1 } bind
+  /DeviceRGB { pop //01_3 } bind
+  /DeviceCMYK { pop //01_4 } bind
+  /CIEBasedA { 1 get /RangeA .knownget not { //01_1 } if } bind
+  /CIEBasedABC { 1 get /RangeABC .knownget not { //01_3 } if } bind
+  /Separation { pop //01_1 } bind
   /DeviceN {
-    dup 1 oget length [ exch {0 1} repeat ] readonly
-  }
+    1 oget length [ exch {0 1} repeat ] readonly
+  } bind
   /Indexed {
     pop [ 0 1 BitsPerComponent bitshift 1 sub ]
-  }
+  } bind
 .dicttomark readonly def
 
 /checkaltimage {	% <resdict> checkaltimage <resdict[']>
