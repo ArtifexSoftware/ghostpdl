@@ -262,16 +262,15 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  return e_Range;
 	hpgl_arg_c_real(pargs, &chord);
 	/* draw the arc/circle */
-	hpgl_call(hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
+	hpgl_call(hpgl_add_arc_to_path(pgls, pos.x, pos.y,
 				       radius, 0.0, 360.0, chord, true,
 				       hpgl_plot_draw_absolute, reset_ctm));
-	if ( !pgls->g.polygon_mode ) {
-	    hpgl_call(hpgl_draw_arc(pgls));
-	    /* move back to the center */
-	    hpgl_call(hpgl_add_point_to_path(pgls, pos.x, pos.y,
-					     hpgl_plot_move_absolute, reset_ctm));
+	if ( !pgls->g.polygon_mode )
+	  hpgl_call(hpgl_draw_arc(pgls));
+	/* move back to the center */
+	hpgl_call(hpgl_set_current_position(pgls, &pos));
+	if ( !pgls->g.polygon_mode )
 	    hpgl_call(hpgl_clear_current_path(pgls));
-	}
 	return 0;
 
 }
