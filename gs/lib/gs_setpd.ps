@@ -198,6 +198,7 @@ level2dict begin
   /BeginPage {{.callbeginpage}} bind
   /EndPage {{.callendpage}} bind
   /Policies .defaultpolicies
+  /ImagingBBox null		% default value
 .dicttomark readonly def
 
 % Define currentpagedevice so it creates the dictionary on demand if needed,
@@ -388,6 +389,12 @@ level2dict begin
       false
     }
   /ViewerPreProcess false
+  /ImagingBBox false	% This prevents the ImagingBBox value in the setpagedevice
+			% from affecting the device's ImagingBBox parameter, but
+			% does retain a 'shadow' copy at the PostScript level.
+			% This is done for Adobe compatibility since Adobe does
+			% render marks outside the ImagingBBox (and QuarkXpress
+			% relies on it).
 .dicttomark readonly def
 
 % Define access to device defaults.
