@@ -516,6 +516,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	plfont->storage = src->storage;
 	plfont->header_size = src->header_size;
 	plfont->scaling_technology = src->scaling_technology;
+        plfont->is_xl_format = plfont->is_xl_format;
 	plfont->font_type = src->font_type;
 	plfont->char_width = src->char_width;
 	plfont->char_metrics = src->char_metrics;
@@ -971,6 +972,7 @@ pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
 	    plfont->font_type = plft_Unicode;
 	    plfont->large_sizes = true;
 	    plfont->offsets.GT = 0;
+            plfont->is_xl_format = false;
 	    pl_fill_in_tt_font(pfont, tt_font_datap, unique_id);
 	    code = gs_definefont(pdir, (gs_font *)pfont);
 	}

@@ -253,8 +253,14 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
         memcpy(header, data, count);
         plfont->storage = pcds_temporary;
         plfont->data_are_permanent = false;
+        if (fst == plfst_Intellifont) {
+            code = pl_swap_header(header);
+            if ( code != 0 )
+                return code;
+        }
         plfont->header = header;
         plfont->header_size = count;
+        plfont->is_xl_format = false;
         plfont->scaling_technology = fst;
         plfont->font_type = (pl_font_type_t)pfh->FontType;
         plfont->font_file = (char *)0;

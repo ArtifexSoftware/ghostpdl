@@ -134,7 +134,6 @@ pl_alloc_font(gs_memory_t *mem, client_name_t cname)
 	    /* Initialize other defaults. */
 	    plfont->landscape = false;
 	    plfont->bold_fraction = 0;
-	    plfont->is_xl_format1 = false;
 	    plfont->font_file = 0;
 	    plfont->resolution.x = plfont->resolution.y = 0;
 	    plfont->params.proportional_spacing = true;
@@ -159,10 +158,6 @@ pl_font_t *
 pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 {
     pl_font_t *plfont;
-    /* it is not clear how to clone resident ufst fco fonts unless
-       they are downloaded */
-    dprintf(mem, "clone fonts\n" );
-
     if (src->header == 0)
         return 0;
     plfont = gs_alloc_struct(mem, pl_font_t, &st_pl_font, cname);
@@ -172,6 +167,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
     plfont->storage = src->storage;
     plfont->header_size = src->header_size;
     plfont->scaling_technology = src->scaling_technology;
+    plfont->is_xl_format = plfont->is_xl_format;
     plfont->font_type = src->font_type;
     plfont->char_width = src->char_width;
     plfont->large_sizes = src->large_sizes;
@@ -226,14 +222,12 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
                 {
                     gs_font_type42 *pfont =
                         gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42, cname);
-                    /* detect if a truetype font is downloaded or
-                       internal.  There must be a better way... */
-                    gs_font_type42 *pfont_src = (gs_font_type42 *)src->pfont;
-                    bool downloaded = (pfont_src->data.get_outline == pl_tt_get_outline);
                     if ( pfont == 0 )
                         return 0;
-                    pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "illegal font");
-                    pl_fill_in_tt_font(pfont, downloaded ? NULL : src->header, gs_next_ids(mem, 1));
+                    pl_fill_in_font((gs_font *)pfont,
+                                    plfont, src->pfont->dir,
+                                    mem, "illegal font");
+                    pl_fill_in_tt_font(pfont, NULL, gs_next_ids(mem, 1));
                 }
                 break;
 	    }
@@ -713,6 +707,7 @@ pl_load_mt_font(SW16 handle, gs_font_dir *pdir, gs_memory_t *mem,
                   plfont->scaling_technology = plfst_MicroType;
                   plfont->font_type = plft_Unicode;
                   plfont->large_sizes = true;
+                  plfont->is_xl_format = plfont->is_xl_format;
                   pl_fill_in_mt_font(pfont, handle, unique_id);
                   code = gs_definefont(pdir, (gs_font *)pfont);
               }

@@ -50,14 +50,6 @@
 #include "port.h"
 #include "shareinc.h"
 
-/* 0 false lets ufst render downloaded truetype
- * 1 true lets artifex font scaler render downloaded truetype
- */
-#define AFS_FOR_DOWNLOADED_TRUETYPE 1
-#ifndef AFS_FOR_DOWNLOADED_TRUETYPE 
-#error
-#endif
-
 /*
  * As of gs library version 5.86, the log2_current_scale member of the
  * gs_show_enum structure is renamed log2_scale.  The following test
@@ -344,8 +336,7 @@ pl_init_fc(
     gs_state *          pgs,
     int                 need_outline,
     FONTCONTEXT *       pfc,
-    bool                width_request,
-    bool                is_xl_format1)
+    bool                width_request)
 {
     gs_font *               pfont = plfont->pfont;
 
@@ -399,7 +390,7 @@ pl_init_fc(
 
     /* support Format 16 headers (TrueType fonts only) */
     pfc->ExtndFlags = 0;
-    if ( is_xl_format1 ) {
+    if (plfont->is_xl_format) {
         pfc->ExtndFlags = EF_XLFONT_TYPE;
         if ((pfont->WMode & 0x1) != 0)  /* vertical substitution */
             pfc->ExtndFlags |= EF_VERTSUBS_TYPE;
@@ -454,8 +445,7 @@ pl_purge_ufst_font(const pl_font_t * plfont)
 
     pl_init_fc(plfont, NULL /* graphics state */,
                false /* needs outline */,
-               &fc, true /* requesting width */,
-               false /* is_xl_format1 (don't care) */ );
+               &fc, true /* requesting width */);
     fc.format |= FC_EXTERN_TYPE;
     if (plfont->scaling_technology == plfst_TrueType)
         fc.format |= FC_TT_TYPE;
@@ -714,175 +704,6 @@ pl_ufst_make_char(
         return (code < 0 ? code : 0);
     }    
 }
-
-#if AFS_FOR_DOWNLOADED_TRUETYPE
-
-/* Render a TrueType character. */
-private int
-pl_afs_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
-  gs_char chr, gs_glyph orig_glyph)
-{	gs_glyph glyph = orig_glyph;
-#define pbfont ((gs_font_base *)pfont)
-#define pfont42 ((gs_font_type42 *)pfont)
-	int code;
-	pl_font_t *plfont = (pl_font_t *)pfont->client_data;
-	float bold_fraction = gs_show_in_charpath(penum) != cpm_show ? 0.0 : plfont->bold_fraction;
-	uint bold_added;
-	double scale;
-	float sbw[4], w2[6];
-	int ipx, ipy, iqx, iqy;
-	gx_device_memory mdev;
-
-#ifdef CACHE_TRUETYPE_CHARS
-#  define tt_set_cache(penum, pgs, w2)\
-     gs_setcachedevice(penum, pgs, w2)
-#else
-#  define tt_set_cache(penum, pgs, w2)\
-     gs_setcharwidth(penum, pgs, w2[0], w2[1]);
-#endif
-	/* undefined */
-	if ( glyph == gs_no_glyph )
-	    return 0;
-	/* Check for a vertical substitute. */
-	if ( pfont->WMode & 1 )
-	  { pl_font_t *plfont = pfont->client_data;
-	    gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
-
-	    if ( vertical != gs_no_glyph )
-	      glyph = vertical;
-	  }
-
-	/* Establish a current point. */
-
-	if ( (code = gs_moveto(pgs, 0.0, 0.0)) < 0 )
-	  return code;
-
-	/* Get the metrics and set the cache device. */
-	code = pl_tt_get_metrics(pfont42, glyph, pfont->WMode, sbw);
-
-	if ( code < 0 )
-	  return code;
-	w2[0] = sbw[2], w2[1] = sbw[3];
-
-	/* Adjust the bounding box for stroking if needed. */
-
-	{ const gs_rect *pbbox = &pbfont->FontBBox;
-
-	  w2[2] = pbbox->p.x, w2[3] = pbbox->p.y;
-	  w2[4] = pbbox->q.x, w2[5] = pbbox->q.y;
-	  if ( pfont->PaintType )
-	    {	double expand = max(1.415, gs_currentmiterlimit(pgs)) *
-		  gs_currentlinewidth(pgs) / 2;
-
-		w2[2] -= expand, w2[3] -= expand;
-		w2[4] += expand, w2[5] += expand;
-	    }
-	}
-
-	/*
-	 * If we want pseudo-bold, render untransformed to an intermediate
-	 * bitmap, smear it, and then transform it to produce the output.
-	 * This is really messy.
-	 */
-	if ( bold_fraction == 0 )
-	  { code = tt_set_cache(penum, pgs, w2);
-	    if ( code < 0 )
-	      return code;
-	    bold_added = 0;
-	  }
-	else
-	  { gs_matrix mat, smat;
-	    gs_rect sbox;
-
-	    code = gs_gsave(pgs);
-	    if ( code < 0 )
-	      return code;
-	    gs_currentmatrix(pgs, &mat);
-	    /* Determine an appropriate scale for the bitmap. */
-	    scale = max(fabs(mat.xx) + fabs(mat.yx),
-			fabs(mat.xy) + fabs(mat.yy));
-	    gs_make_scaling(scale, scale, &smat);
-	    sbox.p.x = w2[2], sbox.p.y = w2[3];
-	    sbox.q.x = w2[4], sbox.q.y = w2[5];
-	    gs_bbox_transform(pgs->memory, &sbox, &smat, &sbox);
-	    ipx = (int)sbox.p.x, ipy = (int)sbox.p.y;
-	    iqx = (int)ceil(sbox.q.x), iqy = (int)ceil(sbox.q.y);
-	    /* Set up the memory device for the bitmap. */
-	    gs_make_mem_mono_device(&mdev, NULL, pgs->device);
-	    /* prevent freeing - shoule not be freed */
-	    gx_device_retain((gx_device *)&mdev, true);
-	    bold_added = (int)ceil((iqy - ipy) * bold_fraction);
-	    mdev.width = iqx - ipx + bold_added;
-	    mdev.height = iqy - ipy;
-	    mdev.bitmap_memory = pgs->memory;
-	    code = (*dev_proc(&mdev, open_device))((gx_device *)&mdev);
-	    if ( code < 0 )
-	      { gs_grestore(pgs);
-	        return code;
-	      }
-	    /* Don't allow gs_setdevice to reset things. */
-	    pgs->device = (gx_device *)&mdev;
-	    { gs_fixed_rect cbox;
-	      cbox.p.x = cbox.p.y = fixed_0;
-	      cbox.q.x = int2fixed(mdev.width);
-	      cbox.q.y = int2fixed(mdev.height);
-	      gx_clip_to_rectangle(pgs, &cbox);
-	    }
-	    /* Make sure we clear the entire bitmap. */
-	    memset(mdev.base, 0, bitmap_raster(mdev.width) * mdev.height);
-	    gx_set_device_color_1(pgs);	/* write 1's */
-	    smat.tx = -ipx;
-	    smat.ty = -ipy;
-	    gs_setmatrix(pgs, &smat);
-	  }
-	code = gs_type42_append(glyph,
-				(gs_imager_state *)pgs, pgs->path,
-				&penum->log2_current_scale,
-				gs_show_in_charpath(penum) != cpm_show,
-				pfont->PaintType, pfont42);
-	if ( code >= 0 )
-	  code = (pfont->PaintType ? gs_stroke(pgs) : gs_fill(pgs));
-	if ( bold_added )
-	  gs_grestore(pgs);
-	if ( code < 0 || !bold_added )
-	  return (code < 0 ? code : 0);
-
-	/* Now smear the bitmap and copy it to the destination. */
-
-	{ gs_image_t image;
-	  gs_image_enum *ienum =
-	    gs_image_enum_alloc(pgs->memory, "pl_tt_build_char");
-	  byte *bold_lines =
-	    alloc_bold_lines(pgs->memory, mdev.width - bold_added, bold_added,
-			     "pl_tt_build_char(bold_lines)");
-
-	  if ( ienum == 0 || bold_lines == 0 )
-	    { code = gs_note_error(pgs->memory, gs_error_VMerror);
-	      goto out;
-	    }
-	  gs_image_t_init_mask(&image, true);
-	  image.Width = mdev.width;
-	  image.Height = mdev.height + bold_added;
-	  gs_make_scaling(scale, scale, &image.ImageMatrix);
-	  image.ImageMatrix.tx = -ipx;
-	  image.ImageMatrix.ty = -ipy;
-	  image.adjust = true;
-	  code = tt_set_cache(penum, pgs, w2);
-	  if ( code < 0 )
-	    goto out;
-	  code = image_bitmap_char(ienum, &image, mdev.base,
-				   bitmap_raster(mdev.width), bold_added,
-				   bold_lines, pgs);
-out:	  gs_free_object(pgs->memory, bold_lines, "pl_tt_build_char(bold_lines)");
-	  gs_free_object(pgs->memory, ienum, "pl_tt_build_char(image enum)");
-	  gs_free_object(pgs->memory, mdev.base, "pl_tt_build_char(bitmap)");
-	}
-	return (code < 0 ? code : 0);
-#undef pfont42
-#undef pbfont
-}
-
-#endif /* AFS_FOR_DOWNLOADED_TRUETYPE */
 
 /* ---------------- Bitmap font support ---------------- */
 
@@ -1437,15 +1258,40 @@ pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
         return gs_no_glyph;
 }
 
-/* unfortunately we have to maintain a global buffer to store the byte
-   swapped data to pass to the UFST.  The legacy UFST code does not
-   intelligently handle big endian vs. little endian data.  The big
-   endian pcl font header and character data is swapped to little
-   endian format on little endian architectures.  The pcl component
-   expects header data to be in the documented format, thus on little
-   endian platforms. */
+/* brilliant - what can we do? */
+const UB8 agfa_xl_header[72] = {0,0x48,0x10,0x02,0,0,0,0,0,0,0,0,0,0x01,0x02,0x75,
+                                0,0,0,0,0,0,0,0,0,0xFE,0,0,0,0,0,0,
+                                0,0,0,0,0,0x20,0,0xFF,0,0,0,0,0,0,0,0,
+                                0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                                0x10,0,0,0,0,0,0x01,0};
 
-UB8 global_font_header_buffer[512];
+int
+pl_prepend_xl_dummy_header(gs_memory_t *mem, byte **ppheader)
+{
+
+    uint size = gs_object_size(mem, *ppheader);
+    byte *new_header = gs_alloc_bytes(mem, size + 72 - 8 /* agfa dummy header */, "pl_prepend_xl_dummy_header");
+    
+    if (new_header == NULL)
+        return -1;
+    memcpy(new_header, agfa_xl_header, 72);
+    memcpy(new_header + 72 - 8, *ppheader, size);
+    gs_free_object(mem, *ppheader,"pl_prepend_xl_dummy_header");
+    *ppheader = new_header;
+    return 0;
+}
+
+int
+pl_swap_header(byte *header)
+{
+#if (BYTEORDER == LOHI)
+    /* the second parameter here is undocumented but is in the code,
+       I'm not sure what it does */
+    return PCLswapHdr(FSA header, 0);
+#else
+    return 0;
+#endif
+}
 
 /*
  * Set the current UFST font to be a TrueType font.
@@ -1457,17 +1303,8 @@ pl_set_tt_font(
     int                 need_outline,
     FONTCONTEXT *       pfc )
 {
-    /* if this is an XL TT font rewrite the header so the agfa
-       rasterizer can properly parse the data */
-    if ( plfont->scaling_technology == plfst_TrueType && 
-         plfont->font_type == plft_16bit &&
-         plfont->header[0] == 0 && plfont->header[1] != 0x8 ) {
-        plfont->header[1] = 0x8;
-        plfont->is_xl_format1 = true;
-    }
-
     pl_init_fc(plfont, pgs, need_outline, pfc,
-               /* width request iff */  pgs == NULL, plfont->is_xl_format1);
+               /* width request iff */  pgs == NULL);
     pfc->font_hdr = plfont->header;
     pfc->format |= FC_NON_Z_WIND | FC_EXTERN_TYPE | FC_TT_TYPE;
     return pl_set_ufst_font(plfont, pfc);
@@ -1477,32 +1314,12 @@ pl_set_tt_font(
 private int
 pl_tt_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
 {
-    gs_font *pfont = plfont->pfont;
-    gs_char chr = char_code;
-    gs_glyph unused_glyph = gs_no_glyph;
-    gs_glyph glyph = pl_tt_encode_char(pfont, chr, unused_glyph);
-    int code;
-    float sbw[4];
-	
-    pwidth->x = pwidth->y = 0;
+    FONTCONTEXT             fc;
 
-    /* Check for a vertical substitute. */
-    if ( pfont->WMode & 1 ) {
-        gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
-        if ( vertical != gs_no_glyph )
-            glyph = vertical;
-    }
-
-    /* undefined character */
-    if ( glyph == 0xffff || glyph == gs_no_glyph )
-        return 1;
-
-    code = gs_type42_get_metrics((gs_font_type42 *)pfont, glyph, sbw);
-    if ( code < 0 )
-        return code;
-    /* character exists */
-    pwidth->x = sbw[2];
-    return 0;
+    if (pl_set_tt_font(NULL /* graphics state */, plfont, false, &fc) != 0)
+        return -1;
+    return pl_ufst_char_width(char_code, pgs, pwidth, &fc);
+    
 }
 
 /* Get metrics */
@@ -1687,13 +1504,8 @@ pl_set_if_font(
     int                 need_outline,
     FONTCONTEXT *       pfc )
 {
-    pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL,
-               /* is XL font */ false);
-    memcpy(global_font_header_buffer, plfont->header, plfont->header_size);
-#if (BYTEORDER == LOHI)
-    PCLswapHdr(FSA global_font_header_buffer);
-#endif
-    pfc->font_hdr = &global_font_header_buffer;
+    pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL);
+    pfc->font_hdr = plfont->header;
     pfc->format |= FC_NON_Z_WIND | FC_EXTERN_TYPE | FC_IF_TYPE;
     return pl_set_ufst_font(plfont, pfc);
 }
@@ -1843,8 +1655,7 @@ pl_set_mt_font(
     int                 need_outline,
     FONTCONTEXT *       pfc )
 {
-    pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL,
-               /* is XL font */ false);
+    pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL);
     pfc->font_id = ((gs_font_base *)(plfont->pfont))->UID.id;
 #ifdef UFST_FROM_ROM
     pfc->format |= FC_ROM_TYPE;
@@ -2054,11 +1865,7 @@ void
 pl_tt_init_procs(gs_font_type42 *pfont)
 {  
     pfont->procs.encode_char = (void *)pl_tt_encode_char; /* FIX ME (void *) */
-#   if AFS_FOR_DOWNLOADED_TRUETYPE
-        pfont->procs.build_char = (void *)pl_afs_tt_build_char; /* FIX ME (void *) */
-#   else
-        pfont->procs.build_char = (void *)pl_tt_build_char; /* FIX ME (void *) */
-#   endif
+    pfont->procs.build_char = (void *)pl_tt_build_char; /* FIX ME (void *) */
     pfont->data.string_proc = pl_tt_string_proc;
 #define plfont ((pl_font_t *)pfont->client_data)
     plfont->char_width = pl_tt_char_width;
@@ -2073,9 +1880,6 @@ pl_tt_finish_init(gs_font_type42 *pfont, bool downloaded)
         ulong head = tt_find_table(pfont, "head", NULL);
         const byte *hdata;
 
-
-        if ( downloaded && AFS_FOR_DOWNLOADED_TRUETYPE ) 
-          pfont->data.get_outline = pl_tt_get_outline;	
 
         /* Set the FontBBox. */
         access(head, 44, hdata);
@@ -2296,12 +2100,11 @@ fg:     pfg = pl_font_lookup_glyph(plfont, key);
             ptcg->glyph = key;
           }
         pfg->glyph = key;
-        /* swap data for intellifont downloaded fonts */
+        pfg->data = cdata;
 #if (BYTEORDER == LOHI)
         if ( plfont->scaling_technology == plfst_Intellifont )
             PCLswapChar(FSA cdata);
 #endif
-        pfg->data = cdata;
         return 0;
 }
 

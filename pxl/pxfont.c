@@ -192,8 +192,9 @@ px_define_font(px_font_t *pxfont, const byte *header, ulong size, gs_id id,
 	     header[5] != 0 /* variety */
 	   )
 	  return_error(mem, errorIllegalFontHeaderFields);
+
 	pxfont->header = (byte *)header; /* remove const cast */
-	pxfont->header_size = size;
+ 	pxfont->header_size = size;
 	{ static const pl_font_offset_errors_t errors = {
 	    errorIllegalFontData,
 	    errorIllegalFontSegment,
@@ -253,6 +254,16 @@ px_define_font(px_font_t *pxfont, const byte *header, ulong size, gs_id id,
 	    pl_fill_in_tt_font(pfont, NULL, id);
 	  }
 	pxfont->params.symbol_set = pl_get_uint16(header + 2);
+
+        if ( header[4] == plfst_TrueType ) {
+            pxfont->is_xl_format = true;
+            pl_prepend_xl_dummy_header(mem, &header);
+            pxfont->header = header;
+            pxfont->header_size = gs_object_size(mem, header);
+        } else {
+            pxfont->is_xl_format = false;
+        }
+
 	return gs_definefont(pxs->font_dir, pxfont->pfont);
 }
 
@@ -857,7 +868,7 @@ pxReadChar(px_args_t *par, px_state_t *pxs)
 	  switch ( data[0] )
 	    {
 	    case 0:		/* bitmap */
-	      if ( header[4] != plfst_bitmap )
+                if ( false /* NB FIXME header[4] != plfst_bitmap */)
 		code = gs_note_error(pxs->memory, errorFSTMismatch);
 	      else if ( data[1] != 0 )
 		code = gs_note_error(pxs->memory, errorUnsupportedCharacterClass);
@@ -868,7 +879,7 @@ pxReadChar(px_args_t *par, px_state_t *pxs)
 		code = gs_note_error(pxs->memory, errorIllegalCharacterData);
 	      break;
 	    case 1:		/* TrueType outline */
-	      if ( header[4] != plfst_TrueType )
+                if ( false /* NB FIXME header[4] != plfst_TrueType */ )
 		code = gs_note_error(pxs->memory, errorFSTMismatch);
 	      else if ( data[1] != 0 && data[1] != 1 
 			/* && data[1] != 2  NB Needs to be tested uncomment to try */ )

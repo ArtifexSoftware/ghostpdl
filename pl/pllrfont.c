@@ -55,7 +55,7 @@ pl_append_tt_data(gs_memory_t *mem, char **ppheader, char *buffer, int length)
         uint size = gs_object_size(mem, *ppheader);
         byte *new_header = gs_resize_object(mem, *ppheader, size + length,
 			   "pl_append_tt_data");
-        if (*ppheader == NULL)
+        if (new_header == NULL)
             return -1;
         memcpy(new_header + size, buffer, length);
         *ppheader = new_header;
@@ -138,6 +138,7 @@ pl_load_romtt_font(gs_font_dir *pdir, gs_memory_t *mem, long unique_id, pl_font_
 	    plfont->font_type = plft_Unicode;
 	    plfont->large_sizes = true;
 	    plfont->offsets.GT = 0;
+            plfont->is_xl_format = false;            
 	    pl_fill_in_tt_font(pfont, font_data, unique_id);
 	    code = gs_definefont(pdir, (gs_font *)pfont);
 	    if ( code >= 0 ) { 

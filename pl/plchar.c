@@ -79,6 +79,18 @@ pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont);
 /**** ASSUME uint >= 32 BITS ****/
 #define u32(bptr) (uint)pl_get_uint32(bptr)
 
+int
+pl_prepend_xl_dummy_header(gs_memory_t *mem, byte **ppheader)
+{
+    return 0;
+}
+
+int
+pl_swap_header(byte *header)
+{
+    return 0;
+}
+
 /* ---------------- Utilities ---------------- */
 
 /* Look up a glyph in a font.  Return a pointer to the glyph's slot */

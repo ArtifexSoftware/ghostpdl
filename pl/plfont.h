@@ -159,6 +159,7 @@ struct pl_font_s {
   ulong header_size;
 	/* Information extracted from the font or supplied by the client. */
   pl_font_scaling_technology_t scaling_technology;
+    bool is_xl_format;          /* this is required for the agfa ufst scaler */
   pl_font_type_t font_type;
   /* Implementation of pl_font_char_width, see below */
   int (*char_width)(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth);
@@ -167,7 +168,6 @@ struct pl_font_s {
 			/* (for segmented fonts only) */
   struct { uint x, y; } resolution; /* resolution (for bitmap fonts) */
   float bold_fraction;              /* for PXL algorithmic bolding */
-  bool is_xl_format1;               /* Notify ufst of xl font format */
   bool landscape;                   /* true if pcl bitmap font designed in landscape */
   pl_font_params_t params;
   byte character_complement[8];	/* character complement (for unbound fonts) */
@@ -315,4 +315,9 @@ int pl_store_resident_font_data_in_file(char *font_file, gs_memory_t *mem, pl_fo
    compressed header, exclusively. */
 #define pl_is_tt_zlibC(header)\
     ((header[0] & 0xf) == 8)
+/* agfa requires prepending a dummy header to xl fonts */
+int pl_prepend_xl_dummy_header(gs_memory_t *mem, byte **ppheader);
+/* agfa requires swapping downloaded intellifont headers */
+int pl_swap_header(byte *header);
+
 #endif				/* plfont_INCLUDED */
