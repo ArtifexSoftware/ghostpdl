@@ -1320,7 +1320,7 @@ scavenge_low_free(gs_ref_memory_t *mem, unsigned request_size)
 	    	    break;
 	    } else
 	    	begin_free = 0;
-	END_OBJECTS_SCAN_INCOMPLETE
+	END_OBJECTS_SCAN_NO_ABORT
 
 	/* Found sufficient range of empty memory */
 	if (begin_free != 0 && found_free >= need_free) {
@@ -2023,11 +2023,7 @@ debug_dump_chunk(const chunk_t * cp, const dump_control_t * control)
 				  control)
 	)
 	debug_print_object(pre + 1, control);
-/* Temporarily redefine gs_exit so a chunk parsing error */
-/* won't actually exit. */
-#define gs_exit(n) DO_NOTHING
-    END_OBJECTS_SCAN
-#undef gs_exit
+    END_OBJECTS_SCAN_NO_ABORT
 }
 void 
 debug_print_chunk(const chunk_t * cp)
@@ -2076,11 +2072,7 @@ debug_find_pointers(const gs_ref_memory_t *mem, const void *target)
 			dprintf1("Index %d in", index);
 			debug_print_object(pre + 1, &control);
 		    }
-/* Temporarily redefine gs_exit so a chunk parsing error */
-/* won't actually exit. */
-#define gs_exit(n) DO_NOTHING
-	END_OBJECTS_SCAN
-#undef gs_exit
+	END_OBJECTS_SCAN_NO_ABORT
     }
 }
 

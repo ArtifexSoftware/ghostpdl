@@ -199,6 +199,8 @@ extern_st(st_chunk);
  *      DO_ALL
  *              << code for all objects -- size is set >>
  *      END_OBJECTS_SCAN
+ *
+ * NB on error END_OBJECTS_SCAN calls gs_abort in debug systems.
  */
 #define SCAN_CHUNK_OBJECTS(cp)\
 	{	obj_header_t *pre = (obj_header_t *)((cp)->cbase);\
@@ -212,7 +214,7 @@ extern_st(st_chunk);
 #define DO_ALL\
 			size = pre_obj_contents_size(pre);\
 			{
-#define END_OBJECTS_SCAN_INCOMPLETE\
+#define END_OBJECTS_SCAN_NO_ABORT\
 			}\
 		}\
 	}
@@ -227,7 +229,7 @@ extern_st(st_chunk);
 		}\
 	}
 #else
-#  define END_OBJECTS_SCAN END_OBJECTS_SCAN_INCOMPLETE
+#  define END_OBJECTS_SCAN END_OBJECTS_SCAN_NO_ABORT
 #endif
 
 /* Initialize a chunk. */
