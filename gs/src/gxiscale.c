@@ -67,9 +67,10 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     gs_point dst_xy;
     uint in_size;
 
-    if (!penum->interpolate || penum->use_mask_color)
+    if (!penum->interpolate) 
 	return 0;
-    if (penum->posture != image_portrait || penum->masked || penum->alpha) {
+    if (penum->use_mask_color || penum->posture != image_portrait ||
+    	penum->masked || penum->alpha) {
 	/* We can't handle these cases yet.  Punt. */
 	penum->interpolate = false;
 	return 0;
