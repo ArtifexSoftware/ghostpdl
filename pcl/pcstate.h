@@ -179,7 +179,7 @@ struct pcl_state_s {
 
     const pcl_text_parsing_method_t *   text_parsing_method;
 
-    int             text_path;		/* 0 or -1 */
+    int             text_path;		/* 0, 1, -1 */
 
     /* Internal variables */
     float           last_width;		/* escapement of last char (for BS) */

@@ -274,18 +274,34 @@ get_next_char(
  * Draw the foreground of a character. For transparent text this is the only
  * part that must be drawn.
  */
-  private int
+private int
 show_char_foreground(
     const pcl_state_t * pcs,
     const char *        pbuff
 )
 {
-    gs_text_enum_t *   penum;
-    int                code = gs_ushow_begin(pcs->pgs, pbuff, 1, pcs->memory, &penum);
+    int code = 0;
+    gs_text_enum_t *penum;
+    const pl_font_t *plfont = pcs->font;
+    gs_font *pfont = plfont->pfont;
+
+    if (pcs->text_path == -1 && pbuff[0] && pcs->source_transparent) {
+	/* -1 text path rotated text path; don't rotate 1 byte chars 
+	 * NB no support for opaque text
+	 * NB no support for centering about the center line of the glyph 
+	 */
+	pfont->WMode = 1;        /* enable vertical substitutions */
+	gs_rotate(pcs->pgs, 90); /* caller will unrotate */
+    }
+
+    code = gs_ushow_begin(pcs->pgs, pbuff, 1, pcs->memory, &penum);
 
     if (code >= 0)
         code = gs_text_process(penum);
     gs_text_release(penum, "show_char_foreground");
+
+    /* disable vert. sub. since WMode rotates character metrics which we don't want */
+    pfont->WMode = 0; 
     return code;
 }
 
@@ -517,6 +533,7 @@ pcl_show_chars_slow(
 
     cpt.x = pcs->cap.x;
     cpt.y = pcs->cap.y;
+
     while (get_next_char(pcs, &str, &size, &chr, &is_space, literal, &advance_vector) == 0) {
         floatp  tmp_x;
 
@@ -570,13 +587,19 @@ pcl_show_chars_slow(
          */
         tmp_x = cpt.x;
         if (pcs->last_was_BS)
-            tmp_x += (pcs->last_width - width) / 2;
+            tmp_x += (pcs->last_width - width) / 2; 
+	if (pcs->text_path) {
+	    /* move to the lower right corner of the glyph to account for rotation without
+	     * translation of axis of rotation.
+	     */
+	    tmp_x += width;
+	}
         gs_moveto(pgs, tmp_x / pscale->x, cpt.y / pscale->y);
 
         if (chr != 0xffff) {
 
             /* if source is opaque, show and opaque background */
-            if (opaque)
+            if (opaque) 
                 code = show_char_background(pcs, buff);
             if (code >= 0)
                 code = show_char_foreground(pcs, buff);
@@ -719,6 +742,7 @@ pcl_text(
     /* possibly invert text because HP coordinate system is inverted */
     scale.y *= scale_sign;
     gs_scale(pgs, scale.x, scale.y);
+
     /* Print remaining characters, restore the ctm */
     code = pcl_show_chars_slow(pcs, &scale, str, size, literal);
     gs_setmatrix(pgs, &user_ctm);
@@ -907,6 +931,7 @@ pcl_text_path_direction(
       case -1:
 	break;
 
+      case 1: /* unsupported */     
       default:
 	return e_Range;
     }
