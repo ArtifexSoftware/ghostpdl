@@ -36,9 +36,6 @@ private const bool I_FORCE_GLOBAL_GC = false;
 /* Define whether to bypass the collector entirely. */
 private const bool I_BYPASS_GC = false;
 
-/* Avoid including all of iname.h. */
-//extern name_table *the_gs_name_table;
-
 /* Define an entry on the mark stack. */
 typedef struct {
     void *ptr;
