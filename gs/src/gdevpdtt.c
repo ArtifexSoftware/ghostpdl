@@ -1303,13 +1303,9 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
     }
     /* Try for MissingWidth. */
     {
-	gs_point scale2;
-	const gs_point *pscale = 0;
 	gs_font_info_t finfo;
 
-	if (scale_c != 1)
-	    scale2.x = scale2.y = scale_c, pscale = &scale2;
-	code = cfont->procs.font_info((gs_font *)cfont, pscale,
+	code = cfont->procs.font_info((gs_font *)cfont, NULL,
 				      FONT_INFO_MISSING_WIDTH, &finfo);
 	if (code < 0)
 	    return code;
