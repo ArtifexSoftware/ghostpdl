@@ -685,7 +685,7 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
     if (!gp_file_name_is_absolute(prefix, strlen(prefix))) {
 	int plen = sizeof(sTempDir);
 
-	if (gp_gettmpdir(sTempDir, &plen) < 0)
+	if (gp_gettmpdir(sTempDir, &plen) != 0)
 	    l = GetTempPath(sizeof(sTempDir), sTempDir);
 	else
 	    l = strlen(sTempDir);

@@ -743,6 +743,24 @@ zlibfile(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* A "simple" prefix is defined a nonempty string of alphanumeric,
+   underscore, and hyphen characters. */
+private bool
+prefix_is_simple(const char *pstr)
+{
+    int i;
+    char c;
+
+    if (pstr[0] == 0) return false;
+
+    for (i = 0; (c = pstr[i]) != 0; i++) {
+	if (!(c == '-' || c == '_' || (c >= '0' && c <= '9') ||
+	      (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')))
+	    return false;
+    }
+    return true;
+}
+
 /* <prefix|null> <access_string> .tempfile <name_string> <file> */
 private int
 ztempfile(i_ctx_t *i_ctx_p)
@@ -757,10 +775,6 @@ ztempfile(i_ctx_t *i_ctx_p)
     FILE *sfile;
     stream *s;
     byte *buf;
-#if NEW_COMBINE_PATH
-    char tdir[gp_file_name_sizeof];
-    bool temp_dir = false;
-#endif
 
     if (code < 0)
 	return code;
@@ -778,41 +792,16 @@ ztempfile(i_ctx_t *i_ctx_p)
 	prefix[psize] = 0;
 	pstr = prefix;
     }
-#if NEW_COMBINE_PATH
-    if (!gp_file_name_is_absolute(pstr, strlen(pstr))) {
-	int tlen = sizeof(tdir);
-	uint flen = sizeof(fname);
-	gp_file_name_combine_result r;
 
-	code = gp_gettmpdir(tdir, &tlen);
-	if (code < 0 || tlen == 0 || tdir[0] == 0)
-	    strcpy(tdir, gp_file_name_current());
-	else
-	    temp_dir = true;
-        tlen = strlen(tdir);
-	r = gp_file_name_combine_generic(tdir, tlen, 
-		    pstr, strlen(pstr), i_ctx_p->LockFilePermissions, fname, &flen);
-	if (r != gp_combine_success)
-	    return_error(e_undefinedfilename);
-	memcpy(prefix, fname, flen);
-	prefix[flen] = 0;
-	pstr = prefix;
-    }
-#endif
-    if (i_ctx_p->LockFilePermissions) 
-        if (
-#if !NEW_COMBINE_PATH
-	    gp_file_name_references_parent(pstr, strlen(pstr)) ||
-	    (gp_pathstring_not_bare(pstr, strlen(pstr)) &&
-	      check_file_permissions(i_ctx_p, pstr, strlen(pstr),
-	      				"PermitFileWriting") < 0 )
-#else
-	    !temp_dir &&
-	    check_file_permissions(i_ctx_p, pstr, strlen(pstr),
-	      				"PermitFileWriting") < 0
-#endif
-	)
+    if (gp_file_name_is_absolute(pstr, strlen(pstr))) {
+	if (check_file_permissions(i_ctx_p, pstr, strlen(pstr),
+				   "PermitFileWriting") < 0) {
 	    return_error(e_invalidfileaccess);
+	}
+    } else if (!prefix_is_simple(pstr)) {
+	return_error(e_invalidfileaccess);
+    }
+
     s = file_alloc_stream(imemory, "ztempfile(stream)");
     if (s == 0)
 	return_error(e_VMerror);

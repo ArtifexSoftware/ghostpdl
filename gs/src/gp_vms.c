@@ -219,10 +219,19 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 		     const char *mode)
 {
     FILE *f;
+    char tmpdir[gp_file_name_sizeof];
 
-    if (strlen(prefix) + 6 >= gp_file_name_sizeof)
+    if (!gp_file_name_is_absolute(prefix, strlen(prefix)) &&
+	gp_gettmpdir(tmpdir, &tdlen) == 0) {
+	if (gp_file_name_combine(tmpdir, tdlen, prefix, strlen(prefix),
+			     false, fname, gp_file_name_sizeof)) {
+	    return NULL;
+	}
+    } else {
+	strcpy(fname, prefix);
+    }
+    if (strlen(fname) + 6 >= gp_file_name_sizeof)
 	return 0;		/* file name too long */
-    strcpy(fname, prefix);
     strcat(fname, "XXXXXX");
     mktemp(fname);
     f = fopen(fname, mode);

@@ -41,11 +41,6 @@
  * stream.h.
  */
 #include "srdline.h"
-/*
- * The definition for gp_file_name_combine_result is in gpmisc.h, 
- * since it is shared with gpmisc.c .
- */
-#include "gpmisc.h"
 
 /* ------ Initialization/termination ------ */
 
@@ -174,8 +169,22 @@ extern const char gp_fmode_binary_suffix[];
 extern const char gp_fmode_rb[];
 extern const char gp_fmode_wb[];
 
-/* Create and open a scratch file with a given name prefix. */
-/* Write the actual file name at fname. */
+/**
+ * gp_open_scratch_file: Create a scratch file.
+ * @prefix: Name prefix.
+ * @fname: Where to store filename of newly created file.
+ * @mode: File access mode (in fopen syntax).
+ *
+ * Creates a scratch (temporary) file in the filesystem. The exact
+ * location and name of the file is platform dependent, but in general
+ * uses @prefix as a prefix. If @prefix is not absolute, then choose
+ * an appropriate system directory, usually as determined from
+ * gp_gettmpdir(), followed by a path as returned from a system call.
+ *
+ * Implementations should make sure that 
+ *
+ * Return value: Opened file object, or NULL on error.
+ **/
 FILE *gp_open_scratch_file(const char *prefix,
 			   char fname[gp_file_name_sizeof],
 			   const char *mode);
@@ -215,6 +224,12 @@ bool gp_file_name_references_parent(const char *fname, uint len);
 /* in some cases (platform dependent).					*/
 const char *gp_file_name_concat_string(const char *prefix, uint plen);
 #endif
+
+typedef enum {
+    gp_combine_small_buffer = -1,
+    gp_combine_cant_handle = 0,
+    gp_combine_success = 1
+} gp_file_name_combine_result;
 
 /*
  * Combine a file name with a prefix.
