@@ -178,7 +178,8 @@ lj3100sw_print_page_copies(gx_device_printer *pdev, FILE *prn_stream, int num_co
 	int paper_height = pdev->height;
 	int paper_width  = pdev->width;
 	int line_size = gdev_prn_raster(pdev);
-	byte *in = (byte *)gs_malloc(line_size, 1, "lj3100sw_print_page");
+	gs_memory_t *mem = pdev->memory;
+	byte *in = (byte *)gs_malloc(mem, line_size, 1, "lj3100sw_print_page");
 	byte *data;
 	if (in == 0)
 		return_error(gs_error_VMerror);
@@ -261,7 +262,7 @@ lj3100sw_print_page_copies(gx_device_printer *pdev, FILE *prn_stream, int num_co
 	for (i = 0; i < 4 * ppdev->NumCopies; i++)
 		lj3100sw_output_section_header(prn_stream, 54, 0, 0);
 
-	gs_free((char *)in, line_size, 1, "lj3100sw_print_page");
+	gs_free(mem, (char *)in, line_size, 1, "lj3100sw_print_page");
 	return 0;
 }
 
