@@ -83,7 +83,12 @@ gp_fopentemp(const char *fname, const char *mode)
     fildes = open(fname, flags, S_IRUSR | S_IWUSR);
     if (fildes < 0)
 	return 0;
-    file = fdopen(fildes, mode);
+    /*
+     * The DEC VMS C compiler incorrectly defines the second argument of
+     * fdopen as (char *), rather than following the POSIX.1 standard,
+     * which defines it as (const char *).  Patch this here.
+     */
+    file = fdopen(fildes, (char *)mode); /* still really const */
     if (file == 0)
 	close(fildes);
     return file;
