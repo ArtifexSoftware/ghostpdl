@@ -211,8 +211,16 @@ frgrnd_do_registration(
 private void
 frgrnd_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {
-    if ( type & (pcl_reset_initial | pcl_reset_printer) )
-	pcs->pdflt_frgrnd = 0;
+    if ( type & (pcl_reset_permanent) ) {
+	// Release foreground, NB these releases should be moved to
+	// their corresponding modules.
+	pcl_ht_release(pcs->pdflt_ht);
+	pcl_cs_base_release(pcs->pdflt_cs_indexed);
+	pcl_cs_base_release(pcs->pwhite_cs);
+	pcl_crd_release(pcs->pcl_default_crd);
+	pcl_frgrnd_release(pcs->pdflt_frgrnd);
+	pcl_frgrnd_release(pcs->pfrgrnd);
+    }
 }
 
   private int
