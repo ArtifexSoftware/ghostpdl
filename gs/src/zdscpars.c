@@ -233,6 +233,18 @@ dsc_creation_date(gs_param_list *plist, const CDSC *pData)
 }
 
 private int
+dsc_title(gs_param_list *plist, const CDSC *pData)
+{
+    return dsc_put_string(plist, "Title", pData->dsc_title );
+}
+
+private int
+dsc_for(gs_param_list *plist, const CDSC *pData)
+{
+    return dsc_put_string(plist, "For", pData->dsc_for);
+}
+
+private int
 dsc_bounding_box(gs_param_list *plist, const CDSC *pData)
 {
     return dsc_put_bounding_box(plist, "BoundingBox", pData->bbox);
@@ -291,17 +303,21 @@ dsc_orientation(gs_param_list *plist, const CDSC *pData)
 			   convert_orient(pData->page_orientation));
 }
 
-
 private int
-dsc_title(gs_param_list *plist, const CDSC *pData)
+dsc_viewer_orientation(gs_param_list *plist, const CDSC *pData)
 {
-    return dsc_put_string(plist, "Title", pData->dsc_title );
-}
+    float values[4];
+    gs_param_float_array va;
+    const CDSCCTM *pctm = pData->viewer_orientation;
 
-private int
-dsc_for(gs_param_list *plist, const CDSC *pData)
-{
-    return 0;		        /* To be completed */
+    values[0] = pctm->xx;
+    values[1] = pctm->xy;
+    values[2] = pctm->yx;
+    values[3] = pctm->yy;
+    va.data = values;
+    va.size = 4;
+    va.persistent = false;
+    return param_write_float_array(plist, "ViewerOrientation", &va);
 }
 
 /*
@@ -326,11 +342,12 @@ private const cmdlist_t DSCcmdlist[] = {
     { CDSC_BOUNDINGBOX,     "BoundingBox",	dsc_bounding_box },
     { CDSC_ORIENTATION,	    "Orientation",	dsc_orientation },
     { CDSC_BEGINDEFAULTS,   "BeginDefaults",	NULL },
-    { CDSC_ENDDEFAULTS,     "BeginDefaults",	NULL },
+    { CDSC_ENDDEFAULTS,     "EndDefaults",	NULL },
     { CDSC_PAGE,	    "Page",		dsc_page },
     { CDSC_PAGES,	    "Pages",		dsc_pages },
     { CDSC_PAGEORIENTATION, "PageOrientation",  dsc_page_orientation },
     { CDSC_PAGEBOUNDINGBOX, "PageBoundingBox",	dsc_page_bounding_box },
+    { CDSC_VIEWERORIENTATION, "ViewerOrientation", dsc_viewer_orientation },
     { CDSC_EOF,		    "EOF",		NULL },
     { 0,		    "NOP",		NULL }  /* Table terminator */
 };
