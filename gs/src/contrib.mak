@@ -470,6 +470,18 @@ $(GLOBJ)gdevcd8.$(OBJ) : $(GLSRC)gdevcd8.c $(PDEVH) $(math__h)\
  $(gsparam_h) $(gxlum_h) $(gdevpcl_h)
 	$(GLCC) $(GLO_)gdevcd8.$(OBJ) $(C_) $(GLSRC)gdevcd8.c
 
+### -------------- cdj880 - HP 880c Driver under development ------------- ###
+### Since this driver is in the development phase it is not distributed    ###
+### with Ghostscript, but is available from                                ###
+###   http://www.proaxis.com/~mgelhaus/linux/software/hp880c/hp880c.html   ###
+### For questions about this driver, please contact:                       ###
+###       Matthew Gelhaus (mgelhaus@proaxis.com)                           ###
+
+### NOTE:  Depends on the presence of the cdj850 section above.            ###
+
+$(DD)cdj880.dev : $(cdeskjet8_) $(DD)page.dev
+	$(SETPDEV2) $(DD)cdj880 $(cdeskjet8_)
+
 ### ------------ The H-P PaintJet color printer device ----------------- ###
 ### Note: this driver also supports the DEC LJ250 color printer, which   ###
 ###       has a PaintJet-compatible mode, and the PaintJet XL.           ###
