@@ -293,7 +293,7 @@ typedef int bool;
 #define false ((bool)0)
 #undef true
 #define true ((bool)1)
-#endif __MACOS__
+#endif /* __MACOS__ */
 
 /*
  * Compilers disagree as to whether macros used in macro arguments
