@@ -7,6 +7,22 @@ This file, NEWS-PL, describes the changes in the most recent releases of
 Aladdin's library code that is shared between PCL5, HP-GL/2, HP RTL, and PCL
 XL, in reverse chronological order.
 
+Version 1.21 (10/05/98)
+=======================
+
+Mon Oct  5 08:07:30 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pjparse.c: stylistic changes affecting string lengths
+
+	* pjparse.c, pjparse.h:
+	new pjl parser for PDL settable pjl environment variables.
+
+Sat Sep 26 19:13:48 1998  Red Hat Linux User  <henrys@warthog>
+
+	* NEWS-PL: *** empty log message ***
+
+	* pl.mak: changes to support msvc builds
+
 Version 1.20 (9/24/98)
 ======================
 
