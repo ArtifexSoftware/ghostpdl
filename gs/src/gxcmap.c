@@ -32,7 +32,6 @@
 #include "gxcdevn.h"
 #include "string_.h"
 
-
 /* Structure descriptor */
 public_st_device_color();
 private 
@@ -781,7 +780,7 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
 
     /* We make a test for direct vs. halftoned, rather than */
     /* duplicating most of the code of this procedure. */
-    if (gx_color_device_must_halftone(dev)) {
+    if (gx_device_must_halftone(dev)) {
 	if (gx_render_device_DeviceN(cm_comps, pdc, dev,
 		    pis->dev_ht, &pis->screen_phase[select], false) == 1)
 	    gx_color_load_select(pdc, pis, dev, select);

@@ -417,8 +417,6 @@ int gx_device_close_output_file(const gx_device * dev, const char *fname,
 #define gx_device_must_halftone(dev)\
   ((gx_device_has_color(dev) ? (dev)->color_info.max_color :\
     (dev)->color_info.max_gray) < 31)
-#define gx_color_device_must_halftone(dev)\
-  ((dev)->color_info.max_gray < 31)
 
 /*
  * Do generic work for output_page.  All output_page procedures must call
