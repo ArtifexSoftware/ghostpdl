@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.19 2002/08/10 10:39:20 giles Exp $
+    $Id: jbig2_text.c,v 1.20 2002/08/15 14:54:45 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -233,7 +233,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         
 	    /* (3c.viii) */
 	    if (!params->TRANSPOSED) {
-		switch (params->REFCORNER) {  // FIXME: double check offsets
+		switch (params->REFCORNER) {  /* FIXME: double check offsets */
 		case JBIG2_CORNER_TOPLEFT: x = S; y = T; break;
 		case JBIG2_CORNER_TOPRIGHT: x = S - IB->width + 1; y = T; break;
 		case JBIG2_CORNER_BOTTOMLEFT: x = S; y = T - IB->height + 1; break;
@@ -280,7 +280,7 @@ find_segment(Jbig2Ctx *ctx, uint32_t number)
 {
     int index, index_max = ctx->segment_index;
     
-    // FIXME: binary search would be better?
+    /* FIXME: binary search would be better? */
     for (index = index_max; index >= 0; index--)
         if (ctx->segments[index]->number == number)
             return (ctx->segments[index]);

@@ -736,7 +736,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
   while (1)
     {
       uint32_t word = mmr->word;
-      //printf ("%08x\n", word);
+      /* printf ("%08x\n", word); */
       if ((word >> (32 - 3)) == 1)
 	{
 	  int white_run, black_run;
@@ -744,46 +744,46 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
 	  jbig2_decode_mmr_consume(mmr, 3);
 	  white_run = jbig2_decode_get_run(mmr, cf_white_decode, 8);
 	  black_run = jbig2_decode_get_run(mmr, cf_black_decode, 7);
-	  //printf ("H %d %d\n", white_run, black_run);
+	  /* printf ("H %d %d\n", white_run, black_run); */
 	}
       else if ((word >> (32 - 4)) == 1)
 	{
-	  //printf ("P\n");
+	  /* printf ("P\n"); */
 	  jbig2_decode_mmr_consume(mmr, 3);
 	}
       else if ((word >> (32 - 1)) == 1)
 	{
-	  //printf ("V(0)\n");
+	  /* printf ("V(0)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 1);
 	}
       else if ((word >> (32 - 3)) == 3)
 	{
-	  //printf ("VR(1)\n");
+	  /* printf ("VR(1)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 3);
 	}
       else if ((word >> (32 - 6)) == 3)
 	{
-	  //printf ("VR(2)\n");
+	  /* printf ("VR(2)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 6);
 	}
       else if ((word >> (32 - 7)) == 3)
 	{
-	  //printf ("VR(3)\n");
+	  /* printf ("VR(3)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 7);
 	}
       else if ((word >> (32 - 3)) == 2)
 	{
-	  //printf ("VL(1)\n");
+	  /* printf ("VL(1)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 3);
 	}
       else if ((word >> (32 - 6)) == 2)
 	{
-	  //printf ("VL(2)\n");
+	  /* printf ("VL(2)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 6);
 	}
       else if ((word >> (32 - 7)) == 2)
 	{
-	  //printf ("VL(3)\n");
+	  /* printf ("VL(3)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 7);
 	}
       else

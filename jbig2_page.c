@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_page.c,v 1.14 2002/08/05 22:46:00 giles Exp $
+    $Id: jbig2_page.c,v 1.15 2002/08/15 14:54:45 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -77,7 +77,7 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment
         index = ctx->current_page;
         while (ctx->pages[index].state != JBIG2_PAGE_FREE) {
             index++;
-            if (index >= ctx->max_page_index) { // FIXME: should also look for freed pages?
+            if (index >= ctx->max_page_index) { /* FIXME: should also look for freed pages? */
                 /* grow the list */
                 jbig2_realloc(ctx->allocator, ctx->pages, (ctx->max_page_index <<= 2) * sizeof(Jbig2Page));
                 for (j=index; j < ctx->max_page_index; j++) {
@@ -95,7 +95,7 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment
         page->number = segment->page_association;
     }
     
-    // FIXME: would be nice if we tried to work around this
+    /* FIXME: would be nice if we tried to work around this */
     if (segment->data_length < 19) {
         return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
             "segment too short");

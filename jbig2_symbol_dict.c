@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.c,v 1.18 2002/07/20 17:23:15 giles Exp $
+    $Id: jbig2_symbol_dict.c,v 1.19 2002/08/15 14:54:45 giles Exp $
     
     symbol dictionary segment decode and support
 */
@@ -47,7 +47,7 @@ typedef struct {
   /* SDHUFFBMSIZE */
   /* SDHUFFAGGINST */
   int SDTEMPLATE;
-  int8_t sdat[8]; 	// FIXME: do these need to be explicitly signed?
+  int8_t sdat[8];
   bool SDRTEMPLATE;
   int8_t sdrat[4];
 } Jbig2SymbolDictParams;
@@ -62,7 +62,11 @@ jbig2_dump_symbol_dict(Jbig2SymbolDict *dict)
     fprintf(stderr, "dumping symbol dict as %d individual png files\n", dict->n_symbols);
     for (index = 0; index < dict->n_symbols; index++) {
         snprintf(filename, sizeof(filename), "symbol_%04d.png", index);
+#ifdef HAVE_LIBPNG
         jbig2_image_write_png_file(dict->glyphs[index], filename);
+#else
+        jbig2_image_write_pbm_file(dict->glyphs[index], filename);
+#endif
     }
 }
 #endif /* HAVE_LIBPNG */
@@ -296,8 +300,8 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 				  segment_data + offset,
 				  segment->data_length - offset,
 				  GB_stats);
-#ifdef HAVE_LIBPNG
-//  jbig2_dump_symbol_dict(segment->result);
+#ifdef DEBUG
+  jbig2_dump_symbol_dict(segment->result);
 #endif
 
   return 0;

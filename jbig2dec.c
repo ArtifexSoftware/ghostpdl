@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.40 2002/08/15 13:52:28 giles Exp $
+    $Id: jbig2dec.c,v 1.41 2002/08/15 14:54:45 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -111,9 +111,8 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 			"Vh?qvdo:t:", long_options, &option_idx);
 		if (option == -1) break;
 
-		//fprintf(stderr, "option '%c' value '%s'\n", option, optarg);
 		switch (option) {
-			case 0:	// unknown long option
+			case 0:	/* unknown long option */
 				if (!params->verbose) fprintf(stdout,
 					"unrecognized option: --%s\n",
 					long_options[option_idx].name);
@@ -324,7 +323,7 @@ main (int argc, char **argv)
   jbig2dec_params_t params;
   int filearg;
   
-  // set defaults
+  /* set defaults */
   params.mode = render;
   params.verbose = 1;
   params.hash = 0;
@@ -345,7 +344,7 @@ main (int argc, char **argv)
     case render:
     
   if ((argc - filearg) == 1)
-  // only one argument--open as a jbig2 file
+  /* only one argument--open as a jbig2 file */
     {
       char *fn = argv[filearg];
 
@@ -357,7 +356,7 @@ main (int argc, char **argv)
 	}
     }
   else if ((argc - filearg) == 2)
-  // two arguments open as separate global and page streams
+  /* two arguments open as separate global and page streams */
     {
       char *fn = argv[filearg];
       char *fn_page = argv[filearg+1];
@@ -377,14 +376,14 @@ main (int argc, char **argv)
 	}
     }
   else
-  // any other number of arguments
+  /* any other number of arguments */
     return print_usage();
     
   ctx = jbig2_ctx_new(NULL, f_page != NULL ? JBIG2_OPTIONS_EMBEDDED : 0,
 		      NULL,
 		      error_callback, &params);
 
-  // pull the whole file/global stream into memory
+  /* pull the whole file/global stream into memory */
   for (;;)
     {
       int n_bytes = fread(buf, 1, sizeof(buf), f);
@@ -394,7 +393,7 @@ main (int argc, char **argv)
     }
   fclose(f);
 
-  // if there's a local page stream read that in its entirety
+  /* if there's a local page stream read that in its entirety */
   if (f_page != NULL)
     {
       Jbig2GlobalCtx *global_ctx = jbig2_make_global_ctx(ctx);
@@ -411,7 +410,7 @@ main (int argc, char **argv)
       jbig2_global_ctx_free(global_ctx);
     }
 
-  // retrieve and output the returned pages
+  /* retrieve and output the returned pages */
   {
     Jbig2Image *image;
 
@@ -443,6 +442,6 @@ main (int argc, char **argv)
 
   if (params.hash) hash_free(&params);
   
-  // fin
+  /* fin */
   return 0;
 }

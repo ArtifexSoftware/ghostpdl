@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image_pbm.c,v 1.11 2002/08/14 11:44:53 giles Exp $
+    $Id: jbig2_image_pbm.c,v 1.12 2002/08/15 14:54:45 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -72,7 +72,7 @@ Jbig2Image *jbig2_image_read_pbm_file(Jbig2Ctx *ctx, char *filename)
     return (image);
 }
 
-// FIXME: should handle multi-image files
+/* FIXME: should handle multi-image files */
 Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
 {
     int i, dim[2];

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image.c,v 1.19 2002/07/20 17:23:15 giles Exp $
+    $Id: jbig2_image.c,v 1.20 2002/08/15 14:54:45 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -83,7 +83,7 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
     w = src->width;
     h = src->height;
     ss = src->data;
-    // FIXME: this isn't sufficient for the < 0 cases
+    /* FIXME: this isn't sufficient for the < 0 cases */
     if (x < 0) { w += x; x = 0; }
     if (y < 0) { h += y; y = 0; } 
     w = (x + w < dst->width) ? w : dst->width - x;
