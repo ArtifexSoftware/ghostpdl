@@ -322,7 +322,7 @@ dsc_viewing_orientation(gs_param_list *plist, const CDSC *pData)
      * As for PageOrientation, ViewingOrientation may be either in the
      * 'defaults' section or in a page section.
      */
-    if (page_num && pData->page[page_num - 1].viewing_orientation != CDSC_ORIENT_UNKNOWN) {
+    if (page_num && pData->page[page_num - 1].viewing_orientation != NULL) {
 	key = "PageViewingOrientation";
 	pctm = pData->page[page_num - 1].viewing_orientation;
     } else {
