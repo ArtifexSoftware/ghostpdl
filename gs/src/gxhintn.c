@@ -814,7 +814,10 @@ int t1_hinter__rmoveto(t1_hinter * this, fixed xx, fixed yy)
 		this->path_opened = false;
 	    }
 	    g2d(this, gx, gy, &fx, &fy);
-	    return gx_path_add_point(this->output_path, fx, fy);
+	    code = gx_path_add_point(this->output_path, fx, fy);
+	    vd_circle(this->cx, this->cy, 2, RGB(255, 0, 0));
+	    vd_moveto(this->cx, this->cy);
+	    return code;
 	}
 	if (this->pole_count > 0 && this->pole[this->pole_count - 1].type == moveto)
 	    this->pole_count--;
@@ -853,6 +856,7 @@ int t1_hinter__rlineto(t1_hinter * this, fixed xx, fixed yy)
 	t1_glyph_space_coord gy = this->cy += import_shift(yy, this->import_shift);
 	fixed fx, fy;
 
+	vd_lineto(this->cx, this->cy);
 	this->path_opened = true;
 	g2d(this, gx, gy, &fx, &fy);
 	return gx_path_add_line(this->output_path, fx, fy);
@@ -2122,9 +2126,13 @@ int t1_hinter__endglyph(t1_hinter * this)
 	    Current implementation paints exported rotated glyph in wrong coordinates.
 	*/
     }
-    code = t1_hinter__export(this);
+    if (this->pole_count) {
+	code = t1_hinter__export(this);
+	if (code < 0)
+	    return code;
+    }
 exit:
     t1_hinter__free_arrays(this);
     vd_release_dc;
-    return code;
+    return 0;
 }
