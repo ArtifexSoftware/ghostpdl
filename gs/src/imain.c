@@ -813,10 +813,16 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      * data before destruction. pdfwrite needs so.
      */
     if (minst->init_done >= 1) {
+	int code = interp_reclaim(&minst->i_ctx_p, avm_global);
+
+	if (code < 0) {
+	    eprintf1("ERROR %d reclaiming the memory while the interpreter finalization.\n", code);
+	    return e_Fatal;
+	}
 	if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
 	    gx_device *pdev = i_ctx_p->pgs->device;
-	    int code = gs_closedevice(pdev);
-	    
+
+	    code = gs_closedevice(pdev);
 	    if (code < 0)
 		eprintf2("ERROR %d closing the device. See gs/src/ierrors.h for code explanation.\n", code, i_ctx_p->pgs->device->dname);
 	    if (exit_status == 0 || exit_status == e_Quit)

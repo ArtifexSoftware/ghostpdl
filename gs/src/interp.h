@@ -53,6 +53,11 @@ extern const int gs_interp_num_special_ops;
  */
 void gs_interp_make_oper(ref * opref, op_proc_t, int index);
 
+/*
+ * Call the garbage collector, updating the context pointer properly.
+ */
+int interp_reclaim(i_ctx_t **pi_ctx_p, int space);
+
 /* Get the name corresponding to an error number. */
 int gs_errorname(i_ctx_t *, int, ref *);
 

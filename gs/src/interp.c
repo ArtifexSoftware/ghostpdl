@@ -406,7 +406,7 @@ gs_interp_make_oper(ref * opref, op_proc_t proc, int idx)
 /*
  * Call the garbage collector, updating the context pointer properly.
  */
-private int
+int
 interp_reclaim(i_ctx_t **pi_ctx_p, int space)
 {
     i_ctx_t *i_ctx_p = *pi_ctx_p;
@@ -438,7 +438,7 @@ gs_interpret(i_ctx_t **pi_ctx_p, ref * pref, int user_errors, int *pexit_code,
 {
     i_ctx_t *i_ctx_p = *pi_ctx_p;
     gs_gc_root_t error_root;
-    int code;
+    int code, code1;
 
     gs_register_ref_root(imemory_system, &error_root,
 			 (void **)&perror_object, "gs_interpret");
