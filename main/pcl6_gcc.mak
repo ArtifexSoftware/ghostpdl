@@ -50,34 +50,35 @@ TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 # NB - this should all be done automatically by choosing the device
 # but it ain't.
 
-# !!!! The user is responsible for building the agfa or freetype libs.
-# We don't overload the makefile with nonsense to build these
-# libraries on the fly. If the artifex font scaler is chosen the
-# makefiles will build the scaler automatically!!!!
+# The user is responsible for building the agfa or freetype libs.  We
+# don't overload the makefile with nonsense to build these libraries
+# on the fly. If the artifex font scaler is chosen the makefiles will
+# build the scaler automatically.
 
 # Pick a font system technology.  PCL and XL do not need to use the
-# same scaler.
+# same scaler, but the it is necessary to tinker with pl.mak to get it
+# to work properly.
 # ufst - Agfa universal font scaler.
 # fts - freetype font system.
 # afs - artifex font scaler.
-PCL_FONT_SCALER=afs
-PXL_FONT_SCALER=afs
-
+PCL_FONT_SCALER=ufst
+PXL_FONT_SCALER=ufst
+PL_SCALER=ufst
 # 3 mutually exclusive choices follow, pick one.
 # CHOICE 1, if you chose ufst (agfa) uncomment the next two variable
 # assignments
-#LDFLAGS=-Xlinker -L../pl/agfa/rts/lib/
+LDFLAGS=-Xlinker -L../pl/agfa/rts/lib/
 # agfa does not use normalized library names (ie we expect libif.a not
 # agfa's if_lib.a)
-#EXTRALIBS=-lif -lfco -lpsi -ltt
+EXTRALIBS=-lif -lfco -ltt
 AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/
-# CHOICE 2, if you chose ufst uncomment the next two variable
+# CHOICE 2, if you chose fts (freetype) uncomment the next two variable
 # assignments.
 #LDFLAGS=-Xlinker -rpath -Xlinker -L../pl/freetype-1.3.1/lib/.libs
 #EXTRALIBS=-lttf
-# CHOICE 3, if you chose the artifex font scaler.
-LDFLAGS=
-EXTRALIBS=
+# CHOICE 3, if you chose the artifex font scaler uncomment these.
+#LDFLAGS=
+#EXTRALIBS=
 
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
