@@ -398,10 +398,10 @@ gsijs_set_margin_params(gx_device_ijs *ijsdev)
 
 	if (code == 0) {
 	    m[0] = printable_left;
-	    m[1] = printable_top;
+	    m[3] = printable_top;
 	    m[2] = ijsdev->MediaSize[0] * (1.0 / 72) -
 		printable_left - printable_width;
-	    m[3] = ijsdev->MediaSize[1] * (1.0 / 72) -
+	    m[1] = ijsdev->MediaSize[1] * (1.0 / 72) -
 		printable_top - printable_height;
 	    gx_device_set_margins((gx_device *)ijsdev, m, true);
 	    sprintf (buf, "%gx%g", printable_left, printable_top);
