@@ -446,7 +446,7 @@ end		% serverdict
   { .startnewjob true } .startjob
 } odef
 
-/* The procedure to undo the job encapsulation 
+% The procedure to undo the job encapsulation 
 /.endjob {
   clear cleardictstack
   serverdict /.jobsave get dup null eq { pop } { restore } ifelse
