@@ -1180,14 +1180,6 @@ private const pcl_ht_builtin_threshold_t    noise_dither_thresh = {
     noise_dither_data
 };
 
-private const byte  rendering_remap_proto[20] = {
-    0,  1,  2,  3,  /*  0 -  3 */
-    3,  5,  5,  7,  /*  4 -  7 */
-    8,  9, 10, 11,  /*  8 - 11 */
-   12, 13, 14,  3,  /* 12 - 15 */
-    5,  5,  3,  5   /* 16 - 19 */
-};
-
 /* table used to map color rendering modes into monochrome 
  */
 static  const byte  monochrome_remap[20] = {  5,  5,  2,  5,
