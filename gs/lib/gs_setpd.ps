@@ -200,15 +200,11 @@ level2dict begin
       % see note above about pagetype executable array contents.
       load dup 0 get exch 1 get 2 array astore .dicttomark
     } forall
-    % If NORANGEPAGESIZE is defined, (-dNORANGEPAGESIZE), then don't add
-    % the 'match any' PageSize entry
-    systemdict /NORANGEPAGESIZE known not {
-      % Add one last entry which is the 4 element range array (non-standard)
-      counttomark 2 idiv 
+    % Add one last entry which is the 4 element range array (non-standard)
+    counttomark 2 idiv 
 	% PageSize with either dimension 0 will be detected in
 	% match_page_size, so we can allow it here
-      mark /PageSize [0 dup 16#7ffff dup] .dicttomark
-    } if
+    mark /PageSize [0 dup 16#7ffff dup] .dicttomark
     .dicttomark
   }
   (%MediaSource) 0
