@@ -251,7 +251,9 @@ cgm_put_params(gx_device * dev, gs_param_list * plist)
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofs)) {
 	case 0:
-	    if (dev->LockSafetyParams) {
+	    if (dev->LockSafetyParams &&
+		    bytes_compare(ofs.data, ofs.size,
+			(const byte *)cdev->fname, strlen(cdev->fname))) {
 	        ecode = gs_note_error(gs_error_invalidaccess);
 		goto ofe;
 	    }

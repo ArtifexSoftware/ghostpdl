@@ -624,7 +624,9 @@ mac_put_params(gx_device *dev, gs_param_list *plist)
 		return code;
 	} else if (code == 0) {
 		
-		if (dev->LockSafetyParams) {
+		if (dev->LockSafetyParams &&
+			bytes_compare(outputFile.data, outputFile.size,
+			    (const byte *)mdev->outputFileName, strlen(mdev->outputFileName))) {
 			param_signal_error(plist, "OutputFile", gs_error_invalidaccess);
 			return gs_error_invalidaccess;
 		}

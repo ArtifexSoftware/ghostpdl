@@ -590,8 +590,11 @@ label:\
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofs)) {
 	case 0:
-	    if (pdev->LockSafetyParams)
+	    if (pdev->LockSafetyParams &&
+		    bytes_compare(ofs.data, ofs.size,
+			(const byte *)ppdev->fname, strlen(ppdev->fname))) {
 	        code = gs_error_invalidaccess;
+	    }
 	    else
 		code = validate_output_file(&ofs);
 	    if (code >= 0)
