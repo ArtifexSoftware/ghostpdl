@@ -1,8 +1,8 @@
 %    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
-
 % $RCSfile$ $Revision$
+
 % The current implementation of setpagedevice has the following limitations:
 %	- It doesn't attempt to "interact with the user" for Policy = 2.
 
@@ -88,7 +88,7 @@ level2dict begin
    dup type /booleantype eq
     { pop pop }
     {		% This should never happen!
-      DEBUG { (Error in .trysetparams!\n) print pstack flush } if
+      DEBUG { (Error in .trysetparams!) = pstack flush } if
       cleartomark pop pop pop
       /.installpagedevice cvx /rangecheck signalerror
     }
@@ -423,7 +423,7 @@ level2dict begin
 	/setpagedevice load /configurationerror signalerror
   } bind
   1 {		% Roll back the failed request to its previous status.
-DEBUG { (Rolling back.\n) print pstack flush } if
+DEBUG { (Rolling back.) = pstack flush } if
 	3 index 2 index 3 -1 roll put
 	4 index 1 index .knownget
 	 { 4 index 3 1 roll put }
@@ -492,9 +492,9 @@ DEBUG { (Rolling back.\n) print pstack flush } if
 			%   -mark- key1 value1 ...
    counttomark 5 add index .computemediasize
    exch pop exch pop /.MediaSize exch
-DEBUG { (Putting.\n) print pstack flush } if
+DEBUG { (Putting.) = pstack flush } if
    .putdeviceparamsonly
-DEBUG { (Result of putting.\n) print pstack flush } if
+DEBUG { (Result of putting.) = pstack flush } if
  } bind def
 
 % Compute the media size and initial matrix from a merged request (after
@@ -530,7 +530,7 @@ DEBUG { (Result of putting.\n) print pstack flush } if
 		% also handle the case where the current device
 		% is not a page device.
 		% Stack: mark <request> <current>
-DEBUG { (Checking.\n) print pstack flush } if
+DEBUG { (Checking.) = pstack flush } if
 
    dup /OutputDevice .knownget
     {		% Current device is a page device.
@@ -572,7 +572,7 @@ DEBUG { (Checking.\n) print pstack flush } if
 		% Construct a merged request from the actual request plus
 		% any keys that should always be propagated.
 		% Stack: mark <request> <orig>
-DEBUG { (Merging.\n) print pstack flush } if
+DEBUG { (Merging.) = pstack flush } if
 
    exch 1 index length 1 index length add dict
    .copiedkeys
@@ -599,7 +599,7 @@ DEBUG { (Merging.\n) print pstack flush } if
 
 		% Select input and output media.
 		% Stack: mark <orig> <request> <merged>
-DEBUG { (Selecting.\n) print pstack flush } if
+DEBUG { (Selecting.) = pstack flush } if
 
    0 dict	% <failed>
    1 index /InputAttributes .knownget
@@ -616,7 +616,7 @@ DEBUG { (Selecting.\n) print pstack flush } if
 
 		% Construct the new device, and attempt to set its attributes.
 		% Stack: mark <orig> <request> <merged> <failed>
-DEBUG { (Constructing.\n) print pstack flush } if
+DEBUG { (Constructing.) = pstack flush } if
 
    currentdevice .devicename 2 index /OutputDevice get eq
     { currentdevice }
@@ -632,7 +632,7 @@ DEBUG { (Constructing.\n) print pstack flush } if
     {		% The request failed.
 		% Stack: ... <orig> <request> <merged> <failed> <device>
 		%   <Policies> true mark <name> <errorname> ...
-DEBUG { (Recovering.\n) print pstack flush } if
+DEBUG { (Recovering.) = pstack flush } if
       counttomark 4 add index
       counttomark 2 idiv { dup 4 -2 roll put } repeat
       pop pop pop
@@ -652,7 +652,7 @@ DEBUG { (Recovering.\n) print pstack flush } if
 
 		% The attempt succeeded.  Install the new device.
 		% Stack: mark ... <merged> <failed> <device> <eraseflag>
-DEBUG { (Installing.\n) print pstack flush } if
+DEBUG { (Installing.) = pstack flush } if
 
    pop 2 .endpage
     { 1 true .outputpage
@@ -693,9 +693,24 @@ DEBUG { (Installing.\n) print pstack flush } if
    if
 		% We must install the new page device dictionary
 		% before calling the Install procedure.
-   dup .setpagedevice
-   .setdefaultscreen	% Set the default screen before calling Install.
-   dup /Install .knownget { exec } if
+  dup .setpagedevice
+  .setdefaultscreen	% Set the default screen before calling Install.
+  dup /Install .knownget {
+    { .execinstall } stopped { .postinstall stop } { .postinstall } ifelse
+  } {
+    .postinstall
+  } ifelse
+} odef
+
+% We break out the code after calling the Install procedure into a
+% separate procedure, since it is executed even if Install causes an error.
+% By making .execinstall a separate operator procedure, we get the stacks
+% restored if it fails.
+
+/.execinstall {		% <proc> .execinstall -
+  exec
+} odef
+/.postinstall {		% mark ... <failed> <merged> .postinstall -
    matrix currentmatrix .setdefaultmatrix
 		% Erase and initialize the page.
    erasepage initgraphics
@@ -703,7 +718,7 @@ DEBUG { (Installing.\n) print pstack flush } if
 
 		% Clean up, calling PolicyReport if needed.
 		% Stack: mark ... <failed> <merged>
-DEBUG { (Finishing.\n) print pstack flush } if
+DEBUG { (Finishing.) = pstack flush } if
 
    exch dup length 0 ne
     { 1 index /Policies get /PolicyReport get
@@ -714,7 +729,8 @@ DEBUG { (Finishing.\n) print pstack flush } if
     }
    ifelse pop
 
- } odef
+} odef
 
 end				% level2dict
 .setlanguagelevel
+
