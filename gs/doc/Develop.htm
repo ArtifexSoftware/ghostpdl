@@ -37,7 +37,7 @@
     <a href="#Text">Text</a>,
     <a href="#Images">Images</a>,
     <a href="#Paint">Paint</a>,
-    <a href="#Other_graphics">Other_graphics</a>,
+    <a href="#Other_graphics">Other graphics</a>,
     <a href="#Driver_support">Driver support</a>
 </ul>
 <li><a href="#Device_drivers">Device drivers</a>
@@ -731,11 +731,7 @@ generation and undercolor removal.  The non-trivial cases are implemented in
 
 <li>Application of the transfer function(s) (done in-line).
 
-<li>Halftoning if necessary.  The halftone level is computed in <a
-href="../src/gxdither.c">src/gxdither.c</a>; the actual halftone mask or
-tile is computed in either <a href="../src/gxcht.c">src/gxcht.c</a>, or <a
-href="../src/gxht.c">src/gxht.c</a> and <a
-href="../src/gxhtbit.c">src/gxhtbit.c</a>.
+<li>Halftoning if necessary: see below.
 
 </ul>
 
@@ -743,11 +739,10 @@ The result is called (inappropriately) a <em>device color</em>
 (<b><tt>gx_device_color</tt></b>, defined in <a
 href="../src/gsdcolor.h">src/gsdcolor.h</a> and <a
 href="../src/gxdcolor.h">src/gxdcolor.h</a>).  For ordinary non-Pattern
-colors, a device color is either a pure color, a binary halftone (single
-plane, single bit, with a 2-color palette), or a multi-plane halftone.  The
-device and color model associated with a device color are implicit.  The
-procedure for this step is the virtual <b><tt>remap_concrete_color</tt></b>
-procedure in the color space.
+colors, a device color is either a pure color, or a halftone.  The device
+and color model associated with a device color are implicit.  The procedure
+for this step is the virtual <b><tt>remap_concrete_color</tt></b> procedure
+in the color space.
 
 <li>The pure colors that underlie a device color are opaque <em>pixel
 values</em> defined by the device (misnamed <b><tt>gx_color_index</tt></b>,
@@ -852,6 +847,56 @@ Color mapping:
 <a href="../src/gxfmap.h">src/gxfmap.h</a>,
 <a href="../src/gxlum.h">src/gxlum.h</a>,
 <a href="../src/gxtmap.h">src/gxtmap.h</a>.
+
+</dl>
+
+<p>
+Ghostscript represents halftones internally by "whitening orders" --
+essentially, arrays of arrays of bit coordinates within a halftone cell,
+specifying which bits are inverted to get from halftone level K to level
+K+1.  The code does support all of the PostScript halftone types, but they
+are all ultimately reduced to whitening orders.
+
+<p>
+Threshold arrays, the more conventional representation of halftones, can be
+mapped to whitening orders straightforwardly; however, whitening orders can
+represent non-monotonic halftones (halftones where the bits turned on for
+level K+1 don't necessarily include all the bits turned on for level K),
+while threshold arrays cannot.  On the other hand, threshold arrays allow
+rapid conversion of images (using a threshold comparison for each pixel)
+with no additional space, while whitening orders do not: they require
+storing the rendered halftone cell for each possible level as a bitmap.
+
+<p>
+Ghostscript uses two distinct types of rendered halftones -- that is, the
+bitmap(s) that represent a particular level.
+
+<ul>
+
+<li>Binary halftones.  The rendered halftone is a single bit plane; each bit
+selects one of two pure colors.  These are fast but limited: they are used
+for monochrome output devices, or for color devices in those cases where
+only two distinct colors are involved in a halftone (e.g., a pure cyan shade
+on a CMYK device).  The device color for a binary halftone stores a pointer
+to the halftone bitmap, and the two pure colors.
+
+<li>Multi-plane halftones.  Internally, each plane is rendered individually.
+Since there isn't enough room to store all 2^N pure colors, multi-plane
+halftones only store the scaled values for the individual components; the
+halftone renderer maps these to the pure colors on the fly, then combines
+the planes to assemble an N-bit index into the list of colors for each
+pixel, and stores the color into the fully rendered halftone.
+
+</ul>
+
+<p>
+The halftone level for rendering a color is computed in <a
+href="../src/gxdither.c">src/gxdither.c</a>; the actual halftone mask or
+tile is computed either in <a href="../src/gxcht.c">src/gxcht.c</a> (for
+multi-plane halftones), or in <a href="../src/gxht.c">src/gxht.c</a> and <a
+href="../src/gxhtbit.c">src/gxhtbit.c</a> (for binary halftones).
+
+<dl>
 
 <dt>
 Halftoning:
@@ -1884,7 +1929,7 @@ Other support:
 <a href="../lib/gs_dscp.ps">lib/gs_dscp.ps</a>,
 <a href="../lib/gs_epsf.ps">lib/gs_epsf.ps</a>,
 <a href="../lib/gs_pdfwr.ps">lib/gs_pdfwr.ps</a>,
-<a href="../lib/gs_rdlin.ps">lib/gs_rdlin.ps</a>,
+<a href="../lib/gs_rdlin.ps">lib/gs_rdlin.ps</a>.
 
 <dt>
 X Windows icon bitmaps:
@@ -2827,8 +2872,8 @@ Implementation files shared among multiple platforms:
 <a href="../src/gp_mktmp.c">src/gp_mktmp.c</a>,
 <a href="../src/gp_nsync.c">src/gp_nsync.c</a>,
 <a href="../src/gp_psync.c">src/gp_psync.c</a>,
-<a href="../src/gp_strdl.c">src/gp_strdl.c</a>.
-<a href="../src/gpmisc.c">src/gpmisc.c</a>,
+<a href="../src/gp_strdl.c">src/gp_strdl.c</a>,
+<a href="../src/gpmisc.c">src/gpmisc.c</a>.
 
 <dt>
 Platform-specific implementation files:
