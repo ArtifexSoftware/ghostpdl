@@ -364,7 +364,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
     code = cos_stream_add_since(writer.data, pos);
     pdf_end_image_binary(pdev, &writer, writer.height);
     if (!pres) {
-	switch (pdf_end_write_image(pdev, &writer)) {
+	switch ((code = pdf_end_write_image(pdev, &writer))) {
 	    default:		/* error */
 		return code;
 	    case 1:
@@ -374,7 +374,15 @@ pdf_copy_mono(gx_device_pdf *pdev,
 				    true);
 	}
     }
-    pputs(pdev->strm, "\nEI\n");
+    writer.end_string = "";	/* no Q */
+    switch ((code = pdf_end_write_image(pdev, &writer))) {
+    default:		/* error */
+	return code;
+    case 0:			/* not possible */
+	return_error(gs_error_Fatal);
+    case 1:
+	break;
+    }
     code = pdf_end_char_proc(pdev, &ipos);
     if (code < 0)
 	return code;

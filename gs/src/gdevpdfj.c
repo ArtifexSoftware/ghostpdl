@@ -191,6 +191,7 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 	piw->data = cos_stream_alloc(pdev, "pdf_begin_image_data");
 	if (piw->data == 0)
 	    return_error(gs_error_VMerror);
+	piw->end_string = " Q";
     } else {
 	pdf_x_object_t *pxo;
 	cos_stream_t *pcos;
@@ -282,7 +283,7 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	cos_stream_elements_write(piw->data, pdev);
 	pputs(s, (pdev->binary_ok ? "ID " : "ID\n"));
 	cos_stream_contents_write(piw->data, pdev);
-	pputs(s, "\nEI Q\n");
+	pprints1(s, "\nEI%s\n", piw->end_string);
 	COS_FREE(piw->data, "pdf_end_write_image");
 	return 1;
     }

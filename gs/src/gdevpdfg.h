@@ -149,6 +149,7 @@ typedef struct pdf_image_writer_s {
     pdf_resource_t *pres;	/* XObject resource iff not in-line */
     int height;			/* initially specified image height */
     cos_stream_t *data;
+    const char *end_string;	/* string to write after EI if in-line */
 } pdf_image_writer;
 extern_st(st_pdf_image_writer);	/* public for gdevpdfi.c */
 #define public_st_pdf_image_writer()\
