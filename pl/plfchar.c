@@ -780,7 +780,7 @@ private int
 ft_moveto(FT_Vector *to, gs_state *pgs)
 {
     gs_fixed_point pt;
-    gs_point_transform2fixed(&pgs->ctm, (double)to->x/2048.0, (double)to->y/2048.0, &pt);
+    gs_point_transform2fixed(&pgs->ctm, (double)to->x/64.0, (double)to->y/64.0, &pt);
     return gx_path_add_point(pgs->path, pt.x, pt.y);
 }
 
@@ -788,7 +788,7 @@ private int
 ft_lineto(FT_Vector *to, gs_state *pgs)
 {
     gs_fixed_point pt;
-    gs_point_transform2fixed(&pgs->ctm, (double)to->x/2048.0, (double)to->y/2048.0, &pt);
+    gs_point_transform2fixed(&pgs->ctm, (double)to->x/64.0, (double)to->y/64.0, &pt);
     return gx_path_add_line(pgs->path, pt.x, pt.y);
 }
 
@@ -800,10 +800,10 @@ ft_conicto(FT_Vector* control, FT_Vector* to, gs_state *pgs)
     gs_fixed_point end_pt;  /* end point */
 
     gx_path_current_point(pgs->path, &cur_pt);
-    gs_point_transform2fixed(&pgs->ctm, (double)control->x/2048.0,
-                             (double)control->y/2048.0, &con_pt);
-    gs_point_transform2fixed(&pgs->ctm, (double)to->x/2048.0,
-                             (double)to->y/2048.0, &end_pt);
+    gs_point_transform2fixed(&pgs->ctm, (double)control->x/64.0,
+                             (double)control->y/64.0, &con_pt);
+    gs_point_transform2fixed(&pgs->ctm, (double)to->x/64.0,
+                             (double)to->y/64.0, &end_pt);
 
     /* convert quadratic to cubic */
     gx_path_add_curve(pgs->path, 
@@ -916,15 +916,15 @@ pl_ft_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
                 return (code < 0 ? code : 0);
             } else /* outline */ {
                 FT_Outline_Funcs interface;
-#if 0
 		gs_matrix save_ctm, tmp_ctm;
                 /* move to device space */
                 gs_currentmatrix(pgs, &save_ctm);
                 gs_make_identity(&tmp_ctm);
                 tmp_ctm.tx = save_ctm.tx;
                 tmp_ctm.ty = save_ctm.ty;
+                tmp_ctm.xy = -tmp_ctm.xy;
+                tmp_ctm.yy = -tmp_ctm.yy;
                 gs_setmatrix(pgs, &tmp_ctm);
-#endif
                 interface.move_to = ft_moveto;
                 interface.line_to = ft_lineto;
                 interface.conic_to = ft_conicto;
@@ -936,10 +936,7 @@ pl_ft_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
                 code = gx_path_close_subpath(pgs->path);
                 if ( code >= 0 )
                     code = gs_fill(pgs);
-#if 0
                 gs_setmatrix(pgs, &save_ctm);
-                dprintf( "outline\n" );
-#endif
             }
         
         }
