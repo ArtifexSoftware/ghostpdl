@@ -71,7 +71,6 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 # *	iwlo	Apple Imagewriter in low-resolution mode
 # *	iwlq	Apple Imagewriter LQ in 320 x 216 dpi mode
 # *	jetp3852  IBM Jetprinter ink-jet color printer (Model #3852)
-# *	la70t	DEC LA70 printer with low-resolution text enhancement
 # *	lbp8	Canon LBP-8II laser printer
 # *	lips3	Canon LIPS III laser printer in English (CaPSL) mode
 # *	lj250	DEC LJ250 Companion color printer
@@ -547,17 +546,6 @@ $(DD)lips3.dev : $(lbp8_) $(DD)page.dev
 
 $(GLOBJ)gdevlbp8.$(OBJ) : $(GLSRC)gdevlbp8.c $(PDEVH)
 	$(GLCC) $(GLO_)gdevlbp8.$(OBJ) $(C_) $(GLSRC)gdevlbp8.c
-
-### -------- The DEC LN03/DL2100/LA50/LA70/LA75 printer devices -------- ###
-
-# LA70 driver with low-resolution text enhancement.
-
-la70t_=$(GLOBJ)gdevla7t.$(OBJ)
-$(DD)la70t.dev : $(la70t_) $(DD)page.dev
-	$(SETPDEV) $(DD)la70t $(la70t_)
-
-$(GLOBJ)gdevla7t.$(OBJ) : $(GLSRC)gdevla7t.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevla7t.$(OBJ) $(C_) $(GLSRC)gdevla7t.c
 
 ### -------------- The Epson LP-8000 laser printer device -------------- ###
 ### Note: this driver was contributed by a user: please contact Oleg     ###
