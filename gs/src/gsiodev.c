@@ -20,6 +20,7 @@
 /* IODevice implementation for Ghostscript */
 #include "errno_.h"
 #include "string_.h"
+#include "unistd_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gp.h"

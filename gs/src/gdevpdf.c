@@ -20,6 +20,7 @@
 /* PDF-writing driver */
 #include "memory_.h"
 #include "string_.h"
+#include "unistd_.h"
 #include "gx.h"
 #include "gp.h"			/* for gp_get_realtime */
 #include "gserrors.h"
