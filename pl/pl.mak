@@ -78,6 +78,7 @@ plvocab_h=$(PLSRC)plvocab.h
 # Out of order because of inclusion
 plfont_h=$(PLSRC)plfont.h $(gsccode_h) $(plsymbol_h)
 
+# artifex character module.
 $(PLOBJ)plchar.$(OBJ): $(PLSRC)plchar.c $(AK) $(math__h) $(memory__h) $(stdio__h)\
  $(gdebug_h)\
  $(gsbittab_h) $(gschar_h) $(gscoord_h) $(gserror_h) $(gserrors_h) $(gsimage_h)\
@@ -87,6 +88,28 @@ $(PLOBJ)plchar.$(OBJ): $(PLSRC)plchar.c $(AK) $(math__h) $(memory__h) $(stdio__h
  $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
  $(plfont_h) $(plvalue_h)
 	$(PLCCC) $(PLSRC)plchar.c $(PLO_)plchar.$(OBJ)
+
+# freetype character module.
+$(PLOBJ)plfchar.$(OBJ): $(PLSRC)plfchar.c $(AK) $(math__h) $(memory__h) $(stdio__h)\
+ $(gdebug_h)\
+ $(gsbittab_h) $(gschar_h) $(gscoord_h) $(gserror_h) $(gserrors_h) $(gsimage_h)\
+ $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gspath_h)\
+ $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
+ $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
+ $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
+ $(plfont_h) $(plvalue_h)
+	$(PLCCC) $(FT_INCLUDES) $(PLSRC)plfchar.c $(PLO_)plfchar.$(OBJ)
+
+# agfa character module.
+$(PLOBJ)pluchar.$(OBJ): $(PLSRC)pluchar.c $(AK) $(math__h) $(memory__h) $(stdio__h)\
+ $(gdebug_h)\
+ $(gsbittab_h) $(gschar_h) $(gscoord_h) $(gserror_h) $(gserrors_h) $(gsimage_h)\
+ $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gspath_h)\
+ $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
+ $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
+ $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
+ $(plfont_h) $(plvalue_h)
+	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)pluchar.c $(PLO_)pluchar.$(OBJ)
 
 $(PLOBJ)pldict.$(OBJ): $(PLSRC)pldict.c $(AK) $(memory__h)\
  $(gsmemory_h) $(gsstruct_h) $(gstypes_h)\
@@ -98,6 +121,13 @@ $(PLOBJ)pldraw.$(OBJ): $(PLSRC)pldraw.c $(AK) $(std_h)\
  $(pldraw_h)
 	$(PLCCC) $(PLSRC)pldraw.c $(PLO_)pldraw.$(OBJ)
 
+$(PLOBJ)plfdraw.$(OBJ): $(PLSRC)plfdraw.c $(AK) $(std_h)\
+ $(gsmemory_h) $(gstypes_h) $(gxdevice_h) $(gzstate_h)\
+ $(pldraw_h)
+	$(PLCCC) $(PLSRC)plfdraw.c $(PLO_)plfdraw.$(OBJ)
+
+
+#artifex font module.
 $(PLOBJ)plfont.$(OBJ): $(PLSRC)plfont.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h)\
  $(gschar_h) $(gserror_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
@@ -105,6 +135,24 @@ $(PLOBJ)plfont.$(OBJ): $(PLSRC)plfont.c $(AK) $(memory__h) $(stdio__h)\
  $(gxfont_h) $(gxfont42_h)\
  $(plfont_h) $(plvalue_h)
 	$(PLCCC) $(PLSRC)plfont.c $(PLO_)plfont.$(OBJ)
+
+#freetype font module.
+$(PLOBJ)plffont.$(OBJ): $(PLSRC)plffont.c $(AK) $(memory__h) $(stdio__h)\
+ $(gdebug_h)\
+ $(gschar_h) $(gserror_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
+ $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
+ $(gxfont_h) $(gxfont42_h)\
+ $(plfont_h) $(plvalue_h)
+	$(PLCCC) $(FT_INCLUDES) $(PLSRC)plffont.c $(PLO_)plffont.$(OBJ)
+
+#ufst font module.
+$(PLOBJ)plufont.$(OBJ): $(PLSRC)plufont.c $(AK) $(memory__h) $(stdio__h)\
+ $(gdebug_h)\
+ $(gschar_h) $(gserror_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
+ $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
+ $(gxfont_h) $(gxfont42_h)\
+ $(plfont_h) $(plvalue_h)
+	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plufont.c $(PLO_)plufont.$(OBJ)
 
 $(PLOBJ)plplatf.$(OBJ): $(PLSRC)plplatf.c $(AK) $(stdio__h) $(string__h)\
  $(gdebug_h) $(gp_h) $(gsio_h) $(gslib_h) $(gsmemory_h) $(gstypes_h)\
@@ -131,15 +179,51 @@ $(PLOBJ)plvocab.$(OBJ): $(PLSRC)plvocab.c $(AK) $(stdpre_h)\
  $(plvocab_h)
 	$(PLCCC) $(PLSRC)plvocab.c $(PLO_)plvocab.$(OBJ)
 
+# freetype font loading module.
+$(PLOBJ)plflfont.$(OBJ): $(PLSRC)plflfont.c $(PLSRC)pllfont.h $(AK) $(string__h)\
+	$(gx_h) $(gp_h) $(gsccode_h) $(gsmatrix_h) $(gsutil_h)\
+	$(gxfont_h) $(gxfont42_h)
+	$(PLCCC) $(FT_INCLUDES) $(PLSRC)plflfont.c $(PLO_)plflfont.$(OBJ)
+
+# ufst font loading module.
+$(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(PLSRC)pllfont.h $(AK) $(string__h)\
+	$(gx_h) $(gp_h) $(gsccode_h) $(gsmatrix_h) $(gsutil_h)\
+	$(gxfont_h) $(gxfont42_h)
+	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plulfont.c $(PLO_)plulfont.$(OBJ)
+
+# artifex font loading module.
+$(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(PLSRC)pllfont.h $(AK) $(string__h)\
+	$(gx_h) $(gp_h) $(gsccode_h) $(gsmatrix_h) $(gsutil_h)\
+	$(gxfont_h) $(gxfont42_h)
+	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
+
 pl_obj1=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plfont.$(OBJ)
-pl_obj2=$(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ)
+pl_obj2=$(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pllfont.$(OBJ)
 pl_obj3=$(PLOBJ)pltop.$(OBJ) $(PLOBJ)pltoputl.$(OBJ) $(PLOBJ)plplatf.$(OBJ)
 pl_obj=$(pl_obj1) $(pl_obj2) $(pl_obj3)
 
-$(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj)
-	$(SETMOD) $(PLOBJ)pl $(pl_obj1)
-	$(ADDMOD) $(PLOBJ)pl $(pl_obj2)
-	$(ADDMOD) $(PLOBJ)pl $(pl_obj3)
+# generic artifex font device.
+$(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj1) $(pl_obj2)
+	$(SETMOD) $(PLOBJ)afs $(PLOBJ)plchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pllfont.$(OBJ)
+
+# AGFA ufst font device
+$(PLOBJ)ufst.dev: $(PL_MAK) $(ECHOGS_XE) $(PLOBJ)pluchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)plulfont.$(OBJ)
+	$(SETMOD) $(PLOBJ)ufst $(PLOBJ)pluchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)plulfont.$(OBJ)
+	$(ADDMOD) $(PLOBJ)ufst -link $(AGFALIBDIRS)
+	$(ADDMOD) $(PLOBJ)ufst -lib $(AGFALIBS)
+
+# Bitstream font device
+$(PLOBJ)bfs.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj1) $(pl_obj2)
+	$(SETMOD) $(PLOBJ)bfs $(pl_obj1) $(pl_obj2)
+
+# Freetype font device  NB organize.
+$(PLOBJ)fts.dev: $(PL_MAK) $(ECHOGS_XE) $(PLOBJ)plfchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plffont.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)plflfont.$(OBJ)
+	$(SETMOD) $(PLOBJ)fts $(PLOBJ)plfchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plffont.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)plflfont.$(OBJ)
+	$(ADDMOD) $(PLOBJ)fts -link $(FT_LIBDIRS)
+	$(ADDMOD) $(PLOBJ)fts -lib $(FT_LIBS)
+
+$(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj3)
+	$(SETMOD) $(PLOBJ)pl $(pl_obj3)
 
 ###### Command-line driver's main program #####
 
