@@ -1,9 +1,10 @@
-# $Id: Makefile.am,v 1.12 2002/08/06 11:27:08 giles Exp $
+# $Id: Makefile.am,v 1.13 2002/08/06 11:52:43 giles Exp $
 ## process this file with automake to generate Makefile.in
 
 AUTOMAKE_OPTIONS = 1.6.1 # require automake 1.6
 
 lib_LIBRARIES = libjbig2dec.a
+include_HEADERS = jbig2.h
 
 libjbig2dec_a_SOURCES = jbig2.c \
 	jbig2_arith.c jbig2_arith_int.c jbig2_arith_iaid.c jbig2_huffman.c \
@@ -17,8 +18,9 @@ libjbig2dec_a_SOURCES = jbig2.c \
 	jbig2_huffman.h jbig2_hufftab.h jbig2_mmr.h \
 	jbig2_generic.h jbig2_symbol_dict.h
 
-bin_PROGRAMS = jbig2dec test_sha1
+bin_PROGRAMS = jbig2dec
 #noinst_PROGRAMS = test_huffman test_arith
+noinst_PROGRAMS = test_sha1
 
 jbig2dec_SOURCES = jbig2dec.c sha1.c sha1.h \
 	jbig2.h jbig2_image.h getopt.h \
