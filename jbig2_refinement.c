@@ -53,7 +53,7 @@ jbig2_decode_refinement_template0(Jbig2Ctx *ctx,
 }
 
 static int
-jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
+jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
                               Jbig2Segment *segment,
                               const Jbig2RefinementRegionParams *params,
                               Jbig2ArithState *as,
