@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.29 2002/07/09 09:45:32 giles Exp $
+    $Id: jbig2dec.c,v 1.30 2002/07/13 00:03:52 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -98,12 +98,12 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 					long_options[option_idx].name);
 					break;
 			case 'q':
-				params->verbose=0;
+				params->verbose = 0;
 				break;
 			case 'h':
 			case '?':
-				print_usage();
-				exit (0);
+				params->mode = usage;
+                                break;
 			case 'd':
 				params->mode=dump;
 				break;
@@ -143,6 +143,54 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
     return 0;
 }
 
+static char *
+make_output_filename(const char *input_filename, const char *extension)
+{
+    char *output_filename;
+    const char *c, *e;
+    int len;
+    
+    if (extension == NULL) {
+        fprintf(stderr, "make_output_filename called with no extension!\n");
+        exit (1);
+    }
+    
+    if (input_filename == NULL)
+      output_filename = "out";
+      
+    /* strip any leading path */
+    c = strrchr(input_filename, '/'); /* *nix */
+    if (c == NULL)
+      c = strrchr(input_filename, '\\'); /* win32/dos */
+    if (c != NULL)
+      c++; /* skip the path separator */
+    else
+      c = input_filename; /* no leading path */
+    /* make sure we haven't just stripped the last character */
+    if (*c = '\0')
+      c = "out";
+        
+    /* strip the extension */
+    len = strlen(c);
+    e = strrchr(c, '.');
+    if (e != NULL)
+      len -= strlen(e);
+    
+    /* allocate enough space for the base + ext */
+    output_filename = malloc(len + strlen(extension) + 1);
+    if (output_filename == NULL) {
+        fprintf(stderr, "couldn't allocate memory for output_filename\n");
+        exit (1);
+    }
+    
+    strncpy(output_filename, c, len);
+    strncpy(output_filename + len, extension, strlen(extension));
+    *(output_filename + len + strlen(extension)) = '\0';
+    
+    /* return the new string */
+    return (output_filename);
+}
+
 static int
 write_page_image(jbig2dec_params_t *params, Jbig2Image *image)
 {
@@ -174,19 +222,23 @@ main (int argc, char **argv)
   FILE *f = NULL, *f_page = NULL;
   Jbig2Ctx *ctx;
   uint8_t buf[4096];
-  jbig2dec_params_t params = {usage,1,NULL};
+  jbig2dec_params_t params = {render,1,NULL};
   int filearg;
 
+  fprintf(stderr, "heisenbug detector: %s\n", make_output_filename(NULL, ".out"));
+  
+  
   filearg = parse_options(argc, argv, &params);
 
-  if (params.output_file == NULL)
-    {
-#ifdef HAVE_LIBPNG
-      params.output_file = "out.png";
-#else
-      params.output_file = "out.pbm";
-#endif
-    }
+  switch (params.mode) {
+    case usage:
+        print_usage();
+        exit (0);
+        break;
+    case dump:
+        fprintf(stderr, "Sorry, segment dump not yet implemented\n");
+        break;
+    case render:
     
   if ((argc - filearg) == 1)
   // only one argument--open as a jbig2 file
@@ -263,6 +315,15 @@ main (int argc, char **argv)
     if (f_page != NULL)
       jbig2_complete_page(ctx);
     
+    if (params.output_file == NULL)
+      {
+#ifdef HAVE_LIBPNG
+        params.output_file = make_output_filename(argv[filearg], ".png");
+#else
+        params.output_file = make_output_filename(argv[filearg], ".pbm");
+#endif
+      }
+    
     /* retrieve and write out all the completed pages */
     while ((image = jbig2_page_out(ctx)) != NULL) {
       write_page_image(&params, image);
@@ -272,6 +333,8 @@ main (int argc, char **argv)
   
   jbig2_ctx_free(ctx);
 
+  } /* end params.mode switch */
+  
   // fin
   return 0;
 }
