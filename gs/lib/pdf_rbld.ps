@@ -52,8 +52,13 @@
     Objects 3 index 3 index cvx lput	% Save object location
     Generations 3 index 2 index lput	% Save geenration number
   } {
-	% Verify that the new entry has a higher Generaton number
-    Generations 3 index lget 1 index lt {
+	% Verify that the new entry has at least as high a generaton number
+	% We accept equal entry number because we have found PDF files in
+	% which there are multiple objects with the same object and entry
+	% numbers.  The normal xref logic only accepts the first such
+	% entry that it finds.  However the 'rebuild PDF' logic can find
+	% both such entries.  The correct one is usually the last one.
+    Generations 3 index lget 1 index le {
       Objects 3 index 3 index cvx lput	% Save object location
       Generations 3 index 2 index lput	% Save geenration number
     } if
@@ -101,6 +106,9 @@
   } ifelse			% check if we got token
 } bind def
 
+% Allocate space for post_eof_count to be bound into procedures below.
+/post_eof_count 0 def
+ 
 % We want the location of the trailer dictionary at the start of file.
 % First we will find the xref.  Then we will skip over the xref entries
 % to the trailer.
@@ -131,11 +139,10 @@
 % We will read the last block of data and search for the final occurance
 % of the word 'trailer'
 /search_end_trailer		% - search_end_trailer <trailer loc>
-{ % Position to read block of data from the end of the file.  Note:  We leave
-  % the last 10 bytes since we do not want to read past the end of the file
-  % and the dictionary has to start before then.
+{ % Position to read block of data from the end of the file.  Note:  We ignore
+  % anything past the last %%EOF since this is not PDF data.
   PDFfile 0 setfileposition
-  PDFfile bytesavailable 10 sub	% location of end of file (-10 bytes)
+  PDFfile bytesavailable post_eof_count sub	% location of end of data
   dup 4096 .min			% block size to read
 				% stack: <file end pos> <block size>
   % move file position to the start of the block
@@ -153,30 +160,70 @@
 % for each xref object list.  We only want the trailer dictionary associated
 % with the first xref object list.  In theory this can be anywhere in the
 % file.  However since we are trying to repair a broken file, we cannot simply
-% follow the xref links.  So we are falling back to a simple strategy.  If the
-% file is linearized, the desired trailer is generally near the beginning and
-% for non-linearized PDF it is generally near the end of the file.
+% follow the xref links.  So we are falling back to a simple strategy.  We
+% find the specified location of the first xref list.  If its location is in
+% the first half of the file then we search for the first trailer dictionary
+% at the start of the file.  Otherwise we search for the last trailer at the
+% end of the file.
 /search_trailer			% - search_trailer -
-{ % Read the first 300 bytes and check for 'linearized'
+{ % Find the 'startxref' and associated position at the end of the file.
+  % Position to read block of data from the end of the file.  Note:  We
+  % actually end at the end of the last %%EOF since this is the end of the
+  % useful PDF data.  (Some files contain trailing garbage.)
   PDFfile 0 setfileposition
-  300 string 0 1 299 { 2 copy PDFfile read pop put pop } for
-  (/Linearized) search {
-    pop pop pop search_start_trailer
-  } {
-    pop search_end_trailer
-  } ifelse
+  PDFfile bytesavailable	% size of file
+  post_eof_count sub dup	% location of end of last %%EOF
+  dup 4096 .min			% block size to read
+  % stack: <useful file size> <useful file size file> <block size>
+  % move file position to the start of the block
+  2 copy sub PDFfile exch setfileposition
+  % read block of data
+  dup string 0 1 4 -1 roll 1 sub { 2 copy PDFfile read pop put pop } for
+  % search for last occurance of 'startxref'
+  (startxref) { search not { exit } if pop } loop
+  % determine where the trailer is in the file
+  %   trailer loc = end loc - remaing string length
+  length sub 9 sub
+  % move the file to this position and read startxref and position
+  PDFfile exch setfileposition
+  PDFfile token pop pop PDFfile token pop
+  % compare xref position to 1/2 the length of the file and search for trailer
+  exch 2 div lt { search_start_trailer } { search_end_trailer } ifelse
+  % get the trailer
   PDFfile exch setfileposition		% set to the specified trailer location
   PDFfile traileropdict .pdfrun		% read trailer info
   /Trailer exch def
 } bind def
 
+% This routine will determine if there is stuff after the %%EOF.  There is
+% supposed to be only a line termination.  However many real life files
+% contain some garbage.  This routine checks how much.  We then ignore this
+% stuff when we are scanning for objects.
+/determine_post_eof_count
+{ % Position to read block of data from the end of the file. 
+  PDFfile 0 setfileposition
+  PDFfile bytesavailable	% size of file
+  dup 4096 .min			% block size to read
+  % stack: <file size> <file size> <block size>
+  % move file position to the start of the block
+  2 copy sub PDFfile exch setfileposition
+  % read block of data
+  dup string 0 1 4 -1 roll 1 sub { 2 copy PDFfile read pop put pop } for
+  % search for last occurance of '%%EOF'
+  (%%EOF) { search not { exit } if pop } loop
+  % how much is left = remaining string length
+  length exch pop		% pop /%%EOF
+} bind def
+
 % This routine will scan a file searaching for object locations to build
-% an alternate version of the data in the xerf tables.
-% Its purpose is to provide a basis for a xref fixing facility.
+% an alternate version of the data in the xref tables.
+% Its purpose is to provide a basis for an xref fixing facility.
 /search_objects				% - search_objects -
 { % Reset the Objects and Generations larrays
   /Objects larray def
   /Generations lstring def
+  % Determine how many bytes are in the file after the final %%EOF
+  /post_eof_count determine_post_eof_count def
   % Start at the beginning of the file
   PDFfile 0 setfileposition
   % Create a working string (and also store its length on stack)
@@ -186,7 +233,7 @@
     % When we get near the end of the file, we use a smaller interval of
     % our working string to prevent reading past the end.  (See comments on
     % EOF testing below.)
-    PDFfile bytesavailable 20 sub dup 4 index lt {
+    PDFfile bytesavailable post_eof_count sub 10 sub dup 4 index lt {
       2 index 0 3 -1 roll getinterval	% near EOF, use interval of string
     } { pop 1 index			% not near end, use full working string
     }ifelse
@@ -220,9 +267,9 @@
     pop					% remove location
     % Check if we are approaching the end of the file.  We do not want to
     % read past the end of the file since that closes it.  We actually stop
-    % 20-30 bytes early since there cannot be an object that close to the end.
+    % 10-20 bytes early since there cannot be an object that close to the end.
     % (There is a Trailer dictionary, etc. at the end of the file.)
-    PDFfile bytesavailable 30 lt { exit } if
+    PDFfile bytesavailable post_eof_count sub 20 lt { exit } if
   } loop				% loop through the entire file
   pop pop				% remove working string and its length
 } bind def
