@@ -187,7 +187,7 @@ typedef struct gx_ht_order_procs_s {
 
     /* Update a halftone cache tile to match this order. */
 
-    int (*render)(gx_ht_tile *tile, int new_bit_level,
+    int (*render)(const gs_memory_t *mem, gx_ht_tile *tile, int new_bit_level,
 		  const gx_ht_order *order);
 
     /* Draw a halftone shade into a 1 bit deep buffer. */

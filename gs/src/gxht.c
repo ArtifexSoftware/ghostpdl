@@ -808,7 +808,7 @@ render_ht(const gs_memory_t *mem, gx_ht_tile * pbt, int level /* [1..num_bits-1]
 	return_error(mem, gs_error_Fatal);
     }
 #endif
-    code = porder->procs->render(pbt, level, porder);
+    code = porder->procs->render(mem, pbt, level, porder);
     if (code < 0)
 	return code;
     pbt->level = level;
