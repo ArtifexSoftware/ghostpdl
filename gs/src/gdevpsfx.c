@@ -624,7 +624,7 @@ psf_convert_type1_to_type2(stream *s, const gs_const_string *pstr,
 	     * adjust the adx argument to compensate for the fact that
 	     * Type 2 CharStrings don't have any concept of l.s.b.
 	     */
-	    csp[-3] -= csp[-4];
+	    csp[-3] += cis.lsb.x - csp[-4];
 	    memmove(csp - 4, csp - 3, sizeof(*csp) * 4);
 	    POP(1);
 	    /* (falls through) */
