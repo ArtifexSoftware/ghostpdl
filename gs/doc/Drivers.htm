@@ -1144,8 +1144,9 @@ The <b><tt>map_rgb_color</tt></b>, <b><tt>map_color_rgb</tt></b>, and
 in the device procedure list for backward compatibility. See the
 <b><tt>encode_color</tt></b> and <b><tt>decode_color</tt></b> procedures
 below. To insure that older device drivers are changed to use the new
-<b><tt>encode_color</tt></b> and <b><tt>decode_color</tt></b> procedures.
-The parameters for the older procedures have been changed to
+<b><tt>encode_color</tt></b> and <b><tt>decode_color</tt></b> 
+procedures,
+the parameters for the older procedures have been changed to
 match the new procedures.  To minimize changes in devices that have
 already been written, the map_rgb_color and map_cmyk_color routines
 are used as the default value for the encode_color routine.  The
