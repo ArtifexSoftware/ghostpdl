@@ -223,7 +223,7 @@ SHARE_JBIG2=0
 JBIG2DEVS=''
 if test x$with_jbig2dec != xno; then
   AC_MSG_CHECKING([for local jbig2dec library source])
-  for d in jbig2dec jbig2dec-0.2; do
+  for d in jbig2dec jbig2dec-0.2 jbig2dec-0.3; do
     test -d "$d" && JBIG2DIR=$d && break
   done
   if test "x$JBIG2DIR" != xsrc; then
