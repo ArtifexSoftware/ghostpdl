@@ -29,7 +29,7 @@
 
 /* Define whether to force all halftones to be strip halftones, */
 /* for debugging. */
-static bool FORCE_STRIP_HALFTONES = false;
+static const bool FORCE_STRIP_HALFTONES = false;
 
 /* Structure descriptors */
 private_st_gs_screen_enum();

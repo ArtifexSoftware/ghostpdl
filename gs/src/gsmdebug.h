@@ -24,7 +24,7 @@
 #  define gsmdebug_INCLUDED
 
 /* Define the fill patterns used for debugging the allocator. */
-extern byte
+extern const byte
        gs_alloc_fill_alloc,	/* allocated but not initialized */
        gs_alloc_fill_block,	/* locally allocated block */
        gs_alloc_fill_collected,	/* garbage collected */

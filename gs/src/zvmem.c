@@ -36,10 +36,10 @@
 
 /* Define whether we validate memory before/after save/restore. */
 /* Note that we only actually do this if DEBUG is set and -Z? is selected. */
-private bool I_VALIDATE_BEFORE_SAVE = true;
-private bool I_VALIDATE_AFTER_SAVE = true;
-private bool I_VALIDATE_BEFORE_RESTORE = true;
-private bool I_VALIDATE_AFTER_RESTORE = true;
+private const bool I_VALIDATE_BEFORE_SAVE = true;
+private const bool I_VALIDATE_AFTER_SAVE = true;
+private const bool I_VALIDATE_BEFORE_RESTORE = true;
+private const bool I_VALIDATE_AFTER_RESTORE = true;
 
 /* 'Save' structure */
 typedef struct vm_save_s vm_save_t;

@@ -39,14 +39,14 @@
 
 /* Define whether or not to cache characters rotated by angles other than */
 /* multiples of 90 degrees. */
-private bool CACHE_ROTATED_CHARS = true;
+private const bool CACHE_ROTATED_CHARS = true;
 
 /* Define whether or not to oversample characters at small sizes. */
-private bool OVERSAMPLE = true;
+private const bool OVERSAMPLE = true;
 
 /* Define the maximum size of a full temporary bitmap when rasterizing, */
 /* in bits (not bytes). */
-private uint MAX_TEMP_BITMAP_BITS = 80000;
+private const uint MAX_TEMP_BITMAP_BITS = 80000;
 
 /* Define whether the show operation uses the character outline data, */
 /* as opposed to just needing the width (or nothing). */

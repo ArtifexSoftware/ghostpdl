@@ -37,10 +37,10 @@
 #include "opdef.h"		/* for marking oparray names */
 
 /* Define whether to force all garbage collections to be global. */
-private bool I_FORCE_GLOBAL_GC = false;
+private const bool I_FORCE_GLOBAL_GC = false;
 
 /* Define whether to bypass the collector entirely. */
-private bool I_BYPASS_GC = false;
+private const bool I_BYPASS_GC = false;
 
 /* Avoid including all of iname.h. */
 extern name_table *the_gs_name_table;

@@ -117,7 +117,8 @@ struct stats_clip_s {
     long
          loops, out, in_y, in, in1, down, up, x, no_x;
 } stats_clip;
-private uint clip_interval = 10000;
+
+private const uint clip_interval = 10000;
 
 # define INCR(v) (++(stats_clip.v))
 # define INCR_THEN(v, e) (INCR(v), (e))

@@ -41,7 +41,7 @@ extern_gx_image_type_table();
 
 /* Define whether we should use high-level images. */
 /* (See below for additional restrictions.) */
-static bool USE_HL_IMAGES = true;
+static const bool USE_HL_IMAGES = true;
 
 /* Forward references */
 private int cmd_put_set_data_x(P3(gx_device_clist_writer * cldev,
