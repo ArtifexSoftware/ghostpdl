@@ -647,6 +647,82 @@ true setglobal
   exch scalefont setfont
 } bind def
 
+% ===================== Images ===============================
+
+/ImageKeys 15 dict begin
+  /BPC /BitsPerComponent def
+  /CS /ColorSpace def
+  /D /Decode def
+  /DP /DecodeParams def
+  /F /Filter def
+  /H /Height def
+  /IM /ImageMask def
+  % /Intent is undefined - pdfwrite must take care of.
+  /I /Interpolate def
+  /W /Width def
+currentdict end def
+
+/ImageValues 15 dict begin
+  /G   /DeviceGray def
+  /RGB /DeviceRGB def
+  /CMYK /DeviceCMYK def 
+  /I   /Indexed def
+  /AHx /ASCIIHexDecode def
+  /A85 /ASCII85Decode def
+  /LZW /LZWDecode def
+  /Fl  /FlateDecode def
+  /RL  /RunLengthDecode def
+  /CCF /CCITTFaxDecode def
+  /DCT /DCTDecode def
+currentdict end def
+
+/DecodeArrays 15 dict begin
+  /DeviceGray { [0 1] } def
+  /DeviceRGB { [0 1 0 1 0 1] } def
+  /DeviceCMYK { [0 1 0 1 0 1 0 1] } def 
+  /Indexed { MakeIndexedDecode } def
+  /CalGray { [0 1] } def
+  /CalRGB { [0 1 0 1 0 1] } def
+currentdict end def
+
+/Substitute % <key> <dict> Substitute <key>
+{ 1 index //knownget exec {
+    exch pop
+  } if
+} bind def
+
+/CompleteImage  % <dict> CompleteImage <image_dict>
+{
+  dup /ImageType known not {
+	dup /ImageType 1 put
+  } if
+  dup length dict exch {					% d key val
+      exch //ImageKeys //Substitute exec
+	dup /Filter eq {
+	  exch //ImageValues //Substitute exec exch
+	} if
+	dup /ColorSpace eq {
+	  exch //ImageValues //Substitute exec exch
+	} if
+	exch
+	2 index 3 1 roll put
+  } forall
+  dup /Decode known not {
+    dup /ColorSpace //knownget exec { 
+	  //DecodeArrays exch get exec 
+	} {
+	  [0 1]
+	} ifelse
+	1 index exch /Decode exch put
+  } if
+  dup /ImageMatrix [1 0 0 1 0 0] put
+  //PDFR_DEBUG {
+    (Image :) =
+    dup { exch //=only exec ( ) print == 
+	} forall
+  } if
+} bind def
+
 % ===================== Interpret Data Streams ===============
 
 /TempMatrix matrix def
@@ -946,9 +1022,18 @@ currentdict end def
 
   /DO { DoXObject } bind def
 
-  /BI { BeginInlineImage } bind def
-  /EI { EndInlineImage } bind def
-  /ID { BeginInlineData } bind def
+  /BI { currentglobal false setglobal << } bind def
+  /ID { >>
+		dup /DataSource currentfile put
+        //CompleteImage exec
+		exch setglobal
+		gsave
+		dup /ColorSpace //knownget exec { setcolorspace } if
+        dup /ImageMask //knownget exec not { false } if
+        { imagemask } { image } ifelse 
+		grestore
+	  } bind def
+  /EI {} bind def
 
   /BT { gsave //GraphicState /InitialTextMatrix get currentmatrix pop } bind def
   /ET { grestore } bind def
