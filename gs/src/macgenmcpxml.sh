@@ -197,9 +197,17 @@ WriteSETTINGLIST()
 	
 	# install the carbon prefix file for carbon targets
 	if test "$OUTPUTNAME" = "GhostscriptLib Carbon"; then
-	  WriteValueSetting MWFrontEnd_C_prefixname macos_carbon_pre.h
+	  if test "$TARGETNAME" = "GhostscriptLib Carbon (Debug)"; then
+	    WriteValueSetting MWFrontEnd_C_prefixname macos_carbon_d_pre.h
+	  else
+	    WriteValueSetting MWFrontEnd_C_prefixname macos_carbon_pre.h
+	  fi
 	else
-	  WriteValueSetting MWFrontEnd_C_prefixname        
+	  if test "$TARGETNAME" = "GhostscriptLib PPC (Debug)"; then
+	    WriteValueSetting MWFrontEnd_C_prefixname macos_classic_d_pre.h
+	  else
+	    WriteValueSetting MWFrontEnd_C_prefixname
+	  fi
 	fi
 	
 	WriteValueSetting MWFrontEnd_C_ansistrict 0
