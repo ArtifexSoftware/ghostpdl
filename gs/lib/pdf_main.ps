@@ -70,7 +70,11 @@ systemdict begin
 /.runps /run load def
 /run {
   dup type /filetype ne { (r) file } if
-  dup ( ) .peekstring {
+  % skip leading whitespace characters (actually anything less than or equal to <sp>)
+  { dup ( ) .peekstring not { false exit } if
+    dup 0 get 32 le { pop dup read pop pop } { true exit } ifelse
+  } loop
+  {
     (%) eq {
       dup (     ) .peekstring {
 	(%PDF-) eq {
