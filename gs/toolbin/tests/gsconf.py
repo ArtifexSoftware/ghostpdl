@@ -40,6 +40,7 @@ if os.name == 'nt':
 
 	log_stdout = testroot + 'gs-stdout.log'
 	log_stderr = testroot + 'gs-stderr.log'
+	log_baseline = testroot + 'baseline.log'
 
 	fuzzy = 'D:/path/to/fuzzy.exe'
 
@@ -61,5 +62,6 @@ else:
 
 	log_stdout = testroot + 'gs-stdout.log'
 	log_stderr = testroot + 'gs-stderr.log'
+	log_baseline = testroot + 'baseline.log'
 
 	fuzzy = '/path/to/fuzzy'

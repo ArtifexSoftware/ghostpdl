@@ -18,7 +18,7 @@
 # $Id$
 
 #
-# revert_baseline <file>
+# revert_pdfbaseline <file>
 #
 # this script updates the testdata database with a new baseline sum
 # for all versions of file <file>.  use this when you've accidentally
@@ -29,6 +29,7 @@ import gsconf
 import gssum
 import gsparamsets
 import anydbm
+import time
 import os, sys
 import string
 
@@ -66,6 +67,10 @@ def make_pdfcompare_entry(ifile, device, dpi, band):
 
     if gs.process():
         try:
+	    if gsconf.log_baseline:
+	        log = open(gsconf.log_baseline, "a")
+		log.write(time.ctime() + " " + ifile + " reverted (pdfwrite)\n")
+		log.close()
             gssum.add_file(ofile)
             os.unlink(tfile)
             os.unlink(ofile)

@@ -18,7 +18,7 @@
 # $Id$
 
 #
-# update_baseline <file>
+# update_pdfbaseline <file>
 #
 # this script updates the testdata database with a new baseline sum
 # for all versions of file <file>.  use this when the comparing gs is
@@ -30,6 +30,7 @@ import gsconf
 import gssum
 import gsparamsets
 import anydbm
+import time
 import os, sys
 import string
 
@@ -63,6 +64,10 @@ def make_pdfcompare_entry(ifile, device, dpi, band):
 
     if gs.process():
         try:
+	    if gsconf.log_baseline:
+	        log = open(gsconf.log_baseline, "a")
+		log.write(time.ctime() + " " + ifile + " updated (pdfwrite)\n")
+		log.close()
             gssum.add_file(ofile)
             os.unlink(tfile)
             os.unlink(ofile)

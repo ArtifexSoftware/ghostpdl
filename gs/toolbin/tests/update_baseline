@@ -30,6 +30,7 @@ import gsconf
 import gssum
 import gsparamsets
 import anydbm
+import time
 import os, sys
 import string
 
@@ -49,6 +50,10 @@ def make_entry(ifile, device, dpi, band):
 
     if gs.process():
         try:
+ 	    if gsconf.log_basline:
+	        log = open(gsconf.log_baseline, "a")
+	        log.write(time.ctime() + " " + ifile + " updated\n")
+	        log.close()
             gssum.add_file(ofile)
             os.unlink(ofile)
             print "done."
