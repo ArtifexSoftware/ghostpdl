@@ -273,7 +273,7 @@ DEVICE_DEVS21=
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev $(PSD)jbig2.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -453,7 +453,8 @@ all : macro [.lib]Fontmap. $(GS_XE)
 # zlib.mak must precede libpng.mak
 .include $(GLSRCDIR)zlib.mak
 .include $(GLSRCDIR)libpng.mak
-include $(GLSRCDIR)/jbig2.mak
+JBIG2_EXTRA_OBJS=$(JBIG2OBJDIR)$(D)vsnprintf.$(OBJ)
+.include $(GLSRCDIR)jbig2.mak
 .include $(GLSRCDIR)icclib.mak
 .include $(GLSRCDIR)devs.mak
 .include $(GLSRCDIR)contrib.mak

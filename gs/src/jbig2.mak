@@ -36,7 +36,7 @@ JBIG2GEN=$(JBIG2OBJDIR)$(D)
 JBIG2OBJ=$(JBIG2OBJDIR)$(D)
 # This list is only good for jbig2dec v0.2
 
-libjbig2_OBJS=\
+libjbig2_OBJS1=\
 	$(JBIG2OBJ)jbig2.$(OBJ) \
 	$(JBIG2OBJ)jbig2_arith.$(OBJ) \
         $(JBIG2OBJ)jbig2_arith_iaid.$(OBJ) \
@@ -44,12 +44,16 @@ libjbig2_OBJS=\
         $(JBIG2OBJ)jbig2_generic.$(OBJ) \
         $(JBIG2OBJ)jbig2_huffman.$(OBJ) \
         $(JBIG2OBJ)jbig2_image.$(OBJ) \
-        $(JBIG2OBJ)jbig2_mmr.$(OBJ) \
-        $(JBIG2OBJ)jbig2_page.$(OBJ) \
+        $(JBIG2OBJ)jbig2_mmr.$(OBJ)
+
+libjbig2_OBJS2=\
+	$(JBIG2OBJ)jbig2_page.$(OBJ) \
         $(JBIG2OBJ)jbig2_segment.$(OBJ) \
         $(JBIG2OBJ)jbig2_symbol_dict.$(OBJ) \
         $(JBIG2OBJ)jbig2_text.$(OBJ) \
-        $(JBIG2OBJ)jbig2_metadata.$(OBJ)
+        $(JBIG2OBJ)jbig2_metadata.$(OBJ) $(JBIG2_EXTRA_OBJS)
+
+libjbig2_OBJS=$(libjbig2_OBJS1) $(libjbig2_OBJS2)
 
 libjbig2_HDRS=\
         $(JBIG2SRC)jbig2.h \
@@ -94,9 +98,13 @@ $(JBIG2GEN)libjbig2_1.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE)
 
 # dev file for compiling our own from source
 $(JBIG2GEN)libjbig2_0.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE) $(libjbig2_OBJS)
-	$(SETMOD) $(JBIG2GEN)libjbig2_0 $(libjbig2_OBJS)
+	$(SETMOD) $(JBIG2GEN)libjbig2_0 $(libjbig2_OBJS1)
+	$(ADDMOD) $(JBIG2GEN)libjbig2_0 $(libjbig2_OBJS2)
 
 # explicit rules for building the source files. 
+
+$(JBIG2OBJ)vsnprintf.$(OBJ) : $(JBIG2SRC)vsnprintf.c $(JBIG2DEP)
+	$(JBIG2_CC) $(JBIG2O_)vsnprintf.$(OBJ) $(C_) $(JBIG2SRC)vsnprintf.c
 
 $(JBIG2OBJ)getopt.$(OBJ) : $(JBIG2SRC)getopt.c $(JBIG2SRC)getopt.h $(JBIG2DEP)
 	$(JBIG2_CC) $(JBIG2O_)getopt.$(OBJ) $(C_) $(JBIG2SRC)getopt.c
