@@ -3,10 +3,15 @@
     
     Copyright (C) 2001-2003 artofcode LLC.
     
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    This software is distributed under license and may not
+    be copied, modified or distributed except as expressly
+    authorized under the terms of the license contained in
+    the file LICENSE in this distribution.
+                                                                                
+    For information on commercial licensing, go to
+    http://www.artifex.com/licensing/ or contact
+    Artifex Software, Inc.,  101 Lucas Valley Road #110,
+    San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
     $Id: jbig2_symbol_dict.c,v 1.20 2003/03/05 12:25:54 giles Exp $
     
@@ -153,7 +158,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             {
 	      /* todo: mem cleanup */
               code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-                "Invalid SYMWIDTH value");
+                "Invalid SYMWIDTH value (%d) at symbol %d", SYMWIDTH, NSYMSDECODED+1);
               return NULL;
             }
 #ifdef DEBUG
@@ -300,10 +305,10 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 				  segment->data_length - offset,
 				  GB_stats);
 #ifdef DUMP_SYMDICT
-  jbig2_dump_symbol_dict(segment->result);
+  if (segment->result) jbig2_dump_symbol_dict(segment->result);
 #endif
 
-  return 0;
+  return (segment->result != NULL) ? 0 : -1;
 
   /* todo: retain or free GB_stats */
   

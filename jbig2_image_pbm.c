@@ -3,10 +3,15 @@
     
     Copyright (c) 2002 artofcode LLC.
     
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    This software is distributed under license and may not
+    be copied, modified or distributed except as expressly
+    authorized under the terms of the license contained in
+    the file LICENSE in this distribution.
+                                                                                
+    For information on commercial licensing, go to
+    http://www.artifex.com/licensing/ or contact
+    Artifex Software, Inc.,  101 Lucas Valley Road #110,
+    San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
     $Id: jbig2_image_pbm.c,v 1.12 2002/08/15 14:54:45 giles Exp $
 */
