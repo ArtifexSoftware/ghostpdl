@@ -298,7 +298,7 @@ containing '=' mean that the value of the parameter is the same as in the
 <tr valign=top><td><b><tt>SubsetFonts</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>TransferFunctionInfo</tt></b><td><td><a href="#note_4">(4)</a><td><td>/Preserve<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>UCRandBGInfo</tt></b><td><td><td><td>/Remove<td><td>/Remove<td><td>/Remove<td><td>/Preserve<td><td>/Preserve
-<tr valign=top><td><b><tt>UseFlateCompression</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>UseFlateCompression</tt></b><td><td><a href="#note_2">(2)</a><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>UsePrologue</tt></b><td><td><a href="#note_0">(0)</a><td><td>false<td><td>=<td><td>=<td><td>=<td><td>=
 </table></blockquote>
 
@@ -309,7 +309,7 @@ This parameter can be set and queried, but currently has no effect.
 <p>
 <a name="note_1">(note 1)</a>
 Currently, <b><tt>AutoFilterxxxImages</tt></b> doesn't examine the image to
-decide between JPEG and LZW or Flate compression: it always uses LZW or
+decide between JPEG and LZW or Flate compression: it always uses 
 Flate compression.  If you want to force JPEG compression, use
 <b><tt>-dAutoFilterxxxImages=false</tt></b>.
 
@@ -317,9 +317,9 @@ Flate compression.  If you want to force JPEG compression, use
 <a name="note_2">(note 2)</a>
 Because of Unisys's threats regarding the Welch patent,
 <b><tt>ps2pdf</tt></b> cannot actually use LZW compression: instead, it
-treats all requests for LZW compression as calling for Flate compression if
-<b><tt>UseFlateCompression</tt></b> is true and
-<b><tt>CompatibilityLevel</tt></b> &gt;= 1.2, and ignores them otherwise.
+treats all requests for LZW compression as calling for Flate compression.
+Concomitantly, <tt>UseFlateCompression</tt> is treated as always on, and
+the value of this parameter is ignored as with note 0.
 
 <p>
 <a name="note_3">(note 3)</a>
