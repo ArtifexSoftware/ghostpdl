@@ -48,8 +48,33 @@ orig_sqrt(double x)
 /* Define private replacements for stdin, stdout, and stderr. */
 FILE *gs_stdio[3];
 
-
+#if 1
 /* ------ Redirected stdout and stderr  ------ */
+
+/* Provide a single point for all "C" stdout and stderr.
+ * Eventually these will always be referenced through an instance structure. 
+ */
+
+int outwrite(const char *str, int len)
+{
+    return fwrite(str, 1, len, gs_stdout);
+}
+
+int errwrite(const char *str, int len)
+{
+    return fwrite(str, 1, len, gs_stderr);
+}
+
+void outflush()
+{
+    fflush(gs_stdout);
+}
+
+void errflush()
+{
+    fflush(gs_stderr);
+}
+#endif
 
 #include <stdarg.h>
 #define PRINTF_BUF_LENGTH 1024

@@ -860,6 +860,11 @@ gs_debug_dump_stack(int code, ref * perror_object)
     gs_main_dump_stack(gs_main_instance_default(), code, perror_object);
 }
 
+#if 0
+/* stefan foo:
+ * break the gsdll and gsapi interface for now
+ */
+
 
 /* Provide a single point for all "C" stdout and stderr.
  * Eventually these will always be referenced through an instance structure. 
@@ -897,4 +902,4 @@ void errflush()
         fflush(minst->fstderr);
 }
 
-
+#endif 
