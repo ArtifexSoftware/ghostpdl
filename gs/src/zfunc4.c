@@ -274,6 +274,7 @@ gs_build_function_4(const ref *op, const gs_function_params_t * mnDR,
 	code = gs_note_error(e_typecheck);
 	goto fail;
     }
+    size = 0;
     code = check_psc_function(proc, 0, NULL, &size);
     if (code < 0)
 	goto fail;
