@@ -373,6 +373,7 @@ DEVICE_DEVS17=
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=$(DD)cljet5.dev $(DD)cljet5c.dev
+DEVICE_DEVS21=$(DD)spotrgb.dev $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev
 
 # ---------------------------- End of options --------------------------- #
 
