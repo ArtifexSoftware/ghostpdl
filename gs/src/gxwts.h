@@ -24,8 +24,14 @@ typedef bits16 wts_screen_sample_t;
 typedef struct wts_screen_s wts_screen_t;
 #endif
 
+typedef enum {
+    WTS_SCREEN_RAT,
+    WTS_SCREEN_J,
+    WTS_SCREEN_H
+} wts_screen_type;
+
 struct wts_screen_s {
-    /* methods */
+    wts_screen_type type;
     int cell_width;
     int cell_height;
     int cell_shift;

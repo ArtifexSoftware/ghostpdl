@@ -24,12 +24,6 @@ typedef struct gs_wts_screen_enum_s gs_wts_screen_enum_t;
 
 typedef struct gx_wts_cell_params_s gx_wts_cell_params_t;
 
-typedef enum {
-    WTS_SCREEN_J,
-    WTS_SCREEN_H
-    /* very plausibly, rational should be another type. */
-} wts_screen_type;
-
 /* Note: this corresponds roughly to the SP structure in the WTS code. */
 struct gx_wts_cell_params_s {
     wts_screen_type t;

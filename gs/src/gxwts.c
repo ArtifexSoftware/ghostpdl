@@ -99,7 +99,7 @@ private int
 wts_get_samples_j(const wts_screen_t *ws, int x, int y,
 		  wts_screen_sample_t **samples, int *p_nsamples)
 {
-   const wts_screen_j_t *wsj = (const wts_screen_j_t *)ws;
+    const wts_screen_j_t *wsj = (const wts_screen_j_t *)ws;
     /* int d = y / ws->cell_height; */
     int y_ix = y;
     int x_ix = x;
@@ -137,6 +137,43 @@ wts_get_samples_j(const wts_screen_t *ws, int x, int y,
     return 0;
 }
 
+private int
+wts_screen_h_offset(int x, double p1, int m1, int m2)
+{
+    /* todo: this is a linear search; constant time should be feasible */
+    double running_p = 0;
+    int width_so_far;
+    int this_width;
+
+    for (width_so_far = 0;; width_so_far += this_width) {
+	running_p += p1;
+	if (running_p >= 0.5) {
+	    this_width = m1;
+	    running_p -= 1;
+	} else {
+	    this_width = m2;
+	}
+	if (width_so_far + this_width > x)
+	    break;
+    }
+    return x - width_so_far + (this_width == m1 ? 0 : m1);
+}
+
+/* Implementation of wts_get_samples for Screen H. */
+private int
+wts_get_samples_h(const wts_screen_t *ws, int x, int y,
+		  wts_screen_sample_t **samples, int *p_nsamples)
+{
+    const wts_screen_h_t *wsh = (const wts_screen_h_t *)ws;
+    int x_ix = wts_screen_h_offset(x, wsh->px,
+				   wsh->x1, ws->cell_width - wsh->x1);
+    int y_ix = wts_screen_h_offset(y, wsh->py,
+				   wsh->y1, ws->cell_height - wsh->y1);
+    *p_nsamples = (x_ix >= wsh->x1 ? ws->cell_width : wsh->x1) - x_ix;
+    *samples = ws->samples + x_ix + y_ix * ws->cell_width;
+    return 0;
+}
+
 /**
  * wts_get_samples: Get samples from Well Tempered Screening cell.
  * @ws: Well Tempered Screening cell.
@@ -164,7 +201,12 @@ int
 wts_get_samples(const wts_screen_t *ws, int x, int y,
 		wts_screen_sample_t **samples, int *p_nsamples)
 {
-    return wts_get_samples_j(ws, x, y, samples, p_nsamples);
+    if (ws->type == WTS_SCREEN_J)
+	return wts_get_samples_j(ws, x, y, samples, p_nsamples);
+    if (ws->type == WTS_SCREEN_H)
+	return wts_get_samples_h(ws, x, y, samples, p_nsamples);
+    else
+	return -1;
 }
 
 /* Device color methods follow. */

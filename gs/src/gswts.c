@@ -265,6 +265,51 @@ wts_set_mat(gx_wts_cell_params_t *wcp, double sratiox, double sratioy,
     wcp->vslow = cos(sangle) / sratioy;
 }
 
+
+/**
+ * Calculate Screen H cell sizes.
+ **/
+private void
+wts_cell_calc_h(double inc, int *px1, int *pxwidth, double *pp1, double memw)
+{
+    double minrep = pow(2, memw) * 50 / pow(2, 7.5);
+    int m1 = 0, m2 = 0;
+    double e1, e2;
+
+    int uacc;
+
+    e1 = 1e5;
+    e2 = 1e5;
+    for (uacc = ceil(minrep * inc); uacc <= floor(2 * minrep * inc); uacc++) {
+	int mt;
+	double et;
+
+	mt = floor(uacc / inc + 1e-5);
+	et = uacc / inc - mt + mt * 0.001;
+	if (et < e1) {
+	    e1 = et;
+	    m1 = mt;
+	}
+	mt = ceil(uacc / inc - 1e-5);
+	et = mt - uacc / inc + mt * 0.001;
+	if (et < e2) {
+	    e2 = et;
+	    m2 = mt;
+	}
+    }
+    if (m1 == m2) {
+	*px1 = m1;
+	*pxwidth = m1;
+	*pp1 = 1.0;
+    } else {
+	*px1 = m1;
+	*pxwidth = m1 + m2;
+	e1 = fabs(m1 * inc - floor(0.5 + m1 * inc));
+	e2 = fabs(m2 * inc - floor(0.5 + m2 * inc));
+	*pp1 = e2 / (e1 + e2);
+    }
+}
+
 /* Implementation for Screen H. This is optimized for 0 and 45 degree
    rotations. */
 private gx_wts_cell_params_t *
@@ -272,6 +317,7 @@ wts_pick_cell_size_h(double sratiox, double sratioy, double sangledeg,
 		     double memw)
 {
     gx_wts_cell_params_h_t *wcph;
+    double xinc, yinc;
 
     wcph = malloc(sizeof(gx_wts_cell_params_h_t));
     if (wcph == NULL)
@@ -279,6 +325,17 @@ wts_pick_cell_size_h(double sratiox, double sratioy, double sangledeg,
 
     wcph->base.t = WTS_SCREEN_H;
     wts_set_mat(&wcph->base, sratiox, sratioy, sangledeg);
+
+    xinc = fabs(wcph->base.ufast);
+    if (xinc == 0)
+	xinc = fabs(wcph->base.vfast);
+
+    wts_cell_calc_h(xinc, &wcph->x1, &wcph->base.width, &wcph->px, memw);
+
+    yinc = fabs(wcph->base.uslow);
+    if (yinc == 0)
+	yinc = fabs(wcph->base.vslow);
+    wts_cell_calc_h(yinc, &wcph->y1, &wcph->base.height, &wcph->py, memw);
 
     return &wcph->base;
 }
@@ -722,18 +779,28 @@ wts_pick_cell_size(gs_screen_halftone *ph, const gs_matrix *pmat)
 struct gs_wts_screen_enum_s {
     wts_screen_type t;
     bits32 *cell;
+    int width;
+    int height;
+    int size;
+
+    int idx;
 };
 
 typedef struct {
     gs_wts_screen_enum_t base;
     const gx_wts_cell_params_j_t *wcpj;
-
-    /* All four of these should go into the base class */
-    int idx;
-    int width;
-    int height;
-    int size;
 } gs_wts_screen_enum_j_t;
+
+typedef struct {
+    gs_wts_screen_enum_t base;
+    const gx_wts_cell_params_h_t *wcph;
+
+    /* an argument can be made that these should be in the params */
+    double ufast1, vfast1;
+    double ufast2, vfast2;
+    double uslow1, vslow1;
+    double uslow2, vslow2;
+} gs_wts_screen_enum_h_t;
 
 private gs_wts_screen_enum_t *
 gs_wts_screen_enum_j_new(gx_wts_cell_params_t *wcp)
@@ -743,11 +810,11 @@ gs_wts_screen_enum_j_new(gx_wts_cell_params_t *wcp)
     wsej = malloc(sizeof(gs_wts_screen_enum_j_t));
     wsej->base.t = WTS_SCREEN_J;
     wsej->wcpj = (const gx_wts_cell_params_j_t *)wcp;
-    wsej->idx = 0;
-    wsej->width = wcp->width;
-    wsej->height = wcp->height;
-    wsej->size = wcp->width * wcp->height;
-    wsej->base.cell = malloc(wsej->size * sizeof(wsej->base.cell[0]));
+    wsej->base.width = wcp->width;
+    wsej->base.height = wcp->height;
+    wsej->base.size = wcp->width * wcp->height;
+    wsej->base.cell = malloc(wsej->base.size * sizeof(wsej->base.cell[0]));
+    wsej->base.idx = 0;
 
     return (gs_wts_screen_enum_t *)wsej;
 }
@@ -759,14 +826,14 @@ gs_wts_screen_enum_j_currentpoint(gs_wts_screen_enum_t *self,
     gs_wts_screen_enum_j_t *z = (gs_wts_screen_enum_j_t *)self;
     const gx_wts_cell_params_j_t *wcpj = z->wcpj;
     
-    double x, y;
+    int x, y;
     double u, v;
 
-    if (z->idx == z->size) {
+    if (z->base.idx == z->base.size) {
 	return 1;
     }
-    x = z->idx % wcpj->base.width;
-    y = z->idx / wcpj->base.width;
+    x = z->base.idx % wcpj->base.width;
+    y = z->base.idx / wcpj->base.width;
     u = wcpj->ufast_a * x + wcpj->uslow_a * y;
     v = wcpj->vfast_a * x + wcpj->vslow_a * y;
     u -= floor(u);
@@ -776,26 +843,84 @@ gs_wts_screen_enum_j_currentpoint(gs_wts_screen_enum_t *self,
     return 0;
 }
 
-private int
-gs_wts_screen_enum_j_next(gs_wts_screen_enum_t *self, floatp value)
+private gs_wts_screen_enum_t *
+gs_wts_screen_enum_h_new(gx_wts_cell_params_t *wcp)
 {
-    gs_wts_screen_enum_j_t *z = (gs_wts_screen_enum_j_t *)self;
-    bits32 sample;
+    gs_wts_screen_enum_h_t *wseh;
+    const gx_wts_cell_params_h_t *wcph = (const gx_wts_cell_params_h_t *)wcp;
+    int x1 = wcph->x1;
+    int x2 = wcp->width - x1;
+    int y1 = wcph->y1;
+    int y2 = wcp->height - y1;
 
-    if (value < -1.0 || value > 1.0)
-	return_error(gs_error_rangecheck);
-    sample = (bits32) ((value + 1) * 0x7fffffff);
-    z->base.cell[z->idx] = sample;
-    z->idx++;
+    wseh = malloc(sizeof(gs_wts_screen_enum_h_t));
+    wseh->base.t = WTS_SCREEN_H;
+    wseh->wcph = wcph;
+    wseh->base.width = wcp->width;
+    wseh->base.height = wcp->height;
+    wseh->base.size = wcp->width * wcp->height;
+    wseh->base.cell = malloc(wseh->base.size * sizeof(wseh->base.cell[0]));
+    wseh->base.idx = 0;
+
+    wseh->ufast1 = floor(0.5 + wcp->ufast * x1) / x1;
+    wseh->vfast1 = floor(0.5 + wcp->vfast * x1) / x1;
+    if (x2 > 0) {
+	wseh->ufast2 = floor(0.5 + wcp->ufast * x2) / x2;
+	wseh->vfast2 = floor(0.5 + wcp->vfast * x2) / x2;
+    }
+    wseh->uslow1 = floor(0.5 + wcp->uslow * y1) / y1;
+    wseh->vslow1 = floor(0.5 + wcp->vslow * y1) / y1;
+    if (y2 > 0) {
+	wseh->uslow2 = floor(0.5 + wcp->uslow * y2) / y2;
+	wseh->vslow2 = floor(0.5 + wcp->vslow * y2) / y2;
+    }
+
+    return &wseh->base;
+}
+
+private int
+gs_wts_screen_enum_h_currentpoint(gs_wts_screen_enum_t *self,
+				  gs_point *ppt)
+{
+    gs_wts_screen_enum_h_t *z = (gs_wts_screen_enum_h_t *)self;
+    const gx_wts_cell_params_h_t *wcph = z->wcph;
+    
+    int x, y;
+    double u, v;
+
+    if (self->idx == self->size) {
+	return 1;
+    }
+    x = self->idx % wcph->base.width;
+    y = self->idx / wcph->base.width;
+    if (x < wcph->x1) {
+	u = z->ufast1 * x;
+	v = z->vfast1 * x;
+    } else {
+	u = z->ufast2 * (x - wcph->x1);
+	v = z->vfast2 * (x - wcph->x1);
+    }
+    if (y < wcph->y1) {
+	u += z->uslow1 * y;
+	v += z->vslow1 * y;
+    } else {
+	u += z->uslow2 * (y - wcph->y1);
+	v += z->vslow2 * (y - wcph->y1);
+    }
+    u -= floor(u);
+    v -= floor(v);
+    ppt->x = 2 * u - 1;
+    ppt->y = 2 * v - 1;
     return 0;
 }
 
-/* todo: virtualize */
 gs_wts_screen_enum_t *
 gs_wts_screen_enum_new(gx_wts_cell_params_t *wcp)
 {
     if (wcp->t == WTS_SCREEN_J)
 	return gs_wts_screen_enum_j_new(wcp);
+    else if (wcp->t == WTS_SCREEN_H)
+	return gs_wts_screen_enum_h_new(wcp);
     else
 	return NULL;
 }
@@ -805,6 +930,8 @@ gs_wts_screen_enum_currentpoint(gs_wts_screen_enum_t *wse, gs_point *ppt)
 {
     if (wse->t == WTS_SCREEN_J)
 	return gs_wts_screen_enum_j_currentpoint(wse, ppt);
+    if (wse->t == WTS_SCREEN_H)
+	return gs_wts_screen_enum_h_currentpoint(wse, ppt);
     else
 	return -1;
 }
@@ -812,10 +939,14 @@ gs_wts_screen_enum_currentpoint(gs_wts_screen_enum_t *wse, gs_point *ppt)
 int
 gs_wts_screen_enum_next(gs_wts_screen_enum_t *wse, floatp value)
 {
-    if (wse->t == WTS_SCREEN_J)
-	return gs_wts_screen_enum_j_next(wse, value);
-    else
-	return -1;
+    bits32 sample;
+
+    if (value < -1.0 || value > 1.0)
+	return_error(gs_error_rangecheck);
+    sample = (bits32) ((value + 1) * 0x7fffffff);
+    wse->cell[wse->idx] = sample;
+    wse->idx++;
+    return 0;
 }
 
 /* Run the enum with a square dot. This is useful for testing. */
@@ -839,8 +970,8 @@ wts_run_enum_squaredot(gs_wts_screen_enum_t *wse)
 
 private int
 wts_sample_cmp(const void *av, const void *bv) {
-    bits32 *const *a = (bits32 *const *)av;
-    bits32 *const *b = (bits32 *const *)bv;
+    const bits32 *const *a = (const bits32 *const *)av;
+    const bits32 *const *b = (const bits32 *const *)bv;
 
     if (**a > **b) return 1;
     if (**a < **b) return -1;
@@ -849,11 +980,11 @@ wts_sample_cmp(const void *av, const void *bv) {
 
 /* This implementation simply sorts the threshold values (evening the
    distribution), without applying any moire reduction. */
-private int
-wts_sort_cell_j(gs_wts_screen_enum_j_t *wsej)
+int
+wts_sort_cell(gs_wts_screen_enum_t *wse)
 {
-    int size = wsej->width * wsej->height;
-    bits32 *cell = wsej->base.cell;
+    int size = wse->width * wse->height;
+    bits32 *cell = wse->cell;
     bits32 **pcell;
     int i;
 
@@ -869,11 +1000,6 @@ wts_sort_cell_j(gs_wts_screen_enum_j_t *wsej)
     return 0;
 }
 
-int
-wts_sort_cell(gs_wts_screen_enum_t *wse)
-{
-    return wts_sort_cell_j((gs_wts_screen_enum_j_t *)wse);
-}
 /**
  * wts_blue_bump: Generate bump function for BlueDot.
  *
@@ -882,10 +1008,10 @@ wts_sort_cell(gs_wts_screen_enum_t *wse)
 private bits32 *
 wts_blue_bump(gs_wts_screen_enum_t *wse)
 {
-    gs_wts_screen_enum_j_t *wsej = (gs_wts_screen_enum_j_t *)wse;
-    int width = wsej->width;
-    int height = wsej->height;
-    int shift = wsej->wcpj->shift;
+    const gx_wts_cell_params_t *wcp;
+    int width = wse->width;
+    int height = wse->height;
+    int shift;
     int size = width * height;
     bits32 *bump;
     int i;
@@ -895,6 +1021,17 @@ wts_blue_bump(gs_wts_screen_enum_t *wse)
     int x0, y0;
     int x, y;
 
+    if (wse->t == WTS_SCREEN_J) {
+	gs_wts_screen_enum_j_t *wsej = (gs_wts_screen_enum_j_t *)wse;
+	shift = wsej->wcpj->shift;
+	wcp = &wsej->wcpj->base;
+    } else if (wse->t == WTS_SCREEN_H) {
+	gs_wts_screen_enum_h_t *wseh = (gs_wts_screen_enum_h_t *)wse;
+	shift = 0;
+	wcp = &wseh->wcph->base;
+    } else
+	return NULL;
+
     bump = (bits32 *)malloc(size * sizeof(bits32));
     if (bump == NULL)
 	return NULL;
@@ -902,8 +1039,8 @@ wts_blue_bump(gs_wts_screen_enum_t *wse)
     for (i = 0; i < size; i++)
 	bump[i] = 0;
     /* todo: more intelligence for anisotropic scaling */
-    uf = wsej->wcpj->ufast_a;
-    vf = wsej->wcpj->vfast_a;
+    uf = wcp->ufast;
+    vf = wcp->vfast;
 
     am = uf * uf + vf * vf;
     eg = (1 << 24) * 2.0 * sqrt (am);
@@ -937,22 +1074,28 @@ wts_blue_bump(gs_wts_screen_enum_t *wse)
 /**
  * wts_sort_blue: Sort cell using BlueDot.
  **/
-private int
-wts_sort_blue_j(gs_wts_screen_enum_j_t *wsej)
+int
+wts_sort_blue(gs_wts_screen_enum_t *wse)
 {
-    bits32 *cell = wsej->base.cell;
-    int width = wsej->width;
-    int height = wsej->height;
-    int shift = wsej->wcpj->shift;
+    bits32 *cell = wse->cell;
+    int width = wse->width;
+    int height = wse->height;
+    int shift;
     int size = width * height;
     bits32 *ref;
     bits32 **pcell;
     bits32 *bump;
     int i;
 
+    if (wse->t == WTS_SCREEN_J) {
+	gs_wts_screen_enum_j_t *wsej = (gs_wts_screen_enum_j_t *)wse;
+	shift = wsej->wcpj->shift;
+    } else
+	shift = 0;
+
     ref = (bits32 *)malloc(size * sizeof(bits32));
     pcell = (bits32 **)malloc(size * sizeof(bits32 *));
-    bump = wts_blue_bump(&wsej->base);
+    bump = wts_blue_bump(wse);
     if (ref == NULL || pcell == NULL || bump == NULL) {
 	free(ref);
 	free(pcell);
@@ -1022,7 +1165,9 @@ wts_sort_blue_j(gs_wts_screen_enum_j_t *wsej)
 		    gmin = *pcell[j];
 		}
 	    }
-	    dlprintf1("gmin = %d\n", gmin);
+#ifdef VERBOSE
+	    if_debug1('h', "[h]gmin = %d\n", gmin);
+#endif
 	    for (j = i + 1; j < size; j++)
 		*pcell[j] -= gmin;
 	    
@@ -1035,15 +1180,6 @@ wts_sort_blue_j(gs_wts_screen_enum_j_t *wsej)
     return 0;
 }
 
-int
-wts_sort_blue(gs_wts_screen_enum_t *wse)
-{
-    if (wse->t == WTS_SCREEN_J)
-	return wts_sort_blue_j((gs_wts_screen_enum_j_t *)wse);
-    else
-	return -1;
-}
-
 private wts_screen_t *
 wts_screen_from_enum_j(const gs_wts_screen_enum_t *wse)
 {
@@ -1054,8 +1190,9 @@ wts_screen_from_enum_j(const gs_wts_screen_enum_t *wse)
     int i;
 
     wsj = malloc(sizeof(wts_screen_j_t));
-    wsj->base.cell_width = wsej->width;
-    wsj->base.cell_height = wsej->height;
+    wsj->base.type = WTS_SCREEN_J;
+    wsj->base.cell_width = wsej->base.width;
+    wsj->base.cell_height = wsej->base.height;
     size = wsj->base.cell_width * wsj->base.cell_height;
     wsj->base.cell_shift = wsej->wcpj->shift;
     wsj->pa = floor(wsej->wcpj->pa * (1 << 16) + 0.5);
@@ -1080,10 +1217,45 @@ wts_screen_from_enum_j(const gs_wts_screen_enum_t *wse)
     return &wsj->base;
 }
 
+private wts_screen_t *
+wts_screen_from_enum_h(const gs_wts_screen_enum_t *wse)
+{
+    const gs_wts_screen_enum_h_t *wseh = (const gs_wts_screen_enum_h_t *)wse;
+    wts_screen_h_t *wsh;
+    wts_screen_sample_t *samples;
+    int size;
+    int i;
+
+    /* factor some of this out into a common init routine? */
+    wsh = malloc(sizeof(wts_screen_h_t));
+    wsh->base.type = WTS_SCREEN_H;
+    wsh->base.cell_width = wseh->base.width;
+    wsh->base.cell_height = wseh->base.height;
+    size = wsh->base.cell_width * wsh->base.cell_height;
+    wsh->base.cell_shift = 0;
+    wsh->px = wseh->wcph->px;
+    wsh->py = wseh->wcph->py;
+    wsh->x1 = wseh->wcph->x1;
+    wsh->y1 = wseh->wcph->y1;
+
+    samples = malloc(sizeof(wts_screen_sample_t) * size);
+    wsh->base.samples = samples;
+    for (i = 0; i < size; i++) {
+	samples[i] = wseh->base.cell[i] >> WTS_EXTRA_SORT_BITS;
+    }
+
+    return &wsh->base;
+}
+
 wts_screen_t *
 wts_screen_from_enum(const gs_wts_screen_enum_t *wse)
 {
-    return wts_screen_from_enum_j(wse);
+    if (wse->t == WTS_SCREEN_J)
+	return wts_screen_from_enum_j(wse);
+    else if (wse->t == WTS_SCREEN_H)
+	return wts_screen_from_enum_h(wse);
+    else
+	return NULL;
 }
 
 void
@@ -1103,6 +1275,11 @@ private int
 dump_thresh(const wts_screen_t *ws, int width, int height)
 {
     int x, y;
+    wts_screen_sample_t *s0;
+    int dummy;
+
+    wts_get_samples(ws, 0, 0, &s0, &dummy);
+
 
     printf("P5\n%d %d\n255\n", width, height);
     for (y = 0; y < height; y++) {
@@ -1113,7 +1290,10 @@ dump_thresh(const wts_screen_t *ws, int width, int height)
 	    wts_get_samples(ws, x, y, &samples, &n_samples);
 #if 1
 	    for (i = 0; x + i < width && i < n_samples; i++)
-		fputc(samples[i] >> 8, stdout);
+		fputc(samples[i] >> 7, stdout);
+#else
+	    printf("(%d, %d): %d samples at %d\n",
+		   x, y, n_samples, samples - s0);
 #endif
 	    x += n_samples;
 	}
@@ -1137,14 +1317,18 @@ main (int argc, char **argv)
     mat.yx = 0;
     mat.yy = yres / 72.0;
 
-    h.frequency = 175;
-    h.angle = 30;
+    h.frequency = 121;
+    h.angle = 45;
 
     wcp = wts_pick_cell_size(&h, &mat);
     dlprintf2("cell size = %d x %d\n", wcp->width, wcp->height);
     wse = gs_wts_screen_enum_new(wcp);
     wts_run_enum_squaredot(wse);
+#if 1
     wts_sort_blue(wse);
+#else
+    wts_sort_cell(wse);
+#endif
     ws = wts_screen_from_enum(wse);
 
     dump_thresh(ws, 512, 512);
