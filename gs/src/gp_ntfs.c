@@ -274,11 +274,11 @@ uint gp_file_name_root(const char *fname, uint len)
     if (len == 0)
 	return 0;
     if (len > 1 && fname[0] == '\\' && fname[1] == '\\') {
-	/* A network path: "//server/share/" */
+	/* A network path: "\\server\share\" */
 	int k = 0;
 
 	for (i = 2; i < len; i++)
-	    if (fname[i] == '\\')
+	    if (fname[i] == '\\' || fname[i] == '/')
 		if (k++) {
 		    i++;
 		    break;
