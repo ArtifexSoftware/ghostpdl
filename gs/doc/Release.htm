@@ -558,18 +558,22 @@ directory, store the following files:
 </pre></blockquote>
 
 <li>Third-party libraries, as links (upload these if not installed), where
-<b><tt>$$$</tt></b> et al refer to the version number of the library (which
-must be consistent with the values of <b><tt>JVERSION</tt></b> and
-<b><tt>PVERSION</tt></b> in the makefiles):
+<b><tt>$$$</tt></b> et al. refer to the version number of the library, which
+should be the latest compatible release of the library and must be consistent
+with the values of <b><tt>JVERSION</tt></b> and <b><tt>PVERSION</tt></b> in 
+the makefiles:
 
 <blockquote><pre>
-<b><tt>ghostscript-#.##jpeg.tar.gz</tt></b> -> <b><tt>../../3rdparty/jpegsrc.v$$.tar.gz</tt></b>
-<b><tt>ghostscript-#.##libpng.tar.gz</tt></b> -> <b><tt>../../3rdparty/libpng-$.$.$.tar.gz</tt></b>
-<b><tt>ghostscript-#.##zlib.tar.gz</tt></b> -> <b><tt>../../3rdparty/zlib-$.$.$.tar.gz</tt></b>
+<b><tt>jpegsrc.v$$.tar.gz</tt></b> -> <b><tt>../../3rdparty/jpegsrc.v$$.tar.gz</tt></b>
+<b><tt>libpng-$.$.$.tar.gz</tt></b> -> <b><tt>../../3rdparty/libpng-$.$.$.tar.gz</tt></b>
+<b><tt>zlib-$.$.$.tar.gz</tt></b> -> <b><tt>../../3rdparty/zlib-$.$.$.tar.gz</tt></b>
 <b><tt>jpegsr$$.zip</tt></b> -> <b><tt>../../3rdparty/jpegsr$$.zip</tt></b>
 <b><tt>lpng$$$.zip</tt></b> -> <b><tt>../../3rdparty/lpng$$$.zip</tt></b>
 <b><tt>zlib$$$.zip</tt></b> -> <b><tt>../../3rdparty/zlib$$$.zip</tt></b>
 </pre></blockquote>
+
+In any case, the names of the links in the distribution directory should reflect
+the original name of the upstream file.
 
 <li>Fonts, where <b><tt>$.$$</tt></b> refers to the most recent version
 number of the fonts:
@@ -594,7 +598,8 @@ To: gs-announce
 </pre></blockquote>
 
 <p>
-Edit the Web pages on the Wisconsin server to reflect the new release.
+Edit the Web pages in cvs and commit to reflect the new release.
+The Wisconsin server should update automatically.
 
 <h2><a name="After_releasing"></a>After releasing</h2>
 
