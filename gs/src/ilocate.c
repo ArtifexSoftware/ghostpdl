@@ -317,13 +317,14 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 	gs_ptr_type_t ptype;
 
 	if (proc != gs_no_struct_enum_ptrs)
-	    for (; (ptype = (*proc) (pre + 1, size, index, &eptr, pre->o_type, NULL)) != 0; ++index)
+	    for (; (ptype = (*proc) (pre + 1, size, index, &eptr, pre->o_type, NULL)) != 0; ++index) {
 		if (eptr.ptr == 0)
 		    DO_NOTHING;
 		else if (ptype == ptr_struct_type)
 		    ialloc_validate_object(eptr.ptr, NULL, gcst);
 		else if (ptype == ptr_ref_type)
 		    ialloc_validate_ref_packed(eptr.ptr, gcst);
+	    }
     }
     END_OBJECTS_SCAN
 }
