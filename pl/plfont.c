@@ -516,7 +516,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	plfont->storage = src->storage;
 	plfont->header_size = src->header_size;
 	plfont->scaling_technology = src->scaling_technology;
-        plfont->is_xl_format = plfont->is_xl_format;
+        plfont->is_xl_format = src->is_xl_format;
 	plfont->font_type = src->font_type;
 	plfont->char_width = src->char_width;
 	plfont->char_metrics = src->char_metrics;
