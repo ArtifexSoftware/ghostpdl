@@ -291,7 +291,7 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
 		"ttfFont__Open");
 	if (tti->usage == NULL)
 	    return fMemoryError;
-	tti->usage_size = this->nMaxComponents;
+	tti->usage_size = this->nMaxComponents * MAX_SUBGLYPH_NESTING;
     }
     this->face = mem->alloc_struct(mem, (const ttfMemoryDescriptor *)&st_TFace, "ttfFont__Open");
     if (this->face == NULL)
