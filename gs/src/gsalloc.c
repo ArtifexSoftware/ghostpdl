@@ -606,15 +606,22 @@ i_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
     gs_memory_type_ptr_t pstype = pp->o_type;
     ulong old_size = pre_obj_contents_size(pp);
     ulong new_size = (ulong) pstype->ssize * new_num_elements;
-    ulong new_size_rounded;
-    void *new_obj;
+    void *new_obj = NULL;
+    ulong new_size_rounded = obj_align_round(new_size);
 
+    if (obj_align_round(old_size) == new_size_rounded)
+	return obj;
     if ((byte *)obj + obj_align_round(old_size) == imem->cc.cbot &&
-	imem->cc.ctop - (byte *)obj >=
-	  (new_size_rounded = obj_align_round(new_size))
-	) {
+	imem->cc.ctop - (byte *)obj >= new_size_rounded ) {
 	imem->cc.cbot = (byte *)obj + new_size_rounded;
 	pp->o_size = new_size;
+	new_obj = obj;
+    } else /* try and trim the object -- but only if room for a dummy header */
+	if (new_size_rounded + sizeof(obj_header_t) <= obj_align_round(old_size)) {
+	    trim_obj(mem, (obj_header_t *)obj, (uint)new_size_rounded);
+	    new_obj = obj;
+	}
+    if (new_obj) {
 	if_debug8('A', "[a%d:%c%c ]%s %s(%lu=>%lu) 0x%lx\n",
 		  imem->space,
 		  (new_size > old_size ? '>' : '<'),
@@ -622,7 +629,7 @@ i_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
 		  client_name_string(cname),
 		  struct_type_name_string(pstype),
 		  old_size, new_size, (ulong) obj);
-	return obj;
+	return new_obj;
     }
     /* Punt. */
     new_obj = gs_alloc_struct_array(mem, new_num_elements, void,
@@ -817,7 +824,9 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     byte *ptr;
 
-    if (data == imem->cc.ctop &&
+    if (old_num == new_num)	/* same size returns the same string */
+        return data;
+    if (data == imem->cc.ctop &&	/* bottom-most string */
 	(new_num < old_num ||
 	 imem->cc.ctop - imem->cc.cbot > new_num - old_num)
 	) {			/* Resize in place. */
@@ -835,15 +844,25 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
 	else
 	    gs_alloc_fill(data, gs_alloc_fill_free, old_num - new_num);
 #endif
-    } else {			/* Punt. */
-	ptr = gs_alloc_string(mem, new_num, cname);
-	if (ptr == 0)
-	    return 0;
-	memcpy(ptr, data, min(old_num, new_num));
-	gs_free_string(mem, data, old_num, cname);
-    }
+    } else
+	if( new_num < old_num) {
+	    /* trim the string and create a free space hole */
+	    ptr = data;
+	    imem->lost.strings += old_num - new_num;
+	    gs_alloc_fill(data+new_num, gs_alloc_fill_free, old_num - new_num);
+	    if_debug5('A', "[a%d:<> ]%s(%u->%u) 0x%lx\n",
+		      imem->space, client_name_string(cname),
+		      old_num, new_num, (ulong)ptr);
+        } else {			/* Punt. */
+	    ptr = gs_alloc_string(mem, new_num, cname);
+	    if (ptr == 0)
+		return 0;
+	    memcpy(ptr, data, min(old_num, new_num));
+	    gs_free_string(mem, data, old_num, cname);
+	}
     return ptr;
 }
+
 private void
 i_free_string(gs_memory_t * mem, byte * data, uint nbytes,
 	      client_name_t cname)
@@ -860,6 +879,7 @@ i_free_string(gs_memory_t * mem, byte * data, uint nbytes,
     }
     gs_alloc_fill(data, gs_alloc_fill_free, nbytes);
 }
+
 
 private void
 i_status(gs_memory_t * mem, gs_memory_status_t * pstat)
@@ -1533,29 +1553,6 @@ chunk_locate_ptr(const void *ptr, chunk_locator_t * clp)
 #ifdef DEBUG
 
 #include "string_.h"
-
-/*
- * Define the options for a memory dump.  These may be or'ed together.
- */
-typedef enum {
-    dump_do_default = 0,	/* pro forma */
-    dump_do_strings = 1,
-    dump_do_type_addresses = 2,
-    dump_do_no_types = 4,
-    dump_do_pointers = 8,
-    dump_do_pointed_strings = 16,	/* only if do_pointers also set */
-    dump_do_contents = 32,
-    dump_do_marks = 64
-} dump_options_t;
-
-/*
- * Define all the parameters controlling what gets dumped.
- */
-typedef struct dump_control_s {
-    dump_options_t options;
-    const byte *bottom;
-    const byte *top;
-} dump_control_t;
 
 inline private bool
 obj_in_control_region(const void *obot, const void *otop,
