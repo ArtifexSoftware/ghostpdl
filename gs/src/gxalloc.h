@@ -386,6 +386,7 @@ struct gs_ref_memory_s {
     struct alloc_save_s *reloc_saved;	/* for GC */
     gs_memory_status_t previous_status;		/* total allocated & used */
 				/* in outer save levels */
+    uint largest_free_size;	/* largest (aligned) size on large block list */
     /* We put the freelists last to keep the scalar offsets small. */
     obj_header_t *freelists[num_freelists];
 };

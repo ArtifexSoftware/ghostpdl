@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -977,6 +977,8 @@ combine_space(gs_ref_memory_t * mem)
 		*(obj_header_t **) list = olist;
 	    }
 	}
+	if (omem->largest_free_size > mem->largest_free_size)
+	    mem->largest_free_size = omem->largest_free_size;
     }
     gs_free_object((gs_memory_t *) mem, saved, "combine_space(saved)");
     alloc_open_chunk(mem);

@@ -330,6 +330,7 @@ ialloc_reset_free(gs_ref_memory_t * mem)
     mem->cfreed.cp = 0;
     for (i = 0, p = &mem->freelists[0]; i < num_freelists; i++, p++)
 	*p = 0;
+    mem->largest_free_size = 0;
 }
 
 /* Set the allocation limit after a change in one or more of */
@@ -764,12 +765,17 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	 */
 	imem->cfreed.memory = imem;
 	if (chunk_locate(ptr, &imem->cfreed)) {
-	    obj_header_t **pfl =
-		(size > max_freelist_size ?
-		 &imem->freelists[LARGE_FREELIST_INDEX] :
-		 &imem->freelists[(size + obj_align_mask) >> log2_obj_align_mod]);
+	    obj_header_t **pfl;
 
-	    /* keep track of higest object on a freelist */
+	    if (size > max_freelist_size) {
+		pfl = &imem->freelists[LARGE_FREELIST_INDEX];
+		if (rounded_size > imem->largest_free_size)
+		    imem->largest_free_size = rounded_size;
+	    } else {
+		pfl = &imem->freelists[(size + obj_align_mask) >>
+				      log2_obj_align_mod];
+	    }
+	    /* keep track of highest object on a freelist */
 	    if ((byte *)pp >= imem->cc.int_freed_top)
 		imem->cc.int_freed_top = (byte *)ptr + rounded_size;
 	    pp->o_type = &st_free;	/* don't confuse GC */
@@ -990,6 +996,10 @@ large_freelist_alloc(gs_ref_memory_t *mem, uint size)
     uint best_fit_size = max_uint;
     obj_header_t *pfree;
     obj_header_t **ppfprev = &mem->freelists[LARGE_FREELIST_INDEX];
+    uint largest_size = 0;
+
+    if (aligned_size > mem->largest_free_size)
+	return 0;		/* definitely no block large enough */
 
     while ((pfree = *ppfprev) != 0) {
 	uint free_size = obj_align_round(pfree[-1].o_size);
@@ -1004,9 +1014,18 @@ large_freelist_alloc(gs_ref_memory_t *mem, uint size)
 		break;	/* good enough fit to spare scan of entire list */
 	}
 	ppfprev = (obj_header_t **) pfree;
+	if (free_size > largest_size)
+	    largest_size = free_size;
     }
-    if (best_fit == 0)
-	return 0;   /* no single free chunk is large enough */
+    if (best_fit == 0) {
+	/*
+	 * No single free chunk is large enough, but since we scanned the
+	 * entire list, we now have an accurate updated value for
+	 * largest_free_size.
+	 */
+	mem->largest_free_size = largest_size;
+	return 0;
+    }
 
     /* Remove from freelist & return excess memory to free */
     *best_fit_prev = *(obj_header_t **)best_fit;
@@ -1352,8 +1371,13 @@ trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size, chunk_t *cp)
 	if (excess_size <= max_freelist_size)
 	    pfl = &mem->freelists[(excess_size + obj_align_mask) >>
 				 log2_obj_align_mod];
-	else
+	else {
+	    uint rounded_size = obj_align_round(excess_size);
+
 	    pfl = &mem->freelists[LARGE_FREELIST_INDEX];
+	    if (rounded_size > mem->largest_free_size)
+		mem->largest_free_size = rounded_size;
+	}
 	*(obj_header_t **) (excess_pre + 1) = *pfl;
 	*pfl = excess_pre + 1;
 	mem->cfreed.memory = mem;
@@ -1418,9 +1442,17 @@ alloc_link_chunk(chunk_t * cp, gs_ref_memory_t * imem)
     chunk_t *icp;
     chunk_t *prev;
 
-    for (icp = imem->cfirst; icp != 0 && PTR_GE(cdata, icp->ctop);
-	 icp = icp->cnext
-	);
+    /*
+     * Allocators tend to allocate in either ascending or descending
+     * address order.  The loop will handle the latter well; check for
+     * the former first.
+     */
+    if (imem->clast && PTR_GE(cdata, imem->clast->ctop))
+	icp = 0;
+    else
+	for (icp = imem->cfirst; icp != 0 && PTR_GE(cdata, icp->ctop);
+	     icp = icp->cnext
+	    );
     cp->cnext = icp;
     if (icp == 0) {		/* add at end of chain */
 	prev = imem->clast;
@@ -1660,6 +1692,9 @@ chunk_locate_ptr(const void *ptr, chunk_locator_t * clp)
 	cp = clp->memory->cfirst;
 	if (cp == 0)
 	    return false;
+	/* ptr is in the last chunk often enough to be worth checking for. */
+	if (PTR_GE(ptr, clp->memory->clast->cbase))
+	    cp = clp->memory->clast;
     }
     if (PTR_LT(ptr, cp->cbase)) {
 	do {
