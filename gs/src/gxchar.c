@@ -1411,11 +1411,11 @@ show_set_scale(const gs_show_enum * penum, gs_log2_scale_point *log2_scale)
     if ((penum->charpath_flag == cpm_show ||
 	 penum->charpath_flag == cpm_charwidth) &&
 	SHOW_USES_OUTLINE(penum) &&
-	gx_path_is_void_inline(pgs->path) &&
+	/* gx_path_is_void_inline(pgs->path) && */
     /* Oversampling rotated characters doesn't work well. */
 	is_matrix_good_for_caching(&pgs->char_tm)
 	) {
-	const gs_font_base *pfont = (gs_font_base *) pgs->font;
+	const gs_font_base *pfont = (const gs_font_base *)penum->current_font;
 	gs_fixed_point extent;
 	int code = gs_distance_transform2fixed(&pgs->char_tm,
 				  pfont->FontBBox.q.x - pfont->FontBBox.p.x,
