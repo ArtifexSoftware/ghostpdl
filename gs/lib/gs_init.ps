@@ -331,6 +331,18 @@ currentdict /hwsizedict .undef
   } for pop
 } bind def
 
+% Utility for removing all entries from a dictionary
+/.PurgeDict   % <dict> .PurgeDict -
+{ { true
+    1 index { pop exch pop false exit
+    } forall
+    { exit
+    } if
+    1 index exch undef
+  } loop
+  pop
+} bind def
+
 % Define predefined procedures substituting for operators,
 % in alphabetical order.
 
@@ -349,7 +361,9 @@ userdict /#copies 1 put
 	  .currentnumcopies 1 index .outputpage
 	  (>>copypage, press <return> to continue<<\n) .confirm
 	  dup { erasepage } if
-	} if pop .beginpage
+	} if pop
+    systemdict /..page_default_spaces .knownget { //.PurgeDict exec } if
+    .beginpage
 } odef
 /currentmatrix {
 	.currentmatrix 6 index astore pop
@@ -522,7 +536,9 @@ odef
           .fillpage
           setoverprint 0 setcolor
 	}
-	{ initgraphics } ifelse .beginpage
+	{ initgraphics } ifelse
+    systemdict /..page_default_spaces .knownget { //.PurgeDict exec } if
+    .beginpage
 } odef
 % Code output by Adobe Illustrator relies on the fact that
 % `stack' is a procedure, not an operator!!!

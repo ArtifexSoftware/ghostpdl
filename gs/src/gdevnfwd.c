@@ -750,7 +750,8 @@ gx_forward_fill_rectangle_hl_color(gx_device *dev,
 }
 
 int
-gx_forward_include_color_space(gx_device *dev, gs_color_space *cspace)
+gx_forward_include_color_space(gx_device *dev, gs_color_space *cspace, 
+	    const byte *res_name, int name_length)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
@@ -760,7 +761,7 @@ gx_forward_include_color_space(gx_device *dev, gs_color_space *cspace)
     if (tdev == 0)
 	return 0;
     else
-	return dev_proc(tdev, include_color_space)(tdev, cspace);
+	return dev_proc(tdev, include_color_space)(tdev, cspace, res_name, name_length);
 }
 
 /* ---------------- The null device(s) ---------------- */

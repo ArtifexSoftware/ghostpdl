@@ -48,6 +48,6 @@ const gs_cie_render *gs_currentcolorrendering(const gs_state *);
 int gs_setcolorrendering(gs_state *, gs_cie_render *);
 
 /* High level device support */
-int gs_includecolorspace(gs_state * pgs);
+int gs_includecolorspace(gs_state * pgs, const byte *res_name, int name_length);
 
 #endif /* gscolor2_INCLUDED */

@@ -46,23 +46,30 @@
   }
 bind def
 
+systemdict /..page_default_spaces 3 dict put
+
 % <color_space_name> ..includecolorspace -
 /..includecolorspace
 { % Only includes ones explicitly defined by the document.
-  mark exch
-  { dup /ColorSpace resourcestatus {
-      pop 0 eq {
-        gsave
-        { /ColorSpace findresource setcolorspace .includecolorspace
-        } stopped pop
-        grestore
+  systemdict /..page_default_spaces get 1 index known {
+    pop
+  } {
+    mark exch
+    { dup /ColorSpace resourcestatus {
+        pop 0 eq {
+          systemdict /..page_default_spaces get 1 index //true put
+          gsave
+          { dup /ColorSpace findresource //_setcolorspace_nosub exec .includecolorspace
+          } stopped pop
+          grestore
+        } if
       } if
-    } if
-  } stopped pop
-  cleartomark
+    } stopped pop
+    cleartomark
+  } ifelse
 } bind def
 
-% <color_space> <color_space_name> ..includecolorspace <color_space1> <color_space2>
+% <color_space> <color_space_name> cs_substitute_generic <color_space1> <color_space2>
 /cs_substitute_generic
 { .getuseciecolor
     { NOSUBSTDEVICECOLORS 

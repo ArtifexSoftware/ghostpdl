@@ -514,11 +514,11 @@ pdf_find_cspace_resource(gx_device_pdf *pdev, const byte *serialized, uint seria
  * to the ranges in *ppranges, otherwise set *ppranges to 0.
  */
 int
-pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
+pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 		const gs_range_t **ppranges,
 		const gs_color_space *pcs,
 		const pdf_color_space_names_t *pcsn,
-		bool by_name)
+		bool by_name, const byte *res_name, int name_length)
 {
     gs_color_space_index csi = gs_color_space_get_index(pcs);
     cos_array_t *pca;
@@ -557,11 +557,14 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	 */
         if (pcs->params.icc.picc_info->picc == 0 ||
 	    pdev->CompatibilityLevel < 1.3
-	    )
+	    ) {
+	    if (res_name != NULL)
+		return 0; /* Ignore .includecolorspace */
             return pdf_color_space( pdev, pvalue, ppranges,
                                     (const gs_color_space *)
                                         &pcs->params.icc.alt_space,
                                     pcsn, by_name);
+	}
         break;
     default:
 	break;
@@ -828,7 +831,6 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
      * by name rather than directly.
      */
     {
-	pdf_resource_t *pres;
 	pdf_color_space_t *ppcs;
 
 	if (code < 0 ||
@@ -837,6 +839,11 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    ) {
 	    COS_FREE(pca, "pdf_color_space");
 	    return code;
+	}
+	if (res_name != NULL) {
+	    int l = min(name_length, sizeof(pres->rname) - 1);
+	    memcpy(pres->rname, res_name, l);
+	    pres->rname[l] = 0;
 	}
 	ppcs = (pdf_color_space_t *)pres;
 	if (serialized == serialized0) {
@@ -877,6 +884,14 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     if (pres != NULL)
 	pres->where_used |= pdev->used_mask;
     return 0;
+}
+pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
+		const gs_range_t **ppranges,
+		const gs_color_space *pcs,
+		const pdf_color_space_names_t *pcsn,
+		bool by_name)
+{
+    return pdf_color_space_named(pdev, pvalue, ppranges, pcs, pcsn, by_name, NULL, 0);
 }
 
 /* ---------------- Miscellaneous ---------------- */

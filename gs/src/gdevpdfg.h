@@ -90,6 +90,11 @@ int pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 		    const gs_color_space *pcs,
 		    const pdf_color_space_names_t *pcsn,
 		    bool by_name);
+int pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
+		    const gs_range_t **ppranges,
+		    const gs_color_space *pcs,
+		    const pdf_color_space_names_t *pcsn,
+		    bool by_name, const byte *res_name, int name_length);
 
 /* Create colored and uncolored Pattern color spaces. */
 int pdf_cs_Pattern_colored(gx_device_pdf *pdev, cos_value_t *pvalue);

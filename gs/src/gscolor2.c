@@ -547,9 +547,10 @@ gx_serialize_Indexed(const gs_color_space * pcs, stream * s)
  * highly undesirable.
  * No need to call it with color spaces explicitly referred by the document,
  * because they are included automatically.
+ * res_name and name_length passes the resource name.
  */
 int
-gs_includecolorspace(gs_state * pgs)
+gs_includecolorspace(gs_state * pgs, const byte *res_name, int name_length)
 {
-    return (*dev_proc(pgs->device, include_color_space))(pgs->device, pgs->color_space);
+    return (*dev_proc(pgs->device, include_color_space))(pgs->device, pgs->color_space, res_name, name_length);
 }

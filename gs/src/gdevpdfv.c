@@ -681,11 +681,11 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     Include color space.
  */
 int
-gdev_pdf_include_color_space(gx_device *dev, gs_color_space *cspace)
+gdev_pdf_include_color_space(gx_device *dev, gs_color_space *cspace, const byte *res_name, int name_length)
 {
     gx_device_pdf * pdev = (gx_device_pdf *)dev;
     cos_value_t cs_value;
 
-    return pdf_color_space(pdev, &cs_value, NULL, cspace,
-				&pdf_color_space_names, true);
+    return pdf_color_space_named(pdev, &cs_value, NULL, cspace,
+				&pdf_color_space_names, true, res_name, name_length);
 }

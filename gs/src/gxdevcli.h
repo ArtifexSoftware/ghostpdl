@@ -1216,7 +1216,7 @@ typedef enum {
 */
 
 #define dev_t_proc_include_color_space(proc, dev_t)\
-  int proc(dev_t *dev, gs_color_space *cspace)
+  int proc(dev_t *dev, gs_color_space *cspace, const byte *res_name, int name_length)
 #define dev_proc_include_color_space(proc)\
   dev_t_proc_include_color_space(proc, gx_device)
 
