@@ -49,7 +49,7 @@
 
 
 true setglobal
-30 dict begin
+50 dict begin
 
 % ===================== Debugging =========================================
 
@@ -66,6 +66,16 @@ true setglobal
 
 /=only {
   //=string cvs print
+} bind def
+
+/HexDigits (0123456789ABCDEF) readonly def
+
+/PrintHex  % <int> PrintHex -
+{ 8 {
+    dup -28 bitshift //HexDigits exch 1 getinterval //=only exec
+    4 bitshift
+  } repeat
+  pop
 } bind def
 
 /PDFR_DEBUG DefaultSwitch
@@ -102,7 +112,7 @@ true setglobal
 
 % ===================== Work Data =========================================
 
-/BlockBuffer 4096 string def
+/BlockBuffer 65535 string def % Make it big to load entire TrueType font
 /PDFReader currentdict def
 /ObjectRegistry 50 array def % may grow later
 /CurrentObject null def
@@ -116,6 +126,7 @@ currentdict end def
 /PDFColorSpaces 50 dict def
 /FuncDataReader 10 dict def
 /InstalledFonts 50 dict def
+/MacRomanEncodingInverse null def
 
 % Debug data :
 /StreamDumperBuffer //PDFR_DEBUG { 1024 } { 1 } ifelse string def
@@ -451,11 +462,39 @@ currentdict end readonly def
     //PDFR_DEBUG {
       (Loaded the font ) print dup /FontName get =
     } if
-    dup /FontName get					% id obj fd fn
-    //PDFReader /RemoveFontNamePrefix get exec 
-    currentglobal true setglobal exch			% id obj fd g fn
-    findfont						% id obj fd g f
-    exch setglobal					% id obj fd f
+    {
+      dup /FontFileType get /Type1 eq {			% id obj fd
+	% We assume that the Type 1 font has same name with no prefix
+	% due to pdfwrite specifics.
+	% We use it to find the font after it is defined.
+	% We could redefine 'definefont' for hooking the font, 
+	% but we don't think that it could be guaranteedly portable : 
+	% a 3d party PS interpreter may set a special context 
+	% when running the font file.
+	% Note that this mechanizm does not depend on the
+	% font name uniquity, because the last 'definefont'
+	% is only important.
+	dup /FontName get				% id obj fd fn
+	//PDFReader /RemoveFontNamePrefix get exec 
+	currentglobal true setglobal exch		% id obj fd g fn
+	findfont					% id obj fd g f
+	exch setglobal					% id obj fd f
+	exit
+      } if
+      dup /FontFileType get /TrueType eq {		% id obj fd
+        //PDFReader /MakeType42 get exec
+	//PDFR_DEBUG {
+	  (Font dict <<) =
+	  dup {
+	    exch //=only exec ( ) print ==
+	  } forall
+	  (>>) =
+	} if
+	dup /FontName get exch definefont
+	exit
+      } if
+      mark (definefont_hook has no proc for ) 3 index /FontFileType get //error exec
+    } loop
     /Font exch put					% id obj
     //definefont_hook /FontDescriptor undef
   } if
@@ -501,7 +540,7 @@ currentdict end readonly def
 { % Note: an excessive operand from a prebond procedure.
   //PDFR_DEBUG {
     (Executing FontFileDaemon for ) print 2 index =
-  } if							% id obj fd
+  } if
   % We need any font resource that refers this descriptor
   % to know the font type. Assuming that FontDescriptorDaemon
   % provided FontFileType.
@@ -545,16 +584,19 @@ currentdict end readonly def
   { //PDFR_DEBUG {
       (Recognized a font descriptor.)=
     } if
-    dup /FontFile //knownget exec {			% id obj ff
-      0 get //DoNothing exch				% id obj dn id1
-      [ % <id> <obj> proc <id> <obj>
-        3 index //FontFileDaemon /exec load
-      ] cvx						% id obj {}
-      //Register exec					% id obj
-    } {
-      % FontFile2, FontFile3 are not implemented yet.
+    {
+      dup dup /FontFile known {/FontFile} {/FontFile2} ifelse 
+      //knownget exec {					% id obj ff
+        0 get //DoNothing exch				% id obj dn id1
+        [ % <id> <obj> proc <id> <obj>
+          3 index //FontFileDaemon /exec load
+        ] cvx						% id obj {}
+        //Register exec					% id obj
+        exit
+      } if
+      % FontFile3 are not implemented yet.
       (Font descriptor ) print 1 index =only ( has no FontFile.) =
-    } ifelse
+    } loop
   } bind
   /Font
   { //PDFR_DEBUG {
@@ -644,11 +686,42 @@ currentdict end readonly def
   { //PDFR_DEBUG {
       (ReadFontProcs.Type1) =
     } if
-    //definefont_hook /FontDescriptor 3 index  put
+    //definefont_hook /FontDescriptor 3 index put
     dup /ImmediateExec true put
     /GlobalExec true put
   } bind def
+  /TrueType   % <font_descriptor> <FontFile_object> Type1 <font_descriptor>
+  { //PDFR_DEBUG {
+      (ReadFontProcs.TrueType) =
+    } if
+    //definefont_hook /FontDescriptor 3 index put
+    pop
+  } bind def
 end
+
+/MakeType42 % <FontFile_object> <font_descriptor> MakeType42 <FontFile_object> <font_descriptor> <font>
+{
+  //PDFR_DEBUG {
+    (MakeType42 beg)=
+  } if
+  1 index 2 known {
+    % The font exceeds the stream buffer.
+    (Underimplemented MakeType42.) //error exec
+  } if
+  10 dict begin
+    /FontName 1 index /FontName get def
+    /FontType 42 def
+    /FontMatrix [1 0 0 1 0 0] def
+    /FontBBox 1 index /FontBBox get def
+    /CharStrings 2 index //PDFReader /MakeTTCharStrings get exec def
+    /sfnts [ 3 index 0 get ] def
+    /Encoding StandardEncoding def % A stub - will be replaced by font resource.
+    /PaintType 0 def
+  currentdict end
+  //PDFR_DEBUG {
+    (MakeType42 end)=
+  } if
+} bind def
 
 /GetInstalledFont % <name> GetInstalledFont <font>
 { currentglobal exch true setglobal				% g n
@@ -662,7 +735,7 @@ end
 } bind def
 
 /RemoveFontNamePrefix % <name> RemoveFontNamePrefix <name>
-{ =string cvs true
+{ //=string cvs true
   0 1 5 {
     2 index exch get //IsUpper exec not {
       pop false exit
@@ -845,7 +918,6 @@ end
 	} {
           //GetInstalledFont exec			% s fr f
 	} ifelse
-	(vvv)= pstack
         dup length dict copy				% s fr f
         dup 2 index /Encoding get 			% s fr f f e
         /Encoding exch put				% s fr f
@@ -894,6 +966,444 @@ end
 { currentglobal true setglobal 3 1 roll
   //ResolveAndSetFontAux exec
   setglobal
+} bind def
+
+% ===================== True Type cmap Decoder =============
+% This fragment is copied from gs/lib/gs_ttf.ps with no cnahge.
+
+% <string> <index> getu16 <integer>
+/getu16 {
+  2 copy get 8 bitshift 3 1 roll 1 add get add
+} bind def
+
+% <string> <index> gets16 <integer>
+/gets16 {
+  getu16 16#8000 xor 16#8000 sub
+} bind def
+
+% <string> <index> getu32 <integer>
+/getu32 {
+  2 copy getu16 16 bitshift 3 1 roll 2 add getu16 add
+} bind def
+
+% <string> <index> gets32 <integer>
+/gets32 {
+  2 copy gets16 16 bitshift 3 1 roll 2 add getu16 add
+} bind def
+
+% Each procedure in this dictionary is called as follows:
+%       <encodingtable> proc <glypharray>
+/cmapformats mark
+  0 {		% Apple standard 1-to-1 mapping.
+    6 256 getinterval { } forall 256 packedarray
+  } bind
+  2 {		% Apple 16bit CJK (ShiftJIS etc)
+
+    % /sHK_sz		subHeaderKey_size	% 1 * uint16
+    % /sH_sz		subHeader_size		% 4 * uint16
+    % /sH_len		subHeader_length
+    % /cmapf2_tblen	total table length
+    % /cmapf2_lang	language code (not used)
+    % /sHKs		subHeaderKeys
+
+    /sHK_sz 2 def
+    /sH_sz 8 def
+    dup 2 getu16 /cmapf2_tblen exch def
+
+    dup 4 getu16 /cmapf2_lang exch def
+
+    dup 6 256 sHK_sz mul getinterval /sHKs exch def
+
+    0		% initialization value for /sH_len
+    0 1 255 {
+       sHKs exch
+       2 mul getu16
+       1 index	% get current max
+       1 index	% get current subHeaderKey
+       lt {exch} if pop
+    } for
+    /sH_len exch def
+
+    dup 6 256 sHK_sz mul add
+    cmapf2_tblen 1 index sub getinterval
+    /sH_gIA exch def
+
+    /cmapf2_glyph_array 65535 array def
+
+    /.cmapf2_putGID {
+        /cmapf2_ch cmapf2_ch_hi 8 bitshift cmapf2_ch_lo add def
+        firstCode cmapf2_ch_lo le
+        cmapf2_ch_lo firstCode entryCount add lt
+        and { % true: j is inside
+            sH_offset idRangeOffset add		% offset to gI
+            cmapf2_ch_lo firstCode sub 2 mul	% rel. pos. in range
+            add 6 add				% offset in sH_gIA
+            sH_gIA exch getu16
+            dup 0 gt { %
+                idDelta add
+                cmapf2_glyph_array exch cmapf2_ch exch put
+            } {
+                pop
+                % cmapf2_glyph_array cmapf2_ch 0 put
+            } ifelse
+        } {   % false: j is outside
+            % cmapf2_glyph_array cmapf2_ch 0 put
+        } ifelse
+    } def
+
+    16#00 1 16#ff { % hi_byte scan
+        /cmapf2_ch_hi exch def
+        sHKs cmapf2_ch_hi sHK_sz mul getu16
+        /sH_offset exch def
+        sH_gIA sH_offset sH_sz getinterval
+            dup 0 getu16 /firstCode exch def
+            dup 2 getu16 /entryCount exch def
+            dup 4 gets16 /idDelta exch def
+            dup 6 getu16 /idRangeOffset exch def
+        pop
+        sH_offset 0 eq {
+           /cmapf2_ch_lo cmapf2_ch_hi def
+           /cmapf2_ch_hi 0 def
+           .cmapf2_putGID
+        } {
+           16#00 1 16#ff { % lo_byte scan
+               /cmapf2_ch_lo exch def
+               .cmapf2_putGID
+           } for
+        } ifelse
+     } for
+     pop
+     0 1 cmapf2_glyph_array length 1 sub { % rewrite null -> 0.
+        dup cmapf2_glyph_array exch get
+        null eq { cmapf2_glyph_array exch 0 put } {pop} ifelse
+     } for
+     cmapf2_glyph_array
+  } bind
+  4 {		% Microsoft/Adobe segmented mapping.
+    /etab exch def
+    /nseg2 etab 6 getu16 def
+    14 /endc etab 2 index nseg2 getinterval def
+		% The Apple TrueType documentation omits the 2-byte
+		% 'reserved pad' that follows the endCount vector!
+    2 add
+    nseg2 add /startc etab 2 index nseg2 getinterval def
+    nseg2 add /iddelta etab 2 index nseg2 getinterval def
+    nseg2 add /idroff etab 2 index nseg2 getinterval def
+		% The following hack allows us to properly handle
+		% idiosyncratic fonts that start at 0xf000:
+    pop
+    /firstcode startc 0 getu16 16#ff00 and dup 16#f000 ne { pop 0 } if def
+    /putglyph {
+      glyphs code 3 -1 roll put /code code 1 add def
+    } bind def
+		% Do a first pass to compute the size of the glyphs array.
+    /numcodes 0 def /glyphs 0 0 2 nseg2 3 sub {
+		% Stack: /glyphs numglyphs i2
+      /i2 exch def
+      /scode startc i2 getu16 def
+      /ecode endc i2 getu16 def
+      numcodes scode firstcode sub
+		% Hack for fonts that have only 0x0000 and 0xf000 ranges
+      %dup 16#e000 ge { 255 and } if
+      % the previous line is obstructive to CJK fonts, so it was removed
+      exch sub 0 .max ecode scode sub 1 add add
+      exch 1 index add exch
+      numcodes add /numcodes exch def
+    } for array def
+    % prefill the array with 0's faster than a { 0 putglyph } repeat
+    glyphs length 1024 ge {
+      .array1024z 0 1024 glyphs length 1023 sub { glyphs exch 2 index putinterval } for
+      glyphs dup length 1024 sub 3 -1 roll
+      putinterval
+    } {
+      0 1 glyphs length 1 sub { glyphs exch 0 put } for
+    } ifelse
+		% Now fill in the array.
+    /numcodes 0 def /code 0 def
+    0 2 nseg2 3 sub {
+      /i2 exch def
+      /scode startc i2 getu16 def
+      /ecode endc i2 getu16 def
+      numcodes scode firstcode sub
+		% Hack for fonts that have only 0x0000 and 0xf000 ranges
+      %dup 16#e000 ge { 255 and } if
+      % the previous line is obstructive to CJK fonts, so it was removed
+      exch sub 0 .max dup /code exch code exch add def
+      ecode scode sub 1 add add numcodes add /numcodes exch def
+      /delta iddelta i2 gets16 def
+      TTFDEBUG {
+	(scode=) print scode =only
+	( ecode=) print ecode =only
+	( delta=) print delta =only
+	( droff=) print idroff i2 getu16 =
+      } if
+      idroff i2 getu16 dup 0 eq {
+	pop scode delta add 65535 and 1 ecode delta add 65535 and
+	{ putglyph } for
+      } {	% The +2 is for the 'reserved pad'.
+        /gloff exch 14 nseg2 3 mul add 2 add i2 add add def
+        0 1 ecode scode sub {
+	  2 mul gloff add etab exch getu16
+	  dup 0 ne { delta add 65535 and } if putglyph
+	} for
+      } ifelse
+    } for glyphs /glyphs null def	% for GC
+  } bind
+  6 {		% Single interval lookup.
+    dup 6 getu16 /firstcode exch def dup 8 getu16 /ng exch def
+    firstcode ng add array
+		% Stack: tab array
+		% Fill elements 0 .. firstcode-1 with 0
+    0 1 firstcode 1 sub { 2 copy 0 put pop } for
+    dup firstcode ng getinterval
+		% Stack: tab array subarray
+		% Fill elements firstcode .. firstcode+nvalue-1 with glyph values
+    0 1 ng 1 sub {
+      dup 2 mul 10 add 4 index exch getu16 3 copy put pop pop
+    } for pop exch pop
+  } bind
+.dicttomark readonly def                % cmapformats
+
+% <cmaptab> cmaparray <glypharray>
+/cmaparray {
+  dup 0 getu16 cmapformats exch .knownget {
+    TTFDEBUG {
+      (cmap: format ) print 1 index 0 getu16 = flush
+    } if exec
+  } {
+    (Can't handle format ) print 0 getu16 = flush
+    0 1 255 { } for 256 packedarray
+  } ifelse
+  TTFDEBUG {
+    (cmap: length=) print dup length = dup ==
+  } if
+} bind def
+
+% ===================== True Type Interpretation =============
+
+/TTParser <<
+  /Pos 0
+>> def
+
+/readu8   % <file> readu8 <int>
+{ read not {
+    mark (Insufficient data in the stream.) //error exec
+  } if
+} bind def
+
+/readu16   % <file> readu16 <int>
+{ dup //readu8 exec 8 bitshift exch //readu8 exec or
+} bind def
+
+/reads16   % <file> reads16 <int>
+{ //readu16 exec 16#8000 xor 16#8000 sub
+} bind def
+
+/readu32   % <file> readu32 <int>
+{ dup //readu16 exec 16 bitshift exch //readu16 exec or
+} bind def
+
+/reads32   % <file> reads32 <int>
+{ dup //reads16 exec 16 bitshift exch //readu16 exec or
+} bind def
+
+/SkipToPosition % <file> <int> SkipToPosition -
+{ dup //TTParser /Pos get				% f P P p
+  exch //TTParser exch /Pos exch put			% f P p
+  sub							% f P-p
+  //PDFR_DEBUG {
+    (Skipping ) print dup //=only exec ( bytes.) =
+  } if
+  dup 0 eq {
+    pop pop
+  } {
+    //BlockBuffer exch 0 exch getinterval readstring not {
+      mark (Insufficient data in the stream for SkipToPosition.) //error exec
+    } if						% s
+    pop							%
+  } ifelse
+} bind def
+
+/TagBuffer 4 string def
+
+/ParseTTTableDirectory  % <file> ParseTTTableDirectory <dict>
+{ //PDFR_DEBUG {
+    (ParseTTTableDirectory beg) =
+  } if
+  15 dict begin
+    dup //readu32 exec 16#00010000 ne {
+      mark (Unknown True Type version.) //error exec
+    } if
+    dup //readu16 exec /NumTables exch def
+    dup //readu16 exec /SearchRange exch def
+    dup //readu16 exec /EntrySelector exch def
+    dup //readu16 exec /RangeShift exch def
+    //PDFR_DEBUG {
+      (NumTables = ) print NumTables =
+    } if
+    NumTables {
+      dup //TagBuffer readstring not {
+        mark (Could not read TT tag.) //error exec
+      } if
+      cvn
+      [ 2 index //readu32 exec pop % CheckSum
+        2 index //readu32 exec  % Offset
+        3 index //readu32 exec  % Length
+      ]
+      //PDFR_DEBUG {
+	2 copy exch //=only exec ( ) print ==
+      } if
+      def
+    } repeat
+    pop  % file
+    //TTParser /Pos 12 NumTables 16 mul add put
+  currentdict end
+  //PDFR_DEBUG {
+    (ParseTTTableDirectory end) =
+  } if
+} bind def
+
+/ParseTTcmapHeader  % <file> <TableDirectory> ParseTTcmapHeader <dict>
+{ //PDFR_DEBUG {
+    (ParseTTcmapHeader beg) =
+  } if
+  /cmap get aload pop					% f o L
+  3 1 roll						% L f o
+  //PDFR_DEBUG {
+    (Current position = ) print //TTParser /Pos get =
+    (cmap position = ) print dup =
+  } if
+  1 index exch //SkipToPosition exec			% L f
+  5 dict begin
+    //TTParser /Pos get /TablePos exch def
+    dup //readu16 exec pop % version
+    dup //readu16 exec /NumEncodings exch def
+    //PDFR_DEBUG {
+      (NumEncodings = ) print NumEncodings =
+    } if
+    null						% L f null
+    NumEncodings {
+      1 index //readu32 exec % platformID, specificID   % L f null id
+      2 index //readu32 exec % offset			% L f null id o
+      2 array dup 3 2 roll 0 exch put			% L f []|null id []
+      2 index null ne {
+        dup 0 get 3 index 0 get sub			% L f []|null id [] l
+	3 index exch 1 exch put				% L f []|null id []
+      } if
+      dup 4 3 roll pop 3 1 roll				% L f [] id []
+      def
+    } repeat						% L f []
+    dup 0 get						% L f [] o
+    4 3 roll exch sub					% f [] L-o
+    1 exch put						% f
+    pop							%
+    //PDFR_DEBUG {
+      currentdict {
+        exch dup type /integertype eq {
+	  //PrintHex exec ( ) print ==
+	} {
+	  pop pop
+	} ifelse
+      } forall
+    } if
+    4 NumEncodings 8 mul add /HeaderLength exch def
+    //TTParser /Pos //TTParser /Pos get HeaderLength add put
+  currentdict end
+  //PDFR_DEBUG {
+    (ParseTTcmapHeader end) =
+  } if
+} bind def
+
+/GetTTEncoding   % <file> <TTcmapHeader> <platformIDspecificID> GetTTEncoding <array>
+{ //PDFR_DEBUG {
+    (GetTTEncoding beg)=
+  } if
+  1 index exch get					% f c []
+  aload pop						% f c o l
+  3 2 roll /TablePos get				% f o l p
+  3 2 roll add						% f l p+o
+  2 index exch //SkipToPosition exec			% f l
+  //BlockBuffer exch 0 exch getinterval			% f s
+  readstring not {
+    mark (Insufficient data in the stream for GetTTEncoding.) //error exec
+  } if							% s
+  10 dict begin % For local variables.
+    /TTFDEBUG //PDFR_DEBUG def
+    //cmaparray exec
+  end
+  //PDFR_DEBUG {
+    (GetTTEncoding end)=
+    dup ==
+  } if
+} bind def
+
+/GetMacRomanEncodingInverse
+{ //PDFReader /MacRomanEncodingInverse get 
+  dup null eq {
+    pop
+    256 dict begin
+      /MacRomanEncoding findencoding 
+      dup length 1 sub -1 0 {
+        2 copy get
+	exch def
+      } for
+      pop
+      //PDFReader /MacRomanEncodingInverse currentdict put
+    currentdict end
+  } if
+} bind def
+
+/ComposeCharStrings % <cmaparray> <dict> ComposeCharStrings <dict>
+{ 1 index length 1 add dict begin				% cmap d
+  /.notdef 0 def
+  {							% cmap name code
+    dup 3 index length lt {				% cmap name code
+      2 index exch get					% cmap name glyphindex
+      dup 0 ne {
+        def						% cmap
+      } {
+        pop pop
+      } ifelse
+    } {
+      pop pop						% cmap
+    } ifelse
+  } forall
+  pop							%
+  currentdict end
+} bind def
+
+/MakeTTCharStrings % <FontFile_object> MakeTTCharStrings <CharStrings>
+{ //MakeStreamReader exec				% f
+  dup dup //ParseTTTableDirectory exec			% f f d
+  //ParseTTcmapHeader exec				% f ch
+  {
+    dup 16#00030001 known {
+      //PDFR_DEBUG {
+        (Using the TT cmap encoding for Windows Unicode.) =
+      } if
+      16#00030001 //GetTTEncoding exec
+      AdobeGlyphList //ComposeCharStrings exec
+      exit
+    } if
+    dup 16#00010000 known {
+      //PDFR_DEBUG {
+        (Using the TT cmap encoding for Macintosh Roman.) =
+      } if
+      16#00010000 //GetTTEncoding exec 
+      //GetMacRomanEncodingInverse exec
+      //ComposeCharStrings exec
+      exit
+    } if
+    % Must process 'post' here (with another stream reader).
+    mark (True Type cmap has no useful encodings.) //error exec
+  } loop
+  //PDFR_DEBUG {
+    (CharStrings <<) =
+    dup {
+      exch //=only exec ( ) print ==
+    } forall
+    (>>) =
+  } if
 } bind def
 
 % ===================== Functions ============================
