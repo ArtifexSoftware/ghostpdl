@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.7 2002/07/01 19:34:31 raph Exp $
+    $Id: jbig2_text.c,v 1.8 2002/07/03 00:08:40 giles Exp $
 */
 
 #include <stddef.h>
@@ -144,7 +144,9 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     } else {
         code = jbig2_arith_int_decode(IADT, as, &STRIPT);
     }
+#ifdef DEBUG
     fprintf(stderr, "decoded stript value %d (scale to %d)\n", STRIPT, -STRIPT*params->SBSTRIPS);
+#endif
     /* 6.4.5 (2) */
     STRIPT *= -(params->SBSTRIPS);
     FIRSTS = 0;
@@ -160,10 +162,11 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         }
         DT *= params->SBSTRIPS;
         STRIPT += DT;
+#ifdef DEBUG
         fprintf(stderr, "decoded DT = %d, STRIPT = %d\n", DT, STRIPT);
-        
+#endif        
 	first_symbol = TRUE;
-	/* (3c) */
+	/* 6.4.5 (3c) - decode symbols in strip */
 	for (;;) {
 	    /* (3c.i) */
 	    if (first_symbol) {
@@ -176,23 +179,29 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		FIRSTS += DFS;
 		CURS = FIRSTS;
 		first_symbol = FALSE;
+#ifdef DEBUG
             fprintf(stderr, "decoded DFS = %d (first symbol) CURS = %d\n", DFS, CURS);
+#endif
 	    } else {
-		/* (3c.ii), 6.4.8 */
+		/* (3c.ii / 6.4.8) */
 		if (params->SBHUFF) {
 		    /* todo */
 		} else {
 		    code = jbig2_arith_int_decode(IADS, as, &IDS);
 		}
 		if (code) {
+#ifdef DEBUG
 		    fprintf(stderr, "Symbol instance S coordinate OOB: End of Strip\n");
+#endif
 		    break;
 		}
 		CURS += IDS + params->SBDSOFFSET;
+#ifdef DEBUG
 		fprintf(stderr, "decoded IDS = %d, CURS = %d\n", IDS, CURS);
+#endif
 	    }
 
-	    /* (3c.iii), 6.4.9 */
+	    /* (3c.iii / 6.4.9) */
 	    if (params->SBSTRIPS == 1) {
 		CURT = 0;
 	    } else if (params->SBHUFF) {
@@ -201,9 +210,10 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		code = jbig2_arith_int_decode(IAIT, as, &CURT);
 	    }
 	    T = STRIPT + CURT;
+#ifdef DEBUG
 	    fprintf(stderr, "decoded CURT = %d, STRIPT = %d, T = %d\n", CURT, STRIPT, T);
-
-	    /* (3b.iv) / 6.4.10 decode the symbol id */
+#endif
+	    /* (3b.iv / 6.4.10) decode the symbol id */
 	    if (params->SBHUFF) {
 		/* todo */
 	    } else {
@@ -213,8 +223,9 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
                     "symbol id out of range! (%d/%d)", ID, max_id);
 	    }
+#ifdef DEBUG
 	    fprintf(stderr, "decoded symbol id = %d (code = %d)\n", ID, code);
-
+#endif
 	    /* (3c.v) look up the symbol bitmap IB */
 	    {
 		int id = ID;
@@ -245,10 +256,10 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		}
 	    } else { /* TRANSPOSED */
 		switch (params->REFCORNER) {
-		case JBIG2_CORNER_TOPLEFT: x = S; y = T; break;
-		case JBIG2_CORNER_TOPRIGHT: x = S - IB->width + 1; y = T; break;
-		case JBIG2_CORNER_BOTTOMLEFT: x = S; y = T - IB->height + 1; break;
-		case JBIG2_CORNER_BOTTOMRIGHT: x = S - IB->width + 1; y = T - IB->height + 1; break;
+		case JBIG2_CORNER_TOPLEFT: y = T; x = T; break;
+		case JBIG2_CORNER_TOPRIGHT: y = S - IB->width + 1; x = T; break;
+		case JBIG2_CORNER_BOTTOMLEFT: y = S; x = T - IB->height + 1; break;
+		case JBIG2_CORNER_BOTTOMRIGHT: y = S - IB->width + 1; x = T - IB->height + 1; break;
 		}
 	    }
         
@@ -269,7 +280,9 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	    /* (3c.xi) */
 	    NINSTANCES++;
 	}
+        /* end strip */
     }
+    /* 6.4.5 (4) */
     
     return 0;
 }
@@ -392,6 +405,9 @@ jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_d
 
     /* todo: check errors */
 
+    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, 
+        "composing %dx%d decoded text region onto page at (%d, %d)",
+        region_info.width, region_info.height, region_info.x, region_info.y);
     jbig2_image_compose(ctx, page_image, image, region_info.x, region_info.y, JBIG2_COMPOSE_OR);
     if (image != page_image)
         jbig2_image_free(ctx, image);
