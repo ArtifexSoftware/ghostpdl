@@ -118,6 +118,10 @@ pcl_gsave(
     if (pids == 0)
         return e_Memory;
 
+    pids->pht = 0; 
+    pids->pcrd = 0;
+    pids->pccolor = 0;
+
     if ((code = gs_gsave(pcs->pgs)) >= 0) {
         pids->prev = pcs->pids->prev;
         pcs->pids->prev = pids;
@@ -138,7 +142,7 @@ pcl_grestore(
     pcl_gstate_ids_t *  pids = pcs->pids->prev;
     int                 code = 0;
     /* check for bottom of graphic state stack */
-    if (pids == 0)
+    if (pcs == 0 || pcs->pids == 0 || pids == 0)
         return e_Range;
     if ((code = gs_grestore(pcs->pgs)) >= 0) {
         pcs->pids->prev = pids->prev;
