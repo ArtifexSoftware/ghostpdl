@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.14 2002/07/09 09:38:37 giles Exp $
+    $Id: jbig2_text.c,v 1.15 2002/07/13 00:32:43 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -85,7 +85,8 @@ typedef struct {
  *
  * returns: 0 on success
  **/
-int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
+static int
+jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                              const Jbig2TextRegionParams *params,
                              const Jbig2SymbolDict **dicts, const int n_dicts,
                              Jbig2Image *image,
