@@ -95,8 +95,8 @@ Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
         return NULL;
     }
     /* read size. we must find two decimal numbers representing
-       the image dimensions. done will index whether we're
-       looking for the width of the height and i will be our
+       the image dimensions. 'done' will index whether we're
+       looking for the width or the height and 'i' will be our
        array index for copying strings into our buffer */
     done = 0;
     i = 0;
