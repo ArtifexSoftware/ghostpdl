@@ -35,6 +35,13 @@ C_=-c
 I_=-I
 II=-I
 _I=
+
+# Define the syntax for compile command line defines
+# such as defining XYZZY to 0-1: 	 $(D_)XYZZY$(_D_)0-1$(_D)
+D_=-D
+_D_=$(NULL)=
+_D=
+
 # There should be a <space> at the end of the definition of O_,
 # but we have to work around the fact that some `make' programs
 # drop trailing spaces in macro definitions.
