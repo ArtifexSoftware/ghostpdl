@@ -1,4 +1,4 @@
-%    Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -35,10 +35,10 @@
       FDepVector 1 index get
       dup type /dicttype ne {
 	dup /CIDFont resourcestatus {
-	  pop pop /CIDFont findresource
+	  pop pop /CIDFont
 	} {
-	  /Font findresource
-	} ifelse
+	  /Font
+	} ifelse findresource
       } if
       exch CMap /FontMatrices get dup length 2 index gt {
 	exch get dup null eq { pop } { makefont } ifelse
@@ -49,7 +49,7 @@
     /FMapType 9 def
     /FontMatrix matrix def
     /FontName 3 index def
-    /CMap load /WMode .knownget { /WMode exch def } if
+    CMap /WMode .knownget { /WMode exch def } if
     /FontType 0 def
   pop pop currentdict end /Font defineresource
 } bind odef
@@ -58,76 +58,92 @@
 
 40 dict begin
 
-% Our internal .CodeMaps structure is an array of two arrays: array 0
-% is the map for defined characters, array 1 is the map for notdefs.
-% Both are multi-level arrays indexed by the successive bytes of the
-% character code.  Each value is either a sub-array, null, a character name,
-% a CID (an integer), or a character code (expressed as a byte string).
-% .FontIndices is a similar array holding the corresponding usefont values,
-% except that if the only font index is 0, the .FontIndices element is 0.
+% Our internal .CodeMapData structure closely mirrors the structures
+% defined in gxfcmap.h (q.v.).  () indicate a string, [] indicate an array,
+% ? indicates a Boolean, # indicates an integer, {} for grouping.
+%	[[(first) (last) ...]		% code space ranges
+%	 [(prefix) (key_size,?is_range,value_type,value_size) (keys...)
+%	   {(values...) | [value ...]}
+%	   {#font_index | (font_indices...)}	% code mappings
+%	  ...]
+%	 <<same>>		% notdef mappings
+%	]
 % FontMatrices is the array of matrices defined by begin/endusematrix.
 % All of the arrays and strings are read-only after they have been built.
 %
 % Note that the code in zfcmap.c that constructs the C structures from
 % the PostScript structures has intimate knowledge of the above format.
 
+% ****** NOTE: The code currently only handles "well-behaved" CMaps:
+%	- CID values only (no bfchars), 16-bit
+%	- Entries (both code space and map) must be sorted
+%	- Only the last byte must vary in each map range, except for
+%	the identity mapping
+
 % ------ Font-level operators ------ %
 
 /begincmap {		% - begincmap -
-  /.CodeMaps [256 array 256 array] def
-  /.FontIndices [0 0] def
+  /.CodeMapData [[] [] []] def
   /FontMatrices [] def
   /.FontIndex 0 def
+  /.TempMaps [20 dict 50 dict 50 dict] def
 } bind def
 /endcmap {		% - endcmap -
-  /.CodeMaps .CodeMaps .endmap def
-  /.FontIndices .FontIndices .endmap def
+  10 dict begin 0 1 2 {
+    /i exch def
+		% Append data from .TempMaps to .CodeMapData.
+    /t .TempMaps i get def
+    .CodeMapData i get length t { exch pop length add } forall
+    array /a exch def
+    a 0 .CodeMapData i get .putmore
+    0 1 t length 1 sub {
+      t exch get .putmore
+    } for pop pop
+    .CodeMapData i a put
+  } for end
+  currentdict /.TempMaps undef
+  /.CodeMapData .CodeMapData .endmap def
   /FontMatrices FontMatrices .endmap def
   /CodeMap null def		% for .buildcmap
-  currentdict end .buildcmap begin
+  currentdict end
+ .buildcmap begin
 } bind def
 
-/begincodespacerange {	% <count> begincodespacerange -
-  pop mark
-} bind def
-/endcodespacerange {	% <code_lo> <code_hi> ... endcodespacerange -
-  counttomark 2 idiv {
-    .CodeMaps { 3 copy .addcodespacerange pop } forall pop pop
-  } repeat pop
+/.putmore {		% <array> <i> <array2> .putmore <array> <i+len(array2)>
+  3 copy putinterval length add
 } bind def
 
-/.addcodespacerange {	% <code_lo> <code_hi> <map> .addcodespacerange -
-  2 index length 1 eq
-    { 2 { 3 -1 roll 0 get } repeat 1 exch
-       { 2 copy 0 put pop } for pop
-    }
-    { 2 index 0 get 1 3 index 0 get
-      6 -2 roll
-      2 { 1 1 index length 1 sub getinterval 6 1 roll } repeat
-		% Stack: lo hi map lo0 1 hi0
-       { 2 copy get null eq { 2 copy 256 array put } if
-         4 copy get .addcodespacerange pop
-       }
-      for pop pop pop
-    }
-  ifelse
-} bind def
 /.endmap {		% <map> .endmap <map>
   dup type /arraytype eq {
 	% This might be a shared read-only array inherited via usecmap.
 	% Don't try to update its elements if this is the case.
     dup wcheck {
-      dup { .endmap exch } forall astore readonly
+      0 1 2 index length 1 sub {
+	2 copy 2 copy get .endmap put pop
+      } for readonly
     } if
   } {
     dup type /stringtype eq { readonly } if
   } ifelse
 } bind def
 
+/.appendmap {		% -mark- <elt> ... <array#> .appendmap -
+  .TempMaps exch get counttomark 1 add 1 roll
+  ] 1 index length exch put
+} bind def
+
+/begincodespacerange {	% <count> begincodespacerange -
+  pop mark
+} bind def
+/endcodespacerange {	% <code_lo> <code_hi> ... endcodespacerange -
+  0 .appendmap
+} bind def
+
 /usecmap {		% <CMap_name> usecmap -
   /CMap findresource
-  dup /.CodeMaps get dup length array copy /.CodeMaps exch def
-  /.FontIndices get /.FontIndices exch def
+		% Copy the top level of .CodeMapData
+  /.CodeMapData .CodeMapData copyarray def
+  /FontMatrices FontMatrices copyarray def
 } bind def
 
 /usefont {		% <fontID> usefont -
@@ -159,6 +175,8 @@
 } bind def
 
 % ------ Character name/code selector operators ------ %
+
+% ****** THIS SECTION NOT UPDATED ******
 
 /beginbfchar {		% <count> beginbfchar -
   pop mark
@@ -198,82 +216,81 @@
   pop mark
 } bind def
 /endcidchar {		% <code> <cid> ... endcidchar -
-  .endmapchar
+  1 .endmapchars
 } bind def
 
 /begincidrange {	% <count> begincidrange -
   pop mark
 } bind def
 /endcidrange {		% <code_lo> <code_hi> <cid_base> ... endcidrange -
-  counttomark 3 idiv {
-    counttomark -3 roll		% process in correct order
-    { 1 add } .addcharrange
-  } repeat pop
+  1 .endmapranges
 } bind def
 
-/.endmapchar {		% -mark- <code> <value> ... .endmapchar -
+/.endmapchars {		% -mark- <code> <cid> ... <map#> .endmapchars -
+  counttomark 1 add 1 roll
   counttomark 2 idiv {
     counttomark -2 roll		% process in correct order
-    1 index exch { } .addcharrange
+		% Construct prefix, params, key, value, font_index
+    <00 00 00 02> ()	% params, key
+    4 -1 roll .endmapvalue
   } repeat pop
+  counttomark 2 add -1 roll .appendmap
 } bind def
 
-/.addcharrange {	% <code_lo> <code_hi> <value_base> <next_proc>
-			%   .addcharrange -
-  0 .putmaprange
+/.endmapranges {	% -mark- <code_lo> <code_hi> <cid_base> ... <map#>
+			%   .endmapranges -
+  2 dict begin /merge false def
+  counttomark 1 add 1 roll
+  counttomark 3 idiv {
+    counttomark -3 roll		% process in correct order
+		% Construct prefix, params, key_lo, key_hi, value, font_index
+    3 1 roll dup length 1 eq {
+      exch 0 get exch 0 get 1 exch {
+		% Stack: cid code
+        1 string dup 0 4 -1 roll put	% prefix
+	<00 00 00 02> ()	% params, keys
+	3 index .endmapvalue
+	6 -1 roll 1 add
+      } for pop
+      /merge false def
+    } {
+		% Hack: handle 16-bit single-range mappings specially.
+      counttomark 3 eq 1 index length 2 eq and {
+	() 3 1 roll	% prefix
+	<02 01 00 02>	% params
+	3 1 roll	% keys
+	concatstrings 4 -1 roll .endmapvalue
+	/merge false def
+      } {
+	exch dup dup length 1 sub 0 exch getinterval	% prefix
+	<01 01 00 02>	% params
+	3 -1 roll dup length 1 sub 1 getinterval	% key_lo
+	4 -1 roll dup length 1 sub 1 getinterval	% key_hi
+	concatstrings 4 -1 roll .endmapvalue
+		% See if we can merge with the previous value.
+		% Stack: prefix params keys value fontindex
+	merge {
+	  4 index 10 index eq 1 index 7 index eq and {
+	    pop 4 2 roll pop pop
+		% Stack: prefix params keys value fontindex keys2 value2
+	    5 -1 roll 3 -1 roll concatstrings
+		% Stack: prefix params value fontindex value2 keys'
+	    4 -1 roll 3 -1 roll concatstrings
+		% Stack: prefix params fontindex keys' values'
+	    3 -1 roll
+	  } if
+	} if
+	/merge true def
+      } ifelse
+    } ifelse
+  } repeat
+  counttomark 2 add -1 roll .appendmap end
 } bind def
 
-/.putmaprange	 {	% <code_lo> <code_hi> <value_base> <next_proc> <0|1>
-			%   .putmaprange -
-  5 1 roll
-		% Most CMaps don't involve multiple fonts.
-		% For this reason, we create .FontIndices lazily.
-  .FontIndices 5 index get 0 eq .FontIndex 0 ne and {
-		% Create .FontIndices now.
-    .CodeMaps 5 index get .makecodespace
-      .FontIndices 6 index 3 -1 roll put
-  } if
-  .FontIndices 5 index get 0 ne {
-    3 index 3 index .FontIndex { } .FontIndices 9 index get .addmaprange
-      .FontIndices 7 index 3 -1 roll put pop
-  } if
-  .CodeMaps 5 index get .addmaprange
-    .CodeMaps 3 index 3 -1 roll put pop
-  pop
-} bind def
-/.makecodespace {	% <array|other> .makecodespace -
-  dup type /arraytype eq {
-    [ exch { .makecodespace } forall ]
-  } {
-    pop 0
-  } ifelse
-} bind def
-
-/.addmaprange {		% <code_lo> <code_hi> <value_base> <next_proc> <map>
-			%   .addmaprange <value_next> <map>
-	% We may be updating a (partly) read-only map from another CMap.
-	% If so, implement copy-on-write.
-   dup wcheck not { dup length array copy } if
-   4 index length 1 eq
-    { 2 { 5 -1 roll 0 get } repeat 1 exch
-       {	% Stack: value proc map code
-	 2 copy 5 index put pop
-	 3 -1 roll 2 index exec 3 1 roll
-       } for
-    }
-    { 4 index 0 get 1 5 index 0 get
-      8 -2 roll
-      2 { 1 1 index length 1 sub getinterval 8 1 roll } repeat
-		% Stack: lo hi next proc map lo0 1 hi0
-       { 6 copy get .addmaprange
-		% Stack: lo hi oldnext proc map i next submap
-	 exch 6 1 roll 5 -1 roll pop
-		% Stack: lo hi next proc map i submap
-	 3 copy put pop pop
-       }
-      for 5 -2 roll pop pop
-    }
-   ifelse exch pop
+/.endmapvalue {		% <cid> .endmapvalue (hi,lo) .FontIndex
+  2 string dup 0 3 index -8 bitshift put	% value
+  dup 1 4 -1 roll 255 and put
+  .FontIndex		% font_index
 } bind def
 
 % ------ notdef operators ------ %
@@ -282,24 +299,14 @@
   pop mark
 } bind def
 /endnotdefchar {	% <code> <cid> ... endnotdefchar -
-  counttomark 2 idiv {
-    counttomark -2 roll		% process in correct order
-    1 index exch .addnotdefrange
-  } repeat pop
+  2 .endmapchars
 } bind def
 
 /beginnotdefrange {	% <count> beginnotdefrange -
   pop mark
 } bind def
 /endnotdefrange {	% <code_lo> <code_hi> <cid> ... endnotdefrange -
-  counttomark 3 idiv {
-    counttomark -3 roll		% process in correct order
-    .addnotdefrange
-  } repeat pop
-} bind def
-
-/.addnotdefrange {	% <code_lo> <code_hi> <cid_base> .addnotdefrange -
-  { } 1 .putmaprange
+  2 .endmapranges
 } bind def
 
 % ---------------- Resource category definition ---------------- %

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,7 +28,7 @@
 /* Define the abstract type for a CMap. */
 #ifndef gs_cmap_DEFINED
 #  define gs_cmap_DEFINED
-typedef struct gs_cmap_s gs_cmap;
+typedef struct gs_cmap_s gs_cmap_t;
 #endif
 
 /* ---------------- Procedural interface ---------------- */
@@ -39,8 +39,8 @@ typedef struct gs_cmap_s gs_cmap;
  * number of bytes in the code, or an error.  For undefined characters,
  * we return CID 0.
  */
-int gs_cmap_decode_next(P6(const gs_cmap * pcmap, const gs_const_string * str,
-			   uint * pindex, uint * pfidx,
-			   gs_char * pchr, gs_glyph * pglyph));
+int gs_cmap_decode_next(P6(const gs_cmap_t *pcmap, const gs_const_string *str,
+			   uint *pindex, uint *pfidx,
+			   gs_char *pchr, gs_glyph *pglyph));
 
 #endif /* gsfcmap_INCLUDED */

@@ -55,25 +55,10 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Version6.20"></a>Version 6.20 (2000-04-06)</h1>
+<h1><a name="Version6.21"></a>Version 6.21 (2000-xx-xx)</h1>
 
 <p>
-This fileset includes the first steps towards bringing the pdfwrite driver
-closer to matching Acrobat Distiller 4.  Highlights:
-
-<ul>
-
-<li> Reimplementation of CIDFontType 0 support in C rather than PostScript;
-
-<li> Parsing (but not functional implementation) of nearly all the Acrobat
-Distiller 4 parameters;
-
-<li> Implementation of AutoRotatePages and DCTEncode filtering in the PDF
-writer;
-
-<li> A PDF linearizer ("optimizer").
-
-</ul>
+xxxxxxx
 
 <p>
 All problems registered on SourceForge numbered 103963 or lower are closed,
@@ -84,55 +69,10 @@ except for the following: 101549, 101814, 101829, 101905, 101955, 102046,
 
 <h2><a name="6.20_Incompatible_changes"></a>Incompatible changes</h2>
 
-(Procedures)
-	- The default value of FPU_TYPE in all Windows and OS/2 makefiles
-is now 387 rather than 0.
-	- The process for reporting problems has changed significantly.
-(PDF writer)
-	- The Cos procedures no longer take the device as an argument,
-except for object-creating procedures, which now take the device rather
-than an allocator.
-	- The is_object member of Cos values is replaced by value_type.
-Clients must use COS_VALUE_IS_OBJECT() to test whether a value is an object
-reference.
-	- The Cos procedures that take C strings no longer copy the string.
-	- The argument of cos_write_object is no longer const.
-(Drivers)
-	- The default BufferSpace for printer drivers is now 4 Mb.
-	- Device halftone order implementations must now provide a new
-bit_index procedure.
-	- The image argument for psdf_setup_image_filters is changed from
-gs_image_t to gs_pixel_image_t.
-	- The font-related psdf_ procedures are renamed psf_.
-(Streams)
-	- The interface to the [T]BCP filters is now in a separate file,
-sbcp.h.
-(PDF interpreter)
-	- The internal beginpage procedure is renamed dictbeginpage, and
-now takes a dictionary argument.
-(Interpreter)
-	- The argument list for the internal build_gs_TrueType_font
-procedure has changed.
-	- The zcharstring_glyph_outline procedure is renamed
-zchar1_glyph_outline.
-	- The Instances dictionary of resources is renamed .Instances.
 (Library)
-	- ImageType 4 images now give an error if a MaskColor value is out
-of the range of possible sample values.
-	- The definition of gs_param_key_t, the key type returned by
-parameter list enumeration, is changed.
-	- Implementors of parameter lists must now call gs_param_list_init
-to initialize the common members.
-	- st_indexed_map is now private.  Clients allocating instances of
-this structure must now call alloc_indexed_map.
-	- Setting a transfer map as the identity mapping now requires
-calling gx_set_identity_transfer.
-	- gs_cid_system_info is renamed gs_cid_system_info_t.
-	- The get_outline procedure of a Type 42 or Type 11 (CIDFontType 0)
-font now returns 1 if the string was newly allocated and can be freed by the
-client.
-	- The procs member of gs_type1_data is now an in-line structure
-rather than a pointer to a const structure.
+	- The internal representation of CMaps is changed completely.
+	- gs_cmap is renamed gs_cmap_t; gx_code_map is renamed
+gx_code_map_t.
 
 </pre>
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1992, 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -44,7 +44,7 @@
 #include "store.h"
 
 /* Imported from zfcmap.c */
-int ztype0_get_cmap(P4(const gs_cmap ** ppcmap, const ref * pfdepvector,
+int ztype0_get_cmap(P4(const gs_cmap_t ** ppcmap, const ref * pfdepvector,
 		       const ref * op, gs_memory_t *imem));
 
 /* Forward references */

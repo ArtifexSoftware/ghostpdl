@@ -1317,10 +1317,11 @@ $(PSD)cmapread.dev : $(INT_MAK) $(ECHOGS_XE) $(cmapread_)\
 	$(ADDMOD) $(PSD)cmapread -oper zfcmap
 	$(ADDMOD) $(PSD)cmapread -ps gs_cmap
 
-$(PSOBJ)zfcmap.$(OBJ) : $(PSSRC)zfcmap.c $(OP)\
+$(PSOBJ)zfcmap.$(OBJ) : $(PSSRC)zfcmap.c $(OP) $(memory__h)\
  $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\
  $(gxfcmap_h) $(gxfont_h)\
- $(ialloc_h) $(iddict_h) $(idparam_h) $(ifont_h) $(iname_h) $(store_h)
+ $(ialloc_h) $(icid_h) $(iddict_h) $(idparam_h) $(ifont_h) $(iname_h)\
+ $(store_h)
 	$(PSCC) $(PSO_)zfcmap.$(OBJ) $(C_) $(PSSRC)zfcmap.c
 
 cidread_=$(PSOBJ)zcid.$(OBJ) $(PSOBJ)zfcid.$(OBJ) $(PSOBJ)zfcid0.$(OBJ) $(PSOBJ)zfcid1.$(OBJ)
