@@ -43,6 +43,7 @@
 <li><a href="#Display_devices">Display devices</a>
 <ul>
 <li><a href="#x11_devices">X Window System</a>
+<li><a href="#display_device">display device (MS Windows, OS/2, gtk+)</a>
 </ul>
 <li><a href="#IJS">IJS - Inkjet and other raster devices</a>
 <li><a href="#Rinkj">Rinkj - Resplendent inkjet driver</a>
@@ -608,6 +609,52 @@ it to RGB for display. It's intended for testing only.
 <dt><b>x11gray4</b>
 <dd>This is a device for 4 bpp (16-level) monochrome displays.
 </dl>
+
+<h3><a name="display_device"></a>display device (MS Windows, OS/2, gtk+)</h3>
+<p>
+The <b><tt>display</tt></b> device is used by the MS Windows, 
+OS/2 and the gtk+ versions of ghostscript.
+</p>
+
+<h4>Options</h4>
+
+<p>The display device has several user settable options.</p>
+
+<blockquote>
+<dl>
+<dt><b><tt>-dDisplayFormat=</tt></b><b><em>N</em></b> (integer bit-field)
+<dd>Some common values are 16#30804 for Windows RGB, 16#804 for gtk+ RGB,
+16#20101 for Windows monochrome, 16#102 for gtk+ monochrome, 
+16#20802 grayscale, 16#20808 for CMYK, 16#a0800 for separations.
+The bit fields are
+<ul>
+<li> native (1), gray (2), RGB (4), CMYK (8), or separation (80000) 
+  color spaces.
+<li> unused first byte (40) or last byte (80).
+<li> 1 (100), 4 (400), or 8 (800) bits/component.
+<li> bigendian (00000 = RGB) or littleendian (10000 = BGR) order.
+<li> top first (20000) or bottom first (00000) raster.
+<li> 16 bits/pixel with 555 (00000) or 565 (40000) bitfields.
+</ul>
+For more details, see the <a href="API.htm#display">Ghostscript 
+Interpreter API.</a>
+</dl>
+
+</blockquote>
+
+When using the separation color space, the following options may be set
+using setpagedevice, as described in the PostScript Language Reference:
+
+<blockquote>
+<dl>
+<dt><b><tt>SeparationColorNames</tt></b>
+<dd>An array giving the names of the spot colors
+
+<dt><b><tt>SeparationOrder</tt></b>
+<dd>An array giving the names and order of the colorants 
+to be output.
+</dl>
+</blockquote>
 
 
 <hr>

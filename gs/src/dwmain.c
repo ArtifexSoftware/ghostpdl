@@ -226,6 +226,22 @@ static int display_update(void *handle, void *device,
     return poll();
 }
 
+int display_separation(void *handle, void *device, 
+   int comp_num, const char *name,
+   unsigned short c, unsigned short m,
+   unsigned short y, unsigned short k)
+{
+    IMAGE *img;
+#ifdef DISPLAY_DEBUG
+    fprintf(stdout, "display_separation(0x%x, 0x%x, %d '%s' %d,%d,%d,%d)\n", 
+	handle, device, comp_num, name, (int)c, (int)m, (int)y, (int)k);
+#endif
+    img = image_find(handle, device);
+    if (img)
+        image_separation(img, comp_num, name, c, m, y, k);
+    return 0;
+}
+
 display_callback display = { 
     sizeof(display_callback),
     DISPLAY_VERSION_MAJOR,
@@ -239,7 +255,8 @@ display_callback display = {
     display_page,
     display_update,
     NULL,	/* memalloc */
-    NULL	/* memfree */
+    NULL,	/* memfree */
+    display_separation
 };
 
 

@@ -44,6 +44,8 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "idisp.h"
+#include "gdevdevn.h"
+#include "gsequivc.h"
 #include "gdevdsp.h"
 #include "gdevdsp2.h"
 

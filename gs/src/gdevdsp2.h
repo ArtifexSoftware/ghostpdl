@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 2001-2004, Ghostgum Software Pty Ltd.  All rights reserved.
 
    This software is provided AS-IS with no warranty, either express or
    implied.
@@ -28,7 +28,9 @@ typedef struct gx_device_display_s gx_device_display;
 	void *pHandle;\
 	int nFormat;\
 	void *pBitmap;\
-	unsigned long ulBitmapSize
+	unsigned long ulBitmapSize;\
+        gs_devn_params devn_params;\
+        equivalent_cmyk_color_params equiv_cmyk_colors
 
 /* The device descriptor */
 struct gx_device_display_s {

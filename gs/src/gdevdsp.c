@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 2001-2004, Ghostgum Software Pty Ltd.  All rights reserved.
 
    This software is provided AS-IS with no warranty, either express or
    implied.
@@ -50,6 +50,8 @@
 
 #include "gdevpccm.h"		/* 4-bit PC color */
 #include "gxdevmem.h"
+#include "gdevdevn.h"
+#include "gsequivc.h"
 #include "gdevdsp.h"
 #include "gdevdsp2.h"
 
@@ -85,6 +87,13 @@ private dev_proc_get_bits(display_get_bits);
 private dev_proc_get_params(display_get_params);
 private dev_proc_put_params(display_put_params);
 private dev_proc_finish_copydevice(display_finish_copydevice);
+
+private dev_proc_get_color_mapping_procs(display_separation_get_color_mapping_procs);
+private dev_proc_get_color_comp_index(display_separation_get_color_comp_index);
+private dev_proc_encode_color(display_separation_encode_color);
+private dev_proc_decode_color(display_separation_decode_color);
+private dev_proc_update_spot_equivalent_colors(display_update_spot_equivalent_colors);
+
 
 private const gx_device_procs display_procs =
 {
@@ -137,18 +146,34 @@ private const gx_device_procs display_procs =
     NULL,				/* end_transparency_group */
     NULL,				/* begin_transparency_mask */
     NULL,				/* end_transparency_mask */
-    NULL				/* discard_transparency_layer */
+    NULL,				/* discard_transparency_layer */
+    NULL,				/* get_color_mapping_procs */
+    NULL,				/* get_color_comp_index */
+    NULL,           			/* encode_color */
+    NULL,           			/* decode_color */
+    NULL,                          	/* pattern_manage */
+    NULL,				/* fill_rectangle_hl_color */\
+    NULL,				/* include_color_space */\
+    NULL,				/* fill_linear_color_scanline */\
+    NULL,				/* fill_linear_color_trapezoid */\
+    NULL,				/* fill_linear_color_triangle */\
+    display_update_spot_equivalent_colors /* update_spot_equivalent_colors */
 };
 
 /* GC descriptor */
 public_st_device_display();
 
 private 
-ENUM_PTRS_WITH(display_enum_ptrs, gx_device_display *ddev) return 0;
-    case 0: 
+ENUM_PTRS_WITH(display_enum_ptrs, gx_device_display *ddev)
+    if (index == 0) {
 	if (ddev->mdev) {
 	    return ENUM_OBJ(gx_device_enum_ptr((gx_device *)ddev->mdev));
 	}
+	return 0;
+    }
+    else if (index-1 < ddev->devn_params.separations.num_separations)
+        ENUM_RETURN(ddev->devn_params.separations.names[index-1]);
+    else
 	return 0;
 ENUM_PTRS_END
 
@@ -157,6 +182,11 @@ RELOC_PTRS_WITH(display_reloc_ptrs, gx_device_display *ddev)
     if (ddev->mdev) {
 	ddev->mdev = (gx_device_memory *)
 	    gx_device_reloc_ptr((gx_device *)ddev->mdev, gcst);
+    }
+    {   int i;
+        for (i = 0; i < ddev->devn_params.separations.num_separations; ++i) {
+            RELOC_PTR(gx_device_display, devn_params.separations.names[i]);
+        }
     }
 RELOC_PTRS_END
 
@@ -174,6 +204,17 @@ const gx_device_display gs_display_device =
     0,				/* nFormat */
     NULL,			/* pBitmap */
     0, 				/* ulBitmapSize */
+
+    {    /* devn_params specific parameters */
+      8,        /* Bits per color - must match ncomp, depth, etc. */
+      DeviceCMYKComponents,     /* Names of color model colorants */
+      4,                        /* Number of colorants for CMYK */
+      0,                        /* MaxSeparations has not been specified */
+      {0},                      /* SeparationNames */
+      {0},                      /* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 } /* Initial component SeparationOrder */
+    },
+    { true }                   /* equivalent CMYK colors for spot colors */
 };
 
 
@@ -183,6 +224,7 @@ private int display_check_structure(gx_device_display *dev);
 private void display_free_bitmap(gx_device_display * dev);
 private int display_alloc_bitmap(gx_device_display *, gx_device *);
 private int display_set_color_format(gx_device_display *dev, int nFormat);
+private int display_set_separations(gx_device_display *dev);
 
 /* Open the display driver. */
 private int
@@ -260,6 +302,8 @@ display_sync_output(gx_device * dev)
     gx_device_display *ddev = (gx_device_display *) dev;
     if (ddev->callback == NULL)
 	return 0;
+    display_set_separations(ddev);
+
     (*(ddev->callback->display_sync))(ddev->pHandle, dev);
     return (0);
 }
@@ -273,6 +317,7 @@ display_output_page(gx_device * dev, int copies, int flush)
     int code;
     if (ddev->callback == NULL)
 	return 0;
+    display_set_separations(ddev);
 
     code = (*(ddev->callback->display_page))
 			(ddev->pHandle, dev, copies, flush);
@@ -695,12 +740,16 @@ private int
 display_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
-    int code = gx_default_get_params(dev, plist);
+    int code;
+
+    code = gx_default_get_params(dev, plist);
     (void)(code < 0 ||
 	(code = param_write_long(plist, 
 	    "DisplayHandle", (long *)(&ddev->pHandle))) < 0 ||
 	(code = param_write_int(plist, 
-	    "DisplayFormat", &ddev->nFormat)) < 0 );
+	    "DisplayFormat", &ddev->nFormat)) < 0 ||
+	(code = devn_get_params(dev, plist, &ddev->devn_params, 
+		&ddev->equiv_cmyk_colors)) < 0);
     return code;
 }
 
@@ -720,6 +769,13 @@ display_put_params(gx_device * dev, gs_param_list * plist)
     int old_height = dev->height;
     int old_format = ddev->nFormat;
     void *old_handle = ddev->pHandle;
+
+    gs_devn_params *pdevn_params = &ddev->devn_params;
+    equivalent_cmyk_color_params *pequiv_colors = &ddev->equiv_cmyk_colors;
+    /* Save current data in case we have a problem */
+    gx_device_color_info save_info = dev->color_info;
+    gs_devn_params saved_devn_params = *pdevn_params;
+    equivalent_cmyk_color_params saved_equiv_colors = *pequiv_colors;
 
     int format;
     void *handle;
@@ -769,12 +825,27 @@ display_put_params(gx_device * dev, gs_param_list * plist)
     }
 
     if (ecode >= 0) {
+	/* Use utility routine to handle devn parameters */
+	ecode = devn_put_params(dev, plist, pdevn_params, pequiv_colors);
+        /* 
+	 * Setting MaxSeparations changes color_info.depth in
+	 * devn_put_params, but we always use 64bpp,
+	 * so reset it to the the correct value.
+	 */
+	if ((ddev->nFormat & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_SEPARATION)
+	    dev->color_info.depth = sizeof(gx_color_index)*8;
+    }
+
+    if (ecode >= 0) {
 	/* Prevent gx_default_put_params from closing the device. */
 	dev->is_open = false;
 	ecode = gx_default_put_params(dev, plist);
 	dev->is_open = is_open;
     }
     if (ecode < 0) {
+	/* If we have an error then restore original data. */
+	*pdevn_params = saved_devn_params;
+	*pequiv_colors = saved_equiv_colors;
 	if (format != old_format)
 	    display_set_color_format(ddev, old_format);
 	ddev->pHandle = old_handle;
@@ -795,6 +866,8 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 	    ddev->nFormat) < 0) {
 	    /* caller won't let us change the size */
 	    /* restore parameters then return an error */
+	    *pdevn_params = saved_devn_params;
+	    *pequiv_colors = saved_equiv_colors;
 	    display_set_color_format(ddev, old_format);
 	    ddev->nFormat = old_format;
 	    ddev->pHandle = old_handle;
@@ -840,6 +913,134 @@ display_finish_copydevice(gx_device *dev, const gx_device *from_dev)
     return 0;
 }
 
+/*
+ * The following procedures are used to map the standard color spaces into
+ * the separation color components for the display device.
+ */
+private void
+display_separation_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
+{
+    int * map =
+      (int *)(&((gx_device_display *) dev)->devn_params.separation_order_map);
+
+    gray_cs_to_devn_cm(dev, map, gray, out);
+}
+
+private void
+display_separation_rgb_cs_to_cmyk_cm(gx_device * dev, 
+    const gs_imager_state *pis, frac r, frac g, frac b, frac out[])
+{
+    int * map =
+      (int *)(&((gx_device_display *) dev)->devn_params.separation_order_map);
+
+    rgb_cs_to_devn_cm(dev, map, pis, r, g, b, out);
+}
+
+private void
+display_separation_cmyk_cs_to_cmyk_cm(gx_device * dev, 
+    frac c, frac m, frac y, frac k, frac out[])
+{
+    int * map =
+      (int *)(&((gx_device_display *) dev)->devn_params.separation_order_map);
+
+    cmyk_cs_to_devn_cm(dev, map, c, m, y, k, out);
+}
+
+private const gx_cm_color_map_procs display_separation_cm_procs = {
+    display_separation_gray_cs_to_cmyk_cm, 
+    display_separation_rgb_cs_to_cmyk_cm, 
+    display_separation_cmyk_cs_to_cmyk_cm
+};
+
+private const gx_cm_color_map_procs *
+display_separation_get_color_mapping_procs(const gx_device * dev)
+{
+    return &display_separation_cm_procs;
+}
+
+
+/*
+ * Encode a list of colorant values into a gx_color_index_value.
+ */
+private gx_color_index
+display_separation_encode_color(gx_device *dev, const gx_color_value colors[])
+{
+    int bpc = ((gx_device_display *)dev)->devn_params.bitspercomponent;
+    int drop = sizeof(gx_color_value) * 8 - bpc;
+    gx_color_index color = 0;
+    int i = 0;
+    int ncomp = dev->color_info.num_components;
+
+    for (; i<ncomp; i++) {
+	color <<= bpc;
+	color |= (colors[i] >> drop);
+    }
+    if (bpc*ncomp < sizeof(gx_color_index)*8)
+	color <<= (sizeof(gx_color_index)*8 - ncomp*bpc);
+    return (color == gx_no_color_index ? color ^ 1 : color);
+}
+
+/*
+ * Decode a gx_color_index value back to a list of colorant values.
+ */
+private int
+display_separation_decode_color(gx_device * dev, gx_color_index color, 
+    gx_color_value * out)
+{
+    int bpc = ((gx_device_display *)dev)->devn_params.bitspercomponent;
+    int drop = sizeof(gx_color_value) * 8 - bpc;
+    int mask = (1 << bpc) - 1;
+    int i = 0;
+    int ncomp = dev->color_info.num_components;
+
+    if (bpc*ncomp < sizeof(gx_color_index)*8)
+	color >>= (sizeof(gx_color_index)*8 - ncomp*bpc);
+    for (; i<ncomp; i++) {
+	out[ncomp - i - 1] = (gx_color_value) ((color & mask) << drop);
+	color >>= bpc;
+    }
+    return 0;
+}
+
+/*
+ *  Device proc for updating the equivalent CMYK color for spot colors.
+ */
+private int
+display_update_spot_equivalent_colors(gx_device * dev, const gs_state * pgs)
+{
+    gx_device_display * ddev = (gx_device_display *)dev;
+
+    if ((ddev->nFormat & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_SEPARATION)
+        update_spot_equivalent_cmyk_colors(dev, pgs,
+		    &ddev->devn_params, &ddev->equiv_cmyk_colors);
+    return 0;
+}
+
+/*
+ * This routine will check to see if the color component name  match those
+ * that are available amoung the current device's color components.  
+ *
+ * Parameters:
+ *   dev - pointer to device data structure.
+ *   pname - pointer to name (zero termination not required)
+ *   nlength - length of the name
+ *
+ * This routine returns a positive value (0 to n) which is the device colorant
+ * number if the name is found.  It returns GX_DEVICE_COLOR_MAX_COMPONENTS if
+ * the colorant is not being used due to a SeparationOrder device parameter.
+ * It returns a negative value if not found.
+ */
+private int
+display_separation_get_color_comp_index(gx_device * dev, 
+    const char * pname, int name_size, int component_type)
+{
+    return devn_get_color_comp_index(dev,
+		&(((gx_device_display *)dev)->devn_params), 
+		&(((gx_device_display *)dev)->equiv_cmyk_colors), 
+		pname, name_size, component_type, ENABLE_AUTO_SPOT_COLORS);
+}
+
+
 /* ------ Internal routines ------ */
 
 /* Make sure we have been given a valid structure */
@@ -849,15 +1050,27 @@ private int display_check_structure(gx_device_display *ddev)
     if (ddev->callback == 0)
 	return_error(gs_error_rangecheck);
 
-    if (ddev->callback->size != sizeof(display_callback))
-	return_error(gs_error_rangecheck);
+    if (ddev->callback->size == sizeof(struct display_callback_v1_s)) {
+	/* Original V1 structure */
+	if (ddev->callback->version_major != DISPLAY_VERSION_MAJOR_V1)
+	    return_error(gs_error_rangecheck);
 
-    if (ddev->callback->version_major != DISPLAY_VERSION_MAJOR)
-	return_error(gs_error_rangecheck);
+	/* complain if caller asks for newer features */
+	if (ddev->callback->version_minor > DISPLAY_VERSION_MINOR_V1)
+	    return_error(gs_error_rangecheck);
+    }
+    else {
+	/* V2 structure with added display_separation callback */
+	if (ddev->callback->size != sizeof(display_callback))
+	    return_error(gs_error_rangecheck);
 
-    /* complain if caller asks for newer features */
-    if (ddev->callback->version_minor > DISPLAY_VERSION_MINOR)
-	return_error(gs_error_rangecheck);
+	if (ddev->callback->version_major != DISPLAY_VERSION_MAJOR)
+	    return_error(gs_error_rangecheck);
+
+	/* complain if caller asks for newer features */
+	if (ddev->callback->version_minor > DISPLAY_VERSION_MINOR)
+	    return_error(gs_error_rangecheck);
+    }
 
     if ((ddev->callback->display_open == NULL) ||
 	(ddev->callback->display_close == NULL) ||
@@ -867,8 +1080,10 @@ private int display_check_structure(gx_device_display *ddev)
 	(ddev->callback->display_page == NULL))
 	return_error(gs_error_rangecheck);
 
-    /* don't test display_update, display_memalloc or display_memfree
-     * since these may be NULL if not provided
+    /* Don't test display_update, display_memalloc or display_memfree
+     * since these may be NULL if not provided.
+     * Don't test display_separation, since this may be NULL if
+     * separation format is not supported.
      */
 
     return 0;
@@ -980,6 +1195,79 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     return ccode;
 }
 
+private int 
+display_set_separations(gx_device_display *dev)
+{
+    if (((dev->nFormat & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_SEPARATION) &&
+	(dev->callback->version_major > DISPLAY_VERSION_MAJOR_V1) &&
+	(dev->callback->display_separation != NULL)) {
+	/* Tell the client about the separation to composite mapping */
+	char name[64];
+	int num_spot = dev->devn_params.separations.num_separations;
+	int num_std_colorants = dev->devn_params.num_std_colorant_names;
+ 	int num_comp = num_std_colorants + num_spot;
+        int comp_map[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	int comp_num;
+	int sep_num;
+	int sep_name_size;
+	unsigned int c, m, y, k;
+
+	/* Map the separation numbers to component numbers */
+	memset(comp_map, 0, sizeof(comp_map));
+	for (sep_num = 0; sep_num < num_comp; sep_num++) {
+	    comp_num = dev->devn_params.separation_order_map[sep_num];
+	    if (comp_num >= 0 && comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS)
+		comp_map[comp_num] = sep_num;
+	}
+	/* For each component, tell the client the separation mapping */
+	for (comp_num = 0; comp_num < num_comp; comp_num++) {
+	    c = y = m = k = 0;
+	    sep_num = comp_map[comp_num];
+	    /* Get the CMYK equivalent */
+	    if (sep_num < dev->devn_params.num_std_colorant_names) {
+		sep_name_size = 
+		    strlen(dev->devn_params.std_colorant_names[sep_num]);
+		if (sep_name_size > sizeof(name)-2)
+		    sep_name_size = sizeof(name)-1;
+		memcpy(name, dev->devn_params.std_colorant_names[sep_num],
+		    sep_name_size);
+		name[sep_name_size] = '\0';
+		switch (sep_num) {
+		    case 0: c = 65535; break;
+		    case 1: m = 65535; break;
+		    case 2: y = 65535; break;
+		    case 3: k = 65535; break;
+		}
+	    }
+	    else {
+		sep_num -= dev->devn_params.num_std_colorant_names;
+		sep_name_size = 
+		    dev->devn_params.separations.names[sep_num]->size;
+		if (sep_name_size > sizeof(name)-2)
+		    sep_name_size = sizeof(name)-1;
+		memcpy(name, dev->devn_params.separations.names[sep_num]->data, 
+		    sep_name_size);
+		name[sep_name_size] = '\0';
+		if (dev->equiv_cmyk_colors.color[sep_num].color_info_valid) {
+		    c = dev->equiv_cmyk_colors.color[sep_num].c
+			   * 65535 / frac_1;
+		    m = dev->equiv_cmyk_colors.color[sep_num].m
+			   * 65535 / frac_1;
+		    y = dev->equiv_cmyk_colors.color[sep_num].y
+			   * 65535 / frac_1;
+		    k = dev->equiv_cmyk_colors.color[sep_num].k
+			   * 65535 / frac_1;
+		}
+	    }
+	    (*dev->callback->display_separation)(dev->pHandle, dev, 
+		comp_num, name, 
+		(unsigned short)c, (unsigned short)m, 
+		(unsigned short)y, (unsigned short)k);
+	}
+    }
+    return 0;
+}
+
 /*
  * This is a utility routine to build the display device's color_info
  * structure (except for the anti alias info).
@@ -1012,6 +1300,10 @@ set_color_info(gx_device_color_info * pdci, int nc, int depth, int maxgray, int 
 	    pdci->gray_index = 3;
 	    break;
 	default:
+	    /* Anything else is separations */
+	    pdci->polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+	    pdci->cm_name = "DeviceCMYK";
+	    pdci->gray_index = GX_CINFO_COMP_NO_INDEX; /* may not have K */
 	    break;
     }
 }
@@ -1210,6 +1502,22 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 	    else
 		return_error(gs_error_rangecheck);
 	    break;
+	case DISPLAY_COLORS_SEPARATION:
+	    if ((nFormat & DISPLAY_ENDIAN_MASK) != DISPLAY_BIGENDIAN)
+		return_error(gs_error_rangecheck);
+	    bpp = sizeof(gx_color_index)*8;
+	    set_color_info(&dci, bpp/bpc, bpp, maxvalue, maxvalue);
+	    if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8) {
+		ddev->devn_params.bitspercomponent = bpc;
+		set_color_procs(pdev, 
+		    display_separation_encode_color, 
+		    display_separation_decode_color,
+		    display_separation_get_color_mapping_procs,
+		    display_separation_get_color_comp_index);
+	    }
+	    else
+		return_error(gs_error_rangecheck);
+	    break;
 	default:
 	    return_error(gs_error_rangecheck);
     }
@@ -1228,6 +1536,9 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 	    break;
 	case DISPLAY_COLORS_CMYK:
 	    ddev->color_info.gray_index = 3;
+	    break;
+	case DISPLAY_COLORS_SEPARATION:
+	    ddev->color_info.gray_index = GX_CINFO_COMP_NO_INDEX;
 	    break;
     }
     ddev->nFormat = nFormat;

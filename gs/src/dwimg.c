@@ -1,4 +1,4 @@
-/* Copyright (C) 1996-2001 Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 1996-2004 Ghostgum Software Pty Ltd.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -60,14 +60,8 @@ static HPALETTE create_palette(IMAGE *img);
 static void create_window(IMAGE *img);
 
 #define M_COPY_CLIP 1
-#define M_SEP_CYAN 2
-#define M_SEP_MAGENTA 3
-#define M_SEP_YELLOW 4
-#define M_SEP_BLACK 5
-#define SEP_CYAN 8
-#define SEP_MAGENTA 4
-#define SEP_YELLOW 2
-#define SEP_BLACK 1
+#define M_DEVICEN_GRAY 2	/* show single separation as gray */
+#define M_SEPARATION 3 		/* 3 to 3+IMG_DEVICEN_MAX-1 */
 
 #define DISPLAY_ERROR (-1)	/* return this to Ghostscript on error */
 
@@ -94,7 +88,9 @@ void image_16RGB555_to_24BGR(int width, unsigned char *dest,
 void image_16RGB565_to_24BGR(int width, unsigned char *dest, 
     unsigned char *source);
 void image_32CMYK_to_24BGR(int width, unsigned char *dest, 
-    unsigned char *source, int sep);
+    unsigned char *source, IMAGE_DEVICEN *devicen, int devicen_gray);
+void image_devicen_to_24BGR(int width, unsigned char *dest, 
+    unsigned char *source, IMAGE_DEVICEN *devicen, int devicen_gray);
 
 
 /****************************************************************/
@@ -122,6 +118,7 @@ image_new(void *handle, void *device)
 {
     IMAGE *img = (IMAGE *)malloc(sizeof(IMAGE));
     if (img) {
+        memset(img, 0, sizeof(IMAGE));
 	/* remember device and handle */
 	img->handle = handle;
 	img->device = device;
@@ -164,6 +161,7 @@ int
 image_size(IMAGE *img, int new_width, int new_height, int new_raster, 
     unsigned int new_format, void *pimage)
 {
+    int i;
     img->raster = new_raster;
     img->format = new_format;
     img->image = (unsigned char *)pimage;
@@ -173,6 +171,18 @@ image_size(IMAGE *img, int new_width, int new_height, int new_raster,
     img->bmih.biWidth = new_width;
     img->bmih.biHeight = new_height;
     img->bmih.biPlanes = 1;
+
+    /* Reset separations */
+    for (i=0; i<IMAGE_DEVICEN_MAX; i++) {
+	img->devicen[i].used = 0;
+	img->devicen[i].visible = 1;
+	memset(img->devicen[i].name, 0, sizeof(img->devicen[i].name));
+	img->devicen[i].cyan = 0;
+	img->devicen[i].magenta = 0;
+	img->devicen[i].yellow = 0;
+	img->devicen[i].black = 0;
+    }
+
     switch (img->format & DISPLAY_COLORS_MASK) {
 	case DISPLAY_COLORS_NATIVE:
 	    switch (img->format & DISPLAY_DEPTH_MASK) {
@@ -259,6 +269,30 @@ image_size(IMAGE *img, int new_width, int new_height, int new_raster,
 	    img->bmih.biBitCount = 24;
 	    img->bmih.biClrUsed = 0;
 	    img->bmih.biClrImportant = 0;
+	    img->devicen[0].used = 1;
+	    img->devicen[0].cyan = 65535;
+	    /* We already know about the CMYK components */
+	    strncpy(img->devicen[0].name, "Cyan", 
+		sizeof(img->devicen[0].name));
+	    img->devicen[1].used = 1;
+	    img->devicen[1].magenta = 65535;
+	    strncpy(img->devicen[1].name, "Magenta", 
+		sizeof(img->devicen[1].name));
+	    img->devicen[2].used = 1;
+	    img->devicen[2].yellow = 65535;
+	    strncpy(img->devicen[2].name, "Yellow", 
+		sizeof(img->devicen[2].name));
+	    img->devicen[3].used = 1;
+	    img->devicen[3].black = 65535;
+	    strncpy(img->devicen[3].name, "Black", 
+		sizeof(img->devicen[3].name));
+	    break;
+	case DISPLAY_COLORS_SEPARATION:
+	    /* we can't display this natively */
+	    /* we will convert it just before displaying */
+	    img->bmih.biBitCount = 24;
+	    img->bmih.biClrUsed = 0;
+	    img->bmih.biClrImportant = 0;
 	    break;
     }
 
@@ -272,6 +306,24 @@ image_size(IMAGE *img, int new_width, int new_height, int new_raster,
 	DeleteObject(img->palette);
     img->palette = create_palette(img);
 
+    return 0;
+}
+
+int 
+image_separation(IMAGE *img,
+    int comp_num, const char *name,
+    unsigned short c, unsigned short m,
+    unsigned short y, unsigned short k)
+{
+    if ((comp_num < 0) || (comp_num > IMAGE_DEVICEN_MAX))
+	return DISPLAY_ERROR;
+    img->devicen[comp_num].used = 1;
+    strncpy(img->devicen[comp_num].name, name,
+	sizeof(img->devicen[comp_num].name)-1);
+    img->devicen[comp_num].cyan    = c;
+    img->devicen[comp_num].magenta = m;
+    img->devicen[comp_num].yellow  = y;
+    img->devicen[comp_num].black   = k;
     return 0;
 }
 
@@ -332,41 +384,58 @@ register_class(void)
 void image_separations(IMAGE *img)
 {
     char buf[64];
+    int i;
+    int exist;
+    int num_visible = 0;
     HMENU sysmenu = GetSystemMenu(img->hwnd, FALSE);
-    int exist = GetMenuString(sysmenu, M_SEP_CYAN, buf, sizeof(buf)-1, 
-		MF_BYCOMMAND) != 0;
-    if ((img->format & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_CMYK) {
-        if (!exist) {
-	    /* menus don't exist - add them */
-            img->sep = 0xf;
-	    AppendMenu(sysmenu, MF_SEPARATOR, 0, NULL);
-	    AppendMenu(sysmenu, MF_STRING | MF_CHECKED, 
-		M_SEP_CYAN, "Cyan");
-	    AppendMenu(sysmenu, MF_STRING | MF_CHECKED, 
-		M_SEP_MAGENTA, "Magenta");
-	    AppendMenu(sysmenu, MF_STRING | MF_CHECKED, 
-		M_SEP_YELLOW, "Yellow");
-	    AppendMenu(sysmenu, MF_STRING | MF_CHECKED, 
-		M_SEP_BLACK, "Black");
+    if (((img->format & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_CMYK) ||
+        ((img->format & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_SEPARATION)) {
+	/* Add menus if needed */
+	for (i=0; i<IMAGE_DEVICEN_MAX; i++) {
+	    exist = 0;
+	    if (img->devicen[i].menu)
+		exist = GetMenuString(sysmenu, M_SEPARATION+i, 
+			buf, sizeof(buf)-1, MF_BYCOMMAND) != 0;
+	    if (exist && (strcmp(img->devicen[i].name, buf) != 0)) {
+		/* remove it because name changed */
+	       RemoveMenu(sysmenu, M_SEPARATION+i, MF_BYCOMMAND);
+	       img->devicen[i].menu = 0;
+	    }
+	    if (img->devicen[i].name[0] && !img->devicen[i].menu) {
+		AppendMenu(sysmenu, MF_STRING | MF_CHECKED, 
+		    M_SEPARATION+i, img->devicen[i].name);
+		img->devicen[i].menu = 1;
+	    }
+	    if (img->devicen[i].used && img->devicen[i].visible)
+		num_visible++;
 	}
+	EnableMenuItem(sysmenu, M_DEVICEN_GRAY, 
+	    MF_BYCOMMAND | ((num_visible <= 1) ? MF_ENABLED : MF_GRAYED));
     }
     else {
-        if (exist)  {
-	    RemoveMenu(sysmenu, M_SEP_CYAN, MF_BYCOMMAND);
-	    RemoveMenu(sysmenu, M_SEP_MAGENTA, MF_BYCOMMAND);
-	    RemoveMenu(sysmenu, M_SEP_YELLOW, MF_BYCOMMAND);
-	    RemoveMenu(sysmenu, M_SEP_BLACK, MF_BYCOMMAND);
-	    /* remove separator */
-	    RemoveMenu(sysmenu, GetMenuItemCount(sysmenu)-1, MF_BYPOSITION);
+	for (i=0; i<IMAGE_DEVICEN_MAX; i++) {
+	   if (img->devicen[i].menu) {
+	       RemoveMenu(sysmenu, M_SEPARATION+i, MF_BYCOMMAND);
+	       img->devicen[i].menu = 0;
+	   }
 	}
+	EnableMenuItem(sysmenu, M_DEVICEN_GRAY, MF_BYCOMMAND | MF_GRAYED);
     }
 }
 
-void sep_menu(IMAGE *img, int menu, int mask)
+void sep_menu(IMAGE *img, int component)
 {
-    img->sep ^= mask ;
-    CheckMenuItem(GetSystemMenu(img->hwnd, FALSE), menu, MF_BYCOMMAND | 
-	((img->sep & mask) ? MF_CHECKED : MF_UNCHECKED) );
+    int i;
+    int num_visible = 0;
+    img->devicen[component].visible = !img->devicen[component].visible;
+    CheckMenuItem(GetSystemMenu(img->hwnd, FALSE), 
+	M_SEPARATION+component, 
+	(img->devicen[component].visible ? MF_CHECKED : MF_UNCHECKED));
+    for (i=0; i<IMAGE_DEVICEN_MAX; i++)
+        if (img->devicen[i].used && img->devicen[i].visible)
+	    num_visible++;
+    EnableMenuItem(GetSystemMenu(img->hwnd, FALSE), M_DEVICEN_GRAY, 
+	MF_BYCOMMAND | ((num_visible <= 1) ? MF_ENABLED : MF_GRAYED));
     InvalidateRect(img->hwnd, NULL, 0);
     UpdateWindow(img->hwnd);
 }
@@ -449,6 +518,8 @@ create_window(IMAGE *img)
     sysmenu = GetSystemMenu(img->hwnd, 0);	/* get the sysmenu */
     AppendMenu(sysmenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(sysmenu, MF_STRING, M_COPY_CLIP, "Copy to Clip&board");
+    AppendMenu(sysmenu, MF_STRING, M_DEVICEN_GRAY, "Show as Gray");
+    AppendMenu(sysmenu, MF_SEPARATOR, 0, NULL);
 
     image_separations(img);
 }
@@ -500,6 +571,7 @@ image_sync(IMAGE *img)
 	InvalidateRect(img->hwnd, NULL, 1);
 	UpdateWindow(img->hwnd);
     }
+    image_separations(img);
 }
 
 
@@ -672,27 +744,89 @@ image_16RGB565_to_24BGR(int width, unsigned char *dest, unsigned char *source)
 /* convert one line of 32CMYK to 24BGR */
 void
 image_32CMYK_to_24BGR(int width, unsigned char *dest, unsigned char *source,
-    int sep)
+    IMAGE_DEVICEN *devicen, int devicen_gray)
 {
     int i;
     int cyan, magenta, yellow, black;
+    int vc = devicen[0].visible;
+    int vm = devicen[1].visible;
+    int vy = devicen[2].visible;
+    int vk = devicen[3].visible;
+    int vall = vc && vm && vy && vk;
+    int show_gray = (vc + vm + vy + vk == 1) && devicen_gray;
     for (i=0; i<width; i++) {
 	cyan = source[0];
 	magenta = source[1];
 	yellow = source[2];
 	black = source[3];
-	if (!(sep & SEP_CYAN))
-	    cyan = 0;
-	if (!(sep & SEP_MAGENTA))
-	    magenta = 0;
-	if (!(sep & SEP_YELLOW))
-	    yellow = 0;
-	if (!(sep & SEP_BLACK))
-	    black = 0;
+	if (!vall) {
+	    if (!vc)
+		cyan = 0;
+	    if (!vm)
+		magenta = 0;
+	    if (!vy)
+		yellow = 0;
+	    if (!vk)
+		black = 0;
+	    if (show_gray) {
+		black += cyan + magenta + yellow;
+		cyan = magenta = yellow = 0;
+	    }
+	}
 	*dest++ = (255 - yellow)  * (255 - black)/255; /* blue */
 	*dest++ = (255 - magenta) * (255 - black)/255; /* green */
 	*dest++ = (255 - cyan)    * (255 - black)/255; /* red */
 	source += 4;
+    }
+}
+
+void
+image_devicen_to_24BGR(int width, unsigned char *dest, unsigned char *source, 
+    IMAGE_DEVICEN *devicen, int devicen_gray)
+{
+    int i, j;
+    int cyan, magenta, yellow, black;
+    int num_comp = 0;
+    int value;
+    int num_visible = 0;
+    int show_gray = 0;
+    for (j=0; j<IMAGE_DEVICEN_MAX; j++) {
+	if (devicen[j].used) {
+	   num_comp = j+1;
+	   if (devicen[j].visible)
+		num_visible++;
+	}
+    }
+    if ((num_visible == 1) && devicen_gray)
+	show_gray = 1;
+
+    for (i=0; i<width; i++) {
+	cyan = magenta = yellow = black = 0;
+	for (j=0; j<num_comp; j++) {
+	    if (devicen[j].visible && devicen[j].used) {
+		value = source[j];
+		if (show_gray)
+		    black += value;
+		else {
+		    cyan    += value * devicen[j].cyan    / 65535;
+		    magenta += value * devicen[j].magenta / 65535;
+		    yellow  += value * devicen[j].yellow  / 65535;
+		    black   += value * devicen[j].black / 65535;
+		}
+	    }
+	}
+	if (cyan > 255)
+	   cyan = 255;
+	if (magenta > 255)
+	   magenta = 255;
+	if (yellow > 255)
+	   yellow = 255;
+	if (black > 255)
+	   black = 255;
+	*dest++ = (255 - yellow)  * (255 - black)/255; /* blue */
+	*dest++ = (255 - magenta) * (255 - black)/255; /* green */
+	*dest++ = (255 - cyan)    * (255 - black)/255; /* red */
+	source += 8;
     }
 }
 
@@ -760,7 +894,14 @@ printf("   d=0x%x s=0x%x\n", (int)d, (int)s);
 	case DISPLAY_COLORS_CMYK:
 	    if ((img->format & DISPLAY_DEPTH_MASK) != DISPLAY_DEPTH_8)
 		return;
-	    image_32CMYK_to_24BGR(width, dest, source, img->sep);
+	    image_32CMYK_to_24BGR(width, dest, source, 
+		img->devicen, img->devicen_gray);
+	    break;
+	case DISPLAY_COLORS_SEPARATION:
+	    if ((img->format & DISPLAY_DEPTH_MASK) != DISPLAY_DEPTH_8)
+		return;
+	    image_devicen_to_24BGR(width, dest, source, 
+		img->devicen, img->devicen_gray);
 	    break;
     }
 }
@@ -954,17 +1095,16 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		    ReleaseMutex(img->hmutex);
 		return 0;
 	    }
-	    else if (LOWORD(wParam) == M_SEP_CYAN) {
-		sep_menu(img, M_SEP_CYAN, SEP_CYAN);
+	    else if ((LOWORD(wParam) >= M_SEPARATION) &&
+	             (LOWORD(wParam) < M_SEPARATION+IMAGE_DEVICEN_MAX)) {
+		sep_menu(img, LOWORD(wParam) - M_SEPARATION);
 	    }
-	    else if (LOWORD(wParam) == M_SEP_MAGENTA) {
-		sep_menu(img, M_SEP_MAGENTA, SEP_MAGENTA);
-	    }
-	    else if (LOWORD(wParam) == M_SEP_YELLOW) {
-		sep_menu(img, M_SEP_YELLOW, SEP_YELLOW);
-	    }
-	    else if (LOWORD(wParam) == M_SEP_BLACK) {
-		sep_menu(img, M_SEP_BLACK, SEP_BLACK);
+	    else if (LOWORD(wParam) == M_DEVICEN_GRAY) {
+		img->devicen_gray = !img->devicen_gray;
+		CheckMenuItem(GetSystemMenu(img->hwnd, FALSE), M_DEVICEN_GRAY, 
+		    (img->devicen_gray ? MF_CHECKED : MF_UNCHECKED));
+		InvalidateRect(img->hwnd, NULL, 0);
+		UpdateWindow(img->hwnd);
 	    }
 	    break;
 	case WM_CREATE:

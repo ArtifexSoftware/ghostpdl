@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 2001, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 1996-2004, Ghostgum Software Pty Ltd.  All rights reserved.
 
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -22,6 +22,19 @@
 
 /* Windows Image Window structure */
 
+typedef struct IMAGE_DEVICEN_S IMAGE_DEVICEN;
+struct IMAGE_DEVICEN_S {
+    int used;		/* non-zero if in use */
+    int visible;	/* show on window */
+    char name[64];
+    int cyan;
+    int magenta;
+    int yellow;
+    int black;
+    int menu;		/* non-zero if menu item added to system menu */
+};
+#define IMAGE_DEVICEN_MAX 8
+
 typedef struct IMAGE_S IMAGE;
 struct IMAGE_S {
     void *handle;
@@ -34,7 +47,8 @@ struct IMAGE_S {
     BITMAPINFOHEADER bmih;
     HPALETTE palette;
     int bytewidth;
-    int sep;		/* CMYK separations to display */
+    int devicen_gray;	/* true if a single separation should be shown gray */
+    IMAGE_DEVICEN devicen[IMAGE_DEVICEN_MAX];
 
     /* periodic redrawing */
     SYSTEMTIME update_time;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996-2001 Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 1996-2004 Ghostgum Software Pty Ltd.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -278,6 +278,21 @@ int display_memfree(void *handle, void *device, void *mem)
 }
 #endif
 
+int display_separation(void *handle, void *device, 
+   int comp_num, const char *name,
+   unsigned short c, unsigned short m,
+   unsigned short y, unsigned short k)
+{
+    IMAGE *img;
+#ifdef DISPLAY_DEBUG
+    fprintf(stdout, "display_separation(0x%x, 0x%x, %d '%s' %d,%d,%d,%d)\n", 
+	handle, device, comp_num, name, (int)c, (int)m, (int)y, (int)k);
+#endif
+    img = image_find(handle, device);
+    if (img)
+        image_separation(img, comp_num, name, c, m, y, k);
+    return 0;
+}
 
 
 display_callback display = { 
@@ -294,11 +309,12 @@ display_callback display = {
     display_update,
 #ifdef DISPLAY_DEBUG_USE_ALLOC
     display_memalloc,	/* memalloc */
-    display_memfree	/* memfree */
+    display_memfree,	/* memfree */
 #else
     NULL,	/* memalloc */
-    NULL	/* memfree */
+    NULL,	/* memfree */
 #endif
+    display_separation
 };
 
 
