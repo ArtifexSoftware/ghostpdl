@@ -24,8 +24,6 @@
 #include "vdtrace.h"
 #include <assert.h>
 
-#define FLATTENED_ITERATOR_SELFTEST 0 /* Debug purpose only. */
-
 /* ---------------- Curve flattening ---------------- */
 
 /*
@@ -179,20 +177,12 @@ curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3,
     return true;
 }
 
-#if FLATTENED_ITERATOR_SELFTEST
-private void gx_flattened_iterator__test_filtered(gx_flattened_iterator *this);
-#endif
-
 /*  Initialize the iterator. 
     Momotonic curves with non-zero length are only allowed.
  */
 bool
 gx_flattened_iterator__init(gx_flattened_iterator *this, 
-	    fixed x0, fixed y0, const curve_segment *pc, int k
-#if !DONT_FILTER_SMALL_SEGMENTS
-	    , fixed coords_near_threshold
-#endif
-	    )
+	    fixed x0, fixed y0, const curve_segment *pc, int k)
 {
     /* Note : Immediately after the ininialization it keeps an invalid (zero length) segment. */
     fixed x1, y1, x2, y2;
@@ -213,10 +203,6 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
 			     &this->ay, &this->by, &this->cy, k))
 	return false;
     this->curve = true;
-#if !DONT_FILTER_SMALL_SEGMENTS
-    this->coords_near_threshold = coords_near_threshold;
-    this->prev_filtered1_i = 0; /* stub */
-#endif
     vd_curve(this->x0, this->y0, x1, y1, x2, y2, this->x3, this->y3, 0, RGB(255, 255, 255));
     this->k = k;
 #   ifdef DEBUG
@@ -278,9 +264,6 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
     adjust_rem(this->rd2x, this->id2x, this->rmask);
     adjust_rem(this->rd2y, this->id2y, this->rmask);
 #   undef adjust_rem
-#   if FLATTENED_ITERATOR_SELFTEST
-	gx_flattened_iterator__test_filtered(this);
-#   endif
     return true;
 }
 
@@ -296,9 +279,6 @@ gx_flattened_iterator__init_line(gx_flattened_iterator *this,
     this->k = 0;
     this->i = 1;
     this->curve = false;
-#if !DONT_FILTER_SMALL_SEGMENTS
-    this->coords_near_threshold = 0;
-#endif
     return true;
 }
 
@@ -320,25 +300,9 @@ gx_flattened_iterator__print_state(gx_flattened_iterator *this)
 }
 #endif
 
-#if !DONT_FILTER_SMALL_SEGMENTS
-#if 1
-private inline bool 
-coord_near(fixed x0, fixed y0, fixed x1, fixed y1, fixed dist_inv) 
-{
-   return !(((x0 ^ x1) | (y0 ^ y1)) & dist_inv);
-}
-#else
-#define coord_near(x0, y0, x1, y1, dist) (!(((x0 ^ x1) | (y0 ^ y1)) & dist))
-#endif
-#endif
-
-
 /* Move to the next segment and store it to this->lx0, this->ly0, this->lx1, this->ly1 .
  * Return true iff there exist more segments.
  */
-#if !DONT_FILTER_SMALL_SEGMENTS
-private inline 
-#endif
 bool
 gx_flattened_iterator__next(gx_flattened_iterator *this)
 {
@@ -395,18 +359,9 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 		  (((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5) ?
 		   "add" : "skip"),
 		  fixed2float(x), fixed2float(y), x, y);
-#	if !DONT_FILTER_SMALL_SEGMENTS
-	    if (!coord_near(x, y, this->x0, this->y0, this->coords_near_threshold) ||
-		!coord_near(x, y, this->x3, this->y3, this->coords_near_threshold)) 
-#	endif
-	{
-	    this->lx1 = x, this->ly1 = y;
-	    vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
-	    return true;
-	}
-#	if !DONT_FILTER_SMALL_SEGMENTS
-	--this->i;
-#	endif
+	this->lx1 = x, this->ly1 = y;
+	vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
+	return true;
     } else {
 	--this->i;
 	if (this->i == 0)
@@ -442,35 +397,6 @@ last:
     return false;
 }
 
-#if !DONT_FILTER_SMALL_SEGMENTS
-/* Move to the next segment uniting small segments,
- * and store it to this->gx0, this->gy0, this->gx1, this->gy1 .
- * Return true iff there exist more segments.
- */
-bool
-gx_flattened_iterator__next_filtered(gx_flattened_iterator *this)
-{
-    fixed x0 = this->lx1, y0 = this->ly1;
-
-    this->gx0 = x0;
-    this->gy0 = y0;
-    this->prev_filtered1_i = this->filtered1_i;
-    for (;;) {
-	bool more = gx_flattened_iterator__next(this);
-	bool b = !coord_near(x0, y0, this->lx1, this->ly1, this->coords_near_threshold);
-
-	if (!more || !coord_near(x0, y0, this->lx1, this->ly1, this->coords_near_threshold)) {
-	    this->filtered1_i = this->i;
-	    this->gx0 = x0;
-	    this->gy0 = y0;
-	    this->gx1 = this->lx1;
-	    this->gy1 = this->ly1;
-	    return more;
-	}
-    }
-}
-#endif
-
 private inline void
 gx_flattened_iterator__unaccum(gx_flattened_iterator *this)
 {
@@ -490,9 +416,6 @@ gx_flattened_iterator__unaccum(gx_flattened_iterator *this)
  * This only works for states reached with gx_flattened_iterator__next.
  * Return true iff there exist more segments.
  */
-#if !DONT_FILTER_SMALL_SEGMENTS
-private inline 
-#endif
 bool
 gx_flattened_iterator__prev(gx_flattened_iterator *this)
 {
@@ -541,179 +464,10 @@ gx_flattened_iterator__switch_to_backscan(gx_flattened_iterator *this, bool not_
 	When scanning back, the accumulator should stand on the beginning of a segment.
 	Asuuming that at least one forward step is done.
     */
-    if (not_first) {
+    if (not_first)
 	if (this->i > 0 && this->k != 1 /* This case doesn't use the accumulator. */)
 	    gx_flattened_iterator__unaccum(this);
-#	if !DONT_FILTER_SMALL_SEGMENTS
-	    while (this->i < this->prev_filtered1_i) {
-		gx_flattened_iterator__prev(this);
-	    }
-#	endif
-    }
-#   if !DONT_FILTER_SMALL_SEGMENTS
-	this->last_filtered1_i = this->i;
-	this->filtered1_i = this->i;
-#   endif
 }
-
-#if !DONT_FILTER_SMALL_SEGMENTS
-/* Move to the previous segment uniting small segments.
- * Return true iff there exist more segments.
- */
-bool
-gx_flattened_iterator__prev_filtered(gx_flattened_iterator *this)
-{
-    /*	Stores the result to this->gx0, this->gy0, this->gx1, this->gy1 .
-	When returned, the base (unfiltered) iterator stands
-	on the segment, which's end point is the starting point
-	of the result, except for the curve end.
-	With the curve end it stands at the first unfiltered segment.
-     */
-    if (this->last_filtered1_i == 0) {
-	/* A single segment curve. */
-	this->gx0 = this->x0;
-	this->gy0 = this->y0;
-	this->gx1 = this->x3;
-	this->gy1 = this->y3;
-	this->filtered1_i = 0;
-	return false;
-    } else if (this->i < this->last_filtered1_i) {
-	/* next_filtered has an anomaly with the last but one
-	   due to possibly insufficient points to reach 
-	   !coord_near. To get a consistent state we scan 
-	   until the last_filtered1_i with 'prev'. */
-	this->filtered1_i = this->i;
-	while (this->i < this->last_filtered1_i) {
-	    gx_flattened_iterator__prev(this);
-	}
-	assert(this->i < 1 << this->k);
-	this->gx0 = this->lx1;
-	this->gy0 = this->ly1;
-	return true;
-    } else {
-	fixed x1 = this->gx0, y1 = this->gy0;
-	fixed x0 = this->lx0, y0 = this->ly0;
-
-	this->filtered1_i = this->i;
-	for (;;) {
-	    if (this->i + 1 == 1 << this->k) {
-		this->gx0 = this->lx0;
-		this->gy0 = this->ly0;
-		this->gx1 = x1;
-		this->gy1 = y1;
-		return false;
-	    }
-	    gx_flattened_iterator__prev(this);
-	    if (!coord_near(x0, y0, this->lx0, this->ly0, this->coords_near_threshold)) {
-		this->gx0 = this->lx1;
-		this->gy0 = this->ly1;
-		this->gx1 = x1;
-		this->gy1 = y1;
-		return true;
-	    }
-	}
-    }
-}
-
-#if FLATTENED_ITERATOR_SELFTEST
-
-private void
-gx_flattened_iterator__test_backscan2(gx_flattened_iterator *this, 
-	gs_fixed_point *points, gs_fixed_point *ppt, byte *skip_points, 
-	int skip_points_len, bool single_segment, bool last_segment)
-{   int i, j;
-    gx_flattened_iterator fi = *this;
-    bool more;
-    bool missed_back2 = false, extra_back2 = false;
-
-    if (single_segment) {
-	/* We stand on the last segment, there is no more. */
-	return;
-    }
-    gx_flattened_iterator__switch_to_backscan(&fi);
-    i = fi.last_filtered1_i + 1; /* fi.i counts back. */
-    if (points != NULL)
-	ppt--;
-    do {
-	more = gx_flattened_iterator__prev_filtered(&fi);
-	j = fi.filtered1_i;
-	/* The bit index corresponds to the end of a filtered segment. */
-	for (; i < j; i++) {
-	    if (i <= skip_points_len * 8 &&
-		skip_points[i >> 3] & (1 << (i & 7)))
-		assert(missed_back2);
-	}
-	if (j <= skip_points_len * 8 &&
-	    !(skip_points[j >> 3] & (1 << (j & 7))))
-	    assert(extra_back2);
-	i = j + 1;
-	if (points != NULL) {
-	    ppt--;
-	    assert(ppt >= points);
-	    assert(ppt->x == fi.gx1 && ppt->y == fi.gy1);
-	}
-    } while(more);
-    if (points != NULL)
-	assert(ppt == points);
-}
-
-private void
-gx_flattened_iterator__test_filtered(gx_flattened_iterator *this)
-{
-    /* 'this' must be just initialized. */
-    byte skip_points[(1 << k_sample_max) / 8];
-    gx_flattened_iterator fi = *this, fi1;
-    bool more, first = true, single_segment = true;
-    bool missed_forth2 = false, extra_forth2 = false;
-    int i, j;
-    gs_fixed_point points[100], *ppt = points, *ppe = ppt + count_of(points), *ppp = points;
-
-    memset(skip_points, 0, sizeof(skip_points));
-    do {
-	more = gx_flattened_iterator__next_filtered(&fi);
-	ppt->x = fi.gx1;
-	ppt->y = fi.gy1;
-	ppt++;
-    } while(more && ppt < ppe);
-    fi = *this;
-    do {
-	fixed x = fi.lx1, y = fi.ly1;
-
-	more = gx_flattened_iterator__next_filtered(&fi);
-	if (fi.i <= sizeof(skip_points) * 8)
-	    skip_points[fi.i >> 3] |= 1 << (fi.i & 7);
-	first = false;
-    } while(more);
-    fi = *this;
-    i = (1 << fi.k) - 1; /* fi.i counts back. */
-    do {
-	more = gx_flattened_iterator__next_filtered(&fi);
-	j = fi.filtered1_i;
-	/* The bit index corresponds to the end of a filtered segment. */
-	for (; i > j; i--) {
-	    if (i <= sizeof(skip_points) * 8 &&
-		skip_points[i >> 3] & (1 << (i & 7)))
-		assert(missed_forth2);
-	}
-	if (j <= sizeof(skip_points) * 8 &&
-	    !(skip_points[j >> 3] & (1 << (j & 7))))
-	    assert(extra_forth2);
-	i = j - 1;
-	if (ppt < ppe) {
-	    assert(ppp < ppt);
-	    assert(ppp->x == fi.gx1 && ppp->y == fi.gy1);
-	    ppp++;
-	}
-	gx_flattened_iterator__test_backscan2(&fi, 
-	    (ppt < ppe ? points : NULL), ppp, skip_points, 
-	    sizeof(skip_points), single_segment, !more);
-	single_segment &= !more;
-    } while(more);
-    if (ppt < ppe)
-	assert(ppp == ppt);
-}
-#endif /* FLATTENED_ITERATOR_SELFTEST */
-#endif /* !DONT_FILTER_SMALL_SEGMENTS */
 
 #define max_points 50		/* arbitrary */
 
@@ -749,11 +503,7 @@ gx_subdivide_curve_rec(gx_flattened_iterator *this,
 
 top :
     if (!gx_flattened_iterator__init(this, 
-		ppath->position.x, ppath->position.y, pc, k
-#		if !DONT_FILTER_SMALL_SEGMENTS
-		, float2fixed(-0.5)
-#		endif
-		)) {
+		ppath->position.x, ppath->position.y, pc, k)) {
 	/* Curve is too long.  Break into two pieces and recur. */
 	curve_segment cseg;
 
@@ -773,15 +523,9 @@ top :
 	bool more;
 
 	for(;;) {
-#	    if !DONT_FILTER_SMALL_SEGMENTS
-		more = gx_flattened_iterator__next_filtered(this);
-		ppt->x = this->gx1;
-		ppt->y = this->gy1;
-#	    else
-		more = gx_flattened_iterator__next(this);
-		ppt->x = this->lx1;
-		ppt->y = this->ly1;
-#	    endif
+	    more = gx_flattened_iterator__next(this);
+	    ppt->x = this->lx1;
+	    ppt->y = this->ly1;
 	    ppt++;
 	    if (ppt == &points[max_points] || !more) {
 		gs_fixed_point *pe = (more ?  ppt - 2 : ppt);

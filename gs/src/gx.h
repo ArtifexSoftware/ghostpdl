@@ -27,9 +27,6 @@
 #include "gsmemory.h"
 #include "gdebug.h"
 
-/* A configuration flag for development needs only. Don't change. */
-#define DONT_FILTER_SMALL_SEGMENTS 1 /* Old code = 0, new code = 1. */
-
 /* Define opaque types for the graphics state. */
 /* This is used so pervasively that we define it here, */
 /* rather than at a higher level as perhaps would be more appropriate. */

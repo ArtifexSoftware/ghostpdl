@@ -41,16 +41,6 @@
 #include "gxfillts.h" - Do not remove this comment. "gxfillts.h" is included below.
 */
 
-
-#if DONT_FILTER_SMALL_SEGMENTS
-#   define gx0 lx0
-#   define gy0 ly0
-#   define gx1 lx1
-#   define gy1 ly1
-#   define gx_flattened_iterator__next_filtered gx_flattened_iterator__next
-#   define gx_flattened_iterator__prev_filtered gx_flattened_iterator__prev
-#endif
-
 #ifdef DEBUG
 /* Define the statistics structure instance. */
 stats_fill_t stats_fill;
@@ -461,12 +451,6 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	pfpath = &ffpath;
     }
     fo.fill_by_trapezoids = fill_by_trapezoids;
-#if !DONT_FILTER_SMALL_SEGMENTS
-    if (fill_by_trapezoids)
-	fo.coords_near_threshold = float2fixed(-0.5);
-    else
-	fo.coords_near_threshold = ~0;
-#endif
     if ((code = add_y_list(pfpath, &lst)) < 0)
 	goto nope;
     {
@@ -705,8 +689,8 @@ add_y_curve_part(line_list *ll, segment *s0, segment *s1, int dir,
 	gx_flattened_iterator__switch_to_backscan(&alp->fi, more1);
     if (step_back) {
 	do {
-	    alp->more_flattened = gx_flattened_iterator__prev_filtered(&alp->fi);
-	    if (compute_dir(ll->fo, alp->fi.gy0, alp->fi.gy1) != 2)
+	    alp->more_flattened = gx_flattened_iterator__prev(&alp->fi);
+	    if (compute_dir(ll->fo, alp->fi.ly0, alp->fi.ly1) != 2)
 		break;
 	} while (alp->more_flattened);
     }
@@ -752,13 +736,13 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
 
     /* q stands at the first segment, which isn't last. */
     do {
-	q->more_flattened = gx_flattened_iterator__next_filtered(q->fi);
-	dir = compute_dir(fo, q->fi->gy0, q->fi->gy1);
-	if (q->fi->gy0 > fo->ymax && ll->y_break > q->fi->y0)
-	    ll->y_break = q->fi->gy0;
-	if (q->fi->gy1 > fo->ymax && ll->y_break > q->fi->gy1)
-	    ll->y_break = q->fi->gy1;
-	if (dir == DIR_UP && ll->main_dir == DIR_DOWN && q->fi->gy0 >= fo->ymin) {
+	q->more_flattened = gx_flattened_iterator__next(q->fi);
+	dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
+	if (q->fi->ly0 > fo->ymax && ll->y_break > q->fi->y0)
+	    ll->y_break = q->fi->ly0;
+	if (q->fi->ly1 > fo->ymax && ll->y_break > q->fi->ly1)
+	    ll->y_break = q->fi->ly1;
+	if (dir == DIR_UP && ll->main_dir == DIR_DOWN && q->fi->ly0 >= fo->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi, 
 			    true, true, q->monotonic_x);
 	    if (code < 0) 
@@ -767,12 +751,12 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
 			    q->more_flattened, false, q->monotonic_x);
 	    if (code < 0) 
 		return code; 
-	} else if (q->fi->gy0 < fo->ymin && q->fi->gy1 >= fo->ymin) {
+	} else if (q->fi->ly0 < fo->ymin && q->fi->ly1 >= fo->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, q->fi, 
 			    q->more_flattened, false, q->monotonic_x);
 	    if (code < 0) 
 		return code; 
-	} else if (q->fi->gy0 >= fo->ymin && q->fi->gy1 < fo->ymin) {
+	} else if (q->fi->ly0 >= fo->ymin && q->fi->ly1 < fo->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi, 
 			    true, false, q->monotonic_x);
 	    if (code < 0) 
@@ -815,12 +799,7 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 	curve_segment *s = (curve_segment *)q->pseg;
 	int k = gx_curve_log2_samples(q->prev->pt.x, q->prev->pt.y, s, fo->fixed_flat);
 
-#	if !DONT_FILTER_SMALL_SEGMENTS
-	gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, 
-					s, k, fo->coords_near_threshold);
-#	else
 	gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, s, k);
-#	endif
     } else {
 	q->dir = compute_dir(fo, q->prev->pt.y, q->pseg->pt.y);
 	gx_flattened_iterator__init_line(q->fi, 
@@ -839,7 +818,6 @@ scan_contour(line_list *ll, contour_cursor *q)
     int code;
     bool only_horizontal = true, saved = false;
     const fill_options * const fo = ll->fo;
-    const bool fill_by_trapezoids = fo->fill_by_trapezoids;
     contour_cursor save_q;
 
     p.fi = &fi;
@@ -847,13 +825,13 @@ scan_contour(line_list *ll, contour_cursor *q)
     ll->main_dir = DIR_HORIZONTAL;
     for (; ; q->pseg = q->prev, q->prev = q->prev->prev) {
 	init_contour_cursor(ll, q);
-	while(gx_flattened_iterator__next_filtered(q->fi)) {
+	while(gx_flattened_iterator__next(q->fi)) {
 	    q->first_flattened = false;
-	    q->dir = compute_dir(fo, q->fi->gy0, q->fi->gy1);
+	    q->dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
 	    ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
 			    q->dir == DIR_UP ? DIR_UP : ll->main_dir);
 	}
-	q->dir = compute_dir(fo, q->fi->gy0, q->fi->gy1);
+	q->dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
 	q->more_flattened = false;
 	ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
 			q->dir == DIR_UP ? DIR_UP : ll->main_dir);
@@ -880,12 +858,12 @@ scan_contour(line_list *ll, contour_cursor *q)
 		|| p.prev->pt.x != p.pseg->pt.x || p.prev->pt.y != p.pseg->pt.y 
 		|| p.pseg->type == s_curve) {
 	    init_contour_cursor(ll, &p);
-	    p.more_flattened = gx_flattened_iterator__next_filtered(p.fi);
-	    p.dir = compute_dir(fo, p.fi->gy0, p.fi->gy1);
-	    if (p.fi->gy0 > fo->ymax && ll->y_break > p.fi->gy0)
-		ll->y_break = p.fi->gy0;
-	    if (p.fi->gy1 > fo->ymax && ll->y_break > p.fi->gy1)
-		ll->y_break = p.fi->gy1;
+	    p.more_flattened = gx_flattened_iterator__next(p.fi);
+	    p.dir = compute_dir(fo, p.fi->ly0, p.fi->ly1);
+	    if (p.fi->ly0 > fo->ymax && ll->y_break > p.fi->ly0)
+		ll->y_break = p.fi->ly0;
+	    if (p.fi->ly1 > fo->ymax && ll->y_break > p.fi->ly1)
+		ll->y_break = p.fi->ly1;
 	    if (p.monotonic_y && p.dir == DIR_HORIZONTAL && 
 		    !fo->pseudo_rasterization && 
 		    fixed2int_pixround(p.pseg->pt.y - fo->adjust_below) <
@@ -902,12 +880,12 @@ scan_contour(line_list *ll, contour_cursor *q)
 		if (code < 0)
 		    return code;
 	    } 
-	    if (p.fi->gy0 >= fo->ymin && p.dir == DIR_UP && ll->main_dir == DIR_DOWN) {
+	    if (p.fi->ly0 >= fo->ymin && p.dir == DIR_UP && ll->main_dir == DIR_DOWN) {
 		code = start_al_pair(ll, q, &p);
 		if (code < 0)
 		    return code;
 	    }
-	    if (p.fi->gy0 < fo->ymin && p.fi->gy1 >= fo->ymin) {
+	    if (p.fi->ly0 < fo->ymin && p.fi->ly1 >= fo->ymin) {
 		if (p.monotonic_y)
 		    code = add_y_line(p.prev, p.pseg, DIR_UP, ll);
 		else
@@ -916,7 +894,7 @@ scan_contour(line_list *ll, contour_cursor *q)
 		if (code < 0)
 		    return code;
 	    }	    
-	    if (p.fi->gy0 >= fo->ymin && p.fi->gy1 < fo->ymin) {
+	    if (p.fi->ly0 >= fo->ymin && p.fi->ly1 < fo->ymin) {
 		if (p.monotonic_y)
 		    code = add_y_line(p.prev, p.pseg, DIR_DOWN, ll);
 		else
@@ -1013,17 +991,17 @@ step_al(active_line *alp, bool move_iterator)
 
     if (move_iterator) {
 	if (forth)
-	    alp->more_flattened = gx_flattened_iterator__next_filtered(&alp->fi);
+	    alp->more_flattened = gx_flattened_iterator__next(&alp->fi);
 	else
-	    alp->more_flattened = gx_flattened_iterator__prev_filtered(&alp->fi);
+	    alp->more_flattened = gx_flattened_iterator__prev(&alp->fi);
     } else
 	vd_bar(alp->fi.lx0, alp->fi.ly0, alp->fi.lx1, alp->fi.ly1, 1, RGB(0, 0, 255));
     /* Note that we can get alp->fi.ly0 == alp->fi.ly1 
        if the curve tangent is horizontal. */
-    alp->start.x = (forth ? alp->fi.gx0 : alp->fi.gx1);
-    alp->start.y = (forth ? alp->fi.gy0 : alp->fi.gy1);
-    alp->end.x = (forth ? alp->fi.gx1 : alp->fi.gx0);
-    alp->end.y = (forth ? alp->fi.gy1 : alp->fi.gy0);
+    alp->start.x = (forth ? alp->fi.lx0 : alp->fi.lx1);
+    alp->start.y = (forth ? alp->fi.ly0 : alp->fi.ly1);
+    alp->end.x = (forth ? alp->fi.lx1 : alp->fi.lx0);
+    alp->end.y = (forth ? alp->fi.ly1 : alp->fi.ly0);
     alp->diff.x = alp->end.x - alp->start.x;
     alp->diff.y = alp->end.y - alp->start.y;
     SET_NUM_ADJUST(alp);
@@ -1043,13 +1021,8 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
 	    const curve_segment *cs = (const curve_segment *)s1;
 	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, cs, ll->fo->fixed_flat);
 
-#	    if !DONT_FILTER_SMALL_SEGMENTS
-	    gx_flattened_iterator__init(&alp->fi, 
-		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k, ll->fo->coords_near_threshold);
-#	    else
 	    gx_flattened_iterator__init(&alp->fi, 
 		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k);
-#	    endif
 	    step_al(alp, true);
 	    if (!ll->fo->fill_by_trapezoids) {
 		alp->monotonic_y = (s0->pt.y <= cs->p1.y && cs->p1.y <= cs->p2.y && cs->p2.y <= cs->pt.y);
@@ -1061,16 +1034,11 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
 	    int k = gx_curve_log2_samples(s1->pt.x, s1->pt.y, cs, ll->fo->fixed_flat);
 	    bool more;
 
-#	    if !DONT_FILTER_SMALL_SEGMENTS
-	    gx_flattened_iterator__init(&alp->fi, 
-		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k, ll->fo->coords_near_threshold);
-#	    else
 	    gx_flattened_iterator__init(&alp->fi, 
 		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k);
-#	    endif
 	    alp->more_flattened = false;
 	    do {
-		more = gx_flattened_iterator__next_filtered(&alp->fi);
+		more = gx_flattened_iterator__next(&alp->fi);
 		alp->more_flattened |= more;
 	    } while(more);
 	    gx_flattened_iterator__switch_to_backscan(&alp->fi, alp->more_flattened);

@@ -100,9 +100,6 @@ typedef struct fill_options_s {
     bool fill_by_trapezoids;
     fixed adjust_left, adjust_right;
     fixed adjust_below, adjust_above;
-#if !DONT_FILTER_SMALL_SEGMENTS
-    fixed coords_near_threshold;
-#endif
     gx_device *dev;
     const gs_fixed_rect * pbox;
     bool is_spotan;
