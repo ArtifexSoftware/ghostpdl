@@ -1162,11 +1162,15 @@ copy_font_type42(gs_font *font, gs_font *copied)
     if (code < 0)
 	return code;
     swrite_position_only(&fs);
-    code = psf_write_truetype_stripped(&fs, font42);
+    code = (font->FontType == ft_TrueType ? psf_write_truetype_stripped(&fs, font42)
+					  : psf_write_cid2_stripped(&fs, (gs_font_cid2 *)font42));
     code = copied_data_alloc(copied, &fs, extra, code);
     if (code < 0)
 	goto fail;
-    psf_write_truetype_stripped(&fs, font42);
+    if (font->FontType == ft_TrueType)
+	psf_write_truetype_stripped(&fs, font42);
+    else
+	psf_write_cid2_stripped(&fs, (gs_font_cid2 *)font42);
     copied42->data.string_proc = copied_type42_string_proc;
     copied42->data.proc_data = cfdata;
     code = gs_type42_font_init(copied42);

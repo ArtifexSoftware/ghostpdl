@@ -663,7 +663,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	writing_stripped = (options & WRITE_TRUETYPE_STRIPPED) != 0,
 	generate_mtx = (options & WRITE_TRUETYPE_HVMTX) != 0,
 	no_generate = writing_cid | writing_stripped,
-	have_cmap = no_generate,
+	have_cmap = no_generate && !writing_cid,
 	have_name = !(options & WRITE_TRUETYPE_NAME),
 	have_OS_2 = no_generate,
 	have_post = no_generate;
