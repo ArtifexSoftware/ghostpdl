@@ -16,6 +16,7 @@
 
 /* $Id$ */
 /* Color operators */
+#include "memory_.h"
 #include "ghost.h"
 #include "oper.h"
 #include "estack.h"
@@ -127,15 +128,25 @@ zcurrentcolorspace(i_ctx_t * i_ctx_p)
     os_ptr  op = osp;   /* required by "push" macro */
 
     push(1);
-    if ( igs->in_cachedevice ) {
-	int code = ialloc_ref_array(op, a_all, 1, "currentcolorspace");
-	if (code < 0)
-	    return code;
-	return name_enter_string("DeviceGray", op->value.refs);
-    } else {
+    if ( gs_color_space_get_index(igs->color_space) == gs_color_space_index_DeviceGray ) {
+        ref gray, graystr;
+        ref csa = istate->colorspace.array; 
+        if (array_get(&csa, 0, &gray) >= 0 && 
+            r_has_type(&gray, t_name) && 
+	    (name_string_ref(&gray, &graystr),
+	    r_size(&graystr) == 10 &&
+	    !memcmp(graystr.value.bytes, "DeviceGray", 10))) {
+            
+            *op = istate->colorspace.array;
+        } else {
+	    int code = ialloc_ref_array(op, a_all, 1, "currentcolorspace");
+	    if (code < 0)
+	        return code;
+	    return name_enter_string("DeviceGray", op->value.refs);
+        }
+    } else
         *op = istate->colorspace.array;
-        return 0;
-    }
+    return 0;
 }
 
 /*

@@ -436,7 +436,8 @@ $(PSOBJ)zcharout.$(OBJ) : $(PSSRC)zcharout.c $(OP) $(memory__h)\
  $(idict_h) $(ifont_h) $(igstate_h) $(iname_h) $(store_h)
 	$(PSCC) $(PSO_)zcharout.$(OBJ) $(C_) $(PSSRC)zcharout.c
 
-$(PSOBJ)zcolor.$(OBJ) : $(PSSRC)zcolor.c $(OP) $(estack_h) $(ialloc_h)\
+$(PSOBJ)zcolor.$(OBJ) : $(PSSRC)zcolor.c $(OP)\
+ $(memory__h) $(estack_h) $(ialloc_h)\
  $(igstate_h) $(iutil_h) $(store_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gzstate_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxcmap_h)\
  $(gxcspace_h) $(gxcolor2_h) $(gxpcolor_h)\
