@@ -85,7 +85,7 @@ BAND_LIST_COMPRESSOR=zlib
 CPU_TYPE=586
 FPU_TYPE=0
 
-COMPILE_INITS=1
+COMPILE_INITS=0
 
 # Define which major version of MSVC is being used (currently, 4, 5, & 6 supported)
 #       default to the latest version
