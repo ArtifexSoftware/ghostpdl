@@ -30,6 +30,8 @@ private int common_transform(P3(i_ctx_t *,
 		int (*)(P4(gs_state *, floatp, floatp, gs_point *)),
 		int (*)(P4(floatp, floatp, const gs_matrix *, gs_point *))));
 
+private const gs_matrix unit_matrix={1,0,0,1,0,0};
+
 /* - initmatrix - */
 private int
 zinitmatrix(i_ctx_t *i_ctx_p)
@@ -48,36 +50,30 @@ zdefaultmatrix(i_ctx_t *i_ctx_p)
     return write_matrix(op, &mat);
 }
 
-/* - .currentmatrix <xx> <xy> <yx> <yy> <tx> <ty> */
+/* <matrix> currentmatrix <matrix> */
 private int
 zcurrentmatrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_matrix mat;
     int code = gs_currentmatrix(igs, &mat);
-
     if (code < 0)
-	return code;
-    push(6);
-    code = make_floats(op - 5, &mat.xx, 6);
-    if (code < 0)
-	pop(6);
-    return code;
+	  return code;
+    return write_matrix(op, &mat);
 }
 
-/* <xx> <xy> <yx> <yy> <tx> <ty> .setmatrix - */
+/* <matrix> setmatrix - */
 private int
 zsetmatrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_matrix mat;
-    int code = float_params(op, 6, &mat.xx);
-
+    int code = read_matrix(op, &mat);
     if (code < 0)
-	return code;
+	  return code;
     if ((code = gs_setmatrix(igs, &mat)) < 0)
-	return code;
-    pop(6);
+	  return code;
+    pop(1);
     return 0;
 }
 
@@ -307,7 +303,7 @@ common_transform(i_ctx_t *i_ctx_p,
     switch (r_type(op - 1)) {
 	case t_real:
 	    opxy[0] = (op - 1)->value.realval;
-	    break;
+	    break;                                                                  
 	case t_integer:
 	    opxy[0] = (op - 1)->value.intval;
 	    break;
@@ -340,24 +336,54 @@ zinvertmatrix(i_ctx_t *i_ctx_p)
     return code;
 }
 
+
+/* - matrix <matrix> */
+private int
+zmatrix(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code;
+    push(1);
+    if((code = ialloc_ref_array((ref *)op, a_all, 6, "matrix"))<0)
+      return code;
+    return write_matrix(op, &unit_matrix);
+}
+
+/* <matrix> matrix <matrix> */
+private int
+zidentmatrix(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    return write_matrix(op, &unit_matrix);
+}
+
+
 /* ------ Initialization procedure ------ */
 
-const op_def zmatrix_op_defs[] =
+/* We need to split the table because of the 16-element limit. */
+const op_def zmatrix1_op_defs[] =
 {
     {"1concat", zconcat},
     {"2dtransform", zdtransform},
     {"3concatmatrix", zconcatmatrix},
-    {"0.currentmatrix", zcurrentmatrix},
+    {"1currentmatrix", zcurrentmatrix},
     {"1defaultmatrix", zdefaultmatrix},
     {"2idtransform", zidtransform},
     {"0initmatrix", zinitmatrix},
     {"2invertmatrix", zinvertmatrix},
     {"2itransform", zitransform},
+    op_def_end(0)
+};
+
+const op_def zmatrix2_op_defs[] =
+{
     {"1rotate", zrotate},
     {"2scale", zscale},
-    {"6.setmatrix", zsetmatrix},
+    {"1setmatrix", zsetmatrix},
     {"1.setdefaultmatrix", zsetdefaultmatrix},
     {"2transform", ztransform},
     {"2translate", ztranslate},
+    {"0matrix", zmatrix},
+    {"1identmatrix", zidentmatrix},
     op_def_end(0)
 };

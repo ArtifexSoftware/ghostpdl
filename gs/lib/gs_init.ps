@@ -300,9 +300,6 @@ userdict /#copies 1 put
 	  dup { erasepage } if
 	} if pop .beginpage
 } odef
-/currentmatrix {
-	.currentmatrix 6 index astore pop
-} odef
 % .currentnumcopies is redefined in Level 2.
 /.currentnumcopies { #copies } odef
 /setcolorscreen where { pop		% not in all Level 1 configurations
@@ -369,12 +366,8 @@ userdict /.echo.mode true put
 	} odef
 /handleerror
 	{ /errordict .systemvar /handleerror get exec } bind def
-/identmatrix [1.0 0.0 0.0 1.0 0.0 0.0] readonly def
-/identmatrix
-	{ dup 0 //identmatrix putinterval } odef
 /languagelevel 1 def		% gs_lev2.ps may change this
 /makeimagedevice { false makewordimagedevice } odef
-/matrix	{ 6 array identmatrix } odef
 /pathbbox
 	{ false .pathbbox
 	} odef
@@ -435,9 +428,6 @@ userdict /.echo.mode true put
 /setlinejoin {
 	dup 2 gt { /setlinejoin load /rangecheck signalerror } if
 	.setlinejoin
-} odef
-/setmatrix {
-	dup aload pop .setmatrix pop
 } odef
 /showpage {
 	0 .endpage .doneshowpage {
