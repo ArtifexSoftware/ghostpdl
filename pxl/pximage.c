@@ -41,6 +41,7 @@
 #include "strimpl.h"
 #include "srlx.h"
 #include "pldraw.h"
+#include "plsrgb.h"
 #include "jpeglib_.h"           /* for jpeg filter */
 #include "sdct.h"
 #include "sjpeg.h"

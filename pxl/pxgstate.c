@@ -34,6 +34,7 @@
 #include "gxpath.h"
 #include "gzstate.h"
 #include "gscolor2.h"
+#include "plsrgb.h"
 
 /*
  * There is an apparent bug in the LJ5 and LJ6MP firmware that causes
@@ -54,60 +55,6 @@ px_operator_proc(pxRectanglePath);
 /* Forward references */
 px_operator_proc(pxSetClipIntersect);
 
-/* GC descriptors */
-private_st_px_paint();
-#define ppt ((px_paint_t *)vptr)
-private ENUM_PTRS_BEGIN(px_paint_enum_ptrs) {
-    if ( ppt->type != pxpPattern )
-	return 0;
-    return ENUM_SUPER_ELT(px_paint_t, st_client_color,
-			  value.pattern.color, 1);
-}
-    case 0:
-	ENUM_RETURN((ppt->type == pxpPattern ? ppt->value.pattern.pattern : 0));
-ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(px_paint_reloc_ptrs) {
-    if ( ppt->type == pxpPattern ) {
-	 RELOC_PTR(px_paint_t, value.pattern.pattern);
-	 RELOC_SUPER_ELT(px_paint_t, st_client_color, value.pattern.color);
-    }
-} RELOC_PTRS_END
-#undef ppt
-private_st_px_gstate();
-#define pxgs ((px_gstate_t *)vptr)
-private ENUM_PTRS_BEGIN(px_gstate_enum_ptrs) {
-	index -= px_gstate_num_ptrs + px_gstate_num_string_ptrs;
-	if ( index == 0 )
-	  ENUM_RETURN_CONST_STRING_PTR(px_gstate_t, palette);
-	index--;
-	if ( index < st_px_paint_max_ptrs )
-	  return ENUM_SUPER_ELT(px_gstate_t, st_px_paint, brush, 0);
-	index -= st_px_paint_max_ptrs;
-	if ( index < st_px_paint_max_ptrs )
-	  return ENUM_SUPER_ELT(px_gstate_t, st_px_paint, pen, 0);
-	index -= st_px_paint_max_ptrs;
-	return ENUM_SUPER_ELT(px_gstate_t, st_px_dict, temp_pattern_dict, 0);
-	}
-#define mp(i,e) ENUM_PTR(i, px_gstate_t, e);
-#define ms(i,e) ENUM_STRING_PTR(px_gstate_num_ptrs + i, px_gstate_t, e);
-	px_gstate_do_ptrs(mp)
-	px_gstate_do_string_ptrs(ms)
-#undef mp
-#undef ms
-ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(px_gstate_reloc_ptrs) {
-	RELOC_SUPER_ELT(px_gstate_t, st_px_paint, brush);
-	RELOC_CONST_STRING_PTR(px_gstate_t, palette);
-	RELOC_SUPER_ELT(px_gstate_t, st_px_paint, pen);
-	RELOC_SUPER_ELT(px_gstate_t, st_px_dict, temp_pattern_dict);
-#define mp(i,e) RELOC_PTR(px_gstate_t, e);
-#define ms(i,e) RELOC_STRING_PTR(px_gstate_t, e);
-	px_gstate_do_ptrs(mp)
-	px_gstate_do_string_ptrs(ms)
-#undef mp
-#undef ms
-} RELOC_PTRS_END
-#undef pxgs
 
 /* Imported color space types */
 extern const gs_color_space_type gs_color_space_type_Indexed; /* gscolor2.c */
@@ -148,22 +95,25 @@ px_gstate_rc_adjust(px_gstate_t *pxgs, int delta, gs_memory_t *mem)
 }
 private void *
 px_gstate_client_alloc(gs_memory_t *mem)
-{	px_gstate_t *pxgs =
-	  gs_alloc_struct(mem, px_gstate_t, &st_px_gstate, "px_gstate_alloc");
+{	
+    px_gstate_t *pxgs = 
+        (px_gstate_t *)gs_alloc_bytes(mem, 
+                                      sizeof(px_gstate_t),
+                                      "px_gstate_alloc");
 
-	if ( pxgs == 0 )
-	  return 0;
-	/* Initialize reference-counted pointers and other pointers */
-	/* needed to establish invariants. */
-	pxgs->memory = mem;
-	pxgs->halftone.thresholds.data = 0;
-	pxgs->halftone.thresholds.size = 0;
-	pxgs->dither_matrix.data = 0;
-	pxgs->dither_matrix.size = 0;
-	pxgs->brush.type = pxpNull;
-	pxgs->pen.type = pxpNull;
-	px_dict_init(&pxgs->temp_pattern_dict, mem, px_free_pattern);
-	return pxgs;
+    if ( pxgs == 0 )
+        return 0;
+    /* Initialize reference-counted pointers and other pointers */
+    /* needed to establish invariants. */
+    pxgs->memory = mem;
+    pxgs->halftone.thresholds.data = 0;
+    pxgs->halftone.thresholds.size = 0;
+    pxgs->dither_matrix.data = 0;
+    pxgs->dither_matrix.size = 0;
+    pxgs->brush.type = pxpNull;
+    pxgs->pen.type = pxpNull;
+    px_dict_init(&pxgs->temp_pattern_dict, mem, px_free_pattern);
+    return pxgs;
 }
 private int
 px_gstate_client_copy_for(void *to, void *from, gs_state_copy_reason_t reason)
@@ -191,10 +141,10 @@ px_gstate_client_copy_for(void *to, void *from, gs_state_copy_reason_t reason)
 	 * halftone.thresholds is a different special case.  We need to
 	 * copy it for gsave and gstate, and free it on grestore.
 	 */
-	{ gs_string tmat;
-	  gs_string thtt;
+	{ gs_const_string tmat;
+	  gs_const_string thtt;
 	  pl_dict_t tdict;
-	  gs_string *phtt;
+	  gs_const_string *phtt;
 
 	  tmat = pxto->dither_matrix;
 	  thtt = pxto->halftone.thresholds;
@@ -242,11 +192,11 @@ px_gstate_client_free(void *old, gs_memory_t *mem)
 
 	px_dict_release(&pxgs->temp_pattern_dict);
 	if ( pxgs->halftone.thresholds.data )
-	  gs_free_string(mem, pxgs->halftone.thresholds.data,
+            gs_free_string(mem, (byte *)pxgs->halftone.thresholds.data,
 			 pxgs->halftone.thresholds.size,
 			 "px_gstate_free(halftone.thresholds)");
 	if ( pxgs->dither_matrix.data )
-	  gs_free_string(mem, pxgs->dither_matrix.data,
+            gs_free_string(mem, (byte *)pxgs->dither_matrix.data,
 			 pxgs->dither_matrix.size,
 			 "px_gstate_free(dither_matrix)");
 	px_gstate_rc_adjust(old, -1, mem);
@@ -376,8 +326,9 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
         break;
     case eSRGB:
     case eCRGB:
-        // NB should check for code.
-        pl_cspace_init_SRGB(&pcs, pgs);
+        if ( pl_cspace_init_SRGB(&pcs, pgs) < 0 )
+            /* should not happen */
+            return_error(pgs->memory, errorInsufficientMemory);
 	break;
     default:
 	return_error(pgs->memory, errorIllegalAttributeValue);

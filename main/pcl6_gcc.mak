@@ -21,6 +21,9 @@ ZGENDIR=$(GENDIR)
 ZOBJDIR=$(GENDIR)
 SHARE_ZLIB=0
 
+# PLPLATFORM indicates should be set to 'ps' for language switch
+# builds and null otherwise.
+PLPLATFORM=
 
 # specify the locate of the jpeg library.
 JSRCDIR=../gs/jpeg

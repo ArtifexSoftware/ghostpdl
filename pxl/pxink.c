@@ -35,6 +35,7 @@
 #include "gxht.h"
 #include "gxstate.h"
 #include "pldraw.h"
+#include "plht.h"
 
 /*
  * Contrary to the documentation, SetColorSpace apparently doesn't set the

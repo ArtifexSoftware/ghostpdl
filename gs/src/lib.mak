@@ -456,6 +456,11 @@ gdevmrop_h=$(GLSRC)gdevmrop.h
 gdevmrun_h=$(GLSRC)gdevmrun.h $(gxdevmem_h)
 gdevplnx_h=$(GLSRC)gdevplnx.h $(gxrplane_h)
 
+gdevpxat_h=$(GLSRC)gdevpxat.h
+gdevpxen_h=$(GLSRC)gdevpxen.h
+gdevpxop_h=$(GLSRC)gdevpxop.h
+gdevpxut_h=$(GLSRC)gdevpxut.h
+
 sa85d_h=$(GLSRC)sa85d.h
 sa85x_h=$(GLSRC)sa85x.h $(sa85d_h)
 sbcp_h=$(GLSRC)sbcp.h

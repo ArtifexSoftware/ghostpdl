@@ -142,9 +142,9 @@ typedef struct px_gstate_s {
     uint width;
     uint height;
     gs_point origin;
-    gs_string thresholds;
+    gs_const_string thresholds;
   } halftone;
-  gs_string dither_matrix;	/* dither matrix downloaded at this level */
+  gs_const_string dither_matrix;	/* dither matrix downloaded at this level */
   pxeFillMode_t fill_mode;
   bool dashed;
   gs_matrix dash_matrix;

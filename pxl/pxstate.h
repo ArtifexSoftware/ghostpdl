@@ -127,7 +127,7 @@ struct px_state_s {
     byte *data;
     uint size;
   } download_bytes;		/* font/character/halftone data */
-  gs_string download_string;	/* ditto */
+    gs_const_string download_string;	/* ditto */
   struct sp_n {
     int x;
     double y0, y1;

@@ -28,6 +28,10 @@ ZGENDIR=$(GENDIR)
 ZOBJDIR=$(GENDIR)
 SHARE_ZLIB=0
 
+# PLPLATFORM indicates should be set to 'ps' for language switch
+# builds and null otherwise.
+PLPLATFORM=ps
+
 # specify the locate of the jpeg library.
 JSRCDIR=../gs/jpeg
 JGENDIR=$(GENDIR)
@@ -154,7 +158,7 @@ STDLIBS=-lm -lpthread
 include $(COMMONDIR)/ugcc_top.mak
 # Subsystems
 
-include $(PLSRCDIR)/plps.mak
+include $(PLSRCDIR)/pl.mak
 include $(PXLSRCDIR)/pxl.mak
 include $(PCLSRCDIR)/pcl.mak
 include $(PSISRCDIR)/psi.mak
@@ -173,14 +177,3 @@ clean-not-config-clean: pl.clean-not-config-clean pxl.clean-not-config-clean
 config-clean: pl.config-clean pxl.config-clean
 	$(RMN_) *.tr $(GD)devs.tr$(CONFIG) $(GD)ld.tr
 	$(RMN_) $(PXLGEN)pconf.h $(PXLGEN)pconfig.h
-
-
-
-#### Implementation stub
-#$(PLOBJDIR)plimpl.$(OBJ): ./plimpl.c \
-#                        $(memory__h)          \
-#                        $(scommon_h)          \
-#                        $(gxdevice_h)         \
-#                        $(pltop_h)
-#	$(APP_CCC) ./plimpl.c $(PLO_)plimpl.$(OBJ)
-

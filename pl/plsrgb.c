@@ -24,7 +24,7 @@
 #include "gsparam.h"
 #include "gxstate.h"
 #include "gzstate.h"
-#include "pldraw.h"
+#include "plsrgb.h"
 
 /* shared language (pcl and pclxl) for setting up sRGB to XYZ and an
    associated default CRD to be used.  The code will request a crd
@@ -340,7 +340,7 @@ pl_build_and_set_sRGB_space(gs_state *pgs)
 gs_color_space *pl_pcs2;
 bool pl_pcs2_built = false;
 int
-pl_cspace_init_SRGB(gs_color_space **ppcs, gs_state *pgs)
+pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs)
 {
 
     int code = 0;

@@ -76,7 +76,7 @@ def find_targets(target, makefiles):
     parsed_targets = []
     # list of lines
     for line in fileinput.input(makefiles):
-        if line.find(target) >= 0:
+        if line.find(')' + target) >= 0:
             parsed_targets.append(find_target(fileinput.filename(), target))
     fileinput.close()
     return parsed_targets
@@ -84,6 +84,11 @@ def find_targets(target, makefiles):
 import re
 
 def get_deps_from_target(target):
+    # find .h files sans definition.
+    reg=re.compile('\.h')
+    for line in target:
+        for h in reg.findall(line):
+            print "naked .h found in " + target[0][0:target[0].index(":")]
     # not quite right.
     reg=re.compile('[A-Za-z0-9]+_+h')
     deps=[]

@@ -607,10 +607,6 @@ $(DD)oce9050.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 ###	- If you have any other model of LJ 5 or 6, use the pxlmono
 ###	driver, which often produces much more compact output.
 
-gdevpxat_h=$(GLSRC)gdevpxat.h
-gdevpxen_h=$(GLSRC)gdevpxen.h
-gdevpxop_h=$(GLSRC)gdevpxop.h
-gdevpxut_h=$(GLSRC)gdevpxut.h
 
 
 $(GLOBJ)gdevpxut.$(OBJ) : $(GLSRC)gdevpxut.c $(math__h) $(string__h)\

@@ -31,6 +31,24 @@ pltop_h=$(PLSRC)pltop.h $(scommon_h) $(gsgc_h)
 pltoputl_h=$(PLSRC)pltoputl.h $(scommon_h)
 
 
+################ Shared library include definitions ################
+
+pldebug_h=$(PLSRC)pldebug.h
+pldict_h=$(PLSRC)pldict.h
+pldraw_h=$(PLSRC)pldraw.h $(gsiparam_h)
+plht_h=$(PLSRC)plht.h
+pllfont_h=$(PLSRC)pllfont.h
+plmain_h=$(PLSRC)plmain.h $(gsargs_h) $(gsgc_h)
+plplatf_h=$(PLSRC)plplatf.h
+plparse_h=$(PLSRC)plparse.h $(scommon_h)
+plsymbol_h=$(PLSRC)plsymbol.h
+plsrgb_h=$(PLSRC)plsrgb.h
+plvalue_h=$(PLSRC)plvalue.h
+plvocab_h=$(PLSRC)plvocab.h
+romfnttab_h=$(PLSRC)romfnttab.h
+# Out of order because of inclusion
+plfont_h=$(PLSRC)plfont.h $(gsccode_h) $(plsymbol_h)
+
 ################ PJL ################
 
 
@@ -57,12 +75,11 @@ $(PLSRC)plver.h: $(PLSRC)pl.mak
 	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -n -x 23 "define PJL_VOLUME_1"
 	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -s -x 22 $(PJL_VOLUME_1) -x 22
 
-# Currently we only parse PJL enough to detect UELs.
-
 pjparse_h=$(PLSRC)pjparse.h
 pjtop_h=$(PLSRC)pjtop.h $(pltop_h)
 
 $(PLOBJ)pjparse.$(OBJ): $(PLSRC)pjparse.c\
+	$(ctype__h)  \
         $(stat__h)   \
         $(memory__h) \
         $(scommon_h) \
@@ -74,10 +91,10 @@ $(PLOBJ)pjparse.$(OBJ): $(PLSRC)pjparse.c\
 	$(PLCCC) $(PLSRC)pjparse.c $(PLO_)pjparse.$(OBJ)
 
 $(PLOBJ)pjparsei.$(OBJ): $(PLSRC)pjparsei.c \
- $(string__h) $(pjparsei_h) $(plparse_h) $(string__h) $(gserrors_h) $(plver_h)
+ $(string__h) $(pjtop_h) $(pjparse_h) $(plparse_h) $(string__h) $(gserrors_h) $(plver_h)
 	$(PLCCC) $(PLSRC)pjparsei.c $(PLO_)pjparsei.$(OBJ)
 
-$(PLOBJ)pjtop.$(OBJ): $(PLSRC)pjtop.c $(AK) $(pjtop_h) $(pltop_h) $(string__h)
+$(PLOBJ)pjtop.$(OBJ): $(PLSRC)pjtop.c $(AK) $(pjtop_h) $(string__h)
 	$(PLCCC) $(PLSRC)pjtop.c $(PLO_)pjtop.$(OBJ)
 
 pjl_obj=$(PLOBJ)pjparse.$(OBJ) $(PLOBJ)pjparsei.$(OBJ) $(PLOBJ)pjtop.$(OBJ) $(PLOBJ)pltop.$(OBJ)
@@ -89,10 +106,14 @@ $(PLOBJ)pjl.dev: $(PL_MAK) $(ECHOGS_XE) $(pjl_obj)
 pldebug_h=$(PLSRC)pldebug.h
 pldict_h=$(PLSRC)pldict.h
 pldraw_h=$(PLSRC)pldraw.h $(gsiparam_h)
+pllfont_h=$(PLSRC)pllfont.h
+plmain_h=$(PLSRC)plmain.h $(gsargs_h) $(gsgc_h)
 plplatf_h=$(PLSRC)plplatf.h
+plparse_h=$(PLSRC)plparse.h $(scommon_h)
 plsymbol_h=$(PLSRC)plsymbol.h
 plvalue_h=$(PLSRC)plvalue.h
 plvocab_h=$(PLSRC)plvocab.h
+romfnttab_h=$(PLSRC)romfnttab.h
 # Out of order because of inclusion
 plfont_h=$(PLSRC)plfont.h $(gsccode_h) $(plsymbol_h)
 
@@ -107,17 +128,6 @@ $(PLOBJ)plchar.$(OBJ): $(PLSRC)plchar.c $(AK) $(math__h) $(memory__h) $(stdio__h
  $(plfont_h) $(plvalue_h)
 	$(PLCCC) $(PLSRC)plchar.c $(PLO_)plchar.$(OBJ)
 
-# freetype character module.
-$(PLOBJ)plfchar.$(OBJ): $(PLSRC)plfchar.c $(AK) $(math__h) $(memory__h) $(stdio__h)\
- $(gdebug_h)\
- $(gsbittab_h) $(gschar_h) $(gscoord_h) $(gserror_h) $(gserrors_h) $(gsimage_h)\
- $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gspath_h)\
- $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
- $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
- $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
- $(plfont_h) $(plvalue_h) $(freetype_h) 
-	$(PLCCC) $(FT_INCLUDES) $(PLSRC)plfchar.c $(PLO_)plfchar.$(OBJ)
-
 # agfa character module.
 $(PLOBJ)pluchar.$(OBJ): $(PLSRC)pluchar.c $(AK) $(math__h) $(memory__h) $(stdio__h)\
  $(gdebug_h)\
@@ -126,8 +136,7 @@ $(PLOBJ)pluchar.$(OBJ): $(PLSRC)pluchar.c $(AK) $(math__h) $(memory__h) $(stdio_
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
  $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxpath_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
- $(gxchar_h) $(gxfcache_h) $(plfont_h) $(plvalue_h)\
- $(cgconfig_h) $(ufstport_h) $(shareinc_h) 
+ $(gxchar_h) $(gxfcache_h) $(plfont_h) $(plvalue_h)
 	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)pluchar.c $(PLO_)pluchar.$(OBJ)
 
 $(PLOBJ)pldict.$(OBJ): $(PLSRC)pldict.c $(AK) $(memory__h)\
@@ -135,10 +144,13 @@ $(PLOBJ)pldict.$(OBJ): $(PLSRC)pldict.c $(AK) $(memory__h)\
  $(pldict_h)
 	$(PLCCC) $(PLSRC)pldict.c $(PLO_)pldict.$(OBJ)
 
-$(PLOBJ)plht.$(OBJ): $(PLSRC)plht.c
+$(PLOBJ)plht.$(OBJ): $(PLSRC)plht.c  $(stdpre_h) $(plht_h) $(gxdevice_h)\
+   $(gsstate_h) $(gxtmap_h) $(gsmemory_h) $(gstypes_h) $(gxht_h)
 	$(PLCCC) $(PLSRC)plht.c $(PLO_)plht.$(OBJ)
 
-$(PLOBJ)plsrgb.$(OBJ): $(PLSRC)plsrgb.c
+$(PLOBJ)plsrgb.$(OBJ): $(PLSRC)plsrgb.c $(math__h) $(string__h) $(plsrgb_h)\
+  $(gzstate_h) $(gxstate_h) $(gsparam_h) $(gscrd_h) $(gscrdp_h) $(gscie_h)\
+  $(gsstate_h) $(gscspace_h) $(gsmemory_h) $(gstypes_h)
 	$(PLCCC) $(PLSRC)plsrgb.c $(PLO_)plsrgb.$(OBJ)
 
 $(PLOBJ)pldraw.$(OBJ): $(PLSRC)pldraw.c $(AK) $(std_h)\
@@ -151,7 +163,7 @@ $(PLOBJ)pldraw.$(OBJ): $(PLSRC)pldraw.c $(AK) $(std_h)\
 $(PLOBJ)plfont.$(OBJ): $(PLSRC)plfont.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h) $(gp_h)\
  $(gschar_h) $(gserror_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
- $(gsstate_h) $(gsstruct_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gsstate_h) $(gsstruct_h) $(gsmatrix_h) $(gstypes_h) $(gsutil_h)\
  $(gxfont_h) $(gxfont42_h)\
  $(plfont_h) $(plvalue_h)
 	$(PLCCC) $(PLSRC)plfont.c $(PLO_)plfont.$(OBJ)
@@ -162,19 +174,20 @@ $(PLOBJ)plufont.$(OBJ): $(PLSRC)plufont.c $(AK) $(memory__h) $(stdio__h)\
  $(gschar_h) $(gserror_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)\
  $(gxfont_h) $(gxfont42_h)\
- $(plfont_h) $(plvalue_h) $(cgconfig_h) $(ufstport_h)
+ $(plfont_h) $(plvalue_h)
 	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plufont.c $(PLO_)plufont.$(OBJ)
 
-$(PLOBJ)plplatf.$(OBJ): $(PLSRC)plplatf.c $(AK) $(string__h)\
+$(PLOBJ)plplatf$(PLPLATFORM).$(OBJ): $(PLSRC)plplatf$(PLPLATFORM).c $(AK) $(string__h)\
+ $(string__h)\
  $(gdebug_h) $(gp_h) $(gsio_h) $(gslib_h) $(gsmemory_h) $(gstypes_h)\
- $(gsstruct_h) $(gsdevice) $(plplatf_h)
-	$(PLCCC) $(PLSRC)plplatf.c $(PLO_)plplatf.$(OBJ)
+ $(gsstruct_h) $(plplatf_h)
+	$(PLCCC) $(PLSRC)plplatf$(PLPLATFORM).c $(PLO_)plplatf$(PLPLATFORM).$(OBJ)
 
 plftable_h=$(PLSRC)plftable.h
 
 # hack - need AGFA included for -DAGFA_FONT_TABLE
 $(PLOBJ)plftable.$(OBJ): $(PLSRC)plftable.c $(AK) $(plftable_h)\
-  $(gstype_h) $(plfont_h)
+  $(ctype__h) $(gstypes_h) $(plfont_h)
 	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plftable.c $(PLO_)plftable.$(OBJ)
 
 $(PLOBJ)pltop.$(OBJ): $(PLSRC)pltop.c $(AK) $(string__h)\
@@ -201,34 +214,36 @@ $(PLOBJ)plvocab.$(OBJ): $(PLSRC)plvocab.c $(AK) $(stdpre_h)\
 plalloc_h=$(PLSRC)plalloc.h
 
 $(PLOBJ)plalloc.$(OBJ): $(PLSRC)plalloc.c $(AK) \
-       $(malloc_h) $(memory_h) $(gdebug_h)\
-       $(gsmemory_h) $(gsstype_h) $(plalloc_h) $(plftable_h)
+  $(malloc__h) $(memory__h) $(gdebug_h)\
+  $(gsmalloc_h) $(gsmemret_h) $(gsstype_h)\
+  $(plalloc_h)
 	$(PLCCC) $(PLSRC)plalloc.c $(PLO_)plalloc.$(OBJ)
 
 # ufst font loading module.
-$(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(PLSRC)pllfont.h $(AK)\
-        $(stdio_h) $(string__h) $(gsmemory_h) $(gstypes_h)\
+$(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(pllfont_h) $(AK)\
+        $(stdio__h) $(string__h) $(gpgetenv_h) $(gsmemory_h) $(gp_h) $(gstypes_h)\
         $(plfont_h) $(pldict_h) $(pllfont_h) $(plvalue_h)\
-	$(cgconfig_h) $(ufstport_h) $(shareinc_h) 
+	$(plftable_h)
 	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plulfont.c $(PLO_)plulfont.$(OBJ)
 
 # artifex font loading module.
-$(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(PLSRC)pllfont.h $(AK)\
+$(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(pllfont_h) $(AK)\
         $(ctype__h) $(stdio__h) $(string__h)\
 	$(gx_h) $(gp_h) $(gsccode_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
-	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h)
+	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h) $(plvalue_h) $(plftable_h)
 	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
 
 # artifex rom font loading module
-$(PLOBJ)pllrfont.$(OBJ): $(PLSRC)pllrfont.c $(PLSRC)pllfont.h $(PLSRC)romfnttab.h $(AK)\
+$(PLOBJ)pllrfont.$(OBJ): $(PLSRC)pllrfont.c $(pllfont_h) $(romfnttab_h) $(AK)\
         $(ctype__h) $(stdio__h) $(string__h)\
 	$(gx_h) $(gp_h) $(gsccode_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
-	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h)
+	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h) $(plvalue_h)\
+	$(plftable_h) $(zlib_h)
 	$(PLCCC) $(PLSRC)pllrfont.c $(PLO_)pllrfont.$(OBJ)
 
 pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plht.$(OBJ) $(PLOBJ)plsrgb.$(OBJ)
 pl_obj2=$(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pltop.$(OBJ) $(PLOBJ)pltoputl.$(OBJ)
-pl_obj3=$(PLOBJ)plplatf.$(OBJ) $(PLOBJ)plalloc.$(OBJ)
+pl_obj3=$(PLOBJ)plplatf$(PLPLATFORM).$(OBJ) $(PLOBJ)plalloc.$(OBJ)
 
 # shared objects - non font
 pl_obj=$(pl_obj1) $(pl_obj2) $(pl_obj3)
@@ -271,12 +286,12 @@ $(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj)
 
 ###### Command-line driver's main program #####
 
-$(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(stdio__h) $(string__h)\
+$(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(string__h)\
  $(gdebug_h) $(gscdefs_h) $(gsio_h) $(gstypes_h) $(gserrors_h) \
  $(gsmemory_h) $(plalloc_h) $(gsmalloc_h) $(gsstruct_h) $(gxalloc_h)\
- $(gsalloc_h) $(gsargs_h) $(gp_h) $(gsdevice_h)\
- $(gsparam_h) $(pjtop_h) $(plparse_h) $(plplatf_h)\
- $(plmain_h) $(pltop_h) $(pltoputl_h) $(gsargs_h) $(gsgc_h)
+ $(gsalloc_h) $(gsargs_h) $(gp_h) $(gsdevice_h) $(gslib_h) $(gslibctx_h)\
+ $(gxdevice_h) $(gsparam_h) $(pjtop_h) $(plapi_h) $(plparse_h) $(plplatf_h)\
+ $(plmain_h) $(pltop_h) $(pltoputl_h) $(gsargs_h)
 	$(PLCCC) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)
 
 $(PLOBJ)plimpl.$(OBJ):  $(PLSRC)plimpl.c            \

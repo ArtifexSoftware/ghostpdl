@@ -14,8 +14,6 @@
 /* plparse.h */
 /* Interface to all (H-P) language parsers */
 
-/**** THIS FILE IS LESS THAN HALF BAKED AND IS NOT REALLY USED YET. ****/
-
 #ifndef plparse_INCLUDED
 #  define plparse_INCLUDED
 

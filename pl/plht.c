@@ -11,7 +11,7 @@
    San Rafael, CA  94903, (415)492-9861, for further information. */
 /*$Id$ */
 
-/* plht.c - shared haltone resource. */
+/* plht.c - shared halftone resource. */
 #include "stdpre.h"
 #include "gstypes.h"
 #include "gsmemory.h"
@@ -24,6 +24,7 @@ typedef struct gs_state_s gs_state;
 #include "gsstate.h"
 #include "gxht.h"
 #include "gxdevice.h"
+#include "plht.h"
 
 int 
 pl_set_pcl_halftone(gs_state *pgs, gs_mapping_proc transfer_proc,
