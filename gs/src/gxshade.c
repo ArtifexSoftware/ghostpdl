@@ -21,6 +21,7 @@
 #include "gserrors.h"
 #include "gsrect.h"
 #include "gxcspace.h"
+#include "gscindex.h"
 #include "gscie.h"		/* requires gscspace.h */
 #include "gxdevcli.h"
 #include "gxistate.h"
