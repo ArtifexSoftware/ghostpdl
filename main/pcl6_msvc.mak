@@ -39,6 +39,13 @@ PCLOBJDIR=$(GENDIR)
 
 PXLOBJDIR=$(GENDIR)
 
+JGENDIR=$(GENDIR)
+
+JOBJDIR=$(GENDIR)
+
+ZGENDIR=$(GENDIR)
+ZOBJDIR=$(GENDIR)
+
 DD=$(GLGENDIR)
 
 # Executable path\name w/o the .EXE extension
@@ -49,6 +56,10 @@ DEBUG=0
 TDEBUG=0
 NOPRIVATE=0
 
+# Banding options
+BAND_LIST_STORAGE=memory
+BAND_LIST_COMPRESSOR=zlib
+
 # Target options
 CPU_TYPE=586
 FPU_TYPE=0
@@ -58,7 +69,7 @@ BAND_LIST_COMPRESSOR=zlib
 
 # Define which major version of MSVC is being used (currently, 4, 5, & 6 supported)
 #       default to the latest version
-MSVC_VERSION=6
+MSVC_VERSION=5
 
 D=\\
 
@@ -86,6 +97,7 @@ DEVICE_DEVS=    $(DD)\djet500.dev\
                 $(DD)\pkmraw.dev\
                 $(DD)\pxlmono.dev\
                 $(DD)\pxlcolor.dev\
+		$(DD)\jpeg.dev\
                 $(DD)\tiffcrle.dev\
                 $(DD)\tiffg3.dev\
                 $(DD)\tiffg32d.dev\
@@ -108,7 +120,8 @@ FEATURE_DEVS    = $(DD)\dps2lib.dev   \
                   $(DD)\cielib.dev    \
                   $(DD)\htxlib.dev    \
                   $(DD)\devcmap.dev   \
-                  $(DD)\gsnogc.dev
+                  $(DD)\gsnogc.dev    \
+                  $(DD)\sdctd.dev
 
 default: $(TARGET_XE).exe
         echo Done.
@@ -131,4 +144,3 @@ $(PLOBJDIR)\plimpl.$(OBJ): $(PLSRCDIR)\plimpl.c \
 !include $(PLSRCDIR)\pl.mak
 !include $(PCLSRCDIR)\pcl.mak
 !include $(PXLSRCDIR)\pxl.mak
-
