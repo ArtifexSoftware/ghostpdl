@@ -87,6 +87,7 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 # *	oki182	Okidata MicroLine 182
 # *	okiibm	Okidata MicroLine IBM-compatible printers
 # *	paintjet  alternate H-P PaintJet color printer
+# *	photoex  Epson Stylus Color Photo, Photo EX, Photo 700
 # *	pj	H-P PaintJet XL driver 
 # *	pjetxl	alternate H-P PaintJet XL driver
 # *	pjxl	H-P PaintJet XL color printer
@@ -633,6 +634,17 @@ $(DD)okiibm.dev : $(okiibm_) $(DD)page.dev
 
 $(GLOBJ)gdevokii.$(OBJ) : $(GLSRC)gdevokii.c $(PDEVH)
 	$(GLCC) $(GLO_)gdevokii.$(OBJ) $(C_) $(GLSRC)gdevokii.c
+
+### ------------------ The Epson Stylus Photo devices ------------------ ###
+### This driver was contributed by a user: please contact                ###
+###	Zoltan Kocsi (zoltan@bendor.com.au) if you have questions.       ###
+
+photoex_=$(GLOBJ)gdevokii.$(OBJ)
+$(DD)photoex.dev : $(photoex_) $(DD)page.dev
+	$(SETPDEV) $(DD)photoex $(photoex_)
+
+$(GLOBJ)gdevphex.$(OBJ) : $(GLSRC)gdevphex.c $(PDEVH)
+	$(GLCC) $(GLO_)gdevphex.$(OBJ) $(C_) $(GLSRC)gdevphex.c
 
 ### ------------- The Ricoh 4081 laser printer device ------------------ ###
 ### Note: this driver was contributed by users:                          ###
