@@ -1230,38 +1230,42 @@ end
 %  and the size of the BBox for the stamp image.  From these we calculate
 %  a scale factor for drawing the stamp.
 /calcstampscale {		% <annot> calcstampscale scale
-  dup annotrect 4 -2 roll pop pop	 % get width height size in user space
-  3 -1 roll /AP knownoget {
-    /N knownoget {
-      dup /Matrix knownoget {
-	% transform /Annot /Rect xwidth to Form space
-	4 -2 roll 3 -1 roll dtransform 3 -1 roll
-      } if
-      /BBox knownoget {
-        exch pop	% discard y height
-        aload pop pop exch pop sub	% BBox width
-	div		% scale x widths
-	dup 0 lt { neg } if		% get magnitude
+  dup /Rect known {
+    dup annotrect 4 -2 roll pop pop	 % get width height size in user space
+    3 -1 roll /AP knownoget {
+      /N knownoget {
+	dup /Matrix knownoget {
+	  % transform /Annot /Rect xwidth to Form space
+	  4 -2 roll 3 -1 roll dtransform 3 -1 roll
+	} if
+	/BBox knownoget {
+	  exch pop	% discard y height
+	  aload pop pop exch pop sub	% BBox width
+	  div		% scale x widths
+	  dup 0 lt { neg } if		% get magnitude
+	} {
+	  pop pop 1		% default to unity scaling
+	} ifelse			% if we have /BBox
       } {
-        pop pop 1		% default to unity scaling
-      } ifelse			% if we have /BBox
+	pop pop 1
+      } ifelse			% if we have /N
     } {
       pop pop 1
-    } ifelse			% if we have /N
+    } ifelse			% if we have /AP
   } {
-    pop pop 1
-  } ifelse			% if we have /AP
+    (   **** Warning: /Annot dict is missing required /Rect entry.\n)
+    pdfformaterror
+    pop 1
+  } ifelse
 } bdef
 
 /drawlink {			% <annot> drawlink -
-  dup drawborder
-  1 exch drawwidget
+  dup drawborder dup calcstampscale exch drawwidget
 } bdef
 
 % Draw an annotation.
 /drawannottypes mark
   /Link { drawlink } bind
-  /Stamp { dup calcstampscale exch drawwidget } bind
 .dicttomark readonly def
 /drawannot {		% <annot> drawannot -
   dup annotvisible {
@@ -1269,7 +1273,7 @@ end
     dup dup /Subtype get //drawannottypes exch .knownget {
       exec
     } {
-      1 exch drawwidget		% Use drawwidget for everything else
+      dup calcstampscale exch drawwidget	% Use drawwidget for everything else
     } ifelse			% type known
     grestore
   } if pop			% annotvisible
