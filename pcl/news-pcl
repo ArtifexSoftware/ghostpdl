@@ -6,6 +6,142 @@
 This file, NEWS-5, describes the changes in the most recent releases of
 Aladdin's PCL 5 code, in reverse chronological order.
 
+Version 0.22 (4/13/97)
+======================
+
+This is another bug fix fileset.  With these fixes, we produce nearly
+correct output from the first CET file (14_01), allowing for the fact that
+we don't have the right set of fonts; we get semi-reasonable output from CET
+14* through 16*, except as noted below; and we can run the entire non-GL/2
+CET subset (14* through 23*) without crashing, except for 31_01.
+
+Known problems:
+	- The width of Intellifont characters is wrong.  (CET 14_01)
+	- Positioning of characters is off -- requires "real" fonts.
+	- Text wrap happens too far to the right.
+	- Tabs don't work quite right.
+	- Graphics aren't oriented correctly in landscape print direction.
+	- Text length doesn't work.  (CET 16_04)
+	- CET files with major anomalies: 16_10, 16_11
+	- The built-in shading and cross-hatch patterns are rendered at the
+	maximum printer resolution rather than always at 300 dpi.
+Unimplemented features:
+	- Font Control 6 (copy font & assign ID) (CET 14_04)
+	- Text clipping at the right margin.
+	- User-defined line type (99).
+
+(LPD) Fixes bugs:
+	- When printing to a real printer, the left edge of the page was
+clipped inappropriately.  (pcdraw.c, pcmain.c)
+	- The fonts loaded from Windows didn't include Symbol or WingDings.
+(pcfont.c)
+	- The font matching algorithm didn't recognize the same typeface
+from a different vendor as a partial match.  (pcfont.c)
+	- Only the last font loaded from Windows was actually entered in the
+built-in font dictionary.  (pcfont.c)
+	- The CTM was set wrong for landscape orientation.  (pcdraw.c)
+	- Modifying the HMI didn't properly affect fixed-space fonts.
+(pcfont.c)
+	- If a font was selected by ID, setting the height or pitch
+invalidated the font, rather than just scaling it.  (pcstate.h, pcfont.c)
+	- Vertical cursor positioning by rows didn't add the 0.75 * VMI
+fudge factor.  (pcursor.c)
+	- The character complement for the preloaded fonts wasn't set.
+(pcfont.c)
+	- The check for symbol set support in unbound fonts was incorrect.
+(pcfont.c)
+	- check_support didn't complement the glyph vocabulary number in
+fonts, leading to invalid array accesses.  (pcfont.c)
+	- The graphics state client data pointer didn't point back to the
+pcl_state_t.  (pcmain.c)
+	- The raster graphics left margin was never set, and the default
+width was not computed correctly.  (rtraster.c)
+	- For text, the Pattern ID command took effect immediately, instead
+of at the next Select Pattern command.  (pcfont.c)
+	- Out-of-range cross-hatch pattern IDs could cause memory access
+errors.  (pcdraw.c)
+	- Selecting a font by ID didn't set the symbol set correctly.
+(pcfont.c)
+	- Symbol mapping wasn't disabled when selecting a bound font.
+(pcfont.c)
+	- The symbol map wasn't set properly if the selected font was the
+very first font in the dictionary.  (pcfont.c)
+	- User-defined patterns caused illegal memory accesses.  (pcstate.h,
+pcdraw.c)
+	- If the GL/2 parser was both in polygon mode and LOST, commands
+that were to be skipped in either case caused a memory fault.  (pgparse.c)
+	- If a grouped escape sequence was terminated prematurely by a
+control character, that character was discarded.  (pcparse.c)
+	- The CAP bookkeeping for changes in print direction was incomplete.
+(pcdraw.h, pcstate.h, pcdraw.c, pcpage.c, pgframe.c, rtraster.c)
+	- The CTM was set wrong for rotated print directions.  (pcdraw.c)
+	- The CTM was set wrong for 180 and 270 degree rotations.
+(pcdraw.c)
+	- Rectangles didn't follow the print direction.  (pcrect.c)
+	- Setting the orientation didn't eject the current page.  (pcpage.c)
+	- Setting the orientation to the same value wasn't a no-op.  (The
+PCL5 TRM doesn't say this is supposed to be the case, but it is.)
+(pcpage.c)
+	- The default right margin wasn't set correctly.  (pcpage.c)
+
+(LPD) Implements missing functions:
+	- End-of-line wrap for text.  (pcfont.c)
+	- Deleting individual characters from a soft font (ESC * c 3 F).
+(pcsfont.c)
+	- Symbol mapping for unbound fonts.  (pcfont.c)
+	- Intellifont downloading and (unhinted) rasterizing.  (pcifont.c,
+pcsfont.c)
+	- Diagonal-line cross-hatch patterns were reflected, because of the
+reflected coordinate system.  (pcdraw.c)
+	- The drawing color wasn't set for raster graphics.  (rtraster.c)
+	- The cursor stack didn't interact properly with changes in print
+direction.  (pcursor.c)
+	- Margins weren't permuted properly when changing print direction.
+(pcdraw.c)
+	- The default raster width was computed from the right margin
+instead of the right edge of the logical page.  (rtraster.c)
+
+(LPD) Adds text tracing to the PCL tracing output.  (pcparse.c)
+
+(LPD) Initializes the default symbol set to PC-8 rather than Roman-8, for
+compatibility with the LJ 6MP being used for testing.  Eventually this will
+have to be addressed in a more systematic way.  (pcfont.c)
+
+(HAS) ChangeLog:
+
+	* pgstate.h: new data structures to support hpgl label buffering.
+
+	* pgfont.c: program that generates the font data modified to not
+	multiply the font height by 1.5.  The calcomp font code did this
+	for an unknown reason.
+
+	* pgdraw.c (hpgl_set_label_to_plu_ctm): modified to use the
+	current selected font.
+
+	* pgchar.c (hpgl_get_current_cell_width): updated to use current font
+	selection.
+	(hpgl_get_current_cell_height): updated to use current font
+	selection, and the character cell was incorrectly calculated to be
+	2x the current point size -- changed to 1.33 point size for stick
+	fonts. 
+	(hpgl_CP): added comments and a note about incorrect calculation of
+	extra space command.
+	(hpgl_update_label_length): new funtion to update the length of
+	the current label string as characters are buffered.
+	(hpgl_init_label_buffer): new function to allocate a label buffer
+	and set up the label state.
+	(hpgl_resize_label_buffer): new function to resize the label
+	buffer if we run out of space.
+	(hpgl_destroy_label_buffer): new function to deallocate the
+	current label buffer and reset the label state.
+	(hpgl_buffer_char): new function to place a character into the
+	character buffer.
+	(hpgl_get_character_origin_offset): new function to calculate the
+	label origin as defined by LO.
+	(hpgl_process_buffer): new function to process the current label
+	buffer of characters.
+	(hpgl_LB): modified to use the new label buffering scheme.
+
 Version 0.21 (4/1/97)
 =====================
 

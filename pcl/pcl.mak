@@ -238,6 +238,12 @@ $(PCLOBJ)pcsymbol.$(OBJ): $(PCLSRC)pcsymbol.c $(stdio__h)\
 	$(PCLCCC) $(PCLSRC)pcsymbol.c $(PCLO_)pcsymbol.$(OBJ)
 
 # Chapter 9 & 11
+$(PCLOBJ)pcifont.$(OBJ): $(PCLSRC)pcifont.c $(std_h)\
+ $(gsccode_h) $(gschar_h) $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h)\
+ $(gxfont_h)\
+ $(plfont_h) $(plvalue_h)
+	$(PCLCCC) $(PCLSRC)pcifont.c $(PCLO_)pcifont.$(OBJ)
+
 $(PCLOBJ)pcsfont.$(OBJ): $(PCLSRC)pcsfont.c $(stdio__h)\
  $(gsccode_h) $(gsmatrix_h) $(gsutil_h) $(gxfont_h) $(gxfont42_h)\
  $(pcommand_h) $(pcfont_h) $(pcstate_h)\
@@ -279,8 +285,8 @@ $(PCLOBJ)pcmisc.$(OBJ): $(PCLSRC)pcmisc.c $(std_h) $(pcommand_h) $(pcstate_h)
 	$(PCLCCC) $(PCLSRC)pcmisc.c $(PCLO_)pcmisc.$(OBJ)
 
 PCL5_OPS1=$(PCLOBJ)pcjob.$(OBJ) $(PCLOBJ)pcpage.$(OBJ) $(PCLOBJ)pcursor.$(OBJ) $(PCLOBJ)pcfont.$(OBJ)
-PCL5_OPS2=$(PCLOBJ)pcsymbol.$(OBJ) $(PCLOBJ)pcsfont.$(OBJ) $(PCLOBJ)pcmacros.$(OBJ) $(PCLOBJ)pcprint.$(OBJ)
-PCL5_OPS3=$(PCLOBJ)pcrect.$(OBJ) $(PCLOBJ)pcstatus.$(OBJ) $(PCLOBJ)pcmisc.$(OBJ)
+PCL5_OPS2=$(PCLOBJ)pcsymbol.$(OBJ) $(PCLOBJ)pcifont.$(OBJ) $(PCLOBJ)pcsfont.$(OBJ) $(PCLOBJ)pcmacros.$(OBJ)
+PCL5_OPS3=$(PCLOBJ)pcprint.$(OBJ) $(PCLOBJ)pcrect.$(OBJ) $(PCLOBJ)pcstatus.$(OBJ) $(PCLOBJ)pcmisc.$(OBJ)
 PCL5_OPS=$(PCL5_OPS1) $(PCL5_OPS2) $(PCL5_OPS3)
 
 # Note: we have to initialize the cursor after initializing the logical

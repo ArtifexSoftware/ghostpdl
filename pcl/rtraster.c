@@ -256,8 +256,13 @@ pcl_register_compression_method(int method, pcl_uncompress_proc_t proc,
 int
 pcl_begin_raster_graphics(pcl_state_t *pcls, int setting)
 {	bool across =
-	  pcls->raster.across_physical_page && (pcls->orientation & 1);
+	  pcls->raster.across_physical_page &&
+	  (pcls->orientation & 1);
+	int code = pcl_set_drawing_color(pcls, pcls->pattern_type,
+					 &pcls->current_pattern_id);
 
+	if ( code < 0 )
+	  return code;
 	pcls->raster.graphics_mode = true;
 	pcls->raster.y = 0;
 	pcls->raster.last_width = 0;
@@ -272,28 +277,24 @@ pcl_begin_raster_graphics(pcl_state_t *pcls, int setting)
 	pcls->raster.scaling = (setting & 2) != 0;
 	pcls->raster.plane = 0;
 	/*
-	 * Set the CTM and, if necessary, default CAP.x.
-	 * Since the normal CTM takes print direction into account,
-	 * we may need to undo this (and orientation, if across_physical_page
-	 * is set) here.
+	 * The discussion of raster direction in TRM 15-9 et seq doesn't
+	 * say how print direction affects raster images in presentation
+	 * mode 3.  We assume here that print direction affects raster
+	 * images regardless of presentation mode.
 	 */
-	if ( pcls->print_direction || across )
-	  { gs_point cap_dev, cap_image;
+	pcl_set_graphics_state(pcls, true);  /* with print direction */
+	if ( across )	/* across_physical_page & landscape */
+	{ gs_point cap_dev, cap_image;
 
-	    /* Convert CAP to device coordinates, since it mustn't move. */
-	    pcl_set_graphics_state(pcls, true);  /* with print direction */
-	    gs_transform(pcls->pgs, (float)pcls->cap.x, (float)pcls->cap.y,
-			 &cap_dev);
-	    pcl_set_graphics_state(pcls, false);  /* ignore print direction */
-	    if ( across )	/* across_physical_page & landscape */
-	      gs_rotate(pcls->pgs, -90.0);
-	    gs_itransform(pcls->pgs, cap_dev.x, cap_dev.y, &cap_image);
-	    pcls->cap.x = (coord)cap_image.x;
-	    pcls->cap.y = (coord)cap_image.y;
-	  }
-	else
-	  pcl_set_graphics_state(pcls, false);  /* ignore print direction */
-	/* See PCL5 manual, p. 15-10, for the following algorithm. */
+	  /* Convert CAP to device coordinates, since it mustn't move. */
+	  gs_transform(pcls->pgs, (floatp)pcls->cap.x, (floatp)pcls->cap.y,
+		       &cap_dev);
+	  gs_rotate(pcls->pgs, -90.0);
+	  gs_itransform(pcls->pgs, cap_dev.x, cap_dev.y, &cap_image);
+	  pcls->cap.x = (coord)cap_image.x;
+	  pcls->cap.y = (coord)cap_image.y;
+	}
+	/* See TRM 15-10 for the following algorithm. */
 	if ( !(setting & 1 ) )
 	  { if ( across )
 	      pcls->cap.x = (coord)(50.0 / pcls->raster.resolution *
@@ -310,6 +311,20 @@ pcl_begin_raster_graphics(pcl_state_t *pcls, int setting)
 	    pcls->raster.image.Decode[0] = 1;
 	    pcls->raster.image.Decode[1] = 0;
 	    pcls->raster.image.CombineWithColor = true;
+	  }
+	pcls->raster.left_margin = pcls->cap.x;
+	if ( !pcls->raster.width_set )
+	  { /* Compute the default raster width per TRM 15-14. */
+	    int direction =
+	      (pcls->raster.across_physical_page ? 0 : pcls->orientation) +
+	      pcls->print_direction;
+	    coord width =
+	      (direction & 1 ? pcls->logical_page_size.y :
+	       pcls->logical_page_size.x) - pcls->raster.left_margin;
+
+	    /* The width shouldn't be negative, but if it is.... */
+	    pcls->raster.width =
+	      (width <= 0 ? 0 : coord2inch(width) * pcls->raster.resolution);
 	  }
 	return 0;
 }
@@ -337,7 +352,6 @@ pcl_read_raster_data(pcl_args_t *pargs, pcl_state_t *pcls, int bits_per_pixel,
   bool last_plane)
 {	uint count = uint_arg(pargs);
 	const byte *data = arg_data(pargs);
-	uint width;
 	int method = pcls->raster.compression;
 	int plane = pcls->raster.plane;
 	pcl_raster_row_t *row = &pcls->raster.row[plane];
@@ -345,13 +359,7 @@ pcl_read_raster_data(pcl_args_t *pargs, pcl_state_t *pcls, int bits_per_pixel,
 	int code;
 
 	/* Make sure we have a large enough row buffer. */
-	if ( pcls->raster.width_set )
-	  width = pcls->raster.width;
-	else if ( method == 0 )
-	  width = (count << 3) / pcls->raster.depth;
-	else
-	  width = pcls->raster.width;	/* default */
-	row_size = (width * bits_per_pixel + 7) >> 3;
+	row_size = (pcls->raster.width * bits_per_pixel + 7) >> 3;
 	code = pcl_resize_row(row, row_size, pcls->memory, "pcl image row");
 	/* Decompress the data into the row. */
 	{ stream_cursor_read r;
@@ -576,7 +584,10 @@ pcl_raster_y_offset(pcl_args_t *pargs, pcl_state_t *pcls)
 /* exit raster graphics mode implicitly. */
 private int
 end_raster_graphics(pcl_state_t *pcls)
-{	int code = 0;
+{	bool across =
+	  pcls->raster.across_physical_page &&
+	  (pcls->orientation & 1);
+	int code = 0;
 
 	if ( !pcls->raster.graphics_mode )
 	  return 0;
@@ -607,15 +618,13 @@ end_raster_graphics(pcl_state_t *pcls)
 	}
 	clear_rows(pcls, pcls->raster.depth);
 	/* Restore the CTM if we modified it. */
-	if ( pcls->print_direction ||
-	     (pcls->raster.across_physical_page && (pcls->orientation & 1))
-	   )
+	if ( across )
 	  { gs_point cap_dev, cap_image;
 
 	    /* Convert CAP to device coordinates, since it mustn't move. */
-	    gs_transform(pcls->pgs, (float)pcls->cap.x, (float)pcls->cap.y,
+	    gs_transform(pcls->pgs, (floatp)pcls->cap.x, (floatp)pcls->cap.y,
 			 &cap_dev);
-	    pcl_set_graphics_state(pcls, true);  /* with print direction */
+	    pcl_set_graphics_state(pcls, true);
 	    gs_itransform(pcls->pgs, cap_dev.x, cap_dev.y, &cap_image);
 	    pcls->cap.x = (coord)cap_image.x;
 	    pcls->cap.y = (coord)cap_image.y;

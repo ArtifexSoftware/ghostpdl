@@ -49,8 +49,9 @@ typedef struct pl_font_s pl_font_t;
 typedef struct pcl_font_selection_s {
     /* Parameters used for selection, or loaded from font selected by ID. */
   pl_font_params_t params;
-    /* Font found by matching */
+    /* Font found by matching or by ID */
   pl_font_t *font;
+  bool selected_by_id;
     /* The symbol map that goes with it. */
   pl_symbol_map_t *map;
 } pcl_font_selection_t;
@@ -262,8 +263,9 @@ struct pcl_state_s {
 		/* Chapter 6 (pcursor.c) */
 
 	coord_point cap;  /* in user coordinates relative to standard CTM */
+			/* *including* rotation for PCL print direction */
 	struct {
-	  coord_point values[20];
+	  gs_point values[20];	/* device coordinates */
 	  int depth;
 	} cursor_stack;
 	int line_termination;
@@ -322,7 +324,8 @@ struct pcl_state_s {
 	pcl_id_t current_pattern_id;	/* at last select_pattern */
 	bool pattern_set;	/* true if pattern set in graphics state */
 	gx_ht_tile pattern_tile;	/* set by pcl_set_drawing_color */
-	gs_pattern_instance *cached_patterns[7+6];  /* create as needed */
+	gs_pattern_instance *cached_shading[7];  /* create as needed */
+	gs_pattern_instance *cached_cross_hatch[6];  /* create as needed */
 
 		/* Chapter 14 (pcrect.c) */
 

@@ -227,10 +227,7 @@ hpgl_set_plu_to_device_ctm(hpgl_state_t *pgls)
 			    (hpgl_real_t)pgls->g.plot_height),
 			   ((hpgl_real_t)pgls->g.picture_frame_width /
 			    (hpgl_real_t)pgls->g.plot_width)));
-
 	return 0;
-
-
 }
 
 private int
@@ -239,10 +236,10 @@ hpgl_set_label_to_plu_ctm(hpgl_state_t *pgls)
 	/* if we are not in character mode do nothing -- identity
            transformation */
         /* HAS font is selection not complete */
-	hpgl_real_t height_points = 
-	  pgls->g.font_selection[0].params.height_4ths / 4.0;
-	hpgl_real_t width_points = 
-	  1.0 / (pgls->g.font_selection[0].params.pitch_100ths / 100.0);
+	pcl_font_selection_t *pfs = 
+	  &pgls->g.font_selection[pgls->g.font_selected];
+	hpgl_real_t height_points = pfs->params.height_4ths / 4.0;
+	hpgl_real_t width_points = 1.0 / (pfs->params.pitch_100ths / 100.0);
 	/* HAS -- Only LO1 is currently supported -- need to add others */
 	hpgl_call(gs_translate(pgls->pgs, pgls->g.pos.x, pgls->g.pos.y));
 	/* HAS -- only support standard font */

@@ -51,7 +51,7 @@ pcl_fill_rect_area(pcl_args_t *pargs, pcl_state_t *pcls)
 
 	if ( code < 0 )
 	  return code;
-	code = pcl_set_graphics_state(pcls, false);
+	code = pcl_set_graphics_state(pcls, true);
 	if ( code < 0 )
 	  return code;
 	{ gs_rect r;

@@ -20,11 +20,13 @@
 #include "gslib.h"
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gspaint.h"
+#include "gsparam.h"
 #include "gsstate.h"
 #include "gscoord.h"
 #include "gspath.h"
 #include "gxalloc.h"
 #include "gxdevice.h"
+#include "gxstate.h"
 #include "gdevbbox.h"
 #include "pjparse.h"
 #include "plmain.h"
@@ -70,6 +72,31 @@ cspotf(floatp x, floatp y)
 {	return (x * x + y * y) / 2;
 }
 
+/* Define the gstate client procedures. */
+private void *
+pcl_gstate_client_alloc(gs_memory_t *mem)
+{	/*
+	 * We don't want to allocate anything here, but we don't
+	 * have any way to say we want to share the client data.
+	 * Since this will only ever be called once, return something random.
+	 */
+	return (void *)1;
+}
+private int
+pcl_gstate_client_copy_for(void *to, void *from, gs_state_copy_reason_t reason)
+{	return 0;
+}
+private void
+pcl_gstate_client_free(void *old, gs_memory_t *mem)
+{
+}
+private const gs_state_client_procs pcl_gstate_procs = {
+  pcl_gstate_client_alloc,
+  0,				/* copy -- superseded by copy_for */
+  pcl_gstate_client_free,
+  pcl_gstate_client_copy_for
+};
+
 /* Here is the real main program. */
 int
 main(int argc, char *argv[])
@@ -77,8 +104,8 @@ main(int argc, char *argv[])
 #define mem ((gs_memory_t *)imem)
 	pl_main_instance_t inst;
 	gs_state *pgs;
+	pcl_state_t *pcls;
 	pcl_parser_state_t pstate;
-	pcl_state_t state;
 	pjl_parser_state_t pjstate;
 	arg_list args;
 	const char *arg;
@@ -100,6 +127,10 @@ main(int argc, char *argv[])
 	  inst.device = (gx_device *)bdev;
 	}
 	pl_main_make_gstate(&inst, &pgs);
+	/****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
+	pcls = (pcl_state_t *)gs_alloc_bytes(mem, sizeof(pcl_state_t),
+					     "main(pcl_state_t)");
+	gs_state_set_client(pgs, pcls, &pcl_gstate_procs);
 	/* Set the default CTM for H-P coordinates. */
 	gs_clippath(pgs);
 	{ gs_rect bbox;
@@ -111,23 +142,26 @@ main(int argc, char *argv[])
 	{ gs_matrix mat;
 	  gs_currentmatrix(pgs, &mat);
 	  gs_setdefaultmatrix(pgs, &mat);
-	  state.resolution.x = mat.xx * 7200;
-	  state.resolution.y = fabs(mat.yy) * 7200;
+	  pcls->resolution.x = mat.xx * 7200;
+	  pcls->resolution.y = fabs(mat.yy) * 7200;
 	  /* Set the simplest possible halftone.  (This is currently */
 	  /* irrelevant, because PCL5e printers never halftone.) */
 	  { gs_screen_halftone ht;
-	    float dpi = fabs(state.resolution.x + state.resolution.y);
+	    float dpi = fabs(pcls->resolution.x + pcls->resolution.y);
 	    ht.frequency = dpi / 10;	/* 100 (non-existent) gray levels */
 	    ht.angle = 0;
 	    ht.spot_function = cspotf;
 	    gs_setscreen(pgs, &ht);
 	  }
 	}
+
 	gs_gsave(pgs);
+	/* We want all gstates to share the same "client data".... */
+	gs_state_set_client(pgs, pcls, &pcl_gstate_procs);
 	gs_erasepage(pgs);
-	state.memory = mem;
-	state.client_data = &inst;
-	state.pgs = pgs;
+	pcls->memory = mem;
+	pcls->client_data = &inst;
+	pcls->pgs = pgs;
 	/* Run initialization code. */
 	{ const pcl_init_t **init;
 	  for ( init = pcl_init_table; *init; ++init )
@@ -138,18 +172,18 @@ main(int argc, char *argv[])
 		    exit(code);
 		  }
 	      }
-	  pcl_do_resets(&state, pcl_reset_initial);
+	  pcl_do_resets(pcls, pcl_reset_initial);
 	}
-	state.end_page = pause_end_page;
+	pcls->end_page = pause_end_page;
 
 	/* Intermediate initialization: after state is initialized, may
 	 * allocate memory, but we won't re-run this level of init. */
-	if ( !pcl_load_built_in_fonts(&state, built_in_font_prefixes) )
+	if ( !pcl_load_built_in_fonts(pcls, built_in_font_prefixes) )
 	  {
 	    lprintf("No built-in fonts found during initialization\n");
 	    exit(1);
 	  }
-	pcl_load_built_in_symbol_sets(&state);
+	pcl_load_built_in_symbol_sets(pcls);
 
 	while ( (arg = arg_next(&args)) != 0 )
 	  { /* Process one input file. */
@@ -190,7 +224,7 @@ process:      if ( in_pjl )
 		    }
 		}
 	      else
-		{ code = pcl_process(&pstate, &state, &r);
+		{ code = pcl_process(&pstate, pcls, &r);
 		  if ( code == e_ExitLanguage )
 		    in_pjl = true;
 		  else if ( code < 0 )
@@ -205,13 +239,13 @@ process:      if ( in_pjl )
 	  if ( gs_debug_c(':') )
 	    dprintf3("Final file position = %ld, exit code = %d, mode = %s\n",
 		     (long)ftell(in) - (r.limit - r.ptr), code,
-		     (in_pjl ? "PJL" : state.parse_other ? "HP-GL/2" : "PCL"));
+		     (in_pjl ? "PJL" : pcls->parse_other ? "HP-GL/2" : "PCL"));
 	  fclose(in);
 
 	  /* Read out any status responses. */
 	  { byte buf[200];
 	    uint count;
-	    while ( (count = pcl_status_read(buf, sizeof(buf), &state)) != 0 )
+	    while ( (count = pcl_status_read(buf, sizeof(buf), pcls)) != 0 )
 	      fwrite(buf, 1, count, stdout);
 	    fflush(stdout);
 	  }

@@ -9,6 +9,7 @@
 #include "pcstate.h"
 #include "pcdraw.h"
 #include "pcfont.h"
+#include "gscoord.h"
 
 /* Control character implementations. */
 /* do_CR and do_LF are exported for display_functions. */
@@ -114,9 +115,12 @@ pcl_HT(pcl_args_t *pargs, pcl_state_t *pcls)
 int /* ESC & a <rows> R */
 pcl_vert_cursor_pos_rows(pcl_args_t *pargs, pcl_state_t *pcls)
 {	float y = float_arg(pargs) * pcls->vmi;		/* centipoints */
+	/* TRM 5-18 justifies the following computation */
+	/* (which is not, however, mentioned on TRM 6-10 under the */
+	/* cursor positioning command). */
 	pcl_set_cursor_y(pcls,
 			 (coord)((arg_is_signed(pargs) ? pcls->cap.y :
-				  pcls->top_margin) + y),
+				  pcls->top_margin + 0.75 * pcls->vmi) + y),
 			 false);
 	return 0;
 }
@@ -175,17 +179,30 @@ pcl_line_termination(pcl_args_t *pargs, pcl_state_t *pcls)
 
 int /* ESC & f <pp_enum> S */
 pcl_push_pop_cursor(pcl_args_t *pargs, pcl_state_t *pcls)
-{	switch ( uint_arg(pargs) )
+{	/*
+	 * We must convert the cursor to device coordinates, so that
+	 * changing print direction doesn't cause confusion.
+	 */
+	switch ( uint_arg(pargs) )
 	{
 	case 0:		/* push cursor */
 		if ( pcls->cursor_stack.depth < 20 )
-		  pcls->cursor_stack.values[pcls->cursor_stack.depth++] =
-		    pcls->cap;
+		  { pcl_set_ctm(pcls, true);
+		    gs_transform(pcls->pgs, (floatp)pcls->cap.x,
+				 (floatp)pcls->cap.y,
+				 &pcls->cursor_stack.values[pcls->cursor_stack.depth++]);
+		  }
 		break;
 	case 1:		/* pop cursor */
 		if ( pcls->cursor_stack.depth > 0 )
-		  { pcls->cap =
-		      pcls->cursor_stack.values[--(pcls->cursor_stack.depth)];
+		  { const gs_point *old_cap =
+		      &pcls->cursor_stack.values[--(pcls->cursor_stack.depth)];
+		    gs_point new_cap;
+
+		    pcl_set_ctm(pcls, true);
+		    gs_itransform(pcls->pgs, old_cap->x, old_cap->y, &new_cap);
+		    pcls->cap.x = (coord)new_cap.x;
+		    pcls->cap.y = (coord)new_cap.y;
 		    pcl_clamp_cursor_x(pcls, false);
 		    pcl_clamp_cursor_y(pcls, false);
 		  }

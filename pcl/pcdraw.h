@@ -23,6 +23,10 @@ void pcl_compute_logical_page_size(P1(pcl_state_t *pcls));
 /* (currently only CTM and clipping region). */
 int pcl_set_graphics_state(P2(pcl_state_t *pcls, bool print_direction));
 
+/* Set the PCL print direction [0..3]. */
+/* We export this only for HP-GL/2. */
+int pcl_set_print_direction(P2(pcl_state_t *pcls, int print_direction));
+
 /* ------ Cursor ------ */
 
 /* Home the cursor to the left edge of the logical page at the top margin. */

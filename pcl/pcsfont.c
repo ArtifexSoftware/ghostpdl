@@ -16,6 +16,9 @@
 #include "gxfont.h"
 #include "gxfont42.h"
 
+/* Import procedures from pcifont.c. */
+extern void pcl_fill_in_intelli_font(P2(gs_font_base *pfont, long unique_id));
+
 /* Define the downloaded character data formats. */
 typedef enum {
   pccd_bitmap = 4,
@@ -87,8 +90,10 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	    return 0;
 	  case 3:
 	    { /* Delete character <font_id, character_code>. */
+	      if ( pl_dict_find(&pcls->soft_fonts, id_key(pcls->font_id), 2, &value) )
+		pl_font_remove_glyph((pl_font_t *)value, pcls->character_code);
+	      return 0;
 	    }
-	    return e_Unimplemented;
 	  case 4:
 	    { /* Make soft font <font_id> temporary. */
 	      if ( pl_dict_find(&pcls->soft_fonts, id_key(pcls->font_id), 2, &value) )
@@ -116,7 +121,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	const byte *data = arg_data(pargs);
 #define pfh ((const pcl_font_header_t *)data)
 	uint desc_size;
-	bool bitmap;
+	pl_font_scaling_technology_t fst;
 	gs_memory_t *mem = pcls->memory;
 	pl_font_t *plfont;
 	byte *header;
@@ -131,14 +136,15 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	  {
 	  case pcfh_bitmap:
 	  case pcfh_resolution_bitmap:
-	    bitmap = true;
+	    fst = plfst_bitmap;
 	    break;
 	  case pcfh_intellifont_bound:
 	  case pcfh_intellifont_unbound:
-	    return e_Unimplemented;
+	    fst = plfst_Intellifont;
+	    break;
 	  case pcfh_truetype:
 	  case pcfh_truetype_large:
-	    bitmap = false;
+	    fst = plfst_TrueType;
 	    break;
 	  default:
 	    return_error(gs_error_invalidfont);
@@ -152,16 +158,19 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	  return_error(e_Memory);
 	memcpy(header, data, count);
 	plfont->storage = pcds_temporary;
-	plfont->font_type = pfh->FontType;
 	plfont->header = header;
 	plfont->header_size = count;
+	plfont->scaling_technology = fst;
+	plfont->font_type = pfh->FontType;
 	code = pl_font_alloc_glyph_table(plfont, 256, mem,
 					 "pcl_font_header(char table)");
 	if ( code < 0 )
 	  return code;
 	/* Create the actual font. */
-	if ( bitmap )
-	  { /* Bitmap font. */
+	switch ( fst )
+	  {
+	  case plfst_bitmap:
+	  {
 	    gs_font_base *pfont =
 	      gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
 			      "pcl_font_header(bitmap font)");
@@ -173,7 +182,6 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	    if ( code < 0 )
 	      return code;
 	    pl_fill_in_bitmap_font(pfont, gs_next_ids(1));
-	    plfont->scaling_technology = plfst_bitmap;
 	    /* Extract parameters from the font header. */
 	    if ( pfh->HeaderFormat == pcfh_resolution_bitmap )
 	      {
@@ -200,9 +208,10 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 		}
 	    }
 	    plfont->params.height_4ths = pl_get_uint16(pfh->Height);
+	    break;
 	  }
-	else
-	  { /* TrueType font. */
+	  case plfst_TrueType:
+	  {
 	    gs_font_type42 *pfont =
 	      gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42,
 			      "pcl_font_header(truetype font)");
@@ -239,8 +248,28 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	    plfont->params.pitch_100ths =
 	      pl_get_uint16(pfh->Pitch) * 100 / pfont->data.unitsPerEm;
 	  }
+	    break;
+	  case plfst_Intellifont:
+	  {
+	    gs_font_base *pfont =
+	      gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
+			      "pcl_font_header(bitmap font)");
+
+	    if ( pfont == 0 )
+	      return_error(e_Memory);
+	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcls->font_dir,
+				   mem);
+	    if ( code < 0 )
+	      return code;
+	    pcl_fill_in_intelli_font(pfont, gs_next_ids(1));
+	    /* pfh->Pitch is design unit width for scalable fonts. */
+	    /****** HOW TO SET THIS? ******/
+	    break;
+	  }
+	  default:
+	    return_error(gs_error_invalidfont);	/* can't happen */
+	  }
 	/* Extract common parameters from the font header. */
-	plfont->font_type = pfh->FontType;
 	plfont->params.symbol_set = pl_get_uint16(pfh->SymbolSet);
 	plfont->params.proportional_spacing = pfh->Spacing;
 	plfont->params.style = (pfh->StyleMSB << 8) + pfh->StyleLSB;
@@ -286,8 +315,8 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 		    format != pcfh_resolution_bitmap)
 		 )
 		return e_Range;
-	      width = (data[10] << 8) + data[11];
-	      height = (data[12] << 8) + data[13];
+	      width = pl_get_uint16(data + 10);
+	      height = pl_get_uint16(data + 12);
 	      switch ( data[3] )
 		{
 		case 1:		/* uncompressed bitmap */
@@ -302,11 +331,38 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	    }
 	    break;
 	  case pccd_intellifont:
-	    if ( format != pcfh_intellifont_bound &&
-		 format != pcfh_intellifont_unbound
+	    if ( data[2] != 2 || count < 14 ||
+		 (format != pcfh_intellifont_bound &&
+		  format != pcfh_intellifont_unbound)
 	       )
 	      return e_Range;
-	    return e_Unimplemented;
+	    switch ( data[3] )
+	      {
+	      case 3:		/* non-compound character */
+		{ uint data_size = pl_get_uint16(data + 4);
+		  uint contour_offset = pl_get_uint16(data + 6);
+		  uint metric_offset = pl_get_uint16(data + 8);
+		  uint outline_offset = pl_get_uint16(data + 10);
+		  uint xy_offset = pl_get_uint16(data + 12);
+
+		  /* The contour data excludes 4 initial bytes of header */
+		  /* and 2 final bytes of padding/checksum. */
+		  if ( data_size != count - 6 ||
+		       contour_offset < 10 ||
+		       metric_offset < contour_offset ||
+		       outline_offset < metric_offset ||
+		       xy_offset < outline_offset ||
+		       xy_offset > count - 6
+		     )
+		    return e_Range;
+		}
+		break;
+	      case 4:		/* compound character */
+		/* We don't handle compound characters yet. */
+	      default:
+		return e_Range;
+	      }
+	    break;
 	  case pccd_truetype:
 	    if ( format != pcfh_truetype &&
 		 format != pcfh_truetype_large

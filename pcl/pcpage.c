@@ -12,6 +12,7 @@
 #include "pcparse.h"		/* for pcl_execute_macro */
 #include "pcfont.h"		/* for underline interface */
 #include "gsmatrix.h"		/* for gsdevice.h */
+#include "gscoord.h"
 #include "gsdevice.h"
 #include "gspaint.h"
 #include "gxdevice.h"
@@ -19,7 +20,6 @@
 
 /* Define the default margin and text length values. */
 #define left_margin_default 0
-#define right_margin_default inch2coord(8.5)	/**** WRONG ****/
 #define top_margin_default inch2coord(0.5)
 
 /* Define the default HMI and VMI values. */
@@ -81,7 +81,7 @@ pcl_default_end_page(pcl_state_t *pcls, int num_copies, int flush)
 private void
 reset_margins(pcl_state_t *pcls)
 {	pcls->left_margin = left_margin_default;
-	pcls->right_margin = right_margin_default;
+	pcls->right_margin = pcls->logical_page_width;
 	pcls->top_margin =
 	  (top_margin_default > pcls->logical_page_height ? 0 :
 	   top_margin_default);
@@ -181,6 +181,17 @@ pcl_page_orientation(pcl_args_t *pargs, pcl_state_t *pcls)
 {	uint i = uint_arg(pargs);
 	if ( i > 3 )
 	  return 0;
+
+	/*
+	 * In apparent contradiction to TRM 5-6, setting the orientation to
+	 * the same value is a no-op.
+	 */
+	if ( i == pcls->orientation )
+	  return 0;
+	{ int code = pcl_end_page_if_marked(pcls);
+	  if ( code < 0 )
+	    return code;
+	}
 	pcls->orientation = i;
 	reset_margins(pcls);
 	pcls->hmi_set = hmi_not_set;
@@ -202,8 +213,7 @@ pcl_print_direction(pcl_args_t *pargs, pcl_state_t *pcls)
 	  default:
 	    return 0;
 	  }
-	pcls->print_direction = i / 90;
-	return 0;
+	return pcl_set_print_direction(pcls, i / 90);
 }
 
 private int /* ESC & a <col> L */

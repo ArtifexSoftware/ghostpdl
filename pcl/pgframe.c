@@ -12,6 +12,7 @@
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsmemory.h"		/* for gsstate.h */
 #include "gsstate.h"            
+#include "pcdraw.h"
 
 /* Import the RTL implementation of ESC % # A. */
 extern pcl_command_proc(rtl_enter_pcl_mode);
@@ -82,8 +83,13 @@ pcl_set_pic_frame_anchor_point(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( i != 0 )
 	  return 0;
 
-	pcls->g.picture_frame.anchor_point.x = pcls->cap.x;
-	pcls->g.picture_frame.anchor_point.y = pcls->cap.y;
+	/* The anchor point does not take print direction into account. */
+	{ int dir = pcls->print_direction;
+	  pcl_set_print_direction(pcls, 0);
+	  pcls->g.picture_frame.anchor_point.x = pcls->cap.x;
+	  pcls->g.picture_frame.anchor_point.y = pcls->cap.y;
+	  pcl_set_print_direction(pcls, dir);
+	}
 
 	{
 	  hpgl_args_t args;

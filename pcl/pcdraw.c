@@ -15,6 +15,7 @@
 #include "gsdcolor.h"
 #include "gxfixed.h"
 #include "gxpath.h"
+#include "plvalue.h"
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcfont.h"		/* for underline break/continue, HMI */
@@ -48,34 +49,41 @@ int
 pcl_set_ctm(pcl_state_t *pcls, bool print_direction)
 {	gs_state *pgs = pcls->pgs;
 	const pcl_paper_size_t *psize = pcls->paper_size;
+	int rotation =
+	  (print_direction ? pcls->orientation + pcls->print_direction :
+	   pcls->orientation) & 3;
 
 	gs_initmatrix(pgs);
 	/**** DOESN'T HANDLE NEGATION FOR DUPLEX BINDING ****/
-	switch ( pcls->orientation )
+	/*
+	 * Note that because we are dealing with an opposite-handed
+	 * coordinate system, all the rotations must be negated.
+	 */
+	switch ( rotation )
 	  {
 	  case 0:
 	    gs_translate(pgs, psize->offset_portrait.x + pcls->left_offset_cp,
 			 pcls->top_offset_cp);
 	    break;
 	  case 1:
-	    gs_rotate(pgs, 90.0);
+	    gs_rotate(pgs, -90.0);
 	    gs_translate(pgs, psize->offset_landscape.x -
-			   (psize->height + pcls->top_offset_cp),
+			 (psize->height + pcls->top_offset_cp),
 			 pcls->left_offset_cp);
+	    break;
 	  case 2:
-	    gs_rotate(pgs, 180.0);
+	    gs_rotate(pgs, -180.0);
 	    gs_translate(pgs, psize->offset_portrait.x -
-			   (psize->width + pcls->left_offset_cp),
+			 (psize->width + pcls->left_offset_cp),
 			 -(psize->height + pcls->top_offset_cp));
 	    break;
 	  case 3:
-	    gs_rotate(pgs, 270.0);
-	    gs_translate(pgs, psize->offset_landscape.x + pcls->top_offset_cp,
+	    gs_rotate(pgs, -270.0);
+	    gs_translate(pgs,
+			 psize->offset_landscape.x + pcls->top_offset_cp,
 			 -(psize->width + pcls->left_offset_cp));
 	    break;
 	  }
-	if ( print_direction && pcls->print_direction )
-	  gs_rotate(pgs, (float)(pcls->print_direction * 90));
 	return 0;
 }
 
@@ -83,16 +91,21 @@ pcl_set_ctm(pcl_state_t *pcls, bool print_direction)
 private int
 pcl_set_clip(pcl_state_t *pcls)
 {	const pcl_paper_size_t *psize = pcls->paper_size;
+	gs_matrix imat;
+	fixed tx, ty;
 	gs_fixed_rect box;
 
+	gs_defaultmatrix(pcls->pgs, &imat);
+	tx = float2fixed(imat.tx);
+	ty = float2fixed(imat.ty);
 	/* Per Figure 2-4 on page 2-9 of the PCL5 TRM, the printable area */
 	/* is always just 1/6" indented from the physical page. */
-	box.p.x = float2fixed(pcls->resolution.x / 6.0);
-	box.p.y = float2fixed(pcls->resolution.y / 6.0);
+	box.p.x = float2fixed(pcls->resolution.x / 6.0) + tx;
+	box.p.y = float2fixed(pcls->resolution.y / 6.0) + ty;
 	box.q.x = float2fixed(psize->width / 7200.0 * pcls->resolution.x)
-	  - box.p.x;
+	  - box.p.x + tx * 2;
 	box.q.y = float2fixed(psize->height / 7200.0 * pcls->resolution.y)
-	  - box.p.y;
+	  - box.p.y + ty * 2;
 	return gx_clip_to_rectangle(pcls->pgs, &box);
 }
 
@@ -104,6 +117,46 @@ pcl_set_graphics_state(pcl_state_t *pcls, bool print_direction)
 	return (code < 0 ? code : pcl_set_clip(pcls));
 }
 
+/* Set the PCL print direction [0..3]. */
+/* We export this only for HP-GL/2. */
+int
+pcl_set_print_direction(pcl_state_t *pcls, int print_direction)
+{	if ( pcls->print_direction != print_direction )
+	  { /*
+	     * Recompute the CAP in the new coordinate system.
+	     * Also permute the margins per TRM 5-11.
+	     */
+	    gs_state *pgs = pcls->pgs;
+	    gs_point capt;
+	    int diff = (print_direction - pcls->print_direction) & 3;
+	    coord page_size[3];
+	    coord margins[7];
+
+	    pcl_set_ctm(pcls, true);
+	    page_size[0] = page_size[2] = pcls->logical_page_width;
+	    page_size[1] = pcls->logical_page_height;
+	    margins[0] = margins[4] = pcls->left_margin;
+	    margins[1] = margins[5] = pcls->top_margin;
+	    margins[2] = margins[6] =
+	      pcls->logical_page_width - pcls->right_margin;
+	    margins[3] = pcls->logical_page_height -
+	      (pcls->top_margin + pcls->text_length * pcls->vmi);
+	    gs_transform(pgs, (floatp)pcls->cap.x, (floatp)pcls->cap.y, &capt);
+	    pcls->print_direction = print_direction;
+	    pcl_set_ctm(pcls, true);
+	    gs_itransform(pgs, capt.x, capt.y, &capt);
+	    pcls->cap.x = (coord)capt.x;
+	    pcls->cap.y = (coord)capt.y;
+	    pcls->left_margin = margins[diff];
+	    pcls->top_margin = margins[diff + 1];
+	    pcls->right_margin =
+	      page_size[diff & 1] - margins[diff + 2];
+	    pcls->text_length =
+	      (page_size[~diff & 1] - margins[diff + 3]) / pcls->vmi;
+	  }
+	return 0;
+}
+
 /* ------ Cursor ------ */
 
 /* Home the cursor to the left edge of the logical page at the top margin. */
@@ -112,8 +165,7 @@ pcl_home_cursor(pcl_state_t *pcls)
 {	
 	pcl_break_underline(pcls);
 	pcls->cap.x = 0;
-	/* See the description of the Top Margin command in Chapter 5 */
-	/* of the PCL5 TRM for the following computation. */
+	/* See TRM 5-18 for the following computation. */
 	pcls->cap.y = pcls->top_margin + 0.75 * pcls->vmi;
 	pcl_continue_underline(pcls);
 }
@@ -232,6 +284,8 @@ private const uint32
 
 /* Define the built-in cross-hatch patterns. */
 /* These are 16x16 bits, replicated horizontally to 64x16. */
+/* Note that the 45-degree patterns are swapped because of the inverted-Y */
+/* coordinate system. */
 private const uint32
   ch_horizontal[] = {
     p8(0x00, 0x00, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00),
@@ -241,16 +295,16 @@ private const uint32
     p2x8(0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80)
   },
   ch_45_degree[] = {
-    r2(0x00, 0xc0), r2(0x01, 0x80), r2(0x03, 0x00), r2(0x06, 0x00),
-    r2(0x0c, 0x00), r2(0x18, 0x00), r2(0x30, 0x00), r2(0x60, 0x00),
-    r2(0xc0, 0x00), r2(0x80, 0x01), r2(0x00, 0x03), r2(0x00, 0x06),
-    r2(0x00, 0x0c), r2(0x00, 0x18), r2(0x00, 0x30), r2(0x00, 0x60)
-  },
-  ch_135_degree[] = {
     r2(0x80, 0x01), r2(0xc0, 0x00), r2(0x60, 0x00), r2(0x30, 0x00),
     r2(0x18, 0x00), r2(0x0c, 0x00), r2(0x06, 0x00), r2(0x03, 0x00),
     r2(0x01, 0x80), r2(0x00, 0xc0), r2(0x00, 0x60), r2(0x00, 0x30),
     r2(0x00, 0x18), r2(0x00, 0x0c), r2(0x00, 0x06), r2(0x00, 0x03)
+  },
+  ch_135_degree[] = {
+    r2(0x00, 0xc0), r2(0x01, 0x80), r2(0x03, 0x00), r2(0x06, 0x00),
+    r2(0x0c, 0x00), r2(0x18, 0x00), r2(0x30, 0x00), r2(0x60, 0x00),
+    r2(0xc0, 0x00), r2(0x80, 0x01), r2(0x00, 0x03), r2(0x00, 0x06),
+    r2(0x00, 0x0c), r2(0x00, 0x18), r2(0x00, 0x30), r2(0x00, 0x60)
   },
   ch_square[] = {
     r2(0x01, 0x80), r2(0x01, 0x80), r2(0xff, 0xff), r2(0xff, 0xff),
@@ -274,7 +328,9 @@ int
 pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
   const pcl_id_t *pid)
 {	gs_state *pgs = pcls->pgs;
-	int pattern_index;
+	gs_pattern_instance **ppi;
+	gs_pattern_instance *pi = 0;	/* for user-defined pattern hack */
+	gs_int_point resolution;
 	gx_tile_bitmap tile;
 
 	switch ( type )
@@ -294,7 +350,7 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 #define else_if_percent(maxp, shade, index)\
   else if ( percent <= maxp )\
     tile.data = (const byte *)shade,\
-    pattern_index = index
+    ppi = &pcls->cached_shading[index]
 	      else_if_percent(2, shade_1_2, 0);
 	      else_if_percent(10, shade_3_10, 1);
 	      else_if_percent(20, shade_11_20, 2);
@@ -313,16 +369,35 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 	      tile.rep_width = 8;
 	      tile.rep_height = (percent <= 2 ? 16 : 8);
 	    }
+	    /*
+	     * TRM 13-18 says that the default resolution for downloaded
+	     * patterns is 300 dpi; apparently (by observation), the
+	     * built-in patterns are also at 300 dpi regardless of the
+	     * printer resolution.
+	     */
+	    resolution.x = resolution.y = 300;
 	    break;
 	  case pcpt_cross_hatch:
-	    pattern_index = id_value(*pid) - 1 + 7;
-	    tile.data =
-	      (const byte *)cross_hatch_patterns[pattern_index - 7];
+	    /*
+	     * The pattern ID may be out of range: we can't check this at
+	     * the time the pattern ID is set, so we have to check it here.
+	     */
+	    { int index = id_value(*pid) - 1;
+	      if ( index < 0 || index >= 6 )
+		{ /* Invalid index, just use black. */
+		  gs_setgray(pgs, 0.0);
+		  return 0;
+		}
+	      ppi = &pcls->cached_cross_hatch[index];
+	      tile.data = (const byte *)cross_hatch_patterns[index];
+	    }
 	    tile.raster = 8;
 	    tile.size.x = 64;
 	    tile.size.y = 16;
 	    tile.rep_width = 16;
 	    tile.rep_height = 16;
+	    /* See above re resolution. */
+	    resolution.x = resolution.y = 300;
 	    break;
 	  case pcpt_user_defined:
 	    { void *value;
@@ -348,9 +423,15 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 		  (ppt->height[0] << 8) + ppt->height[1];
 	      tile.raster =
 		bitmap_raster(tile.size.x);
+	      resolution.x = pl_get_uint16(ppt->x_resolution);
+	      resolution.y = pl_get_uint16(ppt->y_resolution);
 #undef ppt
+	      /*
+	       ****** HACK: just create a new pattern each time.
+	       ****** THIS IS UNACCEPTABLE, but will get us through the CET.
+	       */
+	      ppi = &pi;
 	    }
-	    /**** HANDLE ROTATION & SCALING ****/
 	    break;
 	  /* case pcpt_current_pattern: */	/* caller handles this */
 	  default:
@@ -362,13 +443,24 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 	 * We should track changes in orientation, but we don't yet.
 	 */
 	{ gs_client_color ccolor;
-	  ccolor.pattern = pcls->cached_patterns[pattern_index];
+	  ccolor.pattern = *ppi;
 	  if ( ccolor.pattern == 0 )
-	    { int code = gs_makebitmappattern(&ccolor, &tile, false, pgs, NULL);
+	    { int code;
+	      gs_matrix mat;
+	      /*
+	       * Make a bitmap pattern at the specified resolution.
+	       * Assume the CTM was set by pcl_set_ctm.
+	       ****** DOESN'T WORK -- MAKEB.PATTERN FORCES IDENTITY ******
+	       */
+	      gs_currentmatrix(pgs, &mat);
+	      gs_scale(pgs, pcls->resolution.x / resolution.x,
+		       pcls->resolution.y / resolution.y);
+	      code = gs_makebitmappattern(&ccolor, &tile, false, pgs, NULL);
 
 	      if ( code < 0 )
 		return code;
-	      pcls->cached_patterns[pattern_index] = ccolor.pattern;
+	      *ppi = ccolor.pattern;
+	      gs_setmatrix(pgs, &mat);
 	    }
 	  gs_setpattern(pgs, &ccolor);
 	}
@@ -384,8 +476,10 @@ private void
 pcdraw_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & pcl_reset_initial )
 	  { int i;
-	    for ( i = 0; i < countof(pcls->cached_patterns); ++i )
-	      pcls->cached_patterns[i] = 0;
+	    for ( i = 0; i < countof(pcls->cached_shading); ++i )
+	      pcls->cached_shading[i] = 0;
+	    for ( i = 0; i < countof(pcls->cached_cross_hatch); ++i )
+	      pcls->cached_cross_hatch[i] = 0;
 	  }
 }
 const pcl_init_t pcdraw_init = {

@@ -17,13 +17,24 @@
 #include "pcdraw.h"
 #include "pcsymbol.h"
 #include "gsmatrix.h"
-#include "gschar.h"
 #include "gscoord.h"
-#include "gsfont.h"
 #include "gspaint.h"
 #include "gspath.h"
 #include "gsstate.h"
 #include "gsutil.h"
+#include "gxfixed.h"
+#include "gxchar.h"
+#include "gxfont.h"
+#include "gxstate.h"
+
+/*
+ * It appears that the default symbol set in the LJ 6MP is PC-8,
+ * not Roman-8.  Eventually we will have to deal with this in a more
+ * systematic way, but for now, we just define it at compile time.
+ */
+#define ROMAN_8_SYMBOL_SET 277
+/*#define DEFAULT_SYMBOL_SET 277*/	/* Roman-8 */
+#define DEFAULT_SYMBOL_SET 341		/* PC-8 */
 
 /* pseudo-"dots" (actually 1/300" units) used in underline only */
 #define	dots(n)	((float)(7200 / 300 * n))
@@ -88,7 +99,7 @@ private bool
 check_support(const pcl_state_t *pcls, uint symbol_set, pl_font_t *fp,
     pl_symbol_map_t **mapp)
 {
-	pl_glyph_vocabulary_t gv = fp->character_complement[7] & 07;
+	pl_glyph_vocabulary_t gv = ~fp->character_complement[7] & 07;
 	byte id[2];
 	pl_symbol_map_t *map;
 
@@ -122,11 +133,11 @@ score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
 	    score[score_symbol_set] =
 		pfs->params.symbol_set == fp->params.symbol_set? 2:
 		    (fp->params.symbol_set == pcl_default_symbol_set_value);
-	    mapp = NULL;	/* bound fonts have no map */
+	    *mapp = NULL;	/* bound fonts have no map */
 	  }
 	else
 	  score[score_symbol_set] =
-	    check_support(pcls, fp->params.symbol_set, fp, mapp)? 2:
+	    check_support(pcls, pfs->params.symbol_set, fp, mapp)? 2:
 	      check_support(pcls, pcl_default_symbol_set_value, fp, mapp);
 
 	/* 2.  Spacing. */
@@ -204,8 +215,13 @@ score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
 	}
 
 	/* 7.  Typeface family. */
-	score[score_typeface] =
-	    pfs->params.typeface_family == fp->params.typeface_family;
+	{ uint diff = pfs->params.typeface_family ^ fp->params.typeface_family;
+
+	  /* Give partial credit for the same typeface from a different */
+	  /* vendor. */
+	  score[score_typeface] =
+	    (diff == 0 ? 2 : !(diff & 0xfff) ? 1 : 0);
+	}
 
 	/* 8. Location. */
 	/* Rearrange the value from "storage" into priority for us.  We
@@ -249,17 +265,13 @@ pcl_recompute_font(pcl_state_t *pcls)
 	  { pl_dict_enum_t dictp;
 	    gs_const_string key;
 	    void *value;
-	    pl_font_t *best_font;
+	    pl_font_t *best_font = 0;
 	    pl_symbol_map_t *mapp, *best_map;
 	    match_score_t best_match;
 
-	    /* Be sure we've got at least one font. */
+	    /* Initialize the best match to be worse than any real font. */
+	    best_match[0] = -1;
 	    pl_dict_enum_begin(&pcls->soft_fonts, &dictp);
-	    if ( !pl_dict_enum_next(&dictp, &key, &value) )
-		return e_Unimplemented;
-	    best_font = (pl_font_t *)value;
-	    score_match(pcls, pfs, best_font, &best_map, best_match);
-
 	    while ( pl_dict_enum_next(&dictp, &key, &value) )
 	      { pl_font_t *fp = (pl_font_t *)value;
 		match_score_t match;
@@ -279,49 +291,145 @@ pcl_recompute_font(pcl_state_t *pcls)
 		      break;
 		    }
 	      }
+	    if ( best_font == 0 )
+	      return e_Unimplemented;	/* no fonts */
 	    pfs->font = best_font;
 	    pfs->map = best_map;
 	  }
 	pcls->font = pfs->font;
 	pcls->map = pfs->map;
+	pfs->selected_by_id = false;
 	return 0;
 }
 
-/* Show a string using an enumerator. */
-private int
-pcl_show_chars(gs_show_enum *penum, gs_state *pgs, floatp scaled_hmi,
-  const char *str, uint size)
-{	int code;
+/* Next-character procedures, with symbol mapping. */
+private gs_char
+pcl_map_symbol(uint chr, const gs_show_enum *penum)
+{	pcl_state_t *pcls = gs_state_client_data(penum->pgs);
+	const pl_symbol_map_t *psm =
+	  pcls->font_selection[pcls->font_selected].map;
+	uint first_code;
 
-	if ( (code = gs_show_n_init(penum, pgs, str, size)) < 0 )
+	if ( psm == 0 )
+	  return chr;
+	first_code = pl_get_uint16(psm->first_code);
+	if ( chr < first_code || chr > pl_get_uint16(psm->last_code) )
+	  return 0xffff;
+	return psm->codes[chr - first_code];
+}
+private int
+pcl_next_char_8(gs_show_enum *penum, gs_char *pchr)
+{	if ( penum->index == penum->str.size )
+	  return 2;
+	*pchr = pcl_map_symbol(penum->str.data[penum->index++], penum);
+	return 0;
+}
+
+/* Show a string, possibly substituting a modified HMI for all characters */
+/* or only the space character. */
+typedef enum {
+  char_adjust_none,
+  char_adjust_space,
+  char_adjust_all
+} pcl_char_adjust_t;
+private int
+pcl_char_width(gs_show_enum *penum, gs_state *pgs, byte chr, gs_point *ppt)
+{	int code = gs_stringwidth_n_init(penum, pgs, &chr, 1);
+	if ( code < 0 || (code = gs_show_next(penum)) < 0 )
+	  return code;
+	gs_show_width(penum, ppt);
+	return 0;
+}
+private int
+pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
+  pcl_char_adjust_t adjust, const char *str, uint size)
+{	gs_state *pgs = pcls->pgs;
+	int code;
+	floatp scaled_hmi = pcl_hmi(pcls) / pscale->x;
+	floatp diff;
+
+	/* Compute any width adjustment. */
+	switch ( adjust )
+	  {
+	  case char_adjust_none:
+	    break;
+	  case char_adjust_space:
+	    { gs_point space_width;
+
+	      /* Find the actual width of the space character. */
+	      pcl_char_width(penum, pgs, ' ', &space_width);
+	      diff = scaled_hmi - space_width.x;
+	    }
+	    break;
+	  case char_adjust_all:
+	    { gs_point char_width;
+
+	      /* Find some character that is defined in the font. */
+	      /****** WRONG -- SHOULD GET IT SOMEWHERE ELSE ******/
+	      { byte chr;
+	        for ( chr = ' '; ; ++chr )
+		  { pcl_char_width(penum, pgs, chr, &char_width);
+		    if ( char_width.x != 0 )
+		      break;
+		  }
+		diff = scaled_hmi - char_width.x;
+	      }
+	    }
+	    break;
+	  }
+	if ( pcls->end_of_line_wrap )
+	  { /*
+	     * If end-of-line wrap is enabled, we must render one character
+	     * at a time.  (It's a good thing this is used primarily for
+	     * diagnostics.)
+	     */
+	    int i;
+	    for ( i = 0; i < size; ++i )
+	      { byte chr;
+	        gs_point width, pt;
+		floatp move;
+
+		chr = str[i];
+	        if ( adjust == char_adjust_all ||
+		     (chr == ' ' && adjust == char_adjust_space)
+		   )
+		  { width.x = scaled_hmi;
+		    move = diff;
+		  }
+		else
+		  { pcl_char_width(penum, pgs, chr, &width);
+		    move = 0.0;
+		  }
+		gs_currentpoint(pgs, &pt);
+		/* Compensate for the fact that everything is scaled. */
+		/* We should really handle this by scaling the font.... */
+		if ( (pt.x + width.x) * pscale->x > pcls->right_margin )
+		  { pcl_do_CR(pcls);
+		    pcl_do_LF(pcls);
+		    gs_moveto(pgs, pcls->cap.x / pscale->x,
+			      pcls->cap.y / pscale->y);
+		  }
+		gs_show_n_init(penum, pgs, str + i, 1);
+		gs_show_next(penum);
+		if ( move != 0 )
+		  gs_rmoveto(pgs, move, 0.0);
+	      }
+	  }
+	else switch ( adjust )
+	  {
+	  case char_adjust_none:
+	    code = gs_show_n_init(penum, pgs, str, size);
+	    break;
+	  case char_adjust_space:
+	    code = gs_widthshow_n_init(penum, pgs, diff, 0.0, ' ', str, size);
+	    break;
+	  case char_adjust_all:
+	    code = gs_ashow_n_init(penum, pgs, diff, 0.0, str, size);
+	    break;
+	  }
+	if ( code < 0 )
 	  return code;
 	return gs_show_next(penum);
-}
-/* Show a string, treating spaces as control characters. */
-private int
-pcl_show_chars_SP(gs_show_enum *penum, gs_state *pgs, floatp scaled_hmi,
-  const char *str, uint size)
-{	uint start = 0, i;
-	int code;
-
-	while ( start < size )
-	  { /* Scan for the next space character, if any. */
-	    for ( i = start; i < size && str[i] != ' '; ++i )
-	      ;
-	    /* Show the characters up to the space. */
-	    if ( i > start )
-	      { code = pcl_show_chars(penum, pgs, scaled_hmi, str + start, i - start);
-	        if ( code != 0 )
-		  return code;
-	      }
-	    if ( i == size )
-	      break;
-	    code = gs_rmoveto(pgs, scaled_hmi, 0.0);
-	    if ( code < 0 )
-	      return code;
-	    start = i + 1;
-	  }
-	return 0;
 }
 
 /* Commands */
@@ -335,10 +443,9 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	pcl_font_selection_t *pfp;
 	coord_point initial;
 	gs_point gs_width;
-	float scale_x, scale_y, scale_sign;
-	int (*show_chars)(P5(gs_show_enum *, gs_state *, floatp,
-			     const char *, uint)) = pcl_show_chars;
-	floatp scaled_hmi = 0.0;
+	gs_point scale;
+	int scale_sign;
+	pcl_char_adjust_t adjust = char_adjust_none;
 	int code = 0;
 
 	if ( pcls->font == 0 )
@@ -350,19 +457,26 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	/**** WE COULD CACHE MORE AND DO LESS SETUP HERE ****/
 	pcl_set_graphics_state(pcls, true);
 	code = pcl_set_drawing_color(pcls, pcls->pattern_type,
-				     &pcls->pattern_id);
+				     &pcls->current_pattern_id);
 	if ( code < 0 )
 	  return code;
-	gs_setfont(pgs, (gs_font *)pcls->font->pfont);
+	{ gs_font *pfont = (gs_font *)pcls->font->pfont;
+	  /*
+	   * Set up for single-byte character parsing.  Eventually we will
+	   * use the text parsing method to generalize this....
+	   */
+	  pfont->procs.next_char = pcl_next_char_8;
+	  gs_setfont(pgs, pfont);
+	}
 	penum = gs_show_enum_alloc(mem, pgs, "pcl_plain_char");
 	if ( penum == 0 )
 	  return_error(e_Memory);
-	gs_moveto(pgs, (float)pcls->cap.x, (float)pcls->cap.y);
+	gs_moveto(pgs, (floatp)pcls->cap.x, (floatp)pcls->cap.y);
 
 	if ( pcls->font->scaling_technology == plfst_bitmap )
 	  {
-	    scale_x = pcl_coord_scale / pcls->font->resolution.x;
-	    scale_y = pcl_coord_scale / pcls->font->resolution.y;
+	    scale.x = pcl_coord_scale / pcls->font->resolution.x;
+	    scale.y = pcl_coord_scale / pcls->font->resolution.y;
 	    /*
 	     * Bitmap fonts use an inverted coordinate system,
 	     * the same as the usual PCL system.
@@ -375,7 +489,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	     * Outline fonts are 1-point; the font height is given in
 	     * (quarter-)points.
 	     */
-	    scale_x = scale_y = pfp->params.height_4ths * 0.25
+	    scale.x = scale.y = pfp->params.height_4ths * 0.25
 	      * inch2coord(1.0/72);
 	    /*
 	     * Scalable fonts use an upright coordinate system,
@@ -392,7 +506,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	 * works. */
 	if ( pcls->underline_enabled && pcls->underline_floating )
 	  {
-	    float yu = scale_y / 5.0;
+	    float yu = scale.y / 5.0;
 	    if ( yu > pcls->underline_position )
 	      pcls->underline_position = yu;
 	  }
@@ -407,23 +521,31 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	 * be cleaned up when performance time rolls around. */
 	gs_currentmatrix(pgs, &user_ctm);
 	/* possibly invert text because HP coordinate system is inverted */
-	gs_scale(pgs, scale_x, scale_y * scale_sign);
+	scale.y *= scale_sign;
+	gs_scale(pgs, scale.x, scale.y);
 	gs_currentmatrix(pgs, &font_ctm);
 
 	/*
-	 * If the string has any spaces and the font doesn't define the
-	 * space character, we have to do something special.
+	 * If this is a fixed-pitch font and we have an explicitly set HMI,
+	 * override the HMI.
 	 */
-	{ uint i;
-	  for ( i = 0; i < size; ++i )
-	    if ( str[i] == ' ' )
-	      { if ( !pl_font_includes_char(pcls->font, pcls->map, &font_ctm, ' ') )
-		  { show_chars = pcl_show_chars_SP;
-		    scaled_hmi = pcl_hmi(pcls) / scale_x;
-		  }
-	        break;
-	      }
-	}
+	if ( !pcls->font->params.proportional_spacing &&
+	     pcls->hmi_set == hmi_set_explicitly
+	   )
+	  adjust = char_adjust_all;
+	else
+	  { /*
+	     * If the string has any spaces and the font doesn't define the
+	     * space character, we have to do something special.
+	     */
+	    uint i;
+	    for ( i = 0; i < size; ++i )
+	      if ( str[i] == ' ' )
+		{ if ( !pl_font_includes_char(pcls->font, pcls->map, &font_ctm, ' ') )
+		    adjust = char_adjust_space;
+	          break;
+		}
+	  }
 
 	/* Overstrike-center if needed.  Enter here in font space. */
 	if ( pcls->last_was_BS )
@@ -433,7 +555,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 
 	    /* Scale the width only by the font part of transformation so
 	     * it ends up in PCL coordinates. */
-	    gs_make_scaling(scale_x, scale_y * scale_sign, &font_only_mat);
+	    gs_make_scaling(scale.x, scale.y, &font_only_mat);
 	    if ( (code = pl_font_char_width(pcls->font, pcls->map,
 		&font_only_mat, str[0], &gs_width)) != 0 )
 	      goto x;
@@ -449,7 +571,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 		gs_moveto(pgs, initial.x, initial.y);
 		gs_setmatrix(pgs, &font_ctm);
 	      }
-	    if ( (code = (*show_chars)(penum, pgs, scaled_hmi, str, 1)) != 0 )
+	    if ( (code = pcl_show_chars(penum, pcls, &scale, adjust, str, 1)) != 0 )
 	      goto x;
 	    str++;  size--;
 	    /* Now reposition to "un-backspace", *regardless* of the
@@ -467,7 +589,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	  { gs_point pt;
 	    if ( size > 1 )
 	      {
-		if ( (code = (*show_chars)(penum, pgs, scaled_hmi, str, size - 1)) != 0 )
+		if ( (code = pcl_show_chars(penum, pcls, &scale, adjust, str, size - 1)) != 0 )
 		  goto x;
 		str += size - 1;
 		size = 1;
@@ -480,7 +602,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	    initial.x = pt.x;
 	    initial.y = pt.y;
 	    gs_setmatrix(pgs, &font_ctm);
-	    if ( (code = (*show_chars)(penum, pgs, scaled_hmi, str, 1)) != 0 )
+	    if ( (code = pcl_show_chars(penum, pcls, &scale, adjust, str, 1)) != 0 )
 	      goto x;
 	    gs_setmatrix(pgs, &user_ctm);
 	    gs_currentpoint(pgs, &pt);
@@ -587,13 +709,15 @@ pcl_secondary_spacing(pcl_args_t *pargs, pcl_state_t *pcls)
 private int
 pcl_pitch(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 {	uint pitch_100ths = (uint)(float_arg(pargs) * 100 + 0.5);
+	pcl_font_selection_t *pfs = &pcls->font_selection[set];
 
 	if ( pitch_100ths > 65535 )
 	  return e_Range;
-	if ( pitch_100ths != pcls->font_selection[set].params.pitch_100ths )
+	if ( pitch_100ths != pfs->params.pitch_100ths )
 	  {
-	    pcls->font_selection[set].params.pitch_100ths = pitch_100ths;
-	    pcl_decache_font(pcls, set);
+	    pfs->params.pitch_100ths = pitch_100ths;
+	    if ( !pfs->selected_by_id )
+	      pcl_decache_font(pcls, set);
 	  }
 	return 0;
 }
@@ -609,13 +733,15 @@ pcl_secondary_pitch(pcl_args_t *pargs, pcl_state_t *pcls)
 private int
 pcl_height(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 {	uint height_4ths = (uint)(float_arg(pargs) * 4 + 0.5);
+	pcl_font_selection_t *pfs = &pcls->font_selection[set];
 
 	if ( height_4ths >= 4000 )
 	  return e_Range;
-	if ( height_4ths != pcls->font_selection[set].params.height_4ths )
+	if ( height_4ths != pfs->params.height_4ths )
 	  {
-	    pcls->font_selection[set].params.height_4ths = height_4ths;
-	    pcl_decache_font(pcls, set);
+	    pfs->params.height_4ths = height_4ths;
+	    if ( !pfs->selected_by_id )
+	      pcl_decache_font(pcls, set);
 	  }
 	return 0;
 }
@@ -709,10 +835,26 @@ pcl_font_selection_id(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 
 	/* Transfer parameters from the selected font into the selection
 	 * parameters, being careful with the softer parameters. */
-	/****** WRONG -- DOESN'T SCALE FONT PER HEIGHT ******/
 	pfs->font = fp;
+	pfs->selected_by_id = true;
+	pfs->map = 0;
 	if ( pl_font_is_bound(fp) )
-	    pfs->params.symbol_set = fp->params.symbol_set;
+	  pfs->params.symbol_set = fp->params.symbol_set;
+	else
+	  { if ( check_support(pcls, pfs->params.symbol_set, fp, &pfs->map) )
+	      DO_NOTHING;
+	    else if ( check_support(pcls, pcl_default_symbol_set_value,
+				    fp, &pfs->map)
+		    )
+	      DO_NOTHING;
+	    else
+	      { /*
+		 * This font doesn't support the required symbol set.
+		 * Punt -- map 1-for-1.
+		 */
+	      }
+	  }
+		 
 	pfs->params.proportional_spacing = fp->params.proportional_spacing;
 	if ( !pfs->params.proportional_spacing && !pl_font_is_scalable(fp) )
 	  pfs->params.pitch_100ths = fp->params.pitch_100ths;
@@ -957,9 +1099,8 @@ pcfont_do_init(gs_memory_t *mem)
 private void
 pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
-	  { pcls->font_selection[0].params.symbol_set = 277;	/* Roman-8 */
-	    /* XXX There is some problem with fixed-pitch fonts; make the
-	     * default proportional until it's fixed. */
+	  { pcls->font_selection[0].params.symbol_set =
+	      DEFAULT_SYMBOL_SET;
 	    pcls->font_selection[0].params.proportional_spacing = false;
 	    pcls->font_selection[0].params.pitch_100ths = 10*100;
 	    pcls->font_selection[0].params.height_4ths = 12*4;
@@ -993,29 +1134,46 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *prefixes[])
 #include "string_.h"
 #include "gp.h"
 	typedef struct font_hack {
-	  char *ext_name;
+	  const char *ext_name;
 	  pl_font_params_t params;
+	  byte character_complement[8];
 	} font_hack_t;
 	static const font_hack_t hack_table[] = {
-	    /* Typeface family values are faked; they do not (necessarily)
-	     * match the actual fonts. */
-	    {"arial",	{0, 1, 0, 0, 0, 0, 16602} },
-	    {"arialbd",	{0, 1, 0, 0, 0, 3, 16602} },
-	    {"arialbi",	{0, 1, 0, 0, 1, 3, 16602} },
-	    {"ariali",	{0, 1, 0, 0, 1, 0, 16602} },
-	    {"cour",	{0, 0, 0, 0, 0, 0, 4099} },
-	    {"courbd",	{0, 0, 0, 0, 0, 3, 4099} },
-	    {"courbi",	{0, 0, 0, 0, 1, 3, 4099} },
-	    {"couri",	{0, 0, 0, 0, 1, 0, 4099} },
-	    {"times",	{0, 1, 0, 0, 0, 0, 16901} },
-	    {"timesbd",	{0, 1, 0, 0, 0, 3, 16901} },
-	    {"timesbi",	{0, 1, 0, 0, 1, 3, 16901} },
-	    {"timesi",	{0, 1, 0, 0, 1, 0, 16901} },
+	    /*
+	     * Symbol sets, typeface family values, and character complements
+	     * are faked; they do not (necessarily) match the actual fonts.
+	     */
+#define C(b) ((byte)((b) ^ 0xff))
+#define cc_alphabetic\
+  { C(0), C(0), C(0), C(0), C(0xff), C(0xc0), C(0), C(plgv_Unicode) }
+#define cc_symbol\
+  { C(0), C(0), C(0), C(4), C(0), C(0), C(0), C(plgv_Unicode) }
+#define cc_dingbats\
+  { C(0), C(0), C(0), C(1), C(0), C(0), C(0), C(plgv_Unicode) }
+	    {"arial",	{0, 1, 0, 0, 0, 0, 16602}, cc_alphabetic },
+	    {"arialbd",	{0, 1, 0, 0, 0, 3, 16602}, cc_alphabetic },
+	    {"arialbi",	{0, 1, 0, 0, 1, 3, 16602}, cc_alphabetic },
+	    {"ariali",	{0, 1, 0, 0, 1, 0, 16602}, cc_alphabetic },
+	    {"cour",	{0, 0, 0, 0, 0, 0,  4099}, cc_alphabetic },
+	    {"courbd",	{0, 0, 0, 0, 0, 3,  4099}, cc_alphabetic },
+	    {"courbi",	{0, 0, 0, 0, 1, 3,  4099}, cc_alphabetic },
+	    {"couri",	{0, 0, 0, 0, 1, 0,  4099}, cc_alphabetic },
+	    {"times",	{0, 1, 0, 0, 0, 0, 16901}, cc_alphabetic },
+	    {"timesbd",	{0, 1, 0, 0, 0, 3, 16901}, cc_alphabetic },
+	    {"timesbi",	{0, 1, 0, 0, 1, 3, 16901}, cc_alphabetic },
+	    {"timesi",	{0, 1, 0, 0, 1, 0, 16901}, cc_alphabetic },
+	    {"symbol",	{621,1,0, 0, 0, 0, 16686}, cc_symbol },
+	    {"wingding",{2730,1,0,0, 0, 0, 19114}, cc_dingbats },
 	    {NULL,	{0, 0, 0, 0, 0, 0, 0} }
+#undef C
+#undef cc_alphabetic
+#undef cc_symbol
+#undef cc_dingbats
 	};
 	const font_hack_t *hackp;
 	byte font_found[countof(hack_table)];
 	bool found_some = false;
+	byte key[3];
 
 	/* This initialization was moved from the do_reset procedures to
 	 * this point to localize the font initialization in the state
@@ -1027,14 +1185,15 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *prefixes[])
 
 	    /* Load only those fonts we know about. */
 	memset(font_found, 0, sizeof(font_found));
+	/* We use a 3-byte key so the built-in fonts don't have */
+	/* IDs that could conflict with user-defined ones. */
+	key[0] = key[1] = key[2] = 0;
 	for ( pprefix = prefixes; *pprefix != 0; ++pprefix )
 	  for ( hackp = hack_table; hackp->ext_name != 0; ++hackp )
 	    if ( !font_found[hackp - hack_table] )
 	      { char fname[150];
 	        FILE *fnp;
 		pl_font_t *plfont;
-		int id = 0;
-		byte key[2];
 
 	        strcpy(fname, *pprefix);
 		strcat(fname, hackp->ext_name);
@@ -1053,16 +1212,18 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *prefixes[])
 		dprintf1("Loaded %s\n", fname);
 #endif
 		plfont->storage = pcds_internal;
+		if ( hackp->params.symbol_set != 0 )
+		  plfont->font_type = plft_8bit;
 		/* Don't smash the pitch_100ths, which was obtained
 		 * from the actual font. */
 		{ uint save_pitch = plfont->params.pitch_100ths;
 		  plfont->params = hackp->params;
 		  plfont->params.pitch_100ths = save_pitch;
 		}
-		id++;
-		key[0] = id >> 8;
-		key[1] = id;
-		pl_dict_put(&pcls->built_in_fonts, key, 2, plfont);
+		memcpy(plfont->character_complement,
+		       hackp->character_complement, 8);
+		pl_dict_put(&pcls->built_in_fonts, key, sizeof(key), plfont);
+		key[sizeof(key) - 1]++;
 		font_found[hackp - hack_table] = 1;
 		found_some = true;
 	    }

@@ -159,14 +159,15 @@ call:	if ( pst->command )
 		       !(pst->command->flags & hpgl_cdf_polygon)
 		      )
 		    pst->command = 0;
-
-		  /* similarly if we are in lost mode we do not
-                     execute the commands that are only defined to 
-		     be used when lost mode is cleared. */
-		  if (( pgls->g.lost_mode == hpgl_lost_mode_entered ) &&
-		      (pst->command->flags & hpgl_cdf_lost_mode_cleared)
-		      )
-		    pst->command = 0;
+		  else
+		    { /* similarly if we are in lost mode we do not
+			 execute the commands that are only defined to 
+			 be used when lost mode is cleared. */
+		      if (( pgls->g.lost_mode == hpgl_lost_mode_entered ) &&
+			  (pst->command->flags & hpgl_cdf_lost_mode_cleared)
+			  )
+			pst->command = 0;
+		    }
 		  goto call;
 		}
 	  }

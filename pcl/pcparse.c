@@ -408,6 +408,8 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 			  pst->scan_type = scanning_none;
 			else
 			  { pst->scan_type = scanning_none;
+			    /* Rescan the out-of-place character. */
+			    --p;
 			    continue;
 			  }
 			/* Dispatch on param_class, param_group, and chr. */
@@ -484,7 +486,10 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 				    while ( p < rlimit && p[1] >= 32 &&
 					    p[1] <= 127
 					  )
-				      ++p;
+				      { if_debug1('i', "%c", p[1]);
+					++p;
+				      }
+				    if_debug0('i', "\n");
 				    code = pcl_text(str, (uint)(p + 1 - str),
 						    pcls);
 				    if ( code < 0 )

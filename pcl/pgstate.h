@@ -182,6 +182,15 @@ typedef struct pcl_hpgl_state_s {
 	  int origin;
 	  uint terminator;
 	  bool print_terminator;
+	  /* NOTE: HAS These pointer could be local to hpgl_LB but the
+             parser can recall hpgl_LB for more data.  So for
+             simplicity we make them part of the global state */
+#define hpgl_char_count 128     /* initial buffer size */
+	  byte *line_ptr;       /* start of line buffer pointer */
+	  byte *char_ptr;      /* pointer to the current character */
+	  unsigned int char_count;  /* count of chars in the buffer */
+          unsigned int buffer_size; /* size of the current buffer */
+	  hpgl_real_t length; /* length of the current label string */
 	} label;
 	bool transparent_data;
 	uint font_id[2];
