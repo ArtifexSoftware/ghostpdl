@@ -120,9 +120,7 @@ extern  pcl_crd_t * pcl_default_crd;
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_crd_build_default_crd(
-    gs_memory_t *   pmem
-);
+extern  int     pcl_crd_build_default_crd( pcl_state_t * pcs );
 
 /*
  * Build a CRD with device-provided parameters, but with the default PCL

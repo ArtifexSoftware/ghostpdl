@@ -27,10 +27,13 @@
 #include "gsmemory.h"
 #include "gsstruct.h"
 #include "gsrefct.h"
+#include "gsparam.h"
+#include "gsdevice.h"
 #include "gscspace.h"
 #include "gscolor2.h"
 #include "gscie.h"
 #include "gscrd.h"
+#include "gscrdp.h"
 #include "pcommand.h"
 #include "pccrd.h"
 
@@ -164,6 +167,73 @@ alloc_crd(
 }
 
 /*
+ * See if the default CRD is specified by the device.
+ *
+ * To simplify selection of more than one default CRD, this code allows more
+ * than one CRD to be included in the parameters associated with a device,
+ * and uses the device parameter "CRDName" to select the one that is to be
+ * used as a default.
+ *
+ * Returns 
+ */
+  private bool
+read_device_CRD(
+    pcl_crd_t *     pcrd,
+    pcl_state_t *   pcs
+)
+{
+    gx_device *     pdev = gs_currentdevice(pcs->pgs);
+    gs_c_param_list list;
+    gs_param_string dstring;
+    char            nbuff[64];  /* ample size */
+    int             code = 0;
+
+    /*get the CRDName parameter from the device */
+    gs_c_param_list_write(&list, pcs->memory);
+    if (param_request((gs_param_list *)&list, "CRDName") < 0)
+        return false;
+
+    if ((code = gs_getdeviceparams(pdev, (gs_param_list *)&list)) >= 0) {
+        gs_c_param_list_read(&list);
+        if ( (code = param_read_string( (gs_param_list *)&list,
+                                        "CRDName",
+                                        &dstring
+                                        )) == 0 ) {
+            if (dstring.size > sizeof(nbuff) - 1)
+                code = 1;
+            else {
+                strncpy(nbuff, (char *)dstring.data, dstring.size);
+                nbuff[dstring.size] = '\0';
+            }
+        }
+    }
+    gs_c_param_list_release(&list);
+    if (code != 0)
+        return false;
+
+    gs_c_param_list_write(&list, pcs->memory);
+    if (param_request((gs_param_list *)&list, nbuff) < 0)
+        return false;
+    if ((code = gs_getdeviceparams(pdev, (gs_param_list *)&list)) >= 0) {
+        gs_param_dict   dict;
+
+        gs_c_param_list_read(&list);
+        if ( (code = param_begin_read_dict( (gs_param_list *)&list,
+                                            nbuff,
+                                            &dict,
+                                            false
+                                            )) == 0 ) {
+            code = param_get_cie_render1(pcrd->pgscrd, dict.list, pdev);
+            param_end_read_dict((gs_param_list *)&list, nbuff, &dict);
+            if (code > 0)
+                code = 0;
+        }
+    }
+    gs_c_param_list_release(&list);
+    return (code == 0);
+}
+
+/*
  * Build the default color rendering dictionary.
  *
  * This routine should be called only once, and then only when there is no
@@ -173,7 +243,7 @@ alloc_crd(
  */
   int
 pcl_crd_build_default_crd(
-    gs_memory_t *   pmem
+    pcl_state_t *   pcs
 )
 {
     pcl_crd_t *     pcrd = pcl_default_crd;
@@ -184,26 +254,30 @@ pcl_crd_build_default_crd(
         return e_Range;
 
     /* allocate the CRD structure */
-    if ((code = alloc_crd(&pcrd, pmem)) < 0)
+    if ((code = alloc_crd(&pcrd, pcs->memory)) < 0)
         return code;
-
     pcl_default_crd = pcrd;
-    dflt_TransformPQR = dflt_TransformPQR_proto;
-    return gs_cie_render1_initialize( pcrd->pgscrd,
-                                      NULL,
-                                      &dflt_WhitePoint,
-                                      NULL,
-                                      NULL,
-                                      NULL,
-                                      &dflt_TransformPQR,
-                                      &dflt_MatrixLMN,
-                                      NULL,
-                                      NULL,
-                                      NULL,
-                                      NULL,
-                                      NULL,
-                                      NULL
-                                      );
+
+    if (read_device_CRD(pcrd, pcs))
+        return 0;
+    else {
+        dflt_TransformPQR = dflt_TransformPQR_proto;
+        return gs_cie_render1_initialize( pcrd->pgscrd,
+                                          NULL,
+                                          &dflt_WhitePoint,
+                                          NULL,
+                                          NULL,
+                                          NULL,
+                                          &dflt_TransformPQR,
+                                          &dflt_MatrixLMN,
+                                          NULL,
+                                          NULL,
+                                          NULL,
+                                          NULL,
+                                          NULL,
+                                          NULL
+                                          );
+    }
 }
 
 /*
@@ -345,8 +419,8 @@ pcl_crd_set_crd(
     int             code = 0;
 
     if (pcrd == 0) {
-        if ( (pcl_default_crd == 0)                               &&
-             ((code = pcl_crd_build_default_crd(pcs->memory)) < 0)  )
+        if ( (pcl_default_crd == 0)                       &&
+             ((code = pcl_crd_build_default_crd(pcs)) < 0)  )
             return code;
         pcrd = pcl_default_crd;
         pcl_crd_init_from(*ppcrd, pcrd);
