@@ -2,7 +2,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
-
+import java.io.File;
+import javax.swing.filechooser.*;
 /**
  * Simple Viewer for PCL and PXL files.
  * Use:
@@ -18,19 +19,18 @@ import java.awt.image.*;
  */
 public class Gview extends JFrame implements KeyListener, MouseListener,  GpickleObserver {
 
-    final static private boolean debug = true; 
-    private BufferedImage currentPage;
-    private int pageNumber = 1;
-    private Gpickle pickle = new Gpickle();
-    private GpickleThread pickleThread;
-    private double desiredRes;
-    private double origRes;
-    private double origH;
-    private double origW;
-    private double origX = 0;
-    private double origY = 0;
-    private int tx;
-    private int ty;
+    protected final static boolean debug = false;
+    protected BufferedImage currentPage;
+    protected int pageNumber = 1;
+    protected GpickleThread pickle;
+    protected double desiredRes;
+    protected double origRes;
+    protected double origH;
+    protected double origW;
+    protected double origX = 0;
+    protected double origY = 0;
+    protected int tx;
+    protected int ty;
     private boolean drag = false;
 
     // constructor
@@ -38,8 +38,8 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
     {
 	super( "Ghost Pickle Viewer" );
 	pageNumber = 1;
-	pickle = new Gpickle();
-	pickleThread = new GpickleThread(pickle, this);
+	pickle = new GpickleThread(this);
+	//pickleThread = new GpickleThread(pickle, this);
 	addKeyListener(this);
 	addMouseListener(this);
     }
@@ -54,16 +54,17 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
 	int key = e.getKeyCode();
 	// page down NB - increment past last page - BufferedImage
 	// will be null and no repaint operation
-	if ( key == KeyEvent.VK_PAGE_DOWN )
-	    ++pageNumber;
+	if ( key == KeyEvent.VK_PAGE_DOWN ) {
+	    nextPage();
+	    return;
+	}
 	else if ( key == KeyEvent.VK_PAGE_UP ) {
-	    --pageNumber;
-	    if ( pageNumber < 1 )
-		pageNumber = 1;
+	    prevPage();
+	    return;
 	}
 	else if ( key == KeyEvent.VK_Q ) {
 	    System.exit(1);
-	}      
+	}
         else if ( key == KeyEvent.VK_Z ) {
             origX = 0;
             origY = 0;
@@ -77,14 +78,31 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
         else if ( key == KeyEvent.VK_R ) {
             pickle.setRTL(!pickle.getRTL());  // toggle
         }
-        else
+        else if ( key == KeyEvent.VK_O ) {
+	    runFileOpen();
+	}
+	else
            return;
 
-	pickleThread.startProduction( pageNumber );
+	pickle.startProduction( pageNumber );
 
     }
 
-    /**
+     /** file open */ 
+    void runFileOpen() {
+	JFileChooser chooser = new JFileChooser();
+	int result = chooser.showOpenDialog(null);
+	File file = chooser.getSelectedFile();
+	if (result == JFileChooser.APPROVE_OPTION) {
+	    if (debug) System.out.println("file open " + file.getPath());
+
+	    pickle.setJob(file.getPath());
+	    pageNumber = 1;
+	    pickle.startProduction( pageNumber );
+	}
+    }
+
+   /**
      * Unused required by KeyListener
      */
     public void keyTyped( KeyEvent e )
@@ -111,7 +129,7 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
     public void mousePressed(MouseEvent e) {
 
 
-	if ( (e.getModifiers() & e.BUTTON2_MASK) != 0 ) {
+	if ( (e.getModifiers() & (e.BUTTON2_MASK | e.BUTTON3_MASK)) != 0 ) {
 	    if ( e.isControlDown() ) {
 		zoomOut(e.getX(), e.getY());
 	    }
@@ -141,24 +159,47 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
         if (e.isControlDown() == false && drag) {
            translate(tx - e.getX(), ty - e.getY());
            drag = false;
-	}     
+	}
     }
     public void mouseEntered(MouseEvent e) {
     }
     public void mouseExited(MouseEvent e) {
     }
 
-    private void translate(int x, int y) {
-        double x1 = origX = origX + x; 
-        double y1 = origY = origY + y; 
+    public void setPage(int _pageNumber) {
+       pageNumber = _pageNumber;
+    }
+    public void nextPage() {
+	++pageNumber;					
+        pickle.startProduction( pageNumber );	
+    }
+    public void prevPage() {
+        --pageNumber;
+        if ( pageNumber < 1 )
+	    pageNumber = 1;
+        pickle.startProduction( pageNumber );
+    }
+
+    protected void translate(int x, int y) {
+        double x1 = origX = origX + x;
+        double y1 = origY = origY + y;
 
         double sfx = desiredRes / origRes;
         double sfy = desiredRes / origRes;
 
         createViewPort( x1, y1, sfx, sfy, origRes, origRes);
     }
+    protected void translateTo( double x1, double y1 ) {
+        origX = x1;
+        origY = y1;
 
-    private void zoomIn( int x, int y ) {
+        double sfx = desiredRes / origRes;
+        double sfy = desiredRes / origRes;
+
+        createViewPort( x1, y1, sfx, sfy, origRes, origRes);
+   }
+
+    protected void zoomIn( int x, int y ) {
 
         double x1 = origX = origX + (x * desiredRes / origRes);
         double y1 = origY = origY + (y * desiredRes / origRes);
@@ -171,7 +212,7 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
         createViewPort( x1, y1, sfx, sfy, origRes, origRes);
     }
 
-    private void zoomOut( int x, int y ) {
+    protected void zoomOut( int x, int y ) {
         double x1 = origX = origX + (x * desiredRes / origRes);
         double y1 = origY = origY + (y * desiredRes / origRes);
 	
@@ -184,8 +225,8 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
     }
 
     /** Generate a new page with  translation, scale, resolution  */
-    private void createViewPort( double tx,   double ty, 
-				 double sx,   double sy, 
+    private void createViewPort( double tx,   double ty,
+				 double sx,   double sy,
 				 double resX, double resY)
     {
 	if ( false && debug ) {
@@ -215,13 +256,14 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
 	if ( false && debug) System.out.println( options );
         pickle.setRes( resX, resY );
         pickle.setDeviceOptions( options  );
-        pickleThread.startProduction( pageNumber );
+        pickle.startProduction( pageNumber );
     }
 
     /** main program */
     public static void main( String[] args )
     {
-	if (debug) System.out.print(usage());
+	// if (debug) 
+	    System.out.print(usage());
 	Gview view = new Gview();
         view.runMain(args);
     }
@@ -232,24 +274,27 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
     public static String usage() {
 	String str =
 	    "Usage::java Gview file.pcl\n"
-	    + "q ->quit\n"
+	    + "q -> quit\n"
+	    + "z -> zoomin\n"
+	    + "x -> zoomout\n"
+	    + "o -> open file\n"
+	    + "PageUp & PageDown\n"
 	    + "drag mouse1 -> translate\n"
-	    + "crtl mouse1 -> reset zoom \n"
 	    + "mouse2 -> zoom in\n"
 	    ;
 	return str;
     }
 
-    private void runMain(String[] args) {
+    protected void runMain(String[] args) {
 	// NB no error checking.
 	pickle.setJob(args[0]);
-	origRes = desiredRes = 75;
+	origRes = desiredRes = 100;
 	pickle.setRes(desiredRes, desiredRes);
 	pickle.setPageNumber(pageNumber);
 	currentPage = pickle.getPrinterOutputPage();
 	setSize(pickle.getImgWidth(), pickle.getImgHeight());
-	origH = pickle.getImgWidth();
-	origW = pickle.getImgHeight();
+	origW = pickle.getImgWidth();
+	origH = pickle.getImgHeight();
 	show();
     }
 }
