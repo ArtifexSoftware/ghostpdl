@@ -17,9 +17,9 @@
 
 /* Commands */
 
-private int /* ESC E */
-pcl_printer_reset(pcl_args_t *pargs, pcl_state_t *pcs)
-{	
+int
+pcl_do_printer_reset(pcl_state_t *pcs)
+{
     if ( pcs->macro_level )
 	return e_Range;	/* not allowed inside macro */
 
@@ -36,6 +36,12 @@ pcl_printer_reset(pcl_args_t *pargs, pcl_state_t *pcs)
     
     /* Reset to user default state. */
     return pcl_do_resets(pcs, pcl_reset_printer);
+}
+    
+private int /* ESC E */
+pcl_printer_reset(pcl_args_t *pargs, pcl_state_t *pcs)
+{	
+    return pcl_do_printer_reset(pcs);
 }
 
 private int /* ESC % -12345 X */

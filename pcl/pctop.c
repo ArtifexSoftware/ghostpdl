@@ -1,3 +1,4 @@
+/* implement device switching NB */
 /* Portions Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights
    reserved.  Unauthorized use, copying, and/or distribution
    prohibited.  */
@@ -62,6 +63,7 @@ extern const pcl_init_t  pglfill_init;
 extern const pcl_init_t  pgchar_init; 
 extern const pcl_init_t  pglabel_init; 
 extern const pcl_init_t  pgcolor_init; 
+extern const pcl_init_t  fontpg_init;
 
 const pcl_init_t *    pcl_init_table[] = {
     &pcparse_init,
@@ -98,6 +100,7 @@ const pcl_init_t *    pcl_init_table[] = {
     &pgchar_init,
     &pglabel_init,
     &pgcolor_init,
+    &fontpg_init,
     0
 };
 
@@ -590,6 +593,7 @@ pcl_end_page_top(
     int                     flush
 )
 {
+
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)(pcs->client_data);
 	pl_interp_instance_t *instance = (pl_interp_instance_t *)pcli;
 	int code = 0;

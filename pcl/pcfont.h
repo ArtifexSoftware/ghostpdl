@@ -96,6 +96,10 @@ typedef struct pcl_resolution_bitmap_header_s {
     char                Copyright[1];
 } pcl_resolution_bitmap_header_t;
 
+/* set the default font environment based on setting from the pjl
+   interpreter */
+int pcl_set_current_font_environment(P1(pcl_state_t *pcs));
+
 /* debugging to to print font parameters */
 #ifdef DEBUG
 void dprint_font_params_t(P1(const pl_font_params_t *pfp));

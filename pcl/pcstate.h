@@ -360,7 +360,7 @@ gx_device *pcl_get_target_device(P1(pcl_state_t *pcs));
 int pcl_load_cartridge_fonts(P2(pcl_state_t *pcs, const char *pathname));
 int pcl_load_simm_fonts(P2(pcl_state_t *pcs, const char *pathname));
 int pcl_load_built_in_fonts(P2(pcl_state_t *pcs, const char *pathname));
-int pcl_set_current_font_environment(P1(pcl_state_t *pcs));
 /* implicitly exit gl/2 whenever ESC E is found */
 int pcl_implicit_gl2_finish(P1(pcl_state_t *pcs));
+int pcl_do_printer_reset(P1(pcl_state_t *pcs));
 #endif 						/* pcstate_INCLUDED */
