@@ -606,6 +606,7 @@ should really be up to the driver author.</I>
 
 <h3>Ghostscript has no %ram% device.</h3>
 
+<p>
 The %ram% device is documented in PS Supplement 3010 and 3011 dated August 30, 1999.
 This is probably not a major impediment to portability, but it would be handy.
 <p><I>
@@ -614,6 +615,22 @@ of the temporary directory (usually /tmp), with the name chosen and the
 directory created in such a way as to avoid /tmp races and similar
 problems. Ghostscript should delete the subdirectory when it exits.
 </I>
+
+<h3>The PDF interpreter doesn't handle misused Widths right.</h3>
+
+<p>
+Adobe Acrobat Reader can handle PDF fonts in which the Widths array is being
+misused to override the widths in the font, even if the same character
+appears multiple places in the font's encoding.  Ghostscript's PDF
+interpreter can't do this using the PostScript Metrics dictionary, because
+PostScript provides no straightforward way to do this; the present code
+tries to hack it, but can't always succeed.  <I>We propose to add a new,
+optional, non-standard .Widths array to Type 1 and Type 42, indexed by
+character code, that the C code would access directly.  That would get rid
+of the current hacks, and would add very little code (in fact, it might not
+net add code at all, because of the code that we could remove from the PDF
+interpreter).  The character code is already being passed to .type1execchar
+and .type42execchar, so no operator definitions would have to change.</I>
 
 <!-- [2.0 end contents] ==================================================== -->
 
