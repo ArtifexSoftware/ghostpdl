@@ -18,7 +18,7 @@
 
 
 /* Configuration scalars */
-#include "stdpre.h"
+#include "std.h"
 #include "gscdefs.h"		/* interface */
 #include "gconf.h"		/* for #defines */
 
@@ -41,7 +41,7 @@ const char *CONFIG_CONST gs_copyright = GS_COPYRIGHT;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-	"Aladdin Ghostscript TESTER RELEASE"
+	"Aladdin Ghostscript BETA RELEASE"
 #endif
 const char *CONFIG_CONST gs_product = GS_PRODUCT;
 

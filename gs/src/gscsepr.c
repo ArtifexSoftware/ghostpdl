@@ -55,10 +55,8 @@ const gs_color_space_type gs_color_space_type_Separation = {
 
 /* GC procedures */
 
-#define pcs ((gs_color_space *)vptr)
-
 private 
-ENUM_PTRS_BEGIN(cs_Separation_enum_ptrs)
+ENUM_PTRS_WITH(cs_Separation_enum_ptrs, gs_color_space *pcs)
 {
     return ENUM_USING(*pcs->params.separation.alt_space.type->stype,
 		      &pcs->params.separation.alt_space,
@@ -66,7 +64,7 @@ ENUM_PTRS_BEGIN(cs_Separation_enum_ptrs)
 }
 ENUM_PTR(0, gs_color_space, params.separation.map);
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(cs_Separation_reloc_ptrs)
+private RELOC_PTRS_WITH(cs_Separation_reloc_ptrs, gs_color_space *pcs)
 {
     RELOC_PTR(gs_color_space, params.separation.map);
     RELOC_USING(*pcs->params.separation.alt_space.type->stype,
@@ -74,8 +72,6 @@ private RELOC_PTRS_BEGIN(cs_Separation_reloc_ptrs)
 		sizeof(gs_base_color_space));
 }
 RELOC_PTRS_END
-
-#undef pcs
 
 /* Get the alternate space for a Separation space. */
 private const gs_color_space *

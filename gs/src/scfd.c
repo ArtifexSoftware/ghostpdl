@@ -118,32 +118,39 @@ s_CFD_release(stream_state * st)
 #else
 #  define IF_DEBUG(expr) DO_NOTHING
 #endif
-#define get_run(decode, initial_bits, runlen, str, outl)\
-{	const cfd_node *np;\
+#define get_run(decode, initial_bits, min_bits, runlen, str, locl, outl)\
+    BEGIN\
+	const cfd_node *np;\
 	int clen;\
-	ensure_bits(initial_bits, outl);\
+\
+	HCD_ENSURE_BITS_ELSE(initial_bits) {\
+	    /* We might still have enough bits for the specific code. */\
+	    if (bits_left < min_bits) goto outl;\
+	    np = &decode[hcd_peek_bits_left() << (initial_bits - bits_left)];\
+	    if ((clen = np->code_length) > bits_left) goto outl;\
+	    goto locl;\
+	}\
 	np = &decode[peek_bits(initial_bits)];\
-	if ( (clen = np->code_length) > initial_bits )\
-	{	IF_DEBUG(uint init_bits = peek_bits(initial_bits));\
-		if ( !avail_bits(clen) ) goto outl;\
+	if ((clen = np->code_length) > initial_bits) {\
+		IF_DEBUG(uint init_bits = peek_bits(initial_bits));\
+		if (!avail_bits(clen)) goto outl;\
 		clen -= initial_bits;\
 		skip_bits(initial_bits);\
 		ensure_bits(clen, outl);		/* can't goto outl */\
 		np = &decode[np->run_length + peek_var_bits(clen)];\
 		if_debug4('W', "%s xcode=0x%x,%d rlen=%d\n", str,\
 			  (init_bits << np->code_length) +\
-				  peek_var_bits(np->code_length),\
+			    peek_var_bits(np->code_length),\
 			  initial_bits + np->code_length,\
 			  np->run_length);\
 		skip_bits(np->code_length);\
-	}\
-	else\
-	{	if_debug4('W', "%s code=0x%x,%d rlen=%d\n", str,\
+	} else {\
+    locl:	if_debug4('W', "%s code=0x%x,%d rlen=%d\n", str,\
 			  peek_var_bits(clen), clen, np->run_length);\
 		skip_bits(clen);\
 	}\
 	runlen = np->run_length;\
-}
+    END
 
 /* Skip data bits for a white run. */
 /* rlen is either less than 64, or a multiple of 64. */
@@ -452,7 +459,8 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
     if (q_at_stop())
 	goto done;
   dw:				/* Decode a white run. */
-    get_run(cf_white_decode, cfd_white_initial_bits, bcnt, "[w1]white", out0);
+    get_run(cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
+	    bcnt, "[w1]white", dwl, out0);
     if (bcnt < 0) {		/* exceptional situation */
 	switch (bcnt) {
 	    case run_uncompressed:	/* Uncompressed data. */
@@ -479,7 +487,8 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
     }
     run_color = 1;
   db:				/* Decode a black run. */
-    get_run(cf_black_decode, cfd_black_initial_bits, bcnt, "[w1]black", out1);
+    get_run(cf_black_decode, cfd_black_initial_bits, cfd_black_initial_bits,
+	    bcnt, "[w1]black", dbl, out1);
     if (bcnt < 0) {		/* All exceptional codes are invalid here. */
 /****** WRONG, uncompressed IS ALLOWED ******/
 	status = ERRC;
@@ -596,8 +605,8 @@ v0:	    skip_bits(1);
 	    else
 		goto hbb;
 	case 0:		/* everything else */
-	    get_run(cf_2d_decode, cfd_2d_initial_bits, rlen,
-		    "[w2]", out0);
+	    get_run(cf_2d_decode, cfd_2d_initial_bits, cfd_2d_min_bits,
+		    rlen, "[w2]", d2l, out0);
 	    /* rlen may be run2_pass, run_uncompressed, or */
 	    /* 0..countof(cf2_run_vertical)-1. */
 	    if (rlen < 0)
@@ -705,16 +714,16 @@ v0:	    skip_bits(1);
      * branch back into it if we run out of input data.
      */
     /* White, then black. */
-  hww:get_run(cf_white_decode, cfd_white_initial_bits, rlen,
-	    " white", outww);
+  hww:get_run(cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
+	      rlen, " white", wwl, outww);
     if ((count -= rlen) < end_count) {
 	status = ERRC;
 	goto out;
     }
     skip_data(rlen, hww);
     /* Handle the second half of a white-black horizontal code. */
-  hwb:get_run(cf_black_decode, cfd_black_initial_bits, rlen,
-	    " black", outwb);
+  hwb:get_run(cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
+	      rlen, " black", wbl, outwb);
     if ((count -= rlen) < end_count) {
 	status = ERRC;
 	goto out;
@@ -726,16 +735,16 @@ v0:	    skip_bits(1);
   outwb:ss->run_color = 1;
     goto out0;
     /* Black, then white. */
-  hbb:get_run(cf_black_decode, cfd_black_initial_bits, rlen,
-	    " black", outbb);
+  hbb:get_run(cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
+	      rlen, " black", bbl, outbb);
     if ((count -= rlen) < end_count) {
 	status = ERRC;
 	goto out;
     }
     invert_data(rlen, black_byte, goto hbb, ihbb);
     /* Handle the second half of a black-white horizontal code. */
-  hbw:get_run(cf_white_decode, cfd_white_initial_bits, rlen,
-	    " white", outbw);
+  hbw:get_run(cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
+	      rlen, " white", bwl, outbw);
     if ((count -= rlen) < end_count) {
 	status = ERRC;
 	goto out;

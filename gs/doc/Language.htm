@@ -75,14 +75,10 @@ overview</a>.
 <p>
 The Ghostscript interpreter, except as noted below, is intended to execute
 properly any source program written in the (Level 2) <b>PostScript</b>
-language as defined in the December 1990 printing of the
-<a href="http://cseng.awl.com/bookdetail.qry?ISBN=0-201-18127-4&ptype=0"><em>PostScript
-Language Reference Manual</em> (Second Edition, ISBN 0-201-18127-4)</a>
-published by Addison-Wesley, augmented by most of the features defined
-in Adobe's PostScript Language Supplements through release 2017
-and a subset of the features defined in the PostScript Language Supplement
-for release 3010 (PostScript LanguageLevel 3).
-However, the interpreter is configurable in
+language as defined in the <a
+href="http://cseng.awl.com/bookdetail.qry?ISBN=0-201-37922-8&ptype=0"><em>PostScript
+Language Reference, Third Edition</em> (ISBN 0-201-37922-8)</a> published by
+Addison-Wesley in mid-1999.  However, the interpreter is configurable in
 ways that can restrict it to various subsets of this language.
 Specifically, the base interpreter accepts the Level 1 subset of the
 PostScript language, as defined in the first edition of the <em>PostScript
@@ -133,10 +129,9 @@ section A.1.1 of the Second Edition and not listed in any of the other
 A.1.n sections.  These facilities are available only if the
 <b><tt>level2</tt></b> feature was selected when Ghostscript was built.
 
-<li>A subset of PostScript LanguageLevel 3 operators and facilities listed
-in Adobe's PostScript Language Supplement for version 3010.
-These facilities are available only if the
-<b><tt>psl3</tt></b> feature was selected when Ghostscript was built.
+<li>All PostScript LanguageLevel 3 operators and facilities listed in the
+Third Edition, except as noted below.  These facilities are available only
+if the <b><tt>psl3</tt></b> feature was selected when Ghostscript was built.
 
 <li>The ability to recognize DOS EPSF files and process only the PostScript
 part, ignoring bitmap previews or other information.  This facility is
@@ -145,17 +140,43 @@ Ghostscript was built.
 </ul>
 
 <p>
-Adding all of these produces a full Level 2 PostScript language
-interpreter, plus a subset of PostScript LanguageLevel 3.
+Ghostscript currently does not implement the following PostScript
+LanguageLevel 3 facilities:
 
-<p><a name="PDF1.2"></a>
+<ul>
+<li>Native <b><tt>Separation</tt></b> and <b><tt>DeviceN</tt></b> color
+spaces -- the alternate space is always used.
+
+<li>Settable <b><tt>ProcessColorModel</tt></b> for page devices, except for
+a very few special devices.
+
+<li><b><tt>IODevice</tt></b>s other than <b><tt>%stdin</tt></b>,
+<b><tt>%stdout</tt></b>, <b><tt>%stderr</tt></b>, <b><tt>%lineedit</tt></b>,
+<b><tt>%statementedit</tt></b>, <b><tt>%os%</tt></b>, and (if configured)
+<b><tt>%pipe%</tt></b>.
+</ul>
+
+<p>
 Ghostscript can also interpret files in the Portable Document Format (PDF)
-1.2 format defined in the
-<a href="http://www.adobe.com/supportservice/devrelations/PDFS/TN/PDFSPEC.PDF"><em>Portable
-Document Format Reference Manual</em> Version 1.2</a> of November 12, 1996,
+1.3 format defined in the <a
+href="http://partners.adobe.com/asn/developer/PDFS/TN/PLRM.pdf"><em>Portable
+Document Format Reference Manual</em> Version 1.3</a> of March 11, 1999,
 distributed by <a href="http://www.adobe.com/">Adobe Systems
-Incorporated</a>.  This facility is available only if the
-"<b><tt>pdf</tt></b>" feature was selected when Ghostscript was built.
+Incorporated</a>, except as noted below.  This facility is available only if
+the <b><tt>pdf</tt></b> feature was selected when Ghostscript was built.
+
+<p>
+Ghostscript currently does not implement the following PDF 1.3 facilities:
+
+<ul>
+<li>Masked images.
+
+<li>Type 2 (smooth shading) Pattern color spaces, although the
+<b><tt>sh</tt></b> operator for smooth-shaded fills is implemented.
+
+<li>Native <b><tt>Separation</tt></b> and <b><tt>DeviceN</tt></b> color
+spaces, as noted above for PostScript.
+</ul>
 
 <p>
 Ghostscript also includes a number of
@@ -295,17 +316,25 @@ match other PostScript implementations.
 </dl>
 
 <dl>
-<dt><b><tt>&lt;bool&gt; .setclipoutside -</tt></b>
-<dd>Sets a graphics state flag that determines whether the effective
-clipping region is the inside (false) or the outside (true) of the region
-defined by the clipping operators (<b><tt>clip</tt></b>,
-<b><tt>rectclip</tt></b>, etc.)  <b><tt>initclip</tt></b> sets this flag to
-false.
+<dt><b><tt>&lt;int&gt; .setcurvejoin -</tt></b>
+<dd>Sets a graphics state parameter that determines how to treat the joins
+between the line segments produced when a curve is flattened.  The parameter
+value may be either -1 or a value acceptable to <b><tt>setlinejoin</tt></b>.
+If the parameter value is -1, the join used for flattened curve line
+segments is given by the current line join parameter in the graphics state
+(except that if the line join value is "none", a bevel join is used), which
+matches the Adobe Red Book, but not the Adobe implementations; if the curve
+join parameter value is a line join value, that type of join is used for
+flattened curve line segments, regardless of the value of the graphics state
+line join parameter.  The initial (and default) value of the curve join
+parameter is 2, causing bevel joins to be used: this matches the Adobe
+implementations.  <b><tt>initgraphics</tt></b> sets the parameter to its
+default value.
 </dl>
 
 <dl>
-<dt><b><tt>- .currentclipoutside &lt;bool&gt;</tt></b>
-<dd>Returns the current value of the outside clipping flag.
+<dt><b><tt>- .currentcurvejoin &lt;int&gt;</tt></b>
+<dd>Returns the current value of the curve join parameter.
 </dl>
 
 <dl>
@@ -619,14 +648,18 @@ This is supported only on operating systems that provide
 <h3><a name="Filters"></a>Filters</h3>
 
 <p>
-Ghostscript supports all the standard PostScript Level 2 filters, except
-that it does not currently support the <b><tt>EarlyChange</tt></b> key in
-the <b><tt>LZWEncode</tt></b> filter.  Ghostscript also supports the as yet
-undocumented <b><tt>FlateEncode</tt></b> and <b><tt>FlateDecode</tt></b>
-filters from <a href="#PDF1.2">PDF 1.2</a> and (presumably) PostScript
-Level 3, except for the <b><tt>Effort</tt></b> key in
-<b><tt>FlateEncode</tt></b>.  In addition, Ghostscript supports the
-following non-standard filters:
+Ghostscript supports all the standard PostScript LanguageLevel 3 filters,
+both encoding and decoding, except that it does not currently support:
+
+<ul>
+<li>the <b><tt>EarlyChange</tt></b> key in the <b><tt>LZWEncode</tt></b>
+filter;
+
+<li>the <b><tt>Effort</tt></b> key in <b><tt>FlateEncode</tt></b> filter.
+</ul>
+
+<p>
+In addition, Ghostscript supports the following non-standard filters:
 
 <dl>
 <dt><b><tt>&lt;target&gt; /BCPEncode filter &lt;file&gt;</tt></b>
@@ -735,7 +768,7 @@ optimize the choice of algorithm.  For more details see the PNG
 specification
 
 <blockquote>
-<a href="http://www.w3.org/TR/REC-png">http://www.w3.org/TR/REC-png</a>
+<a href="http://www.w3.org/TR/WD-png-960128.html">http://www.w3.org/TR/WD-png-960128.html</a>
 </blockquote>
 </dl>
 
@@ -1013,8 +1046,8 @@ measurements</a> in the documentation on devices).
 </dl>
 
 <dl>
-<dt><b><tt>Colors, GrayValues, RedValues, GreenValues, BlueValues, ColorValues</tt></b> (usually read-only)
-<dd>As for the "<b><tt>deviceinfo</tt></b>" operator of Display PostScript.
+<dt><b><tt>Colors, GrayValues, RedValues, GreenValues, BlueValues, ColorValues (usually read-only)</tt></b>
+<dd>As for the <b><tt>deviceinfo</tt></b> operator of Display PostScript.
 <b><tt>Red</tt></b>, <b><tt>Green</tt></b>, <b><tt>Blue</tt></b>, and
 <b><tt>ColorValues</tt></b> are only defined if
 <b><tt>Colors</tt></b>&nbsp;&gt;&nbsp;1.
@@ -1041,7 +1074,7 @@ In addition, the following are defined per Adobe's documentation for the
 <b><tt>OutputDevice</tt></b><br>
 <b><tt>PageOffset</tt></b> (write-only)<br>
 <b><tt>PageSize</tt></b><br>
-<b><tt>ProcessColorModel</tt></b>
+<b><tt>ProcessColorModel</tt></b> (usually read-only)<br>
 </blockquote>
 
 <p>
@@ -1064,9 +1097,12 @@ For printers these are also defined:
 
 <dl>
 <dt><b><tt>OutputFile &lt;string&gt;</tt></b>
-<dd><b><tt>()</tt></b> means "send to printer directly", otherwise
-specifies the file name for output; "<b><tt>%d</tt></b>" is replaced by the
-page number; on Unix systems "<b><tt>(|command)</tt></b>" writes to a pipe.
+
+<dd>An empty string means "send to printer directly", otherwise specifies
+the file name for output; <b><tt>%d</tt></b> is replaced by the page number;
+on Unix systems <b><tt>%pipe%</tt></b><em>command</em> writes to a pipe.
+(<b><tt>|</tt></b><em>command</em> also writes to a pipe, but is now
+deprecated.)
 </dl>
 
 <dl>
@@ -1135,7 +1171,7 @@ errors just as for the string case.
 
 <font size=2>
 
-<p>Copyright &copy; 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+<p>Copyright &copy; 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
 <p>This file is part of Aladdin Ghostscript.  See the
 <a href="Public.htm">Aladdin Free Public License</a> (the "License") for
@@ -1143,7 +1179,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.50, 16 September 1998
+Ghostscript version 5.91, 30 August 1999
 
 </font>
 

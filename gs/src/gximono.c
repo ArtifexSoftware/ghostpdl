@@ -40,6 +40,9 @@
 
 /* ------ Strategy procedure ------ */
 
+/* Check the prototype. */
+iclass_proc(gs_image_class_3_mono);
+
 private irender_proc(image_render_mono);
 irender_proc_t
 gs_image_class_3_mono(gx_image_enum * penum)

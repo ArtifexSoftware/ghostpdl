@@ -25,6 +25,11 @@
 #include "store.h"
 
 /*
+ * Many of the procedures in this file are public only so they can be
+ * called from the FunctionType 4 interpreter (zfunc4.c).
+ */
+
+/*
  * Define the current state of random number generator for operators.  We
  * have to implement this ourselves because the Unix rand doesn't provide
  * anything equivalent to rrand.  Note that the value always lies in the
@@ -37,17 +42,13 @@
 #define zrand_state (i_ctx_p->rand_state)
 
 /* Initialize the random number generator. */
-void
-zrand_state_init(long *pstate)
-{
-    *pstate = 1;
-}
+const long rand_state_initial = 1;
 
 /****** NOTE: none of these operators currently ******/
 /****** check for floating over- or underflow.	******/
 
 /* <num> sqrt <real> */
-private int
+int
 zsqrt(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -93,7 +94,7 @@ zarcsin(i_ctx_t *i_ctx_p)
 }
 
 /* <num> <denom> atan <real> */
-private int
+int
 zatan(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -118,7 +119,7 @@ zatan(i_ctx_t *i_ctx_p)
 }
 
 /* <num> cos <real> */
-private int
+int
 zcos(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -132,7 +133,7 @@ zcos(i_ctx_t *i_ctx_p)
 }
 
 /* <num> sin <real> */
-private int
+int
 zsin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -146,7 +147,7 @@ zsin(i_ctx_t *i_ctx_p)
 }
 
 /* <base> <exponent> exp <real> */
-private int
+int
 zexp(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -168,7 +169,7 @@ zexp(i_ctx_t *i_ctx_p)
 }
 
 /* <posnum> ln <real> */
-private int
+int
 zln(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -184,7 +185,7 @@ zln(i_ctx_t *i_ctx_p)
 }
 
 /* <posnum> log <real> */
-private int
+int
 zlog(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

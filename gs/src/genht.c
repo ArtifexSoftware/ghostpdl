@@ -31,8 +31,6 @@
 #include "strimpl.h"
 #include "sstring.h"
 
-extern_gx_device_halftone_list();
-
 /*
  * This program translates PostScript halftone resources into C data
  * structures that can then be compiled into executables and put in shared,
@@ -322,7 +320,6 @@ void
 gx_ht_complete_threshold_order(gx_ht_order *porder)
 {
 }
-const gx_dht_proc gx_device_halftone_list[] = { 0 };
 
 /*
  * In order to avoid a linking step, we #include the required files here
@@ -331,3 +328,5 @@ const gx_dht_proc gx_device_halftone_list[] = { 0 };
 #include "gxhtbit.c"
 #include "scantab.c"
 #include "sstring.c"
+
+const gx_dht_proc gx_device_halftone_list[] = { 0 };

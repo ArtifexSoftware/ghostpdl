@@ -354,7 +354,7 @@ bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {				/* Just dump the bits on the file. */
     /* If the file is 'nul', don't even do the writes. */
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
-    byte *in = (byte *) gs_malloc(line_size, 1, "bit_print_page(in)");
+    byte *in = gs_alloc_bytes(pdev->memory, line_size, "bit_print_page(in)");
     byte *data;
     int nul = !strcmp(pdev->fname, "nul");
     int lnum = 0, bottom = pdev->height;
@@ -366,6 +366,6 @@ bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
 	if (!nul)
 	    fwrite(data, 1, line_size, prn_stream);
     }
-    gs_free((char *)in, line_size, 1, "bit_print_page(in)");
+    gs_free_object(pdev->memory, in, "bit_print_page(in)");
     return 0;
 }

@@ -31,13 +31,11 @@ private int swritebuf(P3(stream *, stream_cursor_read *, bool));
 private void stream_compact(P2(stream *, bool));
 
 /* Structure types for allocating streams. */
-private_st_stream();
+public_st_stream();
 public_st_stream_state();	/* default */
 /* GC procedures */
-#define st ((stream *)vptr)
 private 
-ENUM_PTRS_BEGIN(stream_enum_ptrs) return 0;
-
+ENUM_PTRS_WITH(stream_enum_ptrs, stream *st) return 0;
 case 0:
 if (st->foreign)
     ENUM_RETURN(NULL);
@@ -45,12 +43,10 @@ else if (st->cbuf_string.data != 0)
     ENUM_RETURN_STRING_PTR(stream, cbuf_string);
 else
     ENUM_RETURN(st->cbuf);
-ENUM_PTR(1, stream, strm);
-ENUM_PTR(2, stream, prev);
-ENUM_PTR(3, stream, next);
+ENUM_PTR3(1, stream, strm, prev, next);
 ENUM_PTR(4, stream, state);
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(stream_reloc_ptrs)
+private RELOC_PTRS_WITH(stream_reloc_ptrs, stream *st)
 {
     byte *cbuf_old = st->cbuf;
 
@@ -80,18 +76,20 @@ RELOC_PTRS_END
 private void
 stream_finalize(void *vptr)
 {
+    stream *const st = vptr;
+
     if_debug2('u', "[u]%s 0x%lx\n",
 	      (!s_is_valid(st) ? "already closed:" :
 	       st->is_temp ? "is_temp set:" :
 	       st->file == 0 ? "not file:" :
 	       "closing file:"), (ulong) st);
-    if (s_is_valid(st) && !st->is_temp && st->file != 0) {	/* Prevent any attempt to free the buffer. */
+    if (s_is_valid(st) && !st->is_temp && st->file != 0) {
+	/* Prevent any attempt to free the buffer. */
 	st->cbuf = 0;
 	st->cbuf_string.data = 0;
 	sclose(st);		/* ignore errors */
     }
 }
-#undef st
 
 /* Dummy template for streams that don't have a separate state. */
 private const stream_template s_no_template = {
@@ -125,6 +123,14 @@ s_alloc(gs_memory_t * mem, client_name_t cname)
 }
 
 /* Allocate a stream state and initialize it minimally. */
+void
+s_init_state(stream_state *st, const stream_template *template,
+	     gs_memory_t *mem)
+{
+    st->template = template;
+    st->memory = mem;
+    st->report_error = s_no_report_error;
+}
 stream_state *
 s_alloc_state(gs_memory_t * mem, gs_memory_type_ptr_t stype,
 	      client_name_t cname)
@@ -135,18 +141,9 @@ s_alloc_state(gs_memory_t * mem, gs_memory_type_ptr_t stype,
 	      client_name_string(cname),
 	      client_name_string(stype->sname),
 	      (ulong) st);
-    if (st == 0)
-	return 0;
-    st->memory = mem;
-    st->report_error = s_no_report_error;
+    if (st)
+	s_init_state(st, NULL, mem);
     return st;
-}
-
-/* Vacuous stream initialization */
-int
-s_no_init(stream_state * st)
-{
-    return 0;
 }
 
 /* Standard stream initialization */
@@ -299,16 +296,14 @@ s_no_report_error(stream_state * st, const char *str)
 
 /* Generic procedure structures for filters. */
 
-const stream_procs s_filter_read_procs =
-{
+const stream_procs s_filter_read_procs = {
     s_std_noavailable, s_std_noseek, s_std_read_reset,
     s_std_read_flush, s_filter_close
 };
 
-const stream_procs s_filter_write_procs =
-{
+const stream_procs s_filter_write_procs = {
     s_std_noavailable, s_std_noseek, s_std_write_reset,
-    s_std_write_flush, s_filter_close
+    s_filter_write_flush, s_filter_close
 };
 
 /* ------ Implementation-independent procedures ------ */
@@ -392,7 +387,10 @@ spgetcc(register stream * s, bool close_at_eod)
 	   left <= min_left && status >= 0
 	)
 	s_process_read_buf(s);
-    if (left <= min_left && (left == 0 || (status != EOFC && status != ERRC))) {	/* Compact the stream so stell will return the right result. */
+    if (left <= min_left &&
+	(left == 0 || (status != EOFC && status != ERRC))
+	) {
+	/* Compact the stream so stell will return the right result. */
 	stream_compact(s, true);
 	if (status == EOFC && close_at_eod && s->close_at_eod) {
 	    status = sclose(s);
@@ -688,14 +686,16 @@ s_process_write_buf(stream * s, bool last)
 /* Move forward or backward in a pipeline.  We temporarily reverse */
 /* the direction of the pointers while doing this. */
 /* (Cf the Deutsch-Schorr-Waite graph marking algorithm.) */
-#define move_back(curr, prev)\
-{ stream *back = prev->strm;\
-  prev->strm = curr; curr = prev; prev = back;\
-}
-#define move_ahead(curr, prev)\
-{ stream *ahead = curr->strm;\
-  curr->strm = prev; prev = curr; curr = ahead;\
-}
+#define MOVE_BACK(curr, prev)\
+  BEGIN\
+    stream *back = prev->strm;\
+    prev->strm = curr; curr = prev; prev = back;\
+  END
+#define MOVE_AHEAD(curr, prev)\
+  BEGIN\
+    stream *ahead = curr->strm;\
+    curr->strm = prev; prev = curr; curr = ahead;\
+  END
 
 /* Read from a pipeline. */
 private int
@@ -736,7 +736,7 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 	    status = strm->end_status;
 	    if (status < 0)
 		break;
-	    move_ahead(curr, prev);
+	    MOVE_AHEAD(curr, prev);
 	    stream_compact(curr, false);
 	}
 	/* If curr reached EOD and is a filter stream, close it. */
@@ -753,7 +753,7 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 	/* If we need to do a callout, unwind all the way now. */
 	if (status == CALLC) {
 	    while ((curr->end_status = status), prev != 0) {
-		move_back(curr, prev);
+		MOVE_BACK(curr, prev);
 	    }
 	    return status;
 	}
@@ -762,7 +762,7 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 	curr->end_status = (status >= 0 ? 0 : status);
 	if (prev == 0)
 	    return status;
-	move_back(curr, prev);
+	MOVE_BACK(curr, prev);
     }
 }
 
@@ -772,7 +772,7 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
 {
     stream *prev = 0;
     stream *curr = s;
-    int depth = 0;		/* depth of nesting in non-temp streams */
+    int depth = 0;		/* # of non-temp streams before curr */
     int status;
 
     /*
@@ -786,7 +786,8 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
      * end_status < 0.
      */
     for (;;) {
-	for (;;) {		/* Descend into the recursion. */
+	for (;;) {
+	    /* Move ahead in the pipeline. */
 	    stream *strm = curr->strm;
 	    stream_cursor_write cw;
 	    stream_cursor_read *pr;
@@ -798,8 +799,8 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
 	     * immediately below it.
 	     */
 	    bool end = last &&
-	    (prev == 0 ||
-	     (depth <= 1 && prev->end_status == EOFC));
+		(prev == 0 ||
+		 (depth <= 1 && prev->end_status == EOFC));
 
 	    if (strm == 0)
 		cw.ptr = 0, cw.limit = 0, pw = &cw;
@@ -809,55 +810,62 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
 		pr = pbuf;
 	    else
 		pr = &curr->cursor.r;
-	    if_debug4('s', "[s]write process 0x%lx, nr=%u, nw=%u, end=%d\n",
-		      (ulong) curr, (uint) (pr->limit - pr->ptr),
-		      (uint) (pw->limit - pw->ptr), end);
+	    if_debug5('s',
+		      "[s]write process 0x%lx(%s), nr=%u, nw=%u, end=%d\n",
+		      (ulong)curr,
+		      gs_struct_type_name(curr->state->template->stype),
+		      (uint)(pr->limit - pr->ptr),
+		      (uint)(pw->limit - pw->ptr), end);
 	    status = curr->end_status;
-	    if (status < 0)
-		break;
-	    status = (*curr->procs.process) (curr->state,
-					     pr, pw, end);
-	    if_debug5('s', "[s]after write 0x%lx, nr=%u, nw=%u, end=%d, status=%d\n",
-		      (ulong) curr, (uint) (pr->limit - pr->ptr),
-		      (uint) (pw->limit - pw->ptr), end, status);
-	    if (status == 0 && end)
-		status = EOFC;
-	    if (status == EOFC || status == ERRC)
-		curr->end_status = status;
+	    if (status >= 0) {
+		status = (*curr->procs.process)(curr->state, pr, pw, end);
+		if_debug5('s',
+			  "[s]after write 0x%lx, nr=%u, nw=%u, end=%d, status=%d\n",
+			  (ulong) curr, (uint) (pr->limit - pr->ptr),
+			  (uint) (pw->limit - pw->ptr), end, status);
+		if (status == 0 && end)
+		    status = EOFC;
+		if (status == EOFC || status == ERRC)
+		    curr->end_status = status;
+	    }
 	    if (strm == 0 || (status < 0 && status != EOFC))
 		break;
-	    if (status == 1)
-		end = false;
-	    else {		/* Keep going if we are closing */
-		/* a filter with a sub-stream. */
-		/* We know status == 0 or EOFC. */
+	    if (status != 1) {
+		/*
+		 * Keep going if we are closing a filter with a sub-stream.
+		 * We know status == 0 or EOFC.
+		 */
 		if (!end || !strm->is_temp)
 		    break;
 	    }
 	    status = strm->end_status;
 	    if (status < 0)
 		break;
-	    move_ahead(curr, prev);
-	    stream_compact(curr, false);
 	    if (!curr->is_temp)
 		++depth;
+	    if_debug1('s', "[s]moving ahead, depth = %d\n", depth);
+	    MOVE_AHEAD(curr, prev);
+	    stream_compact(curr, false);
 	}
-	/* Unwind from the recursion. */
+	/* Move back in the pipeline. */
 	curr->end_status = (status >= 0 ? 0 : status);
-	if (status < 0 || prev == 0) {	/*
-					 * All streams above here were called with last = true
-					 * and returned 0 or EOFC: finish unwinding and then
-					 * return.
-					 */
+	if (status < 0 || prev == 0) {
+	    /*
+	     * All streams above here were called with last = true
+	     * and returned 0 or EOFC: finish unwinding and then
+	     * return.
+	     */
 	    while (prev) {
-		move_back(curr, prev);
+		if_debug0('s', "[s]unwinding\n");
+		MOVE_BACK(curr, prev);
 		curr->end_status = (status >= 0 ? 0 : status);
 	    }
 	    return status;
 	}
-	move_back(curr, prev);
+	MOVE_BACK(curr, prev);
 	if (!curr->is_temp)
 	    --depth;
+	if_debug1('s', "[s]moving back, depth = %d\n", depth);
     }
 }
 
@@ -900,11 +908,13 @@ stream_compact(stream * s, bool always)
 
 /* String stream procedures */
 private int
-    s_string_available(P2(stream *, long *)), s_string_read_seek(P2(stream *, long)),
-     s_string_write_seek(P2(stream *, long)), s_string_read_process(P4(stream_state *, stream_cursor_read *,
-					      stream_cursor_write *, bool)),
-     s_string_write_process(P4(stream_state *, stream_cursor_read *,
-			       stream_cursor_write *, bool));
+    s_string_available(P2(stream *, long *)),
+    s_string_read_seek(P2(stream *, long)),
+    s_string_write_seek(P2(stream *, long)),
+    s_string_read_process(P4(stream_state *, stream_cursor_read *,
+			     stream_cursor_write *, bool)),
+    s_string_write_process(P4(stream_state *, stream_cursor_read *,
+			      stream_cursor_write *, bool));
 
 /* Initialize a stream for reading a string. */
 void
@@ -966,9 +976,9 @@ s_string_read_seek(register stream * s, long pos)
 void
 swrite_string(register stream * s, byte * ptr, uint len)
 {
-    static const stream_procs p =
-    {s_std_noavailable, s_string_write_seek, s_std_write_reset,
-     s_std_null, s_std_null, s_string_write_process
+    static const stream_procs p = {
+	s_std_noavailable, s_string_write_seek, s_std_write_reset,
+	s_std_null, s_std_null, s_string_write_process
     };
 
     s_std_init(s, ptr, len, &p, s_mode_write + s_mode_seek);
@@ -1025,5 +1035,78 @@ s_write_position_process(stream_state * st, stream_cursor_read * pr,
 			 stream_cursor_write * ignore_pw, bool last)
 {
     pr->ptr = pr->limit;	/* discard data */
+    return 0;
+}
+
+/* ------ Filter pipelines ------ */
+
+/*
+ * Add a filter to a pipeline.  The client must have allocated the stream
+ * state, if any, using the given allocator.  For s_init_filter, the
+ * client must have called s_init and s_init_state.
+ */
+int
+s_init_filter(stream *fs, stream_state *fss, byte *buf, uint bsize,
+	      stream *target)
+{
+    const stream_template *template = fss->template;
+
+    if (bsize < template->min_out_size)
+	return ERRC;
+    s_std_init(fs, buf, bsize, &s_filter_write_procs, s_mode_write);
+    fs->procs.process = template->process;
+    fs->state = fss;
+    if (template->init)
+	(template->init)(fss);
+    fs->strm = target;
+    return 0;
+}
+stream *
+s_add_filter(stream **ps, const stream_template *template,
+	     stream_state *ss, gs_memory_t *mem)
+{
+    stream *es = s_alloc(mem, "s_add_filter(stream)");
+    stream_state *ess = (ss == 0 ? (stream_state *)es : ss);
+    uint bsize = max(template->min_out_size, 256);	/* arbitrary */
+    byte *buf = gs_alloc_bytes(mem, bsize, "s_add_filter(buf)");
+
+    if (es == 0 || buf == 0) {
+	gs_free_object(mem, buf, "s_add_filter(buf)");
+	gs_free_object(mem, es, "s_add_filter(stream)");
+	return 0;
+    }
+    ess->template = template;
+    ess->memory = mem;
+    es->memory = mem;
+    s_init_filter(es, ess, buf, bsize, *ps);
+    *ps = es;
+    return es;
+}
+
+/*
+ * Close the filters in a pipeline, up to a given target stream, freeing
+ * their buffers and state structures.
+ */
+int
+s_close_filters(stream **ps, stream *target)
+{
+    while (*ps != target) {
+	stream *s = *ps;
+	gs_memory_t *mem = s->state->memory;
+	byte *sbuf = s->cbuf;
+	stream *next = s->strm;
+	int status = sclose(s);
+	stream_state *ss = s->state; /* sclose may set this to s */
+
+	if (status < 0)
+	    return status;
+	if (mem) {
+	    gs_free_object(mem, sbuf, "s_close_filters(buf)");
+	    gs_free_object(mem, s, "s_close_filters(stream)");
+	    if (ss != (stream_state *)s)
+		gs_free_object(mem, ss, "s_close_filters(state)");
+	}
+	*ps = next;
+    }
     return 0;
 }

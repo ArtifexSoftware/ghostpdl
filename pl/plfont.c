@@ -257,13 +257,14 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
 	pfont->next = pfont->prev = 0;
 	pfont->memory = mem;
 	pfont->dir = pdir;
+	gs_notify_init(&pfont->notify_list, gs_memory_stable(mem));
 	pfont->base = pfont;
 	pfont->client_data = plfont;
 	pfont->WMode = 0;
 	pfont->PaintType = 0;
 	pfont->StrokeWidth = 0;
 	pfont->procs.init_fstack = gs_default_init_fstack;
-	pfont->procs.next_char = gs_default_next_char;
+	pfont->procs.next_char_glyph = gs_default_next_char_glyph;
 	pfont->procs.callbacks.glyph_name = pl_glyph_name;
 	pfont->procs.callbacks.known_encode = pl_known_encode;
 	pfont->procs.define_font = gs_no_define_font;
@@ -536,7 +537,7 @@ pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
 		      gs_char space = ' ';
 		      uint glyph_index =
 			(*pfont->procs.encode_char)
-			  (NULL, (gs_font *)pfont, &space);
+			  ((gs_font *)pfont, space, gs_no_glyph);
 		      float sbw[4];
 
 		      if ( gs_type42_get_metrics(pfont, glyph_index, sbw) < 0 )

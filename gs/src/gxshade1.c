@@ -385,13 +385,17 @@ A_fill_region(A_fill_state_t * pfs)
 
     for (;;) {
 	double t0 = fp->t0, t1 = fp->t1;
+	float ft0, ft1;
 
-	if (!shade_colors2_converge(fp->cc,
-				    (const shading_fill_state_t *)pfs) &&
-	    /*
-	     * The colors don't converge.  Is the stripe less than 1
-	     * pixel wide?
-	     */
+	if ((!(pfn->head.is_monotonic > 0 ||
+	       (ft0 = (float)t0, ft1 = (float)t1,
+		gs_function_is_monotonic(pfn, &ft0, &ft1, EFFORT_MODERATE) > 0)) ||
+	     !shade_colors2_converge(fp->cc,
+				     (const shading_fill_state_t *)pfs)) &&
+	     /*
+	      * The function isn't monotonic, or the colors don't converge.
+	      * Is the stripe less than 1 pixel wide?
+	      */
 	    pfs->length * (t1 - t0) > 1 &&
 	    fp < &pfs->frames[countof(pfs->frames) - 1]
 	    ) {
@@ -537,26 +541,30 @@ R_fill_region(R_fill_state_t * pfs)
 
     for (;;) {
 	double t0 = fp->t0, t1 = fp->t1;
+	float ft0, ft1;
 
-	if (!shade_colors2_converge(fp->cc,
-				    (const shading_fill_state_t *)pfs) &&
+	if ((!(pfn->head.is_monotonic > 0 ||
+	       (ft0 = (float)t0, ft1 = (float)t1,
+		gs_function_is_monotonic(pfn, &ft0, &ft1, EFFORT_MODERATE) > 0)) ||
+	     !shade_colors2_converge(fp->cc,
+				     (const shading_fill_state_t *)pfs)) &&
 	    /*
-	     * The colors don't converge.  Is the annulus less than 1 pixel
-	     * wide?
+	     * The function isn't monotonic, or the colors don't converge.
+	     * Is the annulus less than 1 pixel wide?
 	     */
 	    pfs->width * (t1 - t0) > 1 &&
 	    fp < &pfs->frames[countof(pfs->frames) - 1]
 	   ) {
-	/* Subdivide the interval and recur.  */
-	float tm = (t0 + t1) * 0.5;
-	float dm = tm * pfs->dd + psh->params.Domain[0];
+	    /* Subdivide the interval and recur.  */
+	    float tm = (t0 + t1) * 0.5;
+	    float dm = tm * pfs->dd + psh->params.Domain[0];
 
-	gs_function_evaluate(pfn, &dm, fp[1].cc[1].paint.values);
-	fp[1].cc[0].paint = fp->cc[0].paint;
-	fp[1].t0 = t0;
-	fp[1].t1 = fp->t0 = tm;
-	fp->cc[0].paint = fp[1].cc[1].paint;
-	++fp;
+	    gs_function_evaluate(pfn, &dm, fp[1].cc[1].paint.values);
+	    fp[1].cc[0].paint = fp->cc[0].paint;
+	    fp[1].t0 = t0;
+	    fp[1].t1 = fp->t0 = tm;
+	    fp->cc[0].paint = fp[1].cc[1].paint;
+	    ++fp;
 	} else {
 	    /* Fill the region with the color. */
 	    int code = R_fill_annulus(pfs, &fp->cc[0], t0, t1,

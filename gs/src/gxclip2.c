@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -88,12 +88,12 @@ private const gx_device_tile_clip gs_tile_clip_device =
 /* Initialize a tile clipping device from a mask. */
 int
 tile_clip_initialize(gx_device_tile_clip * cdev, const gx_strip_bitmap * tiles,
-		     gx_device * tdev, int px, int py)
+		     gx_device * tdev, int px, int py, gs_memory_t *mem)
 {
     int code =
     gx_mask_clip_initialize(cdev, &gs_tile_clip_device,
 			    (const gx_bitmap *)tiles,
-			    tdev, 0, 0);	/* phase will be reset */
+			    tdev, 0, 0, mem);	/* phase will be reset */
 
     if (code >= 0) {
 	cdev->tiles = *tiles;

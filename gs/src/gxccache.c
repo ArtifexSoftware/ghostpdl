@@ -257,7 +257,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	code = gx_effective_clip_path(pgs, &pcpath);
 	if (code < 0)
 	    return code;
-	gx_make_clip_device(&cdev, &cdev, gx_cpath_list(pcpath));
+	gx_make_clip_device(&cdev, gx_cpath_list(pcpath));
 	cdev.target = dev;
 	dev = (gx_device *) & cdev;
 	(*dev_proc(dev, open_device)) (dev);

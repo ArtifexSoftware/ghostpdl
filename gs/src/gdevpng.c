@@ -18,6 +18,8 @@
 
 
 /* PNG (Portable Network Graphics) Format.  Pronounced "ping". */
+/* lpd 1999-07-01: replaced remaining uses of gs_malloc and gs_free with
+   gs_alloc_bytes and gs_free_object. */
 /* lpd 1999-03-08: changed png.h to png_.h to allow compiling with only
    headers in /usr/include, no source code. */
 /* lpd 1997-07-20: changed from using gs_malloc/png_xxx_int to png_create_xxx
@@ -117,10 +119,11 @@ prn_device(png16m_procs, "png16m",
 private int
 png_print_page(gx_device_printer * pdev, FILE * file)
 {
+    gs_memory_t *mem = pdev->memory;
     int raster = gdev_prn_raster(pdev);
 
     /* PNG structures */
-    byte *row = (byte *) gs_malloc(raster, 1, "png raster buffer");
+    byte *row = gs_alloc_bytes(mem, raster, "png raster buffer");
     png_struct *png_ptr =
     png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     png_info *info_ptr =
@@ -186,7 +189,9 @@ png_print_page(gx_device_printer * pdev, FILE * file)
 	int num_colors = 1 << depth;
 	gx_color_value rgb[3];
 
-	info_ptr->palette = gs_malloc(256 * sizeof(png_color), 1, "png palette");
+	info_ptr->palette =
+	    (void *)gs_alloc_bytes(mem, 256 * sizeof(png_color),
+				   "png palette");
 	if (info_ptr->palette == 0) {
 	    code = gs_note_error(gs_error_VMerror);
 	    goto done;
@@ -227,14 +232,13 @@ png_print_page(gx_device_printer * pdev, FILE * file)
     /* write the rest of the file */
     png_write_end(png_ptr, info_ptr);
 
-    /* if you malloced the palette, free it here */
-    if (info_ptr->palette)
-	gs_free(info_ptr->palette, 256 * sizeof(png_color), 1, "png palette");
+    /* if you alloced the palette, free it here */
+    gs_free_object(mem, info_ptr->palette, "png palette");
 
   done:
     /* free the structures */
     png_destroy_write_struct(&png_ptr, &info_ptr);
-    gs_free((char *)row, raster, 1, "png raster buffer");
+    gs_free_object(mem, row, "png raster buffer");
 
     return code;
 }

@@ -39,6 +39,8 @@
 #include "spdiffx.h"
 #include "spngpx.h"
 #include "ifilter.h"
+#include "ifilter2.h"
+#include "ifrpred.h"
 
 /* ------ ASCII85 filters ------ */
 
@@ -66,15 +68,15 @@ zA85D(i_ctx_t *i_ctx_p)
 /* Common setup for encoding and decoding filters. */
 extern stream_state_proc_put_params(s_CF_put_params, stream_CF_state);
 int
-zcf_setup(os_ptr op, stream_CF_state * pcfs)
+zcf_setup(os_ptr op, stream_CF_state *pcfs, gs_ref_memory_t *imem)
 {
     dict_param_list list;
-    int code = dict_param_list_read(&list, op, NULL, false);
+    int code = dict_param_list_read(&list, op, NULL, false, imem);
 
     if (code < 0)
 	return code;
     s_CF_set_defaults_inline(pcfs);
-    code = s_CF_put_params((gs_param_list *) & list, pcfs);
+    code = s_CF_put_params((gs_param_list *)&list, pcfs);
     iparam_list_release(&list);
     return code;
 }
@@ -94,17 +96,13 @@ zCFD(i_ctx_t *i_ctx_p)
 	dop = op;
     } else
 	dop = 0;
-    code = zcf_setup(dop, (stream_CF_state *) & cfs);
+    code = zcf_setup(dop, (stream_CF_state *)&cfs, iimemory);
     if (code < 0)
 	return code;
-    return filter_read(i_ctx_p, 0, &s_CFD_template, (stream_state *) & cfs, 0);
+    return filter_read(i_ctx_p, 0, &s_CFD_template, (stream_state *)&cfs, 0);
 }
 
 /* ------ Common setup for possibly pixel-oriented decoding filters ------ */
-
-/* Forward declarations */
-int zpd_setup(P2(os_ptr op, stream_PDiff_state * ppds));
-int zpp_setup(P2(os_ptr op, stream_PNGP_state * ppps));
 
 int
 filter_read_predictor(i_ctx_t *i_ctx_p, int npop,

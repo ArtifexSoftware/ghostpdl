@@ -43,7 +43,10 @@ typedef const gs_memory_struct_type_t *gs_memory_type_ptr_t;
 
 /* Define the opaque type for an allocator. */
 /* (The actual structure is defined later in this file.) */
+#ifndef gs_memory_DEFINED
+#  define gs_memory_DEFINED
 typedef struct gs_memory_s gs_memory_t;
+#endif
 
 /* Define the opaque type for a pointer type. */
 typedef struct gs_ptr_procs_s gs_ptr_procs_t;
@@ -80,6 +83,8 @@ typedef struct gs_memory_procs_s {
   gs_memory_t_proc_resize_object(proc, gs_memory_t)
 #define gs_memory_proc_free_object(proc)\
   gs_memory_t_proc_free_object(proc, gs_memory_t)
+#define gs_memory_proc_stable(proc)\
+  gs_memory_t_proc_stable(proc, gs_memory_t)
 #define gs_memory_proc_status(proc)\
   gs_memory_t_proc_status(proc, gs_memory_t)
 #define gs_memory_proc_free_all(proc)\
@@ -273,8 +278,10 @@ void *gs_raw_alloc_struct_immovable(P3(gs_raw_memory_t * rmem,
 /*
  * Define an abstract allocator instance.
  * Subclasses may have state as well.
+ * Note that the initial part of this must match gs_raw_memory_t.
  */
 #define gs_memory_common\
+	gs_memory_t *stable_memory;\
 	gs_memory_procs_t procs
 struct gs_memory_s {
     gs_memory_common;

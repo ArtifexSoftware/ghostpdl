@@ -30,11 +30,12 @@
 #include "iddict.h"
 #include "idparam.h"
 #include "igstate.h"
+#include "iimage2.h"
 #include "iname.h"
 #include "store.h"
 
 /* Import the procedure for constructing user paths. */
-extern int make_upath(P4(ref *, const gs_state *, gx_path *, bool));
+extern int make_upath(P5(i_ctx_t *, ref *, const gs_state *, gx_path *, bool));
 
 /* ------ Graphics state ------ */
 
@@ -87,20 +88,6 @@ zcurrentscreenphase(i_ctx_t *i_ctx_p)
 }
 
 /* ------ Device-source images ------ */
-
-/* Process an image that has no explicit source data. */
-/* We export this for composite images. */
-int
-process_non_source_image(i_ctx_t *i_ctx_p, const gs_image_common_t * pic,
-			 client_name_t cname)
-{
-    gx_image_enum_common_t *pie;
-    int code = gs_image_begin_typed(pic, igs, false /****** WRONG ******/ ,
-				    &pie);
-
-    /* We didn't pass any data, so there's nothing to clean up. */
-    return code;
-}
 
 /* <dict> .image2 - */
 private int
@@ -158,7 +145,8 @@ zimage2(i_ctx_t *i_ctx_p)
 	    if (gx_path_is_null(image.UnpaintedPath))
 		make_null(&rupath);
 	    else
-		code = make_upath(&rupath, igs, image.UnpaintedPath, false);
+		code = make_upath(i_ctx_p, &rupath, igs, image.UnpaintedPath,
+				  false);
 	    gx_path_free(image.UnpaintedPath, ".image2 UnpaintedPath");
 	    if (code < 0)
 		return code;
@@ -250,7 +238,7 @@ zdefineusername(i_ctx_t *i_ctx_p)
 		return code;
 	    }
 	    refcpy_to_new(new_array.value.refs, user_names_p->value.refs,
-			  old_size);
+			  old_size, idmemory);
 	    refset_null(new_array.value.refs + old_size,
 			new_size - old_size);
 	    ifree_ref_array(user_names_p, "defineusername(old)");

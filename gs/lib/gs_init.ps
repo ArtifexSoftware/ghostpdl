@@ -31,7 +31,7 @@
 
 % Check the interpreter revision.  NOTE: the interpreter code requires
 % that the first non-comment token in this file be an integer.
-584
+593
 dup revision ne
  { (gs: Interpreter revision \() print revision 10 string cvs print
    (\) does not match gs_init.ps revision \() print 10 string cvs print
@@ -289,7 +289,6 @@ userdict /#copies 1 put
 	/mark load def
 (]) cvn
 	{counttomark array astore exch pop} odef
-/abs	{dup 0 lt {neg} if} odef
 % .beginpage is redefined if setpagedevice is present.
 /.beginpage { } odef
 % In LanguageLevel 3, copypage erases the page.
@@ -784,6 +783,7 @@ currentdict /superexec .knownget {
 		 (--dict:) print
 		 dup rcheck {
 		   dup length =only (/) print dup maxlength =only
+		   dup wcheck not { ((ro)) print } if
 		 } if
 		 /gcheck where {
 		   pop gcheck { ((G)) } { ((L)) } ifelse print
@@ -985,8 +985,8 @@ systemdict /registeredencodings .undef
 (gs_std_e.ps) dup runlibfile VMDEBUG
 
 % Load ISOLatin1Encoding.
-%% Replace 1 (gs_iso_e.ps)
-(gs_iso_e.ps) dup runlibfile VMDEBUG
+%% Replace 1 (gs_il1_e.ps)
+(gs_il1_e.ps) dup runlibfile VMDEBUG
 
 % Define stubs for the Symbol and Dingbats encodings.
 % Note that the first element of the procedure must be the file name,
@@ -1576,7 +1576,7 @@ currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
       /DataSource 1 index def
       /ImageMatrix 2 index def
       /BitsPerComponent 1 def
-      3 index { {1 0} } { {0 1} } ifelse /Decode exch def
+      2 index { {1 0} } { {0 1} } ifelse /Decode exch def
       /Height 4 index def
       /Width 5 index def
       /Interpolate true def

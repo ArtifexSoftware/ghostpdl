@@ -176,8 +176,6 @@ struct pcl_state_s {
     float           last_width;		/* escapement of last char (for BS) */
     coord_point_t   underline_start;	/* start point of underline */
     bool            last_was_BS;	/* no printable chars since last BS */
-    gs_show_enum *  penum;              /* enumeration structure for
-                                         * printing text */
 
     /* Chapter 10 (pcsymbol.c) */
     pcl_id_t        symbol_set_id;

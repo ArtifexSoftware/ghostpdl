@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -87,7 +87,7 @@ lzw_put_code(register stream_LZW_state * ss, byte * q, uint code)
 }
 
 /* Initialize LZW-compatible encoding filter. */
-int
+private int
 s_LZWE_reset(stream_state * st)
 {
     stream_LZW_state *const ss = (stream_LZW_state *) st;

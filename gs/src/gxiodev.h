@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,30 +30,30 @@
  * Second Edition, for more information.
  */
 
-typedef struct gx_io_device_s gx_io_device;	/* defined here */
-typedef struct gx_io_device_procs_s gx_io_device_procs;		/* defined here */
+#ifndef gx_io_device_DEFINED
+#  define gx_io_device_DEFINED
+typedef struct gx_io_device_s gx_io_device;
+#endif
+typedef struct gx_io_device_procs_s gx_io_device_procs;  /* defined here */
 
-/* The IODevice table is defined in gconfig.c; its extern is in gscdefs.h. */
+/* The IODevice table is defined in gconf.c; its extern is in gscdefs.h. */
 
 #ifndef file_enum_DEFINED	/* also defined in gp.h */
 #  define file_enum_DEFINED
 struct file_enum_s;		/* opaque to client, defined by implementors */
 typedef struct file_enum_s file_enum;
-
 #endif
 
 /* Define an opaque type for parameter lists. */
 #ifndef gs_param_list_DEFINED
 #  define gs_param_list_DEFINED
 typedef struct gs_param_list_s gs_param_list;
-
 #endif
 
 /* Define an opaque type for streams. */
 #ifndef stream_DEFINED
 #  define stream_DEFINED
 typedef struct stream_s stream;
-
 #endif
 
 /* Definition of IODevice procedures */
@@ -172,7 +172,7 @@ int gs_fopen_errno_to_code(P1(int));
 /* Finally, the IODevice structure itself. */
 struct gx_io_device_s {
     const char *dname;		/* the IODevice name */
-    const char *dtype;		/* the type returned by c'devparams */
+    const char *dtype;		/* the type returned by currentdevparams */
     gx_io_device_procs procs;
     void *state;		/* (if the IODevice has state) */
 };

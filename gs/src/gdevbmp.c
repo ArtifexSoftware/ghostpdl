@@ -29,12 +29,25 @@ private dev_proc_print_page(bmp_cmyk_print_page);
 
 /* Monochrome. */
 
-gx_device_printer far_data gs_bmpmono_device =
+gx_device_printer gs_bmpmono_device =
 prn_device(prn_std_procs, "bmpmono",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
 	   1, bmp_print_page);
+
+/* 8-bit (SuperVGA-style) grayscale . */
+/* (Uses a fixed palette of 256 gray levels.) */
+
+private const gx_device_procs bmpgray_procs =
+prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+		gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
+gx_device_printer gs_bmpgray_device =
+prn_device(bmpgray_procs, "bmpgray",
+	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+	   X_DPI, Y_DPI,
+	   0, 0, 0, 0,		/* margins */
+	   8, bmp_print_page);
 
 /* 1-bit-per-plane separated CMYK color. */
 
@@ -47,7 +60,7 @@ prn_device(prn_std_procs, "bmpmono",
 private gx_device_procs bmpsep1_procs = {
     bmp_cmyk_procs(cmyk_1bit_map_color_rgb, cmyk_1bit_map_cmyk_color)
 };
-gx_device_printer far_data gs_bmpsep1_device = {
+gx_device_printer gs_bmpsep1_device = {
   prn_device_body(gx_device_printer, bmpsep1_procs, "bmpsep1",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
@@ -60,7 +73,7 @@ gx_device_printer far_data gs_bmpsep1_device = {
 private gx_device_procs bmpsep8_procs = {
     bmp_cmyk_procs(cmyk_8bit_map_color_rgb, cmyk_8bit_map_cmyk_color)
 };
-gx_device_printer far_data gs_bmpsep8_device = {
+gx_device_printer gs_bmpsep8_device = {
   prn_device_body(gx_device_printer, bmpsep8_procs, "bmpsep8",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
@@ -73,7 +86,7 @@ gx_device_printer far_data gs_bmpsep8_device = {
 private const gx_device_procs bmp16_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
-gx_device_printer far_data gs_bmp16_device =
+gx_device_printer gs_bmp16_device =
 prn_device(bmp16_procs, "bmp16",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
@@ -86,7 +99,7 @@ prn_device(bmp16_procs, "bmp16",
 private const gx_device_procs bmp256_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
-gx_device_printer far_data gs_bmp256_device =
+gx_device_printer gs_bmp256_device =
 prn_device(bmp256_procs, "bmp256",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
@@ -98,7 +111,7 @@ prn_device(bmp256_procs, "bmp256",
 private const gx_device_procs bmp16m_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		bmp_map_16m_rgb_color, bmp_map_16m_color_rgb);
-gx_device_printer far_data gs_bmp16m_device =
+gx_device_printer gs_bmp16m_device =
 prn_device(bmp16m_procs, "bmp16m",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
@@ -110,7 +123,7 @@ prn_device(bmp16m_procs, "bmp16m",
 private const gx_device_procs bmp32b_procs = {
     bmp_cmyk_procs(cmyk_8bit_map_color_rgb, gx_default_cmyk_map_cmyk_color)
 };
-gx_device_printer far_data gs_bmp32b_device =
+gx_device_printer gs_bmp32b_device =
 prn_device(bmp32b_procs, "bmp32b",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
@@ -127,7 +140,7 @@ bmp_print_page(gx_device_printer * pdev, FILE * file)
     uint raster = gdev_prn_raster(pdev);
     /* BMP scan lines are padded to 32 bits. */
     uint bmp_raster = raster + (-raster & 3);
-    byte *row = (byte *)gs_malloc(bmp_raster, 1, "bmp file buffer");
+    byte *row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
     int y;
     int code;		/* return code */
 
@@ -149,7 +162,7 @@ bmp_print_page(gx_device_printer * pdev, FILE * file)
     }
 
 done:
-    gs_free((char *)row, bmp_raster, 1, "bmp file buffer");
+    gs_free_object(pdev->memory, row, "bmp file buffer");
 
     return code;
 }
@@ -163,7 +176,7 @@ bmp_cmyk_print_page(gx_device_printer * pdev, FILE * file)
     uint raster = bitmap_raster(pdev->width * plane_depth);
     /* BMP scan lines are padded to 32 bits. */
     uint bmp_raster = raster + (-raster & 3);
-    byte *row = (byte *)gs_malloc(bmp_raster, 1, "bmp file buffer");
+    byte *row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
     int y;
     int code = 0;		/* return code */
     int plane;
@@ -198,7 +211,7 @@ bmp_cmyk_print_page(gx_device_printer * pdev, FILE * file)
     }
 
 done:
-    gs_free((char *)row, bmp_raster, 1, "bmp file buffer");
+    gs_free_object(pdev->memory, row, "bmp file buffer");
 
     return code;
 }

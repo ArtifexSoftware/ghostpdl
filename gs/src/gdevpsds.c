@@ -302,6 +302,15 @@ const stream_template s_8_4_template = {
 
 private_st_C2R_state();
 
+/* Set default parameter values (actually, just clear pointers). */
+private void
+s_C2R_set_defaults(stream_state * st)
+{
+    stream_C2R_state *const ss = (stream_C2R_state *) st;
+
+    ss->pis = 0;
+}
+
 /* Process one buffer. */
 private int
 s_C2R_process(stream_state * st, stream_cursor_read * pr,
@@ -330,7 +339,7 @@ s_C2R_process(stream_state * st, stream_cursor_read * pr,
 
 const stream_template s_C2R_template =
 {
-    &st_C2R_state, 0 /*NULL */ , s_C2R_process, 4, 3
+    &st_C2R_state, 0 /*NULL */ , s_C2R_process, 4, 3, 0, s_C2R_set_defaults
 };
 
 /* ---------------- Downsampling ---------------- */
@@ -410,6 +419,17 @@ const stream_template s_Subsample_template =
 /* Average */
 
 private_st_Average_state();
+
+/* Set default parameter values (actually, just clear pointers). */
+private void
+s_Average_set_defaults(stream_state * st)
+{
+    stream_Average_state *const ss = (stream_Average_state *) st;
+
+    s_Downsample_set_defaults(st);
+    /* Clear pointers */
+    ss->sums = 0;
+}
 
 /* Initialize the state. */
 private int
@@ -497,5 +517,5 @@ out:
 const stream_template s_Average_template =
 {
     &st_Average_state, s_Average_init, s_Average_process, 4, 4,
-    s_Average_release, s_Downsample_set_defaults
+    s_Average_release, s_Average_set_defaults
 };

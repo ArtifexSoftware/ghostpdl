@@ -323,6 +323,34 @@ zcurrentaccuratecurves(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* <join_int|-1> .setcurvejoin - */
+private int
+zsetcurvejoin(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code;
+
+    check_type(*op, t_integer);
+    if (op->value.intval < -1 || op->value.intval > max_int)
+	return_error(e_rangecheck);
+    code = gs_setcurvejoin(igs, (int)op->value.intval);
+    if (code < 0)
+	return code;
+    pop(1);
+    return 0;
+}
+
+/* - .currentcurvejoin <join_int|-1> */
+private int
+zcurrentcurvejoin(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_int(op, gs_currentcurvejoin(igs));
+    return 0;
+}
+
 /* <adjust.x> <adjust.y> .setfilladjust2 - */
 private int
 zsetfilladjust2(i_ctx_t *i_ctx_p)
@@ -426,6 +454,7 @@ zdotorientation(i_ctx_t *i_ctx_p)
 /* We need to split the table because of the 16-element limit. */
 const op_def zgstate1_op_defs[] = {
     {"0.currentaccuratecurves", zcurrentaccuratecurves},
+    {"0.currentcurvejoin", zcurrentcurvejoin},
     {"0currentdash", zcurrentdash},
     {"0.currentdashadapt", zcurrentdashadapt},
     {"0.currentdotlength", zcurrentdotlength},
@@ -439,11 +468,12 @@ const op_def zgstate1_op_defs[] = {
     {"0grestore", zgrestore},
     {"0grestoreall", zgrestoreall},
     {"0gsave", zgsave},
-    {"0initgraphics", zinitgraphics},
     op_def_end(0)
 };
 const op_def zgstate2_op_defs[] = {
+    {"0initgraphics", zinitgraphics},
     {"1.setaccuratecurves", zsetaccuratecurves},
+    {"1.setcurvejoin", zsetcurvejoin},
     {"2setdash", zsetdash},
     {"1.setdashadapt", zsetdashadapt},
     {"2.setdotlength", zsetdotlength},

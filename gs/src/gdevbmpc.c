@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -137,12 +137,17 @@ write_bmp_depth_header(gx_device_printer *pdev, FILE *file, int depth,
 	BMP_ASSIGN_WORD(ihdr.bitCount, depth);
 	BMP_ASSIGN_DWORD(ihdr.compression, 0);
 	BMP_ASSIGN_DWORD(ihdr.sizeImage, bmp_raster * height);
-	/* Even though we could compute the resolution correctly, */
-	/* the convention seems to be to leave it unspecified. */
-	BMP_ASSIGN_DWORD(ihdr.xPelsPerMeter, 0);
-	    /*(dword)(pdev->x_pixels_per_inch * (1000.0 / 30.48))); */
-	BMP_ASSIGN_DWORD(ihdr.yPelsPerMeter, 0);
-	    /*(dword)(pdev->y_pixels_per_inch * (1000.0 / 30.48))); */
+	/*
+	 * Earlier versions of this driver set the PelsPerMeter values
+	 * to zero.  At a user's request, we now set them correctly,
+	 * but we suspect this will cause problems other places.
+	 */
+#define INCHES_PER_METER (100 /*cm/meter*/ / 2.54 /*cm/inch*/)
+	BMP_ASSIGN_DWORD(ihdr.xPelsPerMeter,
+			 (dword)(pdev->x_pixels_per_inch * INCHES_PER_METER));
+	BMP_ASSIGN_DWORD(ihdr.yPelsPerMeter,
+			 (dword)(pdev->y_pixels_per_inch * INCHES_PER_METER));
+#undef INCHES_PER_METER
 	BMP_ASSIGN_DWORD(ihdr.clrUsed, 0);
 	BMP_ASSIGN_DWORD(ihdr.clrImportant, 0);
 	if (fwrite((const char *)&ihdr, 1, sizeof(ihdr), file) != sizeof(ihdr))

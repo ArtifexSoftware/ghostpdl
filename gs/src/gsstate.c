@@ -167,18 +167,18 @@ typedef struct gs_state_parts_s {
 
 /* GC descriptors */
 extern_st(st_imager_state);
-private_st_gs_state();
+public_st_gs_state();
 
 /* GC procedures for gs_state */
-#define gsvptr ((gs_state *)vptr)
-private ENUM_PTRS_BEGIN(gs_state_enum_ptrs) ENUM_PREFIX(st_imager_state, gs_state_num_ptrs + 1);
+private ENUM_PTRS_WITH(gs_state_enum_ptrs, gs_state *gsvptr)
+ENUM_PREFIX(st_imager_state, gs_state_num_ptrs + 1);
 #define e1(i,elt) ENUM_PTR(i,gs_state,elt);
 gs_state_do_ptrs(e1)
 case gs_state_num_ptrs:	/* handle device specially */
 ENUM_RETURN(gx_device_enum_ptr(gsvptr->device));
 #undef e1
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(gs_state_reloc_ptrs)
+private RELOC_PTRS_WITH(gs_state_reloc_ptrs, gs_state *gsvptr)
 {
     RELOC_PREFIX(st_imager_state);
     {
@@ -189,7 +189,6 @@ private RELOC_PTRS_BEGIN(gs_state_reloc_ptrs)
     }
 }
 RELOC_PTRS_END
-#undef gsvptr
 
 /* Copy client data, using the copy_for procedure if available, */
 /* the copy procedure otherwise. */
@@ -204,6 +203,11 @@ gstate_copy_client_data(gs_state * pgs, void *dto, void *dfrom,
 
 /* ------ Operations on the entire graphics state ------ */
 
+/* Define the initial value of the graphics state. */
+private const gs_imager_state gstate_initial = {
+    gs_imager_state_initial(1.0)
+};
+
 /* Allocate and initialize a graphics state. */
 gs_state *
 gs_state_alloc(gs_memory_t * mem)
@@ -214,13 +218,7 @@ gs_state_alloc(gs_memory_t * mem)
     if (pgs == 0)
 	return 0;
     pgs->saved = 0;
-    {
-	static const gs_imager_state gstate_initial = {
-	    gs_imager_state_initial(1.0)
-	};
-
-	*(gs_imager_state *) pgs = gstate_initial;
-    }
+    *(gs_imager_state *)pgs = gstate_initial;
 
     /*
      * Just enough of the state is initialized at this point
@@ -398,7 +396,7 @@ fail:
 
 /* Restore the graphics state. Can fully empty graphics stack */
 int	/* return 0 if ok, 1 if stack was empty */
-gs_grestore_no_wraparound(gs_state * pgs)
+gs_grestore_only(gs_state * pgs)
 {
     gs_state *saved = pgs->saved;
     void *pdata = pgs->client_data;
@@ -425,12 +423,13 @@ gs_grestore_no_wraparound(gs_state * pgs)
 }
 
 /* Restore the graphics state per PostScript semantics */
-int gs_grestore(gs_state * pgs)
+int
+gs_grestore(gs_state * pgs)
 {
     int code;
     if (!pgs->saved)
 	return gs_gsave(pgs);	/* shouldn't ever happen */
-    code = gs_grestore_no_wraparound(pgs);
+    code = gs_grestore_only(pgs);
     if (code < 0)
 	return code;
 
@@ -621,14 +620,15 @@ gs_initgraphics(gs_state * pgs)
     if ((code = gs_newpath(pgs)) < 0 ||
 	(code = gs_initclip(pgs)) < 0 ||
 	(code = gs_setlinewidth(pgs, 1.0)) < 0 ||
-	(code = gs_setlinecap(pgs, gs_cap_butt)) < 0 ||
-	(code = gs_setlinejoin(pgs, gs_join_miter)) < 0 ||
+	(code = gs_setlinecap(pgs, gstate_initial.line_params.cap)) < 0 ||
+	(code = gs_setlinejoin(pgs, gstate_initial.line_params.join)) < 0 ||
+	(code = gs_setcurvejoin(pgs, gstate_initial.line_params.curve_join)) < 0 ||
 	(code = gs_setdash(pgs, (float *)0, 0, 0.0)) < 0 ||
 	(gs_setdashadapt(pgs, false),
 	 (code = gs_setdotlength(pgs, 0.0, false))) < 0 ||
 	(code = gs_setdotorientation(pgs)) < 0 ||
 	(code = gs_setgray(pgs, 0.0)) < 0 ||
-	(code = gs_setmiterlimit(pgs, 10.0)) < 0
+	(code = gs_setmiterlimit(pgs, gstate_initial.line_params.miter_limit)) < 0
 	)
 	return code;
     gs_init_rop(pgs);

@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -17,13 +17,15 @@
  */
 
 
-/* Type 1 / Type 2 character rendering operator entry */
+/* Utilities for Level 2 filters */
 
-#ifndef ichar1_INCLUDED
-#  define ichar1_INCLUDED
+#ifndef ifilter2_INCLUDED
+#  define ifilter2_INCLUDED
 
-/* Render a Type 1 or Type 2 outline. */
-/* This is the entire implementation of the .type1/2execchar operators. */
-int charstring_execchar(P2(op_args_t *op_args_p, int font_type_mask));
+/* Import setup code from zfdecode.c */
+int zcf_setup(P3(os_ptr op, stream_CF_state * pcfs, gs_ref_memory_t *imem));
+int zlz_setup(P2(os_ptr op, stream_LZW_state * plzs));
+int zpd_setup(P2(os_ptr op, stream_PDiff_state * ppds));
+int zpp_setup(P2(os_ptr op, stream_PNGP_state * ppps));
 
-#endif /* ichar1_INCLUDED */
+#endif /* ifilter2_INCLUDED */

@@ -67,7 +67,7 @@ zDCTD(i_ctx_t *i_ctx_p)
 	npop = 1, dop = op, dspace = r_space(op);
     else
 	npop = 0, dop = 0, dspace = 0;
-    if ((code = dict_param_list_read(&list, dop, NULL, false)) < 0)
+    if ((code = dict_param_list_read(&list, dop, NULL, false, iimemory)) < 0)
 	goto fail;
     if ((code = s_DCTD_put_params((gs_param_list *) & list, &state)) < 0)
 	goto rel;

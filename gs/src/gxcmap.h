@@ -88,8 +88,6 @@ void gx_set_cmap_procs(P2(gs_imager_state *, const gx_device *));
   ((pis)->cmap_procs->map_rgb_alpha)(cr, cg, cb, ca, pdc, pis, dev, select)
 
 /* Map a color, with optional tracing if we are debugging. */
-#ifdef DEBUG
-/* Use procedures in gxcmap.c */
 #include "gxcindex.h"
 #include "gxcvalue.h"
 gx_color_index gx_proc_map_rgb_color(P4(gx_device *,
@@ -98,7 +96,8 @@ gx_color_index gx_proc_map_rgb_alpha_color(P5(gx_device *,
 	   gx_color_value, gx_color_value, gx_color_value, gx_color_value));
 gx_color_index gx_proc_map_cmyk_color(P5(gx_device *,
 	   gx_color_value, gx_color_value, gx_color_value, gx_color_value));
-
+#ifdef DEBUG
+/* Use procedures in gxcmap.c */
 #  define gx_map_rgb_color(dev, vr, vg, vb)\
      gx_proc_map_rgb_color(dev, vr, vg, vb)
 #  define gx_map_rgb_alpha_color(dev, vr, vg, vb, va)\

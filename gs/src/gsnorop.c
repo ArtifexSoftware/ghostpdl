@@ -22,6 +22,9 @@
 #include "gserrors.h"
 #include "gsrop.h"
 #include "gxdevcli.h"
+#include "gxdevice.h"		/* for gx_default_*copy_rop prototypes */
+#include "gxdevmem.h"		/* for gdevmem.h */
+#include "gdevmem.h"		/* for mem_*_strip_copy_rop prototypes */
 #include "gdevmrop.h"
 
 /* Stub accessors to logical operation in graphics state. */

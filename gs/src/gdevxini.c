@@ -17,15 +17,23 @@
  */
 
 
-/* X Windows driver initialization for Ghostscript library */
+/* X Windows driver initialization/finalization */
 #include "memory_.h"
 #include "x_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gxdevice.h"
+#include "gxdevmem.h"
+#include "gsparamx.h"
+#include "gdevbbox.h"
 #include "gdevx.h"
 
 extern char *getenv(P1(const char *));
+
+extern const gx_device_bbox gs_bbox_device;
+extern const gx_device_X gs_x11_device;
+
+extern const gx_device_bbox_procs_t gdev_x_box_procs;
 
 /* Define constants for orientation from ghostview */
 /* Number represents clockwise rotation of the paper in degrees */
@@ -36,8 +44,12 @@ typedef enum {
     Seascape = 270		/* Landscape rotated the wrong way */
 } orientation;
 
-/* Forward/external references */
-int gdev_x_setup_colors(P1(gx_device_X *));
+/* GC descriptors */
+private_st_x11fontmap();
+
+/* ---------------- Opening/initialization ---------------- */
+
+/* Forward references */
 private void gdev_x_setup_fontmap(P1(gx_device_X *));
 
 /* Catch the alloc error when there is not enough resources for the
@@ -74,7 +86,7 @@ x_catch_free_colors(Display * dpy, XErrorEvent * err)
 
 /* Open the X device */
 int
-gdev_x_open(register gx_device_X * xdev)
+gdev_x_open(gx_device_X * xdev)
 {
     XSizeHints sizehints;
     char *window_id;
@@ -476,6 +488,117 @@ gdev_x_open(register gx_device_X * xdev)
     return 0;
 }
 
+/* Set up or take down buffering in a RAM image. */
+private int
+x_set_buffer(gx_device_X * xdev)
+{
+    gs_memory_t *mem = xdev->memory;
+    bool buffered = xdev->MaxBitmap > 0;
+    const gx_device_procs *procs;
+
+ setup:
+    if (buffered) {
+	/* We want to buffer. */
+	/* Check that we can set up a memory device. */
+	gx_device_memory *mdev = (gx_device_memory *)xdev->target;
+
+	if (mdev == 0 || mdev->color_info.depth != xdev->color_info.depth) {
+	    const gx_device_memory *mdproto =
+		gdev_mem_device_for_bits(xdev->color_info.depth);
+
+	    if (!mdproto) {
+		buffered = false;
+		goto setup;
+	    }
+	    if (mdev) {
+		/* Update the pointer we're about to overwrite. */
+		gx_device_set_target((gx_device_forward *)mdev, NULL);
+	    } else {
+		mdev = gs_alloc_struct(mem, gx_device_memory,
+				       &st_device_memory, "memory device");
+		if (mdev == 0) {
+		    buffered = false;
+		    goto setup;
+		}
+	    }
+	    /*
+	     * We want to forward image drawing to the memory device.
+	     * That requires making the memory device forward its color
+	     * mapping operations back to the X device, creating a circular
+	     * pointer structure.  This is not a disaster, we just need to
+	     * be aware that this is going on.
+	     */
+	    gs_make_mem_device(mdev, mdproto, mem, 0, (gx_device *)xdev);
+	    gx_device_set_target((gx_device_forward *)xdev, (gx_device *)mdev);
+	}
+	if (mdev->width != xdev->width || mdev->height != xdev->height) {
+	    byte *buffer;
+	    ulong space;
+
+	    space = gdev_mem_data_size(mdev, xdev->width, xdev->height);
+	    if (space > xdev->MaxBitmap) {
+		buffered = false;
+		goto setup;
+	    }
+	    buffer =
+		(xdev->buffer ?
+		 (byte *)gs_resize_object(mem, xdev->buffer, space, "buffer") :
+		 gs_alloc_bytes(mem, space, "buffer"));
+	    if (!buffer) {
+		buffered = false;
+		goto setup;
+	    }
+	    xdev->buffer_size = space;
+	    xdev->buffer = buffer;
+	    mdev->width = xdev->width;
+	    mdev->height = xdev->height;
+	    mdev->color_info = xdev->color_info;
+	    mdev->base = xdev->buffer;
+	    gdev_mem_open_scan_lines(mdev, xdev->height);
+	}
+	xdev->white = gx_device_white((gx_device *)xdev);
+	xdev->black = gx_device_black((gx_device *)xdev);
+	procs = &gs_bbox_device.procs;
+    } else {
+	/* Not buffering.  Release the buffer and memory device. */
+	gs_free_object(mem, xdev->buffer, "buffer");
+	xdev->buffer = 0;
+	xdev->buffer_size = 0;
+	if (!IS_BUFFERED(xdev))
+	    return 0;
+	gx_device_set_target((gx_device_forward *)xdev->target, NULL);
+	gx_device_set_target((gx_device_forward *)xdev, NULL);
+	procs = &gs_x11_device.procs;
+    }
+    if (dev_proc(xdev, fill_rectangle) != procs->fill_rectangle) {
+#define COPY_PROC(p) set_dev_proc(xdev, p, procs->p)
+	COPY_PROC(fill_rectangle);
+	COPY_PROC(copy_mono);
+	COPY_PROC(copy_color);
+	COPY_PROC(copy_alpha);
+	COPY_PROC(fill_path);
+	COPY_PROC(stroke_path);
+	COPY_PROC(fill_mask);
+	COPY_PROC(fill_trapezoid);
+	COPY_PROC(fill_parallelogram);
+	COPY_PROC(fill_triangle);
+	COPY_PROC(draw_thin_line);
+	COPY_PROC(strip_tile_rectangle);
+	COPY_PROC(strip_copy_rop);
+	COPY_PROC(begin_typed_image);
+	COPY_PROC(create_compositor);
+	COPY_PROC(text_begin);
+#undef COPY_PROC
+	if (IS_BUFFERED(xdev)) {
+	    gx_device_forward_fill_in_procs((gx_device_forward *)xdev);
+	    xdev->box_procs = gdev_x_box_procs;
+	    xdev->box_proc_data = xdev;
+	} else
+	    gx_device_fill_in_procs((gx_device *)xdev);
+    }
+    return 0;
+}
+
 /* Allocate the backing pixmap, if any, and clear the window. */
 void
 gdev_x_clear_window(gx_device_X * xdev)
@@ -505,6 +628,7 @@ gdev_x_clear_window(gx_device_X * xdev)
 	} else
 	    xdev->bpixmap = (Pixmap) 0;
     }
+    x_set_buffer(xdev);
     /* Clear the destination pixmap to avoid initializing with garbage. */
     if (xdev->dest != (Pixmap) 0) {
 	XSetForeground(xdev->dpy, xdev->gc, xdev->background);
@@ -593,7 +717,7 @@ get_x11_name(const char **cpp, int *len)
 
 /* Scan one resource and build font map records. */
 private void
-scan_font_resource(const char *resource, x11fontmap ** pmaps)
+scan_font_resource(const char *resource, x11fontmap **pmaps, gs_memory_t *mem)
 {
     const char *ps_name;
     const char *x11_name;
@@ -605,27 +729,26 @@ scan_font_resource(const char *resource, x11fontmap ** pmaps)
     while ((ps_name = get_ps_name(&cp, &ps_name_len)) != 0) {
 	x11_name = get_x11_name(&cp, &x11_name_len);
 	if (x11_name) {
-	    font = (x11fontmap *) gs_malloc(sizeof(x11fontmap), 1,
-					    "x11_setup_fontmap");
+	    font = gs_alloc_struct(mem, x11fontmap, &st_x11fontmap,
+				   "scan_font_resource(font)");
 	    if (font == NULL)
 		continue;
-	    font->ps_name = (char *)gs_malloc(sizeof(char), ps_name_len + 1,
-					      "x11_setup_fontmap");
-
+	    font->ps_name = (char *)
+		gs_alloc_byte_array(mem, ps_name_len + 1, sizeof(char),
+				    "scan_font_resource(ps_name)");
 	    if (font->ps_name == NULL) {
-		gs_free((char *)font, sizeof(x11fontmap), 1, "x11_fontmap");
+		gs_free_object(mem, font, "scan_font_resource(font)");
 		continue;
 	    }
 	    strncpy(font->ps_name, ps_name, ps_name_len);
 	    font->ps_name[ps_name_len] = '\0';
-	    font->x11_name = (char *)gs_malloc(sizeof(char), x11_name_len,
-					       "x11_setup_fontmap");
-
+	    font->x11_name = (char *)
+		gs_alloc_byte_array(mem, x11_name_len, sizeof(char),
+				    "scan_font_resource(x11_name)");
 	    if (font->x11_name == NULL) {
-		gs_free(font->ps_name, sizeof(char), strlen(font->ps_name) + 1,
-			"x11_font_psname");
-
-		gs_free((char *)font, sizeof(x11fontmap), 1, "x11_fontmap");
+		gs_free_object(mem, font->ps_name,
+			       "scan_font_resource(ps_name)");
+		gs_free_object(mem, font, "scan_font_resource(font)");
 		continue;
 	    }
 	    strncpy(font->x11_name, x11_name, x11_name_len - 1);
@@ -655,7 +778,172 @@ gdev_x_setup_fontmap(gx_device_X * xdev)
     if (!xdev->useXFonts)
 	return;			/* If no external fonts, don't bother */
 
-    scan_font_resource(xdev->regularFonts, &xdev->regular_fonts);
-    scan_font_resource(xdev->symbolFonts, &xdev->symbol_fonts);
-    scan_font_resource(xdev->dingbatFonts, &xdev->dingbat_fonts);
+    scan_font_resource(xdev->regularFonts, &xdev->regular_fonts, xdev->memory);
+    scan_font_resource(xdev->symbolFonts, &xdev->symbol_fonts, xdev->memory);
+    scan_font_resource(xdev->dingbatFonts, &xdev->dingbat_fonts, xdev->memory);
+}
+
+/* ---------------- Get/put parameters ---------------- */
+
+/* Get the device parameters.  See below. */
+int
+gdev_x_get_params(gx_device * dev, gs_param_list * plist)
+{
+    gx_device_X *xdev = (gx_device_X *) dev;
+    int code = gx_default_get_params(dev, plist);
+    long id = (long)xdev->pwin;
+
+    if (code < 0 ||
+	(code = param_write_long(plist, "WindowID", &id)) < 0 ||
+	(code = param_write_bool(plist, ".IsPageDevice", &xdev->IsPageDevice)) < 0 ||
+	(code = param_write_long(plist, "MaxBitmap", &xdev->MaxBitmap)) < 0 ||
+	(code = param_write_int(plist, "MaxTempPixmap", &xdev->MaxTempPixmap)) < 0 ||
+	(code = param_write_int(plist, "MaxTempImage", &xdev->MaxTempImage)) < 0 ||
+	(code = param_write_int(plist, "MaxBufferedTotal", &xdev->MaxBufferedTotal)) < 0 ||
+	(code = param_write_int(plist, "MaxBufferedArea", &xdev->MaxBufferedArea)) < 0 ||
+	(code = param_write_int(plist, "MaxBufferedCount", &xdev->MaxBufferedCount)) < 0
+	)
+	DO_NOTHING;
+    return code;
+}
+
+/* Set the device parameters.  We reimplement this so we can resize */
+/* the window and avoid closing and reopening the device, and to add */
+/* .IsPageDevice. */
+int
+gdev_x_put_params(gx_device * dev, gs_param_list * plist)
+{
+    gx_device_X *xdev = (gx_device_X *) dev;
+    /*
+     * Provide copies of values of parameters being set:
+     * is_open, width, height, HWResolution, IsPageDevice, Max*.
+     */
+    gx_device_X values;
+
+    long pwin = (long)xdev->pwin;
+    bool save_is_page = xdev->IsPageDevice;
+    int ecode = 0, code;
+
+    values = *xdev;
+
+    /* Handle extra parameters */
+
+    ecode = param_put_long(plist, "WindowID", &pwin, ecode);
+    ecode = param_put_bool(plist, ".IsPageDevice", &values.IsPageDevice, ecode);
+    ecode = param_put_long(plist, "MaxBitmap", &values.MaxBitmap, ecode);
+    ecode = param_put_int(plist, "MaxTempPixmap", &values.MaxTempPixmap, ecode);
+    ecode = param_put_int(plist, "MaxTempImage", &values.MaxTempImage, ecode);
+    ecode = param_put_int(plist, "MaxBufferedTotal", &values.MaxBufferedTotal, ecode);
+    ecode = param_put_int(plist, "MaxBufferedArea", &values.MaxBufferedArea, ecode);
+    ecode = param_put_int(plist, "MaxBufferedCount", &values.MaxBufferedCount, ecode);
+
+    if (ecode < 0)
+	return ecode;
+
+    /* Unless we specified a new window ID, */
+    /* prevent gx_default_put_params from closing the device. */
+    if (pwin == (long)xdev->pwin)
+	dev->is_open = false;
+    xdev->IsPageDevice = values.IsPageDevice;
+    code = gx_default_put_params(dev, plist);
+    dev->is_open = values.is_open; /* saved value */
+    if (code < 0) {		/* Undo setting of .IsPageDevice */
+	xdev->IsPageDevice = save_is_page;
+	return code;
+    }
+    if (pwin != (long)xdev->pwin) {
+	if (xdev->is_open)
+	    gs_closedevice(dev);
+	xdev->pwin = (Window) pwin;
+    }
+    /****** DO MORE FOR RESETTING MaxBitmap ******/
+    xdev->MaxBitmap = values.MaxBitmap;
+    /* If the device is open, resize the window. */
+    /* Don't do this if Ghostview is active. */
+    if (xdev->is_open && !xdev->ghostview &&
+	(dev->width != values.width || dev->height != values.height ||
+	 dev->HWResolution[0] != values.HWResolution[0] ||
+	 dev->HWResolution[1] != values.HWResolution[1] ||
+	 xdev->MaxBitmap != values.MaxBitmap)
+	) {
+	int dw = dev->width - values.width;
+	int dh = dev->height - values.height;
+	double qx = dev->HWResolution[0] / values.HWResolution[0];
+	double qy = dev->HWResolution[1] / values.HWResolution[1];
+
+	if (dw || dh) {
+	    XResizeWindow(xdev->dpy, xdev->win,
+			  dev->width, dev->height);
+	    if (xdev->bpixmap != (Pixmap) 0) {
+		XFreePixmap(xdev->dpy, xdev->bpixmap);
+		xdev->bpixmap = (Pixmap) 0;
+	    }
+	    xdev->dest = 0;
+	}
+	xdev->MaxTempPixmap = values.MaxTempPixmap;
+	xdev->MaxTempImage = values.MaxTempImage;
+	xdev->MaxBufferedTotal = values.MaxBufferedTotal;
+	xdev->MaxBufferedArea = values.MaxBufferedArea;
+	xdev->MaxBufferedCount = values.MaxBufferedCount;
+	if (dw || dh || xdev->MaxBitmap != values.MaxBitmap)
+	    gdev_x_clear_window(xdev);
+	/* Attempt to update the initial matrix in a sensible way. */
+	/* The whole handling of the initial matrix is a hack! */
+	if (xdev->initial_matrix.xy == 0) {
+	    if (xdev->initial_matrix.xx < 0) {	/* 180 degree rotation */
+		xdev->initial_matrix.tx += dw;
+	    } else {		/* no rotation */
+		xdev->initial_matrix.ty += dh;
+	    }
+	} else {
+	    if (xdev->initial_matrix.xy < 0) {	/* 90 degree rotation */
+		xdev->initial_matrix.tx += dh;
+		xdev->initial_matrix.ty += dw;
+	    } else {		/* 270 degree rotation */
+	    }
+	}
+	xdev->initial_matrix.xx *= qx;
+	xdev->initial_matrix.xy *= qx;
+	xdev->initial_matrix.yx *= qy;
+	xdev->initial_matrix.yy *= qy;
+    }
+    return 0;
+}
+
+/* ---------------- Closing/finalization ---------------- */
+
+/* Free fonts when closing the device. */
+private void
+free_x_fontmaps(x11fontmap **pmaps, gs_memory_t *mem)
+{
+    while (*pmaps) {
+	x11fontmap *font = *pmaps;
+
+	*pmaps = font->next;
+	if (font->std.names)
+	    XFreeFontNames(font->std.names);
+	if (font->iso.names)
+	    XFreeFontNames(font->iso.names);
+	gs_free_object(mem, font->x11_name, "free_x_fontmaps(x11_name)");
+	gs_free_object(mem, font->ps_name, "free_x_fontmaps(ps_name)");
+	gs_free_object(mem, font, "free_x_fontmaps(font)");
+    }
+}
+
+/* Close the device. */
+int
+gdev_x_close(gx_device_X *xdev)
+{
+    if (xdev->ghostview)
+	gdev_x_send_event(xdev, xdev->DONE);
+    if (xdev->vinfo) {
+	XFree((char *)xdev->vinfo);
+	xdev->vinfo = NULL;
+    }
+    gdev_x_free_colors(xdev);
+    free_x_fontmaps(&xdev->dingbat_fonts, xdev->memory);
+    free_x_fontmaps(&xdev->symbol_fonts, xdev->memory);
+    free_x_fontmaps(&xdev->regular_fonts, xdev->memory);
+    XCloseDisplay(xdev->dpy);
+    return 0;
 }

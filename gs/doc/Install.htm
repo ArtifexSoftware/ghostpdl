@@ -68,9 +68,10 @@ with the ability to interpret Adobe Portable Document Format (PDF) files,
 that is, <b><tt>pdf.dev</tt></b> was included in
 <b><tt>FEATURE_DEVS</tt></b> when Ghostscript was built.
 
-<li><b><tt>Fontmap</tt></b>, unless you plan always to invoke Ghostscript
-with the <a href="Use.htm#FONTMAP_switch"><b><tt>-dNOFONTMAP</tt></b>
-switch</a>.
+<li><b><tt>Fontmap</tt></b> and <b><tt>Fontmap.GS</tt></b> (or the
+appropriate <b><tt>Fontmap.</tt></b><em>xxx</em> for your platform), unless
+you plan always to invoke Ghostscript with the <a
+href="Use.htm#FONTMAP_switch"><b><tt>-dNOFONTMAP</tt></b> switch</a>.
 </ul>
 
 <li>Fonts, for rendering text.  These are platform-independent,
@@ -264,10 +265,11 @@ little testing.  You need these files to run Ghostscript on OS/2:
 <b><tt>GSPMDRV.EXE</tt></b> are compiled using EMX/GCC 0.9b.  You must have
 the EMX DLLs on your <b><tt>LIBPATH</tt></b>; they are available in a
 package <b><tt>emxrt*.zip</tt></b> from many places on the Internet, so you
-can find the package by using a search engine or the ftp lookup service at
+can find the package by using a search engine or an ftp lookup service such
+as the one at
 
 <blockquote>
-<a href="http://ftpsearch.ntnu.no/">http://ftpsearch.ntnu.no/</a>
+<a href="http://ftpsearch.lycos.com/">http://ftpsearch.lycos.com/</a>
 </blockquote>
 
 <p>
@@ -367,20 +369,13 @@ Consult the makefile for more details.  If you have Adobe Acrobat
 installed, you can use the Acrobat fonts in place of the ones provided with
 Ghostscript by adding the Acrobat fonts directory to
 <b><tt>GS_FONTPATH</tt></b> and removing these fonts from
-<b><tt>Fontmap</tt></b>:
+<b><tt>Fontmap.GS</tt></b>:
 
 <blockquote>
 Courier, Courier-Bold, Courier-BoldOblique, Courier-Oblique, Helvetica,
 Helvetica-Bold, Helvetica-BoldOblique, Helvetica-Oblique, Symbol, Times-Bold,
 Times-BoldItalic, Times-Italic, Times-Roman, ZapfDingbats
 </blockquote>
-
-<p>
-The syntax of the <b><tt>install</tt></b> command varies unpredictably
-between Unix systems.  If your system has an <b><tt>installbsd</tt></b>
-program, edit the definition of <b><tt>INSTALL</tt></b> in the makefile to
-change "<b><tt>install</tt></b>" to "<b><tt>installbsd</tt></b>" before you
-run "<b><tt>make install</tt></b>".
 
 <p>
 For Linux, you can install or upgrade Ghostscript from precompiled 
@@ -410,7 +405,7 @@ more details.
 
 <p>
 If you have DECWindows/Motif installed, you may wish to replace the
-<b><tt>FONTMAP</tt></b> file with <b><tt>FONTMAP.VMS</tt></b>.  Read the
+<b><tt>FONTMAP.GS</tt></b> file with <b><tt>FONTMAP.VMS</tt></b>.  Read the
 comment at the beginning of the latter file for more information.
 
 <!-- [2.0 end contents] ---------------------------------------------------- -->
@@ -428,7 +423,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.50, 16 September 1998
+Ghostscript version 5.91, 30 August 1999
 
 </font>
 

@@ -26,8 +26,8 @@
 /* The client handles all encoding issues for these fonts. */
 /* The fonts themselves use Unicode indexing. */
 private gs_glyph
-hpgl_stick_arc_encode_char(gs_show_enum *penum, gs_font *pfont, gs_char *pchr)
-{	return (gs_glyph)*pchr;
+hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph not_used)
+{	return (gs_glyph)chr;
 }
 
 /* The stick font is fixed-pitch. */

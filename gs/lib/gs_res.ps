@@ -188,7 +188,7 @@ mark
 	5 copy pop 4 packedarray count
 		% Stack: ...operands... proc saved count
 	4 -1 roll pop		% pop the category
-	/.internalstopped load 3 1 roll
+	/stopped load 3 1 roll
 	3 .execn
 		% Stack: ... stopped saved count
 	3 -1 roll {

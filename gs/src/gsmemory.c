@@ -48,12 +48,12 @@ public_st_const_string_element();
 
 /* GC procedures for bytestrings */
 gs_ptr_type_t
-enum_bytestring(const void **pep, const gs_bytestring *pbs)
+enum_bytestring(enum_ptr_t *pep, const gs_bytestring *pbs)
 {
     return (pbs->bytes ? ENUM_OBJ(pbs->bytes) : ENUM_STRING(pbs));
 }
 gs_ptr_type_t
-enum_const_bytestring(const void **pep, const gs_const_bytestring *pbs)
+enum_const_bytestring(enum_ptr_t *pep, const gs_const_bytestring *pbs)
 {
     return (pbs->bytes ? ENUM_OBJ(pbs->bytes) : ENUM_CONST_STRING(pbs));
 }
@@ -182,7 +182,7 @@ gs_register_struct_root(gs_memory_t *mem, gs_gc_root_t *root,
 
 #ifdef DEBUG
 
-const char *
+private const char *
 rc_object_type_name(const void *vp, const rc_header *prc)
 {
     gs_memory_type_ptr_t pstype;
@@ -207,6 +207,35 @@ rc_object_type_name(const void *vp, const rc_header *prc)
     return client_name_string(gs_struct_type_name(pstype));
 }
 
+/* Trace reference count operations. */
+void
+rc_trace_init_free(const void *vp, const rc_header *prc)
+{
+    dprintf3("[^]%s 0x%lx init = %ld\n",
+	     rc_object_type_name(vp, prc), (ulong)vp, (long)prc->ref_count);
+}
+void
+rc_trace_free_struct(const void *vp, const rc_header *prc, client_name_t cname)
+{
+    dprintf3("[^]%s 0x%lx => free (%s)\n",
+	      rc_object_type_name(vp, prc),
+	      (ulong)vp, client_name_string(cname));
+}
+void
+rc_trace_increment(const void *vp, const rc_header *prc)
+{
+    dprintf3("[^]%s 0x%lx ++ => %ld\n",
+	      rc_object_type_name(vp, prc),
+	      (ulong)vp, (long)prc->ref_count);
+}
+void
+rc_trace_adjust(const void *vp, const rc_header *prc, int delta)
+{
+    dprintf4("[^]%s 0x%lx %+d => %ld\n",
+	     rc_object_type_name(vp, prc),
+	     (ulong)vp, delta, (long)(prc->ref_count + delta));
+}
+
 #endif /* DEBUG */
 
 /* Normal freeing routine for reference-counted structures. */
@@ -226,21 +255,22 @@ ENUM_PTRS_BEGIN_PROC(basic_enum_ptrs)
 
     if (index < psd->num_ptrs) {
 	const gc_ptr_element_t *ppe = &psd->ptrs[index];
-	char *pptr = (char *)vptr + ppe->offset;
+	EV_CONST char *pptr = (EV_CONST char *)vptr + ppe->offset;
 
 	switch ((gc_ptr_type_index_t)ppe->type) {
 	    case GC_ELT_OBJ:
-		return ENUM_OBJ(*(void **)pptr);
+		return ENUM_OBJ(*(const void *EV_CONST *)pptr);
 	    case GC_ELT_STRING:
-		return ENUM_STRING((gs_string *) pptr);
+		return ENUM_STRING((const gs_string *)pptr);
 	    case GC_ELT_CONST_STRING:
-		return ENUM_CONST_STRING((gs_string *) pptr);
+		return ENUM_CONST_STRING((const gs_const_string *)pptr);
 	}
     }
     if (!psd->super_type)
 	return 0;
     return ENUM_USING(*(psd->super_type),
-		      (void *)((char *)vptr + psd->super_offset),
+		      (EV_CONST void *)
+		        ((EV_CONST char *)vptr + psd->super_offset),
 		      pstype->ssize, index - psd->num_ptrs);
 }
 ENUM_PTRS_END_PROC

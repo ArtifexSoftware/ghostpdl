@@ -169,7 +169,7 @@ zSFD(i_ctx_t *i_ctx_p)
 /* ------ Utilities ------ */
 
 /* Forward references */
-private int filter_ensure_buf(P3(stream **, uint, bool));
+private int filter_ensure_buf(P4(stream **, uint, gs_ref_memory_t *, bool));
 
 /* Set up an input filter. */
 int
@@ -215,7 +215,7 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
 	default:
 	    check_proc(*sop);
 	    ialloc_set_space(idmemory, max(space, r_space(sop)));
-	    code = sread_proc(sop, &sstrm);
+	    code = sread_proc(sop, &sstrm, iimemory);
 	    if (code < 0)
 		goto out;
 	    sstrm->is_temp = 2;
@@ -223,7 +223,7 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
 	    code = filter_ensure_buf(&sstrm,
 				     template->min_in_size +
 				     sstrm->state->template->min_out_size,
-				     false);
+				     iimemory, false);
 	    if (code < 0)
 		goto out;
 	    break;
@@ -231,7 +231,7 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
     if (min_size < 128)
 	min_size = file_default_buffer_size;
     code = filter_open("r", min_size, (ref *) sop,
-		       &s_filter_read_procs, template, st);
+		       &s_filter_read_procs, template, st, imemory);
     if (code < 0)
 	goto out;
     s = fptr(sop);
@@ -292,7 +292,7 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
 	default:
 	    check_proc(*sop);
 	    ialloc_set_space(idmemory, max(space, r_space(sop)));
-	    code = swrite_proc(sop, &sstrm);
+	    code = swrite_proc(sop, &sstrm, iimemory);
 	    if (code < 0)
 		goto out;
 	    sstrm->is_temp = 2;
@@ -300,7 +300,7 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
 	    code = filter_ensure_buf(&sstrm,
 				     template->min_out_size +
 				     sstrm->state->template->min_in_size,
-				     true);
+				     iimemory, true);
 	    if (code < 0)
 		goto out;
 	    break;
@@ -308,7 +308,7 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
     if (min_size < 128)
 	min_size = file_default_buffer_size;
     code = filter_open("w", min_size, (ref *) sop,
-		       &s_filter_write_procs, template, st);
+		       &s_filter_write_procs, template, st, imemory);
     if (code < 0)
 	goto out;
     s = fptr(sop);
@@ -338,15 +338,15 @@ s_Null1D_process(stream_state * st, stream_cursor_read * pr,
     *++(pw->ptr) = *++(pr->ptr);
     return 1;
 }
-private const stream_template s_Null1D_template =
-{
+private const stream_template s_Null1D_template = {
     &st_stream_state, NULL, s_Null1D_process, 1, 1
 };
 
 /* Ensure a minimum buffer size for a filter. */
 /* This may require creating an intermediate stream. */
 private int
-filter_ensure_buf(stream ** ps, uint min_buf_size, bool writing)
+filter_ensure_buf(stream ** ps, uint min_buf_size, gs_ref_memory_t *imem,
+		  bool writing)
 {
     stream *s = *ps;
     uint min_size = min_buf_size + max_min_left;
@@ -361,7 +361,8 @@ filter_ensure_buf(stream ** ps, uint min_buf_size, bool writing)
 	/* This is a newly created procedure stream. */
 	/* Just allocate a buffer for it. */
 	uint len = max(min_size, 128);
-	byte *buf = ialloc_bytes(len, "filter_ensure_buf");
+	byte *buf = gs_alloc_bytes((gs_memory_t *)imem, len,
+				   "filter_ensure_buf");
 
 	if (buf == 0)
 	    return_error(e_VMerror);
@@ -374,10 +375,10 @@ filter_ensure_buf(stream ** ps, uint min_buf_size, bool writing)
 	/* Allocate an intermediate stream. */
 	if (writing)
 	    code = filter_open("w", min_size, &bsop, &s_filter_write_procs,
-			       &s_NullE_template, NULL);
+			       &s_NullE_template, NULL, (gs_memory_t *)imem);
 	else
 	    code = filter_open("r", min_size, &bsop, &s_filter_read_procs,
-			       &s_Null1D_template, NULL);
+			       &s_Null1D_template, NULL, (gs_memory_t *)imem);
 	if (code < 0)
 	    return code;
 	bs = fptr(&bsop);
@@ -398,8 +399,7 @@ filter_mark_temp(const ref * fop, int is_temp)
 
 /* ------ Initialization procedure ------ */
 
-const op_def zfilter_op_defs[] =
-{
+const op_def zfilter_op_defs[] = {
 		/* We enter PSStringEncode and SubFileDecode (only) */
 		/* as separate operators. */
     {"1.psstringencode", zPSSE},

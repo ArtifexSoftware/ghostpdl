@@ -95,20 +95,21 @@ zastore(i_ctx_t *i_ctx_p)
 
     check_write_type(*op, t_array);
     size = r_size(op);
-    if (size > op - osbot) {	/* The store operation might involve other stack segments. */
+    if (size > op - osbot) {
+	/* The store operation might involve other stack segments. */
 	ref arr;
 
 	if (size >= ref_stack_count(&o_stack))
 	    return_error(e_stackunderflow);
 	arr = *op;
-	code = ref_stack_store(&o_stack, &arr, size, 1, 0, true,
+	code = ref_stack_store(&o_stack, &arr, size, 1, 0, true, idmemory,
 			       "astore");
 	if (code < 0)
 	    return code;
 	ref_stack_pop(&o_stack, size);
 	*ref_stack_index(&o_stack, 0) = arr;
     } else {
-	code = refcpy_to_old(op, 0, op - size, size, "astore");
+	code = refcpy_to_old(op, 0, op - size, size, idmemory, "astore");
 	if (code < 0)
 	    return code;
 	op[-(int)size] = *op;

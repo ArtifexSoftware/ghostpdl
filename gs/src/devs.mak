@@ -127,6 +127,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	bitrgb	Plain bits, RGB
 #	bitcmyk  Plain bits, CMYK
 #	bmpmono	Monochrome MS Windows .BMP file format
+#	bmpgray	8-bit gray .BMP file format
 #	bmpsep1	Separated 1-bit CMYK .BMP file format, primarily for testing
 #	bmpsep8	Separated 8-bit CMYK .BMP file format, primarily for testing
 #	bmp16	4-bit (EGA/VGA) .BMP file format
@@ -300,10 +301,10 @@ $(GLOBJ)gdevpcfb.$(OBJ) : $(GLSRC)gdevpcfb.c $(GDEV) $(memory__h) $(gconfigv_h)\
 
 # The EGA/VGA family includes EGA and VGA.  Many SuperVGAs in 800x600,
 # 16-color mode can share the same code; see the next section below.
-$(DD)ega.dev : $(EGAVGA)
+$(DD)ega.dev : $(DEVS_MAK) $(EGAVGA)
 	$(SETDEV) $(DD)ega $(EGAVGA)
 
-$(DD)vga.dev : $(EGAVGA)
+$(DD)vga.dev : $(DEVS_MAK) $(EGAVGA)
 	$(SETDEV) $(DD)vga $(EGAVGA)
 
 ### ------------------------- SuperVGA displays ------------------------ ###
@@ -315,7 +316,7 @@ $(DD)vga.dev : $(EGAVGA)
 # where NNN is the display mode in decimal.  See Use.htm for the modes
 # for some popular display chipsets.
 
-$(DD)svga16.dev : $(EGAVGA)
+$(DD)svga16.dev : $(DEVS_MAK) $(EGAVGA)
 	$(SETDEV) $(DD)svga16 $(EGAVGA)
 
 # More capable SuperVGAs have a wide variety of slightly differing
@@ -331,28 +332,28 @@ $(GLOBJ)gdevsvga.$(OBJ) : $(GLSRC)gdevsvga.c $(GDEV) $(memory__h) $(gconfigv_h)\
 # The SuperVGA family includes: Avance Logic Inc., ATI Wonder, S3,
 # Trident, Tseng ET3000/4000, and VESA.
 
-$(DD)ali.dev : $(SVGA)
+$(DD)ali.dev : $(DEVS_MAK) $(SVGA)
 	$(SETDEV) $(DD)ali $(SVGA)
 
-$(DD)atiw.dev : $(SVGA)
+$(DD)atiw.dev : $(DEVS_MAK) $(SVGA)
 	$(SETDEV) $(DD)atiw $(SVGA)
 
-$(DD)cirr.dev : $(SVGA)
+$(DD)cirr.dev : $(DEVS_MAK) $(SVGA)
 	$(SETDEV) $(DD)cirr $(SVGA)
 
-$(DD)tseng.dev : $(SVGA)
+$(DD)tseng.dev : $(DEVS_MAK) $(SVGA)
 	$(SETDEV) $(DD)tseng $(SVGA)
 
-$(DD)tvga.dev : $(SVGA)
+$(DD)tvga.dev : $(DEVS_MAK) $(SVGA)
 	$(SETDEV) $(DD)tvga $(SVGA)
 
-$(DD)vesa.dev : $(SVGA)
+$(DD)vesa.dev : $(DEVS_MAK) $(SVGA)
 	$(SETDEV) $(DD)vesa $(SVGA)
 
 # The S3 driver doesn't share much code with the others.
 
 s3vga_=$(GLOBJ)gdevs3ga.$(OBJ) $(GLOBJ)gdevsvga.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
-$(DD)s3vga.dev : $(SVGA) $(s3vga_)
+$(DD)s3vga.dev : $(DEVS_MAK) $(SVGA) $(s3vga_)
 	$(SETDEV) $(DD)s3vga $(SVGA)
 	$(ADDMOD) $(DD)s3vga -obj $(s3vga_)
 
@@ -370,7 +371,7 @@ $(GLOBJ)gdevs3ga.$(OBJ) : $(GLSRC)gdevs3ga.c $(GDEV) $(gdevpcfb_h) $(gdevsvga_h)
 ###       Erik Talvola (talvola@gnu.ai.mit.edu).                          ###
 
 lvga256_=$(GLOBJ)gdevl256.$(OBJ)
-$(DD)lvga256.dev : $(lvga256_)
+$(DD)lvga256.dev : $(DEVS_MAK) $(lvga256_)
 	$(SETDEV) $(DD)lvga256 $(lvga256_)
 	$(ADDMOD) $(DD)lvga256 -lib vga vgagl
 
@@ -378,7 +379,7 @@ $(GLOBJ)gdevl256.$(OBJ) : $(GLSRC)gdevl256.c $(GDEV)
 	$(GLCC) $(GLO_)gdevl256.$(OBJ) $(C_) $(GLSRC)gdevl256.c
 
 vgalib_=$(GLOBJ)gdevvglb.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
-$(DD)vgalib.dev : $(vgalib_)
+$(DD)vgalib.dev : $(DEVS_MAK) $(vgalib_)
 	$(SETDEV2) $(DD)vgalib $(vgalib_)
 	$(ADDMOD) $(DD)vgalib -lib vga
 
@@ -393,33 +394,39 @@ $(GLOBJ)gdevvglb.$(OBJ) : $(GLSRC)gdevvglb.c $(GDEV) $(gdevpccm_h) $(gsparam_h)
 
 x__h=$(GLSRC)x_.h
 gdevxcmp_h=$(GLSRC)gdevxcmp.h
-gdevx_h=$(GLSRC)gdevx.h $(gdevxcmp_h)
+gdevx_h=$(GLSRC)gdevx.h $(gdevbbox_h) $(gdevxcmp_h)
 
 # See the main makefile for the definition of XLIBS.
-x11_=$(GLOBJ)gdevx.$(OBJ) $(GLOBJ)gdevxcmp.$(OBJ) $(GLOBJ)gdevxini.$(OBJ) $(GLOBJ)gdevxres.$(OBJ) $(GLOBJ)gdevxxf.$(OBJ) $(GLOBJ)gdevemap.$(OBJ)
-$(DD)x11_.dev : $(x11_)
+x11_=$(GLOBJ)gdevx.$(OBJ) $(GLOBJ)gdevxcmp.$(OBJ) $(GLOBJ)gdevxini.$(OBJ)\
+ $(GLOBJ)gdevxres.$(OBJ) $(GLOBJ)gdevxxf.$(OBJ)\
+ $(GLOBJ)gdevemap.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
+$(DD)x11_.dev : $(DEVS_MAK) $(x11_) $(GLD)bbox.dev
 	$(SETMOD) $(DD)x11_ $(x11_)
 	$(ADDMOD) $(DD)x11_ -lib $(XLIBS)
+	$(ADDMOD) $(DD)x11_ -include $(GLD)bbox
 
-$(DD)x11.dev : $(DD)x11_.dev
+$(DD)x11.dev : $(DEVS_MAK) $(DD)x11_.dev
 	$(SETDEV2) $(DD)x11 -include $(DD)x11_
 
 # See the main makefile for the definition of XINCLUDE.
 GDEVX=$(GDEV) $(x__h) $(gdevx_h) $(TOP_MAKEFILES)
 $(GLOBJ)gdevx.$(OBJ) : $(GLSRC)gdevx.c $(GDEVX) $(math__h) $(memory__h)\
  $(gscoord_h) $(gsdevice_h) $(gsiparm2_h) $(gsmatrix_h) $(gsparam_h)\
- $(gxgetbit_h) $(gxiparam_h) $(gxpath_h)
+ $(gxdevmem_h) $(gxgetbit_h) $(gxiparam_h) $(gxpath_h)
 	$(GLCC) $(XINCLUDE) $(GLO_)gdevx.$(OBJ) $(C_) $(GLSRC)gdevx.c
 
 $(GLOBJ)gdevxcmp.$(OBJ) : $(GLSRC)gdevxcmp.c $(GDEVX) $(math__h)
 	$(GLCC) $(XINCLUDE) $(GLO_)gdevxcmp.$(OBJ) $(C_) $(GLSRC)gdevxcmp.c
 
 $(GLOBJ)gdevxini.$(OBJ) : $(GLSRC)gdevxini.c $(GDEVX) $(memory__h)\
- $(gserrors_h)
+ $(gserrors_h) $(gsparamx_h) $(gxdevmem_h) $(gdevbbox_h)
 	$(GLCC) $(XINCLUDE) $(GLO_)gdevxini.$(OBJ) $(C_) $(GLSRC)gdevxini.c
 
-$(GLOBJ)gdevxres.$(OBJ) : $(GLSRC)gdevxres.c $(GDEVX) $(std_h)
-	$(GLCC) $(XINCLUDE) $(GLO_)gdevxres.$(OBJ) $(C_) $(GLSRC)gdevxres.c
+# We have to compile gdevxres without warnings, because there is a
+# const/non-const cast required by the X headers that we can't work around.
+$(GLOBJ)gdevxres.$(OBJ) : $(GLSRC)gdevxres.c $(std_h) $(x__h)\
+ $(gsmemory_h) $(gstypes_h) $(gxdevice_h) $(gdevx_h)
+	$(CC_NO_WARN) $(GLCCFLAGS) $(XINCLUDE) $(GLO_)gdevxres.$(OBJ) $(C_) $(GLSRC)gdevxres.c
 
 $(GLOBJ)gdevxxf.$(OBJ) : $(GLSRC)gdevxxf.c $(GDEVX) $(math__h) $(memory__h)\
  $(gsstruct_h) $(gsutil_h) $(gxxfont_h)
@@ -434,37 +441,37 @@ $(GLOBJ)gdevxxf.$(OBJ) : $(GLSRC)gdevxxf.c $(GDEVX) $(math__h) $(memory__h)\
 # x11gray2 pretends to be a 2-bit gray-scale device.
 # x11gray4 pretends to be a 4-bit gray-scale device.
 # x11mono pretends to be a black-and-white device.
-x11alt_=$(GLOBJ)gdevxalt.$(OBJ) $(GLOBJ)gdevdcrd.$(OBJ)
-$(DD)x11alt_.dev : $(x11alt_) $(DD)x11_.dev
+x11alt_=$(GLOBJ)gdevxalt.$(OBJ)
+$(DD)x11alt_.dev : $(DEVS_MAK) $(x11alt_) $(DD)x11_.dev
 	$(SETMOD) $(DD)x11alt_ $(x11alt_)
 	$(ADDMOD) $(DD)x11alt_ -include $(DD)x11_
 
-$(DD)x11alpha.dev : $(DD)x11alt_.dev
+$(DD)x11alpha.dev : $(DEVS_MAK) $(DD)x11alt_.dev
 	$(SETDEV2) $(DD)x11alpha -include $(DD)x11alt_
 
-$(DD)x11cmyk.dev : $(DD)x11alt_.dev
+$(DD)x11cmyk.dev : $(DEVS_MAK) $(DD)x11alt_.dev
 	$(SETDEV2) $(DD)x11cmyk -include $(DD)x11alt_
 
-$(DD)x11cmyk2.dev : $(DD)x11alt_.dev
+$(DD)x11cmyk2.dev : $(DEVS_MAK) $(DD)x11alt_.dev
 	$(SETDEV2) $(DD)x11cmyk2 -include $(DD)x11alt_
 
-$(DD)x11cmyk4.dev : $(DD)x11alt_.dev
+$(DD)x11cmyk4.dev : $(DEVS_MAK) $(DD)x11alt_.dev
 	$(SETDEV2) $(DD)x11cmyk4 -include $(DD)x11alt_
 
-$(DD)x11cmyk8.dev : $(DD)x11alt_.dev
+$(DD)x11cmyk8.dev : $(DEVS_MAK) $(DD)x11alt_.dev
 	$(SETDEV2) $(DD)x11cmyk8 -include $(DD)x11alt_
 
-$(DD)x11gray2.dev : $(DD)x11alt_.dev
+$(DD)x11gray2.dev : $(DEVS_MAK) $(DD)x11alt_.dev
 	$(SETDEV2) $(DD)x11gray2 -include $(DD)x11alt_
 
-$(DD)x11gray4.dev : $(DD)x11alt_.dev
+$(DD)x11gray4.dev : $(DEVS_MAK) $(DD)x11alt_.dev
 	$(SETDEV2) $(DD)x11gray4 -include $(DD)x11alt_
 
-$(DD)x11mono.dev : $(DD)x11alt_.dev
+$(DD)x11mono.dev : $(DEVS_MAK) $(DD)x11alt_.dev
 	$(SETDEV2) $(DD)x11mono -include $(DD)x11alt_
 
 $(GLOBJ)gdevxalt.$(OBJ) : $(GLSRC)gdevxalt.c $(GDEVX) $(math__h) $(memory__h)\
- $(gsdevice_h) $(gsparam_h) $(gdevdcrd_h)
+ $(gsdevice_h) $(gsparam_h) $(gsstruct_h)
 	$(GLCC) $(XINCLUDE) $(GLO_)gdevxalt.$(OBJ) $(C_) $(GLSRC)gdevxalt.c
 
 ###### --------------- Memory-buffered printer devices --------------- ######
@@ -488,51 +495,51 @@ $(GLOBJ)gdevpcl.$(OBJ) : $(GLSRC)gdevpcl.c $(PDEVH) $(gdevpcl_h)
 $(GLOBJ)gdevdjet.$(OBJ) : $(GLSRC)gdevdjet.c $(PDEVH) $(gdevpcl_h)
 	$(GLCC) $(GLO_)gdevdjet.$(OBJ) $(C_) $(GLSRC)gdevdjet.c
 
-$(DD)deskjet.dev : $(HPMONO) $(GLD)page.dev
+$(DD)deskjet.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 	$(SETPDEV2) $(DD)deskjet $(HPMONO)
 
-$(DD)djet500.dev : $(HPMONO) $(GLD)page.dev
+$(DD)djet500.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 	$(SETPDEV2) $(DD)djet500 $(HPMONO)
 
-$(DD)fs600.dev : $(HPMONO) $(GLD)page.dev
+$(DD)fs600.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 	$(SETPDEV2) $(DD)fs600 $(HPMONO)
 
-$(DD)laserjet.dev : $(HPMONO) $(GLD)page.dev
+$(DD)laserjet.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 	$(SETPDEV2) $(DD)laserjet $(HPMONO)
 
-$(DD)ljetplus.dev : $(HPMONO) $(GLD)page.dev
+$(DD)ljetplus.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 	$(SETPDEV2) $(DD)ljetplus $(HPMONO)
 
 ### Selecting ljet2p provides TIFF (mode 2) compression on LaserJet III,
 ### IIIp, IIId, IIIsi, IId, and IIp. 
 
-$(DD)ljet2p.dev : $(HPMONO) $(GLD)page.dev
+$(DD)ljet2p.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 	$(SETPDEV2) $(DD)ljet2p $(HPMONO)
 
 ### Selecting ljet3 provides Delta Row (mode 3) compression on LaserJet III,
 ### IIIp, IIId, IIIsi.
 
-$(DD)ljet3.dev : $(HPMONO) $(GLD)page.dev
+$(DD)ljet3.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 	$(SETPDEV2) $(DD)ljet3 $(HPMONO)
 
 ### Selecting ljet3d also provides duplex printing capability.
 
-$(DD)ljet3d.dev : $(HPMONO) $(GLD)page.dev
+$(DD)ljet3d.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 	$(SETPDEV2) $(DD)ljet3d $(HPMONO)
 
 ### Selecting ljet4 or ljet4d also provides Delta Row compression on
 ### LaserJet IV series.
 
-$(DD)ljet4.dev : $(HPMONO) $(GLD)page.dev
+$(DD)ljet4.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 	$(SETPDEV2) $(DD)ljet4 $(HPMONO)
 
-$(DD)ljet4d.dev : $(HPMONO) $(GLD)page.dev
+$(DD)ljet4d.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 	$(SETPDEV2) $(DD)ljet4d $(HPMONO)
 
-$(DD)lp2563.dev : $(HPMONO) $(GLD)page.dev
+$(DD)lp2563.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 	$(SETPDEV2) $(DD)lp2563 $(HPMONO)
 
-$(DD)oce9050.dev : $(HPMONO) $(GLD)page.dev
+$(DD)oce9050.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 	$(SETPDEV2) $(DD)oce9050 $(HPMONO)
 
 ### -------------------- The H-P Color LaserJet 5/5M -------------------- ###
@@ -545,7 +552,7 @@ $(DD)oce9050.dev : $(HPMONO) $(GLD)page.dev
 ###	Henry Stiles <henrys@meerkat.dimensional.com>
 
 cljet5_=$(GLOBJ)gdevclj.$(OBJ) $(HPPCL)
-$(DD)cljet5.dev : $(cljet5_) $(GLD)page.dev
+$(DD)cljet5.dev : $(DEVS_MAK) $(cljet5_) $(GLD)page.dev
 	$(SETPDEV) $(DD)cljet5 $(cljet5_)
 
 $(GLOBJ)gdevclj.$(OBJ) : $(GLSRC)gdevclj.c $(math__h) $(PDEVH)\
@@ -553,7 +560,7 @@ $(GLOBJ)gdevclj.$(OBJ) : $(GLSRC)gdevclj.c $(math__h) $(PDEVH)\
 	$(GLCC) $(GLO_)gdevclj.$(OBJ) $(C_) $(GLSRC)gdevclj.c
 
 cljet5c_=$(GLOBJ)gdevcljc.$(OBJ) $(HPPCL)
-$(DD)cljet5c.dev : $(cljet5c_) $(GLD)page.dev
+$(DD)cljet5c.dev : $(DEVS_MAK) $(cljet5c_) $(GLD)page.dev
 	$(SETPDEV) $(DD)cljet5c $(cljet5c_)
 
 $(GLOBJ)gdevcljc.$(OBJ) : $(GLSRC)gdevcljc.c $(math__h) $(PDEVH) $(gdevpcl_h)
@@ -574,10 +581,10 @@ gdevpxen_h=$(GLSRC)gdevpxen.h
 gdevpxop_h=$(GLSRC)gdevpxop.h
 
 ljet5_=$(GLOBJ)gdevlj56.$(OBJ) $(HPPCL)
-$(DD)lj5mono.dev : $(ljet5_) $(GLD)page.dev
+$(DD)lj5mono.dev : $(DEVS_MAK) $(ljet5_) $(GLD)page.dev
 	$(SETPDEV) $(DD)lj5mono $(ljet5_)
 
-$(DD)lj5gray.dev : $(ljet5_) $(GLD)page.dev
+$(DD)lj5gray.dev : $(DEVS_MAK) $(ljet5_) $(GLD)page.dev
 	$(SETPDEV) $(DD)lj5gray $(ljet5_)
 
 $(GLOBJ)gdevlj56.$(OBJ) : $(GLSRC)gdevlj56.c $(PDEVH) $(gdevpcl_h)\
@@ -588,29 +595,32 @@ $(GLOBJ)gdevlj56.$(OBJ) : $(GLSRC)gdevlj56.c $(PDEVH) $(gdevpcl_h)\
 
 # Support for PostScript and PDF
 
-gdevpsdf_h=$(GLSRC)gdevpsdf.h $(gdevvec_h) $(gsparam_h) $(scfx_h) $(strimpl_h)
+gdevpsdf_h=$(GLSRC)gdevpsdf.h $(gdevvec_h) $(gsparam_h)\
+ $(sa85x_h) $(scfx_h) $(spsdf_h) $(strimpl_h)
 gdevpsds_h=$(GLSRC)gdevpsds.h $(strimpl_h)
-gdevpstr_h=$(GLSRC)gdevpstr.h
 
-psdf_1=$(GLOBJ)gdevpsde.$(OBJ) $(GLOBJ)gdevpsdf.$(OBJ) $(GLOBJ)gdevpsdi.$(OBJ)
-psdf_2=$(GLOBJ)gdevpsdp.$(OBJ) $(GLOBJ)gdevpsds.$(OBJ) $(GLOBJ)gdevpstr.$(OBJ)
+psdf_1=$(GLOBJ)gdevpsd1.$(OBJ) $(GLOBJ)gdevpsdf.$(OBJ) $(GLOBJ)gdevpsdi.$(OBJ)
+psdf_2=$(GLOBJ)gdevpsdp.$(OBJ) $(GLOBJ)gdevpsds.$(OBJ) $(GLOBJ)gdevpsdt.$(OBJ)
 psdf_3=$(GLOBJ)scfparam.$(OBJ) $(GLOBJ)sdcparam.$(OBJ) $(GLOBJ)sdeparam.$(OBJ)
-psdf_=$(psdf_1) $(psdf_2) $(psdf_3)
-$(DD)psdf.dev : $(ECHOGS_XE) $(psdf_) $(GLD)vector.dev $(GLD)pngp.dev
+psdf_4=$(GLOBJ)spprint.$(OBJ) $(GLOBJ)spsdf.$(OBJ)
+psdf_=$(psdf_1) $(psdf_2) $(psdf_3) $(psdf_4)
+$(DD)psdf.dev : $(DEVS_MAK) $(ECHOGS_XE) $(psdf_) $(GLD)vector.dev $(GLD)pngp.dev
 	$(SETMOD) $(DD)psdf $(psdf_1)
 	$(ADDMOD) $(DD)psdf -obj $(psdf_2)
 	$(ADDMOD) $(DD)psdf -obj $(psdf_3)
+	$(ADDMOD) $(DD)psdf -obj $(psdf_4)
 	$(ADDMOD) $(DD)psdf -include $(GLD)vector $(GLD)pngp
 
-$(GLOBJ)gdevpsde.$(OBJ) : $(GLSRC)gdevpsde.c $(GXERR) $(memory__h)\
+$(GLOBJ)gdevpsd1.$(OBJ) : $(GLSRC)gdevpsd1.c $(GXERR) $(memory__h)\
  $(gsccode_h) $(gsmatrix_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
- $(stream_h)\
- $(gdevpsdf_h) $(gdevpstr_h)
-	$(GLCC) $(GLO_)gdevpsde.$(OBJ) $(C_) $(GLSRC)gdevpsde.c
+ $(sfilter_h) $(stream_h) $(sstring_h)\
+ $(gdevpsdf_h) $(spprint_h)
+	$(GLCC) $(GLO_)gdevpsd1.$(OBJ) $(C_) $(GLSRC)gdevpsd1.c
 
-$(GLOBJ)gdevpsdf.$(OBJ) : $(GLSRC)gdevpsdf.c $(GXERR) $(string__h)\
+$(GLOBJ)gdevpsdf.$(OBJ) : $(GLSRC)gdevpsdf.c $(GXERR) $(memory__h)\
+ $(gxfont_h)\
  $(sa85x_h) $(scanchar_h) $(scfx_h) $(sstring_h) $(strimpl_h)\
- $(gdevpsdf_h) $(gdevpstr_h)
+ $(gdevpsdf_h) $(spprint_h)
 	$(GLCC) $(GLO_)gdevpsdf.$(OBJ) $(C_) $(GLSRC)gdevpsdf.c
 
 $(GLOBJ)gdevpsdi.$(OBJ) : $(GLSRC)gdevpsdi.c $(GXERR)\
@@ -624,26 +634,27 @@ $(GLOBJ)gdevpsdi.$(OBJ) : $(GLSRC)gdevpsdi.c $(GXERR)\
 $(GLOBJ)gdevpsdp.$(OBJ) : $(GLSRC)gdevpsdp.c $(GDEVH)\
  $(string__h) $(jpeglib__h)\
  $(scfx_h) $(sdct_h) $(slzwx_h) $(srlx_h) $(strimpl_h) $(szlibx_h)\
- $(gsparamx_h) $(gdevpsdf_h) $(gdevpstr_h)
+ $(gsparamx_h) $(gsutil_h) $(gdevpsdf_h) $(spprint_h)
 	$(GLJCC) $(GLO_)gdevpsdp.$(OBJ) $(C_) $(GLSRC)gdevpsdp.c
 
 $(GLOBJ)gdevpsds.$(OBJ) : $(GLSRC)gdevpsds.c $(GX) $(memory__h)\
  $(gdevpsds_h) $(gserrors_h) $(gxdcconv_h)
 	$(GLCC) $(GLO_)gdevpsds.$(OBJ) $(C_) $(GLSRC)gdevpsds.c
 
-$(GLOBJ)gdevpstr.$(OBJ) : $(GLSRC)gdevpstr.c\
- $(math__h) $(stdio__h) $(string__h)\
- $(gdevpstr_h) $(stream_h)
-	$(GLCC) $(GLO_)gdevpstr.$(OBJ) $(C_) $(GLSRC)gdevpstr.c
+$(GLOBJ)gdevpsdt.$(OBJ) : $(GLSRC)gdevpsdt.c $(GXERR) $(memory__h)\
+ $(gsmatrix_h) $(gsutil_h) $(gxfont_h) $(gxfont42_h)\
+ $(spprint_h) $(stream_h)\
+ $(gdevpsdf_h)
+	$(GLCC) $(GLO_)gdevpsdt.$(OBJ) $(C_) $(GLSRC)gdevpsdt.c
 
 # PostScript and EPS writers
 
 pswrite_=$(GLOBJ)gdevps.$(OBJ) $(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
-$(DD)epswrite.dev : $(ECHOGS_XE) $(pswrite_) $(GLD)psdf.dev
+$(DD)epswrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pswrite_) $(GLD)psdf.dev
 	$(SETDEV2) $(DD)epswrite $(pswrite_)
 	$(ADDMOD) $(DD)epswrite -include $(GLD)psdf
 
-$(DD)pswrite.dev : $(ECHOGS_XE) $(pswrite_) $(GLD)psdf.dev
+$(DD)pswrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pswrite_) $(GLD)psdf.dev
 	$(SETDEV2) $(DD)pswrite $(pswrite_)
 	$(ADDMOD) $(DD)pswrite -include $(GLD)psdf
 
@@ -652,40 +663,45 @@ $(GLOBJ)gdevps.$(OBJ) : $(GLSRC)gdevps.c $(GDEV)\
  $(gscdefs_h) $(gscspace_h) $(gsline_h) $(gsparam_h) $(gsiparam_h) $(gsmatrix_h)\
  $(gxdcolor_h) $(gxpath_h)\
  $(sa85x_h) $(sstring_h) $(strimpl_h)\
- $(gdevpsdf_h) $(gdevpstr_h)
+ $(gdevpsdf_h) $(spprint_h)
 	$(GLCC) $(GLO_)gdevps.$(OBJ) $(C_) $(GLSRC)gdevps.c
 
 # PDF writer
 # Note that gs_pdfwr.ps will only actually be loaded if the configuration
-# includes a PostScript interpreter.
+# includes a PostScript interpreter.  gs_mgl_e requires gs_mro_e and should
+# always be loaded: guaranteeing this will require moving the Encodings
+# into C code.
 
-pdfwrite1_=$(GLOBJ)gdevpdf.$(OBJ) $(GLOBJ)gdevpdfd.$(OBJ) $(GLOBJ)gdevpdfi.$(OBJ)
-pdfwrite2_=$(GLOBJ)gdevpdfm.$(OBJ) $(GLOBJ)gdevpdfo.$(OBJ) $(GLOBJ)gdevpdfp.$(OBJ)
-pdfwrite3_=$(GLOBJ)gdevpdft.$(OBJ) $(GLOBJ)gsflip.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
-pdfwrite4_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ) $(GLOBJ)sstring.$(OBJ)
-pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)
-$(DD)pdfwrite.dev : $(ECHOGS_XE) $(pdfwrite_)\
- $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)dcte.dev $(GLD)lzwe.dev $(GLD)rle.dev $(GLD)szlibe.dev $(GLD)psdf.dev
+pdfwrite1_=$(GLOBJ)gdevpdf.$(OBJ) $(GLOBJ)gdevpdfd.$(OBJ)
+pdfwrite2_=$(GLOBJ)gdevpdff.$(OBJ) $(GLOBJ)gdevpdfi.$(OBJ) $(GLOBJ)gdevpdfm.$(OBJ)
+pdfwrite3_=$(GLOBJ)gdevpdfo.$(OBJ) $(GLOBJ)gdevpdfp.$(OBJ) $(GLOBJ)gdevpdfr.$(OBJ)
+pdfwrite4_=$(GLOBJ)gdevpdft.$(OBJ) $(GLOBJ)gdevpdfu.$(OBJ)
+pdfwrite5_=$(GLOBJ)gsflip.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
+pdfwrite6_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ) $(GLOBJ)sstring.$(OBJ)
+pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_) $(pdfwrite5_)
+$(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
+ $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)dcte.dev $(GLD)lzwe.dev\
+ $(GLD)rle.dev $(GLD)szlibe.dev $(GLD)psdf.dev
 	$(SETDEV2) $(DD)pdfwrite $(pdfwrite1_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite2_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite3_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite4_)
+	$(ADDMOD) $(DD)pdfwrite $(pdfwrite5_)
+	$(ADDMOD) $(DD)pdfwrite $(pdfwrite6_)
 	$(ADDMOD) $(DD)pdfwrite -ps gs_pdfwr
+	$(ADDMOD) $(DD)pdfwrite -ps gs_lgo_e gs_lgx_e gs_mgl_e gs_mro_e
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)cmyklib $(GLD)cfe $(GLD)dcte
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)lzwe $(GLD)rle $(GLD)szlibe
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf
 
+gdevpdfo_h=$(GLSRC)gdevpdfo.h
 gdevpdfx_h=$(GLSRC)gdevpdfx.h\
- $(gsparam_h) $(gxdevice_h) $(gxline_h) $(stream_h)\
- $(gdevpsdf_h) $(gdevpstr_h)
+ $(gsparam_h) $(gsuid_h) $(gxdevice_h) $(gxfont_h) $(gxline_h)\
+ $(spprint_h) $(stream_h) $(gdevpsdf_h) $(gdevpdfo_h)
 
 $(GLOBJ)gdevpdf.$(OBJ) : $(GLSRC)gdevpdf.c $(GDEVH)\
- $(math__h) $(memory__h) $(string__h) $(time__h)\
- $(gp_h)\
- $(gdevpdfx_h) $(gscdefs_h)\
- $(gxfixed_h) $(gxistate_h) $(gxpaint_h)\
- $(gzcpath_h) $(gzpath_h)\
- $(scanchar_h) $(scfx_h) $(slzwx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
+ $(memory__h) $(string__h)\
+ $(gscdefs_h) $(gdevpdfx_h)
 	$(GLCC) $(GLO_)gdevpdf.$(OBJ) $(C_) $(GLSRC)gdevpdf.c
 
 $(GLOBJ)gdevpdfd.$(OBJ) : $(GLSRC)gdevpdfd.c $(math__h)\
@@ -693,6 +709,14 @@ $(GLOBJ)gdevpdfd.$(OBJ) : $(GLSRC)gdevpdfd.c $(math__h)\
  $(gx_h) $(gxdevice_h) $(gxfixed_h) $(gxistate_h) $(gxpaint_h)\
  $(gzcpath_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gdevpdfd.$(OBJ) $(C_) $(GLSRC)gdevpdfd.c
+
+$(GLOBJ)gdevpdff.$(OBJ) : $(GLSRC)gdevpdff.c\
+ $(math__h) $(memory__h) $(string__h) $(gx_h)\
+ $(gdevpdfx_h)\
+ $(gserrors_h) $(gsmalloc_h) $(gsmatrix_h) $(gspath_h) $(gsutil_h)\
+ $(gxfcache_h) $(gxfixed_h) $(gxfont_h) $(gxpath_h)\
+ $(scommon_h)
+	$(GLCC) $(GLO_)gdevpdff.$(OBJ) $(C_) $(GLSRC)gdevpdff.c
 
 $(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c\
  $(math__h) $(memory__h) $(string__h) $(jpeglib__h) $(gx_h)\
@@ -710,7 +734,7 @@ $(GLOBJ)gdevpdfm.$(OBJ) : $(GLSRC)gdevpdfm.c\
 
 $(GLOBJ)gdevpdfo.$(OBJ) : $(GLSRC)gdevpdfo.c $(memory__h) $(string__h)\
  $(gx_h)\
- $(gdevpdfx_h) $(gserrors_h) $(gsutil_h)\
+ $(gdevpdfo_h) $(gdevpdfx_h) $(gserrors_h) $(gsutil_h)\
  $(sstring_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpdfo.$(OBJ) $(C_) $(GLSRC)gdevpdfo.c
 
@@ -718,20 +742,36 @@ $(GLOBJ)gdevpdfp.$(OBJ) : $(GLSRC)gdevpdfp.c $(gx_h)\
  $(gdevpdfx_h) $(gserrors_h) $(gsparamx_h)
 	$(GLCC) $(GLO_)gdevpdfp.$(OBJ) $(C_) $(GLSRC)gdevpdfp.c
 
+$(GLOBJ)gdevpdfr.$(OBJ) : $(GLSRC)gdevpdfr.c $(memory__h) $(string__h)\
+ $(gx_h)\
+ $(gdevpdfx_h) $(gserrors_h) $(gsutil_h)\
+ $(scanchar_h) $(sstring_h) $(strimpl_h)
+	$(GLCC) $(GLO_)gdevpdfr.$(OBJ) $(C_) $(GLSRC)gdevpdfr.c
+
 $(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c\
  $(math__h) $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdfx_h) $(gserrors_h) $(gsutil_h)\
+ $(gdevpdfx_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gxfcache_h) $(gxfixed_h) $(gxfont_h) $(gxfont0_h) $(gxpath_h)\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdft.$(OBJ) $(C_) $(GLSRC)gdevpdft.c
+
+$(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GDEVH)\
+ $(math__h) $(memory__h) $(string__h) $(time__h)\
+ $(gp_h)\
+ $(gdevpdfx_h)\
+ $(gxfixed_h) $(gxistate_h) $(gxpaint_h)\
+ $(gzcpath_h) $(gzpath_h)\
+ $(scanchar_h) $(scfx_h) $(slzwx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
+	$(GLCC) $(GLO_)gdevpdfu.$(OBJ) $(C_) $(GLSRC)gdevpdfu.c
 
 # High-level PCL XL writer
 
 pxl_=$(GLOBJ)gdevpx.$(OBJ)
-$(DD)pxlmono.dev : $(pxl_) $(GDEV) $(GLD)vector.dev
+$(DD)pxlmono.dev : $(DEVS_MAK) $(pxl_) $(GDEV) $(GLD)vector.dev
 	$(SETDEV2) $(DD)pxlmono $(pxl_)
 	$(ADDMOD) $(DD)pxlmono -include $(GLD)vector
 
-$(DD)pxlcolor.dev : $(pxl_) $(GDEV) $(GLD)vector.dev
+$(DD)pxlcolor.dev : $(DEVS_MAK) $(pxl_) $(GDEV) $(GLD)vector.dev
 	$(SETDEV2) $(DD)pxlcolor $(pxl_)
 	$(ADDMOD) $(DD)pxlcolor -include $(GLD)vector
 
@@ -752,15 +792,15 @@ $(GLOBJ)gdevpx.$(OBJ) : $(GLSRC)gdevpx.c\
 
 bit_=$(GLOBJ)gdevbit.$(OBJ) $(GLOBJ)gdevdcrd.$(OBJ)
 
-$(DD)bit.dev : $(bit_) $(GLD)page.dev $(GLD)cielib.dev
+$(DD)bit.dev : $(DEVS_MAK) $(bit_) $(GLD)page.dev $(GLD)cielib.dev
 	$(SETPDEV2) $(DD)bit $(bit_)
 	$(ADDMOD) $(DD)bit -include $(GLD)cielib
 
-$(DD)bitrgb.dev : $(bit_) $(GLD)page.dev $(GLD)cielib.dev
+$(DD)bitrgb.dev : $(DEVS_MAK) $(bit_) $(GLD)page.dev $(GLD)cielib.dev
 	$(SETPDEV2) $(DD)bitrgb $(bit_)
 	$(ADDMOD) $(DD)bitrgb -include $(GLD)cielib
 
-$(DD)bitcmyk.dev : $(bit_) $(GLD)page.dev $(GLD)cielib.dev
+$(DD)bitcmyk.dev : $(DEVS_MAK) $(bit_) $(GLD)page.dev $(GLD)cielib.dev
 	$(SETPDEV2) $(DD)bitcmyk $(bit_)
 	$(ADDMOD) $(DD)bitcmyk -include $(GLD)cielib
 
@@ -780,62 +820,64 @@ $(GLOBJ)gdevbmp.$(OBJ) : $(GLSRC)gdevbmp.c $(PDEVH) $(gdevbmp_h) $(gdevpccm_h)
 $(GLOBJ)gdevbmpc.$(OBJ) : $(GLSRC)gdevbmpc.c $(PDEVH) $(gdevbmp_h)
 	$(GLCC) $(GLO_)gdevbmpc.$(OBJ) $(C_) $(GLSRC)gdevbmpc.c
 
-$(DD)bmpmono.dev : $(bmp_) $(GLD)page.dev
+$(DD)bmpmono.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
 	$(SETPDEV) $(DD)bmpmono $(bmp_)
 
-$(DD)bmpsep1.dev : $(bmp_) $(GLD)page.dev
+$(DD)bmpgray.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
+	$(SETPDEV) $(DD)bmpgray $(bmp_)
+
+$(DD)bmpsep1.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
 	$(SETPDEV) $(DD)bmpsep1 $(bmp_)
 
-$(DD)bmpsep8.dev : $(bmp_) $(GLD)page.dev
+$(DD)bmpsep8.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
 	$(SETPDEV) $(DD)bmpsep8 $(bmp_)
 
-$(DD)bmp16.dev : $(bmp_) $(GLD)page.dev
+$(DD)bmp16.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
 	$(SETPDEV) $(DD)bmp16 $(bmp_)
 
-$(DD)bmp256.dev : $(bmp_) $(GLD)page.dev
+$(DD)bmp256.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
 	$(SETPDEV) $(DD)bmp256 $(bmp_)
 
-$(DD)bmp16m.dev : $(bmp_) $(GLD)page.dev
+$(DD)bmp16m.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
 	$(SETPDEV) $(DD)bmp16m $(bmp_)
 
-$(DD)bmp32b.dev : $(bmp_) $(GLD)page.dev
+$(DD)bmp32b.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
 	$(SETPDEV) $(DD)bmp32b $(bmp_)
 
 ### ------------- BMP driver that serves as demo of async rendering ---- ###
 
-bmpa_=$(GLOBJ)gdevbmpa.$(OBJ) $(GLOBJ)gdevbmpc.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) \
- $(GLOBJ)gdevpccm.$(OBJ)
+bmpa_=$(GLOBJ)gdevbmpa.$(OBJ) $(GLOBJ)gdevbmpc.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ) $(GLOBJ)gdevppla.$(OBJ)
 
 $(GLOBJ)gdevbmpa.$(OBJ) : $(GLSRC)gdevbmpa.c $(AK) $(stdio__h)\
  $(gdevbmp_h) $(gdevprna_h) $(gdevpccm_h) $(gdevppla_h)\
  $(gserrors_h) $(gpsync_h)
 	$(GLCC) $(GLO_)gdevbmpa.$(OBJ) $(C_) $(GLSRC)gdevbmpa.c
 
-$(DD)bmpamono.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev
+$(DD)bmpamono.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
 	$(SETPDEV) $(DD)bmpamono $(bmpa_)
 	$(ADDMOD) $(DD)bmpamono -include $(GLD)async
 
-$(DD)bmpasep1.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev
+$(DD)bmpasep1.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
 	$(SETPDEV) $(DD)bmpasep1 $(bmpa_)
 	$(ADDMOD) $(DD)bmpasep1 -include $(GLD)async
 
-$(DD)bmpasep8.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev
+$(DD)bmpasep8.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
 	$(SETPDEV) $(DD)bmpasep8 $(bmpa_)
 	$(ADDMOD) $(DD)bmpasep8 -include $(GLD)async
 
-$(DD)bmpa16.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev
+$(DD)bmpa16.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
 	$(SETPDEV) $(DD)bmpa16 $(bmpa_)
 	$(ADDMOD) $(DD)bmpa16 -include $(GLD)async
 
-$(DD)bmpa256.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev
+$(DD)bmpa256.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
 	$(SETPDEV) $(DD)bmpa256 $(bmpa_)
 	$(ADDMOD) $(DD)bmpa256 -include $(GLD)async
 
-$(DD)bmpa16m.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev
+$(DD)bmpa16m.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
 	$(SETPDEV) $(DD)bmpa16m $(bmpa_)
 	$(ADDMOD) $(DD)bmpa16m -include $(GLD)async
 
-$(DD)bmpa32b.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev
+$(DD)bmpa32b.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
 	$(SETPDEV) $(DD)bmpa32b $(bmpa_)
 	$(ADDMOD) $(DD)bmpa32b -include $(GLD)async
 
@@ -857,13 +899,13 @@ $(GLOBJ)gdevcgml.$(OBJ) : $(GLSRC)gdevcgml.c $(memory__h) $(stdio__h)\
  $(gdevcgmx_h)
 	$(GLCC) $(GLO_)gdevcgml.$(OBJ) $(C_) $(GLSRC)gdevcgml.c
 
-$(DD)cgmmono.dev : $(cgm_)
+$(DD)cgmmono.dev : $(DEVS_MAK) $(cgm_)
 	$(SETDEV) $(DD)cgmmono $(cgm_)
 
-$(DD)cgm8.dev : $(cgm_)
+$(DD)cgm8.dev : $(DEVS_MAK) $(cgm_)
 	$(SETDEV) $(DD)cgm8 $(cgm_)
 
-$(DD)cgm24.dev : $(cgm_)
+$(DD)cgm24.dev : $(DEVS_MAK) $(cgm_)
 	$(SETDEV) $(DD)cgm24 $(cgm_)
 
 ### ------------------------- JPEG file format ------------------------- ###
@@ -871,12 +913,12 @@ $(DD)cgm24.dev : $(cgm_)
 jpeg_=$(GLOBJ)gdevjpeg.$(OBJ)
 
 # RGB output
-$(DD)jpeg.dev : $(jpeg_) $(GLD)sdcte.dev $(GLD)page.dev
+$(DD)jpeg.dev : $(DEVS_MAK) $(jpeg_) $(GLD)sdcte.dev $(GLD)page.dev
 	$(SETPDEV2) $(DD)jpeg $(jpeg_)
 	$(ADDMOD) $(DD)jpeg -include $(GLD)sdcte
 
 # Gray output
-$(DD)jpeggray.dev : $(jpeg_) $(GLD)sdcte.dev $(GLD)page.dev
+$(DD)jpeggray.dev : $(DEVS_MAK) $(jpeg_) $(GLD)sdcte.dev $(GLD)page.dev
 	$(SETPDEV2) $(DD)jpeggray $(jpeg_)
 	$(ADDMOD) $(DD)jpeggray -include $(GLD)sdcte
 
@@ -891,7 +933,7 @@ $(GLOBJ)gdevjpeg.$(OBJ) : $(GLSRC)gdevjpeg.c $(PDEVH)\
 
 miff_=$(GLOBJ)gdevmiff.$(OBJ)
 
-$(DD)miff24.dev : $(miff_) $(GLD)page.dev
+$(DD)miff24.dev : $(DEVS_MAK) $(miff_) $(GLD)page.dev
 	$(SETPDEV) $(DD)miff24 $(miff_)
 
 $(GLOBJ)gdevmiff.$(OBJ) : $(GLSRC)gdevmiff.c $(PDEVH)
@@ -904,27 +946,27 @@ pcx_=$(GLOBJ)gdevpcx.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
 $(GLOBJ)gdevpcx.$(OBJ) : $(GLSRC)gdevpcx.c $(PDEVH) $(gdevpccm_h) $(gxlum_h)
 	$(GLCC) $(GLO_)gdevpcx.$(OBJ) $(C_) $(GLSRC)gdevpcx.c
 
-$(DD)pcxmono.dev : $(pcx_) $(GLD)page.dev
+$(DD)pcxmono.dev : $(DEVS_MAK) $(pcx_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pcxmono $(pcx_)
 
-$(DD)pcxgray.dev : $(pcx_) $(GLD)page.dev
+$(DD)pcxgray.dev : $(DEVS_MAK) $(pcx_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pcxgray $(pcx_)
 
-$(DD)pcx16.dev : $(pcx_) $(GLD)page.dev
+$(DD)pcx16.dev : $(DEVS_MAK) $(pcx_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pcx16 $(pcx_)
 
-$(DD)pcx256.dev : $(pcx_) $(GLD)page.dev
+$(DD)pcx256.dev : $(DEVS_MAK) $(pcx_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pcx256 $(pcx_)
 
-$(DD)pcx24b.dev : $(pcx_) $(GLD)page.dev
+$(DD)pcx24b.dev : $(DEVS_MAK) $(pcx_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pcx24b $(pcx_)
 
-$(DD)pcxcmyk.dev : $(pcx_) $(GLD)page.dev
+$(DD)pcxcmyk.dev : $(DEVS_MAK) $(pcx_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pcxcmyk $(pcx_)
 
 # The 2-up PCX device is here only as an example, and for testing.
 
-$(DD)pcx2up.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gdevp2up.$(OBJ) $(GLD)page.dev $(DD)pcx256.dev
+$(DD)pcx2up.dev : $(DEVS_MAK) $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gdevp2up.$(OBJ) $(GLD)page.dev $(DD)pcx256.dev
 	$(SETPDEV) $(DD)pcx2up $(GLOBJ)gdevp2up.$(OBJ)
 	$(ADDMOD) $(DD)pcx2up -include $(DD)pcx256
 
@@ -944,63 +986,63 @@ $(GLOBJ)gdevpbm.$(OBJ) : $(GLSRC)gdevpbm.c $(PDEVH)\
 
 ### Portable Bitmap (PBM, plain or raw format, magic numbers "P1" or "P4")
 
-$(DD)pbm.dev : $(pxm_) $(GLD)page.dev
+$(DD)pbm.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pbm $(pxm_)
 
-$(DD)pbmraw.dev : $(pxm_) $(GLD)page.dev
+$(DD)pbmraw.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pbmraw $(pxm_)
 
 ### Portable Graymap (PGM, plain or raw format, magic numbers "P2" or "P5")
 
-$(DD)pgm.dev : $(pxm_) $(GLD)page.dev
+$(DD)pgm.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pgm $(pxm_)
 
-$(DD)pgmraw.dev : $(pxm_) $(GLD)page.dev
+$(DD)pgmraw.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pgmraw $(pxm_)
 
 # PGM with automatic optimization to PBM if this is possible.
 
-$(DD)pgnm.dev : $(pxm_) $(GLD)page.dev
+$(DD)pgnm.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pgnm $(pxm_)
 
-$(DD)pgnmraw.dev : $(pxm_) $(GLD)page.dev
+$(DD)pgnmraw.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pgnmraw $(pxm_)
 
 ### Portable Pixmap (PPM, plain or raw format, magic numbers "P3" or "P6")
 
-$(DD)ppm.dev : $(pxm_) $(GLD)page.dev
+$(DD)ppm.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)ppm $(pxm_)
 
-$(DD)ppmraw.dev : $(pxm_) $(GLD)page.dev
+$(DD)ppmraw.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)ppmraw $(pxm_)
 
 # PPM with automatic optimization to PGM or PBM if possible.
 
-$(DD)pnm.dev : $(pxm_) $(GLD)page.dev
+$(DD)pnm.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pnm $(pxm_)
 
-$(DD)pnmraw.dev : $(pxm_) $(GLD)page.dev
+$(DD)pnmraw.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pnmraw $(pxm_)
 
 ### Portable inKmap (CMYK internally, converted to PPM=RGB at output time)
 
-$(DD)pkm.dev : $(pxm_) $(GLD)page.dev
+$(DD)pkm.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pkm $(pxm_)
 
-$(DD)pkmraw.dev : $(pxm_) $(GLD)page.dev
+$(DD)pkmraw.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pkmraw $(pxm_)
 
 ### Portable Separated map (CMYK internally, produces 4 monobit pages)
 
-$(DD)pksm.dev : $(pxm_) $(GLD)page.dev
+$(DD)pksm.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pksm $(pxm_)
 
-$(DD)pksmraw.dev : $(pxm_) $(GLD)page.dev
+$(DD)pksmraw.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pksmraw $(pxm_)
 
 ### Plan 9 bitmap format
 
-$(DD)plan9bm.dev : $(pxm_) $(GLD)page.dev
+$(DD)plan9bm.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)plan9bm $(pxm_)
 
 ### --------------- Portable Network Graphics file format --------------- ###
@@ -1017,23 +1059,23 @@ $(GLOBJ)gdevpng.$(OBJ) : $(GLSRC)gdevpng.c\
  $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h) $(png__h)
 	$(CC_) $(I_)$(GLI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(GLO_)gdevpng.$(OBJ) $(C_) $(GLSRC)gdevpng.c
 
-$(DD)pngmono.dev : $(libpng_dev) $(png_) $(GLD)page.dev
+$(DD)pngmono.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pngmono $(png_)
 	$(ADDMOD) $(DD)pngmono $(png_i_)
 
-$(DD)pnggray.dev : $(libpng_dev) $(png_) $(GLD)page.dev
+$(DD)pnggray.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pnggray $(png_)
 	$(ADDMOD) $(DD)pnggray $(png_i_)
 
-$(DD)png16.dev : $(libpng_dev) $(png_) $(GLD)page.dev
+$(DD)png16.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)png16 $(png_)
 	$(ADDMOD) $(DD)png16 $(png_i_)
 
-$(DD)png256.dev : $(libpng_dev) $(png_) $(GLD)page.dev
+$(DD)png256.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)png256 $(png_)
 	$(ADDMOD) $(DD)png256 $(png_i_)
 
-$(DD)png16m.dev : $(libpng_dev) $(png_) $(GLD)page.dev
+$(DD)png16m.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)png16m $(png_)
 	$(ADDMOD) $(DD)png16m $(png_i_)
 
@@ -1050,10 +1092,10 @@ psim_=$(GLOBJ)gdevpsim.$(OBJ)
 $(GLOBJ)gdevpsim.$(OBJ) : $(GLSRC)gdevpsim.c $(PDEVH)
 	$(GLCC) $(GLO_)gdevpsim.$(OBJ) $(C_) $(GLSRC)gdevpsim.c
 
-$(DD)psmono.dev : $(psim_) $(GLD)page.dev
+$(DD)psmono.dev : $(DEVS_MAK) $(psim_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)psmono $(psim_)
 
-$(DD)psgray.dev : $(psim_) $(GLD)page.dev
+$(DD)psgray.dev : $(DEVS_MAK) $(psim_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)psgray $(psim_)
 
 # RGB, Level 2 output
@@ -1064,7 +1106,7 @@ $(GLOBJ)gdevpsci.$(OBJ) : $(GLSRC)gdevpsci.c $(PDEVH)\
  $(srlx_h) $(stream_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpsci.$(OBJ) $(C_) $(GLSRC)gdevpsci.c
 
-$(DD)psrgb.dev : $(psci_) $(GLD)page.dev
+$(DD)psrgb.dev : $(DEVS_MAK) $(psci_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)psrgb $(psci_)
 
 ### -------------------- Plain or TIFF fax encoding --------------------- ###
@@ -1078,32 +1120,33 @@ $(DD)psrgb.dev : $(psci_) $(GLD)page.dev
 # AdjustWidth to 0 (e.g., -dAdjustWidth=0 on the command line).
 
 gdevtifs_h=$(GLSRC)gdevtifs.h
+gdevtfax_h=$(GLSRC)gdevtfax.h
 
 tfax_=$(GLOBJ)gdevtfax.$(OBJ)
-$(DD)tfax.dev : $(tfax_) $(GLD)cfe.dev $(GLD)lzwe.dev $(GLD)rle.dev $(DD)tiffs.dev
+$(DD)tfax.dev : $(DEVS_MAK) $(tfax_) $(GLD)cfe.dev $(GLD)lzwe.dev $(GLD)rle.dev $(DD)tiffs.dev
 	$(SETMOD) $(DD)tfax $(tfax_)
 	$(ADDMOD) $(DD)tfax -include $(GLD)cfe $(GLD)lzwe $(GLD)rle
 	$(ADDMOD) $(DD)tfax -include $(DD)tiffs
 
 $(GLOBJ)gdevtfax.$(OBJ) : $(GLSRC)gdevtfax.c $(PDEVH)\
- $(gdevtifs_h) $(scfx_h) $(slzwx_h) $(srlx_h) $(strimpl_h)
+ $(gdevtifs_h) $(gdevtfax_h) $(scfx_h) $(slzwx_h) $(srlx_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevtfax.$(OBJ) $(C_) $(GLSRC)gdevtfax.c
 
 ### Plain G3/G4 fax with no header
 
-$(DD)faxg3.dev : $(DD)tfax.dev
+$(DD)faxg3.dev : $(DEVS_MAK) $(DD)tfax.dev
 	$(SETDEV2) $(DD)faxg3 -include $(DD)tfax
 
-$(DD)faxg32d.dev : $(DD)tfax.dev
+$(DD)faxg32d.dev : $(DEVS_MAK) $(DD)tfax.dev
 	$(SETDEV2) $(DD)faxg32d -include $(DD)tfax
 
-$(DD)faxg4.dev : $(DD)tfax.dev
+$(DD)faxg4.dev : $(DEVS_MAK) $(DD)tfax.dev
 	$(SETDEV2) $(DD)faxg4 -include $(DD)tfax
 
 ### ---------------------------- TIFF formats --------------------------- ###
 
 tiffs_=$(GLOBJ)gdevtifs.$(OBJ)
-$(DD)tiffs.dev : $(tiffs_) $(GLD)page.dev
+$(DD)tiffs.dev : $(DEVS_MAK) $(tiffs_) $(GLD)page.dev
 	$(SETMOD) $(DD)tiffs $(tiffs_)
 	$(ADDMOD) $(DD)tiffs -include $(GLD)page
 
@@ -1114,37 +1157,37 @@ $(GLOBJ)gdevtifs.$(OBJ) : $(GLSRC)gdevtifs.c $(PDEVH) $(stdio__h) $(time__h)\
 # Black & white, G3/G4 fax
 # NOTE: see under faxg* above regarding page width adjustment.
 
-$(DD)tiffcrle.dev : $(DD)tfax.dev
+$(DD)tiffcrle.dev : $(DEVS_MAK) $(DD)tfax.dev
 	$(SETDEV2) $(DD)tiffcrle -include $(DD)tfax
 
-$(DD)tiffg3.dev : $(DD)tfax.dev
+$(DD)tiffg3.dev : $(DEVS_MAK) $(DD)tfax.dev
 	$(SETDEV2) $(DD)tiffg3 -include $(DD)tfax
 
-$(DD)tiffg32d.dev : $(DD)tfax.dev
+$(DD)tiffg32d.dev : $(DEVS_MAK) $(DD)tfax.dev
 	$(SETDEV2) $(DD)tiffg32d -include $(DD)tfax
 
-$(DD)tiffg4.dev : $(DD)tfax.dev
+$(DD)tiffg4.dev : $(DEVS_MAK) $(DD)tfax.dev
 	$(SETDEV2) $(DD)tiffg4 -include $(DD)tfax
 
 # Black & white, LZW compression
 
-$(DD)tifflzw.dev : $(DD)tfax.dev
+$(DD)tifflzw.dev : $(DEVS_MAK) $(DD)tfax.dev
 	$(SETDEV2) $(DD)tifflzw -include $(DD)tfax
 
 # Black & white, PackBits compression
 
-$(DD)tiffpack.dev : $(DD)tfax.dev
+$(DD)tiffpack.dev : $(DEVS_MAK) $(DD)tfax.dev
 	$(SETDEV2) $(DD)tiffpack -include $(DD)tfax
 
 # RGB, no compression
 
 tiffrgb_=$(GLOBJ)gdevtfnx.$(OBJ)
 
-$(DD)tiff12nc.dev : $(tiffrgb_) $(DD)tiffs.dev
+$(DD)tiff12nc.dev : $(DEVS_MAK) $(tiffrgb_) $(DD)tiffs.dev
 	$(SETPDEV2) $(DD)tiff12nc $(tiffrgb_)
 	$(ADDMOD) $(DD)tiff12nc -include $(DD)tiffs
 
-$(DD)tiff24nc.dev : $(tiffrgb_) $(DD)tiffs.dev
+$(DD)tiff24nc.dev : $(DEVS_MAK) $(tiffrgb_) $(DD)tiffs.dev
 	$(SETPDEV2) $(DD)tiff24nc $(tiffrgb_)
 	$(ADDMOD) $(DD)tiff24nc -include $(DD)tiffs
 

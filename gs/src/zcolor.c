@@ -32,10 +32,6 @@
 #include "gxcmap.h"
 #include "icolor.h"
 
-/* Import the 'for' operator */
-extern int
-    zfor_fraction(P1(i_ctx_t *));
-
 /* Imported from gsht.c */
 void gx_set_effective_transfer(P1(gs_state *));
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -57,11 +57,8 @@ public_st_ht_component_element();
 
 /* GC procedures */
 
-#define hptr ((gs_halftone_component *)vptr)
-
 private 
-ENUM_PTRS_BEGIN(halftone_component_enum_ptrs) return 0;
-
+ENUM_PTRS_WITH(halftone_component_enum_ptrs, gs_halftone_component *hptr) return 0;
 case 0:
 switch (hptr->type)
 {
@@ -93,8 +90,7 @@ switch (hptr->type) {
 	return 0;
 }
 ENUM_PTRS_END
-
-private RELOC_PTRS_BEGIN(halftone_component_reloc_ptrs)
+private RELOC_PTRS_WITH(halftone_component_reloc_ptrs, gs_halftone_component *hptr)
 {
     switch (hptr->type) {
 	case ht_type_spot:
@@ -119,8 +115,6 @@ private RELOC_PTRS_BEGIN(halftone_component_reloc_ptrs)
     }
 }
 RELOC_PTRS_END
-
-#undef hptr
 
 /* setcolorscreen */
 int
@@ -213,19 +207,18 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 				&phc[ci], gs_currentaccuratescreens(), mem);
 		    if (code < 0)
 			break;
-#define sorder senum.order
-		    poc->corder = sorder;
+		    poc->corder = senum.order;
 		    poc->cname = cnames[i];
 		    if (i == 0)	/* Gray = Default */
-			pdht->order = sorder;
+			pdht->order = senum.order;
 		    else {
-			uint tile_bytes =
-			sorder.raster * (sorder.num_bits / sorder.width);
+			uint tile_bytes = senum.order.raster *
+			    (senum.order.num_bits / senum.order.width);
 			uint num_tiles =
-			max_tile_cache_bytes / tile_bytes + 1;
+			    max_tile_cache_bytes / tile_bytes + 1;
 			gx_ht_cache *pcache =
-			gx_ht_alloc_cache(mem, num_tiles,
-					  tile_bytes * num_tiles);
+			    gx_ht_alloc_cache(mem, num_tiles,
+					      tile_bytes * num_tiles);
 
 			if (pcache == 0) {
 			    code = gs_note_error(gs_error_VMerror);
@@ -234,7 +227,6 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 			poc->corder.cache = pcache;
 			gx_ht_init_cache(pcache, &poc->corder);
 		    }
-#undef sorder
 		}
 		if (code < 0)
 		    break;

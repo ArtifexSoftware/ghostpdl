@@ -112,7 +112,33 @@
  * because no commercial compiler gives the error on (void)0, although
  * some give warnings.)
  */
-#define discard(expr) ((void)(expr))
+#define DISCARD(expr) ((void)(expr))
+/* Backward compatibility */
+#define discard(expr) DISCARD(expr)
+
+/*
+ * Some versions of the Watcom compiler give a "Comparison result always
+ * 0/1" message that we want to suppress because it gets in the way of
+ * meaningful warnings.
+ */
+#ifdef __WATCOMC__
+#  pragma disable_message(124);
+#endif
+
+/*
+ * Some versions of gcc have a bug such that after
+	byte *p;
+	...
+	x = *(long *)p;
+ * the compiler then thinks that p always points to long-aligned data.
+ * Detect this here so it can be handled appropriately in the few places
+ * that (we think) matter.
+ */
+#ifdef __GNUC__
+# if __GNUC__ == 2 & (7 < __GNUC_MINOR__ <= 95)
+#  define ALIGNMENT_ALIASING_BUG
+# endif
+#endif
 
 /*
  * The SVR4.2 C compiler incorrectly considers the result of << and >>

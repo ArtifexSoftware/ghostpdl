@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -17,18 +17,14 @@
  */
 
 
-/* PatternType 1 filling algorithm interface */
+/* filter_read_predictor prototype */
 
-#ifndef gxp1fill_INCLUDED
-#  define gxp1fill_INCLUDED
+#ifndef ifwpred_INCLUDED
+#  define ifwpred_INCLUDED
 
-/*
- * We use 'masked_fill_rect' instead of 'masked_fill_rectangle'
- * in order to limit identifier lengths to 32 characters.
- */
-dev_color_proc_fill_rectangle(gx_dc_pattern_fill_rectangle);
-dev_color_proc_fill_rectangle(gx_dc_pure_masked_fill_rect);
-dev_color_proc_fill_rectangle(gx_dc_binary_masked_fill_rect);
-dev_color_proc_fill_rectangle(gx_dc_colored_masked_fill_rect);
+/* Exported by zfilter2.c for zfzlib.c */
+int filter_write_predictor(P4(i_ctx_t *i_ctx_p, int npop,
+			      const stream_template * template,
+			      stream_state * st));
 
-#endif /* gxp1fill_INCLUDED */
+#endif /* ifwpred_INCLUDED */

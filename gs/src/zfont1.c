@@ -23,25 +23,26 @@
 #include "gxfixed.h"
 #include "gsmatrix.h"
 #include "gxdevice.h"
-#include "gschar.h"
 #include "gxfont.h"
 #include "gxfont1.h"
 #include "bfont.h"
 #include "ialloc.h"
+#include "icharout.h"
 #include "idict.h"
 #include "idparam.h"
 #include "ifont1.h"
+#include "iname.h"		/* for name_index in enumerate_glyph */
 #include "store.h"
 
-/*#define TEST*/
-
-/* Type 1 auxiliary procedures (defined in zchar1.c) */
+/* Type 1 font procedures (defined in zchar1.c) */
 extern const gs_type1_data_procs_t z1_data_procs;
+font_proc_glyph_outline(zcharstring_glyph_outline);
 
 /* Default value of lenIV */
 #define DEFAULT_LENIV_1 4
 
-/* Private utilities */
+/* ------ Private utilities ------ */
+
 private void
 find_zone_height(float *pmax_height, int count, const float *values)
 {
@@ -52,6 +53,20 @@ find_zone_height(float *pmax_height, int count, const float *values)
 	if ((zone_height = values[i + 1] - values[i]) > *pmax_height)
 	    *pmax_height = zone_height;
 }
+
+/* ------ Font procedures ------ */
+
+private int
+z1_enumerate_glyph(gs_font * pfont, int *pindex, gs_glyph_space_t ignored,
+		   gs_glyph * pglyph)
+{
+    const gs_font_type1 *const pfont1 = (gs_font_type1 *)pfont;
+    const ref *pcsdict = &pfont_data(pfont1)->CharStrings;
+
+    return zchar_enumerate_glyph(pcsdict, pindex, pglyph);
+}
+
+/* ------ Public procedures ------ */
 
 /* Extract pointers to internal structures. */
 int
@@ -175,8 +190,12 @@ build_charstring_font(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs *pbuild,
     ref_assign(&pdata->u.type1.GlobalSubrs, pfr->GlobalSubrs);
     pfont->data.procs = &z1_data_procs;
     pfont->data.proc_data = (char *)pdata;
+    pfont->procs.enumerate_glyph = z1_enumerate_glyph;
+    pfont->procs.glyph_outline = zcharstring_glyph_outline;
     return define_gs_font((gs_font *)pfont);
 }
+
+/* ------ Operators ------ */
 
 /* Build a Type 1 or Type 4 font. */
 private int
@@ -226,40 +245,11 @@ zbuildfont4(i_ctx_t *i_ctx_p)
     return buildfont1or4(i_ctx_p, op, &build, ft_disk_based, bf_options_none);
 }
 
-#ifdef TEST
-
-#include "igstate.h"
-#include "stream.h"
-#include "files.h"
-
-/* <file> .printfont1 - */
-private int
-zprintfont1(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    const gs_font *pfont = gs_currentfont(igs);
-    stream *s;
-    int code;
-
-    if (pfont->FontType != ft_encrypted)
-	return_error(e_rangecheck);
-    check_write_file(s, op);
-    code = psdf_embed_type1_font(s, (gs_font_type1 *) pfont);
-    if (code >= 0)
-	pop(1);
-    return code;
-}
-
-#endif
-
 /* ------ Initialization procedure ------ */
 
 const op_def zfont1_op_defs[] =
 {
     {"2.buildfont1", zbuildfont1},
     {"2.buildfont4", zbuildfont4},
-#ifdef TEST
-    {"2.printfont1", zprintfont1},
-#endif
     op_def_end(0)
 };

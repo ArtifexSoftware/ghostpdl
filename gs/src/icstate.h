@@ -55,6 +55,7 @@ struct gs_context_state_s {
     exec_stack_t exec_stack;
     op_stack_t op_stack;
 };
+extern const long rand_state_initial; /* in zmath.c */
 
 /*
  * We make st_context_state public because zcontext.c must subclass it.

@@ -64,10 +64,10 @@ zpcolor_init(i_ctx_t *i_ctx_p)
 
 /* Create an interpreter pattern structure. */
 int
-int_pattern_alloc(int_pattern **ppdata, const ref *op)
+int_pattern_alloc(int_pattern **ppdata, const ref *op, gs_memory_t *mem)
 {
     int_pattern *pdata =
-	ialloc_struct(int_pattern, &st_int_pattern, "int_pattern");
+	gs_alloc_struct(mem, int_pattern, &st_int_pattern, "int_pattern");
 
     if (pdata == 0)
 	return_error(e_VMerror);
@@ -109,7 +109,7 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     template.BBox.q.x = BBox[2];
     template.BBox.q.y = BBox[3];
     template.PaintProc = zPaintProc;
-    code = int_pattern_alloc(&pdata, op1);
+    code = int_pattern_alloc(&pdata, op1, imemory);
     if (code < 0)
 	return code;
     template.client_data = pdata;

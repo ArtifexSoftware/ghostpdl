@@ -603,6 +603,7 @@ cie_cache_finish_store(i_ctx_t *i_ctx_p, bool replicate)
     /* the pointer to the cache. */
     pcache = (cie_cache_floats *) (r_ptr(esp - 1, char) + esp->value.intval);
 
+    pcache->params.is_identity = false;	/* cache_set_linear computes this */
     if_debug3('c', "[c]cache 0x%lx base=%g, factor=%g:\n",
 	      (ulong) pcache, pcache->params.base, pcache->params.factor);
     if (replicate ||

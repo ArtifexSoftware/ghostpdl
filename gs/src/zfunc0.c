@@ -31,10 +31,13 @@
 #include "idparam.h"
 #include "ifunc.h"
 
+/* Check prototype */
+build_function_proc(gs_build_function_0);
+
 /* Finish building a FunctionType 0 (Sampled) function. */
 int
 gs_build_function_0(const ref *op, const gs_function_params_t * mnDR,
-		    int depth, gs_function_t ** ppfn)
+		    int depth, gs_function_t ** ppfn, gs_memory_t *mem)
 {
     gs_function_Sd_params_t params;
     ref *pDataSource;
@@ -68,12 +71,13 @@ gs_build_function_0(const ref *op, const gs_function_params_t * mnDR,
     if ((code = dict_int_param(op, "Order", 1, 3, 1, &params.Order)) < 0 ||
 	(code = dict_int_param(op, "BitsPerSample", 1, 32, 0,
 			       &params.BitsPerSample)) < 0 ||
-	((code = fn_build_float_array(op, "Encode", false, true, &params.Encode)) != 2 * params.m && (code != 0 || params.Encode != 0)) ||
-	((code = fn_build_float_array(op, "Decode", false, true, &params.Decode)) != 2 * params.n && (code != 0 || params.Decode != 0))
+	((code = fn_build_float_array(op, "Encode", false, true, &params.Encode, mem)) != 2 * params.m && (code != 0 || params.Encode != 0)) ||
+	((code = fn_build_float_array(op, "Decode", false, true, &params.Decode, mem)) != 2 * params.n && (code != 0 || params.Decode != 0))
 	) {
 	goto fail;
     } {
-	int *ptr = (int *)ialloc_byte_array(params.m, sizeof(int), "Size");
+	int *ptr = (int *)
+	    gs_alloc_byte_array(mem, params.m, sizeof(int), "Size");
 
 	if (ptr == 0) {
 	    code = gs_note_error(e_VMerror);
@@ -84,10 +88,10 @@ gs_build_function_0(const ref *op, const gs_function_params_t * mnDR,
 	if (code != params.m)
 	    goto fail;
     }
-    code = gs_function_Sd_init(ppfn, &params, imemory);
+    code = gs_function_Sd_init(ppfn, &params, mem);
     if (code >= 0)
 	return 0;
 fail:
-    gs_function_Sd_free_params(&params, imemory);
+    gs_function_Sd_free_params(&params, mem);
     return (code < 0 ? code : gs_note_error(e_rangecheck));
 }

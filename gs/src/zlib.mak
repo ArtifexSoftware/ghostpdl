@@ -45,13 +45,11 @@ ZGEN=$(ZGENDIR)$(D)
 ZOBJ=$(ZOBJDIR)$(D)
 ZO_=$(O_)$(ZOBJ)
 
-# Because the Watcom C runtime (and compiler) substitute space for = in
-# command lines (!), we can't have a -D whose argument begins with -,
-# since this will cause the argument to be interpreted as a switch (!!).
-# We need D_, _D_, and _D because the OpenVMS and Watcom  compilers use
-# different syntax.
+# We need D_, _D_, and _D because the OpenVMS compiler uses different
+# syntax from other compilers.
 # ZI_ and ZF_ are defined in gs.mak.
-ZCC=$(CC_) $(I_)$(ZI_)$(_I) $(ZF_) $(D_)verbose$(_D_)0-1$(_D)
+ZCCFLAGS=$(I_)$(ZI_)$(_I) $(ZF_) $(D_)verbose$(_D_)-1$(_D)
+ZCC=$(CC_) $(ZCCFLAGS)
 
 # Define the name of this makefile.
 ZLIB_MAK=$(GLSRC)zlib.mak
@@ -110,8 +108,10 @@ $(ZGEN)crc32_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE)
 $(ZGEN)crc32_0.dev : $(ZLIB_MAK) $(ECHOGS_XE) $(ZOBJ)crc32.$(OBJ)
 	$(SETMOD) $(ZGEN)crc32_0 $(ZOBJ)crc32.$(OBJ)
 
+# We have to compile crc32 without warnings, because it defines 32-bit
+# constants that produces gcc warnings with -Wtraditional.
 $(ZOBJ)crc32.$(OBJ) : $(ZSRC)crc32.c $(ZDEP)
-	$(ZCC) $(ZO_)crc32.$(OBJ) $(C_) $(ZSRC)crc32.c
+	$(CC_NO_WARN) $(ZCCFLAGS) $(ZO_)crc32.$(OBJ) $(C_) $(ZSRC)crc32.c
 
 # Decoding (decompression) code.
 

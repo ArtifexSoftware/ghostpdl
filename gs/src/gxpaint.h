@@ -53,8 +53,12 @@ int gx_fill_path(P6(gx_path * ppath, gx_device_color * pdevc, gs_state * pgs,
 		    int rule, fixed adjust_x, fixed adjust_y));
 int gx_stroke_fill(P2(gx_path * ppath, gs_state * pgs));
 int gx_stroke_add(P3(gx_path *ppath, gx_path *to_path, const gs_state * pgs));
-int gx_imager_stroke_add(P3(gx_path *ppath, gx_path *to_path,
-			    const gs_imager_state *pis));
+/*
+ * gx_imager_stroke_add needs a device for the sake of absolute-length
+ * dots (and for no other reason).
+ */
+int gx_imager_stroke_add(P4(gx_path *ppath, gx_path *to_path,
+			    gx_device *dev, const gs_imager_state *pis));
 
 /* ------ Imager procedures ------ */
 
@@ -106,7 +110,6 @@ struct gx_fill_params_s {
 #ifndef gx_stroke_params_DEFINED
 #  define gx_stroke_params_DEFINED
 typedef struct gx_stroke_params_s gx_stroke_params;
-
 #endif
 struct gx_stroke_params_s {
     float flatness;

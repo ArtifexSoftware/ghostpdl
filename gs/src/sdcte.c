@@ -155,17 +155,30 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
 	    ss->phase = 4;
 	    /* falls through */
 	case 4:		/* all data processed, finishing */
-	    /* jpeg_finish_compress can't suspend, so make sure
-	     * it has plenty of room to write the last few bytes.
+	    /* jpeg_finish_compress can't suspend, so write its output
+	     * to a fixed-size internal buffer.
 	     */
-	    if (pw->limit - pw->ptr < 100)
-		return 1;
+	    dest->next_output_byte = jcdp->finish_compress_buf;
+	    dest->free_in_buffer = sizeof(jcdp->finish_compress_buf);
 	    if (gs_jpeg_finish_compress(ss) < 0)
 		return ERRC;
-	    pw->ptr = dest->next_output_byte - 1;
+	    jcdp->fcb_size =
+		dest->next_output_byte - jcdp->finish_compress_buf;
+	    jcdp->fcb_pos = 0;
 	    ss->phase = 5;
 	    /* falls through */
-	case 5:		/* we are DONE */
+	case 5:		/* copy the final data to the output */
+	    if (jcdp->fcb_pos < jcdp->fcb_size) {
+		int count = min(jcdp->fcb_size - jcdp->fcb_pos,
+				pw->limit - pw->ptr);
+
+		memcpy(pw->ptr + 1, jcdp->finish_compress_buf + jcdp->fcb_pos,
+		       count);
+		jcdp->fcb_pos += count;
+		pw->ptr += count;
+		if (jcdp->fcb_pos < jcdp->fcb_size)
+		    return 1;
+	    }
 	    return EOFC;
     }
     /* Default case can't happen.... */

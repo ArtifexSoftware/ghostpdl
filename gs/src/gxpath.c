@@ -657,6 +657,14 @@ gx_path_add_char_path(gx_path * to_path, gx_path * from_path,
 	default:		/* shouldn't happen! */
 	    gx_path_new(from_path);
 	    return 0;
+	case cpm_charwidth: {
+	    gs_fixed_point cpt;
+
+	    code = gx_path_current_point(from_path, &cpt);
+	    if (code < 0)
+		break;
+	    return gx_path_add_point(to_path, cpt.x, cpt.y);
+	}
 	case cpm_true_charpath:
 	case cpm_false_charpath:
 	    return gx_path_add_path(to_path, from_path);

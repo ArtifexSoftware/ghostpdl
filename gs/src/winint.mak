@@ -59,18 +59,18 @@ $(GLGEN)gstext.ico: $(GLSRC)gstext.icx $(ECHOGS_XE) $(WININT_MAK)
 
 # resources for short EXE loader (no dialogs)
 $(GS_OBJ).res: $(GLSRC)dwmain.rc $(dwmain_h) $(ICONS) $(WININT_MAK)
-	$(ECHOGS_XE) -w $(GLGEN)_exe.rc -x 23 define -s gstext_ico $(GLGENDIR)/gstext.ico
-	$(ECHOGS_XE) -a $(GLGEN)_exe.rc -x 23 define -s gsgraph_ico $(GLGENDIR)/gsgraph.ico
+	$(ECHOGS_XE) -w $(GLGEN)_exe.rc -x 23 define -s gstext_ico $(GLGENDIR)\gstext.ico
+	$(ECHOGS_XE) -a $(GLGEN)_exe.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gsgraph.ico
 	$(ECHOGS_XE) -a $(GLGEN)_exe.rc -R $(GLSRC)dwmain.rc
-	$(RCOMP) -I$(GLSRCDIR) -i$(INCDIR) -r -fo$(GS_OBJ).res $(GLGEN)_exe.rc
+	$(RCOMP) -I$(GLSRCDIR) -i$(INCDIR)$(_I) -r $(RO_)$(GS_OBJ).res $(GLGEN)_exe.rc
 	del $(GLGEN)_exe.rc
 
 # resources for main program (includes dialogs)
 $(GSDLL_OBJ).res: $(GLSRC)gsdll32.rc $(gp_mswin_h) $(ICONS) $(WININT_MAK)
-	$(ECHOGS_XE) -w $(GLGEN)_dll.rc -x 23 define -s gstext_ico $(GLGENDIR)/gstext.ico
-	$(ECHOGS_XE) -a $(GLGEN)_dll.rc -x 23 define -s gsgraph_ico $(GLGENDIR)/gsgraph.ico
+	$(ECHOGS_XE) -w $(GLGEN)_dll.rc -x 23 define -s gstext_ico $(GLGENDIR)\gstext.ico
+	$(ECHOGS_XE) -a $(GLGEN)_dll.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gsgraph.ico
 	$(ECHOGS_XE) -a $(GLGEN)_dll.rc -R $(GLSRC)gsdll32.rc
-	$(RCOMP) -I$(GLSRCDIR) -i$(INCDIR) -r -fo$(GSDLL_OBJ).res $(GLGEN)_dll.rc
+	$(RCOMP) -I$(GLSRCDIR) -i$(INCDIR)$(_I) -r $(RO_)$(GSDLL_OBJ).res $(GLGEN)_dll.rc
 	del $(GLGEN)_dll.rc
 
 
@@ -80,19 +80,19 @@ DWOBJ=$(GLOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj 
 
 $(GLOBJ)dwdll.obj: $(GLSRC)dwdll.cpp $(AK)\
  $(dwdll_h) $(gsdll_h) $(gsdllwin_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwdll.obj -c $(GLSRC)dwdll.cpp
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwdll.obj $(C_) $(GLSRC)dwdll.cpp
 
 $(GLOBJ)dwimg.obj: $(GLSRC)dwimg.cpp $(AK)\
  $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h)\
  $(gscdefs_h) $(gsdll_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwimg.obj -c $(GLSRC)dwimg.cpp
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwimg.obj $(C_) $(GLSRC)dwimg.cpp
 
 $(GLOBJ)dwmain.obj: $(GLSRC)dwmain.cpp $(AK)\
  $(dwdll_h) $(gscdefs_h) $(gsdll_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwmain.obj -c $(GLSRC)dwmain.cpp
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwmain.obj $(C_) $(GLSRC)dwmain.cpp
 
 $(GLOBJ)dwtext.obj: $(GLSRC)dwtext.cpp $(AK) $(dwtext_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtext.obj -c $(GLSRC)dwtext.cpp
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtext.obj $(C_) $(GLSRC)dwtext.cpp
 
 # Modules for big EXE
 
@@ -100,12 +100,12 @@ DWOBJNO = $(GLOBJ)dwnodll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtex
 
 $(GLOBJ)dwnodll.obj: $(GLSRC)dwnodll.cpp $(AK)\
  $(dwdll_h) $(gsdll_h) $(gsdllwin_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwnodll.obj -c $(GLSRC)dwnodll.cpp
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwnodll.obj $(C_) $(GLSRC)dwnodll.cpp
 
 # Compile gsdll.c, the main program of the DLL.
 
 $(GLOBJ)gsdll.obj: $(GLSRC)gsdll.c $(AK) $(gsdll_h) $(ghost_h)
-	$(PSCCWIN) $(COMPILE_FOR_DLL) $(GLO_)gsdll.$(OBJ) -c $(GLSRC)gsdll.c
+	$(PSCCWIN) $(COMPILE_FOR_DLL) $(GLO_)gsdll.$(OBJ) $(C_) $(GLSRC)gsdll.c
 
 # Modules for console mode EXEs
 
@@ -113,12 +113,12 @@ OBJC=$(GLOBJ)dwmainc.obj $(GLOBJ)dwdllc.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv
 OBJCNO=$(GLOBJ)dwmainc.obj $(GLOBJ)dwnodllc.obj
 
 $(GLOBJ)dwmainc.obj: $(GLSRC)dwmainc.cpp $(AK) $(dwmain_h) $(dwdll_h) $(gscdefs_h) $(gsdll_h)
-	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwmainc.obj -c $(GLSRC)dwmainc.cpp
+	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwmainc.obj $(C_) $(GLSRC)dwmainc.cpp
 
 $(GLOBJ)dwdllc.obj: $(GLSRC)dwdll.cpp $(AK) $(dwdll_h) $(gsdll_h)
-	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwdllc.obj -c $(GLSRC)dwdll.cpp
+	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwdllc.obj $(C_) $(GLSRC)dwdll.cpp
 
 $(GLOBJ)dwnodllc.obj: $(GLSRC)dwnodll.cpp $(AK) $(dwdll_h) $(gsdll_h)
-	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwnodllc.obj -c $(GLSRC)dwnodll.cpp
+	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwnodllc.obj $(C_) $(GLSRC)dwnodll.cpp
 
 # end of winint.mak

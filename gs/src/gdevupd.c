@@ -16,7 +16,7 @@
   all copies.
 */
 
-
+/* gdevupd.c $Revision$ */
 /* "uniprint" -- Ugly Printer Driver by Gunther Hess (gunther@elmos.de) */
 
 /* Revision-History:
@@ -881,7 +881,7 @@ Here are several Macros, named "UPD_MM_*" to deal with that.
 
 /** Version-String */
 
-
+static const char rcsid[] = "$Revision$";
 
 /** Default-Transfer-curve */
 
@@ -1341,7 +1341,6 @@ upd_get_params(gx_device *pdev, gs_param_list *plist)
 
 /** Export the version */
    if(upd_version) { /* Version-Export enabled */
-      const byte *rcsid = "1.0";
       udev->upd_version.data       = (const byte *) rcsid;
       udev->upd_version.size       = strlen(rcsid);
       udev->upd_version.persistent = true;
@@ -2398,7 +2397,8 @@ upd_expand(upd_pc upd,int i,uint32 ci)
 /* ------------------------------------------------------------------- */
 
 private uint32
-upd_truncate(upd_pc upd,int i,gx_color_value v) {
+upd_truncate(upd_pc upd,int i,gx_color_value v)
+{
    const updcmap_pc cmap = upd->cmap + i;
    int32           s; /* step size */
    gx_color_value *p; /* value-pointer */

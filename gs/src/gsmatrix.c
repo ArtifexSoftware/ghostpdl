@@ -370,6 +370,21 @@ gs_bbox_transform_inverse(const gs_rect * pbox_in, const gs_matrix * pmat,
 
 #define f_fits_in_fixed(f) f_fits_in_bits(f, fixed_int_bits)
 
+/* Make a gs_matrix_fixed from a gs_matrix. */
+int
+gs_matrix_fixed_from_matrix(gs_matrix_fixed *pfmat, const gs_matrix *pmat)
+{
+    *(gs_matrix *)pfmat = *pmat;
+    if (f_fits_in_fixed(pmat->tx) && f_fits_in_fixed(pmat->ty)) {
+	pfmat->tx = fixed2float(pfmat->tx_fixed = float2fixed(pmat->tx));
+	pfmat->ty = fixed2float(pfmat->ty_fixed = float2fixed(pmat->ty));
+	pfmat->txy_fixed_valid = true;
+    } else {
+	pfmat->txy_fixed_valid = false;
+    }
+    return 0;
+}
+
 /* Transform a point with a fixed-point result. */
 int
 gs_point_transform2fixed(const gs_matrix_fixed * pmat,

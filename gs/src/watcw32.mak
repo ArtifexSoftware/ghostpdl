@@ -22,8 +22,7 @@
 #   Someone with access to the Watcom 16-bit documentation will need to 
 #   do this.
 # Created 1997-02-23 by Russell Lang from MSVC++ 4.0 makefile.
-#**************** THIS MAKEFILE DOES NOT WORK. ****************
-#**************** DO NOT ATTEMPT TO USE IT. ****************
+# Major revisions 1999-07-26 by Ray Johnston.
 
 # ------------------------------- Options ------------------------------- #
 
@@ -89,14 +88,14 @@ MAKEDLL=1
 # source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-BINDIR=.\bin
-GLSRCDIR=.\src
-GLGENDIR=.\obj
-GLOBJDIR=.\obj
-PSSRCDIR=.\src
-PSLIBDIR=.\lib
-PSGENDIR=.\obj
-PSOBJDIR=.\obj
+BINDIR=bin
+GLSRCDIR=src
+GLGENDIR=obj
+GLOBJDIR=obj
+PSSRCDIR=src
+PSLIBDIR=lib
+PSGENDIR=obj
+PSOBJDIR=obj
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -134,20 +133,18 @@ CFLAGS=
 # COMPAUX is the compiler name for DOS utilities.
 # RCOMP is the resource compiler name.
 # LINK is the full linker path name.
-# WBIND is used for binding resources to an EXE or DLL
 # Note that INCDIR and LIBDIR are always followed by a \,
 #   so if you want to use the current directory, use an explicit '.'.
 
-COMPBASE=d:\watcom
-COMPDIR=$(COMPBASE)\binb
-INCDIR=$(COMPBASE)\h;$(COMPBASE)\h\nt
+COMPBASE=$(%WATCOM)
+COMPDIR=$(COMPBASE)\binnt
+INCDIR=$(COMPBASE)\h -i$(COMPBASE)\h\nt
 LIBDIR=$(COMPBASE)\lib386;$(COMPBASE)\lib386\nt
 COMP=$(COMPDIR)\wcc386
 COMPCPP=$(COMPDIR)\wpp386
 COMPAUX=$(COMPDIR)\wcc386
 RCOMP=$(COMPDIR)\wrc
 LINK=$(COMPDIR)\wlink
-WBIND=$(COMPDIR)\wbind
 
 # Define the processor architecture. (always i386)
 CPU_FAMILY=i386
@@ -173,6 +170,12 @@ FPU_TYPE=0
 # what you're doing.
 
 SYNC=winsync
+
+# Do not edit the next group of lines.
+NUL=
+DD=$(GLGENDIR)\$(NUL)
+GLD=$(GLGENDIR)\$(NUL)
+PSD=$(GLGENDIR)\$(NUL)
 
 # ------ Devices and features ------ #
 
@@ -204,24 +207,24 @@ FILE_IMPLEMENTATION=stdio
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
-DEVICE_DEVS=mswindll.dev mswinprn.dev mswinpr2.dev
-DEVICE_DEVS2=epson.dev eps9high.dev eps9mid.dev epsonc.dev ibmpro.dev
-DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev
-DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev
-DEVICE_DEVS5=djet500c.dev declj250.dev lj250.dev jetp3852.dev r4081.dev lbp8.dev uniprint.dev
-DEVICE_DEVS6=st800.dev stcolor.dev bj10e.dev bj200.dev m8510.dev necp6.dev bjc600.dev bjc800.dev
-DEVICE_DEVS7=t4693d2.dev t4693d4.dev t4693d8.dev tek4696.dev
-DEVICE_DEVS8=pcxmono.dev pcxgray.dev pcx16.dev pcx256.dev pcx24b.dev pcxcmyk.dev
-DEVICE_DEVS9=pbm.dev pbmraw.dev pgm.dev pgmraw.dev pgnm.dev pgnmraw.dev pnm.dev pnmraw.dev ppm.dev ppmraw.dev
-DEVICE_DEVS10=tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev tifflzw.dev tiffpack.dev
-DEVICE_DEVS11=bmpmono.dev bmp16.dev bmp256.dev bmp16m.dev tiff12nc.dev tiff24nc.dev
-DEVICE_DEVS12=psmono.dev bit.dev bitrgb.dev bitcmyk.dev
-DEVICE_DEVS13=pngmono.dev pnggray.dev png16.dev png256.dev png16m.dev
-DEVICE_DEVS14=jpeg.dev jpeggray.dev
-DEVICE_DEVS15=pdfwrite.dev pswrite.dev epswrite.dev pxlmono.dev pxlcolor.dev
+DEVICE_DEVS=$(DD)mswindll.dev $(DD)mswinprn.dev $(DD)mswinpr2.dev
+DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
+DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
+DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
+DEVICE_DEVS5=$(DD)djet500c.dev $(DD)declj250.dev $(DD)lj250.dev $(DD)jetp3852.dev $(DD)r4081.dev $(DD)lbp8.dev $(DD)uniprint.dev
+DEVICE_DEVS6=$(DD)st800.dev $(DD)stcolor.dev $(DD)bj10e.dev $(DD)bj200.dev $(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
+DEVICE_DEVS7=$(DD)t4693d2.dev $(DD)t4693d4.dev $(DD)t4693d8.dev $(DD)tek4696.dev
+DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
+DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
+DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
+DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev
+DEVICE_DEVS12=$(DD)psmono.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
+DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
+DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
 # Overflow for DEVS3,4,5,6,9
-DEVICE_DEVS16=ljet3.dev ljet3d.dev ljet4.dev ljet4d.dev
-DEVICE_DEVS17=pj.dev pjxl.dev pjxl300.dev
+DEVICE_DEVS16=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
+DEVICE_DEVS17=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=
@@ -242,7 +245,7 @@ SH=
 
 # Define the arguments for genconf.
 
-CONFILES=-p %%s, -l $(GLGENDIR)\lib.tr
+CONFILES=-e ~ -p FILE~s~ps
 CONFLDTR=-o
 
 # Define the generic compilation flags.
@@ -294,7 +297,7 @@ CP=
 !endif
 
 !ifneq DEBUG 0
-CD=/DDEBUG
+CD=-dDEBUG
 !else
 CD=
 !endif
@@ -309,8 +312,8 @@ COMPILE_WITHOUT_FRAMES=    # no optimization when debugging
 !else
 CT=-d1
 LCT=DEBUG LINES
-COMPILE_FULL_OPTIMIZED=-Oilmre -s
-COMPILE_WITH_FRAMES=-Of+
+COMPILE_FULL_OPTIMIZED=-oilmre -s
+COMPILE_WITH_FRAMES=-of+
 COMPILE_WITHOUT_FRAMES=-s
 !endif
 
@@ -321,15 +324,15 @@ CS=-s
 !endif
 
 # Specify function prolog type
-COMPILE_FOR_DLL=/LD
+COMPILE_FOR_DLL=-bd
 COMPILE_FOR_EXE=
 COMPILE_FOR_CONSOLE_EXE=
 
-GENOPT=$(CP) $(CD) $(CT) $(CS) -zq
+GENOPT=-d+ $(CP) $(CD) $(CT) $(CS) -zq -zp8
 
 CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS)
-CC=$(COMP) -c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
-CPP=$(COMPCPP) -c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
+CC=$(COMP) $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
+CPP=$(COMPCPP) $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
 !ifneq MAKEDLL 0
 WX=$(COMPILE_FOR_DLL)
 !else
@@ -340,13 +343,14 @@ CC_=$(CC_WX) $(COMPILE_FULL_OPTIMIZED)
 CC_D=$(CC_WX) $(COMPILE_WITH_FRAMES)
 CC_INT=$(CC)
 CC_LEAF=$(CC_) $(COMPILE_WITHOUT_FRAMES)
+CC_NO_WARN=$(CC_)
 
 # No additional flags are needed for Windows compilation.
 CCWINFLAGS=
 
 # Compiler for auxiliary programs
 
-CCAUX=$(COMPAUX) -I$(INCDIR) -O
+CCAUX=$(COMPAUX) -I$(INCDIR) -otexan
 
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
@@ -354,8 +358,15 @@ CCAUX=$(COMPAUX) -I$(INCDIR) -O
 
 BEGINFILES2=gsdll32.rex gswin32.rex gswin32c.rex
 
+# Define the switches for the compilers.
+
+C_=
+O_=-fo=
+RO_=$(O_)
+
 # Include the generic makefiles.
 
+!include $(GLSRCDIR)\version.mak
 !include $(GLSRCDIR)\winlib.mak
 !include $(GLSRCDIR)\winint.mak
 
@@ -364,7 +375,46 @@ BEGINFILES2=gsdll32.rex gswin32.rex gswin32c.rex
 $(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
 	echo $(GENOPT) -I$(INCDIR) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ -D_WATCOM_ > $(GLGENDIR)\ccf32.tr
 
+$(ECHOGS_XE): $(GLSRC)echogs.c
+	$(CCAUX) $(GLSRC)echogs.c $(O_)$(GLOBJ)echogs.obj 
+	$(LINK) FILE $(GLOBJ)echogs.obj NAME $(ECHOGS_XE)
+
+# Don't create genarch if it's not needed
+!ifdef GENARCH_XE
+$(GENARCH_XE): $(GLSRC)genarch.c $(GENARCH_DEPS) $(GLGENDIR)\ccf32.tr
+	$(CCAUX) $(GLSRC)genarch.c @$(GLGENDIR)\ccf32.tr $(O_)$(GLOBJ)genarch.obj 
+	$(LINK) FILE $(GLOBJ)genarch.obj NAME $(GENARCH_XE)
+!endif
+
+$(GENCONF_XE): $(GLSRC)genconf.c $(GENCONF_DEPS)
+	$(CCAUX) $(GLSRC)genconf.c $(O_)$(GLOBJ)genconf.obj 
+	$(LINK) FILE $(GLOBJ)genconf.obj NAME $(GENCONF_XE)
+
+$(GENDEV_XE): $(GLSRC)gendev.c $(GENDEV_DEPS)
+	$(CCAUX) $(GLSRC)gendev.c $(O_)$(GLOBJ)gendev.obj 
+	$(LINK) FILE $(GLOBJ)gendev.obj NAME $(GENDEV_XE)
+
+$(GENHT_XE): $(GLSRC)genht.c $(GENHT_DEPS)
+	$(CCAUX) $(GENHT_CFLAGS) $(GLSRC)genht.c $(O_)$(GLOBJ)genht.obj 
+	$(LINK) FILE $(GLOBJ)genht.obj NAME $(GENHT_XE)
+
+# PSSRC and PSOBJ aren't defined yet, so we spell out the definitions.
+$(GENINIT_XE): $(PSSRCDIR)$(D)geninit.c $(GENINIT_DEPS)
+	$(CCAUX) $(PSSRCDIR)$(D)geninit.c $(O_)$(PSOBJDIR)$(D)geninit.obj 
+	$(LINK) FILE $(GLOBJ)geninit.obj NAME $(GENINIT_XE)
+
 # -------------------------------- Library -------------------------------- #
+
+# make sure the target directories exist - use special Watcom .BEFORE
+# (This is not the best way to do this, but we will have to wait until
+# the makefiles get disentangled to do it better.)
+.BEFORE
+	@if not exist $(GLGENDIR) mkdir $(GLGENDIR)
+	@if not exist $(GLOBJDIR) mkdir $(GLOBJDIR)
+	@if not exist $(PSGENDIR) mkdir $(PSGENDIR)
+	@if not exist $(PSOBJDIR) mkdir $(PSOBJDIR)
+	@if not exist $(BINDIR) mkdir $(BINDIR)
+	@if not exist $(GLGENDIR)\lib.tr copy nul: $(GLGENDIR)\lib.tr
 
 # See winlib.mak
 
@@ -373,48 +423,50 @@ $(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
 #LIBCTR=libc32.tr
 LIBCTR=
 
-#rjl
-#$(LIBCTR): $(TOP_MAKEFILES) $(ECHOGS_XE)
-#        echogs -w $(LIBCTR) $(LIBDIR)\shell32.lib
-#        echogs -a $(LIBCTR) $(LIBDIR)\comdlg32.lib
+GSCONSOLE_XE=$(BINDIR)\$(GSCONSOLE).exe
+GSDLL_DLL=$(BINDIR)\$(GSDLL).dll
 
-DWOBJLINK=dwdll.obj, dwimg.obj, dwmain.obj, dwtext.obj, gscdefs.obj, gp_wgetv.obj
-DWOBJNOLINK= dwnodll.obj, dwimg.obj, dwmain.obj, dwtext.obj
-OBJCLINK=dwmainc.obj, dwdllc.obj, gscdefs.obj, gp_wgetv.obj
-OBJCNOLINK=dwmainc.obj, dwnodllc.obj
+DWOBJLINK=$(GLOBJ)dwdll.obj, $(GLOBJ)dwimg.obj, $(GLOBJ)dwmain.obj, $(GLOBJ)dwtext.obj, $(GLOBJ)gscdefw.obj, $(GLOBJ)gp_wgetw.obj
+DWOBJNOLINK= $(GLOBJ)dwnodll.obj, $(GLOBJ)dwimg.obj, $(GLOBJ)dwmain.obj, $(GLOBJ)dwtext.obj
+OBJCLINK=$(GLOBJ)dwmainc.obj, $(GLOBJ)dwdllc.obj, $(GLOBJ)gscdefw.obj, $(GLOBJ)gp_wgetw.obj
+OBJCNOLINK=$(GLOBJ)dwmainc.obj, $(GLOBJ)dwnodllc.obj
 
 !ifneq MAKEDLL 0
+
+# The non DLL compiles of the some modules also in the DLL
+$(GLOBJ)gp_wgetw.$(OBJ): $(GLSRC)gp_wgetv.c $(AK) $(gscdefs_h)
+	$(CC) $(COMPILE_FOR_CONSOLE_EXE) $(GLCCFLAGS) $(CCWINFLAGS) $(I_)$(GLI_)$(_I) $(GLF_) $(GLO_)gp_wgetw.$(OBJ) $(C_) $(GLSRC)gp_wgetv.c
+
+$(GLOBJ)gscdefw.$(OBJ): $(GLGEN)gscdefs.c $(AK) $(gscdefs_h)
+	$(CC) $(COMPILE_FOR_CONSOLE_EXE) $(GLCCFLAGS) $(CCWINFLAGS) $(I_)$(GLI_)$(_I) $(GLF_) $(GLO_)gscdefw.$(OBJ) $(C_) $(GLGEN)gscdefs.c
+
 # The graphical small EXE loader
-$(GS_XE): $(GSDLL).dll $(GSDLL).lib  $(DWOBJ) $(GSCONSOLE).exe $(GS).res 
-	$(LINK) system nt_win $(LCT) Name $(GS_XE) File $(DWOBJLINK) Library $(GSDLL).lib
-	$(WBIND) $(GS_XE) -R $(GS).res
+$(GS_XE): $(GSDLL_DLL) $(GLOBJ)$(GSDLL).lib $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)$(GS).res \
+		$(GLOBJ)gp_wgetw.obj $(GLOBJ)gscdefw.obj
+	$(LINK) system nt_win $(LCT) Name $(GS_XE) File $(DWOBJLINK) Library $(GLOBJ)$(GSDLL).lib
 
 # The console mode small EXE loader
-$(GSCONSOLE).exe: $(OBJC) $(GS).res dw32c.def
-	$(LINK) system nt option map $(LCT) Name $(GSCONSOLE).exe File $(OBJCLINK) Library $(GSDLL).lib
-	$(WBIND) $(GSCONSOLE).exe -R $(GS).res
+$(GSCONSOLE_XE): $(OBJC) $(GLOBJ)$(GS).res $(GLSRCDIR)\dw32c.def \
+		$(GLOBJ)gp_wgetw.obj $(GLOBJ)gscdefw.obj
+	$(LINK) system nt option map $(LCT) Name $(GSCONSOLE_XE) File $(OBJCLINK) Library $(GLOBJ)$(GSDLL).lib
 
 # The big DLL
-$(GSDLL).dll: $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(GSDLL).res 
-	$(LINK) system nt_dll initinstance terminstance @gsdll32.wex $(LCT) Name $(GSDLL).dll File gsdll.obj, @$(ld_tr) 
-	$(WBIND) $(GSDLL).dll -R $(GSDLL).res
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GLOBJ)$(GSDLL).res 
+	$(LINK) system nt_dll initinstance terminstance $(LCT) Name $(GSDLL_DLL) File $(GLOBJ)gsdll.obj @$(ld_tr) @$(GLSRC)gsdll32w.lnk
 
-$(GSDLL).lib: $(GSDLL).dll
-	erase $(GSDLL).lib
-	wlib $(GSDLL) +$(GSDLL).dll
+$(GLOBJ)$(GSDLL).lib: $(GSDLL_DLL)
+	erase $(GLOBJ)$(GSDLL).lib
+	wlib $(GLOBJ)$(GSDLL) +$(GSDLL_DLL)
 
 !else
 # The big graphical EXE
-$(GS_XE): $(GSCONSOLE).exe $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(DWOBJNO) $(GS).res dwmain32.def
-	$(LINK) option map $(LCT) Name $(GS) File gsdll, $(DWOBJNOLINK), @$(ld_tr) 
-	$(WBIND) $(GS_XE) -R $(GSDLL).res
+$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GLOBJ)$(GS).res $(GLOBJ)dwmain32.def
+	$(LINK) option map $(LCT) Name $(GS) File $(GLOBJ)gsdll, $(DWOBJNOLINK) @$(ld_tr) 
 
 # The big console mode EXE
-$(GSCONSOLE).exe:  $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(OBJCNO) $(GS).res dw32c.def
-	$(COMPDIR)\$(LINK) option map $(LCT) Name $(GSCONSOLE).exe File gsdll, $(OBJCNOLINK), @$(ld_tr) 
-	$(WBIND) $(GSCONSOLE).exe -R $(GSDLL).res
+$(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(OBJCNO) $(GLOBJ)$(GS).res $(GLSRCDIR)\dw32c.def
+	$(COMPDIR)\$(LINK) option map $(LCT) Name $(GSCONSOLE_XE) File $(GLOBJ)gsdll, $(OBJCNOLINK), @$(ld_tr) 
 !endif
 
 # end of makefile
-
 

@@ -53,9 +53,8 @@ private const gx_image_enum_procs_t image1_enum_procs = {
 };
 
 /* GC procedures */
-#define eptr ((gx_image_enum *)vptr)
 private 
-ENUM_PTRS_BEGIN(image_enum_enum_ptrs)
+ENUM_PTRS_WITH(image_enum_enum_ptrs, gx_image_enum *eptr)
 {
     int bps;
     gs_ptr_type_t ret;
@@ -82,7 +81,7 @@ ENUM_PTRS_BEGIN(image_enum_enum_ptrs)
 gx_image_enum_do_ptrs(e1)
 #undef e1
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(image_enum_reloc_ptrs)
+private RELOC_PTRS_WITH(image_enum_reloc_ptrs, gx_image_enum *eptr)
 {
     int i;
 
@@ -102,7 +101,6 @@ private RELOC_PTRS_BEGIN(image_enum_reloc_ptrs)
     }
 }
 RELOC_PTRS_END
-#undef eptr
 
 /* Forward declarations */
 private int color_draws_b_w(P2(gx_device * dev,
@@ -570,8 +568,8 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     }
     if (penum->clip_image && pcpath) {	/* Set up the clipping device. */
 	gx_device_clip *cdev =
-	gs_alloc_struct(mem, gx_device_clip,
-			&st_device_clip, "image clipper");
+	    gs_alloc_struct(mem, gx_device_clip,
+			    &st_device_clip, "image clipper");
 
 	if (cdev == 0) {
 	    gx_default_end_image(dev,
@@ -579,7 +577,8 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 				 false);
 	    return_error(gs_error_VMerror);
 	}
-	gx_make_clip_device(cdev, cdev, gx_cpath_list(pcpath));
+	gx_make_clip_translate_device(cdev, gx_cpath_list(pcpath), 0, 0, mem);
+	gx_device_retain((gx_device *)cdev, true); /* will free explicitly */
 	gx_device_set_target((gx_device_forward *)cdev, dev);
 	(*dev_proc(cdev, open_device)) ((gx_device *) cdev);
 	penum->clip_dev = cdev;

@@ -28,6 +28,7 @@
 #include "idparam.h"
 #include "igstate.h"
 #include "iname.h"
+#include "iutil.h"
 #include "store.h"
 #include "gxdevice.h"
 #include "gsstate.h"
@@ -264,17 +265,13 @@ restore_page_device(const gs_state * pgs_old, const gs_state * pgs_new)
 	if (dev_t1 != dev_t2)
 	    return true;
     }
-    /* The current implementation of setpagedevice just sets new */
-    /* parameters in the same device object, so we have to check */
-    /* whether the page device dictionaries are the same. */
-    {
-	const ref *ppd1 = &gs_int_gstate(pgs_old)->pagedevice;
-	const ref *ppd2 = &gs_int_gstate(pgs_new)->pagedevice;
-
-	return (r_type(ppd1) != r_type(ppd2) ||
-		(r_has_type(ppd1, t_dictionary) &&
-		 ppd1->value.pdict != ppd2->value.pdict));
-    }
+    /*
+     * The current implementation of setpagedevice just sets new
+     * parameters in the same device object, so we have to check
+     * whether the page device dictionaries are the same.
+     */
+    return !obj_eq(&gs_int_gstate(pgs_old)->pagedevice,
+		   &gs_int_gstate(pgs_new)->pagedevice);
 }
 
 /* - grestore - */

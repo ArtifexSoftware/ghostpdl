@@ -24,7 +24,6 @@
 #include "gxdevmem.h"		/* semi-public definitions */
 #include "gdevmem.h"		/* private definitions */
 
-extern dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);
 #define mem_true24_strip_copy_rop mem_gray8_rgb24_strip_copy_rop
 
 /*
@@ -162,7 +161,7 @@ mem_true24_fill_rectangle(gx_device * dev,
 			((bits32 *) pptr)[1] = cword;
 		    pptr += 8;
 		}
-		switch (pptr - limit) {
+		switch ((int)(pptr - limit)) {
 		    case 0:
 			pptr[6] = (byte) cword;
 		    case 1:

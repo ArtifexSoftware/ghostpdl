@@ -92,15 +92,15 @@ private dev_proc_put_params(cgm_put_params);
 	0 /*false*/	/* in_picture */\
 }
 
-gx_device_cgm far_data gs_cgmmono_device =
+gx_device_cgm gs_cgmmono_device =
 cgm_device("cgmmono", 1, 1, 2,
 	   gx_default_map_rgb_color, gx_default_w_b_map_color_rgb);
 
-gx_device_cgm far_data gs_cgm8_device =
+gx_device_cgm gs_cgm8_device =
 cgm_device("cgm8", 8, 6, 7,
 	   pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 
-gx_device_cgm far_data gs_cgm24_device =
+gx_device_cgm gs_cgm24_device =
 cgm_device("cgm24", 24, 255, 255,
 	   gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 
@@ -109,19 +109,15 @@ private void *
 cgm_gs_alloc(void *private_data, uint size)
 {
     gx_device_cgm *cdev = private_data;
-    gs_memory_t *mem =
-    (cdev->memory == 0 ? &gs_memory_default : cdev->memory);
 
-    return gs_alloc_bytes(mem, size, "cgm_gs_alloc");
+    return gs_alloc_bytes(cdev->memory, size, "cgm_gs_alloc");
 }
 private void
 cgm_gs_free(void *private_data, void *obj)
 {
     gx_device_cgm *cdev = private_data;
-    gs_memory_t *mem =
-    (cdev->memory == 0 ? &gs_memory_default : cdev->memory);
 
-    gs_free_object(mem, obj, "cgm_gs_free");
+    gs_free_object(cdev->memory, obj, "cgm_gs_free");
 }
 
 /* ---------------- Utilities ---------------- */

@@ -23,7 +23,7 @@
 #define DEBUG
 #include "string_.h"
 #include "ghost.h"
-#include "ialloc.h"		/* for imemory for getting struct type */
+#include "gxalloc.h"		/* for procs for getting struct type */
 #include "idebug.h"		/* defines interface */
 #include "idict.h"
 #include "iname.h"
@@ -130,10 +130,13 @@ debug_print_full_ref(const ref * pref)
 	case t_struct:
 	  strct:{
 		obj_header_t *obj = (obj_header_t *) pref->value.pstruct;
+		/* HACK: We know this object was allocated with gsalloc.c. */
+		gs_memory_type_ptr_t otype =
+		    gs_ref_memory_procs.object_type(NULL, obj);
 
 		dprintf2("struct %s 0x%lx",
 			 (r_is_foreign(pref) ? "-foreign-" :
-		  gs_struct_type_name_string(gs_object_type(imemory, obj))),
+			  gs_struct_type_name_string(otype)),
 			 (ulong) obj);
 	    }
 	    break;
@@ -170,13 +173,18 @@ debug_print_packed_ref(const ref_packed * pref)
     }
 }
 void
+debug_print_ref_packed(const ref_packed *rpp)
+{
+    if (r_is_packed(rpp))
+	debug_print_packed_ref(rpp);
+    else
+	debug_print_full_ref((const ref *)rpp);
+    fflush(dstderr);
+}
+void
 debug_print_ref(const ref * pref)
 {
-    if (r_is_packed(pref))
-	debug_print_packed_ref((const ref_packed *)pref);
-    else
-	debug_print_full_ref(pref);
-    fflush(dstderr);
+    debug_print_ref_packed((const ref_packed *)pref);
 }
 
 /* Dump one ref. */
@@ -292,10 +300,10 @@ debug_dump_array(const ref * array)
 
 	packed_get(pp, &temp);
 	if (r_is_packed(pp)) {
-	    dprintf2("0x%lx* 0x%04x", (ulong)pp, (uint)*pp);
+	    dprintf2("0x%lx* 0x%04x ", (ulong)pp, (uint)*pp);
 	    print_ref_data(&temp);
 	} else {
-	    dprintf2("0x%lx: 0x%02x", (ulong)pp, r_type(&temp));
+	    dprintf2("0x%lx: 0x%02x ", (ulong)pp, r_type(&temp));
 	    debug_dump_one_ref(&temp);
 	}
 	dputc('\n');

@@ -25,6 +25,7 @@
 /* Define the type of an X pixel. */
 typedef unsigned long x_pixel;
 
+#include "gdevbbox.h"
 #include "gdevxcmp.h"
 
 /* Declare the X resource tables compiled separately in gdevxres.c. */
@@ -32,12 +33,11 @@ extern XtResource gdev_x_resources[];
 extern const int gdev_x_resource_count;
 extern String gdev_x_fallback_resources[];
 
-/* Define a rectangle structure for update bookkeeping */
-typedef struct x_rect_s {
-    int xo, yo, xe, ye;
-} x_rect;
-
 /* Define PostScript to X11 font name mapping */
+/*
+ * x11fontlist is only used within x11fontmap.
+ * The names array is managed by Xlib, so the structure is simple.
+ */
 typedef struct x11fontlist_s {
     char **names;
     int count;
@@ -49,11 +49,18 @@ struct x11fontmap_s {
     x11fontlist std, iso;
     x11fontmap *next;
 };
+#define private_st_x11fontmap()	/* in gdevxini.c */\
+  gs_private_st_ptrs3(st_x11fontmap, x11fontmap, "x11fontmap",\
+    x11fontmap_enum_ptrs, x11fontmap_reloc_ptrs, ps_name, x11_name, next)
 
 /* Define the X Windows device */
 typedef struct gx_device_X_s {
-    gx_device_common;
+    gx_device_bbox_common;	/* if target != 0, is image buffer */
+#define IS_BUFFERED(xdev) ((xdev)->target != 0)
     bool IsPageDevice;
+    long MaxBitmap;
+    byte *buffer;		/* full-window image */
+    long buffer_size;
 
     /* An XImage object for writing bitmap images to the screen */
     XImage image;
@@ -71,16 +78,18 @@ typedef struct gx_device_X_s {
 
     /* A backing pixmap so X will handle exposure automatically */
     Pixmap bpixmap;		/* 0 if useBackingPixmap is false, */
-    /* or if it can't be allocated */
+				/* or if it can't be allocated */
     int ghostview;		/* flag to tell if ghostview is in control */
     Window mwin;		/* window to receive ghostview messages */
     gs_matrix initial_matrix;	/* the initial transformation */
     Atom NEXT, PAGE, DONE;	/* Atoms used to talk to ghostview */
-    x_rect update;		/* region needing updating */
-    long up_area;		/* total area of update */
-				/* (always 0 if no backing pixmap) */
-    int up_count;		/* # of updates since flush */
-    Pixmap dest;		/* bpixmap if non-0, else win */
+    struct {
+	gs_int_rect box;	/* region needing updating */
+	long area;		/* total area of update */
+	long total;		/* total of individual area updates */
+	int count;		/* # of updates since flush */
+    } update;
+    Pixmap dest;		/* bpixmap if non-0, else use win */
     x_pixel colors_or;		/* 'or' of all device colors used so far */
     x_pixel colors_and;		/* 'and' ditto */
 
@@ -106,15 +115,21 @@ typedef struct gx_device_X_s {
     int fill_style;
     Font fid;
 
-#define set_fill_style(style)\
-  if ( xdev->fill_style != style )\
-    XSetFillStyle(xdev->dpy, xdev->gc, (xdev->fill_style = style))
-#define set_function(func)\
-  if ( xdev->function != func )\
-    XSetFunction(xdev->dpy, xdev->gc, (xdev->function = func))
-#define set_font(font)\
-  if ( xdev->fid != font )\
-    XSetFont(xdev->dpy, xdev->gc, (xdev->fid = font))
+#define X_SET_FILL_STYLE(xdev, style)\
+  BEGIN\
+    if (xdev->fill_style != (style))\
+      XSetFillStyle(xdev->dpy, xdev->gc, (xdev->fill_style = (style)));\
+  END
+#define X_SET_FUNCTION(xdev, func)\
+  BEGIN\
+    if (xdev->function != (func))\
+      XSetFunction(xdev->dpy, xdev->gc, (xdev->function = (func)));\
+  END
+#define X_SET_FONT(xdev, font)\
+  BEGIN\
+    if (xdev->fid != (font))\
+      XSetFont(xdev->dpy, xdev->gc, (xdev->fid = (font)));\
+  END
 
     x_pixel back_color, fore_color;
 
@@ -126,21 +141,25 @@ typedef struct gx_device_X_s {
      */
     x11_cman_t cman;
 
-#define note_color(pixel)\
-  xdev->colors_or |= pixel,\
-  xdev->colors_and &= pixel
-#define set_back_color(pixel)\
-  if ( xdev->back_color != pixel )\
-   { xdev->back_color = pixel;\
-     note_color(pixel);\
-     XSetBackground(xdev->dpy, xdev->gc, pixel);\
-   }
-#define set_fore_color(pixel)\
-  if ( xdev->fore_color != pixel )\
-   { xdev->fore_color = pixel;\
-     note_color(pixel);\
-     XSetForeground(xdev->dpy, xdev->gc, pixel);\
-   }
+#define NOTE_COLOR(xdev, pixel)\
+  (xdev->colors_or |= (pixel),\
+   xdev->colors_and &= (pixel))
+#define X_SET_BACK_COLOR(xdev, pixel)\
+  BEGIN\
+    if (xdev->back_color != (pixel)) {\
+      xdev->back_color = (pixel);\
+      NOTE_COLOR(xdev, pixel);\
+      XSetBackground(xdev->dpy, xdev->gc, (pixel));\
+    }\
+  END
+#define X_SET_FORE_COLOR(xdev, pixel)\
+  BEGIN\
+    if (xdev->fore_color != (pixel)) {\
+      xdev->fore_color = (pixel);\
+      NOTE_COLOR(xdev, pixel);\
+      XSetForeground(xdev->dpy, xdev->gc, (pixel));\
+    }\
+  END
 
     /* Defaults set by resources */
     Pixel borderColor;
@@ -162,7 +181,36 @@ typedef struct gx_device_X_s {
     Boolean useXPutImage;
     Boolean useXSetTile;
 
-    /* Buffered text awaiting display */
+    /*
+     * Parameters for the screen update algorithms.
+     */
+
+    /*
+     * Define whether to update after every write, for debugging.
+     * Note that one can obtain the same effect by setting any of
+     */
+    bool AlwaysUpdate;
+    /*
+     * Define the maximum size of the temporary pixmap for copy_mono
+     * that we are willing to leave lying around in the server
+     * between uses.
+     */
+    int MaxTempPixmap;
+    /*
+     * Define the maximum size of the temporary image created in memory
+     * for get_bits_rectangle.
+     */
+    int MaxTempImage;
+    /*
+     * Define the maximum buffered updates before doing a screen write.
+     */
+    int MaxBufferedTotal;		/* sum of individual areas */
+    int MaxBufferedArea;		/* area of merged bounding box */
+    int MaxBufferedCount;		/* number of writes */
+
+    /*
+     * Buffered text awaiting display.
+     */
     struct {
 	int item_count;
 #define IN_TEXT(xdev) ((xdev)->text.item_count != 0)
@@ -184,13 +232,39 @@ typedef struct gx_device_X_s {
 	     xdev->text.origin.y, xdev->text.items, xdev->text.item_count)
 
 } gx_device_X;
+#define private_st_device_X()	/* in gdevx.c */\
+  gs_public_st_suffix_add4_final(st_device_X, gx_device_X,\
+    "gx_device_X", device_x_enum_ptrs, device_x_reloc_ptrs,\
+    gx_device_finalize, st_device_bbox, buffer, regular_fonts,\
+    symbol_fonts, dingbat_fonts)
+
+/* Send an event to the Ghostview process */
+void gdev_x_send_event(P2(gx_device_X *xdev, Atom msg));
 
 /* function to keep track of screen updates */
-void x_update_add(P5(gx_device *, int, int, int, int));
+void x_update_add(P5(gx_device_X *, int, int, int, int));
 void gdev_x_clear_window(P1(gx_device_X *));
 int x_catch_free_colors(P2(Display *, XErrorEvent *));
 
 /* Number used to distinguish when resolution was set from the command line */
 #define FAKE_RES (16*72)
+
+/* ------ Inter-module procedures ------ */
+
+/* Exported by gdevxcmp.c for gdevxini.c */
+int gdev_x_setup_colors(P1(gx_device_X *));
+void gdev_x_free_colors(P1(gx_device_X *));
+void gdev_x_free_dynamic_colors(P1(gx_device_X *));
+
+/* Exported by gdevxini.c for gdevx.c */
+int gdev_x_open(P1(gx_device_X *));
+int gdev_x_close(P1(gx_device_X *));
+
+/* Driver procedures exported for gdevx.c */
+dev_proc_map_rgb_color(gdev_x_map_rgb_color);  /* gdevxcmp.c */
+dev_proc_map_color_rgb(gdev_x_map_color_rgb);  /* gdevxcmp.c */
+dev_proc_get_params(gdev_x_get_params);  /* gdevxini.c */
+dev_proc_put_params(gdev_x_put_params);  /* gdevxini.c */
+dev_proc_get_xfont_procs(gdev_x_get_xfont_procs);  /* gdevxxf.c */
 
 #endif /* gdevx_INCLUDED */

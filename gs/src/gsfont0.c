@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,7 +26,6 @@
 #include "gsmatrix.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
-#include "gxchar.h"
 #include "gxfcache.h"		/* gs_font_dir */
 #include "gxfont.h"
 #include "gxfont0.h"
@@ -36,25 +35,25 @@ private struct_proc_enum_ptrs(font_type0_enum_ptrs);
 private struct_proc_reloc_ptrs(font_type0_reloc_ptrs);
 
 public_st_gs_font_type0();
-#define pfont ((gs_font_type0 *)vptr)
 private 
-ENUM_PTRS_BEGIN(font_type0_enum_ptrs) ENUM_PREFIX(st_gs_font, gs_type0_data_max_ptrs);
-
+ENUM_PTRS_WITH(font_type0_enum_ptrs, gs_font_type0 *pfont)
+ENUM_PREFIX(st_gs_font, gs_type0_data_max_ptrs);
 ENUM_PTR(0, gs_font_type0, data.Encoding);
 ENUM_PTR(1, gs_font_type0, data.FDepVector);
 case 2:
 switch (pfont->data.FMapType)
 {
     case fmap_SubsVector:
-ENUM_RETURN_CONST_STRING_PTR(gs_font_type0,
-			     data.SubsVector);
+	ENUM_RETURN_CONST_STRING_PTR(gs_font_type0,
+				     data.SubsVector);
     case fmap_CMap:
-ENUM_RETURN_PTR(gs_font_type0, data.CMap);
+	ENUM_RETURN_PTR(gs_font_type0, data.CMap);
     default:
-ENUM_RETURN(0);
+	ENUM_RETURN(0);
 }
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(font_type0_reloc_ptrs) RELOC_PREFIX(st_gs_font);
+private RELOC_PTRS_WITH(font_type0_reloc_ptrs, gs_font_type0 *pfont)
+RELOC_PREFIX(st_gs_font);
 RELOC_PTR(gs_font_type0, data.Encoding);
 RELOC_PTR(gs_font_type0, data.FDepVector);
 switch (pfont->data.FMapType)
@@ -69,7 +68,6 @@ break;
 ;
 }
 RELOC_PTRS_END
-#undef pfont
 
 /* Adjust a composite font by concatenating a given matrix */
 /* to the FontMatrix of all descendant composite fonts. */

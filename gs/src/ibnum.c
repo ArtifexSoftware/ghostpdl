@@ -205,7 +205,7 @@ sdecodefloat(const byte * p, int format)
 	    fnum = 0;
 	else {
 	    mant += 0x800000;
-	    fnum = (float)ldexp((float)mant, expt - 127 - 24);
+	    fnum = (float)ldexp((float)mant, expt - 127 - 23);
 	}
 	if (sign_expt & 0x100)
 	    fnum = -fnum;

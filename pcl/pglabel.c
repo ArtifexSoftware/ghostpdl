@@ -91,12 +91,13 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
 /* Next-character procedure for fonts in GL/2 mode. NB.  this need to
    be reworked. */
 private int
-hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr)
+hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr, gs_glyph *pglyph)
 {	const pcl_state_t *pcs = gs_state_client_data(penum->pgs);
 #define pgls pcs		/****** NOTA BENE ******/
 	int code = hpgl_next_char(penum, pgls, pchr);
 	if ( code )
 	  return code;
+        *pglyph = gs_no_glyph;
 	*pchr = hpgl_map_symbol(*pchr, pgls);
 #undef pgls
 	return 0;
@@ -584,19 +585,13 @@ hpgl_print_char(
         gs_matrix       pre_rmat, rmat, advance_mat;
         int             angle = -1;	/* a multiple of 90 if used */
         int             weight = pfs->params.stroke_weight;
-	gs_show_enum *  penum = gs_show_enum_alloc( pgls->memory,
-                                                    pgs,
-                                                    "hpgl_print_char"
-                                                    );
+	gs_text_enum_t *penum;
         byte            str[1];
         int             code;
         gs_point        start_pt, end_pt;
 	hpgl_real_t     space_width;
 	int             space_code;
 	hpgl_real_t     width;
-
-	if (penum == 0)
-	    return_error(e_Memory);
 
 	/* Handle size. */
 	if (pgls->g.character.size_mode == hpgl_size_not_set) {
@@ -696,7 +691,7 @@ hpgl_print_char(
 	/*
 	 * Patch the next-character procedure.
 	 */
-	pfont->procs.next_char = hpgl_next_char_proc;
+	pfont->procs.next_char_glyph = hpgl_next_char_proc;
 	gs_setfont(pgs, pfont);
 
 	/*
@@ -769,13 +764,14 @@ hpgl_print_char(
 	} else {
             if (use_show) {
 		hpgl_call(hpgl_set_drawing_color(pgls, hpgl_rm_character));
-	        code = gs_show_n_init(penum, pgs, (char *)str, 1);
+	        code = gs_show_begin(pgs, (char *)str, 1, pgls->memory, &penum);
 	    } else
-		code = gs_charpath_n_init(penum, pgs, (char *)str, 1, true);
-	    if ((code < 0) || ((code = gs_show_next(penum)) != 0) ) {
-                gs_show_enum_release(penum, pgls->memory);
-		return (code < 0 ? code : gs_error_Fatal);
-	    }
+		code = gs_charpath_begin(pgs, (char *)str, 1, true, pgls->memory, &penum);
+	    if ( code >= 0 )
+		code = gs_text_process(penum);
+	    gs_text_release(penum, "hpgl_print_char");
+	    if ( code < 0 )
+		return code;
 	    gs_setmatrix(pgs, &advance_mat);
 	    if (angle >= 0) {
                 /* Compensate for bitmap font non-rotation. */
@@ -793,8 +789,6 @@ hpgl_print_char(
 		hpgl_call(hpgl_add_point_to_path(pgls, end_pt.x, end_pt.y, hpgl_plot_move_absolute, false));
 	    }
 	}
-	gs_free_object(pgls->memory, penum, "hpgl_print_char");
-
 	/*
 	 * Adjust the final position according to the text path.
 	 */

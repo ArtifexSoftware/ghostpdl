@@ -20,6 +20,7 @@
 /* Operators related to user paths */
 #include "ghost.h"
 #include "oper.h"
+#include "oparc.h"
 #include "idict.h"
 #include "dstack.h"
 #include "igstate.h"
@@ -284,9 +285,6 @@ static const byte up_nargs[UPATH_MAX_OP + 1] = {
 
 /* Declare operator procedures not declared in opextern.h. */
 int zsetbbox(P1(i_ctx_t *));
-int zarc(P1(i_ctx_t *));
-int zarcn(P1(i_ctx_t *));
-int zarct(P1(i_ctx_t *));
 private int zucache(P1(i_ctx_t *));
 
 #undef zp
@@ -402,7 +400,7 @@ zustrokepath(i_ctx_t *i_ctx_p)
 /* <with_ucache> upath <userpath> */
 /* We do all the work in a procedure that is also used to construct */
 /* the UnpaintedPath user path for ImageType 2 images. */
-int make_upath(P4(ref * rupath, gs_state * pgs, gx_path * ppath,
+int make_upath(P5(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 		  bool with_ucache));
 private int
 zupath(i_ctx_t *i_ctx_p)
@@ -410,10 +408,11 @@ zupath(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     check_type(*op, t_boolean);
-    return make_upath(op, igs, igs->path, op->value.boolval);
+    return make_upath(i_ctx_p, op, igs, igs->path, op->value.boolval);
 }
 int
-make_upath(ref * rupath, gs_state * pgs, gx_path * ppath, bool with_ucache)
+make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
+	   bool with_ucache)
 {
     int size = (with_ucache ? 6 : 5);
     gs_path_enum penum;

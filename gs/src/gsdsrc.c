@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,9 +27,8 @@
 
 /* GC descriptor */
 public_st_data_source();
-#define psrc ((gs_data_source_t *)vptr)
 private 
-ENUM_PTRS_BEGIN(data_source_enum_ptrs)
+ENUM_PTRS_WITH(data_source_enum_ptrs, gs_data_source_t *psrc)
 {
     if (psrc->type == data_source_type_string)
 	ENUM_RETURN_CONST_STRING_PTR(gs_data_source_t, data.str);
@@ -39,7 +38,7 @@ ENUM_PTRS_BEGIN(data_source_enum_ptrs)
 	ENUM_RETURN_PTR(gs_data_source_t, data.str.data);
 }
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(data_source_reloc_ptrs)
+private RELOC_PTRS_WITH(data_source_reloc_ptrs, gs_data_source_t *psrc)
 {
     if (psrc->type == data_source_type_string)
 	RELOC_CONST_STRING_PTR(gs_data_source_t, data.str);
@@ -49,7 +48,6 @@ private RELOC_PTRS_BEGIN(data_source_reloc_ptrs)
 	RELOC_PTR(gs_data_source_t, data.str.data);
 }
 RELOC_PTRS_END
-#undef psrc
 
 /* Access data from a string or a byte object. */
 /* Does *not* check bounds. */

@@ -42,11 +42,15 @@ float gs_currentflat(P1(const gs_state *));
 int gs_setstrokeadjust(P2(gs_state *, bool));
 bool gs_currentstrokeadjust(P1(const gs_state *));
 
-/* Extensions */
-void gs_setaccuratecurves(P2(gs_state *, bool));
-bool gs_currentaccuratecurves(P1(const gs_state *));
+/* Extensions - device-independent */
 void gs_setdashadapt(P2(gs_state *, bool));
 bool gs_currentdashadapt(P1(const gs_state *));
+int gs_setcurvejoin(P2(gs_state *, int));
+int gs_currentcurvejoin(P1(const gs_state *));
+
+/* Extensions - device-dependent */
+void gs_setaccuratecurves(P2(gs_state *, bool));
+bool gs_currentaccuratecurves(P1(const gs_state *));
 int gs_setdotlength(P3(gs_state *, floatp, bool));
 float gs_currentdotlength(P1(const gs_state *));
 bool gs_currentdotlength_absolute(P1(const gs_state *));
@@ -57,7 +61,6 @@ int gs_dotorientation(P1(gs_state *));
 #ifndef gs_imager_state_DEFINED
 #  define gs_imager_state_DEFINED
 typedef struct gs_imager_state_s gs_imager_state;
-
 #endif
 int gs_imager_setflat(P2(gs_imager_state *, floatp));
 bool gs_imager_currentdashadapt(P1(const gs_imager_state *));

@@ -24,8 +24,6 @@
 #include "gxdevmem.h"		/* semi-public definitions */
 #include "gdevmem.h"		/* private definitions */
 
-extern dev_proc_strip_copy_rop(mem_gray_strip_copy_rop);
-
 /* ================ Standard (byte-oriented) device ================ */
 
 #undef chunk

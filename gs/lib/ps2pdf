@@ -23,8 +23,8 @@ if [ $# -eq 1 ]
 then
 	case "${infile}" in
 	  -)		outfile=- ;;
-	  *.ps)		base=`basename ${infile} .ps; outfile=${base}.pdf` ;;
-	  *)		base=`basename ${infile}` ; outfile=${base}.pdf;;
+	  *.ps)		base=`basename ${infile} .ps`; outfile=${base}.pdf ;;
+	  *)		base=`basename ${infile}`; outfile=${base}.pdf ;;
 	esac
 else
 	outfile=$2

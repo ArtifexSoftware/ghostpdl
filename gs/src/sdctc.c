@@ -41,4 +41,7 @@ s_DCT_set_defaults(stream_state * st)
 	 ****************/
     ss->ColorTransform = -1;
     ss->QFactor = 1.0;
+    /* Clear pointers */
+    ss->Markers.data = 0;
+    ss->Markers.size = 0;
 }

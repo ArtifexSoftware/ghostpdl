@@ -26,12 +26,17 @@
 
 /* Copy refs from one place to another. */
 /* (If we are copying to the stack, we can just use memcpy.) */
-void refcpy_to_new(P3(ref * to, const ref * from, uint size));
-int refcpy_to_old(P5(ref * aref, uint index, const ref * from, uint size,
-		     client_name_t cname));
+void refcpy_to_new(P4(ref * to, const ref * from, uint size,
+		      gs_dual_memory_t *dmem));
+int refcpy_to_old(P6(ref * aref, uint index, const ref * from, uint size,
+		     gs_dual_memory_t *dmem, client_name_t cname));
 
-/* Fill an array with nulls. */
-void refset_null(P2(ref * to, uint size));
+/*
+ * Fill an array with nulls.
+ * For backward compatibility, we define the procedure with a new name.
+ */
+void refset_null_new(P3(ref * to, uint size, uint new_mask));
+#define refset_null(to, size) refset_null_new(to, size, ialloc_new_mask)
 
 /* Compare two objects for equality. */
 bool obj_eq(P2(const ref *, const ref *));
@@ -54,10 +59,14 @@ int obj_string_data(P3(const ref *op, const byte **pchars, uint *plen));
  * object's contents weren't readable.  If the return value is 0 or 1,
  * *prlen contains the amount of data returned.  start_pos is the starting
  * output position -- the first start_pos bytes of output are discarded.
+ *
+ * The mem argument is only used for getting the type of structures,
+ * not for allocating; if it is NULL and full_print != 0, structures will
+ * print as --(struct)--.
  */
 #define CVP_MAX_STRING 200  /* strings are truncated here if full_print = 1 */
-int obj_cvp(P6(const ref * op, byte *str, uint len, uint * prlen,
-	       int full_print, uint start_pos));
+int obj_cvp(P7(const ref * op, byte *str, uint len, uint * prlen,
+	       int full_print, uint start_pos, gs_memory_t *mem));
 
 /*
  * Create a printable representation of an object, a la cvs and =.  Return 0
@@ -131,6 +140,13 @@ typedef struct gs_matrix_s gs_matrix;
 int read_matrix(P2(const ref *, gs_matrix *));
 
 /* Write a matrix operand. */
-int write_matrix(P2(ref *, const gs_matrix *));
+/* If dmem is NULL, the array is guaranteed newly allocated in imem. */
+/* If dmem is not NULL, imem is ignored. */
+int write_matrix_in(P4(ref *op, const gs_matrix *pmat, gs_dual_memory_t *dmem,
+		       gs_ref_memory_t *imem));
+#define write_matrix_new(op, pmat, imem)\
+  write_matrix_in(op, pmat, NULL, imem)
+#define write_matrix(op, pmat)\
+  write_matrix_in(op, pmat, idmemory, NULL)
 
 #endif /* iutil_INCLUDED */

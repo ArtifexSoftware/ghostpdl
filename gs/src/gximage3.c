@@ -88,9 +88,10 @@ typedef struct gx_image3_enum_s {
     int pixel_y;
 } gx_image3_enum_t;
 
-gs_private_st_ptrs6(st_image3_enum, gx_image3_enum_t, "gx_image3_enum_t",
-		    image3_enum_enum_ptrs, image3_enum_reloc_ptrs,
-		 mdev, pcdev, pixel_info, mask_info, pixel_data, mask_data);
+extern_st(st_gx_image_enum_common);
+gs_private_st_suffix_add6(st_image3_enum, gx_image3_enum_t, "gx_image3_enum_t",
+  image3_enum_enum_ptrs, image3_enum_reloc_ptrs, st_gx_image_enum_common,
+  mdev, pcdev, pixel_info, mask_info, pixel_data, mask_data);
 
 /* Begin an ImageType 3 image. */
 private bool check_image3_extent(P2(floatp mask_coeff, floatp data_coeff));
@@ -265,7 +266,7 @@ gx_begin_image3(gx_device * dev,
 	bits.id = gx_no_bitmap_id;
 	code = gx_mask_clip_initialize(pcdev, &gs_mask_clip_device,
 				       (const gx_bitmap *)&bits, dev,
-				       origin.x, origin.y);
+				       origin.x, origin.y, mem);
 	if (code < 0)
 	    goto out4;
 	pcdev->tiles = bits;
@@ -351,6 +352,8 @@ gx_begin_image3(gx_device * dev,
 	       (penum->num_planes - 1) * sizeof(penum->plane_depths[0]));
 	break;
     }
+    gx_device_retain((gx_device *)mdev, true); /* will free explicitly */
+    gx_device_retain((gx_device *)pcdev, true); /* ditto */
     *pinfo = (gx_image_enum_common_t *) penum;
     return 0;
   out6:gx_image_end(penum->mask_info, false);

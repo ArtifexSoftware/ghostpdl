@@ -293,15 +293,15 @@ ADDMOD=$(EXP)$(ECHOGS_XE) -e .dev -a- $(NULL)
 # because this must include $(GLSRCDIR), which isn't defined yet.
 JI_=$(JSRCDIR)
 JF_=
-JCF_=$(D_)SHARE_JPEG=$(SHARE_JPEG)
+JCF_=$(D_)SHARE_JPEG=$(SHARE_JPEG)$(_D)
 PI_=$(PSRCDIR) $(II)$(ZSRCDIR)
 # PF_ should include PNG_USE_CONST, but this doesn't work.
 #PF_=-DPNG_USE_CONST
 PF_=
-PCF_=$(D_)SHARE_LIBPNG=$(SHARE_LIBPNG)
+PCF_=$(D_)SHARE_LIBPNG=$(SHARE_LIBPNG)$(_D)
 ZI_=$(ZSRCDIR)
 ZF_=
-ZCF_=$(D_)SHARE_ZLIB=$(SHARE_ZLIB)
+ZCF_=$(D_)SHARE_ZLIB=$(SHARE_ZLIB)$(_D)
 
 ######################## How to define new 'features' #######################
 #

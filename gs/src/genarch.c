@@ -23,6 +23,12 @@
 #include "stdpre.h"
 #include <ctype.h>
 #include <stdio.h>
+/*
+ * In theory, not all systems provide <string.h>, or declare memset in
+ * that header file, but at this point I don't think we care about any
+ * that don't.
+ */
+#include <string.h>
 #include <time.h>
 
 /* We should write the result on stdout, but the original Turbo C 'make' */

@@ -23,6 +23,7 @@
 #include "ghost.h"
 #include "gscdefs.h"		/* for gx_io_device_table */
 #include "gp.h"
+#include "gsfname.h"
 #include "gsstruct.h"		/* for registering root */
 #include "gxalloc.h"		/* for streams */
 #include "oper.h"
@@ -36,14 +37,10 @@
 #include "strimpl.h"
 #include "sfilter.h"
 #include "gxiodev.h"		/* must come after stream.h */
-					/* and before files.h */
-#include "files.h"		/* ditto */
-#include "fname.h"		/* ditto */
+				/* and before files.h */
+#include "files.h"
 #include "main.h"		/* for gs_lib_paths */
 #include "store.h"
-
-/* Import the file_open routine for %os%, which is the default. */
-extern iodev_proc_open_file(iodev_os_open_file);
 
 /* Import the IODevice table. */
 extern_gx_io_device_table();
@@ -51,10 +48,14 @@ extern_gx_io_device_table();
 /* Import the dtype of the stdio IODevices. */
 extern const char iodev_dtype_stdio[];
 
-/* Forward references: file opening. */
-int file_open(P6(const byte *, uint, const char *, uint, ref *, stream **));
+/* Forward references: file name parsing. */
+private int parse_file_name(P2(const ref * op, gs_parsed_file_name_t * pfn));
+private int parse_real_file_name(P4(const ref * op,
+				    gs_parsed_file_name_t * pfn,
+				    gs_memory_t *mem, client_name_t cname));
 
 /* Forward references: other. */
+private iodev_proc_open_file(iodev_os_open_file);
 private int execfile_finish(P1(i_ctx_t *));
 private int execfile_cleanup(P1(i_ctx_t *));
 
@@ -129,12 +130,12 @@ make_invalid_file(ref * fp)
 }
 
 /* <name_string> <access_string> file <file> */
-int
+private int
 zfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     char file_access[3];
-    parsed_file_name pname;
+    gs_parsed_file_name_t pname;
     const byte *astr;
     int code;
     stream *s;
@@ -208,13 +209,13 @@ private int
 zdeletefile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    parsed_file_name pname;
-    int code = parse_real_file_name(op, &pname, "deletefile");
+    gs_parsed_file_name_t pname;
+    int code = parse_real_file_name(op, &pname, imemory, "deletefile");
 
     if (code < 0)
 	return code;
     code = (*pname.iodev->procs.delete_file)(pname.iodev, pname.fname);
-    free_file_name(&pname, "deletefile");
+    gs_free_file_name(&pname, "deletefile");
     if (code < 0)
 	return code;
     pop(1);
@@ -289,13 +290,14 @@ private int
 zrenamefile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    parsed_file_name pname1, pname2;
-    int code = parse_real_file_name(op - 1, &pname1, "renamefile(from)");
+    gs_parsed_file_name_t pname1, pname2;
+    int code = parse_real_file_name(op - 1, &pname1, imemory,
+				    "renamefile(from)");
 
     if (code < 0)
 	return code;
     pname2.fname = 0;
-    code = parse_real_file_name(op, &pname2, "renamefile(to)");
+    code = parse_real_file_name(op, &pname2, imemory, "renamefile(to)");
     if (code < 0 || pname1.iodev != pname2.iodev ||
 	(code = (*pname1.iodev->procs.rename_file)(pname1.iodev,
 					    pname1.fname, pname2.fname)) < 0
@@ -303,8 +305,8 @@ zrenamefile(i_ctx_t *i_ctx_p)
 	if (code >= 0)
 	    code = gs_note_error(e_invalidfileaccess);
     }
-    free_file_name(&pname2, "renamefile(to)");
-    free_file_name(&pname1, "renamefile(from)");
+    gs_free_file_name(&pname2, "renamefile(to)");
+    gs_free_file_name(&pname1, "renamefile(from)");
     if (code < 0)
 	return code;
     pop(2);
@@ -329,13 +331,13 @@ zstatus(i_ctx_t *i_ctx_p)
 	    return 0;
 	case t_string:
 	    {
-		parsed_file_name pname;
+		gs_parsed_file_name_t pname;
 		struct stat fstat;
 		int code = parse_file_name(op, &pname);
 
 		if (code < 0)
 		    return code;
-		code = terminate_file_name(&pname, "status");
+		code = gs_terminate_file_name(&pname, imemory, "status");
 		if (code < 0)
 		    return code;
 		code = (*pname.iodev->procs.file_status)(pname.iodev,
@@ -373,7 +375,7 @@ zstatus(i_ctx_t *i_ctx_p)
 			make_bool(op, 0);
 			code = 0;
 		}
-		free_file_name(&pname, "status");
+		gs_free_file_name(&pname, "status");
 		return code;
 	    }
 	default:
@@ -415,7 +417,7 @@ execfile_cleanup(i_ctx_t *i_ctx_p)
 }
 
 /* <dir> <name> .filenamedirseparator <string> */
-int
+private int
 zfilenamedirseparator(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -435,7 +437,7 @@ zfilenamedirseparator(i_ctx_t *i_ctx_p)
 }
 
 /* - .filenamelistseparator <string> */
-int
+private int
 zfilenamelistseparator(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -447,7 +449,7 @@ zfilenamelistseparator(i_ctx_t *i_ctx_p)
 }
 
 /* <name> .filenamesplit <dir> <base> <extension> */
-int
+private int
 zfilenamesplit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -459,7 +461,7 @@ zfilenamesplit(i_ctx_t *i_ctx_p)
 
 /* <string> findlibfile <found_string> <file> true */
 /* <string> findlibfile <string> false */
-int
+private int
 zfindlibfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -467,7 +469,7 @@ zfindlibfile(i_ctx_t *i_ctx_p)
 #define MAX_CNAME 200
     byte cname[MAX_CNAME];
     uint clen;
-    parsed_file_name pname;
+    gs_parsed_file_name_t pname;
     stream *s;
 
     check_ostack(2);
@@ -494,7 +496,7 @@ zfindlibfile(i_ctx_t *i_ctx_p)
 	byte *cstr;
 
 	code = lib_file_open(pname.fname, pname.len, cname, MAX_CNAME,
-			     &clen, op + 1);
+			     &clen, op + 1, imemory);
 	if (code == e_VMerror)
 	    return code;
 	if (code < 0) {
@@ -533,7 +535,43 @@ const op_def zfile_op_defs[] =
     op_def_end(zfile_init)
 };
 
+/* ------ File name parsing ------ */
+
+/* Parse a file name into device and individual name. */
+/* See gsfname.c for details. */
+private int
+parse_file_name(const ref * op, gs_parsed_file_name_t * pfn)
+{
+    check_read_type(*op, t_string);
+    return gs_parse_file_name(pfn, (const char *)op->value.const_bytes,
+			      r_size(op));
+}
+
+/* Parse a real (non-device) file name and convert to a C string. */
+/* See gsfname.c for details. */
+private int
+parse_real_file_name(const ref *op, gs_parsed_file_name_t *pfn,
+		     gs_memory_t *mem, client_name_t cname)
+{
+    check_read_type(*op, t_string);
+    return gs_parse_real_file_name(pfn, (const char *)op->value.const_bytes,
+				   r_size(op), mem, cname);
+}
+
 /* ------ Stream opening ------ */
+
+/*
+ * Define the file_open procedure for the %os% IODevice (also used, as the
+ * default, for %pipe% and possibly others).
+ */
+private int
+iodev_os_open_file(gx_io_device * iodev, const char *fname, uint len,
+		   const char *file_access, stream ** ps, gs_memory_t * mem)
+{
+    return file_open_stream(fname, len, file_access,
+			    file_default_buffer_size, ps,
+			    iodev->procs.fopen, mem);
+}
 
 /* Make a t_file reference to a stream. */
 void
@@ -625,11 +663,11 @@ lib_fopen(const char *bname)
 /* The startup code calls this to open the initialization file gs_init.ps. */
 int
 lib_file_open(const char *fname, uint len, byte * cname, uint max_clen,
-	      uint * pclen, ref * pfile)
+	      uint * pclen, ref * pfile, gs_memory_t *mem)
 {
     stream *s;
-    int code = file_open_stream(fname, len, "r",
-				file_default_buffer_size, &s, lib_file_fopen);
+    int code = file_open_stream(fname, len, "r", file_default_buffer_size,
+				&s, lib_file_fopen, mem);
     char *bname;
     uint blen;
 
@@ -652,18 +690,16 @@ lib_file_open(const char *fname, uint len, byte * cname, uint max_clen,
 /* (This is currently used only by the ccinit feature.) */
 /* The string must be allocated in non-garbage-collectable (foreign) space. */
 int
-file_read_string(const byte * str, uint len, ref * pfile)
+file_read_string(const byte *str, uint len, ref *pfile, gs_ref_memory_t *imem)
 {
-    stream *s = file_alloc_stream(imemory, "file_read_string");
-    int space;
+    stream *s = file_alloc_stream((gs_memory_t *)imem, "file_read_string");
 
     if (s == 0)
 	return_error(e_VMerror);
-    space = icurrent_space;
     sread_string(s, str, len);
     s->foreign = 1;
     s->write_id = 0;
-    make_file(pfile, a_readonly | space, s->read_id, s);
+    make_file(pfile, a_readonly | imemory_space(imem), s->read_id, s);
     s->save_close = s->procs.close;
     s->procs.close = file_close_disable;
     return 0;
@@ -676,7 +712,8 @@ file_read_string(const byte * str, uint len, ref * pfile)
 /* but don't open an OS file or initialize the stream. */
 int
 file_open_stream(const char *fname, uint len, const char *file_access,
-		 uint buffer_size, stream ** ps, iodev_proc_fopen_t fopen_proc)
+		 uint buffer_size, stream ** ps, iodev_proc_fopen_t fopen_proc,
+		 gs_memory_t *mem)
 {
     byte *buffer;
     register stream *s;
@@ -687,11 +724,11 @@ file_open_stream(const char *fname, uint len, const char *file_access,
 	return_error(e_limitcheck);
     /* Allocate the stream first, since it persists */
     /* even after the file has been closed. */
-    s = file_alloc_stream(imemory, "file_open_stream");
+    s = file_alloc_stream(mem, "file_open_stream");
     if (s == 0)
 	return_error(e_VMerror);
     /* Allocate the buffer. */
-    buffer = ialloc_bytes(buffer_size, "file_open(buffer)");
+    buffer = gs_alloc_bytes(mem, buffer_size, "file_open_stream(buffer)");
     if (buffer == 0)
 	return_error(e_VMerror);
     if (fname != 0) {
@@ -710,7 +747,7 @@ file_open_stream(const char *fname, uint len, const char *file_access,
 	code = (*fopen_proc)(iodev_default, file_name, fmode, &file,
 			     (char *)buffer, buffer_size);
 	if (code < 0) {
-	    ifree_object(buffer, "file_open(buffer)");
+	    gs_free_object(mem, buffer, "file_open_stream(buffer)");
 	    return code;
 	}
 	/* Set up the stream. */
@@ -758,7 +795,7 @@ filter_report_error(stream_state * st, const char *str)
 int
 filter_open(const char *file_access, uint buffer_size, ref * pfile,
 	    const stream_procs * procs, const stream_template * template,
-	    const stream_state * st)
+	    const stream_state * st, gs_memory_t *mem)
 {
     stream *s;
     uint ssize = gs_struct_type_size(template->stype);
@@ -766,15 +803,14 @@ filter_open(const char *file_access, uint buffer_size, ref * pfile,
     int code;
 
     if (template->stype != &st_stream_state) {
-	sst = s_alloc_state(imemory, template->stype,
-			    "filter_open(stream_state)");
+	sst = s_alloc_state(mem, template->stype, "filter_open(stream_state)");
 	if (sst == 0)
 	    return_error(e_VMerror);
     }
     code = file_open_stream((char *)0, 0, file_access,
-			    buffer_size, &s, (iodev_proc_fopen_t) 0);
+			    buffer_size, &s, (iodev_proc_fopen_t)0, mem);
     if (code < 0) {
-	ifree_object(sst, "filter_open(stream_state)");
+	gs_free_object(mem, sst, "filter_open(stream_state)");
 	return code;
     }
     s_std_init(s, s->cbuf, s->bsize, procs,
@@ -790,13 +826,13 @@ filter_open(const char *file_access, uint buffer_size, ref * pfile,
 	memcpy(sst, st, ssize);
     s->state = sst;
     sst->template = template;
-    sst->memory = imemory;
+    sst->memory = mem;
     sst->report_error = filter_report_error;
     if (template->init != 0) {
 	code = (*template->init)(sst);
 	if (code < 0) {
-	    ifree_object(sst, "filter_open(stream_state)");
-	    ifree_object(s->cbuf, "filter_open(buffer)");
+	    gs_free_object(mem, sst, "filter_open(stream_state)");
+	    gs_free_object(mem, s->cbuf, "filter_open(buffer)");
 	    return code;
 	}
     }
@@ -815,21 +851,14 @@ file_alloc_stream(gs_memory_t * mem, client_name_t cname)
     gs_ref_memory_t *imem = 0;
 
     /*
-     * HACK: Figure out whether this is a gs_ref_memory_t we know
-     * about.  Avoiding this hack would require rippling a change
+     * HACK: Figure out whether this is a gs_ref_memory_t.
+     * Avoiding this hack would require rippling a change
      * from gs_memory_t to gs_ref_memory_t into the open_file and
      * open_device procedures of gx_io_device, which in turn would
      * impact other things we don't want to change.
      */
-    {
-	int i;
-
-	for (i = 0; i < countof(gs_imemory.spaces_indexed); ++i)
-	    if (mem == (gs_memory_t *) gs_imemory.spaces_indexed[i]) {
-		imem = (gs_ref_memory_t *) mem;
-		break;
-	    }
-    }
+    if (mem->procs.free_object == gs_ref_memory_procs.free_object)
+	imem = (gs_ref_memory_t *) mem;
 
     if (imem) {
 	/* Look first for a free stream allocated at this level. */

@@ -47,21 +47,20 @@ The interface between Ghostscript and device drivers
 <li><a href="#Life_cycle">Life cycle</a>
 <li><a href="#Open_close">Open, close, sync</a>
 <li><a href="#Color_mapping">Color and alpha mapping</a>
-<li><a href="#Drawing">Drawing</a>
+<li><a href="#Pixel_level_drawing">Pixel-level drawing</a>
+<ul>
 <li><a href="#Bitmap_imaging">Bitmap imaging</a>
 <li><a href="#Pixmap_imaging">Pixmap imaging</a>
 <li><a href="#Compositing">Compositing</a>
-<ul>
-<li><a href="#S_spec">The source specification S</a>
-<li><a href="#T_spec">The texture specification T</a>
-<li><a href="#F_spec">The function specification f</a>
-<li><a href="#Notes">Notes</a>
+  [<a href="#S_spec">S</a>, <a href="#T_spec">T</a>, <a href="#F_spec">f</a>,
+   <a href="#Compositing_notes">Notes</a>]
 </ul>
-<li><a href="#Polygons">Polygons</a>
+<li><a href="#Polygon_level_drawing">Polygon-level drawing</a>
 <li><a href="#High_level_drawing">High-level drawing</a>
-<li><a href="#High_level_bitmap_imaging">High-level bitmap imaging</a>
 <ul>
-<li><a href="#HLBMI_notes">Notes</a>
+<li><a href="#Paths">Paths</a>
+<li><a href="#Images">Images</a> [<a href="#Images_notes">Notes</a>]
+<li><a href="#Text">Text</a>
 </ul>
 <li><a href="#Reading_bits_back">Reading bits back</a>
 <li><a href="#Parameters">Parameters</a>
@@ -936,16 +935,18 @@ ignored on such devices.
 <dt><b><tt>typedef&nbsp;enum&nbsp;{&nbsp;go_text,
 go_graphics&nbsp;}&nbsp;graphic_object_type;&nbsp;int
 (*get_alpha_bits)(P4(gx_device&nbsp;*dev,
-graphic_object_type&nbsp;type))</tt></b> <b><em>[OPTIONAL]</em></b>
-<dd>Return the number of alpha (opacity) bits that should be used in
-rendering an object of the given type.  The default value is 1; the only
-values allowed are 1, 2, and 4.
+graphic_object_type&nbsp;type))</tt></b> <b><em>[OPTIONAL] [OBSOLETE]</em></b>
+<dd>This procedure is no longer used: it is replaced by the
+color_info.anti_alias member of the driver structure.  However, it still
+appears in the driver procedure vector for backward compatibility.  It
+should never be called, and drivers should not implement it.
 </dl>
 
-<h2><a name="Drawing"></a>Drawing</h2>
+<h2><a name="Pixel_level_drawing"></a>Pixel-level drawing</h2>
 
 <p>
-All drawing operations use device coordinates and device color values.
+This group of drawing operations specifies data at the pixel level.  All
+drawing operations use device coordinates and device color values.
 
 <dl>
 <dt><b><tt>int (*fill_rectangle)(P6(gx_device&nbsp;*, int&nbsp;x,
@@ -965,20 +966,7 @@ Note that <b><tt>fill_rectangle</tt></b> is the only non-optional procedure
 in the driver interface.
 </dl>
 
-<dl>
-<b><tt>int (*draw_line)(P6(gx_device&nbsp;*, int&nbsp;x0, int&nbsp;y0,
-int&nbsp;x1, int&nbsp;y1, gx_color_index&nbsp;color))</tt></b> <b><em>[OPTIONAL]</em></b>
-<dd>Draw a minimum-thickness line from <em>(x0,y0)</em> to
-<em>(x1,y1)</em>.  The precise set of points to be filled is defined as
-follows.  First, if <b><tt>y1</tt></b>&nbsp;&lt;&nbsp;<b><tt>y0</tt></b>,
-exchange <em>(x0,y0)</em> and <em>(x1,y1)</em>.  Then the line includes the
-point <em>(x0,y0)</em> but not the point <em>(x1,y1)</em>.  If
-<b><tt>x0</tt></b>&nbsp;=&nbsp;<b><tt>x1</tt></b> and
-<b><tt>y0</tt></b>&nbsp;=&nbsp;<b><tt>y1</tt></b>,
-<b><tt>draw_line</tt></b> should return 0 without drawing anything.
-</dl>
-
-<h2><a name="Bitmap_imaging"></a>Bitmap imaging</h2>
+<h3><a name="Bitmap_imaging"></a>Bitmap imaging</h3>
 
 <p>
 Bitmap (or pixmap) images are stored in memory in a nearly standard way.
@@ -1061,7 +1049,7 @@ implementing it efficiently for solid tiles (that is, where either
 important.
 </dl>
 
-<h2><a name="Pixmap_imaging"></a>Pixmap imaging</h2>
+<h3><a name="Pixmap_imaging"></a>Pixmap imaging</h3>
 
 <p>
 Pixmaps are just like bitmaps, except that each pixel occupies more than
@@ -1096,7 +1084,7 @@ but the <b><tt>x</tt></b> and <b><tt>width</tt></b> are in pixels, not
 bits.
 </dl>
 
-<h2><a name="Compositing"></a>Compositing</h2>
+<h3><a name="Compositing"></a>Compositing</h3>
 
 <p>
 In addition to direct writing of opaque pixels, devices must also support
@@ -1250,7 +1238,7 @@ slow) operation.  The arguments are as follows:
 </table></blockquote>
 </dl>
 
-<h3><a name="S_spec"></a>The source specification S</h3>
+<h4><a name="S_spec"></a>The source specification S</h4>
 
 <p>
 As noted above, the source <b>S</b> may be a solid color, a bitmap, or a
@@ -1300,7 +1288,7 @@ Note that if the source is a bitmap with background=0 and foreground=1, and
 the destination is 1 bit deep, then the source can be treated as a pixmap
 (scolors=<b><tt>NULL</tt></b>).
 
-<h3><a name="T_spec"></a>The texture specification T</h3>
+<h4><a name="T_spec"></a>The texture specification T</h4>
 
 <p>
 Similar to the source, the texture <b>T</b> may be a solid color, a bitmap,
@@ -1351,7 +1339,7 @@ the destination, a texture bitmap or pixmap has its own width and height
 specified in the <b><tt>gx_tile_bitmap</tt></b> structure, and is
 replicated or clipped as needed.
 
-<h3><a name="F_spec"></a>The function specification f</h3>
+<h4><a name="F_spec"></a>The function specification f</h4>
 
 <p>
 "Command" indicates the raster operation and transparency as follows:
@@ -1460,7 +1448,7 @@ source and texture are both all 1s and the command specifies transparent
 source and opaque texture, the result <b><em>should</em></b> be written in
 the output.  We think this is an error in the documentation.)
 
-<h3><a name="Notes"></a>Notes</h3>
+<h4><a name="Compositing_notes"></a>Notes</h4>
 
 <p>
 <b><tt>copy_rop</tt></b> is defined to operate on pixels in RGB space,
@@ -1533,10 +1521,10 @@ For monobit devices, we assume that black = 1.
                                    x, y, w, h, px, py, rop3_T)</pre>
 </font></blockquote>
 
-<h2><a name="Polygons"></a>Polygons</h2>
+<h2><a name="Polygon_level_drawing"></a>Polygon-level drawing</h2>
 
 <p>
-In addition to the lowest-level drawing operations that take integer device
+In addition to the pixel-level drawing operations that take integer device
 coordinates and pure device colors, the driver interface includes
 higher-level operations that draw polygons using fixed-point coordinates,
 possibly halftoned colors, and possibly a non-default logical operation.
@@ -1593,14 +1581,23 @@ fixed&nbsp;fx0, fixed&nbsp;fy0, fixed&nbsp;fx1, fixed&nbsp;fy1,
 const&nbsp;gx_drawing_color&nbsp;*pdcolor,
 gs_logical_operation_t&nbsp;lop))</tt></b> <b><em>[OPTIONAL]</em></b>
 <dd>Draw a one-pixel-wide line from <em>(fx0,fy0)</em> to
-<em>(fx1,fy1)</em>.  This replaces the older <b><tt>draw_line</tt></b>
-procedure, which required integer coordinates, a pure color, and no logical
-operation.
+<em>(fx1,fy1)</em>.
+</dl>
+
+<dl>
+<b><tt>int (*draw_line)(P6(gx_device&nbsp;*dev, int&nbsp;x0, int&nbsp;y0,
+int&nbsp;x1, int&nbsp;y1, gx_color_index&nbsp;color))</tt></b>
+<b><em>[OPTIONAL] [OBSOLETE]</em></b>
+<dd>This procedure is no longer used: it is replaced by the draw_thin_line
+procedure.  However, still appears in the driver procedure vector for
+backward compatibility.  It should never be called, and drivers should not
+implement it.
 </dl>
 
 <h2><a name="High_level_drawing"></a>High-level drawing</h2>
 
-<p> In addition to the low-level drawing operations described above, the
+<p>
+In addition to the lower-level drawing operations described above, the
 driver interface provides a set of high-level operations.  Normally these
 will have their default implementation, which converts the high-level
 operation to the low-level ones just described; however, drivers that
@@ -1640,6 +1637,8 @@ consult the source code, specifically:
 	<td><b><tt>gx_clip_path</tt></b>
 </table></blockquote>
 
+<h3><a name="Paths"></a>Paths</h3>
+
 <dl>
 <dt><b><tt>int (*fill_path)(P6(gx_device&nbsp;*dev,
 const&nbsp;gx_imager_state&nbsp;*pis, gx_path&nbsp;*ppath,
@@ -1678,7 +1677,7 @@ with the given color and logical operation.  The clip path pointer may be
 command is as for <b><tt>copy_rop</tt></b>.
 </dl>
 
-<h2><a name="High_level_bitmap_imaging"></a>High-level bitmap imaging</h2>
+<h3><a name="Images"></a>Images</h3>
 
 <p>
 Similar to the high-level interface for fill and stroke graphics, a high-level
@@ -2012,7 +2011,7 @@ subsidiary structures.  If <b><tt>draw_last</tt></b> is true, it should
 finish drawing any buffered lines of the image.
 </dl>
 
-<h3><a name="HLBMI_notes"></a>Notes</h3>
+<h4><a name="Images_notes"></a>Notes</h4>
 
 <p>
 While there will almost never be more than one image enumeration in
@@ -2029,6 +2028,129 @@ algorithms or to use the default implementation.  (It may need to call
 <b><tt>gx_default_begin</tt></b>/<b><tt>end_image</tt></b> partway
 through.)  [A later revision of this document may include an example here.]
 
+<h3><a name="Text"></a>Text</h3>
+
+<p>
+The third high-level interface handles text.  As for images, the interface
+is based on creating an enumerator which then may execute the operation in
+multiple steps.  As for the other high-level interfaces, the procedures are
+optional.
+
+<dl>
+<dt><b><tt>int (*text_begin)(P9(gx_device&nbsp;*dev,
+gs_imager_state&nbsp;*pis, const&nbsp;gs_text_params_t&nbsp;*text,
+gs_font&nbsp;*font, gx_path&nbsp;*path,
+const&nbsp;gx_device_color&nbsp;*pdcolor,
+const&nbsp;gx_clip_path&nbsp;*pcpath, gs_memory_t&nbsp;*memory,
+gs_text_enum_t&nbsp;**ppte))</tt></b> <b><em>[OPTIONAL]</em></b>
+
+<blockquote>
+<b><em>UNDER DEVELOPMENT.  USE AT YOUR OWN RISK.</em></b>
+</blockquote>
+
+<dd>Begin processing text, by creating a state structure and storing it in
+<b><tt>*ppte</tt></b>.  The parameters of <b><tt>text_begin</tt></b> are as
+follows:
+</dl>
+
+<blockquote><table cellpadding=0 cellspacing=0>
+<tr valign=top>	<td><b><tt>dev</tt></b>
+	<td>&nbsp;&nbsp;&nbsp;
+	<td>The usual pointer to the device.
+<tr valign=top>	<td><b><tt>pis</tt></b>
+	<td>&nbsp;&nbsp;&nbsp;
+	<td>A pointer to an imager state.  All elements may be relevant,
+	    depending on how the text is rendered.	
+<tr valign=top>	<td><b><tt>text</tt></b>
+	<td>&nbsp;
+	<td>A pointer to the structure that defines the text operation
+	    and parameters.  See <b><tt>gstext.h</tt></b> for details.
+<tr valign=top>	<td><b><tt>font</tt></b>
+	<td>&nbsp;
+	<td>Defines the font for drawing.
+<tr valign=top>	<td><b><tt>path</tt></b>
+	<td>&nbsp;
+	<td>Defines the path where the character outline will be appended
+	    (if the text operation includes <b><tt>TEXT_DO_...PATH</tt></b>),
+	    and whose current point indicates where drawing should occur
+	    and will be updated by the string width (unless the text
+	    operation includes <b><tt>TEXT_DO_NONE</tt></b>).
+<tr valign=top>	<td><b><tt>pdcolor</tt></b>
+	<td>&nbsp;
+	<td>Defines the drawing color for the text.  Only relevant if
+	    the text operation includes <b><tt>TEXT_DO_DRAW</tt></b>.
+<tr valign=top>	<td><b><tt>pcpath</tt></b>
+	<td>&nbsp;
+	<td>If not <b><tt>NULL</tt></b>, defines an optional clipping path.
+	    Only relevant if the text operation includes
+	    <b><tt>TEXT_DO_DRAW</tt></b>.
+<tr valign=top>	<td><b><tt>memory</tt></b>
+	<td>&nbsp;
+	<td>Defines the allocator to be used for allocating bookkeeping
+	    information.
+<tr valign=top>	<td><b><tt>ppte</tt></b>
+	<td>&nbsp;
+	<td>The implementation should return a pointer to its state
+	    structure here.
+</table></blockquote>
+
+<p>
+<b><tt>text_begin</tt></b> must allocate a structure for its bookkeeping
+needs, using the allocator defined by the <b><tt>memory</tt></b> parameter,
+and return it in <b><tt>*ppte</tt></b>.  <b><tt>text_begin</tt></b> may
+assume that the structures passed as parameters will survive until text
+processing is complete.
+
+<p>
+Clients should not call the driver <b><tt>text_begin></tt></b> procedure
+directly.  Instead, they should call <b><tt>gx_device_text_begin></tt></b>,
+which takes the same parameters and also initializes certain common elements
+of the text enumeration structure, or <b><tt>gs_text_begin</tt></b>, which
+takes many of the parameters from a graphics state structure.  For details,
+see <b><tt>gstext.h</tt></b>.
+
+<p>
+The actual processing of text uses the procedures in the enumeration
+structure, not driver procedures, since the handling of the text may depend
+on the font and parameters rather than the device.  Text processing may also
+require the client to take action between characters, either because the
+client requested it (<b><tt>TEXT_INTERVENE</tt></b> in the operation) or
+because rendering a character requires suspending text processing to call an
+external package such as the PostScript interpreter.  (It is a deliberate
+design decision to handle this by returning to the client, rather than
+calling out of the text renderer, in order to avoid potentially unknown
+stack requirements.)  Specifically, the client must call the following
+procedures, which in turn call the procedures in the text enumerator.
+
+<dl>
+<dt><b><tt>int gs_text_process(P1(gs_text_enum_t&nbsp;*pte))</tt></b>
+<dd>Continue processing text.  This procedure may return 0 or a negative
+error code as usual, or one of the following values (see
+<b><tt>gstext.h</tt></b> for details).
+
+<blockquote><table cellpadding=0 cellspacing=0>
+<tr valign=top>	<td><b><tt>TEXT_PROCESS_RENDER</tt></b>
+	<td>The client must cause the current character to be rendered.
+	    This currently only is used for PostScript Type 0-4 fonts
+	    and their CID-keyed relatives.
+<tr valign=top>	<td><b><tt>TEXT_PROCESS_INTERVENE</tt></b>
+	<td>The client has asked to intervene between characters.
+	    This is used for <b><tt>cshow</tt></b> and <b><tt>kshow</tt></b>.
+</table></blockquote>
+</dl>
+
+<dl>
+<dt><b><tt>int gs_text_release(P2(gs_text_enum_t&nbsp;*pte,
+client_name_t&nbsp;cname))</tt></b> <dd>Finish processing text and release
+all associated structures.  Clients must call this procedure after
+<b><tt>gs_text_process</tt></b> returns 0 or an error, and may call it at
+any time.
+</dl>
+
+<p>
+There are numerous other procedures that clients may call during text
+processing.  See <b><tt>gstext.h</tt></b> for details.
+
 <h2><a name="Reading_bits_back"></a>Reading bits back</h2>
 
 <dl>
@@ -2044,7 +2166,7 @@ consists of:
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr valign=top>	<td><b><tt>options</tt></b>
-	<td>&nbsp;&nbsp;&nbsp;
+	<td>&nbsp;
 	<td>the allowable formats for returning the data
 <tr valign=top>	<td><b><tt>data[32]</tt></b>
 	<td>&nbsp;
@@ -2351,7 +2473,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.50, 16 September 1998
+Ghostscript version 5.91, 30 August 1999
 
 </font>
 

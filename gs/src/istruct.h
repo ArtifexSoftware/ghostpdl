@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -60,8 +60,8 @@ typedef struct gc_procs_with_refs_s {
  * those macros to be consistent which these, which are better, but it's
  * not worth the trouble.)
  */
-#define ENUM_RETURN_REF(ptr)\
-  return (*pep = (const void *)(ptr), ptr_ref_type)
+#define ENUM_RETURN_REF(rptr)\
+  return (pep->ptr = (const void *)(rptr), ptr_ref_type)
 #define ENUM_RETURN_REF_MEMBER(typ, memb)\
   ENUM_RETURN_REF(&((typ *)vptr)->memb)
 #define RELOC_REF_PTR_VAR(ptrvar)\

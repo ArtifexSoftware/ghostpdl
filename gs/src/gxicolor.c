@@ -48,6 +48,9 @@ typedef union {
 
 /* ------ Strategy procedure ------ */
 
+/* Check the prototype. */
+iclass_proc(gs_image_class_4_color);
+
 private irender_proc(image_render_color);
 irender_proc_t
 gs_image_class_4_color(gx_image_enum * penum)

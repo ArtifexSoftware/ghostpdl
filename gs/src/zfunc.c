@@ -57,7 +57,7 @@ zbuildfunction(i_ctx_t *i_ctx_p)
 			    ".buildfunction");
     if (code < 0)
 	return code;
-    code = fn_build_function(op, &pfn);
+    code = fn_build_function(op, &pfn, imemory);
     if (code < 0) {
 	ifree_ref_array(&cref, ".buildfunction");
 	return code;
@@ -128,7 +128,13 @@ zexecfunction(i_ctx_t *i_ctx_p)
 
 /* Build a function structure from a PostScript dictionary. */
 int
-fn_build_sub_function(const ref * op, gs_function_t ** ppfn, int depth)
+fn_build_function(const ref * op, gs_function_t ** ppfn, gs_memory_t *mem)
+{
+    return fn_build_sub_function(op, ppfn, 0, mem);
+}
+int
+fn_build_sub_function(const ref * op, gs_function_t ** ppfn, int depth,
+		      gs_memory_t *mem)
 {
     int code, type, i;
     gs_function_params_t params;
@@ -147,33 +153,35 @@ fn_build_sub_function(const ref * op, gs_function_t ** ppfn, int depth)
     /* Collect parameters common to all function types. */
     params.Domain = 0;
     params.Range = 0;
-    code = fn_build_float_array(op, "Domain", true, true, &params.Domain);
+    code = fn_build_float_array(op, "Domain", true, true, &params.Domain, mem);
     if (code < 0)
 	goto fail;
     params.m = code >> 1;
-    code = fn_build_float_array(op, "Range", false, true, &params.Range);
+    code = fn_build_float_array(op, "Range", false, true, &params.Range, mem);
     if (code < 0)
 	goto fail;
     params.n = code >> 1;
     /* Finish building the function. */
     /* If this fails, it will free all the parameters. */
-    return (*build_function_type_table[i].proc)(op, &params, depth + 1, ppfn);
+    return (*build_function_type_table[i].proc)
+	(op, &params, depth + 1, ppfn, mem);
 fail:
-    ifree_const_object(params.Range, "Range");
-    ifree_const_object(params.Domain, "Domain");
+    gs_free_const_object(mem, params.Range, "Range");
+    gs_free_const_object(mem, params.Domain, "Domain");
     return code;
 }
 
 /* Allocate an array of function objects. */
 int
-ialloc_function_array(uint count, gs_function_t *** pFunctions)
+alloc_function_array(uint count, gs_function_t *** pFunctions,
+		     gs_memory_t *mem)
 {
     gs_function_t **ptr;
 
     if (count == 0)
 	return_error(e_rangecheck);
-    ptr = ialloc_struct_array(count, gs_function_t *,
-			      &st_function_ptr_element, "Functions");
+    ptr = gs_alloc_struct_array(mem, count, gs_function_t *,
+				&st_function_ptr_element, "Functions");
     if (ptr == 0)
 	return_error(e_VMerror);
     memset(ptr, 0, sizeof(*ptr) * count);
@@ -189,7 +197,7 @@ ialloc_function_array(uint count, gs_function_t *** pFunctions)
  */
 int
 fn_build_float_array(const ref * op, const char *kstr, bool required,
-		     bool even, const float **pparray)
+		     bool even, const float **pparray, gs_memory_t *mem)
 {
     ref *par;
     int code;
@@ -201,13 +209,14 @@ fn_build_float_array(const ref * op, const char *kstr, bool required,
 	return_error(e_typecheck);
     {
 	uint size = r_size(par);
-	float *ptr = (float *)ialloc_byte_array(size, sizeof(float), kstr);
+	float *ptr = (float *)
+	    gs_alloc_byte_array(mem, size, sizeof(float), kstr);
 
 	if (ptr == 0)
 	    return_error(e_VMerror);
 	code = dict_float_array_param(op, kstr, size, ptr, NULL);
 	if (code < 0 || (even && (code & 1) != 0)) {
-	    ifree_object(ptr, kstr);
+	    gs_free_object(mem, ptr, kstr);
 	    return(code < 0 ? code : gs_note_error(e_rangecheck));
 	}
 	*pparray = ptr;

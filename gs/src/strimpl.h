@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -98,6 +98,17 @@
  */
 
 /*
+ * The set_defaults procedure in the template has a dual purpose: it sets
+ * default values for all parameters that the client can set before calling
+ * the init procedure, and it also must initialize all pointers in the
+ * stream state to a value that will be valid for the garbage collector
+ * (normally 0).  The latter implies that:
+ *
+ *	Any stream whose state includes additional pointers (beyond those
+ *	in stream_state_common) must have a set_defaults procedure.
+ */
+
+/*
  * Define a template for creating a stream.
  *
  * The meaning of min_in_size and min_out_size is the following:
@@ -113,24 +124,25 @@ struct stream_template_s {
     gs_memory_type_ptr_t stype;
 
     /* Define an optional initialization procedure. */
-                         stream_proc_init((*init));
+    stream_proc_init((*init));
 
     /* Define the processing procedure. */
     /* (The init procedure can reset other procs if it wants.) */
-                         stream_proc_process((*process));
+    stream_proc_process((*process));
 
     /* Define the minimum buffer sizes. */
     uint min_in_size;		/* minimum size for process input */
     uint min_out_size;		/* minimum size for process output */
 
     /* Define an optional releasing procedure. */
-         stream_proc_release((*release));
+    stream_proc_release((*release));
 
-    /* Define an optional parameter defaulting procedure. */
-         stream_proc_set_defaults((*set_defaults));
+    /* Define an optional parameter defaulting and pointer initialization */
+    /* procedure. */
+    stream_proc_set_defaults((*set_defaults));
 
     /* Define an optional reinitialization procedure. */
-         stream_proc_reinit((*reinit));
+    stream_proc_reinit((*reinit));
 
 };
 

@@ -22,6 +22,7 @@
 #ifndef gshsb_INCLUDED
 #  define gshsb_INCLUDED
 
-int gs_sethsbcolor(P4(gs_state *, floatp, floatp, floatp)), gs_currenthsbcolor(P2(const gs_state *, float[3]));
+int gs_sethsbcolor(P4(gs_state *, floatp, floatp, floatp)),
+    gs_currenthsbcolor(P2(const gs_state *, float[3]));
 
 #endif /* gshsb_INCLUDED */

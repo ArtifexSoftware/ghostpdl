@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -40,9 +40,10 @@ typedef gx_device_mask_clip gx_device_tile_clip;
  * Initialize a tile clipping device from a mask.
  * We supply an explicit phase.
  */
-int tile_clip_initialize(P5(gx_device_tile_clip * cdev,
+int tile_clip_initialize(P6(gx_device_tile_clip * cdev,
 			    const gx_strip_bitmap * tiles,
-			    gx_device * tdev, int px, int py));
+			    gx_device * tdev, int px, int py,
+			    gs_memory_t *mem));
 
 /*
  * Set the phase of the tile -- used in the tiling loop when

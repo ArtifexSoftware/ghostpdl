@@ -101,37 +101,7 @@
 
 % Define the Macintosh standard mapping from characters to glyph indices.
 /MacRomanEncoding dup .findencoding def
-/MacGlyphEncoding mark
-    /.notdef /.null /CR
-MacRomanEncoding 32 95 getinterval aload pop
-MacRomanEncoding 128 45 getinterval aload pop
-% 143
-    /notequal /AE
-	/Oslash /infinity /plusinus /lessequal /greaterequal
-    /yen /mu1 /partialdiff /summation /product
-	/pi /integral /ordfeminine /ordmasculine /Ohm
-    /ae /oslash /questiondown /exclamdown /logicalnot
-	/radical /florin /approxequal /increment /guillemotleft
-    /guillemotright /ellipsis /nbspace
-MacRomanEncoding 203 12 getinterval aload pop
-    /lozenge
-MacRomanEncoding 216 24 getinterval aload pop
-    /applelogo
-MacRomanEncoding 241 7 getinterval aload pop
-    /overscore
-MacRomanEncoding 249 7 getinterval aload pop
-% 226
-	/Lslash /lslash /Scaron /scaron
-    /Zcaron /zcaron /brokenbar /Eth /eth
-	/Yacute /yacute /Thorn /thorn /minus
-    /multiply /onesuperior /twosuperior /threesuperior /onehalf
-	/onequarter /threequarters /franc /Gbreve /gbreve
-    /Idot /Scedilla /scedilla /Cacute /cacute
-	/Ccaron /ccaron /dmacron
-/packedarray where
- { pop counttomark packedarray exch pop }
- { ] readonly }
-ifelse def
+/MacGlyphEncoding dup .findencoding def
 
 % ---- Utilities ---- %
 
@@ -293,25 +263,23 @@ ifelse def
 %       posttable <<proc>> glyphencoding
 /postformats mark
   16#00010000  {	% 258 standard Macintosh glyphs.
-    MacGlyphEncoding
+    pop MacGlyphEncoding
   }
   16#00020000  {	% Detailed map, required by Microsoft fonts.
     /postglyphs exch def
       postglyphs 32 getu16 /numglyphs exch def
       /glyphnames numglyphs 2 mul 34 add def
-      [ 0 1 numglyphs 1 sub
-       { 2 mul 34 add postglyphs exch getu16
-	 dup 258 lt
-	  { MacGlyphEncoding exch get
-	  }
-	  { 258 sub glyphnames exch
-	     { postglyphs 1 index get 1 add add }
-	    repeat
-	    1 add postglyphs exch 2 copy 1 sub get getinterval cvn
-	  }
-	 ifelse
-       }
-      for ]
+      [ 0 1 numglyphs 1 sub {
+	2 mul 34 add postglyphs exch getu16
+	dup 258 lt {
+	  MacGlyphEncoding exch get
+	} {
+	  258 sub glyphnames exch {
+	    postglyphs 1 index get 1 add add
+	  } repeat
+	  1 add postglyphs exch 2 copy 1 sub get getinterval cvn
+	} ifelse
+      } for ]
   } bind
   16#00030000  {	% No map.
     pop [ ]
@@ -327,7 +295,9 @@ ifelse def
   (cmap) { .readtable }
   (head) 1 index
   (hhea) 1 index
+  (maxp) 1 index
   (name) 1 index
+  (OS/2) 1 index
   (post) 1 index
   (vhea) 1 index
 	% Big tables
@@ -335,6 +305,10 @@ ifelse def
   (loca) 1 index
   (hmtx) 1 index
   (vmtx) 1 index
+	% Tables only needed for embedding in PDF files
+  (cvt ) { .readtable }
+  (fpgm) 1 index
+  (prep) 1 index
 .dicttomark readonly def                % readtables
 
 % Read a table as a single string.
@@ -572,6 +546,7 @@ ifelse def
 
 % - .ttkeys <key> <value> ...
 /.ttkeys {
+  count /ttkeycount exch def
   /upem head 18 getu16 def
   /FontMatrix matrix
   /FontBBox [ 36 2 42 { head exch gets16 upem div } for ]
@@ -600,11 +575,12 @@ ifelse def
   } if
   counttomark 0 ne { .dicttomark } { pop pop } ifelse
   /XUID [orgXUID 42 checksum]
-  /sfnts sfnts
   DEBUG {
     tabs { .printtab } forall
     [ sfnts { length } forall ] ==
+    count ttkeycount sub array astore dup { == } forall aload pop
   } if
+  /sfnts sfnts
 } bind def
 
 % -mark- <key> <value> ... .definettfont <font>
@@ -612,11 +588,15 @@ ifelse def
   /FontType 42
   /PaintType 0
 		% See if we have PostScript glyph name information.
-   /glyphencoding post null eq {
+  /glyphencoding post null eq {
      [ ]
-   } {
-     postformats post 0 getu32 .knownget { post exch exec } { [ ] } ifelse
-   } ifelse
+  } {
+    postformats post 0 getu32 .knownget {
+      post exch exec
+    } {
+      [ ]
+    } ifelse
+  } ifelse
 		% If necessary, fabricate additional glyphencoding entries
 		% to cover all of loca.
    dup length numloca lt {
@@ -672,7 +652,9 @@ ifelse def
     /Supplement 0
   .dicttomark
   /CharStrings mark /.notdef 0 .dicttomark
-  cmaptab cmaparray
+		% The cmap isn't of any use even if it is present.
+		% Just construct an identity CIDMap covering all the glyphs.
+  mark 0 1 numloca 1 sub { } for
   counttomark /cidcount exch def
   cidcount maxstring le {
 		% Use a single string.
@@ -703,7 +685,7 @@ ifelse def
 /.loadttcidfont {
   .loadttfonttables
   .makesfnts
-  .getcmap
+	% CIDFontType2 fonts don't have a cmap: they are indexed by CID.
   mark
   .ttkeys
   .definettcidfont

@@ -35,11 +35,10 @@
  * a symbol CHECK_INTERRUPTS.  Currently this is only the Microsoft
  * Windows platform.
  */
+int gs_return_check_interrupt(P1(int code));
 
 #ifdef CHECK_INTERRUPTS
 int gp_check_interrupts(P0());
-int gs_return_check_interrupt(P1(int code));
-
 #  define process_interrupts() discard(gp_check_interrupts())
 #  define return_if_interrupt()\
     { int icode_ = gp_check_interrupts();\

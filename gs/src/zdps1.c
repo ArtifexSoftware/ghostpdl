@@ -32,7 +32,7 @@
 #include "ibnum.h"
 
 /* Forward references */
-private int gstate_unshare(P1(os_ptr));
+private int gstate_unshare(P1(i_ctx_t *));
 
 /* Structure descriptors */
 public_st_igstate_obj();
@@ -143,7 +143,7 @@ zcopy_gstate(i_ctx_t *i_ctx_p)
     check_stype(*op, st_igstate_obj);
     check_stype(*op1, st_igstate_obj);
     check_write(*op);
-    code = gstate_unshare(op);
+    code = gstate_unshare(i_ctx_p);
     if (code < 0)
 	return code;
     pgs = igstate_ptr(op);
@@ -178,7 +178,7 @@ zcurrentgstate(i_ctx_t *i_ctx_p)
 
     check_stype(*op, st_igstate_obj);
     check_write(*op);
-    code = gstate_unshare(op);
+    code = gstate_unshare(i_ctx_p);
     if (code < 0)
 	return code;
     pgs = igstate_ptr(op);
@@ -228,8 +228,8 @@ typedef struct local_rects_s {
 } local_rects_t;
 
 /* Forward references */
-private int rect_get(P2(local_rects_t *, os_ptr));
-private void rect_release(P1(local_rects_t *));
+private int rect_get(P3(local_rects_t *, os_ptr, gs_memory_t *));
+private void rect_release(P2(local_rects_t *, gs_memory_t *));
 
 /* <x> <y> <width> <height> .rectappend - */
 /* <numarray|numstring> .rectappend - */
@@ -238,13 +238,13 @@ zrectappend(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     local_rects_t lr;
-    int npop = rect_get(&lr, op);
+    int npop = rect_get(&lr, op, imemory);
     int code;
 
     if (npop < 0)
 	return npop;
     code = gs_rectappend(igs, lr.pr, lr.count);
-    rect_release(&lr);
+    rect_release(&lr, imemory);
     if (code < 0)
 	return code;
     pop(npop);
@@ -258,13 +258,13 @@ zrectclip(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     local_rects_t lr;
-    int npop = rect_get(&lr, op);
+    int npop = rect_get(&lr, op, imemory);
     int code;
 
     if (npop < 0)
 	return npop;
     code = gs_rectclip(igs, lr.pr, lr.count);
-    rect_release(&lr);
+    rect_release(&lr, imemory);
     if (code < 0)
 	return code;
     pop(npop);
@@ -278,13 +278,13 @@ zrectfill(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     local_rects_t lr;
-    int npop = rect_get(&lr, op);
+    int npop = rect_get(&lr, op, imemory);
     int code;
 
     if (npop < 0)
 	return npop;
     code = gs_rectfill(igs, lr.pr, lr.count);
-    rect_release(&lr);
+    rect_release(&lr, imemory);
     if (code < 0)
 	return code;
     pop(npop);
@@ -303,19 +303,19 @@ zrectstroke(i_ctx_t *i_ctx_p)
 
     if (read_matrix(op, &mat) >= 0) {
 	/* Concatenate the matrix to the CTM just before stroking the path. */
-	npop = rect_get(&lr, op - 1);
+	npop = rect_get(&lr, op - 1, imemory);
 	if (npop < 0)
 	    return npop;
 	code = gs_rectstroke(igs, lr.pr, lr.count, &mat);
 	npop++;
     } else {
 	/* No matrix. */
-	npop = rect_get(&lr, op);
+	npop = rect_get(&lr, op, imemory);
 	if (npop < 0)
 	    return npop;
 	code = gs_rectstroke(igs, lr.pr, lr.count, (gs_matrix *) 0);
     }
-    rect_release(&lr);
+    rect_release(&lr, imemory);
     if (code < 0)
 	return code;
     pop(npop);
@@ -327,7 +327,7 @@ zrectstroke(i_ctx_t *i_ctx_p)
 /* Get rectangles from the stack. */
 /* Return the number of elements to pop (>0) if OK, <0 if error. */
 private int
-rect_get(local_rects_t * plr, os_ptr op)
+rect_get(local_rects_t * plr, os_ptr op, gs_memory_t *mem)
 {
     int format, code;
     uint n, count;
@@ -362,8 +362,8 @@ rect_get(local_rects_t * plr, os_ptr op)
     if (count <= MAX_LOCAL_RECTS)
 	pr = plr->rl;
     else {
-	pr = (gs_rect *) ialloc_byte_array(count, sizeof(gs_rect),
-					   "rect_get");
+	pr = (gs_rect *)gs_alloc_byte_array(mem, count, sizeof(gs_rect),
+					    "rect_get");
 	if (pr == 0)
 	    return_error(e_VMerror);
     }
@@ -394,10 +394,10 @@ rect_get(local_rects_t * plr, os_ptr op)
 
 /* Release the rectangle list if needed. */
 private void
-rect_release(local_rects_t * plr)
+rect_release(local_rects_t * plr, gs_memory_t *mem)
 {
     if (plr->pr != plr->rl)
-	ifree_object(plr->pr, "rect_release");
+	gs_free_object(mem, plr->pr, "rect_release");
 }
 
 /* ------ Graphics state ------ */
@@ -447,8 +447,9 @@ const op_def zdps1_l2_op_defs[] =
 /* Ensure that a gstate is not shared with an outer save level. */
 /* *op is of type t_astruct(igstate_obj). */
 private int
-gstate_unshare(os_ptr op)
+gstate_unshare(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     ref *pgsref = &r_ptr(op, igstate_obj)->gstate;
     gs_state *pgs = r_ptr(pgsref, gs_state);
     gs_state *pnew;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -54,7 +54,7 @@ null_open(gx_io_device * iodev, const char *access, stream ** ps,
     return file_open_stream(gp_null_file_name,
 			    strlen(gp_null_file_name),
 			    access, 256 /* arbitrary */ , ps,
-			    iodev->procs.fopen);
+			    iodev->procs.fopen, mem);
 }
 
 /* ------ %ram% ------ */
@@ -88,7 +88,7 @@ zgetdevparams(i_ctx_t *i_ctx_p)
     iodev = gs_findiodevice(op->value.bytes, r_size(op));
     if (iodev == 0)
 	return_error(e_undefinedfilename);
-    stack_param_list_write(&list, &o_stack, NULL);
+    stack_param_list_write(&list, &o_stack, NULL, iimemory);
     if ((code = gs_getdevparams(iodev, plist)) < 0) {
 	ref_stack_pop(&o_stack, list.count * 2);
 	return code;
@@ -113,7 +113,7 @@ zputdevparams(i_ctx_t *i_ctx_p)
     iodev = gs_findiodevice(op->value.bytes, r_size(op));
     if (iodev == 0)
 	return_error(e_undefinedfilename);
-    code = stack_param_list_read(&list, &o_stack, 1, NULL, false);
+    code = stack_param_list_read(&list, &o_stack, 1, NULL, false, iimemory);
     if (code < 0)
 	return code;
     code = dict_read_password(&system_params_password, systemdict,

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -58,6 +58,7 @@ int gs_show_n_init(P4(gs_show_enum *, gs_state *, const char *, uint)),
     gs_charpath_n_init(P5(gs_show_enum *, gs_state *, const char *, uint, bool)),
     gs_glyphpath_init(P4(gs_show_enum *, gs_state *, gs_glyph, bool)),
     gs_charboxpath_n_init(P5(gs_show_enum *, gs_state *, const char *, uint, bool));
+int gs_show_use_glyph(P2(gs_show_enum *, gs_glyph));
 
 /* After setting up the enumeration, all the string-related routines */
 /* work the same way.  The client calls gs_show_next until it returns */
@@ -67,19 +68,19 @@ int gs_show_n_init(P4(gs_show_enum *, gs_state *, const char *, uint)),
 	/* The client must render a character: obtain the code from */
 	/* gs_show_current_char, do whatever is necessary, and then */
 	/* call gs_show_next again. */
-#define gs_show_render 1
+#define gs_show_render TEXT_PROCESS_RENDER
 
 	/* The client has asked to intervene between characters (kshow). */
 	/* Obtain the previous and next codes from gs_kshow_previous_char */
 	/* and gs_kshow_next_char, do whatever is necessary, and then */
 	/* call gs_show_next again. */
-#define gs_show_kern 2
+#define gs_show_kern TEXT_PROCESS_INTERVENE
 
 	/* The client has asked to handle characters individually */
 	/* (xshow, yshow, xyshow, cshow).  Obtain the current code */
 	/* from gs_show_current_char, do whatever is necessary, and then */
 	/* call gs_show_next again. */
-#define gs_show_move 3
+#define gs_show_move TEXT_PROCESS_INTERVENE
 
 int gs_show_next(P1(gs_show_enum *));
 
@@ -89,7 +90,6 @@ gs_char
     gs_kshow_next_char(P1(const gs_show_enum *));
 gs_font *
     gs_show_current_font(P1(const gs_show_enum *));
-int gs_show_restore_font(P1(const gs_show_enum *));
 
 gs_glyph
     gs_show_current_glyph(P1(const gs_show_enum *));
@@ -110,7 +110,6 @@ int gs_setcachedevice2_double(P3(gs_show_enum *, gs_state *, const double * /*[1
 #define gs_setcachedevice2(penum, pgs, pw2)\
   gs_setcachedevice2_float(penum, pgs, pw2)
 int gs_setcharwidth(P4(gs_show_enum *, gs_state *, floatp, floatp));
-gs_in_cache_device_t gs_incachedevice(P1(const gs_state *));
 
 /* Return true if we only need the width from the rasterizer */
 /* and can short-circuit the full rendering of the character, */

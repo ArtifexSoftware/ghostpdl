@@ -99,7 +99,9 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	     pdev->version >= psdf_version_ll3 ?
 	     &s_zlibE_template : &s_LZWE_template);
     }
-    if (!pdip->Encode || template == 0)		/* no compression */
+    if (!pdip->Encode || template == 0)	/* no compression */
+	return 0;
+    if (pim->Width * pim->Height <= 16)	/* not worth compressing */
 	return 0;
     /* Only use DCTE for 8-bit data. */
     if (template == &s_DCTE_template &&

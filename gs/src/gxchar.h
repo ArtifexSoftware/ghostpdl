@@ -30,58 +30,29 @@
 #ifndef cached_char_DEFINED
 #  define cached_char_DEFINED
 typedef struct cached_char_s cached_char;
-
 #endif
 
 /* The type of cached font/matrix pairs is opaque. */
 #ifndef cached_fm_pair_DEFINED
 #  define cached_fm_pair_DEFINED
 typedef struct cached_fm_pair_s cached_fm_pair;
-
 #endif
 
 /* The type of font objects is opaque. */
 #ifndef gs_font_DEFINED
 #  define gs_font_DEFINED
 typedef struct gs_font_s gs_font;
-
 #endif
 
 /* The types of memory and null devices may be opaque. */
 #ifndef gx_device_memory_DEFINED
 #  define gx_device_memory_DEFINED
 typedef struct gx_device_memory_s gx_device_memory;
-
 #endif
 #ifndef gx_device_null_DEFINED
 #  define gx_device_null_DEFINED
 typedef struct gx_device_null_s gx_device_null;
-
 #endif
-
-/*
- * Define the stack for composite fonts.
- * If the current font is not composite, depth = -1.
- * If the current font is composite, 0 <= depth <= max_font_depth.
- * items[0] through items[depth] are occupied.
- * items[0].font is the root font; items[0].index = 0.
- * The root font must be composite, but may be of any map type.
- * items[0..N-1] are modal composite fonts, for some N <= depth.
- * items[N..depth-1] are non-modal composite fonts.
- * items[depth] is a base (non-composite) font.
- * Note that if depth >= 0, the font member of the graphics state
- * for a base font BuildChar/Glyph is the same as items[depth].font.
- */
-#define max_font_depth 5
-typedef struct gx_font_stack_item_s {
-    gs_font *font;		/* font at this level */
-    uint index;			/* index of this font in parent's */
-    /* Encoding */
-} gx_font_stack_item;
-typedef struct gx_font_stack_s {
-    int depth;
-    gx_font_stack_item items[1 + max_font_depth];
-} gx_font_stack;
 
 /* An enumeration object for string display. */
 typedef enum {
@@ -93,32 +64,8 @@ typedef enum {
 struct gs_show_enum_s {
     /* Put this first for subclassing. */
     gs_text_enum_common;	/* (procs, text, index) */
-
-#define SHOW_IS(penum, op_mask)\
-  (((penum)->text.operation & (op_mask)) != 0)
-#define SHOW_IS_ALL_OF(penum, op_mask)\
-  (((penum)->text.operation & (op_mask)) == (op_mask))
-    /*
-     * The comments next to the following macros indicate the
-     * corresponding test in pre-5.24 filesets.
-     */
-#define SHOW_IS_ADD_TO_ALL(penum)	/* add */\
-  SHOW_IS(penum, TEXT_ADD_TO_ALL_WIDTHS)
-#define SHOW_IS_ADD_TO_SPACE(penum)	/* wchr != no_char */\
-  SHOW_IS(penum, TEXT_ADD_TO_SPACE_WIDTH)
-#define SHOW_IS_DO_KERN(penum)		/* do_kern */\
-  SHOW_IS(penum, TEXT_INTERVENE)
-#define SHOW_IS_XYCSHOW(penum)		/* do_kern < 0 */\
-  (SHOW_IS_DO_KERN(penum) &&\
-   SHOW_IS(penum, TEXT_REPLACE_X_WIDTHS | TEXT_REPLACE_Y_WIDTHS | TEXT_DO_NONE))
-#define SHOW_IS_SLOW(penum)		/* slow_show */\
-  SHOW_IS(penum, TEXT_ADD_TO_ALL_WIDTHS | TEXT_ADD_TO_SPACE_WIDTH | TEXT_INTERVENE)
-#define SHOW_IS_DRAWING(penum)		/* !stringwidth_flag */\
-  !SHOW_IS(penum, TEXT_DO_NONE)
-#define SHOW_IS_STRINGWIDTH(penum)	/* stringwidth_flag > 0 */\
-  SHOW_IS_ALL_OF(penum, TEXT_DO_NONE | TEXT_RETURN_WIDTH)
-
     /* Following are set at creation time */
+    bool auto_release;		/* true if old API, false if new */
     gs_state *pgs;
     int level;			/* save the level of pgs */
     gs_char_path_mode charpath_flag;
@@ -132,9 +79,7 @@ struct gs_show_enum_s {
     gs_int_rect obox;		/* int version of (outer) clip box */
     int ftx, fty;		/* transformed font translation */
     /* Following are updated dynamically */
-    gs_glyph(*encode_char) (P3(gs_show_enum *, gs_font *, gs_char *));
-				/* copied from font, */
-				/* except for glyphshow */
+    gs_glyph (*encode_char)(P3(gs_font *, gs_char, gs_glyph_space_t));  /* copied from font */
     gs_log2_scale_point log2_suggested_scale;	/* suggested scaling */
 				/* factors for oversampling, */
 				/* based on FontBBox and CTM */
@@ -143,26 +88,24 @@ struct gs_show_enum_s {
 				/* if dev_cache is an alpha buffer */
     gx_device_null *dev_null;	/* null device for stringwidth */
     /*uint index; */		/* index within string */
-    gs_char current_char;	/* current char for render or move */
-    gs_glyph current_glyph;	/* current glyph ditto */
-    int cmap_code;		/* for FMapType 9 composite fonts, */
-				/* the value returned by decode_next */
+    /*uint xy_index;*/		/* index within X/Y widths */
+    /*gs_char returned.current_char;*/	/* current char for render or move */
+    /*gs_glyph returned.current_glyph;*/	/* current glyph ditto */
     gs_fixed_point wxy;		/* width of current char */
 				/* in device coords */
     gs_fixed_point origin;	/* unrounded origin of current char */
 				/* in device coords, needed for */
 				/* charpath and WMode=1 */
     cached_char *cc;		/* being accumulated */
-    gs_point width;		/* total width of string, set at end */
+    /*gs_point returned.total_width;*/		/* total width of string, set at end */
     show_width_status width_status;
-    gs_log2_scale_point log2_current_scale;
-    gx_font_stack fstack;
+    /*gs_log2_scale_point log2_scale;*/
     int (*continue_proc) (P1(gs_show_enum *));	/* continuation procedure */
 };
-
 #define gs_show_enum_s_DEFINED
-#define private_st_gs_show_enum() /* in gschar.c */\
-  gs_private_st_composite(st_gs_show_enum, gs_show_enum, "gs_show_enum",\
+/* The structure descriptor is public for gschar.c. */
+#define public_st_gs_show_enum() /* in gxchar.c */\
+  gs_public_st_composite(st_gs_show_enum, gs_show_enum, "gs_show_enum",\
     show_enum_enum_ptrs, show_enum_reloc_ptrs)
 
 /* Cached character procedures (in gxccache.c and gxccman.c) */

@@ -42,12 +42,13 @@ private const pcl_text_parsing_method_t pcl_tpm_0 = pcl_tpm_0_data,
  */
   private int
 get_gs_next_char(
-    gs_show_enum *      penum,
-    gs_char *           pchr
+    gs_text_enum_t *    penum,
+    gs_char *           pchr,
+    gs_glyph *          pglyph
 )
 {
-   const byte *        pb = penum->text.data.bytes;
-
+    const byte *        pb = penum->text.data.bytes;
+    *pglyph = gs_no_glyph;
     if (penum->index >= 2)
         return 2;
     *pchr = (((uint)pb[0]) << 8) + pb[1];
@@ -65,7 +66,7 @@ set_gs_font(
 {
     gs_font *       pfont = (gs_font *)pcs->font->pfont;
 
-    pfont->procs.next_char = get_gs_next_char;
+    pfont->procs.next_char_glyph = get_gs_next_char;
     gs_setfont(pcs->pgs, pfont);
 }
 
@@ -286,7 +287,7 @@ show_char_background(
 
     if (plfont->scaling_technology == plfst_bitmap) {
 	gs_char         chr = (((uint)pbuff[0]) << 8) + pbuff[1];
-	gs_glyph        glyph = pfont->procs.encode_char(penum, pfont, &chr);
+	gs_glyph        glyph = pfont->procs.encode_char(pfont, chr, gs_no_glyph);
 	const byte *    cdata = pl_font_lookup_glyph(plfont, glyph)->data;
 	int             nbytes;
         uint            used;
@@ -332,14 +333,15 @@ show_char_background(
 	gs_moveto(pgs, pt.x, pt.y);
 
         /* get the character path */
-	gs_charpath_n_init(penum, pgs, pbuff, 2, true);
-	if ((code = gs_show_next(penum)) >= 0) {
+	gs_charpath_begin(pgs, pbuff, 2, true, pcs->memory, &penum);
+	if ((code = gs_text_process(penum)) >= 0) {
 
 	    /* append the characters bounding box and use eofill */
 	    gs_pathbbox(pgs, &bbox);
 	    gs_rectappend(pgs, &bbox, 1);
 	    gs_eofill(pgs);
         }
+	gs_text_release(penum, "show_char_background");
     }
 
     pcl_grestore(pcs);
@@ -356,11 +358,12 @@ show_char_foreground(
     const char *        pbuff
 )
 {
-    gs_show_enum *      penum = pcs->penum;
-    int                 code = gs_show_n_init(penum, pcs->pgs, pbuff, 2);
+    gs_text_enum_t *   penum;
+    int                code = gs_show_begin(pcs->pgs, pbuff, 2, pcs->memory, &penum);
 
     if (code >= 0)
-        code = gs_show_next(penum);
+        code = gs_text_process(penum);
+    gs_text_release(penum, "show_char_foreground");
     return code;
 }
 
@@ -586,12 +589,6 @@ pcl_text(
     gs_point        scale;
     int             scale_sign;
     int             code;
-
-    /**** WE COULD CACHE MORE AND DO LESS SETUP HERE ****/
-
-    /* if there is no enumerator, give up now */
-    if (pcs->penum == 0)
-        return e_Memory;
 
     /* rtl files can have text in them - we don't print any characters
        in rtl */
@@ -939,11 +936,6 @@ pctext_do_reset(
 	pcs->last_width = inch2coord(1.0 / 10.0);
 	pcs->text_parsing_method = &pcl_tpm_0;
 	pcs->text_path = 0;
-        if ((type & (pcl_reset_initial)) != 0)
-            pcs->penum = gs_show_enum_alloc( pcs->memory,
-                                             pcs->pgs,
-                                             "pcl text enumerator"
-                                             );
     }
 }
 

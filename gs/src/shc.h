@@ -212,36 +212,46 @@ typedef struct hcd_table_s {
 #define hcd_bits_available(n)\
   (bits_left >= (n) || rlimit - p > ((n) - bits_left - 1) >> 3)
 /* For hcd_ensure_bits, n must not be greater than 8. */
+#define HCD_ENSURE_BITS_ELSE(n)\
+  if (bits_left >= n)\
+    DO_NOTHING;\
+  else HCD_MORE_BITS_ELSE
 #define hcd_ensure_bits(n, outl)\
-  if ( bits_left < n ) hcd_more_bits(outl)
+  BEGIN HCD_ENSURE_BITS_ELSE(n) goto outl; END
 
 /* Load more bits into the buffer. */
-#define hcd_more_bits_1(outl)\
-  { int c;\
-    if ( p < rlimit ) c = *++p;\
-    else goto outl;\
-    if ( ss->FirstBitLowOrder ) c = byte_reverse_bits[c];\
+#define HCD_MORE_BITS_1_ELSE\
+  if (p < rlimit) {\
+    int c = *++p;\
+\
+    if (ss->FirstBitLowOrder)\
+      c = byte_reverse_bits[c];\
     bits = (bits << 8) + c, bits_left += 8;\
-  }
+  } else
 #if hc_bits_size == 16
-#  define hcd_more_bits(outl) hcd_more_bits_1(outl)
+#  define HCD_MORE_BITS_ELSE HCD_MORE_BITS_1_ELSE
 #else /* hc_bits_size >= 32 */
-#  define hcd_more_bits(outl)\
-  { if ( rlimit - p < 3 ) hcd_more_bits_1(outl)\
+#  define HCD_MORE_BITS_ELSE\
+  if (rlimit - p >= 3) {\
+    if (ss->FirstBitLowOrder)\
+      bits = (bits << 24) + ((uint)byte_reverse_bits[p[1]] << 16) + ((uint)byte_reverse_bits[p[2]] << 8) + byte_reverse_bits[p[3]];\
     else\
-    { if ( ss->FirstBitLowOrder )\
-	bits = (bits << 24) + ((uint)byte_reverse_bits[p[1]] << 16) + ((uint)byte_reverse_bits[p[2]] << 8) + byte_reverse_bits[p[3]];\
-      else\
-	bits = (bits << 24) + ((uint)p[1] << 16) + ((uint)p[2] << 8) + p[3];\
-      bits_left += 24, p += 3;\
-    }\
-  }
+      bits = (bits << 24) + ((uint)p[1] << 16) + ((uint)p[2] << 8) + p[3];\
+    bits_left += 24, p += 3;\
+  } else HCD_MORE_BITS_1_ELSE
 #endif
+#define hcd_more_bits(outl)\
+  BEGIN HCD_MORE_BITS_ELSE goto outl; END
 
 #define hcd_peek_bits(n) ((bits >> (bits_left - (n))) & ((1 << (n)) - 1))
 
+/* hcd_peek_var_bits requires bits_left <= 8. */
 #define hcd_peek_var_bits(n)\
   ((bits >> (bits_left - (n))) & byte_right_mask[n])
+
+/* hcd_peek_bits_left requires bits_left <= 8. */
+#define hcd_peek_bits_left()\
+  (bits & byte_right_mask[bits_left])
 
 #define hcd_skip_bits(n) (bits_left -= (n))
 

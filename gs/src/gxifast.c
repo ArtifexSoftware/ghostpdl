@@ -46,6 +46,9 @@
 
 /* ------ Strategy procedure ------ */
 
+/* Check the prototype. */
+iclass_proc(gs_image_class_1_simple);
+
 /* Use special fast logic for portrait or landscape black-and-white images. */
 private irender_proc(image_render_skip);
 private irender_proc(image_render_simple);
@@ -167,6 +170,9 @@ gs_image_class_1_simple(gx_image_enum * penum)
 }
 
 /* ------ Rendering procedures ------ */
+
+#define DC_IS_NULL(pdc)\
+  (gx_dc_is_pure(pdc) && (pdc)->colors.pure == gx_no_color_index)
 
 /* Skip over a completely transparent image. */
 private int
@@ -496,9 +502,6 @@ copy_portrait(gx_image_enum * penum, const byte * data, int dx, int raster,
 	const gx_device_color *pdc;
 	bool invert;
 
-#define DC_IS_NULL(pdc)\
-  (gx_dc_is_pure(pdc) && (pdc)->colors.pure == gx_no_color_index)
-
 	if (DC_IS_NULL(pdc1)) {
 	    pdc = pdc0;
 	    invert = true;
@@ -513,9 +516,6 @@ copy_portrait(gx_image_enum * penum, const byte * data, int dx, int raster,
 	    pdc = pdc1;
 	    invert = false;
 	}
-
-#undef DC_IS_NULL
-
 	return (*pdc->type->fill_masked)
 	    (pdc, data, dx, raster, gx_no_bitmap_id, x, y, w, h,
 	     dev, lop_default, invert);
@@ -538,12 +538,19 @@ image_render_simple(gx_image_enum * penum, const byte * buffer, int data_x,
     int ix = fixed2int_pixround(xcur);
     int ixr;
     const int iy = penum->yci, ih = penum->hci;
-    const gx_device_color * const pdc0 = &penum->icolor0;
-    const gx_device_color * const pdc1 = &penum->icolor1;
+    gx_device_color * const pdc0 = &penum->icolor0;
+    gx_device_color * const pdc1 = &penum->icolor1;
     int dy;
+    int code;
 
     if (h == 0)
 	return 0;
+    if ((!DC_IS_NULL(pdc0) &&
+	 (code = gx_color_load(pdc0, penum->pis, dev)) < 0) ||
+	(!DC_IS_NULL(pdc1) &&
+	 (code = gx_color_load(pdc1, penum->pis, dev)) < 0)
+	)
+	return code;
     if (penum->line == 0) {	/* A direct BitBlt is possible. */
 	line = buffer;
 	line_size = (w + 7) >> 3;

@@ -48,6 +48,9 @@
 
 /* ------ Strategy procedure ------ */
 
+/* Check the prototype. */
+iclass_proc(gs_image_class_0_interpolate);
+
 /* If we're interpolating, use special logic. */
 private irender_proc(image_render_interpolate);
 irender_proc_t
@@ -62,6 +65,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     const gs_color_space *pcs = penum->pcs;
     const gs_color_space *pccs;
     gs_point dst_xy;
+    uint in_size;
 
     if (!penum->interpolate || penum->use_mask_color)
 	return 0;
@@ -80,7 +84,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
      * If we use Adobe's spatial interpolation approach, we don't need
      * to do this.
      */
-#ifdef USE_MITCHELL_FILTER
+#ifdef USE_MITCHELL_FILTERX
     if (penum->bps < 4 || penum->bps * penum->spp < 8 ||
 	(fabs(penum->matrix.xx) <= 5 && fabs(penum->matrix.yy <= 5))
 	) {
@@ -91,13 +95,6 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     /* Non-ANSI compilers require the following casts: */
     gs_distance_transform((float)penum->rect.w, (float)penum->rect.h,
 			  &penum->matrix, &dst_xy);
-    if (penum->bps <= 8 && penum->device_color) {
-	iss.BitsPerComponentIn = 8;
-	iss.MaxValueIn = 0xff;
-    } else {
-	iss.BitsPerComponentIn = sizeof(frac) * 8;
-	iss.MaxValueIn = frac_1;
-    }
     iss.BitsPerComponentOut = sizeof(frac) * 8;
     iss.MaxValueOut = frac_1;
     iss.WidthOut = (int)ceil(fabs(dst_xy.x));
@@ -106,16 +103,24 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     iss.HeightIn = penum->rect.h;
     pccs = cs_concrete_space(pcs, pis);
     iss.Colors = cs_num_components(pccs);
+    if (penum->bps <= 8 && penum->device_color) {
+	iss.BitsPerComponentIn = 8;
+	iss.MaxValueIn = 0xff;
+	in_size = 0;
+    } else {
+	iss.BitsPerComponentIn = sizeof(frac) * 8;
+	iss.MaxValueIn = frac_1;
+	in_size = round_up(iss.WidthIn * iss.Colors * sizeof(frac),
+			   align_bitmap_mod);
+    }
     /* Allocate a buffer for one source/destination line. */
     {
-	uint in_size =
-	    iss.WidthIn * iss.Colors * (iss.BitsPerComponentIn / 8);
 	uint out_size =
-	    iss.WidthOut * iss.Colors *
-	    max(iss.BitsPerComponentOut / 8, sizeof(gx_color_index));
+	    iss.WidthOut * max(iss.Colors * (iss.BitsPerComponentOut / 8),
+			       sizeof(gx_color_index));
 
-	line = gs_alloc_bytes(mem, max(in_size, out_size),
-			      "image scale src line");
+	line = gs_alloc_bytes(mem, in_size + out_size,
+			      "image scale src+dst line");
     }
 #ifdef USE_MITCHELL_FILTER
     template = &s_IScale_template;
@@ -129,7 +134,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 	 (*pss->template->init) ((stream_state *) pss) < 0)
 	) {
 	gs_free_object(mem, pss, "image scale state");
-	gs_free_object(mem, line, "image scale src line");
+	gs_free_object(mem, line, "image scale src+dst line");
 	/* Try again without interpolation. */
 	penum->interpolate = false;
 	return 0;
@@ -163,6 +168,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
     int c = pss->params.Colors;
     stream_cursor_read r;
     stream_cursor_write w;
+    byte *out = penum->line;
 
     if (h != 0) {
 	/* Convert the unpacked data to concrete values in */
@@ -184,6 +190,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	    int i;
 
 	    r.ptr = (byte *) psrc - 1;
+	    if_debug0('B', "[B]Concrete row:\n[B]");
 	    for (i = 0; i < pss->params.WidthIn; i++, psrc += c) {
 		int j;
 
@@ -195,7 +202,18 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 			decode_frac(*(const frac *)pdata, cc, j);
 		    }
 		(*pcs->type->concretize_color) (&cc, pcs, psrc, pis);
+#ifdef DEBUG
+		if (gs_debug_c('B')) {
+		    int ci;
+
+		    for (ci = 0; ci < c; ++ci)
+			dprintf2("%c%04x", (ci == 0 ? ' ' : ','), psrc[ci]);
+		}
+#endif
 	    }
+	    out += round_up(pss->params.WidthIn * c * sizeof(frac),
+			    align_bitmap_mod);
+	    if_debug0('B', "\n");
 	}
 	r.limit = r.ptr + row_size;
     } else			/* h == 0 */
@@ -227,12 +245,11 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	    gx_device_color devc;
 	    int code;
 
-	    DECLARE_LINE_ACCUM_COPY(penum->line, bpp, xo);
+	    DECLARE_LINE_ACCUM_COPY(out, bpp, xo);
 
-	    w.limit = penum->line + width * c *
-		sizeof(gx_color_index) - 1;
-	    w.ptr = w.limit - width * c *
-		(sizeof(gx_color_index) - sizeofPixelOut);
+	    w.limit = out + width *
+		max(c * sizeofPixelOut, sizeof(gx_color_index)) - 1;
+	    w.ptr = w.limit - width * c * sizeofPixelOut;
 	    psrc = (const frac *)(w.ptr + 1);
 	    code = (*pss->template->process)
 		((stream_state *) pss, &r, &w, h == 0);
@@ -241,7 +258,18 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	    if (w.ptr == w.limit) {
 		int xe = xo + width;
 
+		if_debug1('B', "[B]Interpolated row %d:\n[B]",
+			  penum->line_xy);
 		for (x = xo; x < xe;) {
+#ifdef DEBUG
+		    if (gs_debug_c('B')) {
+			int ci;
+
+			for (ci = 0; ci < c; ++ci)
+			    dprintf2("%c%04x", (ci == 0 ? ' ' : ','),
+				     psrc[ci]);
+		    }
+#endif
 		    code = (*pconcs->type->remap_concrete_color)
 			(psrc, &devc, pis, dev, gs_color_select_source);
 		    if (code < 0)
@@ -265,8 +293,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 		    } else {
 			int rcode;
 
-			LINE_ACCUM_COPY(dev, penum->line, bpp,
-					xo, x, raster, ry);
+			LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
 			rcode = gx_fill_rectangle_device_rop(x, ry,
 						     1, 1, &devc, dev, lop);
 			if (rcode < 0)
@@ -276,9 +303,9 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 			x++, psrc += c;
 		    }
 		}
-		LINE_ACCUM_COPY(dev, penum->line, bpp,
-				xo, x, raster, ry);
+		LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
 		penum->line_xy++;
+		if_debug0('B', "\n");
 	    }
 	    if ((code == 0 && r.ptr == r.limit) || code == EOFC)
 		break;

@@ -438,9 +438,9 @@ hpjet_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype,
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     int line_size_words = (line_size + W - 1) / W;
     uint storage_size_words = line_size_words * 8;	/* data, out_row, out_row_alt, prev_row */
-    word *storage = (ulong *) gs_malloc(storage_size_words, W,
-					"hpjet_print_page");
-
+    word *storage =
+	(ulong *)gs_alloc_byte_array(pdev->memory, storage_size_words, W,
+				     "hpjet_print_page");
     word
 	* data_words,
 	*out_row_words,
@@ -652,7 +652,7 @@ hpjet_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype,
     fputs("\033*rB\f", prn_stream);
 
     /* free temporary storage */
-    gs_free((char *)storage, storage_size_words, W, "hpjet_print_page");
+    gs_free_object(pdev->memory, storage, "hpjet_print_page");
 
     return code;
 }

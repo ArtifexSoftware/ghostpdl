@@ -32,6 +32,7 @@
 /* Generate a block of unique IDs. */
 static ulong gs_next_id;
 
+init_proc(gs_gsutil_init);	/* check prototype */
 void
 gs_gsutil_init(gs_memory_t *mem)
 {

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -17,16 +17,15 @@
  */
 
 
-/* Stream output for PostScript- and PDF-writing drivers. */
+/* Print values in ASCII form on a stream */
 
-#ifndef gdevpstr_INCLUDED
-#  define gdevpstr_INCLUDED
+#ifndef spprint_INCLUDED
+#  define spprint_INCLUDED
 
 /* Define an opaque type for streams. */
 #ifndef stream_DEFINED
 #  define stream_DEFINED
 typedef struct stream_s stream;
-
 #endif
 
 /* Put a character on a stream. */
@@ -79,6 +78,6 @@ const char *pprints1(P3(stream * s, const char *format, const char *str));
 const char *pprints2(P4(stream * s, const char *format,
 			const char *str1, const char *str2));
 const char *pprints3(P5(stream * s, const char *format,
-		     const char *str1, const char *str2, const char *str3));
+			const char *str1, const char *str2, const char *str3));
 
-#endif /* gdevpstr_INCLUDED */
+#endif /* spprint_INCLUDED */

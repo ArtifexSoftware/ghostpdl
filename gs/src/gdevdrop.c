@@ -29,6 +29,7 @@
 #include "gxdevmem.h"
 #include "gxdevrop.h"
 #include "gxgetbit.h"
+#include "gdevmem.h"		/* for mem_default_strip_copy_rop prototype */
 #include "gdevmrop.h"
 
 /*
@@ -103,7 +104,7 @@ gx_default_strip_copy_rop(gx_device * dev,
 			  gs_logical_operation_t lop)
 {
     int depth = dev->color_info.depth;
-    gs_memory_t *mem = (dev->memory ? dev->memory : &gs_memory_default);
+    gs_memory_t *mem = dev->memory;
     const gx_device_memory *mdproto = gdev_mem_device_for_bits(depth);
     gx_device_memory mdev;
     uint draster;
@@ -363,7 +364,7 @@ mem_default_strip_copy_rop(gx_device * dev,
 	GB_ALPHA_NONE | GB_DEPTH_8 |
 	GB_PACKING_CHUNKY | GB_RETURN_COPY | GB_ALIGN_STANDARD |
 	GB_OFFSET_0 | GB_RASTER_STANDARD;
-    gs_memory_t *mem = (dev->memory ? dev->memory : &gs_memory_default);
+    gs_memory_t *mem = dev->memory;
     const gx_device_memory *mdproto = gdev_mem_device_for_bits(rop_depth);
     gx_device_memory mdev;
     union { long l; void *p; } mdev_storage[20];

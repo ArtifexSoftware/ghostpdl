@@ -32,6 +32,7 @@
 private gs_memory_proc_alloc_bytes(gs_locked_alloc_bytes_immovable);
 private gs_memory_proc_resize_object(gs_locked_resize_object);
 private gs_memory_proc_free_object(gs_locked_free_object);
+private gs_memory_proc_stable(gs_locked_stable);
 private gs_memory_proc_status(gs_locked_status);
 private gs_memory_proc_free_all(gs_locked_free_all);
 private gs_memory_proc_consolidate_free(gs_locked_consolidate_free);
@@ -59,6 +60,7 @@ private const gs_memory_procs_t locked_procs =
     gs_locked_alloc_bytes_immovable,
     gs_locked_resize_object,
     gs_locked_free_object,
+    gs_locked_stable,
     gs_locked_status,
     gs_locked_free_all,
     gs_locked_consolidate_free,
@@ -90,7 +92,7 @@ gs_memory_locked_init(
 		      gs_memory_t * target	/* allocator to monitor lock */
 )
 {
-    /* Init the procedure vector from template */
+    lmem->stable_memory = 0;
     lmem->procs = locked_procs;
 
     lmem->target = target;
@@ -149,6 +151,11 @@ gs_locked_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
     gs_memory_t * const target = lmem->target;
 
     /* Only free the structures and the allocator itself. */
+    if (mem->stable_memory) {
+	gs_memory_free_all(mem->stable_memory, free_mask, cname);
+	if (free_mask & FREE_ALL_ALLOCATOR)
+	    mem->stable_memory = 0;
+    }
     if (free_mask & FREE_ALL_STRUCTURES) {
 	/*
 	 * Check for monitor == 0, in case this is called after a
@@ -341,6 +348,34 @@ gs_locked_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp,
 		 (*lmem->target->procs.unregister_root)
 		   (lmem->target, rp, cname)
 		 );
+}
+private gs_memory_t *
+gs_locked_stable(gs_memory_t * mem)
+{
+    if (!mem->stable_memory) {
+	gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;
+	gs_memory_t *stable;
+
+	gx_monitor_enter(lmem->monitor);
+	stable = gs_memory_stable(lmem->target);
+	if (stable == lmem->target)
+	    mem->stable_memory = mem;
+	else {
+	    gs_memory_locked_t *locked_stable = (gs_memory_locked_t *)
+		gs_alloc_bytes(stable, sizeof(*lmem), "gs_locked_stable");
+
+	    if (locked_stable) {
+		int code = gs_memory_locked_init(locked_stable, stable);
+
+		if (code < 0)
+		    gs_free_object(stable, locked_stable, "gs_locked_stable");
+		else
+		    mem->stable_memory = (gs_memory_t *)locked_stable;
+	    }
+	}
+	gx_monitor_leave(lmem->monitor);
+    }
+    return mem->stable_memory;
 }
 private void
 gs_locked_status(gs_memory_t * mem, gs_memory_status_t * pstat)

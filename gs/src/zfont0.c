@@ -32,7 +32,6 @@
 #include "gxmatrix.h"
 #include "gzstate.h"		/* must precede gxdevice */
 #include "gxdevice.h"		/* must precede gxfont */
-#include "gschar.h"
 #include "gxfcmap.h"
 #include "gxfont.h"
 #include "gxfont0.h"
@@ -44,15 +43,9 @@
 #include "iname.h"
 #include "store.h"
 
-/* Composite font procedures */
-extern font_proc_init_fstack(gs_type0_init_fstack);
-extern font_proc_define_font(gs_type0_define_font);
-extern font_proc_make_font(gs_type0_make_font);
-extern font_proc_next_glyph(gs_type0_next_glyph);
-
 /* Imported from zfcmap.c */
-int ztype0_get_cmap(P3(const gs_cmap ** ppcmap, const ref * pfdepvector,
-		       const ref * op));
+int ztype0_get_cmap(P4(const gs_cmap ** ppcmap, const ref * pfdepvector,
+		       const ref * op, gs_memory_t *imem));
 
 /* Forward references */
 private font_proc_define_font(ztype0_define_font);
@@ -151,7 +144,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 	    } break;
 	case fmap_CMap:	/* need CMap */
 	    code = ztype0_get_cmap(&data.CMap, (const ref *)&fdepvector,
-				   (const ref *)op);
+				   (const ref *)op, imemory);
 	    break;
 	default:
 	    ;
@@ -186,10 +179,9 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 	return code;
     /* Fill in the rest of the basic font data. */
     pfont->procs.init_fstack = gs_type0_init_fstack;
-    pfont->procs.next_char = 0;	/* superseded by next_glyph */
     pfont->procs.define_font = ztype0_define_font;
     pfont->procs.make_font = ztype0_make_font;
-    pfont->procs.next_glyph = gs_type0_next_glyph;
+    pfont->procs.next_char_glyph = gs_type0_next_char_glyph;
     if (dict_find_string(op, "PrefEnc", &pprefenc) <= 0) {
 	ref nul;
 
@@ -263,20 +255,24 @@ fail:
 private int
 ztype0_adjust_FDepVector(gs_font_type0 * pfont)
 {
+    gs_memory_t *mem = pfont->memory;
+    /* HACK: We know the font was allocated by the interpreter. */
+    gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
     gs_font **pdep = pfont->data.FDepVector;
     ref newdep;
     uint fdep_size = pfont->data.fdep_size;
     ref *prdep;
     uint i;
-    int code = ialloc_ref_array(&newdep, a_readonly, fdep_size,
-				"ztype0_adjust_matrix");
+    int code = gs_alloc_ref_array(imem, &newdep, a_readonly, fdep_size,
+				  "ztype0_adjust_matrix");
 
     if (code < 0)
 	return code;
     for (prdep = newdep.value.refs, i = 0; i < fdep_size; i++, prdep++) {
 	const ref *pdict = pfont_dict(pdep[i]);
 
-	ref_assign_new(prdep, pdict);
+	ref_assign(prdep, pdict);
+	r_set_attrs(prdep, imemory_new_mask(imem));
     }
     /*
      * The FDepVector is an existing key in the parent's dictionary,

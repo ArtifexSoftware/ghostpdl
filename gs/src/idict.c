@@ -20,6 +20,7 @@
 /* Dictionary implementation */
 #include "string_.h"		/* for strlen */
 #include "ghost.h"
+#include "gxalloc.h"		/* for accessing masks */
 #include "errors.h"
 #include "imemory.h"
 #include "idebug.h"		/* for debug_print_name */
@@ -128,16 +129,17 @@ dict_alloc(gs_ref_memory_t * mem, uint size, ref * pdref)
 {
     ref arr;
     int code =
-    gs_alloc_ref_array(mem, &arr, a_all, sizeof(dict) / sizeof(ref),
-		       "dict_alloc");
+	gs_alloc_ref_array(mem, &arr, a_all, sizeof(dict) / sizeof(ref),
+			   "dict_alloc");
     dict *pdict;
     ref dref;
 
     if (code < 0)
 	return code;
     pdict = (dict *) arr.value.refs;
-    make_tav_new(&dref, t_dictionary, r_space(&arr) | a_all,
-		 pdict, pdict);
+    make_tav(&dref, t_dictionary,
+	     r_space(&arr) | imemory_new_mask(mem) | a_all,
+	     pdict, pdict);
     make_struct(&pdict->memory, avm_foreign, mem);
     code = dict_create_contents(size, &dref, dict_default_pack);
     if (code < 0) {
@@ -159,10 +161,11 @@ dict_create_unpacked_keys(uint asize, const ref * pdref)
     code = gs_alloc_ref_array(mem, &pdict->keys, a_all, asize,
 			      "dict_create_unpacked_keys");
     if (code >= 0) {
+	uint new_mask = imemory_new_mask(mem);
 	ref *kp = pdict->keys.value.refs;
 
-	ref_mark_new(&pdict->keys);
-	refset_null(kp, asize);
+	r_set_attrs(&pdict->keys, new_mask);
+	refset_null_new(kp, asize, new_mask);
 	r_set_attrs(kp, a_executable);	/* wraparound entry */
     }
     return code;
@@ -175,6 +178,7 @@ dict_create_contents(uint size, const ref * pdref, bool pack)
 {
     dict *pdict = pdref->value.pdict;
     gs_ref_memory_t *mem = dict_memory(pdict);
+    uint new_mask = imemory_new_mask(mem);
     uint asize = dict_round_size((size == 0 ? 1 : size));
     int code;
     register uint i;
@@ -186,8 +190,8 @@ dict_create_contents(uint size, const ref * pdref, bool pack)
 			      "dict_create_contents(values)");
     if (code < 0)
 	return code;
-    ref_mark_new(&pdict->values);
-    refset_null(pdict->values.value.refs, asize);
+    r_set_attrs(&pdict->values, new_mask);
+    refset_null_new(pdict->values.value.refs, asize, new_mask);
     if (pack) {
 	uint ksize = (asize + packed_per_ref - 1) / packed_per_ref;
 	ref arr;
@@ -199,9 +203,9 @@ dict_create_contents(uint size, const ref * pdref, bool pack)
 	if (code < 0)
 	    return code;
 	pkp = (ref_packed *) arr.value.refs;
-	make_tasv_new(&pdict->keys, t_shortarray,
-		      r_space(&arr) | a_all,
-		      asize, packed, pkp);
+	make_tasv(&pdict->keys, t_shortarray,
+		  r_space(&arr) | a_all | new_mask,
+		  asize, packed, pkp);
 	for (pzp = pkp, i = 0; i < asize || i % packed_per_ref; pzp++, i++)
 	    *pzp = packed_key_empty;
 	*pkp = packed_key_deleted;	/* wraparound entry */
@@ -211,8 +215,8 @@ dict_create_contents(uint size, const ref * pdref, bool pack)
 	if (code < 0)
 	    return code;
     }
-    make_int_new(&pdict->count, 0);
-    make_int_new(&pdict->maxlength, size);
+    make_tav(&pdict->count, t_integer, new_mask, intval, 0);
+    make_tav(&pdict->maxlength, t_integer, new_mask, intval, size);
     return 0;
 }
 
@@ -228,6 +232,7 @@ dict_unpack(ref * pdref, dict_stack_t *pds)
     if (!dict_is_packed(pdict))
 	return 0;		/* nothing to do */
     {
+	gs_ref_memory_t *mem = dict_memory(pdict);
 	uint count = nslots(pdict);
 	const ref_packed *okp = pdict->keys.value.packed;
 	ref old_keys;
@@ -235,20 +240,19 @@ dict_unpack(ref * pdref, dict_stack_t *pds)
 	ref *nkp;
 
 	old_keys = pdict->keys;
-	if (ref_must_save(&old_keys))
-	    ref_do_save(pdref, &pdict->keys, "dict_unpack(keys)");
+	if (ref_must_save_in(mem, &old_keys))
+	    ref_do_save_in(mem, pdref, &pdict->keys, "dict_unpack(keys)");
 	code = dict_create_unpacked_keys(count, pdref);
 	if (code < 0)
 	    return code;
 	for (nkp = pdict->keys.value.refs; count--; okp++, nkp++)
 	    if (r_packed_is_name(okp)) {
 		packed_get(okp, nkp);
-		ref_mark_new(nkp);
+		ref_mark_new_in(mem, nkp);
 	    } else if (*okp == packed_key_deleted)
 		r_set_attrs(nkp, a_executable);
-	if (!ref_must_save(&old_keys))
-	    gs_free_ref_array(dict_memory(pdict), &old_keys,
-			      "dict_unpack(old keys)");
+	if (!ref_must_save_in(mem, &old_keys))
+	    gs_free_ref_array(mem, &old_keys, "dict_unpack(old keys)");
 	if (pds)
 	    dstack_set_top(pds);	/* just in case */
     }
@@ -401,6 +405,8 @@ int
 dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 	 dict_stack_t *pds)
 {
+    dict *pdict = pdref->value.pdict;
+    gs_ref_memory_t *mem = dict_memory(pdict);
     int rcode = 0;
     int code;
     ref *pvslot;
@@ -408,7 +414,6 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
     /* Check the value. */
     store_check_dest(pdref, pvalue);
   top:if ((code = dict_find(pdref, pkey, &pvslot)) <= 0) {	/* not found *//* Check for overflow */
-	dict *pdict = pdref->value.pdict;
 	ref kname;
 	uint index;
 
@@ -450,10 +455,10 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 		goto top;
 	    }
 	    kp = pdict->keys.value.writable_packed + index;
-	    if (ref_must_save(&pdict->keys)) {	/* See initial comment for why it is safe */
+	    if (ref_must_save_in(mem, &pdict->keys)) {	/* See initial comment for why it is safe */
 		/* not to save the change if the keys */
 		/* array itself is new. */
-		ref_do_save(&pdict->keys, kp, "dict_put(key)");
+		ref_do_save_in(mem, &pdict->keys, kp, "dict_put(key)");
 	    }
 	    *kp = pt_tag(pt_literal_name) + name_index(pkey);
 	} else {
@@ -462,10 +467,10 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 	    if_debug2('d', "[d]0x%lx: fill key at 0x%lx\n",
 		      (ulong) pdict, (ulong) kp);
 	    store_check_dest(pdref, pkey);
-	    ref_assign_old(&pdict->keys, kp, pkey,
-			   "dict_put(key)");	/* set key of pair */
+	    ref_assign_old_in(mem, &pdict->keys, kp, pkey,
+			      "dict_put(key)");	/* set key of pair */
 	}
-	ref_save(pdref, &pdict->count, "dict_put(count)");
+	ref_save_in(mem, pdref, &pdict->count, "dict_put(count)");
 	pdict->count.value.intval++;
 	/* If the key is a name, update its 1-element cache. */
 	if (r_has_type(pkey, t_name)) {
@@ -477,7 +482,7 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 		 * Only set the cache if we aren't inside a save.
 		 * This way, we never have to undo setting the cache.
 		 */
-		alloc_save_level(idmemory) == 0
+		!ref_saving_in(mem)
 		) {		/* Set the cache. */
 		if_debug0('d', "[d]set cache\n");
 		pname->pvalue = pvslot;
@@ -494,8 +499,8 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 	      (ulong) pvslot,
 	      ((const ulong *)pvslot)[0], ((const ulong *)pvslot)[1],
 	      ((const ulong *)pvalue)[0], ((const ulong *)pvalue)[1]);
-    ref_assign_old(&pdref->value.pdict->values, pvslot, pvalue,
-		   "dict_put(value)");
+    ref_assign_old_in(mem, &pdref->value.pdict->values, pvslot, pvalue,
+		      "dict_put(value)");
     return rcode;
 }
 
@@ -518,6 +523,7 @@ dict_put_string(ref * pdref, const char *kstr, const ref * pvalue,
 int
 dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
 {
+    gs_ref_memory_t *mem;
     ref *pvslot;
     dict *pdict;
     uint index;
@@ -527,6 +533,7 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
     /* Remove the entry from the dictionary. */
     pdict = pdref->value.pdict;
     index = pvslot - pdict->values.value.refs;
+    mem = dict_memory(pdict);
     if (dict_is_packed(pdict)) {
 	ref_packed *pkp = pdict->keys.value.writable_packed + index;
 
@@ -534,8 +541,8 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
 		  (ulong)pdict, (ulong)pkp, (uint)*pkp);
 	/* See the initial comment for why it is safe not to save */
 	/* the change if the keys array itself is new. */
-	if (ref_must_save(&pdict->keys))
-	    ref_do_save(&pdict->keys, pkp, "dict_undef(key)");
+	if (ref_must_save_in(mem, &pdict->keys))
+	    ref_do_save_in(mem, &pdict->keys, pkp, "dict_undef(key)");
 	/*
 	 * Accumulating deleted entries slows down lookup.
 	 * Detect the easy case where we can use an empty entry
@@ -559,7 +566,7 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
 
 	if_debug4('d', "[d]0x%lx: removing key at 0%lx: 0x%lx 0x%lx\n",
 		  (ulong)pdict, (ulong)kp, ((ulong *)kp)[0], ((ulong *)kp)[1]);
-	make_null_old(&pdict->keys, kp, "dict_undef(key)");
+	make_null_old_in(mem, &pdict->keys, kp, "dict_undef(key)");
 	/*
 	 * Accumulating deleted entries slows down lookup.
 	 * Detect the easy case where we can use an empty entry
@@ -571,7 +578,7 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
 	    )
 	    r_set_attrs(kp, a_executable);	/* mark as deleted */
     }
-    ref_save(pdref, &pdict->count, "dict_undef(count)");
+    ref_save_in(mem, pdref, &pdict->count, "dict_undef(count)");
     pdict->count.value.intval--;
     /* If the key is a name, update its 1-element cache. */
     if (r_has_type(pkey, t_name)) {
@@ -588,7 +595,7 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
 	    pname->pvalue = pv_no_defn;
 	}
     }
-    make_null_old(&pdict->values, pvslot, "dict_undef(value)");
+    make_null_old_in(mem, &pdict->values, pvslot, "dict_undef(value)");
     return 0;
 }
 
@@ -652,6 +659,7 @@ dict_resize(ref * pdref, uint new_size, dict_stack_t *pds)
 {
     dict *pdict = pdref->value.pdict;
     gs_ref_memory_t *mem = dict_memory(pdict);
+    uint new_mask = imemory_new_mask(mem);
     dict dnew;
     ref drto;
     int code;
@@ -661,8 +669,8 @@ dict_resize(ref * pdref, uint new_size, dict_stack_t *pds)
 	    return_error(e_dictfull);
 	new_size = d_length(pdict);
     }
-    make_tav_new(&drto, t_dictionary, r_space(pdref) | a_all,
-		 pdict, &dnew);
+    make_tav(&drto, t_dictionary, r_space(pdref) | a_all | new_mask,
+	     pdict, &dnew);
     dnew.memory = pdict->memory;
     if ((code = dict_create_contents(new_size, &drto, dict_is_packed(pdict))) < 0)
 	return code;
@@ -672,17 +680,18 @@ dict_resize(ref * pdref, uint new_size, dict_stack_t *pds)
     r_set_space(&drto, avm_local);
     dict_copy(pdref, &drto, pds);	/* can't fail */
     /* Save or free the old dictionary. */
-    if (ref_must_save(&pdict->values))
-	ref_do_save(pdref, &pdict->values, "dict_resize(values)");
+    if (ref_must_save_in(mem, &pdict->values))
+	ref_do_save_in(mem, pdref, &pdict->values, "dict_resize(values)");
     else
 	gs_free_ref_array(mem, &pdict->values, "dict_resize(old values)");
-    if (ref_must_save(&pdict->keys))
-	ref_do_save(pdref, &pdict->keys, "dict_resize(keys)");
+    if (ref_must_save_in(mem, &pdict->keys))
+	ref_do_save_in(mem, pdref, &pdict->keys, "dict_resize(keys)");
     else
 	gs_free_ref_array(mem, &pdict->keys, "dict_resize(old keys)");
     ref_assign(&pdict->keys, &dnew.keys);
     ref_assign(&pdict->values, &dnew.values);
-    ref_save(pdref, &pdict->maxlength, "dict_resize(maxlength)");
+    ref_save_in(dict_memory(pdict), pdref, &pdict->maxlength,
+		"dict_resize(maxlength)");
     d_set_maxlength(pdict, new_size);
     if (pds)
 	dstack_set_top(pds);	/* just in case this is the top dict */
@@ -694,7 +703,6 @@ int
 dict_grow(ref * pdref, dict_stack_t *pds)
 {
     dict *pdict = pdref->value.pdict;
-
     /* We might have maxlength < npairs, if */
     /* dict_round_size increased the size. */
     ulong new_size = (ulong) d_maxlength(pdict) * 3 / 2 + 2;
@@ -721,7 +729,8 @@ dict_grow(ref * pdref, dict_stack_t *pds)
 	new_size = npairs(pdict);
     }
     /* maxlength < npairs, we can grow in place */
-    ref_save(pdref, &pdict->maxlength, "dict_put(maxlength)");
+    ref_save_in(dict_memory(pdict), pdref, &pdict->maxlength,
+		"dict_put(maxlength)");
     d_set_maxlength(pdict, new_size);
     return 0;
 }

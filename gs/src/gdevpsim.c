@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -134,7 +134,7 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     int lnum;
-    byte *line = (byte *) gs_malloc(line_size, 1, "psmono_print_page");
+    byte *line = gs_alloc_bytes(pdev->memory, line_size, "psmono_print_page");
     byte invert = (pdev->color_info.depth == 1 ? 0xff : 0);
 
     if (line == 0)
@@ -206,7 +206,7 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
     /* Clean up and return. */
     fputs("\r\n", prn_stream);
-    gs_free((char *)line, line_size, 1, "psmono_print_page");
+    gs_free_object(pdev->memory, line, "psmono_print_page");
     return 0;
 }
 

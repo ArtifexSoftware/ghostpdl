@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -66,7 +66,9 @@ typedef struct stream_CF_state_s {
    (ss)->DamagedRowsBeforeError = 0, /* always set, for s_CF_get_params */\
    (ss)->FirstBitLowOrder = false,\
 		/* Added by us */\
-   (ss)->DecodedByteAlign = 1)
+   (ss)->DecodedByteAlign = 1,\
+	/* Clear pointers */\
+   (ss)->lbuf = 0, (ss)->lprev = 0)
 
 /* CCITTFaxEncode */
 typedef struct stream_CFE_state_s {
@@ -84,7 +86,7 @@ typedef struct stream_CFE_state_s {
   gs_private_st_ptrs3(st_CFE_state, stream_CFE_state, "CCITTFaxEncode state",\
     cfe_enum_ptrs, cfe_reloc_ptrs, lbuf, lprev, lcode)
 #define s_CFE_set_defaults_inline(ss)\
-  s_CF_set_defaults_inline(ss)
+  (s_CF_set_defaults_inline(ss), (ss)->lcode = 0)
 extern const stream_template s_CFE_template;
 
 /* CCITTFaxDecode */

@@ -30,8 +30,107 @@ Changes in the most recent releases of Ghostscript
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Version5.93">Version 5.93 (beta) (9/11/99)</a>
+<ul>
+<li><a href="#5.93_Incompatible_changes">Incompatible changes</a>,
+    <a href="#5.93_Documentation">Documentation</a>,
+    <a href="#5.93_Procedures">Procedures</a>,
+    <a href="#5.93_Utilities">Utilities</a>,
+    <a href="#5.93_Drivers">Drivers</a>,
+    <a href="#5.93_Platforms">Platforms</a>,
+    <a href="#5.93_PDF_writer">PDF writer</a>,
+    <a href="#5.93_Interpreter_PDF">Interpreter (PDF)</a>,
+    <a href="#5.93_Interpreter">Interpreter</a>,
+    <a href="#5.93_Streams">Streams</a>,
+    <a href="#5.93_Library">Library</a>
+</ul>
+<li><a href="#Version5.92">Version 5.92 (beta) (9/2/99)</a>
+<ul>
+<li><a href="#5.92_Documentation">Documentation</a>,
+    <a href="#5.92_Procedures">Procedures</a>,
+    <a href="#5.92_Utilities">Utilities</a>,
+    <a href="#5.92_Drivers">Drivers</a>,
+    <a href="#5.92_PDF_writer">PDF writer</a>,
+    <a href="#5.92_Interpreter">Interpreter</a>,
+    <a href="#5.92_Streams">Streams</a>
+</ul>
+<li><a href="#Version5.91">Version 5.91 (beta) (8/30/99)</a>
+<ul>
+ili><a href="#5.91_Documentation">Documentation</a>,
+    <a href="#5.91_Utilities">Utilities</a>,
+    <a href="#5.91_Drivers">Drivers</a>,
+    <a href="#5.91_Platforms">Platforms</a>,
+    <a href="#5.91_Fonts">Fonts</a>,
+    <a href="#5.91_PDF_writer">PDF writer</a>,
+    <a href="#5.91_Library">Library</a>
+</ul>
+<li><a href="#Version5.90">Version 5.90 (beta) (8/20/99)</a>
+<ul>
+<li><a href="#5.90_Incompatible_changes">Incompatible changes</a>,
+    <a href="#5.90_Documentation">Documentation</a>,
+    <a href="#5.90_Procedures">Procedures</a>,
+    <a href="#5.90_Utilities">Utilities</a>,
+    <a href="#5.90_Drivers">Drivers</a>,
+    <a href="#5.90_Platforms">Platforms</a>,
+    <a href="#5.90_Fonts">Fonts</a>,
+    <a href="#5.90_PDF_writer">PDF writer</a>,
+    <a href="#5.90_Interpreter_PDF">Interpreter (PDF)</a>,
+    <a href="#5.90_Interpreter">Interpreter</a>,
+    <a href="#5.90_Streams">Streams</a>,
+    <a href="#5.90_Library">Library</a>
+</ul>
+<li>(Version 5.89 deliberately omitted.)
+<li><a href="#Version5.88">Version 5.88 (tester) (8/3/99)</a>
+<ul>
+<li><a href="#5.88_Incompatible_changes">Incompatible changes</a>,
+    <a href="#5.88_Documentation">Documentation</a>,
+    <a href="#5.88_Procedures">Procedures</a>,
+    <a href="#5.88_Drivers">Drivers</a>,
+    <a href="#5.88_Platforms">Platforms</a>,
+    <a href="#5.88_Fonts">Fonts</a>,
+    <a href="#5.88_Interpreter_PDF">Interpreter (PDF)</a>,
+    <a href="#5.88_Interpreter">Interpreter</a>,
+    <a href="#5.88_Streams">Streams</a>,
+    <a href="#5.88_Library">Library</a>
+</ul>
+<li><a href="#Version5.87">Version 5.87 (tester) (6/29/99)</a>
+<ul>
+<li><a href="#5.87_Incompatible_changes">Incompatible changes</a>,
+    <a href="#5.87_Documentation">Documentation</a>,
+    <a href="#5.87_Procedures">Procedures</a>,
+    <a href="#5.87_Drivers">Drivers</a>,
+    <a href="#5.87_Interpreter_PDF">Interpreter (PDF)</a>,
+    <a href="#5.87_Interpreter">Interpreter</a>,
+    <a href="#5.87_Library">Library</a>
+</ul>
+<li><a href="#Version5.86">Version 5.86 (tester) (6/14/99)</a>
+<ul>
+<li><a href="#5.86_Incompatible_changes">Incompatible changes</a>,
+    <a href="#5.86_Documentation">Documentation</a>,
+    <a href="#5.86_Procedures">Procedures</a>,
+    <a href="#5.86_Utilities">Utilities</a>,
+    <a href="#5.86_Drivers">Drivers</a>,
+    <a href="#5.86_Platforms">Platforms</a>,
+    <a href="#5.86_Fonts">Fonts</a>,
+    <a href="#5.86_Interpreter_PDF">Interpreter (PDF)</a>,
+    <a href="#5.86_Interpreter">Interpreter</a>,
+    <a href="#5.86_Streams">Streams</a>,
+    <a href="#5.86_Library">Library</a>
+</ul>
+<li><a href="#Version5.85">Version 5.85 (tester) (5/29/99)</a>
+<ul>
+<li><a href="#5.85_Incompatible_changes">Incompatible changes</a>,
+    <a href="#5.85_Documentation">Documentation</a>,
+    <a href="#5.85_Procedures">Procedures</a>,
+    <a href="#5.85_Utilities">Utilities</a>,
+    <a href="#5.85_Drivers">Drivers</a>,
+    <a href="#5.85_Interpreter_PDF">Interpreter (PDF)</a>,
+    <a href="#5.85_Interpreter">Interpreter</a>,
+    <a href="#5.85_Library">Library</a>
+</ul>
 <li><a href="#Version5.84">Version 5.84 (tester) (5/19/99)</a>
-<ul><a href="#5.84_Incompatible_changes">Incompatible changes</a>,
+<ul>
+<li><a href="#5.84_Incompatible_changes">Incompatible changes</a>,
     <a href="#5.84_Procedures">Procedures</a>,
     <a href="#5.84_Utilities">Utilities</a>,
     <a href="#5.84_Drivers">Drivers</a>,
@@ -41,7 +140,8 @@ Changes in the most recent releases of Ghostscript
     <a href="#5.84_Library">Library</a>
 </ul>
 <li><a href="#Version5.83">Version 5.83 (tester) (5/13/99)</a>
-<ul><a href="#5.83_Incompatible_changes">Incompatible changes</a>,
+<ul>
+<li><a href="#5.83_Incompatible_changes">Incompatible changes</a>,
     <a href="#5.83_Documentation">Documentation</a>,
     <a href="#5.83_Procedures">Procedures</a>,
     <a href="#5.83_Utilities">Utilities</a>,
@@ -49,7 +149,8 @@ Changes in the most recent releases of Ghostscript
     <a href="#5.83_Library">Library</a>
 </ul>
 <li><a href="#Version5.82">Version 5.82 (tester) (4/24/99)</a>
-<ul><a href="#5.82_Incompatible_changes">Incompatible changes</a>,
+<ul>
+<li><a href="#5.82_Incompatible_changes">Incompatible changes</a>,
     <a href="#5.82_Documentation">Documentation</a>,
     <a href="#5.82_Procedures">Procedures</a>,
     <a href="#5.82_Utilities">Utilities</a>,
@@ -60,7 +161,8 @@ Changes in the most recent releases of Ghostscript
     <a href="#5.82_Library">Library</a>
 </ul>
 <li><a href="#Version5.81">Version 5.81 (tester) (4/14/99)</a>
-<ul><a href="#5.81_Incompatible_changes">Incompatible changes</a>,
+<ul>
+<li><a href="#5.81_Incompatible_changes">Incompatible changes</a>,
     <a href="#5.81_Procedures">Procedures</a>,
     <a href="#5.81_Utilities">Utilities</a>,
     <a href="#5.81_Drivers">Drivers</a>,
@@ -71,7 +173,8 @@ Changes in the most recent releases of Ghostscript
     <a href="#5.81_Library">Library</a>
 </ul>
 <li><a href="#Version5.80">Version 5.80 (tester) (4/6/99)</a>
-<ul><a href="#5.80_Incompatible_changes">Incompatible changes</a>,
+<ul>
+<li><a href="#5.80_Incompatible_changes">Incompatible changes</a>,
     <a href="#5.80_Procedures">Procedures</a>,
     <a href="#5.80_Utilities">Utilities</a>,
     <a href="#5.80_Drivers">Drivers</a>,
@@ -84,7 +187,8 @@ Changes in the most recent releases of Ghostscript
 </ul>
 <li>(Versions 5.74 - 5.79 deliberately omitted.)
 <li><a href="#Version5.73">Version 5.73 (tester) (3/19/99)</a>
-<ul><a href="#5.73_Incompatible_changes">Incompatible changes</a>,
+<ul>
+<li><a href="#5.73_Incompatible_changes">Incompatible changes</a>,
     <a href="#5.73_Documentation">Documentation</a>,
     <a href="#5.73_Procedures">Procedures</a>,
     <a href="#5.73_Drivers">Drivers</a>,
@@ -92,7 +196,8 @@ Changes in the most recent releases of Ghostscript
     <a href="#5.73_Library">Library</a>
 </ul>
 <li><a href="#Version5.72">Version 5.72 (tester) (3/17/99)</a>
-<ul><a href="#5.72_Incompatible_changes">Incompatible changes</a>,
+<ul>
+<li><a href="#5.72_Incompatible_changes">Incompatible changes</a>,
     <a href="#5.72_Documentation">Documentation</a>,
     <a href="#5.72_Procedures">Procedures</a>,
     <a href="#5.72_Utilities">Utilities</a>,
@@ -245,7 +350,7 @@ Changes in the most recent releases of Ghostscript
 
 <p>
 This document is a record of changes in Ghostscript releases numbered 5.60
-through 6.0.  For earlier versions, see the the history documents:
+through 5.9x.  For earlier versions, see the the history documents:
 
 <blockquote>
 <a href="History5.htm">History of Ghostscript versions 5.0 - 5.50</a><br>
@@ -269,9 +374,1691 @@ overview</a>.
 <pre>
 Within each release, news appears in the following order: Incompatible
 changes, Documentation, Procedures, Utilities, Drivers, Platforms, Fonts,
-Interpreter, Streams (included under Interpreter through release 2.9.9),
-Library.  Changes marked with a * were made available as patches to a
-previous release.
+PDF writer (included under Drivers through fileset 5.88), Interpreter,
+Streams (included under Interpreter through release 2.9.9), Library.
+Changes marked with a * were made available as patches to a previous
+release.
+
+<hr>
+
+<h1><a name="Version5.93"></a>Version 5.93 (beta) (9/11/99)</h1>
+
+This is the next candidate for the 6.0 release.  As with 5.92, all changes
+other than added documentation are bug fixes.
+
+<h2><a name="5.93_Incompatible_changes"></a>Incompatible changes</h2>
+
+(Library)
+	- Every stream whose state includes any GC-traceable pointers must
+now have a set_defaults procedure that clears those pointers.
+
+<h2><a name="5.93_Documentation"></a>Documentation</h2>
+
+Fixes problems:
+	- There was an extra /ul tag.  (doc/Release.htm)
+	- Fontmap.GS wasn't mentioned as needing to be installed.
+(doc/Install.htm)
+	- Some documentation for the handling of seac was incorrect.
+(gxtype1.c)
+
+Removes references to installbsd, which are no longer relevant.
+(doc/Install.htm)
+
+Updates the information on building with NeXTSTEP.  (doc/Make.htm)
+
+<h2><a name="5.93_Procedures"></a>Procedures</h2>
+
+Fixes problems:
+	- The install command had unpredictably different syntax from one
+"standard" Unix system to another, causing `make install' to fail.  We
+replaced the install command with our own script.  (instcopy, dvx-gcc.mak,
+unix-gcc.mak, unixansi.mak, unixtrad.mak)
+
+<h2><a name="5.93_Utilities"></a>Utilities</h2>
+
+Fixes problems:
+	- pcharstr.ps loaded type1ops.ps with run rather than runlibfile,
+causing an error.  (lib/pcharstr.ps)
+
+<h2><a name="5.93_Drivers"></a>Drivers</h2>
+
+Fixes problems:
+	- Attempting to embed a font whose Encoding included characters not
+present in the font produced invalid output.  (gdevpsd1.c)
+	- Allocating a stream state didn't (automatically) clear all its
+internal pointers, possibly causing GC memory access errors.  (gdevpsds.c)
+	- An #include of string_.h should have been memory_.h.  (gdevpsdf.c)
+
+Disables compression for very small images.  (gdevpsdi.c)
+
+<h2><a name="5.93_Platforms"></a>Platforms</h2>
+
+Fixes problems:
+	- Compiling gp_msio with MSVC's /MD switch caused a compile-time
+error.  (gp_msio.c)
+
+<h2><a name="5.93_PDF_writer"></a>PDF writer</h2>
+
+Fixes problems:
+	- A bookkeeping object was allocated with the wrong allocator,
+possibly causing access errors or garbage output.  (gdevpdfu.c)
+	- Certain Patterns weren't treated as such, leading to very large
+output files.  (gdevpdfi.c)
+	- If one of the base 14 fonts had a non-standard FontMatrix, the
+output disregarded this fact.  This could cause double obliquing.
+(gdevpdfx.h, gdevpdff.c, gdevpdft.c)
+	- Articles never got an object ID assigned.  (bug introduced in
+5.91) (gdevpdfm.c)
+
+<h2><a name="5.93_Interpreter_PDF"></a>Interpreter (PDF)</h2>
+
+Changes the PDF interpreter to allow abbreviated filter names like /Fl for
+all streams, not just in-line images.  This directly contradicts the
+published PDF specification, but Acrobat Reader allows it.
+(lib/pdf_base.ps)
+
+<h2><a name="5.93_Interpreter"></a>Interpreter</h2>
+
+Fixes problems:
+	- Compiled fonts were broken by the introduction of i_ctx_p.
+(lib/font2c.ps, ccfont.h, iccfont.c)
+	- Allocating a stream state didn't (automatically) clear all its
+internal pointers, possibly causing GC memory access errors.  (zfproc.c)
+
+<h2><a name="5.93_Streams"></a>Streams</h2>
+
+Fixes problems:
+	- Allocating a stream state didn't (automatically) clear all its
+internal pointers, possibly causing GC memory access errors.  (scfx.h,
+slzwx.h, spngpx.h, strimpl.h, sbwbs.c, sdctc.c, seexec.c, sfilter1.c,
+siscale.c, szlibc.c)
+	- The PNG predictor streams could fail to process some data at the
+end of the input.  (spngp.c)
+
+<h2><a name="5.93_Library"></a>Library</h2>
+
+Fixes problems:
+	- Some obsolete definitions for Turbo C could produce references to
+an undefined procedure (setmem) at link time.  (memory_.h, string_.h)
+
+<hr>
+
+<h1><a name="Version5.92"></a>Version 5.92 (beta) (9/2/99)</h1>
+
+This is the next candidate for the 6.0 release.  All changes other than
+added documentation are bug fixes.
+
+<h2><a name="5.92_Documentation"></a>Documentation</h2>
+
+Fixes problems:
+	- The News for 5.91 didn't include a summary.  (doc/News.htm)
+	- The documentation for Microsoft platforms didn't mention that you
+must add the Ghostscript bin and lib directories to the PATH.  (doc/Use.htm)
+
+Adds a file describing Aladdin's process for building, testing, and
+releasing Ghostscript.  (doc/Readme.htm, doc/Release.htm)
+
+<h2><a name="5.92_Procedures"></a>Procedures</h2>
+
+Fixes problems:
+	- Fontmap.GS is now required, but wasn't installed.  (unixinst.mak)
+	- A couple of documentation files weren't installed.  (unixinst.mak)
+
+<h2><a name="5.92_Utilities"></a>Utilities</h2>
+
+Fixes problems:
+	- The ps2pdf script for MS Windows used the wrong name for the
+executable.  (lib/ps2pdf.bat)
+
+<h2><a name="5.92_Drivers"></a>Drivers</h2>
+
+Fixes problems:
+	- An uninitialized variable annoyed some compilers.  (gdevpsdt.c)
+	- The PostScript-writing driver used the wrong allocator, causing
+possible memory access errors.  (gdevps.c)
+	- The PostScript-writing driver didn't clear a pointer, causing
+possible GC errors.  (gdevps.c)
+	- The PostScript-writing driver didn't have a correct GC descriptor,
+causing pointers to be corrupted.  (gdevpsdf.h, gdevps.c, gdevpsdf.c)
+	- Embedded Type 1 fonts unnecessarily filled individual Encoding
+slots with /.notdef.  (gdevpsd1.c)
+	- A large constant produced warnings on some compilers.  (gdevpsdt.c)
+
+<h2><a name="5.92_PDF_writer"></a>PDF writer</h2>
+
+Fixes problems:
+	- Once again, gcc didn't complain about an ANSI-illegal extra
+semicolon in a declaration list.  (gdevpdfo.h)
+	- Adds a cast to work around the fact that some compilers declare
+the return type of memchr as char * rather than void *.  (gdevpdfr.c)
+	- The bookkeeping for whether a font had been written and freed was
+inverted, causing some fonts to be written many times and other fonts not to
+be written at all.  (gdevpdf.c)
+
+<h2><a name="5.92_Interpreter"></a>Interpreter</h2>
+
+Fixes problems:
+	- More places needed workarounds for the alignment aliasing gcc bug.
+The bug only occurs if a pointer variable is dereferenced through a cast to
+a stricter alignment and then dereferenced later in its original form, so it
+doesn't affect very many places.  (igc.c, igcref.c, isave.c)
+
+<h2><a name="5.92_Streams"></a>Streams</h2>
+
+Makes the stream GC descriptor public for subclassing.  (stream.h, stream.c)
+
+<hr>
+
+<h1><a name="Version5.91"></a>Version 5.91 (beta) (8/30/99)</h1>
+
+This is the next beta for 6.0.  It includes a major rewrite of the parts of
+the PDF writer that deal with resources and pdfmarks, as well as the usual
+bug fixes.  There are still problems with embedded fonts, both TrueType
+(which sometimes don't show up at all) and Type 1 (which sometimes confuse
+Acrobat Reader 3).
+
+<h2><a name="5.91_Documentation"></a>Documentation</h2>
+
+Fixes problems:
+	- An HTML tag was misplaced in the News file.  (doc/News.htm)
+
+Notes that the Solaris FONTPATH scanning problem may be fixed.
+(doc/Use.htm)
+
+<h2><a name="5.91_Utilities"></a>Utilities</h2>
+
+Fixes problems:
+	- Many of the margin and width computations in ps2epsi.ps (not
+written by Aladdin) were wrong -- off by 1.  It's only because the bugs
+masked each other or cancelled each other out that the code didn't produce
+errors more of the time.  (lib/ps2epsi.ps)
+
+<h2><a name="5.91_Drivers"></a>Drivers</h2>
+
+Fixes problems:
+	- Font subset glyphs weren't sorted early enough, causing Type 1
+embedded fonts to be written with inconsistent lengths.  (gdevpsd1.c)
+
+Changes the BMP drivers so that they set the resolution in the BMP header
+rather than leaving it at 0.  This solves some problems reported by users,
+but may cause others.  (gdevbmpc.c)
+
+<h2><a name="5.91_Platforms"></a>Platforms</h2>
+
+Fixes problems:
+	- A change made in 5.90 was incorrect (we couldn't test it, because
+MS Windows and OS/2 systems can't be used over a network).  (gp_msio.c,
+gp_os2.c)
+
+Adds some conditionalization to work around a bug in some recent versions of
+gcc/egcs.  (stdpre.h, interp.c)
+
+<h2><a name="5.91_Fonts"></a>Fonts</h2>
+
+Fixes problems:
+	- If the extension of a font file name on GS_FONTPATH included any
+upper-case characters, the font would not be found.  (lib/gs_fonts.ps)
+
+Allows fontmaps to contain <string> run or .runlibfile, to get rid of the
+Fontmap -> Fontmap.GS link that VMS can't handle.  (lib/gs_fonts.ps)
+
+<h2><a name="5.91_PDF_writer"></a>PDF writer</h2>
+
+Fixes problems:
+	- Very long arguments for pdfmark caused an ioerror, because the
+buffer used for converting them was fixed-length.  (lib/gs_pdfwr.ps)
+	- pdfmarks couldn't refer to objects that hadn't been defined yet.
+(gdevpdfx.h, gdevpdfo.c)
+	- When a DOCVIEW pdfmark added an OpenAction key to the Catalog,
+it omitted the / before the name.  (gdevpdfm.c)
+	- Font resources could be written in the middle of a page contents
+stream.  (bug introduced in 5.90) (gdevpdff.c, gdevpdfu.c)
+	- As usual, there were some signed/unsigned char * mismatches that
+gcc didn't detect.  (gdevpdff.c, gdevpdfm.c, gdevpdfo.c)
+	- Fonts used on a page but freed before the end of the page were
+omitted from the page's resource dictionary.  (gdevpdfx.h, gdevpdf.c,
+gdevpdff.c, gdevpdft.c)
+	- /D or /Dest keys in Action pdfmark dictionaries dropped the first
+character of their value.  (gdevpdfm.c)
+	- If a pdfmark added annotations to a page after the end of that
+page had been reached, those annotations would be lost.  (gdevpdf.c)
+	- ANN, LNK, DEST, and PS pdfmarks ignored the object name, if any.
+(Only OBJ and BP processed the name.) Unfortunately, fixing this required a
+complete overhaul of the way that resources and PDF objects were represented
+internally.  The result is both simpler and more general, but it involved a
+major upheaval in the PDF writer code.  (lib/gs_pdfwr.ps, gdevpdfo.h,
+gdevpdfx.h, gdevpdf.c, gdevpdff.c, gdevpdfi.c, gdevpdfm.c, gdevpdfo.c,
+gdevpdfr.c, gdevpdft.c, gdevpdfu.c)
+	- EP pdfmarks didn't close any open text context.  (gdevpdfm.c)
+
+Adds debugging code to check the consistency of the embedded Type 1 font
+writer.  (gdevpdff.c)
+
+Makes /A and /F at the top level of an annotation or outline pdfmark
+equivalent to /Action and /File respectively.  See the code for more
+information.  (gdevpdfm.c)
+
+<h2><a name="5.91_Library"></a>Library</h2>
+
+Fixes problems:
+	- Degenerate Bezier curves could cause a division by zero.
+(gxpcopy.c)
+	- Some macros used in non-FPU configurations were missing some
+needed uses of const, and in one case an additional cast.  (gxfarith.h,
+gxfixed.h)
+
+Changes the discard macro to upper-case.  (stdpre.h)
+
+<hr>
+
+<h1><a name="Version5.90"></a>Version 5.90 (beta) (8/20/99)</h1>
+
+This is the first real candidate for the 6.0 release.  It does not fix all
+known bugs, but it includes all planned functionality.  New in this fileset:
+	- FunctionType 4 for PDF files.
+	- Alternate printer images for PDF files (-dUsePrinterImages
+	switch).
+	- pdfwrite support for PDF "Cos objects" (without compression for
+	streams).
+	- pdfwrite support for graphics objects named with BP/EP/SP
+	(without compression for the object definition).
+	- pdfwrite font subsetting and embedded TrueType fonts.
+
+<h2><a name="5.90_Incompatible_changes"></a>Incompatible changes</h2>
+
+(Interpreter)
+	- ref_stack_init now takes an additional argument.
+	- no_time_slice_proc is removed -- use 0 instead.
+(Library)
+	- Notification client procedures and the gs_notify_ procedures
+take different arguments.
+	- The common part of a gs_function_t structure has changed.
+	- gs_text_enum_init now returns a value that can indicate an error.
+	- The font font_info procedure now takes an additional argument.
+	- The IODevice open_device procedure is now defined as returning
+0 or 1 under specific circumstances.
+	- gxp1fill.h is renamed gxp1impl.h.
+	- Allocators now have an additional procedure they must implement,
+and a state member they must initialize.
+	- Most of the gs..basic.. structure definition macros have been
+renamed.  The ptrs1_stringsN structure definition macros are removed.
+	- Implementations of the text API now must provide a resync
+procedure rather than a restart procedure.
+
+<h2><a name="5.90_Documentation"></a>Documentation</h2>
+
+Documents the new -dUsePrinterImages switch, and the expanded meaning of
+-Z~.  (doc/Use.htm)
+
+Updates FSF's address in documentation.  (lib/Fontmap.GS, lib/Fontmap.Sol,
+gdevcd8.c)
+
+Brings the PDF writer (ps2pdf) documentation up to date.  (doc/Ps2pdf.htm)
+
+Updates the current-release documentation.  (doc/Current.htm,
+doc/Readme.htm)
+
+Updates the problem-reporting procedure for contributed drivers, and some
+other new-user information.  (doc/New-user.htm)
+
+<h2><a name="5.90_Procedures"></a>Procedures</h2>
+
+Fixes bugs:
+	- Because of a typo, the file gs_mgl_e.ps wasn't installed (on Unix
+systems) by 'make install'.  (unixinst.mak)
+	- The .dev files for drivers didn't depend on devs.mak.  (devs.mak)
+	- The X driver didn't include a needed dependency on the bbox
+device.  (devs.mak)
+
+Incorporates the pdfmin package into the pdf package, since pdfmin was only
+provided for very small-memory environments and is no longer useful.
+(int.mak)
+
+Adds additional prototype-checking switches, which are important on 64-bit
+platforms and useful on all platforms, to the gcc compilation line.
+(unix-gcc.mak)
+
+<h2><a name="5.90_Utilities"></a>Utilities</h2>
+
+Fixes bugs:
+	- A backquote was misplaced in the Unix ps2pdf script.  (lib/ps2pdf)
+	- Some example files didn't have %! headers.  (examples/alphabet.ps,
+examples/waterfal.ps)
+	- ansi2knr didn't handle preprocessor directives within a function
+header.  (ansi2knr.c)
+
+Cleans up some minor compiler complaints.  (genarch.c, genconf.c, echogs.c)
+
+<h2><a name="5.90_Drivers"></a>Drivers</h2>
+
+Fixes bugs:
+	- The PostScript writer sometimes failed to reset the clip path,
+causing parts of the output to be omitted or to appear incorrectly.
+(gdevvec.c)
+	- There was a type mismatch in a conditional.  (gdevxini.c)
+	- A constant array wasn't declared as static.  (gdevpsdt.c)
+	- Once again, there were some signed / unsigned char mismatches that
+gcc apparently can't be forced to detect.  (gdevpsdt.c)
+	- The alternative X drivers didn't have GC descriptors, which could
+lead to memory corruption.  (gdevxalt.c)
+	- The alternative X drivers didn't handle the closing of the
+underlying X driver correctly, leading to a dangling pointer.  (gdevxalt.c)
+	- Font subsetting didn't eliminate duplicate glyphs (glyphs
+referenced more than once from the Encoding vector.)  (gdevpsd1.c,
+gdevpsdt.c)
+	- Type 1 font subsetting didn't ensure the presence of .notdef.
+(gdevpsd1.c)
+	- The embedded TrueType font writer wrote all 16-bit values
+incorrectly.  This could explain a lot!  (gdevpsdt.c)
+
+Cleans up public functions with no previous prototype.  (gdevtfax.h,
+gdevx.h, gdevdfax.c, gdevtfax.c, gdevx.c, gdevxini.c, gdevxxf.c)
+
+Adds some procedures to support font subsetting.  (gdevpsdf.h, gdevpsdf.c)
+
+Adds an alternate font name for writing TrueType fonts.  (gdevpsdt.c)
+
+Makes the TrueType font writer generate an OS/2 table, a Macintosh cmap, and
+a name table (for the font name), as well as a Windows cmap and post, if
+necessary.  (gdevpsdf.h, gdevpsdt.c)
+
+<h2><a name="5.90_Platforms"></a>Platforms</h2>
+
+Updates a couple of clients for the change in the IODevice open_device
+procedure, eliminating some undesirable externs.  (gp_msio.c, gp_os2.c)
+
+<h2><a name="5.90_Fonts"></a>Fonts</h2>
+
+Adds OS/2 and maxp to the list of tables that must be preserved when loading
+TrueType fonts.  (lib/gs_ttf.ps)
+
+Registers the complete lists of glyphs in the Adobe Latin fonts as
+pseudo-encodings.  (lib/gs_lgo_e.ps, lib/gs_lgx_e.ps, unixinst.mak)
+
+<h2><a name="5.90_PDF_writer"></a>PDF writer</h2>
+
+Fixes bugs:
+	- One built-in font was sometimes substituted for another.
+(gdevpdff.c)
+	- Use of composite fonts often produced a rangecheck error.
+(gdevpdft.c)
+	- The structures for named objects were freed twice.  (gdevpdfx.h,
+gdevpdf.c, gdevpdfo.c)
+	- The code to avoid writing a blank between a Td command and
+following text was fragile and still incorrect after being "fixed" twice.
+We removed this minor optimization, at a small cost in file size when not
+compressing.  (gdevpdft.c)
+	- No Names tree was generated for named destinations specified as
+strings.  Rather than do this, we now convert string destinations to names.
+This doesn't scale up well, but it is simple and also is compatible with all
+PDF versions from 1.1 on.  (gdevpdfm.c)
+	- Fonts that define characters incrementally, such as the TrueType
+fonts written by some versions of the AdobePS Windows driver, could omit
+characters if embedded.  Fixing this required delaying writing out fonts
+until the font was about to be freed or the writer was closed.  (gdevpdfx.h,
+gdevpdff.c, gdevpdft.c)
+
+Cleans up public functions with no previous prototype.  (gdevpdfx.h,
+gdevpdf.c, gdevpdfm.c)
+
+Updates client code for the change in gs_text_enum_init.  (gdevpdft.c)
+
+Makes some changes towards handling show operations that must be split up
+internally into multiple operations using different fonts.  (gdevpdfx.h,
+gdevpdff.c, gdevpdft.c)
+
+Implements the PUT pdfmark for the built-in objects (Catalog, DocInfo,
+Page<#>, ThisPage, PrevPage, NextPage).  This required deferring writing out
+page objects until the end of the document.  (lib/gs_pdfwr.ps, gdevpdfx.h,
+gdevpdf.c, gdevpdff.c, gdevpdfm.c, gdevpdfo.c, gdevpdfu.c)
+
+Adds table entries, but not parsing, checking, or functionality, for the new
+Acrobat 4 pdfmarks related to document logical structure.  (gdevpdfm.c)
+
+Implements stream-type Cos objects.  (lib/gs_pdfwr.ps, gdevpdfx.h,
+gdevpdf.c, gdevpdfm.c, gdevpdfo.c, gdevpdfp.c, gdevpdfu.c)
+
+Implements BP/EP/SP pdfmarks.  (gdevpdfx.h, gdevpdf.c, gdevpdfi.c,
+gdevpdfm.c)
+
+Changes enumeration and #defined names to upper case, and adds _t to type
+names.  (gdevpdfx.h, gdevpdf*.c)
+
+Adds an OS/2 table for embedded fonts if missing.  (gdevpdff.c)
+
+Makes the allocator for the PDF device's internal structures be the stable
+allocator of the device's allocator, not the C heap.  This required
+correcting a number of GC descriptors.  (gdevpdfx.h, gdevpdf.c, gdevpdfu.c)
+
+Replaces the text restart procedure with the new resync procedure.
+(gdevpdft.c)
+
+<h2><a name="5.90_Interpreter_PDF"></a>Interpreter (PDF)</h2>
+
+Fixes problems:
+	- Failure to find a font in the Resources dictionary signalled an
+/undefinedfont error (which does not exist) rather than /invalidfont.
+(lib/pdf_font.ps)
+
+Implements FunctionType 4 functions.  (lib/pdf_draw.ps, zfunc4.c)
+
+Implements the -dUsePrinterImages switch to use "alternate" printer images
+when rendering.  (lib/pdf_draw.ps)
+
+<h2><a name="5.90_Interpreter"></a>Interpreter</h2>
+
+Fixes problems:
+	- Some pointers were declared as ref * that actually could be
+ref_packed *, potentially confusing compilers that follow the new, stricter
+ANSI C rules about alignment aliasing.  (idebug.h, idebug.c, igc.c,
+igcref.c, zmisc.c)
+	- cshow didn't restore the root font after executing the procedure,
+producing incorrect results if the procedure did a setfont.  (ichar.h,
+zcfont.c, zchar.c)
+	- A needed const-breaking cast was omitted.  (zmisc.c)
+	- The memory validator could cause an unaligned access.  (ilocate.c)
+	- restore could free parts of the stacks that were still in use.  We
+fixed this long-standing problem using the new concept of stable allocators.
+(interp.c)
+
+Moves the implementation of the abs operator to C, required for FunctionType
+4 support.  (lib/gs_init.ps, zarith.c)
+
+Makes more operator procedures public, required for FunctionType 4 support.
+(zarith.c, zmath.c, zrelbit.c, ztype.c)
+
+Adds an additional parameter to ref_stack_init, to allow creating a
+temporary stack without having an allocator.  (istkparm.h, istack.h,
+interp.c, istack.c)
+
+Cleans up public functions with no previous prototype.  (files.h, ichar.h,
+icstate.h, ifilter2.h, ifrpred.h, ifwpred.h, igcstr.h, iimage.h, iimage2.h,
+iinit.h, imain.h, interp.h, iscanbin.h, ivmem2.h, oparc.h, opextern.h,
+icontext.c, igc.c, iinit.c, imain.c, inobtokn.c, interp.c, iscan.c,
+iscanbin.c, zchar.c, zcharout.c, zcolor.c, zcolor1.c, zcontrol.c, zdevice.c,
+zdpnext.c, zdps.c, zfdecode.c, zfile.c, zfilter2.c, zfont0.c, zfunc0.c,
+zfunc3.c, zfzlib.c, zgeneric.c, zht1.c, zht2.c, zimage.c, zimage2.c,
+ziodev.c, zmath.c, zpath1.c, zupath.c, zusparam.c, zvmem.c, zvmem2.c)
+
+Updates client code for the tweak in the definition of the IODevice
+open_device procedure.  (ziodev.c)
+
+Implements stable local and global VM allocators.  This required changing
+more places than we would have liked.  (ialloc.c, igc.c, ilocate.c, imain.c,
+interp.c, ireclaim.c, isave.c, zcontext.c)
+
+Removes the global member of gs_ref_memory_t, since it isn't used.
+(gxalloc.h, ialloc.c, zcontext.c)
+
+Adds more tracing to the relocation phase of the garbage collector.
+(igcref.c)
+
+<h2><a name="5.90_Streams"></a>Streams</h2>
+
+Fixes problems:
+	 - jpeg_open_backing_store no longer had the correct arguments.
+(This had no effect in practice, since the procedure was never called.)
+(sjpegc.c)
+
+Cleans up public functions with no previous prototype.  (scfdgen.c,
+scfetab.c, sjpegc.c, slzwce.c, slzwd.c, stream.c)
+
+Adds some tracing to the image scaling stream.  (siscale.c)
+
+<h2><a name="5.90_Library"></a>Library</h2>
+
+Fixes bugs:
+	- A null OutputFile name could cause an error.  (gxdevice.h,
+gsdevice.c, gsfname.c)
+	- Shading with non-monotonic Functions produced incorrect output.
+(gxshade1.c)
+	- An #undef didn't match the #define it was supposed to cancel.
+(gxchar.c)
+	- The default next_char_glyph procedure didn't handle FROM_CHARS or
+FROM_SINGLE_CHAR data sources.  (gstext.c)
+	- When finalizing a forwarding device, the target pointer in the
+device wasn't cleared, leading to an incorrect attempt to access it later.
+(gdevnfwd.c)
+	- Interpolated images were broken, probably since 5.81.
+(gxiscale.c)
+	- Some color space implementation procedures hadn't been updated to
+add 'const' to the color space argument.  (gscie.c)
+	- A constant had a signed/unsigned ambiguity on systems where
+sizeof(long) > 4.  (gsccode.h)
+	- The font font_info procedure didn't provide for scaling.
+(gxfont.h)
+
+Simplifies the notification mechanism to remove the concept of client and
+generating object.  Registration now just takes a closure (procedure +
+opaque data); events pass the closure data and event data.  (gsnotify.h,
+gsfont.c, gsnotify.c)
+
+Changes gs_notify_unregister so that it can unregister all registrations of
+a particular client rather than only one.  (gsnotify.h, gsnotify.c)
+
+Adds support for "vanilla" Functions at the library level.  (gsfunc.h,
+gsfunc.c)
+
+Adds some tracing for Functions.  (gsfunc3.c)
+
+Redefines function monotonicity to indicate whether the function is
+increasing or decreasing, and implements monotonicity correctly for all
+FunctionTypes except 4.  (gsfunc.h, gxfunc.h, gsfunc0.c, gsfunc3.c)
+
+Makes Type 0 fonts check that they are being used with a string, not a
+character or (a) glyph(s).  (gxtext.h, gschar.c, gschar0.c, gstext.c,
+gxchar.c)
+
+Cleans up public functions with no previous prototype.  (gdevmem.h,
+gpcheck.h, gscie.h, gserror.h, gsmemory.h, gxcie.h, gxcldev.h, gxclpath.h,
+gxcmap.h, gxcspace.h, gxfixed.h, gxfont0.h, gxp1fill.h [deleted],
+gxp1impl.h, math_.h, std.h, gconf.c, gdevdrop.c, gdevm1.c, gdevm2.c,
+gdevm4.c, gdevm8.c, gdevm24.c, gdevmr1.c, gdevmr2n.c, gdevprn.c, gsbittab.c,
+gscdef.c, gscie.c, gsciemap.c, gscspace.c, gscscie.c, gsdevmem.c,
+gsdparam.c, gshtscr.c, gsimpath.c, gsiodev.c, gsmisc.c, gsnorop.c, gspath.c,
+gspcolor.c, gsptype1.c, gsropc.c, gsutil.c, gxacpath.c, gxclist.c,
+gxcpath.c, gxi12bit.c, gxicolor.c, gxifast.c, gximono.c, gxiscale.c,
+gxp1fill.c, gxpath2.c)
+
+Gets rid of some remaining vestiges of 16-bit ints.  (gdevm1.c, gsbitops.c)
+
+Adds procedures to register clients for notification when a font is freed.
+(gxfont.h, gsfont.c)
+
+Defines the IODevice open_device procedure as returning 1 if it opened a new
+stream, 0 if it returned an existing stream.  This eliminates some awkward
+externs.
+
+Adds the concept of a stable allocator -- an allocator that allocates from
+the same heap and in the same VM space as another allocator, but is not
+subject to save and restore.  (gsmemory.h, gsmemraw.h, gsalloc.c,
+gsmalloc.c, gsmemlok.c, gsmemret.c, gsnogc.c)
+
+Adds some new macros to make defining new kinds of fixed-format structures
+simpler.  (gsstruct.h)
+
+Replaces the text processing restart procedure with a more general resync
+procedure, which can be used to restart partway through a string.  We retain
+gs_text_restart for backward compatibility and general usefulness.
+(gstext.h, gxtext.h, gdevbbox.c, gstext.c, gxchar.c)
+
+Adds the Adobe Latin glyph sets as pseudo-encodings.  (gsccode.h)
+
+<hr>
+
+<h1><a name="Version5.88"></a>Version 5.88 (tester) (8/3/99)</h1>
+
+This fileset adds the ability to reference and embed TrueType fonts in PDF
+output.  Unfortunately, even though the resulting PDF files work fine with
+Ghostscript itself, Acrobat Reader apparently can't handle embedded TrueType
+fonts with non-standard Encodings.  We hope to fix this problem during the
+6.0 beta test period.
+
+This fileset also adds the ability to buffer X Windows output in a
+client-side bitmap.  This is typically more efficient than trying to push
+many small commands through the X client/server knothole, especially if
+bitmap images or RasterOp are involved.
+
+Some reported problems have been deliberately left unfixed: we will need
+every minute of the 13 days before the start of the 6.0 beta test period to
+implement the last few items of functionality scheduled for the 6.0 release,
+and we can fix problems (but not add functionality) during the beta test
+period.
+
+<h2><a name="5.88_Incompatible_changes"></a>Incompatible changes</h2>
+
+(Library)
+	- The box_device member of the bbox device is replaced by the
+box_data member, with a different meaning.
+	- The x_rect structure is removed; all uses are changed to
+gs_int_rect.
+	- gdevpstr.h is renamed spprint.h.
+	- The parameter printing procedures are moved from gdevpsdf.[hc] to
+spsdf.[hc].
+	- Clients must now allocate gs_font* objects using gs_font_alloc or
+gs_font_base_alloc, not directly with gs_alloc_struct.
+	- The first (vptr) argument of enum_ptrs procedures is now const *.
+EV_CONST is no longer defined.
+	- The pep argument of enum_ptrs procedures is now enum_ptr_t *
+rather than const void **.
+	- The font glyph_pieces procedure is replaced with an option for
+glyph_info.
+	- The font encode_char procedure now takes an additional glyph_space
+argument.
+	- The o_large flag in object headers is renamed o_alone; o_lmark and
+o_lsize no longer exist.  The DO_LARGE and DO_SMALL macros for enumerating
+objects in a chunk are also removed.
+
+<h2><a name="5.88_Documentation"></a>Documentation</h2>
+
+Fixes problems:
+	- News entries since 5.72 had a missing &lt;li&gt; in the table of
+contents entry.  (doc/News.htm)
+	- gs_text_params_t still referred to REPLACE_X_WIDTHS and
+REPLACE_Y_WIDTHS rather than REPLACE_WIDTHS.  (gstext.h)
+
+Clarifies that the font glyph_outline procedure must append a final moveto
+for the advance width.  (gxfont.h)
+
+Clarifies that the font enumerate_glyph procedure enumerates glyphs in an
+unpredictable order.  (gxfont.h)
+
+Documents that reference counted freeing procedures for structures with
+finalization must free the structure itself first rather than last.
+(gsrefct.h)
+
+Updates documentation on building Ghostscript on MS-DOS and MS Windows.
+(doc/Make.htm)
+
+Adds some documentation on how the makefiles are / should be structured.
+(doc/Source.htm)
+
+Documents the new parameters for the X driver.  (doc/Use.htm)
+
+Updates the language documentation to refer properly to PostScript
+LanguageLevel 3 and PDF 1.3. (doc/Language.htm)
+
+<h2><a name="5.88_Procedures"></a>Procedures</h2>
+
+Fixes problems:
+	- An omitted space in a makefile caused an incompatibility with the
+VMS build utilities.  (lib.mak)
+	- The gsindent script was omitted from the fileset.  (gsindent)
+	- The core library didn't include stream.c, which is now required.
+(lib.mak)
+	- The workaround for the peculiarities of the Watcom compiler's
+command line syntax didn't work.  (zlib.mak)
+	- A DOS command line overflowed in the makefile.  We patched this by
+deleting the bmpgray device from the Borland Windows platform.
+(bcwin32.mak)
+
+Provides a .lnk file required by the revised linking procedures on MS
+Windows.  (gsdll32w.lnk)
+
+Straightens out the Watcom makefiles so that it is possible to build a
+Windows executable and DLL using the Watcom compiler.  This required moving
+some parameters around in the other PC makefiles.  (bcwin32.mak,
+msvccmd.mak, watc.mak, watcw32.mak, wccommon.mak, winint.mak, winlib.mak)
+
+<h2><a name="5.88_Drivers"></a>Drivers</h2>
+
+Fixes problems:
+	- The X driver reported the wrong parameter name for errors in the
+value of the WindowID or .IsPageDevice parameter.  (gdevxini.c)
+	- The X driver calculated the Y window dimension incorrectly when
+resizing the window if X and Y resolutions were different.  (Never happens
+in practice.)  (gdevxini.c)
+	- The bmpasep8 device was defined as gx_device_printer rather than
+gx_device_async.  (gdevbmpa.c)
+	- Some casts between signed and unsigned char * were missing.
+(gdevpdff.c, gdevpdft.c)
+	- The PDF writer didn't handle reencoded characters properly in
+non-embedded fonts.  (gdevpdfx.h)
+	- The PDF writer allocated new structures while being closed,
+causing memory corruption if the close procedure was called for
+finalization.  (gdevpdff.c, gdevpsd1.c)
+	- The PDF writer tried to close the resource file twice.  (bug
+introduced since 5.50) (gdevpdf.c)
+	- The PDF writer failed to work around a bug in Acrobat 3 Reader's
+Print function related to re-encoded fonts.  (gdevpdft.c)
+	- The PDF writer incorrectly specified ASCII85Encode rather than
+ASCII85Decode for non-binary embedded fonts.  (gdevpdff.c)
+	- The PDF writer didn't handle embedded fonts with a non-standard
+FontMatrix correctly.  (gdevpdft.c)
+	- The PDF writer didn't handle reassigned characters correctly.
+(gdevpdft.c)
+	- When embedding a Type 1 font, the PDF writer didn't check that the
+font contains only CharStrings (no PostScript procedures), no non-standard
+OtherSubrs, and no CDevProc.  (gdevpsd1.c)
+	- There was an unused label in the mswinpr2 driver.  (gdevwpr2.c)
+	- The X driver didn't flush buffered output before reading back
+bits from the display.  (gdevx.c)
+	- The X driver still didn't set up the color mapping tables
+correctly -- in particular, it didn't initialize cman.color_to_rgb before
+setting up the dither ramp or cube.  This is at least the third time we have
+"fixed" this problem.  (gdevxcmp.c)
+
+Removes the remaining uses of gs_malloc, gs_free, and gs_memory_default from
+Aladdin's non-display drivers.  (gdevbit.c, gdevbmp.c, gdevbmpa.c,
+gdevcgm.c, gdevclj.c, gdevcljc.c, gdevdjet.c, gdevlj56.c, gdevmiff.c,
+gdevpbm.c, gdevpcx.c, gdevpng.c, gdevpsim.c, gdevtfax.c, gdevtfnx.c,
+gdevxalt.c)
+
+Adds a MaxBitmap parameter to the X driver: the driver will maintain a
+full-window pixmap in memory if it requires no more space than MaxBitmap.
+The default value of this parameter is 0, meaning never use a client-side
+bitmap.  (gdevx.h, gdevx.c, gdevxini.c, gdevxxf.c)
+
+Moves the X device closing and get/put parameters procedures from gdevx.c to
+gdevxini.c.  (gdevx.c, gdevxini.c)
+
+Removes some remaining uses of gs_malloc and gs_free from the X driver.
+Note that this requires making the X device structure properly
+garbage-collectable.  (gdevx.h, gsstruct.h, gdevxini.c)
+
+Removes the remaining uses of 'register' from the X driver.  (gdevx.c,
+gdevxini.c)
+
+Removes the remaining uses of the obsolete far_data keyword from Aladdin's
+non-PC drivers.  (gdevbmp.c, gdevbmpa.c, gdevcgm.c, gdevlj56.c, gdevmiff.c,
+gdevp2up.c)
+
+Improves the X driver's algorithm for deciding when to update the screen,
+and makes its parameters available for reading and setting.  (gdevx.h,
+gdevx.c, gdevxini.c)
+
+In the X driver's color mapper, improves performance slightly by replacing
+multiplies and divides with shifts and table lookups in the normal case of
+standard color maps.  (gdevxcmp.h, gdevxcmp.c)
+
+Moves some filter-related code from the driver level to the stream level.
+(gdevpsdf.c)
+
+Moves some utilities for printing values in ASCII form from the driver level
+to the stream level.  (devs.mak, gdevpdfx.h, gdevpstr.h [deleted], gdevps.c,
+gdevpsde.c, gdevpsdf.c, gdevpsdp.c, gdevpstr.c [deleted])
+
+Upgrades the PDF writer to handle TrueType fonts as well as Type 1.
+(gdevpdfx.h, gdevpsdf.h, gdevpdff.c, gdevpdft.c, gdevpsde.c => gdevpsd1.c,
+gdevpsdt.c)
+
+Starts to implement font subsetting in the PDF writer. (gdevpdfx.h,
+gdevpsdf.h, gdevpdff.c, gdevpsd1.c, gdevpsdt.c)
+
+Partially implements WMode when writing font descriptors.  (gdevpdff.c)
+
+Changes psdf_binary_writer so that adding the ASCII85 filter in
+psdf_begin_binary doesn't require allocating any memory.  (gdevpsdf.h,
+gdevpsdf.c)
+
+Makes the PDF writer guess the Ascent and StemV values for embedded fonts
+when it can't determine them by examining the font.  (gdevpdff.c)
+
+Makes the PDF writer able to handle xshow and yshow (TEXT_REPLACE_WIDTHS).
+(gdevpdft.c)
+
+Updates code to reflect the addition of glyph_space to the font encode_char
+and enumerate_glyph procedures.  (gdevpsdf.h, gdevpdff.c, gdevpdft.c,
+gdevpsd1.c, gdevpsdf.c, gdevpsdt.c)
+
+Removes some unnecessary #includes.  (gdevxres.c)
+
+Removes the sample driver-based CRD from the variant X drivers, since this
+created a pointless dependency.  (The `bit' drivers still provide this
+feature, for testing.)  (gdevxalt.c)
+
+Changes the default compatibility level of PDF output from 1.2 (Acrobat 3)
+to 1.3 (Acrobat 4).  (gdevpdf.c)
+
+<h2><a name="5.88_Platforms"></a>Platforms</h2>
+
+Fixes problems:
+	- A comment included an extra /*.  (gp_mswin.c)
+	- The definitions for min and max in a couple of files disagreed
+with the ones typically provided in system header files.  (dwimg.cpp,
+dwtext.cpp)
+
+Removes some unnecessary code related to generating temporary file names.
+(gp_iwatc.c)
+
+<h2><a name="5.88_Fonts"></a>Fonts</h2>
+
+Changes the loader for TrueType fonts to keep the 'instructions', which are
+required if the font is going to be written out in a PDF file.
+(lib/gs_ttf.ps)
+
+Adds some more debugging output to the TrueType font loader.
+(lib/gs_ttf.ps)
+
+Registers the MacGlyphEncoding so it can be made available to the PDF
+writer.  (lib/gs_mgl_e.ps, lib/gs_ttf.ps, unixinst.mak, gsccode.h, ifont.h)
+
+<h2><a name="5.88_Interpreter_PDF"></a>Interpreter (PDF)</h2>
+
+Fixes problems:
+	- The serif and small-caps flags in the FontDescriptor were ignored
+when doing font substitution.  (lib/gs_fonts.ps, lib/pdf_font.ps)
+	- The ri operator was undefined.  We added a dummy definition.
+(lib/pdf_ops.ps)
+	- The redefinitions of restore could cause a recursion loop.
+(lib/gs_fform.ps, lib/gs_lev2.ps)
+	- There was an extra gsave executed for each page, causing the
+graphics state stack to grow deeper and deeper, which caused problems when
+wrapping up at the end of execution.  (lib/pdf_main.ps)
+
+Implements the sh operator.  (lib/pdf_draw.ps)
+
+Works around a bug in some PDF files generated by Adobe's PDF library (?),
+which attempt to create a font Encoding array with more than 256 elements.
+(lib/pdf_font.ps)
+
+<h2><a name="5.88_Interpreter"></a>Interpreter</h2>
+
+Fixes problems:
+	- The GNU readline completion code (which Aladdin did not write) was
+completely wrong.  (gp_gnrdl.c)
+	- The top-level restore sometimes tried to restore global VM an
+extra time, leading to memory corruption.  (bug probably introduced in 5.85)
+(isave.c)
+	- The glyph_ref procedure was defined in two different places
+(inconsistently).  (ichar.h, zchar.c, zchar1.c)
+
+Restructures the name table to improve cache coherence and to make it
+possible to store initial name strings in ROM.  (iname.h, inamedef.h,
+inames.h, inamestr.h, igc.c, iname.c, isave.c)
+
+Changes the scanner so it doesn't copy name strings when scanning a compiled
+init string.  This reduces RAM requirements by about 20K when using compiled
+initialization.  (iscan.c)
+
+Removes redundant FontBBox correction code, since this is now handled by the
+library.  (zfont42.c)
+
+Updates the Type 1 and Type 42 font code to implement the new font
+procedures.  (icharout.h, zcharout.c, zchar1.c, zchar42.c, zfont1.c,
+zfont42.c)
+
+Simplifies the code that checks whether a grestore needs to do a
+setpagedevice.  (zdevice2.c)
+
+Updates code to reflect the change of the vptr argument of enum_ptrs
+procedures to const *.  (igcref.c)
+
+Updates code to reflect the change in the pep argument of enum_ptrs
+procedures to enum_ptr_t *.  (igc.h, iscan.h, istruct.h, igc.c, igcref.c,
+ilocate.c, iscan.c)
+
+Updates code to reflect the addition of glyph_space to the font encode_char
+and enumerate_glyph procedures.  (bfont.h, ifont.h, zbfont.c, zfont1.c,
+zfont32.c, zfont42.c)
+
+Cleans up some code details.  (idebug.h, ifunc.h, iparray.h, istream.h,
+zfunc.c)
+
+Removes some no longer needed test code.  (zfont1.c)
+
+Updates memory manager code to reflect the change from o_large to o_alone.
+(igc.c, igcref.c, ilocate.c, isave.c)
+
+Changes the printed font substitution message to be closer to what some
+Adobe products print if SHORTERRORS is defined.  (Thanks to Andrew Chilvers
+for the suggestion.)  (lib/gs_fonts.ps)
+
+<h2><a name="5.88_Streams"></a>Streams</h2>
+
+Fixes problems:
+	- The fix in 5.85 for ASCII85Encode EOLs was wrong and caused a word
+of data to be dropped occasionally.  (sfilter2.c)
+
+Moves some filter-related code from the driver level to the stream level.
+(stream.h, stream.c)
+
+Moves some utilities for printing values in ASCII form from the driver level
+to the stream level.  (lib.mak, spprint.h, spsdf.h, spprint.c, spsdf.c)
+
+Adds some more tracing output for image scaling.  (siscale.c)
+
+<h2><a name="5.88_Library"></a>Library</h2>
+
+Fixes problems:
+	- The bbox device's check for whether a rectangle filled the entire
+page was wrong.  (gdevbbox.c)
+	- The bbox device didn't correctly handle parallelograms, triangles,
+or thin lines with points specified in other than ascending order.
+(gdevbbox.c)
+	- The bbox device smashed the reference count of the text enumerator
+it created, causing a memory leak.  (gdevbbox.c)
+	- The bbox device didn't copy back all the dynamic information from
+a subsidiary text enumerator, with unpredictable results.  (gxtext.h,
+gdevbbox.c, gstext.c)
+	- The default implementation of glyph_info for fonts incorrectly
+reported that it returned values for all members, not just the ones it knew
+about.  (gsfont.c)
+	- The profiling implementation of memset was incorrect, leading to
+memory smashing.  (gsmisc.c)
+	- The default implementation of glyph_info had a memory leak.
+(gsfont.c)
+	- The default implementation of character rendering didn't correctly
+handle the case where the character was in the cache and only the character
+width was requested.  (gxchar.c)
+	- Text processing didn't correctly handle REPLACE_WIDTHS if the X
+and Y width arrays were different.  (The PostScript interpreter never does
+this.)  (gstext.h, gstext.c, gxchar.c)
+	- Compositing devices weren't initialized properly, leading to
+invalid accesses.  This is the last (?) bit of the device reference counting
+bug tail.  (gsalphac.c, gsropc.c)
+
+Changes the bbox device to make the procedures for managing the bounding box
+virtual, so the X device can be a subclass.  (gdevbbox.h, gdevbbox.c)
+
+Changes the bbox device so it always adds the bounding box after doing the
+drawing operation rather than before, for the benefit of the buffering X
+device.  (gdevbbox.c)
+
+Removes some remaining uses of gs_memory_default.  (gdevdrop.c)
+
+Removes all uses of the obsolete far_data keyword from the library.
+(gconf.c, gdevbbox.c)
+
+Changes the bbox device so it doesn't run drawing algorithms twice if it has
+a target that uses the default implementation.  (gdevbbox.c)
+
+Speeds up the implementation of fill_rectangle for 16-bit memory devices.
+(gdevm16.c)
+
+Makes TrueType fonts implement the new font procedures.  (gxfont42.h,
+gxmatrix.h, gsmatrix.c, gstype42.c)
+
+Adds a gs_id to gs_font objects, so that fonts with the same name can be
+distinguished reliably without relying on the address.  (gxfont.h, gsfont.c)
+
+Makes the vptr argument of enum_ptrs procedures be const *.  This is a
+long-overdue change.  (gsstype.h, gxxfont.h, gsalloc.c, gsfont.c,
+gsmemory.c) ****** REDO THE CONST-BREAKING CASTS IN gsfont.c ******
+
+Changes the pep argument of enum_ptrs from const void ** to enum_ptr_t *, to
+get rid of some hacks in enum_ptrs implementations that had to construct
+temporary gs_strings.  (gsstruct.h, gsstype.h, gstext.h, gsalloc.c,
+gscolor2.c, gsfont.c, gsmemory.c, gstext.c)
+
+Adds a general mechanism that provides for an arbitrary number of clients to
+be notified when an event occurs.  For the moment, we only use it to notify
+PDF writers when a font is about to be freed.  (gsnotify.h, gsnotify.c)
+
+Makes fonts use the new notification mechanism to notify clients when the
+font is about to be freed.  (gxfont.h, gsfont.c)
+
+Adds a gs_text_set_cache procedure to parallel restart and retry.
+(gstext.h, gxtext.h, gstext.c)
+
+Adds a glyph_space argument to the font encode_char and enumerate_glyph
+procedures, so that clients can choose between glyph names and glyph indices
+in environments that use both.  (gsccode.h, gxchar.h, gxfont.h, gxfont42.h,
+gsfont.c, gstype42.c, gxchar.c)
+
+Changes the bbox device so it optionally considers white to be opaque.
+(gdevbbox.h, gdevbbox.c)
+
+Cleans up some code details.  (gshsb.h)
+
+Adds a hack to suppress warning messages from the Watcom compiler about
+testing constant values.  (stdpre.h)
+
+Replaces the glyph_pieces font procedure with a GLYPH_INFO_PIECES option for
+glyph_info.  (gxfont.h, gxfont42.h, gsfont.c, gstype42.c)
+
+Adds a font_info font procedure, similar to glyph_info but giving
+information about the font as a whole.  (gxfont.h)
+
+In order to fix a bug in resizing large objects, gets rid of the concept of
+large objects entirely, replacing it with the concept of an 'alone' object
+that is guaranteed to be the only object in its chunk.  (gxalloc.h, gxobj.h,
+gsalloc.c)
+
+Adds some more tracing output for interpolated images.  (gxiscale.c)
+
+Adds a _long parameter setting procedure to parallel _bool, _enum, and _int.
+(gsparamx.h, gsparamx.c)
+
+<hr>
+
+<h1><a name="Version5.87"></a>Version 5.87 (tester) (6/29/99)</h1>
+
+In this fileset, the pdfwrite device finally handles general Type 1 fonts,
+and can write them in both embedded and non-embedded form.  This fileset
+also contains a few more changes to the text API, and some incompatible
+changes to the gs_font procedure vector: more such changes are likely.  It
+also fixes a couple of long-standing pdfmark bugs.
+
+NOTE: there are known problems in PDF output with non-embedded fonts (fonts
+represented only by a descriptor): some characters will be missing, and
+because of bugs in Acrobat's Print function, even more characters will be
+missing or wrong when printing from Acrobat.  We will fix our problems, and
+work around Acrobat's bugs, in the next couple of filesets.
+
+<h2><a name="5.87_Incompatible_changes"></a>Incompatible changes</h2>
+
+(Library)
+	- Text enumerators now have a release procedure.
+	- gx_device_text_begin no longer stores its arguments into the
+enumerator: the driver text_begin procedure must do this.
+	- The argument list for the font encode_char procedure no longer
+includes the enumerator, and the second argument is now a gs_char rather
+than a gs_char *.
+	- The font next_char procedure is removed.  (It has been obsolete
+for a while.)  The next_glyph procedure is renamed next_char_glyph.
+	- The first argument of the font init_fstack, build_char, and
+next_glyph procedures is changed from gs_show_enum * to gs_text_enum_t *.
+	- gx_font_stack[_item] is renamed gx_font_stack[_item]_t.
+	- New font procedures have been added, of which two (enumerate_glyph
+and glyph_outline) are required.  The font procedure vector has been
+reorganized.
+	- The Type 1 font next_glyph procedure is replaced by the gs_font
+enumerate_glyph procedure.
+	- psdf_embed_type1_font is renamed psdf_write_type1_font, and has
+an additional argument.
+	- psdf_alloc_param_printer takes slightly different arguments;
+print_binary_ok and print_ASCII85_ok are now upper-case.
+
+<h2><a name="5.87_Documentation"></a>Documentation</h2>
+
+Reorganizes the driver API documentation slightly, documents the fact that
+get_alpha_bits and draw_line are obsolete, and documents the driver text
+API.  (doc/Drivers.htm)
+
+Documents an additional Irix configuration where the compiler doesn't work.
+(doc/Make.htm)
+
+<h2><a name="5.87_Procedures"></a>Procedures</h2>
+
+Moves the %pipe% IODevice into lib.mak, since it is now included on Windows
+as well as Unix.  (lib.mak, unix-aux.mak)
+
+Adds the bmpgray driver to all platforms that include the other BMP drivers.
+(bcwin32.mak, msvc32.mak, os2.mak, unix-gcc.mak, watc.mak, watcw32.mak)
+
+<h2><a name="5.87_Drivers"></a>Drivers</h2>
+
+Fixes problems:
+	- The PS and PDF writers didn't maintain the font embedding lists
+correctly.  (gdevpsdp.c)
+	- The CreationDate in PDF output was always set to the current date,
+and couldn't be set with a pdfmark.  We now don't set CreationDate at all,
+since it is supposed to be the creation date of the original document, not
+of the PDF file.  (gdevpdfm.c, gdevpdfu.c)
+	- The Producer in PDF output couldn't be set with a pdfmark.
+(gdevpdfx.h, gdevpdf.c, gdevpdfm.c, gdevpdfu.c)
+	- pdfmarks with /Action /GoTo incorrectly retained the Action key.
+(gdevpdfm.c)
+	- pdfmarks didn't substitute /Dest => /D or /File => /F correctly.
+(gdevpdfm.c)
+
+Updates the PDF writer to use the new text API rather than the show
+pseudo-parameter.  (gdevpdfx.h, gdevpdf.c, gdevpdfp.c, gdevpdft.c)
+
+Changes pdf_open_document so that it opens the document even if some
+resources have been allocated.  (gdevpdf.c)
+
+Splits off pdfwrite utilities from top-level control, since the file was
+getting too big.  (gdevpdfx.h, gdevpdf.c, gdevpdfu.c)
+
+When writing PDF, avoids resetting the word spacing parameter if the string
+doesn't contain any spaces, and the character spacing parameter if the
+string has no more than 1 character.  (gdevpdft.c)
+
+Splits off PDF font handling from text handling, since the file was getting
+too big.  (gdevpdfx.h, gdevpdff.c, gdevpdft.c)
+
+Implement both embedded and non-embedded fonts beyond the base 14 in the PDF
+writer.  This code doesn't work very reliably yet.  (gdevpdfx.h, gdevpdff.c,
+gdevpdft.c)
+
+Adds a bmpgray driver that produces 8-bit gray-scale output.  (devs.mak,
+gdevbmp.c)
+
+Updates the PDF writer for changes in the gs_font procedure vector.
+(gdevpdff.c, gdevpdft.c)
+
+Updates the Type 1 font writer for changes in the gs_font procedure vector,
+and adds some output options.  (gdevpsdf.h, gdevpsde.c)
+
+Changes the printing parameter list implementation to take all of its
+parametric arguments in the params structure, and changes the names of the
+options.  (gdevpsdf.h, gdevpsde.c, gdevpsdf.c, gdevpdff.c, gdevpdfi.c,
+gdevpdfu.c)
+
+<h2><a name="5.87_Interpreter_PDF"></a>Interpreter (PDF)</h2>
+
+Fixes problems:
+	- Indexed color spaces didn't allow the base space to be an indirect
+reference.  (lib/pdf_draw.ps)
+	- The CS and cs operators didn't accept a literal color space name
+(as opposed to a color space resource name).  (lib/pdf_draw.ps)
+	- Some PDF 1.2 files had a SM entry in graphics state dictionaries,
+even though this is not documented and requires a LL3 interpreter.
+(lib/pdf_draw.ps)
+	- Generated font names included a % character, which could cause
+problems for ps2pdf.  (lib/pdf_font.ps)
+
+<h2><a name="5.87_Interpreter"></a>Interpreter</h2>
+
+Fixes problems:
+	- The calculation of the final index when enumerating the pointers
+in a context state was incorrect.  (source bug only, no effect on execution)
+(icontext.c)
+
+Updates the interpreter's glue code for the changes in the PDF writer.
+(lib/gs_pdfwr.ps)
+
+Updates a client to use gs_font_alloc.  (zbfont.c)
+
+Updates clients for changes in the gs_font procedure vector.  (zbfont.c,
+zchar1.c, zfont0.c, zfont1.c, zfont32.c)
+
+Updates a client for the change to psdf_write_type1_font.  (zfont1.c)
+
+<h2><a name="5.87_Library"></a>Library</h2>
+
+Fixes problems:
+	- Some code used rc_decrement_only instead of gx_device_retain.
+(Stylistic bug only.)  (gschar.c)
+	- The finalize procedure for the character cache device could get
+unset and/or the retained flag cleared, leading to a reference count not
+getting decremented.  (gxccman.c)
+	- Allocating a show enumerator didn't clear the show_gstate member.
+(Probably no effect in practice.)  (gschar.c)
+	- Cleaning up at the end of text processing was not consistent and
+sometimes didn't get done. The old API used explicit and separate client
+allocation (gs_show_enum_alloc), release (gs_show_enum_release), and freeing
+(gs_free_object); release, but not free, was automatic at the end of
+processing (in show_finish).  The new API has allocation in gs_text_begin or
+gx_device_text_begin, no implicit release or free, and a single
+gs_text_release call to handle both release and free.  Reconciling these
+required adding an auto_release flag in the gs_show_enum structure to
+indicate which API was used to create it, and a release procedure.  (The
+auto_release flag is only needed for backward compatibility with clients
+that use the old API.  Ghostscript itself no longer has such clients, but
+the PCL interpreters do.)  (gxchar.h, gxtext.h, gdevbbox.c, gschar.c,
+gstext.c, gxchar.c)
+	- We were burned once again by gcc's acceptance of private/public
+procedure mismatches.  (gxchar.c)
+	- A line break was missing between the return type and a procedure
+name.  (gsstate.c)
+	- Show enumerators had an incorrect GC descriptor.  (gxchar.c)
+	- Text enumerators didn't terminate their list properly.  (gstext.c)
+
+Adds a debugging procedure that finds all the pointers to an object.  This
+uses the GC's pointer enumeration procedures, so it will only work if all
+structures have correct GC descriptors.  (Of course, we think this is true
+of all of Ghostscript.)  The current implementation doesn't trace refs.
+(gsalloc.c)
+
+Removes remaining references from gxchar.c to procedures defined in
+gschar.c.  The standard Ghostscript build now no longer needs gschar.c,
+although we will keep it for the moment for backward compatibility.
+(gschar.c, gxchar.c)
+
+Removes an obsolete reference to gs_show_enum.  (gstype1.h)
+
+Adds definitions for the built-in encoding indices.  (gsccode.h, gxfont.h,
+gxxfont.h)
+
+To make text_begin implementations callable, requires them, rather than
+gx_device_text_begin, to save their parameters in the enumerator structure.
+(gxtext.h, gstext.c, gxchar.c)
+
+Adds a TEXT_DO_CHARWIDTH alternative to the text operation, to just advance
+the current point by the character width (stringwidth rmoveto).  (gscpm.h,
+gstext.h, gxchar.c, gxpath.c)
+
+Adds procedures to allocate and initialize fonts.  (gxfont.h, gsfont.c)
+
+Starts to revise the gs_font procedure vector to create a real "font socket"
+API, adding several new procedures.  This is a NON-BACKWARD-COMPATIBLE
+change, and there probably are more to come.  (gxchar.h, gxfont.h, gsfont.c,
+gstext.c, gxchar.c)
+
+Moves the Type 0 font stack from gs_show_enum to gs_text_enum_t, and renames
+its types to gx_font_stack_[item_]t.  Also moves cmap_code.  (gxchar.h,
+gxtext.h, gschar0.c, gstext.c, gxchar.c)
+
+Moves the glyph enumeration procedure from Type 1 fonts to general fonts,
+changing its name to enumerate_glyph.  (gxfont1.h)
+
+Changes the debugging code for reference counting to call procedures, to
+allow better breakpointing.  (gsrefct.h, gsmemory.c)
+
+<hr>
+
+<h1><a name="Version5.86"></a>Version 5.86 (tester) (6/14/99)</h1>
+
+This fileset includes the first batch of changes for the new driver-based
+text API.  Unfortunately, a few of them are non-backward-compatible.
+WARNING: This API is UNSTABLE and should not be used yet.  This includes the
+APIs and structures in gxtext.h, and to a lesser extent those in gstext.h.
+
+<h2><a name="5.86_Incompatible_changes"></a>Incompatible changes</h2>
+
+(Interpreter)
+	- The default initialization of fonts now sets next_glyph rather
+than next_char.
+(Library)
+	- The font argument of the driver text_begin procedure is no
+longer declared as const.
+	- Text enumerators now have a is_width_only and current_width
+procedures; the restart procedure is renamed retry, and there is a new
+restart procedure that does something different.
+	- The scale member of gs_text_enum_t is renamed log2_scale.
+	- gs_show_restore_font is removed.
+	- The current_char, current_glyph, width, and log2_current_scale
+members of gs_show_enum are removed (replaced by members of gs_text_enum_t).
+	- The current_width member of gs_text_enum_t is removed.
+	- Replaces TEXT_REPLACE_{X,Y}_WIDTHS with a single
+TEXT_REPLACE_WIDTHS.
+
+<h2><a name="5.86_Documentation"></a>Documentation</h2>
+
+Fixes a number of outdated URLs.  (doc/Devices.htm, doc/Fonts.htm,
+doc/Install.htm, doc/Language.htm, doc/Make.htm, doc/New-user.htm)
+
+Documents the name change from gs_iso_e.ps to gs_il1_e.ps.
+(doc/Psfiles.htm)
+
+Documents the fact that a double % may be needed on MS systems.
+(doc/Use.htm)
+
+Documents that reversepath discards a trailing moveto, for compatibility
+with Adobe implementations.  (gxpath2.c)
+
+<h2><a name="5.86_Procedures"></a>Procedures</h2>
+
+Fixes problems:
+	- Some punctuation was omitted that affects builds on VMS systems.
+(gs.mak)
+	- 'make install' didn't install doc/History5.htm.  (unixinst.mak)
+	- The Borland makefile put some generated files in the top-level
+directory rather than the build directory.  (bcwin32.mak)
+
+Updates the Unix install script for the name change of gs_iso_e.ps.
+(unixinst.mak)
+
+Moves the GNU-licensed drivers to a separate makefile.  (contrib.mak,
+gnu/src/gnudevs.mak)
+
+Adds pipe.dev to the BC++, MSVC++, and OS/2 (GCC/EMX) platforms.
+(bcwin32.mak, dvx-gcc.mak, msvc32.mak, msvclib.mak)
+
+<h2><a name="5.86_Utilities"></a>Utilities</h2>
+
+Fixes problems: - The usage message for pdf2ps was incorrect.  (lib/pdf2ps,
+	lib/pdf2ps.bat)
+
+<h2><a name="5.86_Drivers"></a>Drivers</h2>
+
+Removes all remaining uses of #define'd casts in connection with ENUM_PTRS
+and RELOC_PTRS procedures.  (gdevpdf.c, gdevpdfo.c)
+
+Adds a user-contributed driver for the Oki Data OkiPage 4w+ LED printer.
+This is a GPL'ed driver.  (contrib.mak, gnu/src/gdevop4w.c)
+
+<h2><a name="5.86_Platforms"></a>Platforms</h2>
+
+Adds a %handle% IODevice (mshandle.dev) to recognize file names of the form
+%handle%NNNNNNNN under MS Windows.  GSview uses this feature in place of
+pipes, which are an open industry standard not supported by MS Windows.
+(msvc32.mak, winlib.mak, gp_mshdl.c)
+
+<h2><a name="5.86_Fonts"></a>Fonts</h2>
+
+Adds the ISO 8859-2 encoding to the stock of built-in encodings.
+(lib/gs_il2_e.ps, lib/gs_iso_e.ps => lib/gs_il1_e.ps)
+
+<h2><a name="5.86_Interpreter_PDF"></a>Interpreter (PDF)</h2>
+
+Fixes problems:
+	- Using a colored pattern with an uncolored Pattern color space
+caused an error.  (lib/pdf_draw.ps)
+	- Embedded CIDFontType 2 fonts didn't work, and embedded TrueType
+fonts did an extra definefont.  (lib/gs_ttf.ps, lib/pdf_font.ps,
+lib/pdf_ops.ps) ****** IN PROGRESS ******
+
+<h2><a name="5.86_Interpreter"></a>Interpreter</h2>
+
+Fixes problems:
+	- Some files hadn't been updated for the removal of the gs_imemory
+static.  (int.mak, gp_gnrdl.c, imain.c, ztrap.c)
+	- %statementedit could append a spurious character if the last
+character of the statement was not whitespace.  (bug probably introduced in
+5.8x) (ziodev.c)
+	- The show operators didn't properly handle the special case of
+executing within a cshow procedure for a non-CID font.  (zchar.c)
+	- cshow applied to a composite font didn't scale the current font
+correctly (in fact, at all).  (zcfont.c)
+	- If an error occurred within the procedure called by
+resourceforall, it wasn't reported.  (lib/gs_res.ps)
+	- flushfile and closefile didn't correctly handle filters that only
+write a fixed amount of data.  (zfileio.c)
+	- cshow didn't restore the font reliably after executing the
+procedure.  (ichar.h, zcfont.c, zchar.c)
+	- An execstackoverflow error might temporarily leave the execution
+stack in an invalid state.  (interp.c)
+
+Cleans up some macros.  (iname.c, isave.c, iscan.c)
+
+Removes all remaining uses of #define'd casts in connection with ENUM_PTRS
+and RELOC_PTRS procedures.  (icontext.c, iname.c, isave.c, iscan.c,
+istack.c, zcontext.c, zfproc.c)
+
+Adds a run-time warning message if gp_gnrdl.c is included in a non-GNU
+build.  (gp_gnrdl.c)
+
+Converts clients to use the gs_text procedures that replace the gs_show
+procedures, and to use gs_text_enum_t rather than gs_show_enum as the
+enumerator type.  (ichar.h, zbfont.c, zcfont.c, zchar.c, zchar1.c,
+zchar32.c, zchar42.c, zcharout.c, zcharx.c, zfont.c, zfont0.c, zfont1.c,
+zfont32.c, zimage.c, zimage2.c)
+
+Updates the initialization code for the name change of gs_iso_e.ps.
+(lib/gs_init.ps)
+
+Splits off the definitions relating to name indices, in anticipation of
+defining some name indices statically.  (inamedef.h, inameidx.h, iname.c)
+
+<h2><a name="5.86_Streams"></a>Streams</h2>
+
+Fixes problems:
+	- The pixel-difference filters didn't initialize the previous sample
+to 0 at the beginning of each row.  (spdiff.c)
+	- The CCITTFaxDecode filter didn't correctly handle the case where
+the last code of a row occurred less than 7 or 8 bits before the end of the
+input stream.  (scf.h, shc.h, scfd.c)
+	- Flushing filters didn't work.  (stream.c)
+	- The DCTEncode filter gave an error if asked to write to a string
+with less than 100 bytes of free space left when the end of the input data
+was reached.  (sdct.h, sdcte.c)
+
+Removes all remaining uses of #define'd casts in connection with ENUM_PTRS
+and RELOC_PTRS procedures.  (stream.c)
+
+Changes the ASCII85Encode stream to reliably insert a newline at least once
+every 80 characters, rather than unreliably after at most 80 characters of
+data.  (sfilter2.c)
+
+Cleans up some formatting.  (stream.c)
+
+<h2><a name="5.86_Library"></a>Library</h2>
+
+Fixes problems:
+	- A client wasn't updated for the change in the declaration of
+gx_dht_proc.  (bug introduced in 5.84) (genht.c)
+	- When rendering a 12-bit-per-sample color image, the device color
+wasn't initialized, possibly causing a memory access error when comparing
+the current color with the previous one.  (gxi12bit.c)
+	- arch_floats_are_IEEE was incorrectly defined as
+arch_floats_are_ieee.  (bug introduced in 5.83) (std.h)
+	- Decoding of IEEE floats on non-IEEE systems was wrong.  (ibnum.c)
+	- The fast case of masked images in Pattern color spaces didn't
+work.  (bug introduced since 5.50) (gxifast.c)
+	- cshow gave an error if there was no current point.  (gxchar.c)
+
+Replaces TEXT_REPLACE_{X,Y}_WIDTHS with a single TEXT_REPLACE_WIDTHS.
+(gstext.h, gstext.c)
+
+Cleans up some macros.  (gdevddrw.c, gsfont.c, gsht1.c)
+
+Removes all remaining uses of #define'd casts in connection with ENUM_PTRS
+and RELOC_PTRS procedures.  (gdevddrw.c, gdevplnx.c, gsalloc.c, gschar.c,
+gscolor.c, gscolor2.c, gscrd.c, gscsepr.c, gscspace.c, gsdevice.c, gsdsrc.c,
+gsfcmap.c, gsfont.c, gsfont0.c, gsht1.c, gshtscr.c, gsimage.c, gspcolor.c,
+gsptype1.c, gsstate.c, gstext.c, gxcmap.c, gxht.c, gxipixel.c, gxmclip.c,
+gxtype1.c)
+
+Adds gs_c_param_list_write_more, to switch a C parameter list back to write
+mode without clearing it.  (gsparam.h, gscparam.c)
+
+Adds gs_grestore_only, to do a grestore without requiring 2 entries on the
+graphics state stack.  (gsstate.h, gsstate.c)
+
+Completes a first bridge between the new driver text_begin procedure and the
+existing text API defined in gschar.h.  The changes are backward-compatible
+for both clients of the APIs and (the few) implementors of text_begin,
+except that the font argument of text_begin is no longer const.  Note that
+gschar.h is no longer used by any client, and in fact is deprecated.
+(gschar.h, gstext.h, gxfcache.h, gxtext.h, gzstate.h, gdevbbox.c,
+gdevnfwd.c, gschar.c, gsfont.c, gsfont0.c, gstext.c)
+
+Mostly splits off the existing text procedures from the default
+implementation of the new text facilities.  (lib.mak, gxchar.h, gschar.c,
+gxchar.c)
+
+Makes the structure descriptor for gs_state public, for testing in gxchar.c.
+(gzstate.h, gsstate.c)
+
+Adds is_width_only and current_width procedures to the text enumerator;
+renames restart as retry, and adds a restart procedure for restarting with
+different parameters.  (gstext.h, gxtext.h, gdevbbox.c, gschar.c, gstext.c,
+gxchar.c)
+
+Makes the masks for the subgroups of text operation parameters public.
+(gstext.h)
+
+Removes members of gs_show_enum that are superseded by members of
+gs_text_enum_t: current_char, current_glyph, width, and log2_current_scale.
+(gxchar.h, gxchar.c)
+
+Adds aliases for popen and pclose under WIN32.  (pipe_.h)
+
+Moves gs_incachedevice from gschar.h to gsstate.h.  (gschar.h, gsstate.h)
+
+<hr>
+
+<h1><a name="Version5.85"></a>Version 5.85 (tester) (5/29/99)</h1>
+
+This fileset removes a few more writable statics, and adds uniform support
+for %filedevice%filename syntax in OutputFile.  Unfortunately, removing the
+static that held the interpreter's allocator group was almost as much of an
+upheaval as removing the statics for the interpreter stacks.
+
+<h2><a name="5.85_Incompatible_changes"></a>Incompatible changes</h2>
+
+(Interpreter)
+	- context_state_alloc now takes an additional parameter, as do
+obj_cvp, make_packed_array, parse_real_file_name, ref_stack_store,
+sread/write_proc, terminate_file_name, and a number of other internal
+interpreter procedures.
+	- scan_number now does not mark the result as new.
+	- The _param_list_read/write procedures now take an additional
+gs_ref_memory_t * parameter.
+	- It is no longer possible to store pointers to the interpreter's
+allocator group (gs_dual_memory_t) in structures or variables across a
+garbage collection.
+	- The save_level instance variable is moved from gs_dual_memory_t
+to gs_ref_memory_t.
+	- op_show_finish_setup can now fail.
+	- fname.h is renamed gsfname.h; the procedure names and parameters
+for %device%name file names are changed.
+	- gx_imager_stroke_add now takes an additional argument; a NULL
+value for the device argument of gx_stroke_path_only is no longer valid.
+	- gx_make_clip_translate_device now takes a memory parameter, and no
+container parameter; gx_make_clip_device no longer takes a container
+parameter; gx_mask_clip_initialize and tile_clip_initialize now take a
+memory parameter.
+
+<h2><a name="5.85_Documentation"></a>Documentation</h2>
+
+Fixes problems:
+	- The language documentation still referred to outside clipping.
+(doc/Language.htm)
+
+Documents the new curve join graphics state parameter.  (doc/Language.htm)
+
+Documents the fact that the OutputFile device parameter now supports the
+%device%file syntax.  (gp.h, doc/Use.htm)
+
+Documents the licensing problems related to GNU readline.  (int.mak,
+unix-gcc.mak, gp_gnrdl.c)
+
+<h2><a name="5.85_Procedures"></a>Procedures</h2>
+
+Fixes problems:
+	- The bmpa devices needed gdevppla.  (bug introduced in 5.84)
+(devs.mak)
+	- The bmpa devices were accidentally included in the DEVICE_DEVS
+setting in the distributed fileset.  (unix-gcc.mak)
+	- msvclib.mak was missing some definitions.  (msvclib.mak)
+
+Adds a CC_NO_WARN macro for those few files that produce tons of warnings
+that we can't work around.  (bcwin32.mak, dvx-gcc.mak, msvccmd.mak,
+openvms.mak, openvms.mmk, os2.mak, ugcclib.mak, unix-gcc.mak, unixansi.mak,
+unixtrad.mak, watcw32.mak, wccommon.mak, devs.mak, lib.mak, zlib.mak)
+
+Adds version.mak to msvclib.mak, so library clients can track the version.
+(msvclib.mak)
+
+<h2><a name="5.85_Utilities"></a>Utilities</h2>
+
+Fixes problems:
+	- -replace didn't work if it was the last item of a module
+description.  (genconf.c)
+
+<h2><a name="5.85_Drivers"></a>Drivers</h2>
+
+Fixes problems:
+	- CCITTFax-compressed bitmaps sometimes used both a Rows value and
+an end-of-block indicator, which some PostScript implementations don't
+handle properly.  (gdevpsdf.h, gdevps.c, gdevpsdf.c)
+
+Removes an unused procedure and macro.  (gdevlj56.c)
+
+<h2><a name="5.85_Interpreter_PDF"></a>Interpreter (PDF)</h2>
+
+Fixes problems:
+	- The interpreter cached objects even if the reference had the wrong
+generation number, causing errors if a correct reference occurred later.
+(lib/pdf_base.ps)
+	- Embedded TrueType fonts using the Macintosh encoding sometimes
+caused an error.  (lib/gs_ttf.ps)
+
+<h2><a name="5.85_Interpreter"></a>Interpreter</h2>
+
+Fixes problems:
+	- Multiple contexts were broken (probably since 5.80).  Fixing this
+required adding a parameter to context_state_alloc, to provide systemdict.
+(icontext.h, icontext.c, interp.c)
+	- setpagedevice didn't accept the 4-element PageSize values that
+appear in the InputAttributes dictionary.  (zmedia2.c)
+	- BuildChar/BuildGlyph was "short circuited" even in some cases
+where it wasn't safe to do so.  (ichar.h, zchar.c, zcharout.c)
+	- The show operators didn't properly handle the special case of
+executing within a cshow procedure.  (ichar.h, zcfont.c, zchar.c, zcharx.c)
+	- The -dDOINTERPOLATE switch had gotten broken somehow.
+(lib/gs_init.ps)
+	- The is_identity flag wasn't properly cleared when loading cached
+CIE mapping values, causing incorrect output.  (zcie.c)
+
+Removes the writable static for the context scheduler.  (zcontext.c)
+
+Removes the writable static for the interpreter's group of allocators
+(gs_imemory).  This too turned out to be a massive change with many
+NON-BACKWARD-COMPATIBLE changes required in internal procedures.  (bfont.h,
+files.h, fname.h, ialloc.h, ifunc.h, imemory.h, interp.h, iparam.h,
+iparray.h, ipcolor.h, isave.h, iscannum.h, istack.h, istream.h, iutil.h,
+store.h, ialloc.c, icontext.c, idebug.c, idict.c, iinit.c, imain.c,
+imainarg.c, interp.c, iparam.c, ireclaim.c, isave.c, iscan.c, iscanbin.c,
+iscannum.c, isstate.h, istack.c, iutil.c, zarray.c, zbfont.c, zcontext.c,
+zdict.c, zfname.c, zdps.c, zdps1.c, zfcmap.c, zdict.c, zfile.c, zfilter.c,
+zfont.c, zfont0.c, zfproc.c, zfreuse.c, zfunc.c, zfunc0.c, zfunc3.c,
+zgeneric.c, zht2.c, ziodev.c, ziodev2.c, zpacked.c, zpcolor.c, zshade.c,
+zupath.c, zvmem.c)
+
+Adds a gs_memory_t * argument to obj_cvp.  This is part of the work for
+removing the gs_imemory static: we note it separately because it affects
+code beyond the interpreter.  (iutil.h, gp_gnrdl.c, iutil.c, zfileio.c)
+
+Updates interpreter code for the addition of new_mask, test_mask, and
+save_level to gs_ref_memory_t, and the removal of save_level from
+gs_dual_memory_t.  (ialloc.h, ialloc.c, isave.c)
+
+Adds a gs_ref_memory_t * argument to all the _param_list_read/write
+procedures.  (iparam.h, iparam.c, zcrd.c, zdevice.c, zfdctd.c, zfdcte.c,
+zfdecode.c, zfilter2.c, ziodev2.c, zusparam.c)
+
+Changes the hack in file_alloc_stream that determines whether a gs_memory_t
+* is actually a gs_ref_memory_t *.  The former code tested specifically
+whether the allocator was one of the current interpreter allocators; the new
+code simply tests the procedure vector.  We aren't 100% sure that this
+change will work reliably.  (zfile.c)
+
+Factors common code out of isave.h and store.h.  (idosave.h, isave.h,
+store.h)
+
+Removes the reclaim_data member of gs_dual_memory_t, since it is no longer
+useful.  (imemory.h, ialloc.c, ireclaim.c)
+
+Makes the default InputAttributes and OutputAttributes elements of page
+device dictionaries writable and (if possible) allocated in local VM, to
+work around bugs in the output of Word Perfect.  (lib/gs_setpd.ps)
+
+Modifies the interpreter's error printout to indicate whether dictionaries
+on the stack(s) are writable.  (lib/gs_init.ps)
+
+Moves support for %device%name file naming into the library.  (fname.h,
+zfile.c, zfname.c [deleted])
+
+Adds interpreter support for the new curve join graphics state parameter.
+(zgstate.c)
+
+<h2><a name="5.85_Library"></a>Library</h2>
+
+Fixes problems:
+	- bbox_fill_path device didn't interact with compositors correctly.
+(This problem had no practical effect.)  (gdevbbox.c)
+	- kshow didn't check for CID fonts.  (gschar.c)
+	- The bbox and ImageType 3 image enumerators had incorrect GC
+descriptors, possibly causing memory-related crashes.  (gsstruct.h,
+gdevbbox.c, gximage3.c)
+	- gx_make_clip_[translate_]device took an obsolete container
+parameter.  (gxcpath.h, gsshade.c, gxccache.c, gxfill.c, gxstroke.c)
+	- Non-transient clipping devices were used for image clipping, but
+the API didn't support creating them.  (gxcpath.h, gxclip.c, gximage3.c,
+gxipixel.c)
+	- Some devices were created without setting their memory member,
+which caused the GC not to trace pointers to them.  (gxmclip.h, gxclip2.h,
+gxclip2.c, gximage3.c, gxmclip.c, gxp1fill.c)
+	- The bbox device didn't handle ImageType 3 images correctly.
+(gdevbbox.c)
+	- When the bbox device passed a stroke operation to the library, it
+didn't pass the device, causing absolute-length dots to render incorrectly.
+Fixing this required adding a device parameter to the gx_imager_stroke_add
+procedure.  (gxpaint.h, gdevbbox.c, gxpaint.c)
+	- The counter control OtherSubrs (12 and 13) weren't implemented.
+(This probably had no effect.)  (gstype1.c)
+	- Type 1 stem hints with negative widths didn't work properly.
+(gxhint2.c)
+	- The debugging output for hintmask and cntrmask printed the vstem
+and hstem counts in the wrong order.  (gstype2.c)
+	- If the value of the OutputFile device parameter was too long,
+the result could be memory corruption rather than a rangecheck error.
+(gsdevice.c)
+	- The dash pattern pointer in the saved imager state of a band list
+writer could point inside the writer structure, confusing the garbage
+collector.  (gxclist.h, gxclpath.c)
+
+Adds new_mask, test_mask, and save_level instance variables to
+gs_ref_memory_t.  This too is part of the gs_imemory work: we note it
+separately because it is the only piece of this work that affects the
+library.  (gxalloc.h, gsalloc.c)
+
+Makes cntrmask at the beginning of a charstring act like vstemhm + cntrmask,
+as with hintmask.  This is not documented, but we see it used this way in
+Type 2 CharStrings.  (gstype2.c)
+
+Cleans up formatting and macros.  (gp.h)
+
+Speeds up the bounding box device by skipping path filling if the entire
+path falls within the already-accumulated bounding box, and by defining the
+device as 8-bit gray to avoid halftone computation.  (gdevbbox.c)
+
+Adds a procedure, gs_show_use_glyph, for implementing the show-in-cshow
+hack.  (gschar.h, gschar.c)
+
+Moves support for %device%file file naming into the library.  (lib.mak,
+gsfname.h, gxiodev.h, gdevpipe.c, gsfname.c)
+
+Makes the OutputFile device parameter recognize %device%file syntax, as well
+as "-" and (on platforms that support pipes) |command.  (gp.h, gxdevice.h,
+gdevprn.c, gsdevice.c, gp_unix.c)
+
+Adds a separate graphics state parameter to indicate how to treat joins
+between segments of a flattened curve, for compatibility with Adobe
+interpreters (which apparently always use bevel joins).  (gsline.h,
+gxclpath.h, gxline.h, gsline.c, gsstate.c, gxclpath.c, gxclrast.c,
+gxstroke.c)
+
+Changes code slightly, introducing an unnecessary assignment, in order to
+suppress a compiler warning.  (gxclpath.c)
+
+Tweaks the CIE_LOAD_CACHE_BODY macro slightly.  (gscie.c)
 
 <hr>
 
@@ -2551,7 +4338,7 @@ Greatly improves documentation for the page queue.  (from Artifex 5.50c)
 Documents the fact that Solaris builds now need -lposix4 for <semaphore.h>.
 (doc/Make.htm)
 
-Adds a stack status comment in .pdfshow.  (gs_pdfwr.ps)
+Adds a stack status comment in .pdfshow.  (lib/gs_pdfwr.ps)
 
 Documents the new -Z` debugging switch.  (doc/Use.htm)
 
@@ -4159,7 +5946,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.70, 20 February 1999
+Ghostscript version 5.91, 30 August 1999
 
 </font>
 

@@ -72,9 +72,8 @@ struct gc_state_s {
 };
 
 /* Exported by igcref.c for igc.c */
-void ptr_ref_unmark(P2(void *, gc_state_t *));
-bool ptr_ref_mark(P2(void *, gc_state_t *));
-
+ptr_proc_unmark(ptr_ref_unmark);
+ptr_proc_mark(ptr_ref_mark);
 /*ref_packed *gs_reloc_ref_ptr(P2(const ref_packed *, gc_state_t *)); */
 
 /* Exported by ilocate.c for igc.c */

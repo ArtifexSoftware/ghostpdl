@@ -33,7 +33,7 @@
 /* GC information */
 #define CLIST_IS_WRITER(cdev) ((cdev)->common.ymin < 0)
 extern_st(st_imager_state);
-public
+private
 ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
     if (index < st_device_forward_max_ptrs) {
 	gs_ptr_type_t ret = ENUM_USING_PREFIX(st_device_forward, 0);
@@ -51,7 +51,7 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
 			  sizeof(gs_imager_state), index - 1);
     }
 ENUM_PTRS_END
-public
+private
 RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
 {
     RELOC_PREFIX(st_device_forward);
@@ -69,28 +69,7 @@ private dev_proc_open_device(clist_open);
 private dev_proc_output_page(clist_output_page);
 private dev_proc_close_device(clist_close);
 private dev_proc_get_band(clist_get_band);
-
-/* In gxclrect.c */
-extern dev_proc_fill_rectangle(clist_fill_rectangle);
-extern dev_proc_copy_mono(clist_copy_mono);
-extern dev_proc_copy_color(clist_copy_color);
-extern dev_proc_copy_alpha(clist_copy_alpha);
-extern dev_proc_strip_tile_rectangle(clist_strip_tile_rectangle);
-extern dev_proc_strip_copy_rop(clist_strip_copy_rop);
-
-/* In gxclpath.c */
-extern dev_proc_fill_path(clist_fill_path);
-extern dev_proc_stroke_path(clist_stroke_path);
-extern dev_proc_fill_parallelogram(clist_fill_parallelogram);
-extern dev_proc_fill_triangle(clist_fill_triangle);
-
-/* In gxclimag.c */
-extern dev_proc_fill_mask(clist_fill_mask);
-extern dev_proc_begin_typed_image(clist_begin_typed_image);
-extern dev_proc_create_compositor(clist_create_compositor);
-
-/* In gxclread.c */
-extern dev_proc_get_bits_rectangle(clist_get_bits_rectangle);
+/* Driver procedures defined in other files are declared in gxcldev.h. */
 
 /* Other forward declarations */
 private int clist_put_current_params(P1(gx_device_clist_writer *cldev));

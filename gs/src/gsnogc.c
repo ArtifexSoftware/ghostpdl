@@ -299,6 +299,7 @@ sf_consolidate_free(gs_memory_t *mem)
  * within the chunk if possible.
  */
 
+private void use_string_freelists(P1(gs_ref_memory_t *mem));
 void
 gs_nogc_reclaim(vm_spaces * pspaces, bool global)
 {
@@ -311,17 +312,25 @@ gs_nogc_reclaim(vm_spaces * pspaces, bool global)
 	if (mem == 0 || mem == mem_prev)
 	    continue;
 	mem_prev = mem;
-
-	/*
-	 * Change the allocator to use string freelists in the future.
-	 */
-	mem->procs.alloc_string = sf_alloc_string;
-	if (mem->procs.free_string != gs_ignore_free_string)
-	    mem->procs.free_string = sf_free_string;
-	mem->procs.enable_free = sf_enable_free;
-	mem->procs.consolidate_free = sf_consolidate_free;
+	use_string_freelists(mem);
+	if (mem->stable_memory != (gs_memory_t *)mem &&
+	    mem->stable_memory != 0
+	    )
+	    use_string_freelists((gs_ref_memory_t *)mem->stable_memory);
+    }
+}
+private void
+use_string_freelists(gs_ref_memory_t *mem)
+{
+    /*
+     * Change the allocator to use string freelists in the future.
+     */
+    mem->procs.alloc_string = sf_alloc_string;
+    if (mem->procs.free_string != gs_ignore_free_string)
+	mem->procs.free_string = sf_free_string;
+    mem->procs.enable_free = sf_enable_free;
+    mem->procs.consolidate_free = sf_consolidate_free;
 
 	/* Merge free objects, detecting entirely free chunks. */
-	gs_consolidate_free((gs_memory_t *)mem);
-    }
+    gs_consolidate_free((gs_memory_t *)mem);
 }

@@ -36,12 +36,11 @@
 #include "gxclip2.h"
 #include "gspath.h"
 #include "gxpath.h"
-#include "gxp1fill.h"
 #include "gxpcolor.h"
+#include "gxp1impl.h"		/* requires gxpcolor.h */
 #include "gzstate.h"
 #include "gsimage.h"
 #include "gsiparm4.h"
-#include "gscssub.h"
 
 /* GC descriptors */
 private_st_pattern1_template();
@@ -65,15 +64,10 @@ private RELOC_PTRS_BEGIN(pattern1_instance_reloc_ptrs) {
     RELOC_SUPER(gs_pattern1_instance_t, st_pattern1_template, template);
 } RELOC_PTRS_END
 
-/* Import the Pattern reloading procedure from gxpcmap.c. */
-int gx_pattern_load(P4(gx_device_color *, const gs_imager_state *,
-		       gx_device *, gs_color_select_t));
-
 /* Define a PatternType 1 pattern. */
 private pattern_proc_uses_base_space(gs_pattern1_uses_base_space);
 private pattern_proc_make_pattern(gs_pattern1_make_pattern);
 private pattern_proc_get_pattern(gs_pattern1_get_pattern);
-extern pattern_proc_remap_color(gs_pattern1_remap_color);
 private const gs_pattern_type_t gs_pattern1_type = {
     1, {
 	gs_pattern1_uses_base_space, gs_pattern1_make_pattern,
@@ -348,7 +342,7 @@ gs_private_st_suffix_add1(st_pixmap_info,
  *  Note that this routine does NOT release the data in the original pixmap;
  *  that remains the responsibility of the client.
  */
-  void
+private void
 free_pixmap_pattern(
     gs_memory_t *           pmem,
     void *                  pvpinst,
@@ -531,16 +525,10 @@ gs_makepixmappattern(
 
 	if (!mask && (white_index >= (1 << pbitmap->pix_depth)))
 	    pinst->uses_mask = false;
-	/* 
-	 * Since the PaintProcs don't reference the saved color space or
-	 * color, reset these so that there isn't an extra retained
-	 * reference to the Pattern object.
-	 */
-	gs_setcolorspace(pinst->saved, gs_current_DeviceGray_space(pinst->saved));
 
         /* overwrite the free procedure for the pattern instance */
-	ppmap->free_proc = pinst->rc.free;
-	pinst->rc.free = free_pixmap_pattern;
+        ppmap->free_proc = pinst->rc.free;
+        pinst->rc.free = free_pixmap_pattern;
     }
     gs_setmatrix(pgs, &smat);
     return code;
@@ -640,9 +628,8 @@ const gx_device_color_type_t *const gx_dc_type_pattern = &gx_dc_pattern;
 #define gx_dc_type_pattern (&gx_dc_pattern)
 
 /* GC procedures */
-#define cptr ((gx_device_color *)vptr)
 private 
-ENUM_PTRS_BEGIN(dc_pattern_enum_ptrs)
+ENUM_PTRS_WITH(dc_pattern_enum_ptrs, gx_device_color *cptr)
 {
     return ENUM_USING(st_dc_pure_masked, vptr, size, index - 1);
 }
@@ -653,7 +640,7 @@ case 0:
     ENUM_RETURN((tile == 0 ? tile : tile - tile->index));
 }
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(dc_pattern_reloc_ptrs)
+private RELOC_PTRS_WITH(dc_pattern_reloc_ptrs, gx_device_color *cptr)
 {
     gx_color_tile *tile = cptr->colors.pattern.p_tile;
 
@@ -665,7 +652,8 @@ private RELOC_PTRS_BEGIN(dc_pattern_reloc_ptrs)
     RELOC_USING(st_dc_pure_masked, vptr, size);
 }
 RELOC_PTRS_END
-private ENUM_PTRS_BEGIN(dc_masked_enum_ptrs) ENUM_SUPER(gx_device_color, st_client_color, ccolor, 1);
+private ENUM_PTRS_WITH(dc_masked_enum_ptrs, gx_device_color *cptr)
+ENUM_SUPER(gx_device_color, st_client_color, ccolor, 1);
 case 0:
 {
     gx_color_tile *mask = cptr->mask.m_tile;
@@ -673,7 +661,7 @@ case 0:
     ENUM_RETURN((mask == 0 ? mask : mask - mask->index));
 }
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(dc_masked_reloc_ptrs)
+private RELOC_PTRS_WITH(dc_masked_reloc_ptrs, gx_device_color *cptr)
 {
     gx_color_tile *mask = cptr->mask.m_tile;
 
@@ -699,7 +687,6 @@ private RELOC_PTRS_BEGIN(dc_binary_masked_reloc_ptrs)
     RELOC_USING(st_dc_ht_binary, vptr, size);
 }
 RELOC_PTRS_END
-#undef cptr
 
 /* Macros for pattern loading */
 #define FINISH_PATTERN_LOAD\

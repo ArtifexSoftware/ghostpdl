@@ -320,7 +320,8 @@ zdictstack(i_ctx_t *i_ctx_p)
     check_write_type(*op, t_array);
     if (!level2_enabled)
 	count--;		/* see dstack.h */
-    return ref_stack_store(&d_stack, op, count, 0, 0, true, "dictstack");
+    return ref_stack_store(&d_stack, op, count, 0, 0, true, idmemory,
+			   "dictstack");
 }
 
 /* - cleardictstack - */
@@ -408,7 +409,7 @@ zforceput(i_ctx_t *i_ctx_p)
 
     check_type(*odp, t_dictionary);
     if (odp->value.pdict == systemdict->value.pdict ||
-	!ialloc_is_in_save()
+	!imemory_save_level(iimemory)
 	) {
 	uint space = r_space(odp);
 

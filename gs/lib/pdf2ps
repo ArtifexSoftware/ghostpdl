@@ -13,7 +13,7 @@ do
 done
 
 if [ $# -ne 2 ]; then
-	echo "Usage: `basename $0` [-dPSBinaryOK] [-dPSLevel1] [-dPSNoProcSet] input.pdf output.ps" 1>&2
+	echo "Usage: `basename $0` [-dASCII85EncodePages=false] [-dLanguageLevel=n] input.pdf output.ps" 1>&2
 	exit 1
 fi
 

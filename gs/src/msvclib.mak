@@ -16,10 +16,6 @@
 # all copies.
 
 
-# needed by clients that don't use msvc32.mak
-#
-
-!include $(GLSRCDIR)\version.mak
 # makefile for Microsoft Visual C++ 4.1 or later, Windows NT or Windows 95 LIBRARY.
 #
 # All configurable options are surrounded by !ifndef/!endif to allow 
@@ -118,6 +114,7 @@ GLOBJDIR=.\obj
 NUL=
 DD=$(GLGENDIR)\$(NUL)
 GLD=$(GLGENDIR)\$(NUL)
+
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
 # You may need to change this if the IJG library version changes.
@@ -247,7 +244,7 @@ SYNC=winsync
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=dps2lib.dev psl2cs.dev cielib.dev imasklib.dev patlib.dev htxlib.dev roplib.dev devcmap.dev bbox.dev
+FEATURE_DEVS=dps2lib.dev psl2cs.dev cielib.dev imasklib.dev patlib.dev htxlib.dev roplib.dev devcmap.dev bbox.dev pipe.dev
 !endif
 
 # Choose whether to compile the .ps initialization files into the executable.
@@ -340,7 +337,7 @@ LIB_ONLY=$(GLOBJDIR)\gslib.obj $(GLOBJDIR)\gsnogc.obj $(GLOBJDIR)\gconfig.obj $(
 MAKEDLL=0
 PLATFORM=mslib32_
 
-
+!include $(GLSRCDIR)\version.mak
 !include $(GLSRCDIR)\msvccmd.mak
 !include $(GLSRCDIR)\winlib.mak
 !include $(GLSRCDIR)\msvctail.mak

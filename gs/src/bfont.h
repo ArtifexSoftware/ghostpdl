@@ -26,7 +26,8 @@
 #include "ifont.h"
 
 /* In zfont.c */
-int add_FID(P3(i_ctx_t *i_ctx_p, ref * pfdict, gs_font * pfont));
+int add_FID(P4(i_ctx_t *i_ctx_p, ref *pfdict, gs_font *pfont,
+	       gs_ref_memory_t *imem));
 
 font_proc_make_font(zdefault_make_font);
 font_proc_make_font(zbase_make_font);
@@ -66,5 +67,6 @@ int build_gs_font(P7(i_ctx_t *, os_ptr, gs_font **, font_type,
 		     gs_memory_type_ptr_t, const build_proc_refs *,
 		     build_font_options_t));
 int define_gs_font(P1(gs_font *));
+gs_glyph zfont_encode_char(P3(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored));
 
 #endif /* bfont_INCLUDED */

@@ -23,7 +23,6 @@
 #include "gsstruct.h"		/* for registering root */
 #include "gzstate.h"		/* must precede gxdevice */
 #include "gxdevice.h"		/* must precede gxfont */
-#include "gschar.h"
 #include "gxfont.h"
 #include "gxfcache.h"
 #include "bfont.h"
@@ -231,12 +230,14 @@ font_param(const ref * pfdict, gs_font ** ppfont)
 /* Add the FID entry to a font dictionary. */
 /* Note that i_ctx_p may be NULL. */
 int
-add_FID(i_ctx_t *i_ctx_p, ref * fp /* t_dictionary */ , gs_font * pfont)
+add_FID(i_ctx_t *i_ctx_p, ref * fp /* t_dictionary */ , gs_font * pfont,
+	gs_ref_memory_t *imem)
 {
     ref fid;
 
-    make_tav_new(&fid, t_fontID, a_readonly | icurrent_space,
-		 pstruct, (void *)pfont);
+    make_tav(&fid, t_fontID,
+	     a_readonly | imemory_space(imem) | imemory_new_mask(imem),
+	     pstruct, (void *)pfont);
     return (i_ctx_p ? idict_put_string(fp, "FID", &fid) :
 	    dict_put_string(fp, "FID", &fid, NULL));
 }
@@ -318,6 +319,9 @@ zdefault_make_font(gs_font_dir * pdir, const gs_font * oldfont,
 		   const gs_matrix * pmat, gs_font ** ppfont)
 {
     gs_font *newfont = *ppfont;
+    gs_memory_t *mem = newfont->memory;
+    /* HACK: we know this font was allocated by the interpreter. */
+    gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
     ref *fp = pfont_dict(oldfont);
     font_data *pdata;
     ref newdict, newmat, scalemat;
@@ -327,20 +331,21 @@ zdefault_make_font(gs_font_dir * pdir, const gs_font * oldfont,
 
     if (dlen < mlen)
 	dlen = mlen;
-    if ((pdata = ialloc_struct(font_data, &st_font_data,
-			       "make_font(font_data)")) == 0
+    if ((pdata = gs_alloc_struct(mem, font_data, &st_font_data,
+				 "make_font(font_data)")) == 0
 	)
 	return_error(e_VMerror);
     /*
      * This dictionary is newly created: it's safe to pass NULL as the
      * dstack pointer to dict_copy and dict_put_string.
      */
-    if ((code = dict_create(dlen, &newdict)) < 0 ||
+    if ((code = dict_alloc(imem, dlen, &newdict)) < 0 ||
 	(code = dict_copy(fp, &newdict, NULL)) < 0 ||
-    (code = ialloc_ref_array(&newmat, a_all, 12, "make_font(matrices)")) < 0
+	(code = gs_alloc_ref_array(imem, &newmat, a_all, 12,
+				   "make_font(matrices)")) < 0
 	)
 	return code;
-    refset_null(newmat.value.refs, 12);
+    refset_null_new(newmat.value.refs, 12, imemory_new_mask(imem));
     ref_assign(&scalemat, &newmat);
     r_set_size(&scalemat, 6);
     scalemat.value.refs += 6;
@@ -361,16 +366,16 @@ zdefault_make_font(gs_font_dir * pdir, const gs_font * oldfont,
 	      gs_matrix_multiply(pmat, &prev_scale, &scale) >= 0)
 	    )
 	    scale = *pmat;
-	write_matrix(&scalemat, &scale);
+	write_matrix_new(&scalemat, &scale, imem);
     }
     r_clear_attrs(&scalemat, a_write);
     r_set_size(&newmat, 6);
-    write_matrix(&newmat, &newfont->FontMatrix);
+    write_matrix_new(&newmat, &newfont->FontMatrix, imem);
     r_clear_attrs(&newmat, a_write);
     if ((code = dict_put_string(&newdict, "FontMatrix", &newmat, NULL)) < 0 ||
 	(code = dict_put_string(&newdict, "OrigFont", pfont_dict(oldfont->base), NULL)) < 0 ||
 	(code = dict_put_string(&newdict, "ScaleMatrix", &scalemat, NULL)) < 0 ||
-	(code = add_FID(NULL, &newdict, newfont)) < 0
+	(code = add_FID(NULL, &newdict, newfont, imem)) < 0
 	)
 	return code;
     newfont->client_data = pdata;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -359,8 +359,8 @@ private int gp_printfile_win32(const char *filename, char *port);
 /* Win32s: Pass to Win16 spooler via gs16spl.exe */
 private int gp_printfile_gs16spl(const char *filename, const char *port);
 
-
-/* valid values for pmport are:
+/*
+ * Valid values for pmport are:
  *   ""
  *      action: WinNT and Win95 use default queue, Win32s prompts for port
  *   "LPT1:" (or other port that appears in win.ini [ports]
@@ -373,8 +373,8 @@ private int gp_printfile_gs16spl(const char *filename, const char *port);
  *      action: prompt for queue name then send to printer using 
  *              WritePrinter (WinNT and Win95).
  *      action: prompt for port then use gs16spl.exe (Win32s).
- *   
- /* Print File */
+ */
+/* Print File */
 private int
 gp_printfile(const char *filename, const char *pmport)
 {

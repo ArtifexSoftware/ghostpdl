@@ -104,7 +104,7 @@ row:
     if (ss->row_left == 0) {
 	ss->row_left = ss->row_count;
 	s0 = 0;
-	memset(ss->prev + 1, s_PDiff_max_Colors - 1, 0);
+	memset(ss->prev + 1, 0, s_PDiff_max_Colors - 1);
     }
     {
 	int rcount = pr->limit - p;

@@ -31,9 +31,6 @@ typedef struct gs_type1_state_s gs_type1_state;
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
 #endif
-#ifndef gs_show_enum_s_DEFINED
-struct gs_show_enum_s;
-#endif
 #ifndef gs_font_type1_DEFINED
 #  define gs_font_type1_DEFINED
 typedef struct gs_font_type1_s gs_font_type1;

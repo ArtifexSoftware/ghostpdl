@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -42,18 +42,14 @@
 /* Define masks for little-endian operation. */
 /* masks[i] has the first i bits off and the rest on. */
 #if !arch_is_big_endian
-const bits16 mono_copy_masks[17] =
-{
+const bits16 mono_copy_masks[17] = {
     0xffff, 0xff7f, 0xff3f, 0xff1f,
     0xff0f, 0xff07, 0xff03, 0xff01,
     0xff00, 0x7f00, 0x3f00, 0x1f00,
     0x0f00, 0x0700, 0x0300, 0x0100,
     0x0000
 };
-
-#  if arch_sizeof_int > 2
-const bits32 mono_fill_masks[33] =
-{
+const bits32 mono_fill_masks[33] = {
 #define mask(n)\
   ((~0xff | (0xff >> (n & 7))) << (n & -8))
     mask( 0),mask( 1),mask( 2),mask( 3),mask( 4),mask( 5),mask( 6),mask( 7),
@@ -63,8 +59,6 @@ const bits32 mono_fill_masks[33] =
     0
 #undef mask
 };
-
-#  endif
 #endif
 
 /* Fill a rectangle of bits with an 8x1 pattern. */
@@ -277,10 +271,12 @@ bits_bounding_box(const byte * data, uint height, uint raster,
 		  gs_int_rect * pbox)
 {
     register const ulong *lp;
-    static const byte first_1[16] =
-    {4, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
-    static const byte last_1[16] =
-    {0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4};
+    static const byte first_1[16] = {
+	4, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+    static const byte last_1[16] = {
+	0, 4, 3, 4, 2, 4, 3, 4, 1, 4, 3, 4, 2, 4, 3, 4
+    };
 
     /* Count trailing blank rows. */
     /* Since the raster is a multiple of sizeof(long), */
@@ -402,16 +398,21 @@ bits_bounding_box(const byte * data, uint height, uint raster,
 }
 
 /* Count the number of 1-bits in a half-byte. */
-static const byte half_byte_1s[16] =
-{0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
+static const byte half_byte_1s[16] = {
+    0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4
+};
 
 /* Count the number of trailing 1s in an up-to-5-bit value, -1. */
-static const byte bits5_trailing_1s[32] =
-{0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 4};
+static const byte bits5_trailing_1s[32] = {
+    0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 3,
+    0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 4
+};
 
 /* Count the number of leading 1s in an up-to-5-bit value, -1. */
-static const byte bits5_leading_1s[32] =
-{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 4};
+static const byte bits5_leading_1s[32] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 4
+};
 
 /*
  * Compress a value between 0 and 2^M to a value between 0 and 2^N-1.
@@ -419,26 +420,33 @@ static const byte bits5_leading_1s[32] =
  * The name of the table is compress_count_M_N.
  * As noted below, we require that N <= M.
  */
-static const byte compress_1_1[3] =
-{0, 1, 1};
-static const byte compress_2_1[5] =
-{0, 0, 1, 1, 1};
-static const byte compress_2_2[5] =
-{0, 1, 2, 2, 3};
-static const byte compress_3_1[9] =
-{0, 0, 0, 0, 1, 1, 1, 1, 1};
-static const byte compress_3_2[9] =
-{0, 0, 1, 1, 2, 2, 2, 3, 3};
-static const byte compress_4_1[17] =
-{0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-static const byte compress_4_2[17] =
-{0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3};
-static const byte compress_4_4[17] =
-{0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 9, 10, 11, 12, 13, 14, 15};
+static const byte compress_1_1[3] = {
+    0, 1, 1
+};
+static const byte compress_2_1[5] = {
+    0, 0, 1, 1, 1
+};
+static const byte compress_2_2[5] = {
+    0, 1, 2, 2, 3
+};
+static const byte compress_3_1[9] = {
+    0, 0, 0, 0, 1, 1, 1, 1, 1
+};
+static const byte compress_3_2[9] = {
+    0, 0, 1, 1, 2, 2, 2, 3, 3
+};
+static const byte compress_4_1[17] = {
+    0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+};
+static const byte compress_4_2[17] = {
+    0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3
+};
+static const byte compress_4_4[17] = {
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 9, 10, 11, 12, 13, 14, 15
+};
 
 /* The table of tables is indexed by log2(N) and then by M-1. */
-static const byte *const compress_tables[4][4] =
-{
+static const byte *const compress_tables[4][4] = {
     {compress_1_1, compress_2_1, compress_3_1, compress_4_1},
     {0, compress_2_2, compress_3_2, compress_4_2},
     {0, 0, 0, compress_4_4}

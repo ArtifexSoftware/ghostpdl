@@ -52,7 +52,7 @@ zclosefile(i_ctx_t *i_ctx_p)
     if (file_is_valid(s, op)) {	/* closing a closed file is a no-op */
 	int status = sclose(s);
 
-	if (status != 0) {
+	if (status != 0 && status != EOFC) {
 	    if (s_is_writing(s))
 		return handle_write_status(i_ctx_p, status, op, NULL,
 					   zclosefile);
@@ -499,7 +499,7 @@ zflushfile(i_ctx_t *i_ctx_p)
 	return 0;
     }
     status = sflush(s);
-    if (status == 0) {
+    if (status == 0 || status == EOFC) {
 	pop(1);
 	return 0;
     }
@@ -632,7 +632,7 @@ zwritecvp_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, bool first)
     check_write_file(s, op - 2);
     check_type(*op, t_integer);
     code = obj_cvp(op - 1, str, sizeof(str), &len, (int)op->value.intval,
-		   start);
+		   start, imemory);
     if (code == e_rangecheck) {
 	code = obj_string_data(op - 1, &data, &len);
 	if (len < start)

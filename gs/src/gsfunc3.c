@@ -59,7 +59,7 @@ private int
 fn_ElIn_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 {
     const gs_function_ElIn_t *const pfn =
-    (const gs_function_ElIn_t *)pfn_common;
+	(const gs_function_ElIn_t *)pfn_common;
     double arg = in[0], raised;
     int i;
 
@@ -83,6 +83,7 @@ fn_ElIn_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 		value = r1;
 	}
 	out[i] = value;
+	if_debug3('~', "[~]ElIn %g => [%d]%g\n", arg, i, out[i]);
     }
     return 0;
 }
@@ -90,16 +91,37 @@ fn_ElIn_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 /* Test whether an Exponential function is monotonic.  (They always are.) */
 private int
 fn_ElIn_is_monotonic(const gs_function_t * pfn_common,
-		     const float *lower, const float *upper, bool must_know)
+		     const float *lower, const float *upper,
+		     gs_function_effort_t effort)
 {
     const gs_function_ElIn_t *const pfn =
 	(const gs_function_ElIn_t *)pfn_common;
+    int i;
+    int dir = 0;
 
     if (lower[0] > pfn->params.Domain[1] ||
 	upper[0] < pfn->params.Domain[0]
 	)
 	return_error(gs_error_rangecheck);
-    return 1;
+    if (pfn->params.C0 == 0 && pfn->params.C1 == 0)
+	return FN_MONOTONIC_INCREASING;
+    if (effort <= EFFORT_EASY)
+	return gs_error_undefined;
+    for (i = 0; i < pfn->params.n; ++i) {
+	double diff = pfn->params.C1[i] - pfn->params.C0[i];
+	int code;
+
+	if (diff == 0)
+	    continue;
+	code = (diff > 0 ? FN_MONOTONIC_INCREASING : FN_MONOTONIC_DECREASING);
+	if (code <= 0)
+	    return code;
+	if (dir == 0)
+	    dir = code;
+	else if (dir != code)
+	    return 0;
+    }
+    return dir;
 }
 
 /* Free the parameters of an Exponential Interpolation function. */
@@ -118,13 +140,14 @@ gs_function_ElIn_init(gs_function_t ** ppfn,
 		      const gs_function_ElIn_params_t * params,
 		      gs_memory_t * mem)
 {
-    static const gs_function_head_t function_ElIn_head =
-    {
+    static const gs_function_head_t function_ElIn_head = {
 	function_type_ExponentialInterpolation,
-	(fn_evaluate_proc_t) fn_ElIn_evaluate,
-	(fn_is_monotonic_proc_t) fn_ElIn_is_monotonic,
-	(fn_free_params_proc_t) gs_function_ElIn_free_params,
-	fn_common_free
+	{
+	    (fn_evaluate_proc_t) fn_ElIn_evaluate,
+	    (fn_is_monotonic_proc_t) fn_ElIn_is_monotonic,
+	    (fn_free_params_proc_t) gs_function_ElIn_free_params,
+	    fn_common_free
+	}
     };
     int code;
 
@@ -145,14 +168,16 @@ gs_function_ElIn_init(gs_function_t ** ppfn,
 	    return_error(gs_error_rangecheck);
     } {
 	gs_function_ElIn_t *pfn =
-	gs_alloc_struct(mem, gs_function_ElIn_t, &st_function_ElIn,
-			"gs_function_ElIn_init");
+	    gs_alloc_struct(mem, gs_function_ElIn_t, &st_function_ElIn,
+			    "gs_function_ElIn_init");
 
 	if (pfn == 0)
 	    return_error(gs_error_VMerror);
 	pfn->params = *params;
 	pfn->params.m = 1;
 	pfn->head = function_ElIn_head;
+	pfn->head.is_monotonic =
+	    fn_domain_is_monotonic((gs_function_t *)pfn, EFFORT_MODERATE);
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;
@@ -172,7 +197,7 @@ private int
 fn_1ItSg_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 {
     const gs_function_1ItSg_t *const pfn =
-    (const gs_function_1ItSg_t *)pfn_common;
+	(const gs_function_1ItSg_t *)pfn_common;
     float arg = in[0], b0, b1, e0, encoded;
     int k = pfn->params.k;
     int i;
@@ -193,23 +218,67 @@ fn_1ItSg_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
     e0 = pfn->params.Encode[2 * i];
     encoded =
 	(arg - b0) * (pfn->params.Encode[2 * i + 1] - e0) / (b1 - b0) + e0;
+    if_debug3('~', "[~]1ItSg %g in %d => %g\n", arg, i, encoded);
     return gs_function_evaluate(pfn->params.Functions[i], &encoded, out);
 }
 
 /* Test whether a 1-Input Stitching function is monotonic. */
 private int
 fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
-		      const float *lower, const float *upper, bool must_know)
+		      const float *lower, const float *upper,
+		      gs_function_effort_t effort)
 {
     const gs_function_1ItSg_t *const pfn =
-    (const gs_function_1ItSg_t *)pfn_common;
+	(const gs_function_1ItSg_t *)pfn_common;
+    float v0 = lower[0], v1 = upper[0];
+    float d0 = pfn->params.Domain[0], d1 = pfn->params.Domain[1];
+    int k = pfn->params.k;
+    int i;
+    int dir = 0;
 
-    if (lower[0] > pfn->params.Domain[1] ||
-	upper[0] < pfn->params.Domain[0]
-	)
+    if (v0 > d1 || v1 < d0)
 	return_error(gs_error_rangecheck);
-/****** NYI ******/
-    return gs_error_undefined;
+    if (v0 < d0)
+	v0 = d0;
+    if (v1 > d1)
+	v1 = d1;
+    for (i = 0; i < pfn->params.k; ++i) {
+	float b0 = (i == 0 ? d0 : pfn->params.Bounds[i - 1]);
+	float b1 = (i == k - 1 ? d1 : pfn->params.Bounds[i]);
+	float e0, e1;
+	float w0, w1;
+	int code;
+
+	if (v0 >= b1 || v1 <= b0)
+	    continue;
+	e0 = pfn->params.Encode[2 * i];
+	e1 = pfn->params.Encode[2 * i + 1];
+	w0 = (max(v0, b0) - b0) * (e1 - e0) / (b1 - b0) + e0;
+	w1 = (min(v1, b1) - b0) * (e1 - e0) / (b1 - b0) + e0;
+	/* Note that w0 > w1 is now possible if e0 > e1. */
+	if (w0 > w1) {
+	    code = gs_function_is_monotonic(pfn->params.Functions[i],
+					    &w0, &w1, effort);
+	    switch (code) {
+	    case FN_MONOTONIC_INCREASING:
+		code = FN_MONOTONIC_DECREASING; break;
+	    case FN_MONOTONIC_DECREASING:
+		code = FN_MONOTONIC_INCREASING; break;
+	    default:
+		break;
+	    }
+	} else {
+	    code = gs_function_is_monotonic(pfn->params.Functions[i],
+					    &w0, &w1, effort);
+	}
+	if (code <= 0)
+	    return code;
+	if (dir == 0)
+	    dir = code;
+	else if (dir != code)
+	    return 0;
+    }
+    return dir;
 }
 
 /* Free the parameters of a 1-Input Stitching function. */
@@ -228,13 +297,14 @@ int
 gs_function_1ItSg_init(gs_function_t ** ppfn,
 	       const gs_function_1ItSg_params_t * params, gs_memory_t * mem)
 {
-    static const gs_function_head_t function_1ItSg_head =
-    {
+    static const gs_function_head_t function_1ItSg_head = {
 	function_type_1InputStitching,
-	(fn_evaluate_proc_t) fn_1ItSg_evaluate,
-	(fn_is_monotonic_proc_t) fn_1ItSg_is_monotonic,
-	(fn_free_params_proc_t) gs_function_1ItSg_free_params,
-	fn_common_free
+	{
+	    (fn_evaluate_proc_t) fn_1ItSg_evaluate,
+	    (fn_is_monotonic_proc_t) fn_1ItSg_is_monotonic,
+	    (fn_free_params_proc_t) gs_function_1ItSg_free_params,
+	    fn_common_free
+	}
     };
     int n = (params->Range == 0 ? 0 : params->n);
     float prev = params->Domain[0];
@@ -262,8 +332,8 @@ gs_function_1ItSg_init(gs_function_t ** ppfn,
     fn_check_mnDR((const gs_function_params_t *)params, 1, n);
     {
 	gs_function_1ItSg_t *pfn =
-	gs_alloc_struct(mem, gs_function_1ItSg_t, &st_function_1ItSg,
-			"gs_function_1ItSg_init");
+	    gs_alloc_struct(mem, gs_function_1ItSg_t, &st_function_1ItSg,
+			    "gs_function_1ItSg_init");
 
 	if (pfn == 0)
 	    return_error(gs_error_VMerror);
@@ -271,6 +341,8 @@ gs_function_1ItSg_init(gs_function_t ** ppfn,
 	pfn->params.m = 1;
 	pfn->params.n = n;
 	pfn->head = function_1ItSg_head;
+	pfn->head.is_monotonic =
+	    fn_domain_is_monotonic((gs_function_t *)pfn, EFFORT_MODERATE);
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;
@@ -290,12 +362,12 @@ private int
 fn_AdOt_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 {
     const gs_function_AdOt_t *const pfn =
-    (const gs_function_AdOt_t *)pfn_common;
+	(const gs_function_AdOt_t *)pfn_common;
     int i;
 
     for (i = 0; i < pfn->params.n; ++i) {
 	int code =
-	gs_function_evaluate(pfn->params.Functions[i], in, out + i);
+	    gs_function_evaluate(pfn->params.Functions[i], in, out + i);
 
 	if (code < 0)
 	    return code;
@@ -306,21 +378,27 @@ fn_AdOt_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 /* Test whether an Arrayed Output function is monotonic. */
 private int
 fn_AdOt_is_monotonic(const gs_function_t * pfn_common,
-		     const float *lower, const float *upper, bool must_know)
+		     const float *lower, const float *upper,
+		     gs_function_effort_t effort)
 {
     const gs_function_AdOt_t *const pfn =
-    (const gs_function_AdOt_t *)pfn_common;
+	(const gs_function_AdOt_t *)pfn_common;
     int i;
+    int dir = 0;
 
     for (i = 0; i < pfn->params.n; ++i) {
 	int code =
-	gs_function_is_monotonic(pfn->params.Functions[i], lower, upper,
-				 must_know);
+	    gs_function_is_monotonic(pfn->params.Functions[i], lower, upper,
+				     effort);
 
 	if (code <= 0)
 	    return code;
+	if (dir == 0)
+	    dir = code;
+	else if (dir != code)
+	    return 0;
     }
-    return 1;
+    return dir;
 }
 
 /* Free the parameters of an Arrayed Output function. */
@@ -337,13 +415,14 @@ int
 gs_function_AdOt_init(gs_function_t ** ppfn,
 		const gs_function_AdOt_params_t * params, gs_memory_t * mem)
 {
-    static const gs_function_head_t function_AdOt_head =
-    {
+    static const gs_function_head_t function_AdOt_head = {
 	function_type_ArrayedOutput,
-	(fn_evaluate_proc_t) fn_AdOt_evaluate,
-	(fn_is_monotonic_proc_t) fn_AdOt_is_monotonic,
-	(fn_free_params_proc_t) gs_function_AdOt_free_params,
-	fn_common_free
+	{
+	    (fn_evaluate_proc_t) fn_AdOt_evaluate,
+	    (fn_is_monotonic_proc_t) fn_AdOt_is_monotonic,
+	    (fn_free_params_proc_t) gs_function_AdOt_free_params,
+	    fn_common_free
+	}
     };
     int m = params->m, n = params->n;
     int i;
@@ -359,8 +438,8 @@ gs_function_AdOt_init(gs_function_t ** ppfn,
     }
     {
 	gs_function_AdOt_t *pfn =
-	gs_alloc_struct(mem, gs_function_AdOt_t, &st_function_AdOt,
-			"gs_function_AdOt_init");
+	    gs_alloc_struct(mem, gs_function_AdOt_t, &st_function_AdOt,
+			    "gs_function_AdOt_init");
 
 	if (pfn == 0)
 	    return_error(gs_error_VMerror);
@@ -368,6 +447,8 @@ gs_function_AdOt_init(gs_function_t ** ppfn,
 	pfn->params.Domain = 0;
 	pfn->params.Range = 0;
 	pfn->head = function_AdOt_head;
+	pfn->head.is_monotonic =
+	    fn_domain_is_monotonic((gs_function_t *)pfn, EFFORT_MODERATE);
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;

@@ -62,12 +62,12 @@
 /* ---------------- Resources (devices, inits, IODevices) ---------------- */
 
 /* Declare devices, image types, init procedures, and IODevices as extern. */
-#define device_(dev) extern far_data gx_device dev;
+#define device_(dev) extern gx_device dev;
 #define device2_(dev) extern const gx_device dev;
 #define halftone_(dht) extern const gx_device_halftone_resource_t *dht(P0());
 #define image_class_(cls) extern iclass_proc(cls);
 #define image_type_(i,type) extern const gx_image_type_t type;
-#define init_(proc) extern void proc(P1(gs_memory_t *));
+#define init_(proc) extern init_proc(proc);
 #define io_device_(iodev) extern const gx_io_device iodev;
 #include "gconf.h"
 #undef io_device_

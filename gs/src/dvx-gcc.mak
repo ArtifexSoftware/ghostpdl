@@ -34,7 +34,7 @@ include $(GLSRCDIR)/version.mak
 # the directories also define the default search path for the
 # initialization files (gs_*.ps) and the fonts.
 
-INSTALL = install -c
+INSTALL = $(GLSRCDIR)/instcopy -c
 INSTALL_PROGRAM = $(INSTALL) -m 755
 INSTALL_DATA = $(INSTALL) -m 644
 
@@ -229,7 +229,7 @@ SYNC=posync
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)pipe.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -294,6 +294,7 @@ AK=
 CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CC_LEAF=$(CC_) -fomit-frame-pointer
+CC_NO_WARN=$(CC_)
 
 # ---------------- End of platform-specific section ---------------- #
 

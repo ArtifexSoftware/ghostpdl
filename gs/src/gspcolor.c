@@ -36,7 +36,6 @@
 #include "gxclip2.h"
 #include "gspath.h"
 #include "gxpath.h"
-#include "gxp1fill.h"
 #include "gxpcolor.h"
 #include "gzstate.h"
 #include "gsimage.h"
@@ -291,11 +290,11 @@ gx_adjust_color_Pattern(const gs_client_color * pcc,
 
 /* GC procedures */
 
-#define pcs ((gs_color_space *)vptr)
-
 private 
 ENUM_PTRS_BEGIN_PROC(cs_Pattern_enum_ptrs)
 {
+    EV_CONST gs_color_space *const pcs = vptr;
+
     if (!pcs->params.pattern.has_base_space)
 	return 0;
     return ENUM_USING(*pcs->params.pattern.base_space.type->stype,
@@ -303,7 +302,7 @@ ENUM_PTRS_BEGIN_PROC(cs_Pattern_enum_ptrs)
 		      sizeof(pcs->params.pattern.base_space), index);
 }
 ENUM_PTRS_END_PROC
-private RELOC_PTRS_BEGIN(cs_Pattern_reloc_ptrs)
+private RELOC_PTRS_WITH(cs_Pattern_reloc_ptrs, gs_color_space *pcs)
 {
     if (!pcs->params.pattern.has_base_space)
 	return;
@@ -312,5 +311,3 @@ private RELOC_PTRS_BEGIN(cs_Pattern_reloc_ptrs)
 		sizeof(gs_paint_color_space));
 }
 RELOC_PTRS_END
-
-#undef pcs

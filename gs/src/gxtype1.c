@@ -89,9 +89,8 @@ gs_type1_decrypt(byte * dest, const byte * src, uint len, crypt_state * pstate)
 /* Define the structure type for a Type 1 interpreter state. */
 public_st_gs_type1_state();
 /* GC procedures */
-#define pcis ((gs_type1_state *)vptr)
 private 
-ENUM_PTRS_BEGIN(gs_type1_state_enum_ptrs)
+ENUM_PTRS_WITH(gs_type1_state_enum_ptrs, gs_type1_state *pcis)
 {
     if (index < pcis->ips_count + 4) {
 	ENUM_RETURN_CONST_STRING_PTR(gs_type1_state,
@@ -102,7 +101,7 @@ ENUM_PTRS_BEGIN(gs_type1_state_enum_ptrs)
 ENUM_PTR3(0, gs_type1_state, pfont, pis, path);
 ENUM_PTR(3, gs_type1_state, callback_data);
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(gs_type1_state_reloc_ptrs)
+private RELOC_PTRS_WITH(gs_type1_state_reloc_ptrs, gs_type1_state *pcis)
 {
     int i;
 
@@ -118,7 +117,6 @@ private RELOC_PTRS_BEGIN(gs_type1_state_reloc_ptrs)
 	ipsp->ip = ipsp->char_string.data + diff;
     }
 } RELOC_PTRS_END
-#undef pcis
 
 /* ------ Interpreter services ------ */
 
@@ -421,8 +419,9 @@ gs_type1_endchar(gs_type1_state * pcis)
 	pcis->asb_diff = pcis->save_asb;
 	pcis->adxy = pcis->save_adxy;
 	/*
-	 * We're going to add in the lsb of the accented character when
-	 * we encounter its [h]sbw, so don't do it now.
+	 * We're going to add in the lsb of the base character / accented
+	 * character (*not* the lsb of the accent) when we encounter the
+	 * [h]sbw of the accent, so ignore the lsb for now.
 	 */
 	accum_xy(pcis->adxy.x, pcis->adxy.y);
 	ppath->position.x = pcis->position.x = ptx;

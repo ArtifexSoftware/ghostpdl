@@ -64,10 +64,10 @@ extern_st(st_device_mask_clip);
  * We supply an explicit device space origin or phase.
  * Note that this procedure does not set cdev->tiles.
  */
-int gx_mask_clip_initialize(P6(gx_device_mask_clip * cdev,
+int gx_mask_clip_initialize(P7(gx_device_mask_clip * cdev,
 			       const gx_device_mask_clip * proto,
 			       const gx_bitmap * bits, gx_device * tdev,
-			       int tx, int ty));
+			       int tx, int ty, gs_memory_t *mem));
 
 /*
  * Prepare colors for a copy_mono operation.

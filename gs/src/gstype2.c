@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -411,19 +411,27 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		 * A hintmask at the beginning of the CharString is
 		 * equivalent to vstemhm + hintmask.  For simplicity, we use
 		 * this interpretation everywhere.
+		 *
+		 * Even though the Adobe documentation doesn't say this,
+		 * it appears that the same holds true for cntrmask.
 		 */
+	    case c2_cntrmask:
 		pcis->have_hintmask = true;
 		check_first_operator(!((csp - cstack) & 1));
 		type2_vstem(pcis, csp, cstack);
+		/*
+		 * We should clear the stack here only if this is the
+		 * initial mask operator that includes the implicit
+		 * vstemhm, but currently this is too much trouble to
+		 * detect.
+		 */
 		clear;
-		/* (falls through) */
-	    case c2_cntrmask:
 		{
 		    byte mask[max_total_stem_hints / 8];
 		    int i;
 
-		    if_debug3('1', "[1]mask[%d:%dv,%dh]", pcis->num_hints,
-			  pcis->vstem_hints.count, pcis->hstem_hints.count);
+		    if_debug3('1', "[1]mask[%d:%dh,%dv]", pcis->num_hints,
+			  pcis->hstem_hints.count, pcis->vstem_hints.count);
 		    for (i = 0; i < pcis->num_hints; ++cip, i += 8) {
 			charstring_next(*cip, state, mask[i >> 3], encrypted);
 			if_debug1('1', " 0x%02x", mask[i >> 3]);

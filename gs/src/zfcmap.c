@@ -301,7 +301,8 @@ cid_system_info_compatible(const gs_cid_system_info * psi1,
 /* Get the CodeMap from a Type 0 font, and check the CIDSystemInfo of */
 /* its subsidiary fonts. */
 int
-ztype0_get_cmap(const gs_cmap **ppcmap, const ref *pfdepvector, const ref *op)
+ztype0_get_cmap(const gs_cmap **ppcmap, const ref *pfdepvector, const ref *op,
+		gs_memory_t *imem)
 {
     ref *prcmap;
     ref *pcodemap;
@@ -313,7 +314,7 @@ ztype0_get_cmap(const gs_cmap **ppcmap, const ref *pfdepvector, const ref *op)
     if (dict_find_string(op, "CMap", &prcmap) <= 0 ||
 	!r_has_type(prcmap, t_dictionary) ||
 	dict_find_string(prcmap, "CodeMap", &pcodemap) <= 0 ||
-	!r_has_stype(pcodemap, imemory, st_cmap)
+	!r_has_stype(pcodemap, imem, st_cmap)
 	)
 	return_error(e_invalidfont);
     pcmap = r_ptr(pcodemap, gs_cmap);

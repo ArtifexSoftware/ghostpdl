@@ -477,6 +477,10 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 				    replace_stem_hints(pcis);
 				    csp -= 2;
 				    inext;
+				case 12:
+				case 13:
+				    /* Counter control isn't implemented. */
+				    cnext;
 				case 14:
 				    num_results = 1;
 				  blend:{

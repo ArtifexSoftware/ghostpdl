@@ -259,13 +259,4 @@ void gs_main_dump_stack(P3(gs_main_instance *minst, int code,
  */
 void gs_main_finit(P3(gs_main_instance * minst, int exit_status, int code));
 
-/* ================ Other exported procedures ================ */
-
-/*
- * Define an internal interface to the interpreter.  Clients do not
- * normally use this.
- */
-int gs_interpret(P5(i_ctx_t **pi_ctx_p, ref * pref, int user_errors,
-		    int *pexit_code, ref * perror_object));
-
 #endif /* imain_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -85,16 +85,32 @@ mem_true16_fill_rectangle(gx_device * dev,
     const ushort color16 = (ushort)((color << 8) | (color >> 8));
 #endif
     declare_scan_ptr(dest);
+
     fit_fill(dev, x, y, w, h);
     setup_rect(dest);
-    while (h-- > 0) {
-	ushort *pptr = (ushort *) dest;
-	int cnt = w;
+    if (w == 1) {
+	while (h-- > 0) {
+	    *(ushort *)dest = color16;
+	    inc_ptr(dest, draster);
+	}
+    } else if ((color16 >> 8) == (color16 & 0xff)) {
+	bytes_fill_rectangle(scan_line_base(mdev, y) + (x << 1), draster,
+			     (byte)color, w << 1, h);
+    } else {
+	while (h-- > 0) {
+	    ushort *pptr = (ushort *) dest;
+	    int cnt = w;
 
-	do {
-	    *pptr++ = color16;
-	} while (--cnt > 0);
-	inc_ptr(dest, draster);
+	    for (; cnt >= 4; pptr += 4, cnt -= 4)
+		pptr[3] = pptr[2] = pptr[1] = pptr[0] = color16;
+	    switch (cnt) {
+	    case 3: pptr[2] = color16;
+	    case 2: pptr[1] = color16;
+	    case 1: pptr[0] = color16;
+	    case 0: DO_NOTHING;
+	    }
+	    inc_ptr(dest, draster);
+	}
     }
     return 0;
 }

@@ -215,6 +215,10 @@ typedef struct char_cache_s {
 /* ------ Font/character cache ------ */
 
 /* A font "directory" (font/character cache manager). */
+#ifndef gs_font_dir_DEFINED
+#  define gs_font_dir_DEFINED
+typedef struct gs_font_dir_s gs_font_dir;
+#endif
 struct gs_font_dir_s {
 
     /* Original (unscaled) fonts */

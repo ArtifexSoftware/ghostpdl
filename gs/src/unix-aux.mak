@@ -30,17 +30,6 @@ UNIX_AUX_MAK=$(GLSRC)unix-aux.mak
 # We have to include a test for the existence of sys/time.h,
 # because some System V platforms don't have it.
 
-# Define pipes as a separable feature.
-
-pipe_=$(GLOBJ)gdevpipe.$(OBJ)
-$(GLD)pipe.dev: $(UNIX_AUX_MAK) $(ECHOGS_XE) $(pipe_)
-	$(SETMOD) $(GLD)pipe $(pipe_)
-	$(ADDMOD) $(GLD)pipe -iodev pipe
-
-$(GLOBJ)gdevpipe.$(OBJ): $(GLSRC)gdevpipe.c $(AK) $(errno__h) $(pipe__h) $(stdio__h) $(string__h) \
-  $(gserror_h) $(gsmemory_h) $(gstypes_h) $(gxiodev_h) $(stream_h)
-	$(GLCC) $(GLO_)gdevpipe.$(OBJ) $(C_) $(GLSRC)gdevpipe.c
-
 # Unix platforms other than System V, and also System V Release 4
 # (SVR4) platforms.
 unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ)

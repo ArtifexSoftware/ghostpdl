@@ -133,7 +133,7 @@ end
 % Restore must restore the user parameters.
 % (Since userparams is in local VM, save takes care of saving them.)
 /restore {		% <save> restore -
-  restore /userparams .systemvar .setuserparams
+  //restore /userparams .systemvar .setuserparams
 } .bind odef
 
 % The pssystemparams dictionary holds some system parameters that

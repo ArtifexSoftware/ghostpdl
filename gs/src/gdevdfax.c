@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1999 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -25,11 +25,7 @@
 #include "gdevprn.h"
 #include "strimpl.h"
 #include "scfx.h"
-
-/* Import the key routines from gdevtfax.c. */
-int gdev_fax_open(P1(gx_device *));
-void gdev_fax_init_state(P2(stream_CFE_state *, const gx_device_printer *));
-int gdev_fax_print_page(P3(gx_device_printer *, FILE *, stream_CFE_state *));
+#include "gdevtfax.h"
 
 /* Define the device parameters. */
 #define X_DPI 204

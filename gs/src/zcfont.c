@@ -20,11 +20,10 @@
 /* Composite font-related character operators */
 #include "ghost.h"
 #include "oper.h"
-#include "gschar.h"
 #include "gsmatrix.h"		/* for gxfont.h */
 #include "gxfixed.h"		/* for gxfont.h */
 #include "gxfont.h"
-#include "gxchar.h"
+#include "gxtext.h"
 #include "estack.h"
 #include "ichar.h"
 #include "ifont.h"
@@ -42,12 +41,12 @@ zcshow(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     os_ptr proc_op = op - 1;
     os_ptr str_op = op;
-    gs_show_enum *penum;
+    gs_text_enum_t *penum;
     int code;
 
     /*
      * Even though this is not documented anywhere by Adobe,
-     * the Adobe interpreters apparently allow the string and
+     * some Adobe interpreters apparently allow the string and
      * the procedure to be provided in either order!
      */
     if (r_is_proc(proc_op))
@@ -59,15 +58,14 @@ zcshow(i_ctx_t *i_ctx_p)
 	check_op(2);
 	return_error(e_typecheck);
     }
-    if ((code = op_show_setup(i_ctx_p, str_op, &penum)) != 0)
+    if ((code = op_show_setup(i_ctx_p, str_op)) != 0 ||
+	(code = gs_cshow_begin(igs, str_op->value.bytes, r_size(str_op),
+			       imemory, &penum)) < 0)
 	return code;
-    if ((code = gs_cshow_n_init(penum, igs, (char *)str_op->value.bytes,
-				r_size(str_op))) < 0
-	) {
+    if ((code = op_show_finish_setup(i_ctx_p, penum, 2, NULL)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
     }
-    op_show_finish_setup(i_ctx_p, penum, 2, NULL);
     sslot = *proc_op;		/* save kerning proc */
     pop(2);
     return cshow_continue(i_ctx_p);
@@ -76,14 +74,14 @@ private int
 cshow_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_show_enum *penum = senum;
+    gs_text_enum_t *penum = senum;
     int code;
 
     check_estack(4);		/* in case we call the procedure */
-    code = gs_show_next(penum);
-    if (code != gs_show_move) {
+    code = gs_text_process(penum);
+    if (code != TEXT_PROCESS_INTERVENE) {
 	code = op_show_continue_dispatch(i_ctx_p, 0, code);
-	if (code == o_push_estack)	/* must be gs_show_render */
+	if (code == o_push_estack)	/* must be TEXT_PROCESS_RENDER */
 	    make_op_estack(esp - 1, cshow_continue);
 	return code;
     }
@@ -91,42 +89,33 @@ cshow_continue(i_ctx_t *i_ctx_p)
     {
 	ref *pslot = &sslot;
 	gs_point wpt;
-	gs_font *font = gs_show_current_font(penum);
+	gs_font *font = gs_text_current_font(penum);
+	gs_font *root_font = gs_rootfont(igs);
 	gs_font *scaled_font;
+	uint font_space = r_space(pfont_dict(font));
+	uint root_font_space = r_space(pfont_dict(root_font));
 
-	gs_show_current_width(penum, &wpt);
-#if 0
-		/****************
-		 * The following code is logically correct (or at least,
-		 * probably more correct than the code it replaces),
-		 * but because of the issues about creating the scaled
-		 * font in the correct VM space that make_font (in zfont.c)
-		 * has to deal with, it creates references pointing to
-		 * the wrong spaces.  Therefore, we've removed it.
-		 *****************/
-	{
-	    int fdepth = penum->fstack.depth;
-
-	    if (fdepth <= 0)
-		scaled_font = font;	/* not composite */
-	    else {
-		code = gs_makefont(font->dir, font,
-				   &penum->fstack.items[fdepth - 1].font->
-				   FontMatrix, &scaled_font);
-		if (code < 0)
-		    return code;
-	    }
+	gs_text_current_width(penum, &wpt);
+	if (font == root_font)
+	    scaled_font = font;
+	else {
+	    /* Construct a scaled version of the leaf font. */
+	    uint save_space = idmemory->current_space;
+	    
+	    ialloc_set_space(idmemory, font_space);
+	    code = gs_makefont(font->dir, font, &root_font->FontMatrix,
+			       &scaled_font);
+	    ialloc_set_space(idmemory, save_space);
+	    if (code < 0)
+		return code;
 	}
-#else
-	scaled_font = font;
-#endif
 	push(3);
-	make_int(op - 2, gs_show_current_char(penum) & 0xff);
+	make_int(op - 2, gs_text_current_char(penum) & 0xff);
 	make_real(op - 1, wpt.x);
 	make_real(op, wpt.y);
-	push_op_estack(cshow_continue);
-	if (scaled_font != gs_rootfont(igs))
-	    push_op_estack(cshow_restore_font);
+	make_struct(&ssfont, font_space, font);
+	make_struct(&srfont, root_font_space, root_font);
+	push_op_estack(cshow_restore_font);
 	/* cshow does not change rootfont for user procedure */
 	gs_set_currentfont(igs, scaled_font);
 	*++esp = *pslot;	/* user procedure */
@@ -135,8 +124,11 @@ cshow_continue(i_ctx_t *i_ctx_p)
 }
 private int
 cshow_restore_font(i_ctx_t *i_ctx_p)
-{	/* We have 1 more entry on the e-stack (cshow_continue). */
-    return gs_show_restore_font(esenum(esp - 1));
+{
+    /* We must restore both the root font and the current font. */
+    gs_setfont(igs, r_ptr(&srfont, gs_font));
+    gs_set_currentfont(igs, r_ptr(&ssfont, gs_font));
+    return cshow_continue(i_ctx_p);
 }
 
 /* - rootfont <font> */

@@ -199,7 +199,7 @@ SYNC=winsync
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)mshandle.dev $(PSD)pipe.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -277,9 +277,11 @@ PCFBASM=
 
 dosdefault: default $(BINDIR)\gs16spl.exe
 
-# Define the switch for output files.
+# Define the switches for the compilers.
 
+C_=-c
 O_=-o
+RO_=-fo
 
 # Define the compilation flags.
 
@@ -365,6 +367,7 @@ CC_=$(CC_WX) $(CO)
 CC_D=$(CC_WX)
 CC_INT=$(CC_WX)
 CC_LEAF=$(CC_)
+CC_NO_WARN=$(CC_)
 
 # No additional flags are needed for Windows compilation.
 CCWINFLAGS=
@@ -373,8 +376,8 @@ CCWINFLAGS=
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
-# ****** HACK ****** *.tr and *.map are still created in the current directory.
-BEGINFILES2=$(BINDIR)\gs16spl.exe *.tr *.map
+# ****** HACK ****** *.tr is still created in the current directory.
+BEGINFILES2=$(BINDIR)\gs16spl.exe *.tr
 
 # Include the generic makefiles.
 
@@ -437,7 +440,7 @@ $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE)\
 	$(LINK) /Tpe $(LCT) @&&!
 $(LIBDIR)\c0w32 +
 $(DWOBJ) +
-,$(GS_XE),$(GS), +
+,$(GS_XE),$(GLOBJ)$(GS), +
 $(LIBDIR)\import32 +
 $(LIBDIR)\cw32, +
 $(GLSRCDIR)\dwmain32.def, +
@@ -449,7 +452,7 @@ $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
 	$(LINK) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
 $(LIBDIR)\c0w32 +
 $(OBJC) +
-,$(GSCONSOLE_XE),$(GSCONSOLE), +
+,$(GSCONSOLE_XE),$(GLOBJ)$(GSCONSOLE), +
 $(LIBDIR)\import32 +
 $(LIBDIR)\cw32, +
 $(GLSRCDIR)\dw32c.def, +
@@ -462,7 +465,7 @@ $(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ)\
 	-del $(GLGEN)gswin32.tr
 	copy $(ld_tr) $(GLGEN)gswin32.tr
 	echo $(LIBDIR)\c0d32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpd @$(GLGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
+	$(LINK) $(LCT) /Tpd @$(GLGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(GLOBJ)$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
 
 !else
 # The big graphical EXE
@@ -472,7 +475,7 @@ $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
 	copy $(ld_tr) $(GLGEN)gswin32.tr
 	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
 	echo $(DWOBJNO) $(INTASM) >> $(GLGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpe @$(GLGEN)gswin32.tr ,$(GS_XE),$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\dwmain32.def,$(GS_OBJ).res
+	$(LINK) $(LCT) /Tpe @$(GLGEN)gswin32.tr ,$(GS_XE),$(GLOBJ)$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\dwmain32.def,$(GS_OBJ).res
 
 # The big console mode EXE
 $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
@@ -481,7 +484,7 @@ $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
 	copy $(ld_tr) $(GLGEN)gswin32.tr
 	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
 	echo $(OBJCNO) $(INTASM) >> $(GLGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpe /ap @$(GLGEN)gswin32.tr ,$(GSCONSOLE_XE),$(GSCONSOLE),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\dw32c.def,$(GS_OBJ).res
+	$(LINK) $(LCT) /Tpe /ap @$(GLGEN)gswin32.tr ,$(GSCONSOLE_XE),$(GLOBJ)$(GSCONSOLE),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\dw32c.def,$(GS_OBJ).res
 !endif
 
 # Access to 16 spooler from Win32s

@@ -114,8 +114,9 @@ zrsdparams(i_ctx_t *i_ctx_p)
  *      source;
  *      - A reusable stream.
  */
-private int make_rss(P7(os_ptr op, const byte * data, uint size, long offset,
-			long length, bool is_bytestring, bool close_source));
+private int make_rss(P8(i_ctx_t *i_ctx_p, os_ptr op, const byte * data,
+			uint size, long offset,	long length,
+			bool is_bytestring, bool close_source));
 private int
 zreusablestream(i_ctx_t *i_ctx_p)
 {
@@ -138,7 +139,7 @@ zreusablestream(i_ctx_t *i_ctx_p)
 	uint size = r_size(source_op);
 
 	check_read(*source_op);
-	code = make_rss(source_op, source_op->value.const_bytes,
+	code = make_rss(i_ctx_p, source_op, source_op->value.const_bytes,
 			size, 0L, (length < 0 ? size : length), false,
 			close_source);
     } else if (r_has_type(source_op, t_astruct)) {
@@ -147,9 +148,9 @@ zreusablestream(i_ctx_t *i_ctx_p)
 	if (gs_object_type(imemory, source_op->value.pstruct) != &st_bytes)
 	    return_error(e_rangecheck);
 	check_read(*source_op);
-	code = make_rss(source_op, (const byte *)source_op->value.pstruct,
-			size, 0L, (length < 0 ? size : length), true,
-			close_source);
+	code = make_rss(i_ctx_p, source_op,
+			(const byte *)source_op->value.pstruct, size, 0L,
+			(length < 0 ? size : length), true, close_source);
     } else {
 	long offset = 0;
 	stream *source;
@@ -164,7 +165,7 @@ rs:
 	    savailable(source, &avail);
 	    if (avail < 0)
 		avail = 0;
-	    code = make_rss(source_op, source->cbuf_string.data,
+	    code = make_rss(i_ctx_p, source_op, source->cbuf_string.data,
 			    source->cbuf_string.size, offset, avail, false,
 			    close_source);
 	} else if (source->file != 0) {
@@ -199,8 +200,8 @@ rs:
 
 /* Make a reusable string stream. */
 private int
-make_rss(os_ptr op, const byte * data, uint size, long offset,
-	 long length, bool is_bytestring, bool close_source)
+make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data, uint size,
+	 long offset, long length, bool is_bytestring, bool close_source)
 {
     stream *s;
 

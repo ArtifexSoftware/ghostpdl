@@ -59,9 +59,12 @@ ZLIB_NAME=z
 CC=gcc
 CCLD=$(CC)
 
-GCFLAGS=-Wall -Wcast-qual -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -fno-builtin -fno-common
+GCFLAGS_NO_WARN=-fno-builtin -fno-common
+GCFLAGS_WARNINGS=-Wall -Wcast-qual -Wpointer-arith -Wstrict-prototypes -Wwrite-strings
+GCFLAGS=$(GCFLAGS_NO_WARN) $(GCFLAGS_WARNINGS)
 XCFLAGS=
 CFLAGS=-g -O $(GCFLAGS) $(XCFLAGS)
+CFLAGS_NO_WARN=-g -O $(GCFLAGS_NO_WARN) $(XCFLAGS)
 LDFLAGS=$(XLDFLAGS)
 EXTRALIBS=
 XINCLUDE=-I/usr/local/X/include
@@ -111,6 +114,7 @@ CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CCAUX=$(CC)
 CC_LEAF=$(CC_)
+CC_NO_WARN=$(CC) $(GENOPT) $(CFLAGS_NO_WARN)
 # When using gcc, CCA2K isn't needed....
 CCA2K=$(CC)
 

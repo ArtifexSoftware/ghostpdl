@@ -25,7 +25,6 @@
 #include "gxfixed.h"
 #include "gsmatrix.h"
 #include "gxdevice.h"
-#include "gschar.h"
 #include "gxfont.h"
 #include "bfont.h"
 #include "ialloc.h"
@@ -85,17 +84,17 @@ zbuildfont3(i_ctx_t *i_ctx_p)
 }
 
 /* Encode a character. */
-private gs_glyph
-zfont_encode_char(gs_show_enum * penum, gs_font * pfont, gs_char * pchr)
+gs_glyph
+zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored)
 {
     const ref *pencoding = &pfont_data(pfont)->Encoding;
-    ulong index = *pchr;	/* work around VAX widening bug */
+    ulong index = chr;	/* work around VAX widening bug */
     ref cname;
     int code = array_get(pencoding, (long)index, &cname);
 
     if (code < 0 || !r_has_type(&cname, t_name))
 	return gs_no_glyph;
-    return (gs_glyph) name_index(&cname);
+    return (gs_glyph)name_index(&cname);
 }
 
 /* Encode a character in a known encoding. */
@@ -289,9 +288,9 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 	return code;
     pfont = *ppfont;
     pfont->procs.init_fstack = gs_default_init_fstack;
-    pfont->procs.next_char = gs_default_next_char;
     pfont->procs.define_font = gs_no_define_font;
     pfont->procs.make_font = zbase_make_font;
+    pfont->procs.next_char_glyph = gs_default_next_char_glyph;
     pfont->FontBBox.p.x = bbox[0];
     pfont->FontBBox.p.y = bbox[1];
     pfont->FontBBox.q.x = bbox[2];
@@ -459,14 +458,14 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	if (pencoding)
 	    encoding = *pencoding;
 	ialloc_set_space(idmemory, r_space(op));
-	pfont = ialloc_struct(gs_font, pstype,
+	pfont = gs_font_alloc(imemory, pstype, &gs_font_procs_default, NULL,
 			      "buildfont(font)");
 	pdata = ialloc_struct(font_data, &st_font_data,
 			      "buildfont(data)");
 	if (pfont == 0 || pdata == 0)
 	    code = gs_note_error(e_VMerror);
 	else
-	    code = add_FID(i_ctx_p, op, pfont);
+	    code = add_FID(i_ctx_p, op, pfont, iimemory);
 	if (code < 0) {
 	    ifree_object(pdata, "buildfont(data)");
 	    ifree_object(pfont, "buildfont(font)");
@@ -479,12 +478,6 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	ref_assign_new(&pdata->BuildGlyph, &pbuild->BuildGlyph);
 	if (pencoding)
 	    ref_assign_new(&pdata->Encoding, &encoding);
-	/* Clear the chain pointers so as not to confuse the memory */
-	/* manager if we bail out after returning from here. */
-	pfont->next = pfont->prev = 0;
-	pfont->memory = imemory;
-	pfont->dir = 0;
-	pfont->base = pfont;
 	pfont->client_data = pdata;
 	pfont->FontType = ftype;
 	pfont->FontMatrix = mat;
@@ -493,9 +486,6 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	pfont->InBetweenSize = (fbit_type) inbetweensize;
 	pfont->TransformedChar = (fbit_type) transformedchar;
 	pfont->WMode = wmode;
-	pfont->PaintType = 0;
-	pfont->StrokeWidth = 0.0;
-	pfont->procs.build_char = gs_no_build_char;
 	pfont->procs.encode_char = zfont_encode_char;
 	pfont->procs.callbacks.glyph_name = zfont_glyph_name;
 	pfont->procs.callbacks.known_encode = zfont_known_encode;

@@ -1946,12 +1946,14 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
 		  pis->line_params.cap, pis->line_params.join);
 	break;
 
-    case cmd_set_misc2_ac_op_sa >> 6:
+    case cmd_set_misc2_cj_ac_op_sa >> 6:
+	pis->line_params.curve_join = ((cb >> 3) & 7) - 1;
 	pis->accurate_curves = (cb & 4) != 0;
 	pis->overprint = (cb & 2) != 0;
 	pis->stroke_adjust = cb & 1;
-	if_debug3('L', " AC=%d OP=%d SA=%d\n",
-		  pis->accurate_curves, pis->overprint, pis->stroke_adjust);
+	if_debug4('L', " CJ=%d AC=%d OP=%d SA=%d\n",
+		  pis->line_params.curve_join, pis->accurate_curves,
+		  pis->overprint, pis->stroke_adjust);
 	break;
 
     case cmd_set_misc2_notes >> 6:

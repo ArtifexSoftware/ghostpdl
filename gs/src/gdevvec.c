@@ -866,6 +866,10 @@ gdev_vector_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
 	if (code < 0)
 	    return code;
+	/* Make sure we aren't being clipped. */
+	code = gdev_vector_update_clip_path(vdev, NULL);
+	if (code < 0)
+	    return code;
     }
     if (vdev->bbox_device) {
 	int code = (*dev_proc(vdev->bbox_device, fill_rectangle))
@@ -952,6 +956,10 @@ gdev_vector_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
     if (code < 0)
 	return gx_default_fill_trapezoid(dev, left, right, ybot, ytop,
 					 swap_axes, pdevc, lop);
+    /* Make sure we aren't being clipped. */
+    code = gdev_vector_update_clip_path(vdev, NULL);
+    if (code < 0)
+	return code;
     if (swap_axes)
 	points[0].y = x0l, points[1].y = x0r,
 	    points[0].x = points[1].x = y0,
@@ -988,6 +996,10 @@ gdev_vector_fill_parallelogram(gx_device * dev,
     if (code < 0)
 	return gx_default_fill_parallelogram(dev, px, py, ax, ay, bx, by,
 					     pdevc, lop);
+    /* Make sure we aren't being clipped. */
+    code = gdev_vector_update_clip_path(vdev, NULL);
+    if (code < 0)
+	return code;
     if (vdev->bbox_device) {
 	code = (*dev_proc(vdev->bbox_device, fill_parallelogram))
 	    ((gx_device *) vdev->bbox_device, px, py, ax, ay, bx, by,
@@ -1014,6 +1026,10 @@ gdev_vector_fill_triangle(gx_device * dev,
     if (code < 0)
 	return gx_default_fill_triangle(dev, px, py, ax, ay, bx, by,
 					pdevc, lop);
+    /* Make sure we aren't being clipped. */
+    code = gdev_vector_update_clip_path(vdev, NULL);
+    if (code < 0)
+	return code;
     if (vdev->bbox_device) {
 	code = (*dev_proc(vdev->bbox_device, fill_triangle))
 	    ((gx_device *) vdev->bbox_device, px, py, ax, ay, bx, by,

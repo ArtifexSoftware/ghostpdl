@@ -32,6 +32,7 @@
 #include "ostack.h"		/* must precede iscan.h */
 #include "iname.h"
 #include "iscan.h"		/* for scan_Refill */
+#include "iscanbin.h"
 #include "iutil.h"
 #include "ivmspace.h"
 #include "store.h"
@@ -132,7 +133,7 @@ typedef enum {
 private int scan_bin_num_array_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
 private int scan_bin_string_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
 private int scan_bos_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
-private byte *scan_bos_resize(P3(scanner_state *, uint, uint));
+private byte *scan_bos_resize(P4(i_ctx_t *, scanner_state *, uint, uint));
 private int scan_bos_string_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
 
 /* Scan a binary token.  Called from the main scanner */
@@ -475,7 +476,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		    byte *sbase;
 
 		    if (pstate->s_da.is_dynamic)
-			sbase = scan_bos_resize(pstate, str_size,
+			sbase = scan_bos_resize(i_ctx_p, pstate, str_size,
 						index);
 		    else
 			sbase = ialloc_string(str_size,
@@ -560,7 +561,8 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 /* Reallocate the strings for a binary object sequence, */
 /* adjusting all the pointers to them from objects. */
 private byte *
-scan_bos_resize(scanner_state * pstate, uint new_size, uint index)
+scan_bos_resize(i_ctx_t *i_ctx_p, scanner_state * pstate, uint new_size,
+		uint index)
 {
     scan_binary_state *const pbs = &pstate->s_ss.binary;
     uint old_size = da_size(&pstate->s_da);

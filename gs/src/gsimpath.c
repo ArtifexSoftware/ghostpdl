@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,6 +21,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsmatrix.h"
+#include "gspaint.h"		/* for gs_imagepath prototype */
 #include "gsstate.h"
 #include "gspath.h"
 

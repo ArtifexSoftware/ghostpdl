@@ -166,8 +166,8 @@ struct alloc_change_s {
     alloc_change_t *next;
     ref_packed *where;
     ref contents;
-#define ac_offset_static (-2)	/* static object */
-#define ac_offset_ref (-1)	/* dynamic ref */
+#define AC_OFFSET_STATIC (-2)	/* static object */
+#define AC_OFFSET_REF (-1)	/* dynamic ref */
     short offset;		/* if >= 0, offset within struct */
 };
 
@@ -196,9 +196,9 @@ private RELOC_PTRS_WITH(change_reloc_ptrs, alloc_change_t *ptr)
 {
     RELOC_VAR(ptr->next);
     switch (ptr->offset) {
-	case ac_offset_static:
+	case AC_OFFSET_STATIC:
 	    break;
-	case ac_offset_ref:
+	case AC_OFFSET_REF:
 	    RELOC_REF_PTR_VAR(ptr->where);
 	    break;
 	default:
@@ -259,28 +259,44 @@ private void save_set_new_changes(P2(gs_ref_memory_t *, bool));
 void
 alloc_save_init(gs_dual_memory_t * dmem)
 {
-    dmem->save_level = 0;
     alloc_set_not_in_save(dmem);
 }
 
 /* Record that we are in a save. */
+private void
+alloc_set_masks(gs_dual_memory_t *dmem, uint new_mask, uint test_mask)
+{
+    int i;
+    gs_ref_memory_t *mem;
+
+    dmem->new_mask = new_mask;
+    dmem->test_mask = test_mask;
+    for (i = 0; i < countof(dmem->spaces.memories.indexed); ++i)
+	if ((mem = dmem->spaces.memories.indexed[i]) != 0) {
+	    mem->new_mask = new_mask, mem->test_mask = test_mask;
+	    if (mem->stable_memory != (gs_memory_t *)mem) {
+		mem = (gs_ref_memory_t *)mem->stable_memory;
+		mem->new_mask = new_mask, mem->test_mask = test_mask;
+	    }
+	}
+}
 void
 alloc_set_in_save(gs_dual_memory_t *dmem)
 {
-    dmem->test_mask = dmem->new_mask = l_new;
+    alloc_set_masks(dmem, l_new, l_new);
 }
 
 /* Record that we are not in a save. */
 void
 alloc_set_not_in_save(gs_dual_memory_t *dmem)
 {
-    dmem->test_mask = ~0;
-    dmem->new_mask = 0;
+    alloc_set_masks(dmem, 0, ~0);
 }
 
 /* Save the state. */
-private alloc_save_t *alloc_save_space(P2(gs_ref_memory_t *,
-					  gs_dual_memory_t *));
+private alloc_save_t *alloc_save_space(P3(gs_ref_memory_t *mem,
+					  gs_dual_memory_t *dmem,
+					  ulong sid));
 private void
 alloc_free_save(gs_ref_memory_t *mem, alloc_save_t *save, const char *scn,
 		const char *icn)
@@ -297,11 +313,11 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
     gs_ref_memory_t *gmem = dmem->space_global;
     ulong sid = gs_next_ids(2);
     bool global =
-	dmem->save_level == 0 && gmem != lmem &&
+	lmem->save_level == 0 && gmem != lmem &&
 	gmem->num_contexts == 1;
     alloc_save_t *gsave =
-	(global ? alloc_save_space(gmem, dmem) : (alloc_save_t *) 0);
-    alloc_save_t *lsave = alloc_save_space(lmem, dmem);
+	(global ? alloc_save_space(gmem, dmem, sid + 1) : (alloc_save_t *) 0);
+    alloc_save_t *lsave = alloc_save_space(lmem, dmem, sid);
 
     if (lsave == 0 || (global &&gsave == 0)) {
 	if (lsave != 0)
@@ -313,7 +329,6 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 	return 0;
     }
     if (gsave != 0) {
-	gsave->id = sid + 1;
 	gsave->client_data = 0;
 	print_save("save", gmem->space, gsave);
 	/* Restore names when we do the local restore. */
@@ -326,19 +341,20 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
     /* Reset the l_new attribute in all slots.  The only slots that */
     /* can have the attribute set are the ones on the changes chain, */
     /* and ones in objects allocated since the last save. */
-    if (dmem->save_level != 0) {
+    if (lmem->save_level > 1) {
 	long scanned = save_set_new(&lsave->state, false);
 
 	if ((lsave->state.total_scanned += scanned) > max_repeated_scan) {
 	    /* Do a second, invisible save. */
 	    alloc_save_t *rsave;
 
-	    rsave = alloc_save_space(lmem, dmem);
+	    rsave = alloc_save_space(lmem, dmem, 0L);
 	    if (rsave != 0) {
-		rsave->id = sid;
 		rsave->client_data = cdata;
+		rsave->id = lsave->id;
 		print_save("save", lmem->space, rsave);
 		lsave->id = 0;	/* mark as invisible */
+		rsave->state.save_level--; /* ditto */
 		lsave->client_data = 0;
 		/* Inherit the allocated space count -- */
 		/* we need this for triggering a GC. */
@@ -349,13 +365,12 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 	    }
 	}
     }
-    dmem->save_level++;
     alloc_set_in_save(dmem);
     return sid;
 }
 /* Save the state of one space (global or local). */
 private alloc_save_t *
-alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem)
+alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
 {
     gs_ref_memory_t save_mem;
     alloc_save_t *save;
@@ -403,40 +418,40 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem)
 	return 0;
     }
     save->state = save_mem;
-    save->dmem = dmem;
+    save->spaces = dmem->spaces;
     save->restore_names = (name_memory() == (gs_memory_t *) mem);
     save->is_current = (dmem->current == mem);
+    save->id = sid;
     mem->saved = save;
     if_debug2('u', "[u%u]file_save 0x%lx\n",
 	      mem->space, (ulong) mem->streams);
     mem->streams = 0;
     mem->total_scanned = 0;
+    if (sid)
+	mem->save_level++;
     return save;
 }
 
 /* Record a state change that must be undone for restore, */
 /* and mark it as having been saved. */
 int
-alloc_save_change(gs_dual_memory_t * dmem, const ref * pcont,
+alloc_save_change_in(gs_ref_memory_t *mem, const ref * pcont,
 		  ref_packed * where, client_name_t cname)
 {
-    gs_ref_memory_t *mem;
     register alloc_change_t *cp;
 
-    if (dmem->save_level == 0)
+    if (mem->new_mask == 0)
 	return 0;		/* no saving */
-    mem = (pcont == NULL ? dmem->space_local :
-	   dmem->spaces_indexed[r_space(pcont) >> r_space_shift]);
-    cp = gs_alloc_struct((gs_memory_t *) mem, alloc_change_t,
+    cp = gs_alloc_struct((gs_memory_t *)mem, alloc_change_t,
 			 &st_alloc_change, "alloc_save_change");
     if (cp == 0)
 	return -1;
     cp->next = mem->changes;
     cp->where = where;
     if (pcont == NULL)
-	cp->offset = ac_offset_static;
+	cp->offset = AC_OFFSET_STATIC;
     else if (r_is_array(pcont) || r_has_type(pcont, t_dictionary))
-	cp->offset = ac_offset_ref;
+	cp->offset = AC_OFFSET_REF;
     else if (r_is_struct(pcont))
 	cp->offset = (byte *) where - (byte *) pcont->value.pstruct;
     else {
@@ -445,7 +460,7 @@ alloc_save_change(gs_dual_memory_t * dmem, const ref * pcont,
 	gs_abort();
     }
     if (r_is_packed(where))
-	*(ref_packed *) & cp->contents = *where;
+	*(ref_packed *)&cp->contents = *where;
     else {
 	ref_assign_inline(&cp->contents, (ref *) where);
 	r_set_attrs((ref *) where, l_new);
@@ -459,12 +474,15 @@ alloc_save_change(gs_dual_memory_t * dmem, const ref * pcont,
 #endif
     return 0;
 }
-
-/* Return the current save level */
 int
-alloc_save_level(const gs_dual_memory_t * dmem)
+alloc_save_change(gs_dual_memory_t * dmem, const ref * pcont,
+		  ref_packed * where, client_name_t cname)
 {
-    return dmem->save_level;
+    gs_ref_memory_t *mem =
+	(pcont == NULL ? dmem->space_local :
+	 dmem->spaces_indexed[r_space(pcont) >> r_space_shift]);
+
+    return alloc_save_change_in(mem, pcont, where, cname);
 }
 
 /* Return (the id of) the innermost externally visible save object, */
@@ -488,13 +506,11 @@ alloc_save_current(const gs_dual_memory_t * dmem)
 bool
 alloc_is_since_save(const void *vptr, const alloc_save_t * save)
 {
-#define ptr ((const char *)vptr)
-
     /* A reference postdates a save iff it is in a chunk allocated */
     /* since the save (including the carried-over inner chunk). */
 
-    const gs_dual_memory_t *dmem = save->dmem;
-    register const gs_ref_memory_t *mem = dmem->space_local;
+    const char *const ptr = (const char *)vptr;
+    register const gs_ref_memory_t *mem = save->space_local;
 
     if_debug2('U', "[U]is_since_save 0x%lx, 0x%lx:\n",
 	      (ulong) ptr, (ulong) save);
@@ -530,9 +546,9 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
      * outermost save), we also have to check the global save.
      * Global saves can't be nested, which makes things easy.
      */
-    if (dmem->save_level == 1 &&
-	(mem = dmem->space_global) != dmem->space_local &&
-	dmem->space_global->num_contexts == 1
+    if (mem->save_level == 1 &&
+	(mem = save->space_global) != save->space_local &&
+	save->space_global->num_contexts == 1
 	) {
 	const chunk_t *cp;
 
@@ -553,14 +569,14 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
 bool
 alloc_name_is_since_save(const ref * pnref, const alloc_save_t * save)
 {
-    const name *pname;
+    const name_string_t *pnstr;
 
     if (!save->restore_names)
 	return false;
-    pname = pnref->value.pname;
-    if (pname->foreign_string)
+    pnstr = names_string_inline(the_gs_name_table, pnref);
+    if (pnstr->foreign_string)
 	return false;
-    return alloc_is_since_save(pname->string_bytes, save);
+    return alloc_is_since_save(pnstr->string_bytes, save);
 }
 bool
 alloc_name_index_is_since_save(uint nidx, const alloc_save_t * save)
@@ -613,13 +629,15 @@ alloc_save_client_data(const alloc_save_t * save)
  * and global VM) or if we created extra save levels to reduce scanning.
  */
 private void restore_finalize(P1(gs_ref_memory_t *));
-private void restore_space(P1(gs_ref_memory_t *));
+private void restore_space(P2(gs_ref_memory_t *, gs_dual_memory_t *));
 
 bool
-alloc_restore_state_step(alloc_save_t * save)
+alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 {
-    gs_dual_memory_t *dmem = save->dmem;
-    gs_ref_memory_t *mem = dmem->space_local;
+    /* Get save->space_* now, because the save object will be freed. */
+    gs_ref_memory_t *lmem = save->space_local;
+    gs_ref_memory_t *gmem = save->space_global;
+    gs_ref_memory_t *mem = lmem;
     alloc_save_t *sprev;
 
     /* Do one (externally visible) step of restoring the state. */
@@ -630,21 +648,20 @@ alloc_restore_state_step(alloc_save_t * save)
 	sid = sprev->id;
 	restore_finalize(mem);	/* finalize objects */
 	restore_resources(sprev, mem);	/* release other resources */
-	restore_space(mem);	/* release memory */
-	if (sid != 0) {
-	    dmem->save_level--;
+	restore_space(mem, dmem);	/* release memory */
+	if (sid != 0)
 	    break;
-	}
     }
     while (sprev != save);
 
-    if (dmem->save_level == 0) {	/* This is the outermost save, which might also */
+    if (mem->save_level == 0) {
+	/* This is the outermost save, which might also */
 	/* need to restore global VM. */
-	mem = dmem->space_global;
-	if (mem != dmem->space_local && mem->saved != 0) {
+	mem = gmem;
+	if (mem != lmem && mem->saved != 0) {
 	    restore_finalize(mem);
 	    restore_resources(mem->saved, mem);
-	    restore_space(mem);
+	    restore_space(mem, dmem);
 	}
 	alloc_set_not_in_save(dmem);
     } else {			/* Set the l_new attribute in all slots that are now new. */
@@ -656,7 +673,7 @@ alloc_restore_state_step(alloc_save_t * save)
 /* Restore the memory of one space, by undoing changes and freeing */
 /* memory allocated since the save. */
 private void
-restore_space(gs_ref_memory_t * mem)
+restore_space(gs_ref_memory_t * mem, gs_dual_memory_t *dmem)
 {
     alloc_save_t *save = mem->saved;
     alloc_save_t saved;
@@ -699,8 +716,6 @@ restore_space(gs_ref_memory_t * mem)
 
     /* Make the allocator current if it was current before the save. */
     if (saved.is_current) {
-	gs_dual_memory_t *dmem = saved.dmem;
-
 	dmem->current = mem;
 	dmem->current_space = mem->space;
     }
@@ -711,41 +726,52 @@ restore_space(gs_ref_memory_t * mem)
 void
 alloc_restore_all(gs_dual_memory_t * dmem)
 {
+    /*
+     * Save the memory pointers, since freeing space_local will also
+     * free dmem itself.
+     */
+    gs_ref_memory_t *lmem = dmem->space_local;
+    gs_ref_memory_t *gmem = dmem->space_global;
+    gs_ref_memory_t *smem = dmem->space_system;
+    gs_ref_memory_t *mem;
+
     /* Restore to a state outside any saves. */
-    while (dmem->save_level != 0)
-	discard(alloc_restore_state_step(dmem->space_local->saved));
+    while (lmem->save_level != 0)
+	discard(alloc_restore_step_in(dmem, lmem->saved));
 
     /* Finalize memory. */
-    restore_finalize(dmem->space_local);
-    {
-	gs_ref_memory_t *mem = dmem->space_global;
-
-	if (mem != dmem->space_local && mem->num_contexts == 1)
+    restore_finalize(lmem);
+    if ((mem = (gs_ref_memory_t *)lmem) != lmem)
+	restore_finalize(mem);
+    if (gmem != lmem && gmem->num_contexts == 1) {
+	restore_finalize(gmem);
+	if ((mem = (gs_ref_memory_t *)gmem) != gmem)
 	    restore_finalize(mem);
     }
-    restore_finalize(dmem->space_system);
+    restore_finalize(smem);
 
     /* Release resources other than memory, using fake */
     /* save and memory objects. */
     {
 	alloc_save_t empty_save;
 
-	empty_save.dmem = dmem;
+	empty_save.spaces = dmem->spaces;
 	empty_save.restore_names = false;	/* don't bother to release */
 	restore_resources(&empty_save, NULL);
     }
 
     /* Finally, release memory. */
-    restore_free(dmem->space_local);
-    {
-	gs_ref_memory_t *mem = dmem->space_global;
-
-	if (mem != dmem->space_local) {
-	    if (!--(mem->num_contexts))
+    restore_free(lmem);
+    if ((mem = (gs_ref_memory_t *)lmem) != lmem)
+	restore_free(mem);
+    if (gmem != lmem) {
+	if (!--(gmem->num_contexts)) {
+	    restore_free(gmem);
+	    if ((mem = (gs_ref_memory_t *)gmem) != gmem)
 		restore_free(mem);
 	}
     }
-    restore_free(dmem->space_system);
+    restore_free(smem);
 
 }
 
@@ -811,10 +837,9 @@ private void file_forget_save(P1(gs_ref_memory_t *));
 private void combine_space(P1(gs_ref_memory_t *));
 private void forget_changes(P1(gs_ref_memory_t *));
 void
-alloc_forget_save(alloc_save_t * save)
+alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 {
-    gs_dual_memory_t *dmem = save->dmem;
-    gs_ref_memory_t *mem = dmem->space_local;
+    gs_ref_memory_t *mem = save->space_local;
     alloc_save_t *sprev;
 
     print_save("forget_save", mem->space, save);
@@ -823,8 +848,8 @@ alloc_forget_save(alloc_save_t * save)
     do {
 	sprev = mem->saved;
 	if (sprev->id != 0)
-	    dmem->save_level--;
-	if (dmem->save_level != 0) {
+	    mem->save_level--;
+	if (mem->save_level != 0) {
 	    alloc_change_t *chp = mem->changes;
 
 	    save_set_new(&sprev->state, true);
@@ -845,8 +870,8 @@ alloc_forget_save(alloc_save_t * save)
 	    combine_space(mem);	/* combine memory */
 	    /* This is the outermost save, which might also */
 	    /* need to combine global VM. */
-	    mem = dmem->space_global;
-	    if (mem != dmem->space_local && mem->saved != 0) {
+	    mem = save->space_global;
+	    if (mem != save->space_local && mem->saved != 0) {
 		forget_changes(mem);
 		save_set_new(mem, false);
 		file_forget_save(mem);
@@ -887,7 +912,7 @@ combine_space(gs_ref_memory_t * mem)
 	    {
 		obj_header_t *hp = (obj_header_t *) outer->cbot;
 
-		hp->o_large = 0;
+		hp->o_alone = 0;
 		hp->o_size = (char *)(cp->chead + 1)
 		    - (char *)(hp + 1);
 		hp->o_type = &st_bytes;
@@ -998,11 +1023,18 @@ save_set_new(gs_ref_memory_t * mem, bool to_new)
 
 	    SCAN_CHUNK_OBJECTS(cp)
 		DO_ALL
-		if_debug3('U', "[U]set_new scan(0x%lx(%lu), %d)\n",
+		if_debug3('U', "[U]set_new scan(0x%lx(%u), %d)\n",
 			  (ulong) pre, size, to_new);
-	    if (pre->o_type == &st_refs) {	/* These are refs, scan them. */
+	    if (pre->o_type == &st_refs) {
+		/* These are refs, scan them. */
 		ref_packed *prp = (ref_packed *) (pre + 1);
 		ref_packed *next = (ref_packed *) ((char *)prp + size);
+#ifdef ALIGNMENT_ALIASING_BUG
+		ref *rpref;
+# define RP_REF(rp) (rpref = (ref *)rp, rpref)
+#else
+# define RP_REF(rp) ((ref *)rp)
+#endif
 
 		if_debug2('U', "[U]refs 0x%lx to 0x%lx\n",
 			  (ulong) prp, (ulong) next);
@@ -1016,7 +1048,7 @@ save_set_new(gs_ref_memory_t * mem, bool to_new)
 			if (r_is_packed(prp))
 			    prp++;
 			else {
-			    ((ref *) prp)->tas.type_attrs |= l_new;
+			    RP_REF(prp)->tas.type_attrs |= l_new;
 			    prp += packed_per_ref;
 			    if (prp >= next)
 				break;
@@ -1026,12 +1058,13 @@ save_set_new(gs_ref_memory_t * mem, bool to_new)
 			if (r_is_packed(prp))
 			    prp++;
 			else {
-			    ((ref *) prp)->tas.type_attrs &= ~l_new;
+			    RP_REF(prp)->tas.type_attrs &= ~l_new;
 			    prp += packed_per_ref;
 			    if (prp >= next)
 				break;
 			}
 		    }
+#undef RP_REF
 	    } else
 		scanned += sizeof(obj_header_t);
 	    END_OBJECTS_SCAN

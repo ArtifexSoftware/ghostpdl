@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -46,6 +46,8 @@ s_zlib_set_defaults(stream_state * st)
     /* DEF_MEM_LEVEL should be in zlib.h or zconf.h, but it isn't. */
     ss->memLevel = min(MAX_MEM_LEVEL, 8);
     ss->strategy = Z_DEFAULT_STRATEGY;
+    /* Clear pointers */
+    ss->dynamic = 0;
 }
 
 /* Allocate the dynamic state. */

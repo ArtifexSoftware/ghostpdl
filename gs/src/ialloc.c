@@ -34,7 +34,6 @@
  * Define global and local instances.
  */
 public_st_gs_dual_memory();
-gs_dual_memory_t gs_imemory;
 
 /* Initialize the allocator */
 void
@@ -42,11 +41,19 @@ ialloc_init(gs_dual_memory_t *dmem, gs_raw_memory_t * rmem, uint chunk_size,
 	    bool level2)
 {
     gs_ref_memory_t *ilmem = ialloc_alloc_state(rmem, chunk_size);
-    gs_ref_memory_t *igmem =
-	(level2 ? ialloc_alloc_state(rmem, chunk_size) : ilmem);
+    gs_ref_memory_t *ilmem_stable = ialloc_alloc_state(rmem, chunk_size);
+    gs_ref_memory_t *igmem;
+    gs_ref_memory_t *igmem_stable;
     gs_ref_memory_t *ismem = ialloc_alloc_state(rmem, chunk_size);
     int i;
 
+    ilmem->stable_memory = (gs_memory_t *)ilmem_stable;
+    if (level2) {
+	igmem = ialloc_alloc_state(rmem, chunk_size);
+	igmem_stable = ialloc_alloc_state(rmem, chunk_size);
+	igmem->stable_memory = (gs_memory_t *)igmem_stable;
+    } else
+	igmem = ilmem, igmem_stable = ilmem_stable;
     for (i = 0; i < countof(dmem->spaces_indexed); i++)
 	dmem->spaces_indexed[i] = 0;
     dmem->space_local = ilmem;
@@ -54,11 +61,11 @@ ialloc_init(gs_dual_memory_t *dmem, gs_raw_memory_t * rmem, uint chunk_size,
     dmem->space_system = ismem;
     dmem->spaces.vm_reclaim = gs_gc_reclaim; /* real GC */
     dmem->reclaim = 0;		/* no interpreter GC yet */
-    dmem->reclaim_data = 0;
     /* Level 1 systems have only local VM. */
     igmem->space = avm_global;
+    igmem_stable->space = avm_global;
     ilmem->space = avm_local;	/* overrides if ilmem == igmem */
-    igmem->global = ilmem->global = igmem;
+    ilmem_stable->space = avm_local; /* ditto */
     ismem->space = avm_system;
     ialloc_set_space(dmem, avm_global);
 }
@@ -67,7 +74,7 @@ ialloc_init(gs_dual_memory_t *dmem, gs_raw_memory_t * rmem, uint chunk_size,
 
 /* Get the space attribute of an allocator */
 uint
-imemory_space(gs_ref_memory_t * iimem)
+imemory_space(const gs_ref_memory_t * iimem)
 {
     return iimem->space;
 }
@@ -82,6 +89,21 @@ ialloc_set_space(gs_dual_memory_t * dmem, uint space)
     dmem->current_space = mem->space;
 }
 
+/* Get the l_new attribute of a current allocator. */
+/* (A copy of the new_mask in the gs_dual_memory_t.) */
+uint
+imemory_new_mask(const gs_ref_memory_t *imem)
+{
+    return imem->new_mask;
+}
+
+/* Get the save level of an allocator. */
+int
+imemory_save_level(const gs_ref_memory_t *imem)
+{
+    return imem->save_level;
+}
+
 /* Reset the requests. */
 void
 ialloc_reset_requested(gs_dual_memory_t * dmem)
@@ -92,6 +114,14 @@ ialloc_reset_requested(gs_dual_memory_t * dmem)
 }
 
 /* ================ Refs ================ */
+
+#ifdef DEBUG
+private int
+ialloc_trace_space(const gs_ref_memory_t *imem)
+{
+    return imem->space + (imem->stable_memory == (gs_memory_t *)imem);
+}
+#endif
 
 /* Register a ref root. */
 int
@@ -125,8 +155,9 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
 	ref *end;
 
 	obj = (ref *) mem->cc.rtop - 1;		/* back up over last ref */
-	if_debug4('A', "[a%d:+$ ]%s(%u) = 0x%lx\n", mem->space,
-		  client_name_string(cname), num_refs, (ulong) obj);
+	if_debug4('A', "[a%d:+$ ]%s(%u) = 0x%lx\n",
+		  ialloc_trace_space(mem), client_name_string(cname),
+		  num_refs, (ulong) obj);
 	mem->cc.rcur[-1].o_size += num_refs * sizeof(ref);
 	end = (ref *) (mem->cc.rtop = mem->cc.cbot +=
 		       num_refs * sizeof(ref));
@@ -191,14 +222,16 @@ gs_resize_ref_array(gs_ref_memory_t * mem, ref * parr,
 	ref *end = (ref *) (mem->cc.cbot = mem->cc.rtop -=
 			    diff * sizeof(ref));
 
-	if_debug4('A', "[a%d:<$ ]%s(%u) 0x%lx\n", mem->space,
-		  client_name_string(cname), diff, (ulong) obj);
+	if_debug4('A', "[a%d:<$ ]%s(%u) 0x%lx\n",
+		  ialloc_trace_space(mem), client_name_string(cname), diff,
+		  (ulong) obj);
 	mem->cc.rcur[-1].o_size -= diff * sizeof(ref);
 	make_mark(end - 1);
     } else {
 	/* Punt. */
-	if_debug4('A', "[a%d:<$#]%s(%u) 0x%lx\n", mem->space,
-		  client_name_string(cname), diff, (ulong) obj);
+	if_debug4('A', "[a%d:<$#]%s(%u) 0x%lx\n",
+		  ialloc_trace_space(mem), client_name_string(cname), diff,
+		  (ulong) obj);
 	mem->lost.refs += diff * sizeof(ref);
     }
     r_set_size(parr, new_num_refs);
@@ -232,7 +265,7 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
 	} else {
 	    /* Deallocate it at the end of the refs object. */
 	    if_debug4('A', "[a%d:-$ ]%s(%u) 0x%lx\n",
-		      mem->space, client_name_string(cname),
+		      ialloc_trace_space(mem), client_name_string(cname),
 		      num_refs, (ulong) obj);
 	    mem->cc.rcur[-1].o_size -= num_refs * sizeof(ref);
 	    mem->cc.rtop = mem->cc.cbot = (byte *) (obj + 1);
@@ -253,7 +286,7 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
 	    ) {
 	    /* Free the chunk. */
 	    if_debug4('a', "[a%d:-$L]%s(%u) 0x%lx\n",
-		      mem->space, client_name_string(cname),
+		      ialloc_trace_space(mem), client_name_string(cname),
 		      num_refs, (ulong) obj);
 	    alloc_free_chunk(cl.cp, mem);
 	    return;
@@ -261,8 +294,9 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
     }
     /* Punt, but fill the array with nulls so that there won't be */
     /* dangling references to confuse the garbage collector. */
-    if_debug4('A', "[a%d:-$#]%s(%u) 0x%lx\n", mem->space,
-	      client_name_string(cname), num_refs, (ulong) obj);
+    if_debug4('A', "[a%d:-$#]%s(%u) 0x%lx\n",
+	      ialloc_trace_space(mem), client_name_string(cname), num_refs,
+	      (ulong) obj);
     {
 	uint size;
 
@@ -271,15 +305,15 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
 		size = num_refs * sizeof(ref_packed);
 		break;
 	    case t_mixedarray:{
-		    /* We have to parse the array to compute the storage size. */
-		    uint i = 0;
-		    const ref_packed *p = parr->value.packed;
+		/* We have to parse the array to compute the storage size. */
+		uint i = 0;
+		const ref_packed *p = parr->value.packed;
 
-		    for (; i < num_refs; ++i)
-			p = packed_next(p);
-		    size = (const byte *)p - (const byte *)parr->value.packed;
-		    break;
-		}
+		for (; i < num_refs; ++i)
+		    p = packed_next(p);
+		size = (const byte *)p - (const byte *)parr->value.packed;
+		break;
+	    }
 	    case t_array:
 		size = num_refs * sizeof(ref);
 		break;
@@ -288,9 +322,11 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
 			 r_type(parr), num_refs, (ulong) obj);
 		return;
 	}
-	/* If there are any leftover packed elements, we don't */
-	/* worry about them, since they can't be dangling references. */
-	refset_null(obj, size / sizeof(ref));
+	/*
+	 * If there are any leftover packed elements, we don't
+	 * worry about them, since they can't be dangling references.
+	 */
+	refset_null_new(obj, size / sizeof(ref), 0);
 	mem->lost.refs += size;
     }
 }

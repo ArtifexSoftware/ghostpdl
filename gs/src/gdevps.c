@@ -32,11 +32,11 @@
 #include "gscspace.h"
 #include "gxdcolor.h"
 #include "gxpath.h"
-#include "gdevpsdf.h"
-#include "gdevpstr.h"
-#include "sstring.h"
+#include "spprint.h"
 #include "strimpl.h"
+#include "sstring.h"
 #include "sa85x.h"
+#include "gdevpsdf.h"
 
 /****************************************************************
  * Notes:
@@ -84,8 +84,8 @@ typedef struct gx_device_pswrite_s {
     bool ProduceEPS;
     bool first_page;
     long bbox_position;
-    psdf_binary_writer image_writer;
-#define image_stream image_writer.strm
+    psdf_binary_writer *image_writer;
+#define image_stream image_writer->strm
 #define image_cache_size 197
 #define image_cache_reprobe_step 121
     psw_image_params_t image_cache[image_cache_size];
@@ -94,9 +94,11 @@ typedef struct gx_device_pswrite_s {
     psw_path_state_t path_state;
 } gx_device_pswrite;
 
+/* GC descriptor and procedures */
 gs_private_st_suffix_add1_final(st_device_pswrite, gx_device_pswrite,
-   "gx_device_pswrite", device_pswrite_enum_ptrs, device_pswrite_reloc_ptrs,
-			  gx_device_finalize, st_device_psdf, image_stream);
+				"gx_device_pswrite", device_pswrite_enum_ptrs,
+				device_pswrite_reloc_ptrs, gx_device_finalize,
+				st_device_psdf, image_writer);
 
 #define psw_procs\
 	{	psw_open,\
@@ -301,7 +303,6 @@ private const char *const psw_2_prolog[] =
 	/* <src> X <a85src> */
 	/* - @X <a85src> */
 	/* <w> <h> <src> +F <w> <h> <g4src> */
-	/* <w> <h> +F <w> <h> <g4src> */
 	/* <w> <h> @F <w> <h> <g4src> */
 	/* <w> <h> @C <w> <h> <g4a85src> */
     "/X{/ASCII85Decode filter}!/@X{@ X}!/+F{2 index 2 index F}!/@F{@ +F}!/@C{@X +F}!",
@@ -384,12 +385,12 @@ psw_image_stream_setup(gx_device_pswrite * pdev)
     int code, encode;
 
     if (pdev->LanguageLevel >= 2 || pdev->binary_ok) {
-	code = psdf_begin_binary((gx_device_psdf *)pdev, &pdev->image_writer);
+	code = psdf_begin_binary((gx_device_psdf *)pdev, pdev->image_writer);
 	encode =
 	    (pdev->image_stream->state->template == &s_A85E_template ? 1 : 0);
     } else {
 	pdev->binary_ok = true;
-	code = psdf_begin_binary((gx_device_psdf *)pdev, &pdev->image_writer);
+	code = psdf_begin_binary((gx_device_psdf *)pdev, pdev->image_writer);
 	pdev->binary_ok = false;
 	if (code >= 0) {
 	    stream_state *st =
@@ -399,7 +400,7 @@ psw_image_stream_setup(gx_device_pswrite * pdev)
 	    if (st == 0)
 		code = gs_note_error(gs_error_VMerror);
 	    else {
-		code = psdf_encode_binary(&pdev->image_writer,
+		code = psdf_encode_binary(pdev->image_writer,
 					  &s_AXE_template, st);
 		if (code >= 0)
 		    ((stream_AXE_state *)st)->EndOfData = false; /* no > */
@@ -415,8 +416,8 @@ private void
 psw_image_cleanup(gx_device_pswrite * pdev)
 {
     if (pdev->image_stream != 0) {
-	psdf_end_binary(&pdev->image_writer);
-	pdev->image_stream = 0;
+	psdf_end_binary(pdev->image_writer);
+	memset(pdev->image_writer, 0, sizeof(*pdev->image_writer));
     }
 }
 
@@ -470,7 +471,7 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 	 * We should really look at the statistics of the image before
 	 * committing to using G4 encoding....
 	 */
-	code = psdf_CFE_binary(&pdev->image_writer, width, height, false);
+	code = psdf_CFE_binary(pdev->image_writer, width, height, false);
 	if (code < 0)
 	    return code;
 	encode += 2;
@@ -806,8 +807,9 @@ psw_endpath(gx_device_vector * vdev, gx_path_type_t type)
 private int
 psw_open(gx_device * dev)
 {
-    vdev->v_memory = dev->memory;
-/****** WRONG ******/
+    gs_memory_t *mem = gs_memory_stable(dev->memory);
+
+    vdev->v_memory = mem;
     vdev->vec_procs = &psw_vector_procs;
     {
 	int code = gdev_vector_open_file_bbox(vdev, 512, true);
@@ -818,6 +820,10 @@ psw_open(gx_device * dev)
     gdev_vector_init(vdev);
     pdev->first_page = true;
     pdev->binary_ok = !pdev->params.ASCII85EncodePages;
+    pdev->image_writer = gs_alloc_struct(mem, psdf_binary_writer,
+					 &st_psdf_binary_writer,
+					 "psw_open(image_writer)");
+    memset(pdev->image_writer, 0, sizeof(*pdev->image_writer));  /* for GC */
     image_cache_reset(pdev);
     return 0;
 }
@@ -866,6 +872,9 @@ psw_close(gx_device * dev)
     }
     if (!pdev->ProduceEPS)
 	fputs("%%EOF\n", f);
+    gs_free_object(pdev->v_memory, pdev->image_writer,
+		   "psw_close(image_writer)");
+    pdev->image_writer = 0;
     gdev_vector_close_file(vdev);
     return 0;
 }

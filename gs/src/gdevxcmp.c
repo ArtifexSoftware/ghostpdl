@@ -36,6 +36,36 @@ gs_x_free(void *obj, client_name_t cname)
 /* ---------------- Color mapping setup / cleanup ---------------- */
 
 #if HaveStdCMap
+
+/* Install a standard color map in the device. */
+/* Sets std_cmap.* except for free_map. */
+private bool
+set_cmap_values(x11_cmap_values_t *values, int maxv, int mult)
+{
+    int i;
+
+    if (maxv < 1 || maxv > 63 || (maxv & (maxv + 1)) ||
+	(mult & (mult - 1))
+	)
+	return false;
+    values->cv_shift = 16 - small_exact_log2(maxv + 1);
+    for (i = 0; i <= maxv; ++i)
+	values->nearest[i] = X_max_color_value * i / maxv;
+    for (i = 0; mult != (1 << i); ++i)
+	DO_NOTHING;
+    values->pixel_shift = i;
+    return true;
+}
+private void
+set_std_cmap(gx_device_X *xdev, XStandardColormap *map)
+{
+    xdev->cman.std_cmap.map = map;
+    xdev->cman.std_cmap.fast =
+	set_cmap_values(&xdev->cman.std_cmap.red, map->red_max, map->red_mult) &&
+	set_cmap_values(&xdev->cman.std_cmap.green, map->green_max, map->green_mult) &&
+	set_cmap_values(&xdev->cman.std_cmap.blue, map->blue_max, map->blue_mult);
+}
+
 /* Get the Standard colormap if available. */
 /* Uses: dpy, scr, cmap. */
 private XStandardColormap *
@@ -56,7 +86,7 @@ x_get_std_cmap(gx_device_X * xdev, Atom prop)
 
 /* Create a Standard colormap for a TrueColor or StaticGray display. */
 /* Return true if the allocation was successful. */
-/* Uses: vinfo.  Sets: std_cmap, free_std_cmap. */
+/* Uses: vinfo.  Sets: std_cmap.*. */
 private bool
 alloc_std_cmap(gx_device_X *xdev, bool colored)
 {
@@ -91,10 +121,11 @@ alloc_std_cmap(gx_device_X *xdev, bool colored)
 	    cmap->blue_mult <<= 1;
 	}
     }
-    xdev->cman.std_cmap = cmap;
-    xdev->cman.free_std_cmap = true;
+    set_std_cmap(xdev, cmap);
+    xdev->cman.std_cmap.free_map = true;
     return true;
 }
+
 #endif
 
 /* Allocate the dynamic color table, if needed and possible. */
@@ -260,8 +291,8 @@ gdev_x_setup_colors(gx_device_X * xdev)
     xdev->cman.num_rgb = 1 << xdev->vinfo->bits_per_rgb;
 
 #if HaveStdCMap
-    xdev->cman.std_cmap = NULL;
-    xdev->cman.free_std_cmap = false;
+    xdev->cman.std_cmap.map = NULL;
+    xdev->cman.std_cmap.free_map = false;
 #endif
     xdev->cman.dither_ramp = NULL;
     xdev->cman.dynamic.colors = NULL;
@@ -278,6 +309,21 @@ gdev_x_setup_colors(gx_device_X * xdev)
 	eprintf1("Unsupported X visual depth: %d\n", xdev->vinfo->depth);
 	return_error(gs_error_rangecheck);
     }
+    {	/* Set up the reverse map from pixel values to RGB. */
+	int count = 1 << min(xdev->color_info.depth, 8);
+
+	xdev->cman.color_to_rgb.values =
+	    (x11_rgb_t *)gs_malloc(sizeof(x11_rgb_t), count,
+				   "gdevx color_to_rgb");
+	if (xdev->cman.color_to_rgb.values) {
+	    int i;
+
+	    for (i = 0; i < count; ++i)
+		xdev->cman.color_to_rgb.values[i].defined = false;
+	    xdev->cman.color_to_rgb.size = count;
+	} else
+	    xdev->cman.color_to_rgb.size = 0;
+    }
     switch ((int)palette) {
     case 'C':
 	xdev->color_info.num_components = 3;
@@ -286,17 +332,19 @@ gdev_x_setup_colors(gx_device_X * xdev)
 #if HaveStdCMap
 	/* Get a standard color map if available */
 	if (xdev->vinfo->visual == DefaultVisualOfScreen(xdev->scr)) {
-	    xdev->cman.std_cmap = x_get_std_cmap(xdev, XA_RGB_DEFAULT_MAP);
+	    xdev->cman.std_cmap.map = x_get_std_cmap(xdev, XA_RGB_DEFAULT_MAP);
 	} else {
-	    xdev->cman.std_cmap = x_get_std_cmap(xdev, XA_RGB_BEST_MAP);
+	    xdev->cman.std_cmap.map = x_get_std_cmap(xdev, XA_RGB_BEST_MAP);
 	}
-	if (xdev->cman.std_cmap ||
+	if (xdev->cman.std_cmap.map ||
 	    (xdev->vinfo->class == TrueColor && alloc_std_cmap(xdev, true))
 	    ) {
 	    xdev->color_info.dither_grays = xdev->color_info.dither_colors =
-		min(xdev->cman.std_cmap->red_max,
-		    min(xdev->cman.std_cmap->green_max,
-			xdev->cman.std_cmap->blue_max)) + 1;
+		min(xdev->cman.std_cmap.map->red_max,
+		    min(xdev->cman.std_cmap.map->green_max,
+			xdev->cman.std_cmap.map->blue_max)) + 1;
+	    if (xdev->cman.std_cmap.map)
+		set_std_cmap(xdev, xdev->cman.std_cmap.map);
 	} else
 #endif
 	    /* Otherwise set up a rgb cube of our own */
@@ -340,11 +388,14 @@ grayscale:
 	xdev->color_info.max_gray = xdev->cman.num_rgb - 1;
 #if HaveStdCMap
 	/* Get a standard color map if available */
-	xdev->cman.std_cmap = x_get_std_cmap(xdev, XA_RGB_GRAY_MAP);
-	if (xdev->cman.std_cmap ||
+	xdev->cman.std_cmap.map = x_get_std_cmap(xdev, XA_RGB_GRAY_MAP);
+	if (xdev->cman.std_cmap.map ||
 	    (xdev->vinfo->class == StaticGray && alloc_std_cmap(xdev, false))
 	    ) {
-	    xdev->color_info.dither_grays = xdev->cman.std_cmap->red_max + 1;
+	    xdev->color_info.dither_grays =
+		xdev->cman.std_cmap.map->red_max + 1;
+	    if (xdev->cman.std_cmap.map)
+		set_std_cmap(xdev, xdev->cman.std_cmap.map);
 	} else
 #endif
 	    /* Otherwise set up a gray ramp of our own */
@@ -383,22 +434,11 @@ monochrome:
 	break;
     default:
 	eprintf1("Unknown palette: %s\n", xdev->palette);
-	return_error(gs_error_rangecheck);
-    }
-    {	/* Set up the reverse map from pixel values to RGB. */
-	int count = 1 << min(xdev->color_info.depth, 8);
-
-	xdev->cman.color_to_rgb.values =
-	    (x11_rgb_t *)gs_malloc(sizeof(x11_rgb_t), count,
-				   "gdevx color_to_rgb");
 	if (xdev->cman.color_to_rgb.values) {
-	    int i;
-
-	    for (i = 0; i < count; ++i)
-		xdev->cman.color_to_rgb.values[i].defined = false;
-	    xdev->cman.color_to_rgb.size = count;
-	} else
-	    xdev->cman.color_to_rgb.size = 0;
+	    gs_x_free(xdev->cman.color_to_rgb.values, "gdevx color_to_rgb");
+	    xdev->cman.color_to_rgb.values = 0;
+	}
+	return_error(gs_error_rangecheck);
     }
     return 0;
 }
@@ -426,18 +466,20 @@ gdev_x_free_dynamic_colors(gx_device_X *xdev)
     }
 }
 
-/* Free storage and color map entries when closing the device. */
-/* Uses and sets: cman.{std_cmap, dither_ramp, dynamic.colors, color_to_rgb.*}. */
-/* Uses: cman.free_std_cmap. */
+/*
+ * Free storage and color map entries when closing the device.
+ * Uses and sets: cman.{std_cmap.map, dither_ramp, dynamic.colors,
+ * color_to_rgb}.  Uses: cman.std_cmap.free_map.
+ */
 void
 gdev_x_free_colors(gx_device_X *xdev)
 {
-    if (xdev->cman.free_std_cmap) {
+    if (xdev->cman.std_cmap.free_map) {
 	/* XFree is declared as taking a char *, not a void *! */
-	XFree((void *)xdev->cman.std_cmap);
-	xdev->cman.free_std_cmap = false;
+	XFree((void *)xdev->cman.std_cmap.map);
+	xdev->cman.std_cmap.free_map = false;
     }
-    xdev->cman.std_cmap = 0;
+    xdev->cman.std_cmap.map = 0;
     if (xdev->cman.dither_ramp)
 	gs_x_free(xdev->cman.dither_ramp, "x11 dither_colors");
     if (xdev->cman.dynamic.colors) {
@@ -527,25 +569,38 @@ gdev_x_map_rgb_color(gx_device * dev,
 
 #if HaveStdCMap
     /* check the standard colormap first */
-    if (xdev->cman.std_cmap) {
-	const XStandardColormap *cmap = xdev->cman.std_cmap;
+    if (xdev->cman.std_cmap.map) {
+	const XStandardColormap *cmap = xdev->cman.std_cmap.map;
 
 	if (gx_device_has_color(xdev)) {
 	    uint cr, cg, cb;	/* rgb cube indices */
 	    X_color_value cvr, cvg, cvb;	/* color value on cube */
 
-	    cr = r * (cmap->red_max + 1) / CV_DENOM;
-	    cg = g * (cmap->green_max + 1) / CV_DENOM;
-	    cb = b * (cmap->blue_max + 1) / CV_DENOM;
-	    cvr = X_max_color_value * cr / cmap->red_max;
-	    cvg = X_max_color_value * cg / cmap->green_max;
-	    cvb = X_max_color_value * cb / cmap->blue_max;
+	    if (xdev->cman.std_cmap.fast) {
+		cr = r >> xdev->cman.std_cmap.red.cv_shift;
+		cvr = xdev->cman.std_cmap.red.nearest[cr];
+		cg = g >> xdev->cman.std_cmap.green.cv_shift;
+		cvg = xdev->cman.std_cmap.green.nearest[cg];
+		cb = b >> xdev->cman.std_cmap.blue.cv_shift;
+		cvb = xdev->cman.std_cmap.blue.nearest[cb];
+	    } else {
+		cr = r * (cmap->red_max + 1) / CV_DENOM;
+		cg = g * (cmap->green_max + 1) / CV_DENOM;
+		cb = b * (cmap->blue_max + 1) / CV_DENOM;
+		cvr = X_max_color_value * cr / cmap->red_max;
+		cvg = X_max_color_value * cg / cmap->green_max;
+		cvb = X_max_color_value * cb / cmap->blue_max;
+	    }
 	    if ((iabs((int)r - (int)cvr) & xdev->cman.color_mask.red) == 0 &&
 		(iabs((int)g - (int)cvg) & xdev->cman.color_mask.green) == 0 &&
 		(iabs((int)b - (int)cvb) & xdev->cman.color_mask.blue) == 0) {
 		gx_color_index pixel =
-		    cr * cmap->red_mult + cg * cmap->green_mult +
-		    cb * cmap->blue_mult + cmap->base_pixel;
+		    (xdev->cman.std_cmap.fast ?
+		     (cr << xdev->cman.std_cmap.red.pixel_shift) +
+		     (cg << xdev->cman.std_cmap.green.pixel_shift) +
+		     (cb << xdev->cman.std_cmap.blue.pixel_shift) :
+		     cr * cmap->red_mult + cg * cmap->green_mult +
+		     cb * cmap->blue_mult) + cmap->base_pixel;
 
 		if_debug4('C', "[cX]%u,%u,%u (std cmap) => %lu\n",
 			  r, g, b, pixel);
@@ -691,7 +746,7 @@ gdev_x_map_color_rgb(gx_device * dev, gx_color_index color,
 {
     const gx_device_X *const xdev = (const gx_device_X *) dev;
 #if HaveStdCMap
-    const XStandardColormap *cmap = xdev->cman.std_cmap;
+    const XStandardColormap *cmap = xdev->cman.std_cmap.map;
 #endif
 
     if (color == xdev->foreground) {

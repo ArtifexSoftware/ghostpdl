@@ -24,7 +24,6 @@
 #include "gsmatrix.h"
 #include "gsutil.h"
 #include "gxfixed.h"
-#include "gxchar.h"
 #include "gxfont.h"
 #include "gxfcache.h"
 #include "ifont.h"

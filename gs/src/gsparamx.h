@@ -35,5 +35,7 @@ int param_put_bool(P4(gs_param_list * plist, gs_param_name param_name,
 		      bool * pval, int ecode));
 int param_put_int(P4(gs_param_list * plist, gs_param_name param_name,
 		     int * pval, int ecode));
+int param_put_long(P4(gs_param_list * plist, gs_param_name param_name,
+		      long * pval, int ecode));
 
 #endif /* gsparamx_INCLUDED */

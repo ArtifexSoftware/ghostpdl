@@ -29,24 +29,16 @@
 #  include <strings.h>
 #  define strchr index
 #else
-#  ifdef __TURBOC__
-#    undef memset		/* just in case */
-#    include <string.h>
-#    ifndef memset		/* Borland C++ can inline this */
-#      define memset(dest,chr,cnt) setmem(dest,cnt,chr)
-#    endif
-#  else
-#    ifdef MEMORY__NEED_MEMMOVE
-#      undef memmove		/* This is disgusting, but so is GCC */
-#    endif
-#    include <string.h>
-#    if defined(THINK_C)
+#  ifdef MEMORY__NEED_MEMMOVE
+#    undef memmove		/* This is disgusting, but so is GCC */
+#  endif
+#  include <string.h>
+#  if defined(THINK_C)
 	/* Patch strlen to return a uint rather than a size_t. */
-#      define strlen (uint)strlen
-#    endif
-#    ifdef MEMORY__NEED_MEMMOVE
-#      define memmove(dest,src,len) gs_memmove(dest,src,len)
-#    endif
+#    define strlen (uint)strlen
+#  endif
+#  ifdef MEMORY__NEED_MEMMOVE
+#    define memmove(dest,src,len) gs_memmove(dest,src,len)
 #  endif
 #endif
 

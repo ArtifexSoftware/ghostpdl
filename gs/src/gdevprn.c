@@ -22,6 +22,7 @@
 #include "gdevprn.h"
 #include "gp.h"
 #include "gsdevice.h"		/* for gs_deviceinitialmatrix */
+#include "gsfname.h"
 #include "gsparam.h"
 #include "gxclio.h"
 #include "gxgetbit.h"
@@ -31,14 +32,14 @@
 
 /* GC information */
 #define PRINTER_IS_CLIST(pdev) ((pdev)->buffer_space != 0)
-public
+private
 ENUM_PTRS_WITH(device_printer_enum_ptrs, gx_device_printer *pdev)
     if (PRINTER_IS_CLIST(pdev))
 	ENUM_PREFIX(st_device_clist, 0);
     else
 	ENUM_PREFIX(st_device_forward, 0);
 ENUM_PTRS_END
-public
+private
 RELOC_PTRS_WITH(device_printer_reloc_ptrs, gx_device_printer *pdev)
 {
     if (PRINTER_IS_CLIST(pdev))
@@ -84,14 +85,14 @@ int
 gdev_prn_close(gx_device * pdev)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+    int code = 0;
 
     gdev_prn_free_memory(pdev);
     if (ppdev->file != NULL) {
-	if (ppdev->file != stdout)
-	    gp_close_printer(ppdev->file, ppdev->fname);
+	code = gx_device_close_output_file(pdev, ppdev->fname, ppdev->file);
 	ppdev->file = NULL;
     }
-    return 0;
+    return code;
 }
 
 private int		/* returns 0 ok, else -ve error cde */
@@ -490,52 +491,11 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
 private int
 validate_output_file(const gs_param_string * ofs)
 {
-    const byte *data = ofs->data;
-    uint size = ofs->size;
-    bool have_format = false;
-    uint i;
+    gs_parsed_file_name_t parsed;
+    const char *fmt;
 
-    if (size >= prn_fname_sizeof)
-	return_error(gs_error_limitcheck);
-    for (i = 0; i < size; ++i)
-	if (data[i] == '%') {
-	    if (i + 1 < size && data[i + 1] == '%')
-		continue;
-	    if (have_format)	/* more than one % */
-		return_error(gs_error_rangecheck);
-	    have_format = true;
-	  sw:if (++i == size)
-		return_error(gs_error_rangecheck);
-	    switch (data[i]) {
-		case ' ':
-		case '#':
-		case '+':
-		case '-':
-		case '.':
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-		case 'l':
-		    goto sw;
-		case 'd':
-		case 'i':
-		case 'u':
-		case 'o':
-		case 'x':
-		case 'X':
-		    continue;
-		default:
-		    return_error(gs_error_rangecheck);
-	    }
-	}
-    return 0;
+    return gx_parse_output_file_name(&parsed, &fmt, (const char *)ofs->data,
+				     ofs->size) >= 0;
 }
 
 /* Put parameters. */
@@ -690,8 +650,8 @@ label:\
 		      (const byte *)ppdev->fname, strlen(ppdev->fname))
 	) {
 	/* Close the file if it's open. */
-	if (ppdev->file != NULL && ppdev->file != stdout)
-	    gp_close_printer(ppdev->file, ppdev->fname);
+	if (ppdev->file != NULL)
+	    gx_device_close_output_file(pdev, ppdev->fname, ppdev->file);
 	ppdev->file = NULL;
 	memcpy(ppdev->fname, ofs.data, ofs.size);
 	ppdev->fname[ofs.size] = 0;
@@ -1180,11 +1140,15 @@ int
 gdev_prn_close_printer(gx_device * pdev)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+    gs_parsed_file_name_t parsed;
+    const char *fmt;
+    int code = gx_parse_output_file_name(&parsed, &fmt, ppdev->fname,
+					 strlen(ppdev->fname));
 
-    if (strchr(ppdev->fname, '%') /* file per page */ ||
+    if ((code >= 0 && fmt) /* file per page */ ||
 	ppdev->ReopenPerPage	/* close and reopen for each page */
 	) {
-	gp_close_printer(ppdev->file, ppdev->fname);
+	gx_device_close_output_file(pdev, ppdev->fname, ppdev->file);
 	ppdev->file = NULL;
     }
     return 0;

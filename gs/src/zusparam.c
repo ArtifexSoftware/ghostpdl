@@ -36,14 +36,11 @@
 #include "dstack.h"
 #include "iname.h"
 #include "iutil2.h"
+#include "ivmem2.h"
 #include "store.h"
 
 /* The (global) font directory */
 extern gs_font_dir *ifont_dir;	/* in zfont.c */
-
-/* Import the GC parameters from zvmem2.c. */
-extern int set_vm_reclaim(P2(i_ctx_t *, long));
-extern int set_vm_threshold(P2(i_ctx_t *, long));
 
 /* Define an individual user or system parameter. */
 /* Eventually this will be made public. */
@@ -107,7 +104,7 @@ zcheckpassword(i_ctx_t *i_ctx_p)
     if (code < 0)
 	return code;
     params[1] = *op;
-    array_param_list_read(&list, params, 2, NULL, false);
+    array_param_list_read(&list, params, 2, NULL, false, iimemory);
     if (dict_read_password(&pass, systemdict, "StartJobPassword") >= 0 &&
 	param_check_password(plist, &pass) == 0
 	)
@@ -231,7 +228,7 @@ zsetsystemparams(i_ctx_t *i_ctx_p)
     password pass;
 
     check_type(*op, t_dictionary);
-    code = dict_param_list_read(&list, op, NULL, false);
+    code = dict_param_list_read(&list, op, NULL, false, iimemory);
     if (code < 0)
 	return code;
     code = dict_read_password(&pass, systemdict, "SystemParamsPassword");
@@ -470,7 +467,7 @@ set_user_params(i_ctx_t *i_ctx_p, const ref *paramdict)
     int code;
 
     check_type(*paramdict, t_dictionary);
-    code = dict_param_list_read(&list, paramdict, NULL, false);
+    code = dict_param_list_read(&list, paramdict, NULL, false, iimemory);
     if (code < 0)
 	return code;
     code = setparams(i_ctx_p, (gs_param_list *)&list, &user_param_set);
@@ -582,7 +579,7 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
     gs_param_list *const plist = (gs_param_list *)&list;
     int i;
 
-    stack_param_list_write(&list, &o_stack, NULL);
+    stack_param_list_write(&list, &o_stack, NULL, iimemory);
     for (i = 0; i < pset->long_count; i++) {
 	const char *pname = pset->long_defs[i].pname;
 

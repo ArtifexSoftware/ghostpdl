@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -76,9 +76,9 @@ extern double hypot(double, double);
 extern double atan2(), ldexp();
 #endif
 
-#ifdef DEBUG
 /* Intercept calls on sqrt for debugging. */
 extern double gs_sqrt(P3(double, const char *, int));
+#ifdef DEBUG
 #undef sqrt
 #define sqrt(x) gs_sqrt(x, __FILE__, __LINE__)
 #endif /* DEBUG */

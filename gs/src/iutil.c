@@ -38,6 +38,13 @@
 #include "oper.h"
 #include "store.h"
 
+/*
+ * By design choice, none of the procedures in this file take a context
+ * pointer (i_ctx_p).  Since a number of them require a gs_dual_memory_t
+ * for store checking or save bookkeeping, we need to #undef idmemory.
+ */
+#undef idmemory
+
 /* ------ Object utilities ------ */
 
 /* Define the table of ref type properties. */
@@ -48,7 +55,7 @@ const byte ref_type_properties[] = {
 /* Copy refs from one place to another. */
 int
 refcpy_to_old(ref * aref, uint index, const ref * from,
-	      uint size, client_name_t cname)
+	      uint size, gs_dual_memory_t *idmemory, client_name_t cname)
 {
     ref *to = aref->value.refs + index;
     int code = refs_check_space(from, size, r_space(aref));
@@ -65,7 +72,8 @@ refcpy_to_old(ref * aref, uint index, const ref * from,
     return 0;
 }
 void
-refcpy_to_new(ref * to, const ref * from, uint size)
+refcpy_to_new(ref * to, const ref * from, uint size,
+	      gs_dual_memory_t *idmemory)
 {
     while (size--)
 	ref_assign_new(to, from), to++, from++;
@@ -73,10 +81,10 @@ refcpy_to_new(ref * to, const ref * from, uint size)
 
 /* Fill a new object with nulls. */
 void
-refset_null(ref * to, uint size)
+refset_null_new(ref * to, uint size, uint new_mask)
 {
-    while (size--)
-	make_null_new(to), to++;
+    for (; size--; ++to)
+	make_ta(to, t_null, new_mask);
 }
 
 /* Compare two objects for equality. */
@@ -219,8 +227,11 @@ obj_string_data(const ref *op, const byte **pchars, uint *plen)
  * if OK, 1 if the destination wasn't large enough, e_invalidaccess if the
  * object's contents weren't readable.  If the return value is 0 or 1,
  * *prlen contains the amount of data returned.  start_pos is the starting
- * output position -- the first start_pos bytes of output are discarded, and
- * *prlen reflects the remaining amount of output.
+ * output position -- the first start_pos bytes of output are discarded.
+ *
+ * The mem argument is only used for getting the type of structures,
+ * not for allocating; if it is NULL and full_print != 0, structures will
+ * print as --(struct)--.
  *
  * This rather complex API is needed so that a client can call obj_cvp
  * repeatedly to print on a stream, which may require suspending at any
@@ -229,7 +240,7 @@ obj_string_data(const ref *op, const byte **pchars, uint *plen)
 private void ensure_dot(P1(char *));
 int
 obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
-	int full_print, uint start_pos)
+	int full_print, uint start_pos, gs_memory_t *mem)
 {
     char buf[50];  /* big enough for any float, double, or struct name */
     const byte *data = (const byte *)buf;
@@ -272,7 +283,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 	}
 	case t_operator:
 	case t_oparray:  
-	    code = obj_cvp(op, (byte *)buf + 2, sizeof(buf) - 4, &size, 0, 0);
+	    code = obj_cvp(op, (byte *)buf + 2, sizeof(buf) - 4, &size, 0, 0, mem);
 	    if (code < 0) 
 		return code;
 	    buf[0] = buf[1] = buf[size + 2] = buf[size + 3] = '-';
@@ -286,10 +297,10 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 		goto nl;
 	    }
 	    if (start_pos > 0)
-		return obj_cvp(op, str, len, prlen, 0, start_pos - 1);
+		return obj_cvp(op, str, len, prlen, 0, start_pos - 1, mem);
 	    if (len < 1)
 		return_error(e_rangecheck);
-	    code = obj_cvp(op, str + 1, len - 1, prlen, 0, 0);
+	    code = obj_cvp(op, str + 1, len - 1, prlen, 0, 0, mem);
 	    if (code < 0)
 		return code;
 	    str[0] = '/';
@@ -378,9 +389,13 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 		data = (const byte *)"-foreign-struct-";
 		goto rs;
 	    }
+	    if (!mem) {
+		data = (const byte *)"-(struct)-";
+		goto rs;
+	    }
 	    data = (const byte *)
 		gs_struct_type_name_string(
-			gs_object_type(imemory,
+			gs_object_type(mem,
 			       (const obj_header_t *)op->value.pstruct));
 	    size = strlen((const char *)data);
 	    if (size > 4 && !memcmp(data + size - 4, "type", 4))
@@ -501,7 +516,7 @@ int
 obj_cvs(const ref * op, byte * str, uint len, uint * prlen,
 	const byte ** pchars)
 {
-    int code = obj_cvp(op, str, len, prlen, 0, 0);
+    int code = obj_cvp(op, str, len, prlen, 0, 0, NULL);
 
     if (code != 1 && pchars) {
 	*pchars = str;
@@ -829,7 +844,8 @@ read_matrix(const ref * op, gs_matrix * pmat)
 /* Write a matrix operand. */
 /* Return 0 if OK, error code if not. */
 int
-write_matrix(ref * op, const gs_matrix * pmat)
+write_matrix_in(ref * op, const gs_matrix * pmat, gs_dual_memory_t *idmemory,
+		gs_ref_memory_t *imem)
 {
     ref *aptr;
     const float *pel;
@@ -841,8 +857,12 @@ write_matrix(ref * op, const gs_matrix * pmat)
     aptr = op->value.refs;
     pel = (const float *)pmat;
     for (i = 5; i >= 0; i--, aptr++, pel++) {
-	ref_save(op, aptr, "write_matrix");
-	make_real_new(aptr, *pel);
+	if (idmemory) {
+	    ref_save(op, aptr, "write_matrix");
+	    make_real_new(aptr, *pel);
+	} else {
+	    make_tav(aptr, t_real, imemory_new_mask(imem), realval, *pel);
+	}
     }
     return 0;
 }

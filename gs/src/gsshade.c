@@ -477,7 +477,7 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 	 gx_cpath_intersect(path_clip, ppath, gx_rule_winding_number, pis)) < 0
 	)
 	goto out;
-    gx_make_clip_device(&path_dev, &path_dev, &path_clip->rect_list->list);
+    gx_make_clip_device(&path_dev, &path_clip->rect_list->list);
     path_dev.target = dev;
     dev = (gx_device *)&path_dev;
     dev_proc(dev, open_device)(dev);

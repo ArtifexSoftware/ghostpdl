@@ -62,7 +62,12 @@ CCAUX_TAIL= /link $(LINK_LIB_SWITCH)
 D=\#
 
 SH=
+
+# Define switches for the compilers.
+
+C_=
 O_=-Fo
+RO_=$(O_)
 
 # Define the arguments for genconf.
 
@@ -185,6 +190,7 @@ CC_=$(CC_WX) $(COMPILE_FULL_OPTIMIZED) /Za
 CC_D=$(CC_WX) $(COMPILE_WITH_FRAMES)
 CC_INT=$(CC_)
 CC_LEAF=$(CC_) $(COMPILE_WITHOUT_FRAMES)
+CC_NO_WARN=$(CC_)
 
 # Compiler for auxiliary programs
 

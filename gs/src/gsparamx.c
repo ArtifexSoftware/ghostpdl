@@ -98,3 +98,21 @@ param_put_int(gs_param_list * plist, gs_param_name param_name,
     }
     return ecode;
 }
+
+/* Put a long value. */
+int
+param_put_long(gs_param_list * plist, gs_param_name param_name,
+	       long *pval, int ecode)
+{
+    int code;
+
+    switch (code = param_read_long(plist, param_name, pval)) {
+	default:
+	    ecode = code;
+	    param_signal_error(plist, param_name, ecode);
+	case 0:
+	case 1:
+	    break;
+    }
+    return ecode;
+}

@@ -37,15 +37,7 @@
 #  else
 #    define memcmp_inline(b1,b2,len) __memcmp__(b1,b2,len)
 #  endif
-/*
- * The Turbo C implementation of memset swaps the arguments and calls
- * the non-standard routine setmem.  We may as well do it in advance.
- */
-#  undef memset			/* just in case */
 #  include <mem.h>
-#  ifndef memset		/* Borland C++ can inline this */
-#    define memset(dest,chr,cnt) setmem(dest,cnt,chr)
-#  endif
 #else
 	/* Not Turbo C, no inline functions */
 #  define memcmp_inline(b1,b2,len) memcmp(b1,b2,len)

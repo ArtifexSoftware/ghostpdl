@@ -331,7 +331,8 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc2, 2);
 	if (code < 0)
 	    return code;
-	dp[1] = cmd_set_misc2_ac_op_sa +
+	dp[1] = cmd_set_misc2_cj_ac_op_sa +
+	    ((cldev->imager_state.line_params.curve_join + 1) << 3) +
 	    (cldev->imager_state.accurate_curves ? 4 : 0) +
 	    (cldev->imager_state.overprint ? 2 : 0) +
 	    (cldev->imager_state.stroke_adjust ? 1 : 0);
@@ -353,8 +354,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	       sizeof(float));
 	if (n != 0)
 	    memcpy(dp + 2 + sizeof(float) * 2,
-		   cldev->imager_state.line_params.dash.pattern,
-		   n * sizeof(float));
+		   cldev->dash_pattern, n * sizeof(float));
 	pcls->known |= dash_known;
     }
     if (unknown & alpha_known) {
@@ -629,11 +629,9 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     y1 = y + height;
     /* Check the dash pattern, since we bail out if */
     /* the pattern is too large. */
-    cdev->imager_state.line_params.dash.pattern = cdev->dash_pattern;
     if (cdev->imager_state.line_params.dash.pattern_size != pattern_size ||
 	(pattern_size != 0 &&
-	 memcmp(cdev->imager_state.line_params.dash.pattern,
-		pis->line_params.dash.pattern,
+	 memcmp(cdev->dash_pattern, pis->line_params.dash.pattern,
 		pattern_size * sizeof(float))) ||
 	cdev->imager_state.line_params.dash.offset !=
 	  pis->line_params.dash.offset ||
@@ -643,15 +641,22 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	  pis->line_params.dot_length ||
 	cdev->imager_state.line_params.dot_length_absolute !=
 	  pis->line_params.dot_length_absolute
-    ) {				/* Bail out if the dash pattern is too long. */
+    ) {
+	/* Bail out if the dash pattern is too long. */
 	if (pattern_size > cmd_max_dash)
 	    return gx_default_stroke_path(dev, pis, ppath, params,
 					  pdcolor, pcpath);
 	unknown |= dash_known;
+	/*
+	 * Temporarily reset the dash pattern pointer for gx_set_dash,
+	 * but don't leave it set, since that would confuse the GC.
+	 */
+	cdev->imager_state.line_params.dash.pattern = cdev->dash_pattern;
 	gx_set_dash(&cdev->imager_state.line_params.dash,
 		    pis->line_params.dash.pattern,
 		    pis->line_params.dash.pattern_size,
 		    pis->line_params.dash.offset, NULL);
+	cdev->imager_state.line_params.dash.pattern = 0;
 	gx_set_dash_adapt(&cdev->imager_state.line_params.dash,
 			  pis->line_params.dash.adapt);
 	gx_set_dot_length(&cdev->imager_state.line_params,
@@ -689,10 +694,11 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	state_update(line_params.cap);
 	state_update(line_params.join);
     }
-    if (state_neq(accurate_curves) || state_neq(overprint) ||
-	state_neq(stroke_adjust)
+    if (state_neq(line_params.curve_join) || state_neq(accurate_curves) ||
+	state_neq(overprint) || state_neq(stroke_adjust)
 	) {
 	unknown |= misc1_known;
+	state_update(line_params.curve_join);
 	state_update(accurate_curves);
 	state_update(overprint);
 	state_update(stroke_adjust);
@@ -999,11 +1005,13 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     cmd_segment_writer writer;
 
     /*
-     * initial_op is logically const, so we declare it as such, 
-     * since some systems really dislike non-const statics.
-     * This entails an otherwise pointless cast in set_first_point().
+     * initial_op is logically const.  We would like to declare it as
+     * static const, since some systems really dislike non-const statics,
+     * but this would entail a cast in set_first_point() that provokes a
+     * warning message from gcc.  Instead, we pay the (tiny) cost of an
+     * unnecessary dynamic initialization.
      */
-    static const byte initial_op = cmd_opv_end_run;
+    byte initial_op = cmd_opv_end_run;
 
     /*
      * We define the 'side' of a point according to its Y value as
@@ -1068,7 +1076,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     writer.cldev = cldev;
     writer.pcls = pcls;
     writer.notes = sn_none;
-#define set_first_point() (writer.dp = (byte *)&initial_op)
+#define set_first_point() (writer.dp = &initial_op)
 #define first_point() (writer.dp == &initial_op)
     set_first_point();
     for (;;) {

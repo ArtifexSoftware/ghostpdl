@@ -26,14 +26,8 @@
 #include "spngpx.h"
 #include "szlibx.h"
 #include "ifilter.h"
-
-/* Import the Predictor machinery from zfdecode.c and zfilter2.c. */
-int filter_read_predictor(P4(i_ctx_t *i_ctx_p, int npop,
-			     const stream_template * template,
-			     stream_state * st));
-int filter_write_predictor(P4(i_ctx_t *i_ctx_p, int npop,
-			      const stream_template * template,
-			      stream_state * st));
+#include "ifrpred.h"
+#include "ifwpred.h"
 
 /* <source> zlibEncode/filter <file> */
 /* <source> <dict> zlibEncode/filter <file> */

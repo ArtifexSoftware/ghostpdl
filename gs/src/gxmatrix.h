@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -36,6 +36,9 @@ typedef struct gs_matrix_fixed_s {
     fixed tx_fixed, ty_fixed;
     bool txy_fixed_valid;
 } gs_matrix_fixed;
+
+/* Make a gs_matrix_fixed from a gs_matrix. */
+int gs_matrix_fixed_from_matrix(P2(gs_matrix_fixed *, const gs_matrix *));
 
 /* Coordinate transformations to fixed point. */
 int gs_point_transform2fixed(P4(const gs_matrix_fixed *, floatp, floatp,

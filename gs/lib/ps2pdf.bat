@@ -7,12 +7,11 @@ rem	contact Matt Sergeant (sergeant@geocities.com).
 
 set PS2PDFPARAMS=-q -dNOPAUSE -dBATCH -sDEVICE#pdfwrite
 set PS2PDFOPT=
+set PS2PDFGS=gswin32c
 
 if "%OS%"=="Windows_NT" goto nt
 
-rem	Run ps2pdf on any Microsoft OS.  The executable must be named gs.
-
-set PS2PDFGS=gs
+rem	Run ps2pdf on any Microsoft OS.
 
 :run
 if "%1"=="" goto usage
@@ -33,7 +32,7 @@ goto end
 echo "Usage: ps2pdf [options...] input.ps output.pdf"
 goto end
 
-rem	Run ps2pdf on Windows NT.  The executable must be named gswin32c.
+rem	Run ps2pdf on Windows NT.
 
 :nt
 set PS2PDFGS=gswin32c

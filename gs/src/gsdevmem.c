@@ -1,4 +1,4 @@
-/* Copyright (C) 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,6 +22,7 @@
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
+#include "gsdevice.h"		/* for prototypes */
 #include "gxarith.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"

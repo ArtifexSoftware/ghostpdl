@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -45,10 +45,11 @@ typedef struct gx_line_params_s {
     float half_width;		/* one-half line width */
     gs_line_cap cap;
     gs_line_join join;
+    int curve_join;		/* <0 means use join between segments of */
+				/* flattened curves, >=0 means use this join */
     float miter_limit;
     float miter_check;		/* computed from miter limit, */
-    /* see gx_set_miter_limit and */
-    /* gs_stroke */
+				/* see gx_set_miter_limit and gs_stroke */
     float dot_length;
     bool dot_length_absolute;	/* if true, dot_length is 1/72" units */
     gs_matrix dot_orientation;	/* dot length is aligned with (1,0); */
@@ -72,7 +73,8 @@ int gx_set_dot_length(P3(gx_line_params *, floatp, bool));
 
 /* See gsline.c for the computation of miter_check. */
 #define gx_line_params_initial\
-  0.0, gs_cap_butt, gs_join_miter, 10.0, 0.20305866, 0.0, 0/*false*/,\
+ 0.0, gs_cap_butt, gs_join_miter, gs_join_bevel /* for Adobe compatibility */,\
+ 10.0, 0.20305866, 0.0, 0/*false*/,\
   { identity_matrix_body }, { gx_dash_params_initial }
 
 #endif /* gxline_INCLUDED */

@@ -113,11 +113,21 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 			    SET_EXTENT(ex, x0, pc->p1.x, pc->p2.x, pc->pt.x);
 			    SET_EXTENT(ey, y0, pc->p1.y, pc->p2.y, pc->pt.y);
 #undef SET_EXTENT
-			    flat_x = fixed_mult_quo(fixed_flatness, ex,
-						    ex + expansion.x);
-			    flat_y = fixed_mult_quo(fixed_flatness, ey,
-						    ey + expansion.y);
-			    flat = min(flat_x, flat_y);
+			    /*
+			     * We check for the degenerate case specially
+			     * to avoid a division by zero.
+			     */
+			    if (ex == 0 || ey == 0)
+				flat = 0;
+			    else {
+				flat_x =
+				    fixed_mult_quo(fixed_flatness, ex,
+						   ex + expansion.x);
+				flat_y =
+				    fixed_mult_quo(fixed_flatness, ey,
+						   ey + expansion.y);
+				flat = min(flat_x, flat_y);
+			    }
 			}
 			k = gx_curve_log2_samples(x0, y0, pc, flat);
 			if (options & pco_accurate) {

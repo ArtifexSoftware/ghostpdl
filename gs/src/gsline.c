@@ -285,6 +285,23 @@ gs_currentdashadapt(const gs_state * pgs)
     return gs_imager_currentdashadapt((const gs_imager_state *)pgs);
 }
 
+/* setcurvejoin */
+int
+gs_setcurvejoin(gs_state * pgs, int join)
+{
+    if (join < -1 || join > gs_line_join_max)
+	return_error(gs_error_rangecheck);
+    pgs_lp->curve_join = join;
+    return 0;
+}
+
+/* currentcurvejoin */
+int
+gs_currentcurvejoin(const gs_state * pgs)
+{
+    return pgs_lp->curve_join;
+}
+
 /* Device-dependent */
 
 /* setaccuratecurves */

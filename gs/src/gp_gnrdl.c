@@ -16,8 +16,30 @@
    all copies.
  */
 
+/*
+  As of version 5.71, Ghostscript includes an interface to the GNU readline
+  library, as a build-time option.  This library is licensed under the GNU
+  General Public License (GPL), not the GNU Library / Lesser General Public
+  License (LGPL).  If you build Aladdin Ghostscript with the gnrdline
+  option, which links this library into the executable, the GPL DOES NOT
+  ALLOW YOU TO COPY OR DISTRIBUTE THE RESULT.  For example, the GPL forbids
+  you to build a RPM of Aladdin Ghostscript with GNU readline support and
+  put it on a server.
 
-/* GNU readline implementation */
+  The GPL does not forbid you to build or use the just-described software,
+  only to copy or distribute it.
+
+  You *are* allowed to distribute the result of linking the GNU readline
+  library into GNU Ghostscript, which is licensed with the GPL.
+
+  If you have questions or opinions about any of the above, please feel free
+  to contact the Free Software Foundation, authors of the GNU licenses, at
+  gnu@gnu.org, and/or Aladdin Enterprises, author of Ghostscript, at
+  ghost@aladdin.com.
+ */
+
+
+/* GNU readline interface */
 #include "ctype_.h"
 #include "string_.h"
 #include "malloc_.h"
@@ -27,11 +49,13 @@
 #include "ghost.h"
 #include "errors.h"
 #include "gp.h"
+#include "gscdefs.h"		/* for gs_product for GNU test */
 #include "gsmalloc.h"
 #include "gsmemory.h"
 #include "gsstruct.h"
 #include "stream.h"
 #include "gxiodev.h"
+#include "ialloc.h"
 #include "idict.h"
 #include "iname.h"
 #include "iutil.h"
@@ -129,14 +153,22 @@ gs_readline_complete(char *text, int state)
 	    return NULL;
     }
     while ((p->c_idx = dict_next(cdict, p->c_idx, eltp)) >= 0) {
-	const byte *rname = eltp->value.refs->value.const_bytes;
-	uint rlen = eltp->value.refs->tas.rsize >> 2;
+	ref rnstr;
+	const byte *nchars;
+	uint nlen;
 
-	if (rname && !strncmp((const char *)rname, text, p->c_len)) {
-	    char *name = (char *)malloc(rlen + 1);
+	if (!r_has_type(eltp, t_name))
+	    continue;
+	name_string_ref(eltp, &rnstr);
+	nchars = rnstr.value.const_bytes;
+	nlen = r_size(&rnstr);
+	if (nlen < p->c_len)
+	    continue;
+	if (!strncmp((const char *)nchars, text, p->c_len)) {
+	    char *name = (char *)malloc(nlen + 1);
 
-	    memcpy(name, rname, rlen);
-	    name[rlen] = 0;
+	    memcpy(name, nchars, nlen);
+	    name[nlen] = 0;
 	    return name;
 	}
     }
@@ -213,7 +245,7 @@ rl_show_name_value(int count, int key)
 	char str[MAX_CVS];
 	const byte *pchars = (const byte *)str;
 	uint len;
-	int code = obj_cvp(pvref, (byte *)str, MAX_CVS, &len, 1, 0);
+	int code = obj_cvp(pvref, (byte *)str, MAX_CVS, &len, 1, 0, imemory);
 
 	putchar('\n');
 	if (code < 0) {
@@ -250,6 +282,22 @@ int
 gp_readline_init(void **preadline_data, gs_memory_t * mem)
 {
     readline_data_t *p;
+    int i;
+
+    /*
+     * If this package is included in a non-GNU build, warn the user
+     * about the consequences of the GPL.
+     */
+    for (i = strlen(gs_product) - 3; i >= 0; --i)
+	if (!strncmp(gs_product + i, "GNU", 3))
+	    break;
+    if (i < 0) {
+	fputs("\n    **** WARNING: This program appears to include both the GNU readline\n", stderr);
+	fputs("    **** library and non-GNU-licensed code.  This being so, the GNU license\n", stderr);
+	fputs("    **** (COPYLEFT) forbids you to copy or distribute this program.\n", stderr);
+	fputs("    **** See src/gp_gnrdl.c for details.\n\n", stderr);
+	fflush(stderr);
+    }
 
     using_history();
     read_history(GS_histfile);

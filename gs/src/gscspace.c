@@ -24,6 +24,7 @@
 #include "gsstruct.h"
 #include "gsccolor.h"
 #include "gsutil.h"		/* for gs_next_ids */
+#include "gxcmap.h"
 #include "gxcspace.h"
 #include "gxistate.h"
 
@@ -33,15 +34,6 @@
  * the PostScript operator procedures (setcmykcolor, etc.) for dealing with
  * it.
  */
-extern cs_proc_remap_color(gx_remap_DeviceGray);
-extern cs_proc_concretize_color(gx_concretize_DeviceGray);
-extern cs_proc_remap_concrete_color(gx_remap_concrete_DGray);
-extern cs_proc_remap_color(gx_remap_DeviceRGB);
-extern cs_proc_concretize_color(gx_concretize_DeviceRGB);
-extern cs_proc_remap_concrete_color(gx_remap_concrete_DRGB);
-extern cs_proc_remap_color(gx_remap_DeviceCMYK);
-extern cs_proc_concretize_color(gx_concretize_DeviceCMYK);
-extern cs_proc_remap_concrete_color(gx_remap_concrete_DCMYK);
 private const gs_color_space_type gs_color_space_type_DeviceGray = {
     gs_color_space_index_DeviceGray, true, true,
     &st_base_color_space, gx_num_components_1,
@@ -262,17 +254,17 @@ gx_no_adjust_cspace_count(const gs_color_space * pcs, int delta)
 
 /* GC procedures */
 
-#define pcs ((gs_color_space *)vptr)
 private 
 ENUM_PTRS_BEGIN_PROC(color_space_enum_ptrs)
 {
+    EV_CONST gs_color_space *pcs = vptr;
+
     return ENUM_USING(*pcs->type->stype, vptr, size, index);
     ENUM_PTRS_END_PROC
 }
 private 
-RELOC_PTRS_BEGIN(color_space_reloc_ptrs)
+RELOC_PTRS_WITH(color_space_reloc_ptrs, gs_color_space *pcs)
 {
     RELOC_USING(*pcs->type->stype, vptr, size);
 }
 RELOC_PTRS_END
-#undef pcs

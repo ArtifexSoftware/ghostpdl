@@ -105,8 +105,10 @@ bool names_mark_index(P2(name_table * nt, name_index_t nidx));
 /* Get the object (sub-table) containing a name. */
 /* The garbage collector needs this so it can relocate pointers to names. */
 void /*obj_header_t */ *
-     names_ref_sub_table(P2(name_table * nt, const ref * pnref));
+    names_ref_sub_table(P2(name_table * nt, const ref * pnref));
 void /*obj_header_t */ *
-     names_index_ptr_sub_table(P3(name_table * nt, name_index_t nidx, name * pname));
+    names_index_sub_table(P2(name_table * nt, name_index_t nidx));
+void /*obj_header_t */ *
+    names_index_string_sub_table(P2(name_table * nt, name_index_t nidx));
 
 #endif /* inames_INCLUDED */

@@ -33,6 +33,10 @@
 /* Structure descriptor */
 public_st_gs_font_type42();
 
+/* Forward references */
+private int append_outline(P4(uint glyph_index, const gs_matrix_fixed * pmat,
+			      gx_path * ppath, gs_font_type42 * pfont));
+
 /* Set up a pointer to a substring of the font data. */
 /* Free variables: pfont, string_proc. */
 #define ACCESS(base, length, vptr)\
@@ -50,117 +54,6 @@ private ulong
 u32(const byte *p)
 {
     return ((ulong)U16(p) << 16) + U16((p) + 2);
-}
-
-/* Define the default implementation for getting the outline data for */
-/* a glyph, using indexToLocFormat and the loca and glyf tables. */
-/* Set pglyph->data = 0 if the glyph is empty. */
-private int
-default_get_outline(gs_font_type42 * pfont, uint glyph_index,
-		    gs_const_string * pglyph)
-{
-    int (*string_proc) (P4(gs_font_type42 *, ulong, uint, const byte **)) =
-    pfont->data.string_proc;
-    const byte *ploca;
-    ulong glyph_start;
-    uint glyph_length;
-    int code;
-
-    /*
-     * We can't assume that consecutive loca entries are stored
-     * contiguously in memory: we have to access each entry
-     * individually.
-     */
-    if (pfont->data.indexToLocFormat) {
-	ACCESS(pfont->data.loca + glyph_index * 4, 4, ploca);
-	glyph_start = u32(ploca);
-	ACCESS(pfont->data.loca + glyph_index * 4 + 4, 4, ploca);
-	glyph_length = u32(ploca) - glyph_start;
-    } else {
-	ACCESS(pfont->data.loca + glyph_index * 2, 2, ploca);
-	glyph_start = (ulong) U16(ploca) << 1;
-	ACCESS(pfont->data.loca + glyph_index * 2 + 2, 2, ploca);
-	glyph_length = ((ulong) U16(ploca) << 1) - glyph_start;
-    }
-    pglyph->size = glyph_length;
-    if (glyph_length == 0)
-	pglyph->data = 0;
-    else
-	ACCESS(pfont->data.glyf + glyph_start, glyph_length, pglyph->data);
-    return 0;
-}
-
-/* Initialize the cached values in a Type 42 font. */
-/* Note that this initializes get_outline as well. */
-int
-gs_type42_font_init(gs_font_type42 * pfont)
-{
-    int (*string_proc)(P4(gs_font_type42 *, ulong, uint, const byte **)) =
-	pfont->data.string_proc;
-    const byte *OffsetTable;
-    uint numTables;
-    const byte *TableDirectory;
-    uint i;
-    int code;
-    byte head_box[8];
-
-    ACCESS(0, 12, OffsetTable);
-    {
-	static const byte version1_0[4] = {0, 1, 0, 0};
-	static const byte * const version_true = (const byte *)"true";
-
-	if (memcmp(OffsetTable, version1_0, 4) &&
-	    memcmp(OffsetTable, version_true, 4))
-	    return_error(gs_error_invalidfont);
-    }
-    numTables = U16(OffsetTable + 4);
-    ACCESS(12, numTables * 16, TableDirectory);
-    /* Clear optional entries. */
-    pfont->data.numLongMetrics = 0;
-    for (i = 0; i < numTables; ++i) {
-	const byte *tab = TableDirectory + i * 16;
-	ulong offset = u32(tab + 8);
-
-	if (!memcmp(tab, "glyf", 4))
-	    pfont->data.glyf = offset;
-	else if (!memcmp(tab, "head", 4)) {
-	    const byte *head;
-
-	    ACCESS(offset, 54, head);
-	    pfont->data.unitsPerEm = U16(head + 18);
-	    memcpy(head_box, head + 36, 8);
-	    pfont->data.indexToLocFormat = U16(head + 50);
-	} else if (!memcmp(tab, "hhea", 4)) {
-	    const byte *hhea;
-
-	    ACCESS(offset, 36, hhea);
-	    pfont->data.numLongMetrics = U16(hhea + 34);
-	} else if (!memcmp(tab, "hmtx", 4))
-	    pfont->data.hmtx = offset,
-		pfont->data.hmtx_length = (uint) u32(tab + 12);
-	else if (!memcmp(tab, "loca", 4))
-	    pfont->data.loca = offset;
-    }
-    /*
-     * If the font doesn't have a valid FontBBox, compute one from the
-     * 'head' information.  Since the Adobe PostScript driver sometimes
-     * outputs garbage FontBBox values, we use a "reasonableness" check
-     * here.
-     */
-    if (pfont->FontBBox.p.x >= pfont->FontBBox.q.x ||
-	pfont->FontBBox.p.y >= pfont->FontBBox.q.y ||
-	pfont->FontBBox.p.x < -0.5 || pfont->FontBBox.p.x > 0.5 ||
-	pfont->FontBBox.p.y < -0.5 || pfont->FontBBox.p.y > 0.5
-	) {
-	float upem = pfont->data.unitsPerEm;
-
-	pfont->FontBBox.p.x = S16(head_box) / upem;
-	pfont->FontBBox.p.y = S16(head_box + 2) / upem;
-	pfont->FontBBox.q.x = S16(head_box + 4) / upem;
-	pfont->FontBBox.q.y = S16(head_box + 6) / upem;
-    }
-    pfont->data.get_outline = default_get_outline;
-    return 0;
 }
 
 /* Define the bits in the component glyph flags. */
@@ -236,6 +129,252 @@ no_scale:
     *pdata = glyph;
     *pflags = flags;
     *psmat = mat;
+}
+
+/* Define the default implementation for getting the outline data for */
+/* a glyph, using indexToLocFormat and the loca and glyf tables. */
+/* Set pglyph->data = 0 if the glyph is empty. */
+private int
+default_get_outline(gs_font_type42 * pfont, uint glyph_index,
+		    gs_const_string * pglyph)
+{
+    int (*string_proc) (P4(gs_font_type42 *, ulong, uint, const byte **)) =
+    pfont->data.string_proc;
+    const byte *ploca;
+    ulong glyph_start;
+    uint glyph_length;
+    int code;
+
+    /*
+     * We can't assume that consecutive loca entries are stored
+     * contiguously in memory: we have to access each entry
+     * individually.
+     */
+    if (pfont->data.indexToLocFormat) {
+	ACCESS(pfont->data.loca + glyph_index * 4, 4, ploca);
+	glyph_start = u32(ploca);
+	ACCESS(pfont->data.loca + glyph_index * 4 + 4, 4, ploca);
+	glyph_length = u32(ploca) - glyph_start;
+    } else {
+	ACCESS(pfont->data.loca + glyph_index * 2, 2, ploca);
+	glyph_start = (ulong) U16(ploca) << 1;
+	ACCESS(pfont->data.loca + glyph_index * 2 + 2, 2, ploca);
+	glyph_length = ((ulong) U16(ploca) << 1) - glyph_start;
+    }
+    pglyph->size = glyph_length;
+    if (glyph_length == 0)
+	pglyph->data = 0;
+    else
+	ACCESS(pfont->data.glyf + glyph_start, glyph_length, pglyph->data);
+    return 0;
+}
+
+/* Parse a glyph into pieces, if any. */
+private int
+parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
+	     int *pnum_pieces)
+{
+    uint glyph_index = glyph - gs_min_cid_glyph;
+    gs_const_string glyph_string;
+    int code = pfont->data.get_outline(pfont, glyph_index, &glyph_string);
+
+    if (code < 0)
+	return code;
+    if (glyph_string.size != 0 && S16(glyph_string.data) == -1) {
+	/* This is a composite glyph. */
+	int i = 0;
+	uint flags = cg_moreComponents;
+	const byte *glyph = glyph_string.data + 10;
+	gs_matrix_fixed mat;
+
+	memset(&mat, 0, sizeof(mat)); /* arbitrary */
+	for (i = 0; flags & cg_moreComponents; ++i) {
+	    if (pieces)
+		pieces[i] = U16(glyph + 2) + gs_min_cid_glyph;
+	    parse_component(&glyph, &flags, &mat, pfont, &mat);
+	}
+	*pnum_pieces = i;
+    } else
+	*pnum_pieces = 0;
+    return 0;
+}
+
+/* Define the font procedures for a Type 42 font. */
+int
+gs_type42_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+			gx_path *ppath)
+{
+    gs_font_type42 *const pfont = (gs_font_type42 *)font;
+    uint glyph_index = glyph - gs_min_cid_glyph;
+    gs_fixed_point origin;
+    int code;
+    gs_glyph_info_t info;
+    gs_matrix_fixed fmat;
+    static const gs_matrix imat = { identity_matrix_body };
+
+    if (pmat == 0)
+	pmat = &imat;
+    if ((code = gs_matrix_fixed_from_matrix(&fmat, pmat)) < 0 ||
+	(code = gx_path_current_point(ppath, &origin)) < 0 ||
+	(code = append_outline(glyph_index, &fmat, ppath, pfont)) < 0 ||
+	(code = font->procs.glyph_info(font, glyph, pmat,
+				       GLYPH_INFO_WIDTH, &info)) < 0
+	)
+	return code;
+    if (pmat) {
+	if ((code = gs_point_transform(info.width[0].x, info.width[0].y,
+				       pmat, &info.width[0])) < 0)
+	    return code;
+    }
+    return gx_path_add_point(ppath, origin.x + float2fixed(info.width[0].x),
+			     origin.y + float2fixed(info.width[0].y));
+}
+int
+gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+		     int members, gs_glyph_info_t *info)
+{
+    gs_font_type42 *const pfont = (gs_font_type42 *)font;
+    uint glyph_index = glyph - gs_min_cid_glyph;
+    int default_members =
+	members & ~(GLYPH_INFO_WIDTHS | GLYPH_INFO_NUM_PIECES |
+		    GLYPH_INFO_PIECES);
+    gs_const_string outline;
+    int code = 0;
+
+    if (default_members) {
+	code = gs_default_glyph_info(font, glyph, pmat, default_members, info);
+
+	if (code < 0)
+	    return code;
+    } else if ((code = pfont->data.get_outline(pfont, glyph_index, &outline)) < 0)
+	return code;		/* non-existent glyph */
+    else
+	info->members = 0;
+    if (members & GLYPH_INFO_WIDTH) {
+	float sbw[4];
+
+	code = gs_type42_get_metrics(pfont, glyph_index, sbw);
+	if (code < 0)
+	    return code;
+	if (pmat)
+	    code = gs_point_transform(sbw[2], sbw[3], pmat, &info->width[0]);
+	else
+	    info->width[0].x = sbw[2], info->width[0].y = sbw[3];
+	info->members |= GLYPH_INFO_WIDTH;
+    }
+    if (members & (GLYPH_INFO_NUM_PIECES | GLYPH_INFO_PIECES)) {
+	gs_glyph *pieces =
+	    (members & GLYPH_INFO_PIECES ? info->pieces : (gs_glyph *)0);
+	int code = parse_pieces(pfont, glyph, pieces, &info->num_pieces);
+
+	if (code < 0)
+	    return code;
+	info->members |= members & (GLYPH_INFO_NUM_PIECES | GLYPH_INFO_PIECES);
+    }
+    return code;
+}
+int
+gs_type42_enumerate_glyph(gs_font *font, int *pindex,
+			  gs_glyph_space_t glyph_space, gs_glyph *pglyph)
+{
+    gs_font_type42 *const pfont = (gs_font_type42 *)font;
+
+    while (++*pindex <= pfont->data.numGlyphs) {
+	gs_const_string outline;
+	uint glyph_index = *pindex - 1;
+	int code = pfont->data.get_outline(pfont, glyph_index, &outline);
+
+	if (code < 0)
+	    return code;
+	if (outline.data == 0)
+	    continue;		/* empty (undefined) glyph */
+	*pglyph = glyph_index + gs_min_cid_glyph;
+	return 0;
+    }
+    /* We are done. */
+    *pindex = 0;
+    return 0;
+}
+
+/* Initialize the cached values in a Type 42 font. */
+/* Note that this initializes get_outline and the font procedures as well. */
+int
+gs_type42_font_init(gs_font_type42 * pfont)
+{
+    int (*string_proc)(P4(gs_font_type42 *, ulong, uint, const byte **)) =
+	pfont->data.string_proc;
+    const byte *OffsetTable;
+    uint numTables;
+    const byte *TableDirectory;
+    uint i;
+    int code;
+    byte head_box[8];
+    ulong loca_size = 0;
+
+    ACCESS(0, 12, OffsetTable);
+    {
+	static const byte version1_0[4] = {0, 1, 0, 0};
+	static const byte version_true[4] = {'t', 'r', 'u', 'e'};
+
+	if (memcmp(OffsetTable, version1_0, 4) &&
+	    memcmp(OffsetTable, version_true, 4))
+	    return_error(gs_error_invalidfont);
+    }
+    numTables = U16(OffsetTable + 4);
+    ACCESS(12, numTables * 16, TableDirectory);
+    /* Clear optional entries. */
+    pfont->data.numLongMetrics = 0;
+    for (i = 0; i < numTables; ++i) {
+	const byte *tab = TableDirectory + i * 16;
+	ulong offset = u32(tab + 8);
+
+	if (!memcmp(tab, "glyf", 4))
+	    pfont->data.glyf = offset;
+	else if (!memcmp(tab, "head", 4)) {
+	    const byte *head;
+
+	    ACCESS(offset, 54, head);
+	    pfont->data.unitsPerEm = U16(head + 18);
+	    memcpy(head_box, head + 36, 8);
+	    pfont->data.indexToLocFormat = U16(head + 50);
+	} else if (!memcmp(tab, "hhea", 4)) {
+	    const byte *hhea;
+
+	    ACCESS(offset, 36, hhea);
+	    pfont->data.numLongMetrics = U16(hhea + 34);
+	} else if (!memcmp(tab, "hmtx", 4)) {
+	    pfont->data.hmtx = offset;
+	    pfont->data.hmtx_length = (uint)u32(tab + 12);
+	} else if (!memcmp(tab, "loca", 4)) {
+	    pfont->data.loca = offset;
+	    loca_size = u32(tab + 12);
+	}
+    }
+    loca_size >>= pfont->data.indexToLocFormat + 1;
+    pfont->data.numGlyphs = (loca_size == 0 ? 0 : loca_size - 1);
+    /*
+     * If the font doesn't have a valid FontBBox, compute one from the
+     * 'head' information.  Since the Adobe PostScript driver sometimes
+     * outputs garbage FontBBox values, we use a "reasonableness" check
+     * here.
+     */
+    if (pfont->FontBBox.p.x >= pfont->FontBBox.q.x ||
+	pfont->FontBBox.p.y >= pfont->FontBBox.q.y ||
+	pfont->FontBBox.p.x < -0.5 || pfont->FontBBox.p.x > 0.5 ||
+	pfont->FontBBox.p.y < -0.5 || pfont->FontBBox.p.y > 0.5
+	) {
+	float upem = pfont->data.unitsPerEm;
+
+	pfont->FontBBox.p.x = S16(head_box) / upem;
+	pfont->FontBBox.p.y = S16(head_box + 2) / upem;
+	pfont->FontBBox.q.x = S16(head_box + 4) / upem;
+	pfont->FontBBox.q.y = S16(head_box + 6) / upem;
+    }
+    pfont->data.get_outline = default_get_outline;
+    pfont->procs.glyph_outline = gs_type42_glyph_outline;
+    pfont->procs.glyph_info = gs_type42_glyph_info;
+    pfont->procs.enumerate_glyph = gs_type42_enumerate_glyph;
+    return 0;
 }
 
 /* Get the metrics of a simple glyph. */
@@ -317,10 +456,6 @@ gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
 #define gf_xSame 16		/* !xShort */
 #define gf_yPos 32		/* yShort */
 #define gf_ySame 32		/* !yShort */
-
-/* Forward references */
-private int append_outline(P4(uint glyph_index, const gs_matrix_fixed * pmat,
-			      gx_path * ppath, gs_font_type42 * pfont));
 
 /* Append a TrueType outline to a path. */
 /* Note that this does not append the final moveto for the width. */

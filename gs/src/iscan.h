@@ -46,7 +46,6 @@ typedef struct scanner_state_s scanner_state;
 #define max_dsc_line max_comment_line	/* backward compatibility */
 #define da_buf_size (max_comment_line + 2)
 typedef struct dynamic_area_s {
-    gs_string str;		/* for GC */
     byte *base;
     byte *next;
     byte *limit;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,10 +23,10 @@
 #  define isstate_INCLUDED
 
 /* Saved state of allocator and other things as needed. */
-						/*typedef struct alloc_save_s alloc_save_t; *//* in isave.h */
+/*typedef struct alloc_save_s alloc_save_t; *//* in isave.h */
 struct alloc_save_s {
     gs_ref_memory_t state;	/* must be first for subclassing */
-    gs_dual_memory_t *dmem;
+    vm_spaces spaces;
     bool restore_names;
     bool is_current;
     ulong id;

@@ -37,7 +37,8 @@ extern int set_user_params(P2(i_ctx_t *i_ctx_p, const ref * paramdict));
 
 /* Allocate the state of a context, always in local VM. */
 /* If *ppcst == 0, allocate the state object as well. */
-int context_state_alloc(P2(gs_context_state_t ** ppcst,
+int context_state_alloc(P3(gs_context_state_t ** ppcst,
+			   const ref *psystem_dict,
 			   const gs_dual_memory_t * dmem));
 
 /* Load the state of the interpreter from a context. */

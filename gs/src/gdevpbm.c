@@ -467,7 +467,7 @@ pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
     uint raster = gdev_prn_raster(pdev);
-    byte *data = (byte *) gs_malloc(raster, 1, "pbm_print_page_loop");
+    byte *data = gs_alloc_bytes(pdev->memory, raster, "pbm_print_page_loop");
     int lnum = 0;
     int code = 0;
 
@@ -504,7 +504,7 @@ pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
 	if (code < 0)
 	    break;
     }
-    gs_free((char *)data, raster, 1, "pbm_print_page_loop");
+    gs_free_object(pdev->memory, data, "pbm_print_page_loop");
     return (code < 0 ? code : 0);
 }
 
@@ -868,7 +868,7 @@ psm_print_page(gx_device_printer * pdev, FILE * pstream)
      * component will have 1/N of the bits.)
      */
     uint max_raster = bitmap_raster(pdev->width * pdev->color_info.depth);
-    byte *data = (byte *)gs_malloc(max_raster, 1, "pksm_print_page");
+    byte *data = gs_alloc_bytes(pdev->memory, max_raster, "pksm_print_page");
     int code = 0;
     int plane;
 
@@ -945,6 +945,6 @@ psm_print_page(gx_device_printer * pdev, FILE * pstream)
 		break;
 	}
     }
-    gs_free((char *)data, max_raster, 1, "pksm_print_page");
+    gs_free_object(pdev->memory, data, "pksm_print_page");
     return (code < 0 ? code : 0);
 }

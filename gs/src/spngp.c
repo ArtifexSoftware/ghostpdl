@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -264,13 +264,16 @@ s_PNGPE_process(stream_state * st, stream_cursor_read * pr,
 		continue;
 	    if (n < bpp) {
 		/*
-		 * We didn't have enough data to use up all of prev.
-		 * Shift more data into prev and exit.
+		 * We didn't have both enough input data and enough output
+		 * space to use up all of prev.  Shift more data into prev
+		 * and exit.
 		 */
 		int prev_left = bpp - n;
 
 		memmove(ss->prev, ss->prev + n, prev_left);
 		memcpy(ss->prev + prev_left, pr->ptr - (n - 1), n);
+		if (pw->ptr >= pw->limit && pr->ptr < pr->limit)
+		    status = 1;
 		break;
 	    }
 	    /* Process bytes whose predecessors are in the input. */
@@ -342,8 +345,11 @@ s_PNGPD_process(stream_state * st, stream_cursor_read * pr,
 	    if (ss->row_left == 0)
 		continue;
 	    if (n < bpp) {
-		/* We didn't have enough data to use up all of prev. */
-		/* Shift more data into prev and exit. */
+		/*
+		 * We didn't have both enough input data and enough output
+		 * space to use up all of prev.  Shift more data into prev
+		 * and exit.
+		 */
 		int prev_left = bpp - n;
 
 		memmove(ss->prev, ss->prev + n, prev_left);

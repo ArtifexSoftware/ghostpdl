@@ -34,19 +34,17 @@
 
 /* Structure descriptor */
 public_st_device_color();
-#define cptr ((gx_device_color *)vptr)
 private 
-ENUM_PTRS_BEGIN(device_color_enum_ptrs)
+ENUM_PTRS_WITH(device_color_enum_ptrs, gx_device_color *cptr)
 {
     return ENUM_USING(*cptr->type->stype, vptr, size, index);
 }
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(device_color_reloc_ptrs)
+private RELOC_PTRS_WITH(device_color_reloc_ptrs, gx_device_color *cptr)
 {
     RELOC_USING(*cptr->type->stype, vptr, size);
 }
 RELOC_PTRS_END
-#undef cptr
 
 /* ------ Trace device mapping procedures ------ */
 

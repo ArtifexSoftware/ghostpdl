@@ -22,6 +22,7 @@
 #include "string_.h"
 #include "jpeglib_.h"
 #include "jerror_.h"
+#include "jmemsys.h"		/* for prototypes */
 #include "gx.h"
 #include "gserrors.h"
 #include "strimpl.h"
@@ -195,7 +196,7 @@ jpeg_mem_available(j_common_ptr cinfo, long min_bytes_needed,
 }
 
 void
-jpeg_open_backing_store(j_common_ptr cinfo, void *info,
+jpeg_open_backing_store(j_common_ptr cinfo, backing_store_ptr info,
 			long total_bytes_needed)
 {
     ERREXIT(cinfo, JERR_NO_BACKING_STORE);

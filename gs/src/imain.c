@@ -22,8 +22,8 @@
 #include "string_.h"
 /* Capture stdin/out/err before gs.h redefines them. */
 #include <stdio.h>
-void
-gs_get_real_stdio(FILE * stdfiles[3])
+private void
+set_stdfiles(FILE * stdfiles[3])
 {
     stdfiles[0] = stdin;
     stdfiles[1] = stdout;
@@ -46,6 +46,7 @@ gs_get_real_stdio(FILE * stdfiles[3])
 #include "stream.h"		/* for files.h */
 #include "files.h"
 #include "ialloc.h"
+#include "iinit.h"
 #include "strimpl.h"		/* for sfilter.h */
 #include "sfilter.h"		/* for iscan.h */
 #include "iscan.h"
@@ -96,6 +97,13 @@ private void print_resource_usage(P3(const gs_main_instance *,
 
 /* ------ Initialization ------ */
 
+/* Save the real stdio files. */
+void
+gs_get_real_stdio(FILE * stdfiles[3])
+{
+    set_stdfiles(stdfiles);
+}
+
 /* Initialization to be done before anything else. */
 void
 gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
@@ -134,18 +142,16 @@ void
 gs_main_init1(gs_main_instance * minst)
 {
     if (minst->init_done < 1) {
-	{
-	    extern bool gs_have_level2(P0());
+	gs_dual_memory_t idmem;
 
-	    ialloc_init(idmemory, (gs_raw_memory_t *)&gs_memory_default,
-			minst->memory_chunk_size, gs_have_level2());
-	    gs_lib_init1((gs_memory_t *) imemory_system);
-	    alloc_save_init(idmemory);
-	}
+	ialloc_init(&idmem, (gs_raw_memory_t *)&gs_memory_default,
+		    minst->memory_chunk_size, gs_have_level2());
+	gs_lib_init1((gs_memory_t *)idmem.space_system);
+	alloc_save_init(&idmem);
 	{
-	    gs_memory_t *mem = imemory_system;
+	    gs_memory_t *mem = (gs_memory_t *)idmem.space_system;
 	    name_table *nt = names_init(minst->name_table_size,
-					iimemory_system);
+					idmem.space_system);
 
 	    if (nt == 0) {
 		puts("name_init failed");
@@ -155,11 +161,7 @@ gs_main_init1(gs_main_instance * minst)
 	    gs_register_struct_root(mem, NULL, (void **)&the_gs_name_table,
 				    "the_gs_name_table");
 	}
-	{
-	    extern void obj_init(P1(i_ctx_t **));
-
-	    obj_init(&minst->i_ctx_p);	/* requires name_init */
-	}
+	obj_init(&minst->i_ctx_p, &idmem);	/* requires name_init */
 	minst->init_done = 1;
     }
 }
@@ -179,27 +181,27 @@ init2_make_string_array(i_ctx_t *i_ctx_p, const ref * srefs, const char *aname)
 void
 gs_main_init2(gs_main_instance * minst)
 {
+    i_ctx_t *i_ctx_p;
+
     gs_main_init1(minst);
+    i_ctx_p = minst->i_ctx_p;
     if (minst->init_done < 2) {
-	i_ctx_t *i_ctx_p = minst->i_ctx_p;
 	int code, exit_code;
 	ref error_object;
 
+	zop_init(i_ctx_p);
 	{
-	    extern void zop_init(P1(i_ctx_t *));
-
-	    zop_init(i_ctx_p);
-	}
-	{
+	    /*
+	     * gs_iodev_init has to be called here (late), rather than
+	     * with the rest of the library init procedures, because of
+	     * some hacks specific to MS Windows for patching the
+	     * stdxxx IODevices.
+	     */
 	    extern void gs_iodev_init(P1(gs_memory_t *));
 
 	    gs_iodev_init(imemory);
 	}
-	{
-	    extern void op_init(P1(i_ctx_t *));
-
-	    op_init(i_ctx_p);	/* requires obj_init */
-	}
+	op_init(i_ctx_p);	/* requires obj_init */
 
 	/* Set up the array of additional initialization files. */
 	init2_make_string_array(i_ctx_p, gs_init_file_array, "INITFILES");
@@ -216,6 +218,7 @@ gs_main_init2(gs_main_instance * minst)
 	    gs_exit_with_code((exit_code ? exit_code : 2), code);
 	}
 	minst->init_done = 2;
+	i_ctx_p = minst->i_ctx_p; /* init file may change it */
     }
     if (gs_debug_c(':'))
 	print_resource_usage(minst, &gs_imemory, "Start");
@@ -314,14 +317,16 @@ gs_main_set_lib_paths(gs_main_instance * minst)
 /* Open a file, using the search paths. */
 int
 gs_main_lib_open(gs_main_instance * minst, const char *file_name, ref * pfile)
-{				/* This is a separate procedure only to avoid tying up */
+{
+    /* This is a separate procedure only to avoid tying up */
     /* extra stack space while running the file. */
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
 #define maxfn 200
     byte fn[maxfn];
     uint len;
 
     return lib_file_open(file_name, strlen(file_name), fn, maxfn,
-			 &len, pfile);
+			 &len, pfile, imemory);
 }
 
 /* Open and execute a file. */
@@ -362,8 +367,8 @@ gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
     if (gs_init_string_sizeof == 0) {	/* Read from gs_init_file. */
 	code = gs_main_run_file_open(minst, gs_init_file, &ifile);
     } else {			/* Read from gs_init_string. */
-	code = file_read_string(gs_init_string, gs_init_string_sizeof,
-				&ifile);
+	code = file_read_string(gs_init_string, gs_init_string_sizeof, &ifile,
+				iimemory);
     }
     if (code < 0) {
 	*pexit_code = 255;
@@ -601,12 +606,15 @@ gs_pop_string(gs_main_instance * minst, gs_string * result)
 /* Free all resources and exit. */
 void
 gs_main_finit(gs_main_instance * minst, int exit_status, int code)
-{	/*
-	 * Previous versions of this code closed the devices in the
-	 * device list here.  Since these devices are now prototypes,
-	 * they cannot be opened, so they do not need to be closed;
-	 * alloc_restore_all will close dynamically allocated devices.
-	 */
+{
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
+
+    /*
+     * Previous versions of this code closed the devices in the
+     * device list here.  Since these devices are now prototypes,
+     * they cannot be opened, so they do not need to be closed;
+     * alloc_restore_all will close dynamically allocated devices.
+     */
     gs_exit_status = exit_status;	/* see above */
     gp_readline_finit(minst->readline_data);
     if (gs_debug_c(':'))
@@ -648,10 +656,17 @@ print_resource_usage(const gs_main_instance * minst, gs_dual_memory_t * dmem,
 
 	    if (mem != 0 && (i == 0 || mem != dmem->spaces_indexed[i - 1])) {
 		gs_memory_status_t status;
+		gs_ref_memory_t *mem_stable =
+		    (gs_ref_memory_t *)gs_memory_stable((gs_memory_t *)mem);
 
-		gs_memory_status((gs_memory_t *) mem, &status);
+		gs_memory_status((gs_memory_t *)mem, &status);
 		allocated += status.allocated;
 		used += status.used;
+		if (mem_stable != mem) {
+		    gs_memory_status((gs_memory_t *)mem_stable, &status);
+		    allocated += status.allocated;
+		    used += status.used;
+		}
 	    }
 	}
     }

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id: gsmalloc.c */
+
 /* C heap allocator */
 #include "malloc_.h"
 #include "gdebug.h"
@@ -41,6 +41,7 @@
 private gs_memory_proc_alloc_bytes(gs_heap_alloc_bytes);
 private gs_memory_proc_resize_object(gs_heap_resize_object);
 private gs_memory_proc_free_object(gs_heap_free_object);
+private gs_memory_proc_stable(gs_heap_stable);
 private gs_memory_proc_status(gs_heap_status);
 private gs_memory_proc_free_all(gs_heap_free_all);
 
@@ -62,6 +63,7 @@ private const gs_memory_procs_t gs_malloc_memory_procs =
     gs_heap_alloc_bytes,
     gs_heap_resize_object,
     gs_heap_free_object,
+    gs_heap_stable,
     gs_heap_status,
     gs_heap_free_all,
     gs_ignore_consolidate_free,
@@ -112,6 +114,7 @@ gs_malloc_memory_init(void)
     gs_malloc_memory_t *mem =
 	(gs_malloc_memory_t *)malloc(sizeof(gs_malloc_memory_t));
 
+    mem->stable_memory = 0;	/* just for tidyness, never referenced */
     mem->procs = gs_malloc_memory_procs;
     mem->allocated = 0;
     mem->limit = max_long;
@@ -362,6 +365,11 @@ private void
 gs_heap_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp,
 			client_name_t cname)
 {
+}
+private gs_memory_t *
+gs_heap_stable(gs_memory_t *mem)
+{
+    return mem;			/* heap memory is stable */
 }
 private void
 gs_heap_status(gs_memory_t * mem, gs_memory_status_t * pstat)

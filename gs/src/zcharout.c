@@ -20,7 +20,7 @@
 /* Common code for outline (Type 1 / 4 / 42) fonts */
 #include "ghost.h"
 #include "oper.h"
-#include "gschar.h"
+#include "gstext.h"
 #include "gxdevice.h"		/* for gxfont.h */
 #include "gxfont.h"
 #include "dstack.h"		/* only for systemdict */
@@ -30,11 +30,8 @@
 #include "idict.h"
 #include "ifont.h"
 #include "igstate.h"
+#include "iname.h"
 #include "store.h"
-
-/* Imported operators */
-int zsetcachedevice(P1(i_ctx_t *));	/* zchar.c */
-int zsetcachedevice2(P1(i_ctx_t *));	/* zchar.c */
 
 /*
  * Execute an outline defined by a PostScript procedure.
@@ -119,6 +116,31 @@ zchar_get_metrics(const gs_font_base * pbfont, const ref * pcnref,
     return metricsNone;
 }
 
+/* Get the vertical metrics for a character from Metrics2, if present. */
+int
+zchar_get_metrics2(const gs_font_base * pbfont, const ref * pcnref,
+		   double pwv[4])
+{
+    const ref *pfdict = &pfont_data(pbfont)->dict;
+    ref *pmdict;
+
+    if (dict_find_string(pfdict, "Metrics2", &pmdict) > 0) {
+	ref *pmvalue;
+
+	check_type_only(*pmdict, t_dictionary);
+	check_dict_read(*pmdict);
+	if (dict_find(pmdict, pcnref, &pmvalue) > 0) {
+	    check_read_type_only(*pmvalue, t_array);
+	    if (r_size(pmvalue) == 4) {
+		int code = num_params(pmvalue->value.refs + 3, 4, pwv);
+
+		return (code < 0 ? code : metricsSideBearingAndWidth);
+	    }
+	}
+    }
+    return metricsNone;
+}
+
 /*
  * Consult Metrics2 and CDevProc, and call setcachedevice[2].  Return
  * o_push_estack if we had to call a CDevProc, or if we are skipping the
@@ -132,14 +154,13 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 {
     os_ptr op = osp;
     const ref *pfdict = &pfont_data(pbfont)->dict;
-    ref *pmdict;
     ref *pcdevproc;
     int have_cdevproc;
     ref rpop;
-    bool metrics2 = false;
+    bool metrics2;
     op_proc_t cont;
     double w2[10];
-    gs_show_enum *penum = op_show_find(i_ctx_p);
+    gs_text_enum_t *penum = op_show_find(i_ctx_p);
 
     w2[0] = pwidth[0], w2[1] = pwidth[1];
 
@@ -160,26 +181,18 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 
     /* Check for Metrics2. */
 
-    if (dict_find_string(pfdict, "Metrics2", &pmdict) > 0) {
-	ref *pmvalue;
+    {
+	int code = zchar_get_metrics2(pbfont, pcnref, w2 + 6);
 
-	check_type_only(*pmdict, t_dictionary);
-	check_dict_read(*pmdict);
-	if (dict_find(pmdict, pcnref, &pmvalue) > 0) {
-	    check_read_type_only(*pmvalue, t_array);
-	    if (r_size(pmvalue) == 4) {
-		int code = num_params(pmvalue->value.refs + 3, 4, w2 + 6);
-
-		if (code < 0)
-		    return code;
-		metrics2 = true;
-	    }
-	}
+	if (code < 0)
+	    return code;
+	metrics2 = code > 0;
     }
+
     /* Check for CDevProc or "short-circuiting". */
 
     have_cdevproc = dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0;
-    if (have_cdevproc || gs_show_width_only(penum)) {
+    if (have_cdevproc || zchar_show_width_only(penum)) {
 	int i;
 	op_proc_t zsetc;
 	int nparams;
@@ -219,8 +232,8 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 	return o_push_estack;
     } {
 	int code =
-	(metrics2 ? gs_setcachedevice2_double(penum, igs, w2) :
-	 gs_setcachedevice_double(penum, igs, w2));
+	    (metrics2 ? gs_text_setcachedevice2(penum, w2) :
+	     gs_text_setcachedevice(penum, w2));
 
 	if (code < 0)
 	    return code;
@@ -235,4 +248,52 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 	make_real(op, psb[1]);
     }
     return cont(i_ctx_p);
+}
+
+/*
+ * Get the CharString data corresponding to a glyph.  Return typecheck
+ * if it isn't a string.
+ */
+int
+zchar_charstring_data(gs_font *font, const ref *pgref, gs_const_string *pstr)
+{
+    ref *pcstr;
+
+    if (dict_find(&pfont_data(font)->CharStrings, pgref, &pcstr) <= 0)
+	return_error(e_undefined);
+    check_type_only(*pcstr, t_string);
+    pstr->data = pcstr->value.const_bytes;
+    pstr->size = r_size(pcstr);
+    return 0;
+}
+
+/*
+ * Enumerate the next glyph from a directory.  This is essentially a
+ * wrapper around dict_first/dict_next to implement the enumerate_glyph
+ * font procedure.
+ */
+int
+zchar_enumerate_glyph(const ref *prdict, int *pindex, gs_glyph *pglyph)
+{
+    int index = *pindex - 1;
+    ref elt[2];
+
+    if (index < 0)
+	index = dict_first(prdict);
+next:
+    index = dict_next(prdict, index, elt);
+    *pindex = index + 1;
+    if (index >= 0) {
+	switch (r_type(elt)) {
+	    case t_integer:
+		*pglyph = gs_min_cid_glyph + elt[0].value.intval;
+		break;
+	    case t_name:
+		*pglyph = name_index(elt);
+		break;
+	    default:		/* can't handle it */
+		goto next;
+	}
+    }
+    return 0;
 }

@@ -37,6 +37,7 @@
 #include "ostack.h"		/* for accumulating proc bodies; */
 					/* must precede iscan.h */
 #include "iscan.h"		/* defines interface */
+#include "iscanbin.h"
 #include "iscannum.h"
 #include "istream.h"
 #include "istruct.h"		/* for RELOC_REF_VAR */
@@ -47,13 +48,6 @@
 
 #define recognize_btokens()\
   (ref_binary_object_format.value.intval != 0 && level2_enabled)
-
-/*
- * Procedure for binary tokens.  Only called if recognize_btokens() is true;
- * returns e_unregistered if Level 2 features are not included.  Returns 0
- * or scan_BOS on success, <0 on failure.
- */
-int scan_binary_token(P4(i_ctx_t *, stream *, ref *, scanner_state *));
 
 #ifdef DEBUG
 /* Dummy comment processing procedure for testing. */
@@ -87,11 +81,14 @@ int (*scan_comment_proc) (P2(const byte *, uint)) = NULL;
 /* ------ Dynamic strings ------ */
 
 /* Begin collecting a dynamically allocated string. */
-#define dynamic_init(pda, mem)\
-	((pda)->is_dynamic = false,\
-	 (pda)->limit = (pda)->buf + da_buf_size,\
-	 (pda)->next = (pda)->base = (pda)->buf,\
-	 (pda)->memory = (mem))
+inline private void
+dynamic_init(da_ptr pda, gs_memory_t *mem)
+{
+    pda->is_dynamic = false;
+    pda->limit = pda->buf + da_buf_size;
+    pda->next = pda->base = pda->buf;
+    pda->memory = mem;
+}
 
 /* Free a dynamic string. */
 private void
@@ -167,7 +164,7 @@ dynamic_save(da_ptr pda)
 
 /* Finish collecting a dynamic string. */
 private int
-dynamic_make_string(ref * pref, da_ptr pda, byte * next)
+dynamic_make_string(i_ctx_t *i_ctx_p, ref * pref, da_ptr pda, byte * next)
 {
     uint size = (pda->next = next) - pda->base;
     int code = dynamic_resize(pda, size);
@@ -183,36 +180,38 @@ dynamic_make_string(ref * pref, da_ptr pda, byte * next)
 /* ------ Main scanner ------ */
 
 /* GC procedures */
-#define ssptr ((scanner_state *)vptr)
 #define ssarray ssptr->s_ss.binary.bin_array
 private 
 CLEAR_MARKS_PROC(scanner_clear_marks)
 {
+    scanner_state *const ssptr = vptr;
+
     r_clear_attrs(&ssarray, l_mark);
 }
 private 
-ENUM_PTRS_BEGIN(scanner_enum_ptrs) return 0;
-
+ENUM_PTRS_WITH(scanner_enum_ptrs, scanner_state *ssptr) return 0;
 case 0:
-if (ssptr->s_scan_type == scanning_none ||
-    !ssptr->s_da.is_dynamic
-)
-    ENUM_RETURN(0);
-ssptr->s_da.str.data = ssptr->s_da.base;
-ssptr->s_da.str.size = da_size(&ssptr->s_da);
-ENUM_RETURN_STRING_PTR(scanner_state, s_da.str);
+    if (ssptr->s_scan_type == scanning_none ||
+	!ssptr->s_da.is_dynamic
+	)
+	ENUM_RETURN(0);
+    return ENUM_STRING2(ssptr->s_da.base, da_size(&ssptr->s_da));
 case 1:
-if (ssptr->s_scan_type != scanning_binary)
-    return 0;
-ENUM_RETURN_REF(&ssarray);
+    if (ssptr->s_scan_type != scanning_binary)
+	return 0;
+    ENUM_RETURN_REF(&ssarray);
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(scanner_reloc_ptrs)
+private RELOC_PTRS_WITH(scanner_reloc_ptrs, scanner_state *ssptr)
 {
     if (ssptr->s_scan_type != scanning_none && ssptr->s_da.is_dynamic) {
-	RELOC_STRING_VAR(ssptr->s_da.str);
-	ssptr->s_da.limit = ssptr->s_da.str.data + ssptr->s_da.str.size;
-	ssptr->s_da.next = ssptr->s_da.str.data + (ssptr->s_da.next - ssptr->s_da.base);
-	ssptr->s_da.base = ssptr->s_da.str.data;
+	gs_string sda;
+
+	sda.data = ssptr->s_da.base;
+	sda.size = da_size(&ssptr->s_da);
+	RELOC_STRING_VAR(sda);
+	ssptr->s_da.limit = sda.data + sda.size;
+	ssptr->s_da.next = sda.data + (ssptr->s_da.next - ssptr->s_da.base);
+	ssptr->s_da.base = sda.data;
     }
     if (ssptr->s_scan_type == scanning_binary) {
 	RELOC_REF_VAR(ssarray);
@@ -220,7 +219,6 @@ private RELOC_PTRS_BEGIN(scanner_reloc_ptrs)
     }
 }
 RELOC_PTRS_END
-#undef ssptr
 /* Structure type */
 public_st_scanner_state();
 
@@ -548,7 +546,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		case EOFC:
 		    ;
 	    }
-	    retcode = dynamic_make_string(myref, &da, da.next);
+	    retcode = dynamic_make_string(i_ctx_p, myref, &da, da.next);
 	    if (retcode < 0) {	/* VMerror */
 		sputback(s);	/* rescan ) */
 		scan_type = scanning_string;
@@ -603,8 +601,8 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		    make_empty_array(myref, 0);
 		    ref_stack_pop(&o_stack, size);
 		} else if (ref_array_packing.value.boolval) {
-		    retcode = make_packed_array(myref, &o_stack,
-						size, "scanner(packed)");
+		    retcode = make_packed_array(myref, &o_stack, size,
+						idmemory, "scanner(packed)");
 		    if (retcode < 0) {	/* must be VMerror */
 			osp++;
 			scan_putback();
@@ -622,8 +620,8 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 			scan_type = scanning_none;
 			goto pause_ret;
 		    }
-		    retcode = ref_stack_store(&o_stack, myref,
-					      size, 0, 1, false, "scanner");
+		    retcode = ref_stack_store(&o_stack, myref, size, 0, 1,
+					      false, idmemory, "scanner");
 		    if (retcode < 0) {
 			ifree_ref_array(myref, "scanner(proc)");
 			sreturn(retcode);
@@ -791,13 +789,13 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	case '9':
 	case '.':
 	    sign = 0;
-	  nr:			/*
-				 * Skip a leading sign, if any, by conditionally passing
-				 * sptr + 1 rather than sptr.  Also, if the last character
-				 * in the buffer is a CR, we must stop the scan 1 character
-				 * early, to be sure that we can test for CR+LF within the
-				 * buffer, by passing endptr rather than endptr + 1.
-				 */
+    nr:	    /*
+	     * Skip a leading sign, if any, by conditionally passing
+	     * sptr + 1 rather than sptr.  Also, if the last character
+	     * in the buffer is a CR, we must stop the scan 1 character
+	     * early, to be sure that we can test for CR+LF within the
+	     * buffer, by passing endptr rather than endptr + 1.
+	     */
 	    retcode = scan_number(sptr + (sign & 1),
 		    endptr /*(*endptr == char_CR ? endptr : endptr + 1) */ ,
 				  sign, myref, &newptr);
@@ -806,6 +804,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		if (*sptr == char_CR && sptr[1] == char_EOL)
 		    sptr++;
 		retcode = 0;
+		ref_mark_new(myref);
 		break;
 	    }
 	    name_type = 0;
@@ -1009,9 +1008,10 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 
 		scan_sign(sign, base);
 		retcode = scan_number(base, daptr, sign, myref, &newptr);
-		if (retcode == 1)
+		if (retcode == 1) {
+		    ref_mark_new(myref);
 		    retcode = 0;
-		else if (retcode != e_syntaxerror) {
+		} else if (retcode != e_syntaxerror) {
 		    dynamic_free(&da);
 		    if (name_type == 2)
 			sreturn(e_syntaxerror);
@@ -1036,7 +1036,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		}
 	    } else {
 		retcode = name_ref(da.base, (uint) (daptr - da.base),
-				   myref, 1);
+				   myref, !s->foreign);
 	    }
 	    /* Done scanning.  Check for preceding /'s. */
 	    if (retcode < 0) {

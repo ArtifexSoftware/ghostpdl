@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,8 +24,6 @@
 #include "gxdevmem.h"		/* semi-public definitions */
 #include "gdevmem.h"		/* private definitions */
 
-extern dev_proc_strip_copy_rop(mem_mono_strip_copy_rop);
-
 /* Optionally, use the slow RasterOp implementations for testing. */
 /*#define USE_COPY_ROP */
 
@@ -35,23 +33,12 @@ extern dev_proc_strip_copy_rop(mem_mono_strip_copy_rop);
 
 /* ================ Standard (byte-oriented) device ================ */
 
-/* We went to a lot of trouble to optimize mem_mono_tile_rectangle. */
-/* It has a substantial effect on the total time at high resolutions. */
-/* However, it takes quite a lot of code, so we omit it on 16-bit systems. */
-#define OPTIMIZE_TILE (arch_sizeof_int > 2)
-
 /* Procedures */
 private dev_proc_map_rgb_color(mem_mono_map_rgb_color);
 private dev_proc_map_color_rgb(mem_mono_map_color_rgb);
 private dev_proc_copy_mono(mem_mono_copy_mono);
 private dev_proc_fill_rectangle(mem_mono_fill_rectangle);
-
-#if OPTIMIZE_TILE
 private dev_proc_strip_tile_rectangle(mem_mono_strip_tile_rectangle);
-
-#else
-#  define mem_mono_strip_tile_rectangle gx_default_strip_tile_rectangle
-#endif
 
 /* The device descriptor. */
 /* The instance is public. */
@@ -471,8 +458,6 @@ mem_mono_copy_mono(gx_device * dev,
 #endif /* !USE_COPY_ROP */
 }
 
-#if OPTIMIZE_TILE		/**************** *************** */
-
 /* Strip-tile with a monochrome halftone. */
 /* This is a performance bottleneck for monochrome devices, */
 /* so we re-implement it, even though it takes a lot of code. */
@@ -694,8 +679,6 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
     return 0;
 #endif /* !USE_COPY_ROP */
 }
-
-#endif /**************** *************** */
 
 /* ================ "Word"-oriented device ================ */
 

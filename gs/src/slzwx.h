@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -65,7 +65,9 @@ extern_st(st_LZW_state);
   ((ss)->InitialCodeLength = 8,\
    (ss)->FirstBitLowOrder = false,\
    (ss)->BlockData = false,\
-   (ss)->EarlyChange = 1)
+   (ss)->EarlyChange = 1,\
+   /* Clear pointers */\
+   (ss)->table.decode /*=encode*/ = 0)
 extern const stream_template s_LZWD_template;
 extern const stream_template s_LZWE_template;
 

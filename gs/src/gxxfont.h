@@ -99,11 +99,11 @@ struct gx_xfont_procs_s {
     gs_memory_t *mem))
     xfont_proc_lookup_font((*lookup_font));
 
-    /* Convert a character name to an xglyph code. */
-    /* encoding_index is 0 for StandardEncoding, */
-    /* 1 for ISOLatin1Encoding, 2 for SymbolEncoding, */
-    /* and -1 for any other encoding.  Either chr or glyph */
-    /* may be absent (gs_no_char/glyph), but not both. */
+    /*
+     * Convert a character name to an xglyph code.  encoding_index is
+     * actually a gs_encoding_index_t.  Either chr or glyph may be absent
+     * (gs_no_char/glyph), but not both.
+     */
     /* OBSOLETE as of release 3.43, but still supported. */
 
 #define xfont_proc_char_xglyph(proc)\
@@ -156,11 +156,11 @@ struct gx_xfont_procs_s {
  * to its device:
  */
 #define gs__st_dev_ptrs1(scope_st, stname, stype, sname, penum, preloc, de)\
-  private ENUM_PTRS_BEGIN(penum) return 0;\
-    case 0: ENUM_RETURN(gx_device_enum_ptr((gx_device *)(((stype *)vptr)->de)));\
+  private ENUM_PTRS_WITH(penum, stype *xfptr) return 0;\
+    case 0: ENUM_RETURN(gx_device_enum_ptr((gx_device *)(xfptr->de)));\
   ENUM_PTRS_END\
-  private RELOC_PTRS_BEGIN(preloc) ;\
-    ((stype *)vptr)->de = (void *)gx_device_reloc_ptr((gx_device *)(((stype *)vptr)->de), gcst);\
+  private RELOC_PTRS_WITH(preloc, stype *xfptr) ;\
+    xfptr->de = (void *)gx_device_reloc_ptr((gx_device *)(xfptr->de), gcst);\
   RELOC_PTRS_END\
   gs__st_composite_only(scope_st, stname, stype, sname, penum, preloc)
 /*

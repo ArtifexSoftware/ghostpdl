@@ -46,10 +46,10 @@
 #define USE_FILL_ADJUSTMENT
 
 #ifdef USE_FILL_ADJUSTMENT
-#  define stroke_adjustment(thin, pis, xy)\
+#  define STROKE_ADJUSTMENT(thin, pis, xy)\
      (thin ? fixed_0 : (pis)->fill_adjust.xy)
 #else
-#  define stroke_adjustment(thin, pis, xy) fixed_0
+#  define STROKE_ADJUSTMENT(thin, pis, xy) fixed_0
 #endif
 
 /*
@@ -86,6 +86,7 @@
  * check and covers many common cases.  Clients that care always have the
  * option of using strokepath to get an exact result.
  */
+private float join_expansion_factor(P2(const gs_imager_state *, gs_line_join));
 int
 gx_stroke_path_expansion(const gs_imager_state * pis, const gx_path * ppath,
 			 gs_fixed_point * ppt)
@@ -127,14 +128,20 @@ gx_stroke_path_expansion(const gs_imager_state * pis, const gx_path * ppath,
 	result = 0;		/* exact result */
     }
 not_exact:
-    if (result)
-	expand *=
-	    (!gx_path_has_curves(ppath) && gx_path_subpath_count(ppath) <= 1 &&
-	     (psub == 0 || (pseg = psub->next) == 0 ||
-	      (pseg = pseg->next) == 0 || pseg->type == s_line_close) ? 1.0 :
-	     pis->line_params.join == gs_join_miter ?
-	     pis->line_params.miter_limit :
-	     pis->line_params.join == gs_join_triangle ? 2.0 : 1.0);
+    if (result) {
+	if (!gx_path_has_curves(ppath) && gx_path_subpath_count(ppath) <= 1 &&
+	    (psub == 0 || (pseg = psub->next) == 0 ||
+	     (pseg = pseg->next) == 0 || pseg->type == s_line_close))
+	    DO_NOTHING;
+	else {
+	    float factor = join_expansion_factor(pis, pis->line_params.join);
+
+	    if (pis->line_params.curve_join >= 0)
+		factor = max(factor, join_expansion_factor(pis,
+				(gs_line_join)pis->line_params.curve_join));
+	    expand *= factor;
+	}
+    }
 	    
     /* Short-cut gs_bbox_transform. */
     {
@@ -150,6 +157,15 @@ not_exact:
     }
 
     return result;
+}
+private float
+join_expansion_factor(const gs_imager_state *pis, gs_line_join join)
+{
+    switch (join) {
+    case gs_join_miter: return pis->line_params.miter_limit;
+    case gs_join_triangle: return 2.0;
+    default: return 1.0;
+    }
 }
 
 /*
@@ -196,10 +212,10 @@ typedef partial_line *pl_ptr;
 /* Other forward declarations */
 private bool width_is_thin(P1(pl_ptr));
 private void adjust_stroke(P3(pl_ptr, const gs_imager_state *, bool));
-private int line_join_points(P5(const gx_line_params * pgs_lp,
+private int line_join_points(P6(const gx_line_params * pgs_lp,
 				pl_ptr plp, pl_ptr nplp,
 				gs_fixed_point * join_points,
-				const gs_matrix * pmat));
+				const gs_matrix * pmat, gs_line_join join));
 private void compute_caps(P1(pl_ptr));
 private int add_points(P4(gx_path *, const gs_fixed_point *,
 			  int, bool));
@@ -221,10 +237,10 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
 /* Fill a partial stroked path.  Free variables: */
 /* to_path, stroke_path_body, fill_params, always_thin, pis, dev, pdevc, */
 /* code, ppath, exit(label). */
-#define fill_stroke_path(thin)\
+#define FILL_STROKE_PATH(thin)\
   if(to_path==&stroke_path_body && !gx_path_is_void(&stroke_path_body)) {\
-    fill_params.adjust.x = stroke_adjustment(thin, pis, x);\
-    fill_params.adjust.y = stroke_adjustment(thin, pis, y);\
+    fill_params.adjust.x = STROKE_ADJUSTMENT(thin, pis, x);\
+    fill_params.adjust.y = STROKE_ADJUSTMENT(thin, pis, y);\
     code = gx_fill_path_only(to_path, dev, pis, &fill_params, pdevc, NULL);\
     gx_path_free(&stroke_path_body, "fill_stroke_path");\
     if ( code < 0 ) goto exit;\
@@ -239,9 +255,10 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
  * with an appropriate cap.
  */
 #define stroke_line_proc(proc)\
-  int proc(P10(gx_path *, int, pl_ptr, pl_ptr, const gx_device_color *,\
+  int proc(P11(gx_path *, int, pl_ptr, pl_ptr, const gx_device_color *,\
 	       gx_device *, const gs_imager_state *,\
-	       const gx_stroke_params *, const gs_fixed_rect *, int))
+	       const gx_stroke_params *, const gs_fixed_rect *, int,\
+	       gs_line_join))
 typedef stroke_line_proc((*stroke_line_proc_t));
 
 private stroke_line_proc(stroke_add);
@@ -305,8 +322,22 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	 (uniform = 0,
 	  reflected = xy * yx > xx * yy,
 	  orient_other));
+    /*
+     * Formerly, there was a hack here that only treated the joins of
+     * flattened curves specially if the dot length was non-zero.
+     * This was a surrogate to detect use of the library by PCL
+     * interpreters.  We have replaced this hack with an explicit
+     * curve join parameter in the graphics state.
+     */
+#if 0
     segment_notes not_first =
 	(!is_fzero(pis->line_params.dot_length) ? sn_not_first : sn_none);
+#else
+    const segment_notes not_first = sn_not_first;
+#endif
+    gs_line_join curve_join =
+	(pgs_lp->curve_join >= 0 ? (gs_line_join)pgs_lp->curve_join :
+	 pgs_lp->join == gs_join_none ? gs_join_bevel : pgs_lp->join);
     float line_width = pgs_lp->half_width;	/* (*half* the line width) */
     bool always_thin;
     double line_width_and_scale, device_line_width_scale;
@@ -394,7 +425,7 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	 * If there is a clipping path, set up a clipping device.
 	 */
 	if (pcpath) {
-	    gx_make_clip_device(&cdev, &cdev, gx_cpath_list(pcpath));
+	    gx_make_clip_device(&cdev, gx_cpath_list(pcpath));
 	    cdev.target = dev;
 	    cdev.max_fill_band = dev->max_fill_band;
 	    dev = (gx_device *) & cdev;
@@ -655,12 +686,12 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		}
 	    }
 	    if (index++) {
+		gs_line_join join =
+		    (pseg->notes & not_first ? curve_join : pgs_lp->join);
 		int first;
 		pl_ptr lptr;
 
-		if (pgs_lp->join == gs_join_none &&
-		    !(pseg->notes & not_first)
-		    ) {
+		if (join == gs_join_none) {
 		    /* Fake the end of a subpath so we get */
 		    /* caps instead of joins. */
 		    first = 0;
@@ -672,10 +703,10 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		}
 		code = (*line_proc) (to_path, first, &pl_prev, lptr,
 				     pdevc, dev, pis, params, &cbox,
-				     uniform);
+				     uniform, join);
 		if (code < 0)
 		    goto exit;
-		fill_stroke_path(always_thin);
+		FILL_STROKE_PATH(always_thin);
 	    } else
 		pl_first = pl;
 	    pl_prev = pl;
@@ -683,20 +714,20 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	}
 	if (index) {
 	    /* If closed, join back to start, else cap. */
+	    gs_line_join join =
+		((pseg == 0 ? (const segment *)spath->first_subpath :
+		  pseg)->notes & not_first ? curve_join : pgs_lp->join);
 	    /* For some reason, the Borland compiler requires the cast */
 	    /* in the following statement. */
 	    pl_ptr lptr =
-		(!is_closed ||
-		 (pgs_lp->join == gs_join_none &&
-		  !((pseg == 0 ? (const segment *)spath->first_subpath :
-		     pseg)->notes & not_first)) ?
+		(!is_closed || join == gs_join_none ?
 		 (pl_ptr) 0 : (pl_ptr) & pl_first);
 
-	    code = (*line_proc) (to_path, index - 1, &pl_prev, lptr,
-				 pdevc, dev, pis, params, &cbox, uniform);
+	    code = (*line_proc) (to_path, index - 1, &pl_prev, lptr, pdevc,
+				 dev, pis, params, &cbox, uniform, join);
 	    if (code < 0)
 		goto exit;
-	    fill_stroke_path(always_thin);
+	    FILL_STROKE_PATH(always_thin);
 	}
 	psub = (const subpath *)pseg;
     }
@@ -772,11 +803,11 @@ adjust_stroke(pl_ptr plp, const gs_imager_state * pis, bool thin)
     if (any_abs(plp->width.x) < any_abs(plp->width.y)) {
 	/* More horizontal stroke */
 	pw = &plp->width.y, pov = &plp->o.p.y, pev = &plp->e.p.y;
-	adj2 = stroke_adjustment(thin, pis, y) << 1;
+	adj2 = STROKE_ADJUSTMENT(thin, pis, y) << 1;
     } else {
 	/* More vertical stroke */
 	pw = &plp->width.x, pov = &plp->o.p.x, pev = &plp->e.p.x;
-	adj2 = stroke_adjustment(thin, pis, x) << 1;
+	adj2 = STROKE_ADJUSTMENT(thin, pis, x) << 1;
     }
     /* Round the larger component of the width up or down, */
     /* whichever way produces a result closer to the correct width. */
@@ -876,9 +907,9 @@ set_thin_widths(register pl_ptr plp)
 /* Treat no join the same as a bevel join. */
 private int
 stroke_fill(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
-const gx_device_color * pdevc, gx_device * dev, const gs_imager_state * pis,
-	    const gx_stroke_params * params, const gs_fixed_rect * pbbox,
-	    int uniform)
+	    const gx_device_color * pdevc, gx_device * dev,
+	    const gs_imager_state * pis, const gx_stroke_params * params,
+	    const gs_fixed_rect * pbbox, int uniform, gs_line_join join)
 {
     const fixed lix = plp->o.p.x;
     const fixed liy = plp->o.p.y;
@@ -918,7 +949,6 @@ const gx_device_color * pdevc, gx_device * dev, const gs_imager_state * pis,
     {
 	const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
 	gs_line_cap cap = pgs_lp->cap;
-	gs_line_join join = pgs_lp->join;
 
 	if (!plp->thin && (nplp == 0 || !nplp->thin)
 	    && ((first != 0 && nplp != 0) || cap == gs_cap_butt
@@ -938,7 +968,7 @@ const gx_device_color * pdevc, gx_device * dev, const gs_imager_state * pis,
 	    else
 		code = line_join_points(pgs_lp, plp, nplp, points + npoints,
 					(uniform ? (gs_matrix *) 0 :
-					 &ctm_only(pis)));
+					 &ctm_only(pis)), join);
 	    if (code < 0)
 		return code;
 	    if (nplp != 0) {
@@ -985,15 +1015,15 @@ const gx_device_color * pdevc, gx_device * dev, const gs_imager_state * pis,
     }
     /* General case: construct a path for the fill algorithm. */
     return stroke_add(ppath, first, plp, nplp, pdevc, dev, pis, params,
-		      pbbox, uniform);
+		      pbbox, uniform, join);
 }
 
 /* Add a segment to the path.  This handles all the complex cases. */
 private int
 stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
-const gx_device_color * pdevc, gx_device * dev, const gs_imager_state * pis,
-	const gx_stroke_params * params, const gs_fixed_rect * ignore_pbbox,
-	   int uniform)
+	   const gx_device_color * pdevc, gx_device * dev,
+	   const gs_imager_state * pis, const gx_stroke_params * params,
+	   const gs_fixed_rect * ignore_pbbox, int uniform, gs_line_join join)
 {
     const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
     gs_fixed_point points[8];
@@ -1031,7 +1061,7 @@ const gx_device_color * pdevc, gx_device * dev, const gs_imager_state * pis,
 	    goto done;
 	}
 	code = cap_points(pgs_lp->cap, &plp->e, points + npoints);
-    } else if (pgs_lp->join == gs_join_round) {
+    } else if (join == gs_join_round) {
 	ASSIGN_POINT(&points[npoints], plp->e.co);
 	++npoints;
 	if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
@@ -1042,7 +1072,8 @@ const gx_device_color * pdevc, gx_device * dev, const gs_imager_state * pis,
 	code = cap_points(gs_cap_butt, &plp->e, points + npoints);
     else			/* non-round join */
 	code = line_join_points(pgs_lp, plp, nplp, points + npoints,
-			      (uniform ? (gs_matrix *) 0 : &ctm_only(pis)));
+				(uniform ? (gs_matrix *) 0 : &ctm_only(pis)),
+				join);
     if (code < 0)
 	return code;
     code = add_points(ppath, points, npoints + code, moveto_first);
@@ -1075,10 +1106,9 @@ add_points(gx_path * ppath, const gs_fixed_point * points, int npoints,
 /* the miter check. */
 private int
 line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
-		 gs_fixed_point * join_points, const gs_matrix * pmat)
+		 gs_fixed_point * join_points, const gs_matrix * pmat,
+		 gs_line_join join)
 {
-    gs_line_join join = pgs_lp->join;
-
 #define jp1 join_points[0]
 #define np1 join_points[1]
 #define np2 join_points[2]
@@ -1336,8 +1366,7 @@ add_round_cap(gx_path * ppath, const_ep_ptr endp)
 /* Compute the points for a non-round cap. */
 /* Return the number of points. */
 private int
-cap_points(gs_line_cap type, const_ep_ptr endp,
-	   gs_fixed_point * pts /* [3] */ )
+cap_points(gs_line_cap type, const_ep_ptr endp, gs_fixed_point *pts /*[3]*/)
 {
 #define PUT_POINT(i, px, py)\
   pts[i].x = (px), pts[i].y = (py)

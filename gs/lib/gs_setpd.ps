@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -165,24 +165,27 @@ level2dict begin
   /PageSize 0
   /PolicyReport {pop} bind
 .dicttomark readonly def
+% Note that the values of .requiredattrs are executed, not just fetched.
 /.requiredattrs mark
   /PageOffset [0 0] readonly
 % We define InputAttributes and OutputAttributes with a single
 % dummy media type that handles pages of any size.
 % Devices that care will override this.
-  /InputAttributes mark 0
+  /InputAttributes {
+    mark 0
 	% Since sizes match within 5 user units, we need to set the smallest
 	% PageSize to 6 units so that [0 0] will fail.
-    mark /PageSize [6 dup 16#7ffff dup] .dicttomark readonly
-  .dicttomark readonly
+    mark /PageSize [6 dup 16#7ffff dup] .dicttomark
+    .dicttomark
+  }
   (%MediaSource) 0
-  /OutputAttributes mark 0
-    mark .dicttomark readonly
-  .dicttomark readonly
+  /OutputAttributes {
+    mark 0 mark .dicttomark readonly .dicttomark
+  }
   (%MediaDestination) 0
-  /Install {.callinstall} bind
-  /BeginPage {.callbeginpage} bind
-  /EndPage {.callendpage} bind
+  /Install {{.callinstall}} bind
+  /BeginPage {{.callbeginpage}} bind
+  /EndPage {{.callendpage}} bind
   /Policies .defaultpolicies
 .dicttomark readonly def
 
@@ -194,22 +197,34 @@ level2dict begin
   /.MediaSize dup		% because it changes when PageSize is set
   /PageCount dup
 .dicttomark readonly def
-/.makecurrentpagedevice		% - .makecurrentpagedevice <dict>
- { currentdevice null .getdeviceparams
-	% In case of duplicate keys, .dicttomark takes the entry
-	% lower on the stack, so we can just append the defaults here.
-   .requiredattrs { } forall .dicttomark
-   dup .setpagedevice
- } bind def
-/currentpagedevice
- { .currentpagedevice
-    { dup length 0 eq
-       { pop .makecurrentpagedevice
-       }
-       {	% If any of the dynamic keys have changed,
+/.makecurrentpagedevice {	% - .makecurrentpagedevice <dict>
+  currentdevice null .getdeviceparams
+	% Make the dictionary large enough to add defaulted entries.
+  counttomark 2 idiv .requiredattrs length add dict
+  counttomark 2 idiv { dup 4 2 roll put } repeat exch pop
+	% Add any missing required attributes.
+	% Make a writable and (if possible) local copy of any default
+	% dictionaries, to work around a bug in the output of WordPerfect,
+	% which assumes that these dictionaries are writable and local.
+  .currentglobal exch dup gcheck .setglobal
+  .requiredattrs {
+    2 index 2 index known {
+      pop pop
+    } {
+      exec 2 index 3 1 roll put
+    } ifelse
+  } forall exch .setglobal
+  dup .setpagedevice
+} bind def
+/currentpagedevice {
+  .currentpagedevice {
+    dup length 0 eq {
+      pop .makecurrentpagedevice
+    } {
+		% If any of the dynamic keys have changed,
 		% we must update the page device dictionary.
-	 currentdevice //.dynamicppkeys .getdeviceparams .dicttomark
-	  {	% Stack: current key value
+      currentdevice //.dynamicppkeys .getdeviceparams .dicttomark {
+		% Stack: current key value
 	    2 index 2 index .knownget { 1 index ne } { true } ifelse
 	     { 2 index wcheck not
 		{	% This is the first entry being updated.
@@ -223,8 +238,24 @@ level2dict begin
 	     { pop pop
 	     }
 	    ifelse
-	  }
-	 forall
+      } forall
+		% If the dictionary was global and is now local, copy
+		% any global subsidiary dictionaries to local VM.  This
+		% too is to work around the Word Perfect bug (see above).
+      dup gcheck not {
+	dup {
+	  dup type /dicttype eq { dup gcheck } { false } ifelse {
+		% Copy-on-write, see above.
+	    2 index wcheck not {
+	      3 -1 roll dup length dict .copydict
+	      3 1 roll
+	    } if
+	    .copytree 2 index 3 1 roll put
+	  } {
+	    pop pop
+	  } ifelse
+	} forall
+      } if
 		% We would like to do a .setpagedevice so we don't keep
 		% re-creating the dictionary.  Unfortunately, the effect
 		% of this is that if any dynamic key changes (PageCount
@@ -233,12 +264,17 @@ level2dict begin
 		% Therefore, we make the dictionary read-only, but
 		% we don't store it away.  I.e., NOT:
 		% dup wcheck { .setpagedevice .currentpagedevice pop } if
-	 readonly
-       }
-      ifelse
-    }
-   if
- } bind odef
+      readonly
+    } ifelse
+  } if
+} bind odef
+
+% Copy a dictionary recursively.
+/.copytree {	% <dict> .copytree <dict'>
+  dup length dict exch {
+    dup type /dicttype eq { .copytree } if 2 index 3 1 roll put
+  } forall
+} bind def
 
 % The implementation of setpagedevice is quite complex.  Currently,
 % everything but the media matching algorithm is implemented here.
@@ -531,7 +567,7 @@ DEBUG { (Checking.\n) print pstack flush } if
     { exch pop .defaultdeviceparams
 		% In case of duplicate keys, .dicttomark takes the entry
 		% lower on the stack, so we can just append the defaults here.
-      .requiredattrs { } forall .dicttomark
+      .requiredattrs { exec } forall .dicttomark
     }
    ifelse
 

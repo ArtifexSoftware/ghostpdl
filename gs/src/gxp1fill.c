@@ -30,7 +30,7 @@
 #include "gxdevmem.h"
 #include "gxclip2.h"
 #include "gxpcolor.h"
-#include "gxp1fill.h"
+#include "gxp1impl.h"
 
 /* Define the state for tile filling. */
 typedef struct tile_fill_state_s {
@@ -90,7 +90,7 @@ tile_fill_init(tile_fill_state_t * ptfs, const gx_device_color * pdevc,
 		  m_tile->tmask.rep_height);
     } else
 	px = py = 0;
-    return tile_clip_initialize(&ptfs->cdev, ptfs->tmask, dev, px, py);
+    return tile_clip_initialize(&ptfs->cdev, ptfs->tmask, dev, px, py, NULL);
 }
 
 /*

@@ -208,6 +208,20 @@ cs_proc_install_cspace(gx_no_install_cspace);
 cs_proc_adjust_cspace_count(gx_no_adjust_cspace_count);
 cs_proc_adjust_color_count(gx_no_adjust_color_count);
 
+/*
+ * Define the implementation procedures for the standard device color
+ * spaces.  These are implemented in gxcmap.c.
+ */
+cs_proc_remap_color(gx_remap_DeviceGray);
+cs_proc_concretize_color(gx_concretize_DeviceGray);
+cs_proc_remap_concrete_color(gx_remap_concrete_DGray);
+cs_proc_remap_color(gx_remap_DeviceRGB);
+cs_proc_concretize_color(gx_concretize_DeviceRGB);
+cs_proc_remap_concrete_color(gx_remap_concrete_DRGB);
+cs_proc_remap_color(gx_remap_DeviceCMYK);
+cs_proc_concretize_color(gx_concretize_DeviceCMYK);
+cs_proc_remap_concrete_color(gx_remap_concrete_DCMYK);
+
 /* Define the allocator type for color spaces. */
 extern_st(st_color_space);
 

@@ -24,8 +24,6 @@
 #include "gsstruct.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"
-#include "gxchar.h"		/* for gs_type1_init in gstype1.h */
-				/* (should only be gschar.h) */
 #include "gxdevice.h"		/* for gxfont.h */
 #include "gxfont.h"
 #include "gxfont1.h"
@@ -46,7 +44,7 @@
 #include "iname.h"
 #include "store.h"
 
-/* ---------------- Inline utilities ---------------- */
+/* ---------------- Utilities ---------------- */
 
 /* Test whether a font is a CharString font. */
 private bool
@@ -55,6 +53,22 @@ font_uses_charstrings(const gs_font *pfont)
     return (pfont->FontType == ft_encrypted ||
 	    pfont->FontType == ft_encrypted2 ||
 	    pfont->FontType == ft_disk_based);
+}
+
+/* Initialize a Type 1 interpreter. */
+private int
+type1_exec_init(gs_type1_state *pcis, gs_text_enum_t *penum,
+		gs_state *pgs, gs_font_type1 *pfont1)
+{
+    /*
+     * We have to disregard penum->pis and penum->path, and render to
+     * the current gstate and path.  This is a design bug that we will
+     * have to address someday!
+     */
+    return gs_type1_interp_init(pcis, (gs_imager_state *)pgs, pgs->path,
+				&penum->log2_scale,
+				(penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0,
+				pfont1->PaintType, pfont1);
 }
 
 /* ---------------- .type1execchar ---------------- */
@@ -131,14 +145,14 @@ charstring_execchar(i_ctx_t *i_ctx_p, int font_type_mask)
     gs_font_base *const pbfont = (gs_font_base *) pfont;
     gs_font_type1 *const pfont1 = (gs_font_type1 *) pfont;
     const gs_type1_data *pdata;
-    gs_show_enum *penum = op_show_find(i_ctx_p);
+    gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_type1exec_state cxs;
     gs_type1_state *const pcis = &cxs.cis;
 
     if (code < 0)
 	return code;
     if (penum == 0 ||
-	pfont->FontType > sizeof(font_type_mask) * 8 ||
+	pfont->FontType >= sizeof(font_type_mask) * 8 ||
 	!(font_type_mask & (1 << (int)pfont->FontType)))
 	return_error(e_undefined);
     pdata = &pfont1->data;
@@ -179,9 +193,7 @@ charstring_execchar(i_ctx_t *i_ctx_p, int font_type_mask)
     code = gs_moveto(igs, 0.0, 0.0);
     if (code < 0)
 	return code;
-    code = gs_type1_init(pcis, penum, NULL,
-			 gs_show_in_charpath(penum) != cpm_show,
-			 pfont1->PaintType, pfont1);
+    code = type1_exec_init(pcis, penum, igs, pfont1);
     if (code < 0)
 	return code;
     gs_type1_set_callback_data(pcis, &cxs);
@@ -341,7 +353,7 @@ bbox_finish(i_ctx_t *i_ctx_p, int (*cont) (P1(i_ctx_t *)))
     os_ptr op = osp;
     gs_font *pfont;
     int code;
-    gs_show_enum *penum = op_show_find(i_ctx_p);
+    gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_type1exec_state cxs;	/* stack allocate to avoid sandbars */
     gs_type1_state *const pcis = &cxs.cis;
     double sbxy[2];
@@ -374,11 +386,11 @@ bbox_finish(i_ctx_t *i_ctx_p, int (*cont) (P1(i_ctx_t *)))
 	if (lenIV > 0 && r_size(opc) <= lenIV)
 	    return_error(e_invalidfont);
 	check_estack(5);	/* in case we need to do a callout */
-	code = gs_type1_init(pcis, penum, psbpt,
-			     gs_show_in_charpath(penum) != cpm_show,
-			     pfont1->PaintType, pfont1);
+	code = type1_exec_init(pcis, penum, igs, pfont1);
 	if (code < 0)
 	    return code;
+	if (psbpt)
+	    gs_type1_set_lsb(pcis, psbpt);
     }
     opstr = opc;
   icont:
@@ -430,7 +442,7 @@ bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(P1(gs_state *)))
     os_ptr op = osp;
     gs_rect bbox;
     gs_font *pfont;
-    gs_show_enum *penum;
+    gs_text_enum_t *penum;
     gs_font_base * pbfont;
     gs_font_type1 * pfont1;
     gs_type1exec_state cxs;
@@ -458,21 +470,13 @@ bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(P1(gs_state *)))
     /* Enlarge the FontBBox to save work in the future. */
     rect_merge(pbfont->FontBBox, bbox);
     /* Dismantle everything we've done, and start over. */
-    if (penum->cc) {
-	gx_free_cached_char(pfont->dir, penum->cc);
-	penum->cc = 0;
-    }
-    gs_grestore(penum->pgs);
-    penum->width_status = sws_none;
-    penum->log2_current_scale.x = penum->log2_current_scale.y = 0;
+    gs_text_retry(penum);
     pfont1 = (gs_font_type1 *) pfont;
     code = zchar_get_metrics(pbfont, op - 1, cxs.sbw);
     if (code < 0)
 	return code;
     cxs.present = code;
-    code = gs_type1_init(&cxs.cis, penum, NULL,
-			 gs_show_in_charpath(penum) != cpm_show,
-			 pfont1->PaintType, pfont1);
+    code = type1_exec_init(&cxs.cis, penum, igs, pfont1);
     if (code < 0)
 	return code;
     cxs.char_bbox = pfont1->FontBBox;
@@ -671,7 +675,7 @@ nobbox_finish(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs)
 {
     os_ptr op = osp;
     int code;
-    gs_show_enum *penum = op_show_find(i_ctx_p);
+    gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_font *pfont;
 
     if ((code = gs_pathbbox(igs, &pcxs->char_bbox)) < 0 ||
@@ -700,9 +704,7 @@ nobbox_finish(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs)
 	    ) {
 	    gs_newpath(igs);
 	    gs_moveto(igs, 0.0, 0.0);
-	    code = gs_type1_init(&pcxs->cis, penum, NULL,
-				 gs_show_in_charpath(penum) != cpm_show,
-				 pfont1->PaintType, pfont1);
+	    code = type1_exec_init(&pcxs->cis, penum, igs, pfont1);
 	    if (code < 0)
 		return code;
 	    return type1exec_bbox(i_ctx_p, pcxs, pfont);
@@ -759,30 +761,12 @@ const op_def zchar1_op_defs[] =
 /* ------ Auxiliary procedures for type 1 fonts ------ */
 
 private int
-z1_charstring_data(gs_font_type1 * pfont, const ref * pgref,
-		   gs_const_string * pstr)
-{
-    ref *pcstr;
-
-    if (dict_find(&pfont_data(pfont)->CharStrings, pgref, &pcstr) <= 0)
-	return_error(e_undefined);
-    check_type_only(*pcstr, t_string);
-    pstr->data = pcstr->value.const_bytes;
-    pstr->size = r_size(pcstr);
-    return 0;
-
-}
-
-private int
 z1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_const_string * pstr)
 {
     ref gref;
 
-    if (glyph < gs_min_cid_glyph)
-	name_index_ref(glyph, &gref);
-    else
-	make_int(&gref, glyph - gs_min_cid_glyph);
-    return z1_charstring_data(pfont, &gref, pstr);
+    glyph_ref(glyph, &gref);
+    return zchar_charstring_data((gs_font *)pfont, &gref, pstr);
 }
 
 private int
@@ -812,34 +796,7 @@ z1_seac_data(gs_font_type1 * pfont, int index, gs_const_string * pstr)
 
     if (code < 0)
 	return code;
-    return z1_charstring_data(pfont, &enc_entry, pstr);
-}
-
-private int
-z1_next_glyph(gs_font_type1 * pfont, int *pindex, gs_glyph * pglyph)
-{
-    ref *pcsdict = &pfont_data(pfont)->CharStrings;
-    int index = *pindex - 1;
-    ref elt[2];
-
-    if (index < 0)
-	index = dict_first(pcsdict);
-next:
-    index = dict_next(pcsdict, index, elt);
-    *pindex = index + 1;
-    if (index >= 0) {
-	switch (r_type(elt)) {
-	    case t_integer:
-		*pglyph = gs_min_cid_glyph + elt[0].value.intval;
-		break;
-	    case t_name:
-		*pglyph = name_index(elt);
-		break;
-	    default:		/* can't handle it */
-		goto next;
-	}
-    }
-    return 0;
+    return zchar_charstring_data((gs_font *)pfont, &enc_entry, pstr);
 }
 
 private int
@@ -874,8 +831,93 @@ z1_pop(void *callback_data, fixed * pf)
 }
 
 /* Define the Type 1 procedure vector. */
-const gs_type1_data_procs_t z1_data_procs =
-{
-    z1_glyph_data, z1_subr_data, z1_seac_data, z1_next_glyph,
-    z1_push, z1_pop
+const gs_type1_data_procs_t z1_data_procs = {
+    z1_glyph_data, z1_subr_data, z1_seac_data, z1_push, z1_pop
 };
+
+/* ------ Font procedures for Type 1 fonts ------ */
+
+int
+zcharstring_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+			  gx_path *ppath)
+{
+    gs_font_type1 *const pfont1 = (gs_font_type1 *)font;
+    gs_const_string charstring;
+    ref gref;
+    gs_const_string *pchars = &charstring;
+    int code;
+    gs_type1exec_state cxs;
+    gs_type1_state *const pcis = &cxs.cis;
+    static const gs_log2_scale_point no_scale = {0, 0};
+    const gs_type1_data *pdata;
+    const ref *pfdict;
+    ref *pcdevproc;
+    int value;
+    gs_imager_state gis;
+    double sbw[4];
+    gs_point mpt;
+
+    glyph_ref(glyph, &gref);
+    code = zchar_charstring_data(font, &gref, &charstring);
+    if (code < 0)
+	return code;
+    pdata = &pfont1->data;
+    if (charstring.size <= max(pdata->lenIV, 0))
+	return_error(e_invalidfont);
+    pfdict = &pfont_data(pfont1)->dict;
+    if (dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0)
+	return_error(e_rangecheck); /* can't call CDevProc from here */
+    switch (font->WMode) {
+    default:
+	code = zchar_get_metrics2((gs_font_base *)pfont1, &gref, sbw);
+	if (code)
+	    break;
+	/* falls through */
+    case 0:
+	code = zchar_get_metrics((gs_font_base *)pfont1, &gref, sbw);
+    }
+    if (code < 0)
+	return code;
+    cxs.present = code;
+    /* Initialize just enough of the imager state. */
+    if (pmat)
+	gs_matrix_fixed_from_matrix(&gis.ctm, pmat);
+    else {
+	gs_matrix imat;
+
+	gs_make_identity(&imat);
+	gs_matrix_fixed_from_matrix(&gis.ctm, &imat);
+    }
+    gis.flatness = 0;
+    code = gs_type1_interp_init(&cxs.cis, &gis, ppath, &no_scale, true, 0,
+				pfont1);
+    if (code < 0)
+	return code;
+    gs_type1_set_callback_data(pcis, &cxs);
+    switch (cxs.present) {
+    case metricsSideBearingAndWidth:
+	mpt.x = sbw[0], mpt.y = sbw[1];
+	gs_type1_set_lsb(pcis, &mpt);
+	/* falls through */
+    case metricsWidthOnly:
+	mpt.x = sbw[2], mpt.y = sbw[3];
+	gs_type1_set_width(pcis, &mpt);
+    case metricsNone:
+	;
+    }
+    /* Continue interpreting. */
+icont:
+    code = pfont1->data.interpret(pcis, pchars, &value);
+    switch (code) {
+    case 0:		/* all done */
+	/* falls through */
+    default:		/* code < 0, error */
+	return code;
+    case type1_result_callothersubr:	/* unknown OtherSubr */
+	return_error(e_rangecheck); /* can't handle it */
+    case type1_result_sbw:	/* [h]sbw, just continue */
+	type1_cis_get_metrics(pcis, cxs.sbw);
+	pchars = 0;
+	goto icont;
+    }
+}

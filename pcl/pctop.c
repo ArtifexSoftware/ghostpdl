@@ -392,7 +392,7 @@ pisdEnd:
 	case Sreset:	/* pcl_do_resets failed */
 	case Serase:	/* gs_erasepage failed */
 	  /* undo 1st gsave */
-	  gs_grestore_no_wraparound(pcli->pcs.pgs);	/* destroys gs_save stack */
+	  gs_grestore_only(pcli->pcs.pgs);	/* destroys gs_save stack */
 	  /* fall thru to next */
 
 	case Sgsave1:	/* 1st gsave failed */
@@ -530,7 +530,7 @@ pcl_impl_remove_device(
 	if (code >= 0)
 	  code = error;
 	/* return to original gstate w/bbox, target */
-	gs_grestore_no_wraparound(pcli->pcs.pgs);	/* destroys gs_save stack */
+	gs_grestore_only(pcli->pcs.pgs);	/* destroys gs_save stack */
 	/* Deselect bbox. Bbox has been prevented from auto-closing/deleting */
 	error = gs_nulldevice(pcli->pcs.pgs);
 	if (code >= 0)

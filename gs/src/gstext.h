@@ -23,15 +23,14 @@
 #  define gstext_INCLUDED
 
 #include "gsccode.h"
-#include "gsrefct.h"
+#include "gscpm.h"
 
 /*
- * Note that like get_params and get_hardware_params, but unlike all other
- * driver procedures, text display must return information to the generic
- * code:
- *      *show except [x][y]show: the string escapement a.k.a. "width").
- *      charpath, .glyphpath: the entire character description.
- *      .charboxpath: the character bounding box.
+ * Note that text display must return information to the generic code:
+ *	If TEXT_RETURN_WIDTH or TEXT_DO_CHARWIDTH, the string escapement
+ *	  (a.k.a. "width");
+ *	If TEXT_DO_*_CHARPATH, the entire character description;
+ *	If TEXT_DO_*_CHARBOXPATH, the character bounding box.
  */
 
 /*
@@ -43,18 +42,18 @@
  *	- FROM_SINGLE with size != 1.
  *      - Both ADD_TO and REPLACE.
  */
-#define TEXT_HAS_MORE_THAN_ONE_(op, any_)\
-  ( ((op) & any_) & (((op) & any_) - 1) )
+#define TEXT_HAS_MORE_THAN_ONE_(op, any)\
+  ( ((op) & any) & (((op) & any) - 1) )
 #define TEXT_OPERATION_IS_INVALID(op)\
-  (!((op) & TEXT_FROM_ANY_) ||\
-   !((op) & TEXT_DO_ANY_) ||\
-   TEXT_HAS_MORE_THAN_ONE_(op, TEXT_FROM_ANY_) ||\
-   TEXT_HAS_MORE_THAN_ONE_(op, TEXT_DO_ANY_) ||\
-   (((op) & TEXT_ADD_ANY_) && ((op) & TEXT_REPLACE_ANY_))\
+  (!((op) & TEXT_FROM_ANY) ||\
+   !((op) & TEXT_DO_ANY) ||\
+   TEXT_HAS_MORE_THAN_ONE_(op, TEXT_FROM_ANY) ||\
+   TEXT_HAS_MORE_THAN_ONE_(op, TEXT_DO_ANY) ||\
+   (((op) & TEXT_ADD_ANY) && ((op) & TEXT_REPLACE_WIDTHS))\
    )
 #define TEXT_PARAMS_ARE_INVALID(params)\
-  (TEXT_OPERATION_IS_INVALID(op) ||\
-   ( ((op) & TEXT_FROM_ANY_SINGLE_) && ((params)->size != 1) )\
+  (TEXT_OPERATION_IS_INVALID((params)->operation) ||\
+   ( ((params)->operation & TEXT_FROM_ANY_SINGLE) && ((params)->size != 1) )\
    )
 
 	/* Define the representation of the text itself. */
@@ -64,31 +63,29 @@
 #define TEXT_FROM_GLYPHS          0x00008
 #define TEXT_FROM_SINGLE_CHAR     0x00010
 #define TEXT_FROM_SINGLE_GLYPH    0x00020
-#define TEXT_FROM_ANY_SINGLE_ /* internal use only, see above */\
+#define TEXT_FROM_ANY_SINGLE	/* only for testing and masking */\
   (TEXT_FROM_SINGLE_CHAR | TEXT_FROM_SINGLE_GLYPH)
-#define TEXT_FROM_ANY_ /* internal use only, see above */\
+#define TEXT_FROM_ANY	/* only for testing and masking */\
   (TEXT_FROM_STRING | TEXT_FROM_BYTES | TEXT_FROM_CHARS | TEXT_FROM_GLYPHS |\
-   TEXT_FROM_ANY_SINGLE_)
+   TEXT_FROM_ANY_SINGLE)
 	/* Define how to compute escapements. */
 #define TEXT_ADD_TO_ALL_WIDTHS    0x00040
 #define TEXT_ADD_TO_SPACE_WIDTH   0x00080
-#define TEXT_ADD_ANY_ /* internal use only, see above */\
+#define TEXT_ADD_ANY	/* only for testing and masking */\
   (TEXT_ADD_TO_ALL_WIDTHS | TEXT_ADD_TO_SPACE_WIDTH)
-#define TEXT_REPLACE_X_WIDTHS     0x00100
-#define TEXT_REPLACE_Y_WIDTHS     0x00200
-#define TEXT_REPLACE_ANY_ /* internal use only, see above */\
-  (TEXT_REPLACE_X_WIDTHS | TEXT_REPLACE_Y_WIDTHS)
+#define TEXT_REPLACE_WIDTHS       0x00100
 	/* Define what result should be produced. */
-#define TEXT_DO_NONE              0x00400	/* stringwidth or cshow only */
-#define TEXT_DO_DRAW              0x00800
+#define TEXT_DO_NONE              0x00200	/* stringwidth or cshow only */
+#define TEXT_DO_DRAW              0x00400
+#define TEXT_DO_CHARWIDTH         0x00800	/* rmoveto by width */
 #define TEXT_DO_FALSE_CHARPATH    0x01000
 #define TEXT_DO_TRUE_CHARPATH     0x02000
 #define TEXT_DO_FALSE_CHARBOXPATH 0x04000
 #define TEXT_DO_TRUE_CHARBOXPATH  0x08000
-#define TEXT_DO_ANY_CHARPATH\
-  (TEXT_DO_FALSE_CHARPATH | TEXT_DO_TRUE_CHARPATH |\
+#define TEXT_DO_ANY_CHARPATH	/* only for testing and masking */\
+  (TEXT_DO_CHARWIDTH | TEXT_DO_FALSE_CHARPATH | TEXT_DO_TRUE_CHARPATH |\
    TEXT_DO_FALSE_CHARBOXPATH | TEXT_DO_TRUE_CHARBOXPATH)
-#define TEXT_DO_ANY_ /* internal use only, see above */\
+#define TEXT_DO_ANY	/* only for testing and masking */\
   (TEXT_DO_NONE | TEXT_DO_DRAW | TEXT_DO_ANY_CHARPATH)
 	/* Define whether the client intervenes between characters. */
 #define TEXT_INTERVENE            0x10000
@@ -110,7 +107,8 @@ typedef struct gs_text_params_s {
 	gs_char d_char;		/* FROM_SINGLE_CHAR */
 	gs_glyph d_glyph;	/* FROM_SINGLE_GLYPH */
     } data;
-    uint size;			/* number of data elements */
+    uint size;			/* number of data elements, */
+				/* must be 1 if FROM_SINGLE */
     /* The following are used only in the indicated cases. */
     gs_point delta_all;		/* ADD_TO_ALL_WIDTHS */
     gs_point delta_space;	/* ADD_TO_SPACE_WIDTH */
@@ -120,11 +118,9 @@ typedef struct gs_text_params_s {
     } space;
     /* If x_widths == y_widths, widths are taken in pairs. */
     /* Either one may be NULL, meaning widths = 0. */
-    const float *x_widths;	/* REPLACE_X_WIDTHS */
-    const float *y_widths;	/* REPLACE_Y_WIDTHS */
-    uint widths_size;		/* REPLACE_X_WIDTHS, REPLACE_Y_WIDTHS */
-    /* The following are for internal use only, not by clients. */
-    gs_const_string gc_string;	/* for use only during GC */
+    const float *x_widths;	/* REPLACE_WIDTHS */
+    const float *y_widths;	/* REPLACE_WIDTHS */
+    uint widths_size;		/****** PROBABLY NOT NEEDED ******/
 } gs_text_params_t;
 
 #define st_gs_text_params_max_ptrs 3
@@ -133,11 +129,18 @@ typedef struct gs_text_params_s {
   gs_public_st_composite(st_gs_text_params, gs_text_params_t,\
     "gs_text_params", text_params_enum_ptrs, text_params_reloc_ptrs)
 
+/* Assuming REPLACE_WIDTHS is set, return the width of the i'th character. */
+int gs_text_replaced_width(P3(const gs_text_params_t *text, uint index,
+			      gs_point *pwidth));
+
 /*
  * Define the abstract type for the structure that tracks the state of text
  * processing.
  */
+#ifndef gs_text_enum_DEFINED
+#  define gs_text_enum_DEFINED
 typedef struct gs_text_enum_s gs_text_enum_t;
+#endif
 
 /* Abstract types */
 #ifndef gx_device_DEFINED
@@ -166,18 +169,19 @@ typedef struct gx_clip_path_s gx_clip_path;
 #endif
 
 /*
- * Define the driver procedure for text.
+ * Define the driver procedure for text.  This procedure must allocate
+ * the enumerator (see gxtext.h) and initialize the procs and rc members.
  */
 #define dev_t_proc_text_begin(proc, dev_t)\
   int proc(P9(dev_t *dev,\
     gs_imager_state *pis,\
     const gs_text_params_t *text,\
-    const gs_font *font,\
-    gx_path *path,			/* unless DO_NONE & !RETURN_WIDTH */\
+    gs_font *font,\
+    gx_path *path,			/* unless DO_NONE */\
     const gx_device_color *pdcolor,	/* if DO_DRAW */\
     const gx_clip_path *pcpath,		/* if DO_DRAW */\
     gs_memory_t *memory,\
-    gs_text_enum_t **ppenum))
+    gs_text_enum_t **ppte))
 #define dev_proc_text_begin(proc)\
   dev_t_proc_text_begin(proc, gx_device)
 
@@ -226,6 +230,16 @@ int
 			    gs_memory_t *, gs_text_enum_t **));
 
 /*
+ * Restart text processing with new parameters.
+ */
+int gs_text_restart(P2(gs_text_enum_t *pte, const gs_text_params_t *text));
+
+/*
+ * Resync text processing with new parameters and string position.
+ */
+int gs_text_resync(P2(gs_text_enum_t *pte, const gs_text_enum_t *pfrom));
+
+/*
  * Define the possible return values from gs_text_process.  The client
  * should call text_process until it returns 0 (successful completion) or a
  * negative (error) value.
@@ -233,32 +247,61 @@ int
 
 	/*
 	 * The client must render a character: obtain the code from
-	 * gs_text_current_char, do whatever is necessary, and then
+	 * gs_text_current_char/glyph, do whatever is necessary, and then
 	 * call gs_text_process again.
 	 */
 #define TEXT_PROCESS_RENDER 1
 
 	/*
 	 * The client has asked to intervene between characters.
-	 * Obtain the current and next codes from gs_text_current_char
+	 * Obtain the current and next codes from gs_text_current_char/glyph
 	 * and gs_text_next_char, do whatever is necessary, and then
 	 * call gs_text_process again.
 	 */
 #define TEXT_PROCESS_INTERVENE 2
 
 /* Process text after 'begin'. */
-int gs_text_process(P1(gs_text_enum_t * penum));
+int gs_text_process(P1(gs_text_enum_t *pte));
+
+/* Access elements of the enumerator. */
+gs_font *gs_text_current_font(P1(const gs_text_enum_t *pte));
+gs_char gs_text_current_char(P1(const gs_text_enum_t *pte));
+gs_char gs_text_next_char(P1(const gs_text_enum_t *pte));
+gs_glyph gs_text_current_glyph(P1(const gs_text_enum_t *pte));
+int gs_text_total_width(P2(const gs_text_enum_t *pte, gs_point *pwidth));
+
+/*
+ * After the implementation returned TEXT_PROCESS_RENDER, determine
+ * whether it needs the entire character description, or only the width
+ * (escapement).
+ */
+bool gs_text_is_width_only(P1(const gs_text_enum_t *pte));
+
+/*
+ * Return the width of the current character (in user space coordinates).
+ */
+int gs_text_current_width(P2(const gs_text_enum_t *pte, gs_point *pwidth));
 
 /*
  * Set text metrics and optionally enable caching.  Return 1 iff the
  * cache device was just installed.
  */
+typedef enum {
+    TEXT_SET_CHAR_WIDTH,	/* wx wy */
+    TEXT_SET_CACHE_DEVICE,	/* wx wy llx lly urx ury */
+    TEXT_SET_CACHE_DEVICE2	/* w0x w0y llx lly urx ury w1x w1y vx vy */
+} gs_text_cache_control_t;
 int
-    gs_text_setcharwidth(P2(gs_text_enum_t * penum, const double wxy[2])),
-    gs_text_setcachedevice(P2(gs_text_enum_t * penum, const double wbox[6])),
-    gs_text_setcachedevice2(P2(gs_text_enum_t * penum, const double wbox2[10]));
+    gs_text_set_cache(P3(gs_text_enum_t *pte, const double *values,
+			 gs_text_cache_control_t control)),
+    gs_text_setcharwidth(P2(gs_text_enum_t *pte, const double wxy[2])),
+    gs_text_setcachedevice(P2(gs_text_enum_t *pte, const double wbox[6])),
+    gs_text_setcachedevice2(P2(gs_text_enum_t *pte, const double wbox2[10]));
+
+/* Retry processing of the last character. */
+int gs_text_retry(P1(gs_text_enum_t *pte));
 
 /* Release the text processing structures. */
-void gs_text_release(P2(gs_text_enum_t * penum, client_name_t cname));
+void gs_text_release(P2(gs_text_enum_t *pte, client_name_t cname));
 
 #endif /* gstext_INCLUDED */

@@ -44,22 +44,23 @@ typedef struct iparam_loc_s {
 } iparam_loc;
 
 #define iparam_list_common\
-	gs_param_list_common;\
-	union {\
-	  struct {		/* reading */\
-	    int (*read)(P3(iparam_list *, const ref *, iparam_loc *));\
-	    ref policies;	/* policy dictionary or null */\
-	    bool require_all;	/* if true, require all params to be known */\
-	  } r;\
-	  struct {		/* writing */\
-	    int (*write)(P3(iparam_list *, const ref *, const ref *));\
-	    ref wanted;		/* desired keys or null */\
-	  } w;\
-	} u;\
-	int (*enumerate)(P4(iparam_list *, gs_param_enumerator_t *, gs_param_key_t *, ref_type *));\
-	int *results;		/* (only used when reading, 0 when writing) */\
-	uint count;		/* # of key/value pairs */\
-	bool int_keys		/* if true, keys are integers */
+    gs_param_list_common;\
+    gs_ref_memory_t *ref_memory; /* a properly typed copy of memory */\
+    union {\
+      struct {	/* reading */\
+	int (*read)(P3(iparam_list *, const ref *, iparam_loc *));\
+	ref policies;	/* policy dictionary or null */\
+	bool require_all;	/* if true, require all params to be known */\
+      } r;\
+      struct {		/* writing */\
+	int (*write)(P3(iparam_list *, const ref *, const ref *));\
+	ref wanted;		/* desired keys or null */\
+      } w;\
+    } u;\
+    int (*enumerate)(P4(iparam_list *, gs_param_enumerator_t *, gs_param_key_t *, ref_type *));\
+    int *results;		/* (only used when reading, 0 when writing) */\
+    uint count;		/* # of key/value pairs */\
+    bool int_keys		/* if true, keys are integers */
 typedef struct iparam_list_s iparam_list;
 struct iparam_list_s {
     iparam_list_common;
@@ -91,22 +92,22 @@ typedef struct stack_param_list_s {
  * If the bool parameter is true, if there are any unqueried parameters,
  * the commit procedure will return an e_undefined error.
  */
-int dict_param_list_read(P4(dict_param_list *, const ref * /*t_dictionary */ ,
-			    const ref *, bool));
-int dict_param_list_write(P3(dict_param_list *, ref * /*t_dictionary */ ,
-			     const ref *));
-int array_indexed_param_list_read(P4(dict_param_list *, const ref * /*t_*array */ ,
-				     const ref *, bool));
-int array_indexed_param_list_write(P3(dict_param_list *, ref * /*t_*array */ ,
-				      const ref *));
-int array_param_list_read(P5(array_param_list *, ref *, uint,
-			     const ref *, bool));
-int stack_param_list_read(P5(stack_param_list *, ref_stack_t *, uint,
-			     const ref *, bool));
-int stack_param_list_write(P3(stack_param_list *, ref_stack_t *,
-			      const ref *));
+int dict_param_list_read(P5(dict_param_list *, const ref * /*t_dictionary */ ,
+			    const ref *, bool, gs_ref_memory_t *));
+int dict_param_list_write(P4(dict_param_list *, ref * /*t_dictionary */ ,
+			     const ref *, gs_ref_memory_t *));
+int array_indexed_param_list_read(P5(dict_param_list *, const ref * /*t_*array */ ,
+				     const ref *, bool, gs_ref_memory_t *));
+int array_indexed_param_list_write(P4(dict_param_list *, ref * /*t_*array */ ,
+				      const ref *, gs_ref_memory_t *));
+int array_param_list_read(P6(array_param_list *, ref *, uint,
+			     const ref *, bool, gs_ref_memory_t *));
+int stack_param_list_read(P6(stack_param_list *, ref_stack_t *, uint,
+			     const ref *, bool, gs_ref_memory_t *));
+int stack_param_list_write(P4(stack_param_list *, ref_stack_t *,
+			      const ref *, gs_ref_memory_t *));
 
 #define iparam_list_release(plist)\
-  ifree_object((plist)->results, "iparam_list_release")
+  gs_free_object((plist)->memory, (plist)->results, "iparam_list_release")
 
 #endif /* iparam_INCLUDED */

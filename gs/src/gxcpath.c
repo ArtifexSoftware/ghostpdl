@@ -90,44 +90,10 @@ RELOC_PTRS_WITH(device_clip_reloc_ptrs, gx_device_clip *cptr)
 RELOC_PTRS_END
 
 /* Define an empty clip list. */
-private const gx_clip_list clip_list_empty =
-{
+private const gx_clip_list clip_list_empty = {
     {0, 0, min_int, max_int, 0, 0},
     0, 0, 0, 0, 0
 };
-
-/* Debugging */
-
-#ifdef DEBUG
-/* Validate a clipping path. */
-bool				/* only exported for gxacpath.c */
-clip_list_validate(const gx_clip_list * clp)
-{
-    if (clp->count <= 1)
-	return (clp->head == 0 && clp->tail == 0 &&
-		clp->single.next == 0 && clp->single.prev == 0);
-    else {
-	const gx_clip_rect *prev = clp->head;
-	const gx_clip_rect *ptr;
-	bool ok = true;
-
-	while ((ptr = prev->next) != 0) {
-	    if (ptr->ymin > ptr->ymax || ptr->xmin > ptr->xmax ||
-		!(ptr->ymin >= prev->ymax ||
-		  (ptr->ymin == prev->ymin &&
-		   ptr->ymax == prev->ymax &&
-		   ptr->xmin >= prev->xmax)) ||
-		ptr->prev != prev
-		) {
-		clip_rect_print('q', "WRONG:", ptr);
-		ok = false;
-	    }
-	    prev = ptr;
-	}
-	return ok && prev == clp->tail;
-    }
-}
-#endif
 
 /* ------ Clipping path memory management ------ */
 

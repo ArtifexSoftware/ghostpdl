@@ -198,42 +198,28 @@ extern_st(st_chunk);
  * Macros for scanning a chunk linearly, with the following schema:
  *      SCAN_CHUNK_OBJECTS(cp)                  << declares pre, size >>
  *              << code for all objects -- size not set yet >>
- *      DO_LARGE
- *              << code for large objects >>
- *      DO_SMALL
- *              << code for small objects >>
+ *      DO_ALL
+ *              << code for all objects -- size is set >>
  *      END_OBJECTS_SCAN
- * If large and small objects are treated alike, one can use DO_ALL instead
- * of DO_LARGE and DO_SMALL.
  */
 #define SCAN_CHUNK_OBJECTS(cp)\
 	{	obj_header_t *pre = (obj_header_t *)((cp)->cbase);\
 		obj_header_t *end = (obj_header_t *)((cp)->cbot);\
-		ulong size;		/* long because of large objects */\
+		uint size;\
+\
 		for ( ; pre < end;\
 			pre = (obj_header_t *)((char *)pre + obj_size_round(size))\
 		    )\
 		{
-#define DO_LARGE\
-			if ( pre->o_large )\
-			{	size = pre_obj_large_size(pre);\
-				{
-#define DO_SMALL\
-				}\
-			} else\
-			{	size = pre_obj_small_size(pre);\
-				{
 #define DO_ALL\
-			{	size = pre_obj_contents_size(pre);\
-				{
+			size = pre_obj_contents_size(pre);\
+			{
 #define END_OBJECTS_SCAN_INCOMPLETE\
-				}\
 			}\
 		}\
 	}
 #ifdef DEBUG
 #  define END_OBJECTS_SCAN\
-				}\
 			}\
 		}\
 		if ( pre != end )\
@@ -341,8 +327,6 @@ struct gs_ref_memory_s {
     uint large_size;		/* min size to give large object */
 				/* its own chunk: must be */
 				/* 1 mod obj_align_mod */
-    gs_ref_memory_t *global;	/* global VM for this allocator */
-				/* (may point to itself) */
     uint space;			/* a_local, a_global, a_system */
     /* Callers can change the following dynamically */
     /* (through a procedural interface). */
@@ -374,9 +358,12 @@ struct gs_ref_memory_s {
     } lost;
     /*
      * The following are for the interpreter's convenience: the
-     * library initializes them to 0 and then never touches them.
+     * library initializes them as indicated and then never touches them.
      */
-    stream *streams;
+    int save_level;		/* # of saves with non-zero id */
+    uint new_mask;		/* l_new or 0 (default) */
+    uint test_mask;		/* l_new or ~0 (default) */
+    stream *streams;		/* streams allocated at current level */
     /* Garbage collector information */
     gs_gc_root_t *roots;	/* roots for GC */
     /* Sharing / saved state information */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,7 +26,6 @@
 #ifndef gs_state_DEFINED
 #  define gs_state_DEFINED
 typedef struct gs_state_s gs_state;
-
 #endif
 
 /* Initial allocation and freeing */
@@ -35,7 +34,7 @@ int gs_state_free(P1(gs_state *));
 
 /* Initialization, saving, restoring, and copying */
 int gs_gsave(P1(gs_state *)), gs_grestore(P1(gs_state *)), gs_grestoreall(P1(gs_state *));
-int gs_grestore_no_wraparound(P1(gs_state *));
+int gs_grestore_only(P1(gs_state *));
 int gs_gsave_for_save(P2(gs_state *, gs_state **)), gs_grestoreall_for_restore(P2(gs_state *, gs_state *));
 gs_state *gs_gstate(P1(gs_state *));
 gs_state *gs_state_copy(P2(gs_state *, gs_memory_t *));
@@ -72,5 +71,7 @@ int gs_setfilladjust(P3(gs_state *, floatp, floatp));
 int gs_currentfilladjust(P2(const gs_state *, gs_point *));
 void gs_setlimitclamp(P2(gs_state *, bool));
 bool gs_currentlimitclamp(P1(const gs_state *));
+#include "gscpm.h"
+gs_in_cache_device_t gs_incachedevice(P1(const gs_state *));
 
 #endif /* gsstate_INCLUDED */

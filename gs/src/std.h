@@ -53,7 +53,7 @@
 #define arch_cache2_size ARCH_CACHE2_SIZE
 #define arch_is_big_endian ARCH_IS_BIG_ENDIAN
 #define arch_ptrs_are_signed ARCH_PTRS_ARE_SIGNED
-#define arch_floats_are_ieee ARCH_FLOATS_ARE_IEEE
+#define arch_floats_are_IEEE ARCH_FLOATS_ARE_IEEE
 #define arch_arith_rshift ARCH_ARITH_RSHIFT
 #define arch_can_shift_full_long ARCH_CAN_SHIFT_FULL_LONG
 
@@ -160,11 +160,9 @@ typedef ulong bits32;
 /* Print the program line # for debugging. */
 #if __LINE__			/* compiler provides it */
 void dprintf_file_and_line(P3(FILE *, const char *, int));
-
 #  define _dpl dprintf_file_and_line(estderr, __FILE__, __LINE__),
 #else
 void dprintf_file_only(P2(FILE *, const char *));
-
 #  define _dpl dprintf_file_only(estderr, __FILE__),
 #endif
 
@@ -260,11 +258,9 @@ long gs_revision_number(P0());
 
 #if __LINE__			/* compiler provides it */
 void lprintf_file_and_line(P3(FILE *, const char *, int));
-
 #  define _epl _epi lprintf_file_and_line(estderr, __FILE__, __LINE__),
 #else
 void lprintf_file_only(P2(FILE *, const char *));
-
 #  define _epl _epi lprintf_file_only(estderr, __FILE__)
 #endif
 
@@ -290,5 +286,18 @@ void lprintf_file_only(P2(FILE *, const char *));
   (_epl fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
 #define lprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
   (_epl fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
+
+/*
+ * Define the prototype for module initialization procedures.  This is not
+ * a very good place to define this, but we can't find a better one.
+ *
+ * The return value should probably be int rather than void....
+ */
+#ifndef gs_memory_DEFINED
+#  define gs_memory_DEFINED
+typedef struct gs_memory_s gs_memory_t;
+#endif
+#define init_proc(proc)\
+  void proc(P1(gs_memory_t *))
 
 #endif /* std_INCLUDED */

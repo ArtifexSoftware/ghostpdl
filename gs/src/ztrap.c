@@ -37,7 +37,7 @@ zsettrapparams(i_ctx_t *i_ctx_p)
     int code;
 
     check_type(*op, t_dictionary);
-    code = dict_param_list_read(&list, op, NULL, false);
+    code = dict_param_list_read(&list, op, NULL, false, iimemory);
     if (code < 0)
 	return code;
     code = gs_settrapparams(&i_trap_params, (gs_param_list *) & list);

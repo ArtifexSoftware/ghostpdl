@@ -193,10 +193,20 @@ main(
 #ifdef DEBUG
     gs_debug_out = gs_stdout;
 #endif
-
     /* Create a memory allocator to allocate various states from */
     imem = ialloc_alloc_state((gs_raw_memory_t *)&gs_memory_default, 20000);
     imem->space = 0;		/****** WRONG ******/
+
+    {
+	/*
+	 * gs_iodev_init has to be called here (late), rather than
+	 * with the rest of the library init procedures, because of
+	 * some hacks specific to MS Windows for patching the
+	 * stdxxx IODevices.
+	 */
+	extern void gs_iodev_init(P1(gs_memory_t *));
+	gs_iodev_init(mem);
+    }
 
     /* Init the top-level instance */
     gs_c_param_list_write(&params, mem);
@@ -660,7 +670,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 	const char *arg;
 #define plist ((gs_param_list *)params)
 
-	gs_c_param_list_rewrite(params);
+	gs_c_param_list_write_more(params);
 	while ( (arg = arg_next(pal)) != 0 && *arg == '-' )
 	  { arg += 2;
 	    switch ( arg[-1] )

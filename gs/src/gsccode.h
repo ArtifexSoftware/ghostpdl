@@ -40,7 +40,7 @@ typedef ulong gs_glyph;
 
 #define gs_no_glyph ((gs_glyph)0x7fffffff)
 #if arch_sizeof_long > 4
-#  define gs_min_cid_glyph ((gs_glyph)0x80000000)
+#  define gs_min_cid_glyph ((gs_glyph)0x80000000L)
 #else
 /* Avoid compiler warnings about signed/unsigned constants. */
 #  define gs_min_cid_glyph ((gs_glyph)~0x7fffffff)
@@ -57,7 +57,37 @@ typedef bool(*gs_glyph_mark_proc_t) (P2(gs_glyph glyph, void *proc_data));
 /* gs_proc_glyph_name((*procname)) in a formal argument list. */
 typedef gs_proc_glyph_name((*gs_proc_glyph_name_t));
 
-/* Define a procedure for accessing the known encodings. */
+/* Define the indices for known encodings. */
+typedef enum {
+    ENCODING_INDEX_UNKNOWN = -1,
+    ENCODING_INDEX_STANDARD = 0,
+    ENCODING_INDEX_ISOLATIN1,
+    ENCODING_INDEX_SYMBOL,
+    ENCODING_INDEX_DINGBATS,
+    ENCODING_INDEX_WINANSI,
+    ENCODING_INDEX_MACGLYPH,	/* a pseudo-encoding */
+    ENCODING_INDEX_ALOGLYPH,	/* ditto */
+    ENCODING_INDEX_ALXGLYPH	/* ditto */
+} gs_encoding_index_t;
+#define NUM_KNOWN_ENCODINGS 8
+
+/*
+ * For fonts that use more than one method to identify glyphs, define the
+ * glyph space for the values returned by procedures that return glyphs.
+ * Note that if a font uses only one method (such as Type 1 fonts, which
+ * only use names, or TrueType fonts, which only use indexes), the
+ * glyph_space argument is ignored.
+ */
+typedef enum gs_glyph_space_s {
+    GLYPH_SPACE_NAME,		/* names (if available) */
+    GLYPH_SPACE_INDEX		/* indexes (if available) */
+} gs_glyph_space_t;
+
+/*
+ * Define a procedure for accessing the known encodings.  Note that if
+ * there is a choice, this procedure always returns a glyph name, not a
+ * glyph index.
+ */
 #define gs_proc_known_encode(proc)\
   gs_glyph proc(P2(gs_char, int))
 typedef gs_proc_known_encode((*gs_proc_known_encode_t));

@@ -46,7 +46,6 @@ AK=$(GLGENDIR)\ccf32.tr
 NULL=
 
 CMD=.bat
-C_=-c
 D_=-D
 _D_=$(NULL)=
 _D=
@@ -151,5 +150,17 @@ $(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
 
 $(GLOBJ)gp_wgetv.$(OBJ): $(GLSRC)gp_wgetv.c $(AK) $(gscdefs_h)
 	$(GLCCWIN) $(GLO_)gp_wgetv.$(OBJ) $(C_) $(GLSRC)gp_wgetv.c
+
+# Define MS-Windows handles (file system) as a separable feature.
+
+mshandle_=$(GLOBJ)gp_mshdl.$(OBJ)
+$(GLD)mshandle.dev: $(ECHOGS_XE) $(mshandle_)
+	$(SETMOD) $(GLD)mshandle $(mshandle_)
+	$(ADDMOD) $(GLD)mshandle -iodev handle
+
+$(GLOBJ)gp_mshdl.$(OBJ): $(GLSRC)gp_mshdl.c $(AK)\
+ $(ctype__h) $(errno__h) $(stdio__h) $(string__h)\
+ $(gserror_h) $(gsmemory_h) $(gstypes_h) $(gxiodev_h)
+	$(GLCC) $(GLO_)gp_mshdl.$(OBJ) $(C_) $(GLSRC)gp_mshdl.c
 
 # end of winlib.mak

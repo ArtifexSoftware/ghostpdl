@@ -28,6 +28,7 @@
 #include "iddict.h"
 #include "dstack.h"
 #include "ilevel.h"
+#include "iinit.h"
 #include "iname.h"
 #include "interp.h"
 #include "ipacked.h"
@@ -88,7 +89,7 @@ const char *const gs_error_names[] =
 op_array_table op_array_table_global, op_array_table_local;	/* definitions of `operator' procedures */
 
 /* Enter a name and value into a dictionary. */
-void
+private void
 i_initial_enter_name_in(i_ctx_t *i_ctx_p, ref *pdict, const char *nstr,
 			const ref * pref)
 {
@@ -226,7 +227,7 @@ make_initial_dict(i_ctx_t *i_ctx_p, const char *iname, ref idicts[])
 /* Initialize objects other than operators.  In particular, */
 /* initialize the dictionaries that hold operator definitions. */
 void
-obj_init(i_ctx_t **pi_ctx_p)
+obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
 {
     bool level2 = gs_have_level2();
     ref system_dict;
@@ -236,12 +237,12 @@ obj_init(i_ctx_t **pi_ctx_p)
      * Create systemdict.  The context machinery requires that
      * we do this before initializing the interpreter.
      */
-    dict_alloc(iimemory_global,
+    dict_alloc(idmem->space_global,
 	       (level2 ? SYSTEMDICT_LEVEL2_SIZE : SYSTEMDICT_SIZE),
 	       &system_dict);
 
     /* Initialize the interpreter. */
-    gs_interp_init(pi_ctx_p, &system_dict);
+    gs_interp_init(pi_ctx_p, &system_dict, idmem);
     i_ctx_p = *pi_ctx_p;
 
     {
@@ -385,7 +386,8 @@ zop_init(i_ctx_t *i_ctx_p)
 
 /* Create an op_array table. */
 private int
-alloc_op_array_table(uint size, uint space, op_array_table * opt)
+alloc_op_array_table(i_ctx_t *i_ctx_p, uint size, uint space,
+		     op_array_table *opt)
 {
     uint save_space = ialloc_space(idmemory);
     int code;
@@ -459,7 +461,7 @@ op_init(i_ctx_t *i_ctx_p)
     /* Allocate the tables for `operator' procedures. */
     /* Make one of them local so we can have local operators. */
 
-    if (alloc_op_array_table(OP_ARRAY_TABLE_GLOBAL_SIZE,
+    if (alloc_op_array_table(i_ctx_p, OP_ARRAY_TABLE_GLOBAL_SIZE,
 			     avm_global, &op_array_table_global) < 0)
 	gs_abort();
     op_array_table_global.base_index = op_def_count;
@@ -470,7 +472,7 @@ op_init(i_ctx_t *i_ctx_p)
 			    (void **)&op_array_table_global.nx_table,
 			    "op_array nx_table(global)");
 
-    if (alloc_op_array_table(OP_ARRAY_TABLE_LOCAL_SIZE,
+    if (alloc_op_array_table(i_ctx_p, OP_ARRAY_TABLE_LOCAL_SIZE,
 			     avm_local, &op_array_table_local) < 0)
 	gs_abort();
     op_array_table_local.base_index =

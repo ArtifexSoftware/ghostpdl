@@ -28,9 +28,6 @@
 #include "iutil.h"
 #include "store.h"
 
-/* Make an invalid file object. */
-extern void make_invalid_file(P1(ref *));	/* in zfile.c */
-
 /* Forward references */
 private int no_cleanup(P1(i_ctx_t *));
 private uint count_exec_stack(P2(i_ctx_t *, bool));
@@ -119,7 +116,7 @@ zexec(i_ctx_t *i_ctx_p)
 }
 
 /* <obj1> ... <objn> <n> .execn - */
-int
+private int
 zexecn(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

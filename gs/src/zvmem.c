@@ -41,9 +41,6 @@ private bool I_VALIDATE_AFTER_SAVE = true;
 private bool I_VALIDATE_BEFORE_RESTORE = true;
 private bool I_VALIDATE_AFTER_RESTORE = true;
 
-/* Make an invalid file object. */
-extern void make_invalid_file(P1(ref *));	/* in zfile.c */
-
 /* 'Save' structure */
 typedef struct vm_save_s vm_save_t;
 struct vm_save_s {
@@ -105,7 +102,7 @@ zsave(i_ctx_t *i_ctx_p)
 }
 
 /* <save> restore - */
-private int restore_check_operand(P2(os_ptr, alloc_save_t **));
+private int restore_check_operand(P3(os_ptr, alloc_save_t **, gs_dual_memory_t *));
 private int restore_check_stack(P3(const ref_stack_t *, const alloc_save_t *, bool));
 private void restore_fix_stack(P3(ref_stack_t *, const alloc_save_t *, bool));
 int
@@ -115,7 +112,7 @@ zrestore(i_ctx_t *i_ctx_p)
     alloc_save_t *asave;
     bool last;
     vm_save_t *vmsave;
-    int code = restore_check_operand(op, &asave);
+    int code = restore_check_operand(op, &asave, idmemory);
 
     if (code < 0)
 	return code;
@@ -175,7 +172,8 @@ zrestore(i_ctx_t *i_ctx_p)
 }
 /* Check the operand of a restore. */
 private int
-restore_check_operand(os_ptr op, alloc_save_t ** pasave)
+restore_check_operand(os_ptr op, alloc_save_t ** pasave,
+		      gs_dual_memory_t *idmem)
 {
     vm_save_t *vmsave;
     ulong sid;
@@ -186,7 +184,7 @@ restore_check_operand(os_ptr op, alloc_save_t ** pasave)
     if (vmsave == 0)		/* invalidated save */
 	return_error(e_invalidrestore);
     sid = op->value.saveid;
-    asave = alloc_find_save(idmemory, sid);
+    asave = alloc_find_save(idmem, sid);
     if (asave == 0)
 	return_error(e_invalidrestore);
     *pasave = asave;
@@ -336,7 +334,7 @@ zvmstatus(i_ctx_t *i_ctx_p)
     }
     gs_memory_status(&gs_memory_default, &dstat);
     push(3);
-    make_int(op - 2, alloc_save_level(idmemory));
+    make_int(op - 2, imemory_save_level(iimemory_local));
     make_int(op - 1, mstat.used);
     make_int(op, mstat.allocated + dstat.allocated - dstat.used);
     return 0;
@@ -351,7 +349,7 @@ zforgetsave(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     alloc_save_t *asave;
     vm_save_t *vmsave;
-    int code = restore_check_operand(op, &asave);
+    int code = restore_check_operand(op, &asave, idmemory);
 
     if (code < 0)
 	return 0;

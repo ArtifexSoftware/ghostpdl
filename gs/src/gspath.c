@@ -23,6 +23,7 @@
 #include "gxfixed.h"
 #include "gxmatrix.h"
 #include "gscoord.h"		/* requires gsmatrix.h */
+#include "gspath.h"		/* for checking prototypes */
 #include "gzstate.h"
 #include "gzpath.h"
 #include "gxdevice.h"		/* for gxcpath.h */

@@ -17,15 +17,16 @@
  */
 
 
-/* Requires scommon.h, ostack.h */
+/* Requires scommon.h */
 
 #ifndef istream_INCLUDED
 #  define istream_INCLUDED
 
 /* Procedures exported by zfproc.c */
+
 	/* for zfilter.c - procedure stream initialization */
-int sread_proc(P2(ref *, stream **));
-int swrite_proc(P2(ref *, stream **));
+int sread_proc(P3(ref *, stream **, gs_ref_memory_t *));
+int swrite_proc(P3(ref *, stream **, gs_ref_memory_t *));
 
 	/* for interp.c, zfileio.c, zpaint.c - handle a procedure */
 	/* callback or an interrupt */

@@ -41,19 +41,17 @@
 #define COPY_ROP_TEXTURE_BUF_SIZE 100
 
 /* GC procedures */
-#define edev ((gx_device_plane_extract *)vptr)
 private 
-ENUM_PTRS_BEGIN(device_plane_extract_enum_ptrs) ENUM_PREFIX(st_device_forward, 1);
-case 0:
-ENUM_RETURN(gx_device_enum_ptr(edev->target));
+ENUM_PTRS_WITH(device_plane_extract_enum_ptrs, gx_device_plane_extract *edev)
+    ENUM_PREFIX(st_device_forward, 1);
+case 0: ENUM_RETURN(gx_device_enum_ptr(edev->target));
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(device_plane_extract_reloc_ptrs)
+private RELOC_PTRS_WITH(device_plane_extract_reloc_ptrs, gx_device_plane_extract *edev)
 {
     RELOC_PREFIX(st_device_forward);
     edev->plane_dev = gx_device_reloc_ptr(edev->plane_dev, gcst);
 }
 RELOC_PTRS_END
-#undef edev
 public_st_device_plane_extract();
 
 /* Driver procedures */

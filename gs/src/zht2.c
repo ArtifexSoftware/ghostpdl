@@ -36,13 +36,19 @@
 private int dict_spot_params(P4(const ref *, gs_spot_halftone *,
 				ref *, ref *));
 private int dict_spot_results(P3(i_ctx_t *, ref *, const gs_spot_halftone *));
-private int dict_threshold_params(P3(const ref *,
-				     gs_threshold_halftone *, ref *));
-private int dict_threshold2_params(P3(const ref *,
-				      gs_threshold2_halftone *, ref *));
+private int dict_threshold_params(P3(const ref *, gs_threshold_halftone *,
+				     ref *));
+private int dict_threshold2_params(P4(const ref *, gs_threshold2_halftone *,
+				      ref *, gs_memory_t *));
+
+/* Dummy spot function */
+private float
+spot1_dummy(floatp x, floatp y)
+{
+    return (x + y) / 2;
+}
 
 /* <dict> <dict5> .sethalftone5 - */
-float spot_dummy(P2(floatp, floatp));	/* in zht1.c */
 private int sethalftone_finish(P1(i_ctx_t *));
 private int sethalftone_cleanup(P1(i_ctx_t *));
 private int
@@ -113,8 +119,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 			code = dict_spot_params(pvalue,
 						&pc->params.spot, sprocs + j,
 						tprocs + j);
-			pc->params.spot.screen.spot_function =
-			    spot_dummy;
+			pc->params.spot.screen.spot_function = spot1_dummy;
 			pc->type = ht_type_spot;
 			break;
 		    case 3:
@@ -124,7 +129,8 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 			break;
 		    case 7:
 			code = dict_threshold2_params(pvalue,
-					 &pc->params.threshold2, tprocs + j);
+					&pc->params.threshold2, tprocs + j,
+					imemory);
 			pc->type = ht_type_threshold2;
 			break;
 		}
@@ -377,7 +383,7 @@ dict_threshold_params(const ref * pdict, gs_threshold_halftone * ptp,
 /* BitsPerSample. */
 private int
 dict_threshold2_params(const ref * pdict, gs_threshold2_halftone * ptp,
-		       ref * ptproc)
+		       ref * ptproc, gs_memory_t *mem)
 {
     ref *tstring;
     int code =
@@ -408,9 +414,9 @@ dict_threshold2_params(const ref * pdict, gs_threshold2_halftone * ptp,
 				  size);
 	break;
     case t_astruct:
-	if (gs_object_type(imemory, tstring->value.pstruct) != &st_bytes)
+	if (gs_object_type(mem, tstring->value.pstruct) != &st_bytes)
 	    return_error(e_typecheck);
-	size = gs_object_size(imemory, tstring->value.pstruct);
+	size = gs_object_size(mem, tstring->value.pstruct);
 	gs_bytestring_from_bytes(&ptp->thresholds, r_ptr(tstring, byte),
 				 0, size);
 	break;

@@ -37,13 +37,10 @@
 /* See the comment in opdef.h for an invariant which allows */
 /* more efficient implementation of forall. */
 
-/* Imported operators */
-extern int zcopy_dict(P1(i_ctx_t *));
-
 /* Forward references */
 private int zcopy_integer(P1(i_ctx_t *));
 private int zcopy_interval(P1(i_ctx_t *));
-private int copy_interval(P4(os_ptr, uint, os_ptr, client_name_t));
+private int copy_interval(P5(i_ctx_t *, os_ptr, uint, os_ptr, client_name_t));
 
 /* <various1> <various2> copy <various> */
 /* <obj1> ... <objn> <int> copy <obj1> ... <objn> <obj1> ... <objn> */
@@ -105,7 +102,7 @@ zcopy_interval(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     os_ptr op1 = op - 1;
-    int code = copy_interval(op, 0, op1, "copy");
+    int code = copy_interval(i_ctx_p, op, 0, op1, "copy");
 
     if (code < 0)
 	return code;
@@ -313,8 +310,8 @@ zputinterval(i_ctx_t *i_ctx_p)
 	case t_string:
 	    check_write(*opto);
 	    check_int_leu(*opindex, r_size(opto));
-	    code = copy_interval(opto, (uint)(opindex->value.intval), op,
-				 "putinterval");
+	    code = copy_interval(i_ctx_p, opto, (uint)(opindex->value.intval),
+				 op, "putinterval");
 	    break;
 	case t_astruct: {
 	    uint dsize, ssize, index;
@@ -511,7 +508,8 @@ const op_def zgeneric_op_defs[] =
 /* and the starting index is known to be less than or equal to */
 /* its length; nothing else has been checked. */
 private int
-copy_interval(os_ptr prto, uint index, os_ptr prfrom, client_name_t cname)
+copy_interval(i_ctx_t *i_ctx_p /* for ref_assign_old */, os_ptr prto,
+	      uint index, os_ptr prfrom, client_name_t cname)
 {
     int fromtype = r_type(prfrom);
     uint fromsize = r_size(prfrom);
@@ -530,7 +528,7 @@ copy_interval(os_ptr prto, uint index, os_ptr prfrom, client_name_t cname)
 	    {			/* We have to worry about aliasing, */
 		/* but refcpy_to_old takes care of it for us. */
 		return refcpy_to_old(prto, index, prfrom->value.refs,
-				     fromsize, cname);
+				     fromsize, idmemory, cname);
 	    }
 	case t_string:
 	    {	/* memmove takes care of aliasing. */

@@ -62,7 +62,8 @@ int gs_errorname(P3(i_ctx_t *, int, ref *));
 int gs_errorinfo_put_string(P2(i_ctx_t *, const char *));
 
 /* Initialize the interpreter. */
-int gs_interp_init(P2(i_ctx_t **pi_ctx_p, const ref *psystem_dict));
+int gs_interp_init(P3(i_ctx_t **pi_ctx_p, const ref *psystem_dict,
+		      gs_dual_memory_t *dmem));
 
 #ifndef gs_context_state_t_DEFINED
 #  define gs_context_state_t_DEFINED
@@ -85,5 +86,9 @@ void gs_interp_free_stacks(P2(gs_ref_memory_t * smem,
 
 /* Reset the interpreter. */
 void gs_interp_reset(P1(i_ctx_t *i_ctx_p));
+
+/* Define the top-level interface to the interpreter. */
+int gs_interpret(P5(i_ctx_t **pi_ctx_p, ref * pref, int user_errors,
+		    int *pexit_code, ref * perror_object));
 
 #endif /* interp_INCLUDED */

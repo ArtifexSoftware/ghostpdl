@@ -22,7 +22,7 @@
 #ifndef ifont_INCLUDED
 #  define ifont_INCLUDED
 
-#include "gsccode.h"		/* for gs_glyph */
+#include "gsccode.h"		/* for gs_glyph, NUM_KNOWN_ENCODINGS */
 #include "gsstype.h"		/* for extern_st */
 
 /* The external definition of fonts is given in the PostScript manual, */
@@ -68,7 +68,7 @@ extern_st(st_font_data);
 /* Registered encodings, for the benefit of platform fonts, `seac', */
 /* and compiled font initialization. */
 /* This is a t_array ref that points to the encodings. */
-#define registered_Encodings_countof 5
+#define registered_Encodings_countof NUM_KNOWN_ENCODINGS
 extern ref registered_Encodings;
 
 #define registered_Encoding(i) (registered_Encodings.value.refs[i])
@@ -83,7 +83,6 @@ int font_bbox_param(P2(const ref * pfdict, double bbox[4]));
 #ifndef gs_font_DEFINED
 #  define gs_font_DEFINED
 typedef struct gs_font_s gs_font;
-
 #endif
 int font_param(P2(const ref * pfdict, gs_font ** ppfont));
 bool zfont_mark_glyph_name(P2(gs_glyph glyph, void *ignore_data));

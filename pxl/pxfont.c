@@ -262,15 +262,15 @@ px_concat_font_name(char *message, uint max_message, const px_value_t *pfnv)
 /* Paint text or add it to the path. */
 /* This procedure implements the Text and TextPath operators. */
 /* Attributes: pxaTextData, pxaXSpacingData, pxaYSpacingData. */
-private font_proc_next_char(px_next_char_8);
-private font_proc_next_char(px_next_char_16big);
-private font_proc_next_char(px_next_char_16little);
+private font_proc_next_char_glyph(px_next_char_8);
+private font_proc_next_char_glyph(px_next_char_16big);
+private font_proc_next_char_glyph(px_next_char_16little);
 int
 px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 {	gs_memory_t *mem = pxs->memory;
 	gs_state *pgs = pxs->pgs;
 	px_gstate_t *pxgs = pxs->pxgs;
-	gs_show_enum *penum;
+	gs_text_enum_t *penum;
 	const px_value_t *pstr = par->pv[0];
 	int index_shift = (pstr->type & pxd_ubyte ? 0 : 1);
 	const char *str = (const char *)pstr->value.array.data;
@@ -279,7 +279,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	const px_value_t *pydata = par->pv[2];
        	gs_matrix save_ctm;
 	gs_font *pfont = gs_currentfont(pgs);
-	font_proc_next_char((*save_next_char)) = pfont->procs.next_char;
+	font_proc_next_char_glyph((*save_next_char)) = pfont->procs.next_char_glyph;
 	int code = 0;
 
 	if ( (pxdata != 0 && pxdata->value.array.size != len) ||
@@ -293,9 +293,6 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	    if ( code < 0 )
 	      return code;
 	  }
-	penum = gs_show_enum_alloc(mem, pgs, "px_text");
-	if ( penum == 0 )
-	  return_error(errorInsufficientMemory);
 	gs_currentmatrix(pgs, &save_ctm);
 #if 0
 	/*
@@ -338,7 +335,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 #else
 	gs_concat(pgs, &pxgs->char_matrix);
 #endif
-	pfont->procs.next_char =
+	pfont->procs.next_char_glyph =
 	  (!index_shift ? px_next_char_8 :
 	   pstr->type & pxd_big_endian ? px_next_char_16big :
 	   px_next_char_16little);
@@ -358,16 +355,14 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 		code = gx_path_current_point(pgs->path, &origin);
 		if ( code < 0 )
 		  break;
-		code = gs_charpath_n_init(penum, pgs,
-					  str + (i << index_shift), 1, false);
-		if ( code < 0 )
-		  break;
-		code = gs_show_next(penum);
+		
+		code = gs_charpath_begin(pgs, str + (i << index_shift), 1, false,
+					 mem, &penum);
+		if ( code >= 0 )
+		    code = gs_text_process(penum);
+		gs_text_release(penum, "px_text");
 		if ( code != 0 )
-		  { if ( code > 0 )
-		      code = gs_note_error(errorBadFontData);	/* shouldn't happen! */
 		    break;
-		  }
 		/* We cheat here, knowing that gs_d_t2f doesn't actually */
 		/* require a gs_matrix_fixed but only a gs_matrix. */
 		gs_distance_transform2fixed((const gs_matrix_fixed *)&save_ctm,
@@ -383,48 +378,45 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	else
 	  { /* Text */
 	    uint i;
-	    code = gs_xyshow_n_init(penum, pgs, str, len);
-	    if ( code < 0 )
-	      goto x;
-	    for ( i = 0; i < len; ++i )
-	      { gs_fixed_point dist;
-		code = gs_show_next(penum);
-		if ( code != gs_show_move )
-		  { if ( code >= 0 )
-		      code = gs_note_error(errorBadFontData);	/* shouldn't happen! */
-		    break;
-		  }
-		/* See above re the cast in the next line. */
-		gs_distance_transform2fixed((const gs_matrix_fixed *)&save_ctm,
-					(pxdata ? real_elt(pxdata, i) : 0.0),
-					(pydata ? real_elt(pydata, i) : 0.0),
-					&dist);
-		code = gx_path_add_relative_point(pgs->path, dist.x, dist.y);
-		if ( code < 0 )
-		  break;
-	      }
+	    float *fvals = 0;
+	    if ( len > 0 ) {
+		fvals = (float *)gs_alloc_byte_array(mem, len, sizeof(float) * 2, "pxtext");
+		if ( fvals == 0 )
+		    return_error(errorInsufficientMemory);
+	    }
+	    for ( i = 0; i < len; i++ ) { 
+		/* NB this will not work in practice too slow */
+		gs_point device_distance;
+		gs_point font_distance;
+		gs_matrix current_mat;
+		gs_currentmatrix(pgs, &current_mat);
+		gs_distance_transform(pxdata ? real_elt(pxdata, i) : 0.0,
+				      pydata ? real_elt(pydata, i) : 0.0,
+				      &save_ctm,
+				      &device_distance);
+		gs_distance_transform_inverse(device_distance.x, device_distance.y, 
+					      &current_mat, &font_distance);
+		fvals[i * 2] = font_distance.x;
+		fvals[i * 2 + 1] = font_distance.y;
+	    }
+	    code = gs_xyshow_begin(pgs, str, len, fvals, fvals, len * 2, mem, &penum);
 	    if ( code >= 0 )
-	      { code = gs_show_next(penum);
-	        if ( code != 0 )
-		  { if ( code >= 0 )
-		      code = gs_note_error(errorBadFontData);	/* shouldn't happen! */
-		  }
-	      }
+		code = gs_text_process(penum);
+	    gs_text_release(penum, "pxtext");
+	    if ( fvals ) gs_free_object( mem, fvals, "pxtext" );
 	  }
-x:	if ( code < 0 )
-	  gs_show_enum_release(penum, mem);
-	else
-	  gs_free_object(mem, penum, "px_text");
 	gs_setmatrix(pgs, &save_ctm);
 	pfont->WMode = 0;
-	pfont->procs.next_char = save_next_char;
+	pfont->procs.next_char_glyph = save_next_char;
 	return (code == gs_error_invalidfont ?
 		gs_note_error(errorBadFontData) : code);
 }
 /* Next-character procedures, with symbol mapping. */
 private gs_char
-map_symbol(uint chr, const gs_show_enum *penum)
-{	px_gstate_t *pxgs = gs_state_client_data(penum->pgs);
+map_symbol(uint chr, const gs_text_enum_t *penum)
+{	/* NB * the gs_show_enum cast is not appropriate.  Map symbol
+           should need the gs anyway */
+        px_gstate_t *pxgs = gs_state_client_data(((gs_show_enum *)penum)->pgs);
 	const pl_symbol_map_t *psm = pxgs->symbol_map;
 	uint first_code;
 
@@ -435,26 +427,33 @@ map_symbol(uint chr, const gs_show_enum *penum)
 	  return 0xffff;
 	return psm->codes[chr - first_code];
 }
+
 private int
-px_next_char_8(gs_show_enum *penum, gs_char *pchr)
-{	if ( penum->index == penum->text.size )
-	  return 2;
-	*pchr = map_symbol(penum->text.data.bytes[penum->index++], penum);
-	return 0;
+px_next_char_8(gs_text_enum_t *penum, gs_char *pchr, gs_glyph *pglyph)
+{	
+    *pglyph = gs_no_glyph;
+    if ( penum->index == penum->text.size )
+	return 2;
+    *pchr = map_symbol(penum->text.data.bytes[penum->index++], penum);
+    return 0;
 }
 private int
-px_next_char_16big(gs_show_enum *penum, gs_char *pchr)
-{	if ( penum->index == penum->text.size )
-	  return 2;
-	*pchr = map_symbol(uint16at(&penum->text.data.bytes[penum->index++ << 1], true), penum);
-	return 0;
+px_next_char_16big(gs_text_enum_t *penum, gs_char *pchr, gs_glyph *pglyph)
+{	
+    *pglyph = gs_no_glyph;
+    if ( penum->index == penum->text.size )
+	return 2;
+    *pchr = map_symbol(uint16at(&penum->text.data.bytes[penum->index++ << 1], true), penum);
+    return 0;
 }
 private int
-px_next_char_16little(gs_show_enum *penum, gs_char *pchr)
-{	if ( penum->index == penum->text.size )
-	  return 2;
-	*pchr = map_symbol(uint16at(&penum->text.data.bytes[penum->index++ << 1], false), penum);
-	return 0;
+px_next_char_16little(gs_text_enum_t *penum, gs_char *pchr, gs_glyph *pglyph)
+{	
+    *pglyph = gs_no_glyph;
+    if ( penum->index == penum->text.size )
+	return 2;
+    *pchr = map_symbol(uint16at(&penum->text.data.bytes[penum->index++ << 1], false), penum);
+    return 0;
 }
 
 /* ---------------- Operators ---------------- */

@@ -71,7 +71,7 @@ currently included in the makefiles for all platforms.
 The usage for ps2pdf is
 
 <blockquote><b><tt>
-ps2pdf input.ps output.pdf
+ps2pdf [options] input.ps output.pdf
 </tt></b></blockquote>
 
 <p>
@@ -121,12 +121,15 @@ set PS2PDFGS=gswin32c
 <h1><a name="Limitations"></a>Limitations</h1>
 
 <p>
-The most serious limitation of <b><tt>ps2pdf</tt></b> is that text in any
-font other than the fourteen Adobe base fonts (Courier, Times, and
-Helvetica families, Symbol, and Zapf Dingbats) is converted to bitmaps.
-<b><tt>ps2pdf</tt></b> also may convert strings to bitmaps if the string is
-in one of those base fonts but contains a character that uses a
-non-standard encoding.
+In a few situations, <b><tt>ps2pdf</tt></b> will convert text to
+high-resolution bitmapped fonts rather than to embedded outline fonts.  This
+may occur when the PostScript file uses embedded Multiple Master or
+CID-keyed fonts, or in some cases if it uses fonts with non-standard
+encodings.
+
+<p>
+The PDF output always represents colors and images in DeviceGray or
+DeviceRGB color space.  All other color spaces are converted to these.
 
 <p>
 <b><tt>ps2pdf</tt></b> implements <b><tt>setdistillerparams</tt></b>, and
@@ -191,6 +194,19 @@ otherwise.
 between JPEG and <b><tt>LZW/Flate</tt></b> compression: it always uses
 <b><tt>LZW/Flate</tt></b> compression.
 
+<p>
+<b><tt>ps2pdf</tt></b> ignores the PDF 1.3 (Acrobat 4.x) pdfmarks related to
+document content structure: <b><tt>StRoleMap</tt></b>,
+<b><tt>StClassMap</tt></b>, <b><tt>StPNE</tt></b>,
+<b><tt>StBookmarkRoot</tt></b>, <b><tt>StPush</tt></b>,
+<b><tt>StPop</tt></b>, <b><tt>StPopAll</tt></b>, <b><tt>StBMC</tt></b>,
+<b><tt>StBDC</tt></b>, <b><tt>EMC</tt></b>, <b><tt>StOBJ</tt></b>,
+<b><tt>StAttr</tt></b>, <b><tt>StStore</tt></b>, <b><tt>StRetrieve</tt></b>,
+<b><tt>NamespacePush</tt></b>, <b><tt>NamespacePop</tt></b>, and
+<b><tt>NI</tt></b>.  While this causes some structural information to be
+omitted from the output file, the displayed and printed output are normally
+not affected.
+
 <hr>
 
 <h1><a name="Problems"></a>Known problems</h1>
@@ -204,24 +220,21 @@ observed using both Acrobat version 2.1 and the Alpha 2 release of Adobe
 Amber.  (Adobe may have fixed this problem by now.)
 
 <p>
-<b><tt>ps2pdf</tt></b> does not yet process the new PDF 1.2 (Acrobat 3.x)
-<b><tt>BP</tt></b>, <b><tt>EP</tt></b>, <b><tt>SP</tt></b>, and
-<b><tt>OBJ</tt></b> and related pdfmarks.  If the application uses these
-pdfmark commands (and few applications do), some material may be lost from
-the output file.
+There appear to be bugs in all versions of Acrobat Reader that cause them to
+process some embedded TrueType fonts incorrectly.  <b><tt>ps2pdf</tt></b>
+does not yet work around these bugs.
 
 <hr>
 
 <h1><a name="Benefits"></a>Benefits of using <b><tt>ps2pdf</tt></b></h1>
 
 <p>
-Despite the limitations of <b><tt>ps2pdf</tt></b>, the class of "suitable"
-documents is a large one.  Many users report that the combination of
-<b><tt>ps2pdf</tt></b> with Acrobat is superior to using a generic
-PostScript viewer (<b><tt>psview</tt></b> or <b><tt>ghostview</tt></b>),
-particularly for documents with many pages where the navigational support
-in PDF files reduces the overhead involved in navigating conventional
-PostScript documents.
+Many users report that the combination of <b><tt>ps2pdf</tt></b> with
+Acrobat is superior to using a generic PostScript viewer
+(<b><tt>psview</tt></b> or <b><tt>ghostview</tt></b>), particularly for
+documents with many pages where the navigational support in PDF files
+reduces the overhead involved in navigating conventional PostScript
+documents.
 
 <p>
 For certain documents, <b><tt>ps2pdf</tt></b> is much faster than Adobe
@@ -251,7 +264,7 @@ Nova Scotia for extensive testing of early versions of
 
 <font size=2>
 
-<p>Copyright &copy; 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+<p>Copyright &copy; 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
 <p>This file is part of Aladdin Ghostscript.  See the
 <a href="Public.htm">Aladdin Free Public License</a> (the "License") for
@@ -259,7 +272,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.50, 16 September 1998
+Ghostscript version 5.91, 30 August 1999
 
 </font>
 

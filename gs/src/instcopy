@@ -1,0 +1,31 @@
+#!/bin/sh
+
+#
+# Implement a uniform 'install' syntax independent of which of the two
+# "standard" install programs is installed.  Based on ideas in, but not
+# copied from, the GNU fileutils install-sh script.  Usage:
+#	instcopy -c [-m <mode>] <file> <dir>
+
+c=$1
+mode=""
+
+    if [ "$2" = "-m" ]; then mode=$3; shift; shift; else true; fi
+
+src=$2
+dst=$3
+
+    if [ x"$c" = x-c -a -f $src -a -d $dst ]; then true; else
+	echo "Usage: instcopy -c [-m <mode>] <file> <dir>"
+	exit 1
+    fi
+
+dstdir=`echo $dst | sed -e 's,/$,,'`
+dsttmp=$dstdir/#inst.$$#
+dst="$dstdir"/`basename $src`
+
+cp $src $dsttmp &&
+trap "rm -f $dsttmp" 0 &&
+if [ x"$mode" != x ]; then chmod $mode $dsttmp; else true; fi &&
+rm -f $dst &&
+mv $dsttmp $dst &&
+exit 0

@@ -50,6 +50,8 @@ bool zis_stdin(P1(const stream *));
 /* An invalid (closed) file. */
 #define avm_invalid_file_entry avm_foreign
 extern stream *const invalid_file_entry;
+/* Make an invalid file object. */
+void make_invalid_file(P1(ref *));
 
 /*
  * Macros for checking file validity.
@@ -119,20 +121,26 @@ extern const uint file_default_buffer_size;
 FILE *lib_fopen(P1(const char *));
 
 	/* for imain.c */
-int lib_file_open(P6(const char *, uint, byte *, uint, uint *, ref *));
+int lib_file_open(P7(const char *, uint, byte *, uint, uint *, ref *,
+		     gs_memory_t *));
 
-	/* for iccinit.c */
-int file_read_string(P3(const byte *, uint, ref *));
+	/* for imain.c */
+#ifndef gs_ref_memory_DEFINED
+#  define gs_ref_memory_DEFINED
+typedef struct gs_ref_memory_s gs_ref_memory_t;
+#endif
+int file_read_string(P4(const byte *, uint, ref *, gs_ref_memory_t *));
 
 	/* for os_open in ziodev.c */
 #ifdef iodev_proc_fopen		/* in gxiodev.h */
-int file_open_stream(P6(const char *, uint, const char *, uint,
-			stream **, iodev_proc_fopen_t));
-
+int file_open_stream(P7(const char *, uint, const char *, uint,
+			stream **, iodev_proc_fopen_t, gs_memory_t *));
 #endif
+
 	/* for zfilter.c */
-int filter_open(P6(const char *, uint, ref *, const stream_procs *,
-		   const stream_template *, const stream_state *));
+int filter_open(P7(const char *, uint, ref *, const stream_procs *,
+		   const stream_template *, const stream_state *,
+		   gs_memory_t *));
 
 	/* for zfileio.c */
 void make_stream_file(P3(ref *, stream *, const char *));

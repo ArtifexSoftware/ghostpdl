@@ -23,15 +23,13 @@
 #include "gsccode.h"		/* for gxfont.h */
 #include "gsmatrix.h"
 #include "gsutil.h"
-#include "gxfixed.h"		/* for gxchar.h */
-#include "gxchar.h"
 #include "gxfont.h"
 #include "bfont.h"
 #include "store.h"
 
 /* The encode_char procedure of a Type 32 font should never be called. */
 private gs_glyph
-zfont_no_encode_char(gs_show_enum * penum, gs_font * pfont, gs_char * pchr)
+zfont_no_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored)
 {
     return gs_no_glyph;
 }

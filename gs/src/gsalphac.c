@@ -277,13 +277,12 @@ c_alpha_create_default_compositor(const gs_composite_t * pcte,
 	gs_alloc_struct_immovable(mem, gx_device_composite_alpha,
 				  &st_device_composite_alpha,
 				  "create default alpha compositor");
-    *pcdev = (gx_device *) cdev;
+    *pcdev = (gx_device *)cdev;
     if (cdev == 0)
 	return_error(gs_error_VMerror);
-    *(gx_device *) cdev = *dev;
-    cdev->dname = gs_composite_alpha_device.dname;
-    cdev->memory = mem;
-    cdev->stype = &st_device_composite_alpha;
+    gx_device_init((gx_device *)cdev,
+		   (const gx_device *)&gs_composite_alpha_device, mem, true);
+    gx_device_copy_params((gx_device *)cdev, dev);
     /*
      * Set the color_info and depth to be compatible with the target,
      * but using standard chunky color storage, including alpha.
@@ -295,7 +294,6 @@ c_alpha_create_default_compositor(const gs_composite_t * pcte,
     cdev->color_info.max_gray = cdev->color_info.max_color = 255;
     /* No halftoning will occur, but we fill these in anyway.... */
     cdev->color_info.dither_grays = cdev->color_info.dither_colors = 256;
-    assign_dev_procs(cdev, &gs_composite_alpha_device);
     /*
      * We could speed things up a little by tailoring the procedures in
      * the device to the specific num_components, but for simplicity,

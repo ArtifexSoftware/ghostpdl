@@ -70,17 +70,51 @@
  * calls to their target.  By default, they do propagate these calls:
  * use gx_device_bbox_fwd_open_close to change this if you want.
  */
+/*
+ * Define virtual procedures for managing the accumulated bounding box.
+ * These may be redefined by subclasses, and are also used for compositors.
+ */
+typedef struct gx_device_bbox_procs_s {
+
+#define dev_bbox_proc_init_box(proc)\
+  bool proc(P1(void *proc_data))
+    dev_bbox_proc_init_box((*init_box));
+
+#define dev_bbox_proc_get_box(proc)\
+  void proc(P2(const void *proc_data, gs_fixed_rect *pbox))
+    dev_bbox_proc_get_box((*get_box));
+
+#define dev_bbox_proc_add_rect(proc)\
+  void proc(P5(void *proc_data, fixed x0, fixed y0, fixed x1, fixed y1))
+    dev_bbox_proc_add_rect((*add_rect));
+
+#define dev_bbox_proc_in_rect(proc)\
+  bool proc(P2(const void *proc_data, const gs_fixed_rect *pbox))
+    dev_bbox_proc_in_rect((*in_rect));
+
+} gx_device_bbox_procs_t;
+/* Default implementations */
+dev_bbox_proc_init_box(bbox_default_init_box);
+dev_bbox_proc_get_box(bbox_default_get_box);
+dev_bbox_proc_add_rect(bbox_default_add_rect);
+dev_bbox_proc_in_rect(bbox_default_in_rect);
+
 #define gx_device_bbox_common\
 	gx_device_forward_common;\
 	bool free_standing;\
 	bool forward_open_close;\
-	/* In order to handle compositors, we provide a separate pointer */\
-	/* to the bbox device instance that holds the actual box. */\
-	gx_device_bbox *box_device;\
+	gx_device_bbox_procs_t box_procs;\
+	void *box_proc_data;\
+	bool white_is_opaque;\
 	/* The following are updated dynamically. */\
 	gs_fixed_rect bbox;\
-	gx_color_index black, white
+	gx_color_index black, white;\
+	gx_color_index transparent /* white or gx_no_color_index */
 typedef struct gx_device_bbox_s gx_device_bbox;
+#define gx_device_bbox_common_initial(fs, foc, wio)\
+  0 /* target */,\
+  fs, foc, {0}, 0, wio,\
+  {{0, 0}, {0, 0}}, gx_no_color_index, gx_no_color_index, gx_no_color_index
 struct gx_device_bbox_s {
     gx_device_bbox_common;
 };
@@ -89,7 +123,7 @@ extern_st(st_device_bbox);
 #define public_st_device_bbox()	/* in gdevbbox.c */\
   gs_public_st_suffix_add1_final(st_device_bbox, gx_device_bbox,\
     "gx_device_bbox", device_bbox_enum_ptrs, device_bbox_reloc_ptrs,\
-    gx_device_finalize, st_device_forward, box_device)
+    gx_device_finalize, st_device_forward, box_proc_data)
 
 /* Initialize a bounding box device. */
 void gx_device_bbox_init(P2(gx_device_bbox * dev, gx_device * target));
@@ -97,6 +131,10 @@ void gx_device_bbox_init(P2(gx_device_bbox * dev, gx_device * target));
 /* Set whether a bounding box device propagates open/close to its target. */
 void gx_device_bbox_fwd_open_close(P2(gx_device_bbox * dev,
 				      bool forward_open_close));
+
+/* Set whether a bounding box device considers white to be opaque. */
+void gx_device_bbox_set_white_opaque(P2(gx_device_bbox *dev,
+					bool white_is_opaque));
 
 /* Read back the bounding box in 1/72" units. */
 void gx_device_bbox_bbox(P2(gx_device_bbox * dev, gs_rect * pbbox));

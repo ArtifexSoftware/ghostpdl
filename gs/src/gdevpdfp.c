@@ -34,7 +34,6 @@
  * Their "value" is an array of strings, some of which may be the result
  * of converting arbitrary PostScript objects to string form.
  *      pdfmark - see gdevpdfm.c
- *      show - see gdevpdft.c
  */
 
 private const int CoreDistVersion = 3000;	/* Distiller 3.0 */
@@ -80,28 +79,9 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     psdf_version save_version = pdev->version;
 
     /*
-     * If this is one of the pseudo-parameters (show or pdfmark),
+     * If this is a pseudo-parameter (show or pdfmark),
      * don't bother checking for any real ones.
      */
-
-    {
-	gs_param_string pps;
-
-	code = param_read_string(plist, (param_name = "show"), &pps);
-	switch (code) {
-	    case 0:
-		pdf_open_document(pdev);
-		code = pdfshow_process(pdev, plist, &pps);
-		if (code >= 0)
-		    return code;
-		/* falls through for errors */
-	    default:
-		param_signal_error(plist, param_name, code);
-		return code;
-	    case 1:
-		break;
-	}
-    }
 
     {
 	gs_param_string_array ppa;
@@ -186,8 +166,8 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     pdev->ReEncodeCharacters = rec;
     if (fon != pdev->FirstObjectNumber) {
 	pdev->FirstObjectNumber = fon;
-	if (pdev->tfile != 0) {
-	    fseek(pdev->tfile, 0L, SEEK_SET);
+	if (pdev->xref.file != 0) {
+	    fseek(pdev->xref.file, 0L, SEEK_SET);
 	    pdf_initialize_ids(pdev);
 	}
     }

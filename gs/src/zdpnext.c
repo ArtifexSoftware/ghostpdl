@@ -34,6 +34,7 @@
 #include "ialloc.h"
 #include "igstate.h"
 #include "iimage.h"
+#include "iimage2.h"
 #include "store.h"
 
 /* ------ alpha channel ------ */
@@ -79,9 +80,6 @@ zsetalpha(i_ctx_t *i_ctx_p)
 
 /* Imported procedures */
 int zimage_multiple(P2(i_ctx_t *i_ctx_p, bool has_alpha));  /* in zcolor1.c */
-int process_non_source_image(P3(i_ctx_t *i_ctx_p,
-				const gs_image_common_t * pim,
-				client_name_t cname));	/* in zdps.c */
 
 /*
  * Define the operand and bookeeping structure for a compositing operation.

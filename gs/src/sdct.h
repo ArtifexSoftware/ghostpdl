@@ -54,6 +54,8 @@ typedef struct jpeg_compress_data_s {
     /* cinfo must immediately follow the common fields */
     struct jpeg_compress_struct cinfo;
     struct jpeg_destination_mgr destination;
+    byte finish_compress_buf[100];
+    int fcb_size, fcb_pos;
 } jpeg_compress_data;
 
 typedef struct jpeg_decompress_data_s {

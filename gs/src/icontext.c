@@ -40,21 +40,19 @@ extern_st(st_dict_stack);
 extern_st(st_exec_stack);
 extern_st(st_op_stack);
 
-/* Initialization procedures */
-void zrand_state_init(P1(long *));
-
 /* GC descriptors */
-#define pcst ((gs_context_state_t *)vptr)
 private 
 CLEAR_MARKS_PROC(context_state_clear_marks)
 {
+    gs_context_state_t *const pcst = vptr;
+
     r_clear_attrs(&pcst->stdio[0], l_mark);
     r_clear_attrs(&pcst->stdio[1], l_mark);
     r_clear_attrs(&pcst->stdio[2], l_mark);
     r_clear_attrs(&pcst->userparams, l_mark);
 }
 private 
-ENUM_PTRS_BEGIN(context_state_enum_ptrs) {
+ENUM_PTRS_WITH(context_state_enum_ptrs, gs_context_state_t *pcst) {
     index -= 5;
     if (index < st_gs_dual_memory_num_ptrs)
 	return ENUM_USING(st_gs_dual_memory, &pcst->memory,
@@ -67,7 +65,7 @@ ENUM_PTRS_BEGIN(context_state_enum_ptrs) {
     if (index < st_exec_stack_num_ptrs)
 	return ENUM_USING(st_exec_stack, &pcst->exec_stack,
 			  sizeof(pcst->exec_stack), index);
-    index -= st_dict_stack_num_ptrs;
+    index -= st_exec_stack_num_ptrs;
     return ENUM_USING(st_op_stack, &pcst->op_stack,
 		      sizeof(pcst->op_stack), index);
     }
@@ -77,7 +75,7 @@ ENUM_PTRS_BEGIN(context_state_enum_ptrs) {
     case 3: ENUM_RETURN_REF(&pcst->stdio[2]);
     case 4: ENUM_RETURN_REF(&pcst->userparams);
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(context_state_reloc_ptrs);
+private RELOC_PTRS_WITH(context_state_reloc_ptrs, gs_context_state_t *pcst);
     RELOC_PTR(gs_context_state_t, pgs);
     RELOC_USING(st_gs_dual_memory, &pcst->memory, sizeof(pcst->memory));
     RELOC_REF_VAR(pcst->stdio[0]);
@@ -89,12 +87,12 @@ private RELOC_PTRS_BEGIN(context_state_reloc_ptrs);
     RELOC_USING(st_exec_stack, &pcst->exec_stack, sizeof(pcst->exec_stack));
     RELOC_USING(st_op_stack, &pcst->op_stack, sizeof(pcst->op_stack));
 RELOC_PTRS_END
-#undef pcst
 public_st_context_state();
 
 /* Allocate the state of a context. */
 int
 context_state_alloc(gs_context_state_t ** ppcst,
+		    const ref *psystem_dict,
 		    const gs_dual_memory_t * dmem)
 {
     gs_ref_memory_t *mem = dmem->space_local;
@@ -111,6 +109,12 @@ context_state_alloc(gs_context_state_t ** ppcst,
     code = gs_interp_alloc_stacks(mem, pcst);
     if (code < 0)
 	goto x0;
+    /*
+     * We have to initialize the dictionary stack early,
+     * for far-off references to systemdict.
+     */
+    pcst->dict_stack.system_dict = *psystem_dict;
+    pcst->dict_stack.min_size = 0;
     pcst->pgs = int_gstate_alloc(dmem);
     if (pcst->pgs == 0) {
 	code = gs_note_error(e_VMerror);
@@ -120,7 +124,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
     pcst->language_level = 1;
     make_false(&pcst->array_packing);
     make_int(&pcst->binary_object_format, 0);
-    zrand_state_init(&pcst->rand_state);
+    pcst->rand_state = rand_state_initial;
     pcst->usertime_total = 0;
     pcst->keep_usertime = false;
     {	/*
@@ -161,14 +165,13 @@ context_state_alloc(gs_context_state_t ** ppcst,
 
 /* Load the interpreter state from a context. */
 int
-context_state_load(gs_context_state_t * pcst)
+context_state_load(gs_context_state_t * i_ctx_p)
 {
     gs_ref_memory_t *lmem = iimemory_local;
-    ref *system_dict = &pcst->dict_stack.system_dict;
+    ref *system_dict = systemdict;
     uint space = r_space(system_dict);
     int code;
 
-    gs_imemory = pcst->memory;
     /*
      * Set systemdict.userparams to the saved copy, and then
      * set the actual user parameters.  Be careful to disable both
@@ -176,16 +179,16 @@ context_state_load(gs_context_state_t * pcst)
      */
     r_set_space(system_dict, avm_max);
     alloc_set_not_in_save(idmemory);
-    code = dict_put_string(system_dict, "userparams", &pcst->userparams,
-			   &pcst->dict_stack);
+    code = dict_put_string(system_dict, "userparams", &i_ctx_p->userparams,
+			   &idict_stack);
     if (code >= 0)
-	code = set_user_params(pcst, &pcst->userparams);
+	code = set_user_params(i_ctx_p, &i_ctx_p->userparams);
     if (iimemory_local != lmem) {
 	/*
 	 * Switch references in systemdict to local objects.
 	 * userdict.localdicts holds these objects.
 	 */
-	dict_stack_t *dstack = &pcst->dict_stack;
+	dict_stack_t *dstack = &idict_stack;
 	ref_stack_t *rdstack = &dstack->stack;
 	const ref *puserdict =
 	    ref_stack_index(rdstack, ref_stack_count(rdstack) - 1 -
@@ -199,10 +202,10 @@ context_state_load(gs_context_state_t * pcst)
 	}
     }
     r_set_space(system_dict, space);
-    if (idmemory->save_level > 0)
+    if (lmem->save_level > 0)
 	alloc_set_in_save(idmemory);
-    estack_clear_cache(&pcst->exec_stack);
-    dstack_set_top(&pcst->dict_stack);
+    estack_clear_cache(&iexec_stack);
+    dstack_set_top(&idict_stack);
     return code;
 }
 
@@ -213,7 +216,6 @@ context_state_store(gs_context_state_t * pcst)
     ref_stack_cleanup(&pcst->dict_stack.stack);
     ref_stack_cleanup(&pcst->exec_stack.stack);
     ref_stack_cleanup(&pcst->op_stack.stack);
-    pcst->memory = gs_imemory;
     /*
      * The user parameters in systemdict.userparams are kept
      * up to date by PostScript code, but we still need to save

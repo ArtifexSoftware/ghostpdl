@@ -21,10 +21,10 @@
 #include "ghost.h"
 #include "oper.h"
 #include "gsstruct.h"
+# include "gstext.h"
 #include "gxarith.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"		/* for ifont.h */
-#include "gxchar.h"		/* for stringwidth_flag */
 #include "gxdevice.h"		/* for gxfont.h */
 #include "gxfont.h"
 #include "gzstate.h"
@@ -52,16 +52,16 @@ private int
 zshow(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_show_enum *penum;
-    int code = op_show_setup(i_ctx_p, op, &penum);
+    gs_text_enum_t *penum;
+    int code = op_show_setup(i_ctx_p, op);
 
-    if (code != 0)
+    if (code != 0 ||
+	(code = gs_show_begin(igs, op->value.bytes, r_size(op), imemory, &penum)) < 0)
 	return code;
-    if ((code = gs_show_n_init(penum, igs, (char *)op->value.bytes, r_size(op))) < 0) {
+    if ((code = op_show_finish_setup(i_ctx_p, penum, 1, finish_show)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
     }
-    op_show_finish_setup(i_ctx_p, penum, 1, finish_show);
     return op_show_contioue_pop(i_ctx_p, 1);
 }
 
@@ -70,19 +70,18 @@ private int
 zashow(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_show_enum *penum;
-    int code;
+    gs_text_enum_t *penum;
     double axy[2];
+    int code = num_params(op - 1, 2, axy);
 
-    if ((code = num_params(op - 1, 2, axy)) < 0 ||
-	(code = op_show_setup(i_ctx_p, op, &penum)) != 0
-	)
+    if (code < 0 ||
+	(code = op_show_setup(i_ctx_p, op)) != 0 ||
+	(code = gs_ashow_begin(igs, axy[0], axy[1], op->value.bytes, r_size(op), imemory, &penum)) < 0)
 	return code;
-    if ((code = gs_ashow_n_init(penum, igs, axy[0], axy[1], (char *)op->value.bytes, r_size(op))) < 0) {
+    if ((code = op_show_finish_setup(i_ctx_p, penum, 3, finish_show)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
     }
-    op_show_finish_setup(i_ctx_p, penum, 3, finish_show);
     return op_show_continue_pop(i_ctx_p, 3);
 }
 
@@ -91,25 +90,24 @@ private int
 zwidthshow(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_show_enum *penum;
-    int code;
+    gs_text_enum_t *penum;
     double cxy[2];
+    int code;
 
     check_type(op[-1], t_integer);
     if ((gs_char) (op[-1].value.intval) != op[-1].value.intval)
 	return_error(e_rangecheck);
     if ((code = num_params(op - 2, 2, cxy)) < 0 ||
-	(code = op_show_setup(i_ctx_p, op, &penum)) != 0
-	)
+	(code = op_show_setup(i_ctx_p, op)) != 0 ||
+	(code = gs_widthshow_begin(igs, cxy[0], cxy[1],
+				   (gs_char) op[-1].value.intval,
+				   op->value.bytes, r_size(op),
+				   imemory, &penum)) < 0)
 	return code;
-    if ((code = gs_widthshow_n_init(penum, igs, cxy[0], cxy[1],
-				    (gs_char) op[-1].value.intval,
-				    (char *)op->value.bytes,
-				    r_size(op))) < 0) {
+    if ((code = op_show_finish_setup(i_ctx_p, penum, 4, finish_show)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
     }
-    op_show_finish_setup(i_ctx_p, penum, 4, finish_show);
     return op_show_continue_pop(i_ctx_p, 4);
 }
 
@@ -118,27 +116,26 @@ private int
 zawidthshow(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_show_enum *penum;
-    int code;
+    gs_text_enum_t *penum;
     double cxy[2], axy[2];
+    int code;
 
     check_type(op[-3], t_integer);
     if ((gs_char) (op[-3].value.intval) != op[-3].value.intval)
 	return_error(e_rangecheck);
     if ((code = num_params(op - 4, 2, cxy)) < 0 ||
 	(code = num_params(op - 1, 2, axy)) < 0 ||
-	(code = op_show_setup(i_ctx_p, op, &penum)) != 0
-	)
+	(code = op_show_setup(i_ctx_p, op)) != 0 ||
+	(code = gs_awidthshow_begin(igs, cxy[0], cxy[1],
+				    (gs_char) op[-3].value.intval,
+				    axy[0], axy[1],
+				    op->value.bytes, r_size(op),
+				    imemory, &penum)) < 0)
 	return code;
-    if ((code = gs_awidthshow_n_init(penum, igs, cxy[0], cxy[1],
-				     (gs_char) op[-3].value.intval,
-				     axy[0], axy[1],
-				     (char *)op->value.bytes,
-				     r_size(op))) < 0) {
+    if ((code = op_show_finish_setup(i_ctx_p, penum, 6, finish_show)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
     }
-    op_show_finish_setup(i_ctx_p, penum, 6, finish_show);
     return op_show_continue_pop(i_ctx_p, 6);
 }
 
@@ -147,17 +144,18 @@ private int
 zkshow(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_show_enum *penum;
+    gs_text_enum_t *penum;
     int code;
 
     check_proc(op[-1]);
-    if ((code = op_show_setup(i_ctx_p, op, &penum)) != 0)
+    if ((code = op_show_setup(i_ctx_p, op)) != 0 ||
+	(code = gs_kshow_begin(igs, op->value.bytes, r_size(op),
+			       imemory, &penum)) < 0)
 	return code;
-    if ((code = gs_kshow_n_init(penum, igs, (char *)op->value.bytes, r_size(op))) < 0) {
+    if ((code = op_show_finish_setup(i_ctx_p, penum, 2, finish_show)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
     }
-    op_show_finish_setup(i_ctx_p, penum, 2, finish_show);
     sslot = op[-1];		/* save kerning proc */
     return op_show_continue_pop(i_ctx_p, 2);
 }
@@ -175,16 +173,17 @@ private int
 zstringwidth(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_show_enum *penum;
-    int code = op_show_setup(i_ctx_p, op, &penum);
+    gs_text_enum_t *penum;
+    int code = op_show_setup(i_ctx_p, op);
 
-    if (code != 0)
+    if (code != 0 ||
+	(code = gs_stringwidth_begin(igs, op->value.bytes, r_size(op),
+				     imemory, &penum)) < 0)
 	return code;
-    if ((code = gs_stringwidth_n_init(penum, igs, (char *)op->value.bytes, r_size(op))) < 0) {
+    if ((code = op_show_finish_setup(i_ctx_p, penum, 1, finish_stringwidth)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
     }
-    op_show_finish_setup(i_ctx_p, penum, 1, finish_stringwidth);
     return op_show_continue_pop(i_ctx_p, 1);
 }
 /* Finishing procedure for stringwidth. */
@@ -195,7 +194,7 @@ finish_stringwidth(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_point width;
 
-    gs_show_width(senum, &width);
+    gs_text_total_width(senum, &width);
     push(2);
     make_real(op - 1, width.x);
     make_real(op, width.y);
@@ -205,34 +204,36 @@ finish_stringwidth(i_ctx_t *i_ctx_p)
 /* Common code for charpath and .charboxpath. */
 private int
 zchar_path(i_ctx_t *i_ctx_p,
-	   int (*init)(P5(gs_show_enum *, gs_state *, const char *, uint, bool)))
+	   int (*begin)(P6(gs_state *, const byte *, uint,
+			   bool, gs_memory_t *, gs_text_enum_t **)))
 {
     os_ptr op = osp;
-    gs_show_enum *penum;
+    gs_text_enum_t *penum;
     int code;
 
     check_type(*op, t_boolean);
-    code = op_show_setup(i_ctx_p, op - 1, &penum);
-    if (code != 0)
+    code = op_show_setup(i_ctx_p, op - 1);
+    if (code != 0 ||
+	(code = begin(igs, op[-1].value.bytes, r_size(op - 1),
+		      op->value.boolval, imemory, &penum)) < 0)
 	return code;
-    if ((code = (*init)(penum, igs, (char *)op[-1].value.bytes, r_size(op - 1), op->value.boolval)) < 0) {
+    if ((code = op_show_finish_setup(i_ctx_p, penum, 2, finish_show)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
     }
-    op_show_finish_setup(i_ctx_p, penum, 2, finish_show);
     return op_show_continue_pop(i_ctx_p, 2);
 }
 /* <string> <outline_bool> charpath - */
 private int
 zcharpath(i_ctx_t *i_ctx_p)
 {
-    return zchar_path(i_ctx_p, gs_charpath_n_init);
+    return zchar_path(i_ctx_p, gs_charpath_begin);
 }
 /* <string> <box_bool> .charboxpath - */
 private int
 zcharboxpath(i_ctx_t *i_ctx_p)
 {
-    return zchar_path(i_ctx_p, gs_charboxpath_n_init);
+    return zchar_path(i_ctx_p, gs_charboxpath_begin);
 }
 
 /* <wx> <wy> <llx> <lly> <urx> <ury> setcachedevice - */
@@ -241,16 +242,16 @@ zsetcachedevice(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double wbox[6];
-    gs_show_enum *penum = op_show_find(i_ctx_p);
+    gs_text_enum_t *penum = op_show_find(i_ctx_p);
     int code = num_params(op, 6, wbox);
 
     if (penum == 0)
 	return_error(e_undefined);
     if (code < 0)
 	return code;
-    if (gs_show_width_only(penum))
+    if (zchar_show_width_only(penum))
 	return op_show_return_width(i_ctx_p, 6, &wbox[0]);
-    code = gs_setcachedevice_double(penum, igs, wbox);
+    code = gs_text_setcachedevice(penum, wbox);
     if (code < 0)
 	return code;
     pop(6);
@@ -265,18 +266,18 @@ zsetcachedevice2(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double wbox[10];
-    gs_show_enum *penum = op_show_find(i_ctx_p);
+    gs_text_enum_t *penum = op_show_find(i_ctx_p);
     int code = num_params(op, 10, wbox);
 
     if (penum == 0)
 	return_error(e_undefined);
     if (code < 0)
 	return code;
-    if (gs_show_width_only(penum))
+    if (zchar_show_width_only(penum))
 	return op_show_return_width(i_ctx_p, 10,
 				    (gs_rootfont(igs)->WMode ?
 				     &wbox[6] : &wbox[0]));
-    code = gs_setcachedevice2_double(penum, igs, wbox);
+    code = gs_text_setcachedevice2(penum, wbox);
     if (code < 0)
 	return code;
     pop(10);
@@ -291,16 +292,16 @@ zsetcharwidth(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double width[2];
-    gs_show_enum *penum = op_show_find(i_ctx_p);
+    gs_text_enum_t *penum = op_show_find(i_ctx_p);
     int code = num_params(op, 2, width);
 
     if (penum == 0)
 	return_error(e_undefined);
     if (code < 0)
 	return code;
-    if (gs_show_width_only(penum))
+    if (zchar_show_width_only(penum))
 	return op_show_return_width(i_ctx_p, 2, &width[0]);
-    code = gs_setcharwidth(penum, igs, width[0], width[1]);
+    code = gs_text_setcharwidth(penum, width);
     if (code < 0)
 	return code;
     pop(2);
@@ -360,7 +361,7 @@ const op_def zchar_op_defs[] =
 /* Most of these are exported for zchar2.c. */
 
 /* Convert a glyph to a ref. */
-private void
+void
 glyph_ref(gs_glyph glyph, ref * gref)
 {
     if (glyph < gs_min_cid_glyph)
@@ -369,55 +370,83 @@ glyph_ref(gs_glyph glyph, ref * gref)
 	make_int(gref, glyph - gs_min_cid_glyph);
 }
 
-/* Prepare to set up for a show operator. */
+/* Prepare to set up for a text operator. */
 /* Don't change any state yet. */
 int
-op_show_setup(i_ctx_t *i_ctx_p, os_ptr op, gs_show_enum ** ppenum)
+op_show_setup(i_ctx_t *i_ctx_p, os_ptr op)
 {
     check_read_type(*op, t_string);
-    return op_show_enum_setup(i_ctx_p, ppenum);
+    return op_show_enum_setup(i_ctx_p);
 }
 int
-op_show_enum_setup(i_ctx_t *i_ctx_p, gs_show_enum ** ppenum)
+op_show_enum_setup(i_ctx_t *i_ctx_p)
 {
     check_estack(snumpush + 2);
-    if ((*ppenum = gs_show_enum_alloc((gs_memory_t *) imemory, igs, "op_show_enum_setup")) == 0)
-	return_error(e_VMerror);
     return 0;
 }
 
-/* Finish setting up a show operator.  This can't fail, since */
-/* op_show_enum_setup did the check_estack. */
-void
-op_show_finish_setup(i_ctx_t *i_ctx_p, gs_show_enum * penum, int npop,
+/* Finish setting up a text operator. */
+int
+op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
 		     op_proc_t endproc /* end procedure */ )
 {
-    register es_ptr ep = esp + snumpush;
+    gs_text_enum_t *osenum = op_show_find(i_ctx_p);
+    es_ptr ep = esp + snumpush;
+    gs_glyph glyph;
 
-    esp = ep;
+    /*
+     * If we are in the procedure of a cshow for a CID font and this is
+     * a show operator, do something special, per the Red Book.
+     */
+    if (osenum &&
+	SHOW_IS_ALL_OF(osenum,
+		       TEXT_FROM_STRING | TEXT_DO_NONE | TEXT_INTERVENE) &&
+	SHOW_IS_ALL_OF(penum, TEXT_FROM_STRING | TEXT_RETURN_WIDTH) &&
+	(glyph = gs_text_current_glyph(osenum)) != gs_no_glyph &&
+	glyph >= gs_min_cid_glyph
+	) {
+	gs_text_params_t text;
+
+	if (!(penum->text.size == 1 &&
+	      penum->text.data.bytes[0] == (glyph & 0xff))
+	    )
+	    return_error(e_rangecheck);
+	text = penum->text;
+	text.operation =
+	    (text.operation &
+	     ~(TEXT_FROM_STRING | TEXT_FROM_BYTES | TEXT_FROM_CHARS |
+	       TEXT_FROM_GLYPHS | TEXT_FROM_SINGLE_CHAR)) |
+	    TEXT_FROM_SINGLE_GLYPH;
+	text.data.d_glyph = glyph;
+	text.size = 1;
+	gs_text_restart(penum, &text);
+    }
     make_mark_estack(ep - (snumpush - 1), es_show, op_show_cleanup);
     if (endproc == NULL)
 	endproc = finish_show;
     make_null(&esslot(ep));
-    make_int(&essindex(ep), 0);
     make_int(&esodepth(ep), 0);	/* see gs_show_render case in */
     /* op_show_continue_dispatch */
     make_int(&esddepth(ep), 0);	/* ditto */
     make_int(&esgslevel(ep), igs->level);
+    make_null(&essfont(ep));
+    make_null(&esrfont(ep));
     make_op_estack(&eseproc(ep), endproc);
     make_istruct(ep, 0, penum);
+    esp = ep;
+    return 0;
 }
 
 /* Continuation operator for character rendering. */
 int
 op_show_continue(i_ctx_t *i_ctx_p)
 {
-    return op_show_continue_dispatch(i_ctx_p, 0, gs_show_next(senum));
+    return op_show_continue_dispatch(i_ctx_p, 0, gs_text_process(senum));
 }
 int
 op_show_continue_pop(i_ctx_t *i_ctx_p, int npop)
 {
-    return op_show_continue_dispatch(i_ctx_p, npop, gs_show_next(senum));
+    return op_show_continue_dispatch(i_ctx_p, npop, gs_text_process(senum));
 }
 /*
  * Note that op_show_continue_dispatch sets osp = op explicitly iff the
@@ -429,7 +458,7 @@ int
 op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 {
     os_ptr op = osp - npop;
-    gs_show_enum *penum = senum;
+    gs_text_enum_t *penum = senum;
 
     switch (code) {
 	case 0: {		/* all done */
@@ -444,21 +473,21 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 	    }
 	    return o_pop_estack;
 	}
-	case gs_show_kern: {
-	    ref *pslot = &sslot;
+	case TEXT_PROCESS_INTERVENE: {
+	    ref *pslot = &sslot; /* only used for kshow */
 
 	    push(2);
-	    make_int(op - 1, gs_kshow_previous_char(penum));
-	    make_int(op, gs_kshow_next_char(penum));
+	    make_int(op - 1, gs_text_current_char(penum)); /* previous char */
+	    make_int(op, gs_text_next_char(penum));
 	    push_op_estack(op_show_continue);	/* continue after kerning */
 	    *++esp = *pslot;	/* kerning procedure */
 	    return o_push_estack;
 	}
-	case gs_show_render: {
+	case TEXT_PROCESS_RENDER: {
 	    gs_font *pfont = gs_currentfont(igs);
 	    font_data *pfdata = pfont_data(pfont);
-	    gs_char chr = gs_show_current_char(penum);
-	    gs_glyph glyph = gs_show_current_glyph(penum);
+	    gs_char chr = gs_text_current_char(penum);
+	    gs_glyph glyph = gs_text_current_glyph(penum);
 
 	    push(2);
 	    op[-1] = pfdata->dict;	/* push the font */
@@ -564,7 +593,7 @@ map_glyph_to_char(const ref * pgref, const ref * pencoding, ref * pch)
 
 /* Find the index of the e-stack mark for the current show enumerator. */
 /* Return 0 if we can't find the mark. */
-uint
+private uint
 op_show_find_index(i_ctx_t *i_ctx_p)
 {
     ref_stack_enum_t rsenum;
@@ -583,7 +612,7 @@ op_show_find_index(i_ctx_t *i_ctx_p)
 }
 
 /* Find the current show enumerator on the e-stack. */
-gs_show_enum *
+gs_text_enum_t *
 op_show_find(i_ctx_t *i_ctx_p)
 {
     uint index = op_show_find_index(i_ctx_p);
@@ -591,7 +620,32 @@ op_show_find(i_ctx_t *i_ctx_p)
     if (index == 0)
 	return 0;		/* no mark */
     return r_ptr(ref_stack_index(&e_stack, index - (snumpush - 1)),
-		 gs_show_enum);
+		 gs_text_enum_t);
+}
+
+/*
+ * Return true if we only need the width from the rasterizer
+ * and can short-circuit the full rendering of the character,
+ * false if we need the actual character bits.  This is only safe if
+ * we know the character is well-behaved, i.e., is not defined by an
+ * arbitrary PostScript procedure.
+ */
+bool
+zchar_show_width_only(const gs_text_enum_t * penum)
+{
+    if (!gs_text_is_width_only(penum))
+	return false;
+    switch (penum->orig_font->FontType) {
+    case ft_encrypted:
+    case ft_encrypted2:
+    case ft_CID_encrypted:
+    case ft_CID_TrueType:
+    case ft_CID_bitmap:
+    case ft_TrueType:
+	return true;
+    default:
+	return false;
+    }
 }
 
 /* Shortcut the BuildChar or BuildGlyph procedure at the point */
@@ -603,7 +657,7 @@ op_show_return_width(i_ctx_t *i_ctx_p, uint npop, double *pwidth)
 {
     uint index = op_show_find_index(i_ctx_p);
     es_ptr ep = (es_ptr) ref_stack_index(&e_stack, index - (snumpush - 1));
-    int code = gs_setcharwidth(esenum(ep), igs, pwidth[0], pwidth[1]);
+    int code = gs_text_setcharwidth(esenum(ep), pwidth);
     uint ocount, dsaved, dcount;
 
     if (code < 0)
@@ -637,7 +691,7 @@ private int
 op_show_restore(i_ctx_t *i_ctx_p, bool for_error)
 {
     register es_ptr ep = esp + snumpush;
-    gs_show_enum *penum = esenum(ep);
+    gs_text_enum_t *penum = esenum(ep);
     int saved_level = esgslevel(ep).value.intval;
     int code = 0;
 
@@ -651,14 +705,19 @@ op_show_restore(i_ctx_t *i_ctx_p, bool for_error)
     if (SHOW_IS_STRINGWIDTH(penum)) {	/* stringwidth does an extra gsave */
 	--saved_level;
     }
+    if (penum->text.operation & TEXT_REPLACE_WIDTHS) {
+	gs_free_const_object(penum->memory, penum->text.y_widths, "y_widths");
+	if (penum->text.x_widths != penum->text.y_widths)
+	    gs_free_const_object(penum->memory, penum->text.x_widths, "x_widths");
+    }
     /*
-     * We might have been inside a cshow, in which case currentfont
-     * was reset temporarily, as though we were inside a BuildChar/
-     * BuildGlyph procedure.  If this is the case, set currentfont
-     * back to its normal state, the root font.
+     * We might have been inside a cshow, in which case currentfont was
+     * reset temporarily, as though we were inside a BuildChar/ BuildGlyph
+     * procedure.  To handle this case, set currentfont back to its original
+     * state.  NOTE: this code previously used fstack[0] in the enumerator
+     * for the root font: we aren't sure that this change is correct.
      */
-    if (penum->fstack.depth >= 0)
-	gs_set_currentfont(igs, penum->fstack.items[0].font);
+    gs_set_currentfont(igs, penum->orig_font);
     while (igs->level > saved_level && code >= 0) {
 	if (igs->saved == 0 || igs->saved->saved == 0) {
 	    /*
@@ -669,7 +728,7 @@ op_show_restore(i_ctx_t *i_ctx_p, bool for_error)
 	} else
 	    code = gs_grestore(igs);
     }
-    gs_show_enum_release(penum, (gs_memory_t *) imemory);
+    gs_text_release(penum, "op_show_restore");
     return code;
 }
 /* Clean up after an error. */

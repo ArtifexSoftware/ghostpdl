@@ -25,6 +25,7 @@
 /* Print individual values. */
 void debug_print_name(P1(const ref *));
 void debug_print_ref(P1(const ref *));
+void debug_print_ref_packed(P1(const ref_packed *));
 
 /* Dump regions of memory. */
 void debug_dump_one_ref(P1(const ref *));
@@ -33,7 +34,7 @@ void debug_dump_array(P1(const ref * array));
 
 /* Dump a stack.  Using this requires istack.h. */
 #ifndef ref_stack_DEFINED
-typedef struct ref_stack_s ref_stack_t;	/* also defined in istack.h */
+typedef struct ref_stack_s ref_stack_t;	/* also defined in isdata.h */
 #  define ref_stack_DEFINED
 #endif
 void debug_dump_stack(P2(const ref_stack_t * pstack, const char *msg));

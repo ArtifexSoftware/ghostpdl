@@ -86,7 +86,7 @@ private prn_dev_proc_get_space_params(bmpa_get_space_params);
 
 private gx_device_procs bmpamono_procs =
   prn_procs(bmpa_writer_open, gdev_prn_output_page, gdev_prn_close);
-gx_device_async far_data gs_bmpamono_device =
+gx_device_async gs_bmpamono_device =
   async_device(bmpamono_procs, "bmpamono",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
@@ -105,7 +105,7 @@ private gx_device_procs bmpasep1_procs = {
     bmpa_cmyk_procs(bmpa_cmyk_writer_open, cmyk_1bit_map_color_rgb,
 		    cmyk_1bit_map_cmyk_color)
 };
-gx_device_async far_data gs_bmpasep1_device = {
+gx_device_async gs_bmpasep1_device = {
   prn_device_body(gx_device_async, bmpasep1_procs, "bmpasep1",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
@@ -119,8 +119,8 @@ private gx_device_procs bmpasep8_procs = {
     bmpa_cmyk_procs(bmpa_cmyk_writer_open, cmyk_8bit_map_color_rgb,
 		    cmyk_8bit_map_cmyk_color)
 };
-gx_device_printer far_data gs_bmpasep8_device = {
-  prn_device_body(gx_device_printer, bmpasep8_procs, "bmpasep8",
+gx_device_async gs_bmpasep8_device = {
+  prn_device_body(gx_device_async, bmpasep8_procs, "bmpasep8",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
 	0,0,0,0,			/* margins */
@@ -132,7 +132,7 @@ gx_device_printer far_data gs_bmpasep8_device = {
 private gx_device_procs bmpa16_procs =
   prn_color_procs(bmpa_writer_open, gdev_prn_output_page, gdev_prn_close,
     pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
-gx_device_async far_data gs_bmpa16_device =
+gx_device_async gs_bmpa16_device =
   async_device(bmpa16_procs, "bmpa16",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
@@ -145,7 +145,7 @@ gx_device_async far_data gs_bmpa16_device =
 private gx_device_procs bmpa256_procs =
   prn_color_procs(bmpa_writer_open, gdev_prn_output_page, gdev_prn_close,
     pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
-gx_device_async far_data gs_bmpa256_device =
+gx_device_async gs_bmpa256_device =
   async_device(bmpa256_procs, "bmpa256",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
@@ -157,7 +157,7 @@ gx_device_async far_data gs_bmpa256_device =
 private gx_device_procs bmpa16m_procs =
   prn_color_procs(bmpa_writer_open, gdev_prn_output_page, gdev_prn_close,
     bmp_map_16m_rgb_color, bmp_map_16m_color_rgb);
-gx_device_async far_data gs_bmpa16m_device =
+gx_device_async gs_bmpa16m_device =
   async_device(bmpa16m_procs, "bmpa16m",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
@@ -170,7 +170,7 @@ private const gx_device_procs bmpa32b_procs = {
     bmpa_cmyk_procs(bmpa_writer_open, gx_default_map_color_rgb,
 		    gx_default_cmyk_map_cmyk_color)
 };
-gx_device_async far_data gs_bmpa32b_device =
+gx_device_async gs_bmpa32b_device =
   async_device(bmpa32b_procs, "bmpa32b",
 	       DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	       X_DPI, Y_DPI,
@@ -326,7 +326,7 @@ bmpa_reader_print_planes(gx_device_printer *pdev, FILE *prn_stream,
 	goto done;
     }
 
-    row = (byte *)gs_malloc(bmp_raster, 1, "bmp file buffer");
+    row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
     if (row == 0)		/* can't allocate row buffer */
 	return_error(gs_error_VMerror);
 
@@ -369,7 +369,7 @@ bmpa_reader_print_planes(gx_device_printer *pdev, FILE *prn_stream,
 	}
     }
 done:
-    gs_free((char *)row, bmp_raster, 1, "bmp file buffer");
+    gs_free_object(pdev->memory, row, "bmp file buffer");
 #ifdef SINGLE_PAGE
     if (code >= 0 && prdev->copies_printed > 0)
 	prdev->copies_printed = num_copies;

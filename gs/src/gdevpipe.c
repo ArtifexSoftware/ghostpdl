@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,14 +25,12 @@
 #include "gserror.h"
 #include "gstypes.h"
 #include "gsmemory.h"		/* for gxiodev.h */
-#include "stream.h"
 #include "gxiodev.h"
 
 /* The pipe IODevice */
 private iodev_proc_fopen(pipe_fopen);
 private iodev_proc_fclose(pipe_fclose);
-const gx_io_device gs_iodev_pipe =
-{
+const gx_io_device gs_iodev_pipe = {
     "%pipe%", "FileSystem",
     {iodev_no_init, iodev_no_open_device,
      NULL /*iodev_os_open_file */ , pipe_fopen, pipe_fclose,
@@ -47,7 +45,8 @@ const gx_io_device gs_iodev_pipe =
 private int
 pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
 	   FILE ** pfile, char *rfname, uint rnamelen)
-{				/* The OSF/1 1.3 library doesn't include const in the */
+{
+    /* The OSF/1 1.3 library doesn't include const in the */
     /* prototype for popen.... */
     errno = 0;
     *pfile = popen((char *)fname, (char *)access);

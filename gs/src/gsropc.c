@@ -181,12 +181,9 @@ c_rop_create_default_compositor(const gs_composite_t * pcte,
     *pcdev = (gx_device *) cdev;
     if (cdev == 0)
 	return_error(gs_error_VMerror);
-    *(gx_device *) cdev = *dev;
-    cdev->dname = gs_composite_rop_device.dname;
-    cdev->memory = mem;
-    cdev->stype = &st_device_composite_rop;
-    cdev->color_info = dev->color_info;
-    assign_dev_procs(cdev, &gs_composite_rop_device);
+    gx_device_init((gx_device *)cdev,
+		   (const gx_device *)&gs_composite_rop_device, mem, true);
+    gx_device_copy_params((gx_device *)cdev, dev);
     /*
      * Check for memory devices, and select the correct RasterOp
      * implementation based on depth and device color space.
@@ -211,9 +208,6 @@ dcr_close(gx_device * dev)
 /* ------ Imaging ------ */
 
 /* Import the existing RasterOp implementations. */
-extern dev_proc_strip_copy_rop(mem_mono_strip_copy_rop);
-extern dev_proc_strip_copy_rop(mem_gray_strip_copy_rop);
-extern dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);
 extern dev_proc_strip_copy_rop(gx_default_strip_copy_rop);
 
 private int

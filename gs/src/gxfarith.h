@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -45,8 +45,8 @@ typedef long _f_int_t;
 typedef ulong _f_uint_t;
 
 #  endif
-#  define _f_as_int(f) *(_f_int_t *)(&(f))
-#  define _f_as_uint(f) *(_f_uint_t *)(&(f))
+#  define _f_as_int(f) *(const _f_int_t *)(&(f))
+#  define _f_as_uint(f) *(const _f_uint_t *)(&(f))
 
 #  if arch_sizeof_double == arch_sizeof_int
 #    define _d_int_t int
@@ -56,8 +56,8 @@ typedef ulong _f_uint_t;
 #   endif
 #  endif
 #  define _d_uint_t unsigned _d_int_t
-#  define _d_as_int(f) *(_d_int_t *)(&(d))
-#  define _d_as_uint(f) *(_d_uint_t *)(&(d))
+#  define _d_as_int(f) *(const _d_int_t *)(&(d))
+#  define _d_as_uint(f) *(const _d_uint_t *)(&(d))
 
 #  define _ftest(v,f,n)\
      (sizeof(v)==sizeof(float)?(f):(n))
@@ -82,9 +82,9 @@ typedef ulong _f_uint_t;
 
 #  undef is_fneg
 #  if arch_is_big_endian
-#    define _is_fnegb(f) (*(byte *)&(f) >= 0x80)
+#    define _is_fnegb(f) (*(const byte *)&(f) >= 0x80)
 #  else
-#    define _is_fnegb(f) (((byte *)&(f))[sizeof(f) - 1] >= 0x80)
+#    define _is_fnegb(f) (((const byte *)&(f))[sizeof(f) - 1] >= 0x80)
 #  endif
 #  if arch_sizeof_float == arch_sizeof_int
 #    define is_fneg(f)\

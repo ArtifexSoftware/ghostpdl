@@ -325,7 +325,7 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
     int height = pdev->height;
     int depth = pdev->color_info.depth;
     uint lsize = raster + rsize;
-    byte *line = (byte *) gs_malloc(lsize, 1, "pcx file buffer");
+    byte *line = gs_alloc_bytes(pdev->memory, lsize, "pcx file buffer");
     byte *plane = line + raster;
     int y;
     int code = 0;		/* return code */
@@ -417,7 +417,7 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
     }
 
   pcx_done:
-    gs_free((char *)line, lsize, 1, "pcx file buffer");
+    gs_free_object(pdev->memory, line, "pcx file buffer");
 
     return code;
 }

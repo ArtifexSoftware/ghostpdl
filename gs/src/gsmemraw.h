@@ -118,12 +118,31 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
   ((mem)->procs.status(mem, pst))
 
 		/*
+		 * Return the stable allocator for this allocator.  The
+		 * stable allocator allocates from the same heap and in
+		 * the same VM space, but is not subject to save and restore.
+		 * (It is the client's responsibility to avoid creating
+		 * dangling pointers.)
+		 *
+		 * Note that the stable allocator may be the same allocator
+		 * as this one.
+		 */
+
+#define gs_memory_t_proc_stable(proc, mem_t)\
+  mem_t *proc(P1(mem_t *mem))
+
+#define gs_memory_stable(mem)\
+  ((mem)->procs.stable(mem))
+
+		/*
 		 * Free one or more of: data memory acquired by the allocator
 		 * (FREE_ALL_DATA), overhead structures other than the
 		 * allocator itself (FREE_ALL_STRUCTURES), and the allocator
 		 * itself (FREE_ALL_ALLOCATOR).  Note that this requires
 		 * allocators to keep track of all the memory they have ever
-		 * acquired, and where they acquired it.
+		 * acquired, and where they acquired it.  Note that this
+		 * operation propagates to the stable allocator (if
+		 * different).
 		 */
 
 #define FREE_ALL_DATA 1
@@ -158,20 +177,20 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
     gs_memory_t_proc_alloc_bytes((*alloc_bytes_immovable), mem_t);\
     gs_memory_t_proc_resize_object((*resize_object), mem_t);\
     gs_memory_t_proc_free_object((*free_object), mem_t);\
+    gs_memory_t_proc_stable((*stable), mem_t);\
     gs_memory_t_proc_status((*status), mem_t);\
     gs_memory_t_proc_free_all((*free_all), mem_t);\
     gs_memory_t_proc_consolidate_free((*consolidate_free), mem_t)
 
-/* Define the procedure vector for a raw memory allocator. */
+/*
+ * Define an abstract raw-memory allocator instance.
+ * Subclasses may have additional state.
+ */
 typedef struct gs_raw_memory_procs_s {
     gs_raw_memory_procs(gs_raw_memory_t);
 } gs_raw_memory_procs_t;
-
-/*
- * Define an abstract raw-memory allocator instance.
- * Subclasses may have state as well.
- */
 struct gs_raw_memory_s {
+    gs_raw_memory_t *stable_memory;	/* cache the stable allocator */
     gs_raw_memory_procs_t procs;
 };
 

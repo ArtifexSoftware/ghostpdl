@@ -39,6 +39,11 @@ int /*metrics_present*/
   zchar_get_metrics(P3(const gs_font_base * pbfont, const ref * pcnref,
 		       double psbw[4]));
 
+/* Get the vertical metrics for a character from Metrics2, if present. */
+int /*metrics_present*/
+  zchar_get_metrics2(P3(const gs_font_base * pbfont, const ref * pcnref,
+			double pwv[4]));
+
 /*
  * Consult Metrics2 and CDevProc, and call setcachedevice[2].  Return
  * o_push_estack if we had to call a CDevProc, or if we are skipping the
@@ -49,5 +54,19 @@ int zchar_set_cache(P8(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 		       const double pwidth[2], const gs_rect * pbbox,
 		       int (*cont_fill) (P1(i_ctx_t *)),
 		       int (*cont_stroke) (P1(i_ctx_t *))));
+
+/*
+ * Get the CharString data corresponding to a glyph.  Return typecheck
+ * if it isn't a string.
+ */
+int zchar_charstring_data(P3(gs_font *font, const ref *pgref,
+			     gs_const_string *pstr));
+
+/*
+ * Enumerate the next glyph from a directory.  This is essentially a
+ * wrapper around dict_first/dict_next to implement the enumerate_glyph
+ * font procedure.
+ */
+int zchar_enumerate_glyph(P3(const ref *prdict, int *pindex, gs_glyph *pglyph));
 
 #endif /* icharout_INCLUDED */

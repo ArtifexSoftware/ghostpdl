@@ -27,9 +27,7 @@
 public_st_device_mask_clip();
 
 /* GC procedures */
-#define mcdev ((gx_device_mask_clip *)vptr)
-
-private ENUM_PTRS_BEGIN(device_mask_clip_enum_ptrs)
+private ENUM_PTRS_WITH(device_mask_clip_enum_ptrs, gx_device_mask_clip *mcdev)
 {
     if (index < st_gx_strip_bitmap_max_ptrs) {
 	return ENUM_USING(st_gx_strip_bitmap, &mcdev->tiles,
@@ -43,8 +41,7 @@ private ENUM_PTRS_BEGIN(device_mask_clip_enum_ptrs)
     ENUM_PREFIX(st_device_forward, st_device_memory_max_ptrs);
 }
 ENUM_PTRS_END
-
-private RELOC_PTRS_BEGIN(device_mask_clip_reloc_ptrs)
+private RELOC_PTRS_WITH(device_mask_clip_reloc_ptrs, gx_device_mask_clip *mcdev)
 {
     RELOC_PREFIX(st_device_forward);
     RELOC_USING(st_gx_strip_bitmap, &mcdev->tiles, sizeof(mcdev->tiles));
@@ -66,21 +63,19 @@ private RELOC_PTRS_BEGIN(device_mask_clip_reloc_ptrs)
 }
 RELOC_PTRS_END
 
-#undef mcdev
-
 /* Initialize a mask clipping device. */
 int
 gx_mask_clip_initialize(gx_device_mask_clip * cdev,
 			const gx_device_mask_clip * proto,
 			const gx_bitmap * bits, gx_device * tdev,
-			int tx, int ty)
+			int tx, int ty, gs_memory_t *mem)
 {
     int buffer_width = bits->size.x;
     int buffer_height =
 	tile_clip_buffer_size / (bits->raster + sizeof(byte *));
 
     gx_device_init((gx_device *)cdev, (const gx_device *)proto,
-		   NULL, true);
+		   mem, true);
     cdev->width = tdev->width;
     cdev->height = tdev->height;
     cdev->color_info = tdev->color_info;

@@ -63,11 +63,12 @@ typedef struct ref_stack_block_s {
 
 /*
  * Initialize a stack.  Note that this allocates the stack parameter
- * structure.
+ * structure iff params is not NULL.
  */
-int ref_stack_init(P6(ref_stack_t *pstack, const ref *pblock_array,
+int ref_stack_init(P7(ref_stack_t *pstack, const ref *pblock_array,
 		      uint bot_guard, uint top_guard,
-		      const ref *pguard_value, gs_ref_memory_t *mem));
+		      const ref *pguard_value, gs_ref_memory_t *mem,
+		      ref_stack_params_t *params));
 
 /* Set whether a stack is allowed to expand.  The initial value is true. */
 void ref_stack_allow_expansion(P2(ref_stack_t *pstack, bool expand));
@@ -123,8 +124,13 @@ int ref_stack_store_check(P4(const ref_stack_t *pstack, ref *parray,
  * no check, 0 for old, 1 for new.  May return e_rangecheck or
  * e_invalidaccess.
  */
-int ref_stack_store(P7(const ref_stack_t *pstack, ref *parray, uint count,
-		       uint skip, int age, bool check, client_name_t cname));
+#ifndef gs_dual_memory_DEFINED
+#  define gs_dual_memory_DEFINED
+typedef struct gs_dual_memory_s gs_dual_memory_t;
+#endif
+int ref_stack_store(P8(const ref_stack_t *pstack, ref *parray, uint count,
+		       uint skip, int age, bool check,
+		       gs_dual_memory_t *idmem, client_name_t cname));
 
 /*
  * Pop the top N elements off a stack.

@@ -55,17 +55,18 @@ SHARE_ZLIB=0
 
 NULL=
 
+C_=
 CMD=.bat
 D_=-D
-# Watcom C requires quoting parameter values with a - in them!
-_D_=$(NULL)="
-_D="
+_D_=$(NULL)=
+_D=
 I_=-i=
 II=-i=
 _I=
 NO_OP=%null
 O_=-fo=
 OBJ=obj
+RO_=$(O_)
 XE=.exe
 XEAUX=.exe
 
@@ -219,7 +220,7 @@ LCT=DEBUG LINES
 
 GENOPT=$(CP) $(CD) $(CT) $(CS)
 
-CCOPT=-i=$(INCDIRS) -zq -zp8
+CCOPT=-d+ -i=$(INCDIRS) -zq -zp8
 CCFLAGS=$(CCOPT) $(GENOPT) $(PLATOPT) $(FPFLAGS) $(CFLAGS) $(XCFLAGS)
 CC=$(COMP) -oi $(CCFLAGS)
 CCAUX=$(COMP) -oi $(CCOPT) $(FPFLAGS)
@@ -227,3 +228,4 @@ CC_=$(CC)
 CC_D=$(CC)
 CC_INT=$(COMP) -oit $(CCFLAGS)
 CC_LEAF=$(CC_) -s
+CC_NO_WARN=$(CC_)

@@ -24,11 +24,11 @@
 #include "gspaint.h"		/* for gs_fill, gs_stroke */
 #include "gspath.h"
 #include "gxfixed.h"
-#include "gxchar.h"
 #include "gxfont.h"
 #include "gxfont42.h"
 #include "gxistate.h"
 #include "gxpath.h"
+#include "gxtext.h"
 #include "gzstate.h"		/* only for ->path */
 #include "dstack.h"		/* only for systemdict */
 #include "estack.h"
@@ -37,14 +37,6 @@
 #include "ifont.h"		/* for font_param */
 #include "igstate.h"
 #include "store.h"
-
-/* Imported procedures */
-int gs_type42_append(P7(uint glyph_index, gs_imager_state * pis,
-			gx_path * ppath, const gs_log2_scale_point * pscale,
-			bool charpath_flag, int paint_type,
-			gs_font_type42 * pfont));
-int gs_type42_get_metrics(P3(gs_font_type42 * pfont, uint glyph_index,
-			     float psbw[4]));
 
 /* <font> <code|name> <name> <glyph_index> .type42execchar - */
 private int type42_fill(P1(i_ctx_t *));
@@ -56,7 +48,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
     gs_font *pfont;
     int code = font_param(op - 3, &pfont);
     gs_font_base *const pbfont = (gs_font_base *) pfont;
-    gs_show_enum *penum = op_show_find(i_ctx_p);
+    gs_text_enum_t *penum = op_show_find(i_ctx_p);
     int present;
     double sbw[4];
 
@@ -135,7 +127,7 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (P1(gs_state *)))
     os_ptr op = osp;
     gs_font *pfont;
     int code;
-    gs_show_enum *penum = op_show_find(i_ctx_p);
+    gs_text_enum_t *penum = op_show_find(i_ctx_p);
     double sbxy[2];
     gs_point sbpt;
     gs_point *psbpt = 0;
@@ -159,17 +151,19 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (P1(gs_state *)))
 		       pfont->FontType != ft_CID_TrueType)
 	)
 	return_error(e_undefined);
-    code = gs_type42_append((uint) opc->value.intval,
-			    (gs_imager_state *) penum->pgs,
-			    penum->pgs->path,
-			    &penum->log2_current_scale,
-			    gs_show_in_charpath(penum) != cpm_show,
-			    pfont->PaintType,
-			    (gs_font_type42 *) pfont);
+    /*
+     * We have to disregard penum->pis and penum->path, and render to
+     * the current gstate and path.  This is a design bug that we will
+     * have to address someday!
+     */
+    code = gs_type42_append((uint)opc->value.intval, (gs_imager_state *)igs,
+			    igs->path, &penum->log2_scale,
+			    (penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0,
+			    pfont->PaintType, (gs_font_type42 *)pfont);
     if (code < 0)
 	return code;
     pop((psbpt == 0 ? 4 : 6));
-    return (*cont)(penum->pgs);
+    return (*cont)(igs);
 }
 
 /* ------ Initialization procedure ------ */

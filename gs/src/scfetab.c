@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -158,7 +158,8 @@ const cfe_run cf_uncompressed_exit[10] =
 };
 
 /* Some C compilers insist on having executable code in every file.... */
+void scfetab_dummy(P0());	/* for picky compilers */
 void
-cfe_dummy(void)
+scfetab_dummy(void)
 {
 }

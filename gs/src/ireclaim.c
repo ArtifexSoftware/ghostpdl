@@ -55,8 +55,10 @@ ireclaim(gs_dual_memory_t * dmem, int space)
     bool global;
     gs_ref_memory_t *mem;
 
-    if (space < 0) {		/* Determine which allocator got the VMerror. */
+    if (space < 0) {
+	/* Determine which allocator got the VMerror. */
 	gs_memory_status_t stats;
+	ulong allocated;
 	int i;
 
 	mem = dmem->space_global;	/* just in case */
@@ -64,11 +66,19 @@ ireclaim(gs_dual_memory_t * dmem, int space)
 	    mem = dmem->spaces_indexed[i];
 	    if (mem == 0)
 		continue;
-	    if (mem->gc_status.requested > 0)
+	    if (mem->gc_status.requested > 0 ||
+		((gs_ref_memory_t *)mem->stable_memory)->gc_status.requested > 0
+		)
 		break;
 	}
 	gs_memory_status((gs_memory_t *) mem, &stats);
-	if (stats.allocated >= mem->gc_status.max_vm) {		/* We can't satisfy this request within max_vm. */
+	allocated = stats.allocated;
+	if (mem->stable_memory != (gs_memory_t *)mem) {
+	    gs_memory_status(mem->stable_memory, &stats);
+	    allocated += stats.allocated;
+	}
+	if (allocated >= mem->gc_status.max_vm) {
+	    /* We can't satisfy this request within max_vm. */
 	    return_error(e_VMerror);
 	}
     } else {
@@ -77,62 +87,75 @@ ireclaim(gs_dual_memory_t * dmem, int space)
     if_debug3('0', "[0]GC called, space=%d, requestor=%d, requested=%ld\n",
 	      space, mem->space, (long)mem->gc_status.requested);
     global = mem->space != avm_local;
+    /* Since dmem may move, reset the request now. */
+    ialloc_reset_requested(dmem);
     gs_vmreclaim(dmem, global);
 
     ialloc_set_limit(mem);
-    ialloc_reset_requested(dmem);
     return 0;
 }
 
 /* Interpreter entry to garbage collector. */
 private void
-gs_vmreclaim(gs_dual_memory_t * dmem, bool global)
+gs_vmreclaim(gs_dual_memory_t *dmem, bool global)
 {
-    i_ctx_t *i_ctx_p = dmem->reclaim_data;
+    /* HACK: we know the gs_dual_memory_t is embedded in a context state. */
+    i_ctx_t *i_ctx_p =
+	(i_ctx_t *)((char *)dmem - offset_of(i_ctx_t, memory));
     gs_ref_memory_t *lmem = dmem->space_local;
-    gs_ref_memory_t *gmem = dmem->space_global;
-    gs_ref_memory_t *smem = dmem->space_system;
     int code = context_state_store(i_ctx_p);
+    gs_ref_memory_t *memories[5];
+    gs_ref_memory_t *mem;
+    int nmem, i;
 
-/****** ABORT IF code < 0 ******/
-    alloc_close_chunk(lmem);
-    if (gmem != lmem)
-	alloc_close_chunk(gmem);
-    alloc_close_chunk(smem);
+    memories[0] = dmem->space_system;
+    memories[1] = mem = dmem->space_global;
+    nmem = 2;
+    if (lmem != dmem->space_global)
+	memories[nmem++] = lmem;
+    for (i = nmem; --i >= 0;) {
+	mem = memories[i];
+	if (mem->stable_memory != (gs_memory_t *)mem)
+	    memories[nmem++] = (gs_ref_memory_t *)mem->stable_memory;
+    }
+
+    /****** ABORT IF code < 0 ******/
+    for (i = nmem; --i >= 0; )
+	alloc_close_chunk(memories[i]);
 
     /* Prune the file list so it won't retain potentially collectible */
     /* files. */
 
-    {
-	int i;
+    for (i = (global ? i_vm_system : i_vm_local);
+	 i < countof(dmem->spaces_indexed);
+	 ++i
+	 ) {
+	gs_ref_memory_t *mem = dmem->spaces_indexed[i];
 
-	for (i = (global ? i_vm_system : i_vm_local);
-	     i < countof(dmem->spaces_indexed);
-	     ++i
-	    ) {
-	    gs_ref_memory_t *mem = dmem->spaces_indexed[i];
-
-	    if (mem == 0 || (i > 0 && mem == dmem->spaces_indexed[i - 1]))
-		continue;
-	    for (;; mem = &mem->saved->state) {
-		ialloc_gc_prepare(mem);
-		if (mem->saved == 0)
-		    break;
-	    }
+	if (mem == 0 || (i > 0 && mem == dmem->spaces_indexed[i - 1]))
+	    continue;
+	if (mem->stable_memory != (gs_memory_t *)mem)
+	    ialloc_gc_prepare((gs_ref_memory_t *)mem->stable_memory);
+	for (;; mem = &mem->saved->state) {
+	    ialloc_gc_prepare(mem);
+	    if (mem->saved == 0)
+		break;
 	}
     }
 
     /* Do the actual collection. */
 
     {
+	void *ctxp = i_ctx_p;
 	gs_gc_root_t context_root;
 
 	gs_register_struct_root((gs_memory_t *)lmem, &context_root,
-				(void **)&dmem->reclaim_data, "reclaim_data");
+				&ctxp, "i_ctx_p root");
 	GS_RECLAIM(&dmem->spaces, global);
-	gs_unregister_root((gs_memory_t *)lmem, &context_root, "reclaim_data");
+	gs_unregister_root((gs_memory_t *)lmem, &context_root, "i_ctx_p root");
+	i_ctx_p = ctxp;
+	dmem = &i_ctx_p->memory;
     }
-    i_ctx_p = dmem->reclaim_data;
 
     /* Update caches not handled by context_state_load. */
 
@@ -142,11 +165,6 @@ gs_vmreclaim(gs_dual_memory_t * dmem, bool global)
 
     code = context_state_load(i_ctx_p);
     /****** ABORT IF code < 0 ******/
-    /*
-     * context_state_load overwrites gs_memory (*dmem): put back the
-     * relocated context pointer.
-     */
-    dmem->reclaim_data = i_ctx_p;
 
     /* Update the cached value pointers in names. */
 
@@ -154,10 +172,8 @@ gs_vmreclaim(gs_dual_memory_t * dmem, bool global)
 
     /* Reopen the active chunks. */
 
-    alloc_open_chunk(smem);
-    if (gmem != lmem)
-	alloc_open_chunk(gmem);
-    alloc_open_chunk(lmem);
+    for (i = 0; i < nmem; ++i)
+	alloc_open_chunk(memories[i]);
 }
 
 /* ------ Initialization procedure ------ */

@@ -898,7 +898,8 @@ source files that must be compiled.
 <h1><a name="PC_build"></a>How to build Ghostscript from source (PC version)</h1>
 
 <p>
-The relevant makefiles are
+All Ghostscript builds in PC (DOS and MS Windows) environments are 32- or
+64-bit: 16-bit builds are not supported.  The relevant makefiles are
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr><th colspan=5 bgcolor="#CCCC00"><hr><font size="+1">PC makefiles</font><hr>
@@ -912,12 +913,12 @@ The relevant makefiles are
 	<td>&nbsp;
 	<td valign=top><a href="#Borland_build">Borland C++ 4.x</a>
 	<td>&nbsp;
-	<td valign=top>32-bit MS Windows 3.1 + Win32s, 95, NT
+	<td valign=top>32-bit MS Windows 3.1 + Win32s, 95, 98, NT
 <tr>	<td valign=top><b><tt>msvc32.mak</tt></b>
 	<td>&nbsp;
 	<td valign=top><a href="#Microsoft_build">Microsoft Visual C++ 4.x or 5.x</a>
 	<td>&nbsp;
-	<td valign=top>MS Windows32-bit
+	<td valign=top>MS Windows 32-bit
 <tr>	<td valign=top><b><tt>watc.mak</tt></b>
 	<td>&nbsp;
 	<td valign=top><a href="#Watcom_build">Watcom C/386 or C++</a>
@@ -927,33 +928,40 @@ The relevant makefiles are
 	<td>&nbsp;
 	<td valign=top><a href="#Watcom_build">Watcom C/386 or C++</a>
 	<td>&nbsp;
-	<td valign=top>MS Windows 32-bit (<b>DOESN'T WORK YET</b>)
+	<td valign=top>MS Windows 32-bit
 <tr>	<td valign=top><b><tt>unix-gcc.mak</tt></b>
 	<td>&nbsp;
 	<td valign=top><a href="#Cygwin32_build">Cygnus gcc</a>
 	<td>&nbsp;
-	<td valign=top><a href="http://www.cygnus.com/misc/gnu-win32/">Cygnus gnu-win32</a>
+	<td valign=top><a href="http://sourceware.cygnus.com/cygwin/">Cygnus gnu-win32</a>
 </table></blockquote>
 
 <p>
 To build Ghostscript you need MS-DOS version 3.3 or later and Borland C/C++
 (4.0 or later); Microsoft Visual C++ (version 4.0 or later); Watcom C/386
 (version 8.5 or later) or C++ (any version); or the free djgpp + go32
-development system.  The options in the makefiles were chosen to strike a
-balance between RAM consumption and likely usefulness.  The default
-configuration generates an executable that assumes the directory where
-<b><tt>make</tt></b> was run as the final default directory for looking up
-the Ghostscript initialization and font files.
+development system.  The options in the makefiles are chosen to strike a
+balance between RAM consumption and likely usefulness.  If you run
+<b><tt>make</tt></b> in directory <em>{dir}</em>, the default configuration
+generates an executable that assumes the Ghostscript initialization and font
+files are in directory <em>{dir}</em><b><tt>\lib</tt></b>.
 
 <p>
-You must have <b><tt>COMMAND.COM</tt></b> in your path to build
-Ghostscript.  After making the changes needed to choose features and
-devices to build into the executable, you must create the directory
-where the compiler will do its work (normally the <b><tt>obj</tt></b>
-subdirectory of the current directory) and the directory where the
-compiled code will be placed (normally the <b><tt>bin</tt></b>
-subdirectory).  Then to build the Ghostscript executable
-all you need do is give the <b><tt>make</tt></b> command.
+Note that the <b><tt>make</tt></b> program supplied with each PC compiler
+has a different name.  We refer to this program generically as
+<b><tt>make</tt></b> everywhere else in this document, but you will find the
+correct name for each compiler in the relevant section below that discusses
+that compiler.
+
+<p>
+You must have <b><tt>COMMAND.COM</tt></b> in your path to build Ghostscript.
+After making the changes needed to choose features and devices to build into
+the executable, you must create the directory where the compiler will do its
+work (normally the <b><tt>obj</tt></b> subdirectory of the current
+directory) and the directory where the compiled code will be placed
+(normally the <b><tt>bin</tt></b> subdirectory).  Then to build the
+Ghostscript executable all you need do is give the <b><tt>make</tt></b>
+command.
 
 <p><a name="Make_begin"></a>
 A special make target "<b><tt>begin</tt></b>" attempts to compile all the
@@ -994,15 +1002,22 @@ simple way to fix this, if you have the InfoZIP <b><tt>zip</tt></b> and
 
 <p>
 To compile Ghostscript with the Borland environment, you need Borland C++
-(version 4.0 or later); specifically the compiler, <b><tt>make</tt></b> utility, and
-linker.  You also need either the Borland assembler (version 1.0 or later)
-or the Microsoft assembler (version 4.0 or later).
+(version 4.0 or later); specifically the compiler, <b><tt>make</tt></b>
+utility, and linker.  You also need either the Borland assembler (version
+1.0 or later) or the Microsoft assembler (version 4.0 or later).
 
 <p>
 To create "<b><tt>makefile</tt></b>", give the command
 
 <blockquote><b><tt>
 echo !include "src\bcwin32.mak" &gt;makefile
+</tt></b></blockquote>
+
+<p>
+To run the <b><tt>make</tt></b> program, give the commmand
+
+<blockquote><b><tt>
+make
 </tt></b></blockquote>
 
 <p>
@@ -1087,6 +1102,13 @@ echo !include src\msvc32.mak &gt;makefile
 </tt></b></blockquote>
 
 <p>
+To run the <b><tt>make</tt></b> program, give the commmand
+
+<blockquote><b><tt>
+nmake
+</tt></b></blockquote>
+
+<p>
 You may get error messages during compilation about <b><tt>/QI0f</tt></b>
 being an undefined switch, or the message "dwmain32.def: EXETYPE not
 supported for platform; ignored" during linking.  Ignore them.
@@ -1104,21 +1126,25 @@ compiling without stack checking.  Don't change the setting
 <h2><a name="Watcom_build"></a>Watcom environment</h2>
 
 <p>
-<b>NOTE:</b> The Watcom compiler is unusable, because Watcom's
-<b><tt>wmake</tt></b> and <b><tt>wmakel</tt></b> programs have severe size
-limitations that cause them to run out of memory when processing the
-Ghostscript makefiles.  If enough people call Watcom (now PowerSoft)
-technical support, maybe they will do something about this.  If you have
-suggestions for how to get around this limitation, please let us know.
+Because of limitations in the way that Watcom implemented their
+<b><tt>wmake</tt></b> program, you must run the Watcom tools under MS
+Windows, even if you are generating a DOS executable.  This is very
+unfortunate, and there is no good technical reason for it, but we were
+unable to persuade Watcom (now Powersoft) to do anything about it.
 
 <p>
-On DOS or MS Windows with the Watcom compiler, add to
-<b><tt>C:\AUTOEXEC.BAT</tt></b> the line
-"<b><tt>set&nbsp;DOS4G=quiet</tt></b>".  Then to create
+To use the Watcom compiler, add to <b><tt>\AUTOEXEC.BAT</tt></b> the line
+"<b><tt>set&nbsp;DOS4G=quiet</tt></b>".  Check that
+<b><tt>\AUTOEXEC.BAT</tt></b> also contains a line of the form
+"<b><tt>set&nbsp;WATCOM=</tt></b><em>{wcdir}</em>" where <em>{wcdir}</em> is
+the directory where you installed the Watcom tools, and that the setting of
+<b><tt>PATH</tt></b> includes <em>{wcdir}</em><b><tt>\binnt</tt></b> (or
+<b><tt>%WATCOM%\binnt</tt></b>) before <em>{wcdir}</em><b><tt>\binw</tt></b>
+(or <b><tt>%WATCOM%\binw</tt></b>).  Then to create
 "<b><tt>makefile</tt></b>":
 
 <blockquote><table cellpadding=0 cellspacing=0>
-<tr>	<th align=left>Under
+<tr>	<th align=left>For
 	<td>&nbsp;&nbsp;&nbsp;
 	<th align=left>Give the command
 <tr>	<td colspan=3><hr>
@@ -1138,25 +1164,11 @@ using.  This is necessary to handle some minor incompatibilities between
 versions.
 
 <p>
-To build Ghostscript, execute "<b><tt>wmakebat</tt></b>".  This constructs
-a build script and then executes it.  (This roundabout procedure is
-necessary because Watcom chose to implement <b><tt>wmake</tt></b> in a way
-that requires reading both the entire makefile and the entire current
-directory into the limited 640K DOS address space.)
+To run the <b><tt>make</tt></b> program, give the commmand
 
-<p>
-Note that Watcom C/386 version 8.5 does not include <b><tt>wmakel</tt></b>
-(the 32-bit version of <b><tt>wmake</tt></b>).  If this is the version that
-you have, use <b><tt>wmake</tt></b> instead, that is, edit
-<b><tt>wmakebat.bat</tt></b> to change "<b><tt>wmakel</tt></b>" to
-"<b><tt>wmake</tt></b>".
-
-<p>
-If you get an "Error(F01): Out of memory" with Watcom 8.5, you may wish to
-reduce the total size of the makefiles by editing <b><tt>devs.mak</tt></b>
-and <b><tt>contrib.mak</tt></b> to remove drivers you don't intend to use.
-If the error persists, contact Watcom technical support; they can send you
-the <b><tt>wmakel</tt></b> program, probably at no charge.
+<blockquote>
+<b><tt>wmake -u</tt></b>
+</blockquote>
 
 <h2><a name="Cygwin32_build"></a>Cygwin32 gcc</h2>
 
@@ -1175,7 +1187,7 @@ changes:
 Information about this compiler and environment is at the Cygnus site:
 
 <blockquote>
-<a href="http://www.cygnus.com/misc/gnu-win32/">http://www.cygnus.com/misc/gnu-win32/</a>
+<a href="http://sourceware.cygnus.com/cygwin/">http://sourceware.cygnus.com/cygwin/</a>
 </blockquote>
 
 <p>
@@ -1727,32 +1739,23 @@ with "<b><tt>-O2 -mips2</tt></b>" produces good output.
 <h3><a name="NeXTSTEP"></a>NeXTSTEP</h3>
 
 <p><ul>
-<li>For all NeXTSTEP systems, use <b><tt>unix-gcc.mak</tt></b>.
+<li>If you are using a NeXTSTEP version before 3.3, please get a no-cost
+upgrade (along with Y2K patches) from Apple.
 
-<li>For current versions of NeXTSTEP, in <b><tt>unixtail.mak</tt></b> (and
-<b><tt>ugcclib.mak</tt></b>, if you are using only the library) change the
-definition of <b><tt>INCLUDE</tt></b> to
-"<b><tt>INCLUDE=/usr/include/bsd</tt></b>"
+<li>For all NeXTSTEP systems, use <b><tt>unix-gcc.mak</tt></b>.  Make the
+following changes:
 
-<li>For NeXTSTEP versions before 3.2
 <ul>
-<li>edit <b><tt>unix-gcc.mak</tt></b> to change <b><tt>CC=gcc</tt></b> to
-<b><tt>CC=cc</tt></b> and add <b><tt>-D_NEXT_SOURCE</tt></b> to
-<b><tt>CFLAGS</tt></b>;
-<li>change occurrences of <b><tt>sys/time.h</tt></b> to
-<b><tt>ansi/time.h</tt></b>; and
-<li>in <b><tt>gp_unifs.c</tt></b> change <b><tt>&lt;dirent.h&gt;</tt></b>
-to <b><tt>&lt;sys/dirent.h&gt;</tt></b>.
-</ul>
+<li>In <b><tt>unix-aux.mak</tt></b> (and <b><tt>ugcclib.mak</tt></b>, if you
+are using only the library) change the definition of <b><tt>INCLUDE</tt></b>
+to "<b><tt>INCLUDE=/usr/include/bsd</tt></b>";
 
-<li>For NeXTSTEP 3.2 and later
-<ul>
-<li>edit <b><tt>unix-gcc.mak</tt></b> to change <b><tt>CC=gcc</tt></b> to
+<li>in <b><tt>unix-gcc.mak</tt></b>, change <b><tt>CC=gcc</tt></b> to
 <b><tt>CC=cc</tt></b>, add <b><tt>-D_POSIX_SOURCE</tt></b> to
 <b><tt>CFLAGS</tt></b> and remove <b><tt>-g</tt></b>, and remove
 <b><tt>-Wstrict-prototypes</tt></b> from <b><tt>GCFLAGS</tt></b>; and
 
-<li>to the end of Fontmap add the line
+<li>to the end of <b><tt>Fontmap.GS</tt></b> add the line
 "<b><tt>/Ohlfs&nbsp;/Courier&nbsp;;</tt></b>".
 </ul>
 
@@ -1922,9 +1925,12 @@ optimization, e.g.:
 <p>
 after doing a normal compile; then relink.
 
-<li>Irix 6.5.1m with compiler 7.2.1.1m requires compiling with the
-<b><tt>-o32</tt></b> option.  Compiling with the (default)
-<b><tt>-n32</tt></b> option produces non-working executables.
+<li>Irix 6.5.1m with MIPSpro compiler 7.2.1.1m, Irix 6.5.3m with MIPSpro
+compiler 7.2.1, and probably other 6.5x / 7.2x combinations require
+compiling with the <b><tt>-o32</tt></b> option.  Compiling with the
+(default) <b><tt>-n32</tt></b> option produces non-working executables.
+<b><tt>-O2</tt></b> is OK (possibly except for <b><tt>idict.c</tt></b>), but
+not <b><tt>-O3</tt></b>.
 </ul>
 
 <h3><a name="Sun"></a>Sun</h3>
@@ -2361,7 +2367,7 @@ to begin
 
 <font size=2>
 
-<p>Copyright &copy; 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+<p>Copyright &copy; 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
 <p>This file is part of Aladdin Ghostscript.  See the
 <a href="Public.htm">Aladdin Free Public License</a> (the "License") for
@@ -2369,7 +2375,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.50, 16 September 1998
+Ghostscript version 5.91, 30 August 1999
 
 </font>
 

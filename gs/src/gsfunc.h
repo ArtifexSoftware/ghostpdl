@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -42,6 +42,13 @@ typedef int gs_function_type_t;
     int n;			/* # of outputs */\
     const float *Range		/* 2 x n, optional except for type 0 */
 
+/* Define calculation effort values (currently only used for monotonicity). */
+typedef enum {
+    EFFORT_EASY = 0,
+    EFFORT_MODERATE = 1,
+    EFFORT_ESSENTIAL = 2
+} gs_function_effort_t;
+
 /* Define a generic function, for use as the target type of pointers. */
 typedef struct gs_function_params_s {
     gs_function_params_common;
@@ -52,17 +59,21 @@ typedef int (*fn_evaluate_proc_t)(P3(const gs_function_t * pfn,
 typedef int (*fn_is_monotonic_proc_t)(P4(const gs_function_t * pfn,
 					 const float *lower,
 					 const float *upper,
-					 bool must_know));
+					 gs_function_effort_t effort));
 typedef void (*fn_free_params_proc_t)(P2(gs_function_params_t * params,
 					 gs_memory_t * mem));
 typedef void (*fn_free_proc_t)(P3(gs_function_t * pfn,
 				  bool free_params, gs_memory_t * mem));
-typedef struct gs_function_head_s {
-    gs_function_type_t type;
+typedef struct gs_function_procs_s {
     fn_evaluate_proc_t evaluate;
     fn_is_monotonic_proc_t is_monotonic;
     fn_free_params_proc_t free_params;
     fn_free_proc_t free;
+} gs_function_procs_t;
+typedef struct gs_function_head_s {
+    gs_function_type_t type;
+    gs_function_procs_t procs;
+    bool is_monotonic;		/* cached when function is created */
 } gs_function_head_t;
 struct gs_function_s {
     gs_function_head_t head;
@@ -107,24 +118,64 @@ void gs_function_XxYy_free_params(P2(gs_function_XxYy_params_t *params,
 
 /* Evaluate a function. */
 #define gs_function_evaluate(pfn, in, out)\
-  (*(pfn)->head.evaluate)(pfn, in, out)
+  (*(pfn)->head.procs.evaluate)(pfn, in, out)
 
 /*
  * Test whether a function is monotonic on a given (closed) interval.  If
- * must_know is true, returns 0 for false, 1 for true, gs_error_rangecheck
- * if any part of the interval is outside the function's domain; if
- * must_know is false, may also return gs_error_undefined to mean "can't
- * determine quickly".  If lower[i] > upper[i], the result is not defined.
+ * the test requires too much effort, the procedure may return
+ * gs_error_undefined; normally, it returns 0 for false, >0 for true,
+ * gs_error_rangecheck if any part of the interval is outside the function's
+ * domain.  If lower[i] > upper[i], the result is not defined.
+ *
+ * Note that this is a very unsophisticated test: it returns false for
+ * situations where a function is monotonic in individual inputs and/or
+ * outputs but not for all inputs and/or outputs in the same direction.  We
+ * only use it for fast checks.
  */
-#define gs_function_is_monotonic(pfn, lower, upper, must_know)\
-  (*(pfn)->head.is_monotonic)(pfn, lower, upper, must_know)
+#define gs_function_is_monotonic(pfn, lower, upper, effort)\
+  (*(pfn)->head.procs.is_monotonic)(pfn, lower, upper, effort)
+#define FN_MONOTONIC_INCREASING 1
+#define FN_MONOTONIC_DECREASING 2
 
 /* Free function parameters. */
 #define gs_function_free_params(pfn, mem)\
-  (*(pfn)->head.free_params)(&(pfn)->params, mem)
+  (*(pfn)->head.procs.free_params)(&(pfn)->params, mem)
 
 /* Free a function's implementation, optionally including its parameters. */
 #define gs_function_free(pfn, free_params, mem)\
-  (*(pfn)->head.free)(pfn, free_params, mem)
+  (*(pfn)->head.procs.free)(pfn, free_params, mem)
+
+/* ---------------- Vanilla functions ---------------- */
+
+/*
+ * The simplest type of functions, these just store closure data.
+ * The client provides the evaluation procedure.
+ */
+
+#define function_type_Vanilla (-1)
+
+typedef struct gs_function_Va_params_s {
+    gs_function_params_common;
+    fn_evaluate_proc_t eval_proc;
+    void *eval_data;
+    bool is_monotonic;
+} gs_function_Va_params_t;
+
+typedef struct gs_function_Va_s {
+    gs_function_head_t head;
+    gs_function_Va_params_t params;
+} gs_function_Va_t;
+
+#define private_st_function_Va()	/* in gsfunc.c */\
+  gs_private_st_suffix_add1(st_function_Va, gs_function_Va_t,\
+    "gs_function_Va_t", function_Va_enum_ptrs, function_Va_reloc_ptrs,\
+    st_function, params.eval_data)
+
+int gs_function_Va_init(P3(gs_function_t ** ppfn,
+			   const gs_function_Va_params_t * params,
+			   gs_memory_t * mem));
+
+void gs_function_Va_free_params(P2(gs_function_Va_params_t * params,
+				   gs_memory_t * mem));
 
 #endif /* gsfunc_INCLUDED */

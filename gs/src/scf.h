@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -99,19 +99,22 @@ typedef hcd_code cfd_node;
  * or a (negative) exceptional value.
  */
 #define run_error (-1)
-#define run_zeros (-2)		/* EOL follows, possibly with more padding first */
+#define run_zeros (-2)	/* EOL follows, possibly with more padding first */
 #define run_uncompressed (-3)
 /* 2-D codes */
 #define run2_pass (-4)
 #define run2_horizontal (-5)
 
 #define cfd_white_initial_bits 8
+#define cfd_white_min_bits 4	/* shortest white run */
 extern const cfd_node cf_white_decode[];
 
 #define cfd_black_initial_bits 7
+#define cfd_black_min_bits 2	/* shortest black run */
 extern const cfd_node cf_black_decode[];
 
 #define cfd_2d_initial_bits 7
+#define cfd_2d_min_bits 4	/* shortest non-H/V 2-D run */
 extern const cfd_node cf_2d_decode[];
 
 #define cfd_uncompressed_initial_bits 6		/* must be 6 */

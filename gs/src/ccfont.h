@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -62,23 +62,26 @@ typedef struct {
     /* (only used for string dicts) */
 } cfont_dict_keys;
 
-/* We pass a procedure vector to the font initialization routine */
-/* to avoid having externs, which compromise sharability. */
+/*
+ * We pass a procedure vector to the font initialization routine
+ * to avoid having externs, which compromise sharability.
+ */
 typedef struct cfont_procs_s {
-    int (*ref_dict_create) (P4(ref *, const cfont_dict_keys *,
+    int (*ref_dict_create) (P5(i_ctx_t *, ref *, const cfont_dict_keys *,
 			       cfont_string_array, const ref *));
-    int (*string_dict_create) (P4(ref *, const cfont_dict_keys *,
+    int (*string_dict_create) (P5(i_ctx_t *, ref *, const cfont_dict_keys *,
 				  cfont_string_array,
 				  cfont_string_array));
-    int (*num_dict_create) (P5(ref *, const cfont_dict_keys *,
+    int (*num_dict_create) (P6(i_ctx_t *, ref *, const cfont_dict_keys *,
 			       cfont_string_array, const ref *,
 			       const char *));
-    int (*name_array_create) (P3(ref *, cfont_string_array, int));
-    int (*string_array_create) (P4(ref *, cfont_string_array,
-				   int /*size */ ,
-				   uint /*protection */ ));
-    int (*name_create) (P2(ref *, const char *));
-    int (*ref_from_string) (P3(ref *, const char *, uint));
+    int (*name_array_create) (P4(i_ctx_t *, ref *, cfont_string_array, int));
+    int (*string_array_create) (P5(i_ctx_t *, ref *, cfont_string_array,
+				   int /*size */ , uint /*protection */ ));
+    int (*scalar_array_create) (P5(i_ctx_t *, ref *, const ref *,
+				   int /*size */ , uint /*protection */ ));
+    int (*name_create) (P3(i_ctx_t *, ref *, const char *));
+    int (*ref_from_string) (P4(i_ctx_t *, ref *, const char *, uint));
 } cfont_procs;
 
 /*
@@ -87,7 +90,7 @@ typedef struct cfont_procs_s {
  * a tiny procedural interface for getting access to the compiled font table.
  */
 #define ccfont_proc(proc)\
-  int proc(P2(const cfont_procs *, ref *))
+  int proc(P3(i_ctx_t *, const cfont_procs *, ref *))
 typedef ccfont_proc((*ccfont_fproc));
 
 /*
@@ -96,6 +99,6 @@ typedef ccfont_proc((*ccfont_fproc));
  */
 extern int ccfont_fprocs(P2(int *, const ccfont_fproc **));
 
-#define ccfont_version 18	/* for checking against libraries */
+#define ccfont_version 19	/* for checking against libraries */
 
 #endif /* ccfont_INCLUDED */

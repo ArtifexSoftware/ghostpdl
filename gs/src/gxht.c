@@ -58,10 +58,8 @@ const gx_device_color_type_t *const gx_dc_type_ht_binary =
 
 #define gx_dc_type_ht_binary (&gx_dc_type_data_ht_binary)
 /* GC procedures */
-#define cptr ((gx_device_color *)vptr)
 private 
-ENUM_PTRS_BEGIN(dc_ht_binary_enum_ptrs) return 0;
-
+ENUM_PTRS_WITH(dc_ht_binary_enum_ptrs, gx_device_color *cptr) return 0;
 ENUM_PTR(0, gx_device_color, colors.binary.b_ht);
 case 1:
 {
@@ -70,7 +68,7 @@ case 1:
     ENUM_RETURN(tile - tile->index);
 }
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(dc_ht_binary_reloc_ptrs)
+private RELOC_PTRS_WITH(dc_ht_binary_reloc_ptrs, gx_device_color *cptr)
 {
     uint index = cptr->colors.binary.b_tile->index;
 

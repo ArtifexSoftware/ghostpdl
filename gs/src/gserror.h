@@ -22,10 +22,8 @@
 #ifndef gserror_INCLUDED
 #  define gserror_INCLUDED
 
-#ifdef DEBUG
 int gs_log_error(P3(int, const char *, int));
-
-#else
+#ifndef DEBUG
 #  define gs_log_error(err, file, line) (err)
 #endif
 #define gs_note_error(err) gs_log_error(err, __FILE__, __LINE__)

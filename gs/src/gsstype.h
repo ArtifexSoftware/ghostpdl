@@ -26,14 +26,21 @@
 typedef struct gc_state_s gc_state_t;
 
 /*
- * The first argument of enum_ptrs procedures is logically const *.
- * Unfortunately, actually declaring it as such would produce many compiler
- * warnings from places that cast this argument to a non-const non-void
- * pointer type.  For the moment, we define EV_CONST as empty, with the
- * intention of changing it to const at some future time.
+ * Define the structure used to return an enumerated pointer.  Ordinary
+ * object pointers use only the ptr element; strings also use size.
  */
-/*#define EV_CONST const */
-#define EV_CONST		/* */
+typedef struct enum_ptr_s {
+    const void *ptr;
+    uint size;
+} enum_ptr_t;
+
+/*
+ * The first argument of enum_ptrs procedures formerly was not const *, and
+ * EV_CONST was defined as empty.  Unfortunately, changing EV_CONST to const
+ * produced many compiler warnings from places that cast this argument to a
+ * non-const non-void pointer type.
+ */
+#define EV_CONST const
 
 /* Define the procedures for structure types. */
 
@@ -47,7 +54,7 @@ typedef struct gc_state_s gc_state_t;
 
 #define struct_proc_enum_ptrs(proc)\
   gs_ptr_type_t proc(P6(EV_CONST void /*obj_header_t*/ *ptr, uint size,\
-    int index, const void **pep, const gs_memory_struct_type_t *pstype,\
+    int index, enum_ptr_t *pep, const gs_memory_struct_type_t *pstype,\
     gc_state_t *gcst))
 
 		/* Relocate all the pointers in this structure. */

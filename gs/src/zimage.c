@@ -26,7 +26,6 @@
 #include "igstate.h"
 #include "ilevel.h"
 #include "store.h"
-#include "gschar.h"		/* for in_cachedevice */
 #include "gscspace.h"
 #include "gscssub.h"
 #include "gsmatrix.h"
@@ -63,6 +62,46 @@ zimagemask(i_ctx_t *i_ctx_p)
     gs_image_t_init_mask_adjust(&image, op[-2].value.boolval,
 				gs_incachedevice(igs) != CACHE_DEVICE_NONE);
     return image_setup(i_ctx_p, op, &image, NULL, 5);
+}
+
+/* Setup for [color|alpha]image.  This code isn't used for Level 1, */
+/* but it's simpler to include it here. */
+int
+zimage_multiple(i_ctx_t *i_ctx_p, bool has_alpha)
+{
+    os_ptr op = osp;
+    int spp;			/* samples per pixel */
+    int npop = 7;
+    os_ptr procp = op - 2;
+    const gs_color_space *pcs;
+    bool multi = false;
+
+    check_int_leu(*op, 4);	/* ncolors */
+    check_type(op[-1], t_boolean);	/* multiproc */
+    switch ((spp = (int)(op->value.intval))) {
+	case 1:
+	    pcs = gs_current_DeviceGray_space(igs);
+	    break;
+	case 3:
+	    pcs = gs_current_DeviceRGB_space(igs);
+	    goto color;
+	case 4:
+	    pcs = gs_current_DeviceCMYK_space(igs);
+color:
+	    if (op[-1].value.boolval) {	/* planar format */
+		if (has_alpha)
+		    ++spp;
+		npop += spp - 1;
+		procp -= spp - 1;
+		multi = true;
+	    }
+	    break;
+	default:
+	    return_error(e_rangecheck);
+    }
+    return zimage_opaque_setup(i_ctx_p, procp, multi,
+		    (has_alpha ? gs_image_alpha_last : gs_image_alpha_none),
+			       pcs, npop);
 }
 
 /* Common setup for [color|alpha]image. */

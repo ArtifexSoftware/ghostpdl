@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,6 +23,7 @@
 #  define store_INCLUDED
 
 #include "ialloc.h"		/* for imemory masks & checks */
+#include "idosave.h"
 
 /*
  * Macros for storing a ref.  We use macros for storing into objects,
@@ -91,30 +92,36 @@
 	(*(pto) = *(pfrom))
 #endif
 
-/****** NOTE: the following declarations are duplicated from isave.h. ******/
-
-int alloc_save_change(P4(gs_dual_memory_t *, const ref * pcont,
-			 ref_packed * ptr, client_name_t cname));
-int alloc_save_level(P1(const gs_dual_memory_t *));
-
-/****** END duplicated declarations. ******/
-
-#define ialloc_save_change(pcont, ptr, cname)\
-  alloc_save_change(idmemory, pcont, ptr, cname)
-#define ialloc_is_in_save() (idmemory->save_level > 0)
-#define ialloc_test_mask (idmemory->test_mask)
 #define ialloc_new_mask (idmemory->new_mask)
-#define ref_must_save(pto)\
-  ((r_type_attrs(pto) & ialloc_test_mask) == 0)
+     /*
+      * The mmem argument may be either a gs_dual_memory_t or a
+      * gs_ref_memory_t, since it is only used for accessing the masks.
+      */
+#define ref_saving_in(mmem)\
+  ((mmem)->new_mask != 0)
+#define ref_must_save_in(mmem,pto)\
+  ((r_type_attrs(pto) & (mmem)->test_mask) == 0)
+#define ref_must_save(pto) ref_must_save_in(idmemory, pto)
+#define ref_do_save_in(mem, pcont, pto, cname)\
+  alloc_save_change_in(mem, pcont, (ref_packed *)(pto), cname)
 #define ref_do_save(pcont, pto, cname)\
-  ialloc_save_change(pcont, (ref_packed *)(pto), cname)
+  alloc_save_change(idmemory, pcont, (ref_packed *)(pto), cname)
+#define ref_save_in(mem, pcont, pto, cname)\
+  discard((ref_must_save_in(mem, pto) ?\
+	   ref_do_save_in(mem, pcont, pto, cname) : 0))
 #define ref_save(pcont, pto, cname)\
   discard((ref_must_save(pto) ? ref_do_save(pcont, pto, cname) : 0))
-#define ref_mark_new(pto) ((pto)->tas.type_attrs |= ialloc_new_mask)
+#define ref_mark_new_in(mmem,pto)\
+  ((pto)->tas.type_attrs |= (mmem)->new_mask)
+#define ref_mark_new(pto) ref_mark_new_in(idmemory, pto)
+#define ref_assign_new_in(mem,pto,pfrom)\
+  discard((ref_assign(pto,pfrom), ref_mark_new_in(mem,pto)))
 #define ref_assign_new(pto,pfrom)\
   discard((ref_assign(pto,pfrom), ref_mark_new(pto)))
 #define ref_assign_new_inline(pto,pfrom)\
   discard((ref_assign_inline(pto,pfrom), ref_mark_new(pto)))
+#define ref_assign_old_in(mem,pcont,pto,pfrom,cname)\
+  (ref_save_in(mem,pcont,pto,cname), ref_assign_new_in(mem,pto,pfrom))
 #define ref_assign_old(pcont,pto,pfrom,cname)\
   (ref_save(pcont,pto,cname), ref_assign_new(pto,pfrom))
 #define ref_assign_old_inline(pcont,pto,pfrom,cname)\
@@ -144,10 +151,16 @@ int alloc_save_level(P1(const gs_dual_memory_t *));
 #endif
 
 /* make_t must set the attributes to 0 to clear a_local! */
+#define make_ta(pref,newtype,newattrs)\
+  (r_set_type_attrs(pref, newtype, newattrs) and_fill_sv(pref))
 #define make_t(pref,newtype)\
-  (r_set_type_attrs(pref, newtype, 0) and_fill_sv(pref))
+  make_ta(pref, newtype, 0)
+#define make_t_new_in(mem,pref,newtype)\
+  make_ta(pref, newtype, imemory_new_mask(mem))
 #define make_t_new(pref,newtype)\
-  (r_set_type_attrs(pref, newtype, ialloc_new_mask) and_fill_sv(pref))
+  make_ta(pref, newtype, ialloc_new_mask)
+#define make_t_old_in(mem,pcont,pref,newtype,cname)\
+  (ref_save_in(mem,pcont,pref,cname), make_t_new_in(mem,pref,newtype))
 #define make_t_old(pcont,pref,newtype,cname)\
   (ref_save(pcont,pref,cname), make_t_new(pref,newtype))
 
@@ -197,6 +210,8 @@ int alloc_save_level(P1(const gs_dual_memory_t *));
   make_t(pref, t_null)
 #define make_null_new(pref)\
   make_t_new(pref, t_null)
+#define make_null_old_in(mem,pcont,pref,cname)\
+  make_t_old_in(mem, pcont, pref, t_null, cname)
 #define make_null_old(pcont,pref,cname)\
   make_t_old(pcont, pref, t_null, cname)
 

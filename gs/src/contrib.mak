@@ -34,8 +34,6 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 # *	att3b1	AT&T 3b1/Unixpc monochrome display   [3b1 only]
 # *	sonyfb	Sony Microsystems monochrome display   [Sony only]
 # *	sunview  SunView window system   [SunOS only]
-#   Platform-independent:
-# *	sxlcrt	CRT sixels, e.g. for VT240-like terminals
 # Printers:
 # *	ap3250	Epson AP3250 printer
 # *	appledmp  Apple Dot Matrix Printer (should also work with Imagewriter)
@@ -59,7 +57,6 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 # *	declj250  alternate DEC LJ250 driver
 # *	djet500c  H-P DeskJet 500C alternate driver
 #		(does not work on 550C or 560C)
-# *	dl2100	DEC DEClaser 2100 printer
 # *	dnj650c  H-P DesignJet 650C
 #	epson	Epson-compatible dot matrix printers (9- or 24-pin)
 # *	eps9mid  Epson-compatible 9-pin, interleaved lines
@@ -74,14 +71,9 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 # *	iwlo	Apple Imagewriter in low-resolution mode
 # *	iwlq	Apple Imagewriter LQ in 320 x 216 dpi mode
 # *	jetp3852  IBM Jetprinter ink-jet color printer (Model #3852)
-# *	la50	DEC LA50 printer
-# *	la70	DEC LA70 printer
 # *	la70t	DEC LA70 printer with low-resolution text enhancement
-# *	la75	DEC LA75 printer
-# *	la75plus DEC LA75plus printer
 # *	lbp8	Canon LBP-8II laser printer
 # *	lips3	Canon LIPS III laser printer in English (CaPSL) mode
-# *	ln03	DEC LN03 printer
 # *	lj250	DEC LJ250 Companion color printer
 # *	lj3100sw H-P LaserJet 3100 (requires installed HP-Software)
 # +	lj4dith  H-P LaserJet 4 with Floyd-Steinberg dithering
@@ -111,7 +103,6 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 # *	tek4696  Tektronix 4695/4696 inkjet plotter
 # *	uniprint  Unified printer driver -- Configurable Color ESC/P-,
 #		ESC/P2-, HP-RTL/PCL mono/color driver
-# *	xes	Xerox XES printers (2700, 3700, 4045, etc.)
 # Fax systems:
 # *	dfaxhigh  DigiBoard, Inc.'s DigiFAX software format (high resolution)
 # *	dfaxlow  DigiFAX low (normal) resolution
@@ -192,16 +183,6 @@ $(DD)sunview.dev : $(sunview_)
 $(GLOBJ)gdevsun.$(OBJ) : $(GLSRC)gdevsun.c $(GDEV) $(malloc__h)\
  $(gscdefs_h) $(gserrors_h) $(gsmatrix_h)
 	$(GLCC) $(GLO_)gdevsun.$(OBJ) $(C_) $(GLSRC)gdevsun.c
-
-### ------------------------- DEC sixel displays ------------------------ ###
-### Note: this driver was contributed by a user: please contact           ###
-###   Phil Keegstra (keegstra@tonga.gsfc.nasa.gov) if you have questions. ###
-
-# This is a "printer" device, but it probably shouldn't be.
-# I don't know why the implementor chose to do it this way.
-sxlcrt_=$(GLOBJ)gdevln03.$(OBJ)
-$(DD)sxlcrt.dev : $(sxlcrt_) $(DD)page.dev
-	$(SETPDEV) $(DD)sxlcrt $(sxlcrt_)
 
 ###### --------------- Memory-buffered printer devices --------------- ######
 
@@ -568,38 +549,6 @@ $(GLOBJ)gdevlbp8.$(OBJ) : $(GLSRC)gdevlbp8.c $(PDEVH)
 	$(GLCC) $(GLO_)gdevlbp8.$(OBJ) $(C_) $(GLSRC)gdevlbp8.c
 
 ### -------- The DEC LN03/DL2100/LA50/LA70/LA75 printer devices -------- ###
-### Note: this driver was contributed by users: please contact           ###
-###       Ulrich Mueller (ulm@vsnhd1.cern.ch) if you have questions.     ###
-### For questions about the DEClaser 2100, please contact                ###
-###       Nick Brown (nick.brown@coe.int).                               ###
-### For questions about LA50 and LA75, please contact                    ###
-###       Ian MacPhedran (macphed@dvinci.USask.CA).                      ###
-### For questions about the LA70, please contact                         ###
-###       Bruce Lowekamp (lowekamp@csugrad.cs.vt.edu).                   ###
-### For questions about the LA75plus, please contact                     ###
-###       Andre' Beck (Andre_Beck@IRS.Inf.TU-Dresden.de).                ###
-
-ln03_=$(GLOBJ)gdevln03.$(OBJ)
-$(DD)ln03.dev : $(ln03_) $(DD)page.dev
-	$(SETPDEV) $(DD)ln03 $(ln03_)
-
-$(DD)dl2100.dev : $(ln03_) $(DD)page.dev
-	$(SETPDEV) $(DD)dl2100 $(ln03_)
-
-$(DD)la50.dev : $(ln03_) $(DD)page.dev
-	$(SETPDEV) $(DD)la50 $(ln03_)
-
-$(DD)la70.dev : $(ln03_) $(DD)page.dev
-	$(SETPDEV) $(DD)la70 $(ln03_)
-
-$(DD)la75.dev : $(ln03_) $(DD)page.dev
-	$(SETPDEV) $(DD)la75 $(ln03_)
-
-$(DD)la75plus.dev : $(ln03_) $(DD)page.dev
-	$(SETPDEV) $(DD)la75plus $(ln03_)
-
-$(GLOBJ)gdevln03.$(OBJ) : $(GLSRC)gdevln03.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevln03.$(OBJ) $(C_) $(GLSRC)gdevln03.c
 
 # LA70 driver with low-resolution text enhancement.
 
@@ -759,17 +708,6 @@ $(DD)tek4696.dev : $(tek4696_) $(DD)page.dev
 $(GLOBJ)gdevtknk.$(OBJ) : $(GLSRC)gdevtknk.c $(PDEVH) $(malloc__h)
 	$(GLCC) $(GLO_)gdevtknk.$(OBJ) $(C_) $(GLSRC)gdevtknk.c
 
-### ----------------- The Xerox XES printer device --------------------- ###
-### Note: this driver was contributed by users: please contact           ###
-###       Peter Flass (flass@lbdrscs.bitnet) if you have questions.      ###
-
-xes_=$(GLOBJ)gdevxes.$(OBJ)
-$(DD)xes.dev : $(xes_) $(DD)page.dev
-	$(SETPDEV) $(DD)xes $(xes_)
-
-$(GLOBJ)gdevxes.$(OBJ) : $(GLSRC)gdevxes.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevxes.$(OBJ) $(C_) $(GLSRC)gdevxes.c
-
 ###### ------------------------- Fax devices ------------------------- ######
 
 ### ------------------------- The DigiFAX device ------------------------ ###
@@ -789,7 +727,8 @@ $(DD)dfaxhigh.dev : $(dfax_) $(DD)tfax.dev
 	$(SETDEV) $(DD)dfaxhigh $(dfax_)
 	$(ADDMOD) $(GLGEN)dfaxhigh -include $(DD)tfax
 
-$(GLOBJ)gdevdfax.$(OBJ) : $(GLSRC)gdevdfax.c $(PDEVH) $(scfx_h) $(strimpl_h)
+$(GLOBJ)gdevdfax.$(OBJ) : $(GLSRC)gdevdfax.c $(PDEVH)\
+ $(gdevtfax_h) $(scfx_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevdfax.$(OBJ) $(C_) $(GLSRC)gdevdfax.c
 
 ###### --------------------- Raster file formats --------------------- ######

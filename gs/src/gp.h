@@ -26,12 +26,12 @@
 #include "gstypes.h"
 /*
  * This file defines the interface to ***ALL*** platform-specific routines,
- * with the exception of the thread/synchronization interface (gpsync.h).
- * The routines are implemented in a gp_*.c file specific to each platform.
- * We try very hard to keep this list short!
+ * with the exception of the thread/synchronization interface (gpsync.h)
+ * and getenv (gpgetenv.h).  The implementations are in gp_*.c files
+ * specific to each platform.  We try very hard to keep this list short!
  */
 /*
- * gp_getenv is declared in a separate file, because a few places need it
+ * gp_getenv is declared in a separate file because a few places need it
  * and don't want to include any of the other gs definitions.
  */
 #include "gpgetenv.h"
@@ -204,24 +204,32 @@ const char *gp_file_name_concat_string(P4(const char *prefix, uint plen,
 /* ------ Printer accessing ------ */
 
 /*
- * Open a connection to a printer.  A null file name means use the
- * standard printer connected to the machine, if any.
- * If possible, support "|command" for opening an output pipe.
- * Return NULL if the connection could not be opened.
+ * Open a connection to a printer.  A null file name means use the standard
+ * printer connected to the machine, if any.  Note that this procedure is
+ * called only if the original file name (normally the value of the
+ * OutputFile device parameter) was an ordinary file (not stdout, a pipe, or
+ * other %filedevice%file name): stdout is handled specially, and other
+ * values of filedevice are handled by calling the fopen procedure
+ * associated with that kind of "file".
  *
  * Note that if the file name is null (0-length), it may be replaced with
  * the name of a scratch file.
  */
 FILE *gp_open_printer(P2(char fname[gp_file_name_sizeof], int binary_mode));
 
-/* Close the connection to the printer. */
+/*
+ * Close the connection to the printer.  Note that this is only called
+ * if the original file name was an ordinary file (not stdout, a pipe,
+ * or other %filedevice%file name): stdout is handled specially, and other
+ * values of filedevice are handled by calling the fclose procedure
+ * associated with that kind of "file".
+ */
 void gp_close_printer(P2(FILE * pfile, const char *fname));
 
 /* ------ File enumeration ------ */
 
 #ifndef file_enum_DEFINED	/* also defined in iodev.h */
 #  define file_enum_DEFINED
-struct file_enum_s;		/* opaque to client, defined by implementor */
 typedef struct file_enum_s file_enum;
 #endif
 

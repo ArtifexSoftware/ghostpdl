@@ -67,7 +67,7 @@ zcurrentdevice(i_ctx_t *i_ctx_p)
 }
 
 /* <device> .devicename <string> */
-int
+private int
 zdevicename(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -219,7 +219,7 @@ zget_device_params(i_ctx_t *i_ctx_p, bool is_hardware)
     rkeys = *op;
     dev = op[-1].value.pdevice;
     pop(1);
-    stack_param_list_write(&list, &o_stack, &rkeys);
+    stack_param_list_write(&list, &o_stack, &rkeys, iimemory);
     code = gs_get_device_or_hardware_params(dev, (gs_param_list *) & list,
 					    is_hardware);
     if (code < 0) {
@@ -361,7 +361,7 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
     check_write_type_only(*pdev, t_device);
     dev = pdev->value.pdevice;
     code = stack_param_list_read(&list, &o_stack, 0, ppolicy,
-				 prequire_all->value.boolval);
+				 prequire_all->value.boolval, iimemory);
     if (code < 0)
 	return code;
     old_width = dev->width;

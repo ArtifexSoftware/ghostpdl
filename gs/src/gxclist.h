@@ -211,9 +211,14 @@ typedef struct gx_device_clist_writer_s {
     uint tile_max_count;	/* max # of hash table entries */
     gx_strip_bitmap tile_params;	/* current tile parameters */
     int tile_depth;		/* current tile depth */
-    int tile_known_min, tile_known_max;
-    /* range of bands that knows the */
-    /* current tile parameters */
+    int tile_known_min, tile_known_max;  /* range of bands that knows the */
+				/* current tile parameters */
+    /*
+     * NOTE: we must not set the line_params.dash.pattern member of the
+     * imager state to point to the dash_pattern member of the writer
+     * state (except transiently), since this would confuse the
+     * garbage collector.
+     */
     gs_imager_state imager_state;	/* current values of imager params */
     float dash_pattern[cmd_max_dash];	/* current dash pattern */
     const gx_clip_path *clip_path;	/* current clip path */

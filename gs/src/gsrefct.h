@@ -26,6 +26,15 @@
  * A reference-counted object must include the following header:
  *      rc_header rc;
  * The header need not be the first element of the object.
+ *
+ * Reference-counted objects have a freeing procedure that gets called when
+ * the reference count reaches zero.  In retrospect, we probably should have
+ * used finalization for this, but it's too difficult to change now.
+ * Because of the interaction between these two features, the freeing
+ * procedure for reference-counted objects that do use finalization must
+ * free the object itself first, before decrementing the reference counts
+ * of referenced objects (which of course requires saving pointers to those
+ * objects before freeing the containing object).
  */
 typedef struct rc_header_s rc_header;
 struct rc_header_s {
@@ -37,7 +46,14 @@ struct rc_header_s {
 };
 
 #ifdef DEBUG
-const char *rc_object_type_name(P2(const void *vp, const rc_header *prc));
+void rc_trace_init_free(P2(const void *vp, const rc_header *prc));
+void rc_trace_free_struct(P3(const void *vp, const rc_header *prc,
+			     client_name_t cname));
+void rc_trace_increment(P2(const void *vp, const rc_header *prc));
+void rc_trace_adjust(P3(const void *vp, const rc_header *prc, int delta));
+#define IF_RC_DEBUG(call) if (gs_debug_c('^')) dlputs(""), call
+#else
+#define IF_RC_DEBUG(call) DO_NOTHING
 #endif
 
 /* ------ Allocate/free ------ */
@@ -49,8 +65,7 @@ rc_free_proc(rc_free_struct_only);
     (vp)->rc.ref_count = rcinit;\
     (vp)->rc.memory = mem;\
     (vp)->rc.free = proc;\
-    if_debug3('^', "[^]%s 0x%lx init = %d\n",\
-	      rc_object_type_name(vp, &(vp)->rc), (ulong)vp, rcinit);\
+    IF_RC_DEBUG(rc_trace_init_free(vp, &(vp)->rc));\
   END
 #define rc_init(vp, mem, rcinit)\
   rc_init_free(vp, mem, rcinit, rc_free_struct_only)
@@ -70,9 +85,7 @@ rc_free_proc(rc_free_struct_only);
 
 #define rc_free_struct(vp, cname)\
   BEGIN\
-    if_debug3('^', "[^]%s 0x%lx => free (%s)\n",\
-	      rc_object_type_name(vp, &(vp)->rc),\
-	      (ulong)vp, client_name_string(cname));\
+    IF_RC_DEBUG(rc_trace_free_struct(vp, &(vp)->rc, cname));\
     (vp)->rc.free((vp)->rc.memory, (void *)(vp), cname);\
   END
 
@@ -82,9 +95,7 @@ rc_free_proc(rc_free_struct_only);
 #define RC_DO_INCREMENT(vp)\
   BEGIN\
     (vp)->rc.ref_count++;\
-    if_debug3('^', "[^]%s 0x%lx ++ => %ld\n",\
-	      rc_object_type_name(vp, &(vp)->rc),\
-	      (ulong)vp, (long)(vp)->rc.ref_count);\
+    IF_RC_DEBUG(rc_trace_increment(vp, &(vp)->rc));\
   END
 #define rc_increment(vp)\
   BEGIN\
@@ -103,9 +114,7 @@ rc_free_proc(rc_free_struct_only);
 /* Guarantee that a structure is allocated and is not shared. */
 #define RC_DO_ADJUST(vp, delta)\
   BEGIN\
-    if_debug4('^', "[^]%s 0x%lx %+d => %ld\n",\
-	      rc_object_type_name(vp, &(vp)->rc),\
-	      (ulong)vp, delta, (long)((vp)->rc.ref_count + (delta)));\
+    IF_RC_DEBUG(rc_trace_adjust(vp, &(vp)->rc, delta));\
     (vp)->rc.ref_count += (delta);\
   END
 #define rc_unshare_struct(vp, typ, pstype, mem, errstat, cname)\

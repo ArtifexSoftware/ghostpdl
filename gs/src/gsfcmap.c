@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,11 +28,10 @@ public_st_cmap();
 public_st_code_map();
 public_st_code_map_element();
 
-#define pcmap ((gx_code_map *)vptr)
 /* Because code maps can be elements of arrays, */
 /* their enum_ptrs procedure must never return 0 prematurely. */
 private 
-ENUM_PTRS_BEGIN(code_map_enum_ptrs) return 0;
+ENUM_PTRS_WITH(code_map_enum_ptrs, gx_code_map *pcmap) return 0;
 ENUM_PTR(0, gx_code_map, cmap);
 case 1:
 switch (pcmap->type)
@@ -46,7 +45,7 @@ switch (pcmap->type)
 	ENUM_RETURN_PTR(gx_code_map, data.subtree);
 }
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(code_map_reloc_ptrs);
+private RELOC_PTRS_WITH(code_map_reloc_ptrs, gx_code_map *pcmap);
 switch (pcmap->type) {
     case cmap_subtree:
 	RELOC_PTR(gx_code_map, data.subtree);
@@ -56,7 +55,6 @@ switch (pcmap->type) {
 }
 RELOC_PTR(gx_code_map, cmap);
 RELOC_PTRS_END
-#undef pcmap
 
 /* CIDSystemInfo structure descriptors */
 private_st_cid_system_info();

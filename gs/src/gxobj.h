@@ -27,19 +27,13 @@
 /* ================ Objects ================ */
 
 /*
- * Object headers come in a number of different varieties.
- * All arise from the same basic form, which is
- -l- -lmsize/mark/back-
- -size-
- -type/reloc-
- * l (large) is a single bit.  The size of lmsize/mark/back, size, and type
- * varies according to the environment.  On machines with N:16 segmented
- * addressing, 16-bit ints, and no alignment requirement more severe than
- * 2 bytes, we can fit an object header into 8 bytes by making the first
- * two fields only 16 bits wide.  On all other machines, we let the
- * lmsize/mark/back field be 1 bit shorter than a uint, and round the header
- * size up to the next multiple of the most severe alignment restriction
- * (4 or 8 bytes).  Miraculously, we can do all this without any case testing.
+ * Object headers have the form:
+	-l- -mark/back-
+	-size-
+	-type/reloc-
+ * l (aLone) is a single bit.  Mark/back is 1 bit shorter than a uint.  We
+ * round the header size up to the next multiple of the most severe
+ * alignment restriction (4 or 8 bytes).
  *
  * The mark/back field is used for the mark during the marking phase of
  * garbage collection, and for a back pointer value during the compaction
@@ -51,12 +45,6 @@
  *      we use 1...10 in the mark field (o_untraced).
  * Note that neither of these values is a possible real relocation value.
  *
- * The lmsize field of large objects overlaps mark and back, so we must
- * handle these functions for large objects in some other way.
- * Since large objects cannot be moved or relocated, we don't need the
- * back field for them; we allocate 2 bits for the 3 mark values.
- */
-/*
  * The back pointer's meaning depends on whether the object is
  * free (unmarked) or in use (marked):
  *      - In free objects, the back pointer is an offset from the object
@@ -73,46 +61,26 @@
  */
 #define obj_flag_bits 1
 #define obj_mb_bits (arch_sizeof_int * 8 - obj_flag_bits)
-#define obj_ls_bits (obj_mb_bits - 2)
 #define o_unmarked (((uint)1 << obj_mb_bits) - 1)
-#define o_l_unmarked (o_unmarked & 3)
-#define o_set_unmarked_large(pp) (pp)->o_lmark = o_l_unmarked
 #define o_set_unmarked(pp)\
-  BEGIN\
-    if ((pp)->o_large) o_set_unmarked_large(pp);\
-    else (pp)->o_smark = o_unmarked;\
-  END
-#define o_is_unmarked_large(pp) ((pp)->o_lmark == o_l_unmarked)
+  ((pp)->o_smark = o_unmarked)
 #define o_is_unmarked(pp)\
- ((pp)->o_large ? o_is_unmarked_large(pp) :\
-  ((pp)->o_smark == o_unmarked))
+  ((pp)->o_smark == o_unmarked)
 #define o_untraced (((uint)1 << obj_mb_bits) - 2)
-#define o_l_untraced (o_untraced & 3)
 #define o_set_untraced(pp)\
-  BEGIN\
-    if ((pp)->o_large) (pp)->o_lmark = o_l_untraced;\
-    else (pp)->o_smark = o_untraced;\
-  END
+  ((pp)->o_smark = o_untraced)
 #define o_is_untraced(pp)\
- ((pp)->o_large ? (pp)->o_lmark == o_l_untraced :\
-  ((pp)->o_smark == o_untraced))
+  ((pp)->o_smark == o_untraced)
 #define o_marked 0
-#define o_mark_large(pp) (pp)->o_lmark = o_marked
 #define o_mark(pp)\
-  BEGIN\
-    if ((pp)->o_large) o_mark_large(pp);\
-    else (pp)->o_smark = o_marked;\
-  END
+  ((pp)->o_smark = o_marked)
 #define obj_back_shift obj_flag_bits
 #define obj_back_scale (1 << obj_back_shift)
 typedef struct obj_header_data_s {
     union _f {
 	struct _h {
-	    unsigned large:1;
+	    unsigned alone:1;
 	} h;
-	struct _l {
-	    unsigned _:1, lmark:2, lsize:obj_ls_bits;
-	} l;
 	struct _m {
 	    unsigned _:1, smark:obj_mb_bits;
 	} m;
@@ -165,9 +133,7 @@ struct obj_header_s {		/* must be a struct because of forward reference */
 };
 
 /* Define some reasonable abbreviations for the fields. */
-#define o_large d.o.f.h.large
-#define o_lsize d.o.f.l.lsize
-#define o_lmark d.o.f.l.lmark
+#define o_alone d.o.f.h.alone
 #define o_back d.o.f.b.back
 #define o_smark d.o.f.m.smark
 #define o_size d.o.size
@@ -178,34 +144,8 @@ struct obj_header_s {		/* must be a struct because of forward reference */
  * The macros for getting the sizes of objects all take pointers to
  * the object header, for use when scanning storage linearly.
  */
-#define pre_obj_small_size(pp)\
+#define pre_obj_contents_size(pp)\
   ((pp)->o_size)
-
-#if arch_sizeof_long > arch_sizeof_int
-
-	/* Large objects need to use o_lsize. */
-
-#define pre_obj_large_size(pp)\
-  (((ulong)(pp)->o_lsize << (arch_sizeof_int * 8)) + (pp)->o_size)
-#define pre_obj_set_large_size(pp, lsize)\
-  ((pp)->o_lsize = (lsize) >> (arch_sizeof_int * 8),\
-   (pp)->o_size = (uint)(lsize))
-#define pre_obj_contents_size(pp)\
-  ((pp)->o_large ? pre_obj_large_size(pp) : pre_obj_small_size(pp))
-
-#else
-
-	/* Large objects don't need to use o_lsize. */
-
-#define pre_obj_large_size(pp)\
-  pre_obj_small_size(pp)
-#define pre_obj_set_large_size(pp, lsize)\
-  ((pp)->o_lsize = 0,\
-   (pp)->o_size = (lsize))
-#define pre_obj_contents_size(pp)\
-  pre_obj_small_size(pp)
-
-#endif
 
 #define pre_obj_rounded_size(pp)\
   obj_size_round(pre_obj_contents_size(pp))

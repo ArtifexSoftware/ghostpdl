@@ -22,9 +22,10 @@
 #include "memory_.h"		/* for memcpy */
 #include "string_.h"
 #include "gx.h"
+#include "gp.h"
 #include "gscdefs.h"		/* for gs_lib_device_list */
 #include "gserrors.h"
-#include "gp.h"
+#include "gsfname.h"
 #include "gsstruct.h"
 #include "gspath.h"		/* gs_initclip prototype */
 #include "gspaint.h"		/* gs_erasepage prototype */
@@ -34,6 +35,7 @@
 #include "gxcmap.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
+#include "gxiodev.h"
 
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
@@ -64,19 +66,15 @@ gx_device_free_local(gx_device *dev)
 }
 
 /* GC procedures */
-#define fdev ((gx_device_forward *)vptr)
 private 
-ENUM_PTRS_BEGIN(device_forward_enum_ptrs) return 0;
-
-case 0:
-ENUM_RETURN(gx_device_enum_ptr(fdev->target));
+ENUM_PTRS_WITH(device_forward_enum_ptrs, gx_device_forward *fdev) return 0;
+case 0: ENUM_RETURN(gx_device_enum_ptr(fdev->target));
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(device_forward_reloc_ptrs)
+private RELOC_PTRS_WITH(device_forward_reloc_ptrs, gx_device_forward *fdev)
 {
     fdev->target = gx_device_reloc_ptr(fdev->target, gcst);
 }
 RELOC_PTRS_END
-#undef fdev
 
 /*
  * Structure descriptors.  These must follow the procedures, because
@@ -629,60 +627,155 @@ gx_device_copy_params(gx_device *dev, const gx_device *target)
 
 #undef COPY_PARAM
 
+/*
+ * Parse the output file name for a device, recognizing "-" and "|command",
+ * and also detecting and validating any %nnd format for inserting the
+ * page count.  If a format is present, store a pointer to its last
+ * character in *pfmt, otherwise store 0 there.  Note that an empty name
+ * is currently allowed.
+ */
+int
+gx_parse_output_file_name(gs_parsed_file_name_t *pfn, const char **pfmt,
+			  const char *fname, uint fnlen)
+{
+    int code = gs_parse_file_name(pfn, fname, fnlen);
+    bool have_format = false, field = 0;
+    int width[2], int_width = sizeof(int) * 3, w = 0;
+    uint i;
+
+    *pfmt = 0;
+    if (fnlen == 0) {		/* allow null name */
+	pfn->memory = 0;
+	pfn->iodev = NULL;
+	pfn->fname = 0;		/* irrelevant since length = 0 */
+	pfn->len = 0;
+	return 0;
+    }
+    if (code < 0)
+	return code;
+    if (!pfn->iodev) {
+	if (!strcmp(pfn->fname, "-")) {
+	    pfn->iodev = gs_findiodevice((const byte *)"%stdout", 7);
+	    pfn->fname = NULL;
+	} else if (pfn->fname[0] == '|') {
+	    pfn->iodev = gs_findiodevice((const byte *)"%pipe", 5);
+	    pfn->fname++, pfn->len--;
+	} else
+	    pfn->iodev = iodev_default;
+	if (!pfn->iodev)
+	    return_error(gs_error_undefinedfilename);
+    }
+    if (!pfn->fname)
+	return 0;
+    /* Scan the file name for a format string, and validate it if present. */
+    width[0] = width[1] = 0;
+    for (i = 0; i < pfn->len; ++i)
+	if (pfn->fname[i] == '%') {
+	    if (i + 1 < pfn->len && pfn->fname[i + 1] == '%')
+		continue;
+	    if (have_format)	/* more than one % */
+		return_error(gs_error_rangecheck);
+	    have_format = true;
+	sw:
+	    if (++i == pfn->len)
+		return_error(gs_error_rangecheck);
+	    switch (pfn->fname[i]) {
+		case 'l':
+		    int_width = sizeof(long) * 3;
+		case ' ': case '#': case '+': case '-':
+		    goto sw;
+		case '.':
+		    if (field)
+			return_error(gs_error_rangecheck);
+		    field = 1;
+		    continue;
+		case '0': case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+		    width[field] = width[field] * 10 + pfn->fname[i] - '0';
+		    goto sw;
+		case 'd': case 'i': case 'u': case 'o': case 'x': case 'X':
+		    *pfmt = &pfn->fname[i];
+		    continue;
+		default:
+		    return_error(gs_error_rangecheck);
+	    }
+	}
+    if (have_format) {
+	/* Calculate a conservative maximum width. */
+	w = max(width[0], width[1]);
+	w = max(w, int_width) + 5;
+    }
+    if (strlen(pfn->iodev->dname) + pfn->len + w >= gp_file_name_sizeof)
+	return_error(gs_error_rangecheck);
+    return 0;
+}
+
 /* Open the output file for a device. */
 int
-gx_device_open_output_file(const gx_device * dev, const char *fname,
+gx_device_open_output_file(const gx_device * dev, char *fname,
 			   bool binary, bool positionable, FILE ** pfile)
 {
+    gs_parsed_file_name_t parsed;
+    const char *fmt;
     char pfname[gp_file_name_sizeof];
-    char pfmt[10];
-    const char *fsrc = fname;
-    char *fdest = pfname;
-    long count1 = dev->PageCount + 1;
+    int code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname));
 
-    if (!strcmp(fname, "-")) {
+    if (code < 0)
+	return code;
+    if (parsed.iodev && !strcmp(parsed.iodev->dname, "%stdout%")) {
+	if (parsed.fname)
+	    return_error(gs_error_undefinedfilename);
 	*pfile = stdout;
 	/* Force stdout to binary. */
 	return gp_setmode_binary(*pfile, true);
     }
-/****** SHOULD RETURN rangecheck IF FILE NAME TOO LONG ******/
-    for (; *fsrc; ++fsrc) {
-	if (*fsrc != '%') {
-	    *fdest++ = *fsrc;
-	    continue;
-	}
-	if (fsrc[1] == '%') {
-	    *fdest++ = '%';
-	    ++fsrc;
-	    continue;
-	} {
-	    char *ffmt = pfmt;
-	    bool use_long;
+    if (!parsed.fname)
+	return_error(gs_error_undefinedfilename);
+    if (fmt) {
+	long count1 = dev->PageCount + 1;
 
-/****** SHOULD CHECK FOR FORMAT TOO LONG ******/
-	    while (!isalpha(*fsrc))
-		*ffmt++ = *fsrc++;
-	    if ((use_long = (*fsrc == 'l')))
-		*ffmt++ = *fsrc++;
-	    *ffmt = *fsrc;
-	    ffmt[1] = 0;
-/****** SHOULD CHECK FOR LEGAL FORMATS ******/
-	    sprintf(fdest, pfmt, (use_long ? count1 : (int)count1));
-	    fdest += strlen(fdest);
-	}
+	while (*fmt != 'l' && *fmt != '%')
+	    --fmt;
+	if (*fmt == 'l')
+	    sprintf(pfname, parsed.fname, count1);
+	else
+	    sprintf(pfname, parsed.fname, (int)count1);
+	parsed.fname = pfname;
+	parsed.len = strlen(parsed.fname);
     }
-    *fdest = 0;
-    if (positionable && pfname[0] != '|') {
+    if (positionable || (parsed.iodev && parsed.iodev != iodev_default)) {
 	char fmode[4];
 
 	strcpy(fmode, gp_fmode_wb);
-	strcat(fmode, "+");
-	*pfile = gp_fopen(pfname, fmode);
+	if (positionable)
+	    strcat(fmode, "+");
+	code = parsed.iodev->procs.fopen(parsed.iodev, parsed.fname, fmode,
+					 pfile, NULL, 0);
 	if (*pfile)
 	    return 0;
     }
-    *pfile = gp_open_printer(pfname, binary);
+    *pfile = gp_open_printer((fmt ? pfname : fname), binary);
     if (*pfile)
 	return 0;
     return_error(gs_error_invalidfileaccess);
+}
+
+/* Close the output file for a device. */
+int
+gx_device_close_output_file(const gx_device * dev, const char *fname,
+			    FILE *file)
+{
+    gs_parsed_file_name_t parsed;
+    const char *fmt;
+    int code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname));
+
+    if (code < 0)
+	return code;
+    if (!strcmp(parsed.iodev->dname, "%stdout%"))
+	return 0;
+    /* NOTE: fname is unsubstituted if the name has any %nnd formats. */
+    if (parsed.iodev != iodev_default)
+	return parsed.iodev->procs.fclose(parsed.iodev, file);
+    gp_close_printer(file, parsed.fname);
+    return 0;
 }

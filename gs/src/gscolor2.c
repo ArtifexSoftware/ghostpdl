@@ -180,10 +180,16 @@ const gs_color_space_type gs_color_space_type_Indexed = {
 
 /* GC procedures. */
 
-#define pcs ((gs_color_space *)vptr)
+private uint
+indexed_table_size(const gs_color_space *pcs)
+{
+    return (pcs->params.indexed.hival + 1) *
+	cs_num_components((const gs_color_space *)
+			  &pcs->params.indexed.base_space);
 
+}
 private 
-ENUM_PTRS_BEGIN(cs_Indexed_enum_ptrs)
+ENUM_PTRS_WITH(cs_Indexed_enum_ptrs, gs_color_space *pcs)
 {
     return ENUM_USING(*pcs->params.indexed.base_space.type->stype,
 		      &pcs->params.indexed.base_space,
@@ -192,28 +198,27 @@ ENUM_PTRS_BEGIN(cs_Indexed_enum_ptrs)
 case 0:
 if (pcs->params.indexed.use_proc)
     ENUM_RETURN((void *)pcs->params.indexed.lookup.map);
-else {
-    pcs->params.indexed.lookup.table.size =
-	(pcs->params.indexed.hival + 1) *
-	cs_num_components((const gs_color_space *)
-			  &pcs->params.indexed.base_space);
-    ENUM_RETURN_CONST_STRING_PTR(gs_color_space,
-				 params.indexed.lookup.table);
-}
+else
+    return ENUM_CONST_STRING2(pcs->params.indexed.lookup.table.data,
+			      indexed_table_size(pcs));
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(cs_Indexed_reloc_ptrs)
+private RELOC_PTRS_WITH(cs_Indexed_reloc_ptrs, gs_color_space *pcs)
 {
     RELOC_USING(*pcs->params.indexed.base_space.type->stype,
 		&pcs->params.indexed.base_space,
 		sizeof(gs_base_color_space));
     if (pcs->params.indexed.use_proc)
 	RELOC_PTR(gs_color_space, params.indexed.lookup.map);
-    else
-	RELOC_CONST_STRING_PTR(gs_color_space, params.indexed.lookup.table);
+    else {
+	gs_const_string table;
+
+	table.data = pcs->params.indexed.lookup.table.data;
+	table.size = indexed_table_size(pcs);
+	RELOC_CONST_STRING_VAR(table);
+	pcs->params.indexed.lookup.table.data = table.data;
+    }
 }
 RELOC_PTRS_END
-
-#undef pcs
 
 /* Return the base space of an Indexed color space. */
 private const gs_color_space *

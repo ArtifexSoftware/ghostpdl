@@ -35,6 +35,11 @@
 #include "dstack.h"		/* for dict_set_top */
 #include "store.h"
 
+/*
+ * Some of the procedures in this file are public only so they can be
+ * called from the FunctionType 4 interpreter (zfunc4.c).
+ */
+
 /* Forward references */
 private int access_check(P3(i_ctx_t *, int, bool));
 private int convert_to_string(P2(os_ptr, os_ptr));
@@ -231,7 +236,7 @@ zwcheck(i_ctx_t *i_ctx_p)
 
 /* <num> cvi <int> */
 /* <string> cvi <int> */
-private int
+int
 zcvi(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -290,7 +295,7 @@ zcvn(i_ctx_t *i_ctx_p)
 
 /* <num> cvr <real> */
 /* <string> cvr <real> */
-private int
+int
 zcvr(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

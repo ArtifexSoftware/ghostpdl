@@ -256,15 +256,67 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 }
 
 /* Test whether a Sampled function is monotonic. */
-/* Since this can be very time-consuming, we only do it if necessary. */
 private int
 fn_Sd_is_monotonic(const gs_function_t * pfn_common,
-		   const float *lower, const float *upper, bool must_know)
+		   const float *lower, const float *upper,
+		   gs_function_effort_t effort)
 {
-    if (!must_know)
-	return gs_error_undefined;	/* don't know */
-/****** NYI ******/
-    return gs_error_undefined;
+    const gs_function_Sd_t *const pfn =
+	(const gs_function_Sd_t *)pfn_common;
+    float d0 = pfn->params.Domain[0], d1 = pfn->params.Domain[1];
+    float v0 = lower[0], v1 = upper[0];
+    float e0, e1, w0, w1;
+    float r0[max_Sd_n], r1[max_Sd_n];
+    int dir = 0;
+    int i, code;
+
+    /*
+     * Testing this in general is very time-consuming, so we don't bother.
+     * However, we do implement it correctly for one special case that is
+     * important in practice: for 1-input functions when the lower and
+     * upper values are in the same sample cell.
+     */
+    if (pfn->params.m > 1)
+	return gs_error_undefined;
+    if (lower[0] > pfn->params.Domain[1] ||
+	upper[0] < pfn->params.Domain[0]
+	)
+	return gs_error_rangecheck;
+    if (pfn->params.Encode)
+	e0 = pfn->params.Encode[0], e1 = pfn->params.Encode[1];
+    else
+	e0 = 0, e1 = pfn->params.Size[0];
+    w0 = (v0 - d0) * (e1 - e0) / (d1 - d0) + e0;
+    if (w0 < 0)
+	w0 = 0;
+    else if (w0 >= pfn->params.Size[0] - 1)
+	w0 = pfn->params.Size[0] - 1;
+    w1 = (v1 - d0) * (e1 - e0) / (d1 - d0) + e0;
+    if (w1 < 0)
+	w1 = 0;
+    else if (w1 >= pfn->params.Size[0] - 1)
+	w1 = pfn->params.Size[0] - 1;
+    if ((int)w0 != (int)w1)
+	return gs_error_undefined; /* not in the same sample */
+    code = gs_function_evaluate(pfn_common, lower, r0);
+    if (code < 0)
+	return code;
+    gs_function_evaluate(pfn_common, upper, r1);
+    if (code < 0)
+	return code;
+    for (i = 0; i < pfn->params.n; ++i) {
+	float diff = r1[i] - r0[i];
+	int code;
+
+	if (diff == 0)
+	    continue;
+	code = (diff < 0 ? FN_MONOTONIC_DECREASING : FN_MONOTONIC_INCREASING);
+	if (dir == 0)
+	    dir = code;
+	else if (dir != code)
+	    return 0;
+    }
+    return dir;
 }
 
 /* Free the parameters of a Sampled function. */
@@ -282,13 +334,14 @@ int
 gs_function_Sd_init(gs_function_t ** ppfn,
 		  const gs_function_Sd_params_t * params, gs_memory_t * mem)
 {
-    static const gs_function_head_t function_Sd_head =
-    {
+    static const gs_function_head_t function_Sd_head = {
 	function_type_Sampled,
-	(fn_evaluate_proc_t) fn_Sd_evaluate,
-	(fn_is_monotonic_proc_t) fn_Sd_is_monotonic,
-	(fn_free_params_proc_t) gs_function_Sd_free_params,
-	fn_common_free
+	{
+	    (fn_evaluate_proc_t) fn_Sd_evaluate,
+	    (fn_is_monotonic_proc_t) fn_Sd_is_monotonic,
+	    (fn_free_params_proc_t) gs_function_Sd_free_params,
+	    fn_common_free
+	}
     };
     int code;
     int i;
@@ -326,8 +379,8 @@ gs_function_Sd_init(gs_function_t ** ppfn,
 	    return_error(gs_error_rangecheck);
     {
 	gs_function_Sd_t *pfn =
-	gs_alloc_struct(mem, gs_function_Sd_t, &st_function_Sd,
-			"gs_function_Sd_init");
+	    gs_alloc_struct(mem, gs_function_Sd_t, &st_function_Sd,
+			    "gs_function_Sd_init");
 
 	if (pfn == 0)
 	    return_error(gs_error_VMerror);
@@ -335,6 +388,8 @@ gs_function_Sd_init(gs_function_t ** ppfn,
 	if (params->Order == 0)
 	    pfn->params.Order = 1;	/* default */
 	pfn->head = function_Sd_head;
+	pfn->head.is_monotonic =
+	    fn_domain_is_monotonic((gs_function_t *)pfn, EFFORT_MODERATE);
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;

@@ -496,7 +496,7 @@ void gs_c_param_list_set_target(P2(gs_c_param_list *, gs_param_list *));
 
 /* Clients normally allocate the gs_c_param_list on the stack. */
 void gs_c_param_list_write(P2(gs_c_param_list *, gs_memory_t *));
-void gs_c_param_list_rewrite(P1(gs_c_param_list *)); /* switch back to writing, no init */
+void gs_c_param_list_write_more(P1(gs_c_param_list *)); /* switch back to writing, no init */
 void gs_c_param_list_read(P1(gs_c_param_list *));	/* switch to reading */
 void gs_c_param_list_release(P1(gs_c_param_list *));
 

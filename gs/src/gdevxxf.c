@@ -56,7 +56,7 @@ private const gx_xfont_procs x_xfont_procs =
 
 /* Return the xfont procedure record. */
 const gx_xfont_procs *
-x_get_xfont_procs(gx_device * dev)
+gdev_x_get_xfont_procs(gx_device * dev)
 {
     return &x_xfont_procs;
 }
@@ -345,7 +345,7 @@ x_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
     int x, y, w, h;
     int code;
 
-    if (dev->dname == gs_x11_device.dname) {
+    if (dev->dname == gs_x11_device.dname && !IS_BUFFERED((gx_device_X *)dev)){
 	code = (*xf->common.procs->char_metrics) (xf, xg, 0, &wxy, &bbox);
 	if (code < 0)
 	    return code;
@@ -360,9 +360,9 @@ x_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
 	    xdev->text.item_count = xdev->text.char_count = 0;
 	}
 	if (xdev->text.item_count == 0) {
-	    set_fill_style(FillSolid);
-	    set_fore_color(color);
-	    set_function(GXcopy);
+	    X_SET_FILL_STYLE(xdev, FillSolid);
+	    X_SET_FORE_COLOR(xdev, color);
+	    X_SET_FUNCTION(xdev, GXcopy);
 	    xdev->text.origin.x = xdev->text.x = xo;
 	    xdev->text.origin.y = yo;
 	    xdev->text.items[0].font = xdev->fid = xxf->font->fid;
@@ -398,7 +398,7 @@ x_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
 	    w = bbox.q.x - bbox.p.x;
 	    h = bbox.q.y - bbox.p.y;
 	    fit_fill(dev, x, y, w, h);
-	    x_update_add(dev, x, y, w, h);
+	    x_update_add(xdev, x, y, w, h);
 	}
 	return 0;
     } else if (!required)

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,6 +24,7 @@
 
 typedef enum {
     cpm_show,			/* *show (default, must be 0) */
+    cpm_charwidth,		/* stringwidth rmoveto (not standard PS) */
     cpm_false_charpath,		/* false charpath */
     cpm_true_charpath,		/* true charpath */
     cpm_false_charboxpath,	/* false charboxpath (not standard PS) */

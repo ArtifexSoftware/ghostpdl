@@ -23,6 +23,7 @@
 #include "estack.h"
 #include "ialloc.h"		/* for ivmspace.h */
 #include "ivmspace.h"
+#include "ivmem2.h"
 #include "store.h"
 
 /* Garbage collector control parameters. */

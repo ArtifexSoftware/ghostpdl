@@ -23,6 +23,7 @@
 #include "stdio_.h"
 #include <assert.h>
 #include "gconfigv.h"
+#include "gdebug.h"
 #include "strimpl.h"
 #include "siscale.h"
 
@@ -293,6 +294,8 @@ zoom_x(PixelTmp * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
 	PixelTmp *tp = tmp + c;
 	const CLIST *clp = contrib;
 
+	if_debug1('W', "[W]zoom_x color %d:", c);
+
 #define zoom_x_loop(PixelIn, PixelIn2)\
 		const PixelIn *raster = (const PixelIn *)src + c;\
 		for ( i = 0; i < tmp_width; tp += Colors, ++clp, ++i )\
@@ -316,6 +319,7 @@ zoom_x(PixelTmp * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
 			  }\
 			}\
 			{ PixelIn2 pixel = unscale_AccumTmp(weight);\
+			  if_debug1('W', " %ld", (long)pixel);\
 			  *tp =\
 			    (PixelTmp)CLAMP(pixel, minPixelTmp, maxPixelTmp);\
 			}\
@@ -330,6 +334,7 @@ zoom_x(PixelTmp * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
 	    zoom_x_loop(bits16, int)
 #endif
 	}
+	if_debug0('W', "\n");
     }
 } /* Apply filter to zoom vertically from tmp to dst. *//* This is simpler because we can treat all columns identically *//* without regard to the number of samples per pixel. */ private void
 zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
@@ -343,9 +348,11 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
     int kc;
     PixelTmp2 max_weight = MaxValueOut;
 
+    if_debug0('W', "[W]zoom_y: ");
+
 #define zoom_y_loop(PixelOut)\
-	for ( kc = 0; kc < kn; ++kc )\
-	  {	AccumTmp weight = 0;\
+	for ( kc = 0; kc < kn; ++kc ) {\
+		AccumTmp weight = 0;\
 		{ const PixelTmp *pp = &tmp[kc + first_pixel];\
 		  int j = cn;\
 		  const CONTRIB *cp = cbp;\
@@ -353,16 +360,18 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
 		    weight += *pp * cp->weight;\
 		}\
 		{ PixelTmp2 pixel = unscale_AccumTmp(weight);\
+		  if_debug1('W', " %d", pixel);\
 		  ((PixelOut *)dst)[kc] =\
 		    (PixelOut)CLAMP(pixel, 0, max_weight);\
 		}\
-	  }
+	}
 
     if (sizeofPixelOut == 1) {
 	zoom_y_loop(byte)
     } else {			/* sizeofPixelOut == 2 */
 	zoom_y_loop(bits16)
     }
+    if_debug0('W', "\n");
 }
 
 /* ------ Stream implementation ------ */
@@ -401,6 +410,24 @@ calculate_dst_contrib(stream_IScale_state * ss, int y)
 	ss->dst_next_list.n = MAX_ISCALE_SUPPORT;
 	ss->dst_next_list.first_pixel = 0;
     }
+#ifdef DEBUG
+    if (gs_debug_c('w')) {
+	dprintf1("[w]calc dest contrib for y = %d\n", y);
+    }
+#endif
+}
+
+/* Set default parameter values (actually, just clear pointers). */
+private void
+s_IScale_set_defaults(stream_state * st)
+{
+    stream_IScale_state *const ss = (stream_IScale_state *) st;
+
+    ss->src = 0;
+    ss->dst = 0;
+    ss->tmp = 0;
+    ss->contrib = 0;
+    ss->items = 0;
 }
 
 /* Initialize the filter. */
@@ -532,6 +559,8 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 		ss->src_offset = 0;
 	    }
 	    /* Apply filter to zoom horizontally from src to tmp. */
+	    if_debug2('w', "[w]zoom_x y = %d to tmp row %d\n",
+		      ss->src_y, (ss->src_y % MAX_ISCALE_SUPPORT));
 	    zoom_x(ss->tmp + (ss->src_y % MAX_ISCALE_SUPPORT) *
 		   ss->tmp_width * ss->params.Colors, row,
 		   ss->sizeofPixelIn, ss->tmp_width, ss->params.WidthIn,
@@ -568,7 +597,7 @@ s_IScale_release(stream_state * st)
 }
 
 /* Stream template */
-const stream_template s_IScale_template =
-{&st_IScale_state, s_IScale_init, s_IScale_process, 1, 1,
- s_IScale_release
+const stream_template s_IScale_template = {
+    &st_IScale_state, s_IScale_init, s_IScale_process, 1, 1,
+    s_IScale_release, s_IScale_set_defaults
 };

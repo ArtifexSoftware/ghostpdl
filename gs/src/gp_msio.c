@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -29,7 +29,17 @@
 
 /* Factored out from gp_mswin.c by JD 6/25/97 */
 
+/*
+ * The MSVC compiler, when invoked with the /MD switch, considers that the
+ * dllimport qualifier on fprintf in stdio.h and the dllexport qualifier
+ * on the definition of fprintf in this file are incompatible.
+ * We use a hack (similar to the one in stdpre.h to deal with sys/types.h)
+ * to work around this.
+ */
+#define fprintf UNDEFINE_fprintf
 #include "stdio_.h"
+#undef fprintf
+
 #include <stdlib.h>
 #include "gx.h"
 #include "gp.h"
@@ -79,13 +89,12 @@ win_stdio_init(gx_io_device * iodev, gs_memory_t * mem)
 
 /* Define alternate 'open' routines for our stdin/out/err streams. */
 
-extern int iodev_stdin_open(P4(gx_io_device *, const char *, stream **,
-			       gs_memory_t *));
+extern const gx_io_device gs_iodev_stdin;
 private int
 win_stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
 	       gs_memory_t * mem)
 {
-    int code = iodev_stdin_open(iodev, access, ps, mem);
+    int code = gs_iodev_stdin.procs.open_device(iodev, access, ps, mem);
     stream *s = *ps;
 
     if (code != 1)
@@ -96,13 +105,12 @@ win_stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
     return 0;
 }
 
-extern int iodev_stdout_open(P4(gx_io_device *, const char *, stream **,
-				gs_memory_t *));
+extern const gx_io_device gs_iodev_stdout;
 private int
 win_stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 		gs_memory_t * mem)
 {
-    int code = iodev_stdout_open(iodev, access, ps, mem);
+    int code = gs_iodev_stdout.procs.open_device(iodev, access, ps, mem);
     stream *s = *ps;
 
     if (code != 1)
@@ -113,13 +121,12 @@ win_stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
     return 0;
 }
 
-extern int iodev_stderr_open(P4(gx_io_device *, const char *, stream **,
-				gs_memory_t *));
+extern const gx_io_device gs_iodev_stderr;
 private int
 win_stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
 		gs_memory_t * mem)
 {
-    int code = iodev_stderr_open(iodev, access, ps, mem);
+    int code = gs_iodev_stderr.procs.open_device(iodev, access, ps, mem);
     stream *s = *ps;
 
     if (code != 1)

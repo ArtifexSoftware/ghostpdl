@@ -35,17 +35,6 @@
 #include "scanchar.h"		/* for char_EOL */
 #include "store.h"
 
-/* Complete the definition of the %os% device. */
-/* The open_file routine is exported for pipes and for %null. */
-int
-iodev_os_open_file(gx_io_device * iodev, const char *fname, uint len,
-		   const char *file_access, stream ** ps, gs_memory_t * mem)
-{
-    return file_open_stream(fname, len, file_access,
-			    file_default_buffer_size, ps,
-			    iodev->procs.fopen);
-}
-
 /* Define the special devices. */
 const char iodev_dtype_stdio[] = "Special";
 #define iodev_special(dname, init, open) {\
@@ -160,9 +149,9 @@ s_stdin_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     return (ferror(file) ? ERRC : feof(file) ? EOFC : count == wcount ? 1 : 0);
 }
 
-int
-iodev_stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
-		 gs_memory_t * mem)
+private int
+stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
+	   gs_memory_t * mem)
 {
     i_ctx_t *i_ctx_p = (i_ctx_t *)iodev->state;	/* see above */
     stream *s;
@@ -193,14 +182,6 @@ iodev_stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
     *ps = s;
     return 0;
 }
-private int
-stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
-	   gs_memory_t * mem)
-{
-    int code = iodev_stdin_open(iodev, access, ps, mem);
-
-    return min(code, 0);
-}
 /* This is the public routine for getting the stdin stream. */
 int
 zget_stdin(i_ctx_t *i_ctx_p, stream ** ps)
@@ -217,7 +198,7 @@ zget_stdin(i_ctx_t *i_ctx_p, stream ** ps)
     iodev->state = i_ctx_p;
     code = (*iodev->procs.open_device)(iodev, "r", ps, imemory_system);
     iodev->state = NULL;
-    return code;
+    return min(code, 0);
 }
 /* Test whether a stream is stdin. */
 bool
@@ -226,9 +207,9 @@ zis_stdin(const stream *s)
     return (s_is_valid(s) && s->procs.process == s_stdin_read_process);
 }
 
-int
-iodev_stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
-		  gs_memory_t * mem)
+private int
+stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
+	    gs_memory_t * mem)
 {
     i_ctx_t *i_ctx_p = (i_ctx_t *)iodev->state;	/* see above */
     stream *s;
@@ -253,14 +234,6 @@ iodev_stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
     *ps = s;
     return 0;
 }
-private int
-stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
-	    gs_memory_t * mem)
-{
-    int code = iodev_stdout_open(iodev, access, ps, mem);
-
-    return min(code, 0);
-}
 /* This is the public routine for getting the stdout stream. */
 int
 zget_stdout(i_ctx_t *i_ctx_p, stream ** ps)
@@ -277,12 +250,12 @@ zget_stdout(i_ctx_t *i_ctx_p, stream ** ps)
     iodev->state = i_ctx_p;
     code = (*iodev->procs.open_device)(iodev, "w", ps, imemory_system);
     iodev->state = NULL;
-    return code;
+    return min(code, 0);
 }
 
-int
-iodev_stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
-		  gs_memory_t * mem)
+private int
+stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
+	    gs_memory_t * mem)
 {
     i_ctx_t *i_ctx_p = (i_ctx_t *)iodev->state;	/* see above */
     stream *s;
@@ -307,14 +280,6 @@ iodev_stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
     *ps = s;
     return 0;
 }
-private int
-stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
-	    gs_memory_t * mem)
-{
-    int code = iodev_stderr_open(iodev, access, ps, mem);
-
-    return min(code, 0);
-}
 /* This is the public routine for getting the stderr stream. */
 int
 zget_stderr(i_ctx_t *i_ctx_p, stream ** ps)
@@ -331,7 +296,7 @@ zget_stderr(i_ctx_t *i_ctx_p, stream ** ps)
     iodev->state = i_ctx_p;
     code = (*iodev->procs.open_device)(iodev, "w", ps, imemory_system);
     iodev->state = NULL;
-    return code;
+    return min(code, 0);
 }
 
 /* ------ %lineedit and %statementedit ------ */
@@ -379,6 +344,7 @@ rd:
     /* HACK: set %stdin's state so that GNU readline can retrieve it. */
     indev->state = i_ctx_p;
     code = zreadline_from(ins, buf, mem, &count, &in_eol);
+    buf->size++;		/* restore correct size */
     indev->state = 0;
     switch (code) {
 	case EOFC:
@@ -462,16 +428,20 @@ private int
 lineedit_open(gx_io_device * iodev, const char *access, stream ** ps,
 	      gs_memory_t * mem)
 {
-    return line_collect(iodev, access, ps, mem,
-			LINEEDIT_BUF_SIZE, false);
+    int code = line_collect(iodev, access, ps, mem,
+			    LINEEDIT_BUF_SIZE, false);
+
+    return (code < 0 ? code : 1);
 }
 
 private int
 statementedit_open(gx_io_device * iodev, const char *access, stream ** ps,
 		   gs_memory_t * mem)
 {
-    return line_collect(iodev, access, ps, mem,
-			STATEMENTEDIT_BUF_SIZE, true);
+    int code = line_collect(iodev, access, ps, mem,
+			    STATEMENTEDIT_BUF_SIZE, true);
+
+    return (code < 0 ? code : 1);
 }
 
 /* ------ Initialization procedure ------ */

@@ -52,8 +52,7 @@ PSD=$(PSGENDIR)/
 # the directories also define the default search path for the
 # initialization files (gs_*.ps) and the fonts.
 
-# If your system has installbsd, change install to installbsd in the next line.
-INSTALL = install -c
+INSTALL = $(GLSRCDIR)/instcopy -c
 INSTALL_PROGRAM = $(INSTALL) -m 755
 INSTALL_DATA = $(INSTALL) -m 644
 
@@ -183,7 +182,7 @@ CCLD=$(CC)
 # the 2.7.0-2.7.2 optimizer bug, either "-Dconst=" or
 # "-Wcast-qual -Wwrite-strings" is automatically included.
 
-GCFLAGS=-Wall -Wstrict-prototypes -Wtraditional -fno-builtin -fno-common
+GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -Wtraditional -fno-builtin -fno-common
 
 # Define the added flags for standard, debugging, and profiling builds.
 
@@ -275,11 +274,15 @@ SYNC=posync
 # Choose the language feature(s) to include.  See gs.mak for details.
 # Note that there is one feature that requires a GNU library:
 # $(PSD)gnrdline.dev, which adds support for GNU readline, including
-# on-the-fly name completion and evaluation.  For details, see gp_gnrdl.c.
+# on-the-fly name completion and evaluation.  For details, including
+# licensing problems that will arise if you add this feature to Aladdin
+# Ghostscript releases, see gp_gnrdl.c.
 
-#FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)pipe.dev
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)pipe.dev $(PSD)rasterop.dev
-#FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)pipe.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)compht.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)pipe.dev
+#FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)pipe.dev $(PSD)rasterop.dev
+# The following is strictly for testing.
+FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)pipe.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)compht.dev $(PSD)gnrdline.dev
+#FEATURE_DEVS=$(FEATURE_DEVS_ALL)
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -302,13 +305,34 @@ BAND_LIST_COMPRESSOR=zlib
 
 FILE_IMPLEMENTATION=stdio
 
+# Define the name table capacity size of 2^(16+n).
+# Setting this to a non-zero value will slow down the interpreter.
+
+EXTEND_NAMES=0
+
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
 DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev
-DEVICE_DEVS1=$(DD)bmpmono.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)bmp32b.dev
-DEVICE_DEVS2=$(DD)bmpamono.dev $(DD)bmpasep1.dev $(DD)bmpasep8.dev $(DD)bmpa16.dev $(DD)bmpa256.dev $(DD)bmpa16m.dev $(DD)bmpa32b.dev
+
+#DEVICE_DEVS1=
 #DEVICE_DEVS2=
+#DEVICE_DEVS3=
+#DEVICE_DEVS4=
+#DEVICE_DEVS5=
+#DEVICE_DEVS6=
+#DEVICE_DEVS7=
+#DEVICE_DEVS8=
+#DEVICE_DEVS9=
+#DEVICE_DEVS10=
+#DEVICE_DEVS11=
+#DEVICE_DEVS12=
+#DEVICE_DEVS13=
+#DEVICE_DEVS14=
+#DEVICE_DEVS15=
+
+DEVICE_DEVS1=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)bmp32b.dev
+DEVICE_DEVS2=$(DD)bmpamono.dev $(DD)bmpasep1.dev $(DD)bmpasep8.dev $(DD)bmpa16.dev $(DD)bmpa256.dev $(DD)bmpa16m.dev $(DD)bmpa32b.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev $(DD)lj5mono.dev $(DD)lj5gray.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev $(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
 DEVICE_DEVS5=$(DD)uniprint.dev
@@ -322,6 +346,7 @@ DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)b
 DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+
 DEVICE_DEVS16=
 DEVICE_DEVS17=
 DEVICE_DEVS18=
@@ -350,6 +375,9 @@ CCAUX=$(CC) `cat $(AK)`
 CC_LEAF=$(CC_) -fomit-frame-pointer
 # gcc can't use -fomit-frame-pointer with -pg.
 CC_LEAF_PG=$(CC_)
+# These are the specific warnings we have to turn off to compile those
+# specific few files that need this.  We may turn off others in the future.
+CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
 
 # ---------------- End of platform-specific section ---------------- #
 

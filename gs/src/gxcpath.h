@@ -112,11 +112,12 @@ extern_st(st_device_clip);
   gs_public_st_composite_use_final(st_device_clip, gx_device_clip,\
     "gx_device_clip", device_clip_enum_ptrs, device_clip_reloc_ptrs,\
     gx_device_finalize)
-void gx_make_clip_translate_device(P5(gx_device_clip * dev, void *container,
-				const gx_clip_list * list, int tx, int ty));
+void gx_make_clip_translate_device(P5(gx_device_clip * dev,
+				      const gx_clip_list * list,
+				      int tx, int ty, gs_memory_t *mem));
 
-#define gx_make_clip_device(dev, container, list)\
-  gx_make_clip_translate_device(dev, container, list, 0, 0)
+#define gx_make_clip_device(dev, list)\
+  gx_make_clip_translate_device(dev, list, 0, 0, NULL)
 void gx_make_clip_path_device(P2(gx_device_clip *, const gx_clip_path *));
 
 #define clip_rect_print(ch, str, ar)\

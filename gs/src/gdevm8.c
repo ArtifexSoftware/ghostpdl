@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,8 +23,6 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"		/* semi-public definitions */
 #include "gdevmem.h"		/* private definitions */
-
-extern dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);
 
 #define mem_gray8_strip_copy_rop mem_gray8_rgb24_strip_copy_rop
 

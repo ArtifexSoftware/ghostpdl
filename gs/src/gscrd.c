@@ -38,20 +38,15 @@ extern_gs_lib_device_list();
 
 /* Allocator structure type */
 public_st_cie_render1();
-#define pcrd ((gs_cie_render *)vptr)
 private 
-ENUM_PTRS_BEGIN(cie_render1_enum_ptrs) return 0;
-
-case 0:
-return ENUM_OBJ(pcrd->client_data);
-case 1:
-return ENUM_OBJ(pcrd->RenderTable.lookup.table);
-case 2:
-return (pcrd->RenderTable.lookup.table ?
-	ENUM_CONST_STRING(&pcrd->TransformPQR.proc_data) :
-	0);
+ENUM_PTRS_WITH(cie_render1_enum_ptrs, gs_cie_render *pcrd) return 0;
+case 0: return ENUM_OBJ(pcrd->client_data);
+case 1: return ENUM_OBJ(pcrd->RenderTable.lookup.table);
+case 2: return (pcrd->RenderTable.lookup.table ?
+		ENUM_CONST_STRING(&pcrd->TransformPQR.proc_data) :
+		0);
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(cie_render1_reloc_ptrs);
+private RELOC_PTRS_WITH(cie_render1_reloc_ptrs, gs_cie_render *pcrd);
 RELOC_OBJ_VAR(pcrd->client_data);
 if (pcrd->RenderTable.lookup.table)
 {
@@ -59,7 +54,6 @@ RELOC_OBJ_VAR(pcrd->RenderTable.lookup.table);
 RELOC_CONST_STRING_VAR(pcrd->TransformPQR.proc_data);
 }
 RELOC_PTRS_END
-#undef pcrd
 
 /* Default CRD procedures. */
 

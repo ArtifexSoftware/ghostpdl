@@ -25,7 +25,17 @@
 #include "gdevvec.h"
 #include "gsparam.h"
 #include "strimpl.h"
+#include "sa85x.h"
 #include "scfx.h"
+#include "spsdf.h"
+
+extern const stream_template s_DCTE_template; /* don't want all of sdct.h */
+
+/*
+ * NOTE: the default filter for color and gray images should be DCTEncode.
+ * We don't currently set this, because the management of the parameters
+ * for this filter simply doesn't work.
+ */
 
 /* ---------------- Distiller parameters ---------------- */
 
@@ -96,14 +106,14 @@ typedef struct psdf_distiller_params_s {
     bool ConvertCMYKImagesToRGB;
     bool ConvertImagesToIndexed;
 #define psdf_color_image_param_defaults\
-  { psdf_image_param_defaults(1/*true*/, 72, 0, 0) },\
-  ccs_LeaveColorUnchanged, 1/*true*/, 0		/*false */
+  { psdf_image_param_defaults(1/*true*/, 72, 0/*"DCTEncode"*/, 0/*&s_DCTE_template*/) },\
+  ccs_LeaveColorUnchanged, 1/*true*/, 0/*false */
 
     /* Grayscale sampled image parameters */
 
     psdf_image_params GrayImage;
 #define psdf_gray_image_param_defaults\
-  { psdf_image_param_defaults(1/*true*/, 72, 0, 0) }
+  { psdf_image_param_defaults(1/*true*/, 72, 0/*"DCTEncode"*/, 0/*&s_DCTE_template*/) }
 
     /* Monochrome sampled image parameters */
 
@@ -203,9 +213,24 @@ int psdf_closepath(P6(gx_device_vector * vdev, floatp x0, floatp y0,
 
 /* Define the structure for writing binary data. */
 typedef struct psdf_binary_writer_s {
-    stream *strm;
-    gx_device_psdf *dev;
+    /* Preallocate an ASCII85Encode filter. */
+    byte buf[100];		/* arbitrary, but must be first */
+				/* for pointers from A85E.s */
+    struct {
+	stream s;
+	stream_A85E_state state;
+    } A85E;
+    stream *target;		/* underlying stream */
+    gs_memory_t *memory;
+    stream *strm;		/* may point to A85E.s */
+    gx_device_psdf *dev;	/* may be unused */
 } psdf_binary_writer;
+extern_st(st_psdf_binary_writer);
+#define public_st_psdf_binary_writer() /* in gdevpsdf.c */\
+  gs_public_st_composite(st_psdf_binary_writer, psdf_binary_writer,\
+    "psdf_binary_writer", psdf_binary_writer_enum_ptrs,\
+    psdf_binary_writer_reloc_ptrs)
+#define psdf_binary_writer_max_ptrs (stream_num_ptrs + 3)
 
 /* Begin writing binary data. */
 int psdf_begin_binary(P2(gx_device_psdf * pdev, psdf_binary_writer * pbw));
@@ -216,60 +241,108 @@ int psdf_encode_binary(P3(psdf_binary_writer * pbw,
 		      const stream_template * template, stream_state * ss));
 
 /* Add a 2-D CCITTFax encoding filter. */
+/* Set EndOfBlock iff the stream is not ASCII85 encoded. */
 int psdf_CFE_binary(P4(psdf_binary_writer * pbw, int w, int h, bool invert));
 
 /* Set up compression and downsampling filters for an image. */
 /* Note that this may modify the image parameters. */
 /* If pctm is NULL, downsampling is not used. */
 /* pis only provides UCR and BG information for CMYK => RGB conversion. */
-int psdf_setup_image_filters(P5(gx_device_psdf * pdev, psdf_binary_writer * pbw,
-				gs_image_t * pim, const gs_matrix * pctm,
+int psdf_setup_image_filters(P5(gx_device_psdf *pdev, psdf_binary_writer *pbw,
+				gs_image_t *pim, const gs_matrix *pctm,
 				const gs_imager_state * pis));
 
 /* Finish writing binary data. */
 int psdf_end_binary(P1(psdf_binary_writer * pbw));
 
-/* ------ Symbolic data printing ------ */
+/* ---------------- Embedded font writing ---------------- */
 
-/* Print a PostScript string in the most efficient form. */
-#define print_binary_ok 1
-#define print_ASCII85_ok 2
-void psdf_write_string(P4(stream * s, const byte * str, uint size,
-			  int print_ok));
-
-/*
- * Create a stream that just keeps track of how much has been written
- * to it.  We use this for measuring data that will be stored rather
- * than written to an actual stream.  This too should probably migrate
- * to stream.c....
- */
-int psdf_alloc_position_stream(P2(stream ** ps, gs_memory_t * mem));
+typedef struct psdf_glyph_enum_s {
+    gs_font *font;
+    gs_glyph *subset_glyphs;
+    uint subset_size;
+    gs_glyph_space_t glyph_space;
+    ulong index;
+} psdf_glyph_enum_t;
 
 /*
- * Create/release a parameter list for printing (non-default) filter
- * parameters.  This should probably migrate to a lower level....
+ * Begin enumerating the glyphs in a font or a font subset.  If subset_size
+ * > 0 but subset_glyphs == 0, enumerate all glyphs in [0 .. subset_size-1]
+ * (as integer glyphs, i.e., offset by gs_min_cid_glyph).
  */
-typedef struct param_printer_params_s {
-    const char *prefix;		/* before entire object, if any params */
-    const char *suffix;		/* after entire object, if any params */
-    const char *item_prefix;	/* before each param */
-    const char *item_suffix;	/* after each param */
-} param_printer_params_t;
+void psdf_enumerate_glyphs_begin(P5(psdf_glyph_enum_t *ppge, gs_font *font,
+				    gs_glyph *subset_glyphs,
+				    uint subset_size,
+				    gs_glyph_space_t glyph_space));
 
-#define param_printer_params_default_values 0, 0, 0, "\n"
-extern const param_printer_params_t param_printer_params_default;
-int psdf_alloc_param_printer(P5(gs_param_list ** pplist,
-			     const param_printer_params_t * ppp, stream * s,
-				int print_ok, gs_memory_t * mem));
-void psdf_free_param_printer(P1(gs_param_list * plist));
+/* Reset a glyph enumeration. */
+void psdf_enumerate_glyphs_reset(P1(psdf_glyph_enum_t *ppge));
 
-/* Write out a Type 1 font definition. */
+/* Enumerate the next glyph in a font or a font subset. */
+/* Return 0 if more glyphs, 1 if done, <0 if error. */
+int psdf_enumerate_glyphs_next(P2(psdf_glyph_enum_t *ppge, gs_glyph *pglyph));
+
+/*
+ * Get the set of referenced glyphs (indices) for writing a subset font.
+ * Does not sort or remove duplicates.
+ */
+int psdf_subset_glyphs(P3(gs_glyph glyphs[256], gs_font *font,
+			  const byte used[32]));
+
+/*
+ * Sort a list of glyphs and remove duplicates.  Return the number of glyphs
+ * in the result.
+ */
+int psdf_sort_glyphs(P2(gs_glyph *glyphs, int count));
+
+/* ------ Exported by gdevpsd1.c ------ */
+
+/*
+ * Write out a Type 1 font definition.  This procedure does not allocate
+ * or free any data.
+ */
 #ifndef gs_font_type1_DEFINED
 #  define gs_font_type1_DEFINED
 typedef struct gs_font_type1_s gs_font_type1;
-
 #endif
-int psdf_embed_type1_font(P2(stream * s, gs_font_type1 * pfont));
+#define WRITE_TYPE1_EEXEC 1
+#define WRITE_TYPE1_ASCIIHEX 2  /* use ASCII hex rather than binary */
+#define WRITE_TYPE1_EEXEC_PAD 4  /* add 512 0s */
+#define WRITE_TYPE1_EEXEC_MARK 8  /* assume 512 0s will be added */
+#define WRITE_TYPE1_POSTSCRIPT 16  /* don't observe ATM restrictions */
+int psdf_write_type1_font(P7(stream *s, gs_font_type1 *pfont, int options,
+			     gs_glyph *subset_glyphs, uint subset_size,
+			     const gs_const_string *alt_font_name,
+			     int lengths[3]));
+
+/* ------ Exported by gdevpsdt.c ------ */
+
+/*
+ * Write out a TrueType (Type 42) font definition.  This procedure does
+ * not allocate or free any data.
+ */
+#ifndef gs_font_type42_DEFINED
+#  define gs_font_type42_DEFINED
+typedef struct gs_font_type42_s gs_font_type42;
+#endif
+#define WRITE_TRUETYPE_CMAP 1	/* generate cmap from the Encoding */
+#define WRITE_TRUETYPE_NAME 2	/* generate name if missing */
+#define WRITE_TRUETYPE_POST 4	/* generate post if missing */
+int psdf_write_truetype_font(P6(stream *s, gs_font_type42 *pfont, int options,
+				gs_glyph *subset_glyphs, uint subset_size,
+				const gs_const_string *alt_font_name));
+
+/* ---------------- Symbolic data printing ---------------- */
+
+/* Backward compatibility definitions. */
+#define psdf_write_string(s, str, size, print_ok)\
+  s_write_ps_string(s, str, size, print_ok)
+#define psdf_alloc_position_stream(ps, mem)\
+  s_alloc_position_stream(ps, mem)
+#define psdf_alloc_param_printer(pplist, ppp, s, mem)\
+  s_alloc_param_printer(pplist, ppp, s, mem)
+#define psdf_free_param_printer(plist)\
+  s_free_param_printer(plist)
 
 /* ---------------- Other procedures ---------------- */
 

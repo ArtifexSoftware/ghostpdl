@@ -1,4 +1,4 @@
-%    Copyright (C) 1990, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1990, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -55,27 +55,38 @@
 
 % Load a font name -> font file name map.
 userdict /Fontmap .FontDirectory maxlength dict put
-/.loadFontmap		% <file> .loadFontmap -
- {		% We would like to simply execute .definefontmap as we read,
+/.loadFontmap {		% <file> .loadFontmap -
+		% We would like to simply execute .definefontmap as we read,
 		% but we have to maintain backward compatibility with an older
 		% specification that makes later entries override earlier.
-   50 dict exch
+   50 dict exch .readFontmap
+    { .definefontmap } forall
+} bind def
+/.readFontmap {		% <dict> <file> .readFontmap <dict>
     { dup token not { closefile exit } if
-		% stack: <file> fontname
+		% stack: dict file fontname
       % This is a hack to get around the absurd habit of MS-DOS editors
       % of adding an EOF character at the end of the file.
       dup (\032) eq { pop closefile exit } if
       1 index token not
        { (Fontmap entry for ) print dup =only
 	 ( has no associated file or alias name!  Giving up.\n) print flush
-	 {.loadFontmap} 0 get 1 .quit
+	 {.readFontmap} 0 get 1 .quit
        } if
       dup type dup /stringtype eq exch /nametype eq or not
        { (Fontmap entry for ) print 1 index =only
 	 ( has an invalid file or alias name!  Giving up.\n) print flush
-	 {.loadFontmap} 0 get 1 .quit
+	 {.readFontmap} 0 get 1 .quit
        } if
 		% stack: dict file fontname filename|aliasname
+      1 index type /stringtype eq
+      1 index type /nametype eq and 1 index xcheck and
+      1 index /run eq 2 index /.runlibfile eq or and {
+		% This is an inclusion entry.
+	pop findlibfile { exch pop } { file } ifelse
+	2 index exch .readFontmap pop
+      } {
+		% This is a real entry.
 		% Read and pop tokens until a semicolon.
        { 2 index token not
 	  { (Fontmap entry for ) print 1 index =only
@@ -85,9 +96,9 @@ userdict /Fontmap .FontDirectory maxlength dict put
 	 dup /; eq { pop 3 index 3 1 roll .growput exit } if
 	 pop
        } loop
+      } ifelse
     } loop
-    { .definefontmap } forall
- } bind def
+} bind def
 % Add an entry in Fontmap.  We redefine this if the Level 2
 % resource machinery is loaded.
 /.definefontmap			% <fontname> <file|alias> .definefontmap -
@@ -163,22 +174,20 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
     }
    for
  } bind def
-/.splitfilename		% <dir.../base.extn> .basename <base> <extn>
- {  { (/) search { true } { (\\) search } ifelse
-       { pop pop }
-       { exit }
-      ifelse
-    }
-   loop
-   dup { (.) search { pop pop } { exit } ifelse } loop
-   2 copy eq
-    { pop () }
-    { exch dup length 2 index length 1 add sub 0 exch getinterval exch }
-   ifelse
-% Following is debugging code.
-%   (*** Split => ) print 2 copy exch ==only ( ) print ==only
-%   ( ***\n) print flush
- } bind def
+/.splitfilename {	% <dir.../base.extn> .basename <base> <extn>
+		% Make the file name read-only to detect aliasing bugs.
+		% We really don't like doing this, but we've had one
+		% such bug already.
+  readonly {
+    (/) search { true } { (\\) search } ifelse { pop pop } { exit } ifelse
+  } loop
+  dup { (.) search { pop pop } { exit } ifelse } loop
+  2 copy eq {
+    pop ()
+  } {
+    exch dup length 2 index length 1 add sub 0 exch getinterval exch
+  } ifelse
+} bind def
 /.scanfontdict 1 dict def		% establish a binding
 /.scanfontbegin
  {	% Construct the table of all file names already in Fontmap.
@@ -233,7 +242,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
    0 0 0 4 -1 roll	% found scanned files
     {		% stack: <fontcount> <scancount> <filecount> <filename>
       exch 1 add exch                   % increment filecount
-      dup .splitfilename .lowerstring
+      dup .splitfilename .fonttempstring copy .lowerstring
 		% stack: <fontcount> <scancount> <filecount+1> <filename>
 		%	<BASE> <ext>
       .scanfontskip exch known exch .scanfontdict exch known or
@@ -471,9 +480,10 @@ buildfontdict 3 /.buildfont3 cvx put
   [(Typewriter) /Courier]
 ] readonly def
 /.substituteproperties [
-  [(It) 1] [(Oblique) 1]
+  [(It) 9] [(Oblique) 1]
   [(Black) 2] [(Bd) 2] [(Bold) 2] [(bold) 2] [(Demi) 2] [(Heavy) 2] [(Sb) 2]
   [(Cn) 4] [(Cond) 4] [(Narrow) 4] [(Pkg) 4]
+  % 8 is serif, currently only used in PDF and for (It)
 ] readonly def
 /.fontnameproperties {		% <string|name> .fontnameproperties <int>
   .fontnamestring
@@ -517,27 +527,29 @@ buildfontdict 3 /.buildfont3 cvx put
 /.substitutefontname {		% <fontname> <properties> .substitutefontname
 				%   <altname|null>
 	% Look for properties and/or a face name in the font name.
-	% If we find any, use Helvetica as the base font;
-	% otherwise, use the default font.
+	% If we find any, use Times (serif) or Helvetica (sans) as the
+	% base font; otherwise, use the default font.
 	% Note that the "substituted" font name may be the same as
 	% the requested one; the caller must check this.
-   exch .fontnamestring
-    {defaultfontname /Helvetica-Oblique /Helvetica-Bold /Helvetica-BoldOblique
-     /Helvetica-Narrow /Helvetica-Narrow-Oblique
-     /Helvetica-Narrow-Bold /Helvetica-Narrow-BoldOblique}
-   exch 3 -1 roll exch	% stack: facelist properties fontname
+  exch .fontnamestring {
+    defaultfontname /Helvetica-Oblique /Helvetica-Bold /Helvetica-BoldOblique
+    /Helvetica-Narrow /Helvetica-Narrow-Oblique
+    /Helvetica-Narrow-Bold /Helvetica-Narrow-BoldOblique
+    /Times-Roman /Times-Italic /Times-Bold /Times-BoldItalic
+    /Helvetica-Narrow /Helvetica-Narrow-Oblique
+    /Helvetica-Narrow-Bold /Helvetica-Narrow-BoldOblique
+  } exch 3 -1 roll exch
+	% Stack: facelist properties fontname
 	% Look for a face name.
-   .substitutefaces
-    { 2 copy 0 get search
-       { pop pop pop 1 get .substitutefamilies exch get
-	 4 -1 roll pop 3 1 roll
-       }
-       { pop pop
-       }
-      ifelse
-    }
-   forall pop
-   1 index length mod get exec
+  .substitutefaces {
+    2 copy 0 get search {
+      pop pop pop 1 get .substitutefamilies exch get
+      4 -1 roll pop 3 1 roll
+    } {
+      pop pop
+    } ifelse
+  } forall pop
+  1 index length mod get exec
 } bind def
 /.substitutefont {		% <fontname> .substitutefont <altname>
   dup .fontnameproperties .substitutefontname
@@ -647,8 +659,13 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
 	2 copy eq { pop defaultfontname } if
 	.checkalias
 	QUIET not {
-	  (Substituting font ) print dup =only ( for ) print
-	  1 index =only (.\n) print flush
+	  SHORTERRORS {
+	    (%%[) print 1 index =only
+	    ( not found, substituting ) print dup =only (]%%)
+	  } {
+	    (Substituting font ) print dup =only
+	    ( for ) print 1 index =only (.)
+	  } ifelse = flush
 	} if
 			% Remove all the accumulated aliases.
 	counttomark 1 add 1 roll cleartomark mark exch

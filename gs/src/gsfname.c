@@ -19,37 +19,34 @@
 
 /* File name utilities */
 #include "memory_.h"
-#include "ghost.h"
-#include "oper.h"
-#include "ialloc.h"
-#include "stream.h"
-#include "gxiodev.h"		/* must come after stream.h */
-#include "fname.h"
+#include "gserror.h"
+#include "gserrors.h"
+#include "gsmemory.h"
+#include "gstypes.h"
+#include "gsfname.h"
+#include "gxiodev.h"
 
 /* Parse a file name into device and individual name. */
 /* The device may be NULL, or the name may be NULL, but not both. */
 /* According to the Adobe documentation, %device and %device% */
 /* are equivalent; both return name==NULL. */
 int
-parse_file_name(const ref * op, parsed_file_name * pfn)
+gs_parse_file_name(gs_parsed_file_name_t * pfn, const char *pname, uint len)
 {
-    const byte *pname;
-    uint len, dlen;
-    const byte *pdelim;
+    uint dlen;
+    const char *pdelim;
     gx_io_device *iodev;
 
-    check_read_type(*op, t_string);
-    len = r_size(op);
-    pname = op->value.const_bytes;
     if (len == 0)
-	return_error(e_undefinedfilename);
+	return_error(gs_error_undefinedfilename); /* null name not allowed */
     if (pname[0] != '%') {	/* no device */
+	pfn->memory = 0;
 	pfn->iodev = NULL;
-	pfn->fname = (const char *)pname;
+	pfn->fname = pname;
 	pfn->len = len;
 	return 0;
     }
-    pdelim = (const byte *)memchr(pname + 1, '%', len - 1);
+    pdelim = memchr(pname + 1, '%', len - 1);
     if (pdelim == NULL)		/* %device */
 	dlen = len;
     else if (pdelim[1] == 0) {	/* %device% */
@@ -59,43 +56,49 @@ parse_file_name(const ref * op, parsed_file_name * pfn)
 	dlen = pdelim - pname;
 	pdelim++, len--;
     }
-    iodev = gs_findiodevice(pname, dlen);
+    iodev = gs_findiodevice((const byte *)pname, dlen);
     if (iodev == 0)
-	return_error(e_undefinedfilename);
+	return_error(gs_error_undefinedfilename);
+    pfn->memory = 0;
     pfn->iodev = iodev;
-    pfn->fname = (const char *)pdelim;
+    pfn->fname = pdelim;
     pfn->len = len - dlen;
     return 0;
 }
 
 /* Parse a real (non-device) file name and convert to a C string. */
 int
-parse_real_file_name(const ref * op, parsed_file_name * pfn, client_name_t cname)
+gs_parse_real_file_name(gs_parsed_file_name_t * pfn, const char *pname,
+			uint len, gs_memory_t *mem, client_name_t cname)
 {
-    int code = parse_file_name(op, pfn);
+    int code = gs_parse_file_name(pfn, pname, len);
 
     if (code < 0)
 	return code;
     if (pfn->len == 0)
-	return_error(e_invalidfileaccess);	/* device only */
-    return terminate_file_name(pfn, cname);
+	return_error(gs_error_invalidfileaccess);	/* device only */
+    return gs_terminate_file_name(pfn, mem, cname);
 }
 
 /* Convert a file name to a C string by adding a null terminator. */
 int
-terminate_file_name(parsed_file_name * pfn, client_name_t cname)
+gs_terminate_file_name(gs_parsed_file_name_t * pfn, gs_memory_t *mem,
+		       client_name_t cname)
 {
     uint len = pfn->len;
-    ref fnref;
-    const char *fname;
+    char *fname;
 
     if (pfn->iodev == NULL)	/* no device */
 	pfn->iodev = iodev_default;
-    fnref.value.const_bytes = (const byte *)pfn->fname;
-    r_set_size(&fnref, len);
-    fname = ref_to_string(&fnref, imemory, cname);
+    if (pfn->memory)
+	return 0;		/* already copied */
+    /* Copy the file name to a C string. */
+    fname = (char *)gs_alloc_string(mem, len + 1, cname);
     if (fname == 0)
-	return_error(e_VMerror);
+	return_error(gs_error_VMerror);
+    memcpy(fname, pfn->fname, len);
+    fname[len] = 0;
+    pfn->memory = mem;
     pfn->fname = fname;
     pfn->len = len + 1;		/* null terminator */
     return 0;
@@ -103,8 +106,9 @@ terminate_file_name(parsed_file_name * pfn, client_name_t cname)
 
 /* Free a file name that was copied to a C string. */
 void
-free_file_name(parsed_file_name * pfn, client_name_t cname)
+gs_free_file_name(gs_parsed_file_name_t * pfn, client_name_t cname)
 {
     if (pfn->fname != 0)
-	ifree_const_string((const byte *)pfn->fname, pfn->len, cname);
+	gs_free_const_string(pfn->memory, (const byte *)pfn->fname, pfn->len,
+			     cname);
 }

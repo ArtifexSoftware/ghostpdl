@@ -22,6 +22,7 @@
 #include "string_.h"		/* for strlen */
 #include "gx.h"
 #include "gserrors.h"
+#include "gsdevice.h"		/* for prototypes */
 #include "gsparam.h"
 #include "gxdevice.h"
 #include "gxfixed.h"

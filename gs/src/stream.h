@@ -159,9 +159,12 @@ struct stream_s {
     int (*save_close)(P1(stream *));	/* save original close proc */
 };
 
-#define private_st_stream()	/* in stream.c */\
-  gs_private_st_composite_final(st_stream, stream, "stream",\
+/* The descriptor is only public for subclassing. */
+extern_st(st_stream);
+#define public_st_stream()	/* in stream.c */\
+  gs_public_st_composite_final(st_stream, stream, "stream",\
     stream_enum_ptrs, stream_reloc_ptrs, stream_finalize)
+#define STREAM_NUM_PTRS 5
 
 /* Initialize the checking IDs of a stream. */
 #define s_init_ids(s) ((s)->read_id = (s)->write_id = 1)
@@ -295,8 +298,12 @@ int spseek(P2(stream *, long));
 /* Allocate a stream or a stream state. */
 stream *s_alloc(P2(gs_memory_t *, client_name_t));
 stream_state *s_alloc_state(P3(gs_memory_t *, gs_memory_type_ptr_t, client_name_t));
-/* Initialize a separately allocated stream, as if allocated by s_alloc. */
+/*
+ * Initialize a separately allocated stream or stream state, as if allocated
+ * by s_alloc[_state].
+ */
 void s_init(P2(stream *, gs_memory_t *));
+void s_init_state(P3(stream_state *, const stream_template *, gs_memory_t *));
 
 /* Create a stream on a string or a file. */
 void sread_string(P3(stream *, const byte *, uint)),
@@ -327,5 +334,21 @@ int s_filter_write_flush(P1(stream *)), s_filter_close(P1(stream *));
 
 /* Generic procedure structures for filters. */
 extern const stream_procs s_filter_read_procs, s_filter_write_procs;
+
+/*
+ * Add a filter to a pipeline.  The client must have allocated the stream
+ * state, if any, using the given allocator.  For s_init_filter, the
+ * client must have called s_init and s_init_state.
+ */
+int s_init_filter(P5(stream *fs, stream_state *fss, byte *buf, uint bsize,
+		     stream *target));
+stream *s_add_filter(P4(stream **ps, const stream_template *template,
+			stream_state *ss, gs_memory_t *mem));
+
+/*
+ * Close the filters in a pipeline, up to a given target stream, freeing
+ * their buffers and state structures.
+ */
+int s_close_filters(P2(stream **ps, stream *target));
 
 #endif /* stream_INCLUDED */

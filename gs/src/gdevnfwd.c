@@ -30,7 +30,8 @@ gx_device_forward_finalize(gx_device *dev)
 {
     gx_device *target = ((gx_device_forward *)dev)->target;
 
-    rc_decrement(target, "gx_device_forward_finalize");
+    ((gx_device_forward *)dev)->target = 0;
+    rc_decrement_only(target, "gx_device_forward_finalize");
 }
 
 /* Set the target of a forwarding device. */
@@ -572,7 +573,7 @@ gx_forward_get_hardware_params(gx_device * dev, gs_param_list * plist)
 
 int
 gx_forward_text_begin(gx_device * dev, gs_imager_state * pis,
-		      const gs_text_params_t * text, const gs_font * font,
+		      const gs_text_params_t * text, gs_font * font,
 		      gx_path * path, const gx_device_color * pdcolor,
 		      const gx_clip_path * pcpath, gs_memory_t * memory,
 		      gs_text_enum_t ** ppenum)

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -52,7 +52,7 @@ typedef struct gx_device_2up_s {
 private const gx_device_procs pcx2up_procs =
 prn_color_procs(pcx2up_open, gdev_prn_output_page, gdev_prn_close,
 		pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
-gx_device_2up far_data gs_pcx2up_device =
+gx_device_2up gs_pcx2up_device =
 {prn_device_body(gx_device_2up, pcx2up_procs, "pcx2up",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,

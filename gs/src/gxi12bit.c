@@ -97,6 +97,9 @@ const sample_unpack_proc_t sample_unpack_12_proc = sample_unpack_12;
 
 /* ------ Strategy procedure ------ */
 
+/* Check the prototype. */
+iclass_proc(gs_image_class_2_fracs);
+
 /* Use special (slow) logic for 12-bit source values. */
 private irender_proc(image_render_frac);
 irender_proc_t
@@ -201,6 +204,8 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 	      penum->y, w, fixed2float(xl), fixed2float(ytf));
     memset(&run, 0, sizeof(run));
     memset(&next, 0, sizeof(next));
+    /* Ensure that we don't get any false dev_color_eq hits. */
+    color_set_pure(&devc1, gx_no_color_index);
     cs_full_init_color(&cc, pcs);
     run.v[0] = ~psrc[0];	/* force remap */
 

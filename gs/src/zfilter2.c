@@ -33,12 +33,8 @@
 #include "spdiffx.h"
 #include "spngpx.h"
 #include "ifilter.h"
-
-/* Import setup code from zfdecode.c */
-int zcf_setup(P2(os_ptr op, stream_CF_state * pcfs));
-int zlz_setup(P2(os_ptr op, stream_LZW_state * plzs));
-int zpd_setup(P2(os_ptr op, stream_PDiff_state * ppds));
-int zpp_setup(P2(os_ptr op, stream_PNGP_state * ppps));
+#include "ifilter2.h"
+#include "ifwpred.h"
 
 /* ------ CCITTFaxEncode filter ------ */
 
@@ -52,7 +48,7 @@ zCFE(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_dictionary);
     check_dict_read(*op);
-    code = zcf_setup(op, (stream_CF_state *)&cfs);
+    code = zcf_setup(op, (stream_CF_state *)&cfs, iimemory);
     if (code < 0)
 	return code;
     return filter_write(i_ctx_p, 0, &s_CFE_template, (stream_state *)&cfs, 0);

@@ -16,6 +16,7 @@ FEATURE_DEVS    = $(DD)dps2lib.dev   \
                   $(DD)colimlib.dev  \
                   $(DD)cielib.dev    \
                   $(DD)htxlib.dev    \
+	          $(DD)pipe.dev      \
                   $(DD)devcmap.dev
 
 default: $(TARGET_XE)$(XE)

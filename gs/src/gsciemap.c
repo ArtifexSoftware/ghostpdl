@@ -21,9 +21,9 @@
 #include "math_.h"
 #include "gx.h"
 #include "gserrors.h"
-#include "gxcspace.h"
-#include "gscie.h"
+#include "gxcspace.h"		/* for gxcie.c */
 #include "gxarith.h"
+#include "gxcie.h"
 #include "gxdevice.h"		/* for gxcmap.h */
 #include "gxcmap.h"
 #include "gxistate.h"

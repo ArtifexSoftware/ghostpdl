@@ -30,7 +30,7 @@
  * (e.g., some Linux versions).  Also, this procedure does the right thing
  * if old_ptr = NULL.
  */
-void *
+private void *
 mrealloc(void *old_ptr, size_t old_size, size_t new_size)
 {
     void *new_ptr = malloc(new_size);
@@ -163,6 +163,7 @@ bool var_expand(P3(char *, char [MAX_STR], const config *));
 void add_definition(P4(const char *, const char *, string_list *, bool));
 string_item *lookup(P2(const char *, const string_list *));
 
+int
 main(int argc, char *argv[])
 {
     config conf;
@@ -396,13 +397,17 @@ process_replaces(config * pconf)
 
 			for (tn = 0; tn < count; ++tn) {
 			    if (items[tn].file_index == j) {
-				/* Delete the item.  Since we haven't sorted the items */
-				/* yet, just replace this item with the last one. */
+				/*
+				 * Delete the item.  Since we haven't sorted
+				 * the items yet, just replace this item
+				 * with the last one, but make sure we don't
+				 * miss scanning it.
+				 */
 				if (pconf->debug)
 				    printf("Replacing %s %s.\n",
 					 pconf->lists.indexed[rn].list_name,
 					   items[tn].str);
-				items[tn] = items[--count];
+				items[tn--] = items[--count];
 			    }
 			}
 			pconf->lists.indexed[rn].count = count;
@@ -422,7 +427,7 @@ process_replaces(config * pconf)
 /* We use the 'index' of the file_contents string_item to record the union */
 /* of the uniq_modes of all (direct and indirect) items in the file. */
 /* Return the file_contents item for the file. */
-string_item *
+private string_item *
 read_file(config * pconf, const char *fname)
 {
     char *cname = malloc(strlen(fname) + strlen(pconf->file_prefix) + 1);
@@ -570,8 +575,8 @@ pre:		sprintf(template, pat, pconf->name_prefix);
 		break;
 	    case 'e':
 		if (IS_CAT("emulator")) {
-		    sprintf(str, "emulator_(\"%s\",%d)",
-			    item, strlen(item));
+		    sprintf(str, "emulator_(\"%s\",%u)",
+			    item, (uint)strlen(item));
 		    item = str;
 		    break;
 		}
@@ -633,8 +638,8 @@ pre:		sprintf(template, pat, pconf->name_prefix);
 		goto err;
 	    case 'p':
 		if (IS_CAT("ps")) {
-		    sprintf(str, "psfile_(\"%s.ps\",%d)",
-			    item, strlen(item) + 3);
+		    sprintf(str, "psfile_(\"%s.ps\",%u)",
+			    item, (uint)(strlen(item) + 3));
 		    item = str;
 		    break;
 		}
@@ -695,14 +700,14 @@ add_item(string_list * list, const char *str, int file_index)
 /* or the latest (if last = true). */
 #define psi1 ((const string_item *)p1)
 #define psi2 ((const string_item *)p2)
-int
+private int
 cmp_index(const void *p1, const void *p2)
 {
     int cmp = psi1->index - psi2->index;
 
     return (cmp < 0 ? -1 : cmp > 0 ? 1 : 0);
 }
-int
+private int
 cmp_str(const void *p1, const void *p2)
 {
     return strcmp(psi1->str, psi2->str);

@@ -27,8 +27,7 @@
 /*
  * Define the interpreter memory manager instance.
  */
-extern gs_dual_memory_t gs_imemory;
-
+#define gs_imemory (i_ctx_p->memory)
 #define idmemory (&gs_imemory)
 #define iimemory (gs_imemory.current)
 #define imemory ((gs_memory_t *)iimemory)
@@ -83,10 +82,16 @@ void ialloc_validate_spaces(P1(const gs_dual_memory_t *));
 /* Get the space attribute of the current allocator. */
 #define ialloc_space(dmem) ((dmem)->current_space)
 #define icurrent_space ialloc_space(idmemory)
-extern uint imemory_space(P1(gs_ref_memory_t *));
+uint imemory_space(P1(const gs_ref_memory_t *));
 
 /* Select the allocation space. */
 void ialloc_set_space(P2(gs_dual_memory_t *, uint));
+
+/* Get the l_new attribute of an allocator. */
+uint imemory_new_mask(P1(const gs_ref_memory_t *));
+
+/* Get the save level of an allocator. */
+int imemory_save_level(P1(const gs_ref_memory_t *));
 
 /*
  * Ref-related facilities.

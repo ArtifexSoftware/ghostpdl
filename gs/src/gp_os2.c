@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -819,13 +819,12 @@ pm_std_read_reset(stream * s)
 
 /* Define alternate 'open' routines for our stdin/out/err streams. */
 
-extern int iodev_stdin_open(P4(gx_io_device *, const char *, stream **,
-			       gs_memory_t *));
+extern const gx_io_device gs_iodev_stdin;
 private int
 pm_stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
 	      gs_memory_t * mem)
 {
-    int code = iodev_stdin_open(iodev, access, ps, mem);
+    int code = gs_iodev_stdin.procs.open_device(iodev, access, ps, mem);
     stream *s = *ps;
 
     if (code != 1)
@@ -837,13 +836,12 @@ pm_stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
     return 0;
 }
 
-extern int iodev_stdout_open(P4(gx_io_device *, const char *, stream **,
-				gs_memory_t *));
+extern const gx_io_device gs_iodev_stdout;
 private int
 pm_stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 	       gs_memory_t * mem)
 {
-    int code = iodev_stdout_open(iodev, access, ps, mem);
+    int code = gs_iodev_stdout.procs.open_device(iodev, access, ps, mem);
     stream *s = *ps;
 
     if (code != 1)
@@ -854,13 +852,12 @@ pm_stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
     return 0;
 }
 
-extern int iodev_stderr_open(P4(gx_io_device *, const char *, stream **,
-				gs_memory_t *));
+extern const gx_io_device gs_iodev_stderr;
 private int
 pm_stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
 	       gs_memory_t * mem)
 {
-    int code = iodev_stderr_open(iodev, access, ps, mem);
+    int code = gs_iodev_stderr.procs.open_device(iodev, access, ps, mem);
     stream *s = *ps;
 
     if (code != 1)

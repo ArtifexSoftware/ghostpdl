@@ -27,6 +27,7 @@
 private gs_memory_proc_alloc_bytes(gs_retrying_alloc_bytes_immovable);
 private gs_memory_proc_resize_object(gs_retrying_resize_object);
 private gs_memory_proc_free_object(gs_forward_free_object);
+private gs_memory_proc_stable(gs_retrying_stable);
 private gs_memory_proc_status(gs_forward_status);
 private gs_memory_proc_free_all(gs_forward_free_all);
 private gs_memory_proc_consolidate_free(gs_forward_consolidate_free);
@@ -53,6 +54,7 @@ private const gs_memory_procs_t retrying_procs = {
     gs_retrying_alloc_bytes_immovable,
     gs_retrying_resize_object,
     gs_forward_free_object,
+    gs_retrying_stable,
     gs_forward_status,
     gs_forward_free_all,
     gs_forward_consolidate_free,
@@ -91,6 +93,7 @@ gs_memory_retrying_init(
 		      gs_memory_t * target	/* allocator to wrap */
 )
 {
+    rmem->stable_memory = 0;
     rmem->procs = retrying_procs;
     rmem->target = target;
     gs_memory_retrying_set_recover(rmem, no_recover_proc, NULL);
@@ -319,6 +322,31 @@ gs_forward_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp,
 			  client_name_t cname)
 {
     DO_FORWARD(target->procs.unregister_root(target, rp, cname));
+}
+private gs_memory_t *
+gs_retrying_stable(gs_memory_t * mem)
+{
+    if (!mem->stable_memory) {
+	gs_memory_retrying_t * const rmem = (gs_memory_retrying_t *)mem;
+	gs_memory_t *stable = gs_memory_stable(rmem->target);
+
+	if (stable == rmem->target)
+	    mem->stable_memory = mem;
+	else {
+	    gs_memory_retrying_t *retrying_stable = (gs_memory_retrying_t *)
+		gs_alloc_bytes(stable, sizeof(*rmem), "gs_retrying_stable");
+
+	    if (retrying_stable) {
+		int code = gs_memory_retrying_init(retrying_stable, stable);
+
+		if (code < 0)
+		    gs_free_object(stable, retrying_stable, "gs_retrying_stable");
+		else
+		    mem->stable_memory = (gs_memory_t *)retrying_stable;
+	    }
+	}
+    }
+    return mem->stable_memory;
 }
 private void
 gs_forward_status(gs_memory_t * mem, gs_memory_status_t * pstat)

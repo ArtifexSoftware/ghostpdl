@@ -18,19 +18,60 @@
 
 
 /* Common utilities for PostScript and PDF writers */
-#include "string_.h"
+#include "memory_.h"
+#include <stdlib.h>		/* for qsort */
 #include "gx.h"
 #include "gserrors.h"
 #include "gdevpsdf.h"
-#include "gdevpstr.h"
+#include "gxfont.h"
 #include "scanchar.h"
 #include "strimpl.h"
 #include "sa85x.h"
 #include "scfx.h"
+#include "spprint.h"
 #include "sstring.h"
 
-/* Structure descriptor */
+/* Structure descriptors */
 public_st_device_psdf();
+public_st_psdf_binary_writer();
+
+/* GC procedures */
+private 
+ENUM_PTRS_WITH(psdf_binary_writer_enum_ptrs, psdf_binary_writer *pbw) {
+    /*
+     * Don't enumerate the stream pointers: they are all either
+     * unused or internal, except for strm.
+     */
+    return 0;
+}
+    case 0: ENUM_RETURN(pbw->target);
+    case 1: ENUM_RETURN((pbw->strm == &pbw->A85E.s ? pbw->A85E.s.strm :
+			 pbw->strm));
+    case 2: ENUM_RETURN(pbw->dev);
+ENUM_PTRS_END
+private
+RELOC_PTRS_WITH(psdf_binary_writer_reloc_ptrs, psdf_binary_writer *pbw)
+{
+    RELOC_VAR(pbw->target);
+    RELOC_VAR(pbw->dev);
+    if (pbw->strm == &pbw->A85E.s) {
+	char *relocated = (char *)RELOC_OBJ(pbw);
+	long reloc = relocated - (char *)pbw;
+
+	/* Fix up the internal pointers. */
+	pbw->A85E.s.cbuf += reloc;
+	pbw->A85E.s.srptr += reloc;
+	pbw->A85E.s.srlimit += reloc;
+	pbw->A85E.s.swlimit += reloc;
+	RELOC_VAR(pbw->A85E.s.strm);
+	pbw->A85E.s.state = (stream_state *)
+	    (relocated + offset_of(psdf_binary_writer, A85E.state));
+	pbw->strm = (stream *)
+	    (relocated + offset_of(psdf_binary_writer, A85E.s));
+    } else
+	RELOC_VAR(pbw->strm);
+}
+RELOC_PTRS_END
 
 /* ---------------- Vector implementation procedures ---------------- */
 
@@ -195,17 +236,19 @@ psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
 int
 psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
 {
-    pbw->strm = pdev->strm;
+    pbw->target = pdev->strm;
+    pbw->memory = pdev->v_memory;
     pbw->dev = pdev;
     /* If not binary, set up the encoding stream. */
     if (!pdev->binary_ok) {
-	stream_state *st =
-	    s_alloc_state(pdev->v_memory, s_A85E_template.stype,
-			  "psdf_begin_binary");
-
-	if (st == 0)
-	    return_error(gs_error_VMerror);
-	psdf_encode_binary(pbw, &s_A85E_template, st);
+	s_init(&pbw->A85E.s, NULL);
+	s_init_state((stream_state *)&pbw->A85E.state, &s_A85E_template, NULL);
+	s_init_filter(&pbw->A85E.s, (stream_state *)&pbw->A85E.state,
+		      pbw->buf, sizeof(pbw->buf), pdev->strm);
+	pbw->strm = &pbw->A85E.s;
+    } else {
+	memset(&pbw->A85E.s, 0, sizeof(pbw->A85E.s)); /* for GC */
+	pbw->strm = pdev->strm;
     }
     return 0;
 }
@@ -216,39 +259,16 @@ int
 psdf_encode_binary(psdf_binary_writer * pbw, const stream_template * template,
 		   stream_state * ss)
 {
-    gx_device_psdf *pdev = pbw->dev;
-    gs_memory_t *mem = pdev->v_memory;
-    stream *es = s_alloc(mem, "psdf_encode_binary(stream)");
-    stream_state *ess = (ss == 0 ? (stream_state *) es : ss);
-    uint bsize = max(template->min_out_size, 256);	/* arbitrary */
-    byte *buf = gs_alloc_bytes(mem, bsize, "psdf_encode_binary(buf)");
-
-    if (es == 0 || buf == 0) {
-	gs_free_object(mem, buf, "psdf_encode_binary(buf)");
-	gs_free_object(mem, es, "psdf_encode_binary(stream)");
-	return_error(gs_error_VMerror);
-    }
-    if (ess == 0)
-	ess = (stream_state *) es;
-    s_std_init(es, buf, bsize, &s_filter_write_procs, s_mode_write);
-    ess->template = template;
-    ess->memory = mem;
-    es->procs.process = template->process;
-    es->memory = mem;
-    es->state = ess;
-    if (template->init)
-	(*template->init) (ess);
-    es->strm = pbw->strm;
-    pbw->strm = es;
-    return 0;
+    return (s_add_filter(&pbw->strm, template, ss, pbw->memory) == 0 ?
+	    gs_note_error(gs_error_VMerror) : 0);
 }
 
 /* Add a 2-D CCITTFax encoding filter. */
+/* Set EndOfBlock iff the stream is not ASCII85 encoded. */
 int
 psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert)
 {
-    gx_device_psdf *pdev = pbw->dev;
-    gs_memory_t *mem = pdev->v_memory;
+    gs_memory_t *mem = pbw->memory;
     const stream_template *template = &s_CFE_template;
     stream_CFE_state *st =
 	gs_alloc_struct(mem, stream_CFE_state, template->stype,
@@ -262,7 +282,7 @@ psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert)
     st->Columns = w;
     st->Rows = 0;
     st->BlackIs1 = !invert;
-    st->EndOfBlock = true;
+    st->EndOfBlock = pbw->strm->state->template != &s_A85E_template;
     code = psdf_encode_binary(pbw, template, (stream_state *) st);
     if (code < 0)
 	gs_free_object(mem, st, "psdf_CFE_binary");
@@ -273,251 +293,93 @@ psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert)
 int
 psdf_end_binary(psdf_binary_writer * pbw)
 {
-    gx_device_psdf *pdev = pbw->dev;
+    return s_close_filters(&pbw->strm, pbw->target);
+}
 
-    /* Close the filters in reverse order. */
-    /* Stop before we try to close the file stream. */
-    while (pbw->strm != pdev->strm) {
-	stream *s = pbw->strm;
-	gs_memory_t *mem = s->state->memory;
-	byte *sbuf = s->cbuf;
-	stream *next = s->strm;
+/* ---------------- Embedded font writing ---------------- */
 
-	sclose(s);
-	if (s->state != (stream_state *)s)
-	    gs_free_object(mem, s->state, "psdf_end_binary(state)");
-	gs_free_object(mem, s, "psdf_end_binary(stream)");
-	gs_free_object(mem, sbuf, "psdf_end_binary(buf)");
-	pbw->strm = next;
+/* Begin enumerating the glyphs in a font or a font subset. */
+void
+psdf_enumerate_glyphs_begin(psdf_glyph_enum_t *ppge, gs_font *font,
+			    gs_glyph *subset_glyphs, uint subset_size,
+			    gs_glyph_space_t glyph_space)
+{
+    ppge->font = font;
+    ppge->subset_glyphs = subset_glyphs;
+    ppge->subset_size = subset_size;
+    ppge->glyph_space = glyph_space;
+    psdf_enumerate_glyphs_reset(ppge);
+}
+
+/* Reset a glyph enumeration. */
+void
+psdf_enumerate_glyphs_reset(psdf_glyph_enum_t *ppge)
+{
+    ppge->index = 0;
+}
+
+/* Enumerate the next glyph in a font or a font subset. */
+/* Return 0 if more glyphs, 1 if done, <0 if error. */
+int
+psdf_enumerate_glyphs_next(psdf_glyph_enum_t *ppge, gs_glyph *pglyph)
+{
+    if (ppge->subset_size) {
+	if (ppge->index >= ppge->subset_size)
+	    return 1;
+	*pglyph =
+	    (ppge->subset_glyphs ? ppge->subset_glyphs[ppge->index++] :
+	     (gs_glyph)(ppge->index++ + gs_min_cid_glyph));
+	return 0;
+    } else {
+	gs_font *font = ppge->font;
+	int index = (int)ppge->index;
+	int code = font->procs.enumerate_glyph(font, &index,
+					       ppge->glyph_space, pglyph);
+
+	ppge->index = index;
+	return (index == 0 ? 1 : code < 0 ? code : 0);
     }
-    return 0;
 }
 
 /*
- * Write a string in its shortest form ( () or <> ).  Note that
- * this form is different depending on whether binary data are allowed.
- * Currently we don't support ASCII85 strings ( <~ ~> ).
+ * Get the set of referenced glyphs (indices) for writing a subset font.
+ * Does not sort or remove duplicates.
  */
-void
-psdf_write_string(stream * s, const byte * str, uint size, int print_ok)
-{
-    uint added = 0;
-    uint i;
-    const stream_template *template;
-    stream_AXE_state state;
-    stream_state *st = NULL;
-
-    if (print_ok & print_binary_ok) {	/* Only need to escape (, ), \, CR, EOL. */
-	pputc(s, '(');
-	for (i = 0; i < size; ++i) {
-	    byte ch = str[i];
-
-	    switch (ch) {
-		case char_CR:
-		    pputs(s, "\\r");
-		    continue;
-		case char_EOL:
-		    pputs(s, "\\n");
-		    continue;
-		case '(':
-		case ')':
-		case '\\':
-		    pputc(s, '\\');
-	    }
-	    pputc(s, ch);
-	}
-	pputc(s, ')');
-	return;
-    }
-    for (i = 0; i < size; ++i) {
-	byte ch = str[i];
-
-	if (ch == 0 || ch >= 127)
-	    added += 3;
-	else if (strchr("()\\\n\r\t\b\f", ch) != 0)
-	    ++added;
-	else if (ch < 32)
-	    added += 3;
-    }
-
-    if (added < size) {		/* More efficient to represent as PostScript string. */
-	template = &s_PSSE_template;
-	pputc(s, '(');
-    } else {			/* More efficient to represent as hex string. */
-	template = &s_AXE_template;
-	st = (stream_state *) & state;
-	s_AXE_init_inline(&state);
-	pputc(s, '<');
-    }
-
-    {
-	byte buf[100];		/* size is arbitrary */
-	stream_cursor_read r;
-	stream_cursor_write w;
-	int status;
-
-	r.ptr = str - 1;
-	r.limit = r.ptr + size;
-	w.limit = buf + sizeof(buf) - 1;
-	do {
-	    w.ptr = buf - 1;
-	    status = (*template->process) (st, &r, &w, true);
-	    pwrite(s, buf, (uint) (w.ptr + 1 - buf));
-	}
-	while (status == 1);
-    }
-}
-
-/* Set up a write stream that just keeps track of the position. */
 int
-psdf_alloc_position_stream(stream ** ps, gs_memory_t * mem)
+psdf_subset_glyphs(gs_glyph glyphs[256], gs_font *font, const byte used[32])
 {
-    stream *s = *ps = s_alloc(mem, "psdf_alloc_position_stream");
+    int i, n;
 
-    if (s == 0)
-	return_error(gs_error_VMerror);
-    swrite_position_only(s);
-    return 0;
+    for (i = n = 0; i < 256; ++i)
+	if (used[i >> 3] & (1 << (i & 7))) {
+	    gs_glyph glyph = font->procs.encode_char(font, (gs_char)i,
+						     GLYPH_SPACE_INDEX);
+
+	    if (glyph != gs_no_glyph)
+		glyphs[n++] = glyph;
+	}
+    return n;
 }
 
-/* ---------------- Parameter printing ---------------- */
-
-typedef struct printer_param_list_s {
-    gs_param_list_common;
-    stream *strm;
-    param_printer_params_t params;
-    int print_ok;
-    bool any;
-} printer_param_list_t;
-
-gs_private_st_ptrs1(st_printer_param_list, printer_param_list_t,
-  "printer_param_list_t", printer_plist_enum_ptrs, printer_plist_reloc_ptrs,
-		    strm);
-const param_printer_params_t param_printer_params_default =
-{
-    param_printer_params_default_values
-};
-
-/* We'll implement the other printers later if we have to. */
-private param_proc_xmit_typed(param_print_typed);
-/*private param_proc_begin_xmit_collection(param_print_begin_collection); */
-/*private param_proc_end_xmit_collection(param_print_end_collection); */
-private const gs_param_list_procs printer_param_list_procs = {
-    param_print_typed,
-    NULL /* begin_collection */ ,
-    NULL /* end_collection */ ,
-    NULL /* get_next_key */ ,
-    gs_param_request_default,
-    gs_param_requested_default
-};
-
-int
-psdf_alloc_param_printer(gs_param_list ** pplist,
-			 const param_printer_params_t * ppp, stream * s,
-			 int print_ok, gs_memory_t * mem)
-{
-    printer_param_list_t *prlist =
-    gs_alloc_struct(mem, printer_param_list_t, &st_printer_param_list,
-		    "psdf_alloc_param_printer");
-
-    *pplist = (gs_param_list *) prlist;
-    if (prlist == 0)
-	return_error(gs_error_VMerror);
-    prlist->procs = &printer_param_list_procs;
-    prlist->memory = mem;
-    prlist->strm = s;
-    prlist->params = *ppp;
-    prlist->print_ok = print_ok;
-    prlist->any = false;
-    return 0;
-}
-
-void
-psdf_free_param_printer(gs_param_list * plist)
-{
-    if (plist) {
-	printer_param_list_t *prlist = (printer_param_list_t *) plist;
-
-	if (prlist->any && prlist->params.suffix)
-	    pputs(prlist->strm, prlist->params.suffix);
-	gs_free_object(prlist->memory, plist, "psdf_free_param_printer");
-    }
-}
-
-#define prlist ((printer_param_list_t *)plist)
+/*
+ * Sort a list of glyphs and remove duplicates.  Return the number of glyphs
+ * in the result.
+ */
 private int
-param_print_typed(gs_param_list * plist, gs_param_name pkey,
-		  gs_param_typed_value * pvalue)
+compare_glyphs(const void *pg1, const void *pg2)
 {
-    stream *s = prlist->strm;
+    gs_glyph g1 = *(const gs_glyph *)pg1, g2 = *(const gs_glyph *)pg2;
 
-    if (!prlist->any) {
-	if (prlist->params.prefix)
-	    pputs(s, prlist->params.prefix);
-	prlist->any = true;
-    }
-    if (prlist->params.item_prefix)
-	pputs(s, prlist->params.item_prefix);
-    pprints1(s, "/%s", pkey);
-    switch (pvalue->type) {
-	case gs_param_type_null:
-	    pputs(s, " null");
-	    break;
-	case gs_param_type_bool:
-	    pputs(s, (pvalue->value.b ? " true" : " false"));
-	    break;
-	case gs_param_type_int:
-	    pprintd1(s, " %d", pvalue->value.i);
-	    break;
-	case gs_param_type_long:
-	    pprintld1(s, " %l", pvalue->value.l);
-	    break;
-	case gs_param_type_float:
-	    pprintg1(s, " %g", pvalue->value.f);
-	    break;
-	case gs_param_type_string:
-	    psdf_write_string(s, pvalue->value.s.data, pvalue->value.s.size,
-			      prlist->print_ok);
-	    break;
-	case gs_param_type_name:
-/****** SHOULD USE #-ESCAPES FOR PDF ******/
-	    pputc(s, '/');
-	    pwrite(s, pvalue->value.n.data, pvalue->value.n.size);
-	    break;
-	case gs_param_type_int_array:
-	    {
-		uint i;
-		char sepr = (pvalue->value.ia.size <= 10 ? ' ' : '\n');
-
-		pputc(s, '[');
-		for (i = 0; i < pvalue->value.ia.size; ++i) {
-		    pprintd1(s, "%d", pvalue->value.ia.data[i]);
-		    pputc(s, sepr);
-		}
-		pputc(s, ']');
-	    }
-	    break;
-	case gs_param_type_float_array:
-	    {
-		uint i;
-		char sepr = (pvalue->value.fa.size <= 10 ? ' ' : '\n');
-
-		pputc(s, '[');
-		for (i = 0; i < pvalue->value.fa.size; ++i) {
-		    pprintg1(s, "%g", pvalue->value.fa.data[i]);
-		    pputc(s, sepr);
-		}
-		pputc(s, ']');
-	    }
-	    break;
-	    /*case gs_param_type_string_array: */
-	    /*case gs_param_type_name_array: */
-	default:
-	    return_error(gs_error_typecheck);
-    }
-    if (prlist->params.item_suffix)
-	pputs(s, prlist->params.item_suffix);
-    return 0;
+    return (g1 < g2 ? -1 : g1 > g2 ? 1 : 0);
 }
+int
+psdf_sort_glyphs(gs_glyph *glyphs, int count)
+{
+    int i, n;
 
-#undef prlist
+    qsort(glyphs, count, sizeof(*glyphs), compare_glyphs);
+    for (i = n = 0; i < count; ++i)
+	if (i == 0 || glyphs[i] != glyphs[i - 1])
+	    glyphs[n++] = glyphs[i];
+    return n;
+}

@@ -24,10 +24,10 @@
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsmatrix.h"		/* for gscolor2.h */
-#include "gxcspace.h"
+#include "gxcspace.h"		/* for gxcie.c */
 #include "gscolor2.h"		/* for gs_set/currentcolorrendering */
-#include "gscie.h"
 #include "gxarith.h"
+#include "gxcie.h"
 #include "gxdevice.h"		/* for gxcmap.h */
 #include "gxcmap.h"
 #include "gzstate.h"
@@ -63,19 +63,18 @@ private_st_joint_caches();
 	int j;\
 \
 	for (j = 0; j < countof(pcache); j++) {\
+	    cie_cache_floats *pcf = &(pcache)[j].floats;\
 	    int i;\
 	    gs_for_loop_params lp;\
 \
-	    gs_cie_cache_init(&(pcache)[j].floats.params, &lp,\
-			      &(domains)[j], cname);\
+	    gs_cie_cache_init(&pcf->params, &lp, &(domains)[j], cname);\
 	    for (i = 0; i < gx_cie_cache_size; lp.init += lp.step, i++) {\
-		pcache[j].floats.values[i] =\
-		  (*(rprocs)->procs[j])(lp.init, pcie);\
+		pcf->values[i] = (*(rprocs)->procs[j])(lp.init, pcie);\
 		if_debug5('C', "[C]%s[%d,%d] = %g => %g\n",\
-			  cname, j, i, lp.init, pcache[j].floats.values[i]);\
+			  cname, j, i, lp.init, pcf->values[i]);\
 	    }\
-	    (pcache)[j].floats.params.is_identity =\
-		 (rprocs)->procs[j] == (dprocs).procs[j];\
+	    pcf->params.is_identity =\
+		(rprocs)->procs[j] == (dprocs).procs[j];\
 	}\
   END
 
@@ -396,7 +395,7 @@ gx_install_cie_abc(gs_cie_abc *pcie, gs_state * pgs)
 }
 
 int
-gx_install_CIEDEFG(gs_color_space * pcs, gs_state * pgs)
+gx_install_CIEDEFG(const gs_color_space * pcs, gs_state * pgs)
 {
     gs_cie_defg *pcie = pcs->params.defg;
 
@@ -407,7 +406,7 @@ gx_install_CIEDEFG(gs_color_space * pcs, gs_state * pgs)
 }
 
 int
-gx_install_CIEDEF(gs_color_space * pcs, gs_state * pgs)
+gx_install_CIEDEF(const gs_color_space * pcs, gs_state * pgs)
 {
     gs_cie_def *pcie = pcs->params.def;
 
@@ -418,13 +417,13 @@ gx_install_CIEDEF(gs_color_space * pcs, gs_state * pgs)
 }
 
 int
-gx_install_CIEABC(gs_color_space * pcs, gs_state * pgs)
+gx_install_CIEABC(const gs_color_space * pcs, gs_state * pgs)
 {
     return gx_install_cie_abc(pcs->params.abc, pgs);
 }
 
 int
-gx_install_CIEA(gs_color_space * pcs, gs_state * pgs)
+gx_install_CIEA(const gs_color_space * pcs, gs_state * pgs)
 {
     gs_cie_a *pcie = pcs->params.a;
     int i;

@@ -21,6 +21,7 @@
 #include "math_.h"
 #include "gx.h"
 #include "gserrors.h"
+#include "gspath.h"		/* for gs_path_enum_alloc prototype */
 #include "gsstruct.h"
 #include "gxfixed.h"
 #include "gxarith.h"
@@ -81,7 +82,8 @@ gx_path_bbox(gx_path * ppath, gs_fixed_rect * pbox)
     }
     /* The stored bounding box may not be up to date. */
     /* Correct it now if necessary. */
-    if (ppath->box_last == ppath->current_subpath->last) {	/* Box is up to date */
+    if (ppath->box_last == ppath->current_subpath->last) {
+	/* Box is up to date */
 	*pbox = ppath->bbox;
     } else {
 	fixed px, py, qx, qy;
@@ -306,9 +308,9 @@ gx_path_scale_exp2_shared(gx_path * ppath, int log2_scale_x, int log2_scale_y,
  * Reverse a path.  We know ppath != ppath_old.
  * NOTE: in releases 5.01 and earlier, the implicit line added by closepath
  * became the first segment of the reversed path.  Starting in release
- * 5.02, the code follows the Adobe implementation, in which this line
- * becomes the *last* segment of the reversed path.  This can produce some
- * quite counter-intuitive results.
+ * 5.02, the code follows the Adobe implementation (and LanguageLevel 3
+ * specification), in which this line becomes the *last* segment of the
+ * reversed path.  This can produce some quite unintuitive results.
  */
 int
 gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
@@ -323,8 +325,8 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 	const segment *pseg = psub->last;
 	const segment *prev;
 	segment_notes prev_notes =
-	(pseg == (const segment *)psub ? sn_none :
-	 psub->next->notes);
+	    (pseg == (const segment *)psub ? sn_none :
+	     psub->next->notes);
 	segment_notes notes;
 
 	if (!psub->is_closed) {
@@ -385,9 +387,14 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 	/* not reached */
     }
 #undef sn_not_end
+    /*
+     * In the Adobe implementations, reversepath discards a trailing
+     * moveto unless the path consists only of a moveto.  We reproduce
+     * this behavior here, even though we consider it a bug.
+     */
     if (ppath_old->first_subpath == 0 &&
 	path_last_is_moveto(ppath_old)
-	) {			/* The path consists only of a single moveto. */
+	) {
 	int code = gx_path_add_point(ppath, ppath_old->position.x,
 				     ppath_old->position.y);
 

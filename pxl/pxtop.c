@@ -341,9 +341,8 @@ pisdEnd:
 
 	case Serase:	/* gs_erasepage failed */
 	  /* undo  gsave */
-	  gs_grestore_no_wraparound(pxli->pgs);	/* destroys gs_save stack */
+	  gs_grestore_only(pxli->pgs);	 /* destroys gs_save stack */
 	  /* fall thru to next */
-
 	case Sgsave:	/* gsave failed */
 	case Sinitg:
 	  /* undo setdevice */
@@ -555,8 +554,7 @@ pxl_impl_remove_device(
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
 
 	/* return to original gstate  */
-	gs_grestore_no_wraparound(pxli->pgs);	/* destroys gs_save stack */
-
+	gs_grestore_only(pxli->pgs);	/* destroys gs_save stack */
 	/* Deselect device */
 	error = gs_nulldevice(pxli->pgs);
 	if (code >= 0)

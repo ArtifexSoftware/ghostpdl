@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,6 +30,9 @@
 #include "gxdevice.h"
 #include "gxiparam.h"
 #include "gxistate.h"
+
+#define SWAP(a, b, t)\
+  (t = a, a = b, b = t)
 
 /* ---------------- Polygon and line drawing ---------------- */
 
@@ -334,10 +337,9 @@ gx_default_fill_parallelogram(gx_device * dev,
     if (by < 0)
 	px += bx, py += by, bx = -bx, by = -by;
     qx = px + ax + bx;
-#define swap(r, s) (t = r, r = s, s = t)
     if ((ax ^ bx) < 0) {	/* In this case, the test ax <= bx is sufficient. */
 	if (ax > bx)
-	    swap(ax, bx), swap(ay, by);
+	    SWAP(ax, bx, t), SWAP(ay, by, t);
     } else {			/*
 				 * Compare the slopes.  We know that ay >= 0, by >= 0,
 				 * and ax and bx have the same sign; the lines are in the
@@ -348,7 +350,7 @@ gx_default_fill_parallelogram(gx_device * dev,
 				 * without using floating point.
 				 */
 	if ((double)ay * bx < (double)by * ax)
-	    swap(ax, bx), swap(ay, by);
+	    SWAP(ax, bx, t), SWAP(ay, by, t);
     }
     fill_trapezoid = dev_proc(dev, fill_trapezoid);
     qy = py + ay + by;
@@ -358,10 +360,10 @@ gx_default_fill_parallelogram(gx_device * dev,
     left.end.y = py + ay;
     right.end.x = px + bx;
     right.end.y = py + by;
-#define rounded_same(p1, p2)\
+#define ROUNDED_SAME(p1, p2)\
   (fixed_pixround(p1) == fixed_pixround(p2))
     if (ay < by) {
-	if (!rounded_same(py, left.end.y)) {
+	if (!ROUNDED_SAME(py, left.end.y)) {
 	    code = (*fill_trapezoid) (dev, &left, &right, py, left.end.y,
 				      false, pdevc, lop);
 	    if (code < 0)
@@ -370,7 +372,7 @@ gx_default_fill_parallelogram(gx_device * dev,
 	left.start = left.end;
 	left.end.x = qx, left.end.y = qy;
 	ym = right.end.y;
-	if (!rounded_same(left.start.y, ym)) {
+	if (!ROUNDED_SAME(left.start.y, ym)) {
 	    code = (*fill_trapezoid) (dev, &left, &right, left.start.y, ym,
 				      false, pdevc, lop);
 	    if (code < 0)
@@ -379,7 +381,7 @@ gx_default_fill_parallelogram(gx_device * dev,
 	right.start = right.end;
 	right.end.x = qx, right.end.y = qy;
     } else {
-	if (!rounded_same(py, right.end.y)) {
+	if (!ROUNDED_SAME(py, right.end.y)) {
 	    code = (*fill_trapezoid) (dev, &left, &right, py, right.end.y,
 				      false, pdevc, lop);
 	    if (code < 0)
@@ -388,7 +390,7 @@ gx_default_fill_parallelogram(gx_device * dev,
 	right.start = right.end;
 	right.end.x = qx, right.end.y = qy;
 	ym = left.end.y;
-	if (!rounded_same(right.start.y, ym)) {
+	if (!ROUNDED_SAME(right.start.y, ym)) {
 	    code = (*fill_trapezoid) (dev, &left, &right, right.start.y, ym,
 				      false, pdevc, lop);
 	    if (code < 0)
@@ -397,13 +399,12 @@ gx_default_fill_parallelogram(gx_device * dev,
 	left.start = left.end;
 	left.end.x = qx, left.end.y = qy;
     }
-    if (!rounded_same(ym, qy))
+    if (!ROUNDED_SAME(ym, qy))
 	return (*fill_trapezoid) (dev, &left, &right, ym, qy,
 				  false, pdevc, lop);
     else
 	return 0;
-#undef rounded_same
-#undef swap
+#undef ROUNDED_SAME
 }
 
 /* Fill a triangle whose points are p, p+a, and p+b. */
@@ -427,10 +428,8 @@ gx_default_fill_triangle(gx_device * dev,
     if (by < 0)
 	px += bx, py += by, ax -= bx, ay -= by, bx = -bx, by = -by;
     /* Ensure ay <= by. */
-#define swap(r, s) (t = r, r = s, s = t)
     if (ay > by)
-	swap(ax, bx), swap(ay, by);
-#undef swap
+	SWAP(ax, bx, t), SWAP(ay, by, t);
     /*
      * Make a special check for a flat bottom or top,
      * which we can handle with a single call on fill_trapezoid.
@@ -514,10 +513,9 @@ gx_default_draw_thin_line(gx_device * dev,
 	bool swap_axes;
 	gs_fixed_edge left, right;
 
-#define fswap(a, b) tf = a, a = b, b = tf
 	if ((w < 0 ? -w : w) <= (h < 0 ? -h : h)) {
 	    if (h < 0)
-		fswap(fx0, fx1), fswap(fy0, fy1),
+		SWAP(fx0, fx1, tf), SWAP(fy0, fy1, tf),
 		    h = -h;
 	    right.start.x = (left.start.x = fx0 - fixed_half) + fixed_1;
 	    right.end.x = (left.end.x = fx1 - fixed_half) + fixed_1;
@@ -526,7 +524,7 @@ gx_default_draw_thin_line(gx_device * dev,
 	    swap_axes = false;
 	} else {
 	    if (w < 0)
-		fswap(fx0, fx1), fswap(fy0, fy1),
+		SWAP(fx0, fx1, tf), SWAP(fy0, fy1, tf),
 		    w = -w;
 	    right.start.x = (left.start.x = fy0 - fixed_half) + fixed_1;
 	    right.end.x = (left.end.x = fy1 - fixed_half) + fixed_1;
@@ -537,7 +535,6 @@ gx_default_draw_thin_line(gx_device * dev,
 	return (*dev_proc(dev, fill_trapezoid)) (dev, &left, &right,
 						 left.start.y, left.end.y,
 						 swap_axes, pdevc, lop);
-#undef fswap
     }
 }
 
@@ -554,22 +551,17 @@ gx_default_draw_line(gx_device * dev,
 /* GC structures for image enumerator */
 public_st_gx_image_enum_common();
 
-#define eptr ((gx_image_enum_common_t *)vptr)
-
 private 
-ENUM_PTRS_BEGIN(image_enum_common_enum_ptrs) return 0;
-
-case 0:
-return ENUM_OBJ(gx_device_enum_ptr(eptr->dev));
+ENUM_PTRS_WITH(image_enum_common_enum_ptrs, gx_image_enum_common_t *eptr)
+    return 0;
+case 0: return ENUM_OBJ(gx_device_enum_ptr(eptr->dev));
 ENUM_PTRS_END
 
-private RELOC_PTRS_BEGIN(image_enum_common_reloc_ptrs)
+private RELOC_PTRS_WITH(image_enum_common_reloc_ptrs, gx_image_enum_common_t *eptr)
 {
     eptr->dev = gx_device_reloc_ptr(eptr->dev, gcst);
 }
 RELOC_PTRS_END
-
-#undef eptr
 
 /*
  * gx_default_begin_image is only invoked for ImageType 1 images.  However,

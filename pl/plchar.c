@@ -99,8 +99,8 @@ pl_font_lookup_glyph(const pl_font_t *plfont, gs_glyph glyph)
 /* Encode a character for a bitmap font.  This is simple, because */
 /* bitmap fonts are always bound. */
 private gs_glyph
-pl_bitmap_encode_char(gs_show_enum *penum, gs_font *pfont, gs_char *pchr)
-{	return (gs_glyph)*pchr;
+pl_bitmap_encode_char(gs_font *pfont, gs_char chr, gs_glyph not_used)
+{	return (gs_glyph)chr;
 }
 
 /* Get character existence and escapement for a bitmap font. */
@@ -697,9 +697,8 @@ pl_font_galley_character(gs_char chr, const pl_font_t *plfont)
 /* What we actually return is the TT glyph index.  Note that */
 /* we may return either gs_no_glyph or 0 for an undefined character. */
 gs_glyph
-pl_tt_encode_char(gs_show_enum *ignore_penum, gs_font *pfont_generic,
-  gs_char *pchr)
-{	gs_char chr = *pchr;
+pl_tt_encode_char(gs_font *pfont_generic, gs_char chr, gs_glyph not_used)
+{	
 	gs_font_type42 *pfont = (gs_font_type42 *)pfont_generic;
 	uint cmap_len;
 	ulong cmap_offset = tt_find_table(pfont, "cmap", &cmap_len);
@@ -719,8 +718,7 @@ pl_tt_encode_char(gs_show_enum *ignore_penum, gs_font *pfont_generic,
 	  { gs_char galley_char = pl_font_galley_character(chr, plfont);
 
 	    if ( galley_char != gs_no_char )
-	      { *pchr = galley_char;
-	        return
+	      { return
 		  (galley_char == 0xffff ? 0 :
 		   cmap_offset == 0 ?
 		   pl_tt_dynamic_encode_char(pfont, galley_char) :
@@ -761,7 +759,8 @@ pl_tt_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
   const gs_matrix *pmat, uint char_code, gs_point *pwidth)
 {	gs_font *pfont = plfont->pfont;
 	gs_char chr = char_code;
-	gs_glyph glyph = pl_tt_encode_char(NULL, pfont, &chr);
+	gs_glyph unused_glyph = gs_no_glyph;
+	gs_glyph glyph = pl_tt_encode_char(pfont, chr, unused_glyph);
 	int code;
 	float sbw[4];
 
@@ -964,8 +963,8 @@ out:	  gs_free_object(pgs->memory, bold_lines, "pl_tt_build_char(bold_lines)");
 /* We don't have to do any character encoding, since Intellifonts are */
 /* indexed by character code (if bound) or MSL code (if unbound). */
 private gs_glyph
-pl_intelli_encode_char(gs_show_enum *penum, gs_font *pfont, gs_char *pchr)
-{	return (gs_glyph)*pchr;
+pl_intelli_encode_char(gs_font *pfont, gs_char pchr, gs_glyph not_used)
+{	return (gs_glyph)pchr;
 }
 
 /* Define the structure of the Intellifont metrics. */

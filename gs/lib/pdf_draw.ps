@@ -19,12 +19,6 @@
 % pdf_draw.ps
 % PDF drawing operations (graphics, text, and images).
 
-% We don't handle the following PDF 1.0/1.1 elements yet: (identified by
-%	style strings, except in a few known fonts
-%	font descriptor resources, except for MissingWidth
-%	text clipping modes
-%		What do these mean??
-
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
 .currentglobal true .setglobal
 /pdfdict where { pop } { /pdfdict 100 dict def } ifelse
@@ -43,6 +37,7 @@ pdfdict begin
   0 { .resolvefn0 }
   2 { }
   3 { .resolvefn3 }
+  4 { .resolvefn4 }
 .dicttomark readonly def
 
 /.resolvefn0 {
@@ -63,9 +58,37 @@ pdfdict begin
 } bdef
 
 /.resolvefn3 {
-  dup /Functions oget mark exch dup { resolvefunction } forall
-  counttomark -1 roll astore cleartomark
+  dup length dict .copydict
+  dup /Functions 2 copy oget mark exch dup {
+    oforce resolvefunction
+  } forall
+  counttomark -1 roll astore exch pop put
 } bdef
+
+/tfopdict mark
+  /true /.true load
+  /false /.false load
+.dicttomark readonly def
+/.resolvefn4 {
+  PDFfile fileposition exch
+  dup true resolvestream 
+		% Stack: filepos fndict stream
+  1 index /Length oget string readstring pop
+  exch dup length dict copy dup /Function undef
+  exch token not {
+    () /rangecheck cvx signalerror
+  } if
+  exch token {
+    /rangecheck cvx signalerror
+  } if
+		% Use .bind to avoid idiom recognition.
+		% Use tfopdict to bind true and false.
+  //tfopdict begin .bind end
+  1 index /Function 3 -1 roll put
+  .buildfunction
+  exch PDFfile exch setfileposition
+} bdef
+currentdict /tfopdict undef
 
 /resolvefunction {	% <fndict> resolvefunction <function>
   dup /FunctionType oget //fnrdict exch get exec
@@ -73,6 +96,34 @@ pdfdict begin
 
 /resolveidfunction {
   dup /Identity eq { pop { } } { resolvefunction } ifelse
+} bdef
+
+% ---------------- Shadings ---------------- %
+
+/shrdict mark
+  /ColorSpace {
+    resolvecolorspace
+  }
+  /Function {
+    dup type /dicttype eq {
+      resolvefunction
+    } {
+      [ exch { resolvefunction } forall ]
+    } ifelse
+  }
+.dicttomark readonly def
+
+/resolveshading {	% <shname> resolveshading <shading>
+  Page /Shading rget {
+    mark exch {
+      oforce //shrdict 2 index .knownget { exec } if
+    } forall .dicttomark
+    dup /ShadingType get 4 ge {
+      dup dup true resolvestream /DataSource exch def
+    } if
+  } {
+    null
+  } ifelse
 } bdef
 
 % ---------------- Halftones ---------------- %
@@ -195,7 +246,8 @@ end
     } ifelse
   }
   /HTP { aload pop sethalftonephase }
-  /SM { setsmoothness }
+	% SM may be present even if this is only a Level 2 interpreter.
+  /SM { /setsmoothness where { pop setsmoothness } { pop } ifelse }
   /Font { aload pop Tf }
   /LW { setlinewidth }
   /LC { setlinecap }
@@ -305,7 +357,7 @@ end
     4 array astore
   }
   /Indexed {
-    aload pop 3 -1 roll resolvecolorspace
+    aload pop 3 -1 roll oforce resolvecolorspace
 		% If the underlying space is a Lab space, we must scale
 		% the output of the lookup table as part of DecodeABC.
     dup dup type /arraytype eq { 0 get } if /CIEBasedABC eq {
@@ -338,16 +390,14 @@ end
     }
     if 4 array astore
   }
-  /Pattern
-   { dup type /nametype ne
-      { dup length 1 gt
-	 { 1 get resolvecolorspace
-	   /Pattern exch 2 array astore
-	 }
-	if
-      }
-     if
-   }
+  /Pattern {
+    dup type /nametype ne {
+      dup length 1 gt {
+	1 oget resolvecolorspace
+	/Pattern exch 2 array astore
+      } if
+    } if
+  }
 .dicttomark readonly def
 
 /cssubst {		% <csname> cssubst <cspace'> true
@@ -356,12 +406,16 @@ end
   dup 1 index ne { exch pop true } { pop pop false } ifelse
 } bdef
 
-/csresolve		% <csresourcename> csresolve <cspace>
- { dup Page /ColorSpace rget
-    { exch pop resolvecolorspace }
-    { /undefined cvx signalerror }
-   ifelse
- } bdef
+/csnames mark
+  /DeviceGray dup  /DeviceRGB dup  /DeviceCMYK dup  /Pattern dup
+.dicttomark readonly def
+/csresolve {		% <csresourcename> csresolve <cspace>
+  dup Page /ColorSpace rget {
+    exch pop resolvecolorspace
+  } {
+    //csnames 1 index known not { /undefined cvx signalerror } if
+  } ifelse
+} bdef
 /resolvecolorspace {	% <cspace> resolvecolorspace <cspace'>
   dup dup type /arraytype eq { 0 get } if
   //csrdict exch .knownget {
@@ -371,17 +425,22 @@ end
   } ifelse
 } bdef
 
-/scresolve	% <c0> ... scresolve <multi>
- {		% We can't really make sc[n] and SC[N] work, because
+/scresolve {	% <c0> ... scresolve <multi>
+		% We can't really make sc[n] and SC[N] work, because
 		% the color space information isn't available at
 		% conversion time; so we hack it by assuming that
 		% all the operands on the stack are used, and that
 		% if the top operand is a name, it's a Pattern resource.
-   dup type /nametype eq
+  dup type /nametype eq
     { Page /Pattern rget { resolvepattern } { null } ifelse }
-   if
-   count 1 gt
- } bdef
+  if
+  dup type /dicttype eq {
+		% Check the PaintType
+    dup /PaintType get 2 eq
+  } {
+    count 1 gt
+  } ifelse
+} bdef
 
 /.pdfpaintproc {         % <patdict> <resdict> .pdfpaintproc -
   DEBUG { (%Begin PaintProc) = flush } if
@@ -431,6 +490,7 @@ drawopdict begin
   /RG { /DeviceRGB cssubst { CS SC* } { RG } ifelse } bdef
   /K { K } bdef
   /CS { csresolve CS } bdef
+  /ri { ri } bdef
   /SC { scresolve { SC* } { SC1 } ifelse } bdef
   /SCN /SC load def
 end
@@ -461,6 +521,7 @@ drawopdict begin
   /b* { b* } def
   /W { W } def
   /W* { W* } def
+  /sh { resolveshading shfill } def
 end
 
 % ---------------- XObjects ---------------- %
@@ -487,6 +548,26 @@ end
     pop [ 0 1 BitsPerComponent bitshift 1 sub ]
   }
 .dicttomark readonly def
+
+/checkaltimage {	% <resdict> checkaltimage <resdict[']>
+  /UsePrinterImages where {
+    pop UsePrinterImages {
+      dup /Alternates knownoget {
+	{
+	  dup /DefaultForPrinting knownoget {
+	    {
+	      /Image oget exch pop exit
+	    } {
+	      pop
+	    } ifelse
+	  } {
+	    pop
+	  } ifelse
+	} forall
+      } if
+    } if
+  } if
+} bdef
 
 /makeimagedict {	% <resdict> <newdict> makeimagedict -
 			% On return, newdict' is currentdict
@@ -528,7 +609,7 @@ end
 } bdef
 
 /DoImage {
-  dup length 6 add dict makeimagedict doimage
+  checkaltimage dup length 6 add dict makeimagedict doimage
 } bdef
 /doimage {	% <imagemask> doimage -
 		% imagedict is currentdict, gets popped from dstack

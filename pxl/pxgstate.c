@@ -42,10 +42,6 @@ px_operator_proc(pxRectanglePath);
 /* Forward references */
 px_operator_proc(pxSetClipIntersect);
 
-/* Imported color space types */
-extern const gs_color_space_type gs_color_space_type_Indexed; /* gscolor2.c */
-extern const gs_color_space_type gs_color_space_type_Pattern; /* gspcolor.c */
-
 /* GC descriptors */
 private_st_px_paint();
 #define ppt ((px_paint_t *)vptr)
@@ -70,7 +66,7 @@ private_st_px_gstate();
 private ENUM_PTRS_BEGIN(px_gstate_enum_ptrs) {
 	index -= px_gstate_num_ptrs + px_gstate_num_string_ptrs;
 	if ( index == 0 )
-	  ENUM_RETURN_CONST_STRING_PTR(px_gstate_t, palette.data);
+	  ENUM_RETURN_CONST_STRING_PTR(px_gstate_t, palette);
 	index--;
 	if ( index < st_px_paint_max_ptrs )
 	  return ENUM_SUPER_ELT(px_gstate_t, st_px_paint, brush, 0);
@@ -100,6 +96,10 @@ private RELOC_PTRS_BEGIN(px_gstate_reloc_ptrs) {
 #undef ms
 } RELOC_PTRS_END
 #undef pxgs
+
+/* Imported color space types */
+extern const gs_color_space_type gs_color_space_type_Indexed; /* gscolor2.c */
+extern const gs_color_space_type gs_color_space_type_Pattern; /* gspcolor.c */
 
 /* Define 'client procedures' for copying the PCL XL state. */
 /* We export the reference count adjustment procedures for the sake of */

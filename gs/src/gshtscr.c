@@ -35,10 +35,8 @@ static bool FORCE_STRIP_HALFTONES = false;
 private_st_gs_screen_enum();
 
 /* GC procedures */
-#define eptr ((gs_screen_enum *)vptr)
-
 private 
-ENUM_PTRS_BEGIN(screen_enum_enum_ptrs)
+ENUM_PTRS_WITH(screen_enum_enum_ptrs, gs_screen_enum *eptr)
 {
     if (index < 1 + st_ht_order_max_ptrs) {
 	gs_ptr_type_t ret =
@@ -54,16 +52,13 @@ ENUM_PTRS_BEGIN(screen_enum_enum_ptrs)
 }
 ENUM_PTR(0, gs_screen_enum, pgs);
 ENUM_PTRS_END
-
-private RELOC_PTRS_BEGIN(screen_enum_reloc_ptrs)
+private RELOC_PTRS_WITH(screen_enum_reloc_ptrs, gs_screen_enum *eptr)
 {
     RELOC_PTR(gs_screen_enum, pgs);
     RELOC_USING(st_halftone, &eptr->halftone, sizeof(gs_halftone));
     RELOC_USING(st_ht_order, &eptr->order, sizeof(gx_ht_order));
 }
 RELOC_PTRS_END
-
-#undef eptr
 
 /* Define the default value of AccurateScreens that affects */
 /* setscreen and setcolorscreen. */
@@ -96,6 +91,7 @@ gs_currentminscreenlevels(void)
 }
 
 /* Initialize the screen control statics at startup. */
+init_proc(gs_gshtscr_init);	/* check prototype */
 void
 gs_gshtscr_init(gs_memory_t *mem)
 {

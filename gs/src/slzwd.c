@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -51,7 +51,7 @@ gs_private_st_simple(st_lzw_decode, lzw_decode, "lzw_decode");
 
 /* Initialize LZWDecode filter */
 /* We separate out the reset function for some non-stream clients. */
-int
+private int
 s_LZWD_reset(stream_state * st)
 {
     stream_LZW_state *const ss = (stream_LZW_state *) st;

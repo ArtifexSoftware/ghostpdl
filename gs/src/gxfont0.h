@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -45,7 +45,6 @@ typedef enum {
 #ifndef gs_cmap_DEFINED
 #  define gs_cmap_DEFINED
 typedef struct gs_cmap_s gs_cmap;
-
 #endif
 typedef struct gs_type0_data_s {
     fmap_type FMapType;
@@ -71,5 +70,11 @@ extern_st(st_gs_font_type0);
 #define public_st_gs_font_type0()	/* in gsfont0.c */\
   gs_public_st_complex_only(st_gs_font_type0, gs_font_type0, "gs_font_type0",\
     0, font_type0_enum_ptrs, font_type0_reloc_ptrs, gs_font_finalize)
+
+/* Define the Type 0 font procedures. */
+font_proc_define_font(gs_type0_define_font);
+font_proc_make_font(gs_type0_make_font);
+font_proc_init_fstack(gs_type0_init_fstack);
+font_proc_next_char_glyph(gs_type0_next_char_glyph);
 
 #endif /* gxfont0_INCLUDED */

@@ -63,6 +63,7 @@ const gx_io_device gs_iodev_os =
 
 /* ------ Initialization ------ */
 
+init_proc(gs_iodev_init);	/* check prototype */
 void
 gs_iodev_init(gs_memory_t * mem)
 {				/* Make writable copies of all IODevices. */

@@ -182,12 +182,12 @@ scan_number(const byte * str, const byte * end, int sign,
 			    return_error(e_limitcheck);
 		    }
 		}
-		make_int_new(pref, uval);
+		make_int(pref, uval);
 		return code;
 	    }
     }
 iret:
-    make_int_new(pref, (sign < 0 ? -ival : ival));
+    make_int(pref, (sign < 0 ? -ival : ival));
     return code;
 
     /* Accumulate a long in lval. */
@@ -234,7 +234,7 @@ i2l:
 	    return_error(e_syntaxerror);
     }
 lret:
-    make_int_new(pref, (sign < 0 ? -lval : lval));
+    make_int(pref, (sign < 0 ? -lval : lval));
     return code;
 
     /* Accumulate a double in dval. */
@@ -285,7 +285,7 @@ i2r:
     if (!(c == 'e' || c == 'E' || exp10 < -NUM_POWERS_10)) {	/* Check for trailing garbage */
 	if (c != EOFC)
 	    *psp = sp, code = 1;
-	make_real_new(pref, ival * neg_powers_10[-exp10]);
+	make_real(pref, ival * neg_powers_10[-exp10]);
 	return code;
     }
     dval = ival;
@@ -387,6 +387,6 @@ fe:
 	    return_error(e_limitcheck);
     }
 rret:
-    make_real_new(pref, dval);
+    make_real(pref, dval);
     return code;
 }

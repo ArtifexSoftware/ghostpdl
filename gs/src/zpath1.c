@@ -21,6 +21,7 @@
 #include "memory_.h"
 #include "ghost.h"
 #include "oper.h"
+#include "oparc.h"		/* for prototypes */
 #include "estack.h"		/* for pathforall */
 #include "ialloc.h"
 #include "igstate.h"

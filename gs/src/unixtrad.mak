@@ -52,8 +52,7 @@ PSD=$(PSGENDIR)/
 # the directories also define the default search path for the
 # initialization files (gs_*.ps) and the fonts.
 
-# If your system has installbsd, change install to installbsd in the next line.
-INSTALL = install -c
+INSTALL = $(GLSRCDIR)/instcopy -c
 INSTALL_PROGRAM = $(INSTALL) -m 755
 INSTALL_DATA = $(INSTALL) -m 644
 
@@ -336,6 +335,7 @@ CCA2K=$(CC)
 CCAUX=$(GLSRCDIR)/ccgs $(AK) "$(CC)"
 CC_LEAF=$(CC_)
 CC_LEAF_PG=$(CC_)
+CC_NO_WARN=$(CC_)
 
 # ---------------- End of platform-specific section ---------------- #
 

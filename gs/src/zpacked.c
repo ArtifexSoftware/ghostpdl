@@ -56,7 +56,7 @@ zpackedarray(i_ctx_t *i_ctx_p)
 	return_error(e_rangecheck);
     osp--;
     code = make_packed_array(&parr, &o_stack, (uint) op->value.intval,
-			     "packedarray");
+			     idmemory, "packedarray");
     osp++;
     if (code >= 0)
 	*osp = parr;
@@ -81,9 +81,10 @@ zsetpacking(i_ctx_t *i_ctx_p)
 
 /* Make a packed array.  See the comment in packed.h about */
 /* ensuring that refs in mixed arrays are properly aligned. */
+#undef idmemory			/****** NOTA BENE ******/
 int
 make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
-		  client_name_t cname)
+		  gs_dual_memory_t *idmemory, client_name_t cname)
 {
     uint i;
     const ref *pref;
@@ -92,7 +93,8 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
     ref_packed *pdest;
     ref_packed *pshort;		/* points to start of */
 				/* last run of short elements */
-    uint space = ialloc_space(idmemory);
+    gs_ref_memory_t *imem = idmemory->current;
+    uint space = imemory_space(imem);
     int skip = 0, pad;
     ref rtemp;
     int code;
@@ -154,8 +156,8 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
 
     /* Now we can allocate the array. */
 
-    code = ialloc_ref_array(&rtemp, 0, (idest + pad) / packed_per_ref,
-			    cname);
+    code = gs_alloc_ref_array(imem, &rtemp, 0, (idest + pad) / packed_per_ref,
+			      cname);
     if (code < 0)
 	return code;
     pbody = (ref_packed *) rtemp.value.refs;

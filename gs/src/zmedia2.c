@@ -277,11 +277,13 @@ zmatch_page_size(const ref * pvreq, const ref * pvmed,
 		 int policy, int orient, bool roll,
 		 float *best_mismatch, gs_matrix * pmat, gs_point * pmsize)
 {
-    uint nm;
+    uint nr, nm;
 
     check_array(*pvreq);
+    nr = r_size(pvreq);
     check_array(*pvmed);
-    if (!(r_size(pvreq) == 2 && ((nm = r_size(pvmed)) == 2 || nm == 4)))
+    nm = r_size(pvmed);
+    if (!((nm == 2 || nm == 4) && (nr == 2 || nr == nm)))
 	return_error(e_rangecheck);
     {
 	ref rv[6];

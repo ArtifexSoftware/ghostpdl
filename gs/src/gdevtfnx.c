@@ -120,7 +120,7 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
     {
 	int y;
 	int raster = gdev_prn_raster(pdev);
-	byte *line = (byte *) gs_malloc(raster, 1, "tiff12_print_page");
+	byte *line = gs_alloc_bytes(pdev->memory, raster, "tiff12_print_page");
 	byte *row;
 
 	if (line == 0)
@@ -146,7 +146,7 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
 	}
 
 	gdev_tiff_end_page(&tfdev->tiff, file);
-	gs_free(line, raster, 1, "tiff12_print_page");
+	gs_free_object(pdev->memory, line, "tiff12_print_page");
     }
 
     return code;
@@ -170,7 +170,7 @@ tiff24_print_page(gx_device_printer * pdev, FILE * file)
     {
 	int y;
 	int raster = gdev_prn_raster(pdev);
-	byte *line = (byte *) gs_malloc(raster, 1, "tiff24_print_page");
+	byte *line = gs_alloc_bytes(pdev->memory, raster, "tiff24_print_page");
 	byte *row;
 
 	if (line == 0)
@@ -182,7 +182,7 @@ tiff24_print_page(gx_device_printer * pdev, FILE * file)
 	    fwrite((char *)row, raster, 1, file);
 	}
 	gdev_tiff_end_page(&tfdev->tiff, file);
-	gs_free(line, raster, 1, "tiff24_print_page");
+	gs_free_object(pdev->memory, line, "tiff24_print_page");
     }
 
     return code;

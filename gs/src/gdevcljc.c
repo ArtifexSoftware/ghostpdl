@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -35,6 +35,7 @@
 private int
 cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
+    gs_memory_t *mem = pdev->memory;
     uint raster = gx_device_raster(pdev, false);
     int i;
     int worst_case_comp_size = raster + (raster / 8) + 1;
@@ -44,9 +45,9 @@ cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int code = 0;
 
     /* allocate memory for the raw data and compressed data.  */
-    if (((data = gs_malloc(raster, 1, "cljc_print_page(data)")) == 0) ||
-	((cdata = gs_malloc(worst_case_comp_size, 1, "cljc_print_page(cdata)")) == 0) ||
-	((prow = gs_malloc(worst_case_comp_size, 1, "cljc_print_page(prow)")) == 0)) {
+    if (((data = gs_alloc_bytes(mem, raster, "cljc_print_page(data)")) == 0) ||
+	((cdata = gs_alloc_bytes(mem, worst_case_comp_size, "cljc_print_page(cdata)")) == 0) ||
+	((prow = gs_alloc_bytes(mem, worst_case_comp_size, "cljc_print_page(prow)")) == 0)) {
 	code = gs_note_error(gs_error_VMerror);
 	goto out;
     }
@@ -79,9 +80,9 @@ cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
     /* PCL will take care of blank lines at the end */
     fputs("\033*rC\f", prn_stream);
 out:
-    gs_free((char *)data, raster, 1, "cljc_print_page(data)");
-    gs_free((char *)cdata, worst_case_comp_size, 1, "cljc_print_page(cdata)");
-    gs_free((char *)prow, worst_case_comp_size, 1, "cljc_print_page(prow)");
+    gs_free_object(mem, prow, "cljc_print_page(prow)");
+    gs_free_object(mem, cdata, "cljc_print_page(cdata)");
+    gs_free_object(mem, data, "cljc_print_page(data)");
     return code;
 }
 

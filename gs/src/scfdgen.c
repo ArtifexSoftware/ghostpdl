@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1994, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1994, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -42,7 +42,7 @@ main()
     FILE *out = fopen("scfdtab.c", "w");
     cfd_node area[1 << max(cfd_white_initial_bits, cfd_black_initial_bits)];
 
-    fputs("/* Copyright (C) 1992, 1993, 1998 Aladdin Enterprises.  All rights reserved. */\n\n", out);
+    fputs("/* Copyright (C) 1992, 1993, 1998, 1999 Aladdin Enterprises.  All rights reserved. */\n\n", out);
     fputs("/* This file was generated automatically.  It is governed by the same terms */\n", out);
     fputs("/* as the files scfetab.c and scfdgen.c from which it was derived. */\n", out);
     fputs("/* Consult those files for the licensing terms and conditions. */\n\n", out);
@@ -68,7 +68,8 @@ main()
     cfd_build_tree(area, cfd_enumerate_uncompressed, cfd_uncompressed_initial_bits, out);
     fputs("\n};\n\n", out);
     fputs("/* Dummy executable code to pacify compilers. */\n", out);
-    fputs("void\ncfd_dummy()\n{\n}\n", out);
+    fputs("void scfdtab_dummy(P0());\n", out);
+    fputs("void\nscfdtab_dummy()\n{\n}\n", out);
     fclose(out);
     return 0;
 }

@@ -32,9 +32,6 @@
 #include "gzcpath.h"
 #include "gzacpath.h"
 
-/* Imported procedures */
-extern bool clip_list_validate(P1(const gx_clip_list *));
-
 /* Device procedures */
 private dev_proc_open_device(accum_open);
 private dev_proc_close_device(accum_close);
@@ -184,6 +181,37 @@ gx_cpath_intersect_path_slow(gx_clip_path * pcpath, gx_path * ppath,
 }
 
 /* ------ Device implementation ------ */
+
+#ifdef DEBUG
+/* Validate a clipping path after accumulation. */
+private bool
+clip_list_validate(const gx_clip_list * clp)
+{
+    if (clp->count <= 1)
+	return (clp->head == 0 && clp->tail == 0 &&
+		clp->single.next == 0 && clp->single.prev == 0);
+    else {
+	const gx_clip_rect *prev = clp->head;
+	const gx_clip_rect *ptr;
+	bool ok = true;
+
+	while ((ptr = prev->next) != 0) {
+	    if (ptr->ymin > ptr->ymax || ptr->xmin > ptr->xmax ||
+		!(ptr->ymin >= prev->ymax ||
+		  (ptr->ymin == prev->ymin &&
+		   ptr->ymax == prev->ymax &&
+		   ptr->xmin >= prev->xmax)) ||
+		ptr->prev != prev
+		) {
+		clip_rect_print('q', "WRONG:", ptr);
+		ok = false;
+	    }
+	    prev = ptr;
+	}
+	return ok && prev == clp->tail;
+    }
+}
+#endif /* DEBUG */
 
 /* Initialize the accumulation device. */
 private int

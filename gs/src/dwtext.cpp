@@ -37,8 +37,14 @@
 #if defined(_MSC_VER) && defined(__WIN32__)
 #define _export
 #else
-#define max(a,b) ( (a>b) ? a : b )
-#define min(a,b) ( (a<b) ? a : b )
+  /* Define  min and max, but make sure to use the identical definition */
+  /* to the one that all the compilers seem to have.... */
+#  ifndef min
+#    define min(a, b) (((a) < (b)) ? (a) : (b))
+#  endif
+#  ifndef max
+#    define max(a, b) (((a) > (b)) ? (a) : (b))
+#  endif
 #endif
 
 #ifndef EOF

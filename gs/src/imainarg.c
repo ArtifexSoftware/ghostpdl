@@ -463,6 +463,7 @@ run_stdin:
 			make_empty_string(&value, a_readonly);
 		} else {
 		    int code;
+		    i_ctx_t *i_ctx_p = minst->i_ctx_p;
 		    uint space = icurrent_space;
 
 		    *eqp++ = 0;

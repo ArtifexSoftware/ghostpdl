@@ -22,16 +22,21 @@
 #include "jpeglib_.h"		/* for sdct.h */
 #include "gx.h"
 #include "gserrors.h"
+#include "gsutil.h"
 #include "gxdevice.h"
 #include "gsparamx.h"
 #include "gdevpsdf.h"
-#include "gdevpstr.h"
 #include "strimpl.h"		/* for short-sighted compilers */
 #include "scfx.h"
 #include "sdct.h"
 #include "slzwx.h"
+#include "spprint.h"
 #include "srlx.h"
 #include "szlibx.h"
+
+/* Define a (bogus) GC descriptor for gs_param_string. */
+/****** FIX THIS ******/
+gs_private_st_simple(st_gs_param_string, gs_param_string, "gs_param_string");
 
 /* ---------------- Get/put Distiller parameters ---------------- */
 
@@ -39,6 +44,17 @@
  * This code handles all the Distiller parameters except the *ACSDict and
  * *ImageDict parameter dictionaries.  (It doesn't cause any of the
  * parameters actually to have any effect.)
+ */
+
+/*
+ * The Always/NeverEmbed parameters are defined as being incremental.  Since
+ * this isn't compatible with the general property of page devices that if
+ * you do a getpagedevice, doing a setpagedevice later will restore the same
+ * state, we actually define the parameters in sets of 3:
+ *	- AlwaysEmbed is used for incremental additions.
+ *	- ~AlwaysEmbed is used for incremental deletions.
+ *	- .AlwaysEmbed is used for the complete list.
+ * and analogously for NeverEmbed.
  */
 
 typedef struct psdf_image_filter_name_s {
@@ -203,6 +219,18 @@ psdf_get_image_params(gs_param_list * plist,
     return code;
 }
 
+/* Get a font embedding parameter. */
+private int
+psdf_get_embed_param(gs_param_list *plist, gs_param_name allpname,
+		     const gs_param_string_array *psa)
+{
+    int code = param_write_name_array(plist, allpname, psa);
+
+    if (code >= 0)
+	code = param_write_name_array(plist, allpname + 1, psa);
+    return code;
+}
+
 /* Get parameters. */
 int
 gdev_psdf_get_params(gx_device * dev, gs_param_list * plist)
@@ -265,8 +293,8 @@ gdev_psdf_get_params(gx_device * dev, gs_param_list * plist)
 
     /* Font embedding parameters */
 
-	   (code = param_write_name_array(plist, "AlwaysEmbed", &pdev->params.AlwaysEmbed)) < 0 ||
-	   (code = param_write_name_array(plist, "NeverEmbed", &pdev->params.NeverEmbed)) < 0 ||
+	   (code = psdf_get_embed_param(plist, ".AlwaysEmbed", &pdev->params.AlwaysEmbed)) < 0 ||
+	   (code = psdf_get_embed_param(plist, ".NeverEmbed", &pdev->params.NeverEmbed)) < 0 ||
 	   (code = param_write_bool(plist, "EmbedAllFonts", &pdev->params.EmbedAllFonts)) < 0 ||
 	   (code = param_write_bool(plist, "SubsetFonts", &pdev->params.SubsetFonts)) < 0 ||
 	   (code = param_write_int(plist, "MaxSubsetPct", &pdev->params.MaxSubsetPct)) < 0
@@ -297,17 +325,24 @@ psdf_DCT_put_params(gs_param_list * plist, stream_state * ss)
 }
 
 /* Put [~](Always|Never)Embed parameters. */
+private bool
+param_string_eq(const gs_param_string *ps1, const gs_param_string *ps2)
+{
+    return !bytes_compare(ps1->data, ps1->size, ps2->data, ps2->size);
+}
 private int
 psdf_put_embed_param(gs_param_list * plist, gs_param_name notpname,
-		     gs_param_string_array * psa, int ecode)
+		     gs_param_name allpname, gs_param_string_array * psa,
+		     gs_memory_t *mem, int ecode)
 {
     gs_param_name pname = notpname + 1;
     int code;
-    gs_param_string_array nsa;
+    gs_param_string_array sa, nsa, asa;
+    bool replace;
 
-/***** Storage management is incomplete ******/
-/***** Doesn't do incremental add/delete ******/
-    switch (code = param_read_name_array(plist, pname, psa)) {
+    /***** Storage management is incomplete ******/
+    sa.data = 0, sa.size = 0;
+    switch (code = param_read_name_array(plist, pname, &sa)) {
 	default:
 	    ecode = code;
 	    param_signal_error(plist, pname, ecode);
@@ -315,6 +350,7 @@ psdf_put_embed_param(gs_param_list * plist, gs_param_name notpname,
 	case 1:
 	    break;
     }
+    nsa.data = 0, nsa.size = 0;
     switch (code = param_read_name_array(plist, notpname, &nsa)) {
 	default:
 	    ecode = code;
@@ -323,7 +359,87 @@ psdf_put_embed_param(gs_param_list * plist, gs_param_name notpname,
 	case 1:
 	    break;
     }
-    return ecode;
+    asa.data = 0, asa.size = 0;
+    switch (code = param_read_name_array(plist, allpname, &asa)) {
+	default:
+	    ecode = code;
+	    param_signal_error(plist, allpname, ecode);
+	case 0:
+	case 1:
+	    break;
+    }
+    if (ecode < 0)
+	return ecode;
+    /*
+     * Figure out whether we're replacing (sa == asa or asa and no sa,
+     * no nsa) or updating (all other cases).
+     */
+    if (asa.data == 0 || nsa.data != 0)
+	replace = false;
+    else if (sa.data == 0)
+	replace = true;
+    else if (sa.size != asa.size)
+	replace = false;
+    else {
+	/* Test whether sa == asa. */
+	uint i;
+
+	replace = true;
+	for (i = 0; i < sa.size; ++i)
+	    if (!param_string_eq(&sa.data[i], &asa.data[i])) {
+		replace = false;
+		break;
+	    }
+    }
+    if (replace) {
+	/****** FREE OLD ARRAY ******/
+	*psa = asa;
+    } else if (sa.data || nsa.data) {
+	/* Incremental update. */
+	gs_param_string_array rsa;
+	gs_param_string *rdata;
+	uint i;
+	uint count = psa->size;
+
+	rdata = gs_alloc_struct_array(mem, count + sa.size,
+				      gs_param_string, &st_gs_param_string,
+				      "psdf_put_embed_param");
+	if (rdata == 0)
+	    return_error(gs_error_VMerror);
+	memcpy(rdata, psa->data, psa->size * sizeof(*psa->data));
+	/* Add sa to *psa. */
+	for (i = 0; i < sa.size; ++i) {
+	    uint j;
+
+	    for (j = 0; j < count; ++j)
+		if (param_string_eq(&sa.data[i], &rdata[j]))
+		    break;
+	    if (j == count)
+		rdata[count++] = sa.data[i];
+	    else {
+		/****** FREE sa.data[i] ******/
+	    }
+	}
+	/* Delete nsa from *psa. */
+	for (i = 0; i < nsa.size; ++i) {
+	    uint j;
+
+	    for (j = 0; j < count; ++j)
+		if (param_string_eq(&sa.data[i], &rdata[j]))
+		    break;
+	    if (j < count) {
+		/****** FREE rdata[j] ******/
+		rdata[j] = rdata[--count];
+	    }
+	    /****** FREE nsa.data[i] ******/
+	}
+	rdata = gs_resize_object(mem, rdata, count, "psdf_put_embed_param");
+	rsa.data = rdata;
+	rsa.size = count;
+	rsa.persistent = true;
+	*psa = rsa;
+    }
+    return 0;
 }
 
 /* Put an image Dict parameter. */
@@ -479,6 +595,8 @@ int
 gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_psdf *pdev = (gx_device_psdf *) dev;
+    gs_memory_t *mem =
+	(pdev->v_memory ? pdev->v_memory : dev->memory);
     int ecode = 0;
     int code;
     gs_param_name param_name;
@@ -561,10 +679,10 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
 
     /* Font embedding parameters */
 
-    ecode = psdf_put_embed_param(plist, "~AlwaysEmbed",
-				 &params.AlwaysEmbed, ecode);
-    ecode = psdf_put_embed_param(plist, "~NeverEmbed",
-				 &params.NeverEmbed, ecode);
+    ecode = psdf_put_embed_param(plist, "~AlwaysEmbed", ".AlwaysEmbed",
+				 &params.AlwaysEmbed, mem, ecode);
+    ecode = psdf_put_embed_param(plist, "~NeverEmbed", ".NeverEmbed",
+				 &params.NeverEmbed, mem, ecode);
     ecode = param_put_bool(plist, "EmbedAllFonts",
 				&params.EmbedAllFonts, ecode);
     ecode = param_put_bool(plist, "SubsetFonts",

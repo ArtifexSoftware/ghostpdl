@@ -60,9 +60,8 @@ gs_private_st_composite(st_gs_image_enum, gs_image_enum, "gs_image_enum",
 #define gs_image_enum_num_ptrs 2
 
 /* GC procedures */
-#define eptr ((gs_image_enum *)vptr)
 private 
-ENUM_PTRS_BEGIN(gs_image_enum_enum_ptrs)
+ENUM_PTRS_WITH(gs_image_enum_enum_ptrs, gs_image_enum *eptr)
 {
     /* Enumerate the data planes. */
     index -= gs_image_enum_num_ptrs;
@@ -76,7 +75,7 @@ ENUM_PTRS_BEGIN(gs_image_enum_enum_ptrs)
 ENUM_PTR(0, gs_image_enum, dev);
 ENUM_PTR(1, gs_image_enum, info);
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(gs_image_enum_reloc_ptrs)
+private RELOC_PTRS_WITH(gs_image_enum_reloc_ptrs, gs_image_enum *eptr)
 {
     int i;
 
@@ -88,7 +87,6 @@ private RELOC_PTRS_BEGIN(gs_image_enum_reloc_ptrs)
 	RELOC_STRING_PTR(gs_image_enum, planes[i].row);
 }
 RELOC_PTRS_END
-#undef eptr
 
 /* Create an image enumerator given image parameters and a graphics state. */
 int

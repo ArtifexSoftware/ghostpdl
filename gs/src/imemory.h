@@ -75,25 +75,29 @@ int gs_register_ref_root(P4(gs_memory_t *mem, gs_gc_root_t *root,
  * VM space, system VM, that exists in both modes and is used for objects
  * that must not be affected by even the outermost save/restore (stack
  * segments and names).
+ *
+ * NOTE: since the interpreter's (only) instances of gs_dual_memory_t are
+ * embedded in-line in context state structures, pointers to these
+ * instances must not be stored anywhere that might persist across a
+ * garbage collection.
  */
+#ifndef gs_dual_memory_DEFINED
+#  define gs_dual_memory_DEFINED
 typedef struct gs_dual_memory_s gs_dual_memory_t;
+#endif
 struct gs_dual_memory_s {
     gs_ref_memory_t *current;	/* = ...global or ...local */
     vm_spaces spaces;		/* system, global, local */
     uint current_space;		/* = current->space */
-    /* Save/restore machinery */
-    int save_level;
     /* Garbage collection hook */
     int (*reclaim) (P2(gs_dual_memory_t *, int));
-    void *reclaim_data;
     /* Masks for store checking, see isave.h. */
     uint test_mask;
     uint new_mask;
 };
 
 #define public_st_gs_dual_memory()	/* in ialloc.c */\
-  gs_public_st_ptrs1(st_gs_dual_memory, gs_dual_memory_t, "gs_dual_memory_t",\
-    dual_memory_enum_ptrs, dual_memory_reloc_ptrs, reclaim_data)
-#define st_gs_dual_memory_num_ptrs 1
+  gs_public_st_simple(st_gs_dual_memory, gs_dual_memory_t, "gs_dual_memory_t")
+#define st_gs_dual_memory_num_ptrs 0
 
 #endif /* imemory_INCLUDED */

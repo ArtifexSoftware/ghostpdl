@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -40,16 +40,18 @@
 /* ------ Private code ------ */
 
 /* Forward references */
-private int cfont_ref_from_string(P3(ref *, const char *, uint));
+private int cfont_ref_from_string(P4(i_ctx_t *, ref *, const char *, uint));
 
 typedef struct {
+    i_ctx_t *i_ctx_p;
     const char *str_array;
     ref next;
 } str_enum;
 
 inline private void
-init_str_enum(str_enum *pse, const char *ksa)
+init_str_enum(str_enum *pse, i_ctx_t *i_ctx_p, const char *ksa)
 {
+    pse->i_ctx_p = i_ctx_p;
     pse->str_array = ksa;
 }
 
@@ -59,10 +61,11 @@ typedef struct {
 } key_enum;
 
 inline private void
-init_key_enum(key_enum *pke, const cfont_dict_keys *pkeys, const char *ksa)
+init_key_enum(key_enum *pke, i_ctx_t *i_ctx_p, const cfont_dict_keys *pkeys,
+	      const char *ksa)
 {
     pke->keys = *pkeys;
-    init_str_enum(&pke->strings, ksa);
+    init_str_enum(&pke->strings, i_ctx_p, ksa);
 }
 
 /* Check for reaching the end of the keys. */
@@ -89,7 +92,8 @@ cfont_next_string(str_enum * pse)
 	int code;
 
 	len = ((len & 0xff) << 8) + str[2];
-	code = cfont_ref_from_string(&pse->next, (const char *)str + 3, len);
+	code = cfont_ref_from_string(pse->i_ctx_p, &pse->next,
+				     (const char *)str + 3, len);
 	if (code < 0)
 	    return code;
 	pse->str_array = str + 3 + len;
@@ -105,6 +109,7 @@ cfont_next_string(str_enum * pse)
 private int
 cfont_put_next(ref * pdict, key_enum * kep, const ref * pvalue)
 {
+    i_ctx_t *i_ctx_p = kep->strings.i_ctx_p;
     cfont_dict_keys * const kp = &kep->keys;
     ref kname;
     int code;
@@ -132,20 +137,21 @@ cfont_put_next(ref * pdict, key_enum * kep, const ref * pvalue)
     }
     if (code < 0)
 	return code;
-    return dict_put(pdict, &kname, pvalue);
+    return dict_put(pdict, &kname, pvalue, &i_ctx_p->dict_stack);
 }
 
 /* ------ Routines called from compiled font initialization ------ */
 
 /* Create a dictionary with general ref values. */
 private int
-cfont_ref_dict_create(ref * pdict, const cfont_dict_keys * kp,
-		      cfont_string_array ksa, const ref * values)
+cfont_ref_dict_create(i_ctx_t *i_ctx_p, ref *pdict,
+		      const cfont_dict_keys *kp, cfont_string_array ksa,
+		      const ref *values)
 {
     key_enum kenum;
     const ref *vp = values;
 
-    init_key_enum(&kenum, kp, ksa);
+    init_key_enum(&kenum, i_ctx_p, kp, ksa);
     pdict->value.pdict = 0;
     while (more_keys(&kenum)) {
 	const ref *pvalue = vp++;
@@ -159,15 +165,16 @@ cfont_ref_dict_create(ref * pdict, const cfont_dict_keys * kp,
 
 /* Create a dictionary with string/null values. */
 private int
-cfont_string_dict_create(ref * pdict, const cfont_dict_keys * kp,
-			 cfont_string_array ksa, cfont_string_array kva)
+cfont_string_dict_create(i_ctx_t *i_ctx_p, ref *pdict,
+			 const cfont_dict_keys *kp, cfont_string_array ksa,
+			 cfont_string_array kva)
 {
     key_enum kenum;
     str_enum senum;
     uint attrs = kp->value_attrs;
 
-    init_key_enum(&kenum, kp, ksa);
-    init_str_enum(&senum, kva);
+    init_key_enum(&kenum, i_ctx_p, kp, ksa);
+    init_str_enum(&senum, i_ctx_p, kva);
     pdict->value.pdict = 0;
     while (more_keys(&kenum)) {
 	int code = cfont_next_string(&senum);
@@ -189,16 +196,16 @@ cfont_string_dict_create(ref * pdict, const cfont_dict_keys * kp,
 
 /* Create a dictionary with number values. */
 private int
-cfont_num_dict_create(ref * pdict, const cfont_dict_keys * kp,
-		      cfont_string_array ksa, const ref * values,
-		      const char *lengths)
+cfont_num_dict_create(i_ctx_t *i_ctx_p, ref * pdict,
+		      const cfont_dict_keys * kp, cfont_string_array ksa,
+		      const ref * values, const char *lengths)
 {
     key_enum kenum;
     const ref *vp = values;
     const char *lp = lengths;
     ref vnum;
 
-    init_key_enum(&kenum, kp, ksa);
+    init_key_enum(&kenum, i_ctx_p, kp, ksa);
     pdict->value.pdict = 0;
     while (more_keys(&kenum)) {
 	int len = (lp == 0 ? 0 : *lp++);
@@ -220,7 +227,8 @@ cfont_num_dict_create(ref * pdict, const cfont_dict_keys * kp,
 
 /* Create an array with name values. */
 private int
-cfont_name_array_create(ref * parray, cfont_string_array ksa, int size)
+cfont_name_array_create(i_ctx_t *i_ctx_p, ref * parray, cfont_string_array ksa,
+			int size)
 {
     int code = ialloc_ref_array(parray, a_readonly, size,
 				"cfont_name_array_create");
@@ -230,7 +238,7 @@ cfont_name_array_create(ref * parray, cfont_string_array ksa, int size)
 
     if (code < 0)
 	return code;
-    init_str_enum(&senum, ksa);
+    init_str_enum(&senum, i_ctx_p, ksa);
     for (i = 0; i < size; i++, aptr++) {
 	ref nref;
 	int code = cfont_next_string(&senum);
@@ -248,8 +256,8 @@ cfont_name_array_create(ref * parray, cfont_string_array ksa, int size)
 
 /* Create an array with string/null values. */
 private int
-cfont_string_array_create(ref * parray, cfont_string_array ksa,
-			  int size, uint attrs)
+cfont_string_array_create(i_ctx_t *i_ctx_p, ref * parray,
+			  cfont_string_array ksa, int size, uint attrs)
 {
     int code = ialloc_ref_array(parray, a_readonly, size,
 				"cfont_string_array_create");
@@ -259,7 +267,7 @@ cfont_string_array_create(ref * parray, cfont_string_array ksa,
 
     if (code < 0)
 	return code;
-    init_str_enum(&senum, ksa);
+    init_str_enum(&senum, i_ctx_p, ksa);
     for (i = 0; i < size; i++, aptr++) {
 	int code = cfont_next_string(&senum);
 
@@ -277,16 +285,35 @@ cfont_string_array_create(ref * parray, cfont_string_array ksa,
     return 0;
 }
 
+/* Create an array with scalar values. */
+private int
+cfont_scalar_array_create(i_ctx_t *i_ctx_p, ref * parray,
+			  const ref *va, int size, uint attrs)
+{
+    int code = ialloc_ref_array(parray, attrs, size,
+				"cfont_scalar_array_create");
+    ref *aptr = parray->value.refs;
+    uint elt_attrs = attrs | ialloc_new_mask;
+    int i;
+
+    if (code < 0)
+	return code;
+    memcpy(aptr, va, size * sizeof(ref));
+    for (i = 0; i < size; i++, aptr++)
+	r_set_attrs(aptr, elt_attrs);
+    return 0;
+}
+
 /* Create a name. */
 private int
-cfont_name_create(ref * pnref, const char *str)
+cfont_name_create(i_ctx_t *i_ctx_p, ref * pnref, const char *str)
 {
     return name_ref((const byte *)str, strlen(str), pnref, 0);
 }
 
 /* Create an object by parsing a string. */
 private int
-cfont_ref_from_string(ref * pref, const char *str, uint len)
+cfont_ref_from_string(i_ctx_t *i_ctx_p, ref * pref, const char *str, uint len)
 {
     scanner_state sstate;
     stream s;
@@ -294,20 +321,20 @@ cfont_ref_from_string(ref * pref, const char *str, uint len)
 
     scanner_state_init(&sstate, false);
     sread_string(&s, (const byte *)str, len);
-    code = scan_token(&s, pref, &sstate);
+    code = scan_token(i_ctx_p, &s, pref, &sstate);
     return (code <= 0 ? code : gs_note_error(e_Fatal));
 }
 
 /* ------ Initialization ------ */
 
 /* Procedure vector passed to font initialization procedures. */
-private const cfont_procs ccfont_procs =
-{
+private const cfont_procs ccfont_procs = {
     cfont_ref_dict_create,
     cfont_string_dict_create,
     cfont_num_dict_create,
     cfont_name_array_create,
     cfont_string_array_create,
+    cfont_scalar_array_create,
     cfont_name_create,
     cfont_ref_from_string
 };
@@ -315,8 +342,9 @@ private const cfont_procs ccfont_procs =
 /* null    .getccfont    <number-of-fonts> */
 /* <int>   .getccfont    <font-object> */
 private int
-zgetccfont(register os_ptr op)
+zgetccfont(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
     const ccfont_fproc *fprocs;
     int nfonts;
@@ -335,7 +363,7 @@ zgetccfont(register os_ptr op)
     if (index < 0 || index >= nfonts)
 	return_error(e_rangecheck);
 
-    return (*fprocs[index]) (&ccfont_procs, op);
+    return (*fprocs[index]) (i_ctx_p, &ccfont_procs, op);
 }
 
 /* Operator table initialization */

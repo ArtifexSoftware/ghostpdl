@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -126,9 +126,9 @@ gp_close_printer(FILE * pfile, const char *fname)
 FILE *
 gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 		     const char *mode)
-{				/* Unfortunately, Watcom C doesn't provide mktemp, */
+{
+    /* Unfortunately, Watcom C doesn't provide mktemp, */
     /* so we have to simulate it ourselves. */
-    char *temp;
     struct stat fst;
     char *end;
 
@@ -137,19 +137,13 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 
     if (gp_getenv("TEMP", fname, &len) != 0)
 	*fname = 0;
-    else {
-	char last = '\\';
-	char *temp;
-
-	/* Prevent X's in path from being converted by mktemp. */
-	for (temp = fname; *temp; temp++)
-	    *temp = last = tolower(*temp);
-	switch (last) {
-	    default:
-		strcat(fname, "\\");
-	    case ':':
-	    case '\\':
-		;
+    else if (*fname) {
+	switch (fname[strlen(fname) - 1]) {
+	default:
+	    strcat(fname, "\\");
+	case ':':
+	case '\\':
+	    ;
 	}
     }
     strcat(fname, prefix);

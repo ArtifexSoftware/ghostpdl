@@ -404,7 +404,8 @@ pdfdict begin
 	 if
 	 pdf_run_resolve	% PDFfile resolveopdict .pdfrun
        }
-       { Objects exch null lput pop null
+       {		% Don't cache if the generation # is wrong.
+	 pop pop null
        }
       ifelse exch PDFfile exch setfileposition
     }
@@ -463,6 +464,14 @@ pdfdict begin
   exit
 } bind def
 
+% Contrary to the published PDF (1.3) specification, Acrobat Reader
+% accepts abbreviated filter names everywhere, not just for in-line images,
+% and some applications (notably htmldoc) rely on this.
+/unabbrevfilterdict mark
+  /AHx /ASCIIHexDecode  /A85 /ASCII85Decode  /CCF /CCITTFaxDecode
+  /DCT /DCTDecode  /Fl /FlateDecode  /LZW /LZWDecode  /RL /RunLengthDecode
+.dicttomark readonly def
+
 % Extract and apply filters.
 /filterparms {		% <dict> <DPkey> <Fkey> filterparms
 			%   <dict> <parms> <filternames>
@@ -482,12 +491,15 @@ pdfdict begin
     pop null { }
   } ifelse
 } bind def
+/filtername {		% <filtername> filtername <filtername'>
+  //unabbrevfilterdict 1 index .knownget { exch pop } if
+} bind def
 /applyfilters {		% <parms> <source> <filternames> applyfilters <stream>
   2 index null eq {
-    { filter }
+    { filtername filter }
   } {
     {		% Stack: parms stream filtername
-      2 index 0 get dup null eq { pop } { exch } ifelse filter
+      2 index 0 get dup null eq { pop } { exch } ifelse filtername filter
       exch dup length 1 sub 1 exch getinterval exch
     }
   } ifelse forall exch pop

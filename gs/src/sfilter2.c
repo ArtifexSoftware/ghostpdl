@@ -20,6 +20,7 @@
 /* Simple Level 2 filters */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
+#include "gdebug.h"
 #include "strimpl.h"
 #include "sa85x.h"
 #include "sbtx.h"
@@ -39,7 +40,7 @@ s_A85E_init(stream_state * st)
 }
 
 /* Process a buffer */
-#define LINE_LIMIT 80
+#define LINE_LIMIT 79		/* not 80, to satisfy Genoa FTS */
 private int
 s_A85E_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
@@ -47,21 +48,34 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
     stream_A85E_state *const ss = (stream_A85E_state *) st;
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
-    byte *qn = q + (LINE_LIMIT - ss->count);
+    byte *qn = q + (LINE_LIMIT - ss->count); /* value of q before next EOL */
     const byte *rlimit = pr->limit;
     byte *wlimit = pw->limit;
     int status = 0;
     int count;
 
+    if_debug3('w', "[w85]initial ss->count = %d, rcount = %d, wcount = %d\n",
+	      ss->count, (int)(rlimit - p), (int)(wlimit - q));
     for (; (count = rlimit - p) >= 4; p += 4) {
 	ulong word =
 	    ((ulong) (((uint) p[1] << 8) + p[2]) << 16) +
 	    (((uint) p[3] << 8) + p[4]);
 
 	if (word == 0) {
-	    if (wlimit - q < 2) {
-		status = 1;
-		break;
+	    if (q >= qn) {
+		if (wlimit - q < 2) {
+		    status = 1;
+		    break;
+		}
+		*++q = '\n';
+		qn = q + LINE_LIMIT;
+		if_debug1('w', "[w85]EOL at %d bytes written\n",
+			  (int)(q - pw->ptr));
+	    } else {
+		if (q >= wlimit) {
+		    status = 1;
+		    break;
+		}
 	    }
 	    *++q = 'z';
 	} else {
@@ -70,7 +84,18 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
 	    uint v2 = v3 / 85;	/* max 85^2 */
 	    uint v1 = v2 / 85;	/* max 85 */
 
-put:	    if (wlimit - q < 6) {
+put:	    if (q + 5 > qn) {
+		if (q >= wlimit) {
+		    status = 1;
+		    break;
+		}
+		*++q = '\n';
+		qn = q + LINE_LIMIT;
+		if_debug1('w', "[w85]EOL at %d bytes written\n",
+			  (int)(q - pw->ptr));
+		goto put;
+	    }
+	    if (wlimit - q < 5) {
 		status = 1;
 		break;
 	    }
@@ -93,6 +118,8 @@ put:	    if (wlimit - q < 6) {
 		     */
 		    *++q = '\n';
 		    qn = q + LINE_LIMIT;
+		    if_debug1('w', "[w85]EOL at %d bytes written\n",
+			      (int)(q - pw->ptr));
 		    goto put;
 		}
 		if (q[2] == '%' && *q == '\n') {
@@ -101,10 +128,10 @@ put:	    if (wlimit - q < 6) {
 		     * there are more than two %s in a row.
 		     */
 		    int extra =
-		    (q[3] != '%' ? 1 : q[4] != '%' ? 2 :
-		     q[5] != '%' ? 3 : 4);
+			(q[3] != '%' ? 1 : q[4] != '%' ? 2 :
+			 q[5] != '%' ? 3 : 4);
 
-		    if (wlimit - q < 6 + extra) {
+		    if (wlimit - q < 5 + extra) {
 			status = 1;
 			break;
 		    }
@@ -124,22 +151,28 @@ put:	    if (wlimit - q < 6) {
 			    q[6] = q[5], q[5] = q[4], q[4] = q[3];
 			  e1:q[3] = '%', q[2] = '\n';
 		    }
+		    if_debug1('w', "[w85]EOL at %d bytes written\n",
+			      (int)(q + 2 * extra - pw->ptr));
+		    qn = q + 2 * extra + LINE_LIMIT;
 		    q += extra;
-		    qn = q + (5 + LINE_LIMIT);
 		}
 	    }
 	    q += 5;
 	}
-	if (q >= qn) {
-	    *++q = '\n';
-	    qn = q + LINE_LIMIT;
-	}
     }
+ end:
     ss->count = LINE_LIMIT - (qn - q);
     /* Check for final partial word. */
     if (last && status == 0 && count < 4) {
-	if (wlimit - q < (count == 0 ? 2 : count + 3))
+	int nchars = (count == 0 ? 2 : count + 3);
+
+	if (wlimit - q < nchars)
 	    status = 1;
+	else if (q + nchars > qn) {
+	    *++q = '\n';
+	    qn = q + LINE_LIMIT;
+	    goto end;
+	}
 	else {
 	    ulong word = 0;
 	    ulong divisor = 85L * 85 * 85 * 85;
@@ -153,7 +186,7 @@ put:	    if (wlimit - q < 6) {
 		    word += (ulong) p[1] << 24;
 		    p += count;
 		    while (count-- >= 0) {
-			ulong v = word / divisor;	/* actually only a byte */
+			ulong v = word / divisor;  /* actually only a byte */
 
 			*++q = (byte) v + '!';
 			word -= v * divisor;
@@ -165,6 +198,8 @@ put:	    if (wlimit - q < 6) {
 	    *++q = '>';
 	}
     }
+    if_debug3('w', "[w85]final ss->count = %d, %d bytes read, %d written\n",
+	      ss->count, (int)(p - pr->ptr), (int)(q - pw->ptr));
     pr->ptr = p;
     pw->ptr = q;
     return status;

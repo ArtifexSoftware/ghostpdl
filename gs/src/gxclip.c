@@ -95,11 +95,11 @@ private const gx_device_clip gs_clip_device =
 
 /* Make a clipping device. */
 void
-gx_make_clip_translate_device(gx_device_clip * dev, void *container,
-			      const gx_clip_list * list, int tx, int ty)
+gx_make_clip_translate_device(gx_device_clip * dev, const gx_clip_list * list,
+			      int tx, int ty, gs_memory_t *mem)
 {
     gx_device_init((gx_device *)dev, (const gx_device *)&gs_clip_device,
-		   NULL, true);
+		   mem, true);
     dev->list = *list;
     dev->translation.x = tx;
     dev->translation.y = ty;
@@ -107,7 +107,7 @@ gx_make_clip_translate_device(gx_device_clip * dev, void *container,
 void
 gx_make_clip_path_device(gx_device_clip * dev, const gx_clip_path * pcpath)
 {
-    gx_make_clip_device(dev, NULL, gx_cpath_list(pcpath));
+    gx_make_clip_device(dev, gx_cpath_list(pcpath));
 }
 
 /* Define debugging statistics for the clipping loops. */

@@ -211,6 +211,13 @@ extern const gx_device_memory mem_true16_device;
 extern const gx_device_memory mem_true24_device;
 extern const gx_device_memory mem_true32_device;
 extern const gx_device_memory mem_planar_device;
+/*
+ * We declare the RasterOp implementation procedures here because they are
+ * referenced in several implementation modules.
+ */
+dev_proc_strip_copy_rop(mem_mono_strip_copy_rop);
+dev_proc_strip_copy_rop(mem_gray_strip_copy_rop);
+dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);
 
 #if arch_is_big_endian
 #  define mem_mono_word_device mem_mono_device

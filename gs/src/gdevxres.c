@@ -20,8 +20,8 @@
 /* X Windows driver resource tables */
 #include "std.h"	/* must precede any file that includes <sys/types.h> */
 #include "x_.h"
-#include "gx.h"
-#include "gserrors.h"
+#include "gstypes.h"
+#include "gsmemory.h"
 #include "gxdevice.h"
 #include "gdevx.h"
 

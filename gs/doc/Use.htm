@@ -56,18 +56,22 @@ How to use Ghostscript
 <li><a href="#Platforms">Notes on specific platforms</a>
 <ul>
 <li><a href="#Unix">Unix</a>
-<li><a href="#VMS">VMS</a>
 <ul>
-<li><a href="#VMS_X_Windows">Using X Windows on VMS</a>
+<li><a href="#SCO_Unix">SCO Unix</a>
 </ul>
-<li><a href="#DOS">DOS</a>
 <li><a href="#X_Windows">X Windows</a>
 <ul>
 <li><a href="#X_resources">X resources</a>
 <li><a href="#X_server_bugs">Working around bugs in X servers</a>
 <li><a href="#X_fonts">X fonts</a>
+<li><a href="#X_device_parameters">X device parameters</a>
 </ul>
-<li><a href="#SCO_Unix">SCO Unix</a>
+<li><a href="#MS_Windows">MS Windows</a>
+<li><a href="#MS-DOS">MS-DOS</a>
+<li><a href="#VMS">VMS</a>
+<ul>
+<li><a href="#VMS_X_Windows">Using X Windows on VMS</a>
+</ul>
 </ul>
 <li><a href="#Switches">Switches</a>
 <ul>
@@ -374,18 +378,51 @@ For example, on Epson-compatible printers you have these choices:
 <h2><a name="File_output"></a>Output to files</h2>
 
 <p>
-If you select a printer as the output device, Ghostscript also allows you
-to control where the device sends its output.  On DOS systems, output
-normally goes directly to the printer (<b><tt>PRN</tt></b>);
-on Unix or VMS systems normally to a temporary file for later printing.  To
-send the output to a file, use the
-<b><tt>-sOutputFile=</tt></b> switch (for compatibility with
-older versions of Ghostscript, <b><tt>-sOUTPUTFILE=</tt></b>
-also works).  For instance, to direct all output into the file
-<b><tt>ABC.xyz</tt></b>, use
+If you select a printer as the output device, Ghostscript also allows you to
+control where the device sends its output.  On DOS and MS Windows systems,
+output normally goes directly to the printer (<b><tt>PRN</tt></b>); on Unix
+or VMS systems normally to a temporary file for later printing.  To send the
+output to a file, use the <b><tt>-sOutputFile=</tt></b> switch (for
+compatibility with older versions of Ghostscript,
+<b><tt>-sOUTPUTFILE=</tt></b> also works).  For instance, to direct all
+output into the file <b><tt>ABC.xyz</tt></b>, use
 
 <blockquote><b><tt>
 gs -sOutputFile=ABC.xyz
+</tt></b></blockquote>
+
+<p>
+The file name follows the PostScript convention that if a name begins with
+<b><tt>%</tt></b>, the name must be in the form <b><tt>%</tt></b>filedevice
+or <b><tt>%</tt></b>filedevice<tt><b>%</tt></b>file.  The legal values of
+filedevice are system-dependent, but the following have consistent meanings
+across systems:
+
+<blockquote><table cellpadding=0 cellspacing=0>
+<tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">"%{filedevice}%{file}" in <b><tt>-sOutputFile=</tt></b></font><hr>
+<tr valign=bottom>
+	<th align=left>filedevice
+	<td>&nbsp;&nbsp;&nbsp;
+	<th align=left>Meaning
+<tr>	<td colspan=3><hr>
+<tr valign=top>	<td><b><tt>%os%xyz</tt></b>
+	<td>&nbsp;
+	<td>An ordinary file named <b><tt>xyz</tt></b>
+<tr valign=top>	<td><b><tt>%pipe%cmd</tt></b>
+	<td>&nbsp;
+	<td>(if supported) A pipe to an instance of the command <b><tt>cmd</tt></b>
+<tr valign=top>	<td><b><tt>%stdout</tt></b>
+	<td>&nbsp;
+	<td>The standard output file
+</table></blockquote>
+
+<p>
+Note that on DOS and MS Windows systems, the <b><tt>%</tt></b> character has
+a special meaning for the command processor (shell), so you will have to
+double it, e.g., for a pipe on MS Windows,
+
+<blockquote><b><tt>
+gs -sOutputFile=%%pipe%%cmd
 </tt></b></blockquote>
 
 <h3><a name="One_page_per_file"></a>One page per file</h3>
@@ -412,29 +449,47 @@ for instance
 	<td><b><tt>ABC001.xyz</tt></b> ... <b><tt>ABC010.xyz</tt></b> ...
 </table></blockquote>
 
+<p>
+As noted above, on DOS and MS Windows systems, you will have to double the
+<b><tt>%</tt></b> character, e.g.,
+
+<blockquote><b><tt>
+gs -sOutputFile=ABC%%03d.xyz
+</tt></b></blockquote>
+
 <h3><a name="Pipe_output"></a>Output to a pipe</h3>
 
 <p>
-On Unix systems you can use this switch to send output directly to a pipe.
-For example, to pipe the output to <b><tt>lpr</tt></b>, use
-the command
+On Unix and (32-bit) MS Windows systems you can use this switch to send
+output directly to a pipe.  For example, to pipe the output to
+<b><tt>lpr</tt></b>, use the command
 
 <blockquote><b><tt>
 	gs -sOutputFile=\|lpr
 </tt></b></blockquote>
+or, as noted above,
+<blockquote><b><tt>
+	gs -sOutputFile=%pipe%lpr
+</tt></b></blockquote>
 
 <p>
-You can also send output to standard output for piping in the usual way
-supported by the system:
+(doubling the <b><tt>%</tt></b> characters on MS Windows systems, as noted
+above.)  You can also send output to standard output for piping in the usual
+way supported by the system:
 
 <blockquote>
-<b><tt>gs -sOutputFile=- -q |</tt></b> ...
+	<b><tt>gs -sOutputFile=- -q |</tt></b> ...
+</blockquote>
+or, as noted above,
+<blockquote>
+	<b><tt>gs -sOutputFile=%stdout -q |</tt></b> ...
 </blockquote>
 
 <p>
-(In this case you must also use the <a href="#Quiet"><b><tt>-q</tt></b>
+(again, doubling the <b><tt>%</tt></b> character on MS Windows systems.)
+In this case you must also use the <a href="#Quiet"><b><tt>-q</tt></b>
 switch</a> to prevent Ghostscript from writing messages to standard output
-which become mixed with the intended output stream.)
+which become mixed with the intended output stream.
 
 <h3><a name="Output_to_graphics"></a>Output to graphics file formats</h3>
 
@@ -448,7 +503,8 @@ gs -sDEVICE=pcxmono -sOutputFile=xyz.pcx
 
 <p>
 Here, as with printable files, you can use "<b><tt>%d</tt></b>"
-to specify <a href="#One_page_per_file">one page per output file</a>.
+("<b><tt>%%d</tt></b>" on DOS and MS Windows) to specify <a
+href="#One_page_per_file">one page per output file</a>.
 
 <h2><a name="Paper_size"></a>Choosing paper size</h2>
 
@@ -741,13 +797,15 @@ notes on systems marked with "*"):
 </table>
 
 <hr align=left width="25%"><b>*</b> On Solaris systems simply setting
-<b><tt>GS_FONTPATH</tt></b> may not work, because for some reason some
-versions of Ghostscript can't seem to find any of the Type1 fonts in
+<b><tt>GS_FONTPATH</tt></b> or using <b><tt>-sFONTPATH=</tt></b> may not
+work, because for some reason some versions of Ghostscript can't seem to
+find any of the Type1 fonts in
 <b><tt>/usr/openwin/lib/X11/fonts/Type1/outline</tt></b>. (It says: "15
-files, 15 scanned, 0 new fonts".) See <b><tt>Fontmap.Sol</tt></b> instead.
-Also, on Solaris 2.x it's probably not worth your while to add Sun's fonts
-to your font path and Fontmap.  The fonts Sun distributes on Solaris 2.x in
-the directories
+files, 15 scanned, 0 new fonts". We think this problem has been fixed in
+Ghostscript version 6.0, but we aren't sure because we've never been able to
+reproduce it.)  See <b><tt>Fontmap.Sol</tt></b> instead.  Also, on Solaris
+2.x it's probably not worth your while to add Sun's fonts to your font path
+and Fontmap.  The fonts Sun distributes on Solaris 2.x in the directories
 
 <blockquote><b><tt>
 	/usr/openwin/lib/X11/fonts/Type1<br>
@@ -1111,7 +1169,21 @@ and then run Ghostscript by typing <b><tt>gs</tt></b> at the command line.
 
 <hr>
 
-<h2><a name="DOS"></a>DOS</h2>
+<h2><a name="MS_Windows"></a>MS Windows</h2>
+
+<p>
+You must add <em>gs\</em><b><tt>bin</tt></b> and
+<em>gs\</em><b><tt>lib</tt></b> to the <b><tt>PATH</tt></b>, where
+<em>gs</em> is the top-level Ghostscript directory.
+
+<hr>
+
+<h2><a name="MS-DOS"></a>MS-DOS</h2>
+
+<p>
+You must add <em>gs\</em><b><tt>bin</tt></b> and
+<em>gs\</em><b><tt>lib</tt></b> to the <b><tt>PATH</tt></b>, where
+<em>gs</em> is the top-level Ghostscript directory.
 
 <ul>
 <li>
@@ -1562,6 +1634,41 @@ use native X11 fonts for fonts that are anamorphically scaled, rotated, or
 mirrored.  If the changes have been installed to the X or font server, they
 are automatically used when appropriate.
 
+<h3><a name="X_device_parameters"></a>X device parameters</h3>
+
+<p>
+In addition to the device parameters recognized by <a
+href="Language.htm#Device_parameters">all devices</a>, Ghostscript's X
+driver provides parameters to adjust its performance.  Users will rarely
+need to modify these.
+
+<dl>
+<dt><b><tt>AlwaysUpdate &lt;boolean&gt;</tt></b>
+<dd>If <b><tt>true</tt></b>, the driver updates the screen after each
+primitive drawing operation; if <b><tt>false</tt></b> (the default), the
+driver uses an intelligent buffered updating algorithm.
+</dl>
+
+<dl>
+<dt><b><tt>MaxBitmap &lt;integer&gt;</tt></b>
+<dd>If the amount of memory required to hold the pixmap for the window is no
+more than the value of <b><tt>MaxBitmap</tt></b>, the driver will draw to a
+pixmap in Ghostscript's address space (called a "client-side pixmap") and
+will copy it to the screen from time to time; if the amount of memory
+required for the pixmap exceeds the value of <b><tt>MaxBitmap</tt></b>, the
+driver will draw to a server pixmap.  Using a client-side pixmap usually
+provides better performance, but since it may require quite a lot of RAM
+(e.g., about 2.2 Mb for a 24-bit 1024x768 window), the default value of
+<b><tt>MaxBitmap</tt></b> is 0.
+</dl>
+
+<dl>
+<dt><b><tt>MaxTempPixmap, MaxTempImage, MaxBufferedTotal, MaxBufferedArea,
+MaxBufferedCount &lt;integer&gt;</tt></b>
+<dd>These control various aspects of the driver's buffering behavior.  For
+details, please consult the source file <b><tt>gdevx.h</tt></b>.
+</dl>
+
 <hr>
 
 <h2><a name="SCO_Unix"></a>SCO Unix</h2>
@@ -1807,6 +1914,12 @@ very slow systems where color accuracy is less important.
 <dd>Turns off image interpolation, improving performance on interpolated
 images at the expense of image quality.  <b><tt>-dNOINTERPOLATE</tt></b>
 overrides <b><tt>-dDOINTERPOLATE</tt></b>.
+</dl>
+
+<dl>
+<dt><b><tt>-dUsePrinterImages</tt></b>
+<dd>In PDF files that provide alternate images for printing, uses the
+alternate image (for all output devices).  Useful for print previewing.
 </dl>
 
 <h3><a name="Page_parameters"></a>Page parameters</h3>
@@ -2167,7 +2280,7 @@ usage.
 <dt><b><tt>%</tt></b><dd>externally processed comments
 <dt><b><tt>*</tt></b><dd>image and RasterOp parameters
 <dt><b><tt>:</tt></b><dd>command list and allocator/time summary
-<dt><b><tt>~</tt></b><dd>math functions
+<dt><b><tt>~</tt></b><dd>math functions and Functions
 <dt><b><tt>'</tt></b><dd>contexts, create/destroy
 <dt>&nbsp;&nbsp;&nbsp;<b><tt>"</tt></b><dd>contexts, every operation
 <dt><b><tt>^</tt></b><dd>reference counting
@@ -2471,7 +2584,7 @@ Ghostscript.symbolFonts: \
 
 <font size=2>
 
-<p>Copyright &copy; 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+<p>Copyright &copy; 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
 <p>This file is part of Aladdin Ghostscript.  See the
 <a href="Public.htm">Aladdin Free Public License</a> (the "License") for
@@ -2479,7 +2592,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.50, 28 October 1998
+Ghostscript version 5.91, 30 August 1999
 
 </font>
 

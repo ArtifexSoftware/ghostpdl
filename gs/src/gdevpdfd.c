@@ -42,7 +42,7 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     /* which shouldn't cause the page to be opened. */
     if (color == 0xffffff && !is_in_page(pdev))
 	return 0;
-    code = pdf_open_page(pdev, pdf_in_stream);
+    code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
     /* Make sure we aren't being clipped. */
@@ -152,8 +152,8 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	}
     }
     pdev->text.font = 0;
-    if (pdev->context == pdf_in_text)
-	pdev->context = pdf_in_stream;
+    if (pdev->context == PDF_IN_TEXT)
+	pdev->context = PDF_IN_STREAM;
     pdf_reset_graphics(pdev);
     return 0;
 }
@@ -199,10 +199,10 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
     if (gx_dc_pure_color(pdcolor) == 0xffffff && !is_in_page(pdev))
 	return 0;
     have_path = !gx_path_is_void(ppath);
-    if (have_path || pdev->context == pdf_in_none ||
+    if (have_path || pdev->context == PDF_IN_NONE ||
 	pdf_must_put_clip_path(pdev, pcpath)
 	) {
-	code = pdf_open_page(pdev, pdf_in_stream);
+	code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
     }
@@ -241,7 +241,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
 				      pcpath);
     pdev->vec_procs = &pdf_vector_procs;
-    code = pdf_open_page(pdev, pdf_in_stream);
+    code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
     /*

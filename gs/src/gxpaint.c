@@ -77,11 +77,11 @@ gx_stroke_add(gx_path * ppath, gx_path * to_path,
 
 int
 gx_imager_stroke_add(gx_path *ppath, gx_path *to_path,
-		     const gs_imager_state *pis)
+		     gx_device *dev, const gs_imager_state *pis)
 {
     gx_stroke_params params;
 
     params.flatness = pis->flatness;
-    return gx_stroke_path_only(ppath, to_path, (gx_device *)0, pis,
+    return gx_stroke_path_only(ppath, to_path, dev, pis,
 			       &params, NULL, NULL);
 }

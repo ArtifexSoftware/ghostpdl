@@ -291,6 +291,24 @@ struct gx_clist_state_s {
 /* primarily large copy_ operations. */
 #define cbuf_size 800
 
+/* ---------------- Driver procedures ---------------- */
+
+/* In gxclrect.c */
+dev_proc_fill_rectangle(clist_fill_rectangle);
+dev_proc_copy_mono(clist_copy_mono);
+dev_proc_copy_color(clist_copy_color);
+dev_proc_copy_alpha(clist_copy_alpha);
+dev_proc_strip_tile_rectangle(clist_strip_tile_rectangle);
+dev_proc_strip_copy_rop(clist_strip_copy_rop);
+
+/* In gxclimag.c */
+dev_proc_fill_mask(clist_fill_mask);
+dev_proc_begin_typed_image(clist_begin_typed_image);
+dev_proc_create_compositor(clist_create_compositor);
+
+/* In gxclread.c */
+dev_proc_get_bits_rectangle(clist_get_bits_rectangle);
+
 /* ---------------- Driver procedure support ---------------- */
 
 /*

@@ -24,10 +24,10 @@
 #include "x_.h"
 #include "gserrors.h"
 #include "gsparam.h"
+#include "gsstruct.h"
 #include "gxdevice.h"
 #include "gsdevice.h"		/* for gs_copydevice */
 #include "gdevx.h"
-#include "gdevdcrd.h"
 
 extern const gx_device_X gs_x11_device;
 
@@ -40,6 +40,9 @@ typedef struct {
     gx_device_forward_common;
     gx_color_index color_cache[16];
 } gx_device_X_wrapper;
+gs_private_st_suffix_add0_final(st_device_X_wrapper, gx_device_X_wrapper,
+  "gx_device_X_wrapper", gdevx_wrapper_enum_ptrs, gdevx_wrapper_reloc_ptrs,
+  gx_device_finalize, st_device_forward);
 
 /* ---------------- Generic procedures ---------------- */
 
@@ -101,22 +104,14 @@ x_forward_output_page(gx_device * dev, int num_copies, int flush)
 private int
 x_wrap_close(gx_device * dev)
 {
-    gx_device *tdev;
-
-    /* If Ghostscript is exiting, we might have closed the */
-    /* underlying x11 device already.... */
-    int code;
-
-    set_dev_target(tdev, dev);
-    if (tdev->is_open) {
-	code = (*dev_proc(tdev, close_device)) (tdev);
-	x_clear_color_cache(dev);
-	if (code < 0)
-	    return code;
-	tdev->is_open = false;
-    } else
-	code = 0;
-    return code;
+    /*
+     * The underlying x11 device will be closed and freed as soon as there
+     * are no more pointers to it, which normally occurs in the next
+     * statement.
+     */
+    gx_device_set_target((gx_device_forward *)dev, NULL);
+    x_clear_color_cache(dev);
+    return 0;
 }
 
 private int
@@ -256,8 +251,7 @@ x_wrap_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
     int sdepth;
     byte smask;
     uint dsize;
-    gs_memory_t *mem =
-    (dev->memory == 0 ? &gs_memory_default : dev->memory);
+    gs_memory_t *mem = dev->memory;
     byte *row;
     byte *base;
     int code;
@@ -330,7 +324,7 @@ x_wrap_get_params(gx_device * dev, gs_param_list * plist)
     gx_device *tdev;
     /* We assume that a get_params call has no side effects.... */
     gx_device_X save_dev;
-    int ecode, code;
+    int ecode;
 
     set_dev_target(tdev, dev);
     save_dev = *(gx_device_X *) tdev;
@@ -339,9 +333,6 @@ x_wrap_get_params(gx_device * dev, gs_param_list * plist)
     tdev->dname = dev->dname;
     ecode = (*dev_proc(tdev, get_params)) (tdev, plist);
     *(gx_device_X *) tdev = save_dev;
-    code = sample_device_crd_get_params(dev, plist, "CRDDefault");
-    if (code < 0)
-	ecode = code;
     return ecode;
 }
 
@@ -518,7 +509,8 @@ private const gx_device_procs x_cmyk_procs =
 
 /* The instances are public. */
 const gx_device_X_wrapper gs_x11cmyk_device = {
-    std_device_dci_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk",
+    std_device_dci_type_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk",
+	&st_device_X_wrapper,
 	FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
 	FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
 	4, 4, 1, 1, 2, 2),
@@ -526,7 +518,8 @@ const gx_device_X_wrapper gs_x11cmyk_device = {
     0				/* target */
 };
 const gx_device_X_wrapper gs_x11cmyk2_device = {
-    std_device_dci_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk2",
+    std_device_dci_type_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk2",
+	&st_device_X_wrapper,
 	FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
 	FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
 	4, 8, 3, 3, 4, 4),
@@ -534,7 +527,8 @@ const gx_device_X_wrapper gs_x11cmyk2_device = {
     0				/* target */
 };
 const gx_device_X_wrapper gs_x11cmyk4_device = {
-    std_device_dci_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk4",
+    std_device_dci_type_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk4",
+	&st_device_X_wrapper,
 	FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
 	FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
 	4, 16, 15, 15, 16, 16),
@@ -542,7 +536,8 @@ const gx_device_X_wrapper gs_x11cmyk4_device = {
     0				/* target */
 };
 const gx_device_X_wrapper gs_x11cmyk8_device = {
-    std_device_dci_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk8",
+    std_device_dci_type_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk8",
+	&st_device_X_wrapper,
 	FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
 	FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
 	4, 32, 255, 255, 256, 256),
@@ -628,10 +623,11 @@ private const gx_device_procs x_mono_procs =
 /* The instance is public. */
 const gx_device_X_wrapper gs_x11mono_device =
 {
-    std_device_dci_body(gx_device_X_wrapper, &x_mono_procs, "x11mono",
-			FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
-			FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
-			1, 1, 1, 0, 2, 0),
+    std_device_dci_type_body(gx_device_X_wrapper, &x_mono_procs, "x11mono",
+	&st_device_X_wrapper,
+	FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
+	FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
+	1, 1, 1, 0, 2, 0),
     {0},			/* std_procs */
     0				/* target */
 };
@@ -668,20 +664,22 @@ private const gx_device_procs x_gray_procs =
 /* The instances are public. */
 const gx_device_X_wrapper gs_x11gray2_device =
 {
-    std_device_dci_body(gx_device_X_wrapper, &x_gray_procs, "x11gray2",
-			FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
-			FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
-			1, 2, 3, 0, 4, 0),
+    std_device_dci_type_body(gx_device_X_wrapper, &x_gray_procs, "x11gray2",
+	&st_device_X_wrapper,
+	FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
+	FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
+	1, 2, 3, 0, 4, 0),
     {0},			/* std_procs */
     0				/* target */
 };
 
 const gx_device_X_wrapper gs_x11gray4_device =
 {
-    std_device_dci_body(gx_device_X_wrapper, &x_gray_procs, "x11gray4",
-			FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
-			FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
-			1, 4, 15, 0, 16, 0),
+    std_device_dci_type_body(gx_device_X_wrapper, &x_gray_procs, "x11gray4",
+	&st_device_X_wrapper,
+	FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
+	FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
+	1, 4, 15, 0, 16, 0),
     {0},			/* std_procs */
     0				/* target */
 };
@@ -724,10 +722,10 @@ private const gx_device_procs x_alpha_procs =
 const gx_device_X_wrapper gs_x11alpha_device =
 {
     std_device_dci_alpha_type_body(gx_device_X_wrapper, &x_alpha_procs,
-			"x11alpha", 0,
-			FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
-			FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
-			3, 32, 255, 255, 256, 256, 4, 4),
+	"x11alpha", &st_device_X_wrapper,
+	FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
+	FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
+	3, 32, 255, 255, 256, 256, 4, 4),
     {0},			/* std_procs */
     0				/* target */
 };

@@ -18,6 +18,7 @@
 
 
 /* Packed array constructor for Ghostscript */
+/* Requires ipacked.h, istack.h */
 
 #ifndef iparray_INCLUDED
 #  define iparray_INCLUDED
@@ -31,6 +32,7 @@
 /* Procedures implemented in zpacked.c */
 
 /* Make a packed array from the top N elements of a stack. */
-int make_packed_array(P4(ref *, ref_stack_t *, uint, client_name_t));
+int make_packed_array(P5(ref *, ref_stack_t *, uint, gs_dual_memory_t *,
+			 client_name_t));
 
 #endif /* iparray_INCLUDED */

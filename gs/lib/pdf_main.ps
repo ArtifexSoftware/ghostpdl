@@ -464,8 +464,7 @@ end readonly def
  { } bind def
 
 /pdfshowpage_init 	% <pagedict> pdfshowpage_init <pagedict>
- { gsave
-   /DSCPageCount DSCPageCount 1 add store
+ { /DSCPageCount DSCPageCount 1 add store
  } bind def
 
 /pdfshowpage_setpage {	% <pagedict> pdfshowpage_setpage <pagedict>
@@ -526,7 +525,6 @@ end readonly def
     { oforce false resolvestream pdfopdict .pdfrun } forall
    endpage
    end			% scratch dict
-   grestore
  } bind def
 
 end			% pdfdict

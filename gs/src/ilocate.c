@@ -42,19 +42,46 @@ chunk_t *
 gc_locate(const void *ptr, gc_state_t * gcst)
 {
     const gs_ref_memory_t *mem;
+    const gs_ref_memory_t *other;
 
     if (chunk_locate(ptr, &gcst->loc))
 	return gcst->loc.cp;
     mem = gcst->loc.memory;
 
-    /* Try the other space, if there is one. */
+    /*
+     * Try the stable allocator of this space, or, if the current memory
+     * is the stable one, the non-stable allocator of this space.
+     */
+
+    if ((other = (const gs_ref_memory_t *)mem->stable_memory) != mem ||
+	(other = gcst->spaces_indexed[mem->space >> r_space_shift]) != mem
+	) {
+	gcst->loc.memory = other;
+	gcst->loc.cp = 0;
+	if (chunk_locate(ptr, &gcst->loc))
+	    return gcst->loc.cp;
+    }
+
+    /*
+     * Try the other space, if there is one, including its stable allocator
+     * and all save levels.  (If the original space is system space, try
+     * local space.)
+     */
 
     if (gcst->space_local != gcst->space_global) {
-	gcst->loc.memory =
+	gcst->loc.memory = other =
 	    (mem->space == avm_local ? gcst->space_global : gcst->space_local);
 	gcst->loc.cp = 0;
 	if (chunk_locate(ptr, &gcst->loc))
 	    return gcst->loc.cp;
+	/* Try its stable allocator. */
+	if (other->stable_memory != (const gs_memory_t *)other) {
+	    gcst->loc.memory = (gs_ref_memory_t *)other->stable_memory;
+	    gcst->loc.cp = 0;
+	    if (chunk_locate(ptr, &gcst->loc))
+		return gcst->loc.cp;
+	    gcst->loc.memory = other;
+	}
 	/* Try other save levels of this space. */
 	while (gcst->loc.memory->saved != 0) {
 	    gcst->loc.memory = &gcst->loc.memory->saved->state;
@@ -66,7 +93,7 @@ gc_locate(const void *ptr, gc_state_t * gcst)
 
     /*
      * Try system space.  This is simpler because it isn't subject to
-     * save/restore.
+     * save/restore and doesn't have a separate stable allocator.
      */
 
     if (mem != gcst->space_system) {
@@ -79,12 +106,27 @@ gc_locate(const void *ptr, gc_state_t * gcst)
     /*
      * Try other save levels of the initial space, or of global space if the
      * original space was system space.  In the latter case, try all
-     * levels.
+     * levels, and its stable allocator.
      */
 
-    gcst->loc.memory =
-	(mem == gcst->space_system || mem->space == avm_global ?
-	 gcst->space_global : gcst->space_local);
+    switch (mem->space) {
+    default:			/* system */
+	other = gcst->space_global;
+	if (other->stable_memory != (const gs_memory_t *)other) {
+	    gcst->loc.memory = (gs_ref_memory_t *)other->stable_memory;
+	    gcst->loc.cp = 0;
+	    if (chunk_locate(ptr, &gcst->loc))
+		return gcst->loc.cp;
+	}
+	gcst->loc.memory = other;
+	break;
+    case avm_global:
+	gcst->loc.memory = gcst->space_global;
+	break;
+    case avm_local:
+	gcst->loc.memory = gcst->space_local;
+	break;
+    }
     for (;;) {
 	if (gcst->loc.memory != mem) {	/* don't do twice */
 	    gcst->loc.cp = 0;
@@ -96,7 +138,7 @@ gc_locate(const void *ptr, gc_state_t * gcst)
 	gcst->loc.memory = &gcst->loc.memory->saved->state;
     }
 
-    /* Restore locator to a legal state. */
+    /* Restore locator to a legal state and report failure. */
 
     gcst->loc.memory = mem;
     gcst->loc.cp = 0;
@@ -107,17 +149,56 @@ gc_locate(const void *ptr, gc_state_t * gcst)
 
 #ifdef DEBUG
 
+/* Define the structure for temporarily saving allocator state. */
+typedef struct alloc_temp_save_s {
+	chunk_t cc;
+	uint rsize;
+	ref rlast;
+} alloc_temp_save_t;
+/* Temporarily save the state of an allocator. */
+private void
+alloc_temp_save(alloc_temp_save_t *pats, gs_ref_memory_t *mem)
+{
+    chunk_t *pcc = mem->pcc;
+    obj_header_t *rcur = mem->cc.rcur;
+
+    if (pcc != 0) {
+	pats->cc = *pcc;
+	*pcc = mem->cc;
+    }
+    if (rcur != 0) {
+	pats->rsize = rcur[-1].o_size;
+	rcur[-1].o_size = mem->cc.rtop - (byte *) rcur;
+	/* Create the final ref, reserved for the GC. */
+	pats->rlast = ((ref *) mem->cc.rtop)[-1];
+	make_mark((ref *) mem->cc.rtop - 1);
+    }
+}
+/* Restore the temporarily saved state. */
+private void
+alloc_temp_restore(alloc_temp_save_t *pats, gs_ref_memory_t *mem)
+{
+    chunk_t *pcc = mem->pcc;
+    obj_header_t *rcur = mem->cc.rcur;
+
+    if (rcur != 0) {
+	rcur[-1].o_size = pats->rsize;
+	((ref *) mem->cc.rtop)[-1] = pats->rlast;
+    }
+    if (pcc != 0)
+	*pcc = pats->cc;
+}
+
 /* Validate the contents of an allocator. */
 void
 ialloc_validate_spaces(const gs_dual_memory_t * dmem)
 {
     int i;
     gc_state_t state;
-    struct sm_ {
-	chunk_t cc;
-	uint rsize;
-	ref rlast;
-    } save[countof(dmem->spaces_indexed)];
+    alloc_temp_save_t
+	save[countof(dmem->spaces_indexed)],
+	save_stable[countof(dmem->spaces_indexed)];
+    gs_ref_memory_t *mem;
 
     state.spaces = dmem->spaces;
     state.loc.memory = state.space_local;
@@ -126,44 +207,31 @@ ialloc_validate_spaces(const gs_dual_memory_t * dmem)
     /* Save everything we need to reset temporarily. */
 
     for (i = 0; i < countof(save); i++)
-	if (dmem->spaces_indexed[i] != 0) {
-	    gs_ref_memory_t *mem = dmem->spaces_indexed[i];
-	    chunk_t *pcc = mem->pcc;
-	    obj_header_t *rcur = mem->cc.rcur;
-
-	    if (pcc != 0) {
-		save[i].cc = *pcc;
-		*pcc = mem->cc;
-	    }
-	    if (rcur != 0) {
-		save[i].rsize = rcur[-1].o_size;
-		rcur[-1].o_size = mem->cc.rtop - (byte *) rcur;
-		/* Create the final ref, reserved for the GC. */
-		save[i].rlast = ((ref *) mem->cc.rtop)[-1];
-		make_mark((ref *) mem->cc.rtop - 1);
-	    }
+	if ((mem = dmem->spaces_indexed[i]) != 0) {
+	    alloc_temp_save(&save[i], mem);
+	    if (mem->stable_memory != (gs_memory_t *)mem)
+		alloc_temp_save(&save_stable[i],
+				(gs_ref_memory_t *)mem->stable_memory);
 	}
 
     /* Validate memory. */
 
     for (i = 0; i < countof(save); i++)
-	if (dmem->spaces_indexed[i] != 0)
-	    ialloc_validate_memory(dmem->spaces_indexed[i], &state);
+	if ((mem = dmem->spaces_indexed[i]) != 0) {
+	    ialloc_validate_memory(mem, &state);
+	    if (mem->stable_memory != (gs_memory_t *)mem)
+		ialloc_validate_memory((gs_ref_memory_t *)mem->stable_memory,
+				       &state);
+	}
 
     /* Undo temporary changes. */
 
     for (i = 0; i < countof(save); i++)
-	if (dmem->spaces_indexed[i] != 0) {
-	    gs_ref_memory_t *mem = dmem->spaces_indexed[i];
-	    chunk_t *pcc = mem->pcc;
-	    obj_header_t *rcur = mem->cc.rcur;
-
-	    if (rcur != 0) {
-		rcur[-1].o_size = save[i].rsize;
-		((ref *) mem->cc.rtop)[-1] = save[i].rlast;
-	    }
-	    if (pcc != 0)
-		*pcc = save[i].cc;
+	if ((mem = dmem->spaces_indexed[i]) != 0) {
+	    if (mem->stable_memory != (gs_memory_t *)mem)
+		alloc_temp_restore(&save_stable[i],
+				   (gs_ref_memory_t *)mem->stable_memory);
+	    alloc_temp_restore(&save[i], mem);
 	}
 }
 void
@@ -214,12 +282,13 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
 inline private bool
 object_size_valid(const obj_header_t * pre, uint size, const chunk_t * cp)
 {
-    return (pre->o_large ? (const byte *)pre == cp->cbase :
+    return (pre->o_alone ? (const byte *)pre == cp->cbase :
 	    size <= cp->ctop - (const byte *)(pre + 1));
 }
 
 /* Validate all the objects in a chunk. */
 private void ialloc_validate_ref(P2(const ref *, gc_state_t *));
+private void ialloc_validate_ref_packed(P2(const ref_packed *, gc_state_t *));
 void
 ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 {
@@ -239,35 +308,40 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 	const ref_packed *rp = (const ref_packed *)(pre + 1);
 	const char *end = (const char *)rp + size;
 
-	while ((const char *)rp < end)
-	    if (r_is_packed(rp)) {
-		ref unpacked;
-
-		packed_get(rp, &unpacked);
-		ialloc_validate_ref(&unpacked, gcst);
-		rp++;
-	    } else {
-		ialloc_validate_ref((const ref *)rp, gcst);
-		rp += packed_per_ref;
-	    }
+	while ((const char *)rp < end) {
+	    ialloc_validate_ref_packed(rp, gcst);
+	    rp = packed_next(rp);
+	}
     } else {
 	struct_proc_enum_ptrs((*proc)) = pre->o_type->enum_ptrs;
 	uint index = 0;
-	const void *ptr;
+	enum_ptr_t eptr;
 	gs_ptr_type_t ptype;
 
 	if (proc != gs_no_struct_enum_ptrs)
-	    for (; (ptype = (*proc) (pre + 1, size, index, &ptr, pre->o_type, NULL)) != 0; ++index)
-		if (ptr == 0)
+	    for (; (ptype = (*proc) (pre + 1, size, index, &eptr, pre->o_type, NULL)) != 0; ++index)
+		if (eptr.ptr == 0)
 		    DO_NOTHING;
 		else if (ptype == ptr_struct_type)
-		    ialloc_validate_object(ptr, NULL, gcst);
+		    ialloc_validate_object(eptr.ptr, NULL, gcst);
 		else if (ptype == ptr_ref_type)
-		    ialloc_validate_ref(ptr, gcst);
+		    ialloc_validate_ref_packed(eptr.ptr, gcst);
     }
     END_OBJECTS_SCAN
 }
 /* Validate a ref. */
+private void
+ialloc_validate_ref_packed(const ref_packed * rp, gc_state_t * gcst)
+{
+    if (r_is_packed(rp)) {
+	ref unpacked;
+
+	packed_get(rp, &unpacked);
+	ialloc_validate_ref(&unpacked, gcst);
+    } else {
+	ialloc_validate_ref((const ref *)rp, gcst);
+    }
+}
 private void
 ialloc_validate_ref(const ref * pref, gc_state_t * gcst)
 {

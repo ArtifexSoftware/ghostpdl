@@ -26,8 +26,8 @@
 
 /* Define build procedures for the various function types. */
 #define build_function_proc(proc)\
-  int proc(P4(const ref *op, const gs_function_params_t *params, int depth,\
-	      gs_function_t **ppfn))
+  int proc(P5(const ref *op, const gs_function_params_t *params, int depth,\
+	      gs_function_t **ppfn, gs_memory_t *mem))
 typedef build_function_proc((*build_function_proc_t));
 
 /* Define the table of build procedures, indexed by FunctionType. */
@@ -39,13 +39,14 @@ extern const build_function_type_t build_function_type_table[];
 extern const uint build_function_type_table_count;
 
 /* Build a function structure from a PostScript dictionary. */
-int fn_build_sub_function(P3(const ref * op, gs_function_t ** ppfn, int depth));
-
-#define fn_build_function(op, ppfn)\
-  fn_build_sub_function(op, ppfn, 0)
+int fn_build_function(P3(const ref * op, gs_function_t ** ppfn,
+			 gs_memory_t *mem));
+int fn_build_sub_function(P4(const ref * op, gs_function_t ** ppfn,
+			     int depth, gs_memory_t *mem));
 
 /* Allocate an array of function objects. */
-int ialloc_function_array(P2(uint count, gs_function_t *** pFunctions));
+int alloc_function_array(P3(uint count, gs_function_t *** pFunctions,
+			    gs_memory_t *mem));
 
 /*
  * Collect a heap-allocated array of floats.  If the key is missing, set
@@ -53,7 +54,8 @@ int ialloc_function_array(P2(uint count, gs_function_t *** pFunctions));
  * of elements.  Note that 0-length arrays are acceptable, so if the value
  * returned is 0, the caller must check whether *pparray == 0.
  */
-int fn_build_float_array(P5(const ref * op, const char *kstr, bool required,
-			    bool even, const float **pparray));
+int fn_build_float_array(P6(const ref * op, const char *kstr, bool required,
+			    bool even, const float **pparray,
+			    gs_memory_t *mem));
 
 #endif /* ifunc_INCLUDED */

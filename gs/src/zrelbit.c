@@ -24,6 +24,11 @@
 #include "idict.h"
 #include "store.h"
 
+/*
+ * Many of the procedures in this file are public only so they can be
+ * called from the FunctionType 4 interpreter (zfunc4.c).
+ */
+
 /* ------ Standard operators ------ */
 
 /* Define the type test for eq and its relatives. */
@@ -40,7 +45,7 @@
 private int obj_le(P2(os_ptr, os_ptr));
 
 /* <obj1> <obj2> eq <bool> */
-private int
+int
 zeq(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -52,7 +57,7 @@ zeq(i_ctx_t *i_ctx_p)
 }
 
 /* <obj1> <obj2> ne <bool> */
-private int
+int
 zne(i_ctx_t *i_ctx_p)
 {	/* We'll just be lazy and use eq. */
     int code = zeq(i_ctx_p);
@@ -64,7 +69,7 @@ zne(i_ctx_t *i_ctx_p)
 
 /* <num1> <num2> ge <bool> */
 /* <str1> <str2> ge <bool> */
-private int
+int
 zge(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -79,7 +84,7 @@ zge(i_ctx_t *i_ctx_p)
 
 /* <num1> <num2> gt <bool> */
 /* <str1> <str2> gt <bool> */
-private int
+int
 zgt(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -94,7 +99,7 @@ zgt(i_ctx_t *i_ctx_p)
 
 /* <num1> <num2> le <bool> */
 /* <str1> <str2> le <bool> */
-private int
+int
 zle(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -109,7 +114,7 @@ zle(i_ctx_t *i_ctx_p)
 
 /* <num1> <num2> lt <bool> */
 /* <str1> <str2> lt <bool> */
-private int
+int
 zlt(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -158,7 +163,7 @@ zmin(i_ctx_t *i_ctx_p)
 
 /* <bool1> <bool2> and <bool> */
 /* <int1> <int2> and <int> */
-private int
+int
 zand(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -181,7 +186,7 @@ zand(i_ctx_t *i_ctx_p)
 
 /* <bool> not <bool> */
 /* <int> not <int> */
-private int
+int
 znot(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -201,7 +206,7 @@ znot(i_ctx_t *i_ctx_p)
 
 /* <bool1> <bool2> or <bool> */
 /* <int1> <int2> or <int> */
-private int
+int
 zor(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -224,7 +229,7 @@ zor(i_ctx_t *i_ctx_p)
 
 /* <bool1> <bool2> xor <bool> */
 /* <int1> <int2> xor <int> */
-private int
+int
 zxor(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -246,7 +251,7 @@ zxor(i_ctx_t *i_ctx_p)
 }
 
 /* <int> <shift> bitshift <int> */
-private int
+int
 zbitshift(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

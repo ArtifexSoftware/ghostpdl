@@ -22,7 +22,7 @@
 #include <stdio.h>
 /* Some brain-damaged environments (e.g. Sun) don't include */
 /* prototypes for fputc/fputs in stdio.h! */
-extern int fputc(), fputs();
+extern int fputc(P2(int, FILE *)), fputs(P2(const char *, FILE *));
 
 /* Some systems have time_t in sys/types.h rather than time.h. */
 #include <sys/types.h>
@@ -78,12 +78,18 @@ extern int fputc(), fputs();
  * which writes 'a b'.
  */
 
-static int hputc(), hputs();
+static int hputc(P2(int, FILE *)), hputs(P2(const char *, FILE *));
 
+int
 main(int argc, char *argv[])
 {
     FILE *out = stdout;
-    FILE *in;
+    /*
+     * The initialization in = 0 is unnecessary: in is only referenced if
+     * interact = 1, in which case in has always been initialized.
+     * We initialize in = 0 solely to pacify stupid compilers.
+     */
+    FILE *in = 0;
     const char *extn = "";
     char fmode[4];
 #define FNSIZE 100
@@ -91,7 +97,8 @@ main(int argc, char *argv[])
     char fname[FNSIZE];
     int newline = 1;
     int interact = 0;
-    int (*eputc)() = fputc, (*eputs)() = fputs;
+    int (*eputc)(P2(int, FILE *)) = fputc;
+    int (*eputs)(P2(const char *, FILE *)) = fputs;
 #define LINESIZE 1000
     char line[LINESIZE];
     char sw = 0, sp = 0, hexx = 0;
@@ -329,7 +336,7 @@ hputc(int ch, FILE * out)
 }
 
 static int
-hputs(char *str, FILE * out)
+hputs(const char *str, FILE * out)
 {
     while (*str)
 	hputc(*str++ & 0xff, out);

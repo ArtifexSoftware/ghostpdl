@@ -26,6 +26,11 @@
 /****** NOTE: none of the arithmetic operators  ******/
 /****** currently check for floating exceptions ******/
 
+/*
+ * Many of the procedures in this file are public only so they can be
+ * called from the FunctionType 4 interpreter (zfunc4.c).
+ */
+
 /* Define max and min values for what will fit in value.intval. */
 #define MIN_INTVAL min_long
 #define MAX_INTVAL max_long
@@ -84,7 +89,7 @@ zadd(i_ctx_t *i_ctx_p)
 }
 
 /* <num1> <num2> div <real_quotient> */
-private int
+int
 zdiv(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -126,7 +131,7 @@ zdiv(i_ctx_t *i_ctx_p)
 }
 
 /* <num1> <num2> mul <product> */
-private int
+int
 zmul(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -232,7 +237,7 @@ zsub(i_ctx_t *i_ctx_p)
 }
 
 /* <num1> <num2> idiv <int_quotient> */
-private int
+int
 zidiv(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -251,7 +256,7 @@ zidiv(i_ctx_t *i_ctx_p)
 }
 
 /* <int1> <int2> mod <remainder> */
-private int
+int
 zmod(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -266,7 +271,7 @@ zmod(i_ctx_t *i_ctx_p)
 }
 
 /* <num1> neg <num2> */
-private int
+int
 zneg(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -286,8 +291,29 @@ zneg(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* <num1> abs <num2> */
+int
+zabs(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    switch (r_type(op)) {
+	default:
+	    return_op_typecheck(op);
+	case t_real:
+	    if (op->value.realval >= 0)
+		return 0;
+	    break;
+	case t_integer:
+	    if (op->value.intval >= 0)
+		return 0;
+	    break;
+    }
+    return zneg(i_ctx_p);
+}
+
 /* <num1> ceiling <num2> */
-private int
+int
 zceiling(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -303,7 +329,7 @@ zceiling(i_ctx_t *i_ctx_p)
 }
 
 /* <num1> floor <num2> */
-private int
+int
 zfloor(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -319,7 +345,7 @@ zfloor(i_ctx_t *i_ctx_p)
 }
 
 /* <num1> round <num2> */
-private int
+int
 zround(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -335,7 +361,7 @@ zround(i_ctx_t *i_ctx_p)
 }
 
 /* <num1> truncate <num2> */
-private int
+int
 ztruncate(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -372,6 +398,7 @@ zbitadd(i_ctx_t *i_ctx_p)
 
 const op_def zarith_op_defs[] =
 {
+    {"1abs", zabs},
     {"2add", zadd},
     {"2.bitadd", zbitadd},
     {"1ceiling", zceiling},

@@ -24,6 +24,7 @@
 
 #include "stdio_.h"		/* for FILE */
 #include "gxdevcli.h"
+#include "gsfname.h"
 #include "gsparam.h"
 /*
  * Many drivers still use gs_malloc and gs_free, so include the interface
@@ -360,10 +361,28 @@ void gx_device_copy_color_params(P2(gx_device *dev, const gx_device *target));
  */
 void gx_device_copy_params(P2(gx_device *dev, const gx_device *target));
 
-/* Open the output file for a device. */
-int gx_device_open_output_file(P5(const gx_device * dev, const char *fname,
+/*
+ * Parse the output file name for a device, recognizing "-" and "|command",
+ * and also detecting and validating any %nnd format for inserting the
+ * page count.  If a format is present, store a pointer to its last
+ * character in *pfmt, otherwise store 0 there.  Note that an empty name
+ * is currently allowed.
+ */
+int gx_parse_output_file_name(P4(gs_parsed_file_name_t *pfn,
+				 const char **pfmt, const char *fname,
+				 uint len));
+
+/*
+ * Open the output file for a device.  Note that if the file name is empty,
+ * it may be replaced with the name of a scratch file.
+ */
+int gx_device_open_output_file(P5(const gx_device * dev, char *fname,
 				  bool binary, bool positionable,
 				  FILE ** pfile));
+
+/* Close the output file for a device. */
+int gx_device_close_output_file(P3(const gx_device * dev, const char *fname,
+				   FILE *file));
 
 /*
  * Determine whether a given device needs to halftone.  Eventually this

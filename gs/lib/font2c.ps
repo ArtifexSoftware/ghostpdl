@@ -1,4 +1,4 @@
-%    Copyright (C) 1992, 1993, 1994, 1995 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1992, 1993, 1994, 1995, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -285,7 +285,7 @@ end def
          wt (\);) wl true
        } bind def
       /nametype
-       { (\tcode = (*pprocs->name_create)\(&) ws exch wt
+       { (\tcode = (*pprocs->name_create)\(i_ctx_p, &) ws exch wt
          (, ) ws wnstring cvs wcs	% OK, names are short
 	 (\);) wl
 	 (\tif ( code < 0 ) return code;) wl
@@ -325,44 +325,28 @@ end def
        { (\tr_set_attrs\(&) ws exch wt (, ) ws wpa (\);) wl }
       ifelse
     } bind def
-   /wnuma	% <name> <array> <element_C_type> <<type>_v> wnuma -
-    { 2 index wcheck
-       {	% Allocate an array and copy the values into it.
-		% We can't define new callback procedures, so we must
-		% do this the hard way.
-	 pop pop
-	 ({\tstatic const byte z_[) ws dup length 1 .max 2 mul wt
-	 (] = {0}; ref r_;) wl
-	 (\tcode = (*pprocs->string_array_create)\(&r_, z_, ) ws
-	 dup length wt (, 0\);) wl
-	 (\tif ( code < 0 ) return code;) wl
-	 (\tr_set_attrs\(&r_, ) ws dup wpa (\);) wl
-	 (\t) ws exch wt ( = r_;) wl
-	 0 1 2 index length 1 sub
-	  { 2 copy get
-		% Stack: array index value
-	    dup type /integertype eq { (\tmake_int) } { (\tmake_real) } ifelse
-	    ws (_new\(&r_.value.refs[) ws exch wt
-	    (], ) ws wt (\);) wl
-	  }
-	 for pop
-       }
-       { ({\tstatic const ref_\() ws exch ws
-	 (\) a_[] = {) wl exch
-	 dup length 0 eq
-	  { (\t) ws 1 index ws (\(0\)) wl
-	  }
-	  { dup
-	     { (\t) ws 2 index ws (\() ws wt (\),) wl
-	     } forall
-	  }
-	 ifelse exch pop
-	 (\t};) wl
-	 (\tmake_const_array\(&) ws exch wt
-         (, avm_foreign|) ws dup wpa (, ) ws length wt
-         (, (const ref *)a_\);) wl
-       }
-      ifelse
+   /wnuma {	% <name> <array> <element_C_type> <<type>_v> wnuma -
+      ({\tstatic const ref_\() ws exch ws (\) a_[] = {) wl exch
+		% Stack: name type_v array
+      dup length 0 eq {
+	(\t) ws 1 index ws (\(0\)) wl
+      } {
+	dup {
+	  (\t) ws 2 index ws (\() ws wt (\),) wl
+	} forall
+      } ifelse exch pop
+		% Stack: name array
+      (\t};) wl
+      dup wcheck {
+	(\tcode = (*pprocs->scalar_array_create)\(i_ctx_p, &) ws exch wt
+	(, (const ref *)a_, ) ws dup length wt
+	(, ) ws wpa (\);) wl
+	(\tif ( code < 0 ) return code;) wl
+      } {
+	(\tmake_const_array\(&) ws exch wt
+	(, avm_foreign|) ws dup wpa (, ) ws length wt
+	(, (const ref *)a_\);) wl
+      } ifelse
       (}) wl
     } bind def
    /woatt [
@@ -377,7 +361,7 @@ end def
 	% Strings + nulls
      { { { type dup /nulltype eq exch /stringtype eq or } isall }
        { ({) ws dup (sa_) exch wsna
-	 (\tcode = (*pprocs->string_array_create)\(&) ws exch wt
+	 (\tcode = (*pprocs->string_array_create)\(i_ctx_p, &) ws exch wt
 	 (, sa_, ) ws dup length wt (, ) ws wpa (\);) wl
 	 (\tif ( code < 0 ) return code;) wl
 	 (}) wl true
@@ -386,7 +370,7 @@ end def
 	% Names
      { { { type /nametype eq } isall }
        { ({) ws dup (na_) exch wsna
-	 (\tcode = (*pprocs->name_array_create)\(&) ws 1 index wt
+	 (\tcode = (*pprocs->name_array_create)\(i_ctx_p, &) ws 1 index wt
 	 (, na_, ) ws dup length wt (\);) wl
 	 (\tif ( code < 0 ) return code;) wl
 	 wap (}) wl true
@@ -399,7 +383,7 @@ end def
 	 ({\tstatic const char s_[] = ) ws
          dup dup can_wcs { wcs } { wcca } ifelse
 	 (;) wl
-	 (\tcode = (*pprocs->ref_from_string)\(&) ws 2 index wt
+	 (\tcode = (*pprocs->ref_from_string)\(i_ctx_p, &) ws 2 index wt
 	 (, s_, ) ws length wt (\);) wl
 	 (\tif ( code < 0 ) return code;) wl
 	 wap (}) wl true
@@ -429,7 +413,7 @@ end def
       (\tstatic const cfont_dict_keys keys_ =) wl
       (\t { 0, 0, ) ws length wt (, ) ws 3 -1 roll wt (, ) ws
       dup wpa (, ) ws dup wva ( };) wl pop
-      (\tcode = \(*pprocs->ref_dict_create\)\(&) ws wt
+      (\tcode = \(*pprocs->ref_dict_create\)\(i_ctx_p, &) ws wt
       (, &keys_, str_keys_, v_\);) wl
       (\tif ( code < 0 ) return code;) wl
       (}) wl
@@ -503,7 +487,7 @@ end def
       (static const char values_[] = {) wl
        { wsn } cdforall
       (\t0\n};) wl
-      (\tcode = \(*pprocs->string_dict_create\)\(&) ws wt
+      (\tcode = \(*pprocs->string_dict_create\)\(i_ctx_p, &) ws wt
       (, &keys_, str_keys_, values_\);) wl
       (\tif ( code < 0 ) return code;) wl
       (}) wl
@@ -522,7 +506,7 @@ end def
 	 ifelse wt (,) wl
        } cdforall
       (\t0\n};) wl
-      (\tcode = \(*pprocs->num_dict_create\)\(&) ws wt
+      (\tcode = \(*pprocs->num_dict_create\)\(i_ctx_p, &) ws wt
       (, &keys_, str_keys_, (const ref *)values_, lengths_\);) wl
       (\tif ( code < 0 ) return code;) wl
       (}) wl
@@ -601,11 +585,12 @@ currentdict end /decoding exch def
 
 % Write the procedure prologue.
    (#ifdef __PROTOTYPES__) wl
-   (int huge) wl
-   fontprocname ws ((const cfont_procs *pprocs, ref *pfont)) wl
+   (ccfont_proc\() ws fontprocname ws (\);) wl
+   (int) wl
+   fontprocname ws ((i_ctx_t *i_ctx_p, const cfont_procs *pprocs, ref *pfont)) wl
    (#else) wl
-   (int huge) wl
-   fontprocname ws ((pprocs, pfont) const cfont_procs *pprocs; ref *pfont;) wl
+   (int) wl
+   fontprocname ws ((i_ctx_p, pprocs, pfont) i_ctx_t *i_ctx_p; const cfont_procs *pprocs; ref *pfont;) wl
    (#endif) wl
    ({\tint code;) wl
    (\tref Font;) wl

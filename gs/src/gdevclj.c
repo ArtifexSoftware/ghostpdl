@@ -311,8 +311,7 @@ clj_put_params(
 	    pf_array.size = 2;
 	    pf_array.persistent = false;
 
-	    gs_c_param_list_write(&alist, (pdev->memory) ? pdev->memory : 
-					   &gs_memory_default);
+	    gs_c_param_list_write(&alist, pdev->memory);
 	    code = param_write_float_array((gs_param_list *)&alist, ".MediaSize", &pf_array);
 	    gs_c_param_list_read(&alist);
 
@@ -440,6 +439,7 @@ clj_print_page(
     FILE *                  prn_stream
 )
 {
+    gs_memory_t *mem = pdev->memory;
     bool                    rotate;
     const clj_paper_size *  psize = get_paper_size(pdev->MediaSize, &rotate);
     int                     lsize = pdev->width;
@@ -457,10 +457,10 @@ clj_print_page(
         return_error(gs_error_unregistered);
 
     /* allocate memory for the raw and compressed data */
-    if ((data = gs_malloc(lsize, 1, "clj_print_page(data)")) == 0)
+    if ((data = gs_alloc_bytes(mem, lsize, "clj_print_page(data)")) == 0)
         return_error(gs_error_VMerror);
-    if ((cdata[0] = gs_malloc(3 *clsize, 1, "clj_print_page(cdata)")) == 0) {
-        gs_free((char *)data, lsize, 1, "clj_print_page(data)");
+    if ((cdata[0] = gs_alloc_bytes(mem, 3 * clsize, "clj_print_page(cdata)")) == 0) {
+        gs_free_object(mem, data, "clj_print_page(data)");
         return_error(gs_error_VMerror);
     }
     cdata[1] = cdata[0] + clsize;
@@ -529,8 +529,8 @@ clj_print_page(
     fputs("\033*rC\f", prn_stream);
 
     /* free the buffers used */
-    gs_free((char *)cdata[0], 3 * clsize, 1, "clj_print_page(cdata)");
-    gs_free((char *)data, lsize, 1, "clj_print_page(data)");
+    gs_free_object(mem, cdata[0], "clj_print_page(cdata)");
+    gs_free_object(mem, data, "clj_print_page(data)");
 
     return 0;
 }

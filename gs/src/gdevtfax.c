@@ -22,6 +22,7 @@
 #include "gdevtifs.h"		/* for TIFF output only */
 #include "strimpl.h"
 #include "scfx.h"
+#include "gdevtfax.h"		/* prototypes */
 
 /* Define the device parameters. */
 #define X_DPI 204
@@ -204,12 +205,12 @@ gdev_fax_init_fax_state(stream_CFE_state * ss, const gx_device_printer * pdev)
 /* Send the page to the printer. */
 /* Print a page with a specified width, which may differ from the */
 /* width stored in the device. */
-int
+private int
 gdev_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
 			     const stream_template * temp, stream_state * ss,
 			     int width)
 {
-    gs_memory_t *mem = &gs_memory_default;
+    gs_memory_t *mem = pdev->memory;
     int code;
     stream_cursor_read r;
     stream_cursor_write w;
@@ -300,7 +301,7 @@ gdev_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
 	(*temp->release) (ss);
     return code;
 }
-int
+private int
 gdev_stream_print_page(gx_device_printer * pdev, FILE * prn_stream,
 		       const stream_template * temp, stream_state * ss)
 {

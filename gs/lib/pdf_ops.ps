@@ -144,6 +144,7 @@ nodict readonly pop
 /K { 4 array astore cvx //csdevcmyk scput } bdef
 /cs { csset fcput } bdef
 /CS { csset scput } bdef
+/ri { pop } bdef
 % We have to break up sc according to the number of operands.
 /sc1 { /FillColor gput } bdef
 /SC1 { /StrokeColor gput } bdef
@@ -305,7 +306,7 @@ end readonly def
     { 3 -1 roll true .copyfontdict dup /Metrics 4 -1 roll put exch }
     { pop }
    ifelse
-   dup null ne 1 index 3 index /Encoding get ne and
+   dup null ne { 1 index 3 index /Encoding get ne } { false } ifelse
     { exch false .copyfontdict dup /Encoding 4 -1 roll put }
     { pop }
    ifelse exch 1 index ne

@@ -1,4 +1,4 @@
-%    Copyright (C) 1990, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1990, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -20,8 +20,11 @@
 %
 % Please do not contact these users if you have questions.  They no longer
 % have the time, interest, or current expertise to keep this code working.
-% If you find bugs, please send proposed fixes to ghost@aladdin.com.
+% If you find bugs, please send proposed fixes to gs-bugs@aladdin.com.
 %
+% Bug fix 8/21/99 by lpd: many of the margin and width computations were
+%   wrong (off by 1).  The code only "worked" because the bugs were
+%   (mostly) in conservative directions.
 % Modified 3/17/98 by lpd to make it possible to run this file without
 %   running the ps2epsi script first, for debugging.
 % Bug fix 9/29/97 by lpd <ghost@aladdin.com>: if the page size wasn't an
@@ -59,6 +62,7 @@ ps2edict begin
      arraydevice setdevice	% (does an erasepage)
      /rowwidth devwidth 7 add 8 idiv def
      /row rowwidth string def
+     /zerorow rowwidth string def	% all zero
 				% Replace the definition of showpage
      userdict /showpage { ps2edict begin epsipage end } bind put
      userdict /setfont { ps2edict begin epsisetfont end } bind put
@@ -79,27 +83,22 @@ ps2edict begin
 
 % Get a scan line from the memory device, zeroing any bits beyond
 % the device width.
- /getscanline		% <device> <y> <string> getscanline -
- {
-	dup 4 1 roll copyscanlines pop
-	16#ff00 devwidth 7 and neg bitshift 255 and
-	dup 0 ne {
-	  exch dup length 1 sub 2 copy get 4 -1 roll and put
-	} {
-	  pop pop
-	} ifelse
- } bind def
+/getscanline {		% <device> <y> <string> getscanline <string>
+  dup 4 1 roll copyscanlines pop
+  16#ff00 devwidth 7 and neg bitshift 255 and
+  dup 0 ne {
+    1 index dup length 1 sub 2 copy get 4 -1 roll and put
+  } {
+    pop
+  } ifelse
+} bind def
 
- /margintest
- {
-      { dup arraydevice exch row getscanline
-	-1 0 1 rowwidth 1 sub
-	{ dup row exch get 0 ne { exit }{ pop } ifelse
-	} for
-	dup -1 ne { exch pop } if
-	-1 ne { exit } if pop
-      } for
- } bind def
+/margintest {		% <y-start> <step> <y-limit> margintest <y-non-blank>
+			% <y-start> <step> <y-limit> margintest -
+  { dup arraydevice exch row getscanline
+    zerorow ne { exit } if pop
+  } for
+} bind def
 
 
   /epsiNameStr 200 string def
@@ -110,12 +109,12 @@ ps2edict begin
 	 /epsiNpages epsiNpages 1 add def
      /loopcount devheight 1 sub def
 
-     % Find top margin
+     % Find top margin -- minimum Y of non-blank scan line.
      -1 0 1 loopcount margintest
      dup -1 eq { (blank page!!\n) print quit }{ exch pop } ifelse 
      /tm exch def
 
-     % Find bottom margin
+     % Find bottom margin -- maximum Y of non-blank scan line.
      loopcount -1 0 margintest
      /bm exch def
      
@@ -127,7 +126,7 @@ ps2edict begin
      % Find left and right boundaries of image
      tm 1 bm
       { % Get more data
-	arraydevice exch row getscanline
+	arraydevice exch row getscanline pop
 	% Scan from left to find first non-zero element
 	% We save first the element, then the index
 	-1 0 1 loopcount
@@ -167,11 +166,12 @@ ps2edict begin
      } for
      /rmb exch def
 
-     % Calculate the bounding box values
-     /llx lm 8 mul lmb add  1 sub def
-     /lly devheight bm sub  1 sub def
+     % Calculate the bounding box values.
+     % Note that these must be corrected to produce closed-open intervals.
+     /llx lm 8 mul lmb add def
+     /lly devheight bm sub 1 sub def
      /urx rm 8 mul rmb add 1 add def
-     /ury devheight tm sub 1 add def
+     /ury devheight tm sub def
 
     % Write out the magic string and bounding box information
      epsifile (%!PS-Adobe-2.0 EPSF-1.2\n) writestring
@@ -202,15 +202,15 @@ ps2edict begin
      epsifile urx write==only epsifile ( ) writestring
      epsifile ury write==
      epsifile (%%BeginPreview: ) writestring
-     epsifile urx llx sub 1 add write==only epsifile ( ) writestring
+     epsifile urx llx sub write==only epsifile ( ) writestring
      epsifile bm tm sub 1 add write==only epsifile ( 1 ) writestring
      epsifile bm tm sub 1 add write==
      epsifile flushfile
 
     % Define character and bit widths for the output line buffer:
-     /cwidth rm lm sub 1 add 8 mul 7 add 8 idiv def
+     /cwidth rm lm sub 1 add def
      /bwidth cwidth 8 mul def
-     /owidth urx llx sub 1 add 7 add 8 idiv def
+     /owidth urx llx sub 7 add 8 idiv def
      /out cwidth string def
 
      % Create a 1-bit-high device for bitblt to align with the bbox

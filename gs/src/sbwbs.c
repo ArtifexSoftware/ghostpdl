@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,6 +31,14 @@
 private_st_buffered_state();
 
 /* Initialize */
+private void
+s_buffered_set_defaults(stream_state * st)
+{
+    stream_buffered_state *const ss = (stream_buffered_state *) st;
+
+    /* Clear pointers */
+    ss->buffer = 0;
+}
 private int
 s_buffered_no_block_init(stream_state * st)
 {
@@ -97,6 +105,16 @@ s_buffered_release(stream_state * st)
 
 private_st_BWBS_state();
 private void s_BWBS_release(P1(stream_state *));
+
+/* Set default parameter values (actually, just clear pointers). */
+private void
+s_BWBS_set_defaults(stream_state * st)
+{
+    stream_BWBS_state *const ss = (stream_BWBS_state *) st;
+
+    s_buffered_set_defaults(st);
+    ss->offsets = 0;
+}
 
 /* Initialize */
 private int
@@ -275,8 +293,9 @@ s_BWBSE_process(stream_state * st, stream_cursor_read * pr,
 }
 
 /* Stream template */
-const stream_template s_BWBSE_template =
-{&st_BWBS_state, s_BWBSE_init, s_BWBSE_process, sizeof(int) * 2, 1, s_BWBS_release
+const stream_template s_BWBSE_template = {
+    &st_BWBS_state, s_BWBSE_init, s_BWBSE_process, sizeof(int) * 2, 1,
+    s_BWBS_release, s_BWBS_set_defaults
 };
 
 /* ------ BWBlockSortDecode ------ */
@@ -524,6 +543,7 @@ s_BWBSD_process(stream_state * st, stream_cursor_read * pr,
 }
 
 /* Stream template */
-const stream_template s_BWBSD_template =
-{&st_BWBS_state, s_BWBSD_init, s_BWBSD_process, 1, sizeof(int) * 2, s_BWBS_release
+const stream_template s_BWBSD_template = {
+    &st_BWBS_state, s_BWBSD_init, s_BWBSD_process, 1, sizeof(int) * 2,
+    s_BWBS_release, s_BWBS_set_defaults
 };

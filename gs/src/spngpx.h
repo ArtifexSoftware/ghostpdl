@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -48,7 +48,9 @@ typedef struct stream_PNGP_state_s {
     prev_row)
 #define s_PNGP_set_defaults_inline(ss)\
   ((ss)->Colors = 1, (ss)->BitsPerComponent = 8, (ss)->Columns = 1,\
-   (ss)->Predictor = 15)
+   (ss)->Predictor = 15,\
+		/* Clear pointers */\
+   (ss)->prev_row = 0)
 extern const stream_template s_PNGPD_template;
 extern const stream_template s_PNGPE_template;
 

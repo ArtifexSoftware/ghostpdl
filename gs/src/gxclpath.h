@@ -60,8 +60,8 @@ typedef enum {
 				/* [, hival#, table|map] */
     cmd_opv_set_misc2 = 0xd5,
 #define cmd_set_misc2_cap_join (0x00) /* 00: cap(3)join(3) */
-#define cmd_set_misc2_ac_op_sa (0x40) /* 01: 0(3)acc.curves(1)overprint(1) */
-					/*   stroke_adj(1) */
+#define cmd_set_misc2_cj_ac_op_sa (0x40) /* 01: curve_join+1(3)acc.curves(1) */
+				/* overprint(1)stroke_adj(1) */
 #define cmd_set_misc2_notes (0x80)	/* 10: seg.notes(6) */
 #define cmd_set_misc2_value (0xc0)	/* 11: (see below) */
 #define cmd_set_misc2_flatness (0xc0+0)    /* 11000000, flatness(float) */
@@ -161,6 +161,14 @@ typedef enum {
  *      111----- (a full-size `fixed' value)
  */
 #define is_bits(d, n) !(((d) + ((fixed)1 << ((n) - 1))) & (-(fixed)1 << (n)))
+
+/* ---------------- Driver procedures ---------------- */
+
+/* In gxclpath.c */
+dev_proc_fill_path(clist_fill_path);
+dev_proc_stroke_path(clist_stroke_path);
+dev_proc_fill_parallelogram(clist_fill_parallelogram);
+dev_proc_fill_triangle(clist_fill_triangle);
 
 /* ---------------- Driver procedure support ---------------- */
 

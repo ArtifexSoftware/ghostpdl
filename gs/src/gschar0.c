@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1992, 1993, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1992, 1993, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,67 +25,68 @@
 #include "gsfcmap.h"
 #include "gxfixed.h"
 #include "gxdevice.h"
-#include "gxdevmem.h"		/* for gxchar.h */
-#include "gxchar.h"
 #include "gxfont.h"
 #include "gxfont0.h"
+#include "gxtext.h"
 
 /* Stack up modal composite fonts, down to a non-modal or base font. */
 private int
-gs_stack_modal_fonts(gs_show_enum * penum)
+gs_stack_modal_fonts(gs_text_enum_t *pte)
 {
-    int fdepth = penum->fstack.depth;
-    gs_font *cfont = penum->fstack.items[fdepth].font;
+    int fdepth = pte->fstack.depth;
+    gs_font *cfont = pte->fstack.items[fdepth].font;
 
     while (cfont->FontType == ft_composite) {
 	gs_font_type0 *const cmfont = (gs_font_type0 *) cfont;
 
 	if (!fmap_type_is_modal(cmfont->data.FMapType))
 	    break;
-	if (fdepth == max_font_depth)
+	if (fdepth == MAX_FONT_STACK)
 	    return_error(gs_error_invalidfont);
 	fdepth++;
 	cfont = cmfont->data.FDepVector[cmfont->data.Encoding[0]];
-	penum->fstack.items[fdepth].font = cfont;
-	penum->fstack.items[fdepth].index = 0;
+	pte->fstack.items[fdepth].font = cfont;
+	pte->fstack.items[fdepth].index = 0;
 	if_debug2('j', "[j]stacking depth=%d font=0x%lx\n",
 		  fdepth, (ulong) cfont);
     }
-    penum->fstack.depth = fdepth;
+    pte->fstack.depth = fdepth;
     return 0;
 }
 /* Initialize the composite font stack for a show enumerator. */
+/* Return an error if the data is not a byte string. */
 int
-gs_type0_init_fstack(gs_show_enum * penum, gs_font * pfont)
+gs_type0_init_fstack(gs_text_enum_t *pte, gs_font * pfont)
 {
+    if (!(pte->text.operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES)))
+	return_error(gs_error_invalidfont);
     if_debug1('j', "[j]stacking depth=0 font=0x%lx\n",
 	      (ulong) pfont);
-    penum->fstack.depth = 0;
-    penum->fstack.items[0].font = pfont;
-    penum->fstack.items[0].index = 0;
-    return gs_stack_modal_fonts(penum);
+    pte->fstack.depth = 0;
+    pte->fstack.items[0].font = pfont;
+    pte->fstack.items[0].index = 0;
+    return gs_stack_modal_fonts(pte);
 }
 
 /* Select the appropriate descendant of a font. */
-/* Uses free variables: penum. */
+/* Uses free variables: pte. */
 /* Uses pdata, uses & updates fdepth, sets pfont. */
 #define select_descendant(pfont, pdata, fidx, fdepth)\
-  if ( fidx >= pdata->encoding_size )\
+  if (fidx >= pdata->encoding_size)\
     return_error(gs_error_rangecheck);\
-  if ( fdepth == max_font_depth )\
+  if (fdepth == MAX_FONT_STACK)\
     return_error(gs_error_invalidfont);\
   pfont = pdata->FDepVector[pdata->Encoding[fidx]];\
-  if ( ++fdepth > orig_depth || pfont != penum->fstack.items[fdepth].font )\
-    penum->fstack.items[fdepth].font = pfont,\
-    changed = 1;\
-  penum->fstack.items[fdepth].index = fidx
+  if (++fdepth > orig_depth || pfont != pte->fstack.items[fdepth].font)\
+    pte->fstack.items[fdepth].font = pfont, changed = 1;\
+  pte->fstack.items[fdepth].index = fidx
 
 /* Get the root EscChar of a composite font, which overrides the EscChar */
 /* of descendant fonts. */
 private uint
-root_esc_char(const gs_show_enum * penum)
+root_esc_char(const gs_text_enum_t *pte)
 {
-    return ((gs_font_type0 *) (penum->fstack.items[0].font))->data.EscChar;
+    return ((gs_font_type0 *) (pte->fstack.items[0].font))->data.EscChar;
 }
 
 /* Get the next character or glyph from a composite string. */
@@ -94,13 +95,12 @@ root_esc_char(const gs_show_enum * penum)
 /* If the string is empty, return 2. */
 /* If the current (base) font changed, return 1.  Otherwise, return 0. */
 int
-gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
-		    gs_glyph * pglyph)
+gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 {
-    const byte *str = penum->text.data.bytes;
-    const byte *p = str + penum->index;
-    const byte *end = str + penum->text.size;
-    int fdepth = penum->fstack.depth;
+    const byte *str = pte->text.data.bytes;
+    const byte *p = str + pte->index;
+    const byte *end = str + pte->text.size;
+    int fdepth = pte->fstack.depth;
     int orig_depth = fdepth;
     gs_font *pfont;
 
@@ -123,10 +123,10 @@ gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
      * reported by Norio Katayama, and confirmed by someone at Adobe.)
      */
 
-    if (penum->index == 0) {
+    if (pte->index == 0) {
 	int idepth = 0;
 
-	pfont = penum->fstack.items[0].font;
+	pfont = pte->fstack.items[0].font;
 	for (; pfont->FontType == ft_composite;) {
 	    fmap_type fmt = (pdata = &pfont0->data)->FMapType;
 
@@ -135,7 +135,7 @@ gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
 	    chr = *p;
 	    switch (fmt) {
 		case fmap_escape:
-		    if (chr != root_esc_char(penum))
+		    if (chr != root_esc_char(pte))
 			break;
 		    need_left(2);
 		    fidx = p[1];
@@ -146,7 +146,7 @@ gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
 			      idepth, (ulong) pfont);
 		    continue;
 		case fmap_double_escape:
-		    if (chr != root_esc_char(penum))
+		    if (chr != root_esc_char(pte))
 			break;
 		    need_left(2);
 		    fidx = p[1];
@@ -177,13 +177,13 @@ gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
 	if (idepth != 0) {
 	    int code;
 
-	    penum->fstack.depth = idepth;
-	    code = gs_stack_modal_fonts(penum);
+	    pte->fstack.depth = idepth;
+	    code = gs_stack_modal_fonts(pte);
 	    if (code < 0)
 		return code;
-	    if (penum->fstack.depth > idepth)
+	    if (pte->fstack.depth > idepth)
 		changed = 1;
-	    orig_depth = fdepth = penum->fstack.depth;
+	    orig_depth = fdepth = pte->fstack.depth;
 	}
     }
     /* Handle initial escapes or shifts. */
@@ -192,7 +192,7 @@ gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
 	return 2;
     chr = *p;
     while (fdepth > 0) {
-	pfont = penum->fstack.items[fdepth - 1].font;
+	pfont = pte->fstack.items[fdepth - 1].font;
 	pdata = &pfont0->data;
 	switch (pdata->FMapType) {
 	    default:		/* non-modal */
@@ -200,7 +200,7 @@ gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
 		continue;
 
 	    case fmap_escape:
-		if (chr != root_esc_char(penum))
+		if (chr != root_esc_char(pte))
 		    break;
 		need_left(2);
 		fidx = *++p;
@@ -228,7 +228,7 @@ gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
 		continue;
 
 	    case fmap_double_escape:
-		if (chr != root_esc_char(penum))
+		if (chr != root_esc_char(pte))
 		    break;
 		need_left(2);
 		fidx = *++p;
@@ -264,7 +264,7 @@ gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
      * simply the first byte of the data.
      */
 
-    while ((pfont = penum->fstack.items[fdepth].font)->FontType == ft_composite) {
+    while ((pfont = pte->fstack.items[fdepth].font)->FontType == ft_composite) {
 	pdata = &pfont0->data;
 	switch (pdata->FMapType) {
 	    default:		/* can't happen */
@@ -364,7 +364,7 @@ gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
 					       &fidx, &chr, &glyph);
 		    if (code < 0)
 			return code;
-		    penum->cmap_code = code; /* hack for widthshow */
+		    pte->cmap_code = code; /* hack for widthshow */
 		    p = str + mindex;
 		    if_debug3('J', "[J]CMap returns %d, chr=0x%lx, glyph=0x%lx\n",
 			      code, (ulong) chr, (ulong) glyph);
@@ -391,12 +391,12 @@ done:
     *pglyph = glyph;
     /* Update the pointer into the original string, but only if */
     /* we didn't switch over to parsing a code from a CMap. */
-    if (str == penum->text.data.bytes)
-	penum->index = p - str;
-    penum->fstack.depth = fdepth;
+    if (str == pte->text.data.bytes)
+	pte->index = p - str;
+    pte->fstack.depth = fdepth;
     if_debug4('J', "[J]depth=%d font=0x%lx index=%d changed=%d\n",
-	      fdepth, (ulong) penum->fstack.items[fdepth].font,
-	      penum->fstack.items[fdepth].index, changed);
+	      fdepth, (ulong) pte->fstack.items[fdepth].font,
+	      pte->fstack.items[fdepth].index, changed);
     return changed;
 #undef pfont0
 }

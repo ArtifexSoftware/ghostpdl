@@ -167,6 +167,16 @@ const stream_template s_PFBD_template = {
 
 private_st_SFD_state();
 
+/* Set default parameter values (actually, just clear pointers). */
+private void
+s_SFD_set_defaults(stream_state * st)
+{
+    stream_SFD_state *const ss = (stream_SFD_state *) st;
+
+    ss->eod.data = 0;
+    ss->eod.size = 0;
+}
+
 /* Initialize the stream */
 private int
 s_SFD_init(stream_state * st)
@@ -293,5 +303,5 @@ xit:	pr->ptr = p;
 
 /* Stream template */
 const stream_template s_SFD_template = {
-    &st_SFD_state, s_SFD_init, s_SFD_process, 1, 1
+    &st_SFD_state, s_SFD_init, s_SFD_process, 1, 1, 0, s_SFD_set_defaults
 };

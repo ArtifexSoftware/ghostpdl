@@ -17,661 +17,641 @@
  */
 
 
-/* Named object pdfmark processing */
+/* Cos object support */
 #include "memory_.h"
 #include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsutil.h"		/* for bytes_compare */
 #include "gdevpdfx.h"
+#include "gdevpdfo.h"
 #include "strimpl.h"
 #include "sstring.h"
 
+/* GC descriptors */
+private_st_cos_element();
+private_st_cos_stream_piece();
+private_st_cos_object();
+private_st_cos_value();
+private_st_cos_array_element();
+private_st_cos_dict_element();
+
 /* GC procedures */
-
-private_st_pdf_named_element();
-public_st_pdf_named_object();
-
-#define pne ((pdf_named_element *)vptr)
-private 
-ENUM_PTRS_BEGIN(pdf_named_elt_enum_ptrs) return 0;
-
-ENUM_PTR(0, pdf_named_element, next);
-ENUM_STRING_PTR(1, pdf_named_element, key);
-/****** WRONG IF data = 0 ******/
-ENUM_STRING_PTR(2, pdf_named_element, value);
+private
+ENUM_PTRS_WITH(cos_value_enum_ptrs, cos_value_t *pcv) return 0;
+ case 0: return (pcv->is_object ? ENUM_OBJ(pcv->contents.object) :
+		 ENUM_STRING(&pcv->contents.chars));
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(pdf_named_elt_reloc_ptrs)
+private
+RELOC_PTRS_WITH(cos_value_reloc_ptrs, cos_value_t *pcv)
 {
-    RELOC_PTR(pdf_named_element, next);
-    if (pne->key.data != 0)
-	RELOC_STRING_PTR(pdf_named_element, key);
-    RELOC_STRING_PTR(pdf_named_element, value);
+    if (pcv->is_object)
+	RELOC_VAR(pcv->contents.object);
+    else
+	RELOC_STRING_VAR(pcv->contents.chars);
 }
 RELOC_PTRS_END
-#undef pne
+private
+ENUM_PTRS_WITH(cos_array_element_enum_ptrs, cos_array_element_t *pcae)
+{
+    return (index < cos_element_num_ptrs ?
+	    ENUM_USING_PREFIX(st_cos_element, 0) :
+	    ENUM_USING(st_cos_value, &pcae->value, sizeof(cos_value_t),
+		       index - cos_element_num_ptrs));
+}
+ENUM_PTRS_END
+private
+RELOC_PTRS_WITH(cos_array_element_reloc_ptrs, cos_array_element_t *pcae)
+{
+    RELOC_PREFIX(st_cos_element);
+    RELOC_USING(st_cos_value, &pcae->value, sizeof(cos_value_t));
+}
+RELOC_PTRS_END
+private
+ENUM_PTRS_WITH(cos_dict_element_enum_ptrs, cos_dict_element_t *pcde)
+{
+    return (index < cos_element_num_ptrs ?
+	    ENUM_USING_PREFIX(st_cos_element, 0) :
+	    (index -= cos_element_num_ptrs) == 0 ?
+	    ENUM_STRING(&pcde->key) :
+	    ENUM_USING(st_cos_value, &pcde->value, sizeof(cos_value_t),
+		       index - 1));
+}
+ENUM_PTRS_END
+private
+RELOC_PTRS_WITH(cos_dict_element_reloc_ptrs, cos_dict_element_t *pcde)
+{
+    RELOC_PREFIX(st_cos_element);
+    RELOC_STRING_VAR(pcde->key);
+    RELOC_USING(st_cos_value, &pcde->value, sizeof(cos_value_t));
+}
+RELOC_PTRS_END
 
-#define pno ((pdf_named_object *)vptr)
-private ENUM_PTRS_BEGIN(pdf_named_obj_enum_ptrs) return 0;
-ENUM_PTR(0, pdf_named_object, next);
-ENUM_STRING_PTR(1, pdf_named_object, key);
-ENUM_PTR(2, pdf_named_object, elements);
-case 3:
-if (pno->type == named_graphics)
-    ENUM_RETURN(pno->graphics.enclosing);
-else
+/* ---------------- Generic support ---------------- */
+
+/* Initialize a just-allocated cos object. */
+private void
+cos_object_init(cos_object_t *pco, const cos_object_procs_t *procs)
+{
+    if (pco) {
+	pco->cos_procs = procs;
+	pco->id = 0;
+	pco->elements = 0;
+	pco->pieces = 0;
+	pco->is_open = true;
+    }
+}
+
+/* Change a generic cos object into one of a specific type. */
+int
+cos_become(cos_object_t *pco, cos_type_t cotype)
+{
+    if (cos_type(pco) != cos_type_generic)
+	return_error(gs_error_typecheck);
+    cos_type(pco) = cotype;
     return 0;
-ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(pdf_named_obj_reloc_ptrs)
-{
-    RELOC_PTR(pdf_named_object, next);
-    RELOC_STRING_PTR(pdf_named_object, key);
-    RELOC_PTR(pdf_named_object, elements);
-    if (pno->type == named_graphics)
-	RELOC_PTR(pdf_named_object, graphics.enclosing);
 }
-RELOC_PTRS_END
-#undef pno
 
-/* ---------------- pdfmark processing ---------------- */
-
-/* Define the pdfmark types implemented here. */
-private pdfmark_proc(pdfmark_BP);
-private pdfmark_proc(pdfmark_EP);
-private pdfmark_proc(pdfmark_SP);
-private pdfmark_proc(pdfmark_OBJ);
-private pdfmark_proc(pdfmark_PUT);
-private pdfmark_proc(pdfmark_PUTDICT);
-private pdfmark_proc(pdfmark_PUTINTERVAL);
-private pdfmark_proc(pdfmark_CLOSE);
-const pdfmark_name pdfmark_names_named[] =
+/* Release a cos object. */
+cos_proc_release(cos_release);	/* check prototype */
+void
+cos_release(cos_object_t *pco, gs_memory_t *mem, client_name_t cname)
 {
-    {"BP", pdfmark_BP, pdfmark_nameable},
-    {"EP", pdfmark_EP, 0},
-    {"SP", pdfmark_SP, pdfmark_odd_ok | pdfmark_keep_name},
-    {"OBJ", pdfmark_OBJ, pdfmark_nameable},
-    {"PUT", pdfmark_PUT, pdfmark_odd_ok | pdfmark_keep_name},
-    {".PUTDICT", pdfmark_PUTDICT, pdfmark_odd_ok | pdfmark_keep_name},
-  {".PUTINTERVAL", pdfmark_PUTINTERVAL, pdfmark_odd_ok | pdfmark_keep_name},
-    {"CLOSE", pdfmark_CLOSE, pdfmark_odd_ok | pdfmark_keep_name},
-    {0, 0}
+    pco->cos_procs->release(pco, mem, cname);
+}
+
+/* Free a cos object. */
+void
+cos_free(cos_object_t *pco, gs_memory_t *mem, client_name_t cname)
+{
+    cos_release(pco, mem, cname);
+    gs_free_object(mem, pco, cname);
+}
+
+/* Write a cos object on the output. */
+cos_proc_write(cos_write);	/* check prototype */
+int
+cos_write(const cos_object_t *pco, gx_device_pdf *pdev)
+{
+    return pco->cos_procs->write(pco, pdev);
+}
+
+/* Write a cos object as a PDF object. */
+int
+cos_write_object(const cos_object_t *pco, gx_device_pdf *pdev)
+{
+    int code;
+
+    if (pco->id == 0)
+	return_error(gs_error_Fatal);
+    pdf_open_separate(pdev, pco->id);
+    code = cos_write(pco, pdev);
+    pdf_end_separate(pdev);
+    return code;
+}
+
+/* Make a value to store into a composite object. */
+const cos_value_t *
+cos_string_value(cos_value_t *pcv, const byte *data, uint size)
+{
+    /*
+     * It's OK to break const here, because the value will be copied
+     * before being stored in the collection.
+     */
+    pcv->contents.chars.data = (byte *)data;
+    pcv->contents.chars.size = size;
+    pcv->is_object = false;
+    return pcv;
+}
+const cos_value_t *
+cos_c_string_value(cos_value_t *pcv, const char *str)
+{
+    return cos_string_value(pcv, (const byte *)str, strlen(str));
+}
+const cos_value_t *
+cos_object_value(cos_value_t *pcv, cos_object_t *pco)
+{
+    pcv->contents.object = pco;
+    pcv->is_object = true;
+    return pcv;
+}
+
+/* Free a value. */
+private void
+cos_value_free(cos_value_t *pcv, gs_memory_t *mem, client_name_t cname)
+{
+    if (pcv->is_object) {
+	/* Free the object if this is the only reference to it. */
+	if (!pcv->contents.object->id)
+	    cos_free(pcv->contents.object, mem, cname);
+    } else
+	gs_free_string(mem, pcv->contents.chars.data, pcv->contents.chars.size,
+		       cname);
+}
+
+/* Write a value on the output. */
+private void
+cos_value_write(const cos_value_t *pcv, gx_device_pdf *pdev)
+{
+    if (pcv->is_object) {
+	cos_object_t *pco = pcv->contents.object;
+
+	if (pco->id)
+	    pprintld1(pdev->strm, "%ld 0 R", pco->id);
+	else
+	    cos_write(pco, pdev);
+    } else
+	pdf_write_value(pdev, pcv->contents.chars.data,
+			pcv->contents.chars.size);
+}
+
+/* Copy a value if necessary for putting into an array or dictionary. */
+private int
+cos_copy_element_value(cos_value_t *pcv, gs_memory_t *mem,
+		       const cos_value_t *pvalue)
+{
+    *pcv = *pvalue;
+    if (!pvalue->is_object) {
+	byte *value_data = gs_alloc_string(mem, pvalue->contents.chars.size,
+					   "cos_copy_element_value");
+
+	if (value_data == 0)
+	    return_error(gs_error_VMerror);
+	memcpy(value_data, pvalue->contents.chars.data,
+	       pvalue->contents.chars.size);
+	pcv->contents.chars.data = value_data;
+    }
+    return 0;
+}
+
+/* Release a value copied for putting, if the operation fails. */
+private void
+cos_uncopy_element_value(cos_value_t *pcv, gs_memory_t *mem)
+{
+    if (!pcv->is_object)
+	gs_free_string(mem, pcv->contents.chars.data, pcv->contents.chars.size,
+		       "cos_uncopy_element_value");
+}
+
+/* ---------------- Specific object types ---------------- */
+
+/* ------ Generic objects ------ */
+
+private cos_proc_release(cos_generic_release);
+private cos_proc_write(cos_generic_write);
+const cos_object_procs_t cos_generic_procs = {
+    cos_generic_release, cos_generic_write
 };
 
-/*
- * Predefined objects:
- *      {Catalog}, {DocInfo}
- *      {Page<#>}, {ThisPage}, {PrevPage}, {NextPage}
- */
+cos_object_t *
+cos_object_alloc(gs_memory_t *mem, client_name_t cname)
+{
+    cos_object_t *pco =
+	gs_alloc_struct(mem, cos_object_t, &st_cos_object, cname);
 
-/* ---------------- Utilities ---------------- */
+    cos_object_init(pco, &cos_generic_procs);
+    return pco;
+}
 
-private int pdfmark_write_named(P2(gx_device_pdf * pdev,
-				   const pdf_named_object * pno));
-private void pdfmark_free_named(P2(gx_device_pdf * pdev,
-				   pdf_named_object * pno));
+private void
+cos_generic_release(cos_object_t *pco, gs_memory_t *mem, client_name_t cname)
+{
+    /* Do nothing. */
+}
 
-/* ------ Public ------ */
-
-/*
- * Look up an object name.  Return e_rangecheck if the syntax is invalid.
- * If the object is missing, then:
- *      - If create is false, return gs_error_undefined;
- *      - If create is true, create the object and return 1.
- * Note that there is code in gdevpdf.c that relies on the fact that
- * the named_objects list is sorted by decreasing object number.
- */
 private int
-pdfmark_find_named(gx_device_pdf * pdev, const gs_param_string * pname,
-		   pdf_named_object ** ppno, bool create)
+cos_generic_write(const cos_object_t *pco, gx_device_pdf *pdev)
 {
-    const byte *data = pname->data;
-    uint size = pname->size;
-    gs_id key_id =
-    (size == 0 ? 0 : data[0] + data[size / 2] + data[size - 1]);
-    pdf_resource **plist =
-    &pdev->resources[resourceNamedObject].
-    chains[gs_id_hash(key_id) % num_resource_chains];
-    pdf_named_object *pno = (pdf_named_object *) * plist;
-
-    if (!pdfmark_objname_is_valid(data, size))
-	return_error(gs_error_rangecheck);
-    for (; pno; pno = pno->next)
-	if (!bytes_compare(data, size, pno->key.data, pno->key.size)) {
-	    *ppno = pno;
-	    return 0;
-	}
-    if (!create)
-	return_error(gs_error_undefined);
-    {
-	gs_memory_t *mem = pdev->pdf_memory;
-	byte *key = gs_alloc_string(mem, size, "pdf named object key");
-	pdf_resource *pres;
-	int code;
-
-	if (key == 0)
-	    return_error(gs_error_VMerror);
-	code = pdf_alloc_resource(pdev, resourceNamedObject, key_id, &pres);
-	if (code < 0) {
-	    gs_free_string(mem, key, size, "pdf named object key");
-	    return code;
-	}
-	pno = (pdf_named_object *) pres;
-	memcpy(key, data, size);
-	pno->id = pdf_obj_ref(pdev);
-	pno->type = named_unknown;	/* caller may change */
-	pno->key.data = key;
-	pno->key.size = size;
-	pno->elements = 0;
-	pno->open = true;
-	/* For now, just link the object onto the private list. */
-	pno->next = pdev->named_objects;
-	pdev->named_objects = pno;
-	*ppno = pno;
-	return 1;
-    }
+    return_error(gs_error_Fatal);
 }
 
-/* Replace object names with object references in a (parameter) string. */
-private const byte *
-pdfmark_next_object(const byte * scan, const byte * end, const byte ** pname,
-		    pdf_named_object ** ppno, gx_device_pdf * pdev)
-{				/*
-				 * Starting at scan, find the next object reference, set *pname
-				 * to point to it in the string, store the object at *ppno,
-				 * and return a pointer to the first character beyond the
-				 * reference.  If there are no more object references, set
-				 * *pname = end and return end.
-				 */
-    const byte *left;
-    const byte *lit;
-    const byte *right;
+/* ------ Arrays ------ */
 
-    *ppno = 0;
-top:
-    left = (const byte *)memchr(scan, '{', end - scan);
-    if (left == 0)
-	return (*pname = end);
-    lit = (const byte *)memchr(scan, '(', left - scan);
-    if (lit) {
-	/* Skip over the string. */
-	byte buf[50];		/* size is arbitrary */
-	stream_cursor_read r;
-	stream_cursor_write w;
-	stream_PSSD_state ss;
-	int status;
+private cos_proc_release(cos_array_release);
+private cos_proc_write(cos_array_write);
+const cos_object_procs_t cos_array_procs = {
+    cos_array_release, cos_array_write
+};
 
-	s_PSSD_init_inline(&ss);
-	r.ptr = lit - 1;
-	r.limit = end - 1;
-	w.limit = buf + sizeof(buf) - 1;
-	do {
-	    w.ptr = buf - 1;
-	    status = (*s_PSSD_template.process)
-		((stream_state *) & ss, &r, &w, true);
-	}
-	while (status == 1);
-	scan = r.ptr + 1;
-	goto top;
-    }
-    right = (const byte *)memchr(left + 1, '}', end - (left + 1));
-    if (right == 0)		/* malformed name */
-	return (*pname = end);
-    *pname = left;
-    ++right;
-    {
-	gs_param_string sname;
-
-	sname.data = left;
-	sname.size = right - left;
-	pdfmark_find_named(pdev, &sname, ppno, false);
-    }
-    return right;
-}
-int
-pdfmark_replace_names(gx_device_pdf * pdev, const gs_param_string * from,
-		      gs_param_string * to)
+cos_array_t *
+cos_array_alloc(gs_memory_t *mem, client_name_t cname)
 {
-    const byte *start = from->data;
-    const byte *end = start + from->size;
-    const byte *scan;
-    uint size = 0;
-    pdf_named_object *pno;
-    bool any = false;
-    byte *sto;
-    char ref[1 + 10 + 5 + 1];	/* max obj number is 10 digits */
+    cos_array_t *pca =
+	gs_alloc_struct(mem, cos_array_t, &st_cos_object, cname);
 
-    /* Do a first pass to compute the length of the result. */
-    for (scan = start; scan < end;) {
-	const byte *sname;
-	const byte *next =
-	pdfmark_next_object(scan, end, &sname, &pno, pdev);
-
-	size += sname - scan;
-	if (pno) {
-	    sprintf(ref, " %ld 0 R ", pno->id);
-	    size += strlen(ref);
-	}
-	scan = next;
-	any |= next != sname;
-    }
-    to->persistent = true;	/* ??? */
-    if (!any) {
-	to->data = start;
-	to->size = size;
-	return 0;
-    }
-    sto = gs_alloc_bytes(pdev->pdf_memory, size,
-			 "pdfmark_replace_names");
-    if (sto == 0)
-	return_error(gs_error_VMerror);
-    to->data = sto;
-    to->size = size;
-    /* Do a second pass to do the actual substitutions. */
-    for (scan = start; scan < end;) {
-	const byte *sname;
-	const byte *next =
-	pdfmark_next_object(scan, end, &sname, &pno, pdev);
-	uint copy = sname - scan;
-	int rlen;
-
-	memcpy(sto, scan, copy);
-	sto += copy;
-	if (pno) {
-	    sprintf(ref, " %ld 0 R ", pno->id);
-	    rlen = strlen(ref);
-	    memcpy(sto, ref, rlen);
-	    sto += rlen;
-	}
-	scan = next;
-    }
-    return 0;
+    cos_object_init((cos_object_t *)pca, &cos_array_procs);
+    return pca;
 }
 
-/* Write and free an entire list of named objects. */
-int
-pdfmark_write_and_free_named(gx_device_pdf * pdev, pdf_named_object ** ppno)
+private void
+cos_array_release(cos_object_t *pco, gs_memory_t *mem, client_name_t cname)
 {
-    pdf_named_object *pno = *ppno;
-    pdf_named_object *next;
+    cos_array_t *const pca = (cos_array_t *)pco;
+    cos_array_element_t *cur;
+    cos_array_element_t *next;
 
-    for (; pno; pno = next) {
-	next = pno->next;
-	pdfmark_write_named(pdev, pno);
-	pdfmark_free_named(pdev, pno);
+    for (cur = pca->elements; cur; cur = next) {
+	next = cur->next;
+	cos_value_free(&cur->value, mem, cname);
+	gs_free_object(mem, cur, cname);
     }
-    *ppno = 0;
-    return 0;
+    pca->elements = 0;
 }
 
-/* ------ Private ------ */
-
-/* Put an element of an array object. */
 private int
-pdf_named_array_put(gx_device_pdf * pdev, pdf_named_object * pno, int index,
-		    const gs_param_string * pvalue)
-{
-    gs_memory_t *mem = pdev->pdf_memory;
-    pdf_named_element **ppne = &pno->elements;
-    pdf_named_element *pne;
-    pdf_named_element *pnext;
-    gs_string value;
-
-    while ((pnext = *ppne) != 0 && pnext->key.size > index)
-	ppne = &pnext->next;
-    value.data = gs_alloc_string(mem, pvalue->size, "named array value");
-    if (value.data == 0)
-	return_error(gs_error_VMerror);
-    value.size = pvalue->size;
-    if (pnext && pnext->key.size == index) {
-	/* We're replacing an existing element. */
-	gs_free_string(mem, pnext->value.data, pnext->value.size,
-		       "named array old value");
-	pne = pnext;
-    } else {
-	/* Create a new element. */
-	pne = gs_alloc_struct(mem, pdf_named_element, &st_pdf_named_element,
-			      "named array element");
-	if (pne == 0) {
-	    gs_free_string(mem, value.data, value.size, "named array value");
-	    return_error(gs_error_VMerror);
-	}
-	pne->key.data = 0;
-	pne->key.size = index;
-	pne->next = pnext;
-	*ppne = pne;
-    }
-    memcpy(value.data, pvalue->data, value.size);
-    pne->value = value;
-    return 0;
-}
-
-/* Put an element of a dictionary object. */
-private int
-pdf_named_dict_put(gx_device_pdf * pdev, pdf_named_object * pno,
-	       const gs_param_string * pkey, const gs_param_string * pvalue)
-{
-    gs_memory_t *mem = pdev->pdf_memory;
-    pdf_named_element **ppne = &pno->elements;
-    pdf_named_element *pne;
-    pdf_named_element *pnext;
-    gs_string value;
-
-    while ((pnext = *ppne) != 0 &&
-	   bytes_compare(pnext->key.data, pnext->key.size,
-			 pkey->data, pkey->size)
-	)
-	ppne = &pnext->next;
-    value.data = gs_alloc_string(mem, pvalue->size, "named dict value");
-    if (value.data == 0)
-	return_error(gs_error_VMerror);
-    value.size = pvalue->size;
-    if (pnext) {
-	/* We're replacing an existing element. */
-	gs_free_string(mem, pnext->value.data, pnext->value.size,
-		       "named array old value");
-	pne = pnext;
-    } else {
-	/* Create a new element. */
-	gs_string key;
-
-	key.data = gs_alloc_string(mem, pkey->size, "named dict key");
-	key.size = pkey->size;
-	pne = gs_alloc_struct(mem, pdf_named_element, &st_pdf_named_element,
-			      "named dict element");
-	if (key.data == 0 || pne == 0) {
-	    gs_free_object(mem, pne, "named dict element");
-	    if (key.data)
-		gs_free_string(mem, key.data, key.size, "named dict key");
-	    gs_free_string(mem, value.data, value.size, "named dict value");
-	    return_error(gs_error_VMerror);
-	}
-	pne->key = key;
-	memcpy(key.data, pkey->data, key.size);
-	pne->next = pnext;
-	*ppne = pne;
-    }
-    memcpy(value.data, pvalue->data, value.size);
-    pne->value = value;
-    return 0;
-}
-
-/* Write out the definition of a named object. */
-private pdf_named_element *
-pdf_reverse_elements(pdf_named_element * pne)
-{
-    pdf_named_element *prev = NULL;
-    pdf_named_element *next;
-
-    for (; pne; pne = next)
-	next = pne->next, pne->next = prev, prev = pne;
-    return prev;
-}
-private int
-pdfmark_write_named(gx_device_pdf * pdev, const pdf_named_object * pno)
+cos_array_write(const cos_object_t *pco, gx_device_pdf *pdev)
 {
     stream *s = pdev->strm;
-    pdf_named_element *pne = pno->elements;
+    const cos_array_t *const pca = (const cos_array_t *)pco;
+    cos_array_element_t *last;
+    cos_array_element_t *next;
+    cos_array_element_t *pcae;
+    uint last_index = 0;
 
-    switch (pno->type) {
-	case named_array:{
-		uint last_index = 0;
-		pdf_named_element *last = pne = pdf_reverse_elements(pne);
-
-		pdf_open_obj(pdev, pno->id);
-		pputs(s, "[");
-		for (; pne; ++last_index, pne = pne->next) {
-		    for (; pne->key.size > last_index; ++last_index)
-			pputs(s, "null\n");
-		    pdf_put_value(pdev, pne->value.data, pne->value.size);
-		    pputc(s, '\n');
-		}
-		pdf_reverse_elements(last);
-		pputs(s, "]");
-	    }
-	    break;
-	case named_dict:
-	    pdf_open_obj(pdev, pno->id);
-	    pputs(s, "<<");
-	    for (; pne; pne = pne->next) {
-		pdf_put_value(pdev, pne->key.data, pne->key.size);
-		pputc(s, ' ');
-		pdf_put_value(pdev, pne->value.data, pne->value.size);
-		pputc(s, '\n');
-	    }
-	    pputs(s, ">>");
-	    break;
-	case named_stream:{
-		pdf_named_element *last = pne = pdf_reverse_elements(pne);
-
-/****** NYI ******/
-#if 0
-		pdf_open_stream(pdev, pno->id);
-/****** DOESN'T EXIST ******/
-		for (; pne; pne = pne->next)
-		    pwrite(s, pne->value.data, pne->value.size);
-		pdf_close_stream(pdev);
-/****** DITTO ******/
-#endif
-		pdf_reverse_elements(last);
-	    }
-	    break;
-/****** WHAT TO DO WITH GRAPHICS/UNDEFINED? ******/
-	default:
-	    return 0;
+    pputs(s, "[");
+    /* Reverse the elements temporarily. */
+    for (pcae = pca->elements, last = NULL; pcae; pcae = next)
+	next = pcae->next, pcae->next = last, last = pcae;
+    for (pcae = last; pcae; ++last_index, pcae = pcae->next) {
+	for (; pcae->index > last_index; ++last_index)
+	    pputs(s, "null\n");
+	cos_value_write(&pcae->value, pdev);
+	pputc(s, '\n');
     }
-    pdf_end_obj(pdev);
+    /* Reverse the elements back. */
+    for (pcae = last, last = NULL; pcae; pcae = next)
+	next = pcae->next, pcae->next = last, last = pcae;
+    pputs(s, "]");
     return 0;
 }
 
-/* Free the definition of a named object. */
+/* Put/add an element in/to an array. */
+int
+cos_array_put(cos_array_t *pca, gx_device_pdf *pdev, long index,
+	      const cos_value_t *pvalue)
+{
+    gs_memory_t *mem = pdev->pdf_memory;
+    cos_array_element_t **ppcae = &pca->elements;
+    cos_array_element_t *pcae;
+    cos_array_element_t *next;
+    cos_value_t value;
+    int code;
+
+    code = cos_copy_element_value(&value, mem, pvalue);
+    if (code < 0)
+	return code;
+    while ((next = *ppcae) != 0 && next->index > index)
+	ppcae = &next->next;
+    if (next && next->index == index) {
+	/* We're replacing an existing element. */
+	cos_value_free(&next->value, mem, "cos_array_put(old value)");
+	pcae = next;
+    } else {
+	/* Create a new element. */
+	pcae = gs_alloc_struct(mem, cos_array_element_t, &st_cos_array_element,
+			       "cos_array_put(element)");
+	if (pcae == 0) {
+	    gs_free_object(mem, pcae, "cos_array_put(element)");
+	    cos_uncopy_element_value(&value, mem);
+	    return_error(gs_error_VMerror);
+	}
+	pcae->index = index;
+	pcae->next = next;
+	*ppcae = pcae;
+    }
+    pcae->value = value;
+    return 0;
+}
+int
+cos_array_add(cos_array_t *pca, gx_device_pdf *pdev, const cos_value_t *pvalue)
+{
+    return cos_array_put(pca, pdev,
+			 (pca->elements ? pca->elements->index + 1 : 0L),
+			 pvalue);
+}
+
+/* ------ Dictionaries ------ */
+
+private cos_proc_release(cos_dict_release);
+private cos_proc_write(cos_dict_write);
+const cos_object_procs_t cos_dict_procs = {
+    cos_dict_release, cos_dict_write
+};
+
+cos_dict_t *
+cos_dict_alloc(gs_memory_t *mem, client_name_t cname)
+{
+    cos_dict_t *pcd =
+	gs_alloc_struct(mem, cos_dict_t, &st_cos_object, cname);
+
+    cos_object_init((cos_object_t *)pcd, &cos_dict_procs);
+    return pcd;
+}
+
 private void
-pdfmark_free_named(gx_device_pdf * pdev, pdf_named_object * pno)
+cos_dict_release(cos_object_t *pco, gs_memory_t *mem, client_name_t cname)
 {
-    pdf_named_element *pne = pno->elements;
-    pdf_named_element *next;
+    cos_dict_t *const pcd = (cos_dict_t *)pco;
+    cos_dict_element_t *cur;
+    cos_dict_element_t *next;
 
-    for (; pne; pne = next) {
-	next = pne->next;
-	gs_free_string(pdev->pdf_memory, pne->value.data, pne->value.size,
-		       "named object element value");
-	if (pne->key.data)
-	    gs_free_string(pdev->pdf_memory, pne->key.data, pne->key.size,
-			   "named object element key");
+    for (cur = pcd->elements; cur; cur = next) {
+	next = cur->next;
+	cos_value_free(&cur->value, mem, cname);
+	gs_free_string(mem, cur->key.data, cur->key.size, cname);
+	gs_free_object(mem, cur, cname);
     }
-    gs_free_string(pdev->pdf_memory, pno->key.data, pno->key.size,
-		   "named object key");
-    gs_free_object(pdev->pdf_memory, pno, "named object");
+    pcd->elements = 0;
 }
 
-/* ---------------- Individual pdfmarks ---------------- */
-
-/* [ /BBox [llx lly urx ury] /_objdef {obj} /BP pdfmark */
+/* Write the elements of a dictionary.  (This procedure is exported.) */
 private int
-pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
-	   const gs_matrix * pctm, const gs_param_string * objname)
+cos_elements_write(stream *s, const cos_dict_element_t *pcde,
+		   gx_device_pdf *pdev)
 {
-    gs_rect bbox;
-    pdf_named_object *pno;
-    int code;
+    /* Temporarily replace the output stream in pdev. */
+    stream *save = pdev->strm;
 
-    if (objname == 0 || count != 2 || !pdf_key_eq(&pairs[0], "BBox"))
-	return_error(gs_error_rangecheck);
-    if (sscanf((const char *)pairs[1].data, "[%lg %lg %lg %lg]",
-	       &bbox.p.x, &bbox.p.y, &bbox.q.x, &bbox.q.y) != 4
-	)
-	return_error(gs_error_rangecheck);
-    code = pdfmark_find_named(pdev, objname, &pno, true);
-    if (code < 0)
-	return code;
-    if (pno->type != named_unknown)
-	return_error(gs_error_rangecheck);
-    code = pdf_named_dict_put(pdev, pno, &pairs[0], &pairs[1]);
-    if (code < 0)
-	return code;
-    pno->type = named_graphics;
-    pno->graphics.enclosing = pdev->open_graphics;
-    pdev->open_graphics = pno;
-/****** NYI ******/
-    return 0;
-}
-
-/* [ /EP pdfmark */
-private int
-pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
-	   const gs_matrix * pctm, const gs_param_string * no_objname)
-{
-    pdf_named_object *pno = pdev->open_graphics;
-
-    if (count != 0 || pno == 0 || pno->type != named_graphics ||
-	!pno->open
-	)
-	return_error(gs_error_rangecheck);
-    pno->open = false;
-    pdev->open_graphics = pno->graphics.enclosing;
-/****** NYI ******/
-    return 0;
-}
-
-/* [ {obj} /SP pdfmark */
-private int
-pdfmark_SP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
-	   const gs_matrix * pctm, const gs_param_string * no_objname)
-{
-    pdf_named_object *pno;
-    int code;
-
-    if (count != 1)
-	return_error(gs_error_rangecheck);
-    if ((code = pdfmark_find_named(pdev, &pairs[0], &pno, false)) < 0)
-	return code;
-    if (pno->type != named_graphics || pno->open)
-	return_error(gs_error_rangecheck);
-    code = pdf_open_contents(pdev, pdf_in_stream);
-    if (code < 0)
-	return code;
-    pdf_put_matrix(pdev, "q ", pctm, "cm\n");
-    pprintld1(pdev->strm, "/R%ld Do Q\n", pno->id);
-    return 0;
-}
-
-/* [ /_objdef {array} /type /array /OBJ pdfmark */
-/* [ /_objdef {dict} /type /dict /OBJ pdfmark */
-/* [ /_objdef {stream} /type /stream /OBJ pdfmark */
-private int
-pdfmark_OBJ(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
-	    const gs_matrix * pctm, const gs_param_string * objname)
-{
-    pdf_named_object_type type;
-    pdf_named_object *pno;
-    int code;
-
-    if (objname == 0 || count != 2 || !pdf_key_eq(&pairs[0], "type"))
-	return_error(gs_error_rangecheck);
-    if (pdf_key_eq(&pairs[1], "/array"))
-	type = named_array;
-    else if (pdf_key_eq(&pairs[1], "/dict"))
-	type = named_dict;
-    else if (pdf_key_eq(&pairs[1], "/stream"))
-	type = named_stream;
-    else
-	return_error(gs_error_rangecheck);
-    if ((code = pdfmark_find_named(pdev, objname, &pno, true)) < 0)
-	return code;
-    if (pno->type != named_unknown)
-	return_error(gs_error_rangecheck);
-    pno->type = type;
-    return 0;
-}
-
-/* [ {array} index value /PUT pdfmark */
-/* [ {stream} string|file /PUT pdfmark */
-/* Dictionaries are converted to .PUTDICT */
-private int
-pdfmark_PUT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
-	    const gs_matrix * pctm, const gs_param_string * no_objname)
-{
-    pdf_named_object *pno;
-    int code;
-
-    if ((code = pdfmark_find_named(pdev, &pairs[0], &pno, false)) < 0)
-	return code;
-    switch (pno->type) {
-	case named_array:{
-		int index;
-
-		if (count != 3)
-		    return_error(gs_error_rangecheck);
-		if ((code = pdfmark_scan_int(&pairs[1], &index)) < 0)
-		    return code;
-		if (index < 0)
-		    return_error(gs_error_rangecheck);
-		code = pdf_named_array_put(pdev, pno, index, pairs + 2);
-		break;
-	    }
-	case named_stream:
-	    if (count != 2)
-		return_error(gs_error_rangecheck);
-/****** NYI ******/
-	    break;
-	default:
-	    return_error(gs_error_rangecheck);
+    pdev->strm = s;
+    for (; pcde; pcde = pcde->next) {
+	pdf_write_value(pdev, pcde->key.data, pcde->key.size);
+	pputc(s, ' ');
+	cos_value_write(&pcde->value, pdev);
+	pputc(s, '\n');
     }
-    return code;
+    pdev->strm = save;
+    return 0;
+}
+int
+cos_dict_elements_write(const cos_dict_t *pcd, gx_device_pdf *pdev)
+{
+    return cos_elements_write(pdev->strm, pcd->elements, pdev);
 }
 
-/* [ {dict} key value ... /.PUTDICT pdfmark */
 private int
-pdfmark_PUTDICT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
-		const gs_matrix * pctm, const gs_param_string * no_objname)
+cos_dict_write(const cos_object_t *pco, gx_device_pdf *pdev)
 {
-    pdf_named_object *pno;
-    int code, i;
+    stream *s = pdev->strm;
 
-    if ((code = pdfmark_find_named(pdev, &pairs[0], &pno, false)) < 0)
-	return code;
-    if (!(count & 1) || pno->type != named_dict)
-	return_error(gs_error_rangecheck);
-    for (i = 1; code >= 0 && i < count; i += 2)
-	code = pdf_named_dict_put(pdev, pno, pairs + i, pairs + i + 1);
-    return code;
+    pputs(s, "<<");
+    cos_dict_elements_write((const cos_dict_t *)pco, pdev);
+    pputs(s, ">>");
+    return 0;
 }
 
-/* [ {array} index value ... /.PUTINTERVAL pdfmark */
-private int
-pdfmark_PUTINTERVAL(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
-		 const gs_matrix * pctm, const gs_param_string * no_objname)
+/* Put an element in a dictionary. */
+int
+cos_dict_put(cos_dict_t *pcd, gx_device_pdf *pdev, const byte *key_data,
+	     uint key_size, const cos_value_t *pvalue)
 {
-    pdf_named_object *pno;
-    int code, index, i;
-
-    if ((code = pdfmark_find_named(pdev, &pairs[0], &pno, false)) < 0)
-	return code;
-    if (count < 2 || pno->type != named_array)
-	return_error(gs_error_rangecheck);
-    if ((code = pdfmark_scan_int(&pairs[1], &index)) < 0)
-	return code;
-    if (index < 0)
-	return_error(gs_error_rangecheck);
-    for (i = 2; code >= 0 && i < count; ++i)
-	code = pdf_named_array_put(pdev, pno, index + i - 2, &pairs[i]);
-    return code;
-}
-
-/* [ {stream} /CLOSE pdfmark */
-private int
-pdfmark_CLOSE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
-	      const gs_matrix * pctm, const gs_param_string * no_objname)
-{
-    pdf_named_object *pno;
+    gs_memory_t *mem = pdev->pdf_memory;
+    cos_dict_element_t **ppcde = &pcd->elements;
+    cos_dict_element_t *pcde;
+    cos_dict_element_t *next;
+    cos_value_t value;
     int code;
 
-    if (count != 1)
-	return_error(gs_error_rangecheck);
-    if ((code = pdfmark_find_named(pdev, &pairs[0], &pno, false)) < 0)
+    code = cos_copy_element_value(&value, mem, pvalue);
+    if (code < 0)
 	return code;
-    if (pno->type != named_stream || !pno->open)
-	return_error(gs_error_rangecheck);
-    /* Currently we don't do anything special when closing a stream. */
-    pno->open = false;
+    while ((next = *ppcde) != 0 &&
+	   bytes_compare(next->key.data, next->key.size, key_data, key_size)
+	   )
+	ppcde = &next->next;
+    if (next) {
+	/* We're replacing an existing element. */
+	cos_value_free(&next->value, mem, "cos_dict_put(old value)");
+	pcde = next;
+    } else {
+	/* Create a new element. */
+	byte *copied_key_data;
+
+	copied_key_data = gs_alloc_string(mem, key_size, "cos_dict_put(key)");
+	pcde = gs_alloc_struct(mem, cos_dict_element_t, &st_cos_dict_element,
+			       "cos_dict_put(element)");
+	if (copied_key_data == 0 || pcde == 0) {
+	    gs_free_object(mem, pcde, "cos_dict_put(element)");
+	    if (copied_key_data)
+		gs_free_string(mem, copied_key_data, key_size,
+			       "cos_dict_put(key)");
+	    cos_uncopy_element_value(&value, mem);
+	    return_error(gs_error_VMerror);
+	}
+	pcde->key.data = copied_key_data;
+	pcde->key.size = key_size;
+	memcpy(copied_key_data, key_data, key_size);
+	pcde->next = next;
+	*ppcde = pcde;
+    }
+    pcde->value = value;
     return 0;
+}
+int
+cos_dict_put_string(cos_dict_t *pcd, gx_device_pdf *pdev, const byte *key_data,
+		    uint key_size, const byte *value_data, uint value_size)
+{
+    cos_value_t cvalue;
+
+    return cos_dict_put(pcd, pdev, key_data, key_size,
+			cos_string_value(&cvalue, value_data, value_size));
+}
+int
+cos_dict_put_c_strings(cos_dict_t *pcd, gx_device_pdf *pdev,
+		       const char *key, const char *value)
+{
+    cos_value_t cvalue;
+
+    return cos_dict_put(pcd, pdev, (const byte *)key, strlen(key),
+			cos_c_string_value(&cvalue, value));
+}
+
+/* Look up a key in a dictionary. */
+const cos_value_t *
+cos_dict_find(const cos_dict_t *pcd, const byte *key_data, uint key_size)
+{
+    cos_dict_element_t *pcde = pcd->elements;
+
+    for (; pcde; pcde = pcde->next)
+	if (!bytes_compare(key_data, key_size, pcde->key.data, pcde->key.size))
+	    return &pcde->value;
+    return 0;
+}
+
+/* ------ Streams ------ */
+
+private cos_proc_release(cos_stream_release);
+private cos_proc_write(cos_stream_write);
+const cos_object_procs_t cos_stream_procs = {
+    cos_stream_release, cos_stream_write
+};
+
+cos_stream_t *
+cos_stream_alloc(gs_memory_t *mem, client_name_t cname)
+{
+    cos_stream_t *pcs =
+	gs_alloc_struct(mem, cos_stream_t, &st_cos_object, cname);
+
+    cos_object_init((cos_object_t *)pcs, &cos_stream_procs);
+    return pcs;
+}
+
+private void
+cos_stream_release(cos_object_t *pco, gs_memory_t *mem, client_name_t cname)
+{
+    cos_stream_t *const pcs = (cos_stream_t *)pco;
+    cos_stream_piece_t *cur;
+    cos_stream_piece_t *next;
+
+    for (cur = pcs->pieces; cur; cur = next) {
+	next = cur->next;
+	gs_free_object(mem, cur, cname);
+    }
+    pcs->pieces = 0;
+    cos_dict_release(pco, mem, cname);
+}
+
+/* Write the (dictionary) elements of a stream. */
+/* (This procedure is exported.) */
+int
+cos_stream_elements_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
+{
+    return cos_elements_write(pdev->strm, pcs->elements, pdev);
+}
+
+private int
+cos_stream_write(const cos_object_t *pco, gx_device_pdf *pdev)
+{
+    stream *s = pdev->strm;
+    const cos_stream_t *const pcs = (const cos_stream_t *)pco;
+    cos_stream_piece_t *last;
+    cos_stream_piece_t *next;
+    cos_stream_piece_t *pcsp = pcs->pieces;
+    FILE *sfile = pdev->streams.file;
+    long end_pos;
+    long length;
+    int code;
+
+    /****** DOESN'T ENCODE OR COMPRESS YET ******/
+
+    sflush(pdev->streams.strm);
+    end_pos = ftell(sfile);
+
+    /* Do a first pass to calculate the length. */
+    {
+	stream poss;
+
+	swrite_position_only(&poss);
+	for (length = stell(&poss); pcsp; pcsp = pcsp->next)
+	    length += pcsp->size;
+    }
+
+    /* Now write the stream. */
+    pputs(s, "<<");
+    cos_elements_write(s, pcs->elements, pdev);
+    pprintld1(s, "/Length %ld>>stream\n", length);
+    /* Reverse the elements temporarily. */
+    for (pcsp = pcs->pieces, last = NULL; pcsp; pcsp = next)
+	next = pcsp->next, pcsp->next = last, last = pcsp;
+    for (pcsp = last, code = 0; pcsp && code >= 0; pcsp = pcsp->next) {
+	fseek(sfile, pcsp->position, SEEK_SET);
+	pdf_copy_data(s, sfile, pcsp->size);
+    }
+    /* Reverse the elements back. */
+    for (pcsp = last, last = NULL; pcsp; pcsp = next)
+	next = pcsp->next, pcsp->next = last, last = pcsp;
+    pputs(s, "endstream\n");
+
+    fseek(sfile, end_pos, SEEK_SET);
+    return code;
+}
+
+/* Put an element in a stream's dictionary. */
+int
+cos_stream_put(cos_stream_t *pcs, gx_device_pdf *pdev, const byte *key_data,
+	       uint key_size, const cos_value_t *pvalue)
+{
+    return cos_dict_put((cos_dict_t *)pcs, pdev, key_data, key_size, pvalue);
+}
+int
+cos_stream_put_c_strings(cos_stream_t *pcs, gx_device_pdf *pdev,
+			 const char *key, const char *value)
+{
+    return cos_dict_put_c_strings((cos_dict_t *)pcs, pdev, key, value);
+}
+
+/* Add a contents piece to a stream object: size bytes just written on */
+/* streams.strm. */
+int
+cos_stream_add(cos_stream_t *pcs, gx_device_pdf * pdev, uint size)
+{
+    stream *s = pdev->streams.strm;
+    long position = stell(s);
+    cos_stream_piece_t *prev = pcs->pieces;
+
+    /* Check for consecutive writing -- just an optimization. */
+    if (prev != 0 && prev->position + prev->size + size == position) {
+	prev->size += size;
+    } else {
+	gs_memory_t *mem = pdev->pdf_memory;
+	cos_stream_piece_t *pcsp =
+	    gs_alloc_struct(mem, cos_stream_piece_t, &st_cos_stream_piece,
+			    "cos_stream_add");
+
+	if (pcsp == 0)
+	    return_error(gs_error_VMerror);
+	pcsp->position = position - size;
+	pcsp->size = size;
+	pcsp->next = pcs->pieces;
+	pcs->pieces = pcsp;
+    }
+    return 0;
+}
+
+/* Add bytes to a stream object. */
+int
+cos_stream_add_bytes(cos_stream_t *pcs, gx_device_pdf * pdev,
+		     const byte *data, uint size)
+{
+    pwrite(pdev->streams.strm, data, size);
+    return cos_stream_add(pcs, pdev, size);
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -319,7 +319,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	 */
 	if (pcpath) {
 	    dev = (gx_device *) & cdev;
-	    gx_make_clip_device(&cdev, &cdev, gx_cpath_list(pcpath));
+	    gx_make_clip_device(&cdev, gx_cpath_list(pcpath));
 	    cdev.target = save_dev;
 	    cdev.max_fill_band = save_dev->max_fill_band;
 	    (*dev_proc(dev, open_device)) (dev);

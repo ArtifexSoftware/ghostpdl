@@ -31,6 +31,7 @@ Guide to Ghostscript source code
 <li><a href="#Drivers">Device drivers</a>
 <li><a href="#Platform_specific_code">Platform-specific code</a>
 </ul>
+<li><a href="#Makefiles">Makefiles</a>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] ------------------------------------------- -->
@@ -274,6 +275,105 @@ systems, check the *<b><tt>_.h</tt></b> files for <b><tt>ifdef</tt></b> on
 things other than <b><tt>DEBUG</tt></b>.  You should probably plan to make
 a new makefile and a new <b><tt>gp_</tt></b>XXX<b><tt>.c</tt></b> file.
 
+<hr>
+
+<h1><a name="Makefiles"></a>Makefiles</h1>
+
+<p>
+This section is only for advanced developers who need to integrate
+Ghostscript into a larger program at build time.
+
+<p>
+NOTE: THIS SECTION IS INCOMPLETE.  IT WILL BE IMPROVED IN A LATER REVISION.
+
+<p>
+The Ghostscript makefiles are meant to be organized according to the
+following two principles:
+
+<ul>
+
+<p>
+<li>All the parameters that vary from platform to platform appear in the
+top-level makefile for a given platform.  ("Platform" = OS + compiler +
+choice of interpreter vs. library)
+
+<p>
+<li>All the rules and definitions that can meaningfully be shared among more
+than 1 platform appear in a makefile that is "included" by a makefile
+(normally the top-level makefile) for those platforms.
+</ul>
+
+<p>
+Thus, for example:
+
+<ul>
+
+<p>
+<li>Rules and definitions shared by all builds are in
+<b><tt>gs.mak</tt></b>.
+
+<p>
+<li>Rules and definitions specific to the library (on all platforms) are in
+<b><tt>lib.mak</tt></b>.  In principle this could be merged with
+<b><tt>gs.mak</tt></b>, but we wanted to leave open the possibility that
+<b><tt>gs.mak</tt></b> might be useful with hypothetical interpreter-only
+products.
+
+<p>
+<li>Stuff specific to interpreters (on all platforms) is in
+<b><tt>int.mak</tt></b>.
+
+<p>
+<li>Stuff specific to all Unix platforms should be in a single
+<b><tt>unix.mak</tt></b> file, but because <b><tt>make</tt></b> sometimes
+cares about the order of definitions, and because some of it is shared with
+DV/X, it got split between <b><tt>unix-aux.mak</tt></b>,
+<b><tt>unix-end.mak</tt></b>, <b><tt>unixhead.mak</tt></b>,
+<b><tt>unixinst.mak</tt></b>, and <b><tt>unixlink.mak</tt></b>.
+
+</ul>
+
+<p>
+For MS-DOS and MS Windows builds, there should be:
+
+<ul>
+
+<p>
+<li>A makefile for all MS OS (DOS or Windows) builds, for all
+        compilers and products.
+
+<p>
+<li>Perhaps a makefile for all MS-DOS builds, for all compilers and
+products, although since Watcom is the only such compiler we're likely to
+support this may be overkill.
+
+<p>
+<li>A makefile for all MS Windows builds, for all compilers and products.
+
+<p>
+<li>A makefile for all Watcom builds (DOS or Windows), for all products.
+
+<p>
+<li>A top-level makefile for the Watcom DOS interpreter product.
+
+<p>
+<li>A top-level makefile for the Watcom Windows interpreter product.
+
+<p>
+<li>A top-level makefile for the Watcom DOS library "product".
+
+<p>
+<li>A top-level makefile for the Watcom Windows library "product".
+
+<p>
+<li>A makefile for all Borland builds (DOS or Windows), for all
+        products.
+
+</ul>
+
+<p>
+and so on.
+
 <!-- [2.0 end contents] ---------------------------------------------------- -->
 
 <!-- [3.0 begin visible trailer] ------------------------------------------- -->
@@ -289,7 +389,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.50, 16 September 1998
+Ghostscript version 5.91, 30 August 1999
 
 </font>
 

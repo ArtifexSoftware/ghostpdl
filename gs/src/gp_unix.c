@@ -141,19 +141,16 @@ gp_getenv_display(void)
 
 /* ------ Printer accessing ------ */
 
-/* Open a connection to a printer.  A null file name means use the */
-/* standard printer connected to the machine, if any. */
-/* "|command" opens an output pipe. */
-/* Return NULL if the connection could not be opened. */
+/* Open a connection to a printer.  See gp.h for details. */
 FILE *
 gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
+    const char *fmode = (binary_mode ? "wb" : "w");
+
     return
 	(strlen(fname) == 0 ?
-	 gp_open_scratch_file(gp_scratch_file_name_prefix, fname, "w") :
-	 fname[0] == '|' ?
-	 popen(fname + 1, "w") :
-	 fopen(fname, "w"));
+	 gp_open_scratch_file(gp_scratch_file_name_prefix, fname, fmode) :
+	 fopen(fname, fmode));
 }
 
 /* Close the connection to the printer. */

@@ -31,12 +31,14 @@
 #include "ifunc.h"
 #include "store.h"
 
-/* Define the available Function types. */
+/* Check prototypes */
+build_function_proc(gs_build_function_2);
+build_function_proc(gs_build_function_3);
 
 /* Finish building a FunctionType 2 (ExponentialInterpolation) function. */
 int
 gs_build_function_2(const ref *op, const gs_function_params_t * mnDR,
-		    int depth, gs_function_t ** ppfn)
+		    int depth, gs_function_t ** ppfn, gs_memory_t *mem)
 {
     gs_function_ElIn_params_t params;
     int code, n0, n1;
@@ -45,8 +47,8 @@ gs_build_function_2(const ref *op, const gs_function_params_t * mnDR,
     params.C0 = 0;
     params.C1 = 0;
     if ((code = dict_float_param(op, "N", 0.0, &params.N)) != 0 ||
-	(code = n0 = fn_build_float_array(op, "C0", false, false, &params.C0)) < 0 ||
-	(code = n1 = fn_build_float_array(op, "C1", false, false, &params.C1)) < 0
+	(code = n0 = fn_build_float_array(op, "C0", false, false, &params.C0, mem)) < 0 ||
+	(code = n1 = fn_build_float_array(op, "C1", false, false, &params.C1, mem)) < 0
 	)
 	goto fail;
     if (params.C0 == 0)
@@ -57,18 +59,18 @@ gs_build_function_2(const ref *op, const gs_function_params_t * mnDR,
 	params.n = n0;		/* either one will do */
     if (n0 != n1 || n0 != params.n)
 	goto fail;
-    code = gs_function_ElIn_init(ppfn, &params, imemory);
+    code = gs_function_ElIn_init(ppfn, &params, mem);
     if (code >= 0)
 	return 0;
 fail:
-    gs_function_ElIn_free_params(&params, imemory);
+    gs_function_ElIn_free_params(&params, mem);
     return (code < 0 ? code : gs_note_error(e_rangecheck));
 }
 
 /* Finish building a FunctionType 3 (1-Input Stitching) function. */
 int
 gs_build_function_3(const ref *op, const gs_function_params_t * mnDR,
-		    int depth, gs_function_t ** ppfn)
+		    int depth, gs_function_t ** ppfn, gs_memory_t *mem)
 {
     gs_function_1ItSg_params_t params;
     int code;
@@ -86,7 +88,7 @@ gs_build_function_3(const ref *op, const gs_function_params_t * mnDR,
 	    return (code < 0 ? code : gs_note_error(e_rangecheck));
 	check_array_only(*pFunctions);
 	params.k = r_size(pFunctions);
-	code = ialloc_function_array(params.k, &ptr);
+	code = alloc_function_array(params.k, &ptr, mem);
 	if (code < 0)
 	    return code;
 	params.Functions = (const gs_function_t * const *)ptr;
@@ -94,21 +96,21 @@ gs_build_function_3(const ref *op, const gs_function_params_t * mnDR,
 	    ref subfn;
 
 	    array_get(pFunctions, (long)i, &subfn);
-	    code = fn_build_sub_function(&subfn, &ptr[i], depth);
+	    code = fn_build_sub_function(&subfn, &ptr[i], depth, mem);
 	    if (code < 0)
 		goto fail;
 	}
     }
-    if ((code = fn_build_float_array(op, "Bounds", true, false, &params.Bounds)) != params.k - 1 ||
-	(code = fn_build_float_array(op, "Encode", true, true, &params.Encode)) != 2 * params.k
+    if ((code = fn_build_float_array(op, "Bounds", true, false, &params.Bounds, mem)) != params.k - 1 ||
+	(code = fn_build_float_array(op, "Encode", true, true, &params.Encode, mem)) != 2 * params.k
 	)
 	goto fail;
     if (params.Range == 0)
 	params.n = params.Functions[0]->params.n;
-    code = gs_function_1ItSg_init(ppfn, &params, imemory);
+    code = gs_function_1ItSg_init(ppfn, &params, mem);
     if (code >= 0)
 	return 0;
 fail:
-    gs_function_1ItSg_free_params(&params, imemory);
+    gs_function_1ItSg_free_params(&params, mem);
     return (code < 0 ? code : gs_note_error(e_rangecheck));
 }

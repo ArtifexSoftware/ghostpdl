@@ -72,14 +72,6 @@ typedef struct gs_type1_data_procs_s {
 			 gs_const_string * pcdata));
 
     /*
-     * Get the next glyph in an enumeration.  index = 0 means return the
-     * first one; a returned index of 0 means the enumeration is finished.
-     */
-
-    int (*next_glyph)(P3(gs_font_type1 *pfont, int *pindex,
-			 gs_glyph * pglyph));
-
-    /*
      * Push (a) value(s) onto the client ('PostScript') stack during
      * interpretation.  Note that this procedure and the next one take a
      * closure pointer, not the font pointer, as the first argument.

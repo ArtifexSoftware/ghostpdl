@@ -377,6 +377,7 @@ CC_=$(CC)
 CC_D=$(CC) $(CO)
 CC_INT=$(CC)
 CC_LEAF=$(CC_)
+CC_NO_WARN=$(CC_)
 
 # ------ Devices and features ------ #
 
@@ -425,7 +426,7 @@ DEVICE_DEVS7=dfaxhigh.dev dfaxlow.dev
 DEVICE_DEVS8=pcxmono.dev pcxgray.dev pcx16.dev pcx256.dev pcx24b.dev pcxcmyk.dev
 DEVICE_DEVS9=pbm.dev pbmraw.dev pgm.dev pgmraw.dev pgnm.dev pgnmraw.dev pnm.dev pnmraw.dev ppm.dev ppmraw.dev
 DEVICE_DEVS10=tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev tifflzw.dev tiffpack.dev
-DEVICE_DEVS11=bmpmono.dev bmp16.dev bmp256.dev bmp16m.dev tiff12nc.dev tiff24nc.dev
+DEVICE_DEVS11=bmpmono.dev bmpgray.dev bmp16.dev bmp256.dev bmp16m.dev tiff12nc.dev tiff24nc.dev
 DEVICE_DEVS12=psmono.dev psgray.dev bit.dev bitrgb.dev bitcmyk.dev
 DEVICE_DEVS13=pngmono.dev pnggray.dev png16.dev png256.dev png16m.dev
 DEVICE_DEVS14=jpeg.dev jpeggray.dev

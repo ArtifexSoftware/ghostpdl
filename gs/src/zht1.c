@@ -34,7 +34,7 @@
 #include "store.h"
 
 /* Dummy spot function */
-float
+private float
 spot_dummy(floatp x, floatp y)
 {
     return (x + y) / 2;

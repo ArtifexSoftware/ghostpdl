@@ -70,15 +70,16 @@ zbind(i_ctx_t *i_ctx_p)
      * Here are the invariants for the following loop:
      *      `depth' elements have been pushed on the ostack;
      *      For i < depth, p = ref_stack_index(&o_stack, i):
-     *        *p is an array (or packedarray) ref. */
+     *        *p is an array (or packedarray) ref.
+     */
     while (depth) {
 	while (r_size(bsp)) {
-	    ref *tp = bsp->value.refs;
+	    ref_packed *const tpp = (ref_packed *)bsp->value.packed; /* break const */
 
 	    r_dec_size(bsp, 1);
-	    if (r_is_packed(tp)) {
+	    if (r_is_packed(tpp)) {
 		/* Check for a packed executable name */
-		ushort elt = *(ushort *) tp;
+		ushort elt = *tpp;
 
 		if (r_packed_is_exec_name(&elt)) {
 		    ref nref;
@@ -94,15 +95,16 @@ zbind(i_ctx_t *i_ctx_p)
 			 * Always save the change, since this can only
 			 * happen once.
 			 */
-			ref_do_save(bsp, tp, "bind");
-			*(ushort *) tp =
-			    pt_tag(pt_executable_operator) +
+			ref_do_save(bsp, tpp, "bind");
+			*tpp = pt_tag(pt_executable_operator) +
 			    op_index(pvalue);
 		    }
 		}
-		bsp->value.refs = (ref *) ((ref_packed *) tp + 1);
-	    } else
-		switch (bsp->value.refs++, r_type(tp)) {
+		bsp->value.packed = tpp + 1;
+	    } else {
+		ref *const tp = bsp->value.refs++;
+
+		switch (r_type(tp)) {
 		    case t_name:	/* bind the name if an operator */
 			if (r_has_attr(tp, a_executable)) {
 			    ref *pvalue;
@@ -142,6 +144,7 @@ zbind(i_ctx_t *i_ctx_p)
 			    depth++;
 			}
 		}
+	    }
 	}
 	bsp--;
 	depth--;

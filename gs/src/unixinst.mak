@@ -61,14 +61,14 @@ install-data: man/gs.1
 	-mkdir $(gsdatadir)
 	-mkdir $(gsdatadir)/lib
 	cd lib; $(SH) -c 'for f in \
-Fontmap \
+Fontmap Fontmap.GS \
 cbjc600.ppd cbjc800.ppd *.upp \
 gs_init.ps gs_btokn.ps gs_ccfnt.ps gs_cff.ps gs_cidfn.ps gs_cmap.ps \
 gs_diskf.ps gs_dpnxt.ps gs_dps.ps gs_dps1.ps gs_dps2.ps gs_epsf.ps \
 gs_fonts.ps gs_kanji.ps gs_lev2.ps gs_ll3.ps \
 gs_pfile.ps gs_rdlin.ps gs_res.ps gs_setpd.ps gs_statd.ps \
 gs_trap.ps gs_ttf.ps gs_typ32.ps gs_typ42.ps gs_type1.ps \
-gs_dbt_e.ps gs_iso_e.ps gs_ksb_e.ps gs_std_e.ps gs_sym_e.ps \
+gs_dbt_e.ps gs_il1_e.ps gs_il2_e.ps gs_ksb_e.ps gs_std_e.ps gs_sym_e.ps \
 ht_ccbnm.ps \
 acctest.ps align.ps bdftops.ps caption.ps cid2code.ps decrypt.ps docie.ps \
 errpage.ps font2c.ps font2pcl.ps gslp.ps impath.ps \
@@ -83,7 +83,8 @@ winmaps.ps wftopfa.ps wrfont.ps zeroline.ps \
 gs_l2img.ps \
 pdf2dsc.ps \
 pdf_base.ps pdf_draw.ps pdf_font.ps pdf_main.ps pdf_ops.ps pdf_sec.ps \
-gs_mex_e.ps gs_mro_e.ps gs_pdf_e.ps gs_wan_e.ps \
+gs_lgo_e.ps gs_lgx_e.ps gs_mex_e.ps gs_mgl_e.ps gs_mro_e.ps \
+gs_pdf_e.ps gs_wan_e.ps \
 gs_pdfwr.ps ;\
 	do if ( test -f $$f ); then $(INSTALL_DATA) $$f $(gsdatadir)/lib/$$f; fi;\
 	done'
@@ -93,10 +94,11 @@ PUBLIC README \
 ps2epsi.txt \
 Bug-form.htm C-style.htm Commprod.htm Copying.htm Current.htm \
 DLL.htm Devices.htm Drivers.htm Fonts.htm \
-Helpers.htm Hershey.htm History1.htm History2.htm History3.htm History4.htm \
+Helpers.htm Hershey.htm \
+History1.htm History2.htm History3.htm History4.htm History5.htm \
 Htmstyle.htm Humor.htm Install.htm Language.htm Lib.htm Make.htm New-user.htm \
-News.htm Ps2pdf.htm Psfiles.htm Public.htm \
-Readme.htm Source.htm Unix-lpr.htm Use.htm Xfonts.htm ;\
+News.htm Ps2pdf.htm Psfiles.htm Public.htm Readme.htm Release.htm \
+Source.htm Tester.htm Unix-lpr.htm Use.htm Xfonts.htm ;\
 	do if ( test -f $$f ); then $(INSTALL_DATA) $$f $(docdir)/$$f; fi;\
 	done'
 	-mkdir $(exdir)

@@ -78,14 +78,14 @@ GS=gs386
 # source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-BINDIR=.\bin
-GLSRCDIR=.\src
-GLGENDIR=.\obj
-GLOBJDIR=.\obj
-PSSRCDIR=.\src
-PSLIBDIR=.\lib
-PSGENDIR=.\obj
-PSOBJDIR=.\obj
+BINDIR=bin
+GLSRCDIR=src
+GLGENDIR=obj
+GLOBJDIR=obj
+PSSRCDIR=src
+PSLIBDIR=lib
+PSGENDIR=obj
+PSOBJDIR=obj
 
 # Do not edit the next group of lines.
 NUL=
@@ -206,8 +206,13 @@ FILE_IMPLEMENTATION=stdio
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
-DEVICE_DEVS=$(DD)vga.dev $(DD)ega.dev $(DD)svga16.dev
-DEVICE_DEVS1=$(DD)atiw.dev $(DD)tseng.dev $(DD)tvga.dev
+# ****** NOTE: the PC frame buffer devices won't compile with the binnt
+# ****** compiler.  If you know what needs to be changed, let us know!
+# ****** Probably it's just a compiler command line switch.
+#DEVICE_DEVS=$(DD)vga.dev $(DD)ega.dev $(DD)svga16.dev
+DEVICE_DEVS=
+#DEVICE_DEVS1=$(DD)atiw.dev $(DD)tseng.dev $(DD)tvga.dev
+DEVICE_DEVS1=
 DEVICE_DEVS2=
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
@@ -217,7 +222,7 @@ DEVICE_DEVS7=
 DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
 DEVICE_DEVS9=
 DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
-DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev
+DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev
 DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
 DEVICE_DEVS13=
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev

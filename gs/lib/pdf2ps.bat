@@ -17,6 +17,6 @@ gs -q -sOutputFile#%2 @_.at %1
 goto end
 
 :usage
-echo "Usage: pdf2ps [-dPSBinaryOK] [-dPSLevel1] [-dPSNoProcSet] input.pdf output.ps"
+echo "Usage: pdf2ps [-dASCII85DecodePages=false] [-dLanguageLevel=n] input.pdf output.ps"
 
 :end

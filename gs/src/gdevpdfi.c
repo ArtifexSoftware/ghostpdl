@@ -366,7 +366,6 @@ pdf_write_image_filters(gx_device_pdf * pdev, const psdf_binary_writer * pbw,
 	    ppp.prefix = "<<";
 	    ppp.suffix = ">>";
 	    code = psdf_alloc_param_printer(&printer, &ppp, &s_parms,
-					    0 /*no strings */ ,
 					    pdev->pdf_memory);
 	    if (code < 0)
 		return code;
@@ -477,7 +476,7 @@ typedef struct pdf_image_writer_s {
     psdf_binary_writer binary;
     const pdf_image_names *pin;
     const char *begin_data;
-    pdf_resource *pres;		/* XObject resource iff not in-line */
+    pdf_resource_t *pres;		/* XObject resource iff not in-line */
     long length_id;		/* id of length object (forward reference) */
     long start_pos;		/* starting file position of data */
 } pdf_image_writer;
@@ -494,7 +493,7 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw, bool in_line
 	piw->pin = &image_names_short;
 	piw->begin_data = (pdev->binary_ok ? "ID " : "ID\n");
     } else {
-	int code = pdf_begin_resource(pdev, resourceImageXObject, gs_no_id,
+	int code = pdf_begin_resource(pdev, resourceXObject, gs_no_id,
 				      &piw->pres);
 	stream *s = pdev->strm;
 
@@ -551,16 +550,16 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 
 /* Put out a reference to an image resource. */
 private int
-pdf_do_image(gx_device_pdf * pdev, const pdf_resource * pres,
+pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
 	     const gs_matrix * pimat)
 {
-    int code = pdf_open_contents(pdev, pdf_in_stream);
+    int code = pdf_open_contents(pdev, PDF_IN_STREAM);
 
     if (code < 0)
 	return code;
     if (pimat)
 	pdf_put_image_matrix(pdev, pimat);
-    pprintld1(pdev->strm, "/R%ld Do\nQ\n", pres->id);
+    pprintld1(pdev->strm, "/R%ld Do\nQ\n", pres->object->id);
     return 0;
 }
 
@@ -581,13 +580,13 @@ pdf_copy_mono(gx_device_pdf *pdev,
     gs_image_t image;
     int yi;
     pdf_image_writer writer;
-    pdf_stream_position ipos;
-    pdf_resource *pres = 0;
+    pdf_stream_position_t ipos;
+    pdf_resource_t *pres = 0;
     byte invert = 0;
 
     /* Update clipping. */
     if (pdf_must_put_clip_path(pdev, pcpath)) {
-	code = pdf_open_page(pdev, pdf_in_stream);
+	code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
 	pdf_put_clip_path(pdev, pcpath);
@@ -601,7 +600,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    pdf_set_color(pdev, one, &pdev->fill_color, "rg");
 	    pres = pdf_find_resource_by_gs_id(pdev, resourceCharProc, id);
 	    if (pres == 0) {	/* Define the character in an embedded font. */
-		pdf_char_proc *pcp;
+		pdf_char_proc_t *pcp;
 		int y_offset;
 		int max_y_offset =
 		(pdev->open_font == 0 ? 0 :
@@ -633,7 +632,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 		if (code < 0)
 		    return code;
 		pcp->rid = id;
-		pres = (pdf_resource *) pcp;
+		pres = (pdf_resource_t *) pcp;
 		goto wr;
 	    }
 	    pdf_make_bitmap_matrix(&image.ImageMatrix, x, y, w, h);
@@ -674,7 +673,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 
 	if (in_line)
 	    pdf_put_image_matrix(pdev, &image.ImageMatrix);
-	code = pdf_open_page(pdev, pdf_in_stream);
+	code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
 	code = pdf_begin_write_image(pdev, &writer, in_line);
@@ -747,7 +746,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	imat.xy /= h;
 	imat.yx /= w;
 	imat.yy /= h;
-	return pdf_do_char_image(pdev, (const pdf_char_proc *)pres, &imat);
+	return pdf_do_char_image(pdev, (const pdf_char_proc_t *)pres, &imat);
     }
 }
 int
@@ -835,7 +834,7 @@ gdev_pdf_copy_color(gx_device * dev, const byte * base, int sourcex,
     
     if (w <= 0 || h <= 0)
 	return 0;
-    code = pdf_open_page(pdev, pdf_in_stream);
+    code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
     /* Make sure we aren't being clipped. */
@@ -882,10 +881,10 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 {
     gx_device_pdf *const pdev = (gx_device_pdf *) dev;
     int tw = tiles->rep_width, th = tiles->rep_height;
-    pdf_resource *pres;
+    pdf_resource_t *pres;
 
     if (tiles->id == gx_no_bitmap_id || tiles->shift != 0 ||
-	w < tw || h < th ||
+	(w < tw && h < th) ||
 	/* We only handle full colored patterns right now. */
 	color0 != gx_no_color_index || color1 != gx_no_color_index ||
 	/* Pattern fills are only available starting in PDF 1.2. */
@@ -941,7 +940,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     }
     /* Fill the rectangle with the Pattern. */
     {
-	int code = pdf_open_page(pdev, pdf_in_stream);
+	int code = pdf_open_page(pdev, PDF_IN_STREAM);
 	double xscale = pdev->HWResolution[0] / 72.0,
 	    yscale = pdev->HWResolution[1] / 72.0;
 	stream *s;
@@ -954,7 +953,8 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	 * leave the CTM alone here: we have to reset it to the default.
 	 */
 	pprintg2(s, "q %g 0 0 %g 0 0 cm", xscale, yscale);
-	pprintld2(s, "/R%ld cs/R%ld scn ", pdev->cs_Pattern->id, pres->id);
+	pprintld2(s, "/R%ld cs/R%ld scn ", pdev->cs_Pattern->object->id,
+		  pres->object->id);
 	pprintg4(s, "%g %g %g %g re f Q\n",
 		 x / xscale, y / yscale, w / xscale, h / xscale);
     }
@@ -1060,7 +1060,7 @@ gdev_pdf_begin_image(gx_device * dev,
 	return gx_default_begin_image(dev, pis, pim, format, prect,
 				      pdcolor, pcpath, mem, pinfo);
     }
-    code = pdf_open_page(pdev, pdf_in_stream);
+    code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
     if (prect)

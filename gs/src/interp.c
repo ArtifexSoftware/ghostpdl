@@ -71,11 +71,6 @@ public_st_dict_stack();
 public_st_exec_stack();
 public_st_op_stack();
 
-/* Imported operator procedures */
-extern int zop_add(P1(os_ptr));
-extern int zop_def(P1(i_ctx_t *));
-extern int zop_sub(P1(os_ptr));
-
 /* Other imported procedures */
 extern int ztokenexec_continue(P1(i_ctx_t *));
 
@@ -94,12 +89,7 @@ int (*gs_interp_reschedule_proc)(P1(i_ctx_t **)) = no_reschedule;
  * The procedure to call for time-slicing.
  * This is a no-op unless the context machinery has been installed.
  */
-int
-no_time_slice_proc(i_ctx_t **pi_ctx_p)
-{
-    return 0;
-}
-int (*gs_interp_time_slice_proc)(P1(i_ctx_t **)) = no_time_slice_proc;
+int (*gs_interp_time_slice_proc)(P1(i_ctx_t **)) = 0;
 
 /*
  * The number of interpreter "ticks" between calls on the time_slice_proc.
@@ -146,7 +136,7 @@ private int estack_underflow(P1(i_ctx_t *));
 private int interp(P3(i_ctx_t **, const ref *, ref *));
 private int interp_exit(P1(i_ctx_t *));
 private void set_gc_signal(P3(i_ctx_t *, int *, int));
-private int copy_stack(P2(const ref_stack_t *, ref *));
+private int copy_stack(P3(i_ctx_t *, const ref_stack_t *, ref *));
 private int oparray_pop(P1(i_ctx_t *));
 private int oparray_cleanup(P1(i_ctx_t *));
 
@@ -181,11 +171,12 @@ const int gs_interp_max_op_num_args = MIN_BLOCK_OSTACK;		/* for iinit.c */
 #endif
 /*
  * The minimum block size for extending the execution stack is the largest
- * size of a contiguous block surrounding an e-stack mark, currently ???.
- * At least, that's what the minimum value would be if we supported
- * multi-block estacks, which we currently don't.
+ * size of a contiguous block surrounding an e-stack mark.  (At least,
+ * that's what the minimum value would be if we supported multi-block
+ * estacks, which we currently don't.)  Currently, the largest such block is
+ * the one created for text processing, which is 8 (snumpush) slots.
  */
-#define MIN_BLOCK_ESTACK MAX_ESTACK
+#define MIN_BLOCK_ESTACK 8
 
 /*
  * Define the initial maximum size of the dictionary stack (MaxDictStack
@@ -284,26 +275,18 @@ const op_def interp_op_defs[] = {
 
 /* Initialize the interpreter. */
 int
-gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict)
+gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict,
+	       gs_dual_memory_t *dmem)
 {
     /* Create and initialize a context state. */
     gs_context_state_t *pcst = 0;
-    int code = context_state_alloc(&pcst, &gs_imemory);
+    int code = context_state_alloc(&pcst, psystem_dict, dmem);
 
-    if (code >= 0) {
-	/*
-	 * We have to initialize the dictionary stack early,
-	 * for far-off references to systemdict.
-	 */
-	pcst->dict_stack.system_dict = *psystem_dict;
-	pcst->dict_stack.stack.extension_size = 0;
-	pcst->dict_stack.min_size = 0;
+    if (code >= 0)
 	code = context_state_load(pcst);
-    }
-
-    *pi_ctx_p = pcst;
     if (code < 0)
 	lprintf1("Fatal error %d in gs_interp_init!", code);
+    *pi_ctx_p = pcst;
     return code;
 }
 /*
@@ -311,8 +294,10 @@ gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict)
  * We export this for creating new contexts.
  */
 int
-gs_interp_alloc_stacks(gs_ref_memory_t * smem, gs_context_state_t * pcst)
+gs_interp_alloc_stacks(gs_ref_memory_t *mem, gs_context_state_t * pcst)
 {
+    gs_ref_memory_t *smem =
+	(gs_ref_memory_t *)gs_memory_stable((gs_memory_t *)mem);
     ref stk;
 
 #define REFS_SIZE_OSTACK OS_REFS_SIZE(MAX_OSTACK)
@@ -326,7 +311,8 @@ gs_interp_alloc_stacks(gs_ref_memory_t * smem, gs_context_state_t * pcst)
 	ref_stack_t *pos = &pcst->op_stack.stack;
 
 	r_set_size(&stk, REFS_SIZE_OSTACK);
-	ref_stack_init(pos, &stk, OS_GUARD_UNDER, OS_GUARD_OVER, NULL, smem);
+	ref_stack_init(pos, &stk, OS_GUARD_UNDER, OS_GUARD_OVER, NULL,
+		       smem, NULL);
 	ref_stack_set_error_codes(pos, e_stackunderflow, e_stackoverflow);
 	ref_stack_set_max_count(pos, MAX_OSTACK);
 	stk.value.refs += REFS_SIZE_OSTACK;
@@ -339,7 +325,7 @@ gs_interp_alloc_stacks(gs_ref_memory_t * smem, gs_context_state_t * pcst)
 	r_set_size(&stk, REFS_SIZE_ESTACK);
 	make_oper(&euop, 0, estack_underflow);
 	ref_stack_init(pes, &stk, ES_GUARD_UNDER, ES_GUARD_OVER, &euop,
-		       smem);
+		       smem, NULL);
 	ref_stack_set_error_codes(pes, e_ExecStackUnderflow,
 				  e_execstackoverflow);
 	/**************** E-STACK EXPANSION IS NYI. ****************/
@@ -352,7 +338,7 @@ gs_interp_alloc_stacks(gs_ref_memory_t * smem, gs_context_state_t * pcst)
 	ref_stack_t *pds = &pcst->dict_stack.stack;
 
 	r_set_size(&stk, REFS_SIZE_DSTACK);
-	ref_stack_init(pds, &stk, 0, 0, NULL, smem);
+	ref_stack_init(pds, &stk, 0, 0, NULL, smem, NULL);
 	ref_stack_set_error_codes(pds, e_dictstackunderflow,
 				  e_dictstackoverflow);
 	ref_stack_set_max_count(pds, MAX_DSTACK);
@@ -412,6 +398,24 @@ gs_interp_make_oper(ref * opref, op_proc_t proc, int idx)
 }
 
 /*
+ * Call the garbage collector, updating the context pointer properly.
+ */
+private int
+interp_reclaim(i_ctx_t **pi_ctx_p, int space)
+{
+    i_ctx_t *i_ctx_p = *pi_ctx_p;
+    gs_gc_root_t ctx_root;
+    int code;
+
+    gs_register_struct_root(imemory_system, &ctx_root,
+			    (void **)pi_ctx_p, "interp_reclaim(pi_ctx_p)");
+    code = (*idmemory->reclaim)(idmemory, space);
+    i_ctx_p = *pi_ctx_p;	/* may have moved */
+    gs_unregister_root(imemory_system, &ctx_root, "interp_reclaim(pi_ctx_p)");
+    return code;
+}
+
+/*
  * Invoke the interpreter.  If execution completes normally, return 0.
  * If an error occurs, the action depends on user_errors as follows:
  *    user_errors < 0: always return an error code.
@@ -465,11 +469,9 @@ again:
 	/* Make sure that doref will get relocated properly if */
 	/* a garbage collection happens with epref == &doref. */
 	gs_register_ref_root(imemory_system, &epref_root,
-			     (void **)&epref,
-			     "gs_call_interpret(epref)");
-	idmemory->reclaim_data = i_ctx_p;
-	code = (*idmemory->reclaim) (idmemory, -1);
-	*pi_ctx_p = i_ctx_p = idmemory->reclaim_data;
+			     (void **)&epref, "gs_call_interpret(epref)");
+	code = interp_reclaim(pi_ctx_p, -1);
+	i_ctx_p = *pi_ctx_p;
 	gs_unregister_root(imemory_system, &epref_root,
 			   "gs_call_interpret(epref)");
 	if (code < 0)
@@ -504,12 +506,11 @@ again:
 	    goto again;
 	case e_VMreclaim:
 	    /* Do the GC and continue. */
-	    idmemory->reclaim_data = i_ctx_p;
-	    code = (*idmemory->reclaim) (idmemory,
-					 (osp->value.intval == 2 ?
-					  avm_global : avm_local));
+	    code = interp_reclaim(pi_ctx_p,
+				  (osp->value.intval == 2 ?
+				   avm_global : avm_local));
+	    i_ctx_p = *pi_ctx_p;
 	    /****** What if code < 0? ******/
-	    *pi_ctx_p = i_ctx_p = idmemory->reclaim_data;
 	    make_oper(&doref, 0, zpop);
 	    epref = &doref;
 	    goto again;
@@ -533,7 +534,7 @@ again:
 		if ((ccode = ref_stack_extend(&o_stack, 1)) < 0)
 		    return ccode;
 	    }
-	    ccode = copy_stack(&d_stack, &saref);
+	    ccode = copy_stack(i_ctx_p, &d_stack, &saref);
 	    if (ccode < 0)
 		return ccode;
 	    ref_stack_pop_to(&d_stack, min_dstack_size);
@@ -557,15 +558,30 @@ again:
 		if ((ccode = ref_stack_extend(&o_stack, 1)) < 0)
 		    return ccode;
 	    }
-	    ccode = copy_stack(&e_stack, &saref);
+	    ccode = copy_stack(i_ctx_p, &e_stack, &saref);
 	    if (ccode < 0)
 		return ccode;
 	    {
 		uint count = ref_stack_count(&e_stack);
 		long limit = ref_stack_max_count(&e_stack) - 10;
 
-		if (count > limit)
+		if (count > limit) {
+		    /*
+		     * If there is an e-stack mark within MIN_BLOCK_ESTACK of
+		     * the new top, cut the stack back to remove the mark.
+		     */
+		    int i;
+
+		    for (i = 0; i < MIN_BLOCK_ESTACK; ++i) {
+			const ref *ep = ref_stack_index(&e_stack, limit - i);
+
+			if (r_has_type_attrs(ep, t_null, a_executable)) {
+			    limit -= i + 1;
+			    break;
+			}
+		    }
 		    pop_estack(i_ctx_p, count - limit);
+		}
 	    }
 	    *++osp = saref;
 	    break;
@@ -581,7 +597,7 @@ again:
 		epref = &doref;
 		goto again;
 	    }
-	    ccode = copy_stack(&o_stack, &saref);
+	    ccode = copy_stack(i_ctx_p, &o_stack, &saref);
 	    if (ccode < 0)
 		return ccode;
 	    ref_stack_clear(&o_stack);
@@ -625,19 +641,26 @@ set_gc_signal(i_ctx_t *i_ctx_p, int *psignal, int value)
 
     for (i = 0; i < countof(idmemory->spaces_indexed); i++) {
 	gs_ref_memory_t *mem = idmemory->spaces_indexed[i];
+	gs_ref_memory_t *mem_stable;
 
-	if (mem != 0) {
+	if (mem == 0)
+	    continue;
+	for (;; mem = mem_stable) {
+	    mem_stable = (gs_ref_memory_t *)
+		gs_memory_stable((gs_memory_t *)mem);
 	    gs_memory_gc_status(mem, &stat);
 	    stat.psignal = psignal;
 	    stat.signal_value = value;
 	    gs_memory_set_gc_status(mem, &stat);
+	    if (mem_stable == mem)
+		break;
 	}
     }
 }
 
 /* Copy the contents of an overflowed stack into a (local) array. */
 private int
-copy_stack(const ref_stack_t * pstack, ref * arr)
+copy_stack(i_ctx_t *i_ctx_p, const ref_stack_t * pstack, ref * arr)
 {
     uint size = ref_stack_count(pstack);
     uint save_space = ialloc_space(idmemory);
@@ -646,7 +669,8 @@ copy_stack(const ref_stack_t * pstack, ref * arr)
     ialloc_set_space(idmemory, avm_local);
     code = ialloc_ref_array(arr, a_all, size, "copy_stack");
     if (code >= 0)
-	code = ref_stack_store(pstack, arr, size, 0, 1, true, "copy_stack");
+	code = ref_stack_store(pstack, arr, size, 0, 1, true, idmemory,
+			       "copy_stack");
     ialloc_set_space(idmemory, save_space);
     return code;
 }
@@ -705,7 +729,18 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
      * time.
      */
     register const ref_packed *iref_packed = (const ref_packed *)pref;
-#define IREF ((const ref *)iref_packed)
+    /*
+     * To make matters worse, some versions of gcc/egcs have a bug that
+     * leads them to assume that if iref_packed is EVER cast to a ref *,
+     * it is ALWAYS ref-aligned.  We detect this in stdpre.h and provide
+     * the following workaround:
+     */
+#ifdef ALIGNMENT_ALIASING_BUG
+    const ref *iref_temp;
+#  define IREF (iref_temp = (const ref *)iref_packed, iref_temp)
+#else
+#  define IREF ((const ref *)iref_packed)
+#endif
 #define SET_IREF(rp) (iref_packed = (const ref_packed *)(rp))
     register int icount = 0;	/* # of consecutive tokens at iref */
     register os_ptr iosp = osp;	/* private copy of osp */
@@ -1568,14 +1603,15 @@ res:
     esp = iesp;
     /* If ticks_left <= -100, we need to GC now. */
     if (ticks_left <= -100) {	/* We need to garbage collect now. */
-	idmemory->reclaim_data = i_ctx_p;
-	code = (*idmemory->reclaim) (idmemory, -1);
-	*pi_ctx_p = i_ctx_p = idmemory->reclaim_data;
-    } else {
+	*pi_ctx_p = i_ctx_p;
+	code = interp_reclaim(pi_ctx_p, -1);
+	i_ctx_p = *pi_ctx_p;
+    } else if (gs_interp_time_slice_proc) {
 	*pi_ctx_p = i_ctx_p;
 	code = (*gs_interp_time_slice_proc)(pi_ctx_p);
 	i_ctx_p = *pi_ctx_p;
-    }
+    } else
+	code = 0;
     ticks_left = gs_interp_time_slice_ticks;
     goto sched;
 

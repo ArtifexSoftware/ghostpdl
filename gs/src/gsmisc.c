@@ -25,6 +25,7 @@
 #include "string_.h"
 #include "gx.h"
 #include "gpcheck.h"		/* for gs_return_check_interrupt */
+#include "gserror.h"		/* for prototype */
 #include "gserrors.h"
 #include "gconfigv.h"		/* for USE_ASM */
 #include "gxfarith.h"
@@ -69,6 +70,7 @@ dprintf_file_tail(const char *file)
 	--tail;
     return tail;
 }
+#if __LINE__			/* compiler provides it */
 void
 dprintf_file_and_line(FILE * f, const char *file, int line)
 {
@@ -76,12 +78,14 @@ dprintf_file_and_line(FILE * f, const char *file, int line)
 	fprintf(f, dprintf_file_and_line_format,
 		dprintf_file_tail(file), line);
 }
+#else
 void
-dprintf_file(FILE * f, const char *file)
+dprintf_file_only(FILE * f, const char *file)
 {
     if (gs_debug['/'])
 	fprintf(f, dprintf_file_only_format, dprintf_file_tail(file));
 }
+#endif
 void
 printf_program_ident(FILE * f, const char *program_name,
 		     long revision_number)
@@ -105,16 +109,19 @@ eprintf_program_ident(FILE * f, const char *program_name,
 	fputs(": ", f);
     }
 }
+#if __LINE__			/* compiler provides it */
 void
 lprintf_file_and_line(FILE * f, const char *file, int line)
 {
     fprintf(f, "%s(%d): ", file, line);
 }
+#else
 void
 lprintf_file_only(FILE * f, const char *file)
 {
     fprintf(f, "%s(?): ", file);
 }
+#endif
 
 /* Log an error return.  We always include this, in case other */
 /* modules were compiled with DEBUG set. */
@@ -274,11 +281,11 @@ gs_memset(void *dest, register int ch, size_t len)
 		((long *)p)[0] = wd;
 	switch (count >> ARCH_LOG2_SIZEOF_LONG) {
 	case 3:
-	    ((long *)p)[2] = wd; p += sizeof(long);
+	    *((long *)p) = wd; p += sizeof(long);
 	case 2:
-	    ((long *)p)[1] = wd; p += sizeof(long);
+	    *((long *)p) = wd; p += sizeof(long);
 	case 1:
-	    ((long *)p)[0] = wd; p += sizeof(long);
+	    *((long *)p) = wd; p += sizeof(long);
 	    count &= sizeof(long) - 1;
 	case 0:
 	default:		/* can't happen */
@@ -448,7 +455,7 @@ ilog2(int n)
 	 "\000\000\001\001\002\002\002\002\003\003\003\003\003\003\003\003"[m] + l);
 }
 
-#if defined(CHECK_FMUL2FIXED_VARS) && !USE_ASM
+#if defined(NEED_SET_FMUL2FIXED) && !USE_ASM
 
 /*
  * Floating multiply with fixed result, for avoiding floating point in
@@ -501,7 +508,7 @@ set_dfmul2fixed_(fixed * pr, ulong /*double lo */ xalo, long /*float */ b, long 
 			   b);
 }
 
-#endif
+#endif /* NEED_SET_FMUL2FIXED */
 
 #if USE_FPU_FIXED
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -17,12 +17,12 @@
  */
 
 
-/* Stream output for PostScript- and PDF-writing drivers */
+/* Print values in ASCII form on a stream */
 #include "math_.h"		/* for fabs */
 #include "stdio_.h"		/* for stream.h */
 #include "string_.h"		/* for strchr */
-#include "gdevpstr.h"
 #include "stream.h"
+#include "spprint.h"
 
 /* ------ Output ------ */
 

@@ -105,7 +105,7 @@ struct gs_state_s {
     gs_matrix_fixed char_tm;	/* font matrix * ctm */
 #define char_tm_only(pgs) *(gs_matrix *)&(pgs)->char_tm
     bool char_tm_valid;		/* true if char_tm is valid */
-    gs_in_cache_device_t in_cachedevice;    /* (see gschar.h) */
+    gs_in_cache_device_t in_cachedevice;    /* (see gscpm.h) */
     gs_char_path_mode in_charpath;	/* (see gscpm.h) */
     gs_state *show_gstate;	/* gstate when show was invoked */
 				/* (so charpath can append to path) */
@@ -124,8 +124,8 @@ struct gs_state_s {
     gs_state_client_procs client_procs;
 };
 
-#define private_st_gs_state()	/* in gsstate.c */\
-  gs_private_st_composite(st_gs_state, gs_state, "gs_state",\
+#define public_st_gs_state()	/* in gsstate.c */\
+  gs_public_st_composite(st_gs_state, gs_state, "gs_state",\
     gs_state_enum_ptrs, gs_state_reloc_ptrs)
 
 #endif /* gzstate_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,7 +30,7 @@
 
 /* Define the tolerance for testing whether a point is in a zone, */
 /* in device pixels.  (Maybe this should be variable?) */
-#define stem_tolerance float2fixed(0.05)
+#define STEM_TOLERANCE float2fixed(0.05)
 
 /* Forward references */
 
@@ -94,14 +94,15 @@ update_stem_hints(gs_type1_state * pcis)
 private void
 store_stem_deltas(const stem_hint_table * psht, stem_hint * psh,
 		  const pixel_scale * psp, fixed v, fixed dv, fixed adj_dv)
-{				/*
-				 * We want to align the stem so its edges fall on pixel boundaries
-				 * (possibly "big pixel" boundaries if we are oversampling),
-				 * but if hint replacement has occurred, we must shift edges in a
-				 * consistent way.  This is a real nuisance, but I don't see how
-				 * to avoid it; if we don't do it, we get bizarre anomalies like
-				 * disappearing stems.
-				 */
+{
+    /*
+     * We want to align the stem so its edges fall on pixel boundaries
+     * (possibly "big pixel" boundaries if we are oversampling),
+     * but if hint replacement has occurred, we must shift edges in a
+     * consistent way.  This is a real nuisance, but I don't see how
+     * to avoid it; if we don't do it, we get bizarre anomalies like
+     * disappearing stems.
+     */
     const stem_hint *psh0 = 0;
     const stem_hint *psh1 = 0;
     int i;
@@ -150,6 +151,22 @@ store_stem_deltas(const stem_hint_table * psht, stem_hint * psh,
     }
 }
 
+/*
+ * The Type 1 font format uses negative stem widths to indicate edge hints.
+ * We need to convert these into zero-width stem hints.
+ */
+private void
+detect_edge_hint(fixed *xy, fixed *dxy)
+{
+    if (*dxy == -21) {
+	/* Bottom edge hint. */
+	*xy -= 21, *dxy = 0;
+    } else if (*dxy == -20) {
+	/* Top edge hint. */
+	*dxy = 0;
+    }
+}
+
 /* Add a horizontal stem hint. */
 void
 type1_do_hstem(gs_type1_state * pcis, fixed y, fixed dy,
@@ -163,6 +180,7 @@ type1_do_hstem(gs_type1_state * pcis, fixed y, fixed dy,
 
     if (!pcis->fh.use_y_hints || !pmat->txy_fixed_valid)
 	return;
+    detect_edge_hint(&y, &dy);
     y += pcis->lsb.y + pcis->adxy.y;
     if (pcis->fh.axes_swapped) {
 	psp = &pcis->scale.x;
@@ -240,6 +258,7 @@ type1_do_vstem(gs_type1_state * pcis, fixed x, fixed dx,
 
     if (!pcis->fh.use_x_hints)
 	return;
+    detect_edge_hint(&x, &dx);
     x += pcis->lsb.x + pcis->adxy.x;
     if (pcis->fh.axes_swapped) {
 	psp = &pcis->scale.y;
@@ -322,8 +341,8 @@ type1_stem(const gs_type1_state * pcis, stem_hint_table * psht,
 	top--;
     }
     /* Add a little fuzz for insideness testing. */
-    top->v0 = v0 - stem_tolerance;
-    top->v1 = v0 + d + stem_tolerance;
+    top->v0 = v0 - STEM_TOLERANCE;
+    top->v1 = v0 + d + STEM_TOLERANCE;
     top->index = pcis->hstem_hints.count + pcis->vstem_hints.count;
     top->active = true;
     psht->count++;

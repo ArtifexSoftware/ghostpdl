@@ -34,28 +34,27 @@
 /* ---------------- Generic ---------------- */
 
 /* GC procedures */
-#define pptr ((stream_proc_state *)vptr)
 private 
 CLEAR_MARKS_PROC(sproc_clear_marks)
 {
+    stream_proc_state *const pptr = vptr;
+
     r_clear_attrs(&pptr->proc, l_mark);
     r_clear_attrs(&pptr->data, l_mark);
 }
 private 
-ENUM_PTRS_BEGIN(sproc_enum_ptrs) return 0;
-
+ENUM_PTRS_WITH(sproc_enum_ptrs, stream_proc_state *pptr) return 0;
 case 0:
 ENUM_RETURN_REF(&pptr->proc);
 case 1:
 ENUM_RETURN_REF(&pptr->data);
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(sproc_reloc_ptrs);
+private RELOC_PTRS_WITH(sproc_reloc_ptrs, stream_proc_state *pptr);
 RELOC_REF_VAR(pptr->proc);
 r_clear_attrs(&pptr->proc, l_mark);
 RELOC_REF_VAR(pptr->data);
 r_clear_attrs(&pptr->data, l_mark);
 RELOC_PTRS_END
-#undef pptr
 
 /* Structure type for procedure-based streams. */
 private_st_stream_proc_state();
@@ -64,22 +63,23 @@ private_st_stream_proc_state();
 /* The caller must have checked that *sop is a procedure. */
 private int
 s_proc_init(ref * sop, stream ** psstrm, uint mode,
-	    const stream_template * temp, const stream_procs * procs)
+	    const stream_template * temp, const stream_procs * procs,
+	    gs_ref_memory_t *imem)
 {
-    stream *sstrm = file_alloc_stream(imemory, "s_proc_init(stream)");
-    stream_proc_state *state =
-    (stream_proc_state *) s_alloc_state(imemory, &st_sproc_state,
-					"s_proc_init(state)");
+    gs_memory_t *const mem = (gs_memory_t *)imem;
+    stream *sstrm = file_alloc_stream(mem, "s_proc_init(stream)");
+    stream_proc_state *state = (stream_proc_state *)
+	s_alloc_state(mem, &st_sproc_state, "s_proc_init(state)");
 
     if (sstrm == 0 || state == 0) {
-	ifree_object(state, "s_proc_init(state)");
-	/*ifree_object(sstrm, "s_proc_init(stream)"); *//* just leave it on the file list */
+	gs_free_object(mem, state, "s_proc_init(state)");
+	/*gs_free_object(mem, sstrm, "s_proc_init(stream)"); *//* just leave it on the file list */
 	return_error(e_VMerror);
     }
     s_std_init(sstrm, NULL, 0, procs, mode);
     sstrm->procs.process = temp->process;
     state->template = temp;
-    state->memory = imemory;
+    state->memory = mem;
     state->eof = 0;
     state->proc = *sop;
     make_empty_string(&state->data, a_all);
@@ -116,6 +116,15 @@ s_handle_intc(i_ctx_t *i_ctx_p, const ref *pstate, int nstate,
     return o_push_estack;
 }
 
+/* Set default parameter values (actually, just clear pointers). */
+private void
+s_proc_set_defaults(stream_state * st)
+{
+    stream_proc_state *const ss = (stream_proc_state *) st;
+
+    make_null(&ss->proc);
+    make_null(&ss->data);
+}
 
 /* ---------------- Read streams ---------------- */
 
@@ -125,7 +134,8 @@ private int s_proc_read_continue(P1(i_ctx_t *));
 
 /* Stream templates */
 private const stream_template s_proc_read_template = {
-    &st_sproc_state, NULL, s_proc_read_process, 1, 1, NULL
+    &st_sproc_state, NULL, s_proc_read_process, 1, 1,
+    NULL, s_proc_set_defaults
 };
 private const stream_procs s_proc_read_procs = {
     s_std_noavailable, s_std_noseek, s_std_read_reset,
@@ -135,11 +145,11 @@ private const stream_procs s_proc_read_procs = {
 /* Allocate and open a procedure-based read stream. */
 /* The caller must have checked that *sop is a procedure. */
 int
-sread_proc(ref * sop, stream ** psstrm)
+sread_proc(ref * sop, stream ** psstrm, gs_ref_memory_t *imem)
 {
     int code =
 	s_proc_init(sop, psstrm, s_mode_read, &s_proc_read_template,
-		    &s_proc_read_procs);
+		    &s_proc_read_procs, imem);
 
     if (code < 0)
 	return code;
@@ -234,7 +244,8 @@ private int s_proc_write_continue(P1(i_ctx_t *));
 
 /* Stream templates */
 private const stream_template s_proc_write_template = {
-    &st_sproc_state, NULL, s_proc_write_process, 1, 1, NULL
+    &st_sproc_state, NULL, s_proc_write_process, 1, 1,
+    NULL, s_proc_set_defaults
 };
 private const stream_procs s_proc_write_procs = {
     s_std_noavailable, s_std_noseek, s_std_write_reset,
@@ -244,10 +255,10 @@ private const stream_procs s_proc_write_procs = {
 /* Allocate and open a procedure-based write stream. */
 /* The caller must have checked that *sop is a procedure. */
 int
-swrite_proc(ref * sop, stream ** psstrm)
+swrite_proc(ref * sop, stream ** psstrm, gs_ref_memory_t *imem)
 {
     return s_proc_init(sop, psstrm, s_mode_write, &s_proc_write_template,
-		       &s_proc_write_procs);
+		       &s_proc_write_procs, imem);
 }
 
 /* Handle an output request. */

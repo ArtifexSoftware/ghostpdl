@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -93,7 +93,5 @@ extern name_table *the_gs_name_table;
 /* The garbage collector needs this so it can relocate pointers to names. */
 #define name_ref_sub_table(pnref)\
   names_ref_sub_table(the_gs_name_table, pnref)
-#define name_index_ptr_sub_table(nidx, pnref)\
-  names_index_ptr_sub_table(the_gs_name_table, nidx, pnref)
 
 #endif /* iname_INCLUDED */

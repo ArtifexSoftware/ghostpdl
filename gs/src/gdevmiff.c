@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,7 +33,7 @@ private dev_proc_print_page(miff24_print_page);
 private const gx_device_procs miff24_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
-gx_device_printer far_data gs_miff24_device =
+gx_device_printer gs_miff24_device =
 prn_device(miff24_procs, "miff24",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
@@ -45,7 +45,7 @@ private int
 miff24_print_page(gx_device_printer * pdev, FILE * file)
 {
     int raster = gx_device_raster((gx_device *) pdev, true);
-    byte *line = (byte *) gs_malloc(raster, 1, "miff line buffer");
+    byte *line = gs_alloc_bytes(pdev->memory, raster, "miff line buffer");
     int y;
     int code = 0;		/* return code */
 
@@ -80,7 +80,7 @@ miff24_print_page(gx_device_printer * pdev, FILE * file)
 	    row += 3;
 	}
     }
-    gs_free((char *)line, lsize, 1, "miff line buffer");
+    gs_free_object(pdev->memory, line, "miff line buffer");
 
     return code;
 }

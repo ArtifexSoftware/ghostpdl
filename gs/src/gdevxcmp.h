@@ -45,11 +45,22 @@ struct x11_color_s {
 
 /*
  * Define X color values.  Fortuitously, these are the same as Ghostscript
- * color values; in gdevxcmap.c, we are pretty sloppy about aliasing the
+ * color values; in gdevxcmp.c, we are pretty sloppy about aliasing the
  * two.
  */
 typedef ushort X_color_value;
 #define X_max_color_value 0xffff
+
+#if HaveStdCMap  /* Standard colormap stuff is only in X11R4 and later. */
+
+/* Define the structure for values computed from a standard cmap component. */
+typedef struct x11_cmap_values_s {
+    int cv_shift;	/* 16 - log2(max_value + 1) */
+    X_color_value nearest[64]; /* [i] = i * 0xffff / max_value */
+    int pixel_shift;	/* log2(mult) */
+} x11_cmap_values_t;
+
+#endif
 
 typedef struct x11_cman_s {
 
@@ -70,19 +81,29 @@ typedef struct x11_cman_s {
 
 #if HaveStdCMap  /* Standard colormap stuff is only in X11R4 and later. */
 
-    /*
-     * std_cmap is the X standard colormap for the display and screen,
-     * if one is available.
-     */
+    struct {
 
-    XStandardColormap *std_cmap;
+	/*
+	 * map is the X standard colormap for the display and screen,
+	 * if one is available.
+	 */
+	XStandardColormap *map;
 
-    /*
-     * If free_std_cmap is true, we allocated std_cmap ourselves (to
-     * represent a TrueColor or Static Gray visual), and must free it when
-     * closing the device.
-     */
-    bool free_std_cmap;
+	/*
+	 * When possible, we precompute shift values and tables that replace
+	 * some multiplies and divides.
+	 */
+	bool fast;
+	x11_cmap_values_t red, green, blue;
+
+	/*
+	 * If free_map is true, we allocated the map ourselves (to
+	 * represent a TrueColor or Static Gray visual), and must free it
+	 * when closing the device.
+	 */
+	bool free_map;
+
+    } std_cmap;
 
 #endif /* HaveStdCmap */
 

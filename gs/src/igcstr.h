@@ -31,5 +31,7 @@ bool gc_string_mark(P4(const byte *, uint, bool, gc_state_t *));
 void gc_strings_clear_reloc(P1(chunk_t *));
 void gc_strings_set_reloc(P1(chunk_t *));
 void gc_strings_compact(P1(chunk_t *));
+string_proc_reloc(igc_reloc_string);
+const_string_proc_reloc(igc_reloc_const_string);
 
 #endif /* igcstr_INCLUDED */
