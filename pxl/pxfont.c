@@ -285,7 +285,7 @@ private void
 px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr)
 {
     const px_value_t *pstr = par->pv[0];
-    const char *str = (const char *)pstr->value.array.data;
+    const unsigned char *str = (const unsigned char *)pstr->value.array.data;
     uint len = pstr->value.array.size;
     int i;
     gs_char chr;
