@@ -59,6 +59,7 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 {	/* The -8 is for XXXXXX plus a possible final / and -. */
     int prefix_length = strlen(prefix);
     int len = gp_file_name_sizeof - prefix_length - 8;
+    FILE *fp;
 
     if (gp_pathstring_not_bare(prefix, prefix_length))
 	*fname = 0;
@@ -79,21 +80,23 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 #ifdef HAVE_MKSTEMP
     {
 	    int file;
-	    FILE *fp;
 
 	    file = mkstemp(fname);
-	    if (file < -1)
+	    if (file < -1) {
+		    eprintf1("**** Could not open temporary file %s\n", fname);
 		    return NULL;
+	    }
 	    fp = fdopen(file, mode);
-	    if (fp == NULL)
-		    close(file);
-		    
-	    return fp;
+ 	    if (fp == NULL)
+ 		    close(file);
     }
 #else
     mktemp(fname);
-    return gp_fopentemp(fname, mode);
+    fp = gp_fopentemp(fname, mode);
 #endif
+    if (fp == NULL)
+	eprintf1("**** Could not open temporary file %s\n", fname);
+    return fp;
 }
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */

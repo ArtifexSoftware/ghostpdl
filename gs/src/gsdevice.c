@@ -796,14 +796,18 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
 	if (!parsed.fname)
 	    return_error(gs_error_undefinedfilename);
 	strcpy(fmode, gp_fmode_wb);
-	if (positionable)
-	    strcat(fmode, "+");
-	return parsed.iodev->procs.fopen(parsed.iodev, parsed.fname, fmode,
-					 pfile, NULL, 0);
+  	if (positionable)
+  	    strcat(fmode, "+");
+ 	code = parsed.iodev->procs.fopen(parsed.iodev, parsed.fname, fmode,
+  					 pfile, NULL, 0);
+ 	if (code)
+     	    eprintf1("**** Could not open the file %s .\n", parsed.fname);
+ 	return code;
     }
     *pfile = gp_open_printer((fmt ? pfname : fname), binary);
     if (*pfile)
-	return 0;
+  	return 0;
+    eprintf1("**** Could not open the file %s .\n", (fmt ? pfname : fname));
     return_error(gs_error_invalidfileaccess);
 }
 

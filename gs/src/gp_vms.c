@@ -217,12 +217,16 @@ FILE *
 gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 		     const char *mode)
 {
+    FILE *f;
+
     if (strlen(prefix) + 6 >= gp_file_name_sizeof)
 	return 0;		/* file name too long */
     strcpy(fname, prefix);
     strcat(fname, "XXXXXX");
     mktemp(fname);
-    return fopen(fname, mode);
+    if (f == NULL)
+	eprintf1("**** Could not open temporary file %s\n", fname);
+    f = fopen(fname, mode);
 }
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */

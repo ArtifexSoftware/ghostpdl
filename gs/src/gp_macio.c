@@ -404,6 +404,8 @@ gp_open_scratch_file (const char *prefix, char *fname, const char *mode)
 	short foundVRefNum;
 	long foundDirID;
 	FSSpec fSpec;
+	FILE *f;
+
 	strcpy (fname, (char *) prefix);
 	{
 		char newName[50];
@@ -430,7 +432,10 @@ gp_open_scratch_file (const char *prefix, char *fname, const char *mode)
 	   thepfname[0]=strlen(thefname);
    }
 
-	return gp_fopen (thefname, mode);
+    f = gp_fopen (thefname, mode);
+    if (f == NULL)
+	eprintf1("**** Could not open temporary file %s\n", fname);
+    return f;
 }
 
 /*

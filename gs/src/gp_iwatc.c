@@ -126,6 +126,7 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
 {	      /* The -7 is for XXXXXXX */
     int prefix_length = strlen(prefix);
     int len = gp_file_name_sizeof - prefix_length - 7;
+    FILE *f;
 
     if (gp_pathstring_not_bare(prefix, prefix_length) ||
 	gp_gettmpdir(fname, &len) != 0
@@ -145,7 +146,10 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
     strcat(fname, prefix);
     strcat(fname, "XXXXXX");
     mktemp(fname);
-    return gp_fopentemp(fname, mode);
+    f = gp_fopentemp(fname, mode);
+    if (f == NULL)
+	eprintf1("**** Could not open temporary file %s\n", fname);
+    return f;
 }
 
 

@@ -748,6 +748,7 @@ FILE *
 gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 		     const char *mode)
 {
+    FILE *f;
 #ifdef __IBMC__
     char *temp = 0;
     char *tname;
@@ -797,7 +798,10 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
     strcat(fname, "XXXXXX");
     mktemp(fname);
 #endif
-    return gp_fopentemp(fname, mode);
+    f = gp_fopentemp(fname, mode);
+    if (f == NULL)
+	eprintf1("**** Could not open temporary file %s\n", fname);
+    return f;
 }
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
