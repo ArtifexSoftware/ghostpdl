@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -729,21 +729,33 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
 		pvalue->value.d.size = 0;
 		return 0;
 	    }
-	    /* Get array type based on type of 1st element of array */
+	    /*
+	     * We have to guess at the array type.  First we guess based
+	     * on the type of the first element of the array.  If that
+	     * fails, we try again with more general types.
+	     */
 	    array_get(loc.pvalue, 0, &elt);
-	    switch (r_type(&elt)) {	/* redundant key lookup, but cached */
+	    switch (r_type(&elt)) {
 		case t_integer:
 		    pvalue->type = gs_param_type_int_array;
-		    return ref_param_read_int_array(plist, pkey, &pvalue->value.ia);
+		    code = ref_param_read_int_array(plist, pkey,
+						    &pvalue->value.ia);
+		    if (code != e_typecheck)
+			return code;
+		    /* This might be a float array.  Fall through. */
+		    *loc.presult = 0;  /* reset error */
 		case t_real:
 		    pvalue->type = gs_param_type_float_array;
-		    return ref_param_read_float_array(plist, pkey, &pvalue->value.fa);
+		    return ref_param_read_float_array(plist, pkey,
+						      &pvalue->value.fa);
 		case t_string:
 		    pvalue->type = gs_param_type_string_array;
-		    return ref_param_read_string_array(plist, pkey, &pvalue->value.sa);
+		    return ref_param_read_string_array(plist, pkey,
+						       &pvalue->value.sa);
 		case t_name:
 		    pvalue->type = gs_param_type_name_array;
-		    return ref_param_read_string_array(plist, pkey, &pvalue->value.na);
+		    return ref_param_read_string_array(plist, pkey,
+						       &pvalue->value.na);
 		default:
 		    break;
 	    }
