@@ -204,11 +204,14 @@ cp50_output_page(gx_device *pdev, int num_copies, int flush)
  
 /* Map a r-g-b color to a color index. */
 private gx_color_index
-cp50_rgb_color(gx_device *dev, gx_color_value r, gx_color_value g,
-  gx_color_value b)
-{   return ((ulong)gx_color_value_to_byte(r) << 16)+
-           ((uint)gx_color_value_to_byte(g) << 8) +
-           gx_color_value_to_byte(b);
+cp50_rgb_color(gx_device *dev, const gx_color_value cv[])
+{   
+    gx_color_value red, green, blue;
+
+    red = cv[0]; green = cv[1]; blue = cv[2];
+    return ((ulong)gx_color_value_to_byte(red) << 16)+
+           ((uint)gx_color_value_to_byte(green) << 8) +
+           gx_color_value_to_byte(blue);
 }
  
 /* Map a color index to a r-g-b color. */
