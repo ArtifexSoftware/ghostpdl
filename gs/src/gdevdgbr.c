@@ -669,8 +669,9 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		goto ret;
 	    }
 	}
-	code = (*dev_proc(dev, get_bits))
-	    (dev, prect->p.y, row, &params->data[0]);
+	code = (*dev_proc(dev, get_bits)) (dev, prect->p.y, row,
+		(params->options & GB_RETURN_POINTER) ? &params->data[0]
+						      : NULL );
 	if (code >= 0) {
 	    if (row != data) {
 		if (prect->p.x == 0 && params->data[0] != row) {
