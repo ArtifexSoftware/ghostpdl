@@ -23,6 +23,7 @@ typedef struct gs_state_s gs_state;
 #endif
 #include "gsstate.h"
 #include "gxht.h"
+#include "gxdevice.h"
 
 int 
 pl_set_pcl_halftone(gs_state *pgs, gs_mapping_proc transfer_proc,
@@ -34,6 +35,9 @@ pl_set_pcl_halftone(gs_state *pgs, gs_mapping_proc transfer_proc,
 
     int code;
     gs_halftone ht;
+    /* nothing to do for a contone device */
+    if ( !gx_device_must_halftone(gs_currentdevice(pgs)) )
+         return 0;
     gs_settransfer(pgs, transfer_proc);
     ht.type = ht_type_threshold;
     ht.params.threshold.width = width;
