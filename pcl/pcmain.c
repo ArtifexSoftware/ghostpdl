@@ -36,8 +36,7 @@
 #include "pclver.h"
 #include "plmain.h"
 
-/*#define BUFFER_SIZE 1024*/	/* minimum is 17 */
-#define BUFFER_SIZE 17
+#define BUFFER_SIZE 512		/* minimum is 17 */
 
 #ifdef DEBUG
 extern  FILE *  gs_debug_out;
