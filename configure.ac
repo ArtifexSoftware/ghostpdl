@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([jbig2dec.c])
 AM_INIT_AUTOMAKE([AC_PACKAGE_NAME], [AC_PACKAGE_VERSION])
 AM_CONFIG_HEADER(config.h)
 
-AC_REVISION([$Revision: 1.8 $])
+AC_REVISION([$Revision: 1.9 $])
 
 # Checks for programs.
 AC_PROG_CC
@@ -96,6 +96,27 @@ AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([memset strdup])
 
+dnl use our included md5 if we can't find one
+AC_CHECK_HEADER([openssl/md5.h], [
+  AC_CHECK_LIB(crypto, MD5_Init, [
+    AC_DEFINE(HAVE_OPENSSL_MD5,,[Define to use of the 
+      MD5_*() routines from OpenSSL rather than the included ones])
+    LIBS="$LIBS -lcrypto"
+  ], [
+    AC_LIBOBJ([md5])
+  ])
+],,[ ])
+	
+dnl use our included SHA-1 if we can't find one
+AC_CHECK_HEADER([openssl/sha.h], [
+  AC_CHECK_LIB(crypto, SHA1_Init, [
+    AC_DEFINE(HAVE_OPENSSL_SHA1,,[Define to use of the 
+      SHA1_*() routines from OpenSSL rather than the included ones])
+  ], [
+    AC_LIBOBJ([sha1])
+  ])
+],,[ ])
+	
 dnl use our included getopt if the system doesn't have getopt_long()
 AC_CHECK_FUNC(getopt_long, 
 	[AC_DEFINE(HAVE_GETOPT_LONG,,[Define if the local libc includes getopt_long()])],

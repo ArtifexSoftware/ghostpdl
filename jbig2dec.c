@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.31 2002/07/13 00:32:13 giles Exp $
+    $Id: jbig2dec.c,v 1.32 2002/07/15 20:01:01 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -22,9 +22,12 @@
 #endif
 
 #include <stdio.h>
-# include <stdlib.h>
-# include <stddef.h>
-# include <string.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <string.h>
+
+#include "jbig2.h"
+#include "jbig2_image.h"
 
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
@@ -32,8 +35,9 @@
 # include "getopt.h"
 #endif
 
-#include "jbig2.h"
-#include "jbig2_image.h"
+#ifdef HAVE_OPENSSL_SHA1
+# include <openssl/sha.h>
+#endif
 
 typedef enum {
     usage,dump,render
@@ -41,37 +45,66 @@ typedef enum {
 
 typedef struct {
 	jbig2dec_mode mode;
-	int verbose;
+	int verbose, hash;
+#ifdef HAVE_OPENSSL_SHA1
+        SHA_CTX *hash_ctx;
+#endif
 	char *output_file;
 } jbig2dec_params_t;
 
-
-static int
-print_usage (void)
+/* page hashing functions */
+static void
+hash_init(jbig2dec_params_t *params)
 {
-  fprintf(stderr,
-    "Usage: jbig2dec [options] <file.jbig2>\n"
-    "   or  jbig2dec [options] <global_stream> <page_stream>\n"
-    "\n"
-    "  When invoked with a single file, it attempts to parse it as\n"
-    "  a normal jbig2 file. Invoked with two files, it treats the\n"
-    "  first as the global segments, and the second as the segment\n"
-    "  stream for a particular page. This is useful for examining\n"
-    "  embedded streams.\n"
-    "\n"
-    "  available options:\n"
-    "    -h --help	this usage summary\n"
-    "    -q --quiet     suppress diagnostic output\n"
-    "    -d --dump      print the structure of the jbig2 file\n"
-    "                   rather than explicitly decoding\n"
-    "    -o <file>	send decoded output to <file>\n"
-    "                   Defaults to the the input with a different\n"
-    "                   extension. Pass '-' for stdout.\n"
-    "\n"
-  );
-  
-  return 1;
+#ifdef HAVE_OPENSSL_SHA1
+    params->hash_ctx = malloc(sizeof(SHA_CTX));
+    if (params->hash == NULL) {
+        fprintf(stderr, "unable to allocate hash state\n");
+        params->hash = 0;
+        return;
+    } else {
+        SHA1_Init(params->hash_ctx);
+    }
+#endif /* HAVE_OPENSSL_SHA1 */
 }
+
+static void
+hash_image(jbig2dec_params_t *params, Jbig2Image *image)
+{
+    int N = image->stride * image->height;
+#ifdef HAVE_OPENSSL_SHA1
+    SHA1_Update(params->hash_ctx, image->data, N);
+#endif
+}
+
+static void
+hash_print(jbig2dec_params_t *params, FILE *out)
+{
+#ifdef HAVE_OPENSSL_SHA1
+    char md[SHA_DIGEST_LENGTH];
+    char digest[2*SHA_DIGEST_LENGTH + 1];
+    int i;
+    
+    SHA1_Final(md, params->hash_ctx);
+    for (i = 0; i < SHA_DIGEST_LENGTH; i++) {
+        snprintf(&(digest[2*i]), 3, "%02x", md[i]);
+    }
+    fprintf(out, "%s", digest);
+#else
+    fprintf(out, "sorry, hash function unimplemented");
+#endif
+}
+
+static void
+hash_free(jbig2dec_params_t *params)
+{
+#ifdef HAVE_OPENSSL_SHA1
+    // FIXME: need to check for SHA1 finalization?
+    free(params->hash_ctx);
+    params->hash_ctx = NULL;
+#endif
+}
+
 
 static int
 parse_options(int argc, char *argv[], jbig2dec_params_t *params)
@@ -80,6 +113,7 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 		{"quiet", 0, NULL, 'q'},
 		{"help", 0, NULL, 'h'},
 		{"dump", 0, NULL, 'd'},
+                {"hash", 0, NULL, 'm'},
 		{"output", 1, NULL, 'o'},
 		{NULL, 0, NULL, 0}
 	};
@@ -108,6 +142,9 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 			case 'd':
 				params->mode=dump;
 				break;
+                        case 'm':
+                                params->hash = 1;
+                                break;
 			case 'o':
 				params->output_file = strdup(optarg);
 				break;
@@ -117,10 +154,36 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 				break;
 		}
 	}
-	fprintf(stderr, "final option index %d out of %d\n", optind, argc);
 	return (optind);
 }
 
+static int
+print_usage (void)
+{
+  fprintf(stderr,
+    "Usage: jbig2dec [options] <file.jbig2>\n"
+    "   or  jbig2dec [options] <global_stream> <page_stream>\n"
+    "\n"
+    "  When invoked with a single file, it attempts to parse it as\n"
+    "  a normal jbig2 file. Invoked with two files, it treats the\n"
+    "  first as the global segments, and the second as the segment\n"
+    "  stream for a particular page. This is useful for examining\n"
+    "  embedded streams.\n"
+    "\n"
+    "  available options:\n"
+    "    -h --help	this usage summary\n"
+    "    -q --quiet     suppress diagnostic output\n"
+    "    -d --dump      print the structure of the jbig2 file\n"
+    "                   rather than explicitly decoding\n"
+    "       --hash	print a hash of the decode document\n"
+    "    -o <file>	send decoded output to <file>\n"
+    "                   Defaults to the the input with a different\n"
+    "                   extension. Pass '-' for stdout.\n"
+    "\n"
+  );
+  
+  return 1;
+}
 
 static int
 error_callback(void *error_callback_data, const char *buf, Jbig2Severity severity,
@@ -197,7 +260,7 @@ make_output_filename(const char *input_filename, const char *extension)
 static int
 write_page_image(jbig2dec_params_t *params, Jbig2Image *image)
 {
-      if (!strcmp(params->output_file, "-"))
+      if (!strncmp(params->output_file, "-", 2))
         {
           fprintf(stderr, "writing decoded page to stdout\n");
 #ifdef HAVE_LIBPNG
@@ -219,17 +282,43 @@ write_page_image(jbig2dec_params_t *params, Jbig2Image *image)
   return 0;
 }
 
+static int
+write_document_hash(jbig2dec_params_t *params)
+{
+    FILE *out;
+    
+    if (!strncmp(params->output_file, "-", 2)) {
+        out = stderr;
+    } else {
+        out = stdout;
+    }
+    
+    fprintf(out, "Hash of decoded document: ");
+    hash_print(params, out);
+    fprintf(out, "\n");
+    
+    return 0;
+}
+
 int
 main (int argc, char **argv)
 {
   FILE *f = NULL, *f_page = NULL;
   Jbig2Ctx *ctx;
   uint8_t buf[4096];
-  jbig2dec_params_t params = {render,1,NULL};
+  jbig2dec_params_t params;
   int filearg;
+  
+  // set defaults
+  params.mode = render;
+  params.verbose = 1;
+  params.hash = 0;
+  params.output_file = NULL;
 
   filearg = parse_options(argc, argv, &params);
 
+  if (params.hash) hash_init(&params);
+  
   switch (params.mode) {
     case usage:
         print_usage();
@@ -310,7 +399,7 @@ main (int argc, char **argv)
   // retrieve and output the returned pages
   {
     Jbig2Image *image;
-    
+
     /* work around broken CVision embedded streams */
     if (f_page != NULL)
       jbig2_complete_page(ctx);
@@ -327,13 +416,17 @@ main (int argc, char **argv)
     /* retrieve and write out all the completed pages */
     while ((image = jbig2_page_out(ctx)) != NULL) {
       write_page_image(&params, image);
+      if (params.hash) hash_image(&params, image);
       jbig2_release_page(ctx, image);
     }
+    if (params.hash) write_document_hash(&params);
   }
   
   jbig2_ctx_free(ctx);
 
   } /* end params.mode switch */
+
+  if (params.hash) hash_free(&params);
   
   // fin
   return 0;
