@@ -156,7 +156,6 @@ gxbitops_h=$(GLSRC)gxbitops.h $(gsbitops_h)
 # Streams
 scommon_h=$(GLSRC)scommon.h $(gsmemory_h) $(gstypes_h) $(gsstype_h)
 stream_h=$(GLSRC)stream.h $(scommon_h) $(srdline_h)
-gs_stdio_h=$(GLSRC)gs_stdio.h $(stdio__h) $(stream_h)
 
 ### Memory manager
 
@@ -2099,11 +2098,9 @@ $(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(GLD)cielib.dev\
 	$(SETMOD) $(GLD)sicclib $(sicclib_)
 	$(ADDMOD) $(GLD)sicclib -include $(ICCGENDIR)$(D)icclib.dev
 
-icc_h=$(ICCI_)$(D)icc.h
-
 $(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(GXERR) $(math__h) $(memory__h)\
  $(gsstruct_h) $(stream_h) $(gxcspace_h) $(gxarith_h) $(gxcie_h)\
- $(gzstate_h) $(gs_stdio_h) $(icc_h) $(gsicc_h)
+ $(gzstate_h) $(icc_h) $(gsicc_h)
 	$(GLCC) $(GLO_)gsicc.$(OBJ) $(C_) $(I_)$(GLI_) $(II)$(ICCI_)$(_I) $(GLSRC)gsicc.c
 
 # ---------------- Separation colors ---------------- #

@@ -29,33 +29,45 @@
 #include "gxarith.h"
 #include "gxcie.h"
 #include "gzstate.h"
-#include "gs_stdio.h"
+#include "stream.h"
 #include "icc.h"		/* must precede icc.h */
 #include "gsicc.h"
 
+
+typedef struct _icmFileGs icmFileGs;
+
+struct _icmFileGs {
+    ICM_FILE_BASE
+
+    /* Private: */
+    stream *strp;
+};
 
 /* Garbage collection code */
 
 /*
  * Discard a gs_cie_icc_s structure. This requires that we call the
- * destructor for ICC profile and lookup objects (which are stored in
- * "foreign" memory).
+ * destructor for ICC profile, lookup, and file objects (which are
+ * stored in "foreign" memory).
  *
  * No special action is taken with respect to the stream pointer; that is
- * the responsibility of the client.
- */
+ * the responsibility of the client.  */
 private void
 cie_icc_finalize(void * pvicc_info)
 {
     gs_cie_icc *    picc_info = (gs_cie_icc *)pvicc_info;
 
     if (picc_info->plu != NULL) {
-        picc_info->plu->free(picc_info->plu);
+        picc_info->plu->del(picc_info->plu);
         picc_info->plu = NULL;
     }
     if (picc_info->picc != NULL) {
-        picc_info->picc->free(picc_info->picc);
+        picc_info->picc->del(picc_info->picc);
         picc_info->picc = NULL;
+    }
+    if (picc_info->pfile != NULL) {
+        picc_info->pfile->del(picc_info->pfile);
+        picc_info->pfile = NULL;
     }
 }
 
@@ -256,7 +268,7 @@ gx_restrict_CIEICC(gs_client_color * pcc, const gs_color_space * pcs)
  * for all CIE bases. If the alternate color space is being used, then
  * this question is passed on the the appropriate method of that space.
  */
-const gs_color_space *
+private const gs_color_space *
 gx_concrete_space_CIEICC(const gs_color_space * pcs, const gs_imager_state * pis)
 {
     if (pcs->params.icc.picc_info->picc == NULL) {
@@ -301,7 +313,7 @@ gx_concretize_CIEICC(
     /* verify and update the stream pointer */
     if (picc_info->file_id != (instrp->read_id | instrp->write_id))
         return_error(gs_error_ioerror);
-    icc_update_fp(picc, instrp);
+    ((icmFileGs *)picc->fp)->strp = instrp;
 
     /* translate the input components */
     gx_restrict_CIEICC(&lcc, pcs);
@@ -372,13 +384,90 @@ gx_adjust_cspace_CIEICC(const gs_color_space * pcs, int delta)
                 (const gs_color_space *)&picc_params->alt_space, delta );
 }
 
+private int
+icmFileGs_seek(icmFile *pp, long int offset)
+{
+    icmFileGs *p = (icmFileGs *)pp;
+
+    return spseek(p->strp, offset);
+}
+
+private size_t
+icmFileGs_read(icmFile *pp, void *buffer, size_t size, size_t count)
+{
+    icmFileGs *p = (icmFileGs *)pp;
+    uint    tot;
+    int     status = sgets(p->strp, buffer, size * count, &tot);
+
+    return (status < 0) ? status : tot;
+}
+
+private size_t
+icmFileGs_write(icmFile *pp, void *buffer, size_t size, size_t count)
+{
+    icmFileGs *p = (icmFileGs *)pp;
+    uint    tot;
+    int     status = sputs(p->strp, buffer, size * count, &tot);
+
+    return (status < 0) ? status : tot;
+}
+
+private int
+icmFileGs_flush(icmFile *pp)
+{
+    icmFileGs *p = (icmFileGs *)pp;
+
+    return s_std_write_flush(p->strp);
+}
+
+private int
+icmFileGs_delete(icmFile *pp)
+{
+    free(pp);
+    return 0;
+}
+
+/**
+ * gx_wrap_icc_stream: Wrap a Ghostscript stream as an icclib file.
+ * @strp: The Ghostscript stream.
+ *
+ * Creates an icmFile object that wraps @stream.
+ *
+ * Note: the memory for this object is allocated using malloc, and the
+ * relocation of the stream pointer is done lazily, before an icclu
+ * operation. It would probably be cleaner to allocate the icmFile in
+ * garbage collected memory, and have the relocation happen there, but
+ * I wanted to minimally modify Jan's working code.
+ *
+ * Return value: the stream wrapped as an icmFile object, or NULL on
+ * error.
+ **/
+private icmFile *
+gx_wrap_icc_stream(stream *strp)
+{
+    icmFileGs *p;
+
+    if ((p = (icmFileGs *) calloc(1,sizeof(icmFileGs))) == NULL)
+	return NULL;
+    p->seek  = icmFileGs_seek;
+    p->read  = icmFileGs_read;
+    p->write = icmFileGs_write;
+    p->flush = icmFileGs_flush;
+    p->del   = icmFileGs_delete;
+
+    p->strp = strp;
+
+    return (icmFile *)p;
+}
+
 int
 gx_load_icc_profile(gs_cie_icc *picc_info)
 {
     stream *        instrp = picc_info->instrp;
-    icc *           picc = picc_info->picc;
+    icc *           picc;
     icmLuBase * plu = NULL;
-
+    icmFile *pfile = NULL;
+	
     /* verify that the file is legitimate */
     if (picc_info->file_id != (instrp->read_id | instrp->write_id))
 	return_error(gs_error_ioerror);
@@ -402,9 +491,11 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
 	icProfileClassSignature profile_class;
 	icColorSpaceSignature   cspace_type;
 	gs_vector3 *            ppt;
+
+	pfile = gx_wrap_icc_stream (instrp);
       
-	if ((picc->read(picc, instrp, 0)) != 0)
-	    return_error(gs_error_rangecheck);
+	if ((picc->read(picc, pfile, 0)) != 0)
+	    goto return_rangecheck;
             
 	/* verify the profile type */
 	profile_class = picc->header->deviceClass;
@@ -412,7 +503,7 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
 	     profile_class != icSigDisplayClass   &&
 	     profile_class != icSigOutputClass    &&
 	     profile_class != icSigColorSpaceClass  )
-	    return_error(gs_error_rangecheck);
+	    goto return_rangecheck;
 
 	/* verify the profile connection space */
 	cspace_type = picc->header->pcs;
@@ -421,20 +512,20 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
 	else if (cspace_type == icSigXYZData)
 	    picc_info->pcs_is_cielab = false;
 	else
-	    return_error(gs_error_rangecheck);
+	    goto return_rangecheck;
 
 	/* verify the source color space */
 	cspace_type = picc->header->colorSpace;
 	if (cspace_type == icSigCmykData) {
 	    if (picc_info->num_components != 4)
-		return_error(gs_error_rangecheck);
+		goto return_rangecheck;
 	} else if ( cspace_type == icSigRgbData ||
 		    cspace_type == icSigLabData   ) {
 	    if (picc_info->num_components != 3)
-		return_error(gs_error_rangecheck);
+		goto return_rangecheck;
 	} else if (cspace_type == icSigGrayData) {
 	    if (picc_info->num_components != 1)
-		return_error(gs_error_rangecheck);
+		goto return_rangecheck;
 	}
 
 	/*
@@ -491,9 +582,10 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
 	plu = picc->get_luobj( picc,
 			       icmFwd,
 			       icmDefaultIntent,
+			       0, /* PCS override */
 			       icmLuOrdNorm );
 	if (plu == NULL)
-	    return_error(gs_error_rangecheck);
+	    goto return_rangecheck;
 
 	/* 
 	 * Get the appropriate white and black points. See the note on
@@ -508,16 +600,19 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
 
 	picc_info->picc = picc;
 	picc_info->plu = plu;
-
+	picc_info->pfile = pfile;
     }
 
-    if (picc_info->picc == NULL) {
-	if (plu != NULL)
-	    plu->free(plu);
-	if (picc != NULL)
-	    picc->free(picc);
-    }
     return 0;
+
+ return_rangecheck:
+    if (plu != NULL)
+	plu->del(plu);
+    if (picc != NULL)
+	picc->del(picc);
+    if (pfile != NULL)
+	pfile->del(pfile);
+    return_error(gs_error_rangecheck);
 }
 
 /*
@@ -529,7 +624,7 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
 private int
 gx_install_CIEICC(const gs_color_space * pcs, gs_state * pgs)
 {
-    gs_icc_params * picc_params = (gs_icc_params *)&pcs->params.icc;
+    const gs_icc_params * picc_params = (const gs_icc_params *)&pcs->params.icc;
     gs_cie_icc *    picc_info = picc_params->picc_info;
 
     /* update the stub information used by the joint caches */
@@ -584,6 +679,7 @@ gs_cspace_build_CIEICC(
     picc_info->pcs_is_cielab = false;
     picc_info->picc = NULL;
     picc_info->plu = NULL;
+    picc_info->pfile = NULL;
 
     pcs = *ppcspace;
     pcs->params.icc.picc_info = picc_info;

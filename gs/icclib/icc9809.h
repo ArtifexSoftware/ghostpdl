@@ -1,6 +1,6 @@
 
 /*
- * Note: Modified for use by icclib V1.23:
+ * Note: Modified for use by icclib V2.00:
  *
  * Changed guard bands from ICC_H to ICC9809_H
  *
@@ -11,9 +11,16 @@
  * the sizes of ic Numbers, if ORD is defined.
  *
  * Adding colorspaces 'MCH5-8' for Hexachrome and others. (Colorsync ?)
+ * Added the Positive/Negative and Color/BlackAndWhite Attribute bits
  *
  * I believe icMeasurementFlare as an enumeration is bogus in
  * this file. It is meant to be a u16.16 number.
+ *
+ * Add Chromaticity Tag and Type from ICC.1A:1999-04,
+ * but there is no formal "icc.h" from the ICC that indicates
+ * what the names should be.
+ *
+ * Added Colorsync 2.5 specific VideoCardGamma defines.
  *
  *  Graeme Gill.
  */
@@ -140,6 +147,10 @@ authorization from SunSoft Inc.
 #define icTransparency                  0x00000001L     /* Bit pos 0 */
 #define icGlossy                        0x00000000L     /* Bit pos 1 */
 #define icMatte                         0x00000002L     /* Bit pos 1 */
+#define icPositive                      0x00000000L     /* Bit pos 2 */
+#define icNegative                      0x00000004L     /* Bit pos 2 */
+#define icColor                         0x00000000L     /* Bit pos 3 */
+#define icBlackAndWhite                 0x00000008L     /* Bit pos 3 */
 
 /*
  * Profile header flags, the least-significant 16 bits are reserved
@@ -153,6 +164,17 @@ authorization from SunSoft Inc.
 /* Ascii or Binary data */
 #define icAsciiData                     0x00000000L 
 #define icBinaryData                    0x00000001L
+
+/* Phosphor or Colorant sets */
+#define icPhColUnknown                  0x0000          /* Specified */
+#define icPhColITU_R_BT_709             0x0001          /* ITU-R BT.709 */
+#define icPhColSMPTE_RP145_1994         0x0002          /* SMPTE RP145-1994 */
+#define icPhColEBU_Tech_3213_E          0x0003          /* EBU Tech.3213-E */
+#define icPhColP22                      0x0004          /* P22 */
+
+/* Video card gamma formats (ColorSync 2.5 specific) */
+#define icVideoCardGammaTable           0x00000000
+#define icVideoCardGammaFormula         0x00000001
 
 /* 
  * Define used to indicate that this is a variable length array
@@ -252,6 +274,7 @@ typedef enum {
     icSigBToA2Tag                       = 0x42324132L,  /* 'B2A2' */
     icSigCalibrationDateTimeTag         = 0x63616C74L,  /* 'calt' */
     icSigCharTargetTag                  = 0x74617267L,  /* 'targ' */ 
+    icSigChromaticityTag                = 0x6368726DL,  /* 'chrm' */ 
     icSigCopyrightTag                   = 0x63707274L,  /* 'cprt' */
     icSigCrdInfoTag                     = 0x63726469L,  /* 'crdi' */
     icSigDeviceMfgDescTag               = 0x646D6E64L,  /* 'dmnd' */
@@ -286,6 +309,7 @@ typedef enum {
     icSigScreeningTag                   = 0x7363726EL,  /* 'scrn' */
     icSigTechnologyTag                  = 0x74656368L,  /* 'tech' */
     icSigUcrBgTag                       = 0x62666420L,  /* 'bfd ' */
+	icSigVideoCardGammaTag              = 0x76636774L,  /* 'vcgt' ColorSync 2.5 */
     icSigViewingCondDescTag             = 0x76756564L,  /* 'vued' */
     icSigViewingConditionsTag           = 0x76696577L,  /* 'view' */
     icMaxEnumTag                        = icMaxTagVal 
@@ -321,6 +345,7 @@ typedef enum {
 /* type signatures */
 typedef enum {
     icSigCurveType                      = 0x63757276L,  /* 'curv' */
+    icSigChromaticityType               = 0x6368726DL,  /* 'chrm' */ 
     icSigDataType                       = 0x64617461L,  /* 'data' */
     icSigDateTimeType                   = 0x6474696DL,  /* 'dtim' */
     icSigDeviceSettingsType             = 0x64657673L,  /* 'devs' */
@@ -342,6 +367,7 @@ typedef enum {
     icSigUInt32ArrayType                = 0x75693332L,  /* 'ui32' */
     icSigUInt64ArrayType                = 0x75693634L,  /* 'ui64' */
     icSigUInt8ArrayType                 = 0x75693038L,  /* 'ui08' */
+	icSigVideoCardGammaType             = 0x76636774L,  /* 'vcgt' ColorSync 2.5 */
     icSigViewingConditionsType          = 0x76696577L,  /* 'view' */
     icSigXYZType                        = 0x58595A20L,  /* 'XYZ ' */
     icSigXYZArrayType                   = 0x58595A20L,  /* 'XYZ ' */
