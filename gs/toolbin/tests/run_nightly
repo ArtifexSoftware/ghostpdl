@@ -190,8 +190,10 @@ if p:
         diff = diff + line
     p.close()
 
-diff = diff + "\n\nThe complete list of regressions for today:\n"
-msg = diff + msg
+# include the main body only on Mondays
+if time.gmtime()[6] == 0:
+    diff = diff + "\n\nThe complete list of regressions for today:\n"
+    msg = diff + msg
 
 # Get updated baselines
 baselines = 'The following files had their baselines updated:\n'
