@@ -1535,7 +1535,8 @@ process_text_add_width(gs_text_enum_t *pte, gs_font *font,
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
     int i, w;
-    double scale = (font->FontType == ft_TrueType ? 0.001 : 1.0);
+    gs_matrix smat;
+    double scale;
     gs_point dpt;
 	gs_matrix tmat;
     int space_char =
@@ -1544,6 +1545,8 @@ process_text_add_width(gs_text_enum_t *pte, gs_font *font,
     int code = 0;
     bool move = false;
 
+    pdf_font_orig_matrix(font, &smat);
+    scale = 0.001 / smat.xx;
     dpt.x = dpt.y = 0;
     tmat = ppts->text_matrix;
     for (i = *pindex, w = 0; i < pstr->size; ++i) {
