@@ -616,7 +616,14 @@ end readonly def
 
 	% Copy the crop box.
     dup /CropBox knownoget {
-      mark /CropBox 3 -1 roll /PAGE pdfmark
+	% If the page has been rotated, rotate the CropBox.
+      mark /CropBox 3 -1 roll
+      3 index /Rotate pget {
+	90 idiv 1 and 0 ne {
+	  aload pop 4 -2 roll exch 4 2 roll exch 4 array astore
+	} if
+      } if
+      /PAGE pdfmark
     } if
 
 	% Copy annotations and links.
