@@ -7,6 +7,68 @@ This file, NEWS-TLS (tools), describes the changes in the most recent
 releases of Aladdin's utility tools directory in reverse chronological
 order.
 
+Version 1.32 (01/11/00)
+=======================
+
+../tools/cvs2log.py -h artifex.com
+Mon Dec 13 04:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * grid.pcl [1.1]:
+        gl/2 code to create a grid that spans the pcl picture frame window.
+        Each grid unit is 1/16 of an inch.  Useful for finding placement problems.
+        
+
+Fri Dec 10 21:00:00 1999 GMT            ray@artifex.com
+
+        * x [1.4]:
+        Get rid of this test file
+        
+        * x [1.3]:
+        Revise RCS keyword line
+        
+        * x [1.6]:
+        Fix RCSfile (was RCSFile)
+        
+        * x [1.7]:
+        Remove keyword instance and commit
+        
+        * x [1.5]:
+        New version of x
+        
+
+Fri Dec 10 20:00:00 1999 GMT            ray@artifex.com
+
+        * x [1.1]:
+        Test of CVS keywords - initial version
+        
+        * x [1.2]:
+        Test with no changes except RCS keyword line
+        
+
+Fri Sep 17 06:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * cvs2log.py [1.10]:
+        adds -p option so that a corresponding patch can be appended to each
+        log entry.
+        
+        * cvs2log.py [1.11]:
+        better error checking for odd rcs numbers when creating patches.
+        
+
+Fri Sep 17 05:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * cvs2log.py [1.9]:
+        Changed back to use the Working file instead of the RCS file.
+        
+
+Sat Sep 11 20:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * cvs2log.py [1.8]:
+        Modified to parse the RCS file: (not Working File:) field of the cvs
+        log output and always print the module name followed by the file name
+        (i.e. pcl/pcparse.c instead of pcparse.c).  Also removes obsolete code
+        to get working directory and debug print of log file.
+        
 Version 1.30 (08/25/99)
 ======================
 

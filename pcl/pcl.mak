@@ -35,7 +35,7 @@ pcl.config-clean: clean_gs
 
 #### Miscellaneous
 
-PCLVERSION=1.31d
+PCLVERSION=1.32
 
 # pgstate.h is out of order because pcstate.h includes it.
 pclver_h    = $(PCLSRC)pclver.h

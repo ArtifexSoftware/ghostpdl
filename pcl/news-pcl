@@ -10,6 +10,441 @@ generated from the revision control logs.  The dates provided for each
 entry are the dates the sources were committed to the source code
 repository.
 
+Version 1.32 (01/12/00)
+=======================
+
+Tue Jan 11 02:00:00 2000 GMT            ray@artifex.com
+
+        * pglabel.c [1.27]:
+        Change name of hpgl_select_font to prevent multiply defined symbol
+        when building with -DNOPRIVATE.
+        
+
+Wed Jan  5 03:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgvector.c [1.16]:
+        stroke paths that get excessively large during PE (polyline encode).
+        This change was motivated by a performance problem in the test file
+        bwalldpf.pcl.
+        
+        * pgframe.c [1.10], pcstate.h [1.24], pcjob.c [1.17]:
+        Code to implicitly exit gl/2 when if we receive an ESC E while the
+        gl/2 parser is active.
+        
+
+Tue Dec 21 23:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pglabel.c [1.26]:
+        clears the path after exiting label mode.
+        
+
+Tue Dec 21 22:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgdraw.c [1.51]:
+        The new pixel placement algorithm introduced several problems in the pcl5e ats because pcl was using and adjustment of 0.0 instead of 0.5.
+        
+        * pcfont.c [1.23]:
+        PCL did not correctly process corrupt files because the font selection
+        structures were not properly initialized without <ESC>E.
+        
+
+Mon Dec 13 02:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgdraw.c [1.50]:
+        The last change fixing pixel placement cause a bug with 0 width lines.
+        
+
+Mon Dec 13 00:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pctext.c [1.25]:
+        The plot thickens.  pcl double rounds truetype fonts - the scaling
+        factor and the final resulting width are integral in centipoints.
+        Other fonts, intellifont and bitmap only round the final width.
+        
+        * pgdraw.c [1.49]:
+        Uses gx_translate_path() to emulate pcl pixel placement.  Also, we now
+        properly emulate gl/2 character fill, apparently characters are filled
+        first, then edged.  Also the edging stroke must be done with the
+        default raster op.  The combination of these two changes fixes the
+        problems on fts panels 2390, 2391, and other pixel placement panels.
+        
+        * pcl_ugcc.mak [1.25]:
+        pcl now uses cljet5pr, cljet5 is no longer longedge feed.
+        
+
+Mon Nov 29 01:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pglabel.c [1.25]:
+        positioning of vertical labels was not correct.
+        
+        * pgvector.c [1.15], pgstate.h [1.9], pgpoly.c [1.10], pgdraw.c [1.48], 
+        pgconfig.c [1.18]:
+        We now emulate the unusual HP Line Type 0 behavior (fixes fts panel
+        1503) and phase of dashing has been fixed to exactly emulate hp (fixes
+        fts panels 1482, 1483, 1484 and others).  The hp spec is not clear
+        exactly what happens when assymetric scaling is combined with vector
+        fills 3 and 4.  We now apply the x and y scaling to x and y spacing
+        when the fill type is crosshatch (4) and apply the maximum spacing for
+        single line fills (fill type 3).  This was done to fix fts panel 2380.
+        This entry and code mods are too "heavy", each of the problems above
+        should have been checked in separately.
+        
+        * rtraster.c [1.21]:
+        "CombineWithColor" was not properly set to false with thresholding
+        monochrome pcl configuration.
+        
+        * Anomalies.txt [1.16]:
+        Replaces gl/2 character anomaly test file with a smaller one.  Adds a
+        new anomaly with an example illustrating a rounding difference between
+        HP and Artifex, the example was extracted from a "low priority" ats
+        test file.
+        
+
+Wed Nov 10 05:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * Anomalies.txt [1.15]:
+        Documents hpgl/2 character placement bug in HP printers.
+        
+        * pgdraw.c [1.47]:
+        Fixes hpgl (FT3 & FT4) polygon fills to support non-zero winding and
+        even odd filling.  Thanks to Ray for finding this problem and
+        explaining my misuse of "clip".
+        
+        * rtgmode.c [1.15]:
+        Not properly converting coordinates from raster space to device space,
+        in some cases.  Problem introduced with the last round of performance
+        improvements.
+        
+
+Fri Nov  5 05:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgconfig.c [1.17]:
+        fix for a font initialization problem.
+        
+
+Tue Nov  2 04:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcpage.h [1.5], pcpage.c [1.33]:
+        the bounding box is now accessed through one pcl routine to prevent
+        duplicating the code everywhere.
+        
+        * pglfill.c [1.19], pgcolor.c [1.7], pcpatrn.c [1.21], pcpalet.c [1.16], 
+        pclookup.c [1.4], pcfrgrnd.c [1.7], pccolor.c [1.7], pccid.c [1.11]:
+        adds configuration for pcl5e without the benefit of grayscaling to
+        improve performance.
+        
+        * pgdraw.c [1.46]:
+        It seems that HP would prefer 6 digits of accuracy while scaling.  The
+        test file cd60bw22.bin actually requires this lesser accuracy to print
+        correctly.  This fixes the stray lines on the baseball players face on
+        page 3.  The truncation was empirically derived.
+        
+        * rtraster.h [1.6]:
+        This file should have been checked in with the raster speedup logged
+        below.
+        
+        * pctext.c [1.24]:
+        Performance modifications to print strings using xyshow for the common
+        cases instead of showing a single character at a time.
+        
+        * rtraster.c [1.20], rtgmode.c [1.14]:
+        Special speedup to handle an unusual class of pcl files that use
+        opaque source and transparent pattern raster with no background, we
+        use the pages bounding box to conservatively determine if the region
+        of interest (the area the raster will cover) is blank, then we can use
+        a simpler raster algorithm.
+        
+
+Tue Oct 26 19:00:00 1999 GMT            ray@artifex.com
+
+        * pcl_watc.mak [1.8], pcl_ugcc.mak [1.24], pcl_msvc.mak [1.7]:
+        Change to -include gsnogc.dev instead of explicit reference to gsnogc.obj.
+        Avoids linker unresolved / mulitply defined problems with async devices.
+        
+
+Mon Oct 25 21:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pglfill.c [1.18], pgdraw.c [1.45], pgconfig.c [1.16], 
+        pcursor.c [1.16], pctop.c [1.11], pcpage.c [1.32], pcommand.c [1.14]:
+        adds initializations needed after removing the clearing of the pcl
+        state structure.
+        
+        * pcl_ugcc.mak [1.23]:
+        adds jpeg driver and necessary jpeg source directory setting.
+        
+        * pctext.c [1.23]:
+        modification to round font width calculations to pcl current units.
+        
+
+Mon Oct 25 01:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * rtgmode.c [1.13]:
+        Raster state's graphics margin was not being reset when a pcl reset
+        was issued, potentially resulting in an obscure bug.  If the margin
+        was set in raster mode and raster mode is subsequently entered
+        implicitly, after a reset, the graphics margin was improperly retained.
+        Running the fts test panels 2278-83 immediately followed by fts panel
+        2290 improperly retains the graphics margin which resulting indirectly
+        in a misplaced vertical line.  The probability of this occurring in
+        any real pcl file is very low.
+        
+
+Fri Oct 15 07:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pctop.c [1.10]:
+        removes setting of the entire pcl state to 0 bugmask at the beginning
+        of a job.
+        
+
+Fri Oct 15 06:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgdraw.c [1.44]:
+        Adds a "moveto" the first point of a bezier curve if there is no
+        current subpath even if we are in polygon mode.
+        
+
+Thu Oct  7 07:00:00 1999 GMT            ray@artifex.com
+
+        * pglabel.c [1.24], pgfont.c [1.5]:
+        adds (void *) casts for some font related function to avoid the work
+        of (1) finding a reasonable set of include files for plchar.c and (2)
+        the indirectly related problem of derefencing pointers to the graphics
+        state whose type definition should be opaque.
+        
+
+Tue Oct  5 04:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcl_ugcc.mak [1.22], pcl_top.mak [1.19]:
+        Moves "FEATUREDEVS" back to the main makefiles.  These were moved to
+        the top level makefile to avoid duplicating the definitions in each
+        file.  Because pipe.dev must be included unix makefiles and not
+        microsoft (Watcom) environments different definitiion are required for
+        FEATUREDEVS.
+        
+
+Sun Oct  3 18:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pctext.c [1.22]:
+        changes typedef from gs_show_enum to gs_text_enum_t.  This one was missed
+        in the integration.
+        
+
+Sun Oct  3 08:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pglabel.c [1.23], pgfont.c [1.4], pctop.c [1.9], pctext.c [1.21], 
+        pcstate.h [1.23], pcl_top.mak [1.18]:
+        This is the first gs593 integration it is *NOT* a release.  Normally
+        each file is checked in with an associated log entry, in order to
+        check in all of the code simultaneously we batch all of the file
+        name's modified and change descriptions here (Note: Aladdin code changes
+        are documented in gs/doc/News.htm)
+        
+        - pcstate.h - removes show enumeration from pcl state.
+        - pctop.c, pxtop.c
+        	- gs_grestore_no_wraparound()'s is now gs_grestore_only().
+        - pxgstate.c
+                - ENUM_RETURN_CONST_STRING_PTR() now takes a gs string
+        	  argument instead of the string's data as it did
+                  previously.
+        - plmain.c -
+        	- The library no longer initializes io devices.  Adds
+        	  gs_iodev_init() to main() procedure.  Also, gs_c_param_list_rewrite()
+        	  is renamed to gs_c_param_list_write_more().
+        - pcltop.mak - adds pipe.dev for operating system pipe support.
+        - pctext.c, pglabel.c, pxfont.c, plfont.c
+           - extensive modifications to support the text api (gstext.h)
+        	- use gs_text_enum_t instead of gs_show_enum.
+        	- removes enumeration allocation, this is now done by the text
+                  "begin" functions.
+        	- update "next_char" procs and "encode char" procs to take a
+        	  glyph argument and the character argument is now passed by value
+                  (pcl nor xl make use of the glyph argument).
+        	- char_path_n_init() replaced with gs_charpath_begin().
+        	- gs_show_n_init() replaced with gs_show_begin().
+        	- gs_show_next() is now handled by gs_process_text().
+        	- gs_release_text() added.
+                - gs_xyshow_n_init() replace with gs_xyshow_begin().  Passing
+        	  of x and y coordinates modified to support the new interface.
+        	  Unfortunately, we need to transform the coordinates into the
+                  space of the font scaling matrix, that is the current ctm for
+                  xl when the the text is processed.  This differs from postscript
+        	  which appears to have the regular user->device matrix in the
+        	  graphics state during processing.
+        	- (plfont.c) - gs_notify_init() is now part of the pfont
+                  initialization procedure, related TODO: cut over to gs_font_alloc()
+        	  and gs_font_base_alloc().
+        
+        - all gs files - removes uninitialized rcs identifiers.
+        
+        KNOWN PROBLEMS:
+        
+        occassional pxl and pcl crashes in gdev_mem_set_line_ptrs() when
+        running in color due to null base (data) pointer.
+        
+
+Thu Sep 30 20:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgvector.c [1.14], pgdraw.c [1.43]:
+        Allowing unnecessary "pen ups" in polygon mode when placing beziers in
+        the polygon buffer.  Fixes missing graphics in lotus 1-2-3 generated
+        files: ls40c1d3.bin and ls40d1d3.bin.
+        
+
+Wed Sep 29 04:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pctop.c [1.8]:
+        The cursor pointer was not correctly updated to the beginning of the
+        UEL code int the stream when flushing to the end of a job.
+        
+
+Wed Sep 29 00:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgpoly.c [1.9]:
+        Corrects a typo in the last pgpoly.c fix that used the wrong pen state
+        structure.  Thanks to Larry Baer for noticing this problem.
+        
+
+Sun Sep 26 06:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgvector.c [1.13]:
+        modified to ignore spurious pen ups in polygon mode to accomodate the
+        unusual pcl in ls4031d1.bin and ls4051d1.bin.
+        
+        * pgpoly.c [1.8]:
+        Exiting polygon mode should only have an effect if we are already in
+        polygon mode.  This problem was discovered in two legacy dos lotus 1 2
+        3 files ls4031d1.bin and ls4051d1.bin.
+        
+        * pcsfont.c [1.18]:
+        The partial implementation of continuation (see below) did not allow
+        for more than one continuation command.  This change should work
+        for any number of continuation commands.  This fixes the truncated
+        large bookman font that prints the number '200' on fw21fww3.bin.
+        
+        * pglfill.c [1.17]:
+        In contradicton to PCLTRM Select Pen is not ignored in polygon mode.
+        This also fixes problems seen in legacy ls4031d1.bin and ls4051d1.bin.
+        NOTE: I have not tested if this is also true for polyline encoded
+        select pen command.
+        
+
+Wed Sep 22 05:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgdraw.c [1.42]:
+        normalizes angle on second pass of gl/2 vector fills to the 1st or 2nd
+        quadrant, specifically [0..PI).  Fixes problem in test file c3.bin bug
+        number 199912.
+        
+
+Tue Sep 21 16:00:00 1999 GMT            marcos@artifex.com
+
+        * pctop.c [1.7], pcsymbol.c [1.13], pcfrgrnd.c [1.6], pcfont.c [1.22]:
+        Changed comments from // to /* */
+        
+
+Mon Sep 20 17:00:00 1999 GMT            marcos@artifex.com
+
+        * pcl.mak [1.33]:
+        Changed version number.
+        
+
+Fri Sep 17 19:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgchar.c [1.13]:
+        In contradiction to PCLTRM 23-85 the HPGL/2 SD command permits the
+        same values for posture as pcl permits for the style attribute.  The
+        possible values of 0, 1 and 2 on 23-85 are incorrect.
+        
+
+Fri Sep 17 09:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgdraw.c [1.41]:
+        Improves algorithm to determine if a path should be closed.  We now
+        make comparisons of gl/2's first and last point of a subpath in device
+        space instead of user space.  Fixes missing miter and join in test
+        file golfer.pcl.
+        
+
+Thu Sep 16 06:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcpage.c [1.31]:
+        Proper "page feed if marked" logic for set paper source and set page
+        size commands.
+        
+        * pcjob.c [1.16]:
+        resets "parse other" to pcl upon receiving a printer reset in case we
+        received the command after entering gl/2 mode.  Fixes the overlay
+        macro bug page 3 fts.2230.
+        
+        * pcjob.c [1.15]:
+        Proper "page feed if marked" logic for duplexing commands.
+        
+
+Fri Sep 10 09:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pctext.c [1.20]:
+        Improperly qualifying an undefined glyph.  In pcl parlance undefined
+        glyphs are space characters, for some reason this rule was not being
+        upheld in all cases.  Fixes the bad spacing on page 1 of mc608w22.bin.
+        
+        * pcfont.c [1.21]:
+        The pcl font machinary was changed (see below) to maintain a flag in
+        the font selection state indicating if the font should be selected by
+        id.  Unfortunately, we forgot to clear the flag when decaching font
+        and font selection parameters.  This fixes the missing characters seen
+        on pcl5e ats file mc608w22.bin and others.
+        
+
+Fri Sep 10 08:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgchar.c [1.12]:
+        HP does not stop processing an SD or AD command because one or more of
+        the parameters are out of range, out of range parameters are skipped.
+        File bug410.pcl.
+        
+        * pcstate.h [1.22]:
+        This file should have been checked in with the change to implement
+        soft font continuation - see last entry for file pcsfont.c.  This fixes
+        large missing 4 character in ats file pl30aw22.bin.
+        
+
+Fri Sep 10 01:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcsfont.c [1.17]:
+        soft font continuation support for uncompressed bitmap fonts.
+        
+
+Sun Sep  5 19:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcpage.c [1.30]:
+        pjl wide a4 should only be in effect if a4 paper is selected.
+        
+
+Tue Aug 31 02:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcjob.c [1.14]:
+        The pcl duplex page side select command does not do an unconditional
+        page eject contrary to the documentation.
+        
+
+Sun Aug 29 03:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pctext.c [1.19]:
+        Change to not automatically treat ascii character 32 as a space.  As a
+        hack we only do this for internal fonts which shouldn't have a real
+        character mapped at position 32.  Download fonts may hava a real
+        character mapped at position 32 in which case the escapement for the
+        character (not hmi) should be used.  Thanks to Jan Stoeckenius for
+        fixing this one.
+        
+
+Wed Aug 25 22:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcfsel.c [1.13]:
+        fixes pitch selection problem - scalable fonts should score worst not
+        best when a fixed pitch font is requested.  Improves font selection
+        debugging code, as well.
+        
 Version 1.30 (08/25/99)
 =======================
 

@@ -7,6 +7,122 @@ This file, NEWS-PL, describes the changes in the most recent releases of
 Aladdin's library code that is shared between PCL5, HP-GL/2, HP RTL, and PCL
 XL, in reverse chronological order.
 
+Version 1.32 (01/11/00)
+=======================
+
+Wed Jan  5 04:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * plmain.c [1.18]:
+        removes an unnecessary compilation directive.
+        
+        * pjparse.c [1.10]:
+        The PJL parser does not correctly handle side effects amongst PJL
+        variables.  This change simply adds one effect to correctly print a
+        customer file.  Changing the ORIENTATION variable automatically
+        updates the FORMLINES variable.  There are other side effects that
+        should be implemented and tested (todo).
+        
+
+Sun Dec 12 23:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * plchar.c [1.10]:
+        The actual bold fraction used on HP printers is larger than the
+        expected value from the specification - we now emulate the HP printers
+        (C311.bin, T311.bin and other test files.  Also, the unusual passing
+        of the bold fraction between pxl and the font machinery (through
+        WMode) is now more accurate.
+        
+
+Tue Nov  2 04:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * plfont.c [1.7], plchar.c [1.9]:
+        Better handling of undefined glyphs.  In particular pcl prints a space
+        for undefined characters - so it is most convenient for the font
+        machinery to return an undefined glyph code instead of rendering the 0
+        glyph (the rectangle) when a glyph is undefined.  TODO: needs to be
+        tested with XL.
+        
+
+Fri Oct 15 05:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * plmain.c [1.17]:
+        device parameters derived from the command line were being sent to an
+        already open device, we now apply these parameters before the device
+        is open.
+        
+
+Tue Oct  5 18:00:00 1999 GMT            ray@artifex.com
+
+        * pjtop.h [1.2], pjparse.h [1.7]:
+        Fix non-standard comment after #endif to use /* */ - prevent warnings
+        
+
+Tue Oct  5 04:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * plchar.c [1.8]:
+        adds (void *) casts for some font related function to avoid the work
+        of (1) finding a reasonable set of include files for plchar.c and (2)
+        the indirectly related problem of derefencing pointers to the graphics
+        state whose type definition should be opaque.
+        
+
+Sun Oct  3 08:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * plmain.c [1.16], plfont.c [1.6], plchar.c [1.7]:
+        This is the first gs593 integration it is *NOT* a release.  Normally
+        each file is checked in with an associated log entry, in order to
+        check in all of the code simultaneously we batch all of the file
+        name's modified and change descriptions here (Note: Aladdin code changes
+        are documented in gs/doc/News.htm)
+        
+        - pcstate.h - removes show enumeration from pcl state.
+        - pctop.c, pxtop.c
+        	- gs_grestore_no_wraparound()'s is now gs_grestore_only().
+        - pxgstate.c
+                - ENUM_RETURN_CONST_STRING_PTR() now takes a gs string
+        	  argument instead of the string's data as it did
+                  previously.
+        - plmain.c -
+        	- The library no longer initializes io devices.  Adds
+        	  gs_iodev_init() to main() procedure.  Also, gs_c_param_list_rewrite()
+        	  is renamed to gs_c_param_list_write_more().
+        - pcltop.mak - adds pipe.dev for operating system pipe support.
+        - pctext.c, pglabel.c, pxfont.c, plfont.c
+           - extensive modifications to support the text api (gstext.h)
+        	- use gs_text_enum_t instead of gs_show_enum.
+        	- removes enumeration allocation, this is now done by the text
+                  "begin" functions.
+        	- update "next_char" procs and "encode char" procs to take a
+        	  glyph argument and the character argument is now passed by value
+                  (pcl nor xl make use of the glyph argument).
+        	- char_path_n_init() replaced with gs_charpath_begin().
+        	- gs_show_n_init() replaced with gs_show_begin().
+        	- gs_show_next() is now handled by gs_process_text().
+        	- gs_release_text() added.
+                - gs_xyshow_n_init() replace with gs_xyshow_begin().  Passing
+        	  of x and y coordinates modified to support the new interface.
+        	  Unfortunately, we need to transform the coordinates into the
+                  space of the font scaling matrix, that is the current ctm for
+                  xl when the the text is processed.  This differs from postscript
+        	  which appears to have the regular user->device matrix in the
+        	  graphics state during processing.
+        	- (plfont.c) - gs_notify_init() is now part of the pfont
+                  initialization procedure, related TODO: cut over to gs_font_alloc()
+        	  and gs_font_base_alloc().
+        
+        - all gs files - removes uninitialized rcs identifiers.
+        
+        KNOWN PROBLEMS:
+        
+        occassional pxl and pcl crashes in gdev_mem_set_line_ptrs() when
+        running in color due to null base (data) pointer.
+        
+
+Mon Sep 20 17:00:00 1999 GMT            marcos@artifex.com
+
+        * pl.mak [1.13]:
+        Changed version number.
+        
 Version 1.30 (08/25/99)
 =======================
 
