@@ -377,71 +377,6 @@ private const uint32 *cross_hatch_patterns[] = {
   ch_square, ch_diamond
 };
 
-/* Define an analogue of makebitmappattern that allows scaling. */
-/* (This might get migrated back into the library someday.) */
-/* We pass the PCL pattern id so we can store it in the Pattern's UID, */
-/* in order to be able to winnow the Pattern cache by PCL id. */
-private int pcl_bitmap_PaintProc(P2(const gs_client_color *, gs_state *));
-private int
-pcl_makebitmappattern(gs_client_color *pcc, const gx_tile_bitmap *tile,
-  gs_state *pgs, floatp scale_x, floatp scale_y, int rotation /* 0..3 */,
-  uint id)
-{	gs_client_pattern pat;
-	gs_matrix mat, smat;
-	int angle = rotation * 90;
-
-	if ( tile->raster != bitmap_raster(tile->size.x) )
-	  return_error(gs_error_rangecheck);
-	uid_set_UniqueID(&pat.uid, id);
-	pat.PaintType = 1;
-	pat.TilingType = 1;
-	pat.BBox.p.x = 0;
-	pat.BBox.p.y = 0;
-	pat.BBox.q.x = tile->size.x;
-	pat.BBox.q.y = tile->rep_height;
-	pat.XStep = tile->size.x;
-	pat.YStep = tile->rep_height;
-	pat.PaintProc = pcl_bitmap_PaintProc;
-	pat.client_data = tile->data;
-	gs_currentmatrix(pgs, &smat);
-	gs_make_identity(&mat);
-	gs_setmatrix(pgs, &mat);
-	gs_make_scaling(scale_x, scale_y, &mat);
-	gs_matrix_rotate(&mat, -angle, &mat);
-	/*
-	 * Reset the current color in the graphics state so that we don't
-	 * wind up with a stale pointer to a deleted pattern.
-	 */
-	gs_setgray(pgs, 0.0);
-	gs_makepattern(pcc, &pat, &mat, pgs, (gs_memory_t *)0);
-	gs_setmatrix(pgs, &smat);
-	return 0;
-}
-private int
-pcl_bitmap_PaintProc(const gs_client_color *pcolor, gs_state *pgs)
-{	gs_image_enum *pen =
-	  gs_image_enum_alloc(gs_state_memory(pgs), "bitmap_PaintProc");
-	const gs_client_pattern *ppat = gs_getpattern(pcolor);
-	const byte *dp = ppat->client_data;
-	gs_image_t image;
-	int n;
-	uint nbytes, raster, used;
-
-	gs_image_t_init_gray(&image);
-	image.Decode[0] = 1.0;
-	image.Decode[1] = 0.0;
-	image.Width = (int)ppat->XStep;
-	image.Height = (int)ppat->YStep;
-	raster = bitmap_raster(image.Width);
-	nbytes = (image.Width + 7) >> 3;
-	gs_image_init(pen, &image, false, pgs);
-	for ( n = image.Height; n > 0; dp += raster, --n )
-	  gs_image_next(pen, dp, nbytes, &used);
-	gs_image_cleanup(pen);
-	gs_free_object(gs_state_memory(pgs), pen, "bitmap_PaintProc");
-	return 0;
-}
-
 /* Set the color and pattern for drawing. */
 /* Note that we pass the pattern rotation explicitly. */
 int
@@ -463,10 +398,9 @@ pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
 	    return 0;
 	  case pcpt_shading:
 	    { uint percent = id_value(*pid);
-	      if ( percent == 0 )
-		{ gs_setgray(pgs, 1.0);
+	      if ( percent == 0 ) 
+		/* "no pattern", by observation this means the previous pattern */
 		  return 0;
-		}
 #define else_if_percent(maxp, shade, index)\
   else if ( percent <= maxp )\
     tile.data = (const byte *)shade,\
@@ -581,9 +515,10 @@ pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
 	       * Make a bitmap pattern at the specified resolution.
 	       * Assume the CTM was set by pcl_set_ctm.
 	       */
-	      floatp scale_x = pcls->resolution.x / resolution.x;
-	      floatp scale_y = pcls->resolution.y / resolution.y;
-	      int code;
+	      floatp      scale_x = pcls->resolution.x / resolution.x;
+	      floatp      scale_y = pcls->resolution.y / resolution.y;
+	      int         code;
+              gs_matrix   mat;
 
 	      /* If the resolution ratios are almost integers, */
 	      /* make them integers. */
@@ -593,15 +528,25 @@ pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
 	      adjust_scale(scale_x);
 	      adjust_scale(scale_y);
 #undef adjust_scale
-	      code = pcl_makebitmappattern(&ccolor, &tile, pgs, scale_x,
-					   scale_y, rotate, saved_id);
+              gs_make_scaling(scale_x, scale_y, &mat);
+              gs_matrix_rotate(&mat, -rotate * 90, &mat);
+ 
+	      code = gs_makebitmappattern_xform( &ccolor,
+                                                 &tile,
+                                                 true,  /* mask */
+                                                 &mat,
+                                                 saved_id,
+                                                 pgs,
+					         (gs_memory_t *)0
+                                                 );
 
+	      ccolor.paint.values[0] = 0;
 	      if ( code < 0 )
 		return code;
 	      *ppi = ccolor.pattern;
 	    }
 	  gs_setpattern(pgs, &ccolor);
-	  gs_sethalftonephase(pgs, origin->x, origin->y);
+	  gs_sethalftonephase(pgs, (int)origin->x, (int)origin->y);
 	}
 	return 0;
 }
@@ -611,30 +556,17 @@ pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
  int
 pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type, const pcl_id_t *pid)
 {
-	gs_point pattern_origin;
 	gs_point pattern_origin_device;
 	int rotation;
-	/* if the pattern reference point has been set than we use the
-           current cap otherwise the coordinate 0, 0 is used.  The 0,0
-           reference point does not seem to be used on the 6mp but
-           this is in accordance with PCLTRM 13-16. */
-	if ( pcls->shift_patterns )
-	  {
-	    pattern_origin.x = (float)pcls->cap.x;
-	    pattern_origin.y = (float)pcls->cap.y;
-	  }
-	else
-	  {
-	    pattern_origin.x = 0.0;
-	    pattern_origin.y = 0.0;
-	  }
-	gs_transform(pcls->pgs, pattern_origin.x, pattern_origin.y,
-	  &pattern_origin_device);
+	gs_transform(pcls->pgs, 
+		     pcls->pattern_reference_point.x, 
+		     pcls->pattern_reference_point.y,
+		     &pattern_origin_device);
 	/* setting the pattern reference point also decides whether we
            rotate patterns, see pcl_set_pattern_reference_point(). */
 	rotation = pcls->rotate_patterns ? pcls->print_direction : 0;
 	pcl_set_drawing_color_rotation(pcls, type, pid,
-          &pcls->patterns, rotation, &pattern_origin_device);
+	  &pcls->patterns, rotation, &pattern_origin_device);
 	gs_setsourcetransparent(pcls->pgs, pcls->source_transparent);
 	gs_settexturetransparent(pcls->pgs, pcls->pattern_transparent);
 	gs_setrasterop(pcls->pgs, pcls->logical_op);
