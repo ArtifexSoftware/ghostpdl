@@ -1,8 +1,10 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>The interface between Ghostscript and device drivers</title>
 <!-- $Id$ -->
 <!-- Originally: drivers.txt -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -10,11 +12,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-The interface between Ghostscript and device drivers
-</font>
-</table>
+<h1>The interface between Ghostscript and device drivers</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -89,7 +87,7 @@ Ghostscript</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Adding_drivers"></a>Adding a driver</h1>
+<h2><a name="Adding_drivers"></a>Adding a driver</h2>
 
 <p>
 To add a driver to Ghostscript, first pick a name for your device, say
@@ -160,7 +158,7 @@ Note that the space before the :, and the explicit compilation rules for the
 
 <hr>
 
-<h1><a name="KISS"></a>Keeping things simple</h1>
+<h2><a name="KISS"></a>Keeping things simple</h2>
 
 <p>
 If you want to add a simple device (specifically, a monochrome printer), you
@@ -192,7 +190,7 @@ href="../src/gdevdjet.c">gdevdjet.c</a> are good examples of this approach.
 
 <hr>
 
-<h1><a name="Structure"></a>Driver structure</h1>
+<h2><a name="Structure"></a>Driver structure</h2>
 
 <p>
 A device is represented by a structure divided into three parts:
@@ -260,7 +258,7 @@ initialization statement at the beginning of each procedure:
 example, the cast would be unnecessary, and in fact the procedure table
 would be constructed by the compiler.)
 
-<h2><a name="Structure_definition"></a>Structure definition</h2>
+<h3><a name="Structure_definition"></a>Structure definition</h3>
 
 <p>
 You should consult the definition of struct <b><tt>gx_device_s</tt></b> in
@@ -290,7 +288,7 @@ structure for ordinary drivers are:
 The name in the structure (<b><tt>dname</tt></b>) should be the same as the
 name in <a href="../src/contrib.mak">contrib.mak</a>.
 
-<h2><a name="Sophisticated"></a>For sophisticated developers only</h2>
+<h3><a name="Sophisticated"></a>For sophisticated developers only</h3>
 
 <p>
 If for any reason you need to change the definition of the basic device
@@ -354,9 +352,9 @@ href="../src/gdevprn.h">gdevprn.h</a> to define and initialize their state.
 
 <hr>
 
-<h1><a name="coordinates_and_types"></a>Coordinates and types</h1>
+<h2><a name="coordinates_and_types"></a>Coordinates and types</h2>
 
-<h2><a name="Coordinate_system"></a>Coordinate system</h2>
+<h3><a name="Coordinate_system"></a>Coordinate system</h3>
 
 <p>
 Since each driver specifies the initial transformation from user
@@ -376,7 +374,7 @@ to them: they should not assume the coordinates will be in bounds.  The
 <b><tt>fit_fill</tt></b> and <b><tt>fit_copy</tt></b> macros in <a
 href="../src/gxdevice.h">gxdevice.h</a> are very helpful in doing this.
 
-<h2><a name="Color_definition"></a>Color definition</h2>
+<h3><a name="Color_definition"></a>Color definition</h3>
 
 <p>
 Ghostscript represents colors internally as RGB or CMYK values.  In
@@ -451,7 +449,7 @@ distinct colors, equally spaced throughout the color cube, and uses two of
 the nearest ones to the desired color for halftoning.
 </blockquote>
 
-<h2><a name="Types"></a>Types</h2>
+<h3><a name="Types"></a>Types</h3>
 
 <p>
 Here is a brief explanation of the various types that appear as parameters
@@ -559,7 +557,7 @@ typedef struct gx_strip_bitmap_s {
 
 <hr>
 
-<h1><a name="Coding_conventions"></a>Coding conventions</h1>
+<h2><a name="Coding_conventions"></a>Coding conventions</h2>
 
 <p>
 All the driver procedures defined below that return <b><tt>int</tt></b>
@@ -599,7 +597,7 @@ href="../src/gserrors.h">gserrors.h</a>.  For example
 return_error(gs_error_VMerror);
 </tt></b></blockquote>
 
-<h2><a name="Allocating_storage"></a>Allocating storage</h2>
+<h3><a name="Allocating_storage"></a>Allocating storage</h3>
 
 <p>
 While most drivers (especially printer drivers) follow a very similar
@@ -644,7 +642,7 @@ Unlike <b><tt>free</tt></b>, <b><tt>gs_free</tt></b> demands that
 <b><tt>num_elements</tt></b> and element_size be supplied.  It also
 requires a client name, like <b><tt>gs_malloc</tt></b>.
 
-<h2><a name="Driver_instance_allocation"></a>Driver instance allocation</h2>
+<h3><a name="Driver_instance_allocation"></a>Driver instance allocation</h3>
 
 <p>
 All driver instances allocated by Ghostscript's standard allocator must
@@ -662,7 +660,7 @@ and <a href="../src/gsstruct.h">gsstruct.h</a>.
 
 <hr>
 
-<h1><a name="Printer_drivers"></a>Printer drivers</h1>
+<h2><a name="Printer_drivers"></a>Printer drivers</h2>
 
 <p>
 Printer drivers (which include drivers that write some kind of raster file)
@@ -749,7 +747,7 @@ number of copies.
 
 <hr>
 
-<h1><a name="Driver_procedures"></a>Driver procedures</h1>
+<h2><a name="Driver_procedures"></a>Driver procedures</h2>
 
 <p>
 Most of the procedures that a driver may implement are optional.  If a
@@ -763,7 +761,7 @@ value for omitted structure elements, this convention means that statically
 initialized procedure structures continue to work even if new (optional)
 members are added.
 
-<h2><a name="Life_cycle"></a>Life cycle</h2>
+<h3><a name="Life_cycle"></a>Life cycle</h3>
 
 <p>
 A device instance begins life in a closed state.  In this state, no output
@@ -800,7 +798,7 @@ level at the time the instance was created.
 <li>When Ghostscript exits (terminates).
 </ul>
 
-<h2><a name="Open_close"></a>Open, close, sync, copy</h2>
+<h3><a name="Open_close"></a>Open, close, sync, copy</h3>
 
 <dl>
 <dt><b><tt>int (*open_device)(P1(gx_device *))</tt></b> <b><em>[OPTIONAL]</em></b>
@@ -869,7 +867,7 @@ nothing.  <b>NOTE</b>: Clients should never call a device's
 <b><tt>gs_closedevice</tt></b> instead.
 </dl>
 
-<h2><a name="Color_mapping"></a>Color and alpha mapping</h2>
+<h3><a name="Color_mapping"></a>Color and alpha mapping</h3>
 
 <p>
 A given driver normally implements either <b><tt>map_rgb_color</tt></b> or
@@ -976,7 +974,7 @@ appears in the driver procedure vector for backward compatibility.  It
 should never be called, and drivers should not implement it.
 </dl>
 
-<h2><a name="Pixel_level_drawing"></a>Pixel-level drawing</h2>
+<h3><a name="Pixel_level_drawing"></a>Pixel-level drawing</h3>
 
 <p>
 This group of drawing operations specifies data at the pixel level.  All
@@ -1000,7 +998,7 @@ Note that <b><tt>fill_rectangle</tt></b> is the only non-optional procedure
 in the driver interface.
 </dl>
 
-<h3><a name="Bitmap_imaging"></a>Bitmap imaging</h3>
+<h4><a name="Bitmap_imaging"></a>Bitmap imaging</h4>
 
 <p>
 Bitmap (or pixmap) images are stored in memory in a nearly standard way.
@@ -1083,7 +1081,7 @@ implementing it efficiently for solid tiles (that is, where either
 important.
 </dl>
 
-<h3><a name="Pixmap_imaging"></a>Pixmap imaging</h3>
+<h4><a name="Pixmap_imaging"></a>Pixmap imaging</h4>
 
 <p>
 Pixmaps are just like bitmaps, except that each pixel occupies more than
@@ -1118,7 +1116,7 @@ but the <b><tt>x</tt></b> and <b><tt>width</tt></b> are in pixels, not
 bits.
 </dl>
 
-<h3><a name="Compositing"></a>Compositing</h3>
+<h4><a name="Compositing"></a>Compositing</h4>
 
 <p>
 In addition to direct writing of opaque pixels, devices must also support
@@ -1272,7 +1270,7 @@ slow) operation.  The arguments are as follows:
 </table></blockquote>
 </dl>
 
-<h4><a name="S_spec"></a>The source specification S</h4>
+<h5><a name="S_spec"></a>The source specification S</h5>
 
 <p>
 As noted above, the source <b>S</b> may be a solid color, a bitmap, or a
@@ -1322,7 +1320,7 @@ Note that if the source is a bitmap with background=0 and foreground=1, and
 the destination is 1 bit deep, then the source can be treated as a pixmap
 (scolors=<b><tt>NULL</tt></b>).
 
-<h4><a name="T_spec"></a>The texture specification T</h4>
+<h5><a name="T_spec"></a>The texture specification T</h5>
 
 <p>
 Similar to the source, the texture <b>T</b> may be a solid color, a bitmap,
@@ -1373,7 +1371,7 @@ the destination, a texture bitmap or pixmap has its own width and height
 specified in the <b><tt>gx_tile_bitmap</tt></b> structure, and is
 replicated or clipped as needed.
 
-<h4><a name="F_spec"></a>The function specification f</h4>
+<h5><a name="F_spec"></a>The function specification f</h5>
 
 <p>
 "Command" indicates the raster operation and transparency as follows:
@@ -1482,7 +1480,7 @@ source and texture are both all 1s and the command specifies transparent
 source and opaque texture, the result <b><em>should</em></b> be written in
 the output.  We think this is an error in the documentation.)
 
-<h4><a name="Compositing_notes"></a>Notes</h4>
+<h5><a name="Compositing_notes"></a>Notes</h5>
 
 <p>
 <b><tt>copy_rop</tt></b> is defined to operate on pixels in RGB space,
@@ -1555,7 +1553,7 @@ For monobit devices, we assume that black = 1.
                                    x, y, w, h, px, py, rop3_T)</pre>
 </font></blockquote>
 
-<h2><a name="Polygon_level_drawing"></a>Polygon-level drawing</h2>
+<h3><a name="Polygon_level_drawing"></a>Polygon-level drawing</h3>
 
 <p>
 In addition to the pixel-level drawing operations that take integer device
@@ -1628,7 +1626,7 @@ backward compatibility.  It should never be called, and drivers should not
 implement it.
 </dl>
 
-<h2><a name="High_level_drawing"></a>High-level drawing</h2>
+<h3><a name="High_level_drawing"></a>High-level drawing</h3>
 
 <p>
 In addition to the lower-level drawing operations described above, the
@@ -1675,7 +1673,7 @@ consult the source code, specifically:
 For a minimal example of how to implement the high-level drawing operations,
 see <a href="../src/gdevtrac.c">gdevtrac.c</a>.
 
-<h3><a name="Paths"></a>Paths</h3>
+<h4><a name="Paths"></a>Paths</h4>
 
 <dl>
 <dt><b><tt>int (*fill_path)(P6(gx_device&nbsp;*dev,
@@ -1715,7 +1713,7 @@ with the given color and logical operation.  The clip path pointer may be
 command is as for <b><tt>copy_rop</tt></b>.
 </dl>
 
-<h3><a name="Images"></a>Images</h3>
+<h4><a name="Images"></a>Images</h4>
 
 <p>
 Similar to the high-level interface for fill and stroke graphics, a high-level
@@ -2051,7 +2049,7 @@ subsidiary structures.  If <b><tt>draw_last</tt></b> is true, it should
 finish drawing any buffered lines of the image.
 </dl>
 
-<h4><a name="Images_notes"></a>Notes</h4>
+<h5><a name="Images_notes"></a>Notes</h5>
 
 <p>
 While there will almost never be more than one image enumeration in
@@ -2068,7 +2066,7 @@ algorithms or to use the default implementation.  (It may need to call
 <b><tt>gx_default_begin</tt></b>/<b><tt>end_image</tt></b> partway
 through.)  [A later revision of this document may include an example here.]
 
-<h3><a name="Text"></a>Text</h3>
+<h4><a name="Text"></a>Text</h4>
 
 <p>
 The third high-level interface handles text.  As for images, the interface
@@ -2188,7 +2186,7 @@ any time.
 There are numerous other procedures that clients may call during text
 processing.  See <a href="../src/gstext.h">gstext.h</a> for details.
 
-<h4><a name="Text_notes"></a>Notes</h4>
+<h5><a name="Text_notes"></a>Notes</h5>
 
 <p>
 Note that unlike many other optional procedures, the default implementation
@@ -2200,7 +2198,7 @@ return an enumerator.  Furthermore, the implementation of the
 anything, even if it doesn't want to draw anything on the output.  See the
 comments in <a href="../src/gxtext.h">gxtext.h</a> for details.
 
-<h2><a name="Reading_bits_back"></a>Reading bits back</h2>
+<h3><a name="Reading_bits_back"></a>Reading bits back</h3>
 
 <dl>
 <dt><b><tt>int (*get_bits_rectangle)(P4(gx_device&nbsp;*dev,
@@ -2363,7 +2361,7 @@ not define one for <b><tt>get_bits</tt></b>.  (If
 <b><tt>GB_RETURN_POINTER</tt></b> is omitted from the options.)
 </dl>
 
-<h2><a name="Parameters"></a>Parameters</h2>
+<h3><a name="Parameters"></a>Parameters</h3>
 
 <p>
 Devices may have an open-ended set of parameters, which are simply pairs
@@ -2417,7 +2415,8 @@ macros/procedures defined in <a href="../src/gsparam.h">gsparam.h</a>.  All
 algorithm; see <a href="../src/gsparam.h">gsparam.h</a> for details.
 </dl>
 
-<h3><a name="Default_CRD_parameters"></a>Default color rendering dictionary (CRD) parameters</h3>
+<h4><a name="Default_CRD_parameters"></a>Default color rendering
+dictionary (CRD) parameters</h4>
 
 <p>
 Drivers that want to provide one or more default CIE color rendering
@@ -2451,7 +2450,7 @@ the driver return the CRD or the procedure address only if specifically
 requested (<b><tt>param_requested(...)</tt></b> &gt; 0); otherwise, errors
 will occur.
 
-<h2><a name="External_fonts"></a>External fonts</h2>
+<h3><a name="External_fonts"></a>External fonts</h3>
 
 <p>
 Drivers may include the ability to display text.  More precisely, they may
@@ -2477,7 +2476,7 @@ non-default way for this device, if any.  Except for certain special
 internal devices, this is always the device argument.
 </dl>
 
-<h2><a name="Page_devices"></a>Page devices</h2>
+<h3><a name="Page_devices"></a>Page devices</h3>
 
 <dl>
 <dt><b><tt>gx_device&nbsp;*(*get_page_device)(P1(gx_device&nbsp;*dev))</tt></b>
@@ -2490,7 +2489,7 @@ the underlying page device (or <b><tt>NULL</tt></b> if the underlying
 device is not a page device).
 </dl>
 
-<h2><a name="Miscellaneous"></a>Miscellaneous</h2>
+<h3><a name="Miscellaneous"></a>Miscellaneous</h3>
 
 <dl>
 <dt><b><tt>int (*get_band)(P3(gx_device&nbsp;*dev, int&nbsp;y,

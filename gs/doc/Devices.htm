@@ -1,8 +1,10 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>Details of Ghostscript output devices</title>
 <!-- $Id$ -->
 <!-- Originally: devices.txt -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -10,11 +12,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-Details of Ghostscript output devices
-</font>
-</table>
+<h1>Details of Ghostscript output devices</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -143,7 +141,7 @@ the description of the <a href="Drivers.htm">driver interface</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Measurements"></a>Notes on measurements</h1>
+<h2><a name="Measurements"></a>Notes on measurements</h2>
 
 <p>
 Several different important kinds of measures appear throughout this
@@ -180,7 +178,7 @@ known to Ghostscript</a> are defined in the initialization file
 
 <hr>
 
-<h1><a name="Win"></a>MS Windows printers</h1>
+<h2><a name="Win"></a>MS Windows printers</h2>
 
 <p>
 This section was written by Russell Lang, the author of Ghostscript's
@@ -246,7 +244,7 @@ The Ghostscript physical device size is updated to match the Windows
 printer physical device.
 </p>
 
-<h2><a name="Win_properties"></a>Supported command-line parameters</h2>
+<h3><a name="Win_properties"></a>Supported command-line parameters</h3>
 
 <p>
 The <b><tt>mswinpr2</tt></b> device supports a limited number of command-line
@@ -274,7 +272,7 @@ typed exactly as it appears in the Printers control panel, including spaces.</dd
 </dl>
 </blockquote>
 
-<h2><a name="Win_options"></a>Supported options (device properties)</h2>
+<h3><a name="Win_options"></a>Supported options (device properties)</h3>
 
 <p>
 Several extra options exist which cannot be set through the command-line,
@@ -404,7 +402,7 @@ dictionary. You should not rely on them. Their use is still experimental and
 they could be removed in a future version.
 </p>
 
-<h2><a name="Win_duplex"></a>Duplex printing</h2>
+<h3><a name="Win_duplex"></a>Duplex printing</h3>
 
 <p>
 If the Windows printer supports the duplex printing feature, then it will
@@ -430,9 +428,9 @@ the long side of the paper as the reference):
 
 <hr>
 
-<h1><a name="File_formats">File formats</h1>
+<h2><a name="File_formats"></a>File formats</h2>
 
-<h2><a name="JFIF"></a>JPEG file format (JFIF)</h2>
+<h3><a name="JFIF"></a>JPEG file format (JFIF)</h3>
 
 <p>
 Ghostscript includes output drivers that can produce <a
@@ -493,7 +491,7 @@ future.  The JPEG drivers could be extended to support additional JPEG
 compression options, such as the other DCTEncode filter parameters, but so
 far they haven't been.
 
-<h2><a name="TIFF"></a>TIFF file formats</h2>
+<h3><a name="TIFF"></a>TIFF file formats</h3>
 
 <p>
 There are two unrelated sets of TIFF drivers: <b><tt>tiff12nc</tt></b> and
@@ -542,14 +540,14 @@ be a single strip.
 
 <hr>
 
-<h1><a name="HP8_color_inkjet"></a>H-P 8xx, 1100, and 1600 color inkjet printers</h1>
+<h2><a name="HP8_color_inkjet"></a>H-P 8xx, 1100, and 1600 color inkjet printers</h2>
 
 <p>
 This section, written by Uli Wortmann &lt;<a
 href="mailto:uliw@erdw.ethz.ch">uliw@erdw.ethz.ch</a>&gt;, deals with the
 DeskJet 670, 690, 850, 855, 870, 890, 1100, and 1600.
 
-<h2><a name="HP8_gdevcd8"></a>Drivers contained in <b><tt>gdevcd8.c</tt></b></h2>
+<h3><a name="HP8_gdevcd8"></a>Drivers contained in <b><tt>gdevcd8.c</tt></b></h3>
 
 <p>
 The source module <b><tt>gdevcd8.c</tt></b> contains four generic drivers:
@@ -569,7 +567,7 @@ The source module <b><tt>gdevcd8.c</tt></b> contains four generic drivers:
 	<td>HP DeskJet 1600
 </table></blockquote>
 
-<h2><a name="HP8_further_documentation"></a>Further documentation</h2>
+<h3><a name="HP8_further_documentation"></a>Further documentation</h3>
 
 <p>
 <b>Credits:</b> Much of the driver is based on ideas derived from the
@@ -743,7 +741,7 @@ Uli &lt;<a href="mailto:uliw@erdw.ethz.ch">uliw@erdw.ethz.ch</a>&gt;
 
 <hr>
 
-<h1><a name="HP880_color_inkjet"></a>H-P 812, 815, 832, 880, 882, 895, and 970 color inkjet printers</h1>
+<h2><a name="HP880_color_inkjet"></a>H-P 812, 815, 832, 880, 882, 895, and 970 color inkjet printers</h2>
 
 <p>
 This section, written by Matthew Gelhaus &lt;<a
@@ -757,7 +755,7 @@ written by Uli Wortmann.  More information and download are available at
 <a href="http://www.proaxis.com/~mgelhaus/linux/software/hp880c/hp880c.html">
 http://www.proaxis.com/~mgelhaus/linux/software/hp880c/hp880c.html</a>.
 
-<h2><a name="HP880_gdevcd8"></a>Drivers contained in <b><tt>gdevcd8.c</tt></b></h2>
+<h3><a name="HP880_gdevcd8"></a>Drivers contained in <b><tt>gdevcd8.c</tt></b></h3>
 
 <p>
 The source module <b><tt>gdevcd8.c</tt></b> contains one generic driver:
@@ -768,7 +766,7 @@ The source module <b><tt>gdevcd8.c</tt></b> contains one generic driver:
 	<td>HP DeskJet 812, 815, 832, 880, 882, 895, and 970
 </table></blockquote>
 
-<h2><a name="HP880_further_documentation"></a>Further documentation</h2>
+<h3><a name="HP880_further_documentation"></a>Further documentation</h3>
 
 <p>
 <b>Credits:</b> This driver is based on the cdj850 driver by Uli Wortmann, and shares the same
@@ -873,14 +871,14 @@ Matthew Gelhaus &lt;<a href="mailto:mgelhaus@proaxis.com">mgelhaus@proaxis.com</
 
 <hr>
 
-<h1><a name="HP_color_inkjet"></a>H-P color inkjet printers</h1>
+<h2><a name="HP_color_inkjet"></a>H-P color inkjet printers</h2>
 
 <p>
 This section, written by George Cameron, deals with the DeskJet 500C,
 DeskJet 550C, PaintJet, PaintJet XL, PaintJet XL300, the DEC LJ250
 operating in PaintJet-compatible mode.
 
-<h2><a name="HP_gdevcdj"></a>Drivers contained in <b><tt>gdevcdj.c</tt></b></h2>
+<h3><a name="HP_gdevcdj"></a>Drivers contained in <b><tt>gdevcdj.c</tt></b></h3>
 
 <p>
 The source module <b><tt>gdevcdj.c</tt></b> contains six generic drivers:
@@ -932,7 +930,7 @@ drivers above (and <b><tt>cDeskJet</tt></b> is identical to
 	<td>for <b><tt>cdjmono</tt></b>
 </table></blockquote>
 
-<h2><a name="HP_paper_size"></a>Default paper size</h2>
+<h3><a name="HP_paper_size"></a>Default paper size</h3>
 
 <p>
 If the preprocessor symbol <b><tt>A4</tt></b> is defined, the default paper
@@ -942,7 +940,7 @@ documentation).  You can <a href="Use#Paper_size">specify other paper
 sizes</a> on the command line, including A3 for the PaintJet XL and
 PaintJet XL300, as also explained in the usage documentation.
 
-<h2><a name="HP_limits"></a>DeskJet physical limits</h2>
+<h3><a name="HP_limits"></a>DeskJet physical limits</h3>
 
 <p>
 The DeskJet's maximum printing width is 2400 dots, or 8 inches
@@ -957,7 +955,7 @@ All DeskJets have 0.5 inches (1.27cm) of unprintable bottom margin, due to the m
 arrangement used to grab the paper.  Side margins are approximately 0.25 inches (0.64cm)
 for U.S. letter paper, and 0.15 inches (0.38cm) for A4.
 
-<h2><a name="HP_command_line"></a>Printer properties (command-line parameters)</h2>
+<h4><a name="HP_command_line"></a>Printer properties (command-line parameters)</h4>
 
 <p>
 Several printer "properties" have been implemented for these printers.
@@ -972,7 +970,7 @@ specified, for instance, like
 which sets the <b><tt>BitsPerPixel</tt></b> parameter to 32 and the
 <b><tt>Shingling</tt></b> parameter to 1.
 
-<h3><a name="HP_bpp"></a>Bits per pixel</h3>
+<h4><a name="HP_bpp"></a>Bits per pixel</h4>
 
 <p>
 If the preprocessor symbol <b><tt>BITSPERPIXEL</tt></b> is defined as an
@@ -1030,7 +1028,7 @@ on this printer, and uses less memory.  Any differences between 24-bit and
 32-bit should be small.)
 </dl></blockquote>
 
-<h3><a name="HP_DeskJet_properties"></a>DeskJet properties</h3>
+<h4><a name="HP_DeskJet_properties"></a>DeskJet properties</h4>
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr valign=bottom>
@@ -1057,7 +1055,7 @@ on this printer, and uses less memory.  Any differences between 24-bit and
 	<td>"Intelligent" dot-removal: 0 = none, 1 = 25%, 2 = 50%, 1 best for graphics? Use 0 for transparencies.
 </table></blockquote>
 
-<h3><a name="HP_PaintJet_properties"></a>PaintJet XL300 / PaintJet XL properties</h3>
+<h4><a name="HP_PaintJet_properties"></a>PaintJet XL300 / PaintJet XL properties</h4>
 
 <blockquote>
 <table cellpadding=0 cellspacing=0>
@@ -1097,7 +1095,7 @@ The PaintJet (non-XL) has no additional properties.
 
 </blockquote>
 
-<h2><a name="HP_gamma"></a>Gamma correction</h2>
+<h3><a name="HP_gamma"></a>Gamma correction</h3>
 
 <p>
 One consequence of using Floyd-Steinberg dithering rather than Ghostscript's
@@ -1154,7 +1152,7 @@ the device might be doing already.  To do the correction
 This example sets the gamma for R, G, and B to 3, which seems to work
 reasonably well in practice.
 
-<h2><a name="HP_resolution_enhance"></a>HP's resolution-enhanced mode for Inkjet printers</h2>
+<h3><a name="HP_resolution_enhance"></a>HP's resolution-enhanced mode for Inkjet printers</h3>
 
 <p>
 This feature is available on HP's more recent inkjet printers, including
@@ -1184,7 +1182,7 @@ To summarise, you may lose a smidgin of (potential) text clarity using the
 <b><tt>cdjmono</tt></b> etc.), but other than that, they are the ones for
 the job.
 
-<h2><a name="HP_tips"></a>General tips</h2>
+<h3><a name="HP_tips"></a>General tips</h3>
 
 <p>
 For all the printers above, the choice of paper is critically important to
@@ -1210,7 +1208,7 @@ findings back to me.
 
 <hr>
 
-<h1><a name="BJC_8200"></a>Canon BJC-8200 printer</h1>
+<h2><a name="BJC_8200"></a>Canon BJC-8200 printer</h2>
 
 <p>
 This section was contributed by the author of the <b><tt>uniprint</tt></b>
@@ -1223,7 +1221,7 @@ Warning: Usage of this program is neither supported nor endorsed by
 the Canon corporation. Please see the Ghostscript <a
 href="Public.htm">license</a> regarding warranty.
 
-<h2>Introduction</h2>
+<h3>Introduction</h3>
 
 <p>
 The Canon Bubble Jet printer BJC-8200 is designed for printing digital
@@ -1270,7 +1268,7 @@ for the Canon BJC-610. They work also well for some other Canon Bubble
 Jet models, for example for my BJC-35vII. But when using them for a
 BJC-8200 the result is unsatisfactory.
 
-<h2>The uniprint control files for the BJC-8200</h2>
+<h3>The uniprint control files for the BJC-8200</h3>
 
 <p>
 After some experimenting with the options for uniprint I have obtained quite
@@ -1332,7 +1330,7 @@ bootleneck seems to be the transfer of the raster image in run-length
 encoded Canon format to the printer (via the parallel port on my system) or
 the printer's speed, not Ghostscript or the uniprint renderer.
 
-<h2>Further Optimization for the Canon BJC-8200</h2>
+<h3>Further Optimization for the Canon BJC-8200</h3>
 
 So far I have only experimented with the printer initialization code at the
 beginning of each page (-dupBeginPageCommand) and the resolution (-r). Other
@@ -1377,7 +1375,7 @@ Crucial are the numbers in the lines like
    Photo Paper Pro 9
 </pre></blockquote>
 
-<h2>Outlook</h2>
+<h3>Outlook</h3>
 
 <p>
 Presently uniprint can use the black (K), cyan (C), magenta (M), and
@@ -1408,7 +1406,7 @@ such as printing test and demo pages and the low ink warning once the
 protocol for this is known. Clearly it would be difficult to code such a
 uniprint tool for all the platforms where Ghostscript is running.
 
-<h2>Usage on RedHat Linux</h2>
+<h3>Usage on RedHat Linux</h3>
 
 <p>
 In order to install a BJC-8200 printer on a RedHat Linux system with
@@ -1431,7 +1429,7 @@ EndEntry
       .
 </pre></blockquote>
 
-<h2>Contacting the Author</h2>
+<h3>Contacting the Author</h3>
 
 <p>
 E-mail address: &lt;<a
@@ -1452,7 +1450,7 @@ Stephan C. Buchert
 
 <hr>
 
-<h1><a name="BJC"></a>Other Canon BubbleJet (BJC) printers</h1>
+<h2><a name="BJC"></a>Other Canon BubbleJet (BJC) printers</h2>
 
 <p>
 This section was contributed by the author of the drivers, Yves Arrouye
@@ -1461,7 +1459,7 @@ please do not send questions to him: he no longer maintains these drivers.)
 The drivers handle Canon BJC-600, BJC-4xxx, BJC-70, Stylewriter 2x00, and
 BJC-800 printers.
 
-<h2><a name="BJC_history"></a>History</h2>
+<h3><a name="BJC_history"></a>History</h3>
 
 <p>
 The BJC-600 driver was written in the first place by Yoshio Kuniyoshi and
@@ -1478,9 +1476,10 @@ width of an A3 paper size.  PostScript Printer Description (PPD) files for
 the drivers were released with version 2.15.  They are incomplete,
 but they can be used to drive the printers' main features.
 
-<h2><a name="BJC_build"></a>Configuring and building the BJC drivers</h2>
+<h3><a name="BJC_build"></a>Configuring and building the BJC drivers</h3>
 
-<h3><a name="BJC_defaults"></a>Modify values in <b><tt>gdevbjc.h</tt></b></h3>
+<h4><a name="BJC_defaults"></a>Modify values in
+<b><tt>gdevbjc.h</tt></b></h4>
 
 <p>
 Configure the drivers by modifying the default values in the file
@@ -1488,7 +1487,7 @@ Configure the drivers by modifying the default values in the file
 that, the drivers use reasonable defaults that make them work "as
 expected".  All default values shown here are defined in that file.
 
-<h3><a name="BJC_CMYK_RGB"></a>CMYK-to-RGB color conversion</h3>
+<h4><a name="BJC_CMYK_RGB"></a>CMYK-to-RGB color conversion</h4>
 
 <p>
 By default, the drivers use the same algorithm as Ghostscript to convert
@@ -1496,7 +1495,8 @@ CMYK colors to RGB. If you prefer to use Adobe formulas, define
 <b><tt>USE_ADOBE_CMYK_RGB</tt></b> when compiling.  (See the top of the
 file <b><tt>gdevcdj.c</tt></b> to see the difference between the two.)
 
-<h3><a name="BJC_vertical_centering"></a>Vertical centering of the printable area</h3>
+<h4><a name="BJC_vertical_centering"></a>Vertical centering of the
+printable area</h4>
 
 <p>
 The drivers center the imageable area horizontally but not vertically, so
@@ -1505,7 +1505,7 @@ define <b><tt>BJC_DEFAULT_CENTEREDAREA</tt></b> when compiling, then the
 top and bottom margins will be the same, resulting in a (smaller)
 vertically centered imageable area also.
 
-<h3><a name="BJC_margins"></a>Page margins</h3>
+<h4><a name="BJC_margins"></a>Page margins</h4>
 
 <p>
 If you define <b><tt>USE_RECOMMENDED_MARGINS</tt></b>, then the top and
@@ -1537,7 +1537,7 @@ If the margins are okay, you will get a rectangle visibly surrounding
 the printable area.  If they're not correct, one or more of the sides will
 be either incomplete or completely unprinted.
 
-<h3><a name="BJC_compile"></a>Makefile and compilation</h3>
+<h4><a name="BJC_compile"></a>Makefile and compilation</h4>
 
 <p>
 Make sure the <b><tt>bjc600</tt></b> or <b><tt>bjc800</tt></b> devices are
@@ -1550,7 +1550,7 @@ for instance, one makefile has
 DEVICE_DEVS6=bj10e.dev&nbsp;bj200.dev&nbsp;bjc600.dev&nbsp;bjc800.dev
 </tt></b></blockquote>
 
-<h2><a name="BJC_usage"></a>Use of the drivers</h2>
+<h3><a name="BJC_usage"></a>Use of the drivers</h3>
 
 <p>
 There are two drivers here.  The "<b><tt>bjc600</tt></b>" one supports the BJC-600 and
@@ -1558,7 +1558,7 @@ BJC-4xxx (maybe the BJC-70 as well) and the "<b><tt>bjc800</tt></b>" one support
 BJC-800 series.  Remarks here that apply to both drivers use the name
 "bjc".
 
-<h3><a name="BJC_options"></a>Supported Options and Defaults</h3>
+<h4><a name="BJC_options"></a>Supported Options and Defaults</h4>
 
 <p>
 Note: "options", "properties", and "parameters" designate the same thing:
@@ -2006,7 +2006,7 @@ start of printing, not at the end.  This is the expected behaviour.  If you
 need to reset the printer to its default state, simply print a file that
 does just a <b><tt>showpage</tt></b>.
 
-<h3><a name="BJC_device_info"></a>Device information</h3>
+<h4><a name="BJC_device_info"></a>Device information</h4>
 
 <p>
 Here is other information published by the driver that you will find
@@ -2035,7 +2035,7 @@ beta versions.  The date of the last change to this version is given in the
 form MM/DD/YY (no, it won't adapt to your locale).
 </dl>
 
-<h3><a name="BJC_HW_margins"></a>Hardware margins</h3>
+<h4><a name="BJC_HW_margins"></a>Hardware margins</h4>
 
 <p>
 The BJC printers have top and bottom hardware margins of 3mm and 7.1mm
@@ -2049,7 +2049,7 @@ The maximum printing width of a BJC-600 printer is 203mm.  The maximum
 printing width of a BJC-800 printer is 289mm on A3 paper, 203mm on
 U.S. letter and ISO A4 paper.
 
-<h3><a name="BJC_PPD"></a>PostScript printer description (PPD) files</h3>
+<h4><a name="BJC_PPD"></a>PostScript printer description (PPD) files</h4>
 
 <p>
 The files <b><tt>CBJC600.PPD</tt></b> and <b><tt>CBJC800.PPD</tt></b> (whose
@@ -2064,7 +2064,7 @@ correctly enforce constraints specified in these files (in UIConstraints
 descriptions): you must force yourself to use valid combinations of
 options.
 
-<h3><a name="BJC_PPD_custom"></a>Customizing the PPD files</h3>
+<h4><a name="BJC_PPD_custom"></a>Customizing the PPD files</h4>
 
 <p>
 By default the PPD files are set for U.S. letter size paper, and they use a
@@ -2109,7 +2109,7 @@ All customization should be done using the "<b><tt>*Include:</tt></b>"
 feature of PPD files so that your local changes will be retained if you
 update the PPD files.
 
-<h2><a name="BJC_bugs"></a>How to report problems</h2>
+<h3><a name="BJC_bugs"></a>How to report problems</h3>
 
 <p>
 Yves Arrouye no longer maintains this driver, and will not answer questions
@@ -2123,7 +2123,7 @@ driver or by issuing the following command in a shell:
 echo&nbsp;"currentpagedevice&nbsp;/VersionString&nbsp;get&nbsp;=="&nbsp;|&nbsp;gs&nbsp;-q&nbsp;-sDEVICE=bjc600&nbsp;-
 </tt></b></blockquote>
 
-<h2><a name="BJC_acks"></a>Acknowledgements</h2>
+<h3><a name="BJC_acks"></a>Acknowledgements</h3>
 
 <p>
 I am particularly grateful to Yoshio Kuniyoshi &lt;<a
@@ -2152,7 +2152,7 @@ Epson Stylus Color, which I then adapted to the code of these drivers.
 
 <hr>
 
-<h1><a name="STC_epson_stylus"></a>Epson Stylus color printer (see also <b><tt>uniprint</tt></b>)</h1>
+<h2><a name="STC_epson_stylus"></a>Epson Stylus color printer (see also <b><tt>uniprint</tt></b>)</h2>
 
 <p>
 This section was contributed by Gunther Hess
@@ -2161,7 +2161,7 @@ This section was contributed by Gunther Hess
 the section on <a href="#Uniprint"><b><tt>uniprint</tt></b></a> for whether
 it might be better for your uses than this driver.
 
-<h2><a name="STC_usage"></a>Usage</h2>
+<h3><a name="STC_usage"></a>Usage</h3>
 
 <p>
 
@@ -2199,7 +2199,7 @@ Ghostscript options, while their manipulation at the PostScript level is
 documented in the material on <a href="Language.htm">the relationship of
 Ghostscript and PostScript</a> and in <b><tt>stcolor.ps</tt></b>.
 
-<h2><a name="STC_options"></a>Options</h2>
+<h3><a name="STC_options"></a>Options</h3>
 
 <p>
 Now to explain the options (as written on my UNIX system).  The order is
@@ -2485,7 +2485,7 @@ value even if the value is not supported by the printer.  <b>You asked for
 it and you got it!</b>
 </blockquote>
 
-<h2><a name="STC_FAQ"></a>Application note and FAQ</h2>
+<h3><a name="STC_FAQ"></a>Application note and FAQ</h3>
 
 <p>
 Quite a bunch of parameters.  Hopefully you never need any of them, besides
@@ -2496,7 +2496,7 @@ After answering some questions over fifty times I prepared a FAQ.  Here is
 version 1.3 of the FAQ, as of <b><tt>stcolor</tt></b> version 1.20 (for
 Ghostscript 3.50).
 
-<h3><a name="STC_FAQ_A3"></a>Support for A3 paper</h3>
+<h4><a name="STC_FAQ_A3"></a>Support for A3 paper</h4>
 
 <p>
 Yes, this driver supports the A3-size printer: merely set the required
@@ -2506,7 +2506,7 @@ procedure call "<b><tt>a3</tt></b>" in the PostScript prolog section.  To
 optimize the printable area or set the proper margins, see the next
 paragraph.
 
-<h3><a name="STC_FAQ_margins"></a>Margins, PageSize</h3>
+<h4><a name="STC_FAQ_margins"></a>Margins, PageSize</h4>
 
 <p>
 I refuse to add code to <b><tt>stcolor</tt></b> that tries to guess the
@@ -2546,7 +2546,7 @@ U.S. letter size.
 to add the proper "<b><tt>.HWMargins</tt></b>" to the command line or to
 <b><tt>stcolor.ps</tt></b>.
 
-<h3><a name="STC_FAQ_II_IIS_1500"></a>Stylus Color II / IIs and 1500</h3>
+<h4><a name="STC_FAQ_II_IIS_1500"></a>Stylus Color II / IIs and 1500</h4>
 
 <p>
 First the good news: the driver can print on the Stylus Color II.
@@ -2576,7 +2576,7 @@ behaviour.  I experienced significantly increased printing speed with the
 second variant on the old Stylus Color, when printing mostly monochrome
 data.
 
-<h2><a name="STC_recommendations"></a>Recommendations</h2>
+<h3><a name="STC_recommendations"></a>Recommendations</h3>
 
 <p>
 The next section is a contribution from Jason Patterson &lt;jason@reflections.com.au&gt;
@@ -2597,7 +2597,8 @@ where "..." is the name of the desired algorithm.
 for which it is useless and would not allow the selection of
 "<b><tt>gscmyk</tt></b>".
 
-<h3><a name="STC_dither_experiment"></a>Color dithering experiments with <b><tt>gdevstc</tt></b> 1.21</h3>
+<h4><a name="STC_dither_experiment"></a>Color dithering experiments with
+<b><tt>gdevstc</tt></b> 1.21</h4>
 
 <p>
 Here are data about the EPSON Stylus Color driver's different dithering
@@ -2696,7 +2697,7 @@ the MS Windows driver.
 	<td><b><tt>0&nbsp;1&nbsp;2&nbsp;3&nbsp;4&nbsp;5&nbsp;6&nbsp;7&nbsp;8&nbsp;9&nbsp;10</tt></b>
 </table></blockquote>
 
-<h2><a name="STC_color_transform"></a>Color transformation</h2>
+<h3><a name="STC_color_transform"></a>Color transformation</h3>
 
 <p>
 In the initial version of the driver distributed with Ghostscript 3.33, the
@@ -2776,7 +2777,7 @@ per color component and if the algorithm uses bytes too, the second
 transformation is included within the first, which saves significant
 computation time when printing the data.
 
-<h2><a name="STC_CAM"></a><b><tt>ColorAdjustMatrix</tt></b></h2>
+<h3><a name="STC_CAM"></a><b><tt>ColorAdjustMatrix</tt></b></h3>
 
 <p>
 The driver supports different values for <b><tt>ProcessColorModel</tt></b>,
@@ -2859,7 +2860,7 @@ If no <b><tt>ColorAdjustMatrix</tt></b> is set, the matrix computations are
 skipped.  Thus the transformation reduces to range inversion in monochrome
 mode and black separation in CMYK mode.
 
-<h2><a name="STC_RGBCMYK_coding"></a>RGB / CMYK coding and transfer, and <b><tt>BitsPerPixel</tt></b></h2>
+<h3><a name="STC_RGBCMYK_coding"></a>RGB / CMYK coding and transfer, and <b><tt>BitsPerPixel</tt></b></h3>
 
 <p>
 These two (groups of) parameters are arrays of floating-point numbers in
@@ -3413,7 +3414,7 @@ correction, which is not necessarily faster than the
 to the internal color indices.
 </ul></blockquote>
 
-<h2><a name="What_is_weaving"></a>What is weaving?</h2>
+<h3><a name="What_is_weaving"></a>What is weaving?</h3>
 
 <p>
 The Epson Stylus Color has a head assembly that contains two physically
@@ -3589,7 +3590,7 @@ takes place.  Without weaving, adjacent rows are printed by the same jet
 and this makes the dot diameter deviations visible as 1/90in stripes on
 the paper.
 
-<h2><a name="STC_print_modes"></a>Print mode parameters</h2>
+<h3><a name="STC_print_modes"></a>Print mode parameters</h3>
 
 <p>
 The parameters "<b><tt>Unidirectional</tt></b>",
@@ -3597,7 +3598,7 @@ The parameters "<b><tt>Unidirectional</tt></b>",
 "<b><tt>OutputCode</tt></b>", "<b><tt>Model</tt></b>" and the given
 resolution control the data generated for the printer.
 
-<h3><a name="STC_unidirectional"></a><b><tt>Unidirectional</tt></b></h3>
+<h4><a name="STC_unidirectional"></a><b><tt>Unidirectional</tt></b></h4>
 
 <p>
 Simply toggles the unidirectional mode of the printer.  Setting
@@ -3605,7 +3606,8 @@ Simply toggles the unidirectional mode of the printer.  Setting
 improve the quality.  I use this for printing transparencies, where fast
 head movement could smear the ink.
 
-<h3><a name="STC_noweave"></a><b><tt>Microweave</tt></b>, <b><tt>noWeave</tt></b> and <b><tt>OutputCode=deltarow</tt></b></h3>
+<h4><a name="STC_noweave"></a><b><tt>Microweave</tt></b>,
+<b><tt>noWeave</tt></b> and <b><tt>OutputCode=deltarow</tt></b></h4>
 
 <p>
 The first are two booleans, which implies that four combinations are
@@ -3641,7 +3643,7 @@ ESC/P2 code becomes smaller, but I have never observed faster printing
 speed.  Things tend to become slower with <b><tt>deltarow</tt></b> compared
 to <b><tt>Softweave</tt></b>.
 
-<h3><a name="STC_model"></a><b><tt>Model</tt></b></h3>
+<h4><a name="STC_model"></a><b><tt>Model</tt></b></h4>
 
 <p>
 Some ESC/P2 printers such as the Stylus 800 do not offer
@@ -3652,7 +3654,7 @@ compatible with the given printer model.  Currently only
 "<b><tt>st800</tt></b>" is supported besides the default
 <b><tt>stcolor</tt></b>.
 
-<h2><a name="STC_Pitfalls"></a>Bugs and pitfalls</h2>
+<h3><a name="STC_Pitfalls"></a>Bugs and pitfalls</h3>
 
 <ul>
 <li>The given <b><tt>?coding</tt></b> and <b><tt>?transfer</tt></b> arrays
@@ -3677,7 +3679,7 @@ modes and should always use <b><tt>stcolor.ps</tt></b>.  (I prefer
 360&times;720.)
 </ul>
 
-<h2><a name="STC_Tests"></a>Tests</h2>
+<h3><a name="STC_Tests"></a>Tests</h3>
 
 <p>
 This section gives an overview of performance in terms of processing and
@@ -3687,7 +3689,7 @@ printing speed without regard to speed of processing on the host, since at
 high resolutions, processing time is the same order of magnitude and thus
 may become the limiting factor.
 
-<h3><a name="STC_OutputCodes"></a>The various OutputCodes</h3>
+<h4><a name="STC_OutputCodes"></a>The various OutputCodes</h4>
 
 <p>
 I ran several files though Ghostscript and recorded the size of the
@@ -3806,7 +3808,7 @@ in the size of the code are achieved, "<b><tt>deltarow</tt></b>" is not
 competitive.  <b><tt>colorcir.ps</tt></b> shows savings with
 <b><tt>deltarow</tt></b>, but printing is a mess.
 
-<h3><a name="STC_printing_time"></a>Printing time related to other options</h3>
+<h4><a name="STC_printing_time"></a>Printing time related to other options</h4>
 
 <p>
 Full page halftone images printed, unless otherwise noted.
@@ -4067,7 +4069,7 @@ Full page halftone images printed, unless otherwise noted.
 	<td>&nbsp;
 </table></blockquote>
 
-<h2><a name="STC_acks"></a>Acknowledgments</h2>
+<h3><a name="STC_acks"></a>Acknowledgments</h3>
 
 <p>
 This driver was copied from <b><tt>gdevcdj.c</tt></b> (Ghostscript 3.12),
@@ -4093,7 +4095,7 @@ Germany<br>
 
 <hr>
 
-<h1><a name="Uniprint"></a>uniprint, a flexible unified printer driver</h1>
+<h2><a name="Uniprint"></a>uniprint, a flexible unified printer driver</h2>
 
 <p>
 <b><tt>uniprint</tt></b> is a unified parametric driver by Gunther Hess
@@ -4521,7 +4523,7 @@ usually not possible.
 <b><tt>stcany</tt></b>, but their gamma correction might be wrong.
 </ul></blockquote>
 
-<h2><a name="Uni_state"></a>The state of this driver</h2>
+<h3><a name="Uni_state"></a>The state of this driver</h3>
 
 <p>
 The coding of <b><tt>uniprint</tt></b> was triggered by the requirements of
@@ -4543,7 +4545,7 @@ primarily for printing on Canon printers from the pbmplus library. Starting
 with version 1.68 of uniprint, BJC support is available. Work on the
 <b><tt>hpdj</tt></b> integration will start after the update of my website.
 
-<h2><a name="Uni_background"></a>Notes on <b><tt>uniprint</tt></b>'s background</h2>
+<h3><a name="Uni_background"></a>Notes on <b><tt>uniprint</tt></b>'s background</h3>
 
 <p>
 <b><tt>uniprint</tt></b> is actually an update of <b><tt>stcolor</tt></b>,
@@ -4610,7 +4612,7 @@ parameterized are:
 <li>weaving.
 </ul></blockquote>
 
-<h2><a name="Uni_make_pfile"></a>Godzilla's guide to the creation of Unified Printer Parameter (<b><tt>.upp</tt></b>) files</h2>
+<h3><a name="Uni_make_pfile"></a>Godzilla's guide to the creation of Unified Printer Parameter (<b><tt>.upp</tt></b>) files</h3>
 
 <p>
 Here is one of the distributed parameter files (<b><tt>stc_l.upp</tt></b>)
@@ -4876,7 +4878,7 @@ pagedevice dictionary. This includes any parameters generated or changed by
 <b><tt>uniprint</tt></b>.
 </ul>
 
-<h2><a name="Uni_all_parameters"></a>All parameters in brief</h2>
+<h3><a name="Uni_all_parameters"></a>All parameters in brief</h3>
 
 <p>
 This table gives a brief explanation of every parameter known to
@@ -5259,7 +5261,7 @@ denotes that a parameter is an array, and "(RO)" that it is read-only.
 	<td>Yellow transfer
 </table></blockquote>
 
-<h2><a name="Uni_honors"></a><b><tt>uniprint</tt></b>'s Roll of Honor</h2>
+<h3><a name="Uni_honors"></a><b><tt>uniprint</tt></b>'s Roll of Honor</h3>
 
 <p>
 I should mention all of the people who were involved in
@@ -5302,7 +5304,7 @@ Germany<br>
 
 <hr>
 
-<h1><a name="SPARCprinter"></a>Sun SPARCprinter</h1>
+<h2><a name="SPARCprinter"></a>Sun SPARCprinter</h2>
 
 <p>
 This section was contributed by Martin Schulte.
@@ -5323,7 +5325,7 @@ The problem is that there has yet been no effort to make the SPARCPrinter
 driver behave like a BSD output filter.  I made my tests using the script
 shown here.
 
-<h2><a name="SPARC_install"></a>Installation</h2>
+<h3><a name="SPARC_install"></a>Installation</h3>
 
 <p>
 Add <b><tt>sparc.dev</tt></b> to <b><tt>DEVICE_DEVS</tt></b> and compile
@@ -5345,7 +5347,7 @@ else
 fi
 </pre></blockquote>
 
-<h2><a name="SPARC_problems"></a>Problems</h2>
+<h3><a name="SPARC_problems"></a>Problems</h3>
 
 <p>
 Since <b><tt>/dev/lpi</tt></b> can be opened only for exclusive use, if
@@ -5365,7 +5367,7 @@ the print job to be terminated.
 
 <hr>
 
-<h1><a name="Apple"></a>Apple dot matrix printer</h1>
+<h2><a name="Apple"></a>Apple dot matrix printer</h2>
 
 <p>
 This section was contributed by Mark Wedel

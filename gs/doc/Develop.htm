@@ -1,6 +1,8 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>Information for Ghostscript developers</title>
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 <!-- $Id$ -->
 </head>
 
@@ -9,11 +11,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-Information for Ghostscript developers
-</font>
-</table>
+<h1>Information for Ghostscript developers</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -134,7 +132,7 @@ href="Maintain.htm">maintaining Ghostscript</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Introduction"></a>Introduction</h1>
+<h2><a name="Introduction"></a>Introduction</h2>
 
 <p>
 This document provides a wealth of information about Ghostscript's
@@ -143,7 +141,7 @@ internals, primarily for developers actively working on Ghostscript.
 <p>
 THIS FILE IS A WORK IN PROGRESS.  MANY SECTIONS ARE PLACE-HOLDERS.
 
-<h1><a name="Architecture"></a>Architecture</h1>
+<h2><a name="Architecture"></a>Architecture</h2>
 
 <h2><a name="Design_goals"></a>Design goals</h2>
 
@@ -192,7 +190,7 @@ XL interpreters, and the ever-changing roster of inkjet printers.
 These goals often conflict: part of Ghostscript's claim to quality is that
 the conflicts have been resolved well.
 
-<h2><a name="Large_scale_structure"></a>Large-scale structure</h2>
+<h3><a name="Large_scale_structure"></a>Large-scale structure</h3>
 
 <p>
 At the largest design scale, Ghostscript consists of 4 layers.  Layer N
@@ -243,17 +241,17 @@ only one that is extensively documented (see <a
 href="Drivers.htm">Drivers.htm</a>) and kept stringently backward-compatible
 through successive releases.
 
-<h2><a name="Object_oriented_constructs"></a>Object-oriented constructs</h2>
+<h3><a name="Object_oriented_constructs"></a>Object-oriented constructs</h3>
 
 <hr>
 
-<h1><a name="File_roadmap"></a>File roadmap</h1>
+<h2><a name="File_roadmap"></a>File roadmap</h2>
 
 <p>
 This section of the document provides a roadmap to all of the Ghostscript
 source files.
 
-<h2><a name="Substrate"></a>Substrate</h2>
+<h3><a name="Substrate"></a>Substrate</h3>
 
 <h3>Memory manager</h3>
 
@@ -262,8 +260,11 @@ See <a href="#Memory_management">below</a>.
 
 <h3>Streams</h3>
 
-<p>
+<dl>
+
+<dt>
 Framework, file and string streams:
+<dd>
 <a href="../src/gsdsrc.c">src/gsdsrc.c</a>,
 <a href="../src/gsdsrc.h">src/gsdsrc.h</a>,
 <a href="../src/scommon.h">src/scommon.h</a>,
@@ -274,8 +275,9 @@ Framework, file and string streams:
 <a href="../src/stream.c">src/stream.c</a>,
 <a href="../src/strimpl.h">src/strimpl.h</a>.
 
-<p>
+<dt>
 Standard filters:
+<dd>
 <a href="../src/gsjconf.h">src/gsjconf.h</a>,
 <a href="../src/gsjmorec.h">src/gsjmorec.h</a>,
 <a href="../src/sa85d.c">src/sa85d.c</a>,
@@ -313,8 +315,9 @@ Standard filters:
 <a href="../src/sstring.c">src/sstring.c</a>,
 <a href="../src/sstring.h">src/sstring.h</a>.
 
-<p>
+<dt>
 Non-standard filters used to implement standard filters:
+<dd>
 <a href="../src/seexec.c">src/seexec.c</a>,
 <a href="../src/sfilter.h">src/sfilter.h</a>,
 <a href="../src/shc.c">src/shc.c</a>,
@@ -331,8 +334,9 @@ Non-standard filters used to implement standard filters:
 <a href="../src/szlibx.h">src/szlibx.h</a>,
 <a href="../src/szlibxx.h">src/szlibxx.h</a>.
 
-<p>
+<dt>
 Non-standard filters:
+<dd>
 <a href="../src/sbcp.c">src/sbcp.c</a>,
 <a href="../src/sbcp.h">src/sbcp.h</a>,
 <a href="../src/sbhc.c">src/sbhc.c</a>,
@@ -345,21 +349,25 @@ Non-standard filters:
 <a href="../src/smtf.c">src/smtf.c</a>,
 <a href="../src/smtf.h">src/smtf.h</a>.
 
-<p>
+<dt>
 Internal filters:
-<a href="../src/siinterp.c">src/siinterp.c</a>,
+<dd>
+a<a href="../src/siinterp.c">src/siinterp.c</a>,
 <a href="../src/siinterp.h">src/siinterp.h</a>,
 <a href="../src/siscale.c">src/siscale.c</a>,
 <a href="../src/siscale.h">src/siscale.h</a>,
 <a href="../src/sisparam.h">src/sisparam.h</a>.
 
-<p>
+<dt>
 Higher-level stream support:
+<dd>
 <a href="../src/spprint.c">src/spprint.c</a>,
 <a href="../src/spprint.h">src/spprint.h</a>,
 <a href="../src/spsdf.c">src/spsdf.c</a>,
 <a href="../src/spsdf.h">src/spsdf.h</a>,
 <a href="../src/srdline.h">src/srdline.h</a>.
+
+</dl>
 
 <h3>Platform-specific code</h3>
 
@@ -367,20 +375,25 @@ See <a href="#Cross_platform_APIs">below</a>.
 
 <h3>Miscellaneous</h3>
 
-<p>
+<dl>
+
+<dt>
 Library top level:
+<dd>
 <a href="../src/gsinit.c">src/gsinit.c</a>,
 <a href="../src/gslib.h">src/gslib.h</a>.
 
-<p>
+<dt>
 Configuration-related:
+<dd>
 <a href="../src/gconf.c">src/gconf.c</a>,
 <a href="../src/gconf.h">src/gconf.h</a>,
 <a href="../src/gscdef.c">src/gscdef.c</a>,
 <a href="../src/gscdefs.h">src/gscdefs.h</a>.
 
-<p>
+<dt>
 Arithmetic:
+<dd>
 <a href="../src/gsfemu.c">src/gsfemu.c</a>,
 <a href="../src/gxarith.h">src/gxarith.h</a>,
 <a href="../src/gxdda.h">src/gxdda.h</a>,
@@ -388,16 +401,18 @@ Arithmetic:
 <a href="../src/gxfixed.h">src/gxfixed.h</a>,
 <a href="../src/gxfrac.h">src/gxfrac.h</a>.
 
-<p>
+<dt>
 Operating system interface:
+<dd>
 <a href="../src/gserror.h">src/gserror.h</a>,
 <a href="../src/gsexit.h">src/gsexit.h</a>,
 <a href="../src/gxstdio.h">src/gxstdio.h</a>,
 <a href="../src/gxsync.c">src/gxsync.c</a>,
 <a href="../src/gxsync.h">src/gxsync.h</a>.
 
-<p>
+<dt>
 Other:
+<dd>
 <a href="../src/gsargs.c">src/gsargs.c</a>,
 <a href="../src/gsargs.h">src/gsargs.h</a>,
 <a href="../src/gserrors.h">src/gserrors.h</a>,
@@ -412,12 +427,17 @@ Other:
 <a href="../src/md5.c">src/md5.c</a>,
 <a href="../src/md5.h">src/md5.h</a>.
 
-<h2><a name="Graphics_library"></a>Graphics library</h2>
+</dl>
 
-<h3><a name="Library_support"></a>Support</h3>
+<h3><a name="Graphics_library"></a>Graphics library</h3>
 
-<p>
+<h4><a name="Library_support"></a>Support</h4>
+
+<dl>
+
+<dt>
 Bitmap processing:
+<dd>
 <a href="../src/gsbitmap.h">src/gsbitmap.h</a>,
 <a href="../src/gsbitops.c">src/gsbitops.c</a>,
 <a href="../src/gsbitops.h">src/gsbitops.h</a>,
@@ -430,8 +450,9 @@ Bitmap processing:
 <a href="../src/gxsample.c">src/gxsample.c</a>,
 <a href="../src/gxsample.h">src/gxsample.h</a>.
 
-<p>
+<dt>
 Functions:
+<dd>
 <a href="../src/gsfunc.c">src/gsfunc.c</a>,
 <a href="../src/gsfunc.h">src/gsfunc.h</a>,
 <a href="../src/gsfunc0.c">src/gsfunc0.c</a>,
@@ -444,8 +465,9 @@ Functions:
 <a href="../src/gsfuncv.h">src/gsfuncv.h</a>,
 <a href="../src/gxfunc.h">src/gxfunc.h</a>.
 
-<p>
+<dt>
 Parameter lists:
+<dd>
 <a href="../src/gscparam.c">src/gscparam.c</a>,
 <a href="../src/gsparam.c">src/gsparam.c</a>,
 <a href="../src/gsparam.h">src/gsparam.h</a>,
@@ -455,8 +477,9 @@ Parameter lists:
 <a href="../src/gsparamx.c">src/gsparamx.c</a>,
 <a href="../src/gsparamx.h">src/gsparamx.h</a>.
 
-<p>
+<dt>
 I/O-related:
+<dd>
 <a href="../src/gdevpipe.c">src/gdevpipe.c</a>,
 <a href="../src/gsfname.c">src/gsfname.c</a>,
 <a href="../src/gsfname.h">src/gsfname.h</a>,
@@ -465,10 +488,15 @@ I/O-related:
 <a href="../src/gsiodevs.c">src/gsiodevs.c</a>,
 <a href="../src/gxiodev.h">src/gxiodev.h</a>.
 
-<h3><a name="Paths"></a>Paths</h3>
+</dl>
 
-<p>
+<h4><a name="Paths"></a>Paths</h4>
+
+<dl>
+
+<dt>
 Coordinate transformation:
+<dd>
 <a href="../src/gscoord.c">src/gscoord.c</a>,
 <a href="../src/gscoord.h">src/gscoord.h</a>,
 <a href="../src/gsmatrix.c">src/gsmatrix.c</a>,
@@ -476,8 +504,9 @@ Coordinate transformation:
 <a href="../src/gxcoord.h">src/gxcoord.h</a>,
 <a href="../src/gxmatrix.h">src/gxmatrix.h</a>.
 
-<p>
+<dt>
 Path building:
+<dd>
 <a href="../src/gsdps1.c">src/gsdps1.c</a>,
 <a href="../src/gspath.c">src/gspath.c</a>,
 <a href="../src/gspath.h">src/gspath.h</a>,
@@ -491,8 +520,9 @@ Path building:
 <a href="../src/gxpflat.c">src/gxpflat.c</a>,
 <a href="../src/gzpath.h">src/gzpath.h</a>.
 
-<p>
+<dt>
 Path rendering:
+<dd>
 <a href="../src/gdevddrw.c">src/gdevddrw.c</a>,
 <a href="../src/gsdps1.c">src/gsdps1.c</a>,
 <a href="../src/gspaint.c">src/gspaint.c</a>,
@@ -503,22 +533,29 @@ Path rendering:
 <a href="../src/gxpaint.h">src/gxpaint.h</a>,
 <a href="../src/gxstroke.c">src/gxstroke.c</a>.
 
-<p>
+<dt>
 Clipping:
+<dd>
 <a href="../src/gxcpath.c">src/gxcpath.c</a>,
 <a href="../src/gxcpath.h">src/gxcpath.h</a>,
 <a href="../src/gzcpath.h">src/gzcpath.h</a>.
 
-<h3><a name="Text"></a>Text</h3>
+</dl>
 
-<p>
+<h4><a name="Text"></a>Text</h4>
+
+<dl>
+
+<dt>
 Fonts, generic:
+<dd>
 <a href="../src/gsfont.c">src/gsfont.c</a>,
 <a href="../src/gsfont.h">src/gsfont.h</a>,
 <a href="../src/gxfont.h">src/gxfont.h</a>.
 
-<p>
+<dt>
 Fonts, specific FontTypes:
+<dd>
 <a href="../src/gsfcid.c">src/gsfcid.c</a>,
 <a href="../src/gsfcmap.c">src/gsfcmap.c</a>,
 <a href="../src/gsfcmap.h">src/gsfcmap.h</a>,
@@ -532,8 +569,9 @@ Fonts, specific FontTypes:
 <a href="../src/gxftype.h">src/gxftype.h</a>,
 <a href="../src/gxttf.h">src/gxttf.h</a>.
 
-<p>
+<dt>
 Character rendering + font cache, generic:
+<dd>
 <a href="../src/gsccode.h">src/gsccode.h</a>,
 <a href="../src/gschar.c">src/gschar.c</a>,
 <a href="../src/gschar.h">src/gschar.h</a>,
@@ -549,8 +587,9 @@ Character rendering + font cache, generic:
 <a href="../src/gxfcache.h">src/gxfcache.h</a>,
 <a href="../src/gxtext.h">src/gxtext.h</a>.
 
-<p>
+<dt>
 Character rendering, specific FontTypes:
+<dd>
 <a href="../src/gschar0.c">src/gschar0.c</a>,
 <a href="../src/gscrypt1.c">src/gscrypt1.c</a>,
 <a href="../src/gscrypt1.h">src/gscrypt1.h</a>,
@@ -567,10 +606,15 @@ Character rendering, specific FontTypes:
 <a href="../src/gxtype1.c">src/gxtype1.c</a>,
 <a href="../src/gxtype1.h">src/gxtype1.h</a>.
 
-<h3><a name="Images"></a>Images</h3>
+</dl>
 
-<p>
+<h4><a name="Images"></a>Images</h4>
+
+<dl>
+
+<dt>
 Images:
+<dd>
 <a href="../src/gsimage.c">src/gsimage.c</a>,
 <a href="../src/gsimage.h">src/gsimage.h</a>,
 <a href="../src/gsimpath.c">src/gsimpath.c</a>,
@@ -599,7 +643,9 @@ Images:
 <a href="../src/gxipixel.c">src/gxipixel.c</a>,
 <a href="../src/gxiscale.c">src/gxiscale.c</a>.
 
-<h3><a name="Paint"></a>Paint</h3>
+</dl>
+
+<h4><a name="Paint"></a>Paint</h4>
 
 <p>
 Ghostscript uses 4 internal representations of color.  We list them here in
@@ -663,10 +709,11 @@ All painting operations (fill, stroke, imagemask) eventually call a virtual
 procedure in the device color, either <b><tt>fill_rectangle</tt></b> or
 <b><tt>fill_mask</tt></b> to actually paint pixels.
 
-<ul>
+<dl>
 
-<li>
+<dt>
 Color specification:
+<dd>
 <a href="../src/gsccolor.h">src/gsccolor.h</a>,
 <a href="../src/gscolor.c">src/gscolor.c</a>,
 <a href="../src/gscolor.h">src/gscolor.h</a>,
@@ -681,8 +728,9 @@ Color specification:
 <a href="../src/gxcolor2.h">src/gxcolor2.h</a>,
 <a href="../src/gxcvalue.h">src/gxcvalue.h</a>.
 
-<li>
+<dt>
 Color spaces:
+<dd>
 <a href="../src/gscdevn.c">src/gscdevn.c</a>,
 <a href="../src/gscdevn.h">src/gscdevn.h</a>,
 <a href="../src/gscie.c">src/gscie.c</a>,
@@ -701,8 +749,9 @@ Color spaces:
 <a href="../src/gxcie.h">src/gxcie.h</a>,
 <a href="../src/gxcspace.h">src/gxcspace.h</a>.
 
-<li>
+<dt>
 Color mapping:
+<dd>
 <a href="../src/gsciemap.c">src/gsciemap.c</a>,
 <a href="../src/gscindex.h">src/gscindex.h</a>,
 <a href="../src/gscrd.c">src/gscrd.c</a>,
@@ -726,8 +775,9 @@ Color mapping:
 <a href="../src/gxlum.h">src/gxlum.h</a>,
 <a href="../src/gxtmap.h">src/gxtmap.h</a>.
 
-<li>
+<dt>
 Halftoning:
+<dd>
 <a href="../src/gsht.c">src/gsht.c</a>,
 <a href="../src/gsht.h">src/gsht.h</a>,
 <a href="../src/gsht1.c">src/gsht1.c</a>,
@@ -745,7 +795,7 @@ Halftoning:
 <a href="../src/gxhttype.h">src/gxhttype.h</a>,
 <a href="../src/gzht.h">src/gzht.h</a>.
 
-</ul>
+</dl>
 
 <p>
 Pattern colors (tiled patterns and shadings) each use a slightly different
@@ -845,7 +895,7 @@ Advanced transparency:
 
 </ul>
 
-<h3><a name="Other_graphics"></a>Other graphics</h3>
+<h4><a name="Other_graphics"></a>Other graphics</h4>
 
 <p>
 Miscellaneous graphics state:
@@ -869,7 +919,7 @@ Miscellaneous graphics state:
 <a href="../src/gzline.h">src/gzline.h</a>,
 <a href="../src/gzstate.h">src/gzstate.h</a>.
 
-<h3><a name="Driver_support"></a>Driver support</h3>
+<h4><a name="Driver_support"></a>Driver support</h4>
 
 <p>
 Generic driver support:
@@ -932,9 +982,9 @@ Banding:
 <a href="../src/gxclutil.c">src/gxclutil.c</a>,
 <a href="../src/gxclzlib.c">src/gxclzlib.c</a>.
 
-<h2><a name="Device_drivers"></a>Device drivers</h2>
+<h3><a name="Device_drivers"></a>Device drivers</h3>
 
-<h3><a name="Internal_devices"></a>Internal devices</h3>
+<h4><a name="Internal_devices"></a>Internal devices</h4>
 
 <p>
 There are a number of "devices" that serve internal purposes.  Some of these
@@ -1006,7 +1056,7 @@ The forwarding devices meant for use in pipelines are:
 
 </ul>
 
-<h3><a name="High_level_devices"></a>High-level devices</h3>
+<h4><a name="High_level_devices"></a>High-level devices</h4>
 
 <p>
 The driver API includes high-level (path / image / text), mid-level
@@ -1078,7 +1128,7 @@ PCL XL output device (pxlmono, pxlcolor):
 Other high-level devices:
 <a href="../src/gdevtrac.c">src/gdevtrac.c</a>.
 
-<h3><a name="Other_maintained_drivers"></a>Other maintained drivers</h3>
+<h4><a name="Other_maintained_drivers"></a>Other maintained drivers</h4>
 
 <p>
 The standard Ghostscript distribution includes a collection of drivers,
@@ -1144,16 +1194,16 @@ Raster file output drivers:
 <p>
 Printer drivers:
 
-<h3><a name="Contributed_drivers"></a>Contributed drivers</h3>
+<h4><a name="Contributed_drivers"></a>Contributed drivers</h4>
 
-<h2><a name="PostScript_interpreter"></a>PostScript interpreter</h2>
+<h3><a name="PostScript_interpreter"></a>PostScript interpreter</h3>
 
 <p>
 Files:
 <a href="../src/interp.c">src/interp.c</a>,
 <a href="../src/interp.h">src/interp.h</a>.
 
-<h3><a name="Main_program"></a>Main program</h3>
+<h4><a name="Main_program"></a>Main program</h4>
 
 <p>
 The main program of the interpreter is normally invoked from the command
@@ -1178,7 +1228,7 @@ Files:
 <a href="../src/iminst.h">src/iminst.h</a>,
 <a href="../src/main.h">src/main.h</a>.
 
-<h3><a name="PostScript_interpreter_support"></a>Support</h3>
+<h4><a name="PostScript_interpreter_support"></a>Support</h4>
 
 <p>
 Memory management (refs, GC, save/restore) -- see <a
@@ -1264,7 +1314,7 @@ Miscellaneous support:
 <a href="../src/iutil2.h">src/iutil2.h</a>,
 <a href="../src/iutilasm.asm">src/iutilasm.asm</a>.
 
-<h3><a name="Scanning_parsing"></a>Scanning/parsing</h3>
+<h4><a name="Scanning_parsing"></a>Scanning/parsing</h4>
 
 <p>
 Files:
@@ -1282,7 +1332,7 @@ Files:
 <a href="../src/scanchar.h">src/scanchar.h</a>,
 <a href="../src/scantab.c">src/scantab.c</a>.
 
-<h3><a name="Standard_operators"></a>Standard operators</h3>
+<h4><a name="Standard_operators"></a>Standard operators</h4>
 
 <p>
 Operator support:
@@ -1419,7 +1469,7 @@ Other graphics-related operators:
 <a href="../src/ztrap.c">src/ztrap.c</a>,
 <a href="../src/zupath.c">src/zupath.c</a>.
 
-<h3><a name="Non_standard_operators"></a>Non-standard operators</h3>
+<h4><a name="Non_standard_operators"></a>Non-standard operators</h4>
 
 <p>
 The interpreter includes many non-standard operators.  Most of these provide
@@ -1433,7 +1483,7 @@ so you can find them all by executing the following (Unix) command:
 egrep '    [{]["].[.]' src/z*.c
 </pre></blockquote>
 
-<h3><a name="PostScript_code"></a>PostScript code</h3>
+<h4><a name="PostScript_code"></a>PostScript code</h4>
 
 <p>
 Resources
@@ -1450,7 +1500,7 @@ Encodings
 <p>
 Miscellaneous
 
-<h2><a name="PDF_interpreter"></a>PDF interpreter</h2>
+<h3><a name="PDF_interpreter"></a>PDF interpreter</h3>
 
 <p>
 Ghostscript's PDF interpreter is written entirely in PostScript: until
@@ -1474,7 +1524,7 @@ Files:
 <a href="../lib/pdf_ops.ps">lib/pdf_ops.ps</a>,
 <a href="../lib/pdf_sec.ps">lib/pdf_sec.ps</a>.
 
-<h2><a name="Build_support"></a>Build support</h2>
+<h3><a name="Build_support"></a>Build support</h3>
 
 <p>
 Ghostscript's build procedure is somewhat unusual in that it compiles and
@@ -1552,7 +1602,7 @@ Other files:
 <a href="../src/ccgs">src/ccgs</a>,
 <a href="../src/instcopy">src/instcopy</a>.
 
-<h2><a name="Utilities"></a>Utilities</h2>
+<h3><a name="Utilities"></a>Utilities</h3>
 
 <p>
 Ghostscript comes with many utilities for doing things like viewing bitmap
@@ -1560,12 +1610,12 @@ files and converting between file formats.  Some of these are written in
 PostScript, some as scripts, and some as scripts that invoke special
 PostScript code.
 
-<h2><a name="Utilities_in_PostScript"></a>Utilities in PostScript</h2>
+<h4><a name="Utilities_in_PostScript"></a>Utilities in PostScript</h4>
 
 <p>
 These are all documented in <a href="Psfiles.htm">doc/Psfiles.htm</a>, q.v.
 
-<h2><a name="Utility_scripts"></a>Utility scripts</h2>
+<h4><a name="Utility_scripts"></a>Utility scripts</h4>
 
 <p>
 Many of these scripts come in both Unix and MS-DOS (<b><tt>.bat</tt></b>
@@ -1659,9 +1709,9 @@ Script files with only PC versions:
 
 <hr>
 
-<h1><a name="Memory_management"></a>Memory management</h1>
+<h2><a name="Memory_management"></a>Memory management</h2>
 
-<h2><a name="Memory_manager_architecture"></a>Memory manager architecture</h2>
+<h3><a name="Memory_manager_architecture"></a>Memory manager architecture</h3>
 
 <p>
 In many environments, the memory manager is a set of library facilities that
@@ -1685,7 +1735,7 @@ with substantially different properties.
 
 </ul>
 
-<h3><a name="Objects_vs_strings"></a>Objects vs strings</h3>
+<h4><a name="Objects_vs_strings"></a>Objects vs strings</h4>
 
 <p>
 As noted above, allocators provide two different storage genera.
@@ -1730,7 +1780,7 @@ probably opt for a different design in which strings were allocated within
 container objects of a few hundred bytes, and pointers into the middle of
 all objects were allowed.
 
-<h3><a name="Structure_descriptors"></a>Structure descriptors</h3>
+<h4><a name="Structure_descriptors"></a>Structure descriptors</h4>
 
 <p>
 Every object has an associated structure descriptor, which the caller
@@ -1769,7 +1819,7 @@ Files:
 <a href="../src/gsstruct.h">src/gsstruct.h</a>,
 <a href="../src/gsstype.h">src/gsstype.h</a>.
 
-<h3><a name="Garbage_collection"></a>Garbage collection</h3>
+<h4><a name="Garbage_collection"></a>Garbage collection</h4>
 
 <p>
 The allocator architecture is designed to support compacting garbage
@@ -1795,7 +1845,7 @@ Files:
 <a href="../src/gsnogc.c">src/gsnogc.c</a>,
 <a href="../src/gsnogc.h">src/gsnogc.h</a>.
 
-<h3><a name="Movability"></a>Movability</h3>
+<h4><a name="Movability"></a>Movability</h4>
 
 <p>
 As just noted, objects are normally movable by the garbage collector.
@@ -1805,7 +1855,7 @@ procedures for allocating both movable (default) and immovable objects.
 Note, however, that even immovable objects must be traceable (have a
 structure descriptor), and may be freed, by the garbage collector.
 
-<h3><a name="Parent_hierarchy">Parent hierarchy</h3>
+<h4><a name="Parent_hierarchy"></a>Parent hierarchy</h4>
 
 <p>
 When an allocator needs to add memory to the pool that it manages, it
@@ -1817,7 +1867,7 @@ href="#malloc">below</a>.  However, especially in embedded environments, an
 allocator may be limited to a fixed-size pool assigned to it when it is
 created.
 
-<h3><a name="Allocator_API"></a>Allocator API</h3>
+<h4><a name="Allocator_API"></a>Allocator API</h4>
 
 In summary, the allocator API provides the following principal operations:
 
@@ -1849,7 +1899,7 @@ Files:
 <a href="../src/gsstruct.h">src/gsstruct.h</a>,
 <a href="../src/gsstype.h">src/gsstype.h</a>.
 
-<h2><a name="Freeing_storage"></a>Freeing storage</h2>
+<h3><a name="Freeing_storage"></a>Freeing storage</h3>
 
 <p>
 Ghostscript's memory management architecture provides three different ways
@@ -1868,7 +1918,7 @@ types of objects have a virtual finalization procedure as well: the
 finalization procedure defined in the descriptor simply calls the one in the
 object.
 
-<h3><a name="Explicit_freeing"></a>Explicit freeing</h3>
+<h4><a name="Explicit_freeing"></a>Explicit freeing</h4>
 
 <p>
 Objects and strings may be freed explicitly, using the
@@ -1882,7 +1932,7 @@ least safe.  It is most appropriate when storage is freed in the same
 procedure where it is allocated, or for storage that is known to be
 referenced by only one pointer.
 
-<h3><a name="Reference_counting"></a>Reference counting</h3>
+<h4><a name="Reference_counting"></a>Reference counting</h4>
 
 <p>
 Objects may be managed by reference counting.  When an object is allocated,
@@ -1901,15 +1951,15 @@ cannot free objects that are involved in a pointer cycle (e.g., A -> B -> C
 Files:
 <a href="../src/gsrefct.h">src/gsrefct.h</a>.
 
-<h3><a name="Real_garbage_collection"></a>(Real) garbage collection</h3>
+<h4><a name="Real_garbage_collection"></a>(Real) garbage collection</h4>
 
 <p>
 Objects and strings may be freed automatically by a garbage collector.  See
 <a href="#Interpreter_GC">below</a>.
 
-<h2><a name="Special_implementations"></a>Special implementations</h2>
+<h3><a name="Special_implementations"></a>Special implementations</h3>
 
-<h3><a name="malloc"></a>malloc</h3>
+<h4><a name="malloc"></a>malloc</h4>
 
 <p>
 As mentioned <a href="#Parent_hierarchy">above</a>, the ultimate ancestor of
@@ -1921,7 +1971,7 @@ Files:
 <a href="../src/gsmalloc.h">src/gsmalloc.h</a>,
 <a href="../src/gsmalloc.c">src/gsmalloc.c</a>.
 
-<h3><a name="Locking"></a>Locking</h3>
+<h4><a name="Locking"></a>Locking</h4>
 
 <p>
 In a multi-threaded environment, if an allocator must be callable from
@@ -1937,7 +1987,7 @@ Files:
 <a href="../src/gsmemlok.h">src/gsmemlok.h</a>,
 <a href="../src/gsmemlok.c">src/gsmemlok.c</a>.
 
-<h3><a name="Retrying"></a>Retrying</h3>
+<h4><a name="Retrying"></a>Retrying</h4>
 
 <p>
 In an embedded environment, job failure due to memory exhaustion is very
@@ -1952,7 +2002,7 @@ Files:
 <a href="../src/gsmemret.h">src/gsmemret.h</a>,
 <a href="../src/gsmemret.c">src/gsmemret.c</a>.
 
-<h2><a name="Standard_implementation"></a>Standard implementation</h2>
+<h3><a name="Standard_implementation"></a>Standard implementation</h3>
 
 <p>
 The standard Ghostscript allocator gets storage from its parent (normally
@@ -1982,7 +2032,7 @@ Files:
 <a href="../src/gxalloc.h">src/gxalloc.h</a>,
 <a href="../src/gxobj.h">src/gxobj.h</a>.
 
-<h2><a name="PostScript_interpreter_extensions"></a>PostScript interpreter extensions</h2>
+<h3><a name="PostScript_interpreter_extensions"></a>PostScript interpreter extensions</h3>
 
 <p>
 The PostScript interpreter uses an allocator that extends the graphic
@@ -1990,7 +2040,7 @@ library's standard allocator to handle PostScript objects,
 <b><tt>save</tt></b> and <b><tt>restore</tt></b>, and real garbage
 collection.
 
-<h3><a name="Refs"></a>Refs (PostScript "objects")</h3>
+<h4><a name="Refs"></a>Refs (PostScript "objects")</h4>
 
 <p>
 Ghostscript represents what the PLRM calls PostScript "objects" using a
@@ -2058,7 +2108,7 @@ Files:
 <a href="../src/imemory.h">src/imemory.h</a>,
 <a href="../src/istruct.h">src/istruct.h</a>.
 
-<h3><a name="save_forgetsave_restore"></a>save/.forgetsave/restore</h3>
+<h4><a name="save_forgetsave_restore"></a>save/.forgetsave/restore</h4>
 
 <p>
 In addition to <b><tt>save</tt></b> and <b><tt>restore</tt></b>, Ghostscript
@@ -2080,7 +2130,7 @@ Files:
 <a href="../src/isstate.h">src/isstate.h</a>,
 <a href="../src/store.h">src/store.h</a>.
 
-<h3><a name="Stable_allocators"></a>Stable allocators</h3>
+<h4><a name="Stable_allocators"></a>Stable allocators</h4>
 
 <p>
 Even though <b><tt>save</tt></b> and <b><tt>restore</tt></b> are concepts
@@ -2106,7 +2156,7 @@ PostScript arrays but are not subject to <b><tt>save</tt></b> and
 <b><tt>restore</tt></b>.)  For more examples, search the sources for
 references to <b><tt>gs_stable_memory</tt></b>.
 
-<h3><a name="Interpreter_GC"></a>Garbage collection</h3>
+<h4><a name="Interpreter_GC"></a>Garbage collection</h4>
 
 <p>
 The interpreter's garbage collector is a compacting, non-conservative,
@@ -2181,7 +2231,7 @@ Files:
 
 <hr>
 
-<h1><a name="Portability"></a>Portability</h1>
+<h2><a name="Portability"></a>Portability</h2>
 
 <p>
 One of Ghostscript's most important features is its great portability across
@@ -2198,9 +2248,9 @@ order, scalar size, and platform-specific compiler or library features.
 
 </ul>
 
-<h2><a name="Structural"></a>Structural</h2>
+<h3><a name="Structural"></a>Structural</h3>
 
-<h3><a name="CPU_and_compiler"></a>CPU and compiler</h3>
+<h4><a name="CPU_and_compiler"></a>CPU and compiler</h4>
 
 <p>
 Ghostscript attempts to discover characteristics of the CPU and compiler
@@ -2217,7 +2267,7 @@ Files:
 <a href="../src/genarch.c">src/genarch.c</a>,
 <a href="../obj/arch.h">obj/arch.h</a>.
 
-<h3><a name="Library_headers"></a>Library headers</h3>
+<h4><a name="Library_headers"></a>Library headers</h4>
 
 <p>
 Despite the supposed standardization of ANSI C, platforms vary considerably
@@ -2262,7 +2312,7 @@ maintain; and the 'autoconf' tool for generating configure scripts, which we
 found easy to use, covers very little of the ground that Ghostscript
 requires.
 
-<h3><a name="Cross_platform_APIs"></a>Cross-platform APIs</h3>
+<h4><a name="Cross_platform_APIs"></a>Cross-platform APIs</h4>
 
 <p>
 For a few library facilities that are available on all platforms but are not
@@ -2313,7 +2363,7 @@ Platform-specific implementation files:
 <a href="../src/gp_win32.c">src/gp_win32.c</a>,
 <a href="../src/gp_wsync.c">src/gp_wsync.c</a>.
 
-<h3><a name="Makefiles"></a>Makefiles</h3>
+<h4><a name="Makefiles"></a>Makefiles</h4>
 
 <p>
 Ghostscript's makefiles are structured very similarly to the cross-platform
@@ -2453,7 +2503,7 @@ Shared platform-dependent makefiles:
 <a href="../src/winlib.mak">src/winlib.mak</a>,
 <a href="../src/winplat.mak">src/winplat.mak</a>.
 
-<h2><a name="Coding"></a>Coding</h2>
+<h3><a name="Coding"></a>Coding</h3>
 
 <p>
 Coding for portability requires avoiding both <em>explicit</em>
@@ -2461,7 +2511,7 @@ dependencies, such as platform-dependent <b><tt>#ifdef</tt></b>s, and
 <em>implicit</em> dependencies, such as dependencies on byte order or the
 size of the integral types.
 
-<h3><a name="Explicit_dependencies"></a>Explicit dependencies</h3>
+<h4><a name="Explicit_dependencies"></a>Explicit dependencies</h4>
 
 <p>
 The platform-independent .c files never, ever, use <b><tt>#ifdef</tt></b> or
@@ -2479,7 +2529,7 @@ Files:
 <a href="../src/std.h">src/std.h</a>,
 <a href="../src/stdpre.h">src/stdpre.h</a>.
 
-<h3><a name="Implicit_dependencies"></a>Implicit dependencies</h3>
+<h4><a name="Implicit_dependencies"></a>Implicit dependencies</h4>
 
 <p>
 The most common source of byte ordering dependencies is casting between
@@ -2518,7 +2568,7 @@ See the files listed above for other situations where a macro provides
 platform-independence or a workaround for bugs in specific compilers or
 libraries (of which there are a distressing number).
 
-<h2><a name="Platform_specific_code"></a>Platform-specific code</h2>
+<h4><a name="Platform_specific_code"></a>Platform-specific code</h4>
 
 <p>
 There are some features that are inherently platform-specific:
@@ -2555,12 +2605,12 @@ MS Windows files:
 
 <hr>
 
-<h1><a name="Adding_features_and_options"></a>Adding features and options</h1>
+<h2><a name="Adding_features_and_options"></a>Adding features and options</h2>
 
 <p>
 [Ray, please supply more information about what you want here]
 
-<h1><a name="Troubleshooting"></a>Troubleshooting</h1>
+<h2><a name="Troubleshooting"></a>Troubleshooting</h2>
 
 <p>
 The Ghostscript code has many tracing and debugging features that can be
@@ -2595,19 +2645,18 @@ Files:
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-
-<p>Copyright &copy; 2000 artofcode LLC.  All rights reserved.
-
-<p>This file is part of AFPL Ghostscript.  See the <a
-href="Public.htm">Aladdin Free Public License</a> (the "License") for full
-details of the terms of using, copying, modifying, and redistributing
-AFPL Ghostscript.
+<p>
+<small>Copyright &copy; 2000 artofcode LLC.
+All rights reserved.</small>
 
 <p>
-Ghostscript version 6.60, 16 October 2000
+<small>This file is part of AFPL Ghostscript.  See the <a
+href="Public.htm">Aladdin Free Public License</a> (the "License") for full
+details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 6.60, 16 October 2000</small>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

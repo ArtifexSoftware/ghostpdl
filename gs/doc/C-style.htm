@@ -1,8 +1,10 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>Ghostscript C coding guidelines</title>
 <!-- $Id$ -->
 <!-- Originally: c-style.txt -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -10,11 +12,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-Ghostscript C coding guidelines
-</font>
-</table>
+<h1>Ghostscript C coding guidelines</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -33,16 +31,10 @@ Ghostscript C coding guidelines
 <li><a href="#Introduction">Introduction</a>
 <li><a href="#C_features">Use of C language features</a>
 <ul>
-<li><a href="#Preprocessor">Preprocessor</a>
-<ul>
-<li><a href="#Conditionals">Conditionals</a>
-<li><a href="#Macros">Macros</a>
-</ul>
-<li><a href="#Types_declarations">Types and declarations</a>
-<ul>
+<li><a href="#Conditionals">Preprocessor Conditionals</a>
+<li><a href="#Macros">Preprocessor Macros</a>
 <li><a href="#Pointers_structures">Pointers and structures</a>
 <li><a href="#Scalars">Scalars</a>
-</ul>
 <li><a href="#Static_extern_scoping"><b><tt>static</tt></b> and <b><tt>extern</tt></b> scoping</a>
 <li><a href="#Standard_library">Standard library features</a>
 <li><a href="#Other">Miscellany</a>
@@ -51,11 +43,9 @@ Ghostscript C coding guidelines
 <ul>
 <li><a href="#All_files">All files</a>
 <li><a href="#Makefiles">Makefiles</a>
-<li><a href="#C_code_generally">C code in general</a>
-<ul>
+<li><a href="#General_C_code">General C Code</a>
 <li><a href="#Headers">Headers (<b><tt>.h</tt></b> files)</a>
-<li><a href="#Executable_code">Executable code (<b><tt>.c</tt></b> files)</a>
-</ul>
+<li><a href="#Source">Source (<b><tt>.c</tt></b> files)</a>
 </ul>
 <li><a href="#Formatting">Formatting</a>
 <ul>
@@ -97,9 +87,9 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Summary"></a>Summary of the coding guidelines</h1>
+<h2><a name="Summary"></a>Summary of the coding guidelines</h2>
 
-<h2><a name="Summary_preprocessor"></a>Preprocessor</h2>
+<h3><a name="Summary_preprocessor"></a>Preprocessor</h3>
 
 <ul>
 <li>Use preprocessor conditionals that test for individual platforms or
@@ -126,7 +116,7 @@ and around each use of an argument.
 <li>Make all variables referenced in a macro body arguments of the macro.
 </ul>
 
-<h2><a name="Summary_types"></a>Types and scopes</h2>
+<h3><a name="Summary_types"></a>Types and scopes</h3>
 
 <ul>
 
@@ -151,7 +141,7 @@ the top level of a file.
 <li>Put externs in <b><tt>.h</tt></b> files, not <b><tt>.c</tt></b> files.
 </ul>
 
-<h2><a name="Summary_formatting"></a>Formatting</h2>
+<h3><a name="Summary_formatting"></a>Formatting</h3>
 
 <ul>
 
@@ -175,7 +165,7 @@ and shifts with each other or other operators, and around
 "<b><tt>?&nbsp;:</tt></b>" expressions.
 </ul>
 
-<h2><a name="Summary_miscellany"></a>Miscellany</h2>
+<h3><a name="Summary_miscellany"></a>Miscellany</h3>
 
 <ul>
 
@@ -198,7 +188,7 @@ together.
 
 <hr>
 
-<h1><a name="Introduction"></a>Introduction</h1>
+<h2><a name="Introduction"></a>Introduction</h2>
 
 <p>
 The many rules that Ghostscript's code follows almost everywhere are meant
@@ -209,11 +199,9 @@ it's OK to break it.
 
 <hr>
 
-<h1><a name="C_features"></a>Use of C language features</h1>
+<h2><a name="C_features"></a>Use of C language features</h2>
 
-<h2><a name="Preprocessor"></a>Preprocessor</h2>
-
-<h3><a name="Conditionals"></a>Conditionals</h3>
+<h3><a name="Conditionals"></a>Preprocessor Conditionals</h3>
 
 <p>
 Using preprocessor conditionals can easily lead to unreadable code, since
@@ -226,11 +214,11 @@ up source modules rather than use conditionals that affect the structure or
 logic.
 
 <p>
-In <b><tt>.c</tt></b> files don't use preprocessor conditionals that test
-for individual platforms or compilers.  Use them only in header files named
-xxx<b><tt>_.h</tt></b>.
+In <b><tt>.c</tt></b> files don't use preprocessor conditionals that
+test for individual platforms or compilers.  Use them only in header
+files named xxx<b><tt>_.h</tt></b>.
 
-<h3><a name="Macros"></a>Macros</h3>
+<h3><a name="Macros"></a>Preprocessor Macros</h3>
 
 <p>
 Ghostscript code uses macros heavily to effectively extend the rather
@@ -312,8 +300,6 @@ defined.
 <p>
 Preferably <b><tt>CAPITALIZE</tt></b> macro names.
 
-<h2><a name="Types_declarations"></a>Types and declarations</h2>
-
 <h3><a name="Pointers_structures"></a>Pointers and structures</h3>
 
 <p>
@@ -330,7 +316,7 @@ treats memory as opaque.
 
 <p>
 Don't use anonymous structures if you can possibly avoid it, except perhaps
-as components of other structures.  Ideally, use the
+as components of other structures. Ideally, use the
 "<b><tt>struct</tt></b>" keyword only for declaring named structure types,
 like this:
 
@@ -406,7 +392,7 @@ Unless there's a good reason for doing otherwise, return
 in double precision internally and has to do extra work to convert between
 double and single precision.
 
-<h2><a name="Static_extern_scoping"></a>Static and extern scoping</h2>
+<h3><a name="Static_extern_scoping"></a>Static and extern scoping</h3>
 
 <p>
 Use "<b><tt>private</tt></b>" instead of "<b><tt>static</tt></b>" for
@@ -427,7 +413,7 @@ it, especially if it's local to a file.
 Avoid <b><tt>extern</tt></b> in <b><tt>.c</tt></b> files: put it in header
 files.
 
-<h2><a name="Standard_library"></a>Standard library features</h2>
+<h3><a name="Standard_library"></a>Standard library features</h3>
 
 <p>
 Only use library features that are documented in the established ANSI
@@ -436,7 +422,7 @@ standard (e.g., Harbison & Steele's book).  Do not use procedures that are
 originate in BSD Unix (e.g., <b><tt>strcasecmp</tt></b>), or were added in
 later versions of the standard such as C 9X.
 
-<h2><a name="Other"></a>Miscellany</h2>
+<h3><a name="Other"></a>Miscellany</h3>
 
 <p>
 The most important descriptive comments are ones in header files that
@@ -462,9 +448,9 @@ assignment will be evaluated before the right.
 
 <hr>
 
-<h1><a name="File_structuring"></a>File structuring</h1>
+<h2><a name="File_structuring"></a>File structuring</h2>
 
-<h2><a name="All_files"></a>All files</h2>
+<h3><a name="All_files"></a>All files</h3>
 
 <p>
 Keep file names within the "8.3" format for portability
@@ -502,7 +488,7 @@ Every code file should start with comments containing
 If you create a file by copying the beginning of another file, be sure to
 update the copyright year and change the file name.
 
-<h2><a name="Makefiles"></a>Makefiles</h2>
+<h3><a name="Makefiles"></a>Makefiles</h3>
 
 <p>
 Use the extension <b><tt>.mak</tt></b> for makefiles.
@@ -538,7 +524,7 @@ bending this rule).
 For compatibility with the build utilities on OpenVMS, always put a space
 before the colon that separates the target(s) of a rule from the dependents.
 
-<h2><a name="C_code_generally"></a>C code in general</h2>
+<h3><a name="General_C_code"></a>General C code</h3>
 
 <p>
 List <b><tt>#include</tt></b> statements from "bottom" to "top", that is,
@@ -578,7 +564,7 @@ every procedure and structure has a comment that says what it does.  Divide
 procedures into meaningful groups set off by some distinguished form of
 comment.
 
-<h3><a name="Executable_code"></a>Executable code (<b><tt>.c</tt></b> files)</h3>
+<h3><a name="Source"></a>Source (<b><tt>.c</tt></b> files)</h3>
 
 <p>
 After the initial comments, arrange C files in the following order:
@@ -600,9 +586,9 @@ reason.
 
 <hr>
 
-<h1><a name="Formatting"></a>Formatting</h1>
+<h2><a name="Formatting"></a>Formatting</h2>
 
-<h2><a name="Indentation"></a>Indentation</h2>
+<h3><a name="Indentation"></a>Indentation</h3>
 
 <p>
 We've formatted all of our code using the GNU <b><tt>indent</tt></b> program.
@@ -705,7 +691,7 @@ Similarly, for do-while statements, do this:
 <b><tt>} while (</tt></b> ... condition ... <b><tt>);</tt></b>
 </blockquote>
 
-<h2><a name="Spaces"></a>Spaces</h2>
+<h3><a name="Spaces"></a>Spaces</h3>
 
 <p>
 Do put a space:
@@ -726,7 +712,7 @@ Don't put a space:
 <li>before the parenthesis of a macro or procedure call.
 </ul>
 
-<h2><a name="Parentheses"></a>Parentheses</h2>
+<h3><a name="Parentheses"></a>Parentheses</h3>
 
 <p>
 Parentheses are important in only a few places:
@@ -782,9 +768,9 @@ hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y,<br>
 
 <hr>
 
-<h1><a name="Naming"></a>Naming</h1>
+<h2><a name="Naming"></a>Naming</h2>
 
-<h2><a name="General_naming"></a>General rules</h2>
+<h3><a name="General_naming"></a>General rules</h3>
 
 <p>
 Use fully spelled-out English words in names, rather than contractions.
@@ -810,13 +796,13 @@ Procedures, variables, and structures visible outside a single
 subsystem they belong to (in the case of Ghostscript, <b><tt>gs_</tt></b>
 or <b><tt>gx_</tt></b>).  This rule isn't followed very consistently.
 
-<h2><a name="Conventional_names"></a>Names used by convention</h2>
+<h3><a name="Conventional_names"></a>Names used by convention</h3>
 
 <p>
 The Ghostscript code uses certain names consistently for certain kinds of
 values.  Some of the commonest and least obvious are these two:
 
-<h3><a name="code"></a><b><tt>code</tt></b></h3>
+<h4><a name="code"></a><b><tt>code</tt></b></h4>
 
 <blockquote>
 A value to be returned from a procedure:
@@ -835,7 +821,7 @@ A value to be returned from a procedure:
 
 </blockquote>
 
-<h3><a name="status"></a><b><tt>status</tt></b></h3>
+<h4><a name="status"></a><b><tt>status</tt></b></h4>
 
 <blockquote>
 A value returned from a stream procedure:
@@ -855,9 +841,9 @@ A value returned from a stream procedure:
 
 <hr>
 
-<h1><a name="Miscellany"></a>Miscellany</h1>
+<h2><a name="Miscellany"></a>Miscellany</h2>
 
-<h2><a name="Single_use_procedures"></a>Single-use procedures</h2>
+<h3><a name="Single_use_procedures"></a>Single-use procedures</h3>
 
 <p>
 In general, don't create procedures that are private and only called from
@@ -867,7 +853,7 @@ conditional) is too long for the eye easily to match its enclosing braces
 doesn't use or set a lot of state held in outer local variables, it may be
 more readable if you put it in a procedure.
 
-<h2><a name="Local_variables"></a>Local variables</h2>
+<h3><a name="Local_variables"></a>Local variables</h3>
 
 <p>
 Don't assign new values to procedure parameters.  It makes debugging very
@@ -904,7 +890,7 @@ someproc(... <b><tt>gx_device *dev</tt></b> ...)<br>
 <b><tt>}</tt></b>
 </blockquote>
 
-<h2><a name="Error_handling"></a>Error handling</h2>
+<h3><a name="Error_handling"></a>Error handling</h3>
 
 <p>
 Every caller should check for error returns and, in general, propagate them
@@ -928,7 +914,7 @@ See the file <b><tt>gserrors.h</tt></b> for
 the error return codes used by the graphics library,
 most of which correspond directly to PostScript error conditions.
 
-<h2><a name="Compiler_warnings"></a>Compiler warnings</h2>
+<h3><a name="Compiler_warnings"></a>Compiler warnings</h3>
 
 <p>
 The following section refers to the warnings produced by <b><tt>gcc</tt></b>:
@@ -962,19 +948,18 @@ by using explicit casts.
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-
-<p>Copyright &copy; 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-
-<p>This file is part of AFPL Ghostscript.  See the <a
-href="Public.htm">Aladdin Free Public License</a> (the "License") for full
-details of the terms of using, copying, modifying, and redistributing AFPL
-Ghostscript.
+<p>
+<small>Copyright &copy; 1996, 1997, 1998 Aladdin Enterprises.
+All rights reserved.</small>
 
 <p>
-Ghostscript version 6.30, 3 October 2000
+<small>This file is part of AFPL Ghostscript.  See the <a
+href="Public.htm">Aladdin Free Public License</a> (the "License") for full
+details of the terms of using, copying, modifying, and redistributing AFPL
+Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 6.50, 2 November 2000</small>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
