@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.10 2002/07/07 20:30:57 giles Exp $
+    $Id: jbig2_text.c,v 1.11 2002/07/07 20:38:26 giles Exp $
 */
 
 #include <stddef.h>
@@ -293,7 +293,7 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
  * jbig2_read_text_info: read a text region segment header
  **/
 int
-jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
+jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
 {
     int offset = 0;
     Jbig2RegionSegmentInfo region_info;

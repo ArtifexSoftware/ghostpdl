@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_priv.h,v 1.11 2002/07/04 13:34:29 giles Exp $
+    $Id: jbig2_priv.h,v 1.12 2002/07/07 20:38:26 giles Exp $
     
     shared library internals
 */
@@ -110,7 +110,7 @@ struct _Jbig2Page {
     Jbig2Image *image;
 };
 
-int jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
+int jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 int jbig2_complete_page (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 
 typedef enum {
@@ -133,7 +133,7 @@ typedef struct {
 } Jbig2RegionSegmentInfo;
 
 void jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info, const byte *segment_data);
-int jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
+int jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 
 /* 7.4 */
 int jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.12 2002/07/07 20:30:56 giles Exp $
+    $Id: jbig2_segment.c,v 1.13 2002/07/07 20:38:26 giles Exp $
 */
 
 #include <stdlib.h> /* size_t */
@@ -141,7 +141,7 @@ int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
     case 4: /* intermediate text region */
     case 6: /* immediate text region */
     case 7: /* immediate lossless text region */
-      return jbig2_read_text_info(ctx, segment, segment_data);
+      return jbig2_parse_text_region(ctx, segment, segment_data);
     case 16:
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "unhandled segment type 'pattern dictionary'");
@@ -172,7 +172,7 @@ int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "unhandled segment type 'immediate lossless generic refinement region'");
     case 48:
-      return jbig2_read_page_info(ctx, segment, segment_data);
+      return jbig2_parse_page_info(ctx, segment, segment_data);
     case 49:
       return jbig2_complete_page(ctx, segment, segment_data);
     case 50:

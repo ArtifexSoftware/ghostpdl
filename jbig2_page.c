@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_page.c,v 1.8 2002/07/04 16:33:44 giles Exp $
+    $Id: jbig2_page.c,v 1.9 2002/07/07 20:38:26 giles Exp $
 */
 
 #include <stdlib.h>
@@ -53,7 +53,7 @@ dump_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, Jbig2Page *page)
  * buffer for the page (or the first stripe)
  **/
 int
-jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
+jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
 {
     Jbig2Page *page;
 
