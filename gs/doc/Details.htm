@@ -8,6 +8,35 @@
 </head>
 <body>
 
+<p><strong><a name="2003-05-21_0017"></a>
+2003-05-21 00:17 Ralph Giles</strong></p>
+<blockquote><pre>
+Correct additional header dependency errors.
+</pre></blockquote>
+
+<p><strong><a name="2003-05-20_2350"></a>
+2003-05-20 23:50 Ralph Giles</strong></p>
+<blockquote><pre>
+Update changelog and history files for the 8.10 release.
+
+DETAILS:
+
+Turned out I'd forgotten to modify makehist.tcl to handle the new
+changelog format, so the merge of News and Changes into History8.htm
+was done manually. Fortunately this is much simpler now.
+
+We will also need a separate 'detailed history' file in which to archive
+the Details documents before the next release.
+
+N.B. those trying to regenerate this: the gs8_00 tag was accidentally
+modified in April, so the date-from-tag filtering recommended in the
+release instructions does not work for this diff. Instead the xml
+changelong was generated with hand-picked dates:
+
+	cvs2cl.pl --xml --utc -T --follow trunk --usermap authors \
+		--log-opts "-d'2002-11-21<2003-06-21'" -f doc/changelog.xml
+</pre></blockquote>
+
 <p><strong><a name="2003-05-20_2329"></a>
 2003-05-20 23:29 Ralph Giles</strong></p>
 <blockquote><pre>
