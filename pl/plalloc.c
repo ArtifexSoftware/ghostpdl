@@ -12,10 +12,11 @@
 #include "gsmemret.h" /* for gs_memory_type_ptr_t */
 #include "gsmalloc.h"
 #include "gsstype.h"
-
+#include "plalloc.h"
 
 /* a screwed up mess, we try to make it manageable here */
 extern const gs_memory_struct_type_t st_bytes;
+
 
 /* assume doubles are the largest primitive types and malloc alignment
    is consistent.  Covers the machines we care about */
@@ -67,6 +68,107 @@ set_type(byte *bptr, gs_memory_type_ptr_t type)
     return;
 }
     
+#ifndef PL_KEEP_GLOBAL_FREE_LIST
+#error "feature binding PL_KEEP_GLOBAL_FREE_LIST is undefined"
+#endif
+
+typedef struct pl_mem_node_s {
+    byte *address;
+    struct pl_mem_node_s *next;
+} pl_mem_node_t;
+
+/* head of global free list */
+private pl_mem_node_t *head = NULL;
+
+/* return -1 on error, 0 on success */
+int 
+pl_mem_node_add(byte *add)
+{
+  if( PL_KEEP_GLOBAL_FREE_LIST ) {
+    pl_mem_node_t *node = (pl_mem_node_t *)malloc(sizeof(pl_mem_node_t));
+    if ( node == NULL )
+        return -1;
+    if (head == NULL) {
+        head = node;
+        head->next = NULL;
+    } else {
+        node->next = head;
+        head = node;
+    }
+    head->address = add;
+  }
+  return 0;
+}
+
+int        
+pl_mem_node_remove(byte *addr)
+{
+  if ( PL_KEEP_GLOBAL_FREE_LIST ) {
+    pl_mem_node_t *current;
+    /* check the head first */
+    if ( head == NULL ) {
+        dprintf( "FAIL - no nodes to be removed\n" );
+        return -1;
+    }
+
+    if ( head && head->address == addr ) {
+        pl_mem_node_t *tmp = head->next;
+	free(head);
+        head = tmp;
+    } else {
+        /* stop in front of element */
+        bool found = false;
+        for (current = head; current != NULL; current = current->next) {
+
+            if ( current->next && (current->next->address == addr) ) {
+                pl_mem_node_t *tmp = current->next->next;
+		free(current->next);
+                current->next = tmp;
+                found = true;
+                break;
+            }
+            
+        }
+        if ( !found )
+            dprintf( "FAIL freed addres not found\n" );
+    }
+  }
+  return 0;
+}
+    
+void
+pl_mem_node_free_all_remaining()
+{
+    if( PL_KEEP_GLOBAL_FREE_LIST ) {
+        static const bool print_recovered_block_info = (DEBUG && true);
+        uint blk_count = 0;
+	uint size = 0;
+	uint total_size = 0;
+	byte* ptr; 
+
+	pl_mem_node_t *current;
+	pl_mem_node_t *next;
+	current = head;
+	while ( current != NULL ) { 
+	    next = current->next; 
+            if ( print_recovered_block_info ) {
+	       ++blk_count;
+	       ptr = ((byte*)current->address) + (2 * round_up_to_align(1));
+	       size = get_size(ptr);
+	       total_size += size;
+	       dprintf2("Recovered %x size %d\n", ptr, size);
+	    }
+	    free(current->address);
+	    free(current);
+	    current = next;
+	}
+	if ( print_recovered_block_info && blk_count )
+	    dprintf2("Recovered %d blocks, %d bytes\n", blk_count, total_size);
+    }
+    head = NULL;
+}
+
+
 /* all of the allocation routines modulo realloc reduce to the this
    function */
 private byte *
@@ -100,6 +202,10 @@ pl_alloc(gs_memory_t * mem, uint size, gs_memory_type_ptr_t type, client_name_t 
 	if ( gs_debug_c('@') )
 	    memset(&ptr[minsize * 2], 0xff, get_size(&ptr[minsize * 2]));
 #endif
+	if ( pl_mem_node_add(ptr) ) { 
+	   free( ptr );
+	   return NULL;
+	}
 	/* return the memory after the size and type words. */
 	return &ptr[minsize * 2];
     }
@@ -172,8 +278,9 @@ pl_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_nam
     /* get new object's size */
     ulong new_size = (objs_type->ssize * new_num_elements) + header_size;
     /* replace the size field */
+    pl_mem_node_remove(&bptr[-header_size]);
     ptr = (byte *)realloc(&bptr[-header_size], new_size);
-    if ( !ptr )
+    if ( !ptr || pl_mem_node_add(ptr) )
 	return NULL;
     /* da for debug allocator - so scripts can parse the trace */
     if_debug2('A', "[da]:realloc:%x:%s\n", ptr, cname );
@@ -194,7 +301,9 @@ pl_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	if ( gs_debug_c('@') )
 	    memset(&bptr[-header_size], 0xee, header_size + get_size(ptr));
 #endif
+	pl_mem_node_remove(&bptr[-header_size]);
 	free(&bptr[-header_size]);
+
 	/* da for debug allocator - so scripts can parse the trace */
 	if_debug2('A', "[da]:free:%x:%s\n", ptr, cname );
     }
@@ -287,6 +396,7 @@ no_recover_proc(gs_memory_retrying_t *rmem, void *proc_data)
 {
     return RECOVER_STATUS_NO_RETRY;
 }
+
 
 /* forward decl */
 private gs_memory_t * pl_stable(P1(gs_memory_t *mem));

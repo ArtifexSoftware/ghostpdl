@@ -81,8 +81,7 @@ Usage: %s [option* file]+...\n\
 Options: -dNOPAUSE -E[#] -h -C -L<PCL|PCLXL> -K<maxK> -P<PCL5C|PCL5E|RTL> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
 	 -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
-         -J<PJL commands>
-";
+         -J<PJL commands>";
 
 /* ---------------- Forward decls ------------------ */
 /* Functions to encapsulate pl_main_universe_t */
@@ -482,6 +481,8 @@ pl_main(
     if ( gs_debug_c('A') )
 	dprintf( "Final time" );
     pl_platform_dnit(0);
+
+    pl_mem_node_free_all_remaining();
 
     return 0;
 #undef mem

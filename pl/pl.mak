@@ -199,9 +199,11 @@ $(PLOBJ)plvocab.$(OBJ): $(PLSRC)plvocab.c $(AK) $(stdpre_h)\
  $(plvocab_h)
 	$(PLCCC) $(PLSRC)plvocab.c $(PLO_)plvocab.$(OBJ)
 
+plalloc_h=$(PLSRC)plalloc.h
+
 $(PLOBJ)plalloc.$(OBJ): $(PLSRC)plalloc.c $(AK) \
        $(malloc_h) $(memory_h) $(gdebug_h)\
-       $(gsmemory_h) $(gsstype_h)
+       $(gsmemory_h) $(gsstype_h) $(plalloc_h)
 	$(PLCCC) $(PLSRC)plalloc.c $(PLO_)plalloc.$(OBJ)
 
 # freetype font loading module.
