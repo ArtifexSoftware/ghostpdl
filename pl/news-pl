@@ -1,0 +1,200 @@
+   Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+   Unauthorized use, copying, and/or distribution prohibited.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, NEWS-PL, describes the changes in the most recent releases of
+Aladdin's library code that is shared between PCL5, HP-GL/2, HP RTL, and PCL
+XL, in reverse chronological order.
+
+Version 1.17 (2/10/98)
+=====================
+Fixes bugs:
+        - symbol set typos.
+        - key mapping not using mod 64K arithmetic.  (plchar.c)
+
+New stuff:
+        - Updates the dictionary to support adding and deletion of
+	aliases or links.  Supports new pcl command that can create aliases
+	for font and macro id's PCL alphanumeric id data command (pldict.c,
+	pldict.h)
+
+        - Added copy font facilily to make a copy of a "plfont".
+	Supports Assign font id to copy of current font (ESC * c 6 F).
+	(plfont.c)
+
+	- Moved intellifont code to pl to be consistant with the other
+	fonts and to support copying of fonts. (plfont.c, plchar.c)
+
+Version 1.16 (9/4/97)
+=====================
+
+Fixes bugs:
+	- The Math-8 (8M) symbol set mapped many Greek characters to math
+symbols rather than the Greek alphabet, and had a couple of other typos.
+(plsymbol.c)
+	- The Roman-8 (8U) symbol set mapped character 0x7e to the section
+symbol rather than the tilde.  (plsymbol.c)
+	- The width of an undefined TrueType glyph was returned as 0 rather
+than as the width of glyph 0.  (plchar.c)
+	- The Roman-8 (8U) symbol set was marked incorrectly as requiring
+the PCL extensions (bit 25).  (plsymbol.c)
+
+Adds the 0E (5) symbol set, an undocumented symbol set containing the
+extended character set for the HP-GL/2 stick font.  (plsymbol.c)
+
+Adds tracing (with -Zj / -ZJ) to the TrueType character mapper.  (plchar.c)
+
+Version 1.15 (8/15/97)
+======================
+
+Fixes bugs:
+	- The Deskop (7J) symbol set data were incorrect -- apparently a
+copy of the Roman-8 data.  (plsymbol.c)
+	- The entries for the ~ character in the ISO ASCII (0U) and
+Norwegian (0D) symbol sets were incorrect.  (We suspect there are quite a
+few more incorrect entries.)  (plsymbol.c)
+
+Changes the computation of the nominal font width to use the 'x' character
+rather than the space character, since the latter may be very narrow in some
+proportionally spaced fonts.  (plfont.c)
+
+Changes the character width/existence computation for TrueType fonts to
+recognize 0 as denoting an undefined character.  (plchar.c)
+
+Version 1.14 (5/12/97)
+======================
+
+Changes the pitch_100ths field of font parameters into two new fields:
+pitch.cp (centipoints) and pitch.per_inch_x100 (character/inch * 100).
+Previously there was confusion as to the meaning of pitch_100ths.  Note that
+this is a NON-BACKWARD-COMPATIBLE change.  (plfont.h, plfont.c)
+
+Version 1.13 (4/13/97)
+======================
+
+Fixes bugs:
+	- The count of the number of entries in a dictionary wasn't
+initialized.  (pldict.c)
+	- The character complements for most of the symbol maps were wrong.
+(They probably are still wrong, but they're closer to being right.)
+(plsymbol.c)
+	- Many occurrences of the DEGREE SIGN were incorrectly entered as
+RING OPERATOR.  (plsymbol.c)
+	- The map from MSL to Unicode was incomplete.  (plvocab.c)
+	- The FontBBox for preloaded TrueType files contained garbage when
+gs_type42_font_init was called, possibly causing a floating point exception.
+(It was set to the correct value later.)  (plfont.c)
+
+Makes the command line parser ignore -dBATCH, for compatibility with the
+PostScript/PDF command line.  (plmain.c)
+
+Adds a procedure for deleting a glyph from a font.  This is needed to
+implement the corresponding PCL5 command.  (plfont.h, plchar.c)
+
+Adds procedures for mapping between MSL and Unicode.  (plvocab.h, plvocab.c)
+
+Exports the pl_font_lookup_glyph procedure so that the PCL5 Intellifont
+rasterizer can call it.  (plfont.h, plchar.c)
+
+Version 1.12 (3/26/97)
+======================
+
+This is the first numbered fileset.
+
+Updates a get_outline procedure to match a change in the GS library.
+(plchar.c)
+
+Renames and restructures the makefile, in preparation for the move to CVS.
+(pcllib.mak => pl.mak, pl_h.mak, pl_ugcc.mak, pl_watc.mak)
+
+Pre-tracking changes
+====================
+
+Before 3/1/97, we did not track this library as a separate released object;
+we included it in PCL5 and PCL XL releases.  Therefore, older changes are
+noted only by date.
+
+2/21/97
+-------
+
+Fixes bugs:
+	- pl_dict_lookup returned false rather than NULL in the failure
+case.  (This didn't affect its functioning, only its readability.)
+(pldict.c)
+	- The parameter lists for macros accessing font_char_width functions
+were incorrect.  (plfont.h)
+	- There was a duplicate entry for Unicode 19U.  (plsymbol.c)
+	- TrueType fonts didn't set the pitch_100ths value in the font
+structure.  (plfont.h, plfont.c)
+
+Extends the dictionary interface to allow lookups with or without searching
+the stack.  (pldict.h, pldict.c)
+
+2/6/97
+------
+
+Fixes bugs:
+	- In downloaded fonts with more than about 300 characters, some
+characters could get lost.  (plchar.c)
+
+1/30/97
+-------
+
+Adds recognition of @-files on the command line.  (pcllib.mak, plmain.h,
+plmain.c)
+
+1/24/97
+-------
+
+Adds a -K<maxK> switch to impose a limit on the total space allocated.
+(plmain.c)
+
+Includes the time and memory printing code even in non-DEBUG configurations.
+(plmain.c)
+
+1/21/97 (after PCL XL 1.08)
+-------
+
+Makes the command line interpreter recognize # as equivalent to =, to get
+around the Watcom implementation's bug of making = equivalent to space.
+(plmain.c)
+
+1/18/97
+-------
+
+Makes available the procedure for looking up a value in a TrueType-style
+cmap sub-table, since we plan to use it for mapping between glyph
+vocabularies.  (plfont.h, plchar.c)
+
+1/15/97
+-------
+
+Corrects some minor errors in the symbol sets, and resolves the issue of the
+duplicate Desktop set.  (plsymbol.c)
+
+1/13/97
+-------
+
+Updates the dingbats symbol sets to be more complete, and to use a MSL
+mapping.  (plsymbol.c)
+
+1/10/97
+-------
+
+Initializes the new library accurate curves flag to true.  (plmain.c)
+
+1/9/97
+------
+
+Moves code for printing usage statistics (time, # of pages printed, memory
+usage) into the library.  (plmain.h, plmain.c)
+
+Limits the size of the initially allocated glyph tables, in case a client
+asks for an unreasonably large one (as do some of the Genoa tests).
+(plchar.c)
+
+Corrects a misleading error message.  (plmain.c)
+
+Greatly speeds up the generation of pseudo-bold characters, by replacing an
+O(N) algorithm with an O(log N) one.  (plchar.c)
