@@ -1,0 +1,8 @@
+#    Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+#    Unauthorized use, copying, and/or distribution prohibited.
+
+# gccdefs.mak
+# Definitions for compilation with gcc.
+
+CCC=gcc $(GENOPT) $(CFLAGS) $(XCFLAGS) -c
+CCLEAFFLAGS=-fomit-frame-pointer
