@@ -130,6 +130,7 @@ private int gx_ttfReader__LoadGlyph(ttfReader *this, int glyph_index, const byte
 	             It's enough because ttfOutliner__BuildGlyphOutline
 		     is optimized for that, and pfont->data.get_outline 
 		     implements a charstring cache. */
+    r->glyph_data.memory = pfont->memory;
     code = pfont->data.get_outline(pfont, (uint)glyph_index, &r->glyph_data);
     r->extra_glyph_index = glyph_index;
     r->pos = 0;

@@ -818,6 +818,8 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 		    uint glyph_index0 = font0->data.get_glyph_index(font0, glyph);
 		    uint glyph_index1 = font1->data.get_glyph_index(font1, glyph);
 
+		    gdata0.memory = font0->memory;
+		    gdata1.memory = font1->memory;
 		    code0 = font0->data.get_outline(font0, glyph_index0, &gdata0);
 		    code1 = font1->data.get_outline(font1, glyph_index1, &gdata1);
 		    break;
@@ -1275,7 +1277,7 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 		font->FontType == ft_CID_TrueType 
 		    ? fontCID2->cidata.CIDMap_proc(fontCID2, glyph)
 		    : font42->data.get_glyph_index(font42, glyph));
-    int code = font42->data.get_outline(font42, gid, &gdata);
+    int code;
     int rcode;
     gs_copied_font_data_t *const cfdata = cf_data(copied);
     gs_copied_glyph_t *pcg;
@@ -1283,6 +1285,8 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
     double factor = font42->data.unitsPerEm;
     int i;
 
+    gdata.memory = font42->memory;
+    code = font42->data.get_outline(font42, gid, &gdata);
     if (code < 0)
 	return code;
     code = copy_glyph_data(font, gid + GS_MIN_GLYPH_INDEX, copied, options,

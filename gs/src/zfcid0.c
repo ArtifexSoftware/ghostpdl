@@ -392,7 +392,8 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     int code = build_proc_name_refs(imemory, &build, NULL, "%Type9BuildGlyph");
     gs_font_cid_data common;
     ref GlyphDirectory, GlyphData, DataSource;
-    ref *prfda, cfnstr, *CIDFontName;
+    ref *prfda, cfnstr;
+    ref *pCIDFontName, CIDFontName;
     gs_font_type1 **FDArray;
     uint FDArray_size;
     int FDBytes;
@@ -410,10 +411,15 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     if (code < 0 ||
 	(code = cid_font_data_param(op, &common, &GlyphDirectory)) < 0 ||
 	(code = dict_find_string(op, "FDArray", &prfda)) < 0 ||
-	(code = dict_find_string(op, "CIDFontName", &CIDFontName)) <= 0 ||
+	(code = dict_find_string(op, "CIDFontName", &pCIDFontName)) <= 0 ||
 	(code = dict_int_param(op, "FDBytes", 0, MAX_FDBytes, -1, &FDBytes)) < 0
 	)
 	return code;
+    /*
+     * Since build_gs_simple_font may resize the dictionary and cause
+     * pointers to become invalid, save CIDFontName
+     */
+    CIDFontName = *pCIDFontName;
     if (r_has_type(&GlyphDirectory, t_null)) {
 	/* Standard CIDFont, require GlyphData and CIDMapOffset. */
 	ref *pGlyphData;
@@ -477,7 +483,7 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     pfcid->cidata.FDBytes = FDBytes;
     pfcid->cidata.glyph_data = z9_glyph_data;
     pfcid->cidata.proc_data = 0;	/* for GC */
-    get_font_name(imemory, &cfnstr, CIDFontName);
+    get_font_name(imemory, &cfnstr, &CIDFontName);
     copy_font_name(&pfcid->font_name, &cfnstr);
     ref_assign(&pfont_data(pfont)->u.cid0.GlyphDirectory, &GlyphDirectory);
     ref_assign(&pfont_data(pfont)->u.cid0.GlyphData, &GlyphData);

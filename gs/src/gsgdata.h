@@ -62,6 +62,7 @@ struct gs_glyph_data_s {
     gs_const_bytestring bits;	/* pointer to actual data returned here */
     const gs_glyph_data_procs_t *procs;
     void *proc_data;
+    gs_memory_t *memory;	/* allocator to use (may be different than font) */
 };
 extern_st(st_glyph_data);
 #define ST_GLYPH_DATA_NUM_PTRS 2

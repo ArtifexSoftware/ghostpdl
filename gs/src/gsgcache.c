@@ -78,7 +78,7 @@ struct gs_glyph_cache_s {
 gs_private_st_ptrs4(st_glyph_cache, gs_glyph_cache, "gs_glyph_cache",
     gs_glyph_cache_enum_ptrs, gs_glyph_cache_reloc_ptrs, list, memory, pfont, s);
 
-
+GS_NOTIFY_PROC(gs_glpyh_cache__release);
 
 gs_glyph_cache *
 gs_glyph_cache__alloc(gs_font_type42 *pfont, stream *s,
@@ -92,20 +92,36 @@ gs_glyph_cache__alloc(gs_font_type42 *pfont, stream *s,
     gdcache->list = NULL;
     gdcache->pfont = pfont;
     gdcache->s = s;
-    gdcache->memory = pfont->memory;
+    /*
+    * The cache elements need to be in stable memory so they don't
+    * get removed by 'restore' (elements can be created at a different
+    * save level than the current level)
+    */
+    gdcache->memory = pfont->memory->stable_memory;
     gdcache->read_data = read_data;
+    gs_font_notify_register((gs_font *)pfont, gs_glyph_cache__release, (void *)gdcache);
     return gdcache;
 }
 
-void
-gs_glyph_cache__release(gs_glyph_cache *this)
-{   gs_glyph_cache_elem *e = this->list;
-    
+int
+gs_glyph_cache__release(void *data, void *event)
+{   
+    gs_glyph_cache *this = (gs_glyph_cache *)data;
+    gs_glyph_cache_elem *e = this->list;
+    gs_font_type42 *pfont = this->pfont;
+
     while (e != NULL) {
+	gs_glyph_cache_elem *next_e;
+
+	next_e = e->next;
 	e->gd.procs->free(&e->gd, "gs_glyph_cache__release");
 	gs_free_object(this->memory, e, "gs_glyph_cache_elem__release");
+	e = next_e;
     }
     this->list = NULL; 
+    gs_font_notify_unregister((gs_font *)pfont, gs_glyph_cache__release, (void *)this);
+    gs_free_object(this->memory, this, "gs_glyph_cache__release");
+    return 0;
 }
 
 private gs_glyph_cache_elem **
@@ -115,8 +131,9 @@ gs_glyph_cache_elem__locate(gs_glyph_cache *this, uint glyph_index)
     int count = 0; /* debug purpose only */
 
     for (; *e != 0; e = &(*e)->next, count++) {
-	if ((*e)->glyph_index == glyph_index)
+	if ((*e)->glyph_index == glyph_index) {
 	    return e;
+	}
 	if ((*e)->lock_count == 0)
 	    p_unlocked = e;
     }
@@ -168,7 +185,7 @@ gs_get_glyph_data_cached(gs_font_type42 *pfont, uint glyph_index, gs_glyph_data_
 	    e->gd.procs->free(&e->gd, "gs_get_glyph_data_cached");
 	    gs_glyph_cache_elem__move_to_head(gdcache, pe);
 	} else {
-	    /* Allocate new head element : */
+	    /* Allocate new head element. */
 	    e = (gs_glyph_cache_elem *)gs_alloc_struct(gdcache->memory,
 		gs_glyph_cache_elem, &st_glyph_cache_elem, "gs_glyph_cache_elem");
 	    if (e == NULL)
@@ -176,6 +193,7 @@ gs_get_glyph_data_cached(gs_font_type42 *pfont, uint glyph_index, gs_glyph_data_
 	    memset(e, 0, sizeof(*e));
 	    e->next = gdcache->list;
 	    gdcache->list = e;
+	    e->gd.memory = gdcache->memory;
 	}
         /* Load the element's data : */
 	code = (*gdcache->read_data)(pfont, gdcache->s, glyph_index, &e->gd);

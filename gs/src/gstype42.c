@@ -260,14 +260,17 @@ total_points(gs_font_type42 *pfont, uint glyph_index)
 {
     gs_glyph_data_t glyph_data;
     int code;
-    int ocode = pfont->data.get_outline(pfont, glyph_index, &glyph_data);
-    const byte *gdata = glyph_data.bits.data;
+    int ocode;
+    const byte *gdata;
     int total;
 
+    glyph_data.memory = pfont->memory;
+    ocode = pfont->data.get_outline(pfont, glyph_index, &glyph_data);
     if (ocode < 0)
 	return ocode;
     if (glyph_data.bits.size == 0)
 	return 0;
+    gdata = glyph_data.bits.data;
     if (S16(gdata) != -1) {
 	/* This is a simple glyph. */
 	int numContours = S16(gdata);
@@ -360,7 +363,7 @@ default_get_outline(gs_font_type42 * pfont, uint glyph_index,
 	    uint left = glyph_length;
 
 	    /* 'code' is the returned length */
-	    buf = (byte *)gs_alloc_string(pfont->memory, glyph_length, "default_get_outline");
+	    buf = (byte *)gs_alloc_string(pgd->memory, glyph_length, "default_get_outline");
 	    if (buf == 0)
 		return_error(gs_error_VMerror);
 	    gs_glyph_data_from_string(pgd, buf, glyph_length, (gs_font *)pfont);
@@ -413,7 +416,7 @@ gs_type42_get_outline_from_TT_file(gs_font_type42 * pfont, stream *s, uint glyph
 	byte *buf;
 
 	sseek(s, pfont->data.glyf + glyph_start);
-	buf = (byte *)gs_alloc_string(pfont->memory, glyph_length, "default_get_outline");
+	buf = (byte *)gs_alloc_string(pgd->memory, glyph_length, "default_get_outline");
 	if (buf == 0)
 	    return_error(gs_error_VMerror);
 	gs_glyph_data_from_string(pgd, buf, glyph_length, (gs_font *)pfont);
@@ -433,8 +436,10 @@ parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
 			? glyph - GS_MIN_GLYPH_INDEX 
 			: pfont->data.get_glyph_index(pfont, glyph));
     gs_glyph_data_t glyph_data;
-    int code = pfont->data.get_outline(pfont, glyph_index, &glyph_data);
+    int code;
 
+    glyph_data.memory = pfont->memory;
+    code = pfont->data.get_outline(pfont, glyph_index, &glyph_data);
     if (code < 0)
 	return code;
     if (glyph_data.bits.size != 0 && S16(glyph_data.bits.data) == -1) {
@@ -509,6 +514,7 @@ gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *pmat
     gs_glyph_data_t outline;
     int code = 0;
 
+    outline.memory = pfont->memory;
     if (default_members) {
 	code = gs_default_glyph_info(font, glyph, pmat, default_members, info);
 
@@ -585,8 +591,10 @@ gs_type42_enumerate_glyph(gs_font *font, int *pindex,
     while (++*pindex <= pfont->data.numGlyphs) {
 	gs_glyph_data_t outline;
 	uint glyph_index = *pindex - 1;
-	int code = pfont->data.get_outline(pfont, glyph_index, &outline);
+	int code;
 
+	outline.memory = pfont->memory;
+	code = pfont->data.get_outline(pfont, glyph_index, &outline);
 	if (code < 0)
 	    return code;
 	if (outline.bits.data == 0)
@@ -653,9 +661,11 @@ gs_type42_default_get_metrics(gs_font_type42 * pfont, uint glyph_index,
 			      int wmode, float sbw[4])
 {
     gs_glyph_data_t glyph_data;
-    int code = pfont->data.get_outline(pfont, glyph_index, &glyph_data);
+    int code;
     int result;
 
+    glyph_data.memory = pfont->memory;
+    code = pfont->data.get_outline(pfont, glyph_index, &glyph_data);
     if (code < 0)
 	return code;
     if (glyph_data.bits.size != 0 && S16(glyph_data.bits.data) == -1) {
@@ -941,6 +951,7 @@ check_component(uint glyph_index, const gs_matrix_fixed *pmat,
     int numContours;
     int code;
 
+    glyph_data.memory = pfont->memory;
     code = pfont->data.get_outline(pfont, glyph_index, &glyph_data);
     if (code < 0)
 	return code;

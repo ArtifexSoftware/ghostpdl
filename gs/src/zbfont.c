@@ -396,13 +396,19 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     gs_uid uid;
     int code;
     gs_font_base *pfont;
-    ref *pfontinfo, *g2u = NULL;
+    ref *pfontinfo, *g2u = NULL, Glyph2Unicode;
 
     if (dict_find_string(op, "FontInfo", &pfontinfo) <= 0 ||
 	    !r_has_type(pfontinfo, t_dictionary) ||
 	    dict_find_string(pfontinfo, "GlyphNames2Unicode", &g2u) <= 0 ||
 	    !r_has_type(pfontinfo, t_dictionary))
 	g2u = NULL;
+    else
+	/*
+	 * Since build_gs_font may resize the dictionary and cause
+	 * pointers to become invalid, save Glyph2Unicode
+	 */
+	Glyph2Unicode = *g2u;
     code = font_bbox_param(imemory, op, bbox);
     if (code < 0)
 	return code;
@@ -428,7 +434,7 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     if (g2u != NULL) {
 	font_data *pdata = pfont_data(pfont);
 
-	ref_assign_new(&pdata->GlyphNames2Unicode, g2u);
+	ref_assign_new(&pdata->GlyphNames2Unicode, &Glyph2Unicode);
     }
     return 0;
 }
