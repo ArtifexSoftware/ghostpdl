@@ -556,7 +556,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
 {
     int i;
 
-    /* Write out any resource dictionaries. */
+    /* Write any resource dictionaries. */
 
     for (i = 0; i <= resourceFont; ++i) {
 	stream *s = 0;
@@ -821,7 +821,7 @@ pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
 		return_error(gs_error_VMerror);
 	    CHECK(cos_param_list_writer_init(&writer, decode_parms, 0));
 	    /*
-	     * If EndOfBlock is true, we mustn't write out a Rows value.
+	     * If EndOfBlock is true, we mustn't write a Rows value.
 	     * This is a hack....
 	     */
 	    cfs = *(const stream_CF_state *)st;

@@ -737,7 +737,7 @@ pdfmark_OUT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	node.prev_id = 0;
 	plevel->first = node;
 	plevel->first.action = 0; /* never used */
-    } else {			/* Write out the previous node. */
+    } else {			/* Write the previous node. */
 	if (depth > 0)
 	    pdfmark_adjust_parent_count(plevel);
 	pdfmark_write_outline(pdev, &plevel->last, node.id);

@@ -173,7 +173,7 @@ int psf_get_type1_glyphs(P4(psf_outline_glyphs_t *pglyphs,
 			    gs_glyph *subset_glyphs, uint subset_size));
 
 /*
- * Write out a Type 1 font definition.  This procedure does not allocate
+ * Write a Type 1 font definition.  This procedure does not allocate
  * or free any data.
  */
 #define WRITE_TYPE1_EEXEC 1
@@ -191,7 +191,7 @@ int psf_write_type1_font(P7(stream *s, gs_font_type1 *pfont, int options,
 /* ------ Exported by gdevpsf2.c ------ */
 
 /*
- * Write out a Type 1 or Type 2 font definition as CFF.
+ * Write a Type 1 or Type 2 font definition as CFF.
  * This procedure does not allocate or free any data.
  */
 #define WRITE_TYPE2_NO_LENIV 1	/* always use lenIV = -1 */
@@ -207,7 +207,7 @@ typedef struct gs_font_cid0_s gs_font_cid0;
 #endif
 
 /*
- * Write out a CIDFontType 0 font definition as CFF.  The options are
+ * Write a CIDFontType 0 font definition as CFF.  The options are
  * the same as for psf_write_type2_font.  subset_cids is a bit vector of
  * subset_size bits (not bytes).
  * This procedure does not allocate or free any data.
@@ -219,7 +219,7 @@ int psf_write_cid0_font(P6(stream *s, gs_font_cid0 *pfont, int options,
 /* ------ Exported by gdevpsfm.c ------ */
 
 /*
- * Write out a CMap in its customary (source) form.
+ * Write a CMap in its customary (source) form.
  * This procedure does not allocate or free any data.
  */
 #ifndef gs_cmap_DEFINED
@@ -234,7 +234,7 @@ int psf_write_cmap(P4(stream *s, const gs_cmap_t *pcmap,
 /* ------ Exported by gdevpsft.c ------ */
 
 /*
- * Write out a TrueType (Type 42) font definition.
+ * Write a TrueType (Type 42) font definition.
  * This procedure does not allocate or free any data.
  */
 #ifndef gs_font_type42_DEFINED
@@ -270,7 +270,7 @@ typedef struct gs_font_cid2_s gs_font_cid2;
 #endif
 
 /*
- * Write out a CIDFontType 2 font definition.  This differs from
+ * Write a CIDFontType 2 font definition.  This differs from
  * psf_write_truetype_font in that the subset, if any, is specified
  * as a bit vector (as for psf_write_cid0_font) rather than a list of glyphs.
  * Also, none of the options currently have any effect.  The only tables

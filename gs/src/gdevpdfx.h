@@ -270,7 +270,7 @@ typedef struct pdf_page_dsc_info_s {
 /*
  * Define the stored information for a page.  Because pdfmarks may add
  * information to any page anywhere in the document, we have to wait
- * until the end to write out the page dictionaries.
+ * until the end to write the page dictionaries.
  */
 typedef struct pdf_page_s {
     cos_dict_t *Page;
@@ -830,8 +830,11 @@ int pdf_replace_names(P3(gx_device_pdf *pdev, const gs_param_string *from,
 
 /* For gdevpdf.c */
 
-/* Write out the font resources when wrapping up the output. */
-int pdf_write_font_resources(P1(gx_device_pdf *pdev));
+/*
+ * Close the text-related parts of a document, including writing out font
+ * and related resources.
+ */
+int pdf_close_text_document(P1(gx_device_pdf *pdev));
 
 /* ---------------- Exported by gdevpdft.c ---------------- */
 

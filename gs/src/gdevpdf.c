@@ -655,7 +655,7 @@ pdf_close_page(gx_device_pdf * pdev)
     if (code < 0)
 	return code;
 
-    /* Write out Functions. */
+    /* Write the Functions. */
 
     pdf_write_resource_objects(pdev, resourceFunction);
     pdf_free_resource_objects(pdev, resourceFunction);
@@ -739,7 +739,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     }
     stream_puts(s, ">>\n");
 
-    /* Write out the annotations array if any. */
+    /* Write the annotations array if any. */
 
     if (page->Annots) {
 	stream_puts(s, "/Annots");
@@ -815,7 +815,7 @@ pdf_close(gx_device * dev)
 
     /* Write the font resources and related resources. */
 
-    pdf_write_font_resources(pdev);
+    pdf_close_text_document(pdev);
     pdf_write_resource_objects(pdev, resourceCMap);
     pdf_free_resource_objects(pdev, resourceCMap);
 

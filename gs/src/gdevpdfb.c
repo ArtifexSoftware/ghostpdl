@@ -508,7 +508,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	     */
 	    goto use_default;
 	} else {
-	    /* Write out the image as an XObject resource now. */
+	    /* Write the image as an XObject resource now. */
 	    code = copy_data(pdev, tiles->data, 0, tiles->raster,
 			     tile_id, 0, 0, tw, th, &image, &writer, 1);
 	    if (code < 0)

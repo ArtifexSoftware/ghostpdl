@@ -761,7 +761,10 @@ pdf_font_notify_proc(void *vpfn /*proc_data*/, void *event_data)
     return code;
 }
 
-/* Write out the font resources when wrapping up the output. */
+/*
+ * Close the text-related parts of a document, including writing out font
+ * and related resources.
+ */
 private void
 pdf_font_unreg_proc(void *vpfn /*proc_data*/)
 {
@@ -769,9 +772,8 @@ pdf_font_unreg_proc(void *vpfn /*proc_data*/)
 
     gs_free_object(pfn->memory, vpfn, "pdf_font_unreg_proc");
 }
-/* Write out the font resources when wrapping up the output. */
 int
-pdf_write_font_resources(gx_device_pdf *pdev)
+pdf_close_text_document(gx_device_pdf *pdev)
 {
     int j;
 

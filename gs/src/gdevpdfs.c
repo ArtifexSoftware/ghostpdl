@@ -643,7 +643,7 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     if (ppf->from_Unicode >= 0 &&
 	!pdev->Identity_ToUnicode_CMaps[pcmap->WMode]
 	) {
-	/* Create and write out an identity ToUnicode CMap now. */
+	/* Create and write an identity ToUnicode CMap now. */
 	gs_cmap_t *pidcmap;
 
 	code = gs_cmap_create_char_identity(&pidcmap, 2, pcmap->WMode,
@@ -1442,7 +1442,7 @@ pdf_encode_glyph(gx_device_pdf *pdev, int chr, gs_glyph glyph,
 }
 
 /*
- * Write out commands to make the output state match the processing state.
+ * Write commands to make the output state match the processing state.
  */
 private double
 font_matrix_scaling(const gs_font *font)

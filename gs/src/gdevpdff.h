@@ -441,8 +441,11 @@ void pdf_unregister_fonts(P1(gx_device_pdf *pdev));
 /* Register a font for eventual writing (embedded or not). */
 int pdf_register_font(P3(gx_device_pdf *pdev, gs_font *font, pdf_font_t *ppf));
 
-/* Write out the font resources when wrapping up the output. */
-int pdf_write_font_resources(P1(gx_device_pdf *pdev));
+/*
+ * Close the text-related parts of a document, including writing out font
+ * and related resources.
+ */
+int pdf_close_text_document(P1(gx_device_pdf *pdev));
 
 /*
  * Write a font descriptor.
