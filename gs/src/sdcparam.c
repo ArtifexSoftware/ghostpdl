@@ -457,7 +457,7 @@ s_DCT_put_quantization_tables(gs_param_list * plist, stream_DCT_state * pdct,
 					  &quant_tables, true))
 	) {
 	case 1:
-	    return 0;
+	    return 1;
 	default:
 	    return param_signal_error(plist, "QuantTables", code);
 	case 0:

@@ -56,7 +56,7 @@ s_DCTE_set_defaults(stream_state * st)
 
     s_DCT_set_defaults(st);
     ss->QFactor = 1.0;
-    ss->ColorTransform = 0;
+    ss->ColorTransform = -1;
     ss->Markers.data = 0;
     ss->Markers.size = 0;
     ss->NoMarker = true;

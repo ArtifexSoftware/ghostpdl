@@ -210,29 +210,10 @@ s_DCTE_put_params(gs_param_list * plist, stream_DCT_state * pdct)
 	params.Blend < 0 || params.Blend > 1
 	)
 	return_error(gs_error_rangecheck);
-/****** HACK: SET DEFAULTS HERE ******/
     jcdp->Picky = 0;
     jcdp->Relax = 0;
-    if ((code = s_DCT_put_params(plist, pdct)) < 0 ||
-	(code = s_DCT_put_huffman_tables(plist, pdct, false)) < 0
-	)
+    if ((code = s_DCT_put_params(plist, pdct)) < 0)
 	return code;
-    switch ((code = s_DCT_put_quantization_tables(plist, pdct, false))) {
-	case 0:
-	    break;
-	default:
-	    return code;
-	case 1:
-	    /* No QuantTables, but maybe a QFactor to apply to default. */
-	    if (pdct->QFactor != 1.0) {
-		code = gs_jpeg_set_linear_quality(pdct,
-					     (int)(min(pdct->QFactor, 100.0)
-						   * 100.0 + 0.5),
-						  TRUE);
-		if (code < 0)
-		    return code;
-	    }
-    }
     /* Set up minimal image description & call set_defaults */
     jcdp->cinfo.image_width = params.Columns;
     jcdp->cinfo.image_height = params.Rows;
@@ -252,6 +233,24 @@ s_DCTE_put_params(gs_param_list * plist, stream_DCT_state * pdct)
     }
     if ((code = gs_jpeg_set_defaults(pdct)) < 0)
 	return code;
+    if ((code = s_DCT_put_huffman_tables(plist, pdct, false)) < 0)
+	return code;
+    switch ((code = s_DCT_put_quantization_tables(plist, pdct, false))) {
+	case 0:
+	    break;
+	default:
+	    return code;
+	case 1:
+	    /* No QuantTables, but maybe a QFactor to apply to default. */
+	    if (pdct->QFactor != 1.0) {
+		code = gs_jpeg_set_linear_quality(pdct,
+					     (int)(min(pdct->QFactor, 100.0)
+						   * 100.0 + 0.5),
+						  TRUE);
+		if (code < 0)
+		    return code;
+	    }
+    }
     /* Change IJG colorspace defaults as needed;
      * set ColorTransform to what will go in the Adobe marker.
      */
