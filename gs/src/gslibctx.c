@@ -61,6 +61,7 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     
     gs_lib_ctx_get_real_stdio(&pio->fstdin, &pio->fstdout, &pio->fstderr );
 
+    pio->fstdout2 = NULL;
     pio->stdout_is_redirected = false;
     pio->stdout_to_stderr = false;
     pio->stdin_is_interactive = true;
