@@ -388,8 +388,11 @@ run_stdin:
 	    }
 	    break;
 	case 'f':		/* run file of arbitrary name */
-	    if (*arg != 0)
-		argproc(minst, arg);
+	    if (*arg != 0) {
+		code = argproc(minst, arg);
+		if (code < 0)
+		    return code;
+	    }
 	    break;
 	case 'F':		/* run file with buffer_size = 1 */
 	    if (!*arg) {
@@ -399,8 +402,10 @@ run_stdin:
 		uint bsize = minst->run_buffer_size;
 
 		minst->run_buffer_size = 1;
-		argproc(minst, arg);
+		code = argproc(minst, arg);
 		minst->run_buffer_size = bsize;
+		if (code < 0)
+		    return code;
 	    }
 	    break;
 	case 'g':		/* define device geometry */
