@@ -53,14 +53,17 @@ private int parse_file_name(P2(const ref * op, gs_parsed_file_name_t * pfn));
 private int parse_real_file_name(P4(const ref * op,
 				    gs_parsed_file_name_t * pfn,
 				    gs_memory_t *mem, client_name_t cname));
+private int parse_file_access_string(P2(const ref *op, char file_access[4]));
 
 /* Forward references: other. */
+private int execfile_finish(P1(i_ctx_t *));
+private int execfile_cleanup(P1(i_ctx_t *));
 private int zopen_file(P4(const gs_parsed_file_name_t *pfn,
 			  const char *file_access, stream **ps,
 			  gs_memory_t *mem));
 private iodev_proc_open_file(iodev_os_open_file);
-private int execfile_finish(P1(i_ctx_t *));
-private int execfile_cleanup(P1(i_ctx_t *));
+private void file_init_stream(P5(stream *s, FILE *file, const char *fmode,
+				 byte *buffer, uint buffer_size));
 
 /*
  * Since there can be many file objects referring to the same file/stream,
@@ -139,36 +142,13 @@ private int
 zfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    char file_access[3];
+    char file_access[4];
     gs_parsed_file_name_t pname;
-    const byte *astr;
-    int code;
+    int code = parse_file_access_string(op, file_access);
     stream *s;
 
-    check_read_type(*op, t_string);
-    astr = op->value.const_bytes;
-    switch (r_size(op)) {
-	case 2:
-	    if (astr[1] != '+')
-		return_error(e_invalidfileaccess);
-	    file_access[1] = '+';
-	    file_access[2] = 0;
-	    break;
-	case 1:
-	    file_access[1] = 0;
-	    break;
-	default:
-	    return_error(e_invalidfileaccess);
-    }
-    switch (astr[0]) {
-	case 'r':
-	case 'w':
-	case 'a':
-	    break;
-	default:
-	    return_error(e_invalidfileaccess);
-    }
-    file_access[0] = astr[0];
+    if (code < 0)
+	return code;
     code = parse_file_name(op - 1, &pname);
     if (code < 0)
 	return code;
@@ -540,6 +520,63 @@ zlibfile(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* <prefix|null> <access_string> .tempfile <name_string> <file> */
+private int
+ztempfile(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    const char *pstr;
+    char fmode[4];
+    int code = parse_file_access_string(op, fmode);
+    char prefix[gp_file_name_sizeof];
+    char fname[gp_file_name_sizeof];
+    uint fnlen;
+    FILE *sfile;
+    stream *s;
+    byte *buf;
+
+    if (code < 0)
+	return code;
+    strcat(fmode, gp_fmode_binary_suffix);
+    if (r_has_type(op - 1, t_null))
+	pstr = gp_scratch_file_name_prefix;
+    else {
+	uint psize;
+
+	check_read_type(op[-1], t_string);
+	psize = r_size(op - 1);
+	if (psize >= gp_file_name_sizeof)
+	    return_error(e_rangecheck);
+	memcpy(prefix, op[-1].value.const_bytes, psize);
+	prefix[psize] = 0;
+	pstr = prefix;
+    }
+    s = file_alloc_stream(imemory, "ztempfile(stream)");
+    if (s == 0)
+	return_error(e_VMerror);
+    buf = gs_alloc_bytes(imemory, file_default_buffer_size,
+			 "ztempfile(buffer)");
+    if (buf == 0)
+	return_error(e_VMerror);
+    sfile = gp_open_scratch_file(pstr, fname, fmode);
+    if (sfile == 0) {
+	gs_free_object(imemory, buf, "ztempfile(buffer)");
+	return_error(e_invalidfileaccess);
+    }
+    fnlen = strlen(fname);
+    file_init_stream(s, sfile, fmode, buf, file_default_buffer_size);
+    code = ssetfilename(s, fname, fnlen);
+    if (code < 0) {
+	sclose(s);
+	iodev_default->procs.delete_file(iodev_default, fname);
+	return_error(e_VMerror);
+    }
+    make_const_string(op - 1, a_readonly | icurrent_space, fnlen,
+		      s->file_name.data);
+    make_stream_file(op, s, fmode);
+    return code;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zfile_op_defs[] =
@@ -554,6 +591,7 @@ const op_def zfile_op_defs[] =
     {"1.libfile", zlibfile},
     {"2renamefile", zrenamefile},
     {"1status", zstatus},
+    {"2.tempfile", ztempfile},
 		/* Internal operators */
     {"0%file_continue", file_continue},
     {"0%execfile_finish", execfile_finish},
@@ -581,6 +619,40 @@ parse_real_file_name(const ref *op, gs_parsed_file_name_t *pfn,
     check_read_type(*op, t_string);
     return gs_parse_real_file_name(pfn, (const char *)op->value.const_bytes,
 				   r_size(op), mem, cname);
+}
+
+/* Parse the access string for opening a file. */
+/* [4] is for r/w, +, b, \0. */
+private int
+parse_file_access_string(const ref *op, char file_access[4])
+{
+    const byte *astr;
+
+    check_read_type(*op, t_string);
+    astr = op->value.const_bytes;
+    switch (r_size(op)) {
+	case 2:
+	    if (astr[1] != '+')
+		return_error(e_invalidfileaccess);
+	    file_access[1] = '+';
+	    file_access[2] = 0;
+	    break;
+	case 1:
+	    file_access[1] = 0;
+	    break;
+	default:
+	    return_error(e_invalidfileaccess);
+    }
+    switch (astr[0]) {
+	case 'r':
+	case 'w':
+	case 'a':
+	    break;
+	default:
+	    return_error(e_invalidfileaccess);
+    }
+    file_access[0] = astr[0];
+    return 0;
 }
 
 /* ------ Stream opening ------ */
@@ -751,6 +823,37 @@ file_read_string(const byte *str, uint len, ref *pfile, gs_ref_memory_t *imem)
     return 0;
 }
 
+/*
+ * Set up a file stream on an OS file.  The caller has allocated the
+ * stream and buffer.
+ */
+private void
+file_init_stream(stream *s, FILE *file, const char *fmode, byte *buffer,
+		 uint buffer_size)
+{
+    switch (fmode[0]) {
+    case 'a':
+	sappend_file(s, file, buffer, buffer_size);
+	break;
+    case 'r':
+	/* Defeat buffering for terminals. */
+	{
+	    struct stat rstat;
+
+	    fstat(fileno(file), &rstat);
+	    sread_file(s, file, buffer,
+		       (S_ISCHR(rstat.st_mode) ? 1 : buffer_size));
+	}
+	break;
+    case 'w':
+	swrite_file(s, file, buffer, buffer_size);
+    }
+    if (fmode[1] == '+')
+	s->file_modes |= s_mode_read | s_mode_write;
+    s->save_close = s->procs.close;
+    s->procs.close = file_close_file;
+}
+
 /* Open a file stream, optionally on an OS file. */
 /* Return 0 if successful, error code if not. */
 /* On a successful return, the C file name is in the stream buffer. */
@@ -797,28 +900,8 @@ file_open_stream(const char *fname, uint len, const char *file_access,
 	    return code;
 	}
 	/* Set up the stream. */
-	switch (fmode[0]) {
-	    case 'a':
-		sappend_file(s, file, buffer, buffer_size);
-		break;
-	    case 'r':
-		/* Defeat buffering for terminals. */
-		{
-		    struct stat rstat;
-
-		    fstat(fileno(file), &rstat);
-		    sread_file(s, file, buffer,
-			       (S_ISCHR(rstat.st_mode) ? 1 : buffer_size));
-		}
-		break;
-	    case 'w':
-		swrite_file(s, file, buffer, buffer_size);
-	}
-	if (fmode[1] == '+')
-	    s->file_modes |= s_mode_read | s_mode_write;
-	s->save_close = s->procs.close;
-	s->procs.close = file_close_file;
-    } else {			/* save the buffer and size */
+	file_init_stream(s, file, fmode, buffer, buffer_size);
+    } else {			/* just save the buffer and size */
 	s->cbuf = buffer;
 	s->bsize = s->cbsize = buffer_size;
     }

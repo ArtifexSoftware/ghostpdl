@@ -981,8 +981,9 @@ Other specifications are as for <b><tt>type1encrypt</tt></b>.
 <dl>
 <dt><b><tt>&lt;file&gt; .filename &lt;string&gt; true</tt></b>
 <dt><b><tt>&lt;file&gt; .filename false</tt></b>
-<dd>If the file was opened by the <b><tt>file</tt></b> operator, returns the
-file name and <b><tt>true</tt></b>; if the file is a filter, returns
+<dd>If the file was opened by the <b><tt>file</tt></b> or
+<b><tt>.tempfile</tt></b> operator, returns the file name and
+<b><tt>true</tt></b>; if the file is a filter, returns
 <b><tt>false</tt></b>.
 </dl>
 
@@ -1010,6 +1011,41 @@ pushes false on the stack and returns, rather than causing an error.
 the bytes in the file buffer so they will be read again by a subsequent read
 operation.  Currently gives a <b><tt>rangecheck</tt></b> error if
 <b><tt>string</tt></b> is larger than the file's buffer.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;prefix_string|null&gt; &lt;access_string&gt; .tempfile
+&lt;string&gt; &lt;file&gt;</tt></b> <dd>Creates and opens a temporary file
+like the <b><tt>file</tt></b> operator, also returning the file name.  There
+are three cases for the <b><tt>&lt;prefix_string|null&gt;</tt></b> operand:
+
+<ul>
+
+<li><b><tt>null</tt></b>: create the file in the same directory and with the
+same name conventions as other temporary files created by the Ghostscript
+implementation on this platform.  E.g., the temporary file might be named
+<b><tt>/tmp/gs_a1234</tt></b>.
+
+<li>A string that is not the beginning of an absolute file name (e.g., does
+not begin with <b><tt>.</tt></b> or <b><tt>/</tt></b> on Unix-like
+platforms): create the file in the standard temporary directory, but use the
+<b><tt>&lt;prefix_string&gt;</tt></b> as the first part of the file name.
+E.g., if <b><tt>&lt;prefix_string&gt;</tt></b> is <b><tt>xx</tt></b>, the
+temporary file might be named <b><tt>/tmp/xxa1234</tt></b>.
+
+<li>A string that is the beginning of an absolute file name: use the
+<b><tt>&lt;prefix_string&gt;</tt></b> as the first part of the file name.
+E.g., if <b><tt>&lt;prefix_string&gt;</tt></b> is
+<b><tt>/my/tmpdir/zz</tt></b>, the temporary file might be named
+<b><tt>/my/tmpdir/zza1234</tt></b>.
+
+</ul>
+
+<p>
+It is intended that in some future version of Ghostscript, files opened with
+<b><tt>.tempfile</tt></b> will be closed and deleted automatically when
+Ghostscript exits; however, this is not currently the case (version 7.01).
+
 </dl>
 
 <dl>
