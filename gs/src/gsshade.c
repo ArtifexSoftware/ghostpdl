@@ -66,11 +66,15 @@ check_CBFD(const gs_shading_params_t * params,
 	{
 	    int i;
 
-	    for (i = 0; i < m; ++i)
-		if (function->params.Domain[2 * i] > domain[2 * i] ||
-		    function->params.Domain[2 * i + 1] < domain[2 * i + 1]
+	    for (i = 0; i < m; ++i) {
+		static const float dom_01[2] = { 0.0, 1.0 };
+		const float *dom = (domain != 0 ? &domain[2 * i] : dom_01);
+
+		if (function->params.Domain[2 * i] > dom[0] ||
+		    function->params.Domain[2 * i + 1] < dom[1]
 		    )
 		    return_error(gs_error_rangecheck);
+	    }
 	}
 #endif /*************** */
     }
@@ -81,12 +85,12 @@ check_CBFD(const gs_shading_params_t * params,
 private int
 check_mesh(const gs_shading_mesh_params_t * params)
 {
-    if (!data_source_is_array(params->DataSource)) {
-	int code = check_CBFD((const gs_shading_params_t *)params,
-			      params->Function, params->Decode, 1);
+    const float *domain;
 
-	if (code < 0)
-	    return code;
+    if (data_source_is_array(params->DataSource))
+	domain = 0;
+    else {
+	domain = params->Decode;
 	switch (params->BitsPerCoordinate) {
 	    case  1: case  2: case  4: case  8:
 	    case 12: case 16: case 24: case 32:
@@ -102,7 +106,8 @@ check_mesh(const gs_shading_mesh_params_t * params)
 		return_error(gs_error_rangecheck);
 	}
     }
-    return 0;
+    return check_CBFD((const gs_shading_params_t *)params,
+		      params->Function, domain, 1);
 }
 
 /* Check the BitsPerFlag value.  Return the value or an error code. */
