@@ -272,6 +272,13 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     /* General parameters. */
 
     {
+	int efo = 1;
+
+	ecode = param_put_int(plist, (param_name = ".EmbedFontObjects"), &efo, ecode);
+	if (efo != 1)
+	    param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
+    }
+    {
 	int cdv = CoreDistVersion;
 
 	ecode = param_put_int(plist, (param_name = "CoreDistVersion"), &cdv, ecode);
