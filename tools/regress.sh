@@ -22,16 +22,21 @@ read EXE
 # get the device - we assume the chosen device from the new exe device
 # list is available on the old exe.
 
-echo "choose an available device"
+echo "choose available device(s) use a space to delimit devices"
 (cd $DIR1; $EXE)
-read DEVICE
+read DEVICES
+
+# get the resolution
+echo "resolution"
+read RESOLUTION
 
 # verify continuation - exit program if not ok.
 echo $TEST
 echo $DIR1
 echo $DIR2
 echo $EXE
-echo $DEVICE
+echo $DEVICES
+echo $RESOLUTION
 
 echo "enter yes to continue"
 read ANSWER
@@ -42,19 +47,24 @@ then
     exit 0
 fi
     
-# for all of the files in the test file directory 
-for file in $TEST
+# for all devices
+for device in $DEVICES
 do
-    # print test file name
-    echo processing $file
-    # calculate checksum for new and old exe
-    CHECKSUM1=`(cd $DIR1; $EXE -Z@ -dNOPAUSE -sOutputFile="|sum" -sDEVICE=$DEVICE $file | grep "^[0-9]")`
-    CHECKSUM2=`(cd $DIR2; $EXE -Z@ -dNOPAUSE -sOutputFile="|sum" -sDEVICE=$DEVICE $file | grep "^[0-9]")`
-    # if the check sums are different report them and the file name.
-    if [ "$CHECKSUM1" != "$CHECKSUM2" ]
-    then
-	echo checksum1 $CHECKSUM1
-	echo checksum2 $CHECKSUM2
-	echo bad checksum $file
-    fi
+    echo processing $device
+    # for all of the files in the test file directory 
+    for file in $TEST
+    do
+	# print test file name
+	echo processing $file
+	# calculate checksum for new and old exe.  Note we always force banding.
+	CHECKSUM1=`(cd $DIR1; $EXE -Z@ -r$RESOLUTION -K40000 -dBATCH -dNOPAUSE -dMaxBitmap=200000 -dBufferSpace=200000 -sOutputFile="|sum" -sDEVICE=$device $file | grep "^[0-9]" 2> /dev/null)`
+	CHECKSUM2=`(cd $DIR2; $EXE -Z@ -r$RESOLUTION -K40000 -dBATCH -dNOPAUSE -dMaxBitmap=200000 -dBufferSpace=200000 -sOutputFile="|sum" -sDEVICE=$device $file | grep "^[0-9]" 2> /dev/null)`
+	# if the check sums are different report them and the file name.
+	if [ "$CHECKSUM1" != "$CHECKSUM2" ]
+	then
+	    echo checksum1 $CHECKSUM1
+	    echo checksum2 $CHECKSUM2
+	    echo bad checksum $file
+	fi
+    done
 done
