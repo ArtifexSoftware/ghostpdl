@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,10 +23,12 @@
 #include "oper.h"
 #include "gxcspace.h"		/* must precede gscolor2.h */
 #include "gscolor2.h"
+#include "gscdevn.h"
 #include "gxcdevn.h"
 #include "estack.h"
 #include "ialloc.h"
 #include "icremap.h"
+#include "ifunc.h"
 #include "igstate.h"
 #include "iname.h"
 #include "ostack.h"
@@ -52,6 +54,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
     uint num_components;
     gs_color_space cs;
     ref_colorspace cspace_old;
+    gs_function_t *pfn;
     int code;
 
     check_read_type(*op, t_array);
@@ -113,8 +116,12 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
     istate->colorspace.procs.special.device_n.tint_transform = pcsa[2];
     cs.params.device_n.names = names;
     cs.params.device_n.num_components = num_components;
-    pmap->tint_transform = ztransform_DeviceN;
     cs.params.device_n.map = pmap;
+    pfn = ref_function(pcsa + 2);
+    if (pfn)
+	gs_cspace_set_devn_function(&cs, pfn);
+    else
+	pmap->tint_transform = ztransform_DeviceN;
     code = gs_setcolorspace(igs, &cs);
     if (code < 0) {
 	istate->colorspace = cspace_old;

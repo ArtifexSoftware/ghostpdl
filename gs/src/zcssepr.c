@@ -31,6 +31,7 @@
 #include "estack.h"
 #include "ialloc.h"
 #include "icsmap.h"
+#include "ifunc.h"
 #include "igstate.h"
 #include "iname.h"
 #include "ivmspace.h"
@@ -137,6 +138,14 @@ separation_map1(i_ctx_t *i_ctx_p)
 	pop(m);
 	op -= m;
 	if (i == (int)ep[csme_hival].value.intval) {	/* All done. */
+	    /*
+	     * If the tint_transform procedure is a Function, recognize it
+	     * as such now.
+	     */
+	    gs_function_t *pfn = ref_function(&ep[csme_proc]);
+
+	    if (pfn)
+		gs_cspace_set_sepr_function(gs_currentcolorspace(igs), pfn);
 	    esp -= num_csme;
 	    return o_pop_estack;
 	}
