@@ -1975,6 +1975,8 @@ pdf_text_process(gs_text_enum_t *pte)
 	if (code < 0)
 	    return code;
     }
+    if (!penum->pte_default)
+	pdev->charproc_just_accumulated = false;
     code = -1;		/* to force default implementation */
 
     /*
@@ -2004,9 +2006,9 @@ pdf_text_process(gs_text_enum_t *pte)
 	    penum->returned.current_char = pte_default->returned.current_char;
 	    penum->returned.current_glyph = pte_default->returned.current_glyph;
 	}
+	pdev->charproc_just_accumulated = false;
 	if (code == TEXT_PROCESS_RENDER) {
 	    pdev->charproc_ctm = penum->pis->ctm;
-    	    pdev->charproc_just_accumulated = false;
 	    if (penum->current_font->FontType == ft_user_defined && 
 		    !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
 		/* The condition above must be consistent with one in pdf_text_set_cache,
