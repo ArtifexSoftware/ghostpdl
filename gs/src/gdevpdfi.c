@@ -21,6 +21,8 @@
 #include "gserrors.h"
 #include "gsdevice.h"
 #include "gsflip.h"
+#include "gsstate.h"
+#include "gscolor2.h"
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"		/* for data stream */
