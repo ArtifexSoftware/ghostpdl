@@ -575,6 +575,19 @@ uses <b><tt>filenameforall</tt></b> with this IODevice, rather than
 <b><tt>filenameforall</tt></b> with the <b><tt>/Font</tt></b> Resource
 category, to enumerate available fonts.</I>
 
+<h3>Repairing damaged or EOL-converted PDF files.</h3>
+
+<p>
+Adobe Acrobat Reader can scan a PDF file that has had its end-of-lines
+converted by careless users transferring the file across operating systems
+as text rather than binary across, and reconstruct the cross-reference table
+which the PDF interpreter requires.  This only works if the file has no
+binary data in it, which with PDF 1.3 is rarely the case.  However, users
+occasionally receive PDF files that have been damaged in this way, and it
+might be useful to have a program that can repair them.  <I>We think this
+should probably be done as a separate program, possibly in PostScript,
+similar to Ghostscript's PDF linearizer.</I>
+
 <h2><a name="Other_implementation"></a>Implementation</h2>
 
 <h3>Fully re-entrant code.</h3>
