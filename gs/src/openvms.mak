@@ -417,7 +417,7 @@ $(GS_XE) : openvms $(GLOBJDIR)gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
 
 # OpenVMS.dev
 
-openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_vms.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ)
+openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_vms.$(OBJ)
 $(GLGEN)openvms_.dev : $(openvms__) $(GLGEN)nosync.dev
 	$(SETMOD) $(GLGEN)openvms_ $(openvms__) -include $(GLGEN)nosync
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -44,7 +44,6 @@ gp_init(void)
     gs_stdprn = 0;
     /* Set up the handler for numeric exceptions. */
     signal(SIGFPE, handle_FPE);
-    gp_init_console();
 }
 
 /* Trap numeric exceptions.  Someday we will do something */

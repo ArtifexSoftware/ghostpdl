@@ -2160,16 +2160,6 @@ $(GLOBJ)gp_getnv.$(OBJ) : $(GLSRC)gp_getnv.c $(AK) $(stdio__h) $(string__h)\
  $(gp_h) $(gsmemory_h) $(gstypes_h)
 	$(GLCC) $(GLO_)gp_getnv.$(OBJ) $(C_) $(GLSRC)gp_getnv.c
 
-# Frame buffer implementations.
-
-$(GLOBJ)gp_nofb.$(OBJ) : $(GLSRC)gp_nofb.c $(GX)\
- $(gp_h) $(gxdevice_h)
-	$(GLCC) $(GLO_)gp_nofb.$(OBJ) $(C_) $(GLSRC)gp_nofb.c
-
-$(GLOBJ)gp_dosfb.$(OBJ) : $(GLSRC)gp_dosfb.c $(AK) $(malloc__h) $(memory__h)\
- $(gx_h) $(gp_h) $(gserrors_h) $(gxdevice_h)
-	$(GLCC) $(GLO_)gp_dosfb.$(OBJ) $(C_) $(GLSRC)gp_dosfb.c
-
 # File system implementation.
 
 # MS-DOS file system, also used by Desqview/X.

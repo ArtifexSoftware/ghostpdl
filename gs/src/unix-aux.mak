@@ -1,4 +1,4 @@
-#    Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -32,7 +32,7 @@ UNIX_AUX_MAK=$(GLSRC)unix-aux.mak
 
 # Unix platforms other than System V, and also System V Release 4
 # (SVR4) platforms.
-unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ)
+unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ)
 $(GLGEN)unix_.dev: $(unix__) $(GLD)nosync.dev
 	$(SETMOD) $(GLGEN)unix_ $(unix__) -include $(GLD)nosync
 
@@ -43,7 +43,7 @@ $(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
 
 # System V platforms other than SVR4, which lack some system calls,
 # but have pipes.
-sysv__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_sysv.$(OBJ)
+sysv__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_sysv.$(OBJ)
 $(GLGEN)sysv_.dev: $(sysv__) $(GLD)nosync.dev
 	$(SETMOD) $(GLGEN)sysv_ $(sysv__) -include $(GLD)nosync
 

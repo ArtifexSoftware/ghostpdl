@@ -1,4 +1,4 @@
-#    Copyright (C) 1994, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1994, 1995, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -29,7 +29,7 @@
 
 ## The Desqview/X platform
 
-dvx__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_dvx.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ)
+dvx__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_dvx.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ)
 $(GLGEN)dvx_.dev: $(dvx__) nosync.dev
 	$(SETMOD) $(GLGEN)dvx_ $(dvx__) -include nosync
 

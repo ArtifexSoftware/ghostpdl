@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-1999, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -138,7 +138,7 @@ $(GLOBJ)gp_msio.$(OBJ): $(GLSRC)gp_msio.c $(AK) $(gp_mswin_h) \
 # console I/O module gp_msio.c, because this incorrectly refers to gsdll.c,
 # which in turn incorrectly refers to PostScript interpreter code.
 
-msw32nc__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
+msw32nc__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
 msw32nc_inc=$(GLD)nosync.dev $(GLD)winplat.dev
 $(GLGEN)msw32nc_.dev: $(msw32nc__) $(ECHOGS_XE) $(msw32nc_inc)
 	$(SETMOD) $(GLGEN)msw32nc_ $(msw32nc__)

@@ -1,6 +1,6 @@
 /* pop (%!) .skipeof
 
-   Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
+   Copyright (C) 1989, 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,10 +33,6 @@ extern void gp_get_usertime(long ptm[2]);
 FILE *gs_stdout;
 FILE *gs_stderr;
 const char gp_scratch_file_name_prefix[] = "gs_";
-void 
-gp_init_console()
-{
-}
 FILE *
 gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
 {
