@@ -862,7 +862,20 @@ end readonly def                % .loadttfontdict
   0 1 glyphencoding length 1 sub {
     glyphencoding 1 index get exch inversepost 3 1 roll put
   } for
-  /CharStrings mark 3 -1 roll {
+  /CharStrings mark 3 -1 roll
+  % Make sure that all of the glyphs in 'encoding' will be defined in
+  % CharStrings. Ignore .notdef since we fill that in last.
+  %		stack: /CharStrings mark <chartoglyphmap>
+  0 1 encoding length 1 sub {
+    encoding 1 index get dup /.notdef eq exch
+    counttomark 1 sub index exch known or {
+      pop 
+    } {
+      encoding exch get .pdfaddpost
+    } ifelse
+  } for
+  % stack: /CharStrings mark <chartoglyphmap> /name1 glyph#1 /name2 glyph#2 ... /namen glyph#n
+  counttomark -1 roll {
     dup type /arraytype eq {
       exch /ch exch def { ch exch .pdfaddchar } forall
     } {
