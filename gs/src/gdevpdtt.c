@@ -1215,26 +1215,57 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 
     pwidths->v.x = pwidths->v.y = 0;
     if (glyph != GS_NO_GLYPH &&
-	(code = ofont->procs.glyph_info((gs_font *)ofont, glyph, NULL,
+	(code = cfont->procs.glyph_info((gs_font *)cfont, glyph, NULL,
 				        (GLYPH_INFO_WIDTH0 << wmode) |
 				        GLYPH_INFO_OUTLINE_WIDTHS,
 				        &info)) != gs_error_undefined
 	) {
+	gs_point v;
+
 	if (code < 0 ||
-	    (code = store_glyph_width(&pwidths->Width, wmode, scale_o, &info)) < 0
+	    (code = store_glyph_width(&pwidths->Width, wmode, 
+	                              scale_o, &info)) < 0
 	    )
 	    return code;
+	v = info.v;
 	rcode |= code;
-	if ((code = cfont->procs.glyph_info((gs_font *)cfont, glyph, NULL,
+	if ((code = ofont->procs.glyph_info((gs_font *)ofont, glyph, NULL,
 					    GLYPH_INFO_WIDTH0 << wmode,
 					    &info)) != gs_error_undefined
 	    ) {
 	    if (code < 0 ||
-		(code = store_glyph_width(&pwidths->real_width, wmode, scale_c, &info)) < 0
+		(code = store_glyph_width(&pwidths->real_width, wmode, 
+		                          scale_c, &info)) < 0
 		)
 		return code;
 	    rcode |= code;
-	    pwidths->v = info.v;
+	    if (wmode == 0) {
+	        /*
+		 * We will shift the glyph for the difference
+		 * between the side bearing from Metrics and one from 
+		 * the sbw of the outline.
+		 */
+		pwidths->v.x = info.v.x - v.x;
+		pwidths->v.y = info.v.y - v.y;
+	    } else {
+		/*
+		 * We need v vector from Metrics2, but glyph_info
+		 * doesn't say, is it taken from Metrics2 or from sbw
+		 * of the outline. Hopely ones from Metrics2 and sbw
+		 * are different, so checking it here.
+		 */
+		if (info.v.x != v.x || info.v.y != v.y) {
+		    pwidths->v.x = info.v.x;
+		    pwidths->v.y = info.v.y;
+		} else {
+		    /* 
+		     * Probably there is no Metrics2, use zeros.
+		     * This may give a wrong result if side bearing in the 
+		     * outline specifies the shift for vertical writing.
+		     * Perhaps we never met such fonts.
+		     */
+		} 
+	    }
 	} else
 	    pwidths->real_width = pwidths->Width;
 	return rcode;

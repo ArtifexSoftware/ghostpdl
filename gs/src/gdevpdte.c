@@ -304,9 +304,9 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	if (font->WMode != 0 && code > 0 &&
 	    pwidths->v.x == 0 && pwidths->v.y == 0) {
 	    /*
-	     * The font has no Metrics2, so it must be written
+	     * The font has no Metrics2, so it must write
 	     * horizontally due to PS spec.
-	     * Therefore we need to fill Width array,
+	     * Therefore we need to fill the Widths array,
 	     * which is required by PDF spec.
 	     * Take it from WMode==0.
 	     */
@@ -459,10 +459,9 @@ process_text_modify_width(gs_text_enum_t *pte, gs_font_base *font,
 	gs_point did, wanted;	/* user space */
 	gs_point v; /* design space */
 
-	pdf_glyph_origin(ppts->values.pdfont, pstr->data[i], font->WMode, &v);
 	if (code < 0)
-	    break;
-
+	    return code;
+	pdf_glyph_origin(ppts->values.pdfont, pstr->data[i], font->WMode, &v);
 	if (v.x != 0 || v.y != 0) {
 	    gs_point glyph_origin_shift;
 

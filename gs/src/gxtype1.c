@@ -695,6 +695,8 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	case type1_result_sbw:
 	    info->width[wmode].x = fixed2float(cis.width.x);
 	    info->width[wmode].y = fixed2float(cis.width.y);
+	    info->v.x = fixed2float(cis.lsb.x);
+	    info->v.y = fixed2float(cis.lsb.y);
 	    break;
 	}
 	info->members |= width_members;
