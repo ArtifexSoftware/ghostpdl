@@ -160,6 +160,20 @@ ICCSRCDIR=icclib
 #IJSSRCDIR=ijs
 #IJSEXECTYPE=win
 
+# 1 --> Use 64 bits for gx_color_index.  This is required only for
+# non standard devices or DeviceN process color model devices.
+USE_LARGE_COLOR_INDEX=1
+
+!if $(USE_LARGE_COLOR_INDEX) == 1
+# Definitions to force gx_color_index to 64 bits
+LARGEST_UINTEGER_TYPE=unsigned long long
+GX_COLOR_INDEX_TYPE=$(LARGEST_UINTEGER_TYPE)
+GCIFLAGS=-DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
+!else
+GCIFLAGS=
+!endif
+
+
 # The following is a hack to get around the special treatment of \ at
 # the end of a line.
 NUL=
@@ -428,7 +442,7 @@ CEXE=-Zomf
 
 GENOPT=$(CP) $(CD) $(CGDB) $(CDLL) $(CO) $(CPNG)
 
-CCFLAGS0=$(GENOPT) $(PLATOPT) -D__OS2__
+CCFLAGS0=$(GENOPT) $(PLATOPT) -D__OS2__ $(GCIFLAGS)
 CCFLAGS=$(CCFLAGS0) 
 CC=$(COMPDIR)\$(COMP) $(CCFLAGS0)
 CC_=$(CC)
