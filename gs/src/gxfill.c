@@ -1803,11 +1803,12 @@ fill_loop_by_trapezoids(line_list *ll, fixed band_mask)
 
     if (fo->is_spotan)
 	return fill_loop_by_trapezoids__spotan(ll, band_mask);
-    if (fo->pseudo_rasterization)
+    if (fo->pseudo_rasterization) {
 	if (fo->fill_direct)
 	    return fill_loop_by_trapezoids__pr_fd(ll, band_mask);
 	else
 	    return fill_loop_by_trapezoids__pr_nd(ll, band_mask);
+    }
     if (fo->adjust_below | fo->adjust_above | fo->adjust_left | fo->adjust_right) {
 	if (fo->fill_direct)
 	    return fill_loop_by_trapezoids__aj_fd(ll, band_mask);
