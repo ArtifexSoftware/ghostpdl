@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -165,18 +165,20 @@ const gx_device_pswrite gs_epswrite_device =
 private int
     psw_beginpage(P1(gx_device_vector * vdev)),
     psw_setcolors(P2(gx_device_vector * vdev, const gx_drawing_color * pdc)),
-      psw_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
-		    gx_path_type_t type)), psw_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type)),
+    psw_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
+		  fixed y1, gx_path_type_t type)),
+    psw_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type)),
       psw_moveto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-		    floatp x, floatp y, gx_path_type_t type)), psw_lineto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
+		  floatp x, floatp y, gx_path_type_t type)),
+    psw_lineto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
 				  floatp x, floatp y, gx_path_type_t type)),
       psw_curveto(P10(gx_device_vector * vdev, floatp x0, floatp y0,
 		      floatp x1, floatp y1, floatp x2, floatp y2,
-		      floatp x3, floatp y3, gx_path_type_t type)), psw_closepath(P6(gx_device_vector * vdev, floatp x0, floatp y0,
+		    floatp x3, floatp y3, gx_path_type_t type)),
+    psw_closepath(P6(gx_device_vector * vdev, floatp x0, floatp y0,
 		      floatp x_start, floatp y_start, gx_path_type_t type)),
       psw_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
-private const gx_device_vector_procs psw_vector_procs =
-{
+private const gx_device_vector_procs psw_vector_procs = {
 	/* Page management */
     psw_beginpage,
 	/* Imager state */
@@ -567,7 +569,6 @@ psw_beginpage(gx_device_vector * vdev)
 	    psw_put_lines(s, psw_1_prolog);
 	} else if (pdev->LanguageLevel > 1.5) {
 	    psw_put_lines(s, psw_1_5_prolog);
-	    if (pdev->LanguageLevel > 1.5)
 		psw_put_lines(s, psw_2_prolog);
 	} else {
 	    psw_put_lines(s, psw_1_x_prolog);
@@ -831,17 +832,29 @@ psw_open(gx_device * dev)
     return 0;
 }
 
+/*
+ * Write the page trailer.  We do this directly to the file, rather than to
+ * the stream, because we may have to do it during finalization.
+ */
+private void
+psw_write_page_trailer(gx_device *dev, int num_copies, int flush)
+{
+    FILE *f = vdev->file;
+
+    if (num_copies != 1)
+	fprintf(f, "userdict /#copies %d put\n", num_copies);
+    fprintf(f, "cleartomark end %s pagesave restore\n%%%%PageTrailer\n",
+	    (flush ? "showpage" : "copypage"));
+}
+
 /* Wrap up ("output") a page. */
 private int
 psw_output_page(gx_device * dev, int num_copies, int flush)
 {
     stream *s = gdev_vector_stream(vdev);
 
-    if (num_copies != 1)
-	pprintd1(s, "userdict /#copies %d put\n", num_copies);
-    pprints1(s, "cleartomark end %s pagesave restore\n%%%%PageTrailer\n",
-	     (flush ? "showpage" : "copypage"));
-    sflush(s);
+    sflush(s);			/* sync stream and file */
+    psw_write_page_trailer(dev, num_copies, flush);
     vdev->in_page = false;
     pdev->first_page = false;
     gdev_vector_reset(vdev);
@@ -853,13 +866,26 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
 
 /* Close the device. */
 /* Note that if this is being called as a result of finalization, */
-/* the stream may no longer exist; but the file will still be open. */
+/* the stream may have been finalized; but the file will still be open. */
 private void psw_print_bbox(P2(FILE *, const gs_rect *));
 private int
 psw_close(gx_device * dev)
 {
     FILE *f = vdev->file;
 
+    /* If there is an incomplete page, complete it now. */
+    if (vdev->in_page) {
+	/*
+	 * Flush the stream if it hasn't been flushed (and finalized)
+	 * already.
+	 */
+	stream *s = vdev->strm;
+
+	if (s->swptr != s->cbuf - 1)
+	    sflush(s);
+	psw_write_page_trailer(dev, 1, 1);
+	dev->PageCount++;
+    }
     fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", dev->PageCount);
     {
 	gs_rect bbox;
