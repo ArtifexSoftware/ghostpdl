@@ -31,7 +31,11 @@ IINCDIR=
 IINCDIR=/I$(INCDIR)
 !endif
 
+# This also creates the subdirectories since this (hopefully) will be the
+# first need. Too bad nmake doesn't have .BEFORE symbolic target.
 $(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
+	-mkdir $(GLGENDIR)
+	-mkdir $(BINDIR)
 	echo $(GENOPT) $(IINCDIR) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ > $(GLGENDIR)\ccf32.tr
 
 $(ECHOGS_XE): $(GLSRC)echogs.c
