@@ -116,8 +116,9 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	 * Even though this isn't obvious from the Adobe Tech Note,
 	 * it appears that if UseFlateCompression is true, the default
 	 * compressor for AutoFilter is FlateEncode, not LZWEncode.
-	 */
-	orig_template = template = &s_DCTE_template;
+         */
+	orig_template = template = 
+          ( pim->Width < 64 || pim->Height < 64 ) ? lossless_template : &s_DCTE_template;
 	dict = pdip->ACSDict;
     }
     if (template == 0)	/* no compression */
@@ -127,7 +128,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     /* Only use DCTE for 8-bit, non-Indexed data. */
     if (template == &s_DCTE_template) {
 	if (Indexed ||
-	    !(pdip->Downsample ?
+            !(pdip->Downsample ?
 	      pdip->Depth == 8 ||
 	      (pdip->Depth == -1 && pim->BitsPerComponent == 8) :
 	      pim->BitsPerComponent == 8)
