@@ -310,11 +310,11 @@ dsc_orientation(gs_param_list *plist, const CDSC *pData)
 }
 
 private int
-dsc_viewer_orientation(gs_param_list *plist, const CDSC *pData)
+dsc_viewing_orientation(gs_param_list *plist, const CDSC *pData)
 {
     float values[4];
     gs_param_float_array va;
-    const CDSCCTM *pctm = pData->viewer_orientation;
+    const CDSCCTM *pctm = pData->viewing_orientation;
 
     values[0] = pctm->xx;
     values[1] = pctm->xy;
@@ -323,7 +323,7 @@ dsc_viewer_orientation(gs_param_list *plist, const CDSC *pData)
     va.data = values;
     va.size = 4;
     va.persistent = false;
-    return param_write_float_array(plist, "ViewerOrientation", &va);
+    return param_write_float_array(plist, "ViewingOrientation", &va);
 }
 
 /*
@@ -353,7 +353,7 @@ private const cmdlist_t DSCcmdlist[] = {
     { CDSC_PAGES,	    "Pages",		dsc_pages },
     { CDSC_PAGEORIENTATION, "PageOrientation",  dsc_page_orientation },
     { CDSC_PAGEBOUNDINGBOX, "PageBoundingBox",	dsc_page_bounding_box },
-    { CDSC_VIEWERORIENTATION, "ViewerOrientation", dsc_viewer_orientation },
+    { CDSC_VIEWINGORIENTATION, "ViewingOrientation", dsc_viewing_orientation },
     { CDSC_EOF,		    "EOF",		NULL },
     { 0,		    "NOP",		NULL }  /* Table terminator */
 };

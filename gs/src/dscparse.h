@@ -148,7 +148,7 @@ typedef enum {
 /* also %%Begin/EndFont, %%Begin/EndFeature */
 /* also %%Begin/EndResource, %%Begin/EndProcSet */
   CDSC_INCLUDEFONT	= 707,	/* IGNORED %%IncludeFont: */
-  CDSC_VIEWERORIENTATION = 708, /* %%ViewerOrientation: */
+  CDSC_VIEWINGORIENTATION = 708, /* %%ViewingOrientation: */
 
 /* Trailer section */
   CDSC_TRAILER		= 800,	/* %%Trailer */
@@ -215,7 +215,7 @@ typedef struct CDSCMEDIA_S {
 #define CDSC_KNOWN_MEDIA 11
 extern const CDSCMEDIA dsc_known_media[CDSC_KNOWN_MEDIA];
 
-typedef struct CDSCCTM_S { /* used for %%ViewerOrientation */
+typedef struct CDSCCTM_S { /* used for %%ViewingOrientation */
     float xx;
     float xy;
     float yx;
@@ -232,7 +232,7 @@ typedef struct CDSCPAGE_S {
     unsigned int orientation;
     const CDSCMEDIA *media;
     CDSCBBOX *bbox;  /* PageBoundingBox, also used by GSview for PDF CropBox */
-    CDSCCTM *viewer_orientation;
+    CDSCCTM *viewing_orientation;
 } CDSCPAGE;
 
 /* binary DOS EPS header */
@@ -328,7 +328,7 @@ struct CDSC_S {
     unsigned int page_order;	/* enum CDSC_PAGE_ORDER */
     unsigned int page_orientation;  /* the default page orientation */
 				/* enum CDSC_ORIENTATION */
-    CDSCCTM *viewer_orientation;
+    CDSCCTM *viewing_orientation;
     unsigned int media_count;	/* number of media items */
     CDSCMEDIA **media;		/* the array of media */
     const CDSCMEDIA *page_media;/* the default page media */

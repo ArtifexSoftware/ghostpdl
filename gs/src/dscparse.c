@@ -105,7 +105,7 @@ private int dsc_parse_orientation(P3(CDSC *dsc, unsigned int *porientation,
 private int dsc_parse_order(P1(CDSC *dsc));
 private int dsc_parse_media(P2(CDSC *dsc, const CDSCMEDIA **page_media));
 private int dsc_parse_document_media(P1(CDSC *dsc));
-private int dsc_parse_viewer_orientation(P2(CDSC *dsc, CDSCCTM **pctm));
+private int dsc_parse_viewing_orientation(P2(CDSC *dsc, CDSCCTM **pctm));
 private int dsc_parse_page(P1(CDSC *dsc));
 private void dsc_save_line(P1(CDSC *dsc));
 private int dsc_scan_type(P1(CDSC *dsc));
@@ -751,8 +751,8 @@ dsc_reset(CDSC *dsc)
 
 	if (dsc->page[i].bbox)
 	    dsc_memfree(dsc, dsc->page[i].bbox);
-	if (dsc->page[i].viewer_orientation)
-	    dsc_memfree(dsc, dsc->page[i].viewer_orientation);
+	if (dsc->page[i].viewing_orientation)
+	    dsc_memfree(dsc, dsc->page[i].viewing_orientation);
     }
     if (dsc->page)
 	dsc_memfree(dsc, dsc->page);
@@ -763,9 +763,9 @@ dsc_reset(CDSC *dsc)
     dsc->page_pages = 0;
     dsc->page_order = CDSC_ORDER_UNKNOWN;
     dsc->page_orientation = CDSC_ORIENT_UNKNOWN;
-    if (dsc->viewer_orientation)
-	dsc_memfree(dsc, dsc->viewer_orientation);
-    dsc->viewer_orientation = NULL;
+    if (dsc->viewing_orientation)
+	dsc_memfree(dsc, dsc->viewing_orientation);
+    dsc->viewing_orientation = NULL;
 	
     /* page_media is pointer to an element of media or dsc_known_media */
     /* do not free it. */
@@ -1556,11 +1556,11 @@ dsc_parse_document_media(CDSC *dsc)
     return CDSC_OK;
 }
 
-/* viewer orientation is believed to be the first four elements of
+/* viewing orientation is believed to be the first four elements of
  * a CTM matrix
  */
 private int 
-dsc_parse_viewer_orientation(CDSC *dsc, CDSCCTM **pctm)
+dsc_parse_viewing_orientation(CDSC *dsc, CDSCCTM **pctm)
 {
     CDSCCTM ctm;
     unsigned int i, n;
@@ -1570,7 +1570,7 @@ dsc_parse_viewer_orientation(CDSC *dsc, CDSCCTM **pctm)
 	*pctm = NULL;
     }
 
-    n = IS_DSC(dsc->line, "%%+") ? 3 : 20;  /* %%ViewerOrientation: */
+    n = IS_DSC(dsc->line, "%%+") ? 3 : 21;  /* %%ViewingOrientation: */
     while (IS_WHITE(dsc->line[n]))
 	n++;
 
@@ -2156,9 +2156,9 @@ dsc_scan_defaults(CDSC *dsc)
 	if (dsc_parse_bounding_box(dsc, &(dsc->page_bbox), 18))
 	    return CDSC_ERROR;
     }
-    else if (IS_DSC(line, "%%ViewerOrientation:")) {
-	dsc->id = CDSC_VIEWERORIENTATION;
-	if (dsc_parse_viewer_orientation(dsc, &dsc->viewer_orientation))
+    else if (IS_DSC(line, "%%ViewingOrientation:")) {
+	dsc->id = CDSC_VIEWINGORIENTATION;
+	if (dsc_parse_viewing_orientation(dsc, &dsc->viewing_orientation))
 	    return CDSC_ERROR;
     }
     else {
@@ -2671,10 +2671,10 @@ dsc_scan_page(CDSC *dsc)
 	if (dsc_parse_bounding_box(dsc, &dsc->page[dsc->page_count-1].bbox, 18))
 	    return CDSC_NOTDSC;
     }
-    else if (IS_DSC(line, "%%ViewerOrientation:")) {
-	dsc->id = CDSC_VIEWERORIENTATION;
-	if (dsc_parse_viewer_orientation(dsc, 
-	    &dsc->page[dsc->page_count-1].viewer_orientation))
+    else if (IS_DSC(line, "%%ViewingOrientation:")) {
+	dsc->id = CDSC_VIEWINGORIENTATION;
+	if (dsc_parse_viewing_orientation(dsc, 
+	    &dsc->page[dsc->page_count-1].viewing_orientation))
 	    return CDSC_ERROR;
     }
     else if (IS_DSC(line, "%%BeginFont:")) {
