@@ -218,6 +218,7 @@ gs_assert(long line, const char *file, const char *exp)
 
     assert(0);
 }
+#undef assert
 #define assert #error
 #endif
 
