@@ -695,6 +695,7 @@ install_prog()
 	char szProgram[MAXSTR];
 	char szArguments[MAXSTR];
 	char szDescription[MAXSTR];
+	char szDotVersion[MAXSTR];
 	
 	if (g_bQuit)
 		return FALSE;
@@ -716,7 +717,8 @@ install_prog()
 		nGSversion = (p[0]-'0')*100 + (p[2]-'0')*10 + (p[3]-'0');
 	else if (strlen(p) == 3)
 		nGSversion = (p[0]-'0')*100 + (p[2]-'0')*10;
-	sprintf(regkey2, "%d.%d", nGSversion / 100, nGSversion % 100);
+        strncpy(szDotVersion, p, sizeof(szDotVersion));
+	strncpy(regkey2, szDotVersion, sizeof(regkey2));
 	
 	// copy files
 	if (!cinst.InstallFiles(g_bNoCopy, &g_bQuit)) {
@@ -775,8 +777,7 @@ install_prog()
 	strcpy(szArguments, "\042-I");
 	strcat(szArguments, szLIB);
 	strcat(szArguments, "\042");
-	sprintf(szDescription, "Ghostscript %d.%d", 
-		nGSversion / 100, nGSversion % 100);
+	sprintf(szDescription, "Ghostscript %s", szDotVersion);
 	if (!cinst.StartMenuAdd(szDescription, szProgram, szArguments)) {
 		gs_addmess("Failed to add Start Menu item\n");
 		return FALSE;
@@ -785,8 +786,7 @@ install_prog()
 	strcat(szProgram, "\\");
 	strcat(szProgram, cinst.GetMainDir());
 	strcat(szProgram, "\\doc\\Readme.htm");
-	sprintf(szDescription, "Ghostscript Readme %d.%d", 
-		nGSversion / 100, nGSversion % 100);
+	sprintf(szDescription, "Ghostscript Readme %s", szDotVersion);
 	if (!cinst.StartMenuAdd(szDescription, szProgram, NULL)) {
 		gs_addmess("Failed to add Start Menu item\n");
 		return FALSE;

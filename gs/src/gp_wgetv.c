@@ -69,8 +69,14 @@ gp_getenv(const char *name, char *ptr, int *plen)
 	    /* not Win32s */
 	    int code;
 	    char key[256];
-	    sprintf(key, "Software\\%s\\%d.%d", gs_productfamily,
-		    (int)(gs_revision / 100), (int)(gs_revision % 100));
+	    char dotversion[16];
+	    
+	    if (gs_revision % 100 == 0)
+		sprintf(dotversion, "%d.0", (int)(gs_revision / 100));
+	    else
+		sprintf(dotversion, "%d.%02d", (int)(gs_revision / 100),
+			(int)(gs_revision % 100));
+	    sprintf(key, "Software\\%s\\%s", gs_productfamily, dotversion);
 
 	    code = gp_getenv_registry(HKEY_CURRENT_USER, key, name, ptr, plen);
 	    if ( code <= 0 )
