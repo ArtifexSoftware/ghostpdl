@@ -437,7 +437,9 @@ currentdict /.useciecolorkeydict undef
 
 /.setdevicenspace where {
   pop colorspacedict /DeviceN {
-    dup 2 get setcolorspace dup .setdevicenspace
+    dup 2 get setcolorspace dup
+    dup 1 get length		% # of components
+    .converttinttransform .setdevicenspace
   } bind put
 } if
 

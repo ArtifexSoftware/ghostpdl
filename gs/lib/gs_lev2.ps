@@ -1,4 +1,4 @@
-%    Copyright (C) 1990, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -501,7 +501,70 @@ pop		% currentsystemparams
 currentdict end
 /statusdict exch .forcedef	% statusdict is local, systemdict is global
 
+% The following compatibility operators are in systemdict.  They are
+% defined here, rather than in gs_init.ps, because they require the
+% resource machinery.
+
+/devforall {		% <pattern> <proc> <scratch> devforall -
+  exch {
+    1 index currentdevparams
+    /Type .knownget { /FileSystem eq } { false } ifelse
+    { exec } { pop pop } ifelse
+  } /exec load 3 packedarray cvx exch
+  (*) 3 1 roll ppstack flush /IODevice resourceforall
+} odef
+/devstatus {		% <(%disk*%)> devstatus <searchable> <writable>
+			%   <hasNames> <mounted> <removable> <searchOrder>
+			%   <freePages> <size> true
+			% <string> devstatus false
+  dup length 5 ge {
+    dup 0 5 getinterval (%disk) eq {
+      dup /IODevice resourcestatus {
+	pop pop dup currentdevparams
+	dup /Searchable get
+	exch dup /Writable get
+	exch dup /HasNames get
+	exch dup /Mounted get
+	exch dup /Removable get
+	exch dup /SearchOrder get
+	exch dup /Free get
+	exch /LogicalSize get
+	9 -1 roll pop true
+      } {
+	pop false
+      } ifelse
+    } {
+      pop false
+    } ifelse
+  } {
+    pop false
+  } ifelse
+} odef
+
 % ------ Color spaces ------ %
+
+% Attempt to convert a tint transformation procedure to a Function.
+% The current color space defines the number of output values.
+/.converttinttransform {	% [.. .. .. proc ] <m>
+				%   .converttinttransform [.. .. .. proc']
+  .currentglobal 2 index gcheck .setglobal
+  4 dict
+    dup /FunctionType 4 put
+    dup /Function 5 index 3 get put
+		% Stack: orig m global func
+    dup /Domain [ 6 -1 roll {0 1} repeat ] put
+    dup /Range [
+      mark currentcolor counttomark
+      dup 2 add 1 roll cleartomark	% # of components in alternate space
+    {0 1} repeat ] put
+  { .buildfunction } .internalstopped {
+    pop .setglobal
+  } {
+		% Stack: orig global func
+    2 index 4 array copy dup 3 4 -1 roll put
+    exch .setglobal exch pop
+  } ifelse
+} bind def
 
 % Define the setcolorspace procedures:
 %	<colorspace> proc <colorspace'|null>
@@ -524,7 +587,7 @@ currentdict end
    { pop /CIEBasedDEFG { NOCIE { pop 0 0 0 1 setcmykcolor null } { dup 1 get .setciedefgspace } ifelse } bind
    } if
   /.setseparationspace where
-   { pop /Separation { dup 2 get setcolorspace dup .setseparationspace } bind
+   { pop /Separation { dup 2 get setcolorspace dup 1 .converttinttransform .setseparationspace } bind
    } if
   /.setindexedspace where
    { pop /Indexed { dup 1 get setcolorspace dup .setindexedspace } bind
