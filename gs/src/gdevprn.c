@@ -888,8 +888,7 @@ gdev_prn_maybe_reallocate_memory(gx_device_printer *prdev,
     gx_device *const pdev = (gx_device *)prdev;
     gx_device_memory * const mdev = (gx_device_memory *)prdev;
 	
-    /* The first test here used to be prdev->open.  See News for 5.50. */
-    if (mdev->base != 0 &&
+    if (prdev->is_open != 0 &&
 	(memcmp(&prdev->space_params, old_sp, sizeof(*old_sp)) != 0 ||
 	 prdev->width != old_width || prdev->height != old_height )
 	) {
