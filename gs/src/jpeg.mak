@@ -102,7 +102,7 @@ $(GLGEN)jconfig_.h : $(GLGEN)jconfig$(SHARE_JPEG).h $(MAKEFILE)
 	$(CP_) $(GLGEN)jconfig$(SHARE_JPEG).h $(GLGEN)jconfig_.h
 
 $(GLGEN)jconfig0.h : $(ECHOGS_XE) $(GLSRC)gsjconf.h $(stdpre_h) $(MAKEFILE)
-	$(EXP)$(ECHOGS_XE) -w $(GLGEN)jconfig0.h -+R $(GLSRC)stdpre.h -+R $(GLSRC)gsjconf.h
+	$(EXP)$(ECHOGS_XE) -w $(GLGEN)jconfig0.h -+R $(GLSRC)stdpn.h -+R $(GLSRC)stdpre.h -+R $(GLSRC)gsjconf.h
 	$(RM_) $(GLGEN)jconfig1.h
 
 $(GLGEN)jconfig1.h : $(ECHOGS_XE) $(JPEG_MAK)

@@ -406,10 +406,13 @@ typedef const char *client_name_t;
 
 /*
  * Define the now-deprecated Pn macros for pre-ANSI compiler compatibility.
- * (To check that they aren't being used any longer, just comment out the
- * next line.)
+ * The double-inclusion check is replicated here because of the way that
+ * jconfig.h is constructed.
  */
+#ifndef stdpn_INCLUDED
+#  define stdpn_INCLUDED
 #include "stdpn.h"
+#endif /* stdpn_INCLUDED */
 
 /*
  * Define success and failure codes for 'exit'.  The only system on which
