@@ -157,7 +157,6 @@ build_cid_lab_long(
     if (pcid->len != 30)
         return e_Range;
     convert_float_array(6, pbuff + 6, (float *)(plab->minmax.val_range));
-    normalize_cid_minmax_valrange_long((float *)(plab->minmax.val_range));
     return 0;
 }
 
@@ -173,7 +172,6 @@ build_cid_lum_long(
         return e_Range;
     convert_float_array(9, pbuff + 6, plum->matrix);
     convert_float_array(6, pbuff + 42, (float *)(plum->minmax.val_range));
-    normalize_cid_minmax_valrange_long((float *)(plum->minmax.val_range));
     convert_float_array(8, pbuff + 66, (float *)(plum->colmet.chroma));
     convert_float_array(6, pbuff + 98, (float *)(plum->colmet.nonlin));
     return 0;
