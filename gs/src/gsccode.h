@@ -27,7 +27,9 @@
  */
 typedef ulong gs_char;
 
-#define gs_no_char ((gs_char)~0L)
+#define GS_NO_CHAR ((gs_char)~0L)
+/* Backward compatibility */
+#define gs_no_char GS_NO_CHAR
 
 /*
  * Define a character glyph code, a.k.a. character name.
@@ -36,17 +38,21 @@ typedef ulong gs_char;
  */
 typedef ulong gs_glyph;
 
-#define gs_no_glyph ((gs_glyph)0x7fffffff)
+#define GS_NO_GLYPH ((gs_glyph)0x7fffffff)
 #if arch_sizeof_long > 4
-#  define gs_min_cid_glyph ((gs_glyph)0x80000000L)
+#  define GS_MIN_CID_GLYPH ((gs_glyph)0x80000000L)
 #else
 /* Avoid compiler warnings about signed/unsigned constants. */
-#  define gs_min_cid_glyph ((gs_glyph)~0x7fffffff)
+#  define GS_MIN_CID_GLYPH ((gs_glyph)~0x7fffffff)
 #endif
-#define gs_max_glyph max_ulong
+#define GS_MAX_GLYPH max_ulong
+/* Backward compatibility */
+#define gs_no_glyph GS_NO_GLYPH
+#define gs_min_cid_glyph GS_MIN_CID_GLYPH
+#define gs_max_glyph GS_MAX_GLYPH
 
 /* Define a procedure for marking a gs_glyph during garbage collection. */
-typedef bool(*gs_glyph_mark_proc_t) (P2(gs_glyph glyph, void *proc_data));
+typedef bool (*gs_glyph_mark_proc_t)(gs_glyph glyph, void *proc_data);
 
 /* Define a procedure for mapping a gs_glyph to its (string) name. */
 /*
