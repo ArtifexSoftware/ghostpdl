@@ -200,13 +200,11 @@ files:
 <b><tt>ghostscript-fonts-other-</tt></b>#.##<b><tt>.tar.gz</tt></b>
 </blockquote>
 
-<p>For recent versions of AFPL Ghostscript -- <b><em>not</em></b> GNU
-Ghostscript -- there are also zip files (each zipped file fits onto a
-single 1.44MB diskette):
+<p>For recent versions of Ghostscript there are also zip files
 
 <blockquote>
-<b><tt>gs</tt></b>###<b><tt>fn</tt></b>*<b><tt>.zip</tt></b><br>
-<b><tt>gs</tt></b>###<b><tt>sr</tt></b>*<b><tt>.zip</tt></b>
+<b><tt>gs</tt></b>###<b><tt>src.zip</tt></b><br>
+<b><tt>gs</tt></b>###<b><tt>w32.exe</tt></b>
 </blockquote>
 
 <p>
@@ -439,7 +437,7 @@ gs directory the current directory.
 <tr><td>
 <tr>	<th align=left valign=top><tt>unzip</tt>:
 	<td>&nbsp;
-	<td><b><tt>unzip gs</tt></b>###<b><tt>sr*.zip</tt></b>
+	<td><b><tt>unzip gs</tt></b>###<b><tt>src.zip</tt></b>
 </table></blockquote>
 
 <p>
@@ -573,7 +571,7 @@ relatively small ones containing platform-specific information.
 	<td>MS Windows with Borland/Inprise compilers
 <tr>	<td><b><tt>msvc32.mak</tt></b>
 	<td>&nbsp;
-	<td>MS Windows with Microsoft Visual C++ version 4.n or 5.n
+	<td>MS Windows with Microsoft Visual C++ version 4 to 7.
 <tr>	<td><b><tt>openvms.mak</tt></b>
 	<td>&nbsp;
 	<td>OpenVMS
@@ -1000,7 +998,7 @@ All Ghostscript builds in PC (DOS and MS Windows) environments are 32- or
 	<td valign=top>32-bit MS Windows 3.1 + Win32s, 95, 98, NT
 <tr>	<td valign=top><b><tt>msvc32.mak</tt></b>
 	<td>&nbsp;
-	<td valign=top><a href="#Microsoft_build">Microsoft Visual C++ 4.x or 5.x</a>
+	<td valign=top><a href="#Microsoft_build">Microsoft Visual C++ 4 to 7</a>
 	<td>&nbsp;
 	<td valign=top>MS Windows 32-bit
 <tr>	<td valign=top><b><tt>watc.mak</tt></b>
@@ -1072,7 +1070,7 @@ simple way to fix this, if you have the InfoZIP <b><tt>zip</tt></b> and
 <b><tt>unzip</tt></b> programs, is
 
 <blockquote><table cellpadding=0 cellspacing=0>
-<tr>	<td><b><tt>zip -l CVTEMP.zip *.bat *.c *.h</tt></b>
+<tr>	<td><b><tt>zip -l CVTEMP.zip *.bat *.c *.h *.def *.rc</tt></b>
 	<td>&nbsp;&nbsp;&nbsp;&nbsp;
 	<td>(Letter "l", not the digit "1")
 <tr>	<td><b><tt>unzip -o CVTEMP.zip</tt></b>
@@ -1234,14 +1232,14 @@ You should then run "<b><tt>_genarch.bat</tt></b>", wait until
 <p>Ghostscript can be made using either the DOS shell or one one of the various 
   command line shells made for Windows.
 <p>In order for the makefiles to work properly, two items may have to be changed. 
-  If you are not using version 5.x then before building, in <b><tt>src\msvc32.mak</tt></b> 
-  find the line "<b><tt>MSVC_VERSION=5</tt></b>" and change it to "<b><tt>MSVC_VERSION=4</tt></b>" 
-  or "<b><tt>MSVC_VERSION=6</tt></b>". 
+  If you are not using version 6.x then before building, in <b><tt>src\msvc32.mak</tt></b> 
+  find the line "<b><tt>MSVC_VERSION=6</tt></b>" and change it to "<b><tt>MSVC_VERSION=4</tt></b>", 
+  "<b><tt>MSVC_VERSION=5</tt></b>" or "<b><tt>MSVC_VERSION=7</tt></b>". 
 <p>In some cases the location of the Microsoft Developer Studio, needs to be changed. 
   The location of Microsoft Developer Studio is defined by the value of <b><tt>DEVSTUDIO</tt></b>. 
-  There are three different definitions of <b><tt>DEVSTUDIO</tt></b> in src\msvc32.mak. 
+  There are four different definitions of <b><tt>DEVSTUDIO</tt></b> in src\msvc32.mak. 
   There is one for each of the currently supported versions of Microsoft Visual 
-  C++ (4, 5, and 6). 
+  C++ (4, 5, 6 and 7). 
 <p>The normal installation process for Microsoft Visual C++ includes setting the 
   location of the Microsoft Visual C++ executables (cl.exe, link.exe, nmake.exe, 
   rc.exe) in your PATH definition and the LIB and INCLUDE environment variables 
@@ -1264,8 +1262,9 @@ nmake -f src\msvc32.mak
 Rather than changing src/msvc32.mak, these values can be specified on the make
 command line,  I.e.
 
-<blockquote><b><tt> nmake -f src\msvc32.mak MSVC_VERSION=6 DEVSTUDIO="C:\Program 
-  Files\Microsoft Visual Studio" </tt></b></blockquote>
+<blockquote><b><tt> nmake -f src\msvc32.mak MSVC_VERSION=6 DEVSTUDIO="C:\Program Files\Microsoft Visual Studio" <br>
+nmake -f src\msvc32.mak MSVC_VERSION=7 DEVSTUDIO="C:\Program Files\Microsoft Visual Studio .NET"
+ </tt></b></blockquote>
 
 <p> Note that double quotes have been added around the path for <b><tt>DEVSTUDIO</tt></b> 
   due to the spaces in the path value.
