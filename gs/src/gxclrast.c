@@ -41,7 +41,6 @@
 #include "gxpaint.h"		/* for gx_fill/stroke_params */
 #include "gxhttile.h"
 #include "gxiparam.h"
-#include "gdevht.h"
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gzacpath.h"

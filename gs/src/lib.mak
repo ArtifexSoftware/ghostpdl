@@ -1487,7 +1487,6 @@ $(GLD)imasklib.dev : $(LIB_MAK) $(ECHOGS_XE) $(imasklib_)
 
 # ---------------- Banded ("command list") devices ---------------- #
 
-gdevht_h=$(GLSRC)gdevht.h $(gzht_h)
 gxcldev_h=$(GLSRC)gxcldev.h $(gxclist_h) $(gsropt_h) $(gxht_h) $(gxtmap_h) $(gxdht_h)\
  $(strimpl_h) $(scfx_h) $(srlx_h) $(gsdcolor_h)
 gxclpage_h=$(GLSRC)gxclpage.h $(gxclio_h)
@@ -1511,10 +1510,6 @@ $(GLD)clist.dev : $(LIB_MAK) $(ECHOGS_XE) $(clist_)\
 	$(ADDMOD) $(GLD)clist -include $(GLD)cl$(BAND_LIST_STORAGE)
 	$(ADDMOD) $(GLD)clist -include $(GLD)cfe $(GLD)cfd $(GLD)rle $(GLD)rld $(GLD)psl2cs
 
-$(GLOBJ)gdevht.$(OBJ) : $(GLSRC)gdevht.c $(GXERR)\
- $(gdevht_h) $(gxdcconv_h) $(gxdcolor_h) $(gxdevice_h) $(gxdither_h)
-	$(GLCC) $(GLO_)gdevht.$(OBJ) $(C_) $(GLSRC)gdevht.c
-
 $(GLOBJ)gxclist.$(OBJ) : $(GLSRC)gxclist.c $(GXERR) $(memory__h) $(string__h)\
  $(gp_h) $(gpcheck_h) $(gsparams_h)\
  $(gxcldev_h) $(gxclpath_h) $(gxdevice_h) $(gxdevmem_h) $(gxdcolor_h)
@@ -1530,7 +1525,6 @@ $(GLOBJ)gxclpage.$(OBJ) : $(GLSRC)gxclpage.c $(AK)\
 
 $(GLOBJ)gxclrast.$(OBJ) : $(GLSRC)gxclrast.c $(GXERR)\
  $(memory__h) $(gp_h) $(gpcheck_h)\
- $(gdevht_h)\
  $(gsbitops_h) $(gscdefs_h) $(gscoord_h) $(gsdevice_h)\
  $(gsiparm4_h) $(gsparams_h) $(gsstate_h)\
  $(gxcldev_h) $(gxclpath_h) $(gxcmap_h) $(gxcolor2_h) $(gxcspace_h)\
@@ -1543,7 +1537,7 @@ $(GLOBJ)gxclrast.$(OBJ) : $(GLSRC)gxclrast.c $(GXERR)\
 
 $(GLOBJ)gxclread.$(OBJ) : $(GLSRC)gxclread.c $(GXERR)\
  $(memory__h) $(gp_h) $(gpcheck_h)\
- $(gdevht_h) $(gdevplnx_h) $(gdevprn_h)\
+ $(gdevplnx_h) $(gdevprn_h)\
  $(gscoord_h) $(gsdevice_h)\
  $(gxcldev_h) $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(gxhttile_h)\
  $(stream_h) $(strimpl_h)
