@@ -914,7 +914,7 @@ $error /SubstituteFont { .stdsubstfont } put
 
 		% Check to make sure the font was actually loaded.
 	dup 3 index .fontknownget
-	 { dup /Path 4 index .putgstringcopy
+	 { dup /PathLoad 4 index .putgstringcopy
            4 1 roll pop pop pop true exit 
          } if
 
@@ -926,7 +926,7 @@ $error /SubstituteFont { .stdsubstfont } put
 	 {            % Stack: origfontname fontdirectory path filefontname
 	   2 index 1 index .fontknownget
 	    {	% Yes.  Stack: origfontname fontdirectory path filefontname fontdict
-              dup 4 -1 roll /Path exch .putgstringcopy
+              dup 4 -1 roll /PathLoad exch .putgstringcopy
                       % Stack: origfontname fontdirectory filefontname fontdict
 	      3 -1 roll pop exch
 	              % Stack: origfontname fontdict filefontname

@@ -363,13 +363,19 @@ currentdict end Redefine
 % The procedure .FAPIhook redirects PS fonts to FAPI on necessity.
 % This depends on the following conditions :
 %
-% 1. If font dictionary has /FAPI entry, it is a font listed in extfontmap,
-%    and must be build with .FAPIrebuildfont .
+% 1. If font dictionary has /FAPI entry, it is a font listed in FAPIconfig.FontPath,
+%    and must be build with .FAPIrebuildfont, or a copy of a font, which was
+%    built with .FAPIrebuildfont .
 %
-% 2. If the font dictionary has /Path entry, and has no /FAPI entry,
+% 2. If the font dictionary has /PathLoad entry, and has no /FAPI entry,
 %    it is an installed PS font, which is described in lib/fontmap or
-%    in GS_FONTPATH. .loadfont inserts /Path entry for this case
+%    in GS_FONTPATH. .loadfont inserts /PathLoad entry for this case
 %    (see gs_fonts.ps).
+%
+%    Installed fonts are being loaded with GS font loader,
+%    the they are passed to FAPI is same way as embedded fonts are.
+%    We do so because UFST cannot read fonts, which don't
+%    follow Type 1/42 file format strongly.
 %
 % 3. Executing .loadfont, we place /FAPI_hook_disable in the 0th
 %    element of some procedure on the execution stack - see gs_fonts.ps .
@@ -386,7 +392,7 @@ currentdict end Redefine
 %    Hook_Disk_Fonts controls disk PS fonts (which fall into (2) and (3) ).
 %    Hook_Embedded_Fonts controls fonts being embedded into documents.
 %
-% 6. We apply the operator .passtoFAPI for checking whether FAPI can handle a font. 
+% 7. We apply the operator .passtoFAPI for checking whether FAPI can handle a font. 
 %    If so, we insert /FAPI entry into the font dictionary and convert it
 %    with .FAPIrebuildfont . Otherwise the font is handled with the native GS font renderer.
 
@@ -507,8 +513,8 @@ bind def
     { //PrintFontRef exec ( is mapped to FAPI=) print dup /FAPI get = } //FAPI_hook_warn exec
     true //.FAPIrebuildfont //FAPI_choose_decoding exec
   } {
-    dup /Path known dup {
-      { (Path known for the font ) print //PrintFontRef exec (.) = } //FAPI_hook_debug exec
+    dup /PathLoad known dup {
+      { (PathLoad known for the font ) print //PrintFontRef exec (.) = } //FAPI_hook_debug exec
     } {
       pop //FAPI_is_hook_disabled exec dup
       { pop
@@ -569,3 +575,4 @@ end
 odef odef odef odef odef odef
 
 .setlanguagelevel
+

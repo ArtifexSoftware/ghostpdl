@@ -4,8 +4,8 @@
 
 /FontPath             (/Fonts)     % A default directory for FAPI-handled fonts.
 /CIDFontPath          (/CIDFonts)  % A default directory for FAPI-handled CID fonts (may be same as above).
-/HookDiskFonts        [1 9 2 11 42]  % FontType values for disk PS fonts to be redirected to FAPI.
-/HookEmbeddedFonts    [1 9 2 11 42]  % FontType values for embedded PS fonts to be redirected to FAPI.
+/HookDiskFonts        [1 2 9 11 42]  % FontType values for disk PS fonts to be redirected to FAPI.
+/HookEmbeddedFonts    [1 2 9 11 42]  % FontType values for embedded PS fonts to be redirected to FAPI.
 
 % Values allowed for HookDiskFonts and HookEmbeddedFonts are 1, 2, 9, 11, 42.
 % "Disk fonts" are fonts being installed to Ghostscript with 'fontmap' or with GS_FONTPATH,
