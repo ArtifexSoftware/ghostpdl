@@ -139,6 +139,7 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
     }
   }
 
+#ifdef JBIG2_DEBUG
   {
     static count = 0;
     char name[32];
@@ -148,6 +149,7 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
     jbig2_image_write_pbm_file(image, name);
     count++;
   }
+#endif
 
   return 0;
 }
