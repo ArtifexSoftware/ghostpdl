@@ -1243,14 +1243,66 @@ select_current_pattern(
 /*
  * ESC * o # W
  *
- * Driver configuration command. Currently just a stub that absorbs the data.
+ * Driver configuration command.  A partial implementation to show
+ * that we are parsing the command correctly.  The lightness and
+ * saturation parameters are not documented so we do not believe this
+ * command will be used by an application or driver.
+ * 
  */
+
+typedef struct driver_configuration_s {
+    byte device_id;
+    byte function_index;
+    char arguments;
+} driver_configuration_t;
+
   private int
 set_driver_configuration(
     pcl_args_t *    pargs,  /* ignored */
     pcl_state_t *   pcs     /* ignored */
 )
 {
+    uint count = uint_arg(pargs);
+    driver_configuration_t *driver = (driver_configuration_t *)arg_data(pargs);
+
+    if ( count != sizeof(driver_configuration_t) )
+	return e_Range;
+
+    /* the only device known to support this command */
+#define COLOR_HP_LASERJET_PRINTERS 6
+    if ( driver->device_id != COLOR_HP_LASERJET_PRINTERS )
+	return e_Range;
+#undef COLOR_HP_LASERJET_PRINTERS
+
+    /* return unless the function index indicates lightness or
+       saturation. */
+    switch (driver->function_index) {
+    case 0: /* lightness */
+	{
+	    int code;
+	    if ( driver->arguments < -100 || driver->arguments > 100 )
+		return e_Range;
+	    /* map -100..100 to gamma setting 0.05..4.05 */
+	    code = pcl_palette_set_gamma(pcs, ((driver->arguments + 100.0) / 200.0) + 0.05);
+	    if ( code < 0 )
+		return code;
+	}
+	break;
+    case 1: /* saturation */
+	{
+	    int code;
+	    if ( driver->arguments < -100 || driver->arguments > 100 )
+		return e_Range;
+	    /* map -100..100 to gamma setting 0.05..4.05 */
+	    code = pcl_palette_set_gamma(pcs, ((driver->arguments + 100.0) / 200.0) + 0.05);
+	    if ( code < 0 )
+		return code;
+	}
+	break;
+    default:
+	/* out of range or 3, 4, and 5 is not supported. */
+	return e_Range;
+    }
     return 0;
 }
 
