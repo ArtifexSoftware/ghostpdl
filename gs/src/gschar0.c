@@ -385,7 +385,7 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 			    dlprintf(")\n");
 			}
 			code = gs_cmap_decode_next(pdata->CMap, &cstr,
-					&submindex, &fidx, &chr, &glyph);
+					(uint*) &submindex, &fidx, &chr, &glyph);
 			mindex += submindex;
 		    } else {
 			cstr.data = str;
