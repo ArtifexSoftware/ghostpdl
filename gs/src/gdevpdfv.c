@@ -217,25 +217,34 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 			  pdf_resource_t **ppres)
 {
     const gx_color_tile *m_tile = pdc->mask.m_tile;
-    cos_value_t v;
-    stream *s = pdev->strm;
-    int code;
-    cos_stream_t *pcs_image;
     gx_drawing_color dc_pure;
-    static const psdf_set_color_commands_t no_scc = {0, 0, 0};
 
-    if (!tile_size_ok(pdev, NULL, m_tile))
-	return_error(gs_error_limitcheck);
-    if ((code = pdf_cs_Pattern_uncolored(pdev, &v)) < 0 ||
-	(code = pdf_put_pattern_mask(pdev, m_tile, &pcs_image)) < 0 ||
-	(code = pdf_pattern(pdev, pdc, NULL, m_tile, pcs_image, ppres)) < 0
-	)
-	return code;
-    cos_value_write(&v, pdev);
-    pprints1(s, " %s ", ppscc->setcolorspace);
     color_set_pure(&dc_pure, gx_dc_pure_color(pdc));
-    psdf_set_color((gx_device_vector *)pdev, &dc_pure, &no_scc);
-    return 0;
+    if (m_tile == 0) {
+	/*
+	 * If m_tile == 0, this uncolored Pattern is all 1's,
+	 * equivalent to a pure color.
+	 */
+	*ppres = 0;
+	return psdf_set_color((gx_device_vector *)pdev, &dc_pure, ppscc);
+    } else {
+	cos_value_t v;
+	stream *s = pdev->strm;
+	int code;
+	cos_stream_t *pcs_image;
+	static const psdf_set_color_commands_t no_scc = {0, 0, 0};
+
+	if (!tile_size_ok(pdev, NULL, m_tile))
+	    return_error(gs_error_limitcheck);
+	if ((code = pdf_cs_Pattern_uncolored(pdev, &v)) < 0 ||
+	    (code = pdf_put_pattern_mask(pdev, m_tile, &pcs_image)) < 0 ||
+	    (code = pdf_pattern(pdev, pdc, NULL, m_tile, pcs_image, ppres)) < 0
+	    )
+	    return code;
+	cos_value_write(&v, pdev);
+	pprints1(s, " %s ", ppscc->setcolorspace);
+	return psdf_set_color((gx_device_vector *)pdev, &dc_pure, &no_scc);
+    }
 }
 
 /* Write a colored Pattern color. */
@@ -749,7 +758,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 
 /* ---------------- Public procedure ---------------- */
 
-/* Write a color value.  rgs is "rg" for fill, "RG" for stroke. */
+/* Write a color value. */
 int
 pdf_put_drawing_color(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 		      const psdf_set_color_commands_t *ppscc)
@@ -772,8 +781,14 @@ pdf_put_drawing_color(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	    return_error(gs_error_rangecheck);
 	if (code < 0)
 	    return code;
-	cos_value_write(cos_resource_value(&v, pres->object), pdev);
-	pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
+	/*
+	 * Uncolored patterns equivalent to a solid color don't need an
+	 * associated resource, and set pres = 0.
+	 */
+	if (pres) {
+	    cos_value_write(cos_resource_value(&v, pres->object), pdev);
+	    pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
+	}
 	return 0;
     }
 }
