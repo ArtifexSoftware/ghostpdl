@@ -39,19 +39,19 @@ product:
 # It's simplest always to build the floating point emulator,
 # even though we don't always link it in.
 $(GENDIR)/ld$(CONFIG).tr: $(MAKEFILE)
+	-mkdir $(GLGENDIR) $(GLOBJDIR)
 	make \
 	  GCFLAGS='$(GCFLAGS)' FPU_TYPE='$(FPU_TYPE)'\
 	  CONFIG='$(CONFIG)' FEATURE_DEVS='$(FEATURE_DEVS)' \
 	  DEVICE_DEVS='$(DEVICE_DEVS) bbox.dev' \
 	  BAND_LIST_STORAGE=memory BAND_LIST_COMPRESSOR=zlib \
 	  GLSRCDIR='$(GLSRCDIR)' \
-	  GLGENDIR='$(GLGENDIR)' \
-	  GLOBJDIR='$(GLOBJDIR)' \
+	  GLGENDIR='$(GLGENDIR)' GLOBJDIR='$(GLOBJDIR)' \
 	  -f $(GLSRCDIR)/ugcclib.mak \
 	  $(GLOBJDIR)/ld$(CONFIG).tr \
 	  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o $(GLOBJDIR)/gsnogc.o \
 	  $(GLOBJDIR)/gconfig$(CONFIG).o $(GLOBJDIR)/gscdefs$(CONFIG).o
-	cp $(GLOBJDIR)/ld$(CONFIG).tr $(GENDIR)/ld$(CONFIG).tr
+	-cp $(GLOBJDIR)/ld$(CONFIG).tr $(GENDIR)/ld$(CONFIG).tr
 
 # Build the configuration file.
 $(GENDIR)/pconf$(CONFIG).h $(GENDIR)/ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GLOBJDIR)/genconf$(XE)
