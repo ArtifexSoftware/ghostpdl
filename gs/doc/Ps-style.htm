@@ -43,6 +43,7 @@ Ghostscript PostScript coding guidelines
 <li><a href="#Miscellany">Miscellany</a>
 <ul>
 <li><a href="#Non_standard_operators">Some useful non-standard operators</a>
+<li><a href="#Useful_procedures">Some useful procedures</a>
 <li><a href="#Other">Other</a>
 </ul>
 </ul></blockquote>
@@ -426,7 +427,7 @@ codified usage (****** WE NEED A REFERENCE FOR THIS ******).
 
 <dl>
 
-<dt><tt>&lt;obj1&gt; &lt;obj2&gt; ... &lt;objn&gt; &lt;n&gt; .execn ...</tt>
+<dt><b><tt>&lt;obj1&gt; &lt;obj2&gt; ... &lt;objn&gt; &lt;n&gt; .execn ...</tt></b>
 <dd>This executes <b><tt>obj1</tt></b> through <b><tt>objn</tt></b> in that
 order, essentially equivalent to
 
@@ -437,26 +438,39 @@ order, essentially equivalent to
 <p>
 except that it doesn't actually create the array.
 
-<dt><tt>&lt;dict&gt; &lt;key&gt; .knownget &lt;value&gt; true
-<dt><tt>&lt;dict&gt; &lt;key&gt; .knownget false
+<dt><b><tt>&lt;dict&gt; &lt;key&gt; <b>.knownget</b> &lt;value&gt; true</tt></b>
+<dt><b><tt>&lt;dict&gt; &lt;key&gt; <b>.knownget</b> false</tt></b>
 
 <dd>This combines <b><tt>known</tt></b> and <b><tt>get</tt></b> in the
 obvious way.
 
-<dt><tt>&lt;name&gt; &lt;proc&gt; odef -</tt>
+<dt><b><tt>&lt;name&gt; &lt;proc&gt; odef -</tt></b>
 
 <dd>This defines <b><tt>name</tt></b> as a "pseudo-operator".  The value of
 <b><tt>name</tt></b> will be executable, will have type
 <b><tt>operatortype</tt></b>, and will be executed if it appears directly in
 the body of a procedure (like an operator, unlike a procedure), but what
-will actually be executed will be <b><tt>proc</tt></b>.  In addition, if an
-error occurs during execution of <b><tt>proc</tt></b>, and the operand and
+will actually be executed will be <b><tt>proc</tt></b>.  In addition, if the
+execution of <b><tt>proc</tt></b> is ended prematurely (by
+<b><tt>stop</tt></b>, including the <b><tt>stop</tt></b> that is normally
+executed when an error occurs, or <b><tt>exit</tt></b>) and the operand and
 dictionary stacks are at least as deep as they were when the "operator" was
 invoked, the stacks will be cut back to their original depths before the
 error is processed.  Thus, if pseudo-operator procedures are careful not to
 remove any of their operands until they reach a point in execution beyond
 which they cannot possibly cause an error, they will behave just like
 operators in that the stacks will appear to be unchanged if an error occurs.
+
+</dl>
+
+<h2><a name="Useful_procedures"></a>Some useful procedures</h2>
+
+<dl>
+
+<dt><b><tt>&lt;object&gt; &lt;errorname&gt; signalerror -</tt></b>
+
+<dd>Signal an error with the given name and the given "current object".
+This does exactly what the interpreter does when an error occurs.
 
 </dl>
 
