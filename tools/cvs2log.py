@@ -228,8 +228,6 @@ def main():
 	date_option = "'" + "-d>" + time.asctime(LastLogDate2CtimeTuple(logfile)) + "'"
     log_date_command= 'cvs -d ' + GetCVSRepository() + ' -Q log -N ' + date_option + filenames
     # build the logs.
-    print log_date_command
-    
     log = BuildLog(log_date_command)
     # chronologically reversed.  We reverse everything in the list as
     # well.
