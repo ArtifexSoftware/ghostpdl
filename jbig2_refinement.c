@@ -61,6 +61,70 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
                               Jbig2Image *image,
                               Jbig2ArithCx *GB_stats)
 {
+  const int GBW = image->width;
+  const int GBH = image->height;
+  const int stride = image->stride;
+  const int refstride = params->reference->stride;
+  byte *grreg_line = (byte *)image->data;
+  byte *grref_line = (byte *)params->reference->data;
+  int x,y;
+
+  for (y = 0; y < GBH; y++) {
+    const int padded_width = (GBW + 7) & -8;
+    uint32_t CONTEXT;
+    uint32_t refline_m1; /* previous line of the reference bitmap */
+    uint32_t refline_0;  /* current line of the reference bitmap */
+    uint32_t refline_1;  /* next line of the reference bitmap */
+    uint32_t line_m1;    /* previous line of the decoded bitmap */
+
+    line_m1 = (y >= 1) ? grreg_line[-stride] : 0;
+    refline_m1 = (y >= 1) ? grref_line[-stride] : 0;
+    refline_0  = grref_line[0];
+    refline_1  = (y < GBW - 1) ? grref_line[+stride] : 0;
+
+    for (x = 0; x < padded_width; x += 8) {
+      byte result = 0;
+      int x_minor;
+      const int minor_width = GBW - x > 8 ? 8 : GBW - x;
+
+      if (y >= 1) {
+	line_m1 = (line_m1 << 8) | 
+	  (x + 8 < GBW ? grreg_line[-stride + (x >> 3) + 1] : 0);
+	refline_m1 = (refline_m1 << 8) | 
+	  (x + 8 < GBW ? grref_line[-refstride + (x >> 3) + 1] : 0);
+      }
+
+      refline_0 = (refline_0 << 8) |
+	  (x + 8 < GBW ? grref_line[(x >> 3) + 1] : 0);
+
+      if (y < GBH - 1)
+	refline_1 = (refline_1 << 8) |
+	  (x + 8 < GBW ? grref_line[+refstride + (x >> 3) + 1] : 0);
+      else
+	refline_1 = 0;
+
+      /* this is the speed critical inner-loop */
+      for (x_minor = 0; x_minor < minor_width; x_minor++) {
+	bool bit;
+
+	bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
+	result |= bit << (7 - x_minor);
+	CONTEXT = ((CONTEXT & 0x0d6) << 1) | bit |
+	  ((line_m1 >> (10 - x_minor)) &0x00e) |
+	  ((refline_1 >> (10 - x_minor)) &0x030) |
+	  ((refline_0 >> (10 - x_minor)) &0x1c0) |
+	  ((refline_m1 >> (10 - x_minor)) &0x200);
+      }
+
+      grreg_line[x>>3] = result;
+
+    }
+
+    grreg_line += stride;
+    grref_line += refstride;
+
+  }
+
   return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
     "refinement region template 1 NYI");
 }
@@ -93,7 +157,7 @@ jbig2_decode_refinement_region(Jbig2Ctx *ctx,
 {
   {
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-      "decoding generic refinement region with offset %dx%x,\n"
+      "decoding generic refinement region with offset %d,%x,\n"
       "  GRTEMPLATE=%d, TPGDON=%d, RA1=(%d,%d) RA2=(%d,%d)\n",
       params->DX, params->DY, params->GRTEMPLATE, params->TPGDON,
       params->grat[0], params->grat[1], params->grat[2], params->grat[3]);
