@@ -515,8 +515,16 @@ cff_get_Top_info_common(cff_writer_t *pcw, gs_font_base *pbfont,
 }
 private void
 cff_write_Top_common(cff_writer_t *pcw, gs_font_base *pbfont,
-		     const gs_font_info_t *pinfo)
+		     bool write_FontMatrix, const gs_font_info_t *pinfo)
 {
+    /*
+     * The Adobe documentation doesn't make it at all clear that if the
+     * FontMatrix is missing (defaulted) in a CFF CIDFont, all of the
+     * FontMatrices of the subfonts in FDArray are multiplied by 1000.
+     * (This is documented for ordinary CIDFonts, but not for CFF CIDFonts.)
+     * Because of this, the FontMatrix for a CFF CIDFont must be written
+     * even if if is the default.  write_FontMatrix controls this.
+     */
     /* (version) */
     if (pinfo->members & FONT_INFO_NOTICE)
 	cff_put_string_value(pcw, pinfo->Notice.data, pinfo->Notice.size,
@@ -571,7 +579,8 @@ cff_write_Top_common(cff_writer_t *pcw, gs_font_base *pbfont,
 	    constant_matrix_body(0.001, 0, 0, 0.001, 0, 0)
 	};
 
-	if (pbfont->FontMatrix.xx != fm_default.xx ||
+	if (write_FontMatrix ||
+	    pbfont->FontMatrix.xx != fm_default.xx ||
 	    pbfont->FontMatrix.xy != 0 || pbfont->FontMatrix.yx != 0 ||
 	    pbfont->FontMatrix.yy != fm_default.yy ||
 	    pbfont->FontMatrix.tx != 0 || pbfont->FontMatrix.ty != 0
@@ -599,7 +608,7 @@ cff_write_Top_font(cff_writer_t *pcw, uint Encoding_offset,
     gs_font_info_t info;
 
     cff_get_Top_info_common(pcw, pbfont, true, &info);
-    cff_write_Top_common(pcw, pbfont, &info);
+    cff_write_Top_common(pcw, pbfont, false, &info);
     cff_put_int(pcw, Private_size);
     cff_put_int_value(pcw, Private_offset, TOP_Private);
     cff_put_int_value(pcw, CharStrings_offset, TOP_CharStrings);
@@ -631,7 +640,7 @@ cff_write_Top_cidfont(cff_writer_t *pcw, uint charset_offset,
     gs_font_cid0 *pfont = (gs_font_cid0 *)pbfont;
 
     cff_write_ROS(pcw, &pfont->cidata.common.CIDSystemInfo);
-    cff_write_Top_common(pcw, pbfont, pinfo); /* full_info = true */
+    cff_write_Top_common(pcw, pbfont, true, pinfo); /* full_info = true */
     cff_put_int_if_ne(pcw, charset_offset, charset_DEFAULT, TOP_charset);
     cff_put_int_value(pcw, CharStrings_offset, TOP_CharStrings);
     /*
@@ -667,7 +676,7 @@ cff_write_Top_fdarray(cff_writer_t *pcw, gs_font_base *pbfont,
     gs_font_info_t info;
 
     cff_get_Top_info_common(pcw, pbfont, false, &info);
-    cff_write_Top_common(pcw, pbfont, &info);
+    cff_write_Top_common(pcw, pbfont, false, &info);
     cff_put_int(pcw, Private_size);
     cff_put_int_value(pcw, Private_offset, TOP_Private);
     if (pfname->size == 0)
