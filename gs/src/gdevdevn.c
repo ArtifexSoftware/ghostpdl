@@ -145,8 +145,8 @@ const spotcmyk_device gs_spotcmyk_device =
     /* DeviceN device specific parameters */
     { 1,			/* Bits per color - must match ncomp, depth, etc. above */
     				/* Names of color model colorants */
-      (const fixed_colorant_names_list *) &DeviceCMYKComponents,
-      4,				/* Number colorants for CMYK */
+      (fixed_colorant_names_list *) &DeviceCMYKComponents,
+      4,			/* Number colorants for CMYK */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */

@@ -41,7 +41,7 @@ typedef fixed_colorant_name fixed_colorant_names_list[];
  */
 typedef struct gs_separation_info_s {
     bool has_cmyk_color;
-    gs_param_string * name;
+    const gs_param_string * name;
 } gs_separation_info;
 
 /*

@@ -667,7 +667,6 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
 {
     psd_device * const pdevn = (psd_device *) pdev;
     gx_device_color_info save_info;
-    gs_param_name param_name;
     int num_spot = pdevn->devn_params.separations.num_separations;
     int ecode = 0;
     int code;

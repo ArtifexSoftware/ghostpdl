@@ -1157,7 +1157,7 @@ $(DD)psdcmyk.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev
 
 $(GLOBJ)gdevpsd.$(OBJ) : $(GLSRC)gdevpsd.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)\
- $(gxdcconv_h)
+ $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h)
 	$(GLICCCC) $(GLO_)gdevpsd.$(OBJ) $(C_) $(GLSRC)gdevpsd.c
 
 ### ----------------------- The permutation device --------------------- ###
