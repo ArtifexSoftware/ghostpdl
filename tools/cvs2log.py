@@ -114,13 +114,13 @@ def ChangeLogFileRevDesc(entry_dict, indent, line_length, patch):
 	pos = len(leading_space + '* ')
 	# get the revisions and rcs files associated with the
 	# description.
-	for revision, rcs_file in entry_dict[description]:
+	for revision, rcs_file, lines_changed in entry_dict[description]:
 	    # NB do a better wrapping job.
 	    if pos > line_length:
 		change_log_entry = change_log_entry + '\n' + leading_space
 		pos = len(leading_space)
-	    change_log_entry = change_log_entry + rcs_file + ' [' + revision + ']' + ', '
-	    pos = pos + len(rcs_file + ' [' + revision + ']' + ', ')
+	    change_log_entry = change_log_entry + rcs_file + ' [' + revision + ']' + ' (' + lines_changed[:-1] + ')' + ', '
+            pos = pos + len(rcs_file + ' [' + revision + ']' + ' (' + lines_changed[:-1] + ')' + ', ')
 	# replace last ', ' with a semicolon - strings are immutable so
 	# an inplace assignment won't do.
 	change_log_entry = change_log_entry[:-2] + ':\n'
@@ -128,7 +128,7 @@ def ChangeLogFileRevDesc(entry_dict, indent, line_length, patch):
 	change_log_entry = change_log_entry + description + '\n'
         # add on the patches if necessary
         if ( patch == 1 ):
-            for revision, rcs_file in entry_dict[description]:
+            for revision, rcs_file, lines_changed in entry_dict[description]:
                 for patch_line in BuildPatch(revision, rcs_file):
                     change_log_entry = change_log_entry + patch_line
     return change_log_entry
@@ -145,8 +145,10 @@ def BuildLog(log_date_command):
 	if line[:5] == '=====' or line[:5] == '-----':
 	    if description != []:
 		# append these items in the sort order we'll want later on.
-		log.append((RcsDate2CtimeTuple(date), author, description,
-			   rcs_file[:-1], revision[:-1]))
+                # we skip branches entirely.
+                if ( revision.count(".") == 1 ):
+                    log.append((RcsDate2CtimeTuple(date), author, description,
+                                rcs_file[:-1], revision[:-1], state, lines_changed))
 	    reading_description = 0
 	    description = []
 	elif not reading_description and line[:len("Working file: ")] == "Working file: ":
@@ -154,9 +156,20 @@ def BuildLog(log_date_command):
 	elif not reading_description and line[:len("revision ")] == "revision ":
 	    revision = line[len("revision "):]
 	elif not reading_description and line[:len("date: ")] == "date: ":
+            # sample log line - date: 2000/03/15 06:45:34; author: \
+            # henrys; state: Exp; lines: +7 -1
 	    (dd, aa, ss, ll) = string.splitfields(line, ';')
 	    (foo, date) = string.splitfields(dd, ': ')
 	    (foo, author) = string.splitfields(aa, ': ')
+            (foo, state) = string.splitfields(ss, ': ')
+            try:
+                (foo, lines_changed) = string.splitfields(ll, ': ')
+            except:
+                # lines changed does not exist in the initial revision
+                lines_changed = ""
+                initial_rev_line_count_command = 'cvs -d ' + GetCVSRepository() + ' update  -r ' + revision[:-1] + ' -p ' + rcs_file[:-1] + ' 2>/dev/null | wc -l';
+                lines_changed = os.popen(initial_rev_line_count_command, 'r').readline()[:-1]
+                lines_changed = "+" + lines_changed.lstrip() + " -0" + "\n"
 	    reading_description = 1
 	elif reading_description:
 	    description.append(line)
@@ -238,7 +251,7 @@ def main():
     last_date = None
     last_author = None
     entry_dict = {}
-    for date, author, description, rcs_file, revision in log:
+    for date, author, description, rcs_file, revision, state, lines_changed in log:
 	if author != last_author or date != last_date:
 	    # clear out any old revisions, descriptions, and filenames
 	    # that belong with the last log.
@@ -257,9 +270,9 @@ def main():
 	# put the revisions and rcs files in decription-keyed
 	# dictionary.
 	if entry_dict.has_key(description_data):
-	    entry_dict[description_data].append((revision, rcs_file))
+	    entry_dict[description_data].append((revision, rcs_file, lines_changed))
 	else:
-	    entry_dict[description_data] = [(revision, rcs_file)]
+	    entry_dict[description_data] = [(revision, rcs_file, lines_changed)]
 
 	last_author = author
 	last_date = date
