@@ -37,6 +37,15 @@
 #include "vdtrace.h"
 #include <assert.h>
 
+#if DONT_FILTER_SMALL_SEGMENTS
+#   define gx0 lx0
+#   define gy0 ly0
+#   define gx1 lx1
+#   define gy1 ly1
+#   define gx_flattened_iterator__next_filtered gx_flattened_iterator__next
+#   define gx_flattened_iterator__prev_filtered gx_flattened_iterator__prev
+#endif
+
 #ifdef DEBUG
 /* Define the statistics structure instance. */
 stats_fill_t stats_fill;
@@ -458,10 +467,12 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	pfpath = &ffpath;
     }
     fo.fill_by_trapezoids = fill_by_trapezoids;
+#if !DONT_FILTER_SMALL_SEGMENTS
     if (fill_by_trapezoids)
 	fo.coords_near_threshold = float2fixed(-0.5);
     else
 	fo.coords_near_threshold = ~0;
+#endif
     if ((code = add_y_list(pfpath, &lst)) < 0)
 	goto nope;
     {
@@ -799,8 +810,12 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 	curve_segment *s = (curve_segment *)q->pseg;
 	int k = gx_curve_log2_samples(q->prev->pt.x, q->prev->pt.y, s, fo->fixed_flat);
 
+#	if !DONT_FILTER_SMALL_SEGMENTS
 	assert(gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, 
 					s, k, fo->coords_near_threshold));
+#	else
+	assert(gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, s, k));
+#	endif
     } else {
 	q->dir = compute_dir(fo, q->prev->pt.y, q->pseg->pt.y);
 	gx_flattened_iterator__init_line(q->fi, 
@@ -1043,15 +1058,25 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
 	if (alp->direction == DIR_UP) {
 	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, (const curve_segment *)s1, ll->fo->fixed_flat);
 
+#	    if !DONT_FILTER_SMALL_SEGMENTS
 	    assert(gx_flattened_iterator__init(&alp->fi, 
 		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k, ll->fo->coords_near_threshold));
+#	    else
+	    assert(gx_flattened_iterator__init(&alp->fi, 
+		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k));
+#	    endif
 	    step_al(alp, true);
 	} else {
 	    int k = gx_curve_log2_samples(s1->pt.x, s1->pt.y, (const curve_segment *)s0, ll->fo->fixed_flat);
 	    bool more;
 
+#	    if !DONT_FILTER_SMALL_SEGMENTS
 	    assert(gx_flattened_iterator__init(&alp->fi, 
 		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k, ll->fo->coords_near_threshold));
+#	    else
+	    assert(gx_flattened_iterator__init(&alp->fi, 
+		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k));
+#	    endif
 	    alp->more_flattened = false;
 	    do {
 		more = gx_flattened_iterator__next_filtered(&alp->fi);
@@ -1112,7 +1137,7 @@ add_y_line_aux(const segment * prev_lp, const segment * lp,
     insert_y_line(ll, alp);
     return 0;
 }
-private int
+private inline int
 add_y_line(const segment * prev_lp, const segment * lp, int dir, line_list *ll)
 {
     return add_y_line_aux(prev_lp, lp, &lp->pt, &prev_lp->pt, dir, ll);

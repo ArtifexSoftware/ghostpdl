@@ -188,7 +188,11 @@ private void gx_flattened_iterator__test_filtered(gx_flattened_iterator *this);
  */
 bool
 gx_flattened_iterator__init(gx_flattened_iterator *this, 
-	    fixed x0, fixed y0, const curve_segment *pc, int k, fixed coords_near_threshold)
+	    fixed x0, fixed y0, const curve_segment *pc, int k
+#if !DONT_FILTER_SMALL_SEGMENTS
+	    , fixed coords_near_threshold
+#endif
+	    )
 {
     /* Note : Immediately after the ininialization it keeps an invalid (zero length) segment. */
     fixed x1, y1, x2, y2;
@@ -209,8 +213,10 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
 			     &this->ay, &this->by, &this->cy, k))
 	return false;
     this->curve = true;
+#if !DONT_FILTER_SMALL_SEGMENTS
     this->coords_near_threshold = coords_near_threshold;
     this->prev_filtered1_i = 0; /* stub */
+#endif
     vd_curve(this->x0, this->y0, x1, y1, x2, y2, this->x3, this->y3, 0, RGB(255, 255, 255));
     this->k = k;
 #   ifdef DEBUG
@@ -290,7 +296,9 @@ gx_flattened_iterator__init_line(gx_flattened_iterator *this,
     this->k = 0;
     this->i = 1;
     this->curve = false;
+#if !DONT_FILTER_SMALL_SEGMENTS
     this->coords_near_threshold = 0;
+#endif
     return true;
 }
 
@@ -312,6 +320,7 @@ gx_flattened_iterator__print_state(gx_flattened_iterator *this)
 }
 #endif
 
+#if !DONT_FILTER_SMALL_SEGMENTS
 #if 1
 private inline bool 
 coord_near(fixed x0, fixed y0, fixed x1, fixed y1, fixed dist_inv) 
@@ -321,12 +330,16 @@ coord_near(fixed x0, fixed y0, fixed x1, fixed y1, fixed dist_inv)
 #else
 #define coord_near(x0, y0, x1, y1, dist) (!(((x0 ^ x1) | (y0 ^ y1)) & dist))
 #endif
+#endif
 
 
 /* Move to the next segment and store it to this->lx0, this->ly0, this->lx1, this->ly1 .
  * Return true iff there exist more segments.
  */
-private inline bool
+#if !DONT_FILTER_SMALL_SEGMENTS
+private inline 
+#endif
+bool
 gx_flattened_iterator__next(gx_flattened_iterator *this)
 {
     /*
@@ -382,13 +395,18 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 		  (((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5) ?
 		   "add" : "skip"),
 		  fixed2float(x), fixed2float(y), x, y);
-	if (!coord_near(x, y, this->x0, this->y0, this->coords_near_threshold) ||
-	    !coord_near(x, y, this->x3, this->y3, this->coords_near_threshold)) {
+#	if !DONT_FILTER_SMALL_SEGMENTS
+	    if (!coord_near(x, y, this->x0, this->y0, this->coords_near_threshold) ||
+		!coord_near(x, y, this->x3, this->y3, this->coords_near_threshold)) 
+#	endif
+	{
 	    this->lx1 = x, this->ly1 = y;
 	    vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
 	    return true;
 	}
+#	if !DONT_FILTER_SMALL_SEGMENTS
 	--this->i;
+#	endif
     } else {
 	--this->i;
 	if (this->i == 0)
@@ -424,6 +442,7 @@ last:
     return false;
 }
 
+#if !DONT_FILTER_SMALL_SEGMENTS
 /* Move to the next segment uniting small segments,
  * and store it to this->gx0, this->gy0, this->gx1, this->gy1 .
  * Return true iff there exist more segments.
@@ -450,6 +469,7 @@ gx_flattened_iterator__next_filtered(gx_flattened_iterator *this)
 	}
     }
 }
+#endif
 
 private inline void
 gx_flattened_iterator__unaccum(gx_flattened_iterator *this)
@@ -470,7 +490,10 @@ gx_flattened_iterator__unaccum(gx_flattened_iterator *this)
  * This only works for states reached with gx_flattened_iterator__next.
  * Return true iff there exist more segments.
  */
-private inline bool
+#if !DONT_FILTER_SMALL_SEGMENTS
+private inline 
+#endif
+bool
 gx_flattened_iterator__prev(gx_flattened_iterator *this)
 {
     bool last; /* i.e. the first one in the forth order. */
@@ -521,14 +544,19 @@ gx_flattened_iterator__switch_to_backscan(gx_flattened_iterator *this, bool not_
     if (not_first) {
 	if (this->i > 0 && this->k != 1 /* This case doesn't use the accumulator. */)
 	    gx_flattened_iterator__unaccum(this);
-	while (this->i < this->prev_filtered1_i) {
-	    gx_flattened_iterator__prev(this);
-	}
+#	if !DONT_FILTER_SMALL_SEGMENTS
+	    while (this->i < this->prev_filtered1_i) {
+		gx_flattened_iterator__prev(this);
+	    }
+#	endif
     }
-    this->last_filtered1_i = this->i;
-    this->filtered1_i = this->i;
+#   if !DONT_FILTER_SMALL_SEGMENTS
+	this->last_filtered1_i = this->i;
+	this->filtered1_i = this->i;
+#   endif
 }
 
+#if !DONT_FILTER_SMALL_SEGMENTS
 /* Move to the previous segment uniting small segments.
  * Return true iff there exist more segments.
  */
@@ -685,6 +713,7 @@ gx_flattened_iterator__test_filtered(gx_flattened_iterator *this)
 	assert(ppp == ppt);
 }
 #endif /* FLATTENED_ITERATOR_SELFTEST */
+#endif /* !DONT_FILTER_SMALL_SEGMENTS */
 
 #define max_points 50		/* arbitrary */
 
@@ -720,7 +749,11 @@ gx_subdivide_curve_rec(gx_flattened_iterator *this,
 
 top :
     if (!gx_flattened_iterator__init(this, 
-		ppath->position.x, ppath->position.y, pc, k, float2fixed(-0.5))) {
+		ppath->position.x, ppath->position.y, pc, k
+#		if !DONT_FILTER_SMALL_SEGMENTS
+		, float2fixed(-0.5)
+#		endif
+		)) {
 	/* Curve is too long.  Break into two pieces and recur. */
 	curve_segment cseg;
 
@@ -740,9 +773,15 @@ top :
 	bool more;
 
 	for(;;) {
-	    more = gx_flattened_iterator__next_filtered(this);
-	    ppt->x = this->gx1;
-	    ppt->y = this->gy1;
+#	    if !DONT_FILTER_SMALL_SEGMENTS
+		more = gx_flattened_iterator__next_filtered(this);
+		ppt->x = this->gx1;
+		ppt->y = this->gy1;
+#	    else
+		more = gx_flattened_iterator__next(this);
+		ppt->x = this->lx1;
+		ppt->y = this->ly1;
+#	    endif
 	    ppt++;
 	    if (ppt == &points[max_points] || !more) {
 		gs_fixed_point *pe = (more ?  ppt - 2 : ppt);

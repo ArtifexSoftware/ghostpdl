@@ -416,6 +416,7 @@ struct gx_flattened_iterator_s {
     /* public : */
     bool curve;
     fixed lx0, ly0, lx1, ly1;
+#if !DONT_FILTER_SMALL_SEGMENTS
     /* private data for filtered1 : */
     int prev_filtered1_i;
     int last_filtered1_i;
@@ -423,17 +424,27 @@ struct gx_flattened_iterator_s {
     fixed coords_near_threshold;
     fixed gx0, gy0, gx1, gy1;
     int filtered1_i;
+#endif
 };
 
+#if !DONT_FILTER_SMALL_SEGMENTS
 bool gx_flattened_iterator__init(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, const curve_segment *pc, int k, 
 	    fixed coords_near_threshold);
+#else
+bool gx_flattened_iterator__init(gx_flattened_iterator *this, 
+	    fixed x0, fixed y0, const curve_segment *pc, int k);
+#endif
 bool gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, fixed x1, fixed y1);
 void gx_flattened_iterator__switch_to_backscan(gx_flattened_iterator *this, bool not_first);
+#if !DONT_FILTER_SMALL_SEGMENTS
 bool gx_flattened_iterator__next_filtered(gx_flattened_iterator *this);
 bool gx_flattened_iterator__prev_filtered(gx_flattened_iterator *this);
-bool gx_flattened_check_near(fixed x0, fixed y0, fixed x1, fixed y1);
+#else
+bool gx_flattened_iterator__next(gx_flattened_iterator *this);
+bool gx_flattened_iterator__prev(gx_flattened_iterator *this);
+#endif
 
 bool curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3, 
 		    fixed y0, fixed y1, fixed y2, fixed y3, 
