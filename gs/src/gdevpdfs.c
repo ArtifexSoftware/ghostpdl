@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -279,8 +279,10 @@ process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	str.size = 1;
 	code = pdf_process_string(penum, &str, NULL, encoded, &text_state,
 				  &index);
-	if (code >= 0)
+	if (code >= 0) {
+	    pte->returned.current_char = buf[0];
 	    code = TEXT_PROCESS_INTERVENE;
+	}
     } else {
 	str.size = size;
 	code = pdf_process_string(penum, &str, NULL, encoded, &text_state,
