@@ -693,9 +693,18 @@ GSCONSOLE_XE=$(BINDIR)\$(GSCONSOLE).exe
 GSDLL_DLL=$(BINDIR)\$(GSDLL).dll
 GSDLL_OBJS=$(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_msdll.$(OBJ)
 
+!if $(DEBUGSYM) != 0
 $(PSGEN)lib32.rsp: $(TOP_MAKEFILES)
 	echo /NODEFAULTLIB:LIBC.lib > $(PSGEN)lib32.rsp
-	echo libcmt.lib >> $(PSGEN)lib32.rsp
+	echo /NODEFAULTLIB:LIBCMT.lib >> $(PSGEN)lib32.rsp
+	echo LIBCMTD.lib >> $(PSGEN)lib32.rsp
+!else
+$(PSGEN)lib32.rsp: $(TOP_MAKEFILES)
+	echo /NODEFAULTLIB:LIBC.lib > $(PSGEN)lib32.rsp
+	echo /NODEFAULTLIB:LIBCMTD.lib >> $(PSGEN)lib32.rsp
+	echo LIBCMT.lib >> $(PSGEN)lib32.rsp
+!endif
+
 
 !if $(MAKEDLL)
 # The graphical small EXE loader
