@@ -3,6 +3,8 @@
 
 # makefile for PCL5*, HP RTL, and HP-GL/2 interpreters
 # Users of this makefile must define the following:
+#	GLSRCDIR - the GS library source directory
+#	GLGENDIR - the GS library generated file directory
 #	GSSRCDIR - the GS library source directory
 #	PLSRCDIR - the PCL* support library source directory
 #	PLOBJDIR - the object directory for the PCL support library
@@ -44,7 +46,7 @@ PCLGEN      = $(PCLGENDIR)$(D)
 PCLOBJ      = $(PCLOBJDIR)$(D)
 PCLO_       = $(O_)$(PCLOBJ)
 
-PCLCCC  = $(CCC) -I$(PCLSRCDIR) -I$(PCLGENDIR) -I$(PLSRCDIR) -I$(GSSRCDIR) $(C_)
+PCLCCC  = $(CCC) -I$(PCLSRCDIR) -I$(PCLGENDIR) -I$(PLSRCDIR) -I$(GLSRCDIR) -I$(GLGENDIR) $(C_)
 
 # Define the name of this makefile.
 PCL_MAK     = $(PCLSRC)pcl.mak
@@ -54,8 +56,11 @@ pcl.clean: pcl.config-clean pcl.clean-not-config-clean
 pcl.clean-not-config-clean:
 	$(RM_) $(PCLOBJ)*.$(OBJ)
 
+#devices are still created in the current directory.  Until that is
+#fixed we will have to remove them from both directores.
 pcl.config-clean:
 	$(RM_) $(PCLOBJ)*.dev
+	$(RM_) *.dev
 
 ################ Remaining task list:
 # PCL5C drawing commands
@@ -225,7 +230,7 @@ pcfrgrnd_h  = $(PCLSRC)pcfrgrnd.h \
               $(pccrd_h)          \
               $(pcpalet_h)
 
-pcpage_h    = $(PCLSRC)/pcpage.h  \
+pcpage_h    = $(PCLSRC)pcpage.h  \
               $(pcstate_h)        \
               $(pcommand_h)
 

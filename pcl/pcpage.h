@@ -18,38 +18,34 @@
  * all copies.
  */
 
-/* rtgmode.h - interface to PCL graphics (raster) mode */
+/* pcpage.c - PCL5 page and transformation control interface */
 
-#ifndef rtgmode_INCLUDED
-#define rtgmode_INCLUDED
+#ifndef pcpage_INCLUDED
+#define pcpage_INCLUDED
 
-#include "rtrstst.h"
 #include "pcstate.h"
 #include "pcommand.h"
 
+/* set the page output procedure */
+extern  void    pcl_set_end_page( int (*procp)(pcl_state_t *, int, int) );
+
 /*
- * Types of entry into graphics mode. Note that implicit entry is distinct
- * from any of the explicit modes.
+ * End a page, either unconditionally or only if there are marks on it.
+ * Return 1 if the page was actually printed and erased.
  */
 typedef enum {
-    NO_SCALE_LEFT_MARG = 0,
-    NO_SCALE_CUR_PT = 1,
-    SCALE_LEFT_MARG = 2,
-    SCALE_CUR_PTR = 3,
-    IMPLICIT = 100
-} pcl_gmode_entry_t;
+    pcl_print_always,
+    pcl_print_if_marked
+} pcl_print_condition_t;
 
-
-/* enter raster graphics mode */
-extern  int     pcl_enter_graphics_mode(
-    pcl_state_t *       pcs,
-    pcl_gmode_entry_t   mode
+extern  int     pcl_end_page(
+    pcl_state_t *           pcs,
+    pcl_print_condition_t   condition
 );
 
-/* exit raster graphics mode */
-extern  int     pcl_end_graphics_mode( pcl_state_t * pcs );
+#define pcl_end_page_always(pcs)    pcl_end_page((pcs), pcl_print_always)
+#define pcl_end_page_if_marked(pcs) pcl_end_page((pcs), pcl_print_if_marked)
 
-extern  const pcl_init_t    rtgmode_init;
-extern  const pcl_init_t    rtlrastr_init;
+extern  const pcl_init_t    pcpage_init;
 
-#endif			/* rtgmode_INCLUDED */
+#endif			/* pcpage_INCLUDED */
