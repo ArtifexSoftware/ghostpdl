@@ -151,3 +151,18 @@ t415 - Rectangle
 ----------------
 
 Image 02 shows the same problem as noted under t322 and t325.
+
+t202.bin (Protocol 2.0 fts)
+---------------------------
+
+Panel 01 and others show incorrect spacing when rendering downloaded
+TrueType fonts.  This only happens with the AGFA scaler and resolutions
+lower than printer resolutions.
+
+t422.bin (Protocol 2.0 fts)
+---------------------------
+
+A raster pattern of height 1 results in a 0 area pattern which
+produces an error.  The error only happens if the device resolution is
+less than 300 dpi.
+
