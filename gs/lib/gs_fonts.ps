@@ -461,6 +461,10 @@ buildfontdict 3 /.buildfont3 cvx put
 % We go to some trouble to parse the font name and extract
 % properties from it.  Later entries take priority over earlier.
 /.substitutefaces [
+	% Generic terms have lowest priority.
+	% If 'Sans' and 'Serif' both appear, 'Sans' has priority.
+  [(Serif) /Times 0]
+  [(Sans) /Helvetica 0]
 	% Guess at suitable substitutions for random unknown fonts.
   [(Chancery) /ZapfChancery-MediumItalic 0]
   [(Grot) /Times 0]
@@ -479,9 +483,7 @@ buildfontdict 3 /.buildfont3 cvx put
   [(Helv) /Helvetica 0]
   [(NewYork) /Bookman 0]
   [(Pala) /Palatino 0]
-  [(Sans) /Helvetica 0]
   [(Schlbk) /NewCenturySchlbk 0]
-  [(Serif) /Times 0]
   [(Swiss) /Helvetica 0]
   [(Symbol) /Symbol 0]
   [(Times) /Times 0]
