@@ -377,15 +377,15 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
 	}
 	rect_merge(desc.FontBBox, info.bbox);
 	if (!info.num_pieces)
-	    desc.Ascent = max(desc.Ascent, info.bbox.q.y);
+	    desc.Ascent = max(desc.Ascent, (int)info.bbox.q.y);
 	if (notdef == GS_NO_GLYPH && gs_font_glyph_is_notdef(bfont, glyph)) {
 	    notdef = glyph;
-	    desc.MissingWidth = info.width[wmode].x;
+	    desc.MissingWidth = (int)info.width[wmode].x;
 	}
 	if (info.width[wmode].y != 0)
 	    fixed_width = min_int;
 	else if (fixed_width == 0)
-	    fixed_width = info.width[wmode].x;
+	    fixed_width = (int)info.width[wmode].x;
 	else if (info.width[wmode].x != fixed_width)
 	    fixed_width = min_int;
 	if (desc.Flags & FONT_IS_SYMBOLIC)

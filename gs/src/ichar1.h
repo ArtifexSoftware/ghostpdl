@@ -38,7 +38,7 @@ font_proc_glyph_outline(zchar1_glyph_outline);
  * Get a glyph outline given a CharString.  The glyph_outline procedure
  * for CIDFontType 0 fonts uses this.
  */
-int zcharstring_outline(gs_font_type1 *pfont, const ref *pgref,
+int zcharstring_outline(gs_font_type1 *pfont, int WMode, const ref *pgref,
 			const gs_glyph_data_t *pgd,
 			const gs_matrix *pmat, gx_path *ppath);
 

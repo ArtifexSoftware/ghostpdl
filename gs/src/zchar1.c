@@ -964,7 +964,7 @@ const gs_type1_data_procs_t z1_data_procs = {
  * procedure for the font.
  */
 int
-zchar1_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+zchar1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
 		     gx_path *ppath)
 {
     gs_font_type1 *const pfont1 = (gs_font_type1 *)font;
@@ -976,14 +976,14 @@ zchar1_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     code = zchar_charstring_data(font, &gref, &gdata);
     if (code < 0)
 	return code;
-    return zcharstring_outline(pfont1, &gref, &gdata, pmat, ppath);
+    return zcharstring_outline(pfont1, WMode, &gref, &gdata, pmat, ppath);
 }
 /*
  * Get a glyph outline given a CharString.  The glyph_outline procedure
  * for CIDFontType 0 fonts uses this.
  */
 int
-zcharstring_outline(gs_font_type1 *pfont1, const ref *pgref,
+zcharstring_outline(gs_font_type1 *pfont1, int WMode, const ref *pgref,
 		    const gs_glyph_data_t *pgd_orig,
 		    const gs_matrix *pmat, gx_path *ppath)
 {
@@ -1006,7 +1006,7 @@ zcharstring_outline(gs_font_type1 *pfont1, const ref *pgref,
     pfdict = &pfont_data(pfont1)->dict;
     if (dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0)
 	return_error(e_rangecheck); /* can't call CDevProc from here */
-    switch (pfont1->WMode) {
+    switch (WMode) {
     default:
 	code = zchar_get_metrics2((gs_font_base *)pfont1, pgref, wv);
 	sbw[0] = wv[2];
@@ -1084,7 +1084,8 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     int width_members = members & (GLYPH_INFO_WIDTH0 << wmode);
     int outline_widths = members & GLYPH_INFO_OUTLINE_WIDTHS;
     bool modified_widths = false;
-    int default_members = members - (width_members + outline_widths);
+    int default_members = members & ~(width_members + outline_widths + 
+                                      GLYPH_INFO_VVECTOR0 + GLYPH_INFO_VVECTOR1);
     int done_members = 0;
     int code;
 
@@ -1100,7 +1101,7 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    info->width[1].y = wv[1];
 	    info->v.x = wv[2];
 	    info->v.y = wv[3];
-	    done_members = width_members;
+	    done_members = width_members | GLYPH_INFO_VVECTOR1;
 	    width_members = 0;
 	}
     }
@@ -1114,6 +1115,7 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    if (code == metricsSideBearingAndWidth) {
 		info->v.x = sbw[0];
 		info->v.y = sbw[1];
+		width_members |= GLYPH_INFO_VVECTOR0;
 	    } else {
 		info->v.x = 0;
 		info->v.y = 0;

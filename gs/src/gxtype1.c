@@ -642,7 +642,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 {
     gs_font_type1 *const pfont = (gs_font_type1 *)font;
     gs_type1_data *const pdata = &pfont->data;
-    int wmode = pfont->WMode;
+    int wmode = ((members & GLYPH_INFO_WIDTH1) != 0);
     int piece_members = members & (GLYPH_INFO_NUM_PIECES | GLYPH_INFO_PIECES);
     int width_members = members & (GLYPH_INFO_WIDTH0 << wmode);
     int default_members = members & ~(piece_members | width_members |
@@ -710,7 +710,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    info->v.y = fixed2float(cis.lsb.y);
 	    break;
 	}
-	info->members |= width_members;
+	info->members |= width_members | GLYPH_INFO_VVECTOR0;
     }
 
     gs_glyph_data_free(&gdata, "gs_type1_glyph_info");

@@ -1303,10 +1303,12 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
     scale_o = sxo * 1000.0;
     pwidths->Width.v.x = pwidths->Width.v.y = 0;
     pwidths->real_width.v.x = pwidths->real_width.v.y = 0;
+    pwidths->replaced_v = false;
     if (glyph != GS_NO_GLYPH &&
 	(code = cfont->procs.glyph_info((gs_font *)cfont, glyph, NULL,
 				        (GLYPH_INFO_WIDTH0 << wmode) |
-				        GLYPH_INFO_OUTLINE_WIDTHS,
+				        GLYPH_INFO_OUTLINE_WIDTHS |
+					(GLYPH_INFO_VVECTOR0 << wmode),
 				        &info)) != gs_error_undefined
 	) {
 	gs_point v;
@@ -1319,55 +1321,20 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 	v = info.v;
 	rcode |= code;
 	if ((code = ofont->procs.glyph_info(ofont, glyph, NULL,
-					    GLYPH_INFO_WIDTH0 << wmode,
+					    (GLYPH_INFO_WIDTH0 << wmode) |
+					    (GLYPH_INFO_VVECTOR0 << wmode),
 					    &info)) != gs_error_undefined
 	    ) {
+	    if ((info.members & (GLYPH_INFO_VVECTOR0 << wmode)) != 0)
+		pwidths->replaced_v = true;
 	    if (code < 0 ||
 		(code = store_glyph_width(&pwidths->real_width, wmode, 
 		                          scale_o, &info)) < 0
 		)
 		return code;
 	    rcode |= code;
-	    if (wmode == 0) {
-	        /*
-		 * We will shift the glyph for the difference
-		 * between the side bearing from Metrics and one from 
-		 * the sbw of the outline. But glyph_info
-		 * returns zeros if side bearing isn't specified in Metrics.
-		 * Hopely it isn't zero when specified,
-		 * so checking it here.
-		 */
-		if (info.v.x != 0 || info.v.y != 0) {
-		    pwidths->Width.v = v;
-		    pwidths->real_width.v = info.v;
-		} else {
-		    /* 
-		     * Probably there is no side bearing in Metrics, 
-		     * use zero shift.
-		     */
-		    pwidths->Width.v = pwidths->real_width.v = info.v;
-		}
-	    } else {
-		/*
-		 * We need v vector from Metrics2, but glyph_info
-		 * doesn't say, is it taken from Metrics2 or from sbw
-		 * of the outline. Hopely ones from Metrics2 and sbw
-		 * are different, so checking it here.
-		 */
-		if (info.v.x != v.x || info.v.y != v.y) {
-		    pwidths->Width.v = v;
-		    pwidths->real_width.v = info.v;
-		} else {
-		    /* 
-		     * Probably there is no Metrics2, use zero shift.
-		     * This may give a wrong result if side bearing in the 
-		     * outline specifies the shift for vertical writing.
-		     * Perhaps we never met such fonts.
-		     */
-		     pwidths->Width.v.x = pwidths->real_width.v.x = 0;
-		     pwidths->Width.v.y = pwidths->real_width.v.y = 0;
-		} 
-	    }
+	    pwidths->Width.v = v;
+	    pwidths->real_width.v = info.v;
 	} else
 	    pwidths->real_width = pwidths->Width;
 	return rcode;

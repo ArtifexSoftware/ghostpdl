@@ -150,6 +150,8 @@ typedef struct gs_glyph_info_s {
     gs_glyph *pieces;		/* pieces are stored here: the caller must */
 				/* preset pieces if INFO_PIECES is set. */
 #define GLYPH_INFO_OUTLINE_WIDTHS 32 /* return unmodified widths, see above */
+#define GLYPH_INFO_VVECTOR0 64
+#define GLYPH_INFO_VVECTOR1 128	/* must be VVECTOR0 << 1 */
 } gs_glyph_info_t;
 
 /* Define the "object" procedures of fonts. */
@@ -242,6 +244,17 @@ typedef struct gs_font_procs_s {
      * some member options require the caller to preset some of the elements
      * of info.  Note also that this procedure may return more information
      * than was requested.
+     *
+     * Implementations of this method must not access font->WMode,
+     * because for font descendents it is inherited from an upper font.
+     * Implementatios must derive WMode from requested flags specified
+     * in 'members' argument.
+     *
+     * Currently we do not handle requests, in which GLYPH_INFO_VVECTOR0
+     * is set, but GLYPH_INFO_WIDTH0 is not. Same for GLYPH_INFO_VVECTOR1
+     * and GLYPH_INFO_WIDTH1. Also requests, in which both GLYPH_INFO_WIDTH0 and
+     * GLYPH_INFO_WIDTH1 are set, may work wrongly. Such requests look never used 
+     * and debugged, and the implementation code requires improvements.
      */
 
 #define font_proc_glyph_info(proc)\
@@ -253,10 +266,14 @@ typedef struct gs_font_procs_s {
      * Append the outline for a glyph to a path, with the glyph origin
      * at the current point.  pmat is as for glyph_width.  The outline
      * does include a final moveto for the advance width.
+     *
+     * Implementations of this method must not access font->WMode,
+     * because for font descendents it is inherited from an upper font.
+     * This is especially important for Type 42 fonts with hmtx and vmtx.
      */
 
 #define font_proc_glyph_outline(proc)\
-  int proc(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,\
+  int proc(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,\
 	   gx_path *ppath)
     font_proc_glyph_outline((*glyph_outline));
 

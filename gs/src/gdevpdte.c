@@ -449,8 +449,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	code = pdf_glyph_widths(pdfont, font->WMode, glyph, (gs_font *)font, pwidths);
 	if (code < 0)
 	    return code;
-	if (font->WMode != 0 && code > 0 &&
-	    pwidths->real_width.v.x == 0 && pwidths->real_width.v.y == 0) {
+	if (font->WMode != 0 && code > 0 && !pwidths->replaced_v) {
 	    /*
 	     * The font has no Metrics2, so it must write
 	     * horizontally due to PS spec.
@@ -458,14 +457,13 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	     * which is required by PDF spec.
 	     * Take it from WMode==0.
 	     */
-	    int save_WMode = font->WMode;
-	    font->WMode = 0; /* Temporary patch font because font->procs.glyph_info
-	                        has no WMode argument. */
-	    code = pdf_glyph_widths(pdfont, font->WMode, glyph, (gs_font *)font, pwidths);
-	    font->WMode = save_WMode;
+	    code = pdf_glyph_widths(pdfont, 0, glyph, (gs_font *)font, pwidths);
 	}
-	pdfont->u.simple.v[ch].x = pwidths->real_width.v.x - pwidths->Width.v.x;
-	pdfont->u.simple.v[ch].y = pwidths->real_width.v.y - pwidths->Width.v.y;
+	if (pwidths->replaced_v) {
+	    pdfont->u.simple.v[ch].x = pwidths->real_width.v.x - pwidths->Width.v.x;
+	    pdfont->u.simple.v[ch].y = pwidths->real_width.v.y - pwidths->Width.v.y;
+	} else
+	    pdfont->u.simple.v[ch].x = pdfont->u.simple.v[ch].y = 0;
 	if (code == 0) {
 	    pdfont->Widths[ch] = pwidths->Width.w;
 	    real_widths[ch] = pwidths->real_width.w;
@@ -606,7 +604,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
     for (;;) {
 	pdf_glyph_widths_t cw;	/* design space */
 	gs_point did, wanted, tpt;	/* user space */
-	gs_point v; /* design space */
+	gs_point v = {0, 0}; /* design space */
 	gs_char chr;
 	gs_glyph glyph;
 	int code, index = pte->index;

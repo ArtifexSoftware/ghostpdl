@@ -453,7 +453,7 @@ parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
 
 /* Define the font procedures for a Type 42 font. */
 int
-gs_type42_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
 			gx_path *ppath)
 {
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
@@ -470,11 +470,11 @@ gs_type42_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	(code = gx_path_current_point(ppath, &origin)) < 0 ||
 	(code = append_outline(glyph_index, &fmat, ppath, pfont)) < 0 ||
 	(code = font->procs.glyph_info(font, glyph, pmat,
-				       GLYPH_INFO_WIDTH, &info)) < 0
+				       GLYPH_INFO_WIDTH0 << WMode, &info)) < 0
 	)
 	return code;
-    return gx_path_add_point(ppath, origin.x + float2fixed(info.width[0].x),
-			     origin.y + float2fixed(info.width[0].y));
+    return gx_path_add_point(ppath, origin.x + float2fixed(info.width[WMode].x),
+			     origin.y + float2fixed(info.width[WMode].y));
 }
 int
 gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
@@ -520,6 +520,7 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		    info->width[i].x = sbw[2], info->width[i].y = sbw[3];
 		    info->v.x = sbw[0], info->v.y = sbw[1];
 		}
+		info->members |= (GLYPH_INFO_VVECTOR0 << i);
 	    }
 	info->members |= members & GLYPH_INFO_WIDTH;
     }

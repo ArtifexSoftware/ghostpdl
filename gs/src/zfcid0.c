@@ -247,7 +247,7 @@ z9_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
 
 /* Get the outline of a CIDFontType 0 glyph. */
 private int
-z9_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+z9_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
 		 gx_path *ppath)
 {
     gs_font_cid0 *const pfcid = (gs_font_cid0 *)font;
@@ -260,7 +260,7 @@ z9_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     if (code < 0)
 	return code;
     glyph_ref(glyph, &gref);
-    ocode = zcharstring_outline(pfcid->cidata.FDArray[fidx], &gref, &gdata,
+    ocode = zcharstring_outline(pfcid->cidata.FDArray[fidx], WMode, &gref, &gdata,
 				pmat, ppath);
     gs_glyph_data_free(&gdata, "z9_glyph_outline");
     return ocode;

@@ -656,7 +656,7 @@ copied_build_char(gs_text_enum_t *pte, gs_state *pgs, gs_font *font,
     wxy[4] = info.bbox.q.x;
     wxy[5] = info.bbox.q.y;
     if ((code = gs_text_setcachedevice(pte, wxy)) < 0 ||
-	(code = font->procs.glyph_outline(font, glyph, &ctm_only(pgs),
+	(code = font->procs.glyph_outline(font, wmode, glyph, &ctm_only(pgs),
 					  pgs->path)) < 0
 	)
 	return code;
@@ -927,9 +927,13 @@ copy_glyph_type1(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 }
 
 private int
-copied_type1_glyph_outline(gs_font *font, gs_glyph glyph,
+copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
 			   const gs_matrix *pmat, gx_path *ppath)
-{
+{   /* 
+     * 'WMode' may be inherited from an upper font.
+     * We ignore in because Type 1,2 charstrings do not depend on it.
+     */
+
     /*
      * This code duplicates much of zcharstring_outline in zchar1.c.
      * This is unfortunate, but we don't see a simple way to refactor the
@@ -1440,7 +1444,7 @@ copied_cid0_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 }
 
 private int
-copied_cid0_glyph_outline(gs_font *font, gs_glyph glyph,
+copied_cid0_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
 			  const gs_matrix *pmat, gx_path *ppath)
 {
     gs_font_type1 *subfont1;
@@ -1448,7 +1452,7 @@ copied_cid0_glyph_outline(gs_font *font, gs_glyph glyph,
 
     if (code < 0)
 	return code;
-    return subfont1->procs.glyph_outline((gs_font *)subfont1, glyph, pmat,
+    return subfont1->procs.glyph_outline((gs_font *)subfont1, WMode, glyph, pmat,
 					 ppath);
 }
 

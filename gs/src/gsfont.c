@@ -855,16 +855,17 @@ gs_no_enumerate_glyph(gs_font *font, int *pindex, gs_glyph_space_t glyph_space,
 int
 gs_default_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		      int members, gs_glyph_info_t *info)
-{
+{   /* WMode may be inherited from an upper font. */
     gx_path path;
     int returned = 0;
     int code;
+    int wmode = ((members & GLYPH_INFO_WIDTH1) != 0);
 
     gx_path_init_bbox_accumulator(&path);
     code = gx_path_add_point(&path, fixed_0, fixed_0);
     if (code < 0)
 	goto out;
-    code = font->procs.glyph_outline(font, glyph, pmat, &path);
+    code = font->procs.glyph_outline(font, wmode, glyph, pmat, &path);
     if (code < 0)
 	goto out;
     if (members & GLYPH_INFO_WIDTHS) {
@@ -906,7 +907,7 @@ gs_default_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 
 /* Dummy glyph outline procedure */
 int
-gs_no_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+gs_no_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
 		    gx_path *ppath)
 {
     return_error(gs_error_undefined);
