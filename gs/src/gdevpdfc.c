@@ -1,4 +1,4 @@
-/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -38,12 +38,12 @@
 /* ------ CIE space testing ------ */
 
 /* Test whether a cached CIE procedure is the identity function. */
-#define cie_cache_is_identity(pc)\
+#define CIE_CACHE_IS_IDENTITY(pc)\
   ((pc)->floats.params.is_identity)
-#define cie_cache3_is_identity(pca)\
-  (cie_cache_is_identity(&(pca)[0]) &&\
-   cie_cache_is_identity(&(pca)[1]) &&\
-   cie_cache_is_identity(&(pca)[2]))
+#define CIE_CACHE3_IS_IDENTITY(pca)\
+  (CIE_CACHE_IS_IDENTITY(&(pca)[0]) &&\
+   CIE_CACHE_IS_IDENTITY(&(pca)[1]) &&\
+   CIE_CACHE_IS_IDENTITY(&(pca)[2]))
 
 /*
  * Test whether a cached CIE procedure is an exponential.  A cached
@@ -53,15 +53,14 @@
  * two arbitrarily chosen values between 0 and 1.  Naturally all this is
  * done with some slop.
  */
-#define ia (gx_cie_cache_size / 3)
-#define ib (gx_cie_cache_size * 2 / 3)
-#define iv(i) ((i) / (double)(gx_cie_cache_size - 1))
-#define a iv(ia)
-#define b iv(ib)
+#define CC_INDEX_A (gx_cie_cache_size / 3)
+#define CC_INDEX_B (gx_cie_cache_size * 2 / 3)
+#define CC_VALUE(i) ((i) / (double)(gx_cie_cache_size - 1))
+#define CCX_VALUE_A CC_VALUE(CC_INDEX_A)
+#define CCX_VALUE_B CC_VALUE(CC_INDEX_B)
 
 private bool
-cie_values_are_exponential(floatp va, floatp vb, floatp k,
-			   float *pexpt)
+cie_values_are_exponential(floatp va, floatp vb, floatp k, float *pexpt)
 {
     double p;
 
@@ -69,8 +68,8 @@ cie_values_are_exponential(floatp va, floatp vb, floatp k,
 	return false;
     if (va == 0 || (va > 0) != (k > 0))
 	return false;
-    p = log(va / k) / log(a);
-    if (fabs(vb - k * pow(b, p)) >= 0.001)
+    p = log(va / k) / log(CCX_VALUE_A);
+    if (fabs(vb - k * pow(CCX_VALUE_B, p)) >= 0.001)
 	return false;
     *pexpt = p;
     return true;
@@ -79,16 +78,14 @@ cie_values_are_exponential(floatp va, floatp vb, floatp k,
 private bool
 cie_scalar_cache_is_exponential(const gx_cie_scalar_cache * pc, float *pexpt)
 {
-    double k, va, vb;
-
     if (fabs(pc->floats.values[0]) >= 0.001)
 	return false;
-    k = pc->floats.values[gx_cie_cache_size - 1];
-    va = pc->floats.values[ia];
-    vb = pc->floats.values[ib];
-    return cie_values_are_exponential(va, vb, k, pexpt);
+    return cie_values_are_exponential(pc->floats.values[CC_INDEX_A],
+				      pc->floats.values[CC_INDEX_B],
+				      pc->floats.values[gx_cie_cache_size - 1],
+				      pexpt);
 }
-#define cie_scalar3_cache_is_exponential(pca, expts)\
+#define CIE_SCALAR3_CACHE_IS_EXPONENTIAL(pca, expts)\
   (cie_scalar_cache_is_exponential(&(pca)[0], &(expts).u) &&\
    cie_scalar_cache_is_exponential(&(pca)[1], &(expts).v) &&\
    cie_scalar_cache_is_exponential(&(pca)[2], &(expts).w))
@@ -96,25 +93,23 @@ cie_scalar_cache_is_exponential(const gx_cie_scalar_cache * pc, float *pexpt)
 private bool
 cie_vector_cache_is_exponential(const gx_cie_vector_cache * pc, float *pexpt)
 {
-    double k, va, vb;
-
     if (fabs(pc->vecs.values[0].u) >= 0.001)
 	return false;
-    k = pc->vecs.values[gx_cie_cache_size - 1].u;
-    va = pc->vecs.values[ia].u;
-    vb = pc->vecs.values[ib].u;
-    return cie_values_are_exponential(va, vb, k, pexpt);
+    return cie_values_are_exponential(pc->vecs.values[CC_INDEX_A].u,
+				      pc->vecs.values[CC_INDEX_B].u,
+				      pc->vecs.values[gx_cie_cache_size - 1].u,
+				      pexpt);
 }
-#define cie_vector3_cache_is_exponential(pca, expts)\
+#define CIE_VECTOR3_CACHE_IS_EXPONENTIAL(pca, expts)\
   (cie_vector_cache_is_exponential(&(pca)[0], &(expts).u) &&\
    cie_vector_cache_is_exponential(&(pca)[1], &(expts).v) &&\
    cie_vector_cache_is_exponential(&(pca)[2], &(expts).w))
 
-#undef ia
-#undef ib
-#undef iv
-#undef a
-#undef b
+#undef CC_INDEX_A
+#undef CC_INDEX_B
+#undef CC_VALUE
+#undef CCX_VALUE_A
+#undef CCX_VALUE_B
 
 /* ------ Lab space synthesis ------ */
 
@@ -468,12 +463,12 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	      pcie->MatrixA.w == 1 &&
 	      pcie->common.MatrixLMN.is_identity))
 	    return_error(gs_error_rangecheck);
-	if (cie_cache_is_identity(&pcie->caches.DecodeA) &&
-	    cie_scalar3_cache_is_exponential(pcie->common.caches.DecodeLMN, expts) &&
+	if (CIE_CACHE_IS_IDENTITY(&pcie->caches.DecodeA) &&
+	    CIE_SCALAR3_CACHE_IS_EXPONENTIAL(pcie->common.caches.DecodeLMN, expts) &&
 	    expts.v == expts.u && expts.w == expts.u
 	    ) {
 	    DO_NOTHING;
-	} else if (cie_cache3_is_identity(pcie->common.caches.DecodeLMN) &&
+	} else if (CIE_CACHE3_IS_IDENTITY(pcie->common.caches.DecodeLMN) &&
 		   cie_vector_cache_is_exponential(&pcie->caches.DecodeA, &expts.u)
 		   ) {
 	    DO_NOTHING;
@@ -515,13 +510,13 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 
 	pciec = (const gs_cie_common *)pcie;
 	if (pcie->common.MatrixLMN.is_identity &&
-	    cie_cache3_is_identity(pcie->common.caches.DecodeLMN) &&
-	    cie_vector3_cache_is_exponential(pcie->caches.DecodeABC, expts)
+	    CIE_CACHE3_IS_IDENTITY(pcie->common.caches.DecodeLMN) &&
+	    CIE_VECTOR3_CACHE_IS_EXPONENTIAL(pcie->caches.DecodeABC, expts)
 	    )
 	    pmat = &pcie->MatrixABC;
 	else if (pcie->MatrixABC.is_identity &&
-		 cie_cache3_is_identity(pcie->caches.DecodeABC) &&
-		 cie_scalar3_cache_is_exponential(pcie->common.caches.DecodeLMN, expts)
+		 CIE_CACHE3_IS_IDENTITY(pcie->caches.DecodeABC) &&
+		 CIE_SCALAR3_CACHE_IS_EXPONENTIAL(pcie->common.caches.DecodeLMN, expts)
 		 )
 	    pmat = &pcie->common.MatrixLMN;
 	else
