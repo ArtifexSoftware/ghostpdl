@@ -10,8 +10,9 @@ C_=-c
 I_=-I
 II=-I
 _I=
-# There is a very important <space> at the end of the next line.
-O_=-o 
+# The NULL macro after the space forces make to add a space after the -o
+NULL=
+O_=-o $(NULL)
 XE=
 
 CP_=cp -p
