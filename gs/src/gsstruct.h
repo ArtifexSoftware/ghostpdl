@@ -337,13 +337,8 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
 
      /* Begin enumeration */
 
-#ifdef __PROTOTYPES__
-#  define ENUM_PTRS_BEGIN_PROC(proc)\
-    gs_ptr_type_t proc(EV_CONST void *vptr, uint size, int index, enum_ptr_t *pep, const gs_memory_struct_type_t *pstype, gc_state_t *gcst)
-#else
-#  define ENUM_PTRS_BEGIN_PROC(proc)\
-    gs_ptr_type_t proc(vptr, size, index, pep, pstype, gcst) EV_CONST void *vptr; uint size; int index; enum_ptr_t *pep; const gs_memory_struct_type_t *pstype; gc_state_t *gcst;
-#endif
+#define ENUM_PTRS_BEGIN_PROC(proc)\
+  gs_ptr_type_t proc(EV_CONST void *vptr, uint size, int index, enum_ptr_t *pep, const gs_memory_struct_type_t *pstype, gc_state_t *gcst)
 #define ENUM_PTRS_BEGIN(proc)\
   ENUM_PTRS_BEGIN_PROC(proc)\
   { switch ( index ) { default:
@@ -396,13 +391,8 @@ extern gs_ptr_type_t
 
     /* Begin relocation */
 
-#ifdef __PROTOTYPES__
-#  define RELOC_PTRS_BEGIN(proc)\
-    void proc(void *vptr, uint size, const gs_memory_struct_type_t *pstype, gc_state_t *gcst) {
-#else
-#  define RELOC_PTRS_BEGIN(proc)\
-    void proc(vptr, size, pstype, gcst) void *vptr; uint size; const gs_memory_struct_type_t *pstype; gc_state_t *gcst; {
-#endif
+#define RELOC_PTRS_BEGIN(proc)\
+  void proc(void *vptr, uint size, const gs_memory_struct_type_t *pstype, gc_state_t *gcst) {
 #define RELOC_PTRS_WITH(proc, stype_ptr)\
     RELOC_PTRS_BEGIN(proc) stype_ptr = vptr;
 
@@ -527,13 +517,8 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
 /*
  * Boilerplate for clear_marks procedures.
  */
-#ifdef __PROTOTYPES__
-#  define CLEAR_MARKS_PROC(proc)\
-    void proc(void *vptr, uint size, const gs_memory_struct_type_t *pstype)
-#else
-#  define CLEAR_MARKS_PROC(proc)\
-    void proc(vptr, size, pstype) void *vptr; uint size; const gs_memory_struct_type_t *pstype;
-#endif
+#define CLEAR_MARKS_PROC(proc)\
+  void proc(void *vptr, uint size, const gs_memory_struct_type_t *pstype)
 
 	/* Complex structures with their own clear_marks, */
 	/* enum, reloc, and finalize procedures. */

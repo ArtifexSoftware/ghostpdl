@@ -1,4 +1,4 @@
-/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -278,19 +278,12 @@ pdf_write_transfer(gx_device_pdf *pdev, const gx_transfer_map *map,
  * functions used for testing must do the same in order to get identical
  * results.  Currently we only do this for a few of the functions.
  */
-#ifdef __PROTOTYPES__
 #define HT_FUNC(name, expr)\
   private floatp name(floatp xd, floatp yd) {\
     float x = (float)xd, y = (float)yd;\
     return d2f(expr);\
   }
-#else
-#define HT_FUNC(name, expr)\
-  private floatp name(x, y) floatp x, y; {\
-    float x = (float)xd, y = (float)yd;\
-    return d2f(expr);\
-  }
-#endif
+
 /*
  * In most versions of gcc (e.g., 2.7.2.3, 2.95.4), return (float)xxx
  * doesn't actually do the coercion.  Force this here.  Note that if we

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -645,7 +645,6 @@ void gdev_prn_init_color(P4(gx_device *, int, dev_proc_map_rgb_color((*)), dev_p
 private dev_proc_print_page(pageproc);\
 device_type(dtname, st_prn_device, initproc)
 
-/****** FOLLOWING SHOULD CHECK __PROTOTYPES__ ******/
 #define prn_device_type_mono(dtname, dname, initproc, pageproc)\
 private dev_proc_print_page(pageproc);\
 private int \
@@ -654,7 +653,6 @@ initproc(gx_device *dev)\
 }\
 device_type(dtname, st_prn_device, initproc)
 
-/****** DITTO ******/
 #define prn_device_type_color(dtname, dname, depth, initproc, pageproc, rcproc, crproc)\
 private dev_proc_print_page(pageproc);\
 private int \
