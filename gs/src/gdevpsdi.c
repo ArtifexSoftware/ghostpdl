@@ -125,8 +125,9 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     gs_c_param_list_read(dict);	/* ensure param list is in read mode */
     if (template == 0)	/* no compression */
 	return 0;
-    if (pim->Width * pim->Height * Colors * pim->BitsPerComponent <= 160)	/* not worth compressing */
-	return 0;
+    if (pim->Width < 200 && pim->Height < 200) /* Prevent a fixed overflow. */
+	if (pim->Width * pim->Height * Colors * pim->BitsPerComponent <= 160)
+	    return 0;  /* not worth compressing */
     /* Only use DCTE for 8-bit, non-Indexed data. */
     if (template == &s_DCTE_template) {
 	if (Indexed ||
