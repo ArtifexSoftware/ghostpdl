@@ -22,12 +22,24 @@ typedef enum {
   plgv_next
 } pl_glyph_vocabulary_t;
 
+/* Define mapping types so that we do not have to implement both
+ * unicode and msl symbol tables.  These definitions can be used with
+ * the mapping function defined in pl/plvocab.h to map to and from msl
+ * and unicode. There are 3 mutually exclusive possibilities: (1) a
+ * unicode symbol set that can be mapped to msl, (2) an msl symbol set
+ * that can be mapped to unicode and (3) neither (1) or (2).  
+ */
+
+#define PLGV_M2U_MAPPING 1
+#define PLGV_U2M_MAPPING 2
+#define PLGV_NO_MAPPING 3
 /*
  * The following structure is defined by PCL5.  See Figure 10-1 on p. 10-5
  * of the PCL5 Technical Reference Manual.  Note that a symbol set may have
  * two maps, one each for Unicode and MSL.  A symbol map is uniquely iden-
  * tified by its id and format.
  */
+
 typedef struct pl_symbol_map_s {
   byte header_size[2];
   byte id[2];
@@ -36,6 +48,7 @@ typedef struct pl_symbol_map_s {
   byte first_code[2];
   byte last_code[2];
   byte character_requirements[8];
+  byte mapping_type;
   /*
    * Note that the codes are stored with native byte order.
    * If necessary, we byte-swap them after downloading.
