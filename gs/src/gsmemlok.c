@@ -140,7 +140,8 @@ gs_locked_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 
     /* Only free the structures and the allocator itself. */
     if (mem->stable_memory) {
-	gs_memory_free_all(mem->stable_memory, free_mask, cname);
+	if (mem->stable_memory != mem)
+	    gs_memory_free_all(mem->stable_memory, free_mask, cname);
 	if (free_mask & FREE_ALL_ALLOCATOR)
 	    mem->stable_memory = 0;
     }
