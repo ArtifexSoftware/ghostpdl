@@ -1226,20 +1226,15 @@ hpgl_close_path(
     hpgl_state_t *  pgls
 )
 {
-    gs_point        first, first_device, last;
+    gs_point        first, last;
+    gs_fixed_point  first_device;
 
-    /*
-     * if we do not have a subpath there is nothing to do.  HAS
-     * perhaps hpgl_draw_current_path() should make this
-     * observation instead of checking for a null path??? 
-     */
-    if (!gx_current_path(pgls->pgs)->current_subpath)
-        return 0;
-	
-    /* get the first points of the path in device space */
-    first_device.x = (gx_current_path(pgls->pgs))->current_subpath->pt.x;
-    first_device.y = (gx_current_path(pgls->pgs))->current_subpath->pt.y;
-
+    /* if we do not have a subpath there is nothing to do, get the
+       first points of the path in device space */
+    if ( gx_path_subpath_start_point(gx_current_path(pgls->pgs),
+				     &first_device) < 0 )
+ 	return 0;
+ 
     /* convert to user/plu space */
     hpgl_call( gs_itransform( pgls->pgs,
 			      fixed2float(first_device.x),
@@ -1273,21 +1268,20 @@ hpgl_draw_current_path(
     hpgl_rendering_mode_t   render_mode
 )
 {
+    gs_fixed_point          dummy_pt;
     gs_state *              pgs = pgls->pgs;
     pcl_pattern_set_proc_t  set_proc;
     int                     code = 0;
 
-    /* we cannot just check for a current path since the gl/2
-       character routines use just a moveto to guantee the matrix
-       machinery is set up correctly */
-    if (gx_path_is_null(gx_current_path(pgs)))
-	return 0;
-
+    /* check if we have a current path - we don't need the current
+       point */
+    if ( gx_path_subpath_start_point(gx_current_path(pgls->pgs),
+				     &dummy_pt) < 0 )
+ 	return 0;
     hpgl_call(hpgl_close_path(pgls));
     hpgl_call(hpgl_set_drawing_state(pgls, render_mode));
 
     switch (render_mode) {
-
     case hpgl_rm_character:
 	{
 	    /* HAS need to set attributes in set_drawing color (next 2) */
