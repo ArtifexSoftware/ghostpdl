@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 2001 artofcode LLC.  All rights reserved.
+#    Copyright (C) 1997-2002 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -119,22 +119,22 @@ install-man: $(PSMANDIR)/gs.1
 	    do $(INSTALL_DATA) $$f $$man1dir ;\
 	    if ( test -f $$man1dir/ps2ps.$(man1ext) ) ;\
 	      then for f in $(MAN1_LINKS_PS2PS) ;\
-	        do rm -f $$man1dir/$$f.$(man1ext) ;\
-		ln -s $$man1dir/ps2ps.$(man1ext) $$man1dir/$$f.$(man1ext) ;\
+	        do ( cd $$man1dir; rm -f $$f.$(man1ext) ;\
+			  ln -s ps2ps.$(man1ext) $$f.$(man1ext) ) ;\
 	      done ;\
 	    fi ;\
 	    if ( test -f $$man1dir/ps2pdf.$(man1ext) ) ;\
 	      then for f in $(MAN1_LINKS_PS2PDF) ;\
-	        do rm -f $$man1dir/$$f.$(man1ext) ;\
-	        ln -s $$man1dir/ps2pdf.$(man1ext) $$man1dir/$$f.$(man1ext) ;\
- 	      done ;\
+	        do ( cd $$man1dir; rm -f $$f.$(man1ext) ;\
+			  ln -s ps2pdf.$(man1ext) $$f.$(man1ext) ) ;\
+	      done ;\
 	    fi ;\
-	    if ( test -f $$man1dir/gslp.$(man1ext) ) ;\
+	    if ( test -f $$man1dir/ps2ps.$(man1ext) ) ;\
 	      then for f in $(MAN1_LINKS_GSLP) ;\
-	        do rm -f $$man1dir/$$f.$(man1ext) ;\
-	        ln -s $$man1dir/gslp.$(man1ext) $$man1dir/$$f.$(man1ext) ;\
- 	      done ;\
- 	    fi ;\
+	        do ( cd $$man1dir; rm -f $$f.$(man1ext) ;\
+			  ln -s gslp.$(man1ext) $$f.$(man1ext) ) ;\
+	      done ;\
+	    fi ;\
 	  done ;\
 	done'
 
