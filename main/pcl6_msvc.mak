@@ -79,8 +79,14 @@ PCL_TOP_OBJ=$(PCLOBJDIR)\pctop.$(OBJ)
 PXL_TOP_OBJ=$(PXLOBJDIR)\pxtop.$(OBJ)
 TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 
+# Pick a font system technology.  PCL and XL do not need to use the
+# same scaler, but the it is necessary to tinker with pl.mak to get it
+# to work properly.
+# ufst - Agfa universal font scaler.
+# afs - artifex font scaler.
 PCL_FONT_SCALER=afs
 PXL_FONT_SCALER=afs
+PL_SCALER=afs
 
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
