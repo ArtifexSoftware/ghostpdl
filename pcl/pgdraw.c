@@ -1269,21 +1269,16 @@ hpgl_close_path(
     gs_fixed_point  first_device;
 
     /* if we do not have a subpath there is nothing to do, get the
-       first points of the path in device space */
+       first points of the path in device space and convert to floats */
     if ( gx_path_subpath_start_point(gx_current_path(pgls->pgs),
 				     &first_device) < 0 )
  	return 0;
- 
-    /* convert to user/plu space */
-    hpgl_call( gs_itransform( pgls->pgs,
-			      fixed2float(first_device.x),
-			      fixed2float(first_device.y),
-			      &first
-                              ) );
-
+    first.x = fixed2float(first_device.x);
+    first.y = fixed2float(first_device.y);
     /* get gl/2 current position -- always current units */
     hpgl_call(hpgl_get_current_position(pgls, &last));
-
+    /* convert to device space using the current ctm */
+    hpgl_call(gs_transform(pgls->pgs, last.x, last.y, &last));
     /*
      * if the first and last are the same close the path (i.e
      * force gs to apply join and miter)
