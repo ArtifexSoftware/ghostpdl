@@ -63,8 +63,6 @@ fn_scale_functions(gs_function_t ***ppsfns, const gs_function_t *const *pfns,
     
     if (code < 0)
 	return code;
-    for (i = 0; i < count; ++i)
-	psfns[i] = 0;
     for (i = 0; i < count; ++i) {
 	int code = gs_function_make_scaled(pfns[i], &psfns[i], ranges, mem);
 
@@ -591,7 +589,7 @@ fn_AdOt_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
     pfi->num_Functions = pfn->params.n;
 }
 
-/* Make a scaled copy of a PostScript Calculator function. */
+/* Make a scaled copy of an Arrayed Output function. */
 private int
 fn_AdOt_make_scaled(const gs_function_AdOt_t *pfn, gs_function_AdOt_t **ppsfn,
 		    const gs_range_t *pranges, gs_memory_t *mem)
