@@ -590,14 +590,13 @@ end readonly def
       dup type dup /arraytype eq exch /packedarraytype eq or {
 	dup length 4 eq {
 	  dup 2 get /.pdfshowpage_Install load eq {
-	    1 get dup length 0 ne { 0 get } if
+	    1 get 0 get	% previous procedure
 	  } if
 	} if
       } if
-      1 array astore
   } {
     { }
-  } ifelse
+  } ifelse 1 array astore
   2 index exch /.pdfshowpage_Install load /exec load
   4 packedarray cvx
 	% Stack: pagedict currentpagedict installproc
