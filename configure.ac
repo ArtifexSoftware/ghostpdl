@@ -10,15 +10,18 @@ AC_CONFIG_SRCDIR([jbig2dec.c])
 AM_INIT_AUTOMAKE([$package], [$version])
 AM_CONFIG_HEADER(config.h)
 
-AC_REVISION([$Revision: 1.1 $])
+AC_REVISION([$Revision: 1.2 $])
 
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_RANLIB
 
 # Checks for libraries.
-AC_CHECK_LIB([png], [png_check_sig])
-AC_CHECK_LIB([z], [deflate])
+AC_CHECK_LIB([png], [png_check_sig], [
+	AC_DEFINE(HAVE_LIBPNG,,[Define if libpng is available (-lpng)])
+	LIBOBJS="$LIBOBJS jbig2_image_png.o"
+	AC_CHECK_LIB([z], [deflate])
+])
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -34,10 +37,12 @@ AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([memset strdup])
 
 dnl use our included getopt if the system doesn't have getopt_long()
-AC_SUBST(LIBOJBS)
-AC_CHECK_FUNC(getopt_long, [AC_DEFINE(HAVE_GETOPT_LONG)],
-	[LIBOBJS="$LIBOBJS getopt.o getopt1.o"])
+AC_CHECK_FUNC(getopt_long, 
+	[AC_DEFINE(HAVE_GETOPT_LONG,,[Define if the local libc includes getopt_long()])],
+	[LIBOBJS="$LIBOBJS getopt.o getopt1.o"]
+)
 
 # generate output
+AC_SUBST(LIBOJBS)
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
