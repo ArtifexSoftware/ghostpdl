@@ -212,12 +212,14 @@ the output.  The default value is <b><tt>true</tt></b>; the
 <b><tt>false</tt></b> setting is intended only for debugging.
 
 <dt><b><tt>-dMaxInlineImageSize=</tt></b><em>integer</em>
-<dd>Specifies the maximal size of image in bytes, which <b><tt>ps2pdf</tt></b> will
-imbed into a context stream rather than create an XObject.
+<dd>Specifies the maximum size of an inline image, in bytes. For images larger
+than this size, <b><tt>ps2pdf</tt></b> will create an XObject instead of embedding
+the image into the context stream.
 The default value is <b><tt>4000</tt></b>.
-Note that redundant inline images can't merge into a single object,
-so set a small or zero value if the source document is expected
-to contain multiple equal images.
+Note that redundant inline images must be embedded each time they occur in the 
+document, while multiple references can be made to a single XObject image. Therefore
+it may be advantageous to set a small or zero value if the source document is expected
+to contain multiple identical images, reducing the size of the generated PDF.
 
 <dt><b><tt>-dPDFSETTINGS=</tt></b><em>configuration</em>
 <dd>Presets the "distiller parameters" to one of four predefined settings:
