@@ -158,6 +158,7 @@ typedef struct t1_hinter_s
     int19 width_transform_coef_inv;
     int19 heigt_transform_coef_inv;
     t1_glyph_space_coord overshoot_threshold;
+    t1_glyph_space_coord ymin, ymax, ymid;
     gx_path *output_path;
     gs_memory_t *memory;
 } t1_hinter;

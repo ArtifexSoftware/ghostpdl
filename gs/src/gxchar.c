@@ -422,12 +422,17 @@ compute_glyph_raster_params(gs_show_enum *penum, bool in_setcachedevice, int *al
         1 : min(log2_scale->x + log2_scale->y, *alpha_bits));
     if (gs_currentaligntopixels(penum->current_font->dir) == 0) {
 	int scx = -1L << (_fixed_shift - log2_scale->x);
-	int scy = -1L << (_fixed_shift - log2_scale->y);
 	int rdx =  1L << (_fixed_shift - 1 - log2_scale->x);
-	int rdy =  1L << (_fixed_shift - 1 - log2_scale->y);
 
+#	if 1 /* Ever align Y to pixels to provide an uniform glyph height. */
+	    subpix_origin->y = 0;
+#	else
+	    int scy = -1L << (_fixed_shift - log2_scale->y);
+	    int rdy =  1L << (_fixed_shift - 1 - log2_scale->y);
+
+	    subpix_origin->y = ((penum->origin.y + rdy) & scy) & (fixed_1 - 1);
+#	endif
 	subpix_origin->x = ((penum->origin.x + rdx) & scx) & (fixed_1 - 1);
-	subpix_origin->y = ((penum->origin.y + rdy) & scy) & (fixed_1 - 1);
     } else
 	subpix_origin->x = subpix_origin->y = 0;
     return 0;

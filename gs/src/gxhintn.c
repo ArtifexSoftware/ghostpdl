@@ -343,7 +343,9 @@ private inline void o2g_float(t1_hinter * h, t1_hinter_space_coord ox, t1_hinter
 /* --------------------- t1_hint class members ---------------------*/
 
 private void t1_hint__set_aligned_coord(t1_hint * this, t1_glyph_space_coord gc, t1_pole * pole, enum t1_align_type align)
-{   if (this->g0 == (this->type == hstem ? pole->gy : pole->gx)) {
+{   t1_glyph_space_coord g = (this->type == hstem ? pole->gy : pole->gx); 
+
+    if (any_abs(this->g0 - g) < any_abs(this->g1 - g)) {
         if (this->aligned0 < align)
             this->ag0 = gc, this->aligned0 = align;
     } else {
@@ -1329,6 +1331,29 @@ private inline int t1_hinter__segment_end(t1_hinter * this, int pole_index)
     return next;
 }
 
+private void t1_hinter__compute_y_span(t1_hinter * this)
+{
+    int n = this->pole_count - 1;
+    int i;
+    
+    if (n > 1) {
+	/* For non-space characters ignore the trailing moveto. 
+	   Rather it could give a baseline, 
+	   it is not guaranteedly good,
+	   and doesn't allow a stable recognition 
+	   of the upper side of a dot, comma, etc.. */
+	n--; 
+    }
+    this->ymin = this->ymax = this->pole[0].gy;
+    for (i = 0; i < n; i++) {
+	if (this->ymin > this->pole[i].gy)
+	    this->ymin = this->pole[i].gy;
+	if (this->ymax < this->pole[i].gy)
+	    this->ymax = this->pole[i].gy;
+    }
+    this->ymid = (this->ymax + this->ymin) / 2;
+}
+
 private void t1_hinter__simplify_representation(t1_hinter * this)
 {   int i, j;
 
@@ -1357,7 +1382,8 @@ private void t1_hinter__simplify_representation(t1_hinter * this)
     }
 }
 
-private inline bool t1_hinter__is_small_angle(t1_hinter * this, int pole_index0, int pole_index1, long tan_x, long tan_y, int alpha)
+private inline bool t1_hinter__is_small_angle(t1_hinter * this, int pole_index0, int pole_index1, 
+	long tan_x, long tan_y, int alpha, int alpha_div)
 {   long gx = this->pole[pole_index1].gx - this->pole[pole_index0].gx;
     long gy = this->pole[pole_index1].gy - this->pole[pole_index0].gy;
     long vp = mul_shift(gx, tan_y, _fixed_shift) - mul_shift(gy, tan_x, _fixed_shift);
@@ -1366,7 +1392,7 @@ private inline bool t1_hinter__is_small_angle(t1_hinter * this, int pole_index0,
 
     if (gx == 0 && gy == 0)
 	return false;
-    return vp1 <= sp1 / alpha;
+    return vp1 / alpha_div <= sp1 / alpha;
 }
 
 private inline bool t1_hinter__is_conjugated(t1_hinter * this, int pole_index)
@@ -1398,13 +1424,13 @@ private inline bool t1_hinter__is_good_tangent(t1_hinter * this, int pole_index,
 {   int contour_index = this->pole[pole_index].contour_index;
     int beg_contour_pole = this->contour[contour_index];
     int end_contour_pole = this->contour[contour_index + 1] - 2, prev, next;
-    int const alpha = 3;
+    int const alpha = 9, alpha_div = 10;
 
     prev = ranger_step_b(pole_index, beg_contour_pole, end_contour_pole);
-    if (t1_hinter__is_small_angle(this, prev, pole_index, tan_x, tan_y, alpha))
+    if (t1_hinter__is_small_angle(this, prev, pole_index, tan_x, tan_y, alpha, alpha_div))
         return true;
     next = ranger_step_f(pole_index, beg_contour_pole, end_contour_pole);
-    if (t1_hinter__is_small_angle(this, next, pole_index, tan_x, tan_y, alpha))
+    if (t1_hinter__is_small_angle(this, next, pole_index, tan_x, tan_y, alpha, alpha_div))
         return true;
     return false;
 }
@@ -1452,12 +1478,16 @@ private void t1_hinter__compute_type2_stem_ranges(t1_hinter * this)
 
 private bool t1_hinter__is_stem_hint_applicable(t1_hinter * this, t1_hint *hint, int pole_index)
 {   /* We don't check hint->side_mask because the unused coord should be outside the design bbox. */
+    t1_glyph_space_coord const fuzz = this->blue_fuzz; /* comparefiles/tpc2.ps */
+
     if (hint->type == hstem 
-            && (this->pole[pole_index].gy == hint->g0 || this->pole[pole_index].gy == hint->g1)
+            && (any_abs(this->pole[pole_index].gy - hint->g0) <= fuzz || 
+	        any_abs(this->pole[pole_index].gy - hint->g1) <= fuzz )
             && t1_hinter__is_good_tangent(this, pole_index, 1, 0))
         return true;
     if (hint->type == vstem  
-            && (this->pole[pole_index].gx == hint->g0 || this->pole[pole_index].gx == hint->g1)
+            && (any_abs(this->pole[pole_index].gx - hint->g0) <= fuzz || 
+	        any_abs(this->pole[pole_index].gx - hint->g1) <= fuzz)
             && t1_hinter__is_good_tangent(this, pole_index, 0, 1)) 
         return true;
     return false;
@@ -1625,8 +1655,8 @@ private int t1_hinter__find_stem_middle(t1_hinter * this, fixed *t, int pole_ind
     int next = t1_hinter__next_contour_pole(this, pole_index);
     const int alpha = 10;
     bool curve = this->pole[next].type == offcurve;
-    bool continuing = (horiz ? t1_hinter__is_small_angle(this, next, pole_index, 1, 0, alpha)
-                             : t1_hinter__is_small_angle(this, next, pole_index, 0, 1, alpha));
+    bool continuing = (horiz ? t1_hinter__is_small_angle(this, next, pole_index, 1, 0, alpha, 1)
+                             : t1_hinter__is_small_angle(this, next, pole_index, 0, 1, alpha, 1));
 
     *t = (!curve && continuing ? fixed_half : 0);
     return pole_index;
@@ -1640,8 +1670,8 @@ private int t1_hinter__skip_stem(t1_hinter * this, int pole_index, bool horiz)
     long tan_x = (horiz ? 1 : 0);
     long tan_y = (horiz ? 0 : 1);
 
-    while (t1_hinter__is_small_angle(this, i, next_pole, tan_x, tan_y, 1000) && /* The threshold is taken from scratch. */
-           t1_hinter__is_small_angle(this, i, next_segm, tan_x, tan_y, 1000)) {
+    while (t1_hinter__is_small_angle(this, i, next_pole, tan_x, tan_y, 1000, 1) && /* The threshold is taken from scratch. */
+           t1_hinter__is_small_angle(this, i, next_segm, tan_x, tan_y, 1000, 1)) {
         i = t1_hinter__segment_end(this, i);
 	if (i == pole_index) {
 	    /* An invalid glyph with <=2 segments in the contour with no angles. */
@@ -1811,7 +1841,14 @@ private void t1_hinter__compute_opposite_stem_coords(t1_hinter * this)
 			ag0 = ag1 - gw;
 		    else
 			ag1 = ag0 + gw;
-		else {
+		else if (this->hint[i].type == hstem &&
+			min(any_abs(this->hint[i].g0 - this->ymid), any_abs(this->hint[i].g1 - this->ymid)) > 
+			(this->ymax - this->ymin) / 5) {
+		    if ((this->hint[i].g1 + this->hint[i].g0) / 2 > this->ymid)
+			ag0 = ag1 - gw;
+		    else
+			ag1 = ag0 + gw;
+		} else {
 		    if (d0 < d1)
 			ag1 = ag0 + gw;
 		    else
@@ -1825,6 +1862,7 @@ private void t1_hinter__compute_opposite_stem_coords(t1_hinter * this)
 
 private void t1_hinter__align_stem_poles(t1_hinter * this)
 {   int i, j, k;
+    t1_glyph_space_coord const fuzz = this->blue_fuzz; /* comparefiles/tpc2.ps */
 
     for (i = 0; i < this->hint_count; i++)
         if (this->hint[i].type == vstem || this->hint[i].type == hstem) 
@@ -1841,13 +1879,13 @@ private void t1_hinter__align_stem_poles(t1_hinter * this)
 
 		    if (pole->type != oncurve)
 			continue;
-		    if (!horiz && pole->aligned_x > aligned0 && pole->gx == hint->g0)
+		    if (!horiz && pole->aligned_x > aligned0 && any_abs(pole->gx - hint->g0) <= fuzz)
 			ag0 = pole->ax, aligned0 = pole->aligned_x;
-		    else if (!horiz && pole->aligned_x > aligned1 && pole->gx == hint->g1)
+		    else if (!horiz && pole->aligned_x > aligned1 && any_abs(pole->gx - hint->g1) <= fuzz)
 			ag1 = pole->ax, aligned1 = pole->aligned_x;
-		    else if ( horiz && pole->aligned_y > aligned0 && pole->gy == hint->g0)
+		    else if ( horiz && pole->aligned_y > aligned0 && any_abs(pole->gy - hint->g0) <= fuzz)
 			ag0 = pole->ay, aligned0 = pole->aligned_y;
-		    else if ( horiz && pole->aligned_y > aligned1 && pole->gy == hint->g1)
+		    else if ( horiz && pole->aligned_y > aligned1 && any_abs(pole->gy - hint->g1) <= fuzz)
 			ag1 = pole->ay, aligned1 = pole->aligned_y;
 		    /* We could check for horizontality/verticality here,
 		       but some fonts have unaligned serifs.
@@ -1864,13 +1902,13 @@ private void t1_hinter__align_stem_poles(t1_hinter * this)
 
 		    if (pole->type != oncurve)
 			continue;
-		    if (!horiz && pole->gx == hint->g0)
+		    if (!horiz && any_abs(pole->gx - hint->g0) <= fuzz)
 			pole->ax = ag0, pole->aligned_x = aligned0;
-		    else if (!horiz && pole->gx == hint->g1)
+		    else if (!horiz && any_abs(pole->gx - hint->g1) <= fuzz)
 			pole->ax = ag1, pole->aligned_x = aligned1;
-		    else if ( horiz && pole->gy == hint->g0)
+		    else if ( horiz && any_abs(pole->gy - hint->g0) <= fuzz)
 			pole->ay = ag0, pole->aligned_y = aligned0;
-		    else if ( horiz && pole->gy == hint->g1)
+		    else if ( horiz && any_abs(pole->gy - hint->g1) <= fuzz)
 			pole->ay = ag1, pole->aligned_y = aligned1;
 		}
 	    }
@@ -1976,9 +2014,11 @@ private void t1_hinter__interpolate_other_poles(t1_hinter * this)
 
     for (k = 0; k<2; k++) { /* X, Y */
         t1_glyph_space_coord *p_gc = (!k ? &this->pole[0].gx : &this->pole[0].gy);
+        t1_glyph_space_coord *p_wc = (!k ? &this->pole[0].gy : &this->pole[0].gx);
         t1_glyph_space_coord *p_ac = (!k ? &this->pole[0].ax : &this->pole[0].ay);
         enum t1_align_type *p_f = (!k ? &this->pole[0].aligned_x : &this->pole[0].aligned_y);
         int offset_gc = (char *)p_gc - (char *)&this->pole[0];
+        int offset_wc = (char *)p_wc - (char *)&this->pole[0];
         int offset_ac = (char *)p_ac - (char *)&this->pole[0];
         int offset_f  = (char *)p_f -  (char *)&this->pole[0];
 
@@ -1996,82 +2036,81 @@ private void t1_hinter__interpolate_other_poles(t1_hinter * this)
             do {
                 int start_pole = j, stop_pole = -1;
                 t1_glyph_space_coord min_a, max_a;
-		t1_glyph_space_coord min_g, max_g, g0, g1;
+		t1_glyph_space_coord min_g, max_g, g0, g1, a0, a1;
 		int min_i = start_pole, max_i = start_pole, cut_l, l;
+		bool moved = false;
 
 		do {
-		    int min_l = 0, max_l = 0;
+		    int min_l = 0, max_l = 0, jp;
+		    int min_w, max_w, w0;
 
 		    g0 = *member_prt(t1_glyph_space_coord, &this->pole[start_pole], offset_gc);
+		    w0 = *member_prt(t1_glyph_space_coord, &this->pole[start_pole], offset_wc);
+		    a0 = *member_prt(t1_glyph_space_coord, &this->pole[start_pole], offset_ac);
 		    min_g = g0;
 		    max_g = g0;
-		    min_i = start_pole;
-		    max_i = start_pole;
+		    min_w = max_w = w0;
+		    jp = start_pole;
 		    for (j = ranger_step_f(start_pole,  beg_contour_pole, end_contour_pole), l = 1; 
-		         j != start_pole;
+			 j != start_pole;
 			 j = ranger_step_f(j,  beg_contour_pole, end_contour_pole), l++) {
 			t1_glyph_space_coord g = * member_prt(t1_glyph_space_coord, &this->pole[j], offset_gc);
+			t1_glyph_space_coord w = * member_prt(t1_glyph_space_coord, &this->pole[j], offset_wc);
 
 			if (min_g > g)
 			    min_g = g, min_i = j, min_l = l;
 			if (max_g < g)
 			    max_g = g, max_i = j, max_l = l;
+			if (min_w > w)
+			    min_w = w;
+			if (max_w < w)
+			    max_w = w;
 			if (*member_prt(enum t1_align_type, &this->pole[j], offset_f))
 			    break;
 			if (j == stop_pole)
 			    break;
+			jp = j;
 		    }
 		    stop_pole = j;
 		    cut_l = l;
 		    g1 = * member_prt(t1_glyph_space_coord, &this->pole[stop_pole], offset_gc);
+		    a1 = * member_prt(t1_glyph_space_coord, &this->pole[stop_pole], offset_ac);
+
+		    if (start_pole != stop_pole)
+			if (any_abs(g0 - g1) >= any_abs(a0 - a1) / 10)
+			    if (any_abs(max_g - min_g) <= any_abs(max_w - min_w) / 4)
+				break; /* OK to interpolate. */
+		    /* else break at an extremal pole : */
 		    if (min_i != start_pole && min_l < cut_l && min_g != g0 && min_g != g1)
 			stop_pole = min_i, cut_l = min_l;
 		    if (max_i != start_pole && max_l < cut_l && max_g != g0 && max_g != g1)
 			stop_pole = max_i, cut_l = max_l;
 		} while (cut_l < l);
-		if (start_pole == stop_pole)
-		    break; /* safety */
-                /* Now start_pole and end_pole point to the contour interval to interpolate. */
+                    /* Now start_pole and end_pole point to the contour interval to interpolate. */
 		if (g0 < g1) {
 		    min_g = g0;
 		    max_g = g1;
-		    min_i = start_pole;
-		    max_i = stop_pole;
+		    min_a = a0;
+		    max_a = a1;
 		} else {
 		    min_g = g1;
 		    max_g = g0;
-		    min_i = stop_pole;
-		    max_i = start_pole;
+		    min_a = a1;
+		    max_a = a0;
 		}
-                min_a = * member_prt(t1_glyph_space_coord, &this->pole[min_i], offset_ac);
-                max_a = * member_prt(t1_glyph_space_coord, &this->pole[max_i], offset_ac);
-#               if 0
-                    /*  This was an attempt to keep relative stem lenght for stems,
-                        which's longitude is not hinted (horizontal arms in "E", "F" in StoneSans-Bold).
-                        This attempt was not successful.
-                        Probably a smarter algorithm is useful.
-                    */
-                    if (!*member_prt(enum t1_align_type, &this->pole[min_i], offset_f))
-                        min_a = min_g + Min(max_a-max_g, Min (* member_prt(t1_glyph_space_coord, &this->pole[start_pole], offset_ac) - 
-                                                              * member_prt(t1_glyph_space_coord, &this->pole[start_pole], offset_gc),
-                                                              * member_prt(t1_glyph_space_coord, &this->pole[stop_pole ], offset_ac) - 
-                                                              * member_prt(t1_glyph_space_coord, &this->pole[stop_pole ], offset_gc)));
-                    else if (!*member_prt(enum t1_align_type, &this->pole[max_i], offset_f))
-                        max_a = max_g + Max(min_a-min_g, Max (* member_prt(t1_glyph_space_coord, &this->pole[start_pole], offset_ac) - 
-                                                              * member_prt(t1_glyph_space_coord, &this->pole[start_pole], offset_gc),
-                                                              * member_prt(t1_glyph_space_coord, &this->pole[stop_pole ], offset_ac) - 
-                                                              * member_prt(t1_glyph_space_coord, &this->pole[stop_pole ], offset_gc)));
-#               endif
                 for (j = start_pole; ; 
                      j = ranger_step_f(j,  beg_contour_pole, end_contour_pole)) {
                     t1_glyph_space_coord g = * member_prt(t1_glyph_space_coord, &this->pole[j], offset_gc);
 
-                    if (g == min_g)
-                        * member_prt(t1_glyph_space_coord, &this->pole[j], offset_ac) = min_a;
-                    if (g == max_g)
-                        * member_prt(t1_glyph_space_coord, &this->pole[j], offset_ac) = max_a;
-                    if(j == stop_pole)
+                    if (g <= min_g)
+                        * member_prt(t1_glyph_space_coord, &this->pole[j], offset_ac) = 
+			* member_prt(t1_glyph_space_coord, &this->pole[j], offset_gc) + (min_a - min_g);
+                    else if (g >= max_g)
+                        * member_prt(t1_glyph_space_coord, &this->pole[j], offset_ac) = 
+			* member_prt(t1_glyph_space_coord, &this->pole[j], offset_gc) + (max_a - max_g);
+                    if(moved && j == stop_pole)
                         break;
+		    moved = true;
                 }
                 if (min_g < max_g) {
                     int24 div = max_g - min_g;
@@ -2112,7 +2151,7 @@ private void t1_hinter__interpolate_other_poles(t1_hinter * this)
                          j = ranger_step_f(j,  beg_contour_pole, end_contour_pole)) {
                         t1_glyph_space_coord g = *member_prt(t1_glyph_space_coord, &this->pole[j], offset_gc);
 
-                        if (g != min_g && g !=max_g) {
+                        if (min_g < g && g < max_g) {
                             t1_glyph_space_coord *a = member_prt(t1_glyph_space_coord, &this->pole[j], offset_ac);
                             t1_glyph_space_coord x = g - min_g;
                             t1_glyph_space_coord h = mul_shift(x, u, 12); /* It is x*u/2^12 */
@@ -2200,6 +2239,7 @@ int t1_hinter__endglyph(t1_hinter * this)
     code = t1_hinter__add_trailing_moveto(this);
     if (code < 0)
 	goto exit;
+    t1_hinter__compute_y_span(this);
     t1_hinter__simplify_representation(this);
     t1_hinter__paint_glyph(this, false);
     if (!this->disable_hinting && (this->grid_fit_x || this->grid_fit_y)) {
