@@ -1481,27 +1481,29 @@ pcl_ht_init_render_methods(
     }
     gs_c_param_list_release(&list);
 
+#define high_ref_count_hack(color_mapper) ((color_mapper)->rc.ref_count = (max_long / 2))
     /* initialize the color mapping mapping devices; install the default */
     gdev_cmap_init(&pcs->cmap_device_identity, pcur_dev, device_cmap_identity);
-    gx_device_retain((gx_device *)&pcs->cmap_device_identity, true);
+    high_ref_count_hack((gx_device *)&pcs->cmap_device_identity);
 
     gdev_cmap_init( &pcs->cmap_device_snap_to_primaries,
                     pcur_dev,
                     device_cmap_snap_to_primaries
                     );
-    gx_device_retain((gx_device *)&pcs->cmap_device_snap_to_primaries, true);
+    high_ref_count_hack((gx_device *)&pcs->cmap_device_snap_to_primaries);
 
     gdev_cmap_init( &pcs->cmap_device_color_to_black_over_white,
                     pcur_dev,
                     device_cmap_color_to_black_over_white
                     );
-    gx_device_retain((gx_device *)&pcs->cmap_device_color_to_black_over_white, true);
-
+    high_ref_count_hack((gx_device *)&pcs->cmap_device_color_to_black_over_white);
+  
     gdev_cmap_init(&pcs->cmap_device_monochrome, pcur_dev, device_cmap_monochrome);
-    gx_device_retain((gx_device *)&pcs->cmap_device_monochrome, true);
+    high_ref_count_hack((gx_device *)&pcs->cmap_device_monochrome);
 
     gs_setdevice_no_init(pcs->pgs, (gx_device *)&pcs->cmap_device_identity);
     /* initialize default halftone */
+#undef high_ref_count_hack
     pcs->pdflt_ht = 0;
 }
 
