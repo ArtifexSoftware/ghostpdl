@@ -23,21 +23,24 @@
 % represent them in a compact format described in src/gscencs.c.
 % The generated files are named gscedata.[ch] and are included in the
 % source distribution in the src directory.  The canonical invocation is
-%	gs -dNODISPLAY -q -DH -SO=gscedata.h toolbin/encs2c.ps > src/gscedata.h
+%	gs -dNODISPLAY -q -SO=gscedata.h toolbin/encs2c.ps > src/gscedata.h
 %	gs -dNODISPLAY -q -SO=gscedata.c toolbin/encs2c.ps > src/gscedata.c
-
+%
 % NOTE: If the C representation of encodings changes, this file
 % (toolbin/encs2c.ps), src/gscencs.h, and src/gscencs.c must be kept
 % consistent with each other.
+%
+% This program also generates a table of glyphs available in 
+% WinAnsiEncoding, StandardEncoding, MacExpertEncoding, SymbolEncoding
+% for pdfwrite device.
+%
+%	gs -dNODISPLAY -q -SO=gdevpdtv.h toolbin/encs2c.ps > src/gdevpdtv.h
+%	gs -dNODISPLAY -q -SO=gdevpdtv.c toolbin/encs2c.ps > src/gdevpdtv.c
 
 % ================ Write header file ================ %
 
 % Free variables: maxlen.
 /writeheader {
-	% Compute the division of the glyph number into length and offset.
-  /lenbits 1 maxlen {
-    dup 1 eq { exit } if exch 1 add exch -1 bitshift
-  } loop pop def
   (#ifndef gscedata_INCLUDED) =
   (#  define gscedata_INCLUDED) =
   () =
@@ -71,27 +74,24 @@
 	% alphabetically increasing within the same length.
   (
 const char gs_c_known_encoding_chars[] = {) =
-  /lbase maxlen 1 add array def
-  lbase 0 0 put
-  /offset 0 def
   1 1 maxlen {
     /len exch def
-    lbase len offset put
     /noff 0 def
 	% Collect and sort names of this length.
-    /new [ estrs {
+    [ estrs {
       pop dup length len ne { pop } { .namestring } ifelse
-    } forall ] /lt load .sort def
+    } forall ] /lt load .sort
 	% Output the names.
-    new {
+    {
       dup {
 	(') print (x) dup 0 4 -1 roll put print (',) print
       } forall
       (  /*N\() print len =only (,) print noff =only (\)*/) =
-      estrs exch noff put
+      estrs exch get noff ne {
+        (Different offsets in 1st and 2nd pass) =
+      } if
       /noff noff len add def
     } forall
-    /offset offset noff add def
   } for
   (0};) =
 (
@@ -145,6 +145,76 @@ const ushort gs_c_known_encoding_lengths[] = {) =
 
 } def
 
+% ========= Write PDF good glyph table ========= %
+
+/calc_glyph_table {
+
+  /N { lenbits bitshift add } bind def
+
+  /enc_mame_to_index <<
+    0 encnames {
+      exch dup 1 add
+    } forall pop
+  >> readonly def
+
+  /glyph_type 600 dict begin
+
+  /SymbolEncoding enc_mame_to_index exch get encodings exch get {
+    dup length
+    exch estrs exch get
+    N 1 def
+  } forall
+
+  { /StandardEncoding /WinAnsiEncoding /MacExpertEncoding } {
+    enc_mame_to_index exch get encodings exch get {
+      dup length exch estrs exch get N 3 def
+    } forall
+  } forall
+  currentdict end def
+
+  /max_glyph 0 def
+
+  glyph_type {
+    pop max_glyph .max /max_glyph exch def
+  } forall
+
+} bind def
+
+/write_glyph_table {
+  calc_glyph_table
+  (/*) =
+  ( * Glyph attributes for every glyph <= GS_C_PDF_MAX_GOOD_GLYPH) =
+  ( * packed 4 per byte least significant bits first.) =
+  ( */)=
+
+  (const unsigned char gs_c_pdf_glyph_type[] = {) =
+  0 1 max_glyph 4 idiv {
+    4 mul
+    dup           glyph_type exch .knownget not { 0 } if
+    1 index 1 add glyph_type exch .knownget not { 0 } if 2 bitshift or
+    1 index 2 add glyph_type exch .knownget not { 0 } if 4 bitshift or
+    1 index 3 add glyph_type exch .knownget not { 0 } if 6 bitshift or
+    =only
+    3 add max_glyph lt { (,) } { () = (};) } ifelse =
+  } for
+
+} bind def
+
+/write_glyph_table_header {
+  calc_glyph_table
+
+  (#ifndef gdevpdtv_INCLUDED) =
+  (#define gdevpdtv_INCLUDED) =
+  () =
+  (#define GS_C_PDF_MAX_GOOD_GLYPH ) print max_glyph =
+  (#define GS_C_PDF_GOOD_GLYPH_MASK 1) =
+  (#define GS_C_PDF_GOOD_NON_SYMBOL_MASK 2) =
+  () =
+  (extern const unsigned char gs_c_pdf_glyph_type[];) =
+  () =
+  (#endif /* gdevpdtv_INCLUDED */) =
+} bind def
+
 % ================ Main program ================ %
 
 % Collect the registered encodings.
@@ -180,17 +250,41 @@ encodings {
   } forall
 } forall
 
+% Calculate glyph offset dictionary
+/lbase maxlen 1 add array def
+lbase 0 0 put
+/offset 0 def
+1 1 maxlen {
+  /len exch def
+  lbase len offset put
+  /noff 0 def
+	% Collect and sort names of this length.
+  [ estrs {
+  pop dup length len ne { pop } { .namestring } ifelse
+  } forall ] /lt load .sort
+	% Output the names.
+  {
+    estrs exch noff put
+    /noff noff len add def
+  } forall
+  /offset offset noff add def
+} for
+estrs readonly pop
+
+% Compute the division of the glyph number into length and offset.
+/lenbits 1 maxlen {
+  dup 1 eq { exit } if exch 1 add exch -1 bitshift
+} loop pop def
+
 % Write the initial boilerplate.
 (/*) =
 ( * Copyright (C) 2002 artofcode LLC.  All rights reserved.) =
 ( * See toolbin/encs2c.ps for the complete license notice.) =
 ( *) =
-/O where {
-  pop
-	% Break up the next line to prevent RCS from substituting in it.
-  ( * $) print (Id: ) print O print ( $) =
-  ( *) =
-} if
+
+% Break up the next line to prevent RCS from substituting in it.
+( * $) print (Id: ) print O print ( $) =
+( *) =
 ( * This file contains substantial parts of toolbin/encs2c.ps,) =
 ( * which generated the remainder of the file mechanically from) =
 encfiles {
@@ -199,10 +293,18 @@ encfiles {
 ( */) =
 () =
 
-/H where { pop H } { false } ifelse {
-  writeheader
+<<
+  /gscedata.h { writeheader }
+  /gscedata.c { writedata }
+  /gdevpdtv.h { write_glyph_table_header }
+  /gdevpdtv.c { write_glyph_table }
+>> O .knownget {
+  exec
 } {
-  writedata
+  (%stderr) (w) file dup dup
+  (Don't know how to create ) writestring
+  O writestring
+  (\n) writestring
 } ifelse
 
 quit

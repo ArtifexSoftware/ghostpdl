@@ -28,6 +28,7 @@
 #include "gdevpdtf.h"
 #include "gdevpdti.h"		/* for writing bitmap fonts Encoding */
 #include "gdevpdtw.h"
+#include "gdevpdtv.h"
 
 private const char *const encoding_names[] = {
     KNOWN_REAL_ENCODING_NAMES
@@ -99,20 +100,13 @@ pdf_different_encoding_index(const pdf_font_resource_t *pdfont, int ch0)
     return ch;
 }
 
-private ushort good_encodings[] = {
-	    4, /* WinAnsiEncoding */
-	    0, /* StandardEncoding */
-	    6, /* MacExpertEncoding */
-	    2  /* SymbolEncoding */
-	}; /* Ths table must be conssitent with gs_c_known_encodings. */
-
 /* Check for unknown encode (simple fonts only). */
 private bool
 pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
 {
     int ch, ch1, i;
-    int ne = (pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2 
-		? count_of(good_encodings) : count_of(good_encodings) - 1);
+    unsigned char mask = (pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2 
+		? GS_C_PDF_GOOD_GLYPH_MASK : GS_C_PDF_GOOD_NON_SYMBOL_MASK);
 
     if (pdfont->u.simple.Encoding == NULL)
 	return true; /* Bitmap Type 3 fonts have no pdfont->u.simple.Encoding . */
@@ -129,26 +123,10 @@ pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
 	    if (glyph == GS_NO_GLYPH)
 		return true;
 	}
-	for (i = 0; i < ne; i++) {
-	    gs_glyph glyph1 = gs_c_known_encode(ch, good_encodings[i]);
-
-	    if (glyph == glyph1)
-		goto next;
-	}
-	for (i = 0; i < ne; i++) {
-	    ushort ei = good_encodings[i];
-
-	    for (ch1 = 0; ch1 < 256; ++ch1) {
-		gs_glyph glyph1 = gs_c_known_encode(ch1, ei);
-
-		if (glyph == glyph1)
-		    goto next;
-	    }
-	}
-	/* fixme : the 2 loops above to be optimized with a new statically 
-	 * defined table in gscedata.c . */
-	return true;
-	next: continue;
+        glyph -= gs_c_min_std_encoding_glyph;
+        if( glyph > GS_C_PDF_MAX_GOOD_GLYPH ||
+           !(gs_c_pdf_glyph_type[glyph >> 2] & (mask << (( glyph & 3 )<<1) ))) 
+          return true;
     }
     return false;
 }
