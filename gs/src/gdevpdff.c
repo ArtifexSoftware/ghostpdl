@@ -563,6 +563,8 @@ pdf_char_width(pdf_font_t *ppf, int ch, gs_font *font,
 					   GLYPH_INFO_WIDTH0 << wmode,
 					   &info)) >= 0
 	    ) {
+	    gs_const_string gnstr;
+
 	    if (wmode && (w = info.width[wmode].y) != 0)
 		v = info.width[wmode].x;
 	    else
@@ -574,8 +576,14 @@ pdf_char_width(pdf_font_t *ppf, int ch, gs_font *font,
 		w *= 1000;
 	    }
 	    ppf->Widths[ch] = (int)w;
-	    /* Mark the width as known. */
-	    ppf->widths_known[ch >> 3] |= 1 << (ch & 7);
+	    /*
+	     * If the character is .notdef, don't mark the width as known,
+	     * just in case this is an incrementally defined font.
+	     */
+	    gnstr.data = (const byte *)
+		bfont->procs.callbacks.glyph_name(glyph, &gnstr.size);
+	    if (gnstr.size != 7 || memcmp(gnstr.data, ".notdef", 7))
+		ppf->widths_known[ch >> 3] |= 1 << (ch & 7);
 	} else {
 	    /* Try for MissingWidth. */
 	    static const gs_point tt_scale = {1000, 1000};

@@ -508,7 +508,6 @@ create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	     * every character in the font that is ever used.
 	     * Furthermore, if there are several subsets of the same
 	     * font in a document, it appears to be random as to which
-    case ft_CID_TrueType:
 	     * one Acrobat Reader uses to decide what the FirstChar and
 	     * LastChar values are.  Therefore, we must write the Widths
 	     * array for the entire font even for subsets.
@@ -584,21 +583,6 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     switch (font->FontType) {
     case ft_TrueType:
     case ft_CID_TrueType:
-	/*
-	 * The code above that calls pdf_find_char_range does so the first
-	 * time the font is used.  If the font is downloaded incrementally,
-	 * we formerly believed that this caused pdf_find_char_range to
-	 * return a range that was too small.  However, it is only the
-	 * GlyphDirectory, not the CharStrings, that can be filled
-	 * incrementally, and pdf_find_char_range only looks at the Encoding
-	 * and the CharStrings.  Therefore, we believe (and have verified
-	 * using the files available to us) that the right thing will happen
-	 * even in the incremental case.
-	 *
-	 * For the record, we note that the font is an incremental one
-	 * iff the font doesn't have glyf and loca entries, i.e., if
-	 * ((const gs_font_type42 *)font)->data.glyf == 0.
-	 */
 	/* The TrueType FontMatrix is 1 unit per em, which is what we want. */
 	gs_make_identity(&orig_matrix);
 	break;
@@ -1061,11 +1045,19 @@ pdf_text_process(gs_text_enum_t *pte)
 
     for (i = 0; i < str.size; ++i) {
 	int chr = str.data[i];
-	int code = pdf_encode_char(pdev, chr, (gs_font_base *)font,
-				   text_state.pdfont);
+	pdf_font_t *pdfont = text_state.pdfont;
+	int code = pdf_encode_char(pdev, chr, (gs_font_base *)font, pdfont);
 
 	if (code < 0)
 	    goto dflt;
+	/*
+	 * For incrementally loaded fonts, expand FirstChar..LastChar
+	 * if needed.
+	 */
+	if (code < pdfont->FirstChar)
+	    pdfont->FirstChar = code;
+	if (code > pdfont->LastChar)
+	    pdfont->LastChar = code;
 	if (code != chr) {
 	    /*
 	     * It really simplifies things if we can buffer
