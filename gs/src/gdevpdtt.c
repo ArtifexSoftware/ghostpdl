@@ -1521,13 +1521,18 @@ pdf_text_process(gs_text_enum_t *pte)
 {
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
     uint operation = pte->text.operation;
-    const void *vdata;
     uint size = pte->text.size - pte->index;
     gs_text_enum_t *pte_default;
     PROCESS_TEXT_PROC((*process));
     int code = -1;		/* to force default implementation */
     gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
 #define BUF_SIZE 100		/* arbitrary > 0 */
+    /* Use a union to ensure alignment. */
+    union bu_ {
+	byte bytes[BUF_SIZE];
+	gs_char chars[BUF_SIZE / sizeof(gs_char)];
+	gs_glyph glyphs[BUF_SIZE / sizeof(gs_glyph)];
+    } buf;
 
     /*
      * If we fell back to the default implementation, continue using it.
@@ -1595,33 +1600,26 @@ pdf_text_process(gs_text_enum_t *pte)
      */
 
     if (operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES))
-	vdata = pte->text.data.bytes;
+	DO_NOTHING;
     else if (operation & TEXT_FROM_CHARS)
-	vdata = pte->text.data.chars, size *= sizeof(gs_char);
+	size *= sizeof(gs_char);
     else if (operation & TEXT_FROM_SINGLE_CHAR)
-	vdata = &pte->text.data.d_char, size = sizeof(gs_char);
+	size = sizeof(gs_char);
     else if (operation & TEXT_FROM_GLYPHS)
-	vdata = pte->text.data.glyphs, size *= sizeof(gs_glyph);
+	size *= sizeof(gs_glyph);
     else if (operation & TEXT_FROM_SINGLE_GLYPH)
-	vdata = &pte->text.data.d_glyph, size = sizeof(gs_glyph);
+	size = sizeof(gs_glyph);
     else
 	goto skip;
 
-    if (size <= BUF_SIZE) {
-	/* Use a union to ensure alignment. */
-	union bu_ {
-	    byte bytes[BUF_SIZE];
-	    gs_char chars[BUF_SIZE / sizeof(gs_char)];
-	    gs_glyph glyphs[BUF_SIZE / sizeof(gs_glyph)];
-	} buf;
-
-	code = process(pte, vdata, buf.bytes, size);
+    if (size <= sizeof(buf)) {
+	code = process(pte, buf.bytes, size);
     } else {
 	byte *buf = gs_alloc_string(pte->memory, size, "pdf_text_process");
 
 	if (buf == 0)
 	    return_error(gs_error_VMerror);
-	code = process(pte, vdata, buf, size);
+	code = process(pte, buf, size);
 	gs_free_string(pte->memory, buf, size, "pdf_text_process");
     }
  skip:

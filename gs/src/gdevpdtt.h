@@ -133,7 +133,7 @@ typedef struct pdf_glyph_widths_s {
  * (a caller-supplied buffer large enough to hold the string).
  */
 #define PROCESS_TEXT_PROC(proc)\
-  int proc(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
+  int proc(gs_text_enum_t *pte, void *vbuf, uint bsize)
 
 /* ------ gdevpdtt.c ------ */
 

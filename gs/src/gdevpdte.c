@@ -798,8 +798,7 @@ pdf_encode_glyph(gs_font_base *bfont, gs_glyph glyph0,
  * Process a text string in a simple font.
  */
 int
-process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
-		   uint size)
+process_plain_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 {
     byte *const buf = vbuf;
     uint count;
@@ -811,15 +810,25 @@ process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     pdf_text_process_state_t text_state;
 
     if (operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES)) {
-	count = size;
-	memcpy(buf, (const byte *)vdata + pte->index, size);
+	count = pte->text.size - pte->index;
+	if (bsize < count)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	memcpy(buf, (const byte *)pte->text.data.bytes + pte->index, count);
 	encoded = false;
     } else if (operation & (TEXT_FROM_CHARS | TEXT_FROM_SINGLE_CHAR)) {
 	/* Check that all chars fit in a single byte. */
-	const gs_char *const cdata = vdata;
+	const gs_char *cdata;
 	int i;
 
-	count = size / sizeof(gs_char);
+	if (operation & TEXT_FROM_CHARS) {
+	    cdata = pte->text.data.chars;
+	    count = (pte->text.size - pte->index);
+	} else {
+	    cdata = &pte->text.data.d_char;
+	    count = 1;
+	}
+	if (bsize < count * sizeof(gs_char))
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	for (i = 0; i < count; ++i) {
 	    gs_char chr = cdata[pte->index + i];
 
@@ -844,14 +853,22 @@ process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	 * .notdef for a meanful printing).
 	 * fixme: Not implemented yet.
 	 */
-	const gs_glyph *const gdata = vdata;
+	const gs_glyph *gdata;
 	gs_font *font = pte->current_font;
+	uint size;
 	int i;
 
+	if (operation & TEXT_FROM_GLYPHS) {
+	    gdata = pte->text.data.glyphs;
+	    size = pte->text.size - pte->index;
+	} else {
+	    gdata = &pte->text.data.d_glyph;
+	    size = 1;
+	}
 	if (!pdf_is_simple_font(font))
-	    return_error(gs_error_unregistered); /* Must not ahppen. */
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	count = 0;
-	for (i = 0; i < size / sizeof(gs_glyph); ++i) {
+	for (i = 0; i < size; ++i) {
 	    gs_glyph glyph = gdata[pte->index + i];
 	    int char_code_length;
 

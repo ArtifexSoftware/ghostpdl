@@ -39,8 +39,7 @@
  * Process a text string in a composite font with FMapType != 9 (CMap).
  */
 int
-process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
-		       uint size)
+process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 {
     byte *const buf = vbuf;
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
@@ -103,6 +102,8 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 		    break;
 		if (chr != (byte)chr)	/* probably can't happen */
 		    return_error(gs_error_rangecheck);
+		if (buf_index >= bsize)
+		    return_error(gs_error_unregistered); /* Must not happen. */
 		buf[buf_index] = (byte)chr;
 		buf_index++;
 		prev_font = new_font;
@@ -289,7 +290,7 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 }
 
 int
-process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
+process_cmap_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
@@ -429,8 +430,8 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
 	if (code < 0)
 	    return code;
     }
-    str.data = vdata;
-    str.size = size;
+    str.data = pte->text.data.bytes;
+    str.size = pte->text.size - pte->index;
     code = process_text_modify_width((pdf_text_enum_t *)pte, font,
 			  &text_state, &str, &wxy);
     if (code < 0)
@@ -449,20 +450,26 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
  * Process a text string in a CIDFont.  (Only glyphshow is supported.)
  */
 int
-process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
-		 uint size)
+process_cid_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 {
     uint operation = pte->text.operation;
     gs_text_enum_t save;
     gs_font *scaled_font = pte->current_font; /* CIDFont */
     gs_font *font;		/* unscaled font (CIDFont) */
-    const gs_glyph *glyphs = (const gs_glyph *)vdata;
+    const gs_glyph *glyphs;
     gs_matrix scale_matrix;
     pdf_font_resource_t *pdsubf; /* CIDFont */
     gs_font_type0 *font0 = NULL;
+    uint size;
     int code;
 
-    if (!(operation & (TEXT_FROM_GLYPHS | TEXT_FROM_SINGLE_GLYPH)))
+    if (operation & TEXT_FROM_GLYPHS) {
+	glyphs = pte->text.data.glyphs;
+	size = pte->text.size - pte->index;
+    } else if (operation & TEXT_FROM_SINGLE_GLYPH) {
+	glyphs = &pte->text.data.d_glyph;
+	size = 1;
+    } else
 	return_error(gs_error_rangecheck);
 
     /*
@@ -471,11 +478,13 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
      * into 16 bits.  (Eventually we should support wider glyphs too,
      * but this would require a different CMap.)
      */
+    if (bsize < size * 2)
+	return_error(gs_error_unregistered); /* Must not happen. */
     {
 	int i;
 	byte *pchars = vbuf;
 
-	for (i = 0; i * sizeof(gs_glyph) < size; ++i) {
+	for (i = 0; i < size; ++i) {
 	    ulong gnum = glyphs[i] - GS_MIN_CID_GLYPH;
 
 	    if (gnum & ~0xffffL)
@@ -520,10 +529,10 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     pte->text.operation = (operation & ~TEXT_FROM_ANY) | TEXT_FROM_BYTES;
     /* Patch the data for process_cmap_text. */
     pte->text.data.bytes = vbuf;
-    pte->text.size = size / sizeof(gs_glyph) * 2;
+    pte->text.size = size * 2;
     pte->index = 0;
     gs_type0_init_fstack(pte, pte->current_font);
-    code = process_cmap_text(pte, vbuf, vbuf, pte->text.size);
+    code = process_cmap_text(pte, vbuf, pte->text.size);
     pte->current_font = scaled_font;
     pte->orig_font = save.orig_font;
     pte->text = save.text;
