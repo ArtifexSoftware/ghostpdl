@@ -1126,6 +1126,15 @@ devices that do have this parameter.
 </dl>
 
 <dl>
+<dt><b><tt>-dUseCropBox</tt></b>
+<dd>Sets the page size to the CropBox rather than the MediaBox.
+Some files have a CropBox that is smaller than the MediaBox and
+may include white space, registration or cutting marks outside
+the CropBox.  Using this option will set the page size 
+appropriately for a viewer.
+</dl>
+
+<dl>
 <dt><b><tt>-sPDFPassword=</tt></b><em>password</em>
 <dd>Sets the user or owner password to be used in decoding encrypted
 PDF files.
