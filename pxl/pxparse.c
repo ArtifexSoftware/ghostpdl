@@ -369,7 +369,7 @@ top:	if ( st->data_left )
 		  { st->args.source.position = 0;
 		    goto x;
 		  }
-		else if ( code == pxNeedData )
+		else if ( ( code == pxNeedData ) || ( code == pxPassThrough && st->data_left != 0 ) )
 		  { code = 0;		/* exit for more data */
 		    goto x;
 		  }

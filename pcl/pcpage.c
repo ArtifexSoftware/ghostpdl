@@ -360,7 +360,9 @@ new_page_size(
 
     if (!reset_initial) {
         hpgl_do_reset(pcs, pcl_reset_page_params);
-	gs_erasepage(pcs->pgs);
+        /* HACK don't erase unless we are using end_page_top */
+        if ( pcs->end_page == pcl_end_page_top )
+            gs_erasepage(pcs->pgs);
         pcs->page_marked = false;
     }
 }
@@ -505,7 +507,8 @@ pcl_end_page(
     pcs->orientation_set = false;
 
     pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
-    code = gs_erasepage(pcs->pgs);
+    if ( pcs->end_page == pcl_end_page_top )
+        code = gs_erasepage(pcs->pgs);
     pcs->page_marked = false;
     /* force new logical page, allows external resolution changes.
      * see -dFirstPage -dLastPage 

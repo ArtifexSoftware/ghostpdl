@@ -79,10 +79,10 @@ typedef struct hpgl_command_s {
 
 /* Define a HP-GL/2 command argument value. */
 typedef struct hpgl_value_s {
-  union v_ {
+  union v_n {
     int32 i;
     hpgl_real_t r;
-  } v;
+  } v_n;
   bool is_real;
 } hpgl_value_t;
 
@@ -202,12 +202,12 @@ bool hpgl_arg_units(P2(hpgl_args_t *pargs, hpgl_real_t *pu));
 #define hpgl_args_setup(pargs)\
   args_setup_count_(pargs, 0)
 #define args_put_int_(pargs, index, iplus, ival)\
-  ((void)((pargs)->arg.scanned[index].v.i = (ival),\
+  ((void)((pargs)->arg.scanned[index].v_n.i = (ival),\
 	  (pargs)->arg.scanned[iplus].is_real = false))
 #define hpgl_args_add_int(pargs, ival)\
   args_put_int_(pargs, (pargs)->arg.count, (pargs)->arg.count++, ival)
 #define args_put_real_(pargs, index, iplus, rval)\
-  ((void)((pargs)->arg.scanned[index].v.r = (rval),\
+  ((void)((pargs)->arg.scanned[index].v_n.r = (rval),\
 	  (pargs)->arg.scanned[iplus].is_real = true))
 #define hpgl_args_add_real(pargs, rval)\
   args_put_real_(pargs, (pargs)->arg.count, (pargs)->arg.count++, rval)

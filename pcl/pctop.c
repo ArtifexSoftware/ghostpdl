@@ -116,9 +116,6 @@ const pcl_init_t *    pcl_init_table[] = {
     0
 };
 
-/* Built-in symbol set initialization procedure */
-private int pcl_end_page_top(P3(pcl_state_t *pcs, int num_copies, int flush));
-
 /*
  * Define the gstate client procedures.
  */
@@ -209,6 +206,14 @@ pcl_impl_characteristics(
   return &pcl_characteristics;
 }
 
+/* yuck */
+pcl_state_t *
+pcl_get_gstate(pl_interp_instance_t *instance)
+{
+    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
+    return &pcli->pcs;
+}
+
 /* Do static init of PCL interpreter, since there's nothing to allocate */
 private int   /* ret 0 ok, else -ve error code */
 pcl_impl_allocate_interp(
@@ -276,12 +281,16 @@ pcl_impl_allocate_interp_instance(
 /* Set a client language into an interperter instance */
 private int   /* ret 0 ok, else -ve error code */
 pcl_impl_set_client_instance(
-  pl_interp_instance_t   *instance,     /* interp instance to use */
-  pl_interp_instance_t   *client        /* client to set */
+  pl_interp_instance_t         *instance,     /* interp instance to use */
+  pl_interp_instance_t         *client,        /* client to set */
+  pl_interp_instance_clients_t which_client
 )
 {
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
-	pcli->pcs.pjls = client;
+        
+        if ( which_client == PJL_CLIENT )
+            pcli->pcs.pjls = client;
+        /* ignore unknown clients */
 	return 0;
 }
 
@@ -563,9 +572,9 @@ pcl_impl_deallocate_interp(
 }
 
 /* 
- * End-of-page called back by PCL
+ * End-of-page called back by PCL - NB now exported.
  */
-private int
+ int
 pcl_end_page_top(
     pcl_state_t *           pcs,
     int                     num_copies,

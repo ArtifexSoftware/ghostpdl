@@ -19,7 +19,7 @@ PXLGEN=$(PXLGENDIR)$(D)
 PXLOBJ=$(PXLOBJDIR)$(D)
 PXLO_=$(O_)$(PXLOBJ)
 
-PXLCCC=$(CC_) $(I_)$(PXLSRCDIR)$(_I) $(I_)$(PXLGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
+PXLCCC=$(CC_) $(I_)$(PXLSRCDIR)$(_I) $(I_)$(PXLGENDIR)$(_I) $(I_)$(PCLSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
 # Define the name of this makefile.
 PXL_MAK=$(PXLSRC)pxl.mak
@@ -131,13 +131,17 @@ $(PXLOBJ)pxptable.$(OBJ): $(PXLSRC)pxptable.c $(AK) $(std_h)\
  $(pxenum_h) $(pxoper_h) $(pxptable_h) $(pxvalue_h)
 	$(PXLCCC) $(PXLSRC)pxptable.c $(PXLO_)pxptable.$(OBJ)
 
+$(PXLOBJ)pxpthr.$(OBJ): $(PXLSRC)pxpthr.c $(AK) $(stdio_h)\
+ $(pcommand_h) $(pgmand_h) $(pcstate_h) $(pcparse_h) $(pxstate_h)
+	$(PXLCCC) $(PXLSRC)pxpthr.c $(PXLO_)pxpthr.$(OBJ)
+
 $(PXLOBJ)pxvalue.$(OBJ): $(PXLSRC)pxvalue.c $(AK) $(std_h) $(gsmemory_h) $(pxvalue_h)
 	$(PXLCCC) $(PXLSRC)pxvalue.c $(PXLO_)pxvalue.$(OBJ)
 
 # We have to break up pxl_other because of the MS-DOS command line
 # limit of 120 characters.
 pxl_other_obj1=$(PXLOBJ)pxbfont.$(OBJ) $(PXLOBJ)pxerrors.$(OBJ) $(PXLOBJ)pxparse.$(OBJ)
-pxl_other_obj2=$(PXLOBJ)pxstate.$(OBJ) $(PXLOBJ)pxptable.$(OBJ) $(PXLOBJ)pxvalue.$(OBJ)
+pxl_other_obj2=$(PXLOBJ)pxstate.$(OBJ) $(PXLOBJ)pxptable.$(OBJ) $(PXLOBJ)pxpthr.$(OBJ) $(PXLOBJ)pxvalue.$(OBJ)
 pxl_other_obj=$(pxl_other_obj1) $(pxl_other_obj2)
 
 # Operators

@@ -125,7 +125,7 @@ struct px_state_s {
     uint size;
   } download_bytes;		/* font/character/halftone data */
   gs_string download_string;	/* ditto */
-  struct sp_ {
+  struct sp_n {
     int x;
     double y0, y1;
   } scan_point;			/* position when reading scan lines */
@@ -139,6 +139,8 @@ struct px_state_s {
   char warnings[px_max_warning_message + 1];
   /* ---------------- PJL state -------------------- */
   pl_interp_instance_t *pjls;
+  /* ---------------- PCL state -------------------- */
+  pl_interp_instance_t *pcls;
 };
 #define private_st_px_state()		/* in pxstate.c */\
   gs_private_st_composite(st_px_state, px_state_t, "px_state",\

@@ -99,6 +99,12 @@ typedef struct px_args_s {
  */
 #define pxNeedData 42		/* not 0 or 1, and >0 */
 
+/*
+ * contrary to the specification and common sense the pxPassThrough
+ * operator does not know how much data it requires, the parser
+ * requires a special flag to know it is dealing with PassThrough */
+#define pxPassThrough 43
+
 /* Define the argument list for operators. */
 #define px_operator_proc(proc)\
   int proc(P2(px_args_t *, px_state_t *))

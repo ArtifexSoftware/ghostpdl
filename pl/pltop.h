@@ -106,8 +106,17 @@ typedef int (*pl_interp_proc_allocate_interp_t)(P3(pl_interp_t **, const pl_inte
 int pl_allocate_interp_instance(P3(pl_interp_instance_t **, pl_interp_t *, gs_memory_t *));
 typedef int (*pl_interp_proc_allocate_interp_instance_t)(P3(pl_interp_instance_t **, pl_interp_t *, gs_memory_t *));
 
-int pl_set_client_instance(P2(pl_interp_instance_t *, pl_interp_instance_t *));
-typedef int (*pl_interp_proc_set_client_instance_t)(P2(pl_interp_instance_t *, pl_interp_instance_t *));
+/* clients that can be set into an interpreter's state */
+typedef enum { 
+    /* needed to access the pcl interpreter in pxl (passthrough mode) */
+    PCL_CLIENT,
+    /* needed by all interpreters to query pjl state */
+    PJL_CLIENT
+} pl_interp_instance_clients_t;
+
+
+int pl_set_client_instance(P3(pl_interp_instance_t *, pl_interp_instance_t *, pl_interp_instance_clients_t client));
+typedef int (*pl_interp_proc_set_client_instance_t)(P3(pl_interp_instance_t *, pl_interp_instance_t *, pl_interp_instance_clients_t client));
 
 int pl_set_pre_page_action(P3(pl_interp_instance_t *, pl_page_action_t, void *));
 typedef int (*pl_interp_proc_set_pre_page_action_t)(P3(pl_interp_instance_t *, pl_page_action_t, void *));

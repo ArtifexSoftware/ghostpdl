@@ -109,7 +109,8 @@ pjl_impl_allocate_interp_instance(
 int   /* ret 0 ok, else -ve error code */
 pjl_impl_set_client_instance(
   pl_interp_instance_t   *instance,     /* interp instance to use */
-  pl_interp_instance_t   *client        /* client to set */
+  pl_interp_instance_t   *client,       /* client to set */
+  pl_interp_instance_clients_t which_client
 )
 {
 	return 0;

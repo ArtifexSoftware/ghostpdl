@@ -366,4 +366,5 @@ int pcl_load_built_in_fonts(P2(pcl_state_t *pcs, const char *pathname));
 /* implicitly exit gl/2 whenever ESC E is found */
 int pcl_implicit_gl2_finish(P1(pcl_state_t *pcs));
 int pcl_do_printer_reset(P1(pcl_state_t *pcs));
+int pcl_end_page_top(P3(pcl_state_t *pcs, int num_copies, int flush));
 #endif 						/* pcstate_INCLUDED */

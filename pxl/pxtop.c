@@ -257,12 +257,17 @@ pxl_impl_allocate_interp_instance(
 /* Set a client language into an interperter instance */
 private int   /* ret 0 ok, else -ve error code */
 pxl_impl_set_client_instance(
-  pl_interp_instance_t   *instance,     /* interp instance to use */
-  pl_interp_instance_t   *client        /* client to set */
+  pl_interp_instance_t         *instance,     /* interp instance to use */
+  pl_interp_instance_t         *client,       /* client to set */
+  pl_interp_instance_clients_t which_client
 )
 {
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
-	pxli->pxs->pjls = client;
+        if ( which_client == PCL_CLIENT )
+            pxli->pxs->pcls = client;
+        else if ( which_client == PJL_CLIENT )
+            pxli->pxs->pjls = client;
+        /* ignore unknown clients */
 	return 0;
 }
 

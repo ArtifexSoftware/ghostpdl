@@ -534,13 +534,14 @@ pl_main_universe_init(
 	  }
 
 	  instance = universe->pdl_instance_array[index];
-	  if ( pl_set_client_instance(instance, pjl_instance) < 0
-	   || pl_set_pre_page_action(instance, pl_pre_finish_page, inst) < 0
-	   || pl_set_post_page_action(instance, pl_post_finish_page, inst) < 0 ) {
-	    if (err_str)
-	      sprintf(err_str, "Unable to init %s interpreter",
-	       pl_characteristics(pdl_implementation[index])->language);
-	    goto pmui_err;
+	  if ( pl_set_client_instance(instance, pjl_instance, PJL_CLIENT) < 0 ||
+               pl_set_client_instance(instance, universe->pdl_instance_array[0], PCL_CLIENT) ||
+               pl_set_pre_page_action(instance, pl_pre_finish_page, inst) < 0 ||
+               pl_set_post_page_action(instance, pl_post_finish_page, inst) < 0 ) {
+              if (err_str)
+                  sprintf(err_str, "Unable to init %s interpreter",
+                          pl_characteristics(pdl_implementation[index])->language);
+              goto pmui_err;
 	  }
 	}
 	return 0;

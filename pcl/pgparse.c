@@ -224,13 +224,13 @@ hpgl_arg(hpgl_parser_state_t *pst)
 		check_value();
 		parg->have_value = 1;
 		parg->sign = 1;
-		pvalue->v.i = 0;
+		pvalue->v_n.i = 0;
 		break;
 	      case '-':
 		check_value();
 		parg->have_value = 1;
 		parg->sign = -1;
-		pvalue->v.i = 0;
+		pvalue->v_n.i = 0;
 		break;
 	      case '.':
 		switch ( parg->have_value )
@@ -238,10 +238,10 @@ hpgl_arg(hpgl_parser_state_t *pst)
 		  default:	/* > 1 */
 		    goto out;
 		  case 0:
-		    pvalue->v.r = 0;
+		    pvalue->v_n.r = 0;
 		    break;
 		  case 1:
-		    pvalue->v.r = pvalue->v.i;
+		    pvalue->v_n.r = pvalue->v_n.i;
 		  }
 		parg->have_value = 2;
 		parg->frac_scale = 1.0;
@@ -264,9 +264,9 @@ hpgl_arg(hpgl_parser_state_t *pst)
 		++p;
 done:		if ( parg->sign < 0 )
 		  { if ( parg->have_value > 1 )
-		      pvalue->v.r = -pvalue->v.r;
+		      pvalue->v_n.r = -pvalue->v_n.r;
 		    else
-		      pvalue->v.i = -pvalue->v.i;
+		      pvalue->v_n.i = -pvalue->v_n.i;
 		  }
 		goto out;
 	      case '0': case '1': case '2': case '3': case '4':
@@ -276,19 +276,19 @@ done:		if ( parg->sign < 0 )
 		switch ( parg->have_value )
 		  {
 		  default:	/* case 2 */
-		    pvalue->v.r += ch / (parg->frac_scale *= 10);
+		    pvalue->v_n.r += ch / (parg->frac_scale *= 10);
 		    break;
 		  case 0:
 		    parg->have_value = 1;
-		    pvalue->v.i = ch;
+		    pvalue->v_n.i = ch;
 		    break;
 		  case 1:
-		    if ( pvalue->v.i >= max_i/10 &&
-			 (pvalue->v.i > max_i/10 || ch > max_i%10)
+		    if ( pvalue->v_n.i >= max_i/10 &&
+			 (pvalue->v_n.i > max_i/10 || ch > max_i%10)
 		       )
-		      pvalue->v.i = max_i;
+		      pvalue->v_n.i = max_i;
 		    else
-		      pvalue->v.i = pvalue->v.i * 10 + ch;
+		      pvalue->v_n.i = pvalue->v_n.i * 10 + ch;
 		  }
 		break;
 	      default:
@@ -307,11 +307,11 @@ out:	pst->source.ptr = p;
 	  case 0:		/* no argument */
 	    return false;
 	  case 1:		/* integer */
-	    if_debug1('I', "  %ld", (long)pvalue->v.i);
+	    if_debug1('I', "  %ld", (long)pvalue->v_n.i);
 	    pvalue->is_real = false;
 	    break;
 	  default /* case 2 */:	/* real */
-	    if_debug1('I', "  %g", pvalue->v.r);
+	    if_debug1('I', "  %g", pvalue->v_n.r);
 	    pvalue->is_real = true;
 	  }
 	hpgl_arg_init(pst);
@@ -327,7 +327,7 @@ hpgl_arg_real(hpgl_args_t *pargs, hpgl_real_t *pr)
 
 	if ( !pvalue )
 	  return false;
-	*pr = (pvalue->is_real ? pvalue->v.r : pvalue->v.i);
+	*pr = (pvalue->is_real ? pvalue->v_n.r : pvalue->v_n.i);
 	return true;
 }
 
@@ -339,7 +339,7 @@ hpgl_arg_c_real(hpgl_args_t *pargs, hpgl_real_t *pr)
 
 	if ( !pvalue )
 	  return false;
-	r = (pvalue->is_real ? pvalue->v.r : pvalue->v.i);
+	r = (pvalue->is_real ? pvalue->v_n.r : pvalue->v_n.i);
 	*pr = (r < -32768 ? -32768 : r > 32767 ? 32767 : r);
 	return true;
 
@@ -352,7 +352,7 @@ hpgl_arg_int(hpgl_args_t *pargs, int32 *pi)
 
 	if ( !pvalue )
 	  return false;
-	*pi = (pvalue->is_real ? (int32)pvalue->v.r : pvalue->v.i);
+	*pi = (pvalue->is_real ? (int32)pvalue->v_n.r : pvalue->v_n.i);
 	return true;
 }
 
@@ -364,7 +364,7 @@ hpgl_arg_c_int(hpgl_args_t *pargs, int *pi)
 
 	if ( !pvalue )
 	  return false;
-	i = (pvalue->is_real ? (int32)pvalue->v.r : pvalue->v.i);
+	i = (pvalue->is_real ? (int32)pvalue->v_n.r : pvalue->v_n.i);
 	*pi = (i < -32768 ? -32768 : i > 32767 ? 32767 : i);
 	return true;
 }

@@ -269,8 +269,18 @@ pcl_set_cap_y(
 }
 
 /* some convenient short-hand for the cursor movement commands */
-#define do_horiz_motion(pargs, pcs, mul)                                      \
-    pcl_set_cap_x((pcs), float_arg(pargs) * (mul), arg_is_signed(pargs), false)
+
+private inline void
+do_horiz_motion(
+   pcl_args_t  *pargs,
+   pcl_state_t *pcs,
+   coord        mul
+)
+{
+    float x = float_arg(pargs) * (float)mul;
+    pcl_set_cap_x(pcs, (coord)x, arg_is_signed(pargs), false);
+    return;
+}
 
 #define do_vertical_move(pcs, pargs, mul, use_margins, by_row)  \
     return pcl_set_cap_y( (pcs),                                \

@@ -656,12 +656,3 @@ pxCloseDataSource(px_args_t *par, px_state_t *pxs)
 	return 0;
 }
 
-const byte apxPassthrough[] = {0, 0};
-
-int
-pxPassthrough(px_args_t *par, px_state_t *pxs)
-{
-    dprintf( "unimplemented\n");
-    return 0;
-}
-
