@@ -340,7 +340,7 @@ art_blend_pixel_8(byte *dst, const byte *backdrop,
 	    break;
 	case BLEND_MODE_Hue:
 	    {
-		char tmp[3];
+		byte tmp[3];
 
 		art_blend_luminosity_rgb_8(tmp, src, backdrop);
 		art_blend_saturation_rgb_8(dst, tmp, backdrop);
