@@ -143,6 +143,9 @@ When GS converts the source image to JPEG stream in PDF file and the
 source data end prematurely, it generates bad JPEG stream. 
 tiff2ps from libtiff distribution often generates such files.
 <p>
+One potential workaround is to use -dAutoFilterColorImages=false and 
+-dColorImageFilter=/FlateEncode.
+<p>
 SourceForge bug #228808, Jan 15, 2000.
 <p>
 <I>
