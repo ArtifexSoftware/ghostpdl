@@ -1011,7 +1011,6 @@ end
 							% s rn fr
 	//ObtainEncoding exec
 	//ObtainMetrics exec
-        (Underimplemented SetFont) =
         exch pop					% s fr
         dup /BaseFont get 				% s fr n
         //RemoveFontNamePrefix exec			% s fr n
@@ -1737,7 +1736,9 @@ end
 
 /ComputeFunction_10 % <scaled_arg> <sample_array> ComputeFunction_10 <result>
 { % Assuming a 1-argument 1-result function type 0.
-  (ComputeFunction_10 beg ) print 1 index //=only exec ( stack=) print count =
+  //PDFR_DEBUG {
+    (ComputeFunction_10 beg ) print 1 index //=only exec ( stack=) print count =
+  } if
   exch							% [] x
   dup 1 eq {
     pop dup length 1 sub get				% y
@@ -1753,7 +1754,9 @@ end
       2 index mul 3 2 roll 1 exch sub 3 2 roll mul add	% y1*f+(1-f)*y0
     } ifelse
   } ifelse
-  (ComputeFunction_10 end ) print dup //=only exec ( stack=) print count =
+  //PDFR_DEBUG {
+    (ComputeFunction_10 end ) print dup //=only exec ( stack=) print count =
+  } if
 } bind def
 
 /ComputeFunction_n0 % <arg0> .... <argn> <sample_array> ComputeFunction_n0 <result>
