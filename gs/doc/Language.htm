@@ -374,7 +374,7 @@ starts with a %...% IODevice designation, or 124 characters if it does not.
 	<td>&nbsp;
 	<td>65535
 	<td>&nbsp;
-	<td>values (samples × components)<br>for1-, 2-, 4-, or 8-bit samples
+	<td>values (samples Ã— components)<br>for1-, 2-, 4-, or 8-bit samples
 	<td>&nbsp;
 	<td>3300
 <tr valign=top>	<td>&nbsp;
@@ -1384,11 +1384,22 @@ complete scan line.  Always copies an integral number of scan lines.
 
 <dl>
 <dt><b><tt>&lt;device&gt; setdevice -</tt></b>
-<dd>Sets the current device to the specified device.  Also resets the
+<dd>
+<p>
+Sets the current device to the specified device.  Also resets the
 transformation and clipping path to the initial values for the device.
 Signals an <b><tt>invalidaccess</tt></b> error if the device is a
 prototype or if <a href="Language.htm#LockSafetyParams">.LockSafetyParams</a>
 is true for the current device.
+<p>
+Some device properties may need to be set with <tt>putdeviceprops</tt> before 
+<b><tt>setdevice</tt></b> is called. For example, the pdfwrite device will try
+to open its output file, causing an <tt>undefinedfilename</tt> error if 
+<tt>OutputFile</tt> hasn't been set to a valid filename. Another method in such
+cases is to use the level 2 operator instead: 
+
+  <tt>&lt;&lt;&nbsp;/OutputDevice /pdfwrite /OutputFile (MyPDF.pdf)&nbsp;&gt;&gt;    <b>setpagedevice</b></tt>.
+
 </dl>
 
 <dl>
