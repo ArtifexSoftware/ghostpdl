@@ -47,7 +47,6 @@
 % !!!!!!!!!!!!!  THIS REVISION IS INCOMPLETE !!!!!!!!!!!!!!!!!!!!
 % !!!!!!!!!!!!! don't expect perfect results. !!!!!!!!!!!!!!!!!!!
 
-
 true setglobal
 
 % ====================== Error handler =======================
@@ -58,8 +57,14 @@ true setglobal
 /this currentdict def
 /y 720 def
 /ebuf 200 string def
+
 /prnt {
-  36 //this /y get moveto /Courier 12 selectfont //ebuf cvs show
+  36 //this /y get moveto //ebuf cvs show
+  //this /y 2 copy get 12 sub put
+} bind def
+
+/newline {
+  36 //this /y get moveto
   //this /y 2 copy get 12 sub put
 } bind def
 
@@ -83,6 +88,7 @@ errordict /handleerror
       } if
       vmstatus exch pop exch pop 
     }
+    /Courier 12 selectfont
     {
       (ERROR: ) //prnt exec errorname //prnt exec
       (OFFENDING COMMAND: ) //prnt exec
@@ -91,12 +97,20 @@ errordict /handleerror
         (%%[STACK:) =
         (STACK:) //prnt exec
         $error /ostack get aload length {
-          dup = //prnt exec
+          //newline exec
+          dup type /nametype eq { 
+            dup xcheck not {
+              (/) show
+              (/) print
+            } if
+          } if
+          dup = //ebuf cvs show
         } repeat
       } if
     } ifelse
-    //systemdict /showpage get exec
     (%%]%) =
+    //systemdict /showpage get exec
+    quit
   } if
   end
   end
