@@ -471,7 +471,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      * but right now we don't bother.
      */
     gx_path_bbox(ppath, &ibox);
-#   define SMALL_CHARACTER 100
+#   define SMALL_CHARACTER 500
     lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
     lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
     pseudo_rasterization = PSEUDO_RASTERIZATION && 
@@ -663,7 +663,8 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	     * Note that execution pass here only for character size
 	     * grater that MAX_LOCAL_SECTION and lesser than 
 	     * SMALL_CHARACTER. Therefore with !arch_small_memory
-	     * the dynamic allocation never happens.
+	     * the dynamic allocation only happens for characters 
+	     * wider than 100 pixels.
 	     */
 	    lst.margin_set0.sect = (section *)gs_alloc_struct_array(pdev->memory, lst.bbox_width * 2, 
 						   section, &st_section, "section");
