@@ -1,10 +1,10 @@
 #!/bin/sh
 # Run this to set up the build system: configure, makefiles, etc.
 
-# $Id: autogen.sh,v 1.4 2003/03/04 15:39:00 giles Exp $
+# $Id: autogen.sh,v 1.5 2003/03/04 16:52:48 giles Exp $
 
 package="jbig2dec"
-AUTOMAKE_FLAGS="--foreign $AUTOMAKE_FLAGS"
+AUTOMAKE_FLAGS="$AUTOMAKE_FLAGS"
 
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.

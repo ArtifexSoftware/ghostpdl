@@ -1,7 +1,7 @@
-# $Id: Makefile.am,v 1.13 2002/08/06 11:52:43 giles Exp $
+# $Id: Makefile.am,v 1.14 2003/03/04 16:52:47 giles Exp $
 ## process this file with automake to generate Makefile.in
 
-AUTOMAKE_OPTIONS = 1.6.1 # require automake 1.6
+AUTOMAKE_OPTIONS = foreign 1.7 dist-bzip2 # require automake 1.7
 
 lib_LIBRARIES = libjbig2dec.a
 include_HEADERS = jbig2.h
