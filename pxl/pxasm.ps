@@ -40,7 +40,7 @@ bind def
  } loop
 0
  { 1 index =string readline not { pop exit } if
-   (  pxa) anchorsearch
+   (    pxa) anchorsearch
     { pop ( = ) search
        { exch pop exch (,) search pop exch pop exch pop cvi
 	 3 -1 roll pop exch
@@ -63,7 +63,7 @@ loop pop closefile
 0
  { 1 index =string readline not { pop exit } if
    (,) search { exch pop exch pop } if
-   dup (  e) anchorsearch
+   dup (    e) anchorsearch
     { pop pop token pop exch
 		% Stack: file value name rest
       token
@@ -88,7 +88,7 @@ loop pop closefile
  } loop
 0
  { 1 index =string readline not { pop exit } if
-   (  pxt) anchorsearch
+   (    pxt) anchorsearch
     { pop
       (, pxt) search pop exch pop 2 index .defop
       (, pxt) search pop exch pop 2 index 1 add .defop
