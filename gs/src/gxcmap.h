@@ -208,7 +208,7 @@ extern cm_map_proc_cmyk(gx_error_cmyk_cs_to_cmyk_cm);
   Convert a color component name into a colorant index.
 */
 #define dev_t_proc_get_color_comp_index(proc, dev_t) \
-    int (proc)(const dev_t * dev, const char * pname, int name_size, int component_type)
+    int (proc)(dev_t * dev, const char * pname, int name_size, int component_type)
 
 #define dev_proc_get_color_comp_index(proc) \
     dev_t_proc_get_color_comp_index(proc, gx_device)

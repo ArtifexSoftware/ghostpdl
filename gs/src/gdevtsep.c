@@ -16,18 +16,11 @@
 
 /* $Id$ */
 /* tiffgray device:  8-bit Gray uncompressed TIFF device */
+/* tiff32nc device:  32-bit CMYK uncompressed TIFF device */
 /* tiffsep device: Generate individual TIFF gray files for each separation. */
 
-#include "math_.h"
 #include "gdevprn.h"
 #include "gdevtifs.h"
-#include "gsparam.h"
-#include "gscrd.h"
-#include "gscrdp.h"
-#include "gxlum.h"
-#include "gdevdcrd.h"
-#include "gstypes.h"
-#include "gxdcconv.h"
 #include "gdevdevn.h"
 #include "gsequivc.h"
 
@@ -385,12 +378,12 @@ private const gx_device_procs spot_cmyk_procs = device_procs;
 
 const tiffsep_device gs_tiffsep_device =
 {   
-    tiffsep_device_body(spot_cmyk_procs, "tiffsep", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 32, MAX_COLOR_VALUE, MAX_COLOR_VALUE, "DeviceCMYK"),
+    tiffsep_device_body(spot_cmyk_procs, "tiffsep", 8, GX_CINFO_POLARITY_SUBTRACTIVE, 64, MAX_COLOR_VALUE, MAX_COLOR_VALUE, "DeviceCMYK"),
     /* devn_params specific parameters */
     { 8,	/* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,	/* Names of color model colorants */
       4,			/* Number colorants for CMYK */
-      0,			/* MaxSeparations has not been specified */
+      8,			/* MaxSeparations:  our current limit is 8 bytes */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
@@ -403,63 +396,35 @@ const tiffsep_device gs_tiffsep_device =
  * the color components for the tiffsep device.
  */
 private void
-tiffsep_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
+tiffsep_gray_cs_to_cm(gx_device * dev, frac gray, frac out[])
 {
-    int i = dev->color_info.num_components - 1;
-    int * map =
-      (int *)(&((tiffsep_device *) dev)->devn_params.separation_order_map);
+    int * map = ((tiffsep_device *) dev)->devn_params.separation_order_map;
 
-    for(; i >= 0; i--)			/* Clear colors */
-        out[i] = frac_0;
-    if ((i = map[3]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
-        out[i] = frac_1 - gray;
+    gray_cs_to_devn_cm(dev, map, gray, out);
 }
 
 private void
-tiffsep_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_imager_state *pis,
+tiffsep_rgb_cs_to_cm(gx_device * dev, const gs_imager_state *pis,
 				   frac r, frac g, frac b, frac out[])
 {
-    int i = dev->color_info.num_components - 1;
-    int * map =
-      (int *)(&((tiffsep_device *) dev)->devn_params.separation_order_map);
-    frac cmyk[4];
+    int * map = ((tiffsep_device *) dev)->devn_params.separation_order_map;
 
-    for(; i >= 0; i--)			/* Clear colors */
-        out[i] = frac_0;
-    color_rgb_to_cmyk(r, g, b, pis, cmyk);
-    if ((i = map[0]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
-        out[i] = cmyk[0];
-    if ((i = map[1]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
-        out[i] = cmyk[1];
-    if ((i = map[2]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
-        out[i] = cmyk[2];
-    if ((i = map[3]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
-        out[i] = cmyk[3];
+    rgb_cs_to_devn_cm(dev, map, pis, r, g, b, out);
 }
 
 private void
-tiffsep_cmyk_cs_to_cmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+tiffsep_cmyk_cs_to_cm(gx_device * dev,
+		frac c, frac m, frac y, frac k, frac out[])
 {
-    int i = dev->color_info.num_components - 1;
-    int * map =
-      (int *)(&((tiffsep_device *) dev)->devn_params.separation_order_map);
+    int * map = ((tiffsep_device *) dev)->devn_params.separation_order_map;
 
-    for(; i >= 0; i--)			/* Clear colors */
-        out[i] = frac_0;
-    if ((i = map[0]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
-        out[i] = c;
-    if ((i = map[1]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
-        out[i] = m;
-    if ((i = map[2]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
-        out[i] = y;
-    if ((i = map[3]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
-        out[i] = k;
-};
+    cmyk_cs_to_devn_cm(dev, map, c, m, y, k, out);
+}
 
 private const gx_cm_color_map_procs tiffsep_cm_procs = {
-    tiffsep_gray_cs_to_cmyk_cm,
-    tiffsep_rgb_cs_to_cmyk_cm,
-    tiffsep_cmyk_cs_to_cmyk_cm
+    tiffsep_gray_cs_to_cm,
+    tiffsep_rgb_cs_to_cm,
+    tiffsep_cmyk_cs_to_cm
 };
 
 /*
@@ -522,118 +487,27 @@ tiffsep_update_spot_equivalent_colors(gx_device * dev, const gs_state * pgs)
     return 0;
 }
 
-#define set_param_array(a, d, s)\
-  (a.data = d, a.size = s, a.persistent = false);
-
 /* Get parameters.  We provide a default CRD. */
 private int
 tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
 {
-    int code;
-    bool seprs = false;
-    gs_param_string_array scna;
-    gs_param_string_array sona;
+    int code = gdev_prn_get_params(pdev, plist);
 
-    set_param_array(scna, NULL, 0);
-    set_param_array(sona, NULL, 0);
-
-    if ( (code = gdev_prn_get_params(pdev, plist)) < 0 ||
-         (code = sample_device_crd_get_params(pdev, plist, "CRDDefault")) < 0 ||
-	 (code = param_write_name_array(plist, "SeparationColorNames", &scna)) < 0 ||
-	 (code = param_write_name_array(plist, "SeparationOrder", &sona)) < 0 ||
-	 (code = param_write_bool(plist, "Separations", &seprs)) < 0)
+    if (code < 0)
 	return code;
-
-    return code;
+    return devn_get_params(pdev, plist,
+	    	&(((tiffsep_device *)pdev)->devn_params),
+    		&(((tiffsep_device *)pdev)->equiv_cmyk_colors));
 }
-#undef set_param_array
-
-#define BEGIN_ARRAY_PARAM(pread, pname, pa, psize, e)\
-    BEGIN\
-    switch (code = pread(plist, (param_name = pname), &(pa))) {\
-      case 0:\
-	if ((pa).size != psize) {\
-	  ecode = gs_note_error(gs_error_rangecheck);\
-	  (pa).data = 0;	/* mark as not filled */\
-	} else
-#define END_ARRAY_PARAM(pa, e)\
-	goto e;\
-      default:\
-	ecode = code;\
-e:	param_signal_error(plist, param_name, ecode);\
-      case 1:\
-	(pa).data = 0;		/* mark as not filled */\
-    }\
-    END
 
 /* Set parameters.  We allow setting the number of bits per component. */
 private int
 tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
 {
     tiffsep_device * const pdevn = (tiffsep_device *) pdev;
-    int code;
-    gs_param_name param_name;
-    gx_device_color_info save_info = pdevn->color_info;
-    gs_separations saved_separations = pdevn->devn_params.separations;
-    gs_devn_params * pparams = &pdevn->devn_params;
-    int max_sep = pdevn->color_info.num_components;
 
-    /*
-     * Adobe says that MaxSeparations is supposed to be 'read only' however
-     * we use this to allow the specification of the maximum number of
-     * separations.  Memory is allocated for the specified number of
-     * separations.  This allows us to then accept separation colors in
-     * color spaces even if they we not specified at the start of the
-     * image file.
-     */
-    code = param_read_int(plist, param_name = "MaxSeparations", &max_sep);
-    switch (code) {
-        default:
-	    param_signal_error(plist, param_name, code);
-        case 0:
-        case 1:
-	    if (max_sep < 0 || max_sep > GX_DEVICE_COLOR_MAX_COMPONENTS)
-		return_error(gs_error_rangecheck);
-	    {
-		int depth = bpc_to_depth(max_sep, pparams->bitspercomponent);
-
-                if (depth > 8 * size_of(gx_color_index))
-		    return_error(gs_error_rangecheck);
-    	        pdevn->devn_params.max_separations =
-		    pdevn->color_info.max_components =
-    	            pdevn->color_info.num_components = max_sep;
-                pdev->color_info.depth = depth;
-	    }
-
-    }
-    /*
-     * Save the color_info in case devicen_put_params fails.
-     */
-    code = devicen_put_params(pdev, pparams, plist);
-    if (code < 0) {
-	pdevn->color_info = save_info;
-	return code;
-    }
-
-    /*
-     * If we have any changes in the separations, then we need to setup to
-     * capture equivalent CMYK colors for the separations.
-     */
-    if (memcmp(&pdevn->devn_params.separations, &saved_separations,
-			    size_of(gs_separations)) != 0) {
-	if (pdevn->devn_params.separations.num_separations == 0)
-	    pdevn->equiv_cmyk_colors.all_color_info_valid = true;
-	else {
-	    int i;
-	    int num_spot = pdevn->devn_params.separations.num_separations;
-
-	    pdevn->equiv_cmyk_colors.all_color_info_valid = false;
-	    for (i = 0; i < num_spot; i++)
-		pdevn->equiv_cmyk_colors.color[i].color_info_valid = false;
-	}
-    }
-
-    return code;
+    return devn_printer_put_params(pdev, plist,
+		&(pdevn->devn_params), &(pdevn->equiv_cmyk_colors));
 }
 
 
@@ -647,62 +521,24 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
  *   nlength - length of the name
  *
  * This routine returns a positive value (0 to n) which is the device colorant
- * number if the name is found.  It returns a negative value if not found.
+ * number if the name is found.  It returns GX_DEVICE_COLOR_MAX_COMPONENTS if
+ * the colorant is not being used due to a SeparationOrder device parameter.
+ * It returns a negative value if not found.
  */
 private int
-tiffsep_get_color_comp_index(const gx_device * dev, const char * pname,
-					int name_size, int component_type)
+tiffsep_get_color_comp_index(gx_device * dev, const char * pname,
+				int name_size, int component_type)
 {
     tiffsep_device * pdev = (tiffsep_device *) dev;
-    const gs_devn_params * pdevn_params =
-	    &(((const tiffsep_device *)dev)->devn_params);
-    int num_order = pdevn_params->separation_order.num_names;
-    int color_component_number = 0;
 
     /*
-     * Check if the component is in either the process color model list
-     * or in the SeparationNames list.
+     * We allow more spot colors than we can image.  This allows the user
+     * to obtain separations for more than our max of 8 by doing multiple
+     * passes.
      */
-    color_component_number = check_pcm_and_separation_names(dev, pdevn_params,
-					pname, name_size, component_type);
-    /* Check if the component is in the separation order list. */
-
-    if (color_component_number >= 0 && num_order) {
-	color_component_number = 
-		pdevn_params->separation_order_map[color_component_number];
-        return color_component_number;
-    }
-    /*
-     * The given name does not match any of our current components or
-     * separations.  If this is a separation name and we have room
-     * for it then add it to our list of separations.
-     */
-    if (color_component_number < 0 && component_type == SEPARATION_NAME &&
-	pdev->color_info.num_components >
-	    pdev->devn_params.separations.num_separations +
-	    pdev->devn_params.num_std_colorant_names ) {
-	gs_param_string * pstr_param;
-	byte * pseparation;
-	gs_separations * separations = &pdev->devn_params.separations;
-	int sep_num = separations->num_separations++;
-
-	/* We have a new separation */
-	pstr_param = (gs_param_string *)gs_alloc_bytes(pdev->memory,
-			sizeof(gs_param_string), "tiffsep_get_color_comp_index");
-	pseparation = (byte *)gs_alloc_bytes(pdev->memory,
-			name_size, "tiffsep_get_color_comp_index");
-	memcpy(pseparation, pname, name_size);
-	pstr_param->data = pseparation;
-	pstr_param->size = name_size;
-	pstr_param->persistent = false;
-	separations->names[sep_num] = pstr_param;
-	color_component_number = sep_num + pdevn_params->num_std_colorant_names;
-	/* Indicate that we need to find equivalent CMYK color. */
-	pdev->equiv_cmyk_colors.color[sep_num].color_info_valid = false;
-	pdev->equiv_cmyk_colors.all_color_info_valid = false;
-    }
-
-    return color_component_number;
+    return devn_get_color_comp_index(dev,
+		&(pdev->devn_params), &(pdev->equiv_cmyk_colors),
+		pname, name_size, component_type, ALLOW_EXTRA_SPOT_COLORS);
 }
 
 /*
