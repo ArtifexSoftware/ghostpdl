@@ -153,8 +153,22 @@ nodict readonly pop
 % We have to break up sc according to the number of operands.
 /sc1 { /FillColor gput } bdef
 /SC1 { /StrokeColor gput } bdef
-/sc* { /FillColor load astore pop } bdef
-/SC* { /StrokeColor load astore pop } bdef
+% We have to avoid storing into a color array associated with an outer
+% gsave level, so we do a kind of "copy on write".
+/sc* {
+  currentdict /FillColor .knownget {
+    astore pop
+  } {
+    /FillColor load length array astore cvx /FillColor gput
+  } ifelse
+} bdef
+/SC* {
+  currentdict /StrokeColor .knownget {
+    astore pop
+  } {
+    /StrokeColor load length array astore cvx /StrokeColor gput
+  } ifelse
+} bdef
 
 % ---------------- Color installation ---------------- %
 
