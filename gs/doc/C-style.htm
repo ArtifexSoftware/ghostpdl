@@ -346,6 +346,14 @@ should be used in all new code.  (The <b><tt>_s</tt></b> name is needed
 only to satisfy some debuggers.  No code should use it.)
 
 <p>
+Don't assume that the compiler will (or won't) insert padding in structures
+to align members for best performance.  To preserve alignment, only declare
+structure members that are narrower than an <b><tt>int</tt></b> if there
+will be a lot of instances of that structure in memory.  For such
+structures, insert <b><tt>byte</tt></b> and/or <b><tt>short</tt></b> padding
+members as necessary to re-establish <b><tt>int</tt></b> alignment.
+
+<p>
 If a procedure parameter is itself a procedure, do list its
 parameter types rather than just using <b><tt>()</tt></b>.  For example,
 
@@ -363,6 +371,21 @@ int foo(P1(int (*callback)()));
 <h3><a name="Scalars"></a>Scalars</h3>
 
 <p>
+Even though <b><tt>bool</tt></b> is a synonym for <b><tt>int</tt></b>, treat
+them as conceptually different types:
+
+<ul>
+<li>Initialize or set <b><tt>bool</tt></b> variables to <b><tt>true</tt></b>
+or <b><tt>false</tt></b>, not 0 or 1.
+<li>Use the Boolean operators <b><tt>!</tt></b>, <b><tt>&&</tt></b>,
+and <b><tt>||</tt></b> only with Booleans.  Don't use the idiom
+<b><tt>!!x</tt></b> to create a Boolean that is true iff <b><tt>x</tt></b>
+!= 0: use <b><tt>x != 0</tt></b>.
+<li>Use an explicit <b><tt>(int)</tt></b> cast to convert a Boolean to an
+integer.
+</ul>
+
+<p>
 Don't declare parameters as being of type <b><tt>float</tt></b>,
 <b><tt>short</tt></b>, or <b><tt>char</tt></b>.  If you do this and forget
 to include the prototype at a call site, ANSI compilers will generate
@@ -377,7 +400,6 @@ double precision, so never cast a <b><tt>float</tt></b> to a
 <b><tt>double</tt></b> explicitly.
 
 <p>
-
 Unless there's a good reason for doing otherwise, return
 <b><tt>floatp</tt></b> (<b><tt>double</tt></b>) rather than
 <b><tt>float</tt></b> values.  Floating point hardware often does everything
@@ -689,8 +711,9 @@ Similarly, for do-while statements, do this:
 Do put a space:
 <ul>
 <li>after every comma and semicolon, unless it ends a line;
-<li>around every binary operator, although you can omit the spaces around
-the innermost operator in a nested expression if you like;
+<li>around every binary operator other than "<b><tt>-&gt;</tt></b>" and
+"<b><tt>.</tt></b>", although you can omit the spaces around the innermost
+operator in a nested expression if you like;
 <li>on both sides of the parentheses of an <b><tt>if</tt></b>, <b><tt>for</tt></b>, or <b><tt>while</tt></b>.
 </ul>
 
