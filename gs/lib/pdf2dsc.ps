@@ -45,6 +45,7 @@
 % Modified by L. Peter Deutsch for GS 3.33
 % Originally by Russell Lang  1995-04-26
 
+/PDFfile PDFname (r) file def
 /DSCfile DSCname (w) file def
 systemdict /.setsafe known { .setsafe } if
 
@@ -62,7 +63,7 @@ systemdict /.setsafe known { .setsafe } if
 
    GS_PDF_ProcSet begin
    pdfdict begin
-   PDFname (r) file
+   PDFfile
    pdfopen begin
    /FirstPage where { pop } { /FirstPage 1 def } ifelse
    /LastPage where { pop } { /LastPage pdfpagecount def } ifelse
