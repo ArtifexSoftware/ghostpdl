@@ -22,6 +22,8 @@
 #include "gx.h"
 #include "pldict.h"
 #include "pcdraw.h"
+#include "pcpage.h"
+#include "pcursor.h"
 #include "pcpalet.h"
 #include "pcfrgrnd.h"
 
@@ -381,19 +383,26 @@ pcl_palette_NP(
  * Set the render method for the palette.
  *
  * Returns 0 on success, < 0 in the event of an error.
+ *
+ * The value of the render method is not checked against the existing value,
+ * since the fact that two are the same is neither a necessary nor sufficient
+ * condition for determining that the render algorithm has changed: it is
+ * possible that the rendering remap array (see pcht.c) has been modified.
  */
   int
 pcl_palette_set_render_method(
-    pcl_state_t *    pcs,
-    int              render_method
+    pcl_state_t *   pcs,
+    uint            render_method
 )
 {
-    int              code = unshare_palette(pcs);
+    int             code = unshare_palette(pcs);
 
     if ((code == 0) && (pcs->ppalet->pht == 0))
         code = pcl_ht_build_default_ht(&(pcs->ppalet->pht), pcs->memory);
-    if (code == 0)
+    if (code >= 0)
         code = pcl_ht_set_render_method(&(pcs->ppalet->pht), render_method);
+    if (code >= 0)
+        pcs->render_mode = render_method;
     return code;
 }
 
@@ -783,7 +792,7 @@ palette_control(
     pcl_state_t *   pcs
 )
 {
-    int             action = int_arg(pargs);
+    uint            action = uint_arg(pargs);
 
     switch (action) {
 
@@ -842,9 +851,39 @@ set_render_algorithm(
     pcl_state_t *   pcs
 )
 {
-    return pcl_palette_set_render_method(pcs, int_arg(pargs));
+    return pcl_palette_set_render_method(pcs, uint_arg(pargs));
 }
 
+/*
+ * ESC & b # M
+ *
+ * Set monochrome or normal print mode. Note that, for a change in the print
+ * mode to take effect, the current rendering mode must be reset.
+ *
+ * NB: Unlike certain other commands, a monochrome print command always ejects
+ *     the current page if it has been marked, even if no change in the print
+ *     mode occurs.
+ */
+  private int
+set_print_mode(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    uint            mode = uint_arg(pargs);
+    int             code = 0;
+
+    if (mode > 1)
+        return 0;
+
+    if ((code = pcl_end_page_if_marked(pcs)) < 0)
+        return code;
+    pcl_home_cursor(pcs);
+
+    pcs->monochrome_mode = (mode == 1);
+    pcl_ht_set_print_mode(pcs->monochrome_mode);
+    return pcl_palette_set_render_method(pcs, pcs->render_mode);
+}
 
 /*
  * Initialization routine for palettes.
@@ -859,32 +898,45 @@ palette_do_init(
         'p', 'P',
         PCL_COMMAND( "Push/Pop Palette",
                      push_pop_palette,
-                     pca_neg_ignore | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     {
         't', 'J',
         PCL_COMMAND( "Render Algorithm",
                      set_render_algorithm,
-                     pca_neg_ignore | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     END_CLASS
 
     DEFINE_CLASS('&')
     {
+        'b', 'M',
+        PCL_COMMAND( "Monochrome Printing",
+                     set_print_mode,
+                     pca_neg_ok | pca_big_ignore
+                     )
+    },
+    {
         'p', 'S',
-        PCL_COMMAND("Select Palette", set_sel_palette_id, pca_big_ignore)
+        PCL_COMMAND( "Select Palette",
+                      set_sel_palette_id,
+                      pca_neg_ok | pca_big_ignore
+                      )
     },
     {
         'p', 'I',
-        PCL_COMMAND("Palette Control ID", set_ctrl_palette_id, pca_big_ignore)
+        PCL_COMMAND( "Palette Control ID",
+                     set_ctrl_palette_id,
+                     pca_neg_ok | pca_big_ignore
+                     )
     },
     {
         'p', 'C',
         PCL_COMMAND( "Palette Control",
                      palette_control,
-                     pca_neg_ignore | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     END_CLASS
@@ -903,7 +955,8 @@ palette_do_reset(
     int                 code;
     static const uint   mask = (   pcl_reset_initial
                                  | pcl_reset_cold
-                                 | pcl_reset_printer );
+                                 | pcl_reset_printer
+                                 | pcl_reset_overlay );
 
     if ((type & mask) == 0)
         return;
@@ -924,7 +977,7 @@ palette_do_reset(
         pcl_cs_base_init();
         pcl_cs_indexed_init();
 
-    } else {
+    } else if ((type & (pcl_reset_cold | pcl_reset_printer)) != 0) {
 
         /* clear the palette stack and store */
         clear_palette_stack(pcs->memory);
@@ -940,7 +993,8 @@ palette_do_reset(
     (void)pcl_frgrnd_set_default_foreground(pcs);
 
     /* the following is helpful when working with memory leak detectors */
-    pcl_set_drawing_color(pcs, pcl_pattern_solid_frgrnd, 0, false);
+    if ((type & pcl_reset_overlay) == 0)
+        pcl_set_drawing_color(pcs, pcl_pattern_solid_frgrnd, 0, false);
 }
 
 /*
