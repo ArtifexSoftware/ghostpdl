@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -58,10 +58,69 @@ struct gs_c_param_s {
     void *alternate_typed_data;
 };
 
-/* Parameter values aren't really simple, */
-/* but since parameter lists are transient, it doesn't matter. */
-gs_private_st_ptrs2(st_c_param, gs_c_param, "gs_c_param",
-	 c_param_enum_ptrs, c_param_reloc_ptrs, next, alternate_typed_data);
+/* GC descriptor and procedures */
+gs_private_st_composite(st_c_param, gs_c_param, "gs_c_param",
+			c_param_enum_ptrs, c_param_reloc_ptrs);
+ENUM_PTRS_WITH(c_param_enum_ptrs, gs_c_param *param) {
+    index -= 3;
+    switch (param->type) {
+	/* Only the aggregate types are handled specially. */
+    case gs_param_type_dict:
+    case gs_param_type_dict_int_keys:
+    case gs_param_type_array:
+	return ENUM_USING(st_c_param_list, &param->value.d,
+			  sizeof(param->value.d), index);
+    default: {
+	gs_param_typed_value value;
+
+	value.value = *(const gs_param_value *)&param->value;
+	value.type = param->type;
+	return gs_param_typed_value_enum_ptrs(&value, sizeof(value), index,
+					      pep, NULL, gcst);
+    }
+    }
+}
+case 0: return ENUM_OBJ(param->next);
+case 1: return ENUM_OBJ(param->alternate_typed_data);
+case 2:
+    if (!param->key.persistent) {
+	gs_const_string key;
+
+	key.data = param->key.data;
+	key.size = param->key.size;
+	return ENUM_STRING(&key);
+    } else
+	return ENUM_OBJ(0);	/* keep going */
+ENUM_PTRS_END
+RELOC_PTRS_WITH(c_param_reloc_ptrs, gs_c_param *param) {
+    RELOC_VAR(param->next);
+    RELOC_VAR(param->alternate_typed_data);
+    if (!param->key.persistent) {
+	gs_const_string key;
+
+	key.data = param->key.data;
+	key.size = param->key.size;
+	RELOC_CONST_STRING_VAR(key);
+	param->key.data = key.data;
+    }
+    switch (param->type) {
+	/* Only the aggregate types are handled specially. */
+    case gs_param_type_dict:
+    case gs_param_type_dict_int_keys:
+    case gs_param_type_array:
+	RELOC_USING(st_c_param_list, &param->value.d, sizeof(param->value.d));
+	break;
+    default: {
+	gs_param_typed_value value;
+
+	value.value = *(gs_param_value *)&param->value;
+	value.type = param->type;
+	gs_param_typed_value_reloc_ptrs(&value, sizeof(value), NULL, gcst);
+	*(gs_param_value *)&param->value = value.value;
+    }
+    }
+}
+RELOC_PTRS_END
 
 /* ---------------- Utilities ---------------- */
 
