@@ -212,9 +212,6 @@ private void
 frgrnd_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {
     if ( type & (pcl_reset_permanent) ) {
-	gs_free_object(pcs->memory, pcs->pfrgrnd->pbase,  "foreground base color space reset");
-	/*	gs_free_object(pcs->memory, pcs->pfrgrnd->pht,  "palette ht released permanent reset");
-		gs_free_object(pcs->memory, pcs->pfrgrnd->pcrd,  "palette ht released permanent reset"); */
 	gs_free_object(pcs->memory, pcs->pfrgrnd,  "foreground reset");
 	gs_free_object(pcs->memory, pcs->pwhite_cs, "pure white color space reset");
 
