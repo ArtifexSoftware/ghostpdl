@@ -858,7 +858,7 @@ $(GLOBJ)gsparams.$(OBJ) : $(GLSRC)gsparams.c $(GXERR) $(memory__h)\
 	$(GLCC) $(GLO_)gsparams.$(OBJ) $(C_) $(GLSRC)gsparams.c
 
 $(GLOBJ)gspath.$(OBJ) : $(GLSRC)gspath.c $(GXERR)\
- $(gscoord_h) $(gspath_h)\
+ $(math__h) $(gscoord_h) $(gspath_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gzcpath_h) $(gzpath_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gspath.$(OBJ) $(C_) $(GLSRC)gspath.c

@@ -283,4 +283,6 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
 int pdf_encode_glyph(gs_font_base *bfont, gs_glyph glyph0,
 	    byte *buf, int buf_size, int *char_code_length);
 
+int pdf_shift_text_currentpoint(pdf_text_enum_t *penum, gs_point *wpt);
+
 #endif /* gdevpdtt_INCLUDED */

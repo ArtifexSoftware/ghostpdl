@@ -81,4 +81,8 @@ void *gs_state_client_data(const gs_state *);
 /* Accessories. */
 gs_id gx_get_clip_path_id(gs_state *);
 
+/* The following switch is for developmenty purpose only. 
+   PRECISE_CURRENTPOINT 0 must not go to production due to no clamping. */
+#define PRECISE_CURRENTPOINT 1 /* Old code compatible with dropped clamping = 0, new code = 1 */
+
 #endif /* gxstate_INCLUDED */

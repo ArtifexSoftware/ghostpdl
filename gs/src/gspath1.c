@@ -61,6 +61,30 @@ typedef struct arc_curve_params_s {
 /* Forward declarations */
 private int arc_add(const arc_curve_params_t *arc, bool is_quadrant);
 
+
+int
+gx_setcurrentpoint_from_path(gs_imager_state *pis, gx_path *path)
+{
+    gs_point pt;
+
+    pt.x = fixed2float(path->position.x);
+    pt.y = fixed2float(path->position.y);
+    gx_setcurrentpoint(pis, pt.x, pt.y);
+    pis->current_point_valid = true;
+    return 0;
+}
+
+private inline int
+gs_arc_add_inline(gs_state *pgs, bool cw, floatp xc, floatp yc, floatp rad, 
+		    floatp a1, floatp a2, bool add)
+{
+    int code = gs_imager_arc_add(pgs->path, (gs_imager_state *)pgs, cw, xc, yc, rad, a1, a2, add);
+
+    if (code < 0)
+	return code;
+    return gx_setcurrentpoint_from_path((gs_imager_state *)pgs, pgs->path);
+}
+
 int
 gs_arc(gs_state * pgs,
        floatp xc, floatp yc, floatp r, floatp ang1, floatp ang2)
@@ -321,6 +345,8 @@ floatp ax1, floatp ay1, floatp ax2, floatp ay2, floatp arad, float retxy[4])
 	    arc.pt.x = ax1;
 	    arc.pt.y = ay1;
 	    code = arc_add(&arc, false);
+	    if (code == 0)
+		code = gx_setcurrentpoint_from_path((gs_imager_state *)pgs, pgs->path);
 	}
     }
     if (retxy != 0) {
@@ -462,6 +488,13 @@ gs_reversepath(gs_state * pgs)
     if (code < 0) {
 	gx_path_free(&rpath, "gs_reversepath");
 	return code;
+    }
+    if (pgs->current_point_valid) {
+	/* Not empty. */
+	gx_setcurrentpoint(pgs, fixed2float(rpath.position.x), 
+				fixed2float(rpath.position.y));
+	pgs->subpath_start.x = fixed2float(rpath.segments->contents.subpath_current->pt.x);
+	pgs->subpath_start.y = fixed2float(rpath.segments->contents.subpath_current->pt.y);
     }
     gx_path_assign_free(ppath, &rpath);
     return 0;

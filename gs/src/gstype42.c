@@ -717,6 +717,9 @@ gs_type42_append(uint glyph_index, gs_imager_state * pis,
 
     if (code < 0)
 	return code;
+    code = gx_setcurrentpoint_from_path(pis, ppath);
+    if (code < 0)
+	return code;
     /* Set the flatness for curve rendering. */
     return gs_imager_setflat(pis, gs_char_flatness(pis, 1.0));
 }

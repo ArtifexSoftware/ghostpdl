@@ -253,8 +253,14 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 code = t1_hinter__endchar(h, (pcis->seac_accent >= 0));
 		if (code < 0)
 		    return code;
-                if (pcis->seac_accent < 0)
+                if (pcis->seac_accent < 0) {
                     code = t1_hinter__endglyph(h);
+		    if (code < 0)
+			return code;
+		    code = gx_setcurrentpoint_from_path(pcis->pis, pcis->path);
+		    if (code < 0)
+			return code;
+		}
 		code = gs_type1_endchar(pcis);
 		if (code == 1) {
 		    /* do accent of seac */

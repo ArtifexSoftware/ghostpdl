@@ -769,12 +769,9 @@ show_update(gs_show_enum * penum)
 private int
 show_fast_move(gs_state * pgs, gs_fixed_point * pwxy)
 {
-    int code = gx_path_add_rel_point_inline(pgs->path, pwxy->x, pwxy->y);
-
-    /* If the current position is out of range, don't try to move. */
-    if (code == gs_error_limitcheck && pgs->clamp_coordinates)
-	code = 0;
-    return code;
+    return gs_moveto_aux((gs_imager_state *)pgs, pgs->path,
+			      pgs->current_point.x + fixed2float(pwxy->x), 
+			      pgs->current_point.y + fixed2float(pwxy->y));
 }
 
 /* Get the current character code. */

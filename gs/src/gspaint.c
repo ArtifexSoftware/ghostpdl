@@ -395,5 +395,9 @@ gs_strokepath(gs_state * pgs)
 	gx_path_free(&spath, "gs_strokepath");
 	return code;
     }
-    return gx_path_assign_free(pgs->path, &spath);
+    code = gx_path_assign_free(pgs->path, &spath);
+    if (code < 0)
+	return code;
+    gx_setcurrentpoint(pgs, fixed2float(spath.position.x), fixed2float(spath.position.y));
+    return 0;
 }

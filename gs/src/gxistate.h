@@ -211,6 +211,10 @@ typedef struct gs_transparency_source_s {
 	void *client_data;\
 	gx_line_params line_params;\
 	gs_matrix_fixed ctm;\
+	bool current_point_valid;\
+	gs_point current_point;\
+	gs_point subpath_start;\
+	bool clamp_coordinates;\
 	gs_logical_operation_t log_op;\
 	gx_color_value alpha;\
 	gs_blend_mode_t blend_mode;\
@@ -255,6 +259,7 @@ struct gs_imager_state_s {
 #define gs_imager_state_initial(scale)\
   0, 0, { gx_line_params_initial },\
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
+  false, {0, 0}, {0, 0}, false, \
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
    { 1.0, 0 }, { 1.0, 0 }, 0/*false*/, 0, 0, 0/*false*/, 0, 0, 1.0,\
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 0/*false*/, 1.0,\

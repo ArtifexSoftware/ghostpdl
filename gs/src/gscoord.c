@@ -384,6 +384,8 @@ gx_translate_to_fixed(register gs_state * pgs, fixed px, fixed py)
 	trace_matrix_fixed(&pgs->char_tm);
     }
 #endif
+    gx_setcurrentpoint(pgs, fixed2float(pgs->ctm.tx_fixed), fixed2float(pgs->ctm.ty_fixed));
+    pgs->current_point_valid = true;
     return 0;
 }
 

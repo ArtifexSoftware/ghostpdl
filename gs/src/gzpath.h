@@ -235,10 +235,6 @@ typedef enum {
   ((ppath)->state_flags = psf_last_draw)
 #define path_update_closepath(ppath)\
   ((ppath)->state_flags = psf_last_closepath)
-#define path_set_outside_position(ppath, px, py)\
-  ((ppath)->outside_position.x = (px),\
-   (ppath)->outside_position.y = (py),\
-   (ppath)->state_flags |= psf_outside_range)
 
 /*
  * In order to be able to reclaim path segments at the right time, we need
@@ -320,8 +316,6 @@ struct gx_path_s {
     int subpath_count;
     int curve_count;
     gs_fixed_point position;	/* current position */
-    gs_point outside_position;	/* position if outside_range is set */
-    gs_point outside_start;	/* outside_position of last moveto */
     gx_path_procs *procs;
 };
 
@@ -370,13 +364,6 @@ extern_st(st_path_enum);
 #define gx_path_current_point_inline(ppath,ppt)\
  ( !path_position_valid(ppath) ? gs_note_error(gs_error_nocurrentpoint) :\
    ((ppt)->x = ppath->position.x, (ppt)->y = ppath->position.y, 0) )
-/* ...rel_point rather than ...relative_point is because */
-/* some compilers dislike identifiers of >31 characters. */
-#define gx_path_add_rel_point_inline(ppath,dx,dy)\
- ( !path_position_in_range(ppath) || ppath->bbox_set ?\
-   gx_path_add_relative_point(ppath, dx, dy) :\
-   (ppath->position.x += dx, ppath->position.y += dy,\
-    path_update_moveto(ppath), 0) )
 
 /* An iterator of flattened segments for a minotonic curve. */
 typedef struct gx_flattened_iterator_s gx_flattened_iterator;

@@ -524,8 +524,8 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 /* ------ Internal routines ------ */
 
 /* Append a user path to the current path. */
-private int
-upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
+private inline int
+upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p)
 {
     ref opcodes;
     check_read(*oppath);
@@ -636,6 +636,17 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 	if (argcount)
 	    return_error(e_typecheck);	/* leftover args */
     }
+    return 0;
+}
+private int
+upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
+{
+    int code = upath_append_aux(oppath, i_ctx_p);
+
+    if (code < 0)
+	return code;
+    igs->current_point.x = fixed2float(igs->path->position.x);
+    igs->current_point.y = fixed2float(igs->path->position.y);
     return 0;
 }
 

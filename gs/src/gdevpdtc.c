@@ -158,9 +158,7 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
     }
     if (!return_width)
 	return 0;
-    return gx_path_add_point(penum->path,
-			     penum->origin.x + float2fixed(total_width.x),
-			     penum->origin.y + float2fixed(total_width.y));
+    return pdf_shift_text_currentpoint(penum, &total_width);
 }
 
 /* ---------------- CMap-based composite font ---------------- */
@@ -518,10 +516,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    }
 	    pte->index = break_index;
 	    pte->xy_index = break_xy_index;
-
-	    code = gx_path_add_point(pte->path,
-				 pte->origin.x + float2fixed(wxy.x),
-				 pte->origin.y + float2fixed(wxy.y));
+	    code = pdf_shift_text_currentpoint(pte, &wxy);
 	    if (code < 0)
 		return code;
 	} 

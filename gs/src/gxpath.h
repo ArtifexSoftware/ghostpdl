@@ -257,6 +257,11 @@ segment_notes
 gx_path_enum_notes(const gs_path_enum *);
 bool gx_path_enum_backup(gs_path_enum *);
 
+/* An auxiliary function to add a path point with a specified transformation. */
+int gs_moveto_aux(gs_imager_state *pis, gx_path *ppath, floatp x, floatp y);
+int gx_setcurrentpoint_from_path(gs_imager_state *pis, gx_path *path);
+
+
 /* ------ Clipping paths ------ */
 
 /* Opaque type for a clipping path */

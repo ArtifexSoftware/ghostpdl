@@ -29,11 +29,16 @@
  * tx/ty values may be too large to fit in a fixed values; txy_fixed_valid
  * is false if this is the case, and true otherwise.
  */
-typedef struct gs_matrix_fixed_s {
+struct gs_matrix_fixed_s {
     _matrix_body;
     fixed tx_fixed, ty_fixed;
     bool txy_fixed_valid;
-} gs_matrix_fixed;
+};
+
+#ifndef gs_matrix_fixed_DEFINED
+#define gs_matrix_fixed_DEFINED
+typedef struct gs_matrix_fixed_s gs_matrix_fixed;
+#endif
 
 /* Make a gs_matrix_fixed from a gs_matrix. */
 int gs_matrix_fixed_from_matrix(gs_matrix_fixed *, const gs_matrix *);

@@ -373,6 +373,22 @@ adjust_first_last_char(pdf_font_resource_t *pdfont, byte *str, int size)
     }
 }
 
+int
+pdf_shift_text_currentpoint(pdf_text_enum_t *penum, gs_point *wpt)
+{
+    gs_state *pgs;
+    extern_st(st_gs_state);
+
+    if (gs_object_type(penum->dev->memory, penum->pis) != &st_gs_state) {
+	/* Probably never happens. Not sure though. */
+	return_error(gs_error_unregistered);
+    }
+    pgs = (gs_state *)penum->pis;
+    return gs_moveto_aux(penum->pis, gx_current_path(pgs),
+			      fixed2float(penum->origin.x) + wpt->x, 
+			      fixed2float(penum->origin.y) + wpt->y);
+}
+
 /*
  * Internal procedure to process a string in a non-composite font.
  * Doesn't use or set pte->{data,size,index}; may use/set pte->xy_index;
@@ -530,9 +546,7 @@ finish:
 	penum->returned.total_width.y += p.y;
     } else
 	penum->returned.total_width = width_pt;
-    return gx_path_add_point(penum->path,
-			     penum->origin.x + float2fixed(width_pt.x),
-			     penum->origin.y + float2fixed(width_pt.y));
+    return pdf_shift_text_currentpoint(penum, &width_pt);
 }
 
 /*
