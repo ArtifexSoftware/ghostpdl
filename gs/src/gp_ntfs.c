@@ -228,7 +228,8 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
               }
           }
         if ( strcmp(".",  pfen->find_data.cFileName)
-          && strcmp("..", pfen->find_data.cFileName))
+          && strcmp("..", pfen->find_data.cFileName)
+	  && (pfen->find_data.dwFileAttributes != FILE_ATTRIBUTE_DIRECTORY))
             break;
       } 
    
