@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -769,7 +769,12 @@ s_process_write_buf(stream * s, bool last)
     curr->strm = prev; prev = curr; curr = ahead;\
   END
 
-/* Read from a pipeline. */
+/*
+ * Read from a stream pipeline.  Update end_status for all streams that were
+ * actually touched.  Return the status from the outermost stream: this is
+ * normally the same as s->end_status, except that if s->procs.process
+ * returned 1, sreadbuf sets s->end_status to 0, but returns 1.
+ */
 private int
 sreadbuf(stream * s, stream_cursor_write * pbuf)
 {
