@@ -886,7 +886,7 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     /* make a new memory device with new settings */
     gs_make_mem_device(ddev->mdev, 
 	gdev_mem_device_for_bits(ddev->color_info.depth), 
-	0, 0, (gx_device *) ddev);
+	gs_memory_stable(ddev->memory), 0, (gx_device *) ddev);
     ddev->mdev->width = param_dev->width;
     ddev->mdev->height = param_dev->height;
     ddev->ulBitmapSize = gdev_mem_bitmap_size(ddev->mdev);
