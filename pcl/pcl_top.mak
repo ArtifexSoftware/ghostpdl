@@ -32,7 +32,6 @@ config-clean: pl.config-clean pcl.config-clean
 
 #### Main program
 
-# Note: we always compile the main program with -DDEBUG.
 $(PCLOBJ)pcmain.$(OBJ): $(PCLSRC)pcmain.c           \
                         $(AK)                       \
                         $(malloc__h)                \
