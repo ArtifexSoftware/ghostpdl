@@ -241,21 +241,6 @@ print_al(const char *label, const active_line * alp)
     if (gs_debug_c('F'))
 	print_active_line(label, alp);
 }
-private int
-check_line_list(const active_line * flp)
-{
-    const active_line *alp;
-
-    if (flp != 0)
-	for (alp = flp->prev->next; alp != 0; alp = alp->next)
-	    if (alp->next != 0 && alp->next->x_current < alp->x_current) {
-		lprintf("[f]Lines out of order!\n");
-		print_active_line("   1:", alp);
-		print_active_line("   2:", alp->next);
-		return_error(gs_error_Fatal);
-	    }
-    return 0;
-}
 #else
 #define print_al(label,alp) DO_NOTHING
 #endif
@@ -1708,6 +1693,7 @@ private int fill_slant_adjust(fixed, fixed, fixed, fixed, fixed,
 			      fixed, fixed, fixed, const gs_fixed_rect *,
 	     const gx_device_color *, gx_device *, gs_logical_operation_t);
 private void resort_x_line(active_line *);
+private void move_al_by_y(ll_ptr ll, fixed y1);
 
 private int
 loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
@@ -1997,28 +1983,21 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	    fixed height = y1 - y;
 	    fixed xlbot, xltop; /* as of last "outside" line */
 	    int inside = 0;
-	    active_line *nlp, flp;
+	    active_line flp;
 
 	    INCR(band);
-	    for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
+
+	    /* Generate trapezoids */
+
+	    for (alp = ll->x_list; alp != 0; alp = alp->next) {
 		fixed xbot = alp->x_current;
 		fixed xtop = alp->x_current = alp->x_next;
 		fixed wtop;
 		int xi, xli;
 		int code;
-		active_line als = *alp; /* Save data being broken by end_x_line below. */
 
 		print_al("step", alp);
 		INCR(band_step);
-		nlp = alp->next;
-		/* Handle ended or out-of-order lines.	After this, */
-		/* the only member of alp we use is alp->direction. */
-		if (alp->end.y != y1 || !end_x_line(alp, true)) {
-		    if (xtop <= x)
-			resort_x_line(alp);
-		    else
-			x = xtop;
-		}
 		/* rule = -1 for winding number rule, i.e. */
 		/* we are inside if the winding number is non-zero; */
 		/* rule = 1 for even-odd rule, i.e. */
@@ -2027,7 +2006,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		if (!INSIDE_PATH_P()) { 	/* i.e., outside */
 		    inside += alp->direction;
 		    if (INSIDE_PATH_P())	/* about to go in */
-			xlbot = xbot, xltop = xtop, flp = als;
+			xlbot = xbot, xltop = xtop, flp = *alp;
 		    continue;
 		}
 		/* We're inside a region being filled. */
@@ -2077,9 +2056,9 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 			 * against a dropout. Choose one of two pixels which 
 			 * is closer to the "axis".
 			 */
-			fixed x = int2fixed(xli);
+			fixed xx = int2fixed(xli);
 
-			if (x - xltop < xtop - x)
+			if (xx - xltop < xtop - xx)
 			    ++xi;
 			else
 			    --xli;
@@ -2091,16 +2070,16 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		    if (pseudo_rasterization) {
 			if (code < 0)
 			    return code;
-			code = complete_margin(ll, &flp, &als, y, y1);
+			code = complete_margin(ll, &flp, alp, y, y1);
 			if (code < 0)
 			    return code;
-			code = margin_interior(ll, &flp, &als, y, y1);
+			code = margin_interior(ll, &flp, alp, y, y1);
 			if (code < 0)
 			    return code;
-			code = add_margin(ll, &flp, &als, y, y1);
+			code = add_margin(ll, &flp, alp, y, y1);
 			if (code < 0)
 			    return code;
-			code = process_h_lists(ll, plp, &flp, &als);
+			code = process_h_lists(ll, plp, &flp, alp);
 			plp = alp;
 		    }
 #		    endif
@@ -2161,9 +2140,9 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 #		    if PSEUDO_RASTERIZATION
 		    if (pseudo_rasterization) {
 			flags |= ftf_pseudo_rasterization;
-			if (flp.start.x == als.start.x && flp.start.y == y)
+			if (flp.start.x == alp->start.x && flp.start.y == y)
 			    flags |= ftf_peak0;
-			if (flp.end.x == als.end.x && flp.end.y == y1)
+			if (flp.end.x == alp->end.x && flp.end.y == y1)
 			    flags |= ftf_peak0;
 		    }
 #		    endif
@@ -2173,16 +2152,16 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		    if (pseudo_rasterization) {
 			if (code < 0)
 			    return code;
-			code = complete_margin(ll, &flp, &als, y, y1);
+			code = complete_margin(ll, &flp, alp, y, y1);
 			if (code < 0)
 			    return code;
-			code = margin_interior(ll, &flp, &als, y, y1);
+			code = margin_interior(ll, &flp, alp, y, y1);
 			if (code < 0)
 			    return code;
-			code = add_margin(ll, &flp, &als, y, y1);
+			code = add_margin(ll, &flp, alp, y, y1);
 			if (code < 0)
 			    return code;
-			code = process_h_lists(ll, plp, &flp, &als);
+			code = process_h_lists(ll, plp, &flp, alp);
 			plp = alp;
 		    }
 #		    endif
@@ -2192,44 +2171,21 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	    }
 	} else {
 	    /* Just scan for ended or out-of-order lines. */
-	    active_line *nlp, flp;
+	    active_line flp;
 	    int inside = 0;
 
-	    for (x = min_fixed, alp = ll->x_list; alp != 0;
-		 alp = nlp
-		) {
-		fixed nx = alp->x_current = alp->x_next;
-		active_line als = *alp;
+	    /* Process dropouts near trapezoids. */
 
-		nlp = alp->next;
-		if_debug4('F',
-			  "[F]check 0x%lx,x=%g 0x%lx,x=%g\n",
-			  (ulong) alp->prev, fixed2float(x),
-			  (ulong) alp, fixed2float(nx));
-#		if PSEUDO_RASTERIZATION
-		if (!pseudo_rasterization) {
-#		endif
-		    if (alp->end.y == y1) {
-			if (end_x_line(alp, true))
-			    continue;
-		    }
-		    if (nx <= x)
-			resort_x_line(alp);
-		    else
-			x = nx;
-#		if PSEUDO_RASTERIZATION
-		} else {
-		    if (alp->end.y != y1 || !end_x_line(alp, true)) {
-			if (nx <= x)
-			    resort_x_line(alp);
-			else
-			    x = nx;
-		    }
+#	    if PSEUDO_RASTERIZATION
+	    if (pseudo_rasterization) {
+		for (alp = ll->x_list; alp != 0; alp = alp->next) {
+		    alp->x_current = alp->x_next;
+
 #define INSIDE_PATH_P() ((inside & rule) != 0)
 		    if (!INSIDE_PATH_P()) {		/* i.e., outside */
 			inside += alp->direction;
 			if (INSIDE_PATH_P())	/* about to go in */
-			    flp = als;
+			    flp = *alp;
 			continue;
 		    }
 		    /* We're inside a region being filled. */
@@ -2238,30 +2194,23 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 			continue;
 #undef INSIDE_PATH_P
 
-		    code = continue_margin(ll, &flp, &als, y, y1);
+		    code = continue_margin(ll, &flp, alp, y, y1);
 		    if (code < 0)
 			return code;
-		    code = process_h_lists(ll, plp, &flp, &als);
+		    code = process_h_lists(ll, plp, &flp, alp);
 		    plp = alp;
 		    if (code < 0)
 			return code;
 		}
-#		endif
 	    }
+#	    endif
 	}
-#ifdef DEBUG
-	if (gs_debug_c('f')) {
-	    int code = check_line_list(ll->x_list);
-
-	    if (code < 0)
-		return code;
-	}
-#endif
 	if (plp != 0) {
 	    code = process_h_lists(ll, plp, 0, 0);
 	    if (code < 0)
 		return code;
 	}
+	move_al_by_y(ll, y1);
 	y = y1;
 	ll->h_list1 = ll->h_list0;
 	ll->h_list0 = 0;
@@ -2417,6 +2366,26 @@ resort_x_line(active_line * alp)
     if (next)
 	next->prev = alp;
     prev->next = alp;
+}
+
+/* Move active lines by Y. */
+private void
+move_al_by_y(ll_ptr ll, fixed y1)
+{
+    fixed x;
+    active_line *alp, *nlp;
+
+    for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
+	fixed xtop = alp->x_current = alp->x_next;
+
+	nlp = alp->next;
+	if (alp->end.y != y1 || !end_x_line(alp, true)) {
+	    if (xtop <= x)
+		resort_x_line(alp);
+	    else
+		x = xtop;
+	}
+    }
 }
 
 /* ---------------- Range list management ---------------- */
