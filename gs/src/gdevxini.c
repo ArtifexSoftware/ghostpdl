@@ -611,38 +611,43 @@ gdev_x_clear_window(gx_device_X * xdev)
 {
     if (!xdev->ghostview) {
 	if (xdev->useBackingPixmap) {
-	    x_error_handler.oldhandler = XSetErrorHandler(x_catch_alloc);
-	    x_error_handler.alloc_error = False;
-	    xdev->bpixmap =
-		XCreatePixmap(xdev->dpy, xdev->win,
-			      xdev->width, xdev->height,
-			      xdev->vinfo->depth);
-	    XSync(xdev->dpy, False);	/* Force the error */
-	    if (x_error_handler.alloc_error) {
-		xdev->useBackingPixmap = False;
+	    if (xdev->bpixmap == 0) {
+		x_error_handler.oldhandler = XSetErrorHandler(x_catch_alloc);
+		x_error_handler.alloc_error = False;
+		xdev->bpixmap =
+		    XCreatePixmap(xdev->dpy, xdev->win,
+				  xdev->width, xdev->height,
+				  xdev->vinfo->depth);
+		XSync(xdev->dpy, False);	/* Force the error */
+		if (x_error_handler.alloc_error) {
+		    xdev->useBackingPixmap = False;
 #ifdef DEBUG
-		eprintf("Warning: Failed to allocated backing pixmap.\n");
+		    eprintf("Warning: Failed to allocated backing pixmap.\n");
 #endif
-		if (xdev->bpixmap) {
-		    XFreePixmap(xdev->dpy, xdev->bpixmap);
-		    xdev->bpixmap = None;
-		    XSync(xdev->dpy, False);	/* Force the error */
+		    if (xdev->bpixmap) {
+			XFreePixmap(xdev->dpy, xdev->bpixmap);
+			xdev->bpixmap = None;
+			XSync(xdev->dpy, False);	/* Force the error */
+		    }
 		}
+		x_error_handler.oldhandler =
+		    XSetErrorHandler(x_error_handler.oldhandler);
 	    }
-	    x_error_handler.oldhandler =
-		XSetErrorHandler(x_error_handler.oldhandler);
-	} else
-	    xdev->bpixmap = (Pixmap) 0;
+	} else {
+	    if (xdev->bpixmap != 0) {
+		XFreePixmap(xdev->dpy, xdev->bpixmap);
+		xdev->bpixmap = (Pixmap) 0;
+	    }
+	}
     }
     x_set_buffer(xdev);
     /* Clear the destination pixmap to avoid initializing with garbage. */
+    xdev->dest = (xdev->bpixmap != (Pixmap) 0 ?
+		  xdev->bpixmap : (Pixmap) xdev->win);
     if (xdev->dest != (Pixmap) 0) {
 	XSetForeground(xdev->dpy, xdev->gc, xdev->background);
 	XFillRectangle(xdev->dpy, xdev->dest, xdev->gc,
 		       0, 0, xdev->width, xdev->height);
-    } else {
-	xdev->dest = (xdev->bpixmap != (Pixmap) 0 ?
-		      xdev->bpixmap : (Pixmap) xdev->win);
     }
 
     /* Clear the background pixmap to avoid initializing with garbage. */
@@ -829,6 +834,7 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
     long pwin = (long)xdev->pwin;
     bool save_is_page = xdev->IsPageDevice;
     int ecode = 0, code;
+    bool clear_window = false;
 
     values = *xdev;
 
@@ -867,8 +873,7 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
     if (xdev->is_open && !xdev->ghostview &&
 	(dev->width != values.width || dev->height != values.height ||
 	 dev->HWResolution[0] != values.HWResolution[0] ||
-	 dev->HWResolution[1] != values.HWResolution[1] ||
-	 xdev->MaxBitmap != values.MaxBitmap)
+	 dev->HWResolution[1] != values.HWResolution[1])
 	) {
 	int dw = dev->width - values.width;
 	int dh = dev->height - values.height;
@@ -883,16 +888,7 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 		xdev->bpixmap = (Pixmap) 0;
 	    }
 	    xdev->dest = 0;
-	}
-	xdev->MaxTempPixmap = values.MaxTempPixmap;
-	xdev->MaxTempImage = values.MaxTempImage;
-	xdev->MaxBufferedTotal = values.MaxBufferedTotal;
-	xdev->MaxBufferedArea = values.MaxBufferedArea;
-	xdev->MaxBufferedCount = values.MaxBufferedCount;
-	if (dw || dh || xdev->MaxBitmap != values.MaxBitmap) {
-	    /****** DO MORE FOR RESETTING MaxBitmap ******/
-	    xdev->MaxBitmap = values.MaxBitmap;
-	    gdev_x_clear_window(xdev);
+	    clear_window = true;
 	}
 	/* Attempt to update the initial matrix in a sensible way. */
 	/* The whole handling of the initial matrix is a hack! */
@@ -913,6 +909,17 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 	xdev->initial_matrix.xy *= qx;
 	xdev->initial_matrix.yx *= qy;
 	xdev->initial_matrix.yy *= qy;
+    }
+    xdev->MaxTempPixmap = values.MaxTempPixmap;
+    xdev->MaxTempImage = values.MaxTempImage;
+    xdev->MaxBufferedTotal = values.MaxBufferedTotal;
+    xdev->MaxBufferedArea = values.MaxBufferedArea;
+    xdev->MaxBufferedCount = values.MaxBufferedCount;
+    if (clear_window || xdev->MaxBitmap != values.MaxBitmap) {
+	/****** DO MORE FOR RESETTING MaxBitmap ******/
+	xdev->MaxBitmap = values.MaxBitmap;
+	if (xdev->is_open)
+	    gdev_x_clear_window(xdev);
     }
     return 0;
 }
