@@ -50,8 +50,8 @@ typedef ulong _f_uint_t;
 #   endif
 #  endif
 #  define _d_uint_t unsigned _d_int_t
-#  define _d_as_int(f) *(const _d_int_t *)(&(d))
-#  define _d_as_uint(f) *(const _d_uint_t *)(&(d))
+#  define _d_as_int(f) *(const _d_int_t *)(&(f))
+#  define _d_as_uint(f) *(const _d_uint_t *)(&(f))
 
 #  define _ftest(v,f,n)\
      (sizeof(v)==sizeof(float)?(f):(n))
