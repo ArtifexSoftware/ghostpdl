@@ -764,8 +764,15 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 		    code1 = font1->data.procs.glyph_data(font1, glyph, &gdata1);
 		    break;
 		}
-		case ft_TrueType:
-		    return_error(gs_error_unregistered); /* unimplemented */
+		case ft_TrueType: 
+		case ft_CID_TrueType: {
+		    gs_font_type42 *font0 = (gs_font_type42 *)cfont;
+		    gs_font_type42 *font1 = (gs_font_type42 *)ofont;
+
+		    code0 = font0->data.get_outline(font0, glyph, &gdata0);
+		    code1 = font1->data.get_outline(font1, glyph, &gdata1);
+		    break;
+		}
 		case ft_CID_encrypted: {
 		    gs_font_cid0 *font0 = (gs_font_cid0 *)cfont;
 		    gs_font_cid0 *font1 = (gs_font_cid0 *)ofont;
@@ -775,7 +782,6 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 		    code1 = font1->cidata.glyph_data((gs_font_base *)font1, glyph, &gdata1, &fidx1);
 		    break;
 		}
-		case ft_CID_TrueType:
 		default:
 		    return_error(gs_error_unregistered); /* unimplemented */
 	    }
