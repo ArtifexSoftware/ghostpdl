@@ -40,6 +40,7 @@
 #include "ipcolor.h"
 #include "store.h"
 #include "gzstate.h"
+#include "memory_.h"
 
 /* Imported from gspcolor.c */
 extern const gs_color_space_type gs_color_space_type_Pattern;
@@ -147,13 +148,12 @@ zsetpatternspace(i_ctx_t *i_ctx_p)
 	    cs = *gs_currentcolorspace(igs);
 	    if (cs_num_components(&cs) < 0)	/* i.e., Pattern space */
 		return_error(e_rangecheck);
-	    /* We can't count on C compilers to recognize the aliasing */
-	    /* that would be involved in a direct assignment, so.... */
 	    {
-		gs_paint_color_space cs_paint;
-
-		cs_paint = *(gs_paint_color_space *) & cs;
-		cs.params.pattern.base_space = cs_paint;
+		/* We can't count on C compilers to recognize the aliasing */
+		/* that would be involved in a direct assignment
+		/* cs.params.pattern.base_space = *(gs_paint_color_space *)&cs; */
+		/* At least MSVC7 chocks with it. */
+		memmove(&cs.params.pattern.base_space, &cs, sizeof(gs_paint_color_space));
 	    }
 	    cs.params.pattern.has_base_space = true;
     }
