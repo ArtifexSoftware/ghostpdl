@@ -19,6 +19,7 @@
 #include "gscspace.h"
 #include "gsmatrix.h"		/* for gsiparam.h */
 #include "gsimage.h"
+#include "gsutil.h"
 #include "gxarith.h"		/* for igcd */
 #include "gxdevice.h"
 #include "gxiparam.h"
@@ -155,6 +156,7 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
 
     if (code < 0)
 	return code;
+    gs_set_object_tag(GS_IMAGE_TAG);
     if (uses_color) {
 	gx_set_dev_color(pgs);
         code = gs_state_color_load(pgs);

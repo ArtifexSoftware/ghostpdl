@@ -57,4 +57,18 @@ bool string_match(const byte * str, uint len,
 		  const byte * pstr, uint plen,
 		  const string_match_params * psmp);
 
+/* graphical object tags */
+typedef enum {
+    GS_DEVICE_DOESNT_SUPPORT_TAGS = 0, /* default */
+    GS_UNKNOWN_TAG = 0x1,
+    GS_TEXT_TAG = 0x2,
+    GS_IMAGE_TAG = 0x4,
+    GS_PATH_TAG = 0x8
+} gs_object_tag_type_t;
+
+/* accessors for object tags */
+gs_object_tag_type_t gs_current_object_tag(void);
+void gs_set_object_tag(const gs_object_tag_type_t tag);
+void gs_enable_object_tagging(void);
+
 #endif /* gsutil_INCLUDED */

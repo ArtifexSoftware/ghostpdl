@@ -20,6 +20,7 @@
 #include "gsmemory.h"
 #include "gsstruct.h"
 #include "gstypes.h"
+#include "gsutil.h"
 #include "gxdevcli.h"
 #include "gxdcolor.h"		/* for gs_state_color_load */
 #include "gxfont.h"		/* for init_fstack */
@@ -201,7 +202,7 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
 
     if (text->operation & TEXT_DO_DRAW) {
 	int code = gx_effective_clip_path(pgs, &pcpath);
-
+        gs_set_object_tag(GS_TEXT_TAG);
 	if (code < 0)
 	    return code;
 	gx_set_dev_color(pgs);

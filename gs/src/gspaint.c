@@ -16,6 +16,7 @@
 #include "gx.h"
 #include "gpcheck.h"
 #include "gserrors.h"
+#include "gsutil.h"
 #include "gsropt.h"		/* for gxpaint.h */
 #include "gxfixed.h"
 #include "gxmatrix.h"		/* for gs_state */
@@ -66,6 +67,7 @@ gs_fillpage(gs_state * pgs)
     int code;
     gs_logical_operation_t save_lop;
 
+    gs_set_object_tag(GS_PATH_TAG);
     gx_set_dev_color(pgs);
     dev = gs_currentdevice(pgs);
     /* Fill the page directly, ignoring clipping. */
@@ -247,7 +249,13 @@ fill_with_rule(gs_state * pgs, int rule)
 				     pgs->in_charpath);
     else {
 	int abits, acode;
-
+        /* to distinguish text from vectors we hackly look at the
+           target device 1 bit per component is a cache and this is
+           text else it is a path */
+        if (gx_device_has_color(gs_currentdevice(pgs)))
+            gs_set_object_tag(GS_PATH_TAG);
+        else
+            gs_set_object_tag(GS_TEXT_TAG);
 	gx_set_dev_color(pgs);
 	code = gs_state_color_load(pgs);
 	if (code < 0)
@@ -307,6 +315,14 @@ gs_stroke(gs_state * pgs)
 				     pgs->in_charpath);
     } else {
 	int abits, acode;
+
+        /* to distinguish text from vectors we hackly look at the
+           target device 1 bit per component is a cache and this is
+           text else it is a path */
+        if (gx_device_has_color(gs_currentdevice(pgs)))
+            gs_set_object_tag(GS_PATH_TAG);
+        else
+            gs_set_object_tag(GS_TEXT_TAG);
 
 	gx_set_dev_color(pgs);
 	code = gs_state_color_load(pgs);

@@ -23,6 +23,7 @@
 #include "gxmatrix.h"
 #include "gspath.h"
 #include "gspath2.h"		/* defines interface */
+#include "gsutil.h"
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gzstate.h"
@@ -143,6 +144,7 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
     uint rcount = count;
     int code;
 
+    gs_set_object_tag(GS_PATH_TAG);
     gx_set_dev_color(pgs);
     if ((is_fzero2(pgs->ctm.xy, pgs->ctm.yx) ||
 	 is_fzero2(pgs->ctm.xx, pgs->ctm.yy)) &&
