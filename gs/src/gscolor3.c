@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,9 +20,7 @@
 /* "Operators" for LanguageLevel 3 color facilities */
 #include "gx.h"
 #include "gserrors.h"
-#include "gscspace.h"		/* for gscolor2.h */
 #include "gsmatrix.h"		/* for gscolor2.h */
-#include "gscolor2.h"
 #include "gscolor3.h"
 #include "gsptype2.h"
 #include "gxcolor2.h"		/* for gxpcolor.h */

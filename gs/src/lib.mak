@@ -2112,8 +2112,9 @@ gxshade_h=$(GLSRC)gxshade.h $(gsshade_h) $(gxfixed_h) $(gxmatrix_h) $(stream_h)
 gxshade4_h=$(GLSRC)gxshade4.h
 
 $(GLOBJ)gscolor3.$(OBJ) : $(GLSRC)gscolor3.c $(GXERR)\
- $(gscolor2_h) $(gscolor3_h) $(gscspace_h) $(gsmatrix_h)\
- $(gxshade_h) $(gzpath_h) $(gzstate_h)
+ $(gscolor3_h) $(gsmatrix_h) $(gsptype2_h)\
+ $(gxcolor2_h) $(gxcspace_h) $(gxpaint_h) $(gxpcolor_h) $(gxshade_h)\
+ $(gzpath_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gscolor3.$(OBJ) $(C_) $(GLSRC)gscolor3.c
 
 $(GLOBJ)gsfunc3.$(OBJ) : $(GLSRC)gsfunc3.c $(math__h) $(GXERR)\
