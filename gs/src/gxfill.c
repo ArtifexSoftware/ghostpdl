@@ -1394,10 +1394,13 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		/* We just went from inside to outside, so fill the region. */
 		wtop = xtop - xltop;
 		INCR(band_fill);
-		/* If lines are temporarily out of */
-		/* order, wtop might be negative. */
-		/* Patch this up now. */
-		if (wtop < 0) {
+		/*
+		 * If lines are temporarily out of order, we might have
+		 * xtop < xltop.  Patch this up now if necessary.  Note that
+		 * we can't test wtop < 0, because the subtraction might
+		 * overflow.
+		 */
+		if (xtop < xltop) {
 		    if_debug2('f', "[f]patch %g,%g\n",
 			      fixed2float(xltop), fixed2float(xtop));
 		    xtop = xltop += arith_rshift(wtop, 1);
