@@ -1135,7 +1135,7 @@ pcl_pattern_get_proc_FT(
  */
   pcl_pattern_set_proc_t
 pcl_pattern_get_proc_SV(
-    hpgl_FT_pattern_source_t pattern_source
+    hpgl_SV_pattern_source_t pattern_source
 )
 {
     if (pattern_source == hpgl_SV_pattern_solid_pen)
