@@ -1,0 +1,89 @@
+
+This is a rough draft of a rough draft...  The GS DEBUGGER code is
+preliminary.
+
+PS DEBUGGER USAGE
+
+- Compile gs with make debug XCFLAGS="-DGS_DEBUGGER"
+
+- Start GS from the command line or a debugger, the screen should look
+  like this (the current working directory must be "lib"):
+
+     
+     Starting program: /home/henrys/trees/release/gs/debugobj/gs ../examples/tiger.ps
+     dup<< revision ne
+     PSDB ./gs_init.ps:1297 ->
+
+`dup revision ne' is the first line of postscript code `<<' points to
+the operator to be executed.  PSDB means PS Debugger, gs_init.ps is
+the current file and 1297 is the offset (not line number) within
+gs_init.ps.  Line numbers are not very useful in real world postscript
+files.  Type commands after `->'.  `h' will give a list of commands.
+
+TUTORIAL
+
+Print out the operand stack using the command `o':
+
+       PSDB ./gs_init.ps:1297 ->o
+       Operand stack at 0xa1c4b68:
+       0xa1ad9a4: 0x0b int  --F------ 0x0a1a 0x0000032d = 813
+
+
+813 was put on the stack in the previous line of gs_init.ps.  It is
+the revision number.
+
+Type `n' for next - this will exectute the dup command and update the
+cursor:
+
+       PSDB ./gs_init.ps:1297 ->n
+       dup<< revision ne
+
+Print the stack after the dup:
+
+       PSDB ./gs_init.ps:1301 ->o
+       Operand stack at 0xa1c4b68:
+       0xa1ad9a4: 0x0b int  --F------ 0x0a1a 0x0000032d = 813
+       0xa1ad9b4: 0x0b int  --F------ 0x0a1a 0x0000032d = 813
+
+Now we have 2 813's, that's what dup did.
+
+Print `h' to see some help.
+
+       PSDB ./gs_init.ps:1309 ->h
+       Data
+       o Operand Stack           e Exec Stack
+       d Dictionary Stack        r Current Reference
+       Control
+       w Where (NI)              n Next (current level or higher)
+       s Step                    u Up one level
+       c Continue                b Break
+       j Just file for bp        t toggle tracing
+
+Print `l' to avoid debugging the library initialization files, then `n'
+to get to the first line of tiger.ps.
+
+         /Adobe_Illustrator_1.2d1<< dup 100 dict def load begin
+         PSDB ../examples/tiger.ps:360 ->
+
+Use next to go through all the definitions and first few commands at
+the top of tiger.ps until you are here type 's' (step):
+
+0 g<<
+PSDB ../examples/tiger.ps:1673 ->s
+
+g is a procedure which we "step into":
+
+/g {/_b<< xdef /p {_b setgray} def} bdef
+PSDB ../examples/tiger.ps:691 ->
+
+Turn on tracing to see the rest of the file run.
+
+/g {/_b<< xdef /p {_b setgray} def} bdef
+PSDB ../examples/tiger.ps:691 ->t
+
+...
+
+NOTES & PROBLEMS
+
+- Only works with file inputs - string input obviously won't work.
+
