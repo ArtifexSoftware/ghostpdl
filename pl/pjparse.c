@@ -625,11 +625,14 @@ pjl_write_remaining_data(pjl_parser_state_t *pst, byte **pptr, byte **pplimit)
     if ( fwrite( ptr, 1, bytes_written, pst->fp ) != bytes_written ) {
 	/* try to close the file before failing */
 	fclose(pst->fp);
+        pst->fp = NULL;
 	return -1;
     }
     pst->bytes_to_write -= bytes_written;
-    if ( pst->bytes_to_write == 0 ) /* done */
+    if ( pst->bytes_to_write == 0 ) { /* done */
 	fclose(pst->fp);
+        pst->fp = NULL;
+    }
     /* update stream pointer */
     *pptr += bytes_written;
     return 0;
