@@ -29,6 +29,8 @@
 
 /* Temporary switch for a new filling algorithm : */
 #define DROPOUT_PREVENTION 0 /* 0 = old, 1 = new */
+/* Temporary switch for a new type 1 hinter : */
+#define NEW_TYPE1_HINTER 0 /* 0 = old, 1 = new */
 
 /* Define opaque types for the graphics state. */
 /* This is used so pervasively that we define it here, */

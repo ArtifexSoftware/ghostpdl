@@ -24,6 +24,7 @@
 #include "gsgdata.h"
 #include "gstype1.h"
 #include "gxop1.h"
+#include "gxhintn.h"
 
 /* This file defines the structures for the state of a Type 1 / */
 /* Type 2 charstring interpreter. */
@@ -159,6 +160,9 @@ typedef struct segment_s segment;
 #define ostack_size 48		/* per Type 2 documentation */
 #define ipstack_size 10		/* per documentation */
 struct gs_type1_state_s {
+#if NEW_TYPE1_HINTER
+    t1_hinter h;
+#endif
     /* The following are set at initialization */
     gs_font_type1 *pfont;	/* font-specific data */
     gs_imager_state *pis;	/* imager state */

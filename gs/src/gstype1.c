@@ -30,6 +30,15 @@
 #include "gxfont.h"
 #include "gxfont1.h"
 #include "gxtype1.h"
+#include "gxhintn.h"
+
+#if NEW_TYPE1_HINTER
+#   define OLD(a) DO_NOTHING
+#   define NEW(a) a
+#else
+#   define OLD(a) a
+#   define NEW(a) DO_NOTHING
+#endif
 
 /*
  * Define whether to always do Flex segments as curves.
@@ -54,6 +63,9 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 {
     gs_font_type1 *pfont = pcis->pfont;
     gs_type1_data *pdata = &pfont->data;
+#   if NEW_TYPE1_HINTER
+    t1_hinter *h = &pcis->h;
+#   endif
     bool encrypted = pdata->lenIV >= 0;
     gs_op1_state s;
     fixed cstack[ostack_size];
@@ -81,9 +93,52 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 
     switch (pcis->init_done) {
 	case -1:
+            NEW(t1_hinter__reset(h));
+#	    if NEW_TYPE1_HINTER
+            code = t1_hinter__set_transform(h, &pcis->pis->ctm, 
+		    &pfont->FontBBox, &pfont->FontMatrix, &pfont->base->FontMatrix);
+	    if (code < 0)
+	    	return code;
+#	    endif
 	    break;
 	case 0:
 	    gs_type1_finish_init(pcis, &s);	/* sets sfc, ptx, pty, origin */
+#	    if NEW_TYPE1_HINTER
+            t1_hinter__reset_outline(h);
+
+            t1_hinter__set_blue_values(h, pdata->BlueScale, pdata->BlueShift, pdata->BlueFuzz);
+            t1_hinter__set_bold(h, pdata->ForceBold);
+            t1_hinter__set_italic(h,0/*ItalicAngle*/); /*fixme : need ItalicAngle from FontInfo */
+            t1_hinter__set_charpath_flag(h, pcis->charpath_flag);
+            code = t1_hinter__set_alignment_zones(h, pdata->OtherBlues.values, pdata->OtherBlues.count, botzone, false);
+	    if (code >= 0)
+		code = t1_hinter__set_alignment_zones(h, pdata->BlueValues.values, min(2, pdata->BlueValues.count), botzone, false);
+	    if (code >= 0)
+		code = t1_hinter__set_alignment_zones(h, pdata->BlueValues.values + 2, pdata->BlueValues.count - 2, topzone, false);
+	    if (code >= 0)
+		code = t1_hinter__set_alignment_zones(h, pdata->FamilyOtherBlues.values, pdata->FamilyOtherBlues.count, botzone, true);
+	    if (code >= 0)
+		code = t1_hinter__set_alignment_zones(h, pdata->FamilyBlues.values, min(2, pdata->FamilyBlues.count), botzone, true);
+	    if (code >= 0)
+		code = t1_hinter__set_alignment_zones(h, pdata->FamilyBlues.values + 2, pdata->FamilyBlues.count - 2, topzone, true);
+	    if (code >= 0)
+		code = t1_hinter__set_stem_snap(h, pdata->StdHW.values, pdata->StdHW.count, 0);
+	    if (code >= 0)
+		code = t1_hinter__set_stem_snap(h, pdata->StdVW.values, pdata->StdVW.count, 1);
+	    if (code >= 0)
+		code = t1_hinter__set_stem_snap(h, pdata->StemSnapH.values, pdata->StemSnapH.count, 0);
+	    if (code >= 0)
+		code = t1_hinter__set_stem_snap(h, pdata->StemSnapV.values, pdata->StemSnapV.count, 1);
+	    if (code < 0)
+	    	return code;
+	    {	gs_fixed_point p;
+
+		code = gx_path_current_point(pcis->path, &p);
+		if (code < 0)
+	    	    return code;
+		t1_hinter__set_origin(h, p.x, p.y);
+	    }
+#	    endif
 	    ftx = pcis->origin.x, fty = pcis->origin.y;
 	    break;
 	default /*case 1 */ :
@@ -208,28 +263,43 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		/* in Type 1 and Type 2 charstrings. */
 
 	    case cx_hstem:
-		apply_path_hints(pcis, false);
-		type1_hstem(pcis, cs0, cs1, true);
+#	    if NEW_TYPE1_HINTER
+                code = t1_hinter__hstem(h, cs0, cs1);
+		if (code < 0)
+		    return code;
+#	    endif
+		OLD(apply_path_hints(pcis, false));
+		OLD(type1_hstem(pcis, cs0, cs1, true));
 		cnext;
 	    case cx_vstem:
-		apply_path_hints(pcis, false);
-		type1_vstem(pcis, cs0, cs1, true);
+#	    if NEW_TYPE1_HINTER
+                code = t1_hinter__vstem(h, cs0, cs1);
+		if (code < 0)
+		    return code;
+#	    endif
+		OLD(apply_path_hints(pcis, false));
+		OLD(type1_vstem(pcis, cs0, cs1, true));
 		cnext;
 	    case cx_vmoveto:
 		cs1 = cs0;
 		cs0 = 0;
 		accum_y(cs1);
 	      move:		/* cs0 = dx, cs1 = dy for hint checking. */
+#	    if NEW_TYPE1_HINTER
+                code = t1_hinter__rmoveto(h, cs0, cs1);
+#	    else
 		if ((pcis->hint_next != 0 || gx_path_is_drawing(sppath)) &&
 		    pcis->flex_count == flex_max
 		    )
 		    apply_path_hints(pcis, true);
 		code = gx_path_add_point(sppath, ptx, pty);
+#	    endif
 		goto cc;
 	    case cx_rlineto:
 		accum_xy(cs0, cs1);
 	      line:		/* cs0 = dx, cs1 = dy for hint checking. */
-		code = gx_path_add_line(sppath, ptx, pty);
+                NEW(code = t1_hinter__rlineto(h, cs0, cs1));
+		OLD(code = gx_path_add_line(sppath, ptx, pty));
 	      cc:if (code < 0)
 		    return code;
 	      pp:if_debug2('1', "[1]pt=(%g,%g)\n",
@@ -245,9 +315,17 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		accum_y(cs1);
 		goto line;
 	    case cx_rrcurveto:
-		code = gs_op1_rrcurveto(&s, cs0, cs1, cs2, cs3, cs4, cs5);
+                NEW(code = t1_hinter__rcurveto(h, cs0, cs1, cs2, cs3, cs4, cs5));
+		OLD(code = gs_op1_rrcurveto(&s, cs0, cs1, cs2, cs3, cs4, cs5));
 		goto cc;
 	    case cx_endchar:
+#	    if NEW_TYPE1_HINTER
+                code = t1_hinter__endchar(h, (pcis->seac_accent >= 0));
+		if (code < 0)
+		    return code;
+                if (pcis->seac_accent < 0)
+                    code = t1_hinter__endglyph(h, &s);
+#	    else
 		code = gs_type1_endchar(pcis);
 		if (code == 1) {
 		    /* do accent of seac */
@@ -256,6 +334,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    cip = ipsp->cs_data.bits.data;
 		    goto call;
 		}
+#	    endif
 		return code;
 	    case cx_rmoveto:
 		accum_xy(cs0, cs1);
@@ -265,6 +344,9 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		cs1 = 0;
 		goto move;
 	    case cx_vhcurveto:
+#	    if NEW_TYPE1_HINTER
+                code = t1_hinter__rcurveto(h, 0, cs0, cs1, cs2, cs3, 0);
+#	    else
 		{
 		    gs_fixed_point pt1, pt2, p;
 		    fixed ax0, ay0;
@@ -281,8 +363,12 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    accum_x(cs3);
 		    code = gx_path_add_curve(sppath, pt1.x, pt1.y, pt2.x, pt2.y, ptx, pty);
 		}
+#	    endif
 		goto cc;
 	    case cx_hvcurveto:
+#	    if NEW_TYPE1_HINTER
+                code = t1_hinter__rcurveto(h, cs0, 0, cs1, cs2, 0, cs3);
+#	    else
 		{
 		    gs_fixed_point pt1, pt2, p;
 		    fixed ax0, ay0;
@@ -299,16 +385,26 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    accum_y(cs3);
 		    code = gx_path_add_curve(sppath, pt1.x, pt1.y, pt2.x, pt2.y, ptx, pty);
 		}
+#	    endif
 		goto cc;
 
 		/* Commands only recognized in Type 1 charstrings, */
 		/* plus 'escape'. */
 
 	    case c1_closepath:
-		code = gs_op1_closepath(&s);
-		apply_path_hints(pcis, true);
+                NEW(code = t1_hinter__closepath(h));
+		OLD(code = gs_op1_closepath(&s));
+		OLD(apply_path_hints(pcis, true));
 		goto cc;
 	    case c1_hsbw:
+#	    if NEW_TYPE1_HINTER
+                if (!h->seac_flag)
+                    code = t1_hinter__sbw(h, cs0, fixed_0, cs1, fixed_0);
+                else
+                    code = t1_hinter__sbw_seac(h, pcis->adxy.x, pcis->adxy.y);
+		if (code < 0)
+		    return code;
+#	    endif
 		gs_type1_sbw(pcis, cs0, fixed_0, cs1, fixed_0);
 		cs1 = fixed_0;
 rsbw:		/* Give the caller the opportunity to intervene. */
@@ -366,11 +462,21 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 #endif
 		switch ((char1_extended_command) c) {
 		    case ce1_dotsection:
+#		    if NEW_TYPE1_HINTER
+                        code = t1_hinter__dotsection(h);
+			if (code < 0)
+			    return code;
+#		    endif
 			pcis->dotsection_flag ^=
 			    (dotsection_in ^ dotsection_out);
 			cnext;
 		    case ce1_vstem3:
-			apply_path_hints(pcis, false);
+#		    if NEW_TYPE1_HINTER
+                        code = t1_hinter__vstem3(h, cs0, cs1, cs2, cs3, cs4, cs5);
+			if (code < 0)
+			    return code;
+#		    endif
+			OLD(apply_path_hints(pcis, false));
 			if (!pcis->vstem3_set && pcis->fh.use_x_hints) {
 			    type1_center_vstem(pcis, pcis->lsb.x + cs2, cs3);
 			    /* Adjust the current point */
@@ -379,15 +485,21 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    pty += pcis->vs_offset.y;
 			    pcis->vstem3_set = true;
 			}
-			type1_vstem(pcis, cs0, cs1, true);
-			type1_vstem(pcis, cs2, cs3, true);
-			type1_vstem(pcis, cs4, cs5, true);
+			OLD(type1_vstem(pcis, cs0, cs1, true));
+			OLD(type1_vstem(pcis, cs2, cs3, true));
+			OLD(type1_vstem(pcis, cs4, cs5, true));
 			cnext;
 		    case ce1_hstem3:
+#		    if NEW_TYPE1_HINTER
+                        code = t1_hinter__hstem3(h, cs0, cs1, cs2, cs3, cs4, cs5);
+			if (code < 0)
+			    return code;
+#		    else
 			apply_path_hints(pcis, false);
 			type1_hstem(pcis, cs0, cs1, true);
 			type1_hstem(pcis, cs2, cs3, true);
 			type1_hstem(pcis, cs4, cs5, true);
+#		    endif
 			cnext;
 		    case ce1_seac:
 			code = gs_type1_seac(pcis, cstack + 1, cstack[0],
@@ -400,6 +512,14 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			cip = ipsp->cs_data.bits.data;
 			goto call;
 		    case ce1_sbw:
+#		    if NEW_TYPE1_HINTER
+                        if (!h->seac_flag)
+                            code = t1_hinter__sbw(h, cs0, cs1, cs2, cs3);
+                        else
+                            code = t1_hinter__sbw_seac(h, cs0 + pcis->adxy.x , cs1 + pcis->adxy.y);
+			if (code < 0)
+			    return code;
+#		    endif
 			gs_type1_sbw(pcis, cs0, cs1, cs2, cs3);
 			goto rsbw;
 		    case ce1_div:
@@ -447,7 +567,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 					    return code;
 					gx_path_add_point(sppath, fpts[0].x, fpts[0].y);
 					gx_path_set_state_flags(sppath, 
-					    pcis->flex_path_state_flags); /* <--- sleaze */
+					    (byte)pcis->flex_path_state_flags); /* <--- sleaze */
 #if defined(DEBUG) || !ALWAYS_DO_FLEX_AS_CURVE
 					/* Decide whether to do the flex as a curve. */
 					hpt.x = fpts[1].x - fpts[4].x;
@@ -461,21 +581,30 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 					if (any_abs(hpt.x) + any_abs(hpt.y) <
 					    fheight / 100
 					    ) {		/* Do the flex as a line. */
-					    code = gx_path_add_line(sppath,
-							      ept.x, ept.y);
+					    OLD(code = gx_path_add_line(sppath,
+							      ept.x, ept.y));
+					    NEW(code = t1_hinter__rlineto(h, ept.x, ept.y));
 					} else
 #endif
 					{	/* Do the flex as a curve. */
-					    code = gx_path_add_curve(sppath,
+					    OLD(code = gx_path_add_curve(sppath,
 						       fpts[2].x, fpts[2].y,
 						       fpts[3].x, fpts[3].y,
-						      fpts[4].x, fpts[4].y);
+						      fpts[4].x, fpts[4].y));
+					    NEW(code = t1_hinter__rcurveto(h, 
+						       fpts[2].x, fpts[2].y,
+						       fpts[3].x, fpts[3].y,
+						      fpts[4].x, fpts[4].y));
 					    if (code < 0)
 						return code;
-					    code = gx_path_add_curve(sppath,
+					    OLD(code = gx_path_add_curve(sppath,
 						       fpts[5].x, fpts[5].y,
 						       fpts[6].x, fpts[6].y,
-						      fpts[7].x, fpts[7].y);
+						      fpts[7].x, fpts[7].y));
+					    NEW(code = t1_hinter__rcurveto(h, 
+						    fpts[5].x, fpts[5].y, 
+						    fpts[6].x, fpts[6].y, 
+						    fpts[7].x, fpts[7].y));
 					}
 				    }
 				    if (code < 0)
@@ -505,7 +634,12 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 				    /* See above as to why we don't just */
 				    /* look ahead in the opcode stream. */
 				    pcis->ignore_pops = 1;
-				    replace_stem_hints(pcis);
+#				    if NEW_TYPE1_HINTER
+                                    code = t1_hinter__drop_hints(h);
+				    if (code < 0)
+					return code;
+#				    endif
+				    OLD(replace_stem_hints(pcis));
 				    csp -= 2;
 				    inext;
 				case 12:
