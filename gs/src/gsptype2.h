@@ -55,6 +55,7 @@ typedef struct gx_device_color_s gx_device_color;
 typedef struct gs_pattern2_instance_s {
     gs_pattern_instance_common;
     gs_pattern2_template_t template;
+    bool shfill;
 } gs_pattern2_instance_t;
 
 #define private_st_pattern2_instance() /* in gsptype2.c */\
@@ -93,5 +94,8 @@ bool gx_dc_is_pattern2_color(const gx_device_color *pdevc);
 int gx_dc_pattern2_fill_path(const gx_device_color * pdevc, 
 			      gx_path * ppath, gs_fixed_rect * rect, 
 			      gx_device * dev);
+
+/* Set the 'shfill' flag to a PatternType 2 pattern instance. */
+int gs_pattern2_set_shfill(gs_client_color * pcc);
 
 #endif /* gsptype2_INCLUDED */

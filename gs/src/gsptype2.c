@@ -17,6 +17,7 @@
 /* $Id$ */
 /* PatternType 2 implementation */
 #include "gx.h"
+#include "gserrors.h"
 #include "gscspace.h"
 #include "gsshade.h"
 #include "gsmatrix.h"           /* for gspcolor.h */
@@ -97,6 +98,7 @@ gs_pattern2_make_pattern(gs_client_color * pcc,
         return code;
     pinst = (gs_pattern2_instance_t *)pcc->pattern;
     pinst->template = *ptemp;
+    pinst->shfill = false;
     return 0;
 }
 
@@ -107,6 +109,20 @@ gs_pattern2_get_pattern(const gs_pattern_instance_t *pinst)
     return (const gs_pattern_template_t *)
         &((const gs_pattern2_instance_t *)pinst)->template;
 }
+
+/* Set the 'shfill' flag to a PatternType 2 pattern instance. */
+int
+gs_pattern2_set_shfill(gs_client_color * pcc)
+{
+    gs_pattern2_instance_t *pinst;
+
+    if (pcc->pattern->type != &gs_pattern2_type)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    pinst = (gs_pattern2_instance_t *)pcc->pattern;
+    pinst->shfill = true;
+    return 0;
+}
+
 
 /* ---------------- Rendering ---------------- */
 
@@ -201,7 +217,7 @@ gx_dc_pattern2_fill_path(const gx_device_color * pdevc,
         (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
 
     return gs_shading_fill_path_adjusted(pinst->template.Shading, ppath, rect, dev,
-                                (gs_imager_state *)pinst->saved, true);
+                                (gs_imager_state *)pinst->saved, !pinst->shfill);
 }
 
 /* Fill a rectangle with a PatternType 2 color. */
