@@ -603,8 +603,10 @@ end readonly def
               dup 3 1 put
             } if
             setmatrix
-            exch setfillstate show % Tr was set to graphic state.
+            1 index setfillstate show % Tr was set to graphic state.
             setmatrix 
+	    % now set the currentpoint using the original matrix
+            false charpath currentpoint newpath moveto
           }
         } {
           { false charpath textrenderingprocs TextRenderingMode get exec }
