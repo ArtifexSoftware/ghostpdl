@@ -70,6 +70,20 @@ tile_size(const gx_strip_bitmap *tile, int depth)
 {
     return (tile->rep_width * depth + 7) / 8 * tile->rep_height;
 }
+private bool
+tile_size_ok(const gx_device_pdf *pdev, const gx_color_tile *p_tile,
+	     const gx_color_tile *m_tile)
+{
+    /*
+     * Acrobat Reader can't handle image Patterns with more than
+     * 64K of data.  :-(
+     */
+    uint p_size =
+	(p_tile == 0 ? 0 : tile_size(&p_tile->tbits, pdev->color_info.depth));
+    uint m_size =
+	(m_tile == 0 ? 0 : tile_size(&m_tile->tmask, 1));
+    return (max(p_size, m_size) <= 65500);
+}
 private int
 pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	    const gx_color_tile *p_tile, const gx_color_tile *m_tile,
@@ -83,21 +97,13 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     cos_dict_t *pcd_Resources = cos_dict_alloc(pdev, "pdf_pattern(Resources)");
     const gx_color_tile *tile = (p_tile ? p_tile : m_tile);
     const gx_strip_bitmap *btile = (p_tile ? &p_tile->tbits : &m_tile->tmask);
-    uint p_size =
-	(p_tile == 0 ? 0 : tile_size(&p_tile->tbits, pdev->color_info.depth));
-    uint m_size =
-	(m_tile == 0 ? 0 : tile_size(&m_tile->tmask, 1));
     bool mask = p_tile == 0;
     gs_point step;
     gs_matrix smat;
 
     if (code < 0)
 	return code;
-    /*
-     * Acrobat Reader can't handle image Patterns with more than
-     * 64K of data.  :-(
-     */
-    if (max(p_size, m_size) > 65500)
+    if (!tile_size_ok(pdev, p_tile, m_tile))
 	return_error(gs_error_limitcheck);
     /*
      * We currently can't handle Patterns whose X/Y step isn't parallel
@@ -226,6 +232,9 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     /* Masked images are only supported starting in PDF 1.3. */
     if (m_tile && pdev->CompatibilityLevel < 1.3)
 	return_error(gs_error_rangecheck);
+    /* Acrobat Reader has a size limit for image Patterns. */
+    if (!tile_size_ok(pdev, p_tile, m_tile))
+	return_error(gs_error_limitcheck);
     code = pdf_cs_Pattern_colored(pdev, &v);
     if (code < 0)
 	return code;
@@ -281,12 +290,14 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     const gx_color_tile *m_tile = pdc->mask.m_tile;
     cos_value_t v;
     stream *s = pdev->strm;
-    int code = pdf_cs_Pattern_uncolored(pdev, &v);
+    int code;
     cos_stream_t *pcs_image;
     gx_drawing_color dc_pure;
     static const psdf_set_color_commands_t no_scc = {0, 0, 0};
 
-    if (code < 0 ||
+    if (!tile_size_ok(pdev, NULL, m_tile))
+	return_error(gs_error_limitcheck);
+    if ((code = pdf_cs_Pattern_uncolored(pdev, &v)) < 0 ||
 	(code = pdf_put_pattern_mask(pdev, m_tile, &pcs_image)) < 0 ||
 	(code = pdf_pattern(pdev, pdc, NULL, m_tile, pcs_image, ppres)) < 0
 	)
