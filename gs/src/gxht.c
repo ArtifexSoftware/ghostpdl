@@ -152,6 +152,7 @@ gx_ht_alloc_cache(gs_memory_t * mem, uint max_tiles, uint max_bits)
     pcache->bits_size = max_bits;
     pcache->ht_tiles = ht_tiles;
     pcache->num_tiles = max_tiles;
+    pcache->order.data_memory = 0;
     pcache->order.cache = pcache;
     pcache->order.transfer = 0;
     gx_ht_clear_cache(pcache);
