@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,7 +31,7 @@
 private iodev_proc_fopen(pipe_fopen);
 private iodev_proc_fclose(pipe_fclose);
 const gx_io_device gs_iodev_pipe = {
-    "%pipe%", "FileSystem",
+    "%pipe%", "Special",
     {iodev_no_init, iodev_no_open_device,
      NULL /*iodev_os_open_file */ , pipe_fopen, pipe_fclose,
      iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
