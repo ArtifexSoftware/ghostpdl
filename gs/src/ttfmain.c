@@ -344,7 +344,7 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
     if (code)
 	return fBadFontData;
     I.z = this->inst;
-    if (w != 0 | h != 0) {
+    if (w != 0 || h != 0) {
 	ww = floatToF26Dot6(w);
 	hh = floatToF26Dot6(h);
 	this->bOwnScale = false;

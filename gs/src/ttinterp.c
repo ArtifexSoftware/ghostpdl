@@ -597,7 +597,14 @@ static int nInstrCount=0;
       CUR.metrics.ratio = CUR.metrics.y_ratio;
 
     else
-	THROW_PATENTED;
+    {
+      Long  x, y;
+
+
+      x = MulDiv_Round( CUR.GS.projVector.x, CUR.metrics.x_ratio, 0x4000 );
+      y = MulDiv_Round( CUR.GS.projVector.y, CUR.metrics.y_ratio, 0x4000 );
+      CUR.metrics.ratio = Norm( x, y );
+    }
 
     return CUR.metrics.ratio;
   }
@@ -1298,6 +1305,65 @@ static int nInstrCount=0;
     CUR.phase     /= 256;
     CUR.threshold /= 256;
   }
+/*******************************************************************
+ *
+ *  Function    :  Project
+ *
+ *  Description :  Computes the projection of (Vx,Vy) along the
+ *                 current projection vector.
+ *
+ *  Input  :  Vx, Vy    input vector
+ *
+ *  Output :  Returns distance in F26dot6.
+ *
+ *****************************************************************/
+
+  static TT_F26Dot6  Project( EXEC_OPS TT_F26Dot6  Vx, TT_F26Dot6  Vy )
+  {
+    THROW_PATENTED;
+    return 0;
+  }
+
+
+/*******************************************************************
+ *
+ *  Function    :  Dual_Project
+ *
+ *  Description :  Computes the projection of (Vx,Vy) along the
+ *                 current dual vector.
+ *
+ *  Input  :  Vx, Vy    input vector
+ *
+ *  Output :  Returns distance in F26dot6.
+ *
+ *****************************************************************/
+
+  static TT_F26Dot6  Dual_Project( EXEC_OPS TT_F26Dot6  Vx, TT_F26Dot6  Vy )
+  {
+    THROW_PATENTED;
+    return 0;
+  }
+
+
+/*******************************************************************
+ *
+ *  Function    :  Free_Project
+ *
+ *  Description :  Computes the projection of (Vx,Vy) along the
+ *                 current freedom vector.
+ *
+ *  Input  :  Vx, Vy    input vector
+ *
+ *  Output :  Returns distance in F26dot6.
+ *
+ *****************************************************************/
+
+  static TT_F26Dot6  Free_Project( EXEC_OPS TT_F26Dot6  Vx, TT_F26Dot6  Vy )
+  {
+    THROW_PATENTED;
+    return 0;
+  }
+
 
 
 /*******************************************************************
@@ -1362,7 +1428,12 @@ static int nInstrCount=0;
         CUR.F_dot_P       = CUR.GS.projVector.y * 0x10000L;
       }
       else
-	THROW_PATENTED;
+      {
+        CUR.func_move     = (TMove_Function)Direct_Move;
+        CUR.func_freeProj = (TProject_Function)Free_Project;
+        CUR.F_dot_P = (Long)CUR.GS.projVector.x * CUR.GS.freeVector.x * 4 +
+                      (Long)CUR.GS.projVector.y * CUR.GS.freeVector.y * 4;
+      }
     }
 
     CUR.cached_metrics = FALSE;
@@ -1374,7 +1445,7 @@ static int nInstrCount=0;
       if ( CUR.GS.projVector.y == 0x4000 )
         CUR.func_project = (TProject_Function)Project_y;
       else
-        THROW_PATENTED;
+        CUR.func_project = (TProject_Function)Project;
     }
 
     if ( CUR.GS.dualVector.x == 0x4000 )
@@ -1384,7 +1455,7 @@ static int nInstrCount=0;
       if ( CUR.GS.dualVector.y == 0x4000 )
         CUR.func_dualproj = (TProject_Function)Project_y;
       else
-        THROW_PATENTED;
+        CUR.func_dualproj = (TProject_Function)Dual_Project;
     }
 
     CUR.func_move = (TMove_Function)Direct_Move;
@@ -1409,7 +1480,6 @@ static int nInstrCount=0;
     /* Disable cached aspect ratio */
     CUR.metrics.ratio = 0;
   }
-
 
 /*******************************************************************
  *
@@ -2648,9 +2718,6 @@ static int nInstrCount=0;
 
   static void  Ins_SPVTL( INS_ARG )
   {
-    if (args[0] && args[1])
-      THROW_PATENTED;
-
     if ( INS_SxVTL( args[1],
                     args[0],
                     CUR.opcode,
@@ -2701,9 +2768,6 @@ static int nInstrCount=0;
 
     p1 = args[1];
     p2 = args[0];
-
-    if (p1 && p2)
-      THROW_PATENTED;
 
     if ( BOUNDS( p2, CUR.zp1.n_points ) ||
          BOUNDS( p1, CUR.zp2.n_points ) )
@@ -2757,9 +2821,6 @@ static int nInstrCount=0;
     Y = (Long)S;
     S = (Short)args[0];
     X = (Long)S;
-
-    if (X & Y)
-      THROW_PATENTED;
 
     if ( NORMalize( X, Y, &CUR.GS.projVector ) == FAILURE )
       return;
