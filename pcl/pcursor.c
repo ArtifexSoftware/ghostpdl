@@ -690,10 +690,19 @@ private int
 pcursor_do_copy(pcl_state_t *psaved, 
 		const pcl_state_t *pcs, pcl_copy_operation_t operation)
 {
+    int i;
+
     /* don't restore the current cap.  The cap is not part of the
        state */
     if ( operation & pcl_copy_after ) {
 	psaved->cap = pcs->cap;
+
+	/* cursor stack isn't part of the state, either */
+	for (i = 0; i < pcs->cursor_stk_size; ++i) {
+	    psaved->cursor_stk[i] = pcs->cursor_stk[i];
+	}
+	psaved->cursor_stk_size = pcs->cursor_stk_size;
+
         /* NB doesn't belong here */
         psaved->page_marked = pcs->page_marked;
     }
