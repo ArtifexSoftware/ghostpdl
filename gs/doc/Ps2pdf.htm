@@ -245,6 +245,40 @@ wide variety of uses, possibly at the expense of a larger output file.
 
 </dl>
 
+The following switches used for creating encrypted documents :
+
+<dl>
+<dt><b><tt>-sOwnerPassword=</tt></b><em>string</em>
+<dd>Defines that the document to be encrypted with the specified 
+owner password.
+</dl>
+
+<dl>
+<dt><b><tt>-sUserPassword=</tt></b><em>string</em>
+<dd>Defines the user password for opening the document.
+If empty, the document can be opened with no password,
+but the owner password is required to edit it.
+</dl>
+
+<dl>
+<dt><b><tt>-dPermissions=</tt></b><em>number</em>
+<dd>Defines the PDF permissions. Negative values are allowed
+to represent unsigned integers with the highest bit set.
+</dl>
+
+<dl>
+<dt><b><tt>-dEncryptionR=</tt></b><em>number</em>
+<dd>Defines the encryption method revision number - either 2 or 3.
+</dl>
+
+<dl>
+<dt><b><tt>-dKeylength=</tt></b><em>number</em>
+<dd>Defines the length (in bits) of the encryption key.
+Must be a multiple of 8 in the interval [40, 128].
+If the length isn't 40, <b><tt>-dEncryptionR</tt></b> must be 3.
+</dl>
+
+
 <p>
 <b><tt>ps2pdf</tt></b> recognizes all of the Acrobat Distiller 5 parameters
 in
