@@ -35,7 +35,10 @@
  * Their "value" is an array of strings, some of which may be the result
  * of converting arbitrary PostScript objects to string form.
  *      pdfmark - see gdevpdfm.c
+ *	DSC - processed in this file
  */
+private int pdf_dsc_process(P2(gx_device_pdf * pdev,
+			       const gs_param_string_array * pma));
 
 private const int CoreDistVersion = 4000;	/* Distiller 4.0 */
 private const gs_param_item_t pdf_param_items[] = {
@@ -195,9 +198,11 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
     if (code < 0 ||
 	(code = param_write_int(plist, "CoreDistVersion", &cdv)) < 0 ||
 	(code = param_write_float(plist, "CompatibilityLevel", &cl)) < 0 ||
-	/* Indicate that we can process pdfmark. */
+	/* Indicate that we can process pdfmark and DSC. */
 	(param_requested(plist, "pdfmark") > 0 &&
 	 (code = param_write_null(plist, "pdfmark")) < 0) ||
+	(param_requested(plist, "DSC") > 0 &&
+	 (code = param_write_null(plist, "DSC")) < 0) ||
 	(code = gs_param_write_items(plist, pdev, NULL, pdf_param_items)) < 0
 	);
     return code;
@@ -217,7 +222,7 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_name param_name;
 
     /*
-     * If this is a pseudo-parameter (show or pdfmark),
+     * If this is a pseudo-parameter (pdfmark or DSC),
      * don't bother checking for any real ones.
      */
 
@@ -229,6 +234,21 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	    case 0:
 		pdf_open_document(pdev);
 		code = pdfmark_process(pdev, &ppa);
+		if (code >= 0)
+		    return code;
+		/* falls through for errors */
+	    default:
+		param_signal_error(plist, param_name, code);
+		return code;
+	    case 1:
+		break;
+	}
+
+	code = param_read_string_array(plist, (param_name = "DSC"), &ppa);
+	switch (code) {
+	    case 0:
+		pdf_open_document(pdev);
+		code = pdf_dsc_process(pdev, &ppa);
 		if (code >= 0)
 		    return code;
 		/* falls through for errors */
@@ -366,4 +386,13 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 		   gs_param_type_sizes[ppi->type]);
     }
     return ecode;
+}
+
+/* ---------------- Process DSC comments ---------------- */
+
+private int
+pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
+{
+    /* This is just a place-holder. */
+    return 0;
 }
