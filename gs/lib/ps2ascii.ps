@@ -165,6 +165,25 @@
 %%* not specially marked.
 %%* 
 
+%%+ 1/12/99 - Fixes by Ray Johnston, Artifex Software
+%%+ I don't understand the previous comment about the fix to allow
+%%+ redirecting stdout and stderr. There does not seem to be any code
+%%+ for stderr, the the code for stdout was flawed.
+%%+
+%%+  I fixed the stdout logic, so that the output can be redirected with
+%%+ the sequence;
+%%+      /.show.stdout (outfile.txt) (w) file def
+%%+ interposed between loading (running) ps2ascii.ps and loading/running
+%%+ the file(s) to be converted. For example,
+%%+
+%%+     gs -q -dNODISPLAY -dNOBIND -dWRITESYSTEMDICT -dSIMPLE ps2ascii.ps 
+%%+     GS>/.show.stdout (alphabet.txt) (w) file def
+%%+     GS>(alphabet.ps) run
+%%+     GS>quit
+%%+
+%%+ Also added a (\n) to the copypage output for the SIMPLE case to
+%%+ improve readability.
+
 /QUIET true def
 systemdict wcheck { systemdict } { userdict } ifelse begin
 /.max where { pop } { /.max { 2 copy lt { exch } if pop } bind def } ifelse
@@ -189,7 +208,7 @@ ifelse
 % Redefine the end-of-page operators.
 
 /erasepage { } codef
-/copypage { SIMPLE { (\014) } { (P\n) } ifelse //print } codef
+/copypage { SIMPLE { (\n\014) } { (P\n) } ifelse .show.stdout exch writestring } codef
 /showpage { copypage erasepage initgraphics } codef
 
 % Redefine the fill operators to detect rectangles.
@@ -218,7 +237,7 @@ ifelse
    pathforall cleartomark
     { .showcolor counttomark 4 idiv
        { counttomark -4 roll .orderrect
-	 (R ) //print .show==4
+	 (R ) .show.stdout exch writestring .show==4
        }
       repeat pop
     }
@@ -274,7 +293,7 @@ ifelse
    currentlinewidth 2 div dup .dcoord add abs 1 max 5 1 roll
    4 index add 4 1 roll 4 index add 4 1 roll
    4 index sub 4 1 roll 5 -1 roll sub 4 1 roll
-   (R ) //print .show==4
+   (R ) .show.stdout exch writestring .show==4
  } odef
 /.strokecomplex
  {	% Do a first pass to see if the path is all horizontal and vertical
@@ -322,7 +341,7 @@ ifelse
  { COMPLEX
     { gsave setmatrix itransform 0 0 itransform
       grestore .coord 4 2 roll .coord .orderrect
-      (I ) //print .show==4
+      (I ) .show.stdout exch writestring .show==4
     }
     { pop pop pop
     }
@@ -362,11 +381,11 @@ ifelse
       3 index //.color.b .iget eq and
        { pop pop pop
        }
-       { (C ) //print
+       { (C ) .show.stdout exch writestring
 	 dup //.color.r exch .iput .show==only
-         ( ) //print dup //.color.g exch .iput .show==only
-         ( ) //print dup //.color.b exch .iput .show==only
-	 (\n) //print
+         ( ) .show.stdout exch writestring dup //.color.g exch .iput .show==only
+         ( ) .show.stdout exch writestring dup //.color.b exch .iput .show==only
+	 (\n) .show.stdout exch writestring
        }
       ifelse
     }
@@ -448,10 +467,10 @@ ifelse
    //.show.=string //=string copy pop
  } odef
 /.show==4
- { 4 -1 roll .show==only ( ) //print
-   3 -1 roll .show==only ( ) //print
-   exch .show==only ( ) //print
-   .show==only (\n) //print
+ { 4 -1 roll .show==only ( ) .show.stdout exch writestring
+   3 -1 roll .show==only ( ) .show.stdout exch writestring
+   exch .show==only ( ) .show.stdout exch writestring
+   .show==only (\n) .show.stdout exch writestring
  } odef
 
 /.showwidth	% Same as stringwidth, but disable COMPLEX so that
@@ -500,11 +519,11 @@ ifelse
       1 index //.font.name 0 //.font.name.length .iget getinterval eq and
        { pop pop pop
        }
-       { (F ) //print
-	 3 -1 roll dup //.font.height exch .iput .show==only ( ) //print
-         exch dup //.font.width exch .iput .show==only ( ) //print
+       { (F ) .show.stdout exch writestring
+	 3 -1 roll dup //.font.height exch .iput .show==only ( ) .show.stdout exch writestring
+         exch dup //.font.width exch .iput .show==only ( ) .show.stdout exch writestring
 	 dup length //.font.name.length exch .iput
-         //.font.name cvs .show==only (\n) //print
+         //.font.name cvs .show==only (\n) .show.stdout exch writestring
        }
       ifelse
     }
@@ -1389,7 +1408,7 @@ userdict /start-hook {
                 ifelse          % x y string width char
               }
             ifelse
-            //print
+            .show.stdout exch writestring
 
             //.show.y 3 index .iput % x y string width
             //.show.x 4 index .iput % x y string width
@@ -1399,7 +1418,7 @@ userdict /start-hook {
                   % If the word processor split a hyphenated word within
                   % the same line, put out the hyphen now.
             pop
-            //.show.last 0 get .hyphen eq { (-) //print } if
+            //.show.last 0 get .hyphen eq { (-) .show.stdout exch writestring } if
          }
         ifelse
                                 %%* 
@@ -1410,14 +1429,14 @@ userdict /start-hook {
                                 %%* 
         3 index                     % x y string width x
         //.show.x .iget 10 add gt   % x y string width bool
-            { ( ) //print }
+            { ( ) .show.stdout exch writestring }
         if
                                     % x y string width
         4 1 roll                    % width x y string
         .show.write pop             % width x
         add //.show.x exch .iput    % <empty>
       }
-      { (S ) //print .show==4 }
+      { (S ) .show.stdout exch writestring .show==4 }
     ifelse
 } odef
 
