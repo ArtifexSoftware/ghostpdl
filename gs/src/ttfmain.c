@@ -652,8 +652,8 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 		e->m.tx = Scale_X( &exec->metrics, e->arg1 ) << 10;
 		e->m.ty = Scale_Y( &exec->metrics, e->arg2 ) << 10;
             } else {
-		e->m.tx = (pts->org_x[e->arg1] - pts->org_x[e->arg2]) << 10;
-		e->m.ty = (pts->org_y[e->arg1] - pts->org_y[e->arg2]) << 10;
+		e->m.tx = (pts->org_x[e->arg1] - pts->org_x[gOutline->pointCount + e->arg2]) << 10;
+		e->m.ty = (pts->org_y[e->arg1] - pts->org_y[gOutline->pointCount + e->arg2]) << 10;
             }
 	    MoveGlyphOutline(pts, nPointsStored, &out, &e->m);
 	    for (j = nContoursStored; j < out.contourCount + nContoursStored; j++)
