@@ -258,8 +258,18 @@ gdev_x_open(gx_device_X * xdev)
 	xdev->scr = scr;
 	xvinfo.visual = DefaultVisualOfScreen(scr);
 	xdev->cmap = DefaultColormapOfScreen(scr);
+	if (xvinfo.visual->class != TrueColor) {
+	    int scrno = DefaultScreen(xdev->dpy);
+	    if ( XMatchVisualInfo(xdev->dpy, scrno, 24, TrueColor, &xvinfo) ||
+		 XMatchVisualInfo(xdev->dpy, scrno, 32, TrueColor, &xvinfo) || 
+		 XMatchVisualInfo(xdev->dpy, scrno, 16, TrueColor, &xvinfo) ||
+		 XMatchVisualInfo(xdev->dpy, scrno, 15, TrueColor, &xvinfo)  ) {
+		xdev->cmap = XCreateColormap (xdev->dpy, 
+					      DefaultRootWindow(xdev->dpy),
+					      xvinfo.visual, AllocNone ); 
+	    }
+	}
     }
-
     xvinfo.visualid = XVisualIDFromVisual(xvinfo.visual);
     xdev->vinfo = XGetVisualInfo(xdev->dpy, VisualIDMask, &xvinfo, &nitems);
     if (xdev->vinfo == NULL) {
@@ -283,11 +293,13 @@ gdev_x_open(gx_device_X * xdev)
 
     /* Reserve foreground and background colors under the regular connection. */
     xc.pixel = xdev->foreground;
-    XQueryColor(xdev->dpy, xdev->cmap, &xc);
+    XQueryColor(xdev->dpy, DefaultColormap(xdev->dpy,DefaultScreen(xdev->dpy)), &xc);
     XAllocColor(xdev->dpy, xdev->cmap, &xc);
+    xdev->foreground = xc.pixel;
     xc.pixel = xdev->background;
-    XQueryColor(xdev->dpy, xdev->cmap, &xc);
+    XQueryColor(xdev->dpy, DefaultColormap(xdev->dpy,DefaultScreen(xdev->dpy)), &xc);
     XAllocColor(xdev->dpy, xdev->cmap, &xc);
+    xdev->background = xc.pixel;
 
     code = gdev_x_setup_colors(xdev);
     if (code < 0) {
@@ -958,6 +970,8 @@ gdev_x_close(gx_device_X *xdev)
     free_x_fontmaps(&xdev->dingbat_fonts, xdev->memory);
     free_x_fontmaps(&xdev->symbol_fonts, xdev->memory);
     free_x_fontmaps(&xdev->regular_fonts, xdev->memory);
+    if (xdev->cmap != DefaultColormapOfScreen(xdev->scr))
+	XFreeColormap(xdev->dpy, xdev->cmap);
     XCloseDisplay(xdev->dpy);
     return 0;
 }
