@@ -290,10 +290,27 @@ ENUM_PTRS_BEGIN_PROC(basic_enum_ptrs)
 {
     const gc_struct_data_t *psd = pstype->proc_data;
 
+    /* This check is primarily for misuse of the alloc_struct_array */
+    /* with number of elements 0 and allocation not passing 'element' */
+    if (size == 0) {
+#ifdef DEBUG
+	dprintf2("  basic_enum_ptrs: Attempt to enum 0 size structure at 0x%lx, type: %s\n",
+		vptr, pstype->sname);
+#endif
+	return 0;
+    }
     if (index < psd->num_ptrs) {
 	const gc_ptr_element_t *ppe = &psd->ptrs[index];
 	EV_CONST char *pptr = (EV_CONST char *)vptr + ppe->offset;
 
+#ifdef DEBUG
+	/* some extra checking to make sure we aren't out of bounds */
+	if (ppe->offset > size - sizeof(void *)) {
+	    dprintf2("  basic_enum_ptrs: Attempt to enum ptr with offset=%d beyond size=%d: structure at 0x%lx, type: %s\n",
+		    ppe->offset, size, vptr, pstype->sname);
+	    return 0;
+	}
+#endif
 	switch ((gc_ptr_type_index_t)ppe->type) {
 	    case GC_ELT_OBJ:
 		return ENUM_OBJ(*(const void *EV_CONST *)pptr);

@@ -632,6 +632,13 @@ i_alloc_struct_array(gs_memory_t * mem, uint num_elements,
     obj_header_t *obj;
 
     ALLOC_CHECK_SIZE(pstype);
+#ifdef DEBUG
+    if (pstype->enum_ptrs == basic_enum_ptrs) {
+	dprintf2("  i_alloc_struct_array: called with incorrect structure type (not element), struct='%s', client='%s'\n",
+		pstype->sname, cname);
+	return NULL;		/* fail */
+    }
+#endif
     obj = alloc_obj(imem,
 		    (ulong) num_elements * pstype->ssize,
 		    pstype, ALLOC_DIRECT, cname);
