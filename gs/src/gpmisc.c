@@ -316,19 +316,24 @@ bool gp_file_name_is_absolute(const char *fname, uint flen)
 }
 
 /* 
- * Answers whether a reduced file name starts from parent. 
- * This won't work with non-reduced file names.
+ * Returns length of all starting parent references.
  */
-bool gp_file_name_is_from_parent(const char *fname, uint flen)
+uint gp_file_name_parents(const char *fname, uint flen)
 {
     uint plen = gp_file_name_root(fname, flen), slen;
-    const char *ip, *ipe;
+    const char *ip, *ipe, *item;
 
-    if (plen > 0 || plen == flen)
-	return false;
+    if (plen > 0)
+	return 0;
+    ip = fname + plen;
     ipe = fname + flen;
-    for (ip = fname; ip < ipe; ip++)
-	if((slen = gs_file_name_check_separator(ip, ipe - ip, fname)) != 0)
+    for (; ip < ipe; ) {
+	item = ip;
+	slen = search_separator(&ip, ipe, item, 1);
+	if (!gp_file_name_is_parent(item, ip - item))
 	    break;
-    return gp_file_name_is_parent(fname, ip - fname);
+	ip += slen;
+    }
+    return item - fname;
 }
+

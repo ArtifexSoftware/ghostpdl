@@ -66,8 +66,8 @@ gp_file_name_combine_result gp_file_name_reduce(const char *fname, uint flen,
 bool gp_file_name_is_absolute(const char *fname, uint flen);
 
 /* 
- * Answers whether a reduced file name starts from parent. 
+ * Returns length of all starting parent references.
  */
-bool gp_file_name_is_from_parent(const char *fname, uint flen);
+uint gp_file_name_parents(const char *fname, uint flen);
 
 #endif /* gpmisc_INCLUDED */

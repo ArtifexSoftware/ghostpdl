@@ -541,12 +541,12 @@ uint gs_file_name_check_separator(const char *fname, int len, const char *item)
 	 * in forward search, see gp_file_name_combine. 
 	 */
 	if (fname[0] == ']')
-		return 1; /* It is a file separator. */
-	if (fname[0] == '.') {
-	    if (fname == item + 1 && item[0] == '.')
-		return 1; /* It is a separator after parent. */
-	    if (len > 1 && fname[1] == '.')
-		return 0; /* It is parent, not a separator. */
+	    return 1; /* It is a file separator. */
+	if (fname[0] == '.')
+	    return 1; /* It is a directory separator. */
+	if (fname[0] == '-') {
+	    if (fname == item + 1 && item[0] == '-')
+		return 1; /* Two or more parents, cut the first one. */
 	    return 1;
 	}
     } else if (len < 0) {
@@ -558,7 +558,7 @@ uint gs_file_name_check_separator(const char *fname, int len, const char *item)
 
 bool gp_file_name_is_parent(const char *fname, uint len)
 {   /* Ghostscript specifics : an extended syntax like Mac OS. */
-    return len == 1 && fname[0] == '.';
+    return len == 1 && fname[0] == '-';
 }
 
 bool gp_file_name_is_current(const char *fname, uint len)
