@@ -188,7 +188,7 @@ extern  int     pcl_palette_PW( pcl_state_t * pcs, int pen, floatp width );
  */
 extern  int     pcl_palette_set_render_method(
     pcl_state_t *    pcs,
-    int              render_method
+    uint             render_method
 );
 
 /*
