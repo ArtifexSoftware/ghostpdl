@@ -119,20 +119,15 @@ void
 pdf_set_initial_color(gx_device_pdf * pdev, gx_device_color_saved *saved_fill_color,
 		    gx_device_color_saved *saved_stroke_color)
 {
-    gx_color_index color = 0; /* black on DeviceGray and DeviceRGB */
-    gx_device_color temp_color;
+    gx_device_color black;
 
-    if(pdev->color_info.num_components == 4) {
-        gx_color_value cv[4];
-        cv[0] = cv[1] = cv[2] = frac2cv(frac_0);
-        cv[3] = frac2cv(frac_1);
-        color = dev_proc(pdev, map_cmyk_color)((gx_device *)pdev, cv);
-    }
-    color_set_pure(&temp_color, color);
+    pdev->black = gx_device_black((gx_device *)pdev);
+    pdev->white = gx_device_white((gx_device *)pdev);
+    color_set_pure(&black, pdev->black);
     memset(&pdev->vg_initial.saved_fill_color, 0, sizeof(pdev->saved_fill_color));
     memset(&pdev->vg_initial.saved_stroke_color, 0, sizeof(pdev->saved_stroke_color));
-    gx_saved_color_update(&pdev->vg_initial.saved_fill_color, &temp_color);
-    gx_saved_color_update(&pdev->vg_initial.saved_stroke_color, &temp_color);
+    gx_saved_color_update(&pdev->vg_initial.saved_fill_color, &black);
+    gx_saved_color_update(&pdev->vg_initial.saved_stroke_color, &black);
 }
 
 /* Prepare intitial values for viewer's graphics state parameters. */
