@@ -344,6 +344,7 @@ cie_defg_finish(i_ctx_t *i_ctx_p)
     gs_cie_defg *pcie = r_ptr(op, gs_cie_defg);
 
     pcie->DecodeDEFG = DecodeDEFG_from_cache;
+    pcie->DecodeABC = DecodeABC_from_cache;
     pcie->common.DecodeLMN = DecodeLMN_from_cache;
     gs_cie_defg_complete(pcie);
     pop(1);
@@ -402,6 +403,7 @@ cie_def_finish(i_ctx_t *i_ctx_p)
     gs_cie_def *pcie = r_ptr(op, gs_cie_def);
 
     pcie->DecodeDEF = DecodeDEF_from_cache;
+    pcie->DecodeABC = DecodeABC_from_cache;
     pcie->common.DecodeLMN = DecodeLMN_from_cache;
     gs_cie_def_complete(pcie);
     pop(1);
