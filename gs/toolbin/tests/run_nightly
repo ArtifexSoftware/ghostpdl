@@ -31,6 +31,45 @@ HEAD_DIR = '/path/to/cvs'
 REGRESSION_SCRIPT = 'run_regression 2>&1'
 
 
+def change_gsproduct(file):
+    tmpfile = "%s.tmp" % (file,)
+
+    startre = re.compile("^#ifndef\ GS_PRODUCT$")
+    changere = re.compile("^.*?\"[A-Za-z -]+\".*?$")
+    endre = re.compile("^$")
+
+    old = open(file, "r")
+    new = open(tmpfile, "w")
+
+    state = 0
+    for line in old.readlines():
+        if state == 0:
+            m = startre.search(line)
+            if m:
+                state = 1
+                
+            new.write(line)
+        elif state == 1:
+            m = changere.search(line)
+            if m:
+                state = 2
+                new.write("\t\"AFPL Ghostscript\"\n")
+            else:
+                new.write(line)
+        elif state == 2:
+            m = endre.search(line)
+            if m:
+                state = 0
+
+            new.write(line)
+
+
+    old.close()
+    new.close()
+
+    os.unlink(file)
+    os.rename(tmpfile, file)
+
 def sendmail(frm, to, subject, text):
 	import smtplib
 
@@ -44,7 +83,10 @@ def update_ghostscript():
 	cwd = os.getcwd()
 	os.chdir(HEAD_DIR)
 	
+	os.unlink("%s/src/gscdef.c" % (HEAD_DIR,))
 	if os.system("cvs update -Pd > /dev/null 2> /dev/null") != 0: return -1
+	change_gsproduct("%s/src/gscdef.c" % (HEAD_DIR,))
+	
 	if os.system("make clean > /dev/null 2> /dev/null") != 0: return -1
 	if os.system("make > /dev/null 2> /dev/null") != 0: return -1
 	if os.system("make install > /dev/null 2> /dev/null") != 0: return -1
