@@ -117,7 +117,7 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 			     * to avoid a division by zero.
 			     */
 			    if (ex == 0 || ey == 0)
-				flat = 0;
+				k = 0;
 			    else {
 				flat_x =
 				    fixed_mult_quo(fixed_flatness, ex,
@@ -126,9 +126,10 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 				    fixed_mult_quo(fixed_flatness, ey,
 						   ey + expansion.y);
 				flat = min(flat_x, flat_y);
+				k = gx_curve_log2_samples(x0, y0, pc, flat);
 			    }
-			}
-			k = gx_curve_log2_samples(x0, y0, pc, flat);
+			} else
+			    k = gx_curve_log2_samples(x0, y0, pc, flat);
 			if (options & pco_accurate) {
 			    segment *start;
 			    segment *end;
