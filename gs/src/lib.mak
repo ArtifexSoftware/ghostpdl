@@ -176,6 +176,11 @@ $(GLOBJ)gsmemret.$(OBJ) : $(GLSRC)gsmemret.c $(GXERR) $(gsmemret_h)
 	$(GLCC) $(GLO_)gsmemret.$(OBJ) $(C_) $(GLSRC)gsmemret.c
 
 # gsnogc is not part of the base configuration.
+# This is available as a .dev so it can be used by non PS parsers
+gsnogc_=$(GLOBJ)gsnogc.$(OBJ)
+$(GLD)gsnogc.dev : $(LIB_MAK) $(ECHOGS_XE) $(gsnogc_)
+	$(SETMOD) $(GLD)gsnogc $(gsnogc_)
+
 $(GLOBJ)gsnogc.$(OBJ) : $(GLSRC)gsnogc.c $(GX)\
  $(gsmdebug_h) $(gsnogc_h) $(gsstruct_h) $(gxalloc_h)
 	$(GLCC) $(GLO_)gsnogc.$(OBJ) $(C_) $(GLSRC)gsnogc.c
@@ -1531,8 +1536,8 @@ $(GLOBJ)gsropc.$(OBJ) : $(GLSRC)gsropc.c $(GXERR)\
 gxpageq_h=$(GLSRC)gxpageq.h $(gsmemory_h) $(gxband_h) $(gxsync_h)
 gdevprna_h=$(GLSRC)gdevprna.h $(gdevprn_h) $(gxsync_h)
 
-async_=$(GLOBJ)gdevprna.$(OBJ) $(GLOBJ)gsnogc.$(OBJ) $(GLOBJ)gxpageq.$(OBJ)
-async_inc=$(GLD)clist.dev $(GLD)$(SYNC).dev
+async_=$(GLOBJ)gdevprna.$(OBJ) $(GLOBJ)gxpageq.$(OBJ)
+async_inc=$(GLD)clist.dev $(GLD)$(SYNC).dev $(GLD)gsnogc.dev
 $(GLD)async.dev : $(LIB_MAK) $(ECHOGS_XE) $(async_) $(async_inc)
 	$(SETMOD) $(GLD)async $(async_)
 	$(ADDMOD) $(GLD)async -include $(async_inc)
