@@ -49,8 +49,19 @@ Jbig2Metadata *jbig2_metadata_new(Jbig2Ctx *ctx, Jbig2Encoding encoding)
 
 void jbig2_metadata_free(Jbig2Ctx *ctx, Jbig2Metadata *md)
 {
-    if (md->keys) jbig2_free(ctx->allocator, md->keys);
-    if (md->values) jbig2_free(ctx->allocator, md->values);
+    int i;
+
+    if (md->keys) {
+      /* assume we own the pointers */
+      for (i = 0; i < md->entries; i++)
+        jbig2_free(ctx->allocator, md->keys[i]);
+      jbig2_free(ctx->allocator, md->keys);
+    }
+    if (md->values) {
+      for (i = 0; i < md->entries; i++)
+        jbig2_free(ctx->allocator, md->values[i]);
+      jbig2_free(ctx->allocator, md->values);
+    }
     jbig2_free(ctx->allocator, md);
 }
 
