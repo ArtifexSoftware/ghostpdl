@@ -497,6 +497,20 @@ Ghostscript is normally built to interpret both PostScript and PDF files, examin
 </dl>
 
 <dl>
+<dt><b><tt>-dPDFFitPage</tt></b>
+<dd>Rather than selecting a PageSize given by the PDF MediaBox or
+CropBox (see -dUseCropBox), the PDF file will be scaled to fit
+the current device page size (usually the default page size).
+<p>
+This is useful to avoid clipping information on a PDF document when
+sending to a printer that may have unprintable areas at the edge of
+the media larger than allowed for in the document.
+<p>
+This is also useful for creating fixed size images of PDF files
+that may have a variety of page sizes, for example thumbnail images.
+</dl>
+
+<dl>
 <dt><b><tt>-dPrinted</tt></b>
 <dt><b><tt>-dPrinted=false</tt></b>
 <dd>Determines whether the file should be displayed or printed using the
