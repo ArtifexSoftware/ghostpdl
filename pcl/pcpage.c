@@ -315,6 +315,7 @@ new_page_size(
     /* the following sometimes erroneosuly sets have_page */
     if (!reset_initial)
         hpgl_do_reset(pcs, pcl_reset_page_params);
+    gs_erasepage(pcs->pgs);
     pcs->have_page = false;
 }
 
