@@ -1271,14 +1271,13 @@ const UB8 agfa_xl_header[72] = {0,0x48,0x10,0x02,0,0,0,0,0,0,0,0,0,0x01,0x02,0x7
 int
 pl_prepend_xl_dummy_header(gs_memory_t *mem, byte **ppheader)
 {
-
     uint size = gs_object_size(mem, *ppheader);
     byte *new_header = gs_alloc_bytes(mem, size + 72 - 8 /* agfa dummy header */, "pl_prepend_xl_dummy_header");
     
     if (new_header == NULL)
         return -1;
     memcpy(new_header, agfa_xl_header, 72);
-    memcpy(new_header + 72 - 8, *ppheader, size);
+    memcpy(new_header + 72, *ppheader + 8, size - 8);
     gs_free_object(mem, *ppheader,"pl_prepend_xl_dummy_header");
     *ppheader = new_header;
     return 0;
