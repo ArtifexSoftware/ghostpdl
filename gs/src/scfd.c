@@ -199,7 +199,8 @@ private int cf_decode_1d(stream_CFD_state *, stream_cursor_read *);
 private int cf_decode_2d(stream_CFD_state *, stream_cursor_read *);
 private int cf_decode_uncompressed(stream_CFD_state *, stream_cursor_read *);
 private int
-s_CFD_process(stream_state * st, stream_cursor_read * pr,
+s_CFD_process(const gs_memory_t *mem,
+	      stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_CFD_state *const ss = (stream_CFD_state *) st;

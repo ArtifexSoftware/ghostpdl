@@ -80,7 +80,8 @@ s_PDiffD_init(stream_state * st)
 
 /* Process a buffer.  Note that this handles both Encode and Decode. */
 private int
-s_PDiff_process(stream_state * st, stream_cursor_read * pr,
+s_PDiff_process(const gs_memory_t *mem,
+		stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
     stream_PDiff_state *const ss = (stream_PDiff_state *) st;

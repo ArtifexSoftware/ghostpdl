@@ -36,7 +36,8 @@ s_A85E_init(stream_state * st)
 /* Process a buffer */
 #define LINE_LIMIT 79		/* not 80, to satisfy Genoa FTS */
 private int
-s_A85E_process(stream_state * st, stream_cursor_read * pr,
+s_A85E_process(const gs_memory_t *mem,
+	       stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     stream_A85E_state *const ss = (stream_A85E_state *) st;
@@ -228,7 +229,8 @@ private_st_BT_state();
 
 /* Process a buffer.  Note that the same code serves for both streams. */
 private int
-s_BT_process(stream_state * st, stream_cursor_read * pr,
+s_BT_process(const gs_memory_t *mem,
+	     stream_state * st, stream_cursor_read * pr,
 	     stream_cursor_write * pw, bool last)
 {
     stream_BT_state *const ss = (stream_BT_state *) st;

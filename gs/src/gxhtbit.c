@@ -47,7 +47,8 @@ construct_ht_order_default(const gs_memory_t *mem,
  * sets porder->levels[], bit_data[].
  */
 private int
-construct_ht_order_short(gx_ht_order *porder, const byte *thresholds)
+construct_ht_order_short(const gs_memory_t *mem, 
+			 gx_ht_order *porder, const byte *thresholds)
 {
     uint size = porder->num_bits;
     uint i;
@@ -266,7 +267,7 @@ render_ht_short(const gs_memory_t *mem, gx_ht_tile *pbt, int level, const gx_ht_
 /* Define the procedure vectors for the order data implementations. */
 const gx_ht_order_procs_t ht_order_procs_table[2] = {
     { sizeof(gx_ht_bit), construct_ht_order_default, ht_bit_index_default,
-      render_ht_default },
+      render_ht_default, NULL },
     { sizeof(ushort), construct_ht_order_short, ht_bit_index_short,
-      render_ht_short }
+      render_ht_short, NULL }
 };

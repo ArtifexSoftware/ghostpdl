@@ -41,7 +41,8 @@ s_RLE_init(stream_state * st)
 
 /* Process a buffer */
 private int
-s_RLE_process(stream_state * st, stream_cursor_read * pr,
+s_RLE_process(const gs_memory_t *mem,
+	      stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_RLE_state *const ss = (stream_RLE_state *) st;

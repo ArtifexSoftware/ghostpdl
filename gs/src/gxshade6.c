@@ -263,7 +263,8 @@ private int
 patch_fill(const gs_memory_t *mem, 
 	   patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	   const gs_fixed_point interior[4],
-	   void (*transform) (gs_fixed_point *, const patch_curve_t[4],
+	   void (*transform) (const gs_memory_t *mem,
+			      gs_fixed_point *, const patch_curve_t[4],
 			      const gs_fixed_point[4], floatp, floatp))
 {	/*
 	 * The specification says the output must appear to be produced in
@@ -420,10 +421,10 @@ patch_fill(const gs_memory_t *mem,
 	    {
 		mesh_vertex_t mu0v0, mu1v0, mu1v1, mu0v1;
 
-		(*transform)(&mu0v0.p, curve, interior, u0, v0);
-		(*transform)(&mu1v0.p, curve, interior, u1, v0);
-		(*transform)(&mu1v1.p, curve, interior, u1, v1);
-		(*transform)(&mu0v1.p, curve, interior, u0, v1);
+		(*transform)(mem, &mu0v0.p, curve, interior, u0, v0);
+		(*transform)(mem, &mu1v0.p, curve, interior, u1, v0);
+		(*transform)(mem, &mu1v1.p, curve, interior, u1, v1);
+		(*transform)(mem, &mu0v1.p, curve, interior, u0, v1);
 		if_debug4(mem, '2', "[2]  => (%g,%g), (%g,%g),\n",
 			  fixed2float(mu0v0.p.x), fixed2float(mu0v0.p.y),
 			  fixed2float(mu1v0.p.x), fixed2float(mu1v0.p.y));
@@ -450,7 +451,7 @@ patch_fill(const gs_memory_t *mem,
 		    mesh_vertex_t mmid;
 		    int ci;
 
-		    (*transform)(&mmid.p, curve, interior,
+		    (*transform)(mem, &mmid.p, curve, interior,
 				 (u0 + u1) * 0.5, (v0 + v1) * 0.5);
 		    for (ci = 0; ci < pfs->num_components; ++ci)
 			mmid.cc[ci] =
@@ -532,7 +533,8 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 
 /* Calculate the device-space coordinate corresponding to (u,v). */
 private void
-Tpp_transform(gs_fixed_point * pt, const patch_curve_t curve[4],
+Tpp_transform(const gs_memory_t *mem,
+	      gs_fixed_point * pt, const patch_curve_t curve[4],
 	      const gs_fixed_point interior[4], floatp u, floatp v)
 {
     double Bu[4], Bv[4];

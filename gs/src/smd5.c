@@ -32,7 +32,8 @@ s_MD5E_init(stream_state * st)
 
 /* Process a buffer. */
 private int
-s_MD5E_process(stream_state * st, stream_cursor_read * pr,
+s_MD5E_process(const gs_memory_t *mem,
+	       stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     stream_MD5E_state *const ss = (stream_MD5E_state *) st;

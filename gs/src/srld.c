@@ -41,7 +41,8 @@ s_RLD_init(stream_state * st)
 
 /* Refill the buffer */
 private int
-s_RLD_process(stream_state * st, stream_cursor_read * pr,
+s_RLD_process(const gs_memory_t *mem,
+	      stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_RLD_state *const ss = (stream_RLD_state *) st;

@@ -65,7 +65,8 @@ s_xBCPE_process(stream_state * st, stream_cursor_read * pr,
 
 /* Actual process procedures */
 private int
-s_BCPE_process(stream_state * st, stream_cursor_read * pr,
+s_BCPE_process(const gs_memory_t *mem,
+	       stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     static const byte escaped[32] =
@@ -77,7 +78,8 @@ s_BCPE_process(stream_state * st, stream_cursor_read * pr,
     return s_xBCPE_process(st, pr, pw, last, escaped);
 }
 private int
-s_TBCPE_process(stream_state * st, stream_cursor_read * pr,
+s_TBCPE_process(const gs_memory_t *mem, 
+		stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
     static const byte escaped[32] =
@@ -224,13 +226,13 @@ s_xBCPD_process(stream_state * st, stream_cursor_read * pr,
 
 /* Actual process procedures */
 private int
-s_BCPD_process(stream_state * st, stream_cursor_read * pr,
+s_BCPD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     return s_xBCPD_process(st, pr, pw, last, false);
 }
 private int
-s_TBCPD_process(stream_state * st, stream_cursor_read * pr,
+s_TBCPD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
     return s_xBCPD_process(st, pr, pw, last, true);

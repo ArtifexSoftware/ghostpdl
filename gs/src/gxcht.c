@@ -808,7 +808,7 @@ private const gx_const_strip_bitmap ht_no_bitmap = {
     else if (!invert) {\
 	pvp->values[1][i] = fractional_color(q + 1, max_color);\
 	sbits[i] = (const gx_const_strip_bitmap *)\
-	    &gx_render_ht(caches[i], r)->tiles;\
+	    &gx_render_ht(dev->memory, caches[i], r)->tiles;\
     } else {                                                        \
 	const gx_device_halftone *pdht = pdc->colors.colored.c_ht;  \
 	int nlevels =\
@@ -819,7 +819,7 @@ private const gx_const_strip_bitmap ht_no_bitmap = {
 	pvp->values[1][i] = pvp->values[0][i];                   \
 	pvp->values[0][i] = fractional_color(q + 1, max_color);   \
 	sbits[i] = (const gx_const_strip_bitmap *)\
-	    &gx_render_ht(caches[i], nlevels - r)->tiles;    \
+	    &gx_render_ht(dev->memory, caches[i], nlevels - r)->tiles;    \
     }\
   END
 
@@ -985,7 +985,7 @@ set_cmyk_1bit_colors(color_values_pair_t *ignore_pvp,
 \
 	mask0 |= mask;\
 	sbits[3 - i] = (const gx_const_strip_bitmap *)\
-	    &gx_render_ht(caches[i], nlevels - r)->tiles;\
+	    &gx_render_ht(dev->memory, caches[i], nlevels - r)->tiles;\
     }\
   END
 	 /* Suppress a compiler warning about signed/unsigned constants. */

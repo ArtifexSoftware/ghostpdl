@@ -191,7 +191,8 @@ private void cf_encode_1d(stream_CFE_state *, const byte *,
 private void cf_encode_2d(stream_CFE_state *, const byte *,
 			  stream_cursor_write *, const byte *);
 private int
-s_CFE_process(stream_state * st, stream_cursor_read * pr,
+s_CFE_process(const gs_memory_t *mem,
+	      stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_CFE_state *const ss = (stream_CFE_state *) st;

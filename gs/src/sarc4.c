@@ -64,7 +64,8 @@ s_arcfour_set_key(stream_arcfour_state * state, const unsigned char *key,
  * in each direction. see strimpl.h for return codes.
  */
 private int
-s_arcfour_process(stream_state * ss, stream_cursor_read * pr,
+s_arcfour_process(const gs_memory_t *mem,
+		  stream_state * ss, stream_cursor_read * pr,
 		  stream_cursor_write * pw, bool last)
 {
     stream_arcfour_state *const state = (stream_arcfour_state *) ss;
