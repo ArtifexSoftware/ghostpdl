@@ -24,6 +24,6 @@ int pcl_reselect_substitute_font(P3(pcl_font_selection_t *pfs,
  * used only for the font and symbol set dictionaries.
  */
 int pcl_select_font_by_id(P3(pcl_font_selection_t *pfs, uint id,
-			     const pcl_state_t *pcls));
+			     pcl_state_t *pcls));
 
 #endif				/* pcfsel_INCLUDED */

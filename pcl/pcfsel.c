@@ -64,7 +64,7 @@ dprint_font_t(const pl_font_t *pfont)
    if it is available. 2 is returned for no matching symbol set, 1 for
    mismatched vocabulary and 0 if the sets match. */
 private int
-check_support(const pcl_state_t *pcls, uint symbol_set, pl_font_t *fp,
+check_support(const pcl_state_t *pcls, uint symbol_set, const pl_font_t *fp,
     pl_symbol_map_t **mapp)
 {
 	pl_glyph_vocabulary_t gv = ~fp->character_complement[7] & 07;
@@ -346,7 +346,7 @@ pcl_reselect_substitute_font(pcl_font_selection_t *pfs,
 /* set font parameters after an id selection */
 void
 pcl_set_id_parameters(const pcl_state_t *pcls, 
-		      pcl_font_selection_t *pfs, const pl_font_t *fp)
+		      pcl_font_selection_t *pfs, pl_font_t *fp)
 {
 	/* Transfer parameters from the selected font into the selection
 	 * parameters, being careful with the softer parameters. */
@@ -383,8 +383,7 @@ pcl_set_id_parameters(const pcl_state_t *pcls,
 /* Select a font by ID, updating the selection parameters. */
 /* Return 0 normally, 1 if no font was found, or an error code. */
 int
-pcl_select_font_by_id(pcl_font_selection_t *pfs, uint id,
-  const pcl_state_t *pcls)
+pcl_select_font_by_id(pcl_font_selection_t *pfs, uint id, pcl_state_t *pcls)
 {	byte id_key[2];
 	void *value;
 	pl_font_t *fp;
