@@ -346,16 +346,6 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
     bool coerce_dest = false;
 
     Dest.data = 0;
-    if (!for_outline) {
-	code = pdfmark_make_dest(dest, params->pdev, "/Page", "/View",
-				 pairs, count);
-	if (code < 0)
-	    return code;
-	else if (code == 0)
-	    Dest.data = 0;
-	else
-	    param_string_from_string(Dest, dest);
-    }
     if (params->subtype)
 	param_string_from_string(Subtype, params->subtype);
     else
@@ -388,7 +378,8 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 		if (code < 0)
 		    return code;
 		param_string_from_string(Dest, dest);
-		coerce_dest = false;
+		if (for_outline)
+		    coerce_dest = false;
 	    }
 	} else if (pdf_key_eq(pair, "/Subtype"))
 	    Subtype = pair[1];
