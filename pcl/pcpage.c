@@ -290,10 +290,13 @@ new_page_size(
 {
     floatp                      width_pts = psize->width * 0.01;
     floatp                      height_pts = psize->height * 0.01;
+    float                       page_size[2];
     gs_state *                  pgs = pcs->pgs;
     gs_matrix                   mat;
 
-    gx_device_set_media_size(gs_currentdevice(pgs), width_pts, height_pts);
+    page_size[0] = width_pts;
+    page_size[1] = height_pts;
+    put_param1_float_array(pcs, "PageSize", page_size);
 
     /*
      * Reset the default transformation.

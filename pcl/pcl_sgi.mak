@@ -5,7 +5,7 @@
 # Top-level makefile for PCL5* on Silicon Graphics Irix 6.x platforms.
 
 # Directories
-GLSRCDIR    = ../gs
+GLSRCDIR    = ../gs535
 GLGENDIR    = $(GLSRCDIR)
 GLOBJDIR    = $(GLSRCDIR)
 
@@ -13,7 +13,7 @@ PLSRCDIR    = ../pl
 PLGENDIR    = $(PLSRCDIR)
 PLOBJDIR    = $(PLSRCDIR)
 
-PCLSRCDIR   = ../pcl
+PCLSRCDIR   = ../pcl_new
 PCLGENDIR   = $(PCLSRCDIR)
 PCLOBJDIR   = $(PCLSRCDIR)
 GENDIR      = $(PCLSRCDIR)
@@ -59,6 +59,7 @@ DEVICE_DEVS = x11mono.dev   \
               x11cmyk.dev   \
               ljet4.dev     \
               paintjet.dev  \
+              cljet.dev     \
               pbmraw.dev
 
 

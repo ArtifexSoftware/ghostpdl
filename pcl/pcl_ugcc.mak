@@ -51,7 +51,7 @@ DEVICE_DEVS=x11mono.dev x11.dev x11alpha.dev x11cmyk.dev\
  pcx16.dev pcx256.dev\
  pcxmono.dev pcxcmyk.dev pcxgray.dev\
  pbmraw.dev pgmraw.dev ppmraw.dev pkmraw.dev\
- pxlmono.dev pxlcolor.dev\
+ pxlmono.dev pxlcolor.dev cljet.dev\
  paintjet.dev
 
 # Generic makefile
