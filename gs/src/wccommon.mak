@@ -210,8 +210,8 @@ CS=-s
 GENOPT=$(CP) $(CD) $(CT) $(CS)
 
 CCFLAGS=$(GENOPT) $(PLATOPT) $(FPFLAGS) $(CFLAGS) $(XCFLAGS)
-CC=$(COMP) -oi -i=$(INCDIR) $(CCFLAGS) -zq
-CCAUX=$(COMP) -oi -i=$(INCDIR) $(FPFLAGS) -zq
+CC=$(COMP) -oi -i=$(INCDIR) $(CCFLAGS) -zq -zp8
+CCAUX=$(COMP) -oi -i=$(INCDIR) $(FPFLAGS) -zq -zp8
 CC_=$(CC)
 CC_D=$(CC)
 CC_INT=$(COMP) -oit -i=$(INCDIR) $(CCFLAGS)
