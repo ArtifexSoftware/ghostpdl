@@ -53,22 +53,58 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h3><a name="Version7.01"></a>Version 7.01 (2001-04-17)</h3>
+<h3><a name="Version7.02"></a>Version 7.02 (2001-09-22)</h3>
 
 <p>
-This is the official 7.0 AFPL Ghostscript release. Most of the changes
-since 6.64 are quite minor, with the exception of one fix for ICC
-profile support.
+This is a prerelease of Ghostscript, in preparation for a forthcoming
+fully tested, supported 7.0x release. We are skipping the 7.01 release
+number because that number is now associated with CVS versions.
+
+<p> Major changes include:
+
+<ul>
+<li>Compile and portability fixes, including the dreaded time.h
+problem that affects up-to-date Linux builds.
+
+<li>Big improvements in stdio, including a new -sstdout= redirect
+switch. In addition, reading from stdin uses nonblocking I/O, so the
+ugly -_ workaround is no longer necessary.
+
+<li>Substantial pdfwrite improvements.
+
+<li>128-bit encrypted files are now supported.
+
+<li>The usual bug fixes.
+
+</ul>
+
+Release issues that will be fixed before next fully supported version:
+
+<ul>
+
+<li> Update icclib to 2.0.
+
+<li> Update hpijs and Omni glue to latest versions.
+
+<li> Make sure all source files are referenced in Develop.htm.
+
+</ul>
 
 <p>
-All problems registered on SourceForge numbered 414588 or lower are
-closed, except for the following: 209350 215256, 219798, 221582,
-222534, 222727, 224056, 224863, 226477, 226584, 227684, 228180,
-228641, 230694, 231390, 404255, 404482, 405342, 406285, 406689,
-406696, 406979, 407342, 409887, 410371, 411753, 413114, 413669,
-413747, 414022, 414104, 414588.
+The following SourceForge bug numbers are currently open:
+215256, 219798, 222727, 224863, 226477, 405342, 406285, 406689,
+406979, 407342, 411753, 413669, 414947, 414985, 415016, 415142,
+415170, 415177, 415526, 416043, 416131, 416830, 418241, 418597,
+421057, 422532, 423838, 426274, 427193, 427314, 427316, 427347,
+428891, 428973, 430879, 431065, 432040, 432657, 433835, 434277,
+434707, 435154, 436099, 436897, 437285, 438679, 438957, 441566,
+442477, 443745, 444791, 446344, 446672, 446676, 446035, 447695,
+448199, 450271, 450663, 451456, 452155, 452173, 453861, 453969,
+457838, 458025, 458261, 458500, 458769, 458775, 458780, 458818,
+459645, 459647, 459764, 460292, 462139, 462212, 462221, 462319,
+462777, 463123, 463400.
 
-<h3><a name="7.01_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="7.02_Incompatible_changes"></a>Incompatible changes</h3>
 
 <p>
 No incompatible changes have been recorded for this version.
@@ -93,7 +129,7 @@ full details of the terms of using, copying, modifying, and redistributing
 AFPL Ghostscript.</small>
 
 <p>
-<small>Ghostscript version 7.01, 17 April 2001
+<small>Ghostscript version 7.02, 22 September 2001
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
