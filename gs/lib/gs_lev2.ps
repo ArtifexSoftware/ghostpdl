@@ -77,19 +77,30 @@ level2dict begin
   dup type /arraytype eq {
     .currentglobal true .setglobal exch 
     dup wcheck exch dup xcheck exch		% original attributes
-    dup {
-      dup type dup /arraytype eq exch /stringtype eq or {
-        .copyparam	% recurse to handle composite array elements
-      } if exch		% keep oroiginal array on top
-    } forall length array astore
+    dup length array exch dup {	% stack: destination_array original_array original_array
+      dup type /arraytype eq {
+	dup 2 index ne {	% avoid recursion
+          .copyparam	% recurse to handle composite array elements
+        } {
+	  % this array self referenced, do it again (yuk!)
+	  pop 1 index		% get copy of destination array
+	} ifelse
+      } {
+        dup type /stringtype eq {
+	  .copyparam
+        } if 
+      }
+      ifelse 3 1 roll		% keep arrays on top
+    } forall pop astore
     exch { cvx } if		% set executable state
-    exch { readonly } if	% set readonly attribute as original
+    exch not { readonly } if	% set readonly attribute as original
     exch .setglobal
   } if
   dup type /stringtype eq {
+    dup wcheck exch	% save attr for setting readonly
     .currentglobal true .setglobal
     1 index length string exch .setglobal
-    copy readonly
+    copy exch not { readonly } if
   } if
 } .bind def
 
@@ -130,6 +141,14 @@ end
 	pop dup .getuserparam
       } if
       .copyparam
+      % special protection for the security related parameters
+      [ /PermitFileReading /PermitFileWriting /PermitFileControl ]
+      { 2 index eq { % force all strings to readonly
+	  dup length array exch { readonly exch } forall astore
+        } if
+      } forall
+      % protect top level of parameters that we copied
+      dup type dup /arraytype eq exch /stringtype eq or { readonly } if
       /userparams .systemvar 3 1 roll .forceput  % userparams is read-only
     } {
       pop pop
@@ -192,6 +211,8 @@ end
     { //pssystemparams 2 index known
        {		% Stack: key newvalue
 	 .copyparam
+	 % protect top level parameters that we copied
+         dup type dup /arraytype eq exch /stringtype eq or { readonly } if
 	 //pssystemparams 3 1 roll .forceput	% pssystemparams is read-only
        }
        { pop pop
