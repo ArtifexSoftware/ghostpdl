@@ -379,7 +379,14 @@ pcl_get_width(pcl_state_t *pcs, gs_point *advance_vector, const gs_point *pscale
 	if (!pfp->params.proportional_spacing || is_space)
 	    width = pcl_hmi(pcs);
 	else {
-	    width = advance_vector->x * pscale->x;
+	    if ( pcs->font->scaling_technology == plfst_TrueType ) {
+		floatp tmp;
+		tmp = pscale->x / (floatp)pcs->uom_cp + 0.5;
+		tmp -= fmod(tmp, (floatp)1.0);
+		tmp *= (floatp)pcs->uom_cp;
+		width = advance_vector->x * tmp;
+	    } else
+		width = advance_vector->x * pscale->x;
 	}
     } else if (is_space)
 	width = pcl_hmi(pcs);
@@ -479,8 +486,6 @@ pcl_show_chars_slow(
         buff[1] = (chr & 0xff);
 	/* round width to integral pcl current units */
 	width = (pcl_get_width(pcs, &advance_vector, pscale, chr, is_space));
-	width += (floatp)pcs->uom_cp / 2.0;
-	width -= fmod(width, (floatp)pcs->uom_cp);
         /*
          * Check for transitions of the left margin; this check is
          * disabled if the immediately preceding character was a back-space.
