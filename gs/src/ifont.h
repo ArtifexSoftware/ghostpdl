@@ -47,6 +47,7 @@ typedef struct font_data_s {
 	    ref sfnts;
 	    ref CIDMap;		/* for CIDFontType 2 fonts */
 	    ref GlyphDirectory;
+	    ref file;           /* for CIDFontType 2 fonts emulated with a True Type font. */
 	} type42;
 	struct _fc0 {
 	    ref GlyphDirectory;

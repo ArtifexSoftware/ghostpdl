@@ -60,7 +60,7 @@
 % <file> .findttfontname false
 % Closes the file in either case.
 /.findttfontname {
-  .loadttfonttables
+  //true 0 .loadttfonttables
   tabdict /name .knownget {
     dup 8 getu32 f exch setfileposition
     12 getu32 string f exch readstring pop
@@ -504,6 +504,17 @@
 % writable.
 def                % readtables
 
+/readtables_stripped readtables dup length dict copy
+dup (loca) { .skiptable } put
+dup (glyf) { .skiptable } put
+def
+
+% Read a table as a single string.
+% <file> <length> .skiptable <string>
+/.readtable {
+  pop pop ()
+} bind def
+
 % Read a table as a single string.
 % <file> <length> .readtable <string>
 /.readtable {
@@ -543,21 +554,45 @@ end readonly def                % .loadttfontdict
   12 getu32 =
 } bind def
 
-% <file> .loadttfonttables -
+% <file> <bool> <SubfontID> .loadttfonttables -
 % Pushes .loadttfontdict & scratch dict on d-stack.
 % Defines f, offsets, tables, tabdict, tabs.
+% Skips loca nd glyf if <bool> is true.
 /.loadttfonttables {
   .loadttfontdict begin
   40 dict begin
+  /SubfontID exch def
+  /load_stripped exch def
   /f exch def
   /offsets f 12 string readstring pop def
+  load_stripped { readtables_stripped } { readtables } ifelse /readtables_ exch def
+  offsets 0 4 getinterval (ttcf) eq {
+    % We need to handle TT collections with disk fonts only.
+    % Therefore the file is a disk file and it can be positioned.
+    offsets 8 getu32 /num_fonts exch def
+    SubfontID num_fonts ge {
+      QUIET not { (True Type collection contains insufficient fonts.) = } if
+      /.loadttfonttables cvx /invalidfont signalerror
+    } if
+    SubfontID 4 mul 12 add f exch setfileposition
+    f 4 string readstring pop 0
+    getu32 /ttc_offset exch def
+    f ttc_offset setfileposition
+    /offsets f 12 string readstring pop def
+  } {
+    SubfontID 0 gt {
+      QUIET not { (SubfontID > 0 with a True Type file which is not a collection.) = } if
+      /.loadttfonttables cvx /invalidfont signalerror
+    } if
+    /ttc_offset 0 def
+  } ifelse
   /tables f offsets 4 getu16 16 mul string readstring pop def
   /tabdict tables length 16 idiv dict def
 	% tabs = tables we want to keep, sorted by file position.
   /tabs [ 0 16 tables length 1 sub {
     tables exch 16 getinterval
     DEBUG { dup .printtab } if
-    dup 0 4 getinterval readtables 1 index known {
+    dup 0 4 getinterval readtables_ 1 index known {
       tabdict exch 2 index put
     } {
       pop pop
@@ -580,16 +615,28 @@ end readonly def                % .loadttfontdict
   } for
 } bind def
 
+/.file_table_pos_names
+mark
+/glyf 0
+/loca 0
+.dicttomark readonly def
+
 % - .readttdata -
 % Read data.  Updates offsets, tabs; stores data in tabdict.
 /.readttdata {
-  /fpos offsets length tables length add def
+  /file_table_pos 10 dict def
+  /fpos offsets length tables length add ttc_offset add def
   /sfpos offsets length tabs length 16 mul add def
   offsets 4 tabs length putu16
   tabs {
     dup 0 4 getinterval /tname exch def
     dup 8 getu32 /tpos exch def
     dup 12 getu32 /tlen exch def
+    load_stripped { 
+      //.file_table_pos_names tname known {
+        file_table_pos tname [tpos tlen] put
+      } if
+    } if
     8 sfpos putu32
 	% Skip data between the end of the previous table and
 	% the beginning of this one, if any.
@@ -619,34 +666,39 @@ end readonly def                % .loadttfontdict
 /.makesfnts {
   .readttdata
   /head tabdict /head get def
-  /locatable tabdict /loca get def
   /post tabdict /post .knownget not { null } if def
-  /numloca
-    locatable dup type /stringtype eq
-     { length }
-     { 0 exch { length add } forall }
-    ifelse	% no def yet
-  locatable type /stringtype eq {
-    /.indexloca {} def
-  } {
-    /.indexloca /.findseg load def
-  } ifelse
-  head 50 getu16 0 ne {
-    /getloca {
-      2 bitshift locatable exch .indexloca getu32
-    } def
-    4 idiv 1 sub
-  } {
-    /getloca {
-      dup add locatable exch .indexloca getu16 dup add
-    } def
-    2 idiv 1 sub
-  } ifelse def		% numloca
+  load_stripped not {
+    /locatable tabdict /loca get def
+    /numloca
+      locatable dup type /stringtype eq
+       { length }
+       { 0 exch { length add } forall }
+      ifelse	% no def yet
+    locatable type /stringtype eq {
+      /.indexloca {} def
+    } {
+      /.indexloca /.findseg load def
+    } ifelse
+    head 50 getu16 0 ne {
+      /getloca {
+        2 bitshift locatable exch .indexloca getu32
+      } def
+      4 idiv 1 sub
+    } {
+      /getloca {
+        dup add locatable exch .indexloca getu16 dup add
+      } def
+      2 idiv 1 sub
+    } ifelse def		% numloca
 	% If necessary, re-partition the glyfs.
-  tabdict /glyf get dup type /stringtype ne {
-    .dividesfnts tabdict /glyf 3 -1 roll put
+    tabdict /glyf get dup type /stringtype ne {
+      .dividesfnts tabdict /glyf 3 -1 roll put
+    } {
+      pop
+    } ifelse
   } {
-    pop
+    % We did not load loca, take the number of glyphs from maxp.
+    /numloca tabdict /maxp get 4 getu16 def
   } ifelse
   /sfnts [
     offsets tabs { concatstrings } forall
@@ -873,7 +925,7 @@ end readonly def                % .loadttfontdict
 
 % <file> .loadttfont <type42font>
 /.loadttfont {
-  .loadttfonttables
+  //false 0 .loadttfonttables
   .makesfnts
   .getpost
   .pickcmap
@@ -932,32 +984,29 @@ end readonly def                % .loadttfontdict
 
 % <file> .loadttcidfont <cidtype2font>
 /.loadttcidfont {
-  .loadttfonttables
+  //false 0 .loadttfonttables
   .makesfnts
 	% CIDFontType2 fonts don't have a cmap: they are indexed by CID.
   mark
   .ttkeys
   .definettcidfont
 } bind def
-% <file> .loadttcidfont <cidtype2font>
 
-% <file> .load_tt_font_stripped <font_data>
+% <file> <SubfontID> .load_tt_font_stripped <font_data>
 % The font_data includes sfnts, NumGlyphs, TT_cmap.
 % CIDMap to be created later from TT_cmap.
 /.load_tt_font_stripped {
   (.load_tt_font_stripped : Incomplete implementation. See lib/gs_ttf.ps .) =
-  % This incomplete implementation loads entire font into VM.
-  % After we implement an access to glyphs by demand, it should skip glyf and loca.
-  % Also SubfontID to be accounted, and a cmap to be choosen with
-  % using .xlatmap_dict .
+  % fixme : Choose a cmap with using .xlatmap_dict .
   .xlatmap_dict pop    % just check that it presents.
-  .loadttfonttables
+  //true exch .loadttfonttables
   .makesfnts
   .pickcmap
   mark
   .ttkeys
   /NumGlyphs numloca
   /TT_cmap cmaptab cmaparray
+  /file_table_pos file_table_pos
   .dicttomark
   end end 
 } bind def
@@ -1134,7 +1183,7 @@ end readonly def                % .loadttfontdict
 % <file> <is_symbolic> .loadpdfttfont <type42font>
 /.loadpdfttfont {
   /is_symbolic exch def
-  .loadttfonttables
+  //false 0 .loadttfonttables
   .makesfnts
   .getpost
   .pickcmap

@@ -103,6 +103,9 @@ int gs_type42_wmode_metrics(gs_font_type42 * pfont, uint glyph_index,
 int gs_type42_default_get_metrics(gs_font_type42 *pfont, uint glyph_index,
 				  int wmode, float sbw[4]);
 
+int gs_type42_get_outline_from_TT_file(gs_font_type42 * pfont, stream *s, uint glyph_index,
+		gs_glyph_data_t *pgd);
+
 /* Export the font procedures so they can be called from the interpreter. */
 font_proc_enumerate_glyph(gs_type42_enumerate_glyph);
 font_proc_glyph_info(gs_type42_glyph_info);

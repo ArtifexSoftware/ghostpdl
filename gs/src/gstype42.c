@@ -31,6 +31,7 @@
 #include "gxfont42.h"
 #include "gxttf.h"
 #include "gxistate.h"
+#include "stream.h"
 
 /* Structure descriptor */
 public_st_gs_font_type42();
@@ -370,6 +371,51 @@ default_get_outline(gs_font_type42 * pfont, uint glyph_index,
 		    code = left;
 	    }
 	}
+    }
+    return 0;
+}
+
+/* Take outline data from a True Type font file. */
+int
+gs_type42_get_outline_from_TT_file(gs_font_type42 * pfont, stream *s, uint glyph_index,
+		gs_glyph_data_t *pgd)
+{
+    uchar lbuf[8];
+    ulong glyph_start;
+    uint glyph_length, count;
+
+    /* fixme: Since this function is being called multiple times per glyph,
+     * we should cache glyph data in a buffer associated with the font.
+     */
+    if (pfont->data.indexToLocFormat) {
+	sseek(s, pfont->data.loca + glyph_index * 4);
+        sgets(s, lbuf, 8, &count);
+	if (count < 8)
+	    return_error(gs_error_invalidfont);
+	glyph_start = u32(lbuf);
+	glyph_length = u32(lbuf + 4) - glyph_start;
+    } else {
+	sseek(s, pfont->data.loca + glyph_index * 2);
+        sgets(s, lbuf, 4, &count);
+	if (count < 4)
+	    return_error(gs_error_invalidfont);
+	glyph_start = (ulong) U16(lbuf) << 1;
+	glyph_length = ((ulong) U16(lbuf + 2) << 1) - glyph_start;
+    }
+    if (glyph_length == 0)
+	gs_glyph_data_from_null(pgd);
+    else {
+	const byte *data;
+	byte *buf;
+
+	sseek(s, pfont->data.glyf + glyph_start);
+	buf = (byte *)gs_alloc_string(pfont->memory, glyph_length, "default_get_outline");
+	if (buf == 0)
+	    return_error(gs_error_VMerror);
+	gs_glyph_data_from_string(pgd, buf, glyph_length, (gs_font *)pfont);
+        sgets(s, buf, glyph_length, &count);
+	if (count < glyph_length)
+	    return_error(gs_error_invalidfont);
     }
     return 0;
 }

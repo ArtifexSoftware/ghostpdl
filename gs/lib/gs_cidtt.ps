@@ -111,10 +111,12 @@ currentdict /super.complete_instance currentdict /complete_instance get put
   % skipping glyf and loca. 
   % The following code is a temporary implementation,
   % which loads entire font.
-  dup /SubfontID known not {
-    dup /SubfontID 0 put  
-  } if
-  dup /Path get (r) file .load_tt_font_stripped exch copy  % <font>
+  dup /Path get (r) file dup                               % <font> file file
+  3 1 roll                                                 % file <font> file
+  1 index /SubfontID .knownget not { 0 } if                % file <font> file SubfontID
+  .load_tt_font_stripped exch copy                         % file <font>
+  dup 3 1 roll                                             % <font> file <font>
+  exch /File exch put                                      % <font>
   dup dup /CIDSystemInfo get /Ordering get (.)             % <font> () ()
   (Unicode) % fixme : Compute from the cmap of the font 
             % using the dictionary .xlatmap_dict defined 

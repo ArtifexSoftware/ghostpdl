@@ -30,6 +30,8 @@
 #include "ifcid.h"
 #include "ifont42.h"
 #include "store.h"
+#include "stream.h"
+#include "files.h"
 
 /* ---------------- CIDFontType 1 (FontType 10) ---------------- */
 
@@ -128,6 +130,19 @@ z11_get_outline(gs_font_type42 * pfont, uint glyph_index,
     return code;
 }
 
+/* Take outline data from a True TYpe font file. */
+private int
+z11_get_outline_from_TT_file(gs_font_type42 * pfont, uint glyph_index,
+		gs_glyph_data_t *pgd)
+{
+    ref *file = &((font_data *)pfont->client_data)->u.type42.file;
+    stream *s;
+
+    check_read_file(s, file);
+    return gs_type42_get_outline_from_TT_file(pfont, s, glyph_index, pgd);
+}
+
+
 #define GET_U16_MSB(p) (((uint)((p)[0]) << 8) + (p)[1])
 #define GET_S16_MSB(p) (int)((GET_U16_MSB(p) ^ 0x8000) - 0x8000)
 
@@ -177,7 +192,8 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     gs_font_type42 *pfont;
     gs_font_cid2 *pfcid;
     int MetricsCount;
-    ref rcidmap, ignore_gdir;
+    ref rcidmap, ignore_gdir, *file;
+    ulong loca_glyph_pos[2][2];
     int code = cid_font_data_param(op, &common, &ignore_gdir);
 
     if (code < 0 ||
@@ -186,6 +202,32 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 	return code;
     if (MetricsCount & 1)	/* only allowable values are 0, 2, 4 */
 	return_error(e_rangecheck);
+    code = dict_find_string(op, "File", &file);
+    if (code < 0)
+	return code;
+    if (code > 0) {
+	ref *file_table_pos, *a, v;
+	const char *name[2] = {"loca", "glyf"};
+	int i, j;
+	
+        check_read_type(*file, t_file);
+	code = dict_find_string(op, "file_table_pos", &file_table_pos);
+	if (code <= 0 || r_type(file_table_pos) != t_dictionary)
+	    return_error(e_invalidfont);
+	for (i = 0; i < 2; i++) {
+	    code = dict_find_string(file_table_pos, name[i], &a);
+	    if (code <= 0 || r_type(a) != t_array)
+		return_error(e_invalidfont);
+	    for (j = 0; j < 2; j++) {
+		code = array_get(a, j, &v); 
+		if (code < 0 || r_type(&v) != t_integer)
+		    return_error(e_invalidfont);
+		loca_glyph_pos[i][j] = v.value.intval;
+	    }
+	}
+
+    } else
+	file = NULL;
     code = font_string_array_param(op, "CIDMap", &rcidmap);
     switch (code) {
     case 0:			/* in PLRM3 */
@@ -227,6 +269,15 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 	pfont->data.get_outline = z11_get_outline;
 	pfcid->cidata.orig_procs.get_metrics = pfont->data.get_metrics;
 	pfont->data.get_metrics = z11_get_metrics;
+    } else if(file != NULL) {
+        /* 
+	 * We assume that disk fonts has no MetricsCount.
+	 * We could do not, but the number of virtual function wariants increases.
+	 */
+	ref_assign_new(&((font_data *)pfont->client_data)->u.type42.file, file);
+	pfont->data.loca = loca_glyph_pos[0][0];
+	pfont->data.glyf = loca_glyph_pos[1][0];
+	pfont->data.get_outline = z11_get_outline_from_TT_file;
     }
     return define_gs_font((gs_font *)pfont);
 }
