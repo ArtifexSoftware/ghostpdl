@@ -152,6 +152,8 @@ end % A dictionary for local binding
 /PDFR_DUMP DefaultSwitch
 /PDFR_STREAM DefaultSwitch
 /TTFDEBUG DefaultSwitch
+/RotatePages DefaultSwitch
+/FitPages DefaultSwitch
 
 /error	%  mark <object> .... error -
 { % A stub for a while.
@@ -655,39 +657,44 @@ currentdict end readonly def
 /SetupPageView  % <obj> SetupPageView
 {
   //GraphicState /InitialMatrix get setmatrix
-  /MediaBox get
-  % stack: [<prevproc>] <pagedict> <Crop|Media Box>
-  systemdict /PDFFitPage known {
-    PDFDEBUG { (Fiting PDF to imageable area of the page.) = flush } if
-    currentpagedevice /.HWMargins get aload pop
-    currentpagedevice /PageSize get aload pop
-    3 -1 roll sub 3 1 roll exch sub exch
-    % stack: [<prevproc>] <pagedict> <Crop|Media Box> Xmin Ymin Xmax Ymax
-    PDFDEBUG { (    Translate up by [ ) print 3 index =print (, ) print 2 index =print ( ]) = flush } if
-    3 index 3 index translate		% move origin up to imageable area
-    2 index sub exch 3 index sub exch 4 2 roll pop pop
-	    % stack: [Box] XImageable YImageable
-    2 index aload pop 2 index sub exch 3 index sub exch 4 2 roll pop pop
-	    % stack: [Box] XImageable YImageable XBox YBox
-    3 -1 roll exch div 3 1 roll div .min
-    PDFDEBUG { (    Scale by ) print dup = flush } if
-    dup scale
-  } if
-  % Now translate to the origin given in the Crop|Media Box
-  dup dup 0 get neg exch 1 get neg translate
-  % Rotate the page to fit into PageSize
-  systemdict /RotatePages known {
-    aload 5 1 roll
-    3 -1 roll sub 3 1 roll exch sub exch 
-    2 copy gt {
-      90 rotate
-      % pop pop 0 -792 translate
-      pop 0 exch neg translate
+  /MediaBox get aload pop                               % bx0 by0 bx1 by1
+  3 index neg 3 index neg translate % Temporary move to origin
+  3 -1 roll sub 3 1 roll exch sub exch                  % bw bh
+  currentpagedevice /.HWMargins get aload pop
+  currentpagedevice /PageSize get aload pop
+  3 -1 roll sub 3 1 roll exch sub exch                  % bw bh px0 py0 px1 py1
+  exch 3 index sub exch 3 index sub                     % bw bh px0 py0 pw ph
+  RotatePages {
+    2 copy gt 6 index 6 index gt ne {
+      % a rotation is useful except it fits with no rotation.
+      1 index 5 index le 1 index 5 index le and not
     } {
-      pop pop
+      false
     } ifelse
-  } if
-  pop
+  } {
+    false
+  } ifelse
+  { FitPages {
+      1 index 5 index div 1 index 7 index div           % bw bh px0 py0 pw ph sx sy
+      2 copy gt {
+        exch
+      } if
+      pop dup scale                                     % bw bh px0 py0 pw ph
+    } if
+    90 rotate
+    0 5 index neg translate
+  } {
+    FitPages {
+      1 index 6 index div 1 index 6 index div           % bw bh px0 py0 pw ph sx sy
+      2 copy gt {
+        exch
+      } if
+      pop dup scale                                     % bw bh px0 py0 pw ph
+    } if
+  } ifelse                                               
+  pop pop				        	% bw bh px0 py0
+  translate                                             % bw bh
+  pop pop                                               %
 } bind def
 
 /PageContentsDaemon % <id> <obj> <node> PageContentsDaemon <id> <obj>
