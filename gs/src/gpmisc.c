@@ -35,10 +35,12 @@
 int
 gp_gettmpdir(char *ptr, int *plen)
 {
+    int max_len = *plen;
     int code = gp_getenv("TMPDIR", ptr, plen);
 
     if (code != 1)
 	return code;
+    *plen = max_len;
     return gp_getenv("TEMP", ptr, plen);
 }
 
