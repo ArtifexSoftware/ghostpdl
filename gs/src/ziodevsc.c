@@ -109,7 +109,7 @@ stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
 	return_error(e_invalidfileaccess);
     if (file_is_invalid(s, &ref_stdin)) {
 	/* procedure source */
-	gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
+	gs_ref_memory_t *imem = (gs_ref_memory_t *)imemory_system;
 	byte *buf;
 	ref rint;
 
@@ -126,7 +126,8 @@ stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
 	/* allocate buffer */
 	if (s->cbuf == 0) {
 	    int len = STDIN_BUF_SIZE;
-	    byte *buf = gs_alloc_bytes(mem, len, "stdin_open");
+	    byte *buf = gs_alloc_bytes((gs_memory_t *)imemory_system,
+	    		len, "stdin_open");
 	    if (buf == 0)
 		return_error(e_VMerror);
 	    s->cbuf = buf;
@@ -189,7 +190,7 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 	return_error(e_invalidfileaccess);
     if (file_is_invalid(s, &ref_stdout)) {
 	/* procedure source */
-	gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
+	gs_ref_memory_t *imem = (gs_ref_memory_t *)imemory_system;
 	byte *buf;
 	ref rint;
 
@@ -206,7 +207,8 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 	/* allocate buffer */
 	if (s->cbuf == 0) {
 	    int len = STDOUT_BUF_SIZE;
-	    byte *buf = gs_alloc_bytes(mem, len, "stdout_open");
+	    byte *buf = gs_alloc_bytes((gs_memory_t *)imemory_system,
+	    		len, "stdout_open");
 	    if (buf == 0)
 		return_error(e_VMerror);
 	    s->cbuf = buf;
@@ -253,7 +255,7 @@ stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
 	return_error(e_invalidfileaccess);
     if (file_is_invalid(s, &ref_stderr)) {
 	/* procedure source */
-	gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
+	gs_ref_memory_t *imem = (gs_ref_memory_t *)imemory_system;
 	byte *buf;
 	ref rint;
 
@@ -270,7 +272,8 @@ stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
 	/* allocate buffer */
 	if (s->cbuf == 0) {
 	    int len = STDERR_BUF_SIZE;
-	    byte *buf = gs_alloc_bytes(mem, len, "stderr_open");
+	    byte *buf = gs_alloc_bytes((gs_memory_t *)imemory_system,
+	    		len, "stderr_open");
 	    if (buf == 0)
 		return_error(e_VMerror);
 	    s->cbuf = buf;
