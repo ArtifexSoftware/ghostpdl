@@ -68,6 +68,9 @@ struct gs_main_instance_s {
     FILE *fstdin;
     FILE *fstdout;
     FILE *fstderr;
+    FILE *fstdout2;		/* for redirecting %stdout and diagnostics */
+    bool stdout_is_redirected;	/* to stderr or fstdout2 */
+    bool stdout_to_stderr;
     bool stdin_is_interactive;
     gs_memory_t *heap;		/* (C) heap allocator */
     uint memory_chunk_size;	/* 'wholesale' allocation unit */
@@ -100,7 +103,7 @@ struct gs_main_instance_s {
  * must include gconfig.h, because of SEARCH_HERE_FIRST.
  */
 #define gs_main_instance_default_init_values\
-  0, 0, 0, 1 /*true*/, 0, 20000, 0, 0, -1, 0, SEARCH_HERE_FIRST, 1
+  0, 0, 0, 0, 0, 0 ,1 /*true*/, 0, 20000, 0, 0, -1, 0, SEARCH_HERE_FIRST, 1
 extern const gs_main_instance gs_main_instance_init_values;
 
 #endif /* iminst_INCLUDED */

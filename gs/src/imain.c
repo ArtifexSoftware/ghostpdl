@@ -224,15 +224,8 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 		const char *str = (const char *)(esp[0].value.const_bytes); 
 		int count = esp[0].tas.rsize;
 		int rcode = 0;
-		if (str != NULL) {
-		    if (minst->stdout_fn)
-			rcode = (*minst->stdout_fn)(minst->caller_handle, 
-			    str, count);
-		    else {
-			fwrite(str, 1, count, minst->fstdout);
-			fflush(minst->fstdout);
-		    }
-		}
+		if (str != NULL)
+		    rcode = gs_main_outwrite(minst, str, count);
 		if (rcode < 0)
 		    return_error(e_ioerror);
 	    }
@@ -253,15 +246,8 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 		const char *str = (const char *)(esp[0].value.const_bytes); 
 		int count = esp[0].tas.rsize;
 		int rcode = 0;
-		if (str != NULL) {
-		    if (minst->stderr_fn)
-			rcode = (*minst->stderr_fn)(minst->caller_handle, 
-			    str, count);
-		    else {
-			fwrite(str, 1, count, minst->fstderr);
-			fflush(minst->fstderr);
-		    }
-		}
+		if (str != NULL)
+		    rcode = gs_main_errwrite(minst, str, count);
 		if (rcode < 0)
 		    return_error(e_ioerror);
 	    }
@@ -782,6 +768,14 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     /* This will release all memory, close all open files, etc. */
     if (minst->init_done >= 1)
 	alloc_restore_all(idmemory);
+    /* clean up redirected stdout */
+    if (minst->fstdout2 && (minst->fstdout2 != minst->fstdout)
+	    && (minst->fstdout2 != minst->fstderr)) {
+	fclose(minst->fstdout2);
+	minst->fstdout2 = (FILE *)NULL;
+    }
+    minst->stdout_is_redirected = 0;
+    minst->stdout_to_stderr = 0;
     gs_lib_finit(exit_status, code);
 }
 void
@@ -875,20 +869,47 @@ gs_debug_dump_stack(int code, ref * perror_object)
  * instance is possible) so use the default instance.
  */
 
-int outwrite(const char *str, int len)
+int
+gs_main_outwrite(gs_main_instance *minst, const char *str, int len)
 {
-    gs_main_instance * minst = gs_main_instance_default();
+    int code;
+    if (len == 0)
+	return 0;
+    if (minst->stdout_is_redirected) {
+	if (minst->stdout_to_stderr)
+	    return gs_main_errwrite(minst, str, len);
+        code = fwrite(str, 1, len, minst->fstdout2);
+	fflush(minst->fstdout);
+	return code;
+    }
     if (minst->stdout_fn)
 	return (*minst->stdout_fn)(minst->caller_handle, str, len);
-    return fwrite(str, 1, len, minst->fstdout);
+    code = fwrite(str, 1, len, minst->fstdout);
+    fflush(minst->fstdout);
+    return code;
+}
+
+int
+gs_main_errwrite(gs_main_instance *minst, const char *str, int len)
+{
+    int code;
+    if (len == 0)
+	return 0;
+    if (minst->stderr_fn)
+	return (*minst->stderr_fn)(minst->caller_handle, str, len);
+    code = fwrite(str, 1, len, minst->fstderr);
+    fflush(minst->fstderr);
+    return code;
+}
+
+int outwrite(const char *str, int len)
+{
+    return gs_main_outwrite(gs_main_instance_default(), str, len);
 }
 
 int errwrite(const char *str, int len)
 {
-    gs_main_instance * minst = gs_main_instance_default();
-    if (minst->stderr_fn)
-	return (*minst->stderr_fn)(minst->caller_handle, str, len);
-    return fwrite(str, 1, len, minst->fstderr);
+    return gs_main_errwrite(gs_main_instance_default(), str, len);
 }
 
 void outflush()

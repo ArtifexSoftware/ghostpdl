@@ -2212,6 +2212,15 @@ currently necessary when redirecting device output to standard output.
 </dl>
 
 <dl>
+<dt><b><tt>-sstdout=</tt></b><em>filename</em>
+<dd>Redirect PostScript <b><tt>%stdout</tt></b> to a file or 
+<b><tt>stderr</tt></b>, to avoid it being mixed with device stdout.
+To redirect stdout to stderr use <b><tt>-sstdout=%stderr</tt></b>.
+To cancel redirection of stdout use <b><tt>-sstdout=%stdout</tt></b>
+or <b><tt>-sstdout=-</tt></b>.
+</dl>
+
+<dl>
 <dt><b><tt>-dTTYPAUSE</tt></b>
 <dd>Causes Ghostscript to read a character from <b><tt>/dev/tty</tt></b>,
 rather than standard input, at the end of each page.  This may be useful if

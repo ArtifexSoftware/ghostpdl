@@ -92,6 +92,8 @@ private void esc_strcat(P2(char *, const char *));
 private int runarg(P5(gs_main_instance *, const char *, const char *, const char *, int));
 private int run_string(P3(gs_main_instance *, const char *, int));
 private int run_finish(P4(gs_main_instance *, int, int, ref *));
+private int try_stdout_redirect(P3(gs_main_instance * minst, 
+    const char *command, const char *filename));
 
 /* Forward references for help printout */
 private void print_help(P1(gs_main_instance *));
@@ -579,6 +581,8 @@ run_stdin:
 			make_const_string(&value,
 					  a_readonly | avm_foreign,
 					  len, (const byte *)str);
+			if ((code = try_stdout_redirect(minst, adef, eqp)) < 0)
+			    return code;
 		    }
 		    ialloc_set_space(idmemory, space);
 		}
@@ -765,6 +769,45 @@ run_finish(gs_main_instance *minst, int code, int exit_code,
 	    gs_main_dump_stack(minst, code, perror_object);
     }
     return code;
+}
+
+/* Redirect stdout to a file:
+ *  -sstdout=filename
+ *  -sstdout=-
+ *  -sstdout=%stdout
+ *  -sstdout=%stderr
+ * -sOutputFile=- is not affected.
+ * File is closed at program exit (if not stdout/err)
+ * or when -sstdout is used again.
+ */
+private int 
+try_stdout_redirect(gs_main_instance * minst, 
+    const char *command, const char *filename)
+{
+    if (strcmp(command, "stdout") == 0) {
+	minst->stdout_to_stderr = 0;
+	minst->stdout_is_redirected = 0;
+	/* If stdout already being redirected and it is not stdout
+	 * or stderr, close it
+	 */
+	if (minst->fstdout2 && (minst->fstdout2 != minst->fstdout)
+		&& (minst->fstdout2 != minst->fstderr)) {
+	    fclose(minst->fstdout2);
+	    minst->fstdout2 = (FILE *)NULL;
+	}
+	/* If stdout is being redirected, set minst->fstdout2 */
+	if ( (filename != 0) && strlen(filename) &&
+	    strcmp(filename, "-") && strcmp(filename, "%stdout") ) {
+	    if (strcmp(filename, "%stderr") == 0) {
+		minst->stdout_to_stderr = 1;
+	    }
+	    else if ((minst->fstdout2 = fopen(filename, "w")) == (FILE *)NULL)
+		return_error(e_invalidfileaccess);
+	    minst->stdout_is_redirected = 1;
+	}
+	return 0;
+    }
+    return 1;
 }
 
 /* ---------------- Print information ---------------- */

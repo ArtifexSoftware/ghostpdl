@@ -244,6 +244,15 @@ int gs_pop_string(P2(gs_main_instance * minst, gs_string * result));
 void gs_main_dump_stack(P3(gs_main_instance *minst, int code,
 			   ref * perror_object));
 
+/* ---------------- Console output ---------------- */
+
+/*
+ * Write to stdout and stderr, possibly using redirection.
+ */
+int gs_main_outwrite(P3(gs_main_instance *minst, const char *str, int len));
+
+int gs_main_errwrite(P3(gs_main_instance *minst, const char *str, int len));
+
 /* ---------------- Termination ---------------- */
 
 /*
