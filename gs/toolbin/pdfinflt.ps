@@ -69,7 +69,7 @@
             sdict /DecodeParms knownoget pop /FlateDecode filter
             dup OFile 16#7fffffff pdfcopybytes closefile
             /len OFile fileposition opos sub def
-            (endstream\nendobj\n) ows
+            (\nendstream\nendobj\n) ows
             lenobj pdfwriteobjheader len pdfwritevalue
             end
           } {
@@ -94,6 +94,7 @@
       if
       (Converting ) print InFileName print ( to ) print OutFileName = flush
       currentdict /Trailer get
+      dup /Prev undef		% We don't want a 'Prev' link.
       pdfwrite
       end end
       (Done.\n) print flush
