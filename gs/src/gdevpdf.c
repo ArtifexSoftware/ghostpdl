@@ -682,9 +682,13 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 	COS_FREE(page->Annots, "pdf_write_page(Annots)");
 	page->Annots = 0;
     }
-    if (page->contents_id == 0)
-	stream_puts(s, "/Contents []\n");
-    else
+    /*
+     * The PDF documentation allows, and this code formerly emitted,
+     * a Contents entry whose value was an empty array.  Acrobat Reader
+     * 3 and 4 accept this, but Acrobat Reader 5.0 rejects it.
+     * Fortunately, the Contents entry is optional.
+     */
+    if (page->contents_id != 0)
 	pprintld1(s, "/Contents %ld 0 R\n", page->contents_id);
 
     /* Write any elements stored by pdfmarks. */
