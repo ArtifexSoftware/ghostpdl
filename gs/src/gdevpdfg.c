@@ -270,11 +270,12 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
     int code;
     gx_hl_saved_color temp;
     bool process_color;
-    const gs_color_space *pcs;
+    const gs_color_space *pcs, *pcs2;
     const gs_client_color *pcc; /* fixme: not needed due to gx_hld_get_color_component. */
     cos_value_t cs_value;
     const char *command;
     int code1 = 0;
+    gs_color_space_index csi;
 
     if (pdev->skip_colors)
 	return 0;
@@ -307,7 +308,38 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		case gs_color_space_index_DeviceCMYK:
 		    command = ppscc->setcmykcolor; 
 		    break;
+		case gs_color_space_index_Indexed:
+		    if (pdev->CompatibilityLevel <= 1.2) {
+			pcs2 = (const gs_color_space *)&pcs->params.indexed.base_space;
+			csi = gs_color_space_get_index(pcs2);
+			if (csi == gs_color_space_index_Separation) {
+			    pcs2 = (const gs_color_space *)&pcs2->params.separation.alt_space;
+			    goto check_pcs2;
+			}
+			goto check_pcs2;
+		    }
+		    goto scn;
+		case gs_color_space_index_Separation:
+		    if (pdev->CompatibilityLevel <= 1.2) {
+			pcs2 = (const gs_color_space *)&pcs->params.separation.alt_space;
+			check_pcs2:
+			csi = gs_color_space_get_index(pcs2);
+			switch(gs_color_space_get_index(pcs2)) {
+			    case gs_color_space_index_DevicePixel :
+			    case gs_color_space_index_DeviceN:
+			    case gs_color_space_index_CIEICC:
+				goto write_process_color;
+			}
+		    }
+		    goto scn;
+		case gs_color_space_index_CIEICC:
+		case gs_color_space_index_DevicePixel:
+		case gs_color_space_index_DeviceN:
+		    if (pdev->CompatibilityLevel <= 1.2)
+	    		goto write_process_color;
+		    goto scn;
 		default :
+	        scn:
 		    command = ppscc->setcolorn;
 		    if (!gx_hld_saved_color_same_cspace(&temp, psc)) {
 			code = pdf_color_space(pdev, &cs_value, NULL, pcs,
