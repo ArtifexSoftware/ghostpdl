@@ -319,13 +319,29 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	if (pdf_convert_image4_to_image1(pdev, pis, pdcolor,
 					 (const gs_image4_t *)pic,
 					 &image[0].type1, &icolor) >= 0) {
+	    gs_state *pgs = (gs_state *)gx_hld_get_gstate_ptr(pis);
+
+	    if (pgs == NULL)
+		return_error(gs_error_unregistered); /* Must not happen. */
+
 	    /* Undo the pop of the NI stack if necessary. */
 	    if (pnamed)
 		cos_array_add_object(pdev->NI_stack, COS_OBJECT(pnamed));
-	    return pdf_begin_typed_image(pdev, pis, pmat,
+	    /* HACK: temporary patch the color space, to allow 
+	       pdf_prepare_imagemask to write the right color for the imagemask. */
+	    code = gs_gsave(pgs);
+	    if (code < 0)
+		return code;
+	    code = gs_setcolorspace(pgs, ((const gs_image4_t *)pic)->ColorSpace);
+	    if (code < 0)
+		return code;
+	    code = pdf_begin_typed_image(pdev, pis, pmat,
 					 (gs_image_common_t *)&image[0].type1,
 					 prect, &icolor, pcpath, mem,
 					 pinfo, context);
+	    if (code < 0)
+		return code;
+	    return gs_grestore(pgs);
 	}
 	/* No luck.  Masked images require PDF 1.3 or higher. */
 	if (pdev->CompatibilityLevel < 1.3)
