@@ -31,7 +31,7 @@
 #define FNT_LINETO 2
 #define FNT_CURVETO 3
 
-short int stick_font_data[] = {
+const short int stick_font_data[] = {
     FNT_MOVETO, 0, 0,
     FNT_LINETO, 32, 0,
     FNT_LINETO, 32, 65,
@@ -2993,7 +2993,7 @@ short int stick_font_offsets[] = {
     7620
 };
 
-short int arc_font_data[] = {
+const short int arc_font_data[] = {
     FNT_MOVETO, 20, 1014,
     FNT_LINETO, 20, 362,
     FNT_MOVETO, 22, 0,
@@ -4584,7 +4584,7 @@ short int arc_font_data[] = {
    data goes until next index (NB. there's an extra entry for end of data)
    (character codes start with 32)
 */
-short int arc_font_offsets[] = {
+const short int arc_font_offsets[] = {
     0,
     0,
     37,
@@ -4813,7 +4813,7 @@ short int arc_font_offsets[] = {
 };
 
 /* widths for each char (starting with code 32) */
-short int arc_font_widths[] = {
+const short int arc_font_widths[] = {
     193,
     240,
     384,
