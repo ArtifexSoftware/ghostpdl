@@ -490,9 +490,14 @@ pdfdict begin
     } if
     1 index exch /File exch put
   } ifelse
-  PDFsource token pop
+  PDFsource {token} stopped {
+    pop null
+  } {
+    not { null } if
+  } ifelse
     /endstream ne { 
       (   **** PDF format error: stream Length incorrect.\n) pdfformaterror
+      exit % exit from .pdfrun now.
     } if
   cvx
 } bind def
