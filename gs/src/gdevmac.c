@@ -622,6 +622,10 @@ mac_put_params(gx_device *dev, gs_param_list *plist)
 		return code;
 	} else if (code == 0) {
 		
+		if (dev->LockSafetyParams) {
+			param_signal_error(plist, "OutputFile", gs_error_invalidaccess);
+			return gs_error_invalidaccess;
+		}
 		if (outputFile.size > (gp_file_name_sizeof - 1)) {
 			param_signal_error(plist, "OutputFile", gs_error_limitcheck);
 			return gs_error_limitcheck;

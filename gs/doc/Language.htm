@@ -1243,7 +1243,8 @@ complete scan line.  Always copies an integral number of scan lines.
 <dd>Sets the current device to the specified device.  Also resets the
 transformation and clipping path to the initial values for the device.
 Signals an <b><tt>invalidaccess</tt></b> error if the device is a
-prototype.
+prototype or if <b><tt>.LockSafetyParams</tt></b> is true for the
+current device and is not true for the specified device.
 </dl>
 
 <dl>
@@ -1260,7 +1261,7 @@ prototype.
 <dl>
 <dt><b><tt>&lt;mark&gt; &lt;name1&gt; &lt;value1&gt; ... &lt;namen&gt; &lt;valuen&gt; &lt;device&gt; putdeviceprops &lt;device&gt;</tt></b>
 <dd>Sets properties of a device.  May cause <b><tt>undefined</tt></b>,
-<b><tt>typecheck</tt></b>, <b><tt>rangecheck</tt></b>, or
+<b><tt>invalidaccess</tt></b>, <b><tt>typecheck</tt></b>, <b><tt>rangecheck</tt></b>, or
 <b><tt>limitcheck</tt></b> errors.
 </dl>
 
@@ -1536,6 +1537,19 @@ indicated above.)  Here are the currently defined parameters for all
 devices:
 
 <dl>
+<a name="LockSafetyParams"></a>
+<dt><b><tt>.LockSafetyParams &lt;boolean&gt;</tt></b>
+<dd>This parameter allows for improved system security by preventing
+PostScript programs from being able to change potentially dangerous
+device paramters such as OutputFile. This parameter cannot be set false
+if it is already true.
+<p>
+If this parameter is true for the current device, attempt to set a
+new device that has .LockSafetyParams false will signal an <tt><b>
+invalidaccess</b></tt> error.
+</dl>
+
+<dl>
 <dt><b><tt>BitsPerPixel &lt;integer&gt; (usually read-only)</tt></b>
 <dd>Number of bits per pixel.
 </dl>
@@ -1615,6 +1629,9 @@ the file name for output; <b><tt>%d</tt></b> is replaced by the page number;
 on Unix systems <b><tt>%pipe%</tt></b><em>command</em> writes to a pipe.
 (<b><tt>|</tt></b><em>command</em> also writes to a pipe, but is now
 deprecated.)
+<p>
+Attempts to set this parameter if <tt><b>.LockSafetyParams</b></tt> is true
+will signal an <tt><b>invalidaccess</b></tt> error.
 </dl>
 
 <dl>

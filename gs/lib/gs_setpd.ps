@@ -168,7 +168,14 @@ level2dict begin
 /.defaultpolicies mark
   /PolicyNotFound 1
   /PageSize 0
-  /PolicyReport {pop} bind
+  /PolicyReport {
+    dup /.LockSafetyParams known {
+	% Only possible error is invalidaccess
+      /setpagedevice .systemvar /invalidaccess signalerror
+    }
+    if
+    pop
+  } bind
 .dicttomark readonly def
 % Note that the values of .requiredattrs are executed, not just fetched.
 /.requiredattrs mark

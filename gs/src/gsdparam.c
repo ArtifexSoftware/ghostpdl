@@ -168,8 +168,8 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 	(code = param_write_int(plist, "TextAlphaBits",
 				&dev->color_info.anti_alias.text_bits)) < 0 ||
 	(code = param_write_int(plist, "GraphicsAlphaBits",
-				&dev->color_info.anti_alias.graphics_bits)) < 0
-
+				&dev->color_info.anti_alias.graphics_bits)) < 0 ||
+	(code = param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams)) < 0 
 	)
 	return code;
 
@@ -435,6 +435,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     int ncset = dev->NumCopies_set;
     bool ignc = dev->IgnoreNumCopies;
     bool ucc = dev->UseCIEColor;
+    bool locksafe = dev->LockSafetyParams;
     gs_param_float_array ibba;
     bool ibbnull = false;
     int colors = dev->color_info.num_components;
@@ -590,6 +591,18 @@ nce:
     if ((code = param_anti_alias_bits(plist, "GraphicsAlphaBits", &gab)) < 0)
 	ecode = code;
 
+    switch (code = param_read_bool(plist, (param_name = ".LockSafetyParams"), &locksafe)) {
+	case 0:
+	    if (dev->LockSafetyParams && !locksafe)
+		code = gs_note_error(gs_error_invalidaccess);
+	    else
+		break;
+	default:
+	    ecode = code;
+	    param_signal_error(plist, param_name, ecode);
+	case 1:
+	    break;
+    }
     /* Ignore parameters that only have meaning for printers. */
 #define IGNORE_INT_PARAM(pname)\
   { int igni;\
@@ -731,6 +744,7 @@ nce:
     dev->UseCIEColor = ucc;
     dev->color_info.anti_alias.text_bits = tab;
     dev->color_info.anti_alias.graphics_bits = gab;
+    dev->LockSafetyParams = locksafe;
     gx_device_decache_colors(dev);
     return 0;
 }

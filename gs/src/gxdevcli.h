@@ -307,6 +307,7 @@ typedef struct gx_device_cached_colors_s {
 	  bool NumCopies_set;\
 	bool IgnoreNumCopies;		/* if true, force num_copies = 1 */\
 	bool UseCIEColor;		/* for PS LL3 */\
+	bool LockSafetyParams;		/* If true, prevent unsafe changes */\
 	gx_page_device_procs page_procs;	/* must be last */\
 		/* end of std_device_body */\
 	gx_device_procs procs	/* object procedures */

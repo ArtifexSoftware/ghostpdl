@@ -96,12 +96,15 @@
  */
 #define std_device_part2_(width, height, x_dpi, y_dpi)\
 	{ gx_no_color_index, gx_no_color_index }, width, height,\
-	{ (((width) * 72.0 + 0.5) - 0.5) / (x_dpi),\
-	  (((height) * 72.0 + 0.5) - 0.5) / (y_dpi) },\
-	{ 0, 0, 0, 0 }, 0/*false*/, { x_dpi, y_dpi }, { x_dpi, y_dpi }
+	{ (((width) * 72.0 + 0.5) - 0.5) / (x_dpi)/*MediaSize[0]*/,\
+	  (((height) * 72.0 + 0.5) - 0.5) / (y_dpi)/*MediaSize[1]*/},\
+	{ 0, 0, 0, 0 }/*ImagingBBox*/, 0/*ImagingBBox_set*/,\
+	{ x_dpi, y_dpi }/*HWResolution*/, { x_dpi, y_dpi }/*MarginsHWResolution*/
+
 /* offsets and margins go here */
 #define std_device_part3_()\
-	0, 0, 1, 0/*false*/, 0/*false*/, 0/*false*/,\
+	0/*PageCount*/, 0/*ShowpageCount*/, 1/*NumCopies*/, 0/*NumCopies_set*/,\
+	0/*IgnoreNumCopies*/, 0/*UseCIEColor*/, 0/*LockSafetyParams*/,\
 	{ gx_default_install, gx_default_begin_page, gx_default_end_page }
 /*
  * We need a number of different variants of the std_device_ macro simply

@@ -251,6 +251,10 @@ cgm_put_params(gx_device * dev, gs_param_list * plist)
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofs)) {
 	case 0:
+	    if (dev->LockSafetyParams) {
+	        ecode = gs_note_error(gs_error_invalidaccess);
+		goto ofe;
+	    }
 	    if (ofs.size > fname_size)
 		ecode = gs_error_limitcheck;
 	    else

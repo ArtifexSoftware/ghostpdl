@@ -949,10 +949,12 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
 		/* The new name is the same as the old name.  Do nothing. */
 		ofns.data = 0;
 		break;
-	    } else if (dev->is_open && vdev->strm != 0 &&
-		       stell(vdev->strm) != 0
+	    } else if (dev->LockSafetyParams ||
+	    		(dev->is_open && vdev->strm != 0 &&
+		       stell(vdev->strm) != 0)
 		       )
-		ecode = gs_error_rangecheck;
+		ecode = (dev->LockSafetyParams) ? gs_error_invalidaccess : 
+				gs_error_rangecheck;
 	    else
 		break;
 	    goto ofe;
