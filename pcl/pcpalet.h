@@ -309,4 +309,11 @@ int pcl_palette_check_complete(P1(pcl_state_t * pcs));
 extern  const pcl_init_t    pcl_palette_init;
 extern  const pcl_init_t    pcl_color_init;
 
-#endif		/* pcpalet_INCLUDED */
+
+/* free default objects (pcs->pdfl_*) 
+ * called at end of process.
+ */
+void pcl_free_default_objects(gs_memory_t *mem, pcl_state_t *pcs);
+
+
+#endif		/* pcpalet_INCLUDED */   
