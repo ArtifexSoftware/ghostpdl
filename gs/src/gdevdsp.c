@@ -495,13 +495,9 @@ display_map_rgb_color_rgb(gx_device * dev, const gx_color_value cv[])
     gx_color_value r = cv[0];
     gx_color_value g = cv[1];
     gx_color_value b = cv[2];
-    int drop;
+    int drop = gx_color_value_bits - 8;
     gx_color_value red, green, blue;
 
-    if ((ddev->nFormat & DISPLAY_ALPHA_MASK) == DISPLAY_ALPHA_NONE)
-	drop = gx_color_value_bits - (dev->color_info.depth / 3); 
-    else
-	drop = gx_color_value_bits - (dev->color_info.depth / 4); 
     red  = r >> drop;
     green = g >> drop;
     blue = b >> drop;
@@ -537,13 +533,9 @@ display_map_color_rgb_rgb(gx_device * dev, gx_color_index color,
 		 gx_color_value prgb[3])
 {
     gx_device_display *ddev = (gx_device_display *) dev;
-    uint bits_per_color;
+    uint bits_per_color = 8;
     uint color_mask;
     
-    if ((ddev->nFormat & DISPLAY_ALPHA_MASK) == DISPLAY_ALPHA_NONE)
-	bits_per_color = dev->color_info.depth / 3; 
-    else
-	bits_per_color = dev->color_info.depth / 4; 
     color_mask = (1 << bits_per_color) - 1;
 
     switch (ddev->nFormat & DISPLAY_ALPHA_MASK) {
@@ -1007,14 +999,17 @@ set_color_info(gx_device_color_info * pdci, int nc, int depth, int maxgray, int 
 	case 1:
 	    pdci->polarity = GX_CINFO_POLARITY_ADDITIVE;
 	    pdci->cm_name = "DeviceGray";
+	    pdci->gray_index = 0;
 	    break;
 	case 3:
 	    pdci->polarity = GX_CINFO_POLARITY_ADDITIVE;
 	    pdci->cm_name = "DeviceRGB";
+	    pdci->gray_index = GX_CINFO_COMP_NO_INDEX;
 	    break;
 	case 4:
 	    pdci->polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
 	    pdci->cm_name = "DeviceCMYK";
+	    pdci->gray_index = 3;
 	    break;
 	default:
 	    break;
@@ -1093,6 +1088,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
     int bpc;	/* bits per component */
     int bpp;	/* bits per pixel */
     int maxvalue;
+    int i;
 
     switch (nFormat & DISPLAY_DEPTH_MASK) {
 	case DISPLAY_DEPTH_1:
@@ -1118,37 +1114,54 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
     }
     maxvalue = (1 << bpc) - 1;
 
+    switch (ddev->nFormat & DISPLAY_ALPHA_MASK) {
+	case DISPLAY_ALPHA_FIRST:
+	case DISPLAY_ALPHA_LAST:
+	    /* Not implemented and unlikely to ever be implemented
+ 	     * because they would interact with linear_and_separable
+	     */
+	    return_error(gs_error_rangecheck);
+    }
+
     switch (nFormat & DISPLAY_COLORS_MASK) {
 	case DISPLAY_COLORS_NATIVE:
 	    switch (nFormat & DISPLAY_DEPTH_MASK) {
 		case DISPLAY_DEPTH_1: 
 		    /* 1bit/pixel, black is 1, white is 0 */
 	    	    set_color_info(&dci, 1, 1, 1, 0);
+                    dci.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
 		    set_gray_color_procs(pdev, gx_b_w_gray_encode,
 		    				gx_default_b_w_map_color_rgb);
 		    break;
 		case DISPLAY_DEPTH_4:
 		    /* 4bit/pixel VGA color */
 	    	    set_color_info(&dci, 3, 4, 3, 2);
+                    dci.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
 		    set_rgb_color_procs(pdev, display_map_rgb_color_device4,
 		    				display_map_color_rgb_device4);
 		    break;
 		case DISPLAY_DEPTH_8:
 		    /* 8bit/pixel 96 color palette */
 	    	    set_color_info(&dci, 3, 8, 31, 3);
+                    dci.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
 		    set_rgb_color_procs(pdev, display_map_rgb_color_device8,
 		    				display_map_color_rgb_device8);
 		    break;
 		case DISPLAY_DEPTH_16:
 		    /* Windows 16-bit display */
 		    /* Is maxgray = maxcolor = 63 correct? */
-	    	    set_color_info(&dci, 3, 16, 63, 63);
+	            if ((ddev->nFormat & DISPLAY_555_MASK) 
+			== DISPLAY_NATIVE_555)
+	    	        set_color_info(&dci, 3, 16, 31, 31);
+		    else
+	    	        set_color_info(&dci, 3, 16, 63, 63);
 		    set_rgb_color_procs(pdev, display_map_rgb_color_device16,
 		    				display_map_color_rgb_device16);
 		    break;
 		default:
 		    return_error(gs_error_rangecheck);
 	    }
+	    dci.gray_index = GX_CINFO_COMP_NO_INDEX;
 	    break;
 	case DISPLAY_COLORS_GRAY:
 	    set_color_info(&dci, 1, bpc, maxvalue, 0);
@@ -1204,8 +1217,19 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
     /* restore old anti_alias info */
     dci.anti_alias = ddev->color_info.anti_alias;
     ddev->color_info = dci;
-    /* Set the mask bits, etc. even though we are setting linear: unkown */
-    set_linear_color_bits_mask_shift(pdev);
+    check_device_separable(pdev);
+    switch (nFormat & DISPLAY_COLORS_MASK) {
+	case DISPLAY_COLORS_NATIVE:
+	case DISPLAY_COLORS_RGB:
+	    ddev->color_info.gray_index = GX_CINFO_COMP_NO_INDEX;
+	    break;
+	case DISPLAY_COLORS_GRAY:
+	    ddev->color_info.gray_index = 0;
+	    break;
+	case DISPLAY_COLORS_CMYK:
+	    ddev->color_info.gray_index = 3;
+	    break;
+    }
     ddev->nFormat = nFormat;
 
     return 0;
