@@ -2,7 +2,7 @@
 
 /* update package version here */
 #define PACKAGE "jbig2dec"
-#define VERSION "0.1"
+#define VERSION "0.2"
 
 /* define this iff you are linking to/compiling in libpng */
 #define HAVE_LIBPNG
