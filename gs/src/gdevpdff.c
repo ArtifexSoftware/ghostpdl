@@ -270,18 +270,26 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
 {
     const byte *chars = font->font_name.chars;
     uint size = font->font_name.size;
-    /* Check whether the font is in the base 14. */
-    int index = pdf_find_standard_font(chars, size);
 
-    if (index >= 0) {
-	*pindex = index;
-	if (font->is_resource) {
-	    *psame = ~0;
-	    return FONT_EMBED_STANDARD;
-	} else if (font->FontType != ft_composite &&
-		   find_std_appearance(pdev, (gs_font_base *)font, -1,
-				       psame) == index)
-	    return FONT_EMBED_STANDARD;
+    /*
+     * The behavior of Acrobat Distiller changed between 3.0 (PDF 1.2),
+     * which will never embed the base 14 fonts, and 4.0 (PDF 1.3), which
+     * doesn't treat them any differently from any other fonts.
+     */
+    if (pdev->CompatibilityLevel < 1.3) {
+	/* Check whether the font is in the base 14. */
+	int index = pdf_find_standard_font(chars, size);
+
+	if (index >= 0) {
+	    *pindex = index;
+	    if (font->is_resource) {
+		*psame = ~0;
+		return FONT_EMBED_STANDARD;
+	    } else if (font->FontType != ft_composite &&
+		       find_std_appearance(pdev, (gs_font_base *)font, -1,
+					   psame) == index)
+		return FONT_EMBED_STANDARD;
+	}
     }
     *pindex = -1;
     *psame = 0;
