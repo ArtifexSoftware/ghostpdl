@@ -769,9 +769,18 @@ clist_fill_parallelogram(gx_device *dev, fixed px, fixed py,
 			 const gx_drawing_color *pdcolor,
 			 gs_logical_operation_t lop)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     gs_fixed_point pts[3];
     int code;
 
+    if ( (cdev->disable_mask & clist_disable_fill_path) ||
+	 gs_debug_c(',')
+	 ) {
+	/* Disable path-based banding. */
+	return gx_default_fill_parallelogram(dev, px, py, ax, ay, bx, by,
+					  pdcolor, lop);
+    }
     pts[0].x = px + ax, pts[0].y = py + ay;
     pts[1].x = pts[0].x + bx, pts[1].y = pts[0].y + by;
     pts[2].x = px + bx, pts[2].y = py + by;
@@ -787,9 +796,18 @@ clist_fill_triangle(gx_device *dev, fixed px, fixed py,
 		    const gx_drawing_color *pdcolor,
 		    gs_logical_operation_t lop)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     gs_fixed_point pts[2];
     int code;
 
+    if ( (cdev->disable_mask & clist_disable_fill_path) ||
+	 gs_debug_c(',')
+	 ) {
+	/* Disable path-based banding. */
+	return gx_default_fill_triangle(dev, px, py, ax, ay, bx, by,
+					  pdcolor, lop);
+    }
     pts[0].x = px + ax, pts[0].y = py + ay;
     pts[1].x = px + bx, pts[1].y = py + by;
     code = clist_put_polyfill(dev, px, py, pts, 2, pdcolor, lop);
