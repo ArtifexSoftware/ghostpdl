@@ -16,8 +16,9 @@
   copies.
 */
 
-/* $Id: */
+/* $Id$ */
 /* ICCBased color operators */
+
 #include "math_.h"
 #include "memory_.h"
 #include "ghost.h"

@@ -22,6 +22,7 @@
 
 /*
  * gdevhpij.h
+ * $Id$
  */
 
 #ifndef gdevhpij_INCLUDED

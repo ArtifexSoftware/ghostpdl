@@ -16,6 +16,7 @@
   all copies.
 */
 
+/* $Id$ */
 
 #ifndef gdevmac_INCLUDED
 #  define gdevmac_INCLUDED

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994-7 artofcode LLC.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -15,6 +15,8 @@
   License requires that the copyright notice and this notice be preserved on
   all copies.
 */
+
+/* $Id$ */
 
 #include "gdevmac.h"
 #include "gsparam.h"

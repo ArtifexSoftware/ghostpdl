@@ -1,4 +1,4 @@
-/* Copyright (C) 1989 - 1995, 2001 Artifex Software, Inc.  All rights reserved.
+/* Copyright (C) 1989 - 1995, 2001 artofcode LLC.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -15,6 +15,8 @@
   License requires that the copyright notice and this notice be preserved on
   all copies.
 */
+
+/* $Id$ */
 
 #include <Palettes.h>
 #include <Aliases.h>

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1997, 2001 Artifex Software, Inc.  All rights reserved.
+/* Copyright (C) 1994-2001 artofcode LLC.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -16,6 +16,7 @@
   all copies.
 */
 
+/* $Id$ */
 /* External font (xfont) implementation for Classic/Carbon MacOS. */
 
 #include "gdevmac.h"

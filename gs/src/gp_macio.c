@@ -16,7 +16,7 @@
   all copies.
 */
 
-
+/* $Id$ */
 
 //#include "MacHeaders"
 #include <Palettes.h>
