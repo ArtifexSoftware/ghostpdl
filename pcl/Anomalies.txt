@@ -621,9 +621,6 @@ Difference in specific tests of the PCL 5c FTS
     behavior, and the behavior of HP devices other than the CLJ 5/5M. The
     behavior of the CLJ 5/5M is apparently a bug.
         
-1372, 1382
-    small tail on beziers with triangular joins.  Not likely to occur.
-
 1402 (et. al.):
 
     The filling of GL/2 polygon regions with lines in the Artifex PCL 5c
