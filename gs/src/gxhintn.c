@@ -2444,8 +2444,19 @@ private int t1_hinter__export(t1_hinter * this)
 private int t1_hinter__add_trailing_moveto(t1_hinter * this)
 {   t1_glyph_space_coord gx = this->width_gx, gy = this->width_gy;
 
+#if 0 /* This appears wrong due to several reasons :
+	 1. With TextAlphaBits=1, AlignToPixels must have no effect.
+	 2. ashow, awidthshow must add the width before alignment.
+	 4. In the PDF interpreter, Tc must add before alignment.
+	 5. Since a character origin is aligned,
+	    rounding its width doesn't affect subsequent characters.
+	 6. When the character size is smaller than half pixel width,
+	    glyph widths round to zero, causing overlapped glyphs.
+	    (Bug 687719 "PDFWRITE corrupts letter spacing/placement").
+       */
     if (this->align_to_pixels)
 	t1_hinter__align_to_grid(this, this->g2o_fraction, &gx, &gy, this->align_to_pixels);
+#endif
     return t1_hinter__rmoveto(this, gx - this->cx, gy - this->cy);
 }
 
