@@ -32,14 +32,19 @@ class Ghostscript:
 		self.band = 0
 		self.device = ''
 		self.infile = 'input'
-		self.outfile = '/dev/null'
+		if os.name == 'nt':
+			self.nullfile = 'nul'
+		else:
+			self.nullfile = '/dev/null'
+		self.outfile = self.nullfile
 
 	def process(self):
 		bandsize = 10000
 		if (self.band): bandsize = 30000000
 		
 		cmd = self.command
-		cmd = cmd + ' -dQUIET -dNOPAUSE -dBATCH -K50000 '
+		cmd = cmd + self.gsoptions
+		cmd = cmd + ' -dQUIET -dNOPAUSE -dBATCH -K100000 '
 		cmd = cmd + '-r%d ' % (self.dpi,)
 		cmd = cmd + '-dMaxBitmap=%d ' % (bandsize,)
 		cmd = cmd + '-sDEVICE=%s ' % (self.device,)
@@ -52,9 +57,10 @@ class Ghostscript:
 		else:
 			cmd = cmd + '- < '
 
-		cmd = cmd + ' %s > /dev/null 2> /dev/null' % (self.infile,)
+		cmd = cmd + ' %s > %s 2> %s' % (self.infile, self.nullfile, self.nullfile)
 
 		ret = os.system(cmd)
+
 		if ret == 0:
 			return 1
 		else:
