@@ -1742,7 +1742,19 @@ readonly def
                   pop pop                          % templ proc path
                 } {
                   dup .file_name_parents 0 eq {    % templ proc path path'
-                    2 index exec 3 1 roll          % templ templ' proc path
+                    2 index exec                   % templ proc path templ'
+                    % Skip redundant tremplates :
+                    true                           % templ proc path templ' true
+                    counttomark 1 sub -1 4 {
+                      index 2 index eq {
+                        pop false exit 
+                      } if
+                    } for
+                    {
+                      3 1 roll                    % templ templ' proc path
+                    } {
+                      pop
+                    } ifelse
                   } {
                     pop
                   } ifelse
