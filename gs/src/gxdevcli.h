@@ -1173,6 +1173,7 @@ typedef struct gs_param_list_s gs_param_list;
   <0 - error.
 */
 
+		/* High level device support. */
 
 typedef enum {
     pattern_manage__can_accum,
@@ -1206,6 +1207,18 @@ typedef enum {
 	const gx_clip_path *pcpath)
 #define dev_proc_fill_rectangle_hl_color(proc)\
   dev_t_proc_fill_rectangle_hl_color(proc, gx_device)
+
+/*
+  Include a color space into the output.
+  This function is used to include DefaultGray, DefaultRGB, 
+  DefaultCMYK into PDF, PS, EPS output.
+  Low level devices should ignore this call.
+*/
+
+#define dev_t_proc_include_color_space(proc, dev_t)\
+  int proc(dev_t *dev, gs_color_space *cspace)
+#define dev_proc_include_color_space(proc)\
+  dev_t_proc_include_color_space(proc, gx_device)
 
 /* Define the device procedure vector template proper. */
 
@@ -1265,6 +1278,7 @@ typedef enum {
 	dev_t_proc_decode_color((*decode_color), dev_t); \
 	dev_t_proc_pattern_manage((*pattern_manage), dev_t); \
 	dev_t_proc_fill_rectangle_hl_color((*fill_rectangle_hl_color), dev_t); \
+	dev_t_proc_include_color_space((*include_color_space), dev_t); \
 }
 
 

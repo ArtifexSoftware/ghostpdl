@@ -47,4 +47,7 @@ typedef struct gs_cie_render_s gs_cie_render;
 const gs_cie_render *gs_currentcolorrendering(const gs_state *);
 int gs_setcolorrendering(gs_state *, gs_cie_render *);
 
+/* High level device support */
+int gs_includecolorspace(gs_state * pgs);
+
 #endif /* gscolor2_INCLUDED */

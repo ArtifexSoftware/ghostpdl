@@ -534,3 +534,22 @@ gx_serialize_Indexed(const gs_color_space * pcs, stream * s)
     }
     return code;
 }
+
+/* ---------------- High level device support -------------------------------- */
+
+/*
+ * This special function forces a device to include the current
+ * color space into the output. Returns 'rangecheck' if the device can't handle it.
+ * The primary reason is to include DefaultGray, DefaultRGB, DefaultCMYK into PDF.
+ * Should be called for each page that requires the resource.
+ * Redundant calls per page with same cspace id are allowed.
+ * Redundant calls per page with different cspace id are are allowed but 
+ * highly undesirable.
+ * No need to call it with color spaces explicitly referred by the document,
+ * because they are included automatically.
+ */
+int
+gs_includecolorspace(gs_state * pgs)
+{
+    return (*dev_proc(pgs->device, include_color_space))(pgs->device, pgs->color_space);
+}

@@ -103,6 +103,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, decode_color, gx_forward_decode_color);
     fill_dev_proc(dev, pattern_manage, gx_forward_pattern_manage);
     fill_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
+    fill_dev_proc(dev, include_color_space, gx_forward_include_color_space);
     gx_device_fill_in_procs((gx_device *) dev);
 }
 
@@ -748,6 +749,20 @@ gx_forward_fill_rectangle_hl_color(gx_device *dev,
 						pis, pdcolor, NULL);
 }
 
+int
+gx_forward_include_color_space(gx_device *dev, gs_color_space *cspace)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
+    /* Note that clist sets fdev->target == fdev, 
+       so this function is unapplicable to clist. */
+    if (tdev == 0)
+	return 0;
+    else
+	return dev_proc(tdev, include_color_space)(tdev, cspace);
+}
+
 /* ---------------- The null device(s) ---------------- */
 
 private dev_proc_get_initial_matrix(gx_forward_upright_get_initial_matrix);
@@ -824,7 +839,8 @@ private dev_proc_strip_copy_rop(null_strip_copy_rop);
 	gx_default_gray_fast_encode,		/* encode_color */\
 	null_decode_color,		/* decode_color */\
 	gx_default_pattern_manage,\
-	gx_default_fill_rectangle_hl_color\
+	gx_default_fill_rectangle_hl_color,\
+	gx_default_include_color_space\
 }
 
 const gx_device_null gs_null_device = {

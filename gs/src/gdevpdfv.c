@@ -677,3 +677,15 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     return 0;
 }
 
+/*
+    Include color space.
+ */
+int
+gdev_pdf_include_color_space(gx_device *dev, gs_color_space *cspace)
+{
+    gx_device_pdf * pdev = (gx_device_pdf *)dev;
+    cos_value_t cs_value;
+
+    return pdf_color_space(pdev, &cs_value, NULL, cspace,
+				&pdf_color_space_names, true);
+}

@@ -250,6 +250,18 @@ zsetcolorspace(i_ctx_t * i_ctx_p)
 }
 
 /*
+ *  - .includecolorspace -
+ *
+ * See the comment for gs_includecolorspace in gscolor2.c .
+ */
+private int
+zincludecolorspace(i_ctx_t * i_ctx_p)
+{
+    return gs_includecolorspace(igs);
+}
+
+
+/*
  *  <int>   .setdevcspace   -
  *
  * Set a parameterless color space. This is now used to set the
@@ -464,5 +476,8 @@ const op_def    zcolor_op_defs[] =
     { "1%zcolor_remap_one_signed_finish", zcolor_remap_one_signed_finish },
     { "0%zcolor_reset_transfer", zcolor_reset_transfer },
     { "0%zcolor_remap_color", zcolor_remap_color },
+
+    /* high level device support */
+    { "0.includecolorspace", zincludecolorspace },
     op_def_end(0)
 };

@@ -602,3 +602,4 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
 	stream_puts(pdev->strm, "Q\n");
     return 0;
 }
+

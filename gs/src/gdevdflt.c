@@ -530,6 +530,7 @@ gx_device_fill_in_procs(register gx_device * dev)
 
     fill_dev_proc(dev, pattern_manage, gx_default_pattern_manage);
     fill_dev_proc(dev, fill_rectangle_hl_color, gx_default_fill_rectangle_hl_color);
+    fill_dev_proc(dev, include_color_space, gx_default_include_color_space);
 }
 
 int
@@ -689,6 +690,11 @@ gx_default_fill_rectangle_hl_color(gx_device *pdev,
     return_error(gs_error_rangecheck);
 }
 
+int
+gx_default_include_color_space(gx_device *pdev, gs_color_space *cspace)
+{
+    return 0;
+}
 
 /* ---------------- Default per-instance procedures ---------------- */
 
