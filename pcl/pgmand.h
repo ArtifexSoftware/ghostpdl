@@ -265,6 +265,7 @@ int hpgl_IP(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
 int hpgl_IR(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
 int hpgl_IW(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
 int hpgl_PG(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_PS(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
 int hpgl_RO(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
 int hpgl_RP(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
 int hpgl_SC(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));

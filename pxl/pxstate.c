@@ -22,6 +22,7 @@
 #include "pxparse.h"
 #include "pxstate.h"
 #include "pxfont.h"
+#include "gxfcache.h"
 
 /* Import the initialization procedure table from pxtop.c. */
 typedef int (*px_init_proc)(P1(px_state_t *));
@@ -109,9 +110,11 @@ px_state_release(px_state_t *pxs)
     px_dict_release(&pxs->font_dict);
     gs_free_object(pxs->memory, pxs->error_page_show_enum,
 		   "px_state_release(pxs->error_page_show_enum)");
+    gs_free_object(pxs->memory, pxs->font_dir->fmcache.mdata, "px_state_release");
     /* free gs font dir */
     gs_free_object(pxs->memory, pxs->font_dir, "px_state_release(gs_font_dir)");
     /* Don't free pxgs since it'll get freed as pgs' client */
+
     gs_free_object(pxs->memory, pxs, "px_state_release");
 }
 

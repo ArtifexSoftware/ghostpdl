@@ -445,12 +445,15 @@ map_symbol(uint chr, const gs_text_enum_t *penum)
 	const pl_symbol_map_t *psm = pxgs->symbol_map;
 	uint first_code;
 
-	if ( psm == 0 ) /* wingdings and symbol fonts */	 
+	if ( psm == 0 ) { /* wingdings and symbol fonts.  NB comment
+                             is not accurate... psm can be zero for a
+                             few ill-defined reasons. */
 	    if ( (pxgs->base_font->scaling_technology == plfst_TrueType) &&
 		 (pxgs->base_font->storage == pxfsInternal) )
 	        return chr + 0xf000;  
 	    else
 	        return chr;
+        }
 
 	first_code = pl_get_uint16(psm->first_code);
 	if ( chr < first_code || chr > pl_get_uint16(psm->last_code) ) {

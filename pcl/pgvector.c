@@ -193,11 +193,10 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 	pargs->phase = 1;	/* we have arguments */
 	/* first point of a subpolygon is a pen up - absurd */
 	if ( pgls->g.subpolygon_started ) {
-	    hpgl_pen_state_t pen;	    
 	    pgls->g.subpolygon_started = false;
 	    pgls->g.have_drawn_in_path = false;
-	    hpgl_call(hpgl_add_point_to_path(pgls, x, y, 
-					     hpgl_plot_move | pgls->g.relative_coords, 
+	    hpgl_call(hpgl_add_point_to_path(pgls, x, y,
+					     hpgl_plot_move | pgls->g.relative_coords,
 					     true));
 	}
 	else {

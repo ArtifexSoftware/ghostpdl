@@ -176,4 +176,8 @@ void px_state_cleanup(P1(px_state_t *));
 /* Do one-time finalization. */
 void px_state_finit(P1(px_state_t *));
 
+/* get media size */
+void px_get_default_media_size(P2(px_state_t *pxs, gs_point *pt));
+
+
 #endif				/* pxstate_INCLUDED */

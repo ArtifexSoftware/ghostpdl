@@ -22,6 +22,7 @@
 #include "gsmatrix.h"
 #include "gxfixed.h"
 #include "gxchar.h"
+#include "gxfcache.h"
 #include "gxfont.h"
 #include "gxfont42.h"
 #include "gxchar.h"
@@ -633,10 +634,10 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 	pl_dict_release(&pcs->built_in_fonts);
 	pl_dict_release(&pcs->cartridge_fonts);
 	pl_dict_release(&pcs->simm_fonts);
-
 	gx_purge_selected_cached_chars(pcs->font_dir,
 				       purge_all,
 				       (void *)NULL);
+        gs_free_object(pcs->memory, pcs->font_dir->fmcache.mdata, "pcsfont_do_reset");
 	gs_free_object(pcs->memory, pcs->font_dir, "pcfont_do_reset");
     }
 }

@@ -388,7 +388,6 @@ private void
 pjl_parsed_filename_to_string(char *fnamep, const char *pathname)
 {
     int i;
-    char * str_ptr = 0;
     int size;
     
     *fnamep = 0; /* in case of bad input */

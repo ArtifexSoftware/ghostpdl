@@ -26,6 +26,8 @@
 #include "pjparse.h"
 #include "pldict.h"
 #include "plvalue.h"
+#include "plmain.h" /* for high_level_device...
+                      hopefully this will go away soon */
 #include "gsbitops.h"
 #include "gsccode.h"
 #include "gsmatrix.h"

@@ -532,18 +532,6 @@ pattern_control(
     return 0;
 }
 
-/*
- * Stub routine to be used for clearing the pattern cache.
- */
-  private bool
-delete_cached_patterns_stub(
-    gx_color_tile * ctile,      /* ignored */
-    void *          pcls_data   /* ignored */
-)
-{
-    return true;
-}
-
  private int
 upattern_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
   pcl_copy_operation_t operation)

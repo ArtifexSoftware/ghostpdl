@@ -489,7 +489,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 		/* for unicode keying of the dictionary use the unicode
 		   font name, otherwise use the keys. */
 		if ( use_unicode_names_for_keys )
-		    pl_dict_put( pfontdict, residentp->unicode_fontname, 32, plfont );
+		    pl_dict_put( pfontdict, (const byte *)residentp->unicode_fontname, 32, plfont );
 		else {
 		    key[2] = (byte)(residentp - resident_table);
 		    key[0] = key[1] = 0;

@@ -1788,8 +1788,6 @@ pcl_ht_remap_render_method(
     if ( ENABLE_AUTO_GRAY_RENDER_METHODS ) {
         uint render_method = (*ppht)->orig_render_method;
 	int code = 0;
-        gx_device *     pdev = pcl_get_target_device(pcs);
-	
 	if (is_gray != (*ppht)->is_gray_render_method ) {
 
 	    /* gray may be forced, -dForceMono=1 */ 

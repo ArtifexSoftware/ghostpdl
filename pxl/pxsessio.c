@@ -197,16 +197,9 @@ void px_state_cleanup(px_state_t *pxs)
 	pxs->have_page = false;
 }
 
-void px_font_cleanup(px_state_t *pxs)
-{
-    px_purge_character_cache(pxs);
-    px_dict_release(&pxs->font_dict);
-}    
-
 void px_purge_character_cache(px_state_t *pxs)
 {
     gx_purge_selected_cached_chars(pxs->font_dir, purge_all, pxs);
-    return 0;
 }
 
 /* ---------------- Operators ---------------- */

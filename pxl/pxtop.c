@@ -377,7 +377,6 @@ pxl_impl_init_job(
 {
 	int code = 0;
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
-	gs_memory_status_t status;
 	px_reset_errors(pxli->pxs);
 	px_process_init(pxli->st, true);
 
@@ -578,13 +577,11 @@ pxl_impl_deallocate_interp_instance(
 	gs_memory_t *mem = pxli->memory;
 	/* do total dnit of interp state */
 	px_state_finit(pxli->pxs);
-
 	/* Unwind allocation */ 
 	gs_state_free(pxli->pgs);
 	px_process_release(pxli->st);
 	px_state_release(pxli->pxs);
 	gs_free_object(mem, pxli, "pxl_impl_deallocate_interp_instance(pxl_interp_instance_t)");
-
 	return 0;
 }
 
@@ -686,7 +683,5 @@ px_top_init(px_parser_state_t *st, px_state_t *pxs, bool big_endian)
 	if ( code < 0 )
 	    return code;
     }
-    /* HACK */
-    px_font_cleanup(pxs);
     return 0;
 }

@@ -16,6 +16,7 @@
 
 #include "math_.h"
 #include "stdio_.h"			/* for NULL */
+#include "memory_.h"
 #include "gdebug.h"
 #include "gstypes.h"
 #include "gsmemory.h"
@@ -28,6 +29,7 @@
 #include "gscoord.h"
 #include "gsimage.h"
 #include "gscie.h"
+#include "gscrd.h"
 #include "gspath.h"
 #include "gxdevice.h"
 #include "gxht.h"

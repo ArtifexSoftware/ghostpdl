@@ -43,6 +43,7 @@
 #include "pldraw.h"
 #include "jpeglib_.h"           /* for jpeg filter */
 #include "sdct.h"
+#include "sjpeg.h"
 
 /* GC descriptors */
 private_st_px_pattern();
@@ -421,7 +422,7 @@ pxReadImage(px_args_t *par, px_state_t *pxs)
 		if ( code != 1 )
 		  return code;
 		code = (*dev_proc(dev, image_data))
-		  (dev, pxenum->info, &data, 0, pxenum->benum.data_per_row, 1);
+		  (dev, pxenum->info, (const byte **)&data, 0, pxenum->benum.data_per_row, 1);
 		if ( code < 0 )
 		  return code;
 		pxs->have_page = true;
@@ -440,7 +441,7 @@ pxReadImage(px_args_t *par, px_state_t *pxs)
 		  memcpy(data, rdata, pxenum->benum.data_per_row);
 		if ( ++(pxenum->next_row) == pxenum->num_rows )
 		  { code = (*dev_proc(dev, image_data))
-		      (dev, pxenum->info, &pxenum->rows, 0,
+		      (dev, pxenum->info, (const byte **)&pxenum->rows, 0,
 		       pxenum->raster, pxenum->num_rows);
 		    pxenum->next_row = 0;
 		    if ( code < 0 )
@@ -460,7 +461,7 @@ pxEndImage(px_args_t *par, px_state_t *pxs)
 	if ( pxenum->next_row > 0 )
 	  { /* Output any remaining rows. */
 	    int code = (*dev_proc(dev, image_data))
-	      (dev, pxenum->info, &pxenum->rows, 0,
+	      (dev, pxenum->info, (const byte **)&pxenum->rows, 0,
 	       pxenum->raster, pxenum->next_row);
 	    pxenum->next_row = 0;
 	    if ( code < 0 )

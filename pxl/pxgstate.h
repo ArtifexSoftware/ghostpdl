@@ -74,7 +74,6 @@ void px_purge_pattern_cache(P2(px_state_t *, pxePatternPersistence_t));
 /* purge font cache - all characters */
 void px_purge_character_cache(px_state_t *pxs);
 
-
 /* Define a structure for a brush or pen.  These only exist */
 /* within a px_gstate_t; they are never allocated separately. */
 typedef enum {

@@ -77,4 +77,10 @@ void pl_print_usage(P3(gs_memory_t *mem, const pl_main_instance_t *pmi,
 /* Finish a page, possibly printing usage statistics and/or pausing. */
 int pl_finish_page(P4(pl_main_instance_t *pmi, gs_state *pgs,
 		      int num_copies, int flush));
+
+/* determine if a device is high level NB - should be
+   pl_high_level_device.  NBB - this is a hack to do unusual tricks
+   when pdfwrite is the active device. */
+bool high_level_device(P1(gx_device *device));
+
 #endif				/* plmain_INCLUDED */
