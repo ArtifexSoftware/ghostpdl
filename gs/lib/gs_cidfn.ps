@@ -85,8 +85,10 @@ dup 0 {
 	setglobal
       } {
 	pop
-      } ifelse readonly
-    } if pop
+      } ifelse readonly pop
+    } {
+      pop pop
+    } ifelse
   } forall
   3 -1 roll setglobal
 } bind def
