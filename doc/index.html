@@ -278,16 +278,20 @@ Twain</i>
 <p>All options supplied to the interpreter in the following examples are
 described in the&nbsp; <a href="http://www.cs.wisc.edu/~ghost/">Ghostscript
 documentation.</a>
-<p><b>pcl5 -sDEVICE=x11 mypcl.pcl</b>
+<p><b>pcl6 -sDEVICE=x11 mypcl.pcl</b>
 <p>interpret a pcl file called mypcl.pcl and render to the x11 device.
-<p><b>pcl5 -sDEVICE=ljet4 -sOutputFile="| lpr" -dNOPAUSE mypcl.pcl</b>
+<p><b>pcl6 -sDEVICE=ljet4 -sOutputFile="| lpr" -dNOPAUSE mypcl.pcl</b>
 <p>interpret mypcl.pcl and send the Laserjet 4 formatted output to the
 command lpr, lpr should then send it to a real printer.&nbsp; Note this
 is for unix systems.
-<p><b>pcl5 -sDEVICE=pcxcmyk -sOutputFile="pcxpage.%d" -dNOPAUSE mypcl.pcl</b>
+<p><b>pcl6 -sDEVICE=pcxcmyk -sOutputFile="pcxpage.%d" -dNOPAUSE mypcl.pcl</b>
 <p>interpret mypcl.pcl and generate CMYK output. Pages are to be put in
 files named pcxpage.1, pcxpage.2, pcxpage.3, etc.
-<p><b>pcl5</b>
+<p><b>pcl6 -r72 -sDEVICE=x11mono mypcl.pcl -r100 -sDEVICE=x11 mypcl.pcl</b><b></b>
+<p>render a pcl file at 72dpi on the monochrome X11 device, then render
+the same file at 100 dpi&nbsp; on color X11 device.&nbsp; This demonstrates
+on-the-fly device switching.<b></b>
+<p><b>pcl6</b>
 <p>simply running the interpreter should generate some useful information
 about the available options and devices.
 <br>&nbsp;
