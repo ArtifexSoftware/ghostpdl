@@ -328,12 +328,6 @@ gx_b_w_gray_encode(gx_device * dev, const gx_color_value cv[])
 private gx_color_index
 display_map_rgb_color_device4(gx_device * dev, const gx_color_value cv[])
 {
-    gx_color_value r = cv[0];
-    gx_color_value g = cv[1];
-    gx_color_value b = cv[2];
-    if ((r == g) && (g == b) && (r >= gx_max_color_value / 3 * 2 - 1)
-	&& (r < gx_max_color_value / 4 * 3))
-	return ((gx_color_index) 8);	/* light gray */
     return pc_4bit_map_rgb_color(dev, cv);
 }
 
@@ -342,10 +336,7 @@ private int
 display_map_color_rgb_device4(gx_device * dev, gx_color_index color,
 		 gx_color_value prgb[3])
 {
-    if (color == 8)	/* VGA light grey */
-	prgb[0] = prgb[1] = prgb[2] = (gx_max_color_value / 4 * 3);
-    else
-	pc_4bit_map_color_rgb(dev, color, prgb);
+    pc_4bit_map_color_rgb(dev, color, prgb);
     return 0;
 }
 
