@@ -476,7 +476,7 @@ private int
 hpjet_get_params(gx_device *pdev, gs_param_list *plist)
 {
     gx_device_hpjet *dev = (gx_device_hpjet *)pdev;
-    int code = gdev_prn_get_params(dev, plist);
+    int code = gdev_prn_get_params(pdev, plist);
 
     if (code >= 0)
 	code = param_write_bool(plist, "ManualFeed", &dev->ManualFeed);
