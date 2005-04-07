@@ -2092,13 +2092,13 @@ See the helplers <b><tt>init_gradient</tt></b>,
 <b><tt>step_gradient</tt></b> (defined in in <b><tt>gdevddrw.c</tt></b>), how to manage colors.
 See <b><tt>check_gradient_overflow</tt></b>
 (defined in in <b><tt>gdevddrw.c</tt></b>), as an example of an area
-that can't be painted paint in a single action due to 64-bits fixed overflows.
+that can't be painted in a single action due to 64-bits fixed overflows.
 
 </dl>
 
 <dl>
 <dt><b><tt> int (*fill_linear_color_scanline)
-  int proc(dev_t *dev, const gs_fill_attributes *fa,
+      (dev_t *dev, const gs_fill_attributes *fa,
 	int i, int j, int w,
 	const frac31 *c0,
 	const int32_t *c0_f,
@@ -2130,8 +2130,8 @@ See the formula below about using it.
 a vector of values in <b><tt>[-1,1]</tt></b>, each of which correspond to a color component.
 <dd>
 <b><tt>cg_den</tt></b> specify the denominator for the color gradient -
-a vector of values in <b><tt>[-1,1]</tt></b>, each of which correspond to a color component.
-<dd>
+a value in <b><tt>[-1,1]</tt></b>.
+<dd><p>
 The color for the pixel <b><tt>[i + k, j]</tt></b> to be computed like this :
 <pre><b><tt>
          (double)(c0[n] + (c0_f[n] + cg_num[n] * k) / cg_den) / (1 ^ 31 - 1)
@@ -2210,6 +2210,16 @@ const&nbsp;gx_clip_path&nbsp;*pcpath)</tt></b> <b><em>[OPTIONAL]</em></b>
 <dd>Fill the given path, clipped by the given clip path, according to the
 given parameters, with the given color.  The clip path pointer may be
 <b><tt>NULL</tt></b>, meaning do not clip.
+<dd>
+The implementation must paint the path with the specified device color,
+which may be either a pure color, or a pattern. If the device can't
+handle non-pure colors, it should check the color type and
+call the default implementation gx_default_fill_path for cases,
+which the device can't handle. The default implementation will perform
+a subdivision of the area to be painted, and will
+call other device virtual functions (such as fill_linear_color_triangle)
+with simpler areas.
+
 </dl>
 
 <dl>
