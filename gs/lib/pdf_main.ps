@@ -130,7 +130,7 @@ currentdict /runpdfstring .undef
    pdfdict begin
    pdfopen begin
    Trailer /Root oget /Pages oget /CropBox knownoget
-    { oforce_array mark /CropBox 3 -1 roll /PAGES pdfmark
+    { oforce_array normrect mark /CropBox 3 -1 roll /PAGES pdfmark
     }
    if
    /FirstPage where 
@@ -835,7 +835,22 @@ pdfdict begin
    ifelse
  } bind def
 
-% Display a given page.
+% Arrange the four elements that define a rectangle into a 'normal' order.
+/normrect_elems   % <x1> <y1> <x2> <y2> normrect_elems <llx> <lly> <urx> <ury>
+{
+    exch 4 1 roll			% <x2> <x1> <y1> <y2>
+    2 copy gt { exch } if		% <x2> <x1> <lly> <ury>
+    4 2 roll 2 copy lt { exch } if	% <lly> <ury> <urx> <llx>
+    4 1 roll exch			% <llx> <lly> <urx> <ury>
+} bind def
+
+% Arrange a rectangle into a 'normal' order.  I.e the lower left corner
+% followed by the upper right corner.
+/normrect 	% <rect> normrect <rect>
+{
+    aload pop normrect_elems 4 array astore
+} bind def
+
 /boxrect		% <llx> <lly> <urx> <ury> boxrect <x> <y> <w> <h>
  { exch 3 index sub exch 2 index sub
  } bind def
@@ -963,7 +978,7 @@ end readonly def
     dup /MediaBox pget pop	% There has to be a MediaBox
   } ifelse
   % stack: [<prevproc>] <pagedict> <Crop|Media Box>
-  exch pop oforce_array			% done with the pagedict
+  exch pop oforce_array normrect		% done with the pagedict
   systemdict /PDFFitPage known {
     PDFDEBUG { (Fiting PDF to imageable area of the page.) = flush } if
     currentpagedevice /.HWMargins get aload pop
@@ -997,12 +1012,13 @@ end readonly def
 	% Stack: pagedict currentpagedict
   1 index /CropBox pget dup {exch pop} if systemdict /UseCropBox known and {
 			% Set the page size.
-    1 index /CropBox pget pop oforce_elems
-    boxrect 2 array astore /PageSize exch def pop pop
+    1 index /CropBox pget pop oforce_elems normrect_elems boxrect
+    2 array astore /PageSize exch def pop pop
   } {
     1 index /MediaBox pget {
 			% Set the page size.
-      oforce_elems boxrect 2 array astore /PageSize exch def pop pop
+      oforce_elems normrect_elems boxrect
+      2 array astore /PageSize exch def pop pop
     } if
   } ifelse
   % Don't change the page size if we are going to fit the PDF to the page
@@ -1043,7 +1059,7 @@ end readonly def
 
 	% Copy the crop box.
     dup /CropBox knownoget {
-      oforce_array
+      oforce_array normrect
 
         % .pdfshowpage_Install translates the origin -
         % do same here with the CropBox.
@@ -1053,7 +1069,7 @@ end readonly def
       } {
         1 index /MediaBox pget pop	% There has to be a MediaBox
       } ifelse
-      oforce_array
+      oforce_array normrect
       dup 0 get exch 1 get   % [] tx ty
       2 index 0 get 2 index sub 3 index exch 0 exch put
       2 index 2 get 2 index sub 3 index exch 2 exch put
@@ -1091,7 +1107,8 @@ end readonly def
    /TRDefault currenttransfer def
   matrix currentmatrix 2 dict
   2 index /CropBox knownoget {
-    oforce_elems boxrect 4 array astore 1 index /ClipRect 3 -1 roll put
+    oforce_elems normrect_elems boxrect
+    4 array astore 1 index /ClipRect 3 -1 roll put
   } if
   dictbeginpage setmatrix
   /DefaultQstate qstate store
@@ -1109,7 +1126,7 @@ end readonly def
       dup /Group knownoget {
 	1 index /CropBox knownoget not {
 	  1 index /MediaBox pget pop
-	} if oforce_array .beginformgroup {
+	} if oforce_array normrect .beginformgroup {
 	  showpagecontents
 	} stopped {
 	  .discardtransparencygroup stop
