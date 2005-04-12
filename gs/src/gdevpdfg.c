@@ -865,7 +865,7 @@ pdf_write_colorscreen_halftone(gx_device_pdf *pdev,
     stream *s;
     long ht_ids[4];
 
-    for (i = 0; i < 4; ++i) {
+    for (i = 0; i < pdht->num_comp ; ++i) {
 	int code = pdf_write_screen_halftone(pdev, &pcsht->screens.indexed[i],
 					     &pdht->components[i].corder,
 					     &ht_ids[i]);
@@ -874,35 +874,49 @@ pdf_write_colorscreen_halftone(gx_device_pdf *pdev,
     }
     *pid = pdf_begin_separate(pdev);
     s = pdev->strm;
+    /* Use Black, Gray as the Default unless we are in RGB colormodel */
+    /* (num_comp < 4) in which case we use Green (arbitrarily) */
     pprintld1(s, "<</Type/Halftone/HalftoneType 5/Default %ld 0 R\n",
-	      ht_ids[3]);
+	      pdht->num_comp > 3 ? ht_ids[3] : ht_ids[1]);
     pprintld2(s, "/Red %ld 0 R/Cyan %ld 0 R", ht_ids[0], ht_ids[0]);
     pprintld2(s, "/Green %ld 0 R/Magenta %ld 0 R", ht_ids[1], ht_ids[1]);
     pprintld2(s, "/Blue %ld 0 R/Yellow %ld 0 R", ht_ids[2], ht_ids[2]);
+    if (pdht->num_comp > 3)
     pprintld2(s, "/Gray %ld 0 R/Black %ld 0 R", ht_ids[3], ht_ids[3]);
+    stream_puts(s, ">>\n");
     return pdf_end_separate(pdev);
 }
+
+#define CHECK(expr)\
+  BEGIN if ((code = (expr)) < 0) return code; END
+
 private int
 pdf_write_threshold_halftone(gx_device_pdf *pdev,
 			     const gs_threshold_halftone *ptht,
 			     const gx_ht_order *porder, long *pid)
 {
     char trs[17 + MAX_FN_CHARS + 1];
-    int code = pdf_write_transfer(pdev, porder->transfer, "/TransferFunction",
-				  trs);
-    long id = pdf_begin_separate(pdev);
-    stream *s = pdev->strm;
+    stream *s;
     pdf_data_writer_t writer;
+    int code = pdf_write_transfer(pdev, porder->transfer, "",
+				  trs);
 
     if (code < 0)
 	return code;
-    *pid = id;
-    pprintd2(s, "<</Type/Halftone/HalftoneType 6/Width %d/Height %d",
-	     ptht->width, ptht->height);
-    stream_puts(s, trs);
-    code = pdf_begin_data(pdev, &writer);
-    if (code < 0)
-	return code;
+    CHECK(pdf_begin_data(pdev, &writer)); 
+    s = pdev->strm;
+    *pid = writer.pres->object->id;
+    CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
+	"/Type", "/Halftone"));
+    CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
+	"/HalftoneType", "6"));
+    CHECK(cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object,
+	"/Width", ptht->width));
+    CHECK(cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object,
+	"/Height", ptht->height));
+    if (*trs != 0)
+	CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
+	    "/TransferFunction", trs));
     stream_write(writer.binary.strm, ptht->thresholds.data, ptht->thresholds.size);
     return pdf_end_data(&writer);
 }
@@ -912,23 +926,33 @@ pdf_write_threshold2_halftone(gx_device_pdf *pdev,
 			      const gx_ht_order *porder, long *pid)
 {
     char trs[17 + MAX_FN_CHARS + 1];
+    stream *s;
+    pdf_data_writer_t writer;
     int code = pdf_write_transfer(pdev, porder->transfer, "/TransferFunction",
 				  trs);
-    long id = pdf_begin_separate(pdev);
-    stream *s = pdev->strm;
-    pdf_data_writer_t writer;
 
     if (code < 0)
 	return code;
-    *pid = id;
-    pprintd2(s, "<</Type/Halftone/HalftoneType 16/Width %d/Height %d",
-	     ptht->width, ptht->height);
-    if (ptht->width2 && ptht->height2)
-	pprintd2(s, "/Width2 %d/Height2 %d", ptht->width2, ptht->height2);
-    stream_puts(s, trs);
-    code = pdf_begin_data(pdev, &writer);
-    if (code < 0)
-	return code;
+    CHECK(pdf_begin_data(pdev, &writer)); 
+    s = pdev->strm;
+    *pid = writer.pres->object->id;
+    CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
+	"/Type", "/Halftone"));
+    CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
+	"/HalftoneType", "16"));
+    CHECK(cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object,
+	"/Width", ptht->width));
+    CHECK(cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object,
+	"/Height", ptht->height));
+    if (ptht->width2 && ptht->height2) {
+	CHECK(cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object,
+	    "/Width2", ptht->width2));
+	CHECK(cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object,
+	    "/Height2", ptht->height2));
+    }
+    if (*trs != 0)
+	CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
+	    "/TransferFunction", trs));
     s = writer.binary.strm;
     if (ptht->bytes_per_sample == 2)
 	stream_write(s, ptht->thresholds.data, ptht->thresholds.size);
