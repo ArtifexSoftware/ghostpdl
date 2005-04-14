@@ -1207,8 +1207,9 @@ z1_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
     gs_glyph_info_t info;
     int wmode = gs_rootfont(igs)->WMode;
     int code;
+    gs_matrix id_matrix = { identity_matrix_body };
 
-    code = gs_default_glyph_info((gs_font *)pbfont, glyph, &pbfont->FontMatrix,
+    code = gs_default_glyph_info((gs_font *)pbfont, glyph, &id_matrix,
 		((GLYPH_INFO_WIDTH0 | GLYPH_INFO_VVECTOR0) << wmode) | GLYPH_INFO_BBOX,
 	        &info);
     if (code < 0)
