@@ -129,15 +129,6 @@ vx:	    if ((code = shade_next_coords(cs, curve[1].control, 2)) < 0 ||
     return 0;
 }
 
-#if !NEW_SHADINGS
-/* Define the common state for rendering Coons and tensor patches. */
-typedef struct patch_fill_state_s {
-    mesh_fill_state_common;
-    const gs_function_t *Function;
-} patch_fill_state_t;
-#endif
-
-#if NEW_SHADINGS
 int
 init_patch_fill_state(patch_fill_state_t *pfs)
 {
@@ -178,20 +169,16 @@ term_patch_fill_state(patch_fill_state_t *pfs)
 	wedge_vertex_list_elem_buffer_free(pfs);
 #   endif
 }
-#endif
 
 /* Resolve a patch color using the Function if necessary. */
 inline private void
 patch_resolve_color_inline(patch_color_t * ppcr, const patch_fill_state_t *pfs)
 {
     if (pfs->Function) {
-	gs_function_evaluate(pfs->Function, ppcr->t, ppcr->cc.paint.values);
-#	if NEW_SHADINGS
-	{   const gs_color_space *pcs = pfs->direct_space;
+	const gs_color_space *pcs = pfs->direct_space;
 
-	    pcs->type->restrict_color(&ppcr->cc, pcs);
-	}
-#	endif
+	gs_function_evaluate(pfs->Function, ppcr->t, ppcr->cc.paint.values);
+	pcs->type->restrict_color(&ppcr->cc, pcs);
     }
 }
 
@@ -212,7 +199,6 @@ private void
 patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
        const patch_color_t * ppc1, const patch_fill_state_t *pfs, floatp t)
 {
-#if NEW_SHADINGS
     /* The old code gives -IND on Intel. */
     if (pfs->Function) {
 	ppcr->t[0] = ppc0->t[0] * (1 - t) + t * ppc1->t[0];
@@ -225,19 +211,6 @@ patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
 	    ppcr->cc.paint.values[ci] =
 		ppc0->cc.paint.values[ci] * (1 - t) + t * ppc1->cc.paint.values[ci];
     }
-#else
-    if (pfs->Function) {
-	ppcr->t[0] = ppc0->t[0] + t * (ppc1->t[0] - ppc0->t[0]);
-	ppcr->t[1] = 0;
-    } else {
-	int ci;
-
-	for (ci = pfs->num_components - 1; ci >= 0; --ci)
-	    ppcr->cc.paint.values[ci] =
-		ppc0->cc.paint.values[ci] +
-		t * (ppc1->cc.paint.values[ci] - ppc0->cc.paint.values[ci]);
-    }
-#endif
 }
 
 /* ================ Specific shadings ================ */
@@ -286,292 +259,6 @@ curve_eval(gs_fixed_point * pt, const gs_fixed_point * p0,
     if_debug3('2', "[2]t=%g => (%g,%g)\n", t, fixed2float(pt->x),
 	      fixed2float(pt->y));
 }
-
-/*
- * Merge two arrays of splits, sorted in increasing order.
- * Return the number of entries in the result, which might be less than
- * n1 + n2 (if an a1 entry is equal to an a2 entry).
- * a1 or a2 may overlap out as long as a1 - out >= n2 or a2 - out >= n1
- * respectively.
- */
-private int
-merge_splits(double *out, const double *a1, int n1, const double *a2, int n2)
-{
-    double *p = out;
-    int i1 = 0, i2 = 0;
-
-    /*
-     * We would like to write the body of the loop as an assignement
-     * with a conditional expression on the right, but gcc 2.7.2.3
-     * generates incorrect code if we do this.
-     */
-    while (i1 < n1 || i2 < n2)
-	if (i1 == n1)
-	    *p++ = a2[i2++];
-	else if (i2 == n2 || a1[i1] < a2[i2])
-	    *p++ = a1[i1++];
-	else if (a1[i1] > a2[i2])
-	    *p++ = a2[i2++];
-	else
-	    i1++, *p++ = a2[i2++];
-    return p - out;
-}
-
-/*
- * Split a curve in both X and Y.  Return the number of split points.
- * swap = 0 if the control points are in order, 1 if reversed.
- */
-private int
-split_xy(double out[4], const gs_fixed_point *p0, const gs_fixed_point *p1,
-	 const gs_fixed_point *p2, const gs_fixed_point *p3)
-{
-    double tx[2], ty[2];
-
-    return merge_splits(out, tx,
-			gx_curve_monotonic_points(p0->x, p1->x, p2->x, p3->x,
-						  tx),
-			ty,
-			gx_curve_monotonic_points(p0->y, p1->y, p2->y, p3->y,
-						  ty));
-}
-
-/*
- * Compute the joint split points of 2 curves.
- * swap = 0 if the control points are in order, 1 if reversed.
- * Return the number of split points.
- */
-inline private int
-split2_xy(double out[8], const gs_fixed_point *p10, const gs_fixed_point *p11,
-	  const gs_fixed_point *p12, const gs_fixed_point *p13,
-	  const gs_fixed_point *p20, const gs_fixed_point *p21,
-	  const gs_fixed_point *p22, const gs_fixed_point *p23)
-{
-    double t1[4], t2[4];
-
-    return merge_splits(out, t1, split_xy(t1, p10, p11, p12, p13),
-			t2, split_xy(t2, p20, p21, p22, p23));
-}
-
-#if !NEW_SHADINGS
-
-private int
-patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
-	   const gs_fixed_point interior[4],
-	   void (*transform) (gs_fixed_point *, const patch_curve_t[4],
-			      const gs_fixed_point[4], floatp, floatp))
-{	/*
-	 * The specification says the output must appear to be produced in
-	 * order of increasing values of v, and for equal v, in order of
-	 * increasing u.  However, all we actually have to do is follow this
-	 * order with respect to sub-patches that might overlap, which can
-	 * only occur as a result of non-monotonic curves; we can render
-	 * each monotonic sub-patch in any order we want.  Therefore, we
-	 * begin by breaking up the patch into pieces that are monotonic
-	 * with respect to all 4 edges.  Since each edge has no more than
-	 * 2 X and 2 Y split points (for a total of 4), taking both edges
-	 * together we have a maximum of 8 split points for each axis.
-	 */
-    double su[9], sv[9];
-    int nu = split2_xy(su, &curve[C1START].vertex.p,&curve[C1XCTRL].control[1],
-		       &curve[C1XCTRL].control[0], &curve[C1END].vertex.p,
-		       &curve[C2START].vertex.p, &curve[C2CTRL].control[0],
-		       &curve[C2CTRL].control[1], &curve[C2END].vertex.p);
-    int nv = split2_xy(sv, &curve[D1START].vertex.p, &curve[D1CTRL].control[0],
-		       &curve[D1CTRL].control[1], &curve[D1END].vertex.p,
-		       &curve[D2START].vertex.p, &curve[D2XCTRL].control[1],
-		       &curve[D2XCTRL].control[0], &curve[D2END].vertex.p);
-    int iu, iv, ju, jv, ku, kv;
-    double du, dv;
-    double v0, v1, vn, u0, u1, un;
-    patch_color_t c00, c01, c10, c11;
-    /*
-     * At some future time, we should set check = false if the curves
-     * fall entirely within the bounding rectangle.  (Only a small
-     * performance optimization, to avoid making this check for each
-     * triangle.)
-     */
-    bool check = true;
-
-#ifdef DEBUG
-    if (gs_debug_c('2')) {
-	int k;
-
-	dlputs("[2]patch curves:\n");
-	for (k = 0; k < 4; ++k)
-	    dprintf6("        (%g,%g) (%g,%g)(%g,%g)\n",
-		     fixed2float(curve[k].vertex.p.x),
-		     fixed2float(curve[k].vertex.p.y),
-		     fixed2float(curve[k].control[0].x),
-		     fixed2float(curve[k].control[0].y),
-		     fixed2float(curve[k].control[1].x),
-		     fixed2float(curve[k].control[1].y));
-	if (nu > 1) {
-	    dlputs("[2]Splitting u");
-	    for (k = 0; k < nu; ++k)
-		dprintf1(", %g", su[k]);
-	    dputs("\n");
-	}
-	if (nv > 1) {
-	    dlputs("[2]Splitting v");
-	    for (k = 0; k < nv; ++k)
-		dprintf1(", %g", sv[k]);
-	    dputs("\n");
-	}
-    }
-#endif
-    /* Add boundary values to simplify the iteration. */
-    su[nu] = 1;
-    sv[nv] = 1;
-
-    /*
-     * We're going to fill the curves by flattening them and then filling
-     * the resulting triangles.  Start by computing the number of
-     * segments required for flattening each side of the patch.
-     */
-    {
-	fixed flatness = float2fixed(pfs->pis->flatness);
-	int i;
-	int log2_k[4];
-
-	for (i = 0; i < 4; ++i) {
-	    curve_segment cseg;
-
-	    cseg.p1 = curve[i].control[0];
-	    cseg.p2 = curve[i].control[1];
-	    cseg.pt = curve[(i + 1) & 3].vertex.p;
-	    log2_k[i] =
-		gx_curve_log2_samples(curve[i].vertex.p.x, curve[i].vertex.p.y,
-				      &cseg, flatness);
-	}
-	ku = 1 << max(log2_k[1], log2_k[3]);
-	kv = 1 << max(log2_k[0], log2_k[2]);
-    }
-
-    /* Precompute the colors at the corners. */
-
-#define PATCH_SET_COLOR(c, v)\
-  if ( pfs->Function ) c.t[0] = v.cc[0];\
-  else memcpy(c.cc.paint.values, v.cc, sizeof(c.cc.paint.values))
-
-    PATCH_SET_COLOR(c00, curve[D1START].vertex); /* = C1START */
-    PATCH_SET_COLOR(c01, curve[D1END].vertex); /* = C2START */
-    PATCH_SET_COLOR(c11, curve[C2END].vertex); /* = D2END */
-    PATCH_SET_COLOR(c10, curve[C1END].vertex); /* = D2START */
-
-#undef PATCH_SET_COLOR
-
-    /*
-     * Since ku and kv are powers of 2, and since log2(k) is surely less
-     * than the number of bits in the mantissa of a double, 1/k ...
-     * (k-1)/k can all be represented exactly as doubles.
-     */
-    du = 1.0 / ku;
-    dv = 1.0 / kv;
-
-    /* Now iterate over the sub-patches. */
-    for (iv = 0, jv = 0, v0 = 0, v1 = vn = dv; jv < kv; v0 = v1, v1 = vn) {
-	patch_color_t c0v0, c0v1, c1v0, c1v1;
-
-	/* Subdivide the interval if it crosses a split point. */
-
-#define CHECK_SPLIT(ix, jx, x1, xn, dx, ax)\
-  if (x1 > ax[ix])\
-      x1 = ax[ix++];\
-  else {\
-      xn += dx;\
-      jx++;\
-      if (x1 == ax[ix])\
-	  ix++;\
-  }
-
-	CHECK_SPLIT(iv, jv, v1, vn, dv, sv);
-
-	patch_interpolate_color(&c0v0, &c00, &c01, pfs, v0);
-	patch_interpolate_color(&c0v1, &c00, &c01, pfs, v1);
-	patch_interpolate_color(&c1v0, &c10, &c11, pfs, v0);
-	patch_interpolate_color(&c1v1, &c10, &c11, pfs, v1);
-
-	for (iu = 0, ju = 0, u0 = 0, u1 = un = du; ju < ku; u0 = u1, u1 = un) {
-	    patch_color_t cu0v0, cu1v0, cu0v1, cu1v1;
-	    int code;
-
-	    CHECK_SPLIT(iu, ju, u1, un, du, su);
-
-#undef CHECK_SPLIT
-
-	    patch_interpolate_color(&cu0v0, &c0v0, &c1v0, pfs, u0);
-	    patch_resolve_color_inline(&cu0v0, pfs);
-	    patch_interpolate_color(&cu1v0, &c0v0, &c1v0, pfs, u1);
-	    patch_resolve_color_inline(&cu1v0, pfs);
-	    patch_interpolate_color(&cu0v1, &c0v1, &c1v1, pfs, u0);
-	    patch_resolve_color_inline(&cu0v1, pfs);
-	    patch_interpolate_color(&cu1v1, &c0v1, &c1v1, pfs, u1);
-	    patch_resolve_color_inline(&cu1v1, pfs);
-	    if_debug6('2', "[2]u[%d]=[%g .. %g], v[%d]=[%g .. %g]\n",
-		      iu, u0, u1, iv, v0, v1);
-
-	    /* Fill the sub-patch given by ((u0,v0),(u1,v1)). */
-	    {
-		mesh_vertex_t mu0v0, mu1v0, mu1v1, mu0v1;
-		vd_save;
-
-		(*transform)(&mu0v0.p, curve, interior, u0, v0);
-		(*transform)(&mu1v0.p, curve, interior, u1, v0);
-		(*transform)(&mu1v1.p, curve, interior, u1, v1);
-		(*transform)(&mu0v1.p, curve, interior, u0, v1);
-		if_debug4('2', "[2]  => (%g,%g), (%g,%g),\n",
-			  fixed2float(mu0v0.p.x), fixed2float(mu0v0.p.y),
-			  fixed2float(mu1v0.p.x), fixed2float(mu1v0.p.y));
-		if_debug4('2', "[2]     (%g,%g), (%g,%g)\n",
-			  fixed2float(mu1v1.p.x), fixed2float(mu1v1.p.y),
-			  fixed2float(mu0v1.p.x), fixed2float(mu0v1.p.y));
-		memcpy(mu0v0.cc, cu0v0.cc.paint.values, sizeof(mu0v0.cc));
-		memcpy(mu1v0.cc, cu1v0.cc.paint.values, sizeof(mu1v0.cc));
-		memcpy(mu1v1.cc, cu1v1.cc.paint.values, sizeof(mu1v1.cc));
-		memcpy(mu0v1.cc, cu0v1.cc.paint.values, sizeof(mu0v1.cc));
-		vd_quad(mu0v0.p.x, mu0v0.p.y, 
-			mu0v1.p.x, mu0v1.p.y, 
-			mu1v1.p.x, mu1v1.p.y, 
-			mu1v0.p.x, mu1v0.p.y, 
-			0, RGB(0, 255, 0));
-		if (!VD_TRACE_DOWN)
-		    vd_disable;
-
-/* Make this a procedure later.... */
-#define FILL_TRI(pva, pvb, pvc)\
-  BEGIN\
-    mesh_init_fill_triangle((mesh_fill_state_t *)pfs, pva, pvb, pvc, check);\
-    code = mesh_fill_triangle((mesh_fill_state_t *)pfs);\
-    if (code < 0)\
-	return code;\
-  END
-#if 0
-		FILL_TRI(&mu0v0, &mu1v1, &mu1v0);
-		FILL_TRI(&mu0v0, &mu1v1, &mu0v1);
-#else
-		{
-		    mesh_vertex_t mmid;
-		    int ci;
-
-		    (*transform)(&mmid.p, curve, interior,
-				 (u0 + u1) * 0.5, (v0 + v1) * 0.5);
-		    for (ci = 0; ci < pfs->num_components; ++ci)
-			mmid.cc[ci] =
-			    (mu0v0.cc[ci] + mu1v0.cc[ci] +
-			     mu1v1.cc[ci] + mu0v1.cc[ci]) * 0.25;
-		    FILL_TRI(&mu0v0, &mu1v0, &mmid);
-		    FILL_TRI(&mu1v0, &mu1v1, &mmid);
-		    FILL_TRI(&mu1v1, &mu0v1, &mmid);
-		    FILL_TRI(&mu0v1, &mu0v0, &mmid);
-		}
-#endif
-		vd_restore;
-	    }
-	}
-    }
-    return 0;
-}
-#endif
 
 /* ---------------- Coons patch shading ---------------- */
 
@@ -625,11 +312,9 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     if (code < 0)
 	return code;
     state.Function = psh->params.Function;
-#   if NEW_SHADINGS
-	code = init_patch_fill_state(&state);
-	if(code < 0)
-	    return code;
-#   endif
+    code = init_patch_fill_state(&state);
+    if(code < 0)
+	return code;
     if (VD_TRACE_TENSOR_PATCH && vd_allowed('s')) {
 	vd_get_dc('s');
 	vd_set_shift(0, 0);
@@ -648,9 +333,7 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     }
     if (VD_TRACE_TENSOR_PATCH && vd_allowed('s'))
 	vd_release_dc;
-#   if NEW_SHADINGS
-	term_patch_fill_state(&state);
-#   endif
+    term_patch_fill_state(&state);
     return min(code, 0);
 }
 
@@ -722,11 +405,9 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     if (code < 0)
 	return code;
     state.Function = psh->params.Function;
-#   if NEW_SHADINGS
-	code = init_patch_fill_state(&state);
-	if(code < 0)
-	    return code;
-#   endif
+    code = init_patch_fill_state(&state);
+    if(code < 0)
+	return code;
     if (VD_TRACE_TENSOR_PATCH && vd_allowed('s')) {
 	vd_get_dc('s');
 	vd_set_shift(0, 0);
@@ -752,15 +433,11 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	if (code < 0)
 	    break;
     }
-#   if NEW_SHADINGS
-	term_patch_fill_state(&state);
-#   endif
+    term_patch_fill_state(&state);
     if (VD_TRACE_TENSOR_PATCH && vd_allowed('s'))
 	vd_release_dc;
     return min(code, 0);
 }
-
-#if NEW_SHADINGS
 
 /*
     This algorithm performs a decomposition of the shading area
@@ -3861,5 +3538,3 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
 		interpatch_padding | inpatch_wedge);
     return code;
 }
-
-#endif

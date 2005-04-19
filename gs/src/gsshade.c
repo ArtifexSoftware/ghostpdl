@@ -519,7 +519,7 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 	dev = (gx_device *)&path_dev;
 	dev_proc(dev, open_device)(dev);
     }
-#if 0 /* NEW_SHADINGS - doesn't work for 478-01.ps, which sets a big smoothness :
+#if 0 /* doesn't work for 478-01.ps, which sets a big smoothness :
          makes an assymmetrix domain, and the patch decomposition
 	 becomes highly irregular. */
     {	gs_fixed_rect r;
@@ -531,12 +531,6 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
     dev_proc(dev, get_clipping_box)(dev, &path_box);
 #endif
     if (psh->params.Background && fill_background) {
-#if !NEW_SHADINGS
-	int x0 = fixed2int(path_box.p.x);
-	int y0 = fixed2int(path_box.p.y);
-	int x1 = fixed2int(path_box.q.x);
-	int y1 = fixed2int(path_box.q.y);
-#endif
 	const gs_color_space *pcs = psh->params.ColorSpace;
 	gs_client_color cc;
 	gx_device_color dev_color;
@@ -547,12 +541,7 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 				  dev, gs_color_select_texture);
 
 	/****** WRONG IF NON-IDEMPOTENT RasterOp ******/
-#if NEW_SHADINGS
 	code = gx_shade_background(dev, &path_box, &dev_color, pis->log_op);
-#else
-	code = gx_fill_rectangle_device_rop(x0, y0, x1 - x0, y1 - y0,
-					    &dev_color, dev, pis->log_op);
-#endif
 	if (code < 0)
 	    goto out;
     }
@@ -577,28 +566,6 @@ gs_shading_fill_path_adjusted(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 		     const gs_fixed_rect *prect, gx_device *orig_dev,
 		     gs_imager_state *pis, bool fill_background)
 {   
-#if NEW_SHADINGS
-    int code = gs_shading_fill_path(psh, ppath, prect, orig_dev, pis, fill_background);
-#else
-    gs_point save_adjust;
-    int code;
-
-    gs_currentfilladjust(pis, &save_adjust);
-	/*
-	 * We should set the fill adjustment to zero here, so that we don't
-	 * get multiply-written pixels as a result of filling abutting
-	 * triangles.  However, numerical inaccuracies in the shading
-	 * algorithms can cause pixel dropouts, and a non-zero adjustment
-	 * is by far the easiest way to work around them as a stopgap.
-	 * NOTE: This makes shadings not interact properly with
-	 * non-idempotent RasterOps (not a problem in practice, since
-	 * PostScript doesn't have RasterOps and PCL doesn't have shadings).
-	 */
-	gs_setfilladjust(pis, 0.5, 0.5);
-	/****** DOESN'T HANDLE RASTER OP ******/
-    code = gs_shading_fill_path(psh, ppath, prect, orig_dev, pis, fill_background);
-    gs_setfilladjust(pis, save_adjust.x, save_adjust.y);
-#endif
-    return code;
+    return  gs_shading_fill_path(psh, ppath, prect, orig_dev, pis, fill_background);
 }
 

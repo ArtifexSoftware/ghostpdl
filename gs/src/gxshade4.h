@@ -21,9 +21,7 @@
 #  define gxshade4_INCLUDED
 
 /* Configuration flags for development needs only. Users should not modify them. */
-#define NEW_SHADINGS 1 /* Old code = 0, new code = 1. */
 #define USE_LINEAR_COLOR_PROCS 1 /* Old code = 0, new code = 1. */
-#define NEW_RADIAL_SHADINGS 1 /* Old code = 0, new code = 1. */
 
 #define QUADRANGLES 0 /* 0 = decompose by triangles, 1 = by quadrangles. */
 /* The code QUADRANGLES 1 appears unuseful.
@@ -86,7 +84,6 @@ typedef struct mesh_fill_state_s {
 } mesh_fill_state_t;
 /****** NEED GC DESCRIPTOR ******/
 
-#if NEW_SHADINGS
 typedef struct wedge_vertex_list_elem_s wedge_vertex_list_elem_t;
 struct wedge_vertex_list_elem_s {
     gs_fixed_point p;
@@ -106,7 +103,6 @@ typedef struct {
 typedef struct patch_fill_state_s {
     mesh_fill_state_common;
     const gs_function_t *Function;
-#if NEW_SHADINGS
     bool vectorization;
     int n_color_args;
     fixed max_small_coord; /* Length restriction for intersection_of_small_bars. */
@@ -122,9 +118,7 @@ typedef struct patch_fill_state_s {
     bool linear_color;
     bool unlinear;
     bool inside;
-#endif
 } patch_fill_state_t;
-#endif
 /* Define a color to be used in curve rendering. */
 /* This may be a real client color, or a parametric function argument. */
 typedef struct patch_color_s {
@@ -151,16 +145,6 @@ int mesh_init_fill_state(mesh_fill_state_t * pfs,
 			  const gs_fixed_rect * rect_clip,
 			  gx_device * dev, gs_imager_state * pis);
 
-#if !NEW_SHADINGS
-/* Fill one triangle in a mesh. */
-void mesh_init_fill_triangle(mesh_fill_state_t * pfs,
-			     const mesh_vertex_t *va,
-			     const mesh_vertex_t *vb,
-			     const mesh_vertex_t *vc, bool check_clipping);
-int mesh_fill_triangle(mesh_fill_state_t * pfs);
-#endif
-
-#if NEW_SHADINGS
 int init_patch_fill_state(patch_fill_state_t *pfs);
 void term_patch_fill_state(patch_fill_state_t *pfs);
 
@@ -182,7 +166,5 @@ void patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t *pfs);
 
 int gx_shade_background(gx_device *pdev, const gs_fixed_rect *rect, 
 	const gx_device_color *pdevc, gs_logical_operation_t log_op);
-
-#endif
 
 #endif /* gxshade4_INCLUDED */
