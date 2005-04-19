@@ -545,7 +545,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 /* Test whether a PostScript Calculator function is monotonic. */
 private int
 fn_PtCr_is_monotonic(const gs_function_t * pfn_common,
-		     const float *lower, const float *upper)
+		     const float *lower, const float *upper, uint *mask)
 {
     /*
      * No reasonable way to tell.  Eventually we should check for
@@ -553,6 +553,7 @@ fn_PtCr_is_monotonic(const gs_function_t * pfn_common,
      * since these may be common for DeviceN color spaces and *are*
      * monotonic.
      */
+    *mask = 0x49249249;
     return 0;
 }
 

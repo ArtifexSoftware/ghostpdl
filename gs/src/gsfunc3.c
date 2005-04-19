@@ -124,7 +124,7 @@ fn_ElIn_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 /* Test whether an Exponential function is monotonic.  (They always are.) */
 private int
 fn_ElIn_is_monotonic(const gs_function_t * pfn_common,
-		     const float *lower, const float *upper)
+		     const float *lower, const float *upper, uint *mask)
 {
     const gs_function_ElIn_t *const pfn =
 	(const gs_function_ElIn_t *)pfn_common;
@@ -133,6 +133,7 @@ fn_ElIn_is_monotonic(const gs_function_t * pfn_common,
 	upper[0] < pfn->params.Domain[0]
 	)
 	return_error(gs_error_rangecheck);
+    *mask = 0;
     return 1;
 }
 
@@ -326,7 +327,7 @@ fn_1ItSg_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 /* Test whether a 1-Input Stitching function is monotonic. */
 private int
 fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
-		      const float *lower, const float *upper)
+		      const float *lower, const float *upper, uint *mask)
 {
     const gs_function_1ItSg_t *const pfn =
 	(const gs_function_1ItSg_t *)pfn_common;
@@ -335,6 +336,7 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
     int k = pfn->params.k;
     int i;
 
+    *mask = 0;
     if (v0 > v1) {
 	v0 = v1; v1 = lower[0];
     }
@@ -385,12 +387,13 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
 	}
 	if (w0 > w1)
 	    return gs_function_is_monotonic(pfn->params.Functions[i],
-					    &w1, &w0);
+					    &w1, &w0, mask);
 	else
 	    return gs_function_is_monotonic(pfn->params.Functions[i],
-					    &w0, &w1);
+					    &w0, &w1, mask);
     }
     /* v0 is equal to the range end. */
+    *mask = 1;
     return 1; 
 }
 
@@ -601,7 +604,7 @@ fn_AdOt_evaluate(const gs_function_t *pfn_common, const float *in0, float *out)
 /* Test whether an Arrayed Output function is monotonic. */
 private int
 fn_AdOt_is_monotonic(const gs_function_t * pfn_common,
-		     const float *lower, const float *upper)
+		     const float *lower, const float *upper, uint *mask)
 {
     const gs_function_AdOt_t *const pfn =
 	(const gs_function_AdOt_t *)pfn_common;
@@ -609,7 +612,7 @@ fn_AdOt_is_monotonic(const gs_function_t * pfn_common,
 
     for (i = 0; i < pfn->params.n; ++i) {
 	int code =
-	    gs_function_is_monotonic(pfn->params.Functions[i], lower, upper);
+	    gs_function_is_monotonic(pfn->params.Functions[i], lower, upper, mask);
 
 	if (code <= 0)
 	    return code;

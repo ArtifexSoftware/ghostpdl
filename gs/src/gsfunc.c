@@ -91,6 +91,7 @@ fn_domain_is_monotonic(const gs_function_t *pfn)
 #define MAX_M 16		/* arbitrary */
     float lower[MAX_M], upper[MAX_M];
     int i;
+    uint mask;
 
     if (pfn->params.m > MAX_M)
 	return gs_error_undefined;
@@ -98,7 +99,7 @@ fn_domain_is_monotonic(const gs_function_t *pfn)
 	lower[i] = pfn->params.Domain[2 * i];
 	upper[i] = pfn->params.Domain[2 * i + 1];
     }
-    return gs_function_is_monotonic(pfn, lower, upper);
+    return gs_function_is_monotonic(pfn, lower, upper, &mask);
 }
 
 /* Return default function information. */

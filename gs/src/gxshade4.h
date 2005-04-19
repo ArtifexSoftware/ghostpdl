@@ -119,6 +119,7 @@ typedef struct patch_fill_state_s {
     double smoothness;
     bool maybe_self_intersecting;
     bool monotonic_color;
+    bool linear_color;
     bool unlinear;
     bool inside;
 #endif

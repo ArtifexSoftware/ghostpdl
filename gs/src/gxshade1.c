@@ -881,10 +881,11 @@ R_fill_region(R_fill_state_t * pfs)
     for (;;) {
 	double t0 = fp->t0, t1 = fp->t1;
 	float ft0, ft1;
+	uint mask;
 
 	if ((!(pfn->head.is_monotonic > 0 ||
 	       (ft0 = (float)t0, ft1 = (float)t1,
-		gs_function_is_monotonic(pfn, &ft0, &ft1) > 0)) ||
+		gs_function_is_monotonic(pfn, &ft0, &ft1, &mask) > 0)) ||
 	     !shade_colors2_converge(fp->cc,
 				     (const shading_fill_state_t *)pfs)) &&
 	    /*
