@@ -26,6 +26,7 @@
 #include "gxcspace.h"
 #include "gsiparm4.h"
 #include "gdevpsds.h"
+#include "spngpx.h"
 
 #define CHECK(expr)\
   BEGIN if ((code = (expr)) < 0) return code; END
@@ -406,8 +407,9 @@ pdf_complete_image_data(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h,
 			int width, int bits_per_pixel)
 {
     if (data_h != piw->height) {
-	if (piw->binary[0].strm->procs.process == s_DCTE_template.process) {
-	    /* 	Since DCTE can't safely close with incomplete data,
+	if (piw->binary[0].strm->procs.process == s_DCTE_template.process || 
+	    piw->binary[0].strm->procs.process == s_PNGPE_template.process ) {
+	    /* 	Since DCTE and PNGPE can't safely close with incomplete data,
 		we add stub data to complete the stream.
 	    */
 	    int bytes_per_line = (width * bits_per_pixel + 7) / 8;
