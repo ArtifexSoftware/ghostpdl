@@ -74,11 +74,12 @@ typedef struct gx_device_s gx_device;
  * clipping device if necessary.
  */
 #define SHADING_FILL_RECTANGLE_PROC(proc)\
-  int proc(const gs_shading_t *psh, const gs_rect *prect, gx_device *dev,\
+  int proc(const gs_shading_t *psh, const gs_rect *prect,\
+	   const gs_fixed_rect *prect_clip, gx_device *dev,\
 	   gs_imager_state *pis)
 typedef SHADING_FILL_RECTANGLE_PROC((*shading_fill_rectangle_proc_t));
-#define gs_shading_fill_rectangle(psh, prect, dev, pis)\
-  ((psh)->head.procs.fill_rectangle(psh, prect, dev, pis))
+#define gs_shading_fill_rectangle(psh, prect, prect_clip, dev, pis)\
+  ((psh)->head.procs.fill_rectangle(psh, prect, prect_clip, dev, pis))
 
 /* Define the generic shading structures. */
 typedef struct gs_shading_procs_s {

@@ -55,7 +55,7 @@
    dramatically reduces, causing a significant speedup.
    The LAZY_WEDGES 0 mode was not systematically tested.
  */
-#define VD_TRACE_DOWN 0 /* Developer's needs, not important for production. */
+#define VD_TRACE_DOWN 1 /* Developer's needs, not important for production. */
 #define NOFILL_TEST 0 /* Developer's needs, must be off for production. */
 #define SKIP_TEST 0 /* Developer's needs, must be off for production. */
 /* End of configuration flags (we don't mean that users should modify the rest). */
@@ -148,7 +148,7 @@ typedef struct patch_curve_s {
 /* Initialize the fill state for triangle shading. */
 int mesh_init_fill_state(mesh_fill_state_t * pfs,
 			  const gs_shading_mesh_t * psh,
-			  const gs_rect * rect,
+			  const gs_fixed_rect * rect_clip,
 			  gx_device * dev, gs_imager_state * pis);
 
 #if !NEW_SHADINGS

@@ -565,7 +565,7 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 	path_rect.q.y = fixed2float(path_box.q.y);
 	gs_bbox_transform_inverse(&path_rect, (const gs_matrix *)pmat, &rect);
     }
-    code = gs_shading_fill_rectangle(psh, &rect, dev, pis);
+    code = gs_shading_fill_rectangle(psh, &rect, &path_box, dev, pis);
 out:
     if (path_clip)
 	gx_cpath_free(path_clip, "shading_fill_path(path_clip)");

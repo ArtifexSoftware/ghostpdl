@@ -611,6 +611,7 @@ Cp_transform(gs_fixed_point * pt, const patch_curve_t curve[4],
 
 int
 gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
+			     const gs_fixed_rect * rect_clip,
 			     gx_device * dev, gs_imager_state * pis)
 {
     const gs_shading_Cp_t * const psh = (const gs_shading_Cp_t *)psh0;
@@ -620,7 +621,7 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     int code;
 
     code = mesh_init_fill_state((mesh_fill_state_t *) &state,
-			 (const gs_shading_mesh_t *)psh0, rect, dev, pis);
+			 (const gs_shading_mesh_t *)psh0, rect_clip, dev, pis);
     if (code < 0)
 	return code;
     state.Function = psh->params.Function;
@@ -706,6 +707,7 @@ Tpp_transform(gs_fixed_point * pt, const patch_curve_t curve[4],
 
 int
 gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
+			     const gs_fixed_rect * rect_clip,
 			      gx_device * dev, gs_imager_state * pis)
 {
     const gs_shading_Tpp_t * const psh = (const gs_shading_Tpp_t *)psh0;
@@ -716,7 +718,7 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     int code;
 
     code = mesh_init_fill_state((mesh_fill_state_t *) & state,
-			 (const gs_shading_mesh_t *)psh0, rect, dev, pis);
+			 (const gs_shading_mesh_t *)psh0, rect_clip, dev, pis);
     if (code < 0)
 	return code;
     state.Function = psh->params.Function;

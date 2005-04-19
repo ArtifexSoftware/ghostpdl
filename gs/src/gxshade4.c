@@ -47,13 +47,14 @@ patch_set_color_values(const mesh_fill_state_t * pfs, float *cc, const patch_col
 /* Initialize the fill state for triangle shading. */
 int
 mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
-		     const gs_rect * rect, gx_device * dev,
+		     const gs_fixed_rect * rect_clip, gx_device * dev,
 		     gs_imager_state * pis)
 {
     shade_init_fill_state((shading_fill_state_t *) pfs,
 			  (const gs_shading_t *)psh, dev, pis);
     pfs->pshm = psh;
-    return gx_dc_pattern2_shade_bbox_transform2fixed(rect, pis, &pfs->rect);
+    pfs->rect = *rect_clip;
+    return 0;
 }
 
 /* Initialize the recursion state for filling one triangle. */
@@ -393,6 +394,7 @@ Gt_fill_triangle(mesh_fill_state_t * pfs, const shading_vertex_t * va,
 
 int
 gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
+			       const gs_fixed_rect * rect_clip,
 			       gx_device * dev, gs_imager_state * pis)
 {
     const gs_shading_FfGt_t * const psh = (const gs_shading_FfGt_t *)psh0;
@@ -409,7 +411,7 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	vd_set_scale(0.01);
 	vd_set_origin(0, 0);
     }
-    code = mesh_init_fill_state(&state, (const gs_shading_mesh_t *)psh, rect,
+    code = mesh_init_fill_state(&state, (const gs_shading_mesh_t *)psh, rect_clip,
 			 dev, pis);
     if (code < 0)
 	return code;
@@ -446,6 +448,7 @@ v2:		if ((code = Gt_next_vertex(state.pshm, &cs, &vc)) < 0)
 
 int
 gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
+			       const gs_fixed_rect * rect_clip,
 			       gx_device * dev, gs_imager_state * pis)
 {
     const gs_shading_LfGt_t * const psh = (const gs_shading_LfGt_t *)psh0;
@@ -462,7 +465,7 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	vd_set_scale(0.01);
 	vd_set_origin(0, 0);
     }
-    code = mesh_init_fill_state(&state, (const gs_shading_mesh_t *)psh, rect,
+    code = mesh_init_fill_state(&state, (const gs_shading_mesh_t *)psh, rect_clip,
 			 dev, pis);
     if (code < 0)
 	return code;

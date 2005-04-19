@@ -373,7 +373,7 @@ make_other_poles(patch_curve_t curve[4])
 }
 
 private int
-Fb_fill_region(Fb_fill_state_t * pfs, const gs_rect *rect)
+Fb_fill_region(Fb_fill_state_t * pfs, const gs_fixed_rect *rect)
 {
     patch_fill_state_t pfs1;
     patch_curve_t curve[4];
@@ -393,9 +393,7 @@ Fb_fill_region(Fb_fill_state_t * pfs, const gs_rect *rect)
 	return code;
     pfs1.maybe_self_intersecting = false;
     pfs1.n_color_args = 2;
-    code = gx_dc_pattern2_shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
-    if (code < 0)
-	return code;
+    pfs1.rect = *rect;
     gs_point_transform2fixed(&pfs->ptm, fp->region.p.x, fp->region.p.y, &curve[0].vertex.p);
     gs_point_transform2fixed(&pfs->ptm, fp->region.q.x, fp->region.p.y, &curve[1].vertex.p);
     gs_point_transform2fixed(&pfs->ptm, fp->region.q.x, fp->region.q.y, &curve[2].vertex.p);
@@ -414,7 +412,8 @@ Fb_fill_region(Fb_fill_state_t * pfs, const gs_rect *rect)
 #endif
 
 int
-gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
+gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect, 
+			     const gs_fixed_rect * rect_clip,
 			     gx_device * dev, gs_imager_state * pis)
 {
     const gs_shading_Fb_t * const psh = (const gs_shading_Fb_t *)psh0;
@@ -453,7 +452,7 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     state.frames[0].region.p.y = y[0];
     state.frames[0].region.q.x = x[1];
     state.frames[0].region.q.y = y[1];
-    return Fb_fill_region(&state, rect);
+    return Fb_fill_region(&state, rect_clip);
 }
 
 /* ---------------- Axial shading ---------------- */
@@ -621,7 +620,7 @@ A_fill_region(A_fill_state_t * pfs, const gs_rect *rect)
 }
 #else
 private int
-A_fill_region(A_fill_state_t * pfs, const gs_rect *rect)
+A_fill_region(A_fill_state_t * pfs, const gs_fixed_rect *rect_clip)
 {
     const gs_shading_A_t * const psh = pfs->psh;
     gs_function_t * const pfn = psh->params.Function;
@@ -639,9 +638,7 @@ A_fill_region(A_fill_state_t * pfs, const gs_rect *rect)
     code = init_patch_fill_state(&pfs1);
     if (code < 0)
 	return code;
-    code = gx_dc_pattern2_shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
-    if (code < 0)
-	return code;
+    pfs1.rect = *rect_clip;
     pfs1.maybe_self_intersecting = false;
     gs_point_transform2fixed(&pfs->pis->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
     gs_point_transform2fixed(&pfs->pis->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
@@ -660,6 +657,7 @@ A_fill_region(A_fill_state_t * pfs, const gs_rect *rect)
 
 private inline int
 gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
+			    const gs_fixed_rect *clip_rect,
 			    gx_device * dev, gs_imager_state * pis)
 {
     const gs_shading_A_t *const psh = (const gs_shading_A_t *)psh0;
@@ -726,7 +724,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     state.length = hypot(dist.x, dist.y);	/* device space line length */
     state.dd = dd;
     state.depth = 1;
-    code = A_fill_region(&state, rect);
+    code = A_fill_region(&state, clip_rect);
 #   if NEW_SHADINGS
     if (psh->params.Extend[0] && t0 > t_rect.p.y) {
 	if (code < 0)
@@ -735,7 +733,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	state.v0 = t_rect.p.y;
 	state.v1 = t0;
 	state.t0 = state.t1 = t0 * dd + d0;
-	code = A_fill_region(&state, rect);
+	code = A_fill_region(&state, clip_rect);
     }
     if (psh->params.Extend[1] && t1 < t_rect.q.y) {
 	if (code < 0)
@@ -744,7 +742,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	state.v0 = t1;
 	state.v1 = t_rect.q.y;
 	state.t0 = state.t1 = t1 * dd + d0;
-	code = A_fill_region(&state, rect);
+	code = A_fill_region(&state, clip_rect);
     }
 #   else
     if (psh->params.Extend[0] && t0 > t_rect.p.y) {
@@ -763,6 +761,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 
 int
 gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
+			    const gs_fixed_rect * rect_clip,
 			    gx_device * dev, gs_imager_state * pis)
 {
     int code;
@@ -773,7 +772,7 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	vd_set_scale(0.01);
 	vd_set_origin(0, 0);
     }
-    code = gs_shading_A_fill_rectangle_aux(psh0, rect, dev, pis);
+    code = gs_shading_A_fill_rectangle_aux(psh0, rect, rect_clip, dev, pis);
     if (VD_TRACE_AXIAL_PATCH && vd_allowed('s'))
 	vd_release_dc;
     return code;
@@ -1390,6 +1389,7 @@ R_compute_extension_bar(floatp x0, floatp y0, floatp x1,
 
 private int
 gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
+			    const gs_fixed_rect *clip_rect,
 			    gx_device * dev, gs_imager_state * pis)
 {
     const gs_shading_R_t *const psh = (const gs_shading_R_t *)psh0;
@@ -1445,9 +1445,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	code = init_patch_fill_state(&pfs1);
 	if (code < 0)
 	    return code;
-	code = gx_dc_pattern2_shade_bbox_transform2fixed(rect, pis, &pfs1.rect);
-	if (code < 0)
-	    return code;
+	pfs1.rect = *clip_rect;
 	pfs1.maybe_self_intersecting = false;
 
 	code = R_extensions(&pfs1, psh, rect, t[0], t[1], psh->params.Extend[0], false);
@@ -1606,6 +1604,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 
 int
 gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
+			    const gs_fixed_rect * rect_clip,
 			    gx_device * dev, gs_imager_state * pis)
 {   
     int code;
@@ -1616,7 +1615,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	vd_set_scale(0.01);
 	vd_set_origin(0, 0);
     }
-    code = gs_shading_R_fill_rectangle_aux(psh0, rect, dev, pis);
+    code = gs_shading_R_fill_rectangle_aux(psh0, rect, rect_clip, dev, pis);
     if (VD_TRACE_FUNCTIONAL_PATCH && vd_allowed('s'))
 	vd_release_dc;
     return code;
