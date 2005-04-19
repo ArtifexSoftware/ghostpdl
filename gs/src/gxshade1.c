@@ -41,25 +41,6 @@
 #define VD_TRACE_FUNCTIONAL_PATCH 1
 
 
-/* ================ Utilities ================ */
-
-/* Check whether 2 colors fall within the smoothness criterion. */
-private bool
-shade_colors2_converge(const gs_client_color cc[2],
-		       const shading_fill_state_t * pfs)
-{
-    int ci;
-
-    for (ci = pfs->num_components - 1; ci >= 0; --ci)
-	if (fabs(cc[1].paint.values[ci] - cc[0].paint.values[ci]) >
-	    pfs->cc_max_error[ci]
-	    )
-	    return false;
-    return true;
-}
-
-/* ================ Specific shadings ================ */
-
 /* ---------------- Function-based shading ---------------- */
 
 typedef struct Fb_frame_s {	/* A rudiment of old code. */
@@ -231,7 +212,6 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     gs_matrix cmat;
     gs_rect t_rect;
     A_fill_state_t state;
-    gs_client_color rcc[2];
     float d0 = psh->params.Domain[0], d1 = psh->params.Domain[1];
     float dd = d1 - d0;
     double t0, t1;
@@ -323,70 +303,6 @@ typedef struct R_fill_state_s {
     R_frame_t frame;
 } R_fill_state_t;
 /****** NEED GC DESCRIPTOR ******/
-
-/* Note t0 and t1 vary over [0..1], not the Domain. */
-
-private int
-R_fill_annulus(const R_fill_state_t * pfs, gs_client_color *pcc,
-	       floatp t0, floatp t1, floatp r0, floatp r1, const gs_fixed_point *fill_adjust)
-{
-    const gs_shading_R_t * const psh = pfs->psh;
-    gx_device_color dev_color;
-    const gs_color_space *pcs = psh->params.ColorSpace;
-    gs_imager_state *pis = pfs->pis;
-    double
-	x0 = psh->params.Coords[0] + pfs->delta.x * t0,
-	y0 = psh->params.Coords[1] + pfs->delta.y * t0;
-    double
-	x1 = psh->params.Coords[0] + pfs->delta.x * t1,
-	y1 = psh->params.Coords[1] + pfs->delta.y * t1;
-    gx_path *ppath = gx_path_alloc(pis->memory, "R_fill");
-    int code;
-
-    (*pcs->type->restrict_color)(pcc, pcs);
-    (*pcs->type->remap_color)(pcc, pcs, &dev_color, pis,
-			      pfs->dev, gs_color_select_texture);
-    if ((code = gs_imager_arc_add(ppath, pis, false, x0, y0, r0,
-				  0.0, 360.0, false)) >= 0 &&
-	(code = gs_imager_arc_add(ppath, pis, true, x1, y1, r1,
-				  360.0, 0.0, false)) >= 0
-	) {
-	code = shade_fill_path((const shading_fill_state_t *)pfs,
-			       ppath, &dev_color, fill_adjust);
-    }
-    gx_path_free(ppath, "R_fill");
-    return code;
-}
-
-private int
-R_fill_triangle(const R_fill_state_t * pfs, gs_client_color *pcc,
-	       floatp x0, floatp y0, floatp x1, floatp y1, floatp x2, floatp y2)
-{
-    const gs_shading_R_t * const psh = pfs->psh;
-    gx_device_color dev_color;
-    const gs_color_space *pcs = psh->params.ColorSpace;
-    gs_imager_state *pis = pfs->pis;
-    gs_fixed_point pts[3];
-    int code;
-    gx_path *ppath = gx_path_alloc(pis->memory, "R_fill");
-
-    (*pcs->type->restrict_color)(pcc, pcs);
-    (*pcs->type->remap_color)(pcc, pcs, &dev_color, pis,
-			      pfs->dev, gs_color_select_texture);
-
-    gs_point_transform2fixed(&pfs->pis->ctm, x0, y0, &pts[0]);
-    gs_point_transform2fixed(&pfs->pis->ctm, x1, y1, &pts[1]);
-    gs_point_transform2fixed(&pfs->pis->ctm, x2, y2, &pts[2]);
-
-    gx_path_add_point(ppath, pts[0].x, pts[0].y);
-    gx_path_add_lines(ppath, pts+1, 2);
-
-    code = shade_fill_path((const shading_fill_state_t *)pfs,
-			   ppath, &dev_color, &pfs->pis->fill_adjust);
-
-    gx_path_free(ppath, "R_fill");
-    return code;
-}
 
 private int 
 R_tensor_annulus(patch_fill_state_t *pfs, const gs_rect *rect,
@@ -749,111 +665,6 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
     return 0;
 }
 
-
-private double
-R_compute_radius(floatp x, floatp y, const gs_rect *rect)
-{
-    double x0 = rect->p.x - x, y0 = rect->p.y - y,
-	x1 = rect->q.x - x, y1 = rect->q.y - y;
-    double r00 = hypot(x0, y0), r01 = hypot(x0, y1),
-	r10 = hypot(x1, y0), r11 = hypot(x1, y1);
-    double rm0 = max(r00, r01), rm1 = max(r10, r11);
-
-    return max(rm0, rm1);
-}
-
-/*
- * For differnt radii, compute the coords for /Extend option.
- * r0 MUST be greater than r1.
- *
- * The extension is an area which is bounded by the two exterior common
- * tangent of the given circles except the area between the circles.
- *
- * Therefore we can make the extension with the contact points between
- * the tangent lines and circles, and the intersection point of
- * the lines (Note that r0 is greater than r1, therefore the exterior common 
- * tangent for the two circles always intersect at one point.
- * (The case when both radii are same is handled by 'R_compute_extension_bar')
- * 
- * A brief algorithm is following.
- *
- * Let C0, C1 be the given circle with r0, r1 as radii.
- * There exist two contact points for each circles and
- * say them p0, p1 for C0 and q0, q1 for C1.
- *
- * First we compute the intersection point of both tangent lines (isecx, isecy).
- * Then we get the angle between a tangent line and the line which penentrates
- * the centers of circles.
- *
- * Then we can compute 4 contact points between two tangent lines and two circles,
- * and 2 points outside the cliping area on the tangent lines.
- */
-
-private void
-R_compute_extension_cone(floatp x0, floatp y0, floatp r0, 
-			 floatp x1, floatp y1, floatp r1, 
-			 floatp max_ext, floatp coord[7][2])
-{
-    floatp isecx, isecy;
-	floatp dist_c0_isec;
-    floatp dist_c1_isec;
-	floatp dist_p0_isec;
-    floatp dist_q0_isec;
-    floatp cost, sint;
-    floatp dx0, dy0, dx1, dy1;
-
-    isecx = (x1-x0)*r0 / (r0-r1) + x0;
-    isecy = (y1-y0)*r0 / (r0-r1) + y0;
-
-	dist_c0_isec = hypot(x0-isecx, y0-isecy);
-    dist_c1_isec = hypot(x1-isecx, y1-isecy);
-	dist_p0_isec = sqrt(dist_c0_isec*dist_c0_isec - r0*r0);
-	dist_q0_isec = sqrt(dist_c1_isec*dist_c1_isec - r1*r1);    
-    cost = dist_p0_isec / dist_c0_isec;
-    sint = r0 / dist_c0_isec;
-
-    dx0 = ((x0-isecx)*cost - (y0-isecy)*sint) / dist_c0_isec;
-    dy0 = ((x0-isecx)*sint + (y0-isecy)*cost) / dist_c0_isec;
-    sint = -sint;
-    dx1 = ((x0-isecx)*cost - (y0-isecy)*sint) / dist_c0_isec;
-    dy1 = ((x0-isecx)*sint + (y0-isecy)*cost) / dist_c0_isec;
-
-	coord[0][0] = isecx;
-	coord[0][1] = isecy;
-    coord[1][0] = isecx + dx0 * dist_q0_isec;
-    coord[1][1] = isecy + dy0 * dist_q0_isec;
-    coord[2][0] = isecx + dx1 * dist_q0_isec;
-    coord[2][1] = isecy + dy1 * dist_q0_isec;
-
-    coord[3][0] = isecx + dx0 * dist_p0_isec;
-    coord[3][1] = isecy + dy0 * dist_p0_isec;
-    coord[4][0] = isecx + dx0 * max_ext;
-    coord[4][1] = isecy + dy0 * max_ext;
-    coord[5][0] = isecx + dx1 * dist_p0_isec;
-    coord[5][1] = isecy + dy1 * dist_p0_isec;
-    coord[6][0] = isecx + dx1 * max_ext;
-    coord[6][1] = isecy + dy1 * max_ext;
-}
-
-/* for same radii, compute the coords for one side extension */
-private void
-R_compute_extension_bar(floatp x0, floatp y0, floatp x1, 
-			floatp y1, floatp radius, 
-			floatp max_ext, floatp coord[4][2])
-{
-    floatp dis;
-
-    dis = hypot(x1-x0, y1-y0);
-    coord[0][0] = x0 + (y0-y1) / dis * radius;
-    coord[0][1] = y0 - (x0-x1) / dis * radius;
-    coord[1][0] = coord[0][0] + (x0-x1) / dis * max_ext;
-    coord[1][1] = coord[0][1] + (y0-y1) / dis * max_ext;
-    coord[2][0] = x0 - (y0-y1) / dis * radius;
-    coord[2][1] = y0 + (x0-x1) / dis * radius;
-    coord[3][0] = coord[2][0] + (x0-x1) / dis * max_ext;
-    coord[3][1] = coord[2][1] + (y0-y1) / dis * max_ext;
-}
-
 private int
 gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 			    const gs_fixed_rect *clip_rect,
@@ -861,15 +672,12 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 {
     const gs_shading_R_t *const psh = (const gs_shading_R_t *)psh0;
     R_fill_state_t state;
-    gs_client_color rcc[2];
     float d0 = psh->params.Domain[0], d1 = psh->params.Domain[1];
     float dd = d1 - d0;
     float x0 = psh->params.Coords[0], y0 = psh->params.Coords[1];
     floatp r0 = psh->params.Coords[2];
     float x1 = psh->params.Coords[3], y1 = psh->params.Coords[4];
     floatp r1 = psh->params.Coords[5];
-    float t[2];
-    int i;
     int code;
     float dist_between_circles;
     gs_point dev_dpt;
@@ -880,12 +688,14 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     state.psh = psh;
     state.rect = *rect;
     /* Compute the parameter range. */
-    t[0] = d0;
-    t[1] = d1;
-    for (i = 0; i < 2; ++i)
-	gs_function_evaluate(psh->params.Function, &t[i],
-			     rcc[i].paint.values);
-    memcpy(state.frame.cc, rcc, sizeof(rcc[0]) * 2);
+    code = gs_function_evaluate(psh->params.Function, &d0,
+			     state.frame.cc[0].paint.values);
+    if (code < 0)
+	return code;
+    code = gs_function_evaluate(psh->params.Function, &d1,
+			     state.frame.cc[1].paint.values);
+    if (code < 0)
+	return code;
     state.delta.x = x1 - x0;
     state.delta.y = y1 - y0;
     state.dr = r1 - r0;
@@ -903,7 +713,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	return code;
     pfs1.rect = *clip_rect;
     pfs1.maybe_self_intersecting = false;
-    code = R_extensions(&pfs1, psh, rect, t[0], t[1], psh->params.Extend[0], false);
+    code = R_extensions(&pfs1, psh, rect, d0, d1, psh->params.Extend[0], false);
     if (code < 0)
 	return code;
     {
@@ -912,11 +722,11 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	float x1 = psh->params.Coords[3], y1 = psh->params.Coords[4];
 	floatp r1 = psh->params.Coords[5];
 	
-	code = R_tensor_annulus(&pfs1, rect, x0, y0, r0, t[0], x1, y1, r1, t[1]);
+	code = R_tensor_annulus(&pfs1, rect, x0, y0, r0, d0, x1, y1, r1, d1);
 	if (code < 0)
 	    return code;
     }
-    return R_extensions(&pfs1, psh, rect, t[0], t[1], false, psh->params.Extend[1]);
+    return R_extensions(&pfs1, psh, rect, d0, d1, false, psh->params.Extend[1]);
 }
 
 int

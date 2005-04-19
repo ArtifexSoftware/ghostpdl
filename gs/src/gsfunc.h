@@ -137,7 +137,6 @@ typedef struct gs_function_procs_s {
 typedef struct gs_function_head_s {
     gs_function_type_t type;
     gs_function_procs_t procs;
-    int is_monotonic;		/* cached when function is created */
 } gs_function_head_t;
 struct gs_function_s {
     gs_function_head_t head;

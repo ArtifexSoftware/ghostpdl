@@ -1404,8 +1404,6 @@ gs_function_Sd_init(gs_function_t ** ppfn,
 	for (i = 0; i < sa; i++)
 	    pfn->params.pole[i] = double_stub;
 	pfn->params.array_size = sa;
-	pfn->head.is_monotonic =
-	    fn_domain_is_monotonic((gs_function_t *)pfn);
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;
