@@ -2881,7 +2881,7 @@ mesh_triangle(patch_fill_state_t *pfs,
 }
 
 private inline int 
-triangles(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argument)
+triangles4(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argument)
 {
     shading_vertex_t p0001, p1011, q;
     wedge_vertex_list_t l[4];
@@ -2917,6 +2917,26 @@ triangles(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argumen
     if (code < 0)
 	return code;
     code = terminate_wedge_vertex_list(pfs, &l[3], &q.c, &p->p[0][0]->c);
+    if (code < 0)
+	return code;
+    return 0;
+}
+
+private inline int 
+triangles2(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argument)
+{
+    wedge_vertex_list_t l;
+    int code;
+
+    init_wedge_vertex_list(&l, 1);
+    code = fill_triangle(pfs, p->p[0][0], p->p[0][1], p->p[1][1], p->l0001, p->l0111, &l);
+    if (code < 0)
+	return code;
+    l.last_side = true;
+    code = fill_triangle(pfs, p->p[1][1], p->p[1][0], p->p[0][0], p->l1110, p->l1000, &l);
+    if (code < 0)
+	return code;
+    code = terminate_wedge_vertex_list(pfs, &l, &p->p[1][1]->c, &p->p[0][0]->c);
     if (code < 0)
 	return code;
     return 0;
@@ -2981,6 +3001,7 @@ typedef enum {
     color_change_small,
     color_change_gradient,
     color_change_linear,
+    color_change_bilinear,
     color_change_general
 } color_change_type_t;
 
@@ -3014,13 +3035,17 @@ quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p
 	}
     }
     color_diff(pfs, &d0001, &d1011, &d);
-    D = color_norm(pfs, &d);
     Du = max(D0001, D1011);
     Dv = max(D0010, D0111);
     if (Du <= pfs->smoothness / 8 && Dv <= pfs->smoothness / 8)
 	return color_change_small;
-    if (D <= pfs->smoothness)
+    if (Du <= pfs->smoothness / 8)
 	return color_change_linear;
+    if (Dv <= pfs->smoothness / 8)
+	return color_change_linear;
+    D = color_norm(pfs, &d);
+    if (D <= pfs->smoothness)
+	return color_change_bilinear;
     if (Du > Dv)
 	*divide_u = true;
     else
@@ -3097,7 +3122,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    is_big_v = true;
 	else if (!is_big_u)
 	    return (QUADRANGLES || !pfs->maybe_self_intersecting ? 
-			constant_color_quadrangle : triangles)(pfs, p, 
+			constant_color_quadrangle : triangles4)(pfs, p, 
 			    pfs->maybe_self_intersecting);
 	if (!pfs->monotonic_color) {
 	    bool not_monotonic_by_u = false, not_monotonic_by_v = false;
@@ -3154,14 +3179,21 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	} else switch(quadrangle_color_change(pfs, p, &divide_u, &divide_v)) {
 	    case color_change_small: 
 		code = (QUADRANGLES || !pfs->maybe_self_intersecting ? 
-			    constant_color_quadrangle : triangles)(pfs, p, 
+			    constant_color_quadrangle : triangles4)(pfs, p, 
 				pfs->maybe_self_intersecting);
 		pfs->monotonic_color = monotonic_color_save;
 		pfs->linear_color = linear_color_save;
 		return code;
+	    case color_change_bilinear:
+		if (!QUADRANGLES) {
+		    code = triangles4(pfs, p, true);
+		    pfs->monotonic_color = monotonic_color_save;
+		    pfs->linear_color = linear_color_save;
+		    return code;
+		}
 	    case color_change_linear:
 		if (!QUADRANGLES) {
-		    code = triangles(pfs, p, true);
+		    code = triangles2(pfs, p, true);
 		    pfs->monotonic_color = monotonic_color_save;
 		    pfs->linear_color = linear_color_save;
 		    return code;
@@ -3256,7 +3288,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	}
     } else 
 	code = (QUADRANGLES || !pfs->maybe_self_intersecting ? 
-		    constant_color_quadrangle : triangles)(pfs, p, 
+		    constant_color_quadrangle : triangles4)(pfs, p, 
 			pfs->maybe_self_intersecting);
     pfs->monotonic_color = monotonic_color_save;
     pfs->linear_color = linear_color_save;
