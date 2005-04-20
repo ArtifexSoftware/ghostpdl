@@ -36,6 +36,8 @@
 #   include <assert.h>
 #endif
 
+#define MAX_FAST_COMPS 8
+
 typedef struct gs_function_Sd_s {
     gs_function_head_t head;
     gs_function_Sd_params_t params;
@@ -556,6 +558,20 @@ index_span(const gs_function_Sd_t *pfn, int *I, double *T, int ii, int *Ii, int 
 	*ib = *Ii; 
 	*ie = *Ii + 1;
     }
+}
+
+private inline int
+load_vector_to(const gs_function_Sd_t *pfn, int s_offset, double *V)
+{
+    uint sdata[max_Sd_n];
+    int k, code;
+
+    code = fn_get_samples[pfn->params.BitsPerSample](pfn, s_offset, sdata);
+    if (code < 0)
+	return code;
+    for (k = 0; k < pfn->params.n; k++)
+	V[k] = fn_Sd_encode(pfn, k, (double)sdata[k]);
+    return 0;
 }
 
 private inline int
@@ -1103,9 +1119,73 @@ is_lattice_monotonic(const gs_function_Sd_t *pfn, const double *T0, const double
     return 0;
 }
 
-/* Test whether a linear Sampled function is monotonic. */
+private int /* 3 bits per result : 3 - non-monotonic or don't know, 		    
+	       2 - decreesing, 0 - constant, 1 - increasing,
+	       <0 - error. */
+fn_Sd_1arg_linear_monotonic_rec(const gs_function_Sd_t *const pfn, int i0, int i1, 
+				const double *V0, const double *V1)
+{
+    if (i1 - i0 <= 1) {
+	int code = 0, i;
+
+	for (i = 0; i < pfn->params.n; i++) {
+	    if (V0[i] < V1[i])
+		code |= 1 << (i * 3);
+	    else if (V0[i] > V1[i])
+		code |= 2 << (i * 3);
+	}
+	return code;
+    } else {
+	double VV[MAX_FAST_COMPS];
+	int ii = (i0 + i1) / 2, code, cod1;
+
+	code = load_vector_to(pfn, ii * pfn->params.n * pfn->params.BitsPerSample, VV);
+	if (code < 0)
+	    return code;
+	if (code & (code >>1))
+	    return code; /* Not monotonic by some component of the result. */
+	code = fn_Sd_1arg_linear_monotonic_rec(pfn, i0, ii, V0, VV);
+	if (code < 0)
+	    return code;
+	cod1 = fn_Sd_1arg_linear_monotonic_rec(pfn, ii, i1, VV, V1);
+	if (cod1 < 0)
+	    return cod1;
+	return code | cod1;	
+    }
+}
+
+private int
+fn_Sd_1arg_linear_monotonic(const gs_function_Sd_t *const pfn, double T0, double T1,
+			    uint *mask /* 1 - non-monotonic or don't know, 0 - monotonic. */)
+{
+    int i0 = (int)floor(T0);
+    int i1 = (int)ceil(T1), code;
+    double V0[MAX_FAST_COMPS], V1[MAX_FAST_COMPS];
+
+    if (i1 - i0 > 1) {
+	code = load_vector_to(pfn, i0 * pfn->params.n * pfn->params.BitsPerSample, V0);
+	if (code < 0)
+	    return code;
+	code = load_vector_to(pfn, i1 * pfn->params.n * pfn->params.BitsPerSample, V1);
+	if (code < 0)
+	    return code;
+	code = fn_Sd_1arg_linear_monotonic_rec(pfn, i0, i1, V0, V1);
+	if (code < 0)
+	    return code;
+	if (code & (code >> 1)) {
+	    *mask = 1;
+	    return 0;
+	}
+    }
+    *mask = 0;
+    return 1;
+}
+
+#define DEBUG_Sd_1arg 0
+
+/* Test whether a Sampled function is monotonic. */
 private int /* 1 = monotonic, 0 = not or don't know, <0 = error. */
-fn_is_monotonic(const gs_function_Sd_t *const pfn,
+fn_Sd_is_monotonic_aux(const gs_function_Sd_t *const pfn,
 		   const float *lower, const float *upper, 
 		   uint *mask /* 1 bit per dimension : 1 - non-monotonic or don't know, 
 		      0 - monotonic. */)
@@ -1114,7 +1194,10 @@ fn_is_monotonic(const gs_function_Sd_t *const pfn,
     int I[4];
     double T0[count_of(I)], T1[count_of(I)];
     double S0[count_of(I)], S1[count_of(I)]; 
-    uint m, mm, m1 = (1 << pfn->params.m )- 1;
+    uint m, mm, m1;
+#   if DEBUG_Sd_1arg
+    int code1, mask1;
+#   endif
 
     if (ii >= count_of(T0)) {
 	 /* Unimplemented. We don't know practical cases,
@@ -1130,6 +1213,16 @@ fn_is_monotonic(const gs_function_Sd_t *const pfn,
 	T0[i] = w0;
 	T1[i] = w1;
     }
+    if (pfn->params.m == 1 && pfn->params.Order == 1 && pfn->params.n <= MAX_FAST_COMPS) {
+	code = fn_Sd_1arg_linear_monotonic(pfn, T0[0], T1[0], mask);
+#	if !DEBUG_Sd_1arg
+	    return code;
+#	else
+	    mask1 = *mask;
+	    code1 = code;
+#	endif
+    }
+    m1 = (1 << pfn->params.m )- 1;
     code = make_interpolation_nodes(pfn, T0, T1, I, S0, 0, 0, ii);
     if (code < 0)
 	return code;
@@ -1142,6 +1235,12 @@ fn_is_monotonic(const gs_function_Sd_t *const pfn,
 	if (mm == m1) /* Don't return early - shadings need to know about all dimensions. */
 	    break; 
     }
+#   if DEBUG_Sd_1arg
+	if (mask1 != mm)
+	    return_error(gs_error_unregistered);
+	if (code1 != !mm)
+	    return_error(gs_error_unregistered);
+#   endif
     *mask = mm;
     return !mm;
 }
@@ -1155,7 +1254,7 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
     const gs_function_Sd_t *const pfn =
 	(const gs_function_Sd_t *)pfn_common;
 
-    return fn_is_monotonic(pfn, lower, upper, mask);
+    return fn_Sd_is_monotonic_aux(pfn, lower, upper, mask);
 }
 
 /* Return Sampled function information. */
@@ -1381,29 +1480,34 @@ gs_function_Sd_init(gs_function_t ** ppfn,
 	pfn->params.array_step = NULL;
 	pfn->params.stream_step = NULL;
 	pfn->head = function_Sd_head;
-	pfn->params.array_step = (int *)gs_alloc_byte_array(mem, 
-				max_Sd_m, sizeof(int), "gs_function_Sd_init");
-	pfn->params.stream_step = (int *)gs_alloc_byte_array(mem, 
-				max_Sd_m, sizeof(int), "gs_function_Sd_init");
-	if (pfn->params.array_step == NULL || pfn->params.stream_step == NULL)
-	    return_error(gs_error_VMerror);
-	bps = pfn->params.BitsPerSample;
-	sa = pfn->params.n;
-	ss = pfn->params.n * bps;
-	order = pfn->params.Order;
-	for (i = 0; i < pfn->params.m; i++) {
-	    pfn->params.array_step[i] = sa * order;
-	    sa = (pfn->params.Size[i] * order - (order - 1)) * sa;
-	    pfn->params.stream_step[i] = ss;
-	    ss = pfn->params.Size[i] * ss;
+	pfn->params.array_size = 0;
+	if (pfn->params.m == 1 && pfn->params.Order == 1 && pfn->params.n <= MAX_FAST_COMPS && !DEBUG_Sd_1arg) {
+	    /* Won't use pole cache. Call fn_Sd_1arg_linear_monotonic instead. */
+	} else {
+	    pfn->params.array_step = (int *)gs_alloc_byte_array(mem, 
+				    max_Sd_m, sizeof(int), "gs_function_Sd_init");
+	    pfn->params.stream_step = (int *)gs_alloc_byte_array(mem, 
+				    max_Sd_m, sizeof(int), "gs_function_Sd_init");
+	    if (pfn->params.array_step == NULL || pfn->params.stream_step == NULL)
+		return_error(gs_error_VMerror);
+	    bps = pfn->params.BitsPerSample;
+	    sa = pfn->params.n;
+	    ss = pfn->params.n * bps;
+	    order = pfn->params.Order;
+	    for (i = 0; i < pfn->params.m; i++) {
+		pfn->params.array_step[i] = sa * order;
+		sa = (pfn->params.Size[i] * order - (order - 1)) * sa;
+		pfn->params.stream_step[i] = ss;
+		ss = pfn->params.Size[i] * ss;
+	    }
+	    pfn->params.pole = (double *)gs_alloc_byte_array(mem, 
+				    sa, sizeof(double), "gs_function_Sd_init");
+	    if (pfn->params.pole == NULL)
+		return_error(gs_error_VMerror);
+	    for (i = 0; i < sa; i++)
+		pfn->params.pole[i] = double_stub;
+	    pfn->params.array_size = sa;
 	}
-	pfn->params.pole = (double *)gs_alloc_byte_array(mem, 
-				sa, sizeof(double), "gs_function_Sd_init");
-	if (pfn->params.pole == NULL)
-	    return_error(gs_error_VMerror);
-	for (i = 0; i < sa; i++)
-	    pfn->params.pole[i] = double_stub;
-	pfn->params.array_size = sa;
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;
