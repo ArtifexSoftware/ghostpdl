@@ -888,7 +888,18 @@ end
       pdfformaterror
       [ exch { 0.5 add cvi } forall ]  % following AR4, 5, 6 implementation
     } if
-    /MaskColor exch def
+	% Check elements of array are within 0::(2**BitsPerComponent)-1
+	% This is a PostScript error, but AR ignores Mask in that case
+    2 BitsPerComponent exp cvi 1 sub //false 2 index {
+      % stack: max_value result_bool value
+      dup 0 lt exch 3 index gt or or
+    } forall exch pop {
+      (\n   **** Warning: Some elements of Mask array are out of range.\n)
+      pdfformaterror
+      pop /ImageType 1 def		% revert to non-masked image
+    } {
+      /MaskColor exch def
+    } ifelse
   } {
 		% Mask is a stream, another Image XObject.
 		% Stack: datasource imagemask(false) maskstreamdict
