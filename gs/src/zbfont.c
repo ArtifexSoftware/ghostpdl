@@ -534,7 +534,11 @@ sub_font_params(const gs_memory_t *mem, const ref *op, gs_matrix *pmat, gs_matri
 	    )
 	    memset(pomat, 0, sizeof(*pomat));
     }
-    if (dict_find_string((porigfont != NULL ? porigfont : op), ".Alias", &pfontname) > 0) {
+    /* Use the FontInfo/OrigFontName key preferrentially (created by MS PSCRIPT driver) */
+    if ((dict_find_string((porigfont != NULL ? porigfont : op), "FontInfo", &pfontname) > 0) &&
+        (dict_find_string(pfontname, "OrigFontName", &pfontname) > 0)) {
+	get_font_name(mem, pfname, pfontname);
+    } else if (dict_find_string((porigfont != NULL ? porigfont : op), ".Alias", &pfontname) > 0) {
         /* If we emulate the font, we want the requested name rather than a substitute. */
 	get_font_name(mem, pfname, pfontname);
     } else if (dict_find_string((porigfont != NULL ? porigfont : op), "FontName", &pfontname) > 0) {
