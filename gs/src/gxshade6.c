@@ -2683,7 +2683,8 @@ typedef enum {
 } color_change_type_t;
 
 private inline color_change_type_t
-quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p, bool *divide_u, bool *divide_v)
+quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p, 
+			bool is_big_u, bool is_big_v, bool *divide_u, bool *divide_v)
 {
     patch_color_t d0001, d1011, d;
     double D, D0001, D1011, D0010, D0111, D0011, D0110;
@@ -2703,10 +2704,18 @@ quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p
 	    D0011 <= pfs->smoothness && D0110 <= pfs->smoothness)
 	    return color_change_small;
 	if (D0001 <= pfs->smoothness && D1011 <= pfs->smoothness) {
+	    if (!is_big_v) {
+		/* The color function looks uncontiguous. */
+		return color_change_small;
+	    }
 	    *divide_v = true;
 	    return color_change_gradient;
 	}
 	if (D0010 <= pfs->smoothness && D0111 <= pfs->smoothness) {
+	    if (!is_big_u) {
+		/* The color function looks uncontiguous. */
+		return color_change_small;
+	    }
 	    *divide_u = true;
 	    return color_change_gradient;
 	}
@@ -2723,15 +2732,30 @@ quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p
     D = color_norm(pfs, &d);
     if (D <= pfs->smoothness)
 	return color_change_bilinear;
+#if 0 /* Disabled due to a 0.5% slowdown with the test file of the Bug 687948. */
+    if (Du > Dv && is_big_u)
+	*divide_u = true;
+    else if (Du < Dv && is_big_v)
+	*divide_v = true;
+    else if (is_big_u)
+	*divide_u = true;
+    else if (is_big_v)
+	*divide_v = true;
+    else {
+	/* The color function looks uncontiguous. */
+	return color_change_small;
+    }
+#else
     if (Du > Dv)
 	*divide_u = true;
     else
 	*divide_v = true;
+#endif
     return color_change_general;
 }
 
 private int 
-fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
+fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big, int level)
 {
     /* The quadrangle is flattened enough by V and U, so ignore inner poles. */
     /* Assuming the XY span is restricted with curve_samples. 
@@ -2747,6 +2771,8 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
     gs_fixed_rect r, r1;
     /* Warning : pfs->monotonic_color is not restored on error. */
 
+    if (level > 100)
+	return_error(gs_error_unregistered); /* Safety. */
     if (!pfs->inside) {
 	bbox_of_points(&r, &p->p[0][0]->p, &p->p[0][1]->p, &p->p[1][0]->p, &p->p[1][1]->p);
 	r1 = r;
@@ -2853,7 +2879,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	}
 	if (!pfs->linear_color) {
 	    /* go to divide. */
-	} else switch(quadrangle_color_change(pfs, p, &divide_u, &divide_v)) {
+	} else switch(quadrangle_color_change(pfs, p, is_big_u, is_big_v, &divide_u, &divide_v)) {
 	    case color_change_small: 
 		code = (QUADRANGLES || !pfs->maybe_self_intersecting ? 
 			    constant_color_quadrangle : triangles4)(pfs, p, 
@@ -2905,7 +2931,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    if (code < 0)
 		return code;
 	}
-	code = fill_quadrangle(pfs, &s0, big);
+	code = fill_quadrangle(pfs, &s0, big, level + 1);
 	if (code < 0)
 	    return code;
 	if (LAZY_WEDGES) {
@@ -2913,7 +2939,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    move_wedge(&l1, p->l0111, true);
 	    move_wedge(&l2, p->l1000, false);
 	}
-	code = fill_quadrangle(pfs, &s1, big1);
+	code = fill_quadrangle(pfs, &s1, big1, level + 1);
 	if (LAZY_WEDGES) {
 	    if (code < 0)
 		return code;
@@ -2943,7 +2969,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    if (code < 0)
 		return code;
 	}
-	code = fill_quadrangle(pfs, &s0, big1);
+	code = fill_quadrangle(pfs, &s0, big1, level + 1);
 	if (code < 0)
 	    return code;
 	if (LAZY_WEDGES) {
@@ -2951,7 +2977,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    move_wedge(&l1, p->l0001, true);
 	    move_wedge(&l2, p->l1110, false);
 	}
-	code = fill_quadrangle(pfs, &s1, big1);
+	code = fill_quadrangle(pfs, &s1, big1, level + 1);
 	if (LAZY_WEDGES) {
 	    if (code < 0)
 		return code;
@@ -3036,7 +3062,7 @@ decompose_stripe(patch_fill_state_t *pfs, const tensor_patch *p, int ku)
 #	if SKIP_TEST
 	    dbg_quad_cnt++;
 #	endif
-	code = fill_quadrangle(pfs, &q, true);
+	code = fill_quadrangle(pfs, &q, true, 0);
 	if (LAZY_WEDGES) {
 	    code = terminate_wedge_vertex_list(pfs, &l[0], &q.p[0][0]->c, &q.p[0][1]->c);
 	    if (code < 0)
