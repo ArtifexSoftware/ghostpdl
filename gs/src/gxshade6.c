@@ -2840,7 +2840,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big, in
 	    if (!divide_u && !divide_v)
 		pfs->monotonic_color = true;
 	}
-	if (pfs->monotonic_color) {
+	if (pfs->monotonic_color && !pfs->linear_color) {
 	    if (divide_v && divide_u) {
 		if (d0001x + d1011x + d0001y + d1011y > d0010x + d0111x + d0010y + d0111y)
 		    divide_v = false;
