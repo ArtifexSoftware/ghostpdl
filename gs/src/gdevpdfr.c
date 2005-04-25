@@ -309,7 +309,7 @@ pdf_scan_token(const byte **pscan, const byte * end, const byte **ptoken)
 	stream_PSSD_state ss;
 	int status;
 
-	s_PSSD_init_inline(&ss);
+	s_PSSD_init((stream_state *)&ss);
 	r.ptr = p;		/* skip the '(' */
 	r.limit = end - 1;
 	w.limit = buf + sizeof(buf) - 1;

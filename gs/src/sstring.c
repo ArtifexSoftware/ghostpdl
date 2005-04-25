@@ -222,12 +222,13 @@ const stream_template s_PSSE_template =
 private_st_PSSD_state();
 
 /* Initialize the state */
-private int
+int
 s_PSSD_init(stream_state * st)
 {
     stream_PSSD_state *const ss = (stream_PSSD_state *) st;
 
-    return s_PSSD_init_inline(ss);
+    ss->from_string = false;
+    return s_PSSD_partially_init_inline(ss);
 }
 
 /* Process a buffer */
