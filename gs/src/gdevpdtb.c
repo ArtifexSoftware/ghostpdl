@@ -145,32 +145,6 @@ pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, byte *used, in
     return 0;
 }
 
-/* Begin writing FontFile* data. */
-private int
-pdf_begin_fontfile(gx_device_pdf *pdev, long FontFile_id,
-		   const char *entries, long len1, pdf_data_writer_t *pdw)
-{
-    int code;
-    code = pdf_begin_data_stream(pdev, pdw, DATA_STREAM_BINARY | DATA_STREAM_ENCRYPT |
-				 (pdev->CompressFonts ?
-				  DATA_STREAM_COMPRESS : 0), FontFile_id);
-    if (len1 >= 0) {
-	code = cos_dict_put_c_key_int((cos_dict_t *)pdw->pres->object, "/Length1", len1);
-	if (code < 0)
-	    return code;
-    }
-    if (entries != NULL) {
-	const char *p = strchr(entries + 1, '/');
-
-	code = cos_dict_put_string((cos_dict_t *)pdw->pres->object, 
-		    (const byte *)entries, p - entries,
-		    (const byte *)p, strlen(p));
-	if (code < 0)
-	    return code;
-    }
-    return code;
-}
-
 /* Finish writing FontFile* data. */
 private int
 pdf_end_fontfile(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
@@ -501,18 +475,19 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
     bool do_subset = pdf_do_subset_font(pdev, pbfont, rid);
     gs_font_base *out_font =
 	(do_subset || pbfont->complete == NULL ? pbfont->copied : pbfont->complete);
-    long FontFile_id;
     gs_const_string fnstr;
     pdf_data_writer_t writer;
     int code;
 
     if (pbfont->written)
 	return 0;		/* already written */
-    FontFile_id = -1; /* A stub for old code compatibility. */
-    /* We write the font data to a delayed stream
-       to provide it to be written after the font descriptor 
-       for ps2write needs.
-     */
+    code = pdf_begin_data_stream(pdev, &writer, DATA_STREAM_BINARY | 
+			    /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
+			       See comment in pdf_begin_encrypt. */
+				 (pdev->CompressFonts ?
+				  DATA_STREAM_COMPRESS : 0), 0);
+    if (code < 0)
+	return code;
     if (pdev->CompatibilityLevel == 1.2 &&
 	!do_subset && !pbfont->is_standard ) {
 	/*
@@ -523,7 +498,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	 * Note that subsetted fonts already have an unique name
 	 * due to subset prefix.
 	 */
-	 int code = pdf_adjust_font_name(pdev, FontFile_id, pbfont);
+	 int code = pdf_adjust_font_name(pdev, writer.pres->object->id, pbfont);
 	 if (code < 0)
 	    return code;
     }
@@ -552,10 +527,6 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	    /* Write the type 1 font with no converting to CFF. */
 	    int lengths[3];
 
-	    code = pdf_begin_fontfile(pdev, FontFile_id, NULL, -1L,
-					&writer);
-	    if (code < 0)
-		return code;
 	    code = psf_write_type1_font(writer.binary.strm,
 				(gs_font_type1 *)out_font,
 				WRITE_TYPE1_WITH_LENIV |
@@ -585,8 +556,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	     * them.  Also remove lenIV, so Type 2 fonts will compress better.
 	     */
 #define TYPE2_OPTIONS (WRITE_TYPE2_NO_LENIV | WRITE_TYPE2_CHARSTRINGS)
-	    code = pdf_begin_fontfile(pdev, FontFile_id, "/Subtype/Type1C", -1L,
-				      &writer);
+	    code = cos_dict_put_string_copy((cos_dict_t *)writer.pres->object, "/Subtype", "/Type1C");
 	    if (code < 0)
 		return code;
 	    code = psf_write_type2_font(writer.binary.strm,
@@ -621,8 +591,9 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	code = psf_write_truetype_font(&poss, pfont, options, NULL, 0, &fnstr);
 	if (code < 0)
 	    return code;
-	code = pdf_begin_fontfile(pdev, FontFile_id, NULL, stell(&poss),
-				  &writer);
+	code = cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object, "/Length1", stell(&poss));
+	if (code < 0)
+	    return code;
 	if (code < 0)
 	    return code;
 	code = psf_write_truetype_font(writer.binary.strm, pfont,
@@ -631,8 +602,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
     }
 
     case ft_CID_encrypted:
-	code = pdf_begin_fontfile(pdev, FontFile_id, "/Subtype/CIDFontType0C",
-				  -1L, &writer);
+	code = cos_dict_put_string_copy((cos_dict_t *)writer.pres->object, "/Subtype", "/CIDFontType0C");
 	if (code < 0)
 	    return code;
 	code = psf_write_cid0_font(writer.binary.strm,
@@ -643,14 +613,10 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
     case ft_CID_TrueType:
 	/* CIDFontType 2 fonts don't use cmap, name, OS/2, or post. */
 #define CID2_OPTIONS WRITE_TRUETYPE_HVMTX
-	code = pdf_begin_fontfile(pdev, FontFile_id, NULL, -1L, &writer);
-	if (code < 0)
-	    return code;
 	code = psf_write_cid2_font(writer.binary.strm,
 				   (gs_font_cid2 *)out_font,
 				   CID2_OPTIONS, NULL, 0, &fnstr);
     finish:
-	pdf_reserve_object_id(pdev, writer.pres, gs_no_id);
 	*ppcd = (cos_dict_t *)writer.pres->object;
 	if (code < 0) {
 	    pdf_end_fontfile(pdev, &writer);

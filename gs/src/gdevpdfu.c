@@ -1149,6 +1149,7 @@ pdf_encrypt_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size
     stream_state so;
     byte buf[100], bufo[100];
     stream_arcfour_state sarc4;
+
     if (pdf_encrypt_init(pdev, object_id, &sarc4) < 0) {
 	/* The interface can't pass an error. */
 	stream_write(pdev->strm, str, size);
@@ -1156,6 +1157,7 @@ pdf_encrypt_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size
     }
     sread_string(&sinp, str + 1, size);
     s_init(&sstr, NULL);
+    sstr.close_at_eod = false;
     s_init_state((stream_state *)&st, &s_PSSD_template, NULL);
     s_init_filter(&sstr, (stream_state *)&st, buf, sizeof(buf), &sinp);
     s_init(&sout, NULL);

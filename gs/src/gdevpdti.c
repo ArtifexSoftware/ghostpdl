@@ -470,7 +470,7 @@ pdf_open_aside(gx_device_pdf *pdev, pdf_resource_type_t rtype,
 	return_error(gs_error_VMerror);
     pdev->strm = s;
     code = pdf_append_data_stream_filters(pdev, &writer,
-			     options | DATA_STREAM_NOLENGTH, 0);
+			     options | DATA_STREAM_NOLENGTH, pres->object->id);
     if (code < 0) {
 	pdev->strm = save_strm;
 	return code;

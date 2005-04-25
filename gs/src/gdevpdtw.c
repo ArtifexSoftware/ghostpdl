@@ -507,7 +507,10 @@ pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	int i;
 
 	pdf_begin_data_stream(pdev, &writer,
-	    DATA_STREAM_BINARY | DATA_STREAM_COMPRESS | DATA_STREAM_ENCRYPT, map_id);
+	    DATA_STREAM_BINARY | DATA_STREAM_COMPRESS,
+		    /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
+		       See comment in pdf_begin_encrypt. */
+		    map_id);
 	for (i = 0; i < count; ++i) {
 	    uint gid = pdfont->u.cidfont.CIDToGIDMap[i];
 
@@ -647,7 +650,7 @@ pdf_write_cid_system_info_to_stream(gx_device_pdf *pdev, stream *s,
 	return_error(gs_error_limitcheck);
     memcpy(Registry, pcidsi->Registry.data, pcidsi->Registry.size);
     memcpy(Ordering, pcidsi->Ordering.data, pcidsi->Ordering.size);
-    if (pdev->KeyLength) {
+    if (pdev->KeyLength && object_id != 0) {
 	stream_arcfour_state sarc4;
 	int code; 
 
@@ -688,7 +691,9 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
     pdf_data_writer_t writer;
 
     code = pdf_begin_data_stream(pdev, &writer,
-				 DATA_STREAM_NOT_BINARY | DATA_STREAM_ENCRYPT |
+				 DATA_STREAM_NOT_BINARY |
+			    /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
+			       See comment in pdf_begin_encrypt. */
 				 (pdev->CompressFonts ? 
 				  DATA_STREAM_COMPRESS : 0), gs_no_id);
     if (code < 0)
@@ -711,8 +716,7 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 	    return code;
 	s_init(&s, pdev->memory);
 	swrite_string(&s, buf, sizeof(buf));
-	code = pdf_write_cid_system_info_to_stream(pdev, &s, pcmap->CIDSystemInfo, 
-		writer.pres->object->id);
+	code = pdf_write_cid_system_info_to_stream(pdev, &s, pcmap->CIDSystemInfo, 0);
 	if (code < 0)
 	    return code;
 	code = cos_dict_put_c_key_string(pcd, "/CIDSystemInfo", 

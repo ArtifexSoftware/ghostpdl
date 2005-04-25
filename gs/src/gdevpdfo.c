@@ -761,7 +761,8 @@ cos_elements_write(stream *s, const cos_dict_element_t *pcde,
 
 	pdev->strm = s;
 	for (;;) {
-	    gs_id object_id1 = (pdev->NoEncrypt.size == 0 || 
+	    gs_id object_id1 = (object_id == pdev->Info->id ? (gs_id)-1 :
+				pdev->NoEncrypt.size == 0 || 
 				bytes_compare(pdev->NoEncrypt.data, pdev->NoEncrypt.size,
 				    pcde->key.data, pcde->key.size) 
 				? object_id : (gs_id)-1);
