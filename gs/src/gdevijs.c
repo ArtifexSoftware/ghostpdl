@@ -627,7 +627,7 @@ gsijs_finish_copydevice(gx_device *dev, const gx_device *from_dev)
     code = gx_default_finish_copydevice(dev, from_dev);
     if(code < 0)
         return code;
-    
+ 
     if (!ijsdev->ColorSpace) {
 	ijsdev->ColorSpace = gs_malloc(ijsdev->memory, sizeof(rgb), 1, 
 		"gsijs_finish_copydevice");
@@ -654,19 +654,17 @@ gsijs_close(gx_device *dev)
 
     code = gdev_prn_close(dev);
     if (ijsdev->IjsParams)
-	gs_free(dev->memory, ijsdev->IjsParams, ijsdev->IjsParams_size, 1, 
-	    "gsijs_read_string_malloc");
+	gs_free(dev->memory, ijsdev->IjsParams,
+		ijsdev->IjsParams_size, 1, "gsijs_read_string_malloc");
     if (ijsdev->ColorSpace)
 	gs_free(dev->memory, ijsdev->ColorSpace,
-		ijsdev->ColorSpace_size, 1, 
-		"gsijs_read_string_malloc");
+		ijsdev->ColorSpace_size, 1, "gsijs_read_string_malloc");
     if (ijsdev->DeviceManufacturer)
 	gs_free(dev->memory, ijsdev->DeviceManufacturer,
-		ijsdev->DeviceManufacturer_size, 1, 
-		"gsijs_read_string_malloc");
+		ijsdev->DeviceManufacturer_size, 1, "gsijs_read_string_malloc");
     if (ijsdev->DeviceModel)
-	gs_free(dev->memory, ijsdev->DeviceModel, ijsdev->DeviceModel_size, 1, 
-		"gsijs_read_string_malloc");
+	gs_free(dev->memory, ijsdev->DeviceModel,
+		ijsdev->DeviceModel_size, 1, "gsijs_read_string_malloc");
     ijsdev->IjsParams = NULL;
     ijsdev->IjsParams_size = 0;
     ijsdev->DeviceManufacturer = NULL;
@@ -980,14 +978,16 @@ gsijs_read_string_malloc(gs_param_list *plist, gs_param_name pname, char **str,
 		code = gs_error_rangecheck;
 		goto e;
 	    }
-	    if (new_value.size >= *size) {
+	    if (new_value.size + 1 != *size) {
 	        if (*str)
-		    gs_free(plist->memory, str, *size, 1, "gsijs_read_string_malloc");
+		    gs_free(plist->memory, *str, *size, 1,
+					"gsijs_read_string_malloc");
 		*str = NULL;
 		*size = 0;
 	    }
-	    *str = gs_malloc(plist->memory, new_value.size + 1, 1, 
-		"gsijs_read_string_malloc");
+	    if (*str == NULL)
+	        *str = gs_malloc(plist->memory, new_value.size + 1, 1, 
+					"gsijs_read_string_malloc");
 	    if (*str == NULL) {
                 code = gs_note_error(gs_error_VMerror);
                 goto e;
