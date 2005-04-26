@@ -503,12 +503,23 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
 		int tmp;
 		byte mask;
 
-		if (mask_alpha == 255)
-		    mask = mask_ptr[x]; /* todo: rgba->mask */
+		/*
+		 * The mask data is really monochrome.  Thus for additive (RGB)
+		 * we use the R channel for alpha since R = G = B.  For
+		 * subtractive (CMYK) we use the K channel.
+		 */
+		if (mask_alpha == 255) {
+		    /* todo: rgba->mask */
+		    mask = additive ? mask_ptr[x]
+			    	    : 255 - mask_ptr[x + 3 * mask_planestride];
+		}
 		else if (mask_alpha == 0)
 		    mask = mask_bg_alpha;
 		else {
-		    int t2 = (mask_ptr[x] - mask_bg_alpha) * mask_alpha + 0x80;
+		    int t2 = additive ? mask_ptr[x]
+			    	      : 255 - mask_ptr[x + 3 * mask_planestride];
+
+		    t2 = (t2 - mask_bg_alpha) * mask_alpha + 0x80;
 		    mask = mask_bg_alpha + ((t2 + (t2 >> 8)) >> 8);
 		}
 	 	mask = mask_tr_fn[mask];
