@@ -672,12 +672,13 @@ gs_purge_font(gs_font * pfont)
 
 /* Locate a gs_font by gs_id. */
 gs_font *
-gs_find_font_by_id(gs_font_dir *pdir, gs_id id)
+gs_find_font_by_id(gs_font_dir *pdir, gs_id id, gs_matrix *FontMatrix)
  {
     gs_font *pfont = pdir->orig_fonts;
 
     for(; pfont != NULL; pfont = pfont->next)
-	if(pfont->id == id)
+	if(pfont->id == id &&
+	    !memcmp(&pfont->FontMatrix, FontMatrix, sizeof(pfont->FontMatrix)))
 	    return pfont;
     return NULL;
  }

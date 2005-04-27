@@ -68,7 +68,7 @@ gs_font *gs_rootfont(const gs_state *);
 void gs_set_currentfont(gs_state *, gs_font *);
 void gs_purge_font(gs_font *);
 /* Locate a gs_font by gs_id. */
-gs_font *gs_find_font_by_id(gs_font_dir *pdir, gs_id id);
+gs_font *gs_find_font_by_id(gs_font_dir *pdir, gs_id id, gs_matrix *FontMatrix);
 
 /* Font cache parameter operations */
 void gs_cachestatus(const gs_font_dir *, uint[7]);

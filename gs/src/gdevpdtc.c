@@ -647,7 +647,7 @@ process_cid_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 
     if (pdsubf->u.cidfont.glyphshow_font_id != 0)
  	font0 = (gs_font_type0 *)gs_find_font_by_id(font->dir, 
- 		    pdsubf->u.cidfont.glyphshow_font_id);
+ 		    pdsubf->u.cidfont.glyphshow_font_id, &scaled_font->FontMatrix);
     if (font0 == NULL) {
   	code = gs_font_type0_from_cidfont(&font0, font, font->WMode,
  					  &scale_matrix, font->memory);
