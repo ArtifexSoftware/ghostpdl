@@ -34,6 +34,6 @@ test_sha1_CFLAGS = -DTEST
 
 TESTS = test_sha1 test_jbig2dec.py
 
-EXTRA_DIST = test_jbig2dec.py msvc.mak LICENSE
+EXTRA_DIST = test_jbig2dec.py msvc.mak LICENSE CHANGES
 
 MAINTAINERCLEANFILES = config_types.h.in
