@@ -384,7 +384,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		      if (params->SDHUFF) {
 			  /* todo */
 		      } else {
-			  code = jbig2_arith_iaid_decode(IAID, as, &ID);
+			  code = jbig2_arith_iaid_decode(IAID, as, (int32_t*)&ID);
 		          code = jbig2_arith_int_decode(IARDX, as, &RDX);
 		          code = jbig2_arith_int_decode(IARDY, as, &RDY);
 		      }
@@ -462,7 +462,8 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   {
     int i = 0;
     int j = 0;
-    int k, m, exrunlength, exflag = 0;
+    int k, m, exflag = 0;
+    int32_t exrunlength;
     
     if (params->SDINSYMS != NULL)
       m = params->SDINSYMS->n_symbols;
