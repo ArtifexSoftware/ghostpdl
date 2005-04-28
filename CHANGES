@@ -1,9 +1,10 @@
-Version 0.8 (unreleased)
+Version 0.8 (2005 April 6)
 
  * Fix an allocation error in the page array
  * properly handle non-OR image composition operators
  * Fix a UMR bug in the compositor
  * successfully decodes ubc test streams 042_12,15,16,17,18
+ * various memory leak fixes
 
 Version 0.7 (2004 December 8)
 
