@@ -37,11 +37,17 @@ currentdict /super.complete_instance currentdict /complete_instance get put
     Decoding /CIDCount get /CIDCount exch def
     % Prepare the CIDMap structure :
     /CIDMap [
-      CIDCount 32767 le {
+      CIDCount 22000 le {
         CIDCount 2 mul string
       } {
-        32767 2 mul string
-        CIDCount 32767 sub 2 mul string
+        44000 string
+        CIDCount 44000 gt {
+	   % need three strings
+           44000 string		% 22000 2 mul string
+           CIDCount 44000 sub 2 mul string
+        } {
+           CIDCount 22000 sub 2 mul string
+        } ifelse
       } ifelse
     ] def
     % Now fill it :
