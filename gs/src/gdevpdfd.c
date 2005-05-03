@@ -1120,9 +1120,13 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 			    rect_size.x, rect_size.y, false);
 	    stream_puts(pdev->strm, "q\n");
 	    if (code >= 0) {
-		pdf_put_matrix(pdev, NULL, &cvd.m, " cm q\n");
-		cvd.write_matrix = false;
+		code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,
+					gx_path_type_clip, NULL);
+		if (code >= 0)
+		    stream_puts(pdev->strm, "W n\n");
 	    }
+	    pdf_put_matrix(pdev, NULL, &cvd.m, " cm q\n");
+	    cvd.write_matrix = false;
 	    if (code >= 0) {
 		/* See gx_default_fill_path. */
 		gx_clip_path cpath_intersection;
@@ -1297,31 +1301,49 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     double scale;
     gs_matrix smat;
     gs_matrix *psmat = NULL;
+    const bool convert_to_image = (pdev->CompatibilityLevel <= 1.2 && 
+	    gx_dc_is_pattern2_color(pdcolor));
 
     if (rect->p.x == rect->q.x)
 	return 0;
-    code = prepare_fill_with_clip(pdev, pis, &box, true, pdcolor, pcpath);
-    if (code < 0)
+    if (!convert_to_image) {
+	code = prepare_fill_with_clip(pdev, pis, &box, true, pdcolor, pcpath);
+	if (code < 0)
+	    return code;
+	if (code == 1)
+	    return 0; /* Nothing to paint. */
+	code = pdf_setfillcolor((gx_device_vector *)pdev, pis, pdcolor);
+	if (code < 0)
+	    return code;
+	if (pcpath) 
+	    rect_intersect(box1, box);
+	if (box1.p.x > box1.q.x || box1.p.y > box1.q.y)
+  	    return 0;		/* outside the clipping path */
+	if (make_rect_scaling(pdev, &box1, 1.0, &scale)) {
+	    gs_make_scaling(pdev->scale.x * scale, pdev->scale.y * scale, &smat);
+	    pdf_put_matrix(pdev, "q ", &smat, "cm\n");
+	    psmat = &smat;
+	}
+	pprintg4(pdev->strm, "%g %g %g %g re f\n",
+		fixed2float(box1.p.x) * scale, fixed2float(box1.p.y) * scale,
+		fixed2float(box1.q.x - box1.p.x) * scale, fixed2float(box1.q.y - box1.p.y) * scale);
+	if (psmat)
+	    stream_puts(pdev->strm, "Q\n");
+	return 0;
+    } else {
+	gx_fill_params params;
+	gx_path path;
+
+	params.rule = 1; /* Not important because the path is a rectange. */
+	params.adjust.x = params.adjust.y = 0;
+        params.flatness = pis->flatness;
+	params.fill_zero_width = false;
+	gx_path_init_local(&path, pis->memory);
+	gx_path_add_rectangle(&path, rect->p.x, rect->p.y, rect->q.x, rect->q.y);
+	code = gdev_pdf_fill_path(dev, pis, &path, &params, pdcolor, pcpath);
+	gx_path_free(&path, "gdev_pdf_fill_rectangle_hl_color");
 	return code;
-    if (code == 1)
-	return 0; /* Nothing to paint. */
-    code = pdf_setfillcolor((gx_device_vector *)pdev, pis, pdcolor);
-    if (code < 0)
-	return code;
-    if (pcpath) 
-	rect_intersect(box1, box);
-    if (box1.p.x > box1.q.x || box1.p.y > box1.q.y)
-  	return 0;		/* outside the clipping path */
-    if (make_rect_scaling(pdev, &box1, 1.0, &scale)) {
-	gs_make_scaling(pdev->scale.x * scale, pdev->scale.y * scale, &smat);
-        pdf_put_matrix(pdev, "q ", &smat, "cm\n");
-	psmat = &smat;
+
     }
-    pprintg4(pdev->strm, "%g %g %g %g re f\n",
-	     fixed2float(box1.p.x) * scale, fixed2float(box1.p.y) * scale,
-	     fixed2float(box1.q.x - box1.p.x) * scale, fixed2float(box1.q.y - box1.p.y) * scale);
-    if (psmat)
-	stream_puts(pdev->strm, "Q\n");
-    return 0;
 }
 
