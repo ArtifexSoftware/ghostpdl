@@ -21,19 +21,25 @@ libjbig2dec_a_SOURCES = jbig2.c \
 	jbig2_metadata.c jbig2_metadata.h
 
 bin_PROGRAMS = jbig2dec
-#noinst_PROGRAMS = test_huffman test_arith
-noinst_PROGRAMS = test_sha1
+noinst_PROGRAMS = test_sha1 test_huffman test_arith
 
 jbig2dec_SOURCES = jbig2dec.c sha1.c sha1.h \
 	jbig2.h jbig2_image.h getopt.h \
 	os_types.h config_types.h config_win32.h
 jbig2dec_LDADD = libjbig2dec.a @LIBOBJS@
 
-test_sha1_SOURCES = sha1.c sha1.h
-test_sha1_CFLAGS = -DTEST
-
-TESTS = test_sha1 test_jbig2dec.py
-
 EXTRA_DIST = test_jbig2dec.py msvc.mak LICENSE CHANGES
 
 MAINTAINERCLEANFILES = config_types.h.in
+
+TESTS = test_sha1 test_jbig2dec.py test_huffman test_arith
+
+test_sha1_SOURCES = sha1.c sha1.h
+test_sha1_CFLAGS = -DTEST
+
+test_arith_SOURCES = sha1.c sha1.h
+test_arith_CFLAGS = -DTEST
+
+test_huffman_SOURCES = sha1.c sha1.h
+test_huffman_CFLAGS = -DTEST
+
