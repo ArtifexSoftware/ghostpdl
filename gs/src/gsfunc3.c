@@ -391,7 +391,7 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
 					    &w0, &w1, mask);
     }
     /* v0 is equal to the range end. */
-    *mask = 1;
+    *mask = 0;
     return 1; 
 }
 
