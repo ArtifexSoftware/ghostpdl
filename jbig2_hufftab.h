@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
     
-    $Id: jbig2_hufftab.h,v 1.3 2002/06/15 16:02:54 giles Exp $
+    $Id$
 */
 
 /* predefined Huffman table definitions 
@@ -22,10 +22,7 @@
 #ifndef JBIG2_HUFFTAB_H
 #define JBIG2_HUFFTAB_H
 
-typedef struct _Jbig2HuffmanEntry Jbig2HuffmanEntry;
-typedef struct _Jbig2HuffmanState Jbig2HuffmanState;
-typedef struct _Jbig2HuffmanTable Jbig2HuffmanTable;
-typedef struct _Jbig2HuffmanParams Jbig2HuffmanParams;
+/* types are in jbig2_huffman.h, you must include that first */
 
 struct _Jbig2HuffmanEntry {
   union {

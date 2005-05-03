@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2001 artofcode LLC.
+    Copyright (c) 2001-2005 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
     
-    $Id: jbig2_huffman.c,v 1.11 2002/07/20 17:23:15 giles Exp $
+    $Id$
 */
 
 /* Huffman table decoding procedures 
@@ -29,6 +29,7 @@
 #include "jbig2.h"
 #include "jbig2_priv.h"
 #include "jbig2_huffman.h"
+#include "jbig2_hufftab.h"
 
 #define JBIG2_HUFFMAN_FLAGS_ISOOB 1
 #define JBIG2_HUFFMAN_FLAGS_ISLOW 2
@@ -49,19 +50,38 @@ struct _Jbig2HuffmanState {
 };
 
 
+/** Allocate and initialize a new huffman coding state
+ *  the returned pointer can simply be freed; this does
+ *  not affect the associated Jbig2WordStream.
+ */
 Jbig2HuffmanState *
-jbig2_huffman_new (Jbig2WordStream *ws)
+jbig2_huffman_new (Jbig2Ctx *ctx, Jbig2WordStream *ws)
 {
-  Jbig2HuffmanState *result = (Jbig2HuffmanState *)malloc (sizeof(Jbig2HuffmanState));
+  Jbig2HuffmanState *result;
 
-  result->offset = 0;
-  result->offset_bits = 0;
-  result->this_word = ws->get_next_word (ws, 0);
-  result->next_word = ws->get_next_word (ws, 4);
+  result = (Jbig2HuffmanState *)jbig2_alloc(ctx->allocator,  
+	sizeof(Jbig2HuffmanState));
 
-  result->ws = ws;
+  if (result != NULL) {
+      result->offset = 0;
+      result->offset_bits = 0;
+      result->this_word = ws->get_next_word (ws, 0);
+      result->next_word = ws->get_next_word (ws, 4);
+
+      result->ws = ws;
+  }
 
   return result;
+}
+
+/** Free an allocated huffman coding state.
+ *  This just calls jbig2_free() if the pointer is not NULL
+ */
+void
+jbig2_huffman_free (Jbig2Ctx *ctx, Jbig2HuffmanState *hs)
+{
+  if (hs != NULL) free(hs);
+  return;
 }
 
 int32_t
@@ -145,7 +165,7 @@ jbig2_huffman_get (Jbig2HuffmanState *hs,
 #define LOG_TABLE_SIZE_MAX 8
 
 Jbig2HuffmanTable *
-jbig2_build_huffman_table (const Jbig2HuffmanParams *params)
+jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
 {
   int LENCOUNT[256];
   int LENMAX = -1;
@@ -180,9 +200,9 @@ jbig2_build_huffman_table (const Jbig2HuffmanParams *params)
       if (lts <= LOG_TABLE_SIZE_MAX && log_table_size < lts)
 		log_table_size = lts;
     }
-  result = (Jbig2HuffmanTable *)malloc (sizeof(Jbig2HuffmanTable));
+  result = (Jbig2HuffmanTable *)jbig2_alloc(ctx->allocator, sizeof(Jbig2HuffmanTable));
   result->log_table_size = log_table_size;
-  entries = (Jbig2HuffmanEntry *)malloc (sizeof(Jbig2HuffmanEntry) << log_table_size);
+  entries = (Jbig2HuffmanEntry *)jbig2_alloc(ctx->allocator, sizeof(Jbig2HuffmanEntry) << log_table_size);
   result->entries = entries;
 
   LENCOUNT[0] = 0;
