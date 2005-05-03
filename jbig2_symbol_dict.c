@@ -31,6 +31,7 @@
 #include "jbig2_arith.h"
 #include "jbig2_arith_int.h"
 #include "jbig2_arith_iaid.h"
+#include "jbig2_huffman.h"
 #include "jbig2_generic.h"
 #include "jbig2_symbol_dict.h"
 
@@ -218,6 +219,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   int32_t SYMWIDTH, TOTWIDTH;
   uint32_t HCFIRSTSYM;
   Jbig2WordStream *ws = NULL;
+  Jbig2HuffmanState *hs = NULL;
   Jbig2ArithState *as = NULL;
   Jbig2ArithIntCtx *IADH = NULL;
   Jbig2ArithIntCtx *IADW = NULL;
@@ -232,8 +234,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   HCHEIGHT = 0;
   NSYMSDECODED = 0;
 
+  ws = jbig2_word_stream_buf_new(ctx, data, size);
+
   if (!params->SDHUFF) {
-      ws = jbig2_word_stream_buf_new(ctx, data, size);
       as = jbig2_arith_new(ctx, ws);
       IADH = jbig2_arith_int_ctx_new(ctx);
       IADW = jbig2_arith_int_ctx_new(ctx);
@@ -248,9 +251,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  IARDY = jbig2_arith_int_ctx_new(ctx);
       }
   } else {
-      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-	"NYI: huffman coded symbol dictionary");
-      return NULL;
+      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	"huffman coded symbol dictionary");
+      hs = jbig2_huffman_new(ctx, ws);
   }
 
   SDNEWSYMS = jbig2_sd_new(ctx, params->SDNUMNEWSYMS);
@@ -489,18 +492,21 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   jbig2_sd_release(ctx, SDNEWSYMS);
   
   if (!params->SDHUFF) {
-    jbig2_arith_int_ctx_free(ctx, IADH);
-    jbig2_arith_int_ctx_free(ctx, IADW);
-    jbig2_arith_int_ctx_free(ctx, IAEX);
-    jbig2_arith_int_ctx_free(ctx, IAAI);
-    if (params->SDREFAGG) {
-      jbig2_arith_iaid_ctx_free(ctx, IAID);
-      jbig2_arith_int_ctx_free(ctx, IARDX);
-      jbig2_arith_int_ctx_free(ctx, IARDY);
-    }
-    jbig2_free(ctx->allocator, as);  
-    jbig2_word_stream_buf_free(ctx, ws);
+      jbig2_arith_int_ctx_free(ctx, IADH);
+      jbig2_arith_int_ctx_free(ctx, IADW);
+      jbig2_arith_int_ctx_free(ctx, IAEX);
+      jbig2_arith_int_ctx_free(ctx, IAAI);
+      if (params->SDREFAGG) {
+        jbig2_arith_iaid_ctx_free(ctx, IAID);
+        jbig2_arith_int_ctx_free(ctx, IARDX);
+        jbig2_arith_int_ctx_free(ctx, IARDY);
+      }
+      jbig2_free(ctx->allocator, as);  
+  } else {
+      jbig2_free(ctx->allocator, hs);
   }
+
+  jbig2_word_stream_buf_free(ctx, ws);
   
   return SDEXSYMS;
 }
