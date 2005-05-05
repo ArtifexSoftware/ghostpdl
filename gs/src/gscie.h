@@ -62,7 +62,7 @@
  * Define the threshold for interpolating.
  * This is computationally expensive.
  */
-#define CIE_INTERPOLATE_THRESHOLD 0.01
+#define CIE_INTERPOLATE_THRESHOLD 0.001
 
 /*
  * Define whether to interpolate in the RenderTable.  Currently this is a

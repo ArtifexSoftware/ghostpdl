@@ -138,11 +138,9 @@ gx_render_device_DeviceN_wts(frac * pcolor,
 int
 gx_render_device_DeviceN(frac * pcolor,
 	gx_device_color * pdevc, gx_device * dev,
-	gx_device_halftone * pdht, const gs_int_point * ht_phase,
-	bool gray_colorspace)
+	gx_device_halftone * pdht, const gs_int_point * ht_phase)
 {
     uint max_value[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    frac rem_color[GS_CLIENT_COLOR_MAX_COMPONENTS];
     frac dither_check = 0;
     uint int_color[GS_CLIENT_COLOR_MAX_COMPONENTS];
     gx_color_value vcolor[GS_CLIENT_COLOR_MAX_COMPONENTS];
@@ -150,59 +148,39 @@ gx_render_device_DeviceN(frac * pcolor,
     int num_colors = dev->color_info.num_components;
     uint l_color[GS_CLIENT_COLOR_MAX_COMPONENTS];
 
+    if (pdht && pdht->components && pdht->components[0].corder.wts)
+	return gx_render_device_DeviceN_wts(pcolor, pdevc, dev, pdht,
+					    ht_phase);
+
     for (i=0; i<num_colors; i++) {
 	max_value[i] = (dev->color_info.gray_index == i) ?
 	     dev->color_info.dither_grays - 1 :
 	     dev->color_info.dither_colors - 1;
     }
 
-    if (pdht && pdht->components && pdht->components[0].corder.wts)
-	return gx_render_device_DeviceN_wts(pcolor, pdevc, dev, pdht,
-					    ht_phase);
-
-    /* TO_DO_DEVICEN - kludge to minimize DeviceN regressions */
-    if (gray_colorspace || num_colors == 1) {
-        bool invert = dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE;
-
-	for (i = 0; i < num_colors; i++) {
-	    unsigned long hsize = pdht ?
-		    (unsigned) pdht->components[i].corder.num_levels
-	    	    : 1;
-	    unsigned long nshades = hsize * max_value[i] + 1;
-	    long shade = (invert ? frac_1 - pcolor[i] : pcolor[i]) *
-				nshades / (frac_1_long + 1);
-	    int_color[i] = (invert ? nshades - 1 - shade : shade) / hsize;
-	    l_color[i] = (invert ? nshades - 1 - shade : shade) % hsize;
-	    if (max_value[i] < MIN_CONTONE_LEVELS)
-	        dither_check |= l_color[i];
-	}
-    } else {
-
-        /* Compute the quotient and remainder of each color component */
-        /* with the actual number of available colors. */
-	for (i = 0; i < num_colors; i++) {
-            if (max_value[i] == 1) {	/* 8 or 16 colors */
-	        if (pcolor[i] == frac_1) {
-		    rem_color[i] = 0;
-		    int_color[i] = 1;
-		} else {
-		    rem_color[i] = pcolor[i];
-		    dither_check |= rem_color[i];
-		    int_color[i] = 0;
-		}
-	    } else {
-		ulong want_x;
-
-	        want_x = (ulong) max_value[i] * pcolor[i];
-	        int_color[i] = frac_1_quo(want_x);
-	        rem_color[i] = frac_1_rem(want_x, int_color[i]);
-		if (max_value[i] < MIN_CONTONE_LEVELS)
-	            dither_check |= rem_color[i];
-            }
-	    l_color[i] = rem_color[i] * pdht->components[i].corder.num_levels
-				/ frac_1;
-        }
+    for (i = 0; i < num_colors; i++) {
+	unsigned long hsize = pdht ?
+		(unsigned) pdht->components[i].corder.num_levels
+	    	: 1;
+	unsigned long nshades = hsize * max_value[i] + 1;
+	long shade = pcolor[i] * nshades / (frac_1_long + 1);
+	int_color[i] = shade / hsize;
+	l_color[i] = shade % hsize;
+	if (max_value[i] < MIN_CONTONE_LEVELS)
+	    dither_check |= l_color[i];
     }
+
+#ifdef DEBUG
+    if (gs_debug_c('c')) {
+	dlprintf1("[c]ncomp=%d ", num_colors);
+	for (i = 0; i < num_colors; i++)
+	    dlprintf1("0x%x, ", pcolor[i]);
+	dlprintf("-->   ");
+	for (i = 0; i < num_colors; i++)
+	    dlprintf2("%x+0x%x, ", int_color[i], l_color[i]);
+	dlprintf("\n");
+    }
+#endif
 
     /* Check for no dithering required */
     if (!dither_check) {
@@ -211,19 +189,6 @@ gx_render_device_DeviceN(frac * pcolor,
 	color_set_pure(pdevc, dev_proc(dev, encode_color)(dev, vcolor));
 	return 0;
     }
-
-
-#ifdef DEBUG
-    if (gs_debug_c('c')) {
-	dlprintf1("[c]ncomp=%d ", num_colors);
-	for (i = 0; i < num_colors; i++)
-	    dlprintf1("0x%x, ", pcolor[i]);
-	dlprintf("-->\n   ");
-	for (i = 0; i < num_colors; i++)
-	    dlprintf2("%x+0x%x, ", int_color[i], rem_color[i]);
-	dlprintf("-->\n");
-    }
-#endif
 
     /* Use the slow, general colored halftone algorithm. */
 

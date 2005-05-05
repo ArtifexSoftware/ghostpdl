@@ -764,7 +764,7 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
 	    		(frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
 
     if (gx_render_device_DeviceN(cm_comps, pdc, dev, pis->dev_ht,
-    				&pis->screen_phase[select], true) == 1)
+	    				&pis->screen_phase[select]) == 1)
 	gx_color_load_select(pdc, pis, dev, select);
 }
 
@@ -809,7 +809,6 @@ cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
 {
     int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    bool gray_color = false;
 
     /* map to the color model */
     dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
@@ -824,10 +823,8 @@ cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
             cm_comps[i] = frac_1 - gx_map_color_frac(pis,
 	    		(frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
 
-    if (ncomps == 3 && cm_comps[0] == cm_comps[1] && cm_comps[1] == cm_comps[2])
-	gray_color = true;
     if (gx_render_device_DeviceN(cm_comps, pdc, dev, pis->dev_ht,
-    				&pis->screen_phase[select], gray_color) == 1)
+	    				&pis->screen_phase[select]) == 1)
 	gx_color_load_select(pdc, pis, dev, select);
 }
 
@@ -892,7 +889,7 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     /* duplicating most of the code of this procedure. */
     if (gx_device_must_halftone(dev)) {
 	if (gx_render_device_DeviceN(cm_comps, pdc, dev,
-		    pis->dev_ht, &pis->screen_phase[select], false) == 1)
+		    pis->dev_ht, &pis->screen_phase[select]) == 1)
 	    gx_color_load_select(pdc, pis, dev, select);
 	return;
     }
@@ -905,7 +902,7 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
 	color_set_pure(pdc, color);
     else {
 	if (gx_render_device_DeviceN(cm_comps, pdc, dev,
-		    pis->dev_ht, &pis->screen_phase[select], false) == 1)
+		    pis->dev_ht, &pis->screen_phase[select]) == 1)
 	    gx_color_load_select(pdc, pis, dev, select);
 	return;
     }
@@ -945,7 +942,7 @@ cmap_rgb_alpha_halftoned(frac r, frac g, frac b, frac alpha,
 	    		(frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
 
     if (gx_render_device_DeviceN(cm_comps, pdc, dev, pis->dev_ht,
-    				&pis->screen_phase[select], false) == 1)
+	    				&pis->screen_phase[select]) == 1)
 	gx_color_load_select(pdc, pis, dev, select);
 }
 
@@ -1071,7 +1068,7 @@ cmap_separation_halftoned(frac all, gx_device_color * pdc,
 	    		(frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
 
     if (gx_render_device_DeviceN(cm_comps, pdc, dev, pis->dev_ht,
-    				&pis->screen_phase[select], false) == 1)
+    					&pis->screen_phase[select]) == 1)
 	gx_color_load_select(pdc, pis, dev, select);
 }
 
@@ -1155,7 +1152,7 @@ cmap_devicen_halftoned(const frac * pcc,
     /* We need to finish halftoning */
 
     if (gx_render_device_DeviceN(cm_comps, pdc, dev, pis->dev_ht,
-    				&pis->screen_phase[select], false) == 1)
+    					&pis->screen_phase[select]) == 1)
 	gx_color_load_select(pdc, pis, dev, select);
 }
 
