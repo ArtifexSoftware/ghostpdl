@@ -501,6 +501,7 @@ lpdict begin
 	 exch not { exit } if
        }
       ifelse
+      pindex PageLast gt { exit } if
     } loop
    pop
 
@@ -523,10 +524,10 @@ end
 
 lpdict begin
 
-/splitfn		% (FontNNN) -> <font>
+/splitfn		% (FontNN.NN) -> <font>
  { dup /arg exch def length
     { dup 0 le { exit } if
-      dup 1 sub arg exch get dup 48 ge exch 59 le and not { exit } if
+      dup 1 sub arg exch get dup 48 ge 1 index 59 le and exch 46 eq or not { exit } if
       1 sub
     } loop
    arg exch 0 exch getinterval dup cvn find-latin-font
