@@ -233,15 +233,18 @@ pdfdict begin
 		% ensure that Objects and Generations are big enough.
 		% stack: <err count> <first obj> <entry count>
      2 copy add growPDFobjects
-     PDFfile fileposition
-     3 1 roll			% stack: <err count> <filepos> <first obj> <entry count>
-     {				% stack: <err count> <file pos> <obj num>
+     {				% stack: <err count> <obj num>
 		% Read xref line
-       PDFfile pdfstring readline pop  
+       PDFfile 20 string readstring pop  % always read 20 chars.
        token pop		% object position
        exch token pop		% generation #
        exch token pop		% n or f
-       exch pop			% Stack: <err count> <file pos> <obj#> <loc> <gen#> <tag>
+       exch			% stack: <err count> <obj#> <loc> <gen#> <tag> <remainder of line>
+       dup length 0 ne {
+         % check to make sure trailing garbage is just white space
+	 dup { 32 gt { 5 -1 roll 1 add 5 1 roll } if } forall   % bump error count on garbage
+       } if
+       pop			% Stack: <err count> <obj#> <loc> <gen#> <tag>
        dup /n eq {		% xref line tag is /n
 	 pop			% pop dup of line tag
          Objects 3 index lget null eq {	% later update might have set it
@@ -256,16 +259,10 @@ pdfdict begin
 	 } if
        } ifelse
        pop pop			% pop <obj location> and <gen num>
-		% Check if line length is 20 chars (Adobe spec.)
-       exch			% stack: <err count> <obj num> <file pos>
-       PDFfile fileposition	% <err count> <obj#> <old pos> <new pos>
-       dup 4 1 roll		% <err count> <new Pos> <obj#> <old pos> <new pos>
-       exch sub 20 ne		% <err count> <new Pos> <obj#> <bool>
-       { 3 -1 roll 1 add 3 1 roll % Increment error count
-       } if
+       % stack: <err count> <obj num>
        1 add			% increment object number
      } repeat
-     pop pop			% pop <file pos> <obj #>
+     pop			% pop <obj #>
    } loop
    0 ne {
      (   **** Warning:  length of some xref entries is not equal to 20 bytes.\n)
@@ -391,7 +388,8 @@ pdfdict begin
    PDFoffset add PDFfile exch setfileposition
 		% In some PDF files, this position actually points to
 		% white space before the xref line.  Skip over this here.
-   { PDFfile fileposition PDFfile read pop 32 gt { exit } if pop
+   {
+     PDFfile fileposition PDFfile read pop 32 gt { exit } if pop
    } loop
    dup		% Make copy of the file position (before last char was read).
    PDFfile exch setfileposition
