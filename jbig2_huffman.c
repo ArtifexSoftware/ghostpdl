@@ -17,7 +17,7 @@
 */
 
 /* Huffman table decoding procedures 
-    -- See Annex B of the JBIG2 draft spec */
+    -- See Annex B of the JBIG2 specification */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -164,6 +164,9 @@ jbig2_huffman_get (Jbig2HuffmanState *hs,
 
 #define LOG_TABLE_SIZE_MAX 8
 
+/** Build an in-memory representation of a Huffman table from the
+ *  set of template params provided by the spec or a table segment
+ */ 
 Jbig2HuffmanTable *
 jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
 {
@@ -263,6 +266,17 @@ jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
     }
 
   return result;
+}
+
+/** Free the memory associated with the representation of table */
+void
+jbig2_release_huffman_table (Jbig2Ctx *ctx, Jbig2HuffmanTable *table)
+{
+  if (table != NULL) {
+      jbig2_free(ctx->allocator, table->entries);
+      jbig2_free(ctx->allocator, table);
+  }
+  return;
 }
 
 #ifdef TEST

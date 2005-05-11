@@ -48,10 +48,10 @@ typedef struct {
   Jbig2SymbolDict *SDINSYMS;
   uint32_t SDNUMNEWSYMS;
   uint32_t SDNUMEXSYMS;
-  /* SDHUFFDH */
-  /* SDHUFFDW */
-  /* SDHUFFBMSIZE */
-  /* SDHUFFAGGINST */
+  Jbig2HuffmanTable *SDHUFFDH;
+  Jbig2HuffmanTable *SDHUFFDW;
+  Jbig2HuffmanTable *SDHUFFBMSIZE;
+  Jbig2HuffmanTable *SDHUFFAGGINST;
   int SDTEMPLATE;
   int8_t sdat[8];
   bool SDRTEMPLATE;
@@ -218,6 +218,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   uint32_t NSYMSDECODED;
   int32_t SYMWIDTH, TOTWIDTH;
   uint32_t HCFIRSTSYM;
+  uint32_t *SDNEWSYMWIDTHS = NULL;
   Jbig2WordStream *ws = NULL;
   Jbig2HuffmanState *hs = NULL;
   Jbig2ArithState *as = NULL;
@@ -254,6 +255,15 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 	"huffman coded symbol dictionary");
       hs = jbig2_huffman_new(ctx, ws);
+      if (params->SDREFAGG) {
+	  SDNEWSYMWIDTHS = jbig2_alloc(ctx->allocator,
+		sizeof(*SDNEWSYMWIDTHS)*params->SDNUMNEWSYMS);
+	  if (SDNEWSYMWIDTHS == NULL) {
+	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"could not allocate storage for symbol widths");
+	    return NULL;
+	  }
+      }
   }
 
   SDNEWSYMS = jbig2_sd_new(ctx, params->SDNUMNEWSYMS);
@@ -503,6 +513,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       }
       jbig2_free(ctx->allocator, as);  
   } else {
+      if (params->SDREFAGG) {
+	jbig2_free(ctx->allocator, SDNEWSYMWIDTHS);
+      }
       jbig2_free(ctx->allocator, hs);
   }
 
@@ -533,22 +546,84 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   params.SDTEMPLATE = (flags >> 10) & 3;
   params.SDRTEMPLATE = (flags >> 12) & 1;
 
+  params.SDHUFFDH = NULL;
+  params.SDHUFFDW = NULL;
+  params.SDHUFFBMSIZE = NULL;
+  params.SDHUFFAGGINST = NULL;
+
   if (params.SDHUFF) {
     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "symbol dictionary uses the Huffman encoding variant (NYI)");
-    return 0;
+    switch ((flags & 0x000c) >> 2) {
+      case 0: /* Table B.4 */
+	params.SDHUFFDH = jbig2_build_huffman_table(ctx, 
+		                       &jbig2_huffman_params_D);
+	break;
+      case 1: /* Table B.5 */
+	params.SDHUFFDH = jbig2_build_huffman_table(ctx, 
+		                       &jbig2_huffman_params_E);
+	break;
+      case 3: /* Custom table from referred segment */
+	/* We handle this case later by leaving the table as NULL */
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "symbol dictionary uses custom DH huffman table (NYI)");
+      case 2:
+      default:
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "symbol dictionary specified invalid huffman table");
+	break;
+    }
+    switch ((flags & 0x0030) >> 4) {
+      case 0: /* Table B.2 */
+	params.SDHUFFDW = jbig2_build_huffman_table(ctx, 
+		                       &jbig2_huffman_params_B);
+	break;
+      case 1: /* Table B.3 */
+	params.SDHUFFDW = jbig2_build_huffman_table(ctx, 
+		                       &jbig2_huffman_params_C);
+	break;
+      case 3: /* Custom table from referred segment */
+	/* We handle this case later by leaving the table as NULL */
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "symbol dictionary uses custom DW huffman table (NYI)");
+      case 2:
+      default:
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "symbol dictionary specified invalid huffman table");
+	break;
+    }
+    if (flags & 0x0040) {
+        /* Custom table from referred segment */
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "symbol dictionary uses custom BMSIZE huffman table (NYI)");
+    } else {
+	/* Table B.1 */
+	params.SDHUFFBMSIZE = jbig2_build_huffman_table(ctx,
+					&jbig2_huffman_params_A);
+    }
+    if (flags & 0x0080) { 
+        /* Custom table from referred segment */
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "symbol dictionary uses custom REFAGG huffman table (NYI)");
+    } else {
+	/* Table B.1 */
+	params.SDHUFFAGGINST = jbig2_build_huffman_table(ctx,
+					&jbig2_huffman_params_A);
+    }
   }
 
   /* FIXME: there are quite a few of these conditions to check */
   /* maybe #ifdef CONFORMANCE and a separate routine */
-  if(!params.SDHUFF && (flags & 0x000c)) {
+  if (!params.SDHUFF) {
+    if (flags & 0x000c) {
       jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
 		  "SDHUFF is zero, but contrary to spec SDHUFFDH is not.");
-  }
-  if(!params.SDHUFF && (flags & 0x0030)) {
+    }
+    if (flags & 0x0030) {
       jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
 		  "SDHUFF is zero, but contrary to spec SDHUFFDW is not.");
-  }
+    }
+  } 
 
   if (flags & 0x0080) {
       jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
@@ -628,6 +703,13 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 #ifdef DUMP_SYMDICT
   if (segment->result) jbig2_dump_symbol_dict(ctx, segment);
 #endif
+
+  if (params.SDHUFF) {
+      jbig2_release_huffman_table(ctx, params.SDHUFFDH);
+      jbig2_release_huffman_table(ctx, params.SDHUFFDW);
+      jbig2_release_huffman_table(ctx, params.SDHUFFBMSIZE);
+      jbig2_release_huffman_table(ctx, params.SDHUFFAGGINST);
+  }
 
   /* todo: retain or free GB_stats, GR_stats */
 

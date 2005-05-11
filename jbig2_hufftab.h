@@ -17,45 +17,17 @@
 */
 
 /* predefined Huffman table definitions 
-    -- See Annex B of the JBIG2 draft spec */
+    -- See Annex B of the JBIG2 specification */
 
 #ifndef JBIG2_HUFFTAB_H
 #define JBIG2_HUFFTAB_H
 
 /* types are in jbig2_huffman.h, you must include that first */
 
-struct _Jbig2HuffmanEntry {
-  union {
-    int32_t RANGELOW;
-    Jbig2HuffmanTable *ext_table;
-  } u;
-  byte PREFLEN;
-  byte RANGELEN;
-  byte flags;
-};
-
-struct _Jbig2HuffmanTable {
-  int log_table_size;
-  Jbig2HuffmanEntry *entries;
-};
-
-typedef struct _Jbig2HuffmanLine Jbig2HuffmanLine;
-
-struct _Jbig2HuffmanLine {
-  int PREFLEN;
-  int RANGELEN;
-  int RANGELOW;
-};
-
-struct _Jbig2HuffmanParams {
-  bool HTOOB;
-  int n_lines;
-  const Jbig2HuffmanLine *lines;
-};
 
 /* Table B.1 */
 const Jbig2HuffmanLine
-jbig_huffman_lines_A[] = {
+jbig2_huffman_lines_A[] = {
   { 1, 4, 0 },
   { 2, 8, 16 },
   { 3, 16, 272 },
@@ -64,11 +36,11 @@ jbig_huffman_lines_A[] = {
 };
 
 const Jbig2HuffmanParams
-jbig_huffman_params_A = { FALSE, 5, jbig_huffman_lines_A };
+jbig2_huffman_params_A = { FALSE, 5, jbig2_huffman_lines_A };
 
 /* Table B.2 */
 const Jbig2HuffmanLine
-jbig_huffman_lines_B[] = {
+jbig2_huffman_lines_B[] = {
   { 1, 0, 0 },
   { 2, 0, 1 },
   { 3, 0, 2 },
@@ -80,11 +52,11 @@ jbig_huffman_lines_B[] = {
 };
 
 const Jbig2HuffmanParams
-jbig_huffman_params_B = { TRUE, 8, jbig_huffman_lines_B };
+jbig2_huffman_params_B = { TRUE, 8, jbig2_huffman_lines_B };
 
 /* Table B.3 */
 const Jbig2HuffmanLine
-jbig_huffman_lines_C[] = {
+jbig2_huffman_lines_C[] = {
   { 8, 8, -256 },
   { 1, 0, 0 },
   { 2, 0, 1 },
@@ -97,11 +69,11 @@ jbig_huffman_lines_C[] = {
 };
 
 const Jbig2HuffmanParams
-jbig_huffman_params_C = { TRUE, 9, jbig_huffman_lines_C };
+jbig2_huffman_params_C = { TRUE, 9, jbig2_huffman_lines_C };
 
 /* Table B.4 */
 const Jbig2HuffmanLine
-jbig_huffman_lines_D[] = {
+jbig2_huffman_lines_D[] = {
   { 1, 0, 1 },
   { 2, 0, 2 },
   { 3, 0, 3 },
@@ -112,11 +84,11 @@ jbig_huffman_lines_D[] = {
 };
 
 const Jbig2HuffmanParams
-jbig_huffman_params_D = { FALSE, 7, jbig_huffman_lines_D };
+jbig2_huffman_params_D = { FALSE, 7, jbig2_huffman_lines_D };
 
 /* Table B.5 */
 const Jbig2HuffmanLine
-jbig_huffman_lines_E[] = {
+jbig2_huffman_lines_E[] = {
 	{7, 8, -255},
 	{1, 0, 1},
 	{2, 0, 2},
@@ -128,11 +100,11 @@ jbig_huffman_lines_E[] = {
 };
 
 const Jbig2HuffmanParams
-jbig_huffman_params_E = { FALSE, 8, jbig_huffman_lines_E };
+jbig2_huffman_params_E = { FALSE, 8, jbig2_huffman_lines_E };
 
 /* Table B.14 */
 const Jbig2HuffmanLine
-jbig_huffman_lines_N[] = {
+jbig2_huffman_lines_N[] = {
   { 3, 0, -2 },
   { 3, 0, -1 },
   { 1, 0, 0 },
@@ -143,7 +115,7 @@ jbig_huffman_lines_N[] = {
 };
 
 const Jbig2HuffmanParams
-jbig_huffman_params_N = { FALSE, 7, jbig_huffman_lines_N };
+jbig2_huffman_params_N = { FALSE, 7, jbig2_huffman_lines_N };
 
 
 #endif /* JBIG2_HUFFTAB_H */
