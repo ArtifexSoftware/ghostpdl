@@ -84,7 +84,7 @@ trap_reserve(gx_device_spot_analyzer *padev)
     if (t != NULL) {
 	padev->trap_free = t->link;
     } else {
-	if (padev->trap_buffer_count > 1000)
+	if (padev->trap_buffer_count > 10000)
 	    return NULL;
 	t = gs_alloc_struct(padev->memory, gx_san_trap, 
 		&st_san_trap, "trap_reserve");
@@ -109,7 +109,7 @@ cont_reserve(gx_device_spot_analyzer *padev)
     if (t != NULL) {
 	padev->cont_free = t->link;
     } else {
-	if (padev->cont_buffer_count > 1000)
+	if (padev->cont_buffer_count > 10000)
 	    return NULL;
 	t = gs_alloc_struct(padev->memory, gx_san_trap_contact, 
 		&st_san_trap_contact, "cont_reserve");
