@@ -1310,6 +1310,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 		    pdf_resource_t **ppres)
 {
     int code = 0;
+    int bottom;
 
     if (pdev->CompatibilityLevel >= 1.4) {
 	if (pdev->state.blend_mode != pis->blend_mode) {
@@ -1349,7 +1350,10 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
      * removal, halftone phase, overprint mode, smoothness, blend mode, text
      * knockout.
      */
-    if (pdev->sbstack_depth == 0) {
+    bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
+    /* When ResourcesBeforeUsage != 0, one sbstack element 
+       appears from the page contents stream. */
+    if (pdev->sbstack_depth == bottom) {
 	gs_int_point phase, dev_phase;
 	char hts[5 + MAX_FN_CHARS + 1],
 	    trs[5 + MAX_FN_CHARS * 4 + 6 + 1],
