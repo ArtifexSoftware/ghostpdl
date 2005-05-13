@@ -135,7 +135,7 @@ TDEBUG=0
 
 # Setting DEBUGSYM=1 is only useful with TDEBUG=0.
 # This option is for advanced developers. It includes symbol table
-# information for the debugger with in an optimized (release) build.
+# information for the debugger in an optimized (release) build.
 # NOTE: The debugging information generated for the optimized code may be
 # significantly misleading. For general MSVC users we recommend TDEBUG=1.
 
