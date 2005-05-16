@@ -1960,15 +1960,16 @@ end
   sub exch div						% (a-d0)/(d1-d0)
 } bind def
 
-/ScaleArgN % <arg0> ... <argN> <Domain> ScaleArg <scaled_arg0> ... <scaled_argN>
+/ScaleArgN % <arg1> ... <argN> <Domain> ScaleArg <scaled_arg1> ... <scaled_argN>
 {
-  dup length 2 idiv 1 sub -1 0 {			% a0 ... an [] i
-    2 mul 2						% a0 ... an [] 2i 2
-    2 index 3 1 roll getinterval			% a0 ... an [] []
-    3 2 roll						% a0 ... [] [] an
-    exch //ScaleArg exe 				% a0 ... [] an'
-    1 index length 1 roll				% an' a0 ... []
-  } for 						% a0' ... an'
+  dup length 2 sub -2 0 {		     	        % a1 ... an [] 2i
+    2						        % a1 ... an [] 2i 2
+    2 index 3 1 roll getinterval			% a1 ... an [] []
+    3 2 roll						% a1 ... [] [] an
+    exch //ScaleArg exec 				% a1 ... [] an'
+    1 index length 2 idiv 1 add 1 roll			% an' a1 ... []
+  } for 						% a1' ... an' []
+  pop                                                   % a1' ... an'
 } bind def
 
 
@@ -1997,26 +1998,77 @@ end
   } if
 } bind def
 
-/ComputeFunction_n0 % <arg0> .... <argn> <sample_array> ComputeFunction_n0 <result>
+/ComputeFunction_n0 % <arg1> .... <argn> <sample_array> <n> ComputeFunction_n0 <result>
 { % Assuming a n-argument 1-result function type 0.
-  mark (Unimplemented n-argument function type 0.) //error exec
+  //PDFR_DEBUG {
+    (ComputeFunction_n0 beg N=) print dup //=only exec ( stack=) print count =
+  } if
+  dup 0 eq {                                   % v 0
+    pop                                        % v
+  } {                                          
+    dup 2 add -1 roll                          % a2 .... an [] n a1
+    dup 1 eq {
+      pop 1 sub                                % a2 .... an [] n-1
+      exch dup size 1 sub get exch
+      //PDFReader /ComputeFunction_n0 get exec
+    } {
+      dup floor cvi dup                        % a2 .... an [] n a1 i i
+      4 index exch get                         % a2 .... an [] n a1 i [i]
+      3 index dup                              % a2 .... an [] n a1 i [i] n n
+      5 add copy                               % a2 .... an [] n a1 i [i] n a2 .... an [] n a1 i [i] n
+      6 2 roll                                 % a2 .... an [] n a1 i [i] n a2 .... an [i] n [] n a1 i
+      pop pop pop pop                          % a2 .... an [] n a1 i [i] n a2 .... an [i] n 
+      1 sub                                    % a2 .... an [] n a1 i [i] n a2 .... an [i] n-1
+      //PDFReader /ComputeFunction_n0 get exec % a2 .... an [] n a1 i [i] n v0
+      3 2 roll pop                             % a2 .... an [] n a1 i n v0
+      exch                                     % a2 .... an [] n a1 i v0 n
+      4 3 roll exch                            % a2 .... an [] n i v0 a1 n
+      4 add 2 roll 1 add                       % v0 a1 a2 .... an [] n i+1
+      3 2 roll exch get                        % v0 a1 a2 .... an n [i+1]
+      exch 1 sub                               % v0 a1 a2 .... an [i+1] n-1
+      //PDFReader /ComputeFunction_n0 get exec % v0 a1 v1
+      1 index mul                              % v0 a1 v1*a1
+      3 1 roll                                 % v1*a1 v0 a1
+      1 exch sub mul add                       % v1*a1+v0*(1-a1)
+    } ifelse
+  } ifelse
+  //PDFR_DEBUG {
+    (ComputeFunction_n0 end ) print dup //=only exec ( stack=) print count =
+  } if
 } bind def
 
-/FunctionToProc_x01 % <function_dict> <n> FunctionToProc_x01 <proc>
+/FunctionToProc_x01 % <function_dict> FunctionToProc_x01 <proc>
 { % Assuming a n-argument 1-result function type 0.
   % The stream is already converted to the array /Data.
-  /Data get 0 get 
-  [ exch 
+  dup /Domain get exch
+  dup /Data get 0 get exch
+  /Size get length 
+  [ 4 1 roll
     //PDFR_DEBUG {
-      (Color space function beg, stack =) /print load /count load 1 /sub load //=only /exec load (\n) /print load
+      { (function beg, stack =) print count //=only exec (\n) print } /exec load
+      5 2 roll
     } if
-    //ComputeFunction_10 /exec load
+    dup 1 gt {                                 % a1 ... an Domain Data n
+      { mark exch                              % a1 ... an Domain Data [ n
+        3 add 2 roll                           % Data [ a1 ... an Domain
+        //ScaleArgN exec                       % Data [ a1 ... an
+        counttomark dup                        % Data [ a1 ... an n n
+        3 add -2 roll                          % a1 ... an n Data [
+        pop exch                               % a1 ... an Data n
+        //ComputeFunction_n0 exec
+      } /exec load
+    } {
+      pop                                      % a1 Domain Data
+      3 1 /roll load //ScaleArg /exec load     % Data a1s
+      /exch load
+      //ComputeFunction_10 /exec load
+    } ifelse
     //PDFR_DEBUG {
-      (Color space function end, stack =) /print load /count load //=only /exec load (\n) /print load
+      (function end, stack =) /print load /count load //=only /exec load (\n) /print load
     } if
   ] cvx
   //PDFR_DEBUG {
-    (Made a procedure for the 1-argument function :) =
+    (Made a procedure for the 1-result function :) =
     dup ==
   } if
 } bind def
@@ -2062,6 +2114,7 @@ end
       6 index 1 eq {
 	//ComputeFunction_10 /exec load
       } {
+        6 index
 	//ComputeFunction_n0 /exec load
       } ifelse
     ] cvx						% f n m [] i i1 {}
@@ -2103,7 +2156,7 @@ end
   1 index 0 eq {
     exch pop exch pop					% []
   } {
-    dup length - sub -1 0 {				% f n [] i
+    dup length 1 sub -1 0 {				% f n [] i
       3 index 3 index //MakeTableRec exec		% f n [] i []
       2 index 3 1 roll put				% f n []
     } for
@@ -2114,10 +2167,10 @@ end
   } if
 } bind def
 
-//MakeTableRec 0 /MakeTable put
+//MakeTableRec 0 //MakeTable put
 
 /StoreSample  % <value> <table> <dimensions> StoreSample -
-{ % The reader in on the dictionary stack.
+{ % The reader is on the dictionary stack.
   1 sub 
   dup 0 eq {
     pop 						% v []
@@ -2191,15 +2244,16 @@ end
 	  (value=) print dup =
 	} if
 	exch Table exch get				% v []
-	N //StoreSample exec				%
+	Size length //StoreSample exec			%
       } for
     } for
   } {
     1 sub 
     dup Size exch get 0 exch 1 exch 1 sub {		% d-1 i
       I exch 2 index exch put				% d-1
-      //ReadSamplesRec exec
-    } forall
+      dup //ReadSamplesRec exec                         % d-1
+    } for
+    pop
   } ifelse
   //PDFR_DEBUG {
     (ReadSamples end ) print count =
@@ -2258,7 +2312,7 @@ end
   } ifelse
 } bind def
 
-/FunctionToProc2 % <function_dict> FunctionToProc2 <proc>
+/FunctionToProc12 % <function_dict> FunctionToProc12 <proc>
 { begin
     currentdict /C0 //knownget exec { length 1 eq } { true } ifelse {
       N
@@ -2307,7 +2361,7 @@ end
 } bind def
 
 
-/FunctionToProc4 % <function_dict> FunctionToProc4 <proc>
+/FunctionToProc14 % <function_dict> FunctionToProc14 <proc>
 { //MakeStreamReader exec cvx exec
   //PDFR_DEBUG {
     (FunctionType4Proc : ) print dup == 
@@ -2321,13 +2375,31 @@ end
       pop //FunctionToProc10 exec exit
     } if
     dup 2 eq {
-      pop //FunctionToProc2 exec exit
+      pop //FunctionToProc12 exec exit
     } if
     dup 4 eq {
-      pop //FunctionToProc4 exec exit
+      pop //FunctionToProc14 exec exit
     } if
     mark exch (Function type ) exch ( isn't implemented yet.) //error exec
   } loop
+} bind def
+
+/FunctionToProc20 % <function_dict> FunctionToProc20 <proc>
+{ % Assuming a 2-argument function type 0.
+  PDFR_DEBUG {
+    (FunctionToProc20, Range = ) print dup /Range get ==
+  } if
+  dup /Order //knownget exec {
+    1 ne {
+      (Underimplemented function Type 0 Order 3.) =
+    } if
+  } if
+  dup //StreamToArray exec				% f
+  dup /Range get length dup 2 eq {
+    pop //FunctionToProc_x01 exec			% proc
+  } {
+    2 idiv //FunctionToProc_x0n exec			% proc
+  } ifelse
 } bind def
 
 /FunctionToProc % <function_dict> FunctionToProc <proc>
@@ -2339,10 +2411,78 @@ end
     dup 1 eq {
       pop //FunctionToProc1 exec exit
     } if
+    dup 2 eq {
+      pop //FunctionToProc20 exec exit
+    } if
     mark (Functions with many arguments aren't implemented yet.) //error exec
   } loop
   //PDFR_DEBUG {
     (FunctionToProc end ) print count =
+  } if
+} bind def
+
+/spotfunctions mark  % Copied from pdf_draw.ps 
+  /Round {
+    abs exch abs 2 copy add 1 le {
+      dup mul exch dup mul add 1 exch sub 
+    } {
+      1 sub dup mul exch 1 sub dup mul add 1 sub
+    } ifelse
+  }
+  /Diamond {
+    abs exch abs 2 copy add .75 le {
+      dup mul exch dup mul add 1 exch sub
+    } {
+      2 copy add 1.23 le {
+	.85 mul add 1 exch sub
+      } {
+	1 sub dup mul exch 1 sub dup mul add 1 sub
+      } ifelse
+    } ifelse
+  }
+  /Ellipse {
+    abs exch abs 2 copy 3 mul exch 4 mul add 3 sub dup 0 lt {
+      pop dup mul exch .75 div dup mul add 4 div 1 exch sub
+    } {
+      dup 1 gt {
+	pop 1 exch sub dup mul exch 1 exch sub
+	.75 div dup mul add 4 div 1 sub
+      } {
+	.5 exch sub exch pop exch pop
+      } ifelse
+    } ifelse
+  }
+  /EllipseA { dup mul .9 mul exch dup mul add 1 exch sub }
+  /InvertedEllipseA { dup mul .9 mul exch dup mul add 1 sub }
+  /EllipseB { dup 5 mul 8 div mul exch dup mul exch add sqrt 1 exch sub }
+  /EllipseC { dup mul .9 mul exch dup mul add 1 exch sub }
+  /InvertedEllipseC { dup mul .9 mul exch dup mul add 1 sub }
+  /Line { exch pop abs neg }
+  /LineX { pop }
+  /LineY { exch pop }
+  /Square { abs exch abs 2 copy lt { exch } if pop neg }
+  /Cross { abs exch abs 2 copy gt { exch } if pop neg }
+  /Rhomboid { abs exch abs 0.9 mul add 2 div }
+  /DoubleDot { 2 {360 mul sin 2 div exch } repeat add }
+  /InvertedDoubleDot { 2 {360 mul sin 2 div exch } repeat add neg }
+  /SimpleDot { dup mul exch dup mul add 1 exch sub }
+  /InvertedSimpleDot { dup mul exch dup mul add 1 sub }
+  /CosineDot { 180 mul cos exch 180 mul cos add 2 div }
+  /Double { exch 2 div exch 2 { 360 mul sin 2 div exch } repeat add }
+  /InvertedDouble {
+    exch 2 div exch 2 { 360 mul sin 2 div exch } repeat add neg
+  }
+.dicttomark readonly def
+
+/ResolveSpotFunction % <halftone_dict> ResolveSpotFunction <halftone_dict>
+{
+  dup /SpotFunction known 1 index /SpotFunctionResolved known not and {
+    dup /SpotFunction get type /nametype eq {
+      dup /SpotFunction 2 copy get //spotfunctions exch get put
+    } {
+      dup /SpotFunction 2 copy //DoNothing //ResolveD exec //FunctionToProc exec put
+    } ifelse
+    dup /SpotFunctionResolved true put
   } if
 } bind def
 
@@ -2890,21 +3030,18 @@ currentdict end readonly def
 
 /SetTransfer % <operand> SetTransfer -
 {
+  //PDFR_DEBUG { (SetTransfer beg ) print count = } if
   dup /Identity eq {
     pop {} settransfer
   } {
-    dup type /arraytype eq {
+    dup type /arraytype eq 1 index xcheck not and {
       0 4 getinterval aload pop 
-      FunctionToProc1x1 4 1 roll
-      FunctionToProc1x1 4 1 roll
-      FunctionToProc1x1 4 1 roll
-      FunctionToProc1x1 4 1 roll
       setcolortransfer
     } {
-      FunctionToProc1x1
       settransfer
     } ifelse
-  } iflese
+  } ifelse
+  //PDFR_DEBUG { (SetTransfer end ) print count = } if
 } bind def
 
 /CheckExtGState % <id> <obj> CheckExtGState <id> <obj>
@@ -2917,6 +3054,41 @@ currentdict end readonly def
 { dup /HalftoneType known not {
     mark (Resource ) 3 index ( must have /HalftoneType.) //error exec
   } if
+} bind def
+
+/ResolveFunction % <dict> <name> ResolveFunction <dict> <proc>
+{
+  //PDFR_DEBUG { (ResolveFunction beg ) print dup = count = } if
+  1 index /Resolved known not {
+    1 index /Resolved 10 dict put
+  } if
+  1 index /Resolved get 1 index known not {
+    1 index /Resolved get 1 index true put
+    2 copy //DoNothing //ResolveD exec
+    dup type /arraytype eq 1 index xcheck not and {
+      dup length 1 sub -1 0 {
+        2 copy //DoNothing ResolveA
+        dup /Identity eq {
+          pop 2 copy {} put
+        } {
+          //FunctionToProc exec
+          3 copy put pop
+        } ifelse
+        pop
+      } for
+    } {
+      dup /Identity eq {
+        pop {}
+      } {
+        //FunctionToProc exec
+      } ifelse
+    } ifelse
+    3 copy put
+    exch pop
+  } {
+    1 index exch get
+  } ifelse
+  //PDFR_DEBUG { (ResolveFunction end ) print dup == count = } if
 } bind def
 
 /SetExtGState % <name> SetExtGState -
@@ -2958,28 +3130,36 @@ currentdict end readonly def
     % Ghostscript never writes it.
     mark (Unimplemented ExtGState.Font) //error exec
   } if
-  dup /BG //knownget exec {
+  dup /BG known {
+    /BG //ResolveFunction exec
+    (ssss)=
     setblackgeneration
+    (ssss1)=
   } if
-  dup /BG2 //knownget exec {
+  dup /BG2 known {
+    /BG2 //ResolveFunction exec
     dup /Default eq {
       //InitialExtGState /BG2 get
     } if
     setblackgeneration
   } if
-  dup /UCR //knownget exec {
-	setundercolorremoval
+  dup /UCR known {
+    /UCR //ResolveFunction exec
+    setundercolorremoval
   } if
-  dup /UCR2 //knownget exec {
+  dup /UCR2 known {
+    /UCR2 //ResolveFunction exec
     dup /Default eq {
       //InitialExtGState /UCR2 get
     } if
     setundercolorremoval
   } if
-  dup /TR //knownget exec {
+  dup /TR known {
+    /TR //ResolveFunction exec
     //SetTransfer exec
   } if
-  dup /TR2 //knownget exec {
+  dup /TR2 known {
+    /TR2 //ResolveFunction exec
     dup /Default eq {
       pop //InitialExtGState /TR2 get
       aload pop setcolortransfer
@@ -2992,9 +3172,32 @@ currentdict end readonly def
       pop //InitialExtGState /HT get
       sethalftone
     } {
+      //PDFR_DEBUG { (Ht beg) = } if
       pop dup /HT //CheckHalftone //ResolveD exec
+      //ResolveSpotFunction exec
+      dup /HalftoneType get 5 eq {
+        dup {
+          xcheck {
+            1 index exch //CheckHalftone ResolveD
+	    //ResolveSpotFunction exec
+	    //PDFR_DEBUG {
+              (Subhalftone <<) =
+              dup { exch = == } forall
+              (>>)=
+	    } if
+	    pop
+          } {
+            pop
+          } ifelse
+        } forall
+      } if
+      //PDFR_DEBUG {
+        (HT:)= dup {exch = ==} forall flush
+        (HT end)= flush
+      } if
       sethalftone
-    } ifelase
+      //PDFR_DEBUG { (HT set)= flush } if
+    } ifelse
   } if
   dup /FL //knownget exec {
     setflattness
