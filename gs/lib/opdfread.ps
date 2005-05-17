@@ -2029,9 +2029,9 @@ end
     pop                                        % v
   } {                                          
     dup 2 add -1 roll                          % a2 .... an [] n a1
-    dup 1 eq {
+    dup 3 index length 1 sub ge {
       pop 1 sub                                % a2 .... an [] n-1
-      exch dup size 1 sub get exch
+      exch dup length 1 sub get exch
       //PDFReader /ComputeFunction_n0 get exec
     } {
       dup floor cvi dup                        % a2 .... an [] n a1 i i
@@ -3110,6 +3110,27 @@ currentdict end readonly def
   pop
 } bind def
 
+/CreateHalftoneThresholds  % <halftone_dict> CreateHalftoneThresholds <halftone_dict>
+{
+  dup /Thresholds known not {
+    dup /HalftoneType get 10 eq {
+      dup dup //MakeStreamReader exec
+      /Thresholds exch put
+    } if
+    dup /HalftoneType get dup 3 eq exch 6 eq or {
+      dup dup //MakeStreamReader exec
+      //BlockBuffer readstring pop
+      dup length 
+      dup 0 eq {
+        mark (Could not read Thresholds) //error exec
+      } if
+      string copy /Thresholds exch put
+      dup /HalftoneType 3 put % replace Type 6 with Type 3.
+    } if
+  } if
+} bind def
+
+
 /SetExtGState % <name> SetExtGState -
 {
   //PDFReader /CurrentObject get /Context get /Resources get 
@@ -3192,27 +3213,53 @@ currentdict end readonly def
       //PDFR_DEBUG { (Ht beg) = } if
       pop dup /HT //CheckHalftone //ResolveD exec
       /SpotFunction //ResolveFunctionSafe exec
-      dup /HalftoneType get 5 eq {
-        dup {
-          //IsObjRef exec {
-            1 index exch //CheckHalftone ResolveD
-	    /SpotFunction //ResolveFunctionSafe exec
-	    //PDFR_DEBUG {
-              (Subhalftone <<) =
-              dup { exch = == } forall
-              (>>)=
-	    } if
-	    pop
-          } {
+      /TransferFunction //ResolveFunctionSafe exec
+      null exch
+      dup /HalftoneType get dup 5 eq exch dup 4 eq exch 2 eq or or {
+        dup {                             % null h n v
+          dup //IsObjRef exec {
             pop
-          } ifelse
+            1 index exch //CheckHalftone ResolveD
+          } if
+          dup type /dicttype eq {
+            dup /SpotFunction //ResolveFunctionSafe exec
+            /TransferFunction //ResolveFunctionSafe exec
+            //CreateHalftoneThresholds exec
+            dup /HalftoneType get 5 gt {    % null h n v
+              4 3 roll pop 
+              dup 4 1 roll
+            } if
+          } if
+          pop pop
         } forall
       } if
+      //CreateHalftoneThresholds exec
       //PDFR_DEBUG {
-        (HT:)= dup {exch = ==} forall flush
+        (HT:)= 
+        dup { 
+          1 index /Default eq {
+            (Default <<)=
+              exch pop
+              { exch = == } forall
+            (>>)=
+          } {
+            exch = ==
+          } ifelse
+        } forall 
         (HT end)= flush
       } if
-      sethalftone
+      exch dup null ne {
+        (Warning: Ignoring a halftone with a Level 3 component halftone Type ) print dup /HalftoneType get =
+        pop pop
+      } {
+        pop
+        dup /HalftoneType get 5 gt {
+          (Warning: Ignoring a Level 3 halftone Type ) print dup /HalftoneType get =
+          pop
+        } {
+          sethalftone
+        } ifelse
+      } ifelse
       //PDFR_DEBUG { (HT set)= flush } if
     } ifelse
   } if
