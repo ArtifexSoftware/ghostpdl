@@ -387,6 +387,22 @@ currentdict end readonly def
   //PrintReference exec
 } bind def
 
+/IsObjRef %  <any> IsObjRef <bool>
+{ 
+  dup type /arraytype eq {
+    dup length 3 eq {
+      dup xcheck exch
+      dup 0 get type /integertype eq 3 2 roll and exch
+      dup 1 get //GetRegistered eq 3 2 roll and exch
+      2 get /exec load eq and
+    } {
+      pop false
+    } ifelse
+  } {
+    pop false
+  } ifelse
+} bind def
+
 /DoNothing 
 {
 } def
@@ -451,7 +467,7 @@ currentdict end readonly def
 /ResolveD % <dict> <key> <check> ResolveD <value>
 {
   3 copy pop get					% <> key {} e
-  dup xcheck {
+  dup //IsObjRef exec {
     % We've got a reference daemon, execute it :
     //PDFR_DEBUG {
       (Resolving ) print //PrintReference exec
@@ -467,7 +483,7 @@ currentdict end readonly def
 
 /ResolveA   % <array> <index> <check> ResolveA <value>
 { 2 index 2 index get
-  dup xcheck {
+  dup //IsObjRef exec {
     exec
     exch exec
     3 copy put
@@ -2474,19 +2490,6 @@ end
   }
 .dicttomark readonly def
 
-/ResolveSpotFunction % <halftone_dict> ResolveSpotFunction <halftone_dict>
-{
-  dup /SpotFunction known 1 index /SpotFunctionResolved known not and {
-    dup /SpotFunction get type /nametype eq {
-      dup /SpotFunction 2 copy get //spotfunctions exch get put
-    } {
-      dup /SpotFunction 2 copy //DoNothing //ResolveD exec //FunctionToProc exec put
-    } ifelse
-    dup /SpotFunctionResolved true put
-  } if
-} bind def
-
-
 % ===================== Color Spaces and Colors ==============
 
 /CheckColorSpace %  <key> <val> CheckColorSpace  <key> <val>
@@ -3031,15 +3034,11 @@ currentdict end readonly def
 /SetTransfer % <operand> SetTransfer -
 {
   //PDFR_DEBUG { (SetTransfer beg ) print count = } if
-  dup /Identity eq {
-    pop {} settransfer
+  dup type /arraytype eq 1 index xcheck not and {
+    0 4 getinterval aload pop 
+    setcolortransfer
   } {
-    dup type /arraytype eq 1 index xcheck not and {
-      0 4 getinterval aload pop 
-      setcolortransfer
-    } {
-      settransfer
-    } ifelse
+    settransfer
   } ifelse
   //PDFR_DEBUG { (SetTransfer end ) print count = } if
 } bind def
@@ -3059,12 +3058,12 @@ currentdict end readonly def
 /ResolveFunction % <dict> <name> ResolveFunction <dict> <proc>
 {
   //PDFR_DEBUG { (ResolveFunction beg ) print dup = count = } if
-  1 index /Resolved known not {
-    1 index /Resolved 10 dict put
-  } if
-  1 index /Resolved get 1 index known not {
-    1 index /Resolved get 1 index true put
+  2 copy get //IsObjRef exec {
     2 copy //DoNothing //ResolveD exec
+    3 copy put pop
+  } if
+  2 copy get dup type /arraytype eq exch xcheck and not {
+    2 copy get
     dup type /arraytype eq 1 index xcheck not and {
       dup length 1 sub -1 0 {
         2 copy //DoNothing ResolveA
@@ -3077,10 +3076,17 @@ currentdict end readonly def
         pop
       } for
     } {
-      dup /Identity eq {
-        pop {}
+      dup /Default eq {
+        % Leave it. ExtGState methods will resolve.
       } {
-        //FunctionToProc exec
+        dup /Identity eq {
+          pop {}
+        } { dup type /nametype eq {
+            //spotfunctions exch get
+          } {
+            //FunctionToProc exec
+          } ifelse
+        } ifelse
       } ifelse
     } ifelse
     3 copy put
@@ -3089,6 +3095,13 @@ currentdict end readonly def
     1 index exch get
   } ifelse
   //PDFR_DEBUG { (ResolveFunction end ) print dup == count = } if
+} bind def
+
+/ResolveFunctionSafe % <dict> <name> ResolveFunctionSafe <dict>
+{ 2 copy known {
+  //ResolveFunction exec
+  } if
+  pop
 } bind def
 
 /SetExtGState % <name> SetExtGState -
@@ -3132,9 +3145,7 @@ currentdict end readonly def
   } if
   dup /BG known {
     /BG //ResolveFunction exec
-    (ssss)=
     setblackgeneration
-    (ssss1)=
   } if
   dup /BG2 known {
     /BG2 //ResolveFunction exec
@@ -3174,12 +3185,12 @@ currentdict end readonly def
     } {
       //PDFR_DEBUG { (Ht beg) = } if
       pop dup /HT //CheckHalftone //ResolveD exec
-      //ResolveSpotFunction exec
+      /SpotFunction //ResolveFunctionSafe exec
       dup /HalftoneType get 5 eq {
         dup {
-          xcheck {
+          //IsObjRef exec {
             1 index exch //CheckHalftone ResolveD
-	    //ResolveSpotFunction exec
+	    /SpotFunction //ResolveFunctionSafe exec
 	    //PDFR_DEBUG {
               (Subhalftone <<) =
               dup { exch = == } forall
