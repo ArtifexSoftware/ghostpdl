@@ -61,6 +61,8 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     pdf_set_pure_color(pdev, color, &pdev->saved_fill_color,
 		       &pdev->fill_used_process_color,
 		       &psdf_set_fill_color_commands);
+    if (!pdev->HaveStrokeColor)
+	pdev->saved_stroke_color = pdev->saved_fill_color;
     pprintd4(pdev->strm, "%d %d %d %d re f\n", x, y, w, h);
     return 0;
 }
@@ -1272,7 +1274,8 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     if (code < 0)
 	return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
 				      pcpath);
-
+    if (!pdev->HaveStrokeColor)
+	pdev->saved_fill_color = pdev->saved_stroke_color;
     if (set_ctm)
   	pdf_put_matrix(pdev, "q ", &mat, "cm\n");
     code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,
