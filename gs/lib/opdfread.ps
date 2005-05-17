@@ -235,8 +235,6 @@ currentdict end readonly def
   /DeviceCMYK true def 
 currentdict end readonly def
 
-/definefont_hook 1 dict def
-
 /1_24_bitshift_1_sub 1 24 bitshift 1 sub def
 
 /ReadFontProcs 10 dict def % Will be filled below.
@@ -433,6 +431,12 @@ currentdict end readonly def
 {
   //PDFR_DEBUG {
     (endobj ) =
+  } if
+  dup type /dicttype eq {
+    dup /.endobj_daemon //knownget exec {
+      //PDFR_DEBUG { (.endobj_daemon for ) print 2 index = } if
+      exec
+    } if
   } if
   dup type /dicttype eq { dup /ImmediateExec known } { false } ifelse {
     pop pop
@@ -667,8 +671,8 @@ currentdict end readonly def
   } if
 } bind def
 
-/endstream % <id> <obj> endstream <id> <obj>
-{ //definefont_hook /FontDescriptor //knownget exec {	% id obj fd
+/HookFont % <id> <obj> <font_descriptor> HookFont <id> <obj>
+{ 
     //PDFR_DEBUG {
       (Loaded the font ) print dup /FontName get =
     } if
@@ -712,11 +716,13 @@ currentdict end readonly def
 	dup /FontName get exch definefont
 	exit
       } if
-      mark (definefont_hook has no proc for ) 3 index /FontFileType get //error exec
+      mark (FontHook has no proc for ) 3 index /FontFileType get //error exec
     } loop
     /Font exch put					% id obj
-    //definefont_hook /FontDescriptor undef
-  } if
+} bind def
+
+/endstream % <id> <obj> endstream <id> <obj>
+{ 
 } bind def
 
 /xref % - xref -
@@ -958,7 +964,7 @@ currentdict end readonly def
   { //PDFR_DEBUG {
       (ReadFontProcs.Type1) =
     } if
-    //definefont_hook /FontDescriptor 3 index put
+    dup /.endobj_daemon [ 4 index //HookFont /exec load ] cvx put
     dup /ImmediateExec true put
     /GlobalExec true put
   } bind def
@@ -966,7 +972,7 @@ currentdict end readonly def
   { //PDFR_DEBUG {
       (ReadFontProcs.TrueType) =
     } if
-    //definefont_hook /FontDescriptor 3 index put
+    dup /.endobj_daemon [ 4 index //HookFont /exec load ] cvx put
     pop
   } bind def
 end
