@@ -26,10 +26,13 @@
 #include "scommon.h"
 #include <jasper/jasper.h>
 
-/* Arcfour is a symmetric cipher whose state is maintained
- * in two indices into an accompanying 8x8 S box. this will
- * typically be allocated on the stack, and so has no memory
- * management associated.
+/* Our local state consists of pointers to the JasPer library's
+ * stream and image structs for sending and retrieving the
+ * image data. There's no way to feed a jasper stream with
+ * incremental buffers, so we also must spool the entire
+ * compressed stream into our own buffer before handing it
+ * to the library. We also keep track of how much of the
+ * decoded image we have returned.
  */
 typedef struct stream_jpxd_state_s
 {
