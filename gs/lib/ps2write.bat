@@ -1,7 +1,7 @@
 @rem $Id$
 @rem Converting Postscript 3 or PDF into PostScript 2.
 
-set invoke0=%GSC% -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile=temp.pdf %more_param% 
+set invoke0=%GSC% -dBATCH -dNOPAUSE -dNOOUTERSAVE -sDEVICE=pdfwrite -sOutputFile=temp.pdf %more_param% 
 set invoke1=-c mark /ForOPDFRead true /PreserveHalftoneInfo true /TransferFunctionInfo /Preserve 
 set invoke2=/MaxViewerMemorySize 8000000 /CompressPages false /CompressFonts false /ASCII85EncodePages true 
 set invoke3=.dicttomark setpagedevice -f %more_param1%
