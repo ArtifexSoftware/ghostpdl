@@ -29,3 +29,10 @@ jbig2dec_headers = Split(""" sha1.h
         os_types.h config_types.h config_win32.h""")
 
 env.Program('jbig2dec', jbig2dec_sources, LIBS=['jbig2dec'], LIBPATH='.')
+
+# self tests
+test = env.Copy(CPPDEFINES = ['TEST', 'HAVE_STDINT_H'])
+test_sha1 = test.Program(test.Object('test_sha1', 'sha1.c'))
+test_alias = test.Alias('test', [test_sha1, 'test_jbig2dec.py', 'jbig2dec'])
+test.Command(test_alias, [], ["./test_jbig2dec.py", "./test_sha1"])
+test.AlwaysBuild('test')
