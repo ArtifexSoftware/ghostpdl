@@ -282,6 +282,8 @@ typedef struct pdf_page_s {
     cos_array_t *Annots;
     pdf_text_rotation_t text_rotation;
     pdf_page_dsc_info_t dsc_info;
+    bool NumCopies_set; /* ps2write only. */
+    int NumCopies;      /* ps2write only. */
 } pdf_page_t;
 #define private_st_pdf_page()	/* in gdevpdf.c */\
   gs_private_st_ptrs2(st_pdf_page, pdf_page_t, "pdf_page_t",\

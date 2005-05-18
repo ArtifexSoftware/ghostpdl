@@ -629,6 +629,11 @@ currentdict end readonly def
   } if
   //PDFReader /CurrentObject null put
   dup /IsPage known {
+    dup /Context get /NumCopies //knownget exec {
+      1 sub {
+        copypage
+      } repeat
+    } if
     showpage
   } if
 } bind def

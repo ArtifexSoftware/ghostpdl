@@ -936,6 +936,8 @@ pdf_close_page(gx_device_pdf * pdev)
     page->MediaBox.x = pdev->MediaSize[0];
     page->MediaBox.y = pdev->MediaSize[1];
     page->contents_id = pdev->contents_id;
+    page->NumCopies_set = pdev->NumCopies_set;
+    page->NumCopies = pdev->NumCopies;
     /* pdf_store_page_resources sets procsets, resource_ids[]. */
     code = pdf_store_page_resources(pdev, page);
     if (code < 0)
@@ -1021,6 +1023,10 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 	     round_box_coord(page->MediaBox.y));
     pdf_print_orientation(pdev, page);
     pprintld1(s, "/Parent %ld 0 R\n", pdev->Pages->id);
+    if (pdev->ForOPDFRead) {
+	if (page->NumCopies_set)
+	    pprintld1(s, "/NumCopies %ld\n", page->NumCopies);
+    }
     stream_puts(s, "/Resources<</ProcSet[/PDF");
     if (page->procsets & ImageB)
 	stream_puts(s, " /ImageB");
