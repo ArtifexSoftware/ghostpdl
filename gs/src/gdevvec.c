@@ -74,7 +74,7 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
      * which requires (untransformed) device coordinates.
      */
     if (rtype != prt_none &&
-	!((type & gx_path_type_stroke) && rtype == prt_open) &&
+	(!(type & gx_path_type_stroke) || rtype == prt_closed) &&
 	(pmat == 0 || is_xxyy(pmat) || is_xyyx(pmat)) &&
 	(state.scale_mat.xx == 1.0 && state.scale_mat.yy == 1.0 &&
 	 is_xxyy(&state.scale_mat) &&
