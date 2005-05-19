@@ -1205,15 +1205,22 @@ end readonly def
     pop false
   } {
     false exch {
-      dup resourceusestransparency { pop not exit } if
+      4 dict 1 index resourceusestransparency { pop not exit } if
       /Parent knownoget not { exit } if
     } loop
   } ifelse
 } bind def
-% Check the Resources of a page or Form.
-/resourceusestransparency {	% <dict> resourceusestransparency <bool>
+
+% Check the Resources of a page or Form. Check for loops in the resource chain.
+/resourceusestransparency {	% <dict> <dict> resourceusestransparency <bool>
   {	% Use loop to provide an exitable context.
     /Resources knownoget not { 0 dict } if
+    2 copy known {
+      (   **** File has circular references in resource dictionaries.\n)
+      pdfformaterror
+      pop false exit
+    } if
+    2 copy dup put
     dup /ExtGState knownoget {
       false exch {
 	exch pop oforce
@@ -1231,7 +1238,7 @@ end readonly def
 	exch pop oforce dup /Subtype get
 	dup /Image eq { 1 index /SMask known { pop pop not exit } if } if
 	/Form eq {
-	  resourceusestransparency { not exit } if
+	  3 index exch resourceusestransparency { not exit } if
 	} {
 	  pop
 	} ifelse
@@ -1239,6 +1246,7 @@ end readonly def
     } if
     pop false exit
   } loop
+  exch pop
 } bind def
 
 % ------ ColorSpace substitution support ------ %
