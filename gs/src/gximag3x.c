@@ -547,7 +547,7 @@ make_mcdex_default(gx_device *dev, const gs_imager_state *pis,
 
     if (bbdev == 0)
 	return_error(mem, gs_error_VMerror);
-    gx_device_bbox_init(bbdev, dev);
+    gx_device_bbox_init(bbdev, dev, mem);
     gx_device_bbox_fwd_open_close(bbdev, false);
     code = dev_proc(bbdev, begin_typed_image)
 	((gx_device *)bbdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
