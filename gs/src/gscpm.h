@@ -32,6 +32,7 @@ typedef enum {
 typedef enum {
     CACHE_DEVICE_NONE = 0,	/* default, must be 0 */
     CACHE_DEVICE_NOT_CACHING,	/* setcachedevice done but not caching */
+    CACHE_DEVICE_NONE_AND_CLIP, /* setcachedevice done, not caching and applied gsave and clip */
     CACHE_DEVICE_CACHING	/* setcachedevice done and caching */
 } gs_in_cache_device_t;
 

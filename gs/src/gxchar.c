@@ -581,8 +581,33 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 				 log2_scale.x + log2_scale.y > alpha_bits ?
 				 penum->dev_cache2 : NULL),
 				iwidth, iheight, &log2_scale, depth);
-	if (cc == 0)
-	    return 0;		/* too big for cache */
+	if (cc == 0) {
+	    /* too big for cache or no cache */
+	    gx_path box_path;
+
+	    if (penum->current_font->FontType != ft_user_defined && 
+		penum->current_font->FontType != ft_CID_user_defined) {
+		/* Most fonts don't paint outside bbox,
+		   so render with no clipping. */
+		return 0;
+	    }
+	    /* Render with a clip. */
+	    /* show_proceed already did gsave. */
+	    pgs->in_cachedevice = CACHE_DEVICE_NONE; /* Provide a correct grestore on error. */
+	    clip_box.p.x = penum->origin.x - fixed_ceiling(-cll.x);
+	    clip_box.p.y = penum->origin.y - fixed_ceiling(-cll.y);
+	    clip_box.q.x = clip_box.p.x + int2fixed(iwidth);
+	    clip_box.q.y = clip_box.p.y + int2fixed(iheight);
+	    gx_path_init_local(&box_path, pgs->memory);
+	    code = gx_path_add_rectangle(&box_path, clip_box.p.x, clip_box.p.y,
+						    clip_box.q.x, clip_box.q.y);
+	    if (code < 0)
+		return code;
+	    code = gx_cpath_clip(pgs, pgs->clip_path, &box_path, gx_rule_winding_number);
+	    gx_path_free(&box_path, "set_cache_device");
+	    pgs->in_cachedevice = CACHE_DEVICE_NONE_AND_CLIP;
+	    return 0;		
+	}
 	/* The mins handle transposed coordinate systems.... */
 	/* Truncate the offsets to avoid artifacts later. */
 	cc->offset.x = fixed_ceiling(-cll.x);
