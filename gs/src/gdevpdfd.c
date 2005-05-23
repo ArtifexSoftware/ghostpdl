@@ -779,7 +779,7 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
 {
     int code = 0;
 
-    if (!cvd->path_is_empty) {
+    if (!cvd->path_is_empty || cvd->has_background) {
 	code = write_image(pdev, &cvd->mdev, (cvd->write_matrix ? &cvd->m : NULL));
 	cvd->path_is_empty = true;
     } else if (!cvd->mask_is_empty && pdev->PatternImagemask) {
@@ -848,6 +848,8 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
     gx_device_pdf *pdev = (gx_device_pdf *)cvd->mdev.target;
     int code;
 
+    if (cvd->has_background)
+	return 0;
     if (gx_path_is_null(ppath)) {
 	/* use the mask. */
 	if (!cvd->path_is_empty) {
@@ -915,6 +917,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     cvd->path_is_empty = true;
     cvd->mask_is_empty = true;
     cvd->mask_is_clean = false;
+    cvd->has_background = false;
     cvd->mask = 0;
     cvd->write_matrix = true;
     code = (*dev_proc(&cvd->mdev, open_device))((gx_device *)&cvd->mdev);
@@ -1120,6 +1123,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    }
 	    code = pdf_setup_masked_image_converter(pdev, pdev->memory, &m, &pcvd, need_mask, sx, sy, 
 			    rect_size.x, rect_size.y, false);
+	    pcvd->has_background = gx_dc_pattern2_has_background(pdcolor);
 	    stream_puts(pdev->strm, "q\n");
 	    if (code >= 0) {
 		code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,

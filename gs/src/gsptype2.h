@@ -108,4 +108,6 @@ int gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox);
 /* Check device color for a possibly self-overlapping shading. */
 bool gx_dc_pattern2_can_overlap(const gx_device_color *pdevc);
 
+/* Check whether a pattern color has a background. */
+bool gx_dc_pattern2_has_background(const gx_device_color *pdevc);
 #endif /* gsptype2_INCLUDED */

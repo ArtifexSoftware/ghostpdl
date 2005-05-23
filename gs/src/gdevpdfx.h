@@ -869,7 +869,7 @@ int pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath);
 
 /* ------ Masked image convertion ------ */
 
-typedef struct {
+typedef struct pdf_lcvd_s {
     gx_device_memory mdev;
     gx_device_memory *mask;
     gx_device_pdf *pdev;
@@ -879,6 +879,7 @@ typedef struct {
     bool path_is_empty;
     bool mask_is_clean;
     bool write_matrix;
+    bool has_background;
     gs_matrix m;
     gs_point path_offset;
 } pdf_lcvd_t;
