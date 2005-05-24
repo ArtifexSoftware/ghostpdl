@@ -274,7 +274,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
       /* 6.5.6 */
       if (params->SDHUFF) {
-	; /* todo */
+	  HCDH = jbig2_huffman_get(hs, params->SDHUFFDH, &code);
       } else {
 	  code = jbig2_arith_int_decode(IADH, as, &HCDH);
       }
@@ -314,7 +314,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	    }
 	  /* 6.5.7 */
 	  if (params->SDHUFF) {
-	    ; /* todo */
+	      DW = jbig2_huffman_get(hs, params->SDHUFFDW, &code);
 	  } else {
 	      code = jbig2_arith_int_decode(IADW, as, &DW);
 	  }
@@ -327,8 +327,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  }
 	  SYMWIDTH = SYMWIDTH + DW;
 	  TOTWIDTH = TOTWIDTH + SYMWIDTH;
-        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-        "  decoded symbol %d width %d (total width now %d)", NSYMSDECODED, SYMWIDTH, TOTWIDTH); 
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+		"decoded symbol %d width %d (total width now %d)", 
+		NSYMSDECODED, SYMWIDTH, TOTWIDTH); 
 	  if (SYMWIDTH < 0) {
 	      /* todo: mem cleanup */
               code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
@@ -370,7 +371,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                   uint32_t REFAGGNINST;
 
 		  if (params->SDHUFF) {
-		      /* todo */
+		      REFAGGNINST = jbig2_huffman_get(hs, params->SDHUFFAGGINST, &code);
 		  } else {
 		      code = jbig2_arith_int_decode(IAAI, as, (int32_t*)&REFAGGNINST);
 		  }
@@ -552,8 +553,6 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   params.SDHUFFAGGINST = NULL;
 
   if (params.SDHUFF) {
-    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "symbol dictionary uses the Huffman encoding variant (NYI)");
     switch ((flags & 0x000c) >> 2) {
       case 0: /* Table B.4 */
 	params.SDHUFFDH = jbig2_build_huffman_table(ctx, 

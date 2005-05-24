@@ -37,9 +37,11 @@ TESTS = test_sha1 test_jbig2dec.py test_huffman test_arith
 test_sha1_SOURCES = sha1.c sha1.h
 test_sha1_CFLAGS = -DTEST
 
-test_arith_SOURCES = sha1.c sha1.h
+test_arith_SOURCES = jbig2_arith.c
 test_arith_CFLAGS = -DTEST
+test_arith_LDADD = libjbig2dec.a
 
-test_huffman_SOURCES = sha1.c sha1.h
+test_huffman_SOURCES = jbig2_huffman.c
 test_huffman_CFLAGS = -DTEST
+test_huffman_LDADD = libjbig2dec.a
 
