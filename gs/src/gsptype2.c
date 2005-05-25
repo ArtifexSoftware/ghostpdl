@@ -325,5 +325,5 @@ bool gx_dc_pattern2_has_background(const gx_device_color *pdevc)
 	return false;
     pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
     Shading = pinst->template.Shading;
-    return Shading->params.Background != NULL;
+    return !pinst->shfill && Shading->params.Background != NULL;
 }

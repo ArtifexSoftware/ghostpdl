@@ -535,11 +535,8 @@ write_image(gx_device_pdf *pdev, gx_device_memory *mdev, gs_matrix *m)
     const int sourcex = 0;
     int code;
 
-    
     if (m != NULL)
-	pdf_put_matrix(pdev, "W n\n", m, " cm\n");
-    else
-	stream_puts(pdev->strm, "W n\n");
+	pdf_put_matrix(pdev, NULL, m, " cm\n");
     code = pdf_copy_color_data(pdev, mdev->base, sourcex,  
 		mdev->raster, gx_no_bitmap_id, 0, 0, mdev->width, mdev->height,
 		&image, &writer, 2);
@@ -780,6 +777,8 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
     int code = 0;
 
     if (!cvd->path_is_empty || cvd->has_background) {
+	if (!cvd->has_background)
+	    stream_puts(pdev->strm, "W n\n");
 	code = write_image(pdev, &cvd->mdev, (cvd->write_matrix ? &cvd->m : NULL));
 	cvd->path_is_empty = true;
     } else if (!cvd->mask_is_empty && pdev->PatternImagemask) {
@@ -809,8 +808,10 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
 	inst.template.YStep = (float)cvd->mdev.height;
 	code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
 	    id, &inst, pattern_manage__start_accum);
-	if (code >= 0)
+	if (code >= 0) {
+	    stream_puts(pdev->strm, "W n\n");
 	    code = write_image(pdev, &cvd->mdev, NULL);
+	}
 	pres = pdev->accumulating_substream_resource;
 	if (code >= 0)
 	    code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
@@ -1054,7 +1055,6 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    gs_fixed_rect bbox, bbox1;
 	    bool need_mask = gx_dc_pattern2_can_overlap(pdcolor);
 	    gs_matrix m, save_ctm = ctm_only(pis), ms, msi, mm;
-	    gs_point p;
 	    gs_int_point rect_size;
 	    /* double scalex = 1.9, scaley = 1.4; debug purpose only. */
 	    double scale, scalex = 1.0, scaley = 1.0;
@@ -1079,17 +1079,15 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 		return 0;
 	    sx = fixed2int(bbox.p.x);
 	    sy = fixed2int(bbox.p.y);
-	    gs_distance_transform_inverse(sx * pdev->HWResolution[0] / 72, 
-					  sy * pdev->HWResolution[0] / 72, &ctm_only(pis), &p);
 	    gs_make_identity(&m);
 	    rect_size.x = fixed2int(bbox.q.x + fixed_half) - sx;
 	    rect_size.y = fixed2int(bbox.q.y + fixed_half) - sy;
 	    if (rect_size.x == 0 || rect_size.x == 0)
 		return 0;
-	    m.tx = p.x;
-	    m.ty = p.y;
-	    cvd.path_offset.x = m.tx;
-	    cvd.path_offset.y = m.ty;
+	    m.tx = (float)sx;
+	    m.ty = (float)sy;
+	    cvd.path_offset.x = sx;
+	    cvd.path_offset.y = sy;
 	    scale = (double)rect_size.x * rect_size.y * pdev->color_info.num_components /
 		    pdev->MaxShadingBitmapSize;
 	    if (scale > 1) {
@@ -1109,17 +1107,15 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 		rect_size.y = (int)floor(rect_size.y / scaley + 0.5);
 		gs_make_scaling(1.0 / scalex, 1.0 / scaley, &ms);
 		gs_make_scaling(scalex, scaley, &msi);
-		gs_matrix_multiply(&m, &msi, &m);
+		gs_matrix_multiply(&msi, &m, &m);
 		gs_matrix_multiply(&ctm_only(pis), &ms, &mm);
 		gs_setmatrix((gs_state *)pis, &mm);
 		gs_matrix_multiply(&ctm_only((gs_imager_state *)pgs), &ms, &mm);
 		gs_setmatrix((gs_state *)pgs, &mm);
-		m.tx /= scalex;
-		m.ty /= scaley;
-		cvd.path_offset.x = m.tx / scalex;
-		cvd.path_offset.y = m.ty / scaley;
-		sx = (int)floor(sx / scalex + 0.5);
-		sy = (int)floor(sy / scaley + 0.5);
+		sx = fixed2int(bbox.p.x / (int)scalex);
+		sy = fixed2int(bbox.p.y / (int)scaley);
+		cvd.path_offset.x = sx; /* m.tx / scalex */
+		cvd.path_offset.y = sy;
 	    }
 	    code = pdf_setup_masked_image_converter(pdev, pdev->memory, &m, &pcvd, need_mask, sx, sy, 
 			    rect_size.x, rect_size.y, false);

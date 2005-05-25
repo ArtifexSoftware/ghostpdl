@@ -3498,8 +3498,10 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
 	fixed d12y = (curve[2].vertex.p.y - curve[1].vertex.p.y) >> 1;
 	fixed d23x = (curve[3].vertex.p.x - curve[2].vertex.p.x) >> 1;
 	fixed d23y = (curve[3].vertex.p.y - curve[2].vertex.p.y) >> 1;
+	fixed d30x = (curve[0].vertex.p.x - curve[3].vertex.p.x) >> 1;
+	fixed d30y = (curve[0].vertex.p.y - curve[3].vertex.p.y) >> 1;
 	int64_t s1 = (int64_t)d01x * d12y - (int64_t)d01y * d12x;
-	int64_t s2 = (int64_t)d12x * d23y - (int64_t)d12y * d23x;
+	int64_t s2 = (int64_t)d23x * d30y - (int64_t)d23y * d30x;
 	int s = (s1 + s2 > 0 ? 1 : 3), i, j, k, jj, l = (s == 1 ? 0 : 1);
 
 	gx_path_init_local(&path, pdev->memory);

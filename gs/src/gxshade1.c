@@ -376,7 +376,7 @@ R_tensor_annulus(patch_fill_state_t *pfs, const gs_rect *rect,
 			p[j * 3 + 2].x, p[j * 3 + 2].y, &curve[jj].control[1]);
 	    if (code < 0)
 		return code;
-	    curve[j].straight = ((j & 1) != 0);
+	    curve[j].straight = (((j + inside) & 1) != 0);
 	}
 	curve[(0 + inside) % 4].vertex.cc[0] = t0;
 	curve[(1 + inside) % 4].vertex.cc[0] = t0;
