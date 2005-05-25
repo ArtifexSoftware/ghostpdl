@@ -143,8 +143,11 @@ end
       .copyparam
       % special protection for the security related parameters
       [ /PermitFileReading /PermitFileWriting /PermitFileControl ]
-      { 2 index eq { % force all strings to readonly
-	  dup length array exch { readonly exch } forall astore
+      { 2 index eq { % force all strings to readonly but make sure the
+		     % array is in the correct VM space (local/global).
+	currentglobal exch dup gcheck setglobal
+	dup length array exch { readonly exch } forall astore
+	exch setglobal
         } if
       } forall
       % protect top level of parameters that we copied
