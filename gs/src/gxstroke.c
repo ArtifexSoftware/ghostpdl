@@ -850,7 +850,10 @@ adjust_stroke(pl_ptr plp, const gs_imager_state * pis, bool thin)
     /* Note that just rounding the larger component */
     /* may not produce the correct result. */
     w = *pw;
-    w2 = fixed_rounded(w << 1);	/* full line width */
+    if (w > 0)
+	w2 = fixed_rounded(w << 1);	/* full line width */
+    else
+	w2 = -fixed_rounded(-w << 1);	/* full line width */
     if (w2 == 0 && *pw != 0) {
 	/* Make sure thin lines don't disappear. */
 	w2 = (*pw < 0 ? -fixed_1 + adj2 : fixed_1 - adj2);
@@ -1063,6 +1066,7 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
     }
     /* Create an initial cap if desired. */
     if (first == 0 && pgs_lp->cap == gs_cap_round) {
+	vd_moveto(plp->o.co.x, plp->o.co.y);
 	if ((code = gx_path_add_point(ppath, plp->o.co.x, plp->o.co.y)) < 0 ||
 	    (code = add_round_cap(ppath, &plp->o)) < 0
 	    )
@@ -1077,6 +1081,7 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	/* Add a final cap. */
 	if (pgs_lp->cap == gs_cap_round) {
 	    ASSIGN_POINT(&points[npoints], plp->e.co);
+	    vd_lineto(points[npoints].x, points[npoints].y);
 	    ++npoints;
 	    if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
 		return code;
@@ -1086,6 +1091,7 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	code = cap_points(pgs_lp->cap, &plp->e, points + npoints);
     } else if (join == gs_join_round) {
 	ASSIGN_POINT(&points[npoints], plp->e.co);
+	vd_lineto(points[npoints].x, points[npoints].y);
 	++npoints;
 	if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
 	    return code;
@@ -1399,6 +1405,7 @@ add_round_cap(gx_path * ppath, const_ep_ptr endp)
 	(code = gx_path_add_line(ppath, xe, ye)) < 0
 	)
 	return code;
+    vd_lineto(xe, ye);
     return 0;
 }
 
