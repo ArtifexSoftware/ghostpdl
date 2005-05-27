@@ -40,7 +40,8 @@
    acquire an API for changing resolution. */
 int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
 				  gdev_prn_space_params *old_space,
-				  int old_width, int old_height);
+			          int old_width, int old_height,
+			          bool old_page_uses_transparency);
 
 /* Device procedures */
 
@@ -519,8 +520,8 @@ gsijs_set_resolution(gx_device_ijs *ijsdev)
 
     ijsdev->is_open = true;
     code = gdev_prn_maybe_realloc_memory((gx_device_printer *)ijsdev,
-					 &ijsdev->space_params,
-					 width, height);
+					 &ijsdev->space_params, width, height,
+					 ijsdev->page_uses_transparency);
     ijsdev->is_open = save_is_open;
     return code;
 }

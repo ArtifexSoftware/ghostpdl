@@ -57,7 +57,8 @@ const gx_device_procs prn_std_procs =
 /* Forward references */
 int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev, 
 				  gdev_prn_space_params *old_space,
-				  int old_width, int old_height);
+			          int old_width, int old_height,
+			          bool old_page_uses_transparency);
 
 /* ------ Open/close ------ */
 
@@ -528,6 +529,7 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     bool oof = ppdev->OpenOutputFile;
     bool rpp = ppdev->ReopenPerPage;
     bool page_uses_transparency = ppdev->page_uses_transparency;
+    bool old_page_uses_transparency = ppdev->page_uses_transparency;
     bool duplex;
     int duplex_set = -1;
     int width = pdev->width;
@@ -676,7 +678,8 @@ label:\
     /* If necessary, free and reallocate the printer memory. */
     /* Formerly, would not reallocate if device is not open: */
     /* we had to patch this out (see News for 5.50). */
-    code = gdev_prn_maybe_realloc_memory(ppdev, &save_sp, width, height);
+    code = gdev_prn_maybe_realloc_memory(ppdev, &save_sp, width, height,
+		    				old_page_uses_transparency);
     if (code < 0)
 	return code;
 
@@ -1238,7 +1241,8 @@ gdev_prn_close_printer(gx_device * pdev)
 int
 gdev_prn_maybe_realloc_memory(gx_device_printer *prdev, 
 			      gdev_prn_space_params *old_sp,
-			      int old_width, int old_height)
+			      int old_width, int old_height,
+			      bool old_page_uses_transparency)
 {
     int code = 0;
     gx_device *const pdev = (gx_device *)prdev;
@@ -1254,7 +1258,8 @@ gdev_prn_maybe_realloc_memory(gx_device_printer *prdev,
      */
     if (prdev->is_open &&
 	(memcmp(&prdev->space_params, old_sp, sizeof(*old_sp)) != 0 ||
-	 prdev->width != old_width || prdev->height != old_height )
+	 prdev->width != old_width || prdev->height != old_height ||
+	 prdev->page_uses_transparency != old_page_uses_transparency)
 	) {
 	int new_width = prdev->width;
 	int new_height = prdev->height;
