@@ -1082,7 +1082,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    gs_make_identity(&m);
 	    rect_size.x = fixed2int(bbox.q.x + fixed_half) - sx;
 	    rect_size.y = fixed2int(bbox.q.y + fixed_half) - sy;
-	    if (rect_size.x == 0 || rect_size.x == 0)
+	    if (rect_size.x == 0 || rect_size.y == 0)
 		return 0;
 	    m.tx = (float)sx;
 	    m.ty = (float)sy;
