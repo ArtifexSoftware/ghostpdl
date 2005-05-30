@@ -682,7 +682,7 @@ currentdict end readonly def
       (Loaded the font ) print dup /FontName get =
     } if
     {
-      dup /FontFileType get /Type1 eq {			% id obj fd
+      dup /FontFileType get dup /Type1 eq exch /MMType1 eq or {  % id obj fd
 	% We assume that the Type 1 font has same name with no prefix
 	% due to pdfwrite specifics.
 	% We use it to find the font after it is defined.
@@ -721,7 +721,7 @@ currentdict end readonly def
 	dup /FontName get exch definefont
 	exit
       } if
-      mark (FontHook has no proc for ) 3 index /FontFileType get //error exec
+      mark (FontHook has no proc for ) 2 index /FontFileType get //error exec
     } loop
     /Font exch put					% id obj
 } bind def
@@ -973,7 +973,8 @@ currentdict end readonly def
     dup /ImmediateExec true put
     /GlobalExec true put
   } bind def
-  /TrueType   % <font_descriptor> <FontFile_object> Type1 <font_descriptor>
+  /MMType1 //Type1 def
+  /TrueType   % <font_descriptor> <FontFile_object> TrueType <font_descriptor>
   { //PDFR_DEBUG {
       (ReadFontProcs.TrueType) =
     } if
@@ -1199,7 +1200,7 @@ end
     exch pop exch pop
   } {
     {
-      dup /Subtype get dup /Type1 eq exch /TrueType eq or {
+      dup /Subtype get dup dup /Type1 eq exch /TrueType eq or exch /MMType1 eq or {
 							% s rn fr
 	//ObtainEncoding exec
 	//ObtainMetrics exec
@@ -3373,7 +3374,19 @@ currentdict end readonly def
   /b* { closepath gsave eofill grestore stroke } bind def
   /W /clip load def
   /W* /eoclip load def
-  /sh { ResolveShading shfill } bind def
+  /sh { % Reserved for ps3write.
+        ResolveShading 
+        dup /Background known {
+          gsave
+          dup /ColorSpace get setcolorspace
+          dup /Background get aload pop setcolor
+          pathbbox               % x0 y0 x1 y1
+          2 index sub exch 3 index sub exch
+          rectfill
+          grestore
+        } if
+        shfill 
+      } bind def
 
   /Do { //DoXObject exec } bind def
 
