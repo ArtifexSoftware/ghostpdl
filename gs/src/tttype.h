@@ -62,7 +62,13 @@
   /*                                                                 */
   /*******************************************************************/
 
+#if   ARCH_LOG2_SIZEOF_LONG == 2
   typedef signed long     TT_Fixed;   /* Signed Fixed 16.16 Float */
+#elif ARCH_LOG2_SIZEOF_INT  == 2
+  typedef signed int      TT_Fixed;   /* Signed Fixed 16.16 Float */
+#else
+#error "No appropriate type for Fixed 16.16 Floats"
+#endif
 
   typedef signed short    TT_FWord;   /* Distance in FUnits */
   typedef unsigned short  TT_UFWord;  /* Unsigned distance */
@@ -85,10 +91,19 @@
                                       /*  added.                          */
                                       /*                                  */
 
+#if   ARCH_LOG2_SIZEOF_LONG == 2
   typedef signed long     TT_F26Dot6; /* 26.6 fixed float, used for       */
+#elif ARCH_LOG2_SIZEOF_INT  == 2
+  typedef signed int      TT_F26Dot6; /* 26.6 fixed float, used for       */
                                       /* glyph points pixel coordinates.  */
+#else
+#error "No appropriate type for Fixed 26.6 Floats"
+#endif
 
+#if   ARCH_LOG2_SIZEOF_LONG == 2
   typedef signed long     TT_Pos;     /* point position, expressed either */
+#elif ARCH_LOG2_SIZEOF_INT  == 2
+  typedef signed int     TT_Pos;      /* point position, expressed either */
                                       /* in fractional pixels or notional */
                                       /* units, depending on context. For */
                                       /* example, glyph coordinates       */
@@ -98,6 +113,9 @@
                                       /* in 26.6 fractional pixels if it  */
                                       /* was                              */
                                       /*                                  */
+#else
+#error "No appropriate type for point position"
+#endif
 
   struct  _TT_UnitVector      /* guess what...  */
   { 

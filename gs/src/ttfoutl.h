@@ -52,7 +52,13 @@ typedef struct {
     double x, y;
 } FloatPoint;
 
+#if   ARCH_LOG2_SIZEOF_LONG == 2
 typedef signed long F26Dot6;
+#elif ARCH_LOG2_SIZEOF_INT  == 2
+typedef signed int  F26Dot6;
+#else
+#error "No appropriate type for Fixed 26.6 Floats"
+#endif
 
 typedef struct { 
     F26Dot6 x;

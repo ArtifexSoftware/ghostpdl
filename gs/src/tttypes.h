@@ -67,11 +67,11 @@
 
 #if SIZEOF_INT == 4
 
-  typedef long int        Fixed;    /* signed fixed 16.16 float */
+  typedef signed int      Fixed;    /* signed fixed 16.16 float */
 
 #elif SIZEOF_LONG == 4
 
-  typedef long            Fixed;    /* signed fixed 16.16 float */
+  typedef signed long     Fixed;    /* signed fixed 16.16 float */
 
 #else
 
@@ -117,7 +117,13 @@
 #define NULL  (void*)0
 #endif
 
+#if   ARCH_SIZEOF_PTR == SIZEOF_LONG
   typedef long*  PStorage;
+#elif ARCH_SIZEOF_PTR == SIZEOF_INT
+  typedef int*   PStorage;
+#else
+#error "Size of pointer type is not equal to either long or int"
+#endif
 
 
 /* Rounding mode constants */
