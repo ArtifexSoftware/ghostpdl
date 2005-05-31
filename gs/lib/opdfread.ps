@@ -209,7 +209,6 @@ currentdict end def
 /GraphicStateStack 20 array def
 /GraphicStateStackPointer 0 def
 /PDFColorSpaces 50 dict def
-/FuncDataReader 10 dict def
 /InstalledFonts 50 dict def
 /MacRomanEncodingInverse null def
 
@@ -217,6 +216,7 @@ currentdict end def
 currentglobal false setglobal
 userdict /PDFR_InitialGS gstate put
 userdict /PDFR_Patterns 50 dict put
+userdict /FuncDataReader 10 dict put
 setglobal
 
 % ===================== Constants =========================================
@@ -2318,29 +2318,31 @@ end
 { //PDFR_DEBUG {
     (StreamToArray beg ) print count =
   } if
-  //FuncDataReader begin				% f
+  currentglobal true setglobal exch
+  userdict /FuncDataReader get begin			% g f
     dup /BitsPerSample get /BitsPerSample exch def
     dup /Size get length /N exch def
     dup /Range get length 2 idiv /M exch def
     1 BitsPerSample bitshift 1 sub /Div exch def
     /BitsLeft 0 def
     /Buffer 0 def
-    dup /Size get /Size exch def			% f
-    dup /Range get /Range exch def			% f
-    /File 1 index //MakeStreamReader exec def		% f
-    /I [ N { 0 } repeat ] def				% f
-    M array						% f []
-    dup length 1 sub -1 0 {				% f [] m
-      2 index N //MakeTable exec			% f [] m T
-      2 index 3 1 roll put				% f []
+    dup /Size get /Size exch def			% g f
+    dup /Range get /Range exch def			% g f
+    /File 1 index //MakeStreamReader exec def		% g f
+    /I [ N { 0 } repeat ] def				% g f
+    M array						% g f []
+    dup length 1 sub -1 0 {				% g f [] m
+      2 index N //MakeTable exec			% g f [] m T
+      2 index 3 1 roll put				% g f []
     } for
-    /Table exch def					% f
-    N //ReadSamples exec				% f
+    /Table exch def					% g f
+    N //ReadSamples exec				% g f
     PDFR_DEBUG {
       (Table = ) print Table ==
     } if
-    /Data Table put					%
+    /Data Table put					% g
   end
+  setglobal                                             %
   //PDFR_DEBUG {
     (StreamToArray end ) print count =
   } if
@@ -2349,7 +2351,7 @@ end
 /FunctionToProc10 % <function_dict> FunctionToProc10 <proc>
 { % Assuming a 1-argument function type 0.
   PDFR_DEBUG {
-    (FunctionToProc10, Range = ) print dup /Range get ==
+    (FunctionToProc10 beg, Range = ) print dup /Range get ==
   } if
   dup /Order //knownget exec {
     1 ne {
@@ -2362,6 +2364,9 @@ end
   } {
     2 idiv //FunctionToProc_x0n exec			% proc
   } ifelse
+  PDFR_DEBUG {
+    (FunctionToProc10 end) =
+  } if
 } bind def
 
 /FunctionToProc12 % <function_dict> FunctionToProc12 <proc>
@@ -2684,6 +2689,10 @@ end
 
 /ResolveColorSpaceArray  % <color_space> ResolveColorSpaceArray <color_space>
 {
+  //PDFR_DEBUG {
+    (ResolveColorSpaceArray beg ) print dup ==
+  } if
+  currentglobal true setglobal exch
   dup 0 get /Indexed eq {
     1 //ResolveArrayElement exec
     dup dup 1 get 
@@ -2704,6 +2713,10 @@ end
   PDFR_DEBUG {
     (Construcrted color space :) =
     dup ==
+  } if
+  exch setglobal
+  //PDFR_DEBUG {
+    (ResolveColorSpaceArray end ) print dup ==
   } if
 } bind def
 
@@ -2733,7 +2746,7 @@ end
     } ifelse
   } if
   //PDFR_DEBUG {
-	(ResolveColorSpace end ) print dup ==
+    (ResolveColorSpace end ) print dup ==
   } if
 } bind def
 
