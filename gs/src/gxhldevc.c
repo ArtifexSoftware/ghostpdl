@@ -95,8 +95,8 @@ gx_hld_save_color(const gs_imager_state * pis, const gx_device_color * pdevc,
 	    psc->ccolor.paint.values[i] = pdevc->ccolor.paint.values[i];
 
 	/* Save the pattern id - if present */
-	if (pdevc->type == gx_dc_type_pattern 
-	   || pdevc->type == gx_dc_type_pattern2)
+	if ((pdevc->type == gx_dc_type_pattern 
+	   || pdevc->type == gx_dc_type_pattern2) && pdevc->ccolor_valid)
             psc->pattern_id = pdevc->ccolor.pattern->pattern_id;
 	else
             psc->pattern_id = gs_no_id;

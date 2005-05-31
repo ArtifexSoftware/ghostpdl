@@ -996,8 +996,16 @@ gx_dc_pattern_save_dc(
     gx_device_color_saved * psdc )
 {
     psdc->type = pdevc->type;
-    psdc->colors.pattern.id = pdevc->ccolor.pattern->pattern_id;
-    psdc->colors.pattern.phase = pdevc->phase;
+    if (pdevc->ccolor_valid) {
+	psdc->colors.pattern.id = pdevc->ccolor.pattern->pattern_id;
+	psdc->colors.pattern.phase = pdevc->phase;
+    } {
+	/* The client color has been changed to a non-pattern color,
+	   but device color has not been created yet. 
+	 */
+	psdc->colors.pattern.id = gs_no_id;
+	psdc->colors.pattern.phase.x = psdc->colors.pattern.phase.y = 0;
+    }
 }
 
 /*
