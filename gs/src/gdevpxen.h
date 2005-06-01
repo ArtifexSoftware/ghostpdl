@@ -201,7 +201,7 @@ typedef enum {
 #define px_enumerate_media(m)\
   m(eDefaultPaperSize, -1, -1, -1)\
   m(eLetterPaper, 300, 2550, 3300)\
-  m(eLegalPaper, 300, 2550, 5300)\
+  m(eLegalPaper, 300, 2550, 4200)\
   m(eA4Paper, 300, 2480, 3507)\
   m(eExecPaper, 300, 2175, 3150)\
   m(eLedgerPaper, 300, 3300, 5100)\
@@ -211,12 +211,12 @@ typedef enum {
   m(eC5Envelope, 300, 1913, 2704)\
   m(eDLEnvelope, 300, 1299, 2598)\
   m(eJB4Paper, -1, -1, -1)\
-  m(eJB5Paper, -1, -1, -1)\
+  m(eJB5Paper, 300, 2150, 3035)\
   m(eB5Envelope, 300, 2078, 2952)\
-  m(eB5Paper, -1, -1, -1)\
-  m(eJPostcard,  -1, -1, -1)\
+  m(eB5Paper, 300, 2150, 3035)\
+  m(eJPostcard,  300, 1181, 1748)\
   m(eJDoublePostcard, -1, -1, -1)\
-  m(eA5Paper,-1, -1, -1)\
+  m(eA5Paper,300,1748, 2480)\
   m(eA6Paper,-1, -1, -1)\
   m(eJB6Paper,-1, -1, -1)\
   m(eJIS8K, -1, -1, -1)\
