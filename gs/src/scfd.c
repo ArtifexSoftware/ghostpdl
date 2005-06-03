@@ -70,6 +70,7 @@ s_CFD_init(stream_state * st)
     ss->cbit = 0;
     ss->uncomp_run = 0;
     ss->rows_left = (ss->Rows <= 0 || ss->EndOfBlock ? -1 : ss->Rows + 1);
+    ss->row = 0;
     ss->rpos = ss->wpos = raster - 1;
     ss->eol_count = 0;
     ss->invert = white;
@@ -282,6 +283,7 @@ s_CFD_process(stream_state * st, stream_cursor_read * pr,
 	    if (status)
 		goto out;
 	}
+	ss->row++;
 	if (rows_left > 0 && --rows_left == 0) {
 	    status = EOFC;
 	    goto out;
@@ -707,6 +709,10 @@ v0:	    skip_bits(1);
     /* falls through */
   out:cfd_store_state();
     ss->invert = invert;
+    /* Ignore an error (missing EOFB/RTC when EndOfBlock == true) */
+    /* if we have finished all rows. */
+    if (status == ERRC && && ss-> Rows > 0 && ss->row > ss->Rows)
+	status = EOFC;
     return status;
     /*
      * We handle horizontal decoding here, so that we can

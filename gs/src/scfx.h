@@ -93,6 +93,7 @@ typedef struct stream_CFD_state_s {
     int cbit;			/* bits left to fill in current decoded */
     /* byte at lbuf[wpos] (0..7) */
     int rows_left;		/* number of rows left */
+    int row;			/* current row, first is 0 */
     int rpos;			/* rptr for copying lbuf to client */
     int wpos;			/* rlimit/wptr for filling lbuf or */
     /* copying to client */
