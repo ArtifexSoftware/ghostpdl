@@ -578,6 +578,7 @@ pdf_open(gx_device * dev)
     pdev->outlines_open = 0;
     pdev->articles = 0;
     pdev->Dests = 0;
+    pdev->doc_dsc_info.orientation = pdev->TrayOrientation / 90;
     /* {global,local}_named_objects was initialized above */
     pdev->PageLabels = 0;
     pdev->PageLabels_current_page = 0;
@@ -629,10 +630,14 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
     int dsc_orientation = -1;
     const pdf_page_dsc_info_t *ppdi;
 
-    if (pdev->params.AutoRotatePages == arp_None)
-	return; /* Not requested. */
-
     ppdi = (page != NULL ? &page->dsc_info : &pdev->doc_dsc_info);
+
+    if (pdev->TrayOrientation == 0) {
+	if (pdev->params.AutoRotatePages == arp_None)
+	    return; /* Not requested. */
+    }
+    else 
+	ppdi->viewing_orientation = pdev->TrayOrientation / 90;
 
     /* Determine DSC orientation : */
     if (ppdi->viewing_orientation >= 0)

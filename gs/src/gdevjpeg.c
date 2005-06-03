@@ -157,8 +157,6 @@ jpeg_get_params(gx_device * dev, gs_param_list * plist)
     float2double = jdev->ViewTrans.y;
     if ((ecode = param_write_float(plist, "ViewTransY", &float2double)) < 0)
 	code = ecode;
-    if ((ecode = param_write_int(plist, "TrayOrientation", &jdev->TrayOrientation)) < 0)
-        code = ecode;
 
     return code;
 }
@@ -247,19 +245,6 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
 	ecode = code;
 	param_signal_error(plist, param_name, code);
     }  
-    if ((code = param_read_int(plist, "TrayOrientation", &t)) != 1 ) {
-       /* gsdevice.c sets height/width and rotates for 90/270 case
-	* changes in height/width will reallocate the page buffer 
-	*/ 
-       if (code < 0)
-            ecode = code;
-        else if (t != 0 && t != 90 && t != 180 && t != 270)
-            param_signal_error(plist, "TrayOrientation",
-                               ecode = gs_error_rangecheck);
-        else {
-	    jdev->TrayOrientation = t;
-        }
-    }
     code = gdev_prn_put_params(dev, plist);
     if (code < 0)
 	return code;

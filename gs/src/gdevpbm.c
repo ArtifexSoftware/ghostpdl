@@ -112,7 +112,7 @@ private dev_proc_get_params(ppm_get_params);
 private dev_proc_put_params(ppm_put_params);
 private dev_proc_copy_alpha(pnm_copy_alpha);
 private dev_proc_begin_typed_image(pnm_begin_typed_image);
-private dev_proc_get_initial_matrix(pbm_get_initial_matrix);
+
 
 /* We need to initialize uses_color when opening the device, */
 /* and after each showpage. */
@@ -143,7 +143,7 @@ private int pam_print_page(gx_device_printer * pdev, FILE * pstream);
 }
 
 private const gx_device_procs pbm_procs =
-    pgpm_procs(gdev_prn_open, pbm_get_initial_matrix, gdev_prn_get_params,
+    pgpm_procs(gdev_prn_open, NULL, gdev_prn_get_params,
 	       gdev_prn_map_rgb_color, gdev_prn_map_color_rgb, NULL);
 private const gx_device_procs pgm_procs =
     pgpm_procs(ppm_open, NULL, gdev_prn_get_params,
@@ -405,13 +405,6 @@ ppm_get_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
     int code = gdev_prn_get_params_planar(pdev, plist, &bdev->UsePlanarBuffer);
-    int ecode;
-
-    if (code < 0) {
-        if ((ecode = param_write_int(plist, "TrayOrientation", &bdev->TrayOrientation)) < 0) {
-	   code = ecode;
-	}
-    }
     return code;
 }
 
@@ -467,15 +460,6 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
 	}
     }
 
-    if ((code = param_read_int(plist, "TrayOrientation", &t)) != 1 ) {
-        if (code < 0)
-            ecode = code;
-        else if (t != 0 && t != 90 && t != 180 && t != 270)
-            param_signal_error(plist, "TrayOrientation",
-                               ecode = gs_error_rangecheck);
-        else 
-	    ((gx_device_pbm *)pdev)->TrayOrientation = t;
-    }
     if ((code = ecode) < 0 ||
 	(code = gdev_prn_put_params_planar(pdev, plist, &bdev->UsePlanarBuffer)) < 0
 	)
@@ -545,51 +529,6 @@ pnm_begin_typed_image(gx_device *dev,
 
 /* ------ Internal routines ------ */
 
-private void pbm_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
-{
-    floatp fs_res = pdev->HWResolution[0] / 72.0;
-    floatp ss_res = pdev->HWResolution[1] / 72.0;
-    
-    /* NB this device has no paper margins */
-
-    switch(((gx_device_pbm *)pdev)->TrayOrientation) {
-    case 0:
-        pmat->xx = fs_res;
-        pmat->xy = 0;
-        pmat->yx = 0;
-        pmat->yy = -ss_res;
-        pmat->tx = 0;
-        pmat->ty = pdev->height;
-        break;
-    case 90:
-        pmat->xx = 0;
-        pmat->xy = -ss_res;
-        pmat->yx = -fs_res;
-        pmat->yy = 0;
-        pmat->tx = pdev->width;
-        pmat->ty = pdev->height;
-        break;
-    case 180:
-        pmat->xx = -fs_res;
-        pmat->xy = 0;
-        pmat->yx = 0;
-        pmat->yy = ss_res;
-        pmat->tx = pdev->width;
-        pmat->ty = 0;
-        break;
-    case 270:
-        pmat->xx = 0;
-        pmat->xy = ss_res;
-        pmat->yx = fs_res;
-        pmat->yy = 0;
-        pmat->tx = 0;
-        pmat->ty = 0;
-        break;
-    default:
-        break;/* not reached */
-    }
-}
-    
 /* Print a page using a given row printing routine. */
 private int
 pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,

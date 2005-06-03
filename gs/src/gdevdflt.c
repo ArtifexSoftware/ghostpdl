@@ -537,20 +537,55 @@ gx_default_open_device(gx_device * dev)
 
 /* Get the initial matrix for a device with inverted Y. */
 /* This includes essentially all printers and displays. */
+/* Supports TrayOrientation, but no margins or viewports */
 void
 gx_default_get_initial_matrix(gx_device * dev, register gs_matrix * pmat)
 {
-    pmat->xx = dev->HWResolution[0] / 72.0;	/* x_pixels_per_inch */
-    pmat->xy = 0;
-    pmat->yx = 0;
-    pmat->yy = dev->HWResolution[1] / -72.0;	/* y_pixels_per_inch */
-    /****** tx/y is WRONG for devices with ******/
-    /****** arbitrary initial matrix ******/
-    pmat->tx = 0;
-    pmat->ty = (float)dev->height;
+    /* NB this device has no paper margins */
+    floatp fs_res = dev->HWResolution[0] / 72.0;
+    floatp ss_res = dev->HWResolution[1] / 72.0;
+
+    switch(dev->TrayOrientation) {
+    case 90:
+        pmat->xx = 0;
+        pmat->xy = -ss_res;
+        pmat->yx = -fs_res;
+        pmat->yy = 0;
+        pmat->tx = dev->width;
+        pmat->ty = dev->height;
+        break;
+    case 180:
+        pmat->xx = -fs_res;
+        pmat->xy = 0;
+        pmat->yx = 0;
+        pmat->yy = ss_res;
+        pmat->tx = dev->width;
+        pmat->ty = 0;
+        break;
+    case 270:
+        pmat->xx = 0;
+        pmat->xy = ss_res;
+        pmat->yx = fs_res;
+        pmat->yy = 0;
+        pmat->tx = 0;
+        pmat->ty = 0;
+        break;
+    default:
+    case 0:
+        pmat->xx = fs_res;
+        pmat->xy = 0;
+        pmat->yx = 0;
+        pmat->yy = -ss_res;
+        pmat->tx = 0;
+        pmat->ty = dev->height;
+	/****** tx/y is WRONG for devices with ******/
+	/****** arbitrary initial matrix ******/
+        break;
+    }
 }
 /* Get the initial matrix for a device with upright Y. */
 /* This includes just a few printers and window systems. */
+/* TrayOrientation is not provided, so ps, pdf, can do it themselves.
 void
 gx_upright_get_initial_matrix(gx_device * dev, register gs_matrix * pmat)
 {

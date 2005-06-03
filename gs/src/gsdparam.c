@@ -157,6 +157,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 				&dev->color_info.anti_alias.text_bits)) < 0 ||
 	(code = param_write_int(plist, "GraphicsAlphaBits",
 				&dev->color_info.anti_alias.graphics_bits)) < 0 ||
+	(code = param_write_int(plist, "TrayOrientation", &dev->TrayOrientation)) < 0 ||
 	(code = param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams)) < 0 
 	)
 	return code;
@@ -498,6 +499,25 @@ e:	param_signal_error(plist, param_name, ecode);\
 	else
 	    break;
     } END_ARRAY_PARAM(hwsa, hwse);
+
+    {
+	int t;
+	if ((code = param_read_int(plist, "TrayOrientation", &t)) != 1 ) {
+	    /* gsdevice.c sets height/width and rotates for 90/270 case
+	     * changes in height/width will reallocate the page buffer 
+	     */ 
+	    if (code < 0)
+		ecode = code;
+	    else if (t != 0 && t != 90 && t != 180 && t != 270)
+		param_signal_error(plist, "TrayOrientation",
+				   ecode = gs_error_rangecheck);
+	    else {
+		dev->TrayOrientation = t;
+	    }
+	}
+    }
+
+
     {
 	const float *res = (hwra.data == 0 ? dev->HWResolution : hwra.data);
 
@@ -717,6 +737,16 @@ nce:
 	    gs_closedevice(dev);
 	gx_device_set_page_size(dev, msa.data[0], msa.data[1]);
     }
+    if (dev->TrayOrientation != 0 &&
+	hwra.data == 0 &&
+	hwsa.data == 0 &&
+	msa.data == 0 ) {
+	/* handle the default everything but TrayOrientation case */
+	if (dev->is_open)
+	    gs_closedevice(dev);
+	gx_device_set_resolution(dev, dev->HWResolution[0], dev->HWResolution[1]);
+    }
+
     if (ma.data != 0) {
 	dev->Margins[0] = ma.data[0];
 	dev->Margins[1] = ma.data[1];
