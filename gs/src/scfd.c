@@ -711,7 +711,7 @@ v0:	    skip_bits(1);
     ss->invert = invert;
     /* Ignore an error (missing EOFB/RTC when EndOfBlock == true) */
     /* if we have finished all rows. */
-    if (status == ERRC && && ss-> Rows > 0 && ss->row > ss->Rows)
+    if (status == ERRC && ss->Rows > 0 && ss->row > ss->Rows)
 	status = EOFC;
     return status;
     /*
