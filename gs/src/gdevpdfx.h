@@ -147,6 +147,7 @@ typedef enum {
     pdf_resource_t *prev;	/* previously allocated resource */\
     gs_id rid;			/* optional ID key */\
     bool named;\
+    bool global;                /* ps2write only */\
     char rname[1/*R*/ + (sizeof(long) * 8 / 3 + 1) + 1/*\0*/];\
     ulong where_used;		/* 1 bit per level of content stream */\
     cos_object_t *object
@@ -372,6 +373,7 @@ typedef struct pdf_substream_save_s {
     pdf_resource_t      *font3;
     pdf_resource_t	*accumulating_substream_resource;
     bool		charproc_just_accumulated;
+    bool		accumulating_a_global_object;
 } pdf_substream_save;
 
 #define private_st_pdf_substream_save()\
@@ -595,6 +597,11 @@ struct gx_device_pdf_s {
     bool charproc_just_accumulated; /* A flag for controlling 
 			the glyph variation recognition. 
 			Used only with uncached charprocs. */
+    bool accumulating_a_global_object; /* ps2write only.
+			Accumulating a global object (such as a named Form,
+			so that resources used in it must also be global. 
+			Important for viewers with small memory,
+			which drops resources per page. */
     const pdf_char_glyph_pairs_t *cgp; /* A temporary pointer 
 			for pdf_is_same_charproc1.
 			Must be NULL when the garbager is invoked, 
@@ -1176,7 +1183,7 @@ int pdf_exit_substream(gx_device_pdf *pdev);
 /* Add procsets to substream Resources. */
 int pdf_add_procsets(cos_dict_t *pcd, pdf_procset_t procsets);
 /* Add a resource to substream Resources. */
-int pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, const pdf_resource_t *pres);
+int pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, pdf_resource_t *pres);
 
 
 /* For gdevpdfu.c */

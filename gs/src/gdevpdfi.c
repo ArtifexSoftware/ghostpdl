@@ -809,7 +809,7 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
 }
 
 private int
-use_image_as_pattern(gx_device_pdf *pdev, const pdf_resource_t *pres1, 
+use_image_as_pattern(gx_device_pdf *pdev, pdf_resource_t *pres1, 
 		     const gs_matrix *pmat, gs_id id)
 {   /* See also dump_image in gdevpdfd.c . */
     gs_imager_state s;
@@ -884,7 +884,7 @@ pdf_end_and_do_image(gx_device_pdf *pdev, pdf_image_writer *piw,
 		     const gs_matrix *mat, gs_id ps_bitmap_id, pdf_image_usage_t do_image)
 {
     int code = pdf_end_write_image(pdev, piw);
-    const pdf_resource_t *pres = piw->pres;
+    pdf_resource_t *pres = piw->pres;
 
     switch (code) {
     default:

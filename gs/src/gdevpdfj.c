@@ -471,6 +471,11 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	int code;
 
 	if (named) {
+	    if (pdev->ForOPDFRead) {
+		code = cos_dict_put_c_key_bool(named, "/.Global", true);
+		if (code < 0)
+		    return code;
+	    }
 	    /*
 	     * This image was named by NI.  Copy any dictionary elements
 	     * from the named dictionary to the image stream, and then

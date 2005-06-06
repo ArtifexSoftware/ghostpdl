@@ -804,7 +804,8 @@ cos_dict_objects_write(const cos_dict_t *pcd, gx_device_pdf *pdev)
 
     for (; pcde; pcde = pcde->next)
 	if (COS_VALUE_IS_OBJECT(&pcde->value) &&
-	    pcde->value.contents.object->id)
+	    pcde->value.contents.object->id  &&
+	    !pcde->value.contents.object->written /* ForOPDFRead only. */)
 	    cos_write_object(pcde->value.contents.object, pdev);
     return 0;
 }

@@ -1060,6 +1060,7 @@ start_XObject(gx_device_pdf * pdev, bool compress, cos_stream_t **ppcs,
 		pdev->CompressFonts /* Have no better switch*/);
     if (code < 0)
 	return code;
+     pdev->accumulating_a_global_object = true;
     pcs = (cos_stream_t *)pres->object;
     pdev->substream_Resources = cos_dict_alloc(pdev, "start_XObject");
     if (!pdev->substream_Resources)
@@ -1068,6 +1069,11 @@ start_XObject(gx_device_pdf * pdev, bool compress, cos_stream_t **ppcs,
 			    objname->size, cos_object_value(&value, pres->object));
     if (code < 0)
 	return code;
+    if (pdev->ForOPDFRead) {
+	code = cos_dict_put_c_key_bool((cos_dict_t *)pres->object, "/.Global", true);
+	if (code < 0)
+	    return code;
+    }
     pres->named = true;
     pres->where_used = 0;	/* initially not used */
     pcs->pres = pres;
@@ -1110,12 +1116,17 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	    pdf_resource_t *pres;
 
 	    code = pdf_enter_substream(pdev, 
-			resourceXObject /* A stub. Actually it's not a resource. */, 
+			resourceXObject, 
 			gs_no_id, &pres, true, 
 			pdev->CompressFonts /* Have no better switch*/);
 	    if (code < 0)
 		return code;
 	    pcs = (cos_stream_t *)pres->object;
+	    if (pdev->ForOPDFRead && objname != 0) {
+		code = cos_dict_put_c_key_bool((cos_dict_t *)pres->object, "/.Global", true);
+		if (code < 0)
+		    return code;
+	    }
 	    pres->named = (objname != 0);
 	    pres->where_used = 0;
 	    pcs->pres = pres;

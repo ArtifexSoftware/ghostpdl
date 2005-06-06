@@ -551,8 +551,10 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->sbstack[sbstack_ptr].font3 = pdev->font3;
     pdev->sbstack[sbstack_ptr].accumulating_substream_resource = pdev->accumulating_substream_resource;
     pdev->sbstack[sbstack_ptr].charproc_just_accumulated = pdev->charproc_just_accumulated;
+    pdev->sbstack[sbstack_ptr].accumulating_a_global_object = pdev->accumulating_a_global_object;
     pdev->skip_colors = false;
     pdev->charproc_just_accumulated = false;
+    /* Do not reset pdev->accumulating_a_global_object - it inherits. */
     pdev->sbstack_depth++;
     pdev->procsets = 0;
     pdev->font3 = 0;
@@ -603,6 +605,7 @@ pdf_exit_substream(gx_device_pdf *pdev)
     pdev->accumulating_substream_resource = pdev->sbstack[sbstack_ptr].accumulating_substream_resource;
     pdev->sbstack[sbstack_ptr].accumulating_substream_resource = 0;
     pdev->charproc_just_accumulated = pdev->sbstack[sbstack_ptr].charproc_just_accumulated;
+    pdev->accumulating_a_global_object = pdev->sbstack[sbstack_ptr].accumulating_a_global_object;
     pdev->sbstack_depth = sbstack_ptr;
     code1 = pdf_restore_viewer_state(pdev, NULL);
     if (code1 < 0 && code >= 0)
@@ -804,7 +807,7 @@ pdf_add_procsets(cos_dict_t *pcd, pdf_procset_t procsets)
 
 /* Add a resource to substream Resources. */
 int
-pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, const pdf_resource_t *pres)
+pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, pdf_resource_t *pres)
 {
     if (pcd != 0) {
 	const cos_value_t *v = cos_dict_find(pcd, (const byte *)key, strlen(key));
@@ -812,6 +815,12 @@ pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, const pd
 	int code;
 	char buf[10 + (sizeof(long) * 8 / 3 + 1)], buf1[sizeof(pres->rname) + 1];
 
+	if (pdev->ForOPDFRead && !pres->global && pdev->accumulating_a_global_object) {
+	    pres->global = true;
+	    code = cos_dict_put_c_key_bool((cos_dict_t *)pres->object, "/.Global", true);
+	    if (code < 0)
+		return code;
+	}
 	sprintf(buf, "%ld 0 R\n", pres->object->id);
 	if (v != NULL) {
 	    if (v->value_type != COS_VALUE_OBJECT && 

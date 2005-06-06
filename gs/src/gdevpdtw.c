@@ -561,6 +561,8 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	stream_puts(s, "/Type/Font\n");
     else
 	pprintld1(s, "/Type/Font/Name/R%ld\n", pdf_font_id(pdfont));
+    if (pdev->ForOPDFRead && pdfont->global)
+	stream_puts(s, "/.Global true\n");
     return pdfont->write_contents(pdev, pdfont);
 }
 

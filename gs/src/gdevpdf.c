@@ -298,9 +298,13 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* accumulating_substream_resource */
  {0,0,0,0,0,0,0,0,0},		/* charproc_ctm */
  0,				/* charproc_just_accumulated */
+ 0,				/* accumulating_a_global_object */
  0,				/* cgp */
  0,				/* substituted_pattern_count */
- 0				/* substituted_pattern_drop_page */
+ 0,				/* substituted_pattern_drop_page */
+ 0,				/* image_mask_id */
+ {0,0,0,0,0,0}, 		/* gs_matrix converting_image_matrix */
+ 0				/* image_mask_scale */
 };
 
 /* ---------------- Device open/close ---------------- */
@@ -954,7 +958,7 @@ pdf_close_page(gx_device_pdf * pdev)
 	   may be improved with counting stored resource size
 	   and creating multiple streams per page. */
 
-	if (pdev->ResourcesBeforeUsage && pdev->ForOPDFRead) {
+	if (pdev->ForOPDFRead) {
 	    pdf_resource_t *pres = pdf_find_resource_by_resource_id(pdev, resourcePage, pdev->contents_id);
 	    
 	    if (pres != NULL) {

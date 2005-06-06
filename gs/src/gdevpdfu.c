@@ -690,6 +690,7 @@ pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
     pres->prev = pdev->last_resource;
     pdev->last_resource = pres;
     pres->named = false;
+    pres->global = false;
     pres->where_used = pdev->used_mask;
     *ppres = pres;
     return 0;
@@ -789,7 +790,8 @@ pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
 	pdf_resource_t *pres = pdev->resources[rtype].chains[j];
 
 	for (; pres != 0; pres = pres->next)
-	    if (!pres->named && !pres->object->written)
+	    if ((!pres->named || pdev->ForOPDFRead) 
+		&& !pres->object->written)
 		cos_write_object(pres->object, pdev);
     }
     return 0;

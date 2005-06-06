@@ -338,13 +338,17 @@ currentdict end readonly def
       % Don't clean a daemon.
       pop pop
     } {
-      null eq {
-        pop
+      dup null eq {
+        pop pop
       } {
-        //PDFR_DEBUG {
-          (Dropping ) print dup =
-        } if
-        1 index exch /DroppedObject put
+        dup type /dicttype eq { /.Global known } { pop false } ifelse {
+          pop
+        } {
+          //PDFR_DEBUG {
+            (Dropping ) print dup =
+          } if
+          1 index exch /DroppedObject put
+        } ifelse
       } ifelse
     } ifelse
   } for
@@ -1217,7 +1221,7 @@ end
 
 /ResolveAndSetFontAux  % <resource_name> <size> ResolveAndSetFont -
 { exch dup						% s rn rn
-  //PDFReader /CurrentObject get /Context get /Resources get 
+  //PDFReader /CurrentObject get /Context get /Resources get
   /Font //DoNothing //ResolveD exec
   exch //CheckFont //ResolveD exec			% s rn fr
   dup /Font //knownget exec {				% s rn fr f
@@ -3359,7 +3363,26 @@ currentdict end readonly def
     //CompleteOutlineImage exec
     //DoImage exec
   } {
-    mark exch (unimplemented XObject type ) exch //error exec
+    dup /PS eq {
+      PDFR_DEBUG {
+        (Executing a PS Xobject) =
+      } if
+      pop
+      //RunDelayedStream exec
+    } {
+      dup /Form eq {
+        pop
+        PDFR_DEBUG {
+          (Executing a Form XObject) =
+        } if
+        //PDFReader /CurrentObject get exch
+        dup //PDFReader exch << exch /Context exch >> /CurrentObject exch put
+        //RunDelayedStream exec
+        //PDFReader exch /CurrentObject exch put
+      } {
+        mark exch (unimplemented XObject type ) exch //error exec
+      } ifelse
+    } ifelse
   } ifelse
 } bind def
 
@@ -3482,6 +3505,7 @@ currentdict end readonly def
   /EX { EndCompatibilitySection } bind def
   /DP { DefineMarkedContentPointWithPropertyList } bind def
   /MP { DefineMarkedContentPoint } bind def
+  /PS { cvx exec } bind def
 currentdict end def
 
 //PDFR_STREAM {
