@@ -1982,6 +1982,20 @@ end
       //ComposeCharStrings exec
       exit
     } if
+    dup 16#00030000 known {
+      //PDFR_DEBUG {
+        (Using the TT cmap encoding 3.0 - not sure why Ghostscript writes it since old versions.) =
+      } if
+      % Same algorithm as for 16#00010000.
+      16#00030000 //GetTTEncoding exec
+      PDFEncoding dup null eq {
+        pop //GetMacRomanEncodingInverse exec
+      } {
+        //InverseEncoding exec
+      } ifelse
+      //ComposeCharStrings exec
+      exit
+    } if
     mark (True Type cmap has no useful encodings.) //error exec
   } loop
   //PDFR_DEBUG {
