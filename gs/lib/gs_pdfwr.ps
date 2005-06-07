@@ -554,7 +554,7 @@ currentdict /.pdf_hook_DSC_Creator undef
   /SubsetFonts { }
 .dicttomark readonly def
 /.distillerdevice
- { currentdevice .devicename /pdfwrite eq
+ { currentdevice .devicename dup /pdfwrite eq exch /ps2write eq or
     { currentdevice }
     { /pdfwrite finddevice }
    ifelse
@@ -586,13 +586,13 @@ currentdict /.pdf_hook_DSC_Creator undef
 %  def def currentdict end
 } odef
 /setdistillerparams {
-  currentdevice .devicename /pdfwrite ne {
+  currentdevice .devicename dup /pdfwrite ne exch /ps2write ne and {
     /setdistillerparams /undefined signalerror
   } if
   .setdistillerparams
 } bind odef
 /currentdistillerparams {
-  currentdevice .devicename /pdfwrite ne {
+  currentdevice .devicename dup /pdfwrite ne exch /ps2write ne and {
     /currentdistillerparams /undefined signalerror
   } if
   .currentdistillerparams
@@ -600,7 +600,7 @@ currentdict /.pdf_hook_DSC_Creator undef
 
 % Patch 'where' so that the distiller operators are only visible
 % if the pdfwrite device is the current one.
-{ currentdevice .devicename /pdfwrite eq {
+{ currentdevice .devicename dup /pdfwrite eq exch /ps2write eq or{
     .where
   } {
     .where pop dup //systemdict eq { pop false } { true } ifelse
@@ -615,7 +615,7 @@ currentdict /.pdf_hook_DSC_Creator undef
   /currentdistillerparams 1 index eq /setdistillerparams 2 index eq or 
   /pdfmark 2 index eq or {
     systemdict 2 index eq {	% only mask the operator in systemdict
-      known currentdevice .devicename /pdfwrite ne { pop false } if
+      known currentdevice .devicename dup /pdfwrite ne exch /ps2write ne and { pop false } if
   } {
     known
   } ifelse
@@ -658,16 +658,40 @@ currentdict /.pdf_hook_DSC_Creator undef
         systemdict 2 index known { pop pop } { def } ifelse
       } forall
     } repeat
+    currentdevice .devicename /ps2write eq {
+      (opdfread.ps) findlibfile {
+        /OPDFReadProcsetPath exch def
+      } {
+        (Configuration error : library file opdfread.ps not found !) =
+        (opdfread.ps) /undefinedfilename signalerror
+      } ifelse
+    } if
     currentdict end .setdistillerparams
     .distillerdevice //null false mark .putdeviceparams 
     dup type /booleantype eq not { cleartomark pop } if pop pop
 } bind .schedule_init
 
+1011 % priority
+{
+    % Set a path to library files (ps2write)
+    currentdevice .devicename /ps2write eq {
+      mark (gs_mgl_e.ps) (gs_mro_e.ps) (gs_agl.ps) (opdfread.ps) % Reverse order !
+      () counttomark 1 sub {
+        exch
+        .libfile { .filename } { false } ifelse not {
+          (Configuration error : library file opdfread.ps not found !) =
+          (opdfread.ps) /undefinedfilename signalerror
+        } if
+        .filenamelistseparator concatstrings concatstrings
+      } repeat
+      /OPDFReadProcsetPath exch .dicttomark setpagedevice
+   } if
+} bind .schedule_init
+
 2000 % priority
 { % Note, this may not work if the initial device is not pdfwrite
-  currentdevice .devicename /pdfwrite eq {
+  currentdevice .devicename dup /pdfwrite eq exch /ps2write eq or {
     % Inform the device with initial graphic state. See gdev_pdf_fill_path.
     newpath fill
   } if
 } bind .schedule_init
-

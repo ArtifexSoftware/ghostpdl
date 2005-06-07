@@ -418,6 +418,7 @@ struct gx_device_pdf_s {
     bool CompressFonts;
     bool PrintStatistics;
     bool ForOPDFRead;          /* PS2WRITE only. */
+    gs_string OPDFReadProcsetPath; /* PS2WRITE only. */
     bool ResourcesBeforeUsage; /* PS2WRITE only. */
     bool HavePDFWidths;        /* PS2WRITE only. */
     bool HaveStrokeColor;      /* PS2WRITE only. */
@@ -640,8 +641,8 @@ struct gx_device_pdf_s {
  m(31,accumulating_substream_resource)
 #define gx_device_pdf_num_ptrs 32
 #define gx_device_pdf_do_strings(m)\
-    m(0, OwnerPassword) m(1, UserPassword) m(2, NoEncrypt)
-#define gx_device_pdf_num_strings 3
+    m(0, OPDFReadProcsetPath) m(1, OwnerPassword) m(2, UserPassword) m(3, NoEncrypt)
+#define gx_device_pdf_num_strings 4
 #define st_device_pdf_max_ptrs\
   (st_device_psdf_max_ptrs + gx_device_pdf_num_ptrs +\
    gx_device_pdf_num_strings +\
@@ -695,7 +696,7 @@ void pdf_reset_text(gx_device_pdf *pdev);
 /* ------ Document ------ */
 
 /* Open the document if necessary. */
-void pdf_open_document(gx_device_pdf * pdev);
+int pdf_open_document(gx_device_pdf * pdev);
 
 /* ------ Objects ------ */
 

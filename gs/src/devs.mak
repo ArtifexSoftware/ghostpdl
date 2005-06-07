@@ -792,6 +792,10 @@ pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)\
  $(pdfwrite5_) $(pdfwrite6_) $(pdfwrite7_) $(pdfwrite8_) $(pdfwrite9_)\
  $(pdfwrite10_) $(pdfwrite11_)
 
+# Since ps2write actually is a clone of pdfwrite,
+# we don't define a full module for it, 
+# but generate both devices within pdfwrite.dev .
+
 # Note that for ps2pdf operation, we need to parse DSC comments to set
 # the Orientation (Page dict /Rotate value). This is not part of the
 # pdfwrite device, but part of the PS interpreter so that the pdfwrite
@@ -801,6 +805,7 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
  $(GLD)szlibe.dev $(GLD)psdf.dev \
  $(DD)pdtext.dev
+	$(SETDEV2) $(DD)ps2write $(pdfwrite1_)
 	$(SETDEV2) $(DD)pdfwrite $(pdfwrite1_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite2_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite3_)
@@ -819,6 +824,7 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf
 	$(ADDMOD) $(DD)pdfwrite -include $(DD)pdtext
 
+gdevpdfb_h=$(GLSRC)gdevpdfb.h
 gdevpdfc_h=$(GLSRC)gdevpdfc.h
 gdevpdfg_h=$(GLSRC)gdevpdfg.h $(gscspace_h)
 gdevpdfo_h=$(GLSRC)gdevpdfo.h $(gsparam_h)
@@ -828,7 +834,8 @@ gdevpdfx_h=$(GLSRC)gdevpdfx.h\
 
 $(GLOBJ)gdevpdf.$(OBJ) : $(GLSRC)gdevpdf.c $(GDEVH)\
  $(fcntl__h) $(memory__h) $(string__h) $(time__h) $(unistd__h) $(gp_h)\
- $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h) $(gdevpdt_h) $(smd5_h) $(sarc4_h)
+ $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h) $(gdevpdt_h) $(smd5_h) $(sarc4_h)\
+ $(gdevpdfb_h)
 	$(GLCC) $(GLO_)gdevpdf.$(OBJ) $(C_) $(GLSRC)gdevpdf.c
 
 $(GLOBJ)gdevpdfb.$(OBJ) : $(GLSRC)gdevpdfb.c\

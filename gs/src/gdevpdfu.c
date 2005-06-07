@@ -75,16 +75,72 @@ private_st_pdf_pattern();
 
 /* ---------------- Utilities ---------------- */
 
+private int
+copy_file(stream *s, const char *fname)
+{
+    FILE *f;
+    char buf[1024];
+    int n;
+
+    f = gp_fopen(fname, "rb");
+    if (f == NULL)
+	return_error(gs_error_undefinedfilename);
+    do {
+	n = fread(buf, 1, sizeof(buf), f);
+	stream_write(s, buf, n);
+    } while (n == sizeof(buf));
+    return 0;
+}
+
+private int
+copy_procsets(stream *s, const gs_string *path)
+{
+    char fname[gp_file_name_sizeof];
+    const byte *p = path->data, *e = path->data + path->size;
+    int l, i = 0, code;
+
+    if (p != NULL) {
+	for (i;; i++) {
+	    const byte *c = memchr(p, gp_file_name_list_separator, e - p);
+
+	    if (c == NULL)
+		c = e;
+	    l = c - p;
+	    if (l > 0) {
+		if (l > sizeof(fname) - 1)
+		    return_error(gs_error_limitcheck);
+		memcpy(fname, p, l);
+		fname[l] = 0;
+		code = copy_file(s, fname);
+		if (code < 0)
+		    return code;
+	    }
+	    if (c == e)
+		break;
+	    p = c + 1;
+	}
+    }
+    if (!i)
+	return_error(gs_error_undefinedfilename);
+    return 0;
+}
+
 /* ------ Document ------ */
 
 /* Open the document if necessary. */
-void
+int
 pdf_open_document(gx_device_pdf * pdev)
 {
     if (!is_in_page(pdev) && pdf_stell(pdev) == 0) {
 	stream *s = pdev->strm;
 	int level = (int)(pdev->CompatibilityLevel * 10 + 0.5);
 
+	if (pdev->ForOPDFRead) {
+	    int code = copy_procsets(s, &pdev->OPDFReadProcsetPath);
+
+	    if (code < 0)
+		return code;
+	}
 	pprintd2(s, "%%PDF-%d.%d\n", level / 10, level % 10);
 	pdev->binary_ok = !pdev->params.ASCII85EncodePages;
 	if (pdev->binary_ok)
@@ -103,6 +159,7 @@ pdf_open_document(gx_device_pdf * pdev)
 	pdev->compression = pdf_compress_none;
     else
 	pdev->compression = pdf_compress_Flate;
+    return 0;
 }
 
 /* ------ Objects ------ */
@@ -1025,9 +1082,13 @@ int
 pdf_open_page(gx_device_pdf * pdev, pdf_context_t context)
 {
     if (!is_in_page(pdev)) {
+	int code;
+
 	if (pdf_page_id(pdev, pdev->next_page + 1) == 0)
 	    return_error(gs_error_VMerror);
-	pdf_open_document(pdev);
+	code = pdf_open_document(pdev);
+	if (code < 0)
+	    return code;
     }
     /* Note that context may be PDF_IN_NONE here. */
     return pdf_open_contents(pdev, context);

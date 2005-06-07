@@ -93,6 +93,7 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("MaxViewerMemorySize", gs_param_type_int, MaxViewerMemorySize),
     pi("HaveTrueTypes", gs_param_type_bool, HaveTrueTypes),
     pi("HaveCIDSystem", gs_param_type_bool, HaveCIDSystem),
+    pi("OPDFReadProcsetPath", gs_param_type_string, OPDFReadProcsetPath),
 #undef pi
     gs_param_item_end
 };
@@ -218,7 +219,9 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	code = param_read_string_array(plist, (param_name = "pdfmark"), &ppa);
 	switch (code) {
 	    case 0:
-		pdf_open_document(pdev);
+		code = pdf_open_document(pdev);
+		if (code < 0)
+		    return code;
 		code = pdfmark_process(pdev, &ppa);
 		if (code >= 0)
 		    return code;
@@ -233,7 +236,9 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	code = param_read_string_array(plist, (param_name = "DSC"), &ppa);
 	switch (code) {
 	    case 0:
-		pdf_open_document(pdev);
+		code = pdf_open_document(pdev);
+		if (code < 0)
+		    return code;
 		code = pdf_dsc_process(pdev, &ppa);
 		if (code >= 0)
 		    return code;
