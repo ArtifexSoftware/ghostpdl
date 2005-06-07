@@ -53,7 +53,7 @@ false setglobal
 } bind def
 <<
   /BeginPage {
-    .BP .Nx .Ny .max
+    .Nx .Ny .max
     gsave
       initclip clippath pathbbox exch 4 -1 roll sub 3 1 roll exch sub
     grestore
@@ -70,12 +70,17 @@ false setglobal
     translate
 		% Stack: nmax
     1 exch div dup scale
+    .BP
   }
   /EndPage {
-    .ELevel 0 vmstatus pop pop put
-    .Ps 0 .Pn 1 add .Nx .Ny mul mod put    
-    .Pn 0 eq {
-      .EP
+    dup 2 lt {
+      .ELevel 0 vmstatus pop pop put
+      .Ps 0 .Pn 1 add .Nx .Ny mul mod put    
+      .Pn 0 eq {
+        .EP
+      } {
+        pop pop false
+      } ifelse
     } {
       pop pop false
     } ifelse
