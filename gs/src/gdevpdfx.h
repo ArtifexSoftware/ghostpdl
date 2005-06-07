@@ -431,8 +431,8 @@ struct gx_device_pdf_s {
 			      (Bigger shadings to be downsampled). */
     long MaxInlineImageSize;
     /* Encryption parameters */
-    gs_const_string OwnerPassword;
-    gs_const_string UserPassword;
+    gs_string OwnerPassword;
+    gs_string UserPassword;
     uint KeyLength;
     uint Permissions;
     uint EncryptionR;
@@ -443,7 +443,7 @@ struct gx_device_pdf_s {
     byte EncryptionKey[16];
     uint EncryptionV;
     bool EncryptMetadata;
-    gs_const_string NoEncrypt;
+    gs_string NoEncrypt;
     /* Values derived from DSC comments */
     bool is_EPS;
     pdf_page_dsc_info_t doc_dsc_info; /* document default */
@@ -639,8 +639,9 @@ struct gx_device_pdf_s {
  m(28,sbstack) m(29,substream_Resources) m(30,font3)\
  m(31,accumulating_substream_resource)
 #define gx_device_pdf_num_ptrs 32
-#define gx_device_pdf_do_strings(m) /* do nothing */
-#define gx_device_pdf_num_strings 0
+#define gx_device_pdf_do_strings(m)\
+    m(0, OwnerPassword) m(1, UserPassword) m(2, NoEncrypt)
+#define gx_device_pdf_num_strings 3
 #define st_device_pdf_max_ptrs\
   (st_device_psdf_max_ptrs + gx_device_pdf_num_ptrs +\
    gx_device_pdf_num_strings +\
