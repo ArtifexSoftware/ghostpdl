@@ -81,6 +81,33 @@ void jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image)
 	jbig2_free(ctx->allocator, image);
 }
 
+/* resize a Jbig2Image */
+Jbig2Image *jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image, 
+				int width, int height)
+{
+	if (width == image->width) {
+	    /* use the same stride, just change the length */
+	    image->data = jbig2_realloc(ctx->allocator,
+                image->data, image->stride*height);
+            if (image->data == NULL) {
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
+                    "could not resize image buffer!");
+            }
+	    if (height > image->height) {
+		memset(image->data + image->height*image->stride,
+			0, (height - image->height)*image->stride);
+	    }
+            image->height = height;
+
+	} else {
+	    /* we must allocate a new image buffer and copy */
+	    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1,
+		"jbig2_image_resize called with a different width (NYI)");
+	}
+
+	return 0;
+}
+
 /* composite one jbig2_image onto another
    slow but general version */
 int jbig2_image_compose_unopt(Jbig2Ctx *ctx,

@@ -435,7 +435,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "composing %dx%d decoded refinement region onto page at (%d, %d)",
             rsi.width, rsi.height, rsi.x, rsi.y);
-	jbig2_image_compose(ctx, ctx->pages[ctx->current_page].image,
+	jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page],
           image, rsi.x, rsi.y, JBIG2_COMPOSE_OR);
         jbig2_image_release(ctx, image);
     }

@@ -264,8 +264,7 @@ int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
     case 49:
       return jbig2_parse_end_of_page(ctx, segment, segment_data);
     case 50:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "unhandled segment type 'end of stripe'");
+      return jbig2_parse_end_of_stripe(ctx, segment, segment_data);
     case 51:
       ctx->state = JBIG2_FILE_EOF;
       return jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,

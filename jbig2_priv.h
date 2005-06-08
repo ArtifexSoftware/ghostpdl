@@ -115,6 +115,7 @@ struct _Jbig2Page {
              y_resolution;	/* in pixels per meter */
     uint16_t stripe_size;
     bool striped;
+    int end_row;
     uint8_t flags;
     Jbig2Image *image;
 };
@@ -131,6 +132,7 @@ typedef enum {
 } Jbig2ComposeOp;
 
 int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int y, Jbig2ComposeOp op);
+int jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *src, int x, int y, Jbig2ComposeOp op);
 
 /* region segment info */
 

@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2002-2004 artofcode LLC.
+    Copyright (c) 2002-2005 artofcode LLC.
     
     This software is provided AS-IS with no warranty,
     either express or implied.
@@ -617,9 +617,8 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
       jbig2_free(ctx->allocator, GB_stats);
     }
 
-
-  jbig2_image_compose(ctx, ctx->pages[ctx->current_page].image, image,
-			rsi.x, rsi.y, JBIG2_COMPOSE_OR);
+  jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], 
+			image, rsi.x, rsi.y, JBIG2_COMPOSE_OR);
   jbig2_image_release(ctx, image);
   
   return code;
