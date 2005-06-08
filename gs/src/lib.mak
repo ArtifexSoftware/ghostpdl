@@ -376,6 +376,7 @@ gxpaint_h=$(GLSRC)gxpaint.h
 gxpath_h=$(GLSRC)gxpath.h $(gscpm_h) $(gslparam_h) $(gspenum_h) $(gsrect_h)
 gxpcache_h=$(GLSRC)gxpcache.h
 gxsample_h=$(GLSRC)gxsample.h
+gxsamplp_h=$(GLSRC)gxsamplp.h
 gxstate_h=$(GLSRC)gxstate.h
 gxtext_h=$(GLSRC)gxtext.h $(gsrefct_h) $(gstext_h)
 gxtmap_h=$(GLSRC)gxtmap.h
@@ -697,7 +698,7 @@ $(GLOBJ)gxpflat.$(OBJ) : $(GLSRC)gxpflat.c $(GX)\
 	$(GLCC) $(GLO_)gxpflat.$(OBJ) $(C_) $(GLSRC)gxpflat.c
 
 $(GLOBJ)gxsample.$(OBJ) : $(GLSRC)gxsample.c $(GX)\
- $(gxsample_h) $(gxfixed_h) $(gximage_h)
+ $(gxsample_h) $(gxfixed_h) $(gximage_h) $(gxsamplp_h)
 	$(GLCC) $(GLO_)gxsample.$(OBJ) $(C_) $(GLSRC)gxsample.c
 
 $(GLOBJ)gxstroke.$(OBJ) : $(GLSRC)gxstroke.c $(GXERR) $(math__h) $(gpcheck_h)\
