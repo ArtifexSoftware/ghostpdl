@@ -85,7 +85,7 @@ extern const Jbig2HuffmanParams jbig2_huffman_params_J; /* Table B.10 */
 extern const Jbig2HuffmanParams jbig2_huffman_params_K; /* Table B.11 */
 extern const Jbig2HuffmanParams jbig2_huffman_params_L; /* Table B.12 */
 extern const Jbig2HuffmanParams jbig2_huffman_params_M; /* Table B.13 */
-extern const Jbig2HuffmanParams jbig2_huffman_params_J; /* Table B.14 */
+extern const Jbig2HuffmanParams jbig2_huffman_params_N; /* Table B.14 */
 extern const Jbig2HuffmanParams jbig2_huffman_params_O; /* Table B.15 */
 
 
