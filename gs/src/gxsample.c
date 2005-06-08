@@ -22,6 +22,7 @@
 #include "gximage.h"
 /* #include "gxsamplp.h" Do not remove - this file is included below. */
 
+
 /* ---------------- Lookup tables ---------------- */
 
 /*
@@ -108,3 +109,16 @@ sample_unpack_copy(byte * bptr, int *pdata_x, const byte * data, int data_x,
 #undef TEMPLATE_sample_unpack_8
 
 
+#define MULTIPLE_MAPS 1
+#define TEMPLATE_sample_unpack_1 sample_unpack_1_interleaved
+#define TEMPLATE_sample_unpack_2 sample_unpack_2_interleaved
+#define TEMPLATE_sample_unpack_4 sample_unpack_4_interleaved
+#define TEMPLATE_sample_unpack_8 sample_unpack_8_interleaved
+
+#include "gxsamplp.h"
+
+#undef TEMPLATE_sample_unpack_1
+#undef TEMPLATE_sample_unpack_2
+#undef TEMPLATE_sample_unpack_4
+#undef TEMPLATE_sample_unpack_8
+#undef MULTIPLE_MAPS

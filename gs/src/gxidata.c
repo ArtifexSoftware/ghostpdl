@@ -92,7 +92,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 	    sourcex = 0;
 	    for (px = 0; px < num_planes; px += penum->bps)
 		repack_bit_planes(planes, offsets, penum->bps, penum->buffer,
-				  penum->rect.w, &penum->map[0].table,
+				  penum->rect.w, &penum->map[px].table,
 				  penum->spread);
 	    for (px = 0; px < num_planes; ++px)
 		offsets[px] += planes[px].raster;

@@ -76,4 +76,9 @@ SAMPLE_UNPACK_PROC(sample_unpack_2);
 SAMPLE_UNPACK_PROC(sample_unpack_4);
 SAMPLE_UNPACK_PROC(sample_unpack_8);
 
+SAMPLE_UNPACK_PROC(sample_unpack_1_interleaved);
+SAMPLE_UNPACK_PROC(sample_unpack_2_interleaved);
+SAMPLE_UNPACK_PROC(sample_unpack_4_interleaved);
+SAMPLE_UNPACK_PROC(sample_unpack_8_interleaved);
+
 #endif /* gxsample_INCLUDED */
