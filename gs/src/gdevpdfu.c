@@ -100,7 +100,7 @@ copy_procsets(stream *s, const gs_string *path)
     int l, i = 0, code;
 
     if (p != NULL) {
-	for (i;; i++) {
+	for (;; i++) {
 	    const byte *c = memchr(p, gp_file_name_list_separator, e - p);
 
 	    if (c == NULL)
@@ -135,7 +135,7 @@ pdf_open_document(gx_device_pdf * pdev)
 	stream *s = pdev->strm;
 	int level = (int)(pdev->CompatibilityLevel * 10 + 0.5);
 
-	if (pdev->ForOPDFRead) {
+	if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size) {
 	    int code = copy_procsets(s, &pdev->OPDFReadProcsetPath);
 
 	    if (code < 0)

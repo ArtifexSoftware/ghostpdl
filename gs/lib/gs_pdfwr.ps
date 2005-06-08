@@ -675,15 +675,18 @@ currentdict /.pdf_hook_DSC_Creator undef
 {
     % Set a path to library files (ps2write)
     currentdevice .devicename /ps2write eq {
-      mark (gs_mgl_e.ps) (gs_mro_e.ps) (gs_agl.ps) (opdfread.ps) % Reverse order !
-      () counttomark 1 sub {
-        exch
-        .libfile { .filename } { false } ifelse not {
-          (Configuration error : library file opdfread.ps not found !) =
-          (opdfread.ps) /undefinedfilename signalerror
-        } if
-        .filenamelistseparator concatstrings concatstrings
-      } repeat
+      mark
+      systemdict /OPDFReadProcsetPath knownget not {
+        (gs_mgl_e.ps) (gs_mro_e.ps) (gs_agl.ps) (opdfread.ps) % Reverse order !
+        () counttomark 1 sub {
+          exch
+          .libfile { .filename } { false } ifelse not {
+            (Configuration error : library file opdfread.ps not found !) =
+            (opdfread.ps) /undefinedfilename signalerror
+          } if
+          .filenamelistseparator concatstrings concatstrings
+        } repeat
+      } if
       /OPDFReadProcsetPath exch .dicttomark setpagedevice
    } if
 } bind .schedule_init
