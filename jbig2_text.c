@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (C) 2002-2003 artofcode LLC.
+    Copyright (C) 2002-2005 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -29,6 +29,7 @@
 #include "jbig2_arith.h"
 #include "jbig2_arith_int.h"
 #include "jbig2_arith_iaid.h"
+#include "jbig2_huffman.h"
 #include "jbig2_generic.h"
 #include "jbig2_symbol_dict.h"
 
@@ -55,13 +56,13 @@ typedef struct {
     int *SBSYMCODES;
     /* SBSYMCODELEN */
     /* SBSYMS */
-    int SBHUFFFS;
-    int SBHUFFDS;
-    int SBHUFFDT;
-    int SBHUFFRDW;
-    int SBHUFFRDH;
-    int SBHUFFRDX;
-    int SBHUFFRDY;
+    Jbig2HuffmanTable *SBHUFFFS;
+    Jbig2HuffmanTable *SBHUFFDS;
+    Jbig2HuffmanTable *SBHUFFDT;
+    Jbig2HuffmanTable *SBHUFFRDW;
+    Jbig2HuffmanTable *SBHUFFRDH;
+    Jbig2HuffmanTable *SBHUFFRDX;
+    Jbig2HuffmanTable *SBHUFFRDY;
     bool SBHUFFRSIZE;
     bool SBRTEMPLATE;
     int8_t sbrat[4];
@@ -411,13 +412,144 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             "symbol id huffman table decoding NYI");
             
         /* 7.4.3.1.6 */
-        params.SBHUFFFS = (huffman_flags & 0x0003);
-        params.SBHUFFDS = (huffman_flags & 0x000c) >> 2;
-        params.SBHUFFDT = (huffman_flags & 0x0030) >> 4;
-        params.SBHUFFRDW = (huffman_flags & 0x00c0) >> 6;
-        params.SBHUFFRDH = (huffman_flags & 0x0300) >> 8;
-        params.SBHUFFRDX = (huffman_flags & 0x0c00) >> 10;
-        params.SBHUFFRDY = (huffman_flags & 0x3000) >> 12;
+	switch (huffman_flags & 0x0003) {
+	  case 0: /* Table B.6 */
+	    params.SBHUFFFS = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_F);
+	    break;
+	  case 1: /* Table B.7 */
+	    params.SBHUFFFS = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_G);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom FS huffman table (NYI)");
+	    break;
+	  case 2: /* invalid */
+	  default:
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region specified invalid FS huffman table");
+	    break;
+	}
+	switch ((huffman_flags & 0x000c) >> 2) {
+	  case 0: /* Table B.8 */
+	    params.SBHUFFDS = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_H);
+	    break;
+	  case 1: /* Table B.9 */
+	    params.SBHUFFDS = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_I);
+	    break;
+	  case 2: /* Table B.10 */
+	    params.SBHUFFDS = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_J);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom DS huffman table (NYI)");
+	    break;
+	}
+	switch ((huffman_flags & 0x0030) >> 4) {
+	  case 0: /* Table B.11 */
+	    params.SBHUFFDT = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_K);
+	    break;
+	  case 1: /* Table B.12 */
+	    params.SBHUFFDT = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_L);
+	    break;
+	  case 2: /* Table B.13 */
+	    params.SBHUFFDT = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_M);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom DT huffman table (NYI)");
+	    break;
+	}
+	switch ((huffman_flags & 0x00c0) >> 6) {
+	  case 0: /* Table B.14 */
+	    params.SBHUFFRDW = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_N);
+	    break;
+	  case 1: /* Table B.15 */
+	    params.SBHUFFRDW = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_O);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom RDW huffman table (NYI)");
+	    break;
+	  case 2: /* invalid */
+	  default:
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region specified invalid RDW huffman table");
+	    break;
+	}
+	switch ((huffman_flags & 0x0300) >> 8) {
+	  case 0: /* Table B.14 */
+	    params.SBHUFFRDH = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_N);
+	    break;
+	  case 1: /* Table B.15 */
+	    params.SBHUFFRDH = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_O);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom RDH huffman table (NYI)");
+	    break;
+	  case 2: /* invalid */
+	  default:
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region specified invalid RDH huffman table");
+	    break;
+	}
+        switch ((huffman_flags & 0x0c00) >> 10) {
+	  case 0: /* Table B.14 */
+	    params.SBHUFFRDX = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_N);
+	    break;
+	  case 1: /* Table B.15 */
+	    params.SBHUFFRDX = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_O);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom RDX huffman table (NYI)");
+	    break;
+	  case 2: /* invalid */
+	  default:
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region specified invalid RDX huffman table");
+	    break;
+	}
+	switch ((huffman_flags & 0x3000) >> 12) {
+	  case 0: /* Table B.14 */
+	    params.SBHUFFRDY = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_N);
+	    break;
+	  case 1: /* Table B.15 */
+	    params.SBHUFFRDY = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_O);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom RDY huffman table (NYI)");
+	    break;
+	  case 2: /* invalid */
+	  default:
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region specified invalid RDY huffman table");
+	    break;
+	}
         /* todo: conformance */
         params.SBHUFFRSIZE = huffman_flags & 0x8000;
         
@@ -471,6 +603,16 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
                 segment_data + offset, segment->data_length - offset,
 		GR_stats);
 
+    if (params.SBHUFF) {
+      jbig2_release_huffman_table(ctx, params.SBHUFFFS);
+      jbig2_release_huffman_table(ctx, params.SBHUFFDS);
+      jbig2_release_huffman_table(ctx, params.SBHUFFDT);
+      jbig2_release_huffman_table(ctx, params.SBHUFFRDX);
+      jbig2_release_huffman_table(ctx, params.SBHUFFRDY);
+      jbig2_release_huffman_table(ctx, params.SBHUFFRDW);
+      jbig2_release_huffman_table(ctx, params.SBHUFFRDH);
+  }
+
     if (!params.SBHUFF && params.SBREFINE) {
 	jbig2_free(ctx->allocator, GR_stats);
     }
@@ -488,7 +630,8 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, 
             "composing %dx%d decoded text region onto page at (%d, %d)",
             region_info.width, region_info.height, region_info.x, region_info.y);
-        jbig2_image_compose(ctx, page_image, image, region_info.x, region_info.y, JBIG2_COMPOSE_OR);
+	jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image,
+			      region_info.x, region_info.y, JBIG2_COMPOSE_OR);
         jbig2_image_release(ctx, image);
     }
     
