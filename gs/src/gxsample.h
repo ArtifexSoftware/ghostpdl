@@ -40,6 +40,11 @@ typedef union sample_lookup_s {
 extern const bits32 lookup4x1to32_identity[16];
 extern const bits32 lookup4x1to32_inverted[16];
 
+#ifndef sample_map_DEFINED
+#define sample_map_DEFINED
+typedef struct sample_map_s sample_map;
+#endif
+
 /*
  * Define procedures to unpack and shuffle image data samples.  The Unix C
  * compiler can't handle typedefs for procedure (as opposed to
@@ -53,8 +58,9 @@ extern const bits32 lookup4x1to32_inverted[16];
  * a pointer to the original data.
  */
 #define SAMPLE_UNPACK_PROC(proc)\
-  const byte *proc(byte *bptr, int *pdata_x, const byte *data, int data_x,\
-		   uint dsize, const sample_lookup_t *ptab, int spread)
+  const byte *proc(byte *bptr, int *pdata_x, const byte * data, int data_x,\
+		   uint dsize, const sample_map *smap, int spread,\
+		   int num_components_per_plane)
 typedef SAMPLE_UNPACK_PROC((*sample_unpack_proc_t));
 
 /*

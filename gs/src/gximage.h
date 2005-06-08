@@ -53,7 +53,7 @@ typedef enum {
     sd_lookup,			/* use lookup_decode table */
     sd_compute			/* compute using base and factor */
 } sample_decoding;
-typedef struct sample_map_s {
+struct sample_map_s {
 
     sample_lookup_t table;
 
@@ -89,7 +89,12 @@ typedef struct sample_map_s {
 
     bool inverted;
 
-} sample_map;
+};
+
+#ifndef sample_map_DEFINED
+#define sample_map_DEFINED
+typedef struct sample_map_s sample_map;
+#endif
 
 /* Decode an 8-bit sample into a floating point color component. */
 /* penum points to the gx_image_enum structure. */

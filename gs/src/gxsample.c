@@ -18,6 +18,8 @@
 /* Sample unpacking procedures */
 #include "gx.h"
 #include "gxsample.h"
+#include "gxfixed.h"
+#include "gximage.h"
 
 /* ---------------- Lookup tables ---------------- */
 
@@ -83,7 +85,8 @@ const bits32 lookup4x1to32_inverted[16] = {
 
 const byte *
 sample_unpack_copy(byte * bptr, int *pdata_x, const byte * data, int data_x,
-		uint dsize, const sample_lookup_t * ignore_ptab, int spread)
+		uint dsize, const sample_map *ignore_smap, int spread,
+		int ignore_num_components_per_plane)
 {				/* We're going to use the data right away, so no copying is needed. */
     *pdata_x = data_x;
     return data;
@@ -91,8 +94,10 @@ sample_unpack_copy(byte * bptr, int *pdata_x, const byte * data, int data_x,
 
 const byte *
 sample_unpack_1(byte * bptr, int *pdata_x, const byte * data, int data_x,
-		uint dsize, const sample_lookup_t * ptab, int spread)
+		uint dsize, const sample_map *smap, int spread,
+		int num_components_per_plane)
 {
+    const sample_lookup_t * ptab = &smap->table;
     const byte *psrc = data + (data_x >> 3);
     int left = dsize - (data_x >> 3);
 
@@ -148,8 +153,10 @@ sample_unpack_1(byte * bptr, int *pdata_x, const byte * data, int data_x,
 
 const byte *
 sample_unpack_2(byte * bptr, int *pdata_x, const byte * data, int data_x,
-		uint dsize, const sample_lookup_t * ptab, int spread)
+		uint dsize, const sample_map *smap, int spread,
+		int num_components_per_plane)
 {
+    const sample_lookup_t * ptab = &smap->table;
     const byte *psrc = data + (data_x >> 2);
     int left = dsize - (data_x >> 2);
 
@@ -186,8 +193,10 @@ sample_unpack_2(byte * bptr, int *pdata_x, const byte * data, int data_x,
 
 const byte *
 sample_unpack_4(byte * bptr, int *pdata_x, const byte * data, int data_x,
-		uint dsize, const sample_lookup_t * ptab, int spread)
+		uint dsize, const sample_map *smap, int spread,
+		int num_components_per_plane)
 {
+    const sample_lookup_t * ptab = &smap->table;
     byte *bufp = bptr;
     const byte *psrc = data + (data_x >> 1);
     int left = dsize - (data_x >> 1);
@@ -207,8 +216,10 @@ sample_unpack_4(byte * bptr, int *pdata_x, const byte * data, int data_x,
 
 const byte *
 sample_unpack_8(byte * bptr, int *pdata_x, const byte * data, int data_x,
-		uint dsize, const sample_lookup_t * ptab, int spread)
+		uint dsize, const sample_map *smap, int spread,
+		int num_components_per_plane)
 {
+    const sample_lookup_t * ptab = &smap->table;
     byte *bufp = bptr;
     const byte *psrc = data + data_x;
 

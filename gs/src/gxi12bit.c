@@ -38,9 +38,10 @@
 
 private const byte *
 sample_unpack_12(byte * bptr, int *pdata_x, const byte * data,
-		 int data_x, uint dsize, const sample_lookup_t * ignore_ptab,
-		 int spread)
+		 int data_x, uint dsize, const sample_map *ignore_smap, int spread,
+		 int ignore_num_components_per_plane)
 {
+    /* Assuming an identity map for all components. */
     register frac *bufp = (frac *) bptr;
     uint dskip = (data_x >> 1) * 3;
     const byte *psrc = data + dskip;
