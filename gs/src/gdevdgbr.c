@@ -690,7 +690,7 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		    tdev.line_ptrs = &tdev.base;
 		    tdev.base = data;
 		    code = (*dev_proc(&mem_mono_device, copy_mono))
-			((gx_device *) & tdev, params->data[0], prect->p.x * depth,
+			((gx_device *) & tdev, row, prect->p.x * depth,
 			 min_raster, gx_no_bitmap_id, 0, 0, width_bits, 1,
 			 (gx_color_index) 0, (gx_color_index) 1);
 		    params->data[0] = data;
