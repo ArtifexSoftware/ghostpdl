@@ -13,6 +13,11 @@ dnl AC_REVISION([$Rev$])
 AC_PROG_CC
 AC_PROG_RANLIB
 
+# platform specific compiler flags
+if test "x$GCC" = xyes; then
+  CFLAGS="$CFLAGS -Wall"
+fi
+
 # Checks for libraries.
 dnl by default we want png support if possible
 AC_ARG_WITH([libpng], 
