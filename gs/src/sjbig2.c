@@ -45,9 +45,12 @@ private int
 s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity severity,
 	       int32_t seg_idx)
 {
+    stream_jbig2decode_state *const state = 
+	(stream_jbig2decode_state *) error_callback_data;
     const char *type;
     char segment[22];
-    
+    int code = 0;
+
     switch (severity) {
 #ifdef JBIG2_DEBUG   /* verbose reporting when debugging */
         case JBIG2_SEVERITY_DEBUG:
@@ -64,7 +67,11 @@ s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity se
             break;;
 #endif /* JBIG2_DEBUG */
         case JBIG2_SEVERITY_FATAL:
-            type = "FATAL ERROR decoding image:"; break;;
+            type = "FATAL ERROR decoding image:";
+            /* pass the fatal error upstream if possible */
+	    code = gs_error_ioerror;
+	    if (state != NULL) state->error = code; 
+	    break;;
         default: type = "unknown message:"; break;;
     }
     if (seg_idx == -1) segment[0] = '\0';
@@ -72,7 +79,7 @@ s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity se
     
     dlprintf3("jbig2dec %s %s %s\n", type, msg, segment);
 
-    return 0;
+    return code;
 }
 
 /* invert the bits in a buffer */
@@ -93,6 +100,7 @@ public int
 s_jbig2decode_make_global_ctx(byte *data, uint length, Jbig2GlobalCtx **global_ctx)
 {
     Jbig2Ctx *ctx = NULL;
+    int code;
     
     /* the cvision encoder likes to include empty global streams */
     if (length == 0) {
@@ -106,12 +114,18 @@ s_jbig2decode_make_global_ctx(byte *data, uint length, Jbig2GlobalCtx **global_c
                             s_jbig2decode_error, NULL);
     
     /* parse the global bitstream */
-    jbig2_data_in(ctx, data, length);
+    code = jbig2_data_in(ctx, data, length);
     
+    if (code) {
+	/* error parsing the global stream */
+	*global_ctx = NULL;
+	return code;
+    }
+
     /* canonize and store our global state */
     *global_ctx = jbig2_make_global_ctx(ctx);
     
-    return 0; /* todo: check for failure */
+    return 0; /* todo: check for allocation failure */
 }
 
 /* store a global ctx pointer in our state structure */
@@ -137,7 +151,7 @@ s_jbig2decode_init(stream_state * ss)
     state->decode_ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED,
                 global_ctx, s_jbig2decode_error, ss);
     state->image = 0;
-    
+    state->error = 0;
     return 0; /* todo: check for allocation failure */
 }
 
@@ -166,6 +180,8 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
         if (last == 1) {
             jbig2_complete_page(state->decode_ctx);
         }
+	/* handle fatal decoding errors reported through our callback */
+	if (state->error) return state->error;
     }
     if (out_size > 0) {
         if (image == NULL) {
@@ -221,6 +237,7 @@ s_jbig2decode_set_defaults(stream_state *ss)
     state->decode_ctx = NULL;
     state->image = NULL;
     state->offset = 0;
+    state->error = 0;
 }
 
 
