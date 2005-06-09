@@ -658,14 +658,6 @@ currentdict /.pdf_hook_DSC_Creator undef
         systemdict 2 index known { pop pop } { def } ifelse
       } forall
     } repeat
-    currentdevice .devicename /ps2write eq {
-      (opdfread.ps) findlibfile {
-        /OPDFReadProcsetPath exch def
-      } {
-        (Configuration error : library file opdfread.ps not found !) =
-        (opdfread.ps) /undefinedfilename signalerror
-      } ifelse
-    } if
     currentdict end .setdistillerparams
     .distillerdevice //null false mark .putdeviceparams 
     dup type /booleantype eq not { cleartomark pop } if pop pop
