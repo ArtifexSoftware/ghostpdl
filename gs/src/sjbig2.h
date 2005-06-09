@@ -33,6 +33,7 @@ typedef struct stream_jbig2decode_state_s
     Jbig2Ctx *decode_ctx;
     Jbig2Image *image;
     long offset; /* offset into the image bitmap of the next byte to be returned */
+    int error;
 }
 stream_jbig2decode_state;
 
