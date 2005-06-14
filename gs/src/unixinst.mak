@@ -110,15 +110,18 @@ install-resdata: $(PSRESDIR)/Decoding/Unicode
 DOC_PAGES=PUBLIC README index.html gs.css \
 	   API.htm Bug-form.htm Bug-info.htm \
 	   C-style.htm Changes.htm Commprod.htm Copying.htm \
-	   Current.htm DLL.htm Develop.htm Devices.htm Drivers.htm \
+	   Current.htm Deprecated.htm \
+	   DLL.htm Develop.htm Devices.htm Drivers.htm \
 	   Fonts.htm Helpers.htm Hershey.htm \
 	   History1.htm History2.htm History3.htm History4.htm \
-	   History5.htm History6.htm \
-	   Htmstyle.htm Humor.htm Install.htm Language.htm \
+	   History5.htm History6.htm History7.htm History8.htm \
+	   Details.htm Details8.htm \
+	   Htmstyle.htm Humor.htm Issues.htm Install.htm Language.htm \
 	   Lib.htm Maintain.htm Make.htm New-user.htm \
 	   News.htm Projects.htm Ps-style.htm Ps2epsi.htm Ps2pdf.htm \
 	   Psfiles.htm Public.htm Readme.htm Release.htm \
-	   Source.htm Tester.htm Unix-lpr.htm Use.htm Xfonts.htm
+	   Source.htm Tester.htm Testing.htm Unix-lpr.htm \
+	   Use.htm Xfonts.htm
 install-doc: $(PSDOCDIR)/News.htm
 	-mkdir -p $(docdir)
 	$(SH) -c 'for f in $(DOC_PAGES) ;\
