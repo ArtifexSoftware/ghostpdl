@@ -347,9 +347,10 @@ z42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pma
 private int
 z42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	       int members, gs_glyph_info_t *info)
-{
-    return gs_type42_glyph_info(font, glyph_to_index(font, glyph),
-				pmat, members, info);
+{   /* fixme : same as z1_glyph_info. */
+    int wmode = font->WMode;
+
+    return z1_glyph_info_generic(font, glyph, pmat, members, info, gs_type42_glyph_info, wmode);
 }
 
 /* Procedure for accessing the sfnts array.
