@@ -375,16 +375,19 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		  } else {
 		      code = jbig2_arith_int_decode(IAAI, as, (int32_t*)&REFAGGNINST);
 		  }
-		  if (code || (int32_t)REFAGGNINST <= 0)
-		      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		  if (code || (int32_t)REFAGGNINST <= 0) {
+		      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			"invalid number of symbols or OOB in aggregate glyph");
+		      return NULL;
+		  }
 
 		  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 		    "aggregate symbol coding (%d instances)", REFAGGNINST);
 
 		  if (REFAGGNINST > 1) {
-		      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			"aggregate coding with REFAGGNINST=%d", REFAGGNINST);
+		      return NULL;
 		      /* todo: multiple symbols are like a text region */
 		  } else {
 		      /* 6.5.8.2.2 */
@@ -405,7 +408,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 
 		      if (ID >= ninsyms+NSYMSDECODED) {
-			jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+			code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			  "refinement references unknown symbol %d", ID);
 			return NULL;
 		      }
@@ -448,14 +451,16 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 #endif
 
 	  } else {
-	      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+	      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
                 "unhandled bitmap case!!!");
+	      return NULL;
           }
 
 	  /* 6.5.5 (4c.iii) */
 	  if (params->SDHUFF && !params->SDREFAGG) {
-	    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+	    code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
               "NYI: parsing collective bitmaps!!!");
+	    return NULL;
 	  }
 	
 	  /* 6.5.5 (4c.iv) */
