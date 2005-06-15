@@ -191,4 +191,7 @@ int gs_image_next(gs_image_enum * penum, const byte * dbytes,
 /* Clean up after processing an image. */
 int gs_image_cleanup(gs_image_enum * penum);
 
+/* Clean up after processing an image and free the enumerator. */
+int gs_image_cleanup_and_free_enum(gs_image_enum * penum);
+
 #endif /* gsimage_INCLUDED */

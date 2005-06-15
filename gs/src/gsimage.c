@@ -558,3 +558,13 @@ gs_image_cleanup(gs_image_enum * penum)
     /* Don't free the local enumerator -- the client does that. */
     return code;
 }
+
+/* Clean up after processing an image and free the enumerator. */
+int
+gs_image_cleanup_and_free_enum(gs_image_enum * penum)
+{
+    int code = gs_image_cleanup(penum);
+
+    gs_free_object(penum->memory, penum, "gs_image_cleanup_and_free_enum");
+    return code;
+}

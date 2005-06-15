@@ -443,11 +443,10 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 		for (iy = 0; iy < h && code >= 0; iy++)
 		    code = gs_image_next(pie, bits + iy * raster,
 					 (w + 7) >> 3, &used);
-		code1 = gs_image_cleanup(pie);
-		if (code >= 0 && code1 < 0)
-		    code = code1;
 	}
-	gs_free_object(mem, pie, "image_char(image_enum)");
+	code1 = gs_image_cleanup_and_free_enum(pie);
+	if (code >= 0 && code1 < 0)
+	    code = code1;
     }
   done:if (bits != cc_bits(cc))
 	gs_free_object(penum->memory->non_gc_memory, bits, "compress_alpha_bits");
