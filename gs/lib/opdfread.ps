@@ -2158,8 +2158,11 @@ end
   % Making the procedure : { Domain //ScaleArg exec ... n copy {} exec n+1 1 roll ... }
   % except "n copy" for the last chunk.
   %
+  PDFR_DEBUG {
+    (FunctionToProc_x0n beg m=) print dup =
+  } if
   1 index /Size get length exch 			% f n m
-  dup 7 mul 5 add array 				% f n m []
+  dup 7 mul 2 add array 				% f n m []
   PDFR_DEBUG {
     dup 0 //FunctionProcDebugBeg put
   } {
@@ -2190,9 +2193,11 @@ end
     ] cvx						% f n m [] i i1 {}
     3 index exch 2 index exch put 1 add 		% f n m [] i i1
     2 index 1 index /exec load put 1 add
-    2 index 1 index 6 index 1 add put 1 add
-    2 index 1 index 1 put 1 add
-    2 index 1 index /roll load put			% f n m [] i i1
+    1 index 4 index 1 sub ne {
+      2 index 1 index 6 index 1 add put 1 add
+      2 index 1 index 1 put 1 add
+      2 index 1 index /roll load put			% f n m [] i i1
+    } if
     pop pop						% f n m []
   } for
   PDFR_DEBUG {
@@ -2205,6 +2210,9 @@ end
   //PDFR_DEBUG {
     (Made a procedure for the n-argument function :) =
     dup ==
+  } if
+  PDFR_DEBUG {
+    (FunctionToProc_x0n end) =
   } if
 } bind def
 
