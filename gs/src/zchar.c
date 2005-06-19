@@ -32,6 +32,7 @@
 #include "estack.h"
 #include "ialloc.h"
 #include "ichar.h"
+#include "ichar1.h"
 #include "idict.h"
 #include "ifont.h"
 #include "igstate.h"
