@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2002-2003 artofcode LLC.
+    Copyright (c) 2002-2005 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -119,6 +119,9 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
   /* 7.2.7 */
   result->data_length = jbig2_get_int32(buf + offset);
   *p_header_size = offset + 4;
+
+  /* no body parsing results yet */
+  result->result = NULL;
 
   return result;
 }
