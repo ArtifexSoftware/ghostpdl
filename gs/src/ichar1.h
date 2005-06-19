@@ -20,6 +20,11 @@
 #ifndef ichar1_INCLUDED
 #  define ichar1_INCLUDED
 
+#ifndef gs_font_type1_DEFINED
+#  define gs_font_type1_DEFINED
+typedef struct gs_font_type1_s gs_font_type1;
+#endif
+
 /* ---------------- Public ---------------- */
 
 /* Render a Type 1 or Type 2 outline. */

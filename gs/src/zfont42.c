@@ -28,6 +28,7 @@
 #include "idict.h"
 #include "idparam.h"
 #include "ifont42.h"
+#include "ichar1.h"
 #include "iname.h"
 #include "store.h"
 
