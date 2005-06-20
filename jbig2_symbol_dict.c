@@ -255,7 +255,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 	"huffman coded symbol dictionary");
       hs = jbig2_huffman_new(ctx, ws);
-      if (params->SDREFAGG) {
+      if (!params->SDREFAGG) {
 	  SDNEWSYMWIDTHS = jbig2_alloc(ctx->allocator,
 		sizeof(*SDNEWSYMWIDTHS)*params->SDNUMNEWSYMS);
 	  if (SDNEWSYMWIDTHS == NULL) {
@@ -450,17 +450,11 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		  }
 #endif
 
-	  } else {
-	      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-                "unhandled bitmap case!!!");
-	      return NULL;
-          }
+	  }
 
 	  /* 6.5.5 (4c.iii) */
 	  if (params->SDHUFF && !params->SDREFAGG) {
-	    code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-              "NYI: parsing collective bitmaps!!!");
-	    return NULL;
+	    SDNEWSYMWIDTHS[NSYMSDECODED] = SYMWIDTH;
 	  }
 	
 	  /* 6.5.5 (4c.iv) */
@@ -470,6 +464,14 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "%d of %d decoded", NSYMSDECODED, params->SDNUMNEWSYMS);
 #endif
+
+	  /* 6.5.5 (4d) */
+	  if (params->SDHUFF && !params->SDREFAGG) {
+	    /* 6.5.9 */
+	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"unhandled collective bitmap");
+	    return NULL;
+	  }
 
 	}
      }
