@@ -701,7 +701,7 @@ gx_dc_write_color(
         *psize = 1;
         *pdata = 0xff;
     } else {
-        if (depth < 8 * sizeof(gx_color_index))
+        if (depth < 8 * arch_sizeof_color_index)
             color &= ((gx_color_index)1 << depth) - 1;
         while (--num_bytes >= 0) {
             pdata[num_bytes] = color & 0xff;
@@ -750,8 +750,8 @@ gx_dc_read_color(
         return 1;
     }
 
-    /* num_bytes > sizeof(gx_color_index), discard first byte */
-    for (i = (num_bytes >= sizeof(gx_color_index) ? 1 : 0); i < num_bytes; i++)
+    /* num_bytes > arch_sizeof_color_index, discard first byte */
+    for (i = (num_bytes >= arch_sizeof_color_index ? 1 : 0); i < num_bytes; i++)
         color = (color << 8) | pdata[i];
     *pcolor = color;
     return num_bytes;

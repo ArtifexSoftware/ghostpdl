@@ -320,7 +320,7 @@ typedef struct gx_device_color_info_s {
 
     /*
      * The number of bits of gx_color_index actually used. 
-     * This must be <= sizeof(gx_color_index), which is usually 64.
+     * This must be <= arch_sizeof_color_index, which is usually 64.
      */
     byte depth;
 

@@ -1343,7 +1343,7 @@ xcf_write_footer(xcf_write_ctx *xc, xcf_device *pdev)
 	int offset;
 	int tile_idx;
 
-	dlprintf2("actual tile offset: %d %d\n", xc->offset, sizeof(gx_color_index));
+	dlprintf2("actual tile offset: %d %d\n", xc->offset, (int)arch_sizeof_color_index);
 	xcf_write_32(xc, xc->width);
 	xcf_write_32(xc, xc->height);
 	xcf_write_32(xc, separation_name->size + 1);

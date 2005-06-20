@@ -248,7 +248,7 @@ const psd_device gs_psdrgb_device =
  * Select the default number of components based upon the number of bits
  * that we have in a gx_color_index
  */
-#define NC ((sizeof(gx_color_index) <= 8) ? sizeof(gx_color_index) : 8)
+#define NC ((arch_sizeof_color_index <= 8) ? arch_sizeof_color_index : 8)
 
 /*
  * PSD device with CMYK process color model and spot color support.

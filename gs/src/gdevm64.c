@@ -30,7 +30,7 @@ struct stats_mem64_s {
 	fprevc[257];
     double ftotal;
 } stats_mem64;
-static int prev_count;
+static int prev_count = 0;
 static gx_color_index prev_colors[256];
 # define INCR(v) (++(stats_mem64.v))
 #else

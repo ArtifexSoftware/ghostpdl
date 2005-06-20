@@ -384,7 +384,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
  * Select the default number of components based upon the number of bits
  * that we have in a gx_color_index
  */
-#define NC ((sizeof(gx_color_index) <= 8) ? sizeof(gx_color_index) : 8)
+#define NC ((arch_sizeof_color_index <= 8) ? arch_sizeof_color_index : 8)
 
 /*
  * TIFF device with CMYK process color model and spot color support.

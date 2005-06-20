@@ -129,7 +129,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     {
 	uint out_size =
 	    iss.WidthOut * max(iss.Colors * (iss.BitsPerComponentOut / 8),
-			       sizeof(gx_color_index));
+			       arch_sizeof_color_index);
 
 	line = gs_alloc_bytes(mem, in_size + out_size,
 			      "image scale src+dst line");
@@ -273,7 +273,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	    DECLARE_LINE_ACCUM_COPY(out, bpp, xo);
 
 	    w.limit = out + width *
-		max(c * sizeofPixelOut, sizeof(gx_color_index)) - 1;
+		max(c * sizeofPixelOut, arch_sizeof_color_index) - 1;
 	    w.ptr = w.limit - width * c * sizeofPixelOut;
 	    psrc = (const frac *)(w.ptr + 1);
 	    status = (*pss->template->process)
