@@ -138,13 +138,12 @@ typedef struct gx_device_s gx_device;
 /* Initialize an enumerator for an ImageType 1 image. */
 int gs_image_init(gs_image_enum * penum, const gs_image_t * pim,
 		  bool MultipleDataSources, gs_state * pgs);
-/* Initialize an enumerator for a general image. */
-int gs_image_common_init(gs_image_enum * penum,
-			 gx_image_enum_common_t * pie,
-			 const gs_data_image_t * pim,
-			 gs_memory_t * mem, gx_device * dev);
+
+/* Initialize an enumerator for a general image. 
+   penum->memory must be initialized in advance.
+*/
 int gs_image_enum_init(gs_image_enum * penum,
-		       gx_image_enum_common_t * pie,
+		       const gx_image_enum_common_t * pie,
 		       const gs_data_image_t * pim, gs_state *pgs);
 
 /*
