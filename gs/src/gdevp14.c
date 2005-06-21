@@ -2226,7 +2226,7 @@ send_pdf14trans(gs_imager_state * pis, gx_device * dev,
 
     gs_free_object(pis->memory, pct, "send_pdf14trans");
 
-    return 0;
+    return code;
 }
 
 /* ------------- PDF 1.4 transparency device for clist writing ------------- */
@@ -2500,6 +2500,7 @@ pdf14_clist_create_compositor(gx_device * dev, gx_device ** pcdev,
     /* We only handle a few PDF 1.4 transparency operations 4 */
     if (gs_is_pdf14trans_compositor(pct)) {
         const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pct;
+
         switch (pdf14pct->params.pdf14_op) {
 	    case PDF14_PUSH_DEVICE:
 		/* Re-activate the PDF 1.4 compositor */
