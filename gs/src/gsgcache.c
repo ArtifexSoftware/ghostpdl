@@ -84,7 +84,8 @@ gs_glyph_cache *
 gs_glyph_cache__alloc(gs_font_type42 *pfont, stream *s,
 			get_glyph_data_from_file read_data)
 { 
-    gs_glyph_cache *gdcache = (gs_glyph_cache *)gs_alloc_struct(pfont->memory,
+    gs_memory_t *mem = pfont->memory->stable_memory;
+    gs_glyph_cache *gdcache = (gs_glyph_cache *)gs_alloc_struct(mem,
 	    gs_glyph_cache, &st_glyph_cache, "gs_glyph_cache");
     if (gdcache == 0)
 	return 0;
@@ -97,7 +98,7 @@ gs_glyph_cache__alloc(gs_font_type42 *pfont, stream *s,
     * get removed by 'restore' (elements can be created at a different
     * save level than the current level)
     */
-    gdcache->memory = pfont->memory->stable_memory;
+    gdcache->memory = mem;
     gdcache->read_data = read_data;
     gs_font_notify_register((gs_font *)pfont, gs_glyph_cache__release, (void *)gdcache);
     return gdcache;
