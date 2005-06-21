@@ -285,7 +285,7 @@ begin_planes(gs_image_enum *penum)
 }
 
 static int
-gs_image_common_init(gs_image_enum * penum, const gx_image_enum_common_t * pie,
+gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
 	    const gs_data_image_t * pim, gx_device * dev)
 {
     /*
@@ -331,7 +331,7 @@ gs_image_common_init(gs_image_enum * penum, const gx_image_enum_common_t * pie,
    penum->memory must be initialized in advance.
 */
 int
-gs_image_enum_init(gs_image_enum * penum, const gx_image_enum_common_t * pie,
+gs_image_enum_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
 		   const gs_data_image_t * pim, gs_state *pgs)
 {
     return gs_image_common_init(penum, pie, pim,

@@ -143,7 +143,7 @@ int gs_image_init(gs_image_enum * penum, const gs_image_t * pim,
    penum->memory must be initialized in advance.
 */
 int gs_image_enum_init(gs_image_enum * penum,
-		       const gx_image_enum_common_t * pie,
+		       gx_image_enum_common_t * pie,
 		       const gs_data_image_t * pim, gs_state *pgs);
 
 /*
