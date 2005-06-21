@@ -301,6 +301,7 @@ gx_cpath_assign_preserve(gx_clip_path * pcpto, gx_clip_path * pcpfrom)
 	rc_increment(fromlist);
 	rc_decrement(pcpto->rect_list, "gx_cpath_assign");
     }
+    rc_increment(pcpfrom->path_list);
     path = pcpto->path, *pcpto = *pcpfrom, pcpto->path = path;
     return 0;
 }
