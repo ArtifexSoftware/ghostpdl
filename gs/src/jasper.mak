@@ -1,4 +1,4 @@
-#Copyright (C) 2004 artofcode LLC.  All rights reserved.
+# Copyright (C) 2004-2005 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -85,7 +85,7 @@ libjasper_OBJS=$(libjasper_OBJS_base) $(libjasper_OBJS_jpc) $(libjasper_OBJS_jp2
 libjasper_HDRS_base=\
 	$(JASSRC)include$(D)jasper$(D)jasper.h \
 	$(JASSRC)include$(D)jasper$(D)jas_config.h \
-	$(JASSRC)include$(D)jasper$(D)jas_config2.h \
+	$(JASSRC)include$(D)jasper$(D)jas_config_win32.h \
 	$(JASSRC)include$(D)jasper$(D)jas_cm.h \
 	$(JASSRC)include$(D)jasper$(D)jas_fix.h \
 	$(JASSRC)include$(D)jasper$(D)jas_debug.h \
@@ -130,7 +130,7 @@ libjasper_HDRS_jp2=\
 	$(JASSRC)jp2$(D)jp2_cod.h \
 	$(JASSRC)jp2$(D)jp2_dec.h
 
-libjasjper_HDRS=$(libjasper_HDRS_base) $(libjasper_HDRS_jpc) $(libjasper_HDRS_jp2)
+libjasper_HDRS=$(libjasper_HDRS_base) $(libjasper_HDRS_jpc) $(libjasper_HDRS_jp2)
 
 jasper.clean : jasper.config-clean jasper.clean-not-config-clean
 
