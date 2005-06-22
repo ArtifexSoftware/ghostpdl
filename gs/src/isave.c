@@ -541,13 +541,13 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
     }
 
     /*
-     * If we're about to do a global restore (save level = 1),
+     * If we're about to do a global restore (a restore to the level 0),
      * and there is only one context using this global VM
      * (the normal case, in which global VM is saved by the
      * outermost save), we also have to check the global save.
      * Global saves can't be nested, which makes things easy.
      */
-    if (mem->save_level == 1 &&
+    if (mem->save_level == 0 /* was 1 - bug 688157 */ &&
 	(mem = save->space_global) != save->space_local &&
 	save->space_global->num_contexts == 1
 	) {
