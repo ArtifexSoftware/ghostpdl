@@ -347,11 +347,18 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 	    rsave = alloc_save_space(lmem, dmem, 0L);
 	    if (rsave != 0) {
 		rsave->client_data = cdata;
+#if 0 /* Bug 688153 */
 		rsave->id = lsave->id;
 		print_save("save", lmem->space, rsave);
 		lsave->id = 0;	/* mark as invisible */
 		rsave->state.save_level--; /* ditto */
 		lsave->client_data = 0;
+#else
+		rsave->id = 0;  /* mark as invisible */
+		print_save("save", lmem->space, rsave);
+		rsave->state.save_level--; /* ditto */
+		rsave->client_data = 0;
+#endif
 		/* Inherit the allocated space count -- */
 		/* we need this for triggering a GC. */
 		rsave->state.inherited =
