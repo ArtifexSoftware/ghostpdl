@@ -547,7 +547,7 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
      * outermost save), we also have to check the global save.
      * Global saves can't be nested, which makes things easy.
      */
-    if (mem->save_level == 0 /* was 1 - bug 688157 */ &&
+    if (save->state.save_level == 0 /* Restoring to save level 0 - see bug 688157, 688161 */ &&
 	(mem = save->space_global) != save->space_local &&
 	save->space_global->num_contexts == 1
 	) {
