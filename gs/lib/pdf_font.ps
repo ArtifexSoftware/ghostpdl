@@ -700,7 +700,21 @@ readonly def
 /buildType3 {		% <Type3-font-resource> buildType3 <font>
   8 dict begin
     /FontType 3 def
-    /Resources 1 index /Resources knownoget { oforce } { 0 dict } ifelse def
+		% If the font does not contain a Resources entry, then we use
+		% the resources from our current context.  Page 391 of the PDF
+		% 1.6 spec says that the Resources dict is optional and if not
+		% present then we should use the Resources for the page.
+		% However we have a test file (687989) which uses a Type3 font
+		% inside a form XObject and the desired Resources are in the
+		% XObject dict and not in the Page dict.  So we are going to
+		% the parent object to find resources instead of only going to
+		% the page dict when a font does not specify its required
+		% resources.
+    /Resources 1 index /Resources knownoget {
+       oforce
+    } {
+       LocalResources
+    } ifelse def
     /FontBBox 1 index /FontBBox get cvx def
     /FontMatrix 1 index /FontMatrix oget def
     /CharProcs 1 index /CharProcs oget def
