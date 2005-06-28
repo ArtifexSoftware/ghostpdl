@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#    Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 2002-2005 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -133,7 +133,9 @@ gsDoubleInclusionOK = [
     'src/gxdtfill.h',
     'src/gxfillsl.h',
     'src/gxfilltr.h',
-    'src/gxfillts.h'
+    'src/gxfillts.h',
+    'src/gxsamplp.h',
+    'src/gdevpdfb.h'
     ]
 
 # Add the tests defined in this file to a suite.
