@@ -657,9 +657,17 @@ pdf_find_same_charproc(gx_device_pdf *pdev,
     pdev->cgp = cgp;
     for (pcp = pdfont->u.simple.s.type3.char_procs; pcp != NULL; pcp = pcp->char_next) {
 	if (*ppcp != pcp && pdf_is_same_charproc1(pdev, *ppcp, pcp)) {
-	    *ppcp = pcp;
-	    pdev->cgp = NULL;
-	    return 1;
+    	    cos_object_t *pco0 = pcp->object;
+    	    cos_object_t *pco1 = (*ppcp)->object;
+
+	    code = pco0->cos_procs->equal(pco0, pco1, pdev);
+	    if (code < 0)
+		return code;
+	    if (code) {
+		*ppcp = pcp;
+		pdev->cgp = NULL;
+		return 1;
+	    }
 	}
     }
     pcp = *ppcp;
@@ -737,7 +745,12 @@ pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_
 		return 0;
 	    }
 	    if (pdf_is_charproc_defined(pdev, pdfont, ch)) {
-		code = pdf_make_font3_resource(pdev, font, &pdfont);
+		gs_font *base_font = font, *below;
+
+		while ((below = base_font->base) != base_font &&
+			base_font->procs.same_font(base_font, below, FONT_SAME_OUTLINES))
+		    base_font = below;
+		code = pdf_make_font3_resource(pdev, base_font, &pdfont);
 		if (code < 0)
 		    return code;
 		code = pdf_attach_font_resource(pdev, font, pdfont);
@@ -758,6 +771,7 @@ pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_
     glyph0 = font->procs.encode_char(font, ch, GLYPH_SPACE_NAME);
     pcp->char_next = pdfont->u.simple.s.type3.char_procs;
     pdfont->u.simple.s.type3.char_procs = pcp;
+    pcp->font = pdfont;
     pdfont->Widths[ch] = pcp->real_width.x;
     real_widths[ch * 2    ] = pcp->real_width.x;
     real_widths[ch * 2 + 1] = pcp->real_width.y;

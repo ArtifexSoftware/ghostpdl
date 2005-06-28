@@ -61,6 +61,7 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
     pdev->vgstack[i].undercolor_removal_id = pdev->undercolor_removal_id;
     pdev->vgstack[i].overprint_mode = pdev->overprint_mode;
     pdev->vgstack[i].smoothness = pdev->state.smoothness;
+    pdev->vgstack[i].flatness = pdev->state.flatness;
     pdev->vgstack[i].text_knockout = pdev->state.text_knockout;
     pdev->vgstack[i].fill_overprint = pdev->fill_overprint;
     pdev->vgstack[i].stroke_overprint = pdev->stroke_overprint;
@@ -96,6 +97,7 @@ pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
     pdev->undercolor_removal_id = s->undercolor_removal_id;
     pdev->overprint_mode = s->overprint_mode;
     pdev->state.smoothness = s->smoothness;
+    pdev->state.flatness = s->flatness;
     pdev->state.text_knockout = s->text_knockout;
     pdev->fill_overprint = s->fill_overprint;
     pdev->stroke_overprint = s->stroke_overprint;
@@ -1430,7 +1432,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 				     gs_color_select_all);
 	}
     }
-    if (pdev->CompatibilityLevel >= 1.3 && pdev->sbstack_depth == 0) {
+    if (pdev->CompatibilityLevel >= 1.3 && pdev->sbstack_depth == bottom) {
 	if (pdev->overprint_mode != pdev->params.OPM) {
 	    code = pdf_open_gstate(pdev, ppres);
 	    if (code < 0)

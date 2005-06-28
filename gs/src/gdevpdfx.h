@@ -344,6 +344,7 @@ typedef struct pdf_viewer_state_s {
     gs_id undercolor_removal_id;
     int overprint_mode;
     float smoothness; /* state.smoothness */
+    float flatness;
     bool text_knockout; /* state.text_knockout */
     bool fill_overprint;
     bool stroke_overprint;
