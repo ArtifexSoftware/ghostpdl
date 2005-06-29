@@ -1,4 +1,4 @@
-#    Copyright (C) 1997-2003 artofcode LLC. All rights reserved.
+#    Copyright (C) 1997-2005 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -111,7 +111,7 @@ DOC_PAGES=PUBLIC README index.html gs.css \
 	   API.htm Bug-form.htm Bug-info.htm \
 	   C-style.htm Changes.htm Commprod.htm Copying.htm \
 	   Current.htm Deprecated.htm \
-	   DLL.htm Develop.htm Devices.htm Drivers.htm \
+	   DLL.htm Deprecated.htm Develop.htm Devices.htm Drivers.htm \
 	   Fonts.htm Helpers.htm Hershey.htm \
 	   History1.htm History2.htm History3.htm History4.htm \
 	   History5.htm History6.htm History7.htm History8.htm \
@@ -120,7 +120,7 @@ DOC_PAGES=PUBLIC README index.html gs.css \
 	   Lib.htm Maintain.htm Make.htm New-user.htm \
 	   News.htm Projects.htm Ps-style.htm Ps2epsi.htm Ps2pdf.htm \
 	   Psfiles.htm Public.htm Readme.htm Release.htm \
-	   Source.htm Tester.htm Testing.htm Unix-lpr.htm \
+	   Source.htm Testing.htm Testing.htm Unix-lpr.htm \
 	   Use.htm Xfonts.htm
 install-doc: $(PSDOCDIR)/News.htm
 	-mkdir -p $(docdir)
@@ -152,7 +152,7 @@ install-man: $(PSMANDIR)/gs.1
 			  ln -s ps2pdf.$(man1ext) $$f.$(man1ext) ) ;\
 	      done ;\
 	    fi ;\
-	    if ( test -f $$man1dir/ps2ps.$(man1ext) ) ;\
+	    if ( test -f $$man1dir/ps2lp.$(man1ext) ) ;\
 	      then for f in $(MAN1_LINKS_GSLP) ;\
 	        do ( cd $$man1dir; rm -f $$f.$(man1ext) ;\
 			  ln -s gslp.$(man1ext) $$f.$(man1ext) ) ;\
@@ -165,7 +165,7 @@ install-man: $(PSMANDIR)/gs.1
 install-examples:
 	-mkdir -p $(exdir)
 	for f in \
-alphabet.ps chess.ps colorcir.ps doretree.ps escher.ps \
+alphabet.ps annots.pdf chess.ps colorcir.ps doretree.ps escher.ps \
 golfer.eps grayalph.ps snowflak.ps tiger.eps vasarely.ps waterfal.ps \
 ridt91.eps ;\
 	do $(INSTALL_DATA) $(PSEXDIR)/$$f $(exdir) ;\
