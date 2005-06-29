@@ -652,7 +652,7 @@ update_overprint_params(
     int                             ncomps = opdev->color_info.num_components;
 
     /* check if overprint is to be turned off */
-    if (!pparams->retain_any_comps || opdev->color_info.num_components == 1) {
+    if (!pparams->retain_any_comps) {
         /* if fill_rectangle forwards, overprint is already off */
         if (dev_proc(opdev, fill_rectangle) != gx_forward_fill_rectangle)
             memcpy( &opdev->procs,
@@ -951,8 +951,7 @@ c_overprint_create_default_compositor(
     overprint_device_t *    opdev = 0;
 
     /* see if there is anything to do */
-    if ( !ovrpct->params.retain_any_comps    ||
-         tdev->color_info.num_components <= 1  ) {
+    if ( !ovrpct->params.retain_any_comps) {
         *popdev = tdev;
         return 0;
     }
