@@ -120,7 +120,7 @@ DOC_PAGES=PUBLIC README index.html gs.css \
 	   Lib.htm Maintain.htm Make.htm New-user.htm \
 	   News.htm Projects.htm Ps-style.htm Ps2epsi.htm Ps2pdf.htm \
 	   Psfiles.htm Public.htm Readme.htm Release.htm \
-	   Source.htm Testing.htm Testing.htm Unix-lpr.htm \
+	   Source.htm Testing.htm Unix-lpr.htm \
 	   Use.htm Xfonts.htm
 install-doc: $(PSDOCDIR)/News.htm
 	-mkdir -p $(docdir)
