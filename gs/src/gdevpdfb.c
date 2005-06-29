@@ -103,6 +103,18 @@ pdf_copy_mask_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     return pdf_end_write_image(pdev, piw);
 }
 
+private void 
+set_image_color(gx_device_pdf *pdev, gx_color_index c)
+{
+    pdf_set_pure_color(pdev, c, &pdev->saved_fill_color,
+			&pdev->fill_used_process_color,
+			&psdf_set_fill_color_commands);
+    if (!pdev->HaveStrokeColor)
+	pdf_set_pure_color(pdev, c, &pdev->saved_stroke_color,
+			    &pdev->stroke_used_process_color,
+			    &psdf_set_stroke_color_commands);
+}
+
 /* Copy a monochrome bitmap or mask. */
 private int
 pdf_copy_mono(gx_device_pdf *pdev,
@@ -168,22 +180,16 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    } else if (pdev->pte) {
 		/* We're under pdf_text_process. It set a high level color. */
 	    } else
-		pdf_set_pure_color(pdev, one, &pdev->saved_fill_color,
-				   &pdev->fill_used_process_color,
-				   &psdf_set_fill_color_commands);
+		set_image_color(pdev, one);
 	    pdf_make_bitmap_matrix(&image.ImageMatrix, x, y, w, h, h);
 	    goto rx;
 	}
-	pdf_set_pure_color(pdev, one, &pdev->saved_fill_color,
-			   &pdev->fill_used_process_color,
-			   &psdf_set_fill_color_commands);
+	set_image_color(pdev, one);
 	gs_image_t_init_mask(&image, false);
 	invert = 0xff;
     } else if (one == gx_no_color_index) {
 	gs_image_t_init_mask(&image, false);
-	pdf_set_pure_color(pdev, zero, &pdev->saved_fill_color,
-			   &pdev->fill_used_process_color,
-			   &psdf_set_fill_color_commands);
+	set_image_color(pdev, zero);
     } else if (zero == pdev->black && one == pdev->white) {
 	gs_cspace_init_DeviceGray(pdev->memory, &cs);
 	gs_image_t_init(&image, &cs);
