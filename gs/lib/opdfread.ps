@@ -2876,9 +2876,8 @@ currentdict end readonly def
   /DeviceCMYK { [0 1 0 1 0 1 0 1] } def 
   /Indexed { dup /ColorSpace get 2 get [ exch 0 exch ] } def
   /Separation { [0 1] } def
-  /CIEBasedA { [0 1] } def
-  /CIEBasedABC { [0 1 0 1 0 1] } def
-  /CalRGB { [0 1 0 1 0 1] } def
+  /CIEBasedA { dup /ColorSpace get /RangeABC get } def
+  /CIEBasedABC { dup /ColorSpace get /RangeABC get } def
 currentdict end readonly def
 
 /Substitute % <key> <dict> Substitute <key>
