@@ -373,10 +373,10 @@ pdf_make_alt_stream(gx_device_pdf * pdev, psdf_binary_writer * pbw)
         return_error(gs_error_VMerror);
     pbw->dev = (gx_device_psdf *)pdev;
     pbw->memory = pdev->pdf_memory;
-    pbw->target = NULL; /* We don't need target with cos_write_stream. */
     pdev->strm = pbw->strm;
     code = psdf_begin_binary((gx_device_psdf *) pdev, pbw);
     pdev->strm = save_strm;
+    pbw->target = NULL; /* We don't need target with cos_write_stream. */
     return code;
 }
 
