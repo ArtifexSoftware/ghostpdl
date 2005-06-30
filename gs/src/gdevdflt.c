@@ -585,7 +585,7 @@ gx_default_get_initial_matrix(gx_device * dev, register gs_matrix * pmat)
 }
 /* Get the initial matrix for a device with upright Y. */
 /* This includes just a few printers and window systems. */
-/* TrayOrientation is not provided, so ps, pdf, can do it themselves.
+/* TrayOrientation is not provided, so ps, pdf, can do it themselves. */
 void
 gx_upright_get_initial_matrix(gx_device * dev, register gs_matrix * pmat)
 {
