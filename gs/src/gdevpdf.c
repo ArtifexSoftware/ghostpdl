@@ -628,7 +628,7 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
 {
     stream *s = pdev->strm;
     int dsc_orientation = -1;
-    const pdf_page_dsc_info_t *ppdi;
+    pdf_page_dsc_info_t *ppdi;
 
     ppdi = (page != NULL ? &page->dsc_info : &pdev->doc_dsc_info);
 
