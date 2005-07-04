@@ -2870,14 +2870,24 @@ currentdict end readonly def
   /DCT /DCTDecode def
 currentdict end readonly def
 
+/GetColorSpaceRange
+{ 2 index /ColorSpace get
+  dup type /arraytype eq {
+    1 get
+  } if
+  exch //knownget exec {
+    exch pop
+  } if
+} bind def
+
 /DecodeArrays 15 dict begin
   /DeviceGray { [0 1] } def
   /DeviceRGB { [0 1 0 1 0 1] } def
   /DeviceCMYK { [0 1 0 1 0 1 0 1] } def 
   /Indexed { dup /ColorSpace get 2 get [ exch 0 exch ] } def
   /Separation { [0 1] } def
-  /CIEBasedA { dup /ColorSpace get /RangeABC get } def
-  /CIEBasedABC { dup /ColorSpace get /RangeABC get } def
+  /CIEBasedA { [0 1]  /RangeA //GetColorSpaceRange exec } def
+  /CIEBasedABC { [0 1 0 1 0 1] /RangeABC //GetColorSpaceRange exec } def
 currentdict end readonly def
 
 /Substitute % <key> <dict> Substitute <key>
