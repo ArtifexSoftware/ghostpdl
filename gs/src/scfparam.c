@@ -45,8 +45,8 @@ private const gs_param_item_t s_CF_param_items[] =
     gs_param_item_end
 };
 
-/* Define a limit on the Rows parameter, close to max_int. */
-#define cf_max_height 32000
+/* Define a limit on the Rows parameter, was too low at 32000 */
+#define cf_max_height 1000000
 
 /* Get non-default CCITTFax filter parameters. */
 stream_state_proc_get_params(s_CF_get_params, stream_CF_state);		/* check */
