@@ -55,6 +55,10 @@ typedef struct gx_device_pclxl_s {
     gx_device_vector_common;
     /* Additional state information */
     pxeMediaSize_t media_size;
+    bool ManualFeed;            /* map ps setpage commands to pxl */
+    bool ManualFeed_set;         
+    int  MediaPosition;         
+    int  MediaPosition_set;
     gx_path_type_t fill_rule;	/* ...winding_number or ...even_odd  */
     gx_path_type_t clip_rule;	/* ditto */
     pxeColorSpace_t color_space;
@@ -108,6 +112,9 @@ private dev_proc_copy_mono(pclxl_copy_mono);
 private dev_proc_copy_color(pclxl_copy_color);
 private dev_proc_fill_mask(pclxl_fill_mask);
 
+private dev_proc_get_params(pclxl_get_params);
+private dev_proc_put_params(pclxl_put_params);
+
 /*private dev_proc_draw_thin_line(pclxl_draw_thin_line); */
 private dev_proc_begin_image(pclxl_begin_image);
 private dev_proc_strip_copy_rop(pclxl_strip_copy_rop);
@@ -127,8 +134,8 @@ private dev_proc_strip_copy_rop(pclxl_strip_copy_rop);
 	pclxl_copy_color,\
 	NULL,			/* draw_line */\
 	NULL,			/* get_bits */\
-	gdev_vector_get_params,\
-	gdev_vector_put_params,\
+	pclxl_get_params,\
+	pclxl_put_params,\
 	NULL,			/* map_cmyk_color */\
 	NULL,			/* get_xfont_procs */\
 	NULL,			/* get_xfont_device */\
@@ -774,9 +781,17 @@ pclxl_beginpage(gx_device_vector * vdev)
      * from there before in_page is set.
      */
     stream *s = vdev->strm;
+    byte media_source = eAutoSelect; /* default */
 
     px_write_page_header(s, (const gx_device *)vdev);
-    px_write_select_media(s, (const gx_device *)vdev, &xdev->media_size);
+
+    if (xdev->ManualFeed_set && xdev->ManualFeed) 
+	media_source = 2;
+    else if (xdev->MediaPosition_set && xdev->MediaPosition >= 0 )
+	media_source = xdev->MediaPosition;
+ 
+    px_write_select_media(s, (const gx_device *)vdev, &xdev->media_size, &media_source );
+
     spputc(s, pxtBeginPage);
     return 0;
 }
@@ -1595,5 +1610,63 @@ pclxl_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 	code = pclxl_image_write_rows(pie);
     gs_free_object(pie->memory, pie->rows.data, "pclxl_end_image(rows)");
     gs_free_object(pie->memory, pie, "pclxl_end_image");
+    return code;
+}
+
+/* Get parameters. */
+int
+pclxl_get_params(gx_device *dev, gs_param_list *plist)
+{
+    gx_device_pclxl *pdev = (gx_device_pclxl *) dev;
+    int code = gdev_vector_get_params(dev, plist);
+
+    if (code < 0)
+	return code;
+
+     if (code >= 0)
+	code = param_write_bool(plist, "ManualFeed", &pdev->ManualFeed);
+    return code;
+}
+
+/* Put parameters. */
+int
+pclxl_put_params(gx_device * dev, gs_param_list * plist)
+{
+    gx_device_pclxl *pdev = (gx_device_pclxl *) dev;
+    int code = 0;
+    bool ManualFeed;
+    bool ManualFeed_set = false;
+    int MediaPosition;
+    bool MediaPosition_set = false;
+
+    code = param_read_bool(plist, "ManualFeed", &ManualFeed);
+    if (code == 0) 
+	ManualFeed_set = true;
+    if (code >= 0) {
+	code = param_read_int(plist, "%MediaSource", &MediaPosition);
+	if (code == 0) 
+	    MediaPosition_set = true;
+	else if (code < 0) {
+	    if (param_read_null(plist, "%MediaSource") == 0) {
+		code = 0;
+	    }
+	}
+    }
+
+    /* note this handles not opening/closing the device */
+    code = gdev_vector_put_params(dev, plist);
+    if (code < 0)
+	return code;
+
+    if (code >= 0) {
+	if (ManualFeed_set) {
+	    pdev->ManualFeed = ManualFeed;
+	    pdev->ManualFeed_set = true;
+	}
+	if (MediaPosition_set) {
+	    pdev->MediaPosition = MediaPosition;
+	    pdev->MediaPosition_set = true;
+	}
+    }
     return code;
 }

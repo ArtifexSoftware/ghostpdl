@@ -146,7 +146,7 @@ ljet5_print_page(gx_device_printer * pdev, FILE * prn_stream)
 	};
 
 	px_write_page_header(s, (gx_device *)pdev);
-	px_write_select_media(s, (gx_device *)pdev, NULL);
+	px_write_select_media(s, (gx_device *)pdev, NULL, NULL);
 	PX_PUT_LIT(s, page_header);
 	if (pdev->color_info.depth == 1)
 	    PX_PUT_LIT(s, mono_header);

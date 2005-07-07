@@ -25,6 +25,7 @@
 #include "gdevpxen.h"
 #include "gdevpxop.h"
 #include "gdevpxut.h"
+#include <assert.h>
 
 /* ---------------- High-level constructs ---------------- */
 
@@ -83,7 +84,8 @@ px_write_page_header(stream *s, const gx_device *dev)
 
 /* Write the media selection command if needed, updating the media size. */
 int
-px_write_select_media(stream *s, const gx_device *dev, pxeMediaSize_t *pms)
+px_write_select_media(stream *s, const gx_device *dev, 
+		      pxeMediaSize_t *pms, byte *media_source)
 {
 #define MSD(ms, res, w, h)\
   { ms, (float)((w) * 1.0 / (res)), (float)((h) * 1.0 / res) },
@@ -99,6 +101,7 @@ px_write_select_media(stream *s, const gx_device *dev, pxeMediaSize_t *pms)
 	h = dev->height / dev->HWResolution[1];
     int i;
     pxeMediaSize_t size;
+    byte tray = eAutoSelect;
 
     /* The default is eLetterPaper, media size 0. */
     for (i = countof(media_sizes) - 2; i > 0; --i)
@@ -112,15 +115,18 @@ px_write_select_media(stream *s, const gx_device *dev, pxeMediaSize_t *pms)
      * be specified, but MediaSource is optional.
      */
     px_put_uba(s, (byte)size, pxaMediaSize);
-    if (!pms || size != *pms) {
-	static const byte page_header_2[] = {
-	    DUB(eAutoSelect), DA(pxaMediaSource)
-	};
 
+    if (media_source != NULL)
+	tray = *media_source;
+    {
+	byte page_header_2[] = {
+	    DUB(tray), DA(pxaMediaSource)
+	};
 	PX_PUT_LIT(s, page_header_2);
-	if (pms)
-	    *pms = size;
     }
+    if (pms)
+	*pms = size;
+
     return 0;
 }
 
