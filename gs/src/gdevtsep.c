@@ -260,7 +260,7 @@ private
 ENUM_PTRS_WITH(tiffsep_device_enum_ptrs, tiffsep_device *pdev)
 {
     if (index < pdev->devn_params.separations.num_separations)
-	ENUM_RETURN(pdev->devn_params.separations.names[index]);
+	ENUM_RETURN(pdev->devn_params.separations.names[index].data);
     ENUM_PREFIX(st_device_printer,
 		    pdev->devn_params.separations.num_separations);
 }
@@ -273,7 +273,7 @@ private RELOC_PTRS_WITH(tiffsep_device_reloc_ptrs, tiffsep_device *pdev)
 	int i;
 
 	for (i = 0; i < pdev->devn_params.separations.num_separations; ++i) {
-	    RELOC_PTR(tiffsep_device, devn_params.separations.names[i]);
+	    RELOC_PTR(tiffsep_device, devn_params.separations.names[i].data);
 	}
     }
 }
@@ -571,12 +571,12 @@ private void
 copy_separation_name(tiffsep_device * pdev,
 		char * buffer, int max_size, int sep_num)
 {
-    int sep_size = pdev->devn_params.separations.names[sep_num]->size;
+    int sep_size = pdev->devn_params.separations.names[sep_num].size;
 
     /* If name is too long then clip it. */
     if (sep_size > max_size - 1)
         sep_size = max_size - 1;
-    memcpy(buffer, pdev->devn_params.separations.names[sep_num]->data,
+    memcpy(buffer, pdev->devn_params.separations.names[sep_num].data,
 		sep_size);
     buffer[sep_size] = 0;	/* Terminate string */
 }
@@ -695,7 +695,7 @@ tiffsep_prn_close(gx_device * pdev)
     tiffsep_device * const pdevn = (tiffsep_device *) pdev;
     int num_dev_comp = pdevn->color_info.num_components;
     int num_std_colorants = pdevn->devn_params.num_std_colorant_names;
-    int num_order = pdevn->devn_params.separation_order.num_names;
+    int num_order = pdevn->devn_params.num_separation_order_names;
     int num_spot = pdevn->devn_params.separations.num_separations;
     char name[MAX_FILE_NAME_SIZE];
     int code = gdev_prn_close(pdev);
@@ -828,7 +828,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 {
     tiffsep_device * const tfdev = (tiffsep_device *)pdev;
     int num_std_colorants = tfdev->devn_params.num_std_colorant_names;
-    int num_order = tfdev->devn_params.separation_order.num_names;
+    int num_order = tfdev->devn_params.num_separation_order_names;
     int num_spot = tfdev->devn_params.separations.num_separations;
     int num_comp, comp_num, sep_num, code = 0;
     short map_comp_to_sep[GX_DEVICE_COLOR_MAX_COMPONENTS];

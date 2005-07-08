@@ -92,7 +92,7 @@ private
 ENUM_PTRS_WITH(psd_device_enum_ptrs, psd_device *pdev)
 {
     if (index < pdev->devn_params.separations.num_separations)
-	ENUM_RETURN(pdev->devn_params.separations.names[index]);
+	ENUM_RETURN(pdev->devn_params.separations.names[index].data);
     ENUM_PREFIX(st_device_printer,
 		    pdev->devn_params.separations.num_separations);
 }
@@ -105,7 +105,7 @@ private RELOC_PTRS_WITH(psd_device_reloc_ptrs, psd_device *pdev)
 	int i;
 
 	for (i = 0; i < pdev->devn_params.separations.num_separations; ++i) {
-	    RELOC_PTR(psd_device, devn_params.separations.names[i]);
+	    RELOC_PTR(psd_device, devn_params.separations.names[i].data);
 	}
     }
 }
@@ -860,7 +860,7 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     int chan_idx;
     int chan_names_len = 0;
     int sep_num;
-    const gs_param_string *separation_name;
+    const devn_separation_name *separation_name;
 
     psd_write(xc, (const byte *)"8BPS", 4); /* Signature */
     psd_write_16(xc, 1); /* Version - Always equal to 1*/
@@ -881,7 +881,7 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     /* Channel Names */
     for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
 	sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS;
-	separation_name = pdev->devn_params.separations.names[sep_num];
+	separation_name = &(pdev->devn_params.separations.names[sep_num]);
 	chan_names_len += (separation_name->size + 1);
     }    
     psd_write_32(xc, 12 + (chan_names_len + (chan_names_len % 2))
@@ -893,7 +893,7 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     psd_write_32(xc, chan_names_len + (chan_names_len % 2));
     for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
 	sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS;
-	separation_name = pdev->devn_params.separations.names[sep_num];
+	separation_name = &(pdev->devn_params.separations.names[sep_num]);
 	psd_write_8(xc, (byte) separation_name->size);
 	psd_write(xc, separation_name->data, separation_name->size);
     }    

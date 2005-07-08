@@ -43,19 +43,18 @@ typedef fixed_colorant_name * fixed_colorant_names_list;
 /*
  * Structure for holding SeparationNames elements.
  */
-typedef struct gs_separations_s {
-    int num_separations;
-    const gs_param_string * names[GX_DEVICE_MAX_SEPARATIONS];
-} gs_separations;
+typedef struct devn_separation_name_s {
+    int size;
+    byte * data;
+} devn_separation_name;
 
 /*
- * Structure for holding SeparationOrder elements.
+ * Structure for holding SeparationNames elements.
  */
-typedef struct gs_separation_order_s {
-    int num_names;
-    const gs_param_string  *
-	    names[GX_DEVICE_MAX_SEPARATIONS + MAX_DEVICE_PROCESS_COLORS];
-} gs_separation_order;
+typedef struct gs_separations_s {
+    int num_separations;
+    devn_separation_name names[GX_DEVICE_MAX_SEPARATIONS];
+} gs_separations;
 
 /*
  * Type for holding a separation order map
@@ -87,7 +86,7 @@ typedef struct gs_devn_params_s {
     /*
      * Separation Order (if specified).
      */
-    gs_separation_order separation_order;
+    int num_separation_order_names;
     /*
      * The SeparationOrder parameter may change the logical order of
      * components.

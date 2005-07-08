@@ -30,26 +30,6 @@
 #include "gdevdevn.h"
 #include "gsequivc.h"
 
-private
-ENUM_PTRS_WITH(param_string_enum_ptrs, gs_param_string *pstr) return 0;
-case 0: return ENUM_CONST_STRING(pstr);
-ENUM_PTRS_END
-
-private
-RELOC_PTRS_WITH(param_string_reloc_ptrs, gs_param_string *pstr)
-{
-    gs_const_string str;
-
-    str.data = pstr->data, str.size = pstr->size;
-    RELOC_CONST_STRING_VAR(str);
-    pstr->data = str.data;
-}
-RELOC_PTRS_END
-
-/* Define a GC descriptor for gs_param_string. */
-/* This structure descriptor is only for non persistent gs_param_strings. */
-private_st_gs_param_string();
-
 /*
  * Utility routines for common DeviceN related parameters:
  *   SeparationColorNames, SeparationOrder, and MaxSeparations
@@ -199,8 +179,8 @@ check_pcm_and_separation_names(const gx_device * dev,
 	int num_spot = separations->num_separations;
 
 	for (i=0; i<num_spot; i++) {
-	    if (compare_color_names((const char *)separations->names[i]->data,
-		  separations->names[i]->size, pname, name_size)) {
+	    if (compare_color_names((const char *)separations->names[i].data,
+		  separations->names[i].size, pname, name_size)) {
 		return color_component_number;
 	    }
 	    color_component_number++;
@@ -236,7 +216,7 @@ devn_get_color_comp_index(const gx_device * dev, gs_devn_params * pdevn_params,
 		    const char * pname, int name_size, int component_type,
 		    int auto_spot_colors)
 {
-    int num_order = pdevn_params->separation_order.num_names;
+    int num_order = pdevn_params->num_separation_order_names;
     int color_component_number = 0;
     int max_spot_colors = GX_DEVICE_MAX_SEPARATIONS;
 
@@ -274,7 +254,7 @@ devn_get_color_comp_index(const gx_device * dev, gs_devn_params * pdevn_params,
      */
     if (component_type != SEPARATION_NAME ||
 	    auto_spot_colors == NO_AUTO_SPOT_COLORS ||
-	    pdevn_params->separation_order.num_names != 0)
+	    pdevn_params->num_separation_order_names != 0)
 	return -1;	/* Do not add --> indicate colorant unknown. */
     /*
      * Check if we have room for another spot colorant.
@@ -283,21 +263,16 @@ devn_get_color_comp_index(const gx_device * dev, gs_devn_params * pdevn_params,
 	max_spot_colors = dev->color_info.num_components -
 	    pdevn_params->num_std_colorant_names;
     if (pdevn_params->separations.num_separations < max_spot_colors) {
-	gs_param_string * pstr_param;
-	byte * pseparation;
+	byte * sep_name;
 	gs_separations * separations = &pdevn_params->separations;
 	int sep_num = separations->num_separations++;
 
 	/* We have a new spot colorant */
-	pstr_param = gs_alloc_struct(dev->memory, gs_param_string,
-			&st_gs_param_string, "devn_get_color_comp_index");
-	pseparation = gs_alloc_string(dev->memory,
+	sep_name = gs_alloc_bytes(dev->memory,
 			name_size, "devn_get_color_comp_index");
-	memcpy(pseparation, pname, name_size);
-	pstr_param->data = pseparation;
-	pstr_param->size = name_size;
-	pstr_param->persistent = false;
-	separations->names[sep_num] = pstr_param;
+	memcpy(sep_name, pname, name_size);
+	separations->names[sep_num].size = name_size;
+	separations->names[sep_num].data = sep_name;
 	color_component_number = sep_num + pdevn_params->num_std_colorant_names;
 	pdevn_params->separation_order_map[color_component_number] =
 					       color_component_number;
@@ -372,7 +347,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     gs_param_name param_name;
     int npcmcolors = pdevn_params->num_std_colorant_names;
     int num_spot = pdevn_params->separations.num_separations;
-    int num_order = pdevn_params->separation_order.num_names;
+    int num_order = pdevn_params->num_separation_order_names;
     int max_sep = pdev->color_info.num_components;
     gs_param_string_array scna;		/* SeparationColorNames array */
     gs_param_string_array sona;		/* SeparationOrder names array */
@@ -410,21 +385,15 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
 	    for (i = num_spot = 0; i < num_names; i++) {
 		/* Verify that the name is not one of our process colorants */
 	        if (!check_process_color_names(pcomp_names, &scna.data[i])) {
-		    gs_param_string * pstr_param;
-		    byte * pseparation;
+		    byte * sep_name;
 		    int name_size = scna.data[i].size;
 
 		    /* We have a new separation */
-		    pstr_param = (gs_param_string *)
-			gs_alloc_bytes(pdev->memory, sizeof(gs_param_string),
-			"devicen_put_params_no_sep_order");
-		    pseparation = (byte *)gs_alloc_bytes(pdev->memory,
+		    sep_name = (byte *)gs_alloc_bytes(pdev->memory,
 			name_size, "devicen_put_params_no_sep_order");
-		    memcpy(pseparation, scna.data[i].data, name_size);
-		    pstr_param->data = pseparation;
-		    pstr_param->size = name_size;
-		    pstr_param->persistent = false;
-	            pdevn_params->separations.names[num_spot] = pstr_param;
+		    memcpy(sep_name, scna.data[i].data, name_size);
+	            pdevn_params->separations.names[num_spot].size = name_size;
+	            pdevn_params->separations.names[num_spot].data = sep_name;
 		    if (pequiv_colors != NULL) {
 			/* Indicate that we need to find equivalent CMYK color. */
 			pequiv_colors->color[num_spot].color_info_valid = false;
@@ -443,11 +412,10 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
         if (sona.data != 0) {
 	    int i, comp_num;
 
-	    pdevn_params->separation_order.num_names = num_order = sona.size;
+	    pdevn_params->num_separation_order_names = num_order = sona.size;
 	    for (i = 0; i < num_spot + npcmcolors; i++)
 		pdevn_params->separation_order_map[i] = GX_DEVICE_COLOR_MAX_COMPONENTS;
 	    for (i = 0; i < num_order; i++) {
-	        pdevn_params->separation_order.names[i] = &sona.data[i];
 	        /*
 	         * Check if names match either the process color model or
 	         * SeparationColorNames.  If not then error.
@@ -595,7 +563,7 @@ private
 ENUM_PTRS_WITH(spotcmyk_device_enum_ptrs, spotcmyk_device *pdev)
 {
     if (index < pdev->devn_params.separations.num_separations)
-	ENUM_RETURN(pdev->devn_params.separations.names[index]);
+	ENUM_RETURN(pdev->devn_params.separations.names[index].data);
     ENUM_PREFIX(st_device_printer,
 		    pdev->devn_params.separations.num_separations);
 }
@@ -608,7 +576,7 @@ private RELOC_PTRS_WITH(spotcmyk_device_reloc_ptrs, spotcmyk_device *pdev)
 	int i;
 
 	for (i = 0; i < pdev->devn_params.separations.num_separations; ++i) {
-	    RELOC_PTR(spotcmyk_device, devn_params.separations.names[i]);
+	    RELOC_PTR(spotcmyk_device, devn_params.separations.names[i].data);
 	}
     }
 }

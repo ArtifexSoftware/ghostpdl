@@ -128,8 +128,8 @@ update_Separation_spot_equivalent_cmyk_colors(gx_device * pdev,
      */
     for (i = 0; i < pdevn_params->separations.num_separations; i++) {
 	if (pparams->color[i].color_info_valid == false) {
-	    const gs_param_string * dev_sep_name =
-			    pdevn_params->separations.names[i];
+	    const devn_separation_name * dev_sep_name =
+			    &(pdevn_params->separations.names[i]);
 	    unsigned int cs_sep_name_size;
 	    unsigned char * pcs_sep_name;
 
@@ -189,8 +189,8 @@ update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
      */
     for (i = 0; i < pdevn_params->separations.num_separations; i++) {
 	if (pparams->color[i].color_info_valid == false) {
-	    const gs_param_string * dev_sep_name =
-			    pdevn_params->separations.names[i];
+	    const devn_separation_name * dev_sep_name =
+			    &(pdevn_params->separations.names[i]);
 
 	    for (j = 0; j < pcs->params.device_n.num_components; j++) {
 	        pcs->params.device_n.get_colorname_string

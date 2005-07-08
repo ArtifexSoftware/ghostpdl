@@ -392,7 +392,7 @@ $(DD)display.dev : $(display_)
 
 $(GLOBJ)gdevdsp.$(OBJ) : $(GLSRC)gdevdsp.c $(string__h)\
  $(gp_h) $(gpcheck_h) $(gdevpccm_h) $(gsparam_h) $(gsdevice_h)\
- $(GDEVH) $(gxdevmem_h) $(gdevdsp_h) $(gdevdsp2_h)
+ $(GDEVH) $(gxdevmem_h) $(gdevdevn_h) $(gsequivc_h) $(gdevdsp_h) $(gdevdsp2_h)
 	$(GLCC) $(GLO_)gdevdsp.$(OBJ) $(C_) $(GLSRC)gdevdsp.c
 
 
