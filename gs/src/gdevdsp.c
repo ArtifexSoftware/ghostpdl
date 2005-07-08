@@ -172,7 +172,7 @@ ENUM_PTRS_WITH(display_enum_ptrs, gx_device_display *ddev)
 	return 0;
     }
     else if (index-1 < ddev->devn_params.separations.num_separations)
-        ENUM_RETURN(ddev->devn_params.separations.names[index-1]);
+        ENUM_RETURN(ddev->devn_params.separations.names[index-1].data);
     else
 	return 0;
 ENUM_PTRS_END
@@ -185,7 +185,7 @@ RELOC_PTRS_WITH(display_reloc_ptrs, gx_device_display *ddev)
     }
     {   int i;
         for (i = 0; i < ddev->devn_params.separations.num_separations; ++i) {
-            RELOC_PTR(gx_device_display, devn_params.separations.names[i]);
+            RELOC_PTR(gx_device_display, devn_params.separations.names[i].data);
         }
     }
 RELOC_PTRS_END
@@ -1428,10 +1428,10 @@ display_set_separations(gx_device_display *dev)
 	    else {
 		sep_num -= dev->devn_params.num_std_colorant_names;
 		sep_name_size = 
-		    dev->devn_params.separations.names[sep_num]->size;
+		    dev->devn_params.separations.names[sep_num].size;
 		if (sep_name_size > sizeof(name)-2)
 		    sep_name_size = sizeof(name)-1;
-		memcpy(name, dev->devn_params.separations.names[sep_num]->data, 
+		memcpy(name, dev->devn_params.separations.names[sep_num].data, 
 		    sep_name_size);
 		name[sep_name_size] = '\0';
 		if (dev->equiv_cmyk_colors.color[sep_num].color_info_valid) {
