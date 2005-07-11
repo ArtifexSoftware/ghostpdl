@@ -118,12 +118,7 @@ px_write_select_media(stream *s, const gx_device *dev,
 
     if (media_source != NULL)
 	tray = *media_source;
-    {
-	byte page_header_2[] = {
-	    DUB(tray), DA(pxaMediaSource)
-	};
-	PX_PUT_LIT(s, page_header_2);
-    }
+    px_put_uba(s, tray, pxaMediaSource);
     if (pms)
 	*pms = size;
 
