@@ -83,7 +83,11 @@ VC8WARN=/wd4996 /wd4224
 VC8WARN=
 !endif
 
+!if ($(MSVC_VERSION) < 8)
 CDCC=/Gi /ZI
+!else
+CDCC=/ZI
+!endif
 
 !if "$(CPU_FAMILY)"=="i386"
 
