@@ -1225,6 +1225,8 @@ pdf_close(gx_device * dev)
     pdev->pages = 0;
     pdev->num_pages = 0;
 
+    if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size)
+	stream_putc(s, 0x04);
     code1 = gdev_vector_close_file((gx_device_vector *) pdev);
     if (code >= 0)
 	code = code1;
@@ -1238,7 +1240,5 @@ pdf_close(gx_device * dev)
 	    code = gs_note_error(gs_error_rangecheck);
 #endif
     }
-    if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size)
-	stream_putc(s, 0x04);
     return pdf_close_files(pdev, code);
 }
