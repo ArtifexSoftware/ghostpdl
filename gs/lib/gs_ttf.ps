@@ -44,7 +44,8 @@
 /.findfontvalue {
   1 index read {
     2 index 1 index unread
-    dup 0 eq exch (t) 0 get eq or {
+    % beginning with binary 0 or 't' (TrueType), or 'O' (OpenType)
+    dup 0 eq 1 index (O) 0 get eq or exch (t) 0 get eq or {
 		% If this is a font at all, it's a TrueType font.
       dup /FontType eq {
         pop closefile 42 true
