@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992-2005 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -1367,8 +1367,9 @@ gx_default_rgb_map_rgb_color(gx_device * dev, const gx_color_value cv[])
     else {
 	int bpc = dev->color_info.depth / 3;
 	int drop = sizeof(gx_color_value) * 8 - bpc;
-
-	return ((((cv[0] >> drop) << bpc) + (cv[1] >> drop)) << bpc) + (cv[2] >> drop);
+	return ( ( (((gx_color_index)cv[0] >> drop) << bpc) +
+		    ((gx_color_index)cv[1] >> drop)         ) << bpc) + 
+	       ((gx_color_index)cv[2] >> drop);
     }
 }
 
