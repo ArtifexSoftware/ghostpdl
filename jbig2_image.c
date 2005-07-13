@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2001-2003 artofcode LLC.
+    Copyright (c) 2001-2005 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -51,7 +51,7 @@ Jbig2Image* jbig2_image_new(Jbig2Ctx *ctx, int width, int height)
 		jbig2_free(ctx->allocator, image);
 		return NULL;
 	}
-	
+
 	image->width = width;
 	image->height = height;
 	image->stride = stride;
@@ -234,8 +234,9 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
             s = (ss += src->stride);
 	}
     } else {
+	bool overlap = (((w + 7) >> 3) < ((x + w + 7) >> 3) - (x >> 3));
 	mask = 0x100 - (1 << shift);
-	if (((w + 7) >> 3) < ((x + w + 7) >> 3) - (x >> 3))
+	if (overlap)
 	    rightmask = (0x100 - (0x100 >> ((x + w) & 7))) >> (8 - shift);
 	else
 	    rightmask = 0x100 - (0x100 >> (w & 7));
@@ -245,8 +246,8 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
 		*d |= ((*s++ & ~mask) << (8 - shift));
 		*d++ |= ((*s & mask) >> shift);
 	    }
-	    if (((w + 7) >> 3) < ((x + w + 7) >> 3) - (x >> 3))
-		*d |= (s[0] & rightmask) << (8 - shift);
+	    if (overlap)
+		*d |= (*s & rightmask) << (8 - shift);
 	    else
 		*d |= ((s[0] & ~mask) << (8 - shift)) |
 		    ((s[1] & rightmask) >> shift);
