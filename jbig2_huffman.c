@@ -84,6 +84,62 @@ jbig2_huffman_free (Jbig2Ctx *ctx, Jbig2HuffmanState *hs)
   return;
 }
 
+/** Skip bits up to the next byte boundary
+ */
+void
+jbig2_huffman_skip(Jbig2HuffmanState *hs)
+{
+  int bits = hs->offset_bits & 7;
+
+  if (bits) hs->offset_bits += 8 - bits;
+
+  if (hs->offset_bits >= 32) {
+    Jbig2WordStream *ws = hs->ws;
+    hs->this_word = hs->next_word;
+    hs->offset += 4;
+    hs->next_word = ws->get_next_word (ws, hs->offset + 4);
+    hs->offset_bits -= 32;
+  }
+}
+
+/* skip ahead a specified number of bytes in the word stream
+ */
+void jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset)
+{
+  Jbig2WordStream *ws = hs->ws;
+
+  hs->offset += offset;
+  hs->offset_bits = 0;
+  hs->this_word = ws->get_next_word (ws, hs->offset);
+  hs->next_word = ws->get_next_word (ws, hs->offset + 4);
+}
+
+/* return the offset of the huffman decode pointer (in bytes)
+ * from the beginning of the WordStream
+ */
+int 
+jbig2_huffman_offset(Jbig2HuffmanState *hs)
+{
+  return hs->offset + (hs->offset_bits >> 4);
+}
+
+/* read a number of bits directly from the huffman state
+ * without decoding against a table
+ */
+int32_t
+jbig2_huffman_get_bits (Jbig2HuffmanState *hs, const int bits)
+{
+  uint32_t this_word = hs->this_word;
+  int32_t result;
+	
+  result = this_word >> (32 - bits);
+  hs->this_word = (this_word << bits) |
+	(hs->next_word >> (32 - bits));
+  hs->offset_bits += bits;
+
+  return result;
+}
+
 int32_t
 jbig2_huffman_get (Jbig2HuffmanState *hs,
 		   const Jbig2HuffmanTable *table, bool *oob)

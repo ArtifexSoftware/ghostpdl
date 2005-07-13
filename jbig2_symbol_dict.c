@@ -33,6 +33,7 @@
 #include "jbig2_arith_iaid.h"
 #include "jbig2_huffman.h"
 #include "jbig2_generic.h"
+#include "jbig2_mmr.h"
 #include "jbig2_symbol_dict.h"
 
 #if defined(OUTPUT_PBM) || defined(DUMP_SYMDICT)
@@ -219,8 +220,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   int32_t SYMWIDTH, TOTWIDTH;
   uint32_t HCFIRSTSYM;
   uint32_t *SDNEWSYMWIDTHS = NULL;
+  int SBSYMCODELEN = 0;
   Jbig2WordStream *ws = NULL;
   Jbig2HuffmanState *hs = NULL;
+  Jbig2HuffmanTable *SDHUFFRDX = NULL;
   Jbig2ArithState *as = NULL;
   Jbig2ArithIntCtx *IADH = NULL;
   Jbig2ArithIntCtx *IADW = NULL;
@@ -245,7 +248,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       IAAI = jbig2_arith_int_ctx_new(ctx);
       if (params->SDREFAGG) {
 	  int tmp = params->SDINSYMS->n_symbols + params->SDNUMNEWSYMS;
-	  int SBSYMCODELEN;
 	  for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < tmp; SBSYMCODELEN++);
 	  IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
 	  IARDX = jbig2_arith_int_ctx_new(ctx);
@@ -255,6 +257,8 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 	"huffman coded symbol dictionary");
       hs = jbig2_huffman_new(ctx, ws);
+      SDHUFFRDX = jbig2_build_huffman_table(ctx,
+				&jbig2_huffman_params_O);
       if (!params->SDREFAGG) {
 	  SDNEWSYMWIDTHS = jbig2_alloc(ctx->allocator,
 		sizeof(*SDNEWSYMWIDTHS)*params->SDNUMNEWSYMS);
@@ -399,13 +403,14 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		      int ninsyms = params->SDINSYMS->n_symbols;
 
 		      if (params->SDHUFF) {
-			  /* todo */
+			  ID = jbig2_huffman_get_bits(hs, SBSYMCODELEN);
+			  RDX = jbig2_huffman_get(hs, SDHUFFRDX, &code);
+			  RDY = jbig2_huffman_get(hs, SDHUFFRDX, &code);
 		      } else {
 			  code = jbig2_arith_iaid_decode(IAID, as, (int32_t*)&ID);
 		          code = jbig2_arith_int_decode(IARDX, as, &RDX);
 		          code = jbig2_arith_int_decode(IARDY, as, &RDY);
 		      }
-
 
 		      if (ID >= ninsyms+NSYMSDECODED) {
 			code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
@@ -465,16 +470,45 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             "%d of %d decoded", NSYMSDECODED, params->SDNUMNEWSYMS);
 #endif
 
-	  /* 6.5.5 (4d) */
-	  if (params->SDHUFF && !params->SDREFAGG) {
-	    /* 6.5.9 */
-	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-		"unhandled collective bitmap");
-	    return NULL;
-	  }
+	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+		"at end of height class decode loop...");
+      } /* end height class decode loop */
 
+	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+		"left height class decode loop");
+
+      /* 6.5.5 (4d) */
+      if (params->SDHUFF && !params->SDREFAGG) {
+	/* 6.5.9 */
+	Jbig2GenericRegionParams rparams;
+	Jbig2Image *image;
+	int BMSIZE = jbig2_huffman_get(hs, params->SDHUFFBMSIZE, &code);
+	if (code || (BMSIZE < 0)) {
+	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "error decoding size of collective bitmap!");
+	  /* todo: memory cleanup */
+	  return NULL;
 	}
-     }
+	jbig2_huffman_skip(hs);
+	image = jbig2_image_new(ctx, TOTWIDTH, HCHEIGHT);
+	if (image == NULL) {
+	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "could not allocate collective bitmap image!");
+	  /* todo: memory cleanup */
+	  return NULL;
+	}
+	/* todo: if BMSIZE == 0 bitmap is uncompressed */
+	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	  "reading %dx%d collective bitmap for %d symbols (%d bytes)",
+	  image->width, image->height, NSYMSDECODED - HCFIRSTSYM, BMSIZE);
+	rparams.MMR = 1;
+	code = jbig2_decode_generic_mmr(ctx, segment, &rparams,
+	    data + jbig2_huffman_offset(hs), BMSIZE, image);
+        jbig2_image_write_pbm_file(image, "collective.pbm");
+	jbig2_huffman_advance(hs, BMSIZE);
+      }
+
+  } /* end of symbol decode loop */
 
   jbig2_free(ctx->allocator, GB_stats);
   
@@ -524,6 +558,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       if (params->SDREFAGG) {
 	jbig2_free(ctx->allocator, SDNEWSYMWIDTHS);
       }
+      jbig2_release_huffman_table(ctx, SDHUFFRDX);
       jbig2_free(ctx->allocator, hs);
   }
 

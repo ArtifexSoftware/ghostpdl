@@ -61,9 +61,20 @@ jbig2_huffman_new (Jbig2Ctx *ctx, Jbig2WordStream *ws);
 void
 jbig2_huffman_free (Jbig2Ctx *ctx, Jbig2HuffmanState *hs);
 
+void
+jbig2_huffman_skip(Jbig2HuffmanState *hs);
+
+void jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset);
+
+int 
+jbig2_huffman_offset(Jbig2HuffmanState *hs);
+
 int32_t
 jbig2_huffman_get (Jbig2HuffmanState *hs,
 		   const Jbig2HuffmanTable *table, bool *oob);
+
+int32_t
+jbig2_huffman_get_bits (Jbig2HuffmanState *hs, const int bits);
 
 Jbig2HuffmanTable *
 jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params);
