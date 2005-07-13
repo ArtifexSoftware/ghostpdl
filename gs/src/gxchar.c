@@ -971,10 +971,6 @@ show_proceed(gs_show_enum * penum)
 			glyph = (*penum->encode_char)(pfont, chr,
 						      GLYPH_SPACE_NAME);
 			SET_CURRENT_GLYPH(penum, glyph);
-			if (glyph == gs_no_glyph) {
-			    cc = 0;
-			    goto no_cache;
-			}
 		    } else
     			SET_CURRENT_GLYPH(penum, glyph);
 		    penum->is_pure_color = gs_color_writes_pure(penum->pgs); /* Save
@@ -998,6 +994,10 @@ show_proceed(gs_show_enum * penum)
 				return code;
 			}
 			penum->pair = pair;
+			if (glyph == gs_no_glyph) {
+			    cc = 0;
+			    goto no_cache;
+			}
 			cc = gx_lookup_cached_char(pfont, pair, glyph, wmode,
 						   depth, &subpix_origin);
 		    }
