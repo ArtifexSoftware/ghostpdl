@@ -79,7 +79,13 @@ zsetindexedspace(i_ctx_t *i_ctx_p)
 	int num_values = num_entries * cs_num_components(&cs);
 
 	check_read(pcsa[2]);
-	if (r_size(&pcsa[2]) != num_values)
+	/*
+	 * The PDF and PS specifications state that the lookup table must have
+	 * the exact number of of data bytes needed.  However we have found
+	 * PDF files from Amyuni with extra data bytes.  Acrobat 6.0 accepts
+	 * these files without complaint, so we ignore the extra data.
+	 */
+	if (r_size(&pcsa[2]) < num_values)
 	    return_error(e_rangecheck);
 	memmove(&cs.params.indexed.base_space, &cs,
 		sizeof(cs.params.indexed.base_space));
