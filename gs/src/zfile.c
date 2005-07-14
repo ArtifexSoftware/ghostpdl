@@ -603,8 +603,7 @@ zlibfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int code;
-#define MAX_CNAME 200
-    byte cname[MAX_CNAME];
+    byte cname[gp_file_name_sizeof];
     uint clen;
     gs_parsed_file_name_t pname;
     stream *s;
@@ -633,7 +632,7 @@ zlibfile(i_ctx_t *i_ctx_p)
     } else {
 	ref fref;
 
-	code = lib_file_open(i_ctx_p->lib_path, i_ctx_p, pname.fname, pname.len, cname, MAX_CNAME,
+	code = lib_file_open(i_ctx_p->lib_path, i_ctx_p, pname.fname, pname.len, cname, sizeof(cname),
 			     &clen, &fref, imemory);
 	if (code >= 0) {
 	    s = fptr(&fref);
