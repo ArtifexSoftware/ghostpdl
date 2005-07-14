@@ -27,6 +27,7 @@
 #include "gxfcopy.h"
 #include "gxfont.h"
 #include "gxfont1.h"
+#include "gdevpsf.h"
 #include "gdevpdfx.h"
 #include "gdevpdtb.h"
 #include "gdevpdtd.h"
@@ -599,6 +600,29 @@ embed_as_standard(gx_device_pdf *pdev, gs_font *font, int index,
     return (find_std_appearance(pdev, (gs_font_base *)font, -1,
 				pairs, num_glyphs) == index);
 }
+private bool
+has_extension_glyphs(gs_font *pfont)
+{
+    psf_glyph_enum_t genum;
+    gs_glyph glyph;
+    gs_const_string str;
+    int code, j, l;
+    const int sl = strlen(gx_extendeg_glyph_name_separator);
+
+    psf_enumerate_glyphs_begin(&genum, (gs_font *)pfont, NULL, 0, GLYPH_SPACE_NAME);
+    for (glyph = gs_no_glyph; (code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1; ) {
+	code = pfont->procs.glyph_name(pfont, glyph, &str);
+	if (code < 0)
+	    return code;
+	l = str.size - sl, j;
+	for (j = 0; j < l; j ++)
+	    if (!memcmp(gx_extendeg_glyph_name_separator, str.data + j, sl))
+		return true;
+    }
+    psf_enumerate_glyphs_reset(&genum);
+    return false;
+}
+
 /*
  * Choose a name for embedded font.
  */
@@ -630,8 +654,11 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
     if (pdev->CompatibilityLevel < 1.3) {
 	if (index >= 0 && 
 	    (embed_as_standard_called = true,
-	     do_embed_as_standard = embed_as_standard(pdev, font, index, pairs, num_glyphs)))
+		do_embed_as_standard = embed_as_standard(pdev, font, index, pairs, num_glyphs))) {
+	    if (pdev->ForOPDFRead && has_extension_glyphs(font))
+		return FONT_EMBED_YES;
 	    return FONT_EMBED_STANDARD;
+	}
     }
     /* Check the Embed lists. */
     if (!embed_list_includes(&pdev->params.NeverEmbed, chars, size) ||
