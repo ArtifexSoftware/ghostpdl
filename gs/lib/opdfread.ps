@@ -917,6 +917,16 @@ currentdict end readonly def
   { //PDFR_DEBUG {
       (Recognized a font resource.) =
     } if
+    dup /BaseFont //knownget exec {
+      % cache the installed font (if any) before replacing it.
+      //PDFReader /RemoveFontNamePrefix get exec
+      dup /Font resourcestatus {
+        pop pop
+        //PDFReader /GetInstalledFont get exec pop
+      } {
+        pop
+      } ifelse
+    } if
     dup /FontDescriptor //knownget exec {		% id obj fd
       0 get 						% id obj id1
       dup //IsRegistered exec {				% id obj id1
@@ -3530,7 +3540,7 @@ currentdict end readonly def
 	0 0 moveto } bind def
   /T* { 0 //GraphicState /TextLeading get neg //Td exec } bind def
   /Tj { //ShowTextBeg exec  //ShowText exec  //ShowTextEnd exec } bind def
-  /'  { //T* exec //ShowText exec } bind def
+  /'  { //T* exec  //ShowText exec  //ShowTextEnd exec } bind def
   /"  { 3 2 roll //Tw exec exch //Tc exec //' exec} bind def
   /TJ //ShowTextWithGlyphPositioning def
   /Tf //SetFont def
