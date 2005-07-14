@@ -1234,8 +1234,6 @@ end
     {
       dup /Subtype get dup dup /Type1 eq exch /TrueType eq or exch /MMType1 eq or {
 							% s rn fr
-	//ObtainEncoding exec
-	//ObtainMetrics exec
         exch pop					% s fr
         dup /BaseFont get 				% s fr n
         //RemoveFontNamePrefix exec			% s fr n
@@ -1259,6 +1257,13 @@ end
 	} {
           //GetInstalledFont exec			% s fr f
 	} ifelse
+	exch                                            % s f fr
+	dup /Encoding known not {
+	  1 index /Encoding get 1 index exch /Encoding exch put
+	} if
+	//ObtainEncoding exec
+	//ObtainMetrics exec
+	exch
         dup length dict copy				% s fr f
         dup 2 index /Encoding get 			% s fr f f e
         /Encoding exch put				% s fr f
