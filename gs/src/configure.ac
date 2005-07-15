@@ -226,18 +226,19 @@ AC_SUBST(ZLIBDIR)
 dnl png for the png output device; it also requires zlib
 LIBPNGDIR=src
 PNGDEVS=''
+PNGDEVS_ALL='$(DD)png48.dev $(DD)png16m.dev $(DD)pnggray.dev $(DD)pngmono.dev $(DD)png256.dev $(DD)png16.dev $(DD)pngalpha.dev'
 AC_MSG_CHECKING([for local png library source])
 if test -f libpng/pngread.c; then
 	AC_MSG_RESULT([yes])
 	SHARE_LIBPNG=0
 	LIBPNGDIR=libpng
-	PNGDEVS='$(DD)png16m.dev $(DD)pnggray.dev $(DD)pngmono.dev $(DD)png256.dev $(DD)png16.dev $(DD)pngalpha.dev'
+	PNGDEVS="$PNGDEVS_ALL"
 else
 	AC_MSG_RESULT([no])
 	AC_CHECK_LIB(png, png_check_sig, [
 	  AC_CHECK_HEADERS(png.h, [
 		SHARE_LIBPNG=1
-		PNGDEVS='$(DD)png16m.dev $(DD)pnggray.dev $(DD)pngmono.dev $(DD)png256.dev $(DD)png16.dev $(DD)pngalpha.dev'
+		PNGDEVS="$PNGDEVS_ALL"
 	  ], [SHARE_LIBPNG=0])
 	], [SHARE_LIBPNG=0], [-lz])
 fi
