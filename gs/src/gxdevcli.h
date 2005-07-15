@@ -569,16 +569,12 @@ typedef struct gx_device_color_info_s {
 #define dci_std_color_max_gray(nc, color_bits)            \
     ( (nc) == 3                                           \
         ? 0                                               \
-        : ( dci_std_gray_bits(nc, color_bits) >= 8        \
-            ? 255                                         \
-            : (1 << dci_std_gray_bits(nc, color_bits)) - 1 ) )
+        : (1 << dci_std_gray_bits(nc, color_bits)) - 1 ) 
 
 #define dci_std_color_max_color(nc, color_bits)               \
     ( (nc) == 1                                               \
         ? 0                                                   \
-        : ( dci_std_color_bits(nc, color_bits) >= 8           \
-            ? 255                                             \
-            : (1 << dci_std_color_bits(nc, color_bits)) - 1 ) )
+        : (1 << dci_std_color_bits(nc, color_bits)) - 1 )
 
 
 /*
