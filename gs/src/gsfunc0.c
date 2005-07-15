@@ -332,6 +332,8 @@ fn_Sd_encode(const gs_function_Sd_t *pfn, int i, double sample)
     float d0, d1, r0, r1;
     double value;
     int bps = pfn->params.BitsPerSample;
+    /* x86 machines have problems with shifts if bps >= 32 */
+    uint max_samp = (bps < (sizeof(uint) * 8)) ? ((1 << bps) - 1) : max_uint;
 
     if (pfn->params.Range)
 	r0 = pfn->params.Range[2 * i], r1 = pfn->params.Range[2 * i + 1];
@@ -342,7 +344,7 @@ fn_Sd_encode(const gs_function_Sd_t *pfn, int i, double sample)
     else
 	d0 = r0, d1 = r1;
 
-    value = sample * (d1 - d0) / ((1 << bps) - 1) + d0;
+    value = sample * (d1 - d0) / max_samp + d0;
     if (value < r0)
 	value = r0;
     else if (value > r1)
