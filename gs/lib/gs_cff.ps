@@ -314,9 +314,14 @@ def
 % ------ Top dictionary ------ %
 
 /offput {	% <offset> <proc> offput -
-  CFFDEBUG { (queued: ) print 1 index =only ( ) print dup === } if
-  currentdict exch aload length 1 add packedarray cvx
-  offsets 3 1 roll put
+  1 index 0 le
+  CFFDEBUG { dup { (not ) print } if (queued: ) print 2 index =only ( ) print 1 index === } if
+  { pop pop
+  }
+  { currentdict exch aload length 1 add packedarray cvx
+      offsets 3 1 roll put
+  }
+  ifelse
 } bind def
 /queueput {	% <font> <proc> queueput -
   16#7fffffff offsets { pop .min } forall
