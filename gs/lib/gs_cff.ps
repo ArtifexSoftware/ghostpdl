@@ -400,7 +400,8 @@ def
   68 { { readFDArray } offput }
   69 { { readFDSelect } offput }
 	% This operator only appears in a FDArray element.
-  70 { idstring /FontName pxdef }
+	% We don't really need it, so ignore an error.
+  70 { { idstring } .internalstopped { pop pop } { /FontName pxdef } ifelse }
 .dicttomark readonly def
 
 % readcharset and readFDSelect may require the length of CharStringArray,
@@ -705,21 +706,21 @@ dup							% Format 2
   } forall ] def
 
 	% Read other tables with queued offsets.
-
-  CFFDEBUG { (offsets: ) print [ offsets { pop } forall ] == } if
-  { /f cff def
-    CFFDEBUG { (pos=) print pos = } if
-    offsets pos 2 copy .knownget not { pop pop exit } if
-    3 1 roll undef
-    CFFDEBUG { (exec queued: ) print dup == } if
-    exec
+        % We process these in order so we can advance if needed.
+	% The CFF file may not be positionable.
+  {		% outer loop since offsets may be updated when processing
+    CFFDEBUG { (offsets: ) print [ offsets { pop } forall ] == } if
+    [ offsets { pop } forall ] { lt } .sort	% process in order of appearance
+    { 
+      /f cff def
+      CFFDEBUG { (queued offset: ) print dup =print flush (, current pos=) print pos = } if
+      dup pos ne { dup pos sub nextstring pop } if	% negative advance will cause error
+      offsets exch 2 copy get 3 1 roll undef
+      CFFDEBUG { (exec queued: ) print dup == } if
+      exec
+    } forall
+    offsets length 0 eq { exit } if
   } loop
-  offsets length 0 ne {
-    QUIET not {
-      (Error reading the CFF font ) print resname =string cvs print ( : missing tables at ) print [ offsets { pop } forall ] ==
-      (Current position is ) print pos ==
-    } if
-  } if
 
 	% Process out-of-order tables.
 
