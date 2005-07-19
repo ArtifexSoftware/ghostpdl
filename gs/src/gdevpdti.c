@@ -111,7 +111,9 @@ assign_char_code(gx_device_pdf * pdev, int width)
 	pdfont->u.simple.FirstChar = 0;
     }
     c = ++(pdfont->u.simple.LastChar);
-    pdfont->Widths[c] = pdev->char_width.x;
+    pdfont->Widths[c] = psdf_round(pdev->char_width.x, 100, 10); /* See 
+			pdf_write_Widths about rounding. We need to provide 
+			a compatible data for Tj. */
     if (c > pbfs->max_embedded_code)
 	pbfs->max_embedded_code = c;
 
