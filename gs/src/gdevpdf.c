@@ -121,22 +121,26 @@ private dev_proc_close_device(pdf_close);
 
 #define PDF_DEVICE_NAME "pdfwrite"
 #define PDF_DEVICE_IDENT gs_pdfwrite_device
+#define PDF_DEVICE_MaxInlineImageSize 4000
 #define PDF_FOR_OPDFREAD 0
 
 #include "gdevpdfb.h"
 
 #undef PDF_DEVICE_NAME
 #undef PDF_DEVICE_IDENT
+#undef PDF_DEVICE_MaxInlineImageSize
 #undef PDF_FOR_OPDFREAD
 
 #define PDF_DEVICE_NAME "ps2write"
 #define PDF_DEVICE_IDENT gs_ps2write_device
+#define PDF_DEVICE_MaxInlineImageSize max_long
 #define PDF_FOR_OPDFREAD 1
 
 #include "gdevpdfb.h"
 
 #undef PDF_DEVICE_NAME
 #undef PDF_DEVICE_IDENT
+#undef PDF_DEVICE_MaxInlineImageSize
 #undef PDF_FOR_OPDFREAD
 /* ---------------- Device open/close ---------------- */
 

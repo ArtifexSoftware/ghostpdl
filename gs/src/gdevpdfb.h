@@ -21,6 +21,7 @@
    The following macros to be defined in advance :
    PDF_DEVICE_NAME - a string like "pdfwrite".
    PDF_DEVICE_IDENT - an identifier like gs_pdfwrite_device.
+   PDF_DEVICE_MaxInlineImageSize - a value of PDF_DEVICE_MaxInlineImageSize.
    PDF_FOR_OPDFREAD - an integer 0 (false) or 1 (true).
  */
 
@@ -117,7 +118,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  12000,				/* MaxClipPathSize */ /* HP LaserJet 1320 hangs with 14000. */
  max_long,                      /* MaxViewerMemorySize */
  256000,			/* MaxShadingBitmapSize */
- 4000,				/* MaxInlineImageSize */
+ PDF_DEVICE_MaxInlineImageSize,	/* MaxInlineImageSize */
  {0, 0},			/* OwnerPassword */
  {0, 0},			/* UserPassword */
  0,				/* KeyLength */
