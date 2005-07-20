@@ -233,7 +233,7 @@
 .dicttomark readonly
 
 % Define distiller settings for the ps2write device and for the ps2ps2 script :
-/PSPrinter mark
+/PSL2Printer mark
   /AutoRotatePages /None
   /CannotEmbedFontPolicy /Error
   /ColorACSImageDict .prepressACSImageDict
@@ -683,7 +683,7 @@ currentdict /.pdf_hook_DSC_Creator undef
     /PDFSETTINGS where { 
       pop /PDFSETTINGS load 
     } { 
-      currentdevice .devicename /ps2write eq { /PSPrinter } { /default } ifelse
+      currentdevice .devicename /ps2write eq { /PSL2Printer } { /default } ifelse
     } ifelse
     .distillersettings exch get
     % Don't override parameters defined on the command line.
