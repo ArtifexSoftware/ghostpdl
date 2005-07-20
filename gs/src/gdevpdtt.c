@@ -94,8 +94,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
     switch (control) {
     case TEXT_SET_CHAR_WIDTH:
     case TEXT_SET_CACHE_DEVICE:
-	pdev->char_width.x = pw[0];
-	pdev->char_width.y = pw[1];
+	gs_distance_transform(pw[0], pw[1], &ctm_only(pte->pis), &pdev->char_width);
 	break;
     case TEXT_SET_CACHE_DEVICE2:
 	/*
@@ -104,8 +103,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	 * width for Widths array. Therefore we don't check 
 	 * gs_rootfont(pgs)->WMode and don't use pw[6:7].
 	 */
-	pdev->char_width.x = pw[0];
-	pdev->char_width.y = pw[1];
+	gs_distance_transform(pw[0], pw[1], &ctm_only(pte->pis), &pdev->char_width);
 	if (penum->cdevproc_callout) {
 	    memcpy(penum->cdevproc_result, pw, sizeof(penum->cdevproc_result));
 	    return 0;

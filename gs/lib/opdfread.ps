@@ -1160,7 +1160,7 @@ end
       } ifelse
     } for
     pop pop pop pop exch pop				% fr M
-    1 index exch /Metrics put				% fr
+    1 index exch /Metrics exch put			% fr
   } {
     dup /MissingWidth //knownget exec { 		% fr mw
       256 dict						% fr mw M
@@ -1171,7 +1171,7 @@ end
 	pop						% fr mw M
       } forall
       exch pop						% fr M
-      1 index exch /Metrics put 			% fr
+      1 index exch /Metrics exch put 			% fr
     } if
   } ifelse
 } bind def
@@ -1233,6 +1233,15 @@ end
   } forall
 } bind def
 
+/ScaleMetrics % <Metrics> <scale> ScaleMetrics <Metrics>
+{ 1 index {           % M s n v
+    2 index div       % M s n v'
+    3 index           % M s n v' M
+    3 1 roll put      % M s
+  } forall
+  pop
+} bind def
+
 /ResolveAndSetFontAux  % <resource_name> <size> ResolveAndSetFont -
 { exch dup						% s rn rn
   //PDFReader /CurrentObject get /Context get /Resources get
@@ -1278,6 +1287,11 @@ end
         dup 2 index /Encoding get 			% s fr f f e
         /Encoding exch put				% s fr f
         1 index /Metrics //knownget exec {		% s fr f M
+          2 index /Subtype get /TrueType ne {
+            % Adjust Metrics for fonts converted from TrueTypes by 3d party.
+            1 index /FontMatrix get 0 get 0.001 div
+            //ScaleMetrics exec
+          } if
 	  1 index exch /Metrics exch put		% s fr f
         } if
         1 index /BaseFont get				% s fr f n
@@ -1291,7 +1305,6 @@ end
       } if
       dup /Subtype get /Type3 eq {			% s rn fr
 	//ObtainEncoding exec
-	//ObtainMetrics exec
         2 copy exch /FontName exch put
         dup /CharProcs get //ResolveDict exec
         dup /FontType 3 put

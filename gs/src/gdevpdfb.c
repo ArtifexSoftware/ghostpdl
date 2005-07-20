@@ -152,6 +152,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    pres = pdf_find_resource_by_gs_id(pdev, resourceCharProc, id);
 	    if (pres == 0) {	/* Define the character in an embedded font. */
 		pdf_char_proc_t *pcp;
+		double x_offset;
 		int y_offset;
 
 		gs_image_t_init_mask(&image, false);
@@ -167,8 +168,11 @@ pdf_copy_mono(gx_device_pdf *pdev,
 		if (code < 0)
 		    return code;
 		y_offset = -y_offset;
-		pprintd3(pdev->strm, "0 0 0 %d %d %d d1\n", y_offset,
-			 w, h + y_offset);
+		x_offset = psdf_round(pdev->char_width.x, 100, 10); /* See 
+			pdf_write_Widths about rounding. We need to provide 
+			a compatible data for Tj. */
+		pprintg1(pdev->strm, "%g ", x_offset);
+		pprintd3(pdev->strm, "0 0 %d %d %d d1\n", y_offset, w, h + y_offset);
 		pprintd3(pdev->strm, "%d 0 0 %d 0 %d cm\n", w, h,
 			 y_offset);
 		pdf_image_writer_init(&writer);
