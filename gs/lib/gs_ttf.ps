@@ -590,7 +590,7 @@ end readonly def                % .loadttfontdict
 % <file> <bool> <SubfontID> .loadttfonttables -
 % Pushes .loadttfontdict & scratch dict on d-stack.
 % Defines f, offsets, tables, tabdict, tabs.
-% Skips loca nd glyf if <bool> is true.
+% Skips loca and glyf if <bool> is true.
 /.loadttfonttables {
   .loadttfontdict begin
   40 dict begin
@@ -626,11 +626,9 @@ end readonly def                % .loadttfontdict
     tables exch 16 getinterval
     TTFDEBUG { dup .printtab } if
     dup 0 4 getinterval readtables_ 1 index known {
-      1 index 12 4 getinterval (\0\0\0\0) eq {
-        pop pop    % Ignore zero-length table
-      } {
-        tabdict exch 2 index put
-      } ifelse
+      % put all 0 length tables at 0 to avoid overlap
+      1 index 12 getu32 0 eq { 1 index 8 0 putu32 } if
+      tabdict exch 2 index put
     } {
       pop pop
     } ifelse
