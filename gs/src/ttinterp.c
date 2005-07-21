@@ -1693,7 +1693,7 @@ static int nInstrCount=0;
 
     K = CUR.stack[CUR.args - L];
 
-    memcpy( (&CUR.stack[CUR.args - L    ]),
+    memmove( (&CUR.stack[CUR.args - L    ]),
               (&CUR.stack[CUR.args - L + 1]),
               (L - 1) * sizeof ( Long ) );
 
