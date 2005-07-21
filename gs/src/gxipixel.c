@@ -550,7 +550,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	if (interleaved) {
 	    int num_components = penum->plane_depths[0] / penum->bps;
 
-	    for (i = 1; i <= num_components; i++) {
+	    for (i = 1; i < num_components; i++) {
 		if (decode[0] != decode[i * 2 + 0] ||
 		    decode[1] != decode[i * 2 + 1])
 		    break;
