@@ -1600,19 +1600,22 @@ pdf_function_scaled(gx_device_pdf *pdev, const gs_function_t *pfn,
 	return code;
     }
 }
-int
-pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
-	     cos_value_t *pvalue)
+private int
+pdf_function_aux(gx_device_pdf *pdev, const gs_function_t *pfn,
+	     pdf_resource_t **ppres)
 {
     gs_function_info_t info;
     cos_param_list_writer_t rlist;
     pdf_resource_t *pres;
     cos_object_t *pcfn;
     cos_dict_t *pcd;
-    int code = pdf_alloc_resource(pdev, resourceFunction, gs_no_id, &pres, 0L);
+    int code = pdf_alloc_resource(pdev, resourceFunction, gs_no_id, &pres, -1);
 
-    if (code < 0)
+    if (code < 0) {
+	*ppres = 0;
 	return code;
+    }
+    *ppres = pres;
     pcfn = pres->object;
     gs_function_get_info(pfn, &info);
     if (FunctionType(pfn) == function_type_ArrayedOutput) {
@@ -1625,11 +1628,7 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 
 	cos_become(pcfn, cos_type_array);
 	pca = (cos_array_t *)pcfn;
-	code = pdf_function_array(pdev, pca, &info);
-	if (code < 0)
-	    return code;
-	COS_OBJECT_VALUE(pvalue, pca);
-	return 0;
+	return pdf_function_array(pdev, pca, &info);
     }
     if (info.DataSource != 0) {
 	psdf_binary_writer writer;
@@ -1695,10 +1694,34 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
     code = cos_param_list_writer_init(&rlist, pcd, PRINT_BINARY_OK);
     if (code < 0)
 	return code;
-    code = gs_function_get_params(pfn, (gs_param_list *)&rlist);
+    return gs_function_get_params(pfn, (gs_param_list *)&rlist);
+}
+private int 
+functions_equal(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
+{
+    return true;
+}
+int
+pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn, cos_value_t *pvalue)
+{
+    pdf_resource_t *pres, *pres1;
+    int code = pdf_function_aux(pdev, pfn, &pres);
+
     if (code < 0)
 	return code;
-    COS_OBJECT_VALUE(pvalue, pcd);
+    pres1 = pres;
+    code = pdf_find_same_resource(pdev, resourceFunction, &pres, functions_equal);
+    if (code < 0)
+	return code;
+    if (code != 0) {
+	code = pdf_cancel_resource(pdev, pres1, resourceFunction);
+	if (code < 0)
+	    return code;
+	pdf_forget_resource(pdev, pres1, resourceFunction);
+    } else {
+	pdf_reserve_object_id(pdev, pres, 0);
+    }
+    COS_OBJECT_VALUE(pvalue, pres->object);
     return 0;
 }
 private int pdf_function_array(gx_device_pdf *pdev, cos_array_t *pca,
