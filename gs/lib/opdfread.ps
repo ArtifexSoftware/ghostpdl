@@ -1150,11 +1150,16 @@ end
       7 index exch get					% fr E M s mw c0 W w n
       dup null ne {
 	6 index 3 1 roll exch				% fr E M s mw c0 W M n w
-	dup 0 eq {
-	  pop 5 index
-	} if
 	6 index div					
-	put						% fr E M s mw c0 W
+	3 copy pop //knownget exec {
+	  0 eq
+	} {
+	  true
+	} ifelse
+	{ put						% fr E M s mw c0 W
+	} {
+	  pop pop pop
+	} ifelse
       } {
 	pop pop
       } ifelse
