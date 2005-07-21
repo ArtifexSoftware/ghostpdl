@@ -372,11 +372,11 @@ typedef struct gx_device_color_info_s {
      * with configurable color models which may be set for a single
      * non-'gray' color model.
      */
-    gx_color_value max_gray;	/* # of distinct color levels -1 */
-    gx_color_value max_color;
+    uint max_gray;		/* # of distinct color levels -1 */
+    uint max_color;
 
-    gx_color_value dither_grays;
-    gx_color_value dither_colors;
+    uint dither_grays;
+    uint dither_colors;
 
     /*
      * Information to control super-sampling of objects to support
