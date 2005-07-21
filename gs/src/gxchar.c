@@ -1502,7 +1502,7 @@ private int
 show_cache_setup(gs_show_enum * penum)
 {
     gs_state *pgs = penum->pgs;
-    gs_memory_t *mem = pgs->memory;
+    gs_memory_t *mem = penum->memory;
     gx_device_memory *dev =
 	gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
 			"show_cache_setup(dev_cache)");
