@@ -74,25 +74,22 @@ ps2ps2</tt></b> <em>[options] input.{ps|eps|pdf} output.ps</em>
 <h2><a name="Options"></a>Options</h2>
 
 <p>
-The <b><tt>ps2write</tt></b> device handles all distiller parameters, which
-are handled by the <b><tt>pdfwrite</tt></b> device and which are documented in 
-<a href="Ps2pdf.htm#Options">PostScript-to-PDF converter</a> documentation.
+The <em>options</em> given on the command line may include any switches 
+that may be used with Ghostscript's PostScript and PDF interpreter (see 
+<a href="Use.htm#Switches">here</a> for a complete list).
 
 <p>
-The <em>options</em> in the command line may include any switches that may
-be used with Ghostscript's PostScript and PDF interpreter (see <a
-href="Use.htm#Switches">here</a> for a complete list).
+Since <b><tt>ps2write</tt></b> makes use of some printer 
+parameters while converting high level objects into Level 2 objects,
+we strongly recommend to set those values in accordance with the
+target printer or other output device.
+In particular, it is important for
+<a  href="Use.htm#Output_resolution">Output resolution</a>,
+<a href="Use.htm#FIXEDMEDIA"><b><tt>-dFIXEDMEDIA</tt></b></a>, and
+<b><tt>ProcessColorModel</tt></b></a> to be set correctly.
 
 <p>
-Since <b><tt>ps2write</tt></b> assumes some printer parameters while converting
-high level objects into Level 2 objects, we strongly recommend
-to set exactly those values, which the target printer provides.
-Particularly it is important for <a href="Use.htm#Output_resolution">Output resolution</a>
-<a href="Use.htm#FIXEDMEDIA"><b><tt>-dFIXEDMEDIA</tt></b></a>,
-<b><tt>ProcessColorModel</tt></b></a>.
-
-<p>
-More importantly, <em>options</em> may include
+More importantly, <em>options</em> passed to ps2ps2 may include
 <b><tt>-d</tt></b><em>parameter</em>=<em>value</em> or
 <b><tt>-s</tt></b><em>parameter</em>=<em>string</em> switches for setting
 "distiller parameters", Adobe's documented parameters for controlling the
@@ -100,6 +97,14 @@ conversion process.  The PostScript <b><tt>setdistillerparams</tt></b> and
 <b><tt>currentdistillerparams</tt></b> operators are also recognized when
 running <b><tt>ps2ps2</tt></b>, and provide an equivalent way to set these
 parameters from within the PostScript input file.
+
+<p>
+The <b><tt>ps2write</tt></b> device handles the same set of distiller 
+parameters as
+are handled by the <b><tt>pdfwrite</tt></b> device. See the 
+<a href="Ps2pdf.htm#Options">PostScript-to-PDF converter</a> 
+documentation for a complete description of how to use them to
+control the document conversion.
 
 <p>
 The following options may be important for <b><tt>ps2ps2</tt></b> due to the target printer features:
@@ -112,19 +117,17 @@ The following options may be important for <b><tt>ps2ps2</tt></b> due to the tar
 See <a href="Ps2pdf.htm#Options">PostScript-to-PDF converter</a> for details.
 
 The option <b><tt>-dMaxInlineImageSize=</tt></b><em>integer</em>
-Must not use with <tt><b>ps2ps2</tt></b>.
-
-
+Must not be used with <tt><b>ps2ps2</tt></b>.
 
 
 <p>
-<b><tt>ps2ps2</tt></b> recognizes all of the Acrobat Distiller 5 parameters
+This set includes of the Acrobat Distiller 5 parameters
 defined in the DistillerParameters document included in the 
 <a href="http://partners.adobe.com/public/developer/acrobat/sdk/index.html">Acrobat SDK</a>.
 
-Default values are same as <tt><b>printer</tt></b> settings defined in 
-<a href="Ps2pdf.htm#Options">PostScript-to-PDF converter</a>,
-except few special settings for most popular printers :
+Default values are same as the <tt><b>printer</tt></b> settings defined 
+in <a href="Ps2pdf.htm#Options">PostScript-to-PDF converter</a>,
+with these exceptions:
 
 <dl>
 <dt><b><tt>/PreserveHalftoneInfo</tt></b> <em>true</em>,
@@ -142,9 +145,10 @@ Not implemented yet.
 <hr>
 
 <h2><a name="printer_control"></a>Controlling the printer behavior</h2>
+
 <p>
-Few keys may be defined in the <em>userdict</em> of the target printer's virtual memory
-to control its behavior while executing a job generated with <tt><b>ps2ps2</tt></b> :
+A few options can be used to control the behavior of the printer or 
+program that reads the result of ps2ps2.
 
 <dl>
 <dt><b><tt>-dRotatePages=</tt></b><em>boolean</em>. 
@@ -168,8 +172,13 @@ Must be <em>false</em> if <b><tt>-dRotatePages=true</tt></b> or <b><tt>-dFitPage
 </dl>
 
 <p>
-Currently Ghostscript does not provide a method for including
-these options into the generated printer job.
+These correspond to keys in the Postscript <em>userdict</em> 
+of the target printer's virtual memory to control its behavior while 
+executing a job generated with <tt><b>ps2ps2</tt></b>.
+
+<p>
+Currently Ghostscript does not provide a method for 
+incorporating these in a print job.
 Users should refer to the printer's documentation.
 
 <hr>
