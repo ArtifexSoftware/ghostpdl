@@ -30,6 +30,9 @@
 #include "gdevdevn.h"
 #include "gsequivc.h"
 
+/* Enable logic for a local ICC output profile. */
+#define ENABLE_ICC_PROFILE 0
+
 /* Define the device parameters. */
 #ifndef X_DPI
 #  define X_DPI 72
@@ -263,7 +266,7 @@ const psd_device gs_psdcmyk_device =
     { 8,	/* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,	/* Names of color model colorants */
       4,			/* Number colorants for CMYK */
-      0,			/* MaxSeparations has not been specified */
+      NC,			/* MaxSeparations has not been specified */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
@@ -516,6 +519,7 @@ psd_update_spot_equivalent_colors(gx_device *pdev, const gs_state * pgs)
     return 0;
 }
 
+#if ENABLE_ICC_PROFILE
 private int
 psd_open_profile(psd_device *xdev, char *profile_fn, icmLuBase **pluo,
 		 int *poutn)
@@ -559,6 +563,7 @@ psd_open_profiles(psd_device *xdev)
     }
     return code;
 }
+#endif
 
 /* Get parameters.  We provide a default CRD. */
 private int
@@ -566,9 +571,11 @@ psd_get_params(gx_device * pdev, gs_param_list * plist)
 {
     psd_device *xdev = (psd_device *)pdev;
     int code;
+#if ENABLE_ICC_PROFILE
     gs_param_string pos;
     gs_param_string prgbs;
     gs_param_string pcmyks;
+#endif
 
     code = gdev_prn_get_params(pdev, plist);
     if (code < 0)
@@ -578,6 +585,7 @@ psd_get_params(gx_device * pdev, gs_param_list * plist)
     if (code < 0)
 	return code;
 
+#if ENABLE_ICC_PROFILE
     pos.data = (const byte *)xdev->profile_out_fn,
 	pos.size = strlen(xdev->profile_out_fn),
 	pos.persistent = false;
@@ -589,11 +597,14 @@ psd_get_params(gx_device * pdev, gs_param_list * plist)
 	prgbs.size = strlen(xdev->profile_rgb_fn),
 	prgbs.persistent = false;
     code = param_write_string(plist, "ProfileRgb", &prgbs);
+    if (code < 0)
+	return code;
 
     pcmyks.data = (const byte *)xdev->profile_cmyk_fn,
 	pcmyks.size = strlen(xdev->profile_cmyk_fn),
 	pcmyks.persistent = false;
     code = param_write_string(plist, "ProfileCmyk", &prgbs);
+#endif
 
     return code;
 }
@@ -657,8 +668,7 @@ private int
 psd_put_params(gx_device * pdev, gs_param_list * plist)
 {
     psd_device * const pdevn = (psd_device *) pdev;
-    int ecode = 0;
-    int code;
+    int code = 0;
     gs_param_string po;
     gs_param_string prgb;
     gs_param_string pcmyk;
@@ -666,6 +676,7 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
     psd_color_model color_model = pdevn->color_model;
     gx_device_color_info save_info = pdevn->color_info;
 
+#if ENABLE_ICC_PROFILE
     code = psd_param_read_fn(plist, "ProfileOut", &po,
 				 sizeof(pdevn->profile_out_fn));
     if (code >= 0)
@@ -674,6 +685,7 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
     if (code >= 0)
 	code = psd_param_read_fn(plist, "ProfileCmyk", &pcmyk,
 				 sizeof(pdevn->profile_cmyk_fn));
+#endif
 
     if (code >= 0)
 	code = param_read_name(plist, "ProcessColorModel", &pcm);
@@ -691,22 +703,21 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
 			       code = gs_error_rangecheck);
 	}
     }
-    if (code < 0)
-	ecode = code;
 
-    if (ecode >= 0)
-        ecode = psd_set_color_model(pdevn, color_model);
+    if (code >= 0)
+        code = psd_set_color_model(pdevn, color_model);
 
     /* handle the standard DeviceN related parameters */
-    if (ecode == 0)
-        ecode = devn_printer_put_params(pdev, plist,
+    if (code == 0)
+        code = devn_printer_put_params(pdev, plist,
 		&(pdevn->devn_params), &(pdevn->equiv_cmyk_colors));
 
-    if (ecode < 0) {
+    if (code < 0) {
 	pdev->color_info = save_info;
-	return ecode;
+	return code;
     }
 
+#if ENABLE_ICC_PROFILE
     /* Open any ICC profiles that have been specified. */
     if (po.data != 0) {
 	memcpy(pdevn->profile_out_fn, po.data, po.size);
@@ -723,6 +734,7 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
     if (memcmp(&pdevn->color_info, &save_info,
 			    size_of(gx_device_color_info)) != 0)
         code = psd_open_profiles(pdevn);
+#endif
 
     return code;
 }

@@ -343,12 +343,12 @@ int
 devn_put_params(gx_device * pdev, gs_param_list * plist,
     gs_devn_params * pdevn_params, equivalent_cmyk_color_params * pequiv_colors)
 {
-    int code, ecode;
+    int code = 0, ecode;
     gs_param_name param_name;
     int npcmcolors = pdevn_params->num_std_colorant_names;
     int num_spot = pdevn_params->separations.num_separations;
     int num_order = pdevn_params->num_separation_order_names;
-    int max_sep = pdev->color_info.num_components;
+    int max_sep = pdevn_params->max_separations;
     gs_param_string_array scna;		/* SeparationColorNames array */
     gs_param_string_array sona;		/* SeparationOrder names array */
 
@@ -402,7 +402,6 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
 		    num_spot++;
 		}
 	    }
-	    pdevn_params->separations.num_separations = num_spot;
 	    for (i = 0; i < num_spot + npcmcolors; i++)
 		pdevn_params->separation_order_map[i] = i;
         }
@@ -412,7 +411,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
         if (sona.data != 0) {
 	    int i, comp_num;
 
-	    pdevn_params->num_separation_order_names = num_order = sona.size;
+	    num_order = sona.size;
 	    for (i = 0; i < num_spot + npcmcolors; i++)
 		pdevn_params->separation_order_map[i] = GX_DEVICE_COLOR_MAX_COMPONENTS;
 	    for (i = 0; i < num_order; i++) {
@@ -439,8 +438,9 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
         switch (code) {
             default:
 	        param_signal_error(plist, param_name, code);
-            case 0:
             case 1:
+		break;
+            case 0:
 	        if (max_sep < 1 || max_sep > GX_DEVICE_COLOR_MAX_COMPONENTS)
 		    return_error(gs_error_rangecheck);
 	        {
@@ -463,18 +463,30 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
         if (!pdev->color_info.num_components)
 	    pdev->color_info.num_components = 1;
 	/*
-	 * If we have SeparationOrder specified then the number of components
-	 * is given by the number of names in the list.  Otherwise check if
-	 * the MaxSeparations parameter has specified a value.  If so then use
-	 * that value, otherwise use the number of ProcessColorModel components
-	 * plus the number of SeparationColorNames is used.
+	 * Update the number of device components if we have changes in
+	 * SeparationColorNames, SeparationOrder, or maxSeparations.
 	 */
-        pdev->color_info.num_components = (num_order) ? num_order 
+	if (pdevn_params->separations.num_separations != num_spot ||
+    	            pdevn_params->max_separations != max_sep ||
+	    	    pdevn_params->num_separation_order_names != num_order) {
+	    pdevn_params->separations.num_separations = num_spot;
+	    pdevn_params->num_separation_order_names = num_order;
+    	    pdevn_params->max_separations = max_sep;
+	    /*
+	     * If we have SeparationOrder specified then the number of
+	     * components is given by the number of names in the list.
+	     * Otherwise check if the MaxSeparations parameter has specified
+	     * a value.  If so then use that value, otherwise use the number
+	     * of ProcessColorModel components plus the number of
+	     * SeparationColorNames is used.
+	     */
+            pdev->color_info.num_components = (num_order) ? num_order 
 		: (pdevn_params->max_separations)
 				? pdevn_params->max_separations
 				: npcmcolors + num_spot;
-        pdev->color_info.depth = bpc_to_depth(pdev->color_info.num_components, 
+            pdev->color_info.depth = bpc_to_depth(pdev->color_info.num_components, 
 					pdevn_params->bitspercomponent);
+	}
     }
     return code;
 }
