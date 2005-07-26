@@ -640,7 +640,6 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     pca = cos_array_alloc(pdev, "pdf_color_space");
     if (pca == 0)
 	return_error(gs_error_VMerror);
-    pca->id = pdf_obj_ref(pdev);
 
     switch (csi) {
 
@@ -863,13 +862,15 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 
 	if (code < 0 ||
 	    (code = pdf_alloc_resource(pdev, resourceColorSpace, pcs->id,
-				       &pres, pca->id)) < 0
+				       &pres, -1)) < 0
 	    ) {
 	    COS_FREE(pca, "pdf_color_space");
 	    return code;
 	}
+	pdf_reserve_object_id(pdev, pres, 0);
 	if (res_name != NULL) {
 	    int l = min(name_length, sizeof(pres->rname) - 1);
+	    
 	    memcpy(pres->rname, res_name, l);
 	    pres->rname[l] = 0;
 	}
@@ -898,7 +899,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 		*ppranges = copy_ranges;
 	} else
 	    ppcs->ranges = 0;
-	assert(pca->id == pres->object->id);
+	pca->id = pres->object->id;
 	COS_FREE(pres->object, "pdf_color_space");
 	pres->object = (cos_object_t *)pca;
 	cos_write_object(COS_OBJECT(pca), pdev);
