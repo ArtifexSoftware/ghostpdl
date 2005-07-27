@@ -372,8 +372,8 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     params.SBSTRIPS = 1 << ((flags & 0x000c) >> 2);
     params.REFCORNER = (flags & 0x0030) >> 4;
     params.TRANSPOSED = flags & 0x0040;
-    params.SBCOMBOP = (flags & 0x00e0) >> 7;
-    params.SBDEFPIXEL = flags & 0x0100;
+    params.SBCOMBOP = (flags & 0x0180) >> 7;
+    params.SBDEFPIXEL = flags & 0x0200;
     params.SBDSOFFSET = (flags & 0x7C00) >> 10;
     params.SBRTEMPLATE = flags & 0x8000;
     
