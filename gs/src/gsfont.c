@@ -406,6 +406,26 @@ gs_definefont(gs_font_dir * pdir, gs_font * pfont)
     return 0;
 }
 
+/* Find a sililar registered font of same type. */
+int
+gs_font_find_similar(const gs_font_dir * pdir, const gs_font **ppfont, 
+		       int (*similar)(const gs_font *, const gs_font *))
+{
+    const gs_font *pfont0 = *ppfont;
+    const gs_font *pfont1 = pdir->orig_fonts;
+
+    for (; pfont1 != NULL; pfont1 = pfont1->next) {
+	if (pfont1 != pfont0 && pfont1->FontType == pfont0->FontType) {
+	    int code = similar(pfont0, pfont1);
+	    if (code != 0) {
+		*ppfont = pfont1;
+		return code;
+	    }
+	}
+    }
+    return 0;
+}
+
 /* scalefont */
 int
 gs_scalefont(gs_font_dir * pdir, const gs_font * pfont, floatp scale,

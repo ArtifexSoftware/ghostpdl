@@ -58,6 +58,10 @@ gs_font_dir *gs_font_dir_alloc2_limits(gs_memory_t * struct_mem,
 /* Use gs_definefont only with original (unscaled) fonts! */
 int gs_definefont(gs_font_dir *, gs_font *);
 
+/* Find a sililar registered font of same type. */
+int gs_font_find_similar(const gs_font_dir * pdir, const gs_font **ppfont, 
+			   int (*similar)(const gs_font *, const gs_font *));
+
 /* gs_scalefont and gs_makefont return 0 if the scaled font */
 /* was already in the cache, 1 if a new font was created. */
 int gs_scalefont(gs_font_dir *, const gs_font *, floatp, gs_font **);
