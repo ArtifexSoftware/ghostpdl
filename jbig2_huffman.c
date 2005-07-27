@@ -25,6 +25,7 @@
 #include "os_types.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
@@ -84,6 +85,25 @@ jbig2_huffman_free (Jbig2Ctx *ctx, Jbig2HuffmanState *hs)
   return;
 }
 
+/** debug routine */
+void jbig2_dump_huffman_state(Jbig2HuffmanState *hs)
+{
+  fprintf(stderr, "huffman state %08x %08x offset %d.%d\n",
+	hs->this_word, hs->next_word, hs->offset, hs->offset_bits); 
+}
+
+/** debug routine */
+void jbig2_dump_huffman_binary(Jbig2HuffmanState *hs)
+{
+  const uint32_t word = hs->this_word;
+  int i;
+
+  fprintf(stderr, "huffman binary ");
+  for (i = 31; i >= 0; i--)
+    fprintf(stderr, ((word >> i) & 1) ? "1" : "0");
+  fprintf(stderr, "\n");
+}
+
 /** Skip bits up to the next byte boundary
  */
 void
@@ -91,7 +111,14 @@ jbig2_huffman_skip(Jbig2HuffmanState *hs)
 {
   int bits = hs->offset_bits & 7;
 
-  if (bits) hs->offset_bits += 8 - bits;
+  if (bits) {
+    bits = 8 - bits;
+    hs->offset_bits += bits;
+    hs->this_word = (hs->this_word << bits) | 
+	(hs->next_word >> (32 - hs->offset_bits));
+    printf("jbig2_huffman_skip() advancing %d bits (offset now %d)\n", 
+	bits, hs->offset_bits);
+  }
 
   if (hs->offset_bits >= 32) {
     Jbig2WordStream *ws = hs->ws;
@@ -99,6 +126,10 @@ jbig2_huffman_skip(Jbig2HuffmanState *hs)
     hs->offset += 4;
     hs->next_word = ws->get_next_word (ws, hs->offset + 4);
     hs->offset_bits -= 32;
+    if (hs->offset_bits) {
+      hs->this_word = (hs->this_word << hs->offset_bits) |
+	(hs->next_word >> (32 - hs->offset_bits));
+    }
   }
 }
 
@@ -108,10 +139,17 @@ void jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset)
 {
   Jbig2WordStream *ws = hs->ws;
 
-  hs->offset += offset;
-  hs->offset_bits = 0;
+  printf("jbig2_huffman_advance() advancing %d bytes\n", offset);
+  hs->offset += offset & ~3;
+  hs->offset_bits += (offset & 3) << 3;
+  if (hs->offset_bits >= 32) {
+    hs->offset += 4;
+    hs->offset_bits -= 32;
+  }
   hs->this_word = ws->get_next_word (ws, hs->offset);
   hs->next_word = ws->get_next_word (ws, hs->offset + 4);
+  hs->this_word = (hs->this_word << hs->offset_bits) |
+	(hs->next_word >> (32 - hs->offset_bits));
 }
 
 /* return the offset of the huffman decode pointer (in bytes)
@@ -120,7 +158,7 @@ void jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset)
 int 
 jbig2_huffman_offset(Jbig2HuffmanState *hs)
 {
-  return hs->offset + (hs->offset_bits >> 4);
+  return hs->offset + (hs->offset_bits >> 3);
 }
 
 /* read a number of bits directly from the huffman state
@@ -161,6 +199,13 @@ jbig2_huffman_get (Jbig2HuffmanState *hs,
       flags = entry->flags;
       PREFLEN = entry->PREFLEN;
 
+fprintf(stderr, "huffman reading prefix %x (entry %d len %d) flags %d\n",
+	(this_word >> (32 - PREFLEN)),
+	(this_word >> (32 - log_table_size)), PREFLEN, flags);
+
+fprintf(stderr, "huffman state %08x %08x before prefix read\n",
+	this_word, hs->next_word);
+
       next_word = hs->next_word;
       offset_bits += PREFLEN;
       if (offset_bits >= 32)
@@ -173,8 +218,13 @@ jbig2_huffman_get (Jbig2HuffmanState *hs,
 	  hs->next_word = next_word;
 	  PREFLEN = offset_bits;
 	}
+fprintf(stderr, "huffman state %08x %08x after prefix read\n",
+	this_word, next_word);
+if (PREFLEN)
       this_word = (this_word << PREFLEN) |
 	(next_word >> (32 - offset_bits));
+fprintf(stderr, "huffman state %08x %08x after prefix update\n",
+	this_word, next_word);
       if (flags & JBIG2_HUFFMAN_FLAGS_ISEXT)
 	{
 	  table = entry->u.ext_table;
@@ -194,6 +244,9 @@ jbig2_huffman_get (Jbig2HuffmanState *hs,
       else
 	result += HTOFFSET;
 
+fprintf(stderr, "huffman reading range %x (%d bits)\n",
+	HTOFFSET, RANGELEN);
+
       offset_bits += RANGELEN;
       if (offset_bits >= 32)
 	{
@@ -205,6 +258,7 @@ jbig2_huffman_get (Jbig2HuffmanState *hs,
 	  hs->next_word = next_word;
 	  RANGELEN = offset_bits;
 	}
+if (RANGELEN)
       this_word = (this_word << RANGELEN) |
 	(next_word >> (32 - offset_bits));
     }
@@ -214,6 +268,9 @@ jbig2_huffman_get (Jbig2HuffmanState *hs,
 
   if (oob != NULL)
     *oob = (flags & JBIG2_HUFFMAN_FLAGS_ISOOB);
+
+fprintf(stderr, "huffman value is %d%s\n", result,
+	(flags & JBIG2_HUFFMAN_FLAGS_ISOOB) ? " (oob)" : "");
 
   return result;
 }

@@ -278,7 +278,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
       /* 6.5.6 */
       if (params->SDHUFF) {
+	jbig2_dump_huffman_state(hs);
 	  HCDH = jbig2_huffman_get(hs, params->SDHUFFDH, &code);
+	jbig2_dump_huffman_state(hs);
       } else {
 	  code = jbig2_arith_int_decode(IADH, as, &HCDH);
       }
@@ -318,7 +320,11 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	    }
 	  /* 6.5.7 */
 	  if (params->SDHUFF) {
+	      jbig2_dump_huffman_state(hs);
+	      jbig2_dump_huffman_binary(hs);
 	      DW = jbig2_huffman_get(hs, params->SDHUFFDW, &code);
+	      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+		"decoded symbol delta width %d", DW);
 	  } else {
 	      code = jbig2_arith_int_decode(IADW, as, &DW);
 	  }
@@ -403,9 +409,13 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		      int ninsyms = params->SDINSYMS->n_symbols;
 
 		      if (params->SDHUFF) {
+	jbig2_dump_huffman_state(hs);
 			  ID = jbig2_huffman_get_bits(hs, SBSYMCODELEN);
+	jbig2_dump_huffman_state(hs);
 			  RDX = jbig2_huffman_get(hs, SDHUFFRDX, &code);
+	jbig2_dump_huffman_state(hs);
 			  RDY = jbig2_huffman_get(hs, SDHUFFRDX, &code);
+	jbig2_dump_huffman_state(hs);
 		      } else {
 			  code = jbig2_arith_iaid_decode(IAID, as, (int32_t*)&ID);
 		          code = jbig2_arith_int_decode(IARDX, as, &RDX);
@@ -489,7 +499,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  /* todo: memory cleanup */
 	  return NULL;
 	}
+	jbig2_dump_huffman_state(hs);
 	jbig2_huffman_skip(hs);
+	jbig2_dump_huffman_state(hs);
 	image = jbig2_image_new(ctx, TOTWIDTH, HCHEIGHT);
 	if (image == NULL) {
 	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
@@ -498,14 +510,23 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  return NULL;
 	}
 	/* todo: if BMSIZE == 0 bitmap is uncompressed */
+	if (BMSIZE == 0) {
+	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "uncompressed collective bitmap NYI!");
+	  return NULL;
+	}
 	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-	  "reading %dx%d collective bitmap for %d symbols (%d bytes)",
-	  image->width, image->height, NSYMSDECODED - HCFIRSTSYM, BMSIZE);
+	  "reading %dx%d collective bitmap for %d symbols"
+	  " (%d bytes at data offset %d)",
+	  image->width, image->height, NSYMSDECODED - HCFIRSTSYM,
+	  BMSIZE, jbig2_huffman_offset(hs));
 	rparams.MMR = 1;
 	code = jbig2_decode_generic_mmr(ctx, segment, &rparams,
 	    data + jbig2_huffman_offset(hs), BMSIZE, image);
         jbig2_image_write_pbm_file(image, "collective.pbm");
+	jbig2_dump_huffman_state(hs);
 	jbig2_huffman_advance(hs, BMSIZE);
+	jbig2_dump_huffman_state(hs);
       }
 
   } /* end of symbol decode loop */
