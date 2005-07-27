@@ -376,7 +376,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     params.SBDEFPIXEL = flags & 0x0200;
     params.SBDSOFFSET = (flags & 0x7C00) >> 10;
     params.SBRTEMPLATE = flags & 0x8000;
-    
+
     if (params.SBHUFF)	/* Huffman coding */
       {
         /* 7.4.3.1.2 */
@@ -626,12 +626,11 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         segment->result = image;
     } else {
         /* otherwise composite onto the page */
-	Jbig2Image *page_image = ctx->pages[ctx->current_page].image;
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, 
             "composing %dx%d decoded text region onto page at (%d, %d)",
             region_info.width, region_info.height, region_info.x, region_info.y);
 	jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image,
-			      region_info.x, region_info.y, JBIG2_COMPOSE_OR);
+			      region_info.x, region_info.y, region_info.op);
         jbig2_image_release(ctx, image);
     }
     
