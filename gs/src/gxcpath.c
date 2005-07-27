@@ -524,6 +524,20 @@ gx_cpath_reset(gx_clip_path * pcpath)
     return gx_cpath_from_rectangle(pcpath, &null_rect);
 }
 
+/* If a clipping path is a rectangle, return the rectangle. */
+const gs_fixed_rect *
+cpath_is_rectangle(const gx_clip_path * pcpath)
+{
+    if (pcpath->path_valid)
+	return NULL;
+    if (pcpath->inner_box.p.x != pcpath->path.bbox.p.x ||
+	pcpath->inner_box.p.y != pcpath->path.bbox.p.y ||
+	pcpath->inner_box.q.x != pcpath->path.bbox.q.x ||
+	pcpath->inner_box.q.y != pcpath->path.bbox.q.y)
+	return NULL;
+    return &pcpath->inner_box;
+}
+
 /* Intersect a new clipping path with an old one. */
 /* Flatten the new path first (in a copy) if necessary. */
 int

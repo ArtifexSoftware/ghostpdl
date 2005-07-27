@@ -375,6 +375,8 @@ typedef struct pdf_substream_save_s {
     pdf_resource_t	*accumulating_substream_resource;
     bool		charproc_just_accumulated;
     bool		accumulating_a_global_object;
+    gs_fixed_rect		charproc_bbox;
+    bool		charproc_bbox_valid;
 } pdf_substream_save;
 
 #define private_st_pdf_substream_save()\
@@ -617,6 +619,8 @@ struct gx_device_pdf_s {
     gs_id     image_mask_id;
     gs_matrix converting_image_matrix;
     double    image_mask_scale;
+    gs_fixed_rect   charproc_bbox;
+    bool      charproc_bbox_valid;
 };
 
 #define is_in_page(pdev)\

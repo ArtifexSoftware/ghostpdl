@@ -329,6 +329,7 @@ bool
     gx_cpath_outer_box(const gx_clip_path *, gs_fixed_rect *),
     gx_cpath_includes_rectangle(const gx_clip_path *, fixed, fixed,
 				fixed, fixed);
+const gs_fixed_rect *cpath_is_rectangle(const gx_clip_path * pcpath);
 
 /* Enumerate a clipping path.  This interface does not copy the path. */
 /* However, it does write into the path's "visited" flags. */

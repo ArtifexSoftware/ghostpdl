@@ -280,9 +280,16 @@ pdf_must_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 					int2fixed(pdev->height)))
 	    if (pdev->clip_path_id == pdev->no_clip_path_id)
 		return false;
+	if (pdev->charproc_bbox_valid) {
+	    /* Skip the rectangle set by setcachedevice. */
+	    const gs_fixed_rect *rect = cpath_is_rectangle(pcpath);
+	    
+	    if (rect != NULL && !memcmp(&pdev->charproc_bbox, rect, sizeof(*rect)))
+		return false;
+	}
 	if (pdf_is_same_clip_path(pdev, pcpath) > 0) {
 	    pdev->clip_path_id = pcpath->id;
-	    return 0;
+	    return false;
 	}
     }
     return true;
@@ -335,6 +342,13 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	    if (pdev->clip_path_id == pdev->no_clip_path_id)
 		return 0;
 	    new_id = pdev->no_clip_path_id;
+	}
+	if (pdev->charproc_bbox_valid) {
+	    /* Skip the rectangle set by setcachedevice. */
+	    const gs_fixed_rect *rect = cpath_is_rectangle(pcpath);
+	    
+	    if (rect != NULL && !memcmp(&pdev->charproc_bbox, rect, sizeof(*rect)))
+		return false;
 	}
 	code = pdf_is_same_clip_path(pdev, pcpath);
 	if (code < 0)
