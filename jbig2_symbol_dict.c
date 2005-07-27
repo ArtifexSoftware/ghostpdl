@@ -436,7 +436,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 		      /* Table 18 */
 		      rparams.GRTEMPLATE = params->SDRTEMPLATE;
-		      rparams.reference = (ninsyms >= ID) ? 
+		      rparams.reference = (ID < ninsyms) ? 
 					params->SDINSYMS->glyphs[ID] :
 					SDNEWSYMS->glyphs[ID-ninsyms];
 		      rparams.DX = RDX;
@@ -523,7 +523,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	rparams.MMR = 1;
 	code = jbig2_decode_generic_mmr(ctx, segment, &rparams,
 	    data + jbig2_huffman_offset(hs), BMSIZE, image);
+#ifdef OUTPUT_PBM
         jbig2_image_write_pbm_file(image, "collective.pbm");
+#endif
 	jbig2_dump_huffman_state(hs);
 	jbig2_huffman_advance(hs, BMSIZE);
 	jbig2_dump_huffman_state(hs);
