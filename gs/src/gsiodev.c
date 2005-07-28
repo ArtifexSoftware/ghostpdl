@@ -189,7 +189,7 @@ iodev_os_fopen(gx_io_device * iodev, const char *fname, const char *access,
     *pfile = gp_fopen(fname, access);
     if (*pfile == NULL)
 	return_error(gs_fopen_errno_to_code(errno));
-    if (rfname != NULL)
+    if (rfname != NULL && rfname != fname)
 	strcpy(rfname, fname);
     return 0;
 }

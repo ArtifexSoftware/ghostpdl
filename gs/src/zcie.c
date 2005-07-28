@@ -110,13 +110,13 @@ dict_matrix3_param(const gs_memory_t *mem,
      * padding elements after each of the vectors.  However, we can be
      * confident that there is no padding within a single vector.
      */
-    float values[9];
+    float values[9], defaults[9];
     int code;
 
-    memcpy(&values[0], &Matrix3_default.cu, 3 * sizeof(float));
-    memcpy(&values[3], &Matrix3_default.cv, 3 * sizeof(float));
-    memcpy(&values[6], &Matrix3_default.cw, 3 * sizeof(float));
-    code = dict_floats_param(mem, pdref, kstr, 9, values, values);
+    memcpy(&defaults[0], &Matrix3_default.cu, 3 * sizeof(float));
+    memcpy(&defaults[3], &Matrix3_default.cv, 3 * sizeof(float));
+    memcpy(&defaults[6], &Matrix3_default.cw, 3 * sizeof(float));
+    code = dict_floats_param(mem, pdref, kstr, 9, values, defaults);
     if (code < 0)
 	return code;
     memcpy(&pmat3->cu, &values[0], 3 * sizeof(float));
