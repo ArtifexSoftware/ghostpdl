@@ -90,8 +90,9 @@ Jbig2Image *jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image,
 	    image->data = jbig2_realloc(ctx->allocator,
                 image->data, image->stride*height);
             if (image->data == NULL) {
-                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
                     "could not resize image buffer!");
+		return NULL;
             }
 	    if (height > image->height) {
 		memset(image->data + image->height*image->stride,
@@ -105,7 +106,7 @@ Jbig2Image *jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image,
 		"jbig2_image_resize called with a different width (NYI)");
 	}
 
-	return 0;
+	return NULL;
 }
 
 /* composite one jbig2_image onto another
@@ -160,6 +161,14 @@ int jbig2_image_compose_unopt(Jbig2Ctx *ctx,
 		    jbig2_image_set_pixel(dst, i+x, j+y,
 			~(jbig2_image_get_pixel(src, i+sx, j+sy) ^
 			jbig2_image_get_pixel(dst, i+x, j+y)));
+		}
+    	    }
+	    break;
+	case JBIG2_COMPOSE_REPLACE:
+	    for (j = 0; j < sh; j++) {
+		for (i = 0; i < sw; i++) {
+		    jbig2_image_set_pixel(dst, i+x, j+y,
+			jbig2_image_get_pixel(src, i+sx, j+sy));
 		}
     	    }
 	    break;
@@ -290,7 +299,7 @@ int jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value)
 {
   const int w = image->width;
   const int h = image->height;
-  int i, scratch, mask;
+  int scratch, mask;
   int bit, byte;
 
   if ((x < 0) || (x >= w)) return 0;
