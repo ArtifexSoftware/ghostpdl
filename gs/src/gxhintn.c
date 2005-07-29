@@ -621,8 +621,6 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
     double_matrix CTM;
     int code;
 
-    if (scale == 0)
-	return_error(gs_error_invalidfont);
     this->disable_hinting |= (scale < 1/1024. || scale > 4);
     this->log2_pixels_x = log2_pixels_x;
     this->log2_pixels_y = log2_pixels_y;
