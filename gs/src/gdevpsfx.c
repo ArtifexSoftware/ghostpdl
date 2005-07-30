@@ -779,7 +779,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 		    c = c2_vvcurveto;
 		    csp[-1] = csp[0];
 		    if (csp[-5] == 0) {
-			memcpy(csp - 5, csp - 4, sizeof(*csp) * 4);
+			memmove(csp - 5, csp - 4, sizeof(*csp) * 4);
 			POP(2);
 		    } else
 			POP(1);
@@ -787,7 +787,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 		    /* A B|0 C D E 0 rrcurveto => [B] A C D E hhcurveto */
 		    c = c2_hhcurveto;
 		    if (csp[-4] == 0) {
-			memcpy(csp - 4, csp - 3, sizeof(*csp) * 3);
+			memmove(csp - 4, csp - 3, sizeof(*csp) * 3);
 			POP(2);
 		    } else {
 			*csp = csp[-5], csp[-5] = csp[-4], csp[-4] = *csp;
@@ -809,7 +809,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    case c2_hhcurveto:	/* hrcurveto (x1 0 x2 y2 x3 0 rrcurveto)* => */
 				/* hhcurveto */
 		if (csp[-4] == 0 && *csp == 0) {
-		    memcpy(csp - 4, csp - 3, sizeof(*csp) * 3);
+		    memmove(csp - 4, csp - 3, sizeof(*csp) * 3);
 		    c = prev_op;
 		    POP(2);
 		    goto put;
@@ -818,7 +818,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    case c2_vvcurveto:	/* rvcurveto (0 y1 x2 y2 0 y3 rrcurveto)* => */
 				/* vvcurveto */
 		if (csp[-5] == 0 && csp[-1] == 0) {
-		    memcpy(csp - 5, csp - 4, sizeof(*csp) * 3);
+		    memmove(csp - 5, csp - 4, sizeof(*csp) * 3);
 		    csp[-2] = *csp;
 		    c = prev_op;
 		    POP(2);
@@ -834,7 +834,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 		/* hvcurveto (vhcurveto hvcurveto)* vrcurveto => hvcurveto */
 		if (csp[-5] != 0)
 		    goto copy;
-		memcpy(csp - 5, csp - 4, sizeof(*csp) * 5);
+		memmove(csp - 5, csp - 4, sizeof(*csp) * 5);
 		c = prev_op;
 		POP(1);
 		goto put;
@@ -848,7 +848,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 		if (csp[-4] != 0)
 		    goto copy;
 		/* A 0 C D E F => A C D F E */
-		memcpy(csp - 4, csp - 3, sizeof(*csp) * 2);
+		memmove(csp - 4, csp - 3, sizeof(*csp) * 2);
 		csp[-2] = *csp;
 		c = prev_op;
 		POP(1);
