@@ -323,6 +323,8 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
     code = Instance_Init(this->inst);
     if (code == TT_Err_Out_Of_Memory)
 	return fMemoryError;
+    if (code >= TT_Err_Invalid_Opcode && code <= TT_Err_Invalid_Displacement)
+	return fBadInstruction;
     if (code)
 	return fBadFontData;
     I.z = this->inst;
@@ -339,6 +341,8 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
 	return fPatented;
     if (code == TT_Err_Out_Of_Memory)
 	return fMemoryError;
+    if (code >= TT_Err_Invalid_Opcode && code <= TT_Err_Invalid_Displacement)
+	return fBadInstruction;
     if (code)
 	return fBadFontData;
     return code;
