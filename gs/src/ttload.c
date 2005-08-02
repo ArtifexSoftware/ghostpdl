@@ -44,8 +44,13 @@
 #include "ttload.h"
 #include "ttfinp.h"
 
-#define DebugTrace( font, fmt )  font->DebugPrint(font, fmt)
-#define DebugTrace1( font, fmt, x)  font->DebugPrint(font, fmt, x)
+#ifdef DEBUG
+#  define DebugTrace( font, fmt )  (void)(!font->DebugPrint ? 0 : font->DebugPrint(font, fmt))
+#  define DebugTrace1( font, fmt, x)  (void)(!font->DebugPrint ? 0 : font->DebugPrint(font, fmt, x))
+#else
+#  define DebugTrace( font, fmt )
+#  define DebugTrace1( font, fmt, x)
+#endif
 
 /*******************************************************************
  *

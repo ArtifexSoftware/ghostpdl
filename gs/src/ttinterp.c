@@ -75,12 +75,14 @@
 #ifdef DEBUG
 #  define DBG_PAINT    CUR.current_face->font->DebugRepaint(CUR.current_face->font);
 
-#  define DBG_PRT CUR.current_face->font->DebugPrint(CUR.current_face->font
-#  define DBG_PRINT(fmt) DBG_PRT, fmt);
-#  define DBG_PRINT1(fmt, a) DBG_PRT, fmt, a);
-#  define DBG_PRINT3(fmt, a, b, c) DBG_PRT, fmt, a, b, c);
-#  define DBG_PRINT4(fmt, a, b, c, d) DBG_PRT, fmt, a, b, c, d);
+#  define DBG_PRT_FUN CUR.current_face->font->DebugPrint
+#  define DBG_PRT (void)(!DBG_PRT_FUN ? 0 : DBG_PRT_FUN(CUR.current_face->font
+#  define DBG_PRINT(fmt) DBG_PRT, fmt))
+#  define DBG_PRINT1(fmt, a) DBG_PRT, fmt, a))
+#  define DBG_PRINT3(fmt, a, b, c) DBG_PRT, fmt, a, b, c))
+#  define DBG_PRINT4(fmt, a, b, c, d) DBG_PRT, fmt, a, b, c, d))
 #else
+#  define DBG_PRT_FUN NULL
 #  define DBG_PAINT
 #  define DBG_PRINT(fmt)
 #  define DBG_PRINT1(fmt, a)
@@ -5105,6 +5107,7 @@ static int nInstrCount=0;
     PDefRecord   WITH;
     PCallRecord  WITH1;
     bool bFirst;
+    bool dbg_prt = (DBG_PRT_FUN != NULL);
 #   ifdef DEBUG
 	ttfMemory *mem = exc->current_face->font->tti->ttf_memory;
 	F26Dot6 *save_ox, *save_oy, *save_cx, *save_cy;
@@ -5133,7 +5136,7 @@ static int nInstrCount=0;
     Compute_Round( EXEC_ARGS (Byte)exc->GS.round_state );
 
 #   ifdef DEBUG
-      if (CUR.pts.n_points) {
+      if (dbg_prt && CUR.pts.n_points) {
         save_ox = mem->alloc_bytes(mem, CUR.pts.n_points * sizeof(*save_ox), "RunIns");
         save_oy = mem->alloc_bytes(mem, CUR.pts.n_points * sizeof(*save_oy), "RunIns");
         save_cx = mem->alloc_bytes(mem, CUR.pts.n_points * sizeof(*save_cx), "RunIns");
@@ -5184,32 +5187,36 @@ static int nInstrCount=0;
       CUR.error    = TT_Err_Ok;
 
 #     ifdef DEBUG
-        DBG_PRINT3("\n%%n=%5d IP=%5d OP=%s            ", nInstrCount, CUR.IP, Instruct_Dispatch[CUR.opcode].sName)
+        DBG_PRINT3("\n%%n=%5d IP=%5d OP=%s            ", nInstrCount, CUR.IP, Instruct_Dispatch[CUR.opcode].sName);
 	/*
         { for(int i=0;i<CUR.top;i++)
             DBG_PRINT1("% %d",CUR.stack[i]);
         }
 	*/
-        memcpy(save_ox, CUR.pts.org_x, sizeof(CUR.pts.org_x[0]) * CUR.pts.n_points);
-        memcpy(save_oy, CUR.pts.org_y, sizeof(CUR.pts.org_y[0]) * CUR.pts.n_points);
-        memcpy(save_cx, CUR.pts.cur_x, sizeof(CUR.pts.cur_x[0]) * CUR.pts.n_points);
-        memcpy(save_cy, CUR.pts.cur_y, sizeof(CUR.pts.cur_y[0]) * CUR.pts.n_points);
+	if (save_ox != NULL) {
+          memcpy(save_ox, CUR.pts.org_x, sizeof(CUR.pts.org_x[0]) * CUR.pts.n_points);
+          memcpy(save_oy, CUR.pts.org_y, sizeof(CUR.pts.org_y[0]) * CUR.pts.n_points);
+          memcpy(save_cx, CUR.pts.cur_x, sizeof(CUR.pts.cur_x[0]) * CUR.pts.n_points);
+          memcpy(save_cy, CUR.pts.cur_y, sizeof(CUR.pts.cur_y[0]) * CUR.pts.n_points);
+	}
 #     endif
 
       Instruct_Dispatch[CUR.opcode].p( EXEC_ARGS &CUR.stack[CUR.args] );
 
 #     ifdef DEBUG
-      { F26Dot6 *pp[4], *qq[4];
+      if (save_ox != NULL) { 
+	F26Dot6 *pp[4], *qq[4];
         const char *ss[] = {"org.x", "org.y", "cur.x", "cur.y"};
         int l = 0, i, j;
-       pp[0] = save_ox, 
-       pp[1] = save_oy, 
-       pp[2] = save_cx, 
-       pp[3] = save_cy;
-       qq[0] = CUR.pts.org_x;
-       qq[1] = CUR.pts.org_y;
-       qq[2] = CUR.pts.cur_x;
-       qq[3] = CUR.pts.cur_y;
+
+        pp[0] = save_ox, 
+        pp[1] = save_oy, 
+        pp[2] = save_cx, 
+        pp[3] = save_cy;
+        qq[0] = CUR.pts.org_x;
+        qq[1] = CUR.pts.org_y;
+        qq[2] = CUR.pts.cur_x;
+        qq[3] = CUR.pts.cur_y;
 
         for(i = 0; i < 4; i++)
           for(j = 0;j < CUR.pts.n_points; j++)
@@ -5304,12 +5311,15 @@ static int nInstrCount=0;
 
   _LErrorLabel:
     Result = CUR.error;
+    DBG_PRINT1("%%  ERROR=%d", Result);
   _LExit:
 #   ifdef DEBUG
-    mem->free(mem, save_ox, "RunIns");
-    mem->free(mem, save_oy, "RunIns");
-    mem->free(mem, save_cx, "RunIns");
-    mem->free(mem, save_cy, "RunIns");
+    if (save_ox != NULL) {
+      mem->free(mem, save_ox, "RunIns");
+      mem->free(mem, save_oy, "RunIns");
+      mem->free(mem, save_cx, "RunIns");
+      mem->free(mem, save_cy, "RunIns");
+    }
 #   endif
 
     return Result;

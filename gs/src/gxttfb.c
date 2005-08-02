@@ -206,7 +206,7 @@ private void DebugRepaint(ttfFont *ttf)
 {
 }
 
-private void DebugPrint(ttfFont *ttf, const char *fmt, ...)
+private int DebugPrint(ttfFont *ttf, const char *fmt, ...)
 {
     char buf[500];
     va_list args;
@@ -220,6 +220,7 @@ private void DebugPrint(ttfFont *ttf, const char *fmt, ...)
 	errwrite(buf, count);
 	va_end(args);
     }
+    return 0;
 }
 
 private void WarnBadInstruction(gs_font_type42 *pfont, int glyph_index)
@@ -361,7 +362,7 @@ ttfFont *ttfFont__create(gs_font_dir *dir)
     ttf = gs_alloc_struct(mem, ttfFont, &st_ttfFont, "ttfFont__create");
     if (ttf == NULL)
 	return 0;
-    ttfFont__init(ttf, &m->super, DebugRepaint, DebugPrint);
+    ttfFont__init(ttf, &m->super, DebugRepaint, (gs_debug_c('Y') ? DebugPrint : NULL));
     return ttf;
 }
 

@@ -184,7 +184,7 @@ void ttfInterpreter__release(ttfInterpreter **ptti)
 
 void ttfFont__init(ttfFont *this, ttfMemory *mem, 
 		    void (*DebugRepaint)(ttfFont *),
-		    void (*DebugPrint)(ttfFont *, const char *s, ...))
+		    int (*DebugPrint)(ttfFont *, const char *s, ...))
 {
     memset(this, 0, sizeof(*this));
     this->DebugRepaint = DebugRepaint;

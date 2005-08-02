@@ -150,12 +150,12 @@ struct ttfFont_s {
     TExecution_Context  *exec;
     ttfInterpreter *tti;
     void (*DebugRepaint)(ttfFont *);
-    void (*DebugPrint)(ttfFont *, const char *s, ...);
+    int (*DebugPrint)(ttfFont *, const char *s, ...);
 };
 
 void ttfFont__init(ttfFont *this, ttfMemory *mem, 
 		    void (*DebugRepaint)(ttfFont *),
-		    void (*DebugPrint)(ttfFont *, const char *s, ...));
+		    int (*DebugPrint)(ttfFont *, const char *s, ...));
 void ttfFont__finit(ttfFont *this);
 FontError ttfFont__Open(ttfInterpreter *, ttfFont *, ttfReader *r, 
 			unsigned int nTTC, float w, float h, 
