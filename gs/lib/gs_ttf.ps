@@ -450,6 +450,62 @@
   } if
 } bind def
 
+/get_from_stringarray % <array|string> <offset> get_from_stringarray <int>
+{ 1 index type /stringtype eq {
+    get
+  } {
+    exch {                % o ()
+      2 copy length gt {
+        length sub
+      } {
+        exch get exit
+      } ifelse
+    } forall
+  } ifelse
+} bind def
+
+/getinterval_from_stringarray % <array|string> <offset> <length> getinterval_from_stringarray <string>
+{ % May allocate a string in VM.
+  2 index type /stringtype eq {
+    getinterval
+  } {
+    string exch 0                                 % [] s o p
+    4 3 roll {                                    % s o p Si
+      dup length                                  % s o p Si lSi
+      dup 4 index lt {
+        3 index exch sub                          % s o p Si o'
+        exch pop 3 1 roll exch pop                % s o' p
+      } {                                         % s o p Si lSi
+        dup 3 1 roll                              % s o p lSi Si lSi
+        4 index sub                               % s o p lSi Si lSi-o
+        5 index length 4 index sub                % s o p lSi Si lSi-o ls-p
+        2 copy gt { exch } if pop                 % s o p lSi Si minl
+        dup 3 1 roll                              % s o p lSi minl Si minl
+        5 index exch getinterval                  % s o p lSi minl from
+        5 index 4 index 3 index                   % s o p lSi minl from s p minl
+        getinterval                               % s o p lSi minl from to
+        copy pop                                  % s o p lSi minl
+        3 1 roll                                  % s o minl p lSi
+        sub                                       % s o minl p'
+        3 1 roll add                              % s p' o'
+        dup 3 index length ge {
+          exch exit                               % s o p'
+        } if
+        exch                                      % s o' p'
+      } ifelse
+    } forall
+    pop pop                                       % s
+  } ifelse
+} bind def
+
+/string_array_size  % <array|string> string_array_size <int>
+{ dup type /stringtype eq {
+    length
+  } { 
+    0 exch { length add } forall
+  } ifelse
+} bind def
+
 % Each procedure in this dictionary is called as follows:
 %       posttable <<proc>> glyphencoding
 /postformats mark
@@ -457,26 +513,28 @@
     pop MacGlyphEncoding
   }
   16#00020000  {	% Detailed map, required by Microsoft fonts.
-    dup length 36 lt {
+    dup dup type /arraytype  eq { 0 get } if length 36 lt {
       TTFDEBUG { (post format 2.0 invalid.) = flush } if
       pop [ ]
     } {
-    /postglyphs exch def
-      postglyphs 32 getu16 /numglyphs exch def
+      /postglyphs exch def
+      /post_first postglyphs dup type /arraytype eq { 0 get } if def
+      post_first 32 getu16 /numglyphs exch def
       /glyphnames numglyphs 2 mul 34 add def
       % Build names array in the order they occur in the 'post' table
       /postpos glyphnames def
+      /total_length postglyphs //string_array_size exec def
       [ numglyphs 1 sub {
-	postpos postglyphs length ge { exit } if
+	postpos total_length ge { exit } if
 	% No name available, /postnames will be defined as an empty
 	% array and the glyph won't get a name attached.
-	postglyphs postpos get 
-        postglyphs postpos 1 add 2 index getinterval cvn
+	postglyphs postpos //get_from_stringarray exec
+        postglyphs postpos 1 add 2 index //getinterval_from_stringarray exec cvn
 	exch postpos add 1 add /postpos exch def
       } repeat
       ] /postnames exch def
       [ 0 1 numglyphs 1 sub {
-	2 mul 34 add postglyphs exch getu16
+	2 mul 34 add post_first exch getu16
 	dup 258 lt {
 	  MacGlyphEncoding exch get
 	} {
@@ -499,7 +557,7 @@
 	    postremap 1 index .knownget { exch pop } if
 	  } ifelse
 	} ifelse
-      } for ]
+      } for ] 
     }
     ifelse
   } bind
@@ -508,27 +566,34 @@
   } bind
 .dicttomark readonly def                % postformats
 
+/call.readtable
+{ .readtable
+} bind def
+/call.readbigtable
+{ .readbigtable
+} bind def
+
 % Each procedure in this dictionary is called as follows:
 %	<file> <length> -proc- <string|array_of_strings>
 % Note that each table must have an even length, because of a strange
 % Adobe requirement that each sfnts entry have even length.
 /readtables mark
 	% Ordinary tables
-  (cmap) { .readtable }
+  (cmap) //call.readtable
   (head) 1 index
   (hhea) 1 index
   (maxp) 1 index
   (name) 1 index
   (OS/2) 1 index
-  (post) 1 index
-  (vhea) 1 index
+  (post) //call.readbigtable
+  (vhea) //call.readtable
 	% Big tables
-  (glyf) { .readbigtable }
+  (glyf) //call.readbigtable
   (loca) 1 index
   (hmtx) 1 index
   (vmtx) 1 index
 	% Tables only needed for embedding in PDF files
-  (cvt ) { .readtable }
+  (cvt ) //call.readtable
   (fpgm) 1 index
   (prep) 1 index
 .dicttomark
@@ -709,7 +774,11 @@ mark
 /.makesfnts {
   .readttdata
   /head tabdict /head get def
-  /post tabdict /post .knownget not { null } if def
+  /post tabdict /post .knownget { 
+    dup 0 get /post_first_part exch def 
+  } { 
+    null 
+  } ifelse def
   load_stripped not {
     /locatable tabdict /loca get def
     /numloca
@@ -829,16 +898,22 @@ mark
     exch vmreclaim
 } bind def
 
+/first_post_string % - first_post_string <string>
+{
+  post dup type /arraytype eq { 0 get } if
+} bind def
+
 % - .getpost -
 % Uses post, defines glyphencoding
 /.getpost {
   /glyphencoding post null eq {
     TTFDEBUG { (post missing) = flush } if [ ]
   } {
-    postformats post 0 getu32 .knownget {
+    postformats first_post_string 0 getu32 .knownget {
       TTFDEBUG {
 	(post: format ) print
-	post 0 getu16 =only (,) print post 2 getu16 = flush
+	first_post_string
+	dup 0 getu16 =only (,) print 2 getu16 = flush
       } if
       post exch exec
     } {
@@ -874,10 +949,10 @@ mark
   } ifelse
 		% Stack: ... /FontInfo mark key1 value1 ...
   post null ne {
-    /ItalicAngle post 4 gets32 65536.0 div
-    /isFixedPitch post 12 getu32 0 ne
-    /UnderlinePosition post 8 gets16 upem div
-    /UnderlineThickness post 10 gets16 upem div
+    /ItalicAngle first_post_string 4 gets32 65536.0 div
+    /isFixedPitch first_post_string 12 getu32 0 ne
+    /UnderlinePosition first_post_string 8 gets16 upem div
+    /UnderlineThickness first_post_string 10 gets16 upem div
   } if
   counttomark 0 ne { .dicttomark } { pop pop } ifelse
   /XUID [orgXUID 42 curxuid]
