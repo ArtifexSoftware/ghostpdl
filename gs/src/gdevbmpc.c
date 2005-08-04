@@ -207,7 +207,7 @@ write_bmp_separated_header(gx_device_printer *pdev, FILE *file)
     }
     return write_bmp_depth_header(pdev, file, plane_depth,
 				  (const byte *)palette,
-				  bitmap_raster(pdev->width * plane_depth));
+				  (pdev->width*plane_depth + 7) >> 3);
 }
 
 /* 24-bit color mappers (taken from gdevmem2.c). */

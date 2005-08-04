@@ -147,6 +147,7 @@ bmp_print_page(gx_device_printer * pdev, FILE * file)
 
     if (row == 0)		/* can't allocate row buffer */
 	return_error(gs_error_VMerror);
+    memset(row+raster, 0, bmp_raster - raster); /* clear the padding bytes */
 
     /* Write the file header. */
 
@@ -174,7 +175,7 @@ private int
 bmp_cmyk_print_page(gx_device_printer * pdev, FILE * file)
 {
     int plane_depth = pdev->color_info.depth / 4;
-    uint raster = bitmap_raster(pdev->width * plane_depth);
+    uint raster = (pdev->width * plane_depth + 7) >> 3;
     /* BMP scan lines are padded to 32 bits. */
     uint bmp_raster = raster + (-(int)raster & 3);
     byte *row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
@@ -184,13 +185,14 @@ bmp_cmyk_print_page(gx_device_printer * pdev, FILE * file)
 
     if (row == 0)		/* can't allocate row buffer */
 	return_error(gs_error_VMerror);
-
+    memset(row+raster, 0, bmp_raster - raster); /* clear the padding bytes */
+    
     for (plane = 0; plane <= 3; ++plane) {
 	gx_render_plane_t render_plane;
 
 	/* Write the page header. */
 
-	code = write_bmp_separated_header(pdev, file);
+    	code = write_bmp_separated_header(pdev, file);
 	if (code < 0)
 	    break;
 
