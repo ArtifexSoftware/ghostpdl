@@ -32,6 +32,10 @@ typedef struct {
   int8_t gbat[8];
 } Jbig2GenericRegionParams;
 
+/* return the appropriate context size for the given template */
+int
+jbig2_generic_stats_size(Jbig2Ctx *ctx, int template);
+
 int
 jbig2_decode_generic_region(Jbig2Ctx *ctx,
 			    Jbig2Segment *segment,

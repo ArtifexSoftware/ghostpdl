@@ -41,6 +41,16 @@
 #include "jbig2_generic.h"
 #include "jbig2_mmr.h"
 
+/* return the appropriate context size for the given template */
+int
+jbig2_generic_stats_size(Jbig2Ctx *ctx, int template)
+{
+  int stats_size = template == 0 ? 1 << 16 :
+        template == 1 ? 1 << 1 << 13 : 1 << 10;
+  return stats_size;
+}
+
+
 static int
 jbig2_decode_generic_template0(Jbig2Ctx *ctx,
 			       Jbig2Segment *segment,
@@ -600,8 +610,7 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     }
   else
     {
-      int stats_size = params.GBTEMPLATE == 0 ? 65536 :
-	params.GBTEMPLATE == 1 ? 8192 : 1024;
+      int stats_size = jbig2_generic_stats_size(ctx, params.GBTEMPLATE);
       GB_stats = jbig2_alloc(ctx->allocator, stats_size);
       memset(GB_stats, 0, stats_size);
 

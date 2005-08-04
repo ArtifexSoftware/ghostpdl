@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id: jbig2_arith.h,v 1.4 2002/02/16 07:25:36 raph Exp $
+    $Id$
 */
 
 typedef struct _Jbig2ArithState Jbig2ArithState;
@@ -23,8 +23,12 @@ typedef struct _Jbig2ArithState Jbig2ArithState;
    MPS in the top bit. */
 typedef unsigned char Jbig2ArithCx;
 
+/* allocate and initialize a new arithmetic coding state */
 Jbig2ArithState *
 jbig2_arith_new (Jbig2Ctx *ctx, Jbig2WordStream *ws);
 
+/* decode a bit */
 bool
 jbig2_arith_decode (Jbig2ArithState *as, Jbig2ArithCx *pcx);
+
+
