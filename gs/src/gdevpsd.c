@@ -42,6 +42,7 @@
 #endif
 
 /* The device descriptor */
+private dev_proc_open_device(psd_prn_open);
 private dev_proc_get_params(psd_get_params);
 private dev_proc_put_params(psd_put_params);
 private dev_proc_print_page(psd_print_page);
@@ -131,7 +132,7 @@ gs_private_st_composite_final(st_psd_device, psd_device,
  * Macro definition for psd device procedures
  */
 #define device_procs(get_color_mapping_procs)\
-{	gdev_prn_open,\
+{	psd_prn_open,\
 	gx_default_get_initial_matrix,\
 	NULL,				/* sync_output */\
 	gdev_prn_output_page,		/* output_page */\
@@ -277,6 +278,17 @@ const psd_device gs_psdcmyk_device =
 };
 
 #undef NC
+
+/* Open the psd devices */
+int
+psd_prn_open(gx_device * pdev)
+{
+    int code = gdev_prn_open(pdev);
+
+    set_linear_color_bits_mask_shift(pdev);
+    pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+    return code;
+}
 
 /*
  * The following procedures are used to map the standard color spaces into

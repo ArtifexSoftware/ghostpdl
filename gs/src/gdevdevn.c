@@ -551,6 +551,7 @@ devn_printer_put_params(gx_device * pdev, gs_param_list * plist,
 #endif
 
 /* The device descriptor */
+private dev_proc_open_device(spotcmyk_prn_open);
 private dev_proc_get_params(spotcmyk_get_params);
 private dev_proc_put_params(spotcmyk_put_params);
 private dev_proc_print_page(spotcmyk_print_page);
@@ -611,7 +612,7 @@ gs_private_st_composite_final(st_spotcmyk_device, spotcmyk_device,
  * Macro definition for DeviceN procedures
  */
 #define device_procs(get_color_mapping_procs)\
-{	gdev_prn_open,\
+{	spotcmyk_prn_open,\
 	gx_default_get_initial_matrix,\
 	NULL,				/* sync_output */\
 	gdev_prn_output_page,		/* output_page */\
@@ -733,6 +734,17 @@ const spotcmyk_device gs_devicen_device =
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     }
 };
+
+/* Open the psd devices */
+int
+spotcmyk_prn_open(gx_device * pdev)
+{
+    int code = gdev_prn_open(pdev);
+
+    set_linear_color_bits_mask_shift(pdev);
+    pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+    return code;
+}
 
 /* Color mapping routines for the spotcmyk device */
 

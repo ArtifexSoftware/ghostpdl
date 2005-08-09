@@ -227,6 +227,7 @@ tiff32nc_print_page(gx_device_printer * pdev, FILE * file)
 #define MAX_COLOR_VALUE	255		/* We are using 8 bits per colorant */
 
 /* The device descriptor */
+private dev_proc_open_device(tiffsep_prn_open);
 private dev_proc_close_device(tiffsep_prn_close);
 private dev_proc_get_params(tiffsep_get_params);
 private dev_proc_put_params(tiffsep_put_params);
@@ -296,7 +297,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
  * Macro definition for tiffsep device procedures
  */
 #define device_procs \
-{	gdev_prn_open,\
+{	tiffsep_prn_open,\
 	gx_default_get_initial_matrix,\
 	NULL,				/* sync_output */\
 	gdev_prn_output_page,		/* output_page */\
@@ -686,6 +687,17 @@ build_comp_to_sep_map(tiffsep_device * pdev, short * map_comp_to_sep)
 	if (comp_num >= 0 && comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS)
 	    map_comp_to_sep[comp_num] = sep_num;
     }
+}
+
+/* Open the tiffsep device */
+int
+tiffsep_prn_open(gx_device * pdev)
+{
+    int code = gdev_prn_open(pdev);
+
+    set_linear_color_bits_mask_shift(pdev);
+    pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+    return code;
 }
 
 /* Close the tiffsep device */
