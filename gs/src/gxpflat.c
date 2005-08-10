@@ -268,17 +268,46 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
     return true;
 }
 
+private inline bool 
+check_diff_overflow(fixed v0, fixed v1)
+{
+    if (v0 < v1) {
+	if (v1 - v0 < 0)
+	    return true;
+    } else {
+	if (v0 - v1 < 0)
+	    return true;
+    }
+    return false;
+}
+
 /*  Initialize the iterator with a line. */
 bool
 gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, fixed x1, fixed y1)
 {
+    bool ox = check_diff_overflow(x0, x1);
+    bool oy = check_diff_overflow(y0, y1);
+
     this->x0 = this->lx0 = this->lx1 = x0;
     this->y0 = this->ly0 = this->ly1 = y0;
     this->x3 = x1;
     this->y3 = y1;
-    this->k = 0;
-    this->i = 1;
+    if (ox || oy) {
+	/* Subdivide a long line into 2 segments, because the filling algorithm 
+	   and the stroking algorithm need to compute differences 
+	   of coordinates of end points. */
+	/* Note : the result of subdivision may be not strongly colinear. */
+	this->ax = this->bx = 0;
+	this->ay = this->by = 0;
+	this->cx = (ox ? (x1 >> 1) - (x0 >> 1) : (x1 - x0) / 2);
+	this->cy = (oy ? (y1 >> 1) - (y0 >> 1) : (y1 - y0) / 2);
+	this->k = 1;
+	this->i = 2;
+    } else {
+	this->k = 0;
+	this->i = 1;
+    }
     this->curve = false;
     return true;
 }
