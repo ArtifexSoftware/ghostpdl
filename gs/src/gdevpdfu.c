@@ -1109,6 +1109,12 @@ pdf_unclip(gx_device_pdf * pdev)
 	if (code < 0)
 	    return code;
     }
+    if (pdev->context > PDF_IN_STREAM) {
+	int code = pdf_open_contents(pdev, PDF_IN_STREAM);
+
+	if (code < 0)
+	    return code;
+    }
     if (pdev->vgstack_depth > pdev->vgstack_bottom) {
 	int code = pdf_restore_viewer_state(pdev, pdev->strm);
 
