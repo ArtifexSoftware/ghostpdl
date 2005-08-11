@@ -241,7 +241,7 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
   if(to_path==&stroke_path_body && !gx_path_is_void(&stroke_path_body)) {\
     fill_params.adjust.x = STROKE_ADJUSTMENT(thin, pis, x);\
     fill_params.adjust.y = STROKE_ADJUSTMENT(thin, pis, y);\
-    code = gx_fill_path_only(to_path, dev, pis, &fill_params, pdevc, NULL);\
+    code = gx_fill_path_only(to_path, dev, pis, &fill_params, pdevc, pcpath);\
     gx_path_free(&stroke_path_body, "fill_stroke_path");\
     if ( code < 0 ) goto exit;\
     gx_path_init_local(&stroke_path_body, ppath->memory);\
