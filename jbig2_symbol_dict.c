@@ -319,8 +319,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  /* 6.5.7 */
 	  if (params->SDHUFF) {
 	      DW = jbig2_huffman_get(hs, params->SDHUFFDW, &code);
-	      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-		"decoded symbol delta width %d", DW);
 	  } else {
 	      code = jbig2_arith_int_decode(IADW, as, &DW);
 	  }
@@ -333,9 +331,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  }
 	  SYMWIDTH = SYMWIDTH + DW;
 	  TOTWIDTH = TOTWIDTH + SYMWIDTH;
-	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-		"decoded symbol %d width %d (total width now %d)", 
-		NSYMSDECODED, SYMWIDTH, TOTWIDTH); 
 	  if (SYMWIDTH < 0) {
 	      /* todo: mem cleanup */
               code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
@@ -344,12 +339,14 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
           }
 #ifdef JBIG2_DEBUG
 	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-            "SYMWIDTH = %d", SYMWIDTH);
+            "SYMWIDTH = %d TOTWIDTH = %d", SYMWIDTH, TOTWIDTH);
 #endif
 	  /* 6.5.5 (4c.ii) */
 	  if (!params->SDHUFF || params->SDREFAGG) {
+#ifdef JBIG2_DEBUG
 		jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 		  "SDHUFF = %d; SDREFAGG = %d", params->SDHUFF, params->SDREFAGG);
+#endif
 	      /* 6.5.8 */
 	      if (!params->SDREFAGG) {
 		  Jbig2GenericRegionParams region_params;
@@ -464,11 +461,13 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	    SDNEWSYMWIDTHS[NSYMSDECODED] = SYMWIDTH;
 	  }
 	
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+            "decoded symbol %d of %d (%dx%d)",
+		NSYMSDECODED, params->SDNUMNEWSYMS,
+		SYMWIDTH, HCHEIGHT);
+
 	  /* 6.5.5 (4c.iv) */
 	  NSYMSDECODED = NSYMSDECODED + 1;
-
-	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-            "%d of %d decoded", NSYMSDECODED, params->SDNUMNEWSYMS);
 
       } /* end height class decode loop */
 
@@ -477,13 +476,18 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	/* 6.5.9 */
 	Jbig2Image *image;
 	int BMSIZE = jbig2_huffman_get(hs, params->SDHUFFBMSIZE, &code);
+	int j, x;
+
 	if (code || (BMSIZE < 0)) {
 	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 	    "error decoding size of collective bitmap!");
 	  /* todo: memory cleanup */
 	  return NULL;
 	}
+
+	/* skip any bits before the next byte boundary */
 	jbig2_huffman_skip(hs);
+
 	image = jbig2_image_new(ctx, TOTWIDTH, HCHEIGHT);
 	if (image == NULL) {
 	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
@@ -491,17 +495,19 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  /* todo: memory cleanup */
 	  return NULL;
 	}
+
 	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 	  "reading %dx%d collective bitmap for %d symbols (%d bytes)",
 	  image->width, image->height, NSYMSDECODED - HCFIRSTSYM,
 	  BMSIZE);
+
 	if (BMSIZE == 0) {
 	  /* if BMSIZE == 0 bitmap is uncompressed */
 	  const byte *src = data + jbig2_huffman_offset(hs);
 	  const int stride = (image->width >> 3) + 
 		(image->width & 7) ? 1 : 0;
 	  byte *dst = image->data;
-	  int j;
+
 	  for (j = 0; j < image->height; j++) {
 	    memcpy(dst, src, stride);
 	    dst += image->stride;
@@ -510,12 +516,32 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  BMSIZE = image->height * stride;
 	} else {
 	  Jbig2GenericRegionParams rparams;
+
 	  rparams.MMR = 1;
 	  code = jbig2_decode_generic_mmr(ctx, segment, &rparams,
 	    data + jbig2_huffman_offset(hs), BMSIZE, image);
+	  if (code) {
+	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	      "error decoding MMR bitmap image!");
+	    /* todo: memory cleanup */
+	    return NULL;
+	  }
 	}
+
 	/* advance past the data we've just read */
 	jbig2_huffman_advance(hs, BMSIZE);
+
+	/* copy the collective bitmap into the symbol dictionary */
+	x = 0;
+	for (j = HCFIRSTSYM; j < NSYMSDECODED; j++) {
+	  Jbig2Image *glyph;
+	  glyph = jbig2_image_new(ctx, SDNEWSYMWIDTHS[j], HCHEIGHT);
+	  jbig2_image_compose(ctx, glyph, image, 
+		-x, 0, JBIG2_COMPOSE_REPLACE);
+	  x += SDNEWSYMWIDTHS[j];
+	  SDNEWSYMS->glyphs[j] = glyph; 
+	}
+	jbig2_image_release(ctx, image);
       }
 
   } /* end of symbol decode loop */
