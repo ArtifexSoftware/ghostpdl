@@ -148,7 +148,8 @@ void jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset)
   }
   hs->this_word = ws->get_next_word (ws, hs->offset);
   hs->next_word = ws->get_next_word (ws, hs->offset + 4);
-  hs->this_word = (hs->this_word << hs->offset_bits) |
+  if (hs->offset_bits > 0)
+      hs->this_word = (hs->this_word << hs->offset_bits) |
 	(hs->next_word >> (32 - hs->offset_bits));
 }
 
