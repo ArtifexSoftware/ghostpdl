@@ -278,9 +278,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
       /* 6.5.6 */
       if (params->SDHUFF) {
-	jbig2_dump_huffman_state(hs);
 	  HCDH = jbig2_huffman_get(hs, params->SDHUFFDH, &code);
-	jbig2_dump_huffman_state(hs);
       } else {
 	  code = jbig2_arith_int_decode(IADH, as, &HCDH);
       }
@@ -320,8 +318,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	    }
 	  /* 6.5.7 */
 	  if (params->SDHUFF) {
-	      jbig2_dump_huffman_state(hs);
-	      jbig2_dump_huffman_binary(hs);
 	      DW = jbig2_huffman_get(hs, params->SDHUFFDW, &code);
 	      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 		"decoded symbol delta width %d", DW);
@@ -409,13 +405,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		      int ninsyms = params->SDINSYMS->n_symbols;
 
 		      if (params->SDHUFF) {
-	jbig2_dump_huffman_state(hs);
 			  ID = jbig2_huffman_get_bits(hs, SBSYMCODELEN);
-	jbig2_dump_huffman_state(hs);
 			  RDX = jbig2_huffman_get(hs, SDHUFFRDX, &code);
-	jbig2_dump_huffman_state(hs);
 			  RDY = jbig2_huffman_get(hs, SDHUFFRDX, &code);
-	jbig2_dump_huffman_state(hs);
 		      } else {
 			  code = jbig2_arith_iaid_decode(IAID, as, (int32_t*)&ID);
 		          code = jbig2_arith_int_decode(IARDX, as, &RDX);
@@ -475,17 +467,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  /* 6.5.5 (4c.iv) */
 	  NSYMSDECODED = NSYMSDECODED + 1;
 
-#ifdef JBIG2_DEBUG
 	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "%d of %d decoded", NSYMSDECODED, params->SDNUMNEWSYMS);
-#endif
 
-	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-		"at end of height class decode loop...");
       } /* end height class decode loop */
-
-	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-		"left height class decode loop");
 
       /* 6.5.5 (4d) */
       if (params->SDHUFF && !params->SDREFAGG) {
@@ -499,9 +484,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  /* todo: memory cleanup */
 	  return NULL;
 	}
-	jbig2_dump_huffman_state(hs);
 	jbig2_huffman_skip(hs);
-	jbig2_dump_huffman_state(hs);
 	image = jbig2_image_new(ctx, TOTWIDTH, HCHEIGHT);
 	if (image == NULL) {
 	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
@@ -526,9 +509,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 #ifdef OUTPUT_PBM
         jbig2_image_write_pbm_file(image, "collective.pbm");
 #endif
-	jbig2_dump_huffman_state(hs);
 	jbig2_huffman_advance(hs, BMSIZE);
-	jbig2_dump_huffman_state(hs);
       }
 
   } /* end of symbol decode loop */

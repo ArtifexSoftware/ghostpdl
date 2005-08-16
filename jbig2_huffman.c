@@ -25,7 +25,10 @@
 #include "os_types.h"
 
 #include <stdlib.h>
+
+#ifdef JBIG2_DEBUG
 #include <stdio.h>
+#endif
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
@@ -85,14 +88,16 @@ jbig2_huffman_free (Jbig2Ctx *ctx, Jbig2HuffmanState *hs)
   return;
 }
 
-/** debug routine */
+/** debug routines **/
+#ifdef JBIG2_DEBUG
+/** print current huffman state */
 void jbig2_dump_huffman_state(Jbig2HuffmanState *hs)
 {
   fprintf(stderr, "huffman state %08x %08x offset %d.%d\n",
 	hs->this_word, hs->next_word, hs->offset, hs->offset_bits); 
 }
 
-/** debug routine */
+/** print the binary string we're reading from */
 void jbig2_dump_huffman_binary(Jbig2HuffmanState *hs)
 {
   const uint32_t word = hs->this_word;
@@ -103,6 +108,7 @@ void jbig2_dump_huffman_binary(Jbig2HuffmanState *hs)
     fprintf(stderr, ((word >> i) & 1) ? "1" : "0");
   fprintf(stderr, "\n");
 }
+#endif /* JBIG2_DEBUG */
 
 /** Skip bits up to the next byte boundary
  */
@@ -116,8 +122,6 @@ jbig2_huffman_skip(Jbig2HuffmanState *hs)
     hs->offset_bits += bits;
     hs->this_word = (hs->this_word << bits) | 
 	(hs->next_word >> (32 - hs->offset_bits));
-    printf("jbig2_huffman_skip() advancing %d bits (offset now %d)\n", 
-	bits, hs->offset_bits);
   }
 
   if (hs->offset_bits >= 32) {
@@ -139,7 +143,6 @@ void jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset)
 {
   Jbig2WordStream *ws = hs->ws;
 
-  printf("jbig2_huffman_advance() advancing %d bytes\n", offset);
   hs->offset += offset & ~3;
   hs->offset_bits += (offset & 3) << 3;
   if (hs->offset_bits >= 32) {
@@ -149,7 +152,7 @@ void jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset)
   hs->this_word = ws->get_next_word (ws, hs->offset);
   hs->next_word = ws->get_next_word (ws, hs->offset + 4);
   if (hs->offset_bits > 0)
-      hs->this_word = (hs->this_word << hs->offset_bits) |
+    hs->this_word = (hs->this_word << hs->offset_bits) |
 	(hs->next_word >> (32 - hs->offset_bits));
 }
 
@@ -200,13 +203,6 @@ jbig2_huffman_get (Jbig2HuffmanState *hs,
       flags = entry->flags;
       PREFLEN = entry->PREFLEN;
 
-fprintf(stderr, "huffman reading prefix %x (entry %d len %d) flags %d\n",
-	(this_word >> (32 - PREFLEN)),
-	(this_word >> (32 - log_table_size)), PREFLEN, flags);
-
-fprintf(stderr, "huffman state %08x %08x before prefix read\n",
-	this_word, hs->next_word);
-
       next_word = hs->next_word;
       offset_bits += PREFLEN;
       if (offset_bits >= 32)
@@ -219,13 +215,9 @@ fprintf(stderr, "huffman state %08x %08x before prefix read\n",
 	  hs->next_word = next_word;
 	  PREFLEN = offset_bits;
 	}
-fprintf(stderr, "huffman state %08x %08x after prefix read\n",
-	this_word, next_word);
 if (PREFLEN)
       this_word = (this_word << PREFLEN) |
 	(next_word >> (32 - offset_bits));
-fprintf(stderr, "huffman state %08x %08x after prefix update\n",
-	this_word, next_word);
       if (flags & JBIG2_HUFFMAN_FLAGS_ISEXT)
 	{
 	  table = entry->u.ext_table;
@@ -244,9 +236,6 @@ fprintf(stderr, "huffman state %08x %08x after prefix update\n",
 	result -= HTOFFSET;
       else
 	result += HTOFFSET;
-
-fprintf(stderr, "huffman reading range %x (%d bits)\n",
-	HTOFFSET, RANGELEN);
 
       offset_bits += RANGELEN;
       if (offset_bits >= 32)
@@ -269,9 +258,6 @@ if (RANGELEN)
 
   if (oob != NULL)
     *oob = (flags & JBIG2_HUFFMAN_FLAGS_ISOOB);
-
-fprintf(stderr, "huffman value is %d%s\n", result,
-	(flags & JBIG2_HUFFMAN_FLAGS_ISOOB) ? " (oob)" : "");
 
   return result;
 }

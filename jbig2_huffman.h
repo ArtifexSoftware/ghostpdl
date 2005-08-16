@@ -76,6 +76,11 @@ jbig2_huffman_get (Jbig2HuffmanState *hs,
 int32_t
 jbig2_huffman_get_bits (Jbig2HuffmanState *hs, const int bits);
 
+#ifdef JBIG2_DEBUG
+void jbig2_dump_huffman_state(Jbig2HuffmanState *hs);
+void jbig2_dump_huffman_binary(Jbig2HuffmanState *hs);
+#endif
+
 Jbig2HuffmanTable *
 jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params);
 
