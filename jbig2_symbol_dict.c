@@ -475,7 +475,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       /* 6.5.5 (4d) */
       if (params->SDHUFF && !params->SDREFAGG) {
 	/* 6.5.9 */
-	Jbig2GenericRegionParams rparams;
 	Jbig2Image *image;
 	int BMSIZE = jbig2_huffman_get(hs, params->SDHUFFBMSIZE, &code);
 	if (code || (BMSIZE < 0)) {
@@ -492,23 +491,30 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  /* todo: memory cleanup */
 	  return NULL;
 	}
-	/* todo: if BMSIZE == 0 bitmap is uncompressed */
-	if (BMSIZE == 0) {
-	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-	    "uncompressed collective bitmap NYI!");
-	  return NULL;
-	}
 	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-	  "reading %dx%d collective bitmap for %d symbols"
-	  " (%d bytes at data offset %d)",
+	  "reading %dx%d collective bitmap for %d symbols (%d bytes)",
 	  image->width, image->height, NSYMSDECODED - HCFIRSTSYM,
-	  BMSIZE, jbig2_huffman_offset(hs));
-	rparams.MMR = 1;
-	code = jbig2_decode_generic_mmr(ctx, segment, &rparams,
+	  BMSIZE);
+	if (BMSIZE == 0) {
+	  /* if BMSIZE == 0 bitmap is uncompressed */
+	  const byte *src = data + jbig2_huffman_offset(hs);
+	  const int stride = (image->width >> 3) + 
+		(image->width & 7) ? 1 : 0;
+	  byte *dst = image->data;
+	  int j;
+	  for (j = 0; j < image->height; j++) {
+	    memcpy(dst, src, stride);
+	    dst += image->stride;
+	    src += stride;
+	  }
+	  BMSIZE = image->height * stride;
+	} else {
+	  Jbig2GenericRegionParams rparams;
+	  rparams.MMR = 1;
+	  code = jbig2_decode_generic_mmr(ctx, segment, &rparams,
 	    data + jbig2_huffman_offset(hs), BMSIZE, image);
-#ifdef OUTPUT_PBM
-        jbig2_image_write_pbm_file(image, "collective.pbm");
-#endif
+	}
+	/* advance past the data we've just read */
 	jbig2_huffman_advance(hs, BMSIZE);
       }
 
