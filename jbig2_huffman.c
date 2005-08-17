@@ -262,7 +262,10 @@ if (RANGELEN)
   return result;
 }
 
-#define LOG_TABLE_SIZE_MAX 8
+/* TODO: 10 bits here is wasteful of memory here. We have support
+   for sub-trees in jbig2_huffman_get() above, but don't use it here
+   we should, and then revert to 8 bits */
+#define LOG_TABLE_SIZE_MAX 10
 
 /** Build an in-memory representation of a Huffman table from the
  *  set of template params provided by the spec or a table segment
@@ -270,7 +273,7 @@ if (RANGELEN)
 Jbig2HuffmanTable *
 jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
 {
-  int LENCOUNT[256];
+  int LENCOUNT[1 << LOG_TABLE_SIZE_MAX];
   int LENMAX = -1;
   const Jbig2HuffmanLine *lines = params->lines;
   int n_lines = params->n_lines;
