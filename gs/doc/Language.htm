@@ -596,23 +596,25 @@ match other PostScript implementations.
 
 <dl>
 <dt><b><tt>&lt;int&gt; .setcurvejoin -</tt></b>
+<dd>Obsolete, left for backward compatibility.
 <dd>Sets a graphics state parameter that determines how to treat the joins
 between the line segments produced when a curve is flattened.  The parameter
 value may be either -1 or a value acceptable to <b><tt>setlinejoin</tt></b>.
 If the parameter value is -1, the join used for flattened curve line
 segments is given by the current line join parameter in the graphics state
 (except that if the line join value is "none", a bevel join is used), which
-matches the Adobe Red Book, but not the Adobe implementations; if the curve
+matches the Adobe Red Book, but not some old Adobe implementations; if the curve
 join parameter value is a line join value, that type of join is used for
 flattened curve line segments, regardless of the value of the graphics state
 line join parameter.  The initial (and default) value of the curve join
-parameter is 2, causing bevel joins to be used: this matches the Adobe
+parameter is -1, causing the compatibility to Red Book and to modern Adobe
 implementations.  <b><tt>initgraphics</tt></b> sets the parameter to its
 default value.
 </dl>
 
 <dl>
 <dt><b><tt>- .currentcurvejoin &lt;int&gt;</tt></b>
+<dd>Obsolete, left for backward compatibility.
 <dd>Returns the current value of the curve join parameter.
 </dl>
 

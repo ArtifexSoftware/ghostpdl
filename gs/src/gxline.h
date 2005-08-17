@@ -70,7 +70,7 @@ int gx_set_dot_length(gx_line_params *, floatp, bool);
 
 /* See gsline.c for the computation of miter_check. */
 #define gx_line_params_initial\
- 0.0, gs_cap_butt, gs_join_miter, gs_join_bevel /* for Adobe compatibility */,\
+ 0.0, gs_cap_butt, gs_join_miter, -1,\
  10.0, (float)0.20305866, 0.0, 0/*false*/,\
   { identity_matrix_body }, { gx_dash_params_initial }
 

@@ -337,7 +337,8 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 #endif
     gs_line_join curve_join =
 	(pgs_lp->curve_join >= 0 ? (gs_line_join)pgs_lp->curve_join :
-	 pgs_lp->join == gs_join_none ? gs_join_bevel : pgs_lp->join);
+	 pgs_lp->join == gs_join_none || pgs_lp->join == gs_join_round ? 
+	    gs_join_bevel : pgs_lp->join);
     float line_width = pgs_lp->half_width;	/* (*half* the line width) */
     bool always_thin;
     double line_width_and_scale;
