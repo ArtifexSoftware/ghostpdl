@@ -105,10 +105,24 @@ pdfdict begin
    if
  } bdef
 
+/checkGlyphNames2Unicode % <dict> checkGlyphNames2Unicode -
+{
+  PDFDEBUG {
+    dup /FontInfo .knownget { 
+      /GlyphNames2Unicode .knownget { 
+        (Has GlyphNames2Unicode) =
+        pop % { exch == ==} forall 
+      } if 
+    } if
+  } if
+  pop
+} bind def
+
 % Define a font using it's FontName as the key.
 % Adjust a font according to the Encoding and Widths in the font resource.
 /adjustfont {		% <font-resource> <font> adjustfont <font'>
   getfontencoding
+  3 copy .processToUnicode
   getfontmetrics 5 -1 roll pop .updatefont { dup /FontName get exch definefont } if
 } bind def
 
@@ -293,6 +307,170 @@ pdfdict begin
 
 currentdict /unique_name undef
 currentdict /match_in_diff undef
+
+/ToUnicodeCMapReader 3 dict def
+//ToUnicodeCMapReader begin
+  /defineresource % <name> <dict> <cat-name> defineresource <dict> 
+  {
+    pop 
+    dup userdict exch /.lastToUnicode exch put
+    exch pop
+  } bind def
+  /CIDSystemInfo 
+  { 
+    (   **** Warning: ToUnicode CMap has invalid syntax near CIDSystemInfo.\n)  pdfformaterror
+    /CIDSystemInfo 
+  } bind def % A work around a bug in Altona.Page_3.2002-09-27.pdf - a slash is missed.
+end
+
+/string2number     % <string> string2number <number>
+{ 0 exch dup 0 exch 1 exch length 1 sub {     % n () i
+    1 index exch get                          % n () v
+    3 2 roll 256 mul add exch                 % v+n*256 ()
+  } for
+  pop                                         % N
+} bind def
+
+/copy&def    % <key> <value> <bool> copy&def -
+{
+  { true
+  } {
+    currentdict gcheck { 
+      dup gcheck not
+    } {
+      false
+    } ifelse
+  } ifelse
+  { currentglobal currentdict gcheck dup = setglobal 
+    exch dup length string copy exch 
+    setglobal
+  } if
+  def
+} bind def
+
+/.convert_ToUnicode-into-g2u % <GlyphNames2Unicode> <Encoding|null> <CMap> .convert_ToUnicode-into-g2u -
+{
+  PDFDEBUG {
+    (.convert_ToUnicode-into-g2u beg) =
+  } if
+  3 2 roll begin
+  /.CodeMapData get % About the data format see gs_cmap.ps, the comment after "CMap operators".
+  1 get % code maps
+  { 
+    PDFDEBUG {
+      dup ==
+    } if
+    dup length 1 sub 0 exch 5 exch {           % e [] i
+      2 copy get                               % e [] i (prefix)
+      string2number                            % e [] i prefix
+      2 index 2 index 1 add get                % e [] i prefix (key_size,?is_range,value_type,value_size)
+      dup 0 get 8 mul                          % e [] i prefix (key_size,?is_range,value_type,value_size) key_size*8
+      3 2 roll exch bitshift exch              % e [] i prefix<<key_size*8 (key_size,?is_range,value_type,value_size)
+      dup 0 get exch 3 get                     % e [] i offset key_size value_size
+      4 index 4 index 2 add get                % e [] i offset key_size value_size (keys)
+      5 index 5 index 3 add get                % e [] i offset key_size value_size (keys) (values)
+      PDFDEBUG {
+        ( offset=) print 4 index =string cvs print
+        ( key_size=) print 3 index =string cvs print
+        ( value_size=) print 2 index =
+        ( keys=)   print 1 index ==
+        ( values=) print dup ==
+      } if
+      1 index length 0 eq {
+        % A single pair.
+        exch pop exch pop exch pop exch        % e [] i (values) offset
+        4 index null ne {
+          4 index exch get
+        } if                                   % e [] i (values) cid|name
+        exch 
+        PDFDEBUG {
+          ( defined single: ) print 1 index =string cvs print ( ) print dup ==
+        } if
+        false copy&def                         % e [] i
+        pop                                    % e []
+      } {
+        % A range.                             % e [] i offset key_size value_size (keys) (values)
+        dup length string copy % protect the original string from modifications below.
+        0 4 index 2 mul 3 index length 1 sub { % e [] i offset key_size value_size (keys) (values) j
+          2 index 1 index 6 index getinterval          
+          string2number                        % e [] i offset key_size value_size (keys) (values) j keyL
+          PDFDEBUG {
+              ( keyL=) print dup =string cvs print
+          } if
+          3 index 2 index 7 index add 7 index getinterval
+          string2number                        % e [] i offset key_size value_size (keys) (values) j keyL keyH
+          PDFDEBUG {
+              ( keyH=) print dup =
+          } if
+          3 2 roll 6 index idiv 5 index mul    % e [] i offset key_size value_size (keys) (values) keyL keyH J
+          3 index exch 6 index getinterval     % e [] i offset key_size value_size (keys) (values) keyL keyH (valueL)
+          3 1 roll 1 exch {                    % e [] i offset key_size value_size (keys) (values) (value) k
+            9 index null ne {
+              9 index exch get                 % e [] i offset key_size value_size (keys) (values) (value) name
+            } if                               % e [] i offset key_size value_size (keys) (values) (value) cid|name
+            1 index                            % e [] i offset key_size value_size (keys) (values) (value) cid|name (value)
+            PDFDEBUG {
+              ( defined from range: ) print 1 index =string cvs print ( ) print dup ==
+            } if
+            true copy&def                      % e [] i offset key_size value_size (keys) (values) (value)
+            % Assuming the lowest byte of 'value' changes, others don't.
+            dup dup length 1 sub               % e [] i offset key_size value_size (keys) (values) (value) (value) l
+            2 copy get                         % e [] i offset key_size value_size (keys) (values) (value) (value) l v
+            1 add put                          % e [] i offset key_size value_size (keys) (values) (value')
+          } for                                % e [] i offset key_size value_size (keys) (values) (value)
+        } for
+        pop pop pop pop pop pop pop            % e []
+      } ifelse
+    } for
+    pop                                        % e
+  } forall
+  end
+  pop                                          %
+  PDFDEBUG {
+    (.convert_ToUnicode-into-g2u end) =
+  } if
+} bind def
+
+/.processToUnicode   % <font-resource> <font-dict> <encoding|null> .processToUnicode -
+{
+  % Currently pdfwrite is only device which can handle GlyphNames2Unicoide to 
+  % generate a ToUnicode CMaps. So don't bother with other devices.
+  currentdevice .devicename /pdfwrite eq {
+    PDFDEBUG {
+      (.processToUnicode beg) =
+    } if
+    2 index /ToUnicode knownoget {
+      dup type /nametype eq {
+        % Bug687351.pdf defines /ToUnicode /Identity-H, what is incorrect.
+        (   **** Warning: Ignoring bad ToUnicode CMap.\n)  pdfformaterror
+        pop
+      } {
+        PDFfile fileposition exch
+        false resolvestream
+        //ToUnicodeCMapReader begin
+          cvx exec
+        end
+        PDFfile exch setfileposition
+        1 index /FontInfo .knownget not {
+          1 index /FontInfo 5 dict dup 4 1 roll put
+        } if
+        dup /GlyphNames2Unicode .knownget not {
+          currentglobal exch dup gcheck setglobal
+          dup /GlyphNames2Unicode 100 dict dup 4 1 roll .forceput
+          3 2 roll setglobal
+        } if                                 % font-res font-dict encoding|null font-info g2u
+        exch pop exch                        % font-res font-dict g2u encoding|null
+        userdict /.lastToUnicode get         % font-res font-dict g2u Encoding|null CMap
+        .convert_ToUnicode-into-g2u          % font-res font-dict
+        null                                 % font-res font-dict null
+      } ifelse
+    } if
+    PDFDEBUG {
+      (.processToUnicode end) =
+    } if
+  } if
+  pop pop pop
+} bind def
 
 % ---------------- Descriptors ---------------- %
 
@@ -751,6 +929,7 @@ readonly def
       PDFfile exch setfileposition
       end end
     } bdef
+    dup currentdict Encoding .processToUnicode
     FontName currentdict end definefont exch pop
 } bdef
 /.adjustcharwidth {	% <wx> <wy> .adjustcharwidth <wx'> <wy'>
@@ -886,8 +1065,9 @@ readonly def
   [
     3 index /DescendantFonts oget { exec resourcefont } forall
   ]			% subfonts
-  composefont
+  composefont   % composefont must insert FontInfo dictionary - see gs_cmap.ps .
 		% Stack: fontres font
+  2 copy null .processToUnicode
   1 index /FontMatrix knownoget {
     dup aload pop true {0 0 1 0 0 1} {3 -1 roll eq and} forall {
       1 index exch makefont exch /FontName get exch definefont
@@ -1357,6 +1537,7 @@ readonly def
     dup 3 1 roll /PSFont exch put
   }
   ifelse
+  dup checkGlyphNames2Unicode
 } bdef
 
 drawopdict begin

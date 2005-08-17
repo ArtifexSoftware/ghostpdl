@@ -54,6 +54,7 @@
     /CMap 2 index dup type /dicttype ne { /CMap findresource } if def
     /FDepVector 1 index cvlit def	% temporarily
     /Encoding [ 0 1 FDepVector length 1 sub { } for ] def
+    /FontInfo 1 dict def % for .processToUnicode in pdf_font.ps .
     /FDepVector [ 0 1 FDepVector length 1 sub {
 		% Stack: name cmap[name] fonts /FDepVector [ fonts... i
       FDepVector 1 index get
