@@ -89,6 +89,20 @@ In particular, it is important for
 <b><tt>ProcessColorModel</tt></b></a> to be set correctly.
 
 <p>
+<em>
+<b>Important :</b>
+If the target printer can't handle some font type,
+ps2write converts such fonts into bitmap fonts,
+using the resolution specified when ps2write is invoked.
+Particularly this always happen with CID fonts, which are not Postscript Level 2 objects.
+Therefore the page device parameter <b><tt>PageSize</tt></b>
+must match the target printer, and we recommend to set
+the <b><tt>PageSize</tt></b> entry of the <b><tt>Policies</tt></b>
+dictionary to 3, in order to provide a proper page scaling
+in the Postscript interpreter while ps2write is invoked.
+</em>
+
+<p>
 More importantly, <em>options</em> passed to ps2ps2 may include
 <b><tt>-d</tt></b><em>parameter</em>=<em>value</em> or
 <b><tt>-s</tt></b><em>parameter</em>=<em>string</em> switches for setting
@@ -160,7 +174,9 @@ Must be <em>false</em> if <b><tt>-dSetPageSize=true</tt></b>.
 <dd>The printer will scale pages down
 to fit into the real page size. The rendering quality may be poor due to the scaling,
 especially for fonts which Ghostscript had converted into bitmaps 
-(see the <em>ps2write</em> device parameter <b><tt>HaveTrueTypes</tt></b>). 
+(see the <em>ps2write</em> device parameter <b><tt>HaveTrueTypes</tt></b>;
+See <a href="#Options">Options</a> about the <b><tt>PageSize</tt></b> entry of the <b><tt>Policies</tt></b>
+dictionary while the conversion step). 
 Default value : <em>false</em>.
 Must be <em>false</em> if <b><tt>-dSetPageSize=true</tt></b>.
 
