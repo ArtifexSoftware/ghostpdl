@@ -1274,6 +1274,37 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	prescale = (minor == 0 || minor > 1 ? 1 : 1 / minor);
     }
     gx_path_bbox(ppath, &bbox);
+    {
+    	/* Check whether a painting appears inside the clipping box. 
+	   Doing so after writing the clipping path due to /SP pdfmark
+	   uses a special hack with painting outside the clipping box
+	   for synchronizing the clipping path (see lib/gs_pdfwr.ps).
+	   That hack appeared because there is no way to pass 
+	   the imager state through gdev_pdf_put_params,
+	   which pdfmark is implemented with.
+	*/
+	gs_fixed_rect clip_box, stroke_bbox = bbox;
+	gs_point d0, d1;
+	gs_fixed_point p0, p1;
+	fixed bbox_expansion_x, bbox_expansion_y;
+
+	gs_distance_transform(pis->line_params.half_width, 0, &ctm_only(pis), &d0);
+	gs_distance_transform(0, pis->line_params.half_width, &ctm_only(pis), &d1);
+	p0.x = float2fixed(any_abs(d0.x));
+	p0.y = float2fixed(any_abs(d0.y));
+	p1.x = float2fixed(any_abs(d1.x));
+	p1.y = float2fixed(any_abs(d1.y));
+	bbox_expansion_x = max(p0.x, p1.x) + fixed_1 * 2;
+	bbox_expansion_y = max(p0.y, p1.y) + fixed_1 * 2;
+	stroke_bbox.p.x -= bbox_expansion_x;
+	stroke_bbox.p.y -= bbox_expansion_y;
+	stroke_bbox.q.x += bbox_expansion_x;
+	stroke_bbox.q.y += bbox_expansion_y;
+	gx_cpath_outer_box(pcpath, &clip_box);
+	rect_intersect(stroke_bbox, clip_box);
+	if (stroke_bbox.q.x < stroke_bbox.p.x || stroke_bbox.q.y < stroke_bbox.p.y)
+	    return 0;
+    }
     if (make_rect_scaling(pdev, &bbox, prescale, &path_scale)) {
 	scale /= path_scale;
 	if (set_ctm)

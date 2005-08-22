@@ -396,6 +396,13 @@ userdict /.pdfcvstring () put
     .systemvar exch signalerror
 } bind def
 /pdfmark {		% -mark- <key> <value> ... <markname> pdfmark -
+  dup /SP eq {
+    % A hack for synchronizing the clipping path.
+    gsave 
+    [1 0 0 1 0 0] setmatrix 0 setlinewidth
+    -2 -2 moveto closepath stroke % Paints outside the device bbox.
+    grestore
+  } if
   counttomark 1 add copy
   //.pdfmarkparams 1 index .knownget { exec } { .pdfcvsall } ifelse
   mark /pdfmark 3 -1 roll .pdfputparams
