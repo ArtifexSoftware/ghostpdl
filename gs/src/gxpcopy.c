@@ -648,13 +648,13 @@ gx_path_merge_contacting_contours(gx_path *ppath)
 {
     /* Now this is a simplified algorithm,
        which merge only contours by a common vertical line. */
-    int window = 5/* max spot holes */ * 5/* segments per subpath */;
-    subpath *sp0 = (subpath *)ppath->segments->contents.subpath_first;
+    int window = 5/* max spot holes */ * 6/* segments per subpath */;
+    subpath *sp0 = ppath->segments->contents.subpath_first;
 
     for (; sp0 != NULL; sp0 = (subpath *)sp0->last->next) {
 	segment *sp0last = sp0->last;
 	subpath *sp1 = (subpath *)sp0last->next, *spnext;
-
+	subpath *sp1p = sp0;
 	int count;
 	
 	for (count = 0; sp1 != NULL && count < window; sp1 = spnext, count++) {
@@ -683,6 +683,9 @@ gx_path_merge_contacting_contours(gx_path *ppath)
 		    sc1->prev->next = 0;
 		    sc1->prev = 0; /* Safety. */
 		    /* sp1 is not longer in use. Free it : */
+		    if (ppath->segments->contents.subpath_current == sp1) {
+			ppath->segments->contents.subpath_current = sp1p;
+		    }
 		    gs_free_object(ppath->memory, sp1, "gx_path_merge_contacting_contours");
 		    sp1 = 0; /* Safety. */
 		}
@@ -694,7 +697,8 @@ gx_path_merge_contacting_contours(gx_path *ppath)
 		/* Remove degenearte "bridge" segments : (fixme: Not done due to low importance). */
 		/* Edit the subpath count : */
 		ppath->subpath_count--;
-	    }
+	    } else
+		sp1p = sp1;
 	}
     }
     return 0;
