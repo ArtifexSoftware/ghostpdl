@@ -587,3 +587,116 @@ gx_curve_monotonic_points(fixed v0, fixed v1, fixed v2, fixed v3,
     }
 }
 
+/* ---------------- Path optimization for the filling algorithm. ---------------- */
+
+bool
+find_contacting_segments(const subpath *sp0, const segment *sp0last, 
+			 const subpath *sp1, const segment *sp1last, 
+			 const segment **sc0, const segment **sc1)
+{
+    const segment *s0, *s1, *s0s, *s1s;
+    int count0, count1, search_limit = 50;
+    int min_length = fixed_1 * 1;
+
+    /* This is a simplified algorithm, which only checks for quazi-colinear vertical lines. */
+    /* To avoid a big unuseful expence of the processor time,
+       we search the first subpath from the end
+       (assuming that it was recently merged near the end), 
+       and restrict the search with search_limit segments 
+       against a quadratic scanning of two long subpaths. 
+       Thus algorithm is not necessary finds anything contacting.
+       Instead it either quickly finds something, or maybe not. */
+    for (s0 = sp0last, count0 = 0; count0 < search_limit && s0 != (segment *)sp0; s0 = s0->prev, count0++) {
+	s0s = s0->prev;
+	if (s0->type == s_line && (s0s->pt.x == s0->pt.x ||
+	    (any_abs(s0s->pt.x - s0->pt.x) == 1 && any_abs(s0s->pt.y - s0->pt.y) > min_length))) {
+	    for (s1 = sp1last, count1 = 0; count1 < search_limit && s1 != (segment *)sp1; s1 = s1->prev, count1++) {
+		s1s = s1->prev;
+		if (s1->type == s_line && (s1s->pt.x == s1->pt.x || 
+		    (any_abs(s1s->pt.x - s1->pt.x) == 1 && any_abs(s1s->pt.y - s1->pt.y) > min_length))) {
+		    if (s0s->pt.x == s1s->pt.x || s0->pt.x == s1->pt.x || s0->pt.x == s1s->pt.x || s0s->pt.x == s1->pt.x) {
+			if (s0s->pt.y < s0->pt.y && s1s->pt.y > s1->pt.y) {
+			    fixed y0 = max(s0s->pt.y, s1->pt.y);
+			    fixed y1 = min(s0->pt.y, s1s->pt.y);
+
+			    if (y0 <= y1) {
+				*sc0 = s0;
+				*sc1 = s1;
+				return true;
+			    }
+			}
+			if (s0s->pt.y > s0->pt.y && s1s->pt.y < s1->pt.y) {
+			    fixed y0 = max(s0->pt.y, s1s->pt.y);
+			    fixed y1 = min(s0s->pt.y, s1->pt.y);
+
+			    if (y0 <= y1) {
+				*sc0 = s0;
+				*sc1 = s1;
+				return true;
+			    }
+			}
+		    }
+		}
+	    }
+	}
+    }
+    return false;
+}
+
+int
+gx_path_merge_contacting_contours(gx_path *ppath)
+{
+    /* Now this is a simplified algorithm,
+       which merge only contours by a common vertical line. */
+    int window = 5/* max spot holes */ * 5/* segments per subpath */;
+    subpath *sp0 = (subpath *)ppath->segments->contents.subpath_first;
+
+    for (; sp0 != NULL; sp0 = (subpath *)sp0->last->next) {
+	segment *sp0last = sp0->last;
+	subpath *sp1 = (subpath *)sp0last->next, *spnext;
+
+	int count;
+	
+	for (count = 0; sp1 != NULL && count < window; sp1 = spnext, count++) {
+	    segment *sp1last = sp1->last;
+	    segment *sc0, *sc1;
+		
+	    spnext = (subpath *)sp1last->next;
+	    if (find_contacting_segments(sp0, sp0last, sp1, sp1last, &sc0, &sc1)) {
+		/* Detach the subpath 1 from the path: */
+		sp1->prev->next = sp1last->next;
+		if (sp1last->next != NULL)
+		    sp1last->next->prev = sp1->prev;
+		sp1->prev = 0;
+		sp1last->next = 0;
+		/* Change 'closepath' of the subpath 1 to a line (maybe degenerate) : */
+		if (sp1last->type == s_line_close)
+		    sp1last->type = s_line;
+		/* Rotate the subpath 1 to sc1 : */
+		{   segment *old_first = sp1->next;
+
+		    /* Detach s_start and make a loop : */
+		    sp1last->next = old_first;
+		    old_first->prev = sp1last;
+		    /* Unlink before sc1 : */
+		    sp1last = sc1->prev;
+		    sc1->prev->next = 0;
+		    sc1->prev = 0; /* Safety. */
+		    /* sp1 is not longer in use. Free it : */
+		    gs_free_object(ppath->memory, sp1, "gx_path_merge_contacting_contours");
+		    sp1 = 0; /* Safety. */
+		}
+		/* Insert the subpath 1 into the subpath 0 before sc0 :*/
+		sc0->prev->next = sc1;
+		sc1->prev = sc0->prev;
+		sp1last->next = sc0;
+		sc0->prev = sp1last;
+		/* Remove degenearte "bridge" segments : (fixme: Not done due to low importance). */
+		/* Edit the subpath count : */
+		ppath->subpath_count--;
+	    }
+	}
+    }
+    return 0;
+}
+

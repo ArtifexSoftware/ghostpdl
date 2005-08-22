@@ -302,6 +302,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     const bool is_character = params->adjust.x == -1; /* See gxistate.h */
     bool fill_by_trapezoids;
     bool pseudo_rasterization;
+    bool big_path = ppath->subpath_count > 50;
     fill_options fo;
     line_list lst;
 
@@ -458,19 +459,23 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    fill_by_trapezoids = false; /* avoid double writing pixels */
     }
     gx_path_init_local(&ffpath, ppath->memory);
-    if (!gx_path_has_curves(ppath))	/* don't need to flatten */
+    if (!big_path && !gx_path_has_curves(ppath))	/* don't need to flatten */
 	pfpath = ppath;
-    else if (gx_path__check_curves(ppath, pco_small_curves, fo.fixed_flat))
+    else if (is_spotan_device(dev))
+	pfpath = ppath;
+    else if (!big_path && gx_path__check_curves(ppath, pco_small_curves, fo.fixed_flat))
 	pfpath = ppath;
     else {
-	if (is_spotan_device(dev))
-	    return_error(gs_error_unregistered); /* Must not happen. */
-	gx_path_init_local(&ffpath, ppath->memory);
 	code = gx_path_copy_reducing(ppath, &ffpath, fo.fixed_flat, NULL, 
 			    pco_small_curves);
 	if (code < 0)
 	    return code;
 	pfpath = &ffpath;
+	if (big_path) {
+	    code = gx_path_merge_contacting_contours(pfpath);
+	    if (code < 0)
+		return code;
+	}
     }
     fo.fill_by_trapezoids = fill_by_trapezoids;
     if ((code = add_y_list(pfpath, &lst)) < 0)

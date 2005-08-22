@@ -261,6 +261,9 @@ bool gx_path_enum_backup(gs_path_enum *);
 int gs_moveto_aux(gs_imager_state *pis, gx_path *ppath, floatp x, floatp y);
 int gx_setcurrentpoint_from_path(gs_imager_state *pis, gx_path *path);
 
+/* Path optimization for the filling algorithm. */
+
+int gx_path_merge_contacting_contours(gx_path *ppath);
 
 /* ------ Clipping paths ------ */
 
