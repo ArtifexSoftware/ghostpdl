@@ -711,10 +711,13 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
 	int angle = -1;
 	const gs_point *pbox = &(page != NULL ? page : &pdev->pages[0])->MediaBox;
 
+#define  Bug687800
+#ifndef Bug687800 	/* Bug 687800 together with Bug687489.ps . */
 	if (dsc_orientation >= 0 && pbox->x > pbox->y) {
 	    /* The page is in landscape format. Adjust the rotation accordingly. */
 	    dsc_orientation ^= 1;
 	}
+#endif
 
 	/* Combine DSC rotation with text rotation : */
 	if (dsc_orientation == 0) {
@@ -723,14 +726,18 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
 	} else if (dsc_orientation == 1) {
 	    if (ptr->Rotate == 90 || ptr->Rotate == 270)
 		angle = ptr->Rotate;
+	    else 
+		angle = 90;
 	}
 
 	/* If not combinable, prefer text rotation : */
 	if (angle < 0) {
 	    if (ptr->Rotate >= 0)
 		angle = ptr->Rotate;
+#ifdef Bug687800
 	    else
 		angle = dsc_orientation * 90;
+#endif
 	}
 
 	/* If got some, write it out : */
