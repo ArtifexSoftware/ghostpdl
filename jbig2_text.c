@@ -54,7 +54,7 @@ typedef struct {
     int LOGSBSTRIPS;
     int SBSTRIPS;
     /* SBNUMSYMS */
-    Jbig2HuffmanTable *SBSYMCODES;
+    /* SBSYMCODES */
     /* SBSYMCODELEN */
     /* SBSYMS */
     Jbig2HuffmanTable *SBHUFFFS;
@@ -108,10 +108,11 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     int S,T;
     int x,y;
     bool first_symbol;
-    uint32_t index, max_id;
+    uint32_t index, SBNUMSYMS;
     Jbig2Image *IB;
     Jbig2WordStream *ws = NULL;
     Jbig2HuffmanState *hs = NULL;
+    Jbig2HuffmanTable *SBSYMCODES;
     Jbig2ArithState *as = NULL;
     Jbig2ArithIntCtx *IADT = NULL;
     Jbig2ArithIntCtx *IAFS = NULL;
@@ -126,12 +127,12 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     int code = 0;
     int RI;
     
-    max_id = 0;
+    SBNUMSYMS = 0;
     for (index = 0; index < n_dicts; index++) {
-        max_id += dicts[index]->n_symbols;
+        SBNUMSYMS += dicts[index]->n_symbols;
     }
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-        "symbol list contains %d glyphs in %d dictionaries", max_id, n_dicts);
+        "symbol list contains %d glyphs in %d dictionaries", SBNUMSYMS, n_dicts);
     
     ws = jbig2_word_stream_buf_new(ctx, data, size);
     if (!params->SBHUFF) {
@@ -143,7 +144,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         IADS = jbig2_arith_int_ctx_new(ctx);
         IAIT = jbig2_arith_int_ctx_new(ctx);
 	/* Table 31 */
-	for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < max_id; SBSYMCODELEN++);
+	for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < SBNUMSYMS; SBSYMCODELEN++);
         IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
 	IARI = jbig2_arith_int_ctx_new(ctx);
 	IARDW = jbig2_arith_int_ctx_new(ctx);
@@ -151,9 +152,82 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	IARDX = jbig2_arith_int_ctx_new(ctx);
 	IARDY = jbig2_arith_int_ctx_new(ctx);
     } else {
+	Jbig2HuffmanTable *runcodes;
+	Jbig2HuffmanParams runcodeparams;
+	Jbig2HuffmanLine runcodelengths[35];
+	Jbig2HuffmanLine *symcodelengths;
+	Jbig2HuffmanParams symcodeparams;
+	int code, err, range, r;
+
 	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 	  "huffman coded text region");
 	hs = jbig2_huffman_new(ctx, ws);
+
+	/* 7.4.3.1.7 - decode symbol ID Huffman table */
+	/* this is actually part of the segment header, but it is more
+	   convenient to handle it here */
+
+	/* parse and build the runlength code huffman table */
+	for (index = 0; index < 35; index++) {
+	  runcodelengths[index].PREFLEN = jbig2_huffman_get_bits(hs, 4);
+	  runcodelengths[index].RANGELEN = 0;
+	  runcodelengths[index].RANGELOW = index;
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	    "  read runcode%d length %d", index, runcodelengths[index]);
+	}
+	runcodeparams.HTOOB = 0;
+	runcodeparams.lines = runcodelengths;
+	runcodeparams.n_lines = 35;
+	runcodes = jbig2_build_huffman_table(ctx, &runcodeparams);
+	if (runcodes == NULL) {
+	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "error constructing symbol id runcode table!");
+	  return -1;
+	}
+
+	/* decode the symbol id codelengths using the runlength table */
+	symcodelengths = jbig2_alloc(ctx->allocator, SBNUMSYMS*sizeof(Jbig2HuffmanLine));
+	/* todo: could save considerable space by growing the lines array as needed */
+	if (symcodelengths == NULL) {
+	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "memory allocation failure reading symbol ID huffman table!");
+	  return -1;
+	}
+	for (index = 0; index < SBNUMSYMS; index++) {
+	  code = jbig2_huffman_get(hs, runcodes, &err);
+	  if (err != 0 || code < 0 || code >= 35) {
+	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	      "error reading symbol ID huffman table!");
+	    return err;
+	  }
+
+	  if (code < 32) range = 0;
+	  else if (code == 32) range = jbig2_huffman_get_bits(hs, 2);
+	  else if (code == 34) range = jbig2_huffman_get_bits(hs, 3);
+	  else if (code == 35) range = jbig2_huffman_get_bits(hs, 7);
+	  for (r = 0; r < range + 1; r++) {
+	    symcodelengths[index+r].PREFLEN = code; 
+	    symcodelengths[index+r].RANGELEN = 0; 
+	    symcodelengths[index+r].RANGELOW = index;
+	  }
+	  index += r;
+	  if (index > SBNUMSYMS) {
+	    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+	      "runlength extends beyond the end of symbol id table");
+	  }
+	}
+	symcodeparams.HTOOB = 0;
+	symcodeparams.lines = symcodelengths;
+	symcodeparams.n_lines = SBNUMSYMS;
+
+	/* skip to byte boundary */
+	jbig2_huffman_skip(hs);
+
+	/* finally, construct the symbol id huffman table itself */
+	SBSYMCODES = jbig2_build_huffman_table(ctx, &symcodeparams);
+
+	jbig2_free(ctx->allocator, symcodelengths);
+	jbig2_release_huffman_table(ctx, runcodes);
     }
 
     /* 6.4.5 (1) */
@@ -222,13 +296,13 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
 	    /* (3b.iv) / 6.4.10 - decode the symbol id */
 	    if (params->SBHUFF) {
-		ID = jbig2_huffman_get(hs, params->SBSYMCODES, &code);
+		ID = jbig2_huffman_get(hs, SBSYMCODES, &code);
 	    } else {
 		code = jbig2_arith_iaid_decode(IAID, as, (int *)&ID);
 	    }
-	    if (ID >= max_id) {
+	    if (ID >= SBNUMSYMS) {
 		return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-                    "symbol id out of range! (%d/%d)", ID, max_id);
+                    "symbol id out of range! (%d/%d)", ID, SBNUMSYMS);
 	    }
 
 	    /* (3c.v) / 6.4.11 - look up the symbol bitmap IB */
@@ -348,7 +422,9 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     }
     /* 6.4.5 (4) */
 
-    if (!params->SBHUFF) {
+    if (params->SBHUFF) {
+      jbig2_release_huffman_table(ctx, SBSYMCODES);
+    } else {
 	jbig2_arith_int_ctx_free(ctx, IADT);
 	jbig2_arith_int_ctx_free(ctx, IAFS);
 	jbig2_arith_int_ctx_free(ctx, IADS);
@@ -592,7 +668,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 	}
         
         /* 7.4.3.1.7 */
-        /* todo: symbol ID huffman table decoding */
+        /* For convenience this is done in the body decoder routine */
     }
 
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
