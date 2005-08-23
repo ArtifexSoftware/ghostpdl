@@ -622,8 +622,10 @@ gdev_vector_dopath_segment(gdev_vector_dopath_state_t *state, int pe_op,
 
     switch (pe_op) {
 	case gs_pe_moveto:
-	    gs_point_transform_inverse(fixed2float(vs[0].x),
+	    code = gs_point_transform_inverse(fixed2float(vs[0].x),
 				       fixed2float(vs[0].y), pmat, &vp[0]);
+	    if (code < 0)
+		return code;
 	    if (state->first)
 		state->start = vp[0], state->first = false;
 	    code = vdev_proc(vdev, moveto)
@@ -632,18 +634,24 @@ gdev_vector_dopath_segment(gdev_vector_dopath_state_t *state, int pe_op,
 	    state->prev = vp[0];
 	    break;
 	case gs_pe_lineto:
-	    gs_point_transform_inverse(fixed2float(vs[0].x),
+	    code = gs_point_transform_inverse(fixed2float(vs[0].x),
 				       fixed2float(vs[0].y), pmat, &vp[0]);
+	    if (code < 0)
+		return code;
 	    code = vdev_proc(vdev, lineto)
 		(vdev, state->prev.x, state->prev.y, vp[0].x, vp[0].y,
 		 state->type);
 	    state->prev = vp[0];
 	    break;
 	case gs_pe_curveto:
-	    gs_point_transform_inverse(fixed2float(vs[0].x),
+	    code = gs_point_transform_inverse(fixed2float(vs[0].x),
 				       fixed2float(vs[0].y), pmat, &vp[0]);
-	    gs_point_transform_inverse(fixed2float(vs[1].x),
+	    if (code < 0)
+		return code;
+	    code = gs_point_transform_inverse(fixed2float(vs[1].x),
 				       fixed2float(vs[1].y), pmat, &vp[1]);
+	    if (code < 0)
+		return code;
 	    gs_point_transform_inverse(fixed2float(vs[2].x),
 				       fixed2float(vs[2].y), pmat, &vp[2]);
 	    code = vdev_proc(vdev, curveto)
