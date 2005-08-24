@@ -315,6 +315,7 @@ gs_begin_transparency_mask(gs_state * pgs,
     params.has_Background = ptmp->has_Background;
     if (ptmp->has_Background)
 	memcpy(params.Background, ptmp->Background, size_of(ptmp->Background));
+    params.transfer_function = ptmp->TransferFunction_data;
     params.function_is_identity =
 	    (ptmp->TransferFunction == mask_transfer_identity);
     /* Sample the transfer function */

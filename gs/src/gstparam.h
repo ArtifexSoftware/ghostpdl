@@ -75,6 +75,10 @@ typedef struct gs_transparency_mask_s {
 #  define gs_color_space_DEFINED
 typedef struct gs_color_space_s gs_color_space;
 #endif
+#ifndef gs_function_DEFINED
+typedef struct gs_function_s gs_function_t;
+#  define gs_function_DEFINED
+#endif
 
 /* (Update gs_trans_group_params_init if these change.) */
 typedef struct gs_transparency_group_params_s {
@@ -99,7 +103,7 @@ typedef struct gs_transparency_mask_params_s {
     bool has_Background;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int (*TransferFunction)(floatp in, float *out, void *proc_data);
-    void *TransferFunction_data;
+    gs_function_t *TransferFunction_data;
 } gs_transparency_mask_params_t;
 
 #define MASK_TRANSFER_FUNCTION_SIZE 256

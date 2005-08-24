@@ -55,6 +55,11 @@ typedef enum {
 #define PDF14_SET_SHAPE_ALPHA   (1 << 2)
 #define PDF14_SET_OPACITY_ALPHA (1 << 3)
 
+#ifndef gs_function_DEFINED
+typedef struct gs_function_s gs_function_t;
+#  define gs_function_DEFINED
+#endif
+
 typedef struct gs_transparency_source_s {
     float alpha;		/* constant alpha */
     gs_transparency_mask_t *mask;
@@ -76,6 +81,7 @@ struct gs_pdf14trans_params_s {
     bool has_Background;
     bool function_is_identity;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    gs_function_t *transfer_function;
     byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
     /* Individual transparency parameters */
     gs_blend_mode_t blend_mode;

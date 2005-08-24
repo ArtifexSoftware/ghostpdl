@@ -1914,7 +1914,8 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
  * entire gs_pdf14trans_s structure.
  */
 #define private_st_gs_pdf14trans_t()\
-  gs_private_st_simple(st_pdf14trans, gs_pdf14trans_t, "gs_pdf14trans_t");
+  gs_private_st_ptrs1(st_pdf14trans, gs_pdf14trans_t, "gs_pdf14trans_t",\
+      st_pdf14trans_enum_ptrs, st_pdf14trans_reloc_ptrs, params.transfer_function)
 
 /* GC descriptor for gs_pdf14trans_t */
 private_st_gs_pdf14trans_t();
