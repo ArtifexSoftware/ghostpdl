@@ -2554,6 +2554,19 @@ $(GLD)shadelib.dev : $(LIB_MAK) $(ECHOGS_XE) $(shadelib_)\
 	$(ADDMOD) $(GLD)shadelib -obj $(shadelib_2)
 	$(ADDMOD) $(GLD)shadelib -include $(GLD)funclib $(GLD)patlib
 
+# ---------------- Support for %rom% IODevice ----------------- #
+# This is used to access compressed, compiled-in support files
+# define the romfs.dev FEATURE
+romfs_=$(GLOBJ)gsiorom.$(OBJ)
+$(GLD)romfs.dev : $(LIB_MAK) $(ECHO_XE) $(romfs_)
+	$(SETMOD) $(GLD)romfs $(romfs_)
+	$(ADDMOD) $(GLD)romfs -iodev rom
+
+# the following module is only included if the romfs.dev FEATURE is enabled
+$(GLOBJ)gsiorom.$(OBJ) : $(GLSRC)gsiorom.c \
+ $(std_h) $(gx_h) $(gserrors_h) $(gsstruct_h) $(gxiodev_h)
+	$(GLCC) $(GLO_)gsiorom.$(OBJ) $(C_) $(GLSRC)gsiorom.c
+
 # ---------------- Support for %disk IODevices ---------------- #
 # The following module is included only if the diskn.dev FEATURE is included
 $(GLOBJ)gsiodisk.$(OBJ) : $(GLSRC)gsiodisk.c $(GXERR)\
