@@ -157,7 +157,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	Jbig2HuffmanLine runcodelengths[35];
 	Jbig2HuffmanLine *symcodelengths;
 	Jbig2HuffmanParams symcodeparams;
-	int code, err, range, r;
+	int code, err, len, range, r;
 
 	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 	  "huffman coded text region");
@@ -173,7 +173,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	  runcodelengths[index].RANGELEN = 0;
 	  runcodelengths[index].RANGELOW = index;
 	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-	    "  read runcode%d length %d", index, runcodelengths[index]);
+	    "  read runcode%d length %d", index, runcodelengths[index].PREFLEN);
 	}
 	runcodeparams.HTOOB = 0;
 	runcodeparams.lines = runcodelengths;
@@ -193,20 +193,34 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	    "memory allocation failure reading symbol ID huffman table!");
 	  return -1;
 	}
-	for (index = 0; index < SBNUMSYMS; index++) {
+	index = 0;
+	while (index < SBNUMSYMS) {
 	  code = jbig2_huffman_get(hs, runcodes, &err);
 	  if (err != 0 || code < 0 || code >= 35) {
 	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 	      "error reading symbol ID huffman table!");
-	    return err;
+	    return err ? err : -1;
 	  }
 
-	  if (code < 32) range = 0;
-	  else if (code == 32) range = jbig2_huffman_get_bits(hs, 2);
-	  else if (code == 34) range = jbig2_huffman_get_bits(hs, 3);
-	  else if (code == 35) range = jbig2_huffman_get_bits(hs, 7);
-	  for (r = 0; r < range + 1; r++) {
-	    symcodelengths[index+r].PREFLEN = code; 
+	  if (code < 32) {
+	    len = code;
+	    range = 1;
+	  } else {
+	    if (index < 1) {
+	      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"error decoding symbol id table: run length with no antecedent!");
+	      /* todo: memory cleanup */
+	      return -1;
+	    }
+	    len = symcodelengths[index-1].PREFLEN;
+	    if (code == 32) range = jbig2_huffman_get_bits(hs, 2) + 3;
+	    else if (code == 33) range = jbig2_huffman_get_bits(hs, 3) + 3;
+	    else if (code == 34) range = jbig2_huffman_get_bits(hs, 7) + 11;
+	  }
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	    "  read runcode%d at index %d (length %d range %d)", code, index, len, range);
+	  for (r = 0; r < range; r++) {
+	    symcodelengths[index+r].PREFLEN = len; 
 	    symcodelengths[index+r].RANGELEN = 0; 
 	    symcodelengths[index+r].RANGELOW = index;
 	  }

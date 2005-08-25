@@ -90,6 +90,7 @@ jbig2_huffman_free (Jbig2Ctx *ctx, Jbig2HuffmanState *hs)
 
 /** debug routines **/
 #ifdef JBIG2_DEBUG
+#include <stdio.h>
 /** print current huffman state */
 void jbig2_dump_huffman_state(Jbig2HuffmanState *hs)
 {
@@ -175,9 +176,18 @@ jbig2_huffman_get_bits (Jbig2HuffmanState *hs, const int bits)
   int32_t result;
 	
   result = this_word >> (32 - bits);
-  hs->this_word = (this_word << bits) |
-	(hs->next_word >> (32 - bits));
   hs->offset_bits += bits;
+  if (hs->offset_bits >= 32) {
+    hs->offset += 4;
+    hs->offset_bits -= 32;
+    hs->this_word = hs->next_word;
+    hs->next_word = hs->ws->get_next_word(hs->ws, hs->offset + 4);
+    hs->this_word = (hs->this_word << hs->offset_bits) |
+	(hs->next_word >> (32 - hs->offset_bits));
+  } else {
+    hs->this_word = (this_word << bits) |
+	(hs->next_word >> (32 - hs->offset_bits));
+  }
 
   return result;
 }
