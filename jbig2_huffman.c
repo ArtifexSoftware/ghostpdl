@@ -272,9 +272,9 @@ if (RANGELEN)
   return result;
 }
 
-/* TODO: 10 bits here is wasteful of memory here. We have support
-   for sub-trees in jbig2_huffman_get() above, but don't use it here
-   we should, and then revert to 8 bits */
+/* TODO: 10 bits here is wasteful of memory. We have support for 
+   sub-trees in jbig2_huffman_get() above, but don't use it here.
+   We should, and then revert to 8 bits */
 #define LOG_TABLE_SIZE_MAX 10
 
 /** Build an in-memory representation of a Huffman table from the

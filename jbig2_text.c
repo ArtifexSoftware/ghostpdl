@@ -82,7 +82,7 @@ typedef struct {
  * @data: pointer to text region data to be decoded
  * @size: length of text region data
  *
- * Implements the text region decoding proceedure
+ * Implements the text region decoding procedure
  * described in section 6.4 of the JBIG2 spec.
  *
  * returns: 0 on success
@@ -678,7 +678,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 	
         if (huffman_flags & 0x8000) {
 	  jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-	    "text region huffman flags bit 15 is set, contrary to spec");
+ 	    "text region huffman flags bit 15 is set, contrary to spec");
 	}
         
         /* 7.4.3.1.7 */
