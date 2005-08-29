@@ -228,7 +228,15 @@ pdfdict begin
      dup /trailer eq { pop exit } if
      PDFfile pdfstring readline pop
      token pop			% entry count
-     exch pop			% remove last
+     % remaining must be whitespace only (otherwise this xref Size was invalid.
+     exch dup length 0 ne {
+       false 1 index { 32 gt { pop true exit } if } forall {
+         (   **** Warning: xref subsection header has extra characters.\n)
+         pdfformaterror
+         /setxrefentry cvx /syntaxerror signalerror
+       } if
+     } if
+     pop			% remove last
 		% This section might be adding new objects:
 		% ensure that Objects and Generations are big enough.
 		% stack: <err count> <first obj> <entry count>
