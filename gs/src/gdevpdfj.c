@@ -110,11 +110,12 @@ pdf_put_pixel_image_values(cos_dict_t *pcd, gx_device_pdf *pdev,
     {
 	int i;
 
-	for (i = 0; i < num_components * 2; ++i)
+	for (i = 0; i < num_components * 2; ++i) {
 	    if (pim->Decode[i] !=
 		(default_decode ? default_decode[i] : i & 1)
 		)
 		break;
+	}
 	if (i < num_components * 2) {
 	    cos_array_t *pca =
 		cos_array_alloc(pdev, "pdf_put_pixel_image_values(decode)");

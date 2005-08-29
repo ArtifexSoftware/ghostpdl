@@ -73,15 +73,15 @@ const gx_device_pdf PDF_DEVICE_IDENT =
   gdev_pdf_begin_typed_image,
   psdf_get_bits_rectangle,	/* get_bits_rectangle */
   NULL,				/* map_color_rgb_alpha */
-  psdf_create_compositor,	/* create_compositor */
+  gdev_pdf_create_compositor,	/* create_compositor */
   NULL,				/* get_hardware_params */
   gdev_pdf_text_begin,
   NULL,				/* finish_copydevice */
-  NULL,				/* begin_transparency_group */
-  NULL,				/* end_transparency_group */
-  NULL,				/* begin_transparency_mask */
-  NULL,				/* end_transparency_mask */
-  NULL,				/* discard_transparency_layer */
+  gdev_pdf_begin_transparency_group,	/* begin_transparency_group */
+  gdev_pdf_end_transparency_group,	/* end_transparency_group */
+  gdev_pdf_begin_transparency_mask,	/* begin_transparency_mask */
+  gdev_pdf_end_transparency_mask,	/* end_transparency_mask */
+  gdev_pdf_discard_transparency_layer,	/* discard_transparency_layer */
   NULL,				/* get_color_mapping_procs */
   NULL,				/* get_color_comp_index */
   NULL,				/* encode_color */
@@ -114,6 +114,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0 /*false*/,			/* ResourcesBeforeUsage */
  1 /*true*/,			/* HavePDFWidths */
  0 /*false*/,			/* HaveStrokeColor */
+ 0 /*false*/,			/* HaveTransparency */
  0 /*false*/,			/* PatternImagemask */
  12000,				/* MaxClipPathSize */ /* HP LaserJet 1320 hangs with 14000. */
  max_long,                      /* MaxViewerMemorySize */
@@ -214,6 +215,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* substituted_pattern_drop_page */
  0,				/* image_mask_id */
  0,				/* image_mask_is_SMask */
+ 0,				/* image_mask_skip */
  {0,0,0,0,0,0}, 		/* gs_matrix converting_image_matrix */
  0,				/* image_mask_scale */
  {{0, 0}, {0, 0}},		/* charproc_bbox */

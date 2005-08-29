@@ -114,6 +114,8 @@ typedef enum {
     resourceCIDFont,
     resourceCMap,
     resourceFontDescriptor,
+    resourceGroup,
+    resourceSoftMaskDict,
     resourceFunction,
     resourcePage,
     NUM_RESOURCE_TYPES
@@ -121,7 +123,7 @@ typedef enum {
 
 #define PDF_RESOURCE_TYPE_NAMES\
   "/ColorSpace", "/ExtGState", "/Pattern", "/Shading", "/XObject", 0, "/Font",\
-  0, "/Font", "/CMap", "/FontDescriptor", 0
+  0, "/Font", "/CMap", "/FontDescriptor", "/Group", "/Mask", 0, 0
 #define PDF_RESOURCE_TYPE_STRUCTS\
   &st_pdf_color_space,		/* gdevpdfg.h / gdevpdfc.c */\
   &st_pdf_resource,		/* see below */\
@@ -134,6 +136,7 @@ typedef enum {
   &st_pdf_font_resource,	/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_resource,\
   &st_pdf_font_descriptor,	/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_resource,\
   &st_pdf_resource,\
   &st_pdf_resource
 
@@ -280,6 +283,7 @@ typedef struct pdf_page_s {
     pdf_procset_t procsets;
     long contents_id;
     long resource_ids[resourceFont + 1]; /* resources thru Font, see above */
+    long group_id;
     cos_array_t *Annots;
     pdf_text_rotation_t text_rotation;
     pdf_page_dsc_info_t dsc_info;
@@ -425,6 +429,7 @@ struct gx_device_pdf_s {
     bool ResourcesBeforeUsage; /* PS2WRITE only. */
     bool HavePDFWidths;        /* PS2WRITE only. */
     bool HaveStrokeColor;      /* PS2WRITE only. */
+    bool HaveTransparency;
     bool PatternImagemask; /* The target viewer|printer handles imagemask 
 			      with pattern color. */
     long MaxClipPathSize;  /* The maximal number of elements of a clipping path
@@ -618,6 +623,7 @@ struct gx_device_pdf_s {
        between 2 consecutive calls to pdf_image_end_image_data. */
     gs_id     image_mask_id;
     bool      image_mask_is_SMask;
+    bool      image_mask_skip; /* A flag for pdf_begin_transparency_mask */
     gs_matrix converting_image_matrix;
     double    image_mask_scale;
     gs_fixed_rect   charproc_bbox;
@@ -683,6 +689,13 @@ dev_proc_pattern_manage(gdev_pdf_pattern_manage);
 dev_proc_fill_rectangle_hl_color(gdev_pdf_fill_rectangle_hl_color);
     /* In gdevpdfv.c */
 dev_proc_include_color_space(gdev_pdf_include_color_space);
+    /* In gdevpdft.c */
+dev_proc_create_compositor(gdev_pdf_create_compositor);
+dev_proc_begin_transparency_group(gdev_pdf_begin_transparency_group);
+dev_proc_end_transparency_group(gdev_pdf_end_transparency_group);
+dev_proc_begin_transparency_mask(gdev_pdf_begin_transparency_mask);
+dev_proc_end_transparency_mask(gdev_pdf_end_transparency_mask);
+dev_proc_discard_transparency_layer(gdev_pdf_discard_transparency_layer);
 
 /* ================ Utility procedures ================ */
 

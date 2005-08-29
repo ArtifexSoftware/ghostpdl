@@ -1177,7 +1177,7 @@ pdf_is_same_extgstate(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_
 }
 
 /* Finish writing an ExtGState. */
-private int
+int
 pdf_end_gstate(gx_device_pdf *pdev, pdf_resource_t *pres)
 {
     if (pres) {
@@ -1307,7 +1307,7 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
 /*
  * Update the graphics subset common to all high-level drawing operations.
  */
-private int
+int
 pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 		    pdf_resource_t **ppres)
 {

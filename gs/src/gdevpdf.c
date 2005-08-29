@@ -875,6 +875,9 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 	if (page->NumCopies_set)
 	    pprintld1(s, "/NumCopies %ld\n", page->NumCopies);
     }
+    if (page->group_id > 0) {
+	pprintld1(s, "/Group %ld 0 R\n", page->group_id);
+    }
     stream_puts(s, "/Resources<</ProcSet[/PDF");
     if (page->procsets & ImageB)
 	stream_puts(s, " /ImageB");
@@ -983,6 +986,18 @@ pdf_close(gx_device * dev)
     if (code >= 0)
 	code = code1;
     code1 = pdf_free_resource_objects(pdev, resourceXObject);
+    if (code >= 0)
+	code = code1;
+    code1 = pdf_write_resource_objects(pdev, resourceGroup);
+    if (code >= 0)
+	code = code1;
+    code1 = pdf_free_resource_objects(pdev, resourceGroup);
+    if (code >= 0)
+	code = code1;
+    code1 = pdf_write_resource_objects(pdev, resourceSoftMaskDict);
+    if (code >= 0)
+	code = code1;
+    code1 = pdf_free_resource_objects(pdev, resourceSoftMaskDict);
     if (code >= 0)
 	code = code1;
     code1 = pdf_close_text_document(pdev);

@@ -140,6 +140,7 @@ int pdf_set_drawing_color(gx_device_pdf * pdev, const gs_imager_state * pis,
  * (Text uses either fill or stroke.)
  */
 int pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis);
+int pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis, pdf_resource_t **ppres);
 int pdf_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis);
 int pdf_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis);
 int pdf_prepare_image(gx_device_pdf *pdev, const gs_imager_state *pis);
@@ -147,6 +148,7 @@ int pdf_prepare_imagemask(gx_device_pdf *pdev, const gs_imager_state *pis,
 			  const gx_drawing_color *pdcolor);
 int pdf_save_viewer_state(gx_device_pdf *pdev, stream *s);
 int pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s);
+int pdf_end_gstate(gx_device_pdf *pdev, pdf_resource_t *pres);
 
 /*
  * Convert a string into cos name.

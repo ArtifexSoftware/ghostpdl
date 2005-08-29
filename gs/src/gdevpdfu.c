@@ -841,17 +841,18 @@ pdf_end_resource(gx_device_pdf * pdev)
 int
 pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
 {
-    int j;
+    int j, code = 0;
 
-    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+    for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
 	pdf_resource_t *pres = pdev->resources[rtype].chains[j];
 
 	for (; pres != 0; pres = pres->next)
 	    if ((!pres->named || pdev->ForOPDFRead) 
 		&& !pres->object->written)
-		cos_write_object(pres->object, pdev);
+		code = cos_write_object(pres->object, pdev);
+
     }
-    return 0;
+    return code;
 }
 
 /*

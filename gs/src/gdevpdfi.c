@@ -906,7 +906,10 @@ pdf_end_and_do_image(gx_device_pdf *pdev, pdf_image_writer *piw,
 		if (code < 0)
 		    return code;
 	    }
-	    code = pdf_do_image(pdev, pres, mat, true);
+	    if (pdev->image_mask_skip)
+		code = 0;
+	    else
+		code = pdf_do_image(pdev, pres, mat, true);
 	} else if (do_image == USE_AS_MASK) {
 	    /* Provide data for pdf_do_image_by_id, which will be called through 
 		use_image_as_pattern during the next call to this function. 
