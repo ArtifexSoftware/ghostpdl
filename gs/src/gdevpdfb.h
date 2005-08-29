@@ -213,6 +213,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* substituted_pattern_count */
  0,				/* substituted_pattern_drop_page */
  0,				/* image_mask_id */
+ 0,				/* image_mask_is_SMask */
  {0,0,0,0,0,0}, 		/* gs_matrix converting_image_matrix */
  0,				/* image_mask_scale */
  {{0, 0}, {0, 0}},		/* charproc_bbox */

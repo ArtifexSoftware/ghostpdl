@@ -617,6 +617,7 @@ struct gx_device_pdf_s {
        (which is being converted into a pattern)
        between 2 consecutive calls to pdf_image_end_image_data. */
     gs_id     image_mask_id;
+    bool      image_mask_is_SMask;
     gs_matrix converting_image_matrix;
     double    image_mask_scale;
     gs_fixed_rect   charproc_bbox;

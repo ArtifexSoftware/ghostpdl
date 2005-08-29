@@ -331,6 +331,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	gs_matrix m, mi;
 	const gs_matrix *pmat1 = pmat;
 
+	pdev->image_mask_is_SMask = false;
 	if (pdev->CompatibilityLevel < 1.2)
 	    goto nyi;
 	if (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
@@ -381,6 +382,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 		       prect->q.x == pim3x->Width &&
 		       prect->q.y == pim3x->Height))
 	    goto nyi;
+	pdev->image_mask_is_SMask = true;
 	return gx_begin_image3x_generic((gx_device *)pdev, pis, pmat, pic,
 					prect, pdcolor, pcpath, mem,
 					pdf_image3x_make_mid,
@@ -390,6 +392,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	/* Try to convert the image to a plain masked image. */
 	gx_drawing_color icolor;
 
+	pdev->image_mask_is_SMask = false;
 	if (pdf_convert_image4_to_image1(pdev, pis, pdcolor,
 					 (const gs_image4_t *)pic,
 					 &image[0].type1, &icolor) >= 0) {
@@ -577,7 +580,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	cos_c_string_value(&cs_value, names->DeviceRGB);
     } else if (!is_mask) {
 	code = pdf_color_space(pdev, &cs_value, &pranges,
-				 image[0].pixel.ColorSpace,
+				 pcs,
 				 names, in_line);
 	if (code < 0) {
 	    const char *sname;
@@ -898,7 +901,8 @@ pdf_end_and_do_image(gx_device_pdf *pdev, pdf_image_writer *piw,
 		char buf[20];
 
 		sprintf(buf, "%ld 0 R", pdev->image_mask_id);
-		code = cos_dict_put_string_copy((cos_dict_t *)pres->object, "/Mask", buf);
+		code = cos_dict_put_string_copy((cos_dict_t *)pres->object, 
+			pdev->image_mask_is_SMask ? "/SMask" : "/Mask", buf);
 		if (code < 0)
 		    return code;
 	    }
