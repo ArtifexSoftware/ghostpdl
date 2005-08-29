@@ -925,9 +925,20 @@ end
     /ColorSpace DataDict /ColorSpace get def
   } ifelse
 } bdef
+/.imagebox { % -  .imagebox <xl> <yl> <xu> <yu>
+  0 0 transform 
+  0 1 transform
+  1 1 transform
+  1 0 transform                                  % x0 y0 x1 y1 x2 y2 x3 y3
+  dup 3 index .min 5 index min 7 index .min      % x0 y0 x1 y1 x2 y2 x3 y3 yl
+  2 index 3 index .min 5 index min 7 index .min  % x0 y0 x1 y1 x2 y2 x3 y3 yl xl
+  exch 10 2 roll                                 % xl yl x0 y0 x1 y1 x2 y2 x3 y3
+  3 2 roll .max 4 3 roll .max 5 4 roll .max      % xl yl x0 x1 x2 x3 yu
+  5 1 roll .max .max .max exch                   % xl yl xu yu
+} bind def
 /doimagesmask { % <imagemask> doimagesmask -
   PDFusingtransparency { currentdict /SMask knownoget } { false } ifelse {
-    << /Subtype /Luminosity >> 0 0 0 0 .begintransparencymask
+    << /Subtype /Luminosity >> .imagebox .begintransparencymask
     PDFfile fileposition exch
     gsave //nodict begin
     null /SoftMask gput
@@ -938,7 +949,7 @@ end
     end grestore
     PDFfile exch setfileposition
     0 .endtransparencymask
-    << /Subtype /Group /Isolated true >> 0 0 0 0 .begintransparencygroup
+    << /Subtype /Group /Isolated true >> .imagebox .begintransparencygroup
     doimage
     .endtransparencygroup
   } {
