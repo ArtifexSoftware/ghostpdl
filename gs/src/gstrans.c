@@ -227,6 +227,9 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
     gs_transparency_group_params_t tgp = {0};
     gs_rect bbox;
 
+    if (pparams->Background_components != 0 && 
+	pparams->Background_components != pdev->color_info.num_components)
+	return_error(gs_error_rangecheck);
     tgp.Isolated = pparams->Isolated;
     tgp.Knockout = pparams->Knockout;
     pis->opacity.alpha = pparams->opacity.alpha;

@@ -2558,6 +2558,13 @@ pdf14_clist_create_compositor(gx_device * dev, gx_device ** pcdev,
 		pdev->blend_mode = pdf14pct->params.blend_mode;
 		pdev->opacity = pdf14pct->params.opacity.alpha;
 		pdev->shape = pdf14pct->params.shape.alpha;
+		{
+		    const gs_pdf14trans_params_t * pparams = &((const gs_pdf14trans_t *)pct)->params;
+
+		    if (pparams->Background_components != 0 && 
+			pparams->Background_components != pdev->color_info.num_components)
+			return_error(gs_error_rangecheck);
+		}
 		break;
 	    default:
 		break;		/* Pass remaining ops to target */
