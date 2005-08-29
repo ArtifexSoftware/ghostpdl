@@ -290,7 +290,7 @@ gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
 			  gs_transparency_mask_subtype_t subtype)
 {
     ptmp->subtype = subtype;
-    ptmp->has_Background = false;
+    ptmp->Background_components = 0;
     ptmp->TransferFunction = mask_transfer_identity;
     ptmp->TransferFunction_data = 0;
 }
@@ -301,20 +301,20 @@ gs_begin_transparency_mask(gs_state * pgs,
 			   const gs_rect * pbbox)
 {
     gs_pdf14trans_params_t params = { 0 };
+    const int l = sizeof(params.Background[0]) * ptmp->Background_components;
     int i;
 
     if_debug8('v', "[v](0x%lx)begin_transparency_mask [%g %g %g %g]\n\
-      subtype = %d  has_Background = %d  %s\n",
+      subtype = %d  Background_components = %d  %s\n",
 	      (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
-	      (int)ptmp->subtype, ptmp->has_Background,
+	      (int)ptmp->subtype, ptmp->Background_components,
 	      (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
 	       "has TR"));
     params.pdf14_op = PDF14_BEGIN_TRANS_MASK;
     params.bbox = *pbbox;
     params.subtype = ptmp->subtype;
-    params.has_Background = ptmp->has_Background;
-    if (ptmp->has_Background)
-	memcpy(params.Background, ptmp->Background, size_of(ptmp->Background));
+    params.Background_components = ptmp->Background_components;
+    memcpy(params.Background, ptmp->Background, l);
     params.transfer_function = ptmp->TransferFunction_data;
     params.function_is_identity =
 	    (ptmp->TransferFunction == mask_transfer_identity);
@@ -334,17 +334,18 @@ gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
 				const gs_pdf14trans_params_t * pparams)
 {
     gx_transparency_mask_params_t tmp;
+    const int l = sizeof(pparams->Background[0]) * pparams->Background_components;
 
     tmp.subtype = pparams->subtype;
-    tmp.has_Background = pparams->has_Background;
-    memcpy(tmp.Background, pparams->Background, size_of(tmp.Background));
+    tmp.Background_components = pparams->Background_components;
+    memcpy(tmp.Background, pparams->Background, l);
     tmp.function_is_identity = pparams->function_is_identity;
     memcpy(tmp.transfer_fn, pparams->transfer_fn, size_of(tmp.transfer_fn));
     if_debug8('v', "[v](0x%lx)begin_transparency_mask [%g %g %g %g]\n\
-      subtype = %d  has_Background = %d  %s\n",
+      subtype = %d  Background_components = %d  %s\n",
 	      (ulong)pis, pparams->bbox.p.x, pparams->bbox.p.y,
 	      pparams->bbox.q.x, pparams->bbox.q.y,
-	      (int)tmp.subtype, tmp.has_Background,
+	      (int)tmp.subtype, tmp.Background_components,
 	      (tmp.function_is_identity ? "no TR" :
 	       "has TR"));
     if (dev_proc(pdev, begin_transparency_mask) != 0)

@@ -78,7 +78,7 @@ struct gs_pdf14trans_params_s {
     gs_transparency_channel_selector_t csel;
     /* Parameters from the gx_transparency_mask_params_t structure */
     gs_transparency_mask_subtype_t subtype;
-    bool has_Background;
+    bool Background_components;
     bool function_is_identity;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
     gs_function_t *transfer_function;

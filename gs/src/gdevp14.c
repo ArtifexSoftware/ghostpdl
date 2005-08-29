@@ -1432,7 +1432,7 @@ pdf14_begin_transparency_mask(gx_device *dev,
     byte *transfer_fn = (byte *)gs_alloc_bytes(pdev->ctx->memory, 256,
 					       "pdf14_push_transparency_mask");
 
-    if (ptmp->has_Background)
+    if (ptmp->Background_components)
 	bg_alpha = (int)(255 * ptmp->Background[0] + 0.5);
     if_debug1('v', "begin transparency mask, bg_alpha = %d\n", bg_alpha);
     memcpy(transfer_fn, ptmp->transfer_fn, size_of(ptmp->transfer_fn));
@@ -1952,7 +1952,7 @@ c_pdf14trans_write(const gs_composite_t * pct, byte * data, uint * psize)
     const gs_pdf14trans_params_t * pparams = &((const gs_pdf14trans_t *)pct)->params;
     int need, avail = *psize;
     	/* Must be large enough for largest data struct */
-    byte buf[20 + sizeof(pparams->Background)];
+    byte buf[21 + sizeof(pparams->Background)];
     byte * pbuf = buf;
     int opcode = pparams->pdf14_op;
     int mask_size = 0;
@@ -1984,10 +1984,13 @@ c_pdf14trans_write(const gs_composite_t * pct, byte * data, uint * psize)
 	    break;
 	case PDF14_BEGIN_TRANS_MASK:
 	    put_value(pbuf, pparams->subtype);
-	    *pbuf++ = (pparams->has_Background & 1)
-		    + ((pparams->function_is_identity & 1) << 1);
-	    if (pparams->has_Background ) {
-		put_value(pbuf, pparams->Background);
+	    *pbuf++ = pparams->function_is_identity;
+	    *pbuf++ = pparams->Background_components;
+	    if (pparams->Background_components) {
+		const int l = sizeof(pparams->Background[0]) * pparams->Background_components;
+
+		memcpy(pbuf, pparams->Background, l);
+		pbuf += l;
 	    }
 	    if (!pparams->function_is_identity)
 	        mask_size = sizeof(pparams->transfer_fn);
@@ -2071,10 +2074,13 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte * data,
 	    break;
 	case PDF14_BEGIN_TRANS_MASK:
 	    read_value(data, params.subtype);
-	    params.has_Background = (*data) & 1;
-	    params.function_is_identity = (*data++ >> 1) & 1;
-	    if (params.has_Background) {
-		read_value(data, params.Background);
+	    params.function_is_identity = *data++;
+	    params.Background_components = *data++;
+	    if (params.Background_components) {
+		const int l = sizeof(params.Background[0]) * params.Background_components;
+
+    		memcpy(params.Background, data, l);
+		data += l;
 	    }
 	    if (params.function_is_identity) {
 		int i;
