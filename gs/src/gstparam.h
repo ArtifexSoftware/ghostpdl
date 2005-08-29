@@ -100,7 +100,7 @@ typedef enum {
 /* (Update gs_trans_mask_params_init if these change.) */
 typedef struct gs_transparency_mask_params_s {
     gs_transparency_mask_subtype_t subtype;
-    bool Background_components;
+    int Background_components;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int (*TransferFunction)(floatp in, float *out, void *proc_data);
     gs_function_t *TransferFunction_data;
@@ -111,7 +111,7 @@ typedef struct gs_transparency_mask_params_s {
 /* The post clist version of transparency mask parameters */
 typedef struct gx_transparency_mask_params_s {
     gs_transparency_mask_subtype_t subtype;
-    bool Background_components;
+    int Background_components;
     bool function_is_identity;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
     byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
