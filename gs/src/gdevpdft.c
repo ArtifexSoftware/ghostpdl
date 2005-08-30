@@ -256,30 +256,16 @@ pdf_end_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
     if (pdev->image_mask_skip) 
 	pdev->image_mask_skip = false;
     else {
-	pdf_resource_t *pres_gstate;
 	pdf_resource_t *pres = pdev->accumulating_substream_resource;
-	char buf[20];
-	uint ignore;
 	int code;
     
 	code = pdf_exit_substream(pdev);
 	if (code < 0)
 	    return code;
+	pis->soft_mask_id = pdev->soft_mask_dict->id;
 	code = cos_dict_put_c_key_object(pdev->soft_mask_dict, "/G", (cos_object_t *)pres->object);
 	if (code < 0)
 	    return code;
-	code = pdf_alloc_resource(pdev, resourceExtGState, gs_no_id, &pres_gstate, 0);
-	if (code < 0)
-	    return code;
-	cos_become(pres_gstate->object, cos_type_dict);
-	pres_gstate->where_used |= pdev->used_mask;
-	sprintf(buf, "%ld 0 R", pdev->soft_mask_dict->id);
-	code = cos_dict_put_c_key_string((cos_dict_t *)pres_gstate->object, "/SMask", (const byte *)buf, strlen(buf));
-	if (code < 0)
-	    return code;
-	sputc(pdev->strm,'/');
-	sputs(pdev->strm, (const byte *)pres_gstate->rname, strlen(pres->rname), &ignore);
-	sputs(pdev->strm, (const byte *)" gs\n", 4, &ignore);
 	pdev->soft_mask_dict = NULL;
     }
     return 0;

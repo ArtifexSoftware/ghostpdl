@@ -368,9 +368,8 @@ gs_end_transparency_mask(gs_state *pgs,
     if_debug2('v', "[v](0x%lx)end_transparency_mask(%d)\n", (ulong)pgs,
 	      (int)csel);
 
-    /* todo: route csel */
-
     params.pdf14_op = PDF14_END_TRANS_MASK;  /* Other parameters not used */
+    params.csel = csel;
     return gs_state_update_pdf14trans(pgs, &params);
 }
 

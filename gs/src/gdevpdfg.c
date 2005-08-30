@@ -1280,6 +1280,19 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
     floatp alpha;
     int code;
 
+    if (pdev->state.soft_mask_id != pis->soft_mask_id) {
+	char buf[20];
+
+	sprintf(buf, "%ld 0 R", pis->soft_mask_id);
+	code = pdf_open_gstate(pdev, ppres);
+	if (code < 0)
+	    return code;
+	code = cos_dict_put_c_key_string(resource_dict(*ppres), 
+		    "/SMask", (byte *)buf, strlen(buf));
+	if (code < 0)
+	    return code;
+	pdev->state.soft_mask_id = pis->soft_mask_id;
+    }
     if (pdev->state.opacity.alpha != pis->opacity.alpha) {
 	if (pdev->state.shape.alpha != pis->shape.alpha)
 	    return_error(gs_error_rangecheck);
