@@ -219,6 +219,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  {0,0,0,0,0,0}, 		/* gs_matrix converting_image_matrix */
  0,				/* image_mask_scale */
  {{0, 0}, {0, 0}},		/* charproc_bbox */
- false				/* charproc_bbox_valid */
+ false,				/* charproc_bbox_valid */
+ NULL				/* soft_mask_dict */
 };
 

@@ -561,11 +561,13 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->sbstack[sbstack_ptr].accumulating_a_global_object = pdev->accumulating_a_global_object;
     pdev->sbstack[sbstack_ptr].charproc_bbox = pdev->charproc_bbox;
     pdev->sbstack[sbstack_ptr].charproc_bbox_valid = pdev->charproc_bbox_valid;
+    pdev->sbstack[sbstack_ptr].soft_mask_dict = pdev->soft_mask_dict;
     pdev->skip_colors = false;
     pdev->charproc_just_accumulated = false;
     pdev->charproc_bbox.p.x = pdev->charproc_bbox.p.y = 
 	pdev->charproc_bbox.q.x = pdev->charproc_bbox.q.y = 0;
     pdev->charproc_bbox_valid = false;
+    pdev->soft_mask_dict = NULL;
     /* Do not reset pdev->accumulating_a_global_object - it inherits. */
     pdev->sbstack_depth++;
     pdev->procsets = 0;
@@ -620,6 +622,7 @@ pdf_exit_substream(gx_device_pdf *pdev)
     pdev->accumulating_a_global_object = pdev->sbstack[sbstack_ptr].accumulating_a_global_object;
     pdev->charproc_bbox = pdev->sbstack[sbstack_ptr].charproc_bbox;
     pdev->charproc_bbox_valid = pdev->sbstack[sbstack_ptr].charproc_bbox_valid;
+    pdev->soft_mask_dict = pdev->sbstack[sbstack_ptr].soft_mask_dict;
     pdev->sbstack_depth = sbstack_ptr;
     code1 = pdf_restore_viewer_state(pdev, NULL);
     if (code1 < 0 && code >= 0)

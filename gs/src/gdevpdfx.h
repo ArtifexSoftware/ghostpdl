@@ -381,13 +381,14 @@ typedef struct pdf_substream_save_s {
     bool		accumulating_a_global_object;
     gs_fixed_rect		charproc_bbox;
     bool		charproc_bbox_valid;
+    cos_dict_t		*soft_mask_dict;
 } pdf_substream_save;
 
 #define private_st_pdf_substream_save()\
-    gs_private_st_ptrs6(st_pdf_substream_save, pdf_substream_save,\
+    gs_private_st_ptrs7(st_pdf_substream_save, pdf_substream_save,\
 	"pdf_substream_save", pdf_substream_save_enum,\
 	pdf_substream_save_reloc, text_state, clip_path, strm, \
-	substream_Resources, font3, accumulating_substream_resource)
+	substream_Resources, font3, accumulating_substream_resource, soft_mask_dict)
 #define private_st_pdf_substream_save_element()\
   gs_private_st_element(st_pdf_substream_save_element, pdf_substream_save,\
     "pdf_substream_save[]", pdf_substream_save_elt_enum_ptrs,\
@@ -628,6 +629,7 @@ struct gx_device_pdf_s {
     double    image_mask_scale;
     gs_fixed_rect   charproc_bbox;
     bool      charproc_bbox_valid;
+    cos_dict_t	*soft_mask_dict;
 };
 
 #define is_in_page(pdev)\
@@ -650,8 +652,9 @@ struct gx_device_pdf_s {
  m(24,font_cache) m(25,clip_path)\
  m(26,PageLabels) m(27,PageLabels_current_label)\
  m(28,sbstack) m(29,substream_Resources) m(30,font3)\
- m(31,accumulating_substream_resource)
-#define gx_device_pdf_num_ptrs 32
+ m(31,accumulating_substream_resource) \
+ m(32,soft_mask_dict)
+#define gx_device_pdf_num_ptrs 33
 #define gx_device_pdf_do_strings(m)\
     m(0, OPDFReadProcsetPath) m(1, OwnerPassword) m(2, UserPassword) m(3, NoEncrypt)
 #define gx_device_pdf_num_strings 4

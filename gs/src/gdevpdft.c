@@ -26,6 +26,51 @@
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
 
+private int
+pdf_make_soft_mask_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams)
+{
+    pdf_resource_t *pres_soft_mask_dict = 0;
+    char buf[20];
+    uint ignore;
+    int code;
+
+    /* Fixme : merge redundant objects. */
+    code = pdf_alloc_resource(pdev, resourceSoftMaskDict, gs_no_id, &pres_soft_mask_dict, 0);
+    if (code < 0)
+	return code;
+    cos_become(pres_soft_mask_dict->object, cos_type_dict);
+    pdev->soft_mask_dict = (cos_dict_t *)pres_soft_mask_dict->object;
+    code = cos_dict_put_c_key_string(pdev->soft_mask_dict, "/S", 
+	    pparams->subtype == TRANSPARENCY_MASK_Alpha ? (byte *)"/Alpha" : (byte *)"/Luminocity", 
+	    pparams->subtype == TRANSPARENCY_MASK_Alpha ? 6 : 11);
+    if (code < 0)
+	return code;
+    if (pparams->Background_components) {
+	cos_array_t *Background;
+
+	Background = cos_array_from_floats(pdev, pparams->Background, 
+		    pparams->Background_components, "pdf_write_soft_mask_dict");
+	if (Background == NULL)
+	    return_error(gs_error_VMerror);
+	code = cos_dict_put_c_key_object(pdev->soft_mask_dict, "/BC", (cos_object_t *)Background);
+	if (code < 0)
+	    return code;
+    }
+    if (pparams->transfer_function != NULL) {
+	long id;
+	
+	code = pdf_write_function(pdev, pparams->transfer_function, &id);
+	if (code < 0)
+	    return code;
+	sprintf(buf, " %ld 0 R", id);
+	code = cos_dict_put_c_key_string(pdev->soft_mask_dict, "/TR", (const byte *)buf, strlen(buf));
+	if (code < 0)
+	    return code;
+    }
+    return 0;
+
+}
+
 private int 
 pdf_begin_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev,
 				const gs_pdf14trans_params_t * pparams)
@@ -162,41 +207,81 @@ private int
 pdf_begin_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
 				const gs_pdf14trans_params_t * pparams)
 {
-    /* HACK : 
-       This function is being called when 
-       the PDF interpreter will make the PS interpreter 
-       to interprete the mask for filling the transparency buffer
-       with an SMask image.
-       Since we handle Type 3 images as a high level objects, 
-       we don't install the transparency buffer here
-       and need to skip the image enumeration for the SMask.
-       However we have no right method for skipping
-       an image enumeration due to possible side effect 
-       of the image data proc in Postscript language.
-       Therefore we do enumerate the image mask and accumulate
-       it as a PDF stream, but don't create a reference to it.
-       Later it will be enumerated once again as a part of SMask-ed image,
-       and the pdfwrite image handler will recognize duplicated images 
-       and won't create the second stream for same image.
+    if (pparams->mask_is_image) {
+	/* HACK : 
+	    The control comes here when 
+	    the PDF interpreter will make the PS interpreter 
+	    to interprete the mask for filling the transparency buffer
+    	    with an SMask image.
+	    Since we handle Type 3 images as a high level objects, 
+	    we don't install the transparency buffer here
+	    and need to skip the image enumeration for the SMask.
+	    However we have no right method for skipping
+	    an image enumeration due to possible side effect 
+	    of the image data proc in Postscript language.
+	    Therefore we do enumerate the image mask and accumulate
+	    it as a PDF stream, but don't create a reference to it.
+	    Later it will be enumerated once again as a part of SMask-ed image,
+	    and the pdfwrite image handler will recognize duplicated images 
+	    and won't create the second stream for same image.
 
-       We could make a special workaround for 
-       skipping mask images either in the graphics library or 
-       in the PS code of the PDF interpreter,
-       but we don't want to complicate things now.
-       The performance leak for the second enumeration 
-       shouldn't be harmful.
+	    We could make a special workaround for 
+	    skipping mask images either in the graphics library or 
+	    in the PS code of the PDF interpreter,
+	    but we don't want to complicate things now.
+	    The performance leak for the second enumeration 
+	    shouldn't be harmful.
 
-       So now just set a flag for pdf_end_and_do_image.
-     */
-    pdev->image_mask_skip = true;
-    return 0;
+	    So now just set a flag for pdf_end_and_do_image.
+	*/
+	pdev->image_mask_skip = true;
+	return 0;
+    } else {
+	int code;
+	
+	code = pdf_make_soft_mask_dict(pdev, pparams);
+	if (code < 0)
+	    return code;
+	code = pdf_open_page(pdev, PDF_IN_STREAM);
+	if (code < 0)
+	    return code;
+	return pdf_begin_transparency_group(pis, pdev, pparams);
+    }
 }
 
 private int 
 pdf_end_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
 				const gs_pdf14trans_params_t * pparams)
 {
-    pdev->image_mask_skip = false;
+    if (pdev->image_mask_skip) 
+	pdev->image_mask_skip = false;
+    else {
+	pdf_resource_t *pres_gstate;
+	pdf_resource_t *pres = pdev->accumulating_substream_resource;
+	char buf[20];
+	uint ignore;
+	int code;
+    
+	code = pdf_exit_substream(pdev);
+	if (code < 0)
+	    return code;
+	code = cos_dict_put_c_key_object(pdev->soft_mask_dict, "/G", (cos_object_t *)pres->object);
+	if (code < 0)
+	    return code;
+	code = pdf_alloc_resource(pdev, resourceExtGState, gs_no_id, &pres_gstate, 0);
+	if (code < 0)
+	    return code;
+	cos_become(pres_gstate->object, cos_type_dict);
+	pres_gstate->where_used |= pdev->used_mask;
+	sprintf(buf, "%ld 0 R", pdev->soft_mask_dict->id);
+	code = cos_dict_put_c_key_string((cos_dict_t *)pres_gstate->object, "/SMask", (const byte *)buf, strlen(buf));
+	if (code < 0)
+	    return code;
+	sputc(pdev->strm,'/');
+	sputs(pdev->strm, (const byte *)pres_gstate->rname, strlen(pres->rname), &ignore);
+	sputs(pdev->strm, (const byte *)" gs\n", 4, &ignore);
+	pdev->soft_mask_dict = NULL;
+    }
     return 0;
 }
 
@@ -220,21 +305,23 @@ gdev_pdf_create_compositor(gx_device *dev,
 
 	*pcdev = dev;
 	switch(params->pdf14_op) {
-	    case PDF14_PUSH_DEVICE: break;
-	    case PDF14_POP_DEVICE: break;
-	case PDF14_BEGIN_TRANS_GROUP:
-	    return pdf_begin_transparency_group(pis, pdev, params);
-	case PDF14_END_TRANS_GROUP:
-	    return pdf_end_transparency_group(pis, pdev);
-	case PDF14_INIT_TRANS_MASK:
-	    return gx_init_transparency_mask(pis, params);
-	case PDF14_BEGIN_TRANS_MASK:
-	    return pdf_begin_transparency_mask(pis, pdev, params);
-	case PDF14_END_TRANS_MASK:
-	    return pdf_end_transparency_mask(pis, pdev, params);
-	case PDF14_SET_BLEND_PARAMS:
-	    return pdf_set_blend_params(pis, pdev, params);
-	default :
+	    case PDF14_PUSH_DEVICE:
+		return 0;
+	    case PDF14_POP_DEVICE:
+		return 0;
+	    case PDF14_BEGIN_TRANS_GROUP:
+		return pdf_begin_transparency_group(pis, pdev, params);
+	    case PDF14_END_TRANS_GROUP:
+		return pdf_end_transparency_group(pis, pdev);
+	    case PDF14_INIT_TRANS_MASK:
+		return gx_init_transparency_mask(pis, params);
+	    case PDF14_BEGIN_TRANS_MASK:
+		return pdf_begin_transparency_mask(pis, pdev, params);
+	    case PDF14_END_TRANS_MASK:
+		return pdf_end_transparency_mask(pis, pdev, params);
+	    case PDF14_SET_BLEND_PARAMS:
+		return pdf_set_blend_params(pis, pdev, params);
+	    default :
 		return_error(gs_error_unregistered); /* Must not happen. */
 	}
 	return 0;
