@@ -1952,7 +1952,7 @@ c_pdf14trans_write(const gs_composite_t * pct, byte * data, uint * psize)
     const gs_pdf14trans_params_t * pparams = &((const gs_pdf14trans_t *)pct)->params;
     int need, avail = *psize;
     	/* Must be large enough for largest data struct */
-    byte buf[21 + sizeof(pparams->Background)];
+    byte buf[21 + sizeof(pparams->Background) + sizeof(pparams->GrayBackground)];
     byte * pbuf = buf;
     int opcode = pparams->pdf14_op;
     int mask_size = 0;
@@ -1991,6 +1991,8 @@ c_pdf14trans_write(const gs_composite_t * pct, byte * data, uint * psize)
 
 		memcpy(pbuf, pparams->Background, l);
 		pbuf += l;
+		memcpy(pbuf, pparams->GrayBackground, sizeof(pparams->GrayBackground));
+		pbuf += sizeof(pparams->GrayBackground);
 	    }
 	    if (!pparams->function_is_identity)
 	        mask_size = sizeof(pparams->transfer_fn);
@@ -2081,6 +2083,8 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte * data,
 
     		memcpy(params.Background, data, l);
 		data += l;
+		memcpy(pparams->GrayBackground, data, sizeof(pparams->GrayBackground));
+		data += sizeof(pparams->GrayBackground);
 	    }
 	    if (params.function_is_identity) {
 		int i;

@@ -25,6 +25,7 @@
 #include "gsipar3x.h"
 #include "gstrans.h"
 #include "gxiparam.h"		/* for image enumerator */
+#include "gxcspace.h"
 #include "idict.h"
 #include "idparam.h"
 #include "ifunc.h"
@@ -265,8 +266,15 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
     if ((code = enum_param(imemory, pparam, subtype_names)) < 0)
 	return code;
     gs_trans_mask_params_init(&params, code);
-    if ((code = dict_floats_param(imemory, dop, "Background", 1,
+    if ((code = dict_floats_param(imemory, dop, "Background", 
+		    cs_num_components(gs_currentcolorspace(i_ctx_p->pgs)),
 				  params.Background, NULL)) < 0
+	)
+	return code;
+    else if (code > 0)
+	params.Background_components = code;
+    if ((code = dict_floats_param(imemory, dop, "GrayBackground", 
+		    1, params.Background, NULL)) < 0
 	)
 	return code;
     else if (code > 0)

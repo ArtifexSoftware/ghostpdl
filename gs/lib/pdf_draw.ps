@@ -367,13 +367,14 @@ end
     dup /S oget /Subtype exch 3 2 roll
 			% Stack: mark ... smaskdict
     dup /BC knownoget {
+      dup /Background exch 4 2 roll
       gsave
         1 index /G oget /Group oget /CS knownoget {
 	  csresolve dup setgcolorspace csput
 	} if
         aload pop setcolor [ currentgray ]
       grestore
-      /Background exch 3 2 roll
+      /GrayBackground exch 3 2 roll
     } if
     dup /TR knownoget {
       resolveidfnproc /TransferFunction exch 3 2 roll
@@ -388,7 +389,8 @@ end
 /.execmaskgroup {	% <masknum> <paramdict> <formdict> .execmaskgroup -
 	% Save our place in PDFfile, and do a gsave to avoid resetting
 	% the color space.
-  gsave PDFfile fileposition 4 1 roll
+  currentcolorspace 4 1 roll
+  PDFfile fileposition 4 1 roll
 	% We have to select the group's color space so that the
 	% background color will be interpreted correctly.
   dup /Group oget /CS knownoget { csresolve dup setgcolorspace csput } if
@@ -399,7 +401,8 @@ end
   } stopped {
     .discardtransparencymask stop
   } if
-  PDFfile exch setfileposition grestore
+  PDFfile exch setfileposition 
+  setcolorspace
 } bdef
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.
 /.execgroup {		% <resdict> <stream> .execgroup -

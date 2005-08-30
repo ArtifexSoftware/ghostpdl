@@ -41,7 +41,7 @@ pdf_make_soft_mask_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * ppa
     cos_become(pres_soft_mask_dict->object, cos_type_dict);
     pdev->soft_mask_dict = (cos_dict_t *)pres_soft_mask_dict->object;
     code = cos_dict_put_c_key_string(pdev->soft_mask_dict, "/S", 
-	    pparams->subtype == TRANSPARENCY_MASK_Alpha ? (byte *)"/Alpha" : (byte *)"/Luminocity", 
+	    pparams->subtype == TRANSPARENCY_MASK_Alpha ? (byte *)"/Alpha" : (byte *)"/Luminosity", 
 	    pparams->subtype == TRANSPARENCY_MASK_Alpha ? 6 : 11);
     if (code < 0)
 	return code;

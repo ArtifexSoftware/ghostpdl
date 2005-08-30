@@ -102,6 +102,7 @@ typedef struct gs_transparency_mask_params_s {
     gs_transparency_mask_subtype_t subtype;
     int Background_components;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    float GrayBackground;
     int (*TransferFunction)(floatp in, float *out, void *proc_data);
     gs_function_t *TransferFunction_data;
 } gs_transparency_mask_params_t;
@@ -112,8 +113,9 @@ typedef struct gs_transparency_mask_params_s {
 typedef struct gx_transparency_mask_params_s {
     gs_transparency_mask_subtype_t subtype;
     int Background_components;
-    bool function_is_identity;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    float GrayBackground;
+    bool function_is_identity;
     byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
 } gx_transparency_mask_params_t;
 
