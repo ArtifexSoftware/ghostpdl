@@ -90,10 +90,9 @@ jbig2_huffman_free (Jbig2Ctx *ctx, Jbig2HuffmanState *hs)
 
 /** debug routines **/
 #ifdef JBIG2_DEBUG
-#include <stdio.h>
+
 /** print current huffman state */
-void jbig2_dump_huffman_state(Jbig2HuffmanState *hs)
-{
+void jbig2_dump_huffman_state(Jbig2HuffmanState *hs) {
   fprintf(stderr, "huffman state %08x %08x offset %d.%d\n",
 	hs->this_word, hs->next_word, hs->offset, hs->offset_bits); 
 }
@@ -109,6 +108,7 @@ void jbig2_dump_huffman_binary(Jbig2HuffmanState *hs)
     fprintf(stderr, ((word >> i) & 1) ? "1" : "0");
   fprintf(stderr, "\n");
 }
+
 #endif /* JBIG2_DEBUG */
 
 /** Skip bits up to the next byte boundary
@@ -174,7 +174,7 @@ jbig2_huffman_get_bits (Jbig2HuffmanState *hs, const int bits)
 {
   uint32_t this_word = hs->this_word;
   int32_t result;
-	
+
   result = this_word >> (32 - bits);
   hs->offset_bits += bits;
   if (hs->offset_bits >= 32) {
@@ -182,8 +182,12 @@ jbig2_huffman_get_bits (Jbig2HuffmanState *hs, const int bits)
     hs->offset_bits -= 32;
     hs->this_word = hs->next_word;
     hs->next_word = hs->ws->get_next_word(hs->ws, hs->offset + 4);
-    hs->this_word = (hs->this_word << hs->offset_bits) |
+    if (hs->offset_bits) {
+      hs->this_word = (hs->this_word << hs->offset_bits) |
 	(hs->next_word >> (32 - hs->offset_bits));
+    } else {
+      hs->this_word = (hs->this_word << hs->offset_bits);
+    }
   } else {
     hs->this_word = (this_word << bits) |
 	(hs->next_word >> (32 - hs->offset_bits));
@@ -225,9 +229,9 @@ jbig2_huffman_get (Jbig2HuffmanState *hs,
 	  hs->next_word = next_word;
 	  PREFLEN = offset_bits;
 	}
-if (PREFLEN)
-      this_word = (this_word << PREFLEN) |
-	(next_word >> (32 - offset_bits));
+      if (PREFLEN)
+	this_word = (this_word << PREFLEN) |
+	  (next_word >> (32 - offset_bits));
       if (flags & JBIG2_HUFFMAN_FLAGS_ISEXT)
 	{
 	  table = entry->u.ext_table;
@@ -272,10 +276,10 @@ if (RANGELEN)
   return result;
 }
 
-/* TODO: 10 bits here is wasteful of memory. We have support for 
-   sub-trees in jbig2_huffman_get() above, but don't use it here.
+/* TODO: more than 8 bits here is wasteful of memory. We have support 
+   for sub-trees in jbig2_huffman_get() above, but don't use it here.
    We should, and then revert to 8 bits */
-#define LOG_TABLE_SIZE_MAX 10
+#define LOG_TABLE_SIZE_MAX 16
 
 /** Build an in-memory representation of a Huffman table from the
  *  set of template params provided by the spec or a table segment
@@ -288,6 +292,7 @@ jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
   const Jbig2HuffmanLine *lines = params->lines;
   int n_lines = params->n_lines;
   int i, j;
+  int max_j;
   int log_table_size = 0;
   Jbig2HuffmanTable *result;
   Jbig2HuffmanEntry *entries;
@@ -316,9 +321,13 @@ jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
       if (lts <= LOG_TABLE_SIZE_MAX && log_table_size < lts)
 		log_table_size = lts;
     }
+  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
+	"constructing huffman table log size %d", log_table_size);
+  max_j = 1 << log_table_size;
+
   result = (Jbig2HuffmanTable *)jbig2_alloc(ctx->allocator, sizeof(Jbig2HuffmanTable));
   result->log_table_size = log_table_size;
-  entries = (Jbig2HuffmanEntry *)jbig2_alloc(ctx->allocator, sizeof(Jbig2HuffmanEntry) << log_table_size);
+  entries = (Jbig2HuffmanEntry *)jbig2_alloc(ctx->allocator, max_j * sizeof(Jbig2HuffmanEntry));
   result->entries = entries;
 
   LENCOUNT[0] = 0;
@@ -341,25 +350,28 @@ jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
 	      int end_j = (CURCODE + 1) << shift;
 	      byte eflags = 0;
 
+	      if (end_j > max_j) {
+		jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
+		  "ran off the end of the entries table! (%d >= %d)",
+		  end_j, max_j);
+		jbig2_free(ctx->allocator, result->entries);
+		jbig2_free(ctx->allocator, result);
+		return NULL;
+	      }
 	      /* todo: build extension tables */
 	      if (params->HTOOB && CURTEMP == n_lines - 1)
 		eflags |= JBIG2_HUFFMAN_FLAGS_ISOOB;
 	      if (CURTEMP == n_lines - (params->HTOOB ? 3 : 2))
 		eflags |= JBIG2_HUFFMAN_FLAGS_ISLOW;
-	      if (PREFLEN + RANGELEN > LOG_TABLE_SIZE_MAX)
-		{
-		  for (j = start_j; j < end_j; j++)
-		    {
+	      if (PREFLEN + RANGELEN > LOG_TABLE_SIZE_MAX) {
+		  for (j = start_j; j < end_j; j++) {
 		      entries[j].u.RANGELOW = lines[CURTEMP].RANGELOW;
 		      entries[j].PREFLEN = PREFLEN;
 		      entries[j].RANGELEN = RANGELEN;
 		      entries[j].flags = eflags;
 		    }
-		}
-	      else
-		{
-		  for (j = start_j; j < end_j; j++)
-		    {
+	      } else {
+		  for (j = start_j; j < end_j; j++) {
 		      int32_t HTOFFSET = (j >> (shift - RANGELEN)) &
 			((1 << RANGELEN) - 1);
 		      if (eflags & JBIG2_HUFFMAN_FLAGS_ISLOW)

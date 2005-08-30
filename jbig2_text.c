@@ -187,7 +187,6 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
 	/* decode the symbol id codelengths using the runlength table */
 	symcodelengths = jbig2_alloc(ctx->allocator, SBNUMSYMS*sizeof(Jbig2HuffmanLine));
-	/* todo: could save considerable space by growing the lines array as needed */
 	if (symcodelengths == NULL) {
 	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 	    "memory allocation failure reading symbol ID huffman table!");
@@ -213,22 +212,29 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	      return -1;
 	    }
 	    len = symcodelengths[index-1].PREFLEN;
-	    if (code == 32) range = jbig2_huffman_get_bits(hs, 2) + 3;
+	    if (code == 32) range = jbig2_huffman_get_bits(hs, 2) + 2;
 	    else if (code == 33) range = jbig2_huffman_get_bits(hs, 3) + 3;
 	    else if (code == 34) range = jbig2_huffman_get_bits(hs, 7) + 11;
 	  }
 	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 	    "  read runcode%d at index %d (length %d range %d)", code, index, len, range);
+	  if (index+range > SBNUMSYMS) {
+	    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+	      "runlength extends %d entries beyond the end of symbol id table!",
+		index+range - SBNUMSYMS);
+	    range = SBNUMSYMS - index;
+	  }
 	  for (r = 0; r < range; r++) {
 	    symcodelengths[index+r].PREFLEN = len; 
 	    symcodelengths[index+r].RANGELEN = 0; 
-	    symcodelengths[index+r].RANGELOW = index;
+	    symcodelengths[index+r].RANGELOW = index + r;
 	  }
 	  index += r;
-	  if (index > SBNUMSYMS) {
-	    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-	      "runlength extends beyond the end of symbol id table");
-	  }
+	}
+
+	if (index < SBNUMSYMS) {
+	  jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+	    "runlength codes do not cover the available symbol set");
 	}
 	symcodeparams.HTOOB = 0;
 	symcodeparams.lines = symcodelengths;
@@ -242,6 +248,12 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
 	jbig2_free(ctx->allocator, symcodelengths);
 	jbig2_release_huffman_table(ctx, runcodes);
+
+	if (SBSYMCODES == NULL) {
+	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"could not construct Symbol ID huffman table!");
+	    return NULL;
+	}
     }
 
     /* 6.4.5 (1) */
