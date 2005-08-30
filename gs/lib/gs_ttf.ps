@@ -837,11 +837,14 @@ mark
     /prevboundary 0 def
     % sort the locatable in case it is out of order
     % Note the 'loca' table remains unchanged
-    [ /needsort false def -1	% initial values for in order check
-      0 1 numloca 1 sub {
-        getloca exch 1 index gt { /needsort true def } if dup
-      } for pop		% discard inorder check value
-    ]
+    /needsort false def
+    numloca array	% the array of 'loca' entries (may be out of order)
+    -1	% initial values for in order check
+    0 1 numloca 1 sub {
+      dup getloca dup
+      4 -1 roll lt { /needsort true def } if 
+      3 copy put exch pop
+    } for pop		% discard inorder check value
     needsort {
       { lt } bind .sort	 % stack: locatable_array
     } if
