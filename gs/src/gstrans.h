@@ -81,6 +81,7 @@ struct gs_pdf14trans_params_s {
     int Background_components;
     bool function_is_identity;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    float GrayBackground;
     gs_function_t *transfer_function;
     byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
     /* Individual transparency parameters */

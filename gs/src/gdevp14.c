@@ -1991,7 +1991,7 @@ c_pdf14trans_write(const gs_composite_t * pct, byte * data, uint * psize)
 
 		memcpy(pbuf, pparams->Background, l);
 		pbuf += l;
-		memcpy(pbuf, pparams->GrayBackground, sizeof(pparams->GrayBackground));
+		memcpy(pbuf, &pparams->GrayBackground, sizeof(pparams->GrayBackground));
 		pbuf += sizeof(pparams->GrayBackground);
 	    }
 	    if (!pparams->function_is_identity)
@@ -2083,8 +2083,8 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte * data,
 
     		memcpy(params.Background, data, l);
 		data += l;
-		memcpy(pparams->GrayBackground, data, sizeof(pparams->GrayBackground));
-		data += sizeof(pparams->GrayBackground);
+		memcpy(&params.GrayBackground, data, sizeof(params.GrayBackground));
+		data += sizeof(params.GrayBackground);
 	    }
 	    if (params.function_is_identity) {
 		int i;
