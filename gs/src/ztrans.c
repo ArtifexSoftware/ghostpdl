@@ -277,8 +277,6 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
 		    1, params.Background, NULL)) < 0
 	)
 	return code;
-    else if (code > 0)
-	params.Background_components = code;
     if (dict_find_string(dop, "TransferFunction", &pparam) >0) {
 	gs_function_t *pfn = ref_function(pparam);
 
