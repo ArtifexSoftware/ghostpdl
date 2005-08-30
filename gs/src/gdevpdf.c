@@ -709,10 +709,11 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
         const pdf_text_rotation_t *ptr = 
 	    (page != NULL ? &page->text_rotation : &pdev->text_rotation);
 	int angle = -1;
-	const gs_point *pbox = &(page != NULL ? page : &pdev->pages[0])->MediaBox;
 
 #define  Bug687800
 #ifndef Bug687800 	/* Bug 687800 together with Bug687489.ps . */
+	const gs_point *pbox = &(page != NULL ? page : &pdev->pages[0])->MediaBox;
+
 	if (dsc_orientation >= 0 && pbox->x > pbox->y) {
 	    /* The page is in landscape format. Adjust the rotation accordingly. */
 	    dsc_orientation ^= 1;

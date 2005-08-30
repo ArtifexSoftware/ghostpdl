@@ -401,7 +401,7 @@ const tiffsep_device gs_tiffsep_device =
       4,			/* Number colorants for CMYK */
       NC,			/* MaxSeparations:  our current limit is 8 bytes */
       {0},			/* SeparationNames */
-      {0},			/* SeparationOrder names */
+      0,			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     { true },			/* equivalent CMYK colors for spot colors */

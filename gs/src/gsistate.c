@@ -93,12 +93,6 @@ private RELOC_PTRS_BEGIN(imager_state_reloc_ptrs)
 
 /* Initialize an imager state, other than the parts covered by */
 /* gs_imager_state_initial. */
-private float
-imager_null_transfer(floatp gray, const gx_transfer_map * pmap)
-{
-    return gray;
-}
-
 int
 gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
 {

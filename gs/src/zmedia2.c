@@ -469,18 +469,20 @@ make_adjustment_matrix(const gs_point * request, const gs_rect * medium,
     /* If 'medium' is flexible, adjust 'mx' and 'my' towards 'rx' and 'ry',
        respectively. Note that 'mx' and 'my' have just acquired the largest
        permissible value, medium->q. */
-    if (medium->p.x < mx)	/* non-empty width range */
+    if (medium->p.x < mx) {	/* non-empty width range */
 	if (rx < medium->p.x)
 	    mx = medium->p.x;	/* use minimum of the range */
 	else if (rx < mx)
 	    mx = rx;		/* fits */
 		/* else leave mx == medium->q.x, i.e., the maximum */
-    if (medium->p.y < my)	/* non-empty height range */
+    }
+    if (medium->p.y < my) {	/* non-empty height range */
 	if (ry < medium->p.y)
 	    my = medium->p.y;	/* use minimum of the range */
 	else if (ry < my)
 	    my = ry;		/* fits */
 	    /* else leave my == medium->q.y, i.e., the maximum */
+    }
 
     /* Translate to align the centers. */ 
     gs_make_translation(mx / 2, my / 2, pmat);

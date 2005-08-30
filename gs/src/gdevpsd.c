@@ -240,7 +240,7 @@ const psd_device gs_psdrgb_device =
       3,			/* Number colorants for RGB */
       0,			/* MaxSeparations has not been specified */
       {0},			/* SeparationNames */
-      {0},			/* SeparationOrder names */
+      0,			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     { true },			/* equivalent CMYK colors for spot colors */
@@ -269,7 +269,7 @@ const psd_device gs_psdcmyk_device =
       4,			/* Number colorants for CMYK */
       NC,			/* MaxSeparations has not been specified */
       {0},			/* SeparationNames */
-      {0},			/* SeparationOrder names */
+      0,			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     { true },			/* equivalent CMYK colors for spot colors */
@@ -621,6 +621,7 @@ psd_get_params(gx_device * pdev, gs_param_list * plist)
     return code;
 }
 
+#if ENABLE_ICC_PROFILE
 private int
 psd_param_read_fn(gs_param_list *plist, const char *name,
 		  gs_param_string *pstr, uint max_len)
@@ -635,6 +636,7 @@ psd_param_read_fn(gs_param_list *plist, const char *name,
     }
     return code;
 }
+#endif
 
 /* Compare a C string and a gs_param_string. */
 static bool
@@ -681,9 +683,11 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
 {
     psd_device * const pdevn = (psd_device *) pdev;
     int code = 0;
+#if ENABLE_ICC_PROFILE
     gs_param_string po;
     gs_param_string prgb;
     gs_param_string pcmyk;
+#endif
     gs_param_string pcm;
     psd_color_model color_model = pdevn->color_model;
     gx_device_color_info save_info = pdevn->color_info;

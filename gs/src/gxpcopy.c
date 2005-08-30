@@ -589,16 +589,18 @@ gx_curve_monotonic_points(fixed v0, fixed v1, fixed v2, fixed v3,
 
 /* ---------------- Path optimization for the filling algorithm. ---------------- */
 
-bool
-find_contacting_segments(const subpath *sp0, const segment *sp0last, 
-			 const subpath *sp1, const segment *sp1last, 
-			 const segment **sc0, const segment **sc1)
+private bool
+find_contacting_segments(const subpath *sp0, segment *sp0last, 
+			 const subpath *sp1, segment *sp1last, 
+			 segment **sc0, segment **sc1)
 {
-    const segment *s0, *s1, *s0s, *s1s;
+    segment *s0, *s1;
+    const segment *s0s, *s1s;
     int count0, count1, search_limit = 50;
     int min_length = fixed_1 * 1;
 
-    /* This is a simplified algorithm, which only checks for quazi-colinear vertical lines. */
+    /* This is a simplified algorithm, which only checks for quazi-colinear vertical lines.
+       "Quazi-vertical" means dx <= 1 && dy >= min_length . */
     /* To avoid a big unuseful expence of the processor time,
        we search the first subpath from the end
        (assuming that it was recently merged near the end), 
@@ -647,7 +649,7 @@ int
 gx_path_merge_contacting_contours(gx_path *ppath)
 {
     /* Now this is a simplified algorithm,
-       which merge only contours by a common vertical line. */
+       which merge only contours by a common quazi-vertical line. */
     int window = 5/* max spot holes */ * 6/* segments per subpath */;
     subpath *sp0 = ppath->segments->contents.subpath_first;
 

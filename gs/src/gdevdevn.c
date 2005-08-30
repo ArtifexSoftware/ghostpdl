@@ -711,7 +711,7 @@ const spotcmyk_device gs_spotcmyk_device =
       4,			/* Number colorants for CMYK */
       0,			/* MaxSeparations has not been specified */
       {0},			/* SeparationNames */
-      {0},			/* SeparationOrder names */
+      0,			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     }
 };
@@ -730,7 +730,7 @@ const spotcmyk_device gs_devicen_device =
       0,			/* No standard colorants for DeviceN */
       0,			/* MaxSeparations has not been specified */
       {0},			/* SeparationNames */
-      {0},			/* SeparationOrder names */
+      0,			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     }
 };
