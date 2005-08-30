@@ -88,6 +88,7 @@ struct gs_pdf14trans_params_s {
     bool text_knockout;
     gs_transparency_source_t opacity;
     gs_transparency_source_t shape;
+    bool mask_is_image;
 };
 
 typedef struct gs_pdf14trans_params_s gs_pdf14trans_params_t;
@@ -142,7 +143,7 @@ void gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
 
 int gs_begin_transparency_mask(gs_state *pgs,
 			       const gs_transparency_mask_params_t *ptmp,
-			       const gs_rect *pbbox);
+			       const gs_rect *pbbox, bool mask_is_image);
 
 int gs_end_transparency_mask(gs_state *pgs,
 			     gs_transparency_channel_selector_t csel);

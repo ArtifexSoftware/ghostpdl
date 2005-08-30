@@ -514,8 +514,9 @@ onto the group that now becomes current.
 
 <dl>
 <dt><b><tt>&lt;paramdict&gt; &lt;llx&gt; &lt;lly&gt; &lt;urx&gt; &lt;ury&gt;
-.begintransparencymask -</tt></b>
-<dd>Begins a new transparency mask.  The <b><tt>ll/ur</tt></b> coordinates
+.begintransparencymaskgroup -</tt></b>
+<dd>Begins a new transparency mask, which is represented as a group.  
+The <b><tt>ll/ur</tt></b> coordinates
 are the bounding box of the mask in the current user coordinate system.
 <b><tt>paramdict</tt></b> has the following keys:
 <dl>
@@ -527,6 +528,12 @@ are the bounding box of the mask in the current user coordinate system.
 <dt><b><tt>/TransferFunction</tt></b>
 <dd>(optional) Function object (produced by applying
 <b><tt>.buildfunction</tt></b> to a Function dictionary).
+</dl>
+</dl>
+
+<dl>
+<dt><b><tt>- .begintransparencymaskimage -</tt></b>
+<dd>Begins a new transparency mask, which is represented as a single image.
 </dl>
 </dl>
 

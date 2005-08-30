@@ -362,7 +362,7 @@ end
     pop null
   } {
 	% Preprocess the SMask value into a parameter dictionary for
-	% .begintransparencymask, with added /BBox and /Draw keys.
+	% .begintransparencymaskgroup, with added /BBox and /Draw keys.
     mark exch		% Stack: mark smaskdict
     dup /S oget /Subtype exch 3 2 roll
 			% Stack: mark ... smaskdict
@@ -392,7 +392,7 @@ end
 	% We have to select the group's color space so that the
 	% background color will be interpreted correctly.
   dup /Group oget /CS knownoget { csresolve dup setgcolorspace csput } if
-  exch dup /BBox get aload pop .begintransparencymask {
+  exch dup /BBox get aload pop .begintransparencymaskgroup {
     dup /Resources knownoget { oforce } { 0 dict } ifelse
     exch false resolvestream
     .execgroup .endtransparencymask
@@ -927,7 +927,7 @@ end
 } bdef
 /doimagesmask { % <imagemask> doimagesmask -
   PDFusingtransparency { currentdict /SMask knownoget } { false } ifelse {
-    << /Subtype /Luminosity >> 0 0 1 1 .begintransparencymask
+    .begintransparencymaskimage
     PDFfile fileposition exch
     gsave //nodict begin
     null /SoftMask gput

@@ -249,7 +249,7 @@ nodict readonly pop
 
 % Establish a given color (and color space) as current.
 /.settransparencyparams {	% <alpha> <smask> .settransparencyparams -
-  /.begintransparencymask where {
+  /.inittransparencymask where {
     pop AlphaIsShape {
       1 .setopacityalpha 0 .inittransparencymask exch .setshapealpha 1
     } {

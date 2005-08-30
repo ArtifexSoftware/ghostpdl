@@ -243,10 +243,10 @@ zendtransparencygroup(i_ctx_t *i_ctx_p)
     return gs_end_transparency_group(igs);
 }
 
-/* <paramdict> <llx> <lly> <urx> <ury> .begintransparencymask - */
+/* <paramdict> <llx> <lly> <urx> <ury> .begintransparencymaskgroup - */
 private int tf_using_function(floatp, float *, void *);
 private int
-zbegintransparencymask(i_ctx_t *i_ctx_p)
+zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     os_ptr dop = op - 4;
@@ -282,10 +282,25 @@ zbegintransparencymask(i_ctx_t *i_ctx_p)
     code = rect_param(&bbox, op);
     if (code < 0)
 	return code;
-    code = gs_begin_transparency_mask(igs, &params, &bbox);
+    code = gs_begin_transparency_mask(igs, &params, &bbox, false);
     if (code < 0)
 	return code;
     pop(5);
+    return code;
+}
+
+/* - .begintransparencymaskimage - */
+private int
+zbegintransparencymaskimage(i_ctx_t *i_ctx_p)
+{
+    gs_transparency_mask_params_t params;
+    gs_rect bbox = {0, 0, 1, 1};
+    int code;
+
+    gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
+    code = gs_begin_transparency_mask(igs, &params, &bbox, true);
+    if (code < 0)
+	return code;
     return code;
 }
 
@@ -452,7 +467,8 @@ const op_def ztrans2_op_defs[] = {
     {"5.begintransparencygroup", zbegintransparencygroup},
     {"0.discardtransparencygroup", zdiscardtransparencygroup},
     {"0.endtransparencygroup", zendtransparencygroup},
-    {"5.begintransparencymask", zbegintransparencymask},
+    {"5.begintransparencymaskgroup", zbegintransparencymaskgroup},
+    {"5.begintransparencymaskimage", zbegintransparencymaskimage},
     {"0.discardtransparencymask", zdiscardtransparencymask},
     {"1.endtransparencymask", zendtransparencymask},
     {"1.inittransparencymask", zinittransparencymask},

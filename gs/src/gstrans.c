@@ -301,7 +301,7 @@ gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
 int
 gs_begin_transparency_mask(gs_state * pgs,
 			   const gs_transparency_mask_params_t * ptmp,
-			   const gs_rect * pbbox)
+			   const gs_rect * pbbox, bool mask_is_image)
 {
     gs_pdf14trans_params_t params = { 0 };
     const int l = sizeof(params.Background[0]) * ptmp->Background_components;
@@ -321,6 +321,7 @@ gs_begin_transparency_mask(gs_state * pgs,
     params.transfer_function = ptmp->TransferFunction_data;
     params.function_is_identity =
 	    (ptmp->TransferFunction == mask_transfer_identity);
+    params.mask_is_image = mask_is_image;
     /* Sample the transfer function */
     for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
 	float in = (float)(i * (1.0 / (MASK_TRANSFER_FUNCTION_SIZE - 1)));
