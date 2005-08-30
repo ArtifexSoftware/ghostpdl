@@ -26,10 +26,10 @@
 %  gs -dNOEPS file.ps
 
 % When starting to process an EPS file, state is 0.
-% After %%BoundingBox processed, state is 1.
-% After %%HiResBoundingBox processed, state is 2.
-% After %%EndComments processed, state is 3.
-/EPSBoundingBoxState 3 def
+% After %%BoundingBox processed, state is 1 if OK or 2 if cropped.
+% After %%HiResBoundingBox processed, state is 3 if OK or 4 if cropped.
+% After %%EndComments processed, state is 5.
+/EPSBoundingBoxState 5 def
 /EPSBoundingBoxSetState {
   //systemdict /EPSBoundingBoxState 3 -1 roll .forceput
 } .bind odef % .forceput must be bound and hidden
@@ -95,11 +95,12 @@
 	    exch gt { true exit } if
 	    false exit
 	  } loop
-	  QUIET not and {
+	  QUIET not and /EPSBoundingBoxState .systemvar 1 and 1 eq and {
 	    (\n   **** Warning: Some of the BoundingBox for the EPS file will be clipped.) =
 	    (                 Use -dEPSCrop or -dEPSFitPage to avoid clipping.\n) =
 	    flush
-	  } if
+            1 add
+          } if
 	} ifelse
       } ifelse
       EPSBoundingBoxSetState
@@ -117,7 +118,7 @@
     (%%EndComments) anchorsearch {
       pop pop
       % ignore any following bounding boxes
-      3 EPSBoundingBoxSetState
+      5 EPSBoundingBoxSetState
     } {
       (%%BoundingBox:) anchorsearch {
 	pop 
@@ -127,7 +128,7 @@
 	(%%HiResBoundingBox:) anchorsearch {
 	  pop 
 	  EPSDEBUG { (gs_epsf.ps: found %%HiResBoundingBox\n) print flush } if
-	2 EPSBoundingBoxProcess
+	3 EPSBoundingBoxProcess
 	} { 
 	  pop % Not interested in this DSC comment
 	} ifelse
