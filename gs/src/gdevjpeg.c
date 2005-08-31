@@ -138,16 +138,14 @@ jpegcmyk_map_color_rgb(gx_device * dev, gx_color_index color,
 }
 
 private gx_color_index
-jpegcmyk_map_cmyk_color(gx_device * dev,
-			 gx_color_value c, gx_color_value m,
-			 gx_color_value y, gx_color_value k)
+jpegcmyk_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_color_index color = ~(
-	gx_color_value_to_byte(k) +
-	((uint)gx_color_value_to_byte(y) << 8) +
-	((uint)gx_color_value_to_byte(m) << 16) +
-	((uint)gx_color_value_to_byte(c) << 24));
-
+        gx_color_value_to_byte(cv[3]) +
+        ((uint)gx_color_value_to_byte(cv[2]) << 8) +
+        ((uint)gx_color_value_to_byte(cv[1]) << 16) +
+        ((uint)gx_color_value_to_byte(cv[0]) << 24));
+    
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
 
