@@ -569,6 +569,43 @@ pdf_forget_resource(gx_device_pdf * pdev, pdf_resource_t *pres1, pdf_resource_ty
     }
 }
 
+private int 
+nocheck(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
+{
+    return 1;
+}
+
+
+/* Substitute a resource with a same one. */
+int
+pdf_substitue_resource(gx_device_pdf *pdev, pdf_resource_t **ppres, 
+	pdf_resource_type_t rtype, 
+	int (*eq)(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1),
+	bool write)
+{
+    pdf_resource_t *pres1 = *ppres;
+    int code;
+
+    code = pdf_find_same_resource(pdev, rtype, ppres, (eq ? eq : nocheck));
+    if (code < 0)
+	return code;
+    if (code != 0) {
+	code = pdf_cancel_resource(pdev, (pdf_resource_t *)pres1, rtype);
+	if (code < 0)
+	    return code;
+	pdf_forget_resource(pdev, pres1, rtype);
+	return 0;
+    } else {
+	pdf_reserve_object_id(pdev, pres1, gs_no_id);
+	if (write) {
+	    code = cos_write_object(pres1->object, pdev);
+	    if (code < 0)
+		return code;
+	    pres1->object->written = 1;
+	}
+	return 1;
+    }
+}
 
 /* Find a resource of a given type by gs_id. */
 pdf_resource_t *
@@ -1716,18 +1753,9 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn, cos_value_t *pvalue)
 
     if (code < 0)
 	return code;
-    pres1 = pres;
-    code = pdf_find_same_resource(pdev, resourceFunction, &pres, functions_equal);
+    code = pdf_substitue_resource(pdev, &pres, resourceFunction, functions_equal, false);
     if (code < 0)
 	return code;
-    if (code != 0) {
-	code = pdf_cancel_resource(pdev, pres1, resourceFunction);
-	if (code < 0)
-	    return code;
-	pdf_forget_resource(pdev, pres1, resourceFunction);
-    } else {
-	pdf_reserve_object_id(pdev, pres, 0);
-    }
     COS_OBJECT_VALUE(pvalue, pres->object);
     return 0;
 }

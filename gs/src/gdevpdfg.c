@@ -1170,35 +1170,15 @@ pdf_open_gstate(gx_device_pdf *pdev, pdf_resource_t **ppres)
     return 0;
 }
 
-private int 
-pdf_is_same_extgstate(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
-{
-    return true;
-}
-
 /* Finish writing an ExtGState. */
 int
 pdf_end_gstate(gx_device_pdf *pdev, pdf_resource_t *pres)
 {
     if (pres) {
-	pdf_resource_t *pres1 = pres;
-	int code;
-
-	code = pdf_find_same_resource(pdev, resourceExtGState, &pres, pdf_is_same_extgstate);
+	int code = pdf_substitue_resource(pdev, &pres, resourceExtGState, NULL, true);
+	
 	if (code < 0)
 	    return code;
-	if (code != 0) {
-	    code = pdf_cancel_resource(pdev, (pdf_resource_t *)pres1, resourceExtGState);
-	    if (code < 0)
-		return code;
-	    pdf_forget_resource(pdev, pres1, resourceExtGState);
-	} else {
-	    pdf_reserve_object_id(pdev, pres, gs_no_id);
-	    code = cos_write_object(pres->object, pdev);
-	    if (code < 0)
-		return code;
-	    pres->object->written = 1;
-	}
 	code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;

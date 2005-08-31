@@ -450,12 +450,6 @@ pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
     return code < 0 ? code : code1;
 }
 
-private int 
-nocheck(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
-{
-    return 1;
-}
-
 /*
  * Finish writing an image.  If in-line, write the BI/dict/ID/data/EI and
  * return 1; if a resource, write the resource definition and return 0.
@@ -496,21 +490,12 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	    *(cos_object_t *)named = *pco;
 	    pres->object = COS_OBJECT(named);
 	} else if (!pres->named) { /* named objects are written at the end */
-	    code = pdf_find_same_resource(pdev, resourceXObject, &piw->pres, nocheck);
+	    code = pdf_substitue_resource(pdev, &piw->pres, resourceXObject, NULL, false);
 	    if (code < 0)
 		return code;
-	    if (code > 0) {
-		/*  Warning : if the image used alternate streams,
-		    its space in the pdev->streams.strm file
-		    won't be released.
-		 */
-		code = pdf_cancel_resource(pdev, pres, resourceXObject);
-		if (code < 0)
-		    return code;
-		pdf_forget_resource(pdev, pres, resourceXObject);
-		piw->pres->where_used |= pdev->used_mask;
-	    } else if (pres->object->id < 0)
-		pdf_reserve_object_id(pdev, pres, 0);
+	    /*  Warning : If the substituted image used alternate streams,
+		its space in the pdev->streams.strm file won't be released. */
+	    piw->pres->where_used |= pdev->used_mask;
 	}
 	code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", piw->pres);
 	if (code < 0)
