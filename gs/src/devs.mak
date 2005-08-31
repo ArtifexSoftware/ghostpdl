@@ -142,6 +142,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	cgm24	24-bit color CGM -- DITTO
 #	jpeg	JPEG format, RGB output
 #	jpeggray  JPEG format, gray output
+#	jpegcmyk  JPEG format, cmyk output
 #	miff24	ImageMagick MIFF format, 24-bit direct color, RLE compressed
 #	pam	Portable Arbitrary Map file format
 #	pcxmono	PCX file format, monochrome (1-bit black and white)
@@ -1262,6 +1263,11 @@ $(DD)jpeg.dev : $(DEVS_MAK) $(jpeg_) $(GLD)sdcte.dev $(GLD)page.dev
 $(DD)jpeggray.dev : $(DEVS_MAK) $(jpeg_) $(GLD)sdcte.dev $(GLD)page.dev
 	$(SETPDEV2) $(DD)jpeggray $(jpeg_)
 	$(ADDMOD) $(DD)jpeggray -include $(GLD)sdcte
+
+# CMYK output
+$(DD)jpegcmyk.dev : $(DEVS_MAK) $(jpeg_) $(GLD)sdcte.dev $(GLD)page.dev
+	$(SETPDEV2) $(DD)jpegcmyk $(jpeg_)
+	$(ADDMOD) $(DD)jpegcmyk -include $(GLD)sdcte
 
 $(GLOBJ)gdevjpeg.$(OBJ) : $(GLSRC)gdevjpeg.c $(PDEVH)\
  $(stdio__h) $(jpeglib__h)\
