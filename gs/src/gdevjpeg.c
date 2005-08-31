@@ -38,6 +38,8 @@ typedef struct gx_device_jpeg_s {
 private dev_proc_get_params(jpeg_get_params);
 private dev_proc_put_params(jpeg_put_params);
 private dev_proc_print_page(jpeg_print_page);
+private dev_proc_map_color_rgb(jpegcmyk_map_color_rgb);
+private dev_proc_map_cmyk_color(jpegcmyk_map_cmyk_color);
 
 /* ------ The device descriptors ------ */
 
@@ -49,7 +51,7 @@ private dev_proc_print_page(jpeg_print_page);
 #  define Y_DPI 72
 #endif
 
-/* 24-bit color */
+/* 24-bit color RGB */
 
 private const gx_device_procs jpeg_procs =
 prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
@@ -82,6 +84,72 @@ const gx_device_jpeg gs_jpeggray_device =
  0,				/* JPEGQ: 0 indicates not specified */
  0.0				/* QFactor: 0 indicates not specified */
 };
+
+/* 32-bit CMYK */
+
+private const gx_device_procs jpegcmyk_procs =
+{	gdev_prn_open,
+	gx_default_get_initial_matrix,
+	NULL,	/* sync_output */
+	gdev_prn_output_page,
+	gdev_prn_close,
+	NULL,
+        jpegcmyk_map_color_rgb,
+	NULL,	/* fill_rectangle */
+	NULL,	/* tile_rectangle */
+	NULL,	/* copy_mono */
+	NULL,	/* copy_color */
+	NULL,	/* draw_line */
+	NULL,	/* get_bits */
+	jpeg_get_params,
+	jpeg_put_params,
+	jpegcmyk_map_cmyk_color,
+	NULL,	/* get_xfont_procs */
+	NULL,	/* get_xfont_device */
+	NULL,	/* map_rgb_alpha_color */
+	gx_page_device_get_page_device	/* get_page_device */
+};
+
+const gx_device_jpeg gs_jpegcmyk_device =
+{prn_device_std_body(gx_device_jpeg, jpegcmyk_procs, "jpegcmyk",
+		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+		     X_DPI, Y_DPI, 0, 0, 0, 0, 32, jpeg_print_page),
+ 0,				/* JPEGQ: 0 indicates not specified */
+ 0.0				/* QFactor: 0 indicates not specified */
+};
+
+
+/* Apparently Adobe Photoshop and some other applications that	*/
+/* accept JPEG CMYK images expect color values to be inverted.	*/
+private int
+jpegcmyk_map_color_rgb(gx_device * dev, gx_color_index color,
+			gx_color_value prgb[3])
+{
+    int
+	not_k = color & 0xff,
+	r = not_k - ~(color >> 24),
+	g = not_k - ~((color >> 16) & 0xff),
+	b = not_k - ~((color >> 8) & 0xff); 
+
+    prgb[0] = (r < 0 ? 0 : gx_color_value_from_byte(r));
+    prgb[1] = (g < 0 ? 0 : gx_color_value_from_byte(g));
+    prgb[2] = (b < 0 ? 0 : gx_color_value_from_byte(b));
+    return 0;
+}
+
+private gx_color_index
+jpegcmyk_map_cmyk_color(gx_device * dev,
+			 gx_color_value c, gx_color_value m,
+			 gx_color_value y, gx_color_value k)
+{
+    gx_color_index color = ~(
+	gx_color_value_to_byte(k) +
+	((uint)gx_color_value_to_byte(y) << 8) +
+	((uint)gx_color_value_to_byte(m) << 16) +
+	((uint)gx_color_value_to_byte(c) << 24));
+
+    return (color == gx_no_color_index ? color ^ 1 : color);
+}
 
 /* Get parameters. */
 private int
@@ -195,6 +263,10 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     jcdp->cinfo.image_width = pdev->width;
     jcdp->cinfo.image_height = pdev->height;
     switch (pdev->color_info.depth) {
+	case 32:
+	    jcdp->cinfo.input_components = 4;
+	    jcdp->cinfo.in_color_space = JCS_CMYK;
+	    break;
 	case 24:
 	    jcdp->cinfo.input_components = 3;
 	    jcdp->cinfo.in_color_space = JCS_RGB;
