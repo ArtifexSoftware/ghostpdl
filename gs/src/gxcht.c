@@ -1095,7 +1095,7 @@ init_tile_cursor(int i, tile_cursor_t *ptc, const gx_const_strip_bitmap *btile,
     ptc->xbits = ((tw - 1) & 7) + 1;
     ptc->tdata = btile->data;
     ptc->raster = btile->raster;
-    ptc->row = ptc->tdata + by * ptc->raster;
+    ptc->row = ptc->tdata + by * (int)ptc->raster;
     ptc->data = ptc->row + ptc->xoffset;
     ptc->bit_shift = ptc->xshift;
     if_debug6('h', "[h]plane %d: size=%d,%d shift=%d bx=%d by=%d\n",
