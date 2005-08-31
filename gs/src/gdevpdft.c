@@ -30,17 +30,17 @@ private int
 pdf_make_soft_mask_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams)
 {
     pdf_resource_t *pres_soft_mask_dict = 0;
-    char buf[20];
-    uint ignore;
+    cos_dict_t *soft_mask_dict;
     int code;
 
     /* Fixme : merge redundant objects. */
-    code = pdf_alloc_resource(pdev, resourceSoftMaskDict, gs_no_id, &pres_soft_mask_dict, 0);
+    code = pdf_alloc_resource(pdev, resourceSoftMaskDict, gs_no_id, &pres_soft_mask_dict, -1);
     if (code < 0)
 	return code;
     cos_become(pres_soft_mask_dict->object, cos_type_dict);
-    pdev->soft_mask_dict = (cos_dict_t *)pres_soft_mask_dict->object;
-    code = cos_dict_put_c_key_string(pdev->soft_mask_dict, "/S", 
+    pdev->pres_soft_mask_dict = pres_soft_mask_dict;
+    soft_mask_dict = (cos_dict_t *)pres_soft_mask_dict->object;
+    code = cos_dict_put_c_key_string(soft_mask_dict, "/S", 
 	    pparams->subtype == TRANSPARENCY_MASK_Alpha ? (byte *)"/Alpha" : (byte *)"/Luminosity", 
 	    pparams->subtype == TRANSPARENCY_MASK_Alpha ? 6 : 11);
     if (code < 0)
@@ -52,18 +52,19 @@ pdf_make_soft_mask_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * ppa
 		    pparams->Background_components, "pdf_write_soft_mask_dict");
 	if (Background == NULL)
 	    return_error(gs_error_VMerror);
-	code = cos_dict_put_c_key_object(pdev->soft_mask_dict, "/BC", (cos_object_t *)Background);
+	code = cos_dict_put_c_key_object(soft_mask_dict, "/BC", (cos_object_t *)Background);
 	if (code < 0)
 	    return code;
     }
     if (pparams->transfer_function != NULL) {
 	long id;
+	char buf[20];
 	
 	code = pdf_write_function(pdev, pparams->transfer_function, &id);
 	if (code < 0)
 	    return code;
 	sprintf(buf, " %ld 0 R", id);
-	code = cos_dict_put_c_key_string(pdev->soft_mask_dict, "/TR", (const byte *)buf, strlen(buf));
+	code = cos_dict_put_c_key_string(soft_mask_dict, "/TR", (const byte *)buf, strlen(buf));
 	if (code < 0)
 	    return code;
     }
@@ -71,32 +72,21 @@ pdf_make_soft_mask_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * ppa
 
 }
 
-private int 
-pdf_begin_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev,
-				const gs_pdf14trans_params_t * pparams)
+private int
+pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams,
+			    const gs_imager_state * pis, cos_dict_t **pdict)
 {
     pdf_resource_t *pres_group;
     cos_dict_t *group_dict;
-    bool in_page = is_in_page(pdev);
     int code;
     const gs_state *gstate = gx_hld_get_gstate_ptr(pis);
     cos_value_t cs_value;
 
-    if (gstate != NULL) {
-	const gs_color_space *cs = gstate->color_space;
-
-	code = pdf_color_space(pdev, &cs_value, NULL, cs,
-		&pdf_color_space_names, false);
-	if (code < 0)
-	    return code;
-    }
-    code = pdf_alloc_resource(pdev, resourceGroup, gs_no_id, &pres_group, 0);
+    code = pdf_alloc_resource(pdev, resourceGroup, gs_no_id, &pres_group, -1);
     if (code < 0)
 	return code;
     cos_become(pres_group->object, cos_type_dict);
     group_dict = (cos_dict_t *)pres_group->object;
-    if (group_dict == NULL)
-	return_error(gs_error_VMerror);
     code = cos_dict_put_c_key_string(group_dict, "/Type", (const byte *)"/Group", 6);
     if (code < 0)
 	return code;
@@ -114,10 +104,74 @@ pdf_begin_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev,
 	    return code;
     }
     if (gstate != NULL) {
+	const gs_color_space *cs = gstate->color_space;
+
+	code = pdf_color_space(pdev, &cs_value, NULL, cs,
+		&pdf_color_space_names, false);
+	if (code < 0)
+	    return code;
 	code = cos_dict_put_c_key(group_dict, "/CS", &cs_value);
 	if (code < 0)
 	    return code;
     }
+    pdf_reserve_object_id(pdev, pres_group, 0);
+    *pdict = group_dict;
+    return 0;
+}
+
+private int
+pdf_make_form_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams,
+			    const gs_imager_state * pis, 
+			    const cos_dict_t *group_dict, cos_dict_t *form_dict)
+{
+    cos_array_t *bbox_array;
+    float bbox[4];
+    gs_rect bbox_rect;
+    int code;
+
+
+    code = gs_bbox_transform(&pparams->bbox, &ctm_only(pis), &bbox_rect);
+    if (code < 0)
+	return code;
+    bbox[0] = bbox_rect.p.x;
+    bbox[1] = bbox_rect.p.y;
+    bbox[2] = bbox_rect.q.x;
+    bbox[3] = bbox_rect.q.y;
+    code = cos_dict_put_c_key_string(form_dict, "/Type", (const byte *)"/XObject", 8);
+    if (code < 0)
+	return code;
+    code = cos_dict_put_c_key_string(form_dict, "/Subtype", (const byte *)"/Form", 5);
+    if (code < 0)
+	return code;
+    code = cos_dict_put_c_key_int(form_dict, "/FormType", 1);
+    if (code < 0)
+	return code;
+    code = cos_dict_put_c_key_string(form_dict, "/Matrix", (const byte *)"[1 0 0 1 0 0]", 13);
+    if (code < 0)
+	return code;
+    bbox_array = cos_array_from_floats(pdev, bbox, 4, "pdf_begin_transparency_group");
+    if (bbox_array == NULL)
+	return_error(gs_error_VMerror);
+    code = cos_dict_put_c_key_object(form_dict, "/BBox", (cos_object_t *)bbox_array);
+    if (code < 0)
+	return code;
+    return cos_dict_put_c_key_object(form_dict, "/Group", (cos_object_t *)group_dict);
+}
+
+private int 
+pdf_begin_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev,
+				const gs_pdf14trans_params_t * pparams)
+{
+    cos_dict_t *group_dict;
+    bool in_page = is_in_page(pdev);
+    const gs_state *gstate = gx_hld_get_gstate_ptr(pis);
+    int code;
+
+    if (gstate == NULL)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    code = pdf_make_group_dict(pdev, pparams, pis, &group_dict);
+    if (code < 0)
+	return code;
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
@@ -127,53 +181,21 @@ pdf_begin_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev,
 	    return code;
     }
     if (!in_page) 
-	pdev->pages[pdev->next_page].group_id = pres_group->object->id;
+	pdev->pages[pdev->next_page].group_id = group_dict->id;
     else {
 	pdf_resource_t *pres, *pres_gstate = NULL;
-	cos_array_t *bbox_array;
-	float bbox[4];
-	cos_dict_t *form_dict;
-	gs_rect bbox_rect;
-	
+
 	code = pdf_prepare_drawing(pdev, pis, &pres_gstate);
 	if (code < 0)
 	    return code;
 	code = pdf_end_gstate(pdev, pres_gstate);
 	if (code < 0)
 	    return code;
-	code = gs_bbox_transform(&pparams->bbox, &ctm_only(pis), &bbox_rect);
-	if (code < 0)
-	    return code;
-	bbox[0] = bbox_rect.p.x;
-	bbox[1] = bbox_rect.p.y;
-	bbox[2] = bbox_rect.q.x;
-	bbox[3] = bbox_rect.q.y;
 	code = pdf_enter_substream(pdev, resourceXObject, 
-		gs_no_id, &pres, true, pdev->params.CompressPages);
+		gs_no_id, &pres, false, pdev->params.CompressPages);
 	if (code < 0)
 	    return code;
-	form_dict = (cos_dict_t *)pres->object;
-	code = cos_dict_put_c_key_string(form_dict, "/Type", (const byte *)"/XObject", 8);
-	if (code < 0)
-	    return code;
-	code = cos_dict_put_c_key_string(form_dict, "/Subtype", (const byte *)"/Form", 5);
-	if (code < 0)
-	    return code;
-	code = cos_dict_put_c_key_int(form_dict, "/FormType", 1);
-	if (code < 0)
-	    return code;
-	code = cos_dict_put_c_key_string(form_dict, "/Matrix", (const byte *)"[1 0 0 1 0 0]", 13);
-	if (code < 0)
-	    return code;
-	bbox_array = cos_array_from_floats(pdev, bbox, 4, "pdf_begin_transparency_group");
-	if (bbox_array == NULL)
-	    return_error(gs_error_VMerror);
-	code = cos_dict_put_c_key_object(form_dict, "/BBox", (cos_object_t *)bbox_array);
-	if (code < 0)
-	    return code;
-	code = cos_dict_put_c_key_object(form_dict, "/Group", (cos_object_t *)group_dict);
-	if (code < 0)
-	    return code;
+	return pdf_make_form_dict(pdev, pparams, pis, group_dict, (cos_dict_t *)pres->object);
     }
     return 0;
 }
@@ -196,6 +218,7 @@ pdf_end_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev)
 	code = pdf_exit_substream(pdev);
 	if (code < 0)
 	    return code;
+	pdf_reserve_object_id(pdev, pres, 0);
 	sputc(pdev->strm,'/');
 	sputs(pdev->strm, (const byte *)pres->rname, strlen(pres->rname), &ignore);
 	sputs(pdev->strm, (const byte *)" Do\n", 4, &ignore);
@@ -262,11 +285,14 @@ pdf_end_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
 	code = pdf_exit_substream(pdev);
 	if (code < 0)
 	    return code;
-	pis->soft_mask_id = pdev->soft_mask_dict->id;
-	code = cos_dict_put_c_key_object(pdev->soft_mask_dict, "/G", (cos_object_t *)pres->object);
+	pdf_reserve_object_id(pdev, pres, 0);
+	code = cos_dict_put_c_key_object((cos_dict_t *)pdev->pres_soft_mask_dict->object, 
+		"/G", (cos_object_t *)pres->object);
 	if (code < 0)
 	    return code;
-	pdev->soft_mask_dict = NULL;
+	pdf_reserve_object_id(pdev, pdev->pres_soft_mask_dict, 0);
+	pis->soft_mask_id = pdev->pres_soft_mask_dict->object->id;
+	pdev->pres_soft_mask_dict = NULL;
     }
     return 0;
 }
