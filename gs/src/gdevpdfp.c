@@ -207,7 +207,6 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     gx_device_pdf save_dev;
     float cl = (float)pdev->CompatibilityLevel;
     bool locked = pdev->params.LockDistillerParams;
-    bool ht = pdev->HaveTransparency;
     gs_param_name param_name;
 
     /*
@@ -302,18 +301,6 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	    case 1:
 		break;
 	}
-	switch (code = param_read_bool(plist, (param_name = "HaveTransparency"), &ht)) {
-	    default:
-		ecode = code;
-		param_signal_error(plist, param_name, ecode);
-	    case 0:
-		if (ht && cl < (float)1.4) {
-		    ht = false;
-		    param_signal_error(plist, param_name, ecode);
-		}
-	    case 1:
-		break;
-	}
 
 	code = gs_param_read_items(plist, pdev, pdf_param_items);
 	if (code < 0)
@@ -364,7 +351,6 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
      * the version.
      */
     pdev->version = (cl < 1.2 ? psdf_version_level2 : psdf_version_ll3);
-    pdev->HaveTransparency = ht;
     if (pdev->ForOPDFRead) {
 	pdev->ResourcesBeforeUsage = true;
 	pdev->HaveCFF = false;

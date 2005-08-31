@@ -321,7 +321,8 @@ gdev_pdf_create_compositor(gx_device *dev,
 {
     gx_device_pdf *pdev = (gx_device_pdf *)dev;
     
-    if (pdev->HaveTransparency && pct->type->comp_id == GX_COMPOSITOR_PDF14_TRANS) {
+    if (pdev->HaveTransparency && pdev->CompatibilityLevel >= 1.4 &&
+	    pct->type->comp_id == GX_COMPOSITOR_PDF14_TRANS) {
 	gs_pdf14trans_t *pcte = (gs_pdf14trans_t *)pct;
 	gs_pdf14trans_params_t *params = &pcte->params;
 
