@@ -2,6 +2,6 @@
 # $Id$
 # Convert PostScript to PDF.
 
-# Currently, we produce PDF 1.2 by default, but this is not guaranteed
+# Currently, we produce PDF 1.4 by default, but this is not guaranteed
 # not to change in the future.
-exec ps2pdf12 "$@"
+exec ps2pdf14 "$@"

@@ -35,7 +35,7 @@
 /* Define the default language level and PDF compatibility level. */
 /* Acrobat 4 (PDF 1.3) is the default. */
 #define PSDF_VERSION_INITIAL psdf_version_ll3
-#define PDF_COMPATIBILITY_LEVEL_INITIAL 1.3
+#define PDF_COMPATIBILITY_LEVEL_INITIAL 1.4
 
 /* Define the size of internal stream buffers. */
 /* (This is not a limitation, it only affects performance.) */
