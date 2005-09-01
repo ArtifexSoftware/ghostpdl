@@ -275,7 +275,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     while (NINSTANCES < params->SBNUMINSTANCES) {
         /* (3b) */
         if (params->SBHUFF) {
-            /* todo */
+            DT = jbig2_huffman_get(hs, params->SBHUFFDT, &code);
         } else {
             code = jbig2_arith_int_decode(IADT, as, &DT);
         }
@@ -535,7 +535,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     
     if (params.SBHUFF) {
         /* 7.4.3.1.5 - Symbol ID Huffman table */
-	/* todo: write the bloody thing */	
+	/* ...this is handled in the segment body decoder */	
 
         /* 7.4.3.1.6 - Other Huffman table selection */
 	switch (huffman_flags & 0x0003) {
