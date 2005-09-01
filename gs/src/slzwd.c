@@ -339,9 +339,10 @@ reset:
 		if (bits_left + ((rlimit - p) << 3) < code_size) {
 		    /*
 		     * We need more data to decide whether a reset is next.
-		     ****** PUNT ******
-		     */
-		    status = ERRC;
+		     * Return an error if we cannot get more.
+                     */
+		    if (last)
+                        status = ERRC;
 		    goto out;
 		}
 		if (low_order) {
