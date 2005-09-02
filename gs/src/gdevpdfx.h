@@ -138,6 +138,7 @@ typedef enum {
   &st_pdf_font_descriptor,	/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_resource,\
   &st_pdf_resource,\
+  &st_pdf_resource,\
   &st_pdf_resource
 
 /*
