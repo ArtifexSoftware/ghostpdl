@@ -796,9 +796,11 @@ display_get_params(gx_device * dev, gs_param_list * plist)
 	(code = param_write_int(plist, 
 	    "DisplayFormat", &ddev->nFormat)) < 0 ||
 	(code = param_write_float(plist, 
-	    "DisplayResolution", &ddev->HWResolution[1])) < 0 ||
-	(code = devn_get_params(dev, plist, &ddev->devn_params, 
-		&ddev->equiv_cmyk_colors)) < 0);
+	    "DisplayResolution", &ddev->HWResolution[1])) < 0);
+    if (code >= 0 &&
+	(ddev->nFormat & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_SEPARATION)
+	code = devn_get_params(dev, plist, &ddev->devn_params, 
+		&ddev->equiv_cmyk_colors);
     return code;
 }
 
@@ -975,7 +977,8 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 	    break;
     }
 
-    if (ecode >= 0) {
+    if (ecode >= 0 &&
+	    (ddev->nFormat & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_SEPARATION) {
 	/* Use utility routine to handle devn parameters */
 	ecode = devn_put_params(dev, plist, pdevn_params, pequiv_colors);
         /* 
@@ -983,8 +986,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 	 * devn_put_params, but we always use 64bpp,
 	 * so reset it to the the correct value.
 	 */
-	if ((ddev->nFormat & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_SEPARATION)
-	    dev->color_info.depth = arch_sizeof_color_index * 8;
+	dev->color_info.depth = arch_sizeof_color_index * 8;
     }
 
     if (ecode >= 0) {

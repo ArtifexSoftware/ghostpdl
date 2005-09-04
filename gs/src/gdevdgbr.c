@@ -674,7 +674,8 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 						      : NULL );
 	if (code >= 0) {
 	    if (row != data) {
-		if (prect->p.x == 0 && params->data[0] != row) {
+		if (prect->p.x == 0 && params->data[0] != row
+		    && params->options & GB_RETURN_POINTER) {
 		    /*
 		     * get_bits returned an appropriate pointer: we can
 		     * avoid doing any copying.
