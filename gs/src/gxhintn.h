@@ -100,6 +100,7 @@ typedef struct t1_hint_s
     /* b0, b1 are unused. Defined to simplify a compatibility testing. */
 #endif
     enum t1_align_type aligned0, aligned1; /* ag0, ag1 is aligned */
+    int q0, q1; /* Stem quality tangent. */
     unsigned int stem3_index; /* 1,2,3 for stem3 (not used yet), 0 for other types */
     int range_index; /* type 2 only */
     int side_mask;

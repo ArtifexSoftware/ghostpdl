@@ -344,24 +344,24 @@ private inline void o2g_float(t1_hinter * h, t1_hinter_space_coord ox, t1_hinter
 
 /* --------------------- t1_hint class members ---------------------*/
 
-private void t1_hint__set_aligned_coord(t1_hint * this, t1_glyph_space_coord gc, t1_pole * pole, enum t1_align_type align)
+private void t1_hint__set_aligned_coord(t1_hint * this, t1_glyph_space_coord gc, t1_pole * pole, enum t1_align_type align, int quality)
 {   t1_glyph_space_coord g = (this->type == hstem ? pole->gy : pole->gx); 
 
 #if FINE_STEM_COMPLEXES
     if (any_abs(this->g0 - g) < any_abs(this->g1 - g)) {
-        if (this->aligned0 <= align)
-            this->ag0 = gc, this->aligned0 = align;
+        if (this->aligned0 <= align && this->q0 > quality)
+            this->ag0 = gc, this->aligned0 = align, this->q0 = quality;
     } else {
-        if (this->aligned1 <= align)
-            this->ag1 = gc, this->aligned1 = align;
+        if (this->aligned1 <= align && this->q1 > quality)
+            this->ag1 = gc, this->aligned1 = align, this->q1 = quality;
     }
 #else
     if (any_abs(this->g0 - g) < any_abs(this->g1 - g)) {
-        if (this->aligned0 < align)
-            this->ag0 = gc, this->aligned0 = align;
+        if (this->aligned0 < align && this->q0 > quality)
+            this->ag0 = gc, this->aligned0 = align, this->q0 = quality;
     } else {
-        if (this->aligned1 < align)
-            this->ag1 = gc, this->aligned1 = align;
+        if (this->aligned1 < align && this->q1 > quality)
+            this->ag1 = gc, this->aligned1 = align, this->q1 = quality;
     }
 #endif
 }
@@ -636,7 +636,7 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
     if (this->ctmf.denominator != 0) {
 	code = fraction_matrix__invert_to(&this->ctmf, &this->ctmi); /* Note: ctmi is inversion of ctmf, not ctm. */
 	if (code < 0)
-	    this->disable_hinting = true;
+	    return code;
 	this->g2o_fraction = 1 << this->g2o_fraction_bits;
 	/* Note : possibly we'll adjust the matrix precision dynamically 
 	   with adjust_matrix_precision while importing the glyph. */
@@ -1251,6 +1251,7 @@ private inline int t1_hinter__stem(t1_hinter * this, enum t1_hint_type type, uns
 	hint->g0 = hint->ag0 = g0;
 	hint->g1 = hint->ag1 = g1;
 	hint->aligned0 = hint->aligned1 = unaligned;
+	hint->q0 = hint->q1 = max_int;
 	hint->b0 = hint->b1 = false;
 	hint->stem3_index = stem3_index;
 	hint->range_index = -1;
@@ -1414,16 +1415,27 @@ private void t1_hinter__simplify_representation(t1_hinter * this)
 }
 
 private inline bool t1_hinter__is_small_angle(t1_hinter * this, int pole_index0, int pole_index1, 
-	long tan_x, long tan_y, int alpha, int alpha_div)
+	long tan_x, long tan_y, int alpha, int alpha_div, int *quality)
 {   long gx = this->pole[pole_index1].gx - this->pole[pole_index0].gx;
     long gy = this->pole[pole_index1].gy - this->pole[pole_index0].gy;
     long vp = mul_shift(gx, tan_y, _fixed_shift) - mul_shift(gy, tan_x, _fixed_shift);
     long sp = mul_shift(gx, tan_x, _fixed_shift) + mul_shift(gy, tan_y, _fixed_shift);
     long vp1 = any_abs(vp), sp1 = any_abs(sp);
 
-    if (gx == 0 && gy == 0)
+    if (gx == 0 && gy == 0) {
+	*quality = max_int;
 	return false;
-    return vp1 / alpha_div <= sp1 / alpha;
+    }
+    if (vp1 >= sp1) {
+	*quality = max_int;
+	return false;
+    }
+    if (vp1 / alpha_div > sp1 / alpha) {
+	*quality = max_int;
+	return false;
+    }
+    *quality = vp1 * 100 / sp1; /* The best quality is 0. */
+    return true;
 }
 
 private inline bool t1_hinter__is_conjugated(t1_hinter * this, int pole_index)
@@ -1451,19 +1463,24 @@ private inline bool t1_hinter__next_contour_pole(t1_hinter * this, int pole_inde
     return ranger_step_f(pole_index, beg_contour_pole, end_contour_pole);
 }
 
-private inline bool t1_hinter__is_good_tangent(t1_hinter * this, int pole_index, long tan_x, long tan_y)
+private inline bool t1_hinter__is_good_tangent(t1_hinter * this, int pole_index, long tan_x, long tan_y, int *quality)
 {   int contour_index = this->pole[pole_index].contour_index;
     int beg_contour_pole = this->contour[contour_index];
     int end_contour_pole = this->contour[contour_index + 1] - 2, prev, next;
     int const alpha = 9, alpha_div = 10;
+    int quality0, quality1;
+    bool good0, good1;
 
     prev = ranger_step_b(pole_index, beg_contour_pole, end_contour_pole);
-    if (t1_hinter__is_small_angle(this, prev, pole_index, tan_x, tan_y, alpha, alpha_div))
-        return true;
+    good0 = t1_hinter__is_small_angle(this, prev, pole_index, tan_x, tan_y, alpha, alpha_div, &quality0);
+    if (quality0 == 0) {
+	*quality = 0;
+	return true;
+    }
     next = ranger_step_f(pole_index, beg_contour_pole, end_contour_pole);
-    if (t1_hinter__is_small_angle(this, next, pole_index, tan_x, tan_y, alpha, alpha_div))
-        return true;
-    return false;
+    good1 = t1_hinter__is_small_angle(this, next, pole_index, tan_x, tan_y, alpha, alpha_div, &quality1);
+    *quality = min(quality0, quality1);
+    return good0 || good1;
 }
 
 private void t1_hinter__compute_type1_stem_ranges(t1_hinter * this)
@@ -1514,19 +1531,19 @@ private bool t1_hinter__is_stem_boundary_near(t1_hinter * this, const t1_hint *h
     return any_abs(g - (boundary ? hint->g1 : hint->g0)) <= fuzz;
 }
 
-private int t1_hinter__is_stem_hint_applicable(t1_hinter * this, t1_hint *hint, int pole_index)
+private int t1_hinter__is_stem_hint_applicable(t1_hinter * this, t1_hint *hint, int pole_index, int *quality)
 {   /* We don't check hint->side_mask because the unused coord should be outside the design bbox. */
     int k;
 
     if (hint->type == hstem 
 	    && ((k = 1, t1_hinter__is_stem_boundary_near(this, hint, this->pole[pole_index].gy, 0)) ||
 	        (k = 2, t1_hinter__is_stem_boundary_near(this, hint, this->pole[pole_index].gy, 1)))
-            && t1_hinter__is_good_tangent(this, pole_index, 1, 0))
+            && t1_hinter__is_good_tangent(this, pole_index, 1, 0, quality))
         return k;
     if (hint->type == vstem  
 	    && ((k = 1, t1_hinter__is_stem_boundary_near(this, hint, this->pole[pole_index].gx, 0)) ||
 	        (k = 2, t1_hinter__is_stem_boundary_near(this, hint, this->pole[pole_index].gx, 1)))
-            && t1_hinter__is_good_tangent(this, pole_index, 0, 1)) 
+            && t1_hinter__is_good_tangent(this, pole_index, 0, 1, quality)) 
         return k;
     return 0;
 }
@@ -1790,8 +1807,12 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this,
 		max(this->blue_fuzz, any_abs(this->pole[next1].gx - pole->gx) / 10));
         bool bckwd_horiz = (any_abs(this->pole[prev1].gy - pole->gy) <= 
 		max(this->blue_fuzz, any_abs(this->pole[prev1].gx - pole->gx) / 10));
-
-        if (forwd_horiz || bckwd_horiz) {
+        bool maximum = (this->pole[next1].gy - pole->gy < 0 && 
+			this->pole[prev1].gy - pole->gy < 0);
+        bool minimum = (this->pole[next1].gy - pole->gy > 0 && 
+			this->pole[prev1].gy - pole->gy > 0);
+		
+        if (forwd_horiz || bckwd_horiz || maximum || minimum) {
             bool forwd_curve = (this->pole[next1].type == offcurve);
             bool bckwd_curve = (this->pole[prev1].type == offcurve);
             bool curve = (bckwd_curve && forwd_curve);
@@ -1799,9 +1820,13 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this,
                                      this->pole[next2].gy <= pole->gy);
             bool concave = (curve && this->pole[prev2].gy >= pole->gy && 
                                      this->pole[next2].gy >= pole->gy);
-            t1_zone *zone = t1_hinter__find_zone(this, pole->gy, curve, convex, concave);
+            t1_zone *zone = t1_hinter__find_zone(this, pole->gy, curve || maximum || minimum, 
+						convex || maximum, concave || minimum);
 
-            if (zone != NULL) {
+            if (zone != NULL &&
+		   (forwd_horiz || bckwd_horiz || 
+		    (maximum && zone->type == topzone) || 
+		    (minimum && zone->type == botzone))) {
                 if (this->suppress_overshoots)
 #                   if ADOBE_OVERSHOOT_COMPATIBILIY
                         gy = (zone->type == topzone ? zone->overshoot_y : zone->y);
@@ -1874,9 +1899,10 @@ private int t1_hinter__find_stem_middle(t1_hinter * this, fixed *t, int pole_ind
 {   /* We assume proper glyphs, see Type 1 spec, chapter 4. */
     int next = t1_hinter__next_contour_pole(this, pole_index);
     const int alpha = 10;
+    int quality;
     bool curve = this->pole[next].type == offcurve;
-    bool continuing = (horiz ? t1_hinter__is_small_angle(this, next, pole_index, 1, 0, alpha, 1)
-                             : t1_hinter__is_small_angle(this, next, pole_index, 0, 1, alpha, 1));
+    bool continuing = (horiz ? t1_hinter__is_small_angle(this, next, pole_index, 1, 0, alpha, 1, &quality)
+                             : t1_hinter__is_small_angle(this, next, pole_index, 0, 1, alpha, 1, &quality));
 
     *t = (!curve && continuing ? fixed_half : 0);
     return pole_index;
@@ -1889,9 +1915,10 @@ private int t1_hinter__skip_stem(t1_hinter * this, int pole_index, bool horiz)
     int next_segm = t1_hinter__segment_end(this, i);
     long tan_x = (horiz ? 1 : 0);
     long tan_y = (horiz ? 0 : 1);
+    int quality;
 
-    while (t1_hinter__is_small_angle(this, i, next_pole, tan_x, tan_y, 1000, 1) && /* The threshold is taken from scratch. */
-           t1_hinter__is_small_angle(this, i, next_segm, tan_x, tan_y, 1000, 1)) {
+    while (t1_hinter__is_small_angle(this, i, next_pole, tan_x, tan_y, 1000, 1, &quality) && /* The threshold is taken from scratch. */
+           t1_hinter__is_small_angle(this, i, next_segm, tan_x, tan_y, 1000, 1, &quality)) {
         i = t1_hinter__segment_end(this, i);
 	if (i == pole_index) {
 	    /* An invalid glyph with <=2 segments in the contour with no angles. */
@@ -1912,6 +1939,7 @@ private void t1_hinter__mark_existing_stems(t1_hinter * this)
 	    for (k = this->hint[i].range_index; k != -1; k = this->hint_range[k].next) {
 		int beg_range_pole = this->hint_range[k].beg_pole;        
 		int end_range_pole = this->hint_range[k].end_pole;
+		int quality;
 
 		if (this->pole[beg_range_pole].type == closepath) {
 		    /* A workaround for a buggy font from the Bug 687393,
@@ -1921,7 +1949,7 @@ private void t1_hinter__mark_existing_stems(t1_hinter * this)
 			continue;
 		}
 		for (j = beg_range_pole; j <= end_range_pole;) {
-		    int k = t1_hinter__is_stem_hint_applicable(this, &this->hint[i], j);
+		    int k = t1_hinter__is_stem_hint_applicable(this, &this->hint[i], j, &quality);
 		    if (k == 1)
 			this->hint[i].b0 = true;
 		    else if (k == 2)
@@ -1945,6 +1973,7 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
 		int beg_range_pole = this->hint_range[k].beg_pole;        
 		int end_range_pole = this->hint_range[k].end_pole;
 		bool horiz = (this->hint[i].type == hstem);
+		int quality = max_int;
 
 		if (this->pole[beg_range_pole].type == closepath) {
 		    /* A workaround for a buggy font from the Bug 687393,
@@ -1954,7 +1983,7 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
 			continue;
 		}
 		for (j = beg_range_pole; j <= end_range_pole;) {
-		    if (t1_hinter__is_stem_hint_applicable(this, &this->hint[i], j)) {
+		    if (t1_hinter__is_stem_hint_applicable(this, &this->hint[i], j, &quality)) {
 			fixed t; /* Type 1 spec implies that it is 0 for curves, 0.5 for bars */
 			int segment_index = t1_hinter__find_stem_middle(this, &t, j, horiz);
 			t1_glyph_space_coord gc;
@@ -1976,7 +2005,7 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
 			vd_square(this->pole[segment_index].gx, this->pole[segment_index].gy, 
 				    (horiz ? 7 : 9), (i < this->primary_hint_count ? RGB(0,0,255) : RGB(0,255,0)));
 			/* todo: optimize: primary commands don't need to align, if suppressed by secondary ones. */
-			t1_hint__set_aligned_coord(&this->hint[i], gc, &this->pole[j], align);
+			t1_hint__set_aligned_coord(&this->hint[i], gc, &this->pole[j], align, quality);
 			jj = j;
 			j = t1_hinter__skip_stem(this, j, horiz);
 			if (j < jj) { /* Rolled over contour end ? */
