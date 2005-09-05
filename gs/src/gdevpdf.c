@@ -1252,8 +1252,19 @@ pdf_close(gx_device * dev)
     pdev->pages = 0;
     pdev->num_pages = 0;
 
-    if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size)
+    if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size) {
+        /* pdf_open_dcument could set up filters for entire document.
+           Removing them now. */
+	int status;
+    
 	stream_putc(s, 0x04);
+	while (s->strm) {
+	    s = s->strm;
+	}
+	status = s_close_filters(&pdev->strm, s);
+	if (status < 0 && code == 0)
+	    code = gs_error_ioerror;
+    }
     code1 = gdev_vector_close_file((gx_device_vector *) pdev);
     if (code >= 0)
 	code = code1;

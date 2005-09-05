@@ -111,6 +111,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0 /*false*/,			/* PrintStatistics */
  PDF_FOR_OPDFREAD,		/* ForOPDFRead */
  {0, 0, 0},			/* OPDFReadProcsetPath */
+ false,				/* CompressEntireFile */
  0 /*false*/,			/* ResourcesBeforeUsage */
  1 /*true*/,			/* HavePDFWidths */
  0 /*false*/,			/* HaveStrokeColor */

@@ -75,33 +75,165 @@ private_st_pdf_pattern();
 
 /* ---------------- Utilities ---------------- */
 
+/*
+ * Strip whitespace and comments from a line of PostScript code as possible.
+ * Return a pointer to any string that remains, or NULL if none.
+ * Note that this may store into the string.
+ */
+/* This function copied from geninit.c . */
+private char *
+doit(char *line, bool intact)
+{
+    char *str = line;
+    char *from;
+    char *to;
+    int in_string = 0;
+
+    if (intact)
+	return str;
+    while (*str == ' ' || *str == '\t')		/* strip leading whitespace */
+	++str;
+    if (*str == 0)		/* all whitespace */
+	return NULL;
+    if (!strncmp(str, "%END", 4))	/* keep these for .skipeof */
+	return str;
+    if (str[0] == '%')    /* comment line */
+	return NULL;
+    /*
+     * Copy the string over itself removing:
+     *  - All comments not within string literals;
+     *  - Whitespace adjacent to '[' ']' '{' '}';
+     *  - Whitespace before '/' '(' '<';
+     *  - Whitespace after ')' '>'.
+     */
+    for (to = from = str; (*to = *from) != 0; ++from, ++to) {
+	switch (*from) {
+	    case '%':
+		if (!in_string)
+		    break;
+		continue;
+	    case ' ':
+	    case '\t':
+		if (to > str && !in_string && strchr(" \t>[]{})", to[-1]))
+		    --to;
+		continue;
+	    case '(':
+	    case '<':
+	    case '/':
+	    case '[':
+	    case ']':
+	    case '{':
+	    case '}':
+		if (to > str && !in_string && strchr(" \t", to[-1]))
+		    *--to = *from;
+                if (*from == '(')
+                    ++in_string;
+              	continue;
+	    case ')':
+		--in_string;
+		continue;
+	    case '\\':
+		if (from[1] == '\\' || from[1] == '(' || from[1] == ')')
+		    *++to = *++from;
+		continue;
+	    default:
+		continue;
+	}
+	break;
+    }
+    /* Strip trailing whitespace. */
+    while (to > str && (to[-1] == ' ' || to[-1] == '\t'))
+	--to;
+    *to = 0;
+    return str;
+}
+
+
 private int
-copy_file(stream *s, const char *fname)
+copy_ps_file_stripping(stream *s, const char *fname, bool HaveTrueTypes)
 {
     FILE *f;
-    char buf[1024];
-    int n;
+    char buf[1024], *p, *q  = buf;
+    int n, l = 0, m = sizeof(buf) - 1, outl = 0;
+    bool skipping = false;
 
     f = gp_fopen(fname, "rb");
     if (f == NULL)
 	return_error(gs_error_undefinedfilename);
+    n = fread(buf, 1, m, f);
+    buf[n] = 0;
     do {
-	n = fread(buf, 1, sizeof(buf), f);
-	stream_write(s, buf, n);
-    } while (n == sizeof(buf));
+	if (*q == '\r' || *q == '\n') {
+	    q++;
+	    continue;
+	}
+	p = strchr(q, '\r');
+	if (p == NULL)
+	    p = strchr(q, '\n');
+	if (p == NULL) {
+	    if (n < m)
+		p = buf + n;
+	    else {
+		strcpy(buf, q);
+		l = strlen(buf);
+		m = sizeof(buf) - 1 - l;
+		if (!m) {
+		    eprintf1("The procset %s contains a too long line.", fname);
+		    return_error(gs_error_ioerror);
+		}
+		n = fread(buf + l, 1, m, f);
+		n += l;
+		m += l;
+		buf[n] = 0;
+		q = buf;
+		continue;
+	    }
+	}
+	*p = 0;
+	if (q[0] == '%')
+	    l = 0;
+	else {
+	    q = doit(q, false);
+	    if (q == NULL)
+		l = 0;
+	    else
+		l = strlen(q);
+	}
+	if (l) {
+	    if (!HaveTrueTypes && !strcmp("%%beg TrueType", q))
+		skipping = true;
+	    if (!skipping) {
+		outl += l + 1;
+		if (outl > 100) {
+		    q[l] = '\r';
+		    outl = 0;
+		} else
+		    q[l] = ' ';
+		stream_write(s, q, l + 1);
+	    }
+	    if (!HaveTrueTypes && !strcmp("%%end TrueType", q))
+		skipping = false;
+	}
+	q = p + 1;
+    } while (n == m || q < buf + n);
+    if (outl)
+	stream_write(s, "\r", 1);
+    fclose(f);
     return 0;
 }
 
 private int
-copy_procsets(stream *s, const gs_param_string *path)
+copy_procsets(stream *s, const gs_param_string *path, bool HaveTrueTypes)
 {
     char fname[gp_file_name_sizeof];
     const byte *p = path->data, *e = path->data + path->size;
     int l, i = 0, code;
+    const char *tt_encs[] = {"gs_agl.ps", "gs_mgl_e.ps"};
 
     if (p != NULL) {
 	for (;; i++) {
 	    const byte *c = memchr(p, gp_file_name_list_separator, e - p);
+	    int k;
 
 	    if (c == NULL)
 		c = e;
@@ -111,9 +243,19 @@ copy_procsets(stream *s, const gs_param_string *path)
 		    return_error(gs_error_limitcheck);
 		memcpy(fname, p, l);
 		fname[l] = 0;
-		code = copy_file(s, fname);
-		if (code < 0)
-		    return code;
+		if (!HaveTrueTypes) {
+		    for (k = count_of(tt_encs) - 1; k >= 0; k--) {
+			int L = strlen(tt_encs[k]);
+
+			if (!strcmp(fname + strlen(fname) - L, tt_encs[k]))
+			    break;
+		    }
+		}
+		if (HaveTrueTypes || k < 0) {
+		    code = copy_ps_file_stripping(s, fname, HaveTrueTypes);
+		    if (code < 0)
+			return code;
+		}
 	    }
 	    if (c == e)
 		break;
@@ -122,6 +264,22 @@ copy_procsets(stream *s, const gs_param_string *path)
     }
     if (!i)
 	return_error(gs_error_undefinedfilename);
+    return 0;
+}
+
+private int
+encode(stream **s, const stream_template *t, gs_memory_t *mem)
+{
+    stream_state *st = s_alloc_state(mem, t->stype, "pdf_open_document.encode");
+
+    if (st == 0)
+	return_error(gs_error_VMerror);
+    if (t->set_defaults)
+	t->set_defaults(st);
+    if (s_add_filter(s, t, st, mem) == 0) {
+	gs_free_object(mem, st, "pdf_open_document.encode");
+	return_error(gs_error_VMerror);
+    }
     return 0;
 }
 
@@ -135,11 +293,35 @@ pdf_open_document(gx_device_pdf * pdev)
 	stream *s = pdev->strm;
 	int level = (int)(pdev->CompatibilityLevel * 10 + 0.5);
 
+	pdev->binary_ok = !pdev->params.ASCII85EncodePages;
 	if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size) {
-	    int code = copy_procsets(s, &pdev->OPDFReadProcsetPath);
-
+	    int code, status;
+	    
+	    stream_write(s, (byte *)"%!PS-Adobe-2.0\r", 15);
+	    if (pdev->params.CompressPages || pdev->CompressEntireFile) {
+		/*  When CompressEntireFile is true and ASCII85EncodePages is false,
+		    the ASCII85Encode filter is applied, rather one may expect the opposite.
+		    Keeping it so due to no demand for this mode.
+		    A right implementation should compute the length of the compressed procset,
+		    write out an invocation of SubFileDecode filter, and write the length to
+		    there assuming the output file is positionable. */
+		stream_write(s, (byte *)"currentfile /ASCII85Decode filter /LZWDecode filter cvx exec\r", 61);
+		code = encode(&s, &s_A85E_template, pdev->pdf_memory);
+		if (code < 0)
+		    return code;
+		code = encode(&s, &s_LZWE_template, pdev->pdf_memory);
+		if (code < 0)
+		    return code;
+	    }
+	    code = copy_procsets(s, &pdev->OPDFReadProcsetPath, pdev->HaveTrueTypes);
 	    if (code < 0)
 		return code;
+	    if (!pdev->CompressEntireFile) {
+		status = s_close_filters(&s, pdev->strm);
+		if (status < 0)
+		    return_error(gs_error_ioerror);
+	    } else
+		pdev->strm = s;
 	}
 	pprintd2(s, "%%PDF-%d.%d\n", level / 10, level % 10);
 	pdev->binary_ok = !pdev->params.ASCII85EncodePages;
@@ -1748,7 +1930,7 @@ functions_equal(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pre
 int
 pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn, cos_value_t *pvalue)
 {
-    pdf_resource_t *pres, *pres1;
+    pdf_resource_t *pres;
     int code = pdf_function_aux(pdev, pfn, &pres);
 
     if (code < 0)

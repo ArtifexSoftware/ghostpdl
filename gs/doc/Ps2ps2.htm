@@ -152,6 +152,20 @@ with these exceptions:
 <dt><b><tt>/ASCII85EncodePages</tt></b> <em>true</em>,
 </dl>
 
+<p>
+The following ps2write specific option control the output file compression :
+<p>
+
+<dl>
+<b><tt>-dCompressEntireFile=</tt></b><em>boolean</em>
+<dd>When this parameter is true, the <b><tt>LZWEncode</b></tt>
+and <b><tt>ASCII85Encode</b></tt> filters are being applied to entire output file.
+In this case <b><tt>CompressPages</b></tt> should be false to exclude a dual compression.
+When this parameter is false, those filters applies to the initial procset only,
+if <b><tt>CompressPages</b></tt> is true.
+Default value is <b><tt>false</b></tt>.
+</dl>
+
 
 <h2><a name="PPD"></a>Ghostscript PS2 Printer Description</h2>
 <p>

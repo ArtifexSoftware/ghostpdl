@@ -429,6 +429,7 @@ struct gx_device_pdf_s {
     bool PrintStatistics;
     bool ForOPDFRead;          /* PS2WRITE only. */
     gs_param_string OPDFReadProcsetPath; /* PS2WRITE only. */
+    bool CompressEntireFile;  /* PS2WRITE only. */
     bool ResourcesBeforeUsage; /* PS2WRITE only. */
     bool HavePDFWidths;        /* PS2WRITE only. */
     bool HaveStrokeColor;      /* PS2WRITE only. */

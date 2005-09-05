@@ -95,6 +95,7 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("HaveCIDSystem", gs_param_type_bool, HaveCIDSystem),
     pi("HaveTransparency", gs_param_type_bool, HaveTransparency),
     pi("OPDFReadProcsetPath", gs_param_type_string, OPDFReadProcsetPath),
+    pi("CompressEntireFile", gs_param_type_bool, CompressEntireFile),
 #undef pi
     gs_param_item_end
 };
