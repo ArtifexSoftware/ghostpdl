@@ -110,7 +110,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  1 /*true*/,			/* CompressFonts */
  0 /*false*/,			/* PrintStatistics */
  PDF_FOR_OPDFREAD,		/* ForOPDFRead */
- {0, 0},			/* OPDFReadProcsetPath */
+ {0, 0, 0},			/* OPDFReadProcsetPath */
  0 /*false*/,			/* ResourcesBeforeUsage */
  1 /*true*/,			/* HavePDFWidths */
  0 /*false*/,			/* HaveStrokeColor */
@@ -120,8 +120,8 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  max_long,                      /* MaxViewerMemorySize */
  256000,			/* MaxShadingBitmapSize */
  PDF_DEVICE_MaxInlineImageSize,	/* MaxInlineImageSize */
- {0, 0},			/* OwnerPassword */
- {0, 0},			/* UserPassword */
+ {0, 0, 0},			/* OwnerPassword */
+ {0, 0, 0},			/* UserPassword */
  0,				/* KeyLength */
  -4,				/* Permissions */
  0,				/* EncryptionR */
@@ -130,7 +130,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  {0},				/* EncryptionKey */
  0,				/* EncryptionV */
  true,				/* EncryptMetadata */
- {0, 0},			/* NoEncrypt */
+ {0, 0, 0},			/* NoEncrypt */
  0 /*false*/,			/* is_EPS */
  {-1, -1},			/* doc_dsc_info */
  {-1, -1},			/* page_dsc_info */

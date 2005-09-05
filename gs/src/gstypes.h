@@ -52,6 +52,10 @@ typedef struct gs_string_s {
 typedef struct gs_const_string_s {
     GS_CONST_STRING_COMMON;
 } gs_const_string;
+typedef struct gs_param_string_s {
+    GS_CONST_STRING_COMMON;
+    bool persistent;
+} gs_param_string;
 
 /*
  * Since strings are allocated differently from ordinary objects, define a

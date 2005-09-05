@@ -73,7 +73,6 @@ typedef enum {
 
 #define _param_array_struct(sname,etype)\
   struct sname { const etype *data; uint size; bool persistent; }
-typedef _param_array_struct(gs_param_string_s, byte) gs_param_string;
 typedef _param_array_struct(gs_param_int_array_s, int) gs_param_int_array;
 typedef _param_array_struct(gs_param_float_array_s, float) gs_param_float_array;
 typedef _param_array_struct(gs_param_string_array_s, gs_param_string) gs_param_string_array;

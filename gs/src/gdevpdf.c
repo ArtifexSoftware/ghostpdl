@@ -79,7 +79,7 @@ private RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
 #define r1(i,elt) RELOC_PTR(gx_device_pdf,elt);
     gx_device_pdf_do_ptrs(r1)
 #undef r1
-#define r1(i,elt) RELOC_STRING_PTR(gx_device_pdf,elt);
+#define r1(i,elt) RELOC_PARAM_STRING_PTR(gx_device_pdf,elt);
 	gx_device_pdf_do_strings(r1)
 #undef r1
     {
@@ -332,7 +332,7 @@ private const byte pad[32] = { 0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
 			       0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A};
 
 private inline void
-copy_padded(byte buf[32], gs_string *str)
+copy_padded(byte buf[32], gs_param_string *str)
 {
     memcpy(buf, str->data, min(str->size, 32));
     if (32 > str->size)

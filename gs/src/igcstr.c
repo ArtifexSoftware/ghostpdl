@@ -311,9 +311,17 @@ igc_reloc_string(gs_string * sptr, gc_state_t * gcst)
 }
 void
 igc_reloc_const_string(gs_const_string * sptr, gc_state_t * gcst)
-{				/* We assume the representation of byte * and const byte * is */
+{   /* We assume the representation of byte * and const byte * is */
     /* the same.... */
     igc_reloc_string((gs_string *) sptr, gcst);
+}
+void
+igc_reloc_param_string(gs_param_string * sptr, gc_state_t * gcst)
+{   
+    if (!sptr->persistent) {
+	/* We assume that gs_param_string is a subclass of gs_string. */
+	igc_reloc_string((gs_string *)sptr, gcst);
+    }
 }
 
 /* Compact the strings in a chunk. */

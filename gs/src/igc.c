@@ -96,7 +96,7 @@ refs_proc_reloc(igc_reloc_refs);	/* in igcref.c */
 /* Define this GC's procedure vector. */
 private const gc_procs_with_refs_t igc_procs = {
     igc_reloc_struct_ptr, igc_reloc_string, igc_reloc_const_string,
-    igc_reloc_ref_ptr, igc_reloc_refs
+    igc_reloc_param_string, igc_reloc_ref_ptr, igc_reloc_refs
 };
 
 /* Pointer type descriptors. */

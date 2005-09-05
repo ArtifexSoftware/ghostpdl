@@ -163,13 +163,17 @@ struct gs_gc_root_s {
   void proc(gs_string *, gc_state_t *)
 #define const_string_proc_reloc(proc)\
   void proc(gs_const_string *, gc_state_t *)
+#define param_string_proc_reloc(proc)\
+  void proc(gs_param_string *, gc_state_t *)
 #define gc_procs_common\
 	/* Relocate a pointer to an object. */\
   ptr_proc_reloc((*reloc_struct_ptr), void /*obj_header_t*/);\
 	/* Relocate a pointer to a string. */\
   string_proc_reloc((*reloc_string));\
 	/* Relocate a pointer to a const string. */\
-  const_string_proc_reloc((*reloc_const_string))
+  const_string_proc_reloc((*reloc_const_string));\
+	/* Relocate a pointer to a parameter string. */\
+  param_string_proc_reloc((*reloc_param_string))
 typedef struct gc_procs_common_s {
     gc_procs_common;
 } gc_procs_common_t;
@@ -408,6 +412,8 @@ extern gs_ptr_type_t
   (gc_proc(gcst, reloc_string)(&(ptrvar), gcst))
 #define RELOC_CONST_STRING_VAR(ptrvar)\
   (gc_proc(gcst, reloc_const_string)(&(ptrvar), gcst))
+#define RELOC_PARAM_STRING_VAR(ptrvar)\
+  (gc_proc(gcst, reloc_param_string)(&(ptrvar), gcst))
 extern void reloc_bytestring(gs_bytestring *pbs, gc_state_t *gcst);
 #define RELOC_BYTESTRING_VAR(ptrvar)\
   reloc_bytestring(&(ptrvar), gcst)
@@ -421,6 +427,8 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
   RELOC_STRING_VAR(((typ *)vptr)->elt)
 #define RELOC_CONST_STRING_ELT(typ, elt)\
   RELOC_CONST_STRING_VAR(((typ *)vptr)->elt)
+#define RELOC_PARAM_STRING_ELT(typ, elt)\
+  RELOC_PARAM_STRING_VAR(((typ *)vptr)->elt)
 
 /* Relocate a pointer that points to a known offset within an object. */
 /* OFFSET is for byte offsets, TYPED_OFFSET is for element offsets. */
@@ -448,6 +456,8 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
   RELOC_STRING_ELT(typ, elt)
 #define RELOC_CONST_STRING_PTR(typ, elt)\
   RELOC_CONST_STRING_ELT(typ, elt)
+#define RELOC_PARAM_STRING_PTR(typ, elt)\
+  RELOC_PARAM_STRING_ELT(typ, elt)
 
     /* End relocation */
 

@@ -31,5 +31,6 @@ void gc_strings_set_reloc(chunk_t *);
 void gc_strings_compact(chunk_t *);
 string_proc_reloc(igc_reloc_string);
 const_string_proc_reloc(igc_reloc_const_string);
+param_string_proc_reloc(igc_reloc_param_string);
 
 #endif /* igcstr_INCLUDED */

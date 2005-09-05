@@ -93,7 +93,7 @@ copy_file(stream *s, const char *fname)
 }
 
 private int
-copy_procsets(stream *s, const gs_string *path)
+copy_procsets(stream *s, const gs_param_string *path)
 {
     char fname[gp_file_name_sizeof];
     const byte *p = path->data, *e = path->data + path->size;
