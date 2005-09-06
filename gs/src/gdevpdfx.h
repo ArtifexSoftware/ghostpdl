@@ -819,7 +819,7 @@ void pdf_forget_resource(gx_device_pdf * pdev, pdf_resource_t *pres1,
 	pdf_resource_type_t rtype);
 
 /* Substitute a resource with a same one. */
-int pdf_substitue_resource(gx_device_pdf *pdev, pdf_resource_t **ppres, 
+int pdf_substitute_resource(gx_device_pdf *pdev, pdf_resource_t **ppres, 
 	    pdf_resource_type_t rtype, 
 	    int (*eq)(gx_device_pdf *pdev, pdf_resource_t *pres0, pdf_resource_t *pres1),
 	    bool write);

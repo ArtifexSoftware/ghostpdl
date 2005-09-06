@@ -490,7 +490,7 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	    *(cos_object_t *)named = *pco;
 	    pres->object = COS_OBJECT(named);
 	} else if (!pres->named) { /* named objects are written at the end */
-	    code = pdf_substitue_resource(pdev, &piw->pres, resourceXObject, NULL, false);
+	    code = pdf_substitute_resource(pdev, &piw->pres, resourceXObject, NULL, false);
 	    if (code < 0)
 		return code;
 	    /*  Warning : If the substituted image used alternate streams,

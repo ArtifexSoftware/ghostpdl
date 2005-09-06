@@ -115,7 +115,7 @@ pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams
 	    return code;
     }
     group_dict = NULL; /* The next line invalidates it. */
-    code = pdf_substitue_resource(pdev, &pres_group, resourceGroup, NULL, false);
+    code = pdf_substitute_resource(pdev, &pres_group, resourceGroup, NULL, false);
     if (code < 0)
 	return code;
     *pdict = (cos_dict_t *)pres_group->object;
@@ -221,7 +221,7 @@ pdf_end_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev)
 	code = pdf_exit_substream(pdev);
 	if (code < 0)
 	    return code;
-	code = pdf_substitue_resource(pdev, &pres, resourceXObject, NULL, false);
+	code = pdf_substitute_resource(pdev, &pres, resourceXObject, NULL, false);
 	if (code < 0)
 	    return code;
 	sputc(pdev->strm,'/');
@@ -290,14 +290,14 @@ pdf_end_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
 	code = pdf_exit_substream(pdev);
 	if (code < 0)
 	    return code;
-	code = pdf_substitue_resource(pdev, &pres, resourceXObject, NULL, false);
+	code = pdf_substitute_resource(pdev, &pres, resourceXObject, NULL, false);
 	if (code < 0)
 	    return 0;
 	code = cos_dict_put_c_key_object((cos_dict_t *)pdev->pres_soft_mask_dict->object, 
 		"/G", (cos_object_t *)pres->object);
 	if (code < 0)
 	    return code;
-	code = pdf_substitue_resource(pdev, &pdev->pres_soft_mask_dict, 
+	code = pdf_substitute_resource(pdev, &pdev->pres_soft_mask_dict, 
 					resourceSoftMaskDict, NULL, false);
 	if (code < 0)
 	    return code;

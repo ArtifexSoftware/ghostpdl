@@ -1175,7 +1175,7 @@ int
 pdf_end_gstate(gx_device_pdf *pdev, pdf_resource_t *pres)
 {
     if (pres) {
-	int code = pdf_substitue_resource(pdev, &pres, resourceExtGState, NULL, true);
+	int code = pdf_substitute_resource(pdev, &pres, resourceExtGState, NULL, true);
 	
 	if (code < 0)
 	    return code;

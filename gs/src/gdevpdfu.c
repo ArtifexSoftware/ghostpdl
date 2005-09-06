@@ -760,7 +760,7 @@ nocheck(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
 
 /* Substitute a resource with a same one. */
 int
-pdf_substitue_resource(gx_device_pdf *pdev, pdf_resource_t **ppres, 
+pdf_substitute_resource(gx_device_pdf *pdev, pdf_resource_t **ppres, 
 	pdf_resource_type_t rtype, 
 	int (*eq)(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1),
 	bool write)
@@ -1935,7 +1935,7 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn, cos_value_t *pvalue)
 
     if (code < 0)
 	return code;
-    code = pdf_substitue_resource(pdev, &pres, resourceFunction, functions_equal, false);
+    code = pdf_substitute_resource(pdev, &pres, resourceFunction, functions_equal, false);
     if (code < 0)
 	return code;
     COS_OBJECT_VALUE(pvalue, pres->object);
