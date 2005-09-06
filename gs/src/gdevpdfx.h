@@ -384,12 +384,13 @@ typedef struct pdf_substream_save_s {
     gs_fixed_rect		charproc_bbox;
     bool		charproc_bbox_valid;
     pdf_resource_t      *pres_soft_mask_dict;
+    gs_const_string		objname;
 } pdf_substream_save;
 
 #define private_st_pdf_substream_save()\
-    gs_private_st_ptrs7(st_pdf_substream_save, pdf_substream_save,\
+    gs_private_st_strings1_ptrs7(st_pdf_substream_save, pdf_substream_save,\
 	"pdf_substream_save", pdf_substream_save_enum,\
-	pdf_substream_save_reloc, text_state, clip_path, strm, \
+	pdf_substream_save_reloc, objname, text_state, clip_path, strm, \
 	substream_Resources, font3, accumulating_substream_resource, pres_soft_mask_dict)
 #define private_st_pdf_substream_save_element()\
   gs_private_st_element(st_pdf_substream_save_element, pdf_substream_save,\
@@ -635,6 +636,8 @@ struct gx_device_pdf_s {
     bool      charproc_bbox_valid;
     /* Temporary data for soft mask form. */
     pdf_resource_t *pres_soft_mask_dict;
+    /* Temporary data for pdfmark_BP. */
+    gs_const_string objname;
 };
 
 #define is_in_page(pdev)\
@@ -663,9 +666,12 @@ struct gx_device_pdf_s {
 #define gx_device_pdf_do_param_strings(m)\
     m(0, OPDFReadProcsetPath) m(1, OwnerPassword) m(2, UserPassword) m(3, NoEncrypt)
 #define gx_device_pdf_num_param_strings 4
+#define gx_device_pdf_do_const_strings(m)\
+    m(0, objname)
+#define gx_device_pdf_num_const_strings 1
 #define st_device_pdf_max_ptrs\
   (st_device_psdf_max_ptrs + gx_device_pdf_num_ptrs +\
-   gx_device_pdf_num_param_strings +\
+   gx_device_pdf_num_param_strings + gx_device_pdf_num_const_strings +\
    NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS /* resources[].chains[] */ +\
    MAX_OUTLINE_DEPTH * 2 /* outline_levels[].{first,last}.action */
 
