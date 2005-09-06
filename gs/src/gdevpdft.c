@@ -286,15 +286,17 @@ pdf_end_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
     else {
 	pdf_resource_t *pres = pdev->accumulating_substream_resource;
 	int code;
-    
+	char buf[20];
+	
 	code = pdf_exit_substream(pdev);
 	if (code < 0)
 	    return code;
 	code = pdf_substitute_resource(pdev, &pres, resourceXObject, NULL, false);
 	if (code < 0)
 	    return 0;
-	code = cos_dict_put_c_key_object((cos_dict_t *)pdev->pres_soft_mask_dict->object, 
-		"/G", (cos_object_t *)pres->object);
+	sprintf(buf, "%ld 0 R", pdf_resource_id(pres));
+	code = cos_dict_put_c_key_string((cos_dict_t *)pdev->pres_soft_mask_dict->object,
+		"/G", (const byte *)buf, strlen(buf));
 	if (code < 0)
 	    return code;
 	code = pdf_substitute_resource(pdev, &pdev->pres_soft_mask_dict, 
