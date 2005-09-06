@@ -133,8 +133,9 @@ pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
 {
     gx_device_pdf *pdev = (gx_device_pdf *)vdev;
     fixed xmax = int2fixed(vdev->width), ymax = int2fixed(vdev->height);
-    fixed xmin = (pdev->sbstack_depth ? -xmax : 0);
-    fixed ymin = (pdev->sbstack_depth ? -ymax : 0);
+    int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
+    fixed xmin = (pdev->sbstack_depth > bottom ? -xmax : 0);
+    fixed ymin = (pdev->sbstack_depth > bottom ? -ymax : 0);
 
     /*
      * If we're doing a stroke operation, expand the checking box by the
