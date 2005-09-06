@@ -54,7 +54,7 @@ private_st_pdf_substream_save_element();
 private 
 ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
 {
-    index -= gx_device_pdf_num_ptrs + gx_device_pdf_num_strings;
+    index -= gx_device_pdf_num_ptrs + gx_device_pdf_num_param_strings;
     if (index < NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS)
 	ENUM_RETURN(pdev->resources[index / NUM_RESOURCE_CHAINS].chains[index % NUM_RESOURCE_CHAINS]);
     index -= NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS;
@@ -69,8 +69,8 @@ ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
 #define e1(i,elt) ENUM_PTR(i, gx_device_pdf, elt);
 gx_device_pdf_do_ptrs(e1)
 #undef e1
-#define e1(i,elt) ENUM_STRING_PTR(i + gx_device_pdf_num_ptrs, gx_device_pdf, elt);
-gx_device_pdf_do_strings(e1)
+#define e1(i,elt) ENUM_PARAM_STRING_PTR(i + gx_device_pdf_num_ptrs, gx_device_pdf, elt);
+gx_device_pdf_do_param_strings(e1)
 #undef e1
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
@@ -80,7 +80,7 @@ private RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
     gx_device_pdf_do_ptrs(r1)
 #undef r1
 #define r1(i,elt) RELOC_PARAM_STRING_PTR(gx_device_pdf,elt);
-	gx_device_pdf_do_strings(r1)
+	gx_device_pdf_do_param_strings(r1)
 #undef r1
     {
 	int i, j;

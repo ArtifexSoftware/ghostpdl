@@ -630,8 +630,10 @@ struct gx_device_pdf_s {
     bool      image_mask_skip; /* A flag for pdf_begin_transparency_mask */
     gs_matrix converting_image_matrix;
     double    image_mask_scale;
+    /* Temporary data for a charproc accumulation. */
     gs_fixed_rect   charproc_bbox;
     bool      charproc_bbox_valid;
+    /* Temporary data for soft mask form. */
     pdf_resource_t *pres_soft_mask_dict;
 };
 
@@ -658,12 +660,12 @@ struct gx_device_pdf_s {
  m(31,accumulating_substream_resource) \
  m(32,pres_soft_mask_dict)
 #define gx_device_pdf_num_ptrs 33
-#define gx_device_pdf_do_strings(m)\
+#define gx_device_pdf_do_param_strings(m)\
     m(0, OPDFReadProcsetPath) m(1, OwnerPassword) m(2, UserPassword) m(3, NoEncrypt)
-#define gx_device_pdf_num_strings 4
+#define gx_device_pdf_num_param_strings 4
 #define st_device_pdf_max_ptrs\
   (st_device_psdf_max_ptrs + gx_device_pdf_num_ptrs +\
-   gx_device_pdf_num_strings +\
+   gx_device_pdf_num_param_strings +\
    NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS /* resources[].chains[] */ +\
    MAX_OUTLINE_DEPTH * 2 /* outline_levels[].{first,last}.action */
 

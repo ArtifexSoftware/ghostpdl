@@ -373,6 +373,8 @@ extern gs_ptr_type_t
   ENUM_OBJ(((const typ *)vptr)->elt)
 #define ENUM_STRING_ELT(typ, elt)\
   ENUM_STRING(&((const typ *)vptr)->elt)
+#define ENUM_PARAM_STRING_ELT(typ, elt)\
+    (((const typ *)vptr)->elt.persistent ? 0 : ENUM_STRING(&((const typ *)vptr)->elt))
 #define ENUM_CONST_STRING_ELT(typ, elt)\
   ENUM_CONST_STRING(&((const typ *)vptr)->elt)
 
@@ -384,6 +386,8 @@ extern gs_ptr_type_t
   ENUM_PTR(i, typ, e1); ENUM_PTR((i)+1, typ, e2); ENUM_PTR((i)+2, typ, e3)
 #define ENUM_STRING_PTR(i, typ, elt)\
   case i: return ENUM_STRING_ELT(typ, elt)
+#define ENUM_PARAM_STRING_PTR(i, typ, elt)\
+  case i: return ENUM_PARAM_STRING_ELT(typ, elt)
 #define ENUM_CONST_STRING_PTR(i, typ, elt)\
   case i: return ENUM_CONST_STRING_ELT(typ, elt)
 
