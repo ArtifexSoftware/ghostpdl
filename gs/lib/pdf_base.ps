@@ -86,9 +86,14 @@ pdfdict begin
 { exch pop
   1 index 2 () /SubFileDecode filter dup (x) readhexstring
 		% Stack: post pre stream char t/f
-  not { /.pdftoken cvx /syntaxerror signalerror } if
-  exch closefile concatstrings
-  exch 2 1 index length 2 sub getinterval
+  not {	% tolerate, but complain about bad syntax
+    pop closefile (#) concatstrings exch
+    (   **** Warning: Invalid hex following '#' name escape, using literal '#' in name.\n)
+    pdfformaterror
+  } {
+    exch closefile concatstrings
+    exch 2 1 index length 2 sub getinterval
+  } ifelse
   (#) search { name#escape } if concatstrings
 } bind def
 
