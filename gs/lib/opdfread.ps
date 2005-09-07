@@ -3449,6 +3449,8 @@ currentdict end readonly def
         } if
         //PDFReader /CurrentObject get exch
         dup //PDFReader exch << exch /Context exch >> /CurrentObject exch put
+        dup /Matrix get concat
+        dup /BBox get aload pop exch 3 index sub exch 2 index sub rectclip
         //RunDelayedStream exec
         //PDFReader exch /CurrentObject exch put
       } {
