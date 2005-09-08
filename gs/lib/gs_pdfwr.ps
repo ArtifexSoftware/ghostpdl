@@ -313,6 +313,13 @@
       write===only
     } ifelse
   } bind
+  /realtype {
+    % Prevent using floating point format - see Bug 688167.
+    dup dup 0 lt { neg } if 0.0000001 lt {
+      pop 0
+    } if
+    write===only
+  } bind
 .dicttomark readonly def
 /pdf===only {	% <file> <obj> pdf===only -
   .pdf===dict 1 index type .knownget { exec } { write===only } ifelse
