@@ -694,6 +694,12 @@ for creating a PDF/X-3 document. Users should either create an appropriate one t
 or use one from a public domain, or create one with the PDF/X-3 inspector freeware.
 <p>
 
+Here is a sample command line to invoke Ghostscript for generating a PDF/X-3 document :
+<blockquote><b><tt>
+gs -dPDFX -dBATCH -dNOPAUSE -dNOOUTERSAVE -dUseCIEColor -sDEVICE=pdfwrite -sOutputFile=out-x3.pdf PDFX_def.ps input.ps
+</tt></b></blockquote>
+
+<p>
 <hr>
 
 <h2><a name="Limitations"></a>Limitations</h2>
