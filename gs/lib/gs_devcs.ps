@@ -82,6 +82,20 @@ systemdict /..page_default_spaces 3 dict put
 }
 bind def
 
+% <color_space> <color_space_name> cs_substitute_DeviceRGB_for_PDFX <color_space1> <color_space2>
+/cs_substitute_DeviceRGB_for_PDFX
+{ systemdict /PDFX .knownget not { false } if {
+    dup /ColorSpace resourcestatus {
+      pop pop
+    } {
+      (Error: Need a /DefaultRGB /ColorSpace resource for generating a PDF/X document.) =
+      /cs_substitute_DeviceRGB_for_PDFX /undefined signalerror
+    } ifelse
+    /ColorSpace findresource
+  } {
+    //cs_substitute_generic exec
+  } ifelse   
+} bind def
 
 colorspacedict
 
@@ -160,7 +174,7 @@ put
     /cs_validate {}
 
     /cs_substitute
-      { /DefaultRGB //cs_substitute_generic exec
+      { /DefaultRGB //cs_substitute_DeviceRGB_for_PDFX exec
       }
     bind
 

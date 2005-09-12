@@ -25,6 +25,7 @@
 <li><a href="#Usage">Usage</a>
 <li><a href="#Orientation">Setting page orientation</a>
 <li><a href="#Options">Options</a>
+<li><a href="#PDFX">Creating a PDF/X-3 document</a>
 <li><a href="#Limitations">Limitations</a>
 <li><a href="#PPD">Ghostscript PDF Printer Description</a>
 <li><a href="#Problems">Known problems</a>
@@ -245,6 +246,35 @@ wide variety of uses, possibly at the expense of a larger output file.
 </ul>
 
 </dl>
+
+<p>
+The following option controls a conversion into PDF/X-3:
+<p>
+
+<dl>
+<dt><b><tt>-dPDFX=</tt></b><em>boolean</em>
+<dd>Specifies the generated document to follow the PDF/X-3 standard.
+When true, a <b><tt>DefaultRGB</b></tt> <b><tt>ColorSpace</b></tt> resource must be defined, and
+options <b><tt>NOSUBSTDEVICECOLORS</b></tt>, <b><tt>NOCIE</b></tt> must not be specified.
+Default value is <b><tt>false</b></tt>. 
+</dl>
+
+<p>
+
+When generating a PDF/X-3 document, Ghostscript performs the following 
+special actions to satisfy the PDF/X-3 standard :
+<ul>
+<li> All fonts are being embedded.
+<li> <b><tt>DeviceRGB</b></tt> color space is being substituted with <b><tt>DefaultRGB</b></tt> color space,
+which must be defined in the <b><tt>ColorSpace</b></tt> category.
+The easiest way is to provide it in the <b><tt>DefaultRGB</b></tt> file in the resource directory. 
+<li> <b><tt>DeviceRGB</b></tt> color values are being passed unchanged.
+If an user needs an untrivial color adjustment, an untrivial <b><tt>DefaultRGB</b></tt> color space to be 
+defined.
+<li> Transfer functions and halftone phases are being skipped.
+<li> <b><tt>/PS pdfmark</b></tt> interpretes the <b><tt>DataSource</b></tt> stream or file.
+</ul>    
+
 
 <p>
 The following options control a conversion into PDF 1.2:
@@ -575,6 +605,94 @@ set "Mimimum Font Size to Download as Outline" to 0 pixels.
 To set distiller parameters, select the "Ghostscript PDF" 
 Printing Preferences, then the Advanced button.
 The PDF settings are under "Printer Features".
+
+<hr>
+
+<h2><a name="PDFX"></a>Creating a PDF/X-3 document</h2>
+
+<p>
+
+To create a PDF/X-3 document from a Postscript or a PDF file, you should :
+
+<ul>
+<li> Specify the <b><tt>pdfwrite</b></tt> device or use the <b><tt>ps2pdf</b></tt> script.
+<li> Specify the <b><tt>-dPDFX</b></tt> option. It provides the document conformity 
+     and forces <b><tt>-dCompatibilityLevel=1.3</b></tt>.
+<li> Specify <b><tt>-sProcessColorModel=DeviceGray</b></tt> or <b><tt>-sProcessColorModel=DeviceCMYK</b></tt>
+     (<b><tt>DeviceRGB</b></tt> is not allowed).
+<li> Specify the <b><tt>-dUseCIEColor</b></tt> option if necessary (see below).
+<li> Specify a PDF/X definition file before running the input document.
+     It provides additional information to be included into the output document.
+     A sample PDF/X definition file may be found in <b><tt>gs/lib/PDFX_def.ps</b></tt>.
+<li> Provide an ICC profile and specify it in the PDF/X definition file
+     as explained below. Rather PDF/X-3 standard defines the ICC profile
+     as optional, we could not get it working with  the PDF/X-3 Inspector freeware.
+<li> Provide a <b><tt>DefaultRGB</b></tt> resource file in the ColorSpace resource category.
+     Either define it in the PDF/X definition file, or provide
+     a definition of <b><tt>gs/Resource/ColorSpace/DefaultRGB</b></tt> .
+     Rather <b><tt>gs/Resource/ColorSpace/DefaultRGB</b></tt> is usually 
+     distributed with Ghostscript, its contents is not necessarily satisfy your needs, see below.
+</ul>
+
+<p>
+As mentioned above, the PDF/X definition file provides a special information,
+which the PDF/X-3 standard requires. You can find a sample file in
+<b><tt>gs/lib/PDFX_def.ps</b></tt>, and edit it according to your needs.
+The file follows Postscript syntax and uses the operator <b><tt>pdfmark</b></tt>
+to pass the special information. For your comfort 
+we marked editable lines in the sample file with the comment <b><tt>% Customize</b></tt>.
+They are explained below.
+
+<dl>
+<dt><b><tt>ICCProfile</tt></b> <em>string</em>
+<dd>Defines a file name of an ICC profile file to be included into the output document. 
+You may specify either an absolute file name, or a relative
+path fronm the current directory.
+</dl>
+
+<dl>
+<dt><b><tt>Title</tt></b> <em>string</em>
+<dd>Defines the document title.
+</dl>
+
+<dl>
+<dt><b><tt>Info</tt></b> <em>string</em>
+<dd>Defines an <b><tt>Info</tt></b> value for the output intent dictionary.
+</dl>
+
+<dl>
+<dt><b><tt>OutputCondition</tt></b> <em>string</em>
+<dd>Defines an <b><tt>OutputCondition</tt></b> value for the output intent dictionary.
+</dl>
+
+
+<dl>
+<dt><b><tt>OutputConditionIdentifier</tt></b> <em>string</em>
+<dd>Defines an <b><tt>OutputConditionIdentifier</tt></b> value for the output intent dictionary.
+</dl>
+
+<p>
+Rather the PDF/X-3 standard requires colors to be adjusted at the
+document generation time, Ghostscript <em>does not</em> perform any
+special color conversion. Either colors to be adjusted in advance,
+or a proper color conversion to be specified in <b><tt>/DefaultGray</b></tt>,
+<b><tt>DefaultRGB</b></tt>,  <b><tt>DefaultCMYK</b></tt> resources of the  
+<b><tt>ColorSpace</b></tt> resource category,
+and the <b><tt>-dUseCIEColor</b></tt> option to be specified
+to remap device colors into CIE colors. 
+The choice of the ICC profile is also the user's responsibility.
+
+<p>Please note that if a graphic object can't embed into the output format,
+Ghostscript converts it into low level objects, using a device color space
+specified in the <b><tt>ProcessColorModel</b></tt> option.
+If you need to adjust those resulting colors, you may substitute
+them with CIE colors, <em>running Ghostscript at second time </em>.
+Performing both actions in a single pass is a subject of further improvements.
+
+<p>Ghostscript distribution does not contain an ICC profile to be used
+for creating a PDF/X-3 document. Users should either create an appropriate one themselves,
+or use one from a public domain, or create one with the PDF/X-3 inspector freeware.
+<p>
 
 <hr>
 

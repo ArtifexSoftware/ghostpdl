@@ -1357,13 +1357,16 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 
 	hts[0] = trs[0] = bgs[0] = ucrs[0] = 0;
 	if (pdev->params.PreserveHalftoneInfo &&
-	    pdev->halftone_id != pis->dev_ht->id
+	    pdev->halftone_id != pis->dev_ht->id &&
+	    !pdev->PDFX
 	    ) {
 	    code = pdf_update_halftone(pdev, pis, hts);
 	    if (code < 0)
 		return code;
 	}
-	if (pdev->params.TransferFunctionInfo == tfi_Preserve) {
+	if (pdev->params.TransferFunctionInfo == tfi_Preserve &&
+	    !pdev->PDFX
+	    ) {
 	    code = pdf_update_transfer(pdev, pis, trs);
 	    if (code < 0)
 		return code;
@@ -1409,20 +1412,22 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 	    if (code < 0)
 		return code;
 	}
-	gs_currentscreenphase_pis(pis, &phase, 0);
-	gs_currentscreenphase_pis(&pdev->state, &dev_phase, 0);
-	if (dev_phase.x != phase.x || dev_phase.y != phase.y) {
-	    char buf[sizeof(int) * 3 + 5];
+	if (!pdev->PDFX) {
+	    gs_currentscreenphase_pis(pis, &phase, 0);
+	    gs_currentscreenphase_pis(&pdev->state, &dev_phase, 0);
+	    if (dev_phase.x != phase.x || dev_phase.y != phase.y) {
+		char buf[sizeof(int) * 3 + 5];
 
-	    code = pdf_open_gstate(pdev, ppres);
-	    if (code < 0)
-		return code;
-	    sprintf(buf, "[%d %d]", phase.x, phase.y);
-	    code = cos_dict_put_string_copy(resource_dict(*ppres), "/HTP", buf);
-	    if (code < 0)
-		return code;
-	    gx_imager_setscreenphase(&pdev->state, phase.x, phase.y,
-				     gs_color_select_all);
+		code = pdf_open_gstate(pdev, ppres);
+		if (code < 0)
+		    return code;
+		sprintf(buf, "[%d %d]", phase.x, phase.y);
+		code = cos_dict_put_string_copy(resource_dict(*ppres), "/HTP", buf);
+		if (code < 0)
+		    return code;
+		gx_imager_setscreenphase(&pdev->state, phase.x, phase.y,
+					 gs_color_select_all);
+	    }
 	}
     }
     if (pdev->CompatibilityLevel >= 1.3 && pdev->sbstack_depth == bottom) {

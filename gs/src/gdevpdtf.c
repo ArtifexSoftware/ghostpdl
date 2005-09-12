@@ -651,6 +651,8 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
      */
     if (pindex)
 	*pindex = index;
+    if (pdev->PDFX)
+	return FONT_EMBED_YES;
     if (pdev->CompatibilityLevel < 1.3) {
 	if (index >= 0 && 
 	    (embed_as_standard_called = true,

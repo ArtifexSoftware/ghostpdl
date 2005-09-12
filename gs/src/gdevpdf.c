@@ -381,6 +381,10 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
     byte digest[16], buf[32], t;
     stream_arcfour_state sarc4;
 
+    if (pdev->PDFX && pdev->KeyLength != 0) {
+	eprintf("Encryption is not allowed in a PDF/X doucment.\n");
+	return_error(gs_error_rangecheck);
+    }
     if (pdev->KeyLength == 0)
 	pdev->KeyLength = 40;
     if (pdev->EncryptionV == 0 && pdev->KeyLength == 40)
@@ -877,6 +881,11 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     pprintg2(s, "<</Type/Page/MediaBox [0 0 %g %g]\n",
 	     round_box_coord(page->MediaBox.x),
 	     round_box_coord(page->MediaBox.y));
+    if (pdev->PDFX) {
+	pprintg2(s, "/TrimBox [0 0 %g %g]\n",
+		round_box_coord(page->MediaBox.x),
+		round_box_coord(page->MediaBox.y));
+    }
     pdf_print_orientation(pdev, page);
     pprintld1(s, "/Parent %ld 0 R\n", pdev->Pages->id);
     if (pdev->ForOPDFRead) {

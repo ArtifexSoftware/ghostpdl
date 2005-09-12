@@ -96,6 +96,7 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("HaveTransparency", gs_param_type_bool, HaveTransparency),
     pi("OPDFReadProcsetPath", gs_param_type_string, OPDFReadProcsetPath),
     pi("CompressEntireFile", gs_param_type_bool, CompressEntireFile),
+    pi("PDFX", gs_param_type_bool, PDFX),
 #undef pi
     gs_param_item_end
 };
@@ -351,6 +352,8 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
      * legal parameter values for psdf_put_params varies according to
      * the version.
      */
+    if (pdev->PDFX)
+	cl = (float)1.3; /* Instead pdev->CompatibilityLevel = 1.2; - see below. */
     pdev->version = (cl < 1.2 ? psdf_version_level2 : psdf_version_ll3);
     if (pdev->ForOPDFRead) {
 	pdev->ResourcesBeforeUsage = true;

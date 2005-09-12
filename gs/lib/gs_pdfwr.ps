@@ -410,12 +410,25 @@ userdict /.pdfcvstring () put
     -2 -2 moveto closepath stroke % Paints outside the device bbox.
     grestore
   } if
-  counttomark 1 add copy
-  //.pdfmarkparams 1 index .knownget { exec } { .pdfcvsall } ifelse
-  mark /pdfmark 3 -1 roll .pdfputparams
-  dup type /booleantype ne {
-    /pdfmark .pdfparamerror
-  } if cleartomark
+  dup /PS eq systemdict /PDFX .knownget not { false } if and {
+    % Execute it since PDF/X doesn't allow to embed it.
+    { dup mark eq {
+        pop exit
+      } if
+      1 index /DataSource eq {
+        cvx exec
+      } {
+        pop pop
+      } ifelse
+    } loop
+  } {
+    counttomark 1 add copy
+    //.pdfmarkparams 1 index .knownget { exec } { .pdfcvsall } ifelse
+    mark /pdfmark 3 -1 roll .pdfputparams
+    dup type /booleantype ne {
+      /pdfmark .pdfparamerror
+    } if cleartomark
+  } ifelse
 } odef
 userdict /pdfmark .undef
 currentdict /.pdfmarkparams .undef
