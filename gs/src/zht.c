@@ -238,7 +238,9 @@ setscreen_finish(i_ctx_t *i_ctx_p)
 private int
 screen_cleanup(i_ctx_t *i_ctx_p)
 {
-    ifree_object(esp[snumpush].value.pstruct, "screen_cleanup");
+    gs_screen_enum *penum = r_ptr(esp + snumpush, gs_screen_enum);
+
+    gs_free_object(penum->halftone.rc.memory, penum, "screen_cleanup");
     return 0;
 }
 
