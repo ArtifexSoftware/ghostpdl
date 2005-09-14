@@ -1481,6 +1481,7 @@ pl_set_if_font(
     pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL);
     pfc->font_hdr = plfont->header;
     pfc->format |= FC_NON_Z_WIND | FC_EXTERN_TYPE | FC_IF_TYPE;
+    if_state.CGIFinitstate &= ~not_intellifont; /* enable intellifont  */
     return pl_set_ufst_font(plfont, pfc);
 }
 
