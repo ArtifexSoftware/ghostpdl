@@ -142,7 +142,6 @@ main(int argc, char *argv[])
         node->data_lengths = calloc(node->blocks, sizeof(unsigned int));
         node->data = calloc(node->blocks, sizeof(unsigned char *));
         /* compress data here */
-        //fseek(in, 0, SEEK_SET);
         fclose(in);
         in = fopen(node->name, "rb");
         block = 0;
