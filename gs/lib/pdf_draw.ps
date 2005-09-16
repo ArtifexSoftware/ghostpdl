@@ -260,7 +260,16 @@ drawopdict begin
   /q { q } def
   /Q { Q } def
 			% Graphics state setting
-  /cm { //cmmatrix astore concat } def
+  /cm { { //false upath } stopped {
+	  pop	% discard 'false' (upath failed, probably no currentpoint).
+	  //cmmatrix astore concat
+	} {
+	  % update the CTM, then uappend.
+	  7 1 roll //cmmatrix astore concat
+	  newpath { mark exch uappend } stopped 
+	  cleartomark
+	} ifelse
+      } def
   /i { 1 .min setflat } def
   /J /setlinecap load def
   /d /setdash load def
