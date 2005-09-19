@@ -407,7 +407,7 @@ userdict /.pdfcvstring () put
     % A hack for synchronizing the clipping path.
     gsave 
     [1 0 0 1 0 0] setmatrix 0 setlinewidth
-    -2 -2 moveto closepath stroke % Paints outside the device bbox.
+    newpath -3 -3 moveto closepath stroke % Paints outside the device bbox.
     grestore
   } if
   dup /PS eq systemdict /PDFX .knownget not { false } if and {
