@@ -916,7 +916,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     pdf_lcvd_t *cvd = *pcvd;
 
     if (cvd == NULL) {
-	cvd = gs_alloc_struct(mem, pdf_lcvd_t, &st_pdf_lcvd_t, "pdf_image3_make_mid");
+	cvd = gs_alloc_struct(mem, pdf_lcvd_t, &st_pdf_lcvd_t, "pdf_setup_masked_image_converter");
 	if (cvd == NULL)
 	    return_error(gs_error_VMerror);
 	*pcvd = cvd;
