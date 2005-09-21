@@ -95,9 +95,9 @@ convert_color(gx_device *pdev, const gs_color_space *pcs, const gs_imager_state 
     code = pcs->type->remap_color(cc, pcs, &dc, pis, pdev, gs_color_select_texture);
     if (code < 0)
 	return code;
-    c[0] = (float)((dc.colors.pure >> pdev->color_info.comp_shift[0]) & ((1 << pdev->color_info.comp_bits[0]) - 1));
-    c[1] = (float)((dc.colors.pure >> pdev->color_info.comp_shift[1]) & ((1 << pdev->color_info.comp_bits[1]) - 1));
-    c[2] = (float)((dc.colors.pure >> pdev->color_info.comp_shift[2]) & ((1 << pdev->color_info.comp_bits[2]) - 1));
+    c[0] = (float)((int)(dc.colors.pure >> pdev->color_info.comp_shift[0]) & ((1 << pdev->color_info.comp_bits[0]) - 1));
+    c[1] = (float)((int)(dc.colors.pure >> pdev->color_info.comp_shift[1]) & ((1 << pdev->color_info.comp_bits[1]) - 1));
+    c[2] = (float)((int)(dc.colors.pure >> pdev->color_info.comp_shift[2]) & ((1 << pdev->color_info.comp_bits[2]) - 1));
     return 0;
 }
 
