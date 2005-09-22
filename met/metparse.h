@@ -29,6 +29,7 @@ struct met_parser_state_s {
     gs_memory_t *memory;
     int depth;
     void *parser;
+    int next_read_dir;
 };
 
 /* Allocate a parser state. */
@@ -42,7 +43,7 @@ void met_process_init(met_parser_state_t *st);
 
 /* Process a buffer of metro/XML. */
 int met_process(met_parser_state_t *st, met_state_t *pxs,
-                stream_cursor_read *pr);
+                void *pzip, stream_cursor_read *pr);
 
 /* shutdown the parser */
 int met_process_shutdown(met_parser_state_t *st);

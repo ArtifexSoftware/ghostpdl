@@ -16,6 +16,7 @@
 #include "memory_.h"
 #include "metstate.h"
 #include "metparse.h"
+#include "zipstate.h"
 #include "pltop.h"
 #include "gsstate.h"
 #include "gserrors.h"
@@ -46,6 +47,7 @@ typedef struct met_interp_instance_s {
     pl_interp_instance_t     pl;                /* common part: must be first */
     gs_memory_t              *pmemory;          /* memory allocator to use */
     met_parser_state_t       *pst;              /* parser state */
+    zip_state_t              *pzip;             /* zip state */
     met_state_t              *pmets;            /* interp state */
     gs_state                 *pgs;              /* grafix state */
     pl_page_action_t         pre_page_action;   /* action before page out */
@@ -66,7 +68,8 @@ met_impl_characteristics(
 #define METBUILDDATE NULL
   static pl_interp_characteristics_t met_characteristics = {
     "METRO",
-    "<", /* NB string to recognized metro file */
+    // "\0xef\0xbb\0xbf<", /* UTF8 metro */
+    "\0x50\0x4b", /* zip metro */
     "Artifex",
     METVERSION,
     METBUILDDATE,
@@ -171,6 +174,8 @@ met_impl_allocate_interp_instance(
     met_state_init(pmets, pgs);
     pmets->client_data = pmeti;
     pmets->end_page = met_end_page_top;
+
+    pmeti->pzip = zip_init_instance(pmem);
 
     /* Return success */
     *ppinstance = (pl_interp_instance_t *)pmeti;
@@ -310,7 +315,13 @@ met_impl_process(
 )
 {
     met_interp_instance_t *pmeti = (met_interp_instance_t *)pinstance;
-    int code = met_process(pmeti->pst, pmeti->pmets, pcursor);
+    int code = 0;
+    if (pmeti->pzip->zip_mode) 
+	zip_process(pmeti->pst, pmeti->pmets, pmeti->pzip, pcursor);
+    else
+	met_process(pmeti->pst, pmeti->pmets, pmeti->pzip, pcursor);
+
+
     return code;
 }
 
