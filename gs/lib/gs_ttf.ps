@@ -216,29 +216,33 @@
 % <nametable> <nameid> findname false
 /findname {
   TTFDEBUG { (findname: ) print dup =only  } if
-  false 3 1 roll 0 1 3 index 2 getu16 1 sub {
+  false 3 1 roll
+  1 index length 0 gt {	% check for zero length name table 
+    0 1 3 index 2 getu16 1 sub {
 		% Stack: false table id index
-    12 mul 6 add 2 index exch 12 getinterval
-    dup 6 getu16 2 index eq {
-		% We found the name we want.
-      exch pop
-		% Stack: false table record
-      dup 10 getu16 2 index 4 getu16 add
-      1 index 8 getu16 4 -1 roll 3 1 roll
-	  3 copy add 1 index length
-	  le {
-	    pop
-	    getinterval exch
-		% Stack: false string record
-		% Check for 8- vs. 16-bit characters.
-        is2byte { string2to1 } if true null 4 -1 roll exit
-	  } {
-	    pop pop pop pop
-	    false
-		exit
-	  } ifelse
-    } if pop
-  } for pop pop
+      12 mul 6 add 2 index exch 12 getinterval
+      dup 6 getu16 2 index eq {
+		  % We found the name we want.
+	exch pop
+		  % Stack: false table record
+	dup 10 getu16 2 index 4 getu16 add
+	1 index 8 getu16 4 -1 roll 3 1 roll
+	    3 copy add 1 index length
+	    le {
+	      pop
+	      getinterval exch
+		  % Stack: false string record
+		  % Check for 8- vs. 16-bit characters.
+	  is2byte { string2to1 } if true null 4 -1 roll exit
+	    } {
+	      pop pop pop pop
+	      false
+		  exit
+	    } ifelse
+      } if pop
+    } for
+  } if
+  pop pop
   TTFDEBUG {
     dup { ( = ) print 1 index == } { ( not found) = } ifelse
   } if
