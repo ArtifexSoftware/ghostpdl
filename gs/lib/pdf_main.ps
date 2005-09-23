@@ -515,6 +515,9 @@ pdfdict begin
    cvlit /PDFfile exch def
    /PDFsource PDFfile def
    /Repaired false def
+   currentglobal true .setglobal globaldict begin
+   /TTFWarnList 0 dict def /UndefProcList 0 dict def
+   end .setglobal
    PDFfile dup 0 setfileposition pdfstring readstring 
    not {/pdfopen cvx /syntaxerror signalerror} if
    (%PDF-) search not {/pdfopen cvx /syntaxerror signalerror} if
@@ -695,7 +698,29 @@ pdfdict begin
     ( <<<<\n) stderrprint
   } ifelse
 } bind def
+% The TTFWarnList is the list of all TrueType fonts that were not embedded.
+% The UndefProcList collects noisy warnings.
+% This gets rid of many multiple warnings from pdf_font.ps
+/printCollectedWarnings {
+   TTFWarnList length 0 gt {
+      (\n   **** Warning: Fonts with Subtype = /TrueType should be embedded.\n)
+      stderrprint
+      (                 The following fonts were not embedded:\n)
+      stderrprint
+      [ TTFWarnList { pop .namestring (\t\t\t) exch concatstrings (\n) concatstrings } forall ] 
+      { lt } .sort { stderrprint } forall
+   } if
+   UndefProcList length 0 gt {
+      (\n   **** Embedded font uses undefined procedure\(s\):  ) stderrprint
+      UndefProcList {
+         exch .namestring stderrprint ( ) stderrprint
+	 =string cvs stderrprint ( times, ) stderrprint
+      } forall 
+      (\n) stderrprint
+   } if
+} bind def
 /printrepaired {
+   printCollectedWarnings
    (\n   **** This file had errors that were repaired or ignored.\n)
   stderrprint
   printProducer

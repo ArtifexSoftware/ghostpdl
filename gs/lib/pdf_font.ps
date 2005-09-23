@@ -675,8 +675,8 @@ setglobal
   } bdef
 
   /undef_proc_warning {
-    (   **** Embedded font uses undefined procedure ) pdfformaterror
-        .namestring pdfformaterror (\n) pdfformaterror
+    /Repaired true store	% flag that we have warnings
+    UndefProcList exch 2 copy .knownget { 1 add } { 1 } ifelse put
   } bdef
 
   /-| { string currentfile exch readstring pop /-| undef_proc_warning } executeonly bdef
@@ -958,8 +958,8 @@ readonly def
 
 /buildTrueType {	% <TrueType-font-resource> buildTrueType <font>
   dup /BaseFont oget
-  (   **** Warning: Fonts with Subtype = /TrueType should be embedded.\n) pdfformaterror
-  (                 But ) pdfformaterror dup =string cvs pdfformaterror ( is not embedded.\n) pdfformaterror
+  /Repaired true store	% flag that we had warnings
+  TTFWarnList 1 index true put	% Add fontname to the list
   dup TTfonts exch .knownget {
     QUIET not {
       (Substituting font ) print dup =only
