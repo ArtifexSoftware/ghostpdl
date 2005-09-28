@@ -593,10 +593,10 @@ end readonly def
 	  {	
             matrix currentmatrix dup
             dup 0 get 0 eq 1 index 1 get 0 eq and {
-              dup 0 1 put
+              dup dup 2 get 0 eq { 0 }{ 1 } ifelse 1 put
             } if
             dup 2 get 0 eq 1 index 3 get 0 eq and {
-              dup 3 1 put
+              dup dup 1 get 0 eq { 3 }{ 2 } ifelse 1 put
             } if
             setmatrix
             1 index setfillstate show % Tr was set to graphic state.
