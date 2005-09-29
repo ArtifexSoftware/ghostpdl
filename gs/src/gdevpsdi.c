@@ -150,7 +150,7 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
     c[2][0] = any_abs(c[2][0]); c[2][1] = any_abs(c[2][1]); c[2][2] = any_abs(c[2][2]);
     if (c[0][0] * domination > c[0][1] && c[0][0] * domination > c[0][2] &&
 	c[1][1] * domination > c[1][0] && c[1][1] * domination > c[1][2] &&
-	c[2][3] * domination > c[2][0] && c[2][3] * domination > c[2][1]) {
+	c[2][2] * domination > c[2][0] && c[2][2] * domination > c[2][1]) {
 	/* Yes, it looks like an RGB color space. 
 	   Replace ColorTransform with 1. */
 	code = param_write_int((gs_param_list *)list, "ColorTransform", &one);
