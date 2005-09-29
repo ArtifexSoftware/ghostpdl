@@ -113,7 +113,7 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
     int code;
     float c[4][3];
     const float MIN_FLOAT = - MAX_FLOAT;
-    const float domination = (float)0.1;
+    const float domination = (float)0.25;
     const int one = 1, zero = 0;
 
     if (pcs->type->num_components(pcs) != 3)
@@ -184,16 +184,16 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
     } else {
 	/* Unknown color space type.
 	   Replace /HSamples [1 1 1 1] /VSamples [1 1 1 1] to avoid quality degradation. */
-	gs_param_int_array a;
-	const int v[4] = {1, 1, 1, 1};
+	gs_param_string a;
+	static const byte v[4] = {1, 1, 1, 1};
 
 	a.data = v;
 	a.size = 4;
 	a.persistent = true;
-	code = param_write_int_array((gs_param_list *)list, "HSamples", &a);
+	code = param_write_string((gs_param_list *)list, "HSamples", &a);
 	if (code < 0)
 	    return code;
-	code = param_write_int_array((gs_param_list *)list, "VSamples", &a);
+	code = param_write_string((gs_param_list *)list, "VSamples", &a);
 	if (code < 0)
 	    return code;
     }
