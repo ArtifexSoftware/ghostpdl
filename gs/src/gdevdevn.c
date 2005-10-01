@@ -347,6 +347,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     gs_param_name param_name;
     int npcmcolors = pdevn_params->num_std_colorant_names;
     int num_spot = pdevn_params->separations.num_separations;
+    bool num_spot_changed = false;
     int num_order = pdevn_params->num_separation_order_names;
     int max_sep = pdevn_params->max_separations;
     gs_param_string_array scna;		/* SeparationColorNames array */
@@ -402,6 +403,8 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
 		    num_spot++;
 		}
 	    }
+	    pdevn_params->separations.num_separations = num_spot;
+	    num_spot_changed = true;
 	    for (i = 0; i < num_spot + npcmcolors; i++)
 		pdevn_params->separation_order_map[i] = i;
         }
@@ -464,10 +467,9 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
 	    pdev->color_info.num_components = 1;
 	/*
 	 * Update the number of device components if we have changes in
-	 * SeparationColorNames, SeparationOrder, or maxSeparations.
+	 * SeparationColorNames, SeparationOrder, or MaxSeparations.
 	 */
-	if (pdevn_params->separations.num_separations != num_spot ||
-    	            pdevn_params->max_separations != max_sep ||
+	if (num_spot_changed || pdevn_params->max_separations != max_sep ||
 	    	    pdevn_params->num_separation_order_names != num_order) {
 	    pdevn_params->separations.num_separations = num_spot;
 	    pdevn_params->num_separation_order_names = num_order;

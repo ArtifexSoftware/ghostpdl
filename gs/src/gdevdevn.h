@@ -102,7 +102,7 @@ extern fixed_colorant_name DeviceCMYKComponents[];
 
 /*
  * Utility routines for common DeviceN related parameters:
- *   SeparationColorNames, SeparationOrder, iand MaxSeparations
+ *   SeparationColorNames, SeparationOrder, and MaxSeparations
  */
 
 /*
