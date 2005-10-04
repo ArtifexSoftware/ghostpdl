@@ -105,7 +105,7 @@ top:
     *pstr = str + 1;
     return true;
 }
-int
+private int
 parse_halftone(gx_device_halftone_resource_t *phtr, byte **pThresholds,
 	       char **pprefix, char **pcont)
 {
@@ -233,7 +233,7 @@ parse_halftone(gx_device_halftone_resource_t *phtr, byte **pThresholds,
 }
 
 /* Write a halftone as a C procedure. */
-int
+private int
 write_halftone(FILE *out, gx_device_halftone_resource_t *phtr,
 	       const char *prefix, int index)
 {
@@ -269,9 +269,12 @@ write_halftone(FILE *out, gx_device_halftone_resource_t *phtr,
 	    index, phtr->rname, phtr->HalftoneType, phtr->Width, phtr->Height,
 	    phtr->num_levels, index, index,
 	    ht_order_procs_short.bit_data_elt_size);
+
+    return 0;
 }
 
 /* Main program */
+int
 main(int argc, char *argv[])
 {
     char *iname;

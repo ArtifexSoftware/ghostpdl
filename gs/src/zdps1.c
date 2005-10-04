@@ -32,6 +32,9 @@
 /* Forward references */
 private int gstate_unshare(i_ctx_t *);
 
+/* Declare exported procedures (for zupath.c) */
+int zsetbbox(i_ctx_t *);
+
 /* Structure descriptors */
 public_st_igstate_obj();
 

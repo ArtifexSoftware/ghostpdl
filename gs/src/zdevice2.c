@@ -31,6 +31,9 @@
 #include "gxdevice.h"
 #include "gsstate.h"
 
+/* Exported for zfunc4.c */
+int z2copy(i_ctx_t *);
+
 /* Forward references */
 private int z2copy_gstate(i_ctx_t *);
 private int push_callout(i_ctx_t *, const char *);

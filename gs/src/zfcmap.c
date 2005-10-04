@@ -32,6 +32,10 @@
 #include "iname.h"
 #include "store.h"
 
+/* Exported for zfont0.c */
+int ztype0_get_cmap(const gs_cmap_t ** ppcmap, const ref * pfdepvector,
+		    const ref * op, gs_memory_t *imem);
+
 /*
  * Define whether to check the compatibility of CIDSystemInfo between the
  * CMap and the composite font.  PLRM2 says compatibility is required, but

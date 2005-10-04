@@ -300,7 +300,7 @@ private int
 zbegintransparencymaskimage(i_ctx_t *i_ctx_p)
 {
     gs_transparency_mask_params_t params;
-    gs_rect bbox = {0, 0, 1, 1};
+    gs_rect bbox = { { 0, 0} , { 1, 1} };
     int code;
 
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);

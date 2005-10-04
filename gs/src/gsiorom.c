@@ -72,6 +72,7 @@ iodev_rom_init(gx_io_device *iodev, gs_memory_t *mem)
 	return gs_error_VMerror;
 
     state->image = NULL;
+    return 0;
 }
 
 private int
