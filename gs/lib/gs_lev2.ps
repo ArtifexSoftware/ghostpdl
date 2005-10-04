@@ -889,14 +889,21 @@ def
 % Set a custom color based upon a tint and array which describes the custom
 % color.  See findcmykcustomcolor.  First we create and then set a Separation
 % colorspace.  Then we set the specified color.
+% Note that older Adobe ProcSets apparently allow for 'null' as the tint
+% for some reason, so an alternate operational mode is tolerated:
+% 					    null setcustomcolor -
 /setcustomcolor			% <array> <tint> setcustomcolor -
-{ % Start building Separation colorspace
-  [ /Separation 3 index 4 get	% Get separation name from array's key
-  /DeviceCMYK
-  5 index buildcustomtinttransform ]	% build the tint transform function
-  setcolorspace			% Set the Separation color space as current
-  setcolor			% Set the tint as the current color
-  pop				% Remove the input array
+{ dup //null ne {
+    % Start building Separation colorspace
+    [ /Separation 3 index 4 get	% Get separation name from array's key
+    /DeviceCMYK
+    5 index buildcustomtinttransform ]	% build the tint transform function
+    setcolorspace			% Set the Separation color space as current
+    setcolor			% Set the tint as the current color
+    pop				% Remove the input array
+  }
+  { pop }	% 'null' as the tint is ignored
+  ifelse
 } bind def
 
 % This proc is supposed to implement a version of overprinting. TN 5044 says
