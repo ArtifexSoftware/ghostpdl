@@ -626,8 +626,10 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 
 	if ( par->pv[0] )
 	    cspace = par->pv[0]->value.i;
-	else
+	else if ( par->pv[1] )
 	    cspace = par->pv[1]->value.i;
+	else
+	    return_error(pxs->memory, errorIllegalAttributeValue);
         /* substitute srgb if cie color is in effect */
 	if ( ( cspace == eRGB ) && pxs->useciecolor )
             cspace = eSRGB;
