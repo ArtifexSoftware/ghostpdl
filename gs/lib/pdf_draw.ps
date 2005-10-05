@@ -554,6 +554,7 @@ end
     /PDFColorSpace exch def [ /CIEBasedABC currentdict end ]
   }
   /ICCBased {
+    dup 1 get type /dicttype ne {	% don't resolve more than once
     PDFfile fileposition exch
     dup dup 1 oget
     mark exch { oforce } forall .dicttomark
@@ -567,6 +568,7 @@ end
     { oforce resolvecolorspace /Alternate exch put }	% resolve and replace
     { pop }			% remove colorspace dictionary
     ifelse
+    } if
   } bind
   /Separation {
     aload pop exch oforce resolvecolorspace

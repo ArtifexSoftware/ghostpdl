@@ -1652,7 +1652,7 @@ alloc_acquire_chunk(gs_ref_memory_t * mem, ulong csize, bool has_strings,
 
     if( mem->gc_status.psignal != 0) {  
 	/* we have a garbage collector */
-	if ((ulong) (mem->allocated + mem->inherited) >= mem->limit) {
+	if ((ulong) (mem->allocated) >= mem->limit) {
 	    mem->gc_status.requested += csize;
 	    if (mem->limit >= mem->gc_status.max_vm) {
 		gs_free_object(parent, cp, cname);
