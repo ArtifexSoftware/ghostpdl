@@ -178,8 +178,8 @@ proc makefonts {{dot ""}} {
 }
 
 # Merge News and Changes into History#.
-proc mergehist {news changes hist tmp} {
-    # Merge News, Changes, and the existing History# to tmp.
+proc mergehist {news changes histn tmph details detailn tmpd} {
+    # Merge News, Changes, and the existing History# to tmph; News, Details and Details# to tmpd.
     # Return 0 if OK, non-0 or an error if not.
 
     # Define the pattern for the version/date line.
@@ -196,9 +196,8 @@ proc mergehist {news changes hist tmp} {
 	puts stderr "Can't parse header line in News: $l"
 	return 1
     }
-    puts $l
     # Change the header tag to h1 for compatiability with existing files.
-    regsub -all {h[1-3]>} $l h1> l
+    regsub -all {h[1-3]>} $l h2> l
     set monthnames [list\
 	January February March April May June\
 	July August September October November December]
@@ -208,7 +207,7 @@ proc mergehist {news changes hist tmp} {
     # Incompatible Changes, which we need to know for the TOC entry.
     set nlines [list $l]
     set have_changes 0
-    while {[string first </pre> [set l [gets $news]]] != 0} {
+    while {[string first "2.0 end contents" [set l [gets $news]]] < 0} {
 	if {[eof $news]} {
 	    puts stderr "EOF scanning News for Incompatible changes"
 	    return 1
@@ -218,18 +217,17 @@ proc mergehist {news changes hist tmp} {
 	}
 	lappend nlines $l
     }
-    lappend nlines </pre>
 
-    # Copy the prefix of the existing History file.
-    while {[string first <li> [set l [gets $hist]]] != 0} {
-	if {[eof $hist]} {
-	    puts stderr "EOF copying History up to <li>"
+    # Copy the prefix of the existing History# file.
+    while {[string first <li> [set l [gets $histn]]] != 0} {
+	if {[eof $histn]} {
+	    puts stderr "EOF copying History# up to <li>"
 	    return 1
 	}
-	puts $tmp $l
+	puts $tmph $l
     }
 
-    # If there is already a History TOC for this version, delete it.
+    # Make sure this isn't a backward rev.
     if {![regexp $vdpattern $l skip hver hdate]} {
 	puts stderr "Can't parse header line in History: $l"
 	return 1
@@ -238,56 +236,45 @@ proc mergehist {news changes hist tmp} {
 	puts stderr "First History version = $hver > first News version = $nver"
 	return 1
     }
-    if {$hver == $nver} {
-	# Skip over the TOC section.
-	while {[gets $hist] != "</ul>"} {
-	    if {[eof $hist]} {
-		puts stderr "EOF skipping History TOC"
-		return 1
-	    }
-	}
-	set l [gets $hist]
-    }
     set hline $l
 
-    # Advance the Changes file to the TOC.
-    while {[string first <ul> [set l [gets $changes]]] != 0} {
+    # Copy the prefix of the existing Details# file.
+    while {[string first <li> [set l [gets $detailn]]] != 0} {
+	if {[eof $detailn]} {
+	    puts stderr "EOF copying Detail# up to <li>"
+	    return 1
+	}
+	puts $tmpd $l
+    }
+    set dline $l
+
+    # Advance the Changes file to the first line of the body
+    while {[string first <body> [set l [gets $changes]]] != 0} {
 	if {[eof $changes]} {
-	    puts stderr "EOF seeking Changes TOC"
+	    puts stderr "EOF seeking Changes start"
+	    return 1
+	}
+    }
+
+    # Advance the Details file to the first line of the body
+    while {[string first <body> [set l [gets $details]]] != 0} {
+	if {[eof $details]} {
+	    puts stderr "EOF seeking Detail start"
 	    return 1
 	}
     }
 
     # Create the new TOC entry.
-    puts $tmp "<li><a href=\"#Version$nver\">Version $nver ($ndate)</a>"
-    puts $tmp "<ul>"
-    if {$have_changes} {
-	puts $tmp "<li><a href=\"#${nver}_Incompatible_changes\">Incompatible changes</a>,"
-	set l [gets $changes]
-	if {[string first <li> $l] == 0} {
-	    puts $tmp "    [string range $l 4 end]"
-	} else {
-	    # Changes TOC must be empty.
-	    puts $tmp $l
-	}
-    }
-    while {[set l [gets $changes]] != "</ul>"} {
-	if {[eof $changes]} {
-	    puts stderr "EOF copying Changes TOC"
-	    return 1
-	}
-	puts $tmp $l
-    }
-    puts $tmp $l
+    puts $tmph "<li><a href=\"#Version$nver\">Version $nver ($ndate)</a>"
 
-    # Copy the rest of the TOC and preamble.
-    puts $tmp $hline
-    while {[string first <h1> [set l [gets $hist]]] != 0} {
-	if {[eof $hist]} {
+    # Copy the rest of the History TOC and preamble.
+    puts $tmph $hline
+    while {[string first <h2> [set l [gets $histn]]] != 0} {
+	if {[eof $histn]} {
 	    puts stderr "EOF copying History TOC and preamble"
 	    return 1
 	}
-	puts $tmp $l
+	puts $tmph $l
     }
 
     # If there is a History section for this version, delete it.
@@ -297,48 +284,110 @@ proc mergehist {news changes hist tmp} {
     }
     if {$hver == $nver} {
 	# Skip over the history section.
-	while {[set l [gets $hist]] != "<hr>"} {
-	    if {[eof $hist]} {
+	while {[set l [gets $histn]] != "<hr>"} {
+	    if {[eof $histn]} {
 		puts stderr "EOF skipping old History section"
 		return 1
 	    }
 	}
 	# Skip the following blank line, too.
-	gets $hist
-	set l [gets $hist]
+	gets $histn
+	set l [gets $histn]
     }
     set hline $l
 
-    # Copy the comment and "incompatible changes" sections from News.
-    foreach l $nlines {
-	puts $tmp $l
+    # Create the new TOC entry.
+    puts $tmpd "<li><a href=\"#Version$nver\">Version $nver ($ndate)</a>"
+
+    # Copy the rest of the Details TOC and preamble.
+    puts $tmpd $dline
+    while {[string first <h2> [set l [gets $detailn]]] != 0} {
+	if {[eof $detailn]} {
+	    puts stderr "EOF copying Details TOC and preamble"
+	    return 1
+	}
+	puts $tmpd $l
     }
 
-    # Copy the rest of Changes.
-    while {[string first </pre></body> [set l [gets $changes]]] != 0} {
+    # If there is a Details section for this version, delete it.
+    if {![regexp $vdpattern $l skip hver hdate]} {
+	puts stderr "Can't parse header line in Details#: $l"
+	return 1
+    }
+    if {$hver == $nver} {
+	# Skip over the Details section.
+	while {[set l [gets $detailn]] != "<hr>"} {
+	    if {[eof $detailn]} {
+		puts stderr "EOF skipping old Details section"
+		return 1
+	    }
+	}
+	# Skip the following blank line, too.
+	gets $detailn
+	    set l [gets $detailn]
+    }
+    set dline $l
+
+    # Copy the comment and "incompatible changes" sections from News.
+    foreach l $nlines {
+	puts $tmph $l
+	puts $tmpd $l
+    }
+
+    # Copy the rest of Changes, changing links to Details.htm to Details#.htm
+    puts $tmph "<h3><a name=\"${nver}_changelog\"></a>Changelog</h3>"
+    set inum [expr int($hver)]
+    while {[string first </body> [set l [gets $changes]]] < 0} {
 	if {[eof $changes]} {
 	    puts stderr "EOF copying rest of Changes"
 	    return 1
 	}
-	puts $tmp $l
+	regsub {href=\"Details.htm#} $l "href=\"Details$inum.htm#" l
+	puts $tmph $l
     }
-    puts $tmp </pre>
+    puts $tmph <hr>
 
-    # Copy the rest of the History file, changing the date at the end.
-    puts $tmp <hr>
-    puts $tmp ""
-    puts $tmp $hline
-    while {[string first "<small>Ghostscript version " [set l [gets $hist]]] != 0} {
-	if {[eof $hist]} {
-	    puts stderr "EOF seeking History Ghostscript version"
+    # Copy the rest of Details.
+    puts $tmpd "<h3><a name=\"${nver}_changelog\"></a>Changelog</h3>"
+    while {[string first </body> [set l [gets $details]]] < 0} {
+	if {[eof $details]} {
+	    puts stderr "EOF copying rest of Details"
 	    return 1
 	}
-	puts $tmp $l
+	puts $tmpd $l
+    }
+    puts $tmpd <hr>
+
+    # Copy the rest of the History# file, changing the date at the end.
+    puts $tmph ""
+    puts $tmph $hline
+    while {[string first "<small>Ghostscript version " [set l [gets $histn]]] != 0} {
+	if {[eof $histn]} {
+	    puts stderr "EOF seeking History# Ghostscript version"
+	    return 1
+	}
+	puts $tmph $l
     }
     
-    puts $tmp "<small>Ghostscript version $nver, $nday $nmonthname $nyear"
-    while {[gets $hist l] >= 0} {
-	puts $tmp $l
+    puts $tmph "<small>Ghostscript version $nver, $nday $nmonthname $nyear"
+    while {[gets $histn l] >= 0} {
+	puts $tmph $l
+    }
+
+    # Copy the rest of the Details# file, changing the date at the end.
+    puts $tmpd ""
+    puts $tmpd $dline
+    while {[string first "<small>Ghostscript version " [set l [gets $detailn]]] != 0} {
+	if {[eof $detailn]} {
+	    puts stderr "EOF seeking Details# Ghostscript version"
+	    return 1
+	}
+	puts $tmpd $l
+    }
+    
+    puts $tmpd "<small>Ghostscript version $nver, $nday $nmonthname $nyear"
+    while {[gets $detailn l] >= 0} {
+	puts $tmpd $l
     }
 
     return 0
@@ -346,27 +395,34 @@ proc mergehist {news changes hist tmp} {
 proc makehist {} {
     global Dot
 
-    set tmpname /tmp/[pid].htm
+    set tmphname /tmp/[pid]h.htm
+    set tmpdname /tmp/[pid]d.htm
     set news [open doc/News.htm]
     set changes [open doc/Changes.htm]
+    set details [open doc/Details.htm]
     set inum [expr int($Dot)]
-    if {$inum > 9} {
-	set histname doc/Hist$inum.htm
-    } else {
-	set histname doc/History$inum.htm
-    }
-    set hist [open $histname]
-    set tmp [open $tmpname w]
-    set ecode [catch {set code [mergehist $news $changes $hist $tmp]} errMsg]
-    close $tmp
-    close $hist
+    set histname doc/History$inum.htm
+    set detailname doc/Details$inum.htm
+    set historyn [open $histname]
+    set detailn [open $detailname]
+    set tmph [open $tmphname w]
+    set tmpd [open $tmpdname w]
+    set ecode [catch {set code [mergehist $news $changes $historyn $tmph $details $detailn $tmpd]} errMsg]
+    close $tmph
+    close $tmpd
+    close $historyn
+    close $detailn
     close $changes
     close $news
     if {$ecode == 0 && $code == 0} {
-	file rename -force $tmpname $histname
+	file rename -force $tmphname $histname
+	file rename -force $tmpdname $detailname
     } else {
-	file delete $tmpname
+	file delete $tmphname
+	file delete $tmpdname
+	puts "results in: $tmphname and $tmpdname"
 	if {$ecode != 0} {
+	    puts "Error encountered: $errMsg"
 	    error $errMsg
 	}
     }
