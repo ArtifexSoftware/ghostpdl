@@ -29,6 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Version8.52">Version 8.52 (2005-10-07)</a>
 <li><a href="#Version8.51">Version 8.51 (2005-04-18)</a>
 <li><a href="#Version8.50">Version 8.50 (2004-12-10)</a>
 <li><a href="#Version8.33">Version 8.33 (2004-11-20)</a>
@@ -70,6 +71,2698 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
+
+<h2><a name="Version8.52"></a>Version 8.52 (2005-10-07)</h2>
+
+<p>This is the third stable release in the 8.5x series of Ghostscript.
+It contains numerous bug fixes and improvements, particularly in the 
+area DeviceN (spot color) handling and the PDF interpreter.
+
+<p>The pdfwrite device can now create PDF/X-3 compliant documents
+using the lib/PDFX_def.ps prefix approach. See <a href="Ps2pdf.htm#PDFX">
+Ps2pdf documentation.</a>
+
+<p>Also new is a Beta version level 2 Postscript output device, ps2write,
+which generates high-level PostScript including text and images and
+graphics. We encourage its use instead of the older pswrite when Level 2
+PostScript is desired. Please send any comments or problem reports to
+<a href="mailto://bug-gs@ghostscript.com">bug-gs@ghostscript.com</a>
+or submit it to <a href="http://bugs.ghostscript.com">http://bugs.ghostscript.com.</a>
+
+
+<p> The following <a href="http://bugs.ghostscript.com/">bugs</a> were
+open at the time of this release: <blockquote>
+465936, 578865, 592160, 610478, 626295, 686747, 686842, 686853, 687011, 
+687039, 687063, 687108, 687125, 687146, 687196, 687219, 687231, 687243, 
+687257, 687271, 687280, 687292, 687295, 687298, 687314, 687316, 687327, 
+687342, 687345, 687346, 687373, 687397, 687399, 687435, 687480, 687484, 
+687514, 687520, 687525, 687529, 687531, 687545, 687559, 687583, 687608, 
+687621, 687622, 687628, 687633, 687642, 687643, 687644, 687650, 687654, 
+687657, 687663, 687669, 687674, 687676, 687677, 687679, 687682, 687694, 
+687695, 687697, 687702, 687721, 687728, 687729, 687796, 687805, 687806, 
+687808, 687814, 687822, 687825, 687844, 687848, 687850, 687863, 687866, 
+687868, 687870, 687875, 687895, 687903, 687904, 687907, 687914, 687919, 
+687931, 687938, 687957, 687960, 687970, 687974, 687975, 687986, 687988, 
+687992, 687994, 687996, 688005, 688006, 688007, 688009, 688013, 688017, 
+688020, 688022, 688026, 688032, 688035, 688036, 688039, 688042, 688054, 
+688058, 688060, 688061, 688064, 688066, 688068, 688075, 688079, 688081, 
+688091, 688095, 688101, 688106, 688108, 688117, 688124, 688129, 688130, 
+688132, 688134, 688149, 688151, 688152, 688159, 688166, 688176, 688179, 
+688181, 688184, 688187, 688200, 688203, 688207, 688213, 688215, 688225, 
+688226, 688227, 688231, 688239, 688243, 688249, 688255, 688260, 688265, 
+688269, 688274, 688278, 688280, 688282, 688285, 688288, 688290, 688291, 
+688295, 688300, 688302, 688308, 688309, 688311, 688313, 688315, 688317, 
+688318, 688319, 688320, 688321. 
+</blockquote>
+
+<h3><a name="8.52_Incompatible_changes"></a>Incompatible changes</h3>
+
+<p>
+There are no known incompatible changes at this point.
+
+<h3><a name="8.52_changelog"></a>Changelog</h3>
+
+<p><strong><a name="2005-10-07_1835"></a>
+2005-10-07 18:35 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Update to final release date for 8.52</pre>
+<p>[doc/API.htm 1.52, doc/Bug-form.htm 1.48, doc/Bug-info.htm 1.48, doc/C-style.htm 1.54, doc/Commprod.htm 1.40, doc/Copying.htm 1.38, doc/DLL.htm 1.42, doc/Deprecated.htm 1.19, doc/Details8.htm 1.22, doc/Develop.htm 1.158, doc/Devices.htm 1.89, doc/Drivers.htm 1.57, doc/Fonts.htm 1.50, doc/Helpers.htm 1.43, doc/History1.htm 1.38, doc/History2.htm 1.38, doc/History3.htm 1.38, doc/History4.htm 1.38, doc/History5.htm 1.40, doc/History6.htm 1.55, doc/History7.htm 1.43, doc/History8.htm 1.27, doc/Htmstyle.htm 1.43, doc/Install.htm 1.55, doc/Issues.htm 1.51, doc/Language.htm 1.97, doc/Lib.htm 1.42, doc/Maintain.htm 1.49, doc/Make.htm 1.89, doc/News.htm 1.166, doc/Projects.htm 1.66, doc/Ps-style.htm 1.36, doc/Ps2epsi.htm 1.41, doc/Ps2pdf.htm 1.87, doc/Ps2ps2.htm 1.6, doc/Psfiles.htm 1.67, doc/Readme.htm 1.70, doc/Release.htm 1.94, doc/Source.htm 1.38, doc/Testing.htm 1.36, doc/Unix-lpr.htm 1.38, doc/Use.htm 1.135, doc/Xfonts.htm 1.38, doc/gs-vms.hlp 1.36, man/dvipdf.1 1.36, man/font2c.1 1.36, man/gs.1 1.37, man/gslp.1 1.36, man/gsnd.1 1.36, man/pdf2dsc.1 1.35, man/pdf2ps.1 1.37, man/pdfopt.1 1.35, man/pf2afm.1 1.36, man/pfbtopfa.1 1.37, man/printafm.1 1.36, man/ps2ascii.1 1.36, man/ps2epsi.1 1.34, man/ps2pdf.1 1.41, man/ps2pdfwr.1 1.40, man/ps2ps.1 1.43, man/wftopfa.1 1.36, src/version.mak 1.85]</p>
+</blockquote>
+
+<p><strong><a name="2005-10-07_1809"></a>
+2005-10-07 18:09 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Remove this script that is no longer used in the release process. We now
+use cvs2cl.pl third party script.</pre>
+<p>[toolbin/cvs2hist.py 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2005-10-07_1802"></a>
+2005-10-07 18:02 Ray Johnston</strong> (<a href="Details8.htm#2005-10-07_1802">details</a>)</p>
+<blockquote>
+<pre>
+Fix serious bit rot for building History# and Details# from Changes and
+Details created by split_changelog.py. Allows the instructions in Release.htm
+to actually work. This file invoked by toolbin/makehist.tcl.
+
+</pre>
+<p>[toolbin/makeset.tcl 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2005-10-05_1437"></a>
+2005-10-05 14:37 Ray Johnston</strong> (<a href="Details8.htm#2005-10-05_1437">details</a>)</p>
+<blockquote>
+<pre>
+Two changes needed to fix a single bug. First, the GC 'limit' logic was
+collecting too frequently. Second, the PDF ICCBased colorspace logic was
+repeatedly creating a ReusableStreamDecode filter for the DataSource
+element. Fixes bug #687117 for customer #850.`
+
+</pre>
+<p>[lib/pdf_draw.ps 1.98, src/gsalloc.c 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2005-10-04_1924"></a>
+2005-10-04 19:24 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Update change logs for 8.52 release.</pre>
+<p>[doc/Changes.htm 1.59, doc/Details.htm 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2005-10-04_1751"></a>
+2005-10-04 17:51 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Tolerate 'null' as a single argument form of setcustomcolor. This is not
+documented in TN5044, but older Adobe ProcSets apparently use this mode.
+Fixes 'misc/cnurse.ps' of the smoke test used prior to release.</pre>
+<p>[lib/gs_lev2.ps 1.38]</p>
+</blockquote>
+
+<p><strong><a name="2005-10-04_0630"></a>
+2005-10-04 06:30 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix (some of) the gcc compiler warnings (at least the really easy ones).</pre>
+<p>[src/genht.c 1.5, src/gsiorom.c 1.2, src/zdevice2.c 1.10, src/zdps1.c 1.8, src/zfcmap.c 1.17, src/ztrans.c 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2005-10-04_0106"></a>
+2005-10-04 01:06 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Commit updates for 8.52 release -- documentation dates and GS_PRODUCT</pre>
+<p>[doc/API.htm 1.51, doc/Bug-form.htm 1.47, doc/Bug-info.htm 1.47, doc/C-style.htm 1.53, doc/Commprod.htm 1.39, doc/Copying.htm 1.37, doc/DLL.htm 1.41, doc/Deprecated.htm 1.18, doc/Details8.htm 1.21, doc/Develop.htm 1.157, doc/Devices.htm 1.88, doc/Drivers.htm 1.56, doc/Fonts.htm 1.49, doc/Helpers.htm 1.42, doc/History1.htm 1.37, doc/History2.htm 1.37, doc/History3.htm 1.37, doc/History4.htm 1.37, doc/History5.htm 1.39, doc/History6.htm 1.54, doc/History7.htm 1.42, doc/History8.htm 1.26, doc/Htmstyle.htm 1.42, doc/Install.htm 1.54, doc/Issues.htm 1.50, doc/Language.htm 1.96, doc/Lib.htm 1.41, doc/Maintain.htm 1.48, doc/Make.htm 1.88, doc/News.htm 1.165, doc/Projects.htm 1.65, doc/Ps-style.htm 1.35, doc/Ps2epsi.htm 1.40, doc/Ps2pdf.htm 1.86, doc/Ps2ps2.htm 1.5, doc/Psfiles.htm 1.66, doc/Readme.htm 1.69, doc/Release.htm 1.93, doc/Source.htm 1.37, doc/Testing.htm 1.35, doc/Unix-lpr.htm 1.37, doc/Use.htm 1.134, doc/Xfonts.htm 1.37, doc/gs-vms.hlp 1.35, man/dvipdf.1 1.35, man/font2c.1 1.35, man/gs.1 1.36, man/gslp.1 1.35, man/gsnd.1 1.35, man/pdf2dsc.1 1.34, man/pdf2ps.1 1.36, man/pdfopt.1 1.34, man/pf2afm.1 1.35, man/pfbtopfa.1 1.36, man/printafm.1 1.35, man/ps2ascii.1 1.35, man/ps2epsi.1 1.33, man/ps2pdf.1 1.40, man/ps2pdfwr.1 1.39, man/ps2ps.1 1.42, man/wftopfa.1 1.35, src/gscdef.c 1.55, src/version.mak 1.84]</p>
+</blockquote>
+
+<p><strong><a name="2005-10-01_0440"></a>
+2005-10-01 04:40 Dan Coby</strong> (<a href="Details8.htm#2005-10-01_0440">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 688316 SeparationOrder device parameter causes "/undefined in
+--get--".
+
+</pre>
+<p>[src/gdevdevn.c 1.28, src/gdevdevn.h 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-30_1911"></a>
+2005-09-30 19:11 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add missing documentation for lib/PDFX_def.ps.</pre>
+<p>[doc/Psfiles.htm 1.65]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-29_1835"></a>
+2005-09-29 18:35 Igor Melichev</strong> (<a href="Details8.htm#2005-09-29_1835">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Improve DCT compression quality with a hewristic choice of DCT encoding parameters (continued 3).
+
+</pre>
+<p>[src/gdevpsdi.c 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-29_1524"></a>
+2005-09-29 15:24 Igor Melichev</strong> (<a href="Details8.htm#2005-09-29_1524">details</a>)</p>
+<blockquote>
+<pre>
+PDF interpreter now processes ToUnicode CMaps when the target device is pdfwrite (continued).
+
+</pre>
+<p>[lib/pdf_font.ps 1.80]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-29_0836"></a>
+2005-09-29 08:36 Igor Melichev</strong> (<a href="Details8.htm#2005-09-29_0836">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Improve DCT compression quality with a hewristic choice of DCT encoding parameters (continued 2).
+
+</pre>
+<p>[src/gdevpsdi.c 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-28_0433"></a>
+2005-09-28 04:33 Dan Coby</strong> (<a href="Details8.htm#2005-09-28_0433">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 688310 pdf open error in op_show_continue.
+
+</pre>
+<p>[lib/pdf_ops.ps 1.41]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-26_0820"></a>
+2005-09-26 08:20 Igor Melichev</strong> (<a href="Details8.htm#2005-09-26_0820">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : High level pattern handling was incomplete.
+
+</pre>
+<p>[src/devs.mak 1.138, src/gdevpdfb.c 1.33]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-23_1821"></a>
+2005-09-23 18:21 Ray Johnston</strong> (<a href="Details8.htm#2005-09-23_1821">details</a>)</p>
+<blockquote>
+<pre>
+Change reporting of some noisy (irritating) Warnings generated from many
+PDF files that don't strictly follow the spec. Bug 688229.
+
+</pre>
+<p>[lib/pdf_font.ps 1.79, lib/pdf_main.ps 1.100]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-22_1611"></a>
+2005-09-22 16:11 Ray Johnston</strong> (<a href="Details8.htm#2005-09-22_1611">details</a>)</p>
+<blockquote>
+<pre>
+Fix handling of TrueType fonts with zero length name tables. Bug 688305
+for customer 870.
+
+</pre>
+<p>[lib/gs_ttf.ps 1.48]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-21_1703"></a>
+2005-09-21 17:03 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+MSVC 6 cannot convert from int64 to double (not yet implemented error).
+Truncate to int prior to conversion to float.</pre>
+<p>[src/gdevpsdi.c 1.43]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-21_0324"></a>
+2005-09-21 03:24 Ray Johnston</strong> (<a href="Details8.htm#2005-09-21_0324">details</a>)</p>
+<blockquote>
+<pre>
+Fix handling of EOD sequences when decoding CCITT data with EndOfBlock
+false. Bug 688306 for customer 780.
+
+</pre>
+<p>[src/scfd.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-20_1135"></a>
+2005-09-20 11:35 Igor Melichev</strong> (<a href="Details8.htm#2005-09-20_1135">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Improve DCT compression quality with a hewristic choice of DCT encoding parameters.
+
+</pre>
+<p>[src/devs.mak 1.137, src/gdevpdfd.c 1.70, src/gdevpsdi.c 1.42]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-19_1412"></a>
+2005-09-19 14:12 Igor Melichev</strong> (<a href="Details8.htm#2005-09-19_1412">details</a>)</p>
+<blockquote>
+<pre>
+Fix: /SP pdfmark must synchronize the clipping path (continued).
+
+</pre>
+<p>[lib/gs_pdfwr.ps 1.50]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-16_1901"></a>
+2005-09-16 19:01 Ray Johnston</strong> (<a href="Details8.htm#2005-09-16_1901">details</a>)</p>
+<blockquote>
+<pre>
+Fix for double 'endstream' in a Content stream. Now endstream terminates
+the object the same way 'endobj' would. Bug 688303 for customer 670.
+
+</pre>
+<p>[lib/pdf_base.ps 1.48]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-16_0617"></a>
+2005-09-16 06:17 Ray Johnston</strong> (<a href="Details8.htm#2005-09-16_0617">details</a>)</p>
+<blockquote>
+<pre>
+Fix handling of paths so that 'cm' will affect pending path operations (fill
+stroke or clip). Verified that with this patch we do as Acrobat Reader from
+4 through 7 does. Bug 688299 for customer 870.
+
+</pre>
+<p>[lib/pdf_draw.ps 1.97]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-16_0403"></a>
+2005-09-16 04:03 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Correct edit problem with previous commit (copy/paste didn't get totally
+changed for src/gsiorom.c).</pre>
+<p>[doc/Develop.htm 1.156]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-16_0359"></a>
+2005-09-16 03:59 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add missing documentation in Develop.htm and remove dead code commented out
+with C++ style comments to eliminate regression test squawks.</pre>
+<p>[doc/Develop.htm 1.155, src/mkromfs.c 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-14_0713"></a>
+2005-09-14 07:13 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add a common case to an optimization check in the memflip function.</pre>
+<p>[src/gsutil.c 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-14_0709"></a>
+2005-09-14 07:09 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Prevent accessing past end of estack block which could occur if screen
+enum was not in the current estack block.
+
+EXPECTED DIFFERENCES.
+
+None. (this was only encountered in rare circumstances).</pre>
+<p>[src/zht.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-12_1152"></a>
+2005-09-12 11:52 Igor Melichev</strong> (<a href="Details8.htm#2005-09-12_1152">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Implementing a generation of PDF/X-3 (continued).
+
+</pre>
+<p>[doc/Ps2pdf.htm 1.85]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-12_1134"></a>
+2005-09-12 11:34 Igor Melichev</strong> (<a href="Details8.htm#2005-09-12_1134">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Implementing a generation of PDF/X-3.
+
+</pre>
+<p>[doc/Develop.htm 1.154, doc/Ps2pdf.htm 1.84, lib/PDFX_def.ps 1.1, lib/gs_devcs.ps 1.7, lib/gs_pdfwr.ps 1.49, src/gdevpdf.c 1.124, src/gdevpdfb.h 1.13, src/gdevpdfg.c 1.68, src/gdevpdfp.c 1.53, src/gdevpdfx.h 1.136, src/gdevpdtf.c 1.46]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-08_1732"></a>
+2005-09-08 17:32 Igor Melichev</strong> (<a href="Details8.htm#2005-09-08_1732">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Suppress floating point number format in pdfmark operands.
+
+</pre>
+<p>[lib/gs_pdfwr.ps 1.48]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-07_2043"></a>
+2005-09-07 20:43 Igor Melichev</strong> (<a href="Details8.htm#2005-09-07_2043">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Adjust the graphic state before executing a Form XObject.
+
+</pre>
+<p>[lib/opdfread.ps 1.84]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-07_1808"></a>
+2005-09-07 18:08 Ray Johnston</strong> (<a href="Details8.htm#2005-09-07_1808">details</a>)</p>
+<blockquote>
+<pre>
+Change to accept PDF with names that mis-use the '#" escape character when
+characters following the # are not hex (AR 7 does this). Bug 688297.
+
+</pre>
+<p>[lib/pdf_base.ps 1.47]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-06_2221"></a>
+2005-09-06 22:21 Igor Melichev</strong> (<a href="Details8.htm#2005-09-06_2221">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Handling transparency as a high level objects, part 12 (fix 2).
+
+</pre>
+<p>[src/gdevpdft.c 1.52]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-06_2004"></a>
+2005-09-06 20:04 Igor Melichev</strong> (<a href="Details8.htm#2005-09-06_2004">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : The vector device virtual function dorect was not clipped by page.
+
+</pre>
+<p>[src/gdevpdfd.c 1.69]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-06_1718"></a>
+2005-09-06 17:18 Igor Melichev</strong> (<a href="Details8.htm#2005-09-06_1718">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : /BP pdfmark could create dead PDF objects.
+
+</pre>
+<p>[src/gdevpdf.c 1.123, src/gdevpdfb.h 1.12, src/gdevpdfm.c 1.49, src/gdevpdfx.h 1.135, src/gdevpdti.c 1.52, src/gsstruct.h 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-06_1622"></a>
+2005-09-06 16:22 Igor Melichev</strong> (<a href="Details8.htm#2005-09-06_1622">details</a>)</p>
+<blockquote>
+<pre>
+Fix (garbager) : Provide a method for relocating a parameter string and use it in the pdfwrite device (continued).
+
+</pre>
+<p>[src/gdevpdf.c 1.122, src/gdevpdfx.h 1.134, src/gsstruct.h 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-06_1347"></a>
+2005-09-06 13:47 Igor Melichev</strong> (<a href="Details8.htm#2005-09-06_1347">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : pdf_substitute_resource was misspelled.
+
+</pre>
+<p>[src/gdevpdfg.c 1.67, src/gdevpdfj.c 1.49, src/gdevpdft.c 1.51, src/gdevpdfu.c 1.87, src/gdevpdfx.h 1.133]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-05_1418"></a>
+2005-09-05 14:18 Igor Melichev</strong> (<a href="Details8.htm#2005-09-05_1418">details</a>)</p>
+<blockquote>
+<pre>
+Fix (garbager) : Provide a method for relocating a parameter string and use it in the pdfwrite device.
+
+</pre>
+<p>[lib/opdfread.ps 1.83]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-05_1418"></a>
+2005-09-05 14:18 Igor Melichev</strong> (<a href="Details8.htm#2005-09-05_1418">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Compact the output file.
+
+</pre>
+<p>[doc/Ps2ps2.htm 1.4, src/gdevpdf.c 1.121, src/gdevpdfb.h 1.11, src/gdevpdfp.c 1.52, src/gdevpdfu.c 1.86, src/gdevpdfx.h 1.132]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-05_1358"></a>
+2005-09-05 13:58 Igor Melichev</strong> (<a href="Details8.htm#2005-09-05_1358">details</a>)</p>
+<blockquote>
+<pre>
+Fix (garbager) : Provide a method for relocating a parameter string and use it in the pdfwrite device.
+
+</pre>
+<p>[src/gdevpdf.c 1.120, src/gdevpdfb.h 1.10, src/gdevpdfu.c 1.85, src/gdevpdfx.h 1.131, src/gsparam.h 1.13, src/gsstruct.h 1.20, src/gstypes.h 1.7, src/igc.c 1.15, src/igcstr.c 1.7, src/igcstr.h 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-04_2042"></a>
+2005-09-04 20:42 Igor Melichev</strong> (<a href="Details8.htm#2005-09-04_2042">details</a>)</p>
+<blockquote>
+<pre>
+Type 1 hinter : Improve the criterion for stem recognition.
+
+</pre>
+<p>[src/gxhintn.c 1.61, src/gxhintn.h 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-04_0544"></a>
+2005-09-04 05:44 Dan Coby</strong> (<a href="Details8.htm#2005-09-04_0544">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 688275 Overprint problems in Display driver - Gs 8.50 and Gs 8.51.
+
+</pre>
+<p>[src/gdevdgbr.c 1.14, src/gdevdsp.c 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-02_0554"></a>
+2005-09-02 05:54 Igor Melichev</strong> (<a href="Details8.htm#2005-09-02_0554">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Handling transparency as a high level objects, part 11 (fix 1).
+
+</pre>
+<p>[src/gdevpdfx.h 1.130]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-01_2204"></a>
+2005-09-01 22:04 Stefan Kemper</strong></p>
+<blockquote>
+<pre>
+Formatting cleanup for the printing of the Font samples.
+
+Fixes bug 688281
+Thanks to: SaGS5495@hotmail.com</pre>
+<p>[lib/prfont.ps 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2005-09-01_0005"></a>
+2005-09-01 00:05 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix incorrect detection of the end of input data during processing of
+(next_code == lzw_decode_max) branch in s_LZWD_process(). Return the error
+status only when there's not enough data in the buffer and the buffer
+cannot be refilled.
+Fix bug 688287</pre>
+<p>[src/slzwd.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-31_1834"></a>
+2005-08-31 18:34 Igor Melichev</strong> (<a href="Details8.htm#2005-08-31_1834">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Handling transparency as a high level objects, part 10, final.
+
+</pre>
+<p>[src/gdevpdfb.h 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-31_1831"></a>
+2005-08-31 18:31 Igor Melichev</strong> (<a href="Details8.htm#2005-08-31_1831">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Upgrading the default CompatibilityLevel to 1.4 .
+THIS IS INCOMPATIBLE CHANGE.
+
+We believe that CompatibilityLevel=1.3 is now obsolete,
+because most viewers can handle PDF 1.4 .
+If an user needs to create a document for older viewers,
+he should specify CompatibilityLevel explicitly.
+Note that PDFSETTINGS parameter lists have been upgraded also.
+
+</pre>
+<p>[doc/Ps2pdf.htm 1.83, lib/gs_pdfwr.ps 1.47, lib/ps2pdf 1.4, lib/ps2pdf.bat 1.9, lib/ps2pdf.cmd 1.4, src/gdevpdf.c 1.119]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-31_1529"></a>
+2005-08-31 15:29 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Update map_cmyk_color function to modern version (was old style). This
+should complete jpegcmyk for correct behaviour.</pre>
+<p>[src/gdevjpeg.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-31_1431"></a>
+2005-08-31 14:31 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add jpegcmyk device (module missed in previous commit).</pre>
+<p>[src/gdevjpeg.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-31_1235"></a>
+2005-08-31 12:35 Igor Melichev</strong> (<a href="Details8.htm#2005-08-31_1235">details</a>)</p>
+<blockquote>
+<pre>
+Documenting the new pdfwrite device paramentr HaveTransparency.
+
+</pre>
+<p>[doc/Ps2pdf.htm 1.82]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-31_1118"></a>
+2005-08-31 11:18 Igor Melichev</strong> (<a href="Details8.htm#2005-08-31_1118">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Handling transparency as a high level objects, part 9.
+
+</pre>
+<p>[src/gdevpdfp.c 1.51, src/gdevpdft.c 1.50]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-31_1107"></a>
+2005-08-31 11:07 Igor Melichev</strong> (<a href="Details8.htm#2005-08-31_1107">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Handling transparency as a high level objects, part 8.
+
+</pre>
+<p>[src/gdevpdft.c 1.49]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-31_1102"></a>
+2005-08-31 11:02 Igor Melichev</strong> (<a href="Details8.htm#2005-08-31_1102">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : A code restructurisation : factor out pdf_substitue_resource.
+
+</pre>
+<p>[src/gdevpdfg.c 1.66, src/gdevpdfj.c 1.48, src/gdevpdfu.c 1.84, src/gdevpdfx.h 1.129]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-31_0740"></a>
+2005-08-31 07:40 Igor Melichev</strong> (<a href="Details8.htm#2005-08-31_0740">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Handling transparency as a high level objects, part 7.
+
+</pre>
+<p>[src/gdevpdfb.h 1.8, src/gdevpdft.c 1.48, src/gdevpdfx.h 1.128, src/gdevpdti.c 1.51]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-31_0559"></a>
+2005-08-31 05:59 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Remove inadvertent commit that included png48 device.</pre>
+<p>[src/msvc32.mak 1.75]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-31_0552"></a>
+2005-08-31 05:52 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add jpegcmyk device.</pre>
+<p>[src/bcwin32.mak 1.38, src/devs.mak 1.136, src/macos-mcp.mak 1.35, src/macosx.mak 1.28, src/msvc32.mak 1.74, src/openvms.mak 1.41, src/os2.mak 1.47, src/unix-gcc.mak 1.50, src/unixansi.mak 1.41, src/watcw32.mak 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-31_0341"></a>
+2005-08-31 03:41 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 688252 Signal 11 in set_color_ht_le_4 on AMD64.  The fix comes
+from Alex Cherepanov.  Add a cast for force signed math when working
+with a signed and unsigned value.</pre>
+<p>[src/gxcht.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-30_2326"></a>
+2005-08-30 23:26 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Encode the indication that the EPS file has been cropped into
+EPSBoundingBoxState and suppres subsequent messages about cropping the file.
+The warning is false when BoundingBox preceeds HiResBoundingBox and BoundingBox
+causes cropping but HiResBoundingBox doesn't.
+Fix bug 688062</pre>
+<p>[lib/gs_epsf.ps 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-30_2319"></a>
+2005-08-30 23:19 Ray Johnston</strong> (<a href="Details8.htm#2005-08-30_2319">details</a>)</p>
+<blockquote>
+<pre>
+Fix handling of zero length input files so that .peekstring does not give
+a rangecheck error. Bug 688199.
+
+</pre>
+<p>[src/zfileio.c 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-30_1912"></a>
+2005-08-30 19:12 Ray Johnston</strong> (<a href="Details8.htm#2005-08-30_1912">details</a>)</p>
+<blockquote>
+<pre>
+Fix for large 'loca' table counts in TrueType fonts causing stackoverflow.
+Bug 688277 for customer 870.
+
+</pre>
+<p>[lib/gs_ttf.ps 1.47]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-30_1732"></a>
+2005-08-30 17:32 Igor Melichev</strong> (<a href="Details8.htm#2005-08-30_1732">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Handling transparency as a high level objects, part 6.
+
+</pre>
+<p>[src/ztrans.c 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-30_1708"></a>
+2005-08-30 17:08 Igor Melichev</strong> (<a href="Details8.htm#2005-08-30_1708">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Handling transparency as a high level objects, part 5.
+
+</pre>
+<p>[src/gdevp14.c 1.34, src/gstrans.h 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-30_1649"></a>
+2005-08-30 16:49 Igor Melichev</strong> (<a href="Details8.htm#2005-08-30_1649">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Handling transparency as a high level objects, part 4.
+
+</pre>
+<p>[lib/pdf_draw.ps 1.96, src/gdevp14.c 1.33, src/gdevpdft.c 1.47, src/gstparam.h 1.15, src/gstrans.c 1.25, src/int.mak 1.136, src/ztrans.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-30_1301"></a>
+2005-08-30 13:01 Igor Melichev</strong> (<a href="Details8.htm#2005-08-30_1301">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Handling transparency as a high level objects, part 3.
+
+</pre>
+<p>[src/gdevpdfg.c 1.65, src/gdevpdft.c 1.46, src/gdevpdfx.h 1.127, src/gstrans.c 1.24, src/gxistate.h 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-30_1049"></a>
+2005-08-30 10:49 Igor Melichev</strong> (<a href="Details8.htm#2005-08-30_1049">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Handling transparency as a high level objects, part 2.
+
+</pre>
+<p>[src/gdevpdfb.h 1.7, src/gdevpdft.c 1.45, src/gdevpdfx.h 1.126, src/gdevpdti.c 1.50, src/gsstruct.h 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-30_0906"></a>
+2005-08-30 09:06 Igor Melichev</strong> (<a href="Details8.htm#2005-08-30_0906">details</a>)</p>
+<blockquote>
+<pre>
+Fix (device intervace, PDF interpreter) : High level devices need to know whether the mask is an image or a group.
+
+</pre>
+<p>[doc/Language.htm 1.95, lib/pdf_draw.ps 1.95, lib/pdf_ops.ps 1.40, src/gstrans.c 1.23, src/gstrans.h 1.14, src/ztrans.c 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-30_0638"></a>
+2005-08-30 06:38 Igor Melichev</strong> (<a href="Details8.htm#2005-08-30_0638">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Cygwin/gcc warnings.
+
+</pre>
+<p>[src/gdevdevn.c 1.27, src/gdevpdf.c 1.118, src/gdevpsd.c 1.23, src/gdevtsep.c 1.9, src/gsistate.c 1.12, src/gxpcopy.c 1.26, src/zmedia2.c 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-29_1959"></a>
+2005-08-29 19:59 Ray Johnston</strong> (<a href="Details8.htm#2005-08-29_1959">details</a>)</p>
+<blockquote>
+<pre>
+Invalid xref was not detected causing some objects to be defined as 'null'
+which could cause 'typecheck' or other errors. Bug 688285 for customer #870.
+
+</pre>
+<p>[lib/pdf_main.ps 1.99]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-29_1821"></a>
+2005-08-29 18:21 Igor Melichev</strong> (<a href="Details8.htm#2005-08-29_1821">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Handling transparency as a high level objects.
+
+</pre>
+<p>[doc/Develop.htm 1.153, src/devs.mak 1.135, src/gdevpdf.c 1.117, src/gdevpdfb.h 1.6, src/gdevpdfg.c 1.64, src/gdevpdfg.h 1.42, src/gdevpdfi.c 1.73, src/gdevpdfj.c 1.47, src/gdevpdfp.c 1.50, src/gdevpdft.c 1.44, src/gdevpdfu.c 1.83, src/gdevpdfx.h 1.125]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-29_1812"></a>
+2005-08-29 18:12 Igor Melichev</strong> (<a href="Details8.htm#2005-08-29_1812">details</a>)</p>
+<blockquote>
+<pre>
+Fix (PDF interpreter) : Provide a bbox for .begintransparencygroup (issue 2).
+
+</pre>
+<p>[lib/pdf_draw.ps 1.94]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-29_1558"></a>
+2005-08-29 15:58 Igor Melichev</strong> (<a href="Details8.htm#2005-08-29_1558">details</a>)</p>
+<blockquote>
+<pre>
+Fix: Validate the number of transparency Background components.
+
+</pre>
+<p>[src/gdevp14.c 1.32, src/gstrans.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-29_1525"></a>
+2005-08-29 15:25 Igor Melichev</strong> (<a href="Details8.htm#2005-08-29_1525">details</a>)</p>
+<blockquote>
+<pre>
+Fix (device interface): Provide an access for the number of transparency Background components for high level devices, part 2.
+
+</pre>
+<p>[src/gstparam.h 1.14, src/gstrans.h 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-29_1518"></a>
+2005-08-29 15:18 Igor Melichev</strong> (<a href="Details8.htm#2005-08-29_1518">details</a>)</p>
+<blockquote>
+<pre>
+Fix (device interface): Provide an access for the number of transparency Background components for high level devices.
+
+</pre>
+<p>[src/gdevp14.c 1.31, src/gstparam.h 1.13, src/gstrans.c 1.21, src/gstrans.h 1.12, src/ztrans.c 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-29_1405"></a>
+2005-08-29 14:05 Igor Melichev</strong> (<a href="Details8.htm#2005-08-29_1405">details</a>)</p>
+<blockquote>
+<pre>
+Fix (PDF interpreter) : provide a bbox for .begintransparencygroup .
+
+</pre>
+<p>[lib/pdf_draw.ps 1.93]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-29_1251"></a>
+2005-08-29 12:51 Igor Melichev</strong> (<a href="Details8.htm#2005-08-29_1251">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Use DeviceGray when writing SMask image.
+
+</pre>
+<p>[src/gdevpdfb.h 1.5, src/gdevpdfi.c 1.72, src/gdevpdfx.h 1.124]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-25_1534"></a>
+2005-08-25 15:34 Ray Johnston</strong> (<a href="Details8.htm#2005-08-25_1534">details</a>)</p>
+<blockquote>
+<pre>
+Change ResusableStreamDecode filter implementation to avoid using .bigstring
+so that languagelevel 3 is not required for this filter. Patch thanks to
+mat. Gheorghe Savulescu. Bug 688150.
+
+</pre>
+<p>[lib/gs_frsd.ps 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-24_1902"></a>
+2005-08-24 19:02 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Partial support for a compressed %rom% iodevice. It is enabled by
+adding romfs.dev to FEATURE_DEVS in the top-level Makefile.
+
+This also includes a C commandline-utility 'mkromfs' that takes
+a directory and creates a compressed image of it as a file. Currently
+the %rom% iodevice in gsiorom.c reads this directly.
+
+The compressed image is a list of paths with offset pointers,
+each offset pointing to the beginning of a series of zlib-
+compressed blocks comprising the file. This gets us pretty
+good (typically 50% or better) compression of the support
+files while still allowing relatively fast seek and random
+access.
+
+TODO:
+
+1. Have mkromfs trace through the include directives in lib/
+so that only those postscript files required by Ghostscript are
+included, the same as geninit does now. Resources/ and fonts/
+can still be included as-is.
+
+2. Have mkromfs (or a separate tool) general a C file (or sequence
+of them, so the data can be compiled directly into the Ghostscript
+executable. And of course modify gsiorom.c to pull its data from
+there instead of a literal file.
+
+3. Integrate mkromfs into the build system and replace the existing
+geninit code. Setting COMPILE_INITS=1 in the top-level Makefile
+should automatically construct and compile in the compressed image
+and enable the romfs FEATURE_DEV
+
+4. Switch to a b-tree for the block pointer index, so that file
+access remains fast if someone dumps in a huge number of Resources
+or fonts. Right now it does a linear search, which is fast enough
+for the current complement but will cause a problem as some point.</pre>
+<p>[src/Makefile.in 1.41, src/gsiorom.c 1.1, src/lib.mak 1.211, src/mkromfs.c 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-24_1704"></a>
+2005-08-24 17:04 Raph Levien</strong></p>
+<blockquote>
+<pre>
+Cleanup of error message "printquit" calls in pf2afm, mostly to add
+missing newlines. Thanks to Paul Vojta for the patch.</pre>
+<p>[lib/pf2afm.ps 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-24_1703"></a>
+2005-08-24 17:03 Igor Melichev</strong> (<a href="Details8.htm#2005-08-24_1703">details</a>)</p>
+<blockquote>
+<pre>
+Fix (the device interface) : High level devices need an access to a transparency transfer function object.
+
+</pre>
+<p>[src/gdevp14.c 1.30, src/gstparam.h 1.12, src/gstrans.c 1.20, src/gstrans.h 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-23_1926"></a>
+2005-08-23 19:26 Igor Melichev</strong> (<a href="Details8.htm#2005-08-23_1926">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Improve the logic of combining a text rotation with ViewingOrientation.
+
+</pre>
+<p>[src/gdevpdf.c 1.116]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-23_1734"></a>
+2005-08-23 17:34 Igor Melichev</strong> (<a href="Details8.htm#2005-08-23_1734">details</a>)</p>
+<blockquote>
+<pre>
+Fix (Type 1 hinter) : Allow degenerate CTM by a rendering with no hinting.
+
+</pre>
+<p>[src/gxhintn.c 1.60]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-23_1258"></a>
+2005-08-23 12:58 Igor Melichev</strong> (<a href="Details8.htm#2005-08-23_1258">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite and other vector devices) : A compatibility to Adobe when stroking with a degenerate CTM.
+
+</pre>
+<p>[src/gdevpdfd.c 1.68]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-23_1126"></a>
+2005-08-23 11:26 Igor Melichev</strong> (<a href="Details8.htm#2005-08-23_1126">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite and other vector devices) : Indeterministic result when stroking a path with a degenerate CTM.
+
+</pre>
+<p>[src/gdevvec.c 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-22_2130"></a>
+2005-08-22 21:30 Igor Melichev</strong> (<a href="Details8.htm#2005-08-22_2130">details</a>)</p>
+<blockquote>
+<pre>
+Fix: /SP pdfmark must synchronize the clipping path.
+
+</pre>
+<p>[lib/gs_pdfwr.ps 1.46, src/gdevpdfd.c 1.67]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-22_2129"></a>
+2005-08-22 21:29 Igor Melichev</strong> (<a href="Details8.htm#2005-08-22_2129">details</a>)</p>
+<blockquote>
+<pre>
+The filling algorithm : optimize paths with many subpaths (continued).
+
+</pre>
+<p>[src/gxpcopy.c 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-22_1429"></a>
+2005-08-22 14:29 Igor Melichev</strong> (<a href="Details8.htm#2005-08-22_1429">details</a>)</p>
+<blockquote>
+<pre>
+The filling algorithm : optimize paths with many subpaths.
+
+</pre>
+<p>[src/gxfill.c 1.122, src/gxpath.h 1.16, src/gxpcopy.c 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-18_0807"></a>
+2005-08-18 08:07 Igor Melichev</strong> (<a href="Details8.htm#2005-08-18_0807">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Improve the documentation about Policies.PageSize .
+
+</pre>
+<p>[doc/Ps2ps2.htm 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-17_2154"></a>
+2005-08-17 21:54 Igor Melichev</strong> (<a href="Details8.htm#2005-08-17_2154">details</a>)</p>
+<blockquote>
+<pre>
+PDF interpreter now processes ToUnicode CMaps when the target device is pdfwrite.
+
+</pre>
+<p>[lib/gs_cmap.ps 1.19, lib/pdf_font.ps 1.78]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-17_1830"></a>
+2005-08-17 18:30 Ray Johnston</strong> (<a href="Details8.htm#2005-08-17_1830">details</a>)</p>
+<blockquote>
+<pre>
+Previous change for ignoring 0 area clip path was not sufficient and made
+other files misbehave. Fixes bugs 688121 and 688259, reopen 687136.
+
+</pre>
+<p>[lib/pdf_ops.ps 1.39]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-17_1440"></a>
+2005-08-17 14:40 Igor Melichev</strong> (<a href="Details8.htm#2005-08-17_1440">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Unconforming line join.
+
+</pre>
+<p>[src/gxline.h 1.7, src/gxstroke.c 1.18, doc/Language.htm 1.94]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-11_1710"></a>
+2005-08-11 17:10 Igor Melichev</strong> (<a href="Details8.htm#2005-08-11_1710">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Exit a text context before resetting a clip.
+
+</pre>
+<p>[src/gdevpdfu.c 1.82]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-11_1538"></a>
+2005-08-11 15:38 Igor Melichev</strong> (<a href="Details8.htm#2005-08-11_1538">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Clipping was missed while stroking a path with a pattern color.
+
+</pre>
+<p>[src/gxstroke.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-10_1936"></a>
+2005-08-10 19:36 Igor Melichev</strong> (<a href="Details8.htm#2005-08-10_1936">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Divide long lines while flattening a path.
+
+</pre>
+<p>[src/gxpflat.c 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-10_1931"></a>
+2005-08-10 19:31 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : Develop.htm must reference all relevant files (continued).</pre>
+<p>[doc/Develop.htm 1.151, doc/Develop.htm 1.152]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-09_2238"></a>
+2005-08-09 22:38 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 688250 Another overprint problem with the tiffsep and psdcmyk
+devices.  The fix ensures that the various bit mask and shift fields in
+the device's color_info structure is set for the tiffsep, psdcmyk, and
+spotcmyk devices.</pre>
+<p>[src/gdevdevn.c 1.26, src/gdevpsd.c 1.22, src/gdevtsep.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-09_2023"></a>
+2005-08-09 20:23 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Port the 4-bit EGA device to the new DeviceN color mapping. After
+a patch from William Bader. Fixes bug #687795.</pre>
+<p>[src/gdevpcfb.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-08_2324"></a>
+2005-08-08 23:24 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove a generated file that was causing build portability problems.</pre>
+<p>[jasper/src/libjasper/include/jasper/jas_config_ac.h 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-04_1738"></a>
+2005-08-04 17:38 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix calculation of the row width on 64-bit platforms. Remove bitmap_raster()
+macro because Windows bitmap is not affected by the source platform alignment
+constrains. Initialize padding bytes to 0.
+Fix bug 688247</pre>
+<p>[src/gdevbmp.c 1.11, src/gdevbmpc.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-04_0932"></a>
+2005-08-04 09:32 Igor Melichev</strong> (<a href="Details8.htm#2005-08-04_0932">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT font reader) : Allow 'post' over 65536 bytes.
+
+</pre>
+<p>[lib/gs_ttf.ps 1.46]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-03_1636"></a>
+2005-08-03 16:36 Igor Melichev</strong> (<a href="Details8.htm#2005-08-03_1636">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : A workaround for an HP LaserJet 1320 bug in 'resourcestatus'.
+
+</pre>
+<p>[lib/opdfread.ps 1.82]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-02_1112"></a>
+2005-08-02 11:12 Igor Melichev</strong> (<a href="Details8.htm#2005-08-02_1112">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT interpreter) : Optimize the debug support.
+
+</pre>
+<p>[src/gxttfb.c 1.37, src/ttfmain.c 1.34, src/ttfoutl.h 1.16, src/ttinterp.c 1.18, src/ttload.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-01_2058"></a>
+2005-08-01 20:58 Igor Melichev</strong> (<a href="Details8.htm#2005-08-01_2058">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT interpreter) : Skip TT instructions if the font program or the cvt program fails.
+
+</pre>
+<p>[src/ttfmain.c 1.33]</p>
+</blockquote>
+
+<p><strong><a name="2005-08-01_1940"></a>
+2005-08-01 19:40 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : Develop.htm must reference all relevant files.</pre>
+<p>[doc/Develop.htm 1.150]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-30_0239"></a>
+2005-07-30 02:39 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Replace memcpy() with overlapping intervals to memmove() in Type 2 font
+generator. The old code violated the C spec and failed on HP aC++ compiler
+with +Olibcalls option. Thanks to Hin-Tak Leung for the patch.
+Fix bug 687360</pre>
+<p>[src/gdevpsfx.c 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-29_0249"></a>
+2005-07-29 02:49 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Remove the check for 0 CTM in the type 1 font hinter to support PDF files
+with 0-size fonts or 0 CTM.
+Fix bug 688237</pre>
+<p>[src/gxhintn.c 1.59]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-28_1524"></a>
+2005-07-28 15:24 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Pacify Valgrind: don't copy memory on itself.
+Partial fix for bug 688225.</pre>
+<p>[src/gsiodev.c 1.8, src/zcie.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-27_2234"></a>
+2005-07-27 22:34 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : Maybe line breaks are broken by the last patch. Commit it again with right line breaks for sure.</pre>
+<p>[src/gdevpdfb.h 1.4, src/gdevpdfd.c 1.66, src/gdevpdfx.h 1.123, src/gdevpdti.c 1.49, src/gxcpath.c 1.16, src/gxpath.h 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-27_2209"></a>
+2005-07-27 22:09 Igor Melichev</strong> (<a href="Details8.htm#2005-07-27_2209">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Skip a clip path, which is set by setcachedevice.
+
+</pre>
+<p>[src/gdevpdfb.h 1.3, src/gdevpdfd.c 1.65, src/gdevpdfx.h 1.122, src/gdevpdti.c 1.48, src/gxcpath.c 1.15, src/gxpath.h 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-27_1124"></a>
+2005-07-27 11:24 Igor Melichev</strong> (<a href="Details8.htm#2005-07-27_1124">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Ignore XUID if Metrics[2] has been changed.
+
+</pre>
+<p>[src/gsfont.c 1.37, src/gsfont.h 1.12, src/zbfont.c 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-26_2349"></a>
+2005-07-26 23:49 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Improve wording of the new p2ps2 script documentation.</pre>
+<p>[doc/Ps2ps2.htm 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-26_2050"></a>
+2005-07-26 20:50 Igor Melichev</strong> (<a href="Details8.htm#2005-07-26_2050">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Delay the assignation of object id to a color space until its creation is completed.
+
+</pre>
+<p>[src/gdevpdfc.c 1.53]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-26_0059"></a>
+2005-07-26 00:59 Dan Coby</strong> (<a href="Details8.htm#2005-07-26_0059">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 688052 Segv with test file for 687980 and the psdcmyk device.
+
+</pre>
+<p>[src/gdevdevn.c 1.25, src/gdevpsd.c 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-21_1950"></a>
+2005-07-21 19:50 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Use memmove() instead of memcpy() in Ins_MINDEX() because of the overlapping
+memory blocks.
+Fix bug 688224.</pre>
+<p>[src/ttinterp.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-21_1932"></a>
+2005-07-21 19:32 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix off-by-one error in Decode array testing.
+Fix bug 688223.</pre>
+<p>[src/gxipixel.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-21_1819"></a>
+2005-07-21 18:19 Dan Coby</strong></p>
+<blockquote>
+<pre>
+
+Fix for 688218 gdevpng.c(148) : A harmful warning from MSVC8.  The warning
+message was due to a math overflow for the dither_grays and dither_colors
+fields in the device color_info structure.  This occured due to the
+addition of the png48 device which has 16 bit components.  The fix is to
+increase the field size to a uint (typically 32 bits).</pre>
+<p>[src/gxdevcli.h 1.40]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-21_1813"></a>
+2005-07-21 18:13 Igor Melichev</strong> (<a href="Details8.htm#2005-07-21_1813">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite, ps2write) : Merge equal function resources.
+
+</pre>
+<p>[src/gdevpdfu.c 1.81]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-21_1604"></a>
+2005-07-21 16:04 Igor Melichev</strong> (<a href="Details8.htm#2005-07-21_1604">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Some of Widths elements could be missed.
+
+</pre>
+<p>[lib/opdfread.ps 1.81]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-21_0953"></a>
+2005-07-21 09:53 Igor Melichev</strong> (<a href="Details8.htm#2005-07-21_0953">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Move character raster buffers into the memory space of gx_show_enum.
+
+</pre>
+<p>[src/gxchar.c 1.47]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-20_1814"></a>
+2005-07-20 18:14 Igor Melichev</strong> (<a href="Details8.htm#2005-07-20_1814">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite, ps2write) : Synthesized bitmap fonts had zero character width in charprocs.
+
+</pre>
+<p>[lib/opdfread.ps 1.80, src/gdevpdfb.c 1.32, src/gdevpdtt.c 1.103]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-20_1446"></a>
+2005-07-20 14:46 Ray Johnston</strong> (<a href="Details8.htm#2005-07-20_1446">details</a>)</p>
+<blockquote>
+<pre>
+Fix undefined in -get- caused by previous (1.38) patch that ignored zero
+length tables in TT font. Previous fix for 687457. Bug 688220 for customer
+580.
+
+</pre>
+<p>[lib/gs_ttf.ps 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-20_0820"></a>
+2005-07-20 08:20 Igor Melichev</strong> (<a href="Details8.htm#2005-07-20_0820">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Initial commit of the ps2ps2 documentation.
+
+</pre>
+<p>[doc/Ps2ps2.htm 1.1, doc/Readme.htm 1.68]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-20_0722"></a>
+2005-07-20 07:22 Igor Melichev</strong> (<a href="Details8.htm#2005-07-20_0722">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : The default value for MaxInlineImageSize was incorrect.
+
+</pre>
+<p>[src/gdevpdf.c 1.115, src/gdevpdfb.h 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-20_0617"></a>
+2005-07-20 06:17 Igor Melichev</strong> (<a href="Details8.htm#2005-07-20_0617">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Bring the script to the traditional form (continued).
+
+</pre>
+<p>[lib/gs_pdfwr.ps 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-20_0610"></a>
+2005-07-20 06:10 Igor Melichev</strong> (<a href="Details8.htm#2005-07-20_0610">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Bring the script to the traditional form.
+
+</pre>
+<p>[doc/Develop.htm 1.149, doc/Psfiles.htm 1.64, doc/Use.htm 1.133]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-20_0600"></a>
+2005-07-20 06:00 Igor Melichev</strong> (<a href="Details8.htm#2005-07-20_0600">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Bring the script to the traditional form.
+
+</pre>
+<p>[lib/gs_pdfwr.ps 1.44, lib/ps2ps2 1.1, lib/ps2ps2.bat 1.2, lib/ps2ps2.cmd 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-19_1931"></a>
+2005-07-19 19:31 Igor Melichev</strong> (<a href="Details8.htm#2005-07-19_1931">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite, ps2write) : Tj must account the Widths rounding when converting to a bitmap font.
+
+</pre>
+<p>[src/gdevpdti.c 1.47]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-18_0551"></a>
+2005-07-18 05:51 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Skip CFF tables at 0 or negative offset because some CFF fonts put empty tables
+at offset 0. Bug 688160. Thanks to Alex Cherepanov for this patch.</pre>
+<p>[lib/gs_cff.ps 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-18_0533"></a>
+2005-07-18 05:33 Ray Johnston</strong> (<a href="Details8.htm#2005-07-18_0533">details</a>)</p>
+<blockquote>
+<pre>
+Fix handling of Some Type1C (CFF) font subsets where the tables may not
+be completely contiguous. Seen with PDFs created by pdflib. Bug 688216
+and 688040 for customer 562.
+
+</pre>
+<p>[lib/gs_cff.ps 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-15_0559"></a>
+2005-07-15 05:59 Ray Johnston</strong> (<a href="Details8.htm#2005-07-15_0559">details</a>)</p>
+<blockquote>
+<pre>
+Remove the arbitrary limit of 256 max_colors from the dci_ macros. This is
+related to bug 688204 and allows shadings (gradients) to have more than
+256 steps for high precision color devices.
+
+</pre>
+<p>[src/gxdevcli.h 1.39]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-15_0523"></a>
+2005-07-15 05:23 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add a 48 bit RGB PNG raster device for testing deep color output code
+paths. The new device is called 'png48'. Note that this is a different
+naming scheme from the the other PNG devices, which use number of colors
+instead of the log of the number of colors to distinguish between the
+different output formats. Related to bug 688204.</pre>
+<p>[src/configure.ac 1.51, src/devs.mak 1.134, src/gdevpng.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-15_0336"></a>
+2005-07-15 03:36 Dan Coby</strong> (<a href="Details8.htm#2005-07-15_0336">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 688209 Incorrect equiv color for 'Dark Blue' in test file.
+
+</pre>
+<p>[src/gsfunc0.c 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-14_1956"></a>
+2005-07-14 19:56 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Don't use Length value in the stream dictionary when it's incorrect. All
+filtered streams are self-terminated. Unfiltered streams are most often occur
+as contents streams. Their processing is terminated by execution of endstream
+operator. Unfiltered image streams will only read the data required by
+the image.
+Fix bug 688182.</pre>
+<p>[lib/pdf_base.ps 1.46]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-14_1610"></a>
+2005-07-14 16:10 Igor Melichev</strong> (<a href="Details8.htm#2005-07-14_1610">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Don't replace Encoding for standard fonts.
+
+</pre>
+<p>[lib/opdfread.ps 1.79]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-14_1514"></a>
+2005-07-14 15:14 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Increade the limit on the .libfile operand length from 200 to the full
+gp_file_name_sizeof . The OS also limits the length of the file name,
+for instance, on WinNT, NTFS to 252 characters.
+Fix bug 688198.</pre>
+<p>[src/zfile.c 1.42]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-14_1320"></a>
+2005-07-14 13:20 Igor Melichev</strong> (<a href="Details8.htm#2005-07-14_1320">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Don't replace Encoding for standard fonts.
+
+</pre>
+<p>[lib/opdfread.ps 1.78]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-14_1027"></a>
+2005-07-14 10:27 Igor Melichev</strong> (<a href="Details8.htm#2005-07-14_1027">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Embed standard fonts, which use extention glyphs due to encoding conflicts.
+
+</pre>
+<p>[src/devs.mak 1.133, src/gdevpdtf.c 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-13_2121"></a>
+2005-07-13 21:21 Dan Coby</strong> (<a href="Details8.htm#2005-07-13_2121">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 688206 rangecheck in --setcolorspace--.  Actually there is a
+problem with the PDF test files.  The 'fix' is to make Ghostscript more
+tolerant of errors.
+
+</pre>
+<p>[src/zcsindex.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-13_1818"></a>
+2005-07-13 18:18 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Font scanning would miss OpenType fonts (OTTO header).</pre>
+<p>[lib/gs_ttf.ps 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-13_1721"></a>
+2005-07-13 17:21 Igor Melichev</strong> (<a href="Details8.htm#2005-07-13_1721">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT grid fitting) : A missed glyph needs cached_fm_pair_s.
+
+</pre>
+<p>[src/gxchar.c 1.46]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-13_1037"></a>
+2005-07-13 10:37 Igor Melichev</strong> (<a href="Details8.htm#2005-07-13_1037">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : EOT marker was missed.
+
+</pre>
+<p>[src/gdevpdf.c 1.114]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-13_0039"></a>
+2005-07-13 00:39 Ralph Giles</strong> (<a href="Details8.htm#2005-07-13_0039">details</a>)</p>
+<blockquote>
+<pre>
+Cast color components to type gx_color_index before shifting when
+composing a chunked index color in gx_default_rgb_map_rgb_color().
+Partial fix for bug 688204.
+
+</pre>
+<p>[src/gxcmap.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-12_1754"></a>
+2005-07-12 17:54 Igor Melichev</strong> (<a href="Details8.htm#2005-07-12_1754">details</a>)</p>
+<blockquote>
+<pre>
+Fix : MSVC8 Beta 2 doesn't handle the compiler option Gi.
+
+</pre>
+<p>[src/msvccmd.mak 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-11_2208"></a>
+2005-07-11 22:08 Stefan Kemper</strong> (<a href="Details8.htm#2005-07-11_2208">details</a>)</p>
+<blockquote>
+<pre>
+Fix MSVC compile error
+
+</pre>
+<p>[src/gdevpxut.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-08_2206"></a>
+2005-07-08 22:06 Dan Coby</strong></p>
+<blockquote>
+<pre>
+The gdevdsp.c file was missed in the previous commit for the fix for 688192.</pre>
+<p>[src/gdevdsp.c 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-08_2204"></a>
+2005-07-08 22:04 Dan Coby</strong> (<a href="Details8.htm#2005-07-08_2204">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 688192 Resolution dependant problems with tiffsep.  Note:  The
+actual problem is related to garbage collection.
+
+</pre>
+<p>[src/devs.mak 1.132, src/gdevdevn.c 1.24, src/gdevdevn.h 1.11, src/gdevpsd.c 1.20, src/gdevtsep.c 1.7, src/gsequivc.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-07_1644"></a>
+2005-07-07 16:44 Stefan Kemper</strong></p>
+<blockquote>
+<pre>
+Add support for manual feed and media source or tray selection
+to pxl output devices.  This allows postscript input to use
+InputAttributes dictionary selection mechanisms to choose a tray.
+
+The pxl tray numbers in the PXL file are the PS MediaSource numbers
+to "map" correctly an input attributes dictionary needs to be present
+and needs to match the tray contents/numbering of the pxl printer.
+
+postscript manual feed /ManualFeed is directly mapped to PXL this
+will override any tray selection.</pre>
+<p>[src/gdevlj56.c 1.7, src/gdevpx.c 1.16, src/gdevpxut.c 1.7, src/gdevpxut.h 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-06_2054"></a>
+2005-07-06 20:54 Stefan Kemper</strong></p>
+<blockquote>
+<pre>
+Bug fix for 688196.
+
+CCITTFAX decode filter had number of rows limited to 32000.
+Test file with 40000 found, limit is now 1,000,000</pre>
+<p>[src/scfparam.c 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-05_1756"></a>
+2005-07-05 17:56 Igor Melichev</strong> (<a href="Details8.htm#2005-07-05_1756">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Allow .HWMargins in the printer's userdict.
+
+</pre>
+<p>[lib/opdfread.ps 1.77]</p>
+</blockquote>
+
+<p><strong><a name="2005-07-04_0903"></a>
+2005-07-04 09:03 Igor Melichev</strong> (<a href="Details8.htm#2005-07-04_0903">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : CIEBased* images must use DecodeABC as Decode (continued).
+
+</pre>
+<p>[lib/opdfread.ps 1.76]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-29_2346"></a>
+2005-06-29 23:46 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 688144 Overprint problem wtih emitting a single separation from
+tiffsep.  The overprint logic assumed that overprinting was never applied
+if there is only one component in the output device.  This is true for a
+DeviceGray process color model.  However it is possible for there to only
+be a single output component in other process color models (like CMYK) if
+the SeparationOrder device parameter is used to select a subset of the
+device's colorants.  This fix removes the undesired optimization.</pre>
+<p>[src/gsovrc.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-29_2046"></a>
+2005-06-29 20:46 Igor Melichev</strong> (<a href="Details8.htm#2005-06-29_2046">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : CIEBased* images must use DecodeABC as Decode.
+
+</pre>
+<p>[lib/opdfread.ps 1.75]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-29_1821"></a>
+2005-06-29 18:21 Igor Melichev</strong> (<a href="Details8.htm#2005-06-29_1821">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Imagemask incorrectly synchronized color in the !HaveStrokeColor mode.
+
+</pre>
+<p>[src/gdevpdfb.c 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-29_1421"></a>
+2005-06-29 14:21 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove a duplicate file in the installation target list.</pre>
+<p>[src/unixinst.mak 1.41]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-29_1412"></a>
+2005-06-29 14:12 Igor Melichev</strong> (<a href="Details8.htm#2005-06-29_1412">details</a>)</p>
+<blockquote>
+<pre>
+Fix : A dangling pointer from pdf_image_enum.
+
+</pre>
+<p>[src/gdevpdfj.c 1.46]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-29_1054"></a>
+2005-06-29 10:54 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Fix some additional typos in the documentation install rules. Closes bug
+688158.</pre>
+<p>[src/unixinst.mak 1.40]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-28_2300"></a>
+2005-06-28 23:00 Igor Melichev</strong> (<a href="Details8.htm#2005-06-28_2300">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite, ps2write) : A recognition of Type 3 glyph variations was inaccurate.
+
+</pre>
+<p>[src/gdevpdfg.c 1.63, src/gdevpdfx.h 1.121, src/gdevpdti.c 1.46]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-28_1144"></a>
+2005-06-28 11:44 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add two new multiply-included templating files to the exclusion list for
+the multiple-inclusion regression check.</pre>
+<p>[toolbin/tests/check_source.py 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-28_0619"></a>
+2005-06-28 06:19 Dan Coby</strong> (<a href="Details8.htm#2005-06-28_0619">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687989 PDF to any format raises /invalidfont in /R21.  The test
+file was created by an imposition program.
+
+</pre>
+<p>[lib/pdf_font.ps 1.77]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-23_0735"></a>
+2005-06-23 07:35 Igor Melichev</strong> (<a href="Details8.htm#2005-06-23_0735">details</a>)</p>
+<blockquote>
+<pre>
+Fix : A global restore was applied at save level 1.
+
+</pre>
+<p>[src/isave.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-22_2015"></a>
+2005-06-22 20:15 Igor Melichev</strong> (<a href="Details8.htm#2005-06-22_2015">details</a>)</p>
+<blockquote>
+<pre>
+Fix : A global restore was applied at save level 1.
+
+</pre>
+<p>[src/isave.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-22_1536"></a>
+2005-06-22 15:36 Igor Melichev</strong> (<a href="Details8.htm#2005-06-22_1536">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Dangling pointers due to 'restore' left an internal save level.
+
+</pre>
+<p>[src/isave.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-22_1524"></a>
+2005-06-22 15:24 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Fix typos in the the jasper makefile. Closes bug 688148.</pre>
+<p>[src/jasper.mak 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-22_1411"></a>
+2005-06-22 14:11 Stefan Kemper</strong></p>
+<blockquote>
+<pre>
+Added documentation note that gc doesn't collect
+around a reference to a sub interval in an array.
+Rather it gc's arrays as objects.</pre>
+<p>[doc/Language.htm 1.93]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-21_1958"></a>
+2005-06-21 19:58 Igor Melichev</strong> (<a href="Details8.htm#2005-06-21_1958">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Reference count for gx_clip_path::path_list was incorrect.
+
+</pre>
+<p>[src/gxcpath.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-21_1650"></a>
+2005-06-21 16:50 Igor Melichev</strong> (<a href="Details8.htm#2005-06-21_1650">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Always place the image enumerator into local memory (continued 2).
+
+</pre>
+<p>[src/gsimage.c 1.15, src/gsimage.h 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-21_1625"></a>
+2005-06-21 16:25 Igor Melichev</strong> (<a href="Details8.htm#2005-06-21_1625">details</a>)</p>
+<blockquote>
+<pre>
+Fix : A wrong allocator was used to release the glyph cache.
+
+</pre>
+<p>[src/gsgcache.c 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-21_1312"></a>
+2005-06-21 13:12 Igor Melichev</strong> (<a href="Details8.htm#2005-06-21_1312">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Always place the image enumerator into local memory (continued).
+
+</pre>
+<p>[src/gsimage.c 1.14, src/gsimage.h 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-21_0058"></a>
+2005-06-21 00:58 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Partial fix for 688132 WTS crash with pdf input.  Ghostscript does not
+serialize a WTS halftone.  (This is required for clist processing.)  As a
+result, an error code is being returned.  The error code was not being
+properly returned.  We then seg faulted due to a pointer not being set in
+the error case.  This fix corrects the problem with returning the error
+code.  The problem with WTS serializaton remains.</pre>
+<p>[src/gdevp14.c 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-20_0859"></a>
+2005-06-20 08:59 Igor Melichev</strong> (<a href="Details8.htm#2005-06-20_0859">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Factor out any dependence on sizeof(gx_color_index) .
+
+</pre>
+<p>[src/gdevdsp.c 1.33, src/gdevm40.c 1.3, src/gdevm48.c 1.3, src/gdevm64.c 1.4, src/gdevpdfb.c 1.30, src/gdevpdfv.c 1.39, src/gdevpsd.c 1.19, src/gdevtsep.c 1.6, src/gdevxcf.c 1.10, src/gsdparam.c 1.18, src/gxcindex.h 1.7, src/gxdcolor.c 1.13, src/gxdevcli.h 1.38, src/gxiscale.c 1.9, src/gxoprect.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-19_2110"></a>
+2005-06-19 21:10 Igor Melichev</strong> (<a href="Details8.htm#2005-06-19_2110">details</a>)</p>
+<blockquote>
+<pre>
+Fix : zchar.c needs a prototype of z1_set_cache.
+
+</pre>
+<p>[src/int.mak 1.135, src/zchar.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-19_2103"></a>
+2005-06-19 21:03 Igor Melichev</strong> (<a href="Details8.htm#2005-06-19_2103">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite, ps2write) : Type 42 fonts got wrong Width (continued).
+
+</pre>
+<p>[src/ichar1.h 1.13, src/int.mak 1.134, src/zfont42.c 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-19_2045"></a>
+2005-06-19 20:45 Igor Melichev</strong> (<a href="Details8.htm#2005-06-19_2045">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Remove an unreasonably big array type definition related to color index.
+
+</pre>
+<p>[src/gxcht.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-16_0653"></a>
+2005-06-16 06:53 Igor Melichev</strong> (<a href="Details8.htm#2005-06-16_0653">details</a>)</p>
+<blockquote>
+<pre>
+Fix (Ps2pdf.htm) : ConvertCMYKImagesToRGB was wrongly documented.
+
+</pre>
+<p>[doc/Ps2pdf.htm 1.81]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-15_1840"></a>
+2005-06-15 18:40 Igor Melichev</strong> (<a href="Details8.htm#2005-06-15_1840">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Always place the image enumerator into local memory.
+
+</pre>
+<p>[src/gsimage.c 1.13, src/gsptype1.c 1.23, src/gxccache.c 1.34, src/gsimage.h 1.7, src/zimage.c 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-15_0031"></a>
+2005-06-15 00:31 Igor Melichev</strong> (<a href="Details8.htm#2005-06-15_0031">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : A bug while computing an n-argument m-result function type 0.
+
+</pre>
+<p>[lib/opdfread.ps 1.74]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-14_1713"></a>
+2005-06-14 17:13 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Link to the relevent section of Use.htm for details about the GS_LIB env
+variable. Fixes bug 688051.</pre>
+<p>[doc/Install.htm 1.53]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-14_1707"></a>
+2005-06-14 17:07 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add some newer documentation files to the unix install target.
+Fixes bug 688049.</pre>
+<p>[src/unixinst.mak 1.39]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-14_1653"></a>
+2005-06-14 16:53 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Fix a documentation typo: NeverEnbed vs NeverEmbed.</pre>
+<p>[doc/Ps2pdf.htm 1.80]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-14_1119"></a>
+2005-06-14 11:19 Igor Melichev</strong> (<a href="Details8.htm#2005-06-14_1119">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite, ps2write) : Type 42 fonts got wrong Width.
+
+</pre>
+<p>[src/zfont42.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-13_1843"></a>
+2005-06-13 18:43 Igor Melichev</strong> (<a href="Details8.htm#2005-06-13_1843">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Interleaved images could miss Decode, step 4.
+
+</pre>
+<p>[doc/Develop.htm 1.148]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-09_1947"></a>
+2005-06-09 19:47 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add ManualFeed to the set of keys evaluated for media source matching.
+Needed to allow forcing a ManualFeed tray selection even when another
+media of the right type exists in another tray.</pre>
+<p>[lib/gs_setpd.ps 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-09_0729"></a>
+2005-06-09 07:29 Igor Melichev</strong> (<a href="Details8.htm#2005-06-09_0729">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Implementinmg the ps2write device (continued 3).
+
+</pre>
+<p>[lib/gs_pdfwr.ps 1.43]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-09_0715"></a>
+2005-06-09 07:15 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Throw an error when JBIG2 decoding fails in the library
+instead of segfaulting. Bug 688053.</pre>
+<p>[src/sjbig2.h 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-09_0715"></a>
+2005-06-09 07:15 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Throw an error when JBIG2 decoding fails in the library instead of segfaulting. Bug 688053.</pre>
+<p>[src/sjbig2.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-09_0526"></a>
+2005-06-09 05:26 Igor Melichev</strong> (<a href="Details8.htm#2005-06-09_0526">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Implementinmg the ps2write device (continued 2).
+
+</pre>
+<p>[lib/gs_pdfwr.ps 1.42]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-08_1438"></a>
+2005-06-08 14:38 Igor Melichev</strong> (<a href="Details8.htm#2005-06-08_1438">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Interleaved images could miss Decode, step 3.
+
+</pre>
+<p>[src/gxidata.c 1.9, src/gxipixel.c 1.11, src/gxsample.c 1.7, src/gxsample.h 1.7, src/gxsamplp.h 1.2, src/lib.mak 1.210]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-08_1416"></a>
+2005-06-08 14:16 Igor Melichev</strong> (<a href="Details8.htm#2005-06-08_1416">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Interleaved images could miss Decode, step 2.
+
+</pre>
+<p>[src/gxsample.c 1.6, src/gxsamplp.h 1.1, src/lib.mak 1.209]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-08_1400"></a>
+2005-06-08 14:00 Igor Melichev</strong> (<a href="Details8.htm#2005-06-08_1400">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Interleaved images could miss Decode, step 1.
+
+</pre>
+<p>[src/gxi12bit.c 1.7, src/gxi16bit.c 1.2, src/gxidata.c 1.8, src/gximage.h 1.8, src/gxsample.c 1.5, src/gxsample.h 1.6, src/lib.mak 1.208]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-08_0656"></a>
+2005-06-08 06:56 Igor Melichev</strong> (<a href="Details8.htm#2005-06-08_0656">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Implementinmg the ps2write device (continued).
+
+</pre>
+<p>[lib/gs_pdfwr.ps 1.41, src/gdevpdfu.c 1.80]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-08_0642"></a>
+2005-06-08 06:42 Dan Coby</strong> (<a href="Details8.htm#2005-06-08_0642">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 688116 DeviceN spot colours are corrupt in display device.
+
+</pre>
+<p>[src/gdevdgbr.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-07_1924"></a>
+2005-06-07 19:24 Ray Johnston</strong> (<a href="Details8.htm#2005-06-07_1924">details</a>)</p>
+<blockquote>
+<pre>
+Fix for the BeginPage and EndPage procedures used for N-up processing.
+
+</pre>
+<p>[lib/gsnup.ps 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-07_1833"></a>
+2005-06-07 18:33 Igor Melichev</strong> (<a href="Details8.htm#2005-06-07_1833">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Implementinmg the ps2write device.
+
+</pre>
+<p>[lib/gs_pdfwr.ps 1.40, lib/ps2ps2.bat 1.1, src/bcwin32.mak 1.37, src/devs.mak 1.131, src/gdevpdf.c 1.113, src/gdevpdfb.h 1.1, src/gdevpdfp.c 1.49, src/gdevpdfu.c 1.79, src/gdevpdfx.h 1.120, doc/Develop.htm 1.147, doc/Psfiles.htm 1.63, src/macos-mcp.mak 1.34, src/macosx.mak 1.27, src/msvc32.mak 1.73, src/openvms.mak 1.40, src/os2.mak 1.46, src/unix-gcc.mak 1.49, src/unixansi.mak 1.40, src/watcw32.mak 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-07_1641"></a>
+2005-06-07 16:41 Igor Melichev</strong> (<a href="Details8.htm#2005-06-07_1641">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : The memory descriptor of gx_device_pdf missed some strings.
+
+</pre>
+<p>[src/gdevpdf.c 1.112, src/gdevpdfx.h 1.119]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-06_1906"></a>
+2005-06-06 19:06 Igor Melichev</strong> (<a href="Details8.htm#2005-06-06_1906">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Handle TT cmap 00030000.
+
+</pre>
+<p>[lib/opdfread.ps 1.73]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-06_1532"></a>
+2005-06-06 15:32 Igor Melichev</strong> (<a href="Details8.htm#2005-06-06_1532">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : A named resource maintenance.
+
+</pre>
+<p>[lib/opdfread.ps 1.72, src/gdevpdf.c 1.111, src/gdevpdfi.c 1.71, src/gdevpdfj.c 1.45, src/gdevpdfm.c 1.48, src/gdevpdfo.c 1.33, src/gdevpdfu.c 1.78, src/gdevpdfx.h 1.118, src/gdevpdti.c 1.45, src/gdevpdtw.c 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-04_1521"></a>
+2005-06-04 15:21 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Removed extra && and space from last commit (fix for 687973).</pre>
+<p>[src/scfd.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2005-06-03_2003"></a>
+2005-06-03 20:03 Ray Johnston</strong> (<a href="Details8.htm#2005-06-03_2003">details</a>)</p>
+<blockquote>
+<pre>
+Fix to allow CCITT data without EOFB when EndOfBlock is true (the default)
+to return normal end-of-file (EOFC) status instead of ioerror (ERRC) as
+long as the row count given by Rows is satisfied. Bug 687973.
+
+</pre>
+<p>[src/scfd.c 1.7, src/scfx.h 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-31_2042"></a>
+2005-05-31 20:42 Igor Melichev</strong> (<a href="Details8.htm#2005-05-31_2042">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Fixed problems with Separation color spaces.
+
+</pre>
+<p>[lib/opdfread.ps 1.71]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-31_1925"></a>
+2005-05-31 19:25 Stefan Kemper</strong></p>
+<blockquote>
+<pre>
+Update a few of the paper sizes used in reading/writing PXL.
+Fixes bug 688118.</pre>
+<p>[src/gdevpxen.h 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-31_1305"></a>
+2005-05-31 13:05 Igor Melichev</strong> (<a href="Details8.htm#2005-05-31_1305">details</a>)</p>
+<blockquote>
+<pre>
+Fix : TT interpreter had problems on 64 bit platforms.
+
+</pre>
+<p>[src/ttfoutl.h 1.15, src/tttype.h 1.3, src/tttypes.h 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-31_1104"></a>
+2005-05-31 11:04 Igor Melichev</strong> (<a href="Details8.htm#2005-05-31_1104">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Implementing the SetPageSize mode (continued).
+
+</pre>
+<p>[lib/opdfread.ps 1.70]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-31_1056"></a>
+2005-05-31 10:56 Igor Melichev</strong> (<a href="Details8.htm#2005-05-31_1056">details</a>)</p>
+<blockquote>
+<pre>
+Fix : A failed pattern color could cause a crash in vector devices.
+
+</pre>
+<p>[src/gsptype1.c 1.22, src/gxhldevc.c 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-30_2100"></a>
+2005-05-30 21:00 Igor Melichev</strong> (<a href="Details8.htm#2005-05-30_2100">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Implementing the SetPageSize mode.
+
+</pre>
+<p>[lib/opdfread.ps 1.69, lib/ps2write.bat 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-30_1641"></a>
+2005-05-30 16:41 Igor Melichev</strong> (<a href="Details8.htm#2005-05-30_1641">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Implementing the font type MMType1.
+
+</pre>
+<p>[lib/opdfread.ps 1.68]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-29_1929"></a>
+2005-05-29 19:29 Igor Melichev</strong> (<a href="Details8.htm#2005-05-29_1929">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite, ps2write) : Skip empty images when converting a shading into a bitmap.
+
+</pre>
+<p>[src/gdevpdfd.c 1.64]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-27_0543"></a>
+2005-05-27 05:43 Dan Coby</strong> (<a href="Details8.htm#2005-05-27_0543">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 688113 null ptr crash in gdevp14.c.  With the -rXXXxYYY switch
+specified and high resolution PDF 1.4 transparency files, GS would crash.
+
+</pre>
+<p>[src/gdevijs.c 1.12, src/gdevprn.c 1.20, src/gdevprn.h 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-26_1722"></a>
+2005-05-26 17:22 Igor Melichev</strong> (<a href="Details8.htm#2005-05-26_1722">details</a>)</p>
+<blockquote>
+<pre>
+Fix : 'strokepath' could generate wrongly oriented contours (continued 2)
+
+</pre>
+<p>[src/gxpath.c 1.11, src/gxstroke.c 1.16, src/lib.mak 1.207]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-26_0735"></a>
+2005-05-26 07:35 Igor Melichev</strong> (<a href="Details8.htm#2005-05-26_0735">details</a>)</p>
+<blockquote>
+<pre>
+Fix : 'strokepath' could generate wrongly oriented contours (continued)
+
+</pre>
+<p>[src/gxstroke.c 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-25_2158"></a>
+2005-05-25 21:58 Ray Johnston</strong> (<a href="Details8.htm#2005-05-25_2158">details</a>)</p>
+<blockquote>
+<pre>
+Fix VM space for userparams. Problem and patch courtesy of Paul Vojta.
+Bug 688107.
+
+</pre>
+<p>[lib/gs_lev2.ps 1.37]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-25_1557"></a>
+2005-05-25 15:57 Igor Melichev</strong> (<a href="Details8.htm#2005-05-25_1557">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite, ps2write) : Wrong shading coordinates when converting to PDF 1.2 .
+
+</pre>
+<p>[src/gdevpdfd.c 1.63, src/gsptype2.c 1.19, src/gxshade1.c 1.41, src/gxshade6.c 1.100]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-23_2233"></a>
+2005-05-23 22:33 Dan Coby</strong> (<a href="Details8.htm#2005-05-23_2233">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 688010 Errors in overprint with halftoned output.
+
+</pre>
+<p>[src/gxht.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-23_1824"></a>
+2005-05-23 18:24 Igor Melichev</strong> (<a href="Details8.htm#2005-05-23_1824">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite, ps2write) : Shading background was missed in PDF1.2 .
+
+</pre>
+<p>[src/gdevpdfb.c 1.29, src/gdevpdfd.c 1.62, src/gdevpdfx.h 1.117, src/gsptype2.c 1.18, src/gsptype2.h 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-23_1459"></a>
+2005-05-23 14:59 Igor Melichev</strong> (<a href="Details8.htm#2005-05-23_1459">details</a>)</p>
+<blockquote>
+<pre>
+Fix : 'setcachewdevice' must always clip characters.
+
+</pre>
+<p>[src/gscpm.h 1.5, src/gxchar.c 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-23_1049"></a>
+2005-05-23 10:49 Igor Melichev</strong> (<a href="Details8.htm#2005-05-23_1049">details</a>)</p>
+<blockquote>
+<pre>
+Fix : 'strokepath' could generate wrongly oriented contours.
+
+</pre>
+<p>[src/gxstroke.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-19_1639"></a>
+2005-05-19 16:39 Ray Johnston</strong> (<a href="Details8.htm#2005-05-19_1639">details</a>)</p>
+<blockquote>
+<pre>
+Fix for yet another broken PDF that Adobe Reader handles without complaint.
+Circular references in Resources are now detected and handled (with a
+warning). Bug 687946 for customer 580. Thanks to Alex Cherepanov for this fix
+
+</pre>
+<p>[lib/pdf_main.ps 1.98]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-18_1959"></a>
+2005-05-18 19:59 Igor Melichev</strong> (<a href="Details8.htm#2005-05-18_1959">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Improving the script with NOOUTERSAVE.
+
+</pre>
+<p>[lib/ps2write.bat 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-18_1951"></a>
+2005-05-18 19:51 Igor Melichev</strong> (<a href="Details8.htm#2005-05-18_1951">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Passing NumCopies to the output.
+
+</pre>
+<p>[lib/opdfread.ps 1.67, src/gdevpdf.c 1.110, src/gdevpdfx.h 1.116]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-18_1021"></a>
+2005-05-18 10:21 Igor Melichev</strong> (<a href="Details8.htm#2005-05-18_1021">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : A wrong line join with 'stroke'.
+
+</pre>
+<p>[src/gdevvec.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-17_2056"></a>
+2005-05-17 20:56 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update a comment to correctly describe the jasper stream object struct.</pre>
+<p>[src/sjpx.h 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-17_2040"></a>
+2005-05-17 20:40 Igor Melichev</strong> (<a href="Details8.htm#2005-05-17_2040">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Complete supporting vierws which have no stroke color.
+
+</pre>
+<p>[src/gdevpdfd.c 1.61]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-17_1740"></a>
+2005-05-17 17:40 Igor Melichev</strong> (<a href="Details8.htm#2005-05-17_1740">details</a>)</p>
+<blockquote>
+<pre>
+opdfread : Implementing HalftoneType 3,6,10.
+
+</pre>
+<p>[lib/opdfread.ps 1.66]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-17_1204"></a>
+2005-05-17 12:04 Igor Melichev</strong> (<a href="Details8.htm#2005-05-17_1204">details</a>)</p>
+<blockquote>
+<pre>
+Fix (opdfread) : Some glyphs were substituted with .notdef .
+
+</pre>
+<p>[lib/opdfread.ps 1.65]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-17_0841"></a>
+2005-05-17 08:41 Igor Melichev</strong> (<a href="Details8.htm#2005-05-17_0841">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Improving the script.
+
+</pre>
+<p>[lib/ps2write.bat 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-17_0819"></a>
+2005-05-17 08:19 Igor Melichev</strong> (<a href="Details8.htm#2005-05-17_0819">details</a>)</p>
+<blockquote>
+<pre>
+opdfread : Improving the discipline for function resolving.
+
+</pre>
+<p>[lib/opdfread.ps 1.64]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-16_2325"></a>
+2005-05-16 23:25 Igor Melichev</strong> (<a href="Details8.htm#2005-05-16_2325">details</a>)</p>
+<blockquote>
+<pre>
+opdfread : Implementing n-arguments linear sampled functions in BG, UCR, TR, BG2, UCR2, TR2, HT.
+
+</pre>
+<p>[lib/opdfread.ps 1.63]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-13_1228"></a>
+2005-05-13 12:28 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix a typo in a comment.</pre>
+<p>[src/msvc32.mak 1.72]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-12_1926"></a>
+2005-05-12 19:26 Igor Melichev</strong> (<a href="Details8.htm#2005-05-12_1926">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Did not write halftone, color transfer, and some other graphic state parameters.
+
+</pre>
+<p>[src/gdevpdfg.c 1.62]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-12_0201"></a>
+2005-05-12 02:01 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Increase the artificial limits in the spot analyzer device
+to accomodate Xterra-Regular font.
+Fix bug 688077.</pre>
+<p>[src/gzspotan.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-10_1619"></a>
+2005-05-10 16:19 Igor Melichev</strong> (<a href="Details8.htm#2005-05-10_1619">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Properly encrypt the document Info values.
+
+</pre>
+<p>[src/gdevpdfo.c 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-10_1322"></a>
+2005-05-10 13:22 Ray Johnston</strong> (<a href="Details8.htm#2005-05-10_1322">details</a>)</p>
+<blockquote>
+<pre>
+Fix overly agressive xref format checking that was tripped up by double
+<cr> instead of <cr><lf>. Bug 688082 for customer 580.
+
+</pre>
+<p>[lib/pdf_main.ps 1.97]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-07_2256"></a>
+2005-05-07 22:56 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Handle non-integer font size and stop after last page processed.</pre>
+<p>[lib/gslp.ps 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-05_0535"></a>
+2005-05-05 05:35 Dan Coby</strong> (<a href="Details8.htm#2005-05-05_0535">details</a>)</p>
+<blockquote>
+<pre>
+Partial fix for 687814 dithering artifacts.  The given test file shows
+some faint halftone dots in the background when rasterized using the
+bmp256 device.
+
+</pre>
+<p>[src/gscie.h 1.14, src/gxcmap.c 1.25, src/gxdevndi.c 1.6, src/gxdither.h 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-03_1050"></a>
+2005-05-03 10:50 Igor Melichev</strong> (<a href="Details8.htm#2005-05-03_1050">details</a>)</p>
+<blockquote>
+<pre>
+Speed up shadings : a minor optimization for the monotonity check of a stitching function.
+
+</pre>
+<p>[src/gsfunc3.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-03_1041"></a>
+2005-05-03 10:41 Igor Melichev</strong> (<a href="Details8.htm#2005-05-03_1041">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Set device parameters to preserve colors.
+
+</pre>
+<p>[lib/ps2write.bat 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2005-05-03_0910"></a>
+2005-05-03 09:10 Igor Melichev</strong> (<a href="Details8.htm#2005-05-03_0910">details</a>)</p>
+<blockquote>
+<pre>
+ps2write : Fix problems with shadings.
+
+</pre>
+<p>[src/gdevpdfd.c 1.60]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-29_1658"></a>
+2005-04-29 16:58 Ray Johnston</strong> (<a href="Details8.htm#2005-04-29_1658">details</a>)</p>
+<blockquote>
+<pre>
+Handle CIDCount value of 65536 which might be seen with Identity CMap.
+Fix for customer 562.
+
+</pre>
+<p>[lib/gs_cidtt.ps 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-27_1640"></a>
+2005-04-27 16:40 Igor Melichev</strong> (<a href="Details8.htm#2005-04-27_1640">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Properly account FontMatrix of a CID font with 'glypshow', 'cshow'.
+
+</pre>
+<p>[src/gdevpdtc.c 1.42, src/gsfont.c 1.36, src/gsfont.h 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-26_2136"></a>
+2005-04-26 21:36 Dan Coby</strong> (<a href="Details8.htm#2005-04-26_2136">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687883 tiff32nc device and PDF transparency and for 687980
+image missing with psdcmyk driver.
+
+</pre>
+<p>[src/gdevp14.c 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-26_2128"></a>
+2005-04-26 21:28 Dan Coby</strong> (<a href="Details8.htm#2005-04-26_2128">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 688048 ijs driver broken in 8.51 for ProcessColorModel=Gray versus 8.50
+
+</pre>
+<p>[src/gdevijs.c 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-25_1228"></a>
+2005-04-25 12:28 Igor Melichev</strong> (<a href="Details8.htm#2005-04-25_1228">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Uninitialized variable when encrypting a string from a pdfmark.
+
+</pre>
+<p>[src/gdevpdfr.c 1.9, src/iscan.c 1.20, src/sstring.c 1.5, src/sstring.h 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-25_0223"></a>
+2005-04-25 02:23 Igor Melichev</strong> (<a href="Details8.htm#2005-04-25_0223">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : font file objects encryption was broken when worked on ps2write.
+
+</pre>
+<p>[src/gdevpdfo.c 1.31, src/gdevpdfu.c 1.77, src/gdevpdtb.c 1.36, src/gdevpdti.c 1.44, src/gdevpdtw.c 1.43]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-24_2201"></a>
+2005-04-24 22:01 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Initial revision</pre>
+<p>[jasper/NEWS 1.1, jasper/LICENSE 1.1, jasper/README 1.1, jasper/aclocal.m4 1.1, jasper/COPYRIGHT 1.1, jasper/INSTALL 1.1, jasper/Makefile.am 1.1, jasper/Makefile.in 1.1, jasper/configure 1.1, jasper/configure.ac 1.1, jasper/jasper.spec 1.1, jasper/jasper.spec.in 1.1, jasper/doc/README 1.1, jasper/doc/jasper.pdf 1.1, jasper/doc/jpeg2000.pdf 1.1, jasper/src/Makefile.am 1.1, jasper/src/Makefile.in 1.1, jasper/src/README 1.1, jasper/src/appl/Makefile.am 1.1, jasper/src/appl/Makefile.in 1.1, jasper/src/appl/dummy.c 1.1, jasper/src/appl/imginfo.c 1.1, jasper/src/appl/jiv.c 1.1, jasper/src/appl/imgcmp.c 1.1, jasper/src/appl/jasper.c 1.1, jasper/src/appl/jasper_sdl.c 1.1, jasper/src/libjasper/Makefile.am 1.1, jasper/src/libjasper/Makefile.in 1.1, jasper/src/libjasper/README 1.1, jasper/src/libjasper/dummy.c 1.1, jasper/src/libjasper/bmp/Makefile.am 1.1, jasper/src/libjasper/bmp/Makefile.in 1.1, jasper/src/libjasper/bmp/bmp_cod.c 1.1, jasper/src/libjasper/bmp/bmp_cod.h 1.1, jasper/src/libjasper/bmp/bmp_dec.c 1.1, jasper/src/libjasper/bmp/bmp_enc.c 1.1, jasper/src/libjasper/bmp/bmp_enc.h 1.1, jasper/src/libjasper/jp2/Makefile.am 1.1, jasper/src/libjasper/jp2/Makefile.in 1.1, jasper/src/libjasper/jp2/jp2_cod.c 1.1, jasper/src/libjasper/jp2/jp2_cod.h 1.1, jasper/src/libjasper/jp2/jp2_dec.c 1.1, jasper/src/libjasper/jp2/jp2_dec.h 1.1, jasper/src/libjasper/jp2/jp2_enc.c 1.1, jasper/src/libjasper/jpc/jpc_cod.h 1.1, jasper/src/libjasper/jpc/jpc_dec.c 1.1, jasper/src/libjasper/jpc/jpc_dec.h 1.1, jasper/src/libjasper/jpc/jpc_enc.c 1.1, jasper/src/libjasper/jpc/jpc_enc.h 1.1, jasper/src/libjasper/jpc/jpc_fix.h 1.1, jasper/src/libjasper/jpc/jpc_flt.h 1.1, jasper/src/libjasper/jpc/jpc_math.c 1.1, jasper/src/libjasper/jpc/jpc_math.h 1.1, jasper/src/libjasper/jpc/jpc_mct.c 1.1, jasper/src/libjasper/jpc/jpc_mct.h 1.1, jasper/src/libjasper/jpc/jpc_mqcod.c 1.1, jasper/src/libjasper/jpc/jpc_mqcod.h 1.1, jasper/src/libjasper/jpc/jpc_mqdec.c 1.1, jasper/src/libjasper/jpc/jpc_mqdec.h 1.1, jasper/src/libjasper/jpc/jpc_mqenc.c 1.1, jasper/src/msvc/Makefile.am 1.1, jasper/src/msvc/Makefile.in 1.1, jasper/src/msvc/README 1.1, jasper/src/msvc/imgcmp.dsp 1.1, jasper/src/msvc/imginfo.dsp 1.1, jasper/src/msvc/jasper.dsp 1.1, jasper/src/msvc/jasper.dsw 1.1, jasper/src/msvc/jiv.dsp 1.1, jasper/src/msvc/libjasper.dsp 1.1, jasper/src/libjasper/jpc/Makefile.am 1.1, jasper/src/libjasper/jpc/Makefile.in 1.1, jasper/src/libjasper/jpc/jpc_bs.c 1.1, jasper/src/libjasper/jpc/jpc_bs.h 1.1, jasper/src/libjasper/jpc/jpc_cs.c 1.1, jasper/src/libjasper/jpc/jpc_cs.h 1.1, jasper/src/libjasper/jpc/jpc_mqenc.h 1.1, jasper/src/libjasper/jpc/jpc_qmfb.c 1.1, jasper/src/libjasper/jpc/jpc_qmfb.h 1.1, jasper/src/libjasper/jpc/jpc_t1cod.c 1.1, jasper/src/libjasper/jpc/jpc_t1cod.h 1.1, jasper/src/libjasper/jpc/jpc_t1dec.c 1.1, jasper/src/libjasper/jpc/jpc_t1dec.h 1.1, jasper/src/libjasper/jpc/jpc_t1enc.c 1.1, jasper/src/libjasper/jpc/jpc_t1enc.h 1.1, jasper/src/libjasper/jpc/jpc_t2cod.c 1.1, jasper/src/libjasper/jpc/jpc_t2cod.h 1.1, jasper/src/libjasper/jpc/jpc_t2dec.c 1.1, jasper/src/libjasper/jpc/jpc_t2dec.h 1.1, jasper/src/libjasper/jpc/jpc_t2enc.c 1.1, jasper/src/libjasper/jpc/jpc_t2enc.h 1.1, jasper/src/libjasper/jpc/jpc_tagtree.c 1.1, jasper/src/libjasper/jpc/jpc_tagtree.h 1.1, jasper/src/libjasper/jpc/jpc_tsfb.c 1.1, jasper/src/libjasper/jpc/jpc_tsfb.h 1.1, jasper/src/libjasper/jpc/jpc_util.c 1.1, jasper/src/libjasper/jpc/jpc_util.h 1.1, jasper/src/libjasper/jpg/Makefile.am 1.1, jasper/src/libjasper/jpg/Makefile.in 1.1, jasper/src/libjasper/jpg/README 1.1, jasper/src/libjasper/jpg/jpg_cod.h 1.1, jasper/src/libjasper/jpg/jpg_dec.c 1.1, jasper/src/libjasper/jpg/jpg_dummy.c 1.1, jasper/src/libjasper/jpg/jpg_enc.c 1.1, jasper/src/libjasper/jpg/jpg_enc.h 1.1, jasper/src/libjasper/jpg/jpg_jpeglib.h 1.1, jasper/src/libjasper/jpg/jpg_val.c 1.1, jasper/src/libjasper/mif/Makefile.am 1.1, jasper/src/libjasper/mif/README 1.1, jasper/src/libjasper/mif/mif_cod.c 1.1, jasper/src/libjasper/mif/mif_cod.h 1.1, jasper/src/libjasper/base/Makefile.am 1.1, jasper/src/libjasper/base/Makefile.in 1.1, jasper/src/libjasper/base/jas_cm.c 1.1, jasper/src/libjasper/base/jas_debug.c 1.1, jasper/src/libjasper/base/jas_getopt.c 1.1, jasper/src/libjasper/base/jas_icc.c 1.1, jasper/src/libjasper/base/jas_iccdata.c 1.1, jasper/src/libjasper/base/jas_image.c 1.1, jasper/src/libjasper/base/jas_init.c 1.1, jasper/src/libjasper/base/jas_malloc.c 1.1, jasper/src/libjasper/base/jas_seq.c 1.1, jasper/src/libjasper/base/jas_stream.c 1.1, jasper/src/libjasper/base/jas_string.c 1.1, jasper/src/libjasper/base/jas_tvp.c 1.1, jasper/src/libjasper/base/jas_version.c 1.1, jasper/src/libjasper/include/Makefile.am 1.1, jasper/src/libjasper/include/Makefile.in 1.1, jasper/src/libjasper/include/jasper/jas_debug.h 1.1, jasper/src/libjasper/include/jasper/jas_fix.h 1.1, jasper/src/libjasper/include/jasper/jas_icc.h 1.1, jasper/src/libjasper/include/jasper/jas_image.h 1.1, jasper/src/libjasper/include/jasper/jas_init.h 1.1, jasper/src/libjasper/include/jasper/jas_malloc.h 1.1, jasper/src/libjasper/include/jasper/jas_math.h 1.1, jasper/src/libjasper/include/jasper/jas_seq.h 1.1, jasper/src/libjasper/include/jasper/jas_version.h 1.1, jasper/src/libjasper/mif/Makefile.in 1.1, jasper/src/libjasper/pgx/Makefile.am 1.1, jasper/src/libjasper/pgx/Makefile.in 1.1, jasper/src/libjasper/pgx/pgx_cod.c 1.1, jasper/src/libjasper/pgx/pgx_cod.h 1.1, jasper/src/libjasper/pgx/pgx_dec.c 1.1, jasper/src/libjasper/pgx/pgx_enc.c 1.1, jasper/src/libjasper/pgx/pgx_enc.h 1.1, jasper/src/libjasper/pnm/Makefile.am 1.1, jasper/src/libjasper/pnm/Makefile.in 1.1, jasper/src/libjasper/pnm/pnm_cod.c 1.1, jasper/src/libjasper/pnm/pnm_cod.h 1.1, jasper/src/libjasper/pnm/pnm_dec.c 1.1, jasper/src/libjasper/pnm/pnm_enc.c 1.1, jasper/src/libjasper/pnm/pnm_enc.h 1.1, jasper/src/libjasper/ras/Makefile.am 1.1, jasper/src/libjasper/ras/Makefile.in 1.1, jasper/src/libjasper/ras/ras_cod.c 1.1, jasper/src/libjasper/ras/ras_cod.h 1.1, jasper/src/libjasper/ras/ras_dec.c 1.1, jasper/src/libjasper/ras/ras_enc.c 1.1, jasper/src/libjasper/ras/ras_enc.h 1.1, jasper/data/Makefile.am 1.1, jasper/data/colorprofiles/README 1.1, jasper/data/colorprofiles/erimm.icm 1.1, jasper/data/colorprofiles/esrgb.icm 1.1, jasper/data/colorprofiles/esrgbgrey.icm 1.1, jasper/data/colorprofiles/grey.icm 1.1, jasper/data/colorprofiles/greyromm.icm 1.1, jasper/data/colorprofiles/romm.icm 1.1, jasper/data/colorprofiles/sgray.icm 1.1, jasper/data/colorprofiles/srgb.icm 1.1, jasper/data/colorprofiles/sycc.icm 1.1, jasper/data/images/README 1.1, jasper/data/images/example.mif 1.1, jasper/data/images/goldenears.bmp 1.1, jasper/data/images/goldenears.jpg 1.1, jasper/data/images/stawamuschief_gray.pnm 1.1, jasper/data/images/test.pnm 1.1, jasper/src/libjasper/include/jasper/Makefile.am 1.1, jasper/src/libjasper/include/jasper/Makefile.in 1.1, jasper/src/libjasper/include/jasper/jas_cm.h 1.1, jasper/src/libjasper/include/jasper/jas_config.h 1.1, jasper/src/libjasper/include/jasper/jas_config_ac.h 1.1, jasper/src/libjasper/include/jasper/jas_config_ac.h.in 1.1, jasper/src/libjasper/include/jasper/jas_config_win32.h 1.1, jasper/src/libjasper/include/jasper/jas_getopt.h 1.1, jasper/src/libjasper/include/jasper/jas_stream.h 1.1, jasper/src/libjasper/include/jasper/jas_string.h 1.1, jasper/src/libjasper/include/jasper/jas_tvp.h 1.1, jasper/src/libjasper/include/jasper/jas_types.h 1.1, jasper/src/libjasper/include/jasper/jasper.h 1.1, jasper/data/images/example.mif0 1.1, jasper/data/images/goldenears.pnm 1.1, jasper/data/images/goldenears.ras 1.1, jasper/acaux/compile 1.1, jasper/acaux/depcomp 1.1, jasper/data/images/feep.pnm 1.1, jasper/data/images/feep2.pnm 1.1, jasper/data/images/goldenears_gray.jpg 1.1, jasper/data/images/goldenears_gray.pnm 1.1, jasper/data/images/goldenears_gray.ras 1.1, jasper/data/images/small_16x1.pgm 1.1, jasper/data/images/small_1x1.pgm 1.1, jasper/data/images/stawamuschief.pnm 1.1, jasper/acaux/config.guess 1.1, jasper/acaux/config.sub 1.1, jasper/acaux/install-sh 1.1, jasper/acaux/ltmain.sh 1.1, jasper/acaux/missing 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-24_2158"></a>
+2005-04-24 21:58 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Initial revision</pre>
+<p>[jbig2dec/LICENSE 1.1, jbig2dec/README 1.1, jbig2dec/aclocal.m4 1.1, jbig2dec/compile 1.1, jbig2dec/depcomp 1.1, jbig2dec/jbig2_image.c 1.1, jbig2dec/jbig2_image.h 1.1, jbig2dec/jbig2_mmr.c 1.1, jbig2dec/jbig2_mmr.h 1.1, jbig2dec/jbig2dec.c 1.1, jbig2dec/msvc.mak 1.1, jbig2dec/test_jbig2dec.py 1.1, jbig2dec/COPYING 1.1, jbig2dec/Makefile.am 1.1, jbig2dec/Makefile.in 1.1, jbig2dec/config.h.in 1.1, jbig2dec/config_types.h 1.1, jbig2dec/config_types.h.in 1.1, jbig2dec/config_win32.h 1.1, jbig2dec/configure 1.1, jbig2dec/configure.ac 1.1, jbig2dec/getopt.c 1.1, jbig2dec/getopt.h 1.1, jbig2dec/getopt1.c 1.1, jbig2dec/install-sh 1.1, jbig2dec/jbig2.c 1.1, jbig2dec/jbig2.h 1.1, jbig2dec/jbig2_arith.c 1.1, jbig2dec/jbig2_arith.h 1.1, jbig2dec/jbig2_arith_iaid.c 1.1, jbig2dec/jbig2_arith_iaid.h 1.1, jbig2dec/jbig2_arith_int.c 1.1, jbig2dec/jbig2_arith_int.h 1.1, jbig2dec/jbig2_generic.c 1.1, jbig2dec/jbig2_generic.h 1.1, jbig2dec/jbig2_huffman.c 1.1, jbig2dec/jbig2_huffman.h 1.1, jbig2dec/jbig2_hufftab.h 1.1, jbig2dec/jbig2_image_pbm.c 1.1, jbig2dec/jbig2_image_png.c 1.1, jbig2dec/jbig2_metadata.c 1.1, jbig2dec/jbig2_metadata.h 1.1, jbig2dec/jbig2_page.c 1.1, jbig2dec/jbig2_priv.h 1.1, jbig2dec/jbig2_refinement.c 1.1, jbig2dec/jbig2_segment.c 1.1, jbig2dec/jbig2_symbol_dict.c 1.1, jbig2dec/jbig2_symbol_dict.h 1.1, jbig2dec/jbig2_text.c 1.1, jbig2dec/memcmp.c 1.1, jbig2dec/missing 1.1, jbig2dec/os_types.h 1.1, jbig2dec/sha1.c 1.1, jbig2dec/sha1.h 1.1, jbig2dec/snprintf.c 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-24_2146"></a>
+2005-04-24 21:46 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Initial revision</pre>
+<p>[libpng/TODO 1.1, libpng/example.c 1.1, libpng/pngconf.h 1.1, libpng/pnggccrd.c 1.1, libpng/pngget.c 1.1, libpng/LICENSE 1.1, libpng/pngmem.c 1.1, libpng/pngrio.c 1.1, libpng/pngset.c 1.1, libpng/pngwio.c 1.1, libpng/png.5 1.1, libpng/png.c 1.1, libpng/pngtrans.c 1.1, libpng/README 1.1, libpng/configure 1.1, libpng/png.h 1.1, libpng/pngnow.png 1.1, libpng/pngread.c 1.1, libpng/pngtest.c 1.1, libpng/pngbar.jpg 1.1, libpng/pngbar.png 1.1, libpng/pngvcrd.c 1.1, libpng/pngpread.c 1.1, libpng/pngwrite.c 1.1, libpng/libpng.txt 1.1, libpng/libpngpf.3 1.1, libpng/pngwtran.c 1.1, libpng/ANNOUNCE 1.1, libpng/INSTALL 1.1, libpng/KNOWNBUG 1.1, libpng/Y2KINFO 1.1, libpng/pngwutil.c 1.1, libpng/CHANGES 1.1, libpng/libpng.3 1.1, libpng/pngrtran.c 1.1, libpng/pngerror.c 1.1, libpng/pngrutil.c 1.1, libpng/pngtest.png 1.1, libpng/contrib/pngminus/makefile.std 1.1, libpng/contrib/pngminus/makefile.tc3 1.1, libpng/contrib/pngminus/pngminus.sh 1.1, libpng/contrib/pngminus/pnm2png.bat 1.1, libpng/contrib/pngminus/pnm2png.sh 1.1, libpng/contrib/gregbook/LICENSE 1.1, libpng/contrib/gregbook/README 1.1, libpng/contrib/gregbook/makevms.com 1.1, libpng/contrib/gregbook/rpng-win.c 1.1, libpng/contrib/pngminus/README 1.1, libpng/contrib/pngminus/makevms.com 1.1, libpng/contrib/pngminus/png2pnm.bat 1.1, libpng/contrib/pngminus/png2pnm.c 1.1, libpng/contrib/pngminus/png2pnm.sh 1.1, libpng/contrib/pngminus/pngminus.bat 1.1, libpng/contrib/pngminus/pnm2png.c 1.1, libpng/contrib/pngsuite/README 1.1, libpng/contrib/pngsuite/basn0g01.png 1.1, libpng/contrib/pngsuite/basn0g02.png 1.1, libpng/contrib/pngsuite/basn0g04.png 1.1, libpng/contrib/pngsuite/basn0g08.png 1.1, libpng/contrib/pngsuite/basn0g16.png 1.1, libpng/contrib/pngsuite/basn2c08.png 1.1, libpng/contrib/pngsuite/basn2c16.png 1.1, libpng/contrib/pngsuite/basn3p01.png 1.1, libpng/contrib/pngsuite/basn3p02.png 1.1, libpng/contrib/pngsuite/basn3p04.png 1.1, libpng/contrib/pngsuite/basn3p08.png 1.1, libpng/contrib/pngsuite/basn4a08.png 1.1, libpng/contrib/pngsuite/basn4a16.png 1.1, libpng/contrib/pngsuite/basn6a08.png 1.1, libpng/contrib/pngsuite/basn6a16.png 1.1, libpng/contrib/gregbook/rpng2-x.c 1.1, libpng/contrib/gregbook/toucan.png 1.1, libpng/contrib/gregbook/writepng.c 1.1, libpng/contrib/gregbook/writepng.h 1.1, libpng/contrib/gregbook/Makefile.sgi 1.1, libpng/contrib/gregbook/Makefile.unx 1.1, libpng/contrib/gregbook/Makefile.w32 1.1, libpng/contrib/gregbook/readpng2.c 1.1, libpng/contrib/gregbook/readpng2.h 1.1, libpng/contrib/gregbook/rpng-x.c 1.1, libpng/contrib/gregbook/wpng.c 1.1, libpng/contrib/gregbook/readpng.c 1.1, libpng/contrib/gregbook/readpng.h 1.1, libpng/contrib/gregbook/rpng2-win.c 1.1, libpng/contrib/visupng/PngFile.c 1.1, libpng/contrib/visupng/PngFile.h 1.1, libpng/contrib/visupng/VisualPng.c 1.1, libpng/contrib/visupng/VisualPng.dsp 1.1, libpng/contrib/visupng/VisualPng.dsw 1.1, libpng/contrib/visupng/VisualPng.ico 1.1, libpng/contrib/visupng/VisualPng.png 1.1, libpng/contrib/visupng/VisualPng.rc 1.1, libpng/contrib/visupng/resource.h 1.1, libpng/contrib/visupng/README.txt 1.1, libpng/contrib/visupng/cexcept.h 1.1, libpng/scripts/makefile.32sunu 1.1, libpng/scripts/makefile.64sunu 1.1, libpng/scripts/makefile.aix 1.1, libpng/scripts/makefile.bor 1.1, libpng/scripts/makefile.dec 1.1, libpng/scripts/makefile.dj2 1.1, libpng/scripts/makefile.elf 1.1, libpng/scripts/makefile.gcc 1.1, libpng/scripts/makefile.knr 1.1, libpng/scripts/makefile.msc 1.1, libpng/scripts/makefile.os2 1.1, libpng/scripts/makefile.sco 1.1, libpng/scripts/makefile.sgi 1.1, libpng/scripts/makefile.tc3 1.1, libpng/scripts/makefile.watcom 1.1, libpng/scripts/smakefile.ppc 1.1, libpng/scripts/SCOPTIONS.ppc 1.1, libpng/scripts/descrip.mms 1.1, libpng/scripts/libpng-config-body.in 1.1, libpng/scripts/libpng-config-head.in 1.1, libpng/scripts/libpng.icc 1.1, libpng/scripts/libpng.pc.in 1.1, libpng/scripts/makefile.acorn 1.1, libpng/scripts/makefile.amiga 1.1, libpng/scripts/makefile.atari 1.1, libpng/scripts/makefile.darwin 1.1, libpng/scripts/makefile.freebsd 1.1, libpng/scripts/makefile.gcmmx 1.1, libpng/scripts/makefile.hpgcc 1.1, libpng/scripts/makefile.intel 1.1, libpng/scripts/makefile.linux 1.1, libpng/scripts/makefile.ne12bsd 1.1, libpng/scripts/makefile.openbsd 1.1, libpng/scripts/makefile.sggcc 1.1, libpng/scripts/makefile.so9 1.1, libpng/scripts/makefile.solaris 1.1, libpng/scripts/makefile.std 1.1, libpng/scripts/makefile.sunos 1.1, libpng/scripts/makefile.vcawin32 1.1, libpng/scripts/makefile.vcwin32 1.1, libpng/scripts/makevms.com 1.1, libpng/scripts/pngos2.def 1.1, libpng/scripts/pngw32.def 1.1, libpng/scripts/pngw32.rc 1.1, libpng/projects/netware.txt 1.1, libpng/projects/wince.txt 1.1, libpng/projects/beos/x86-shared.proj 1.1, libpng/projects/beos/x86-shared.txt 1.1, libpng/projects/beos/x86-static.proj 1.1, libpng/projects/beos/x86-static.txt 1.1, libpng/scripts/makefile.bc32 1.1, libpng/scripts/makefile.beos 1.1, libpng/scripts/makefile.cygwin 1.1, libpng/scripts/makefile.hp64 1.1, libpng/scripts/makefile.hpux 1.1, libpng/scripts/makefile.ibmc 1.1, libpng/scripts/makefile.mips 1.1, libpng/scripts/makefile.netbsd 1.1, libpng/projects/cbuilder5/libpng.bpf 1.1, libpng/projects/cbuilder5/libpng.bpg 1.1, libpng/projects/cbuilder5/libpng.bpr 1.1, libpng/projects/cbuilder5/libpng.cpp 1.1, libpng/projects/cbuilder5/libpng.readme.txt 1.1, libpng/projects/cbuilder5/libpngstat.bpf 1.1, libpng/projects/cbuilder5/libpngstat.bpr 1.1, libpng/projects/cbuilder5/zlib.readme.txt 1.1, libpng/projects/visualc6/README.txt 1.1, libpng/projects/visualc6/libpng.dsp 1.1, libpng/projects/visualc6/libpng.dsw 1.1, libpng/projects/visualc6/pngtest.dsp 1.1, libpng/projects/visualc71/PRJ0041.mak 1.1, libpng/projects/visualc71/README.txt 1.1, libpng/projects/visualc71/README_zlib.txt 1.1, libpng/projects/visualc71/libpng.sln 1.1, libpng/projects/visualc71/libpng.vcproj 1.1, libpng/projects/visualc71/pngtest.vcproj 1.1, libpng/projects/visualc71/zlib.vcproj 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-24_2139"></a>
+2005-04-24 21:39 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Initial revision</pre>
+<p>[zlib/FAQ 1.1, zlib/crc32.c 1.1, zlib/example.c 1.1, zlib/zconf.in.h 1.1, zlib/INDEX 1.1, zlib/Makefile 1.1, zlib/Makefile.in 1.1, zlib/README 1.1, zlib/adler32.c 1.1, zlib/compress.c 1.1, zlib/configure 1.1, zlib/crc32.h 1.1, zlib/uncompr.c 1.1, zlib/zconf.h 1.1, zlib/zutil.c 1.1, zlib/zutil.h 1.1, zlib/gzio.c 1.1, zlib/inffixed.h 1.1, zlib/trees.c 1.1, zlib/trees.h 1.1, zlib/deflate.c 1.1, zlib/deflate.h 1.1, zlib/inftrees.c 1.1, zlib/inftrees.h 1.1, zlib/zlib.3 1.1, zlib/algorithm.txt 1.1, zlib/infback.c 1.1, zlib/inffast.c 1.1, zlib/inffast.h 1.1, zlib/zlib.h 1.1, zlib/ChangeLog 1.1, zlib/inflate.c 1.1, zlib/inflate.h 1.1, zlib/minigzip.c 1.1, zlib/old/Make_vms.com 1.1, zlib/old/Makefile.riscos 1.1, zlib/old/README 1.1, zlib/old/descrip.mms 1.1, zlib/old/visual-basic.txt 1.1, zlib/contrib/README.contrib 1.1, zlib/contrib/ada/buffer_demo.adb 1.1, zlib/contrib/ada/zlib-streams.adb 1.1, zlib/contrib/ada/zlib-streams.ads 1.1, zlib/old/zlib.html 1.1, zlib/old/os2/Makefile.os2 1.1, zlib/old/os2/zlib.def 1.1, zlib/qnx/package.qpg 1.1, zlib/contrib/ada/mtest.adb 1.1, zlib/contrib/ada/read.adb 1.1, zlib/contrib/ada/readme.txt 1.1, zlib/contrib/ada/test.adb 1.1, zlib/contrib/ada/zlib-thin.adb 1.1, zlib/contrib/ada/zlib-thin.ads 1.1, zlib/contrib/ada/zlib.adb 1.1, zlib/contrib/ada/zlib.ads 1.1, zlib/contrib/ada/zlib.gpr 1.1, zlib/contrib/puff/Makefile 1.1, zlib/contrib/puff/README 1.1, zlib/contrib/puff/zeros.raw 1.1, zlib/contrib/blast/Makefile 1.1, zlib/contrib/blast/README 1.1, zlib/contrib/blast/blast.c 1.1, zlib/contrib/blast/blast.h 1.1, zlib/contrib/blast/test.pk 1.1, zlib/contrib/blast/test.txt 1.1, zlib/contrib/dotzlib/DotZLib.build 1.1, zlib/contrib/iostream/test.cpp 1.1, zlib/contrib/iostream/zfstream.cpp 1.1, zlib/contrib/iostream/zfstream.h 1.1, zlib/contrib/puff/puff.c 1.1, zlib/contrib/puff/puff.h 1.1, zlib/contrib/untgz/Makefile 1.1, zlib/contrib/untgz/Makefile.msc 1.1, zlib/contrib/untgz/untgz.c 1.1, zlib/contrib/dotzlib/DotZLib.chm 1.1, zlib/contrib/dotzlib/DotZLib.sln 1.1, zlib/contrib/dotzlib/LICENSE_1_0.txt 1.1, zlib/contrib/dotzlib/readme.txt 1.1, zlib/contrib/dotzlib/DotZLib/ChecksumImpl.cs 1.1, zlib/contrib/dotzlib/DotZLib/DotZLib.cs 1.1, zlib/contrib/dotzlib/DotZLib/DotZLib.csproj 1.1, zlib/contrib/dotzlib/DotZLib/GZipStream.cs 1.1, zlib/contrib/dotzlib/DotZLib/UnitTests.cs 1.1, zlib/contrib/dotzlib/DotZLib/AssemblyInfo.cs 1.1, zlib/contrib/dotzlib/DotZLib/CircularBuffer.cs 1.1, zlib/contrib/dotzlib/DotZLib/CodecBase.cs 1.1, zlib/contrib/dotzlib/DotZLib/Deflater.cs 1.1, zlib/contrib/dotzlib/DotZLib/Inflater.cs 1.1, zlib/contrib/gzappend/gzappend.c 1.1, zlib/contrib/masm686/match.asm 1.1, zlib/contrib/masmx86/gvmat32c.c 1.1, zlib/contrib/masmx86/inffas32.asm 1.1, zlib/contrib/masmx86/readme.txt 1.1, zlib/contrib/masmx86/gvmat32.asm 1.1, zlib/contrib/masmx86/mkasm.bat 1.1, zlib/contrib/minizip/Makefile 1.1, zlib/contrib/minizip/crypt.h 1.1, zlib/contrib/minizip/miniunz.c 1.1, zlib/contrib/minizip/minizip.c 1.1, zlib/contrib/minizip/zip.c 1.1, zlib/contrib/minizip/zip.h 1.1, zlib/contrib/testzlib/testzlib.c 1.1, zlib/contrib/testzlib/testzlib.sln 1.1, zlib/contrib/testzlib/testzlib.vcproj 1.1, zlib/contrib/minizip/ChangeLogUnzip 1.1, zlib/contrib/minizip/ioapi.c 1.1, zlib/contrib/minizip/ioapi.h 1.1, zlib/contrib/minizip/iowin32.c 1.1, zlib/contrib/minizip/iowin32.h 1.1, zlib/contrib/minizip/mztools.c 1.1, zlib/contrib/minizip/mztools.h 1.1, zlib/contrib/minizip/unzip.c 1.1, zlib/contrib/minizip/unzip.h 1.1, zlib/contrib/asm586/README.586 1.1, zlib/contrib/asm586/match.S 1.1, zlib/contrib/asm686/README.686 1.1, zlib/contrib/asm686/match.S 1.1, zlib/contrib/delphi/ZLib.pas 1.1, zlib/contrib/delphi/ZLibConst.pas 1.1, zlib/contrib/delphi/readme.txt 1.1, zlib/contrib/delphi/zlibd32.mak 1.1, zlib/contrib/iostream2/zstream.h 1.1, zlib/contrib/iostream2/zstream_test.cpp 1.1, zlib/contrib/iostream3/README 1.1, zlib/contrib/iostream3/TODO 1.1, zlib/contrib/iostream3/test.cc 1.1, zlib/contrib/iostream3/zfstream.cc 1.1, zlib/contrib/iostream3/zfstream.h 1.1, zlib/contrib/pascal/zlibd32.mak 1.1, zlib/contrib/infback9/README 1.1, zlib/contrib/infback9/infback9.c 1.1, zlib/contrib/infback9/infback9.h 1.1, zlib/contrib/infback9/inffix9.h 1.1, zlib/contrib/infback9/inflate9.h 1.1, zlib/contrib/infback9/inftree9.c 1.1, zlib/contrib/infback9/inftree9.h 1.1, zlib/contrib/pascal/example.pas 1.1, zlib/contrib/pascal/readme.txt 1.1, zlib/contrib/pascal/zlibpas.pas 1.1, zlib/contrib/vstudio/readme.txt 1.1, zlib/contrib/vstudio/vc7/minizip.vcproj 1.1, zlib/contrib/vstudio/vc7/zlibstat.vcproj 1.1, zlib/contrib/vstudio/vc7/zlibvc.def 1.1, zlib/contrib/vstudio/vc7/zlibvc.sln 1.1, zlib/amiga/Makefile.pup 1.1, zlib/amiga/Makefile.sas 1.1, zlib/as400/compile.clp 1.1, zlib/contrib/inflate86/inffas86.c 1.1, zlib/contrib/inflate86/inffast.S 1.1, zlib/contrib/vstudio/vc7/miniunz.vcproj 1.1, zlib/contrib/vstudio/vc7/zlib.rc 1.1, zlib/contrib/vstudio/vc7/zlibvc.vcproj 1.1, zlib/as400/bndsrc 1.1, zlib/as400/readme.txt 1.1, zlib/as400/zlib.inc 1.1, zlib/msdos/Makefile.bor 1.1, zlib/msdos/Makefile.dj2 1.1, zlib/msdos/Makefile.emx 1.1, zlib/msdos/Makefile.msc 1.1, zlib/msdos/Makefile.tc 1.1, zlib/projects/README.projects 1.1, zlib/projects/visualc6/README.txt 1.1, zlib/projects/visualc6/example.dsp 1.1, zlib/projects/visualc6/minigzip.dsp 1.1, zlib/win32/DLL_FAQ.txt 1.1, zlib/win32/Makefile.bor 1.1, zlib/win32/Makefile.emx 1.1, zlib/win32/Makefile.gcc 1.1, zlib/win32/Makefile.msc 1.1, zlib/win32/VisualC.txt 1.1, zlib/win32/zlib.def 1.1, zlib/win32/zlib1.rc 1.1, zlib/projects/visualc6/zlib.dsp 1.1, zlib/projects/visualc6/zlib.dsw 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-24_2131"></a>
+2005-04-24 21:31 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Initial revision</pre>
+<p>[jpeg/jdinput.c 1.1, jpeg/wrppm.c 1.1, jpeg/wrrle.c 1.1, jpeg/testimg.bmp 1.1, jpeg/testimg.jpg 1.1, jpeg/coderules.doc 1.1, jpeg/jccoefct.c 1.1, jpeg/jcmainct.c 1.1, jpeg/rdjpgcom.1 1.1, jpeg/rdjpgcom.c 1.1, jpeg/testimg.ppm 1.1, jpeg/example.c 1.1, jpeg/jcapimin.c 1.1, jpeg/jcapistd.c 1.1, jpeg/jconfig.dj 1.1, jpeg/jconfig.st 1.1, jpeg/jconfig.vc 1.1, jpeg/jctrans.c 1.1, jpeg/makelib.ds 1.1, jpeg/rdbmp.c 1.1, jpeg/rdgif.c 1.1, jpeg/jcdctmgr.c 1.1, jpeg/jdatadst.c 1.1, jpeg/rdppm.c 1.1, jpeg/rdrle.c 1.1, jpeg/rdtarga.c 1.1, jpeg/transupp.c 1.1, jpeg/transupp.h 1.1, jpeg/djpeg.1 1.1, jpeg/djpeg.c 1.1, jpeg/install.doc 1.1, jpeg/jdatasrc.c 1.1, jpeg/ansi2knr.1 1.1, jpeg/ansi2knr.c 1.1, jpeg/jcmarker.c 1.1, jpeg/jdcolor.c 1.1, jpeg/makefile.bcc 1.1, jpeg/makefile.cfg 1.1, jpeg/usage.doc 1.1, jpeg/jcmaster.c 1.1, jpeg/makefile.mc6 1.1, jpeg/makefile.mms 1.1, jpeg/makefile.sas 1.1, jpeg/makefile.vms 1.1, jpeg/makefile.wat 1.1, jpeg/README 1.1, jpeg/makeapps.ds 1.1, jpeg/configure 1.1, jpeg/filelist.doc 1.1, jpeg/jcomapi.c 1.1, jpeg/ltmain.sh 1.1, jpeg/jconfig.manx 1.1, jpeg/jcparam.c 1.1, jpeg/jdsample.c 1.1, jpeg/jerror.c 1.1, jpeg/jerror.h 1.1, jpeg/jmorecfg.h 1.1, jpeg/makcjpeg.st 1.1, jpeg/wrjpgcom.1 1.1, jpeg/wrjpgcom.c 1.1, jpeg/jcprepct.c 1.1, jpeg/libjpeg.doc 1.1, jpeg/config.guess 1.1, jpeg/config.sub 1.1, jpeg/install-sh 1.1, jpeg/jcphuff.c 1.1, jpeg/jinclude.h 1.1, jpeg/testimgp.jpg 1.1, jpeg/wrtarga.c 1.1, jpeg/ltconfig 1.1, jpeg/structure.doc 1.1, jpeg/jdmerge.c 1.1, jpeg/jmemdosa.asm 1.1, jpeg/jquant1.c 1.1, jpeg/jquant2.c 1.1, jpeg/testprog.jpg 1.1, jpeg/cderror.h 1.1, jpeg/jccolor.c 1.1, jpeg/jdct.h 1.1, jpeg/jidctflt.c 1.1, jpeg/jidctfst.c 1.1, jpeg/jidctint.c 1.1, jpeg/jidctred.c 1.1, jpeg/jmemansi.c 1.1, jpeg/maktjpeg.st 1.1, jpeg/makvms.opt 1.1, jpeg/rdswitch.c 1.1, jpeg/jdcoefct.c 1.1, jpeg/jdmainct.c 1.1, jpeg/jpegint.h 1.1, jpeg/makeproj.mac 1.1, jpeg/jdapimin.c 1.1, jpeg/jdapistd.c 1.1, jpeg/jddctmgr.c 1.1, jpeg/jdpostct.c 1.1, jpeg/jdtrans.c 1.1, jpeg/jpeglib.h 1.1, jpeg/jutils.c 1.1, jpeg/makljpeg.st 1.1, jpeg/testorig.jpg 1.1, jpeg/jconfig.bcc 1.1, jpeg/jconfig.cfg 1.1, jpeg/jdmarker.c 1.1, jpeg/jdmaster.c 1.1, jpeg/jmemname.c 1.1, jpeg/jmemnobs.c 1.1, jpeg/jversion.h 1.1, jpeg/wizard.doc 1.1, jpeg/jconfig.doc 1.1, jpeg/jconfig.mac 1.1, jpeg/jconfig.mc6 1.1, jpeg/jconfig.sas 1.1, jpeg/jconfig.vms 1.1, jpeg/jconfig.wat 1.1, jpeg/jcsample.c 1.1, jpeg/jfdctflt.c 1.1, jpeg/jfdctfst.c 1.1, jpeg/jmemdos.c 1.1, jpeg/jpegtran.1 1.1, jpeg/jpegtran.c 1.1, jpeg/rdcolmap.c 1.1, jpeg/change.log 1.1, jpeg/jfdctint.c 1.1, jpeg/jmemmac.c 1.1, jpeg/jmemmgr.c 1.1, jpeg/jmemsys.h 1.1, jpeg/makefile.dj 1.1, jpeg/makefile.vc 1.1, jpeg/cdjpeg.c 1.1, jpeg/cdjpeg.h 1.1, jpeg/jchuff.c 1.1, jpeg/jchuff.h 1.1, jpeg/jcinit.c 1.1, jpeg/makdjpeg.st 1.1, jpeg/makefile.ansi 1.1, jpeg/makefile.manx 1.1, jpeg/makefile.unix 1.1, jpeg/cjpeg.1 1.1, jpeg/cjpeg.c 1.1, jpeg/ckconfig.c 1.1, jpeg/jdphuff.c 1.1, jpeg/wrbmp.c 1.1, jpeg/wrgif.c 1.1, jpeg/jdhuff.c 1.1, jpeg/jdhuff.h 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-22_1008"></a>
+2005-04-22 10:08 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Correct typo.</pre>
+<p>[man/ps2ascii.1 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-21_1011"></a>
+2005-04-21 10:11 Igor Melichev</strong> (<a href="Details8.htm#2005-04-21_1011">details</a>)</p>
+<blockquote>
+<pre>
+Speed up shadings : a minor optimization for the color monotonity check.
+
+</pre>
+<p>[src/gxshade6.c 1.99]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-21_0928"></a>
+2005-04-21 09:28 Igor Melichev</strong> (<a href="Details8.htm#2005-04-21_0928">details</a>)</p>
+<blockquote>
+<pre>
+Speed up shadings : fixed a crash with unlinear color devices.
+
+</pre>
+<p>[src/gxshade6.c 1.98]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-20_2005"></a>
+2005-04-20 20:05 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Use the OrigFontName from an embedded font's FOntInfo dictionary since this
+is where Windows PostScript dirver puts the real font name when embedding
+fonts. Bug 688006 for customer 32.</pre>
+<p>[src/zbfont.c 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-20_0844"></a>
+2005-04-20 08:44 Igor Melichev</strong> (<a href="Details8.htm#2005-04-20_0844">details</a>)</p>
+<blockquote>
+<pre>
+Speed up shadings with optimizing fn_Sd_is_monotonic.
+
+</pre>
+<p>[src/gsfunc0.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-20_0613"></a>
+2005-04-20 06:13 Ray Johnston</strong> (<a href="Details8.htm#2005-04-20_0613">details</a>)</p>
+<blockquote>
+<pre>
+Prevent out of range ImageType 4 mask array entries from causing an error
+as Adobe Acrobat Reader does. Bug 687611 for customer 870.
+
+</pre>
+<p>[lib/pdf_draw.ps 1.92]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-19_2122"></a>
+2005-04-19 21:22 Stefan Kemper</strong></p>
+<blockquote>
+<pre>
+Added dependancies for gdevpdfj.c</pre>
+<p>[src/devs.mak 1.130]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-19_1435"></a>
+2005-04-19 14:35 Igor Melichev</strong> (<a href="Details8.htm#2005-04-19_1435">details</a>)</p>
+<blockquote>
+<pre>
+Speed up shadings with removing fn_domain_is_monotonic.
+
+</pre>
+<p>[src/gsfunc.c 1.12, src/gsfunc.h 1.13, src/gsfunc0.c 1.25, src/gsfunc3.c 1.25, src/gsfunc4.c 1.18, src/gxfunc.h 1.10, src/gxshade1.c 1.40]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-19_1222"></a>
+2005-04-19 12:22 Igor Melichev</strong> (<a href="Details8.htm#2005-04-19_1222">details</a>)</p>
+<blockquote>
+<pre>
+Removing the !NEW_SHADINGS branch.
+
+</pre>
+<p>[src/gsshade.c 1.17, src/gxshade1.c 1.39, src/gxshade4.c 1.30, src/gxshade4.h 1.41, src/gxshade6.c 1.97]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-19_0948"></a>
+2005-04-19 09:48 Igor Melichev</strong> (<a href="Details8.htm#2005-04-19_0948">details</a>)</p>
+<blockquote>
+<pre>
+Faster shadings with dividing some quadrangles into 2 triangles.
+
+</pre>
+<p>[src/gxshade6.c 1.96]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-19_0836"></a>
+2005-04-19 08:36 Igor Melichev</strong> (<a href="Details8.htm#2005-04-19_0836">details</a>)</p>
+<blockquote>
+<pre>
+Faster shadings with setting a stronger clipping box.
+
+</pre>
+<p>[src/gsshade.c 1.16, src/gsshade.h 1.9, src/gxshade1.c 1.38, src/gxshade4.c 1.29, src/gxshade4.h 1.40, src/gxshade6.c 1.95]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-19_0727"></a>
+2005-04-19 07:27 Igor Melichev</strong> (<a href="Details8.htm#2005-04-19_0727">details</a>)</p>
+<blockquote>
+<pre>
+Faster shadings with a better function monotonity check.
+
+</pre>
+<p>[src/gsfunc.c 1.11, src/gsfunc.h 1.12, src/gsfunc0.c 1.24, src/gsfunc0.h 1.7, src/gsfunc3.c 1.24, src/gsfunc4.c 1.17, src/gxshade1.c 1.37, src/gxshade4.h 1.39, src/gxshade6.c 1.94]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-19_0428"></a>
+2005-04-19 04:28 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Bump the version numbers post-release.</pre>
+<p>[doc/News.htm 1.164, lib/gs_init.ps 1.119, src/gscdef.c 1.54, src/version.mak 1.83]</p>
+</blockquote>
+
+<p><strong><a name="2005-04-19_0029"></a>
+2005-04-19 00:29 Stefan Kemper</strong></p>
+<blockquote>
+<pre>
+Fix for bug 687984.
+
+Incomplete data stream gets artifical data for both DCTE and now
+also for PNGPE streams.
+
+Note that it would be nice if all streams either handled missing data
+or didn't.</pre>
+<p>[src/gdevpdfj.c 1.44]</p>
+</blockquote>
+<hr>
 
 <h2><a name="Version8.51"></a>Version 8.51 (2005-04-18)</h2>
 

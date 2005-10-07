@@ -8,6 +8,56 @@
 </head>
 <body>
 
+<p><strong><a name="2005-10-07_1835"></a>
+2005-10-07 18:35 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Update to final release date for 8.52</pre>
+<p>[doc/API.htm 1.52, doc/Bug-form.htm 1.48, doc/Bug-info.htm 1.48, doc/C-style.htm 1.54, doc/Commprod.htm 1.40, doc/Copying.htm 1.38, doc/DLL.htm 1.42, doc/Deprecated.htm 1.19, doc/Details8.htm 1.22, doc/Develop.htm 1.158, doc/Devices.htm 1.89, doc/Drivers.htm 1.57, doc/Fonts.htm 1.50, doc/Helpers.htm 1.43, doc/History1.htm 1.38, doc/History2.htm 1.38, doc/History3.htm 1.38, doc/History4.htm 1.38, doc/History5.htm 1.40, doc/History6.htm 1.55, doc/History7.htm 1.43, doc/History8.htm 1.27, doc/Htmstyle.htm 1.43, doc/Install.htm 1.55, doc/Issues.htm 1.51, doc/Language.htm 1.97, doc/Lib.htm 1.42, doc/Maintain.htm 1.49, doc/Make.htm 1.89, doc/News.htm 1.166, doc/Projects.htm 1.66, doc/Ps-style.htm 1.36, doc/Ps2epsi.htm 1.41, doc/Ps2pdf.htm 1.87, doc/Ps2ps2.htm 1.6, doc/Psfiles.htm 1.67, doc/Readme.htm 1.70, doc/Release.htm 1.94, doc/Source.htm 1.38, doc/Testing.htm 1.36, doc/Unix-lpr.htm 1.38, doc/Use.htm 1.135, doc/Xfonts.htm 1.38, doc/gs-vms.hlp 1.36, man/dvipdf.1 1.36, man/font2c.1 1.36, man/gs.1 1.37, man/gslp.1 1.36, man/gsnd.1 1.36, man/pdf2dsc.1 1.35, man/pdf2ps.1 1.37, man/pdfopt.1 1.35, man/pf2afm.1 1.36, man/pfbtopfa.1 1.37, man/printafm.1 1.36, man/ps2ascii.1 1.36, man/ps2epsi.1 1.34, man/ps2pdf.1 1.41, man/ps2pdfwr.1 1.40, man/ps2ps.1 1.43, man/wftopfa.1 1.36, src/version.mak 1.85]</p>
+</blockquote>
+
+<p><strong><a name="2005-10-07_1809"></a>
+2005-10-07 18:09 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Remove this script that is no longer used in the release process. We now
+use cvs2cl.pl third party script.</pre>
+<p>[toolbin/cvs2hist.py 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2005-10-07_1802"></a>
+2005-10-07 18:02 Ray Johnston</strong> (<a href="Details.htm#2005-10-07_1802">details</a>)</p>
+<blockquote>
+<pre>
+Fix serious bit rot for building History# and Details# from Changes and
+Details created by split_changelog.py. Allows the instructions in Release.htm
+to actually work. This file invoked by toolbin/makehist.tcl.
+
+</pre>
+<p>[toolbin/makeset.tcl 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2005-10-05_1437"></a>
+2005-10-05 14:37 Ray Johnston</strong> (<a href="Details.htm#2005-10-05_1437">details</a>)</p>
+<blockquote>
+<pre>
+Two changes needed to fix a single bug. First, the GC 'limit' logic was
+collecting too frequently. Second, the PDF ICCBased colorspace logic was
+repeatedly creating a ReusableStreamDecode filter for the DataSource
+element. Fixes bug #687117 for customer #850.`
+
+</pre>
+<p>[lib/pdf_draw.ps 1.98, src/gsalloc.c 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2005-10-04_1924"></a>
+2005-10-04 19:24 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Update change logs for 8.52 release.</pre>
+<p>[doc/Changes.htm 1.59, doc/Details.htm 1.18]</p>
+</blockquote>
+
 <p><strong><a name="2005-10-04_1751"></a>
 2005-10-04 17:51 Ray Johnston</strong></p>
 <blockquote>
