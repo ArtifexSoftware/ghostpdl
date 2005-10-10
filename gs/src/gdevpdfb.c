@@ -23,6 +23,7 @@
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"		/* for data stream */
 #include "gxcspace.h"
+#include "gxdcolor.h"
 #include "gxpcolor.h"
 #include "gxhldevc.h"
 
@@ -464,7 +465,7 @@ gdev_pdf_fill_mask(gx_device * dev,
 
     if (width <= 0 || height <= 0)
 	return 0;
-    if (depth > 1 || !gx_dc_is_pure(pdcolor) != 0 && pdcolor->type != &gx_dc_pattern)
+    if (depth > 1 || (!gx_dc_is_pure(pdcolor) != 0 && pdcolor->type != &gx_dc_pattern))
 	return gx_default_fill_mask(dev, data, data_x, raster, id,
 				    x, y, width, height, pdcolor, depth, lop,
 				    pcpath);
