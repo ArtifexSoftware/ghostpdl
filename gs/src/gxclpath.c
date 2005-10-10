@@ -289,6 +289,29 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
 	*punknown |= clip_path_known;
 }
 
+/* Compute the written CTM length. */
+int
+cmd_write_ctm_return_length(gx_device_clist_writer * cldev, const gs_matrix *m)
+{
+    stream s;
+
+    s_init(&s, cldev->memory);
+    swrite_position_only(&s);
+    sput_matrix(&s, m);
+    return (uint)stell(&s);
+}
+
+/* Write out CTM. */
+int
+cmd_write_ctm(const gs_matrix *m, byte *dp, int len)
+{
+    stream s;
+
+    swrite_string(&s, dp + 1, len);
+    sput_matrix(&s, m);
+    return 0;
+}
+
 /* Write out values of any unknown parameters. */
 int
 cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
@@ -375,18 +398,14 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	pcls->known |= fill_adjust_known;
     }
     if (unknown & ctm_known) {
-	stream s;
-	uint len;
+	int len = cmd_write_ctm_return_length(cldev, &ctm_only(&cldev->imager_state));
 
-	s_init(&s, cldev->memory);
-	swrite_position_only(&s);
-	sput_matrix(&s, (const gs_matrix *)&cldev->imager_state.ctm);
-	len = (uint)stell(&s);
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_ctm, len + 1);
 	if (code < 0)
 	    return code;
-	swrite_string(&s, dp + 1, len);
-	sput_matrix(&s, (const gs_matrix *)&cldev->imager_state.ctm);
+	code = cmd_write_ctm(&ctm_only(&cldev->imager_state), dp, len);
+	if (code < 0)
+	    return code;
 	pcls->known |= ctm_known;
     }
     if (unknown & dash_known) {

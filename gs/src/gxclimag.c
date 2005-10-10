@@ -809,7 +809,24 @@ clist_create_compositor(gx_device * dev,
     if (code < 0)
         return code;
 
+    if (pcte->type->comp_id == GX_COMPOSITOR_PDF14_TRANS) {
+	gx_device_clist_writer * const cldev =
+			&((gx_device_clist *)dev)->writer;
+	int len = cmd_write_ctm_return_length(cldev, &ctm_only(pis));
+
+	code = set_cmd_put_all_op(dp, (gx_device_clist_writer *)dev,
+                           cmd_opv_set_ctm, len + 1);
+	if (code < 0)
+	    return code;
+	/* fixme: would like to set pcls->known for covered bands. */
+	code = cmd_write_ctm(&ctm_only(pis), dp, len);
+	if (code < 0)
+	    return code;
+    }
+
     /* overprint applies to all bands */
+    /* fixme: optimize: the pdf14 compositor could be applied 
+       only to bands covered by the pcte->params.bbox. */
     code = set_cmd_put_all_op( dp,
                                (gx_device_clist_writer *)dev,
                                cmd_opv_extend,
