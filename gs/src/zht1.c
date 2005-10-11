@@ -92,7 +92,7 @@ zsetcolorscreen(i_ctx_t *i_ctx_p)
 	    code = zscreen_enum_init(i_ctx_p,
 				     &pdht->components[(i + 1) & 3].corder,
 				&pht->params.colorscreen.screens.indexed[i],
-				     &sprocs[i], 0, 0, mem);
+				     &sprocs[i], 0, 0, space);
 	    if (code < 0) {
 		esp = esp0;
 		break;

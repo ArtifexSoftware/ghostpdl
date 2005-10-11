@@ -88,8 +88,9 @@ zsethalftone5(i_ctx_t *i_ctx_p)
     uint name_size;
     int halftonetype, type = 0;
     gs_state *pgs = igs;
+    int space_index = r_space_index(op - 1);
 
-    mem = (gs_memory_t *) idmemory->spaces_indexed[r_space_index(op - 1)];
+    mem = (gs_memory_t *) idmemory->spaces_indexed[space_index];
 
     check_type(*op, t_dictionary);
     check_dict_read(*op);
@@ -303,7 +304,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	    case ht_type_spot:
 		code = zscreen_enum_init(i_ctx_p, porder,
 					 &phtc[j].params.spot.screen,
-					 &sprocs[j], 0, 0, mem);
+					 &sprocs[j], 0, 0, space_index);
 		if (code < 0)
 		    break;
 		/* falls through */
