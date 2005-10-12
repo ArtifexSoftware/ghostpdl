@@ -261,7 +261,11 @@ fill_with_rule(gs_state * pgs, int rule)
     if (pgs->in_charpath)
 	code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
 				     pgs->in_charpath);
-    else {
+    else if (gs_is_null_device(pgs->device)) {
+	/* Handle separately to prevent gs_state_color_load - bug 688308. */
+	gs_newpath(pgs);
+	code = 0;
+    } else {
 	int abits, acode;
 
 	gx_set_dev_color(pgs);
@@ -321,6 +325,10 @@ gs_stroke(gs_state * pgs)
 	}
 	code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
 				     pgs->in_charpath);
+    } else if (gs_is_null_device(pgs->device)) {
+	/* Handle separately to prevent gs_state_color_load. */
+	gs_newpath(pgs);
+	code = 0;
     } else {
 	int abits, acode;
 

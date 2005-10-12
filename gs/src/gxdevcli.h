@@ -1544,6 +1544,8 @@ void gx_device_init(gx_device * dev, const gx_device * proto,
 /* or the allocator that was used to allocate it if it is a real object. */
 void gs_make_null_device(gx_device_null *dev_null, gx_device *target,
 			 gs_memory_t *mem);
+/* Is a null device ? */
+bool gs_is_null_device(gx_device *dev);
 
 /* Set the target of a (forwarding) device. */
 void gx_device_set_target(gx_device_forward *fdev, gx_device *target);
