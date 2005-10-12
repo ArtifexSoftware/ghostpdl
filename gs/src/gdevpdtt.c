@@ -201,14 +201,12 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 			pw1, narg, control, ch, &gnstr);
 	    if (code < 0)
 		return code;
-	    if (control == TEXT_SET_CHAR_WIDTH) {
-		/* Prevent writing the clipping path to charproc.
-		   See the comment above.
-		   Note that the clipping in the graphic state will be used while 
-		   fallbacks to default implementations of graphic objects. 
-		   Hopely such fallbacks are rare. */
-		pdev->clip_path_id = gx_get_clip_path_id(penum_s->pgs);
-	    }
+	    /* Prevent writing the clipping path to charproc.
+	       See the comment above and bugs 687678, 688327.
+	       Note that the clipping in the graphic state will be used while 
+	       fallbacks to default implementations of graphic objects. 
+	       Hopely such fallbacks are rare. */
+	    pdev->clip_path_id = gx_get_clip_path_id(penum_s->pgs);
 	    penum->charproc_accum = true;
 	    return code;
 	} else {

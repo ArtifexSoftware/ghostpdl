@@ -439,11 +439,6 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int
 	    (float)pw[0], (float)pw[1], (float)pw[2], 
 	    (float)pw[3], (float)pw[4], (float)pw[5]);
 	pdfont->u.simple.s.type3.cached[ch >> 3] |= 0x80 >> (ch & 7);
-	pdev->charproc_bbox.p.x = float2fixed(pw[2]);
-	pdev->charproc_bbox.p.y = float2fixed(pw[3]);
-	pdev->charproc_bbox.q.x = float2fixed(pw[4]);
-	pdev->charproc_bbox.q.y = float2fixed(pw[5]);
-	pdev->charproc_bbox_valid = true;
     }
     pdfont->used[ch >> 3] |= 0x80 >> (ch & 7);
     pdev->font3 = (pdf_resource_t *)pdfont;
@@ -559,15 +554,10 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->sbstack[sbstack_ptr].accumulating_substream_resource = pdev->accumulating_substream_resource;
     pdev->sbstack[sbstack_ptr].charproc_just_accumulated = pdev->charproc_just_accumulated;
     pdev->sbstack[sbstack_ptr].accumulating_a_global_object = pdev->accumulating_a_global_object;
-    pdev->sbstack[sbstack_ptr].charproc_bbox = pdev->charproc_bbox;
-    pdev->sbstack[sbstack_ptr].charproc_bbox_valid = pdev->charproc_bbox_valid;
     pdev->sbstack[sbstack_ptr].pres_soft_mask_dict = pdev->pres_soft_mask_dict;
     pdev->sbstack[sbstack_ptr].objname = pdev->objname;
     pdev->skip_colors = false;
     pdev->charproc_just_accumulated = false;
-    pdev->charproc_bbox.p.x = pdev->charproc_bbox.p.y = 
-	pdev->charproc_bbox.q.x = pdev->charproc_bbox.q.y = 0;
-    pdev->charproc_bbox_valid = false;
     pdev->pres_soft_mask_dict = NULL;
     pdev->objname.data = NULL;
     pdev->objname.size = 0;
@@ -623,8 +613,6 @@ pdf_exit_substream(gx_device_pdf *pdev)
     pdev->sbstack[sbstack_ptr].accumulating_substream_resource = 0;
     pdev->charproc_just_accumulated = pdev->sbstack[sbstack_ptr].charproc_just_accumulated;
     pdev->accumulating_a_global_object = pdev->sbstack[sbstack_ptr].accumulating_a_global_object;
-    pdev->charproc_bbox = pdev->sbstack[sbstack_ptr].charproc_bbox;
-    pdev->charproc_bbox_valid = pdev->sbstack[sbstack_ptr].charproc_bbox_valid;
     pdev->pres_soft_mask_dict = pdev->sbstack[sbstack_ptr].pres_soft_mask_dict;
     pdev->objname = pdev->sbstack[sbstack_ptr].objname;
     pdev->sbstack_depth = sbstack_ptr;

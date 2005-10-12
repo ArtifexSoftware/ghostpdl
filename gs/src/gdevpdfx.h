@@ -381,8 +381,6 @@ typedef struct pdf_substream_save_s {
     pdf_resource_t	*accumulating_substream_resource;
     bool		charproc_just_accumulated;
     bool		accumulating_a_global_object;
-    gs_fixed_rect		charproc_bbox;
-    bool		charproc_bbox_valid;
     pdf_resource_t      *pres_soft_mask_dict;
     gs_const_string		objname;
 } pdf_substream_save;
@@ -632,9 +630,6 @@ struct gx_device_pdf_s {
     bool      image_mask_skip; /* A flag for pdf_begin_transparency_mask */
     gs_matrix converting_image_matrix;
     double    image_mask_scale;
-    /* Temporary data for a charproc accumulation. */
-    gs_fixed_rect   charproc_bbox;
-    bool      charproc_bbox_valid;
     /* Temporary data for soft mask form. */
     pdf_resource_t *pres_soft_mask_dict;
     /* Temporary data for pdfmark_BP. */
