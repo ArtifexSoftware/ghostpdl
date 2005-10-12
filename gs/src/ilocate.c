@@ -503,9 +503,9 @@ ialloc_validate_pointer_stability(const obj_header_t * ptr_fr,
 		"global_stable", "global", "local_stable", "local"};
 
     if (ptr_fr->d.o.space_id < ptr_to->d.o.space_id) {
-	const char *sn_to = (ptr_fr->d.o.space_id < count_of(sn) 
+	const char *sn_fr = (ptr_fr->d.o.space_id < count_of(sn) 
 			? sn[ptr_fr->d.o.space_id] : "unknown");
-	const char *sn_fr = (ptr_to->d.o.space_id < count_of(sn) 
+	const char *sn_to = (ptr_to->d.o.space_id < count_of(sn) 
 			? sn[ptr_to->d.o.space_id] : "unknown");
 
 	lprintf6("Reference to a less stable object 0x%lx<%s> "
