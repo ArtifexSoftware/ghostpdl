@@ -1258,6 +1258,9 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
     }
 done:
     ptr->o_type = pstype;
+#   if IGC_PTR_STABILITY_CHECK
+	ptr->d.o.space_id = mem->space_id;
+#   endif
     ptr++;
     gs_alloc_fill(ptr, gs_alloc_fill_alloc, lsize);
     return ptr;

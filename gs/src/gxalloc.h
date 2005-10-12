@@ -338,6 +338,9 @@ struct gs_ref_memory_s {
 				/* its own chunk: must be */
 				/* 1 mod obj_align_mod */
     uint space;			/* a_local, a_global, a_system */
+#   if IGC_PTR_STABILITY_CHECK
+    unsigned space_id:3; /* r_space_bits + 1 bit for "instability". */
+#   endif
     /* Callers can change the following dynamically */
     /* (through a procedural interface). */
     gs_memory_gc_status_t gc_status;

@@ -285,8 +285,15 @@ object_size_valid(const obj_header_t * pre, uint size, const chunk_t * cp)
 }
 
 /* Validate all the objects in a chunk. */
+#if IGC_PTR_STABILITY_CHECK
+void ialloc_validate_pointer_stability(const obj_header_t * ptr_from, 
+				   const obj_header_t * ptr_to);
+private void ialloc_validate_ref(const ref *, gc_state_t *, const obj_header_t *pre_fr);
+private void ialloc_validate_ref_packed(const ref_packed *, gc_state_t *, const obj_header_t *pre_fr);
+#else
 private void ialloc_validate_ref(const ref *, gc_state_t *);
 private void ialloc_validate_ref_packed(const ref_packed *, gc_state_t *);
+#endif
 void
 ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 {
@@ -307,7 +314,11 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 	const char *end = (const char *)rp + size;
 
 	while ((const char *)rp < end) {
+#	    if IGC_PTR_STABILITY_CHECK
+	    ialloc_validate_ref_packed(rp, gcst, pre);
+#	    else
 	    ialloc_validate_ref_packed(rp, gcst);
+#	    endif
 	    rp = packed_next(rp);
 	}
     } else {
@@ -322,15 +333,39 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 				     pre->o_type, gcst)) != 0; ++index) {
 		if (eptr.ptr == 0)
 		    DO_NOTHING;
-		else if (ptype == ptr_struct_type)
+		else if (ptype == ptr_struct_type) {
 		    ialloc_validate_object(eptr.ptr, NULL, gcst);
-		else if (ptype == ptr_ref_type)
+#		    if IGC_PTR_STABILITY_CHECK
+			ialloc_validate_pointer_stability(pre, 
+			    (const obj_header_t *)eptr.ptr - 1);
+#		    endif
+		} else if (ptype == ptr_ref_type)
+#		    if IGC_PTR_STABILITY_CHECK
+		    ialloc_validate_ref_packed(eptr.ptr, gcst, pre);
+#		    else
 		    ialloc_validate_ref_packed(eptr.ptr, gcst);
+#		    endif
 	    }
     }
     END_OBJECTS_SCAN
 }
 /* Validate a ref. */
+#if IGC_PTR_STABILITY_CHECK
+private void
+ialloc_validate_ref_packed(const ref_packed * rp, gc_state_t * gcst, const obj_header_t *pre_fr)
+{
+    const gs_memory_t *cmem = gcst->spaces.memories.named.system->stable_memory;
+
+    if (r_is_packed(rp)) {
+	ref unpacked;
+
+	packed_get(cmem, rp, &unpacked);
+	ialloc_validate_ref(&unpacked, gcst, pre_fr);
+    } else {
+	ialloc_validate_ref((const ref *)rp, gcst, pre_fr);
+    }
+}
+#else
 private void
 ialloc_validate_ref_packed(const ref_packed * rp, gc_state_t * gcst)
 {
@@ -345,8 +380,13 @@ ialloc_validate_ref_packed(const ref_packed * rp, gc_state_t * gcst)
 	ialloc_validate_ref((const ref *)rp, gcst);
     }
 }
+#endif
 private void
-ialloc_validate_ref(const ref * pref, gc_state_t * gcst)
+ialloc_validate_ref(const ref * pref, gc_state_t * gcst
+#		    if IGC_PTR_STABILITY_CHECK
+			, const obj_header_t *pre_fr
+#		    endif
+		    )
 {
     const void *optr;
     const ref *rptr;
@@ -369,8 +409,13 @@ ialloc_validate_ref(const ref * pref, gc_state_t * gcst)
 	case t_struct:
 	case t_astruct:
 	    optr = pref->value.pstruct;
-cks:	    if (optr != 0)
+cks:	    if (optr != 0) {
 		ialloc_validate_object(optr, NULL, gcst);
+#		if IGC_PTR_STABILITY_CHECK
+		    ialloc_validate_pointer_stability(pre_fr, 
+			    (const obj_header_t *)optr - 1);
+#		endif
+	    }
 	    break;
 	case t_name:
 	    if (name_index_ptr(cmem, name_index(cmem, pref)) != pref->value.pname) {
@@ -447,6 +492,29 @@ cka:	    if (!gc_locate(rptr, gcst)) {
 	    goto cka;
     }
 }
+
+#if IGC_PTR_STABILITY_CHECK
+/* Validate an pointer stability. */
+void
+ialloc_validate_pointer_stability(const obj_header_t * ptr_fr, 
+				   const obj_header_t * ptr_to)
+{
+    static const char *sn[] = {"undef", "undef", "system", "undef", 
+		"global_stable", "global", "local_stable", "local"};
+
+    if (ptr_fr->d.o.space_id < ptr_to->d.o.space_id) {
+	const char *sn_to = (ptr_fr->d.o.space_id < count_of(sn) 
+			? sn[ptr_fr->d.o.space_id] : "unknown");
+	const char *sn_fr = (ptr_to->d.o.space_id < count_of(sn) 
+			? sn[ptr_to->d.o.space_id] : "unknown");
+
+	lprintf6("Reference to a less stable object 0x%lx<%s> "
+	         "in the space \'%s\' from 0x%lx<%s> in the space \'%s\' !\n",
+		 (ulong) ptr_to, ptr_to->d.o.t.type->sname, sn_to, 
+		 (ulong) ptr_fr, ptr_fr->d.o.t.type->sname, sn_fr);
+    }
+}
+#endif
 
 /* Validate an object. */
 void

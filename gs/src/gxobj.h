@@ -22,6 +22,12 @@
 
 #include "gxbitmap.h"
 
+#ifdef DEBUG
+#define IGC_PTR_STABILITY_CHECK 0
+#else
+#define IGC_PTR_STABILITY_CHECK 0
+#endif
+
 /* ================ Objects ================ */
 
 /*
@@ -91,6 +97,9 @@ typedef struct obj_header_data_s {
 	gs_memory_type_ptr_t type;
 	uint reloc;
     } t;
+#   if IGC_PTR_STABILITY_CHECK
+    unsigned space_id:3; /* r_space_bits + 1 bit for "instability". */
+#   endif
 } obj_header_data_t;
 
 /*

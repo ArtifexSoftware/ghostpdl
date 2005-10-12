@@ -69,6 +69,13 @@ ialloc_init(gs_dual_memory_t *dmem, gs_memory_t * rmem, uint chunk_size,
     ilmem->space = avm_local;	/* overrides if ilmem == igmem */
     ilmem_stable->space = avm_local; /* ditto */
     ismem->space = avm_system;
+#   if IGC_PTR_STABILITY_CHECK
+    igmem->space_id = (i_vm_global << 1) + 1;
+    igmem_stable->space_id = i_vm_global << 1;
+    ilmem->space_id = (i_vm_local << 1) + 1;	/* overrides if ilmem == igmem */
+    ilmem_stable->space_id = i_vm_local << 1; /* ditto */
+    ismem->space_id = (i_vm_system << 1);
+#   endif
     ialloc_set_space(dmem, avm_global);
     return 0;
  fail:
