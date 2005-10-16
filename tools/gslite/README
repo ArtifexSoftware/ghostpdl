@@ -1,0 +1,35 @@
+
+gslt (gs lite)
+
+graphics library client, sans pdl's, based on Peter's gslib.c in gs/src/.
+
+
+BUILD
+-----
+
+Get gs and build a shared libray object, 'make sodebug` is the usual
+incantantation.  This will not work with the shared language gs build,
+use the latest gs build.
+
+Modify the first variable in gs lite's Makefile `GSDIR' to point to the
+gs tree where the shared library was built.  For example:
+  
+  GSDIR=../../gshead
+
+type `make depend'
+
+and then
+
+type `make'
+
+
+The shared library can either be put in a well defined place or
+something like this will work if you run the client from the same
+directory each time:
+
+export LD_LIBRARY_PATH=../../gshead/sobin/
+
+gslt <testnumber>
+
+by default it uses the X11 device and prompts for a keypress after
+rendering something.
