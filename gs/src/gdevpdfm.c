@@ -1161,10 +1161,12 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	code = pdf_substitute_resource(pdev, &pres, resourceXObject, NULL, false);
 	if (code < 0)
 	    return code;
-	code = cos_dict_put(pdev->local_named_objects, objname->data,
+	if (objname != 0) {
+	    code = cos_dict_put(pdev->local_named_objects, objname->data,
 				objname->size, cos_object_value(&value, (cos_object_t *)pcs));
-	if (code < 0)
-	    return code;
+	    if (code < 0)
+		return code;
+	}
 	code = pdf_open_contents(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
@@ -1492,10 +1494,12 @@ pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     code = pdf_substitute_resource(pdev, &pres, resourceXObject, NULL, true);
     if (code < 0)
 	return code;
-    code = cos_dict_put(pdev->local_named_objects, objname.data,
-			    objname.size, cos_object_value(&value, (cos_object_t *)pres->object));
-    if (code < 0)
-	return code;
+    if (objname.size) {
+	code = cos_dict_put(pdev->local_named_objects, objname.data,
+				objname.size, cos_object_value(&value, (cos_object_t *)pres->object));
+	if (code < 0)
+	    return code;
+    }
     gs_free_const_string(pdev->memory, objname.data, objname.size, "pdfmark_EP");
     if (code < 0)
 	return code;
