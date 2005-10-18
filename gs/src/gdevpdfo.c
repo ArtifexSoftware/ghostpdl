@@ -522,7 +522,7 @@ cos_array_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
 	    stream_putc(s, '\n');
 	for (; pcae->index > last_index; ++last_index)
 	    stream_puts(s, "null\n");
-	cos_value_write(&pcae->value, pdev);
+	cos_value_write_spaced(&pcae->value, pdev, false, object_id);
     }
     DISCARD(cos_array_reorder(pca, first));
     stream_puts(s, "]");

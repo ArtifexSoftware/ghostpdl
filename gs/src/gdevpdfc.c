@@ -34,7 +34,6 @@
 #include "strimpl.h"
 #include "sstring.h"
 #include "gxcspace.h"
-#include "sarc4.h"
 #include <assert.h>
 
 /*
@@ -370,8 +369,8 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     int num_entries = pip->hival + 1;
     int num_components = gs_color_space_num_components(base_space);
     uint table_size = num_entries * num_components;
-    /* Guess at the extra space needed for ASCII85 encoding. */
-    uint string_size = 1 + table_size * 2 + table_size / 30 + 2;
+    /* Guess at the extra space needed for PS string encoding. */
+    uint string_size = 2 + table_size * 4;
     uint string_used;
     byte buf[100];		/* arbitrary */
     stream_AXE_state st;
@@ -382,13 +381,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     gs_color_space cs_gray;
     cos_value_t v;
     int code;
-    stream_arcfour_state sarc4;
 
-    if (pdev->KeyLength) {
-	code = pdf_encrypt_init(pdev, pca->id, &sarc4);
-	if (code < 0)
-	    return code;
-    }
     /* PDF doesn't support Indexed color spaces with more than 256 entries. */
     if (num_entries > 256)
 	return_error(gs_error_rangecheck);
@@ -414,9 +407,9 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     }
     swrite_string(&s, table, string_size);
     s_init(&es, mem);
-    s_init_state((stream_state *)&st, &s_AXE_template, NULL);
+    s_init_state((stream_state *)&st, &s_PSSE_template, NULL);
     s_init_filter(&es, (stream_state *)&st, buf, sizeof(buf), &s);
-    sputc(&s, '<');
+    sputc(&s, '(');
     if (pcs->params.indexed.use_proc) {
 	gs_client_color cmin, cmax;
 	byte *pnext = palette;
@@ -448,7 +441,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     if (gs_color_space_get_index(base_space) ==
 	gs_color_space_index_DeviceRGB
 	) {
-	/* Check for an all-gray palette. */
+	/* Check for an all-gray palette3. */
 	int i;
 
 	for (i = table_size; (i -= 3) >= 0; )
@@ -465,8 +458,6 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    base_space = &cs_gray;
 	}
     }
-    if (pdev->KeyLength)
-	s_arcfour_process_buffer(&sarc4, palette, table_size);
     stream_write(&es, palette, table_size);
     gs_free_string(mem, palette, table_size, "pdf_color_space(palette)");
     sclose(&es);

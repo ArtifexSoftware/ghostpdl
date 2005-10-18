@@ -1566,10 +1566,8 @@ pdf_write_value(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_id 
 	return pdf_put_composite(pdev, vstr, size, object_id);
     else if (size > 1 && vstr[0] == '(')
 	return pdf_put_encoded_string(pdev, vstr, size, object_id);
-#if 0 /* Reserved for further extension. */
     else if (size > 1 && vstr[0] == '<')
 	return pdf_put_encoded_hex_string(pdev, vstr, size, object_id);
-#endif
     stream_write(pdev->strm, vstr, size);
     return 0;
 }
