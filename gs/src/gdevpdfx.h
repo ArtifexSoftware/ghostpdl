@@ -974,15 +974,15 @@ void pdf_put_matrix(gx_device_pdf *pdev, const char *before,
 typedef int (*pdf_put_name_chars_proc_t)(stream *, const byte *, uint);
 pdf_put_name_chars_proc_t
     pdf_put_name_chars_proc(const gx_device_pdf *pdev);
-void pdf_put_name_chars(const gx_device_pdf *pdev, const byte *nstr,
+int pdf_put_name_chars(const gx_device_pdf *pdev, const byte *nstr,
 			uint size);
-void pdf_put_name(const gx_device_pdf *pdev, const byte *nstr, uint size);
+int pdf_put_name(const gx_device_pdf *pdev, const byte *nstr, uint size);
 
 /* Write a string in its shortest form ( () or <> ). */
-void pdf_put_string(const gx_device_pdf *pdev, const byte *str, uint size);
+int pdf_put_string(const gx_device_pdf *pdev, const byte *str, uint size);
 
 /* Write a value, treating names specially. */
-void pdf_write_value(const gx_device_pdf *pdev, const byte *vstr, uint size, gs_id object_id);
+int pdf_write_value(const gx_device_pdf *pdev, const byte *vstr, uint size, gs_id object_id);
 
 /* Store filters for a stream. */
 int pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,

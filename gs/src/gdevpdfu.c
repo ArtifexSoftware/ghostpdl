@@ -1417,16 +1417,16 @@ pdf_put_name_chars_proc(const gx_device_pdf *pdev)
 {
     return &pdf_put_name_chars_1_2;
 }
-void
+int
 pdf_put_name_chars(const gx_device_pdf *pdev, const byte *nstr, uint size)
 {
-    DISCARD(pdf_put_name_chars_proc(pdev)(pdev->strm, nstr, size));
+    return pdf_put_name_chars_proc(pdev)(pdev->strm, nstr, size);
 }
-void
+int
 pdf_put_name(const gx_device_pdf *pdev, const byte *nstr, uint size)
 {
     stream_putc(pdev->strm, '/');
-    pdf_put_name_chars(pdev, nstr, size);
+    return pdf_put_name_chars(pdev, nstr, size);
 }
 
 /* Write an encoded string with encryption. */
@@ -1473,15 +1473,23 @@ pdf_encrypt_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size
 }
 
 /* Write an encoded string with possible encryption. */
-private void
+private int
 pdf_put_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
 {
-    if (!pdev->KeyLength || object_id == (gs_id)-1)
+    if (!pdev->KeyLength || object_id == (gs_id)-1) {
 	stream_write(pdev->strm, str, size);
-    else
-	DISCARD(pdf_encrypt_encoded_string(pdev, str, size, object_id));
+	return 0;
+    } else
+	return pdf_encrypt_encoded_string(pdev, str, size, object_id);
 }
-
+/* Write an encoded hexadecimal string with possible encryption. */
+private int
+pdf_put_encoded_hex_string(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
+{
+    eprintf("Unimplemented function : pdf_put_encoded_hex_string\n");
+    stream_write(pdev->strm, str, size);
+    return_error(gs_error_unregistered);
+}
 /*  Scan an item in a serialized array or dictionary.
     This is a very simplified Postscript lexical scanner.
     It assumes the serialization with pdf===only defined in gs/lib/gs_pdfwr.ps .
@@ -1508,12 +1516,11 @@ pdf_scan_item(const gx_device_pdf * pdev, const byte * p, uint l, gs_id object_i
 }
 
 /* Write a serialized array or dictionary with possible encryption. */
-private void
+private int
 pdf_put_composite(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_id object_id)
 {
     if (!pdev->KeyLength || object_id == (gs_id)-1) {
 	stream_write(pdev->strm, vstr, size);
-	return;
     } else {
 	const byte *p = vstr;
 	int l = size, n;
@@ -1529,6 +1536,7 @@ pdf_put_composite(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_i
 	    p += n;
 	}
     }
+    return 0;
 }
 
 /*
@@ -1536,29 +1544,34 @@ pdf_put_composite(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_i
  * this form is different depending on whether binary data are allowed.
  * We wish PDF supported ASCII85 strings ( <~ ~> ), but it doesn't.
  */
-void
+int
 pdf_put_string(const gx_device_pdf * pdev, const byte * str, uint size)
 {
     psdf_write_string(pdev->strm, str, size,
 		      (pdev->binary_ok ? PRINT_BINARY_OK : 0));
+    return 0;
 }
 
 /* Write a value, treating names specially. */
-void
+int
 pdf_write_value(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_id object_id)
 {
     if (size > 0 && vstr[0] == '/')
-	pdf_put_name(pdev, vstr + 1, size - 1);
+	return pdf_put_name(pdev, vstr + 1, size - 1);
     else if (size > 3 && vstr[0] == 0 && vstr[1] == 0 && vstr[size - 1] == 0)
-	pdf_put_name(pdev, vstr + 3, size - 4);
-    else if (size > 1 && vstr[0] == '(')
-	pdf_put_encoded_string(pdev, vstr, size, object_id);
+	return pdf_put_name(pdev, vstr + 3, size - 4);
     else if (size > 1 && (vstr[0] == '[' || vstr[0] == '{'))
-	pdf_put_composite(pdev, vstr, size, object_id);
+	return pdf_put_composite(pdev, vstr, size, object_id);
     else if (size > 2 && vstr[0] == '<' && vstr[1] == '<')
-	pdf_put_composite(pdev, vstr, size, object_id);
-    else
-	stream_write(pdev->strm, vstr, size);
+	return pdf_put_composite(pdev, vstr, size, object_id);
+    else if (size > 1 && vstr[0] == '(')
+	return pdf_put_encoded_string(pdev, vstr, size, object_id);
+#if 0 /* Reserved for further extension. */
+    else if (size > 1 && vstr[0] == '<')
+	return pdf_put_encoded_hex_string(pdev, vstr, size, object_id);
+#endif
+    stream_write(pdev->strm, vstr, size);
+    return 0;
 }
 
 /* Store filters for a stream. */
