@@ -276,6 +276,59 @@
 
 % ---------------- pdfmark and DSC processing ---------------- %
 
+/.write_small_positive_real  % <file> <real> .write_small_positive_real -
+{ % The argument must be grater than 0 and must be strongly samller than 0.1.
+  % The conversion isn't simple due to the low (24 bits) precision 
+  % of the floating point arithmetics in Postscript.
+  % For best result we first use the 1e8 factor since its binary 
+  % representation 101111101011110000100000000 well rounds into 14 significant
+  % bits :         101111101011110000000000000 .
+  1 index (.) writestring
+  { dup 100000000 mul 
+    dup 10 mul 1 ge {
+      % Will need not greater than 0.1 due to a rounding below.
+      pop exit
+    } if
+    exch pop
+    1 index (00000000) writestring
+  } loop
+  % Now it is not smaller than 1e-9, use simple digitizing.
+  { dup 10 mul 
+    dup 10 mul 1 ge { 
+      pop exit 
+    } if
+    exch pop
+    1 index (0) writestring
+  } loop
+  % Now 0.01 <= n < 0.1, but rounding may give 0.1 .
+  % Convert to integer with 7 digits precision :
+  100000000 % precision factor 1e8       % f n r
+  dup 10 idiv 3 1 roll mul 0.5 add cvi   % f r' N
+  2 copy le {
+    % The rounding overflows, suppress it.
+    % Note it carries out an additional digit,
+    % that's why we needed <0.1 above.
+    pop pop (1) writestring
+  } {
+    % Didn't cary out, put 0.
+    2 index (0) writestring
+    exch                                 % f N r
+    % Continue the simple digitizing :
+    { 10 idiv dup                        % f N r' r'
+      2 index exch idiv                  % f N r' d
+      (0123456789) exch 1 getinterval    % f N r' (d)
+      3 index exch writestring           % f N r'
+      dup 3 2 roll exch mod              % f r' N'
+      dup 0 eq { 
+        % Don't write trailing zeros.
+        exit 
+      } if
+      exch                               % f N' r'
+    } loop
+    pop pop pop
+  } ifelse
+} bind def
+
 % Encode values to pass for the /pdfmark or /DSC pseudo-parameter.
 /.pdf===dict mark
   /arraytype
@@ -316,9 +369,17 @@
   /realtype {
     % Prevent using floating point format - see Bug 688167.
     dup dup 0 lt { neg } if 0.0000001 lt {
-      pop 0
-    } if
-    write===only
+      dup 0 eq {
+        pop (0) writestring
+      } {
+        dup 0 lt {
+          1 index (-) writestring neg
+        } if
+        .write_small_positive_real
+      } ifelse
+    } {
+      write===only
+    } ifelse
   } bind
 .dicttomark readonly def
 /pdf===only {	% <file> <obj> pdf===only -
