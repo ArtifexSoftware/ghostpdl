@@ -117,13 +117,7 @@
 #define NULL  (void*)0
 #endif
 
-#if   ARCH_SIZEOF_PTR == SIZEOF_LONG
-  typedef long*  PStorage;
-#elif ARCH_SIZEOF_PTR == SIZEOF_INT
-  typedef int*   PStorage;
-#else
-#error "Size of pointer type is not equal to either long or int"
-#endif
+  typedef Long*    PStorage;
 
 
 /* Rounding mode constants */
