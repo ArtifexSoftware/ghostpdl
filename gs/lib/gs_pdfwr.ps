@@ -368,7 +368,7 @@
   } bind
   /realtype {
     % Prevent using floating point format - see Bug 688167.
-    dup dup 0 lt { neg } if 0.0000001 lt {
+    dup dup 0 lt { neg } if 0.01 lt {
       dup 0 eq {
         pop (0) writestring
       } {
