@@ -454,31 +454,38 @@ pdfdict begin
 % Verify that each entry in the xref table is pointing at an object with
 % the correct object number and generation number.
 /verify_xref				% - verify_xref -
-{ 1 1 Objects llength 1 sub		% stack: 1 1 <number of objects - 1>
+{ PDFfile dup 0 setfileposition bytesavailable	% Determine the size of the file
+  1 1 Objects llength 1 sub	% stack: filesize 1 1 <number of objects - 1>
   {	% Check if the object is free (i.e. not used).  The values in
 	% Generations is the generation number plus 1.  If the value in
 	% Generations is zero then the object is free.
+	% Stack:  <filesize> <obj num>
     Generations 1 index lget 		% Get the genration number
     0 ne {				% Skip if object number is free
       ObjectStream 1 index lget 	% Check if object is in objectstream
       0 eq {	% We only check objects not in an objectstream
         {	% Use stop context since we may get an error if object is invalid
           dup Objects exch lget 	% Get the object location
-	  PDFoffset add PDFfile exch setfileposition
-	  true				% Stack:  <obj num> <true>
-	  PDFfile token pop		% Read object number from file
-	  2 index eq {			% Verify object number
-	    PDFfile token pop		% Read generation number from file
-	    Generations 3 index		% Get specified generaton number
-	    lget 1 sub			% Gen numbs are stored with 1 added.
-	    eq { 			% Verify generation number
-	      PDFfile token pop /obj eq { % Verify 'obj' text
-		pop false		% We have valid object, do not rebuild
+	  PDFoffset add dup 3 index ge	% Compare object location to file size
+	  { pop true }			% Rebuild if location not in file
+	  { PDFfile exch setfileposition % Go to the object location
+	    true			% Stack:  <filesize> <obj num> <true>
+	    PDFfile token pop		% Read object number from file
+	    2 index eq {		% Verify object number
+	      PDFfile token pop		% Read generation number from file
+	      Generations 3 index	% Get specified generaton number
+	      lget 1 sub		% Gen numbs are stored with 1 added.
+	      eq { 			% Verify generation number
+	        PDFfile token pop
+	        /obj eq { % Verify 'obj' text
+		  pop false		% We have valid object, do not rebuild
+	        } if
 	      } if
 	    } if
-	  } if
+	  } ifelse
 	} .internalstopped
 	{ true } if			% If we stop then we need to rebuild
+	% Stack:  <filesize> <obj num> <need rebuild flag>
 	{ 
 	  (   **** Warning:  File has an invalid xref entry:  )
 	  pdfformaterror
@@ -491,6 +498,7 @@ pdfdict begin
     } if				% If object entry is not free
     pop					% Remove object number
   } for
+  pop					% Remove the size of the file
 } bind odef
 
 /pdfopencache {		% - pdfopencache -
