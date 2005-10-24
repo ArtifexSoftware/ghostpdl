@@ -740,7 +740,7 @@ pdfdict begin
   } if
   /endstream ne { 
     (   **** Warning: stream Length incorrect.\n) pdfformaterror
-    dup /Length undef % prevent the use of the incorrect length.
+    dup /Length 0 put	% prevent the use of the incorrect length.
     cvx endobj exit   % exit from .pdfrun now.
   } if
   cvx
