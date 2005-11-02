@@ -661,6 +661,7 @@ pdf_open(gx_device * dev)
     pdf_reset_page(pdev);
     return 0;
   fail:
+    gdev_vector_close_file((gx_device_vector *) pdev);
     return pdf_close_files(pdev, code);
 }
 

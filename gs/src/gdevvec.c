@@ -806,17 +806,21 @@ gdev_vector_close_file(gx_device_vector * vdev)
     gs_free_object(vdev->v_memory, vdev->bbox_device,
 		   "vector_close(bbox_device)");
     vdev->bbox_device = 0;
-    sclose(vdev->strm);
-    gs_free_object(vdev->v_memory, vdev->strm, "vector_close(strm)");
-    vdev->strm = 0;
-    gs_free_object(vdev->v_memory, vdev->strmbuf, "vector_close(strmbuf)");
-    vdev->strmbuf = 0;
+    if (vdev->strm) {
+	sclose(vdev->strm);
+	gs_free_object(vdev->v_memory, vdev->strm, "vector_close(strm)");
+	vdev->strm = 0;
+	gs_free_object(vdev->v_memory, vdev->strmbuf, "vector_close(strmbuf)");
+	vdev->strmbuf = 0;
+    }
     vdev->file = 0;
-    err = ferror(f);
-    /* We prevented sclose from closing the file. */
-    if (gx_device_close_output_file((gx_device *)vdev, vdev->fname, f) != 0 
-	|| err != 0)
-	return_error(gs_error_ioerror);
+    if (f) {
+	err = ferror(f);
+	/* We prevented sclose from closing the file. */
+	if (gx_device_close_output_file((gx_device *)vdev, vdev->fname, f) != 0 
+		|| err != 0)
+	    return_error(gs_error_ioerror);
+    }
     return 0;
 }
 
