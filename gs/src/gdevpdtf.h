@@ -242,9 +242,7 @@ struct pdf_font_resource_s {
 		    pdf_char_proc_t *char_procs;
 		    int max_y_offset;
 		    bool bitmap_font;
-		    pdf_resource_ref_t *used_resources;
-		    int used_resources_count;
-		    int used_resources_max;
+		    cos_dict_t *Resources;
 		    byte *cached;
 		} type3;
 

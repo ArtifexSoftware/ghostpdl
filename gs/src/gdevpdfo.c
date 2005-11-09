@@ -1056,6 +1056,22 @@ cos_dict_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf
     return true;
 }
 
+/* Process all entries in a dictionary. */
+int
+cos_dict_forall(const cos_dict_t *pcd, void *client_data, 
+		int (*proc)(void *client_data, const byte *key_data, uint key_size, const cos_value_t *v))
+{
+    cos_dict_element_t *pcde = pcd->elements;
+
+    for (; pcde; pcde = pcde->next) {
+	int code = proc(client_data, pcde->key.data, pcde->key.size, &pcde->value);
+
+	if (code != 0)
+	    return code;
+    }
+    return 0;
+}
+
 /* Set up a parameter list that writes into a Cos dictionary. */
 
 /* We'll implement the other printers later if we have to. */

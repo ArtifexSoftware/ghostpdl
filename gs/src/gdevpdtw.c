@@ -529,6 +529,7 @@ private int
 pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     stream *s;
+    cos_dict_t *pcd_Resources = NULL;
 
     if (pdfont->cmap_ToUnicode != NULL && pdfont->res_ToUnicode == NULL)
 	if (((pdfont->FontType == ft_composite) && 
@@ -544,6 +545,20 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 		return code;
 	    pdfont->res_ToUnicode = prcmap;
 	}
+    if (pdev->CompatibilityLevel >= 1.2 &&
+	    pdfont->FontType == ft_user_defined && 
+	    pdfont->u.simple.s.type3.Resources != NULL &&
+	    pdfont->u.simple.s.type3.Resources->elements != NULL) {
+	int code; 
+
+	pcd_Resources = pdfont->u.simple.s.type3.Resources;
+	pcd_Resources->id = pdf_obj_ref(pdev);
+	pdf_open_separate(pdev, pcd_Resources->id);
+	code = COS_WRITE(pcd_Resources, pdev);
+	if (code < 0)
+	    return code;
+	pdf_end_separate(pdev);
+    }
     pdf_open_separate(pdev, pdf_font_id(pdfont));
     s = pdev->strm;
     stream_puts(s, "<<");
@@ -563,6 +578,8 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	pprintld1(s, "/Type/Font/Name/R%ld\n", pdf_font_id(pdfont));
     if (pdev->ForOPDFRead && pdfont->global)
 	stream_puts(s, "/.Global true\n");
+    if (pcd_Resources != NULL)
+	pprintld1(s, "/Resources %ld 0 R\n", pcd_Resources->id);
     return pdfont->write_contents(pdev, pdfont);
 }
 

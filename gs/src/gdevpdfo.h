@@ -282,6 +282,9 @@ const cos_array_element_t *
 /* Look up a key in a dictionary. */
 const cos_value_t *cos_dict_find(const cos_dict_t *, const byte *, uint);
 const cos_value_t *cos_dict_find_c_key(const cos_dict_t *, const char *);
+/* Process all entries in a dictionary. */
+int cos_dict_forall(const cos_dict_t *pcd, void *client_data, 
+	int (*proc)(void *client_data, const byte *key_data, uint key_size, const cos_value_t *v));
 
 /* Set up a parameter list that writes into a Cos dictionary. */
 typedef struct cos_param_list_writer_s {
