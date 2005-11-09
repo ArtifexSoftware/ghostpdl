@@ -1845,14 +1845,16 @@ However, '<tt>-</tt>' is equivalent on most systems.
 </dl>
 
 <dl>
-<dt><b><tt>-c</tt></b> <em>tokens ...</em>
+<dt><b><tt>-c</tt></b> <em>token ...</em>
+<br><b><tt>-c</tt></b> <em>string ...</em>
 <dd>Interprets arguments as PostScript code up to the next argument that
 begins with "<b><tt>-</tt></b>" followed by a non-digit, or with
 "<b><tt>@</tt></b>".  For example, if the file <b><tt>quit.ps</tt></b>
 contains just the word "<b><tt>quit</tt></b>", then
 <b><tt>-c&nbsp;quit</tt></b> on the command line is equivalent to
-<b><tt>quit.ps</tt></b> there.  Each argument must be exactly one token, as
-defined by the <b><tt>token</tt></b> operator.
+<b><tt>quit.ps</tt></b> there.  Each argument must be valid PostScript,
+either individual tokens as defined by the <b><tt>token</tt></b> operator,
+or a string containing valid PostScript.
 </dl>
 
 <dl>
@@ -1907,10 +1909,16 @@ supplied directory is "<b><tt>.</tt></b>").
 <dl>
 <dt><b><tt>-D</tt></b><em>name</em><b><tt>=</tt></b><em>token</em>
 <br><b><tt>-d</tt></b><em>name</em><b><tt>=</tt></b><em>token</em>
-<dd>Define a name in systemdict with the given definition.  The token must
-be exactly one token (as defined by the <b><tt>token</tt></b> operator) and
-must not contain any whitespace.  If the token is a non-literal name, it
-must be true, false, or null.
+<dd>Define a name in systemdict with the given value.  The value must be
+a valid PostScript token (as defined by the <b><tt>token</tt></b> operator).
+If the token is a non-literal name, it must be true, false, or null.
+It is recommeded that this is used only for simple values -- use
+<b><tt>-c</tt></b> (above) for complex values such as procedures,
+arrays or dictionaries.
+<br>Note that these values are defined <b>before</b> other names in
+systemdict, so any name that that conflicts with one usually in
+systemdict will be replaced by the normal definition during the
+interpreter initialization.
 </dl>
 
 <dl>
