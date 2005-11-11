@@ -109,6 +109,9 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  1,				/* FirstObjectNumber */
  1 /*true*/,			/* CompressFonts */
  0 /*false*/,			/* PrintStatistics */
+ {0, 0, 0},			/* DocumentUUID */
+ {0, 0, 0},			/* InstanceUUID */
+ 0,				/* DocumentTimeSeq */
  PDF_FOR_OPDFREAD,		/* ForOPDFRead */
  {0, 0, 0},			/* OPDFReadProcsetPath */
  false,				/* CompressEntireFile */
@@ -127,12 +130,13 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* KeyLength */
  -4,				/* Permissions */
  0,				/* EncryptionR */
+ {0, 0, 0},			/* NoEncrypt */
+ true,				/* EncryptMetadata */
+ true,                          /* ComputeDocumentDigest */
  {0},				/* EncryptionO */
  {0},				/* EncryptionU */
  {0},				/* EncryptionKey */
  0,				/* EncryptionV */
- true,				/* EncryptMetadata */
- {0, 0, 0},			/* NoEncrypt */
  0 /*false*/,			/* is_EPS */
  {-1, -1},			/* doc_dsc_info */
  {-1, -1},			/* page_dsc_info */

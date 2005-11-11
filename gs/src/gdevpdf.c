@@ -587,6 +587,13 @@ pdf_open(gx_device * dev)
     code = gdev_vector_open_file((gx_device_vector *) pdev, sbuf_size);
     if (code < 0)
 	goto fail;
+    if (pdev->ComputeDocumentDigest) {
+	stream *s = s_MD5C_make_stream(pdev->pdf_memory, pdev->strm);
+
+	if (s == NULL)
+	    return_error(gs_error_VMerror);
+	pdev->strm = s;
+    }
     gdev_vector_init((gx_device_vector *) pdev);
     pdev->vec_procs = &pdf_vector_procs;
     pdev->fill_options = pdev->stroke_options = gx_path_type_optimize;
@@ -1094,6 +1101,11 @@ pdf_close(gx_device * dev)
     if (pdev->PageLabels) {
 	COS_WRITE_OBJECT(pdev->PageLabels, pdev);
     }
+
+    /* Write the document metadata. */
+    code1 = pdf_document_metadata(pdev);
+    if (code >= 0)
+	code = code1;
 
     /* Write the Catalog. */
 

@@ -426,6 +426,9 @@ struct gx_device_pdf_s {
     long FirstObjectNumber;
     bool CompressFonts;
     bool PrintStatistics;
+    gs_param_string DocumentUUID;
+    gs_param_string InstanceUUID;
+    int DocumentTimeSeq;
     bool ForOPDFRead;          /* PS2WRITE only. */
     gs_param_string OPDFReadProcsetPath; /* PS2WRITE only. */
     bool CompressEntireFile;  /* PS2WRITE only. */
@@ -449,14 +452,15 @@ struct gx_device_pdf_s {
     uint KeyLength;
     uint Permissions;
     uint EncryptionR;
+    gs_param_string NoEncrypt;
+    bool EncryptMetadata;
     /* End of parameters */
+    bool ComputeDocumentDigest; /* Developer needs only; Always true in production. */
     /* Encryption data */
     byte EncryptionO[32];
     byte EncryptionU[32];
     byte EncryptionKey[16];
     uint EncryptionV;
-    bool EncryptMetadata;
-    gs_param_string NoEncrypt;
     /* Values derived from DSC comments */
     bool is_EPS;
     pdf_page_dsc_info_t doc_dsc_info; /* document default */
@@ -660,8 +664,9 @@ struct gx_device_pdf_s {
  m(32,pres_soft_mask_dict)
 #define gx_device_pdf_num_ptrs 33
 #define gx_device_pdf_do_param_strings(m)\
-    m(0, OPDFReadProcsetPath) m(1, OwnerPassword) m(2, UserPassword) m(3, NoEncrypt)
-#define gx_device_pdf_num_param_strings 4
+    m(0, OPDFReadProcsetPath) m(1, OwnerPassword) m(2, UserPassword) m(3, NoEncrypt)\
+    m(4, DocumentUUID) m(5, InstanceUUID)
+#define gx_device_pdf_num_param_strings 6
 #define gx_device_pdf_do_const_strings(m)\
     m(0, objname)
 #define gx_device_pdf_num_const_strings 1
