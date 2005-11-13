@@ -2163,8 +2163,12 @@ gs_copy_font_complete(gs_font *font, gs_font *copied)
 	     code >= 0 &&
 		 (font->procs.enumerate_glyph(font, &index, space, &glyph),
 		  index != 0);
-	     )
+	    ) {
+	    if (font->FontType == ft_TrueType && 
+		    glyph >= GS_MIN_CID_GLYPH && glyph < GS_MIN_GLYPH_INDEX)
+		return_error(gs_error_invalidfont); /* bug 688370. */
 	    code = gs_copy_glyph(font, glyph, copied);
+	}
 	/* For Type 42 fonts, if we copied by name, now copy again by index. */
 	if (space == GLYPH_SPACE_NAME && font->FontType == ft_TrueType)
 	    space = GLYPH_SPACE_INDEX;
@@ -2175,9 +2179,20 @@ gs_copy_font_complete(gs_font *font, gs_font *copied)
 	for (index = 0; code >= 0 && index < 256; ++index) {
 	    glyph = font->procs.encode_char(font, (gs_char)index,
 					    GLYPH_SPACE_NAME);
-	    if (glyph != GS_NO_GLYPH)
+	    if (glyph != GS_NO_GLYPH) {
 		code = gs_copied_font_add_encoding(copied, (gs_char)index,
 						   glyph);
+		if (code == gs_error_undefined) {
+		    /* Skip Encoding entries, which point to undefiuned glyphs - 
+		       happens with 033-52-5873.pdf. */
+		    code = 0; 
+		}
+		if (code == gs_error_rangecheck) {
+		    /* Skip Encoding entries, which point to undefiuned glyphs - 
+		       happens with 159.pdf. */
+		    code = 0; 
+		}
+	    }
 	}
     if (copied->FontType != ft_composite) {
 	gs_font_base *bfont = (gs_font_base *)font;

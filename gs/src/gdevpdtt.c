@@ -2205,6 +2205,8 @@ pdf_text_process(gs_text_enum_t *pte)
 	    return code;
 	if (code == gs_error_VMerror)
 	    return code;
+	if (code == gs_error_invalidfont) /* Bug 688370. */
+	    return code;
  default_impl:
 	/* Fall back to the default implementation. */
 	code = pdf_default_text_begin(pte, &pte->text, &pte_default);
