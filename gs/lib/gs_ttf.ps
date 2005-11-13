@@ -552,6 +552,7 @@
 	    % Get the name for this glyph
 	    258 sub dup postnames length ge {
 	      TTFDEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
+	      pop
 	      exit
 	    } if
 	    postnames exch get
@@ -561,7 +562,7 @@
 	    postremap 1 index .knownget { exch pop } if
 	  } ifelse
 	} ifelse
-      } for ] 
+      } for ]
     }
     ifelse
   } bind
