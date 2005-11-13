@@ -6,11 +6,20 @@
 % This assumes an ICC profile to reside in the file (ISO Coated sb.icc),
 % unless the user modifies the corresponding line below.
 
-% Define emtries to the document Info dictionary :
+
+systemdict /ProcessColorModel known {
+  systemdict /ProcessColorModel get dup /DeviceGray ne exch /DeviceCMYK ne and
+} {
+  true
+} ifelse 
+{ (ERROR: ProcessColorModel must be /DeviceGray or DeviceCMYK.)=
+  /ProcessColorModel cvx /rangecheck signalerror
+} if
+
+
+% Define entries to the document Info dictionary :
 
 /ICCProfile (ISO Coated sb.icc)   % Customize.
-def
-/ICCProfileColorComponents 4      % Customize : 4 or 1.
 def
 
 [ /GTS_PDFXVersion (PDF/X-3:2001) % Must be so (the standard requires).
@@ -21,7 +30,7 @@ def
 % Define an IDD profile :
 
 [/_objdef {icc_PDFX} /type /stream /OBJ pdfmark
-[{icc_PDFX} <</N ICCProfileColorComponents>> /PUT pdfmark
+[{icc_PDFX} <</N systemdict /ProcessColorModel get /DeviceGray eq {1} {4} ifelse >> /PUT pdfmark
 [{icc_PDFX} ICCProfile (r) file /PUT pdfmark
 
 % Define the output intent dictionary :
