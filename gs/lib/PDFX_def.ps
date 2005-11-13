@@ -10,6 +10,8 @@
 
 /ICCProfile (ISO Coated sb.icc)   % Customize.
 def
+/ICCProfileColorComponents 4      % Customize : 4 or 1.
+def
 
 [ /GTS_PDFXVersion (PDF/X-3:2001) % Must be so (the standard requires).
   /Title (Title)                  % Customize.
@@ -19,6 +21,7 @@ def
 % Define an IDD profile :
 
 [/_objdef {icc_PDFX} /type /stream /OBJ pdfmark
+[{icc_PDFX} <</N ICCProfileColorComponents>> /PUT pdfmark
 [{icc_PDFX} ICCProfile (r) file /PUT pdfmark
 
 % Define the output intent dictionary :
