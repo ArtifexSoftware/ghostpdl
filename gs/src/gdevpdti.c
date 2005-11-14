@@ -121,7 +121,7 @@ assign_char_code(gx_device_pdf * pdev, int width)
     {	gs_text_enum_t *pte = pdev->pte;
         gs_font *font = pte->current_font;
 
-	code = pdf_add_ToUnicode(pdev, font, pdfont, pte->returned.current_glyph, c); 
+	code = pdf_add_ToUnicode(pdev, font, pdfont, pte->returned.current_glyph, c, NULL); 
 	if (code < 0)
 	    return code;
     }

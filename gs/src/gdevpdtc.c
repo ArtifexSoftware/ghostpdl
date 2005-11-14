@@ -396,9 +396,9 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		    instead CIDs, and with the WinCharSetFFFF-H2 CMap
 		    character codes appears different than CIDs (Bug 687954),
 		    pass the character code intead the CID. */
-		    code = pdf_add_ToUnicode(pdev, subfont, pdfont, chr + GS_MIN_CID_GLYPH, chr);
+		    code = pdf_add_ToUnicode(pdev, subfont, pdfont, chr + GS_MIN_CID_GLYPH, chr, NULL);
 		} else
-		    code = pdf_add_ToUnicode(pdev, subfont, pdfont, glyph, cid);
+		    code = pdf_add_ToUnicode(pdev, subfont, pdfont, glyph, cid, NULL);
 		if (code < 0)
 		    return code;
 	    }

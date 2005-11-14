@@ -306,7 +306,7 @@ int process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
  */
 int
 pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfont, 
-		  gs_glyph glyph, gs_char ch);
+		  gs_glyph glyph, gs_char ch, const gs_const_string *gnstr);
 
 /*
  * Get character code from a glyph code.

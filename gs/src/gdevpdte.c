@@ -87,13 +87,26 @@ pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
  */
 int
 pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfont, 
-		  gs_glyph glyph, gs_char ch)
+		  gs_glyph glyph, gs_char ch, const gs_const_string *gnstr)
 {   int code;
     gs_char unicode;
 
     if (glyph == GS_NO_GLYPH)
 	return 0;
     unicode = font->procs.decode_glyph((gs_font *)font, glyph);
+    if (unicode == GS_NO_CHAR && gnstr != NULL && gnstr->size == 7) {
+	if (!memcmp(gnstr->data, "uni", 3)) {
+	    static const char *hexdigits = "0123456789ABCDEF";
+	    char *d0 = strchr(hexdigits, gnstr->data[3]);
+	    char *d1 = strchr(hexdigits, gnstr->data[4]);
+	    char *d2 = strchr(hexdigits, gnstr->data[5]);
+	    char *d3 = strchr(hexdigits, gnstr->data[6]);
+
+	    if (d0 != NULL && d1 != NULL && d2 != NULL && d3 != NULL)
+		unicode = ((d0 - hexdigits) << 12) + ((d1 - hexdigits) << 8) +
+			  ((d2 - hexdigits) << 4 ) +  (d3 - hexdigits);
+	}
+    }
     if (unicode != GS_NO_CHAR) {
 	if (pdfont->cmap_ToUnicode == NULL) {
 	    uint num_codes = 256, key_size = 1;
@@ -286,7 +299,7 @@ pdf_encode_string(gx_device_pdf *pdev, pdf_text_enum_t *penum,
 	 * we can't detemine in advance, which glyphs the font actually uses.
 	 * The decision about writing it out is deferred until pdf_write_font_resource.
 	 */
-	code = pdf_add_ToUnicode(pdev, font, pdfont, glyph, ch);
+	code = pdf_add_ToUnicode(pdev, font, pdfont, glyph, ch, &gnstr);
 	if (code < 0)
 	    return code;
 	pet->glyph = glyph;
