@@ -293,8 +293,9 @@ cos_value_free(const cos_value_t *pcv, const cos_object_t *pco,
 	break;
     case COS_VALUE_OBJECT:
 	/* Free the object if this is the only reference to it. */
-	if (!pcv->contents.object->id)
-	    cos_free(pcv->contents.object, cname);
+	if (pcv->contents.object != NULL) /* see cos_dict_objects_delete. */
+	    if (!pcv->contents.object->id)
+		cos_free(pcv->contents.object, cname);
     case COS_VALUE_RESOURCE:
 	break;
     }
@@ -814,11 +815,20 @@ cos_dict_objects_delete(cos_dict_t *pcd)
     cos_dict_element_t *pcde = pcd->elements;
 
     /*
+     * Delete duplicate references to prevent a dual object freeing.
      * Delete the objects' IDs so that freeing the dictionary will
      * free them.
      */
-    for (; pcde; pcde = pcde->next)
-	pcde->value.contents.object->id = 0;
+    for (; pcde; pcde = pcde->next) {
+	if (pcde->value.contents.object) {
+	    cos_dict_element_t *pcde1 = pcde->next;
+	
+	    for (; pcde1; pcde1 = pcde1->next)
+		if (pcde->value.contents.object == pcde1->value.contents.object)
+		    pcde1->value.contents.object = NULL;
+	    pcde->value.contents.object->id = 0;
+	}
+    }	
     return 0;
 }
 

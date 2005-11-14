@@ -840,7 +840,7 @@ pdf_find_same_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, pdf_reso
     
     for (i = 0; i < NUM_RESOURCE_CHAINS; i++) {
 	for (pres = pchain[i]; pres != 0; pres = pres->next) {
-	    if (!pres->named && *ppres != pres) {
+	    if (*ppres != pres) {
 		cos_object_t *pco1 = pres->object;
 		int code = pco0->cos_procs->equal(pco0, pco1, pdev);
 
