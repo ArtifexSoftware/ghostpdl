@@ -268,7 +268,7 @@ private int
 pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 {
     char instance_uuid[40], document_uuid[40], date_time[40];
-    char dd[]={'\'', 0xEF, 0xBB, 0xBF, '\''};
+    char dd[]={'\'', 0xEF, 0xBB, 0xBF, '\'', 0};
     int code;
     stream *s = pdev->strm;
     uint64_t uuid_time = pdf_uuid_time();
