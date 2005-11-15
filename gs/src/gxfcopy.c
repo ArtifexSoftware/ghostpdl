@@ -1544,6 +1544,8 @@ copied_cid0_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 
 	if (code < 0)
 	    return code;
+	info->width[0].x = 0;
+	info->width[0].y = 0;
 	info->width[1].x = 0;
 	info->width[1].y = -finfo.BBox.q.x; /* Sic! */
 	info->v.x = finfo.BBox.q.x / 2;

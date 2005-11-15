@@ -274,7 +274,7 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
     else if (code > 0)
 	params.Background_components = code;
     if ((code = dict_floats_param(imemory, dop, "GrayBackground", 
-		    1, params.Background, NULL)) < 0
+		    1, &params.GrayBackground, NULL)) < 0
 	)
 	return code;
     if (dict_find_string(dop, "TransferFunction", &pparam) >0) {

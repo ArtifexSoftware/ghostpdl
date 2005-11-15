@@ -671,8 +671,10 @@ pdf_find_same_charproc(gx_device_pdf *pdev,
     	    cos_object_t *pco1 = (*ppcp)->object;
 
 	    code = pco0->cos_procs->equal(pco0, pco1, pdev);
-	    if (code < 0)
+	    if (code < 0) {
+		pdev->cgp = NULL;
 		return code;
+	    }
 	    if (code) {
 		*ppcp = pcp;
 		pdev->cgp = NULL;

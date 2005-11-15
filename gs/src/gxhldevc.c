@@ -90,7 +90,10 @@ gx_hld_save_color(const gs_imager_state * pis, const gx_device_color * pdevc,
 
         psc->color_space_id = pcs->id;
         pdevc->type->save_dc(pdevc, &(psc->saved_dev_color));
-        i = any_abs(i);
+	if (pdevc->type == gx_dc_type_pattern2)
+	    i = 0;
+        else if (i < 0)
+	    i = -i - 1; /* See gx_num_components_Pattern. */
         for (i--; i >= 0; i--)
 	    psc->ccolor.paint.values[i] = pdevc->ccolor.paint.values[i];
 

@@ -1045,12 +1045,13 @@ zcharstring_outline(gs_font_type1 *pfont1, int WMode, const ref *pgref,
     switch (WMode) {
     default:
 	code = zchar_get_metrics2((gs_font_base *)pfont1, pgref, wv);
-	sbw[0] = wv[2];
-	sbw[1] = wv[3];
-	sbw[2] = wv[0];
-	sbw[3] = wv[1];
-	if (code)
+	if (code) {
+	    sbw[0] = wv[2];
+	    sbw[1] = wv[3];
+	    sbw[2] = wv[0];
+	    sbw[3] = wv[1];
 	    break;
+	}
 	/* falls through */
     case 0:
 	code = zchar_get_metrics((gs_font_base *)pfont1, pgref, sbw);

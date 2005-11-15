@@ -162,6 +162,7 @@ pdf_viewer_state_from_imager_state_aux(pdf_viewer_state *pvs, const gs_imager_st
     pvs->black_generation_id = (pis->black_generation != 0 ? pis->black_generation->id : 0);
     pvs->undercolor_removal_id = (pis->undercolor_removal != 0 ? pis->undercolor_removal->id : 0);
     pvs->overprint_mode = 0;
+    pvs->flatness = pis->flatness;
     pvs->smoothness = pis->smoothness;
     pvs->text_knockout = pis->text_knockout;
     pvs->fill_overprint = false;

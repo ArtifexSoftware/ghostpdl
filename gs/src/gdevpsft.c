@@ -399,7 +399,7 @@ write_mtx(stream *s, gs_font_type42 *pfont, const gs_type42_mtx_t *pmtx,
 {
     uint num_metrics = pmtx->numMetrics;
     uint len = num_metrics * 4;
-    double factor = pfont->data.unitsPerEm * (wmode ? -1 : 1);
+    double factor = (double)pfont->data.unitsPerEm * (wmode ? -1 : 1);
     float sbw[4];
     uint i;
 
