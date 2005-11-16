@@ -1182,20 +1182,30 @@ end
 % Draw an annotation border.
 /drawborder {		% <annot> drawborder -
   gsave
+  dup /BS known 1 index /Border known or {
   dup /BS knownoget {
+      dup type /dicttype ne   % <annot> <border> <bad?>
+    } {
+      dup /Border oget 
+      dup type /arraytype ne  % <annot> [border] <bad?>
+    } ifelse
+    { 
+      (   **** Warning: Wrong type of annotation border object.\n)
+      pdfformaterror
+    } if
+    dup type /dicttype eq {
     dup /W knownoget not { 1 } if
     [] 2 index /S knownoget {
       /D eq { 2 index /D knownoget not { [3] } if exch pop } if
     } if 3 -1 roll pop strokeborder
   } {
-    dup /Border knownoget {
       dup 2 get
       exch dup length 3 gt { 3 get } { pop [] } ifelse
       strokeborder
+    } ifelse
     } {
       1 [] strokeborder
     } ifelse
-  } ifelse
   grestore
 } bdef
 
