@@ -156,6 +156,7 @@ s_CFE_init(register stream_state * st)
 	return ERRC;
 /****** WRONG ******/
     }
+    memset(ss->lbuf + raster, 0, 4); /* to pacify Valgrind */
     if (ss->K != 0) {
 	ss->lprev = gs_alloc_bytes(st->memory, raster + 4, "CFE lprev");
 	if (ss->lprev == 0) {
@@ -165,7 +166,7 @@ s_CFE_init(register stream_state * st)
 	}
 	/* Clear the initial reference line for 2-D encoding. */
 	/* Make sure it is terminated properly. */
-	memset(ss->lprev, (ss->BlackIs1 ? 0 : 0xff), raster);
+	memset(ss->lprev, (ss->BlackIs1 ? 0 : 0xff), raster + 4); /* +4 to pacify Valgrind */
 	if (columns & 7)
 	    ss->lprev[raster - 1] ^= 0x80 >> (columns & 7);
 	else
