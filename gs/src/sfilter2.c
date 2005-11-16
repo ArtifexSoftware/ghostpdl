@@ -177,39 +177,49 @@ put:	    if (q + 5 > qn) {
     ss->count = LINE_LIMIT - (qn - q);
     /* Check for final partial word. */
     if (last && status == 0 && count < 4) {
-	int nchars = (count == 0 ? 2 : count + 3);
+	char buf[5];
+        int nchars = (count == 0 ? 2 : count + 3);
+	ulong word = 0;
+	ulong divisor = 85L * 85 * 85 * 85;
+        int i, space;
 
-	if (wlimit - q < nchars)
+	switch (count) {
+	    case 3:
+		word += (uint) p[3] << 8;
+	    case 2:
+		word += (ulong) p[2] << 16;
+	    case 1:
+		word += (ulong) p[1] << 24;
+                for(i=0; i <= count; i++) {
+		    ulong v = word / divisor;  /* actually only a byte */
+
+		    buf[i] = (byte) v + '!';
+		    word -= v * divisor;
+		    divisor /= 85;
+		}
+		/*case 0: */
+	}
+        space = count && buf[0] == '%' && 
+          ( (prev == '\n' && ( buf[1] == '%' || buf[1] =='!')) ||
+            (prev == '%'  && qn - q == LINE_LIMIT - 1)
+          );   
+        if (wlimit - q < nchars+space)
 	    status = 1;
-	else if (q + nchars > qn) {
-	    *++q = '\n';
+	else if (q + nchars+space > qn) {
+	    *++q = prev = '\n';
 	    qn = q + LINE_LIMIT;
 	    goto end;
-	}
-	else {
-	    ulong word = 0;
-	    ulong divisor = 85L * 85 * 85 * 85;
-
-	    switch (count) {
-		case 3:
-		    word += (uint) p[3] << 8;
-		case 2:
-		    word += (ulong) p[2] << 16;
-		case 1:
-		    word += (ulong) p[1] << 24;
-		    p += count;
-		    while (count-- >= 0) {
-			ulong v = word / divisor;  /* actually only a byte */
-
-			*++q = (byte) v + '!';
-			word -= v * divisor;
-			divisor /= 85;
-		    }
-		    /*case 0: */
-	    }
-	    *++q = '~';
-	    *++q = '>';
-	}
+	} else {
+            if (count) {
+                if (space)
+  	          *++q = ' ';
+                memcpy(q+1, buf, count+1);
+                q += count+1;
+	        p += count;
+            }
+            *++q = '~';
+            *++q = '>';
+        }
     }
     if_debug3('w', "[w85]final ss->count = %d, %d bytes read, %d written\n",
 	      ss->count, (int)(p - pr->ptr), (int)(q - pw->ptr));
