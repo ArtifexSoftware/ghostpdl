@@ -97,6 +97,7 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("OPDFReadProcsetPath", gs_param_type_string, OPDFReadProcsetPath),
     pi("CompressEntireFile", gs_param_type_bool, CompressEntireFile),
     pi("PDFX", gs_param_type_bool, PDFX),
+    pi("PDFA", gs_param_type_bool, PDFA),
     pi("DocumentUUID", gs_param_type_string, DocumentUUID),
     pi("InstanceUUID", gs_param_type_string, InstanceUUID),
     pi("DocumentTimeSeq", gs_param_type_int, DocumentTimeSeq),

@@ -595,6 +595,7 @@ pdf_open(gx_device * dev)
 	pdev->strm = s;
     }
     gdev_vector_init((gx_device_vector *) pdev);
+    gp_get_realtime(pdev->uuid_time);
     pdev->vec_procs = &pdf_vector_procs;
     pdev->fill_options = pdev->stroke_options = gx_path_type_optimize;
     /* Set in_page so the vector routines won't try to call */

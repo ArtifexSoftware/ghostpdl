@@ -147,6 +147,51 @@ typedef struct pdf_encoding_element_s {
     "pdf_encoding_element_t[]", pdf_encoding_elt_enum_ptrs,\
     pdf_encoding_elt_reloc_ptrs, st_pdf_encoding1)
 
+
+struct pdf_base_font_s {
+    /*
+     * For the standard 14 fonts, copied == complete is a complete copy
+     * of the font, and DO_SUBSET = NO.
+     *
+     * For fonts that MAY be subsetted, copied is a partial copy,
+     * complete is a complete copy, and DO_SUBSET = UNKNOWN until
+     * pdf_font_do_subset is called.
+     *
+     * For fonts that MUST be subsetted, copied == complete is a partial
+     * copy, and DO_SUBSET = YES.
+     */
+    gs_font_base *copied;
+    gs_font_base *complete;
+    enum {
+	DO_SUBSET_UNKNOWN = 0,
+	DO_SUBSET_NO,
+	DO_SUBSET_YES
+    } do_subset;
+    bool is_standard;
+    /*
+     * For CIDFonts, which are always subsetted, num_glyphs is CIDCount.
+     * For optionally subsetted fonts, num_glyphs is the count of glyphs
+     * in the font when originally copied.  Note that if the font is
+     * downloaded incrementally, num_glyphs may be 0.
+     */
+    int num_glyphs;
+    byte *CIDSet;		/* for CIDFonts */
+    gs_string font_name;
+    bool written;
+    cos_dict_t *FontFile;
+};
+#define private_st_pdf_base_font()\
+BASIC_PTRS(pdf_base_font_ptrs) {\
+    GC_OBJ_ELT(pdf_base_font_t, copied),\
+    GC_OBJ_ELT(pdf_base_font_t, complete),\
+    GC_OBJ_ELT(pdf_base_font_t, CIDSet),\
+    GC_OBJ_ELT(pdf_base_font_t, FontFile),\
+    GC_STRING_ELT(pdf_base_font_t, font_name)\
+};\
+gs_private_st_basic(st_pdf_base_font, pdf_base_font_t, "pdf_base_font_t",\
+		    pdf_base_font_ptrs, pdf_base_font_data);
+
+
 typedef struct {
     gs_id id;
     pdf_resource_type_t type;

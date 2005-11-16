@@ -439,6 +439,7 @@ struct gx_device_pdf_s {
     bool PatternImagemask; /* The target viewer|printer handles imagemask 
 			      with pattern color. */
     bool PDFX;		   /* Generate PDF/X */
+    bool PDFA;		   /* Generate PDF/A */
     long MaxClipPathSize;  /* The maximal number of elements of a clipping path
 			      that the target viewer|printer can handle. */
     long MaxViewerMemorySize;
@@ -538,6 +539,8 @@ struct gx_device_pdf_s {
     pdf_article_t *articles;
     cos_dict_t *Dests;
     byte fileID[16];
+    /* Use a single time moment for all UUIDs to minimize an indeterminizm. */
+    long uuid_time[2];
     /*
      * global_named_objects holds named objects that are independent of
      * the current namespace: {Catalog}, {DocInfo}, {Page#}, {ThisPage},

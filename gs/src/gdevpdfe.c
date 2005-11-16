@@ -26,6 +26,7 @@
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
+#include "gdevpdtf.h"
 
 /* Write XML data */
 private void
@@ -188,12 +189,11 @@ pdf_xmp_write_docinfo_item(gx_device_pdf *pdev, stream *s, const char *key, cons
 }
 
 private uint64_t
-pdf_uuid_time(void)
+pdf_uuid_time(gx_device_pdf *pdev)
 {   
-    long dt[2];
+    long *dt = pdev->uuid_time; /* In seconds since Jan. 1, 1980 and fraction in nanoseconds. */
     uint64_t t;
 
-    gp_get_realtime(dt); /* In seconds since Jan. 1, 1980 and fraction in nanoseconds. */
     /* UUIDs use time in 100ns ticks since Oct 15, 1582. */
     t = (uint64_t)10000000 * dt[0] + dt[0] / 100; /* since Jan. 1, 1980 */
     t += (uint64_t) (1000*1000*10)         /* seconds */
@@ -236,7 +236,7 @@ pdf_make_uuid(const byte node[6], uint64_t uuid_time, ulong time_seq, char *buf,
 }
 
 private int
-pdf_make_instance_uuid(gx_device_pdf *pdev, uint64_t uuid_time, const byte digest[6], char *buf, int buf_length)
+pdf_make_instance_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int buf_length)
 {
     if (pdev->InstanceUUID.size) {
 	int l = min(buf_length - 1, pdev->InstanceUUID.size);
@@ -244,12 +244,12 @@ pdf_make_instance_uuid(gx_device_pdf *pdev, uint64_t uuid_time, const byte diges
 	memcpy(buf, pdev->InstanceUUID.data, l);
 	buf[l] = 0;
     } else
-	pdf_make_uuid(digest, uuid_time, pdev->DocumentTimeSeq, buf, buf_length);
+	pdf_make_uuid(digest, pdf_uuid_time(pdev), pdev->DocumentTimeSeq, buf, buf_length);
     return 0;
 }
 
 private int
-pdf_make_document_uuid(gx_device_pdf *pdev, uint64_t uuid_time, const byte digest[6], char *buf, int buf_length)
+pdf_make_document_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int buf_length)
 {
     if (pdev->DocumentUUID.size) {
 	int l = min(buf_length - 1, pdev->DocumentUUID.size);
@@ -257,26 +257,26 @@ pdf_make_document_uuid(gx_device_pdf *pdev, uint64_t uuid_time, const byte diges
 	memcpy(buf, pdev->DocumentUUID.data, l);
 	buf[l] = 0;
     } else
-	pdf_make_uuid(digest, uuid_time, pdev->DocumentTimeSeq, buf, buf_length);
+	pdf_make_uuid(digest, pdf_uuid_time(pdev), pdev->DocumentTimeSeq, buf, buf_length);
     return 0;
 }
 
+private char dd[]={'\'', 0xEF, 0xBB, 0xBF, '\'', 0};
+
 /* --------------------------------------------  */
 
-/* Write metadata */
+/* Write Document metadata */
 private int
 pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 {
     char instance_uuid[40], document_uuid[40], date_time[40];
-    char dd[]={'\'', 0xEF, 0xBB, 0xBF, '\'', 0};
     int code;
     stream *s = pdev->strm;
-    uint64_t uuid_time = pdf_uuid_time();
 
-    code = pdf_make_instance_uuid(pdev, uuid_time, digest, instance_uuid, sizeof(instance_uuid));
+    code = pdf_make_instance_uuid(pdev, digest, instance_uuid, sizeof(instance_uuid));
     if (code < 0)
 	return code;
-    code = pdf_make_document_uuid(pdev, uuid_time, digest, document_uuid, sizeof(document_uuid));
+    code = pdf_make_document_uuid(pdev, digest, document_uuid, sizeof(document_uuid));
     if (code < 0)
 	return code;
     pdf_xmp_time(date_time, sizeof(date_time));
@@ -370,6 +370,26 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 		    pdf_xml_tag_close(s, "rdf:Alt");
 		}
 		pdf_xml_tag_close(s, "dc:title");
+
+		if (cos_dict_find(pdev->Info, (const byte *)"/Author", 7)) {
+		    pdf_xml_tag_open(s, "dc:creator");
+		    {   /* According to the PDF/A specification
+			   "it shall be represented by an ordered Text array of
+			   length one whose single entry shall consist 
+			   of one or more names". */
+			pdf_xml_tag_open(s, "rdf:Seq");
+			{
+			    pdf_xml_tag_open(s, "rdf:li");
+			    {
+    				pdf_xmp_write_docinfo_item(pdev, s,  "/Author", "Unknown", 
+					    pdf_xml_data_write);
+			    }
+			    pdf_xml_tag_close(s, "rdf:li");
+			}
+			pdf_xml_tag_close(s, "rdf:Seq");
+		    }
+		    pdf_xml_tag_close(s, "dc:creator");
+		}
 	    }
 	    pdf_xml_tag_close(s, "rdf:Description");
 	    pdf_xml_newline(s);
@@ -414,6 +434,199 @@ pdf_document_metadata(gx_device_pdf *pdev)
 	    return code;
 	sprintf(buf, "%d 0 R", pres->object->id);
 	cos_dict_put_c_key_object(pdev->Catalog, "/Metadata", pres->object);
+    }
+    return 0;
+}
+
+/* --------------------------------------------  */
+
+/* Write Font metadata */
+private int
+pdf_write_font_metadata(gx_device_pdf *pdev, const pdf_base_font_t *pbfont, 
+			const byte *digest, int digest_length)
+{
+    char instance_uuid[40];
+    int code;
+    stream *s = pdev->strm;
+    gs_font_info_t info;
+    gs_font_base *pfont = pbfont->complete;
+
+    if (pfont == NULL)
+	pfont = pbfont->copied;
+    /* Fixme: For True Type fonts need to get Coipyright, Owner from the TT data. */
+    pdf_make_uuid(digest, pdf_uuid_time(pdev), pdev->DocumentTimeSeq, instance_uuid, sizeof(instance_uuid));
+    code = pfont->procs.font_info((gs_font *)pfont, NULL,
+		    (FONT_INFO_COPYRIGHT | FONT_INFO_NOTICE |
+			FONT_INFO_FAMILY_NAME | FONT_INFO_FULL_NAME),
+					&info);
+    if (code < 0)
+	return code;
+    pdf_xml_ins_beg(s, "xpacket");
+    pdf_xml_attribute_name(s, "begin");
+    pdf_xml_copy(s, dd);
+    pdf_xml_attribute_name(s, "id");
+    pdf_xml_attribute_value(s, "W5M0MpCehiHzreSzNTczkc9d");
+    pdf_xml_ins_end(s);
+    pdf_xml_newline(s);
+
+    pdf_xml_copy(s, "<?adobe-xap-filters esc=\"CRLF\"?>\n");
+    pdf_xml_copy(s, "<x:xmpmeta xmlns:x='adobe:ns:meta/'"
+	                      " x:xmptk='XMP toolkit 2.9.1-13, framework 1.6'>\n");
+    {
+	pdf_xml_copy(s, "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#' "
+	                         "xmlns:iX='http://ns.adobe.com/iX/1.0/'>\n");
+	{
+
+	    pdf_xml_tag_open_beg(s, "rdf:Description");
+	    pdf_xml_attribute_name(s, "rdf:about");
+	    pdf_xml_attribute_value(s, instance_uuid);
+	    pdf_xml_attribute_name(s, "xmlns:xmp");
+	    pdf_xml_attribute_value(s, "http://ns.adobe.com/xap/1.0/");
+	    pdf_xml_tag_end(s);
+	    {
+		pdf_xml_tag_open_beg(s, "xmp:Title");
+		pdf_xml_tag_end(s);
+		{
+		    pdf_xml_tag_open(s, "rdf:Alt");
+		    {
+			pdf_xml_tag_open_beg(s, "rdf:li");
+			pdf_xml_attribute_name(s, "xml:lang");
+			pdf_xml_attribute_value(s, "x-default");
+			pdf_xml_tag_end(s);
+			{
+			   pdf_xml_data_write(s, pbfont->font_name.data, pbfont->font_name.size);
+			}
+			pdf_xml_tag_close(s, "rdf:li");
+		    }
+		    pdf_xml_tag_close(s, "rdf:Alt");
+		}
+		pdf_xml_tag_close(s, "xmp:Title");
+	    }
+	    pdf_xml_tag_close(s, "rdf:Description");
+	    pdf_xml_newline(s);
+
+
+	    pdf_xml_tag_open_beg(s, "rdf:Description");
+	    pdf_xml_attribute_name(s, "rdf:about");
+	    pdf_xml_attribute_value(s, instance_uuid);
+	    pdf_xml_attribute_name(s, "xmlns:xmpRights");
+	    pdf_xml_attribute_value(s, "http://ns.adobe.com/xap/1.0/rights/");
+	    pdf_xml_tag_end(s);
+	    if (info.members & FONT_INFO_COPYRIGHT) {
+		pdf_xml_tag_open_beg(s, "xmpRights:Copyright");
+		pdf_xml_tag_end(s);
+		{
+		    pdf_xml_tag_open(s, "rdf:Alt");
+		    {
+			pdf_xml_tag_open_beg(s, "rdf:li");
+			pdf_xml_attribute_name(s, "xml:lang");
+			pdf_xml_attribute_value(s, "x-default");
+			pdf_xml_tag_end(s);
+			{
+			   pdf_xml_data_write(s, info.Copyright.data, info.Copyright.size);
+			}
+			pdf_xml_tag_close(s, "rdf:li");
+		    }
+		    pdf_xml_tag_close(s, "rdf:Alt");
+		}
+		pdf_xml_tag_close(s, "xmpRights:Copyright");
+
+		/* Don't have an Owner, write Copyright instead. */
+		pdf_xml_tag_open_beg(s, "xmpRights:Owner");
+		pdf_xml_tag_end(s);
+		{
+		    pdf_xml_tag_open(s, "rdf:Alt");
+		    {
+			pdf_xml_tag_open_beg(s, "rdf:li");
+			pdf_xml_attribute_name(s, "xml:lang");
+			pdf_xml_attribute_value(s, "x-default");
+			pdf_xml_tag_end(s);
+			{
+			   pdf_xml_data_write(s, info.Copyright.data, info.Copyright.size);
+			}
+			pdf_xml_tag_close(s, "rdf:li");
+		    }
+		    pdf_xml_tag_close(s, "rdf:Alt");
+		}
+		pdf_xml_tag_close(s, "xmpRights:Owner");
+	    }
+	    {
+		pdf_xml_tag_open_beg(s, "xmpRights:Marked");
+		pdf_xml_tag_end(s);
+		{
+		    pdf_xml_string_write(s, "True");
+		}
+		pdf_xml_tag_close(s, "xmpRights:Marked");
+	    }
+	    if (info.members & FONT_INFO_NOTICE) {
+		pdf_xml_tag_open_beg(s, "xmpRights:UsageTerms");
+		pdf_xml_tag_end(s);
+		{
+		    pdf_xml_tag_open(s, "rdf:Alt");
+		    {
+			pdf_xml_tag_open_beg(s, "rdf:li");
+			pdf_xml_attribute_name(s, "xml:lang");
+			pdf_xml_attribute_value(s, "x-default");
+			pdf_xml_tag_end(s);
+			{
+			   pdf_xml_data_write(s, info.Notice.data, info.Notice.size);
+			}
+			pdf_xml_tag_close(s, "rdf:li");
+		    }
+		    pdf_xml_tag_close(s, "rdf:Alt");
+		}
+		pdf_xml_tag_close(s, "xmpRights:UsageTerms");
+	    }
+	    pdf_xml_tag_close(s, "rdf:Description");
+	    pdf_xml_newline(s);
+	}
+	pdf_xml_copy(s, "</rdf:RDF>\n");
+    }
+    pdf_xml_copy(s, "</x:xmpmeta>\n");
+
+    pdf_xml_copy(s, "                                                                        \n");
+    pdf_xml_copy(s, "                                                                        \n");
+    pdf_xml_copy(s, "<?xpacket end='w'?>");
+    return 0;
+}
+
+int
+pdf_font_metadata(gx_device_pdf *pdev, const pdf_base_font_t *pbfont, 
+		  const byte *digest, int digest_length, gs_id *metadata_object_id)
+{  
+    *metadata_object_id = gs_no_id;
+    if (pdev->CompatibilityLevel < 1.4)
+	return 0;
+    /* The PDF/A specification redss about 
+	"embedded Type 0, Type 1, or TrueType font programs",
+	but we believe that "embedded Type 0 font programs"
+	do not exist.
+	We create Metadata for Type 1,2,42,9,11.
+    */
+    if (pdev->PDFA) {
+	pdf_resource_t *pres;
+	char buf[20];
+	byte digest[6];
+	int code;
+	int options = DATA_STREAM_NOT_BINARY;
+
+	sflush(pdev->strm);
+	s_MD5C_get_digest(pdev->strm, digest, sizeof(digest));
+	if (pdev->EncryptMetadata)
+	    options |= DATA_STREAM_ENCRYPT;
+	code = pdf_open_aside(pdev, resourceOther, gs_no_id, &pres, true, options);
+	if (code < 0)
+	    return code;
+	code = pdf_write_font_metadata(pdev, pbfont, digest, digest_length);
+	if (code < 0)
+	    return code;
+	code = pdf_close_aside(pdev);
+	if (code < 0)
+	    return code;
+	code = COS_WRITE_OBJECT(pres->object, pdev);
+	if (code < 0)
+	    return code;
+	*metadata_object_id = pres->object->id;
     }
     return 0;
 }

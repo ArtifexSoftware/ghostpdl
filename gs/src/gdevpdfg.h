@@ -22,6 +22,11 @@
 
 #include "gscspace.h"		/* for gs_separation_name */
 
+#ifndef pdf_base_font_DEFINED
+#  define pdf_base_font_DEFINED
+typedef struct pdf_base_font_s pdf_base_font_t;
+#endif
+
 /* ---------------- Exported by gdevpdfc.c ---------------- */
 
 /* Define standard and short color space names. */
@@ -337,7 +342,9 @@ int pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 
 #endif /* gdevpdfg_INCLUDED */
 
-/* ---------------- Exported by gdevpdfó.c ---------------- */
+/* ---------------- Exported by gdevpdfe.c ---------------- */
 
 /* Write metadata */
 int pdf_document_metadata(gx_device_pdf *pdev);
+int pdf_font_metadata(gx_device_pdf *pdev, const pdf_base_font_t *pbfont, 
+		  const byte *digest, int digest_length, gs_id *metadata_object_id);

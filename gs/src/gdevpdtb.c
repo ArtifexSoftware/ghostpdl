@@ -31,6 +31,7 @@
 #include "gdevpdfo.h"
 #include "gdevpdtb.h"
 #include "gdevpdtf.h"
+#include "smd5.h"
 
 /*
  * Adobe's Distiller Parameters documentation for Acrobat Distiller 5
@@ -41,51 +42,9 @@
  */
 #define MAX_NO_SUBSET_GLYPHS 500	/* arbitrary */
 
-/* ---------------- Definitions ---------------- */
-
-struct pdf_base_font_s {
-    /*
-     * For the standard 14 fonts, copied == complete is a complete copy
-     * of the font, and DO_SUBSET = NO.
-     *
-     * For fonts that MAY be subsetted, copied is a partial copy,
-     * complete is a complete copy, and DO_SUBSET = UNKNOWN until
-     * pdf_font_do_subset is called.
-     *
-     * For fonts that MUST be subsetted, copied == complete is a partial
-     * copy, and DO_SUBSET = YES.
-     */
-    gs_font_base *copied;
-    gs_font_base *complete;
-    enum {
-	DO_SUBSET_UNKNOWN = 0,
-	DO_SUBSET_NO,
-	DO_SUBSET_YES
-    } do_subset;
-    bool is_standard;
-    /*
-     * For CIDFonts, which are always subsetted, num_glyphs is CIDCount.
-     * For optionally subsetted fonts, num_glyphs is the count of glyphs
-     * in the font when originally copied.  Note that if the font is
-     * downloaded incrementally, num_glyphs may be 0.
-     */
-    int num_glyphs;
-    byte *CIDSet;		/* for CIDFonts */
-    gs_string font_name;
-    bool written;
-    cos_dict_t *FontFile;
-};
-BASIC_PTRS(pdf_base_font_ptrs) {
-    GC_OBJ_ELT(pdf_base_font_t, copied),
-    GC_OBJ_ELT(pdf_base_font_t, complete),
-    GC_OBJ_ELT(pdf_base_font_t, CIDSet),
-    GC_OBJ_ELT(pdf_base_font_t, FontFile),
-    GC_STRING_ELT(pdf_base_font_t, font_name)
-};
-gs_private_st_basic(st_pdf_base_font, pdf_base_font_t, "pdf_base_font_t",
-		    pdf_base_font_ptrs, pdf_base_font_data);
-
 /* ---------------- Private ---------------- */
+
+private_st_pdf_base_font();
 
 #define SUBSET_PREFIX_SIZE 7	/* XXXXXX+ */
 
@@ -481,6 +440,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	(do_subset || pbfont->complete == NULL ? pbfont->copied : pbfont->complete);
     gs_const_string fnstr;
     pdf_data_writer_t writer;
+    byte digest[6] = {0,0,0,0,0,0};
     int code;
 
     if (pbfont->written)
@@ -492,6 +452,13 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 				  DATA_STREAM_COMPRESS : 0), 0);
     if (code < 0)
 	return code;
+    if (pdev->PDFA) {
+	stream *s = s_MD5C_make_stream(pdev->pdf_memory, writer.binary.strm);
+
+	if (s == NULL)
+	    return_error(gs_error_VMerror);
+	writer.binary.strm = s;
+    }
     if (pdev->CompatibilityLevel == 1.2 &&
 	!do_subset && !pbfont->is_standard ) {
 	/*
@@ -621,12 +588,27 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 				   (gs_font_cid2 *)out_font,
 				   CID2_OPTIONS, NULL, 0, &fnstr);
     finish:
+	if (pdev->PDFA) {
+	    sflush(writer.binary.strm);
+	    s_MD5C_get_digest(writer.binary.strm, digest, sizeof(digest));
+	}
 	*ppcd = (cos_dict_t *)writer.pres->object;
 	if (code < 0) {
 	    pdf_end_fontfile(pdev, &writer);
 	    return code;
 	}
 	code = pdf_end_fontfile(pdev, &writer);
+	if (pdev->PDFA && code >= 0) {
+	    gs_id metadata_object_id;
+
+	    code = pdf_font_metadata(pdev, pbfont, digest, sizeof(digest), &metadata_object_id);
+	    if (metadata_object_id && code >= 0) {
+		char buf[20];
+
+		sprintf(buf, "%d 0 R", metadata_object_id);
+		code = cos_dict_put_string_copy(*ppcd, "/Metadata", buf);
+	    }
+	}
 	break;
 
     default:

@@ -121,6 +121,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  1 /*true*/,			/* HaveTransparency */
  0 /*false*/,			/* PatternImagemask */
  0 /*false*/,			/* PDFX */
+ 0 /*false*/,			/* PDFA */
  12000,				/* MaxClipPathSize */ /* HP LaserJet 1320 hangs with 14000. */
  max_long,                      /* MaxViewerMemorySize */
  256000,			/* MaxShadingBitmapSize */
@@ -186,6 +187,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* articles */
  0,				/* Dests */
  {0},				/* fileID */
+	 {0, 0},		/* uuid_time */
  0,				/* global_named_objects */
  0,				/* local_named_objects */
  0,				/* NI_stack */
