@@ -241,10 +241,9 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
 	code = gs_note_error(gs_error_VMerror);
 	goto fail;
     }
-    /* Create the DCT decoder state. */
+    /* Create the DCT encoder state. */
     jcdp->template = s_DCTE_template;
-    state.template = &jcdp->template;
-    state.memory = 0;
+    s_init_state((stream_state *)&state, &jcdp->template, 0);
     if (state.template->set_defaults)
 	(*state.template->set_defaults) ((stream_state *) & state);
     state.QFactor = 1.0;	/* disable quality adjustment in zfdcte.c */
@@ -328,6 +327,10 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
 	byte *data;
 	uint ignore_used;
 
+        if (jstrm.end_status) {
+	    code = gs_note_error(gs_error_ioerror);
+            goto done;
+        }
 	gdev_prn_get_bits(pdev, lnum, in, &data);
 	sputs(&jstrm, data, state.scan_line_size, &ignore_used);
     }
