@@ -2075,7 +2075,7 @@ currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
     dup /Interpolate /INTERPOLATE .systemvar put
     exch .setglobal
   } if
-} bind odef
+} .bind odef
 
 /colorimage
   { /INTERPOLATE .systemvar
@@ -2107,7 +2107,7 @@ currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
       { colorimage
       }
     ifelse
-  } bind odef
+  } .bind odef
 
 /image
   { dup type /dicttype eq
@@ -2143,7 +2143,7 @@ currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
         ifelse
       }
     ifelse
-  } bind odef
+  } .bind odef
 
 /imagemask {
   dup type /dicttype eq {
@@ -2165,7 +2165,7 @@ currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
       imagemask
     } ifelse
   } ifelse
-} bind odef
+} .bind odef
 
 currentdict /.interpolate undef
 
