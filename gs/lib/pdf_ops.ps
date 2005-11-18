@@ -461,7 +461,12 @@ end readonly def
     pdfformaterror
     pop 0.00000001	% handle invalid scale by using a really small value
   } if
-  dup 1 eq { pop } { scalefont } ifelse
+  1 index type /dicttype ne {
+    selectfont currentfont
+  } {
+    dup 1 eq { pop } { scalefont } ifelse
+  }
+  ifelse
   /TextFont gput settextstate
 } bdef
 

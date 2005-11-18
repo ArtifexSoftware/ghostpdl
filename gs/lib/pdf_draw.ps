@@ -1279,7 +1279,47 @@ end
       2 index dup scale		% Apply scale factor
       DoForm Q
     } if
-  } if pop pop
+  } {
+    dup /FT knownoget {
+      /Tx eq {
+	  % Stack: scale annot
+	dup /DA known 1 index /V known and {
+	  dup /DA oget
+	  q graphicsbeginpage textbeginpage
+	  1 index annotrect pop pop translate
+	  2 index dup scale		% Apply scale factor
+	  cvx exec
+	  dup /V oget
+	  0 0 moveto dup false charpath pathbbox newpath 3 -1 roll
+	  sub abs 3 1 roll sub abs
+	  3 index annotrect 4 2 roll pop pop
+	  6 index mul exch 6 index mul
+	    % stack: scale annot V vsize hsize vrect hrect
+	  % Calculate horizontal justification first
+	  % horizontal can be left (Q=0), center (Q=1), or right (Q=2) justification
+	  3 -1 roll 
+	    % stack: scale annot V vsize vrect hrect hsize 
+	  5 index /Q knownoget not { 0 } if	% default 0 == left
+	  dup 0 eq {
+	      pop pop pop 0		% left justified
+	    } {
+	    1 eq {
+	      2 div exch 2 div exch sub	% centered
+	    } {
+	      sub			% right justified (hrect - hsize)
+	    } ifelse
+	  } ifelse
+	    % stack: scale annot V vsize vrect hoffset
+	  % Center the text vertically in the rect (Acrobat Reader seems to do this)
+	  3 1 roll 2 div exch 2 div sub abs
+	    % stack: scale annot V hoffset voffset
+	  moveto show
+	  Q
+	} if
+      } if
+    } if
+  } ifelse
+  pop pop
 } bdef
 
 %  For stamp object we have to determine the size of the output rectangle
