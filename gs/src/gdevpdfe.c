@@ -605,7 +605,6 @@ pdf_font_metadata(gx_device_pdf *pdev, const pdf_base_font_t *pbfont,
     */
     if (pdev->PDFA) {
 	pdf_resource_t *pres;
-	char buf[20];
 	byte digest[6];
 	int code;
 	int options = DATA_STREAM_NOT_BINARY;

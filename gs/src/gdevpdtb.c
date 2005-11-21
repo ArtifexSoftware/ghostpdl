@@ -30,6 +30,7 @@
 #include "gdevpdfx.h"
 #include "gdevpdfo.h"
 #include "gdevpdtb.h"
+#include "gdevpdfg.h"
 #include "gdevpdtf.h"
 #include "smd5.h"
 

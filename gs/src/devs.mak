@@ -987,9 +987,9 @@ $(GLOBJ)gdevpdt.$(OBJ) : $(GLSRC)gdevpdt.c $(gx_h) $(gxpath_h) $(memory__h)\
 	$(GLCC) $(GLO_)gdevpdt.$(OBJ) $(C_) $(GLSRC)gdevpdt.c
 
 $(GLOBJ)gdevpdtb.$(OBJ) : $(GLSRC)gdevpdtb.c $(memory__h) $(ctype__h) $(string__h)\
- $(gx_h) $(gserrors_h) $(gsutil_h)\
- $(gxfcid_h) $(gxfcopy_h) $(gxfont_h) $(gxfont42_h)\
- $(gdevpsf_h) $(gdevpdfx_h) $(gdevpdtb_h) $(smd5_h)
+ $(memory__h) $(ctype__h) $(string__h) $(gx_h) $(gserrors_h) $(gsutil_h) $(gxfcid_h)\
+ $(gxfcopy_h) $(gxfont_h) $(gxfont42_h) $(gdevpsf_h) $(gdevpdfx_h) $(gdevpdfo_h)\
+ $(gdevpdtb_h) $(gdevpdfg_h) $(gdevpdtf_h) $(smd5_h)
 	$(GLCC) $(GLO_)gdevpdtb.$(OBJ) $(C_) $(GLSRC)gdevpdtb.c
 
 $(GLOBJ)gdevpdtc.$(OBJ) : $(GLSRC)gdevpdtc.c $(gx_h) $(memory__h) $(string__h)\

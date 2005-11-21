@@ -45,6 +45,8 @@ private int append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
 private uint default_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph);
 private int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
 				gs_glyph_data_t *pgd);
+font_proc_font_info(zfont_info);
+font_proc_font_info(gs_type42_font_info); /* Type check. */
 
 /* Set up a pointer to a substring of the font data. */
 /* Free variables: pfont, string_proc. */
@@ -155,6 +157,8 @@ gs_type42_font_init(gs_font_type42 * pfont)
 
 	    ACCESS(offset, 30, maxp);
 	    pfont->data.trueNumGlyphs = U16(maxp + 4);
+	} else if (!memcmp(tab, "name", 4)) {
+	    pfont->data.name_offset = offset;
 	} else if (!memcmp(tab, "vhea", 4)) {
 	    const byte *vhea;
 
@@ -1101,6 +1105,79 @@ append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
     code = gx_ttf_outline(pair->ttf, pair->ttr, pfont, (uint)glyph_index, 
 	pmat, pscale, ppath, design_grid);
     gx_ttfReader__set_font(pair->ttr, NULL);
+    return code;
+}
+
+/* ---------------------------------------------- */
+
+private int get_from_names_table(gs_font_type42 *pfont, gs_font_info_t *info,  
+			   gs_const_string *pmember, int member, uint name_id)
+{
+    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
+	pfont->data.string_proc;
+    const byte *t;
+    ushort num_records, strings_offset, i, language_id = 0xffff, length0 = 0, offset0 = 0;
+    int code;
+
+    ACCESS(pfont->data.name_offset + 2, 4, t);
+    num_records = U16(t);
+    strings_offset = U16(t + 2);
+    for (i = 0; i < num_records; i++) {
+	ushort platformID, specificID, languageID, nameID, length, offset;
+
+	ACCESS(pfont->data.name_offset + 6 + i * 12, 12, t);
+	platformID = U16(t + 0);
+	specificID = U16(t + 2);
+	languageID = U16(t + 4);
+	nameID = U16(t + 6);
+	length = U16(t + 8);
+	offset = U16(t + 10);
+	if (nameID == name_id) {
+	    DISCARD(platformID);
+	    DISCARD(specificID);
+	    /* Hack : choose the minimal language id. */
+	    if (language_id > languageID) {
+		language_id = languageID;
+		length0 = length;
+		offset0 = offset;
+	    }
+	}
+    }
+    if (language_id == 0xffff)
+	return 0;
+    ACCESS(pfont->data.name_offset + strings_offset + offset0, length0, t);
+    pmember->data = t;
+    pmember->size = length0;
+    info->members |= member;
+    return 0;
+}
+
+int
+gs_type42_font_info(gs_font *font, const gs_point *pscale, int members,
+	   gs_font_info_t *info)
+{
+    gs_font_type42 *pfont = (gs_font_type42 *)font;
+    int code = zfont_info(font, pscale, members, info);
+
+    if (code < 0)
+	return code;
+    if (pfont->data.name_offset == 0)
+	return 0;
+    if (!(info->members & FONT_INFO_COPYRIGHT) && (members & FONT_INFO_COPYRIGHT)) {
+	code = get_from_names_table(pfont, info, &info->Copyright, FONT_INFO_COPYRIGHT, 0);
+	if (code < 0)
+	    return code;
+    }
+    if (!(info->members & FONT_INFO_FAMILY_NAME) && (members & FONT_INFO_FAMILY_NAME)) {
+	code = get_from_names_table(pfont, info, &info->FamilyName, FONT_INFO_FAMILY_NAME, 1);
+	if (code < 0)
+	    return code;
+    }
+    if (!(info->members & FONT_INFO_FULL_NAME) && (members & FONT_INFO_FULL_NAME)) {
+	code = get_from_names_table(pfont, info, &info->FullName, FONT_INFO_FULL_NAME, 4);
+	if (code < 0)
+	    return code;
+    }
     return code;
 }
 

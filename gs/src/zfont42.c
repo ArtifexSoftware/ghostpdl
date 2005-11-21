@@ -82,6 +82,7 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
     code = gs_type42_font_init(pfont);
     if (code < 0)
 	return code;
+    pfont->procs.font_info = gs_type42_font_info;
     /*
      * If the font has a GlyphDictionary, this replaces loca and glyf for
      * accessing character outlines.  In this case, we use alternate

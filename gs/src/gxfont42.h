@@ -65,6 +65,7 @@ struct gs_type42_data_s {
     uint indexToLocFormat;	/* from head */
     gs_type42_mtx_t metrics[2];	/* hhea/hmtx, vhea/vmtx (indexed by WMode) */
     ulong loca;			/* offset to loca table */
+    ulong name_offset;		/* offset to name table */		
     /*
      * TrueType fonts specify the number of glyphs in two different ways:
      * the size of the loca table, and an explicit value in maxp.  Currently
@@ -131,5 +132,8 @@ font_proc_glyph_outline(gs_type42_glyph_outline);
 /* Get glyph info by glyph index. */
 int gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		     int members, gs_glyph_info_t *info, uint glyph_index);
+
+int gs_type42_font_info(gs_font *font, const gs_point *pscale, int members,
+	   gs_font_info_t *info);
 
 #endif /* gxfont42_INCLUDED */
