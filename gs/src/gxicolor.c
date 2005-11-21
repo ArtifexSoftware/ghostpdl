@@ -191,7 +191,7 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
 	    next.v[2] = psrc[2];
 	    next.v[3] = psrc[3];
 	    psrc += 4;
-map4:	    if (next.all[0] == run.all[0])
+map4:	    if (posture != image_skewed && next.all[0] == run.all[0])
 		goto inc;
 	    if (use_cache) {
 		pic_next = CLUE_HASH4(penum, next);
@@ -256,7 +256,7 @@ do3:	    decode_sample(next.v[0], cc, 0);
 	    next.v[1] = psrc[1];
 	    next.v[2] = psrc[2];
 	    psrc += 3;
-	    if (next.all[0] == run.all[0])
+	    if (posture != image_skewed && next.all[0] == run.all[0])
 		goto inc;
 	    if (use_cache) {
 		pic_next = CLUE_HASH3(penum, next);
@@ -321,7 +321,7 @@ do3:	    decode_sample(next.v[0], cc, 0);
 	    int i;
 
 	    use_cache = false;	/* should do in initialization */
-	    if (!memcmp(psrc, run.v, spp)) {
+	    if (posture != image_skewed && !memcmp(psrc, run.v, spp)) {
 		psrc += spp;
 		goto inc;
 	    }
@@ -359,7 +359,7 @@ f:	if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> %ld,%ld,0x%lx\n",
 		  (ulong) pdevc_next->type);
 	/* Even though the supplied colors don't match, */
 	/* the device colors might. */
-	if (dev_color_eq(*pdevc, *pdevc_next))
+	if (posture != image_skewed && dev_color_eq(*pdevc, *pdevc_next))
 	    goto set;
 fill:	/* Fill the region between */
 	/* xrun/irun and xprev */
