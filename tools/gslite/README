@@ -29,7 +29,11 @@ directory each time:
 
 export LD_LIBRARY_PATH=../../gshead/sobin/
 
-gslt <testnumber>
+gslt <device> <testnumber>
 
-by default it uses the X11 device and prompts for a keypress after
-rendering something.
+example:
+
+gslt x11 5
+
+The first argument is the device, see the ghostscript library makefile
+for supported devices.
