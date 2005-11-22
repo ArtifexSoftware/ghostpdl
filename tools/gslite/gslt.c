@@ -84,6 +84,24 @@ extern_gs_lib_device_list();
 private float odsf(floatp, floatp);
 
 
+/* return index in gs device list -1 if not found */
+private inline int
+get_device_index(const gs_memory_t *mem, const char *value)
+{
+    const gx_device *const *dev_list;
+    int num_devs = gs_lib_device_list(&dev_list, NULL);
+    int di;
+
+    for ( di = 0; di < num_devs; ++di )
+	if ( !strcmp(gs_devicename(dev_list[di]), value) )
+	    break;
+    if ( di == num_devs ) {
+	lprintf1("Unknown device name %s.\n", value);
+	return -1;
+    }
+    return di;
+}
+
 int
 main(int argc, const char *argv[])
 {
@@ -101,10 +119,10 @@ main(int argc, const char *argv[])
     mem = gslt_alloc_init();
     gp_init();
     gs_lib_init1(mem);
-    if (argc < 2 || (achar = argv[1][0]) < '1' ||
+    if (argc < 3 || (achar = argv[2][0]) < '1' ||
 	achar > '0' + countof(tests)
 	) {
-	lprintf1("Usage: gslib 1..%c\n", '0' + countof(tests));
+	lprintf1("Usage: gslt [device] 1..%c\n", '0' + countof(tests));
 	exit(1);
     }
     memset(gs_debug, 0, 128);
@@ -118,8 +136,15 @@ main(int argc, const char *argv[])
      * obscure reasons that really should be documented!
      */
     gs_iodev_init(mem);
-    gs_lib_device_list(&list, NULL);
-    gs_copydevice(&dev, list[1], mem);
+    {
+        int devindex = get_device_index(mem, argv[1]);
+        if (devindex < 0) {
+            lprintf1("device %s not found\n", argv[1]);
+	    exit(1);
+        }
+        gs_lib_device_list(&list, NULL);
+        gs_copydevice(&dev, list[devindex], mem);
+    }
     check_device_separable(dev);
     gx_device_fill_in_procs(dev);
     /* Print out the device name just to test the gsparam.c API. */
