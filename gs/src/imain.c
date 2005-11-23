@@ -905,8 +905,10 @@ gs_to_exit(const gs_memory_t *mem, int exit_status)
 void
 gs_abort(const gs_memory_t *mem)
 {
-    gs_to_exit(mem, 1);
-    /* it's fatal calling OS independent exit() */
+    /* In previous versions, we tried to do a cleanup (using gs_to_exit),
+     * but more often than not, that will trip another abort and create
+     * an infinite recursion. So just abort without trying to cleanup.
+     */
     gp_do_exit(1);	
 }
 
