@@ -316,7 +316,7 @@ currentdict /hwsizedict .undef
    dup type /booleantype ne
     { dup mark eq { /unknown /rangecheck } if
       counttomark 4 add 1 roll cleartomark pop pop pop
-      /.putdeviceprops load exch signalerror
+      /.putdeviceprops .systemvar exch signalerror
     }
    if
  } bind odef
@@ -449,7 +449,7 @@ userdict /.echo.mode true put
 /filter
 	{ //filterdict 1 index .knownget
 	   { exch pop exec }
-	   { /filter load /undefined signalerror }
+	   { /filter .systemvar /undefined signalerror }
 	  ifelse
 	} odef
 % handleerror procedure as mentioned in the "Operators" section of the PLRM Section 8.2
@@ -519,7 +519,7 @@ userdict /.echo.mode true put
 } bind def
 % The following is only for compatibility with Adobe interpreters.
 /setdash {
-	1 index length 11 gt { /setdash load /limitcheck signalerror } if
+	1 index length 11 gt { /setdash .systemvar /limitcheck signalerror } if
 	//setdash
 } odef
 /setdevice
@@ -542,11 +542,11 @@ userdict /.echo.mode true put
   }
 odef
 /setlinecap {
-	dup 2 gt { /setlinecap load /rangecheck signalerror } if
+	dup 2 gt { /setlinecap .systemvar /rangecheck signalerror } if
 	.setlinecap
 } odef
 /setlinejoin {
-	dup 2 gt { /setlinejoin load /rangecheck signalerror } if
+	dup 2 gt { /setlinejoin .systemvar /rangecheck signalerror } if
 	.setlinejoin
 } odef
 /setmatrix {

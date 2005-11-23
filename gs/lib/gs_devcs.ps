@@ -89,7 +89,7 @@ bind def
       pop pop
     } {
       (Error: Need a /DefaultRGB /ColorSpace resource for generating a PDF/X document.) =
-      /cs_substitute_DeviceRGB_for_PDFX /undefined signalerror
+      /cs_substitute_DeviceRGB_for_PDFX cvx /undefined signalerror
     } ifelse
     /ColorSpace findresource
   } {

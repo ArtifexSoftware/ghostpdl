@@ -95,7 +95,7 @@ DELAYBIND NOBIND or not {
   mul add BitsPerSample 8 idiv mul .bigstring
 		% Stack: dict dict source str
   dup type /stringtype eq { readstring } { .readbytestring } ifelse
-  not { /sethalftone load /rangecheck signalerror exit } if
+  not { /sethalftone .systemvar /rangecheck signalerror exit } if
   readonly /Thresholds exch def
   /TransferFunction .knownget { /TransferFunction exch def } if
 		% If the original Thresholds was a file, replace it with

@@ -135,7 +135,7 @@ setglobal
 		% empty .Instances dictionary with the real one later.
 	  readonly
 	} {
-	  /defineresource load /typecheck signalerror
+	  /defineresource .systemvar /typecheck signalerror
 	} ifelse
 } bind def
 /FindResource		% (redefined below)
@@ -157,7 +157,7 @@ setglobal
 	     /UndefineResource }
 	   { 2 index exch known and }
 	  forall
-	  not { /defineresource load /invalidaccess signalerror } if
+	  not { /defineresource .systemvar /invalidaccess signalerror } if
 	  true
 	} bind def
 
@@ -187,7 +187,7 @@ odef
 	currentdict /InstanceType known {
 	  dup type InstanceType ne {
 	    dup type /packedarraytype eq InstanceType /arraytype eq and
-	    not { /defineresource load /typecheck signalerror } if
+	    not { /defineresource .systemvar /typecheck signalerror } if
 	  } if
 	} if
 	/DefineResource .resourceexec
@@ -251,7 +251,7 @@ systemdict begin
     } if
     2 index exch false .file_name_combine not {
       (Error: .default_resource_dir returned ) print exch print ( that can't combine with ) print =
-      /.default_resource_dir /configurationerror .signalerror
+      /.default_resource_dir cvx /configurationerror .signalerror
     } if
   } ifelse
 } bind def
@@ -379,7 +379,7 @@ pop pop
 	     0 2 copy get { readonly } .internalstopped pop
 	     dup 4 1 roll put exch pop exch pop
 	   }
-	   { /defineresource load /typecheck signalerror
+	   { /defineresource .systemvar /typecheck signalerror
 	   }
 	ifelse
 } .bind executeonly		% executeonly to prevent access to .forcedef
@@ -410,13 +410,13 @@ pop pop
 	  dup ResourceStatus {
 	    pop 1 gt {
 	      .DoLoadResource .getvminstance not {
-		/findresource load /undefinedresource signalerror
+		/findresource .systemvar /undefinedresource signalerror
 	      } if 0 get
 	    } {
 	      .GetInstance pop 0 get
 	    } ifelse
 	  } {
-	   /findresource load /undefinedresource signalerror
+	   /findresource .systemvar /undefinedresource signalerror
 	  } ifelse
 	} ifelse
 } bind
@@ -684,20 +684,20 @@ counttomark 2 idiv
 		% We can at least require that the key and value match.
    /DefineResource
 	{ currentglobal not
-	   { /defineresource load /invalidaccess signalerror }
+	   { /defineresource .systemvar /invalidaccess signalerror }
 	   { 2 copy ne
-	      { /defineresource load /rangecheck signalerror }
+	      { /defineresource .systemvar /rangecheck signalerror }
 	      { dup .Instances 4 -2 roll .growput }
 	     ifelse
 	   }
 	  ifelse
 	} bind
    /UndefineResource
-	{ /undefineresource load /invalidaccess signalerror } bind
+	{ /undefineresource .systemvar /invalidaccess signalerror } bind
    /FindResource
 	{ .Instances 1 index .knownget
 	   { exch pop }
-	   { /findresource load /undefinedresource signalerror }
+	   { /findresource .systemvar /undefinedresource signalerror }
 	  ifelse
 	} bind
    /ResourceStatus

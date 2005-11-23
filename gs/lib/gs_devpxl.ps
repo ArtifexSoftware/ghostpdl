@@ -61,7 +61,7 @@ colorspacedict
           //setcspace_rangecheck
         if
         31 gt   % 31 bits is an implementation limit
-          { /setcolorspace cvx /limitcheck signalerror }
+          { /setcolorspace .systemvar /limitcheck signalerror }
         if
       }
     bind

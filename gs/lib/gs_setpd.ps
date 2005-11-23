@@ -503,7 +503,7 @@ level2dict begin
 	pop dup 4 index exch get 2 array astore
 	$error /errorinfo 3 -1 roll put
 	cleartomark
-	/setpagedevice load /configurationerror signalerror
+	/setpagedevice .systemvar /configurationerror signalerror
   } bind
   1 {		% Roll back the failed request to its previous status.
 SETPDDEBUG { (Rolling back.) = pstack flush } if
@@ -596,7 +596,7 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
    4 index /RollFedMedia .knownget not { //false } if
    matrix .matchpagesize not {
 		% This is a "can't happen" condition!
-     /setpagedevice load /rangecheck signalerror
+     /setpagedevice .systemvar /rangecheck signalerror
    } if
    2 array astore
  } bind def
@@ -736,7 +736,7 @@ SETPDDEBUG { (Recovering.) = pstack flush } if
       .trysetparams		% shouldn't fail!
       dup type /booleantype ne
        { 2 { counttomark 1 add 1 roll cleartomark } repeat
-         /setpagedevice load exch signalerror
+         /setpagedevice .systemvar exch signalerror
        }
       if
     }

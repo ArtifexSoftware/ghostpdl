@@ -163,7 +163,7 @@ currentdict end def
 ] def
 /colorimage		% <width> <height> <bits/comp> <matrix>
 			%   <datasrc> false <ncomp> colorimage -
- { 1 index { /colorimage load /rangecheck signalerror } if exch pop
+ { 1 index { /colorimage .systemvar /rangecheck signalerror } if exch pop
    //.cincompdict exch get exec
    7 dict begin /ColorSpace exch cvlit def
    .imagekeys { exch cvlit def } forall

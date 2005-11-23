@@ -137,7 +137,7 @@
 				%   localfork <context>
   .currentglobal true .setglobal 3 index
   dup .proccheck not {
-    pop .setglobal /localfork cvx /typecheck signalerror
+    pop .setglobal /localfork .systemvar /typecheck signalerror
   } if
   {exec .initlocaldicts} aload pop
   3 1 roll 3 packedarray cvx
@@ -154,7 +154,7 @@
 /fork {			% <mark> <obj1> ... <objN> <proc> fork <context>
   .currentglobal false .setglobal 1 index
   dup .proccheck not {
-    pop .setglobal /fork cvx /typecheck signalerror
+    pop .setglobal /fork .systemvar /typecheck signalerror
   } if
   {exec .postfork} aload pop
   3 1 roll 3 packedarray cvx

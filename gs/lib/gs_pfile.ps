@@ -58,7 +58,7 @@
       currentobjectformat exch 1 setobjectformat run
       setobjectformat closefile
     }
-    { 5 1 roll /findlibfile load /undefinedfilename signalerror
+    { 5 1 roll /findlibfile .systemvar /undefinedfilename signalerror
     }
    ifelse
  } bind def

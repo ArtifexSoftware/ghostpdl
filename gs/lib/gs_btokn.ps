@@ -181,7 +181,7 @@ cntdict /dicttype {
       cvlit {.cntobj} exch 2 .execn .cntobj
     } forall
   } {
-    /writeobject load /typecheck signalerror
+    /writeobject .systemvar /typecheck signalerror
   } ifelse
 } bind put
 
