@@ -471,12 +471,15 @@ userdict /.pdfcvstring () put
     newpath -3 -3 moveto closepath stroke % Paints outside the device bbox.
     grestore
   } if
-  dup /PS eq systemdict /PDFX .knownget not { false } if and {
+  dup /PS eq systemdict /PDFX .knownget not { false } if 
+             systemdict /PDFA .knownget not { false } if or and {
     % Execute it since PDF/X doesn't allow to embed it.
+    pop
     { dup mark eq {
         pop exit
       } if
       1 index /DataSource eq {
+        exch pop
         cvx exec
       } {
         pop pop

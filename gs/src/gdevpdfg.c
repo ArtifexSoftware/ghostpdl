@@ -1366,7 +1366,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 		return code;
 	}
 	if (pdev->params.TransferFunctionInfo == tfi_Preserve &&
-	    !pdev->PDFX
+	    !pdev->PDFX && !pdev->PDFA
 	    ) {
 	    code = pdf_update_transfer(pdev, pis, trs);
 	    if (code < 0)

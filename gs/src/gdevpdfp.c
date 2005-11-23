@@ -351,6 +351,23 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     }
     if (ecode < 0)
 	goto fail;
+    if (pdev->PDFX && pdev->PDFA) {
+	ecode = gs_note_error(gs_error_rangecheck);
+	param_signal_error(plist, "PDFA", ecode);
+	goto fail;
+    }
+    if (pdev->PDFX && pdev->ForOPDFRead) {
+	ecode = gs_note_error(gs_error_rangecheck);
+	param_signal_error(plist, "PDFX", ecode);
+	goto fail;
+    }
+    if (pdev->PDFA && pdev->ForOPDFRead) {
+	ecode = gs_note_error(gs_error_rangecheck);
+	param_signal_error(plist, "PDFA", ecode);
+	goto fail;
+    }
+    if (pdev->PDFA)
+	 pdev->HaveTransparency = false;
     /*
      * We have to set version to the new value, because the set of
      * legal parameter values for psdf_put_params varies according to
@@ -358,6 +375,8 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
      */
     if (pdev->PDFX)
 	cl = (float)1.3; /* Instead pdev->CompatibilityLevel = 1.2; - see below. */
+    if (pdev->PDFA && cl < 1.4)
+	cl = (float)1.4;
     pdev->version = (cl < 1.2 ? psdf_version_level2 : psdf_version_ll3);
     if (pdev->ForOPDFRead) {
 	pdev->ResourcesBeforeUsage = true;

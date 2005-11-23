@@ -26,6 +26,7 @@
 <li><a href="#Orientation">Setting page orientation</a>
 <li><a href="#Options">Options</a>
 <li><a href="#PDFX">Creating a PDF/X-3 document</a>
+<li><a href="#PDFA">Creating a PDF/A document</a>
 <li><a href="#Limitations">Limitations</a>
 <li><a href="#PPD">Ghostscript PDF Printer Description</a>
 <li><a href="#Problems">Known problems</a>
@@ -726,7 +727,8 @@ path fronm the current directory.
 
 <dl>
 <dt><b><tt>Title</tt></b> <em>string</em>
-<dd>Defines the document title.
+<dd>Defines the document title. Only useful if the source Postscript file doesnt
+define a title with DSC comments. Otherwise remove entire line from definition file.
 </dl>
 
 <dl>
@@ -772,6 +774,29 @@ Here is a sample command line to invoke Ghostscript for generating a PDF/X-3 doc
 <blockquote><b><tt>
 gs -dPDFX -dBATCH -dNOPAUSE -dNOOUTERSAVE -dUseCIEColor -sDEVICE=pdfwrite -sOutputFile=out-x3.pdf PDFX_def.ps input.ps
 </tt></b></blockquote>
+
+
+<p>
+<hr>
+<h2><a name="PDFA"></a>Creating a PDF/A document</h2>
+
+<p>
+To create a PDF/A document, please follow instructions about <a href="#PDFX">creating a PDF/X-3 document</a>,
+with the following exceptions :
+
+<ul>
+<li> Specify the <b><tt>-dPDFA</b></tt> option.
+<li> A sample PDF/A definition file may be found in <b><tt>gs/lib/PDFA_def.ps</b></tt>.
+<li> <b><tt>Info</tt></b>, <b><tt>OutputCondition</tt></b>, <b><tt>OutputConditionIdentifier</tt></b> 
+are not required in the PDF/A definition file.
+</ul>
+
+
+Here is a sample command line to invoke Ghostscript for generating a PDF/A document :
+<blockquote><b><tt>
+gs -dPDFA -dBATCH -dNOPAUSE -dNOOUTERSAVE -dUseCIEColor -sDEVICE=pdfwrite -sOutputFile=out-a.pdf PDFA_def.ps input.ps
+</tt></b></blockquote>
+
 
 <p>
 <hr>

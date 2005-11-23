@@ -134,8 +134,12 @@ pdf_put_pixel_image_values(cos_dict_t *pcd, gx_device_pdf *pdev,
 					    COS_OBJECT(pca)));
 	}
     }
-    if (pim->Interpolate)
-	CHECK(cos_dict_put_c_strings(pcd, pin->Interpolate, "true"));
+    if (pim->Interpolate) {
+	if (pdev->PDFA)
+	    eprintf("PDFA doesn't allow images with Interpolate true.\n");
+	else
+	    CHECK(cos_dict_put_c_strings(pcd, pin->Interpolate, "true"));
+    }
     return 0;
 }
 int
