@@ -260,12 +260,15 @@ gx_begin_image3x_generic(gx_device * dev,
 	    m_mat.tx -= origin[i].x;
 	    m_mat.ty -= origin[i].y;
 	    /*
-	     * Note that pis = NULL here, since we don't want to have to
-	     * create another imager state with default log_op, etc.
+	     * Peter put in a comment that said " Note that pis = NULL here,
+	     * since we don't want to have to create another imager state with
+	     * default log_op, etc." and passed NULL instead of pis to this
+	     * routine.  However Image type 1 need the imager state (see
+	     * bug 688348) thus his optimization was removed.
 	     * dcolor = NULL is OK because this is an opaque image with
 	     * CombineWithColor = false.
 	     */
-	    code = gx_device_begin_typed_image(mdev, NULL, &m_mat,
+	    code = gx_device_begin_typed_image(mdev, pis, &m_mat,
 			       (const gs_image_common_t *)&mask[i].image,
 					       &mask[i].rect, NULL, NULL,
 					       mem, &penum->mask[i].info);
@@ -398,7 +401,7 @@ check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
 	    break;
 	case interleave_separate_source:
 	    switch (pimm->MaskDict.BitsPerComponent) {
-	    case 1: case 2: case 4: case 8:
+		    case 1: case 2: case 4: case 8: case 12: case 16:
 		break;
 	    default:
 		return_error(gs_error_rangecheck);
