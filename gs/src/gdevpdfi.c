@@ -572,30 +572,32 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 				    pdev->transfer_not_identity ? 1 : 2);
     image[1] = image[0];
     names = (in_line ? &pdf_color_space_names_short : &pdf_color_space_names);
-    if (psdf_is_converting_image_to_RGB((gx_device_psdf *)pdev, pis, pim)) {
-	/* psdf_setup_image_filters may change the color space
-	 * (in case of pdev->params.ConvertCMYKImagesToRGB == true).
-	 * Account it here.
-	 */
-	cos_c_string_value(&cs_value, names->DeviceRGB);
-    } else if (!is_mask) {
-	code = pdf_color_space(pdev, &cs_value, &pranges,
-				 pcs,
-				 names, in_line);
-	if (code < 0) {
-	    const char *sname;
+    if (!is_mask) {
+        if (psdf_is_converting_image_to_RGB((gx_device_psdf *)pdev, pis, pim)) {
+	    /* psdf_setup_image_filters may change the color space
+	     * (in case of pdev->params.ConvertCMYKImagesToRGB == true).
+	     * Account it here.
+	     */
+	    cos_c_string_value(&cs_value, names->DeviceRGB);
+        } else {
+	    code = pdf_color_space(pdev, &cs_value, &pranges,
+				     pcs,
+				     names, in_line);
+	    if (code < 0) {
+	        const char *sname;
 
-	    convert_to_process_colors = true;
-	    switch (pdev->pcm_color_info_index) {
-		case gs_color_space_index_DeviceGray: sname = names->DeviceGray; break;
-		case gs_color_space_index_DeviceRGB:  sname = names->DeviceRGB;  break;
-		case gs_color_space_index_DeviceCMYK: sname = names->DeviceCMYK; break;
-		default:
-		    eprintf("Unsupported ProcessColorModel.");
-		    return_error(gs_error_undefined);
+	        convert_to_process_colors = true;
+	        switch (pdev->pcm_color_info_index) {
+		    case gs_color_space_index_DeviceGray: sname = names->DeviceGray; break;
+		    case gs_color_space_index_DeviceRGB:  sname = names->DeviceRGB;  break;
+		    case gs_color_space_index_DeviceCMYK: sname = names->DeviceCMYK; break;
+		    default:
+		        eprintf("Unsupported ProcessColorModel.");
+		        return_error(gs_error_undefined);
+	        }
+	        cos_c_string_value(&cs_value, sname);
 	    }
-	    cos_c_string_value(&cs_value, sname);
-	}
+        }
     }
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
 		    height, pnamed, in_line)) < 0 ||
