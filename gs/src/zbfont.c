@@ -577,6 +577,7 @@ sub_font_params(const gs_memory_t *mem, const ref *op, gs_matrix *pmat, gs_matri
     }
     /* Use the FontInfo/OrigFontName key preferrentially (created by MS PSCRIPT driver) */
     if ((dict_find_string((porigfont != NULL ? porigfont : op), "FontInfo", &pfontname) > 0) &&
+	r_has_type(pfontname, t_dictionary) &&
         (dict_find_string(pfontname, "OrigFontName", &pfontname) > 0)) {
 	get_font_name(mem, pfname, pfontname);
     } else if (dict_find_string((porigfont != NULL ? porigfont : op), ".Alias", &pfontname) > 0) {
