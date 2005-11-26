@@ -1512,7 +1512,13 @@ readonly def
 	  { exch pop readtruetype }
 	  { /FontFile3 knownoget
 	    { dup /Subtype get fontloadprocs exch get exec }
-            { dup /Subtype get fonttypeprocs exch get exec }
+            { dup /Subtype get fonttypeprocs exch dup () cvn eq {
+                (   **** Warning: Font missing required Subtype, /Type1 assumed.\n)
+                pdfformaterror
+                pop /Type1
+              } if
+              get exec
+            }
 	    ifelse
 	  }
 	  ifelse
