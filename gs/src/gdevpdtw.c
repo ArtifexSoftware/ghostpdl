@@ -708,6 +708,8 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 {
     int code;
     pdf_data_writer_t writer;
+    gs_const_string alt_cmap_name;
+    const gs_const_string *cmap_name = &pcmap->CMapName;
 
     code = pdf_begin_data_stream(pdev, &writer,
 				 DATA_STREAM_NOT_BINARY |
@@ -746,8 +748,15 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 	if (code < 0)
 	    return code;
     }
+    if (pcmap->CMapName.size == 0) {
+	/* Create an arbitrary name (for ToUnicode CMap). */
+	alt_cmap_name.data = (byte *)(*ppres)->rname;
+	alt_cmap_name.size = strlen((*ppres)->rname);
+	cmap_name = &alt_cmap_name;
+    }
     code = psf_write_cmap(pdev->memory, writer.binary.strm, pcmap,
-			  pdf_put_name_chars_proc(pdev), NULL, font_index_only);
+			  pdf_put_name_chars_proc(pdev), 
+			  cmap_name, font_index_only);
     if (code < 0)
 	return code;
     code = pdf_end_data(&writer);
