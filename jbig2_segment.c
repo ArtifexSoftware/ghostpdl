@@ -263,11 +263,9 @@ int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
     case 36:
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "unhandled segment type 'intermediate generic region'");
-    case 38:
+    case 38: /* immediate generic region */
+    case 39: /* immediate lossless generic region */
       return jbig2_immediate_generic_region(ctx, segment, segment_data);
-    case 39:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "unhandled segment type 'immediate lossless generic region'");
     case 40: /* intermediate generic refinement region */
     case 42: /* immediate generic refinement region */
     case 43: /* immediate lossless generic refinement region */
