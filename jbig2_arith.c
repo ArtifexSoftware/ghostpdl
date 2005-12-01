@@ -84,8 +84,8 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 	  B1 = (byte)((as->next_word >> 24) & 0xFF);
 	  if (B1 > 0x8F)
 	    {
-#ifdef JBIG2_DEBUG
-	      printf ("read %02x (aa)\n", B);
+#ifdef JBIG2_DEBUG_ARITH
+	      fprintf(stderr, "read %02x (aa)\n", B);
 #endif
 #ifndef SOFTWARE_CONVENTION
 	      as->C += 0xFF00;
@@ -96,8 +96,8 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 	    }
 	  else
 	    {
-#ifdef JBIG2_DEBUG
-	      printf ("read %02x (a)\n", B);
+#ifdef JBIG2_DEBUG_ARITH
+	      fprintf(stderr, "read %02x (a)\n", B);
 #endif
 #ifdef SOFTWARE_CONVENTION
 	      as->C += 0xFE00 - (B1 << 9);
@@ -113,8 +113,8 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 	  B1 = (byte)((as->next_word >> 16) & 0xFF);
 	  if (B1 > 0x8F)
 	    {
-#ifdef JBIG2_DEBUG
-	      printf ("read %02x (ba)\n", B);
+#ifdef JBIG2_DEBUG_ARITH
+	      fprintf(stderr, "read %02x (ba)\n", B);
 #endif
 #ifndef SOFTWARE_CONVENTION
 	      as->C += 0xFF00;
@@ -125,8 +125,8 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 	    {
 	      as->next_word_bytes--;
 	      as->next_word <<= 8;
-#ifdef JBIG2_DEBUG
-	      printf ("read %02x (b)\n", B);
+#ifdef JBIG2_DEBUG_ARITH
+	      fprintf(stderr, "read %02x (b)\n", B);
 #endif
 
 #ifdef SOFTWARE_CONVENTION
@@ -140,8 +140,8 @@ jbig2_arith_bytein (Jbig2ArithState *as)
     }
   else
     {
-#ifdef JBIG2_DEBUG
-      printf ("read %02x\n", B);
+#ifdef JBIG2_DEBUG_ARITH
+      fprintf(stderr, "read %02x\n", B);
 #endif
       as->CT = 8;
       as->next_word <<= 8;
@@ -163,13 +163,13 @@ jbig2_arith_bytein (Jbig2ArithState *as)
     }
 }
 
-#ifdef JBIG2_DEBUG
+#if defined(JBIG2_DEBUG) || defined(JBIG2_DEBUG_ARITH)
 #include <stdio.h>
 
 static void
 jbig2_arith_trace (Jbig2ArithState *as, Jbig2ArithCx cx)
 {
-  printf ("I = %2d, MPS = %d, A = %04x, CT = %2d, C = %08x\n",
+  fprintf(stderr, "I = %2d, MPS = %d, A = %04x, CT = %2d, C = %08x\n",
 	  cx & 0x7f, cx >> 7, as->A, as->CT, as->C);
 }
 #endif
@@ -373,7 +373,7 @@ main (int argc, char **argv)
 
   ws.get_next_word = test_get_word;
   as = jbig2_arith_new (ctx, &ws);
-#ifdef JBIG2_DEBUG
+#ifdef JBIG2_DEBUG_ARITH
   jbig2_arith_trace (as, cx);
 #endif
 
@@ -382,8 +382,8 @@ main (int argc, char **argv)
       bool D;
 
       D = jbig2_arith_decode (as, &cx);
-#ifdef JBIG2_DEBUG
-      printf ("%3d: D = %d, ", i, D);
+#ifdef JBIG2_DEBUG_ARITH
+      fprintf(stderr, "%3d: D = %d, ", i, D);
       jbig2_arith_trace (as, cx);
 #endif      
     }
