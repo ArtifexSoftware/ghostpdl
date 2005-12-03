@@ -499,26 +499,30 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  return NULL;
 	}
 
-	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-	  "reading %dx%d collective bitmap for %d symbols (%d bytes%s)",
-	  image->width, image->height, NSYMSDECODED - HCFIRSTSYM,
-	  BMSIZE, BMSIZE ? "" : " uncompressed");
-
 	if (BMSIZE == 0) {
 	  /* if BMSIZE == 0 bitmap is uncompressed */
 	  const byte *src = data + jbig2_huffman_offset(hs);
 	  const int stride = (image->width >> 3) + 
-		(image->width & 7) ? 1 : 0;
+		((image->width & 7) ? 1 : 0);
 	  byte *dst = image->data;
+
+	  BMSIZE = image->height * stride;
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	    "reading %dx%d uncompressed bitmap"
+	    " for %d symbols (%d bytes)",
+	    image->width, image->height, NSYMSDECODED - HCFIRSTSYM, BMSIZE);
 
 	  for (j = 0; j < image->height; j++) {
 	    memcpy(dst, src, stride);
 	    dst += image->stride;
 	    src += stride;
 	  }
-	  BMSIZE = image->height * stride;
 	} else {
 	  Jbig2GenericRegionParams rparams;
+
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	    "reading %dx%d collective bitmap for %d symbols (%d bytes)",
+	    image->width, image->height, NSYMSDECODED - HCFIRSTSYM, BMSIZE);
 
 	  rparams.MMR = 1;
 	  code = jbig2_decode_generic_mmr(ctx, segment, &rparams,
