@@ -440,6 +440,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 {
     const gs_param_string *Action = 0;
     const gs_param_string *File = 0;
+    const gs_param_string *URI = 0;
     gs_param_string Dest;
     gs_param_string Subtype;
     uint i;
@@ -471,6 +472,9 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	else if (pdf_key_eq(pair, "/Dest")) {
 	    Dest = pair[1];
 	    coerce_dest = true;
+	}
+	else if (pdf_key_eq(pair, "/URI")) {
+	    URI = pair;		/* save it for placing into the Action dict */
 	}
 	else if (pdf_key_eq(pair, "/Page") || pdf_key_eq(pair, "/View")) {
 	    /* Make a destination even if this is for an outline. */
@@ -611,6 +615,12 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 
 	    if (adict == 0)
 		return_error(gs_error_VMerror);
+	    if (URI) {
+		/* Adobe Distiller puts a /URI key from pdfmark into the */
+		/* Action dict with /S /URI as Subtype */
+		pdfmark_put_pair(adict, URI);
+		cos_dict_put_c_strings(adict, "/S", "/URI");
+	    }
 	    while ((code = pdf_scan_token(&scan, end, &key.data)) > 0) {
 		key.size = scan - key.data;
 		if (key.data[0] != '/' ||
