@@ -3,8 +3,9 @@
 env = Environment(CPPDEFINES = {'HAVE_STDINT_H' : None,
 				'PACKAGE' : '\\"jbig2dec\\"',
 				'VERSION' : '\\"0.8\\"',
+				'JBIG2_DEBUG' : None,
 				'JBIG2_HALFTONE' : None})
-env.Append(CCFLAGS = ' -g')
+env.Append(CCFLAGS = ' -g -Wall')
 
 lib_sources = Split("""jbig2.c 
         jbig2_arith.c jbig2_arith_int.c jbig2_arith_iaid.c 
