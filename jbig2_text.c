@@ -494,6 +494,9 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     /* 7.4.3.1.1 */
     flags = jbig2_get_int16(segment_data + offset);
     offset += 2;
+
+    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	"text region header flags 0x%04x", flags);
     
     params.SBHUFF = flags & 0x0001;
     params.SBREFINE = flags & 0x0002;
@@ -503,8 +506,15 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     params.TRANSPOSED = flags & 0x0040;
     params.SBCOMBOP = (flags & 0x0180) >> 7;
     params.SBDEFPIXEL = flags & 0x0200;
+    /* SBDSOFFSET is a signed 5 bit integer */
     params.SBDSOFFSET = (flags & 0x7C00) >> 10;
+    if (params.SBDSOFFSET > 0x0f) params.SBDSOFFSET -= 0x20;
     params.SBRTEMPLATE = flags & 0x8000;
+
+    if (params.SBDSOFFSET) {
+      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	"text region has SBDSOFFSET %d", params.SBDSOFFSET);
+    }
 
     if (params.SBHUFF)	/* Huffman coding */
       {
