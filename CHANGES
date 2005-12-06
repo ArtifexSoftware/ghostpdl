@@ -1,7 +1,7 @@
 Version 0.9 (unreleased)
 
  * striped page support
- * successfully decodes ubc test stream 042_9
+ * successfully decodes ubc test streams 042_9, 042_20
 
 Version 0.8 (2005 April 6)
 
