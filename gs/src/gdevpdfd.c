@@ -372,18 +372,18 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	if (pcpath->path_list == NULL) {
 	    gs_cpath_enum cenum;
 
-	/*
-	 * We have to break 'const' here because the clip path
-	 * enumeration logic uses some internal mark bits.
-	 * This is very unfortunate, but until we can come up with
-	 * a better algorithm, it's necessary.
-	 */
-	gx_cpath_enum_init(&cenum, (gx_clip_path *) pcpath);
-	while ((pe_op = gx_cpath_enum_next(&cenum, vs)) > 0)
-	    gdev_vector_dopath_segment(&state, pe_op, vs);
-	pprints1(s, "%s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
-	if (pe_op < 0)
-	    return pe_op;
+	    /*
+	     * We have to break 'const' here because the clip path
+	     * enumeration logic uses some internal mark bits.
+	     * This is very unfortunate, but until we can come up with
+	     * a better algorithm, it's necessary.
+	     */
+	    gx_cpath_enum_init(&cenum, (gx_clip_path *) pcpath);
+	    while ((pe_op = gx_cpath_enum_next(&cenum, vs)) > 0)
+		gdev_vector_dopath_segment(&state, pe_op, vs);
+	    pprints1(s, "%s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
+	    if (pe_op < 0)
+		return pe_op;
 	} else {
 	    gs_path_enum cenum;
 
