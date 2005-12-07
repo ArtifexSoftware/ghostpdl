@@ -359,37 +359,57 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	    return code;
     }
     if (new_id != pdev->no_clip_path_id) {
-	gdev_vector_dopath_state_t state;
-	gs_fixed_point vs[3];
-	int pe_op;
+	const gs_fixed_rect *rect = cpath_is_rectangle(pcpath);
 
 	/* Use q to allow the new clipping path to unwind.  */
 	code = pdf_save_viewer_state(pdev, s);
 	if (code < 0)
 	    return code;
-	gdev_vector_dopath_init(&state, (gx_device_vector *)pdev,
-				gx_path_type_fill, NULL);
-	if (pcpath->path_list == NULL) {
-	    gs_cpath_enum cenum;
-
-	    /*
-	     * We have to break 'const' here because the clip path
-	     * enumeration logic uses some internal mark bits.
-	     * This is very unfortunate, but until we can come up with
-	     * a better algorithm, it's necessary.
-	     */
-	    gx_cpath_enum_init(&cenum, (gx_clip_path *) pcpath);
-	    while ((pe_op = gx_cpath_enum_next(&cenum, vs)) > 0)
-		gdev_vector_dopath_segment(&state, pe_op, vs);
-	    pprints1(s, "%s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
-	    if (pe_op < 0)
-		return pe_op;
+	if (rect != NULL) {
+	    /* Use unrounded coordinates. */
+	    pprintg4(s, "%g %g %g %g re", 
+		fixed2float(rect->p.x), fixed2float(rect->p.y),
+		fixed2float(rect->q.x - rect->p.x), 
+		fixed2float(rect->q.y - rect->p.y));
+	    pprints1(s, " %s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
 	} else {
-	    gs_path_enum cenum;
+	    gdev_vector_dopath_state_t state;
+	    gs_fixed_point vs[3];
+	    int pe_op;
 
-	    code = pdf_put_clip_path_list_elem(pdev, pcpath->path_list, &cenum, &state, vs);
-	    if (code < 0)
-		return code;
+	    gdev_vector_dopath_init(&state, (gx_device_vector *)pdev,
+				    gx_path_type_fill, NULL);
+	    if (pcpath->path_list == NULL) {
+		/*
+		 * We think this should be never executed.
+		 * This obsolete branch writes a clip path intersection
+		 * as a set of rectangles computed by 
+		 * gx_cpath_intersect_path_slow.
+		 * Those rectangles use coordinates rounded to pixels,
+		 * therefore the precision may be unsatisfactory -
+		 * see Bug 688407.
+		 */
+		gs_cpath_enum cenum;
+
+		/*
+		 * We have to break 'const' here because the clip path
+		 * enumeration logic uses some internal mark bits.
+		 * This is very unfortunate, but until we can come up with
+		 * a better algorithm, it's necessary.
+		 */
+		gx_cpath_enum_init(&cenum, (gx_clip_path *) pcpath);
+		while ((pe_op = gx_cpath_enum_next(&cenum, vs)) > 0)
+		    gdev_vector_dopath_segment(&state, pe_op, vs);
+		pprints1(s, "%s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
+		if (pe_op < 0)
+		    return pe_op;
+	    } else {
+		gs_path_enum cenum;
+
+		code = pdf_put_clip_path_list_elem(pdev, pcpath->path_list, &cenum, &state, vs);
+		if (code < 0)
+		    return code;
+	    }
 	}
     }
     pdev->clip_path_id = new_id;
