@@ -810,7 +810,22 @@ pdfdict begin
 
 % Get the total number of pages in the document.
 /pdfpagecount		% - pdfpagecount <int>
- { Trailer /Root oget /Pages oget /Count oget
+ { Trailer /Root oget /Pages oget
+   dup /Count knownoget {
+     exch pop
+   } {
+       dup /Type oget /Page eq {
+         << exch 1 array astore /Kids exch /Count 1 /Type /Pages >>
+         Trailer /Root oget /Pages 3 -1 roll put
+         1
+         (   **** Warning:  No /Pages node. The document root directly point a page.\n)
+         pdfformaterror
+     } {
+       (   **** Warning:  Page count not found; assuming 1.\n)
+       pdfformaterror
+       pop 1 
+     } ifelse
+   } ifelse
  } bind def
 
 % Find the N'th page of the document by iterating through the Pages tree.
