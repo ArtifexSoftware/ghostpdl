@@ -1045,7 +1045,9 @@ function_linearity(const patch_fill_state_t *pfs, const patch_color_t *c0, const
 
     if (pfs->Function != NULL) {
 	patch_color_t c;
-	const float q[2] = {(float)0.3, (float)0.7};
+        /* Solaris 9 (Sun C 5.5) compiler cannot initialize a 'const' */
+        /* unless it is 'static const' */
+        static const float q[2] = {(float)0.3, (float)0.7};
 	int i, j;
 
 	for (j = 0; j < count_of(q); j++) {
