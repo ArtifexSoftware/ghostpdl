@@ -85,7 +85,7 @@ gslt_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t
 	if ( !ptr )
 	    return NULL;
 #ifdef DEBUG
-	if_debug2('A', "[da]:malloc:%x:%s\n", &ptr[minsize * 2], cname );
+	if_debug2(mem, 'A', "[da]:malloc:%x:%s\n", &ptr[minsize * 2], cname );
 #endif
 	/* set the type and size */
 	set_type(ptr, type);
@@ -172,7 +172,7 @@ gslt_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_n
 	return NULL;
 
     /* da for debug allocator - so scripts can parse the trace */
-    if_debug2('A', "[da]:realloc:%x:%s\n", ptr, cname );
+    if_debug2(mem, 'A', "[da]:realloc:%x:%s\n", ptr, cname );
     /* we reset size and type - the type in case realloc moved us */
     set_size(ptr, new_size - header_size);
     set_type(ptr, objs_type);
@@ -194,7 +194,7 @@ gslt_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	
 #ifdef DEBUG
 	    /* da for debug allocator - so scripts can parse the trace */
-	    if_debug2('A', "[da]:free:%x:%s\n", ptr, cname );
+	if_debug2(mem, 'A', "[da]:free:%x:%s\n", ptr, cname );
 #endif
     }
 }
