@@ -198,31 +198,31 @@ display_open(gx_device * dev)
 
     /* Make sure we have been passed a valid callback structure. */
     if ((ccode = display_check_structure(ddev)) < 0)
-	return_error(ccode);
+	return_error(dev->memory, ccode);
 
     /* set color info */
     if ((ccode = display_set_color_format(ddev, ddev->nFormat)) < 0)
-	return_error(ccode);
+	return_error(dev->memory, ccode);
 
     /* Tell caller that the device is open. */
     /* This is always the first callback */
     ccode = (*(ddev->callback->display_open))(ddev->pHandle, dev);
     if (ccode < 0)
-	return_error(ccode);
+	return_error(dev->memory, ccode);
 
     /* Tell caller the proposed device parameters */
     ccode = (*(ddev->callback->display_presize)) (ddev->pHandle, dev,
 	dev->width, dev->height, gdev_mem_raster(dev), ddev->nFormat);
     if (ccode < 0) {
 	(*(ddev->callback->display_close))(ddev->pHandle, dev);
-	return_error(ccode);
+	return_error(dev->memory, ccode);
     }
 
     /* allocate the image */
     ccode = display_alloc_bitmap(ddev, dev);
     if (ccode < 0) {
 	(*(ddev->callback->display_close))(ddev->pHandle, dev);
-	return_error(ccode);
+	return_error(dev->memory, ccode);
     }
 
     /* Tell caller the device parameters */
@@ -232,7 +232,7 @@ display_open(gx_device * dev)
     if (ccode < 0) {
 	display_free_bitmap(ddev);
 	(*(ddev->callback->display_close))(ddev->pHandle, dev);
-	return_error(ccode);
+	return_error(dev->memory, ccode);
     }
 
     return 0;
@@ -803,7 +803,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 	    ddev->pHandle = old_handle;
 	    dev->width = old_width;
 	    dev->height = old_height;
-	    return_error(gs_error_rangecheck);
+	    return_error(dev->memory, gs_error_rangecheck);
 	}
 
 	display_free_bitmap(ddev);
@@ -813,14 +813,14 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 	    /* No bitmap, so tell the caller it is zero size */
 	    (*ddev->callback->display_size)(ddev->pHandle, dev, 
 	        0, 0, 0, ddev->nFormat, NULL);
-	    return_error(code);
+	    return_error(dev->memory, code);
         }
     
 	/* tell caller about the new size */
 	if ((*ddev->callback->display_size)(ddev->pHandle, dev, 
 	    dev->width, dev->height, gdev_mem_raster(dev),
 	    ddev->nFormat, ddev->mdev->base) < 0)
-	    return_error(gs_error_rangecheck);
+	    return_error(dev->memory, gs_error_rangecheck);
     }
 
     return 0;
@@ -850,17 +850,17 @@ display_finish_copydevice(gx_device *dev, const gx_device *from_dev)
 private int display_check_structure(gx_device_display *ddev)
 {
     if (ddev->callback == 0)
-	return_error(gs_error_rangecheck);
+	return_error(ddev->memory, gs_error_rangecheck);
 
     if (ddev->callback->size != sizeof(display_callback))
-	return_error(gs_error_rangecheck);
+	return_error(ddev->memory, gs_error_rangecheck);
 
     if (ddev->callback->version_major != DISPLAY_VERSION_MAJOR)
-	return_error(gs_error_rangecheck);
+	return_error(ddev->memory, gs_error_rangecheck);
 
     /* complain if caller asks for newer features */
     if (ddev->callback->version_minor > DISPLAY_VERSION_MINOR)
-	return_error(gs_error_rangecheck);
+	return_error(ddev->memory, gs_error_rangecheck);
 
     if ((ddev->callback->display_open == NULL) ||
 	(ddev->callback->display_close == NULL) ||
@@ -868,7 +868,7 @@ private int display_check_structure(gx_device_display *ddev)
 	(ddev->callback->display_size == NULL) ||
 	(ddev->callback->display_sync == NULL) ||
 	(ddev->callback->display_page == NULL))
-	return_error(gs_error_rangecheck);
+	return_error(ddev->memory, gs_error_rangecheck);
 
     /* don't test display_update, display_memalloc or display_memfree
      * since these may be NULL if not provided
@@ -919,12 +919,12 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     /* allocate a memory device for rendering */
     mdproto = gdev_mem_device_for_bits(ddev->color_info.depth);
     if (mdproto == 0)
-	return_error(gs_error_rangecheck);
+	return_error(ddev->memory, gs_error_rangecheck);
     
     ddev->mdev = gs_alloc_struct(gs_memory_stable(ddev->memory), 
 	    gx_device_memory, &st_device_memory, "display_memory_device");
     if (ddev->mdev == 0)
-        return_error(gs_error_VMerror);
+        return_error(ddev->memory, gs_error_VMerror);
 
     gs_make_mem_device(ddev->mdev, mdproto, gs_memory_stable(ddev->memory), 
 	0, (gx_device *) NULL);
@@ -957,7 +957,7 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     if (ddev->pBitmap == NULL) {
 	ddev->mdev->width = 0;
 	ddev->mdev->height = 0;
-	return_error(gs_error_VMerror);
+	return_error(ddev->memory, gs_error_VMerror);
     }
 
     ddev->mdev->base = (byte *) ddev->pBitmap;
@@ -1108,7 +1108,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 	    bpc = 16;
 	    break;
 	default:
-	    return_error(gs_error_rangecheck);
+	    return_error(ddev->memory, gs_error_rangecheck);
     }
     maxvalue = (1 << bpc) - 1;
 
@@ -1141,7 +1141,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 		    				display_map_color_rgb_device16);
 		    break;
 		default:
-		    return_error(gs_error_rangecheck);
+		    return_error(ddev->memory, gs_error_rangecheck);
 	    }
 	    break;
 	case DISPLAY_COLORS_GRAY:
@@ -1178,9 +1178,9 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 	    bpp = bpc * 4;
 	    set_color_info(&dci, 4, bpp, maxvalue, maxvalue);
 	    if ((nFormat & DISPLAY_ALPHA_MASK) != DISPLAY_ALPHA_NONE)
-		return_error(gs_error_rangecheck);
+		return_error(ddev->memory, gs_error_rangecheck);
 	    if ((nFormat & DISPLAY_ENDIAN_MASK) != DISPLAY_BIGENDIAN)
-		return_error(gs_error_rangecheck);
+		return_error(ddev->memory, gs_error_rangecheck);
 
 	    if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_1)
 	    	set_cmyk_color_procs(pdev, cmyk_1bit_map_cmyk_color,
@@ -1189,10 +1189,10 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 	    	set_cmyk_color_procs(pdev, cmyk_8bit_map_cmyk_color,
 						cmyk_8bit_map_color_cmyk);
 	    else
-		return_error(gs_error_rangecheck);
+		return_error(ddev->memory, gs_error_rangecheck);
 	    break;
 	default:
-	    return_error(gs_error_rangecheck);
+	    return_error(ddev->memory, gs_error_rangecheck);
     }
 
     /* restore old anti_alias info */
