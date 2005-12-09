@@ -46,7 +46,7 @@
 #include "gxdcolor.h"		/* for gx_device_white/black */
 #include "gxdevice.h"
 #include "gxht.h"		/* for gs_halftone */
-#include "gdevcmap.h"
+// #include "gdevcmap.h"
 #include "gshtx.h"
 
 /* Define whether we are processing captured data. */
@@ -96,7 +96,7 @@ get_device_index(const gs_memory_t *mem, const char *value)
 	if ( !strcmp(gs_devicename(dev_list[di]), value) )
 	    break;
     if ( di == num_devs ) {
-	lprintf1("Unknown device name %s.\n", value);
+	lprintf1(mem, "Unknown device name %s.\n", value);
 	return -1;
     }
     return di;
@@ -122,7 +122,7 @@ main(int argc, const char *argv[])
     if (argc < 3 || (achar = argv[2][0]) < '1' ||
 	achar > '0' + countof(tests)
 	) {
-	lprintf1("Usage: gslt [device] 1..%c\n", '0' + countof(tests));
+	lprintf1(mem, "Usage: gslt [device] 1..%c\n", '0' + countof(tests));
 	exit(1);
     }
     memset(gs_debug, 0, 128);
@@ -139,13 +139,14 @@ main(int argc, const char *argv[])
     {
         int devindex = get_device_index(mem, argv[1]);
         if (devindex < 0) {
-            lprintf1("device %s not found\n", argv[1]);
+            lprintf1(mem, "device %s not found\n", argv[1]);
 	    exit(1);
         }
         gs_lib_device_list(&list, NULL);
         gs_copydevice(&dev, list[devindex], mem);
     }
-    check_device_separable(dev);
+    // stefan foo: pulled for linking to gs 8.13
+    //check_device_separable(dev);
     gx_device_fill_in_procs(dev);
     /* Print out the device name just to test the gsparam.c API. */
     {
@@ -155,18 +156,18 @@ main(int argc, const char *argv[])
 	gs_c_param_list_write(&list, mem);
 	code = gs_getdeviceparams(dev, (gs_param_list *) & list);
 	if (code < 0) {
-	    lprintf1("getdeviceparams failed! code = %d\n", code);
+	    lprintf1(mem, "getdeviceparams failed! code = %d\n", code);
 	    exit(1);
 	}
 	gs_c_param_list_read(&list);
 	code = param_read_string((gs_param_list *) & list, "Name", &nstr);
 	if (code < 0) {
-	    lprintf1("reading Name failed! code = %d\n", code);
+	    lprintf1(mem, "reading Name failed! code = %d\n", code);
 	    exit(1);
 	}
-	dputs("Device name = ");
-	debug_print_string(nstr.data, nstr.size);
-	dputs("\n");
+	dputs(mem, "Device name = ");
+	debug_print_string(mem, nstr.data, nstr.size);
+	dputs(mem, "\n");
 	gs_c_param_list_release(&list);
     }
     /*
@@ -181,14 +182,14 @@ main(int argc, const char *argv[])
 	param_string_from_string(nstr, "-");
 	code = param_write_string((gs_param_list *)&list, "OutputFile", &nstr);
 	if (code < 0) {
-	    lprintf1("writing OutputFile failed! code = %d\n", code);
+	    lprintf1(mem, "writing OutputFile failed! code = %d\n", code);
 	    exit(1);
 	}
 	gs_c_param_list_read(&list);
 	code = gs_putdeviceparams(dev, (gs_param_list *)&list);
 	gs_c_param_list_release(&list);
 	if (code < 0 && code != gs_error_undefined) {
-	    lprintf1("putdeviceparams failed! code = %d\n", code);
+	    lprintf1(mem, "putdeviceparams failed! code = %d\n", code);
 	    exit(1);
 	}
     }
@@ -214,13 +215,13 @@ main(int argc, const char *argv[])
         code = (*tests[achar - '1']) (pgs, mem);
         gs_output_page(pgs, 1, 1);
         if (code)
-            dprintf1("**** Test returned code = %d.\n", code);
-        dputs("Done.  Press <enter> to exit.");
+            dprintf1(mem, "**** Test returned code = %d.\n", code);
+        dputs(mem, "Done.  Press <enter> to exit.");
         fgetc(gs_stdin);
     } else {
-        dputs("test not defined\n");
+        dputs(mem, "test not defined\n");
     }
-    gs_lib_finit(0, 0, 0);
+    gs_lib_finit(0, 0, mem);
     return 0;
      
 #undef mem
@@ -486,14 +487,14 @@ test4(gs_state * pgs, gs_memory_t * mem)
     code = param_write_float_array((gs_param_list *) & list,
 				   "HWResolution", &ares);
     if (code < 0) {
-	lprintf1("Writing HWResolution failed: %d\n", code);
+	lprintf1(mem, "Writing HWResolution failed: %d\n", code);
 	exit(1);
     }
     gs_c_param_list_read(&list);
     code = gs_putdeviceparams(dev, (gs_param_list *) & list);
     gs_c_param_list_release(&list);
     if (code < 0) {
-	lprintf1("Setting HWResolution failed: %d\n", code);
+	lprintf1(mem, "Setting HWResolution failed: %d\n", code);
 	exit(1);
     }
     gs_initmatrix(pgs);
@@ -501,7 +502,7 @@ test4(gs_state * pgs, gs_memory_t * mem)
     if (code == 1) {
 	code = (*dev_proc(dev, open_device)) (dev);
 	if (code < 0) {
-	    lprintf1("Reopening device failed: %d\n", code);
+	    lprintf1(mem, "Reopening device failed: %d\n", code);
 	    exit(1);
 	}
     }
@@ -814,7 +815,7 @@ test6(gs_state * pgs, gs_memory_t * mem)
     /* There should be an API for initializing CIE color spaces too.... */
     pabc = pcs->params.abc;
     pabc->common.points.WhitePoint = white_point;
-    gs_cie_abc_complete(pabc);
+    gs_cie_abc_complete(mem, pabc);
     /* End of initializing the color space. */
     gs_setcolorspace(pgs, pcs);
     spectrum(pgs, 5);
