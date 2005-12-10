@@ -35,7 +35,6 @@
 #include "gxxfont.h"
 #include "gxttfb.h"
 #include "gxfont42.h"
-#include <assert.h>
 
 /* Define the descriptors for the cache structures. */
 private_st_cached_fm_pair();
@@ -534,7 +533,7 @@ gx_free_cached_char(gs_font_dir * dir, cached_char * cc)
 }
 
 /* Add a character to the cache */
-void
+int
 gx_add_cached_char(gs_font_dir * dir, gx_device_memory * dev,
 cached_char * cc, cached_fm_pair * pair, const gs_log2_scale_point * pscale)
 {
@@ -563,12 +562,13 @@ cached_char * cc, cached_fm_pair * pair, const gs_log2_scale_point * pscale)
 	       discovered an insufficient FontBBox and enlarged it. 
 	       Glyph raster params could change then. */
 	    cc->pair = pair;
-	} else
-	    assert(cc->pair == pair);
+	} else if (cc->pair != pair)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	cc->linked = true;
 	cc_set_pair(cc, pair);
 	pair->num_chars++;
     }
+    return 0;
 }
 
 /* Adjust the bits of a newly-rendered character, by unscaling */

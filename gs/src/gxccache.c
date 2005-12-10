@@ -163,10 +163,12 @@ gx_lookup_cached_char(const gs_font * pfont, const cached_fm_pair * pair,
 }
 
 /* Look up a character in an external font. */
-/* Return the cached_char or 0. */
-cached_char *
+/* If found, stores a pointer to the cached_char into *pcc and returns 1 */
+/* Otherwise stores NULL into *pcc and returns 0 or error. */
+/* Note it must initialise *pcc in any case. */
+int
 gx_lookup_xfont_char(const gs_state * pgs, cached_fm_pair * pair,
-		     gs_char chr, gs_glyph glyph, int wmode)
+		     gs_char chr, gs_glyph glyph, int wmode, cached_char **pcc)
 {
     gs_font *font = pair->font;
     int enc_index;
@@ -176,9 +178,11 @@ gx_lookup_xfont_char(const gs_state * pgs, cached_fm_pair * pair,
     gs_point wxy;
     gs_int_rect bbox;
     cached_char *cc;
+    int code;
 
+    *pcc = NULL;
     if (font == 0)
-	return NULL;
+	return 0;
     enc_index =
 	(font->FontType == ft_composite ? -1 :
 	 ((gs_font_base *) font)->nearest_encoding_index);
@@ -188,14 +192,14 @@ gx_lookup_xfont_char(const gs_state * pgs, cached_fm_pair * pair,
     }
     xf = pair->xfont;
     if (xf == 0)
-	return NULL;
+	return 0;
     {
 	const gx_xfont_procs *procs = xf->common.procs;
 	gs_const_string gstr;
 	int code = font->procs.glyph_name(font, glyph, &gstr);
 
 	if (code < 0)
-	    return NULL;
+	    return 0;
 	if (enc_index >= 0 && ((gs_font_base *)font)->encoding_index < 0) {
 	    /*
 	     * Use the registered encoding only if this glyph
@@ -211,16 +215,16 @@ gx_lookup_xfont_char(const gs_state * pgs, cached_fm_pair * pair,
 	}
 	xg = procs->char_xglyph(xf, chr, enc_index, glyph, &gstr);
 	if (xg == gx_no_xglyph)
-	    return NULL;
+	    return 0;
 	if ((*procs->char_metrics) (xf, xg, wmode, &wxy, &bbox) < 0)
-	    return NULL;
+	    return 0;
     }
     log2_scale.x = log2_scale.y = 1;
     cc = gx_alloc_char_bits(font->dir, NULL, NULL, 
 		(ushort)(bbox.q.x - bbox.p.x), (ushort)(bbox.q.y - bbox.p.y), 
 		&log2_scale, 1);
     if (cc == 0)
-	return NULL;
+	return 0;
     /* Success.  Make the cache entry. */
     cc->code = glyph;
     cc->wmode = wmode;
@@ -235,8 +239,11 @@ gx_lookup_xfont_char(const gs_state * pgs, cached_fm_pair * pair,
 	      (ulong) glyph, (ulong) xg);
     if_debug6('k', "     wxy=(%g,%g) bbox=(%d,%d),(%d,%d)\n",
 	      wxy.x, wxy.y, bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
-    gx_add_cached_char(font->dir, NULL, cc, pair, &scale_log2_1);
-    return cc;
+    code = gx_add_cached_char(font->dir, NULL, cc, pair, &scale_log2_1);
+    if (code < 0)
+	return code;
+    *pcc = cc;
+    return 1;
 }
 
 /* Copy a cached character to the screen. */
