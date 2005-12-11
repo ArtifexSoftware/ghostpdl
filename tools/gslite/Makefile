@@ -2,7 +2,6 @@ GSDIR=../../gs
 
 CC = gcc
 CFLAGS = -Wall -g -O0 -ggdb
-GX_COLOR_INDEX_DEFINE=-DGX_COLOR_INDEX_TYPE="unsigned long long"
 CPPFLAGS = $(GX_COLOR_INDEX_DEFINE) -DDEBUG
 INCLUDES = -I$(GSDIR)/src -I$(GSDIR)/soobj
 LDFLAGS = -L$(GSDIR)/sobin
