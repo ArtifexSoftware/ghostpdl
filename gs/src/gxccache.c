@@ -85,9 +85,8 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
     float mxx, mxy, myx, myy;
     gs_font *font = pfont;
     register gs_font_dir *dir = font->dir;
-    register cached_fm_pair *pair =
-    dir->fmcache.mdata + dir->fmcache.mnext;
-    int count = dir->fmcache.mmax;
+    register cached_fm_pair *pair = dir->fmcache.mdata + dir->fmcache.used;
+    int count = dir->fmcache.msize;
     gs_uid uid;
 
     gx_compute_ccache_key(pfont, char_tm, log2_scale, design_grid,
@@ -99,10 +98,7 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
 	if (uid_is_valid(&uid))
 	    font = 0;
     }
-    while (count--) {
-	if (pair == dir->fmcache.mdata)
-	    pair += dir->fmcache.mmax;
-	pair--;
+    for (;count--; pair = dir->fmcache.mdata + pair->next) {
 	/* We have either a non-zero font and an invalid UID, */
 	/* or a zero font and a valid UID. */
 	/* We have to break up the test */
@@ -127,6 +123,7 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
 		if_debug2('k', "[k]found pair 0x%lx: font=0x%lx\n",
 			  (ulong) pair, (ulong) pair->font);
 	    }
+	    gx_touch_fm_pair(dir, pair);
 	    *ppair = pair;
 	    return 0;
 	}

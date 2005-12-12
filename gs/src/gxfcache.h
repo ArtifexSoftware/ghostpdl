@@ -91,6 +91,7 @@ struct cached_fm_pair_s {
     ttfFont *ttf;		/* True Type interpreter data. */
     gx_ttfReader *ttr;		/* True Type interpreter data. */
     bool design_grid;           /* A charpath font face.  */
+    uint prev, next;            /* list of pairs. */
 };
 
 #define private_st_cached_fm_pair() /* in gxccman.c */\
@@ -113,7 +114,9 @@ struct cached_fm_pair_s {
 typedef struct fm_pair_cache_s {
     uint msize, mmax;		/* # of cached font/matrix pairs */
     cached_fm_pair *mdata;
-    uint mnext;			/* rover for allocating font/matrix pairs */
+    uint used;			/* list of used pairs in the touch order. */
+    uint free;			/* list of free pairs. */
+    uint unused;		/* index of the first unused pair. */
 } fm_pair_cache;
 
 /* ------ Character cache entry ------- */
@@ -320,6 +323,7 @@ int gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
 int gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
 	       bool design_grid, cached_fm_pair **ppair);
+void gx_touch_fm_pair(gs_font_dir *dir, cached_fm_pair *pair);
 void gx_lookup_xfont(const gs_state *, cached_fm_pair *, int);
 void gs_purge_fm_pair(gs_font_dir *, cached_fm_pair *, int);
 void gs_purge_font_from_char_caches(gs_font_dir *, const gs_font *);

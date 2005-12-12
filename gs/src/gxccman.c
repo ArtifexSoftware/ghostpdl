@@ -35,6 +35,7 @@
 #include "gxxfont.h"
 #include "gxttfb.h"
 #include "gxfont42.h"
+#include "assert.h"
 
 /* Define the descriptors for the cache structures. */
 private_st_cached_fm_pair();
@@ -118,7 +119,9 @@ gx_char_cache_init(register gs_font_dir * dir)
 			     "initial_chunk");
 
     dir->fmcache.msize = 0;
-    dir->fmcache.mnext = 0;
+    dir->fmcache.used = dir->fmcache.mmax;
+    dir->fmcache.free = dir->fmcache.mmax;
+    dir->fmcache.unused = 0;
     gx_bits_cache_chunk_init(cck, NULL, 0);
     gx_bits_cache_init((gx_bits_cache *) & dir->ccache, cck);
     dir->ccache.bspace = 0;
@@ -157,6 +160,48 @@ gx_purge_selected_cached_chars(gs_font_dir * dir,
     }
 }
 
+/* ====== font-matrix pair lists ====== */
+
+private void
+fm_pair_remove_from_list(gs_font_dir * dir, cached_fm_pair *pair, uint *head)
+{
+    assert(dir->fmcache.mdata + pair->index == pair);
+    if (pair->next == pair->index) {
+	/* The list consists of single element. */
+	assert(pair->prev == pair->index);
+	*head = dir->fmcache.mmax;
+    } else {
+	cached_fm_pair *next = dir->fmcache.mdata + pair->next;
+	cached_fm_pair *prev = dir->fmcache.mdata + pair->prev;
+
+	assert(next->prev == pair->index);
+	assert(prev->next == pair->index);
+	if (*head == pair->index)
+	    *head = next->index;
+	next->prev = prev->index;
+	prev->next = next->index;
+    }
+}
+
+private void
+fm_pair_insert_into_list(gs_font_dir * dir, cached_fm_pair *pair, uint *head)
+{
+    assert(dir->fmcache.mdata + pair->index == pair);
+    if (*head >= dir->fmcache.mmax) {
+	*head = pair->next = pair->prev = pair->index;
+    } else {
+	cached_fm_pair *first = dir->fmcache.mdata + *head;
+	cached_fm_pair *last = dir->fmcache.mdata + first->prev;
+
+	assert(first->prev == last->index);
+	assert(last->next == first->index);
+	pair->next = first->index;
+	pair->prev = last->index;
+	first->prev = last->next = pair->index;
+	*head = pair->index;	
+    }
+}
+
 /* ====== Font-level routines ====== */
 
 /* Add a font/matrix pair to the cache. */
@@ -167,29 +212,43 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	       bool design_grid, cached_fm_pair **ppair)
 {
     float mxx, mxy, myx, myy;
-    register cached_fm_pair *pair = dir->fmcache.mdata + dir->fmcache.mnext;
+    register cached_fm_pair *pair;
     cached_fm_pair *mend = dir->fmcache.mdata + dir->fmcache.mmax;
+    int code; 
 
     gx_compute_ccache_key(font, char_tm, log2_scale, design_grid,
 			    &mxx, &mxy, &myx, &myy);
-    if (dir->fmcache.msize == dir->fmcache.mmax) {	/* cache is full *//* Prefer an entry with num_chars == 0, if any. */
-	int count;
-
-	for (count = dir->fmcache.mmax;
-	     --count >= 0 && pair->num_chars != 0;
-	    )
-	    if (++pair == mend)
-		pair = dir->fmcache.mdata;
+    if (dir->fmcache.msize == dir->fmcache.mmax) {	
+	/* cache is full, drop the older entry. */
+	/* gx_touch_fm_pair must be called whenever
+	   a pair is used to move it to the top of the list.
+	   Since we drop a pair from the list bottom,
+	   and since the list is long enough,
+	   with a high probability it won't drop a pair, 
+	   which currently is pointed by an active text enumerator.
+	   
+	   Note that with Type 3 fonts multiple text enumerators
+	   may be active (exist on estack) in same time,
+	   therefore the list length sets a constraint for
+	   the number of font-matrix pairs used within a charproc.
+	   If it uses too many ones, the outer text enumerator
+	   will fail with 'invalidfont' in gx_add_cached_char.
+	*/
+	pair = dir->fmcache.mdata + dir->fmcache.used;
+	pair = dir->fmcache.mdata + pair->prev; /* last touched. */
 	gs_purge_fm_pair(dir, pair, 0);
-    } else {			/* Look for an empty entry.  (We know there is one.) */
-	while (!fm_pair_is_free(pair))
-	    if (++pair == mend)
-		pair = dir->fmcache.mdata;
+    }
+    if (dir->fmcache.free < dir->fmcache.mmax) {
+	/* use a free entry. */
+	pair = dir->fmcache.mdata + dir->fmcache.free;
+	fm_pair_remove_from_list(dir, pair, &dir->fmcache.free);
+    } else {
+	/* reserve a new entry. */
+	pair = dir->fmcache.mdata + dir->fmcache.unused;
+	dir->fmcache.unused++;
     }
     dir->fmcache.msize++;
-    dir->fmcache.mnext = pair + 1 - dir->fmcache.mdata;
-    if (dir->fmcache.mnext == dir->fmcache.mmax)
-	dir->fmcache.mnext = 0;
+    fm_pair_insert_into_list(dir, pair, &dir->fmcache.used);
     pair->font = font;
     pair->UID = *puid;
     pair->FontType = font->FontType;
@@ -206,7 +265,6 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     pair->design_grid = false;
     if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) 
 	if (((gs_font_type42 *)font)->FAPI==NULL) {
-	    int code; 
 	    float cxx, cxy, cyx, cyy;
 	    gs_matrix m;
 	    gx_compute_char_matrix(char_tm, log2_scale, &cxx, &cxy, &cyx, &cyy);
@@ -238,6 +296,16 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	      (long)pair->UID.id, (ulong) pair->UID.xvalues);
     *ppair = pair;
     return 0;
+}
+
+/* Update the pointer to the last used font/matrix pair. */
+void
+gx_touch_fm_pair(gs_font_dir *dir, cached_fm_pair *pair)
+{
+    if (pair->index != dir->fmcache.used) {
+	fm_pair_remove_from_list(dir, pair, &dir->fmcache.used);
+	fm_pair_insert_into_list(dir, pair, &dir->fmcache.used);
+    }
 }
 
 /* Look up the xfont for a font/matrix pair. */
@@ -342,6 +410,8 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 	ttfFont__destroy(pair->ttf, dir);
     pair->ttf = 0;
     if (!xfont_only) {
+	int code; 
+
 #ifdef DEBUG
 	if (pair->num_chars != 0) {
 	    lprintf1("Error in gs_purge_fm_pair: num_chars =%d\n",
@@ -349,6 +419,8 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 	}
 #endif
 	fm_pair_set_free(pair);
+	fm_pair_remove_from_list(dir, pair, &dir->fmcache.used);
+	fm_pair_insert_into_list(dir, pair, &dir->fmcache.free);
 	dir->fmcache.msize--;
     }
 }
@@ -562,8 +634,16 @@ cached_char * cc, cached_fm_pair * pair, const gs_log2_scale_point * pscale)
 	       discovered an insufficient FontBBox and enlarged it. 
 	       Glyph raster params could change then. */
 	    cc->pair = pair;
-	} else if (cc->pair != pair)
-	    return_error(gs_error_unregistered); /* Must not happen. */
+	} else if (cc->pair != pair) {
+	    /* gx_add_fm_pair could drop the active font-matrix pair
+	       due to cache overflow during a charproc interpretation. 
+	       Likely a single charproc renders too many characters
+	       for generating the character image.
+	       We have no mechanizm for locking font-matrix pairs in cache
+	       to avoud their dissipation. Therefore we consider this failure 
+	       as an implementation limitation. */
+	    return_error(gs_error_invalidfont);
+	}
 	cc->linked = true;
 	cc_set_pair(cc, pair);
 	pair->num_chars++;
