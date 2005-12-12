@@ -289,6 +289,7 @@ struct gs_font_dir_s {
     uint grid_fit_tt;
     gx_device_spot_analyzer *san;
     int (*global_glyph_code)(const gs_memory_t *mem, gs_const_string *gstr, gs_glyph *pglyph);
+    ulong text_enum_id; /* debug purpose only. */
 };
 
 #define private_st_font_dir()	/* in gsfont.c */\

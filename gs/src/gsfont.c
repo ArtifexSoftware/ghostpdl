@@ -267,6 +267,7 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     pdir->tti = 0;
     pdir->san = 0;
     pdir->global_glyph_code = NULL;
+    pdir->text_enum_id = 0;
     return pdir;
 }
 
@@ -1043,3 +1044,10 @@ gs_no_glyph_name(gs_font *font, gs_glyph glyph, gs_const_string *pstr)
     return_error(gs_error_undefined);
 }
 
+#ifdef DEBUG
+/* Reserve a text enumerator instance id. */
+ulong gs_next_text_enum_id(const gs_font *font)
+{
+    return ++font->dir->text_enum_id;
+}
+#endif

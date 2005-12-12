@@ -177,8 +177,14 @@ gs_text_enum_init(gs_text_enum_t *pte, const gs_text_enum_procs_t *procs,
     pte->pcpath = pcpath;
     pte->memory = mem;
     pte->procs = procs;
+#ifdef DEBUG
+    pte->text_enum_id = gs_next_text_enum_id(font);
+#else
+    pte->text_enum_id = 0;
+#endif
     /* text_begin procedure sets rc */
     /* init_dynamic sets current_font */
+
     pte->log2_scale.x = pte->log2_scale.y = 0;
     /* init_dynamic sets index, xy_index, fstack */
     code = gs_text_enum_init_dynamic(pte, font);

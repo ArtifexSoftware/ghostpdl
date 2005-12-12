@@ -489,4 +489,9 @@ bool gs_font_glyph_is_notdef(gs_font_base *bfont, gs_glyph glyph);
 /* Get font parent (a Type 9 font). */
 const gs_font_base *gs_font_parent(const gs_font_base *pbfont);
 
+#ifdef DEBUG
+/* Reserve a text enumerator instance id. */
+ulong gs_next_text_enum_id(const gs_font *font);
+#endif
+
 #endif /* gxfont_INCLUDED */
