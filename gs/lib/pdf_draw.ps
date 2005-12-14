@@ -127,16 +127,20 @@ pdfdict begin
 % ---------------- Shadings ---------------- %
 
 /shrdict mark
+  /BBox {
+    dup dup dup aload pop normrect_elems
+    5 -1 roll astore
+  } bind
   /ColorSpace {
     resolvecolorspace
-  }
+  } bind
   /Function {
     dup type /dicttype eq {
       resolvefunction
     } {
       [ exch { oforce resolvefunction } forall ]
     } ifelse
-  }
+  } bind
 .dicttomark readonly def
 
 /resolveshading {	% <shadingstream> resolveshading <shading>
