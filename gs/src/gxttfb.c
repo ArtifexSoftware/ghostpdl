@@ -236,7 +236,7 @@ private void WarnBadInstruction(gs_font_type42 *pfont, int glyph_index)
 	memcpy(buf, base_font->font_name.chars, l);
 	buf[l] = 0;
 	if (glyph_index >= 0)
-	    eprintf2("Failed to interpret TT instructions of fhe glyph index %d of the font %s. "
+	    eprintf2("Failed to interpret TT instructions of the glyph index %d of the font %s. "
 			"Continue ignoring instructions of the font.\n", 
 			glyph_index, buf);
 	else
