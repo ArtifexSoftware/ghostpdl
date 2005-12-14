@@ -626,7 +626,7 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 	    ttfSubGlyphUsage *e = &usage[i];
 	    int j;
 	    TT_Error code;
-	    int nPointsStored = this->nPointsTotal, nContoursStored = this->nContoursTotal;
+	    int nPointsStored = gOutline->pointCount, nContoursStored = gOutline->contourCount;
 
 	    out.contourCount = 0;
 	    out.pointCount = 0;

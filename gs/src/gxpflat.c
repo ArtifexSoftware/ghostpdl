@@ -372,6 +372,7 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
      * variables, we don't actually compute M, only M-1 (rmask).  */
     fixed x = this->lx1, y = this->ly1;
 
+    assert(this->i > 0);
     this->lx0 = this->lx1;
     this->ly0 = this->ly1;
     /* Fast check for N == 3, a common special case for small characters. */

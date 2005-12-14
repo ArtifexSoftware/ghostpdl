@@ -812,7 +812,7 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
        which may vary due to arithmetic errors. */
 }
 
-private inline void
+private inline int
 init_contour_cursor(line_list *ll, contour_cursor *q) 
 {
     const fill_options * const fo = ll->fo;
@@ -836,7 +836,8 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 	curve_segment *s = (curve_segment *)q->pseg;
 	int k = gx_curve_log2_samples(q->prev->pt.x, q->prev->pt.y, s, fo->fixed_flat);
 
-	gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, s, k);
+	if (!gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, s, k))
+	    return_error(gs_error_rangecheck);
     } else {
 	q->dir = compute_dir(fo, q->prev->pt.y, q->pseg->pt.y);
 	gx_flattened_iterator__init_line(q->fi, 
@@ -861,7 +862,9 @@ scan_contour(line_list *ll, contour_cursor *q)
     save_q.dir = 2;
     ll->main_dir = DIR_HORIZONTAL;
     for (; ; q->pseg = q->prev, q->prev = q->prev->prev) {
-	init_contour_cursor(ll, q);
+	code = init_contour_cursor(ll, q);
+	if (code < 0)
+	    return code;
 	while(gx_flattened_iterator__next(q->fi)) {
 	    q->first_flattened = false;
 	    q->dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
@@ -894,7 +897,9 @@ scan_contour(line_list *ll, contour_cursor *q)
 	if (!fo->pseudo_rasterization || only_horizontal
 		|| p.prev->pt.x != p.pseg->pt.x || p.prev->pt.y != p.pseg->pt.y 
 		|| p.pseg->type == s_curve) {
-	    init_contour_cursor(ll, &p);
+	    code = init_contour_cursor(ll, &p);
+	    if (code < 0)
+		return code;
 	    p.more_flattened = gx_flattened_iterator__next(p.fi);
 	    p.dir = compute_dir(fo, p.fi->ly0, p.fi->ly1);
 	    if (p.fi->ly0 > fo->ymax && ll->y_break > p.fi->ly0)
