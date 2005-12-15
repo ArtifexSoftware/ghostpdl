@@ -845,6 +845,7 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 	vd_bar(q->prev->pt.x, q->prev->pt.y, q->pseg->pt.x, q->pseg->pt.y, 1, RGB(0, 0, 255));
     }
     q->first_flattened = true;
+    return 0;
 }
 
 private int
