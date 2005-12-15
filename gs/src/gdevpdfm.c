@@ -572,7 +572,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	const byte *astr = Action[1].data;
 	const uint asize = Action[1].size;
 
-	if ((File != 0 || Dest.data != 0) &&
+	if ((File != 0 || Dest.data != 0 || URI != 0) &&
 	    (pdf_key_eq(Action + 1, "/Launch") ||
 	     (pdf_key_eq(Action + 1, "/GoToR") && File) ||
 	     pdf_key_eq(Action + 1, "/Article"))
@@ -601,6 +601,12 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	    if (File) {
 		pdfmark_put_c_pair(adict, "/F", File + 1);
 		File = 0;	/* so we don't write it again */
+	    }
+	    if (URI) {
+		/* Adobe Distiller puts a /URI key from pdfmark into the */
+		/* Action dict with /S /URI as Subtype */
+		pdfmark_put_pair(adict, URI);
+		cos_dict_put_c_strings(adict, "/S", "/URI");
 	    }
 	    cos_dict_put(pcd, (const byte *)"/A", 2,
 			 COS_OBJECT_VALUE(&avalue, adict));
