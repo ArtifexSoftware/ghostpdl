@@ -738,9 +738,9 @@ currentdict /.pdf_hook_DSC_Creator undef
   /pdfmark 2 index eq or {
     systemdict 2 index eq {	% only mask the operator in systemdict
       known currentdevice .devicename dup /pdfwrite ne exch /ps2write ne and { pop false } if
-  } {
-    known
-  } ifelse
+    } {
+      known
+    } ifelse
   } {
     known
   } ifelse
