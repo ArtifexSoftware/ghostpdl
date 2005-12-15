@@ -286,7 +286,9 @@ cff_put_real(cff_writer_t *pcw, floatp f)
 		goto done;
 	    case '.':
 		digit = 0xa; break;
-	    case '-':
+	    case '+':
+                continue;
+            case '-':
 		digit = 0xe; break;
 	    case 'e': case 'E':
 		if (p[1] == '-')

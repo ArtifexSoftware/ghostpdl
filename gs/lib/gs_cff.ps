@@ -274,15 +274,16 @@ def
   } loop
 } bind def
 /tokenbuf 100 string def
-/tokenput {	% <index> <char> tokenput <index+1>
-  tokenbuf 2 index 3 -1 roll put 1 add
+/tokenput {	% <index> <str> tokenput <index+length>
+  dup length 3 1 roll
+  tokenbuf 2 index 3 -1 roll putinterval add
 } bind def
 /tokenrealarray [
- (0123456789.E) { } forall
- [(E) 0 get /tokenput cvx (-) 0 get] cvx
- null		% will give an error
- (-) 0 get
- { exit }
+ (0)(1)(2)(3)(4)(5)(6)(7)(8)(9)(.)(E)
+ (E-)
+ ()		% ignore the invalid value
+ (-)
+ { exit } bind
 ] readonly def
 /tokenreal {	% - tokenreal <float>
   0 {
