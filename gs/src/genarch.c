@@ -32,6 +32,12 @@
 #include <time.h>
 #include <setjmp.h>
 
+/* we provide a _SIZEOF_ macro for GX_COLOR_INDEX_TYPE
+   fallback to a generic int if no such type is defined */
+#ifndef GX_COLOR_INDEX_TYPE
+#define GX_COLOR_INDEX_TYPE ulong
+#endif
+
 /* We should write the result on stdout, but the original Turbo C 'make' */
 /* can't handle output redirection (sigh). */
 
@@ -172,6 +178,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_LONG_LONG
     define_int(f, "ARCH_LOG2_SIZEOF_LONG_LONG", ilog2(size_of(long long)));
 #endif
+    define_int(f, "ARCH_SIZEOF_GX_COLOR_INDEX", sizeof(GX_COLOR_INDEX_TYPE));
     define_int(f, "ARCH_SIZEOF_PTR", size_of(char *));
     define_int(f, "ARCH_SIZEOF_FLOAT", size_of(float));
     define_int(f, "ARCH_SIZEOF_DOUBLE", size_of(double));
