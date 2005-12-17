@@ -32,8 +32,10 @@
 #include <time.h>
 #include <setjmp.h>
 
-/* we provide a _SIZEOF_ macro for GX_COLOR_INDEX_TYPE
-   fallback to a generic int if no such type is defined */
+/* We provide a _SIZEOF_ macro for GX_COLOR_INDEX_TYPE
+   fallback to a generic int if no such type is defined.
+   This default must be kept in sync with the one in gxcindex.h
+   or ARCH_SIZEOF_GX_COLOR_INDEX will be incorrect for such builds. */
 #ifndef GX_COLOR_INDEX_TYPE
 #define GX_COLOR_INDEX_TYPE ulong
 #endif

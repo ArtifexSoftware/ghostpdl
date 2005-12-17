@@ -57,6 +57,8 @@ typedef struct { ulong value[2]; } gx_color_index_data;
 #ifdef GX_COLOR_INDEX_TYPE
 typedef GX_COLOR_INDEX_TYPE gx_color_index_data;
 #else
+/* this default must be kept in sync with the one in genarch.c
+   or ARCH_SIZEOF_GX_COLOR_INDEX will be incorrect */
 typedef ulong gx_color_index_data;
 #endif
 
