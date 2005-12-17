@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2002-2004 artofcode LLC.
+    Copyright (c) 2002-2005 artofcode LLC.
     
     This software is provided AS-IS with no warranty,
     either express or implied.
@@ -40,6 +40,16 @@
 #include "jbig2_arith.h"
 #include "jbig2_generic.h"
 #include "jbig2_mmr.h"
+
+/* return the appropriate context size for the given template */
+int
+jbig2_generic_stats_size(Jbig2Ctx *ctx, int template)
+{
+  int stats_size = template == 0 ? 1 << 16 :
+        template == 1 ? 1 << 1 << 13 : 1 << 10;
+  return stats_size;
+}
+
 
 static int
 jbig2_decode_generic_template0(Jbig2Ctx *ctx,
@@ -600,8 +610,7 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     }
   else
     {
-      int stats_size = params.GBTEMPLATE == 0 ? 65536 :
-	params.GBTEMPLATE == 1 ? 8192 : 1024;
+      int stats_size = jbig2_generic_stats_size(ctx, params.GBTEMPLATE);
       GB_stats = jbig2_alloc(ctx->allocator, stats_size);
       memset(GB_stats, 0, stats_size);
 
@@ -617,9 +626,8 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
       jbig2_free(ctx->allocator, GB_stats);
     }
 
-
-  jbig2_image_compose(ctx, ctx->pages[ctx->current_page].image, image,
-			rsi.x, rsi.y, JBIG2_COMPOSE_OR);
+  jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], 
+			image, rsi.x, rsi.y, JBIG2_COMPOSE_OR);
   jbig2_image_release(ctx, image);
   
   return code;

@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2002-2003 artofcode LLC.
+    Copyright (c) 2002-2005 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -120,6 +120,9 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
   result->data_length = jbig2_get_int32(buf + offset);
   *p_header_size = offset + 4;
 
+  /* no body parsing results yet */
+  result->result = NULL;
+
   return result;
 }
 
@@ -183,6 +186,7 @@ jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info,
   info->x = jbig2_get_int32(segment_data + 8);
   info->y = jbig2_get_int32(segment_data + 12);
   info->flags = segment_data[16];
+  info->op = info->flags & 0x7;
 }
 
 /* dispatch code for extension segment parsing */
@@ -235,6 +239,14 @@ int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
     case 6: /* immediate text region */
     case 7: /* immediate lossless text region */
       return jbig2_parse_text_region(ctx, segment, segment_data);
+#ifdef JBIG2_HALFTONE
+    case 16:
+      return jbig2_pattern_dictionary(ctx, segment, segment_data);
+    case 20: /* intermediate halftone region */
+    case 22: /* immediate halftone region */
+    case 23: /* immediate lossless halftone region */
+      return jbig2_halftone_region(ctx, segment, segment_data);
+#else
     case 16:
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "unhandled segment type 'pattern dictionary'");
@@ -247,14 +259,13 @@ int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
     case 23:
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "unhandled segment type 'immediate lossless halftone region'");
+#endif
     case 36:
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "unhandled segment type 'intermediate generic region'");
-    case 38:
+    case 38: /* immediate generic region */
+    case 39: /* immediate lossless generic region */
       return jbig2_immediate_generic_region(ctx, segment, segment_data);
-    case 39:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "unhandled segment type 'immediate lossless generic region'");
     case 40: /* intermediate generic refinement region */
     case 42: /* immediate generic refinement region */
     case 43: /* immediate lossless generic refinement region */
@@ -264,8 +275,7 @@ int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
     case 49:
       return jbig2_parse_end_of_page(ctx, segment, segment_data);
     case 50:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "unhandled segment type 'end of stripe'");
+      return jbig2_parse_end_of_stripe(ctx, segment, segment_data);
     case 51:
       ctx->state = JBIG2_FILE_EOF;
       return jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,

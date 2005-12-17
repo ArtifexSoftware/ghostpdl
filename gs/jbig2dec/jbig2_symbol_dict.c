@@ -31,7 +31,9 @@
 #include "jbig2_arith.h"
 #include "jbig2_arith_int.h"
 #include "jbig2_arith_iaid.h"
+#include "jbig2_huffman.h"
 #include "jbig2_generic.h"
+#include "jbig2_mmr.h"
 #include "jbig2_symbol_dict.h"
 
 #if defined(OUTPUT_PBM) || defined(DUMP_SYMDICT)
@@ -47,10 +49,10 @@ typedef struct {
   Jbig2SymbolDict *SDINSYMS;
   uint32_t SDNUMNEWSYMS;
   uint32_t SDNUMEXSYMS;
-  /* SDHUFFDH */
-  /* SDHUFFDW */
-  /* SDHUFFBMSIZE */
-  /* SDHUFFAGGINST */
+  Jbig2HuffmanTable *SDHUFFDH;
+  Jbig2HuffmanTable *SDHUFFDW;
+  Jbig2HuffmanTable *SDHUFFBMSIZE;
+  Jbig2HuffmanTable *SDHUFFAGGINST;
   int SDTEMPLATE;
   int8_t sdat[8];
   bool SDRTEMPLATE;
@@ -72,7 +74,10 @@ jbig2_dump_symbol_dict(Jbig2Ctx *ctx, Jbig2Segment *segment)
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
         "dumping symbol dict as %d individual png files\n", dict->n_symbols);
     for (index = 0; index < dict->n_symbols; index++) {
-        snprintf(filename, sizeof(filename), "symbol_%04d.png", index);
+        snprintf(filename, sizeof(filename), "symbol_%02d-%04d.png", 
+		segment->number, index);
+	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	  "dumping symbol %d/%d as '%s'", index, dict->n_symbols, filename);
 #ifdef HAVE_LIBPNG
         jbig2_image_write_png_file(dict->glyphs[index], filename);
 #else
@@ -217,7 +222,11 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   uint32_t NSYMSDECODED;
   int32_t SYMWIDTH, TOTWIDTH;
   uint32_t HCFIRSTSYM;
+  uint32_t *SDNEWSYMWIDTHS = NULL;
+  int SBSYMCODELEN = 0;
   Jbig2WordStream *ws = NULL;
+  Jbig2HuffmanState *hs = NULL;
+  Jbig2HuffmanTable *SDHUFFRDX = NULL;
   Jbig2ArithState *as = NULL;
   Jbig2ArithIntCtx *IADH = NULL;
   Jbig2ArithIntCtx *IADW = NULL;
@@ -232,8 +241,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   HCHEIGHT = 0;
   NSYMSDECODED = 0;
 
+  ws = jbig2_word_stream_buf_new(ctx, data, size);
+
   if (!params->SDHUFF) {
-      ws = jbig2_word_stream_buf_new(ctx, data, size);
       as = jbig2_arith_new(ctx, ws);
       IADH = jbig2_arith_int_ctx_new(ctx);
       IADW = jbig2_arith_int_ctx_new(ctx);
@@ -241,16 +251,26 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       IAAI = jbig2_arith_int_ctx_new(ctx);
       if (params->SDREFAGG) {
 	  int tmp = params->SDINSYMS->n_symbols + params->SDNUMNEWSYMS;
-	  int SBSYMCODELEN;
 	  for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < tmp; SBSYMCODELEN++);
 	  IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
 	  IARDX = jbig2_arith_int_ctx_new(ctx);
 	  IARDY = jbig2_arith_int_ctx_new(ctx);
       }
   } else {
-      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-	"NYI: huffman coded symbol dictionary");
-      return NULL;
+      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	"huffman coded symbol dictionary");
+      hs = jbig2_huffman_new(ctx, ws);
+      SDHUFFRDX = jbig2_build_huffman_table(ctx,
+				&jbig2_huffman_params_O);
+      if (!params->SDREFAGG) {
+	  SDNEWSYMWIDTHS = jbig2_alloc(ctx->allocator,
+		sizeof(*SDNEWSYMWIDTHS)*params->SDNUMNEWSYMS);
+	  if (SDNEWSYMWIDTHS == NULL) {
+	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"could not allocate storage for symbol widths");
+	    return NULL;
+	  }
+      }
   }
 
   SDNEWSYMS = jbig2_sd_new(ctx, params->SDNUMNEWSYMS);
@@ -261,7 +281,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
       /* 6.5.6 */
       if (params->SDHUFF) {
-	; /* todo */
+	  HCDH = jbig2_huffman_get(hs, params->SDHUFFDH, &code);
       } else {
 	  code = jbig2_arith_int_decode(IADH, as, &HCDH);
       }
@@ -301,7 +321,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	    }
 	  /* 6.5.7 */
 	  if (params->SDHUFF) {
-	    ; /* todo */
+	      DW = jbig2_huffman_get(hs, params->SDHUFFDW, &code);
 	  } else {
 	      code = jbig2_arith_int_decode(IADW, as, &DW);
 	  }
@@ -314,8 +334,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  }
 	  SYMWIDTH = SYMWIDTH + DW;
 	  TOTWIDTH = TOTWIDTH + SYMWIDTH;
-        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-        "  decoded symbol %d width %d (total width now %d)", NSYMSDECODED, SYMWIDTH, TOTWIDTH); 
 	  if (SYMWIDTH < 0) {
 	      /* todo: mem cleanup */
               code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
@@ -324,12 +342,14 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
           }
 #ifdef JBIG2_DEBUG
 	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-            "SYMWIDTH = %d", SYMWIDTH);
+            "SYMWIDTH = %d TOTWIDTH = %d", SYMWIDTH, TOTWIDTH);
 #endif
 	  /* 6.5.5 (4c.ii) */
 	  if (!params->SDHUFF || params->SDREFAGG) {
+#ifdef JBIG2_DEBUG
 		jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 		  "SDHUFF = %d; SDREFAGG = %d", params->SDHUFF, params->SDREFAGG);
+#endif
 	      /* 6.5.8 */
 	      if (!params->SDREFAGG) {
 		  Jbig2GenericRegionParams region_params;
@@ -357,20 +377,23 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                   uint32_t REFAGGNINST;
 
 		  if (params->SDHUFF) {
-		      /* todo */
+		      REFAGGNINST = jbig2_huffman_get(hs, params->SDHUFFAGGINST, &code);
 		  } else {
 		      code = jbig2_arith_int_decode(IAAI, as, (int32_t*)&REFAGGNINST);
 		  }
-		  if (code || (int32_t)REFAGGNINST <= 0)
-		      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		  if (code || (int32_t)REFAGGNINST <= 0) {
+		      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			"invalid number of symbols or OOB in aggregate glyph");
+		      return NULL;
+		  }
 
 		  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 		    "aggregate symbol coding (%d instances)", REFAGGNINST);
 
 		  if (REFAGGNINST > 1) {
-		      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			"aggregate coding with REFAGGNINST=%d", REFAGGNINST);
+		      return NULL;
 		      /* todo: multiple symbols are like a text region */
 		  } else {
 		      /* 6.5.8.2.2 */
@@ -382,16 +405,17 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		      int ninsyms = params->SDINSYMS->n_symbols;
 
 		      if (params->SDHUFF) {
-			  /* todo */
+			  ID = jbig2_huffman_get_bits(hs, SBSYMCODELEN);
+			  RDX = jbig2_huffman_get(hs, SDHUFFRDX, &code);
+			  RDY = jbig2_huffman_get(hs, SDHUFFRDX, &code);
 		      } else {
-			  code = jbig2_arith_iaid_decode(IAID, as, &ID);
+			  code = jbig2_arith_iaid_decode(IAID, as, (int32_t*)&ID);
 		          code = jbig2_arith_int_decode(IARDX, as, &RDX);
 		          code = jbig2_arith_int_decode(IARDY, as, &RDY);
 		      }
 
-
 		      if (ID >= ninsyms+NSYMSDECODED) {
-			jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+			code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			  "refinement references unknown symbol %d", ID);
 			return NULL;
 		      }
@@ -404,7 +428,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 		      /* Table 18 */
 		      rparams.GRTEMPLATE = params->SDRTEMPLATE;
-		      rparams.reference = (ninsyms >= ID) ? 
+		      rparams.reference = (ID < ninsyms) ? 
 					params->SDINSYMS->glyphs[ID] :
 					SDNEWSYMS->glyphs[ID-ninsyms];
 		      rparams.DX = RDX;
@@ -433,27 +457,101 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		  }
 #endif
 
-	  } else {
-	      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-                "unhandled bitmap case!!!");
-          }
+	  }
 
 	  /* 6.5.5 (4c.iii) */
 	  if (params->SDHUFF && !params->SDREFAGG) {
-	    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-              "NYI: parsing collective bitmaps!!!");
+	    SDNEWSYMWIDTHS[NSYMSDECODED] = SYMWIDTH;
 	  }
 	
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+            "decoded symbol %d of %d (%dx%d)",
+		NSYMSDECODED, params->SDNUMNEWSYMS,
+		SYMWIDTH, HCHEIGHT);
+
 	  /* 6.5.5 (4c.iv) */
 	  NSYMSDECODED = NSYMSDECODED + 1;
 
-#ifdef JBIG2_DEBUG
-	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-            "%d of %d decoded", NSYMSDECODED, params->SDNUMNEWSYMS);
-#endif
+      } /* end height class decode loop */
 
+      /* 6.5.5 (4d) */
+      if (params->SDHUFF && !params->SDREFAGG) {
+	/* 6.5.9 */
+	Jbig2Image *image;
+	int BMSIZE = jbig2_huffman_get(hs, params->SDHUFFBMSIZE, &code);
+	int j, x;
+
+	if (code || (BMSIZE < 0)) {
+	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "error decoding size of collective bitmap!");
+	  /* todo: memory cleanup */
+	  return NULL;
 	}
-     }
+
+	/* skip any bits before the next byte boundary */
+	jbig2_huffman_skip(hs);
+
+	image = jbig2_image_new(ctx, TOTWIDTH, HCHEIGHT);
+	if (image == NULL) {
+	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "could not allocate collective bitmap image!");
+	  /* todo: memory cleanup */
+	  return NULL;
+	}
+
+	if (BMSIZE == 0) {
+	  /* if BMSIZE == 0 bitmap is uncompressed */
+	  const byte *src = data + jbig2_huffman_offset(hs);
+	  const int stride = (image->width >> 3) + 
+		((image->width & 7) ? 1 : 0);
+	  byte *dst = image->data;
+
+	  BMSIZE = image->height * stride;
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	    "reading %dx%d uncompressed bitmap"
+	    " for %d symbols (%d bytes)",
+	    image->width, image->height, NSYMSDECODED - HCFIRSTSYM, BMSIZE);
+
+	  for (j = 0; j < image->height; j++) {
+	    memcpy(dst, src, stride);
+	    dst += image->stride;
+	    src += stride;
+	  }
+	} else {
+	  Jbig2GenericRegionParams rparams;
+
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	    "reading %dx%d collective bitmap for %d symbols (%d bytes)",
+	    image->width, image->height, NSYMSDECODED - HCFIRSTSYM, BMSIZE);
+
+	  rparams.MMR = 1;
+	  code = jbig2_decode_generic_mmr(ctx, segment, &rparams,
+	    data + jbig2_huffman_offset(hs), BMSIZE, image);
+	  if (code) {
+	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	      "error decoding MMR bitmap image!");
+	    /* todo: memory cleanup */
+	    return NULL;
+	  }
+	}
+
+	/* advance past the data we've just read */
+	jbig2_huffman_advance(hs, BMSIZE);
+
+	/* copy the collective bitmap into the symbol dictionary */
+	x = 0;
+	for (j = HCFIRSTSYM; j < NSYMSDECODED; j++) {
+	  Jbig2Image *glyph;
+	  glyph = jbig2_image_new(ctx, SDNEWSYMWIDTHS[j], HCHEIGHT);
+	  jbig2_image_compose(ctx, glyph, image, 
+		-x, 0, JBIG2_COMPOSE_REPLACE);
+	  x += SDNEWSYMWIDTHS[j];
+	  SDNEWSYMS->glyphs[j] = glyph; 
+	}
+	jbig2_image_release(ctx, image);
+      }
+
+  } /* end of symbol decode loop */
 
   jbig2_free(ctx->allocator, GB_stats);
   
@@ -462,7 +560,8 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   {
     int i = 0;
     int j = 0;
-    int k, m, exrunlength, exflag = 0;
+    int k, m, exflag = 0;
+    int32_t exrunlength;
     
     if (params->SDINSYMS != NULL)
       m = params->SDINSYMS->n_symbols;
@@ -488,18 +587,25 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   jbig2_sd_release(ctx, SDNEWSYMS);
   
   if (!params->SDHUFF) {
-    jbig2_arith_int_ctx_free(ctx, IADH);
-    jbig2_arith_int_ctx_free(ctx, IADW);
-    jbig2_arith_int_ctx_free(ctx, IAEX);
-    jbig2_arith_int_ctx_free(ctx, IAAI);
-    if (params->SDREFAGG) {
-      jbig2_arith_iaid_ctx_free(ctx, IAID);
-      jbig2_arith_int_ctx_free(ctx, IARDX);
-      jbig2_arith_int_ctx_free(ctx, IARDY);
-    }
-    jbig2_free(ctx->allocator, as);  
-    jbig2_word_stream_buf_free(ctx, ws);
+      jbig2_arith_int_ctx_free(ctx, IADH);
+      jbig2_arith_int_ctx_free(ctx, IADW);
+      jbig2_arith_int_ctx_free(ctx, IAEX);
+      jbig2_arith_int_ctx_free(ctx, IAAI);
+      if (params->SDREFAGG) {
+        jbig2_arith_iaid_ctx_free(ctx, IAID);
+        jbig2_arith_int_ctx_free(ctx, IARDX);
+        jbig2_arith_int_ctx_free(ctx, IARDY);
+      }
+      jbig2_free(ctx->allocator, as);  
+  } else {
+      if (params->SDREFAGG) {
+	jbig2_free(ctx->allocator, SDNEWSYMWIDTHS);
+      }
+      jbig2_release_huffman_table(ctx, SDHUFFRDX);
+      jbig2_free(ctx->allocator, hs);
   }
+
+  jbig2_word_stream_buf_free(ctx, ws);
   
   return SDEXSYMS;
 }
@@ -526,22 +632,82 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   params.SDTEMPLATE = (flags >> 10) & 3;
   params.SDRTEMPLATE = (flags >> 12) & 1;
 
+  params.SDHUFFDH = NULL;
+  params.SDHUFFDW = NULL;
+  params.SDHUFFBMSIZE = NULL;
+  params.SDHUFFAGGINST = NULL;
+
   if (params.SDHUFF) {
-    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "symbol dictionary uses the Huffman encoding variant (NYI)");
-    return 0;
+    switch ((flags & 0x000c) >> 2) {
+      case 0: /* Table B.4 */
+	params.SDHUFFDH = jbig2_build_huffman_table(ctx, 
+		                       &jbig2_huffman_params_D);
+	break;
+      case 1: /* Table B.5 */
+	params.SDHUFFDH = jbig2_build_huffman_table(ctx, 
+		                       &jbig2_huffman_params_E);
+	break;
+      case 3: /* Custom table from referred segment */
+	/* We handle this case later by leaving the table as NULL */
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "symbol dictionary uses custom DH huffman table (NYI)");
+      case 2:
+      default:
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "symbol dictionary specified invalid huffman table");
+	break;
+    }
+    switch ((flags & 0x0030) >> 4) {
+      case 0: /* Table B.2 */
+	params.SDHUFFDW = jbig2_build_huffman_table(ctx, 
+		                       &jbig2_huffman_params_B);
+	break;
+      case 1: /* Table B.3 */
+	params.SDHUFFDW = jbig2_build_huffman_table(ctx, 
+		                       &jbig2_huffman_params_C);
+	break;
+      case 3: /* Custom table from referred segment */
+	/* We handle this case later by leaving the table as NULL */
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "symbol dictionary uses custom DW huffman table (NYI)");
+      case 2:
+      default:
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "symbol dictionary specified invalid huffman table");
+	break;
+    }
+    if (flags & 0x0040) {
+        /* Custom table from referred segment */
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "symbol dictionary uses custom BMSIZE huffman table (NYI)");
+    } else {
+	/* Table B.1 */
+	params.SDHUFFBMSIZE = jbig2_build_huffman_table(ctx,
+					&jbig2_huffman_params_A);
+    }
+    if (flags & 0x0080) { 
+        /* Custom table from referred segment */
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "symbol dictionary uses custom REFAGG huffman table (NYI)");
+    } else {
+	/* Table B.1 */
+	params.SDHUFFAGGINST = jbig2_build_huffman_table(ctx,
+					&jbig2_huffman_params_A);
+    }
   }
 
   /* FIXME: there are quite a few of these conditions to check */
   /* maybe #ifdef CONFORMANCE and a separate routine */
-  if(!params.SDHUFF && (flags & 0x000c)) {
+  if (!params.SDHUFF) {
+    if (flags & 0x000c) {
       jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
 		  "SDHUFF is zero, but contrary to spec SDHUFFDH is not.");
-  }
-  if(!params.SDHUFF && (flags & 0x0030)) {
+    }
+    if (flags & 0x0030) {
       jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
 		  "SDHUFF is zero, but contrary to spec SDHUFFDW is not.");
-  }
+    }
+  } 
 
   if (flags & 0x0080) {
       jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
@@ -621,6 +787,13 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 #ifdef DUMP_SYMDICT
   if (segment->result) jbig2_dump_symbol_dict(ctx, segment);
 #endif
+
+  if (params.SDHUFF) {
+      jbig2_release_huffman_table(ctx, params.SDHUFFDH);
+      jbig2_release_huffman_table(ctx, params.SDHUFFDW);
+      jbig2_release_huffman_table(ctx, params.SDHUFFBMSIZE);
+      jbig2_release_huffman_table(ctx, params.SDHUFFAGGINST);
+  }
 
   /* todo: retain or free GB_stats, GR_stats */
 

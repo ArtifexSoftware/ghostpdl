@@ -115,11 +115,13 @@ struct _Jbig2Page {
              y_resolution;	/* in pixels per meter */
     uint16_t stripe_size;
     bool striped;
+    int end_row;
     uint8_t flags;
     Jbig2Image *image;
 };
 
 int jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
+int jbig2_parse_end_of_stripe(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
 int jbig2_parse_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
 int jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
 
@@ -127,10 +129,12 @@ typedef enum {
     JBIG2_COMPOSE_OR = 0,
     JBIG2_COMPOSE_AND = 1,
     JBIG2_COMPOSE_XOR = 2,
-    JBIG2_COMPOSE_XNOR = 3
+    JBIG2_COMPOSE_XNOR = 3,
+    JBIG2_COMPOSE_REPLACE = 4
 } Jbig2ComposeOp;
 
 int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int y, Jbig2ComposeOp op);
+int jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *src, int x, int y, Jbig2ComposeOp op);
 
 /* region segment info */
 
@@ -139,6 +143,7 @@ typedef struct {
   int32_t height;
   int32_t x;
   int32_t y;
+  Jbig2ComposeOp op;
   uint8_t flags;
 } Jbig2RegionSegmentInfo;
 
@@ -148,7 +153,9 @@ int jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t 
 /* 7.4 */
 int jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 			       const uint8_t *segment_data);
-                               
+int jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
+                               const byte *segment_data);
+          
 /* The word stream design is a compromise between simplicity and
    trying to amortize the number of method calls. Each ::get_next_word
    invocation pulls 4 bytes from the stream, packed big-endian into a

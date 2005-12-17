@@ -1,17 +1,22 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([jbig2dec], [0.8], [jbig2-dev@ghostscript.com])
+AC_INIT([jbig2dec], [0.9pre], [jbig2-dev@ghostscript.com])
 AC_PREREQ(2.53)
 AC_CONFIG_SRCDIR([jbig2dec.c])
 
 AM_INIT_AUTOMAKE([-Wall])
 AM_CONFIG_HEADER(config.h)
 
-dnl AC_REVISION([$Rev: 365 $])
+dnl AC_REVISION([$Rev: 408 $])
 
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_RANLIB
+
+# platform specific compiler flags
+if test "x$GCC" = xyes; then
+  CFLAGS="$CFLAGS -Wall"
+fi
 
 # Checks for libraries.
 dnl by default we want png support if possible

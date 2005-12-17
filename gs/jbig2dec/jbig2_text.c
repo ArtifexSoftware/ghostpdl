@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (C) 2002-2003 artofcode LLC.
+    Copyright (C) 2002-2005 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -29,6 +29,7 @@
 #include "jbig2_arith.h"
 #include "jbig2_arith_int.h"
 #include "jbig2_arith_iaid.h"
+#include "jbig2_huffman.h"
 #include "jbig2_generic.h"
 #include "jbig2_symbol_dict.h"
 
@@ -50,19 +51,20 @@ typedef struct {
     /* SBW */
     /* SBH */
     uint32_t SBNUMINSTANCES;
+    int LOGSBSTRIPS;
     int SBSTRIPS;
     /* SBNUMSYMS */
-    int *SBSYMCODES;
+    /* SBSYMCODES */
     /* SBSYMCODELEN */
     /* SBSYMS */
-    int SBHUFFFS;
-    int SBHUFFDS;
-    int SBHUFFDT;
-    int SBHUFFRDW;
-    int SBHUFFRDH;
-    int SBHUFFRDX;
-    int SBHUFFRDY;
-    bool SBHUFFRSIZE;
+    Jbig2HuffmanTable *SBHUFFFS;
+    Jbig2HuffmanTable *SBHUFFDS;
+    Jbig2HuffmanTable *SBHUFFDT;
+    Jbig2HuffmanTable *SBHUFFRDW;
+    Jbig2HuffmanTable *SBHUFFRDH;
+    Jbig2HuffmanTable *SBHUFFRDX;
+    Jbig2HuffmanTable *SBHUFFRDY;
+    Jbig2HuffmanTable *SBHUFFRSIZE;
     bool SBRTEMPLATE;
     int8_t sbrat[4];
 } Jbig2TextRegionParams;
@@ -80,7 +82,7 @@ typedef struct {
  * @data: pointer to text region data to be decoded
  * @size: length of text region data
  *
- * Implements the text region decoding proceedure
+ * Implements the text region decoding procedure
  * described in section 6.4 of the JBIG2 spec.
  *
  * returns: 0 on success
@@ -106,9 +108,11 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     int S,T;
     int x,y;
     bool first_symbol;
-    uint32_t index, max_id;
+    uint32_t index, SBNUMSYMS;
     Jbig2Image *IB;
     Jbig2WordStream *ws = NULL;
+    Jbig2HuffmanState *hs = NULL;
+    Jbig2HuffmanTable *SBSYMCODES;
     Jbig2ArithState *as = NULL;
     Jbig2ArithIntCtx *IADT = NULL;
     Jbig2ArithIntCtx *IAFS = NULL;
@@ -123,38 +127,141 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     int code = 0;
     int RI;
     
-    max_id = 0;
+    SBNUMSYMS = 0;
     for (index = 0; index < n_dicts; index++) {
-        max_id += dicts[index]->n_symbols;
+        SBNUMSYMS += dicts[index]->n_symbols;
     }
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-        "symbol list contains %d glyphs in %d dictionaries", max_id, n_dicts);
+        "symbol list contains %d glyphs in %d dictionaries", SBNUMSYMS, n_dicts);
     
+    ws = jbig2_word_stream_buf_new(ctx, data, size);
     if (!params->SBHUFF) {
 	int SBSYMCODELEN;
 
-	ws = jbig2_word_stream_buf_new(ctx, data, size);
         as = jbig2_arith_new(ctx, ws);
         IADT = jbig2_arith_int_ctx_new(ctx);
         IAFS = jbig2_arith_int_ctx_new(ctx);
         IADS = jbig2_arith_int_ctx_new(ctx);
         IAIT = jbig2_arith_int_ctx_new(ctx);
 	/* Table 31 */
-	for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < max_id; SBSYMCODELEN++);
+	for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < SBNUMSYMS; SBSYMCODELEN++);
         IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
 	IARI = jbig2_arith_int_ctx_new(ctx);
 	IARDW = jbig2_arith_int_ctx_new(ctx);
 	IARDH = jbig2_arith_int_ctx_new(ctx);
 	IARDX = jbig2_arith_int_ctx_new(ctx);
 	IARDY = jbig2_arith_int_ctx_new(ctx);
+    } else {
+	Jbig2HuffmanTable *runcodes;
+	Jbig2HuffmanParams runcodeparams;
+	Jbig2HuffmanLine runcodelengths[35];
+	Jbig2HuffmanLine *symcodelengths;
+	Jbig2HuffmanParams symcodeparams;
+	int code, err, len, range, r;
+
+	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	  "huffman coded text region");
+	hs = jbig2_huffman_new(ctx, ws);
+
+	/* 7.4.3.1.7 - decode symbol ID Huffman table */
+	/* this is actually part of the segment header, but it is more
+	   convenient to handle it here */
+
+	/* parse and build the runlength code huffman table */
+	for (index = 0; index < 35; index++) {
+	  runcodelengths[index].PREFLEN = jbig2_huffman_get_bits(hs, 4);
+	  runcodelengths[index].RANGELEN = 0;
+	  runcodelengths[index].RANGELOW = index;
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	    "  read runcode%d length %d", index, runcodelengths[index].PREFLEN);
+	}
+	runcodeparams.HTOOB = 0;
+	runcodeparams.lines = runcodelengths;
+	runcodeparams.n_lines = 35;
+	runcodes = jbig2_build_huffman_table(ctx, &runcodeparams);
+	if (runcodes == NULL) {
+	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "error constructing symbol id runcode table!");
+	  return -1;
+	}
+
+	/* decode the symbol id codelengths using the runlength table */
+	symcodelengths = jbig2_alloc(ctx->allocator, SBNUMSYMS*sizeof(Jbig2HuffmanLine));
+	if (symcodelengths == NULL) {
+	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	    "memory allocation failure reading symbol ID huffman table!");
+	  return -1;
+	}
+	index = 0;
+	while (index < SBNUMSYMS) {
+	  code = jbig2_huffman_get(hs, runcodes, &err);
+	  if (err != 0 || code < 0 || code >= 35) {
+	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	      "error reading symbol ID huffman table!");
+	    return err ? err : -1;
+	  }
+
+	  if (code < 32) {
+	    len = code;
+	    range = 1;
+	  } else {
+	    if (index < 1) {
+	      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"error decoding symbol id table: run length with no antecedent!");
+	      /* todo: memory cleanup */
+	      return -1;
+	    }
+	    len = symcodelengths[index-1].PREFLEN;
+	    if (code == 32) range = jbig2_huffman_get_bits(hs, 2) + 2;
+	    else if (code == 33) range = jbig2_huffman_get_bits(hs, 3) + 3;
+	    else if (code == 34) range = jbig2_huffman_get_bits(hs, 7) + 11;
+	  }
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	    "  read runcode%d at index %d (length %d range %d)", code, index, len, range);
+	  if (index+range > SBNUMSYMS) {
+	    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+	      "runlength extends %d entries beyond the end of symbol id table!",
+		index+range - SBNUMSYMS);
+	    range = SBNUMSYMS - index;
+	  }
+	  for (r = 0; r < range; r++) {
+	    symcodelengths[index+r].PREFLEN = len; 
+	    symcodelengths[index+r].RANGELEN = 0; 
+	    symcodelengths[index+r].RANGELOW = index + r;
+	  }
+	  index += r;
+	}
+
+	if (index < SBNUMSYMS) {
+	  jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+	    "runlength codes do not cover the available symbol set");
+	}
+	symcodeparams.HTOOB = 0;
+	symcodeparams.lines = symcodelengths;
+	symcodeparams.n_lines = SBNUMSYMS;
+
+	/* skip to byte boundary */
+	jbig2_huffman_skip(hs);
+
+	/* finally, construct the symbol id huffman table itself */
+	SBSYMCODES = jbig2_build_huffman_table(ctx, &symcodeparams);
+
+	jbig2_free(ctx->allocator, symcodelengths);
+	jbig2_release_huffman_table(ctx, runcodes);
+
+	if (SBSYMCODES == NULL) {
+	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"could not construct Symbol ID huffman table!");
+	    return NULL;
+	}
     }
-    
+
     /* 6.4.5 (1) */
     jbig2_image_clear(ctx, image, params->SBDEFPIXEL);
     
     /* 6.4.6 */
     if (params->SBHUFF) {
-        /* todo */
+        STRIPT = jbig2_huffman_get(hs, params->SBHUFFDT, &code);
     } else {
         code = jbig2_arith_int_decode(IADT, as, &STRIPT);
     }
@@ -168,7 +275,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     while (NINSTANCES < params->SBNUMINSTANCES) {
         /* (3b) */
         if (params->SBHUFF) {
-            /* todo */
+            DT = jbig2_huffman_get(hs, params->SBHUFFDT, &code);
         } else {
             code = jbig2_arith_int_decode(IADT, as, &DT);
         }
@@ -182,7 +289,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	    if (first_symbol) {
 		/* 6.4.7 */
 		if (params->SBHUFF) {
-		    /* todo */
+		    DFS = jbig2_huffman_get(hs, params->SBHUFFFS, &code);
 		} else {
 		    code = jbig2_arith_int_decode(IAFS, as, &DFS);
 		}
@@ -191,9 +298,9 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		first_symbol = FALSE;
 
 	    } else {
-		/* (3c.ii / 6.4.8) */
+		/* (3c.ii) / 6.4.8 */
 		if (params->SBHUFF) {
-		    /* todo */
+		    IDS = jbig2_huffman_get(hs, params->SBHUFFDS, &code);
 		} else {
 		    code = jbig2_arith_int_decode(IADS, as, &IDS);
 		}
@@ -203,28 +310,28 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		CURS += IDS + params->SBDSOFFSET;
 	    }
 
-	    /* (3c.iii / 6.4.9) */
+	    /* (3c.iii) / 6.4.9 */
 	    if (params->SBSTRIPS == 1) {
 		CURT = 0;
 	    } else if (params->SBHUFF) {
-		/* todo */
+		CURT = jbig2_huffman_get_bits(hs, params->LOGSBSTRIPS);
 	    } else {
 		code = jbig2_arith_int_decode(IAIT, as, &CURT);
 	    }
 	    T = STRIPT + CURT;
 
-	    /* (3b.iv / 6.4.10) decode the symbol id */
+	    /* (3b.iv) / 6.4.10 - decode the symbol id */
 	    if (params->SBHUFF) {
-		/* todo */
+		ID = jbig2_huffman_get(hs, SBSYMCODES, &code);
 	    } else {
 		code = jbig2_arith_iaid_decode(IAID, as, (int *)&ID);
 	    }
-	    if (ID >= max_id) {
+	    if (ID >= SBNUMSYMS) {
 		return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-                    "symbol id out of range! (%d/%d)", ID, max_id);
+                    "symbol id out of range! (%d/%d)", ID, SBNUMSYMS);
 	    }
 
-	    /* (3c.v / 6.4.11) look up the symbol bitmap IB */
+	    /* (3c.v) / 6.4.11 - look up the symbol bitmap IB */
 	    {
 		uint32_t id = ID;
 
@@ -234,7 +341,11 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		IB = jbig2_image_clone(ctx, dicts[index]->glyphs[id]);
 	    }
 	    if (params->SBREFINE) {
+	      if (params->SBHUFF) {
+		RI = jbig2_huffman_get_bits(hs, 1);
+	      } else {
 		code = jbig2_arith_int_decode(IARI, as, &RI);
+	      }
 	    } else {
 		RI = 0;
 	    }
@@ -243,14 +354,24 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		Jbig2Image *IBO;
 		int32_t RDW, RDH, RDX, RDY;
 		Jbig2Image *image;
+		int BMSIZE = 0;
 
-		/* (6.4.11 (1, 2, 3, 4)) */
-		code = jbig2_arith_int_decode(IARDW, as, &RDW);
-		code = jbig2_arith_int_decode(IARDH, as, &RDH);
-		code = jbig2_arith_int_decode(IARDX, as, &RDX);
-		code = jbig2_arith_int_decode(IARDY, as, &RDY);
+		/* 6.4.11 (1, 2, 3, 4) */
+		if (!params->SBHUFF) {
+		  code = jbig2_arith_int_decode(IARDW, as, &RDW);
+		  code = jbig2_arith_int_decode(IARDH, as, &RDH);
+		  code = jbig2_arith_int_decode(IARDX, as, &RDX);
+		  code = jbig2_arith_int_decode(IARDY, as, &RDY);
+		} else {
+		  RDW = jbig2_huffman_get(hs, params->SBHUFFRDW, &code);
+		  RDH = jbig2_huffman_get(hs, params->SBHUFFRDH, &code);
+		  RDX = jbig2_huffman_get(hs, params->SBHUFFRDX, &code);
+		  RDY = jbig2_huffman_get(hs, params->SBHUFFRDY, &code);
+		  BMSIZE = jbig2_huffman_get(hs, params->SBHUFFRSIZE, &code);
+		  jbig2_huffman_skip(hs);
+		}
 
-		/* (6.4.11 (6)) */
+		/* 6.4.11 (6) */
 		IBO = IB;
 		image = jbig2_image_new(ctx, IBO->width + RDW,
 					     IBO->height + RDH);
@@ -267,6 +388,12 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		IB = image;
 
 		jbig2_image_release(ctx, IBO);
+
+		/* 6.4.11 (7) */
+		if (params->SBHUFF) {
+		  jbig2_huffman_advance(hs, BMSIZE);
+		}
+
 	    }
         
 	    /* (3c.vi) */
@@ -321,7 +448,9 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     }
     /* 6.4.5 (4) */
 
-    if (!params->SBHUFF) {
+    if (params->SBHUFF) {
+      jbig2_release_huffman_table(ctx, SBSYMCODES);
+    } else {
 	jbig2_arith_int_ctx_free(ctx, IADT);
 	jbig2_arith_int_ctx_free(ctx, IAFS);
 	jbig2_arith_int_ctx_free(ctx, IADS);
@@ -340,7 +469,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 }
 
 /**
- * jbig2_read_text_info: read a text region segment header
+ * jbig2_parse_text_region: read a text region segment header
  **/
 int
 jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
@@ -365,17 +494,28 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     /* 7.4.3.1.1 */
     flags = jbig2_get_int16(segment_data + offset);
     offset += 2;
+
+    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	"text region header flags 0x%04x", flags);
     
     params.SBHUFF = flags & 0x0001;
     params.SBREFINE = flags & 0x0002;
-    params.SBSTRIPS = 1 << ((flags & 0x000c) >> 2);
+    params.LOGSBSTRIPS = (flags & 0x000c) >> 2;
+    params.SBSTRIPS = 1 << params.LOGSBSTRIPS;
     params.REFCORNER = (flags & 0x0030) >> 4;
     params.TRANSPOSED = flags & 0x0040;
-    params.SBCOMBOP = (flags & 0x00e0) >> 7;
-    params.SBDEFPIXEL = flags & 0x0100;
+    params.SBCOMBOP = (flags & 0x0180) >> 7;
+    params.SBDEFPIXEL = flags & 0x0200;
+    /* SBDSOFFSET is a signed 5 bit integer */
     params.SBDSOFFSET = (flags & 0x7C00) >> 10;
+    if (params.SBDSOFFSET > 0x0f) params.SBDSOFFSET -= 0x20;
     params.SBRTEMPLATE = flags & 0x8000;
-    
+
+    if (params.SBDSOFFSET) {
+      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+	"text region has SBDSOFFSET %d", params.SBDSOFFSET);
+    }
+
     if (params.SBHUFF)	/* Huffman coding */
       {
         /* 7.4.3.1.2 */
@@ -404,32 +544,167 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     offset += 4;
     
     if (params.SBHUFF) {
-        /* 7.4.3.1.5 */
-        /* todo: symbol ID huffman decoding table decoding */
-        
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-            "symbol id huffman table decoding NYI");
-            
-        /* 7.4.3.1.6 */
-        params.SBHUFFFS = (huffman_flags & 0x0003);
-        params.SBHUFFDS = (huffman_flags & 0x000c) >> 2;
-        params.SBHUFFDT = (huffman_flags & 0x0030) >> 4;
-        params.SBHUFFRDW = (huffman_flags & 0x00c0) >> 6;
-        params.SBHUFFRDH = (huffman_flags & 0x0300) >> 8;
-        params.SBHUFFRDX = (huffman_flags & 0x0c00) >> 10;
-        params.SBHUFFRDY = (huffman_flags & 0x3000) >> 12;
-        /* todo: conformance */
-        params.SBHUFFRSIZE = huffman_flags & 0x8000;
+        /* 7.4.3.1.5 - Symbol ID Huffman table */
+	/* ...this is handled in the segment body decoder */	
+
+        /* 7.4.3.1.6 - Other Huffman table selection */
+	switch (huffman_flags & 0x0003) {
+	  case 0: /* Table B.6 */
+	    params.SBHUFFFS = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_F);
+	    break;
+	  case 1: /* Table B.7 */
+	    params.SBHUFFFS = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_G);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom FS huffman table (NYI)");
+	    break;
+	  case 2: /* invalid */
+	  default:
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region specified invalid FS huffman table");
+	    break;
+	}
+	switch ((huffman_flags & 0x000c) >> 2) {
+	  case 0: /* Table B.8 */
+	    params.SBHUFFDS = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_H);
+	    break;
+	  case 1: /* Table B.9 */
+	    params.SBHUFFDS = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_I);
+	    break;
+	  case 2: /* Table B.10 */
+	    params.SBHUFFDS = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_J);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom DS huffman table (NYI)");
+	    break;
+	}
+	switch ((huffman_flags & 0x0030) >> 4) {
+	  case 0: /* Table B.11 */
+	    params.SBHUFFDT = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_K);
+	    break;
+	  case 1: /* Table B.12 */
+	    params.SBHUFFDT = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_L);
+	    break;
+	  case 2: /* Table B.13 */
+	    params.SBHUFFDT = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_M);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom DT huffman table (NYI)");
+	    break;
+	}
+	switch ((huffman_flags & 0x00c0) >> 6) {
+	  case 0: /* Table B.14 */
+	    params.SBHUFFRDW = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_N);
+	    break;
+	  case 1: /* Table B.15 */
+	    params.SBHUFFRDW = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_O);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom RDW huffman table (NYI)");
+	    break;
+	  case 2: /* invalid */
+	  default:
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region specified invalid RDW huffman table");
+	    break;
+	}
+	switch ((huffman_flags & 0x0300) >> 8) {
+	  case 0: /* Table B.14 */
+	    params.SBHUFFRDH = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_N);
+	    break;
+	  case 1: /* Table B.15 */
+	    params.SBHUFFRDH = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_O);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom RDH huffman table (NYI)");
+	    break;
+	  case 2: /* invalid */
+	  default:
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region specified invalid RDH huffman table");
+	    break;
+	}
+        switch ((huffman_flags & 0x0c00) >> 10) {
+	  case 0: /* Table B.14 */
+	    params.SBHUFFRDX = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_N);
+	    break;
+	  case 1: /* Table B.15 */
+	    params.SBHUFFRDX = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_O);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom RDX huffman table (NYI)");
+	    break;
+	  case 2: /* invalid */
+	  default:
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region specified invalid RDX huffman table");
+	    break;
+	}
+	switch ((huffman_flags & 0x3000) >> 12) {
+	  case 0: /* Table B.14 */
+	    params.SBHUFFRDY = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_N);
+	    break;
+	  case 1: /* Table B.15 */
+	    params.SBHUFFRDY = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_O);
+	    break;
+	  case 3: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom RDY huffman table (NYI)");
+	    break;
+	  case 2: /* invalid */
+	  default:
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region specified invalid RDY huffman table");
+	    break;
+	}
+	switch ((huffman_flags & 0x4000) >> 14) {
+	  case 0: /* Table B.1 */
+	    params.SBHUFFRSIZE = jbig2_build_huffman_table(ctx,
+			&jbig2_huffman_params_A);
+	    break;
+	  case 1: /* Custom table from referred segment */
+	    /* We handle this case later by leaving the table as NULL */
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"text region uses custom RSIZE huffman table (NYI)");
+	    break;
+	}
+	
+        if (huffman_flags & 0x8000) {
+	  jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+ 	    "text region huffman flags bit 15 is set, contrary to spec");
+	}
         
         /* 7.4.3.1.7 */
-        /* todo: symbol ID huffman table decoding */
-    }
-
-    /* 7.4.3.2 (3) */
-    if (!params.SBHUFF && params.SBREFINE) {
-	int stats_size = params.SBRTEMPLATE ? 1 << 10 : 1 << 13;
-	GR_stats = jbig2_alloc(ctx->allocator, stats_size);
-	memset(GR_stats, 0, stats_size);
+        /* For convenience this is done in the body decoder routine */
     }
 
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
@@ -437,7 +712,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         region_info.width, region_info.height,
         region_info.x, region_info.y, params.SBNUMINSTANCES);
     
-    /* compose the list of symbol dictionaries */
+    /* 7.4.3.2 (2) - compose the list of symbol dictionaries */
     n_dicts = jbig2_sd_count_referred(ctx, segment);
     if (n_dicts != 0) {
         dicts = jbig2_sd_list_referred(ctx, segment);
@@ -464,6 +739,13 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 	}
     }
 
+    /* 7.4.3.2 (3) */
+    if (!params.SBHUFF && params.SBREFINE) {
+	int stats_size = params.SBRTEMPLATE ? 1 << 10 : 1 << 13;
+	GR_stats = jbig2_alloc(ctx->allocator, stats_size);
+	memset(GR_stats, 0, stats_size);
+    }
+
     image = jbig2_image_new(ctx, region_info.width, region_info.height);
 
     code = jbig2_decode_text_region(ctx, segment, &params,
@@ -475,6 +757,17 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 	jbig2_free(ctx->allocator, GR_stats);
     }
 
+    if (params.SBHUFF) {
+      jbig2_release_huffman_table(ctx, params.SBHUFFFS);
+      jbig2_release_huffman_table(ctx, params.SBHUFFDS);
+      jbig2_release_huffman_table(ctx, params.SBHUFFDT);
+      jbig2_release_huffman_table(ctx, params.SBHUFFRDX);
+      jbig2_release_huffman_table(ctx, params.SBHUFFRDY);
+      jbig2_release_huffman_table(ctx, params.SBHUFFRDW);
+      jbig2_release_huffman_table(ctx, params.SBHUFFRDH);
+      jbig2_release_huffman_table(ctx, params.SBHUFFRSIZE);
+    }
+
     jbig2_free(ctx->allocator, dicts);
 
     /* todo: check errors */
@@ -484,11 +777,11 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         segment->result = image;
     } else {
         /* otherwise composite onto the page */
-	Jbig2Image *page_image = ctx->pages[ctx->current_page].image;
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, 
             "composing %dx%d decoded text region onto page at (%d, %d)",
             region_info.width, region_info.height, region_info.x, region_info.y);
-        jbig2_image_compose(ctx, page_image, image, region_info.x, region_info.y, JBIG2_COMPOSE_OR);
+	jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image,
+			      region_info.x, region_info.y, region_info.op);
         jbig2_image_release(ctx, image);
     }
     

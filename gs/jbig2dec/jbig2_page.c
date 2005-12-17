@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2001-2002 artofcode LLC.
+    Copyright (c) 2001-2005 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -132,6 +132,7 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segm
             "height is unspecified but page is not markes as striped");
         page->striped = TRUE;
     }
+    page->end_row = 0;
     
     if (segment->data_length > 19) {
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
@@ -164,11 +165,37 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segm
 }
 
 /**
+ * jbig2_parse_end_of_stripe: parse an end of stripe segment
+ **/
+int
+jbig2_parse_end_of_stripe(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
+{
+    Jbig2Page page = ctx->pages[ctx->current_page];
+    int end_row;
+
+    end_row = jbig2_get_int32(segment_data);
+    if (end_row < page.end_row) {
+	jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+	    "end of stripe segment with non-positive end row advance"
+	    "(new end row %d vs current end row %d)", 
+	    end_row, page.end_row);
+    } else {
+	jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
+	    "end of stripe: advancing end row to %d", end_row);
+    }
+    
+    page.end_row = end_row;
+
+    return 0;
+}
+
+/**
  * jbig2_complete_page: complete a page image
  *
  * called upon seeing an 'end of page' segment, this routine
- * marks a page as completed. final compositing and output
- * of the page image will also happen from here (NYI)
+ * marks a page as completed so it can be returned.
+ * compositing will have already happened in the previous 
+ * segment handlers.
  **/
 int
 jbig2_complete_page (Jbig2Ctx *ctx)
@@ -200,6 +227,35 @@ jbig2_parse_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *seg
 #ifdef OUTPUT_PBM
     jbig2_image_write_pbm(ctx->pages[ctx->current_page].image, stdout);
 #endif
+
+    return 0;
+}
+
+/**
+ * jbig2_add_page_result: composite a decoding result onto a page
+ *
+ * this is called to add the results of segment decode (when it
+ * is an image) to a page image buffer
+ **/
+int
+jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image,
+		      int x, int y, Jbig2ComposeOp op)
+{
+    /* grow the page to accomodate a new stripe if necessary */
+    if (page->striped) {
+	int old_height = page->image->height;
+	int new_height = y + image->height + page->end_row;
+	if (page->image->height < new_height) {
+	    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
+		"growing page buffer to %d rows "
+		"to accomodate new stripe", new_height);
+	    jbig2_image_resize(ctx, page->image,
+		page->image->width, new_height);
+	}
+    }    
+
+    jbig2_image_compose(ctx, page->image, image,
+                        x, y + page->end_row, JBIG2_COMPOSE_OR);
 
     return 0;
 }

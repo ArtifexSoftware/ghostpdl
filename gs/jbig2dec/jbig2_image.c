@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2001-2003 artofcode LLC.
+    Copyright (c) 2001-2005 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -51,7 +51,7 @@ Jbig2Image* jbig2_image_new(Jbig2Ctx *ctx, int width, int height)
 		jbig2_free(ctx->allocator, image);
 		return NULL;
 	}
-	
+
 	image->width = width;
 	image->height = height;
 	image->stride = stride;
@@ -79,6 +79,34 @@ void jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image)
 {
 	jbig2_free(ctx->allocator, image->data);
 	jbig2_free(ctx->allocator, image);
+}
+
+/* resize a Jbig2Image */
+Jbig2Image *jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image, 
+				int width, int height)
+{
+	if (width == image->width) {
+	    /* use the same stride, just change the length */
+	    image->data = jbig2_realloc(ctx->allocator,
+                image->data, image->stride*height);
+            if (image->data == NULL) {
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
+                    "could not resize image buffer!");
+		return NULL;
+            }
+	    if (height > image->height) {
+		memset(image->data + image->height*image->stride,
+			0, (height - image->height)*image->stride);
+	    }
+            image->height = height;
+
+	} else {
+	    /* we must allocate a new image buffer and copy */
+	    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1,
+		"jbig2_image_resize called with a different width (NYI)");
+	}
+
+	return NULL;
 }
 
 /* composite one jbig2_image onto another
@@ -133,6 +161,14 @@ int jbig2_image_compose_unopt(Jbig2Ctx *ctx,
 		    jbig2_image_set_pixel(dst, i+x, j+y,
 			~(jbig2_image_get_pixel(src, i+sx, j+sy) ^
 			jbig2_image_get_pixel(dst, i+x, j+y)));
+		}
+    	    }
+	    break;
+	case JBIG2_COMPOSE_REPLACE:
+	    for (j = 0; j < sh; j++) {
+		for (i = 0; i < sw; i++) {
+		    jbig2_image_set_pixel(dst, i+x, j+y,
+			jbig2_image_get_pixel(src, i+sx, j+sy));
 		}
     	    }
 	    break;
@@ -207,8 +243,9 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
             s = (ss += src->stride);
 	}
     } else {
+	bool overlap = (((w + 7) >> 3) < ((x + w + 7) >> 3) - (x >> 3));
 	mask = 0x100 - (1 << shift);
-	if (((w + 7) >> 3) < ((x + w + 7) >> 3) - (x >> 3))
+	if (overlap)
 	    rightmask = (0x100 - (0x100 >> ((x + w) & 7))) >> (8 - shift);
 	else
 	    rightmask = 0x100 - (0x100 >> (w & 7));
@@ -218,8 +255,8 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
 		*d |= ((*s++ & ~mask) << (8 - shift));
 		*d++ |= ((*s & mask) >> shift);
 	    }
-	    if (((w + 7) >> 3) < ((x + w + 7) >> 3) - (x >> 3))
-		*d |= (s[0] & rightmask) << (8 - shift);
+	    if (overlap)
+		*d |= (*s & rightmask) << (8 - shift);
 	    else
 		*d |= ((s[0] & ~mask) << (8 - shift)) |
 		    ((s[1] & rightmask) >> shift);
@@ -262,7 +299,7 @@ int jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value)
 {
   const int w = image->width;
   const int h = image->height;
-  int i, scratch, mask;
+  int scratch, mask;
   int bit, byte;
 
   if ((x < 0) || (x >= w)) return 0;

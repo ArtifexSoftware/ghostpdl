@@ -23,8 +23,12 @@ typedef struct _Jbig2ArithState Jbig2ArithState;
    MPS in the top bit. */
 typedef unsigned char Jbig2ArithCx;
 
+/* allocate and initialize a new arithmetic coding state */
 Jbig2ArithState *
 jbig2_arith_new (Jbig2Ctx *ctx, Jbig2WordStream *ws);
 
+/* decode a bit */
 bool
 jbig2_arith_decode (Jbig2ArithState *as, Jbig2ArithCx *pcx);
+
+
