@@ -240,7 +240,7 @@ CC_NO_WARN=$(CC_)
 
 # Compiler for auxiliary programs
 
-CCAUX=$(COMPAUX) $(VC8WARN)
+CCAUX=$(COMPAUX) $(VC8WARN) $(CFLAGS)
 
 # Compiler for Windows programs.
 CCWINFLAGS=$(COMPILE_FULL_OPTIMIZED)
