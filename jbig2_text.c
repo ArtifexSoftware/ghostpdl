@@ -252,7 +252,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	if (SBSYMCODES == NULL) {
 	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 		"could not construct Symbol ID huffman table!");
-	    return NULL;
+	    return -1;
 	}
     }
 
