@@ -532,8 +532,7 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     cos_dict_t *pcd_Resources = NULL;
 
     if (pdfont->cmap_ToUnicode != NULL && pdfont->res_ToUnicode == NULL)
-	if (((pdfont->FontType == ft_composite) && 
-		!gs_cmap_is_identity(pdfont->cmap_ToUnicode, -1)) ||
+	if (pdfont->FontType == ft_composite ||
 	    ((pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2 || 
 		pdfont->FontType == ft_TrueType || pdfont->FontType == ft_user_defined) && 
 		pdf_simple_font_needs_ToUnicode(pdfont))
