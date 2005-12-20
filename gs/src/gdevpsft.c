@@ -711,8 +711,9 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	switch (u32(tab)) {
 	case W('h','e','a','d'):
-	    if (length != 54)
+	    if (length < 54)
 		return_error(gs_error_invalidfont);
+	    length = 54; /* bug 688409 fig2.eps has length=56. */
 	    ACCESS(start, length, data);
 	    memcpy(head, data, length);
 	    continue;
