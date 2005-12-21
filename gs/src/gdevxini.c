@@ -96,7 +96,7 @@ gdev_x_open(gx_device_X * xdev)
     Display *dpy;
     XColor xc;
     int zero = 0;
-    int xid_height, xid_width;
+    int xid_height = 0, xid_width = 0;
     int code;
 
 #ifdef DEBUG

@@ -606,7 +606,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	    if (metadata_object_id && code >= 0) {
 		char buf[20];
 
-		sprintf(buf, "%d 0 R", metadata_object_id);
+		sprintf(buf, "%ld 0 R", metadata_object_id);
 		code = cos_dict_put_string_copy(*ppcd, "/Metadata", buf);
 	    }
 	}
