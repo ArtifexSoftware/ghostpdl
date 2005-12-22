@@ -212,10 +212,6 @@ pop		% .cidfonttypes
 % loading the font, since Setup is not referenced anywhere else in the file.
 /cid_Setup { } def
 
-currentdict end
-
-% ---------------- Rendering ---------------- %
-
 % ------ Generic ------ %
 
 % Read a string at a given offset in a "file" (binary file or
@@ -270,6 +266,10 @@ currentdict end
 /.readint		% <pos> <nbytes> .readint <int>
 { string ReadString .cvbsi
 } bind def
+
+currentdict end
+
+% ---------------- Rendering ---------------- %
 
 % ------ CIDFontType 0 ------ %
 
