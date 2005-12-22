@@ -379,15 +379,25 @@ pdfdict begin
 /oforce_elems { % <array> oforce_elems <first> ... <last>
   { oforce } forall
 } bind def
+/oforce_recursive { % <any> oforce_recursive <any>
+  oforce dup type dup /arraytype eq {
+    pop [ exch { oforce_recursive } forall ]
+  } {
+    /dicttype eq {
+     << exch { oforce_recursive exch oforce exch } forall >> 
+    } if
+  } ifelse
+} bind def
+
 % A null value in a dictionary is equivalent to an omitted key;
 % we must check for this specially.
 /knownoget {	% <dict> <key> knownoget <value> true
 		% <dict> <key> knownoget false
 		% See oget above regarding this procedure.
   .knownget {
-    oforce dup null eq { pop false } { true } ifelse
+    oforce dup //null eq { pop //false } { //true } ifelse
   } {
-    false
+    //false
   } ifelse
 } bind def
 
@@ -761,20 +771,22 @@ pdfdict begin
 /filterparms {		% <dict> <DPkey> <Fkey> filterparms
 			%   <dict> <parms> <filternames>
   2 index exch knownoget {
+    oforce_recursive
     exch 2 index exch knownoget {
 		% Both filters and parameters.
+      oforce_recursive
       exch dup type /nametype eq {
 	1 array astore exch
 	dup type /arraytype ne { 1 array astore } if exch
       } if
     } {
 		% Filters, but no parameters.
-      null exch
+      //null exch
       dup type /nametype eq { 1 array astore } if
     } ifelse
   } {
 		% No filters: ignore parameters, if any.
-    pop null { }
+    pop //null { }
   } ifelse
 } bind def
 /filtername {		% <filtername> filtername <filtername'>
