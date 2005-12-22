@@ -351,7 +351,7 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
 
 	desc.FontBBox.p.x = (int)(bfont->FontBBox.p.x * scale);
 	desc.FontBBox.p.y = (int)(bfont->FontBBox.p.y * scale);
-	desc.FontBBox.p.x = (int)(bfont->FontBBox.p.x * scale);
+	desc.FontBBox.q.x = (int)(bfont->FontBBox.q.x * scale);
 	desc.FontBBox.q.y = (int)(bfont->FontBBox.q.y * scale);
 	desc.Ascent = desc.FontBBox.q.y;
 	members &= ~GLYPH_INFO_BBOX;
