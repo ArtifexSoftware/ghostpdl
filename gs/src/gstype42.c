@@ -171,6 +171,27 @@ gs_type42_font_init(gs_font_type42 * pfont)
     }
     loca_size >>= pfont->data.indexToLocFormat + 1;
     pfont->data.numGlyphs = (loca_size == 0 ? 0 : loca_size - 1);
+    if (pfont->data.numGlyphs > pfont->data.trueNumGlyphs) {
+	/* Some fonts have excessive data at end of 'loca' table -
+	   see bug 688467.
+	   We're not sure why old versions of Ghostscript maintain
+	   two different fileds - numGlyphs and trueNumGlyphs.
+	   (A related comment in gxfont42.h isn't explanatory about important cases.)
+	   Our reading of TrueType specification and FreeType experience
+	   is that only trueNumGlyphs should be used.
+	   Maybe (I guess) sometimes somebody observed a font,
+	   in which trueNumGlyphs counts real glyphs, 
+	   and numGlyphs counts all subglyphs ?
+	   Continue using trueNumGlyphs since the document of
+	   the bug 688467 fails otherwise.
+	 */
+#	ifdef DEBUG
+	    /* pfont->key_name.chars is ASCIIZ due to copy_font_name. */
+	eprintf3("Warning: 'loca' length %d is greater than numGlyphs %d in the font %s.\n", 
+		pfont->data.numGlyphs + 1, pfont->data.trueNumGlyphs, pfont->key_name.chars);
+#	endif
+	loca_size = pfont->data.numGlyphs = pfont->data.trueNumGlyphs;
+    }
     /* Now build the len_glyphs array since 'loca' may not be properly sorted */
     pfont->data.len_glyphs = (uint *)gs_alloc_bytes(pfont->memory, pfont->data.numGlyphs * sizeof(uint),
 	    "gs_type42_font");
@@ -182,12 +203,12 @@ gs_type42_font_init(gs_font_type42 * pfont)
     /* Since 'loca' is usually sorted, first try the simple linear scan to  */
     /* avoid the need to perform the more expensive process. */
     glyph_start = get_glyph_offset(pfont, 0);
-    for (i=1; i < loca_size; i++) {
+    for (i = 1; i < loca_size; i++) {
 	glyph_offset = get_glyph_offset(pfont, i);
 	glyph_length = glyph_offset - glyph_start;
 	if (glyph_length > 0x80000000)
 	    break;				/* out of order loca */
-	pfont->data.len_glyphs[i-1] = glyph_length;
+	pfont->data.len_glyphs[i - 1] = glyph_length;
 	glyph_start = glyph_offset;
     }
     if (i < loca_size) {
@@ -201,9 +222,9 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	 * glyphs that have loca table offset equal to the last 'dummy'
          * entry. Otherwise we assume that it is a duplicated entry.
 	 */
-	for (i=0; i < loca_size-1; i++) {
+	for (i = 0; i < loca_size - 1; i++) {
 	    glyph_start = get_glyph_offset(pfont, i);
-	    for (j=1, glyph_length = 0x80000000; j<loca_size; j++) {
+	    for (j = 1, glyph_length = 0x80000000; j < loca_size; j++) {
 		glyph_offset = get_glyph_offset(pfont, j);
 		trial_glyph_length = glyph_offset - glyph_start;
 		if ((trial_glyph_length > 0) && (trial_glyph_length < glyph_length))
