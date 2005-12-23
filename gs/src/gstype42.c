@@ -190,7 +190,8 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	eprintf3("Warning: 'loca' length %d is greater than numGlyphs %d in the font %s.\n", 
 		pfont->data.numGlyphs + 1, pfont->data.trueNumGlyphs, pfont->key_name.chars);
 #	endif
-	loca_size = pfont->data.numGlyphs = pfont->data.trueNumGlyphs;
+	pfont->data.numGlyphs = pfont->data.trueNumGlyphs;
+	loca_size = pfont->data.numGlyphs + 1;
     }
     /* Now build the len_glyphs array since 'loca' may not be properly sorted */
     pfont->data.len_glyphs = (uint *)gs_alloc_bytes(pfont->memory, pfont->data.numGlyphs * sizeof(uint),
