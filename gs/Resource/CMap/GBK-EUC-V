@@ -4,10 +4,10 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%IncludeResource: CMap (GBK-EUC-H)
 %%BeginResource: CMap (GBK-EUC-V)
-%%Title: (GBK-EUC-V Adobe GB1 1)
-%%Version: 10.001
+%%Title: (GBK-EUC-V Adobe GB1 2)
+%%Version: 12.000
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-1998 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2001 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -37,11 +37,11 @@ begincmap
 /CIDSystemInfo 3 dict dup begin
   /Registry (Adobe) def
   /Ordering (GB1) def
-  /Supplement 1 def
+  /Supplement 2 def
 end def
 
 /CMapName /GBK-EUC-V def
-/CMapVersion 10.001 def
+/CMapVersion 12.000 def
 /CMapType 1 def
 
 /XUID [1 10 25378] def

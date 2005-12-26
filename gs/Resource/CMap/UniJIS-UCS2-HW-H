@@ -4,10 +4,10 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%IncludeResource: CMap (UniJIS-UCS2-H)
 %%BeginResource: CMap (UniJIS-UCS2-HW-H)
-%%Title: (UniJIS-UCS2-HW-H Adobe Japan1 2)
-%%Version: 11.001
+%%Title: (UniJIS-UCS2-HW-H Adobe Japan1 4)
+%%Version: 12.000
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-1998 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2001 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -37,11 +37,11 @@ begincmap
 /CIDSystemInfo 3 dict dup begin
   /Registry (Adobe) def
   /Ordering (Japan1) def
-  /Supplement 2 def
+  /Supplement 4 def
 end def
 
 /CMapName /UniJIS-UCS2-HW-H def
-/CMapVersion 11.001 def
+/CMapVersion 12.000 def
 /CMapType 1 def
 
 /XUID [1 10 25448] def

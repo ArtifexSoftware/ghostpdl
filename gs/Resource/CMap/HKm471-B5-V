@@ -4,10 +4,10 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%IncludeResource: CMap (HKm471-B5-H)
 %%BeginResource: CMap (HKm471-B5-V)
-%%Title: (HKm471-B5-V Adobe CNS1 0)
-%%Version: 1.001
+%%Title: (HKm471-B5-V Adobe CNS1 1)
+%%Version: 12.000
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-2000 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2001 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -37,11 +37,11 @@ begincmap
 /CIDSystemInfo 3 dict dup begin
   /Registry (Adobe) def
   /Ordering (CNS1) def
-  /Supplement 0 def
+  /Supplement 1 def
 end def
 
 /CMapName /HKm471-B5-V def
-/CMapVersion 1.001 def
+/CMapVersion 12.000 def
 /CMapType 1 def
 
 /XUID [1 10 25526] def

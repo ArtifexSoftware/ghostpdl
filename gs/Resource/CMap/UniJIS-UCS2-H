@@ -3,9 +3,9 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%BeginResource: CMap (UniJIS-UCS2-H)
 %%Title: (UniJIS-UCS2-H Adobe Japan1 4)
-%%Version: 12.000
+%%Version: 12.001
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-2000 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2001 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -37,7 +37,7 @@ begincmap
 end def
 
 /CMapName /UniJIS-UCS2-H def
-/CMapVersion 12.000 def
+/CMapVersion 12.001 def
 /CMapType 1 def
 
 /XUID [1 10 25356] def
@@ -176,8 +176,8 @@ endcidrange
 <0436> <044f> 1099
 <0451> <0451> 1098
 <045b> <045b> 12092
-<0ebc> <0ebc> 9397
-<0ebd> <0ebd> 9409
+<1ebc> <1ebc> 9397
+<1ebd> <1ebd> 9409
 <2002> <2002> 231
 <2003> <2003> 633
 <2010> <2010> 662
