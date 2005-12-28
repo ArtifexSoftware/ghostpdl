@@ -973,7 +973,7 @@ Here are several Macros, named "UPD_MM_*" to deal with that.
 
 /** Version-String */
 
-static const char rcsid[] = "$Revision$";
+static const char rcsid[] = "$Revision: 5215 $";
 
 /** Default-Transfer-curve */
 

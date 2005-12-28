@@ -53,7 +53,7 @@ pushdef([IJS_VERSION], IJS_MAJOR_VERSION.IJS_MINOR_VERSION[]IJS_EXTRA_VERSION)
 AC_INIT(IJS_NAME, IJS_VERSION, [inkjet-list@linuxprinting.org])
 AC_PREREQ(2.53)
 AC_CONFIG_SRCDIR(ijs.c)
-AC_REVISION($Revision$)
+AC_REVISION($Revision: 5783 $)
 
 dnl In the following script, there are a the following variants
 dnl of ijs cflags and libs variables
