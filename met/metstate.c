@@ -13,6 +13,7 @@
 /*$Id$*/
 
 #include "metstate.h"
+#include "plfont.h"
 
 /* allocate a metro state */
 met_state_t *
@@ -25,6 +26,10 @@ met_state_alloc(gs_memory_t *mem)
     if (pmets == 0)
         return 0;
     pmets->memory = mem;
+    /* nb belongs there should be a metro state initialization
+       function somewhere */
+    pl_dict_init(&pmets->font_dict, mem, pl_free_font);
+    pmets->font_dir = gs_font_dir_alloc(mem);
     return pmets;
 }
 

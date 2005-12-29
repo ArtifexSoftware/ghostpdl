@@ -18,7 +18,9 @@
 #  define metstate_INCLUDED
 
 #include "gx.h"
+#include "gsfont.h"
 #include "pltop.h" /* for pjls pointer */
+#include "pldict.h"
 
 typedef struct met_state_s met_state_t;
 
@@ -29,6 +31,8 @@ struct met_state_s {
     pl_interp_instance_t *pjls; /* probably not used */
     int (*end_page)(met_state_t *pxs, int num_copies, int flush);
     int placeholder;
+    pl_dict_t font_dict;
+    gs_font_dir *font_dir;
 };
 
 /* allocate a metro state */

@@ -18,7 +18,7 @@
 #  define metparse_INCLUDED
 
 #include "gx.h"
-#include "metstate.h"
+#include "metstate.h" /* nb this should be separated out - reconsider */
 
 /* the size of the input buffer to be used by the parser */
 #define MET_PARSER_MIN_INPUT_SIZE 8192
@@ -29,7 +29,8 @@ struct met_parser_state_s {
     gs_memory_t *memory;
     int depth;
     void *parser;
-    int next_read_dir;
+    void *data_stack[20]; /* nb should not have depth limitation */
+    met_state_t *mets; /* nb this should be separated out - reconsider */
 };
 
 /* Allocate a parser state. */
@@ -43,7 +44,7 @@ void met_process_init(met_parser_state_t *st);
 
 /* Process a buffer of metro/XML. */
 int met_process(met_parser_state_t *st, met_state_t *pxs,
-                void *pzip, stream_cursor_read *pr);
+                stream_cursor_read *pr);
 
 /* shutdown the parser */
 int met_process_shutdown(met_parser_state_t *st);
