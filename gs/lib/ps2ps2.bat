@@ -1,5 +1,5 @@
-#!/bin/sh
-# $Id$
+@echo off
+@rem $Id$
 @rem Converting Postscript 3 or PDF into PostScript 2.
 
 if %1/==/ goto usage
@@ -15,6 +15,7 @@ goto cp
 :doit
 rem Watcom C deletes = signs, so use # instead.
 %GSC% -q -sDEVICE#ps2write -sOutputFile#%2 @_.at %1
+if exist _.at erase _.at
 goto end
 
 :usage
