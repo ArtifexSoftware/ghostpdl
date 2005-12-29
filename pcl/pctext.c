@@ -861,7 +861,13 @@ pcl_disable_underline(
     pcl_state_t *   pcs
 )
 {	
-    pcs->underline_enabled = false;
+    /* apparently disabling underlining has the side effect of
+       flushing any pending underlines.  This side effect is not
+       documented */
+    if (pcs->underline_enabled == true) {
+        pcl_do_underline(pcs);
+        pcs->underline_enabled = false;
+    }
     return 0;
 }
 
