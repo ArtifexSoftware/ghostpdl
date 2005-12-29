@@ -63,7 +63,6 @@ UNDONE_STUB(Path_OpacityMask);
 UNDONE_STUB(Path_RenderTransform);
 UNDONE_STUB(PathGeometry);
 UNDONE_STUB(PathGeometry_Transform);
-UNDONE_STUB(PolyBezierSegment);
 UNDONE_STUB(PolyQuadraticBezierSegment);
 UNDONE_STUB(RadialGradientBrush);
 UNDONE_STUB(RadialGradientBrush_GradientStops);

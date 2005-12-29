@@ -372,14 +372,28 @@ PolyLineSegment_action(void *data, met_state_t *ms)
 {
     CT_PolyLineSegment *aPolyLineSegment = data;
     gs_state *pgs = ms->pgs;
+    gs_memory_t *mem = ms->memory;
     int code = 0;
     if (aPolyLineSegment->Points) {
         char *s;
         char pstr[strlen(aPolyLineSegment->Points) + 1];
+        /* the number of argument will be less than the length of the
+           data.  NB wasteful. */
+        char *args[strlen(aPolyLineSegment->Points)];
+        char **pargs = args;
         strcpy(pstr, aPolyLineSegment->Points);
-        for(s = pstr; (s = strtok(s, " ")) != NULL; s = NULL) {
-            gs_point p = getPoint(s);
-            code = gs_lineto(pgs, p.x, p.y);
+        split(pstr, args, is_Data_delimeter);
+        while (*pargs) {
+            gs_point pt;
+            pt.x = atof(*pargs++);
+
+            if (!*pargs) {
+                dprintf(mem, "point does not have two coordinate\n");
+                break;
+            }
+
+            pt.y = atof(*pargs++);
+            code = gs_lineto(pgs, pt.x, pt.y);
             if (code < 0)
                 return code;
         }
@@ -721,4 +735,91 @@ const met_element_t met_element_procs_ArcSegment = {
     ArcSegment_cook,
     ArcSegment_action,
     ArcSegment_done
+};
+
+
+/* element constructor */
+private int
+PolyBezierSegment_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
+{
+    CT_PolyBezierSegment *aPolyBezierSegment = 
+        (CT_PolyBezierSegment *)gs_alloc_bytes(ms->memory,
+                                     sizeof(CT_PolyBezierSegment),
+                                       "PolyBezierSegment_cook");
+    int i;
+
+    memset(aPolyBezierSegment, 0, sizeof(CT_PolyBezierSegment));
+
+    /* parse attributes, filling in the zeroed out C struct */
+    for(i = 0; attr[i]; i += 2) {
+        if (!strcmp(attr[i], "Points")) {
+            aPolyBezierSegment->Points = attr[i + 1];
+        } else {
+            dprintf2(ms->memory, "unsupported attribute %s=%s\n",
+                     attr[i], attr[i+1]);
+        }
+    }
+    /* copy back the data for the parser. */
+    *ppdata = aPolyBezierSegment;
+    return 0;
+}
+
+/* action associated with this element.  NB very similar to other
+   LineSegment routines refactor. */
+private int
+PolyBezierSegment_action(void *data, met_state_t *ms)
+{
+    CT_PolyBezierSegment *aPolyBezierSegment = data;
+    gs_state *pgs = ms->pgs;
+    gs_memory_t *mem = ms->memory;
+    int code = 0;
+    if (aPolyBezierSegment->Points) {
+        char *s;
+        char pstr[strlen(aPolyBezierSegment->Points) + 1];
+        /* the number of argument will be less than the length of the
+           data.  NB wasteful. */
+        char *args[strlen(aPolyBezierSegment->Points)];
+        char **pargs = args;
+        int points_parsed = 0;
+        strcpy(pstr, aPolyBezierSegment->Points);
+        split(pstr, args, is_Data_delimeter);
+        while (*pargs) {
+            gs_point pt[3]; /* the three control points */
+
+            pt[points_parsed % 3].x = atof(*pargs++);
+
+            if (!*pargs) {
+                dprintf(mem, "point does not have two coordinate\n");
+                break;
+            }
+            pt[points_parsed % 3].y = atof(*pargs++);
+            points_parsed++;
+            if (points_parsed % 3 == 0) {
+                code = gs_curveto(pgs, pt[0].x, pt[0].y,
+                                  pt[1].x, pt[1].y,
+                                  pt[2].x, pt[2].y);
+                if (code < 0)
+                    return code;
+            }
+        }
+    }
+    if (nb_pathstate.closed)
+        code = gs_closepath(ms->pgs);
+    return code;
+}
+
+private int
+PolyBezierSegment_done(void *data, met_state_t *ms)
+{
+        
+    gs_free_object(ms->memory, data, "PolyBezierSegment_done");
+    return 0; /* incomplete */
+}
+
+
+const met_element_t met_element_procs_PolyBezierSegment = {
+    "PolyBezierSegment",
+    PolyBezierSegment_cook,
+    PolyBezierSegment_action,
+    PolyBezierSegment_done
 };
