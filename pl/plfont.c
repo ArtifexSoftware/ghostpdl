@@ -681,8 +681,8 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir, gs_memory_
         pfont->procs.glyph_info = gs_default_glyph_info;
         pfont->procs.glyph_outline = gs_no_glyph_outline;
 	pfont->id = gs_next_ids(mem, 1);
-	strncpy(pfont->font_name.chars, font_name, sizeof(pfont->font_name.chars));
 	pfont->font_name.size = strlen(font_name);
+	strncpy(pfont->font_name.chars, font_name, pfont->font_name.size);
 	/* replace spaces with '-', seems acrobat doesn't like spaces. */
 	for (i = 0; i < pfont->font_name.size; i++) {
 	    if (pfont->font_name.chars[i] == ' ')
