@@ -1,0 +1,15 @@
+<FixedPage Height="1056" Width="816" xml:lang="en-US">
+<Path StrokeThickness="5" Stroke="#996666" StrokeLineJoin="Round" Data="M
+   25,25 L 350,25 L 355,250 L 25,250 Z">
+   <Path.Fill>
+       <ImageBrush ImageSource="dog.jpg"
+          Transform=".939,.342,-.342,.939,0,-80"
+          TileMode="Tile"
+          Viewbox="0,0,270,423"
+          ViewboxUnits="Absolute"
+          Viewport="75,75,90,125"
+          ViewportUnits="Absolute"
+          Stretch="Fill" />
+   </Path.Fill>
+</Path>
+</FixedPage>

@@ -1,0 +1,12 @@
+<FixedPage Height="1056" Width="816" xml:lang="en-US">
+<Path Stroke="#000000" StrokeThickness="1">
+   <Path.Data>
+       <PathGeometry>
+          <PathFigure StartPoint="20,80">
+              <PolyBezierSegment Points="70,0 120,160 170,80 120,0 70,160
+                 20,80" />
+          </PathFigure>
+       </PathGeometry>
+   </Path.Data>
+</Path>
+</FixedPage>

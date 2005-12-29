@@ -1,0 +1,11 @@
+<FixedPage Height="1056" Width="816" xml:lang="en-US">
+<Path Stroke="#000000" StrokeThickness="1">
+   <Path.Data>
+       <PathGeometry>
+          <PathFigure StartPoint="50,50" IsClosed="true">
+              <PolyLineSegment Points="250,50 150,250" />
+          </PathFigure>
+       </PathGeometry>
+   </Path.Data>
+</Path>
+</FixedPage>

@@ -1,0 +1,25 @@
+<FixedPage Height="1056" Width="816" xml:lang="en-US">
+<Path Stroke="#000000">
+   <Path.Fill>
+       <SolidColorBrush Color="#00FFFF"/>
+   </Path.Fill>
+   <Path.Data>
+       <CombinedGeometry GeometryCombineMode="Union">
+          <CombinedGeometry.Geometry1>
+              <PathGeometry>
+                 <PathFigure StartPoint="20,40" IsClosed="true">
+                     <PolyLineSegment Points="230,40 125,170" />
+                 </PathFigure>
+              </PathGeometry>
+          </CombinedGeometry.Geometry1>
+          <CombinedGeometry.Geometry2>
+              <PathGeometry>
+                 <PathFigure StartPoint="120,20" IsClosed="true">
+                     <PolyLineSegment Points="330,20 225,150" />
+                 </PathFigure>
+              </PathGeometry>
+          </CombinedGeometry.Geometry2>
+       </CombinedGeometry>
+   </Path.Data>
+</Path>
+</FixedPage>

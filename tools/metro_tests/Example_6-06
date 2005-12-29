@@ -1,0 +1,24 @@
+<FixedPage Height="1056" Width="816" xml:lang="en-US">
+<!-- Draw background diamond to show where fill affects background -->
+<Path Fill="#CCCC66" Data="M 150,0 L 300,150 L 150,300 L 0,150 Z"/>
+<Path Data="M 150,0 L 300,150 L 150,300 L 0,150 Z">
+   <Path.Fill>
+       <VisualBrush
+          Viewbox="0,0,1,1"
+          Viewport="150,75,50,50"
+          Stretch="Fill"
+          ViewboxUnits="Absolute"
+          ViewportUnits="Absolute" TileMode="Tile">
+          <VisualBrush.Visual>
+              <Canvas>
+                 <Path Fill="#333399" Data="M 0.1,0.1 L 0.9,0.1 L 0.9,0.9
+                     L 0.1,0.9 Z"/>
+                 <Path Fill="#FFFF00" Data="M 0.1,0.35 L 0.35,0.1 L 0.6,
+                     0.35 L 0.35,0.6 Z"/>
+              </Canvas>
+          </VisualBrush.Visual>
+       </VisualBrush>
+   </Path.Fill>
+</Path>
+</FixedPage>
+

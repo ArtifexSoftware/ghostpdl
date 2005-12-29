@@ -1,0 +1,21 @@
+<FixedPage Height="1056" Width="816" xml:lang="en-US">
+<Path Stroke="#FF0000">
+   <Path.Fill>
+       <SolidColorBrush Color="#00FFFF"/>
+   </Path.Fill>
+   <Path.Data>
+       <GeometryGroup>
+          <PathGeometry>
+              <PathFigure StartPoint="20,40" IsClosed="true">
+                 <PolyLineSegment Points="230,40 125,170" />
+              </PathFigure>
+          </PathGeometry>
+          <PathGeometry>
+              <PathFigure StartPoint="120,20" IsClosed="true">
+                 <PolyLineSegment Points="330,20 225,150" />
+              </PathFigure>
+          </PathGeometry>
+       </GeometryGroup>
+   </Path.Data>
+</Path>
+</FixedPage>

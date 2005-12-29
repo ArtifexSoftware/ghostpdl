@@ -1,0 +1,14 @@
+<FixedPage Height="1056" Width="816" xml:lang="en-US">
+<Path Stroke="#000000" StrokeThickness="10" Data="M 20,20 L 170,20 L 170,170 L 20,170 Z">
+   <Path.Stroke>
+       <LinearGradientBrush MappingMode="Absolute"
+          StartPoint="0,0" EndPoint="0,5" SpreadMethod="Reflect">
+          <LinearGradientBrush.GradientStops>
+              <GradientStop Color="#9999FF" Offset="0.0"/>
+              <GradientStop Color="#333366" Offset="1.0"/>
+          </LinearGradientBrush.GradientStops>
+       </LinearGradientBrush>
+   </Path.Stroke>
+</Path>
+</FixedPage>
+

@@ -1,0 +1,23 @@
+<FixedPage Height="1056" Width="816" xml:lang="en-US">
+<Path Stroke="#000000">
+   <Path.Data>
+       <PathGeometry>
+          <PathFigure StartPoint="25,75">
+              <PolyLineSegment Points="150,75 50,75" />
+          </PathFigure>
+          <PathFigure StartPoint="50,75" IsClosed="true">
+              <ArcSegment
+                 Size="60,60"
+                 RotationAngle="0"
+                 IsLargeArc="true"
+                 SweepDirection="Counterclockwise"
+                 Point="125,75"
+              />
+          </PathFigure>
+          <PathFigure StartPoint="50,75" IsClosed="true">
+              <PolyLineSegment Points="25,25 150,25 125,75" />
+          </PathFigure>
+       </PathGeometry>
+   </Path.Data>
+</Path>
+</FixedPage>
