@@ -32,6 +32,8 @@ metcomplex_h = $(METSRC)metcomplex.h \
 
 metutil_h = $(METSRC)metutil.h
 
+zipparse_h = $(METSRC)zipparse.h
+
 $(METOBJ)metpage.$(OBJ): $(METSRC)metpage.c
 	$(METCCC) $(METSRC)metpage.c $(METO_)metpage.$(OBJ)
 
@@ -59,6 +61,12 @@ $(METOBJ)metelement.$(OBJ): $(METSRC)metelement.c $(metelement_h)
 $(METOBJ)metundone.$(OBJ): $(METSRC)metundone.c
 	$(METCCC) $(METSRC)metundone.c $(METO_)metundone.$(OBJ)
 
+$(METOBJ)zippart.$(OBJ): $(METSRC)zippart.c $(zipparse_h)
+	$(METCCC) $(METSRC)zippart.c $(METO_)zippart.$(OBJ)
+
+$(METOBJ)zipparse.$(OBJ): $(METSRC)zipparse.c $(zipparse_h) $(pltop_h)
+	$(METCCC) $(METSRC)zipparse.c $(METO_)zipparse.$(OBJ)
+
 $(MET_TOP_OBJ): $(METSRC)mettop.c \
                       $(metstate_h)     \
                       $(pltop_h)
@@ -69,9 +77,10 @@ $(MET_TOP_OBJ): $(METSRC)mettop.c \
 MET_OBJS=$(METOBJ)metparse.$(OBJ) $(METOBJ)metstate.$(OBJ) \
          $(METOBJ)metundone.$(OBJ) $(METOBJ)metpage.$(OBJ) \
          $(METOBJ)metelement.$(OBJ) $(METOBJ)metpath.$(OBJ)\
-	 $(METOBJ)metglyphs.$(OBJ) $(METOBJ)metutil.$(OBJ)
+	 $(METOBJ)metglyphs.$(OBJ) $(METOBJ)metutil.$(OBJ) \
+         $(METOBJ)zipparse.$(OBJ) $(METOBJ)zippart.$(OBJ)
 
-	 
+
 $(METOBJ)met.dev: $(MET_MAK) $(ECHOGS_XE) $(MET_OBJS)
 	$(SETMOD) $(METOBJ)met $(MET_OBJS)
 

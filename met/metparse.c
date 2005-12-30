@@ -139,7 +139,8 @@ met_process_alloc(gs_memory_t *memory)
 
     stp->memory = memory;
     stp->parser = p;
-    stp->depth = 0;
+    stp->depth = 0;    
+    stp->next_read_part = -1;
     /* set up the start end callbacks */
     XML_SetElementHandler(p, met_start, met_end);
     XML_SetUserData(p, stp);
@@ -155,7 +156,7 @@ met_process_release(met_parser_state_t *st)
 }
 
 int
-met_process(met_parser_state_t *st, met_state_t *mets, stream_cursor_read *pr)
+met_process(met_parser_state_t *st, met_state_t *mets,  void *pzip, stream_cursor_read *pr)
 {
     const byte *p = pr->ptr;
     const byte *rlimit = pr->limit;
