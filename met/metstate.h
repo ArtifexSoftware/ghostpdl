@@ -26,6 +26,7 @@ typedef struct met_state_s met_state_t;
 
 struct met_state_s {
     gs_memory_t *memory;
+    void *pzip;
     gs_state *pgs;
     void *client_data;
     pl_interp_instance_t *pjls; /* probably not used */

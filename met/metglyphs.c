@@ -30,21 +30,42 @@
 #include <stdlib.h> /* nb for atof */
 #include "plfont.h"
 #include "gstext.h"
+#include "zipparse.h"
 
 /* utilities for fonts */
 
 /* load the TrueType data from a file to memory */
 private byte *
-load_tt_font(FILE *in, gs_memory_t *mem) {
+load_tt_font(zip_part_t *part, gs_memory_t *mem) {
     byte *pfont_data;
     unsigned long size; /* not used */
 
-    int code = pl_alloc_tt_fontfile_buffer(in, mem, &pfont_data, &size);
-    if (code < 0)
-        return NULL;
-    else
-        return pfont_data;
+    ulong len = zip_part_length(part);
+
+    size = 6 + len;	/* leave room for segment header */
+    if ( size != (uint)(size) ) { 
+	/*
+	 * The font is too big to load in a single piece -- punt.
+	 * The error message is bogus, but there isn't any more
+	 * appropriate one.
+	 */
+	return NULL;
+    }
+    zip_part_seek(part, 0, 0);
+
+    pfont_data = gs_alloc_bytes(mem, size, "xps_tt_load_font data");
+    if ( pfont_data == 0 ) {
+	return NULL;
+    }
+
+    if ( len != zip_part_read(pfont_data + 6, len, part) ) {
+	return NULL;
+    }
+
+    zip_part_free_all(part);
+    return pfont_data;
 }
+
 
 /* find a font (keyed by uri) in the font dictionary. */
 private bool
@@ -194,6 +215,7 @@ Glyphs_action(void *data, met_state_t *ms)
     FILE *in; /* tt font file */
     int code = 0;
     gs_matrix font_mat, save_ctm;
+    zip_part_t *part;
 
     if (!fname) {
         dprintf(mem, "no font is defined\n");
@@ -205,14 +227,19 @@ Glyphs_action(void *data, met_state_t *ms)
        dictionary */
     if (!find_font(ms, fname)) {
         byte *pdata;
-        /* nb obviously this will not do */
-        if ((in = fopen(aGlyphs->FontUri, gp_fmode_rb)) == NULL) {
-            dprintf1(mem, "%s font not found\n", aGlyphs->FontUri);
+        /* nb obviously this will not do 
+	 *
+	 *if ((in = fopen(aGlyphs->FontUri, gp_fmode_rb)) == NULL)
+	 *   return -1;
+	 */
+	part = find_zip_part_by_name(ms->pzip, aGlyphs->FontUri);
+	if (part == NULL) 
+	    return -1;
+
+	/* load the font header */
+        if ((pdata = load_tt_font(part, mem)) == NULL)
             return -1;
-        }
-        /* load the font header */
-        if ((pdata = load_tt_font(in, mem)) == NULL)
-            return -1;
+
         /* create a plfont */
         if ((pcf = new_plfont(pdir, mem, pdata)) == NULL)
             return -1;

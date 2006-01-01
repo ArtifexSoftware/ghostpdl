@@ -32,8 +32,12 @@ struct zip_block_s
     zip_block_t *next;
 };
 
+typedef struct zip_state_s zip_state_t; 
+
 typedef struct zip_part_s
 {
+    zip_state_t *parent;
+
     unsigned short gp_bitflag;
     unsigned short comp_method;
     long csize;                      /* compressed size */
@@ -59,7 +63,7 @@ typedef struct zip_part_s
     bool newfile;                  /* end of compressed stream triggers new file */
 } zip_part_t;
 
-typedef struct zip_state_s
+struct zip_state_s
 {
     gs_memory_t *memory;
     bool zip_mode;
@@ -69,15 +73,21 @@ typedef struct zip_state_s
     int read_state;
     int part_read_state;
 
-    int read_part;                 /* file being read */
+
     int num_files;    
+
+    int read_part;             /* file being read */
     zip_part_t *parts[1024];   /* sk: perhaps a list */
+
+    zip_part_t *head; // NB linked list would be better than array
+    zip_part_t *curr; // internal issue
+    zip_part_t *tail;
+    
 
     int free_blk_list_len;
     zip_block_t *free_list;
 
-    
-} zip_state_t;
+};
 
 typedef enum zip_error_status_code_s {
     eNeedData = 42,

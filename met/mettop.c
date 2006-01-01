@@ -179,6 +179,7 @@ met_impl_allocate_interp_instance(
     pmets->end_page = met_end_page_top;    
 
     pmeti->pzip = zip_init_instance(pmem);
+    pmets->pzip = pmeti->pzip;
 
     /* Return success */
     *ppinstance = (pl_interp_instance_t *)pmeti;

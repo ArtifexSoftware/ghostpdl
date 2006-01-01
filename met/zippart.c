@@ -20,6 +20,19 @@
 static const int ziptestmode = 1;
 
 
+zip_part_t * 
+find_zip_part_by_name(zip_state_t *pzip, char *name)
+{
+    int i;
+    // NB: needs linked list parts interface
+    for (i=0; i<1024 && i < pzip->num_files; i++) 
+	if (pzip->parts[i]) 
+	    if (!strncmp(name+1, pzip->parts[i]->name, strlen(name) - 1 ))
+		return( pzip->parts[i] );
+    
+    return NULL;
+}
+
 /* move curr read block to next block updating read stream
  * 
  * do 
@@ -116,34 +129,33 @@ int zip_part_seek(zip_part_t *rpart, long offset, int whence)
  */
 int zip_part_read( byte *dest, int rlen, zip_part_t *rpart )
 {
-#if 0
-    int error = zip_part_seek(rpart, 0, 0);
+    int error = 0;
     int have = rpart->s.r.limit - rpart->s.r.ptr;
     int copied = 0;
 
     while (rlen > 0) {
-    if (have > rlen) 
-	readis = rlen;
-    
-	memcpy( dest, rpart->s.r.ptr + 1, have );
-	rlen -= have;
-	copied += have;
-	dest += have;
-
+	if ( have > 0 ) {
+	    memcpy( dest, rpart->s.r.ptr + 1, have );
+	    rlen -= have;
+	    copied += have;
+	    dest += have;
+	}
 	if (rlen > 0) {
 	    if (zip_read_blk_next_blk(rpart))
 		break; // early end of data, client must check return count
 	    have = rpart->s.r.limit - rpart->s.r.ptr;
 	}
+	else 
+	    break;
     }
     return copied;
-#endif
 }
 
 
 /* This is test code to test the read stream interface */
 
-int zip_page_test( zip_state_t *pzip, zip_part_t *rpart ) 
+private int 
+zip_page_test( zip_state_t *pzip, zip_part_t *rpart ) 
 {
     static int called_counter = 0;
     int error;
@@ -216,7 +228,7 @@ int zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_
 	while ( 0 == zip_read_blk_next_blk(rpart) );
 	
 	/* auto deletion of FixedPage after parsing */
-	zip_part_free_all(pzip, rpart);
+	zip_part_free_all( rpart );
     }
     else if ( ziptestmode ) {
 	zip_page_test(pzip, rpart);
@@ -226,19 +238,13 @@ int zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_
 }
 
 
-// watch the ptr -1 stream foo
-// read must match copy by yourself behaviour 
-/*
-data[012345]
-ptr   
-limit
-*/
-
-
-int zip_part_free_all( zip_state_t *pzip, zip_part_t *part ) 
+int 
+zip_part_free_all( zip_part_t *part ) 
 {
     zip_block_t *next = part->head;
     zip_block_t *this = part->head;
+    zip_state_t *pzip = part->parent;
+
     int i;
 
     while (next) {
@@ -254,7 +260,7 @@ int zip_part_free_all( zip_state_t *pzip, zip_part_t *part )
 	    gs_free_object(pzip->memory, this, "zip_part_free block");
     } 
     /*
-    // bs should be a list pzip->parts
+    // NB should be a list of pzip->parts
     for (i = 0; i < 1024; i++) {
 	if (pzip->parts[i] == part) {
 	    pzip->parts[i] = 0;

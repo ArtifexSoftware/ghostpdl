@@ -5,19 +5,22 @@
 
 #include "pltop.h"  /* NB hack to enable disable zip/xml parsing */
 
-inline int stream_has(stream_cursor_read *pr, unsigned int cnt)
+private inline int 
+stream_has(stream_cursor_read *pr, unsigned int cnt)
 {
     return( pr->limit - pr->ptr >= cnt );
 }
 
 
-inline byte read_byte(stream_cursor_read *pr)
+private inline byte 
+read_byte(stream_cursor_read *pr)
 {
     pr->ptr++;
     return *pr->ptr;
 }
 
-inline unsigned int read2(stream_cursor_read *pr, unsigned short *a)
+private inline unsigned int 
+read2(stream_cursor_read *pr, unsigned short *a)
 {
     if (stream_has(pr, 2)) {
 	*a =  read_byte(pr) | (read_byte(pr) << 8) ;
@@ -28,7 +31,8 @@ inline unsigned int read2(stream_cursor_read *pr, unsigned short *a)
     return 0;
 }
 
-inline unsigned long read4(stream_cursor_read *pr, unsigned long *a)
+private inline unsigned long 
+read4(stream_cursor_read *pr, unsigned long *a)
 {
     if (stream_has(pr, 4)) {
 	*a = read_byte(pr) |  
@@ -47,6 +51,8 @@ int zip_init_part(zip_state_t *pzip)
 {
     zip_part_t *part = (zip_part_t *)gs_alloc_bytes(pzip->memory, size_of(zip_part_t), 
 						    "zip_init_part");
+
+    part->parent = pzip;  /* back pointer */
     pzip->num_files++;
     pzip->parts[pzip->num_files - 1] = part;
     pzip->part_read_state = 0;
