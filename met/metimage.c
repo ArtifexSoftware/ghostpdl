@@ -35,7 +35,7 @@
 #include "jpeglib_.h"           /* for jpeg filter */
 #include "sdct.h"
 #include "sjpeg.h"
-
+#include "zipparse.h"
 
 private int
 ImageBrush_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
@@ -90,33 +90,36 @@ stream_error(stream_state * st, const char *str)
 }
 
 /* temporary code to read raster format.  reads the whole works.  NB
-   uses stdio FILE, needs to read from zip archive. */
+ */
 private int
-readdata(gs_memory_t *mem, ST_Name ImageSource, byte **bufp, int *lenp)
+readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, int *lenp)
 {
-    FILE *in;
     byte *buf;
-    ulong len;
-    
-    /* open the resource */
-    if ((in = fopen(ImageSource, gp_fmode_rb)) == NULL) {
-        dprintf1(mem, "%s not found\n", ImageSource);
-        return -1;
+    ulong len = 0; 
+    zip_part_t *part = find_zip_part_by_name(pzip, ImageSource);
+
+    if (part == NULL) 
+	return -1;
+
+    len = zip_part_length(part);
+
+    buf = gs_alloc_bytes(mem, len, "xps_tt_load_font data");
+    if ( buf == 0 ) {
+	return -1;
     }
 
-    /* get the whole thing for now */
-    len = (fseek(in, 0L, SEEK_END), ftell(in));
+    zip_part_seek(part, 0, 0);
+    if ( len != zip_part_read(buf, len, part) ) {
+	return -1;
+    }
 
-    /* nb error checking */
-    rewind(in);
-    buf = gs_alloc_bytes(mem, len, "readdata");
-    if (!buf)
-        return -1;
-
-    fread(buf, 1, len, in);
-    fclose(in);
     *bufp = buf;
     *lenp = len;
+
+    /* NB no deletion of images,
+     * NB should process once and use many not read many 
+     */
+
     return 0;
 }
 
@@ -240,7 +243,7 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
     gs_client_pattern gspat;
     gs_client_color gscolor;
     gs_memory_t *mem = ms->memory;
-    code = readdata(mem, ImageSource, &rbuf, &rlen);
+    code = readdata(mem, ms->pzip, ImageSource, &rbuf, &rlen);
     if (code < 0)
         return code;
     if (rbuf[0] == 0xff && rbuf[1] == 0xd8)
