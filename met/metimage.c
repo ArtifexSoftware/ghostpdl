@@ -116,6 +116,32 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
     *bufp = buf;
     *lenp = len;
 
+#ifndef NO_PNG_TO_JPEG_HACK
+    /* NB: this converts PNG to JPEGS on the fly using /tmp/foo.png and /tmp/foo.jpg */
+
+    if (0 == strncasecmp(&ImageSource[strlen(ImageSource) -4], "png", 3 ));
+    {
+	FILE *in = fopen("/tmp/foo.png", "w");
+	fwrite(buf, 1, len, in);
+	fclose(in);
+
+	system("/usr/bin/convert /tmp/foo.png /tmp/foo.jpg");
+
+	in = fopen("/tmp/foo.jpg", "r");
+	if (in == NULL) 
+	    return -1;
+	len = (fseek(in, 0L, SEEK_END), ftell(in));
+	rewind(in);
+	gs_free_object(mem, buf, "readdata");
+	buf = gs_alloc_bytes(mem, len, "readdata");
+	if (!buf)
+	    return -1;
+	fread(buf, 1, len, in);
+	fclose(in);    
+	*bufp = buf;
+	*lenp = len;
+    }
+#endif 
     /* NB no deletion of images,
      * NB should process once and use many not read many 
      */
