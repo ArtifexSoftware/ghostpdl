@@ -34,6 +34,9 @@ metutil_h = $(METSRC)metutil.h
 
 zipparse_h = $(METSRC)zipparse.h
 
+$(METOBJ)metimage.$(OBJ): $(METSRC)metimage.c
+	$(METCCC) $(METSRC)metimage.c $(METO_)metimage.$(OBJ)
+
 $(METOBJ)metpage.$(OBJ): $(METSRC)metpage.c
 	$(METCCC) $(METSRC)metpage.c $(METO_)metpage.$(OBJ)
 
@@ -78,8 +81,8 @@ MET_OBJS=$(METOBJ)metparse.$(OBJ) $(METOBJ)metstate.$(OBJ) \
          $(METOBJ)metundone.$(OBJ) $(METOBJ)metpage.$(OBJ) \
          $(METOBJ)metelement.$(OBJ) $(METOBJ)metpath.$(OBJ)\
 	 $(METOBJ)metglyphs.$(OBJ) $(METOBJ)metutil.$(OBJ) \
-         $(METOBJ)zipparse.$(OBJ) $(METOBJ)zippart.$(OBJ)
-
+	 $(METOBJ)metimage.$(OBJ) $(METOBJ)zipparse.$(OBJ) \
+	 $(METOBJ)zippart.$(OBJ)
 
 $(METOBJ)met.dev: $(MET_MAK) $(ECHOGS_XE) $(MET_OBJS)
 	$(SETMOD) $(METOBJ)met $(MET_OBJS)

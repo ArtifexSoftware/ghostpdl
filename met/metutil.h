@@ -18,6 +18,16 @@
 #ifndef metutil_INCLUDED
 #   define metutil_INCLUDED
 
+#include "stdpre.h" /* for bool */
+
+/* utility for splitting up strings - destroys argument and client
+   must determine supply a large enough argument list to support all
+   of the parameters.  The delimeter function should return true if
+   the character is a delimeter.  The C language library iswhite()
+   could be used as a delimeter function */
+
+void met_split(char *b, char **args, bool (*delimfunc(char c)));
+
 /* strcmp(lhs, attr) || *field = rhs saves keystrokes */
 int met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *attr_name);
 #endif /* metutil_INCLUDED */

@@ -206,8 +206,10 @@ Glyphs_action(void *data, met_state_t *ms)
     if (!find_font(ms, fname)) {
         byte *pdata;
         /* nb obviously this will not do */
-        if ((in = fopen(aGlyphs->FontUri, gp_fmode_rb)) == NULL)
+        if ((in = fopen(aGlyphs->FontUri, gp_fmode_rb)) == NULL) {
+            dprintf1(mem, "%s font not found\n", aGlyphs->FontUri);
             return -1;
+        }
         /* load the font header */
         if ((pdata = load_tt_font(in, mem)) == NULL)
             return -1;

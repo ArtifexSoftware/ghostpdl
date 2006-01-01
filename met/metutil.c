@@ -13,6 +13,9 @@
 
 /* metutil.c */
 
+#include "metutil.h"
+#include <stdlib.h>
+
 int
 met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *attr_name) 
 {
@@ -20,4 +23,17 @@ met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *attr
     if (cmp == 0)
         *field = rhs;
     return cmp;
+}
+
+void 
+met_split(char *b, char **args, bool (*delimfunc(char c)))
+{
+    while (*b != NULL) {
+        while (delimfunc(*b))
+            *b++ = NULL;
+        *args++ = b;
+        while((*b != NULL) && (!delimfunc(*b)))
+            b++;
+    }
+    *args = NULL;
 }

@@ -32,7 +32,7 @@ typedef struct rgb_s {
     int b;
 } rgb_t;
 
-/* temporary hack for the treeless demo */
+/* temporary hacks for the treeless demo */
 typedef struct pathfigure_state_s {
     bool fill;
     bool stroke;
@@ -45,21 +45,7 @@ typedef struct pathfigure_state_s {
 
 private pathfigure_state_t nb_pathstate;
 
-/* utility for splitting up path strings - destroys argument and
-   client must determine memory */
-
-private void 
-split(char *b, char **args, bool (*delimfunc(char c)))
-{
-    while (*b != NULL) {
-        while (delimfunc(*b))
-            *b++ = NULL;
-        *args++ = b;
-        while((*b != NULL) && (!delimfunc(*b)))
-            b++;
-    }
-    *args = NULL;
-}
+bool patternset = false;
 
 /* I am sure there is a better (more robust) meme for this... */
 private rgb_t
@@ -99,7 +85,7 @@ getPoint(const char *metPoint)
     }
     *p = '\0'; /* null terminate p */
 
-    split(pstr, args, is_Data_delimeter);
+    met_split(pstr, args, is_Data_delimeter);
     pt.x = atof(args[0]);
     pt.y = atof(args[1]);
     return pt;
@@ -234,7 +220,7 @@ Path_action(void *data, met_state_t *ms)
         char **pargs = args;
         bool moveto;
         strcpy(pathcopy, aPath->Data);
-        split(pathcopy, args, is_Data_delimeter);
+        met_split(pathcopy, args, is_Data_delimeter);
         /* nb implement the spec for Data - this just prints some test
            examples, sans error checking. */
         moveto = false;
@@ -242,12 +228,10 @@ Path_action(void *data, met_state_t *ms)
             gs_point pt;
             if ((**pargs == 'M') || (**pargs == 'L')) {
                 moveto = (**pargs == 'M');
-                dprintf(mem, "got moveto\n");
                 pargs++;
             }
             pt.x = atof(*pargs++);
             pt.y = atof(*pargs++);
-            dprintf2(mem, "got point %g %g\n", pt.x, pt.y);
             if (moveto)
                 code = gs_moveto(pgs, pt.x, pt.y);
             else
@@ -263,6 +247,9 @@ private int
 set_color(gs_state *pgs, bool forstroke)
 {
     int code = 0;
+    if (patternset)
+        return 0;
+
     if (forstroke) {
         if (nb_pathstate.stroke_color_set) {
             rgb_t rgb = nb_pathstate.stroke_color;
@@ -382,7 +369,7 @@ PolyLineSegment_action(void *data, met_state_t *ms)
         char *args[strlen(aPolyLineSegment->Points)];
         char **pargs = args;
         strcpy(pstr, aPolyLineSegment->Points);
-        split(pstr, args, is_Data_delimeter);
+        met_split(pstr, args, is_Data_delimeter);
         while (*pargs) {
             gs_point pt;
             pt.x = atof(*pargs++);
@@ -782,7 +769,7 @@ PolyBezierSegment_action(void *data, met_state_t *ms)
         char **pargs = args;
         int points_parsed = 0;
         strcpy(pstr, aPolyBezierSegment->Points);
-        split(pstr, args, is_Data_delimeter);
+        met_split(pstr, args, is_Data_delimeter);
         while (*pargs) {
             gs_point pt[3]; /* the three control points */
 

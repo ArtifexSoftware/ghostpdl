@@ -48,7 +48,6 @@ UNDONE_STUB(Glyphs_Fill);
 UNDONE_STUB(Glyphs_OpacityMask);
 UNDONE_STUB(Glyphs_RenderTransform);
 UNDONE_STUB(GradientStop);
-UNDONE_STUB(ImageBrush);
 UNDONE_STUB(ImageBrush_Transform);
 UNDONE_STUB(LinearGradientBrush);
 UNDONE_STUB(LinearGradientBrush_GradientStops);
