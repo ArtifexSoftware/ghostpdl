@@ -117,29 +117,51 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
     *lenp = len;
 
 #ifndef NO_PNG_TO_JPEG_HACK
-    /* NB: this converts PNG to JPEGS on the fly using /tmp/foo.png and /tmp/foo.jpg */
+    /* NB: this converts PNG to JPEGS on the fly using /tmp/foo.png and /tmp/foo.jpg 
+     * NB: also converts TIFF to jpg 
+     * NB: file name extension detection is weak, 
+     * file data inspection would be much better.
+     */
 
-    if (0 == strncasecmp(&ImageSource[strlen(ImageSource) -4], "png", 3 ));
     {
-	FILE *in = fopen("/tmp/foo.png", "w");
-	fwrite(buf, 1, len, in);
-	fclose(in);
+	const char *ctif_convert = "/usr/bin/convert /tmp/foo.tif /tmp/foo.jpg";
+	const char *ctif = "/tmp/foo.tif";
+	const char *cpng_convert = "/usr/bin/convert /tmp/foo.png /tmp/foo.jpg";
+	const char *cpng = "/tmp/foo.png";
+	char *imgStr;
+	char *convertStr;
+	bool doit = false;
 
-	system("/usr/bin/convert /tmp/foo.png /tmp/foo.jpg");
+	if (0 == strncasecmp(&ImageSource[strlen(ImageSource) -5], "tiff", 4 )) {
+	    imgStr = ctif;
+	    convertStr = ctif_convert;
+	    doit = true;
+	} else 	if (0 == strncasecmp(&ImageSource[strlen(ImageSource) -4], "png", 3 )); {
+	    imgStr = cpng;
+	    convertStr = cpng_convert;
+	    doit = true;
+	}
+	if (doit) {
+	    FILE *in = fopen(imgStr, "w");
+	    fwrite(buf, 1, len, in);
+	    fclose(in);
 
-	in = fopen("/tmp/foo.jpg", "r");
-	if (in == NULL) 
-	    return -1;
-	len = (fseek(in, 0L, SEEK_END), ftell(in));
-	rewind(in);
-	gs_free_object(mem, buf, "readdata");
-	buf = gs_alloc_bytes(mem, len, "readdata");
-	if (!buf)
-	    return -1;
-	fread(buf, 1, len, in);
-	fclose(in);    
-	*bufp = buf;
-	*lenp = len;
+	    system( convertStr );
+
+	    in = fopen("/tmp/foo.jpg", "r");
+	    if (in == NULL) 
+		return -1;
+	    len = (fseek(in, 0L, SEEK_END), ftell(in));
+	    rewind(in);
+	    gs_free_object(mem, buf, "readdata");
+	    buf = gs_alloc_bytes(mem, len, "readdata");
+	    if (!buf)
+		return -1;
+	    fread(buf, 1, len, in);
+	    fclose(in);    
+	    *bufp = buf;
+	    *lenp = len;
+	}
     }
 #endif 
     /* NB no deletion of images,
