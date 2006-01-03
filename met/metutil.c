@@ -37,3 +37,24 @@ met_split(char *b, char **args, bool (*delimfunc(char c)))
     }
     *args = NULL;
 }
+
+/* I am sure there is a better (more robust) meme for this... */
+rgb_t
+met_hex2rgb(char *hexstring)
+{
+    char *hextable = "0123456789ABCDEF";
+    rgb_t rgb;
+    char *hexstringp = hexstring;
+    /* nb need to look into color specification */
+    if (strlen(hexstring) == 9)
+        hexstringp += 2;
+        
+#define HEXTABLEINDEX(chr) (strchr(hextable, (chr)) - hextable)
+    rgb.r = HEXTABLEINDEX(hexstringp[1]) * 16 +
+        HEXTABLEINDEX(hexstringp[2]);
+    rgb.g = HEXTABLEINDEX(hexstringp[3]) * 16 +
+        HEXTABLEINDEX(hexstringp[4]);
+    rgb.b = HEXTABLEINDEX(hexstringp[5]) * 16 +
+        HEXTABLEINDEX(hexstringp[6]);
+    return rgb;
+}

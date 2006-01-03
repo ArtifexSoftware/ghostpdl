@@ -25,12 +25,6 @@
 #include "ctype_.h"
 #include <stdlib.h> /* nb for atof */
 
-/* nb use the library */
-typedef struct rgb_s {
-    int r;
-    int g;
-    int b;
-} rgb_t;
 
 /* temporary hacks for the treeless demo */
 typedef struct pathfigure_state_s {
@@ -46,22 +40,6 @@ typedef struct pathfigure_state_s {
 private pathfigure_state_t nb_pathstate;
 
 bool patternset = false;
-
-/* I am sure there is a better (more robust) meme for this... */
-private rgb_t
-hex2rgb(char *hexstring)
-{
-    char *hextable = "0123456789ABCDEF";
-    rgb_t rgb;
-#define HEXTABLEINDEX(chr) (strchr(hextable, (chr)) - hextable)
-    rgb.r = HEXTABLEINDEX(hexstring[1]) * 16 +
-        HEXTABLEINDEX(hexstring[2]);
-    rgb.g = HEXTABLEINDEX(hexstring[3]) * 16 +
-        HEXTABLEINDEX(hexstring[4]);
-    rgb.b = HEXTABLEINDEX(hexstring[5]) * 16 +
-        HEXTABLEINDEX(hexstring[6]);
-    return rgb;
-}
 
 /* this function is passed to the split routine (see below) */
 private bool is_Data_delimeter(char b) 
@@ -209,7 +187,7 @@ Path_action(void *data, met_state_t *ms)
     gs_memory_t *mem = ms->memory;
 
     if (aPath->Stroke) {
-        rgb_t rgb = hex2rgb(aPath->Stroke);
+        rgb_t rgb = met_hex2rgb(aPath->Stroke);
         nb_pathstate.stroke_color_set = true;
         nb_pathstate.stroke_color = rgb;
         nb_pathstate.stroke = 1;
@@ -217,7 +195,7 @@ Path_action(void *data, met_state_t *ms)
     
     /* NB code dup */
     if (aPath->Fill) {
-        rgb_t rgb = hex2rgb(aPath->Fill);
+        rgb_t rgb = met_hex2rgb(aPath->Fill);
         nb_pathstate.fill_color_set = true;
         nb_pathstate.fill_color = rgb;
         nb_pathstate.fill = 1;
@@ -501,7 +479,7 @@ SolidColorBrush_action(void *data, met_state_t *ms)
 {
     CT_SolidColorBrush *aSolidColorBrush = data;
     if (aSolidColorBrush->Color) {
-        rgb_t rgb = hex2rgb(aSolidColorBrush->Color);
+        rgb_t rgb = met_hex2rgb(aSolidColorBrush->Color);
         nb_pathstate.fill_color_set = true;
         nb_pathstate.fill_color = rgb;
     }

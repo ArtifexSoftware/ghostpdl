@@ -30,4 +30,15 @@ void met_split(char *b, char **args, bool (*delimfunc(char c)));
 
 /* strcmp(lhs, attr) || *field = rhs saves keystrokes */
 int met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *attr_name);
+
+/* nb should use a gs type but this is expedient for now.  Convert an
+   rgb hex string to an rgb triple */
+typedef struct rgb_s {
+    int r;
+    int g;
+    int b;
+} rgb_t;
+
+rgb_t met_hex2rgb(char *hexstring);
+
 #endif /* metutil_INCLUDED */

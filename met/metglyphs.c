@@ -199,6 +199,21 @@ Glyphs_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
     return 0;
 }
 
+int
+private set_rgb_text_color(gs_state *pgs, ST_RscRefColor Fill) 
+{
+    if (!Fill) {
+        return gs_setnullcolor(pgs);
+    }
+    else {
+        rgb_t rgb = met_hex2rgb(Fill);
+        return gs_setrgbcolor(pgs, (floatp)rgb.r, (floatp)rgb.g,
+                               (floatp)rgb.b);
+    }
+    return -1; /* not reached */
+}
+
+    
 /* action associated with this element.  NB this procedure should be
    decomposed into manageable pieces */
 private int
@@ -208,6 +223,7 @@ Glyphs_action(void *data, met_state_t *ms)
     /* load the font */
     CT_Glyphs *aGlyphs = data;
     ST_Name fname = aGlyphs->FontUri; /* font uri */
+    ST_RscRefColor color = aGlyphs->Fill;
     gs_memory_t *mem = ms->memory;
     gs_state *pgs = ms->pgs;
     pl_font_t *pcf = NULL; /* current font */
@@ -259,9 +275,12 @@ Glyphs_action(void *data, met_state_t *ms)
     if ((code = gs_moveto(pgs, aGlyphs->OriginX, aGlyphs->OriginY)) != 0)
          return code;
     
-    /* save the current ctm and concatenate a font matrix */
-    gs_currentmatrix(pgs, &save_ctm);
+    /* save the current ctm and the current color */
+    gs_gsave(pgs);
 
+    /* set the text color */
+    set_rgb_text_color(pgs, color);
+    /* concatenate a font matrix */
     gs_make_identity(&font_mat);
 
     /* flip y metro goes down the page */
@@ -286,7 +305,7 @@ Glyphs_action(void *data, met_state_t *ms)
     }
                
     /* restore the ctm */
-    gs_setmatrix(pgs, &save_ctm);
+    gs_grestore(pgs);
     return 0;
 }
 
