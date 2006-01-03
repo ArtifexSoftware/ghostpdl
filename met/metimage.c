@@ -247,19 +247,22 @@ met_PaintPattern(const gs_client_color *pcc, gs_state *pgs)
     const met_pattern_t *pmpat = ppat->client_data;
     const met_image_t *pmim = pmpat->raster_image;
     const byte *pdata = pmim->samples;
+    gs_memory_t *mem = gs_state_memory(pgs);
     gs_image_enum *penum;
     gs_color_space color_space;
     gs_image_t image;
     int num_components = 3; /* NB */
     int code;
-
-    gs_cspace_init_DeviceRGB(gs_state_memory(pgs), &color_space);
+    /* should be just save the ctm */
+    gs_gsave(pgs);
+    gs_scale(pgs, pmim->xres/96.0, pmim->yres/96.0);
+    gs_cspace_init_DeviceRGB(mem, &color_space);
     gs_image_t_init(&image, &color_space);
     image.ColorSpace = &color_space;
     image.BitsPerComponent = pmim->bits;
     image.Width = pmim->width;
     image.Height = pmim->height;
-    penum = gs_image_enum_alloc(gs_state_memory(pgs), "met_PaintPattern");
+    penum = gs_image_enum_alloc(mem, "met_PaintPattern");
     if (!penum)
         return -1;
     if ((code = gs_image_init(penum, &image, false, pgs)) < 0)
@@ -274,11 +277,14 @@ met_PaintPattern(const gs_client_color *pcc, gs_state *pgs)
         if ((code = gs_image_next(penum, pdata, imbytes, &used)) < 0)
             return code;
         if (imbytes != used) {
-            dprintf(gs_state_memory(pgs), "image data error\n");
+            dprintf(mem, "underflow or overlow in image data\n");
             return -1;
         }
     }
-    return -0;
+    gs_image_cleanup(penum);
+    gs_free_object(mem, penum, "px_paint_pattern");
+    gs_grestore(pgs);
+    return 0;
 }
 
 /* NB for the demo we render and set the pattern in the graphics
@@ -308,8 +314,13 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
     uid_set_UniqueID(&gspat.uid, gs_next_ids(mem, 1));
     gspat.PaintType = 1;
     gspat.TilingType = 1;
-    gspat.BBox = metpat->Viewbox;
-    gspat.XStep = metpat->Viewbox.q.x - metpat->Viewbox.p.x;
+    // gspat.BBox = metpat->Viewbox;
+    gspat.BBox.p.x = 0;
+    gspat.BBox.p.y = 0;
+    gspat.BBox.q.x = metpat->Viewbox.q.x - metpat->Viewbox.p.x;
+    gspat.BBox.q.y = metpat->Viewbox.q.y - metpat->Viewbox.p.y;
+
+    gspat.XStep = metpat->Viewbox.q.x - metpat->Viewbox.p.x; 
     gspat.YStep = metpat->Viewbox.q.y - metpat->Viewbox.p.y;
     gspat.PaintProc = met_PaintPattern;
     gspat.client_data = (void *)metpat;
@@ -415,6 +426,7 @@ ImageBrush_action(void *data, met_state_t *ms)
     if (aImageBrush->Transform) {
         char transform[strlen(aImageBrush->Transform)];
         char *args[strlen(aImageBrush->Transform)];
+        strcpy(transform, aImageBrush->Transform);
         char **pargs = args;
         met_split(transform, args, is_Data_delimeter);
         pat->Transform.xx = atof(pargs[0]);

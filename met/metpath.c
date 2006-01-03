@@ -237,7 +237,7 @@ Path_action(void *data, met_state_t *ms)
         /* nb implement the spec for Data - this just prints some test
            examples, sans error checking. */
         moveto = false;
-        while (**pargs != 'Z' && **pargs != 'z') {
+        while (*pargs && **pargs != 'Z' && **pargs != 'z') {
             gs_point pt;
             if ((**pargs == 'M') || (**pargs == 'L')) {
                 moveto = (**pargs == 'M');
