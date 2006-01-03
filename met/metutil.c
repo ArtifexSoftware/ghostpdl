@@ -49,7 +49,7 @@ met_hex2rgb(char *hexstring)
     if (strlen(hexstring) == 9)
         hexstringp += 2;
         
-#define HEXTABLEINDEX(chr) (strchr(hextable, (chr)) - hextable)
+#define HEXTABLEINDEX(chr) (strchr(hextable, (toupper(chr))) - hextable)
     rgb.r = HEXTABLEINDEX(hexstringp[1]) * 16 +
         HEXTABLEINDEX(hexstringp[2]);
     rgb.g = HEXTABLEINDEX(hexstringp[3]) * 16 +
