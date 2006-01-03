@@ -218,8 +218,9 @@ decodejpeg(gs_memory_t *mem, byte *rbuf, int rlen, met_image_t *g_image)
     g_image->width = jddp.dinfo.output_width;
     g_image->height = jddp.dinfo.output_height;
     g_image->comps = jddp.dinfo.output_components;
+    g_image->xres = jddp.dinfo.X_density;
+    g_image->yres = jddp.dinfo.Y_density;
     g_image->bits = 8;
-
     wlen = jddp.dinfo.output_width *
         jddp.dinfo.output_height *
         jddp.dinfo.output_components;
@@ -316,10 +317,21 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
         gs_matrix mat;
         gs_color_space cs;
         gs_state *pgs = ms->pgs;
+        gs_rect vbox = metpat->Viewbox;
+        gs_rect vport = metpat->Viewport;
         gs_gsave(pgs);
-        /* NB figure out the pattern matrix */
-        gs_make_identity(&mat);
-        gs_setmatrix(pgs, &mat);
+        /* NB does not account for resolution */
+        /* translate the viewbox to the origin */
+        gs_make_translation(-vbox.p.x, -vbox.p.y, &mat);
+        /* scale the translated viewbox to the size of the viewport */
+        {
+            double scalex = (vport.q.x - vport.p.x) / (vbox.q.x - vbox.p.x);
+            double scaley = (vport.q.y - vport.p.y) / (vbox.q.y - vbox.p.y);
+            gs_matrix_scale(&mat, scalex, scaley, &mat);
+        }
+        /* translate the box scaled to the viewport back to the
+           viewport origin */
+        gs_matrix_translate(mem, &mat, vport.p.x, vport.p.y, &mat);
         gs_cspace_init_DeviceRGB(mem, &cs);
         gs_setcolorspace(pgs, &cs);
         gs_makepattern(&gscolor, &gspat, &mat, pgs, NULL);
@@ -372,17 +384,45 @@ ImageBrush_action(void *data, met_state_t *ms)
         pat->Transform.tx = atof(pargs[4]);
         pat->Transform.ty = atof(pargs[5]);
     }
-    {
-        char viewstring[strlen(aImageBrush->Viewbox)];
-        strcpy(viewstring, aImageBrush->Viewbox);
+
+    if (aImageBrush->Viewbox) {
+        char viewbox[strlen(aImageBrush->Viewbox)];
+        strcpy(viewbox, aImageBrush->Viewbox);
         /* nb wasteful */
         char *args[strlen(aImageBrush->Viewbox)];
         char **pargs = args;
-        met_split(viewstring, args, is_Data_delimeter);
+        met_split(viewbox, args, is_Data_delimeter);
         pat->Viewbox.p.x = atof(pargs[0]);
         pat->Viewbox.p.y = atof(pargs[1]);
         pat->Viewbox.q.x = pat->Viewbox.p.x + atof(pargs[2]);
         pat->Viewbox.q.y = pat->Viewbox.p.y + atof(pargs[3]);
+    }
+    if (aImageBrush->Viewport) {
+        /* do ever feel like your doing the same thing over and over
+           again... */
+        char viewport[strlen(aImageBrush->Viewport)];
+        strcpy(viewport, aImageBrush->Viewport);
+        /* nb wasteful */
+        char *args[strlen(aImageBrush->Viewbox)];
+        char **pargs = args;
+        met_split(viewport, args, is_Data_delimeter);
+        pat->Viewport.p.x = atof(pargs[0]);
+        pat->Viewport.p.y = atof(pargs[1]);
+        pat->Viewport.q.x = pat->Viewport.p.x + atof(pargs[2]);
+        pat->Viewport.q.y = pat->Viewport.p.y + atof(pargs[3]);
+    }
+
+    if (aImageBrush->Transform) {
+        char transform[strlen(aImageBrush->Transform)];
+        char *args[strlen(aImageBrush->Transform)];
+        char **pargs = args;
+        met_split(transform, args, is_Data_delimeter);
+        pat->Transform.xx = atof(pargs[0]);
+        pat->Transform.xy = atof(pargs[1]);
+        pat->Transform.yx = atof(pargs[2]);
+        pat->Transform.yy = atof(pargs[3]);
+        pat->Transform.tx = atof(pargs[4]);
+        pat->Transform.ty = atof(pargs[5]);
     }
     make_pattern(aImageBrush->ImageSource, pat, ms);
     

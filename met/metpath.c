@@ -186,6 +186,10 @@ Path_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
         else if (!met_cmp_and_set(&aPath->Data,
                                   attr[i], attr[i+1], "Data")) 
             ;
+        else if (!met_cmp_and_set(&aPath->Fill,
+                                  attr[i], attr[i+1], "Fill"))
+            ;
+        
         else {
             dprintf2(ms->memory, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
@@ -208,6 +212,15 @@ Path_action(void *data, met_state_t *ms)
         rgb_t rgb = hex2rgb(aPath->Stroke);
         nb_pathstate.stroke_color_set = true;
         nb_pathstate.stroke_color = rgb;
+        nb_pathstate.stroke = 1;
+    }
+    
+    /* NB code dup */
+    if (aPath->Fill) {
+        rgb_t rgb = hex2rgb(aPath->Fill);
+        nb_pathstate.fill_color_set = true;
+        nb_pathstate.fill_color = rgb;
+        nb_pathstate.fill = 1;
     }
 
     if (aPath->Data) {
@@ -313,6 +326,8 @@ Path_done(void *data, met_state_t *ms)
                 break;
         }
     }
+    /* hack nb fixme */
+    patternset = false;
     gs_free_object(ms->memory, data, "Path_done");
     return code;
 }

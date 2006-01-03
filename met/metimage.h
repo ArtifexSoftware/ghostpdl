@@ -23,6 +23,8 @@ typedef struct met_image_s {
     int height;
     int comps;
     int bits;
+    int xres;
+    int yres;
     byte *samples;
 } met_image_t;
 
