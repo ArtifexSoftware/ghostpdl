@@ -333,7 +333,7 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
         gs_gsave(pgs);
         /* NB does not account for resolution */
         /* translate the viewbox to the origin */
-        gs_make_translation(-vbox.p.x, -vbox.p.y, &mat);
+        gs_make_translation(vport.p.x, vport.p.y, &mat);
         /* scale the translated viewbox to the size of the viewport */
         {
             double scalex = (vport.q.x - vport.p.x) / (vbox.q.x - vbox.p.x);
@@ -342,7 +342,7 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
         }
         /* translate the box scaled to the viewport back to the
            viewport origin */
-        gs_matrix_translate(mem, &mat, vport.p.x, vport.p.y, &mat);
+        gs_matrix_translate(mem, &mat, -vbox.p.x, vbox.p.y, &mat);
         gs_cspace_init_DeviceRGB(mem, &cs);
         gs_setcolorspace(pgs, &cs);
         gs_makepattern(&gscolor, &gspat, &mat, pgs, NULL);
