@@ -331,18 +331,18 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
         gs_rect vbox = metpat->Viewbox;
         gs_rect vport = metpat->Viewport;
         gs_gsave(pgs);
-        /* NB does not account for resolution */
-        /* translate the viewbox to the origin */
+        /* resolution scaling is done when the pattern is painted */
+        /* translate the viewbox to the origin, scale the viewbox to
+           the viewport and translate the viewbox back. */
         gs_make_translation(vport.p.x, vport.p.y, &mat);
-        /* scale the translated viewbox to the size of the viewport */
         {
             double scalex = (vport.q.x - vport.p.x) / (vbox.q.x - vbox.p.x);
             double scaley = (vport.q.y - vport.p.y) / (vbox.q.y - vbox.p.y);
             gs_matrix_scale(&mat, scalex, scaley, &mat);
         }
-        /* translate the box scaled to the viewport back to the
-           viewport origin */
         gs_matrix_translate(mem, &mat, -vbox.p.x, vbox.p.y, &mat);
+
+        /* nb defaults to RGB */
         gs_cspace_init_DeviceRGB(mem, &cs);
         gs_setcolorspace(pgs, &cs);
         gs_makepattern(&gscolor, &gspat, &mat, pgs, NULL);
