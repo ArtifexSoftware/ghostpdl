@@ -66,7 +66,11 @@ zip_part_length(zip_part_t *rpart)
 
     blk = rpart->head;
     while (blk->next) {
-	len += ZIP_BLOCK_SIZE;
+	len += blk->writeoffset;
+	if (blk->writeoffset != ZIP_BLOCK_SIZE)
+	    dprintf2(rpart->parent->memory, 
+		     "Wasted Space! zip_part_length != zip_part_read %d, %d\n", 
+		     blk->writeoffset, ZIP_BLOCK_SIZE);
 	blk = blk->next;
     }
     len += blk->writeoffset;
