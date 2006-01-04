@@ -236,7 +236,7 @@ int zip_new_block(zip_state_t *pzip, zip_part_t *part)
 	blk = pzip->free_list;
 	pzip->free_list = blk->next;
 	blk->next = NULL;
-	blk->readoffset = blk->writeoffset = 0;
+	blk->writeoffset = 0;
     }
     else {
 	blk = (zip_block_t *) gs_alloc_bytes(pzip->memory, 
@@ -244,7 +244,7 @@ int zip_new_block(zip_state_t *pzip, zip_part_t *part)
 					     "zip_new_block");	
 	if (blk == NULL)
 	    return gs_error_VMerror;
-	blk->readoffset = blk->writeoffset = 0;
+	blk->writeoffset = 0;
 	blk->next = NULL;
     }
     assert(part->write);

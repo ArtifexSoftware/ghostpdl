@@ -20,6 +20,8 @@
 static const int ziptestmode = 1;
 
 
+
+/* NB: needed features:  unicode, esc characters,  directories aren't supported.*/
 zip_part_t * 
 find_zip_part_by_name(zip_state_t *pzip, char *name)
 {
@@ -39,7 +41,8 @@ find_zip_part_by_name(zip_state_t *pzip, char *name)
  *   read all avail limit is block size or end of data
  * while (!zip_read_blk_next_blk(rpart))
  */
-int zip_read_blk_next_blk(zip_part_t *rpart)
+int 
+zip_read_blk_next_blk(zip_part_t *rpart)
 {
     rpart->curr = rpart->curr->next;
     if (rpart->curr) {
@@ -55,7 +58,8 @@ int zip_read_blk_next_blk(zip_part_t *rpart)
 
 
 /* length of all the data in a zip file, or XPS part */
-int zip_part_length(zip_part_t *rpart)
+int 
+zip_part_length(zip_part_t *rpart)
 {
     int len = 0;
     zip_block_t *blk;
@@ -72,7 +76,8 @@ int zip_part_length(zip_part_t *rpart)
 /* SEEK_SET, SEEK_CUR, SEEK_END are all supported.
  * readonly usage, so seek beyond EOF is ignored.
  */ 
-int zip_part_seek(zip_part_t *rpart, long offset, int whence)
+int 
+zip_part_seek(zip_part_t *rpart, long offset, int whence)
 {
     zip_block_t *blk;
 
@@ -127,7 +132,8 @@ int zip_part_seek(zip_part_t *rpart, long offset, int whence)
  * entire part is availiable, all pieces are concatinated 
  * prior to first read.
  */
-int zip_part_read( byte *dest, int rlen, zip_part_t *rpart )
+int 
+zip_part_read( byte *dest, int rlen, zip_part_t *rpart )
 {
     int error = 0;
     int have = rpart->s.r.limit - rpart->s.r.ptr;
@@ -141,8 +147,9 @@ int zip_part_read( byte *dest, int rlen, zip_part_t *rpart )
 	    dest += have;
 	}
 	if (rlen > 0) {
-	    if (zip_read_blk_next_blk(rpart))
+	    if (zip_read_blk_next_blk(rpart)) {
 		break; // early end of data, client must check return count
+	    }
 	    have = rpart->s.r.limit - rpart->s.r.ptr;
 	}
 	else 
@@ -169,7 +176,7 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 	while (len) {
 	    len -= zip_part_read(&buf[0], 100, rpart);
 	}
-	zip_part_free_all(pzip, rpart);
+	zip_part_free_all(rpart);
     }
     
     if (1) {
@@ -196,7 +203,7 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 		fwrite(rpart->s.r.ptr + 1, 1, avail, fp);
 		rpart->s.r.ptr += avail;
 	    }
-	    while (rpart->s.r.ptr < rpart->s.r.limit); 
+	    while (rpart->s.r.ptr + 1 < rpart->s.r.limit); 
 	}
 	while ( 0 == zip_read_blk_next_blk(rpart) );
 	fclose(fp);
@@ -204,7 +211,8 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 
 }
 
-int zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part_t *rpart ) 
+int 
+zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part_t *rpart ) 
 {
     long len = 0;
     int error = 0;

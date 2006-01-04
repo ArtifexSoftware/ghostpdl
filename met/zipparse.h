@@ -24,8 +24,6 @@
 typedef struct zip_block_s zip_block_t;
 struct zip_block_s
 {
-    long readoffset;  // why? foo remove
-
     long writeoffset;  // either end of data or last written byte
 
     byte data[ZIP_BLOCK_SIZE];
@@ -96,4 +94,30 @@ typedef enum zip_error_status_code_s {
 } zip_error_status_code_t;
 
 
-int zip_process(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, stream_cursor_read *pr);
+int 
+zip_process(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, stream_cursor_read *pr);
+
+int 
+zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part_t *rpart );
+
+
+/* zip file access routines */
+
+zip_part_t * 
+find_zip_part_by_name(zip_state_t *pzip, char *name);
+
+int 
+zip_read_blk_next_blk(zip_part_t *rpart);
+
+int 
+zip_part_length(zip_part_t *rpart);
+
+int 
+zip_part_seek(zip_part_t *rpart, long offset, int whence);
+
+int 
+zip_part_read( byte *dest, int rlen, zip_part_t *rpart );
+
+int 
+zip_part_free_all( zip_part_t *part );
+
