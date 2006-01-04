@@ -48,8 +48,6 @@
 #define arch_max_ushort ARCH_MAX_USHORT
 #define arch_max_uint ARCH_MAX_UINT
 #define arch_max_ulong ARCH_MAX_ULONG
-#define arch_cache1_size ARCH_CACHE1_SIZE
-#define arch_cache2_size ARCH_CACHE2_SIZE
 #define arch_is_big_endian ARCH_IS_BIG_ENDIAN
 #define arch_ptrs_are_signed ARCH_PTRS_ARE_SIGNED
 #define arch_floats_are_IEEE ARCH_FLOATS_ARE_IEEE

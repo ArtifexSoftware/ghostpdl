@@ -224,68 +224,6 @@ main(int argc, char *argv[])
     fprintf(f, "((unsigned long)~0L + (unsigned long)0)\n");
 #undef PRINT_MAX
 
-    section(f, "Cache sizes");
-
-    /*
-     * Determine the primary and secondary cache sizes by looking for a
-     * non-linearity in the time required to fill blocks with memset.
-     */
-    {
-#define MAX_BLOCK (1 << 22)	/* max 4M cache */
-#define MAX_NREPS (1 << 10)	/* limit the number of reps we try */
-	static char buf[MAX_BLOCK];
-	int bsize = 1 << 10;
-	int nreps = 1;
-	clock_t t = 0;
-	clock_t t_eps;
-
-	/*
-	 * Increase the number of repetitions until the time is
-	 * long enough to exceed the likely uncertainty.
-	 */
-
-	while (nreps < MAX_NREPS && (t = time_clear(buf, bsize, nreps)) == 0)
-	    nreps <<= 1;
-	t_eps = t;
-	while (nreps < MAX_NREPS && (t = time_clear(buf, bsize, nreps)) < t_eps * 10)
-	    nreps <<= 1;
-
-	/*
-	 * Increase the block size until the time jumps non-linearly.
-	 */
-	for (; bsize <= MAX_BLOCK;) {
-	    clock_t dt = time_clear(buf, bsize, nreps);
-
-	    if (dt > t + (t >> 1)) {
-		t = dt;
-		break;
-	    }
-	    bsize <<= 1;
-	    nreps >>= 1;
-	    if (nreps == 0)
-		nreps = 1, t <<= 1;
-	}
-	define_int(f, "ARCH_CACHE1_SIZE", bsize >> 1);
-	/*
-	 * Do the same thing a second time for the secondary cache.
-	 */
-	if (nreps > 1)
-	    nreps >>= 1, t >>= 1;
-	for (; bsize <= MAX_BLOCK;) {
-	    clock_t dt = time_clear(buf, bsize, nreps);
-
-	    if (dt > t * 1.25) {
-		t = dt;
-		break;
-	    }
-	    bsize <<= 1;
-	    nreps >>= 1;
-	    if (nreps == 0)
-		nreps = 1, t <<= 1;
-	}
-	define_int(f, "ARCH_CACHE2_SIZE", bsize >> 1);
-    }
-
     section(f, "Miscellaneous");
 
     define_int(f, "ARCH_IS_BIG_ENDIAN", 1 - *(char *)&one);
