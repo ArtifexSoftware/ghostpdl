@@ -38,9 +38,8 @@
 private byte *
 load_tt_font(zip_part_t *part, gs_memory_t *mem) {
     byte *pfont_data;
-    unsigned long size; /* not used */
-
-    ulong len = zip_part_length(part);
+    int size = 0; 
+    int len = zip_part_length(part);
 
     size = 6 + len;	/* leave room for segment header */
     if ( size != (uint)(size) ) { 
@@ -58,8 +57,10 @@ load_tt_font(zip_part_t *part, gs_memory_t *mem) {
 	return NULL;
     }
 
-    if ( len != zip_part_read(pfont_data + 6, len, part) ) {
-	return NULL;
+    // foo hack size BS
+    size = zip_part_read(pfont_data + 6, len, part);
+    if ( size != len ) {
+	dprintf2(mem, "zip_part_length != zip_part_read %d, %d\n", len, size);
     }
 
     zip_part_free_all(part);
@@ -213,7 +214,49 @@ private set_rgb_text_color(gs_state *pgs, ST_RscRefColor Fill)
     return -1; /* not reached */
 }
 
+/* this function is passed to the split routine (see below) */
+private bool 
+is_Glyph_delimeter(char b) 
+{
+    return (b == ';') || (isspace(b));
+}
+
+private bool
+Unicode_Glyphs(CT_Glyphs *aGlyphs, gs_state *pgs, gs_memory_t *mem)
+{
+    /* gcc dynamic arrays NB: portability? */
+    char indices[strlen(aGlyphs->Indices) + 1];
+    char *args[strlen(aGlyphs->Indices)];
+    char **pargs = args;
+    unsigned short unicode[strlen(aGlyphs->Indices)];
+    int i, code;
+    gs_text_enum_t *penum;    
+
+    strcpy(indices, aGlyphs->Indices);
+    met_split(indices, args, is_Glyph_delimeter);
+    for (i = 0; *pargs; i++) {
+
+	gs_text_params_t text;
+
+	unicode[i] = atoi(*pargs++);
+	if (unicode[i] == 0)
+	    return false;
+
+
+	text.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+	text.data.d_glyph = unicode[i];
+	text.size = 1;
     
+	if ((code = gs_text_begin(pgs, &text, mem, &penum)) != 0)
+	    return code;
+	if ((code = gs_text_process(penum)) != 0)
+	    return code;
+    }
+    gs_text_release(penum, "Glyphs_action()");
+
+    return true;
+}
+
 /* action associated with this element.  NB this procedure should be
    decomposed into manageable pieces */
 private int
@@ -291,7 +334,7 @@ Glyphs_action(void *data, met_state_t *ms)
     if ((code = gs_concat(pgs, &font_mat)) != 0)
         return code;
 
-    {
+    if ( ! Unicode_Glyphs(aGlyphs, pgs, mem) ) {
         gs_text_enum_t *penum;
         gs_text_params_t text;
         text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
