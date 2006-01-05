@@ -38,29 +38,20 @@
 private byte *
 load_tt_font(zip_part_t *part, gs_memory_t *mem) {
     byte *pfont_data;
-    int size = 0; 
     int len = zip_part_length(part);
+    int size = -1;
 
-    size = 6 + len;	/* leave room for segment header */
-    if ( size != (uint)(size) ) { 
-	/*
-	 * The font is too big to load in a single piece -- punt.
-	 * The error message is bogus, but there isn't any more
-	 * appropriate one.
-	 */
-	return NULL;
-    }
     zip_part_seek(part, 0, 0);
 
-    pfont_data = gs_alloc_bytes(mem, size, "xps_tt_load_font data");
+    pfont_data = gs_alloc_bytes(mem, len+6, "xps_tt_load_font data");
     if ( pfont_data == 0 ) {
 	return NULL;
     }
 
-    // foo hack size BS
+    // zip_part_length BUG, length is long, read is correct !!
     size = zip_part_read(pfont_data + 6, len, part);
     if ( size != len ) {
-	dprintf2(mem, "zip_part_length != zip_part_read %d, %d\n", len, size);
+	dprintf2(mem, "BUG! zip_part_length != zip_part_read %d, %d\n", len, size);
     }
 
     zip_part_free_all(part);
@@ -200,170 +191,236 @@ Glyphs_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
     return 0;
 }
 
-int
-private set_rgb_text_color(gs_state *pgs, ST_RscRefColor Fill) 
+private int
+set_rgb_text_color(gs_state *pgs, ST_RscRefColor Fill)
 {
-    if (!Fill) {
-        return gs_setnullcolor(pgs);
-    }
-    else {
-        rgb_t rgb = met_hex2rgb(Fill);
-        return gs_setrgbcolor(pgs, (floatp)rgb.r, (floatp)rgb.g,
-                               (floatp)rgb.b);
-    }
-    return -1; /* not reached */
+   if (!Fill) {
+       return gs_setnullcolor(pgs);
+   }
+   else {
+       rgb_t rgb = met_hex2rgb(Fill);
+       return gs_setrgbcolor(pgs, (floatp)rgb.r, (floatp)rgb.g,
+                              (floatp)rgb.b);
+   }
+   return -1; /* not reached */
 }
 
-/* this function is passed to the split routine (see below) */
-private bool 
-is_Glyph_delimeter(char b) 
+bool iscolon(char c) {return c == ';';}
+
+/* nb hack temporary static buffer for glyphs */
+private gs_glyph glyphs[1024];
+private gs_glyph advance[1024];
+private gs_glyph uOffset[1024];
+private gs_glyph vOffset[1024];
+
+private bool iscomma(char c) {return c == ',';}
+
+/* nb for now we just support the glyph index remapping.  We need
+  cluster mapping an metrics */
+private void 
+get_glyph_advance(char *index, gs_glyph unicode, 
+		  gs_glyph *glyph, gs_glyph *advance,
+		  gs_glyph *uOffset, gs_glyph *vOffset )
 {
-    return (b == ';') || (isspace(b));
+   char *args[strlen(index)];
+   char **pargs = args;
+   int num = 0;
+   int i = 0;
+   char *p;
+
+   *advance = *uOffset = *vOffset = 0;
+
+   if ((p = strchr(index, ','))) {
+       num = met_split(index, args, iscomma);
+       if (p != index) {  /* chr, width */
+	   if (num-- > 0) 
+	       *glyph = atoi(args[0]);
+	   if (num-- > 0) 
+	       *advance = atoi(args[1]);
+	   if (num-- > 0) 
+	       *uOffset = atoi(args[2]);
+	   if (num-- > 0) 
+	       *vOffset = atoi(args[3]);
+       }
+       else {  /* ,num */ 
+	   *glyph = unicode;
+	   if (num-- > 0) 
+	       *advance = atoi(args[0]);
+	   if (num-- > 0) 
+	       *uOffset = atoi(args[1]);
+	   if (num-- > 0) 
+	       *vOffset = atoi(args[2]);
+       }
+   }
+   else
+       *glyph = atoi(index);
+
 }
 
-private bool
-Unicode_Glyphs(CT_Glyphs *aGlyphs, gs_state *pgs, gs_memory_t *mem)
+private gs_text_params_t
+build_text_params(ST_UnicodeString UnicodeString, ST_Indices Indices)
 {
-    /* gcc dynamic arrays NB: portability? */
-    char indices[strlen(aGlyphs->Indices) + 1];
-    char *args[strlen(aGlyphs->Indices)];
-    char **pargs = args;
-    unsigned short unicode[strlen(aGlyphs->Indices)];
-    int i, code;
-    gs_text_enum_t *penum;    
+   gs_text_params_t text;
+   if (!Indices) {
+       /* this would be the hallaluah case */
+       text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+       text.data.bytes = UnicodeString;
+       text.size = strlen(UnicodeString);
+   } else {
+       /* the non halaluah case */
+       char expindstr[strlen(Indices) * 2 + 1];
+       char *args[strlen(Indices) * 2 + 1];
+       char **pargs = args;
+       int glyph_index = 0;
+       int cnt = 0;
+       char *p = 0;
 
-    strcpy(indices, aGlyphs->Indices);
-    met_split(indices, args, is_Glyph_delimeter);
-    for (i = 0; *pargs; i++) {
-
-	gs_text_params_t text;
-
-	unicode[i] = atoi(*pargs++);
-	if (unicode[i] == 0)
-	    return false;
-
-
-	text.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
-	text.data.d_glyph = unicode[i];
-	text.size = 1;
-    
-	if ((code = gs_text_begin(pgs, &text, mem, &penum)) != 0)
-	    return code;
-	if ((code = gs_text_process(penum)) != 0)
-	    return code;
-    }
-    gs_text_release(penum, "Glyphs_action()");
-
-    return true;
+       met_expand(expindstr, Indices, ';', 'Z');
+       cnt = met_split(expindstr, args, iscolon);
+       while (*pargs) {
+           /* if the argument is empty try the unicode string */
+           if (**pargs == 'Z') {
+               if (strlen(UnicodeString) > glyph_index)
+                   glyphs[glyph_index++] = (gs_glyph)UnicodeString[glyph_index];
+               else
+                   /* punt */
+                   glyphs[glyph_index++] = 0;
+           } else {       
+	       /* NB: Till I understand it 
+		* skip a cluster mapping */
+	       if ((*pargs) && (p = strchr(pargs, '('))) {
+		   pargs = p+1;
+		   p = strchr(pargs, ')');
+		   pargs = p+1;
+	       }
+		   
+	       get_glyph_advance(*pargs, (gs_glyph)UnicodeString[glyph_index], 
+				 &glyphs[glyph_index], &advance[glyph_index],
+				 &uOffset[glyph_index], &vOffset[glyph_index]);
+	       glyph_index++;
+           }
+           pargs++;
+       }
+       text.operation = TEXT_FROM_GLYPHS | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+       text.data.glyphs = glyphs;
+       text.size = glyph_index;
+   }
+   return text;
 }
+
 
 /* action associated with this element.  NB this procedure should be
-   decomposed into manageable pieces */
+  decomposed into manageable pieces */
 private int
 Glyphs_action(void *data, met_state_t *ms)
 {
-   
-    /* load the font */
-    CT_Glyphs *aGlyphs = data;
-    ST_Name fname = aGlyphs->FontUri; /* font uri */
-    ST_RscRefColor color = aGlyphs->Fill;
-    gs_memory_t *mem = ms->memory;
-    gs_state *pgs = ms->pgs;
-    pl_font_t *pcf = NULL; /* current font */
-    gs_font_dir *pdir = ms->font_dir;
-    FILE *in; /* tt font file */
-    int code = 0;
-    gs_matrix font_mat, save_ctm;
-    zip_part_t *part;
 
-    if (!fname) {
-        dprintf(mem, "no font is defined\n");
-        return 0;
-    }
+   /* load the font */
+   CT_Glyphs *aGlyphs = data;
+   ST_Name fname = aGlyphs->FontUri; /* font uri */
+   ST_RscRefColor color = aGlyphs->Fill;
+   gs_memory_t *mem = ms->memory;
+   gs_state *pgs = ms->pgs;
+   pl_font_t *pcf = NULL; /* current font */
+   gs_font_dir *pdir = ms->font_dir;
+   FILE *in; /* tt font file */
+   int code = 0;
+   gs_matrix font_mat, save_ctm;
+   zip_part_t *part;
 
-    /* nb cleanup on error.  if it is not in the font dictionary,
-       get the data, build a plfont structure add it to the font
-       dictionary */
-    if (!find_font(ms, fname)) {
-        byte *pdata;
-        /* nb obviously this will not do 
-	 *
-	 *if ((in = fopen(aGlyphs->FontUri, gp_fmode_rb)) == NULL)
-	 *   return -1;
-	 */
-	part = find_zip_part_by_name(ms->pzip, aGlyphs->FontUri);
-	if (part == NULL) 
-	    return -1;
+   if (!fname) {
+       dprintf(mem, "no font is defined\n");
+       return 0;
+   }
 
-	/* load the font header */
-        if ((pdata = load_tt_font(part, mem)) == NULL)
-            return -1;
+   /* nb cleanup on error.  if it is not in the font dictionary,
+      get the data, build a plfont structure add it to the font
+      dictionary */
+   if (!find_font(ms, fname)) {
+       byte *pdata;
+       if (!strcmp(aGlyphs->FontUri, "/font_0.TTF")) {
+           uint len, size;
+           if ((in = fopen(aGlyphs->FontUri, gp_fmode_rb)) == NULL)
+                return -1;
+           len = (fseek(in, 0L, SEEK_END), ftell(in));
+           size = 6 + len;
+           rewind(in);
+           pdata = gs_alloc_bytes(mem, size, "foo");
+           if (!pdata)
+               return -1;
+           fread(pdata + 6, 1, len, in);
+           fclose(in);
+       } else {
+           part = find_zip_part_by_name(ms->pzip, aGlyphs->FontUri);
+           if (part == NULL)
+               return -1;
 
-        /* create a plfont */
-        if ((pcf = new_plfont(pdir, mem, pdata)) == NULL)
-            return -1;
-        /* add the font to the font dictionary keyed on uri */
-        if (!put_font(ms, fname, pcf))
-            return -1;
-    }
+           /* load the font header */
+           if ((pdata = load_tt_font(part, mem)) == NULL)
+               return -1;
+       }
+       /* create a plfont */
+       if ((pcf = new_plfont(pdir, mem, pdata)) == NULL)
+           return -1;
+       /* add the font to the font dictionary keyed on uri */
+       if (!put_font(ms, fname, pcf))
+           return -1;
+   }
+   /* shouldn't fail since we added it if it wasn't in the dict */
+   if ((pcf = get_font(ms, fname)) == NULL)
+       return -1;
 
-    /* shouldn't fail since we added it if it wasn't in the dict */
-    if ((pcf = get_font(ms, fname)) == NULL)
-        return -1;
+   if ((code = gs_setfont(pgs, pcf->pfont)) != 0)
+       return code;
 
-    if ((code = gs_setfont(pgs, pcf->pfont)) != 0)
+   /* move the character "cursor" */
+   if ((code = gs_moveto(pgs, aGlyphs->OriginX, aGlyphs->OriginY)) != 0)
         return code;
 
-    /* move the character "cursor" */
-    if ((code = gs_moveto(pgs, aGlyphs->OriginX, aGlyphs->OriginY)) != 0)
-         return code;
-    
-    /* save the current ctm and the current color */
-    gs_gsave(pgs);
+   /* save the current ctm and the current color */
+   gs_gsave(pgs);
 
-    /* set the text color */
-    set_rgb_text_color(pgs, color);
-    /* concatenate a font matrix */
-    gs_make_identity(&font_mat);
+   /* set the text color */
+   set_rgb_text_color(pgs, color);
+   /* concatenate a font matrix */
+   gs_make_identity(&font_mat);
 
-    /* flip y metro goes down the page */
-    if ((code = gs_matrix_scale(&font_mat, aGlyphs->FontRenderingEmSize,
-                                -aGlyphs->FontRenderingEmSize, &font_mat)) != 0)
-        return code;
+   /* flip y metro goes down the page */
+   if ((code = gs_matrix_scale(&font_mat, aGlyphs->FontRenderingEmSize,
+                               -aGlyphs->FontRenderingEmSize, &font_mat)) != 0)
+       return code;
 
-    if ((code = gs_concat(pgs, &font_mat)) != 0)
-        return code;
+   if ((code = gs_concat(pgs, &font_mat)) != 0)
+       return code;
 
-    if ( ! Unicode_Glyphs(aGlyphs, pgs, mem) ) {
-        gs_text_enum_t *penum;
-        gs_text_params_t text;
-        text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
-        text.data.bytes = aGlyphs->UnicodeString;
-        text.size = strlen(aGlyphs->UnicodeString);
-        if ((code = gs_text_begin(pgs, &text, mem, &penum)) != 0)
-            return code;
-        if ((code = gs_text_process(penum)) != 0)
-            return code;
-        gs_text_release(penum, "Glyphs_action()");
-    }
-               
-    /* restore the ctm */
-    gs_grestore(pgs);
-    return 0;
+   {
+       gs_text_params_t text = build_text_params(aGlyphs->UnicodeString,
+                                                 aGlyphs->Indices);
+       gs_text_enum_t *penum;
+       if ((code = gs_text_begin(pgs, &text, mem, &penum)) != 0)
+           return code;
+       if ((code = gs_text_process(penum)) != 0)
+           return code;
+       gs_text_release(penum, "Glyphs_action()");
+   }
+
+   /* restore the ctm */
+   gs_grestore(pgs);
+   return 0;
 }
 
 private int
 Glyphs_done(void *data, met_state_t *ms)
 {
-        
-    gs_free_object(ms->memory, data, "Glyphs_done");
-    return 0; /* incomplete */
+
+   gs_free_object(ms->memory, data, "Glyphs_done");
+   return 0; /* incomplete */
 }
 
 
 const met_element_t met_element_procs_Glyphs = {
-    "Glyphs",
-    Glyphs_cook,
-    Glyphs_action,
-    Glyphs_done
+   "Glyphs",
+   Glyphs_cook,
+   Glyphs_action,
+   Glyphs_done
 };
