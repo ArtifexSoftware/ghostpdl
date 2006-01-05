@@ -338,7 +338,7 @@ Glyphs_action(void *data, met_state_t *ms)
       dictionary */
    if (!find_font(ms, fname)) {
        byte *pdata;
-       if (!strcmp(aGlyphs->FontUri, "/font_0.TTF")) {
+       if (0 && !strcmp(aGlyphs->FontUri, "/font_0.TTF")) {
            uint len, size;
            if ((in = fopen(aGlyphs->FontUri, gp_fmode_rb)) == NULL)
                 return -1;
