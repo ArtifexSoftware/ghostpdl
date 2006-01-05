@@ -557,7 +557,9 @@ zip_state_t *zip_init_instance(gs_memory_t *mem)
     zip->part_read_state = 0;
     zip->read_part = -1;
     zip->num_files = 0;
+    zip->free_blk_list_len = 0;
     zip->free_list = NULL;
+
 
     return zip;
 }
