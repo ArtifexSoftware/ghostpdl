@@ -24,9 +24,15 @@
    must determine supply a large enough argument list to support all
    of the parameters.  The delimeter function should return true if
    the character is a delimeter.  The C language library iswhite()
-   could be used as a delimeter function */
+   could be used as a delimeter function.  Returns number of args. */
+   
 
-void met_split(char *b, char **args, bool (*delimfunc(char c)));
+int met_split(char *b, char **args, bool (*delimfunc(char c)));
+
+/* utility to expand empty arguments in a string with a sentinel value */
+char *
+met_expand(char *s1, const char *s2, const char delimiter, const char sentinel);
+
 
 /* strcmp(lhs, attr) || *field = rhs saves keystrokes */
 int met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *attr_name);

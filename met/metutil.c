@@ -25,17 +25,41 @@ met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *attr
     return cmp;
 }
 
-void 
+int 
 met_split(char *b, char **args, bool (*delimfunc(char c)))
 {
+    int cnt = 0;
+
     while (*b != NULL) {
         while (delimfunc(*b))
             *b++ = NULL;
         *args++ = b;
+	cnt++;
         while((*b != NULL) && (!delimfunc(*b)))
             b++;
     }
     *args = NULL;
+
+    return cnt;
+}
+
+
+/* utility to expand empty arguments in a string with a sentinel value */
+char *
+met_expand(char *s1, const char *s2, const char delimiter, const char sentinel)
+{
+   char *s = s1;
+   char last_char = '\0';
+   while (*s2 != '\0') {
+       if ((*s2 == delimiter) &&
+           (last_char == '\0' || last_char == delimiter))
+           *s++ = sentinel;
+       last_char = *s2;
+       *s++ = *s2++;
+   }
+   /* add the null terminator */
+   *s = *s2;
+   return s1;
 }
 
 /* I am sure there is a better (more robust) meme for this... */
