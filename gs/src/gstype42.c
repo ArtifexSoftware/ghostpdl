@@ -81,8 +81,21 @@ gs_type42_font_init(gs_font_type42 * pfont)
     int code;
     byte head_box[8];
     ulong loca_size = 0;
+    ulong table_dir_offset = 0;
 
     ACCESS(pfont->memory, 0, 12, OffsetTable);
+
+    /* do something reasonable for truetype collections.  For now we
+       just make use of the first font */
+    if ( !memcmp(OffsetTable, "ttcf", 4) ) {
+        byte *newoffset;
+        /* offset to table directory for font 0 */
+        ACCESS(pfont->memory, 12, 4, newoffset);
+        table_dir_offset = u32(newoffset);
+
+    }
+    ACCESS(pfont->memory, table_dir_offset, 12, OffsetTable);
+
     /* pulling invalid font test, based on customer test that contains garbage here
      * 0x30, 0xc0, 0x60, 0xa0) hplj doesn't complain :( 
      * NB real garbage in won't be caught here . 
@@ -98,7 +111,7 @@ gs_type42_font_init(gs_font_type42 * pfont)
      * }
      */
     numTables = U16(OffsetTable + 4);
-    ACCESS(pfont->memory, 12, numTables * 16, TableDirectory);
+    ACCESS(pfont->memory, table_dir_offset + 12, numTables * 16, TableDirectory);
     /* Clear all non-client-supplied data. */
     {
 	void *proc_data = pfont->data.proc_data;
