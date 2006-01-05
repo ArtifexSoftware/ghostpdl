@@ -288,12 +288,13 @@ build_text_params(ST_UnicodeString UnicodeString, ST_Indices Indices)
            } else {       
 	       /* NB: Till I understand it 
 		* skip a cluster mapping */
+#if 0 
 	       if ((*pargs) && (p = strchr(pargs, '('))) {
 		   pargs = p+1;
 		   p = strchr(pargs, ')');
 		   pargs = p+1;
 	       }
-		   
+#endif		   
 	       get_glyph_advance(*pargs, (gs_glyph)UnicodeString[glyph_index], 
 				 &glyphs[glyph_index], &advance[glyph_index],
 				 &uOffset[glyph_index], &vOffset[glyph_index]);
