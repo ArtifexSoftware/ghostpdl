@@ -145,6 +145,7 @@ zip_part_read( byte *dest, int rlen, zip_part_t *rpart )
 
     while (rlen > 0) {
 	if ( have > 0 ) {
+	    have = min(have, rlen);
 	    memcpy( dest, rpart->s.r.ptr + 1, have );
 	    rlen -= have;
 	    copied += have;
@@ -181,6 +182,14 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 	    len -= zip_part_read(&buf[0], 100, rpart);
 	}
 	zip_part_free_all(rpart);
+    }
+
+    if (1) {
+	char buf[4];
+	error = zip_part_seek(rpart, 0, 0);
+	int size = zip_part_read(&buf, 4, rpart);
+	if ( size != 4 )
+	    dprintf(rpart->parent->memory, "bad len\n");
     }
     
     if (1) {
