@@ -642,10 +642,20 @@ tt_find_table(gs_font_type42 *pfont, const char *tname, uint *plen)
         uint numTables;
         const byte *TableDirectory;
         uint i;
+        ulong table_dir_offset = 0;
 
         access(0, 12, OffsetTable);
+        /* do something reasonable for truetype collections.  For now we
+           just make use of the first font */
+        if ( !memcmp(OffsetTable, "ttcf", 4) ) {
+            byte *newoffset;
+            /* offset to table directory for font 0 */
+            access(12, 4, newoffset);
+            table_dir_offset = pl_get_uint32(newoffset);
+        }
+        access(table_dir_offset, 12, OffsetTable);
         numTables = pl_get_uint16(OffsetTable + 4);
-        access(12, numTables * 16, TableDirectory);
+        access(table_dir_offset + 12, numTables * 16, TableDirectory);
         for ( i = 0; i < numTables; ++i )
           { const byte *tab = TableDirectory + i * 16;
             if ( !memcmp(tab, tname, 4) )
