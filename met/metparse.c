@@ -140,7 +140,6 @@ met_process_alloc(gs_memory_t *memory)
     stp->memory = memory;
     stp->parser = p;
     stp->depth = 0;    
-    stp->next_read_part = -1;
     /* set up the start end callbacks */
     XML_SetElementHandler(p, met_start, met_end);
     XML_SetUserData(p, stp);

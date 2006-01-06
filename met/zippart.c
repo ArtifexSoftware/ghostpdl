@@ -280,8 +280,11 @@ zip_part_free_all( zip_part_t *part )
 	else
 	    gs_free_object(pzip->memory, this, "zip_part_free block");
     } 
-    /*
-    // NB should be a list of pzip->parts
+    part->head = 0;
+    part->curr = 0;
+    part->tail = 0;
+    
+#if 0
     for (i = 0; i < 1024; i++) {
 	if (pzip->parts[i] == part) {
 	    pzip->parts[i] = 0;
@@ -289,7 +292,5 @@ zip_part_free_all( zip_part_t *part )
 	    break;
 	}
     }
-    */
-
-
+#endif 
 }

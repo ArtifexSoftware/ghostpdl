@@ -17,7 +17,8 @@
 #include "metparse.h"
 
 /* linked list block size */
-#define ZIP_BLOCK_SIZE 1024
+#define ZIP_BLOCK_SIZE 2000
+#define ZIP_BLOCK_MAX ZIP_BLOCK_SIZE-1
 #define PZIP_FREE_BLK_MAX_LEN 10
 
 
@@ -60,6 +61,7 @@ typedef struct zip_part_s
     z_stream *zs;                  /* zlib stream, 1 per file ? */
     bool newfile;                  /* end of compressed stream triggers new file */
 } zip_part_t;
+
 
 struct zip_state_s
 {
@@ -121,3 +123,5 @@ zip_part_read( byte *dest, int rlen, zip_part_t *rpart );
 int 
 zip_part_free_all( zip_part_t *part );
 
+int
+zip_end_job(met_state_t *mets, zip_state_t *pzip);

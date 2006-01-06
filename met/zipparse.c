@@ -47,7 +47,41 @@ read4(stream_cursor_read *pr, unsigned long *a)
 }
 
 
-int zip_init_part(zip_state_t *pzip)
+private int 
+zip_new_block(zip_state_t *pzip, zip_part_t *part)
+{
+    int code = 0;
+    zip_block_t *blk;
+
+    if (pzip->free_list) {
+	blk = pzip->free_list;
+	pzip->free_list = blk->next;
+	blk->next = NULL;
+	blk->writeoffset = 0;
+    }
+    else {
+	blk = (zip_block_t *) gs_alloc_bytes(pzip->memory, 
+					     sizeof(zip_block_t), 
+					     "zip_new_block");	
+	if (blk == NULL)
+	    return gs_error_VMerror;
+	blk->writeoffset = 0;
+	blk->next = NULL;
+    }
+    assert(part->write);
+    assert(part->write->writeoffset == ZIP_BLOCK_SIZE);
+
+    memset(blk->data, 0xF0, ZIP_BLOCK_SIZE);
+
+    if (part->tail)
+	part->tail->next = blk;
+    part->tail = blk;
+
+    return code;
+}
+
+private int 
+zip_init_part(zip_state_t *pzip)
 {
     zip_part_t *part = (zip_part_t *)gs_alloc_bytes(pzip->memory, size_of(zip_part_t), 
 						    "zip_init_part");
@@ -67,7 +101,8 @@ int zip_init_part(zip_state_t *pzip)
     return 0;
 }
 
-int zip_read_part(zip_state_t *pzip, stream_cursor_read *pr)
+private int 
+zip_read_part(zip_state_t *pzip, stream_cursor_read *pr)
 {
     unsigned long id;
     unsigned short shortInt;
@@ -227,70 +262,9 @@ int zip_read_part(zip_state_t *pzip, stream_cursor_read *pr)
     return code;
 }
 
-int zip_new_block(zip_state_t *pzip, zip_part_t *part)
-{
-    int code = 0;
-    zip_block_t *blk;
 
-    if (pzip->free_list) {
-	blk = pzip->free_list;
-	pzip->free_list = blk->next;
-	blk->next = NULL;
-	blk->writeoffset = 0;
-    }
-    else {
-	blk = (zip_block_t *) gs_alloc_bytes(pzip->memory, 
-					     sizeof(zip_block_t), 
-					     "zip_new_block");	
-	if (blk == NULL)
-	    return gs_error_VMerror;
-	blk->writeoffset = 0;
-	blk->next = NULL;
-    }
-    assert(part->write);
-    assert(part->write->writeoffset == ZIP_BLOCK_SIZE);
-
-    memset(blk->data, 0xF0, ZIP_BLOCK_SIZE);
-
-    if (part->tail)
-	part->tail->next = blk;
-    part->tail = blk;
-
-    return code;
-}
-
-int zip_save_data(zip_state_t *pzip, stream_cursor_read *pr)
-{
-    int code = 0;
-    zip_part_t *part = pzip->parts[pzip->num_files - 1];
-    long wlen = ZIP_BLOCK_SIZE - part->tail->writeoffset;
-    long slen = pr->limit - pr->ptr;
-    long cleft = max(0, part->csize - part->csaved);
-
-    if (slen == 0)
-	return code;
-
-    if (wlen == 0) {
-	if ((code = zip_new_block(pzip, part)) != 0) 
-	    return code;
-	wlen = ZIP_BLOCK_SIZE - part->tail->writeoffset;
-    }
-    if (cleft == 0 && part->comp_method == 8)
-	cleft = slen;
-    //  zero for length seems to be the norm.  
-    if (cleft) {
-	byte *wptr = &part->tail->data[part->tail->writeoffset];
-	wlen = min(wlen, slen);
-	wlen = min(wlen, cleft);
-	memcpy(wptr, pr->ptr + 1, wlen);
-	pr->ptr += wlen;
-	part->tail->writeoffset += wlen;
-	part->csaved += wlen;
-    }
-    return code;
-}
-
-int zip_init_write_stream(zip_state_t *pzip, zip_part_t *part)
+private int 
+zip_init_write_stream(zip_state_t *pzip, zip_part_t *part)
 {
     if (part->zs == NULL) {
 	part->zs = gs_alloc_bytes(pzip->memory, size_of(z_stream), "zip z_stream");
@@ -303,7 +277,8 @@ int zip_init_write_stream(zip_state_t *pzip, zip_part_t *part)
     return 0;
 }
 
-int zip_decompress_data(zip_state_t *pzip, stream_cursor_read *pin )
+private int 
+zip_decompress_data(zip_state_t *pzip, stream_cursor_read *pin )
 {
     int code = 0;
     zip_part_t *part = pzip->parts[pzip->read_part];
@@ -374,84 +349,51 @@ int zip_decompress_data(zip_state_t *pzip, stream_cursor_read *pin )
     return code;
 }
 
-int met_set_initial_read_part(met_parser_state_t *st, met_state_t *mets, 
-			     zip_state_t *pzip)
-{
-    int code = 0;
-    // hard coded foo
-    st->next_read_part = 0;
-    return code;
-}
-
-
-bool zip_is_image( zip_part_t *part )
-{
-    char *str = part->name + strlen(part->name) - 6; 
-    if (strncmp(str, "1.xaml", 6) == 0)
-	return true; // return false;
-    return true;
-}
-
-
-bool zip_have_page( zip_part_t *rpart )
-{
-    return false;
-}
-
-int zip_decomp_process(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, 
-		       stream_cursor_read *pr)
+/* returns zero on ok else error, swallows status returns 
+ */
+int 
+zip_decomp_process(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, 
+		   stream_cursor_read *pr)
 {
     int code = 0;
     zip_part_t *rpart = NULL;
-    
 
     /* update reading pointer 
      * NB: client should be able to choose a different file to read
      * currently just serially sends file after file.
      */
 
-    if (st->next_read_part < 0)
-	return met_set_initial_read_part(st, mets, pzip);
-    else if (st->next_read_part < pzip->num_files)
-	pzip->read_part = st->next_read_part;
-    else 
-	return code; // Nothing to do till we have read the start of file.
+    if (pzip->read_part < 0 && pzip->num_files > 0)
+	pzip->read_part = 0;
+    if (pzip->read_part >= pzip->num_files )
+	return code; // Nothing to do til we have some data.
 
     rpart = pzip->parts[pzip->read_part];
 
     /* decompress and send data to parser */
     code = zip_decompress_data(pzip, pr);
     if (code == eEndOfStream) { // good end of input stream 
-	
-	/* setup to read next part */
-	st->next_read_part++;
-	pzip->read_state = 2; 
-	code = 0;
-    
+	code = 0;	
 
 	/* determine if the xps should be parsed and call the xml parser
 	 */
 	zip_page(st, mets, pzip, rpart);
 
-	if (0) { // stream adjust
-	    long len = rpart->s.r.limit - rpart->s.r.ptr;
-	    if ( len )
-		memmove(rpart->buf, rpart->s.r.ptr, len);
-	    rpart->s.r.ptr = rpart->buf -1;
-	    rpart->s.r.limit = rpart->buf + ( len - 1 );
-	}
+	/* setup to read next part */
+	pzip->read_part++;
+	pzip->read_state = 2; 
     }
-    else if (code == eWriteStall) { // write stall on output
+    else if (code == eWriteStall) { /* write stall on output */
 	long len = rpart->s.r.limit - rpart->s.r.ptr;
 	if ( len && rpart->buf -1 != rpart->s.r.ptr )
 	    memmove(rpart->buf, rpart->s.r.ptr, len);
 	rpart->s.r.ptr = rpart->buf -1;
 	rpart->s.r.limit = rpart->buf + ( len - 1 );
 	
-	code = 0;  // let it be read
+	code = 0;  /* let it be read */
     }
-    if (code == eNeedData)  // need data
-	return 0;
+    if (code == eNeedData) 
+	code = 0;
     return code;
 }
 
@@ -479,13 +421,12 @@ zip_process(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, stream
 	     */
 	    break;
 	case 1: /* file data */	
-	    // don't save compressed data
-	    //if ((code = zip_save_data(pzip, pr)) != 0)
-	    //return code;
+	    /* We don't save compressed data since the 'standard' XPS files don't have lengths
+	     */
 
 	case 2: /* optional Data descriptor */
 	    wpart = pzip->parts[pzip->num_files - 1];
-	    if (wpart->csaved && wpart->csaved == wpart->csize ) {
+	    if (wpart && wpart->csaved && wpart->csaved == wpart->csize ) {
 		/* have count and fall through */
 
 		if (wpart->gp_bitflag & 1 << 3) { 
@@ -538,28 +479,83 @@ zip_process(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, stream
     return code;
 }
 
-
-zip_state_t *zip_init_instance(gs_memory_t *mem)
+private int
+zip_initialize(zip_state_t *pzip)
 {
-    zip_state_t *zip;
+    int i = 0;
 
-    zip = gs_alloc_bytes(mem, sizeof(zip_state_t), "zip_init alloc zip state");
-
-    zip->memory = mem;
-
+    if (pzip->memory == 0)
+	return -1;
+    
 #ifdef PARSE_XML_HACK
-    zip->zip_mode = false;
+    pzip->zip_mode = false;
 #else
-    zip->zip_mode = true;
+    pzip->zip_mode = true;
 #endif
 
-    zip->read_state = 0;
-    zip->part_read_state = 0;
-    zip->read_part = -1;
-    zip->num_files = 0;
-    zip->free_blk_list_len = 0;
-    zip->free_list = NULL;
+    pzip->need_dir = false;
+    pzip->needfiledata = false;
+    pzip->read_state = 0;
+    pzip->part_read_state = 0;
+    pzip->read_part = -1;
+    pzip->num_files = 0;
+    for (i=0; i < 1024;  i++)
+	pzip->parts[i] = 0;
+
+    return 0;
+}
+
+private bool
+is_font(char *name)
+{
+    int pos = strlen(name) - 4;
+    if (name && pos > 0 )
+	return strncasecmp("TTF", &name[pos], 3);
+    else
+	return false;
+}
+
+int
+zip_end_job(met_state_t *mets, zip_state_t *pzip)
+{
+    int i;
+
+    for (i=0; i < 1024;  i++) {
+	if (pzip->parts[i]) {
+	    if ( is_font(pzip->parts[i]->name) ) {
+		char buf[256];
+		buf[0] = '/';
+		buf[1] = 0;
+		strncpy(&buf[1], pzip->parts[i]->name, strlen(pzip->parts[i]->name));
+		buf[strlen(pzip->parts[i]->name) + 1] = 0;
+		pl_dict_undef(&mets->font_dict, buf, strlen(buf));
+	    }
+	    zip_part_free_all(pzip->parts[i]);
+
+	    // need destructor here.
+	    gs_free_object(pzip->memory, pzip->parts[i]->name, "zip_part_free struct");
+	    gs_free_object(pzip->memory, pzip->parts[i]->buf, "zip_part_free struct");
+	    gs_free_object(pzip->memory, pzip->parts[i]->zs, "zip_part_free struct");
+	    gs_free_object(pzip->memory, pzip->parts[i], "zip_part_free struct");
+	    pzip->parts[i] = 0;
+	}
+    }
+    pzip->read_part = -1;
+
+    return zip_initialize(pzip);
+}
+
+zip_state_t *
+zip_init_instance(gs_memory_t *mem)
+{
+    zip_state_t *pzip;
+
+    pzip = gs_alloc_bytes(mem, sizeof(zip_state_t), "zip_init_instance alloc zip_state_t");
+    pzip->memory = mem;
+    zip_initialize(pzip);
+    pzip->free_blk_list_len = 0;
+    pzip->free_list = NULL;
 
 
-    return zip;
+    return pzip;
 }

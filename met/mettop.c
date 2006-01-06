@@ -386,10 +386,14 @@ met_impl_dnit_job(
 {
     met_interp_instance_t *pmeti = (met_interp_instance_t *)pinstance;
     /* do something with pmeti to stop the compiler unused var warning */
+
     if (!pmeti)
         return -1;
-    else
-        return 0;
+    else {
+	// NB lets free some stuff.
+	zip_end_job(pmeti->pmets, pmeti->pzip);
+    }
+    return 0;
 }
 
 /* Remove a device from an interperter instance */

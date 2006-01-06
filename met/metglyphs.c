@@ -88,7 +88,6 @@ get_font(met_state_t *ms, ST_Name FontUri)
         return NULL;
 }
 
-
 /* a constructor for a plfont type42 suitable for metro.  nb needs
    memory cleanup on error. */
 private pl_font_t *
@@ -338,7 +337,7 @@ Glyphs_action(void *data, met_state_t *ms)
       get the data, build a plfont structure add it to the font
       dictionary */
    if (!find_font(ms, fname)) {
-       byte *pdata;
+       byte *pdata = 0;
        if (0 && !strcmp(aGlyphs->FontUri, "/font_0.TTF")) {
            uint len, size;
            if ((in = fopen(aGlyphs->FontUri, gp_fmode_rb)) == NULL)
@@ -388,7 +387,7 @@ Glyphs_action(void *data, met_state_t *ms)
 
    /* flip y metro goes down the page */
    if ((code = gs_matrix_scale(&font_mat, aGlyphs->FontRenderingEmSize,
-                               -aGlyphs->FontRenderingEmSize, &font_mat)) != 0)
+                               (-aGlyphs->FontRenderingEmSize), &font_mat)) != 0)
        return code;
 
    if ((code = gs_concat(pgs, &font_mat)) != 0)
@@ -398,6 +397,7 @@ Glyphs_action(void *data, met_state_t *ms)
        gs_text_params_t text = build_text_params(aGlyphs->UnicodeString,
                                                  aGlyphs->Indices);
        gs_text_enum_t *penum;
+
        if ((code = gs_text_begin(pgs, &text, mem, &penum)) != 0)
            return code;
        if ((code = gs_text_process(penum)) != 0)
