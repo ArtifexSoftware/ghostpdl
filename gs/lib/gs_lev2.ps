@@ -897,7 +897,7 @@ def
     % Start building Separation colorspace
     [ /Separation 3 index 4 get	% Get separation name from array's key
     /DeviceCMYK
-    5 index buildcustomtinttransform ]	% build the tint transform function
+    5 index //buildcustomtinttransform exec] % build the tint transform function
     setcolorspace			% Set the Separation color space as current
     setcolor			% Set the tint as the current color
     pop				% Remove the input array
@@ -916,6 +916,46 @@ def
 /setcmykoverprint {
   4 { dup -1 eq { pop 0 } if 4 1 roll } repeat setcmykcolor
 } bind def
+
+/separation_all [/Separation /All /DeviceCMYK { dup dup dup } bind ] readonly def
+
+% Collect the arguments into the image dictionary
+% <width> <height> <bits/sample> <matrix> <proc> args2dict <dict>
+/args2dict {
+  10 dict begin
+  {1 0} 1
+  { /ImageType /Decode /DataSource /ImageMatrix /BitsPerComponent /Height /Width
+  } { exch def } forall
+  currentdict end
+} bind def
+
+% Prints (1-gray) on all separations.
+% <gray> setseparationgray -
+/setseparationgray {
+  //separation_all setcolorspace
+  1 exch sub setcolor
+} bind def
+
+% Renders an image whose sample values specify the amount of the custom color.
+% <width> <height> <bits/sample> <matrix> <proc> <array> customcolorimage -
+/customcolorimage {
+  gsave
+  [ /Separation 2 index 4 get /DeviceCMYK 4 index //buildcustomtinttransform exec] setcolorspace
+  //args2dict exec image
+  grestore
+} bind def
+
+% Renders an image on all process and custom color plates.
+% <width> <height> <bits/sample> <matrix> <proc>
+/separationimage {
+  gsave
+  //separation_all setcolorspace
+  //args2dict exec image
+  grestore
+} bind def
+
+{ /buildcustomtinttransform /separation_all /args2dict }
+{ currentdict exch undef } forall
 
 %END TN 5044 psuedo-ops
 
