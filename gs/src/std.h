@@ -29,28 +29,13 @@
  * Define lower-case versions of the architecture parameters for backward
  * compatibility.
  */
-#define arch_align_short_mod ARCH_ALIGN_SHORT_MOD
-#define arch_align_int_mod ARCH_ALIGN_INT_MOD
-#define arch_align_long_mod ARCH_ALIGN_LONG_MOD
-#define arch_align_ptr_mod ARCH_ALIGN_PTR_MOD
-#define arch_align_float_mod ARCH_ALIGN_FLOAT_MOD
-#define arch_align_double_mod ARCH_ALIGN_DOUBLE_MOD
-#define arch_align_struct_mod ARCH_ALIGN_STRUCT_MOD
 #define arch_log2_sizeof_short ARCH_LOG2_SIZEOF_SHORT
 #define arch_log2_sizeof_int ARCH_LOG2_SIZEOF_INT
 #define arch_log2_sizeof_long ARCH_LOG2_SIZEOF_LONG
 #define arch_sizeof_ptr ARCH_SIZEOF_PTR
 #define arch_sizeof_float ARCH_SIZEOF_FLOAT
 #define arch_sizeof_double ARCH_SIZEOF_DOUBLE
-#define arch_float_mantissa_bits ARCH_FLOAT_MANTISSA_BITS
-#define arch_double_mantissa_bits ARCH_DOUBLE_MANTISSA_BITS
-#define arch_max_uchar ARCH_MAX_UCHAR
-#define arch_max_ushort ARCH_MAX_USHORT
-#define arch_max_uint ARCH_MAX_UINT
-#define arch_max_ulong ARCH_MAX_ULONG
 #define arch_is_big_endian ARCH_IS_BIG_ENDIAN
-#define arch_ptrs_are_signed ARCH_PTRS_ARE_SIGNED
-#define arch_floats_are_IEEE ARCH_FLOATS_ARE_IEEE
 #define arch_arith_rshift ARCH_ARITH_RSHIFT
 #define arch_can_shift_full_long ARCH_CAN_SHIFT_FULL_LONG
 /*
@@ -61,7 +46,6 @@
 #define ARCH_ALIGN_MEMORY_MOD\
   (((ARCH_ALIGN_LONG_MOD - 1) | (ARCH_ALIGN_PTR_MOD - 1) |\
     (ARCH_ALIGN_DOUBLE_MOD - 1) | (ARCH_ALIGN_STRUCT_MOD - 1)) + 1)
-#define arch_align_memory_mod ARCH_ALIGN_MEMORY_MOD
 
 /* Define integer data type sizes in terms of log2s. */
 #define ARCH_SIZEOF_CHAR (1 << ARCH_LOG2_SIZEOF_CHAR)
@@ -74,7 +58,6 @@
 #define arch_sizeof_short ARCH_SIZEOF_SHORT
 #define arch_sizeof_int ARCH_SIZEOF_INT
 #define arch_sizeof_long ARCH_SIZEOF_LONG
-#define arch_ints_are_short ARCH_INTS_ARE_SHORT
 
 /* Define whether we are on a large- or small-memory machine. */
 /* Currently, we assume small memory and 16-bit ints are synonymous. */
@@ -84,13 +67,13 @@
 
 /* Define unsigned 16- and 32-bit types.  These are needed in */
 /* a surprising number of places that do bit manipulation. */
-#if arch_sizeof_short == 2	/* no plausible alternative! */
+#if ARCH_SIZEOF_SHORT == 2	/* no plausible alternative! */
 typedef ushort bits16;
 #endif
-#if arch_sizeof_int == 4
+#if ARCH_SIZEOF_INT == 4
 typedef uint bits32;
 #else
-# if arch_sizeof_long == 4
+# if ARCH_SIZEOF_LONG == 4
 typedef ulong bits32;
 # endif
 #endif
@@ -114,13 +97,13 @@ typedef ulong bits32;
  * The UTek compiler does special weird things of its own.
  * All the rest (including gcc on all platforms) do the right thing.
  */
-#define max_uchar arch_max_uchar
-#define max_ushort arch_max_ushort
-#define max_uint arch_max_uint
-#define max_ulong arch_max_ulong
+#define max_uchar ARCH_MAX_UCHAR
+#define max_ushort ARCH_MAX_USHORT
+#define max_uint ARCH_MAX_UINT
+#define max_ulong ARCH_MAX_ULONG
 
 /* Minimum and maximum values for pointers. */
-#if arch_ptrs_are_signed
+#if ARCH_PTRS_ARE_SIGNED
 #  define min_ptr min_long
 #  define max_ptr max_long
 #else

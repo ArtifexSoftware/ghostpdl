@@ -53,11 +53,11 @@ typedef gs_bitmap_id gx_bitmap_id;
  * including offset ROUND_UP(B + 1, align_bitmap_mod) - 1 may be accessed,
  * and therefore must be allocated (not cause hardware-level access faults).
  */
-/* We assume arch_align_long_mod is 1-4 or 8. */
-#if arch_align_long_mod <= 4
+/* We assume ARCH_ALIGN_LONG_MOD is 1-4 or 8. */
+#if ARCH_ALIGN_LONG_MOD <= 4
 #  define log2_align_bitmap_mod 2
 #else
-#if arch_align_long_mod == 8
+#if ARCH_ALIGN_LONG_MOD == 8
 #  define log2_align_bitmap_mod 3
 #endif
 #endif

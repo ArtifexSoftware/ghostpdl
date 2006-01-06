@@ -113,7 +113,7 @@ typedef struct obj_header_data_s {
  * See gsmemraw.h for more information about this.
  */
 #define obj_align_mod\
-  (((arch_align_memory_mod - 1) |\
+  (((ARCH_ALIGN_MEMORY_MOD - 1) |\
     (align_bitmap_mod - 1) |\
     (obj_back_scale - 1)) + 1)
 /* The only possible values for obj_align_mod are 4, 8, or 16.... */

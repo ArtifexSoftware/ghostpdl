@@ -198,7 +198,7 @@ private const bool_param_def_t system_bool_params[] =
 private void
 current_RealFormat(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-#if arch_floats_are_IEEE
+#if ARCH_FLOATS_ARE_IEEE
     static const char *const rfs = "IEEE";
 #else
     static const char *const rfs = "not IEEE";

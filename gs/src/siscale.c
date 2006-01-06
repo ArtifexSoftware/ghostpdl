@@ -39,7 +39,7 @@
 
 typedef int PixelWeight;
 
-#  if arch_ints_are_short
+#  if ARCH_INTS_ARE_SHORT
 typedef long AccumTmp;
 #  else
 typedef int AccumTmp;
@@ -343,7 +343,7 @@ zoom_x(PixelTmp * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
 	if (sizeofPixelIn == 1) {
 	    zoom_x_loop(byte, int)
 	} else {		/* sizeofPixelIn == 2 */
-#if arch_ints_are_short
+#if ARCH_INTS_ARE_SHORT
 	    zoom_x_loop(bits16, long)
 #else
 	    zoom_x_loop(bits16, int)

@@ -80,7 +80,7 @@ typedef ulong ufixed;		/* only used in a very few places */
 #define fixed_pre_pixround(x) ((x)+_fixed_pixround_v)
 #define fixed2int_pixround(x) fixed2int(fixed_pre_pixround(x))
 #define fixed_is_int(x) !((x)&_fixed_fraction_v)
-#if arch_ints_are_short & !arch_is_big_endian
+#if ARCH_INTS_ARE_SHORT & !ARCH_IS_BIG_ENDIAN
 /* Do some of the shifting and extraction ourselves. */
 #  define _fixed_hi(x) *((const uint *)&(x)+1)
 #  define _fixed_lo(x) *((const uint *)&(x))
@@ -129,7 +129,7 @@ typedef ulong ufixed;		/* only used in a very few places */
 #endif
 
 #ifdef USE_FPU
-#  define USE_FPU_FIXED (USE_FPU < 0 && arch_floats_are_IEEE && arch_sizeof_long == 4)
+#  define USE_FPU_FIXED (USE_FPU < 0 && ARCH_FLOATS_ARE_IEEE && arch_sizeof_long == 4)
 #else
 #  define USE_FPU_FIXED 0
 #endif
@@ -194,7 +194,7 @@ int set_fmul2fixed_(fixed *, long, long);
 #define FINISH_FMUL2FIXED_VARS(vr, dtemp)\
   DO_NOTHING
 int set_dfmul2fixed_(fixed *, ulong, long, long);
-#  if arch_is_big_endian
+#  if ARCH_IS_BIG_ENDIAN
 #  define CHECK_DFMUL2FIXED_VARS(vr, vda, vfb, dtemp)\
      set_dfmul2fixed_(&vr, ((const ulong *)&vda)[1], *(const long *)&vfb, *(const long *)&vda)
 #  else
@@ -236,8 +236,8 @@ int set_double2fixed_(fixed *, ulong, long, int);
 # define set_float2fixed_vars(vr,vf)\
     (sizeof(vf) == sizeof(float) ?\
      set_float2fixed_(&vr, *(const long *)&vf, fixed_fraction_bits) :\
-     set_double2fixed_(&vr, ((const ulong *)&vf)[arch_is_big_endian],\
-		       ((const long *)&vf)[1 - arch_is_big_endian],\
+     set_double2fixed_(&vr, ((const ulong *)&vf)[ARCH_IS_BIG_ENDIAN],\
+		       ((const long *)&vf)[1 - ARCH_IS_BIG_ENDIAN],\
 		       fixed_fraction_bits))
 long fixed2float_(fixed, int);
 void set_fixed2double_(double *, fixed, int);

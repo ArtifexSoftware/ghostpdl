@@ -200,7 +200,7 @@ sdecodefloat(const byte * p, int format)
 	fnum = *(float *)&lnum;
     } else {
 	lnum = (bits32) sdecodelong(p, format);
-#if !arch_floats_are_IEEE
+#if !ARCH_FLOATS_ARE_IEEE
 	{
 	    /* We know IEEE floats take 32 bits. */
 	    /* Convert IEEE float to native float. */

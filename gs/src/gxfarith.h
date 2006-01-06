@@ -32,7 +32,7 @@
  * slow (or no) floating point hardware.
  */
 
-# if USE_FPU <= 0 && arch_floats_are_IEEE && (arch_sizeof_float == arch_sizeof_int || arch_sizeof_float == arch_sizeof_long)
+# if USE_FPU <= 0 && ARCH_FLOATS_ARE_IEEE && (arch_sizeof_float == arch_sizeof_int || arch_sizeof_float == arch_sizeof_long)
 
 #  if arch_sizeof_float == arch_sizeof_int
 typedef int _f_int_t;

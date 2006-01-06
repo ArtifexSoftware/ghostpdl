@@ -260,7 +260,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 			int i;
 
 			(*dev_proc(dev, decode_color)) (dev, previous, cv);
-#if arch_ints_are_short
+#if ARCH_INTS_ARE_SHORT
 #  define b_int long
 #else
 #  define b_int int

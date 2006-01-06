@@ -457,7 +457,7 @@ run_stdin:
 		unsigned msize = 0;
 
 		sscanf((const char *)arg, "%u", &msize);
-#if arch_ints_are_short
+#if ARCH_INTS_ARE_SHORT
 		if (msize <= 0 || msize >= 64) {
 		    puts(minst->heap, "-M must be between 1 and 63");
 		    return e_Fatal;
@@ -471,7 +471,7 @@ run_stdin:
 		unsigned nsize = 0;
 
 		sscanf((const char *)arg, "%d", &nsize);
-#if arch_ints_are_short
+#if ARCH_INTS_ARE_SHORT
 		if (nsize < 2 || nsize > 64) {
 		    puts(minst->heap, "-N must be between 2 and 64");
 		    return e_Fatal;

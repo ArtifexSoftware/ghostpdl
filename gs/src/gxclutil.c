@@ -213,7 +213,7 @@ cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)
  * data.  Return the pointer to the data area.  If an error or (low-memory
  * warning) occurs, set cldev->error_code and return 0.
  */
-#define cmd_headroom (sizeof(cmd_prefix) + arch_align_ptr_mod)
+#define cmd_headroom (sizeof(cmd_prefix) + ARCH_ALIGN_PTR_MOD)
 byte *
 cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 {
@@ -248,7 +248,7 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 	/* Skip to an appropriate alignment boundary. */
 	/* (We assume the command buffer itself is aligned.) */
 	cmd_prefix *cp = (cmd_prefix *)
-	    (dp + ((cldev->cbuf - dp) & (arch_align_ptr_mod - 1)));
+	    (dp + ((cldev->cbuf - dp) & (ARCH_ALIGN_PTR_MOD - 1)));
 
 	cmd_count_add1(stats_cmd.other_band);
 	dp = (byte *) (cp + 1);
