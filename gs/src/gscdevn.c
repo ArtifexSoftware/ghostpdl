@@ -78,20 +78,48 @@ ENUM_PTRS_WITH(cs_DeviceN_enum_ptrs, gs_color_space *pcs)
 {
     return ENUM_USING(*pcs->params.device_n.alt_space.type->stype,
 		      &pcs->params.device_n.alt_space,
-		      sizeof(pcs->params.device_n.alt_space), index - 2);
+		      sizeof(pcs->params.device_n.alt_space), index - 3);
 }
 ENUM_PTR(0, gs_color_space, params.device_n.names);
 ENUM_PTR(1, gs_color_space, params.device_n.map);
+ENUM_PTR(2, gs_color_space, params.device_n.attributes);
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(cs_DeviceN_reloc_ptrs, gs_color_space *pcs)
 {
     RELOC_PTR(gs_color_space, params.device_n.names);
     RELOC_PTR(gs_color_space, params.device_n.map);
+    RELOC_PTR(gs_color_space, params.device_n.attributes);
     RELOC_USING(*pcs->params.device_n.alt_space.type->stype,
 		&pcs->params.device_n.alt_space,
 		sizeof(gs_base_color_space));
 }
 RELOC_PTRS_END
+
+/* ---------------- GC for DeviceN Attribute color spaces ---------------- */
+
+private 
+ENUM_PTRS_WITH(device_n_attributes_enum_ptrs, gs_device_n_attributes *pdevnatt)
+{
+    return ENUM_USING(*pdevnatt->cspace.type->stype,
+		      &(pdevnatt->cspace),
+		      sizeof(pdevnatt->cspace), index - 1);
+}
+ENUM_PTR(0, gs_device_n_attributes, next);
+ENUM_PTRS_END
+
+private RELOC_PTRS_WITH(device_n_attributes_reloc_ptrs,
+	       			gs_device_n_attributes *pdevnatt)
+{
+    RELOC_USING(*pdevnatt->cspace.type->stype,
+		      &(pdevnatt->cspace),
+		      sizeof(pdevnatt->cspace));
+    RELOC_PTR(gs_device_n_attributes, next);
+}
+RELOC_PTRS_END
+
+gs_private_st_composite(st_device_n_attributes, gs_device_n_attributes,
+     "gs_device_n_attributes", device_n_attributes_enum_ptrs,
+     device_n_attributes_reloc_ptrs);
 
 /* ------ Public procedures ------ */
 
@@ -107,7 +135,7 @@ gs_build_DeviceN(
 		gs_memory_t *pmem
 		)
 {
-    gs_device_n_params *pcsdevn = pcsdevn = &pcspace->params.device_n;
+    gs_device_n_params *pcsdevn = &pcspace->params.device_n;
     gs_separation_name *pnames = 0;
     int code;
 
@@ -129,6 +157,7 @@ gs_build_DeviceN(
     }
     pcsdevn->names = pnames;
     pcsdevn->num_components = num_components;
+    pcsdevn->attributes = NULL;
     return 0;
 }
 
@@ -176,6 +205,48 @@ alloc_device_n_map(gs_device_n_map ** ppmap, gs_memory_t * mem,
     pimap->tint_transform_data = 0;
     pimap->cache_valid = false;
     *ppmap = pimap;
+    return 0;
+}
+
+/*
+ * DeviceN and NChannel color spaces can have an attributes dict.  In the
+ * attribute dict can be a Colorants dict which contains Separation color
+ * spaces.  If the Colorant dict is present, the PS logic will build each of
+ * the Separation color spaces in a temp gstate and then call this procedure
+ * to attach the Separation color space to the DeviceN color space.
+ * The parameter to this procedure is a colorant name.  The Separation
+ * color space is in the current (temp) gstate.  The DeviceN color space is
+ * in the next gstate down in the gstate list (pgs->saved).
+ */
+int
+gs_attachattributecolorspace(gs_separation_name sep_name, gs_state * pgs)
+{
+    gs_color_space * pdevncs;
+    gs_device_n_attributes * patt;
+
+    /* Verify that we have a DeviceN color space */
+    if (!pgs->saved)
+	return_error(gs_error_rangecheck);
+    pdevncs = pgs->saved->color_space;
+#if 1
+    if (pdevncs->type != &gs_color_space_type_DeviceN)
+	return_error(gs_error_rangecheck);
+#endif
+
+    /* Allocate an attribute list element for our linked list of attributes */
+    patt = gs_alloc_struct(pgs->memory, gs_device_n_attributes,
+		    &st_device_n_attributes, "gs_attachattributrescolorspace");
+    if (patt == NULL)
+	return_error(gs_error_VMerror);
+
+    /* Point our attribute list entry to the attribute color space */
+    patt->colorant_name = sep_name;
+    gs_cspace_init_from((gs_color_space *)&(patt->cspace), pgs->color_space);
+
+    /* Link our new attribute color space to the DeviceN color space */
+    patt->next = pdevncs->params.device_n.attributes;
+    pdevncs->params.device_n.attributes = patt;
+
     return 0;
 }
 
@@ -553,9 +624,18 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_state * pgs)
 private void
 gx_adjust_cspace_DeviceN(const gs_color_space * pcs, int delta)
 {
+    gs_device_n_attributes * patt = pcs->params.device_n.attributes;
+
     rc_adjust_const(pcs->params.device_n.map, delta, "gx_adjust_DeviceN");
     (*pcs->params.device_n.alt_space.type->adjust_cspace_count)
 	((const gs_color_space *)&pcs->params.device_n.alt_space, delta);
+    while (patt != NULL) {
+	gs_color_space * pattcs = &(patt->cspace);
+
+        (pattcs->type->adjust_cspace_count)
+		((const gs_color_space *)pattcs, delta);
+	patt = patt->next;
+    }
 }
 
 /* ---------------- Serialization. -------------------------------- */

@@ -273,6 +273,11 @@ typedef struct gs_base_color_space_s {
 typedef struct gs_device_n_map_s gs_device_n_map;
 #endif
 
+#ifndef gs_device_n_attributes_DEFINED
+#  define gs_device_n_attributes_DEFINED
+typedef struct gs_device_n_attributes_s gs_device_n_attributes;
+#endif
+
 /*
  * Non-base direct color spaces: Separation and DeviceN.
  * These include a base alternative color space.
@@ -305,6 +310,7 @@ typedef struct gs_device_n_params_s {
     uint num_components;
     gs_base_color_space alt_space;
     gs_device_n_map *map;
+    gs_device_n_attributes *attributes;
     bool use_alt_cspace;
     gs_callback_func_get_colorname_string *get_colorname_string;
 } gs_device_n_params;

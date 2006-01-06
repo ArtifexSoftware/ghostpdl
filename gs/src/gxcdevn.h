@@ -45,6 +45,19 @@ struct gs_device_n_map_s {
 int alloc_device_n_map(gs_device_n_map ** ppmap, gs_memory_t * mem,
                        client_name_t cname);
 
+#ifndef gs_device_n_attributes_DEFINED
+#  define gs_device_n_attributes_DEFINED
+typedef struct gs_device_n_attributes_s gs_device_n_attributes;
+#endif
+struct gs_device_n_attributes_s {
+    gs_separation_name colorant_name;
+    gs_color_space cspace;
+    struct gs_device_n_attributes_s * next;	/* Linked list */
+};
+#define private_st_device_n_attributes() /* in gscdevn.c */\
+  gs_private_st_ptrs2(st_device_n_attributes, gs_device_n_attributes, "gs_device_n_attributes",\
+    device_n_attributes_enum_ptrs, device_n_attributes_reloc_ptrs, cspace, next)
+
 /* Check if we are using the alternate color space */
 bool using_alt_color_space(const gs_state * pgs);
 

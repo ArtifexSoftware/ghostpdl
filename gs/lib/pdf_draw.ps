@@ -582,12 +582,22 @@ end
     4 array astore
   }
   /DeviceN {
-    0 4 getinterval                    % ignore attributes
-    aload pop 3 -1 roll oforce	       % resolve names array
-    [ exch { oforce } forall ]	       % resolve each of the names
-    3 -1 roll oforce resolvecolorspace
-    3 -1 roll oforce resolvefnproc
-    4 array astore
+    dup dup 1 oget			% Resolve Names array
+    [ exch { oforce } forall ]		% resolve each of the names
+    1 exch put
+    dup dup 2 oget resolvecolorspace
+    2 exch put
+    dup dup 3 oget resolvefnproc
+    3 exch put
+    dup length 4 gt {			% Check for attributes dict
+      dup dup 4 oget
+      dup dup /Colorants knownoget	% Check for Colorants Dict
+	{				% resolve all of the entries
+	  << exch { oforce resolvecolorspace } forall >>
+       	  /Colorants exch put
+ 	} { pop } ifelse		% No Colorants Dict
+      4 exch put
+    } if
   }
   /Indexed {
     aload pop 3 -1 roll oforce resolvecolorspace
