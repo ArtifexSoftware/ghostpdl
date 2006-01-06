@@ -228,10 +228,8 @@ gs_attachattributecolorspace(gs_separation_name sep_name, gs_state * pgs)
     if (!pgs->saved)
 	return_error(gs_error_rangecheck);
     pdevncs = pgs->saved->color_space;
-#if 1
     if (pdevncs->type != &gs_color_space_type_DeviceN)
 	return_error(gs_error_rangecheck);
-#endif
 
     /* Allocate an attribute list element for our linked list of attributes */
     patt = gs_alloc_struct(pgs->memory, gs_device_n_attributes,
