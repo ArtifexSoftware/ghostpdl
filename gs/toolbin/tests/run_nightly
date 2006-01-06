@@ -101,29 +101,48 @@ def die(msg):
 def update_ghostscript():
     cwd = os.getcwd()
     os.chdir(gsconf.gsroot)
-	
-    os.unlink("%s/src/gscdef.c" % (gsconf.gsroot,))
     
-    if os.system("date >> " + gsconf.cvs_log_stdout) != 0: return (1, None, None)
-    if os.system("date >> " + gsconf.cvs_log_stderr) != 0: return (1, None, None)
+    if os.system("date >> " + gsconf.update_log_stdout) != 0: return (1, None, None)
+    if os.system("date >> " + gsconf.update_log_stderr) != 0: return (1, None, None)
 
     starttime = time.time()
 
-    if os.system("cvs update -Pd >> " + gsconf.cvs_log_stdout + " 2>> " +
-                 gsconf.cvs_log_stderr) != 0: return (1, None, None)
+    # undo our product name alteration	
+    f = "%s/src/gscdef.c" % (gsconf.gsroot,)
+    if os.path.exists(f):
+	os.unlink(f)
+
+    if os.system("svn update >> " + gsconf.update_log_stdout + " 2>> " +
+                 gsconf.update_log_stderr) != 0: return (1, None, None)
+
+    os.system("echo 'svn update complete' >> " + gsconf.update_log_stdout)
 
     endtime = time.time()
     
     change_gsproduct("%s/src/gscdef.c" % (gsconf.gsroot,))
+
+    os.system("echo 'product change complete' >> " + gsconf.update_log_stdout)
 	
+    if os.system("./autogen.sh --prefix=/home/regression/gshead/ > " + 
+		gsconf.config_log_stdout + " 2> " +
+                gsconf.config_log_stderr) != 0: return (2, None, None)
+
+    os.system("echo 'configuration complete' >> " + gsconf.update_log_stdout)
+
     if os.system("make clean > /dev/null 2> /dev/null") != 0:
         return (-1, None, None)
+
+    os.system("echo 'make clean complete' >> " + gsconf.update_log_stdout)
     
     if os.system("make > " + gsconf.make_log_stdout + " 2> " +
                  gsconf.make_log_stderr) != 0: return (2, None, None)
 
+    os.system("echo 'make complete' >> " + gsconf.update_log_stdout)
+
     if os.system("make install > " + gsconf.install_log_stdout + " 2> " + \
                  gsconf.install_log_stderr) != 0: return (3, None, None)
+
+    os.system("echo 'make install complete' >> " + gsconf.update_log_stdout)
 
     return (0, starttime, endtime)
 
@@ -139,11 +158,11 @@ os.umask(0002)
 err, starttime, endtime = update_ghostscript()
 if err != 0:
     if err == 1:
-        msg = "Ghostscript update failed updating from CVS.\n\n"
+        msg = "Ghostscript update failed updating from SVN.\n\n"
         msg = msg + "stdout log:\n\n"
-        msg = msg + get_file(gsconf.cvs_log_stdout)
+        msg = msg + get_file(gsconf.update_log_stdout)
         msg = msg + "\nstderr log:\n\n"
-        msg = msg + get_file(gsconf.cvs_log_stderr)
+        msg = msg + get_file(gsconf.update_log_stderr)
         die(msg)
     elif err == 2:
         msg = "Ghostscript update failed during make.\n\n"
@@ -223,8 +242,8 @@ if p:
 baselines += "\n\n"
 
 # Prepend checkout times
-times = "CVS checkout for this report started at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(starttime)) + "\n"
-times = times + "CVS checkout ended at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(endtime)) + "\n\n"
+times = "SVN checkout for this report started at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(starttime)) + "\n"
+times = times + "SVN checkout ended at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(endtime)) + "\n\n"
 
 # Build the report and capture it in a rotating log file
 log = open(gsconf.log_regression, "w")

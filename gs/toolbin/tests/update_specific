@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.3
 # -*- Mode: python -*-
 
-#    Copyright (C) 2001 Artifex Software Inc.
+#    Copyright (C) 2001-2006 Artifex Software Inc.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -18,7 +18,7 @@
 
 # $Id$
 
-# update_specific <cvs date spec>
+# update_specific <svn date spec>
 #
 # pass files to update via stdin in the following format:
 # (N|P) <file>
@@ -192,7 +192,7 @@ def change_gsproduct(file):
 
 if len(sys.argv) != 2:
     print "Not enough arguments."
-    print "usage: update_specific <cvs date spec>"
+    print "usage: update_specific <svn date spec>"
     print
     sys.exit(1)
 
@@ -215,18 +215,18 @@ print "pdf:", pdfset
     
 # create the build/install directories and subdirectories
 tmpdir = make_temp_dir()
-cvsdir = os.path.join(tmpdir, "cvs")
+svndir = os.path.join(tmpdir, "svn")
 instdir = os.path.join(tmpdir, "inst")
-builddir = os.path.join(cvsdir, "gs")
-os.mkdir(cvsdir)
+builddir = os.path.join(svndir, "gs")
+os.mkdir(svndir)
 os.mkdir(instdir)
 
 try:
-    # do the cvs checkout
-    ret = run("cvs -z3 -d " + gsconf.repodir + " get -D \"" +
-              datespec + "\" gs", cvsdir)
+    # do the svn checkout
+    ret = run("svn checkout -r {\"" + datespec + "\"} " + 
+	gsconf.repository + "/trunk/gs", svndir)
     if ret != 0:
-        raise StandardError, "ERROR: CVS checkout failed"
+        raise StandardError, "ERROR: SVN checkout failed"
 
     # now configure and build Ghostscript
     ret = run("./autogen.sh --prefix=" + instdir, builddir)

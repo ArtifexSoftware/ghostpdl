@@ -9,7 +9,7 @@ logdir		/home/regression/regression/logs/
 dailydir	/home/regression/regression/daily/
 rasterdbdir	/home/regression/regression/raster/
 fontdir		/home/regression/fonts/
-repodir		/cvs/ghostscript
+repository	http://svn.ghostscript.com:8080/ghostscript/
 
 # programs
 
@@ -34,8 +34,10 @@ regression_script	/home/regression/regression/run_regression
 diff_script		/home/regression/regression/testdiff
 diff_script		/home/regression/regression/get_baselines
 
-cvs_log_stdout		/home/regression/regression/logs/cvs-stdout.log
-cvs_log_stderr		/home/regression/regression/logs/cvs-stderr.log
+update_log_stdout	/home/regression/regression/logs/update-stdout.log
+update_log_stderr	/home/regression/regression/logs/update-stderr.log
+config_log_stdout	/home/regression/regression/logs/config-stdout.log
+config_log_stderr	/home/regression/regression/logs/config-stderr.log
 make_log_stdout		/home/regression/regression/logs/make-stdout.log
 make_log_stderr		/home/regression/regression/logs/make-stderr.log
 install_log_stdout	/home/regression/regression/logs/install-stdout.log
