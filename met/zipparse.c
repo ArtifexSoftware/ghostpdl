@@ -334,6 +334,13 @@ zip_decompress_data(zip_state_t *pzip, stream_cursor_read *pin )
 	    else
 		code = pin->ptr > rstart ? 0 : 1;
 	    part->newfile = false;
+
+	    if (part->csize && part->csaved == part->csize) {
+		// NB: need to test the end of part/end of file/no csize case. 
+		code = zip_decompress_data(pzip, pin);
+	    }
+
+	    
 	    break;
 
         case Z_STREAM_END:
