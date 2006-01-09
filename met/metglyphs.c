@@ -204,7 +204,8 @@ set_rgb_text_color(gs_state *pgs, ST_RscRefColor Fill)
    return -1; /* not reached */
 }
 
-bool iscolon(char c) {return c == ';';}
+private bool is_semi_colon(char c) {return c == ';';}
+private bool is_colon(char c) {return c == ':';}
 
 /* nb hack temporary static buffer for glyphs */
 private gs_glyph glyphs[1024];
@@ -217,14 +218,12 @@ private bool iscomma(char c) {return c == ',';}
 /* nb for now we just support the glyph index remapping.  We need
   cluster mapping an metrics */
 private void 
-get_glyph_advance(char *index, gs_glyph unicode, 
+get_glyph_advance(char *index, gs_font *pfont, gs_glyph unicode, 
 		  gs_glyph *glyph, gs_glyph *advance,
 		  gs_glyph *uOffset, gs_glyph *vOffset )
 {
    char *args[strlen(index)];
-   char **pargs = args;
    int num = 0;
-   int i = 0;
    char *p;
 
    *advance = *uOffset = *vOffset = 0;
@@ -242,7 +241,7 @@ get_glyph_advance(char *index, gs_glyph unicode,
 	       *vOffset = atoi(args[3]);
        }
        else {  /* ,num */ 
-	   *glyph = unicode;
+	   *glyph = pl_tt_encode_char(pfont, unicode, 0);
 	   if (num-- > 0) 
 	       *advance = atoi(args[0]);
 	   if (num-- > 0) 
@@ -256,56 +255,72 @@ get_glyph_advance(char *index, gs_glyph unicode,
 
 }
 
-private gs_text_params_t
-build_text_params(ST_UnicodeString UnicodeString, ST_Indices Indices)
+private int 
+build_text_params(gs_text_params_t *text, gs_font *pfont, 
+		  ST_UnicodeString UnicodeString, ST_Indices Indices)
 {
-   gs_text_params_t text;
    if (!Indices) {
        /* this would be the hallaluah case */
-       text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
-       text.data.bytes = UnicodeString;
-       text.size = strlen(UnicodeString);
+       text->operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+       text->data.bytes = UnicodeString;
+       text->size = strlen(UnicodeString);
    } else {
        /* the non halaluah case */
        char expindstr[strlen(Indices) * 2 + 1];
        char *args[strlen(Indices) * 2 + 1];
        char **pargs = args;
-       int glyph_index = 0;
        int cnt = 0;
-       char *p = 0;
+       int glyph_index = 0;
+       int combine_cnt = 0;
 
        met_expand(expindstr, Indices, ';', 'Z');
-       cnt = met_split(expindstr, args, iscolon);
+       cnt = met_split(expindstr, args, is_semi_colon);
        while (*pargs) {
            /* if the argument is empty try the unicode string */
            if (**pargs == 'Z') {
-               if (strlen(UnicodeString) > glyph_index)
-                   glyphs[glyph_index++] = (gs_glyph)UnicodeString[glyph_index];
+               if (strlen(UnicodeString) > glyph_index) {
+		   glyphs[glyph_index++] = 
+		       pl_tt_encode_char(pfont, UnicodeString[glyph_index+combine_cnt], 0);
+	       }
                else
                    /* punt */
                    glyphs[glyph_index++] = 0;
            } else {       
-	       /* NB: Till I understand it 
-		* skip a cluster mapping */
-#if 0 
-	       if ((*pargs) && (p = strchr(pargs, '('))) {
-		   pargs = p+1;
-		   p = strchr(pargs, ')');
-		   pargs = p+1;
+	       char *p = 0;
+
+	       if ((*pargs) && (p = strchr(*pargs, '('))) {
+		   /* parse (a:b)  combine_cnt += a-b */
+		   char colon_str[100];
+		   char *paren[3];
+		   int a, b;
+
+		   *pargs = p+1;
+		   met_expand(colon_str, *pargs, ';', 'Z');
+		   if ( 2 != (cnt = met_split(colon_str, paren, is_colon)))
+			return -1; // parse error
+
+		   a = atoi(paren[0]);
+		   b = atoi(paren[1]);
+
+		   combine_cnt += a - b;
+		   p = strchr(*pargs, ')');
+		   *pargs = p+1;
 	       }
-#endif		   
-	       get_glyph_advance(*pargs, (gs_glyph)UnicodeString[glyph_index], 
+
+	       get_glyph_advance(*pargs, pfont, (gs_glyph)UnicodeString[glyph_index+combine_cnt], 
 				 &glyphs[glyph_index], &advance[glyph_index],
 				 &uOffset[glyph_index], &vOffset[glyph_index]);
-	       glyph_index++;
+	       glyph_index += combine_cnt;
            }
            pargs++;
        }
-       text.operation = TEXT_FROM_GLYPHS | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
-       text.data.glyphs = glyphs;
-       text.size = glyph_index;
+       while (strlen(UnicodeString) > glyph_index+combine_cnt) 
+	   glyphs[glyph_index++] = pl_tt_encode_char(pfont, UnicodeString[glyph_index+combine_cnt], 0);
+       text->operation = TEXT_FROM_GLYPHS | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+       text->data.glyphs = glyphs;
+       text->size = glyph_index;
    }
-   return text;
+   return 0;
 }
 
 
@@ -394,9 +409,13 @@ Glyphs_action(void *data, met_state_t *ms)
        return code;
 
    {
-       gs_text_params_t text = build_text_params(aGlyphs->UnicodeString,
-                                                 aGlyphs->Indices);
+       gs_text_params_t text;
        gs_text_enum_t *penum;
+
+       if ((code = build_text_params(&text, pcf->pfont, 
+				     aGlyphs->UnicodeString,
+				     aGlyphs->Indices)) != 0)
+           return code;
 
        if ((code = gs_text_begin(pgs, &text, mem, &penum)) != 0)
            return code;
