@@ -323,6 +323,10 @@ build_text_params(gs_text_params_t *text, gs_font *pfont,
    return 0;
 }
 
+private bool is_Data_delimeter(char b) 
+{
+    return (b == ',') || (isspace(b));
+}
 
 /* action associated with this element.  NB this procedure should be
   decomposed into manageable pieces */
@@ -388,17 +392,44 @@ Glyphs_action(void *data, met_state_t *ms)
    if ((code = gs_setfont(pgs, pcf->pfont)) != 0)
        return code;
 
-   /* move the character "cursor" */
-   if ((code = gs_moveto(pgs, aGlyphs->OriginX, aGlyphs->OriginY)) != 0)
-        return code;
+   if (aGlyphs->RenderTransform) {
+       char transstring[strlen(aGlyphs->RenderTransform)];
+       strcpy(transstring, aGlyphs->RenderTransform);
+       /* nb wasteful */
+       char *args[strlen(aGlyphs->RenderTransform)];
+       char **pargs = args;
+       met_split(transstring, args, is_Data_delimeter);
+       /* nb checking */
+       font_mat.xx = atof(pargs[0]);
+       font_mat.xy = atof(pargs[1]);
+       font_mat.yx = atof(pargs[2]);
+       font_mat.yy = atof(pargs[3]);
+       font_mat.tx = atof(pargs[4]);
+       font_mat.ty = atof(pargs[5]);
+       if (code < 0)
+           return code;
+   } else {
+       /* concatenate a font matrix */
+       gs_make_identity(&font_mat);
+   }
+
+   /* move the character "cursor".  Note the render transform
+      apparently applies to the coordinate of the origin argument as
+      well as the font */
+   {
+       gs_point pt;
+       if ((code = gs_point_transform(mem, aGlyphs->OriginX, aGlyphs->OriginY,
+                                      &font_mat, &pt)) != 0)
+           return code;
+       if ((code = gs_moveto(pgs, pt.x, pt.y)) != 0)
+           return code;
+   }
 
    /* save the current ctm and the current color */
    gs_gsave(pgs);
 
    /* set the text color */
    set_rgb_text_color(pgs, color);
-   /* concatenate a font matrix */
-   gs_make_identity(&font_mat);
 
    /* flip y metro goes down the page */
    if ((code = gs_matrix_scale(&font_mat, aGlyphs->FontRenderingEmSize,

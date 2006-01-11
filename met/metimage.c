@@ -298,6 +298,7 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
     gs_client_pattern gspat;
     gs_client_color gscolor;
     gs_memory_t *mem = ms->memory;
+    
     code = readdata(mem, ms->pzip, ImageSource, &rbuf, &rlen);
     if (code < 0)
         return code;

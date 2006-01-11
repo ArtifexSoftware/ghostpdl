@@ -215,20 +215,50 @@ Path_action(void *data, met_state_t *ms)
         /* nb implement the spec for Data - this just prints some test
            examples, sans error checking. */
         moveto = false;
-        while (*pargs && **pargs != 'Z' && **pargs != 'z') {
+        while (*pargs) {
             gs_point pt;
-            if ((**pargs == 'M') || (**pargs == 'L')) {
-                moveto = (**pargs == 'M');
+            char arg = toupper(**pargs);
+            if (arg == 'Z') {
+                gs_closepath(pgs);
                 pargs++;
+            } else if (arg == 'F') {
+                /* nb set fill rule */
+                pargs++;
+            } else if (arg == 'M' || arg == 'L') {
+                moveto = (arg == 'M');
+                pargs++;
+                while (pargs) {
+                    if (isalpha(**pargs)) {
+                        break;
+                    }
+                    pt.x = atof(*pargs++);
+                    pt.y = atof(*pargs++);
+                    if (moveto)
+                        code = gs_moveto(pgs, pt.x, pt.y);
+                    else
+                        code = gs_lineto(pgs, pt.x, pt.y);
+                    if (code < 0)
+                        return code;
+                }
+            } else if (arg == 'C') {
+                gs_point cpt0, cpt1, cpt2;
+                *pargs++;
+                while (pargs) {
+                    if (isalpha(**pargs)) {
+                        break;
+                    }
+                    cpt0.x = atof(*pargs++); cpt0.y = atof(*pargs++);
+                    cpt1.x = atof(*pargs++); cpt1.y = atof(*pargs++); 
+                    cpt2.x = atof(*pargs++); cpt2.y = atof(*pargs++);
+                    code = gs_curveto(pgs, cpt0.x, cpt0.y, cpt1.x, cpt1.y,
+                                      cpt2.x, cpt2.y);
+                    if (code < 0)
+                        return code;
+                }
+            } else {
+                *pargs++;
+                dprintf(mem, "unknown operator continuing\n");
             }
-            pt.x = atof(*pargs++);
-            pt.y = atof(*pargs++);
-            if (moveto)
-                code = gs_moveto(pgs, pt.x, pt.y);
-            else
-                code = gs_lineto(pgs, pt.x, pt.y);
-            if (code < 0)
-                return code;
         }
     }
     return code;
@@ -614,7 +644,7 @@ ArcSegment_action(void *data, met_state_t *ms)
     gs_memory_t *mem = ms->memory;
     gs_point start, sstart, rstart, end, send, rend, size, midpoint;
     double len;
-    double cosang, ang, slope, scalex;
+    double cosang, ang, slope, invslope, scalex, dis, distocenter, center1;
     gs_matrix rot_mat, save_ctm;
     int code;
 
@@ -628,21 +658,22 @@ ArcSegment_action(void *data, met_state_t *ms)
     /* get the radii - M$ calls these the "size" */
     size = getPoint(aArcSegment->Size);
     
-    /* create a scaling factor for x based on the ratio of the y
-       radius to the x radius */
-    scalex = size.y / size.x;
-    
-    /* scale each x so we get two circles of radius y instead of two
-       ellipses */
-    sstart.x = start.x * scalex; sstart.y = start.y;
-    send.x = end.x * scalex; send.y = end.y;
-
-    /* find the midpoint of these two points then rotate about that
-       point 90 degrees the end points of these lines should be the
-       centerpoints of the two circles (after a little scaling see
-       below).  NB need error checking */ 
+    /* the midpoint of the line with endpoints at the intersections */
     midpoint.x = (send.x + sstart.x) / 2.0;
     midpoint.y = (send.y + sstart.y) / 2.0;
+    /* slope of the line and its inverse (angle + pi/2) */
+    slope = (end.y - start.y) / (end.x - start.x);
+    invslope = -1.0/slope;
+
+    /* length of the line segment connecting intersections */
+    dis = hypot(end.x - start.x, end.y - start.y);
+    /* length of the line segement connecting midpoint of to center of
+       either circle (ellipse), nb need an extra step for an ellipse.
+       (1/2 dis)^2 = 1/4 dis^2. */
+    distocenter = 1.0/4.0 * dis * dis + size.x * size.x;
+    
+    /* project from midpoint to centers using polar coordinate */
+    //center1.x = distocenter * cos
     
     gs_make_identity(&rot_mat);
     gs_matrix_translate(mem, &rot_mat, midpoint.x, midpoint.y, &rot_mat);
