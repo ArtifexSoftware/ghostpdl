@@ -102,7 +102,6 @@ met_end(void *data, const char *el)
         char str[strlen(term) + strlen(el) + 1];
         strcpy(str, term);
         strcat(str, el);
-        dprintf1(mem, "strlen %d\n", strlen(str));
         dprintf2(mem, "%*s\n", INDENT + strlen(str), str);
     }
 
