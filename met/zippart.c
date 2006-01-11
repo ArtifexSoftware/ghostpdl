@@ -208,7 +208,7 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 	int index = -1;
 	
 
-	mkdir("/tmp/XPS");		
+	mkdir("/tmp/XPS", 0777);		
 
 	sprintf(fname, "/tmp/XPS/", ptr);
 	for (i = strlen(fname); *ptr != 0; i++, ptr++) 
