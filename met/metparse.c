@@ -57,7 +57,7 @@ met_start(void *data, const char *el, const char **attr)
     if ( gs_debug_c('i') ) {
         dprintf2(mem, "%*s\n", INDENT + strlen(el), el);
         for (i = 0; attr[i]; i += 2)
-            dprintf3(mem, "%*s='%s'\n", 
+            dprintf3(mem, "%*s='%.256s'\n", 
                      INDENT + strlen(attr[i]),
                      attr[i], attr[i + 1]);
     }
@@ -102,6 +102,7 @@ met_end(void *data, const char *el)
         char str[strlen(term) + strlen(el) + 1];
         strcpy(str, term);
         strcat(str, el);
+        dprintf1(mem, "strlen %d\n", strlen(str));
         dprintf2(mem, "%*s\n", INDENT + strlen(str), str);
     }
 
