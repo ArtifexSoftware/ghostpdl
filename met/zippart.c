@@ -243,10 +243,14 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
 {
     long len = 0;
     int error = 0;
-
+    char *p = &rpart->name[strlen(rpart->name) - 4];
     dprintf1(pzip->memory, "End of part %s\n", rpart->name );
     
-    if ( !strncmp(rpart->name, "FixedPage_", 10) ) { /* feed met_process a Page */
+    /* NB: its not cool to string compare to find FixedPages to parse thats 
+     * what rels are for...
+     */
+    if ( !strncmp(rpart->name, "FixedPage_", 10) && 
+	 strncmp(p, "rels", 4 )) { /* feed met_process a Page */
 	if ( ziptestmode ) {
 	    zip_page_test(pzip, rpart);
 	}
