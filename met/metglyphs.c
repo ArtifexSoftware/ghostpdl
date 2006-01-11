@@ -281,6 +281,7 @@ build_text_params(gs_text_params_t *text, gs_font *pfont,
                if (strlen(UnicodeString) > glyph_index) {
 		   glyphs[glyph_index++] = 
 		       pl_tt_encode_char(pfont, UnicodeString[glyph_index+combine_cnt], 0);
+		   // ++glyph_index;
 	       }
                else
                    /* punt */
@@ -310,12 +311,14 @@ build_text_params(gs_text_params_t *text, gs_font *pfont,
 	       get_glyph_advance(*pargs, pfont, (gs_glyph)UnicodeString[glyph_index+combine_cnt], 
 				 &glyphs[glyph_index], &advance[glyph_index],
 				 &uOffset[glyph_index], &vOffset[glyph_index]);
-	       glyph_index += combine_cnt;
+	       ++glyph_index;
            }
            pargs++;
        }
-       while (strlen(UnicodeString) > glyph_index+combine_cnt) 
+       while (strlen(UnicodeString) > glyph_index+combine_cnt) {
 	   glyphs[glyph_index++] = pl_tt_encode_char(pfont, UnicodeString[glyph_index+combine_cnt], 0);
+	   //++glyph_index;
+       }
        text->operation = TEXT_FROM_GLYPHS | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
        text->data.glyphs = glyphs;
        text->size = glyph_index;
