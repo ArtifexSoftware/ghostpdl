@@ -392,6 +392,10 @@ Glyphs_action(void *data, met_state_t *ms)
    if ((code = gs_setfont(pgs, pcf->pfont)) != 0)
        return code;
 
+   /* if a render transformation is specified we use it otherwise the
+      font matrix starts out as identity, later it will be
+      concatenated to the graphics state ctm after scaling for point
+      size. */
    if (aGlyphs->RenderTransform) {
        char transstring[strlen(aGlyphs->RenderTransform)];
        strcpy(transstring, aGlyphs->RenderTransform);
@@ -409,13 +413,13 @@ Glyphs_action(void *data, met_state_t *ms)
        if (code < 0)
            return code;
    } else {
-       /* concatenate a font matrix */
        gs_make_identity(&font_mat);
    }
 
    /* move the character "cursor".  Note the render transform
-      apparently applies to the coordinate of the origin argument as
-      well as the font */
+      apparently applies to the coordinates of the origin argument as
+      well as the font, so we transform the origin values by the font
+      matrix! */
    {
        gs_point pt;
        if ((code = gs_point_transform(mem, aGlyphs->OriginX, aGlyphs->OriginY,
@@ -436,6 +440,7 @@ Glyphs_action(void *data, met_state_t *ms)
                                (-aGlyphs->FontRenderingEmSize), &font_mat)) != 0)
        return code;
 
+   /* finally! */
    if ((code = gs_concat(pgs, &font_mat)) != 0)
        return code;
 
