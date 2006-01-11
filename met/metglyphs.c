@@ -279,9 +279,9 @@ build_text_params(gs_text_params_t *text, gs_font *pfont,
            /* if the argument is empty try the unicode string */
            if (**pargs == 'Z') {
                if (strlen(UnicodeString) > glyph_index) {
-		   glyphs[glyph_index++] = 
+		   glyphs[glyph_index] = 
 		       pl_tt_encode_char(pfont, UnicodeString[glyph_index+combine_cnt], 0);
-		   // ++glyph_index;
+		   ++glyph_index;
 	       }
                else
                    /* punt */
@@ -316,8 +316,8 @@ build_text_params(gs_text_params_t *text, gs_font *pfont,
            pargs++;
        }
        while (strlen(UnicodeString) > glyph_index+combine_cnt) {
-	   glyphs[glyph_index++] = pl_tt_encode_char(pfont, UnicodeString[glyph_index+combine_cnt], 0);
-	   //++glyph_index;
+	   glyphs[glyph_index] = pl_tt_encode_char(pfont, UnicodeString[glyph_index+combine_cnt], 0);
+	   ++glyph_index;
        }
        text->operation = TEXT_FROM_GLYPHS | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
        text->data.glyphs = glyphs;
