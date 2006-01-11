@@ -51,7 +51,7 @@ load_tt_font(zip_part_t *part, gs_memory_t *mem) {
     // zip_part_length BUG, length is long, read is correct !!
     size = zip_part_read(pfont_data + 6, len, part);
     if ( size != len ) {
-	dprintf2(mem, "BUG! zip_part_length != zip_part_read %d, %d\n", len, size);
+	dprintf2(0, "BUG! zip_part_length != zip_part_read %d, %d\n", len, size);
     }
 
     zip_part_free_all(part);
@@ -179,7 +179,7 @@ Glyphs_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
             aGlyphs->FontRenderingEmSize = atof(attr[i+1]);
             aGlyphs->avail.FontRenderingEmSize = 1;
         } else {
-            dprintf2(ms->memory, "unsupported attribute %s=%s\n",
+            dprintf2(0, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -344,7 +344,7 @@ Glyphs_action(void *data, met_state_t *ms)
    zip_part_t *part;
 
    if (!fname) {
-       dprintf(mem, "no font is defined\n");
+       dprintf(0, "no font is defined\n");
        return 0;
    }
 

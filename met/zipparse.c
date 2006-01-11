@@ -306,10 +306,16 @@ zip_decompress_data(zip_state_t *pzip, stream_cursor_read *pin )
     zip_init_write_stream(pzip, part);
 	
     if (part->comp_method == 0) {
-	rlen = min(rlen, wlen);
+	int left = part->csize - part->csaved;
+	if (left == 0)\
+	    return eEndOfStream;
+	rlen = min(left, min(rlen, wlen));
 	memcpy(wptr, pin->ptr, rlen);
 	part->tail->writeoffset += rlen;
-	pin->ptr += rlen;
+	part->csaved += rlen;
+	pin->ptr += rlen;    
+	if (part->csize && part->csaved == part->csize) 
+	    return eEndOfStream;
     }
     else {  /* 8 == flate */
 	zs = part->zs;
@@ -506,7 +512,7 @@ zip_initialize(zip_state_t *pzip)
     pzip->part_read_state = 0;
     pzip->read_part = -1;
     pzip->num_files = 0;
-    for (i=0; i < 1024;  i++)
+    for (i=0; i < 5000;  i++)
 	pzip->parts[i] = 0;
 
     return 0;
@@ -527,7 +533,7 @@ zip_end_job(met_state_t *mets, zip_state_t *pzip)
 {
     int i;
 
-    for (i=0; i < 1024;  i++) {
+    for (i=0; i < 5000;  i++) {
 	if (pzip->parts[i]) {
 	    if ( is_font(pzip->parts[i]->name) ) {
 		char buf[256];

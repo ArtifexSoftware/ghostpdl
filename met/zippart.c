@@ -27,7 +27,7 @@ find_zip_part_by_name(zip_state_t *pzip, char *name)
 {
     int i;
     // NB: needs linked list parts interface
-    for (i=0; i<1024 && i < pzip->num_files; i++) 
+    for (i=0; i<5000 && i < pzip->num_files; i++) 
 	if (pzip->parts[i]) 
 	    if (!strncmp(name+1, pzip->parts[i]->name, strlen(name) - 1 ))
 		return( pzip->parts[i] );
@@ -68,9 +68,11 @@ zip_part_length(zip_part_t *rpart)
     while (blk->next) {
 	len += blk->writeoffset;
 	if (blk->writeoffset != ZIP_BLOCK_SIZE)
+	    
 	    dprintf2(rpart->parent->memory, 
 		     "Wasted Space! zip_part_length != zip_part_read %d, %d\n", 
 		     blk->writeoffset, ZIP_BLOCK_SIZE);
+	    
 	blk = blk->next;
     }
     len += blk->writeoffset;
@@ -199,13 +201,19 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 	int i = 0;
 	int index = -1;
 	
-	for (i = 0; *ptr != 0; i++, ptr++) 
-	    if (*ptr == '/')
-		index = i;
-		
-	ptr = &rpart->name[index+1];
 
-	sprintf(fname, "/tmp/XPS/%s", ptr);
+	mkdir("/tmp/XPS");		
+
+	sprintf(fname, "/tmp/XPS/", ptr);
+	for (i = strlen(fname); *ptr != 0; i++, ptr++) 
+	    if (*ptr == '/')
+	         fname[i] = '-';
+	    else 
+		fname[i] = *ptr;
+	fname[i]=0;
+
+	dprintf1(rpart->parent->memory, "Zip File Name %s\n", fname);
+
 	fp = fopen(fname, "w"); 
 	
 	error = zip_part_seek(rpart, 0, 0);
@@ -230,24 +238,27 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
     long len = 0;
     int error = 0;
 
-    // dprintf1(pzip->memory, "End of part %s\n", rpart->name );
+    dprintf1(pzip->memory, "End of part %s\n", rpart->name );
     
-    if ( !strncmp(rpart->name, "FixedPage", 9) ) { /* feed met_process a Page */
+    if ( !strncmp(rpart->name, "FixedPage_", 10) ) { /* feed met_process a Page */
 	if ( ziptestmode ) {
 	    zip_page_test(pzip, rpart);
 	}
 
-	error = zip_part_seek(rpart, 0, 0);
-	if (error) return error;
-	do {
+	if (0 < zip_part_length(rpart)) {
+	    error = zip_part_seek(rpart, 0, 0);
+	    if (error) return error;
 	    do {
-		error = met_process(st, mets, pzip, &rpart->s.r);
-		if (error) return error;
+		do {
+		    error = met_process(st, mets, pzip, &rpart->s.r);
+		    if (error) return error;
+		}
+		while (rpart->s.r.ptr + 1 < rpart->s.r.limit); 
 	    }
-	    while (rpart->s.r.ptr + 1 < rpart->s.r.limit); 
+	    while ( 0 == zip_read_blk_next_blk(rpart) );
 	}
-	while ( 0 == zip_read_blk_next_blk(rpart) );
-	
+	else
+	    dprintf1(pzip->memory, "Zero length part %s\n", rpart->name );
 	/* auto deletion of FixedPage after parsing */
 	zip_part_free_all( rpart );
     }
@@ -285,7 +296,7 @@ zip_part_free_all( zip_part_t *part )
     part->tail = 0;
     
 #if 0
-    for (i = 0; i < 1024; i++) {
+    for (i = 0; i < 5000; i++) {
 	if (pzip->parts[i] == part) {
 	    pzip->parts[i] = 0;
 	    gs_free_object(pzip->memory, part, "zip_part_free struct");

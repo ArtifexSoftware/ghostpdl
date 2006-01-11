@@ -14,6 +14,7 @@
 
 #include "scommon.h"
 #include "szlibxx.h"
+#include "mt_error.h"
 #include "metparse.h"
 
 /* linked list block size */
@@ -77,7 +78,7 @@ struct zip_state_s
     int num_files;    
 
     int read_part;             /* file being read */
-    zip_part_t *parts[1024];   /* sk: perhaps a list */
+    zip_part_t *parts[5000];   /* sk: perhaps a list */
 
     zip_part_t *head; // NB linked list would be better than array
     zip_part_t *curr; // internal issue
