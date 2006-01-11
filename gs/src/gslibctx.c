@@ -30,12 +30,25 @@ gs_lib_ctx_get_real_stdio(FILE **in, FILE **out, FILE **err)
 #include "gslibctx.h"
 #include "gsmemory.h"
 
+
+static gs_memory_t *mem_err_print = NULL;
+
+
+const gs_memory_t *
+gs_lib_ctx_get_non_gc_memory_t() 
+{
+    return mem_err_print ? mem_err_print->non_gc_memory : NULL;
+}
+
+
 int gs_lib_ctx_init( gs_memory_t *mem )
 {
     gs_lib_ctx_t *pio = 0;
 
     if ( mem == 0 ) 
 	return -1;  /* assert mem != 0 */
+
+    mem_err_print = mem;
 
     if (mem->gs_lib_ctx) /* one time initialization */
 	return 0;  
@@ -91,13 +104,14 @@ int outwrite(const gs_memory_t *mem, const char *str, int len)
 int errwrite(const gs_memory_t *mem, const char *str, int len)
 {    
     int code;
-    if (len == 0 || mem == 0)  /* silent NOP on null memory pointer */
+    if (len == 0)
 	return 0;
-    if (mem->gs_lib_ctx->stderr_fn)
-	return (*mem->gs_lib_ctx->stderr_fn)(mem->gs_lib_ctx->caller_handle, str, len);
 
-    code = fwrite(str, 1, len, mem->gs_lib_ctx->fstderr);
-    fflush(mem->gs_lib_ctx->fstderr);
+    if (mem_err_print->gs_lib_ctx->stderr_fn)
+	return (*mem_err_print->gs_lib_ctx->stderr_fn)(mem_err_print->gs_lib_ctx->caller_handle, str, len);
+
+    code = fwrite(str, 1, len, mem_err_print->gs_lib_ctx->fstderr);
+    fflush(mem_err_print->gs_lib_ctx->fstderr);
     return code;
 }
 
