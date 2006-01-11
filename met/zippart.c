@@ -27,10 +27,16 @@ find_zip_part_by_name(zip_state_t *pzip, char *name)
 {
     int i;
     // NB: needs linked list parts interface
+    
     for (i=0; i<5000 && i < pzip->num_files; i++) 
 	if (pzip->parts[i]) 
-	    if (!strncmp(name+1, pzip->parts[i]->name, strlen(name) - 1 ))
-		return( pzip->parts[i] );
+	    if (name[0] == '/') {
+		if (!strncmp(name+1, pzip->parts[i]->name, strlen(name) - 1))
+		    return( pzip->parts[i] );
+	    }
+	    else
+		if (!strncmp(name, pzip->parts[i]->name, strlen(name)))
+		    return( pzip->parts[i] );
     
     return NULL;
 }
