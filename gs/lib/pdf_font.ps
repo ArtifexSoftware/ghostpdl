@@ -656,6 +656,7 @@ setglobal
 /readfontfilter {	% <proc> readfontfilter <filter>
   0 () /SubFileDecode filter
 } bdef
+
 /readtype1dict 5 dict dup begin
   /definefont {
     dup topFontDict eq topFontDict null eq or {
@@ -664,29 +665,41 @@ setglobal
     } if
     //systemdict /definefont get exec
   } bdef
-  /eexec {
-	% Assume the font dictionary is directly below the file on the stack
-    count 0 gt { /topFontDict 2 index cvlit store } if
-    //.eexec_param_dict /eexecDecode filter
-    //systemdict begin readtype1dictcopy begin cvx stopped
-    currentdict readtype1dictcopy eq { end } if
-    currentdict //systemdict eq { end } if
-     { stop } if
-  } bdef
 
   /undef_proc_warning {
     /Repaired true store	% flag that we have warnings
     UndefProcList exch 2 copy .knownget { 1 add } { 1 } ifelse put
   } bdef
 
-  /-| { string currentfile exch readstring pop /-| undef_proc_warning } executeonly bdef
-  /RD { string currentfile exch readstring pop /RD undef_proc_warning } executeonly bdef
-  /|- { noaccess def /|- undef_proc_warning } executeonly bdef
-  /ND { noaccess def /ND undef_proc_warning } executeonly bdef
-  /|  { noaccess put /|  undef_proc_warning } executeonly bdef
-  /NP { noaccess put /NP undef_proc_warning } executeonly bdef
+  /missing-type1-procs 6 dict begin
+    /-| { string currentfile exch readstring pop /-| //undef_proc_warning exec } executeonly bdef
+    /RD { string currentfile exch readstring pop /RD //undef_proc_warning exec } executeonly bdef
+    /|- { noaccess def /|- //undef_proc_warning exec } executeonly bdef
+    /ND { noaccess def /ND //undef_proc_warning exec } executeonly bdef
+    /|  { noaccess put /|  //undef_proc_warning exec } executeonly bdef
+    /NP { noaccess put /NP //undef_proc_warning exec } executeonly bdef
+  currentdict end readonly def
+
+  /eexec {
+	% Assume the font dictionary is directly below the file on the stack
+    count 0 gt { /topFontDict 2 index cvlit store } if
+    //.eexec_param_dict /eexecDecode filter
+
+    //missing-type1-procs begin
+    /userdict .systemvar begin
+    //systemdict begin
+    readtype1dictcopy begin cvx stopped
+
+    { currentdict end //missing-type1-procs eq { exit } if } loop
+    { stop } if
+  } bdef
+
+  currentdict dup
+  /undef_proc_warning undef
+  /missing-type1-procs undef
 
 end readonly def
+
 /readtype1 {		% <font-resource> <stream-dict> readtype1 <font>
 		% Read the definition, using a procedure-based filter
 		% that turns binary/hex conversion on and off
