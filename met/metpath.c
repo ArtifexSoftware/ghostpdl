@@ -227,7 +227,7 @@ Path_action(void *data, met_state_t *ms)
             } else if (arg == 'M' || arg == 'L') {
                 moveto = (arg == 'M');
                 pargs++;
-                while (pargs) {
+                while (*pargs) {
                     if (isalpha(**pargs)) {
                         break;
                     }
@@ -243,7 +243,7 @@ Path_action(void *data, met_state_t *ms)
             } else if (arg == 'C') {
                 gs_point cpt0, cpt1, cpt2;
                 *pargs++;
-                while (pargs) {
+                while (*pargs) {
                     if (isalpha(**pargs)) {
                         break;
                     }
@@ -296,11 +296,9 @@ Path_done(void *data, met_state_t *ms)
 {
     gs_state *pgs = ms->pgs;
     int code;
-    int times = 1;
 
-    /* this loop executes once and is only needed for jump of the
-       break.  Somebody told me not to use goto's */
-    while (times--) {
+    /* this loop executes once */
+    do {
         /* case of stroke and file... uses a gsave/grestore to keep
            the path */
         if (nb_pathstate.fill && nb_pathstate.stroke) {
@@ -333,7 +331,7 @@ Path_done(void *data, met_state_t *ms)
             if ((code = gs_stroke(pgs)) < 0)
                 break;
         }
-    }
+    } while (0);
     /* hack nb fixme */
     patternset = false;
     gs_free_object(ms->memory, data, "Path_done");
