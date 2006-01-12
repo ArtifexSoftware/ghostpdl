@@ -148,7 +148,7 @@ pl_mem_node_remove(gs_memory_t *mem, byte *addr)
             
         }
         if ( !found )
-            dprintf1(mem, "FAIL freeing wild pointer freed address %x not found\n", addr );
+            dprintf1(mem, "FAIL freeing wild pointer freed address %x not found\n", (uint)addr );
     }
   }
   return 0;
@@ -181,7 +181,7 @@ pl_mem_node_free_all_remaining(gs_memory_t *mem)
 	       total_size += size;
 #ifdef DEBUG
 	       dprintf4(mem, "Recovered %x size %d %ld'th allocation client %s\n",
-			ptr, size, current->op_count, current->cname);
+			(uint)ptr, size, current->op_count, current->cname);
 #endif
 	    }
             if ((void*)current->address != (void*)mem->gs_lib_ctx)
@@ -221,7 +221,7 @@ pl_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t c
 	if ( !ptr )
 	    return NULL;
 #ifdef DEBUG
-	if_debug2(mem, 'A', "[da]:malloc:%x:%s\n", &ptr[minsize * 2], cname );
+	if_debug2(mem, 'A', "[da]:malloc:%x:%s\n", (uint)&ptr[minsize * 2], cname );
 #endif
 	/* set the type and size */
 	set_type(ptr, type);
@@ -314,7 +314,7 @@ pl_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_nam
     pl_mem_node_remove(mem, &bptr[-header_size]);
     pl_mem_node_add(mem, ptr, cname);
     /* da for debug allocator - so scripts can parse the trace */
-    if_debug2(mem, 'A', "[da]:realloc:%x:%s\n", ptr, cname );
+    if_debug2(mem, 'A', "[da]:realloc:%x:%s\n", (uint)ptr, cname );
     /* we reset size and type - the type in case realloc moved us */
     set_size(ptr, new_size - header_size);
     set_type(ptr, objs_type);
@@ -336,8 +336,8 @@ pl_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	free(&bptr[-header_size]);
 	
 #ifdef DEBUG
-	    /* da for debug allocator - so scripts can parse the trace */
-	    if_debug2(mem, 'A', "[da]:free:%x:%s\n", ptr, cname );
+	/* da for debug allocator - so scripts can parse the trace */
+	if_debug2(mem, 'A', "[da]:free:%x:%s\n", (uint)ptr, cname );
 #endif
     }
 }
