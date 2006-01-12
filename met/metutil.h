@@ -40,9 +40,9 @@ int met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *
 /* nb should use a gs type but this is expedient for now.  Convert an
    rgb hex string to an rgb triple */
 typedef struct rgb_s {
-    int r;
-    int g;
-    int b;
+    double r;
+    double g;
+    double b;
 } rgb_t;
 
 rgb_t met_hex2rgb(char *hexstring);

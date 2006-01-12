@@ -80,5 +80,6 @@ met_hex2rgb(char *hexstring)
         HEXTABLEINDEX(hexstringp[4]);
     rgb.b = HEXTABLEINDEX(hexstringp[5]) * 16 +
         HEXTABLEINDEX(hexstringp[6]);
+    rgb.r /= 256.0; rgb.g /= 256.0; rgb.b /= 256.0;
     return rgb;
 }
