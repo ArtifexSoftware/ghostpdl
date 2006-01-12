@@ -170,7 +170,7 @@ code_map_decode_next_multidim_regime(const gs_memory_t *mem,
         dlprintf(mem, "[J]CMDNmr() is called: str=(");
         debug_print_string_hex(mem, str, ssize);
         dlprintf3(mem, ") @ 0x%lx ssize=%d, %d ranges to check\n",
-                       str, ssize, pcmap->num_lookup);
+		  (long unsigned)str, ssize, pcmap->num_lookup);
     }
  
     for (i = pcmap->num_lookup - 1; i >= 0; --i) {

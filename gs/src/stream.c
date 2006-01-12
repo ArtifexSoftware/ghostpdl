@@ -801,7 +801,7 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 	    oldpos = pw->ptr;
 	    status = (*curr->procs.process) (s->memory, curr->state, pr, pw, eof);
 	    pr->limit += left;
-	    if_debug5(s->memory, 's', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d, position=%d\n",
+	    if_debug5(s->memory, 's', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d, position=%ld\n",
 		      (ulong) curr, (uint) (pr->limit - pr->ptr),
 		      (uint) (pw->limit - pw->ptr), status, s->position);
 	    if (strm == 0 || status != 0)

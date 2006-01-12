@@ -951,7 +951,7 @@ pdf14_output_page(gx_device *dev, int num_copies, int flush)
 private void
 pdf14_finalize(gx_device *dev)
 {
-    if_debug1(dev->memory, 'v', "[v]finalizing %lx\n", dev);
+    if_debug1(dev->memory, 'v', "[v]finalizing %lx\n", (ulong)dev);
 }
 
 #define COPY_PARAM(p) dev->p = target->p
@@ -1019,7 +1019,7 @@ pdf14_get_marking_device(gx_device *dev, const gs_imager_state *pis)
 		      pdf14_mark_fill_rectangle);
     }
 
-    if_debug1(dev->memory, 'v', "[v]creating %lx\n", mdev);
+    if_debug1(dev->memory, 'v', "[v]creating %lx\n", (long unsigned int)mdev);
     gs_pdf14_device_copy_params((gx_device *)mdev, dev);
     mdev->finalize = pdf14_finalize;
     return (gx_device *)mdev;

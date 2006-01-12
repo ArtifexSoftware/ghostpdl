@@ -182,11 +182,24 @@ int outwrite(const gs_memory_t *mem, const char *str, int len);
 int errwrite(const gs_memory_t *mem, const char *str, int len);
 void outflush(const gs_memory_t *mem);
 void errflush(const gs_memory_t *mem);
+
+
+#ifndef __printflike
+/* error checking for printf format arguement matching */
+#if __GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 7
+#define __printflike(fmtarg, firstvararg) \
+    __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
+#else
+#define __printflike(fmtarg, firstvararg)
+#endif
+#endif
+
+
 /* Formatted output to outwrite and errwrite.
  * The maximum string length is 1023 characters.
  */
-int outprintf(const gs_memory_t *mem, const char *fmt, ...);
-int errprintf(const gs_memory_t *mem, const char *fmt, ...);
+int outprintf(const gs_memory_t *mem, const char *fmt, ...) __printflike(2, 3);
+int errprintf(const gs_memory_t *mem, const char *fmt, ...) __printflike(2, 3);
 
 
 /* Print the program line # for debugging. */
