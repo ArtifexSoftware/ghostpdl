@@ -582,6 +582,7 @@ end
     4 array astore
   }
   /DeviceN {
+    [ exch aload pop ]			% Copy into a new array
     dup dup 1 oget			% Resolve Names array
     [ exch { oforce } forall ]		% resolve each of the names
     1 exch put
@@ -590,13 +591,20 @@ end
     dup dup 3 oget resolvefnproc
     3 exch put
     dup length 4 gt {			% Check for attributes dict
-      dup dup 4 oget
-      dup dup /Colorants knownoget	% Check for Colorants Dict
-	{				% resolve all of the entries
+      dup dup 4 oget			% devn_array devn_array attr_dict
+      dup /Colorants knownoget		% Check for Colorants Dict
+	{	% Create a new attribute dict with only a Colorants dict entry.
+		% Resolve all of the Colorant dict entries.  This is needed
+		% to prevent a conflict if we attempt to resolve the tint
+		% transform functions of the Colorant color spaces multiple
+		% times.
+	  exch pop			% Remove old attributes dict
+	  << exch			% Start new attributes dict
+	  	% Build new Colorants dict with resolved entries
 	  << exch { oforce resolvecolorspace } forall >>
-       	  /Colorants exch put
- 	} { pop } ifelse		% No Colorants Dict
-      4 exch put
+       	  /Colorants exch >>		% Finish new attributes dict
+ 	} if
+      4 exch put			% Put resolved or new attributes dict
     } if
   }
   /Indexed {
