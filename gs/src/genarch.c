@@ -49,17 +49,6 @@ section(FILE * f, const char *str)
     fprintf(f, "\n\t /* ---------------- %s ---------------- */\n\n", str);
 }
 
-private clock_t
-time_clear(char *buf, int bsize, int nreps)
-{
-    clock_t t = clock();
-    int i;
-
-    for (i = 0; i < nreps; ++i)
-	memset(buf, 0, bsize);
-    return clock() - t;
-}
-
 private void
 define(FILE *f, const char *str)
 {
