@@ -99,18 +99,18 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
     zip_part_t *part = find_zip_part_by_name(pzip, ImageSource);
 
     if (part == NULL) 
-	return -1;
+	return mt_throw1(-1,"Image part not found %s", ImageSource);
 
     len = zip_part_length(part);
 
-    buf = gs_alloc_bytes(mem, len, "xps_tt_load_font data");
+    buf = gs_alloc_bytes(mem, len, "xps_readdata buffer");
     if ( buf == 0 ) {
 	return -1;
     }
 
     zip_part_seek(part, 0, 0);
     if ( len != zip_part_read(buf, len, part) ) {
-	return -1;
+	return mt_throw(-1, "zip_part_read len wrong");
     }
 
     *bufp = buf;
@@ -150,7 +150,7 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
 
 	    in = fopen("/tmp/foo.jpg", "r");
 	    if (in == NULL) 
-		return -1;
+		return mt_throw(-1, "/tmp/foo.jpg file open failed");
 	    len = (fseek(in, 0L, SEEK_END), ftell(in));
 	    rewind(in);
 	    gs_free_object(mem, buf, "readdata");
@@ -236,7 +236,7 @@ decodejpeg(gs_memory_t *mem, byte *rbuf, int rlen, met_image_t *g_image)
 
     code = s_DCTD_template.process(mem, (stream_state*)&state, &rp, &wp, true);
     if (code != EOFC)
-        return -1;
+        return mt_throw(-1, "jpeg stream decode error");
     return code;
 }
 
@@ -305,11 +305,10 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
     if (rbuf[0] == 0xff && rbuf[1] == 0xd8)
         decodejpeg(mem, rbuf, rlen, metpat->raster_image);
     else if (memcmp(rbuf, "\211PNG\r\n\032\n", 8) == 0) {
-        dprintf(mem, "png not implemented\n");
-        return -1;
+	//mt_decode_png(mem, rbuf, rlen, metpat->raster_image);
+        return mt_throw(-1, "unsupported png image file format");
     } else {
-        dprintf(mem, "unknown file format");
-        return -1;
+        return mt_throw(-1, "unknown image file format");
     }
     gs_pattern1_init(&gspat);
     uid_set_UniqueID(&gspat.uid, gs_next_ids(mem, 1));

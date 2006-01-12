@@ -73,11 +73,12 @@ zip_part_length(zip_part_t *rpart)
     blk = rpart->head;
     while (blk->next) {
 	len += blk->writeoffset;
-	if (blk->writeoffset != ZIP_BLOCK_SIZE)
-	    
-	    dprintf2(rpart->parent->memory, 
-		     "Wasted Space! zip_part_length != zip_part_read %d, %d\n", 
+	if (blk->writeoffset != ZIP_BLOCK_SIZE) {
+	    ;
+	    dprintf2(NULL, 
+		     "Wasted Space! zip_part_length != zip_part_read %ld, %d\n", 
 		     blk->writeoffset, ZIP_BLOCK_SIZE);
+	}
 	    
 	blk = blk->next;
     }
@@ -210,7 +211,7 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 
 	mkdir("/tmp/XPS", 0777);		
 
-	sprintf(fname, "/tmp/XPS/", ptr);
+	strcpy(fname, "/tmp/XPS/");
 	for (i = strlen(fname); *ptr != 0; i++, ptr++) 
 	    if (*ptr == '/')
 	         fname[i] = '-';

@@ -1,76 +1,71 @@
-/*
- * Error handling
- */
-#include "memory_.h"
-#include "gp.h"
-#include "scommon.h"
-#include "gsmemory.h"
-#include "scommon.h"
+/* Portions Copyright (C) 2005, 2006 Artifex Software Inc.
+   All Rights Reserved.
 
-#include "mt_error.h"
-#include "metparse.h"
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/ or
+   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+   San Rafael, CA  94903, (415)492-9861, for further information. */
+
+/*$Id:*/
+#include "std.h"
+#include "gsmemory.h"
+#include "gserrors.h"
+
 #include "stdarg.h"
 
-struct mt_error_s
+#include "mt_error.h"
+
+int mt_throw_imp(const char *func, const char *file, int line, int op, int code, const char *fmt, ...)
 {
-	char msg[256];
-	char *func;
-	char *file;
-	int line;
-	mt_error_t *cause;
-};
+    char msg[1024];
+    va_list ap;
 
-static mt_error_t mt_outofmem =
-{
-	"outofmemory: could not allocate error object", "static", __FILE__, __LINE__, 0
-};
+    va_start(ap, fmt);
+    vsnprintf(msg, sizeof msg, fmt, ap);
+    msg[sizeof(msg) - 1] = 0;
+    va_end(ap);
 
-mt_error_t *mt_throw_imp(const char *func, const char *file, int line, mt_error_t *cause, char *fmt, ...)
-{
-	gs_memory_t *gsmem;
-	mt_error_t *error;
-	va_list ap;
+    /* throw */
+    if (op == 0)
+	errprintf(NULL, "- %s:%d: %s(%d): %s\n", file, line, func, code, msg);
 
-	/* allocations here are freed by mt_free_error */
-	gsmem = (gs_memory_t *)gs_lib_ctx_get_non_gc_memory_t();
+    /* rethrow */
+    if (op == 1)
+	errprintf(NULL, "| %s:%d: %s(): %s\n", file, line, func, msg);
 
-	error = (mt_error_t*) gs_alloc_bytes(gsmem, sizeof(mt_error_t), "mt_error_t");
-	if (!error)
-		return &mt_outofmem;
+    /* catch */
+    if (op == 2)
+	errprintf(NULL, "\\ %s:%d: %s(): %s\n", file, line, func, msg);
 
-	va_start(ap, fmt);
-	vsnprintf(error->msg, sizeof(error->msg), fmt, ap);
-	va_end(ap);
+    /* warn */
+    if (op == 3)
+	errprintf(NULL, "  %s:%d: %s(): %s\n", file, line, func, msg);
 
-	error->msg[sizeof(error->msg) - 1] = 0;
-	error->func = (char*)func;
-	error->file = (char*)file;
-	error->line = line;
-	error->cause = cause;
-
-	return error;
+    return code;
 }
 
-void mt_free_error(mt_error_t *error)
+const char *gs_errstr(int code)
 {
-	gs_memory_t *gsmem = (gs_memory_t *)gs_lib_ctx_get_non_gc_memory_t();
-	mt_error_t *tmp;
-
-	while (error)
-	{
-		tmp = error->cause;
-		gs_free_object(gsmem, error, "mt_error_t");
-		error = tmp;
-	}
-}
-
-void mt_print_error(mt_error_t *error)
-{
-	while (error)
-	{
-	    dprintf4(NULL,
-		     "%s:%d: in %s(): %s\n", error->file, error->line, error->func, error->msg);
-		error = error->cause;
-	}
+    switch (code) {
+    default:
+    case gs_error_unknownerror: return "unknownerror";
+    case gs_error_interrupt: return "interrupt";
+    case gs_error_invalidaccess: return "invalidaccess";
+    case gs_error_invalidfileaccess: return "invalidfileaccess";
+    case gs_error_invalidfont: return "invalidfont";
+    case gs_error_ioerror: return "ioerror";
+    case gs_error_limitcheck: return "limitcheck";
+    case gs_error_nocurrentpoint: return "nocurrentpoint";
+    case gs_error_rangecheck: return "rangecheck";
+    case gs_error_typecheck: return "typecheck";
+    case gs_error_undefined: return "undefined";
+    case gs_error_undefinedfilename: return "undefinedfilename";
+    case gs_error_undefinedresult: return "undefinedresult";
+    case gs_error_VMerror: return "vmerror";
+    case gs_error_unregistered: return "unregistered";
+    case gs_error_hit_detected: return "hit_detected";
+    case gs_error_Fatal: return "Fatal";
+    }
 }
 

@@ -10,7 +10,7 @@
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
 
-/*$Id: */
+/*$Id:*/
 
 /* metglyphs.c */
 
@@ -298,7 +298,7 @@ build_text_params(gs_text_params_t *text, gs_font *pfont,
 		   *pargs = p+1;
 		   met_expand(colon_str, *pargs, ';', 'Z');
 		   if ( 2 != (cnt = met_split(colon_str, paren, is_colon)))
-			return -1; // parse error
+		       return mt_throw(-1, "xps parse unbalanced expression (a:b) missing ) "); 
 
 		   a = atoi(paren[0]);
 		   b = atoi(paren[1]);
@@ -351,8 +351,7 @@ Glyphs_action(void *data, met_state_t *ms)
    zip_part_t *part;
 
    if (!fname) {
-       dprintf(0, "no font is defined\n");
-       return 0;
+       return mt_throw(-1, "no font is defined");
    }
 
    /* nb cleanup on error.  if it is not in the font dictionary,

@@ -21,6 +21,7 @@
 typedef struct met_image_s {
     int width;
     int height;
+    int colorspace;
     int comps;
     int bits;
     int xres;
