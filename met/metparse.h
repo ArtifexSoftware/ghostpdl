@@ -27,6 +27,7 @@ typedef struct met_parser_state_s met_parser_state_t;
 
 struct met_parser_state_s {
     gs_memory_t *memory;
+    int error_code; /* error detected in a callback */
     int depth;
     void *parser;
     void *data_stack[20]; /* nb should not have depth limitation */

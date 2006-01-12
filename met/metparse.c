@@ -44,6 +44,17 @@ met_expat_realloc(void *ptr, size_t size)
     return gs_resize_object(gs_mem_ptr, ptr, size, "met_expat_free");
 }
 
+/* used to set an error in the midst of a callback */
+private void
+met_set_error(met_parser_state_t *st, int error_code)
+{
+    st->error_code = error_code;
+    /* this effectively will stop the parsing even if the buffer is
+       not complete */
+    XML_SetElementHandler(st->parser, 0, 0);
+    st->error_code = error_code;
+    return;
+}
 #define INDENT (st->depth * 4)
 
 /* start and end callbacks NB DOC */
@@ -76,9 +87,13 @@ met_start(void *data, const char *el, const char **attr)
             }
         } else {
             code = (*metp->init)(&st->data_stack[st->depth], st->mets, el, attr);
-            /* NB check code */
+            if (code < 0)
+                met_set_error(st, code);
+            
             code = (*metp->action)(st->data_stack[st->depth], st->mets);
-            /* NB check code */
+            if (code < 0) {
+                met_set_error(st, code);
+            }
         }
     }
     st->depth++;
@@ -93,7 +108,7 @@ met_end(void *data, const char *el)
     met_element_t *metp = met_get_element_definition(el);
     met_parser_state_t *st = data;
     gs_memory_t *mem = st->memory;
-    int code;
+    int code = 0;
 
     st->depth--;
     if ( gs_debug_c('i') ) {
@@ -107,7 +122,8 @@ met_end(void *data, const char *el)
 
     if (metp && metp->done)
         code = (*metp->done)(st->data_stack[st->depth], st->mets);
-    /* nb check code */
+    if (code < 0)
+        met_set_error(st, code);
 }
 
 /* allocate the parser, and set the global memory pointer see above */
@@ -140,6 +156,7 @@ met_process_alloc(gs_memory_t *memory)
     stp->memory = memory;
     stp->parser = p;
     stp->depth = 0;    
+    stp->error_code = 0;
     /* set up the start end callbacks */
     XML_SetElementHandler(p, met_start, met_end);
     XML_SetUserData(p, stp);
@@ -152,6 +169,14 @@ met_process_release(met_parser_state_t *st)
 {
     XML_ParserFree(st->parser);
     gs_free_object(st->memory, st, "met_process_release");
+}
+
+private void
+met_unset_error_code(met_parser_state_t *st)
+{
+    /* restore handlers */
+    XML_SetElementHandler(st->parser, met_start, met_end);
+    st->error_code = 0;
 }
 
 int
@@ -189,6 +214,10 @@ met_process(met_parser_state_t *st, met_state_t *mets,  void *pzip, stream_curso
               XML_GetCurrentLineNumber(parser),
               XML_ErrorString(XML_GetErrorCode(parser)));
         return -1;
+    } else if (st->error_code < 0) {
+        int code = st->error_code;
+        met_unset_error_code(st);
+        return code;
     }
     /* nb for now we assume the parser has consumed exactly what we gave it. */
     pr->ptr = p + avail;
