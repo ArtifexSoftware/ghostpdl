@@ -564,7 +564,11 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
     for (i = 0; i < ncomp; i++)
 	cv[i] = 0;
     color = (*dev_proc(dev, encode_color)) (dev, cv);
-    dprintf1("Zero color index:  %8x\n", color);
+    if (sizeof(color) <= sizeof(long))
+        dprintf1("Zero color index:  %8lx\n", (ulong)color);
+    else
+        dprintf2("Zero color index:  %8lx%08lx\n",
+            (ulong)(color >> 8*(sizeof(color) - sizeof(long))), (long)color);
 
     dprintf1("separable_and_linear = %s\n", 
       linsep == GX_CINFO_SEP_LIN_NONE ? "No" :

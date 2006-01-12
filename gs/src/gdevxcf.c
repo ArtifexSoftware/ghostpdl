@@ -346,7 +346,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
     int i;
 
     if (luo != NULL) {
-	double in[3];
+	double in[4];
 	double tmp[MAX_CHAN];
 	int outn = xdev->lu_cmyk_outn;
 

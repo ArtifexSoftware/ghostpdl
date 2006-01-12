@@ -2297,7 +2297,7 @@ copied_drop_extension_glyphs(gs_font *copied)
 	if (!pslot->used)
 	    continue;
 	name = &cfdata->names[i];
-	l = name->str.size - sl, j;
+	l = name->str.size - sl;
 
 	for (j = 0; j < l; j ++)
 	    if (!memcmp(gx_extendeg_glyph_name_separator, name->str.data + j, sl))
