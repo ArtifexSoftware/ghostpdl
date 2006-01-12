@@ -1,4 +1,4 @@
-/* Copyright (C) 2003 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2003-2005 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -38,18 +38,18 @@
    memory space, to hold a pointer to the global decoder
    context (which is allocated by libjbig2). This allows
    us to pass the reference through postscript code to
-   the filter initializer. The global_ctx pointer is not
+   the filter initializer. The opaque data pointer is not
    enumerated and will not be garbage collected. We use
    a finalize method to deallocate it when the reference
    is no longer in use. */
    
 typedef struct jbig2_global_data_s {
-	Jbig2GlobalCtx *global_ctx;
+	void *data;
 } jbig2_global_data_t;
 
 private void jbig2_global_data_finalize(void *vptr);
 gs_private_st_simple_final(st_jbig2_global_data_t, jbig2_global_data_t,
-	"jbig2globalctx", jbig2_global_data_finalize);
+	"jbig2globaldata", jbig2_global_data_finalize);
 
 
 /* <source> /JBIG2Decode <file> */
@@ -63,17 +63,18 @@ z_jbig2decode(i_ctx_t * i_ctx_p)
     stream_jbig2decode_state state;
 
     /* Extract the global context reference, if any, from the parameter
-       dictionary. The original object ref is under the JBIG2Globals key.
+       dictionary and embed it in our stream state. The original object 
+       ref is under the JBIG2Globals key.
        We expect the postscript code to resolve this and call 
        z_jbig2makeglobalctx() below to create an astruct wrapping the
-       global decoder context and store it under the .jbig2globalctx key
+       global decoder data and store it under the .jbig2globalctx key
      */
-    s_jbig2decode_set_global_ctx((stream_state*)&state, NULL);
+    s_jbig2decode_set_global_data((stream_state*)&state, NULL);
     if (r_has_type(op, t_dictionary)) {
         check_dict_read(*op);
         if ( dict_find_string(op, ".jbig2globalctx", &sop) > 0) {
 	    gref = r_ptr(sop, jbig2_global_data_t);
-	    s_jbig2decode_set_global_ctx((stream_state*)&state, gref->global_ctx);
+	    s_jbig2decode_set_global_data((stream_state*)&state, gref->data);
         }
     }
     	
@@ -95,7 +96,7 @@ z_jbig2decode(i_ctx_t * i_ctx_p)
 private int
 z_jbig2makeglobalctx(i_ctx_t * i_ctx_p)
 {
-	Jbig2GlobalCtx *global_ctx = NULL;
+	void *global = NULL;
 	jbig2_global_data_t *st;
 	os_ptr op = osp;
 	byte *data;
@@ -106,9 +107,9 @@ z_jbig2makeglobalctx(i_ctx_t * i_ctx_p)
 	size = gs_object_size(imemory, op->value.pstruct);
 	data = r_ptr(op, byte);
 
- 	code = s_jbig2decode_make_global_ctx(data, size,
-			&global_ctx);
-	if (size > 0 && global_ctx == NULL) {
+ 	code = s_jbig2decode_make_global_data(data, size,
+			&global);
+	if (size > 0 && global == NULL) {
 	    dlprintf("failed to create parsed JBIG2GLOBALS object.");
 	    return_error(e_unknownerror);
 	}
@@ -118,7 +119,7 @@ z_jbig2makeglobalctx(i_ctx_t * i_ctx_p)
 		"jbig2decode parsed global context");
 	if (st == NULL) return_error(e_VMerror);
 	
-	st->global_ctx = global_ctx;
+	st->data = global;
 	make_astruct(op, a_readonly | icurrent_space, (byte*)st);
 	
 	return code;
@@ -129,8 +130,8 @@ private void jbig2_global_data_finalize(void *vptr)
 {
 	jbig2_global_data_t *st = vptr;
 	
-	if (st->global_ctx) jbig2_global_ctx_free(st->global_ctx);
-	st->global_ctx = NULL;
+	if (st->data) s_jbig2decode_free_global_data(st->data);
+	st->data = NULL;
 }
    
 /* match the above routine to the corresponding filter name

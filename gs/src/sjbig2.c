@@ -97,7 +97,7 @@ s_jbig2decode_invert_buffer(unsigned char *buf, int length)
 /* parse a globals stream packed into a gs_bytestring for us by the postscript
    layer and stuff the resulting context into a pointer for use in later decoding */
 public int
-s_jbig2decode_make_global_ctx(byte *data, uint length, Jbig2GlobalCtx **global_ctx)
+s_jbig2decode_make_global_data(byte *data, uint length, void **result)
 {
     Jbig2Ctx *ctx = NULL;
     int code;
@@ -105,7 +105,7 @@ s_jbig2decode_make_global_ctx(byte *data, uint length, Jbig2GlobalCtx **global_c
     /* the cvision encoder likes to include empty global streams */
     if (length == 0) {
         if_debug0('s', "[s] ignoring zero-length jbig2 global stream.\n");
-    	*global_ctx = NULL;
+    	*result = NULL;
     	return 0;
     }
     
@@ -118,22 +118,31 @@ s_jbig2decode_make_global_ctx(byte *data, uint length, Jbig2GlobalCtx **global_c
     
     if (code) {
 	/* error parsing the global stream */
-	*global_ctx = NULL;
+	*result = NULL;
 	return code;
     }
 
     /* canonize and store our global state */
-    *global_ctx = jbig2_make_global_ctx(ctx);
+    *result = jbig2_make_global_ctx(ctx);
     
     return 0; /* todo: check for allocation failure */
 }
 
+/* release a global ctx pointer */
+public void
+s_jbig2decode_free_global_data(void *data)
+{
+    Jbig2GlobalCtx *global_ctx = (Jbig2GlobalCtx*)data;
+
+    jbig2_global_ctx_free(global_ctx);
+}
+
 /* store a global ctx pointer in our state structure */
 public int
-s_jbig2decode_set_global_ctx(stream_state *ss, Jbig2GlobalCtx *global_ctx)
+s_jbig2decode_set_global_data(stream_state *ss, void *data)
 {
     stream_jbig2decode_state *state = (stream_jbig2decode_state*)ss;
-    state->global_ctx = global_ctx;
+    state->global_ctx = (Jbig2GlobalCtx*)data;
     return 0;
 }
 
