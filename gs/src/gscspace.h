@@ -310,7 +310,7 @@ typedef struct gs_device_n_params_s {
     uint num_components;
     gs_base_color_space alt_space;
     gs_device_n_map *map;
-    gs_device_n_attributes *attributes;
+    gs_device_n_attributes *colorants;
     bool use_alt_cspace;
     gs_callback_func_get_colorname_string *get_colorname_string;
 } gs_device_n_params;

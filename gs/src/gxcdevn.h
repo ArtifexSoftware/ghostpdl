@@ -50,6 +50,7 @@ int alloc_device_n_map(gs_device_n_map ** ppmap, gs_memory_t * mem,
 typedef struct gs_device_n_attributes_s gs_device_n_attributes;
 #endif
 struct gs_device_n_attributes_s {
+    rc_header rc;
     gs_separation_name colorant_name;
     gs_color_space cspace;
     struct gs_device_n_attributes_s * next;	/* Linked list */
