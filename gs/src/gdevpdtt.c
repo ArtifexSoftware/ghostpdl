@@ -980,6 +980,7 @@ pdf_make_font3_resource(gx_device_pdf *pdev, gs_font *font,
 	return code;
     }
     memset(cached, 0, 256 / 8);
+    pdfont->mark_glyph = font->dir->ccache.mark_glyph; /* For pdf_font_resource_enum_ptrs. */
     pdfont->u.simple.s.type3.bitmap_font = false;
     pdfont->u.simple.BaseEncoding = pdf_refine_encoding_index(pdev,
 			bfont->nearest_encoding_index, true);

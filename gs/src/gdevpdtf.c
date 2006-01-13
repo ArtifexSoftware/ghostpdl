@@ -59,6 +59,13 @@ case 7: switch (pdfont->FontType) {
  case ft_CID_TrueType:
      ENUM_RETURN(pdfont->u.cidfont.Widths2);
  default:
+     if (pdfont->FontType == ft_user_defined && pdfont->u.simple.Encoding != NULL) {
+	 int i;
+
+	 for (i = 0; i < 256; i++)
+	     if (pdfont->u.simple.Encoding[i].glyph != GS_NO_GLYPH)
+		pdfont->mark_glyph(mem, pdfont->u.simple.Encoding[i].glyph, pdfont->mark_glyph_data);
+     }
      ENUM_RETURN(pdfont->u.simple.Encoding);
 }
 case 8: switch (pdfont->FontType) {
@@ -388,6 +395,8 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     pfres->write_contents = write_contents;
     pfres->res_ToUnicode = NULL;
     pfres->cmap_ToUnicode = NULL;
+    pfres->mark_glyph = 0;
+    pfres->mark_glyph_data = 0;
     *ppfres = pfres;
     return 0;
  fail:

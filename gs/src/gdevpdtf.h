@@ -221,6 +221,8 @@ struct pdf_font_resource_s {
 				/* (not used for Type 0 or Type 3) */
     pdf_resource_t *res_ToUnicode; /* CMap (not used for CIDFonts) */
     gs_cmap_t *cmap_ToUnicode;	   /* CMap (not used for CIDFonts) */
+    gs_glyph_mark_proc_t mark_glyph;
+    void *mark_glyph_data;	/* closure data */
     union {
 
 	struct /*type0*/ {
