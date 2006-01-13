@@ -265,6 +265,8 @@ f:
 		  pdevc_next->colors.binary.color[0],
 		  pdevc_next->colors.binary.color[1],
 		  (ulong) pdevc_next->type);
+	/* NB: gx_color_index is 4 or 8 bytes */
+
 	/* Even though the supplied colors don't match, */
 	/* the device colors might. */
 	if (!dev_color_eq(devc1, devc2)) {

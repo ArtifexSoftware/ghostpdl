@@ -163,6 +163,7 @@ typedef struct gs_memory_s gs_memory_t;
 /* To allow stdout and stderr to be redirected, all stdout goes 
  * though outwrite and all stderr goes through errwrite.
  */
+
 int outwrite(const gs_memory_t *mem, const char *str, int len);
 int errwrite(const char *str, int len);
 void outflush(const gs_memory_t *mem);
@@ -171,8 +172,17 @@ void errflush(void);
  * The maximum string length is 1023 characters.
  */
 #ifdef __PROTOTYPES__
-int outprintf(const gs_memory_t *mem, const char *fmt, ...);
-int errprintf(const char *fmt, ...);
+#  ifndef __printflike
+   /* error checking for printf format args gcc only */
+#    if __GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 7
+#      define __printflike(fmtarg, firstvararg) \
+             __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
+#    else
+#      define __printflike(fmtarg, firstvararg)
+#    endif
+#  endif
+int outprintf(const gs_memory_t *mem, const char *fmt, ...) __printflike(2, 3);
+int errprintf(const char *fmt, ...) __printflike(1, 2);
 #else
 int outprintf();
 int errprintf();

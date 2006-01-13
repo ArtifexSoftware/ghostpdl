@@ -357,6 +357,8 @@ f:	if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> %ld,%ld,0x%lx\n",
 		  pdevc_next->colors.binary.color[0],
 		  pdevc_next->colors.binary.color[1],
 		  (ulong) pdevc_next->type);
+	/* NB: printf above fails to account for sizeof gx_color_index 4 or 8 bytes */
+
 	/* Even though the supplied colors don't match, */
 	/* the device colors might. */
 	if (posture != image_skewed && dev_color_eq(*pdevc, *pdevc_next))

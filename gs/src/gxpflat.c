@@ -145,7 +145,7 @@ print_points(const gs_fixed_point *points, int count)
     if (!gs_debug_c('3'))
 	return;
     for (i = 0; i < count; i++)
-	if_debug2('3', "[3]out x=%d y=%d\n", points[i].x, points[i].y);
+	if_debug2('3', "[3]out x=%ld y=%ld\n", points[i].x, points[i].y);
 #endif
 }
 
@@ -386,7 +386,7 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 #	undef poly2
 	if_debug2('3', "[3]dx=%f, dy=%f\n",
 		  fixed2float(x - this->x0), fixed2float(y - this->y0));
-	if_debug5('3', "[3]%s x=%g, y=%g x=%d y=%d\n",
+	if_debug5('3', "[3]%s x=%g, y=%g x=%ld y=%ld\n",
 		  (((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5) ?
 		   "add" : "skip"),
 		  fixed2float(x), fixed2float(y), x, y);
@@ -409,7 +409,7 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 	accum(this->idy, this->rdy, this->id2y, this->rd2y, this->rmask);
 	accum(this->id2x, this->rd2x, this->id3x, this->rd3x, this->rmask);
 	accum(this->id2y, this->rd2y, this->id3y, this->rd3y, this->rmask);
-	if_debug5('3', "[3]%s x=%g, y=%g x=%d y=%d\n",
+	if_debug5('3', "[3]%s x=%g, y=%g x=%ld y=%ld\n",
 		  (((x ^ this->lx0) | (y ^ this->ly0)) & float2fixed(-0.5) ?
 		   "add" : "skip"),
 		  fixed2float(x), fixed2float(y), x, y);
@@ -422,7 +422,7 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 last:
     this->lx1 = this->x3;
     this->ly1 = this->y3;
-    if_debug4('3', "[3]last x=%g, y=%g x=%d y=%d\n",
+    if_debug4('3', "[3]last x=%g, y=%g x=%ld y=%ld\n",
 	      fixed2float(this->lx1), fixed2float(this->ly1), this->lx1, this->ly1);
     vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
     return false;
@@ -471,7 +471,7 @@ gx_flattened_iterator__prev(gx_flattened_iterator *this)
     gx_flattened_iterator__unaccum(this);
     this->i++;
 #   ifdef DEBUG
-    if_debug5('3', "[3]%s x=%g, y=%g x=%d y=%d\n",
+    if_debug5('3', "[3]%s x=%g, y=%g x=%ld y=%ld\n",
 	      (((this->x ^ this->lx1) | (this->y ^ this->ly1)) & float2fixed(-0.5) ?
 	       "add" : "skip"),
 	      fixed2float(this->x), fixed2float(this->y), this->x, this->y);

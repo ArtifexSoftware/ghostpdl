@@ -1490,6 +1490,7 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     byte src_alpha;
 
     if_debug7('v', "[v]pdf14_mark_fill_rectangle, (%d, %d), %d x %d color = %lx  bm %d, nc %d,\n", x, y, w, h, color, blend_mode, num_chan);
+    /* NB: gx_color_index is 4 or 8 bytes */
 
     /* Complement the components for subtractive color spaces */
     if (additive) {
@@ -1578,7 +1579,7 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
     byte opacity;
     bool additive = pdev->ctx->additive;
 
-    if_debug6('v', "[v]pdf14_mark_fill_rectangle_ko_simple, (%d, %d), %d x %d color = %lx  bm %d, nc %d,\n", x, y, w, h, color, num_chan);
+    if_debug6('v', "[v]pdf14_mark_fill_rectangle_ko_simple, (%d, %d), %d x %d color = %lx  bm %d, nc %d,\n", x, y, w, h, color, num_chan);  /* NB: gx_color_index is 4 or 8 bytes */
 
     /* Complement the components for subtractive color spaces */
     if (additive) {

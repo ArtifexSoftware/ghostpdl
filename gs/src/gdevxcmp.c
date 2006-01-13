@@ -633,7 +633,7 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 		     cb * cmap->blue_mult) + cmap->base_pixel;
 
 		if_debug4('C', "[cX]%u,%u,%u (std cmap) => %lu\n",
-			  r, g, b, pixel);
+			  r, g, b, pixel);  /* NB: gx_color_index size is 4 or 8 */
 		return pixel;
 	    }
 	    if_debug3('C', "[cX]%u,%u,%u (std cmap fails)\n", r, g, b);

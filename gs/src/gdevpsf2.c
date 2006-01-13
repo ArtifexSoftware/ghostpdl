@@ -1726,7 +1726,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 			pfont->cidata.FDArray[0], true);
 
     /* Write the charset. */
-    if_debug1('l', "[l]charset = %u\n", stell(writer.strm) - start_pos);
+    if_debug1('l', "[l]charset = %lu\n", stell(writer.strm) - start_pos);
     cff_write_cidset(&writer, &genum);
 
     /* Write the FDSelect structure, checking the offset. */
