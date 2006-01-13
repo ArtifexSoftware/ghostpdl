@@ -17,6 +17,10 @@
 #ifndef metimage_INCLUDED
 #  define metimage_INCLUDED
 
+#include "gsmatrix.h"
+
+enum { MT_GRAY, MT_RGB, MT_CMYK, MT_GRAY_A, MT_RGB_A };
+
 /* type for the information derived directly from the raster file format */
 typedef struct met_image_s {
     int width;

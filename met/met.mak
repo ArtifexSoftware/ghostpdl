@@ -75,6 +75,9 @@ $(METOBJ)zipparse.$(OBJ): $(METSRC)zipparse.c $(zipparse_h) $(pltop_h)
 $(METOBJ)mt_error.$(OBJ): $(METSRC)mt_error.c $(mt_error_h)
 	$(METCCC) $(METSRC)mt_error.c $(METO_)mt_error.$(OBJ)
 
+$(METOBJ)mt_png.$(OBJ): $(METSRC)mt_png.c $(mt_error_h)
+	$(METCCC) $(METSRC)mt_png.c $(METO_)mt_png.$(OBJ)
+
 $(MET_TOP_OBJ): $(METSRC)mettop.c \
                       $(metstate_h)     \
                       $(pltop_h)
@@ -87,7 +90,8 @@ MET_OBJS=$(METOBJ)metparse.$(OBJ) $(METOBJ)metstate.$(OBJ) \
          $(METOBJ)metelement.$(OBJ) $(METOBJ)metpath.$(OBJ)\
 	 $(METOBJ)metglyphs.$(OBJ) $(METOBJ)metutil.$(OBJ) \
 	 $(METOBJ)metimage.$(OBJ) $(METOBJ)zipparse.$(OBJ) \
-	 $(METOBJ)zippart.$(OBJ) $(METOBJ)mt_error.$(OBJ) 
+	 $(METOBJ)zippart.$(OBJ) $(METOBJ)mt_error.$(OBJ) \
+	 $(METOBJ)mt_png.$(OBJ) 
 
 $(METOBJ)met.dev: $(MET_MAK) $(ECHOGS_XE) $(MET_OBJS)
 	$(SETMOD) $(METOBJ)met $(MET_OBJS)

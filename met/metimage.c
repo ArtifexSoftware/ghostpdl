@@ -136,11 +136,14 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
 	    imgStr = ctif;
 	    convertStr = ctif_convert;
 	    doit = true;
-	} else 	if (0 == strncasecmp(&ImageSource[strlen(ImageSource) -4], "png", 3 )); {
+	}
+#if 1 
+	else 	if (0 == strncasecmp(&ImageSource[strlen(ImageSource) -4], "png", 3 )); {
 	    imgStr = cpng;
 	    convertStr = cpng_convert;
 	    doit = true;
 	}
+#endif
 	if (doit) {
 	    FILE *in = fopen(imgStr, "w");
 	    fwrite(buf, 1, len, in);
@@ -200,7 +203,7 @@ decodejpeg(gs_memory_t *mem, byte *rbuf, int rlen, met_image_t *g_image)
     jddp.scanline_buffer = NULL;
 
     if ((code = gs_jpeg_create_decompress(&state)) < 0)
-        return -1;
+        return mt_rethrow(code, "jpeg_create_decompress failed");
 
     s_DCTD_template.init((stream_state*)&state);
 
@@ -213,7 +216,7 @@ decodejpeg(gs_memory_t *mem, byte *rbuf, int rlen, met_image_t *g_image)
 
     code = s_DCTD_template.process(mem, (stream_state*)&state, &rp, &wp, true);
     if (code != 1)
-        return -1;
+        return mt_rethrow(code, "DCTD process failed");
 
     g_image->width = jddp.dinfo.output_width;
     g_image->height = jddp.dinfo.output_height;
@@ -235,9 +238,9 @@ decodejpeg(gs_memory_t *mem, byte *rbuf, int rlen, met_image_t *g_image)
     wp.limit = wbuf + wlen - 1;
 
     code = s_DCTD_template.process(mem, (stream_state*)&state, &rp, &wp, true);
-    if (code != EOFC)
-        return mt_throw(-1, "jpeg stream decode error");
-    return code;
+    if (code == EOFC)
+	return 0;
+    return mt_throw(code, "jpeg stream decode error");
 }
 
 private int
@@ -301,12 +304,16 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
     
     code = readdata(mem, ms->pzip, ImageSource, &rbuf, &rlen);
     if (code < 0)
-        return code;
-    if (rbuf[0] == 0xff && rbuf[1] == 0xd8)
-        decodejpeg(mem, rbuf, rlen, metpat->raster_image);
+        return mt_rethrow(code, "read image data failed");
+    if (rbuf[0] == 0xff && rbuf[1] == 0xd8) {
+        code = decodejpeg(mem, rbuf, rlen, metpat->raster_image);
+	if (code) 
+	    return mt_throw(code, "decodejpeg failed");
+    }
     else if (memcmp(rbuf, "\211PNG\r\n\032\n", 8) == 0) {
-	//mt_decode_png(mem, rbuf, rlen, metpat->raster_image);
-        return mt_throw(-1, "unsupported png image file format");
+	code = mt_decode_png(mem, rbuf, rlen, metpat->raster_image);
+	if (code)
+	    return mt_rethrow(code, "decodepng failed");
     } else {
         return mt_throw(-1, "unknown image file format");
     }
