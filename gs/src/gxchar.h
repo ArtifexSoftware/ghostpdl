@@ -95,8 +95,9 @@ struct gs_show_enum_s {
     /*uint xy_index;*/		/* index within X/Y widths */
     /*gs_char returned.current_char;*/	/* current char for render or move */
     /*gs_glyph returned.current_glyph;*/	/* current glyph ditto */
-    gs_fixed_point wxy;		/* width of current char */
-				/* in device coords */
+    gs_fixed_point wxy;		/* width of current char in device coords */
+    gs_point wxy_float;		/* same for huge characters */
+    bool use_wxy_float;
     gs_fixed_point origin;	/* unrounded origin of current char */
 				/* in device coords, needed for */
 				/* charpath and WMode=1 */

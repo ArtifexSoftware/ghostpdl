@@ -354,7 +354,17 @@ set_char_width(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy)
 	wx = p.x; 
 	wy = p.y;
     }
-    if ((code = gs_distance_transform2fixed(&pgs->ctm, wx, wy, &penum->wxy)) < 0)
+    code = gs_distance_transform2fixed(&pgs->ctm, wx, wy, &penum->wxy);
+    if (code < 0 && penum->cc == 0) {
+	/* Can't represent in 'fixed', use floats. */
+	code = gs_distance_transform(wx, wy, &ctm_only(pgs), &penum->wxy_float);
+	penum->wxy.x = penum->wxy.y = 0;
+	penum->use_wxy_float = true;
+    } else {
+	penum->use_wxy_float = false;
+	penum->wxy_float.x = penum->wxy_float.y = 0;
+    }
+    if (code < 0)
 	return code;
     /* Check whether we're setting the scalable width */
     /* for a cached xfont character. */
@@ -764,6 +774,8 @@ show_update(gs_show_enum * penum)
 	    /* Adobe interpreters assume a character width of 0, */
 	    /* even though the documentation says this is an error.... */
 	    penum->wxy.x = penum->wxy.y = 0;
+	    penum->wxy_float.x = penum->wxy_float.y = 0;
+	    penum->use_wxy_float = false;
 	    break;
 	case sws_cache:
 	    /* Finish installing the cache entry. */
@@ -820,7 +832,7 @@ show_update(gs_show_enum * penum)
 }
 
 /* Move to next character */
-private int
+private inline int
 show_fast_move(gs_state * pgs, gs_fixed_point * pwxy)
 {
     return gs_moveto_aux((gs_imager_state *)pgs, pgs->path,
@@ -896,8 +908,14 @@ show_move(gs_show_enum * penum)
     }
     /* wxy is in device coordinates */
     {
-	int code = show_fast_move(pgs, &penum->wxy);
+	int code;
 
+	if (penum->use_wxy_float)
+	    code = gs_moveto_aux((gs_imager_state *)pgs, pgs->path,
+		    pgs->current_point.x + penum->wxy_float.x + fixed2float(penum->wxy.x), 
+		    pgs->current_point.y + penum->wxy_float.y + fixed2float(penum->wxy.y));
+	else
+	    code = show_fast_move(pgs, &penum->wxy);
 	if (code < 0)
 	    return code;
     }
@@ -1087,6 +1105,8 @@ show_proceed(gs_show_enum * penum)
 			    goto no_cache;
 			}
 		    }
+		    penum->use_wxy_float = false;
+		    penum->wxy_float.x = penum->wxy_float.y = 0;
 		    if (SHOW_IS_SLOW(penum)) {
 			/* Split up the assignment so that the */
 			/* Watcom compiler won't reserve esi/edi. */
