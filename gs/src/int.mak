@@ -1585,8 +1585,7 @@ $(PSD)dcte.dev : $(INT_MAK) $(ECHOGS_XE) $(GLD)sdcte.dev $(GLD)sdeparam.dev $(dc
 	$(ADDMOD) $(PSD)dcte -oper zfdcte
 
 $(PSOBJ)zfdcte.$(OBJ) : $(PSSRC)zfdcte.c $(OP)\
- $(memory__h) $(stdio__h) $(jpeglib__h)\
- $(gsmalloc_h)\
+ $(memory__h) $(stdio__h) $(jpeglib__h) $(gsmemory_h)\
  $(sdct_h) $(sjpeg_h) $(stream_h) $(strimpl_h)\
  $(files_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h) $(iparam_h)
 	$(PSCC) $(PSO_)zfdcte.$(OBJ) $(C_) $(PSSRC)zfdcte.c
@@ -1600,8 +1599,7 @@ $(PSD)dctd.dev : $(INT_MAK) $(ECHOGS_XE) $(GLD)sdctd.dev $(GLD)sddparam.dev $(dc
 	$(ADDMOD) $(PSD)dctd -oper zfdctd
 
 $(PSOBJ)zfdctd.$(OBJ) : $(PSSRC)zfdctd.c $(OP)\
- $(memory__h) $(stdio__h) $(jpeglib__h)\
- $(gsmalloc_h)\
+ $(memory__h) $(stdio__h) $(jpeglib__h) $(gsmemory_h)\
  $(ialloc_h) $(ifilter_h) $(iparam_h) $(sdct_h) $(sjpeg_h) $(strimpl_h)
 	$(PSCC) $(PSO_)zfdctd.$(OBJ) $(C_) $(PSSRC)zfdctd.c
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995-2006 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -21,7 +21,6 @@
 #include "gserrors.h"
 #include "gstypes.h"
 #include "gsmemory.h"
-#include "gsmalloc.h"
 #include "gsstruct.h"
 #include "strimpl.h"
 #include "szlibxx.h"

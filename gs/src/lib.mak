@@ -1241,7 +1241,7 @@ sdcparam_h=$(GLSRC)sdcparam.h
 sdctc_=$(GLOBJ)sdctc.$(OBJ) $(GLOBJ)sjpegc.$(OBJ)
 
 $(GLOBJ)sdctc.$(OBJ) : $(GLSRC)sdctc.c $(AK) $(stdio__h) $(jpeglib__h)\
- $(gsmalloc_h) $(gsmemory_h) $(sdct_h) $(strimpl_h)
+ $(strimpl_h) $(sdct_h)
 	$(GLCC) $(GLO_)sdctc.$(OBJ) $(C_) $(GLSRC)sdctc.c
 
 $(GLOBJ)sjpegc.$(OBJ) : $(GLSRC)sjpegc.c $(AK) $(stdio__h) $(string__h) $(gx_h)\
@@ -1265,9 +1265,8 @@ $(GLD)sdcte.dev : $(LIB_MAK) $(ECHOGS_XE) $(sdcte_) $(JGENDIR)$(D)jpege.dev
 	$(ADDMOD) $(GLD)sdcte -include $(JGENDIR)$(D)jpege.dev
 
 $(GLOBJ)sdcte.$(OBJ) : $(GLSRC)sdcte.c $(AK)\
- $(memory__h) $(stdio__h) $(gdebug_h) $(gsmalloc_h) $(gsmemory_h)\
- $(jerror__h) $(jpeglib__h)\
- $(sdct_h) $(sjpeg_h) $(strimpl_h)
+ $(memory__h) $(stdio__h) $(jerror__h) $(jpeglib__h)\
+ $(gdebug_h) $(gsmemory_h) $(strimpl_h) $(sdct_h) $(sjpeg_h)
 	$(GLJCC) $(GLO_)sdcte.$(OBJ) $(C_) $(GLSRC)sdcte.c
 
 $(GLOBJ)sjpege.$(OBJ) : $(GLSRC)sjpege.c $(AK)\
@@ -1296,9 +1295,8 @@ $(GLD)sdctd.dev : $(LIB_MAK) $(ECHOGS_XE) $(sdctd_) $(JGENDIR)$(D)jpegd.dev
 	$(ADDMOD) $(GLD)sdctd -include $(JGENDIR)$(D)jpegd.dev
 
 $(GLOBJ)sdctd.$(OBJ) : $(GLSRC)sdctd.c $(AK)\
- $(memory__h) $(stdio__h) $(gdebug_h) $(gsmalloc_h) $(gsmemory_h)\
- $(jerror__h) $(jpeglib__h)\
- $(sdct_h) $(sjpeg_h) $(strimpl_h)
+ $(memory__h) $(stdio__h) $(jerror__h) $(jpeglib__h)\
+ $(gdebug_h) $(gsmemory_h) $(strimpl_h) $(sdct_h) $(sjpeg_h)
 	$(GLJCC) $(GLO_)sdctd.$(OBJ) $(C_) $(GLSRC)sdctd.c
 
 $(GLOBJ)sjpegd.$(OBJ) : $(GLSRC)sjpegd.c $(AK)\
@@ -1475,7 +1473,7 @@ $(GLOBJ)spsdf.$(OBJ) : $(GLSRC)spsdf.c $(stdio__h) $(string__h)\
 szlibc_=$(GLOBJ)szlibc.$(OBJ)
 
 $(GLOBJ)szlibc.$(OBJ) : $(GLSRC)szlibc.c $(AK) $(std_h)\
- $(gserror_h) $(gserrors_h) $(gsmalloc_h) $(gsmemory_h)\
+ $(gserror_h) $(gserrors_h) $(gsmemory_h)\
  $(gsstruct_h) $(gstypes_h)\
  $(strimpl_h) $(szlibxx_h)
 	$(GLZCC) $(GLO_)szlibc.$(OBJ) $(C_) $(GLSRC)szlibc.c
@@ -1486,7 +1484,7 @@ $(GLD)szlibe.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibe.dev $(szlibe_)
 	$(ADDMOD) $(GLD)szlibe -include $(ZGENDIR)$(D)zlibe.dev
 
 $(GLOBJ)szlibe.$(OBJ) : $(GLSRC)szlibe.c $(AK) $(std_h)\
- $(gsmalloc_h) $(gsmemory_h) $(strimpl_h) $(szlibxx_h)
+ $(strimpl_h) $(szlibxx_h)
 	$(GLZCC) $(GLO_)szlibe.$(OBJ) $(C_) $(GLSRC)szlibe.c
 
 szlibd_=$(szlibc_) $(GLOBJ)szlibd.$(OBJ)
@@ -1495,7 +1493,7 @@ $(GLD)szlibd.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibd.dev $(szlibd_)
 	$(ADDMOD) $(GLD)szlibd -include $(ZGENDIR)$(D)zlibd.dev
 
 $(GLOBJ)szlibd.$(OBJ) : $(GLSRC)szlibd.c $(AK) $(std_h) $(memory__h)\
- $(gsmalloc_h) $(gsmemory_h) $(strimpl_h) $(szlibxx_h)
+ $(strimpl_h) $(szlibxx_h)
 	$(GLZCC) $(GLO_)szlibd.$(OBJ) $(C_) $(GLSRC)szlibd.c
 
 # ---------------- Page devices ---------------- #

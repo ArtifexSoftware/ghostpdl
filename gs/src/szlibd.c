@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995-2006 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -18,8 +18,6 @@
 /* zlib decoding (decompression) filter stream */
 #include "memory_.h"
 #include "std.h"
-#include "gsmemory.h"
-#include "gsmalloc.h"	    /* for gs_memory_default */
 #include "strimpl.h"
 #include "szlibxx.h"
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000-2006 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -21,7 +21,7 @@
 #include "jpeglib_.h"
 #include "ghost.h"
 #include "oper.h"
-#include "gsmalloc.h"		/* for gs_memory_default */
+#include "gsmemory.h"
 #include "ialloc.h"
 #include "idict.h"
 #include "idparam.h"

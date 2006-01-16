@@ -18,8 +18,6 @@
 /* Code common to DCT encoding and decoding streams */
 #include "stdio_.h"
 #include "jpeglib_.h"
-#include "gsmemory.h"
-#include "gsmalloc.h"
 #include "strimpl.h"
 #include "sdct.h"
 

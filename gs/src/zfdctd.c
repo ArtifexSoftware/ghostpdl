@@ -21,7 +21,7 @@
 #include "jpeglib_.h"
 #include "ghost.h"
 #include "oper.h"
-#include "gsmalloc.h"		/* for gs_memory_default */
+#include "gsmemory.h"
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"
