@@ -19,8 +19,7 @@ systemdict /ProcessColorModel known {
 
 % Define entries to the document Info dictionary :
 
-/ICCProfile (ISO Coated sb.icc)   % Customize.
-def
+/ICCProfile (ISO Coated sb.icc) def  % Customize or remove.
 
 [ /GTS_PDFXVersion (PDF/X-3:2002) % Must be so (the standard requires).
   /Title (Title)                  % Customize.
@@ -29,19 +28,24 @@ def
 
 % Define an ICC profile :
 
-[/_objdef {icc_PDFX} /type /stream /OBJ pdfmark
-[{icc_PDFX} <</N systemdict /ProcessColorModel get /DeviceGray eq {1} {4} ifelse >> /PUT pdfmark
-[{icc_PDFX} ICCProfile (r) file /PUT pdfmark
+currentdict /ICCProfile known {
+  [/_objdef {icc_PDFX} /type /stream /OBJ pdfmark
+  [{icc_PDFX} <</N systemdict /ProcessColorModel get /DeviceGray eq {1} {4} ifelse >> /PUT pdfmark
+  [{icc_PDFX} ICCProfile (r) file /PUT pdfmark
+} if
 
 % Define the output intent dictionary :
 
 [/_objdef {OutputIntent_PDFX} /type /dict /OBJ pdfmark
 [{OutputIntent_PDFX} <<
-  /Type /OutputIntent             % Must be so (the standard requires).
-  /S /GTS_PDFX                    % Must be so (the standard requires).
+  /Type /OutputIntent              % Must be so (the standard requires).
+  /S /GTS_PDFX                     % Must be so (the standard requires).
   /OutputCondition (Commercial and specialty printing) % Customize
-  /Info (none)                             % Customize
-  /OutputConditionIdentifier (Custom)      % Customize
-  /DestOutputProfile {icc_PDFX}            % Must be so (see above).
+  /Info (none)                     % Customize
+  /OutputConditionIdentifier (CGATS TR001)      % Customize
+  /RegistryName (http://www.color.org)   % Must be so (the standard requires).
+  currentdict /ICCProfile known {
+    /DestOutputProfile {icc_PDFX}  % Must be so (see above).
+  } if
 >> /PUT pdfmark
 [{Catalog} <</OutputIntents [ {OutputIntent_PDFX} ]>> /PUT pdfmark

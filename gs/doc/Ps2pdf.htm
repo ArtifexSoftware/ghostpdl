@@ -699,9 +699,9 @@ To create a PDF/X-3 document from a Postscript or a PDF file, you should :
 <li> Specify a PDF/X definition file before running the input document.
      It provides additional information to be included into the output document.
      A sample PDF/X definition file may be found in <b><tt>gs/lib/PDFX_def.ps</b></tt>.
-<li> Provide an ICC profile and specify it in the PDF/X definition file
-     as explained below. Rather PDF/X-3 standard defines the ICC profile
-     as optional, we could not get it working with  the PDF/X-3 Inspector freeware.
+<li> If a registered printing condition is applicable, specify its identifier 
+     in the PDF/X definition file. Otherwise provide an ICC profile and 
+     specify it in the PDF/X definition file as explained below. 
 <li> Provide a <b><tt>DefaultRGB</b></tt> resource file in the ColorSpace resource category.
      Either define it in the PDF/X definition file, or provide
      a definition of <b><tt>gs/Resource/ColorSpace/DefaultRGB</b></tt> .
@@ -719,10 +719,24 @@ we marked editable lines in the sample file with the comment <b><tt>% Customize<
 They are explained below.
 
 <dl>
+<dt><b><tt>OutputCondition</tt></b> <em>string</em>
+<dd>Defines an <b><tt>OutputCondition</tt></b> value for the output intent dictionary.
+</dl>
+
+
+<dl>
+<dt><b><tt>OutputConditionIdentifier</tt></b> <em>string</em>
+<dd>Defines an <b><tt>OutputConditionIdentifier</tt></b> value for the output intent dictionary.
+</dl>
+
+<dl>
 <dt><b><tt>ICCProfile</tt></b> <em>string</em>
-<dd>Defines a file name of an ICC profile file to be included into the output document. 
+<dd> May be omited if <b><tt>OutputConditionIdentifier</tt></b>
+specifies a registed identifier of characterized printing condition
+(see http://www.color.org/IPA_2003-11_PDFX.pdf).
+Defines a file name of an ICC profile file to be included into the output document. 
 You may specify either an absolute file name, or a relative
-path fronm the current directory.
+path from the working directory. 
 </dl>
 
 <dl>
@@ -734,17 +748,6 @@ define a title with DSC comments. Otherwise remove entire line from definition f
 <dl>
 <dt><b><tt>Info</tt></b> <em>string</em>
 <dd>Defines an <b><tt>Info</tt></b> value for the output intent dictionary.
-</dl>
-
-<dl>
-<dt><b><tt>OutputCondition</tt></b> <em>string</em>
-<dd>Defines an <b><tt>OutputCondition</tt></b> value for the output intent dictionary.
-</dl>
-
-
-<dl>
-<dt><b><tt>OutputConditionIdentifier</tt></b> <em>string</em>
-<dd>Defines an <b><tt>OutputConditionIdentifier</tt></b> value for the output intent dictionary.
 </dl>
 
 <p>
