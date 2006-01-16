@@ -273,6 +273,10 @@ drawopdict begin
 	  newpath { mark exch uappend } stopped 
 	  cleartomark
 	} ifelse
+	% If inside a BT/ET block, we need to update the TextSaveMatrix
+	currentdict /TextSaveMatrix .knownget {
+	  TextSaveMatrix cmmatrix 1 index concatmatrix pop
+	} if
       } def
   /i { 1 .min setflat } def
   /J /setlinecap load def
