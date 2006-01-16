@@ -808,7 +808,7 @@ int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdat
     this->ForceBold = pdata->ForceBold;
     this->disable_hinting |= no_grid_fitting;
     this->charpath_flag = no_grid_fitting;
-    if (vd_enabled && (VD_DRAW_IMPORT || this->disable_hinting))
+    if (!vd_enabled && (VD_DRAW_IMPORT || this->disable_hinting))
 	enable_draw_import();
     if (this->disable_hinting)
 	return 0;

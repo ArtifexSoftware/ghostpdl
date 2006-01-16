@@ -513,9 +513,9 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    return_error(code);
 			goto pushed;
 		    case ce1_setcurrentpoint:
-			t1_hinter__setcurrentpoint(h, cs0, cs1);
 			cs0 += pcis->adxy.x;
 			cs1 += pcis->adxy.y;
+			t1_hinter__setcurrentpoint(h, cs0, cs1);
 			cnext;
 		    default:
 			return_error(gs_error_invalidfont);
