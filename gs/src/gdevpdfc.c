@@ -34,6 +34,7 @@
 #include "strimpl.h"
 #include "sstring.h"
 #include "gxcspace.h"
+#include "gxcdevn.h"
 #include <assert.h>
 
 /*
@@ -338,7 +339,8 @@ pdf_separation_color_space(gx_device_pdf *pdev,
 			   const cos_value_t *snames,
 			   const gs_color_space *alt_space,
 			   const gs_function_t *pfn,
-			   const pdf_color_space_names_t *pcsn)
+			   const pdf_color_space_names_t *pcsn,
+			   const cos_value_t *v_attributes)
 {
     cos_value_t v;
     const gs_range_t *ranges;
@@ -349,7 +351,8 @@ pdf_separation_color_space(gx_device_pdf *pdev,
 	(code = pdf_color_space(pdev, &v, &ranges, alt_space, pcsn, false)) < 0 ||
 	(code = cos_array_add(pca, &v)) < 0 ||
 	(code = pdf_function_scaled(pdev, pfn, ranges, &v)) < 0 ||
-	(code = cos_array_add(pca, &v)) < 0
+	(code = cos_array_add(pca, &v)) < 0 ||
+	(v_attributes != NULL ? code = cos_array_add(pca, v_attributes) : 0) < 0
 	)
 	return code;
     return 0;
@@ -785,6 +788,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    int i;
 	    byte *name_string;
 	    uint name_string_length;
+	    cos_value_t v_attriburtes, *va = NULL;
 
 	    if (psna == 0)
 		return_error(gs_error_VMerror);
@@ -799,10 +803,49 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 		    return code;
 	    }
 	    COS_OBJECT_VALUE(&v, psna);
+	    if (pcs->params.device_n.colorants != NULL) {
+		cos_dict_t *colorants  = cos_dict_alloc(pdev, "pdf_color_space(DeviceN)");
+		cos_value_t v_colorants, v_separation, v_colorant_name;
+		const gs_device_n_attributes *csa;
+		pdf_resource_t *pres_attributes;
+
+		if (colorants == NULL)
+		    return_error(gs_error_VMerror);
+		code = pdf_alloc_resource(pdev, resourceOther, 0, &pres_attributes, -1);
+		if (code < 0)
+		    return code;
+		cos_become(pres_attributes->object, cos_type_dict);
+		COS_OBJECT_VALUE(&v_colorants, colorants);
+		code = cos_dict_put((cos_dict_t *)pres_attributes->object, 
+		    (const byte *)"/Colorants", 10, &v_colorants);
+		if (code < 0)
+		    return code;
+		for (csa = pcs->params.device_n.colorants; csa != NULL; csa = csa->next) {
+	 	    code = pcs->params.device_n.get_colorname_string(pdev->memory,
+				  csa->colorant_name, &name_string, &name_string_length);
+		    if (code < 0)
+			return code;
+		    code = pdf_color_space(pdev, &v_separation, NULL, &csa->cspace, pcsn, false);
+		    if (code < 0)
+			return code;
+		    code = pdf_string_to_cos_name(pdev, name_string, name_string_length, &v_colorant_name);
+		    if (code < 0)
+			return code;
+		    code = cos_dict_put(colorants, v_colorant_name.contents.chars.data, 
+					v_colorant_name.contents.chars.size, &v_separation);
+		    if (code < 0)
+			return code;
+		}
+    		code = pdf_substitute_resource(pdev, &pres_attributes, resourceOther, NULL, true);
+		if (code < 0)
+		    return code;
+		va = &v_attriburtes;
+		COS_OBJECT_VALUE(va, pres_attributes->object);
+	    }
 	    if ((code = pdf_separation_color_space(pdev, pca, "/DeviceN", &v,
 						   (const gs_color_space *)
 					&pcs->params.device_n.alt_space,
-					pfn, &pdf_color_space_names)) < 0)
+					pfn, &pdf_color_space_names, va)) < 0)
 		return code;
 	}
 	break;
@@ -824,7 +867,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 		(code = pdf_separation_color_space(pdev, pca, "/Separation", &v,
 						   (const gs_color_space *)
 					    &pcs->params.separation.alt_space,
-					    pfn, &pdf_color_space_names)) < 0)
+					    pfn, &pdf_color_space_names, NULL)) < 0)
 		return code;
 	}
 	break;

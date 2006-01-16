@@ -1165,6 +1165,8 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
 	stream *s = 0;
 	int j;
 
+	if (i == resourceOther)
+	    continue;
 	page->resource_ids[i] = 0;
 	for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
 	    pdf_resource_t *pres = pdev->resources[i].chains[j];
