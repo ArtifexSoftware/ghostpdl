@@ -841,20 +841,18 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	}
 	if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
 	    gx_device *pdev = i_ctx_p->pgs->device;
-	    int pdev_ref_count = pdev->rc.ref_count;
 
+	    /* make sure device doesn't isn't freed by .uninstalldevice */
+	    rc_adjust(pdev, 1, "gs_main_finit");	
 	    /* deactivate the device just before we close it for the last time */
 	    gs_main_run_string(minst, 
 		".uninstallpagedevice ",
 		0 , &exit_code, &error_object);
-	    if (pdev_ref_count > 1) {
-		/* pdev still exists after .uninstallpagedevice */
-		/* an overprint (or other) compositor will not */
-		code = gs_closedevice(pdev);
-		if (code < 0)
-		    eprintf2("ERROR %d closing %s device. See gs/src/ierrors.h for code explanation.\n",
-			code, i_ctx_p->pgs->device->dname);
-	    }
+	    code = gs_closedevice(pdev);
+	    if (code < 0)
+		eprintf2("ERROR %d closing %s device. See gs/src/ierrors.h for code explanation.\n",
+		    code, i_ctx_p->pgs->device->dname);
+	    rc_decrement(pdev, "gs_main_finit");		/* device might be freed */
 	    if (exit_status == 0 || exit_status == e_Quit)
 		exit_status = code;
 	}
