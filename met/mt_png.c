@@ -122,7 +122,9 @@ mt_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, met_image_t *image)
     stride = (image->width * image->comps * image->bits + 7) / 8;
     size = stride * image->height;
 
-    image->samples = gs_alloc_bytes(mem, size, "decodepng");
+    // NB: size * 2 hack covers up a miss calculated size of image buffer
+    // preventing memory usage outside of the allocation.
+    image->samples = gs_alloc_bytes(mem, size * 2, "decodepng");
 
     for (pass = 0; pass < npasses; pass++) {
 	for (y = 0; y < image->height; y++) {
@@ -130,7 +132,7 @@ mt_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, met_image_t *image)
 	}
     }
 
-    png_read_end(png, NULL);
+    png_read_end(png, NULL);           
     png_destroy_read_struct(&png, &info, NULL);
 
     return mt_okay;
