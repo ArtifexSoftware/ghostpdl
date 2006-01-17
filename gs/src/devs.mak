@@ -1,4 +1,4 @@
-#    Copyright (C) 1989, 2000-2004 artofcode LLC. All rights reserved.
+#    Copyright (C) 1989, 2000-2006 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -794,8 +794,10 @@ pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)\
  $(pdfwrite10_) $(pdfwrite11_)
 
 # Since ps2write actually is a clone of pdfwrite,
-# we don't define a full module for it, 
-# but generate both devices within pdfwrite.dev .
+# we just depend on it.
+$(DD)ps2write.dev : $(DEVS_MAK) $(ECHOGS_XE) $(DD)pdfwrite.dev
+	$(SETDEV2) $(DD)ps2write
+	$(ADDMOD) $(DD)ps2write -include $(DD)pdfwrite.dev
 
 # Note that for ps2pdf operation, we need to parse DSC comments to set
 # the Orientation (Page dict /Rotate value). This is not part of the
@@ -806,7 +808,6 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
  $(GLD)szlibe.dev $(GLD)psdf.dev \
  $(DD)pdtext.dev
-	$(SETDEV2) $(DD)ps2write $(pdfwrite1_)
 	$(SETDEV2) $(DD)pdfwrite $(pdfwrite1_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite2_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite3_)
