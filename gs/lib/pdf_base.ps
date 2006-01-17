@@ -871,6 +871,10 @@ pdfdict begin
       } ifelse
       2 index /IDFlag known { pop } { () /SubFileDecode filter } ifelse
     } {
+                % Stack: readdata? dict parms source filternames
+      exch 3 index /Length knownoget {
+        dup 0 ne { () /SubFileDecode filter } { pop } ifelse
+      } if exch
       applyfilters
     } ifelse
   } ifelse
