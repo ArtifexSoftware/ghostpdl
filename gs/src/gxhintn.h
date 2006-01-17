@@ -158,7 +158,6 @@ typedef struct t1_hinter_s
     int flex_count;
     int FontType; /* 1 or 2 */
     bool ForceBold;
-    bool seac_flag;
     bool keep_stem_width;
     bool suppress_overshoots;
     double BlueScale;
@@ -209,7 +208,6 @@ int  t1_hinter__overall_hstem(t1_hinter * this, fixed x0, fixed x1, int side_mas
 int  t1_hinter__hstem3(t1_hinter * this, fixed x0, fixed y1, fixed x2, fixed y3, fixed x4, fixed y5);
 int  t1_hinter__vstem3(t1_hinter * this, fixed y0, fixed y1, fixed y2, fixed y3, fixed y4, fixed y5);
 
-int  t1_hinter__endchar(t1_hinter * this, bool seac_flag);
 int  t1_hinter__endglyph(t1_hinter * this);
 int  t1_hinter__is_x_fitting(t1_hinter * this);
 

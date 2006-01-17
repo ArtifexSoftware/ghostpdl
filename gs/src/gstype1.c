@@ -250,9 +250,6 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 code = t1_hinter__rcurveto(h, cs0, cs1, cs2, cs3, cs4, cs5);
 		goto cc;
 	    case cx_endchar:
-                code = t1_hinter__endchar(h, (pcis->seac_accent >= 0));
-		if (code < 0)
-		    return code;
                 if (pcis->seac_accent < 0) {
                     code = t1_hinter__endglyph(h);
 		    if (code < 0)
@@ -260,7 +257,8 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    code = gx_setcurrentpoint_from_path(pcis->pis, pcis->path);
 		    if (code < 0)
 			return code;
-		}
+		} else
+		    pcis->seac_flag = true;
 		code = gs_type1_endchar(pcis);
 		if (code == 1) {
 		    /* do accent of seac */
@@ -288,7 +286,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 code = t1_hinter__closepath(h);
 		goto cc;
 	    case c1_hsbw:
-                if (!h->seac_flag) {
+                if (!pcis->seac_flag) {
 		    fixed sbx = cs0, sby = fixed_0, wx = cs1, wy = fixed_0;
 
 		    if (pcis->sb_set) {
@@ -382,7 +380,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			cip = ipsp->cs_data.bits.data;
 			goto call;
 		    case ce1_sbw:
-                        if (!h->seac_flag)
+                        if (!pcis->seac_flag)
                             code = t1_hinter__sbw(h, cs0, cs1, cs2, cs3);
                         else
                             code = t1_hinter__sbw_seac(h, cs0 + pcis->adxy.x , cs1 + pcis->adxy.y);

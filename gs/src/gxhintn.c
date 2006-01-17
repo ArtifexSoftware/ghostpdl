@@ -508,7 +508,6 @@ void t1_hinter__init(t1_hinter * this, gx_path *output_path)
     this->heigt_transform_coef_inv = this->width_transform_coef_inv = 0;
     this->cx = this->cy = 0;
     this->contour[0] = 0;
-    this->seac_flag = 0;
     this->keep_stem_width = false;
     this->charpath_flag = false;
     this->grid_fit_x = this->grid_fit_y = true;
@@ -547,7 +546,6 @@ private inline void t1_hinter__init_outline(t1_hinter * this)
 {   this->contour_count = 0;
     this->pole_count = 0;
     this->contour[0] = 0;
-    this->seac_flag = 0;
     this->hint_count = 0;
     this->primary_hint_count = -1;
     this->suppress_overshoots = false;
@@ -1325,11 +1323,6 @@ int t1_hinter__vstem3(t1_hinter * this, fixed y0, fixed y1, fixed y2, fixed y3, 
     if (code < 0)
 	return code;
     return t1_hinter__stem(this, vstem, 3, y4, y5, 3);
-}
-
-int t1_hinter__endchar(t1_hinter * this, bool seac_flag)
-{   this->seac_flag = seac_flag;
-    return 0;
 }
 
 /* --------------------- t1_hinter class members - accessories --------------------*/

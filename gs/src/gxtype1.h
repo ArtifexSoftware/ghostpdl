@@ -115,6 +115,7 @@ struct gs_type1_state_s {
 				/* 0 if not done & needed, 1 if done */
     bool sb_set;		/* true if lsb is preset */
     bool width_set;		/* true if width is set (for seac parts) */
+    bool seac_flag;
     /* (Type 2 charstrings only) */
     int num_hints;		/* number of hints (Type 2 only) */
     gs_fixed_point lsb;		/* left side bearing (char coords) */

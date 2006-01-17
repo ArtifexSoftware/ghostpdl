@@ -329,9 +329,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		 * In this case, there might be a width on the stack.
 		 */
 		check_first_operator(csp >= cstack);
-		code = t1_hinter__endchar(h, (pcis->seac_accent >= 0));
-		if (code < 0)
-		    return code;
 		if (pcis->seac_accent < 0) {
 		    code = t1_hinter__endglyph(h);
 		    if (code < 0)
