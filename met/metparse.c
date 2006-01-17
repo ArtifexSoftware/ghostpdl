@@ -19,6 +19,7 @@
 #include "metparse.h"
 #include "metelement.h"
 #include "metcomplex.h"
+#include "mt_error.h"
 /* have expat use the gs memory manager. */
 
 
@@ -87,11 +88,13 @@ met_start(void *data, const char *el, const char **attr)
             }
         } else {
             code = (*metp->init)(&st->data_stack[st->depth], st->mets, el, attr);
-            if (code < 0)
+            if (code < 0) {
+		mt_rethrow(code, "met_start init");
                 met_set_error(st, code);
-            
+            }
             code = (*metp->action)(st->data_stack[st->depth], st->mets);
             if (code < 0) {
+		mt_rethrow(code, "met_start action");
                 met_set_error(st, code);
             }
         }
@@ -122,8 +125,10 @@ met_end(void *data, const char *el)
 
     if (metp && metp->done)
         code = (*metp->done)(st->data_stack[st->depth], st->mets);
-    if (code < 0)
+    if (code < 0) {
+	mt_rethrow(code, "met_end done");
         met_set_error(st, code);
+    }
 }
 
 /* allocate the parser, and set the global memory pointer see above */
