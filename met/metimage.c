@@ -137,7 +137,7 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
 	    convertStr = ctif_convert;
 	    doit = true;
 	}
-#if 1 
+#if 0 
 	else 	if (0 == strncasecmp(&ImageSource[strlen(ImageSource) -4], "png", 3 )); {
 	    imgStr = cpng;
 	    convertStr = cpng_convert;
@@ -313,9 +313,9 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
     else if (memcmp(rbuf, "\211PNG\r\n\032\n", 8) == 0) {
 	code = mt_decode_png(mem, rbuf, rlen, metpat->raster_image);
 	if (code)
-	    return mt_rethrow(code, "decodepng failed");
+	    return mt_rethrow(code, "decode_png failed");
     } else {
-        return mt_throw(-1, "unknown image file format");
+        return mt_throw1(-1, "unknown image file format %s", ImageSource);
     }
     gs_pattern1_init(&gspat);
     uid_set_UniqueID(&gspat.uid, gs_next_ids(mem, 1));
