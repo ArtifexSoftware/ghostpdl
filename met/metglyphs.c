@@ -209,24 +209,29 @@ private bool is_colon(char c) {return c == ':';}
 
 /* nb hack temporary static buffer for glyphs */
 private gs_glyph glyphs[1024];
-private gs_glyph advance[1024];
-private gs_glyph uOffset[1024];
-private gs_glyph vOffset[1024];
+private float advance[1024];
+private float uOffset[1024];
+private float vOffset[1024];
 
 private bool iscomma(char c) {return c == ',';}
 
-/* nb for now we just support the glyph index remapping.  We need
-  cluster mapping an metrics */
-private void 
+/* no error return 
+ * glyph 
+ * advance integer in 100 em units 
+ * uOffset not used
+ * vOffset not used
+ *
+ */
+private void
 get_glyph_advance(char *index, gs_font *pfont, gs_glyph unicode, 
-		  gs_glyph *glyph, gs_glyph *advance,
-		  gs_glyph *uOffset, gs_glyph *vOffset )
+		  gs_glyph *glyph, float *advance,
+		  float *uOffset, float *vOffset )
 {
    char *args[strlen(index)];
    int num = 0;
    char *p;
 
-   *advance = *uOffset = *vOffset = 0;
+   *advance = *uOffset = *vOffset = 0.0f;
 
    if ((p = strchr(index, ','))) {
        num = met_split(index, args, iscomma);
@@ -234,29 +239,34 @@ get_glyph_advance(char *index, gs_font *pfont, gs_glyph unicode,
 	   if (num-- > 0) 
 	       *glyph = atoi(args[0]);
 	   if (num-- > 0) 
-	       *advance = atoi(args[1]);
+	       *advance = atoi(args[1]) / 100.0f;
+	   else 
+	       *advance = 0.0;
 	   if (num-- > 0) 
 	       *uOffset = atoi(args[2]);
 	   if (num-- > 0) 
 	       *vOffset = atoi(args[3]);
        }
        else {  /* ,num */ 
-	   *glyph = pl_tt_encode_char(pfont, unicode, 0);
+	   *glyph = (*pfont->procs.encode_char)(pfont, unicode, 0);
 	   if (num-- > 0) 
-	       *advance = atoi(args[0]);
+	       *advance = atoi(args[0])/ 100.0f;
+	   else 
+	       *advance = 0.0;
 	   if (num-- > 0) 
 	       *uOffset = atoi(args[1]);
 	   if (num-- > 0) 
 	       *vOffset = atoi(args[2]);
        }
    }
-   else
+   else {
        *glyph = atoi(index);
-
+       *advance = 0.0f;
+   }
 }
 
 private int 
-build_text_params(gs_text_params_t *text, gs_font *pfont, 
+build_text_params(gs_text_params_t *text, pl_font_t *pcf,
 		  ST_UnicodeString UnicodeString, ST_Indices Indices)
 {
    if (!Indices) {
@@ -266,12 +276,17 @@ build_text_params(gs_text_params_t *text, gs_font *pfont,
        text->size = strlen(UnicodeString);
    } else {
        /* the non halaluah case */
+       gs_font *pfont = pcf->pfont;
        char expindstr[strlen(Indices) * 2 + 1];
        char *args[strlen(Indices) * 2 + 1];
        char **pargs = args;
        int cnt = 0;
        int glyph_index = 0;
        int combine_cnt = 0;
+       bool has_widths = false;
+
+       if (strchr(Indices, ','))
+	   has_widths = true; /* pre scan for advance width usage */
 
        met_expand(expindstr, Indices, ';', 'Z');
        cnt = met_split(expindstr, args, is_semi_colon);
@@ -279,8 +294,15 @@ build_text_params(gs_text_params_t *text, gs_font *pfont,
            /* if the argument is empty try the unicode string */
            if (**pargs == 'Z') {
                if (strlen(UnicodeString) > glyph_index) {
+		   gs_point point;
+
 		   glyphs[glyph_index] = 
-		       pl_tt_encode_char(pfont, UnicodeString[glyph_index+combine_cnt], 0);
+		       (*pfont->procs.encode_char)(pfont, UnicodeString[glyph_index+combine_cnt], 0);
+
+		   if (has_widths) {
+		       (*pcf->char_width)(pcf, NULL, UnicodeString[glyph_index+combine_cnt], &point);
+		       advance[glyph_index] = point.x;
+		   }
 		   ++glyph_index;
 	       }
                else
@@ -308,20 +330,43 @@ build_text_params(gs_text_params_t *text, gs_font *pfont,
 		   *pargs = p+1;
 	       }
 
-	       get_glyph_advance(*pargs, pfont, (gs_glyph)UnicodeString[glyph_index+combine_cnt], 
+	       get_glyph_advance(*pargs, pfont, 
+				 (gs_glyph)UnicodeString[glyph_index+combine_cnt], 
 				 &glyphs[glyph_index], &advance[glyph_index],
 				 &uOffset[glyph_index], &vOffset[glyph_index]);
+	       if (has_widths && advance[glyph_index] < 0.01) {  
+		   gs_point point;  /* replace missing advance with char width */
+		   (*pcf->char_width)(pcf, NULL, UnicodeString[glyph_index+combine_cnt], &point);
+		   advance[glyph_index] = point.x;
+	       }
+	       
 	       ++glyph_index;
            }
            pargs++;
        }
        while (strlen(UnicodeString) > glyph_index+combine_cnt) {
-	   glyphs[glyph_index] = pl_tt_encode_char(pfont, UnicodeString[glyph_index+combine_cnt], 0);
+	   glyphs[glyph_index] = 
+	       (*pfont->procs.encode_char)(pfont, UnicodeString[glyph_index+combine_cnt], 0);
+	   if (has_widths) {  /* need advance widths */
+	       gs_point point;
+	       (*pcf->char_width)(pcf, NULL, UnicodeString[glyph_index+combine_cnt], &point);
+	       advance[glyph_index] = point.x;
+	   } else 
+	       advance[glyph_index] = 0.0;
+	   uOffset[glyph_index] = 0.0;
+	   vOffset[glyph_index] = 0.0;
 	   ++glyph_index;
        }
        text->operation = TEXT_FROM_GLYPHS | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
        text->data.glyphs = glyphs;
        text->size = glyph_index;
+
+       if (has_widths) {
+	   text->x_widths = advance;
+	   text->y_widths = uOffset; // NB: wrong better be zeroed for now.
+	   text->widths_size = glyph_index;
+	   text->operation |= TEXT_REPLACE_WIDTHS;
+       }
    }
    return 0;
 }
@@ -347,7 +392,7 @@ Glyphs_action(void *data, met_state_t *ms)
    gs_font_dir *pdir = ms->font_dir;
    FILE *in; /* tt font file */
    int code = 0;
-   gs_matrix font_mat, save_ctm;
+   gs_matrix font_mat;
    zip_part_t *part;
 
    if (!fname) {
@@ -359,10 +404,12 @@ Glyphs_action(void *data, met_state_t *ms)
       dictionary */
    if (!find_font(ms, fname)) {
        byte *pdata = 0;
-       if (0 && !strcmp(aGlyphs->FontUri, "/font_0.TTF")) {
+       if (0 && 
+	   !strcmp(aGlyphs->FontUri, "/font_0.TTF")) {
+	   /* HACK pulls in a fixed font file */
            uint len, size;
            if ((in = fopen(aGlyphs->FontUri, gp_fmode_rb)) == NULL)
-                return -1;
+	       return mt_throw1(-1, "file open failed %s", aGlyphs->FontUri);
            len = (fseek(in, 0L, SEEK_END), ftell(in));
            size = 6 + len;
            rewind(in);
@@ -374,25 +421,25 @@ Glyphs_action(void *data, met_state_t *ms)
        } else {
            part = find_zip_part_by_name(ms->pzip, aGlyphs->FontUri);
            if (part == NULL)
-               return -1;
+               return mt_throw1(-1, "Can't find zip part %s", aGlyphs->FontUri);
 
            /* load the font header */
            if ((pdata = load_tt_font(part, mem)) == NULL)
-               return -1;
+               return mt_throw(-1, "Can't load ttf");
        }
        /* create a plfont */
        if ((pcf = new_plfont(pdir, mem, pdata)) == NULL)
-           return -1;
+           return mt_throw(-1, "new_plfont failed");
        /* add the font to the font dictionary keyed on uri */
        if (!put_font(ms, fname, pcf))
-           return -1;
+           return mt_throw(-1, "font dictionary insert failed");
    }
    /* shouldn't fail since we added it if it wasn't in the dict */
    if ((pcf = get_font(ms, fname)) == NULL)
-       return -1;
+       return mt_throw(-1, "get_font");
 
    if ((code = gs_setfont(pgs, pcf->pfont)) != 0)
-       return code;
+       return mt_rethrow(code, "gs_setfont");
 
    /* if a render transformation is specified we use it otherwise the
       font matrix starts out as identity, later it will be
@@ -404,16 +451,16 @@ Glyphs_action(void *data, met_state_t *ms)
        /* nb wasteful */
        char *args[strlen(aGlyphs->RenderTransform)];
        char **pargs = args;
-       met_split(transstring, args, is_Data_delimeter);
-       /* nb checking */
+
+       if ( 6 != met_split(transstring, args, is_Data_delimeter))
+	   return mt_throw(-1, "Glyphs RenderTransform number of args");
+       /* nb checking for sane arguments */
        font_mat.xx = atof(pargs[0]);
        font_mat.xy = atof(pargs[1]);
        font_mat.yx = atof(pargs[2]);
        font_mat.yy = atof(pargs[3]);
        font_mat.tx = atof(pargs[4]);
        font_mat.ty = atof(pargs[5]);
-       if (code < 0)
-           return code;
    } else {
        gs_make_identity(&font_mat);
    }
@@ -426,9 +473,9 @@ Glyphs_action(void *data, met_state_t *ms)
        gs_point pt;
        if ((code = gs_point_transform(mem, aGlyphs->OriginX, aGlyphs->OriginY,
                                       &font_mat, &pt)) != 0)
-           return code;
+           return mt_rethrow(code, "gs_point_transform");
        if ((code = gs_moveto(pgs, pt.x, pt.y)) != 0)
-           return code;
+           return mt_rethrow(code, "gs_moveto");
    }
 
    /* save the current ctm and the current color */
@@ -440,25 +487,24 @@ Glyphs_action(void *data, met_state_t *ms)
    /* flip y metro goes down the page */
    if ((code = gs_matrix_scale(&font_mat, aGlyphs->FontRenderingEmSize,
                                (-aGlyphs->FontRenderingEmSize), &font_mat)) != 0)
-       return code;
+       return mt_rethrow(code, "gs_matrix_scale");
 
    /* finally! */
    if ((code = gs_concat(pgs, &font_mat)) != 0)
-       return code;
+       return mt_rethrow(code, "gs_concat");
 
    {
        gs_text_params_t text;
        gs_text_enum_t *penum;
 
-       if ((code = build_text_params(&text, pcf->pfont, 
+       if ((code = build_text_params(&text, pcf, 
 				     aGlyphs->UnicodeString,
 				     aGlyphs->Indices)) != 0)
-           return code;
-
+           return mt_rethrow(code, "build_text_params");
        if ((code = gs_text_begin(pgs, &text, mem, &penum)) != 0)
-           return code;
+	   return mt_rethrow(code, "gs_text_begin");
        if ((code = gs_text_process(penum)) != 0)
-           return code;
+	   return mt_rethrow(code, "gs_text_process");
        gs_text_release(penum, "Glyphs_action()");
    }
 
