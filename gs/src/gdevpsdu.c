@@ -424,6 +424,9 @@ psdf_end_binary(psdf_binary_writer * pbw)
 int
 psdf_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 {
+    if (dev_proc(dev, get_alpha_bits)(dev, go_graphics) > 1)
+	eprintf1("Can't set GraphicsAlphaBits > 1 with a vector device %s.\n",
+	    dev->dname);
     return_error(gs_error_unregistered);
 }
 
