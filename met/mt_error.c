@@ -26,6 +26,15 @@ int mt_throw_imp(const char *func, const char *file, int line, int op, int code,
     msg[sizeof(msg) - 1] = 0;
     va_end(ap);
 
+    if (!gs_debug_c('#')) {
+	; /* NB: gs_log_errors  
+	   * we could disable these printfs, and probably will when, 
+	   * the code becomes more stable: 
+	   * return code;
+	   */
+    }
+       
+
     /* throw */
     if (op == 0)
 	errprintf(NULL, "- %s:%d: %s(%d): %s\n", file, line, func, code, msg);
