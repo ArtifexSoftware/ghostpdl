@@ -104,6 +104,9 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  1 /*true*/,			/* PreserveCopyPage */
  0 /*false*/,			/* UsePrologue */
  0,				/* OffOptimizations */
+ {0,0},				/* PDFXTrimBoxToMediaBoxOffset */
+ {0,0},				/* PDFXBleedBoxToTrimBoxOffset */
+ 1 /* true */,			/* PDFXSetBleedBoxToMediaBox */
  1 /*true*/,			/* ReAssignCharacters */
  1 /*true*/,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */

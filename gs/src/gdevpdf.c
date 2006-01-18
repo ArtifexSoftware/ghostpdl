@@ -883,17 +883,69 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 {
     long page_id = pdf_page_id(pdev, page_num);
     pdf_page_t *page = &pdev->pages[page_num - 1];
+    floatp mediabox[4] = {0, 0};
     stream *s;
 
+    mediabox[2] = round_box_coord(page->MediaBox.x);
+    mediabox[3] = round_box_coord(page->MediaBox.y);
     pdf_open_obj(pdev, page_id);
     s = pdev->strm;
     pprintg2(s, "<</Type/Page/MediaBox [0 0 %g %g]\n",
-	     round_box_coord(page->MediaBox.x),
-	     round_box_coord(page->MediaBox.y));
+		mediabox[2], mediabox[3]);
     if (pdev->PDFX) {
-	pprintg2(s, "/TrimBox [0 0 %g %g]\n",
-		round_box_coord(page->MediaBox.x),
-		round_box_coord(page->MediaBox.y));
+	const cos_value_t *v_trimbox = cos_dict_find_c_key(page->Page, "/TrimBox");
+	floatp trimbox[4] = {0, 0}, bleedbox[4] = {0, 0};
+	bool print_bleedbox = false;
+
+	trimbox[2] = bleedbox[2] = mediabox[2];
+	trimbox[3] = bleedbox[3] = mediabox[3];
+	/* Offsets are [left right top bottom] according to the Acrobat 7.0 
+	   distiller parameters manual, 12/7/2004, pp. 102-103. */
+	if (pdev->PDFXTrimBoxToMediaBoxOffset.size >= 4 &&
+		pdev->PDFXTrimBoxToMediaBoxOffset.data[0] >= 0 &&
+		pdev->PDFXTrimBoxToMediaBoxOffset.data[1] >= 0 &&
+		pdev->PDFXTrimBoxToMediaBoxOffset.data[2] >= 0 &&
+		pdev->PDFXTrimBoxToMediaBoxOffset.data[3] >= 0) {
+	    trimbox[0] = mediabox[0] + pdev->PDFXTrimBoxToMediaBoxOffset.data[0];
+	    trimbox[1] = mediabox[1] + pdev->PDFXTrimBoxToMediaBoxOffset.data[3];
+	    trimbox[2] = mediabox[2] + pdev->PDFXTrimBoxToMediaBoxOffset.data[1];
+	    trimbox[3] = mediabox[3] + pdev->PDFXTrimBoxToMediaBoxOffset.data[2];
+	} else if (v_trimbox != NULL && v_trimbox->value_type == COS_VALUE_SCALAR) {
+	    const byte *p = v_trimbox->contents.chars.data;
+	    char buf[100];
+	    int l = min (v_trimbox->contents.chars.size, sizeof(buf) - 1);
+	    float temp[4]; /* the type is float for sscanf. */
+
+	    memcpy(buf, p, l);
+	    buf[l] = 0;
+	    if (sscanf(buf, "[ %g %g %g %g ]", 
+		    &temp[0], &temp[1], &temp[2], &temp[3]) == 4) {
+		trimbox[0] = temp[0];
+		trimbox[1] = temp[1];
+		trimbox[2] = temp[2];
+		trimbox[3] = temp[3];
+	    }
+	}
+	if (pdev->PDFXSetBleedBoxToMediaBox)
+	    print_bleedbox = true;
+	else if (pdev->PDFXBleedBoxToTrimBoxOffset.size >= 4 &&
+		pdev->PDFXBleedBoxToTrimBoxOffset.data[0] >= 0 &&
+		pdev->PDFXBleedBoxToTrimBoxOffset.data[1] >= 0 &&
+		pdev->PDFXBleedBoxToTrimBoxOffset.data[2] >= 0 &&
+		pdev->PDFXBleedBoxToTrimBoxOffset.data[3] >= 0) {
+	    bleedbox[0] = trimbox[0] - pdev->PDFXBleedBoxToTrimBoxOffset.data[0];
+	    bleedbox[1] = trimbox[1] - pdev->PDFXBleedBoxToTrimBoxOffset.data[3];
+	    bleedbox[2] = trimbox[2] + pdev->PDFXBleedBoxToTrimBoxOffset.data[1];
+	    bleedbox[3] = trimbox[3] + pdev->PDFXBleedBoxToTrimBoxOffset.data[2];
+	    print_bleedbox = true;
+	}
+	if (cos_dict_find_c_key(page->Page, "/TrimBox") == NULL)
+	    pprintg4(s, "/TrimBox [%g %g %g %g]\n",
+	        trimbox[0], trimbox[1], trimbox[2], trimbox[3]);
+	if (print_bleedbox &&
+	    cos_dict_find_c_key(page->Page, "/BleedBox") == NULL)
+	    pprintg4(s, "/BleedBox [%g %g %g %g]\n",
+	        bleedbox[0], bleedbox[1], bleedbox[2], bleedbox[3]);
     }
     pdf_print_orientation(pdev, page);
     pprintld1(s, "/Parent %ld 0 R\n", pdev->Pages->id);

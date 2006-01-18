@@ -420,6 +420,10 @@ struct gx_device_pdf_s {
     bool UsePrologue;
     int OffOptimizations;
     /* End of distiller parameters */
+    /* PDF/X parameters */
+    gs_param_float_array PDFXTrimBoxToMediaBoxOffset;
+    gs_param_float_array PDFXBleedBoxToTrimBoxOffset;
+    bool PDFXSetBleedBoxToMediaBox;
     /* Other parameters */
     bool ReAssignCharacters;
     bool ReEncodeCharacters;
@@ -664,8 +668,9 @@ struct gx_device_pdf_s {
  m(26,PageLabels) m(27,PageLabels_current_label)\
  m(28,sbstack) m(29,substream_Resources) m(30,font3)\
  m(31,accumulating_substream_resource) \
- m(32,pres_soft_mask_dict)
-#define gx_device_pdf_num_ptrs 33
+ m(32,pres_soft_mask_dict) m(33,PDFXTrimBoxToMediaBoxOffset.data)\
+ m(34,PDFXBleedBoxToTrimBoxOffset.data)
+#define gx_device_pdf_num_ptrs 35
 #define gx_device_pdf_do_param_strings(m)\
     m(0, OPDFReadProcsetPath) m(1, OwnerPassword) m(2, UserPassword) m(3, NoEncrypt)\
     m(4, DocumentUUID) m(5, InstanceUUID)

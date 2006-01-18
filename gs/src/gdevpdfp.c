@@ -101,6 +101,11 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("DocumentUUID", gs_param_type_string, DocumentUUID),
     pi("InstanceUUID", gs_param_type_string, InstanceUUID),
     pi("DocumentTimeSeq", gs_param_type_int, DocumentTimeSeq),
+
+    /* PDF/X parameters */
+    pi("PDFXTrimBoxToMediaBoxOffset", gs_param_type_float_array, PDFXTrimBoxToMediaBoxOffset),
+    pi("PDFXSetBleedBoxToMediaBox", gs_param_type_bool, PDFXSetBleedBoxToMediaBox),
+    pi("PDFXBleedBoxToTrimBoxOffset", gs_param_type_float_array, PDFXBleedBoxToTrimBoxOffset),
 #undef pi
     gs_param_item_end
 };
