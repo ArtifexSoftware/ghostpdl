@@ -25,6 +25,7 @@ enum { MT_GRAY, MT_RGB, MT_CMYK, MT_GRAY_A, MT_RGB_A };
 typedef struct met_image_s {
     int width;
     int height;
+    int stride;
     int colorspace;
     int comps;
     int bits;
