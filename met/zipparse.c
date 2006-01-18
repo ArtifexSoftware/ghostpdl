@@ -252,6 +252,7 @@ zip_read_part(zip_state_t *pzip, stream_cursor_read *pr)
 
 
 	pzip->part_read_state = 0;  /* reset for next zip file */
+
 	return -102; // e_ExitLanguage;
     
     default:
@@ -390,6 +391,7 @@ zip_decomp_process(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip,
 
 	/* determine if the xps should be parsed and call the xml parser
 	 */
+
 	zip_page(st, mets, pzip, rpart);
 
 	/* setup to read next part */
@@ -426,8 +428,9 @@ zip_process(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, stream
 
 	switch (pzip->read_state) {
 	case 0: /* local file header and skip of end of zip file records */
-	    if ((code = zip_read_part(pzip, pr)) != 0)
+	    if ((code = zip_read_part(pzip, pr)) != 0) {
 		return code;
+	    }
 	    /* 0 : more header to read 
 	     * 1 : file to read
 	     * 3 : end of file 
@@ -506,6 +509,8 @@ zip_initialize(zip_state_t *pzip)
     pzip->zip_mode = true;
 #endif
 
+    pzip->inline_mode = false;  /* false == buffer entire job in ram! */
+
     pzip->need_dir = false;
     pzip->needfiledata = false;
     pzip->read_state = 0;
@@ -529,9 +534,24 @@ is_font(char *name)
 }
 
 int
-zip_end_job(met_state_t *mets, zip_state_t *pzip)
+zip_end_job(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip)
 {
     int i;
+    int code = 0;
+    bool tmp =  pzip->inline_mode;
+
+    pzip->inline_mode = true;
+    if (!tmp) {
+	for (i=0; i < 5000;  i++) {
+	    if (pzip->parts[i]) {
+		code = zip_page(st, mets, pzip, pzip->parts[i]);
+		if (code) {
+		    mt_rethrow(code, "delayed zip_page");
+		    break;
+		}
+	    }
+	}
+    }
 
     for (i=0; i < 5000;  i++) {
 	if (pzip->parts[i]) {
@@ -562,6 +582,9 @@ zip_state_t *
 zip_init_instance(gs_memory_t *mem)
 {
     zip_state_t *pzip;
+
+    // hack
+    gs_debug['#'] = 1;
 
     pzip = gs_alloc_bytes(mem, sizeof(zip_state_t), "zip_init_instance alloc zip_state_t");
     pzip->memory = mem;

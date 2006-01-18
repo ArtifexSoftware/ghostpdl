@@ -53,8 +53,9 @@ load_tt_font(zip_part_t *part, gs_memory_t *mem) {
     if ( size != len ) {
 	dprintf2(0, "BUG! zip_part_length != zip_part_read %d, %d\n", len, size);
     }
-
-    zip_part_free_all(part);
+    
+    //if (part->parent->inline_mode)
+	zip_part_free_all(part);
     return pfont_data;
 }
 
@@ -230,6 +231,7 @@ get_glyph_advance(char *index, gs_font *pfont, gs_glyph unicode,
    char *args[strlen(index)];
    int num = 0;
    char *p;
+   float metrics[4];
 
    *advance = *uOffset = *vOffset = 0.0f;
 
@@ -240,8 +242,12 @@ get_glyph_advance(char *index, gs_font *pfont, gs_glyph unicode,
 	       *glyph = atoi(args[0]);
 	   if (num-- > 0) 
 	       *advance = atoi(args[1]) / 100.0f;
-	   else 
-	       *advance = 0.0;
+	   else {
+	       gs_type42_get_metrics((gs_font_type42 *)pfont, *glyph, metrics);
+	       // NB: type 1 fonts will need 
+	       //(pfont->data.get_metrics)(pfont, *glyph, metrics);
+	       *advance = metrics[2];
+	   }
 	   if (num-- > 0) 
 	       *uOffset = atoi(args[2]);
 	   if (num-- > 0) 
@@ -251,8 +257,10 @@ get_glyph_advance(char *index, gs_font *pfont, gs_glyph unicode,
 	   *glyph = (*pfont->procs.encode_char)(pfont, unicode, 0);
 	   if (num-- > 0) 
 	       *advance = atoi(args[0])/ 100.0f;
-	   else 
-	       *advance = 0.0;
+	   else {
+	       gs_type42_get_metrics((gs_font_type42 *)pfont, *glyph, metrics);
+	       *advance = metrics[2];
+	   }
 	   if (num-- > 0) 
 	       *uOffset = atoi(args[1]);
 	   if (num-- > 0) 
@@ -261,7 +269,8 @@ get_glyph_advance(char *index, gs_font *pfont, gs_glyph unicode,
    }
    else {
        *glyph = atoi(index);
-       *advance = 0.0f;
+       gs_type42_get_metrics((gs_font_type42 *)pfont, *glyph, metrics);
+       *advance = metrics[2];
    }
 }
 
@@ -334,12 +343,6 @@ build_text_params(gs_text_params_t *text, pl_font_t *pcf,
 				 (gs_glyph)UnicodeString[glyph_index+combine_cnt], 
 				 &glyphs[glyph_index], &advance[glyph_index],
 				 &uOffset[glyph_index], &vOffset[glyph_index]);
-	       if (has_widths && advance[glyph_index] < 0.01) {  
-		   gs_point point;  /* replace missing advance with char width */
-		   (*pcf->char_width)(pcf, NULL, UnicodeString[glyph_index+combine_cnt], &point);
-		   advance[glyph_index] = point.x;
-	       }
-	       
 	       ++glyph_index;
            }
            pargs++;
@@ -347,7 +350,7 @@ build_text_params(gs_text_params_t *text, pl_font_t *pcf,
        while (strlen(UnicodeString) > glyph_index+combine_cnt) {
 	   glyphs[glyph_index] = 
 	       (*pfont->procs.encode_char)(pfont, UnicodeString[glyph_index+combine_cnt], 0);
-	   if (has_widths) {  /* need advance widths */
+	   if (has_widths) {  /* need advance widths, out of index */
 	       gs_point point;
 	       (*pcf->char_width)(pcf, NULL, UnicodeString[glyph_index+combine_cnt], &point);
 	       advance[glyph_index] = point.x;

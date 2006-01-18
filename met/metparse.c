@@ -218,11 +218,11 @@ met_process(met_parser_state_t *st, met_state_t *mets,  void *pzip, stream_curso
         dprintf2(st->memory, "Parse error at line %d:\n%s\n",
               XML_GetCurrentLineNumber(parser),
               XML_ErrorString(XML_GetErrorCode(parser)));
-        return -1;
+        return mt_throw(-1, "xml parse error");
     } else if (st->error_code < 0) {
         int code = st->error_code;
         met_unset_error_code(st);
-        return code;
+        return mt_throw(code, "xml parse error st error code");
     }
     /* nb for now we assume the parser has consumed exactly what we gave it. */
     pr->ptr = p + avail;

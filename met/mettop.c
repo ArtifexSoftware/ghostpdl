@@ -391,7 +391,7 @@ met_impl_dnit_job(
         return -1;
     else {
 	// NB lets free some stuff.
-	zip_end_job(pmeti->pmets, pmeti->pzip);
+	zip_end_job(pmeti->pst, pmeti->pmets, pmeti->pzip);
     }
     return 0;
 }

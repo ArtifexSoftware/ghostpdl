@@ -1,4 +1,4 @@
-/* Copyright (C) 2005 Artifex Software Inc.
+/* Copyright (C) 2005, 2006 Artifex Software Inc.
    All Rights Reserved.
 
    This software is distributed under license and may not be copied, modified
@@ -6,6 +6,8 @@
    license.  Refer to licensing information at http://www.artifex.com/ or
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
+
+/* $Id$ */
 
 #include "gx.h"
 #include "zipparse.h"
@@ -185,7 +187,8 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 
     if (0) {  /* test small reads of the whole part */
 	byte buf[100];
-	error = zip_part_seek(rpart, 0, 0);
+	if ((error = zip_part_seek(rpart, 0, 0)) != 0)
+	    return mt_rethrow(error, "seek set 0 error");
 	uint len = zip_part_length(rpart);
 	while (len) {
 	    len -= zip_part_read(&buf[0], 100, rpart);
@@ -195,7 +198,8 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 
     if (1) {
 	char buf[4];
-	error = zip_part_seek(rpart, 0, 0);
+	if ((error = zip_part_seek(rpart, 0, 0)) != 0)
+	    return mt_rethrow(error, "seek set 0 error");
 	int size = zip_part_read(&buf, 4, rpart);
 	if ( size != 4 )
 	    dprintf(rpart->parent->memory, "bad len\n");
@@ -221,10 +225,11 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 
 	dprintf1(rpart->parent->memory, "Zip File Name %s\n", fname);
 
-	fp = fopen(fname, "w"); 
+	if ((fp = fopen(fname, "w")) == NULL)
+	    return mt_throw1(-1, "couldn't open %s", fname);
 	
-	error = zip_part_seek(rpart, 0, 0);
-	if (error) return error;
+	if ((error = zip_part_seek(rpart, 0, 0)) != 0)
+	    return mt_rethrow(error, "seek failed");
 	do {
 	    do {
 	        uint avail = rpart->s.r.limit - rpart->s.r.ptr;
@@ -250,6 +255,10 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
     /* NB: its not cool to string compare to find FixedPages to parse thats 
      * what rels are for...
      */
+
+    if ( pzip->inline_mode == false )
+	return 0;
+
     if ( !strncmp(rpart->name, "FixedPage_", 10) && 
 	 strncmp(p, "rels", 4 )) { /* feed met_process a Page */
 	if ( ziptestmode ) {
@@ -262,7 +271,8 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
 	    do {
 		do {
 		    error = met_process(st, mets, pzip, &rpart->s.r);
-		    if (error) return error;
+		    if (error) 
+			return mt_rethrow(error, "met_process");
 		}
 		while (rpart->s.r.ptr + 1 < rpart->s.r.limit); 
 	    }
@@ -271,9 +281,11 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
 	else
 	    dprintf1(pzip->memory, "Zero length part %s\n", rpart->name );
 	/* auto deletion of FixedPage after parsing */
-	zip_part_free_all( rpart );
+	//if ( pzip->inline_mode == false )
+	//    zip_part_free_all( rpart );
+	// can't delete 
     }
-    else if ( ziptestmode ) {
+    else if ( 0 && ziptestmode ) {
 	zip_page_test(pzip, rpart);
     }
 
@@ -289,6 +301,9 @@ zip_part_free_all( zip_part_t *part )
     zip_state_t *pzip = part->parent;
 
     int i;
+
+    if (!pzip->inline_mode) 
+	return 0;
 
     while (next) {
 	this = next;
@@ -306,13 +321,4 @@ zip_part_free_all( zip_part_t *part )
     part->curr = 0;
     part->tail = 0;
     
-#if 0
-    for (i = 0; i < 5000; i++) {
-	if (pzip->parts[i] == part) {
-	    pzip->parts[i] = 0;
-	    gs_free_object(pzip->memory, part, "zip_part_free struct");
-	    break;
-	}
-    }
-#endif 
 }

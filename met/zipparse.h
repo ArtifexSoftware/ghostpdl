@@ -68,7 +68,7 @@ struct zip_state_s
 {
     gs_memory_t *memory;
     bool zip_mode;
-    
+    bool inline_mode;  /* should be true; set to false reads entire job then processes */
     bool need_dir;
     bool needfiledata;
     int read_state;
@@ -125,4 +125,4 @@ int
 zip_part_free_all( zip_part_t *part );
 
 int
-zip_end_job(met_state_t *mets, zip_state_t *pzip);
+zip_end_job(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip);
