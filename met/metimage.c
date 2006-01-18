@@ -137,7 +137,7 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
 	    convertStr = ctif_convert;
 	    doit = true;
 	}
-#if 0 
+#if 1 
 	else 	if (0 == strncasecmp(&ImageSource[strlen(ImageSource) -4], "png", 3 )); {
 	    imgStr = cpng;
 	    convertStr = cpng_convert;
