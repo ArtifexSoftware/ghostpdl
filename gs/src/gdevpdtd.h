@@ -147,4 +147,10 @@ int pdf_write_FontDescriptor(gx_device_pdf *pdev,
  */
 int pdf_release_FontDescriptor_components(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd);
 
+/*
+ * Mark a FontDescriptor used in a text.
+ */
+int pdf_mark_font_descriptor_used(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd);
+
+
 #endif /* gdevpdtd_INCLUDED */

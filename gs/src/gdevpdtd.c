@@ -223,7 +223,7 @@ pdf_font_descriptor_alloc(gx_device_pdf *pdev, pdf_font_descriptor_t **ppfd,
     if (code < 0)
 	return code;
     code = pdf_alloc_resource(pdev, resourceFontDescriptor,
-			      font->id, (pdf_resource_t **)&pfd, 0L);
+			      font->id, (pdf_resource_t **)&pfd, -1L);
     if (code < 0) {
 	gs_free_object(pdev->pdf_memory, pbfont,
 		       "pdf_font_descriptor_alloc(base_font)");
@@ -577,6 +577,8 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 
     if (pfd->common.object->written)
 	return 0;
+    if (pfd->common.object->id == -1)
+	return 0;
 
     /* If this is a CIDFont subset, write the CIDSet now. */
     switch (ftype) {
@@ -657,5 +659,16 @@ pdf_release_FontDescriptor_components(gx_device_pdf *pdev, pdf_font_descriptor_t
     gs_free_object(pdev->pdf_memory, pfd->base_font, "pdf_release_FontDescriptor_components");
     pfd->base_font = NULL;
     /* fixme: underimplemented. */
+    return 0;
+}
+
+/*
+ * Mark a FontDescriptor used in a text.
+ */
+int 
+pdf_mark_font_descriptor_used(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
+{
+    if (pfd != NULL && pfd->common.object->id == -1)
+	pdf_reserve_object_id(pdev, (pdf_resource_t *)&pfd->common, 0);
     return 0;
 }

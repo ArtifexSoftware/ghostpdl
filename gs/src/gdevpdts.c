@@ -360,6 +360,11 @@ pdf_from_stream_to_text(gx_device_pdf *pdev)
     return 0;
 }
 
+int
+pdf_get_stoted_text_size(pdf_text_state_t *state)
+{
+    return state->buffer.count_chars;
+}
 
 /*
  *  Flush text from buffer.
@@ -370,6 +375,16 @@ flush_text_buffer(gx_device_pdf *pdev)
     pdf_text_state_t *pts = pdev->text->text_state;
     stream *s = pdev->strm;
 
+    if (pts->buffer.count_chars != 0) {
+	pdf_font_resource_t *pdfont = pts->in.pdfont;
+	int code = pdf_assign_font_object_id(pdev, pdfont);
+
+	if (code < 0)
+	    return code;
+	code = pdf_add_resource(pdev, pdev->substream_Resources, "/Font", (pdf_resource_t *)pdfont);
+	if (code < 0)
+	    return code;
+    }
     if (pts->buffer.count_moves > 0) {
 	int i, cur = 0;
 
@@ -423,7 +438,10 @@ sync_text_state(gx_device_pdf *pdev)
     if (pts->out.pdfont != pts->in.pdfont || pts->out.size != pts->in.size) {
 	pdf_font_resource_t *pdfont = pts->in.pdfont;
 
-	pprints1(s, "/%s ", ((pdf_resource_t *)pts->in.pdfont)->rname);
+	code = pdf_assign_font_object_id(pdev, pdfont);
+	if (code < 0)
+	    return code;
+	pprints1(s, "/%s ", pdfont->rname);
 	pprintg1(s, "%g Tf\n", pts->in.size);
 	pts->out.pdfont = pdfont;
 	pts->out.size = pts->in.size;

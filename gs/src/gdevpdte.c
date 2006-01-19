@@ -221,9 +221,6 @@ pdf_encode_string(gx_device_pdf *pdev, pdf_text_enum_t *penum,
     code = pdf_obtain_font_resource(penum, pstr, &pdfont);
     if (code < 0)
 	return code;
-    code = pdf_add_resource(pdev, pdev->substream_Resources, "/Font", (pdf_resource_t *)pdfont);
-    if (code < 0)
-	return code;
     cfont = pdf_font_resource_font(pdfont, false);
     ccfont = pdf_font_resource_font(pdfont, true);
     for (i = 0; i < pstr->size; ++i) {
@@ -567,7 +564,6 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	if (code < 0)
 	    return code;
     }
-
 
 finish:
     /* Finally, return the total width if requested. */

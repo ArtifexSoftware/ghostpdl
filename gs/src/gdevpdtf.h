@@ -392,6 +392,7 @@ int pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *p
 int font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			    gs_id rid, font_type ftype,
 			    pdf_font_write_contents_proc_t write_contents);
+int pdf_assign_font_object_id(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
 
 /* Resize font resource arrays. */
 int pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, 

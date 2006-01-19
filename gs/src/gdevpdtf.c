@@ -336,7 +336,8 @@ pdf_clean_standard_fonts(const gx_device_pdf *pdev)
 /* ------ Private ------ */
 
 
-private int pdf_resize_array(gs_memory_t *mem, void **p, int elem_size, int old_size, int new_size)
+private int 
+pdf_resize_array(gs_memory_t *mem, void **p, int elem_size, int old_size, int new_size)
 {
     void *q = gs_alloc_byte_array(mem, new_size, elem_size, "pdf_resize_array");
 
@@ -383,7 +384,7 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	    memset(widths, 0, chars_count * sizeof(*widths));
 	memset(used, 0, size);
     }
-    code = pdf_alloc_resource(pdev, rtype, rid, (pdf_resource_t **)&pfres, 0L);
+    code = pdf_alloc_resource(pdev, rtype, rid, (pdf_resource_t **)&pfres, -1L);
     if (code < 0)
 	goto fail;
     memset((byte *)pfres + sizeof(pdf_resource_t), 0,
@@ -404,6 +405,29 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     gs_free_object(mem, widths, "font_resource_alloc(Widths)");
     return code;
 }
+
+int
+pdf_assign_font_object_id(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
+{
+    if (pdf_resource_id((pdf_resource_t *)pdfont) == -1) {
+	int code;
+
+	pdf_reserve_object_id(pdev, (pdf_resource_t *)pdfont, 0);
+	code = pdf_mark_font_descriptor_used(pdev, pdfont->FontDescriptor);
+	if (code < 0)
+	    return code;
+	if (pdfont->FontType == 0) {
+	    pdf_font_resource_t *pdfont1 = pdfont->u.type0.DescendantFont;
+
+	    pdf_reserve_object_id(pdev, (pdf_resource_t *)pdfont1, 0);
+	    code = pdf_mark_font_descriptor_used(pdev, pdfont1->FontDescriptor);
+	    if (code < 0)
+		return code;
+	}
+    }
+    return 0;
+}
+
 private int
 font_resource_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			   gs_id rid, font_type ftype, int chars_count,

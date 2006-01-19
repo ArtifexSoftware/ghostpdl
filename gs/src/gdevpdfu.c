@@ -1173,8 +1173,10 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
 
 	    for (; pres != 0; pres = pres->next) {
 		if (pres->where_used & pdev->used_mask) {
-		    long id = pres->object->id;
+		    long id = pdf_resource_id(pres);
 
+		    if (id == -1L)
+			continue;
 		    if (s == 0) {
 			page->resource_ids[i] = pdf_begin_separate(pdev);
 			s = pdev->strm;
