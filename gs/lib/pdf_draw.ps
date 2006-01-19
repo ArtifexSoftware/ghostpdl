@@ -275,7 +275,7 @@ drawopdict begin
 	} ifelse
 	% If inside a BT/ET block, we need to update the TextSaveMatrix
 	currentdict /TextSaveMatrix .knownget {
-	  TextSaveMatrix cmmatrix 1 index concatmatrix pop
+	  cmmatrix TextSaveMatrix dup concatmatrix pop
 	} if
       } def
   /i { 1 .min setflat } def
