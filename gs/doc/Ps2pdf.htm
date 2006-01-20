@@ -274,6 +274,13 @@ If an user needs an untrivial color adjustment, an untrivial <b><tt>DefaultRGB</
 defined.
 <li> Transfer functions and halftone phases are being skipped.
 <li> <b><tt>/PS pdfmark</b></tt> interpretes the <b><tt>DataSource</b></tt> stream or file.
+<li><b><tt>TrimBox</b></tt> and <b><tt>BleedBox</b></tt> entries
+are generated in page descriptions.
+Their values can be changed using the
+<b><tt>PDFXTrimBoxToMediaBoxOffset</b></tt>,
+<b><tt>PDFXSetBleedBoxToMediaBox</b></tt>, and
+<b><tt>PDFXBleedBoxToTrimBoxOffset</b></tt>
+distiller parameters (see below).
 </ul>    
 
 
@@ -771,6 +778,44 @@ Performing both actions in a single pass is a subject of further improvements.
 <p>Ghostscript distribution does not contain an ICC profile to be used
 for creating a PDF/X-3 document. Users should either create an appropriate one themselves,
 or use one from a public domain, or create one with the PDF/X-3 inspector freeware.
+
+<p>The PDF/X-3 standard requires a <b><tt>TrimBox</b></tt> entry
+to be written for all page descriptions.
+This is an array of four offsets
+that specify how the page is to be trimmed
+after it has been printed.
+It is set to the same as <b><tt>MediaBox</b></tt> by default
+unless the <b><tt>PDFXTrimBoxToMediaBoxOffset</b></tt>
+distiller parameter is present.
+It accepts offsets to the <b><tt>MediaBox</b></tt> as an array
+[<i>left&nbsp;right&nbsp;top&nbsp;bottom</i>],
+e.g., the PostScript input code
+<b><tt>&lt;&lt;&nbsp;/PDFXTrimBoxToMediaBoxOffset
+[10&nbsp;20&nbsp;30&nbsp;40]&nbsp;&gt;&gt;&nbsp;setdistillerparams</b></tt>
+specifies that 10 points will be trimmed at the left,
+20 points at the right,
+30 points at the top,
+and 40 points at the bottom.
+
+<p>Another page entry is the <b><tt>BleedBox</b></tt>.
+It gives the area of the page
+to which actual output items may extend;
+cut marks, color bars etc.
+must be positioned in the area between the <b><tt>BleedBox</b></tt>
+and the <b><tt>MediaBox</b></tt>.
+The <b><tt>TrimBox</b></tt> is always contained within the
+<b><tt>BleedBox</b></tt>.
+By default,
+the <b><tt>PDFXSetBleedBoxToMediaBox</b></tt> distiller parameter
+is <b><tt>true</b></tt>,
+and the <b><tt>BleedBox</b></tt> is set to the same values
+as the <b><tt>MediaBox</b></tt>.
+If it is set to <b><tt>false</b></tt>,
+the <b><tt>PDFXBleedBoxToTrimBoxOffset</b></tt>
+parameter gives offset to the <b><tt>TrimBox</b></tt>.
+It accepts a four-value array in the same format as the
+<b><tt>PDFXTrimBoxToMediaBoxOffset</b></tt> parameter.
+
 <p>
 
 Here is a sample command line to invoke Ghostscript for generating a PDF/X-3 document :
