@@ -786,9 +786,6 @@ end readonly def
   if	% if not PFB, return pfbhdr string (first char of file, usually %).
 } bdef
 
-% Characters that can occur in hexadecimal eexec stream 
-/space_hex_char_dict << (\000\t\r\n\f 0123456789abcdefABCDEF) { 0 } forall >> readonly def
-
 % Read the next block of the initial text portion.
 /type1read1 {		% <left> type1read1 <string> <left'>
   PDFDEBUG { (read1 ) print } if
@@ -816,10 +813,10 @@ end readonly def
 	  pop
       } if
       buffer2 type1readdata exch
-			% The check follows s_exD_process() implementation
-      dup 0 8 getinterval //true exch {
-        //space_hex_char_dict exch known and 
-      } forall {
+			% The check doesn't have to be 100% accurate:
+			% hexifying is always OK.
+      dup 0 8 getinterval 0 exch { or } forall
+      128 ge {
 	/hexify { } store
 	/buffer2 buffer def	% We don't need an intermediate buffer.
       } if hexify exch
@@ -828,8 +825,6 @@ end readonly def
     buffer type1readdata
   } ifelse
 } bdef
-
-currentdict /space_hex_char_dict undef
 
 % Convert a string from binary to hex for eexec.
 % Free variables: buffer.
