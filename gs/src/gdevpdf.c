@@ -901,16 +901,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 	trimbox[3] = bleedbox[3] = mediabox[3];
 	/* Offsets are [left right top bottom] according to the Acrobat 7.0 
 	   distiller parameters manual, 12/7/2004, pp. 102-103. */
-	if (pdev->PDFXTrimBoxToMediaBoxOffset.size >= 4 &&
-		pdev->PDFXTrimBoxToMediaBoxOffset.data[0] >= 0 &&
-		pdev->PDFXTrimBoxToMediaBoxOffset.data[1] >= 0 &&
-		pdev->PDFXTrimBoxToMediaBoxOffset.data[2] >= 0 &&
-		pdev->PDFXTrimBoxToMediaBoxOffset.data[3] >= 0) {
-	    trimbox[0] = mediabox[0] + pdev->PDFXTrimBoxToMediaBoxOffset.data[0];
-	    trimbox[1] = mediabox[1] + pdev->PDFXTrimBoxToMediaBoxOffset.data[3];
-	    trimbox[2] = mediabox[2] + pdev->PDFXTrimBoxToMediaBoxOffset.data[1];
-	    trimbox[3] = mediabox[3] + pdev->PDFXTrimBoxToMediaBoxOffset.data[2];
-	} else if (v_trimbox != NULL && v_trimbox->value_type == COS_VALUE_SCALAR) {
+	if (v_trimbox != NULL && v_trimbox->value_type == COS_VALUE_SCALAR) {
 	    const byte *p = v_trimbox->contents.chars.data;
 	    char buf[100];
 	    int l = min (v_trimbox->contents.chars.size, sizeof(buf) - 1);
@@ -925,6 +916,15 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 		trimbox[2] = temp[2];
 		trimbox[3] = temp[3];
 	    }
+	} else if (pdev->PDFXTrimBoxToMediaBoxOffset.size >= 4 &&
+		pdev->PDFXTrimBoxToMediaBoxOffset.data[0] >= 0 &&
+		pdev->PDFXTrimBoxToMediaBoxOffset.data[1] >= 0 &&
+		pdev->PDFXTrimBoxToMediaBoxOffset.data[2] >= 0 &&
+		pdev->PDFXTrimBoxToMediaBoxOffset.data[3] >= 0) {
+	    trimbox[0] = mediabox[0] + pdev->PDFXTrimBoxToMediaBoxOffset.data[0];
+	    trimbox[1] = mediabox[1] + pdev->PDFXTrimBoxToMediaBoxOffset.data[3];
+	    trimbox[2] = mediabox[2] + pdev->PDFXTrimBoxToMediaBoxOffset.data[1];
+	    trimbox[3] = mediabox[3] + pdev->PDFXTrimBoxToMediaBoxOffset.data[2];
 	}
 	if (pdev->PDFXSetBleedBoxToMediaBox)
 	    print_bleedbox = true;
@@ -939,7 +939,8 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 	    bleedbox[3] = trimbox[3] + pdev->PDFXBleedBoxToTrimBoxOffset.data[2];
 	    print_bleedbox = true;
 	}
-	if (cos_dict_find_c_key(page->Page, "/TrimBox") == NULL)
+	if (cos_dict_find_c_key(page->Page, "/TrimBox") == NULL &&
+	    cos_dict_find_c_key(page->Page, "/ArtBox") == NULL)
 	    pprintg4(s, "/TrimBox [%g %g %g %g]\n",
 	        trimbox[0], trimbox[1], trimbox[2], trimbox[3]);
 	if (print_bleedbox &&
