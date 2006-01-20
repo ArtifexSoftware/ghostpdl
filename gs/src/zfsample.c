@@ -28,6 +28,7 @@
 #include "ostack.h"
 #include "store.h"
 #include "gsfunc0.h"
+#include "gscdevn.h"
 
 /*
  * We store the data in a string.  Since the max size for a string is 64k,

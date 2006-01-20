@@ -213,7 +213,6 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 {
     float mxx, mxy, myx, myy;
     register cached_fm_pair *pair;
-    cached_fm_pair *mend = dir->fmcache.mdata + dir->fmcache.mmax;
     int code; 
 
     gx_compute_ccache_key(font, char_tm, log2_scale, design_grid,
@@ -410,7 +409,6 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 	ttfFont__destroy(pair->ttf, dir);
     pair->ttf = 0;
     if (!xfont_only) {
-	int code; 
 
 #ifdef DEBUG
 	if (pair->num_chars != 0) {

@@ -352,10 +352,21 @@ do3:	    decode_sample(next.v[0], cc, 0);
 	    goto fill;
 mapped:	if (pic == pic_next)
 	    goto fill;
-f:	if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> %ld,%ld,0x%lx\n",
+f:	if (sizeof(pdevc_next->colors.binary.color[0]) <= sizeof(ulong))
+	    if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> 0x%lx,0x%lx,0x%lx\n",
 		  next.v[0], next.v[1], next.v[2], next.v[3],
-		  pdevc_next->colors.binary.color[0],
-		  pdevc_next->colors.binary.color[1],
+		  (ulong)pdevc_next->colors.binary.color[0],
+		  (ulong)pdevc_next->colors.binary.color[1],
+		  (ulong) pdevc_next->type);
+	else
+	    if_debug9('B', "[B]0x%x,0x%x,0x%x,0x%x -> 0x%08lx%08lx,0x%08lx%08lx,0x%lx\n",
+		  next.v[0], next.v[1], next.v[2], next.v[3],
+		  (ulong)(pdevc_next->colors.binary.color[0] >> 
+			8 * (sizeof(pdevc_next->colors.binary.color[0]) - sizeof(ulong))),
+		  (ulong)pdevc_next->colors.binary.color[0],
+		  (ulong)(pdevc_next->colors.binary.color[1] >> 
+			8 * (sizeof(pdevc_next->colors.binary.color[1]) - sizeof(ulong))),
+		  (ulong)pdevc_next->colors.binary.color[1],
 		  (ulong) pdevc_next->type);
 	/* NB: printf above fails to account for sizeof gx_color_index 4 or 8 bytes */
 

@@ -594,7 +594,11 @@ in:				/* Initialize for a new page. */
 		            }
 		            *pcolor += delta - cmd_delta_offsets[dev_depth_bytes];
 			}
-			if_debug1('L', " 0x%lx\n", *pcolor);
+			if (sizeof(*pcolor) <= sizeof(ulong))
+			    if_debug1('L', " 0x%lx\n", (ulong)*pcolor);
+			else
+			    if_debug2('L', " 0x%8lx%08lx\n", 
+				(ulong)(*pcolor >> 8*(sizeof(*pcolor) - sizeof(ulong))), (ulong)*pcolor);
 			continue;
 		    case cmd_opv_set_copy_color:
 			state.color_is_alpha = 0;
@@ -653,7 +657,11 @@ in:				/* Initialize for a new page. */
 		    color <<= num_zero_bytes * 8;
 		    *pcolor = color;
 		}
-	        if_debug1('L', " 0x%lx\n", *pcolor);
+		if (sizeof(*pcolor) <= sizeof(ulong))
+		    if_debug1('L', " 0x%lx\n", (ulong)*pcolor);
+		else
+		    if_debug2('L', " 0x%8lx%08lx\n", 
+			(ulong)(*pcolor >> 8*(sizeof(*pcolor) - sizeof(ulong))), (ulong)*pcolor);
 		continue;
 	    case cmd_op_fill_rect >> 4:
 	    case cmd_op_tile_rect >> 4:
