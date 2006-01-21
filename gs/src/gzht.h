@@ -136,7 +136,7 @@ struct gx_ht_cache_s {
 #define max_ht_bits_SMALL 1000
 
 /* Define the size of the halftone tile cache. */
-#define max_tile_bytes_LARGE 4096
+#define max_tile_bytes_LARGE 65536
 #define max_tile_bytes_SMALL 512
 #if arch_small_memory
 #  define max_tile_cache_bytes max_tile_bytes_SMALL
