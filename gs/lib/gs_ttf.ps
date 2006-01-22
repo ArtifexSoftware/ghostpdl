@@ -137,6 +137,7 @@
 
 % Define remapping for misnamed glyphs in TrueType 'post' tables.
 % There are probably a lot more than this!
+% Also see /postalias table below.
 /postremap mark
   /Cdot /Cdotaccent
   /Edot /Edotaccent
@@ -1079,6 +1080,14 @@ mark
   =string cvs (_) exch concatstrings cvn
 } bind def
 
+% Provide alternative backward-compatible names for new TTF glyphs.
+/postalias mark
+  /mu1  /mu   % micro symbol -> greek letter
+  /pi1  /pi   % 3.14 symbol  -> greek letter
+  /plusinus /plusminus
+  /overscore /macron
+.dicttomark readonly def
+
 % - .charkeys /CharStrings <charstrings> /Encoding <encoding>
 % Resets glyphencoding
 /.charkeys {
@@ -1129,6 +1138,18 @@ mark
     } for exch pop
 		% If there is no .notdef entry, map it to glyph 0.
   dup /.notdef known not { dup /.notdef 0 put } if
+  //postalias {
+    2 index 1 index known {
+      pop pop
+    } {
+      2 index 2 index .knownget {
+        % Stack: <<>> /mu1 /mu val
+        3 index 3 1 roll put pop % <<>>
+      } {
+        pop pop
+      } ifelse
+    } ifelse  
+  } forall
   readonly
   /Encoding
     [ cmaptab cmaparray dup length 256 gt { 0 256 getinterval } if
@@ -1136,6 +1157,8 @@ mark
     counttomark 256 exch sub { /.notdef } repeat ]
   TTFDEBUG { (Encoding: ) print dup === flush } if
 } bind def
+
+currentdict /postalias undef
 
 % -mark- <key> <value> ... .definettfont <font>
 /.definettfont {
