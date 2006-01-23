@@ -82,6 +82,6 @@ if rasterdb.exists(dbfile):
 else:
     make_version(file, ofile, device, res, baseline=1)
 
-ofile = "%s.%s.compare.pnm" % (file, device)
+ofile = "%s.pdf.%s.compare.pnm" % (file, device)
 
 make_version(file, ofile, device, res, baseline=0)
