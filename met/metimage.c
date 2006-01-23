@@ -10,7 +10,7 @@
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
 
-/*$Id: */
+/*$Id$*/
 
 /* image related elements */
 
@@ -137,7 +137,7 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
 	    convertStr = ctif_convert;
 	    doit = true;
 	}
-#if 1 
+#if 0 
 	else 	if (0 == strncasecmp(&ImageSource[strlen(ImageSource) -4], "png", 3 )); {
 	    imgStr = cpng;
 	    convertStr = cpng_convert;
