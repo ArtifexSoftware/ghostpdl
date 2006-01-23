@@ -10,7 +10,7 @@
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
 
-/*$Id:*/
+/*$Id$*/
 
 /* metglyphs.c */
 
@@ -31,8 +31,50 @@
 #include "plfont.h"
 #include "gstext.h"
 #include "zipparse.h"
+#include <wchar.h>  /* unicode */
+#include <locale.h>
 
 /* utilities for fonts */
+
+/* utf8 string to wchar_t array conversion
+ *
+ * max input num wptr array elements
+ * wcnt output num wchar's written
+ * wptr wchar_t* array for output
+ * inptr input string containing utf-8 
+ * returns 0 on OK -1 on error
+ *
+ * NB: Portability uses mbrtowc() 
+ *
+ */ 
+int met_utf8_to_wchars(const int max_out, int *wcnt, const wchar_t *wptr_in, const char *inptr_in)
+{
+    mbstate_t ps;
+    wchar_t *wptr = wptr_in;
+    char *inptr = inptr_in;
+
+    /* NB: only tested for UTF-8, specs says utf-16 but all input is utf8 to date 
+     */
+    setlocale(LC_ALL,"");  
+    memset(&ps, 0, sizeof(ps));
+    memset(wptr, 0, *wcnt*sizeof(wchar_t));
+
+    // NB: strlen(inptr) ? this assumes a null will be hit in time and that output array is big enough
+    *wcnt = 0;
+    while (*inptr) {
+	int cnt = mbrtowc(wptr, inptr, 5, &ps);
+	if (cnt < 0)
+	    return mt_throw1(-1, "mbrtowc(%d) utf8 decode failed", cnt);
+	inptr += cnt;
+	++wptr;
+	++(*wcnt);
+						
+	if(*wcnt > max_out)
+	    return mt_throw2(-1, "max output array size exceeded %d > %d", *wcnt, max_out);
+    }
+    return 0;
+}
+
 
 /* load the TrueType data from a file to memory */
 private byte *
@@ -278,6 +320,8 @@ private int
 build_text_params(gs_text_params_t *text, pl_font_t *pcf,
 		  ST_UnicodeString UnicodeString, ST_Indices Indices)
 {
+    int code = 0;
+
    if (!Indices) {
        /* this would be the hallaluah case */
        text->operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
@@ -292,24 +336,27 @@ build_text_params(gs_text_params_t *text, pl_font_t *pcf,
        int cnt = 0;
        int glyph_index = 0;
        int combine_cnt = 0;
-       bool has_widths = false;
+       int wcnt = strlen(UnicodeString);
+       wchar_t wstr[strlen(UnicodeString)];
+       bool has_widths = (bool)strchr(Indices, ',');/* pre scan for advance width usage */
 
-       if (strchr(Indices, ','))
-	   has_widths = true; /* pre scan for advance width usage */
+
+       if ((code = met_utf8_to_wchars(wcnt, &wcnt, &wstr[0], &UnicodeString[0])) != 0)
+	   mt_rethrow(code, "utf8 to wchar conversion failed");
 
        met_expand(expindstr, Indices, ';', 'Z');
        cnt = met_split(expindstr, args, is_semi_colon);
        while (*pargs) {
            /* if the argument is empty try the unicode string */
            if (**pargs == 'Z') {
-               if (strlen(UnicodeString) > glyph_index) {
+               if (wcnt > glyph_index) {
 		   gs_point point;
 
 		   glyphs[glyph_index] = 
-		       (*pfont->procs.encode_char)(pfont, UnicodeString[glyph_index+combine_cnt], 0);
+		       (*pfont->procs.encode_char)(pfont, wstr[glyph_index+combine_cnt], 0);
 
 		   if (has_widths) {
-		       (*pcf->char_width)(pcf, NULL, UnicodeString[glyph_index+combine_cnt], &point);
+		       (*pcf->char_width)(pcf, NULL, wstr[glyph_index+combine_cnt], &point);
 		       advance[glyph_index] = point.x;
 		   }
 		   ++glyph_index;
@@ -340,19 +387,19 @@ build_text_params(gs_text_params_t *text, pl_font_t *pcf,
 	       }
 
 	       get_glyph_advance(*pargs, pfont, 
-				 (gs_glyph)UnicodeString[glyph_index+combine_cnt], 
+				 (gs_glyph)wstr[glyph_index+combine_cnt], 
 				 &glyphs[glyph_index], &advance[glyph_index],
 				 &uOffset[glyph_index], &vOffset[glyph_index]);
 	       ++glyph_index;
            }
            pargs++;
        }
-       while (strlen(UnicodeString) > glyph_index+combine_cnt) {
+       while (wcnt > glyph_index+combine_cnt) {
 	   glyphs[glyph_index] = 
-	       (*pfont->procs.encode_char)(pfont, UnicodeString[glyph_index+combine_cnt], 0);
+	       (*pfont->procs.encode_char)(pfont, wstr[glyph_index+combine_cnt], 0);
 	   if (has_widths) {  /* need advance widths, out of index */
 	       gs_point point;
-	       (*pcf->char_width)(pcf, NULL, UnicodeString[glyph_index+combine_cnt], &point);
+	       (*pcf->char_width)(pcf, NULL, wstr[glyph_index+combine_cnt], &point);
 	       advance[glyph_index] = point.x;
 	   } else 
 	       advance[glyph_index] = 0.0;
