@@ -230,6 +230,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  {0,0,0,0,0,0}, 		/* gs_matrix converting_image_matrix */
  0,				/* image_mask_scale */
  NULL,				/* pres_soft_mask_dict */
- {0, 0}				/* objname */
+ {0, 0},			/* objname */
+ 0				/* OPDFRead_procset_length */
 };
 

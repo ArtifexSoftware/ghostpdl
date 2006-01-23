@@ -322,6 +322,7 @@ pdf_open_document(gx_device_pdf * pdev)
 		    return_error(gs_error_ioerror);
 	    } else
 		pdev->strm = s;
+	    pdev->OPDFRead_procset_length = stell(s);
 	}
 	pprintd2(s, "%%PDF-%d.%d\n", level / 10, level % 10);
 	pdev->binary_ok = !pdev->params.ASCII85EncodePages;

@@ -1268,7 +1268,7 @@ pdf_close(gx_device * dev)
 
     /* Write the cross-reference section. */
 
-    xref = pdf_stell(pdev);
+    xref = pdf_stell(pdev) - pdev->OPDFRead_procset_length;
     if (pdev->FirstObjectNumber == 1)
 	pprintld1(s, "xref\n0 %ld\n0000000000 65535 f \n",
 		  pdev->next_id);
@@ -1287,6 +1287,7 @@ pdf_close(gx_device * dev)
 	    fread(&pos, sizeof(pos), 1, tfile);
 	    if (pos & ASIDES_BASE_POSITION)
 		pos += resource_pos - ASIDES_BASE_POSITION;
+	    pos -= pdev->OPDFRead_procset_length;
 	    sprintf(str, "%010ld 00000 n \n", pos);
 	    stream_puts(s, str);
 	}

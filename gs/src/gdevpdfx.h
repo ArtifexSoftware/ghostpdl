@@ -645,6 +645,7 @@ struct gx_device_pdf_s {
     pdf_resource_t *pres_soft_mask_dict;
     /* Temporary data for pdfmark_BP. */
     gs_const_string objname;
+    int OPDFRead_procset_length;      /* PS2WRITE only. */
 };
 
 #define is_in_page(pdev)\
