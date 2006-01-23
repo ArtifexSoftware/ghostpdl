@@ -101,6 +101,9 @@ zip_init_part(zip_state_t *pzip)
     return 0;
 }
 
+
+/* Can return eNeedData, eExitLanguage, error, 0  
+ */
 private int 
 zip_read_part(zip_state_t *pzip, stream_cursor_read *pr)
 {
@@ -187,11 +190,9 @@ zip_read_part(zip_state_t *pzip, stream_cursor_read *pr)
 	if (stream_has(pr, part->namesize)) {
 	    part->name = gs_alloc_bytes(pzip->memory, part->namesize + 1, "pzip part name");
 	    if (part->name == NULL) 
-		return -1;  // memory error
+		return mt_throw(-1, "out of memory");
 	    memcpy(part->name, pr->ptr +1, part->namesize);
 	    part->name[part->namesize] = 0;
-	    // Perhaps -ZI spew
-	    // dprintf1(pzip->memory, "zip file name:%s\n", part->name );
 	    pr->ptr += part->namesize;
 	    pzip->part_read_state++;
 	} 
@@ -256,8 +257,7 @@ zip_read_part(zip_state_t *pzip, stream_cursor_read *pr)
 	return -102; // e_ExitLanguage;
     
     default:
-	/* coding error */
-	return -1;
+	return mt_throw(-1, "coding error");
     }
     
     return code;
@@ -270,7 +270,7 @@ zip_init_write_stream(zip_state_t *pzip, zip_part_t *part)
     if (part->zs == NULL) {
 	part->zs = gs_alloc_bytes(pzip->memory, size_of(z_stream), "zip z_stream");
 	if (part->zs == NULL)
-	    return -1;
+	    return mt_throw(-1, "out of memory");
 	part->zs->zalloc = 0;
 	part->zs->zfree = 0;
 	part->zs->opaque = 0;
@@ -297,7 +297,7 @@ zip_decompress_data(zip_state_t *pzip, stream_cursor_read *pin )
 
     if (ZIP_BLOCK_SIZE <= part->tail->writeoffset + 1) {
 	if ((code = zip_new_block(pzip, part)))
-	    return code;
+	    return mt_throw(code, "zip_new_block");
 	wptr = &part->tail->data[part->tail->writeoffset];
 	wlen = ZIP_BLOCK_SIZE;
     }
@@ -308,7 +308,7 @@ zip_decompress_data(zip_state_t *pzip, stream_cursor_read *pin )
 	
     if (part->comp_method == 0) {
 	int left = part->csize - part->csaved;
-	if (left == 0)\
+	if (left == 0)
 	    return eEndOfStream;
 	rlen = min(left, min(rlen, wlen));
 	memcpy(wptr, pin->ptr, rlen);
@@ -343,11 +343,10 @@ zip_decompress_data(zip_state_t *pzip, stream_cursor_read *pin )
 	    part->newfile = false;
 
 	    if (part->csize && part->csaved == part->csize) {
-		// NB: need to test the end of part/end of file/no csize case. 
+		/* recursive call
+		 * NB: need to test the end of part/end of file/no csize case. */
 		code = zip_decompress_data(pzip, pin);
 	    }
-
-	    
 	    break;
 
         case Z_STREAM_END:
@@ -358,6 +357,7 @@ zip_decompress_data(zip_state_t *pzip, stream_cursor_read *pin )
 
         default:
 	    code = ERRC;
+	    mt_throw(code, "inflate error");
 	}
     }
     return code;
@@ -391,8 +391,8 @@ zip_decomp_process(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip,
 
 	/* determine if the xps should be parsed and call the xml parser
 	 */
-
-	zip_page(st, mets, pzip, rpart);
+	if ( pzip->inline_mode )
+	    zip_page(st, mets, pzip, rpart);
 
 	/* setup to read next part */
 	pzip->read_part++;
@@ -536,13 +536,12 @@ is_font(char *name)
 int
 zip_end_job(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip)
 {
-    int i;
+    int i = 0; //pzip->firstPage;
     int code = 0;
-    bool tmp =  pzip->inline_mode;
 
-    pzip->inline_mode = true;
-    if (!tmp) {
-	for (i=0; i < 5000;  i++) {
+    
+    if (!pzip->inline_mode) {
+	for (; i < 5000;  i++) {
 	    if (pzip->parts[i]) {
 		code = zip_page(st, mets, pzip, pzip->parts[i]);
 		if (code) {

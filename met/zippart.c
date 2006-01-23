@@ -247,20 +247,28 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 int 
 zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part_t *rpart ) 
 {
+    static int page = 0;
+    static int start_page = 0;  /* hack to skip a few pages */
+
     long len = 0;
     int error = 0;
     char *p = &rpart->name[strlen(rpart->name) - 4];
-    dprintf1(pzip->memory, "End of part %s\n", rpart->name );
+
+    if ( gs_debug_c('i') ) 
+	dprintf1(NULL, "End of part %s\n", rpart->name );
     
     /* NB: its not cool to string compare to find FixedPages to parse thats 
      * what rels are for...
      */
 
-    if ( pzip->inline_mode == false )
-	return 0;
-
     if ( !strncmp(rpart->name, "FixedPage_", 10) && 
 	 strncmp(p, "rels", 4 )) { /* feed met_process a Page */
+
+	++page;
+
+	if ( page < start_page )
+	    return 0;
+
 	if ( ziptestmode ) {
 	    zip_page_test(pzip, rpart);
 	}
@@ -285,7 +293,7 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
 	//    zip_part_free_all( rpart );
 	// can't delete 
     }
-    else if ( 0 && ziptestmode ) {
+    else if ( 1 && ziptestmode ) {
 	zip_page_test(pzip, rpart);
     }
 
@@ -299,11 +307,6 @@ zip_part_free_all( zip_part_t *part )
     zip_block_t *next = part->head;
     zip_block_t *this = part->head;
     zip_state_t *pzip = part->parent;
-
-    int i;
-
-    if (!pzip->inline_mode) 
-	return 0;
 
     while (next) {
 	this = next;
@@ -320,5 +323,4 @@ zip_part_free_all( zip_part_t *part )
     part->head = 0;
     part->curr = 0;
     part->tail = 0;
-    
 }

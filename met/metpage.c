@@ -10,7 +10,7 @@
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
 
-/*$Id: */
+/*$Id$ */
 
 /* metro page related elements */
 

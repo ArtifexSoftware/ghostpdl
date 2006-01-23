@@ -126,7 +126,7 @@ met_end(void *data, const char *el)
     if (metp && metp->done)
         code = (*metp->done)(st->data_stack[st->depth], st->mets);
     if (code < 0) {
-	mt_rethrow(code, "met_end done");
+	mt_rethrow(code, "metp->done");
         met_set_error(st, code);
     }
 }
@@ -205,24 +205,22 @@ met_process(met_parser_state_t *st, met_state_t *mets,  void *pzip, stream_curso
     if (!started) {
         const char *start = "<JOB>";
         if (XML_Parse(parser, start, strlen(start), 0) == XML_STATUS_ERROR) {
-            dprintf2(st->memory, "Parse error at line %d:\n%s\n",
-                     XML_GetCurrentLineNumber(parser),
-                     XML_ErrorString(XML_GetErrorCode(parser)));
-            return -1;
+            return mt_rethrow2(-1, "<job> Parse error at line %d:%s",
+			       XML_GetCurrentLineNumber(parser),
+			       XML_ErrorString(XML_GetErrorCode(parser)));
         }
         started = true;
     }
             
 
     if (XML_Parse(parser, p + 1, avail, 0 /* done? */) == XML_STATUS_ERROR) {
-        dprintf2(st->memory, "Parse error at line %d:\n%s\n",
-              XML_GetCurrentLineNumber(parser),
-              XML_ErrorString(XML_GetErrorCode(parser)));
-        return mt_throw(-1, "xml parse error");
+        return mt_rethrow2(-1, "XML_Parse error at line %d:%s",
+			   XML_GetCurrentLineNumber(parser),
+			   XML_ErrorString(XML_GetErrorCode(parser)));
     } else if (st->error_code < 0) {
         int code = st->error_code;
         met_unset_error_code(st);
-        return mt_throw(code, "xml parse error st error code");
+        return mt_rethrow1(code, "st->error_code %d", code);
     }
     /* nb for now we assume the parser has consumed exactly what we gave it. */
     pr->ptr = p + avail;
@@ -238,19 +236,17 @@ met_process_shutdown(met_parser_state_t *st)
     
     const char *end = "</JOB>";
     if (XML_Parse(parser, end, strlen(end), 0) == XML_STATUS_ERROR) {
-        dprintf2(st->memory, "Parse error at line %d:\n%s\n",
-                 XML_GetCurrentLineNumber(parser),
-                 XML_ErrorString(XML_GetErrorCode(parser)));
-        return -1;
+        return mt_rethrow2(-1, "parse at line %d(%s)",
+			   XML_GetCurrentLineNumber(parser),
+			   XML_ErrorString(XML_GetErrorCode(parser)));
     }
 
     if (XML_Parse(parser, 0 /* data buffer */, 
                   0 /* buffer length */,
                   1 /* done? */ ) == XML_STATUS_ERROR) {
-        dprintf2(st->memory, "Parse error at line %d:\n%s\n",
-                 XML_GetCurrentLineNumber(parser),
-                 XML_ErrorString(XML_GetErrorCode(parser)));
-        return -1;
+        return mt_rethrow2(-1, "parse at line %d(%s)",
+			   XML_GetCurrentLineNumber(parser),
+			   XML_ErrorString(XML_GetErrorCode(parser)));
     }
     return 0;
 }
