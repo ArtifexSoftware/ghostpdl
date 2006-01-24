@@ -294,7 +294,7 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
 	// can't delete 
     }
     else if ( 1 && ziptestmode ) {
-	zip_page_test(pzip, rpart);
+	//zip_page_test(pzip, rpart);
     }
 
     return error;
