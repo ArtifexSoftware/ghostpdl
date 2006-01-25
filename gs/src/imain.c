@@ -846,7 +846,9 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	    rc_adjust(pdev, 1, "gs_main_finit");	
 	    /* deactivate the device just before we close it for the last time */
 	    gs_main_run_string(minst, 
-		".uninstallpagedevice ",
+		/* we need to do the 'quit' so we don't loop for input (double quit) */
+		".uninstallpagedevice "
+		"serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemvar exec",
 		0 , &exit_code, &error_object);
 	    code = gs_closedevice(pdev);
 	    if (code < 0)
