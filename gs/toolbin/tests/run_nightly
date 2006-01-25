@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- Mode: python -*-
 
-#    Copyright (C) 2001 Artifex Software Inc.
+#    Copyright (C) 2001-2006 Artifex Software Inc.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -135,12 +135,12 @@ def update_ghostscript():
     os.system("echo 'make clean complete' >> " + gsconf.update_log_stdout)
     
     if os.system("make > " + gsconf.make_log_stdout + " 2> " +
-                 gsconf.make_log_stderr) != 0: return (2, None, None)
+                 gsconf.make_log_stderr) != 0: return (3, None, None)
 
     os.system("echo 'make complete' >> " + gsconf.update_log_stdout)
 
     if os.system("make install > " + gsconf.install_log_stdout + " 2> " + \
-                 gsconf.install_log_stderr) != 0: return (3, None, None)
+                 gsconf.install_log_stderr) != 0: return (4, None, None)
 
     os.system("echo 'make install complete' >> " + gsconf.update_log_stdout)
 
@@ -165,13 +165,20 @@ if err != 0:
         msg = msg + get_file(gsconf.update_log_stderr)
         die(msg)
     elif err == 2:
-        msg = "Ghostscript update failed during make.\n\n"
+        msg = "Ghostscript update failed during configuration.\n\n"
         msg = msg + "stdout log:\n\n"
         msg = msg + get_file(gsconf.make_log_stdout)
         msg = msg + "\nstderr log:\n\n"
         msg = msg + get_file(gsconf.make_log_stderr)
         die(msg)
     elif err == 3:
+        msg = "Ghostscript update failed during make.\n\n"
+        msg = msg + "stdout log:\n\n"
+        msg = msg + get_file(gsconf.make_log_stdout)
+        msg = msg + "\nstderr log:\n\n"
+        msg = msg + get_file(gsconf.make_log_stderr)
+        die(msg)
+    elif err == 4:
         msg = "Ghostscript update failed during install.\n\n"
         msg = msg + "stdout log:\n\n"
         msg = msg + get_file(gsconf.install_log_stdout)
