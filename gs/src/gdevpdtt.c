@@ -176,15 +176,19 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    penum_s = (gs_show_enum *)penum->pte_default;
 	    if (penum->orig_font->FontType == ft_composite) {
 		pdf_font_resource_t *pdfont;
+		char buf[6];
+		byte *p;
 
 		code = pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL); 
 		if (code < 0)
 		    return code;
 		gnstr.size = 5;
-		gnstr.data = (byte *)gs_alloc_string(pdev->pdf_memory, gnstr.size, "pdf_text_set_cache");
-		if (gnstr.data == NULL)
+		p = (byte *)gs_alloc_string(pdev->pdf_memory, gnstr.size, "pdf_text_set_cache");
+		if (p == NULL)
 		    return_error(gs_error_VMerror);
-		sprintf((char *)gnstr.data, "g%04x", ch);
+		sprintf(buf, "g%04x", ch);
+		memcpy(p, buf, 5);
+		gnstr.data = p;
 	    } else {
 		code = font->procs.glyph_name(font, glyph, &gnstr);
 		if (code < 0)
