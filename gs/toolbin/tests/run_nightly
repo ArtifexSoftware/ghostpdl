@@ -260,7 +260,9 @@ log.write(regout)
 log.close()
 
 # Only include the main body in the email on Mondays
-if time.gmtime()[6] == 0:
+if time.gmtime().tm_wday == 0:
+    msg += regout
+else if len(regout) < 40*1024:
     msg += regout
 
 retry = 1
