@@ -476,22 +476,14 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	} while (!font_change);
 	if (break_index > index) {
 	    pdf_font_resource_t *pdfont;
-	    gs_matrix m0, m1, m2, m3;
+	    gs_matrix m3;
 	    int xy_index_step = (pte->text.x_widths != NULL && /* see gs_text_replaced_width */
 				 pte->text.x_widths == pte->text.y_widths ? 2 : 1);
 	    gs_text_params_t save_text;
 
-	    code = pdf_font_orig_matrix(subfont0, &m0);
-	    if (code < 0)
-		return code;
-	    code = gs_matrix_invert(&m0, &m1);
-	    if (code < 0)
-		return code;
-	    code = gs_matrix_multiply(&subfont0->FontMatrix, &m1, &m2);
-	    if (code < 0)
-		return code;
-	    code = gs_matrix_multiply(&m2, &font->FontMatrix, &m3); 
-	    /* We thought that it should be gs_matrix_multiply(&font->FontMatrix, &m2, &m3); */
+	    pte->current_font = subfont0;
+	    code = gs_matrix_multiply(&subfont0->FontMatrix, &font->FontMatrix, &m3); 
+	    /* We thought that it should be gs_matrix_multiply(&font->FontMatrix, &subfont0->FontMatrix, &m3); */
 	    if (code < 0)
 		return code;
 	    code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf0, 
