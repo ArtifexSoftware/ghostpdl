@@ -431,9 +431,8 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
 	gs_text_restart(penum, &text);
     }
     if (osenum && osenum->current_font->FontType == ft_user_defined &&
-	osenum->fstack.depth >= 1 &&
-	osenum->fstack.items[0].font->FontType == ft_composite &&
-	((const gs_font_type0 *)osenum->fstack.items[0].font)->data.FMapType == fmap_CMap) {
+	osenum->orig_font->FontType == ft_composite &&
+	((const gs_font_type0 *)osenum->orig_font)->data.FMapType == fmap_CMap) {
 	/* A special behavior defined in PLRM3 section 5.11 page 389. */
 	penum->outer_CID = osenum->returned.current_glyph;
     }
