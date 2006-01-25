@@ -131,6 +131,7 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 	    /* set up the base font : */
 	    out.fstack.depth = 0;
 	    out.fstack.items[out.fstack.depth].font = out.current_font = prev_font;
+	    pte->current_font = prev_font;
 
 	    /* Provide the decoded space character : */
 	    out.text.space.s_char = space_char;
@@ -308,7 +309,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
     int wmode = font->WMode, code, rcode = 0;
     pdf_font_resource_t *pdsubf0 = NULL;
     gs_font *subfont0 = NULL;
-    uint index = scan.index, xy_index = scan.xy_index;
+    uint index = scan.index, xy_index = scan.xy_index, start_index = index;
     uint font_index0 = 0x7badf00d;
     bool done = false;
     pdf_char_glyph_pairs_t p;
@@ -351,120 +352,159 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    subfont = scan.fstack.items[scan.fstack.depth].font;
 	    font_index = scan.fstack.items[scan.fstack.depth].index;
 	    scan.xy_index++;
-	    switch (subfont->FontType) {
-	    case ft_CID_encrypted:
-	    case ft_CID_TrueType:
-		break;
-	    default:
-		/* An unsupported case, fall back to default implementation. */
-		return_error(gs_error_rangecheck);
-	    }
 	    if (glyph == GS_NO_GLYPH)
 		glyph = GS_MIN_CID_GLYPH;
 	    cid = glyph - GS_MIN_CID_GLYPH;
-	    p.s[0].glyph = glyph;
-	    p.s[0].chr = cid;
-	    code = pdf_obtain_cidfont_resource(pdev, subfont, &pdsubf, &p);
+	    switch (subfont->FontType) {
+		case ft_CID_encrypted:
+		case ft_CID_TrueType: {
+		    p.s[0].glyph = glyph;
+		    p.s[0].chr = cid;
+		    code = pdf_obtain_cidfont_resource(pdev, subfont, &pdsubf, &p);
+		    if (code < 0)
+			return code;
+		    break;
+		}
+		case ft_user_defined: {
+		    gs_string str1;
+
+		    str1.data = NULL;
+		    str1.size = 0;
+		    pte->current_font = subfont;
+		    code = pdf_obtain_font_resource(pte, &str1, &pdsubf);
+		    if (code < 0)
+			return code;
+		    cid = pdf_find_glyph(pdsubf, glyph);
+		    if (cid == GS_NO_CHAR) {
+			code = pdf_make_font3_resource(pdev, subfont, &pdsubf);
+			if (code < 0) 		    
+			    return code;
+			code = pdf_attach_font_resource(pdev, subfont, pdsubf);
+			if (code < 0) 		    
+			    return code;
+			cid = 0;
+		    }
+		    break;
+		}
+		default:
+		    /* An unsupported case, fall back to default implementation. */
+		    return_error(gs_error_rangecheck);
+	    }
+	    code = pdf_attached_font_resource(pdev, (gs_font *)subfont, &pdsubf, 
+				       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
 	    if (code < 0)
 		return code;
+	    if (break_index > start_index && pdev->charproc_just_accumulated)
+		break;
+	    if (subfont->FontType == ft_user_defined &&
+		(break_index > start_index || !pdev->charproc_just_accumulated) &&
+		!(pdsubf->u.simple.s.type3.cached[cid >> 3] & (0x80 >> (cid & 7)))) {
+		pte->current_font = subfont;
+		return gs_error_undefined;
+	    }
 	    font_change = (pdsubf != pdsubf0 && pdsubf0 != NULL);
 	    if (!font_change) {
 		pdsubf0 = pdsubf;
 		font_index0 = font_index;
 		subfont0 = subfont;
 	    }
-	    code = pdf_attached_font_resource(pdev, (gs_font *)subfont, &pdsubf, 
-				       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
-	    if (code < 0)
-		return code;
 	    pfd = pdsubf->FontDescriptor;
 	    code = pdf_resize_resource_arrays(pdev, pdsubf, cid + 1);
 	    if (code < 0)
 		return code;
-	    code = pdf_obtain_cidfont_widths_arrays(pdev, pdsubf, wmode, &w, &w0, &v);
-	    if (code < 0)
-		return code;
-	    {
+	    if (subfont->FontType == ft_CID_encrypted || subfont->FontType == ft_CID_TrueType) {
+		if (cid >=width_cache_size) {
+		    /* fixme: we add the CID=0 glyph as CID=cid glyph to the output font.
+		       Really it must not add and leave the CID undefined. */
+		    cid = 0; /* notdef. */
+		}
+	    } 
+	    if (cid >= char_cache_size || cid >= width_cache_size)
+		return_error(gs_error_unregistered); /* Must not happen */
+	    if (pdsubf->FontType == ft_user_defined) {
+		code += 0; /* A good place for a breakpoint. */
+	    } else {
 		pdf_font_resource_t *pdfont;
 
+		code = pdf_obtain_cidfont_widths_arrays(pdev, pdsubf, wmode, &w, &w0, &v);
+		if (code < 0)
+		    return code;
 		code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf, 
 				&font->data.CMap->CMapName, &pdfont);
 		if (code < 0)
 		    return code;
 		if (pdf_is_CID_font(subfont)) {
 		    /* Since PScript5.dll creates GlyphNames2Unicode with character codes
-		    instead CIDs, and with the WinCharSetFFFF-H2 CMap
-		    character codes appears different than CIDs (Bug 687954),
-		    pass the character code intead the CID. */
+		       instead CIDs, and with the WinCharSetFFFF-H2 CMap
+		       character codes appears different than CIDs (Bug 687954),
+		       pass the character code intead the CID. */
 		    code = pdf_add_ToUnicode(pdev, subfont, pdfont, chr + GS_MIN_CID_GLYPH, chr, NULL);
 		} else
 		    code = pdf_add_ToUnicode(pdev, subfont, pdfont, glyph, cid, NULL);
 		if (code < 0)
 		    return code;
-	    }
-	    /* We can't check pdsubf->used[cid >> 3] here,
-	       because it mixed data for different values of WMode. 
-	       Perhaps pdf_font_used_glyph returns fast with reused glyphs.
-	     */
-	    code = pdf_font_used_glyph(pfd, glyph, (gs_font_base *)subfont);
-	    if (code == gs_error_rangecheck) {
-		if (!(pdsubf->used[cid >> 3] & (0x80 >> (cid & 7)))) {
-		    char buf[gs_font_name_max + 1];
-		    int l = min(sizeof(buf) - 1, subfont->font_name.size);
+		/*  We can't check pdsubf->used[cid >> 3] here,
+		    because it mixed data for different values of WMode. 
+		    Perhaps pdf_font_used_glyph returns fast with reused glyphs.
+		*/
+		code = pdf_font_used_glyph(pfd, glyph, (gs_font_base *)subfont);
+		if (code == gs_error_rangecheck) {
+		    if (!(pdsubf->used[cid >> 3] & (0x80 >> (cid & 7)))) {
+			char buf[gs_font_name_max + 1];
+			int l = min(sizeof(buf) - 1, subfont->font_name.size);
 
-		    memcpy(buf, subfont->font_name.chars, l);
-		    buf[l] = 0;
-		    eprintf2("Missing glyph CID=%d in the font %s . The output PDF may fail with some viewers.\n", cid, buf);
-		    pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
-		}
-		cid = 0, code = 1;  /* undefined glyph. */
-	    } else if (code < 0)
-		return code;
-	    if (cid >= char_cache_size || cid >= width_cache_size)
-		return_error(gs_error_unregistered); /* Must not happen */
-	    if (code == 0 /* just copied */ || pdsubf->Widths[cid] == 0) {
-		pdf_glyph_widths_t widths;
-
-		code = pdf_glyph_widths(pdsubf, wmode, glyph, (gs_font *)subfont, &widths,
-				pte->cdevproc_callout ? pte->cdevproc_result : NULL);
-		if (code < 0)
-		    return code;
-		if (code == TEXT_PROCESS_CDEVPROC) {
-		    pte->returned.current_glyph = glyph;
-		    pte->current_font = subfont;
-		    rcode = TEXT_PROCESS_CDEVPROC;
-		    break;
-		}
-		if (code == 0) { /* OK to cache */
-		    if (cid > pdsubf->count)
-			return_error(gs_error_unregistered); /* Must not happen. */
-		    w[cid] = widths.Width.w;
-		    if (v != NULL) {
-			v[cid * 2 + 0] = widths.Width.v.x;
-			v[cid * 2 + 1] = widths.Width.v.y;
+			memcpy(buf, subfont->font_name.chars, l);
+			buf[l] = 0;
+			eprintf2("Missing glyph CID=%d in the font %s . The output PDF may fail with some viewers.\n", cid, buf);
+			pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
 		    }
-		    real_widths[cid] = widths.real_width.w;
-		}
-		if (wmode) {
-		    /* Since AR5 use W or DW to compute the x-coordinate of
-		       v-vector, comupte and store the glyph width for WMode 0. */
-		    /* fixme : skip computing real_width here. */
-		    code = pdf_glyph_widths(pdsubf, 0, glyph, (gs_font *)subfont, &widths,
-				    pte->cdevproc_callout ? pte->cdevproc_result : NULL);
+		    cid = 0, code = 1;  /* undefined glyph. */
+		} else if (code < 0)
+		    return code;
+		if (code == 0 /* just copied */ || pdsubf->Widths[cid] == 0) {
+		    pdf_glyph_widths_t widths;
+
+		    code = pdf_glyph_widths(pdsubf, wmode, glyph, (gs_font *)subfont, &widths,
+				pte->cdevproc_callout ? pte->cdevproc_result : NULL);
 		    if (code < 0)
 			return code;
-		    w0[cid] = widths.Width.w;
-		}
-		if (pdsubf->u.cidfont.CIDToGIDMap != 0) {
-		    gs_font_cid2 *subfont2 = (gs_font_cid2 *)subfont;
+		    if (code == TEXT_PROCESS_CDEVPROC) {
+			pte->returned.current_glyph = glyph;
+			pte->current_font = subfont;
+			rcode = TEXT_PROCESS_CDEVPROC;
+			break;
+		    }
+		    if (code == 0) { /* OK to cache */
+			if (cid > pdsubf->count)
+			    return_error(gs_error_unregistered); /* Must not happen. */
+			w[cid] = widths.Width.w;
+			if (v != NULL) {
+			    v[cid * 2 + 0] = widths.Width.v.x;
+			    v[cid * 2 + 1] = widths.Width.v.y;
+			}
+			real_widths[cid] = widths.real_width.w;
+		    }
+		    if (wmode) {
+			/* Since AR5 use W or DW to compute the x-coordinate of
+			   v-vector, comupte and store the glyph width for WMode 0. */
+			/* fixme : skip computing real_width here. */
+			code = pdf_glyph_widths(pdsubf, 0, glyph, (gs_font *)subfont, &widths,
+				    pte->cdevproc_callout ? pte->cdevproc_result : NULL);
+			if (code < 0)
+			    return code;
+			w0[cid] = widths.Width.w;
+		    }
+		    if (pdsubf->u.cidfont.CIDToGIDMap != 0) {
+			gs_font_cid2 *subfont2 = (gs_font_cid2 *)subfont;
 
-		    pdsubf->u.cidfont.CIDToGIDMap[cid] =
-			subfont2->cidata.CIDMap_proc(subfont2, glyph);
+			pdsubf->u.cidfont.CIDToGIDMap[cid] =
+			    subfont2->cidata.CIDMap_proc(subfont2, glyph);
+		    }
 		}
+		if (wmode)
+		    pdsubf->u.cidfont.used2[cid >> 3] |= 0x80 >> (cid & 7);
 	    }
 	    pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
-	    if (wmode)
-		pdsubf->u.cidfont.used2[cid >> 3] |= 0x80 >> (cid & 7);
 	    if (pte->cdevproc_callout) {
 		 /* Only handle a single character because its width is stored 
 		    into pte->cdevproc_result, and process_text_modify_width neds it. 
@@ -486,19 +526,23 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    /* We thought that it should be gs_matrix_multiply(&font->FontMatrix, &subfont0->FontMatrix, &m3); */
 	    if (code < 0)
 		return code;
-	    code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf0, 
+	    if (pdsubf0->FontType == ft_user_defined)
+		pdfont = pdsubf0;
+	    else {
+		code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf0, 
 			    &font->data.CMap->CMapName, &pdfont);
-	    if (code < 0)
-		return code;
-	    if (!pdfont->u.type0.Encoding_name[0]) {
-		/*
-		 * If pdfont->u.type0.Encoding_name is set, 
-		 * a CMap resource is already attached.
-		 * See attach_cmap_resource.
-		 */
-		code = attach_cmap_resource(pdev, pdfont, font->data.CMap, font_index0);
 		if (code < 0)
 		    return code;
+		if (!pdfont->u.type0.Encoding_name[0]) {
+		    /*
+		    * If pdfont->u.type0.Encoding_name is set, 
+		    * a CMap resource is already attached.
+		    * See attach_cmap_resource.
+		    */
+		    code = attach_cmap_resource(pdev, pdfont, font->data.CMap, font_index0);
+		    if (code < 0)
+			return code;
+		}
 	    }
 	    pdf_set_text_wmode(pdev, font->WMode);
 	    code = pdf_update_text_state(&text_state, (pdf_text_enum_t *)pte, pdfont, &m3);
@@ -516,7 +560,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		pte->text.y_widths += xy_index * xy_index_step;
 	    pte->xy_index = 0;
 	    code = process_text_modify_width((pdf_text_enum_t *)pte, (gs_font *)font,
-				  &text_state, &str, &wxy);
+				  &text_state, &str, &wxy, true);
 	    if (pte->text.x_widths != NULL)
 		pte->text.x_widths -= xy_index * xy_index_step;
 	    if (pte->text.y_widths != NULL)
@@ -562,7 +606,7 @@ process_cmap_text(gs_text_enum_t *penum, void *vbuf, uint bsize)
 	/* Not implemented.  (PostScript doesn't allow TEXT_INTERVENE.) */
 	return_error(gs_error_rangecheck);
     }
-    code = scan_cmap_text((pdf_text_enum_t *)pte);
+    code = scan_cmap_text(pte);
     if (code == TEXT_PROCESS_CDEVPROC)
 	pte->cdevproc_callout = true;
     else
@@ -595,6 +639,9 @@ process_cid_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 	size = pte->text.size - pte->index;
     } else if (operation & TEXT_FROM_SINGLE_GLYPH) {
 	glyphs = &pte->text.data.d_glyph;
+	size = 1;
+    } else if (operation & TEXT_FROM_STRING) {
+	glyphs = &pte->outer_CID;
 	size = 1;
     } else
 	return_error(gs_error_rangecheck);

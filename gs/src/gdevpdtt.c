@@ -114,11 +114,10 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	return_error(gs_error_rangecheck);
     }
     if (penum->current_font->FontType == ft_user_defined && 
-	    penum->orig_font->FontType != ft_composite &&
 	    penum->outer_CID == GS_NO_GLYPH &&
 	    !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
 	int code;
-	gs_font *font = penum->orig_font;
+	gs_font *font = penum->current_font;
 	gs_char ch;
 	gs_glyph glyph;
 	gs_const_string gnstr;
@@ -138,6 +137,18 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 		ch = GS_NO_CHAR;
 	    } else
 		ch = buf[0];
+	} else if (penum->orig_font->FontType == ft_composite) {
+	    gs_font_type0 *font0 = (gs_font_type0 *)penum->orig_font;
+	    pdf_font_resource_t *pdfont;
+
+	    code = pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL); 
+	    if (code < 0)
+		return code;
+	    glyph = penum->returned.current_glyph;
+	    if (font0->data.FMapType == fmap_CMap)
+		ch = pdf_find_glyph(pdfont, glyph);
+	    else
+		ch = penum->returned.current_char;
 	} else {
 	    ch = penum->text.data.bytes[penum->index];
 	    glyph = font->procs.encode_char(font, ch, GLYPH_SPACE_NAME);
@@ -163,9 +174,22 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 		return_error(gs_error_unregistered); 
 	    }
 	    penum_s = (gs_show_enum *)penum->pte_default;
-	    code = font->procs.glyph_name(font, glyph, &gnstr);
-	    if (code < 0)
-		return_error(gs_error_unregistered); /* Must not happen. */
+	    if (penum->orig_font->FontType == ft_composite) {
+		pdf_font_resource_t *pdfont;
+
+		code = pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL); 
+		if (code < 0)
+		    return code;
+		gnstr.size = 5;
+		gnstr.data = (byte *)gs_alloc_string(pdev->pdf_memory, gnstr.size, "pdf_text_set_cache");
+		if (gnstr.data == NULL)
+		    return_error(gs_error_VMerror);
+		sprintf((char *)gnstr.data, "g%04x", ch);
+	    } else {
+		code = font->procs.glyph_name(font, glyph, &gnstr);
+		if (code < 0)
+		    return_error(gs_error_unregistered); /* Must not happen. */
+	    }
 	    /* BuildChar could change the scale before calling setcachedevice (Bug 687290). 
 	       We must scale the setcachedevice arguments because we assumed
 	       identity scale before entering the charproc.
@@ -1606,6 +1630,31 @@ pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *
     return 0;
 }
 
+gs_char
+pdf_find_glyph(pdf_font_resource_t *pdfont, gs_glyph glyph)
+{
+    if (pdfont->FontType != ft_user_defined)
+	return GS_NO_CHAR;
+    else {
+	pdf_encoding_element_t *pet = pdfont->u.simple.Encoding;
+	int i, i0 = -1;
+	
+	if (pdfont->u.simple.FirstChar > pdfont->u.simple.LastChar)
+	    return (gs_char)0;
+	for (i = pdfont->u.simple.FirstChar; i <= pdfont->u.simple.LastChar; i++, pet++) {
+	    if (pet->glyph == glyph)
+		return (gs_char)i;
+	    if (i0 == -1 && pet->glyph == GS_NO_GLYPH)
+		i0 = i;
+	}
+	if (i0 != -1)
+	    return (gs_char)i0;
+	if (i < 256)
+	    return (gs_char)i;
+	return GS_NO_CHAR;	
+    }
+}
+
 /*
  * Compute the cached values in the text processing state from the text
  * parameters, current_font, and pis->ctm.  Return either an error code (<
@@ -2054,14 +2103,6 @@ pdf_text_process(gs_text_enum_t *pte)
 	       a transparency with CompatibilityLevel<=1.3 . */
 	    goto default_impl;
 	}
-	if (penum->outer_CID != GS_NO_GLYPH) {
-	    /* Fallback to the default implermentation for handling 
-	       Type 3 fonts with CIDs, because currently Type 3
-	       font resource arrays' sizes are hardcoded to 256 glyphs. 
-	       A better solution would be to re-encode the CID text with
-	       Type 3 glyph variations. */
-	    goto default_impl;
-	}
 	if (code < 0)
 	    return code;
     }
@@ -2081,7 +2122,7 @@ pdf_text_process(gs_text_enum_t *pte)
     pte_default = penum->pte_default;
     if (pte_default) {
 	if (penum->charproc_accum) {
-	    code = pdf_end_charproc_accum(pdev, penum->current_font, penum->cgp);
+	    code = pdf_end_charproc_accum(pdev, penum->current_font, penum->cgp, pte_default->returned.current_glyph);
 	    if (code < 0)
 		return code;
 	    penum->charproc_accum = false;
@@ -2095,17 +2136,12 @@ pdf_text_process(gs_text_enum_t *pte)
 	pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
 	code = gs_text_process(pte_default);
 	pdev->pte = NULL;	 /* CAUTION: See comment in gdevpdfx.h . */
-	if (pte->orig_font->FontType != ft_user_defined)
-	    gs_text_enum_copy_dynamic(pte, pte_default, true);
-	else {
-	    penum->returned.current_char = pte_default->returned.current_char;
-	    penum->returned.current_glyph = pte_default->returned.current_glyph;
-	}
 	pdev->charproc_just_accumulated = false;
 	if (code == TEXT_PROCESS_RENDER) {
+	    penum->returned.current_char = pte_default->returned.current_char;
+	    penum->returned.current_glyph = pte_default->returned.current_glyph;
 	    pdev->charproc_ctm = penum->pis->ctm;
 	    if (penum->current_font->FontType == ft_user_defined && 
-		    penum->orig_font->FontType != ft_composite &&
 		    penum->outer_CID == GS_NO_GLYPH &&
 		    !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
 		/* The condition above must be consistent with one in pdf_text_set_cache,
@@ -2134,8 +2170,10 @@ pdf_text_process(gs_text_enum_t *pte)
 		gs_make_identity(&m);
 		gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
 		return TEXT_PROCESS_RENDER;
-	    }
+	    } else
+		code += 0; /* A fgood place for breakpoint. */
 	}
+	gs_text_enum_copy_dynamic(pte, pte_default, true);
 	if (code)
 	    return code;
 	gs_text_release(pte_default, "pdf_text_process");
@@ -2174,9 +2212,10 @@ pdf_text_process(gs_text_enum_t *pte)
      * of bytes, gs_chars, or gs_glyphs.
      */
 
-    if (operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES))
-	DO_NOTHING;
-    else if (operation & TEXT_FROM_CHARS)
+    if (operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES)) {
+	if (size < sizeof(gs_glyph))
+	    size = sizeof(gs_glyph); /* for process_cid_text */
+    } else if (operation & TEXT_FROM_CHARS)
 	size *= sizeof(gs_char);
     else if (operation & TEXT_FROM_SINGLE_CHAR)
 	size = sizeof(gs_char);

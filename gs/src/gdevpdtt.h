@@ -272,6 +272,8 @@ void pdf_font3_scale(gx_device_pdf *pdev, gs_font *font, double *scale);
 /* Release a text characters colloction. */
 void pdf_text_release_cgp(pdf_text_enum_t *penum);
 
+/* Return char code by glyph. */
+gs_char pdf_find_glyph(pdf_font_resource_t *pdfont, gs_glyph glyph);
 
 /* ------ gdevpdtc.c ------ */
 
@@ -298,7 +300,7 @@ int pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 int process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 			  pdf_text_process_state_t *ppts,
 			  const gs_const_string *pstr,
-			  gs_point *pdpt);
+			  gs_point *pdpt, bool composite);
 
 /* 
  * Add char code pair to ToUnicode CMap,

@@ -552,7 +552,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	penum->xy_index = 0;
 	code = process_text_modify_width(penum, (gs_font *)font, ppts,
 					 (gs_const_string *)pstr,
-					 &width_pt);
+					 &width_pt, false);
 	if (penum->text.x_widths != NULL)
 	    penum->text.x_widths -= xy_index * xy_index_step;
 	if (penum->text.y_widths != NULL)
@@ -655,6 +655,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	    pwidths->Width.xy.y = 0;
 	    pwidths->real_width.xy.x = real_widths[ch * 2 + 0];
 	    pwidths->real_width.xy.y = real_widths[ch * 2 + 1];
+	    pwidths->replaced_v = 0;
 	} else if (font->WMode) {
 	    pwidths->real_width.w = real_widths[ch];
 	    pwidths->Width.xy.x = 0;
@@ -792,7 +793,7 @@ int
 process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 			  pdf_text_process_state_t *ppts,
 			  const gs_const_string *pstr,
-			  gs_point *pdpt)
+			  gs_point *pdpt, bool composite)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
     double scale;
@@ -801,7 +802,6 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	 pte->text.space.s_char : -1);
     int code = 0;
     gs_point start, total;
-    bool composite = (ppts->values.pdfont->FontType == ft_composite);
 
     if (font->FontType == ft_user_defined) {
 	gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;
@@ -835,6 +835,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 #if RIGHT_SBW
 	bool use_cached_v = true;
 #endif
+	byte composite_type3_text[1];
 
 	code = pte1.orig_font->procs.next_char_glyph(&pte1, &chr, &glyph);
 	if (code == 2) { /* end of string */
@@ -845,11 +846,27 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	    return code;
 	if (composite) { /* from process_cmap_text */
 	    gs_font *subfont = pte1.fstack.items[pte1.fstack.depth].font;
-	    pdf_font_resource_t *pdsubf = ppts->values.pdfont->u.type0.DescendantFont;
 
-	    FontType = pdsubf->FontType;
-	    code = pdf_glyph_widths(pdsubf, font->WMode, glyph, subfont, &cw, 
-		pte->cdevproc_callout ? pte->cdevproc_result : NULL);
+	    if (subfont->FontType == ft_user_defined) {
+		pdf_font_resource_t *pdfont;
+
+		FontType = subfont->FontType;
+		code = pdf_attached_font_resource(pdev, subfont, 
+			    &pdfont, NULL, NULL, NULL, NULL);
+		if (code < 0)
+		    return code;
+		chr = pdf_find_glyph(pdfont, glyph);
+		composite_type3_text[0] = (byte)chr;
+		code = pdf_char_widths((gx_device_pdf *)pte->dev,
+				       ppts->values.pdfont, chr, (gs_font_base *)subfont,
+				       &cw);
+	    } else {
+		pdf_font_resource_t *pdsubf = ppts->values.pdfont->u.type0.DescendantFont;
+
+		FontType = pdsubf->FontType;
+		code = pdf_glyph_widths(pdsubf, font->WMode, glyph, subfont, &cw, 
+		    pte->cdevproc_callout ? pte->cdevproc_result : NULL);
+	    }
 	} else {/* must be a base font */
 	    FontType = font->FontType;
 	    if (chr == GS_NO_CHAR && glyph != GS_NO_GLYPH) {
@@ -946,7 +963,10 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 		did.x += tpt.x;
 		did.y += tpt.y;
 	    }
-	    code = pdf_append_chars(pdev, pstr->data + index, pte->index - index, did.x, did.y, composite);
+	    if (composite && FontType == ft_user_defined)
+		code = pdf_append_chars(pdev, composite_type3_text, 1, did.x, did.y, composite);
+	    else
+		code = pdf_append_chars(pdev, pstr->data + index, pte->index - index, did.x, did.y, composite);
 	    if (code < 0)
 		break;
 	} else

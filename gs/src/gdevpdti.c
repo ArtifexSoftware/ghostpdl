@@ -71,7 +71,7 @@ pdf_char_proc_id(const pdf_char_proc_t *pcp)
 
 /* Assign a code for a char_proc. */
 private int
-assign_char_code(gx_device_pdf * pdev, int width)
+assign_char_code(gx_device_pdf * pdev, gs_text_enum_t *pte)
 {
     pdf_bitmap_fonts_t *pbfs = pdev->text->bitmap_fonts;
     pdf_font_resource_t *pdfont = pbfs->open_font; /* Type 3 */
@@ -118,8 +118,7 @@ assign_char_code(gx_device_pdf * pdev, int width)
 	pbfs->max_embedded_code = c;
 
     /* Synthezise ToUnicode CMap :*/
-    {	gs_text_enum_t *pte = pdev->pte;
-        gs_font *font = pte->current_font;
+    {	gs_font *font = pte->current_font;
 
 	code = pdf_add_ToUnicode(pdev, font, pdfont, pte->returned.current_glyph, c, NULL); 
 	if (code < 0)
@@ -284,7 +283,7 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
 		    int y_offset, gs_id id, pdf_char_proc_t ** ppcp,
 		    pdf_stream_position_t * ppos)
 {
-    int char_code = assign_char_code(pdev, x_width);
+    int char_code = assign_char_code(pdev, pdev->pte);
     pdf_bitmap_fonts_t *const pbfs = pdev->text->bitmap_fonts; 
     pdf_font_resource_t *font = pbfs->open_font; /* Type 3 */
     int code = pdf_begin_char_proc_generic(pdev, font, id, char_code, ppcp, ppos);
@@ -647,7 +646,8 @@ pdf_is_same_charproc1(gx_device_pdf * pdev, pdf_char_proc_t *pcp0, pdf_char_proc
     if (memcmp(&pcp0->font->u.simple.s.type3.FontMatrix, &pcp1->font->u.simple.s.type3.FontMatrix,
 		sizeof(pcp0->font->u.simple.s.type3.FontMatrix)))
 	return false;
-    return pdf_check_encoding_compatibility(pcp1->font, pdev->cgp->s, pdev->cgp->num_all_chars);
+    return pdf_check_encoding_compatibility(pcp1->font, pdev->cgp->s, 
+			    (pdev->cgp ? pdev->cgp->num_all_chars : 0));
 }
 
 private int 
@@ -708,7 +708,7 @@ pdf_is_charproc_defined(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, gs_cha
  * Complete charproc accumulation for a Type 3 font.
  */
 int
-pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_pairs_t *cgp) 
+pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_pairs_t *cgp, gs_glyph glyph) 
 {
     int code;
     pdf_resource_t *pres = (pdf_resource_t *)pdev->accumulating_substream_resource;
@@ -721,7 +721,6 @@ pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_
     double *real_widths;
     byte *glyph_usage;
     int char_cache_size, width_cache_size;
-    gs_glyph glyph0;
     bool checking_glyph_variation = false;
     int i;
 
@@ -780,7 +779,6 @@ pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_
 	return_error(gs_error_unregistered); /* Must not happen. */
     if (checking_glyph_variation)
 	pdev->charproc_just_accumulated = true;
-    glyph0 = font->procs.encode_char(font, ch, GLYPH_SPACE_NAME);
     pcp->char_next = pdfont->u.simple.s.type3.char_procs;
     pdfont->u.simple.s.type3.char_procs = pcp;
     pcp->font = pdfont;
@@ -793,12 +791,20 @@ pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_
 	pdfont->u.simple.v[ch].x = pcp->v.x;
 	pdfont->u.simple.v[ch].y = pcp->v.x;
     }
-    for (i = 0; i < 256; i++) {
-	gs_glyph glyph = font->procs.encode_char(font, i, 
-		    font->FontType == ft_user_defined ? GLYPH_SPACE_NOGEN
-						      : GLYPH_SPACE_NAME);
+    {	pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
 
-	if (glyph == glyph0) {
+	pet->glyph = glyph;
+	pet->str = pcp->char_name;
+	pet->is_difference = true;
+	if (pdfont->u.simple.LastChar < (int)ch)
+	    pdfont->u.simple.LastChar = (int)ch;
+	if (pdfont->u.simple.FirstChar > (int)ch)
+	    pdfont->u.simple.FirstChar = (int)ch;
+    }
+    for (i = 0; i < 256; i++) {
+	gs_glyph glyph1 = pdfont->u.simple.Encoding[i].glyph;
+
+	if (glyph == glyph1) {
 	    real_widths[i * 2    ] = real_widths[ch * 2    ];
 	    real_widths[i * 2 + 1] = real_widths[ch * 2 + 1];
 	    glyph_usage[i / 8] |= 0x80 >> (i & 7);
