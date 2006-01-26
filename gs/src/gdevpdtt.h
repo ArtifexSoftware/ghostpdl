@@ -111,6 +111,7 @@ typedef struct pdf_text_enum_s {
     bool cdevproc_callout;
     double cdevproc_result[10];
     pdf_char_glyph_pairs_t *cgp;
+    gs_char output_char_code;
 } pdf_text_enum_t;
 #define private_st_pdf_text_enum()\
   extern_st(st_gs_text_enum);\
