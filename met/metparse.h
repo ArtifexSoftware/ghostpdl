@@ -17,7 +17,6 @@
 #ifndef metparse_INCLUDED
 #  define metparse_INCLUDED
 
-#include "gx.h"
 #include "metstate.h" /* nb this should be separated out - reconsider */
 
 /* the size of the input buffer to be used by the parser */
@@ -25,12 +24,18 @@
 
 typedef struct met_parser_state_s met_parser_state_t;
 
+typedef struct data_element_s {
+    char debug_info[1024];
+    void *data;
+} data_element_t;
+
 struct met_parser_state_s {
     gs_memory_t *memory;
     int error_code; /* error detected in a callback */
     int depth;
     void *parser;
-    void *data_stack[20]; /* nb should not have depth limitation */
+    data_element_t data_stack[20]; /* nb should not have depth limitation */
+    int stack_top;
     met_state_t *mets; /* nb this should be separated out - reconsider */
 };
 

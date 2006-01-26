@@ -13,6 +13,7 @@
 /*$Id$*/
 
 #include "metstate.h"
+#include "metgstate.h"
 #include "plfont.h"
 
 /* allocate a metro state */
@@ -44,4 +45,5 @@ void
 met_state_init(met_state_t *pmet, gs_state *pgs)
 {
     pmet->pgs = pgs;
+    met_gstate_init(pgs, pmet->memory);
 }

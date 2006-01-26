@@ -36,6 +36,7 @@
 #include "sdct.h"
 #include "sjpeg.h"
 #include "zipparse.h"
+#include "mt_error.h"
 
 private int
 ImageBrush_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
@@ -72,7 +73,7 @@ ImageBrush_cook(void **ppdata, met_state_t *ms, const char *el, const char **att
         else if (!MYSET(&aImageBrush->ImageSource, "ImageSource"))
             ;
         else {
-            dprintf2(ms->memory, "unsupported attribute %s=%s\n",
+            mt_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -258,7 +259,7 @@ met_PaintPattern(const gs_client_color *pcc, gs_state *pgs)
     int code;
     /* should be just save the ctm */
     gs_gsave(pgs);
-    gs_scale(pgs, pmim->xres/96.0, pmim->yres/96.0);
+    gs_scale(pgs, 96.0/pmim->xres, 96.0/pmim->yres);
     gs_cspace_init_DeviceRGB(mem, &color_space);
     gs_image_t_init(&image, &color_space);
     image.ColorSpace = &color_space;

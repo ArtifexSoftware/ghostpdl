@@ -17,7 +17,11 @@
 #ifndef metstate_INCLUDED
 #  define metstate_INCLUDED
 
-#include "gx.h"
+#include "stdpre.h"
+#include "std.h"
+#include "gstypes.h"
+#include "gsstate.h"
+#include "gsmemory.h"
 #include "gsfont.h"
 #include "pltop.h" /* for pjls pointer */
 #include "pldict.h"

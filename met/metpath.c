@@ -23,6 +23,7 @@
 #include "gspath.h"
 #include "math_.h"
 #include "ctype_.h"
+#include "mt_error.h"
 #include <stdlib.h> /* nb for atof */
 
 
@@ -88,7 +89,7 @@ PathFigure_cook(void **ppdata, met_state_t *ms, const char *el, const char **att
         } else if (!strcmp(attr[i], "isFilled")) {
             aPathFigure->isFilled  = attr[i+1];
         } else {
-            dprintf2(ms->memory, "unsupported attribute %s=%s\n",
+            mt_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -169,7 +170,7 @@ Path_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
             ;
         
         else {
-            dprintf2(ms->memory, "unsupported attribute %s=%s\n",
+            mt_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -364,7 +365,7 @@ PolyLineSegment_cook(void **ppdata, met_state_t *ms, const char *el, const char 
         if (!strcmp(attr[i], "Points")) {
             aPolyLineSegment->Points = attr[i + 1];
         } else {
-            dprintf2(ms->memory, "unsupported attribute %s=%s\n",
+            mt_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -492,7 +493,7 @@ SolidColorBrush_cook(void **ppdata, met_state_t *ms, const char *el, const char 
         if (!strcmp(attr[i], "Color")) {
             aSolidColorBrush->Color = attr[i+1];
         } else {
-            dprintf2(ms->memory, "unsupported attribute %s=%s\n",
+            mt_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -602,18 +603,14 @@ ArcSegment_cook(void **ppdata, met_state_t *ms, const char *el, const char **att
             ;
         else if (!MYSET(&aArcSegment->SweepDirection, "SweepDirection"))
             ;
-        else if (!strcmp(attr[i], "RotationAngle")) {
+        else if (!strcmp(attr[i], "RotationAngle"))
             aArcSegment->RotationAngle = atof(attr[i+1]);
-            aArcSegment->avail.RotationAngle = 1;
-        } else if (!strcmp(attr[i], "IsLargeArc")) {
+        else if (!strcmp(attr[i], "IsLargeArc"))
             aArcSegment->IsLargeArc = !strcmp(attr[i+1], "true");
-            aArcSegment->avail.IsLargeArc = 1;
-        }
-        else if (!strcmp(attr[i], "IsStroked")) {
+        else if (!strcmp(attr[i], "IsStroked"))
             aArcSegment->IsStroked = !strcmp(attr[i+1], "true");
-            aArcSegment->avail.IsStroked = 1;
-        } else {
-            dprintf2(ms->memory, "unsupported attribute %s=%s\n",
+        else {
+            mt_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -623,32 +620,36 @@ ArcSegment_cook(void **ppdata, met_state_t *ms, const char *el, const char **att
     return 0;
 }
 
-/* action associated with this element.  NB a work in progress */
+/* given two vectors find the angle between */
+private double
+angle_between(const gs_point u, const gs_point v)
+{
+    double det = u.x * v.y - u.y * v.x;
+    double sign = (det < 0 ? -1.0 : 1.0);
+    double magu = u.x * u.x + u.y * u.y;
+    double magv = v.x * v.x + v.y * v.y;
+    double udotv = u.x * v.x + u.y * v.y;
+    return sign * acos(udotv / (magu * magv));
+}
+
+/* ArcSegment pretty much follows the SVG algorithm for converting an
+   arc in endpoint representation to an arc in centerpoint
+   representation.  Once in centerpoint it can be given to the
+   graphics library in the form of a postscript arc. */
 private int
 ArcSegment_action(void *data, met_state_t *ms)
 {
-    /*                        ArcSegment
-                        Size='100,50'
-                        RotationAngle='45'
-                        IsLargeArc='true'
-                        SweepDirection='Counterclockwise'
-                        Point='200,100'
-                        ArcSegment has no implementation
-                        /ArcSegment
-    */
-    
     CT_ArcSegment *aArcSegment = data;
     gs_state *pgs = ms->pgs;
     gs_memory_t *mem = ms->memory;
-    gs_point start, sstart, rstart, end, send, rend, size, midpoint;
-    double len;
-    double cosang, ang, slope, invslope, scalex, dis, distocenter, center1;
-    gs_matrix rot_mat, save_ctm;
+    gs_point start, end, size, midpoint, halfdis, thalfdis, tcenter, center;
+    double center1, sign, rot, start_angle, delta_angle;
     int code;
+    bool isLargeArc, isClockwise;
 
     /* should be available */
     if ((code = gs_currentpoint(pgs, &start)) < 0)
-        return code;
+        return mt_rethrow(code, "missing start point");
     
     /* get the end point */
     end = getPoint(aArcSegment->Point);
@@ -656,77 +657,102 @@ ArcSegment_action(void *data, met_state_t *ms)
     /* get the radii - M$ calls these the "size" */
     size = getPoint(aArcSegment->Size);
     
-    /* the midpoint of the line with endpoints at the intersections */
-    midpoint.x = (send.x + sstart.x) / 2.0;
-    midpoint.y = (send.y + sstart.y) / 2.0;
-    /* slope of the line and its inverse (angle + pi/2) */
-    slope = (end.y - start.y) / (end.x - start.x);
-    invslope = -1.0/slope;
+    /* set the large arc flag */
+    isLargeArc = aArcSegment->IsLargeArc;
 
-    /* length of the line segment connecting intersections */
-    dis = hypot(end.x - start.x, end.y - start.y);
-    /* length of the line segement connecting midpoint of to center of
-       either circle (ellipse), nb need an extra step for an ellipse.
-       (1/2 dis)^2 = 1/4 dis^2. */
-    distocenter = 1.0/4.0 * dis * dis + size.x * size.x;
+    /* set cw flag, nb probably should ignore case */
+    if (!strcmp(aArcSegment->SweepDirection, "Counterclockwise"))
+        isClockwise = false;
+    else
+        isClockwise = true;
+    sign = (isClockwise == isLargeArc ? -1.0 : 1.0);
     
-    /* project from midpoint to centers using polar coordinate */
-    //center1.x = distocenter * cos
-    
-    gs_make_identity(&rot_mat);
-    gs_matrix_translate(mem, &rot_mat, midpoint.x, midpoint.y, &rot_mat);
+    /* get the rotation angle. */
+    rot = aArcSegment->RotationAngle;
 
-    /* it turns out the length of the seqment between centerpoints of
-       the circles is 2 * (r^2 - (1/2 d)^2)^1/2 where r is size.y and
-       d is the euclidean distance between the points of intersection.
-       Simplifying we get (4r^2 - d^2)^1/2 */
+    /* get the distance of the radical line */
+    halfdis.x = (start.x - end.x) / 2.0;
+    halfdis.y = (start.y - end.y) / 2.0;
+    
+#define SQR(x) ((x)*(x))
+
+    /* rotate the halfdis vector so x axis parallel ellipse x axis */
     {
-        double dis = hypot(send.x - sstart.x, send.y - sstart.y);
-        double dis2 = sqrt((4 * size.y * size.y) - (dis * dis));
-        double sc = dis/dis2;
-        gs_matrix_scale(&rot_mat, sc, sc, &rot_mat);
-        gs_matrix_rotate(&rot_mat, 90, &rot_mat);
-        gs_point_transform(mem, send.x, send.y, &rot_mat, &rend);
-        gs_point_transform(mem, sstart.x, sstart.y, &rot_mat, &rstart);
+        gs_matrix rotmat;
+        double correction;
+        gs_make_rotation(-rot, &rotmat);
+        if ((code = gs_distance_transform(mem, halfdis.x, halfdis.y, &rotmat, &thalfdis)) < 0)
+            mt_rethrow(code, "transform failed\n");
+        /* correct radii if necessary */
+        correction = (SQR(thalfdis.x) / SQR(size.x)) + (SQR(thalfdis.y) / SQR(size.y));
+        if (correction > 1.0) {
+            size.x *= sqrt(correction);
+            size.y *= sqrt(correction);
+        }
     }
 
-    /*    slope = (end.y - start.y) / (end.y - start.y); */
+#define MULTOFSQUARES(x, y) (SQR((x)) * SQR((y)))
+    {
+        
+        double scale_num = (MULTOFSQUARES(size.x, size.y)) -
+            (MULTOFSQUARES(size.x, thalfdis.y)) -
+            (MULTOFSQUARES(size.y, thalfdis.x));
+        double scale_denom = MULTOFSQUARES(size.x, thalfdis.y) + MULTOFSQUARES(size.y, thalfdis.x);
+        double scale = sign * sqrt(((scale_num / scale_denom) < 0) ? 0 : (scale_num / scale_denom));
+        double foo1 = (MULTOFSQUARES(size.x, size.y));
+        double foo2 = (MULTOFSQUARES(size.x, thalfdis.y));
+        double foo3 = (MULTOFSQUARES(size.y, thalfdis.x));
 
-    /* the cos(x) = (start "dot" end) / |start||end| */
-    /*    cosang =          (start.x * end.x + start.y + end.y) / */
-              /* -------------------------------------------------- */
-    /*                 (hypot(start.x, start.y) * hypot(end.x, end.y)); */
-    /* the angle between the points is the arccosine */
-    /*    ang = acos(cosang); */
+        /* translated center */
+        tcenter.x = scale * ((size.x * thalfdis.y)/size.y);
+        tcenter.y = scale * ((-size.y * thalfdis.x)/size.x);
 
-    /* the radius - nb not finished. */
-    /*    size = getPoint(aArcSegment->Size); */
+        /* of the original radical line */
+        midpoint.x = (end.x + start.x) / 2.0;
+        midpoint.y = (end.y + start.y) / 2.0;
+        
+        center.x = tcenter.x + midpoint.x;
+        center.y = tcenter.y + midpoint.y;
+        {
+            gs_point coord1, coord2, coord3, coord4;
+            coord1.x = 1;
+            coord1.y = 0;
+            coord2.x = (thalfdis.x - tcenter.x) / size.x; 
+            coord2.y = (thalfdis.y - tcenter.y) / size.y;
+            coord3.x = (thalfdis.x - tcenter.x) / size.x;
+            coord3.y = (thalfdis.y - tcenter.y) / size.y;
+            coord4.x = (-thalfdis.x - tcenter.x) / size.x;
+            coord4.y = (-thalfdis.y - tcenter.y) / size.y;
+            start_angle = angle_between(coord1, coord2);
+            delta_angle = angle_between(coord3, coord4);
+            if (delta_angle < 0 && !isClockwise)
+                delta_angle += (degrees_to_radians * 360);
+            if (delta_angle > 0 && isClockwise)
+                delta_angle -= (degrees_to_radians * 360);
+                
+        }
+    }
+
+    {
+        gs_matrix save_ctm;
+        gs_currentmatrix(pgs, &save_ctm);
+        gs_translate(pgs, center.x, center.y);
+        gs_rotate(pgs, rot);
+        gs_scale(pgs, size.x, size.y);
     
-    gs_currentmatrix(pgs, &save_ctm);
+        if ((code = gs_arcn(pgs, 0, 0, 1,
+                            radians_to_degrees * start_angle,
+                            radians_to_degrees * (start_angle + delta_angle))) < 0)
+            return mt_rethrow(code, "arc failed\n");
+        
 
-    gs_translate(pgs, rstart.x, rstart.y);
-    gs_scale(pgs, size.x, size.y);
-
-    if ((code = gs_arc(pgs, 0, 0, 1.0, 0, 360.0)) < 0)
-        return code;
-
-    /* restore the ctm */
-    gs_setmatrix(pgs, &save_ctm);
-    gs_translate(pgs, rend.x, rend.y);
-    gs_scale(pgs, size.x, size.y);
-
-    if ((code = gs_arc(pgs, 0, 0, 1.0, 0, 360.0)) < 0)
-        return code;
-
-    /* restore the ctm */
-    gs_setmatrix(pgs, &save_ctm);
-
-    if (aArcSegment->avail.IsStroked) {
-        if (aArcSegment->IsStroked == false)
-            nb_pathstate.stroke = 0;
-        else
-            nb_pathstate.stroke = 1;
+        /* restore the ctm */
+        gs_setmatrix(pgs, &save_ctm);
     }
+    if (aArcSegment->IsStroked == false)
+        nb_pathstate.stroke = 0;
+    else
+        nb_pathstate.stroke = 1;
     return 0;
 }
 
@@ -764,7 +790,7 @@ PolyBezierSegment_cook(void **ppdata, met_state_t *ms, const char *el, const cha
         if (!strcmp(attr[i], "Points")) {
             aPolyBezierSegment->Points = attr[i + 1];
         } else {
-            dprintf2(ms->memory, "unsupported attribute %s=%s\n",
+            mt_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }

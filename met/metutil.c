@@ -83,3 +83,15 @@ met_hex2rgb(char *hexstring)
     rgb.r /= 256.0; rgb.g /= 256.0; rgb.b /= 256.0;
     return rgb;
 }
+
+
+char *
+met_strdup(gs_memory_t *mem, const char *str)
+{
+    char *s = NULL;   
+    if ( str )
+        s = gs_alloc_bytes(mem, strlen(str) + 1, met_strdup);
+    if ( s )
+        strcpy(s, str);
+    return s;
+}

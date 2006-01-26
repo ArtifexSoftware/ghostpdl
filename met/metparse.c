@@ -20,6 +20,8 @@
 #include "metelement.h"
 #include "metcomplex.h"
 #include "mt_error.h"
+#include "gdebug.h"
+
 /* have expat use the gs memory manager. */
 
 
@@ -87,16 +89,19 @@ met_start(void *data, const char *el, const char **attr)
                          metp->element);
             }
         } else {
-            code = (*metp->init)(&st->data_stack[st->depth], st->mets, el, attr);
+            data_element_t *data = &st->data_stack[st->stack_top];
+            sprintf(data->debug_info, "depth=%d, element called=%s\n", st->depth, el);
+            code = (*metp->init)(&data->data, st->mets, el, attr);
             if (code < 0) {
 		mt_rethrow(code, "met_start init");
                 met_set_error(st, code);
             }
-            code = (*metp->action)(st->data_stack[st->depth], st->mets);
+            code = (*metp->action)(data->data, st->mets);
             if (code < 0) {
 		mt_rethrow(code, "met_start action");
                 met_set_error(st, code);
             }
+            st->stack_top++;
         }
     }
     st->depth++;
@@ -123,11 +128,15 @@ met_end(void *data, const char *el)
         dprintf2(mem, "%*s\n", INDENT + strlen(str), str);
     }
 
-    if (metp && metp->done)
-        code = (*metp->done)(st->data_stack[st->depth], st->mets);
-    if (code < 0) {
-	mt_rethrow(code, "metp->done");
-        met_set_error(st, code);
+    if (metp && metp->done) {
+        data_element_t *data;
+        st->stack_top--;
+        data = &st->data_stack[st->stack_top];
+        code = (*metp->done)(data->data, st->mets);
+        if (code < 0) {
+            mt_rethrow(code, "metp->done");
+            met_set_error(st, code);
+        }
     }
 }
 
@@ -162,6 +171,7 @@ met_process_alloc(gs_memory_t *memory)
     stp->parser = p;
     stp->depth = 0;    
     stp->error_code = 0;
+    stp->stack_top = 0;
     /* set up the start end callbacks */
     XML_SetElementHandler(p, met_start, met_end);
     XML_SetUserData(p, stp);

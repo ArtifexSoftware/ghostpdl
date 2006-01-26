@@ -27,12 +27,6 @@ typedef struct CT_ArcSegment_s {
     ST_Boolean IsLargeArc;
     ST_SweepDirection SweepDirection;
     ST_Boolean IsStroked;
-    struct {
-        unsigned RotationAngle : 1;
-        unsigned IsLargeArc : 1;
-        unsigned IsStroked : 1;
-    } avail;
-
 } CT_ArcSegment;
 
 

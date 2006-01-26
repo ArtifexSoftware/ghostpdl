@@ -15,11 +15,16 @@
 /* metro page related elements */
 
 #include "memory_.h"
+#include "gstypes.h"
+#include "gsstate.h"
+#include "gscoord.h"
 #include "gsmemory.h"
 #include "gsparam.h"
 #include "gsdevice.h"
+#include "gspaint.h"
 #include "metcomplex.h"
 #include "metelement.h"
+#include "mt_error.h"
 #include <stdlib.h> /* nb for atof */
 
 private int
@@ -45,7 +50,7 @@ FixedPage_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr
             fp->BleedBox = attr[i+1];
             fp->avail.BleedBox = 1;
         } else {
-            dprintf2(ms->memory, "unsupported attribute %s=%s\n", 
+            mt_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -75,7 +80,7 @@ FixedPage_action(void *data, met_state_t *ms)
     fv[0] = fp->Width / 96.0 * 72.0;
     fv[1] = fp->Height / 96.0 * 72.0;
     fa.size = 2;
-    code = param_write_float_array(&list, ".MediaSize", &fa);
+    code = param_write_float_array((gs_param_list *)&list, ".MediaSize", &fa);
     gs_c_param_list_write(&list, mem);
     if ( code >= 0 ) { 
         gs_c_param_list_read(&list);
@@ -101,7 +106,7 @@ FixedPage_action(void *data, met_state_t *ms)
 private int
 FixedPage_done(void *data, met_state_t *ms)
 {
-    CT_FixedPage *fp = data;
+    /* CT_FixedPage *fp = data; */
     (ms->end_page)(ms, 1 /* Copies */, true /* flush */);
 
     gs_free_object(ms->memory, data, "FixedPage_done");

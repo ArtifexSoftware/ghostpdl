@@ -19,6 +19,8 @@ met.config-clean: clean_gs
 
 # NB needs expat dependencies.
 
+metgstate_h = $(METSRC)metgstate.h
+
 metparse_h  = $(METSRC)metparse.h \
               $(gx_h)
 
@@ -47,6 +49,9 @@ $(METOBJ)metpath.$(OBJ): $(METSRC)metpath.c $(metutil_h)
 
 $(METOBJ)metglyphs.$(OBJ): $(METSRC)metglyphs.c $(metutil_h)
 	$(METCCC) $(METSRC)metglyphs.c $(METO_)metglyphs.$(OBJ)
+
+$(METOBJ)metgstate.$(OBJ): $(METSRC)metgstate.c $(metgstate_h)
+	$(METCCC) $(METSRC)metgstate.c $(METO_)metgstate.$(OBJ)
 
 $(METOBJ)metutil.$(OBJ): $(METSRC)metutil.c $(metutil_h)
 	$(METCCC) $(METSRC)metutil.c $(METO_)metutil.$(OBJ)
@@ -91,7 +96,7 @@ MET_OBJS=$(METOBJ)metparse.$(OBJ) $(METOBJ)metstate.$(OBJ) \
 	 $(METOBJ)metglyphs.$(OBJ) $(METOBJ)metutil.$(OBJ) \
 	 $(METOBJ)metimage.$(OBJ) $(METOBJ)zipparse.$(OBJ) \
 	 $(METOBJ)zippart.$(OBJ) $(METOBJ)mt_error.$(OBJ) \
-	 $(METOBJ)mt_png.$(OBJ) 
+	 $(METOBJ)metgstate.$(OBJ) $(METOBJ)mt_png.$(OBJ) 
 
 $(METOBJ)met.dev: $(MET_MAK) $(ECHOGS_XE) $(MET_OBJS)
 	$(SETMOD) $(METOBJ)met $(MET_OBJS)

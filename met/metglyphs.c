@@ -27,6 +27,7 @@
 #include "gsgdata.h"
 #include "gxfont.h"
 #include "gxfont42.h"
+#include "mt_error.h"
 #include <stdlib.h> /* nb for atof */
 #include "plfont.h"
 #include "gstext.h"
@@ -222,7 +223,7 @@ Glyphs_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
             aGlyphs->FontRenderingEmSize = atof(attr[i+1]);
             aGlyphs->avail.FontRenderingEmSize = 1;
         } else {
-            dprintf2(0, "unsupported attribute %s=%s\n",
+            mt_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }

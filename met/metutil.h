@@ -19,6 +19,7 @@
 #   define metutil_INCLUDED
 
 #include "stdpre.h" /* for bool */
+#include "gsmemory.h"
 
 /* utility for splitting up strings - destroys argument and client
    must determine supply a large enough argument list to support all
@@ -47,4 +48,5 @@ typedef struct rgb_s {
 
 rgb_t met_hex2rgb(char *hexstring);
 
+char *met_strdup(gs_memory_t *mem, const char *str);
 #endif /* metutil_INCLUDED */

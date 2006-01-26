@@ -577,6 +577,8 @@ zip_end_job(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip)
     return zip_initialize(pzip);
 }
 
+#include "gdebug.h" /* for gs_debug hack below */
+
 zip_state_t *
 zip_init_instance(gs_memory_t *mem)
 {
