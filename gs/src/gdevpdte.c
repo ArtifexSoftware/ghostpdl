@@ -56,12 +56,9 @@ pdf_process_string_aux(pdf_text_enum_t *penum, gs_string *pstr,
 			  const gs_glyph *gdata, const gs_matrix *pfmat,
 			  pdf_text_process_state_t *ppts)
 {
-    gx_device_pdf *const pdev = (gx_device_pdf *)penum->dev;
-    pdf_font_resource_t *pdfont;
-    gs_font_base *font;
-    int code = 0;
+    gs_font_base *font = (gs_font_base *)penum->current_font;
 
-    switch (penum->current_font->FontType) {
+    switch (font->FontType) {
     case ft_TrueType:
     case ft_encrypted:
     case ft_encrypted2:
@@ -70,7 +67,6 @@ pdf_process_string_aux(pdf_text_enum_t *penum, gs_string *pstr,
     default:
 	return_error(gs_error_rangecheck);
     }
-    font = (gs_font_base *)penum->current_font;
     return pdf_process_string(penum, pstr, pfmat, ppts, gdata);
 }
 
@@ -202,7 +198,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
 		  gs_char ch, const gs_glyph *gdata)
 {
     gs_font_base *cfont, *ccfont;
-    int code, i;
+    int code;
     gs_glyph copied_glyph;
     gs_const_string gnstr;
     pdf_encoding_element_t *pet;
