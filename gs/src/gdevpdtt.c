@@ -43,7 +43,6 @@
 #include "gdevpdtt.h"
 #include "gdevpdti.h"
 #include "gxhldevc.h"
-#include "assert.h"
 
 /* ================ Text enumerator ================ */
 
@@ -122,20 +121,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	gs_glyph glyph;
 	gs_const_string gnstr;
 
-	if (penum->text.operation & TEXT_FROM_SINGLE_GLYPH) {
-	    glyph = pte->text.data.d_glyph;
-	    assert(glyph == penum->returned.current_glyph);
-	} else if (penum->orig_font->FontType == ft_composite) {
-	    glyph = penum->returned.current_glyph;
-	} else {
-	    glyph = font->procs.encode_char(font, penum->output_char_code, GLYPH_SPACE_NAME);
-	    assert(glyph == penum->returned.current_glyph);
-	    /* fixme : can we use penum->returned.current_glyph ? */
-	    /*
-	     * If glyph == GS_NO_GLYPH, we should replace it with 
-	     * a notdef glyph, but we don't know how to do with Type 3 fonts.
-	     */
-	}
+        glyph = penum->returned.current_glyph;
 	if (glyph != GS_NO_GLYPH && penum->output_char_code != GS_NO_CHAR) {
 	    gs_show_enum *penum_s;
 	    extern_st(st_gs_show_enum);
@@ -2071,8 +2057,7 @@ pdf_choose_output_char_code(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_char
 	} else
 	    ch = penum->returned.current_char;
     } else {
-	ch = penum->text.data.bytes[penum->index];
-	assert(ch == penum->returned.current_char);
+	ch = penum->returned.current_char;
 	/* Keep for records : glyph = font->procs.encode_char(font, ch, GLYPH_SPACE_NAME); */
 	/*
 	 * If glyph == GS_NO_GLYPH, we should replace it with 
