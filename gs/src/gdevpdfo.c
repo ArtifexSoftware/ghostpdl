@@ -854,6 +854,17 @@ cos_dict_put_copy(cos_dict_t *pcd, const byte *key_data, uint key_size,
 	ppcde = &next->next;
     if (next) {
 	/* We're replacing an existing element. */
+	if ((pvalue->value_type == COS_VALUE_SCALAR ||
+	     pvalue->value_type == COS_VALUE_CONST) &&
+	    pvalue->value_type == next->value.value_type &&
+	    !bytes_compare(pvalue->contents.chars.data, pvalue->contents.chars.size, 
+		next->value.contents.chars.data, next->value.contents.chars.size))
+	    return 0; /* Same as old value. */
+	if ((pvalue->value_type == COS_VALUE_OBJECT ||
+	     pvalue->value_type == COS_VALUE_RESOURCE) &&
+	    pvalue->value_type == next->value.value_type &&
+	    pvalue->contents.object == next->value.contents.object)
+	    return 0; /* Same as old value. */
 	code = cos_copy_element_value(&value, mem, pvalue,
 				      (flags & DICT_COPY_VALUE) != 0);
 	if (code < 0)
