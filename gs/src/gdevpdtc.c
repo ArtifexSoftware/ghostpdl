@@ -137,7 +137,7 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 	    out.text.space.s_char = space_char;
 
 	    gs_matrix_multiply(&prev_font->FontMatrix, psmat, &fmat);
-	    code = pdf_encode_process_string(&out, &str, NULL, &fmat, &text_state);
+	    code = pdf_process_string_aux(&out, &str, NULL, &fmat, &text_state);
 	    if (code < 0)
 		return code;
 	    curr.xy_index = out.xy_index; /* pdf_encode_process_string advanced it. */
@@ -560,7 +560,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		pte->text.y_widths += xy_index * xy_index_step;
 	    pte->xy_index = 0;
 	    code = process_text_modify_width((pdf_text_enum_t *)pte, (gs_font *)font,
-				  &text_state, &str, &wxy, true);
+				  &text_state, &str, &wxy, NULL, true);
 	    if (pte->text.x_widths != NULL)
 		pte->text.x_widths -= xy_index * xy_index_step;
 	    if (pte->text.y_widths != NULL)

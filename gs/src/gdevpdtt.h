@@ -286,9 +286,9 @@ PROCESS_TEXT_PROC(process_cid_text);
 PROCESS_TEXT_PROC(process_plain_text);
 
 /*
- * Encode and process a string with a simple gs_font.
+ * Process a string with a simple gs_font.
  */
-int pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
+int pdf_process_string_aux(pdf_text_enum_t *penum, gs_string *pstr,
 			      const gs_glyph *gdata, const gs_matrix *pfmat,
 			      pdf_text_process_state_t *ppts);
 
@@ -300,7 +300,7 @@ int pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 int process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 			  pdf_text_process_state_t *ppts,
 			  const gs_const_string *pstr,
-			  gs_point *pdpt, bool composite);
+			  gs_point *pdpt, const gs_glyph *gdata, bool composite);
 
 /* 
  * Add char code pair to ToUnicode CMap,
