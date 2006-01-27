@@ -235,28 +235,29 @@ pdf_char_image_y_offset(const gx_device_pdf *pdev, int x, int y, int h)
     return off;
 }
 
-/* Begin a CharProc for a synthesized font. */
-private int
-pdf_begin_char_proc_generic(gx_device_pdf * pdev, pdf_font_resource_t *pdfont,
-		    gs_id id, gs_char char_code, 
-		    pdf_char_proc_t ** ppcp, pdf_stream_position_t * ppos)
+/* Begin a CharProc for a synthesized (bitmap) font. */
+int
+pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
+		    int y_offset, gs_id id, pdf_char_proc_t ** ppcp,
+		    pdf_stream_position_t * ppos)
 {
+    int char_code = assign_char_code(pdev, pdev->pte);
+    pdf_bitmap_fonts_t *const pbfs = pdev->text->bitmap_fonts; 
+    pdf_font_resource_t *font = pbfs->open_font; /* Type 3 */
     pdf_resource_t *pres;
     pdf_char_proc_t *pcp;
-    int code;
+    int code = pdf_begin_resource(pdev, resourceCharProc, id, &pres);
 
-    code = pdf_begin_resource(pdev, resourceCharProc, id, &pres);
     if (code < 0)
 	return code;
     pcp = (pdf_char_proc_t *) pres;
-    pcp->font = pdfont;
-    pcp->char_next = pdfont->u.simple.s.type3.char_procs;
-    pdfont->u.simple.s.type3.char_procs = pcp;
+    pcp->font = font;
+    pcp->char_next = font->u.simple.s.type3.char_procs;
+    font->u.simple.s.type3.char_procs = pcp;
     pcp->char_code = char_code;
     pres->object->written = true;
     pcp->char_name.data = 0; 
     pcp->char_name.size = 0;
-
     {
 	stream *s = pdev->strm;
 
@@ -273,24 +274,9 @@ pdf_begin_char_proc_generic(gx_device_pdf * pdev, pdf_font_resource_t *pdfont,
     code = pdf_begin_encrypt(pdev, &pdev->strm, pres->object->id);
     if (code < 0)
 	return code;
-    *ppcp = pcp;
-    return 0;
-}
-
-/* Begin a CharProc for a synthesized (bitmap) font. */
-int
-pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
-		    int y_offset, gs_id id, pdf_char_proc_t ** ppcp,
-		    pdf_stream_position_t * ppos)
-{
-    int char_code = assign_char_code(pdev, pdev->pte);
-    pdf_bitmap_fonts_t *const pbfs = pdev->text->bitmap_fonts; 
-    pdf_font_resource_t *font = pbfs->open_font; /* Type 3 */
-    int code = pdf_begin_char_proc_generic(pdev, font, id, char_code, ppcp, ppos);
-    
     if (code < 0)
 	return code;
-    (*ppcp)->y_offset = y_offset;
+    pcp->y_offset = y_offset;
     font->u.simple.s.type3.FontBBox.p.y =
 	min(font->u.simple.s.type3.FontBBox.p.y, y_offset);
     font->u.simple.s.type3.FontBBox.q.x =
@@ -299,6 +285,7 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
 	max(font->u.simple.s.type3.FontBBox.q.y, y_offset + h);
     font->u.simple.s.type3.max_y_offset =
 	max(font->u.simple.s.type3.max_y_offset, h + (h >> 2));
+    *ppcp = pcp;
     return 0;
 }
 
