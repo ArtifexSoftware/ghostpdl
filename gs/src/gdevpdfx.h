@@ -194,6 +194,7 @@ typedef enum {
 
 /* Define abstract types. */
 typedef struct pdf_char_proc_s pdf_char_proc_t;	/* gdevpdff.h */
+typedef struct pdf_char_proc_ownership_s pdf_char_proc_ownership_t;	/* gdevpdff.h */
 typedef struct pdf_font_s pdf_font_t;  /* gdevpdff.h */
 typedef struct pdf_text_data_s pdf_text_data_t;  /* gdevpdft.h */
 

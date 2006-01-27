@@ -38,7 +38,7 @@
 struct pdf_char_proc_s {
     pdf_resource_common(pdf_char_proc_t);
     pdf_font_resource_t *font;
-    pdf_char_proc_t *char_next;	/* next char_proc for same font */
+    pdf_char_proc_ownership_t *owner_fonts; /* fonts using this charproc. */
     int y_offset;		/* of character (0,0) */
     gs_char char_code;
     gs_const_string char_name;
@@ -49,7 +49,16 @@ struct pdf_char_proc_s {
 /* The descriptor is public for pdf_resource_type_structs. */
 gs_public_st_suffix_add2_string1(st_pdf_char_proc, pdf_char_proc_t,
   "pdf_char_proc_t", pdf_char_proc_enum_ptrs, pdf_char_proc_reloc_ptrs,
-  st_pdf_resource, font, char_next, char_name);
+  st_pdf_resource, font, owner_fonts, char_name);
+
+struct pdf_char_proc_ownership_s {
+    pdf_char_proc_t *char_proc;
+    pdf_char_proc_ownership_t *font_next;	/* next char_proc for same font */
+    pdf_char_proc_ownership_t *char_next;	/* next char_proc for same charproc */
+};
+gs_private_st_ptrs3(st_pdf_char_proc_ownership, pdf_char_proc_ownership_t,
+  "pdf_char_proc_ownership_t", pdf_char_proc_ownership_enum_ptrs,
+  pdf_char_proc_ownership_reloc_ptrs, char_proc, char_next, font_next);
 
 /* Define the state structure for tracking bitmap fonts. */
 /*typedef struct pdf_bitmap_fonts_s pdf_bitmap_fonts_t;*/
@@ -132,7 +141,7 @@ int
 pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     stream *s = pdev->strm;
-    const pdf_char_proc_t *pcp;
+    const pdf_char_proc_ownership_t *pcpo;
     long diff_id = 0;
     int code;
 
@@ -147,9 +156,11 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	return code;
     stream_puts(s, "/CharProcs <<");
     /* Write real characters. */
-    for (pcp = pdfont->u.simple.s.type3.char_procs; pcp;
-	 pcp = pcp->char_next
+    for (pcpo = pdfont->u.simple.s.type3.char_procs; pcpo;
+	 pcpo = pcpo->char_next
 	 ) {
+	const pdf_char_proc_t *pcp = pcpo->char_proc;
+
 	if (pdfont->u.simple.s.type3.bitmap_font)
 	    pprintld2(s, "/a%ld %ld 0 R\n", (long)pcp->char_code,
 		      pdf_char_proc_id(pcp));
@@ -235,6 +246,25 @@ pdf_char_image_y_offset(const gx_device_pdf *pdev, int x, int y, int h)
     return off;
 }
 
+/* Attach a CharProc to a font. */
+private int
+pdf_attach_charproc(gx_device_pdf * pdev, pdf_font_resource_t *pdfont, pdf_char_proc_t *pcp)
+{
+    pdf_char_proc_ownership_t *pcpo = gs_alloc_struct(pdev->pdf_memory, 
+	    pdf_char_proc_ownership_t, &st_pdf_char_proc_ownership, "pdf_attach_charproc");
+
+    if (pcpo == NULL)
+	return_error(gs_error_VMerror);
+    pcp->font = pdfont;
+    pcpo->char_next = pdfont->u.simple.s.type3.char_procs;
+    pdfont->u.simple.s.type3.char_procs = pcpo;
+    pcpo->char_proc = pcp;
+    pcpo->font_next = pcp->owner_fonts;
+    pcp->owner_fonts = pcpo;
+    return 0;
+}
+
+
 /* Begin a CharProc for a synthesized (bitmap) font. */
 int
 pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
@@ -251,9 +281,9 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
     if (code < 0)
 	return code;
     pcp = (pdf_char_proc_t *) pres;
-    pcp->font = font;
-    pcp->char_next = font->u.simple.s.type3.char_procs;
-    font->u.simple.s.type3.char_procs = pcp;
+    code = pdf_attach_charproc(pdev, font, pcp);
+    if (code < 0)
+	return code;
     pcp->char_code = char_code;
     pres->object->written = true;
     pcp->char_name.data = 0; 
@@ -380,7 +410,7 @@ pdf_start_charproc_accum(gx_device_pdf *pdev)
     if (code < 0)
        return code;
     pcp = (pdf_char_proc_t *)pres;
-    pcp->char_next = NULL;
+    pcp->owner_fonts = NULL;
     pcp->font = NULL;
     pcp->char_code = GS_NO_CHAR;
     pcp->char_name.data = NULL;
@@ -404,7 +434,7 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int
     if (code < 0)
 	return code;
     pcp = (pdf_char_proc_t *)pres;
-    pcp->char_next = NULL;
+    pcp->owner_fonts = NULL;
     pcp->font = pdfont;
     pcp->char_code = ch;
     pcp->char_name = *gnstr;
@@ -648,11 +678,13 @@ pdf_find_same_charproc(gx_device_pdf *pdev,
 	    pdf_font_resource_t *pdfont, const pdf_char_glyph_pairs_t *cgp, 
 	    pdf_char_proc_t **ppcp)
 {
-    pdf_char_proc_t *pcp;
+    pdf_char_proc_ownership_t *pcpo;
     int code;
 
     pdev->cgp = cgp;
-    for (pcp = pdfont->u.simple.s.type3.char_procs; pcp != NULL; pcp = pcp->char_next) {
+    for (pcpo = pdfont->u.simple.s.type3.char_procs; pcpo != NULL; pcpo = pcpo->char_next) {
+	pdf_char_proc_t *pcp = pcpo->char_proc;
+
 	if (*ppcp != pcp && pdf_is_same_charproc1(pdev, *ppcp, pcp)) {
     	    cos_object_t *pco0 = pcp->object;
     	    cos_object_t *pco1 = (*ppcp)->object;
@@ -669,7 +701,6 @@ pdf_find_same_charproc(gx_device_pdf *pdev,
 	    }
 	}
     }
-    pcp = *ppcp;
     code = pdf_find_same_resource(pdev, resourceCharProc, (pdf_resource_t **)ppcp, pdf_is_same_charproc);
     pdev->cgp = NULL;
     if (code <= 0)
@@ -681,9 +712,11 @@ pdf_find_same_charproc(gx_device_pdf *pdev,
 private bool
 pdf_is_charproc_defined(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, gs_char ch)
 {
-    pdf_char_proc_t *pcp;
+    pdf_char_proc_ownership_t *pcpo;
 
-    for (pcp = pdfont->u.simple.s.type3.char_procs; pcp != NULL; pcp = pcp->char_next) {
+    for (pcpo = pdfont->u.simple.s.type3.char_procs; pcpo != NULL; pcpo = pcpo->char_next) {
+	pdf_char_proc_t *pcp = pcpo->char_proc;
+
 	if (pcp->char_code == ch) {
 	    return true;
 	}
@@ -766,9 +799,9 @@ pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_
 	return_error(gs_error_unregistered); /* Must not happen. */
     if (checking_glyph_variation)
 	pdev->charproc_just_accumulated = true;
-    pcp->char_next = pdfont->u.simple.s.type3.char_procs;
-    pdfont->u.simple.s.type3.char_procs = pcp;
-    pcp->font = pdfont;
+    code = pdf_attach_charproc(pdev, pdfont, pcp);
+    if (code < 0)
+	return code;
     pdfont->Widths[ch] = pcp->real_width.x;
     real_widths[ch * 2    ] = pcp->real_width.x;
     real_widths[ch * 2 + 1] = pcp->real_width.y;
