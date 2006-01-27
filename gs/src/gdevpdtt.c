@@ -2139,7 +2139,8 @@ pdf_text_process(gs_text_enum_t *pte)
     pte_default = penum->pte_default;
     if (pte_default) {
 	if (penum->charproc_accum) {
-	    code = pdf_end_charproc_accum(pdev, penum->current_font, penum->cgp, pte_default->returned.current_glyph);
+	    code = pdf_end_charproc_accum(pdev, penum->current_font, penum->cgp, 
+			pte_default->returned.current_glyph, penum->output_char_code);
 	    if (code < 0)
 		return code;
 	    penum->charproc_accum = false;

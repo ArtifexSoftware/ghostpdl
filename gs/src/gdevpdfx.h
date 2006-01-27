@@ -647,6 +647,7 @@ struct gx_device_pdf_s {
     /* Temporary data for pdfmark_BP. */
     gs_const_string objname;
     int OPDFRead_procset_length;      /* PS2WRITE only. */
+    void *find_resource_param; /* WARNING : not visible for garbager. */
 };
 
 #define is_in_page(pdev)\
@@ -1217,8 +1218,8 @@ int pdf_start_charproc_accum(gx_device_pdf *pdev);
 int pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int narg,
 		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr);
 /* Complete charproc accumulation for aType 3 font. */
-int pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, 
-		const pdf_char_glyph_pairs_t *cgp, gs_glyph glyph0);
+int pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_pairs_t *cgp, 
+		       gs_glyph glyph, gs_char output_char_code);
 
 /* Open a stream object in the temporary file. */
 int pdf_open_aside(gx_device_pdf *pdev, pdf_resource_type_t rtype, 

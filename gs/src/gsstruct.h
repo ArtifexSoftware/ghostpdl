@@ -881,6 +881,18 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 #define gs_private_st_suffix_add2(stname, stype, sname, penum, preloc, supstname, e1, e2)\
   gs__st_suffix_add2(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2)
 
+	/* Suffix subclasses with 1 additional pointers and 1 string. */
+
+#define gs__st_suffix_add1_string1(scope_st, stname, stype, sname, penum, preloc, supstname, e1, e2)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT(stype, e1),\
+    GC_STRING_ELT(stype, e2)\
+  };\
+  gs__st_basic_super(scope_st, stname, stype, sname, penum, preloc, &supstname, 0)
+#define gs_public_st_suffix_add1_string1(stname, stype, sname, penum, preloc, supstname, e1, e2)\
+  gs__st_suffix_add1_string1(public_st, stname, stype, sname, penum, preloc, supstname, e1, e2)
+#define gs_private_st_suffix_add1_string1(stname, stype, sname, penum, preloc, supstname, e1, e2)\
+  gs__st_suffix_add1_string1(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2)
 	/* Suffix subclasses with 2 additional pointers and 1 string. */
 
 #define gs__st_suffix_add2_string1(scope_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3)\
