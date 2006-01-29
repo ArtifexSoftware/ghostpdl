@@ -33,7 +33,7 @@
 #include "gdevpdtd.h"
 #include "gdevpdtf.h"
 #include "gdevpdtw.h"
-#include "gdevpdt.h"
+#include "gdevpdti.h"
 
 /* GC descriptors */
 public_st_pdf_font_resource();

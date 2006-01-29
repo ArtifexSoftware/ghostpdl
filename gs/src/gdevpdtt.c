@@ -117,7 +117,6 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    penum->outer_CID == GS_NO_GLYPH &&
 	    !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
 	int code;
-	gs_font *font = penum->current_font;
 	gs_glyph glyph;
 
         glyph = penum->returned.current_glyph;
@@ -2053,7 +2052,6 @@ private int
 pdf_choose_output_glyph_hame(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_const_string *gnstr, gs_glyph glyph)
 {
     if (penum->orig_font->FontType == ft_composite) {
-	pdf_font_resource_t *pdfont;
 	char buf[6];
 	byte *p;
 

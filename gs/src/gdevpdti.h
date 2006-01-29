@@ -76,6 +76,6 @@ int pdf_write_bitmap_fonts_Encoding(gx_device_pdf *pdev);
 int pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
 
 /* Mark glyph names for garbager. */
-void pdf_mark_glyph_names(pdf_font_resource_t *pdfont, gs_memory_t *memory);
+void pdf_mark_glyph_names(const pdf_font_resource_t *pdfont, const gs_memory_t *memory);
 
 #endif /* gdevpdti_INCLUDED */

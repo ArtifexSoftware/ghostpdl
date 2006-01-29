@@ -155,8 +155,6 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     for (pcpo = pdfont->u.simple.s.type3.char_procs; pcpo;
 	 pcpo = pcpo->char_next
 	 ) {
-	const pdf_char_proc_t *pcp = pcpo->char_proc;
-
 	if (pdfont->u.simple.s.type3.bitmap_font)
 	    pprintld2(s, "/a%ld %ld 0 R\n", (long)pcpo->char_code,
 		      pdf_char_proc_id(pcpo->char_proc));
@@ -357,21 +355,9 @@ pdf_end_char_proc(gx_device_pdf * pdev, pdf_stream_position_t * ppos)
     return 0;
 }
 
-private gs_char
-pdf_char_code_in_font(pdf_font_resource_t *pdfont, const pdf_char_proc_t * pcp)
-{
-    const pdf_char_proc_ownership_t *pcpo = pcp->owner_fonts;
-
-    for (; pcpo != NULL; pcpo = pcpo->font_next) {
-	if (pcpo->font == pdfont)
-	    return pcpo->char_code;
-    }
-    return GS_NO_CHAR;
-}
-
 /* Mark glyph names for garbager. */
 void
-pdf_mark_glyph_names(pdf_font_resource_t *pdfont, gs_memory_t *memory)
+pdf_mark_glyph_names(const pdf_font_resource_t *pdfont, const gs_memory_t *memory)
 {
     if (pdfont->mark_glyph == NULL) {
 	/* Synthesised bitmap fonts pass here. */
@@ -732,7 +718,7 @@ pdf_is_charproc_compatible(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_reso
        otherwise it creates too mixed fonts and disturbs word breaks.
      */
     for (pcpo = pcp1->owner_fonts; pcpo != NULL; pcpo = pcpo->char_next) {
-	if (pcpo->char_code != data->char_code | pcpo->glyph != data->glyph)
+	if (pcpo->char_code != data->char_code || pcpo->glyph != data->glyph)
 	    continue; /* Need same Encoding to generate a proper ToUnicode. */
 	if (pdfont->u.simple.s.type3.bitmap_font != pcpo->font->u.simple.s.type3.bitmap_font)
 	    continue;
@@ -757,7 +743,6 @@ private int
 pdf_find_same_charproc_aux(gx_device_pdf *pdev, 
 	    pdf_font_resource_t **ppdfont, pdf_char_proc_t **ppcp)
 {
-    charproc_compatibility_data_t *data = (charproc_compatibility_data_t *)pdev->find_resource_param;
     pdf_char_proc_ownership_t *pcpo;
     int code;
 
@@ -866,7 +851,7 @@ pdf_char_widths_from_charprocs(gx_device_pdf *pdev, gs_font *font)
     byte *glyph_usage;
     int char_cache_size, width_cache_size;
     pdf_char_proc_ownership_t *pcpo;
-    int code, i;
+    int code;
 
     code = pdf_attached_font_resource(pdev, font, &pdfont,
 		&glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
@@ -900,7 +885,6 @@ pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_
     pdf_font_resource_t *pdfont;
     gs_char ch = output_char_code;
     bool checking_glyph_variation = false;
-    int i;
 
     if (ch == GS_NO_CHAR)
 	return_error(gs_error_unregistered); /* Must not happen. */
