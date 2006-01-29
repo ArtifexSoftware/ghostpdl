@@ -104,9 +104,11 @@ GENOPT=
 # Choose capability options.
 
 # -DHAVE_MKSTEMP
-#	uses mkstemp instead of mktemp
-#		This gets rid of several security warnings that look
-#		ominous.  Enable this if you wish to get rid of them.
+#       uses mkstemp instead of mktemp
+#               This uses the more secure temporary file creation call
+#               Enable this if it is available on your platform.
+# -DHAVE_HYPOT
+#       use the system hypot() call
 
 CAPOPT= -DHAVE_MKSTEMP
 
