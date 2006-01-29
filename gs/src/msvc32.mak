@@ -226,11 +226,15 @@ JBIG2SRCDIR=jbig2dec
 # Define the jasper library source location.
 # See jasper.mak for more information.
 
-# Alternatively, you can build a separate DLL
-# and define SHARE_JASPER=1 in src/winlib.mak
+!ifndef JPX_LIB
+JPX_LIB=jasper
+!endif
 
-!ifndef JASPERSRCDIR
-JASPERSRCDIR=jasper
+# Alternatively, you can build a separate DLL
+# and define SHARE_JPX=1 in src/winlib.mak
+
+!ifndef JPXSRCDIR
+JPXSRCDIR=jasper
 !endif
 
 # Define the directory where the icclib source are stored.

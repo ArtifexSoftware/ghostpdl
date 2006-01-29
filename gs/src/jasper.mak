@@ -17,15 +17,17 @@
 
 # makefile for jasper JPEG 2000 support library
 # Users of this makefile must define the following:
-#	SHARE_JASPER - whether to compile in or link to the library
-#	JASPERSRCDIR - the top-level library source directory
+#	SHARE_JPX - whether to compile in or link to the library
+#	JPXSRCDIR - the top-level library source directory
 #
 # gs.mak and friends define the following:
-#	JASPEROBJDIR - the output obj directory
-#	JASPERGENDIR - generated (.dev) file directory
-#	JASI_ and JASCF_ - include dir and cflags
-# and the usual gs portability stuff.
-
+#	JPXOBJDIR - the output obj directory
+#	JPXGENDIR - generated (.dev) file directory
+#	JPXCF_ - cflags and the usual gs portability stuff.
+#
+# We define the libjasper.dev target and its dependencies and export:
+#	JPXI_ - include path for the jasper library headers
+#	JPX
 # This partial makefile compiles a portion of the jasper library for use in
 # Ghostscript. You're better off just linking to the library's native build
 # but this supports the library on all our platforms.
@@ -33,9 +35,9 @@
 # Define the name of this makefile
 JASPER_MAK=$(GLSRC)jasper.mak
 
-JASSRC=$(JASPERSRCDIR)$(D)src$(D)libjasper$(D)
-JASGEN=$(JASPERGENDIR)$(D)
-JASOBJ=$(JASPEROBJDIR)$(D)
+JASSRC=$(JPXSRCDIR)$(D)src$(D)libjasper$(D)
+JASGEN=$(JPXGENDIR)$(D)
+JASOBJ=$(JPXOBJDIR)$(D)
 
 # our required files from jasper 1.701.x
 
@@ -160,12 +162,16 @@ JAS_EXCF_=\
         $(D_)EXCLUDE_RAS_SUPPORT$(_D_)1$(_D)\
         $(D_)EXCLUDE_PNG_SUPPORT$(_D_)1$(_D)\
 
-JAS_CC=$(CC_) $(CFLAGS) $(I_)$(JASGEN) $(II)$(JASI_)$(_I) $(JASCF_) $(JAS_EXCF_)
+# define our relative include path
+JPXI_=$(JPXSRCDIR)$(D)src$(D)libjasper$(D)include
+
+# define our specific compiler
+JAS_CC=$(CC_) $(CFLAGS) $(I_)$(JASGEN) $(II)$(JPXI_)$(_I) $(JPXCF_) $(JAS_EXCF_)
 JASO_=$(O_)$(JASOBJ)
 
 # switch in the selected .dev
-$(JASGEN)libjasper.dev : $(TOP_MAKEFILES) $(JASGEN)libjasper_$(SHARE_JASPER).dev
-	$(CP_) $(JASGEN)libjasper_$(SHARE_JASPER).dev $(JASGEN)libjasper.dev
+$(JASGEN)libjasper.dev : $(TOP_MAKEFILES) $(JASGEN)libjasper_$(SHARE_JPX).dev
+	$(CP_) $(JASGEN)libjasper_$(SHARE_JPX).dev $(JASGEN)libjasper.dev
 
 # external link .dev
 $(GLOBJ)libjasper_1.dev : $(TOP_MAKEFILES) $(JASPER_MAK) $(ECHOGS_XE)

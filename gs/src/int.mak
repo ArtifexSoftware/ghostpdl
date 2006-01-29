@@ -1321,7 +1321,8 @@ $(PSD)jpx.dev : $(INT_MAK) $(ECHOGS_XE) $(fjpx_) $(GLD)sjpx.dev
 $(PSOBJ)zfjpx.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
  $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
  $(store_h) $(stream_h) $(strimpl_h) $(sjpx_h)
-	$(PSCC) $(I_)$(JASI_)$(_I) $(JASCF_) $(PSO_)zfjpx.$(OBJ) $(C_) $(PSSRC)zfjpx.c
+	$(PSCC) $(I_)$(JPXI_)$(_I) $(JPXCF_) $(PSO_)zfjpx.$(OBJ) \
+		$(C_) $(PSSRC)zfjpx.c
 
 
 # ---------------- Binary tokens ---------------- #

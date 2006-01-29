@@ -1,4 +1,4 @@
-#    Copyright (C) 1989, 1996-2004 artofcode LLC.  All rights reserved.
+#    Copyright (C) 1989, 1996-2006 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -61,13 +61,15 @@
 #	    in from a local copy of the source
 #	JBIG2SRCDIR - the name of the jbig2dec library source directory
 #	    typically 'jbig2dec' or 'jbig2dec-/version/'
-#	SHARE_JASPER - if set to 1, asks the linker to use an existing
-#	    complied libjasper. if set to 0, asks to compile and linking
-#	    in using our custom makefile from a local copy of the source
-#	JASPERSRCDIR - the name of the jasper library source directory
-#	    typically 'jasper' or 'jasper-/version/'
-#	JASPERCFLAGS - any platform-specific flags that are required
-#	    to properly compile in the jasper library source
+#	JPX_LIB - choice of which jpeg2k implementation to use
+#	SHARE_JPX - if set to 1, asks the linker to use an existing
+#	    complied jpeg2k library. if set to 0, asks to compile and 
+#	    link from a local copy of the source using our custom 
+#	    makefile.
+#	JPXSRCDIR - the name of the jpeg2k library source directory
+#	    e.g. 'jasper' or 'jasper-/version/'
+#	JPX_CFLAGS - any platform-specific flags that are required
+#	    to properly compile in the jpeg2k library source
 #	ICCSRCDIR - the name of the ICC lib source dir, currently
 #	    always icclib (compiled in statically)
 #	DEVICE_DEVS - the devices to include in the executable.
@@ -223,8 +225,8 @@ ZGENDIR=$(GLGENDIR)
 ZOBJDIR=$(GLOBJDIR)
 JBIG2GENDIR=$(GLGENDIR)
 JBIG2OBJDIR=$(GLOBJDIR)
-JASPERGENDIR=$(GLGENDIR)
-JASPEROBJDIR=$(GLOBJDIR)
+JPXGENDIR=$(GLGENDIR)
+JPXOBJDIR=$(GLOBJDIR)
 ICCGENDIR=$(GLGENDIR)
 ICCOBJDIR=$(GLOBJDIR)
 IJSGENDIR=$(GLGENDIR)
@@ -324,8 +326,7 @@ ZF_=
 ZCF_=$(D_)SHARE_ZLIB=$(SHARE_ZLIB)$(_D)
 JB2I_=$(JBIG2SRCDIR)
 JB2CF_=
-JASI_=$(JASPERSRCDIR)$(D)src$(D)libjasper$(D)include
-JASCF_=$(JASPERCFLAGS)
+JPXCF_=$(JPX_CFLAGS)
 
 ######################## How to define new 'features' #######################
 #

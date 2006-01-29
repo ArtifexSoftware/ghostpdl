@@ -96,7 +96,7 @@ SHARE_LIBPNG=0
 SHARE_JPEG=0
 SHARE_ZLIB=0
 SHARE_JBIG2=0
-SHARE_JASPER=0
+SHARE_JPX=0
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -127,7 +127,8 @@ JBIG2SRCDIR=jbig2dec
 # Define the japser library source location.
 # See jasper.mak for more information.
 
-JASPERSRCDIR=jasper
+JPX_LIB=jasper
+JPXSRCDIR=jasper
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information

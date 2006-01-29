@@ -1414,7 +1414,7 @@ $(GLD)sjpx.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjasper.dev $(sjpx_)
 $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
  $(memory__h) $(stdio__h) $(gsmalloc_h) $(gserror_h) $(gserrors_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_h)
-	$(GLCC) $(I_)$(JASI_)$(_I) $(JASCF_) $(GLO_)sjpx.$(OBJ) \
+	$(GLCC) $(I_)$(JPXI_)$(_I) $(JPXCF_) $(GLO_)sjpx.$(OBJ) \
 		$(C_) $(GLSRC)sjpx.c
 
 # luratech version
@@ -1429,7 +1429,7 @@ $(GLD)luratech_jp2.dev : $(TOP_MAKEFILES) $(LIB_MAK) $(ECHOGS_XE)
 $(GLOBJ)sjpx_luratech.$(OBJ) : $(GLSRC)sjpx_luratech.c $(AK) \
  $(memory__h) $(stdio__h) $(gsmalloc_h) $(gserror_h) $(gserrors_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_luratech_h)
-	$(GLCC) $(I_)$(JASI_)$(_I) $(JASCF_) $(GLO_)sjpx_luratech.$(OBJ) \
+	$(GLCC) $(I_)$(JPXI_)$(_I) $(JPXCF_) $(GLO_)sjpx_luratech.$(OBJ) \
 		$(C_) $(GLSRC)sjpx_luratech.c
 
 
