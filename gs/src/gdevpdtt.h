@@ -213,6 +213,12 @@ int pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
 			 pdf_font_resource_t *pdfont); 
 
 /*
+ * Locate a font cache element.
+ */
+pdf_font_cache_elem_t **
+pdf_locate_font_cache_elem(gx_device_pdf *pdev, gs_font *font);
+
+/*
  * Create a font resource object for a gs_font of Type 3.
  */
 int pdf_make_font3_resource(gx_device_pdf *pdev, gs_font *font,

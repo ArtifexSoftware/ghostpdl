@@ -119,7 +119,6 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	int code;
 	gs_font *font = penum->current_font;
 	gs_glyph glyph;
-	gs_const_string gnstr;
 
         glyph = penum->returned.current_glyph;
 	if (glyph != GS_NO_GLYPH && penum->output_char_code != GS_NO_CHAR) {
@@ -139,26 +138,6 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 		return_error(gs_error_unregistered); 
 	    }
 	    penum_s = (gs_show_enum *)penum->pte_default;
-	    if (penum->orig_font->FontType == ft_composite) {
-		pdf_font_resource_t *pdfont;
-		char buf[6];
-		byte *p;
-
-		code = pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL); 
-		if (code < 0)
-		    return code;
-		gnstr.size = 5;
-		p = (byte *)gs_alloc_string(pdev->pdf_memory, gnstr.size, "pdf_text_set_cache");
-		if (p == NULL)
-		    return_error(gs_error_VMerror);
-		sprintf(buf, "g%04x", glyph & 0xFFFF);
-		memcpy(p, buf, 5);
-		gnstr.data = p;
-	    } else {
-		code = font->procs.glyph_name(font, glyph, &gnstr);
-		if (code < 0)
-		    return_error(gs_error_unregistered); /* Must not happen. */
-	    }
 	    /* BuildChar could change the scale before calling setcachedevice (Bug 687290). 
 	       We must scale the setcachedevice arguments because we assumed
 	       identity scale before entering the charproc.
@@ -192,7 +171,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    if (code < 0)
 		return code;
 	    code = pdf_set_charproc_attrs(pdev, pte->current_font, 
-			pw1, narg, control, penum->output_char_code, &gnstr);
+			pw1, narg, control, penum->output_char_code);
 	    if (code < 0)
 		return code;
 	    /* Prevent writing the clipping path to charproc.
@@ -443,7 +422,7 @@ pdf_font_cache_elem_id(gs_font *font)
 #endif
 }
 
-private pdf_font_cache_elem_t **
+pdf_font_cache_elem_t **
 pdf_locate_font_cache_elem(gx_device_pdf *pdev, gs_font *font)
 {
     pdf_font_cache_elem_t **e = &pdev->font_cache;
@@ -1142,8 +1121,10 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	return code;
     code = 1;
 
-    if (!pdf_is_CID_font(font))
+    if (!pdf_is_CID_font(font)) {
 	pdfont->u.simple.BaseEncoding = BaseEncoding;
+	pdfont->mark_glyph = font->dir->ccache.mark_glyph;
+    }
 
     *ppdfont = pdfont;
     return 1;
@@ -2068,6 +2049,30 @@ pdf_choose_output_char_code(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_char
     return 0;
 }
 
+private int
+pdf_choose_output_glyph_hame(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_const_string *gnstr, gs_glyph glyph)
+{
+    if (penum->orig_font->FontType == ft_composite) {
+	pdf_font_resource_t *pdfont;
+	char buf[6];
+	byte *p;
+
+	gnstr->size = 5;
+	p = (byte *)gs_alloc_string(pdev->pdf_memory, gnstr->size, "pdf_text_set_cache");
+	if (p == NULL)
+	    return_error(gs_error_VMerror);
+	sprintf(buf, "g%04x", glyph & 0xFFFF);
+	memcpy(p, buf, 5);
+	gnstr->data = p;
+    } else {
+	int code = penum->orig_font->procs.glyph_name(penum->orig_font, glyph, gnstr);
+
+	if (code < 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+    }
+    return 0;
+}
+
 /* ---------------- Main entry ---------------- */
 
 /*
@@ -2139,8 +2144,13 @@ pdf_text_process(gs_text_enum_t *pte)
     pte_default = penum->pte_default;
     if (pte_default) {
 	if (penum->charproc_accum) {
+	    gs_const_string gnstr;
+
+	    code = pdf_choose_output_glyph_hame(pdev, penum, &gnstr, pte_default->returned.current_glyph);
+	    if (code < 0)
+		return code;
 	    code = pdf_end_charproc_accum(pdev, penum->current_font, penum->cgp, 
-			pte_default->returned.current_glyph, penum->output_char_code);
+			pte_default->returned.current_glyph, penum->output_char_code, &gnstr);
 	    if (code < 0)
 		return code;
 	    penum->charproc_accum = false;

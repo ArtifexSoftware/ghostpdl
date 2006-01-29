@@ -33,6 +33,7 @@
 #include "gdevpdtd.h"
 #include "gdevpdtf.h"
 #include "gdevpdtw.h"
+#include "gdevpdt.h"
 
 /* GC descriptors */
 public_st_pdf_font_resource();
@@ -59,13 +60,7 @@ case 7: switch (pdfont->FontType) {
  case ft_CID_TrueType:
      ENUM_RETURN(pdfont->u.cidfont.Widths2);
  default:
-     if (pdfont->FontType == ft_user_defined && pdfont->u.simple.Encoding != NULL) {
-	 int i;
-
-	 for (i = 0; i < 256; i++)
-	     if (pdfont->u.simple.Encoding[i].glyph != GS_NO_GLYPH)
-		pdfont->mark_glyph(mem, pdfont->u.simple.Encoding[i].glyph, pdfont->mark_glyph_data);
-     }
+     pdf_mark_glyph_names(pdfont, mem);
      ENUM_RETURN(pdfont->u.simple.Encoding);
 }
 case 8: switch (pdfont->FontType) {
@@ -856,6 +851,7 @@ pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	return code;
     pdfont->BaseFont.data = (byte *)psfi->fname; /* break const */
     pdfont->BaseFont.size = strlen(psfi->fname);
+    pdfont->mark_glyph = pfont->dir->ccache.mark_glyph;
     set_is_MM_instance(pdfont, pfont);
     if (is_original) {
 	psf->pdfont = pdfont;

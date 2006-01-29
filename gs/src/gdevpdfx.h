@@ -1216,11 +1216,10 @@ int pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
 int pdf_start_charproc_accum(gx_device_pdf *pdev);
 /* Install charproc accumulator for a Type 3 font. */
 int pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int narg,
-		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr);
+		gs_text_cache_control_t control, gs_char ch);
 /* Complete charproc accumulation for aType 3 font. */
 int pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_pairs_t *cgp, 
-		       gs_glyph glyph, gs_char output_char_code);
-
+		       gs_glyph glyph, gs_char output_char_code, const gs_const_string *gnstr);
 /* Open a stream object in the temporary file. */
 int pdf_open_aside(gx_device_pdf *pdev, pdf_resource_type_t rtype, 
 	gs_id id, pdf_resource_t **ppres, bool reserve_object_id, int options);

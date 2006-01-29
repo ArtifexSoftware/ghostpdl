@@ -141,7 +141,7 @@ pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long 
     stream *s;
     gs_encoding_index_t base_encoding = pdfont->u.simple.BaseEncoding;
     const int sl = strlen(gx_extendeg_glyph_name_separator);
-    int prev = 256, code;
+    int prev = 256, code, cnt = 0;
 
     pdf_open_separate(pdev, id);
     s = pdev->strm;
@@ -175,8 +175,11 @@ pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long 
 			break;
 		    }
 	    }
-	    if (ch != prev + 1)
+	    if (ch != prev + 1) {
 		pprintd1(s, "\n%d", ch);
+		cnt = 1;
+	    } else if (!(cnt++ & 15))
+		stream_puts(s, "\n");
 	    pdf_put_name(pdev, d, l);
 	    prev = ch;
 	}
