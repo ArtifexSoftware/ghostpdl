@@ -476,6 +476,7 @@ slzwx_h=$(GLSRC)slzwx.h
 smd5_h=$(GLSRC)smd5.h $(md5_h)
 sarc4_h=$(GLSRC)sarc4.h $(scommon_h)
 sjbig2_h=$(GLSRC)sjbig2.h $(stdint__h) $(scommon_h)
+sjbig2_luratech_h=$(GLSRC)sjbig2_luratech.h $(scommon_h)
 sjpx_h=$(GLSRC)sjpx.h $(scommon_h)
 sjpx_luratech_h=$(GLSRC)sjpx_luratech.h $(scommon_h)
 spdiffx_h=$(GLSRC)spdiffx.h
@@ -1371,15 +1372,34 @@ $(GLOBJ)sarc4.$(OBJ) : $(GLSRC)sarc4.c $(AK) $(memory__h)\
 
 # ---------------- JBIG2 compression filter ---------------- #
 
+# jbig2dec version
 sjbig2_=$(GLOBJ)sjbig2.$(OBJ)
 $(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjbig2.dev $(sjbig2_)
 	$(SETMOD) $(GLD)sjbig2 $(sjbig2_)
 	$(ADDMOD) $(GLD)sjbig2 -include $(GLD)libjbig2.dev
 
+# libjbig2.dev is defined in jbig2.mak
+
 $(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) \
  $(stdint__h) $(memory__h) $(stdio__h) $(gserror_h) $(gserrors_h) $(gdebug_h) \
  $(sjbig2_h) $(strimpl_h)
 	$(GLJBIG2CC) $(GLO_)sjbig2.$(OBJ) $(C_) $(GLSRC)sjbig2.c
+
+# luratech version
+
+#sjbig2_=$(GLOBJ)sjbig2_luratech.$(OBJ)
+#$(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)luratech_jb2.dev $(sjbig2_)
+#	$(SETMOD) $(GLD)sjbig2 $(sjbig2_)
+#	$(ADDMOD) $(GLD)sjbig2 -include $(GLD)luratech_jb2.dev
+
+$(GLD)luratech_jb2.dev : $(TOP_MAKEFILES) $(LIB_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(GLD)luratech_jb2 $(GLD)libluratech_jb2.a
+
+$(GLOBJ)sjbig2_luratech.$(OBJ) : $(GLSRC)sjbig2_luratech.c $(AK) \
+ $(memory__h) $(malloc__h) $(gserrors_h) $(gserror_h) $(gdebug_h) \
+ $(strimpl_h) $(sjbig2_luratech_h)
+	$(GLJBIG2CC) $(GLO_)sjbig2_luratech.$(OBJ) \
+		$(C_) $(GLSRC)sjbig2_luratech.c
 
 # ---------------- JPEG 2000 compression filter ---------------- #
 
