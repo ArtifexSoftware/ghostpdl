@@ -1378,7 +1378,8 @@ $(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)sjbig2_$(JBIG2_LIB).dev
 # jbig2dec version
 sjbig2_jbig2dec=$(GLOBJ)sjbig2.$(OBJ)
 
-$(GLD)sjbig2_jbig2dec.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjbig2_jbig2dec.dev
+$(GLD)sjbig2_jbig2dec.dev : $(LIB_MAK) $(ECHOGS_XE) \
+ $(GLD)libjbig2_jbig2dec.dev $(sjbig2_jbig2dec)
 	$(SETMOD) $(GLD)sjbig2_jbig2dec $(sjbig2_jbig2dec)
 	$(ADDMOD) $(GLD)sjbig2_jbig2dec -include $(GLD)libjbig2_jbig2dec.dev
 
@@ -1392,7 +1393,8 @@ $(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) \
 # luratech version
 sjbig2_luratech=$(GLOBJ)sjbig2_luratech.$(OBJ)
 
-$(GLD)sjbig2_luratech.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjbig2_luratech.dev
+$(GLD)sjbig2_luratech.dev : $(LIB_MAK) $(ECHOGS_XE) \
+ $(GLD)libjbig2_luratech.dev $(sjbig2_luratech)
 	$(SETMOD) $(GLD)sjbig2_luratech $(sjbig2_luratech)
 	$(ADDMOD) $(GLD)sjbig2_luratech -include $(GLD)libjbig2_luratech.dev
 
