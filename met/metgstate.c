@@ -22,12 +22,13 @@
 
 typedef struct metgstate_s {
     ST_RscRefColor Stroke;
+    ST_RscRefColor Fill;
     ST_ZeroOne Opacity;
     ST_FillRule FillRule;
+    bool isClosed;
     gs_memory_t *pmem;
 } metgstate_t;
 
-/* nb stroke is address copied */
 private void *
 met_gstate_alloc(gs_memory_t *pmem)
 {
@@ -41,7 +42,6 @@ private int
 met_gstate_copy_for(void *pto, void *pfrom, gs_state_copy_reason_t reason)
 {
     /* reason is ignored for now */
-    /* struct copy */
     metgstate_t *pt = pto;
     metgstate_t *pf = pfrom;
     
@@ -79,6 +79,21 @@ met_setstrokecolor(gs_state *pgs, const ST_RscRefColor color)
     pmg->Stroke = met_strdup(pmg->pmem, color);
 }
 
+ST_RscRefColor
+met_currentfillcolor(gs_state *pgs)
+{
+    metgstate_t *pmg = gs_state_client_data(pgs);
+    return pmg->Fill;
+}
+    
+void
+met_setfillcolor(gs_state *pgs, const ST_RscRefColor color)
+{
+    metgstate_t *pmg = gs_state_client_data(pgs);
+    pmg->Fill = met_strdup(pmg->pmem, color);
+}
+
+
 void
 met_setfillrule(gs_state *pgs, const ST_FillRule fill)
 {
@@ -107,6 +122,39 @@ met_currentopacity(gs_state *pgs)
     return pmg->Opacity;
 }
     
+met_path_t
+met_currentpathtype(gs_state *pgs) 
+{ 
+    if (met_currentstrokecolor(pgs) && met_currentfillcolor(pgs))
+        return met_stroke_and_fill;
+    if (met_currentfillcolor(pgs))
+        return met_fill_only;
+    if (met_currentstrokecolor(pgs))
+        return met_stroke_only;
+    return met_path_undefined;
+}
+
+/* if set all paths should be closed */
+void met_setclosepath(gs_state *pgs, bool close)
+{
+    metgstate_t *pmg = gs_state_client_data(pgs);
+    pmg->isClosed = close;
+}
+
+bool met_currentclosepath(gs_state *pgs)
+{
+    metgstate_t *pmg = gs_state_client_data(pgs);
+    return pmg->isClosed;
+}   
+
+bool met_currenteofill(gs_state *pgs)
+{
+    /* if not set even odd */
+    if (!met_currentfillrule(pgs))
+        return true;
+
+    return (!strncasecmp(met_currentfillrule(pgs), "EvenOdd"));
+}
 
 private const gs_state_client_procs met_gstate_procs = {
     met_gstate_alloc,
@@ -123,6 +171,8 @@ met_gstate_init(gs_state *pgs, gs_memory_t *pmem)
     pmg->Stroke = 0;
     pmg->Opacity = 0;
     pmg->FillRule = 0;
+    pmg->isClosed = 0;
     pmg->pmem = pmem;
     gs_state_set_client(pgs, pmg, &met_gstate_procs, false);
 }
+

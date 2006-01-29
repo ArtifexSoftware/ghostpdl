@@ -138,20 +138,6 @@ typedef struct CT_ImageBrush_s {
     ST_Name ImageSource; /* NB wrong */
 } CT_ImageBrush;
 
-typedef struct CT_CombinedGeometry_s {
-    ST_CombineMode GeometryCombineMode;
-    ST_RscRefAbbrGeomF Geometry1;
-    ST_RscRefAbbrGeomF Geometry2;
-    ST_RscRefMatrix Transform;
-    /* NB incomplete */
-} CT_CombinedGeometry;
-
-typedef struct CT_GeometryGroup_s {
-    ST_FillRule FillRule;
-    ST_RscRefMatrix Transform;
-    /* nb incomplete */
-} CT_GeometryGroup;
-
 typedef struct CT_PathGeometry_s {
     ST_AbbrGeom Figures;
     ST_FillRule FillRule;
@@ -174,8 +160,6 @@ typedef struct CT_ResourceDictionary_s {
         CT_VisualBrush VisualBrush;
         CT_ImageBrush ImageBrush;
         CT_MatrixTransform MatrixTransform;
-        CT_CombinedGeometry CombinedGeometry;
-        CT_GeometryGroup GeometryGroup;
         CT_PathGeometry PathGeometry;
     } res;
     ST_Name choice; /* nb the selector is yet another string */
@@ -265,12 +249,7 @@ typedef struct CT_PathFigure_s {
 } CT_PathFigure;
         
 typedef struct CT_CP_Geometry {
-    union {
-        CT_GeometryGroup GeometryGroup;
-        CT_CombinedGeometry CombinedGeometry;
-        CT_PathGeometry PathGeometry;
-    } geom;
-    ST_Name choice;
+    CT_PathGeometry PathGeometry;
 } CT_CP_Geometry;
 
 typedef struct CT_Path_s {

@@ -30,10 +30,29 @@ void met_gstate_init(gs_state *pgs, gs_memory_t *mem);
 ST_RscRefColor met_currentstrokecolor(gs_state *pgs);
 void met_setstrokecolor(gs_state *pgs, const ST_RscRefColor color);
 
+ST_RscRefColor met_currentfillcolor(gs_state *pgs);
+void met_setfillcolor(gs_state *pgs, const ST_RscRefColor color);
+
 ST_ZeroOne met_currentopacity(gs_state *pgs);
 void met_setopacity(gs_state *pgs, const ST_ZeroOne opacity);
 
 ST_FillRule met_currentfillrule(gs_state *pgs);
 void met_setfillrule(gs_state *pgs, const ST_FillRule fill);
+
+/* true if even-odd */
+bool met_currenteofill(gs_state *pgs);
+
+typedef enum {
+    met_stroke_only, 
+    met_fill_only, 
+    met_stroke_and_fill,
+    met_path_undefined
+} met_path_t;
+
+met_path_t met_currentpathtype(gs_state *pgs);
+
+/* if set all paths should be closed */
+void met_setclosepath(gs_state *pgs, bool close);
+bool met_currentclosepath(gs_state *pgs);
 
 #endif /* metgstate_INCLUDED */

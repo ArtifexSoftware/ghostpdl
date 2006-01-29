@@ -19,26 +19,15 @@
 #include "gsmatrix.h"
 #include "metcomplex.h"
 #include "metelement.h"
+#include "metgstate.h"
 #include "metutil.h"
 #include "gspath.h"
+#include "gspaint.h"
 #include "math_.h"
 #include "ctype_.h"
 #include "mt_error.h"
 #include <stdlib.h> /* nb for atof */
 
-
-/* temporary hacks for the treeless demo */
-typedef struct pathfigure_state_s {
-    bool fill;
-    bool stroke;
-    bool closed;
-    bool fill_color_set;
-    bool stroke_color_set;
-    rgb_t fill_color;
-    rgb_t stroke_color;
-} pathfigure_state_t;
-
-private pathfigure_state_t nb_pathstate;
 
 bool patternset = false;
 
@@ -105,16 +94,11 @@ PathFigure_action(void *data, met_state_t *ms)
     CT_PathFigure *aPathFigure = data;
     int code;
 
-    /* nb not sure about states default, filled, stroke */
-    if (aPathFigure->isFilled) {
-        nb_pathstate.fill = 1;
-    } else {
-        nb_pathstate.stroke = 1;
-    }
+    /* nb not sure what to make of PathFigure->isFilled.  Maybe a
+       mistake in the spec. */
 
-    if (aPathFigure->isClosed) {
-        nb_pathstate.closed = 1;
-    }
+    /* tell the graphics state to close or not close future paths */
+    met_setclosepath(ms->pgs, aPathFigure->isClosed);
 
     /* we do these now */
     if (aPathFigure->StartPoint) {
@@ -152,7 +136,6 @@ Path_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
                                        "Path_cook");
     int i;
     /* hack for treeless demo */
-    memset(&nb_pathstate, 0, sizeof(nb_pathstate));
     memset(aPath, 0, sizeof(CT_Path));
     /* parse attributes, filling in the zeroed out C struct */
     for(i = 0; attr[i]; i += 2) {
@@ -168,7 +151,6 @@ Path_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
         else if (!met_cmp_and_set(&aPath->Fill,
                                   attr[i], attr[i+1], "Fill"))
             ;
-        
         else {
             mt_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
@@ -187,20 +169,12 @@ Path_action(void *data, met_state_t *ms)
     int code = 0;
     gs_memory_t *mem = ms->memory;
 
-    if (aPath->Stroke) {
-        rgb_t rgb = met_hex2rgb(aPath->Stroke);
-        nb_pathstate.stroke_color_set = true;
-        nb_pathstate.stroke_color = rgb;
-        nb_pathstate.stroke = 1;
-    }
-    
-    /* NB code dup */
-    if (aPath->Fill) {
-        rgb_t rgb = met_hex2rgb(aPath->Fill);
-        nb_pathstate.fill_color_set = true;
-        nb_pathstate.fill_color = rgb;
-        nb_pathstate.fill = 1;
-    }
+    met_setstrokecolor(ms->pgs, aPath->Stroke);
+    met_setfillcolor(ms->pgs, aPath->Fill);
+    code = gs_setlinewidth(ms->pgs, aPath->StrokeThickness);
+
+    if (code < 0)
+        mt_rethrow(code, "setlinewidth failed");
 
     if (aPath->Data) {
         gs_state *pgs = ms->pgs;
@@ -265,29 +239,84 @@ Path_action(void *data, met_state_t *ms)
     return code;
 }
 
+
+/* element constructor */
+private int
+PathGeometry_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
+{
+    CT_PathGeometry *aPathGeometry = 
+        (CT_PathGeometry *)gs_alloc_bytes(ms->memory,
+                                     sizeof(CT_PathGeometry),
+                                       "PathGeometry_cook");
+    int i;
+
+    memset(aPathGeometry, 0, sizeof(CT_PathGeometry));
+
+    /* parse attributes, filling in the zeroed out C struct */
+    for(i = 0; attr[i]; i += 2) {
+        if (!met_cmp_and_set(&aPathGeometry->FillRule,
+                             attr[i], attr[i+1], "FillRule"))
+            ;
+        else {
+            mt_throw2(-1, "unsupported attribute %s=%s\n",
+                     attr[i], attr[i+1]);
+        }
+
+    }
+    /* copy back the data for the parser. */
+    *ppdata = aPathGeometry;
+    return 0;
+}
+
+/* action associated with this element */
+private int
+PathGeometry_action(void *data, met_state_t *ms)
+{
+    CT_PathGeometry *aPathGeometry = data;
+    met_setfillrule(ms->pgs, aPathGeometry->FillRule);
+    return 0;
+}
+
+private int
+PathGeometry_done(void *data, met_state_t *ms)
+{
+        
+    gs_free_object(ms->memory, data, "PathGeometry_done");
+    return 0; /* incomplete */
+}
+
+const met_element_t met_element_procs_PathGeometry = {
+    "PathGeometry",
+    PathGeometry_cook,
+    PathGeometry_action,
+    PathGeometry_done
+};
+
 private int
 set_color(gs_state *pgs, bool forstroke)
 {
     int code = 0;
+    ST_RscRefColor (*color)(gs_state *);
+    ST_RscRefColor met_color;
+
     if (patternset)
         return 0;
 
-    if (forstroke) {
-        if (nb_pathstate.stroke_color_set) {
-            rgb_t rgb = nb_pathstate.stroke_color;
-            code = gs_setrgbcolor(pgs, (floatp)rgb.r,
-                                  (floatp)rgb.g, (floatp)rgb.b);
-        } else {
-            code = gs_setnullcolor(pgs);
-        }
+    if (forstroke)
+        color = met_currentstrokecolor;
+    else
+        color = met_currentfillcolor;
+
+
+    met_color = ((*color)(pgs));
+    
+    if (met_color) {
+        rgb_t rgb = met_hex2rgb(met_color);
+        /* nb rgb color */
+        code = gs_setrgbcolor(pgs, (floatp)rgb.r,
+                              (floatp)rgb.g, (floatp)rgb.b);
     } else {
-        if (nb_pathstate.fill_color_set) {
-            rgb_t rgb = nb_pathstate.fill_color;
-            code = gs_setrgbcolor(pgs, (floatp)rgb.r,
-                                  (floatp)rgb.g, (floatp)rgb.b);
-        } else {
-            code = gs_setnullcolor(pgs);
-        }
+        code = gs_setnullcolor(pgs);
     }
     return code;
 }
@@ -297,12 +326,19 @@ Path_done(void *data, met_state_t *ms)
 {
     gs_state *pgs = ms->pgs;
     int code;
-
+    met_path_t pathtype = met_currentpathtype(pgs);
     /* this loop executes once */
+    int (*fill)(gs_state *);
+
+    if (met_currenteofill(pgs))
+        fill = gs_eofill;
+    else
+        fill = gs_fill;
+            
     do {
         /* case of stroke and file... uses a gsave/grestore to keep
            the path */
-        if (nb_pathstate.fill && nb_pathstate.stroke) {
+        if (pathtype == met_stroke_and_fill) {
             /* set the color before gsave to be consistent with the
                solo stroke and fill cases below we only use the gsave
                to preserve the path. */
@@ -321,22 +357,31 @@ Path_done(void *data, met_state_t *ms)
             if ((code = gs_stroke(pgs)) < 0)
                 break;
         /* just fill or stroke not both */
-        } else if (nb_pathstate.fill) {
+        } else if (pathtype == met_fill_only) {
             if ((code = set_color(pgs, false /* is stroke */)) < 0)
                 break;
             if ((code = gs_eofill(pgs)) < 0)
                 break;
-        } else if (nb_pathstate.stroke) {
+        } else if (pathtype == met_stroke_only) {
             if ((code = set_color(pgs, true /* is stroke */)) < 0)
                 break;
             if ((code = gs_stroke(pgs)) < 0)
                 break;
+        } else {
+            mt_throw(-1, "Unknown path operation");
+            code = -1;
         }
+            
+
     } while (0);
     /* hack nb fixme */
+
     patternset = false;
     gs_free_object(ms->memory, data, "Path_done");
-    return code;
+    if (code < 0)
+        return mt_rethrow(code, "Path done failed");
+    else
+        return 0;
 }
 
 const met_element_t met_element_procs_Path = {
@@ -407,7 +452,7 @@ PolyLineSegment_action(void *data, met_state_t *ms)
                 return code;
         }
     }
-    if (nb_pathstate.closed)
+    if (met_currentclosepath(pgs))
         code = gs_closepath(ms->pgs);
     return code;
 }
@@ -425,10 +470,6 @@ const met_element_t met_element_procs_PolyLineSegment = {
     PolyLineSegment_action,
     PolyLineSegment_done
 };
-
-/* nb Path_Fill needs data modeling work - it looks like this is an
-   extraneous level of state.  For now this does nothing
-   interesting */
 
 /* element constructor */
 private int
@@ -457,7 +498,6 @@ private int
 Path_Fill_action(void *data, met_state_t *ms)
 {
     CT_CP_Brush *aPath_Fill = data;
-    nb_pathstate.fill = 1;
     return 0;
 }
 
@@ -507,11 +547,7 @@ private int
 SolidColorBrush_action(void *data, met_state_t *ms)
 {
     CT_SolidColorBrush *aSolidColorBrush = data;
-    if (aSolidColorBrush->Color) {
-        rgb_t rgb = met_hex2rgb(aSolidColorBrush->Color);
-        nb_pathstate.fill_color_set = true;
-        nb_pathstate.fill_color = rgb;
-    }
+    met_setfillcolor(ms->pgs, aSolidColorBrush->Color);
     return 0;
 }
 
@@ -556,7 +592,6 @@ private int
 Path_Stroke_action(void *data, met_state_t *ms)
 {
     CT_CP_Brush *aPath_Stroke = data;
-    nb_pathstate.stroke = 1;
     return 0;
 
 }
@@ -565,7 +600,7 @@ private int
 Path_Stroke_done(void *data, met_state_t *ms)
 {
         
-    gs_free_object(ms->memory, data, "ELEMENT_done");
+    gs_free_object(ms->memory, data, "Path_Stroke_done");
     return 0; /* incomplete */
 }
 
@@ -699,10 +734,6 @@ ArcSegment_action(void *data, met_state_t *ms)
             (MULTOFSQUARES(size.y, thalfdis.x));
         double scale_denom = MULTOFSQUARES(size.x, thalfdis.y) + MULTOFSQUARES(size.y, thalfdis.x);
         double scale = sign * sqrt(((scale_num / scale_denom) < 0) ? 0 : (scale_num / scale_denom));
-        double foo1 = (MULTOFSQUARES(size.x, size.y));
-        double foo2 = (MULTOFSQUARES(size.x, thalfdis.y));
-        double foo3 = (MULTOFSQUARES(size.y, thalfdis.x));
-
         /* translated center */
         tcenter.x = scale * ((size.x * thalfdis.y)/size.y);
         tcenter.y = scale * ((-size.y * thalfdis.x)/size.x);
@@ -749,11 +780,6 @@ ArcSegment_action(void *data, met_state_t *ms)
         /* restore the ctm */
         gs_setmatrix(pgs, &save_ctm);
     }
-    if (aArcSegment->IsStroked == false)
-        nb_pathstate.stroke = 0;
-    else
-        nb_pathstate.stroke = 1;
-    return 0;
 }
 
 private int
@@ -819,7 +845,7 @@ PolyBezierSegment_action(void *data, met_state_t *ms)
         strcpy(pstr, aPolyBezierSegment->Points);
         met_split(pstr, args, is_Data_delimeter);
         while (*pargs) {
-            gs_point pt[3]; /* the three control points */
+            gs_point pt[3]; /* the two control point and the end point */
 
             pt[points_parsed % 3].x = atof(*pargs++);
 
@@ -838,7 +864,7 @@ PolyBezierSegment_action(void *data, met_state_t *ms)
             }
         }
     }
-    if (nb_pathstate.closed)
+    if (met_currentclosepath(pgs))
         code = gs_closepath(ms->pgs);
     return code;
 }
@@ -847,6 +873,7 @@ private int
 PolyBezierSegment_done(void *data, met_state_t *ms)
 {
         
+
     gs_free_object(ms->memory, data, "PolyBezierSegment_done");
     return 0; /* incomplete */
 }
@@ -857,4 +884,101 @@ const met_element_t met_element_procs_PolyBezierSegment = {
     PolyBezierSegment_cook,
     PolyBezierSegment_action,
     PolyBezierSegment_done
+};
+
+
+/* element constructor */
+private int
+PolyQuadraticBezierSegment_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
+{
+    CT_PolyQuadraticBezierSegment *aPolyQuadraticBezierSegment = 
+        (CT_PolyQuadraticBezierSegment *)gs_alloc_bytes(ms->memory,
+                                     sizeof(CT_PolyQuadraticBezierSegment),
+                                       "PolyQuadraticBezierSegment_cook");
+    int i;
+
+    memset(aPolyQuadraticBezierSegment, 0, sizeof(CT_PolyQuadraticBezierSegment));
+
+    /* parse attributes, filling in the zeroed out C struct */
+    for(i = 0; attr[i]; i += 2) {
+        if (!strcmp(attr[i], "Points")) {
+            aPolyQuadraticBezierSegment->Points = attr[i + 1];
+        } else {
+            mt_throw2(-1, "unsupported attribute %s=%s\n",
+                     attr[i], attr[i+1]);
+        }
+    }
+
+    /* copy back the data for the parser. */
+    *ppdata = aPolyQuadraticBezierSegment;
+    return 0;
+}
+
+
+/* NB code duplication with Segments ahead */
+
+/* action associated with this element */
+private int
+PolyQuadraticBezierSegment_action(void *data, met_state_t *ms)
+{
+    CT_PolyQuadraticBezierSegment *aPolyQuadraticBezierSegment = data;
+    gs_state *pgs = ms->pgs;
+    gs_memory_t *mem = ms->memory;
+    int code = 0;
+    if (aPolyQuadraticBezierSegment->Points) {
+        char *s;
+        char pstr[strlen(aPolyQuadraticBezierSegment->Points) + 1];
+        /* the number of argument will be less than the length of the
+           data.  NB wasteful. */
+        char *args[strlen(aPolyQuadraticBezierSegment->Points)];
+        char **pargs = args;
+        int points_parsed = 0;
+        strcpy(pstr, aPolyQuadraticBezierSegment->Points);
+        met_split(pstr, args, is_Data_delimeter);
+        while (*pargs) {
+            gs_point pt[2]; /* control point and end point */
+
+            pt[points_parsed % 2].x = atof(*pargs++);
+
+            if (!*pargs) {
+                dprintf(mem, "point does not have two coordinate\n");
+                break;
+            }
+            pt[points_parsed % 2].y = atof(*pargs++);
+            points_parsed++;
+            if (points_parsed % 2 == 0) {
+                gs_point start_pt;
+                code = gs_currentpoint(pgs, &start_pt);
+                if (code < 0)
+                    mt_rethrow(code, "currentpoint failed");
+                code = gs_curveto(pgs,
+                                  (start_pt.x + 2 * pt[0].x) / 3,
+                                  (start_pt.x + 2 * pt[0].y) / 3,
+                                  (pt[1].x + 2 * pt[0].x) / 3,
+                                  (pt[1].y + 2 * pt[0].y) / 3,
+                                  pt[1].x, pt[1].y);
+                if (code < 0)
+                    return mt_rethrow(code, "curveto failied");
+            }
+        }
+    }
+    if (met_currentclosepath(pgs))
+        code = gs_closepath(ms->pgs);
+    return code;
+}
+
+private int
+PolyQuadraticBezierSegment_done(void *data, met_state_t *ms)
+{
+        
+    gs_free_object(ms->memory, data, "PolyQuadraticBezierSegment_done");
+    return 0; /* incomplete */
+}
+
+
+const met_element_t met_element_procs_PolyQuadraticBezierSegment = {
+    "PolyQuadraticBezierSegment",
+    PolyQuadraticBezierSegment_cook,
+    PolyQuadraticBezierSegment_action,
+    PolyQuadraticBezierSegment_done
 };
