@@ -1,4 +1,4 @@
-#    Copyright (C) 1997-2002 artofcode LLC. All rights reserved.
+#    Copyright (C) 1997-2006 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -118,7 +118,7 @@ BUILD_TIME_GS=GS
 # You may need to change this if the IJG library version changes.
 # See jpeg.mak for more information.
 
-JSRCDIR=[.jpeg-6b]
+JSRCDIR=[.jpeg]
 JVERSION=6
 
 # Define the directory where the PNG library sources are stored,
@@ -126,18 +126,24 @@ JVERSION=6
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
-PSRCDIR=[.libpng-1_2_8]
+PSRCDIR=[.libpng]
 PVERSION=10208
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
-ZSRCDIR=[.zlib-1_2_1]
+ZSRCDIR=[.zlib]
 
-# Define the jbig2dec library source location.
+# Define the jbig2 library and source location.
 # See jbig2.mak for more information.
 
-JBIG2SRCDIR=[.jbig2dec-0_7]
+JBIG2_LIB=jbig2dec
+JBIG2SRCDIR=[.jbig2dec]
+
+# Define the jpeg2k library and source location.
+
+JPX_LIB=jasper
+JPXSRCDIR=jasper
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
@@ -161,6 +167,7 @@ SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
 SHARE_JBIG2=0
+SHARE_JPX=0
 
 # Define the path to X11 include files
 

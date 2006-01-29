@@ -1,4 +1,4 @@
-#    Copyright (C) 1997-2003 artofcode LLC.  All rights reserved.
+#    Copyright (C) 1997-2006 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -122,6 +122,7 @@ ZSRCDIR=zlib
 # Define the jbig2dec library source location.
 # See jbig2.mak for more information.
 
+JBIG2_LIB=jbig2dec
 JBIG2SRCDIR=jbig2dec
 
 # Define the japser library source location.

@@ -134,6 +134,10 @@ ZSRCDIR=zlib
 # Define the jbig2dec library source location.
 # See jbig2.mak for more information.
 
+!ifndef JBIG2_LIB
+JBIG2_LIB=jbig2dec
+!endif
+
 !ifndef JBIG2SRCDIR
 JBIG2SRCDIR=jbig2dec
 !endif

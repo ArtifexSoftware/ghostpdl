@@ -59,6 +59,7 @@ SHARE_ZLIB=1
 ZLIB_NAME=z
 
 SHARE_JBIG2=0
+JBIG2_LIB=jbig2dec
 JBIG2SRCDIR=jbig2dec
 
 # Define the directory where the icclib source are stored.

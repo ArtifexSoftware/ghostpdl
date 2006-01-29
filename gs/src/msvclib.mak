@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-2001 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-2006 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -149,11 +149,29 @@ PVERSION=10208
 ZSRCDIR=zlib
 !endif
 
-# Define the jbig2dec library source location.
+# Define the jbig2 library and source location.
 # See jbig2.mak for more information.
+
+!ifndef JBIG2_LIB
+JBIG2_LIB=jbig2dec
+!endif
 
 !ifndef JBIG2SRCDIR
 JBIG2SRCDIR=jbig2dec
+!endif
+
+# Define the jasper library source location.
+# See jasper.mak for more information.
+
+!ifndef JPX_LIB
+JPX_LIB=jasper
+!endif
+
+# Alternatively, you can build a separate DLL
+# and define SHARE_JPX=1 in src/winlib.mak
+
+!ifndef JPXSRCDIR
+JPXSRCDIR=jasper
 !endif
 
 # Define the directory where the icclib source are stored.

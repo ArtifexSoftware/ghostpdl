@@ -126,7 +126,7 @@ BUILD_TIME_GS=GS
 .ifdef SYSLIB
 JSRCDIR=sys$library:
 .else
-JSRCDIR=[--.jpeg-6b]
+JSRCDIR=[--.jpeg]
 .endif
 JVERSION=6
 
@@ -138,7 +138,7 @@ JVERSION=6
 .ifdef SYSLIB
 PSRCDIR=sys$library:
 .else
-PSRCDIR=[--.libpng-1_2_8]
+PSRCDIR=[--.libpng]
 .endif
 PVERSION=10208
 
@@ -148,15 +148,26 @@ PVERSION=10208
 .ifdef SYSLIB
 ZSRCDIR=sys$library:
 .else
-ZSRCDIR=[--.zlib-1_2_1]
+ZSRCDIR=[--.zlib]
 .endif
 
 # Define the directory where the jbig2dec library sources are stored.
 # See jbig2.mak for more information
+
+JBIG2_LIB=jbig2dec
 .ifdef SYSLIB
 JBIG2SRCDIR=sys$library:
 .else
-JBIG2SRCDIR=[--.jbig2dec-0_7]
+JBIG2SRCDIR=[--.jbig2dec]
+.endif
+
+# Define the jpeg2k library and source directory
+
+JPX_LIB=jasper
+.ifdef SYSLIB
+JPXSRCDIR=sys$library:
+.else
+JPXSRCDIR=[--.jasper]
 .endif
 
 # Define the directory where the icclib source are stored.

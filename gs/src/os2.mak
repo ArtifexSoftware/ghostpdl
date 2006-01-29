@@ -142,6 +142,7 @@ ZSRCDIR=zlib
 # Define the jbig2dec library source location.
 # See jbig2.mak for more information.
 
+JBIG2_LIB=jbig2dec
 JBIG2SRCDIR=jbig2dec
 
 # Define the directory where the icclib source are stored.

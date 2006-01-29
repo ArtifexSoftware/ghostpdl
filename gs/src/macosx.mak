@@ -180,6 +180,7 @@ ZLIB_NAME=z
 
 # Choose shared or compiled in libjbig2dec and source location
 
+JBIG2_LIB=jbig2dec
 SHARE_JBIG2=0
 JBIG2SRCDIR=jbig2dec
 

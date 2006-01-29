@@ -36,11 +36,9 @@ JBIG2SRC=$(JBIG2SRCDIR)$(D)
 JBIG2GEN=$(JBIG2OBJDIR)$(D)
 JBIG2OBJ=$(JBIG2OBJDIR)$(D)
 
-# This makefile is only known to work with jbig2dec v0.7
+# This makefile is only known to work with jbig2dec v0.7 and later
 # to use an earlier version, remove unknown files from
 # the OBJS lists below
-
-# This list is only known good for jbig2dec v0.2-0.6
 
 libjbig2_OBJS1=\
 	$(JBIG2OBJ)jbig2.$(OBJ) \
@@ -96,17 +94,17 @@ JBIG2_CC=$(CC_) $(CFLAGS) $(I_)$(JBIG2GENDIR) $(II)$(JB2I_)$(_I) $(JB2CF_)
 JBIG2O_=$(O_)$(JBIG2OBJ)
 
 # switch in the version of libjbig2.dev we're actually using
-$(JBIG2GEN)libjbig2.dev : $(TOP_MAKEFILES) $(JBIG2GEN)libjbig2_$(SHARE_JBIG2).dev
-	$(CP_) $(JBIG2GEN)libjbig2_$(SHARE_JBIG2).dev $(JBIG2GEN)libjbig2.dev
+$(JBIG2GEN)libjbig2_jbig2dec.dev : $(TOP_MAKEFILES) $(JBIG2GEN)libjbig2dec_$(SHARE_JBIG2).dev
+	$(CP_) $(JBIG2GEN)libjbig2dec_$(SHARE_JBIG2).dev $(JBIG2GEN)libjbig2_jbig2dec.dev
 
 # dev file for shared (separately built) jbig2dec library
-$(JBIG2GEN)libjbig2_1.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE)
-	$(SETMOD) $(JBIG2GEN)libjbig2_1 -lib jbig2dec
+$(JBIG2GEN)libjbig2dec_1.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(JBIG2GEN)libjbig2dec_1 -lib jbig2dec
 
 # dev file for compiling our own from source
-$(JBIG2GEN)libjbig2_0.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE) $(libjbig2_OBJS)
-	$(SETMOD) $(JBIG2GEN)libjbig2_0 $(libjbig2_OBJS1)
-	$(ADDMOD) $(JBIG2GEN)libjbig2_0 $(libjbig2_OBJS2)
+$(JBIG2GEN)libjbig2dec_0.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE) $(libjbig2_OBJS)
+	$(SETMOD) $(JBIG2GEN)libjbig2dec_0 $(libjbig2_OBJS1)
+	$(ADDMOD) $(JBIG2GEN)libjbig2dec_0 $(libjbig2_OBJS2)
 
 # explicit rules for building the source files. 
 

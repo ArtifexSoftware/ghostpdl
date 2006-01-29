@@ -1372,13 +1372,17 @@ $(GLOBJ)sarc4.$(OBJ) : $(GLSRC)sarc4.c $(AK) $(memory__h)\
 
 # ---------------- JBIG2 compression filter ---------------- #
 
-# jbig2dec version
-sjbig2_=$(GLOBJ)sjbig2.$(OBJ)
-$(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjbig2.dev $(sjbig2_)
-	$(SETMOD) $(GLD)sjbig2 $(sjbig2_)
-	$(ADDMOD) $(GLD)sjbig2 -include $(GLD)libjbig2.dev
+$(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)sjbig2_$(JBIG2_LIB).dev
+	$(CP_) $(GLD)sjbig2_$(JBIG2_LIB).dev $(GLD)sjbig2.dev
 
-# libjbig2.dev is defined in jbig2.mak
+# jbig2dec version
+sjbig2_jbig2dec=$(GLOBJ)sjbig2.$(OBJ)
+
+$(GLD)sjbig2_jbig2dec.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjbig2_jbig2dec.dev
+	$(SETMOD) $(GLD)sjbig2_jbig2dec $(sjbig2_jbig2dec)
+	$(ADDMOD) $(GLD)sjbig2_jbig2dec -include $(GLD)libjbig2_jbig2dec.dev
+
+# libjbig2_jbig2dec.dev is defined in jbig2.mak
 
 $(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) \
  $(stdint__h) $(memory__h) $(stdio__h) $(gserror_h) $(gserrors_h) $(gdebug_h) \
@@ -1386,14 +1390,14 @@ $(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) \
 	$(GLJBIG2CC) $(GLO_)sjbig2.$(OBJ) $(C_) $(GLSRC)sjbig2.c
 
 # luratech version
+sjbig2_luratech=$(GLOBJ)sjbig2_luratech.$(OBJ)
 
-#sjbig2_=$(GLOBJ)sjbig2_luratech.$(OBJ)
-#$(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)luratech_jb2.dev $(sjbig2_)
-#	$(SETMOD) $(GLD)sjbig2 $(sjbig2_)
-#	$(ADDMOD) $(GLD)sjbig2 -include $(GLD)luratech_jb2.dev
+$(GLD)sjbig2_luratech.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjbig2_luratech.dev
+	$(SETMOD) $(GLD)sjbig2_luratech $(sjbig2_luratech)
+	$(ADDMOD) $(GLD)sjbig2_luratech -include $(GLD)libjbig2_luratech.dev
 
-$(GLD)luratech_jb2.dev : $(TOP_MAKEFILES) $(LIB_MAK) $(ECHOGS_XE)
-	$(SETMOD) $(GLD)luratech_jb2 $(GLD)libluratech_jb2.a
+$(GLD)libjbig2_luratech.dev : $(TOP_MAKEFILES) $(LIB_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(GLD)libjbig2_luratech $(GLD)libluratech_jb2.a
 
 $(GLOBJ)sjbig2_luratech.$(OBJ) : $(GLSRC)sjbig2_luratech.c $(AK) \
  $(memory__h) $(malloc__h) $(gserrors_h) $(gserror_h) $(gdebug_h) \
@@ -1403,11 +1407,15 @@ $(GLOBJ)sjbig2_luratech.$(OBJ) : $(GLSRC)sjbig2_luratech.c $(AK) \
 
 # ---------------- JPEG 2000 compression filter ---------------- #
 
+$(GLD)sjpx.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)sjpx_$(JPX_LIB).dev
+	$(CP_) $(GLD)sjpx_$(JPX_LIB).dev $(GLD)sjpx.dev
+
 # jasper version
-sjpx_=$(GLOBJ)sjpx.$(OBJ)
-$(GLD)sjpx.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjasper.dev $(sjpx_)
-	$(SETMOD) $(GLD)sjpx $(sjpx_)
-	$(ADDMOD) $(GLD)sjpx -include $(GLD)libjasper.dev
+sjpx_jasper=$(GLOBJ)sjpx.$(OBJ)
+$(GLD)sjpx_jasper.dev : $(LIB_MAK) $(ECHOGS_XE) \
+ $(GLD)libjasper.dev $(sjpx_jasper)
+	$(SETMOD) $(GLD)sjpx_jasper $(sjpx_jasper)
+	$(ADDMOD) $(GLD)sjpx_jasper -include $(GLD)libjasper.dev
 
 # libjasper.dev is created in jasper.mak
 
@@ -1418,10 +1426,11 @@ $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
 		$(C_) $(GLSRC)sjpx.c
 
 # luratech version
-#sjpx_=$(GLOBJ)sjpx_luratech.$(OBJ)
-#$(GLD)sjpx.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)luratech_jp2.dev $(sjpx_)
-#	$(SETMOD) $(GLD)sjpx $(sjpx_)
-#	$(ADDMOD) $(GLD)sjpx -include $(GLD)luratech_jp2.dev
+sjpx_luratech=$(GLOBJ)sjpx_luratech.$(OBJ)
+$(GLD)sjpx_luratech.dev : $(LIB_MAK) $(ECHOGS_XE) \
+ $(GLD)luratech_jp2.dev $(sjpx_luratech)
+	$(SETMOD) $(GLD)sjpx_luratech $(sjpx_luratech)
+	$(ADDMOD) $(GLD)sjpx_luratech -include $(GLD)luratech_jp2.dev
 
 $(GLD)luratech_jp2.dev : $(TOP_MAKEFILES) $(LIB_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(GLD)luratech_jp2 $(GLD)libluratech_jp2.a

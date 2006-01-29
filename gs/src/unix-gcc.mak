@@ -178,6 +178,7 @@ ZLIB_NAME=z
 
 # Choose shared or compiled in libjbig2dec and source location
 SHARE_JBIG2=0
+JBIG2_LIB=jbig2dec
 JBIG2SRCDIR=jbig2dec
 
 # Define the directory where the icclib source are stored.

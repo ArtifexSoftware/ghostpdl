@@ -56,6 +56,7 @@
 #	    and linking libgz/libz explicitly.
 #	ZLIB_NAME - the name of the shared zlib, either gz (for libgz, -lgz)
 #	    or z (for libz, -lz).
+#	JBIG2_LIB - choice of which jbig2 implementation to use
 #	SHARE_JBIG2 - normally 0; if set to 1, asks the linker to use
 #	    an existing complied libjbig2dec instead of compiling and linking
 #	    in from a local copy of the source
