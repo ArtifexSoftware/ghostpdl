@@ -31,6 +31,7 @@
 #include "isave.h"
 #include "store.h"
 #include "ivmspace.h"
+#include "gscencs.h"
 
 /* Forward references */
 private int make_font(i_ctx_t *, const gs_matrix *);
@@ -44,7 +45,7 @@ gs_font_dir *ifont_dir = 0;	/* needed for buildfont */
 bool
 zfont_mark_glyph_name(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data)
 {
-    return (glyph >= gs_min_cid_glyph || glyph == gs_no_glyph ? false :
+    return (glyph >= gs_c_min_std_encoding_glyph || glyph == gs_no_glyph ? false :
 	    name_mark_index(mem, (uint) glyph));
 }
 

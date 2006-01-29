@@ -458,7 +458,7 @@ $(PSOBJ)zfont.$(OBJ) : $(PSSRC)zfont.c $(OP)\
  $(gsstruct_h) $(gxdevice_h) $(gxfont_h) $(gxfcache_h)\
  $(gzstate_h)\
  $(ialloc_h) $(iddict_h) $(igstate_h) $(iname_h) $(isave_h) $(ivmspace_h)\
- $(bfont_h) $(store_h)
+ $(bfont_h) $(store_h) $(gscencs_h)
 	$(PSCC) $(PSO_)zfont.$(OBJ) $(C_) $(PSSRC)zfont.c
 
 $(PSOBJ)zfontenum.$(OBJ) : $(PSSRC)zfontenum.c $(OP)\
