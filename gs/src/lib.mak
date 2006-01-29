@@ -477,6 +477,7 @@ smd5_h=$(GLSRC)smd5.h $(md5_h)
 sarc4_h=$(GLSRC)sarc4.h $(scommon_h)
 sjbig2_h=$(GLSRC)sjbig2.h $(stdint__h) $(scommon_h)
 sjpx_h=$(GLSRC)sjpx.h $(scommon_h)
+sjpx_luratech_h=$(GLSRC)sjpx_luratech.h $(scommon_h)
 spdiffx_h=$(GLSRC)spdiffx.h
 spngpx_h=$(GLSRC)spngpx.h
 spprint_h=$(GLSRC)spprint.h
@@ -1382,17 +1383,35 @@ $(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) \
 
 # ---------------- JPEG 2000 compression filter ---------------- #
 
+# jasper version
 sjpx_=$(GLOBJ)sjpx.$(OBJ)
 $(GLD)sjpx.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjasper.dev $(sjpx_)
 	$(SETMOD) $(GLD)sjpx $(sjpx_)
 	$(ADDMOD) $(GLD)sjpx -include $(GLD)libjasper.dev
 
+# libjasper.dev is created in jasper.mak
+
 $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
  $(memory__h) $(stdio__h) $(gsmalloc_h) $(gserror_h) $(gserrors_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_h)
-	$(GLCC) $(I_)$(JASI_)$(_I) $(JASCF_) $(GLO_)sjpx.$(OBJ) $(C_) $(GLSRC)sjpx.c
+	$(GLCC) $(I_)$(JASI_)$(_I) $(JASCF_) $(GLO_)sjpx.$(OBJ) \
+		$(C_) $(GLSRC)sjpx.c
 
-# libjasper.dev is created in jasper.mak
+# luratech version
+#sjpx_=$(GLOBJ)sjpx_luratech.$(OBJ)
+#$(GLD)sjpx.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)luratech_jp2.dev $(sjpx_)
+#	$(SETMOD) $(GLD)sjpx $(sjpx_)
+#	$(ADDMOD) $(GLD)sjpx -include $(GLD)luratech_jp2.dev
+
+$(GLD)luratech_jp2.dev : $(TOP_MAKEFILES) $(LIB_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(GLD)luratech_jp2 $(GLD)libluratech_jp2.a
+
+$(GLOBJ)sjpx_luratech.$(OBJ) : $(GLSRC)sjpx_luratech.c $(AK) \
+ $(memory__h) $(stdio__h) $(gsmalloc_h) $(gserror_h) $(gserrors_h) \
+ $(gdebug_h) $(strimpl_h) $(sjpx_luratech_h)
+	$(GLCC) $(I_)$(JASI_)$(_I) $(JASCF_) $(GLO_)sjpx_luratech.$(OBJ) \
+		$(C_) $(GLSRC)sjpx_luratech.c
+
 
 # ---------------- Pixel-difference filters ---------------- #
 # The Predictor facility of the LZW and Flate filters uses these.
