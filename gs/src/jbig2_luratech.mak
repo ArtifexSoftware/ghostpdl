@@ -25,11 +25,15 @@
 #       JBIG2GENDIR - generated (.dev) file directory
 #       JB2CF_ - cflags and the usual gs portability stuff
 #
-# We define the libldf_jb2.dev target and its dependencies and:
+# We define the ldf_jb2.dev target and its dependencies and:
 #	LDF_JB2I_ - include path for ldf_jb2 library headers
 #
 # This partial makefile compiles the ldf_jb2 library for use in
 # Ghostscript.
+
+# define our relative include path for "external" callers
+LDF_JB2I_=$(JBIG2SRCDIR)$(D)source$(D)libraries
+
 
 LDF_JB2_MAK=$(GLSRC)jbig2_luratech.mak
 
@@ -40,9 +44,6 @@ LDF_JB2_OBJ=$(JBIG2OBJDIR)$(D)
 # paths to source directories
 LDF_JB2_COMMON=$(JBIG2SRCDIR)$(D)source$(D)common$(D)
 LDF_JB2_COMPRESS=$(JBIG2SRCDIR)$(D)source$(D)compress$(D)
-
-# define our relative include path for "external" callers
-LDF_JB2I_=$(JBIG2SRCDIR)$(D)source$(D)libraries
 
 # source files to build from the CSDK source
 
@@ -129,7 +130,7 @@ ldf_jb2_compress_OBJS = \
 
 ldf_jb2_OBJS = $(ldf_jb2_common_OBJS) $(ldf_jb2_compress_OBJS)
 
-ldf_jb2_common_HDRS=\
+ldf_jb2_common_HDRS = \
 	$(LDF_JB2_COMMON)jb2_adt_cache.h			\
 	$(LDF_JB2_COMMON)jb2_adt_context_buffer.h		\
 	$(LDF_JB2_COMMON)jb2_adt_context_decoder.h		\
@@ -195,7 +196,7 @@ ldf_jb2_common_HDRS=\
 	$(LDF_JB2_COMMON)jb2_defines.h				\
 	$(LDF_JB2_COMMON)jb2_license.h
 
-ldf_jb2_compress_HDRS=\
+ldf_jb2_compress_HDRS = \
 	$(LDF_JB2_COMPRESS)jb2_adt_component_array.h		\
 	$(LDF_JB2_COMPRESS)jb2_adt_component.h			\
 	$(LDF_JB2_COMPRESS)jb2_adt_context_encoder.h		\
@@ -222,16 +223,16 @@ $(LDF_JB2_GEN)ldf_jb2.dev : $(TOP_MAKEFILES) $(LDF_JB2_GEN)ldf_jb2_$(SHARE_JBIG2
 	$(CP_) $(LDF_JB2_GEN)ldf_jb2_$(SHARE_JBIG2).dev $(LDF_JB2_GEN)ldf_jb2.dev
 
 # external link .dev
-$(LDF_JB2_GEN)ldf_jb2_1.dev : $(TOP_MAKEFILES) $(LDF_JB2_MAKE) $(ECHOGS_XE)
-	$(SETMOD) $(GLD)ldf_jb2_1 -lib ldf_jb2
+$(LDF_JB2_GEN)ldf_jb2_1.dev : $(TOP_MAKEFILES) $(LDF_JB2_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(LDF_JB2_GEN)ldf_jb2_1 -lib ldf_jb2
 
 # compile our own .dev
-$(LDF_JB2_GEN)ldf_jb2_0.dev : $(TOP_MAKEFILE) $(LDF_JB2_MAKE) $(ECHOGS_XE) $(ldf_jb2_OBJS)
+$(LDF_JB2_GEN)ldf_jb2_0.dev : $(TOP_MAKEFILES) $(LDF_JB2_MAK) $(ECHOGS_XE) $(ldf_jb2_OBJS)
 	$(SETMOD) $(LDF_JB2_GEN)ldf_jb2_0 $(ldf_jb2_common_OBJS)
 	$(ADDMOD) $(LDF_JB2_GEN)ldf_jb2_0 $(ldf_jb2_compress_OBJS)
 
 # define our specific compiler
-LDF_JB2_CC=$(CC_) $(CFLAGS) $(I_)$(JB2I_) $(II)$(LDF_JB2I_) $(II)$(LDF_JB2_COMMON) $(II)$(LDF_JB2_COMPRESS)$(_I) $(JB2CF_)
+LDF_JB2_CC=$(CC_) $(CFLAGS) $(I_)$(LDF_JB2I_) $(II)$(LDF_JB2_COMMON) $(II)$(LDF_JB2_COMPRESS)$(_I) $(JB2CF_)
 LDF_JB2_O=$(O_)$(LDF_JB2_OBJ)
 
 LDF_JB2_DEP=$(AK) $(LDF_JB2_MAK)

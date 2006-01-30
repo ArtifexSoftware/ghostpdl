@@ -1440,7 +1440,7 @@ $(GLD)luratech_jp2.dev : $(TOP_MAKEFILES) $(LIB_MAK) $(ECHOGS_XE)
 $(GLOBJ)sjpx_luratech.$(OBJ) : $(GLSRC)sjpx_luratech.c $(AK) \
  $(memory__h) $(stdio__h) $(gsmalloc_h) $(gserror_h) $(gserrors_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_luratech_h)
-	$(GLCC) $(I_)$(JPXI_)$(_I) $(JPXCF_) $(GLO_)sjpx_luratech.$(OBJ) \
+	$(GLCC) $(I_)$(LWF_JPXI_)$(_I) $(JPXCF_) $(GLO_)sjpx_luratech.$(OBJ) \
 		$(C_) $(GLSRC)sjpx_luratech.c
 
 
