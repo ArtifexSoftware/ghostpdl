@@ -25,9 +25,9 @@
 #	JPXGENDIR - generated (.dev) file directory
 #	JPXCF_ - cflags and the usual gs portability stuff.
 #
-# We define the libjasper.dev target and its dependencies and export:
+# We define the jasper.dev target and its dependencies and export:
 #	JPXI_ - include path for the jasper library headers
-#	JPX
+#
 # This partial makefile compiles a portion of the jasper library for use in
 # Ghostscript. You're better off just linking to the library's native build
 # but this supports the library on all our platforms.
@@ -142,7 +142,7 @@ jasper.clean-not-config-clean :
 	$(RM_) $(JASOBJ)*.$(OBJ)
 
 jasper.config-clean :
-	$(RMN_) $(JASGEN)$(D)libjasper*.dev
+	$(RMN_) $(JASGEN)$(D)jasper*.dev
 	
 JASDEP=$(AK) $(JASPER_MAK)
 
@@ -170,18 +170,18 @@ JAS_CC=$(CC_) $(CFLAGS) $(I_)$(JASGEN) $(II)$(JPXI_)$(_I) $(JPXCF_) $(JAS_EXCF_)
 JASO_=$(O_)$(JASOBJ)
 
 # switch in the selected .dev
-$(JASGEN)libjasper.dev : $(TOP_MAKEFILES) $(JASGEN)libjasper_$(SHARE_JPX).dev
-	$(CP_) $(JASGEN)libjasper_$(SHARE_JPX).dev $(JASGEN)libjasper.dev
+$(JASGEN)jasper.dev : $(TOP_MAKEFILES) $(JASGEN)jasper_$(SHARE_JPX).dev
+	$(CP_) $(JASGEN)jasper_$(SHARE_JPX).dev $(JASGEN)jasper.dev
 
 # external link .dev
-$(GLOBJ)libjasper_1.dev : $(TOP_MAKEFILES) $(JASPER_MAK) $(ECHOGS_XE)
-	$(SETMOD) $(GLOBJ)libjasper_1 -lib jasper
+$(GLOBJ)jasper_1.dev : $(TOP_MAKEFILES) $(JASPER_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(GLOBJ)jasper_1 -lib jasper
 
 # compile in .dev
-$(GLOBJ)libjasper_0.dev : $(TOP_MAKEFILES) $(JASPER_MAK) $(ECHOGS_XE) $(libjasper_OBJS)
-	$(SETMOD) $(JASGEN)libjasper_0 $(libjasper_OBJS_base)
-	$(ADDMOD) $(JASGEN)libjasper_0 $(libjasper_OBJS_jpc)
-	$(ADDMOD) $(JASGEN)libjasper_0 $(libjasper_OBJS_jp2)
+$(GLOBJ)jasper_0.dev : $(TOP_MAKEFILES) $(JASPER_MAK) $(ECHOGS_XE) $(libjasper_OBJS)
+	$(SETMOD) $(JASGEN)jasper_0 $(libjasper_OBJS_base)
+	$(ADDMOD) $(JASGEN)jasper_0 $(libjasper_OBJS_jpc)
+	$(ADDMOD) $(JASGEN)jasper_0 $(libjasper_OBJS_jp2)
 
 # explicit rules for building the source files
 # for simplicity we have every source file depend on all headers

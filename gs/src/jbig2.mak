@@ -1,4 +1,4 @@
-#    Copyright (C) 2003 artofcode LLC.  All rights reserved.
+#    Copyright (C) 2003-2006 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -23,9 +23,11 @@
 # gs.mak and friends define the following:
 #	JBIG2OBJDIR - the output obj directory
 #	JBIG2GENDIR - generated (.dev) file directory
-#	JB2I_ and JB2CF_ - include dir and cflags
-# and the usual gs portability stuff.
+#	JB2CF_ - cflags for compiling the lib
 
+# We define the libldf_jb2.dev target and its dependencies and:
+#       JB2I_ - include path for jbig2dec library headers
+#
 # This partial makefile compiles the jbig2dec library for use in
 # Ghostscript.
 
@@ -35,6 +37,10 @@ JBIG2_MAK=$(GLSRC)jbig2.mak
 JBIG2SRC=$(JBIG2SRCDIR)$(D)
 JBIG2GEN=$(JBIG2OBJDIR)$(D)
 JBIG2OBJ=$(JBIG2OBJDIR)$(D)
+
+# define our relative include path for "external" callers
+JB2I_=$(JBIG2SRCDIR)
+
 
 # This makefile is only known to work with jbig2dec v0.7 and later
 # to use an earlier version, remove unknown files from
@@ -94,17 +100,17 @@ JBIG2_CC=$(CC_) $(CFLAGS) $(I_)$(JBIG2GENDIR) $(II)$(JB2I_)$(_I) $(JB2CF_)
 JBIG2O_=$(O_)$(JBIG2OBJ)
 
 # switch in the version of libjbig2.dev we're actually using
-$(JBIG2GEN)libjbig2_jbig2dec.dev : $(TOP_MAKEFILES) $(JBIG2GEN)libjbig2dec_$(SHARE_JBIG2).dev
-	$(CP_) $(JBIG2GEN)libjbig2dec_$(SHARE_JBIG2).dev $(JBIG2GEN)libjbig2_jbig2dec.dev
+$(JBIG2GEN)jbig2dec.dev : $(TOP_MAKEFILES) $(JBIG2GEN)jbig2dec_$(SHARE_JBIG2).dev
+	$(CP_) $(JBIG2GEN)jbig2dec_$(SHARE_JBIG2).dev $(JBIG2GEN)jbig2dec.dev
 
 # dev file for shared (separately built) jbig2dec library
-$(JBIG2GEN)libjbig2dec_1.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE)
-	$(SETMOD) $(JBIG2GEN)libjbig2dec_1 -lib jbig2dec
+$(JBIG2GEN)jbig2dec_1.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(JBIG2GEN)jbig2dec_1 -lib jbig2dec
 
 # dev file for compiling our own from source
-$(JBIG2GEN)libjbig2dec_0.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE) $(libjbig2_OBJS)
-	$(SETMOD) $(JBIG2GEN)libjbig2dec_0 $(libjbig2_OBJS1)
-	$(ADDMOD) $(JBIG2GEN)libjbig2dec_0 $(libjbig2_OBJS2)
+$(JBIG2GEN)jbig2dec_0.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE) $(libjbig2_OBJS)
+	$(SETMOD) $(JBIG2GEN)jbig2dec_0 $(libjbig2_OBJS1)
+	$(ADDMOD) $(JBIG2GEN)jbig2dec_0 $(libjbig2_OBJS2)
 
 # explicit rules for building the source files. 
 
