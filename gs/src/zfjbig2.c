@@ -32,7 +32,7 @@
 #include "strimpl.h"
 #include "ifilter.h"
 
-#ifdef HAVE_LDF_JB2
+#ifdef USE_LDF_JB2
 #include "sjbig2_luratech.h"
 #else
 #include "sjbig2.h"

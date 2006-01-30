@@ -32,7 +32,7 @@
 #include "strimpl.h"
 #include "ifilter.h"
 
-#ifdef HAVE_LWF_JP2
+#ifdef USE_LWF_JP2
 #include "sjpx_luratech.h"
 #else
 #include "sjpx.h"
