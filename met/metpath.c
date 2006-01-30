@@ -334,7 +334,17 @@ Path_done(void *data, met_state_t *ms)
         fill = gs_eofill;
     else
         fill = gs_fill;
-            
+
+    /* NB temporary hack until we do patterns correctly - setting the
+       pattern like a color is set and supporting the filling of a
+       stroke */
+    if (patternset) {
+        if (met_currentstrokecolor(pgs))
+            pathtype = met_stroke_and_fill;
+        else
+            pathtype = met_fill_only;
+    }
+    
     do {
         /* case of stroke and file... uses a gsave/grestore to keep
            the path */
