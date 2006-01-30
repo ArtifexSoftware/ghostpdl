@@ -1317,12 +1317,18 @@ $(PSOBJ)zfjbig2_luratech.$(OBJ) : $(PSSRC)zfjbig2.c $(OP) $(memory__h)\
 # JPX (jpeg 2000) compression filter
 # this can be turned on and off with a FEATURE_DEV
 
-fjpx_=$(PSOBJ)zfjpx.$(OBJ)
-$(PSD)jpx.dev : $(INT_MAK) $(ECHOGS_XE) $(fjpx_) $(GLD)sjpx.dev
-	$(SETMOD) $(PSD)jpx $(fjpx_)
-	$(ADDMOD) $(PSD)jpx -include $(GLD)sjpx
-	$(ADDMOD) $(PSD)jpx -include $(GLD)jasper
-	$(ADDMOD) $(PSD)jpx -oper zfjpx
+$(PSD)jpx.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)jpx_$(JPX_LIB).dev
+	$(CP_) $(PSD)jpx_$(JPX_LIB).dev $(PSD)jpx.dev
+
+fjpx_jasper=$(PSOBJ)zfjpx.$(OBJ)
+
+$(PSD)jpx_jasper.dev : $(INT_MAK) $(ECHOGS_XE) $(fjpx_jasper) $(GLD)sjpx.dev
+	$(SETMOD) $(PSD)jpx_jasper $(fjpx_jasper)
+	$(ADDMOD) $(PSD)jpx_jasper -include $(GLD)sjpx
+	$(ADDMOD) $(PSD)jpx_jasper -include $(GLD)jasper
+	$(ADDMOD) $(PSD)jpx_jasper -oper zfjpx
+
+fjpx_luratech=$(PSOBJ)zfjpx_luratech.$(OBJ)
 
 $(PSOBJ)zfjpx.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
  $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
@@ -1330,6 +1336,17 @@ $(PSOBJ)zfjpx.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
 	$(PSCC) $(I_)$(JPXI_)$(_I) $(JPXCF_) $(PSO_)zfjpx.$(OBJ) \
 		$(C_) $(PSSRC)zfjpx.c
 
+$(PSD)jpx_luratech.dev : $(INT_MAK) $(ECHOGS_XE) $(fjpx_luratech) $(GLD)sjpx.dev
+	$(SETMOD) $(PSD)jpx_luratech $(fjpx_luratech)
+	$(ADDMOD) $(PSD)jpx_luratech -include $(GLD)sjpx
+	$(ADDMOD) $(PSD)jpx_luratech -include $(GLD)lwf_jp2
+	$(ADDMOD) $(PSD)jpx_luratech -oper zfjpx
+
+$(PSOBJ)zfjpx_luratech.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
+ $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
+ $(store_h) $(stream_h) $(strimpl_h) $(sjpx_luratech_h)
+	$(PSCC) $(I_)$(LWF_JPXI_)$(_I) $(JPXCF_) \
+		$(PSO_)zfjpx_luratech.$(OBJ) $(C_) $(PSSRC)zfjpx.c
 
 # ---------------- Binary tokens ---------------- #
 
