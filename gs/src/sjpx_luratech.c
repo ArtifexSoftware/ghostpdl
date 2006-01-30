@@ -30,9 +30,20 @@
 #include "sjpx_luratech.h"
 #include <lwf_jp2.h>
 
-/* stream implementation */
+/* JPXDecode stream implementation using the Luratech library */
 
-/* As with the /JBIG2Decode filter, we let the library do its own 
+/* if linking against a SDK build that requires a separate license key,
+   you can change the following undefs to defines and set them here. */
+/***
+#ifndef JP2_LICENSE_NUM_1
+# undef JP2_LICENSE_NUM_1
+#endif
+#ifndef JP2_LICENSE_NUM_2
+# undef JP2_LICENSE_NUM_2
+#endif
+***/
+
+/* As with the /JBIG2Decode filter, we let the library do its  
    memory management through malloc() etc. and rely on our release() 
    proc being called to deallocate state.
 */
@@ -211,6 +222,12 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 		s_jpxd_read_data, (JP2_Callback_Param)state
 	    );
 
+#if defined(JP2_LICENSE_NUM_1) && defined(JP2_LICENSE_NUM_2)
+            /* set the license keys if appropriate */
+            error = JP2_Decompress_SetLicense(state->handle,
+                JP2_LICENSE_NUM_1, JP2_LICENSE_NUM_2);
+            if (error != cJP2_Error_OK) return ERRC;
+#endif
 	    /* parse image parameters */
 	    if (err != cJP2_Error_OK) return ERRC;
 	    err = JP2_Decompress_GetProp(state->handle,

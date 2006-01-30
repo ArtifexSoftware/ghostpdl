@@ -27,7 +27,18 @@
 
 #include <ldf_jb2.h>
 
-/* stream implementation */
+/* JBIG2Decode stream implementation using the Luratech library */
+
+/* if linking against a SDK build that requires a separate license key,
+   you can change the following undefs to defines and set them here. */
+/***
+#ifndef JB2_LICENSE_NUM_1
+# undef JB2_LICENSE_NUM_1 
+#endif
+#ifndef JB2_LICENSE_NUM_2
+# undef JB2_LICENSE_NUM_2 
+#endif
+***/
 
 /* The /JBIG2Decode filter is a fairly memory intensive one to begin with,
    Furthermore, as a PDF 1.4 feature, we can assume a fairly large 
@@ -302,6 +313,7 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
     if (last && out_size > 0) {
 
 	if (state->doc == NULL) {
+
 	    /* initialize the codec state and pass our callbacks */
 	    error = JB2_Document_Start( &(state->doc),
 		s_jbig2_alloc, ss,	/* alloc and its data */
@@ -309,6 +321,13 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
 		s_jbig2_read, ss,	/* read callback and data */
 		s_jbig2_message, ss);   /* message callback and data */
 	    if (error != cJB2_Error_OK) return ERRC;
+
+#if defined(JB2_LICENSE_NUM_1) && defined(JB2_LICENSE_NUM_2)
+	    /* set the license keys if appropriate */
+	    error = JB2_Document_Set_License(state->doc, 
+		JB2_LICENSE_NUM_1, JB2_LICENSE_NUM_2);
+	    if (error != cJB2_Error_OK) return ERRC;
+#endif
 	    /* decode relevent image parameters */
 	    error = JB2_Document_Set_Page(state->doc, 0);
 	    if (error != cJB2_Error_OK) return ERRC;
@@ -322,10 +341,12 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
 	    state->stride = ((state->width - 1) >> 3) + 1;
 	    if_debug2('s', "[s]jbig2decode page is %ldx%ld; allocating image\n", state->width, state->height);
 	    state->image = malloc(state->height*state->stride);
+
 	    /* start image decode */
 	    error = JB2_Document_Decompress_Page(state->doc, scale, rect,
 		s_jbig2_write, ss);
 	    if (error != cJB2_Error_OK) return ERRC;
+
 	}
 
 	/* copy any buffered image data out */
