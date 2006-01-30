@@ -31,8 +31,12 @@
 #include "stream.h"
 #include "strimpl.h"
 #include "ifilter.h"
-#include "sjpx.h"
 
+#ifdef HAVE_LWF_JP2
+#include "sjpx_luratech.h"
+#else
+#include "sjpx.h"
+#endif
 
 /* <source> /JPXDecode <file> */
 /* <source> <dict> /JPXDecode <file> */

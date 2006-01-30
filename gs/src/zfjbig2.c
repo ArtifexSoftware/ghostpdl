@@ -31,8 +31,12 @@
 #include "stream.h"
 #include "strimpl.h"
 #include "ifilter.h"
-#include "sjbig2.h"
 
+#ifdef HAVE_LDF_JB2
+#include "sjbig2_luratech.h"
+#else
+#include "sjbig2.h"
+#endif
 
 /* We define a structure, allocated in the postscript
    memory space, to hold a pointer to the global decoder
