@@ -35,7 +35,7 @@
 LDF_JB2I_=$(JBIG2SRCDIR)$(D)source$(D)libraries
 
 
-LDF_JB2_MAK=$(GLSRC)jbig2_luratech.mak
+LDF_JB2_MAK=$(GLSRC)ldf_jb2.mak
 
 LDF_JB2_SRC=$(JBIG2SRCDIR)$(D)
 LDF_JB2_GEN=$(JBIG2OBJDIR)$(D)
