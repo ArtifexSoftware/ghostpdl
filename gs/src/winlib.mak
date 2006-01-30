@@ -110,6 +110,8 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\libpng.mak
 !include $(GLSRCDIR)\jbig2.mak
 !include $(GLSRCDIR)\jasper.mak
+!include $(GLSRCDIR)\ldf_jb2.mak
+!include $(GLSRCDIR)\lwf_jp2.mak
 !include $(GLSRCDIR)\icclib.mak
 !include $(GLSRCDIR)\ijs.mak
 !include $(GLSRCDIR)\devs.mak
