@@ -23,10 +23,9 @@
 # gs.mak and friends define the following:
 #	JPXOBJDIR - the output obj directory
 #	JPXGENDIR - generated (.dev) file directory
-#	JPXCF_ - cflags and the usual gs portability stuff.
+#	JPXI_ and JPXCF_ - include and cflags for building the library
 #
-# We define the jasper.dev target and its dependencies and export:
-#	JPXI_ - include path for the jasper library headers
+# We define the jasper.dev target and its dependencies
 #
 # This partial makefile compiles a portion of the jasper library for use in
 # Ghostscript. You're better off just linking to the library's native build
@@ -161,9 +160,6 @@ JAS_EXCF_=\
         $(D_)EXCLUDE_PNM_SUPPORT$(_D_)1$(_D)\
         $(D_)EXCLUDE_RAS_SUPPORT$(_D_)1$(_D)\
         $(D_)EXCLUDE_PNG_SUPPORT$(_D_)1$(_D)\
-
-# define our relative include path
-JPXI_=$(JPXSRCDIR)$(D)src$(D)libjasper$(D)include
 
 # define our specific compiler
 JAS_CC=$(CC_) $(CFLAGS) $(I_)$(JASGEN) $(II)$(JPXI_)$(_I) $(JPXCF_) $(JAS_EXCF_)

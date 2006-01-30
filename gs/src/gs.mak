@@ -325,7 +325,11 @@ PCF_=$(D_)SHARE_LIBPNG=$(SHARE_LIBPNG)$(_D)
 ZI_=$(ZSRCDIR)
 ZF_=
 ZCF_=$(D_)SHARE_ZLIB=$(SHARE_ZLIB)$(_D)
+JB2I_=$(JBIG2SRCDIR)
 JB2CF_=$(JBIG2_CFLAGS)
+LDF_JB2I_=$(JBIG2SRCDIR)$(D)source$(D)libraries
+JPXI_=$(JPXSRCDIR)$(D)src$(D)libjasper$(D)include
+LWF_JPXI_=$(JPXSRCDIR)$(D)library$(D)source
 JPXCF_=$(JPX_CFLAGS)
 
 ######################## How to define new 'features' #######################

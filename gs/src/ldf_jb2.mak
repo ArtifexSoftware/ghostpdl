@@ -13,7 +13,7 @@
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-# $Id$
+# $Id: ldf_jb2.mak 6525 2006-01-30 09:20:34Z giles $
 
 # makefile for Luratech ldf_jb2 library code.
 # Users of this makefile must define the following:
@@ -23,17 +23,13 @@
 # gs.mak and friends define the following:
 #       JBIG2OBJDIR - the output obj directory
 #       JBIG2GENDIR - generated (.dev) file directory
-#       JB2CF_ - cflags and the usual gs portability stuff
+#	LDF_JB2I_ - include path for the library
+#       JB2CF_ - cflags for building the library
 #
-# We define the ldf_jb2.dev target and its dependencies and:
-#	LDF_JB2I_ - include path for ldf_jb2 library headers
+# We define the ldf_jb2.dev target and its dependencies
 #
 # This partial makefile compiles the ldf_jb2 library for use in
 # Ghostscript.
-
-# define our relative include path for "external" callers
-LDF_JB2I_=$(JBIG2SRCDIR)$(D)source$(D)libraries
-
 
 LDF_JB2_MAK=$(GLSRC)ldf_jb2.mak
 

@@ -23,18 +23,13 @@
 # gs.mak and friends define the following:
 #       JPXOBJDIR - the output obj directory
 #       JPXGENDIR - generated (.dev) file directory
-#       JPXCF_ - cflags and the usual gs portability stuff
+#	LWF_JPXI_ - include path for the library headers
+#       JPXCF_ - cflags for building the library
 #
-# We define the lwf_jp2.dev target and its dependencies and:
-#       LWF_JP2I_ - include path for lwf_jp2 library headers
+# We define the lwf_jp2.dev target and its dependencies
 #
 # This partial makefile compiles the lwf_jp2 library for use in
 # Ghostscript.
-
-# define our relative include path for "external" callers
-LWF_JPXI_=$(JPXSRCDIR)$(D)library$(D)source
-
-
 
 LWF_JP2_MAK=$(GLSRC)lwf_jp2.mak
 

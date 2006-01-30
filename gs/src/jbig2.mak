@@ -23,10 +23,9 @@
 # gs.mak and friends define the following:
 #	JBIG2OBJDIR - the output obj directory
 #	JBIG2GENDIR - generated (.dev) file directory
-#	JB2CF_ - cflags for compiling the lib
+#	JB2I_ JB2CF_ - include and cflags for compiling the lib
 
-# We define the libldf_jb2.dev target and its dependencies and:
-#       JB2I_ - include path for jbig2dec library headers
+# We define the jbig2dec.dev target and its dependencies
 #
 # This partial makefile compiles the jbig2dec library for use in
 # Ghostscript.
@@ -37,10 +36,6 @@ JBIG2_MAK=$(GLSRC)jbig2.mak
 JBIG2SRC=$(JBIG2SRCDIR)$(D)
 JBIG2GEN=$(JBIG2OBJDIR)$(D)
 JBIG2OBJ=$(JBIG2OBJDIR)$(D)
-
-# define our relative include path for "external" callers
-JB2I_=$(JBIG2SRCDIR)
-
 
 # This makefile is only known to work with jbig2dec v0.7 and later
 # to use an earlier version, remove unknown files from
