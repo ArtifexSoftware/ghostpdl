@@ -139,7 +139,11 @@ class _GSTextTestResult(unittest._TextTestResult):
     def addFailure(self, test, err):
         self.failures.append((test, err))
         if self.showAll:
-            self.stream.writeln("DIFFER")
+	    lines = err[1].args[0]
+	    if (len(lines) > 18) & (lines[0:18] == "non-zero exit code"):
+		self.stream.writeln("ERROR")
+	    else:
+		self.stream.writeln("DIFFER")
         elif self.dots:
             self.stream.write("D")
     
