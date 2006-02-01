@@ -262,7 +262,7 @@ log.close()
 # Only include the main body in the email on Mondays
 if time.gmtime().tm_wday == 0:
     msg += regout
-elif len(regout) < 40*1024:
+elif len(regout) < 300*1024:
     msg += regout
 
 retry = 1
