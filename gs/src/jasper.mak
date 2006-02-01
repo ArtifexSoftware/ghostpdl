@@ -159,7 +159,7 @@ JAS_EXCF_=\
 	$(D_)EXCLUDE_PGX_SUPPORT$(_D_)1$(_D)\
         $(D_)EXCLUDE_PNM_SUPPORT$(_D_)1$(_D)\
         $(D_)EXCLUDE_RAS_SUPPORT$(_D_)1$(_D)\
-        $(D_)EXCLUDE_PNG_SUPPORT$(_D_)1$(_D)\
+        $(D_)EXCLUDE_PNG_SUPPORT$(_D_)1$(_D)
 
 # define our specific compiler
 JAS_CC=$(CC_) $(CFLAGS) $(I_)$(JASGEN) $(II)$(JPXI_)$(_I) $(JPXCF_) $(JAS_EXCF_)
