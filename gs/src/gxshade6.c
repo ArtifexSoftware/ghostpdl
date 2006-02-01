@@ -36,7 +36,6 @@
 #include "stdint_.h"
 #include "math_.h"
 #include "vdtrace.h"
-#include <assert.h>
 
 #define VD_TRACE_TENSOR_PATCH 1
 
@@ -580,18 +579,6 @@ wedge_vertex_list_elem_release(patch_fill_state_t *pfs, wedge_vertex_list_elem_t
 }
 
 private inline void
-release_triangle_wedge_vertex_list_elem(patch_fill_state_t *pfs, 
-    wedge_vertex_list_elem_t *beg, wedge_vertex_list_elem_t *end)
-{
-    wedge_vertex_list_elem_t *e = beg->next;
-
-    assert(beg->next->next == end);
-    beg->next = end;
-    end->prev = beg;
-    wedge_vertex_list_elem_release(pfs, e);
-}
-
-private inline void
 release_wedge_vertex_list_interval(patch_fill_state_t *pfs, 
     wedge_vertex_list_elem_t *beg, wedge_vertex_list_elem_t *end)
 {
@@ -605,7 +592,7 @@ release_wedge_vertex_list_interval(patch_fill_state_t *pfs,
     }
 }
 
-private inline void
+private inline int
 release_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *ll, int n)
 {
     int i;
@@ -614,14 +601,16 @@ release_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *ll, int 
 	wedge_vertex_list_t *l = ll + i;
 
 	if (l->beg != NULL) {
-	    assert(l->end != NULL);
+	    if (l->end == NULL)
+		return_error(gs_error_unregistered); /* Must not happen. */
 	    release_wedge_vertex_list_interval(pfs, l->beg, l->end);
 	    wedge_vertex_list_elem_release(pfs, l->beg);
 	    wedge_vertex_list_elem_release(pfs, l->end);
 	    l->beg = l->end = NULL;
-	} else
-	    assert(l->end == NULL);
+	} else if (l->end != NULL)
+	    return_error(gs_error_unregistered); /* Must not happen. */
     }
+    return 0;
 }
 
 private inline wedge_vertex_list_elem_t *
@@ -630,7 +619,8 @@ wedge_vertex_list_find(wedge_vertex_list_elem_t *beg, const wedge_vertex_list_el
 {
     wedge_vertex_list_elem_t *e = beg;
     
-    assert(beg != NULL && end != NULL);
+    if (beg == NULL || end == NULL)
+	return NULL; /* Must not happen. */
     for (; e != end; e = e->next)
 	if (e->level == level)
 	    return e;
@@ -786,35 +776,6 @@ intersection_of_small_bars(const gs_fixed_point q[4], int i0, int i1, int i2, in
 	fixed d23x = dx3 - dx2, d23y = dy3 - dy2;
 	int64_t det = (int64_t)dx1 * d23y - (int64_t)dy1 * d23x;
 	int64_t mul = (int64_t)dx2 * d23y - (int64_t)dy2 * d23x;
-#	define USE_DOUBLE 0
-#	define USE_INT64_T (1 || !USE_DOUBLE)
-#	if USE_DOUBLE
-	{ 
-	    /* Assuming big bars. Not a good thing due to 'double'.  */
-	    /* The determinant can't compute in double due to 
-	       possible loss of all significant bits when subtracting the 
-	       trucnated prodicts. But after we subtract in int64_t,
-	       it converts to 'double' with a reasonable truncation. */
-	    double dy = dy1 * (double)mul / (double)det;
-	    fixed iy;
-
-	    if (dy1 > 0 && dy >= dy1)
-		return false; /* Outside the bar 1. */
-	    if (dy1 < 0 && dy <= dy1)
-		return false; /* Outside the bar 1. */
-	    if (dy2 < dy3) {
-		if (dy <= dy2 || dy >= dy3)
-		    return false; /* Outside the bar 2. */
-	    } else {
-		if (dy >= dy2 || dy <= dy3)
-		    return false; /* Outside the bar 2. */
-	    }
-	    iy = (int)floor(dy);
-	    *ry = q[i0].y + iy;
-	    *ey = (dy > iy ? 1 : 0);
-	}
-#	endif
-#	if USE_INT64_T
 	{
 	    /* Assuming small bars : cubes of coordinates must fit into int64_t.
 	       curve_samples must provide that.  */
@@ -846,14 +807,9 @@ intersection_of_small_bars(const gs_fixed_point q[4], int i0, int i1, int i2, in
 	    }
 	    pry = q[i0].y + (fixed)iy;
 	    pey = (iy * det < num ? 1 : 0);
-#	    if USE_DOUBLE && USE_INT64_T
-		assert(*ry == pry);
-		assert(*ey == pey);
-#	    endif
 	    *ry = pry;
 	    *ey = pey;
 	}
-#	endif
 	return true;
     }
     return false;
@@ -1397,33 +1353,41 @@ manhattan_dist(const gs_fixed_point *p0, const gs_fixed_point *p1)
     return max(dx, dy);
 }
 
-private inline void
+private inline int
 create_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *l, 
 	const gs_fixed_point *p0, const gs_fixed_point *p1)
 {
-    assert(l->end == NULL);
+    if (l->end != NULL)
+	return_error(gs_error_unregistered); /* Must not happen. */
     l->beg = wedge_vertex_list_elem_reserve(pfs);
     l->end = wedge_vertex_list_elem_reserve(pfs);
-    assert(l->beg != NULL);
-    assert(l->end != NULL);
+    if (l->beg == NULL)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    if (l->end == NULL)
+	return_error(gs_error_unregistered); /* Must not happen. */
     l->beg->prev = l->end->next = NULL;
     l->beg->next = l->end;
     l->end->prev = l->beg;
     l->beg->p = *p0;
     l->end->p = *p1;
     l->beg->level = l->end->level = 0;
+    return 0;
 }
 
-private inline wedge_vertex_list_elem_t *
-insert_wedge_vertex_list_elem(patch_fill_state_t *pfs, wedge_vertex_list_t *l, const gs_fixed_point *p)
+private inline int
+insert_wedge_vertex_list_elem(patch_fill_state_t *pfs, wedge_vertex_list_t *l, 
+			      const gs_fixed_point *p, wedge_vertex_list_elem_t **r)
 {
     wedge_vertex_list_elem_t *e = wedge_vertex_list_elem_reserve(pfs);
 
     /* We have got enough free elements due to the preliminary decomposition 
        of curves to LAZY_WEDGES_MAX_LEVEL, see curve_samples. */
-    assert(e != NULL); 
-    assert(l->beg->next == l->end);
-    assert(l->end->prev == l->beg);
+    if (e == NULL)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    if (l->beg->next != l->end)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    if (l->end->prev != l->beg)
+	return_error(gs_error_unregistered); /* Must not happen. */
     e->next = l->end;
     e->prev = l->beg;
     e->p = *p;
@@ -1433,69 +1397,97 @@ insert_wedge_vertex_list_elem(patch_fill_state_t *pfs, wedge_vertex_list_t *l, c
     {	int sx = l->beg->p.x < l->end->p.x ? 1 : -1;
 	int sy = l->beg->p.y < l->end->p.y ? 1 : -1;
 
-	assert((p->x - l->beg->p.x) * sx >= 0);
-	assert((p->y - l->beg->p.y) * sy >= 0);
-	assert((l->end->p.x - p->x) * sx >= 0);
-	assert((l->end->p.y - p->y) * sy >= 0);
+	if ((p->x - l->beg->p.x) * sx < 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if ((p->y - l->beg->p.y) * sy < 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if ((l->end->p.x - p->x) * sx < 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if ((l->end->p.y - p->y) * sy < 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
     }
-    return e;
+    *r = e;
+    return 0;
 }
 
-private inline wedge_vertex_list_elem_t *
+private inline int
 open_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
-	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *pm)
+	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *pm,
+	wedge_vertex_list_elem_t **r)
 {
     wedge_vertex_list_elem_t *e;
+    int code;
 
     if (!l->last_side) {
-	if (l->beg == NULL)
-	    create_wedge_vertex_list(pfs, l, p0, p1);
-	assert(l->beg->p.x == p0->x);
-	assert(l->beg->p.y == p0->y);
-	assert(l->end->p.x == p1->x);
-	assert(l->end->p.y == p1->y);
-	e = insert_wedge_vertex_list_elem(pfs, l, pm);
-	e->divide_count++;
-	return e;
-    } else {
 	if (l->beg == NULL) {
-	    create_wedge_vertex_list(pfs, l, p1, p0);
-	    e = insert_wedge_vertex_list_elem(pfs, l, pm);
-	    e->divide_count++;
-	    return e;
+	    code = create_wedge_vertex_list(pfs, l, p0, p1);
+	    if (code < 0)
+		return code;
 	}
-	assert(l->beg->p.x == p1->x);
-	assert(l->beg->p.y == p1->y);
-	assert(l->end->p.x == p0->x);
-	assert(l->end->p.y == p0->y);
+	if (l->beg->p.x != p0->x)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (l->beg->p.y != p0->y)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (l->end->p.x != p1->x)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (l->end->p.y != p1->y)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	code = insert_wedge_vertex_list_elem(pfs, l, pm, &e);
+	if (code < 0)
+	    return code;
+	e->divide_count++;
+    } else if (l->beg == NULL) {
+	code = create_wedge_vertex_list(pfs, l, p1, p0);
+	if (code < 0)
+	    return code;
+	code = insert_wedge_vertex_list_elem(pfs, l, pm, &e);
+	if (code < 0)
+	    return code;
+	e->divide_count++;
+    } else {
+	if (l->beg->p.x != p1->x)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (l->beg->p.y != p1->y)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (l->end->p.x != p0->x)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (l->end->p.y != p0->y)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	if (l->beg->next == l->end) {
-	    e = insert_wedge_vertex_list_elem(pfs, l, pm);
+	    code = insert_wedge_vertex_list_elem(pfs, l, pm, &e);
+	    if (code < 0)
+		return code;
 	    e->divide_count++;
-	    return e;
 	} else {
 	    e = wedge_vertex_list_find(l->beg, l->end, 
 			max(l->beg->level, l->end->level) + 1);
-	    assert(e != NULL);
-	    assert(e->p.x == pm->x && e->p.y == pm->y);
+	    if (e == NULL)
+		return_error(gs_error_unregistered); /* Must not happen. */
+	    if (e->p.x != pm->x || e->p.y != pm->y)
+		return_error(gs_error_unregistered); /* Must not happen. */
     	    e->divide_count++;
-	    return e;
 	}
     }
+    *r = e;
+    return 0;
 }
 
-private inline void
+private inline int
 make_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l, 
 	wedge_vertex_list_t *l0, bool forth, 
 	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *pm)
 {
+    int code;
+
     l->last_side = l0->last_side;
     if (!l->last_side ^ !forth) {
-	l->end = open_wedge_median(pfs, l0, p0, p1, pm);
+	code = open_wedge_median(pfs, l0, p0, p1, pm, &l->end);
 	l->beg = l0->beg;
     } else {
-	l->beg = open_wedge_median(pfs, l0, p0, p1, pm);
+	code = open_wedge_median(pfs, l0, p0, p1, pm, &l->beg);
 	l->end = l0->end;
     }
+    return code;
 }
 
 private int fill_wedge_from_list(patch_fill_state_t *pfs, const wedge_vertex_list_t *l,
@@ -1702,7 +1694,8 @@ fill_wedge_from_list_rec(patch_fill_state_t *pfs,
     if (beg->next == end)
 	return 0;
     else if (beg->next->next == end) {
-	assert(beg->next->divide_count == 1 || beg->next->divide_count == 2);
+	if (beg->next->divide_count != 1 && beg->next->divide_count != 2)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	if (beg->next->divide_count != 1)
 	    return 0;
 	return fill_triangle_wedge_from_list(pfs, beg, end, beg->next, c0, c1);
@@ -1715,8 +1708,10 @@ fill_wedge_from_list_rec(patch_fill_state_t *pfs,
 	p.x = (beg->p.x + end->p.x) / 2;
 	p.y = (beg->p.y + end->p.y) / 2;
 	e = wedge_vertex_list_find(beg, end, level + 1);
-	assert(e != NULL);
-	assert(e->p.x == p.x && e->p.y == p.y);
+	if (e == NULL)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (e->p.x != p.x || e->p.y != p.y)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	patch_interpolate_color(&c, c0, c1, pfs, 0.5);
 	code = fill_wedge_from_list_rec(pfs, beg, e, level + 1, c0, &c);
 	if (code < 0)
@@ -1724,7 +1719,8 @@ fill_wedge_from_list_rec(patch_fill_state_t *pfs,
 	code = fill_wedge_from_list_rec(pfs, e, end, level + 1, &c, c1);
 	if (code < 0)
 	    return code;
-	assert(e->divide_count == 1 || e->divide_count == 2);
+	if (e->divide_count != 1 && e->divide_count != 2)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	if (e->divide_count != 1)
 	    return 0;
 	return fill_triangle_wedge_from_list(pfs, beg, end, e, c0, c1);
@@ -1748,7 +1744,7 @@ terminate_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 
 	if (code < 0)
 	    return code;
-	release_wedge_vertex_list(pfs, l, 1);
+	return release_wedge_vertex_list(pfs, l, 1);
     }
     return 0;
 }
@@ -2373,9 +2369,15 @@ triangle_by_4(patch_fill_state_t *pfs,
     divide_bar(pfs, p2, p0, 2, &p20);
     if (LAZY_WEDGES) {
 	init_wedge_vertex_list(L, count_of(L));
-	make_wedge_median(pfs, &L01, l01, true,  &p0->p, &p1->p, &p01.p);
-	make_wedge_median(pfs, &L12, l12, true,  &p1->p, &p2->p, &p12.p);
-	make_wedge_median(pfs, &L20, l20, false, &p2->p, &p0->p, &p20.p);
+	code = make_wedge_median(pfs, &L01, l01, true,  &p0->p, &p1->p, &p01.p);
+	if (code < 0)
+	    return code;
+	code = make_wedge_median(pfs, &L12, l12, true,  &p1->p, &p2->p, &p12.p);
+	if (code < 0)
+	    return code;
+	code = make_wedge_median(pfs, &L20, l20, false, &p2->p, &p0->p, &p20.p);
+	if (code < 0)
+	    return code;
     } else {
 	code = fill_triangle_wedge(pfs, p0, p1, &p01);
 	if (code < 0)
@@ -2918,8 +2920,12 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big, in
     if (divide_v) {
 	divide_quadrangle_by_v(pfs, &s0, &s1, q, p);
 	if (LAZY_WEDGES) {
-	    make_wedge_median(pfs, &l1, p->l0111, true,  &p->p[0][1]->p, &p->p[1][1]->p, &s0.p[1][1]->p);
-	    make_wedge_median(pfs, &l2, p->l1000, false, &p->p[1][0]->p, &p->p[0][0]->p, &s0.p[1][0]->p);
+	    code = make_wedge_median(pfs, &l1, p->l0111, true,  &p->p[0][1]->p, &p->p[1][1]->p, &s0.p[1][1]->p);
+	    if (code < 0)
+		return code;
+	    code = make_wedge_median(pfs, &l2, p->l1000, false, &p->p[1][0]->p, &p->p[0][0]->p, &s0.p[1][0]->p);
+	    if (code < 0)
+		return code;
 	    s0.l1110 = s1.l0001 = &l0;
 	    s0.l0111 = s1.l0111 = &l1;
 	    s0.l1000 = s1.l1000 = &l2;
@@ -2956,8 +2962,12 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big, in
     } else if (divide_u) {
 	divide_quadrangle_by_u(pfs, &s0, &s1, q, p);
 	if (LAZY_WEDGES) {
-	    make_wedge_median(pfs, &l1, p->l0001, true,  &p->p[0][0]->p, &p->p[0][1]->p, &s0.p[0][1]->p);
-	    make_wedge_median(pfs, &l2, p->l1110, false, &p->p[1][1]->p, &p->p[1][0]->p, &s0.p[1][1]->p);
+	    code = make_wedge_median(pfs, &l1, p->l0001, true,  &p->p[0][0]->p, &p->p[0][1]->p, &s0.p[0][1]->p);
+	    if (code < 0)
+		return code;
+	    code = make_wedge_median(pfs, &l2, p->l1110, false, &p->p[1][1]->p, &p->p[1][0]->p, &s0.p[1][1]->p);
+	    if (code < 0)
+		return code;
 	    s0.l0111 = s1.l1000 = &l0;
 	    s0.l0001 = s1.l0001 = &l1;
 	    s0.l1110 = s1.l1110 = &l2;
@@ -3065,6 +3075,8 @@ decompose_stripe(patch_fill_state_t *pfs, const tensor_patch *p, int ku)
 	    dbg_quad_cnt++;
 #	endif
 	code = fill_quadrangle(pfs, &q, true, 0);
+	if (code < 0)
+	    return code;
 	if (LAZY_WEDGES) {
 	    code = terminate_wedge_vertex_list(pfs, &l[0], &q.p[0][0]->c, &q.p[0][1]->c);
 	    if (code < 0)
