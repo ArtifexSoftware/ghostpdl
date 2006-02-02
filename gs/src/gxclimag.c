@@ -810,9 +810,9 @@ clist_create_compositor(gx_device * dev,
         return code;
 
     if (pcte->type->comp_id == GX_COMPOSITOR_PDF14_TRANS) {
-	gx_device_clist_writer * const cldev =
+	gx_device_clist_writer * const cdev =
 			&((gx_device_clist *)dev)->writer;
-	int len = cmd_write_ctm_return_length(cldev, &ctm_only(pis));
+	int len = cmd_write_ctm_return_length(cdev, &ctm_only(pis));
 
 	code = set_cmd_put_all_op(dp, (gx_device_clist_writer *)dev,
                            cmd_opv_set_ctm, len + 1);
@@ -822,6 +822,7 @@ clist_create_compositor(gx_device * dev,
 	code = cmd_write_ctm(&ctm_only(pis), dp, len);
 	if (code < 0)
 	    return code;
+	state_update(ctm);
     }
 
     /* overprint applies to all bands */
