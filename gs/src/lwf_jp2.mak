@@ -82,7 +82,6 @@ lwf_jp2_OBJS = \
 	$(LWF_JP2_OBJ)jp2c_write.$(OBJ)				\
 	$(LWF_JP2_OBJ)jp2d_codestream.$(OBJ)			\
 	$(LWF_JP2_OBJ)jp2d_decoder.$(OBJ)			\
-	$(LWF_JP2_OBJ)jp2_demo.$(OBJ)				\
 	$(LWF_JP2_OBJ)jp2d_file_format.$(OBJ)			\
 	$(LWF_JP2_OBJ)jp2d_format.$(OBJ)			\
 	$(LWF_JP2_OBJ)jp2d_image.$(OBJ)				\
@@ -150,7 +149,6 @@ lwf_jp2_HDRS = \
 	$(LWF_JP2_SRC)jp2c_write.h			\
 	$(LWF_JP2_SRC)jp2d_codestream.h			\
 	$(LWF_JP2_SRC)jp2d_decoder.h			\
-	$(LWF_JP2_SRC)jp2_demo.h			\
 	$(LWF_JP2_SRC)jp2d_file_format.h		\
 	$(LWF_JP2_SRC)jp2d_format.h			\
 	$(LWF_JP2_SRC)jp2d_image.h			\
