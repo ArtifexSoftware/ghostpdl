@@ -67,7 +67,13 @@
   tabdict /name .knownget {
     dup 8 getu32 f exch setfileposition
     12 getu32 string f exch readstring pop
-    6 findname
+    dup
+    6 findname not {
+      4 findname	% Try FullName
+    } {
+      exch pop true
+    }
+    ifelse
   } {
     false
   } ifelse
@@ -943,7 +949,7 @@ mark
   tabdict /name .knownget {
 		% Find the names from the 'name' table.
     /names exch def
-    /FontName names 6 findname not { curxuid 16 8 string cvrs } if
+    /FontName names 6 findname not { names 4 findname not { curxuid 16 8 string cvrs } if } if
       /fontname 1 index def
     /FontInfo mark
       names 0 findname { /Notice exch } if
