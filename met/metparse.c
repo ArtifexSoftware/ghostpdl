@@ -19,9 +19,8 @@
 #include "metparse.h"
 #include "metelement.h"
 #include "metcomplex.h"
-#include "mt_error.h"
 #include "gdebug.h"
-
+#include "gserror.h"
 /* have expat use the gs memory manager. */
 
 
@@ -93,12 +92,12 @@ met_start(void *data, const char *el, const char **attr)
             sprintf(data->debug_info, "depth=%d, element called=%s\n", st->depth, el);
             code = (*metp->init)(&data->data, st->mets, el, attr);
             if (code < 0) {
-		mt_rethrow(code, "met_start init");
+		gs_rethrow(code, "met_start init");
                 met_set_error(st, code);
             }
             code = (*metp->action)(data->data, st->mets);
             if (code < 0) {
-		mt_rethrow(code, "met_start action");
+		gs_rethrow(code, "met_start action");
                 met_set_error(st, code);
             }
             st->stack_top++;
@@ -134,7 +133,7 @@ met_end(void *data, const char *el)
         data = &st->data_stack[st->stack_top];
         code = (*metp->done)(data->data, st->mets);
         if (code < 0) {
-            mt_rethrow(code, "metp->done");
+            gs_rethrow(code, "metp->done");
             met_set_error(st, code);
         }
     }
@@ -215,7 +214,7 @@ met_process(met_parser_state_t *st, met_state_t *mets,  void *pzip, stream_curso
     if (!started) {
         const char *start = "<JOB>";
         if (XML_Parse(parser, start, strlen(start), 0) == XML_STATUS_ERROR) {
-            return mt_rethrow2(-1, "<job> Parse error at line %d:%s",
+            return gs_rethrow2(-1, "<job> Parse error at line %d:%s",
 			       XML_GetCurrentLineNumber(parser),
 			       XML_ErrorString(XML_GetErrorCode(parser)));
         }
@@ -224,13 +223,13 @@ met_process(met_parser_state_t *st, met_state_t *mets,  void *pzip, stream_curso
             
 
     if (XML_Parse(parser, p + 1, avail, 0 /* done? */) == XML_STATUS_ERROR) {
-        return mt_rethrow2(-1, "XML_Parse error at line %d:%s",
+        return gs_rethrow2(-1, "XML_Parse error at line %d:%s",
 			   XML_GetCurrentLineNumber(parser),
 			   XML_ErrorString(XML_GetErrorCode(parser)));
     } else if (st->error_code < 0) {
         int code = st->error_code;
         met_unset_error_code(st);
-        return mt_rethrow1(code, "st->error_code %d", code);
+        return gs_rethrow1(code, "st->error_code %d", code);
     }
     /* nb for now we assume the parser has consumed exactly what we gave it. */
     pr->ptr = p + avail;
@@ -246,7 +245,7 @@ met_process_shutdown(met_parser_state_t *st)
     
     const char *end = "</JOB>";
     if (XML_Parse(parser, end, strlen(end), 0) == XML_STATUS_ERROR) {
-        return mt_rethrow2(-1, "parse at line %d(%s)",
+        return gs_rethrow2(-1, "parse at line %d(%s)",
 			   XML_GetCurrentLineNumber(parser),
 			   XML_ErrorString(XML_GetErrorCode(parser)));
     }
@@ -254,7 +253,7 @@ met_process_shutdown(met_parser_state_t *st)
     if (XML_Parse(parser, 0 /* data buffer */, 
                   0 /* buffer length */,
                   1 /* done? */ ) == XML_STATUS_ERROR) {
-        return mt_rethrow2(-1, "parse at line %d(%s)",
+        return gs_rethrow2(-1, "parse at line %d(%s)",
 			   XML_GetCurrentLineNumber(parser),
 			   XML_ErrorString(XML_GetErrorCode(parser)));
     }

@@ -22,9 +22,9 @@
 #include "gsparam.h"
 #include "gsdevice.h"
 #include "gspaint.h"
+#include "gserror.h"
 #include "metcomplex.h"
 #include "metelement.h"
-#include "mt_error.h"
 #include <stdlib.h> /* nb for atof */
 
 private int
@@ -50,7 +50,7 @@ FixedPage_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr
             fp->BleedBox = attr[i+1];
             fp->avail.BleedBox = 1;
         } else {
-            mt_throw2(-1, "unsupported attribute %s=%s\n",
+            gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }

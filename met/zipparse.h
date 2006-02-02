@@ -14,7 +14,7 @@
 
 #include "scommon.h"
 #include "szlibxx.h"
-#include "mt_error.h"
+#include "gs_error.h"
 #include "metparse.h"
 
 /* linked list block size */

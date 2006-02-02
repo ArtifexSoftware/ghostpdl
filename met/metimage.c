@@ -36,7 +36,6 @@
 #include "sdct.h"
 #include "sjpeg.h"
 #include "zipparse.h"
-#include "mt_error.h"
 
 private int
 ImageBrush_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
@@ -73,7 +72,7 @@ ImageBrush_cook(void **ppdata, met_state_t *ms, const char *el, const char **att
         else if (!MYSET(&aImageBrush->ImageSource, "ImageSource"))
             ;
         else {
-            mt_throw2(-1, "unsupported attribute %s=%s\n",
+            gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -100,7 +99,7 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
     zip_part_t *part = find_zip_part_by_name(pzip, ImageSource);
 
     if (part == NULL) 
-	return mt_throw1(-1,"Image part not found %s", ImageSource);
+	return gs_throw1(-1,"Image part not found %s", ImageSource);
 
     len = zip_part_length(part);
 
@@ -111,12 +110,12 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
 
     zip_part_seek(part, 0, 0);
     if ( len != zip_part_read(buf, len, part) ) {
-	return mt_throw(-1, "zip_part_read len wrong");
+	return gs_throw(-1, "zip_part_read len wrong");
     }
 
     *bufp = buf;
     *lenp = len;
-
+#define NO_PNG_TO_JPEG_HACK 1
 #ifndef NO_PNG_TO_JPEG_HACK
     /* NB: this converts PNG to JPEGS on the fly using /tmp/foo.png and /tmp/foo.jpg 
      * NB: also converts TIFF to jpg 
@@ -132,19 +131,19 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
 	char *imgStr;
 	char *convertStr;
 	bool doit = false;
-
+	
 	if (0 == strncasecmp(&ImageSource[strlen(ImageSource) -5], "tiff", 4 )) {
 	    imgStr = ctif;
 	    convertStr = ctif_convert;
 	    doit = true;
 	}
-#if 0 
+
 	else 	if (0 == strncasecmp(&ImageSource[strlen(ImageSource) -4], "png", 3 )); {
 	    imgStr = cpng;
 	    convertStr = cpng_convert;
 	    doit = true;
 	}
-#endif
+
 	if (doit) {
 	    FILE *in = fopen(imgStr, "w");
 	    fwrite(buf, 1, len, in);
@@ -154,7 +153,7 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
 
 	    in = fopen("/tmp/foo.jpg", "r");
 	    if (in == NULL) 
-		return mt_throw(-1, "/tmp/foo.jpg file open failed");
+		return gs_throw(-1, "/tmp/foo.jpg file open failed");
 	    len = (fseek(in, 0L, SEEK_END), ftell(in));
 	    rewind(in);
 	    gs_free_object(mem, buf, "readdata");
@@ -176,120 +175,138 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
 }
 
 private int
-decodejpeg(gs_memory_t *mem, byte *rbuf, int rlen, met_image_t *g_image)
-{
-    jpeg_decompress_data jddp;
-    stream_DCT_state state;
-    stream_cursor_read rp;
-    stream_cursor_write wp;
-    int code;
-    int wlen;
-    byte *wbuf;
-    /* NB this is placed before set defaults when the memory parameter
-       brain damage is removed */
-    state.memory = mem;
-
-    s_DCTD_template.set_defaults((stream_state*)&state);
-
-    state.template = &s_DCTD_template;
-    state.report_error = stream_error;
-    state.min_left = 0;
-    state.error_string[0] = 0;
-
-    state.jpeg_memory = mem;
-    state.data.decompress = &jddp;
-
-    jddp.template = s_DCTD_template;
-    jddp.memory = mem;
-    jddp.scanline_buffer = NULL;
-
-    if ((code = gs_jpeg_create_decompress(&state)) < 0)
-        return mt_rethrow(code, "jpeg_create_decompress failed");
-
-    s_DCTD_template.init((stream_state*)&state);
-
-    rp.ptr = rbuf - 1;
-    rp.limit = rbuf + rlen - 1;
-
-    /* read the header only by not having a write buffer */
-    wp.ptr = 0;
-    wp.limit = 0;
-
-    code = s_DCTD_template.process(mem, (stream_state*)&state, &rp, &wp, true);
-    if (code != 1)
-        return mt_rethrow(code, "DCTD process failed");
-
-    g_image->width = jddp.dinfo.output_width;
-    g_image->height = jddp.dinfo.output_height;
-    g_image->comps = jddp.dinfo.output_components;
-    g_image->xres = jddp.dinfo.X_density;
-    g_image->yres = jddp.dinfo.Y_density;
-    g_image->bits = 8;
-    wlen = jddp.dinfo.output_width *
-        jddp.dinfo.output_height *
-        jddp.dinfo.output_components;
-
-    wbuf = gs_alloc_bytes(mem, wlen, "decodejpeg");
-    if (!wbuf)
-        return -1;
-
-    g_image->samples = wbuf;
-
-    wp.ptr = wbuf - 1;
-    wp.limit = wbuf + wlen - 1;
-
-    code = s_DCTD_template.process(mem, (stream_state*)&state, &rp, &wp, true);
-    if (code == EOFC)
-	return 0;
-    return mt_throw(code, "jpeg stream decode error");
-}
-
-private int
 met_PaintPattern(const gs_client_color *pcc, gs_state *pgs)
 {
     const gs_client_pattern *ppat = gs_getpattern(pcc);
     const met_pattern_t *pmpat = ppat->client_data;
-    const met_image_t *pmim = pmpat->raster_image;
+    const xps_image_t *pmim = pmpat->raster_image;
     const byte *pdata = pmim->samples;
     gs_memory_t *mem = gs_state_memory(pgs);
     gs_image_enum *penum;
     gs_color_space color_space;
     gs_image_t image;
-    int num_components = 3; /* NB */
+    uint imbytes = pmim->stride * pmim->height;
+    uint used;
     int code;
+
+    if (gs_debug_c('i'))
+	dprintf5(mem, "paint_image cs=%d n=%d bpc=%d w=%d h=%d\n",
+		 pmim->colorspace, pmim->comps, pmim->bits, pmim->width, pmim->height);
+
     /* should be just save the ctm */
     gs_gsave(pgs);
     gs_scale(pgs, 96.0/pmim->xres, 96.0/pmim->yres);
-    gs_cspace_init_DeviceRGB(mem, &color_space);
+
+    switch (pmim->colorspace)
+    {
+    case XPS_GRAY:
+        gs_cspace_init_DeviceGray(mem, &color_space);
+        break;
+    case XPS_RGB:
+        gs_cspace_init_DeviceRGB(mem, &color_space);
+        break;
+    case XPS_CMYK:
+        gs_cspace_init_DeviceCMYK(mem, &color_space);
+        break;
+    default:
+        return gs_throw(-1, "cannot handle images with alpha channels");
+    }
+
     gs_image_t_init(&image, &color_space);
     image.ColorSpace = &color_space;
     image.BitsPerComponent = pmim->bits;
     image.Width = pmim->width;
     image.Height = pmim->height;
+
     penum = gs_image_enum_alloc(mem, "met_PaintPattern");
     if (!penum)
-        return -1;
-    if ((code = gs_image_init(penum, &image, false, pgs)) < 0)
-        return code;
-    {
-        uint used;
-        uint depth = image.BitsPerComponent * pmim->comps;
-        /* NB - rounding alignement ?? */
-        uint imbytes =
-            ((image.Width * depth + 7) / 8) * image.Height;
+        return gs_throw(-1, "gs_enum_allocate failed");
 
-        if ((code = gs_image_next(penum, pdata, imbytes, &used)) < 0)
-            return code;
-        if (imbytes != used) {
-            dprintf(mem, "underflow or overlow in image data\n");
-            return -1;
-        }
-    }
+    if ((code = gs_image_init(penum, &image, false, pgs)) < 0)
+        return gs_throw(code, "gs_image_init failed");
+
+    if ((code = gs_image_next(penum, pdata, imbytes, &used)) < 0)
+        return gs_throw(code, "gs_image_next failed");
+
+    if (imbytes < used)
+        return gs_throw2(-1, "not enough image data (image=%d used=%d)", imbytes, used);
+    if (imbytes > used)
+        return gs_throw2(0, "too much image data (image=%d used=%d)", imbytes, used);
+
     gs_image_cleanup(penum);
     gs_free_object(mem, penum, "px_paint_pattern");
     gs_grestore(pgs);
-    return 0;
+
+    return gs_okay;
 }
+
+
+
+/*
+ * Strip alpha channel from an image
+ */
+private void 
+xps_strip_alpha(xps_image_t *image)
+{
+    int cs = image->colorspace;
+    int n = image->comps;
+    int y, x, k;
+    byte *sp, *dp;
+
+    if (image->bits != 8)
+    {
+        gs_warn1("cannot strip alpha from %dbpc images", image->bits);
+        return;
+    }
+
+    if ((cs != XPS_GRAY_A) && (cs != XPS_RGB_A) && (cs != XPS_CMYK_A))
+        return;
+
+    for (y = 0; y < image->height; y++)
+    {
+        sp = image->samples + image->width * n * y;
+        dp = image->samples + image->width * (n - 1) * y;
+        for (x = 0; x < image->width; x++)
+        {
+            for (k = 0; k < n - 1; k++)
+                *dp++ = *sp++;
+            sp++;
+        }
+    }
+
+    image->colorspace --;
+    image->comps --;
+    image->stride = (n - 1) * image->width;
+}
+
+/*
+ * Switch on file magic to decode an image.
+ */
+
+private int 
+xps_decode_image(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
+{
+    int error;
+
+    if (rbuf[0] == 0xff && rbuf[1] == 0xd8)
+        error = xps_decode_jpeg(mem, rbuf, rlen, image);
+    else if (memcmp(rbuf, "\211PNG\r\n\032\n", 8) == 0)
+        error = xps_decode_png(mem, rbuf, rlen, image);
+    else if (memcmp(rbuf, "MM", 2) == 0)
+        error = xps_decode_tiff(mem, rbuf, rlen, image);
+    else if (memcmp(rbuf, "II", 2) == 0)
+        error = xps_decode_tiff(mem, rbuf, rlen, image);
+    else
+        error = gs_throw(-1, "unknown image file format");
+
+    if (error)
+        return gs_rethrow(error, "could not decode image");
+
+    /* NB: strip out alpha until we can handle it */
+    xps_strip_alpha(image);
+    return gs_okay;
+}
+
 
 /* NB for the demo we render and set the pattern in the graphics
    state */
@@ -302,27 +319,29 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
     gs_client_pattern gspat;
     gs_client_color gscolor;
     gs_memory_t *mem = ms->memory;
-    
+
     code = readdata(mem, ms->pzip, ImageSource, &rbuf, &rlen);
     if (code < 0)
-        return mt_rethrow(code, "read image data failed");
-    if (rbuf[0] == 0xff && rbuf[1] == 0xd8) {
-        code = decodejpeg(mem, rbuf, rlen, metpat->raster_image);
-	if (code) 
-	    return mt_throw(code, "decodejpeg failed");
+        return gs_rethrow(code, "read image data failed");
+
+    code = xps_decode_image(mem, rbuf, rlen, metpat->raster_image);
+    if (code < 0)
+    {
+        gs_free_object(mem, rbuf, "readdata");
+        return gs_rethrow(code, "decode image data failed");
     }
-    else if (memcmp(rbuf, "\211PNG\r\n\032\n", 8) == 0) {
-	code = mt_decode_png(mem, rbuf, rlen, metpat->raster_image);
-	if (code)
-	    return mt_rethrow(code, "decode_png failed");
-    } else {
-        return mt_throw1(-1, "unknown image file format %s", ImageSource);
-    }
+
+    gs_free_object(mem, rbuf, "readdata");
+
     gs_pattern1_init(&gspat);
     uid_set_UniqueID(&gspat.uid, gs_next_ids(mem, 1));
     gspat.PaintType = 1;
     gspat.TilingType = 1;
-    // gspat.BBox = metpat->Viewbox;
+
+    /* NB: Viewbox(0,0,0,0) appears to be legal, adjust to sane value */
+    metpat->Viewbox.q.x = max( metpat->Viewbox.q.x, 1 );
+    metpat->Viewbox.q.y = max( metpat->Viewbox.q.y, 1 );
+
     gspat.BBox.p.x = 0;
     gspat.BBox.p.y = 0;
     gspat.BBox.q.x = metpat->Viewbox.q.x - metpat->Viewbox.p.x;
@@ -344,8 +363,11 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
            the viewport and translate the viewbox back. */
         gs_make_translation(vport.p.x, vport.p.y, &mat);
         {
-            double scalex = (vport.q.x - vport.p.x) / (vbox.q.x - vbox.p.x);
-            double scaley = (vport.q.y - vport.p.y) / (vbox.q.y - vbox.p.y);
+	    /* NB: don't scale smaller than a pixel */
+            double scalex = max((1.00/( metpat->raster_image->xres)),
+				((vport.q.x - vport.p.x) / (vbox.q.x - vbox.p.x)));
+	    double scaley = max((1.00/( metpat->raster_image->yres)),
+				((vport.q.y - vport.p.y) / (vbox.q.y - vbox.p.y)));
             gs_matrix_scale(&mat, scalex, scaley, &mat);
         }
         gs_matrix_translate(mem, &mat, -vbox.p.x, vbox.p.y, &mat);
@@ -360,6 +382,8 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
     /* !!!! NB !!!! */
     extern bool patternset;
     patternset = true;
+    
+    // gs_free_object(mem, metpat->raster_image->samples, "raster image");
     return -1;
 
 }
@@ -380,8 +404,8 @@ ImageBrush_action(void *data, met_state_t *ms)
     met_pattern_t *pat = 
         (met_pattern_t *)gs_alloc_bytes(ms->memory,
         sizeof(met_pattern_t), "ImageBrush_action");
-    met_image_t *pim =  (met_image_t *)gs_alloc_bytes(ms->memory,
-        sizeof(met_image_t), "ImageBrush_action");
+    xps_image_t *pim =  (xps_image_t *)gs_alloc_bytes(ms->memory,
+        sizeof(xps_image_t), "ImageBrush_action");
 
     if (!pat || !pim)
         return -1;

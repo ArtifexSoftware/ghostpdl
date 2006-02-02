@@ -188,7 +188,7 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
     if (0) {  /* test small reads of the whole part */
 	byte buf[100];
 	if ((error = zip_part_seek(rpart, 0, 0)) != 0)
-	    return mt_rethrow(error, "seek set 0 error");
+	    return gs_rethrow(error, "seek set 0 error");
 	uint len = zip_part_length(rpart);
 	while (len) {
 	    len -= zip_part_read(&buf[0], 100, rpart);
@@ -199,7 +199,7 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
     if (1) {
 	char buf[4];
 	if ((error = zip_part_seek(rpart, 0, 0)) != 0)
-	    return mt_rethrow(error, "seek set 0 error");
+	    return gs_rethrow(error, "seek set 0 error");
 	int size = zip_part_read(&buf, 4, rpart);
 	if ( size != 4 )
 	    dprintf(rpart->parent->memory, "bad len\n");
@@ -226,10 +226,10 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 	dprintf1(rpart->parent->memory, "Zip File Name %s\n", fname);
 
 	if ((fp = fopen(fname, "w")) == NULL)
-	    return mt_throw1(-1, "couldn't open %s", fname);
+	    return gs_throw1(-1, "couldn't open %s", fname);
 	
 	if ((error = zip_part_seek(rpart, 0, 0)) != 0)
-	    return mt_rethrow(error, "seek failed");
+	    return gs_rethrow(error, "seek failed");
 	do {
 	    do {
 	        uint avail = rpart->s.r.limit - rpart->s.r.ptr;
@@ -280,7 +280,7 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
 		do {
 		    error = met_process(st, mets, pzip, &rpart->s.r);
 		    if (error) 
-			return mt_rethrow(error, "met_process");
+			return gs_rethrow(error, "met_process");
 		}
 		while (rpart->s.r.ptr + 1 < rpart->s.r.limit); 
 	    }
@@ -293,8 +293,8 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
 	//    zip_part_free_all( rpart );
 	// can't delete 
     }
-    else if ( 1 && ziptestmode ) {
-	//zip_page_test(pzip, rpart);
+    else if ( 0 && ziptestmode ) {
+	zip_page_test(pzip, rpart);
     }
 
     return error;
@@ -323,4 +323,6 @@ zip_part_free_all( zip_part_t *part )
     part->head = 0;
     part->curr = 0;
     part->tail = 0;
+
+    return 0;
 }

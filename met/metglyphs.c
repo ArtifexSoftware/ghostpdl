@@ -27,7 +27,6 @@
 #include "gsgdata.h"
 #include "gxfont.h"
 #include "gxfont42.h"
-#include "mt_error.h"
 #include <stdlib.h> /* nb for atof */
 #include "plfont.h"
 #include "gstext.h"
@@ -65,13 +64,13 @@ int met_utf8_to_wchars(const int max_out, int *wcnt, const wchar_t *wptr_in, con
     while (*inptr) {
 	int cnt = mbrtowc(wptr, inptr, 5, &ps);
 	if (cnt < 0)
-	    return mt_throw1(-1, "mbrtowc(%d) utf8 decode failed", cnt);
+	    return gs_throw1(-1, "mbrtowc(%d) utf8 decode failed", cnt);
 	inptr += cnt;
 	++wptr;
 	++(*wcnt);
 						
 	if(*wcnt > max_out)
-	    return mt_throw2(-1, "max output array size exceeded %d > %d", *wcnt, max_out);
+	    return gs_throw2(-1, "max output array size exceeded %d > %d", *wcnt, max_out);
     }
     return 0;
 }
@@ -223,7 +222,7 @@ Glyphs_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
             aGlyphs->FontRenderingEmSize = atof(attr[i+1]);
             aGlyphs->avail.FontRenderingEmSize = 1;
         } else {
-            mt_throw2(-1, "unsupported attribute %s=%s\n",
+            gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -343,7 +342,7 @@ build_text_params(gs_text_params_t *text, pl_font_t *pcf,
 
 
        if ((code = met_utf8_to_wchars(wcnt, &wcnt, &wstr[0], &UnicodeString[0])) != 0)
-	   mt_rethrow(code, "utf8 to wchar conversion failed");
+	   gs_rethrow(code, "utf8 to wchar conversion failed");
 
        met_expand(expindstr, Indices, ';', 'Z');
        cnt = met_split(expindstr, args, is_semi_colon);
@@ -377,7 +376,7 @@ build_text_params(gs_text_params_t *text, pl_font_t *pcf,
 		   *pargs = p+1;
 		   met_expand(colon_str, *pargs, ';', 'Z');
 		   if ( 2 != (cnt = met_split(colon_str, paren, is_colon)))
-		       return mt_throw(-1, "xps parse unbalanced expression (a:b) missing ) "); 
+		       return gs_throw(-1, "xps parse unbalanced expression (a:b) missing ) "); 
 
 		   a = atoi(paren[0]);
 		   b = atoi(paren[1]);
@@ -447,7 +446,7 @@ Glyphs_action(void *data, met_state_t *ms)
    zip_part_t *part;
 
    if (!fname) {
-       return mt_throw(-1, "no font is defined");
+       return gs_throw(-1, "no font is defined");
    }
 
    /* nb cleanup on error.  if it is not in the font dictionary,
@@ -460,7 +459,7 @@ Glyphs_action(void *data, met_state_t *ms)
 	   /* HACK pulls in a fixed font file */
            uint len, size;
            if ((in = fopen(aGlyphs->FontUri, gp_fmode_rb)) == NULL)
-	       return mt_throw1(-1, "file open failed %s", aGlyphs->FontUri);
+	       return gs_throw1(-1, "file open failed %s", aGlyphs->FontUri);
            len = (fseek(in, 0L, SEEK_END), ftell(in));
            size = 6 + len;
            rewind(in);
@@ -472,25 +471,25 @@ Glyphs_action(void *data, met_state_t *ms)
        } else {
            part = find_zip_part_by_name(ms->pzip, aGlyphs->FontUri);
            if (part == NULL)
-               return mt_throw1(-1, "Can't find zip part %s", aGlyphs->FontUri);
+               return gs_throw1(-1, "Can't find zip part %s", aGlyphs->FontUri);
 
            /* load the font header */
            if ((pdata = load_tt_font(part, mem)) == NULL)
-               return mt_throw(-1, "Can't load ttf");
+               return gs_throw(-1, "Can't load ttf");
        }
        /* create a plfont */
        if ((pcf = new_plfont(pdir, mem, pdata)) == NULL)
-           return mt_throw(-1, "new_plfont failed");
+           return gs_throw(-1, "new_plfont failed");
        /* add the font to the font dictionary keyed on uri */
        if (!put_font(ms, fname, pcf))
-           return mt_throw(-1, "font dictionary insert failed");
+           return gs_throw(-1, "font dictionary insert failed");
    }
    /* shouldn't fail since we added it if it wasn't in the dict */
    if ((pcf = get_font(ms, fname)) == NULL)
-       return mt_throw(-1, "get_font");
+       return gs_throw(-1, "get_font");
 
    if ((code = gs_setfont(pgs, pcf->pfont)) != 0)
-       return mt_rethrow(code, "gs_setfont");
+       return gs_rethrow(code, "gs_setfont");
 
    /* if a render transformation is specified we use it otherwise the
       font matrix starts out as identity, later it will be
@@ -504,7 +503,7 @@ Glyphs_action(void *data, met_state_t *ms)
        char **pargs = args;
 
        if ( 6 != met_split(transstring, args, is_Data_delimeter))
-	   return mt_throw(-1, "Glyphs RenderTransform number of args");
+	   return gs_throw(-1, "Glyphs RenderTransform number of args");
        /* nb checking for sane arguments */
        font_mat.xx = atof(pargs[0]);
        font_mat.xy = atof(pargs[1]);
@@ -524,9 +523,9 @@ Glyphs_action(void *data, met_state_t *ms)
        gs_point pt;
        if ((code = gs_point_transform(mem, aGlyphs->OriginX, aGlyphs->OriginY,
                                       &font_mat, &pt)) != 0)
-           return mt_rethrow(code, "gs_point_transform");
+           return gs_rethrow(code, "gs_point_transform");
        if ((code = gs_moveto(pgs, pt.x, pt.y)) != 0)
-           return mt_rethrow(code, "gs_moveto");
+           return gs_rethrow(code, "gs_moveto");
    }
 
    /* save the current ctm and the current color */
@@ -538,11 +537,11 @@ Glyphs_action(void *data, met_state_t *ms)
    /* flip y metro goes down the page */
    if ((code = gs_matrix_scale(&font_mat, aGlyphs->FontRenderingEmSize,
                                (-aGlyphs->FontRenderingEmSize), &font_mat)) != 0)
-       return mt_rethrow(code, "gs_matrix_scale");
+       return gs_rethrow(code, "gs_matrix_scale");
 
    /* finally! */
    if ((code = gs_concat(pgs, &font_mat)) != 0)
-       return mt_rethrow(code, "gs_concat");
+       return gs_rethrow(code, "gs_concat");
 
    {
        gs_text_params_t text;
@@ -551,11 +550,11 @@ Glyphs_action(void *data, met_state_t *ms)
        if ((code = build_text_params(&text, pcf, 
 				     aGlyphs->UnicodeString,
 				     aGlyphs->Indices)) != 0)
-           return mt_rethrow(code, "build_text_params");
+           return gs_rethrow(code, "build_text_params");
        if ((code = gs_text_begin(pgs, &text, mem, &penum)) != 0)
-	   return mt_rethrow(code, "gs_text_begin");
+	   return gs_rethrow(code, "gs_text_begin");
        if ((code = gs_text_process(penum)) != 0)
-	   return mt_rethrow(code, "gs_text_process");
+	   return gs_rethrow(code, "gs_text_process");
        gs_text_release(penum, "Glyphs_action()");
    }
 

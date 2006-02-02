@@ -5,6 +5,8 @@ METO_       = $(O_)$(METOBJ)
 
 METCCC  = $(CC_) $(I_)$(METSRCDIR)$(_I) $(I_)$(METGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(C_)
 
+# METCCC  = $(CC_) $(I_)$(METSRCDIR)$(_I) $(I_)$(METGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(C_) -I/opt/local/include
+
 # Define the name of this makefile.
 MET_MAK     = $(METSRC)met.mak
 
@@ -35,8 +37,6 @@ metcomplex_h = $(METSRC)metcomplex.h \
 metutil_h = $(METSRC)metutil.h
 
 zipparse_h = $(METSRC)zipparse.h
-
-mt_error_h = $(METSRC)mt_error.h
 
 $(METOBJ)metimage.$(OBJ): $(METSRC)metimage.c
 	$(METCCC) $(METSRC)metimage.c $(METO_)metimage.$(OBJ)
@@ -77,11 +77,12 @@ $(METOBJ)zippart.$(OBJ): $(METSRC)zippart.c $(zipparse_h)
 $(METOBJ)zipparse.$(OBJ): $(METSRC)zipparse.c $(zipparse_h) $(pltop_h)
 	$(METCCC) $(METSRC)zipparse.c $(METO_)zipparse.$(OBJ)
 
-$(METOBJ)mt_error.$(OBJ): $(METSRC)mt_error.c $(mt_error_h)
-	$(METCCC) $(METSRC)mt_error.c $(METO_)mt_error.$(OBJ)
-
-$(METOBJ)mt_png.$(OBJ): $(METSRC)mt_png.c $(mt_error_h)
-	$(METCCC) $(METSRC)mt_png.c $(METO_)mt_png.$(OBJ)
+$(METOBJ)xps_image_jpeg.$(OBJ): $(METSRC)xps_image_jpeg.c $(xps_error_h)
+	$(METCCC) $(METSRC)xps_image_jpeg.c $(METO_)xps_image_jpeg.$(OBJ)
+$(METOBJ)xps_image_png.$(OBJ): $(METSRC)xps_image_png.c $(xps_error_h)
+	$(METCCC) $(METSRC)xps_image_png.c $(METO_)xps_image_png.$(OBJ)
+$(METOBJ)xps_image_tiff.$(OBJ): $(METSRC)xps_image_tiff.c $(xps_error_h)
+	$(METCCC) $(METSRC)xps_image_tiff.c $(METO_)xps_image_tiff.$(OBJ)
 
 $(MET_TOP_OBJ): $(METSRC)mettop.c \
                       $(metstate_h)     \
@@ -95,8 +96,11 @@ MET_OBJS=$(METOBJ)metparse.$(OBJ) $(METOBJ)metstate.$(OBJ) \
          $(METOBJ)metelement.$(OBJ) $(METOBJ)metpath.$(OBJ)\
 	 $(METOBJ)metglyphs.$(OBJ) $(METOBJ)metutil.$(OBJ) \
 	 $(METOBJ)metimage.$(OBJ) $(METOBJ)zipparse.$(OBJ) \
-	 $(METOBJ)zippart.$(OBJ) $(METOBJ)mt_error.$(OBJ) \
-	 $(METOBJ)metgstate.$(OBJ) $(METOBJ)mt_png.$(OBJ) 
+	 $(METOBJ)zippart.$(OBJ) \
+	 $(METOBJ)xps_image_jpeg.$(OBJ) \
+	 $(METOBJ)xps_image_png.$(OBJ) \
+	 $(METOBJ)xps_image_tiff.$(OBJ) \
+	 $(METOBJ)metgstate.$(OBJ)
 
 $(METOBJ)met.dev: $(MET_MAK) $(ECHOGS_XE) $(MET_OBJS)
 	$(SETMOD) $(METOBJ)met $(MET_OBJS)

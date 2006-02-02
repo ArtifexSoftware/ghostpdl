@@ -17,6 +17,7 @@
 #include "memory_.h"
 #include "gsmemory.h"
 #include "gsmatrix.h"
+#include "gserror.h"
 #include "metcomplex.h"
 #include "metelement.h"
 #include "metgstate.h"
@@ -25,7 +26,6 @@
 #include "gspaint.h"
 #include "math_.h"
 #include "ctype_.h"
-#include "mt_error.h"
 #include <stdlib.h> /* nb for atof */
 
 
@@ -78,7 +78,7 @@ PathFigure_cook(void **ppdata, met_state_t *ms, const char *el, const char **att
         } else if (!strcmp(attr[i], "isFilled")) {
             aPathFigure->isFilled  = attr[i+1];
         } else {
-            mt_throw2(-1, "unsupported attribute %s=%s\n",
+            gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -152,7 +152,7 @@ Path_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
                                   attr[i], attr[i+1], "Fill"))
             ;
         else {
-            mt_throw2(-1, "unsupported attribute %s=%s\n",
+            gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -174,7 +174,7 @@ Path_action(void *data, met_state_t *ms)
     code = gs_setlinewidth(ms->pgs, aPath->StrokeThickness);
 
     if (code < 0)
-        mt_rethrow(code, "setlinewidth failed");
+        gs_rethrow(code, "setlinewidth failed");
 
     if (aPath->Data) {
         gs_state *pgs = ms->pgs;
@@ -258,7 +258,7 @@ PathGeometry_cook(void **ppdata, met_state_t *ms, const char *el, const char **a
                              attr[i], attr[i+1], "FillRule"))
             ;
         else {
-            mt_throw2(-1, "unsupported attribute %s=%s\n",
+            gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
 
@@ -378,7 +378,7 @@ Path_done(void *data, met_state_t *ms)
             if ((code = gs_stroke(pgs)) < 0)
                 break;
         } else {
-            mt_throw(-1, "Unknown path operation");
+            gs_throw(-1, "Unknown path operation");
             code = -1;
         }
             
@@ -389,7 +389,7 @@ Path_done(void *data, met_state_t *ms)
     patternset = false;
     gs_free_object(ms->memory, data, "Path_done");
     if (code < 0)
-        return mt_rethrow(code, "Path done failed");
+        return gs_rethrow(code, "Path done failed");
     else
         return 0;
 }
@@ -420,7 +420,7 @@ PolyLineSegment_cook(void **ppdata, met_state_t *ms, const char *el, const char 
         if (!strcmp(attr[i], "Points")) {
             aPolyLineSegment->Points = attr[i + 1];
         } else {
-            mt_throw2(-1, "unsupported attribute %s=%s\n",
+            gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -543,7 +543,7 @@ SolidColorBrush_cook(void **ppdata, met_state_t *ms, const char *el, const char 
         if (!strcmp(attr[i], "Color")) {
             aSolidColorBrush->Color = attr[i+1];
         } else {
-            mt_throw2(-1, "unsupported attribute %s=%s\n",
+            gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -655,7 +655,7 @@ ArcSegment_cook(void **ppdata, met_state_t *ms, const char *el, const char **att
         else if (!strcmp(attr[i], "IsStroked"))
             aArcSegment->IsStroked = !strcmp(attr[i+1], "true");
         else {
-            mt_throw2(-1, "unsupported attribute %s=%s\n",
+            gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -694,7 +694,7 @@ ArcSegment_action(void *data, met_state_t *ms)
 
     /* should be available */
     if ((code = gs_currentpoint(pgs, &start)) < 0)
-        return mt_rethrow(code, "missing start point");
+        return gs_rethrow(code, "missing start point");
     
     /* get the end point */
     end = getPoint(aArcSegment->Point);
@@ -727,7 +727,7 @@ ArcSegment_action(void *data, met_state_t *ms)
         double correction;
         gs_make_rotation(-rot, &rotmat);
         if ((code = gs_distance_transform(mem, halfdis.x, halfdis.y, &rotmat, &thalfdis)) < 0)
-            mt_rethrow(code, "transform failed\n");
+            gs_rethrow(code, "transform failed\n");
         /* correct radii if necessary */
         correction = (SQR(thalfdis.x) / SQR(size.x)) + (SQR(thalfdis.y) / SQR(size.y));
         if (correction > 1.0) {
@@ -784,7 +784,7 @@ ArcSegment_action(void *data, met_state_t *ms)
         if ((code = gs_arcn(pgs, 0, 0, 1,
                             radians_to_degrees * start_angle,
                             radians_to_degrees * (start_angle + delta_angle))) < 0)
-            return mt_rethrow(code, "arc failed\n");
+            return gs_rethrow(code, "arc failed\n");
         
 
         /* restore the ctm */
@@ -826,7 +826,7 @@ PolyBezierSegment_cook(void **ppdata, met_state_t *ms, const char *el, const cha
         if (!strcmp(attr[i], "Points")) {
             aPolyBezierSegment->Points = attr[i + 1];
         } else {
-            mt_throw2(-1, "unsupported attribute %s=%s\n",
+            gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -914,7 +914,7 @@ PolyQuadraticBezierSegment_cook(void **ppdata, met_state_t *ms, const char *el, 
         if (!strcmp(attr[i], "Points")) {
             aPolyQuadraticBezierSegment->Points = attr[i + 1];
         } else {
-            mt_throw2(-1, "unsupported attribute %s=%s\n",
+            gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
@@ -960,7 +960,7 @@ PolyQuadraticBezierSegment_action(void *data, met_state_t *ms)
                 gs_point start_pt;
                 code = gs_currentpoint(pgs, &start_pt);
                 if (code < 0)
-                    mt_rethrow(code, "currentpoint failed");
+                    gs_rethrow(code, "currentpoint failed");
                 code = gs_curveto(pgs,
                                   (start_pt.x + 2 * pt[0].x) / 3,
                                   (start_pt.x + 2 * pt[0].y) / 3,
@@ -968,7 +968,7 @@ PolyQuadraticBezierSegment_action(void *data, met_state_t *ms)
                                   (pt[1].y + 2 * pt[0].y) / 3,
                                   pt[1].x, pt[1].y);
                 if (code < 0)
-                    return mt_rethrow(code, "curveto failied");
+                    return gs_rethrow(code, "curveto failied");
             }
         }
     }

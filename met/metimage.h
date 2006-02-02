@@ -19,10 +19,14 @@
 
 #include "gsmatrix.h"
 
-enum { MT_GRAY, MT_RGB, MT_CMYK, MT_GRAY_A, MT_RGB_A };
-
 /* type for the information derived directly from the raster file format */
-typedef struct met_image_s {
+
+enum { XPS_GRAY, XPS_GRAY_A, XPS_RGB, XPS_RGB_A, XPS_CMYK, XPS_CMYK_A };
+
+typedef struct xps_image_s xps_image_t;
+
+struct xps_image_s
+{
     int width;
     int height;
     int stride;
@@ -32,14 +36,19 @@ typedef struct met_image_s {
     int xres;
     int yres;
     byte *samples;
-} met_image_t;
+};
+
+int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
+int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
+int xps_decode_tiff(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 
 /* it appears all images in metro are really patterns. */
+
 typedef struct met_pattern_s {
-    met_image_t *raster_image;
+    xps_image_t *raster_image;
     gs_matrix Transform;
     gs_rect Viewbox;
     gs_rect Viewport;
 } met_pattern_t;
 
-#endif				/* metparse_INCLUDED */
+#endif /* metimage_INCLUDED */
