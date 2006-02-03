@@ -32,10 +32,6 @@
 #define POLE_CACHE_IGNORE 0     /* A temporary development technology need. 
 				   Remove after the beta testing. */
 
-#if POLE_CACHE_DEBUG
-#   include <assert.h>
-#endif
-
 #define MAX_FAST_COMPS 8
 
 typedef struct gs_function_Sd_s {
@@ -823,9 +819,12 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 	    int k, code1;
 
 	    code1 = fn_Sd_evaluate_general(pfn_common, in, y);
-	    assert(code == code1);
-	    for (k = 0; k < pfn->params.n; k++)
-		assert(any_abs(y[k] - out[k]) <= 1e-6 * (pfn->params.Range[k * 2 + 1] - pfn->params.Range[k * 2 + 0]));
+	    if (code != code1)
+		return_error(gs_error_unregistered); /* Must not happen. */
+	    for (k = 0; k < pfn->params.n; k++) {
+		if (any_abs(y[k] - out[k]) > 1e-6 * (pfn->params.Range[k * 2 + 1] - pfn->params.Range[k * 2 + 0]))
+		    return_error(gs_error_unregistered); /* Must not happen. */
+	    }
 	}
 #	endif
     } else
