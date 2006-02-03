@@ -165,7 +165,7 @@ compute_ldx(trap_line *tl, fixed ys)
     }
 }
 
-private inline void
+private inline int
 init_gradient(trap_gradient *g, const gs_fill_attributes *fa,
 		const gs_linear_color_edge *e, const gs_linear_color_edge *e1,
 		const trap_line *l, fixed ybot, int num_components)
@@ -183,7 +183,8 @@ init_gradient(trap_gradient *g, const gs_fill_attributes *fa,
 	    g->den = fa->yend - fa->ystart;
 	else {
 	    g->den = e->end.y - e->start.y;
-	    assert(g->den == l->h);
+	    if (g->den != l->h)
+		return_error(gs_error_unregistered); /* Must not happen. */
 	}
 	for (i = 0; i < num_components; i++) {
 	    g->num[i] = e->c1[i] - e->c0[i];
@@ -199,6 +200,7 @@ init_gradient(trap_gradient *g, const gs_fill_attributes *fa,
 	    g->f[i] = (int32_t)c;
 	}
     }
+    return 0;
 }
 
 private inline void
