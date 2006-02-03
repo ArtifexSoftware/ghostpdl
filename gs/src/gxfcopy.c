@@ -1275,6 +1275,8 @@ copy_font_type42(gs_font *font, gs_font *copied)
     code = gs_type42_font_init(copied42);
     if (code < 0)
 	goto fail2;
+    /* gs_type42_font_init overwrites font_info. */
+    copied->procs.font_info = copied_font_info;
     /* gs_type42_font_init overwrites enumerate_glyph. */
     copied42->procs.enumerate_glyph = copied_enumerate_glyph;
     copied42->data.get_glyph_index = copied_type42_get_glyph_index;

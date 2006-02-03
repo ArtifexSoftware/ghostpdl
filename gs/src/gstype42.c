@@ -45,8 +45,8 @@ private int append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
 private uint default_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph);
 private int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
 				gs_glyph_data_t *pgd);
-font_proc_font_info(zfont_info);
 font_proc_font_info(gs_type42_font_info); /* Type check. */
+font_proc_font_info(gs_truetype_font_info); /* Type check. */
 
 /* Set up a pointer to a substring of the font data. */
 /* Free variables: pfont, string_proc. */
@@ -260,6 +260,7 @@ gs_type42_font_init(gs_font_type42 * pfont)
     pfont->procs.glyph_outline = gs_type42_glyph_outline;
     pfont->procs.glyph_info = gs_type42_glyph_info;
     pfont->procs.enumerate_glyph = gs_type42_enumerate_glyph;
+    pfont->procs.font_info = gs_type42_font_info;
     return 0;
 }
 
@@ -1175,14 +1176,12 @@ private int get_from_names_table(gs_font_type42 *pfont, gs_font_info_t *info,
 }
 
 int
-gs_type42_font_info(gs_font *font, const gs_point *pscale, int members,
+gs_truetype_font_info(gs_font *font, const gs_point *pscale, int members,
 	   gs_font_info_t *info)
 {
     gs_font_type42 *pfont = (gs_font_type42 *)font;
-    int code = zfont_info(font, pscale, members, info);
+    int code;
 
-    if (code < 0)
-	return code;
     if (pfont->data.name_offset == 0)
 	return 0;
     if (!(info->members & FONT_INFO_COPYRIGHT) && (members & FONT_INFO_COPYRIGHT)) {
@@ -1200,6 +1199,18 @@ gs_type42_font_info(gs_font *font, const gs_point *pscale, int members,
 	if (code < 0)
 	    return code;
     }
-    return code;
+    return 0;
+}
+
+int
+gs_type42_font_info(gs_font *font, const gs_point *pscale, int members,
+	   gs_font_info_t *info)
+{
+    gs_font_type42 *pfont = (gs_font_type42 *)font;
+    int code = gs_default_font_info(font, pscale, members, info);
+
+    if (code < 0)
+	return code;
+    return gs_truetype_font_info(font, pscale, members, info);
 }
 

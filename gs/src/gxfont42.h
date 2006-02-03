@@ -135,5 +135,7 @@ int gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *
 
 int gs_type42_font_info(gs_font *font, const gs_point *pscale, int members,
 	   gs_font_info_t *info);
+int gs_truetype_font_info(gs_font *font, const gs_point *pscale, int members,
+	   gs_font_info_t *info);
 
 #endif /* gxfont42_INCLUDED */

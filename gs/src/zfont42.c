@@ -41,6 +41,7 @@ private font_proc_enumerate_glyph(z42_gdir_enumerate_glyph);
 private font_proc_encode_char(z42_encode_char);
 private font_proc_glyph_info(z42_glyph_info);
 private font_proc_glyph_outline(z42_glyph_outline);
+private font_proc_font_info(z42_font_info);
 
 /* <string|name> <font_dict> .buildfont11/42 <string|name> <font> */
 /* Build a type 11 (TrueType CID-keyed) or 42 (TrueType) font. */
@@ -82,7 +83,7 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
     code = gs_type42_font_init(pfont);
     if (code < 0)
 	return code;
-    pfont->procs.font_info = gs_type42_font_info;
+    pfont->procs.font_info = z42_font_info;
     /*
      * If the font has a GlyphDictionary, this replaces loca and glyf for
      * accessing character outlines.  In this case, we use alternate
@@ -366,3 +367,15 @@ z42_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
     return string_array_access_proc(pfont->memory, &pfont_data(pfont)->u.type42.sfnts, 2,
 				    offset, length, pdata);
 }
+
+private int
+z42_font_info(gs_font *font, const gs_point *pscale, int members,
+	   gs_font_info_t *info)
+{
+    int code = zfont_info(font, pscale, members, info);
+
+    if (code < 0)
+	return code;
+    return gs_truetype_font_info(font, pscale, members, info);
+}
+
