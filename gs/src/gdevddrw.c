@@ -16,7 +16,6 @@
 
 /* $Id$ */
 /* Default polygon and image drawing device procedures */
-#include <assert.h>
 #include "math_.h"
 #include "memory_.h"
 #include "stdint_.h"
