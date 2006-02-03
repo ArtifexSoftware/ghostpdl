@@ -16,7 +16,6 @@
 
 /* $Id$ */
 /* CMap character decoding */
-#include <assert.h>
 #include "memory_.h"
 #include "string_.h"
 #include "gx.h"
@@ -444,8 +443,7 @@ gs_cmap_ToUnicode_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str
 		     uint *pindex, uint *pfidx,
 		     gs_char *pchr, gs_glyph *pglyph)
 {
-    assert(0); /* Unsupported, because never used. */
-    return 0;
+    return_error(gs_error_unregistered);
 }
 
 private void
