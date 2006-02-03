@@ -34,7 +34,6 @@
 #include "gxshade4.h"
 #include "gxdevcli.h"
 #include "vdtrace.h"
-#include <assert.h>
 
 #define VD_TRACE_AXIAL_PATCH 1
 #define VD_TRACE_RADIAL_PATCH 1
@@ -392,7 +391,7 @@ R_tensor_annulus(patch_fill_state_t *pfs, const gs_rect *rect,
 }
 
 
-private void
+private int
 R_outer_circle(patch_fill_state_t *pfs, const gs_rect *rect, 
 	double x0, double y0, double r0, 
 	double x1, double y1, double r1, 
@@ -411,7 +410,8 @@ R_outer_circle(patch_fill_state_t *pfs, const gs_rect *rect,
 	    (x1 - x0) * s - (r1 - r0) * s == bbox_x - x0 + r0
 	    s = (bbox_x - x0 + r0) / (x1 - x0 - r1 + r0)
 	 */
-	assert(x1 - x0 + r1 - r0); /* We checked for obtuse cone. */
+	if (x1 - x0 + r1 - r0 ==  0) /* We checked for obtuse cone. */
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	sp = (rect->p.x - x0 + r0) / (x1 - x0 - r1 + r0);
 	sq = (rect->q.x - x0 + r0) / (x1 - x0 - r1 + r0);
     } else {
@@ -437,6 +437,7 @@ R_outer_circle(patch_fill_state_t *pfs, const gs_rect *rect,
 	*r2 = r0 + (r1 - r0) * s;
     *x2 = x0 + (x1 - x0) * s;
     *y2 = y0 + (y1 - y0) * s;
+    return 0;
 }
 
 private double 
@@ -522,7 +523,8 @@ R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
 	double da = hypot(ax - x0, ay - y0);
 	double h = r * r0 / da, g;
 
-	assert(h <= r);
+	if (h > r)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	g = sqrt(r * r - h * h);
 	p0.x = ax - dx * g / d - dy * h / d;
 	p0.y = ay - dy * g / d + dx * h / d;
@@ -646,7 +648,9 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
 	double x2, y2, r2, x3, y3, r3;
 
 	if (Extend0) {
-	    R_outer_circle(pfs, rect, x1, y1, r1, x0, y0, r0, &x3, &y3, &r3);
+	    code = R_outer_circle(pfs, rect, x1, y1, r1, x0, y0, r0, &x3, &y3, &r3);
+	    if (code < 0)
+		return code;
 	    if (x3 != x1 || y3 != y1) {
 		code = R_tensor_annulus(pfs, rect, x0, y0, r0, t0, x3, y3, r3, t0);
 		if (code < 0)
@@ -654,7 +658,9 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
 	    }
 	}
 	if (Extend1) {
-	    R_outer_circle(pfs, rect, x0, y0, r0, x1, y1, r1, &x2, &y2, &r2);
+	    code = R_outer_circle(pfs, rect, x0, y0, r0, x1, y1, r1, &x2, &y2, &r2);
+	    if (code < 0)
+		return code;
 	    if (x2 != x0 || y2 != y0) {
 		code = R_tensor_annulus(pfs, rect, x1, y1, r1, t1, x2, y2, r2, t1);
 		if (code < 0)
