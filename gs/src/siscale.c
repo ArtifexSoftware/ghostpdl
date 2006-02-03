@@ -19,7 +19,6 @@
 #include "math_.h"
 #include "memory_.h"
 #include "stdio_.h"
-#include <assert.h>
 #include "gconfigv.h"
 #include "gdebug.h"
 #include "strimpl.h"
@@ -570,9 +569,8 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 
 	if (rleft == 0)
 	    return 0;		/* need more input */
-#ifdef DEBUG
-	assert(ss->src_y < ss->params.HeightIn);
-#endif
+	if (ss->src_y >= ss->params.HeightIn)
+	    return ERRC;
 	if (rleft >= rcount) {	/* We're going to fill up a row. */
 	    const byte *row;
 
