@@ -18,7 +18,6 @@
 /* Serialization and de-serialization for (traditional) halftones */
 
 #include "memory_.h"
-#include <assert.h>
 #include "gx.h"
 #include "gscdefs.h"
 #include "gserrors.h"
@@ -480,7 +479,8 @@ gx_ht_write(
      *
      * NB: the pdht->order field is ignored by this code.
      */
-    assert(pdht != 0 && pdht->components != 0);
+    if (pdht == 0 || pdht->components == 0)
+	return_error(gs_error_unregistered); /* Must not happen. */
 
     /*
      * The following fields do not need to be transmitted:
@@ -512,7 +512,8 @@ gx_ht_write(
         uint     tmp_size = 0;
 
         /* sanity check */
-        assert(i == pdht->components[i].comp_number);
+        if (i != pdht->components[i].comp_number)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 
         code = gx_ht_write_component( &pdht->components[i],
                                       data,
