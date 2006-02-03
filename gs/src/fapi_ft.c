@@ -36,8 +36,6 @@ Started by Graham Asher, 6th June 2002.
 #include "freetype/ftoutln.h"
 #include "freetype/fttrigon.h"
 
-#include <assert.h>
-
 /* Note: structure definitions here start with FF_, which stands for 'FAPI FreeType". */
 
 typedef struct FF_server_
@@ -199,8 +197,8 @@ static FT_Error get_fapi_glyph_metrics(FT_Incremental a_info,FT_UInt a_glyph_ind
 				*a_metrics = a_info->m_glyph_metrics;
 				break;
 			default:
-				assert(false); /* This can't happen. */
-				break;
+				/* This can't happen. */
+				return FT_Err_Invalid_Argument;
 			}
 		}
 	return 0;
@@ -514,7 +512,8 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 					open_args.memory_size = FF_serialize_type1_font(a_font,own_font_data,length);
 				else
 					open_args.memory_size = FF_serialize_type2_font(a_font,own_font_data,length);
-				assert(open_args.memory_size == length);
+				if (open_args.memory_size != length)
+				    return_error(gs_error_unregistered); /* Must not happen. */
 				ft_inc_int = new_inc_int(a_font);
 				if (!ft_inc_int)
 					{
@@ -724,7 +723,8 @@ Return the bitmap created by the last call to get_char_raster_metrics.
 static FAPI_retcode get_char_raster(FAPI_server *a_server,FAPI_raster *a_raster)
 	{
 	FF_server* s = (FF_server*)a_server;
-	assert(s->m_bitmap_glyph);
+	if (!s->m_bitmap_glyph)
+		return_error(gs_error_unregistered); /* Must not happen. */
 	a_raster->p = s->m_bitmap_glyph->bitmap.buffer;
 	a_raster->width = s->m_bitmap_glyph->bitmap.width;
 	a_raster->height = s->m_bitmap_glyph->bitmap.rows;
@@ -885,9 +885,8 @@ int gs_fapi_ft_instantiate(i_ctx_t *a_context,
 static void gs_freetype_destroy(i_plugin_instance *a_plugin_instance,i_plugin_client_memory *a_memory)
 	{
 	FF_server *server = (FF_server *)a_plugin_instance;
-	assert(server->m_fapi_server.ig.d == &TheFreeTypeDescriptor);
 	FT_Done_Glyph(&server->m_outline_glyph->root);
 	FT_Done_Glyph(&server->m_bitmap_glyph->root);
 	FT_Done_FreeType(server->m_freetype_library);
-    a_memory->free(a_memory,server,"FF_server");
+	a_memory->free(a_memory,server,"FF_server");
 	}
