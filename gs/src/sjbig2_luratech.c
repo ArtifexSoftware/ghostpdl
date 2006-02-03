@@ -169,7 +169,7 @@ s_jbig2_message(const char *message, JB2_Message_Level level, void *userdata)
     if (level == cJB2_Message_Error) {
 	dprintf2("Luratech JBIG2 %s %s\n", type, message);
     } else {
-	if_debug2('s', "[s]Luratech JBIG2 %s %s\n", type, message);
+	if_debug2('w', "[w]Luratech JBIG2 %s %s\n", type, message);
     }
 
     return;
@@ -339,7 +339,7 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
 	    if (error != cJB2_Error_OK) return ERRC;
 	    state->height = result;
 	    state->stride = ((state->width - 1) >> 3) + 1;
-	    if_debug2('s', "[s]jbig2decode page is %ldx%ld; allocating image\n", state->width, state->height);
+	    if_debug2('w', "[w]jbig2decode page is %ldx%ld; allocating image\n", state->width, state->height);
 	    state->image = malloc(state->height*state->stride);
 
 	    /* start image decode */

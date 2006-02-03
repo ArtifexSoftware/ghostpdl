@@ -1,4 +1,4 @@
-/* Copyright (C) 2005 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2005-2006 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -19,15 +19,12 @@
  
 #include "memory_.h"
 #include "malloc_.h"
-#ifdef JPX_DEBUG
-#include "stdio_.h"
-#endif
-
 #include "gserrors.h"
 #include "gserror.h"
 #include "gdebug.h"
 #include "strimpl.h"
 #include "sjpx_luratech.h"
+
 #include <lwf_jp2.h>
 
 /* JPXDecode stream implementation using the Luratech library */
@@ -242,7 +239,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 		cJP2_Prop_Height, &result, -1, -1);
 	    if (err != cJP2_Error_OK) return ERRC;
 	    state->height = result;
-	    if_debug3('s', "[s]jpxd image has %d components (%ldx%ld)\n", 
+	    if_debug3('w', "[w]jpxd image has %d components (%ldx%ld)\n", 
 		state->ncomp, state->width, state->height);
 	
 	    {
@@ -270,7 +267,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 		    case cJP2_Colorspace_Palette_ICCa:
 			cspace = "indexed with ICC profile"; break;
 	    	}
-		if_debug1('s', "[s]jpxd image colorspace is %s\n", cspace);
+		if_debug1('w', "[w]jpxd image colorspace is %s\n", cspace);
 	    }
 
 	    {
@@ -285,8 +282,8 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 			cJP2_Prop_Signed_Samples, &result, -1, (short)comp);
 		    if (err != cJP2_Error_OK) return ERRC;
 		    is_signed = result;
-		    if_debug3('s',
-			"[s]jpxd image component %d has %d bit %s samples\n",
+		    if_debug3('w',
+			"[w]jpxd image component %d has %d bit %s samples\n",
 			comp, bits, is_signed ? "signed" : "unsigned");
 		}
 	    }
