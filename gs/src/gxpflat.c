@@ -18,12 +18,12 @@
 /* Path flattening algorithms */
 #include "string_.h"
 #include "gx.h"
+#include "gserrors.h"
 #include "gxarith.h"
 #include "gxfixed.h"
 #include "gzpath.h"
 #include "memory_.h"
 #include "vdtrace.h"
-#include <assert.h>
 
 /* ---------------- Curve flattening ---------------- */
 
@@ -333,7 +333,7 @@ gx_flattened_iterator__print_state(gx_flattened_iterator *this)
 /* Move to the next segment and store it to this->lx0, this->ly0, this->lx1, this->ly1 .
  * Return true iff there exist more segments.
  */
-bool
+int
 gx_flattened_iterator__next(gx_flattened_iterator *this)
 {
     /*
@@ -372,7 +372,8 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
      * variables, we don't actually compute M, only M-1 (rmask).  */
     fixed x = this->lx1, y = this->ly1;
 
-    assert(this->i > 0);
+    if (this->i <= 0)
+	return_error(gs_error_unregistered); /* Must not happen. */
     this->lx0 = this->lx1;
     this->ly0 = this->ly1;
     /* Fast check for N == 3, a common special case for small characters. */
@@ -447,12 +448,13 @@ gx_flattened_iterator__unaccum(gx_flattened_iterator *this)
  * This only works for states reached with gx_flattened_iterator__next.
  * Return true iff there exist more segments.
  */
-bool
+int
 gx_flattened_iterator__prev(gx_flattened_iterator *this)
 {
     bool last; /* i.e. the first one in the forth order. */
 
-    assert(this->i < 1 << this->k);
+    if (this->i >= 1 << this->k)
+	return_error(gs_error_unregistered); /* Must not happen. */
     this->lx1 = this->lx0;
     this->ly1 = this->ly0;
     if (this->k <= 1) {
@@ -482,7 +484,8 @@ gx_flattened_iterator__prev(gx_flattened_iterator *this)
     this->ly0 = this->y;
     vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 0, 255));
     if (last)
-	assert(this->lx0 == this->x0 && this->ly0 == this->y0);
+	if (this->lx0 != this->x0 || this->ly0 != this->y0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
     return !last;
 }
 
@@ -554,7 +557,11 @@ top :
 	bool more;
 
 	for(;;) {
-	    more = gx_flattened_iterator__next(this);
+	    code = gx_flattened_iterator__next(this);
+
+	    if (code < 0)
+		return code;
+	    more = code;
 	    ppt->x = this->lx1;
 	    ppt->y = this->ly1;
 	    ppt++;

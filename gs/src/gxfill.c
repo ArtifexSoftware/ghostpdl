@@ -182,8 +182,8 @@ private int add_y_list(gx_path *, line_list *);
 private int add_y_line_aux(const segment * prev_lp, const segment * lp, 
 	    const gs_fixed_point *curr, const gs_fixed_point *prev, int dir, line_list *ll);
 private void insert_x_new(active_line *, line_list *);
-private bool end_x_line(active_line *, const line_list *, bool);
-private void step_al(active_line *alp, bool move_iterator);
+private int  end_x_line(active_line *, const line_list *, bool);
+private int step_al(active_line *alp, bool move_iterator);
 
 
 #define FILL_LOOP_PROC(proc) int proc(line_list *, fixed band_mask)
@@ -715,6 +715,7 @@ add_y_curve_part(line_list *ll, segment *s0, segment *s1, int dir,
     gx_flattened_iterator *fi, bool more1, bool step_back, bool monotonic_x)
 {
     active_line *alp = make_al(ll);
+    int code;
 
     if (alp == NULL)
 	return_error(gs_error_VMerror);
@@ -726,12 +727,17 @@ add_y_curve_part(line_list *ll, segment *s0, segment *s1, int dir,
 	gx_flattened_iterator__switch_to_backscan(&alp->fi, more1);
     if (step_back) {
 	do {
-	    alp->more_flattened = gx_flattened_iterator__prev(&alp->fi);
+	    code = gx_flattened_iterator__prev(&alp->fi);
+	    if (code < 0)
+		return code;
+	    alp->more_flattened = code;
 	    if (compute_dir(ll->fo, alp->fi.ly0, alp->fi.ly1) != 2)
 		break;
 	} while (alp->more_flattened);
     }
-    step_al(alp, false);
+    code = step_al(alp, false);
+    if (code < 0)
+	return code;
     alp->monotonic_y = false;
     alp->monotonic_x = monotonic_x;
     insert_y_line(ll, alp);
@@ -773,7 +779,10 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
 
     /* q stands at the first segment, which isn't last. */
     do {
-	q->more_flattened = gx_flattened_iterator__next(q->fi);
+	code = gx_flattened_iterator__next(q->fi);
+	if (code < 0)
+	    return code;
+	q->more_flattened = code;
 	dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
 	if (q->fi->ly0 > fo->ymax && ll->y_break > q->fi->y0)
 	    ll->y_break = q->fi->ly0;
@@ -866,7 +875,12 @@ scan_contour(line_list *ll, contour_cursor *q)
 	code = init_contour_cursor(ll, q);
 	if (code < 0)
 	    return code;
-	while(gx_flattened_iterator__next(q->fi)) {
+	for (;;) {
+	    code = gx_flattened_iterator__next(q->fi);
+	    if (code < 0)
+		return code;
+	    if (!code)
+		break;
 	    q->first_flattened = false;
 	    q->dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
 	    ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
@@ -901,7 +915,10 @@ scan_contour(line_list *ll, contour_cursor *q)
 	    code = init_contour_cursor(ll, &p);
 	    if (code < 0)
 		return code;
-	    p.more_flattened = gx_flattened_iterator__next(p.fi);
+	    code = gx_flattened_iterator__next(p.fi);
+	    if (code < 0)
+		return code;
+	    p.more_flattened = code;
 	    p.dir = compute_dir(fo, p.fi->ly0, p.fi->ly1);
 	    if (p.fi->ly0 > fo->ymax && ll->y_break > p.fi->ly0)
 		ll->y_break = p.fi->ly0;
@@ -1027,16 +1044,21 @@ add_y_list(gx_path * ppath, line_list *ll)
 }
 
 
-private void 
+private int
 step_al(active_line *alp, bool move_iterator)
 {
     bool forth = (alp->direction == DIR_UP || !alp->fi.curve);
 
     if (move_iterator) {
+	int code;
+
 	if (forth)
-	    alp->more_flattened = gx_flattened_iterator__next(&alp->fi);
+	    code = gx_flattened_iterator__next(&alp->fi);
 	else
-	    alp->more_flattened = gx_flattened_iterator__prev(&alp->fi);
+	    code = gx_flattened_iterator__prev(&alp->fi);
+	if (code < 0)
+	    return code;
+	alp->more_flattened = code;
     } else
 	vd_bar(alp->fi.lx0, alp->fi.ly0, alp->fi.lx1, alp->fi.ly1, 1, RGB(0, 0, 255));
     /* Note that we can get alp->fi.ly0 == alp->fi.ly1 
@@ -1050,14 +1072,16 @@ step_al(active_line *alp, bool move_iterator)
     SET_NUM_ADJUST(alp);
     (alp)->y_fast_max = MAX_MINUS_NUM_ADJUST(alp) /
       ((alp->diff.x >= 0 ? alp->diff.x : -alp->diff.x) | 1) + alp->start.y;
+    return 0;
 }
 
-private void
+private int
 init_al(active_line *alp, const segment *s0, const segment *s1, const line_list *ll)
 {
     const segment *ss = (alp->direction == DIR_UP ? s1 : s0);
     /* Warning : p0 may be equal to &alp->end. */
     bool curve = (ss != NULL && ss->type == s_curve);
+    int code;
 
     if (curve) {
 	if (alp->direction == DIR_UP) {
@@ -1066,7 +1090,9 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
 
 	    gx_flattened_iterator__init(&alp->fi, 
 		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k);
-	    step_al(alp, true);
+	    code = step_al(alp, true);
+	    if (code < 0)
+		return code;
 	    if (!ll->fo->fill_by_trapezoids) {
 		alp->monotonic_y = (s0->pt.y <= cs->p1.y && cs->p1.y <= cs->p2.y && cs->p2.y <= cs->pt.y);
 		alp->monotonic_x = (s0->pt.x <= cs->p1.x && cs->p1.x <= cs->p2.x && cs->p2.x <= cs->pt.x) ||
@@ -1081,11 +1107,16 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
 		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k);
 	    alp->more_flattened = false;
 	    do {
-		more = gx_flattened_iterator__next(&alp->fi);
+		code = gx_flattened_iterator__next(&alp->fi);
+		if (code < 0)
+		    return code;
+		more = code;
 		alp->more_flattened |= more;
 	    } while(more);
 	    gx_flattened_iterator__switch_to_backscan(&alp->fi, alp->more_flattened);
-	    step_al(alp, false);
+	    code = step_al(alp, false);
+	    if (code < 0)
+		return code;
 	    if (!ll->fo->fill_by_trapezoids) {
 		alp->monotonic_y = (s0->pt.y >= cs->p1.y && cs->p1.y >= cs->p2.y && cs->p2.y >= cs->pt.y);
 		alp->monotonic_x = (s0->pt.x <= cs->p1.x && cs->p1.x <= cs->p2.x && cs->p2.x <= cs->pt.x) ||
@@ -1095,10 +1126,13 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
     } else {
 	gx_flattened_iterator__init_line(&alp->fi, 
 		s0->pt.x, s0->pt.y, s1->pt.x, s1->pt.y);
-	step_al(alp, true);
+	code = step_al(alp, true);
+	if (code < 0)
+	    return code;
 	alp->monotonic_x = alp->monotonic_y = true;
     }
     alp->pseg = s1;
+    return 0;
 }
 /*
  * Internal routine to test a segment and add it to the pending list if
@@ -1108,16 +1142,22 @@ private int
 add_y_line_aux(const segment * prev_lp, const segment * lp, 
 	    const gs_fixed_point *curr, const gs_fixed_point *prev, int dir, line_list *ll)
 {
+    int code; 
+
     active_line *alp = make_al(ll);
     if (alp == NULL)
 	return_error(gs_error_VMerror);
     alp->more_flattened = false;
     switch ((alp->direction = dir)) {
 	case DIR_UP:
-	    init_al(alp, prev_lp, lp, ll);
+	    code = init_al(alp, prev_lp, lp, ll);
+	    if (code < 0)
+		return code;
 	    break;
 	case DIR_DOWN:
-	    init_al(alp, lp, prev_lp, ll);
+	    code = init_al(alp, lp, prev_lp, ll);
+	    if (code < 0)
+		return code;
 	    break;
 	case DIR_HORIZONTAL:
 	    alp->start = *prev;
@@ -1196,7 +1236,7 @@ remove_al(const line_list *ll, active_line *alp)
  * Handle a line segment that just ended.  Return true iff this was
  * the end of a line sequence.
  */
-private bool
+private int
 end_x_line(active_line *alp, const line_list *ll, bool update)
 {
     const segment *pseg = alp->pseg;
@@ -1217,6 +1257,7 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
 	  ((const subpath *)pseg)->last->prev :
 	  pseg->prev)
 	);
+    int code;
 
     if (alp->end.y < alp->start.y) {
 	/* fixme: The condition above causes a horizontal
@@ -1232,7 +1273,9 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
 	return true;
     } else if (alp->more_flattened)
 	return false;
-    init_al(alp, pseg, next, ll);
+    code = init_al(alp, pseg, next, ll);
+    if (code < 0)
+	return code;
     if (alp->start.y > alp->end.y) {
 	/* See comment above. */
 	remove_al(ll, alp);
@@ -1402,11 +1445,12 @@ resort_x_line(active_line * alp)
 }
 
 /* Move active lines by Y. */
-private inline void
+private inline int
 move_al_by_y(line_list *ll, fixed y1)
 {
     fixed x;
     active_line *alp, *nlp;
+    int code;
 
     for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
 	bool notend = false;
@@ -1414,15 +1458,27 @@ move_al_by_y(line_list *ll, fixed y1)
 
 	nlp = alp->next;
 	if (alp->end.y == y1 && alp->more_flattened) {
-	    step_al(alp, true);
+	    code = step_al(alp, true);
+	    if (code < 0)
+		return code;
 	    alp->x_current = alp->x_next = alp->start.x;
 	    notend = (alp->end.y >= alp->start.y);
 	}
-	if (alp->end.y > y1 || notend || !end_x_line(alp, ll, true)) {
+	if (alp->end.y > y1 || notend) {
 	    if (alp->x_next <= x)
 		resort_x_line(alp);
 	    else
 		x = alp->x_next;
+	} else {
+	    code = end_x_line(alp, ll, true);
+	    if (code < 0)
+		return code;
+	    if (!code) {
+		if (alp->x_next <= x)
+		    resort_x_line(alp);
+		else
+		    x = alp->x_next;
+	    }
 	}
     }
     if (ll->x_list != 0 && ll->fo->pseudo_rasterization) {
@@ -1455,6 +1511,7 @@ move_al_by_y(line_list *ll, fixed y1)
 		alp = alp->next;
 	}
     }
+    return 0;
 }
 
 /* Process horizontal segment of curves. */
@@ -2122,7 +2179,9 @@ merge_ranges(coord_range_list_t *pcrl, const line_list *ll, fixed y_min, fixed y
 		x1 = max(x1, xt);
 		if (!alp->more_flattened || alp->end.y > y_top)
 		    break;
-		step_al(alp, true);
+		code = step_al(alp, true);
+		if (code < 0)
+		    return code;
 		if (alp->end.y < alp->start.y) {
 		    remove_al(ll, alp); /* End of a monotonic part of a curve. */
 		    break;

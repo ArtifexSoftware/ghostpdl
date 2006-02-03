@@ -59,14 +59,16 @@ TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
     range_list_init(&rlist, rlocal, countof(rlocal), ll->memory);
     ll->x_list = 0;
     ll->x_head.x_current = min_fixed;	/* stop backward scan */
-    while (code >= 0) {
+    do {
 	active_line *alp, *nlp;
 	fixed x;
 	bool new_band;
 
 	INCR(iter);
 
-	move_al_by_y(ll, y); /* Skip horizontal pieces. */
+	code = move_al_by_y(ll, y); /* Skip horizontal pieces. */
+	if (code < 0)
+	    return code;
 	/*
 	 * Find the next sampling point, either the bottom of a sampling
 	 * band or a line start.
@@ -216,7 +218,7 @@ TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
 		y_min = y;
 	    code = merge_ranges(&rlist, ll, y_min, y_top);
 	} /* else y < y_bot + 1, do nothing */
-    }
+    } while (code >= 0);
  done:
     range_list_free(&rlist);
     return code;

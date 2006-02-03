@@ -135,7 +135,10 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
 	    code = process_h_segments(ll, y);
 	    if (code < 0)
 		return code;
-	    move_al_by_y(ll, y1);
+	    {	int code1 = move_al_by_y(ll, y1);
+		if (code1 < 0)
+		    return code1;
+	    }
 	    if (code > 0) {
 		yll = ll->y_list; /* add_y_line_aux in process_h_segments changes it. */
 		continue;
@@ -329,7 +332,9 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
 	    if (code < 0)
 		return code;
 	}
-	move_al_by_y(ll, y1);
+	code = move_al_by_y(ll, y1);
+	if (code < 0)
+	    return code;
 	ll->h_list1 = ll->h_list0;
 	ll->h_list0 = 0;
 	y = y1;
