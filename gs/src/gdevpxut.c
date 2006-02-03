@@ -25,7 +25,6 @@
 #include "gdevpxen.h"
 #include "gdevpxop.h"
 #include "gdevpxut.h"
-#include <assert.h>
 
 /* ---------------- High-level constructs ---------------- */
 
