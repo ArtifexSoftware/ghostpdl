@@ -69,6 +69,7 @@ s_jpxd_init(stream_state * ss)
     return status;
 }
 
+#ifdef DEBUG
 /* dump information from a jasper image struct for debugging */
 private int
 dump_jas_image(jas_image_t *image)
@@ -79,7 +80,7 @@ dump_jas_image(jas_image_t *image)
 
     if (image == NULL) return 1;
 
-    if_debug('w', "[w]JPX image is %d x %d\n",
+    if_debug2('w', "[w]JPX image is %d x %d\n",
 	jas_image_width(image), jas_image_height(image));
 
     /* sort the colorspace */
@@ -133,7 +134,7 @@ dump_jas_image(jas_image_t *image)
 
     return 0;
 }
-#endif /* JPX_DEBUG */
+#endif /* DEBUG */
 
 private int
 copy_row_gray(unsigned char *dest, jas_image_t *image,
