@@ -115,6 +115,8 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
 	if (pair->mxx == mxx && pair->mxy == mxy &&
 	    pair->myx == myx && pair->myy == myy
 	    && pair->design_grid == design_grid) {
+	    int code; 
+
 	    if (pair->font == 0) {
 		pair->font = pfont;
 		if_debug2('k', "[k]updating pair 0x%lx with font 0x%lx\n",
@@ -123,7 +125,9 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
 		if_debug2('k', "[k]found pair 0x%lx: font=0x%lx\n",
 			  (ulong) pair, (ulong) pair->font);
 	    }
-	    gx_touch_fm_pair(dir, pair);
+	    code = gx_touch_fm_pair(dir, pair);
+	    if (code < 0)
+		return code;
 	    *ppair = pair;
 	    return 0;
 	}

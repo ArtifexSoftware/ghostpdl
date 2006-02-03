@@ -451,14 +451,15 @@ purge_if_name_removed(const gs_memory_t *mem, cached_char * cc, void *vsave)
 }
 
 /* Remove entries from font and character caches. */
-void
+int 
 font_restore(const alloc_save_t * save)
 {
     gs_font_dir *pdir = ifont_dir;
     const gs_memory_t *mem = 0;
+    int code;
 
     if (pdir == 0)		/* not initialized yet */
-	return;
+	return 0;
 
     /* Purge original (unscaled) fonts. */
 
@@ -471,7 +472,9 @@ otop:
 	    ) {
 	    mem = pfont->memory;
 	    if (alloc_is_since_save((char *)pfont, save)) {
-		gs_purge_font(pfont);
+		code = gs_purge_font(pfont);
+		if (code < 0)
+		    return code;
 		goto otop;
 	    }
 	}
@@ -487,7 +490,9 @@ top:
 	     pfont = pfont->next
 	    ) {
 	    if (alloc_is_since_save((char *)pfont, save)) {
-		gs_purge_font(pfont);
+		code = gs_purge_font(pfont);
+		if (code < 0)
+		    return code;
 		goto top;
 	    }
 	}
@@ -507,14 +512,18 @@ top:
 		     alloc_is_since_save((char *)pair->UID.xvalues,
 					 save))
 		    ) {
-		    gs_purge_fm_pair(pdir, pair, 0);
+		    code = gs_purge_fm_pair(pdir, pair, 0);
+		    if (code < 0)
+			return code;
 		    continue;
 		}
 		if (pair->font != 0 &&
 		    alloc_is_since_save((char *)pair->font, save)
 		    ) {
 		    if (!uid_is_valid(&pair->UID)) {
-			gs_purge_fm_pair(pdir, pair, 0);
+			code = gs_purge_fm_pair(pdir, pair, 0);
+			if (code < 0)
+			    return code;
 			continue;
 		    }
 		    /* Don't discard pairs with a surviving UID. */
@@ -523,7 +532,9 @@ top:
 		if (pair->xfont != 0 &&
 		    alloc_is_since_save((char *)pair->xfont, save)
 		    )
-		    gs_purge_fm_pair(pdir, pair, 1);
+		    code = gs_purge_fm_pair(pdir, pair, 1);
+		    if (code < 0)
+			return code;
 	    }
     }
 
@@ -534,7 +545,7 @@ top:
     if (alloc_any_names_since_save(save))
 	gx_purge_selected_cached_chars(pdir, purge_if_name_removed,
 				       (void *)save);
-
+    return 0;
 }
 
 /* ------ Font procedures for PostScript fonts ------ */

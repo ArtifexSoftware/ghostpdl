@@ -873,7 +873,9 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     if (minst->init_done >= 1) {
         gs_memory_t *mem_raw = i_ctx_p->memory.current->non_gc_memory;
         i_plugin_holder *h = i_ctx_p->plugin_list;
-        alloc_restore_all(idmemory);
+        code = alloc_restore_all(idmemory);
+	if (code < 0)
+	    eprintf1("ERROR %d while the final restore. See gs/src/ierrors.h for code explanation.\n", code);
         i_plugin_finit(mem_raw, h);
     }
     /* clean up redirected stdout */

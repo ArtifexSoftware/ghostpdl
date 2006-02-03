@@ -250,7 +250,7 @@ alloc_save_print(alloc_change_t * cp, bool print_current)
 #endif
 
 /* Forward references */
-private void restore_resources(alloc_save_t *, gs_ref_memory_t *);
+private int  restore_resources(alloc_save_t *, gs_ref_memory_t *);
 private void restore_free(gs_ref_memory_t *);
 private long save_set_new(gs_ref_memory_t *, bool);
 private void save_set_new_changes(gs_ref_memory_t *, bool);
@@ -638,7 +638,7 @@ alloc_save_client_data(const alloc_save_t * save)
 private void restore_finalize(gs_ref_memory_t *);
 private void restore_space(gs_ref_memory_t *, gs_dual_memory_t *);
 
-bool
+int
 alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 {
     /* Get save->space_* now, because the save object will be freed. */
@@ -646,6 +646,7 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
     gs_ref_memory_t *gmem = save->space_global;
     gs_ref_memory_t *mem = lmem;
     alloc_save_t *sprev;
+    int code;
 
     /* Finalize all objects before releasing resources or undoing changes. */
     do {
@@ -674,7 +675,9 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 
 	sprev = mem->saved;
 	sid = sprev->id;
-	restore_resources(sprev, mem);	/* release other resources */
+	code = restore_resources(sprev, mem);	/* release other resources */
+	if (code < 0)
+	    return code;
 	restore_space(mem, dmem);	/* release memory */
 	if (sid != 0)
 	    break;
@@ -686,7 +689,9 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	/* need to restore global VM. */
 	mem = gmem;
 	if (mem != lmem && mem->saved != 0) {
-	    restore_resources(mem->saved, mem);
+	    code = restore_resources(mem->saved, mem);
+	    if (code < 0)
+		return code;
 	    restore_space(mem, dmem);
 	}
 	alloc_set_not_in_save(dmem);
@@ -749,7 +754,7 @@ restore_space(gs_ref_memory_t * mem, gs_dual_memory_t *dmem)
 
 /* Restore to the initial state, releasing all resources. */
 /* The allocator is no longer usable after calling this routine! */
-void
+int
 alloc_restore_all(gs_dual_memory_t * dmem)
 {
     /*
@@ -760,10 +765,14 @@ alloc_restore_all(gs_dual_memory_t * dmem)
     gs_ref_memory_t *gmem = dmem->space_global;
     gs_ref_memory_t *smem = dmem->space_system;
     gs_ref_memory_t *mem;
+    int code;
 
     /* Restore to a state outside any saves. */
-    while (lmem->save_level != 0)
-	discard(alloc_restore_step_in(dmem, lmem->saved));
+    while (lmem->save_level != 0) {
+	code = alloc_restore_step_in(dmem, lmem->saved);
+	if (code < 0)
+	    return code;
+    }
 
     /* Finalize memory. */
     restore_finalize(lmem);
@@ -783,7 +792,9 @@ alloc_restore_all(gs_dual_memory_t * dmem)
 
 	empty_save.spaces = dmem->spaces;
 	empty_save.restore_names = false;	/* don't bother to release */
-	restore_resources(&empty_save, NULL);
+	code = restore_resources(&empty_save, NULL);
+	if (code < 0)
+	    return code;
     }
 
     /* Finally, release memory. */
@@ -798,7 +809,7 @@ alloc_restore_all(gs_dual_memory_t * dmem)
 	}
     }
     restore_free(smem);
-
+    return 0;
 }
 
 /*
@@ -830,9 +841,10 @@ restore_finalize(gs_ref_memory_t * mem)
 }
 
 /* Release resources for a restore */
-private void
+private int
 restore_resources(alloc_save_t * sprev, gs_ref_memory_t * mem)
 {
+    int code;
 #ifdef DEBUG
     if (mem) {
 	/* Note restoring of the file list. */
@@ -843,11 +855,14 @@ restore_resources(alloc_save_t * sprev, gs_ref_memory_t * mem)
 #endif
 
     /* Remove entries from font and character caches. */
-    font_restore(sprev);
+    code = font_restore(sprev);
+    if (code < 0)
+	return code;
 
     /* Adjust the name table. */
     if (sprev->restore_names)
 	names_restore(mem->gs_lib_ctx->gs_name_table, sprev);
+    return 0;
 }
 
 /* Release memory for a restore. */

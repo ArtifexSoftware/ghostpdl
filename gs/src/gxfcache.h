@@ -323,9 +323,9 @@ int gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
 int gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
 	       bool design_grid, cached_fm_pair **ppair);
-void gx_touch_fm_pair(gs_font_dir *dir, cached_fm_pair *pair);
+int  gx_touch_fm_pair(gs_font_dir *dir, cached_fm_pair *pair);
 void gx_lookup_xfont(const gs_state *, cached_fm_pair *, int);
-void gs_purge_fm_pair(gs_font_dir *, cached_fm_pair *, int);
-void gs_purge_font_from_char_caches(gs_font_dir *, const gs_font *);
+int  gs_purge_fm_pair(gs_font_dir *, cached_fm_pair *, int);
+int  gs_purge_font_from_char_caches(gs_font_dir *, const gs_font *);
 
 #endif /* gxfcache_INCLUDED */

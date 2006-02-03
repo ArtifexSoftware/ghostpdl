@@ -689,7 +689,7 @@ gs_currentgridfittt(const gs_font_dir * pdir)
 
 /* Purge a font from all font- and character-related tables. */
 /* This is only used by restore (and, someday, the GC). */
-void
+int
 gs_purge_font(gs_font * pfont)
 {
     gs_font_dir *pdir = pfont->dir;
@@ -714,7 +714,10 @@ gs_purge_font(gs_font * pfont)
     /* Purge the font from the scaled font cache. */
     for (pf = pdir->scaled_fonts; pf != 0;) {
 	if (pf->base == pfont) {
-	    gs_purge_font(pf);
+	    int code = gs_purge_font(pf);
+
+	    if (code < 0)
+		return code;
 	    pf = pdir->scaled_fonts;	/* start over */
 	} else
 	    pf = pf->next;
@@ -722,8 +725,7 @@ gs_purge_font(gs_font * pfont)
 
     /* Purge the font from the font/matrix pair cache, */
     /* including all cached characters rendered with that font. */
-    gs_purge_font_from_char_caches(pdir, pfont);
-
+    return gs_purge_font_from_char_caches(pdir, pfont);
 }
 
 /* Locate a gs_font by gs_id. */

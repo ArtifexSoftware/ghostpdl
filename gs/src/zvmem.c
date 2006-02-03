@@ -152,7 +152,10 @@ zrestore(i_ctx_t *i_ctx_p)
 	 */
 	vmsave->gsave = 0;
 	/* Now it's safe to restore the state of memory. */
-	last = alloc_restore_state_step(asave);
+	code = alloc_restore_state_step(asave);
+	if (code < 0)
+	    return code;
+	last = code;
     }
     while (!last);
     {

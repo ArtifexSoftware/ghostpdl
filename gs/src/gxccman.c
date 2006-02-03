@@ -35,7 +35,6 @@
 #include "gxxfont.h"
 #include "gxttfb.h"
 #include "gxfont42.h"
-#include "assert.h"
 
 /* Define the descriptors for the cache structures. */
 private_st_cached_fm_pair();
@@ -162,44 +161,53 @@ gx_purge_selected_cached_chars(gs_font_dir * dir,
 
 /* ====== font-matrix pair lists ====== */
 
-private void
+private int
 fm_pair_remove_from_list(gs_font_dir * dir, cached_fm_pair *pair, uint *head)
 {
-    assert(dir->fmcache.mdata + pair->index == pair);
+    if (dir->fmcache.mdata + pair->index != pair)
+	return_error(gs_error_unregistered); /* Must not happen. */
     if (pair->next == pair->index) {
 	/* The list consists of single element. */
-	assert(pair->prev == pair->index);
+	if (pair->prev != pair->index)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	*head = dir->fmcache.mmax;
     } else {
 	cached_fm_pair *next = dir->fmcache.mdata + pair->next;
 	cached_fm_pair *prev = dir->fmcache.mdata + pair->prev;
 
-	assert(next->prev == pair->index);
-	assert(prev->next == pair->index);
+	if (next->prev != pair->index)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (prev->next != pair->index)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	if (*head == pair->index)
 	    *head = next->index;
 	next->prev = prev->index;
 	prev->next = next->index;
     }
+    return 0;
 }
 
-private void
+private int
 fm_pair_insert_into_list(gs_font_dir * dir, cached_fm_pair *pair, uint *head)
 {
-    assert(dir->fmcache.mdata + pair->index == pair);
+    if (dir->fmcache.mdata + pair->index != pair)
+	return_error(gs_error_unregistered); /* Must not happen. */
     if (*head >= dir->fmcache.mmax) {
 	*head = pair->next = pair->prev = pair->index;
     } else {
 	cached_fm_pair *first = dir->fmcache.mdata + *head;
 	cached_fm_pair *last = dir->fmcache.mdata + first->prev;
 
-	assert(first->prev == last->index);
-	assert(last->next == first->index);
+	if (first->prev != last->index)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (last->next != first->index)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	pair->next = first->index;
 	pair->prev = last->index;
 	first->prev = last->next = pair->index;
 	*head = pair->index;	
     }
+    return 0;
 }
 
 /* ====== Font-level routines ====== */
@@ -235,19 +243,25 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	*/
 	pair = dir->fmcache.mdata + dir->fmcache.used;
 	pair = dir->fmcache.mdata + pair->prev; /* last touched. */
-	gs_purge_fm_pair(dir, pair, 0);
+	code = gs_purge_fm_pair(dir, pair, 0);
+	if (code < 0)
+	    return code;
     }
     if (dir->fmcache.free < dir->fmcache.mmax) {
 	/* use a free entry. */
 	pair = dir->fmcache.mdata + dir->fmcache.free;
-	fm_pair_remove_from_list(dir, pair, &dir->fmcache.free);
+	code = fm_pair_remove_from_list(dir, pair, &dir->fmcache.free);
+	if (code < 0)
+	    return code;
     } else {
 	/* reserve a new entry. */
 	pair = dir->fmcache.mdata + dir->fmcache.unused;
 	dir->fmcache.unused++;
     }
     dir->fmcache.msize++;
-    fm_pair_insert_into_list(dir, pair, &dir->fmcache.used);
+    code = fm_pair_insert_into_list(dir, pair, &dir->fmcache.used);
+    if (code < 0)
+	return code;
     pair->font = font;
     pair->UID = *puid;
     pair->FontType = font->FontType;
@@ -298,13 +312,18 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 }
 
 /* Update the pointer to the last used font/matrix pair. */
-void
+int
 gx_touch_fm_pair(gs_font_dir *dir, cached_fm_pair *pair)
 {
     if (pair->index != dir->fmcache.used) {
-	fm_pair_remove_from_list(dir, pair, &dir->fmcache.used);
-	fm_pair_insert_into_list(dir, pair, &dir->fmcache.used);
+	int code; 
+
+	code = fm_pair_remove_from_list(dir, pair, &dir->fmcache.used);
+	if (code < 0)
+	    return code;
+	return fm_pair_insert_into_list(dir, pair, &dir->fmcache.used);
     }
+    return 0;
 }
 
 /* Look up the xfont for a font/matrix pair. */
@@ -387,7 +406,7 @@ purge_fm_pair_char_xfont(const gs_memory_t *mem, cached_char * cc, void *vpair)
     return cc_pair(cc) == cpair && cpair->xfont == 0 && !cc_has_bits(cc);
 }
 #undef cpair
-void
+int
 gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 {
     if_debug2('k', "[k]purging pair 0x%lx%s\n",
@@ -409,6 +428,7 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 	ttfFont__destroy(pair->ttf, dir);
     pair->ttf = 0;
     if (!xfont_only) {
+	int code;
 
 #ifdef DEBUG
 	if (pair->num_chars != 0) {
@@ -417,10 +437,15 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 	}
 #endif
 	fm_pair_set_free(pair);
-	fm_pair_remove_from_list(dir, pair, &dir->fmcache.used);
-	fm_pair_insert_into_list(dir, pair, &dir->fmcache.free);
+	code = fm_pair_remove_from_list(dir, pair, &dir->fmcache.used);
+	if (code < 0)
+	    return code;
+	code = fm_pair_insert_into_list(dir, pair, &dir->fmcache.free);
+	if (code < 0)
+	    return code;
 	dir->fmcache.msize--;
     }
+    return 0;
 }
 
 /* Look up an xfont by name. */
@@ -780,7 +805,7 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
 }
 
 /* Purge from the caches all references to a given font. */
-void
+int
 gs_purge_font_from_char_caches(gs_font_dir * dir, const gs_font * font)
 {
     cached_fm_pair *pair = dir->fmcache.mdata;
@@ -792,11 +817,16 @@ gs_purge_font_from_char_caches(gs_font_dir * dir, const gs_font * font)
 	if (pair->font == font) {
 	    if (uid_is_valid(&pair->UID)) {	/* Keep the entry. */
 		pair->font = 0;
-	    } else
-		gs_purge_fm_pair(dir, pair, 0);
+	    } else {
+		int code = gs_purge_fm_pair(dir, pair, 0);
+
+		if (code < 0)
+		    return code;
+	    }
 	}
 	pair++;
     }
+    return 0;
 }
 
 /* ------ Internal routines ------ */
