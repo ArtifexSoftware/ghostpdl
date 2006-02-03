@@ -17,7 +17,6 @@
 /* $Id$ */
 /* Dropout prevention for a character rasterization. */
 
-#include <assert.h>
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
@@ -57,7 +56,6 @@ void init_section(section *sect, int i0, int i1)
 private margin * alloc_margin(line_list * ll)
 {   margin *m;
 
-    assert(ll->fo->pseudo_rasterization);
     if (ll->free_margin_list != 0) {
 	m = ll->free_margin_list;
 	ll->free_margin_list = ll->free_margin_list->next;
@@ -106,13 +104,17 @@ private int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
     int i0 = ii0, i1 = ii1;
     margin *m0 = set->margin_touched, *m1;
 
-    assert(ii0 >= 0 && ii1 <= ll->bbox_width);
+    if (!ll->fo->pseudo_rasterization)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    if (ii0 < 0 || ii1 > ll->bbox_width)
+	return_error(gs_error_unregistered); /* Must not happen. */
     set->margin_touched = 0; /* safety */
     /* Find contacting elements. */
     if (m0 != 0) {
 	margin  *m_last = m0, *mb, *me;
 
-	assert(set->margin_list != 0);
+	if (set->margin_list == 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	if (i1 < m0->ibeg) {
 	    do {
 		m0 = m0->prev;
@@ -248,7 +250,8 @@ private int margin_boundary(line_list * ll, margin_set * set, active_line * alp,
 	    xp0 += fixed_1;
 	    i0++;
 	}
-	assert(i0 >= 0);
+	if (i0 < 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	for (i = i0, xp = xp0; xp < xmax && i < ll->bbox_width; xp += fixed_1, i++) {
 	    fixed y = (alp == 0 ? yy0 : Y_AT_X(alp, xp));
 	    fixed dy = y - set->y;
@@ -292,7 +295,8 @@ private int margin_boundary(line_list * ll, margin_set * set, active_line * alp,
 	    if (*b == -1 || (*b != -2 && ( ud ? *b > h : *b < h)))
 		*b = h;
 	}
-	assert(i0 >= 0 && i <= ll->bbox_width);
+	if (i0 < 0 || i > ll->bbox_width)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 #	endif
     if (i > i0)
 	return store_margin(ll, set, i0, i);
@@ -353,7 +357,8 @@ private inline int mark_margin_interior(line_list * ll, margin_set * set, active
     ii0 = i0 - ll->bbox_left;
     ii1 = fixed2int_var_pixround(x1) - ll->bbox_left;
     if (ii0 < ii1) {
-	assert(ii0 >= 0 && ii1 <= ll->bbox_width);
+	if (ii0 < 0 || ii1 > ll->bbox_width)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	for (i = ii0; i < ii1; i++) {
 	    sect[i].y0 = sect[i].y1 = -2;
 	    vd_circle(int2fixed(i + ll->bbox_left) + fixed_half, y, 3, RGB(255, 0, 0));
@@ -486,7 +491,8 @@ private int fill_margin(gx_device * dev, const line_list * ll, margin_set *ms, i
     const fill_options * const fo = ll->fo;
     const bool FILL_DIRECT = fo->fill_direct;
 
-    assert(i0 >= 0 && i1 <= ll->bbox_width);
+    if (i0 < 0 || i1 > ll->bbox_width)
+	return_error(gs_error_unregistered); /* Must not happen. */
     ir = i0;
     for (i = i0; i < i1; i++) {
 	int y0 = sect[i].y0, y1 = sect[i].y1, hh;
