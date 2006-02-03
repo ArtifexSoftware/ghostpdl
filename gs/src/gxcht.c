@@ -16,7 +16,6 @@
 
 /*$Id$ */
 /* Color halftone rendering for Ghostscript imaging library */
-#include <assert.h>
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
@@ -202,7 +201,8 @@ gx_dc_ht_colored_write(
     byte *                          pdata0 = pdata;
 
     /* sanity check */
-    assert(pdevc->colors.colored.num_components == num_comps);
+    if (pdevc->colors.colored.num_components != num_comps)
+	return_error(gs_error_unregistered); /* Must not happen. */
 
     /* check if saved color is of the same type */
     if (psdc != 0 && psdc->type != pdevc->type)

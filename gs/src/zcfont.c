@@ -103,7 +103,7 @@ cshow_continue(i_ctx_t *i_ctx_p)
 	     from the immediate parent of current font. 
 	     (The font matrix of root font is not good for the purpose
 	     in some case.) 
-	     assert (penum->fstack.items[fdepth].font == font
+	     assert_(penum->fstack.items[fdepth].font == font
 	             && penum->fstack.items[0].font == root_font); */
 	  uint save_space = idmemory->current_space;
 	  gs_font * immediate_parent = penum->fstack.items[fdepth - 1].font;
