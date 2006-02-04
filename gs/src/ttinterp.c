@@ -3647,7 +3647,12 @@ static int nInstrCount=0;
 
     if ( BOUNDS( args[0], CUR.pts.n_contours ) )
     {
+#if 0
+      /* A workaround for the Ghostscript bug 688501. 
+       *  Ported from FreeType 2
+       */
       CUR.error = TT_Err_Invalid_Reference;
+#endif
       return;
     }
 
