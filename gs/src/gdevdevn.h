@@ -25,7 +25,7 @@
  * This value is arbitrary.  It is set simply to define a limit on
  * on the separation_name_array and separation_order map.
  */
-#define GX_DEVICE_MAX_SEPARATIONS 16
+#define GX_DEVICE_MAX_SEPARATIONS GX_DEVICE_COLOR_MAX_COMPONENTS
 /*
  * Define the maximum number of process model colorants.  Currently we only
  * have code for DeviceGray, DeviceRGB, and DeviceCMYK.  Thus this value
@@ -33,6 +33,23 @@
  * device.  (This value does not include spot colors.  See previous value.)
  */
 #define MAX_DEVICE_PROCESS_COLORS 6
+/*
+ * This value enable the use of a compression scheme for representing
+ * the colorant values in a device pixel.  Ghostscript represents device
+ * pixel using an integer type value.  This limits the maximum number of
+ * bits that can be used for a pixel to the largest integer size provided
+ * by the compiler.  For most compilers this is 64 bits (a 'long long' or
+ * _int64 type).  For devices with 4 or fewer colorantss like DeviceGray,
+ * DeviceRGB, and DeviceCMYK, this will easily represent 16 bits per colorant.
+ * However if the output device supports spot colorants, this limits us in
+ * what we can do.  To allow support for more than 8 colorants at 8 bits
+ * per colorant, we use a scheme to compress the colorant values into our
+ * 64 bit pixels.  For more information see the header before
+ * devn_encode_compressed_color in src/gdevdevn.c.
+ *
+ * To disable compression of encoded colorant values, change this definition.
+ */
+#define USE_COMPRESSED_ENCODING (ARCH_SIZEOF_GX_COLOR_INDEX >= 8)
 
 /*
  * Type definitions associated with the fixed color model names.
@@ -59,7 +76,7 @@ typedef struct gs_separations_s {
 /*
  * Type for holding a separation order map
  */
-typedef int gs_separation_map[GX_DEVICE_MAX_SEPARATIONS];
+typedef int gs_separation_map[GX_DEVICE_MAX_SEPARATIONS + MAX_DEVICE_PROCESS_COLORS];
 
 typedef struct gs_devn_params_s {
     /*
@@ -92,6 +109,10 @@ typedef struct gs_devn_params_s {
      * components.
      */
     gs_separation_map separation_order_map;
+    /*
+     * Pointer to our list of which colorant combinations are being used.
+     */
+    struct compressed_color_list_s * compressed_color_list;
 } gs_devn_params_t;
 
 typedef gs_devn_params_t gs_devn_params;
@@ -140,7 +161,7 @@ void cmyk_cs_to_devn_cm(gx_device * dev, int * map,
 
 /*
  * This routine will check to see if the color component name  match those
- * that are available amoung the current device's color components.  
+ * that are available amoung the current device's color colorants.  
  *
  * Parameters:
  *   dev - pointer to device data structure.
@@ -159,7 +180,7 @@ void cmyk_cs_to_devn_cm(gx_device * dev, int * map,
  * This routine will also add separations to the device if space is
  * available.
  */
-int devn_get_color_comp_index(const gx_device * dev,
+int devn_get_color_comp_index(gx_device * dev,
     gs_devn_params * pdevn_params, equivalent_cmyk_color_params * pequiv_colors,
     const char * pname, int name_size, int component_type,
     int auto_spot_colors);
@@ -245,5 +266,212 @@ int repack_data(byte * source, byte * dest, int depth, int first_bit,
  * Input values are not tested for validity.
  */
 int bpc_to_depth(int ncomp, int bpc);
+
+
+/*
+ * We are encoding color values into a gx_color_index value.  This is being
+ * done to allow more than eight 8 bit colorant values to be stored inside
+ * of a 64 bit gx_color_index value.
+ *
+ * This is done by only keeping track of non zero colorant values.  We
+ * keep a record of which combinations of colorants are used inside of the
+ * device and encode an index for the colorant combinations into the
+ * gx_color_index value.
+ *
+ * See comments preceding devn_encode_compressed_color in gdevdevn.c for
+ * more information about how we encode the color information into a
+ * gx_color_index value.
+ */
+/*
+ * We are using bytes to pack both which colorants are non zero and the values
+ * of the colorants.  Thus do not change this value without recoding the
+ * methods used for encoding our colorants.  (This definition is really here
+ * to mark locations in the code that are extremely specific to using a byte
+ * oriented approach to the encoding.)
+ */
+#define NUM_ENCODE_LIST_ITEMS 256
+#define STD_ENCODED_VALUE 256
+
+/*
+ * Since we are byte packing things in a gx_color_index.  We need the number
+ * of bytes in a gx_color_index.
+ */
+#define NUM_GX_COLOR_INDEX_BYTES ARCH_SIZEOF_GX_COLOR_INDEX
+#define NUM_GX_COLOR_INDEX_BITS (8 * NUM_GX_COLOR_INDEX_BYTES)
+
+/*
+ * Define the highest level in our encoded color colorant list.
+ * Since we need at least one byte to store our encoded list of colorants
+ * and we are packing colorant values in bytes, the top level of our encoded
+ * color colorants that is the size of gx_clor_index - 1.
+ */
+#define TOP_ENCODED_LEVEL (NUM_GX_COLOR_INDEX_BYTES - 1)
+
+/*
+ * The maximum number of colorants that we can encode.
+ */
+#define MAX_ENCODED_COMPONENTS 14
+
+/*
+ * To prevent having a bunch of one or two colorant elements, we set a
+ * cutoff for the minimum number of colorants.  If we have less than the
+ * cutoff then we add in our process colors on the assumption that it is
+ * likely that sometime we will want a combination of the process and spot
+ * colors.
+ */
+#define MIN_ENCODED_COMPONENTS 5
+
+/*
+ * Define a value to represent a color value that we cannot encode.  This can
+ * occur if either we exceed MAX_ENCODED_COMPONENTS or all of the possible
+ * levels of the encoded colorant list are full.
+ */
+#define NON_ENCODEABLE_COLOR (gx_no_color_index - 1)
+
+/*
+ * We keep a bit map of the colorants.  If a bit map will fit into a
+ * gx_color_index sized intger then we use one, otherwize we use an array
+ * of ints.
+ */
+#if GX_DEVICE_COLOR_MAX_COMPONENTS <= (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
+typedef gx_color_index comp_bit_map_t;
+#define set_colorant_present(pbit_map, comp_list, comp_num)\
+   (pbit_map)->comp_list |= (((gx_color_index)1) << comp_num)
+#define clear_colorant_present(pbit_map, comp_list, comp_num)\
+   (pbit_map)->comp_list &= ~(((gx_color_index)1) << comp_num)
+#define colorant_present(pbit_map, comp_list, comp_num)\
+   ((int)(((pbit_map)->comp_list >> comp_num)) & 1)
+/*
+ * The compare bit map soutine (for the array case) is too complex for a simple
+ * macro.  So it is comditionally compiled using this switch.
+ */
+#define DEVN_ENCODE_COLOR_USING_BIT_MAP_ARRAY 0
+
+#else
+/*
+ * If we are trying to handle more colorants than will fit into a gx_color_index,
+ * then we bit pack them into uints.  So we need to define some values for
+ * defining the number of elements that we need, etc.
+ */
+#define comp_bit_map_elem_t uint
+#define BITS_PER_COMP_BIT_MAP_ELEM (size_of(comp_bit_map_elem_t) * 8)
+#define COMP_BIT_MAP_ELEM_MASK (BITS_PER_COMP_BIT_MAP_ELEM - 1)
+
+#define COMP_BIT_MAP_SIZE \
+    ((GX_DEVICE_COLOR_MAX_COMPONENTS + COMP_BIT_MAP_ELEM_MASK) / \
+     						BITS_PER_COMP_BIT_MAP_ELEM)
+
+/* Bit map list of colorants in the gx_color_index value */
+typedef comp_bit_map_elem_t comp_bit_map_t[COMP_BIT_MAP_SIZE];
+#define set_colorant_present(pbit_map, comp_list, comp_num)\
+   (pbit_map)->comp_list[comp_num / BITS_PER_COMP_BIT_MAP_ELEM] |=\
+				(1 << (comp_num & COMP_BIT_MAP_ELEM_MASK))
+#define clear_colorant_present(pbit_map, comp_list, comp_num)\
+   (pbit_map)->comp_list[comp_num / BITS_PER_COMP_BIT_MAP_ELEM] &=\
+				~(1 << (comp_num & COMP_BIT_MAP_ELEM_MASK))
+#define colorant_present(pbit_map, comp_list, comp_num)\
+   ((pbit_map)->comp_list[comp_num / BITS_PER_COMP_BIT_MAP_ELEM] >>\
+				((comp_num & COMP_BIT_MAP_ELEM_MASK)) & 1)
+/*
+ * The compare bit map soutine is too complex for s simple macro.
+ * So it is comditionally compiled using this switch.
+ */
+#define DEVN_ENCODE_COLOR_USING_BIT_MAP_ARRAY 1
+#endif
+
+/*
+ * The colorant bit map list struct.
+ */
+typedef struct comp_bit_map_list_s {
+    short num_comp;
+    short num_non_solid_comp;
+    bool solid_not_100;		/* 'solid' colorants are not 1005 solid */
+    comp_bit_map_t colorants;
+    comp_bit_map_t solid_colorants;
+} comp_bit_map_list_t;
+
+/*
+ * Encoded colorant list level element definition.
+ *
+ * Each list level contains a list of objects.  An object can be either a
+ * colorant bit map or a pointer to a sub list.  We start our sub level
+ * pointer at zero and work up.  Component bit maps are started at the top and
+ * go down.  When they meet in the middle, then this list level element is full.
+ * Note:  We start with the bit maps in the upper positions to ensure that
+ * gx_no_color_index and NON_ENCODEABLE_COLOR values correspond to 7 colorant
+ * cases.  This is less likely to occur and less likely to cause a problem
+ * when we tweak the outputs to keep actual gx_color_index values from
+ * being one of these two special cases.
+ *
+ * See comments preceding devn_encode_compressed_color in gdevdevn.c for
+ * more information about how we encode the color information into a
+ * gx_color_index value.
+ */
+typedef struct compressed_color_list_s {
+    /*
+     * The number of colorants for this level of the encoded color list.
+     * Note:  Each sub level encodes one fewer colorants.
+     */
+    int level_num_comp;
+    /* The number of sub level list pointers */
+    int num_sub_level_ptrs;
+    /* The current lower limit for the colorant bit maps */
+    int first_bit_map;
+    /*
+     * Use a union since an object is either a sub level pointer or a colorant
+     * bit map but not both.
+     */
+    union {
+	struct compressed_color_list_s * sub_level_ptrs[NUM_ENCODE_LIST_ITEMS];
+	comp_bit_map_list_t comp_data[NUM_ENCODE_LIST_ITEMS];
+    } u;
+} compressed_color_list_t;
+
+/*
+ * Encode a list of colorant values into a gx_color_index_value.
+ *
+ * This routine is designed to pack more than eight 8 bit colorant values into
+ * a 64 bit gx_color_index value.  It does this piece of magic by keeping a list
+ * of which colorant combinations are actualy used (i.e. which colorants are non
+ * zero).  The non zero colorant values and and an 'index' value are packed into
+ * the output gx_color_index value.
+ *
+ * See comments preceding devn_encode_compressed_color in gdevdevn.c for more
+ * information about how we encode the color information into a gx_color_index
+ * value.
+ */
+gx_color_index devn_encode_compressed_color(gx_device *pdev,
+	const gx_color_value colors[], gs_devn_params * pdevn_params);
+
+/*
+ * Decode a gx_color_index value back to a list of colorant values.  This
+ * routine assumes that the gx_color_index value is 'encoded' as described
+ * for devn_encode_compressed_color.
+ *
+ * See comments preceding devn_encode_compressed_color in gdevdevn.c for more
+ * information about how we encode the color information into a gx_color_index
+ * value.
+ */
+int devn_decode_compressed_color(gx_device * dev, gx_color_index color,
+			gx_color_value * out, gs_devn_params * pdevn_params);
+
+/*
+ * Unpack a row of 'encoded color' values.  These values are encoded as
+ * described for the devn_encode_color routine.
+ *
+ * The routine takes a raster line of data and expands each pixel into a buffer
+ * of 8 bit values for each colorant.
+ *
+ * See comments preceding devn_encode_color in gdevdevn.c for more information
+ * about how we encode the color information into a gx_color_index value.
+ */
+int devn_unpack_row(gx_device * dev, int num_comp, gs_devn_params * pdevn_params,
+					 int width, byte * in, byte * out);
+
+/*
+ * A routine for debugging the encoded color colorant list.  This routine
+ * dumps the contents of the list.
+ */
+void print_compressed_color_list(compressed_color_list_t * pcomp_list, int num_comp);
 
 #endif		/* ifndef gdevdevn_INCLUDED */

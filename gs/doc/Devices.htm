@@ -333,7 +333,7 @@ drivers that produce uncompressed output:
 <dd>Produces 24-bit RGB output (8 bits per component).
 <dt><b><tt>tiff32nc</tt></b>
 <dd>Produces 32-bit CMYK output (8 bits per component).
-<dt><b><tt>tiffsep</tt></b>
+<a name="tiffsep"></a><dt><b><tt>tiffsep</tt></b>
 <dd>
 The tiffsep device creates multiple output files.  The device creates a single
 32 bit composite CMYK file (tiff32nc format) and multiple tiffgray files.
@@ -349,13 +349,20 @@ this file is created based upon having color planes for each colorant, the
 file will correctly represent the appearance of overprinting with spot colors.
 
 <p>
-File names for the separations for the
-CMYK colorants are created by appending '.Cyan.tif', '.Magenta.tif'
-'.Yellow.tif' or '.Black.tif' to the to the end of the file name
-specified via the OutputFile parameter.  File names for the spot
-color separation files are created by appending '.sn.tif' (where n
-is the spot color number, see below) to the end of the file name specified via
-the OutputFile parameter.
+File names for the separations for the CMYK colorants are created by appending 
+'.Cyan.tif', '.Magenta.tif' '.Yellow.tif' or '.Black.tif' to the to the 
+end of the file name specified via the OutputFile parameter. File names 
+for the spot color separation files are created by appending '.sn.tif' 
+(where n is the spot color number, see below) to the end of the file name 
+specified via the OutputFile parameter. (If the file name specified via 
+the OutputFile parameter ends with the suffix '.tif', then the suffix 
+is removed prior to adding 'Cyan.tif', etc.)
+
+<p>
+The tiffsep device will automatically recognize spot colors. In this 
+case their order is determined by when they are found in the input file. 
+The names of spot colors may be specified via the SeparationColorNames 
+device parameters. 
 
 <p>
 Internally each spot color is assigned a spot color number.  These
@@ -366,12 +373,6 @@ SeparationColorNames list, if this parameter is specified.  The
 spot color numbers are not affected by the SeparationOrder parameter.
 
 <p>
-The names of spot colors may be specified via the SeparationColorNames device
-parameters.  Or the tiffsep device will automatically recognize spot color
-names if <b><tt>-dMaxSeparations=8</tt></b> is specified on the
-command line.
-
-<p>
 If only a subset of the colorants for a file is desired then the separations
 to be output can be selected via the SeparationOrder
 device parameter.  When colorants are selected via the
@@ -380,25 +381,30 @@ the equivalent CMYK data only for the selected colorants.
 
 <p>
 The tiffsep device also prints the names of any spot colors
-detected within a document to stderr.  (stderr is also use for the
+detected within a document to stderr.  (stderr is also used for the
 output from the bbox device.)  For each spot color the name of
 the color is printed preceded by '%%SeparationName:  '.  This
 provides a simple mechanism for users and external applications to be informed about
 the names of spot colors with a document.
 
 <p>
-Ghostscript currently limits the size of a pixel to 64 bits.
-Since the tiffsep device uses 8 bits per colorant,  the device can handle
-a maximum of 8 colorants per pass.  However it is possible to
-handle more than 8 colorants by doing multiple passes.  For each
-pass after the first one, the names of all of the separations need
-to be specified via the SeparationColorNames parameter and the
-names of the desired separations need to be specified via the
-SeparationOrder parameter.  It is
-possible to create an overall CMYK composite for more than 8
-colorants by then adding together (via an external application like
-imagemagick) the composite CMYK output files from the individual
-Ghostscript passes.
+Generally Ghostscript will support a maximum of 64 process and spot 
+colors. However the maximum may be smaller if the C compiler that was 
+used to build Ghostscript does not support a 64 bit integer type. MSVC, 
+gcc, and most current compilers do support a 64 integer type. For those 
+compilers that have 32 bits as the largest integer type, then only 4 separations 
+can be produced per Ghostscript pass. However it is possible to handle 
+more than 4 colorants by doing multiple passes. For each pass after the 
+first one, the names of all of the separations need to be specified via 
+the SeparationColorNames parameter and the names of the desired separations 
+need to be specified via the SeparationOrder parameter. For instance, 
+add the following to the command line: <b><tt>-c "<< /SeparationColorNames 
+[ /Name1 /Name2 ] /SeparationOrder [ /Name1 ] >> setpagedevice" -f</tt></b>. 
+This will produce a single separation file for the spot color called 'Name1'. 
+It is possible to create an overall CMYK composite for more than 4 colorants 
+by then adding together (via an external application like imagemagick) 
+the composite CMYK output files from the individual Ghostscript passes. 
+
 </dl>
 </blockquote>
 
@@ -516,18 +522,8 @@ series of devices.
 PSD is the image format used by Adobe Photoshop.
 It is supported by the <tt>psdcmyk</tt> and <tt>psdrgb</tt> devices.
 Of special interest with the <tt>psdcmyk</tt> device is that it supports spot
-colors.  The names of the spot colors
-must be specified prior to opening a page. This can be done via adding the
-following to the command line: <b><tt>-c "<< /SeparationColorNames [ /Name1 /Name2 ]
->> setpagedevice" -f</tt></b>. The <tt>psdcmyk</tt> device will support up to four
-spot colors.
-To view the results properly, a color needs to be assigned to each of
-the spot color planes within Photoshop.  (Ghostscript assigns black as
-the default color for all spot colors in the psdcmyk device.)
-
-
-
-</p>
+colors.  <a href="#tiffsep">See the comments under the tiffsep device
+about the maximum number of spot colors supported by Ghostscript</a>
 
 <h2><a name="High-level"></a>High-level devices</h2>
 

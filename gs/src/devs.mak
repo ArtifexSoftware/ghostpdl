@@ -1575,7 +1575,7 @@ $(DD)tiffgray.dev : $(DEVS_MAK) $(tiffgray_) $(DD)tiffs.dev
 	$(ADDMOD) $(DD)tiffgray -include $(DD)tiffs
 
 $(GLOBJ)gdevtsep.$(OBJ) : $(GLSRC)gdevtsep.c $(PDEVH) $(gdevtifs_h)\
-	$(gdevdevn_h) $(gsequivc_h)
+	$(gdevdevn_h) $(gsequivc_h) $(stdio__h) $(ctype__h)
 	$(GLCC) $(GLO_)gdevtsep.$(OBJ) $(C_) $(GLSRC)gdevtsep.c
 
 # TIFF RGB, no compression

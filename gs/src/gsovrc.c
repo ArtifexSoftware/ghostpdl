@@ -331,6 +331,7 @@ private dev_proc_open_device(overprint_open_device);
 private dev_proc_put_params(overprint_put_params);
 private dev_proc_get_page_device(overprint_get_page_device);
 private dev_proc_create_compositor(overprint_create_compositor);
+private dev_proc_get_color_comp_index(overprint_get_color_comp_index);
 
 private gx_device_procs no_overprint_procs = {
     overprint_open_device,              /* open_device */
@@ -383,7 +384,7 @@ private gx_device_procs no_overprint_procs = {
     0,                                  /* end_transparency_mask */
     0,                                  /* discard_transparency_layer */
     0,                                  /* get_color_mapping_procs */
-    0,                                  /* get_color_comp_index */
+    overprint_get_color_comp_index,	/* get_color_comp_index */
     0,                                  /* encode_color */
     0                                   /* decode_color */
 };
@@ -469,7 +470,7 @@ private gx_device_procs generic_overprint_procs = {
     0,                                  /* end_transparency_mask */
     0,                                  /* discard_transparency_layer */
     0,                                  /* get_color_mapping_procs */
-    0,                                  /* get_color_comp_index */
+    overprint_get_color_comp_index,	/* get_color_comp_index */
     0,                                  /* encode_color */
     0                                   /* decode_color */
 };
@@ -525,7 +526,7 @@ private gx_device_procs sep_overprint_procs = {
     0,                                  /* end_transparency_mask */
     0,                                  /* discard_transparency_layer */
     0,                                  /* get_color_mapping_procs */
-    0,                                  /* get_color_comp_index */
+    overprint_get_color_comp_index,	/* get_color_comp_index */
     0,                                  /* encode_color */
     0                                   /* decode_color */
 };
@@ -765,6 +766,29 @@ overprint_put_params(gx_device * dev, gs_param_list * plist)
         gx_device_decache_colors(dev);
         if (!tdev->is_open)
             code = gs_closedevice(dev);
+    }
+    return code;
+}
+
+/*
+ * If the target device 'auto detects' new spot colors, then it will
+ * change its color_info data.  Make sure that we have a current copy.
+ */
+int
+overprint_get_color_comp_index(gx_device * dev, const char * pname,
+					int name_size, int component_type)
+{
+    overprint_device_t * opdev = (overprint_device_t *)dev;
+    gx_device * tdev = opdev->target;
+    int code;
+
+    if (tdev == 0)
+	code = gx_error_get_color_comp_index(dev, pname,
+				name_size, component_type);
+    else {
+	code = dev_proc(tdev, get_color_comp_index)(tdev, pname,
+				name_size, component_type);
+        opdev->color_info = tdev->color_info;
     }
     return code;
 }

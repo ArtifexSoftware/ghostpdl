@@ -98,8 +98,7 @@ private gx_color_index
                 encode_proc = gx_default_encode_color;
             else
                 encode_proc = gx_default_encode_color;
-        } else
-            dprintf("get_encode_color: no color encoding information");
+        }
     }
 
     return encode_proc;

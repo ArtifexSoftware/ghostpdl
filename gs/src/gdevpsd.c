@@ -52,6 +52,8 @@ private dev_proc_get_color_mapping_procs(get_psd_color_mapping_procs);
 private dev_proc_get_color_comp_index(psd_get_color_comp_index);
 private dev_proc_encode_color(psd_encode_color);
 private dev_proc_decode_color(psd_decode_color);
+private dev_proc_encode_color(psd_encode_compressed_color);
+private dev_proc_decode_color(psd_decode_compressed_color);
 private dev_proc_update_spot_equivalent_colors(psd_update_spot_equivalent_colors);
 
 /* This is redundant with color_info.cm_name. We may eliminate this
@@ -95,13 +97,17 @@ typedef struct psd_device_s {
 private 
 ENUM_PTRS_WITH(psd_device_enum_ptrs, psd_device *pdev)
 {
+    if (index == 0)
+	ENUM_RETURN(pdev->devn_params.compressed_color_list);
+    index--;
     if (index < pdev->devn_params.separations.num_separations)
 	ENUM_RETURN(pdev->devn_params.separations.names[index].data);
     ENUM_PREFIX(st_device_printer,
 		    pdev->devn_params.separations.num_separations);
+    return 0;
 }
-
 ENUM_PTRS_END
+
 private RELOC_PTRS_WITH(psd_device_reloc_ptrs, psd_device *pdev)
 {
     RELOC_PREFIX(st_device_printer);
@@ -112,6 +118,7 @@ private RELOC_PTRS_WITH(psd_device_reloc_ptrs, psd_device *pdev)
 	    RELOC_PTR(psd_device, devn_params.separations.names[i].data);
 	}
     }
+    RELOC_PTR(psd_device, devn_params.compressed_color_list);
 }
 RELOC_PTRS_END
 
@@ -131,7 +138,7 @@ gs_private_st_composite_final(st_psd_device, psd_device,
 /*
  * Macro definition for psd device procedures
  */
-#define device_procs(get_color_mapping_procs)\
+#define device_procs(get_color_mapping_procs, encode_color, decode_color)\
 {	psd_prn_open,\
 	gx_default_get_initial_matrix,\
 	NULL,				/* sync_output */\
@@ -183,8 +190,8 @@ gs_private_st_composite_final(st_psd_device, psd_device,
 	NULL,				/* discard_transparency_layer */\
 	get_color_mapping_procs,	/* get_color_mapping_procs */\
 	psd_get_color_comp_index,	/* get_color_comp_index */\
-	psd_encode_color,		/* encode_color */\
-	psd_decode_color,		/* decode_color */\
+	encode_color,			/* encode_color */\
+	decode_color,			/* decode_color */\
 	NULL,				/* pattern_manage */\
 	NULL,				/* fill_rectangle_hl_color */\
 	NULL,				/* include_color_space */\
@@ -207,7 +214,7 @@ private fixed_colorant_name DeviceRGBComponents[] = {
 	0		/* List terminator */
 };
 
-#define psd_device_body(procs, dname, ncomp, pol, depth, mg, mc, cn)\
+#define psd_device_body(procs, dname, ncomp, pol, depth, mg, mc, sl, cn)\
     std_device_full_body_type_extended(psd_device, &procs, dname,\
 	  &st_psd_device,\
 	  (int)((long)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10),\
@@ -219,7 +226,7 @@ private fixed_colorant_name DeviceRGBComponents[] = {
 	  depth, 0,		/* Depth, GrayIndex */\
 	  mg, mc,		/* MaxGray, MaxColor */\
 	  mg + 1, mc + 1,	/* DitherGray, DitherColor */\
-	  GX_CINFO_SEP_LIN,	/* Linear & Separable */\
+	  sl,			/* Linear & Separable? */\
 	  cn,			/* Process color model name */\
 	  0, 0,			/* offsets */\
 	  0, 0, 0, 0		/* margins */\
@@ -229,11 +236,12 @@ private fixed_colorant_name DeviceRGBComponents[] = {
 /*
  * PSD device with RGB process color model.
  */
-private const gx_device_procs spot_rgb_procs = device_procs(get_psdrgb_color_mapping_procs);
+private const gx_device_procs spot_rgb_procs =
+    device_procs(get_psdrgb_color_mapping_procs, psd_encode_color, psd_decode_color);
 
 const psd_device gs_psdrgb_device =
 {   
-    psd_device_body(spot_rgb_procs, "psdrgb", 3, GX_CINFO_POLARITY_ADDITIVE, 24, 255, 255, "DeviceRGB"),
+    psd_device_body(spot_rgb_procs, "psdrgb", 3, GX_CINFO_POLARITY_ADDITIVE, 24, 255, 255, GX_CINFO_SEP_LIN, "DeviceRGB"),
     /* devn_params specific parameters */
     { 8,	/* Bits per color - must match ncomp, depth, etc. above */
       DeviceRGBComponents,	/* Names of color model colorants */
@@ -250,24 +258,38 @@ const psd_device gs_psdrgb_device =
 
 /*
  * Select the default number of components based upon the number of bits
- * that we have in a gx_color_index
+ * that we have in a gx_color_index.  If we have 64 bits then we can compress
+ * the colorant data.  This allows us to handle more colorants.  However the
+ * compressed encoding is not separable.  If we do not have 64 bits then we
+ * use a simple non-compressable encoding.
  */
-#define NC ((arch_sizeof_color_index <= 8) ? arch_sizeof_color_index : 8)
+#if USE_COMPRESSED_ENCODING
+#define NC GX_DEVICE_COLOR_MAX_COMPONENTS 
+#define SL GX_CINFO_SEP_LIN_NONE
+#define ENCODE_COLOR psd_encode_compressed_color
+#define DECODE_COLOR psd_decode_compressed_color
+#else
+#define NC ARCH_SIZEOF_GX_COLOR_INDEX
+#define SL GX_CINFO_SEP_LIN
+#define ENCODE_COLOR psd_encode_color
+#define DECODE_COLOR psd_decode_color
+#endif
+#define GCIB (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
 
 /*
  * PSD device with CMYK process color model and spot color support.
  */
 private const gx_device_procs spot_cmyk_procs
-		= device_procs(get_psd_color_mapping_procs);
+	= device_procs(get_psd_color_mapping_procs, ENCODE_COLOR, DECODE_COLOR);
 
 const psd_device gs_psdcmyk_device =
 {   
-    psd_device_body(spot_cmyk_procs, "psdcmyk", NC, GX_CINFO_POLARITY_SUBTRACTIVE, NC * 8, 255, 255, "DeviceCMYK"),
+    psd_device_body(spot_cmyk_procs, "psdcmyk", NC, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, 255, 255, SL, "DeviceCMYK"),
     /* devn_params specific parameters */
     { 8,	/* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,	/* Names of color model colorants */
       4,			/* Number colorants for CMYK */
-      NC,			/* MaxSeparations has not been specified */
+      0,			/* MaxSeparations has not been specified */
       {0},			/* SeparationNames */
       0,			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
@@ -278,6 +300,9 @@ const psd_device gs_psdcmyk_device =
 };
 
 #undef NC
+#undef SL
+#undef ENCODE_COLOR
+#undef DECODE_COLOR
 
 /* Open the psd devices */
 int
@@ -285,8 +310,14 @@ psd_prn_open(gx_device * pdev)
 {
     int code = gdev_prn_open(pdev);
 
+#if !USE_COMPRESSED_ENCODING
+    /*
+     * If we are using the compressed encoding scheme, then set the separable
+     * and linear info.
+     */
     set_linear_color_bits_mask_shift(pdev);
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+#endif
     return code;
 }
 
@@ -499,6 +530,29 @@ psd_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 	color >>= bpc;
     }
     return 0;
+}
+
+/*
+ * Encode a list of colorant values into a gx_color_index_value.
+ * With 64 bit gx_color_index values, we compress the colorant values.  This
+ * allows us to handle more than 8 colorants.
+ */
+private gx_color_index
+psd_encode_compressed_color(gx_device *dev, const gx_color_value colors[])
+{
+    return devn_encode_compressed_color(dev, colors, &(((psd_device *)dev)->devn_params));
+}
+
+/*
+ * Decode a gx_color_index value back to a list of colorant values.
+ * With 64 bit gx_color_index values, we compress the colorant values.  This
+ * allows us to handle more than 8 colorants.
+ */
+private int
+psd_decode_compressed_color(gx_device * dev, gx_color_index color, gx_color_value * out)
+{
+    return devn_decode_compressed_color(dev, color, out,
+		    &(((psd_device *)dev)->devn_params));
 }
 
 /*
@@ -1031,37 +1085,46 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
     int i, j;
     byte *line, *sep_line;
     int base_bytes_pp = xc->base_bytes_pp;
-    int bytes_pp =pdev->color_info.num_components;
     int chan_idx;
     psd_device *xdev = (psd_device *)pdev;
     icmLuBase *luo = xdev->lu_out;
-    byte *row;
+    byte * row, * unpacked;
+    int width = pdev->width;
+    int non_encodable_count = 0;
+    int num_comp = xc->num_channels;
 
     psd_write_16(xc, 0); /* Compression */
 
     line = gs_alloc_bytes(pdev->memory, raster, "psd_write_image_data");
     sep_line = gs_alloc_bytes(pdev->memory, xc->width, "psd_write_sep_line");
+    unpacked = gs_alloc_bytes(pdev->memory, width *num_comp,
+							"psd_write_image");
+    if (line == NULL || sep_line == NULL || unpacked == NULL)
+	return_error(gs_error_VMerror);
 
     /* Print the output planes */
-    for (chan_idx = 0; chan_idx < xc->num_channels; chan_idx++) {
+    for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
 	for (j = 0; j < xc->height; ++j) {
 	    int data_pos = xc->chnl_to_position[chan_idx];
 
 	    /* Check if the separation is present in the SeparationOrder */
 	    if (data_pos >= 0) {
 	        code = gdev_prn_get_bits(pdev, j, line, &row);
+	        /* Unpack the encoded color info */
+	        non_encodable_count += devn_unpack_row((gx_device *)pdev,
+			num_comp, &(xdev->devn_params), width, row, unpacked);
 	        if (luo == NULL) {
 		    for (i = 0; i < xc->width; ++i) {
 		        if (base_bytes_pp == 3) {
 			    /* RGB */
-			    sep_line[i] = row[i*bytes_pp + data_pos];
+			    sep_line[i] = unpacked[i * num_comp + data_pos];
 		        } else {
 			    /* CMYK */
-			    sep_line[i] = 255 - row[i*bytes_pp + data_pos];
+			    sep_line[i] = 255 - unpacked[i * num_comp + data_pos];
 		        }
 		    }
 	        } else {
-		    psd_calib_row(xc, &sep_line, row, data_pos, luo);
+		    psd_calib_row(xc, &sep_line, unpacked, data_pos, luo);
 	        }	
 	        psd_write(xc, sep_line, xc->width);
 	    } else {

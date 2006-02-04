@@ -23,6 +23,8 @@
 #include "gdevtifs.h"
 #include "gdevdevn.h"
 #include "gsequivc.h"
+#include "stdio_.h"
+#include "ctype_.h"
 
 /*
  * Some of the code in this module is based upon the gdevtfnx.c module.
@@ -236,6 +238,8 @@ private dev_proc_get_color_mapping_procs(tiffsep_get_color_mapping_procs);
 private dev_proc_get_color_comp_index(tiffsep_get_color_comp_index);
 private dev_proc_encode_color(tiffsep_encode_color);
 private dev_proc_decode_color(tiffsep_decode_color);
+private dev_proc_encode_color(tiffsep_encode_compressed_color);
+private dev_proc_decode_color(tiffsep_decode_compressed_color);
 private dev_proc_update_spot_equivalent_colors(tiffsep_update_spot_equivalent_colors);
 
 
@@ -260,13 +264,17 @@ typedef struct tiffsep_device_s {
 private 
 ENUM_PTRS_WITH(tiffsep_device_enum_ptrs, tiffsep_device *pdev)
 {
+    if (index == 0)
+	ENUM_RETURN(pdev->devn_params.compressed_color_list);
+    index--;
     if (index < pdev->devn_params.separations.num_separations)
 	ENUM_RETURN(pdev->devn_params.separations.names[index].data);
     ENUM_PREFIX(st_device_printer,
 		    pdev->devn_params.separations.num_separations);
+    return 0;
 }
-
 ENUM_PTRS_END
+
 private RELOC_PTRS_WITH(tiffsep_device_reloc_ptrs, tiffsep_device *pdev)
 {
     RELOC_PREFIX(st_device_printer);
@@ -277,6 +285,7 @@ private RELOC_PTRS_WITH(tiffsep_device_reloc_ptrs, tiffsep_device *pdev)
 	    RELOC_PTR(tiffsep_device, devn_params.separations.names[i].data);
 	}
     }
+    RELOC_PTR(tiffsep_device, devn_params.compressed_color_list);
 }
 RELOC_PTRS_END
 
@@ -296,7 +305,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
 /*
  * Macro definition for tiffsep device procedures
  */
-#define device_procs \
+#define device_procs(encode_color, decode_color) \
 {	tiffsep_prn_open,\
 	gx_default_get_initial_matrix,\
 	NULL,				/* sync_output */\
@@ -348,8 +357,8 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
 	NULL,				/* discard_transparency_layer */\
 	tiffsep_get_color_mapping_procs,/* get_color_mapping_procs */\
 	tiffsep_get_color_comp_index,	/* get_color_comp_index */\
-	tiffsep_encode_color,		/* encode_color */\
-	tiffsep_decode_color,		/* decode_color */\
+	encode_color,			/* encode_color */\
+	decode_color,			/* decode_color */\
 	NULL,				/* pattern_manage */\
 	NULL,				/* fill_rectangle_hl_color */\
 	NULL,				/* include_color_space */\
@@ -359,7 +368,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
 	tiffsep_update_spot_equivalent_colors /* update_spot_equivalent_colors */\
 }
 
-#define tiffsep_device_body(procs, dname, ncomp, pol, depth, mg, mc, cn)\
+#define tiffsep_device_body(procs, dname, ncomp, pol, depth, mg, mc, sl, cn)\
     std_device_full_body_type_extended(tiffsep_device, &procs, dname,\
 	  &st_tiffsep_device,\
 	  (int)((long)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10),\
@@ -371,7 +380,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
 	  depth, 0,		/* Depth, GrayIndex */\
 	  mg, mc,		/* MaxGray, MaxColor */\
 	  mg + 1, mc + 1,	/* DitherGray, DitherColor */\
-	  GX_CINFO_SEP_LIN,	/* Linear & Separable */\
+	  sl,			/* Linear & Separable? */\
 	  cn,			/* Process color model name */\
 	  0, 0,			/* offsets */\
 	  0, 0, 0, 0		/* margins */\
@@ -383,23 +392,38 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
 
 /*
  * Select the default number of components based upon the number of bits
- * that we have in a gx_color_index
+ * that we have in a gx_color_index.  If we have 64 bits then we can compress
+ * the colorant data.  This allows us to handle more colorants.  However the
+ * compressed encoding is not separable.  If we do not have 64 bits then we
+ * use a simple non-compressable encoding.
  */
-#define NC ((arch_sizeof_color_index <= 8) ? arch_sizeof_color_index : 8)
+#if USE_COMPRESSED_ENCODING
+#define NC GX_DEVICE_COLOR_MAX_COMPONENTS 
+#define SL GX_CINFO_SEP_LIN_NONE
+#define ENCODE_COLOR tiffsep_encode_compressed_color
+#define DECODE_COLOR tiffsep_decode_compressed_color
+#else
+#define NC ARCH_SIZEOF_GX_COLOR_INDEX
+#define SL GX_CINFO_SEP_LIN
+#define ENCODE_COLOR tiffsep_encode_color
+#define DECODE_COLOR tiffsep_decode_color
+#endif
+#define GCIB (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
 
 /*
  * TIFF device with CMYK process color model and spot color support.
  */
-private const gx_device_procs spot_cmyk_procs = device_procs;
+private const gx_device_procs spot_cmyk_procs =
+		device_procs(ENCODE_COLOR, DECODE_COLOR);
 
 const tiffsep_device gs_tiffsep_device =
 {   
-    tiffsep_device_body(spot_cmyk_procs, "tiffsep", NC, GX_CINFO_POLARITY_SUBTRACTIVE, NC * 8, MAX_COLOR_VALUE, MAX_COLOR_VALUE, "DeviceCMYK"),
+    tiffsep_device_body(spot_cmyk_procs, "tiffsep", NC, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, SL, "DeviceCMYK"),
     /* devn_params specific parameters */
-    { 8,		/* Bits per color - must match ncomp, depth, etc. above */
+    { 8,			/* Not used - Bits per color */
       DeviceCMYKComponents,	/* Names of color model colorants */
       4,			/* Number colorants for CMYK */
-      NC,			/* MaxSeparations:  our current limit is 8 bytes */
+      0,			/* MaxSeparations has not been specified */
       {0},			/* SeparationNames */
       0,			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
@@ -408,6 +432,9 @@ const tiffsep_device gs_tiffsep_device =
 };
 
 #undef NC
+#undef SL
+#undef ENCODE_COLOR
+#undef DECODE_COLOR
 
 /*
  * The following procedures are used to map the standard color spaces into
@@ -454,8 +481,33 @@ tiffsep_get_color_mapping_procs(const gx_device * dev)
 {
     return &tiffsep_cm_procs;
 }
+
 /*
  * Encode a list of colorant values into a gx_color_index_value.
+ * With 64 bit gx_color_index values, we compress the colorant values.  This
+ * allows us to handle more than 8 colorants.
+ */
+private gx_color_index
+tiffsep_encode_compressed_color(gx_device *dev, const gx_color_value colors[])
+{
+    return devn_encode_compressed_color(dev, colors, &(((tiffsep_device *)dev)->devn_params));
+}
+
+/*
+ * Decode a gx_color_index value back to a list of colorant values.
+ * With 64 bit gx_color_index values, we compress the colorant values.  This
+ * allows us to handle more than 8 colorants.
+ */
+private int
+tiffsep_decode_compressed_color(gx_device * dev, gx_color_index color, gx_color_value * out)
+{
+    return devn_decode_compressed_color(dev, color, out,
+		    &(((tiffsep_device *)dev)->devn_params));
+}
+
+/*
+ * Encode a list of colorant values into a gx_color_index_value.
+ * With 32 bit gx_color_index values, we simply pack values.
  */
 private gx_color_index
 tiffsep_encode_color(gx_device *dev, const gx_color_value colors[])
@@ -475,6 +527,7 @@ tiffsep_encode_color(gx_device *dev, const gx_color_value colors[])
 
 /*
  * Decode a gx_color_index value back to a list of colorant values.
+ * With 32 bit gx_color_index values, we simply pack values.
  */
 private int
 tiffsep_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
@@ -583,13 +636,37 @@ copy_separation_name(tiffsep_device * pdev,
 }
 
 /*
+ * Determine the length of the base file name.  If the file name includes
+ * the extension '.tif', then we remove it from the length of the file
+ * name.
+ */
+private int
+length_base_file_name(tiffsep_device * pdev)
+{
+    int base_filename_length = strlen(pdev->fname);
+
+#define REMOVE_TIF_FROM_BASENAME 1
+#if REMOVE_TIF_FROM_BASENAME
+    if (base_filename_length > 4 &&
+	pdev->fname[base_filename_length - 4] == '.'  &&
+	toupper(pdev->fname[base_filename_length - 3]) == 'T'  &&
+	toupper(pdev->fname[base_filename_length - 2]) == 'I'  &&
+	toupper(pdev->fname[base_filename_length - 1]) == 'F')
+	base_filename_length -= 4;
+#endif
+#undef REMOVE_TIF_FROM_BASENAME
+
+    return base_filename_length;
+}
+
+/*
  * Create a name for a separation file.
  */
 private int
 create_separation_file_name(tiffsep_device * pdev, char * buffer,
 				uint max_size, int sep_num)
 {
-    uint base_filename_length = strlen(pdev->fname);
+    uint base_filename_length = length_base_file_name(pdev);
 
     /*
      * In most cases it is more convenient if we append '.tif' to the end
@@ -695,8 +772,14 @@ tiffsep_prn_open(gx_device * pdev)
 {
     int code = gdev_prn_open(pdev);
 
+#if !USE_COMPRESSED_ENCODING
+    /*
+     * If we are using the compressed encoding scheme, then set the separable
+     * and linear info.
+     */
     set_linear_color_bits_mask_shift(pdev);
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+#endif
     return code;
 }
 
@@ -786,7 +869,7 @@ build_cmyk_map(tiffsep_device * pdev, int num_comp,
  */
 private void
 build_cmyk_raster_line(byte * src, byte * dest, int width,
-	int num_comp, int pixel_size, cmyk_composite_map * cmyk_map)
+	int num_comp, cmyk_composite_map * cmyk_map)
 {
     int pixel, comp_num;
     uint temp, cyan, magenta, yellow, black;
@@ -808,7 +891,6 @@ build_cmyk_raster_line(byte * src, byte * dest, int width,
 	    black += cmyk_map_entry->k * temp;
 	    cmyk_map_entry++;
 	}
-	src += pixel_size - num_comp;
 	cyan /= frac_1;
 	magenta /= frac_1;
 	yellow /= frac_1;
@@ -846,10 +928,11 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     short map_comp_to_sep[GX_DEVICE_COLOR_MAX_COMPONENTS];
     cmyk_composite_map cmyk_map[GX_DEVICE_COLOR_MAX_COMPONENTS];
     char name[MAX_FILE_NAME_SIZE];
-    int base_filename_length = strlen(pdev->fname);
+    int base_filename_length = length_base_file_name(tfdev);
     int save_depth = pdev->color_info.depth;
     const char *fmt;
     gs_parsed_file_name_t parsed;
+    int non_encodable_count = 0;
 
     build_comp_to_sep_map(tfdev, map_comp_to_sep);
 
@@ -926,13 +1009,14 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
         int raster = gdev_prn_raster(pdev);
 	int width = tfdev->width;
 	int cmyk_raster = width * NUM_CMYK_COMPONENTS;
-	int bytes_pp = tfdev->color_info.num_components;
 	int pixel, y;
 	byte * line = gs_alloc_bytes(pdev->memory, raster, "tiffsep_print_page");
+	byte * unpacked = gs_alloc_bytes(pdev->memory, width * num_comp,
+							"tiffsep_print_page");
 	byte * sep_line;
 	byte * row;
 
-	if (line == NULL)
+	if (line == NULL || unpacked == NULL)
 	    return_error(gs_error_VMerror);
 	sep_line =
 	    gs_alloc_bytes(pdev->memory, cmyk_raster, "tiffsep_print_page");
@@ -946,18 +1030,21 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 	    code = gdev_prn_get_bits(pdev, y, line, &row);
 	    if (code < 0)
 		break;
+	    /* Unpack the encoded color info */
+	    non_encodable_count += devn_unpack_row((gx_device *)pdev, num_comp,
+			    &(tfdev->devn_params), width, row, unpacked);
 	    /* Write separation data (tiffgray format) */
             for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
-		byte * src = row + comp_num;
+		byte * src = unpacked + comp_num;
 		byte * dest = sep_line;
 		
-		for (pixel = 0; pixel < width; pixel++, dest++, src += bytes_pp)
+		for (pixel = 0; pixel < width; pixel++, dest++, src += num_comp)
 		    *dest = MAX_COLOR_VALUE - *src;    /* Gray is additive */
 	        fwrite((char *)sep_line, width, 1, tfdev->sep_file[comp_num]);
 	    }
 	    /* Write CMYK equivalent data (tiff32nc format) */
-	    build_cmyk_raster_line(row, sep_line, width,
-		num_comp, bytes_pp, cmyk_map);
+	    build_cmyk_raster_line(unpacked, sep_line,
+			    		width, num_comp, cmyk_map);
 	    fwrite((char *)sep_line, cmyk_raster, 1, file);
 	}
 	/* Update the strip data */
@@ -973,5 +1060,19 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 	gs_free_object(pdev->memory, sep_line, "tiffsep_print_page");
     }
 
+#if DEBUG && 0
+    print_compressed_color_list(tfdev->devn_params.compressed_color_list,
+		    			max(16, num_comp));
+#endif
+
+    /*
+     * If we have any non encodable pixels then signal an error.
+     */
+    if (non_encodable_count) {
+        dlprintf1("WARNING:  Non encodable pixels = %d\n", non_encodable_count);
+	return_error(gs_error_rangecheck);
+    }
+
     return code;
 }
+
