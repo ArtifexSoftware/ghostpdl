@@ -531,10 +531,11 @@ top:
 		}
 		if (pair->xfont != 0 &&
 		    alloc_is_since_save((char *)pair->xfont, save)
-		    )
+		    ) {
 		    code = gs_purge_fm_pair(pdir, pair, 1);
 		    if (code < 0)
 			return code;
+		}
 	    }
     }
 
