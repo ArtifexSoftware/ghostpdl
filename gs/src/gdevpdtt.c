@@ -1287,6 +1287,7 @@ pdf_make_text_glyphs_table_unencoded(pdf_char_glyph_pairs_t *cgp,
     gs_char ch;
     gs_const_string gname;
     gs_glyph *gid = (gs_glyph *)pstr->data; /* pdf_text_process allocs enough space. */
+    bool unknown = false;
 
     /* Translate glyph name indices into gscencs.c indices. */
     for (i = 0; i < pstr->size; i++) {
@@ -1295,10 +1296,14 @@ pdf_make_text_glyphs_table_unencoded(pdf_char_glyph_pairs_t *cgp,
 	if (code < 0)
 	    return code;
 	gid[i] = gs_c_name_glyph(gname.data, gname.size);
-	if (gid[i] == GS_NO_GLYPH)
-	    return_error(gs_error_rangecheck);
+	if (gid[i] == GS_NO_GLYPH) {
+	    /* Use global glyph name. */
+	    gid[i] = gdata[i];
+	    unknown = true;
+	}
     }
-
+    if (unknown)
+	return 0; /* Using global glyph names. */
     /* Find an acceptable encodng. */
     for (ei = 0; gs_c_known_encodings[ei]; ei++) {
 	cgp->num_unused_chars = 0;
