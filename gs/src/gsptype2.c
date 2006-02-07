@@ -261,6 +261,7 @@ gx_dc_pattern2_save_dc(
 
     psdc->type = pdevc->type;
     psdc->colors.pattern2.id = pinst->pattern_id;
+    psdc->colors.pattern2.shfill = pinst->shfill;
 }
 
 /* Transform a shading bounding box into device space. */

@@ -482,7 +482,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 /* Write parameters common to all Shadings. */
 private int
 pdf_put_shading_common(cos_dict_t *pscd, const gs_shading_t *psh,
-		       const gs_range_t **ppranges)
+		       bool shfill, const gs_range_t **ppranges)
 {
     gs_shading_type_t type = ShadingType(psh);
     const gs_color_space *pcs = psh->params.ColorSpace;
@@ -497,7 +497,7 @@ pdf_put_shading_common(cos_dict_t *pscd, const gs_shading_t *psh,
 	(code = cos_dict_put_c_key(pscd, "/ColorSpace", &cs_value)) < 0
 	)
 	return code;
-    if (psh->params.Background) {
+    if (psh->params.Background && !shfill) {
 	/****** SCALE Background ******/
 	code = cos_dict_put_c_key_floats(pscd, "/Background",
 				   psh->params.Background->paint.values,
@@ -911,12 +911,12 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	/* Shading has an associated data stream. */
 	cos_become(psco, cos_type_stream);
 	code = pdf_put_shading_common(cos_stream_dict((cos_stream_t *)psco),
-				      psh, &pranges);
+				      psh, pinst->shfill, &pranges);
 	if (code >= 0)
 	    code1 = pdf_put_mesh_shading((cos_stream_t *)psco, psh, pranges);
     } else {
 	cos_become(psco, cos_type_dict);
-	code = pdf_put_shading_common((cos_dict_t *)psco, psh, &pranges);
+	code = pdf_put_shading_common((cos_dict_t *)psco, psh, pinst->shfill, &pranges);
 	if (code >= 0)
 	    code = pdf_put_scalar_shading((cos_dict_t *)psco, psh, pranges);
     }

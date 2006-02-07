@@ -397,6 +397,7 @@ struct gx_device_color_saved_s {
 	}		pattern;
 	struct _pattern2 {
 	    gs_id id;
+	    bool shfill;
 	}		pattern2;
     }                       colors;
     gs_int_point            phase;
