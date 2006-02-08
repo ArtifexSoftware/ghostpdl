@@ -416,7 +416,9 @@ end
             % Assuming the lowest byte of 'value' changes, others don't.
             dup dup length 1 sub               % e [] i offset key_size value_size (keys) (values) (value) (value) l
             2 copy get                         % e [] i offset key_size value_size (keys) (values) (value) (value) l v
-            1 add put                          % e [] i offset key_size value_size (keys) (values) (value')
+            % Modulo 256 increment prevents a rangecheck error when the result is stored in a string.
+            % The adjustment can happen only at the end of the loop where the string is discarded. Bug 688535.
+            1 add 255 and put                  % e [] i offset key_size value_size (keys) (values) (value')
           } for                                % e [] i offset key_size value_size (keys) (values) (value)
         } for
         pop pop pop pop pop pop pop            % e []
