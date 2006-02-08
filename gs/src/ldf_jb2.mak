@@ -85,8 +85,6 @@ ldf_jb2_common_OBJS = \
 	$(LDF_JB2_OBJ)jb2_adt_render_text_region.$(OBJ)		\
 	$(LDF_JB2_OBJ)jb2_adt_segment.$(OBJ)		\
 	$(LDF_JB2_OBJ)jb2_adt_segment_array.$(OBJ)		\
-	$(LDF_JB2_OBJ)jb2_adt_segment_end_of_file.$(OBJ)		\
-	$(LDF_JB2_OBJ)jb2_adt_segment_end_of_page.$(OBJ)		\
 	$(LDF_JB2_OBJ)jb2_adt_segment_end_of_stripe.$(OBJ)		\
 	$(LDF_JB2_OBJ)jb2_adt_segment_generic_region.$(OBJ)		\
 	$(LDF_JB2_OBJ)jb2_adt_segment_halftone_region.$(OBJ)		\
