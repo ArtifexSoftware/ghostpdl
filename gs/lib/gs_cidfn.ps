@@ -166,30 +166,27 @@ pop		% .cidfonttypes
   } .internalstopped {
 		% File is not positionable, or uses hex data.
 		% Load the data now.
-    cleartomark exch (Hex) eq
-      { { currentfile exch readhexstring pop } }
-      { { currentfile exch readstring pop } }
-    ifelse exch
-		% Stack: readproc length
+    cleartomark exch
+    currentfile exch
+    (Hex) eq { /ASCIIHexDecode filter } if
+    exch
+		% Stack: file length
     dup 65400 le {
 		% readstring with a 0-length string causes a rangecheck,
 		% but a data length of 0 is allowed.
-      string dup () ne { 1 index exec } if
+      string dup () ne { 1 index exch readstring pop } if
     } {
       mark 3 1 roll {
-		% Stack: mark str ... readproc length
+		% Stack: mark str ... file length
 	dup 0 eq { pop exit } if
-	dup 65400 .min dup string 3 index exec
-		% Stack: mark str ... readproc length newstrlen newstr
+	dup 65400 .min dup string 3 index exch readstring pop
+		% Stack: mark str ... file length newstrlen newstr
 	4 1 roll sub
       } loop
       counttomark 1 add 1 roll ]
     } ifelse
     /GlyphData exch def
-		% If we were reading hex data, skip past the >.
-    2 get { readhexstring } 0 get eq {
-      currentfile 0 (>) .subfiledecode dup flushfile closefile
-    } if
+    dup currentfile eq { pop } { closefile } ifelse
   } {
 		% File is positionable and binary, just save a pointer.
 		% Stack: (Binary) length -mark- pos
