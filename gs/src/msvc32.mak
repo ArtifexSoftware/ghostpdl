@@ -216,30 +216,56 @@ PVERSION=10208
 ZSRCDIR=zlib
 !endif
 
-# Define the jbig2dec library source location.
-# See jbig2.mak for more information.
-
+# Define which jbig2 library to use
 !ifndef JBIG2_LIB
 JBIG2_LIB=jbig2dec
 !endif
 
+!if "$(JBIG2_LIB)" == "luratech" || "$(JBIG2_LIB)" == "ldf_jb2"
+# Set defaults for using the Luratech JB2 implementation
 !ifndef JBIG2SRCDIR
+# CSDK source code location
+JBIG2SRCDIR=ldf_jb2
+!endif
+!ifndef JBIG2_CFLAGS
+# required compiler flags
+JBIG2_CFLAGS=-DUSE_LDF_JB2 -DWIN32
+!endif
+!else
+# Use jbig2dec by default. See jbig2.mak for more information.
+!ifndef JBIG2SRCDIR
+# location of included jbig2dec library source
 JBIG2SRCDIR=jbig2dec
 !endif
+!endif
 
-# Define the jasper library source location.
-# See jasper.mak for more information.
+# Alternatively, you can build a separate DLL
+# and define SHARE_JBIG2=1 in src/winlib.mak
 
+# Define which jpeg2k library to use
 !ifndef JPX_LIB
 JPX_LIB=jasper
 !endif
 
-# Alternatively, you can build a separate DLL
-# and define SHARE_JPX=1 in src/winlib.mak
-
+!if "$(JPX_LIB)" == "luratech" || "$(JPX_LIB)" == "lwf_jp2"
+# Set defaults for using the Luratech JP2 implementation
+!ifndef JPXSRCDIR
+# CSDK source code location
+JPXSRCDIR=lwf_jp2
+!endif
+!ifndef JPX_CFLAGS
+# required compiler flags
+JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN32
+!endif
+!else
+# Use jasper by default. See jasper.mak for more information.
 !ifndef JPXSRCDIR
 JPXSRCDIR=jasper
 !endif
+!endif
+
+# Alternatively, you can build a separate DLL
+# and define SHARE_JPX=1 in src/winlib.mak
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
