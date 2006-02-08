@@ -73,6 +73,11 @@ typedef struct gx_path_s gx_path;
 typedef struct gx_device_s gx_device;
 #endif
 
+#ifndef gs_color_space_DEFINED
+#  define gs_color_space_DEFINED
+typedef struct gs_color_space_s gs_color_space;
+#endif
+
 extern const gx_device_color_type_t gx_dc_pattern2;
 
 #define gx_dc_type_pattern2 (&gx_dc_pattern2)
@@ -102,8 +107,11 @@ int gs_pattern2_set_shfill(gs_client_color * pcc);
 int gx_dc_pattern2_shade_bbox_transform2fixed(const gs_rect * rect,
 	const gs_imager_state * pis, gs_fixed_rect * rfixed);
 
-			   /* Get a shading bbox. Returns 1 on success. */
+/* Get a shading bbox. Returns 1 on success. */
 int gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox);
+
+/* Get a shading color space. */
+const gs_color_space *gx_dc_pattern2_get_color_space(const gx_device_color * pdevc);
 
 /* Check device color for a possibly self-overlapping shading. */
 bool gx_dc_pattern2_can_overlap(const gx_device_color *pdevc);

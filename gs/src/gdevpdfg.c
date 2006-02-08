@@ -262,6 +262,31 @@ pdf_write_ccolor(gx_device_pdf * pdev, const gs_imager_state * pis,
     return 0;
 }
 
+private inline bool
+is_cspace_allowed_in_stradegy(gx_device_pdf * pdev, gs_color_space_index csi)
+{
+    if (pdev->params.ColorConversionStrategy == ccs_CMYK && 
+	    csi != gs_color_space_index_DeviceCMYK &&
+	    csi != gs_color_space_index_DeviceGray)
+	return false;
+    if (pdev->params.ColorConversionStrategy == ccs_sRGB && 
+	    csi != gs_color_space_index_DeviceRGB && 
+	    csi != gs_color_space_index_DeviceGray)
+	return false;
+    return true;
+}
+
+private inline bool
+is_pattern2_allowed_in_stradegy(gx_device_pdf * pdev, const gx_drawing_color *pdc)
+{
+    const gs_pattern2_instance_t *pinst =
+	    (gs_pattern2_instance_t *)pdc->ccolor.pattern;
+    const gs_shading_t *psh = pinst->template.Shading;
+    const gs_color_space *pcs2 = gx_dc_pattern2_get_color_space(pdc);
+    gs_color_space_index csi = gs_color_space_get_index(pcs2);
+
+    return true;
+}
 
 /* Set the fill or stroke color. */
 private int
@@ -306,15 +331,21 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		    command = ppscc->setgray; 
 		    break;
 		case gs_color_space_index_DeviceRGB:
+		    if (pdev->params.ColorConversionStrategy == ccs_CMYK)
+			goto write_process_color;
 		    command = ppscc->setrgbcolor; 
 		    break;
 		case gs_color_space_index_DeviceCMYK:
+		    if (pdev->params.ColorConversionStrategy == ccs_sRGB)
+			goto write_process_color;
 		    command = ppscc->setcmykcolor; 
 		    break;
 		case gs_color_space_index_Indexed:
 		    if (pdev->CompatibilityLevel <= 1.2) {
 			pcs2 = (const gs_color_space *)&pcs->params.indexed.base_space;
 			csi = gs_color_space_get_index(pcs2);
+			if (!is_cspace_allowed_in_stradegy(pdev, csi))
+			    goto write_process_color;
 			if (csi == gs_color_space_index_Separation) {
 			    pcs2 = (const gs_color_space *)&pcs2->params.separation.alt_space;
 			    goto check_pcs2;
@@ -327,6 +358,8 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 			pcs2 = (const gs_color_space *)&pcs->params.separation.alt_space;
 			check_pcs2:
 			csi = gs_color_space_get_index(pcs2);
+			if (!is_cspace_allowed_in_stradegy(pdev, csi))
+			    goto write_process_color;
 			switch(gs_color_space_get_index(pcs2)) {
 			    case gs_color_space_index_DevicePixel :
 			    case gs_color_space_index_DeviceN:
@@ -344,6 +377,10 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 	    		goto write_process_color;
 		    goto scn;
 		default :
+		    if (pdev->params.ColorConversionStrategy == ccs_CMYK)
+			goto write_process_color;
+		    if (pdev->params.ColorConversionStrategy == ccs_sRGB)
+			goto write_process_color;
 	        scn:
 		    command = ppscc->setcolorn;
 		    if (!gx_hld_saved_color_same_cspace(&temp, psc)) {
@@ -385,6 +422,8 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 			code = pdf_write_ccolor(pdev, pis, pcc);
 		} else if (pdc->type == &gx_dc_pattern2) {
 		    if (pdev->CompatibilityLevel <= 1.2)
+	    		return_error(gs_error_rangecheck);
+		    if (!is_pattern2_allowed_in_stradegy(pdev, pdc))
 	    		return_error(gs_error_rangecheck);
 		    code1 = pdf_put_pattern2(pdev, pdc, ppscc, &pres);
 		} else

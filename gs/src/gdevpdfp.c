@@ -219,6 +219,8 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     float cl = (float)pdev->CompatibilityLevel;
     bool locked = pdev->params.LockDistillerParams;
     gs_param_name param_name;
+    enum psdf_color_conversion_strategy save_ccs = pdev->params.ColorConversionStrategy;
+  
 
     pdev->pdf_memory = gs_memory_stable(pdev->memory);
     /*
@@ -418,6 +420,18 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     ecode = gdev_psdf_put_params(dev, plist);
     if (ecode < 0)
 	goto fail;
+    if (cl <= 1.3 && pdev->params.ColorConversionStrategy == ccs_CMYK) {
+	pdev->params.ColorConversionStrategy = save_ccs;
+	ecode = gs_note_error(gs_error_rangecheck);
+    }
+    if ((pdev->params.ColorConversionStrategy == ccs_CMYK &&
+	 strcmp(pdev->color_info.cm_name, "DeviceCMYK")) ||
+	(pdev->params.ColorConversionStrategy == ccs_sRGB &&
+	  strcmp(pdev->color_info.cm_name, "DeviceRGB"))) {
+	eprintf("ColorConversionStrategy is incompatible to ProcessColorModel.\n");
+	ecode = gs_note_error(gs_error_rangecheck);
+	pdev->params.ColorConversionStrategy = save_ccs;
+    }
     if (pdev->HaveTrueTypes && pdev->version == psdf_version_level2) {
 	pdev->version = psdf_version_level2_with_TT ;
     }

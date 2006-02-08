@@ -139,7 +139,6 @@ int pdf_set_drawing_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		      gx_hl_saved_color * psc,
 		      bool *used_process_color,
 		      const psdf_set_color_commands_t *ppscc);
-
 /*
  * Bring the graphics state up to date for a drawing operation.
  * (Text uses either fill or stroke.)

@@ -121,12 +121,13 @@ typedef struct psdf_distiller_params_s {
 	ccs_UseDeviceDependentColor, /* not in Acrobat Distiller 4.0 */
 	ccs_UseDeviceIndependentColor,
 	ccs_UseDeviceIndependentColorForImages,
-	ccs_sRGB
+	ccs_sRGB,
+	ccs_CMYK,
     } ColorConversionStrategy;
 #define psdf_ccs_names\
 	"LeaveColorUnchanged", "UseDeviceDependentColor",\
 	"UseDeviceIndependentColor", "UseDeviceIndependentColorForImages",\
-	"sRGB"
+	"sRGB", "CMYK"
     bool PreserveHalftoneInfo;
     bool PreserveOverprintSettings;
     enum psdf_transfer_function_info {

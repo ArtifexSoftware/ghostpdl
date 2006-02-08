@@ -584,7 +584,16 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     default:
 	break;
     }
-
+    if (pdev->params.ColorConversionStrategy == ccs_CMYK && 
+	    csi != gs_color_space_index_DeviceCMYK &&
+	    csi != gs_color_space_index_DeviceGray &&
+	    csi != gs_color_space_index_Pattern)
+	return_error(gs_error_rangecheck);
+    if (pdev->params.ColorConversionStrategy == ccs_sRGB && 
+	    csi != gs_color_space_index_DeviceRGB && 
+	    csi != gs_color_space_index_DeviceGray &&
+	    csi != gs_color_space_index_Pattern)
+	return_error(gs_error_rangecheck);
     /* Check whether we already have a PDF object for this color space. */
     if (pcs->id != gs_no_id)
 	pres = pdf_find_resource_by_gs_id(pdev, resourceColorSpace, pcs->id);
