@@ -639,8 +639,7 @@ setglobal
 % The state dictionary for the embedded Type 1 font reading procedure
 % has the following keys and values:
 %	data - stream (filter)
-%	buffer, buffer2 - string
-%	hexify - procedure to convert buffer to hex if needed
+%	buffer - string
 %	leftstr - string containing (non-negative) integer
 %	sectionstr - string containing a character 0 .. 3
 %	stream - (stream) dictionary
@@ -714,8 +713,6 @@ end readonly def
      /stream 1 index def
      true resolvestream /data exch def
      /buffer 1000 string def		% arbitrary
-     /buffer2 buffer length 2.1 div cvi 1 sub string def
-     /hexify /buf2hex load def
    currentdict end
    /type1read cvx 2 array astore cvx dup 0 get /proc 2 index put
    readfontfilter
@@ -792,9 +789,8 @@ end readonly def
   dup 0 eq {
     pop sectionstr 0 2 put
     stream /Length2 oget
-			% Determine whether to hexify data for eexec.
     dup 8 lt {
-      type1read2	% Hexify.
+      type1read2
     } {
       PDFDEBUG { (read2 ) print } if
       pfbhdr 0 get 16#80 eq {
@@ -812,25 +808,11 @@ end readonly def
 	} if
 	  pop
       } if
-      buffer2 type1readdata exch
-			% The check doesn't have to be 100% accurate:
-			% hexifying is always OK.
-      dup 0 8 getinterval 0 exch { or } forall
-      128 ge {
-	/hexify { } store
-	/buffer2 buffer def	% We don't need an intermediate buffer.
-      } if hexify exch
+      buffer type1readdata
     } ifelse
   } {
     buffer type1readdata
   } ifelse
-} bdef
-
-% Convert a string from binary to hex for eexec.
-% Free variables: buffer.
-/buf2hex {		% <string> buf2hex <hexstring>
-  buffer /ASCIIHexEncode filter dup 3 -1 roll writestring closefile
-  buffer (>) search pop exch pop exch pop
 } bdef
 
 % Read the next block of the encrypted portion.
@@ -874,7 +856,7 @@ readonly def
        }
       ifelse
     }
-    { buffer2 type1readdata exch hexify exch
+    { buffer type1readdata
     }
    ifelse
 } bdef
