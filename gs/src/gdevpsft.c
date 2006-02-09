@@ -511,15 +511,16 @@ write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
      * We don't bother to set most of the fields.  The really important
      * ones, which affect character mapping, are usFirst/LastCharIndex.
      * We also need to set usWeightClass and usWidthClass to avoid
-     * crashing ttfdump.
+     * crashing ttfdump. Version 1 86-byte structure has all the fields
+     * we need.
      */
     memset(&os2, 0, sizeof(os2));
     put_u16(os2.version, 1);
     put_u16(os2.usWeightClass, 400); /* Normal */
     put_u16(os2.usWidthClass, 5); /* Normal */
     update_OS_2(&os2, first_glyph, num_glyphs);
-    stream_write(s, &os2, sizeof(os2));
-    put_pad(s, sizeof(os2));
+    stream_write(s, &os2, offset_of(ttf_OS_2_t, sxHeight[0]));
+    put_pad(s, offset_of(ttf_OS_2_t, sxHeight[0]));
 }
 
 /* ------ post ------ */
