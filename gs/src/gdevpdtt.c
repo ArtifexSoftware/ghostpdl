@@ -348,6 +348,9 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	    )
 	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
 					 pcpath, mem, ppte);
+    else if (text->operation & TEXT_DO_ANY_CHARPATH)
+	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
+					 pcpath, mem, ppte);
 
     /* Allocate and initialize the enumerator. */
 
