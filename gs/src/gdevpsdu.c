@@ -355,7 +355,9 @@ psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
 	if ((code = gs_jpeg_create_compress(ss)) < 0)
 	    goto dcte_fail;	/* correct to do jpeg_destroy here */
 	/* Read parameters from dictionary */
-	s_DCTE_put_params((gs_param_list *)&rcc_list, ss); /* ignore errors */
+	code = s_DCTE_put_params((gs_param_list *)&rcc_list, ss); /* ignore errors */
+	if (code < 0)
+	    return code;
 	/* Create the filter. */
 	jcdp->template = s_DCTE_template;
 	/* Make sure we get at least a full scan line of input. */
