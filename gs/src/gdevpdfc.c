@@ -594,6 +594,10 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    csi != gs_color_space_index_DeviceGray &&
 	    csi != gs_color_space_index_Pattern)
 	return_error(gs_error_rangecheck);
+    if (pdev->params.ColorConversionStrategy == ccs_Gray && 
+	    csi != gs_color_space_index_DeviceGray &&
+	    csi != gs_color_space_index_Pattern)
+	return_error(gs_error_rangecheck);
     /* Check whether we already have a PDF object for this color space. */
     if (pcs->id != gs_no_id)
 	pres = pdf_find_resource_by_gs_id(pdev, resourceColorSpace, pcs->id);

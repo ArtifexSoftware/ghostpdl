@@ -574,17 +574,21 @@ Optimization (linearization) is implemented with a separate program,
 
 <p>
 <a name="note_6">(note 6)</a>
-Currently, colors for images and shadings are left in the color space
-specified in the PostScript input, except for
-<b><tt>ConvertCMYKImagesToRGB</tt></b>; the current color in the graphics
-state (used for fill, stroke, text, and imagemask) is always converted to
-the color space specified by the current value of
-<b><tt>ProcessColorModel</tt></b>. The intended behavior is the same as for
-Acrobat Distiller, except that if <b><tt>ColorConversionStrategy</tt></b> is
-set to <b><tt>/UseDeviceDependentColor</tt></b>, colors are converted to the
-color space specified by <b><tt>ProcessColorModel</tt></b> rather than
-always to <b><tt>/DeviceRGB</tt></b>.
 
+Ghostscript specifics : The value <tt><b>UseDeviceIndependentColor</tt></b>
+requires the device parameter <tt><b>UseCIEColor</tt></b> to be set to <tt><b>true</tt></b>.
+The value <tt><b>UseDeviceIndependentColorForImages</tt></b> works same as <tt><b>UseDeviceIndependentColor</tt></b>.
+The value <tt><b>CMYK</tt></b> works with any <tt><b>CompatibilityLevel</tt></b> and
+requires the device parameter <tt><b>ProcessColorModel</tt></b> to be set to <tt><b>DeviceCMYK</tt></b>.
+The value <tt><b>sRGB</tt></b>
+requires the device parameter <tt><b>ProcessColorModel</tt></b> to be set to <tt><b>DeviceRGB</tt></b>,
+and actually converts to RBG with the default Ghostscript conversion.
+The new Ghostscript-specific value <tt><b>Gray</tt></b>
+requires the device parameter <tt><b>ProcessColorModel</tt></b> to be set to <tt><b>DeviceGray</tt></b>,
+and converts all colors to DeviceGray.
+The old Ghostscript-specific value <tt><b>UseDeviceDependentColor</tt></b> 
+is now depricated. It is automaticly replaced with <tt><b>sRGB</tt></b>,
+<tt><b>CMYK</tt></b>, or <tt><b>Gray</tt></b>.
 <p>
 <a name="note_7">(note 7)</a>
  The default image parameter dictionary is

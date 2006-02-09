@@ -123,11 +123,12 @@ typedef struct psdf_distiller_params_s {
 	ccs_UseDeviceIndependentColorForImages,
 	ccs_sRGB,
 	ccs_CMYK,
+	ccs_Gray
     } ColorConversionStrategy;
 #define psdf_ccs_names\
 	"LeaveColorUnchanged", "UseDeviceDependentColor",\
 	"UseDeviceIndependentColor", "UseDeviceIndependentColorForImages",\
-	"sRGB", "CMYK"
+	"sRGB", "CMYK", "Gray"
     bool PreserveHalftoneInfo;
     bool PreserveOverprintSettings;
     enum psdf_transfer_function_info {

@@ -420,17 +420,45 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     ecode = gdev_psdf_put_params(dev, plist);
     if (ecode < 0)
 	goto fail;
-    if (cl <= 1.3 && pdev->params.ColorConversionStrategy == ccs_CMYK) {
-	pdev->params.ColorConversionStrategy = save_ccs;
-	ecode = gs_note_error(gs_error_rangecheck);
-    }
     if ((pdev->params.ColorConversionStrategy == ccs_CMYK &&
 	 strcmp(pdev->color_info.cm_name, "DeviceCMYK")) ||
 	(pdev->params.ColorConversionStrategy == ccs_sRGB &&
-	  strcmp(pdev->color_info.cm_name, "DeviceRGB"))) {
+	  strcmp(pdev->color_info.cm_name, "DeviceRGB")) ||
+	(pdev->params.ColorConversionStrategy == ccs_Gray &&
+	  strcmp(pdev->color_info.cm_name, "DeviceGray"))) {
 	eprintf("ColorConversionStrategy is incompatible to ProcessColorModel.\n");
 	ecode = gs_note_error(gs_error_rangecheck);
 	pdev->params.ColorConversionStrategy = save_ccs;
+    }
+    if (pdev->params.ColorConversionStrategy == ccs_UseDeviceIndependentColor) {
+	if (!pdev->UseCIEColor) {
+	    eprintf("Set UseCUEColor for UseDeviceIndependentColor to work properly.\n");
+	    ecode = gs_note_error(gs_error_rangecheck);
+	    pdev->UseCIEColor = true;
+	}
+    }
+    if (pdev->params.ColorConversionStrategy == ccs_UseDeviceIndependentColorForImages) {
+	if (!pdev->UseCIEColor) {
+	    eprintf("UseDeviceDependentColorForImages is not supported. Use UseDeviceIndependentColor.\n");
+	    pdev->params.ColorConversionStrategy = ccs_UseDeviceIndependentColor;
+	    if (!pdev->UseCIEColor) {
+		eprintf("Set UseCUEColor for UseDeviceIndependentColor to work properly.\n");
+		ecode = gs_note_error(gs_error_rangecheck);
+		pdev->UseCIEColor = true;
+	    }
+	}
+    }
+    if (pdev->params.ColorConversionStrategy == ccs_UseDeviceDependentColor) {
+	if (!strcmp(pdev->color_info.cm_name, "DeviceCMYK")) {
+	    eprintf("Replacing the deprecated device parameter value UseDeviceDependentColor with CMYK.\n");
+	    pdev->params.ColorConversionStrategy = ccs_CMYK;
+	} else if (!strcmp(pdev->color_info.cm_name, "DeviceRGB")) {
+	    eprintf("Replacing the deprecated device parameter value UseDeviceDependentColor with sRGB.\n");
+	    pdev->params.ColorConversionStrategy = ccs_sRGB;
+	} else {
+	    eprintf("Replacing the deprecated device parameter value UseDeviceDependentColor with Gray.\n");
+	    pdev->params.ColorConversionStrategy = ccs_Gray;
+	}
     }
     if (pdev->HaveTrueTypes && pdev->version == psdf_version_level2) {
 	pdev->version = psdf_version_level2_with_TT ;

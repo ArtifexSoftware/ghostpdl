@@ -273,6 +273,9 @@ is_cspace_allowed_in_stradegy(gx_device_pdf * pdev, gs_color_space_index csi)
 	    csi != gs_color_space_index_DeviceRGB && 
 	    csi != gs_color_space_index_DeviceGray)
 	return false;
+    if (pdev->params.ColorConversionStrategy == ccs_Gray && 
+	    csi != gs_color_space_index_DeviceGray)
+	return false;
     return true;
 }
 
@@ -333,10 +336,14 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		case gs_color_space_index_DeviceRGB:
 		    if (pdev->params.ColorConversionStrategy == ccs_CMYK)
 			goto write_process_color;
+		    if (pdev->params.ColorConversionStrategy == ccs_Gray)
+			goto write_process_color;
 		    command = ppscc->setrgbcolor; 
 		    break;
 		case gs_color_space_index_DeviceCMYK:
 		    if (pdev->params.ColorConversionStrategy == ccs_sRGB)
+			goto write_process_color;
+		    if (pdev->params.ColorConversionStrategy == ccs_Gray)
 			goto write_process_color;
 		    command = ppscc->setcmykcolor; 
 		    break;
@@ -380,6 +387,8 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		    if (pdev->params.ColorConversionStrategy == ccs_CMYK)
 			goto write_process_color;
 		    if (pdev->params.ColorConversionStrategy == ccs_sRGB)
+			goto write_process_color;
+		    if (pdev->params.ColorConversionStrategy == ccs_Gray)
 			goto write_process_color;
 	        scn:
 		    command = ppscc->setcolorn;
