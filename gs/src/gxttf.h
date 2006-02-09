@@ -137,13 +137,7 @@ typedef struct ttf_OS_2_s {
 	sTypoLineGap[2],
 	usWinAscent[2],
 	usWinDescent[2],
-	ulCodePageRanges[8],
-
-        sxHeight[2],            /* version 2 */
-      	sCapHeight[2],
-       	usDefaultChar[2],
-       	usBreakChar[2],
-        usMaxContext[2];
+	ulCodePageRanges[8];
 } ttf_OS_2_t;
 
 /* ------ vhea ------ */
