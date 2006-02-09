@@ -1412,6 +1412,11 @@ pdf14_begin_transparency_group(gx_device *dev,
     rect.q.x = (int)ceil(dev_bbox.q.x);
     rect.q.y = (int)ceil(dev_bbox.q.y);
     rect_intersect(rect, pdev->ctx->rect);
+    /* Make sure the rectangle is not anomalous (q < p) -- see gsrect.h */
+    if (rect.q.x < rect.p.x)
+	rect.q.x = rect.p.x;
+    if (rect.q.y < rect.p.y)
+	rect.q.y = rect.p.y;
     if_debug4('v', "[v]begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d\n",
 	      ptgp->Isolated, ptgp->Knockout, alpha, pis->blend_mode);
     code = pdf14_push_transparency_group(pdev->ctx, &rect,
