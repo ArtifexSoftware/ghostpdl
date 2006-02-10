@@ -169,11 +169,19 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
  * Process a text string in a composite font with FMapType == 9 (CMap).
  */
 private const char *const standard_cmap_names[] = {
+    /* The following were added in PDF 1.5. */
+    "GBKp-EUC-H", "GBKp-EUC-V", 
+    "UniGB-UTF16-H", "UniGB-UTF16-V",
+    "HKscs-B5-H", "HKscs-B5-V",
+    "UniCNS-UTF16-H", "UniCNS-UTF16-V",
+    "UniJIS-UTF16-H", "UniJIS-UTF16-V",
+    "UniKS-UTF16-H", "UniKS-UTF16-V",
+#define END_PDF15_CMAP_NAMES_INDEX 12
     /* The following were added in PDF 1.4. */
     "GBKp-EUC-H", "GBKp-EUC-V",
     "GBK2K-H", "GBK2K-V",
     "HKscs-B5-H", "HKscs-B5-V",
-#define END_PDF14_CMAP_NAMES_INDEX 6
+#define END_PDF14_CMAP_NAMES_INDEX 18
 
     "Identity-H", "Identity-V",
 
@@ -214,7 +222,8 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
 {
     const char *const *pcmn =
 	standard_cmap_names +
-	(pdev->CompatibilityLevel < 1.4 ? END_PDF14_CMAP_NAMES_INDEX : 0);
+	(pdev->CompatibilityLevel < 1.4 ? END_PDF14_CMAP_NAMES_INDEX : 
+	 pdev->CompatibilityLevel < 1.5 ? END_PDF15_CMAP_NAMES_INDEX : 0);
     bool is_identity = false;
     pdf_resource_t *pcmres = 0;	/* CMap */
     int code;
