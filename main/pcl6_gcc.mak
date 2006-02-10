@@ -21,6 +21,7 @@ ZSRCDIR=../gs/zlib
 ZGENDIR=$(GENDIR)
 ZOBJDIR=$(GENDIR)
 SHARE_ZLIB=0
+SHARE_LIBPNG=0
 
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.
@@ -157,7 +158,7 @@ FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
              $(DD)ttflib.dev  $(DD)cielib.dev $(DD)pipe.dev $(DD)htxlib.dev\
 	     $(DD)gsnogc.dev $(DD)sdctd.dev\
 	     $(DD)psl3lib.dev $(DD)seprlib.dev $(DD)translib.dev\
-	     $(DD)cidlib.dev $(DD)psf1lib.dev $(DD)psf0lib.dev
+	     $(DD)cidlib.dev $(DD)psf1lib.dev $(DD)psf0lib.dev $(DD)lzwd.dev 
 
 # cygwin does not have threads at this time, so we don't include the
 # thread library or asyncronous devices.  Also cygwin does not include
