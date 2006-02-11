@@ -102,7 +102,7 @@ def update_ghostscript():
     cwd = os.getcwd()
     os.chdir(gsconf.gsroot)
     
-    if os.system("date >> " + gsconf.update_log_stdout) != 0: return (1, None, None)
+    if os.system("date >> " + gsconf.update_log_stdout) != 0: return (1, None, None, None)
     if os.system("date >> " + gsconf.update_log_stderr) != 0: return (1, None, None)
 
     starttime = time.time()
@@ -113,38 +113,48 @@ def update_ghostscript():
 	os.unlink(f)
 
     if os.system("svn update >> " + gsconf.update_log_stdout + " 2>> " +
-                 gsconf.update_log_stderr) != 0: return (1, None, None)
+                 gsconf.update_log_stderr) != 0: return (1, None, None, None)
 
     os.system("echo 'svn update complete' >> " + gsconf.update_log_stdout)
 
     endtime = time.time()
     
+    revision = "unknown"
+    p = os.popen("svn info")
+    for line in p:
+	if line[:10] == "Revision: ":
+	    revision = line[10:]
+	    break
+
+    os.system("echo 'revision is " + str(revision) + "' >> " + 
+		gsconf.update_log_stdout)
+
     change_gsproduct("%s/src/gscdef.c" % (gsconf.gsroot,))
 
     os.system("echo 'product change complete' >> " + gsconf.update_log_stdout)
 	
-    if os.system("./autogen.sh --prefix=/home/regression/gshead/ > " + 
+    if os.system("./autogen.sh --prefix=/home/giles/projects/ghostscript/gs/toolbin/tests/gshead/ > " + 
 		gsconf.config_log_stdout + " 2> " +
-                gsconf.config_log_stderr) != 0: return (2, None, None)
+                gsconf.config_log_stderr) != 0: return (2, None, None, revision)
 
     os.system("echo 'configuration complete' >> " + gsconf.update_log_stdout)
 
     if os.system("make clean > /dev/null 2> /dev/null") != 0:
-        return (-1, None, None)
+        return (-1, None, None, revision)
 
     os.system("echo 'make clean complete' >> " + gsconf.update_log_stdout)
     
     if os.system("make > " + gsconf.make_log_stdout + " 2> " +
-                 gsconf.make_log_stderr) != 0: return (3, None, None)
+                 gsconf.make_log_stderr) != 0: return (3, None, None, revision)
 
     os.system("echo 'make complete' >> " + gsconf.update_log_stdout)
 
     if os.system("make install > " + gsconf.install_log_stdout + " 2> " + \
-                 gsconf.install_log_stderr) != 0: return (4, None, None)
+                 gsconf.install_log_stderr) != 0: return (4, None, None, revision)
 
     os.system("echo 'make install complete' >> " + gsconf.update_log_stdout)
 
-    return (0, starttime, endtime)
+    return (0, starttime, endtime, revision)
 
 def get_file(f):
     file = open(f, 'r')
@@ -155,7 +165,7 @@ def get_file(f):
 # set umask
 os.umask(0002)
 
-err, starttime, endtime = update_ghostscript()
+(err, starttime, endtime, revision) = update_ghostscript()
 if err != 0:
     if err == 1:
         msg = "Ghostscript update failed updating from SVN.\n\n"
@@ -250,7 +260,9 @@ baselines += "\n\n"
 
 # Prepend checkout times
 times = "SVN checkout for this report started at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(starttime)) + "\n"
-times = times + "SVN checkout ended at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(endtime)) + "\n\n"
+times += "SVN checkout ended at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(endtime)) + "\n"
+times += "Testing revision " + revision + "\n"
+times += "\n"
 
 # Build the report and capture it in a rotating log file
 log = open(gsconf.log_regression, "w")
@@ -259,11 +271,14 @@ log.write(msg)
 log.write(regout)
 log.close()
 
-# Only include the main body in the email on Mondays
+# Always include the main body in the email on Mondays
 if time.gmtime().tm_wday == 0:
     msg += regout
+# Otherwise trip by size
 elif len(regout) < 300*1024:
     msg += regout
+else:
+    msg += "(report omitted due to length)\n"
 
 retry = 1
 while retry:
