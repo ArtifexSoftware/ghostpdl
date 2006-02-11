@@ -23,6 +23,7 @@ testdatadb	/home/regression/regression/testdata.db
 log_stdout	/home/regression/regression/logs/gs-stdout.log
 log_stderr	/home/regression/regression/logs/gs-stderr.log
 log_baseline	/home/regression/regression/logs/baseline.log
+log_regression	/home/regression/regression/logs/regression.log
 
 # nightly report options
 
