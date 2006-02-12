@@ -133,7 +133,7 @@ def update_ghostscript():
 
     os.system("echo 'product change complete' >> " + gsconf.update_log_stdout)
 	
-    if os.system("./autogen.sh --prefix=/home/giles/projects/ghostscript/gs/toolbin/tests/gshead/ > " + 
+    if os.system("./autogen.sh --prefix=/home/regression/gshead/ > " + 
 		gsconf.config_log_stdout + " 2> " +
                 gsconf.config_log_stderr) != 0: return (2, None, None, revision)
 
