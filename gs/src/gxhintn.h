@@ -89,6 +89,7 @@ typedef struct t1_pole_s /* a pole of outline */
     enum t1_pole_type type;
     int contour_index;
     enum t1_align_type aligned_x, aligned_y;
+    t1_glyph_space_coord boundary_length_x, boundary_length_y;
 } t1_pole;
 
 typedef struct t1_hint_s
@@ -104,11 +105,12 @@ typedef struct t1_hint_s
     unsigned int stem3_index; /* 1,2,3 for stem3 (not used yet), 0 for other types */
     int range_index; /* type 2 only */
     int side_mask;
+    int stem_snap_index0, stem_snap_index1; /* Applicable StemSnap* index range. */
+    t1_glyph_space_coord boundary_length0, boundary_length1;
 } t1_hint;
 
 typedef struct t1_hint_range_s
 {   short beg_pole, end_pole;
-    int contour_index;
     int next;
 } t1_hint_range; /* type 2 only */
 
@@ -147,8 +149,11 @@ typedef struct t1_hinter_s
     int contour0[T1_MAX_CONTOURS], *contour;
     t1_glyph_space_coord stem_snap0[2][T1_MAX_STEM_SNAPS + 1]; /* StdWH + StemSnapH, StdWV + StemSnapV */
     t1_glyph_space_coord *stem_snap[2];
+    int stem_snap_vote0[T1_MAX_STEM_SNAPS + 1];
+    int *stem_snap_vote;
     t1_hint_range hint_range0[T1_MAX_HINTS], *hint_range;
     int stem_snap_count[2], max_stem_snap_count[2]; /* H, V */
+    int stem_snap_vote_count, max_stem_snap_vote_count;
     int contour_count, max_contour_count;
     int zone_count, max_zone_count;
     int pole_count, max_pole_count;
@@ -170,6 +175,8 @@ typedef struct t1_hinter_s
     int19 heigt_transform_coef_rat;
     int19 width_transform_coef_inv;
     int19 heigt_transform_coef_inv;
+    int32_t pixel_o_x, pixel_o_y; /* pixel size in the outline space. */
+    t1_glyph_space_coord pixel_gw, pixel_gh; /* pixel size in the glyph space (maybe transpozed). */
     t1_glyph_space_coord overshoot_threshold;
     t1_glyph_space_coord ymin, ymax, ymid;
     gx_path *output_path;
