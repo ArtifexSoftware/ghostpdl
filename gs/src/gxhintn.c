@@ -352,7 +352,6 @@ private inline void o2g_float(t1_hinter * h, t1_hinter_space_coord ox, t1_hinter
 private void t1_hint__set_aligned_coord(t1_hint * this, t1_glyph_space_coord gc, t1_pole * pole, enum t1_align_type align, int quality)
 {   t1_glyph_space_coord g = (this->type == hstem ? pole->gy : pole->gx); 
 
-#if FINE_STEM_COMPLEXES
     if (any_abs(this->g0 - g) < any_abs(this->g1 - g)) {
         if (this->aligned0 <= align && this->q0 > quality)
             this->ag0 = gc, this->aligned0 = align, this->q0 = quality;
@@ -360,15 +359,6 @@ private void t1_hint__set_aligned_coord(t1_hint * this, t1_glyph_space_coord gc,
         if (this->aligned1 <= align && this->q1 > quality)
             this->ag1 = gc, this->aligned1 = align, this->q1 = quality;
     }
-#else
-    if (any_abs(this->g0 - g) < any_abs(this->g1 - g)) {
-        if (this->aligned0 < align && this->q0 > quality)
-            this->ag0 = gc, this->aligned0 = align, this->q0 = quality;
-    } else {
-        if (this->aligned1 < align && this->q1 > quality)
-            this->ag1 = gc, this->aligned1 = align, this->q1 = quality;
-    }
-#endif
 }
 
 /* --------------------- t1_hinter class members - debug graphics --------------------*/
@@ -1872,8 +1862,8 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this,
     t1_glyph_space_coord gx = this->pole[segment_index].gx, gx0;
     t1_glyph_space_coord gy = this->pole[segment_index].gy, gy0;
     t1_glyph_space_coord gc0 = (horiz ? gy : gx);
-    bool align_by_stem = ALIGN_BY_STEM_MIDDLE 
-		&& align0 == unaligned	 /* Force aligning outer boundaries 
+    bool align_by_stem =
+		align0 == unaligned	 /* Force aligning outer boundaries 
 					    from the TT spot analyzer. */ 
 		&& hint->b0 && hint->b1; /* It's a real stem. Contrary 
 					    033-52-5873.pdf uses single hint boundaries
@@ -2113,11 +2103,7 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
 			    align = (this->hint[i].side_mask & 2 ? topzn : botzn);
 			} else if (this->autohinting && horiz) {
 			    if (this->pole[segment_index].gy == this->hint[i].g0)
-#				if TT_AUTOHINT_TOPZONE_BUG_FIX
-				    align = (this->hint[i].g0 > this->hint[i].g1 ? topzn : botzn);
-#				else
-				    align = (this->hint[i].g0 > this->hint[i].g0 ? topzn : botzn);
-#				endif
+				align = (this->hint[i].g0 > this->hint[i].g1 ? topzn : botzn);
 			}
 			align = t1_hinter__compute_aligned_coord(this, &gc, 
 				    segment_index, t, &this->hint[i], align);
@@ -2632,7 +2618,7 @@ private int t1_hinter__add_trailing_moveto(t1_hinter * this)
 	 5. Since a character origin is aligned,
 	    rounding its width doesn't affect subsequent characters.
 	 6. When the character size is smaller than half pixel width,
-	    glyph widths round to zero, causing overlapped glyphs.
+	    glyph widths rounds to zero, causing overlapped glyphs.
 	    (Bug 687719 "PDFWRITE corrupts letter spacing/placement").
        */
     if (this->align_to_pixels)
@@ -2665,12 +2651,10 @@ int t1_hinter__endglyph(t1_hinter * this)
 	    t1_hinter__compute_type1_stem_ranges(this);
 	else
 	    t1_hinter__compute_type2_stem_ranges(this);
-	if (FINE_STEM_COMPLEXES)
-	    t1_hinter__mark_existing_stems(this);
+	t1_hinter__mark_existing_stems(this);
 	t1_hinter_compute_stem_snap_range(this);
         t1_hinter__align_stem_commands(this);
-	if (FINE_STEM_COMPLEXES)
-	    t1_hinter__unfix_opposite_to_common(this);
+	t1_hinter__unfix_opposite_to_common(this);
         t1_hinter__compute_opposite_stem_coords(this);
         /* stem3 was processed in the Type 1 interpreter. */
         t1_hinter__align_stem_poles(this);

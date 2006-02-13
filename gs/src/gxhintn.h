@@ -22,12 +22,6 @@
 
 #include "stdint_.h"
 
-#define FINE_STEM_COMPLEXES 1		/* A temporary development purpose. */
-#define ALIGN_BY_STEM_MIDDLE 1		/* A temporary development purpose. */
-#define OPPOSITE_STEM_COORD_BUG_FIX 1	/* A temporary development purpose. */
-#define TT_AUTOHINT_TOPZONE_BUG_FIX 1	/* A temporary development purpose. */
-
-
 #ifndef gs_type1_data_DEFINED
 #define gs_type1_data_DEFINED
 typedef struct gs_type1_data_s gs_type1_data;
@@ -67,9 +61,6 @@ enum t1_zone_type
 
 enum t1_align_type
 {   unaligned, weak, aligned, topzn, botzn
-#if !FINE_STEM_COMPLEXES
-    /* 'weak' is never used. Defined to simplify a compatibility testing. */
-#endif
 };
 
 typedef struct {
@@ -97,9 +88,6 @@ typedef struct t1_hint_s
     t1_glyph_space_coord g0, g1; /* starting and ending transversal coord of the stem */
     t1_glyph_space_coord ag0, ag1; /* starting and ending transversal aligned coord of the stem */
     bool b0, b1;  /* g0, g1 correspond to a real stem. */
-#if !FINE_STEM_COMPLEXES
-    /* b0, b1 are unused. Defined to simplify a compatibility testing. */
-#endif
     enum t1_align_type aligned0, aligned1; /* ag0, ag1 is aligned */
     int q0, q1; /* Stem quality tangent. */
     unsigned int stem3_index; /* 1,2,3 for stem3 (not used yet), 0 for other types */
