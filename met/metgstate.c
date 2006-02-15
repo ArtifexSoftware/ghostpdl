@@ -26,6 +26,9 @@ typedef struct metgstate_s {
     ST_ZeroOne Opacity;
     ST_FillRule FillRule;
     bool isClosed;
+    bool charpathmode;
+    ST_RscRefColor CharFill;
+    met_path_child_t child;
     gs_memory_t *pmem;
 } metgstate_t;
 
@@ -50,6 +53,7 @@ met_gstate_copy_for(void *pto, void *pfrom, gs_state_copy_reason_t reason)
     /* deep copy */
     pt->Stroke = met_strdup(pf->pmem, pf->Stroke);
     pt->FillRule = met_strdup(pf->pmem, pf->FillRule);
+    pt->CharFill = met_strdup(pf->pmem, pf->FillRule);
     return 0;
 }
 
@@ -59,11 +63,12 @@ met_gstate_free(void *pold, gs_memory_t *pmem)
     metgstate_t *pmetgs = (metgstate_t *)pold;
     gs_free_object(pmem, pmetgs->Stroke, "met_gstate_free");
     gs_free_object(pmem, pmetgs->FillRule, "met_gstate_free");
+    gs_free_object(pmem, pmetgs->CharFill, "met_gstate_free");
     gs_free_object(pmem, pmetgs, "met_gstate_free");
+
 }
 
-
-/* operators */
+private const ST_RscRefColor met_pattern = "xxx";
 
 ST_RscRefColor
 met_currentstrokecolor(gs_state *pgs)
@@ -91,6 +96,18 @@ met_setfillcolor(gs_state *pgs, const ST_RscRefColor color)
 {
     metgstate_t *pmg = gs_state_client_data(pgs);
     pmg->Fill = met_strdup(pmg->pmem, color);
+}
+
+void
+met_setpatternstroke(gs_state *pgs)
+{
+    met_setstrokecolor(pgs, met_pattern);
+}
+
+void
+met_setpatternfill(gs_state *pgs)
+{
+    met_setfillcolor(pgs, met_pattern);
 }
 
 
@@ -121,7 +138,7 @@ met_currentopacity(gs_state *pgs)
     metgstate_t *pmg = gs_state_client_data(pgs);
     return pmg->Opacity;
 }
-    
+
 met_path_t
 met_currentpathtype(gs_state *pgs) 
 { 
@@ -135,7 +152,8 @@ met_currentpathtype(gs_state *pgs)
 }
 
 /* if set all paths should be closed */
-void met_setclosepath(gs_state *pgs, bool close)
+void 
+met_setclosepath(gs_state *pgs, bool close)
 {
     metgstate_t *pmg = gs_state_client_data(pgs);
     pmg->isClosed = close;
@@ -156,6 +174,53 @@ bool met_currenteofill(gs_state *pgs)
     return (!strncasecmp(met_currentfillrule(pgs), "EvenOdd"));
 }
 
+met_path_child_t met_currentpathchild(gs_state *pgs)
+{
+    metgstate_t *pmg = gs_state_client_data(pgs);
+    return pmg->child;
+}
+
+void met_setpathchild(gs_state *pgs, met_path_child_t child)
+{
+    metgstate_t *pmg = gs_state_client_data(pgs);
+    pmg->child = child;
+}
+
+bool
+met_iscolorpattern(gs_state *pgs, ST_RscRefColor color)
+{
+    if (!color)
+        return false;
+    return !strcmp(color, met_pattern);
+}
+
+void
+met_setcharpathmode(gs_state *pgs, bool mode)
+{
+    metgstate_t *pmg = gs_state_client_data(pgs);
+    pmg->charpathmode = mode;
+}
+
+bool
+met_currentcharpathmode(gs_state *pgs)
+{
+    metgstate_t *pmg = gs_state_client_data(pgs);
+    return pmg->charpathmode;
+}
+
+void
+met_setcharfillcolor(gs_state *pgs, ST_RscRefColor color)
+{
+    metgstate_t *pmg = gs_state_client_data(pgs);
+    pmg->CharFill = color;
+}
+
+ST_RscRefColor met_currentcharfillcolor(gs_state *pgs)
+{
+    metgstate_t *pmg = gs_state_client_data(pgs);
+    return pmg->CharFill;
+}
+
 private const gs_state_client_procs met_gstate_procs = {
     met_gstate_alloc,
     0,
@@ -172,6 +237,9 @@ met_gstate_init(gs_state *pgs, gs_memory_t *pmem)
     pmg->Opacity = 0;
     pmg->FillRule = 0;
     pmg->isClosed = 0;
+    pmg->charpathmode = 0;
+    pmg->CharFill = 0;
+    pmg->child = met_none;
     pmg->pmem = pmem;
     gs_state_set_client(pgs, pmg, &met_gstate_procs, false);
 }

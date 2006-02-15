@@ -19,9 +19,11 @@
 int
 met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *attr_name) 
 {
+    /* nb memory hack */
+    extern gs_memory_t *gs_mem_ptr;
     int cmp = strcmp(lhs, attr_name);
     if (cmp == 0)
-        *field = rhs;
+        *field = met_strdup(gs_mem_ptr, rhs);
     return cmp;
 }
 

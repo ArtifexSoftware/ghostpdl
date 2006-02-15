@@ -25,6 +25,7 @@
 #include "metutil.h"
 #include "math_.h"
 #include "metimage.h"
+#include "metgstate.h"
 #include "ctype_.h"
 #include "gsimage.h"
 #include "gscspace.h"
@@ -378,14 +379,19 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
         gs_makepattern(&gscolor, &gspat, &mat, pgs, NULL);
         gs_grestore(pgs);
         gs_setpattern(pgs, &gscolor);
+        {
+            met_path_child_t parent = met_currentpathchild(pgs);
+            if (parent == met_fill)
+                met_setpatternfill(pgs);
+            else if (parent == met_stroke)
+                met_setpatternstroke(pgs);
+            else {
+                gs_throw(-1, "pattern has no context");
+                return -1;
+            }
+        }
     }
-    /* !!!! NB !!!! */
-    extern bool patternset;
-    patternset = true;
-    
-    // gs_free_object(mem, metpat->raster_image->samples, "raster image");
-    return -1;
-
+    return 0;
 }
 
 
@@ -439,6 +445,15 @@ ImageBrush_action(void *data, met_state_t *ms)
         pat->Viewbox.p.y = atof(pargs[1]);
         pat->Viewbox.q.x = pat->Viewbox.p.x + atof(pargs[2]);
         pat->Viewbox.q.y = pat->Viewbox.p.y + atof(pargs[3]);
+        /* the spec says if the viewbox extant is zero in both
+           directions take a point sample.  We are not exactly sure
+           what this means.  Here is one interpretation. */
+        if ((pat->Viewbox.p.x == pat->Viewbox.q.x) &&
+            (pat->Viewbox.p.y == pat->Viewbox.q.y)) {
+            pat->Viewbox.q.x = pat->Viewbox.p.x + 1.0;
+            pat->Viewbox.q.y = pat->Viewbox.q.y + 1.0;
+        }
+        
     }
     if (aImageBrush->Viewport) {
         /* do ever feel like your doing the same thing over and over
@@ -484,8 +499,11 @@ ImageBrush_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_ImageBrush = {
     "ImageBrush",
-    ImageBrush_cook,
-    ImageBrush_action,
-    ImageBrush_done
+    {
+        ImageBrush_cook,
+        ImageBrush_action,
+        ImageBrush_done
+    }
 };
+
 

@@ -20,17 +20,21 @@
 
 /* implementation procedures for commands */
 
-typedef struct met_element_s {
-    char element[40];
+typedef struct met_element_procs_s {
     /* allocate memory and "cook" the associated C struct */
     int (*init)(void **data, met_state_t *ms, const char *el, const char **attr);
     /* actual parsing - cook the c struct */
     int (*action)(void *data, met_state_t *ms);
     /* end element action */
     int (*done)(void *data, met_state_t *ms);
+} met_element_procs_t;
+
+typedef struct met_element_s {
+    char element[40];
+    met_element_procs_t procs;
 } met_element_t;
 
-met_element_t *met_get_element_definition(const char *element);
+met_element_procs_t *met_get_element_definition(const char *element);
 
 /* generate externs */
 #define EXTERN(element)\

@@ -38,6 +38,9 @@ metutil_h = $(METSRC)metutil.h
 
 zipparse_h = $(METSRC)zipparse.h
 
+$(METOBJ)metcanvas.$(OBJ): $(METSRC)metcanvas.c
+	$(METCCC) $(METSRC)metcanvas.c $(METO_)metcanvas.$(OBJ)
+
 $(METOBJ)metimage.$(OBJ): $(METSRC)metimage.c
 	$(METCCC) $(METSRC)metimage.c $(METO_)metimage.$(OBJ)
 
@@ -90,7 +93,6 @@ $(MET_TOP_OBJ): $(METSRC)mettop.c \
 	$(CP_) $(METGEN)pconf.h $(METGEN)pconfig.h
 	$(METCCC) $(METSRC)mettop.c $(METO_)mettop.$(OBJ)
 
-
 MET_OBJS=$(METOBJ)metparse.$(OBJ) $(METOBJ)metstate.$(OBJ) \
          $(METOBJ)metundone.$(OBJ) $(METOBJ)metpage.$(OBJ) \
          $(METOBJ)metelement.$(OBJ) $(METOBJ)metpath.$(OBJ)\
@@ -100,7 +102,8 @@ MET_OBJS=$(METOBJ)metparse.$(OBJ) $(METOBJ)metstate.$(OBJ) \
 	 $(METOBJ)xps_image_jpeg.$(OBJ) \
 	 $(METOBJ)xps_image_png.$(OBJ) \
 	 $(METOBJ)xps_image_tiff.$(OBJ) \
-	 $(METOBJ)metgstate.$(OBJ)
+	 $(METOBJ)metgstate.$(OBJ) \
+	 $(METOBJ)metcanvas.$(OBJ)
 
 $(METOBJ)met.dev: $(MET_MAK) $(ECHOGS_XE) $(MET_OBJS)
 	$(SETMOD) $(METOBJ)met $(MET_OBJS)

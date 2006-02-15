@@ -116,7 +116,9 @@ FixedPage_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_FixedPage = {
     "FixedPage",
-    FixedPage_cook,
-    FixedPage_action,
-    FixedPage_done
+    {
+        FixedPage_cook,
+        FixedPage_action,
+        FixedPage_done
+    }
 };

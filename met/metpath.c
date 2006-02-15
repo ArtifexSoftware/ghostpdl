@@ -29,8 +29,6 @@
 #include <stdlib.h> /* nb for atof */
 
 
-bool patternset = false;
-
 /* this function is passed to the split routine (see below) */
 private bool is_Data_delimeter(char b) 
 {
@@ -121,9 +119,11 @@ PathFigure_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_PathFigure = {
     "PathFigure",
-    PathFigure_cook,
-    PathFigure_action,
-    PathFigure_done
+    {
+        PathFigure_cook,
+        PathFigure_action,
+        PathFigure_done
+    }
 };
 
 /* CT_Path */
@@ -287,9 +287,11 @@ PathGeometry_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_PathGeometry = {
     "PathGeometry",
-    PathGeometry_cook,
-    PathGeometry_action,
-    PathGeometry_done
+    {
+        PathGeometry_cook,
+        PathGeometry_action,
+        PathGeometry_done
+    }
 };
 
 private int
@@ -299,9 +301,6 @@ set_color(gs_state *pgs, bool forstroke)
     ST_RscRefColor (*color)(gs_state *);
     ST_RscRefColor met_color;
 
-    if (patternset)
-        return 0;
-
     if (forstroke)
         color = met_currentstrokecolor;
     else
@@ -310,6 +309,10 @@ set_color(gs_state *pgs, bool forstroke)
 
     met_color = ((*color)(pgs));
     
+    /* if this is a pattern nothing to do */
+    if (met_iscolorpattern(pgs, met_color))
+        return 0;
+
     if (met_color) {
         rgb_t rgb = met_hex2rgb(met_color);
         /* nb rgb color */
@@ -335,16 +338,6 @@ Path_done(void *data, met_state_t *ms)
     else
         fill = gs_fill;
 
-    /* NB temporary hack until we do patterns correctly - setting the
-       pattern like a color is set and supporting the filling of a
-       stroke */
-    if (patternset) {
-        if (met_currentstrokecolor(pgs))
-            pathtype = met_stroke_and_fill;
-        else
-            pathtype = met_fill_only;
-    }
-    
     do {
         /* case of stroke and file... uses a gsave/grestore to keep
            the path */
@@ -386,7 +379,6 @@ Path_done(void *data, met_state_t *ms)
     } while (0);
     /* hack nb fixme */
 
-    patternset = false;
     gs_free_object(ms->memory, data, "Path_done");
     if (code < 0)
         return gs_rethrow(code, "Path done failed");
@@ -396,9 +388,11 @@ Path_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_Path = {
     "Path",
-    Path_cook,
-    Path_action,
-    Path_done
+    {
+        Path_cook,
+        Path_action,
+        Path_done
+    }
 };
 
 /* CT_Path */
@@ -476,9 +470,11 @@ PolyLineSegment_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_PolyLineSegment = {
     "PolyLineSegment",
-    PolyLineSegment_cook,
-    PolyLineSegment_action,
-    PolyLineSegment_done
+    {
+        PolyLineSegment_cook,
+        PolyLineSegment_action,
+        PolyLineSegment_done
+    }
 };
 
 /* element constructor */
@@ -508,6 +504,7 @@ private int
 Path_Fill_action(void *data, met_state_t *ms)
 {
     CT_CP_Brush *aPath_Fill = data;
+    met_setpathchild(ms->pgs, met_fill);
     return 0;
 }
 
@@ -520,9 +517,11 @@ Path_Fill_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_Path_Fill = {
     "Path_Fill",
-    Path_Fill_cook,
-    Path_Fill_action,
-    Path_Fill_done
+    {
+        Path_Fill_cook,
+        Path_Fill_action,
+        Path_Fill_done
+    }
 };
 
 /* element constructor */
@@ -570,9 +569,11 @@ SolidColorBrush_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_SolidColorBrush = {
     "SolidColorBrush",
-    SolidColorBrush_cook,
-    SolidColorBrush_action,
-    SolidColorBrush_done
+    {
+        SolidColorBrush_cook,
+        SolidColorBrush_action,
+        SolidColorBrush_done
+    }
 };
 
 private int
@@ -602,6 +603,7 @@ private int
 Path_Stroke_action(void *data, met_state_t *ms)
 {
     CT_CP_Brush *aPath_Stroke = data;
+    
     return 0;
 
 }
@@ -617,9 +619,11 @@ Path_Stroke_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_Path_Stroke = {
     "Path_Stroke",
-    Path_Stroke_cook,
-    Path_Stroke_action,
-    Path_Stroke_done
+    {
+        Path_Stroke_cook,
+        Path_Stroke_action,
+        Path_Stroke_done
+    }
 };
 
 /* element constructor */
@@ -803,9 +807,11 @@ ArcSegment_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_ArcSegment = {
     "ArcSegment",
-    ArcSegment_cook,
-    ArcSegment_action,
-    ArcSegment_done
+    {
+        ArcSegment_cook,
+        ArcSegment_action,
+        ArcSegment_done
+    }
 };
 
 
@@ -891,9 +897,11 @@ PolyBezierSegment_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_PolyBezierSegment = {
     "PolyBezierSegment",
-    PolyBezierSegment_cook,
-    PolyBezierSegment_action,
-    PolyBezierSegment_done
+    {
+        PolyBezierSegment_cook,
+        PolyBezierSegment_action,
+        PolyBezierSegment_done
+    }
 };
 
 
@@ -988,7 +996,9 @@ PolyQuadraticBezierSegment_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_PolyQuadraticBezierSegment = {
     "PolyQuadraticBezierSegment",
-    PolyQuadraticBezierSegment_cook,
-    PolyQuadraticBezierSegment_action,
-    PolyQuadraticBezierSegment_done
+    {
+        PolyQuadraticBezierSegment_cook,
+        PolyQuadraticBezierSegment_action,
+        PolyQuadraticBezierSegment_done
+    }
 };

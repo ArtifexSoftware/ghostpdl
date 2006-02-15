@@ -19,6 +19,8 @@
 #ifndef metsimple_INCLUDED
 #   define metsimple_INCLUDED
 
+#include "std.h"
+
 typedef char * ST_AbbrGeom;
 typedef char * ST_AbbrGeomF;
 typedef char * ST_Array;

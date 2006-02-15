@@ -18,6 +18,7 @@
 #  define metparse_INCLUDED
 
 #include "metstate.h" /* nb this should be separated out - reconsider */
+#include "metelement.h"
 
 /* the size of the input buffer to be used by the parser */
 #define MET_PARSER_MIN_INPUT_SIZE 8192
@@ -25,7 +26,7 @@
 typedef struct met_parser_state_s met_parser_state_t;
 
 typedef struct data_element_s {
-    char debug_info[1024];
+    met_element_t *met_element_procs;
     void *data;
 } data_element_t;
 
@@ -36,6 +37,10 @@ struct met_parser_state_s {
     void *parser;
     data_element_t data_stack[20]; /* nb should not have depth limitation */
     int stack_top;
+    int depth_at_record_start;
+    int recording;
+    int record_start;
+    int record_stop;  
     met_state_t *mets; /* nb this should be separated out - reconsider */
 };
 

@@ -76,7 +76,7 @@ const met_element_t *met_element_table[] = {
 
 #undef ENTRY
 
-met_element_t *
+met_element_procs_t *
 met_get_element_definition(const char *element)
 {
     int index = 0;
@@ -93,9 +93,10 @@ met_get_element_definition(const char *element)
     while (true) {
         met_element_t *metdef = met_element_table[index];
         if (!metdef) 
-            return metdef;
+            /* end of table, element not found */
+            return NULL;
         if (!strcmp(elstr, metdef->element))
-            return metdef;
+            return &metdef->procs;
         index++;
     }
 }

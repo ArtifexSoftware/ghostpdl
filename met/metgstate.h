@@ -33,6 +33,9 @@ void met_setstrokecolor(gs_state *pgs, const ST_RscRefColor color);
 ST_RscRefColor met_currentfillcolor(gs_state *pgs);
 void met_setfillcolor(gs_state *pgs, const ST_RscRefColor color);
 
+ST_RscRefColor met_currentcharfillcolor(gs_state *pgs);
+void met_setcharfillcolor(gs_state *pgs, ST_RscRefColor color);
+
 ST_ZeroOne met_currentopacity(gs_state *pgs);
 void met_setopacity(gs_state *pgs, const ST_ZeroOne opacity);
 
@@ -55,4 +58,26 @@ met_path_t met_currentpathtype(gs_state *pgs);
 void met_setclosepath(gs_state *pgs, bool close);
 bool met_currentclosepath(gs_state *pgs);
 
+/* since we are not using a tree this identifies if path.fill,
+   path.stroke or neither is active */
+typedef enum {
+    met_fill,
+    met_stroke,
+    met_none
+} met_path_child_t;
+
+met_path_child_t met_currentpathchild(gs_state *pgs);
+void met_setpathchild(gs_state *pgs, met_path_child_t child);
+
+/* set to stroke or fill with the current pattern */
+void met_setpatternstroke(gs_state *pgs);
+void met_setpatternfill(gs_state *pgs);
+
+/* check if currentstrokecolor or currentfill color has returned a
+   pattern */
+bool met_iscolorpattern(gs_state *pgs, ST_RscRefColor color);
+
+/* if set make an font outline path to be filled */
+void met_setcharpathmode(gs_state *pgs, bool mode);
+bool met_currentcharpathmode(gs_state *pgs);
 #endif /* metgstate_INCLUDED */

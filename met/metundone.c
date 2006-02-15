@@ -27,7 +27,6 @@
     const met_element_t met_element_procs_ ## element = {\
         #element, NULL, NULL, NULL }
 
-UNDONE_STUB(Canvas);
 UNDONE_STUB(Canvas_Clip);
 UNDONE_STUB(Canvas_OpacityMask);
 UNDONE_STUB(Canvas_RenderTransform);
@@ -38,7 +37,6 @@ UNDONE_STUB(FixedDocumentSequence);
 UNDONE_STUB(FixedPage_RenderTransform);
 UNDONE_STUB(FixedPage_Resources);
 UNDONE_STUB(Glyphs_Clip);
-UNDONE_STUB(Glyphs_Fill);
 UNDONE_STUB(Glyphs_OpacityMask);
 UNDONE_STUB(Glyphs_RenderTransform);
 UNDONE_STUB(GradientStop);

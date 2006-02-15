@@ -9,5 +9,5 @@
 
 /*$Id$*/
 
-#error "moved to gs/src/gs_error.h"
+#error "moved to gs/src/gserror.h"
 

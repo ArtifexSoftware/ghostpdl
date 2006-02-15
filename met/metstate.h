@@ -35,7 +35,7 @@ struct met_state_s {
     void *client_data;
     pl_interp_instance_t *pjls; /* probably not used */
     int (*end_page)(met_state_t *pxs, int num_copies, int flush);
-    int placeholder;
+    int entries_recorded;
     pl_dict_t font_dict;
     pl_dict_t pattern_dict;
     gs_font_dir *font_dir;

@@ -16,9 +16,11 @@
 
 #include "memory_.h"
 #include "gp.h"
+#include "gserror.h"
 #include "gsmemory.h"
 #include "metcomplex.h"
 #include "metelement.h"
+#include "metgstate.h"
 #include "metsimple.h"
 #include "metutil.h"
 #include "gspath.h"
@@ -234,18 +236,35 @@ Glyphs_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
 }
 
 private int
-set_rgb_text_color(gs_state *pgs, ST_RscRefColor Fill)
+set_rgb_text_color(gs_state *pgs, CT_Glyphs *aGlyphs)
 {
-   if (!Fill) {
-       return gs_setnullcolor(pgs);
-   }
-   else {
-       rgb_t rgb = met_hex2rgb(Fill);
-       return gs_setrgbcolor(pgs, (floatp)rgb.r, (floatp)rgb.g,
-                              (floatp)rgb.b);
-   }
-   return -1; /* not reached */
+    ST_RscRefColor color;
+    rgb_t rgbcolor;
+    /* character path a glyph child element to specify the fill.
+       Regular character use the Glyph attribute */
+    if (met_currentcharpathmode(pgs)) {
+        color = met_currentfillcolor(pgs);
+        /* if char path a fill color must be set */
+        if (color == NULL) {
+            return gs_throw(-1, "char path color fill not set");
+        }
+    } else {
+        color = aGlyphs->Fill;
+    }
+    if (color == NULL) {
+        gs_warn("fill color not set falling back to black");
+        return gs_setgray(pgs, 0);
+    } else {
+        /* nb rgb only */
+        rgb_t rgbcolor = met_hex2rgb(color);
+        return gs_setrgbcolor(pgs, (floatp)rgbcolor.r, (floatp)rgbcolor.g,
+                              (floatp)rgbcolor.b);
+    }
+    /* unreached */
+    return gs_throw(-1, "Unreached");
 }
+       
+        
 
 private bool is_semi_colon(char c) {return c == ';';}
 private bool is_colon(char c) {return c == ':';}
@@ -316,15 +335,25 @@ get_glyph_advance(char *index, gs_font *pfont, gs_glyph unicode,
    }
 }
 
+private int
+get_text_draw_op(gs_state *pgs)
+{
+    if (met_currentcharpathmode(pgs))
+        return TEXT_DO_TRUE_CHARPATH;
+    else
+        return TEXT_DO_DRAW;
+}
+            
 private int 
 build_text_params(gs_text_params_t *text, pl_font_t *pcf,
-		  ST_UnicodeString UnicodeString, ST_Indices Indices)
+		  ST_UnicodeString UnicodeString, ST_Indices Indices,
+                  uint text_operation)
 {
     int code = 0;
 
    if (!Indices) {
        /* this would be the hallaluah case */
-       text->operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+       text->operation = TEXT_FROM_STRING | text_operation | TEXT_RETURN_WIDTH;
        text->data.bytes = UnicodeString;
        text->size = strlen(UnicodeString);
    } else {
@@ -407,7 +436,7 @@ build_text_params(gs_text_params_t *text, pl_font_t *pcf,
 	   vOffset[glyph_index] = 0.0;
 	   ++glyph_index;
        }
-       text->operation = TEXT_FROM_GLYPHS | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+       text->operation = TEXT_FROM_GLYPHS | text_operation | TEXT_RETURN_WIDTH;
        text->data.glyphs = glyphs;
        text->size = glyph_index;
 
@@ -426,16 +455,23 @@ private bool is_Data_delimeter(char b)
     return (b == ',') || (isspace(b));
 }
 
-/* action associated with this element.  NB this procedure should be
-  decomposed into manageable pieces */
+/* action associated with this element. */
 private int
 Glyphs_action(void *data, met_state_t *ms)
+{
+    /* initialize to render characters normally, not outlines */
+    met_setcharpathmode(ms->pgs, false);
+    return 0;
+}
+
+private int
+Glyphs_done(void *data, met_state_t *ms)
 {
 
    /* load the font */
    CT_Glyphs *aGlyphs = data;
    ST_Name fname = aGlyphs->FontUri; /* font uri */
-   ST_RscRefColor color = aGlyphs->Fill;
+   ST_RscRefColor color;
    gs_memory_t *mem = ms->memory;
    gs_state *pgs = ms->pgs;
    pl_font_t *pcf = NULL; /* current font */
@@ -532,7 +568,9 @@ Glyphs_action(void *data, met_state_t *ms)
    gs_gsave(pgs);
 
    /* set the text color */
-   set_rgb_text_color(pgs, color);
+   if ((code = set_rgb_text_color(pgs, aGlyphs)) < 0)
+       /* clean up */
+       return gs_rethrow(code, "set rgb text color");
 
    /* flip y metro goes down the page */
    if ((code = gs_matrix_scale(&font_mat, aGlyphs->FontRenderingEmSize,
@@ -542,14 +580,14 @@ Glyphs_action(void *data, met_state_t *ms)
    /* finally! */
    if ((code = gs_concat(pgs, &font_mat)) != 0)
        return gs_rethrow(code, "gs_concat");
-
    {
        gs_text_params_t text;
        gs_text_enum_t *penum;
 
        if ((code = build_text_params(&text, pcf, 
 				     aGlyphs->UnicodeString,
-				     aGlyphs->Indices)) != 0)
+				     aGlyphs->Indices,
+                                     get_text_draw_op(pgs))) != 0)
            return gs_rethrow(code, "build_text_params");
        if ((code = gs_text_begin(pgs, &text, mem, &penum)) != 0)
 	   return gs_rethrow(code, "gs_text_begin");
@@ -558,15 +596,13 @@ Glyphs_action(void *data, met_state_t *ms)
        gs_text_release(penum, "Glyphs_action()");
    }
 
+   if (met_currentcharpathmode(pgs)) {
+       if ((code = gs_eofill(pgs)) < 0)
+           return gs_rethrow(code, "eofill failed");
+   }
+           
    /* restore the ctm */
    gs_grestore(pgs);
-   return 0;
-}
-
-private int
-Glyphs_done(void *data, met_state_t *ms)
-{
-
    gs_free_object(ms->memory, data, "Glyphs_done");
    return 0; /* incomplete */
 }
@@ -574,7 +610,58 @@ Glyphs_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_Glyphs = {
    "Glyphs",
-   Glyphs_cook,
-   Glyphs_action,
-   Glyphs_done
+   {
+       Glyphs_cook,
+       Glyphs_action,
+       Glyphs_done
+   }
+};
+
+/* element constructor */
+private int
+Glyphs_Fill_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
+{
+    CT_CP_Brush *aGlyphs_Fill = 
+        (CT_CP_Brush *)gs_alloc_bytes(ms->memory,
+                                      sizeof(CT_CP_Brush),
+                                      "Glyphs_Fill_cook");
+    int i;
+
+    memset(aGlyphs_Fill, 0, sizeof(CT_CP_Brush));
+
+    /* parse attributes, filling in the zeroed out C struct */
+    for(i = 0; attr[i]; i += 2) {
+
+    }
+
+    /* copy back the data for the parser. */
+    *ppdata = aGlyphs_Fill;
+    return 0;
+}
+
+/* action associated with this element */
+private int
+Glyphs_Fill_action(void *data, met_state_t *ms)
+{
+    met_setcharpathmode(ms->pgs, true);
+    CT_CP_Brush *aGlyphs_Fill = data;
+    return 0;
+}
+
+private int
+Glyphs_Fill_done(void *data, met_state_t *ms)
+{
+        
+    gs_free_object(ms->memory, data, "Glyphs_Fill_done");
+    return 0; /* incomplete */
+}
+
+
+const met_element_t met_element_procs_Glyphs_Fill = {
+    "Glyphs_Fill",
+    {
+        Glyphs_Fill_cook,
+        Glyphs_Fill_action,
+        Glyphs_Fill_done
+    }
 };
