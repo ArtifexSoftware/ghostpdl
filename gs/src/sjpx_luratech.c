@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id: sjpx.c,v 1.12 2005/03/16 14:57:42 igor Exp $ */
+/* $Id$ */
 /* JPXDecode filter implementation -- hooks in the Luratech JPEG2K CSDK */
  
 #include "memory_.h"
