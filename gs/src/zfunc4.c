@@ -123,6 +123,28 @@ psc_fixup(byte *p, byte *to)
     p[2] = (byte)skip;
 }
 
+/* Check whether the ref is a given operator or resolves to it */
+private bool
+resolves_to_oper(i_ctx_t *i_ctx_p, const ref *pref, const op_proc_t proc)
+{
+    if (!r_has_attr(pref, a_executable))
+        return false;
+    if (r_btype(pref) == t_operator) {
+        return pref->value.opproc == proc;
+    } else if (r_btype(pref) == t_name) {
+        ref * val;
+        if (dict_find(systemdict, pref, &val) <= 0)
+	    return false;
+        if (r_btype(val) != t_operator)
+	    return false;
+        if (!r_has_attr(val, a_executable))
+	    return false;
+        return val->value.opproc == proc;
+    }
+   else
+      return false;
+}
+
 /*
  * Check a calculator function for validity, optionally storing its encoded
  * representation and add the size of the encoded representation to *psize.
@@ -133,7 +155,7 @@ psc_fixup(byte *p, byte *to)
 private int
 check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int *psize)
 {
-    long i;
+    uint i;
     uint size = r_size(pref);
 
     for (i = 0; i < size; ++i) {
@@ -223,19 +245,16 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 	    if (code < 0)
 		return code;
 	    /* Check for {proc} if | {proc1} {proc2} ifelse */
-#define R_IS_OPER(pref, proc)\
-  (r_btype(pref) == t_operator && r_has_attr(pref, a_executable) &&\
-   (pref)->value.opproc == proc)
-	    if (R_IS_OPER(&elt2, zif)) {
+	    if (resolves_to_oper(i_ctx_p, &elt2, zif)) {
 		if (ops) {
 		    *p = PtCr_if;
 		    psc_fixup(p, ops + *psize);
 		}
 	    } else if (!r_is_proc(&elt2))
 		return_error(e_rangecheck);
-	    else if ((code == array_get(imemory, pref, ++i, &elt3)) < 0)
+    	    else if ((code == array_get(imemory, pref, ++i, &elt3)) < 0)
 		return code;
-	    else if (R_IS_OPER(&elt3, zifelse)) {
+	    else if (resolves_to_oper(i_ctx_p, &elt3, zifelse)) {
 		if (ops) {
 		    *p = PtCr_if;
 		    psc_fixup(p, ops + *psize + 3);
@@ -250,7 +269,6 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 		    psc_fixup(p, ops + *psize);
 	    } else
 		return_error(e_rangecheck);
-#undef R_IS_OPER
 	}
 	}
     next:
