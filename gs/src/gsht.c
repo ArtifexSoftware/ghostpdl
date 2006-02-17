@@ -693,6 +693,15 @@ gs_color_name_component_number(gx_device * dev, const char * pname,
 	    num_colorant = check_colorant_name(dev, "Yellow");
 	else if (check_name("Gray", pname, name_size))
 	    num_colorant = check_colorant_name(dev, "Black");
+	/*
+	 * The device will return GX_DEVICE_COLOR_MAX_COMPONENTS if the
+	 * colorant is logically present in the device but not being used
+	 * because a SeparationOrder parameter is specified.  Since we are
+	 * using this value to indicate 'Default', we use -1 to indicate
+	 * that the colorant is not really being used.
+	 */
+	if (num_colorant == GX_DEVICE_COLOR_MAX_COMPONENTS)
+	    num_colorant = -1;
 
 #undef check_colorant_name
 #undef check_colorant_name_length
