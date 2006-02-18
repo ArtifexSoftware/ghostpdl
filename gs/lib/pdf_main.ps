@@ -171,6 +171,7 @@ currentdict /runpdfstring .undef
    end			% GS_PDF_ProcSet
    PDFTopSave restore
    end			% userdict
+   2 vmreclaim		% couldn't hurt
 } bind def
 
 /runpdf {		% <file> runpdf -
@@ -779,12 +780,19 @@ pdfdict begin
 % Get a (possibly inherited) attribute of a page.
 /pget			% <pagedict> <key> pget <value> -true-
 			% <pagedict> <key> pget -false-
- { 2 copy knownoget
-    { exch pop exch pop true
-    }
+ {
+   2 copy knownoget
+    { exch pop exch pop true }
     { exch /Parent knownoget
-       { exch pget }
-       { pop false }
+      { exch pget }
+	% finally see if the key is (misplaced) in the Root Catalog dict
+      { dup Trailer /Root oget exch knownoget dup {
+	  3 -1 roll (   **** Warning:  The /) pdfformaterror 50 string cvs pdfformaterror
+	  ( key is missing from the Page tree.\n) pdfformaterror
+        }
+	{ exch pop }
+	ifelse
+      }
       ifelse
     }
    ifelse
