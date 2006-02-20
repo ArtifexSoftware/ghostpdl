@@ -28,7 +28,7 @@
  * arch_sizeof_color_index * 8, since for larger values, there aren't enough
  * bits in a gx_color_index to have even 1 bit per component.
  */
-#define GX_DEVICE_COLOR_MAX_COMPONENTS 16
+#define GX_DEVICE_COLOR_MAX_COMPONENTS (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
 
 /*
  * We might change gx_color_index to a pointer or a structure in the
