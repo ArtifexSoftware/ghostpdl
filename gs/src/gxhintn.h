@@ -93,14 +93,20 @@ typedef struct t1_hint_s
     unsigned int stem3_index; /* 1,2,3 for stem3 (not used yet), 0 for other types */
     int range_index; /* type 2 only */
     int side_mask;
-    int stem_snap_index0, stem_snap_index1; /* Applicable StemSnap* index range. */
+    short stem_snap_index0, stem_snap_index1; /* Applicable StemSnap* index range. */
     t1_glyph_space_coord boundary_length0, boundary_length1;
 } t1_hint;
 
 typedef struct t1_hint_range_s
 {   short beg_pole, end_pole;
     int next;
-} t1_hint_range; /* type 2 only */
+} t1_hint_range;
+
+typedef struct t1_hint_applying_s
+{   int pole;
+    int opposite;
+    int next;
+} t1_hint_applying;
 
 typedef struct t1_zone_s /* alignment zone */
 {   enum t1_zone_type type;
@@ -140,6 +146,7 @@ typedef struct t1_hinter_s
     int stem_snap_vote0[T1_MAX_STEM_SNAPS + 1];
     int *stem_snap_vote;
     t1_hint_range hint_range0[T1_MAX_HINTS], *hint_range;
+    t1_hint_applying hint_applying0[T1_MAX_HINTS * 4], *hint_applying;
     int stem_snap_count[2], max_stem_snap_count[2]; /* H, V */
     int stem_snap_vote_count, max_stem_snap_vote_count;
     int contour_count, max_contour_count;
@@ -147,9 +154,11 @@ typedef struct t1_hinter_s
     int pole_count, max_pole_count;
     int hint_count, max_hint_count;
     int hint_range_count, max_hint_range_count;
+    int hint_applying_count, max_hint_applying_count;
     int primary_hint_count;
     int flex_count;
     int FontType; /* 1 or 2 */
+    bool have_flex;
     bool ForceBold;
     bool keep_stem_width;
     bool suppress_overshoots;
