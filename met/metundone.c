@@ -25,7 +25,7 @@
 
 #define UNDONE_STUB(element)\
     const met_element_t met_element_procs_ ## element = {\
-        #element, NULL, NULL, NULL }
+        #element, { NULL, NULL, NULL } }
 
 UNDONE_STUB(Canvas_Clip);
 UNDONE_STUB(Canvas_OpacityMask);

@@ -24,6 +24,7 @@
 #include "metsimple.h"
 #include "metutil.h"
 #include "gspath.h"
+#include "gspaint.h"
 #include "gsutil.h"
 #include "gsccode.h"
 #include "gsgdata.h"
@@ -31,11 +32,12 @@
 #include "gxfont42.h"
 #include <stdlib.h> /* nb for atof */
 #include "plfont.h"
+#include "gscoord.h"
 #include "gstext.h"
 #include "zipparse.h"
 #include <wchar.h>  /* unicode */
 #include <locale.h>
-
+#include "ctype_.h"
 /* utilities for fonts */
 
 /* utf8 string to wchar_t array conversion
@@ -239,7 +241,6 @@ private int
 set_rgb_text_color(gs_state *pgs, CT_Glyphs *aGlyphs)
 {
     ST_RscRefColor color;
-    rgb_t rgbcolor;
     /* character path a glyph child element to specify the fill.
        Regular character use the Glyph attribute */
     if (met_currentcharpathmode(pgs)) {
@@ -471,7 +472,6 @@ Glyphs_done(void *data, met_state_t *ms)
    /* load the font */
    CT_Glyphs *aGlyphs = data;
    ST_Name fname = aGlyphs->FontUri; /* font uri */
-   ST_RscRefColor color;
    gs_memory_t *mem = ms->memory;
    gs_state *pgs = ms->pgs;
    pl_font_t *pcf = NULL; /* current font */
@@ -643,8 +643,8 @@ Glyphs_Fill_cook(void **ppdata, met_state_t *ms, const char *el, const char **at
 private int
 Glyphs_Fill_action(void *data, met_state_t *ms)
 {
+    /* CT_CP_Brush *aGlyphs_Fill = data; */
     met_setcharpathmode(ms->pgs, true);
-    CT_CP_Brush *aGlyphs_Fill = data;
     return 0;
 }
 

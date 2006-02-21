@@ -19,6 +19,8 @@
 #include "metgstate.h"
 #include "metutil.h"
 #include "gxstate.h" /* for gs_state_copy_reason_t */
+#include "string_.h"
+#include "ctype_.h"
 
 typedef struct metgstate_s {
     ST_RscRefColor Stroke;
@@ -171,7 +173,7 @@ bool met_currenteofill(gs_state *pgs)
     if (!met_currentfillrule(pgs))
         return true;
 
-    return (!strncasecmp(met_currentfillrule(pgs), "EvenOdd"));
+    return (!strcasecmp(met_currentfillrule(pgs), "EvenOdd"));
 }
 
 met_path_child_t met_currentpathchild(gs_state *pgs)

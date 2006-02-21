@@ -38,6 +38,10 @@ metutil_h = $(METSRC)metutil.h
 
 zipparse_h = $(METSRC)zipparse.h
 
+$(METOBJ)metrecorder.$(OBJ): $(METSRC)metrecorder.c
+	$(METCCC) $(METSRC)metrecorder.c $(METO_)metrecorder.$(OBJ)
+
+
 $(METOBJ)metcanvas.$(OBJ): $(METSRC)metcanvas.c
 	$(METCCC) $(METSRC)metcanvas.c $(METO_)metcanvas.$(OBJ)
 
@@ -103,7 +107,8 @@ MET_OBJS=$(METOBJ)metparse.$(OBJ) $(METOBJ)metstate.$(OBJ) \
 	 $(METOBJ)xps_image_png.$(OBJ) \
 	 $(METOBJ)xps_image_tiff.$(OBJ) \
 	 $(METOBJ)metgstate.$(OBJ) \
-	 $(METOBJ)metcanvas.$(OBJ)
+	 $(METOBJ)metcanvas.$(OBJ) \
+	 $(METOBJ)metrecorder.$(OBJ)
 
 $(METOBJ)met.dev: $(MET_MAK) $(ECHOGS_XE) $(MET_OBJS)
 	$(SETMOD) $(METOBJ)met $(MET_OBJS)

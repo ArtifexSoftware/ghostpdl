@@ -25,36 +25,33 @@
 #include "gserror.h"
 #include "metcomplex.h"
 #include "metelement.h"
+#include "metutil.h"
 #include <stdlib.h> /* nb for atof */
 
 private int
 FixedPage_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
 {
-    CT_FixedPage *fp = 
+    CT_FixedPage *aFixedPage = 
         (CT_FixedPage *)gs_alloc_bytes(ms->memory,
                                        sizeof(CT_FixedPage),
                                        "FixedPage_cook");
     int i;
-    memset(fp, 0, sizeof(CT_FixedPage));
+    memset(aFixedPage, 0, sizeof(CT_FixedPage));
     for(i = 0; attr[i]; i += 2) {
-        if (!strcmp(attr[i], "Width")) {
-            fp->Width = atof(attr[i+1]); /* nb wrong - assumes the datatype */
-            fp->avail.Width = 1;
-        } else if (!strcmp(attr[i], "Height")) {
-            fp->Height = atof(attr[i+1]); /* nb wrong - assumes the datatype */
-            fp->avail.Height = 1;
-        } else if (!strcmp(attr[i], "ContentBox")) {
-            fp->ContentBox = attr[i+1];
-            fp->avail.ContentBox = 1;
-        } else if (!strcmp(attr[i], "BleedBox")) {
-            fp->BleedBox = attr[i+1];
-            fp->avail.BleedBox = 1;
-        } else {
+        if (!strcmp(attr[i], "Width"))
+            aFixedPage->Width = atof(attr[i+1]);
+        else if (!strcmp(attr[i], "Height"))
+            aFixedPage->Height = atof(attr[i+1]); /* nb wrong - assumes the datatype */
+        else if (!MYSET(&aFixedPage->ContentBox, "ContentBox"))
+            ;
+        else if (!MYSET(&aFixedPage->BleedBox, "BleedBox"))
+            ;
+        else {
             gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
     }
-    *ppdata = fp;
+    *ppdata = aFixedPage;
     return 0; /* incomplete */
 }
 
@@ -62,7 +59,7 @@ private int
 FixedPage_action(void *data, met_state_t *ms)
 {
 
-    CT_FixedPage *fp = data;
+    CT_FixedPage *aFixedPage = data;
     
     gs_state *pgs = ms->pgs;
     gx_device *dev = gs_currentdevice(pgs);
@@ -77,8 +74,8 @@ FixedPage_action(void *data, met_state_t *ms)
     
     /* nb review handling of error codes for parameter writing */
     gs_c_param_list_write(&list, mem);
-    fv[0] = fp->Width / 96.0 * 72.0;
-    fv[1] = fp->Height / 96.0 * 72.0;
+    fv[0] = aFixedPage->Width / 96.0 * 72.0;
+    fv[1] = aFixedPage->Height / 96.0 * 72.0;
     fa.size = 2;
     code = param_write_float_array((gs_param_list *)&list, ".MediaSize", &fa);
     gs_c_param_list_write(&list, mem);
@@ -96,7 +93,7 @@ FixedPage_action(void *data, met_state_t *ms)
     code = gs_scale(pgs, 72.0/96.0, -72.0/96.0);
     if (code < 0)
         return code;
-    code = gs_translate(pgs, 0.0, -fp->Height);
+    code = gs_translate(pgs, 0.0, -aFixedPage->Height);
     if (code < 0)
         return code;
     code = gs_erasepage(pgs);
@@ -106,7 +103,7 @@ FixedPage_action(void *data, met_state_t *ms)
 private int
 FixedPage_done(void *data, met_state_t *ms)
 {
-    /* CT_FixedPage *fp = data; */
+    /* CT_FixedPage *aFixedPage = data; */
     (ms->end_page)(ms, 1 /* Copies */, true /* flush */);
 
     gs_free_object(ms->memory, data, "FixedPage_done");

@@ -23,6 +23,7 @@
 
 #include <stdlib.h>  /* NB for atof */
 #include "memory_.h"
+#include "ctype_.h"
 #include "metcomplex.h"
 #include "metstate.h"
 #include "metelement.h"
@@ -179,3 +180,5 @@ const met_element_t met_element_procs_Canvas = {
         Canvas_done
     }
 };
+
+

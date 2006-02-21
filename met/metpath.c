@@ -22,11 +22,13 @@
 #include "metelement.h"
 #include "metgstate.h"
 #include "metutil.h"
+#include "gscoord.h"
 #include "gspath.h"
 #include "gspaint.h"
 #include "math_.h"
 #include "ctype_.h"
 #include <stdlib.h> /* nb for atof */
+
 
 
 /* this function is passed to the split routine (see below) */
@@ -45,9 +47,10 @@ getPoint(const char *metPoint)
     char *p = pstr;
     char *args[2];
     char ch;
-    while (ch = *metPoint++) {
+    while ((ch = *metPoint)) {
         if (!isspace(ch))
             *p++ = ch;
+        metPoint++;
     }
     *p = '\0'; /* null terminate p */
 
@@ -69,13 +72,13 @@ PathFigure_cook(void **ppdata, met_state_t *ms, const char *el, const char **att
     memset(aPathFigure, 0, sizeof(CT_PathFigure));
     /* parse attributes, filling in the zeroed out C struct */
     for(i = 0; attr[i]; i += 2) {
-        if (!strcmp(attr[i], "IsClosed")) {
+        if (!strcmp(attr[i], "IsClosed"))
             aPathFigure->isClosed = !strcmp(attr[i+1], "true");
-        } else if (!strcmp(attr[i], "StartPoint")) {
-            aPathFigure->StartPoint = attr[i+1];
-        } else if (!strcmp(attr[i], "isFilled")) {
-            aPathFigure->isFilled  = attr[i+1];
-        } else {
+        else if (!strcmp(attr[i], "isFilled"))
+            aPathFigure->isFilled = !strcmp(attr[i+1], "true");
+        else if (!MYSET(&aPathFigure->StartPoint, "StartPoint"))
+            ;
+        else {
             gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
@@ -142,15 +145,15 @@ Path_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
         if (!met_cmp_and_set(&aPath->Stroke,
                              attr[i], attr[i+1], "Stroke"))
             ;
-        else if (!met_cmp_and_set(&aPath->StrokeThickness,
-                                  attr[i], attr[i+1], "StrokeThickness")) 
-            ;
         else if (!met_cmp_and_set(&aPath->Data,
                                   attr[i], attr[i+1], "Data")) 
             ;
         else if (!met_cmp_and_set(&aPath->Fill,
                                   attr[i], attr[i+1], "Fill"))
             ;
+        else if (!strcmp(attr[i], "StrokeThickness"))
+            aPath->StrokeThickness = atof(attr[i+1]);
+
         else {
             gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
@@ -411,9 +414,9 @@ PolyLineSegment_cook(void **ppdata, met_state_t *ms, const char *el, const char 
 
     /* parse attributes, filling in the zeroed out C struct */
     for(i = 0; attr[i]; i += 2) {
-        if (!strcmp(attr[i], "Points")) {
-            aPolyLineSegment->Points = attr[i + 1];
-        } else {
+        if (!MYSET(&aPolyLineSegment->Points, "Points"))
+            ;
+        else {
             gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
@@ -433,7 +436,6 @@ PolyLineSegment_action(void *data, met_state_t *ms)
     gs_memory_t *mem = ms->memory;
     int code = 0;
     if (aPolyLineSegment->Points) {
-        char *s;
         char pstr[strlen(aPolyLineSegment->Points) + 1];
         /* the number of argument will be less than the length of the
            data.  NB wasteful. */
@@ -503,7 +505,7 @@ Path_Fill_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr
 private int
 Path_Fill_action(void *data, met_state_t *ms)
 {
-    CT_CP_Brush *aPath_Fill = data;
+    /* CT_CP_Brush *aPath_Fill = data; */
     met_setpathchild(ms->pgs, met_fill);
     return 0;
 }
@@ -539,9 +541,9 @@ SolidColorBrush_cook(void **ppdata, met_state_t *ms, const char *el, const char 
 
     /* parse attributes, filling in the zeroed out C struct */
     for(i = 0; attr[i]; i += 2) {
-        if (!strcmp(attr[i], "Color")) {
-            aSolidColorBrush->Color = attr[i+1];
-        } else {
+        if (!MYSET(&aSolidColorBrush->Color, "Color"))
+            ;
+        else {
             gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
@@ -602,7 +604,7 @@ Path_Stroke_cook(void **ppdata, met_state_t *ms, const char *el, const char **at
 private int
 Path_Stroke_action(void *data, met_state_t *ms)
 {
-    CT_CP_Brush *aPath_Stroke = data;
+    /* CT_CP_Brush *aPath_Stroke = data; */
     
     return 0;
 
@@ -637,9 +639,6 @@ ArcSegment_cook(void **ppdata, met_state_t *ms, const char *el, const char **att
     int i;
 
     memset(aArcSegment, 0, sizeof(CT_ArcSegment));
-
-#define MYSET(field, value)                                                   \
-    met_cmp_and_set((field), attr[i], attr[i+1], (value))
 
     /* set defaults */
     aArcSegment->IsStroked = true;
@@ -692,7 +691,7 @@ ArcSegment_action(void *data, met_state_t *ms)
     gs_state *pgs = ms->pgs;
     gs_memory_t *mem = ms->memory;
     gs_point start, end, size, midpoint, halfdis, thalfdis, tcenter, center;
-    double center1, sign, rot, start_angle, delta_angle;
+    double sign, rot, start_angle, delta_angle;
     int code;
     bool isLargeArc, isClockwise;
 
@@ -794,6 +793,7 @@ ArcSegment_action(void *data, met_state_t *ms)
         /* restore the ctm */
         gs_setmatrix(pgs, &save_ctm);
     }
+    return 0;
 }
 
 private int
@@ -829,9 +829,9 @@ PolyBezierSegment_cook(void **ppdata, met_state_t *ms, const char *el, const cha
 
     /* parse attributes, filling in the zeroed out C struct */
     for(i = 0; attr[i]; i += 2) {
-        if (!strcmp(attr[i], "Points")) {
-            aPolyBezierSegment->Points = attr[i + 1];
-        } else {
+        if (!MYSET(&aPolyBezierSegment->Points, "Points"))
+            ;
+        else {
             gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
@@ -851,7 +851,6 @@ PolyBezierSegment_action(void *data, met_state_t *ms)
     gs_memory_t *mem = ms->memory;
     int code = 0;
     if (aPolyBezierSegment->Points) {
-        char *s;
         char pstr[strlen(aPolyBezierSegment->Points) + 1];
         /* the number of argument will be less than the length of the
            data.  NB wasteful. */
@@ -919,9 +918,9 @@ PolyQuadraticBezierSegment_cook(void **ppdata, met_state_t *ms, const char *el, 
 
     /* parse attributes, filling in the zeroed out C struct */
     for(i = 0; attr[i]; i += 2) {
-        if (!strcmp(attr[i], "Points")) {
-            aPolyQuadraticBezierSegment->Points = attr[i + 1];
-        } else {
+        if (!MYSET(&aPolyQuadraticBezierSegment->Points, "Points"))
+            ;
+        else {
             gs_throw2(-1, "unsupported attribute %s=%s\n",
                      attr[i], attr[i+1]);
         }
@@ -944,7 +943,6 @@ PolyQuadraticBezierSegment_action(void *data, met_state_t *ms)
     gs_memory_t *mem = ms->memory;
     int code = 0;
     if (aPolyQuadraticBezierSegment->Points) {
-        char *s;
         char pstr[strlen(aPolyQuadraticBezierSegment->Points) + 1];
         /* the number of argument will be less than the length of the
            data.  NB wasteful. */

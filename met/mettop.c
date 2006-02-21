@@ -362,7 +362,7 @@ met_impl_process_eof(
         pl_interp_instance_t *pinstance        /* interp instance to process data job in */
 )
 {
-    met_interp_instance_t *pmeti = (met_interp_instance_t *)pinstance;
+    /* met_interp_instance_t *pmeti = (met_interp_instance_t *)pinstance; */
     return 0;
 }
 

@@ -25,22 +25,31 @@
 
 typedef struct met_parser_state_s met_parser_state_t;
 
-typedef struct data_element_s {
-    met_element_t *met_element_procs;
-    void *data;
-} data_element_t;
+/* data types for recording */
+
+/* we just store the all the procs when recording an element and the
+   following selector is used to determine which procedure to call.  A
+   union might be better for this, but not much difference.  Also we
+   really only need distinguish between cook/action vs. done to establish the right playback. */
+
+typedef enum {met_cook, met_action, met_done} met_selector;
+
+/* an element and its associated cooked data */
+typedef struct met_cooked_element_s {
+    met_selector sel;
+    met_element_procs_t *met_element_procs;
+    void *cooked_data;
+} data_element_t; /* nb rename me met_ */
 
 struct met_parser_state_s {
     gs_memory_t *memory;
     int error_code; /* error detected in a callback */
     int depth;
     void *parser;
-    data_element_t data_stack[20]; /* nb should not have depth limitation */
-    int stack_top;
+    data_element_t element_history[20]; /* nb should not have depth limitation */
+    int last_element;
     int depth_at_record_start;
     int recording;
-    int record_start;
-    int record_stop;  
     met_state_t *mets; /* nb this should be separated out - reconsider */
 };
 

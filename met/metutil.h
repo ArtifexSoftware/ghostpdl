@@ -28,7 +28,7 @@
    could be used as a delimeter function.  Returns number of args. */
    
 
-int met_split(char *b, char **args, bool (*delimfunc(char c)));
+int met_split(char *b, char **args, bool (*delimfunc)(char c));
 
 /* utility to expand empty arguments in a string with a sentinel value */
 char *
@@ -37,6 +37,10 @@ met_expand(char *s1, const char *s2, const char delimiter, const char sentinel);
 
 /* strcmp(lhs, attr) || *field = rhs saves keystrokes */
 int met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *attr_name);
+
+/* nb we agreed these fields should be handled by hashing the strings - change me */
+#define MYSET(field, value)                                                   \
+    met_cmp_and_set((field), attr[i], attr[i+1], (value))
 
 /* nb should use a gs type but this is expedient for now.  Convert an
    rgb hex string to an rgb triple */

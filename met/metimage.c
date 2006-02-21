@@ -30,6 +30,8 @@
 #include "gsimage.h"
 #include "gscspace.h"
 #include "gsptype1.h"
+#include "gscoord.h"
+#include "gscolor2.h"
 #include <stdlib.h> /* nb for atof */
 #include "strimpl.h"
 #include "scommon.h"
@@ -37,6 +39,9 @@
 #include "sdct.h"
 #include "sjpeg.h"
 #include "zipparse.h"
+#include "gxstate.h" /* for gs_state_memory() */
+#include "gdebug.h"
+#include "gsutil.h"
 
 private int
 ImageBrush_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
@@ -80,13 +85,6 @@ ImageBrush_cook(void **ppdata, met_state_t *ms, const char *el, const char **att
 
     /* copy back the data for the parser. */
     *ppdata = aImageBrush;
-    return 0;
-}
-
-private int
-stream_error(stream_state * st, const char *str)
-{
-    dprintf1(st->memory, "stream error %s\n", str );
     return 0;
 }
 
@@ -190,7 +188,7 @@ met_PaintPattern(const gs_client_color *pcc, gs_state *pgs)
     uint used;
     int code;
 
-    if (gs_debug_c('i'))
+    if (gs_debug_c('b'))
 	dprintf5(mem, "paint_image cs=%d n=%d bpc=%d w=%d h=%d\n",
 		 pmim->colorspace, pmim->comps, pmim->bits, pmim->width, pmim->height);
 

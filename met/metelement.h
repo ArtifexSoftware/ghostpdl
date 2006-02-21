@@ -37,57 +37,57 @@ typedef struct met_element_s {
 met_element_procs_t *met_get_element_definition(const char *element);
 
 /* generate externs */
-#define EXTERN(element)\
+#define EXTERNS(element)\
     extern  const met_element_t met_element_procs_ ## element
 
-EXTERN(ArcSegment);
-EXTERN(Canvas);
-EXTERN(Canvas_Clip);
-EXTERN(Canvas_OpacityMask);
-EXTERN(Canvas_RenderTransform);
-EXTERN(Canvas_Resources);
-EXTERN(DocumentReference);
-EXTERN(FixedDocument);
-EXTERN(FixedDocumentSequence);
-EXTERN(FixedPage);
-EXTERN(FixedPage_RenderTransform);
-EXTERN(FixedPage_Resources);
-EXTERN(Glyphs);
-EXTERN(Glyphs_Clip);
-EXTERN(Glyphs_Fill);
-EXTERN(Glyphs_OpacityMask);
-EXTERN(Glyphs_RenderTransform);
-EXTERN(GradientStop);
-EXTERN(ImageBrush);
-EXTERN(ImageBrush_Transform);
-EXTERN(LinearGradientBrush);
-EXTERN(LinearGradientBrush_GradientStops);
-EXTERN(LinearGradientBrush_Transform);
-EXTERN(LinkTarget);
-EXTERN(MatrixTransform);
-EXTERN(PageContent);
-EXTERN(PageContent_LinkTargets);
-EXTERN(Path);
-EXTERN(Path_Clip);
-EXTERN(Path_Data);
-EXTERN(Path_Fill);
-EXTERN(Path_OpacityMask);
-EXTERN(Path_RenderTransform);
-EXTERN(Path_Stroke);
-EXTERN(PathFigure);
-EXTERN(PathGeometry);
-EXTERN(PathGeometry_Transform);
-EXTERN(PolyBezierSegment);
-EXTERN(PolyLineSegment);
-EXTERN(PolyQuadraticBezierSegment);
-EXTERN(RadialGradientBrush);
-EXTERN(RadialGradientBrush_GradientStops);
-EXTERN(RadialGradientBrush_Transform);
-EXTERN(ResourceDictionary);
-EXTERN(SolidColorBrush);
-EXTERN(VisualBrush);
-EXTERN(VisualBrush_Transform);
-EXTERN(VisualBrush_Visual);
+EXTERNS(ArcSegment);
+EXTERNS(Canvas);
+EXTERNS(Canvas_Clip);
+EXTERNS(Canvas_OpacityMask);
+EXTERNS(Canvas_RenderTransform);
+EXTERNS(Canvas_Resources);
+EXTERNS(DocumentReference);
+EXTERNS(FixedDocument);
+EXTERNS(FixedDocumentSequence);
+EXTERNS(FixedPage);
+EXTERNS(FixedPage_RenderTransform);
+EXTERNS(FixedPage_Resources);
+EXTERNS(Glyphs);
+EXTERNS(Glyphs_Clip);
+EXTERNS(Glyphs_Fill);
+EXTERNS(Glyphs_OpacityMask);
+EXTERNS(Glyphs_RenderTransform);
+EXTERNS(GradientStop);
+EXTERNS(ImageBrush);
+EXTERNS(ImageBrush_Transform);
+EXTERNS(LinearGradientBrush);
+EXTERNS(LinearGradientBrush_GradientStops);
+EXTERNS(LinearGradientBrush_Transform);
+EXTERNS(LinkTarget);
+EXTERNS(MatrixTransform);
+EXTERNS(PageContent);
+EXTERNS(PageContent_LinkTargets);
+EXTERNS(Path);
+EXTERNS(Path_Clip);
+EXTERNS(Path_Data);
+EXTERNS(Path_Fill);
+EXTERNS(Path_OpacityMask);
+EXTERNS(Path_RenderTransform);
+EXTERNS(Path_Stroke);
+EXTERNS(PathFigure);
+EXTERNS(PathGeometry);
+EXTERNS(PathGeometry_Transform);
+EXTERNS(PolyBezierSegment);
+EXTERNS(PolyLineSegment);
+EXTERNS(PolyQuadraticBezierSegment);
+EXTERNS(RadialGradientBrush);
+EXTERNS(RadialGradientBrush_GradientStops);
+EXTERNS(RadialGradientBrush_Transform);
+EXTERNS(ResourceDictionary);
+EXTERNS(SolidColorBrush);
+EXTERNS(VisualBrush);
+EXTERNS(VisualBrush_Transform);
+EXTERNS(VisualBrush_Visual);
 #undef EXTERNS
 
 #endif /* metelement_INCLUDED */

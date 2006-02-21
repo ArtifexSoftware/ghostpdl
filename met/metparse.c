@@ -19,6 +19,7 @@
 #include "metparse.h"
 #include "metelement.h"
 #include "metcomplex.h"
+#include "metrecorder.h"
 #include "gdebug.h"
 #include "gserror.h"
 
@@ -58,63 +59,95 @@ met_set_error(met_parser_state_t *st, int error_code)
     st->error_code = error_code;
     return;
 }
+
+
 #define INDENT (st->depth * 4)
 
+#ifdef DEBUG
+private void
+parse_trace(const char *el, const char **attr, int indent)
+{
+    /* nothing to do if not debugging parser flag */
+    if (!gs_debug_c('i'))
+        return;
+    /* assume empty attribute means close element */
+    if (!attr)
+        dprintf3(gs_mem_ptr, "%*s%s\n", indent + 1, "/", el);
+    else
+        dprintf2(gs_mem_ptr, "%*s\n", indent + strlen(el), el);
+    /* print the attributes if we have any.  aren't closing out the element */
+    if (attr) {
+        int i;
+        for (i = 0; attr[i]; i += 2)
+            dprintf3(gs_mem_ptr, "%*s='%.256s'\n",
+                     indent + strlen(attr[i]),
+                     attr[i], attr[i + 1]);
+    }
+}
+#else
+#define parse_trace(a, b, c) /* null */
+#endif    
 
+/* check an element has an implementation */
+private bool 
+element_ok(met_element_procs_t *metp, const char *el)
+{
+    if (!metp) {
+        gs_warn1("element: %s is not in the definition table", el);
+        return false;
+    } else if (!metp->init || !metp->action || !metp->done) {
+        gs_warn1("element: %s has incomplete implementation", el);
+        return false;
+    }
+    return true;
+}
 /* start and end callbacks NB DOC */
 private void
 met_start(void *data, const char *el, const char **attr)
 {
-    int i;
     met_parser_state_t *st = data;
     gs_memory_t *mem = st->memory;
+    met_element_procs_t *metp = met_get_element_definition(el);
     int code;
-    if ( gs_debug_c('i') ) {
-        dprintf2(mem, "%*s\n", INDENT + strlen(el), el);
-        for (i = 0; attr[i]; i += 2)
-            dprintf3(mem, "%*s='%.256s'\n", 
-                     INDENT + strlen(attr[i]),
-                     attr[i], attr[i + 1]);
-    }
-    {
-        met_element_procs_t *metp = met_get_element_definition(el);
-        if (!metp) {
-            if ( gs_debug_c('i') ) {
-                const char *msg = "element is not in definition table\n";
-                dprintf2(mem, "%*s\n", INDENT + strlen(msg), msg);
-            }
-        } else if (!metp->init || !metp->action || !metp->done) {
-            if ( gs_debug_c('i') ) {
-                dprintf2(mem, "%*s has no implementation\n", 
-                         INDENT + strlen(el), el);
-            }
-        } else {
-            data_element_t *data = &st->data_stack[st->stack_top];
-            /* stuff in the procedures */
-            data->met_element_procs = metp;
-            code = (*metp->init)(&data->data, st->mets, el, attr);
-            if (code < 0) {
-		gs_rethrow(code, "met_start init");
+
+    parse_trace(el, attr, INDENT);
+
+    if (element_ok(metp, el)) {
+        /* add and element and its cooked data to the history list.
+           Point element to it's slot in the history list. */
+        data_element_t *element = &st->element_history[st->last_element];
+        /* stuff in the procedure definitions */
+        element->met_element_procs = metp;
+        /* selector to pick a procedure */
+        element->sel = met_action;
+        /* call the cook procedure, it initializes the cooked data */
+        code = (*metp->init)(&element->cooked_data, st->mets, el, attr);
+        if (code < 0) {
+            gs_rethrow(code, "met_start init");
+            met_set_error(st, code);
+        }
+        /* start recording */
+        if (code == 1) { /* nb record me return value */
+            if (st->recording) {
+                gs_rethrow(code, "Fatal recursive recording not supported");
                 met_set_error(st, code);
             }
-            if (code == 1) { /* record me */
-                dprintf2(mem, "starting recording at %s stack pos %d\n", el, st->depth);
-                st->recording = true;
-                st->record_start = st->stack_top;
-                st->depth_at_record_start = st->depth;
-                st->record_stop = st->stack_top - 1;
-            }
-            if (!st->recording) {
-                code = (*metp->action)(data->data, st->mets);
-                if (code < 0) {
-                    gs_rethrow(code, "met_start action");
-                    met_set_error(st, code);
-                }
-            }
-            st->stack_top++;
-            if (st->recording) 
-                st->record_stop++;
+            st->recording = true;
+            st->depth_at_record_start = st->depth;
+            dprintf2(mem, "starting recording at %s stack pos %d\n", el, st->depth);
         }
+
+        if (st->recording) {
+            met_record(mem, element);
+        } else {
+            /* only cook if we are recording */
+            code = (*metp->action)(element->cooked_data, st->mets);
+            if (code < 0) {
+                gs_rethrow(code, "met_start action");
+                met_set_error(st, code);
+            }
+        }
+        st->last_element++;
     }
     st->depth++;
 
@@ -129,44 +162,34 @@ met_end(void *data, const char *el)
     met_parser_state_t *st = data;
     gs_memory_t *mem = st->memory;
     int code = 0;
-    bool just_turned_recording_off = false;
 
     st->depth--;
-    if ( gs_debug_c('i') ) {
-        /* nb gcc'ism */
-        const char *term = "/";
-        char str[strlen(term) + strlen(el) + 1];
-        strcpy(str, term);
-        strcat(str, el);
-        dprintf2(mem, "%*s\n", INDENT + strlen(str), str);
-    }
+    parse_trace(el, NULL, INDENT);
 
-    if (metp && metp->done) {
-        data_element_t *data;
-        st->stack_top--;
-        if (st->recording && (st->depth == st->depth_at_record_start)) {
-            st->recording = false;
-            just_turned_recording_off = true;
-            dprintf2(mem, "end of recording depth=%d record start=%d\n", st->depth, st->depth_at_record_start);
-            data = &st->data_stack[st->record_start];
+    if (element_ok(metp, el)) {
+        data_element_t element;
+        st->last_element--;
+        element = st->element_history[st->last_element];
+        if (st->recording) {
+            element.sel = met_done;
+            code = met_record(mem, &element);
+            /* just free the cooked resource, the recorder made a copy. */
+            gs_free_object(mem, element.cooked_data, "met parser");
+            /* check if we have returned to the depth */
+            if (st->depth == st->depth_at_record_start) {
+                if (code >= 0) {
+                    code = met_playback(st->mets);
+                    if (code >= 0) {
+                        st->recording = false;
+                    }
+                }
+            }
         } else {
-            data = &st->data_stack[st->stack_top];
+            code = (*metp->done)(element.cooked_data, st->mets);
         }
-
-        if (!st->recording) {
-            if (just_turned_recording_off) {
-                st->mets->entries_recorded = st->record_stop - st->record_start;
-                dprintf1(mem, "turning recording off elements recorded=%d\n", st->mets->entries_recorded);
-
-                code = (*metp->done)(data, st->mets);
-
-            } else {
-                code = (*metp->done)(data->data, st->mets);
-            }
-            if (code < 0) {
-                gs_rethrow(code, "metp->done");
-                met_set_error(st, code);
-            }
+        if (code < 0) {
+            gs_rethrow(code, "metp->done");
+            met_set_error(st, code);
         }
     }
 }
@@ -202,7 +225,7 @@ met_process_alloc(gs_memory_t *memory)
     stp->parser = p;
     stp->depth = 0;    
     stp->error_code = 0;
-    stp->stack_top = 0;
+    stp->last_element = 0;
     stp->recording = false;
     /* set up the start end callbacks */
     XML_SetElementHandler(p, met_start, met_end);

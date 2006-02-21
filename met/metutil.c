@@ -14,7 +14,9 @@
 /* metutil.c */
 
 #include "metutil.h"
+#include "string_.h"
 #include <stdlib.h>
+#include "ctype_.h"
 
 int
 met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *attr_name) 
@@ -28,16 +30,16 @@ met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *attr
 }
 
 int 
-met_split(char *b, char **args, bool (*delimfunc(char c)))
+met_split(char *b, char **args, bool (*delimfunc)(char c))
 {
     int cnt = 0;
 
-    while (*b != NULL) {
+    while (*b != (char)NULL) {
         while (delimfunc(*b))
-            *b++ = NULL;
+            *b++ = (char)NULL;
         *args++ = b;
 	cnt++;
-        while((*b != NULL) && (!delimfunc(*b)))
+        while((*b != (char)NULL) && (!delimfunc(*b)))
             b++;
     }
     *args = NULL;
@@ -68,7 +70,7 @@ met_expand(char *s1, const char *s2, const char delimiter, const char sentinel)
 rgb_t
 met_hex2rgb(char *hexstring)
 {
-    char *hextable = "0123456789ABCDEF";
+    const char *hextable = "0123456789ABCDEF";
     rgb_t rgb;
     char *hexstringp = hexstring;
     /* nb need to look into color specification */
@@ -92,7 +94,7 @@ met_strdup(gs_memory_t *mem, const char *str)
 {
     char *s = NULL;   
     if ( str )
-        s = gs_alloc_bytes(mem, strlen(str) + 1, met_strdup);
+        s = gs_alloc_bytes(mem, strlen(str) + 1, "met strdup");
     if ( s )
         strcpy(s, str);
     return s;
