@@ -313,10 +313,14 @@ void process_path(char *path, const char *prefix, Xlist_element *Xlist_head, int
     strcat(prefixed_path, path);
     strcat(prefixed_path, "*");
 #ifdef __WIN32__
-    /* On Windows, the paths may (will) have '\' instead of '/' so we translate them */
-    for (i=0; i<strlen(prefixed_path); i++)
-	if (prefixed_path[i] == '\\')
-	    prefixed_path[i] = '/';
+    {
+	int i;
+
+	/* On Windows, the paths may (will) have '\' instead of '/' so we translate them */
+	for (i=0; i<strlen(prefixed_path); i++)
+	    if (prefixed_path[i] == '\\')
+		prefixed_path[i] = '/';
+	}
 #endif
     /* check for the file on the Xlist */
     pfenum = gp_enumerate_files_init(prefixed_path, strlen(prefixed_path),
