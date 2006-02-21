@@ -2604,16 +2604,30 @@ $(GLD)shadelib.dev : $(LIB_MAK) $(ECHOGS_XE) $(shadelib_)\
 
 # ---------------- Support for %rom% IODevice ----------------- #
 # This is used to access compressed, compiled-in support files
-# define the romfs.dev FEATURE
 romfs_=$(GLOBJ)gsiorom.$(OBJ)
-$(GLD)romfs.dev : $(LIB_MAK) $(ECHO_XE) $(romfs_)
-	$(SETMOD) $(GLD)romfs $(romfs_)
-	$(ADDMOD) $(GLD)romfs -iodev rom
+$(GLD)romfs1.dev : $(LIB_MAK) $(ECHO_XE) $(romfs_)
+	$(SETMOD) $(GLD)romfs1 $(romfs_)
+	$(ADDMOD) $(GLD)romfs1 -iodev rom
+	$(ADDMOD) $(GLD)romfs1 -obj $(GLOBJ)gsromfs.$(OBJ)
+
+# A dummy romfs when we aren't using COMPILE_INITS
+$(GLD)romfs0.dev :  $(LIB_MAK) $(ECHO_XE) 
+	$(SETMOD) $(GLD)romfs0 
 
 # the following module is only included if the romfs.dev FEATURE is enabled
-$(GLOBJ)gsiorom.$(OBJ) : $(GLSRC)gsiorom.c \
+$(GLOBJ)gsiorom.$(OBJ) : $(GLSRC)gsiorom.c $(GLSRC)gsiorom.h \
  $(std_h) $(gx_h) $(gserrors_h) $(gsstruct_h) $(gxiodev_h)
-	$(GLCC) $(GLO_)gsiorom.$(OBJ) $(C_) $(GLSRC)gsiorom.c
+	$(GLCC) $(GLO_)gsiorom.$(OBJ) $(I_)$(ZI_)$(_I) $(C_) $(GLSRC)gsiorom.c
+
+$(GLOBJ)gsromfs.$(OBJ) : $(GLOBJ)gsromfs.c
+	$(GLCC) $(GLO_)gsromfs.$(OBJ) $(C_) $(GLOBJ)gsromfs.c
+
+# The following is only and example since the %rom% IODevice is not exclusively
+# a PostScript feature (although it is usually used for COMPILE_INITS
+# If not using the PS interpreter, the rule for gsromfs.c in int.mak is not used
+# In that case build it here using the example below:
+# $(GLOBJ)gsromfs.c: $(GLSRC)mkromfs.c $(MKROMFS_XE)
+# 	$(EXP)$(MKROMFS_XE) -o $(GLOBJ)gsromfs.c -c -P my_rom_contents/ *
 
 # ---------------- Support for %disk IODevices ---------------- #
 # The following module is included only if the diskn.dev FEATURE is included

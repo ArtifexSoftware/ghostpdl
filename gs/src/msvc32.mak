@@ -306,6 +306,8 @@ CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
 WARNOPT=-W2
 !endif
 
+CWD_PREFIX=./
+
 #
 # Do not edit the next group of lines.
 
@@ -625,6 +627,9 @@ FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(P
 !ifndef COMPILE_INITS
 COMPILE_INITS=0
 !endif
+
+# This is in the top level makefile since it is platform dependent
+RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdoimSet/ Resource/CIDFont/
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.

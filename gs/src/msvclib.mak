@@ -117,6 +117,8 @@ GLGENDIR=.\obj
 GLOBJDIR=.\obj
 !endif
 
+CWD_PREFIX=./
+
 # Do not edit the next group of lines.
 NUL=
 DD=$(GLGENDIR)\$(NUL)
@@ -391,6 +393,10 @@ SYNC=winsync
 !ifndef FEATURE_DEVS
 FEATURE_DEVS=$(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev $(GLD)imasklib.dev $(GLD)patlib.dev $(GLD)htxlib.dev $(GLD)roplib.dev $(GLD)devcmap.dev $(GLD)bbox.dev $(GLD)pipe.dev
 !endif
+
+# The list of resources to be included in the %rom% file system.
+# This is in the top makefile since the file descriptors are platform specific
+RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdoimSet/ Resource/CIDFont/
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.

@@ -135,7 +135,8 @@
 #	COMPILE_INITS - normally 0; if set to 1, compiles the PostScript
 #	    language initialization files (gs_init.ps et al) into the
 #	    executable, eliminating the need for these files to be present
-#	    at run time.
+#	    at run time. Files will be placed in the %rom% device as files.
+#	    Also the 'Resource/*' files will be built into the %rom% device.
 #	BAND_LIST_STORAGE - normally file; if set to memory, stores band
 #	    lists in memory (with compression if needed).
 #	BAND_LIST_COMPRESSOR - normally zlib: selects the compression method
@@ -252,6 +253,7 @@ GENCONF_XE=$(AUXGEN)genconf$(XEAUX)
 GENDEV_XE=$(AUXGEN)gendev$(XEAUX)
 GENHT_XE=$(AUXGEN)genht$(XEAUX)
 GENINIT_XE=$(AUXGEN)geninit$(XEAUX)
+MKROMFS_XE=$(AUXGEN)mkromfs$(XEAUX)
 
 # Define the names of the generated header files.
 # gconfig*.h and gconfx*.h are generated dynamically.
@@ -378,7 +380,7 @@ DEVS_ALL=$(GLGENDIR)$(D)$(PLATFORM).dev\
  $(DEVICE_DEVS10) $(DEVICE_DEVS11) $(DEVICE_DEVS12) $(DEVICE_DEVS13) \
  $(DEVICE_DEVS14) $(DEVICE_DEVS15) $(DEVICE_DEVS16) $(DEVICE_DEVS17) \
  $(DEVICE_DEVS18) $(DEVICE_DEVS19) $(DEVICE_DEVS20) $(DEVICE_DEVS21) \
- $(DEVICE_DEVS_EXTRA)
+ $(DEVICE_DEVS_EXTRA) $(PSD)romfs$(COMPILE_INITS).dev 
 
 devs_tr=$(GLGENDIR)$(D)devs.tr
 $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
@@ -408,6 +410,7 @@ $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS20)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS21)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS_EXTRA)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(PSD)romfs$(COMPILE_INITS).dev
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) - $(GLGENDIR)$(D)libcore
 
 # GCONFIG_EXTRAS can be set on the command line.

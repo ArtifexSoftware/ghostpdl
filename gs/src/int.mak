@@ -964,21 +964,25 @@ $(PSOBJ)iccfont.$(OBJ) : $(PSSRC)iccfont.c $(GH) $(string__h)\
 
 # ---------------- Compiled initialization code ---------------- #
 
-# We select either iccinit0 or iccinit1 depending on COMPILE_INITS.
-
 $(PSOBJ)iccinit0.$(OBJ) : $(PSSRC)iccinit0.c $(stdpre_h)
 	$(PSCC) $(PSO_)iccinit0.$(OBJ) $(C_) $(PSSRC)iccinit0.c
 
-$(PSOBJ)iccinit1.$(OBJ) : $(PSOBJ)gs_init.$(OBJ)
-	$(CP_) $(PSOBJ)gs_init.$(OBJ) $(PSOBJ)iccinit1.$(OBJ)
+$(PSOBJ)iccinit1.$(OBJ) :  $(PSSRC)iccinit1.c $(stdpre_h) $(GLOBJ)gsromfs.$(OBJ)
+	$(PSCC) $(PSO_)iccinit1.$(OBJ) $(C_) $(PSSRC)iccinit1.c
 
-# All the gs_*.ps files should be prerequisites of gs_init.c,
-# but we don't have any convenient list of them.
-$(PSGEN)gs_init.c : $(PSLIB)$(GS_INIT) $(GENINIT_XE) $(gconfig_h)
-	$(EXP)$(GENINIT_XE) -I $(PSLIB) $(GS_INIT) $(gconfig_h) -c $(PSGEN)gs_init.c
+# All the gs_*.ps files should be prerequisites of gs_init.c but we don't have
+# any convenient list of them so we just use lib/gs_init.ps == $(PSLIB)$(GS_INIT).
+$(PSGEN)gs_init.ps : $(PSLIB)$(GS_INIT) $(GENINIT_XE) $(gconfig_h)
+	$(EXP)$(GENINIT_XE) -I $(PSLIB) $(GS_INIT) $(gconfig_h) $(PSGEN)gs_init.ps
 
-$(PSOBJ)gs_init.$(OBJ) : $(PSGEN)gs_init.c $(stdpre_h)
-	$(PSCC) $(PSO_)gs_init.$(OBJ) $(C_) $(PSGEN)gs_init.c
+# The following list of files needed by the interpreter is maintained here.
+# This changes infrequently, but is a potential point of bitrot, but since
+# unix-inst.mak uses this macro, problems should surface when testing installed
+# versions.
+EXTRA_INIT_FILES= Fontmap cidfmap FAPI xlatmap 
+
+$(GLOBJ)gsromfs.c : $(MKROMFS_XE) $(PSGEN)gs_init.ps
+	$(EXP)$(MKROMFS_XE) -o $(GLOBJ)gsromfs.c -c -P $(PSGEN) gs_init.ps -P $(PSLIB) $(EXTRA_INIT_FILES) -P $(CWD_PREFIX) -X .svn $(RESOURCE_LIST)
 
 # ---------------- Stochastic halftone ---------------- #
 

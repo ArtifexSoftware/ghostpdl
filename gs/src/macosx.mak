@@ -33,6 +33,8 @@ PSLIBDIR=./lib
 PSGENDIR=./obj
 PSOBJDIR=./obj
 
+CWD_PREFIX=./
+
 # Do not edit the next group of lines.
 
 #include $(COMMONDIR)/gccdefs.mak
@@ -335,6 +337,10 @@ FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(P
 # The following is strictly for testing.
 FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev
 #FEATURE_DEVS=$(FEATURE_DEVS_ALL)
+
+# The list of resources to be included in the %rom% file system.
+# This is in the top makefile since the file descriptors are platform specific
+RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdoimSet/ Resource/CIDFont/
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.

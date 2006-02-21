@@ -39,6 +39,8 @@ PSLIBDIR=lib
 PSGENDIR=obj
 PSOBJDIR=obj
 
+CWD_PREFIX=./
+
 # Define the root directory for Ghostscript installation.
 
 AROOTDIR=c:/gs
@@ -457,6 +459,9 @@ CC_NO_WARN=$(CC_)
 # Since we have a large address space, we include some optional features.
 
 FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)os2print.dev
+# The list of resources to be included in the %rom% file system.
+# This is in the top makefile since the file descriptors are platform specific
+RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdoimSet/ Resource/CIDFont/
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -631,6 +636,19 @@ $(GENINIT_XE): $(PSSRC)geninit.c $(GENINIT_DEPS)
 !if $(IBMCPP)
 	$(CCAUX) /Fe$(GENINIT_XE) geninit.c
 !endif
+
+MKROMFS_DEPS=$(GLOBJ)compress.$(OBJ) $(GLOBJ)deflate.$(OBJ) $(GLOBJ)zutil.$(OBJ) $(GLOBJ)adler32.$(OBJ) $(GLOBJ)crc32.$(OBJ) $(GLOBJ)trees.$(OBJ) $(GLOBJ)gscdefs.$(OBJ) $(os2__)
+
+$(MKROMFS_XE): $(GLSRC)mkromfs.c $(GLSRC)gsiorom.h $(MKROMFS_DEPS)
+!if $(EMX)
+	$(CCAUX) -o $(AUXGEN)genht $(GENOPT) $(CFLAGS_DEBUG) $(GLSRC)mkromfs.c
+	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)mkromfs $(MKROMFS_DEPS) $(MKROMFS_XE)
+	del $(AUXGEN)mkromfs
+!endif
+!if $(IBMCPP)
+	$(CCAUX) /Fe$(GENHT_XE) genht.c
+!endif
+	$(CCAUX) $(GENOPT) $(CFLAGS_DEBUG) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLOBJ)$(_I) $(I_)$(ZSRCDIR)$(_I) $(GLSRC)mkromfs.c $(O_)$(MKROMFS_XE) $(MKROMFS_DEPS) -lm
 
 # No special gconfig_.h is needed.
 $(gconfig__h): $(TOP_MAKEFILES) $(ECHOGS_XE)

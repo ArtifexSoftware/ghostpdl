@@ -26,6 +26,8 @@ GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(GSROOTDIR)/resource\;$(AROOTDIR)/fonts
 SEARCH_HERE_FIRST=1
 GS_INIT=gs_init.ps
 
+CWD_PREFIX=./
+
 !ifndef DEBUG
 DEBUG=1
 !endif
@@ -133,6 +135,11 @@ FEATURE_DEVS=$(GLD)patlib.dev $(GLD)path1lib.dev
 !ifndef DEVICE_DEVS
 DEVICE_DEVS=$(DD)vga.dev
 !endif
+
+# The list of resources to be included in the %rom% file system.
+# This is in the top makefile since the file descriptors are platform specific
+RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdoimSet/ Resource/CIDFont/
+
 !ifndef COMPILE_INITS
 COMPILE_INITS=0
 !endif

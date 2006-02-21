@@ -37,6 +37,8 @@ PSLIBDIR=lib
 PSGENDIR=obj
 PSOBJDIR=obj
 
+CWD_PREFIX=./
+
 # Define the root directory for Ghostscript installation.
 
 !ifndef AROOTDIR
@@ -313,6 +315,10 @@ SYNC=winsync
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)mspoll.dev $(GLD)pipe.dev $(PSD)fapi.dev
+
+# The list of resources to be included in the %rom% file system.
+# This is in the top makefile since the file descriptors are platform specific
+RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdoimSet/ Resource/CIDFont/
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.

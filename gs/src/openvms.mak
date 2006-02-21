@@ -47,6 +47,8 @@ PSOBJDIR=[.obj]
 BIN_DIR=BIN.DIR
 OBJ_DIR=OBJ.DIR
 
+CWD_PREFIX=[]
+
 # Do not edit the next group of lines.
 
 #include $(COMMONDIR)/vmscdefs.mak
@@ -252,6 +254,17 @@ DEVICE_DEVS21=
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev
+
+# ***********************************************************************************
+#
+#    The following probably won't work without code changes to src/mkromfs.c to
+#    change the VMS style of directory references to PostScript style, but we
+#    have it here in case it works.
+#
+# ***********************************************************************************
+# The list of resources to be included in the %rom% file system.
+# This is in the top makefile since the file descriptors are platform specific
+RESOURCE_LIST=[Resource.CMap] [Resource.ColorSpace] [Resource.Decoding] [Resource.Fonts] [Resource.Procset] [Resource.IdoimSet] [Resource.CIDFont]
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -497,6 +510,15 @@ $(GENINIT_XE) : $(GLOBJDIR)geninit.$(OBJ)
 
 $(GLOBJ)geninit.$(OBJ) :  $(GLSRC)geninit.c $(GENINIT_DEPS)
 	$(CCAUX)/obj=$(GLOBJ)geninit.$(OBJ)  $(GLSRC)geninit.c
+
+MKROMFS_DEPS=$(GLOBJ)compress.$(OBJ) $(GLOBJ)deflate.$(OBJ) $(GLOBJ)zutil.$(OBJ) $(GLOBJ)adler32.$(OBJ) $(GLOBJ)crc32.$(OBJ) $(GLOBJ)trees.$(OBJ) 
+
+# what about include of zlib headers ??? (ZSRCDIR)
+$(GLOBJ)mkromfs.$(OBJ) :  $(GLSRC)mkromfs.c $(GLSRC)gsiorom.h
+	$(CCAUX)/obj=$(GLOBJ)mkromfs.$(OBJ)  $(GLSRC)mkromfs.c
+
+$(MKROMFS_XE): $(GLOBJDIR)mkromfs.$(OBJ) $(MKROMFS_DEPS)
+	LINK/EXE=$@ $(GLOBJ)mkromfs.$(OBJ) $(MKROMFS_DEPS)
 
 # Preliminary definitions
 

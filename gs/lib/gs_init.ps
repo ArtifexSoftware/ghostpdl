@@ -98,7 +98,6 @@ mark	% '[' isn't defined yet
   /PDFOPTDEBUG		% PDF Optimizer (Linearizer)
   /PDFWRDEBUG		% PDF Writer
   /SETPDDEBUG		% setpagedevice
-  /STRESDEBUG		% Static Resources
   /TTFDEBUG		% TTF Fonts
   /VGIFDEBUG		% ViewGIF
   /VJPGDEBUG		% ViewJPEG
@@ -1631,10 +1630,6 @@ if
 } if
 
 (END INITFILES) VMDEBUG
-
-%% Replace 1 (gs_stres.ps)
-(gs_stres.ps) dup runlibfile VMDEBUG
-(END STATIC RESOURCES) VMDEBUG
 
 % Create a null font.  This is the initial font.
 8 dict dup begin

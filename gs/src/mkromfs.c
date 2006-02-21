@@ -16,7 +16,6 @@
 
 /* $Id$ */
 /* Generate source data for the %rom% IODevice */
- 
 /*
  * For reasons of convenience and footprint reduction, the various postscript
  * source files, resources and fonts required by Ghostscript can be compiled
@@ -26,155 +25,458 @@
  * image that can be compiled into the executable as static data and accessed
  * through the %rom% iodevice prefix
  */
+/*
+ *	Usage: mkromfs [-o outputfile] options paths
+ *	    options and paths can be interspersed and are processed in order
+ *	    options:
+ *		-o outputfile	default: obj/gsromfs.c if this option present, must be first.
+ *		-P prefix	use prefix to find path. prefix not included in %rom%
+ *		-X path		exclude the path from further processing.
+ *		-c		compression on
+ *		-b		compression off (binary).
+ *
+ *	    Note: The tail of any path encountered will be tested so .svn
+ */ 
 
+#include "gsiorom.h"
 #include "stdpre.h"
+#include "gsmemret.h" /* for gs_memory_type_ptr_t */
+#include "gsmalloc.h"
+#include "gsstype.h"
+#include "gp.h" 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <zlib.h>
 
-#define ROMFS_BLOCKSIZE 4096
-#define ROMFS_CBUFSIZE ((int)((ROMFS_BLOCKSIZE) * 1.001) + 12)
+/*
+ * The rom file system is an array of pointers to nodes, terminated by a NULL
+ */
+/*
+ * in memory structure of each node is:
+ *
+ *	length_of_uncompressed_file		[31-bit big-endian]
+ *						high bit is compression flag 
+ *	data_block_struct[]
+ *	padded_file_name (char *)	includes as least one terminating <nul>
+ *	padded_data_blocks
+ */
+/*
+ *	data_block_struct:
+ *	    data_length			(not including pad)	[32-bit big-endian]
+ *	    data_block_offset		(start of each block)	[32-bit big-endian]
+ */
 
 typedef struct romfs_inode_s {
-    char *name;
-    struct romfs_inode_s *next, *child;
-    unsigned int blocks;
-    unsigned long length;
-    unsigned long offset;
-    unsigned long data_size;
+    unsigned long length;		/* blocks is (length+ROMFS_BLOCKSIZE-1)/ROMFS_BLOCKSIZE */
+    char *name;				/* nul terminated */
+    unsigned long *data_lengths;	/* this could be short if ROMFS_BLOCKSIZE */
+					/* is < 64k, but the cost is small to use int */
     unsigned char **data;
-    unsigned int *data_lengths;
 } romfs_inode;
 
-static int put_int32(unsigned char *p, const unsigned int q)
+typedef struct Xlist_element_s {
+	void *next;
+	char *path;
+    } Xlist_element;
+
+byte *minimal_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname);
+byte *minimal_alloc_byte_array(gs_memory_t * mem, uint num_elements,
+			     uint elt_size, client_name_t cname);
+void *minimal_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
+	       client_name_t cname);
+void minimal_free_object(gs_memory_t * mem, void * data, client_name_t cname);
+void minimal_free_string(gs_memory_t * mem, byte * data, uint nbytes, client_name_t cname);
+
+/*******************************************************************************
+ * The following is a REALLY minimal gs_memory_t for use by the gp_ functions
+ *******************************************************************************/
+byte *
+minimal_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 {
-    *p++ = (q >> 24) & 0xFF;
-    *p++ = (q >> 16) & 0xFF;
-    *p++ = (q >>  8) & 0xFF;
-    *p++ = (q >>  0) & 0xFF;
-    
-    return 4;
+    return malloc(size);
+}
+
+byte *
+minimal_alloc_byte_array(gs_memory_t * mem, uint num_elements,
+			     uint elt_size, client_name_t cname)
+{
+    return malloc(num_elements * elt_size);
+}
+
+void *
+minimal_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
+	       client_name_t cname)
+{
+    return malloc(pstype->ssize);
+}
+
+void
+minimal_free_object(gs_memory_t * mem, void * data, client_name_t cname)
+{
+    free(data);
+    return;
+}
+
+void
+minimal_free_string(gs_memory_t * mem, byte * data, uint nbytes, client_name_t cname)
+{
+    free(data);
+    return;
+}
+
+void basic_enum_ptrs(void);
+void basic_reloc_ptrs(void);
+
+void basic_enum_ptrs() {
+    printf("basic_enum_ptrs is only called by a GC. Abort.\n");
+    exit(1);
+}
+
+void basic_reloc_ptrs() {
+    printf("basic_reloc_ptrs is only called by a GC. Abort.\n");
+    exit(1);
+}
+
+
+const gs_malloc_memory_t minimal_memory = {
+    (gs_memory_t *)&minimal_memory, /* stable */
+    { minimal_alloc_bytes, /* alloc_bytes_immovable */
+      NULL, /* resize_object */
+      minimal_free_object, /* free_object */
+      NULL, /* stable */
+      NULL, /* status */
+      NULL, /* free_all */
+      NULL, /* consolidate_free */
+      minimal_alloc_bytes, /* alloc_bytes */ 
+      minimal_alloc_struct, /* alloc_struct */
+      minimal_alloc_struct, /* alloc_struct_immovable */
+      minimal_alloc_byte_array, /* alloc_byte_array */
+      minimal_alloc_byte_array, /* alloc_byte_array_immovable */
+      NULL, /* alloc_struct_array */
+      NULL, /* alloc_struct_array_immovable */
+      NULL, /* object_size */
+      NULL, /* object_type */
+      minimal_alloc_bytes, /* alloc_string */
+      minimal_alloc_bytes, /* alloc_string_immovable */
+      NULL, /* resize_string */
+      minimal_free_string, /* free_string */
+      NULL, /* register_root */ 
+      NULL, /* unregister_root */
+      NULL /* enable_free */ 
+    },    
+    NULL, /* gs_lib_ctx */
+    NULL, /* head */
+    NULL, /* non_gc_memory */
+    0, /* allocated */
+    0, /* limit */ 
+    0, /* used */ 
+    0  /* max used */
+};
+
+void put_uint32(FILE *out, const unsigned int q);
+void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len);
+void inode_clear(romfs_inode* node);
+void inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int*totlen);
+void process_path(char *path, const char *prefix, Xlist_element *Xlist_head, int compression,
+	int *inode_count, int *totlen, FILE *out);
+
+/* put 4 byte integer, big endian */
+void put_uint32(FILE *out, const unsigned int q)
+{
+    fprintf (out, "0x%02x%02x%02x%02x,", (q>>24) & 0xff,(q>>16) & 0xff,(q>>8) & 0xff, q & 0xff);
+}
+
+/* write string as 4 character chunks, padded to 4 byte words. */
+void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len)
+{
+    int i, j=0;
+    union {
+	unsigned long l;
+	struct {
+	    unsigned char c1;
+	    unsigned char c2;
+	    unsigned char c3;
+	    unsigned char c4;
+	} c;
+    } l2c;
+
+    for (i=0; i<(len/4); i++) {
+	j = i*4;
+	l2c.c.c1 = p[j++];
+	l2c.c.c2 = p[j++];
+	l2c.c.c3 = p[j++];
+	l2c.c.c4 = p[j++];
+	fprintf(out, "0x%08x,", l2c.l);
+	if ((i & 7) == 7)
+	    fprintf(out, "\n\t");
+    }
+    l2c.l = 0;
+    switch (len - j) {
+      case 3:
+        l2c.c.c3 = p[j+2];
+      case 2:
+        l2c.c.c2 = p[j+1];
+      case 1:
+        l2c.c.c1 = p[j];
+	fprintf(out, "0x%08x,", l2c.l);
+      default: ;
+    }
+    fprintf(out, "\n\t");
 }
 
 /* clear the internal memory of an inode */
 void inode_clear(romfs_inode* node)
 {
-    int i;
+    int i, blocks = (node->length+ROMFS_BLOCKSIZE-1)/ROMFS_BLOCKSIZE;
     
     if (node) {
         if (node->data) {
-            for (i = 0; i < node->blocks; i++) {
+            for (i = 0; i < blocks; i++) {
                 if (node->data[i]) free(node->data[i]);
             }
             free(node->data);
         }
         if (node->data_lengths) free(node->data_lengths);
-        if (node->name) free(node->name);
     }
 }
 
 /* write out and inode and its file data */
-int
-inode_write(FILE *out, romfs_inode *node)
+void
+inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int *totlen)
 {
-    int i, offset = 0;
-    unsigned char buf[64];
-    unsigned char *p = buf;
+    int i, offset;
+    int blocks = (node->length+ROMFS_BLOCKSIZE-1)/ROMFS_BLOCKSIZE;
+    int namelen = strlen(node->name) + 1;	/* include terminating <nul> */
     
-    /* 4 byte offset to next inode */
-    p += put_int32(p, node->offset);
-    /* 4 byte file length */
-    p += put_int32(p, node->length);
-    /* 4 byte path length */
-    p += put_int32(p, strlen(node->name));
+    /* write the node header */
+    fprintf(out,"    static unsigned long node_%d[] = {\n\t", inode_count);
+    /* 4 byte file length + compression flag in high bit */
+    put_uint32(out, node->length | (compression ? 0x80000000 : 0));
+    fprintf(out, "\t/* compression_flag_bit + file length */\n\t");
     
-    printf("writing node '%s'...\n", node->name);
-    printf(" offset %ld\n", node->offset);
-    printf(" length %ld\n", node->length);
-    printf(" path length %ld\n", strlen(node->name));
+    printf("writing node '%s' len=%ld\n", node->name, node->length);
+#ifdef DEBUG
+    printf(" blocks %ld\n", blocks);
+    printf(" compression %d\n", compression);
+#endif
     
-    printf(" %d compressed blocks comprising %ld bytes\n", node->blocks, node->data_size);
+    /* write out data block structures */
+    offset = 4 + (8*blocks) + ((namelen+3) & ~3);
+    *totlen += offset;			/* add in the header size */
+    for (i = 0; i < blocks; i++) {
+	put_uint32(out, node->data_lengths[i]);
+	put_uint32(out, offset);
+	offset += (node->data_lengths[i]+3) & ~3;
+	fprintf(out, "\t/* data_block_length, offset to data_block */\n\t");
+    }
+    /* write file name (path) padded to 4 byte multiple */
+    fprintf(out, "\t/* file name '%s' */\n\t", node->name);
+    put_bytes_padded(out, node->name, namelen);
     
-    /* write header */
-    offset += fwrite(buf, 3, 4, out);
-    /* write path */
-    offset += fwrite(node->name, 1, strlen(node->name), out);
-    /* write block sizes */
-    offset += fwrite(node->data_lengths, node->blocks, sizeof(*node->data_lengths), out);
-    /* write out compressed data */
-    for (i = 0; i < node->blocks; i++)
-        offset += fwrite(node->data[i], 1, node->data_lengths[i], out);
-    
-    printf(" wrote %d bytes in all\n", offset);
-    return offset;
+    /* write out data */
+    for (i = 0; i < blocks; i++) {
+	put_bytes_padded(out, node->data[i], node->data_lengths[i]);
+	*totlen += (node->data_lengths[i]+3) & ~3;	/* padded block length */
+    }
+    fprintf(out, "\t0 };\t/* end-of-node */\n");
 }
 
+
+/* This relies on the gp_enumerate_* which should not return directories, nor */
+/* should it recurse into directories (unlike Adobe's implementation)         */
+void process_path(char *path, const char *prefix, Xlist_element *Xlist_head, int compression,
+	int *inode_count, int *totlen, FILE *out)
+{
+    int namelen, excluded, save_count=*inode_count;
+    Xlist_element *Xlist_scan;
+    char *prefixed_path;
+    char *found_path;
+    file_enum *pfenum;
+    int ret, block, blocks;
+    romfs_inode *node;
+    unsigned char *ubuf, *cbuf;
+    unsigned long ulen, clen;
+    FILE *in;
+
+    prefixed_path = malloc(1024);
+    found_path = malloc(1024);
+    ubuf = malloc(ROMFS_BLOCKSIZE);
+    cbuf = malloc(ROMFS_CBUFSIZE);
+    if (ubuf == NULL || cbuf == NULL || prefixed_path == NULL || found_path == NULL) {
+	printf("malloc fail in process_path\n");
+	exit(1);
+    }
+    prefixed_path[0] = 0;	/* empty string */
+    strcat(prefixed_path, prefix);
+    strcat(prefixed_path, path);
+    strcat(prefixed_path, "*");
+#ifdef __WIN32__
+    /* On Windows, the paths may (will) have '\' instead of '/' so we translate them */
+    for (i=0; i<strlen(prefixed_path); i++)
+	if (prefixed_path[i] == '\\')
+	    prefixed_path[i] = '/';
+#endif
+    /* check for the file on the Xlist */
+    pfenum = gp_enumerate_files_init(prefixed_path, strlen(prefixed_path),
+		    	(gs_memory_t *)&minimal_memory);
+    if (pfenum == NULL) {
+	printf("gp_enumerate_files_init failed.\n");
+	exit(1);
+    }
+    while ((namelen=gp_enumerate_files_next(pfenum, found_path, 1024)) >= 0) {
+	excluded = 0;
+	found_path[namelen] = 0;		/* terminate the string */
+	/* check to see if the tail of the path we found matches one on the exclusion list */
+	for (Xlist_scan = Xlist_head; Xlist_scan != NULL; Xlist_scan = Xlist_scan->next) {
+	    if (strlen(found_path) >= strlen(Xlist_scan->path)) {
+		if (strcmp(Xlist_scan->path, found_path+strlen(found_path)-strlen(Xlist_scan->path)) == 0) {
+		    excluded = 1;
+		    break;
+		}
+	    }
+	}
+	if (excluded)
+	    continue;
+
+	/* process a file */
+	node = calloc(1, sizeof(romfs_inode));
+	/* get info for this file */
+	in = fopen(found_path, "rb");
+	if (in == NULL) {
+	    printf("unable to open file for processing: %s\n", found_path);
+	    continue;
+	}
+	node->name = found_path + strlen(prefix);	/* don't include prefix */
+	fseek(in, 0, SEEK_END);
+	node->length = ftell(in);
+	blocks = (node->length+ROMFS_BLOCKSIZE-1) / ROMFS_BLOCKSIZE + 1;
+	node->data_lengths = calloc(blocks, sizeof(unsigned int));
+	node->data = calloc(blocks, sizeof(unsigned char *));
+	fclose(in);
+	in = fopen(found_path, "rb");
+	block = 0;
+	while (!feof(in)) {
+	    ulen = fread(ubuf, 1, ROMFS_BLOCKSIZE, in);
+	    if (!ulen) break;
+	    clen = ROMFS_CBUFSIZE;
+	    if (compression) {
+		/* compress data here */
+		ret = compress(cbuf, &clen, ubuf, ulen);
+		if (ret != Z_OK) {
+		    printf("error compressing data block!\n");
+		    exit(1);
+		}
+	    } else {
+		memcpy(cbuf, ubuf, ulen);
+		clen = ulen;
+	    }
+	    node->data_lengths[block] = clen; 
+	    node->data[block] = malloc(clen);
+	    memcpy(node->data[block], cbuf, clen);
+	    block++;
+	}
+	fclose(in);
+	/* write out data for this file */
+	inode_write(out, node, compression, *inode_count, totlen);
+	/* clean up */
+	inode_clear(node);
+	free(node);
+	(*inode_count)++;
+    }
+    free(cbuf);
+    free(ubuf);
+    free(found_path);
+    free(prefixed_path);
+    if (save_count == *inode_count) {
+	printf("warning: no files found from path '%s%s'\n", prefix, path);
+    }
+}
 
 int
 main(int argc, char *argv[])
 {
-    int i, ret, block;
-    romfs_inode *node;
-    unsigned char *ubuf, *cbuf;
-    unsigned long ulen, clen;
-    unsigned long offset = 0;
-    FILE *in, *out;
-
-    ubuf = malloc(ROMFS_BLOCKSIZE);
-    cbuf = malloc(ROMFS_CBUFSIZE);
+    int i;
+    int inode_count = 0, totlen = 0;
+    FILE *out;
+    const char *outfilename = "obj/gsromfs.c";
+    const char *prefix = "";
+    int atarg = 1;
+    int compression = 1;			/* default to doing compression */
+    Xlist_element *Xlist_scan, *Xlist_head = NULL;
     
-    printf("compressing with %d byte blocksize (zlib output buffer %d bytes)\n",
+#ifdef DEBUG
+    printf("compression will use %d byte blocksize (zlib output buffer %d bytes)\n",
         ROMFS_BLOCKSIZE, ROMFS_CBUFSIZE);
+#endif /* DEBUG */
     
-    out = fopen("gsromfs", "wb");
-    
-    /* for each path on the commandline, attach an inode */
-    for (i = 1; i < argc; i++) {  
-        node = calloc(1, sizeof(romfs_inode));
-        /* get info for this file */
-        node->name = strdup(argv[i]);
-        in = fopen(node->name, "rb");
-        fseek(in, 0, SEEK_END);
-        node->length = ftell(in);
-        node->blocks = (node->length - 1) / ROMFS_BLOCKSIZE + 1;
-        node->data_lengths = calloc(node->blocks, sizeof(unsigned int));
-        node->data = calloc(node->blocks, sizeof(unsigned char *));
-        /* compress data here */
-        fclose(in);
-        in = fopen(node->name, "rb");
-        block = 0;
-        while (!feof(in)) {
-            ulen = fread(ubuf, 1, ROMFS_BLOCKSIZE, in);
-            if (!ulen) break;
-            clen = ROMFS_CBUFSIZE;
-            ret = compress(cbuf, &clen, ubuf, ulen);
-            if (ret != Z_OK) {
-                printf("error compressing data block!\n");
-            }
-            node->data_lengths[block] = clen; 
-            node->data[block] = malloc(clen);
-            memcpy(node->data[block], cbuf, clen);
-            block++;
-            node->data_size += clen;
-        }
-        fclose(in);
-        node->offset = 12 + 4 * node->blocks + node->data_size + strlen(node->name);
-        printf("inode %d (%ld/%ld bytes) '%s'\t%ld%%\n",
-            i, node->data_size, node->length, node->name, 100*node->data_size/node->length);
-        /* write out data for this file */
-        inode_write(out, node);
-        /* clean up */
-        inode_clear(node);
-        free(node);
+    if (argc < 2) {
+	printf("\nUsage:\n"
+	    );
+	exit(1);
     }
+    if (argc > 4 && argv[1][0] == '-' && argv[1][1] == 'o') {
+	/* process -o option for outputfile */
+	outfilename = argv[2];
+	atarg += 2;
+    }
+#ifdef DEBUG
+    printf("   writing romfs data to '%s'\n", outfilename);
+#endif /* DEBUG */
+    out = fopen(outfilename, "w");
+
+    fprintf(out,"\t/* Generated data for %rom device, see mkromfs.c */\n");
     
-    free(ubuf);
+    /* process the remaining arguments (options interspersed with paths) */
+    for (; atarg < argc; atarg++) {  
+	if (argv[atarg][0] == '-') {
+	    /* process an option */
+	    switch (argv[atarg][1]) {
+	      case 'b':
+	        compression = 0;
+	        break;
+	      case 'c':
+	        compression = 1;
+	        break;
+	      case 'P':
+		if (++atarg == argc) {
+		    printf("   option %s missing required argument\n", argv[atarg-1]);
+		    exit(1);
+		}
+		prefix = argv[atarg];
+	        break;
+	      case 'X':
+		if (++atarg == argc) {
+		    printf("   option %s missing required argument\n", argv[atarg-1]);
+		    exit(1);
+		}
+		Xlist_scan = malloc(sizeof(Xlist_element));
+		if (Xlist_scan == NULL) {
+		    exit(1);
+		}
+		Xlist_scan->next = Xlist_head;
+		Xlist_head = Xlist_scan;
+		Xlist_head->path = argv[atarg];
+	        break;
+	      default:
+	        printf("  unknown option: %s \n", argv[atarg]);
+	    }
+	    continue;
+	}
+	/* process a path */
+	process_path(argv[atarg], prefix, Xlist_head, compression, &inode_count, &totlen, out);
+    }
+    /* now write out the array of nodes */
+    fprintf(out, "    unsigned long *gs_romfs[] = {\n");
+    for (i=0; i<inode_count; i++)
+	fprintf(out, "\tnode_%d,\n", i);
+    fprintf(out, "\t0 };\n");
     
     fclose(out);
+
+    printf("Total %%rom%% structure size is %d bytes.\n", totlen);
     
     return 0;
 }
-
 

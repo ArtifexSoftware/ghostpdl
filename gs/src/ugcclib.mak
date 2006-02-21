@@ -23,6 +23,8 @@ GLOBJDIR=./libobj
 DD=$(GLGENDIR)/
 GLD=$(GLGENDIR)/
 
+CWD_PREFIX=./
+
 #include $(COMMONDIR)/gccdefs.mak
 #include $(COMMONDIR)/unixdefs.mak
 #include $(COMMONDIR)/generic.mak
@@ -106,6 +108,11 @@ SYNC=posync
 FEATURE_DEVS=$(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev\
  $(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)patlib.dev $(GLD)htxlib.dev \
  $(GLD)roplib.dev $(GLD)devcmap.dev
+
+# The list of resources to be included in the %rom% file system.
+# This is in the top makefile since the file descriptors are platform specific
+RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdoimSet/ Resource/CIDFont/
+
 COMPILE_INITS=0
 BAND_LIST_STORAGE=file
 BAND_LIST_COMPRESSOR=zlib
