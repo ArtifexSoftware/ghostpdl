@@ -930,6 +930,12 @@ restored by <b><tt>restore</tt></b>, but they are also saved by
 Changing the value of the <b><tt>CompressPages</tt></b> parameter after any
 marks have been made on the page may cause a crash.
 
+<p>
+Ghostscript has been writing incorrect <b><tt>ToUnicode CMap</tt></b> without
+<tt><b>CMapName</tt></b> into the PDF since version 8.10 (rev. 3611) . This bug
+is fixed in version 8.54 (rev. 6201). We recommend to re-generate PDF files
+created by the affected Ghostscript versions. Since version 8.54 (rev. 6590)
+Ghostscript can read the incorrect PDF files.
 <hr>
 
 <h2><a name="Ps2pdf_vs_AD"></a>Comparison of <b><tt>ps2pdf</tt></b> and
