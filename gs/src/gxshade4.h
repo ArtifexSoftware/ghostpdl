@@ -58,7 +58,6 @@
 #define SKIP_TEST 0 /* Developer's needs, must be off for production. */
 /* End of configuration flags (we don't mean that users should modify the rest). */
 
-#define mesh_max_depth (16 * 3 + 1)	/* each recursion adds 3 entries */
 typedef struct mesh_frame_s {	/* recursion frame */
     mesh_vertex_t va, vb, vc;	/* current vertices */
     bool check_clipping;
@@ -76,9 +75,7 @@ typedef struct mesh_frame_s {	/* recursion frame */
 #define mesh_fill_state_common\
   shading_fill_state_common;\
   const gs_shading_mesh_t *pshm;\
-  gs_fixed_rect rect;\
-  int depth;\
-  mesh_frame_t frames[mesh_max_depth]
+  gs_fixed_rect rect
 typedef struct mesh_fill_state_s {
     mesh_fill_state_common;
 } mesh_fill_state_t;
