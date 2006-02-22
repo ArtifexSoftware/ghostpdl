@@ -436,7 +436,12 @@ main(int argc, char *argv[])
     out = fopen(outfilename, "w");
 
     fprintf(out,"\t/* Generated data for %%rom%% device, see mkromfs.c */\n");
-    fprintf(out,"\n\n#include \"stdint_.h\"\n\n");
+#if ARCH_IS_BIG_ENDIAN
+    fprintf(out,"\t/* this code assumes a big endian target platform */\n");
+#else
+    fprintf(out,"\t/* this code assumes a little endian target platform */\n");
+#endif
+    fprintf(out,"\n#include \"stdint_.h\"\n\n");
 
     /* process the remaining arguments (options interspersed with paths) */
     for (; atarg < argc; atarg++) {  
