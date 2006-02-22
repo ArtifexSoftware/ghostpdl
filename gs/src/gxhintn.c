@@ -2238,27 +2238,37 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this,
     return (align == unaligned ? aligned : align);
 }
 
+#define PRESERVE_STEM_SLANT 1 /*   0 - always diminish
+                                   1 - preserve iff slanted in design space
+				   2 - always preserve */
+
 private int t1_hinter__find_stem_middle(t1_hinter * this, fixed *t, int pole_index, bool horiz)
 {   
-    /* 	 For a better representation of arms with a small slope,
-	 we align their poles. It appears useful for CJK fonts, 
-	 see comparefiles/japan.ps, Bug687603.ps .
-	 Otherwise (a slightly rotated glyph, see Openhuis_pdf_zw.pdf) 
-	 we align the arm middle, causing the slope to look smaller
-       */
-    /* We assume proper glyphs, see Type 1 spec, chapter 4. */
-    int next = t1_hinter__next_contour_pole(this, pole_index);
-    const int alpha = 10;
-    int quality;
-    bool curve = this->pole[next].type == offcurve;
-    bool continuing = (horiz ? t1_hinter__is_small_angle(this, next, pole_index, 1, 0, alpha, 1, &quality)
-                             : t1_hinter__is_small_angle(this, next, pole_index, 0, 1, alpha, 1, &quality));
-
-    if (quality == 0)
-	*t = (!curve && continuing ? fixed_half : 0);
-    else
+    /* *t = 0 preserves slant; *t = fixed_half deminishes slant (don't apply to curves). */
+    if (PRESERVE_STEM_SLANT == 2) {
 	*t = 0;
-    return pole_index;
+	return pole_index;
+    } else {
+	/* For a better representation of arms with a small slope,
+	   we align their poles. It appears useful for CJK fonts, 
+	   see comparefiles/japan.ps, Bug687603.ps .
+	   Otherwise (a slightly rotated glyph, see Openhuis_pdf_zw.pdf) 
+	   we align the arm middle, causing the slope to look smaller
+         */
+	/* We assume proper glyphs, see Type 1 spec, chapter 4. */
+	int next = t1_hinter__next_contour_pole(this, pole_index);
+	const int alpha = 10;
+	int design_slant;
+	bool curve = this->pole[next].type == offcurve;
+	bool continuing = (horiz ? t1_hinter__is_small_angle(this, next, pole_index, 1, 0, alpha, 1, &design_slant)
+				 : t1_hinter__is_small_angle(this, next, pole_index, 0, 1, alpha, 1, &design_slant));
+
+	if (!PRESERVE_STEM_SLANT || design_slant == 0)
+	    *t = (!curve && continuing ? fixed_half : 0);
+	else
+	    *t = 0;
+	return pole_index;
+    }
 }
 
 private int t1_hinter__skip_stem(t1_hinter * this, int pole_index, bool horiz)
