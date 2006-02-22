@@ -111,8 +111,11 @@ TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
 		if (end_x_line(alp, ll, true))
 		    continue;
 		if (alp->more_flattened)
-		    if (alp->end.y <= y || alp->start.y == alp->end.y)
-			step_al(alp, true);
+		    if (alp->end.y <= y || alp->start.y == alp->end.y) {
+			code = step_al(alp, true);
+			if (code < 0)
+			    return code;
+		    }
 		goto e;
 	    }
 	    nx = alp->x_current = (alp->start.y >= y ? alp->start.x : AL_X_AT_Y(alp, y));

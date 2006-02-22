@@ -2170,13 +2170,16 @@ merge_ranges(coord_range_list_t *pcrl, const line_list *ll, fixed y_min, fixed y
     range_list_rescan(pcrl);
     for (alp = ll->x_list; alp != 0 && code >= 0; alp = nlp) {
 	fixed x0 = alp->x_current, x1, xt;
+	bool forth = (alp->direction == DIR_UP || !alp->fi.curve);
+	fixed xe = (forth ? alp->fi.x3 : alp->fi.x0);
+	fixed ye = (forth ? alp->fi.y3 : alp->fi.y0);
 
 	nlp = alp->next;
 	if (alp->start.y < y_min)
 	    continue;
-	if (alp->monotonic_x && alp->monotonic_y && alp->fi.y3 <= y_top) {
+	if (alp->monotonic_x && alp->monotonic_y && ye <= y_top) {
     	    vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 0, RGB(255, 0, 0));
-	    x1 = alp->fi.x3;
+	    x1 = xe;
 	    if (x0 > x1)
 		xt = x0, x0 = x1, x1 = xt;
 	    code = range_list_add(pcrl,
