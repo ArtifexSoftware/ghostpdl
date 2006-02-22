@@ -464,8 +464,8 @@ gs_main_set_lib_paths(gs_main_instance * minst)
     if (minst->lib_path.env != 0)
 	code = file_path_add(&minst->lib_path, minst->lib_path.env);
     /* now put the %rom% device before the gs_lib_default_path on the list */
-    for (i=0; i<gx_io_device_table_count; i++) {
-	gx_io_device *iodev = gx_io_device_table[i];
+    for (i = 0; i < gx_io_device_table_count; i++) {
+	const gx_io_device *iodev = gx_io_device_table[i];
 	const char *dname = iodev->dname;
 
 	if (dname && strlen(dname) == 5 && !memcmp("%rom%", dname, 5)) {
