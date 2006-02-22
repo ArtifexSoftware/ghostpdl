@@ -280,7 +280,7 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
 		do {
 		    error = met_process(st, mets, pzip, &rpart->s.r);
 		    if (error) 
-			return gs_rethrow(error, "met_process");
+			return gs_rethrow(error, "page processing failed");
 		}
 		while (rpart->s.r.ptr + 1 < rpart->s.r.limit); 
 	    }

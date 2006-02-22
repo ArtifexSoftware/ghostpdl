@@ -194,10 +194,10 @@ gs_log_error(const gs_memory_t *mem, int err, const char *file, int line)
 {
     if (gs_log_errors) {
 	if (file == NULL)
-	    dprintf1(mem, "Returning error %d.\n", err);
+	    dprintf2(mem, "* returning error %d (%s)\n", err, gs_errstr(err));
 	else
-	    dprintf3(mem, "%s(%d): Returning error %d.\n",
-		     (const char *)file, line, err);
+	    dprintf4(mem, "* %s:%d: returning error %d (%s)\n",
+		     (const char *)file, line, err, gs_errstr(err));
     }
     return err;
 }

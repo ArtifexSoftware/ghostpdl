@@ -48,6 +48,9 @@ $(METOBJ)metcanvas.$(OBJ): $(METSRC)metcanvas.c
 $(METOBJ)metimage.$(OBJ): $(METSRC)metimage.c
 	$(METCCC) $(METSRC)metimage.c $(METO_)metimage.$(OBJ)
 
+$(METOBJ)xps_gradient_brush.$(OBJ): $(METSRC)xps_gradient_brush.c
+	$(METCCC) $(METSRC)xps_gradient_brush.c $(METO_)xps_gradient_brush.$(OBJ)
+
 $(METOBJ)metpage.$(OBJ): $(METSRC)metpage.c
 	$(METCCC) $(METSRC)metpage.c $(METO_)metpage.$(OBJ)
 
@@ -91,6 +94,9 @@ $(METOBJ)xps_image_png.$(OBJ): $(METSRC)xps_image_png.c $(xps_error_h)
 $(METOBJ)xps_image_tiff.$(OBJ): $(METSRC)xps_image_tiff.c $(xps_error_h)
 	$(METCCC) $(METSRC)xps_image_tiff.c $(METO_)xps_image_tiff.$(OBJ)
 
+$(METOBJ)xps_gradient_draw.$(OBJ): $(METSRC)xps_gradient_draw.c $(xps_error_h)
+	$(METCCC) $(METSRC)xps_gradient_draw.c $(METO_)xps_gradient_draw.$(OBJ)
+
 $(MET_TOP_OBJ): $(METSRC)mettop.c \
                       $(metstate_h)     \
                       $(pltop_h)
@@ -101,11 +107,12 @@ MET_OBJS=$(METOBJ)metparse.$(OBJ) $(METOBJ)metstate.$(OBJ) \
          $(METOBJ)metundone.$(OBJ) $(METOBJ)metpage.$(OBJ) \
          $(METOBJ)metelement.$(OBJ) $(METOBJ)metpath.$(OBJ)\
 	 $(METOBJ)metglyphs.$(OBJ) $(METOBJ)metutil.$(OBJ) \
-	 $(METOBJ)metimage.$(OBJ) $(METOBJ)zipparse.$(OBJ) \
-	 $(METOBJ)zippart.$(OBJ) \
+	 $(METOBJ)metimage.$(OBJ) $(METOBJ)xps_gradient_brush.$(OBJ) \
+	 $(METOBJ)zipparse.$(OBJ) $(METOBJ)zippart.$(OBJ) \
 	 $(METOBJ)xps_image_jpeg.$(OBJ) \
 	 $(METOBJ)xps_image_png.$(OBJ) \
 	 $(METOBJ)xps_image_tiff.$(OBJ) \
+	 $(METOBJ)xps_gradient_draw.$(OBJ) \
 	 $(METOBJ)metgstate.$(OBJ) \
 	 $(METOBJ)metcanvas.$(OBJ) \
 	 $(METOBJ)metrecorder.$(OBJ)

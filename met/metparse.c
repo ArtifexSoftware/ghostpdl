@@ -123,7 +123,7 @@ met_start(void *data, const char *el, const char **attr)
         /* call the cook procedure, it initializes the cooked data */
         code = (*metp->init)(&element->cooked_data, st->mets, el, attr);
         if (code < 0) {
-            gs_rethrow(code, "met_start init");
+            gs_rethrow1(code, "%s init failed", el);
             met_set_error(st, code);
         }
         /* start recording */
@@ -143,7 +143,7 @@ met_start(void *data, const char *el, const char **attr)
             /* only cook if we are recording */
             code = (*metp->action)(element->cooked_data, st->mets);
             if (code < 0) {
-                gs_rethrow(code, "met_start action");
+                gs_rethrow1(code, "%s action failed", el);
                 met_set_error(st, code);
             }
         }
@@ -188,7 +188,7 @@ met_end(void *data, const char *el)
             code = (*metp->done)(element.cooked_data, st->mets);
         }
         if (code < 0) {
-            gs_rethrow(code, "metp->done");
+            gs_rethrow1(code, "%s done failed", el);
             met_set_error(st, code);
         }
     }
@@ -270,8 +270,7 @@ met_process(met_parser_state_t *st, met_state_t *mets,  void *pzip, stream_curso
     if (!started) {
         const char *start = "<JOB>";
         if (XML_Parse(parser, start, strlen(start), 0) == XML_STATUS_ERROR) {
-            return gs_rethrow2(-1, "<job> Parse error at line %d:%s",
-			       XML_GetCurrentLineNumber(parser),
+            return gs_rethrow1(-1, "xml parse error at <job>: %s",
 			       XML_ErrorString(XML_GetErrorCode(parser)));
         }
         started = true;
@@ -279,13 +278,13 @@ met_process(met_parser_state_t *st, met_state_t *mets,  void *pzip, stream_curso
             
 
     if (XML_Parse(parser, p + 1, avail, 0 /* done? */) == XML_STATUS_ERROR) {
-        return gs_rethrow2(-1, "XML_Parse error at line %d:%s",
+        return gs_rethrow2(-1, "xml parse error at line %d: %s",
 			   XML_GetCurrentLineNumber(parser),
 			   XML_ErrorString(XML_GetErrorCode(parser)));
     } else if (st->error_code < 0) {
         int code = st->error_code;
         met_unset_error_code(st);
-        return gs_rethrow1(code, "st->error_code %d", code);
+        return gs_rethrow(code, "xml processing failed");
     }
     /* nb for now we assume the parser has consumed exactly what we gave it. */
     pr->ptr = p + avail;
@@ -301,7 +300,7 @@ met_process_shutdown(met_parser_state_t *st)
     
     const char *end = "</JOB>";
     if (XML_Parse(parser, end, strlen(end), 0) == XML_STATUS_ERROR) {
-        return gs_rethrow2(-1, "parse at line %d(%s)",
+        return gs_rethrow2(-1, "xml parse error at line %d: %s",
 			   XML_GetCurrentLineNumber(parser),
 			   XML_ErrorString(XML_GetErrorCode(parser)));
     }
@@ -309,7 +308,7 @@ met_process_shutdown(met_parser_state_t *st)
     if (XML_Parse(parser, 0 /* data buffer */, 
                   0 /* buffer length */,
                   1 /* done? */ ) == XML_STATUS_ERROR) {
-        return gs_rethrow2(-1, "parse at line %d(%s)",
+        return gs_rethrow2(-1, "xml parse error at line %d: %s",
 			   XML_GetCurrentLineNumber(parser),
 			   XML_ErrorString(XML_GetErrorCode(parser)));
     }

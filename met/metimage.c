@@ -78,7 +78,7 @@ ImageBrush_cook(void **ppdata, met_state_t *ms, const char *el, const char **att
         else if (!MYSET(&aImageBrush->ImageSource, "ImageSource"))
             ;
         else {
-            gs_throw2(-1, "unsupported attribute %s=%s\n",
+            gs_warn2("unsupported attribute %s=%s",
                      attr[i], attr[i+1]);
         }
     }
