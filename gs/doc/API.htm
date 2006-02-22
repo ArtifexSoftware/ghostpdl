@@ -344,6 +344,14 @@ The only exception is <b><tt>gsapi_run_string_continue()</tt></b>
 which will return <b><tt>e_NeedInput</tt></b> if all is well.
 See below for <a href="#return_codes">return codes</a>.
 <p>
+The address passed in <tt>pexit_code</tt> will be used to return the 
+exit code for the interpreter in case of a quit or fatal error. The 
+<tt>user_errors</tt>  argument is normally set to zero to indicate that 
+errors should be handled through the normal mechanisms within the 
+interpreted code. If set to a negative value, the functions will return 
+an error code directly to the caller, bypassing the interpreted 
+language. A positive <tt>user_errors</tt> is treated the same as zero.
+<p>
 There is a 64 KB length limit on any buffer submitted to a 
 <tt>gsapi_run_*</tt> function for processing. If you have more
 than 65535 bytes of input then you must split it into smaller 
@@ -606,6 +614,19 @@ int main(int argc, char *argv[])
 }
 </pre>
 
+<h3>Example 4</h3>
+
+When feeding Ghostscript piecemeal buffers, one can use the normal 
+operators to configure things and invoke library routines. For example,
+to parse a PDF file one could say:
+
+<pre>
+    code = gsapi_run_string(minst, "(example.pdf) .runlibfile", 0, &exit_code);
+</pre>
+
+and Ghostscript would open and process the file named "example.pdf" as 
+if it had been passed as an argument to 
+<b><tt>gsapi_init_with_args()</tt></b>.
 
 <h2><a name="Multiple_threads"></a>Multiple threads</h2>
 The Ghostscript library should have been compiled with a 
