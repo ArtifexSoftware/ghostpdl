@@ -76,6 +76,18 @@ typedef struct romfs_file_enum_s {
 gs_private_st_ptrs1(st_romfs_file_enum, struct romfs_file_enum_s, "romfs_file_enum",
     romfs_file_enum_enum_ptrs, romfs_file_enum_reloc_ptrs, pattern);
 
+private uint32_t get_u32_big_endian(const uint32_t *a);
+
+private uint32_t
+get_u32_big_endian(const uint32_t *a)
+{
+    uint32_t v;
+    const unsigned char *c=(const unsigned char *)a;
+
+    v = (c[0]<<24) | (c[1]<<16) | (c[2]<<8) | c[3];
+    return v;
+}
+
 private int
 romfs_init(gx_io_device *iodev, gs_memory_t *mem)
 {
@@ -103,7 +115,7 @@ romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
 
     /* scan the inodes to find the requested file */
     for (i=0; node_scan != 0; i++, node_scan = gs_romfs[i]) {
-	filelen = node_scan[0] & 0x7fffffff;	/* ignore compression bit */
+	filelen = get_u32_big_endian(node_scan) & 0x7fffffff;	/* ignore compression bit */
 	blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
 	filename = (char *)(&(node_scan[1+(2*blocks)]));
 	if (strncmp(filename, fname, min(namelen, strlen(filename))) == 0) {
@@ -116,7 +128,7 @@ romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
 	return_error(gs_error_undefinedfilename);
 
     /* return the uncompressed contents of the string */
-    compression = ((node[0] & 0x80000000) != 0) ? 1 : 0;
+    compression = ((get_u32_big_endian(node) & 0x80000000) != 0) ? 1 : 0;
     buf = gs_alloc_string(mem, filelen, "romfs buffer");
     if (buf == NULL) {
 	if_debug0('s', "%rom%: could not allocate buffer\n");
@@ -125,8 +137,8 @@ romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
     /* deflate the file into the buffer */
     decompress_len = 0;
     for (i=0; i<blocks; i++) {
-	unsigned long block_length = node[1+(2*i)];
-	unsigned const long block_offset = node[2+(2*i)];
+	unsigned long block_length = get_u32_big_endian(node+1+(2*i));
+	unsigned const long block_offset = get_u32_big_endian(node+2+(2*i));
 	unsigned const char *block_data = ((unsigned char *)node) + block_offset;
 	int code;
 
@@ -144,8 +156,10 @@ romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
         }
     }
     if (decompress_len != filelen) {
+	unsigned long dl=decompress_len, fl=filelen;
+
 	eprintf2("romfs decompression length error. Was %ld should be %ld\n",
-		decompress_len, filelen);
+		dl, fl);
 	return_error(gs_error_ioerror);
     }
     *ps = s_alloc(mem, "romfs");
@@ -196,7 +210,7 @@ romfs_enumerate_next(file_enum *pfen, char *ptr, uint maxlen)
     
     while (gs_romfs[penum->list_index] != 0) {
 	const uint32_t *node = gs_romfs[penum->list_index];
-	uint32_t filelen = node[0] & 0x7fffffff;	/* ignore compression bit */
+	uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
 	long blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
 	char *filename = (char *)(&(node[1+(2*blocks)]));
 

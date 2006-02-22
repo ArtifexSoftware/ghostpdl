@@ -186,7 +186,11 @@ void process_path(char *path, const char *prefix, Xlist_element *Xlist_head, int
 /* put 4 byte integer, big endian */
 void put_uint32(FILE *out, const unsigned int q)
 {
-    fprintf (out, "0x%02x%02x%02x%02x,", (q>>24) & 0xff,(q>>16) & 0xff,(q>>8) & 0xff, q & 0xff);
+#if ARCH_IS_BIG_ENDIAN
+    fprintf (out, "0x%08x,", q);
+#else
+    fprintf (out, "0x%02x%02x%02x%02x,", q & 0xff, (q>>8) & 0xff, (q>>16) & 0xff, (q>>24) & 0xff);
+#endif
 }
 
 /* write string as 4 character chunks, padded to 4 byte words. */
@@ -431,7 +435,7 @@ main(int argc, char *argv[])
 #endif /* DEBUG */
     out = fopen(outfilename, "w");
 
-    fprintf(out,"\t/* Generated data for %rom% device, see mkromfs.c */\n");
+    fprintf(out,"\t/* Generated data for %%rom%% device, see mkromfs.c */\n");
     fprintf(out,"\n\n#include \"stdint_.h\"\n\n");
 
     /* process the remaining arguments (options interspersed with paths) */
