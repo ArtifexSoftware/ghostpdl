@@ -65,20 +65,6 @@
   typedef unsigned long   ULong;
   typedef signed   long   Long;
 
-#if SIZEOF_INT == 4
-
-  typedef signed int      Fixed;    /* signed fixed 16.16 float */
-
-#elif SIZEOF_LONG == 4
-
-  typedef signed long     Fixed;    /* signed fixed 16.16 float */
-
-#else
-
-#error "no 32bit type found"
-
-#endif
-
   typedef int             Int;
 
   typedef long            Integer;
@@ -90,8 +76,6 @@
   typedef Short*   PShort;
   typedef ULong*   PULong;
   typedef Long*    PLong;
-
-  typedef Fixed*   PFixed;
 
   typedef Int*     PInt;
 

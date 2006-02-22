@@ -36,9 +36,6 @@ typedef  uint16_t   uint16; /* 16-bit unsigned integer */
 typedef   int16_t    int16; /* 16-bit signed integer */
 typedef  uint32_t   uint32; /* 32-bit unsigned integer */
 typedef   int32_t    int32; /* 32-bit signed integer */
-#if 0
-typedef   int32_t    Fixed; /* 16.16 32-bit signed fixed-point number */
-#endif
 typedef   int16_t    FUnit; /* Smallest measurable distance in em space (16-bit signed integer) */
 typedef   int16_t    FWord; /* 16-bit signed integer that describes a quantity in FUnits */
 typedef  uint16_t   uFWord; /* 16-bit unsigned integer that describes a quantity in FUnits */
@@ -65,7 +62,7 @@ typedef struct {
  *	The search fields limits numOffsets to 4096.
  */
 typedef struct {
-	Fixed version;					/* 1.0 */
+	TT_Fixed version;		/* 1.0 */
 	uint16 numOffsets;		/* number of tables */
 	uint16 searchRange;		/* (max2 <= numOffsets)*16 */
 	uint16 entrySelector;		/* log2(max2 <= numOffsets) */
@@ -92,8 +89,8 @@ typedef enum sfntHeaderFlagBits {
 #define FONT_HEADER_VERSION			0x10000
 
 typedef struct {
-	Fixed	version;		/* for this table, set to 1.0 */
-	Fixed	fontRevision;		/* For Font Manufacturer */
+	TT_Fixed version;		/* for this table, set to 1.0 */
+	TT_Fixed fontRevision;		/* For Font Manufacturer */
 	uint32	checkSumAdjustment;
 	uint32	magicNumber; 		/* signature, should always be 0x5F0F3CF5  == MAGIC */
 	uint16	flags;
@@ -124,7 +121,7 @@ typedef struct {
 #define METRIC_HEADER_FORMAT		0x10000
 
 typedef struct {
-	Fixed	version;				/* for this table, set to 1.0 */
+	TT_Fixed	version;		/* for this table, set to 1.0 */
 	int16		ascender;
 	int16		descender;
 	int16		lineGap;				/* linespacing = ascender - descender + linegap */
@@ -148,7 +145,7 @@ typedef sfnt_MetricsHeader sfnt_VerticalHeader;
 #define MAX_PROFILE_VERSION		0x10000
 
 typedef struct {
-	Fixed			version;				/* for this table, set to 1.0 */
+	TT_Fixed	version;		/* for this table, set to 1.0 */
 	uint16		numGlyphs;
 	uint16		maxPoints;			/* in an individual glyph */
 	uint16		maxContours;			/* in an individual glyph */
@@ -232,8 +229,8 @@ typedef struct {
 #define	richardsPostTableFormat	0x30000
 
 typedef struct {
-	Fixed	version;
-	Fixed	italicAngle;
+	TT_Fixed version;
+	TT_Fixed italicAngle;
 	int16	underlinePosition;
 	int16	underlineThickness;
 	int16	isFixedPitch;
