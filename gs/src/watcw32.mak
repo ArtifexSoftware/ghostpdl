@@ -41,8 +41,6 @@ PSLIBDIR=lib
 PSGENDIR=obj
 PSOBJDIR=obj
 
-CWD_PREFIX=./
-
 # Define the root directory for Ghostscript installation.
 
 AROOTDIR=c:/gs

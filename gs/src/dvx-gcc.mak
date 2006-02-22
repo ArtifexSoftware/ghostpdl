@@ -40,8 +40,6 @@ PSLIBDIR=lib
 PSGENDIR=obj
 PSOBJDIR=obj
 
-CWD_PREFIX=./
-
 # Define the installation commands and target directories for
 # executables and files.  The commands are only relevant to `make install';
 # the directories also define the default search path for the

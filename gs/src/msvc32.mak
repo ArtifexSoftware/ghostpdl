@@ -306,8 +306,6 @@ CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
 WARNOPT=-W2
 !endif
 
-CWD_PREFIX=./
-
 #
 # Do not edit the next group of lines.
 

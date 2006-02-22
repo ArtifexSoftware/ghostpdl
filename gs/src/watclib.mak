@@ -26,8 +26,6 @@ GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(GSROOTDIR)/resource\;$(AROOTDIR)/fonts
 SEARCH_HERE_FIRST=1
 GS_INIT=gs_init.ps
 
-CWD_PREFIX=./
-
 !ifndef DEBUG
 DEBUG=1
 !endif

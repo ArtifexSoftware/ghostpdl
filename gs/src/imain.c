@@ -27,6 +27,7 @@
 #include "gsutil.h"		/* for bytes_compare */
 #include "gxdevice.h"
 #include "gxalloc.h"
+#include "gxiodev.h"		/* for iodev struct */
 #include "gzstate.h"
 #include "ierrors.h"
 #include "oper.h"
@@ -91,7 +92,7 @@ gs_main_alloc_instance(gs_memory_t *mem)
 /* ------ Forward references ------ */
 
 private int gs_run_init_file(gs_main_instance *, int *, ref *);
-private void print_resource_usage(const gs_main_instance *,
+void print_resource_usage(const gs_main_instance *,
 				  gs_dual_memory_t *, const char *);
 
 /* ------ Initialization ------ */
@@ -425,9 +426,11 @@ gs_main_add_lib_path(gs_main_instance * minst, const char *lpath)
 
 /* ------ Execution ------ */
 
+extern_gx_io_device_table();
+
 /* Complete the list of library search paths. */
-/* This may involve adding or removing the current directory */
-/* as the first element. */
+/* This may involve adding the %rom% device (for COMPILE_INITS) as well */
+/* as adding or removing the current directory as the first element. */
 int
 gs_main_set_lib_paths(gs_main_instance * minst)
 {
@@ -435,8 +438,9 @@ gs_main_set_lib_paths(gs_main_instance * minst)
     int first_is_here =
 	(r_size(&minst->lib_path.list) != 0 &&
 	 paths[0].value.bytes == (const byte *)gp_current_directory_name ? 1 : 0);
-    int count = minst->lib_path.count;
     int code = 0;
+    int count = minst->lib_path.count;
+    int i, have_rom_device = 0;
 
     if (minst->search_here_first) {
 	if (!(first_is_here ||
@@ -459,6 +463,18 @@ gs_main_set_lib_paths(gs_main_instance * minst)
 	       count + (minst->search_here_first ? 1 : 0));
     if (minst->lib_path.env != 0)
 	code = file_path_add(&minst->lib_path, minst->lib_path.env);
+    /* now put the %rom% device before the gs_lib_default_path on the list */
+    for (i=0; i<gx_io_device_table_count; i++) {
+	gx_io_device *iodev = gx_io_device_table[i];
+	const char *dname = iodev->dname;
+
+	if (dname && strlen(dname) == 5 && !memcmp("%rom%", dname, 5)) {
+	    have_rom_device = 1;
+	    break;
+	}
+    }
+    if (have_rom_device && code >= 0)
+	code = file_path_add(&minst->lib_path, "%rom%");
     if (minst->lib_path.final != 0 && code >= 0)
 	code = file_path_add(&minst->lib_path, minst->lib_path.final);
     return code;
@@ -922,7 +938,7 @@ gs_abort(const gs_memory_t *mem)
 /* ------ Debugging ------ */
 
 /* Print resource usage statistics. */
-private void
+void
 print_resource_usage(const gs_main_instance * minst, gs_dual_memory_t * dmem,
 		     const char *msg)
 {

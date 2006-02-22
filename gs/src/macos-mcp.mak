@@ -37,8 +37,6 @@ PSLIBDIR=./lib
 PSGENDIR=./obj
 PSOBJDIR=./obj
 
-CWD_PREFIX=./
-
 # Do not edit the next group of lines.
 
 include $(GLSRCDIR)/version.mak

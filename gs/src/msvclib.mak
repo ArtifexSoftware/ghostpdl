@@ -117,8 +117,6 @@ GLGENDIR=.\obj
 GLOBJDIR=.\obj
 !endif
 
-CWD_PREFIX=./
-
 # Do not edit the next group of lines.
 NUL=
 DD=$(GLGENDIR)\$(NUL)

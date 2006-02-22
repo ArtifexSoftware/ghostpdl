@@ -47,8 +47,6 @@ PSOBJDIR=[.obj]
 BIN_DIR=BIN.DIR
 OBJ_DIR=OBJ.DIR
 
-CWD_PREFIX=[]
-
 # Do not edit the next group of lines.
 
 #include $(COMMONDIR)/vmscdefs.mak

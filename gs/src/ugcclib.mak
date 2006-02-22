@@ -23,8 +23,6 @@ GLOBJDIR=./libobj
 DD=$(GLGENDIR)/
 GLD=$(GLGENDIR)/
 
-CWD_PREFIX=./
-
 #include $(COMMONDIR)/gccdefs.mak
 #include $(COMMONDIR)/unixdefs.mak
 #include $(COMMONDIR)/generic.mak

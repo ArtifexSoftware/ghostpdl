@@ -26,9 +26,6 @@
  */
 const byte gs_init_string[] = 
 	"0 pop "			/* required integer token. DO NOT REMOVE.            */
-	"systemdict /LIBPATH "		/* Put %rom% as first path on list                   */
-	"mark (%rom%) LIBPATH aload pop " 		/* make array with (%rom%) as first  */
-	"counttomark array astore exch pop put "	/* element keeping other paths.      */
 	"systemdict /GenericResourceDir known not { " 		/* if GenericResourceDir was */
 	"systemdict /GenericResourceDir (%rom%Resource/) put "	/* not set on command line,  */
 	"} if "							/* set to %rom%Resource/     */
