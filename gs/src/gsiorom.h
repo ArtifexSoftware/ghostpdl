@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995-2004 artofcode LLC. All rights reserved.
+/* Copyright (C) 2005-2006 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id: $ */
+/* $Id$ */
 /* Rom File System settings */
 
 #ifndef gsiorom_INCLUDED

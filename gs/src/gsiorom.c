@@ -1,4 +1,4 @@
-/* Copyright (C) 2005 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2005-2006 artofcode LLC.  All rights reserved.
 
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -27,6 +27,7 @@
  */
 
 #include "std.h"
+#include "stdint_.h"
 #include "string_.h"
 #include "gsiorom.h"
 #include "gx.h"
@@ -90,9 +91,9 @@ private int
 romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
     const char *access, stream **ps, gs_memory_t *mem)
 {
-    extern const unsigned long *gs_romfs[];
-    unsigned const long *node_scan = gs_romfs[0], *node = NULL;
-    unsigned long filelen, blocks, decompress_len;
+    extern const uint32_t *gs_romfs[];
+    const uint32_t *node_scan = gs_romfs[0], *node = NULL;
+    uint32_t filelen, blocks, decompress_len;
     int i, compression;
     char *filename;
     byte *buf;
@@ -190,12 +191,12 @@ romfs_enumerate_close(file_enum *pfen)
 private uint
 romfs_enumerate_next(file_enum *pfen, char *ptr, uint maxlen)
 {
-    extern const unsigned long *gs_romfs[];
+    extern const uint32_t *gs_romfs[];
     romfs_file_enum *penum = (romfs_file_enum *)pfen;
     
     while (gs_romfs[penum->list_index] != 0) {
-	unsigned const long *node = gs_romfs[penum->list_index];
-	unsigned long filelen = node[0] & 0x7fffffff;	/* ignore compression bit */
+	const uint32_t *node = gs_romfs[penum->list_index];
+	uint32_t filelen = node[0] & 0x7fffffff;	/* ignore compression bit */
 	long blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
 	char *filename = (char *)(&(node[1+(2*blocks)]));
 

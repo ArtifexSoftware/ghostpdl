@@ -1,4 +1,4 @@
-/* Copyright (C) 2005 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2005-2006 artofcode LLC.  All rights reserved.
 
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -38,8 +38,9 @@
  *	    Note: The tail of any path encountered will be tested so .svn
  */ 
 
-#include "gsiorom.h"
 #include "stdpre.h"
+#include "stdint_.h"
+#include "gsiorom.h"
 #include "gsmemret.h" /* for gs_memory_type_ptr_t */
 #include "gsmalloc.h"
 #include "gsstype.h"
@@ -193,34 +194,34 @@ void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len)
 {
     int i, j=0;
     union {
-	unsigned long l;
+	uint32_t w;
 	struct {
 	    unsigned char c1;
 	    unsigned char c2;
 	    unsigned char c3;
 	    unsigned char c4;
 	} c;
-    } l2c;
+    } w2c;
 
     for (i=0; i<(len/4); i++) {
 	j = i*4;
-	l2c.c.c1 = p[j++];
-	l2c.c.c2 = p[j++];
-	l2c.c.c3 = p[j++];
-	l2c.c.c4 = p[j++];
-	fprintf(out, "0x%08x,", l2c.l);
+	w2c.c.c1 = p[j++];
+	w2c.c.c2 = p[j++];
+	w2c.c.c3 = p[j++];
+	w2c.c.c4 = p[j++];
+	fprintf(out, "0x%08x,", w2c.w);
 	if ((i & 7) == 7)
 	    fprintf(out, "\n\t");
     }
-    l2c.l = 0;
+    w2c.w = 0;
     switch (len - j) {
       case 3:
-        l2c.c.c3 = p[j+2];
+        w2c.c.c3 = p[j+2];
       case 2:
-        l2c.c.c2 = p[j+1];
+        w2c.c.c2 = p[j+1];
       case 1:
-        l2c.c.c1 = p[j];
-	fprintf(out, "0x%08x,", l2c.l);
+        w2c.c.c1 = p[j];
+	fprintf(out, "0x%08x,", w2c.w);
       default: ;
     }
     fprintf(out, "\n\t");
@@ -251,7 +252,7 @@ inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int 
     int namelen = strlen(node->name) + 1;	/* include terminating <nul> */
     
     /* write the node header */
-    fprintf(out,"    static unsigned long node_%d[] = {\n\t", inode_count);
+    fprintf(out,"    static uint32_t node_%d[] = {\n\t", inode_count);
     /* 4 byte file length + compression flag in high bit */
     put_uint32(out, node->length | (compression ? 0x80000000 : 0));
     fprintf(out, "\t/* compression_flag_bit + file length */\n\t");
@@ -430,8 +431,9 @@ main(int argc, char *argv[])
 #endif /* DEBUG */
     out = fopen(outfilename, "w");
 
-    fprintf(out,"\t/* Generated data for %rom device, see mkromfs.c */\n");
-    
+    fprintf(out,"\t/* Generated data for %rom% device, see mkromfs.c */\n");
+    fprintf(out,"\n\n#include \"stdint_.h\"\n\n");
+
     /* process the remaining arguments (options interspersed with paths) */
     for (; atarg < argc; atarg++) {  
 	if (argv[atarg][0] == '-') {
@@ -472,7 +474,7 @@ main(int argc, char *argv[])
 	process_path(argv[atarg], prefix, Xlist_head, compression, &inode_count, &totlen, out);
     }
     /* now write out the array of nodes */
-    fprintf(out, "    unsigned long *gs_romfs[] = {\n");
+    fprintf(out, "    uint32_t *gs_romfs[] = {\n");
     for (i=0; i<inode_count; i++)
 	fprintf(out, "\tnode_%d,\n", i);
     fprintf(out, "\t0 };\n");
