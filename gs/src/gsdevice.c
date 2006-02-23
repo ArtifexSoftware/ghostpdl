@@ -718,7 +718,7 @@ gx_device_copy_params(gx_device *dev, const gx_device *target)
 private int
 gx_parse_output_format(gs_parsed_file_name_t *pfn, const char **pfmt)
 {
-    bool have_format = false, field = 0;
+    bool have_format = false, field;
     int width[2], int_width = sizeof(int) * 3, w = 0;
     uint i;
 
@@ -726,34 +726,51 @@ gx_parse_output_format(gs_parsed_file_name_t *pfn, const char **pfmt)
     width[0] = width[1] = 0;
     for (i = 0; i < pfn->len; ++i)
 	if (pfn->fname[i] == '%') {
-	    if (i + 1 < pfn->len && pfn->fname[i + 1] == '%')
+	    if (i + 1 < pfn->len && pfn->fname[i + 1] == '%') {
+		i++;
 		continue;
+	    }
 	    if (have_format)	/* more than one % */
 		return_error(gs_error_undefinedfilename);
 	    have_format = true;
-	sw:
-	    if (++i == pfn->len)
-		return_error(gs_error_undefinedfilename);
-	    switch (pfn->fname[i]) {
-		case 'l':
-		    int_width = sizeof(long) * 3;
-		case ' ': case '#': case '+': case '-':
-		    goto sw;
-		case '.':
-		    if (field)
-			return_error(gs_error_undefinedfilename);
-		    field = 1;
-		    continue;
-		case '0': case '1': case '2': case '3': case '4':
-		case '5': case '6': case '7': case '8': case '9':
-		    width[field] = width[field] * 10 + pfn->fname[i] - '0';
-		    goto sw;
-		case 'd': case 'i': case 'u': case 'o': case 'x': case 'X':
-		    *pfmt = &pfn->fname[i];
-		    continue;
-		default:
+	    field = -1; /* -1..3 for the 5 components of "%[flags][width][.precision][l]type" */
+	    for (;;)
+		if (++i == pfn->len)
 		    return_error(gs_error_undefinedfilename);
-	    }
+		else {
+		    switch (field) {
+			case -1: /* flags */
+			    if (strchr(" #+-", pfn->fname[i]))
+				continue;
+			    else
+				field++;
+			    /* falls through */
+			default: /* width (field = 0) and precision (field = 1) */
+			    if (strchr("0123456789", pfn->fname[i])) {
+				width[field] = width[field] * 10 + pfn->fname[i] - '0';
+				continue;
+			    } else if (0 == field && '.' == pfn->fname[i]) {
+				field++;
+				continue;
+			    } else
+				field = 2;
+			    /* falls through */
+			case 2: /* "long" indicator */
+			    field++;
+			    if ('l' == pfn->fname[i]) {
+				int_width = sizeof(long) * 3;
+				continue;
+			    }
+			    /* falls through */
+			case 3: /* type */
+			    if (strchr("diuoxX", pfn->fname[i])) {
+				*pfmt = &pfn->fname[i];
+				break;
+			    } else
+				return_error(gs_error_undefinedfilename);
+		    }
+		    break;
+		}
 	}
     if (have_format) {
 	/* Calculate a conservative maximum width. */
@@ -839,7 +856,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
 	/* Force stdout to binary. */
 	return gp_setmode_binary(*pfile, true);
     }
-    if (fmt) {
+    if (fmt) {						/* filename includes "%nnd" */
 	long count1 = dev->PageCount + 1;
 
 	while (*fmt != 'l' && *fmt != '%')
@@ -848,6 +865,11 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
 	    sprintf(pfname, parsed.fname, count1);
 	else
 	    sprintf(pfname, parsed.fname, (int)count1);
+    } else if (parsed.len && strchr(parsed.fname, '%'))	/* filename with "%%" but no "%nnd" */
+	sprintf(pfname, parsed.fname);
+    else
+	pfname[0] = 0; /* 0 to use "fname", not "pfname" */
+    if (pfname[0]) {
 	parsed.fname = pfname;
 	parsed.len = strlen(parsed.fname);
     }
@@ -865,10 +887,10 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
      	    eprintf1("**** Could not open the file %s .\n", parsed.fname);
  	return code;
     }
-    *pfile = gp_open_printer((fmt ? pfname : fname), binary);
+    *pfile = gp_open_printer((pfname[0] ? pfname : fname), binary);
     if (*pfile)
   	return 0;
-    eprintf1("**** Could not open the file %s .\n", (fmt ? pfname : fname));
+    eprintf1("**** Could not open the file %s .\n", (pfname[0] ? pfname : fname));
     return_error(gs_error_invalidfileaccess);
 }
 

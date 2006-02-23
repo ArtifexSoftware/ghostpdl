@@ -344,7 +344,23 @@ series of similarly named files. To do this place a template
 page number.
 
 <p>
-You can also control the number of digits used in the file name:
+<b>Note: Since the <tt>%</tt> character is used to precede the page number
+format specification, in order to represent a file name that contains a <tt>%</tt>, 
+double <tt>%</tt> characters must be used. For example for the file <tt>my%foo</tt>
+the OutputFile string needs to be <tt>my%%foo</tt>.</b> 
+
+<p>
+The format can in fact be more involved than a simple '<tt>%d</tt>'.
+The format specifier is of a form similar to the C <tt>printf</tt> format.
+The general form supported is:
+<pre><tt>            %[flags][width][.precision][l]type
+
+    where:  flags    is one of:  #+-
+            type     is one of:  diuoxX
+</tt></pre>
+
+For more information, please refer to documentation on the C printf format
+specifications. Some examples are:
 
 <blockquote><dl>
 <dt><b><tt>-sOutputFile=ABC-%d.png</tt></b>
@@ -355,20 +371,21 @@ You can also control the number of digits used in the file name:
 <dd>produces '<tt>ABC_p0001.tiff</tt>', ... , '<tt>ABC_p0510.tiff</tt>', ... , '<tt>ABC_p5238.tiff</tt>'<p>
 </dl></blockquote>
 
-Generally <tt>%03d</tt> is the best option for normal documents.
 
-<p>
+<p><b>
 Note however that this features is not supported by all devices; in particular
 it does not work with document-oriented output devices like <tt>pdfwrite</tt> and
 <tt>pswrite</tt>. See the <tt>-dFirstPage</tt> and <tt>-dLastPage</tt> switches
 <a href="#PDF_switches">below</a> for a way to extract single pdf pages.
+</b>
 
 <p>
-As noted above, on MS Windows systems, you will have to double the
-<tt>%</tt> character, e.g.,
+As noted above, when using MS Windows console (command.com or cmd.exe), you
+will have to double the <tt>%</tt> character since the <tt>%</tt> is used by
+that shell to prefix variables for substitution, e.g.,
 
 <blockquote><tt><b>
-gs -sOutputFile=ABC%%03d.xyz
+gswin32c -sOutputFile=ABC%%03d.xyz
 </b></tt></blockquote>
 
 

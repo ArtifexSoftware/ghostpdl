@@ -1199,13 +1199,19 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
 /*
  * If necessary, write the close-sequence
  */
-   if((NULL != udev->fname  ) && strchr(udev->fname,'%')) {
+    {
+	gs_parsed_file_name_t parsed;
+	const char *fmt;
 
-      if(0  <   upd->strings[S_CLOSE].size)
-         fwrite(upd->strings[S_CLOSE].data,1,upd->strings[S_CLOSE].size,out);
-
-      upd->flags &= ~B_OPEN;
-   }
+	if (NULL != udev->fname &&
+	    0 <= gx_parse_output_file_name(&parsed, &fmt, udev->fname, strlen(udev->fname)) &&
+	    fmt
+	    ) {
+	    if (0 < upd->strings[S_CLOSE].size)
+		fwrite(upd->strings[S_CLOSE].data,1,upd->strings[S_CLOSE].size,out);
+	    upd->flags &= ~B_OPEN;
+	}
+    }
 
 /*
  * clean up, and return status
