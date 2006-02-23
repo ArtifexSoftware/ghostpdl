@@ -45,10 +45,15 @@ int xps_decode_tiff(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 /* it appears all images in metro are really patterns. */
 
 typedef struct met_pattern_s {
+    void *linear;
+    void *radial;
     xps_image_t *raster_image;
     gs_matrix Transform;
     gs_rect Viewbox;
     gs_rect Viewport;
 } met_pattern_t;
+
+int LinearGradientBrush_paint(void *data, gs_state *pgs);
+int RadialGradientBrush_paint(void *data, gs_state *pgs);
 
 #endif /* metimage_INCLUDED */

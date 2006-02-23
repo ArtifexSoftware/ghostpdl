@@ -173,20 +173,36 @@ readdata(gs_memory_t *mem, zip_state_t *pzip, ST_Name ImageSource, byte **bufp, 
     return 0;
 }
 
-private int
+int
 met_PaintPattern(const gs_client_color *pcc, gs_state *pgs)
 {
+    gs_memory_t *mem = gs_state_memory(pgs);
     const gs_client_pattern *ppat = gs_getpattern(pcc);
     const met_pattern_t *pmpat = ppat->client_data;
+    int code;
+
+    /* if it's a gradient brush */
+    if (!pmpat->raster_image)
+    {
+	gs_gsave(pgs);
+	if (pmpat->linear)
+	    code = LinearGradientBrush_paint(pmpat->linear, pgs);
+	if (pmpat->radial)
+	    code = RadialGradientBrush_paint(pmpat->radial, pgs);
+	gs_grestore(pgs);
+	if (code < 0)
+	    return gs_rethrow(code, "could not paint gradient pattern");
+	return gs_okay;
+    }
+
     const xps_image_t *pmim = pmpat->raster_image;
     const byte *pdata = pmim->samples;
-    gs_memory_t *mem = gs_state_memory(pgs);
     gs_image_enum *penum;
     gs_color_space color_space;
     gs_image_t image;
     uint imbytes = pmim->stride * pmim->height;
     uint used;
-    int code;
+
 
     if (gs_debug_c('b'))
 	dprintf5(mem, "paint_image cs=%d n=%d bpc=%d w=%d h=%d\n",

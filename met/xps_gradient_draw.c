@@ -338,7 +338,7 @@ xps_draw_radial_gradient(gs_memory_t *mem, gs_state *pgs,
     }
     else
     {
-	for (i = 0; i < 20; i++)
+	for (i = 0; i < 10; i++)
 	{
 	    if (spread == XPS_REFLECT && (i & 1))
 		code = xps_draw_one_radial_gradient(mem, pgs, func, false, pt1, rad1, pt0, rad0);
