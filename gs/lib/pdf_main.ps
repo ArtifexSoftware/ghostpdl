@@ -1175,7 +1175,6 @@ end readonly def
   dictbeginpage setmatrix
   /DefaultQstate qstate store
 
-  dup		  % for showing annotations below
   count 1 sub /pdfemptycount exch store
 	% If the page uses any transparency features, show it within
 	% a transparency group.
@@ -1206,17 +1205,8 @@ end readonly def
   } {
     showpagecontents
   } ifelse
-  % check for extra garbage on the ostack and clean it up
-  count pdfemptycount sub dup 0 ne {
-    (   **** File did not complete the page properly and may be damaged.\n)
-    pdfformaterror
-    { pop } repeat
-  } {
-    pop
-  } ifelse
   % todo: mixing drawing ops outside the device filter could cause
   % problems, for example with the pnga device.
-  /Annots knownoget { { oforce drawannot } forall } if
   endpage
   end			% scratch dict
   % Some PDF files don't have matching q/Q (gsave/grestore) so we need
@@ -1233,14 +1223,29 @@ end readonly def
   PDFSave restore
   /Repaired exch def
 } bind def
+
+% Display the contents of a page (including annotations).
 /showpagecontents {	% <pagedict> showpagecontents -
+  dup		% Save the pagedict for the Annotations
+  count 1 sub  /pdfemptycount exch store
   gsave		% preserve gstate for Annotations later
   /Contents knownoget not { 0 array } if
   dup type /arraytype ne { 1 array astore } if {
     oforce false resolvestream pdfopdict .pdfrun
   } forall
+  % check for extra garbage on the ostack and clean it up
+  count pdfemptycount sub dup 0 ne {
+    (   **** File did not complete the page properly and may be damaged.\n)
+    pdfformaterror
+    { pop } repeat
+  } {
+    pop
+  } ifelse
   grestore
+  % Draw the annotations
+  /Annots knownoget { { oforce drawannot } forall } if
 } bind def
+
 /processcolorspace {	% - processcolorspace <colorspace>
 	% The following is per the PLRM3.
   currentdevice 1 dict dup /ProcessColorModel dup put .getdeviceparams
@@ -1268,11 +1273,28 @@ end readonly def
   PDFversion PDFtransparencyversion lt NOTRANSPARENCY or {
     pop false
   } {
-    false exch {
+    dup false exch {
       4 dict 1 index resourceusestransparency { pop not exit } if
       /Parent knownoget not { exit } if
     } loop
+    % Also check for transparency in the annotation (if not in resources).
+    { pop true } { annotsusetransparency } ifelse
   } ifelse
+} bind def
+
+% Check if transparency is specified in an ExtGState dict
+/extgstateusestransparency {	% <gstate dict> extgstateusestransparency <bool>
+  false exch		% Assume no transparency
+  {			% establish loop context
+    exch pop oforce
+    dup /BM knownoget { dup /Normal ne exch /Compatible ne and
+	                    { pop not exit } if
+                          } if
+    dup /ca knownoget { 1 ne { pop not exit } if } if
+    dup /CA knownoget { 1 ne { pop not exit } if } if
+    dup /SMask knownoget { /None ne { pop not exit } if } if
+    pop
+  } forall
 } bind def
 
 % Check the Resources of a page or Form. Check for loops in the resource chain.
@@ -1286,16 +1308,8 @@ end readonly def
     } if
     2 copy dup put
     dup /ExtGState knownoget {
-      false exch {
-	exch pop oforce
-	dup /BM knownoget { dup /Normal ne exch /Compatible ne and
-	                    { pop not exit } if
-                          } if
-	dup /ca knownoget { 1 ne { pop not exit } if } if
-	dup /CA knownoget { 1 ne { pop not exit } if } if
-	dup /SMask knownoget { /None ne { pop not exit } if } if
-	pop
-      } forall { pop true exit } if
+      extgstateusestransparency
+      { pop true exit } if
     } if
     dup /XObject knownoget {
       false exch {
@@ -1311,6 +1325,22 @@ end readonly def
     pop false exit
   } loop
   exch pop
+} bind def
+
+% Check if the annotations on a page use transparency
+/annotsusetransparency {	% <page dict> annotsusetransparency <bool>
+   false exch			% Assume no transparency
+   /Annots knownoget {		% Get Annots array
+     { oforce /AP knownoget {	% Get appearance dict for the annoation
+         /N oget		% Get the /N (i.e. normal) appearance stream
+	 /Resources knownoget {
+	   /ExtGState knownoget {
+	     extgstateusestransparency { pop true exit} if
+	   } if			% If ExtGState known
+	 } if			% If Resources known
+       } if			% If AP dict known
+     } forall			% For all annots on the page
+   } if
 } bind def
 
 % ------ ColorSpace substitution support ------ %
