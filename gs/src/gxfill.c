@@ -541,6 +541,8 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     return code;
 }
 
+#define OLD_CODE_COMPATIBILITY 1
+
 /*
  * Fill a path.  This is the default implementation of the driver
  * fill_path procedure.
@@ -552,38 +554,59 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 {
     int code;
 
-    if (gx_dc_is_pattern2_color(pdevc)) {
-	/*  Optimization for shading fill :
-	    The general path filling algorithm subdivides fill region with 
+    if (gx_dc_is_pattern2_color(pdevc) || pdevc->type == &gx_dc_type_data_ht_colored) {
+	/*  Optimization for shading and halftone fill :
+	    The general filling algorithm subdivides the fill region into 
 	    trapezoid or rectangle subregions and then paints each subregion 
-	    with given color. If the color is shading, each subregion to be 
-	    subdivided into areas of constant color. But with radial 
-	    shading each area is a high order polygon, being 
-	    subdivided into smaller subregions, so as total number of
-	    subregions grows huge. Faster processing is done here by changing 
-	    the order of subdivision cycles : we first subdivide the shading into 
-	    areas of constant color, then apply the general path filling algorithm 
-	    (i.e. subdivide each area into trapezoids or rectangles), using the 
-	    filling path as clip mask.
+	    with given color. If the color is complex, it also needs to be subdivided
+	    into constant color rectangles. In the worst case it gives
+	    a multiple of numbers of rectangles, which may be too slow.
+	    A faster processing may be obtained with installing a clipper
+	    device with the filling path, and then render the complex color 
+	    through it. The speeding up happens due to the clipper device
+	    is optimised for fast scans through neighbour clipping rectangles.
 	*/
-
+	/*  We need a single clipping path here, because shadings and
+	    halftones don't take 2 paths. Compute the clipping path intersection.
+	*/
 	gx_clip_path cpath_intersection;
 	gx_path path_intersection;
 
-	/*  Shading fill algorithm uses "current path" parameter of the general
-	    path filling algorithm as boundary of constant color area,
-	    so we need to intersect the filling path with the clip path now,
-	    reducing the number of pathes passed to it :
-	*/
 	gx_path_init_local(&path_intersection, pdev->memory);
 	gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
-	if ((code = gx_cpath_intersect(&cpath_intersection, ppath, params->rule, (gs_imager_state *)pis)) >= 0)
-	    code = gx_cpath_to_path(&cpath_intersection, &path_intersection);
-
+	code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule, 
+		    (gs_imager_state *)pis, 
+		    OLD_CODE_COMPATIBILITY && pdevc->type != &gx_dc_type_data_ht_colored 
+			    ? NULL : params);
 	/* Do fill : */
+	if (code >= 0) {
+	    if (pdevc->type == &gx_dc_type_data_ht_colored) {
+		const gx_rop_source_t *rs = NULL;
+		gx_device *dev;
+		gx_device_clip cdev;
+		gs_fixed_rect clip_box;
+		gs_int_rect cb;
+
+		gx_cpath_outer_box(&cpath_intersection, &clip_box);
+		gx_make_clip_path_device(&cdev, &cpath_intersection);
+		cdev.target = pdev;
+		dev = (gx_device *)&cdev;
+		(*dev_proc(dev, open_device))(dev);
+		cb.p.x = fixed2int_pixround(clip_box.p.x);
+		cb.p.y = fixed2int_pixround(clip_box.p.y);
+		cb.q.x = fixed2int_pixround(clip_box.q.x);
+		cb.q.y = fixed2int_pixround(clip_box.q.y);
+		code = pdevc->type->fill_rectangle(pdevc,
+			    cb.p.x, cb.p.y, cb.q.x - cb.p.x, cb.q.y - cb.p.y,
+			    dev, pis->log_op, rs);
+	    } else {
+		/* Shading fill algorithm fills an area restricted with a path,
+		   so we need to convert cpath into path .*/
+		code = gx_cpath_to_path(&cpath_intersection, &path_intersection);
 		if (code >= 0)
 		    code = gx_dc_pattern2_fill_path(pdevc, &path_intersection, NULL,  pdev);
-
+	    }
+	}
 	/* Destruct local data and return :*/
 	gx_path_free(&path_intersection, "shading_fill_path_intersection");
 	gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");

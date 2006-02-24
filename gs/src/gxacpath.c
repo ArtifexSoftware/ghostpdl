@@ -104,6 +104,8 @@ gx_cpath_accum_begin(gx_device_cpath_accum * padev, gs_memory_t * mem)
 		   (const gx_device *) & gs_cpath_accum_device,
 		   NULL /* allocated on stack */ , true);
     padev->list_memory = mem;
+    padev->memory = mem; /* gx_general_fill_path may need a storage 
+			    for dropout prevention buffer. */
     (*dev_proc(padev, open_device)) ((gx_device *) padev);
 }
 
@@ -168,7 +170,8 @@ gx_cpath_accum_discard(gx_device_cpath_accum * padev)
 /* Intersect two clipping paths using an accumulator. */
 int
 gx_cpath_intersect_path_slow(gx_clip_path * pcpath, gx_path * ppath,
-			     int rule, gs_imager_state *pis)
+			     int rule, gs_imager_state *pis,
+			     const gx_fill_params * params0)
 {
     gs_logical_operation_t save_lop = gs_current_logical_op_inline(pis);
     gx_device_cpath_accum adev;
@@ -179,10 +182,14 @@ gx_cpath_intersect_path_slow(gx_clip_path * pcpath, gx_path * ppath,
     gx_cpath_accum_begin(&adev, pcpath->path.memory);
     set_nonclient_dev_color(&devc, 0);	/* arbitrary, but not transparent */
     gs_set_logical_op_inline(pis, lop_default);
-    params.rule = rule;
-    params.adjust.x = params.adjust.y = fixed_half;
-    params.flatness = gs_currentflat_inline(pis);
-    params.fill_zero_width = true;
+    if (params0 != 0)
+	params = *params0;
+    else {
+	params.rule = rule;
+	params.adjust.x = params.adjust.y = fixed_half;
+	params.flatness = gs_currentflat_inline(pis);
+	params.fill_zero_width = true;
+    }
     code = gx_fill_path_only(ppath, (gx_device *)&adev, pis,
 			     &params, &devc, pcpath);
     if (code < 0 || (code = gx_cpath_accum_end(&adev, pcpath)) < 0)

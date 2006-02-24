@@ -285,6 +285,13 @@ int gx_effective_clip_path(gs_state *, gx_clip_path **);
 typedef struct gx_clip_list_s gx_clip_list;
 #endif
 
+/* Opaque type for fill parameters. */
+#ifndef gx_fill_params_DEFINED
+#  define gx_fill_params_DEFINED
+typedef struct gx_fill_params_s gx_fill_params;
+#endif
+
+
 /* Opaque type for a clipping path enumerator. */
 typedef struct gs_cpath_enum_s gs_cpath_enum;
 
@@ -323,6 +330,8 @@ int
     gx_cpath_clip(gs_state *, gx_clip_path *, /*const*/ gx_path *, int),
     gx_cpath_intersect(gx_clip_path *, /*const*/ gx_path *, int,
 		       gs_imager_state *),
+    gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
+		   int rule, gs_imager_state *pis, const gx_fill_params * params),
     gx_cpath_scale_exp2_shared(gx_clip_path *pcpath, int log2_scale_x,
 			       int log2_scale_y, bool list_shared,
 			       bool segments_shared),
