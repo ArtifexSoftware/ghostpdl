@@ -935,7 +935,7 @@ private inline int t1_hinter__add_pole(t1_hinter * this, t1_glyph_space_coord xx
     pole->type = type;
     pole->contour_index = this->contour_count;
     pole->aligned_x = pole->aligned_y = unaligned;
-    pole->boundary_length_x = pole->boundary_length_x = 0;
+    pole->boundary_length_x = pole->boundary_length_y = 0;
     this->pole_count++;
     return 0;
 }
@@ -2611,7 +2611,7 @@ private int t1_hinter__align_stem_poles(t1_hinter * this)
 			pole->ax = ag, pole->aligned_x = align, pole->boundary_length_x = bl;
 		} else {
 		    if (pole->aligned_y < align)
-			pole->ay = ag, pole->aligned_y = align, pole->boundary_length_x = bl;
+			pole->ay = ag, pole->aligned_y = align, pole->boundary_length_y = bl;
 		}
 	    }
 	}
