@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id: sjbig2.c,v 1.7 2005/06/09 07:15:07 giles Exp $ */
+/* $Id$ */
 /* jbig2decode filter implementation -- hooks in luratech JBIG2 */
 
 #include "memory_.h"

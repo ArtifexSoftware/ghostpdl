@@ -52,20 +52,12 @@ s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity se
     int code = 0;
 
     switch (severity) {
-#ifdef JBIG2_DEBUG   /* verbose reporting when debugging */
         case JBIG2_SEVERITY_DEBUG:
             type = "DEBUG"; break;;
         case JBIG2_SEVERITY_INFO:
             type = "info"; break;;
         case JBIG2_SEVERITY_WARNING:
             type = "WARNING"; break;;
-#else  /* suppress most messages in normal operation */
-        case JBIG2_SEVERITY_DEBUG:
-        case JBIG2_SEVERITY_INFO:
-        case JBIG2_SEVERITY_WARNING:
-            return 0;
-            break;;
-#endif /* JBIG2_DEBUG */
         case JBIG2_SEVERITY_FATAL:
             type = "FATAL ERROR decoding image:";
             /* pass the fatal error upstream if possible */
@@ -76,8 +68,12 @@ s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity se
     }
     if (seg_idx == -1) segment[0] = '\0';
     else sprintf(segment, "(segment 0x%02x)", seg_idx);
-    
-    dlprintf3("jbig2dec %s %s %s\n", type, msg, segment);
+
+    if (severity == JBIG2_SEVERITY_FATAL) {
+	dlprintf3("jbig2dec %s %s %s\n", type, msg, segment);
+    } else {
+	if_debug3('w', "[w] jbig2dec %s %s %s\n", type, msg, segment);
+    }
 
     return code;
 }
@@ -104,7 +100,7 @@ s_jbig2decode_make_global_data(byte *data, uint length, void **result)
     
     /* the cvision encoder likes to include empty global streams */
     if (length == 0) {
-        if_debug0('s', "[s] ignoring zero-length jbig2 global stream.\n");
+        if_debug0('w', "[w] ignoring zero-length jbig2 global stream.\n");
     	*result = NULL;
     	return 0;
     }
