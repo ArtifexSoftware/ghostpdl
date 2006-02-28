@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id: sjbig2.h,v 1.6 2005/06/09 07:15:07 giles Exp $ */
+/* $Id$ */
 /* Definitions for jbig2decode filter - Luratech version */
 /* Requires scommon.h; strimpl.h if any templates are referenced */
 
@@ -53,5 +53,27 @@ public int
 s_jbig2decode_set_global_data(stream_state *ss, void *data);
 public void
 s_jbig2decode_free_global_data(void *data);
+
+
+/* JBIG2 encoder internal state */
+typedef struct stream_jbig2encode_state_s
+{
+    stream_state_common;	/* inherit base object from scommon.h */
+    JB2_Handle_Compress cmp;	/* compression library context */
+    JB2_Handle_Document doc;
+    unsigned long width, height;
+    unsigned long stride;	/* line length in bytes */
+    unsigned char *outbuf;	/* output data buffer */
+    unsigned long outsize;	/* bytes available in the buffer */ 
+    unsigned long outfill;	/* bytes written to the buffer */ 
+    unsigned long offset;	/* bytes written from the buffer */ 
+
+} stream_jbig2encode_state;
+
+#define private_st_jbig2encode_state()	\
+  gs_private_st_simple(st_jbig2encode_state, stream_jbig2encode_state,\
+    "jbig2encode filter state")
+
+extern const stream_template s_jbig2encode_template;
 
 #endif /* sjbig2_luratech_INCLUDED */

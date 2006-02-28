@@ -50,9 +50,10 @@
  */
  /* TODO: check allocations for integer overflow */
 
-private_st_jbig2decode_state();	/* creates a gc object for our state, defined in sjbig2.h */
+/* create a gc object for our state, defined in sjbig2_luratech.h */
+private_st_jbig2decode_state();	
 
-#define JBIG2DECODE_BUFFER_SIZE 4096
+#define JBIG2_BUFFER_SIZE 4096
 
 /* our implementation of the "parsed" /JBIG2Globals filter parameter */
 typedef struct s_jbig2decode_global_data_s {
@@ -230,9 +231,9 @@ s_jbig2decode_inbuf(stream_jbig2decode_state *state, stream_cursor_read * pr)
 
     /* allocate the input buffer if needed */
     if (state->inbuf == NULL) {
-        state->inbuf = malloc(JBIG2DECODE_BUFFER_SIZE);
+        state->inbuf = malloc(JBIG2_BUFFER_SIZE);
         if (state->inbuf == NULL) return gs_error_VMerror;
-        state->insize = JBIG2DECODE_BUFFER_SIZE;
+        state->insize = JBIG2_BUFFER_SIZE;
         state->infill = 0;
     }
 
@@ -263,10 +264,7 @@ s_jbig2decode_inbuf(stream_jbig2decode_state *state, stream_cursor_read * pr)
     return 0;
 }
 
-/* initialize the steam.
-   this involves allocating the context structures, and
-   initializing the global context from the /JBIG2Globals object reference
- */
+/* initialize the steam. */
 private int
 s_jbig2decode_init(stream_state * ss)
 {
@@ -284,7 +282,7 @@ s_jbig2decode_init(stream_state * ss)
     state->error = 0;
     state->offset = 0;
 
-    return 0; /* todo: check for allocation failure */
+    return 0;
 }
 
 /* process a section of the input and return any decoded data.
@@ -369,9 +367,7 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
     return status;
 }
 
-/* stream release.
-   free all our decoder state.
- */
+/* stream release. free all our decoder state. */
 private void
 s_jbig2decode_release(stream_state *ss)
 {
@@ -392,4 +388,178 @@ const stream_template s_jbig2decode_template = {
     s_jbig2decode_process,
     1, 1, /* min in and out buffer sizes we can handle --should be ~32k,64k for efficiency? */
     s_jbig2decode_release
+};
+
+
+
+/** encode support **/
+
+/* we provide a C-only encode filter for generating embedded JBIG2 image 
+   data */
+
+/* create a gc object for our state, defined in sjbig2_luratech.h */
+private_st_jbig2encode_state();
+
+/* helper - start up the compression context */
+private int
+s_jbig2encode_start(stream_jbig2encode_state *state)
+{
+    JB2_Error err;
+
+    /* initialize the compression handle */
+    err = JB2_Compress_Start(&(state->cmp),
+	s_jbig2_alloc, state,	/* alloc and its parameter data */
+	s_jbig2_free,  state,	/* free callback */
+	s_jbig2_message, state);/* message callback */
+    if (err != cJB2_Error_OK) return err;
+
+            /* set the license keys if appropriate */
+#if defined(JB2_LICENSE_NUM_1) && defined(JB2_LICENSE_NUM_2)
+            err = JB2_Document_Set_License(state->cmp,
+                JB2_LICENSE_NUM_1, JB2_LICENSE_NUM_2);
+            if (err != cJB2_Error_OK) return err;
+#endif
+
+   /* set the image properties */
+   err = JB2_Compress_Set_Property(state->cmp,
+		cJB2_Prop_Page_Width, state->width);
+
+   err = JB2_Compress_Set_Property(state->cmp,
+		cJB2_Prop_Page_Height, state->height);
+   if (err != cJB2_Error_OK) return err;
+
+   /* we otherwise use the default compression parameters */
+
+   return cJB2_Error_OK;
+}
+
+/* callback for compressed data output */
+private JB2_Size_T JB2_Callback
+s_jbig2encode_write(const unsigned char *buffer,
+		JB2_Size_T pos, JB2_Size_T size, void *userdata)
+{
+    stream_jbig2encode_state *state = (stream_jbig2encode_state *)userdata;
+
+    /* allocate the output buffer if necessary */
+    if (state->outbuf == NULL) {
+	state->outbuf = malloc(JBIG2_BUFFER_SIZE);
+	if (state->outbuf == NULL) {
+	    dprintf("jbig2encode: failed to allocate output buffer\n");
+	    return 0; /* can't return an error! */
+	}
+	state->outsize = JBIG2_BUFFER_SIZE;
+    }
+
+    /* grow the output buffer if necessary */
+    while (pos+size > state->outsize) {
+	unsigned char *new = realloc(state->outbuf, state->outsize*2);
+	if (new == NULL) {
+	    dprintf1("jbig2encode: failed to resize output buffer"
+		" beyond %d bytes\n", state->outsize);
+	    return 0; /* can't return an error! */
+	}
+	state->outbuf = new;
+	state->outsize *= 2;
+    }
+
+    /* copy data into our buffer; there will now be enough room. */
+    memcpy(state->outbuf + pos, buffer, size);
+    if (state->outfill < pos + size) state->outfill = pos + size;
+
+    return size;
+}                             
+
+
+/* initialize the steam. */
+private int
+s_jbig2encode_init(stream_state * ss)
+{
+    stream_jbig2encode_state *state = (stream_jbig2encode_state *)ss;
+
+    state->cmp = (JB2_Handle_Compress)NULL;
+    state->doc = (JB2_Handle_Document)NULL;
+    /* width, height, and stride are set by the client */
+    state->outbuf = NULL;
+    state->outsize = 0;
+    state->outfill = 0;
+    state->offset = 0;
+
+    return 0;
+}
+
+/* process a section of the input and return any encoded data.
+   see strimpl.h for return codes.
+ */
+private int
+s_jbig2encode_process(stream_state * ss, stream_cursor_read * pr,
+                  stream_cursor_write * pw, bool last)
+{
+    stream_jbig2encode_state *state = (stream_jbig2encode_state *)ss;
+    long in_size = pr->limit - pr->ptr;
+    long out_size = pw->limit - pw->ptr;
+    long available;
+    JB2_Error err;
+
+    if (in_size > 0) {
+	/* initialize the encoder if necessary */
+	if (state->cmp == (JB2_Handle_Compress)NULL)
+	    s_jbig2encode_start(state);
+
+	/* pass available full lines to the encoder library */
+	available = in_size;
+	while (available >= state->stride) {
+	   err = JB2_Compress_Line(state->cmp, pr->ptr + 1);
+	   pr->ptr += state->stride;
+	   available = pr->limit - pr->ptr;
+	   if (err != cJB2_Error_OK) return ERRC;
+	}
+	if (!last) return 0; /* request more data */
+    }
+
+    if (last && state->outbuf == NULL) {
+	/* convert the compression context to a document context */
+	err = JB2_Compress_End(&(state->cmp), &(state->doc));
+	if (err != cJB2_Error_OK) return ERRC;
+	/* dump the compressed data out through a callback; 
+	   unfortunately we can't serialize this across process calls */
+	err = JB2_Document_Export_Document(state->doc,
+	    s_jbig2encode_write, state,
+	    cJB2_Export_Format_Stream_For_PDF);
+	if (err != cJB2_Error_OK) return ERRC;
+    }
+
+    if (state->outbuf != NULL) {
+	/* copy available output data */
+	available = min(out_size, state->outfill - state->offset);
+	memcpy(pw->ptr + 1, state->outbuf + state->offset, available);
+	pw->ptr += available;
+	state->offset += available;
+
+	/* need further output space? */
+	if (state->outfill - state->offset > 0) return 1;
+	else return EOFC; /* all done */
+    }
+
+    /* something went wrong above */
+    return ERRC;
+}
+
+/* stream release. free all our decoder state.
+ */
+private void
+s_jbig2encode_release(stream_state *ss)
+{
+    stream_jbig2encode_state *state = (stream_jbig2encode_state *)ss;
+
+    if (state->outbuf != NULL) free(state->outbuf);
+}
+
+/* stream template */
+const stream_template s_jbig2encode_template = {
+    &st_jbig2encode_state,
+    s_jbig2encode_init,
+    s_jbig2encode_process,
+    1024, 1024, /* min in and out buffer sizes; could be smaller, but 
+		   this is more efficient */
+    s_jbig2encode_release
 };
