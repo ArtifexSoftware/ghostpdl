@@ -84,6 +84,12 @@
 #include "jpc_tsfb.h"
 #include "jpc_math.h"
 
+#ifndef USE_ASM_WIN32
+# if defined(_WIN32) && !defined(_WIN64)
+#  define USE_ASM_WIN32
+# endif
+#endif
+
 /******************************************************************************\
 *
 \******************************************************************************/
@@ -104,7 +110,7 @@ static void jpc_ns_analyze(jpc_qmfb1d_t *qmfb, int flags, jas_seq2d_t *x);
 
 static void jpc_ns_synthesize(jpc_qmfb1d_t *qmfb, int flags, jas_seq2d_t *x);
 
-#ifdef _WIN32
+#ifdef USE_ASM_WIN32
 static void jpc_win32_ns_synthesize( jpc_qmfb1d_t *qmfb, int flags, jas_seq2d_t *x);
 #endif
 
@@ -125,7 +131,7 @@ jpc_qmfb1dops_t jpc_ns_ops = {
 	jpc_ns_getanalfilters,
 	jpc_ns_getsynfilters,
 	jpc_ns_analyze,
-#ifdef _WIN32
+#ifdef USE_ASM_WIN32
 	jpc_win32_ns_synthesize
 #else
 	jpc_ns_synthesize
@@ -964,7 +970,7 @@ static void jpc_ns_analyze(jpc_qmfb1d_t *qmfb, int flags, jas_seq2d_t *x)
 }
 
 
-#ifdef _WIN32
+#ifdef USE_ASM_WIN32
 
 #define	DBL_FIX_A	(0x0000275d)
 #define	DBL_FIX_B	(0x00003406)
@@ -1063,7 +1069,7 @@ void jpc_ns_synthesize(jpc_qmfb1d_t *qmfb, int flags, jas_seq2d_t *x)
 
 
 
-#ifdef _WIN32
+#ifdef USE_ASM_WIN32
 
 
 #define	USE_LF_ASM
