@@ -218,26 +218,40 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 		/* our read callback */
 		s_jpxd_read_data, (JP2_Callback_Param)state
 	    );
-
+	    if (err != cJP2_Error_OK) {
+		dlprintf1("Luratech JP2 error %d starting decompression\n", (int)err);
+		return ERRC;
+	    }
 #if defined(JP2_LICENSE_NUM_1) && defined(JP2_LICENSE_NUM_2)
             /* set the license keys if appropriate */
             error = JP2_Decompress_SetLicense(state->handle,
                 JP2_LICENSE_NUM_1, JP2_LICENSE_NUM_2);
-            if (error != cJP2_Error_OK) return ERRC;
+            if (error != cJP2_Error_OK) {
+		dlprintf1("Luratech JP2 error %d setting license\n", (int)err);
+		return ERRC;
+	    }
 #endif
 	    /* parse image parameters */
-	    if (err != cJP2_Error_OK) return ERRC;
 	    err = JP2_Decompress_GetProp(state->handle,
 		cJP2_Prop_Components, &result, -1, -1);
-	    if (err != cJP2_Error_OK) return ERRC;
+	    if (err != cJP2_Error_OK) {
+		dlprintf1("Luratech JP2 error %d decoding number of image components\n", (int)err);
+		return ERRC;
+	    }
 	    state->ncomp = result;
 	    err = JP2_Decompress_GetProp(state->handle,
 		cJP2_Prop_Width, &result, -1, -1);
-	    if (err != cJP2_Error_OK) return ERRC;
+	    if (err != cJP2_Error_OK) {
+		dlprintf1("Luratech JP2 error %d decoding image width\n", (int)err);
+		return ERRC;
+	    }
 	    state->width = result;
 	    err = JP2_Decompress_GetProp(state->handle,
 		cJP2_Prop_Height, &result, -1, -1);
-	    if (err != cJP2_Error_OK) return ERRC;
+	    if (err != cJP2_Error_OK) {
+		dlprintf1("Luratech JP2 error %d decoding image height\n", (int)err);
+		return ERRC;
+	    }
 	    state->height = result;
 	    if_debug3('w', "[w]jpxd image has %d components (%ldx%ld)\n", 
 		state->ncomp, state->width, state->height);
@@ -246,7 +260,10 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 		const char *cspace = "unknown";
 		err = JP2_Decompress_GetProp(state->handle,
 			cJP2_Prop_Extern_Colorspace, &result, -1, -1);
-		if (err != cJP2_Error_OK) return ERRC;
+		if (err != cJP2_Error_OK) {
+		    dlprintf1("Luratech JP2 error %d decoding colorspace\n", (int)err);
+		    return ERRC;
+		}
 		switch (result) {
 		    case cJP2_Colorspace_Gray: cspace = "gray"; break;
 		    case cJP2_Colorspace_RGBa: cspace = "sRGB"; break;
@@ -276,11 +293,19 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 		for (comp = 0; comp < state->ncomp; comp++) {
 		    err= JP2_Decompress_GetProp(state->handle,
 			cJP2_Prop_Bits_Per_Sample, &result, -1, (short)comp);
-		    if (err != cJP2_Error_OK) return ERRC;
+		    if (err != cJP2_Error_OK) {
+			dlprintf2("Luratech JP2 error %d decoding "
+				"bits per sample for component %d\n", (int)err, comp);
+			return ERRC;
+		    }
 		    bits = result;
 		    err= JP2_Decompress_GetProp(state->handle,
 			cJP2_Prop_Signed_Samples, &result, -1, (short)comp);
-		    if (err != cJP2_Error_OK) return ERRC;
+		    if (err != cJP2_Error_OK) {
+			dlprintf2("Luratech JP2 error %d decoding " 
+				"signedness of component %d\n", (int)err, comp);
+			return ERRC;
+		    }
 		    is_signed = result;
 		    if_debug3('w',
 			"[w]jpxd image component %d has %d bit %s samples\n",
@@ -300,15 +325,24 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 	    /* attach our output callback */
 	    err = JP2_Decompress_SetProp(state->handle,
 		cJP2_Prop_Output_Parameter, (JP2_Property_Value)state);
-	    if (err != cJP2_Error_OK) return ERRC;
+	    if (err != cJP2_Error_OK) {
+		dlprintf1("Luratech JP2 error %d setting output parameter\n", (int)err);
+		return ERRC;
+	    }
 	    err = JP2_Decompress_SetProp(state->handle,
 		cJP2_Prop_Output_Function, 
 		(JP2_Property_Value)s_jpxd_write_data);
-	    if (err != cJP2_Error_OK) return ERRC;
+	    if (err != cJP2_Error_OK) {
+		dlprintf1("Luratech JP2 error %d setting output function\n", (int)err);
+		return ERRC;
+	    }
 
 	    /* decompress the image */
 	    err = JP2_Decompress_Image(state->handle);
-	    if (err != cJP2_Error_OK) return ERRC; /* parsing error */
+	    if (err != cJP2_Error_OK) {
+		dlprintf1("Luratech JP2 error %d decoding image data\n", (int)err);
+		return ERRC; /* parsing error */
+	    }
 	}
 
 	/* copy out available data */
