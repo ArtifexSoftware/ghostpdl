@@ -2,6 +2,8 @@
  * Copyright (c) 1999-2000 Image Power, Inc. and the University of
  *   British Columbia.
  * Copyright (c) 2001-2003 Michael David Adams.
+ * Copyright (c) 2005-2006 artofcode LLC.
+ *
  * All rights reserved.
  */
 
@@ -1063,6 +1065,9 @@ void jpc_ns_synthesize(jpc_qmfb1d_t *qmfb, int flags, jas_seq2d_t *x)
 
 #ifdef _WIN32
 
+
+#define	USE_LF_ASM
+
 void jpc_win32_ns_synthesize(	jpc_qmfb1d_t *qmfb, 
 								int flags, 
 								jas_seq2d_t *x
@@ -1123,7 +1128,7 @@ void jpc_win32_ns_synthesize(	jpc_qmfb1d_t *qmfb,
 
 			if (endind - startind > 1) 
 			{
-#if 0
+#if !defined(USE_LF_ASM)
 				NNS_SCALE(	lstartptr, 
 							lstartind, 
 							lendind,
@@ -1131,8 +1136,8 @@ void jpc_win32_ns_synthesize(	jpc_qmfb1d_t *qmfb,
 							DBL_FIX_A
 						);
 #else
+
 	__asm	mov	esi,	lstartptr
-	__asm	mov	edi,	hstartptr
 	__asm	mov	eax,	lstartind
 	__asm	mov ebx,	lendind
 	__asm	sub ebx,	eax
@@ -1158,7 +1163,7 @@ skip_scale0:	;
 
 #endif
 
-#if 0
+#if !defined(USE_LF_ASM)
 				NNS_SCALE(	hstartptr, 
 							hstartind, 
 							hendind,
@@ -1167,8 +1172,9 @@ skip_scale0:	;
 						);
 #else
 
-	__asm	mov	eax,	lstartind
-	__asm	mov ebx,	lendind
+	__asm	mov	esi,	hstartptr
+	__asm	mov	eax,	hstartind
+	__asm	mov ebx,	hendind
 	__asm	sub ebx,	eax
 
 scale_lp1:	;
@@ -1190,7 +1196,7 @@ skip_scale1:	;
 
 #endif
 
-#if 0
+#if !defined(USE_LF_ASM)
 				RA_NNS_LIFT1(	lstartptr, 
 								lstartind, 
 								lendind,
@@ -1267,7 +1273,7 @@ no_3C:		;
 #endif
 
 
-#if 0
+#if !defined(USE_LF_ASM)
 				NNS_LIFT0(	lstartptr, 
 							lstartind, 
 							lendind,
@@ -1277,7 +1283,6 @@ no_3C:		;
 							intrastep,
 							DBL_FIX_D
 						);
-
 #else
 
 	__asm	mov	esi,	lstartptr
@@ -1345,7 +1350,7 @@ no_3b_lift0:		;
 
 #endif
 
-#if 0
+#if !defined(USE_LF_ASM)
 				NNS_LIFT1(	lstartptr, 
 							lstartind, 
 							lendind,
@@ -1356,6 +1361,7 @@ no_3b_lift0:		;
 							DBL_FIX_E
 						);
 #else
+
 	__asm	mov	esi,	lstartptr
 	__asm	mov	edi,	hstartptr
 	__asm	mov	eax,	lstartind
@@ -1420,7 +1426,7 @@ no_3a:		;
 
 
 
-#if 0
+#if !defined(USE_LF_ASM)
 				NNS_LIFT0(	lstartptr, 
 							lstartind, 
 	  						lendind,
@@ -1431,6 +1437,7 @@ no_3a:		;
 							DBL_FIX_F
 						);
 #else
+
 	__asm	mov	esi,	lstartptr
 	__asm	mov	edi,	hstartptr
 	__asm	mov	eax,	hstartind
@@ -1508,7 +1515,7 @@ no_3d:		;
 								);
 			} else 
 			{
-#if 0
+#if !defined(USE_LF_ASM)
 				if (lstartind == lendind) {
 					*startptr = jpc_fix_asr(*startptr, 1);
 				}
