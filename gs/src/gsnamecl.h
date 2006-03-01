@@ -56,27 +56,34 @@ typedef struct named_color_params_s {
     int color_index[GS_CLIENT_COLOR_MAX_COMPONENTS];
 } named_color_params_t;
 
-#ifndef gs_color_space
+#ifndef gs_color_space_DEFINED
+#  define gs_color_space_DEFINED
 typedef struct gs_color_space_s gs_color_space;
 #endif
 
-#ifndef gx_device_color
+#ifndef gx_device_color_DEFINED
+#  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
 #endif
 
-#ifndef gs_state
+#ifndef gs_state_DEFINED
+#  define gs_state_DEFINED
 typedef struct gs_state_s gs_state;
 #endif
 
-#ifndef gs_imager_state
+#ifndef gs_imager_state_DEFINED
+#  define gs_imager_state_DEFINED
 typedef struct gs_imager_state_s gs_imager_state;
 #endif
 
-#ifndef gx_device
+#ifndef gx_device_DEFINED
+#  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
 #endif
 
-#ifndef gs_param_list
+/* Define an opaque type for parameter lists. */
+#ifndef gs_param_list_DEFINED
+#  define gs_param_list_DEFINED
 typedef struct gs_param_list_s gs_param_list;
 #endif
 
@@ -137,9 +144,8 @@ int gx_remap_concrete_named_color_DeviceN(const frac * pconc,
  * consists of a pointer to a list of client 'named color' color handling
  * procedures and a pointer to a client data structure.
  */
-typedef struct client_named_color_procs_s client_named_color_procs_t;
 typedef struct client_named_color_params_s {
-    client_named_color_procs_t * client_procs;	/* Client callback handlers */
+    struct client_named_color_procs_s * client_procs;	/* Client callback handlers */
     void * data;				/* For client data */
 } client_named_color_params_t;
 
