@@ -29,6 +29,8 @@ const byte gs_init_string[] =
 	"systemdict /GenericResourceDir known not { " 		/* if GenericResourceDir was */
 	"systemdict /GenericResourceDir (%rom%Resource/) put "	/* not set on command line,  */
 	"} if "							/* set to %rom%Resource/     */
-	"(%rom%gs_init.ps) (r) file cvx exec "		/* now run the %rom% init file       */
+	"(gs_init.ps) .libfile not { "
+	"(Can't find initialization file gs_init.ps.\\n) print flush quit "	/* OOPS! */
+	"} if cvx exec "					/* now run the init file       */
 ;
 const uint gs_init_string_sizeof = sizeof(gs_init_string);

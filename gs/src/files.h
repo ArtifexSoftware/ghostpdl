@@ -124,8 +124,9 @@ typedef struct gs_file_path_s *gs_file_path_ptr;
 FILE *lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *);
 
 	/* for imain.c */
-int lib_file_open(const gs_file_path_ptr pfpath, i_ctx_t *, const char *, uint, byte *, uint, 
-		  uint *, ref *, gs_memory_t *);
+int
+lib_file_open(gs_file_path_ptr, const gs_memory_t *, i_ctx_t *,      
+		       const char *, uint, char *, int, uint *, ref *pfile);
 
 	/* for imain.c */
 #ifndef gs_ref_memory_DEFINED

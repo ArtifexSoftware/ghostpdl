@@ -603,7 +603,7 @@ zlibfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int code;
-    byte cname[gp_file_name_sizeof];
+    byte cname[DEFAULT_BUFFER_SIZE];
     uint clen;
     gs_parsed_file_name_t pname;
     stream *s;
@@ -632,8 +632,8 @@ zlibfile(i_ctx_t *i_ctx_p)
     } else {
 	ref fref;
 
-	code = lib_file_open(i_ctx_p->lib_path, i_ctx_p, pname.fname, pname.len, cname, sizeof(cname),
-			     &clen, &fref, imemory);
+	code = lib_file_open(i_ctx_p->lib_path, imemory, i_ctx_p, pname.fname, pname.len, cname, sizeof(cname),
+			     &clen, &fref);
 	if (code >= 0) {
 	    s = fptr(&fref);
 	    code = ssetfilename(s, cname, clen);
@@ -948,26 +948,23 @@ check_file_permissions_aux(i_ctx_t *i_ctx_p, char *fname, uint flen)
 }
 
 
-/* The startup code calls this to open @-files. */
-private int
-lib_fopen_with_libpath(gs_file_path_ptr  lib_path,
-		       const gs_memory_t *mem,
-		       i_ctx_t *i_ctx_p,      
-		       gx_io_device *iodev, 
-		       const char *fname, uint flen, char fmode[4], char *buffer, int blen,
-		       FILE **file)
-{   /* i_ctx_p is NULL running init files. 
+/* Return a file object of of the file searched for using the search paths. */
+/* The fname cannot contain a device part (%...%) but the lib paths might. */
+/* The startup code calls this to open the initialization file gs_init.ps. */
+/* The startup code also calls this to open @-files. */
+int
+lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx_p,      
+		       const char *fname, uint flen, char *buffer, int blen, uint *pclen, ref *pfile)
+{   /* i_ctx_p is NULL running arg (@) files. 
      * lib_path and mem are never NULL 
      */
-    bool starting_arg_file = false;
+    bool starting_arg_file = (i_ctx_p == NULL) ? true : i_ctx_p->starting_arg_file;
     bool search_with_no_combine = false;
     bool search_with_combine = false;
+    char fmode[4] = { 'r', 0, 0, 0 };		/* room for binary suffix */
+    stream *s;
 
-    if (i_ctx_p != NULL) {
-	starting_arg_file = i_ctx_p->starting_arg_file;
-	i_ctx_p->starting_arg_file = false;
-    } else
-	starting_arg_file = true;
+    strcat(fmode, gp_fmode_binary_suffix);
     if (gp_file_name_is_absolute(fname, flen)) {
        search_with_no_combine = true;
        search_with_combine = false;
@@ -980,16 +977,18 @@ lib_fopen_with_libpath(gs_file_path_ptr  lib_path,
 
 	if (gp_file_name_reduce(fname, flen, buffer, &blen1) != gp_combine_success)
 	    goto skip;
-	if (iodev->procs.fopen(iodev, buffer, fmode, file,
-				 buffer, blen) == 0) {
+	/* when starting arg files (@ files) iodev_default is not yet set */
+	if (iodev_os_open_file((gx_io_device *)gx_io_device_table[0], (const char *)buffer, blen1,
+				(const char *)fmode, &s, (gs_memory_t *)mem) == 0) {
 	    if (starting_arg_file ||
-		check_file_permissions_aux(i_ctx_p, buffer, blen1) >= 0)
-		    return 0;
-	    iodev->procs.fclose(iodev, *file);
-	    *file = NULL;
+			check_file_permissions_aux(i_ctx_p, buffer, blen1) >= 0) {
+		*pclen = blen1;
+		make_stream_file(pfile, s, "r");
+		return 0;
+	    }
+	    iodev_os_fclose(iodev_default, s->file);
 	    return_error(e_invalidfileaccess);
-	} else
-	    *file = NULL;
+	}
 	skip:;
     } 
     if (search_with_combine) {
@@ -1000,21 +999,51 @@ lib_fopen_with_libpath(gs_file_path_ptr  lib_path,
 	    const ref *prdir = pfpath->list.value.refs + pi;
 	    const char *pstr = (const char *)prdir->value.const_bytes;
 	    uint plen = r_size(prdir), blen1 = blen;
+	    gx_io_device *iodev;
+    	    gs_parsed_file_name_t pname;
+	    gp_file_name_combine_result r;
 
-	    gp_file_name_combine_result r = gp_file_name_combine_patch(pstr, plen, 
-		    fname, flen, false, buffer, &blen1);
-	    if (r != gp_combine_success)
-		continue;
-	    if (iodev->procs.fopen(iodev, buffer, fmode, file,
-					 buffer, blen) == 0) {
-		if (starting_arg_file ||
-		    check_file_permissions_aux(i_ctx_p, buffer, blen1) >= 0)
-		    return 0;
-		iodev->procs.fclose(iodev, *file);
-		*file = NULL;
-		return_error(e_invalidfileaccess);
+	    /* We need to concatenate and parse the file name here
+	     * if this path has a %device% prefix.		*/
+	    if (pstr[0] == '%') {
+		int code;
+
+		/* We concatenate directly since gp_file_name_combine_*
+		 * rules are not correct for other devices such as %rom% */
+		if (i_ctx_p == NULL)
+		    continue;		/* devices not yet initialized */
+		gs_parse_file_name(&pname, pstr, plen);
+		iodev = pname.iodev;
+		memcpy(buffer, pname.fname, pname.len);
+		memcpy(buffer+pname.len, fname, flen);
+		code = iodev->procs.open_file(iodev, buffer, pname.len + flen, fmode,
+					      &s, (gs_memory_t *)mem);
+		if (code < 0)
+		    continue;
+		make_stream_file(pfile, s, "r");
+		/* fill in the buffer with the device concatenated */
+		memcpy(buffer, pstr, plen);
+		memcpy(buffer+plen, fname, flen);
+		*pclen = plen + flen;
+		return 0;
+	    } else {
+		iodev = iodev_default;
+		r = gp_file_name_combine_patch(pstr, plen, 
+			fname, flen, false, buffer, &blen1);
+		if (r != gp_combine_success)
+		    continue;
+		if (iodev_os_open_file(iodev_default, (const char *)buffer, blen1, (const char *)fmode,
+					&s, (gs_memory_t *)mem) == 0) {
+		    if (starting_arg_file ||
+			check_file_permissions_aux(i_ctx_p, buffer, blen1) >= 0) {
+			*pclen = blen1;
+			make_stream_file(pfile, s, "r");
+			return 0;
+		    }
+		    iodev_os_fclose(iodev_default, s->file);
+		    return_error(e_invalidfileaccess);
+		}
 	    }
-	    *file = NULL; /* safety */
 	}
     }
     return_error(e_undefinedfilename);
@@ -1025,61 +1054,20 @@ FILE *
 lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *fname)
 {
     /* We need a buffer to hold the expanded file name. */
-    char buffer[gp_file_name_sizeof];
-    /* We can't count on the IODevice table to have been initialized yet. */
-    /* Allocate a copy of the default IODevice. */
-    gx_io_device iodev_default_copy = *gx_io_device_table[0];
-    char fmode[3] = "r";
+    char filename_found[DEFAULT_BUFFER_SIZE];
     FILE *file = NULL;
-
-    strcat(fmode, gp_fmode_binary_suffix);
-    lib_fopen_with_libpath(pfpath, mem, NULL, &iodev_default_copy, fname, strlen(fname), 
-			    fmode, buffer, sizeof(buffer), &file);
-    return file;
-}
-
-/* Open a file stream on an OS file and create a file object, */
-/* using the search paths. */
-/* The startup code calls this to open the initialization file gs_init.ps. */
-int
-lib_file_open(const gs_file_path_ptr pfpath, 
-	      i_ctx_t *i_ctx_p, const char *fname, uint len, byte * cname, uint max_clen,
-	      uint * pclen, ref * pfile, gs_memory_t *mem)
-{   /* i_ctx_p is NULL running init files. */
-    stream *s;
+    uint fnamelen;
+    ref obj;
     int code;
-    char fmode[4];  /* r/w/a, [+], [b], null */
-    char *buffer;
-    uint blen;
-    gx_io_device *iodev = iodev_default;
-    FILE *file;
 
-    code = file_prepare_stream(fname, len, "r", file_default_buffer_size, 
-			    &s, fmode, iodev, mem);
+    /* open the usual 'stream', then if successful, return the file */
+    code = lib_file_open(pfpath, mem, NULL, fname, strlen(fname), 
+			    filename_found, sizeof(filename_found), &fnamelen, &obj);
+    
     if (code < 0)
-	return code;
-    if (fname == 0)
-	return 0;
-    buffer = (char *)s->cbuf;
-    code = lib_fopen_with_libpath(pfpath, mem, i_ctx_p, 
-				  iodev, fname, len, fmode, buffer, s->bsize, &file);
-    if (code < 0) {
-	s->cbuf = NULL;
-	s->bsize = s->cbsize = 0;
-	gs_free_object(mem, buffer, "lib_file_open");
-        return code;
-    }
-    file_init_stream(s, file, fmode, (byte *)buffer, s->bsize);
-    /* Get the name from the stream buffer. */
-    blen = strlen(buffer);
-    if (blen > max_clen) {
-	sclose(s);
-        return_error(e_limitcheck);
-    }
-    memcpy(cname, buffer, blen);
-    *pclen = blen;
-    make_stream_file(pfile, s, "r");
-    return 0;
+	return NULL;
+    file = ((stream *)(obj.value.pfile))->file;
+    return file;
 }
 
 /* Open a file stream that reads a string. */

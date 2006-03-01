@@ -144,6 +144,9 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 int
 gs_main_init1(gs_main_instance * minst)
 {
+    i_ctx_t *i_ctx_p;
+    extern init_proc(gs_iodev_init);
+
     if (minst->init_done < 1) {
 	gs_dual_memory_t idmem;
 	int code =
@@ -174,6 +177,10 @@ gs_main_init1(gs_main_instance * minst)
 	if (code < 0)
 	    return code;
         code = i_plugin_init(minst->i_ctx_p);
+	if (code < 0)
+	    return code;
+	i_ctx_p = minst->i_ctx_p;
+	code = gs_iodev_init(imemory);
 	if (code < 0)
 	    return code;
 	minst->init_done = 1;
@@ -323,19 +330,6 @@ gs_main_init2(gs_main_instance * minst)
 	code = zop_init(i_ctx_p);
 	if (code < 0)
 	    return code;
-	{
-	    /*
-	     * gs_iodev_init has to be called here (late), rather than
-	     * with the rest of the library init procedures, because of
-	     * some hacks specific to MS Windows for patching the
-	     * stdxxx IODevices.
-	     */
-	    extern init_proc(gs_iodev_init);
-
-	    code = gs_iodev_init(imemory);
-	    if (code < 0)
-		return code;
-	}
 	code = op_init(i_ctx_p);	/* requires obj_init */
 	if (code < 0)
 	    return code;
@@ -487,15 +481,14 @@ gs_main_lib_open(gs_main_instance * minst, const char *file_name, ref * pfile)
     /* This is a separate procedure only to avoid tying up */
     /* extra stack space while running the file. */
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
-#define maxfn 200
+#define maxfn 2048
     byte fn[maxfn];
     uint len;
 
-    return lib_file_open( &minst->lib_path,
-			  NULL /* Don't check permissions here, because permlist 
+    return lib_file_open(&minst->lib_path, imemory,
+			 NULL, /* Don't check permissions here, because permlist 
 				  isn't ready running init files. */
-			  , file_name, strlen(file_name), fn, maxfn,
-			  &len, pfile, imemory);
+			  file_name, strlen(file_name), fn, maxfn, &len, pfile);
 }
 
 /* Open and execute a file. */
