@@ -120,6 +120,12 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     /* Transmit the values. */
 
+#if ENABLE_NAMED_COLOR_CALLBACK
+    /* The named color callback pointer */
+    code = named_color_callback_get_params(dev, plist);
+    if (code < 0)
+	return code;
+#endif
     if (
 
 	/* Standard parameters */
@@ -469,6 +475,12 @@ e:	param_signal_error(plist, param_name, ecode);\
     }\
     END
 
+#if ENABLE_NAMED_COLOR_CALLBACK
+    /* The named_color callback pointer */
+    code = named_color_callback_put_params(dev, plist);
+    if (code < 0)
+	ecode = code;
+#endif
     /*
      * The HWResolution, HWSize, and MediaSize parameters interact in
      * the following way:

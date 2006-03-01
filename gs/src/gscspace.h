@@ -22,6 +22,7 @@
 
 #include "gsmemory.h"
 #include "gsiparam.h"
+#include "gsnamecl.h"
 
 /*
  * The handling of color spaces in the graphic library is somewhat
@@ -303,6 +304,9 @@ typedef struct gs_separation_params_s {
     separation_type sep_type;
     bool use_alt_cspace;
     gs_callback_func_get_colorname_string *get_colorname_string;
+#if ENABLE_NAMED_COLOR_CALLBACK
+    named_color_params_t named_color_params;
+#endif
 } gs_separation_params;
 
 typedef struct gs_device_n_params_s {
@@ -313,6 +317,9 @@ typedef struct gs_device_n_params_s {
     gs_device_n_attributes *colorants;
     bool use_alt_cspace;
     gs_callback_func_get_colorname_string *get_colorname_string;
+#if ENABLE_NAMED_COLOR_CALLBACK
+    named_color_params_t named_color_params;
+#endif
 } gs_device_n_params;
 
 #define gs_direct_cspace_params         \

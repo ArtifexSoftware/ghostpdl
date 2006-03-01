@@ -37,6 +37,7 @@
 #include "gxfixed.h"
 #include "gxtext.h"
 #include "gxcmap.h"
+#include "gsnamecl.h"
 
 /* See Drivers.htm for documentation of the driver interface. */
 
@@ -634,6 +635,15 @@ dev_page_proc_install(gx_default_install);
 dev_page_proc_begin_page(gx_default_begin_page);
 dev_page_proc_end_page(gx_default_end_page);
 
+#if ENABLE_NAMED_COLOR_CALLBACK
+/* Ptr to named color callback struct */
+#define NAMED_COLOR_PTR void * named_color_callback;
+#define INIT_NAMED_COLOR_PTR   NULL,		/* Initial value */
+#else
+#define NAMED_COLOR_PTR
+#define INIT_NAMED_COLOR_PTR
+#endif
+
 /* ---------------- Device structure ---------------- */
 
 /*
@@ -706,6 +716,7 @@ typedef struct gx_device_cached_colors_s {
 	bool IgnoreNumCopies;		/* if true, force num_copies = 1 */\
 	bool UseCIEColor;		/* for PS LL3 */\
 	bool LockSafetyParams;		/* If true, prevent unsafe changes */\
+	NAMED_COLOR_PTR			/* Pointer to named color callback struct */\
 	gx_page_device_procs page_procs;	/* must be last */\
 		/* end of std_device_body */\
 	gx_device_procs procs	/* object procedures */

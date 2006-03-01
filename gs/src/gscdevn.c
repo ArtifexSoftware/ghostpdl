@@ -469,6 +469,12 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
 	dprintf("gx_remap_concrete_DeviceN: color space id mismatch");
 #endif
 
+#if ENABLE_NAMED_COLOR_CALLBACK
+    if (pis->color_component_map.use_named_color_callback) {
+	return gx_remap_concrete_named_color_DeviceN(pconc, pcs, pdc,
+						       	pis, dev, select);
+    }
+#endif
     if (pis->color_component_map.use_alt_cspace) {
         const gs_color_space *pacs =
 	    (const gs_color_space *)&pcs->params.device_n.alt_space;
@@ -476,6 +482,10 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
 	return (*pacs->type->remap_concrete_color)
 				(pconc, pacs, pdc, pis, dev, select);
     }
+#if ENABLE_NAMED_COLOR_CALLBACK
+    else if (pcs->params.device_n.named_color_params.use_named_color_callback) {
+    }
+#endif
     else {
 	gx_remap_concrete_devicen(pconc, pdc, pis, dev, select);
 	return 0;
@@ -567,13 +577,33 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_state * pgs)
 private int
 gx_install_DeviceN(const gs_color_space * pcs, gs_state * pgs)
 {
-    int code = check_DeviceN_component_names(pcs, pgs);
+    int code;
+#if ENABLE_NAMED_COLOR_CALLBACK
+    /*
+     * Check if we want to use the callback color processing for this color space.
+     */
+    bool use_named_color_callback =
+    		named_color_callback_install_DeviceN(pgs->color_space, pgs);
 
+    pgs->color_component_map.use_named_color_callback =
+	   					 use_named_color_callback;
+    if (use_named_color_callback) {
+	/*
+	 * We are using the callback instead of the alternate tint transform
+	 * for this color space.
+	 */
+        pgs->color_component_map.use_alt_cspace =
+            pgs->color_space->params.device_n.use_alt_cspace = false;
+        pgs->color_component_map.cspace_id = pcs->id;
+        return 0;
+    }
+#endif
+    code = check_DeviceN_component_names(pcs, pgs);
     if (code < 0)
        return code;
     pgs->color_space->params.device_n.use_alt_cspace =
 	using_alt_color_space(pgs);
-    if (pgs->color_space->params.device_n.use_alt_cspace)
+    if (pcs->params.device_n.use_alt_cspace)
         code = (*pcs->params.device_n.alt_space.type->install_cspace)
 	((const gs_color_space *) & pcs->params.device_n.alt_space, pgs);
     /*

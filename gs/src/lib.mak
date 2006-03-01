@@ -392,13 +392,14 @@ gsdcolor_h=$(GLSRC)gsdcolor.h $(gsccolor_h)\
  $(gxarith_h) $(gxbitmap_h) $(gxcindex_h) $(gxhttile_h) $(gxwts_h)
 gxdcolor_h=$(GLSRC)gxdcolor.h\
  $(gscsel_h) $(gsdcolor_h) $(gsropt_h) $(gsstruct_h)
-gscspace_h=$(GLSRC)gscspace.h $(gsmemory_h)
+gsnamecl_h=$(GLSRC)gsnamecl.h
+gscspace_h=$(GLSRC)gscspace.h $(gsmemory_h) $(gsnamecl_h)
 gscssub_h=$(GLSRC)gscssub.h $(gscspace_h)
 gxdevcli_h=$(GLSRC)gxdevcli.h $(std_h) $(stdint__h)\
  $(gscompt_h) $(gsdcolor_h) $(gsiparam_h) $(gsmatrix_h)\
  $(gsrefct_h) $(gsropt_h) $(gsstruct_h) $(gstparam_h) $(gsxfont_h)\
  $(gxbitmap_h) $(gxcindex_h) $(gxcvalue_h) $(gxfixed_h)\
- $(gxtext_h) $(gscspace_h)
+ $(gxtext_h) $(gscspace_h) $(gsnamecl_h)
 gxdevice_h=$(GLSRC)gxdevice.h $(stdio__h)\
  $(gsfname_h) $(gsmalloc_h) $(gsparam_h) $(gxdevcli_h) $(gxstdio_h)
 gxdht_h=$(GLSRC)gxdht.h\
@@ -431,7 +432,7 @@ gxfmap_h=$(GLSRC)gxfmap.h $(gsrefct_h) $(gsstype_h) $(gxfrac_h) $(gxtmap_h)
 gxcmap_h=$(GLSRC)gxcmap.h $(gscsel_h) $(gxcindex_h) $(gxcvalue_h) $(gxfmap_h)
 gxistate_h=$(GLSRC)gxistate.h\
  $(gscsel_h) $(gsrefct_h) $(gsropt_h) $(gstparam_h) $(gxcvalue_h) $(gxcmap_h)\
- $(gxfixed_h) $(gxline_h) $(gxmatrix_h) $(gxtmap_h) $(gscspace_h)
+ $(gxfixed_h) $(gxline_h) $(gxmatrix_h) $(gxtmap_h) $(gscspace_h) $(gsnamecl_h)
 gxclist_h=$(GLSRC)gxclist.h $(gscspace_h)\
  $(gxband_h) $(gxbcache_h) $(gxclio_h) $(gxdevbuf_h) $(gxistate_h)\
  $(gxrplane_h)
@@ -680,7 +681,7 @@ $(GLOBJ)gxpaint.$(OBJ) : $(GLSRC)gxpaint.c $(GX)\
 	$(GLCC) $(GLO_)gxpaint.$(OBJ) $(C_) $(GLSRC)gxpaint.c
 
 $(GLOBJ)gxpath.$(OBJ) : $(GLSRC)gxpath.c $(GXERR)\
- $(gsstruct_h) $(gxfixed_h) $(gzpath_h) $(vdtrace_h)
+ $(gsstruct_h) $(gxfixed_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gxpath.$(OBJ) $(C_) $(GLSRC)gxpath.c
 
 $(GLOBJ)gxpath2.$(OBJ) : $(GLSRC)gxpath2.c $(GXERR) $(math__h)\
@@ -2407,7 +2408,7 @@ $(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(GXERR) $(math__h) $(memory__h)\
 
 # ---------------- Separation colors ---------------- #
 
-seprlib_=$(GLOBJ)gscsepr.$(OBJ)
+seprlib_=$(GLOBJ)gscsepr.$(OBJ) $(GLOBJ)gsnamecl.$(OBJ) $(GLOBJ)gsncdemo.$(OBJ)
 $(GLD)seprlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(seprlib_)
 	$(SETMOD) $(GLD)seprlib $(seprlib_)
 
@@ -2416,6 +2417,12 @@ $(GLOBJ)gscsepr.$(OBJ) : $(GLSRC)gscsepr.c $(GXERR) $(memory__h)\
  $(gxfixed_h) $(gxcolor2_h) $(gzstate_h) $(gscdevn_h) $(gxcdevn_h)\
  $(gxcmap_h) $(gxdevcli_h) $(gsovrc_h) $(stream_h)
 	$(GLCC) $(GLO_)gscsepr.$(OBJ) $(C_) $(GLSRC)gscsepr.c
+
+$(GLOBJ)gsnamecl.$(OBJ) : $(GLSRC)gsnamecl.c $(GXERR) $(memory__h)
+	$(GLCC) $(GLO_)gsnamecl.$(OBJ) $(C_) $(GLSRC)gsnamecl.c
+
+$(GLOBJ)gsncdemo.$(OBJ) : $(GLSRC)gsncdemo.c $(GXERR) $(memory__h)
+	$(GLCC) $(GLO_)gsncdemo.$(OBJ) $(C_) $(GLSRC)gsncdemo.c
 
 # ================ Display Postscript extensions ================ #
 

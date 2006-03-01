@@ -32,6 +32,7 @@
 #include "gxtmap.h"
 #include "gscspace.h"
 #include "gstrans.h"
+#include "gsnamecl.h"
 
 /*
   Define the subset of the PostScript graphics state that the imager library
@@ -188,6 +189,9 @@ typedef struct gx_transfer_s {
 
 typedef struct gs_devicen_color_map_s {
     bool use_alt_cspace;
+#if ENABLE_NAMED_COLOR_CALLBACK
+    bool use_named_color_callback;
+#endif
     separation_type sep_type;
     uint num_components;	/* Input - Duplicate of value in gs_device_n_params */
     uint num_colorants;		/* Number of colorants - output */ 

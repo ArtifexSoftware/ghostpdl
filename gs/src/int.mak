@@ -523,7 +523,7 @@ Z5_6OPS=zmisc zpacked zrelbit zstack zstring zsysvm
 Z7_8OPS=ztoken ztype zvmem zbfont zchar zcolor
 Z9OPS=zdevice zfont zfontenum zgstate1 zgstate2 zgstate3
 Z10OPS=zdfilter zht zimage zmatrix
-Z11OPS=zpaint zpath
+Z11OPS=zpaint zpath pantone
 # We have to be a little underhanded with *config.$(OBJ) so as to avoid
 # circular definitions.
 INT_MAIN=$(PSOBJ)imain.$(OBJ) $(PSOBJ)imainarg.$(OBJ) $(GLOBJ)gsargs.$(OBJ) $(PSOBJ)idisp.$(OBJ)

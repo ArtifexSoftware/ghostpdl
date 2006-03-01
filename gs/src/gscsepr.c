@@ -129,8 +129,30 @@ check_Separation_component_name(const gs_color_space * pcs, gs_state * pgs);
 private int
 gx_install_Separation(const gs_color_space * pcs, gs_state * pgs)
 {
-    int code = check_Separation_component_name(pcs, pgs);
+    int code;
+#if ENABLE_NAMED_COLOR_CALLBACK
+    /*
+     * Check if we want to use the named color callback color processing for
+     * this color space.
+     */
+    bool use_named_color_callback =
+	    named_color_callback_install_Separation(pgs->color_space, pgs);
 
+    pgs->color_component_map.use_named_color_callback =
+	   					 use_named_color_callback;
+    if (use_named_color_callback) {
+	/*
+	 * We are using the callback instead of the alternate tint transform
+	 * for this color space.
+	 */
+        pgs->color_space->params.separation.use_alt_cspace =
+            pgs->color_component_map.use_alt_cspace = false;
+        pgs->color_component_map.cspace_id = pcs->id;
+        return 0;
+    }
+#endif
+
+    code = check_Separation_component_name(pcs, pgs);
     if (code < 0)
        return code;
     pgs->color_space->params.separation.use_alt_cspace =
@@ -355,7 +377,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 	(const gs_color_space *)&pcs->params.separation.alt_space;
     
     if (pcs->params.separation.sep_type == SEP_OTHER &&
-        pcs->params.separation.use_alt_cspace) {
+	pcs->params.separation.use_alt_cspace) {
         gs_device_n_map *map = pcs->params.separation.map;
 
 	/* Check the 1-element cache first. */
@@ -392,6 +414,12 @@ gx_remap_concrete_Separation(const frac * pconc,  const gs_color_space * pcs,
 	dprintf("gx_remap_concrete_Separation: color space id mismatch");
 #endif
 
+#if ENABLE_NAMED_COLOR_CALLBACK
+    if (pis->color_component_map.use_named_color_callback) {
+	return gx_remap_concrete_named_color_Separation(pconc, pcs, pdc,
+						       	pis, dev, select);
+    }
+#endif
     if (pis->color_component_map.use_alt_cspace) {
         const gs_color_space *pacs =
 	    (const gs_color_space *)&pcs->params.separation.alt_space;
