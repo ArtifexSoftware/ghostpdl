@@ -696,6 +696,7 @@ I/O-related:
 <a href="../src/gsiodevs.c">src/gsiodevs.c</a>,
 <a href="../src/gsiodisk.c">src/gsiodisk.c</a>,
 <a href="../src/gsiorom.c">src/gsiorom.c</a>.
+<a href="../src/gsiorom.h">src/gsiorom.h</a>.
 <a href="../src/gxiodev.h">src/gxiodev.h</a>.
 
 </dl>
@@ -2104,7 +2105,8 @@ Files:
 <dd>
 <a href="../src/gs.c">src/gs.c</a>,
 <a href="../src/gserver.c">src/gserver.c</a>,
-<a href="../src/iccinit0.c">src/iccinit0.c</a>,
+<a href="../src/iccinit0.c">src/iccinit0.c</a>(COMPILE_INITS=0),
+<a href="../src/iccinit1.c">src/iccinit1.c</a>(COMPILE_INITS=1),
 <a href="../src/iinit.c">src/iinit.c</a>,
 <a href="../src/iinit.h">src/iinit.h</a>,
 <a href="../src/imain.c">src/imain.c</a>,
@@ -3177,7 +3179,8 @@ such halftones are included in the build.
 <dt>
 <a href="../src/geninit.c">src/geninit.c</a>
 <dd>
-Converts PostScript initialization files to C data structures that can be
+Converts PostScript initialization files to a single PostScript file that
+has comments removed and optionally, a C data structure that can be
 compiled into an executable.  Only used when building a PostScript
 interpreter, and only if <b><tt>COMPILE_INITS</tt></b> was set to 1 in the
 makefile.
@@ -3187,7 +3190,7 @@ makefile.
 <dd>
 Takes a set of directories, and creates a compressed filesystem
 image that can be compiled into the executable as static data and accessed
-through the %rom% iodevice prefix. Future: this will be used to implement the
+through the %rom% iodevice prefix. This is used to implement the
 <b><tt>COMPILE_INITS=1</tt></b> feature (a compressed init fileset is more
 efficient than the current 'gsinit.c' produced by 'geninit.c'). This IODevice
 is more versatile since other files can be encapsulated such as fonts, helper
