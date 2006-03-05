@@ -423,7 +423,7 @@ gs_main_add_lib_path(gs_main_instance * minst, const char *lpath)
 extern_gx_io_device_table();
 
 /* Complete the list of library search paths. */
-/* This may involve adding the %rom% device (for COMPILE_INITS) as well */
+/* This may involve adding the %rom%lib/ device path (for COMPILE_INITS) as well */
 /* as adding or removing the current directory as the first element. */
 int
 gs_main_set_lib_paths(gs_main_instance * minst)
@@ -457,7 +457,7 @@ gs_main_set_lib_paths(gs_main_instance * minst)
 	       count + (minst->search_here_first ? 1 : 0));
     if (minst->lib_path.env != 0)
 	code = file_path_add(&minst->lib_path, minst->lib_path.env);
-    /* now put the %rom% device before the gs_lib_default_path on the list */
+    /* now put the %rom%lib/ device path before the gs_lib_default_path on the list */
     for (i = 0; i < gx_io_device_table_count; i++) {
 	const gx_io_device *iodev = gx_io_device_table[i];
 	const char *dname = iodev->dname;
@@ -468,7 +468,7 @@ gs_main_set_lib_paths(gs_main_instance * minst)
 	}
     }
     if (have_rom_device && code >= 0)
-	code = file_path_add(&minst->lib_path, "%rom%");
+	code = file_path_add(&minst->lib_path, "%rom%lib/");
     if (minst->lib_path.final != 0 && code >= 0)
 	code = file_path_add(&minst->lib_path, minst->lib_path.final);
     return code;

@@ -26,16 +26,18 @@
  * through the %rom% iodevice prefix
  */
 /*
- *	Usage: mkromfs [-o outputfile] options paths
+ *	Usage: mkromfs [-o outputfile] [options ...] paths
  *	    options and paths can be interspersed and are processed in order
  *	    options:
  *		-o outputfile	default: obj/gsromfs.c if this option present, must be first.
  *		-P prefix	use prefix to find path. prefix not included in %rom%
  *		-X path		exclude the path from further processing.
+ *              -d string       directory in %rom file system (really just a prefix string on filename)
  *		-c		compression on
  *		-b		compression off (binary).
  *
- *	    Note: The tail of any path encountered will be tested so .svn
+ *	    Note: The tail of any path encountered will be tested so .svn on the -X
+ *		  list will exclude that path in all subsequent paths enumerated.
  */ 
 
 #include "stdpre.h"
@@ -180,7 +182,7 @@ void put_uint32(FILE *out, const unsigned int q);
 void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len);
 void inode_clear(romfs_inode* node);
 void inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int*totlen);
-void process_path(char *path, const char *prefix, Xlist_element *Xlist_head, int compression,
+void process_path(char *path, const char *prefix, const char *add_prefix, Xlist_element *Xlist_head, int compression,
 	int *inode_count, int *totlen, FILE *out);
 
 /* put 4 byte integer, big endian */
@@ -291,13 +293,13 @@ inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int 
 
 /* This relies on the gp_enumerate_* which should not return directories, nor */
 /* should it recurse into directories (unlike Adobe's implementation)         */
-void process_path(char *path, const char *prefix, Xlist_element *Xlist_head, int compression,
-	int *inode_count, int *totlen, FILE *out)
+void process_path(char *path, const char *prefix, const char *add_prefix, Xlist_element *Xlist_head,
+		int compression, int *inode_count, int *totlen, FILE *out)
 {
     int namelen, excluded, save_count=*inode_count;
     Xlist_element *Xlist_scan;
     char *prefixed_path;
-    char *found_path;
+    char *found_path, *rom_filename;
     file_enum *pfenum;
     int ret, block, blocks;
     romfs_inode *node;
@@ -307,9 +309,11 @@ void process_path(char *path, const char *prefix, Xlist_element *Xlist_head, int
 
     prefixed_path = malloc(1024);
     found_path = malloc(1024);
+    rom_filename = malloc(1024);
     ubuf = malloc(ROMFS_BLOCKSIZE);
     cbuf = malloc(ROMFS_CBUFSIZE);
-    if (ubuf == NULL || cbuf == NULL || prefixed_path == NULL || found_path == NULL) {
+    if (ubuf == NULL || cbuf == NULL || prefixed_path == NULL ||
+		found_path == NULL || rom_filename == NULL) {
 	printf("malloc fail in process_path\n");
 	exit(1);
     }
@@ -317,6 +321,7 @@ void process_path(char *path, const char *prefix, Xlist_element *Xlist_head, int
     strcat(prefixed_path, prefix);
     strcat(prefixed_path, path);
     strcat(prefixed_path, "*");
+    strcpy(rom_filename, add_prefix);
 #ifdef __WIN32__
     {
 	int i;
@@ -325,7 +330,10 @@ void process_path(char *path, const char *prefix, Xlist_element *Xlist_head, int
 	for (i=0; i<strlen(prefixed_path); i++)
 	    if (prefixed_path[i] == '\\')
 		prefixed_path[i] = '/';
-	}
+	for (i=0; i<strlen(rom_filename); i++)
+	    if (rom_filename[i] == '\\')
+		rom_filename[i] = '/';
+    }
 #endif
     /* check for the file on the Xlist */
     pfenum = gp_enumerate_files_init(prefixed_path, strlen(prefixed_path),
@@ -357,7 +365,11 @@ void process_path(char *path, const char *prefix, Xlist_element *Xlist_head, int
 	    printf("unable to open file for processing: %s\n", found_path);
 	    continue;
 	}
-	node->name = found_path + strlen(prefix);	/* don't include prefix */
+	/* rom_filename + strlen(add_prefix) is first char after the new prefix we want to add */
+	/* found_path + strlen(prefix) is the file name after the -P prefix */
+	rom_filename[strlen(add_prefix)] = 0;		/* truncate afater prefix */
+	strcat(rom_filename, found_path + strlen(prefix));
+	node->name = rom_filename;	/* without -P prefix, with -d add_prefix */
 	fseek(in, 0, SEEK_END);
 	node->length = ftell(in);
 	blocks = (node->length+ROMFS_BLOCKSIZE-1) / ROMFS_BLOCKSIZE + 1;
@@ -411,21 +423,35 @@ main(int argc, char *argv[])
     FILE *out;
     const char *outfilename = "obj/gsromfs.c";
     const char *prefix = "";
+    const char *add_prefix = "";
     int atarg = 1;
     int compression = 1;			/* default to doing compression */
     Xlist_element *Xlist_scan, *Xlist_head = NULL;
     
+    if (argc < 2) {
+	printf("\n"
+ 		"	Usage: mkromfs [-o outputfile] [options ...] paths\n"
+ 		"	    options and paths can be interspersed and are processed in order\n"
+ 		"	    options:\n"
+ 		"		-o outputfile	default: obj/gsromfs.c if this option present, must be first.\n"
+ 		"		-P prefix	use prefix to find path. prefix not included in %rom%\n"
+ 		"		-X path		exclude the path from further processing.\n"
+ 		"		-d string       directory in %rom file system (really just a prefix string on filename)\n"
+ 		"		-c		compression on\n"
+ 		"		-b		compression off (binary).\n"
+ 		"\n"
+ 		"	    Note: The tail of any path encountered will be tested so .svn on the -X\n"
+ 		"		  list will exclude that path in all subsequent paths enumerated.\n"
+	    );
+	exit(1);
+    }
+
 #ifdef DEBUG
     printf("compression will use %d byte blocksize (zlib output buffer %d bytes)\n",
         ROMFS_BLOCKSIZE, ROMFS_CBUFSIZE);
 #endif /* DEBUG */
     
-    if (argc < 2) {
-	printf("\nUsage:\n"
-	    );
-	exit(1);
-    }
-    if (argc > 4 && argv[1][0] == '-' && argv[1][1] == 'o') {
+    if (argc > 3 && argv[1][0] == '-' && argv[1][1] == 'o') {
 	/* process -o option for outputfile */
 	outfilename = argv[2];
 	atarg += 2;
@@ -454,6 +480,13 @@ main(int argc, char *argv[])
 	      case 'c':
 	        compression = 1;
 	        break;
+	      case 'd':
+		if (++atarg == argc) {
+		    printf("   option %s missing required argument\n", argv[atarg-1]);
+		    exit(1);
+		}
+		add_prefix = argv[atarg];
+	        break;
 	      case 'P':
 		if (++atarg == argc) {
 		    printf("   option %s missing required argument\n", argv[atarg-1]);
@@ -480,7 +513,7 @@ main(int argc, char *argv[])
 	    continue;
 	}
 	/* process a path */
-	process_path(argv[atarg], prefix, Xlist_head, compression, &inode_count, &totlen, out);
+	process_path(argv[atarg], prefix, add_prefix, Xlist_head, compression, &inode_count, &totlen, out);
     }
     /* now write out the array of nodes */
     fprintf(out, "    uint32_t *gs_romfs[] = {\n");

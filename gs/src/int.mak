@@ -982,8 +982,9 @@ $(PSGEN)gs_init.ps : $(PSLIB)$(GS_INIT) $(GENINIT_XE) $(gconfig_h)
 EXTRA_INIT_FILES= Fontmap cidfmap FAPI xlatmap 
 
 # Note: RESOURCE_LIST is first since those are CWD relative. Later files use -P prefix paths
+#	The init files are put in the lib/ directory (gs_init.ps + EXTRA_INIT_FILES)
 $(GLOBJ)gsromfs.c : $(MKROMFS_XE) $(PSGEN)gs_init.ps $(arch_h)
-	$(EXP)$(MKROMFS_XE) -o $(GLOBJ)gsromfs.c -c -X .svn $(RESOURCE_LIST) -P $(PSGEN) gs_init.ps -P $(PSLIB) $(EXTRA_INIT_FILES)
+	$(EXP)$(MKROMFS_XE) -o $(GLOBJ)gsromfs.c -c -X .svn $(RESOURCE_LIST) -d lib/ -P $(PSGEN) gs_init.ps -P $(PSLIB) $(EXTRA_INIT_FILES)
 
 # ---------------- Stochastic halftone ---------------- #
 
