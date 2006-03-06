@@ -455,7 +455,7 @@ s_jbig2encode_write(const unsigned char *buffer,
 	unsigned char *new = realloc(state->outbuf, state->outsize*2);
 	if (new == NULL) {
 	    dprintf1("jbig2encode: failed to resize output buffer"
-		" beyond %d bytes\n", state->outsize);
+		" beyond %lu bytes\n", state->outsize);
 	    return 0; /* can't return an error! */
 	}
 	state->outbuf = new;
@@ -476,9 +476,15 @@ s_jbig2encode_init(stream_state * ss)
 {
     stream_jbig2encode_state *state = (stream_jbig2encode_state *)ss;
 
+    /* null library context handles */
     state->cmp = (JB2_Handle_Compress)NULL;
     state->doc = (JB2_Handle_Document)NULL;
-    /* width, height, and stride are set by the client */
+
+    /* width and height are set by the client */
+    /* calculate a stride based on those values */
+    state->stride = ((state->width - 1) >> 3) + 1;
+
+    /* null output buffer */
     state->outbuf = NULL;
     state->outsize = 0;
     state->outfill = 0;
