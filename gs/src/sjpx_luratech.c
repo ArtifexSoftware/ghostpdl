@@ -239,15 +239,19 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 		return ERRC;
 	    }
 	    state->ncomp = result;
+	    /* the library will only return dimensions from the whole 
+	       image if all channels have the same dimension (and aren't
+	       CMYK?) so use the dimensions of component 0 instead.
+	       Ideally, we'd use the size from the image dictionary. */
 	    err = JP2_Decompress_GetProp(state->handle,
-		cJP2_Prop_Width, &result, -1, -1);
+		cJP2_Prop_Width, &result, -1, 0);
 	    if (err != cJP2_Error_OK) {
 		dlprintf1("Luratech JP2 error %d decoding image width\n", (int)err);
 		return ERRC;
 	    }
 	    state->width = result;
 	    err = JP2_Decompress_GetProp(state->handle,
-		cJP2_Prop_Height, &result, -1, -1);
+		cJP2_Prop_Height, &result, -1, 0);
 	    if (err != cJP2_Error_OK) {
 		dlprintf1("Luratech JP2 error %d decoding image height\n", (int)err);
 		return ERRC;
@@ -289,8 +293,25 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 
 	    {
 		int comp;
+		int width, height;
 		int bits, is_signed;
 		for (comp = 0; comp < state->ncomp; comp++) {
+		    err= JP2_Decompress_GetProp(state->handle,
+			cJP2_Prop_Width, &result, -1, (short)comp);
+		    if (err != cJP2_Error_OK) {
+			dlprintf2("Luratech JP2 error %d decoding "
+				"width for component %d\n", (int)err, comp);
+			return ERRC;
+		    }
+		    width = result;
+		    err= JP2_Decompress_GetProp(state->handle,
+			cJP2_Prop_Height, &result, -1, (short)comp);
+		    if (err != cJP2_Error_OK) {
+			dlprintf2("Luratech JP2 error %d decoding "
+				"height for component %d\n", (int)err, comp);
+			return ERRC;
+		    }
+		    height = result;
 		    err= JP2_Decompress_GetProp(state->handle,
 			cJP2_Prop_Bits_Per_Sample, &result, -1, (short)comp);
 		    if (err != cJP2_Error_OK) {
@@ -307,9 +328,10 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 			return ERRC;
 		    }
 		    is_signed = result;
-		    if_debug3('w',
-			"[w]jpxd image component %d has %d bit %s samples\n",
-			comp, bits, is_signed ? "signed" : "unsigned");
+		    if_debug5('w',
+			"[w]jpxd image component %d has %dx%d %s %d bit samples\n",
+			comp, width, height,
+			is_signed ? "signed" : "unsigned", bits);
 		}
 	    }
 	}
