@@ -1505,7 +1505,12 @@ readonly def
 	3 1 roll pop pop
       } {
 	dup /FontFile knownoget
-	{ dup /Length oget 0 eq
+	{ 2 index /Subtype knownoget not {
+	    (   **** Warning: FontFile specified but Subtype is not /Type1.\n)
+	    pdfformaterror
+	    /Type1
+	  } if
+	  /Type1 ne 1 index /Length oget 0 eq or
 	  { pop pop dup /Subtype get fonttypeprocs exch get exec }
 	  { exch pop readtype1 }
 	  ifelse
