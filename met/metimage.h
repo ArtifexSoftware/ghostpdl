@@ -18,6 +18,7 @@
 #  define metimage_INCLUDED
 
 #include "gsmatrix.h"
+#include "plrcnogc.h"
 
 /* type for the information derived directly from the raster file format */
 
@@ -42,11 +43,10 @@ int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_tiff(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 
-/* it appears all images in metro are really patterns. */
-
 typedef struct met_pattern_s {
     void *linear;
     void *radial;
+    void *visual;
     xps_image_t *raster_image;
     gs_matrix Transform;
     gs_rect Viewbox;
@@ -55,5 +55,5 @@ typedef struct met_pattern_s {
 
 int LinearGradientBrush_paint(void *data, gs_state *pgs);
 int RadialGradientBrush_paint(void *data, gs_state *pgs);
-
+int VisualBrush_paint(void *data, gs_state *pgs);
 #endif /* metimage_INCLUDED */

@@ -1,3 +1,19 @@
+/* Portions Copyright (C) 2001 artofcode LLC.
+   Portions Copyright (C) 1996, 2001, 2005 Artifex Software Inc.
+   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
+   This software is based in part on the work of the Independent JPEG Group.
+   All Rights Reserved.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/ or
+   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+   San Rafael, CA  94903, (415)492-9861, for further information. */
+
+/*$Id: */
+
+/* gradient brush */
+
 /* a big puddle of puke needed for the headers */
 #include "memory_.h"
 #include "gsmemory.h"
@@ -34,7 +50,7 @@ LinearGradientBrush_cook(void **ppdata, met_state_t *ms,
     CT_LinearGradientBrush *brush;
     int i;
 
-    brush = (void*) gs_alloc_bytes(ms->memory,
+    brush = (CT_LinearGradientBrush *) gs_alloc_bytes(ms->memory,
 	    sizeof(CT_LinearGradientBrush),
 	    "LinearGradientBrush_cook");
     if (!brush)
@@ -45,25 +61,24 @@ LinearGradientBrush_cook(void **ppdata, met_state_t *ms,
     /* parse attributes, filling in the zeroed out C struct */
     for(i = 0; attr[i]; i += 2)
     {
-	if (!strcmp(attr[i], "Opacity"))
-	    brush->Opacity = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "x:Key"))
-	    brush->Key = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "Opacity"))
-	    brush->Opacity = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "ColorInterpolationMode"))
-	    brush->ColorInterpolationMode = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "SpreadMethod"))
-	    brush->SpreadMethod = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "MappingMode"))
-	    brush->MappingMode = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "Transform"))
-	    brush->Transform = strdup(attr[i+1]);
-
-	if (!strcmp(attr[i], "StartPoint"))
-	    brush->StartPoint = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "EndPoint"))
-	    brush->EndPoint = strdup(attr[i+1]);
+        if (!strcmp(attr[i], "Opacity"))
+            brush->Opacity = atof(attr[i+1]);
+        else if (!MYSET(&brush->ColorInterpolationMode, "ColorInterpolationMode"))
+            ;
+        else if (!MYSET(&brush->SpreadMethod, "SpreadMethod"))
+            ;
+        else if (!MYSET(&brush->MappingMode, "MappingMode"))
+            ;
+	else if (!MYSET(&brush->Transform, "Transform"))
+            ;
+	else if (!MYSET(&brush->StartPoint, "StartPoint"))
+            ;
+	else if (!MYSET(&brush->EndPoint, "EndPoint"))
+            ;
+        else {
+            gs_throw2(-1, "unsupported attribute %s=%s\n",
+                      attr[i], attr[i+1]);
+        }
     }
 
     /* what about child LinearGradientBrush.Transform */
@@ -80,7 +95,7 @@ RadialGradientBrush_cook(void **ppdata, met_state_t *ms,
     CT_RadialGradientBrush *brush;
     int i;
 
-    brush = (void*) gs_alloc_bytes(ms->memory,
+    brush = (CT_RadialGradientBrush *) gs_alloc_bytes(ms->memory,
 	    sizeof(CT_RadialGradientBrush),
 	    "RadialGradientBrush_cook");
     if (!brush)
@@ -91,29 +106,28 @@ RadialGradientBrush_cook(void **ppdata, met_state_t *ms,
     /* parse attributes, filling in the zeroed out C struct */
     for(i = 0; attr[i]; i += 2)
     {
-	if (!strcmp(attr[i], "Opacity"))
-	    brush->Opacity = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "x:Key"))
-	    brush->Key = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "Opacity"))
-	    brush->Opacity = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "ColorInterpolationMode"))
-	    brush->ColorInterpolationMode = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "SpreadMethod"))
-	    brush->SpreadMethod = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "MappingMode"))
-	    brush->MappingMode = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "Transform"))
-	    brush->Transform = strdup(attr[i+1]);
-
-	if (!strcmp(attr[i], "Center"))
-	    brush->Center = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "GradientOrigin"))
-	    brush->GradientOrigin = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "RadiusX"))
-	    brush->RadiusX = strdup(attr[i+1]);
-	if (!strcmp(attr[i], "RadiusY"))
-	    brush->RadiusY = strdup(attr[i+1]);
+        if (!strcmp(attr[i], "Opacity"))
+            brush->Opacity = atof(attr[i+1]);
+        else if (!strcmp(attr[i], "RadiusY"))
+            brush->RadiusY = atof(attr[i+1]);
+        else if (!strcmp(attr[i], "RadiusX"))
+            brush->RadiusX = atof(attr[i+1]);
+        else if (!MYSET(&brush->ColorInterpolationMode, "ColorInterpolationMode"))
+            ;
+        else if (!MYSET(&brush->SpreadMethod, "SpreadMethod"))
+            ;
+        else if (!MYSET(&brush->MappingMode, "MappingMode"))
+            ;
+	else if (!MYSET(&brush->Transform, "Transform"))
+            ;
+	else if (!MYSET(&brush->Center, "Center"))
+            ;
+	else if (!MYSET(&brush->GradientOrigin, "GradientOrigin"))
+            ;
+        else {
+            gs_throw2(-1, "unsupported attribute %s=%s\n",
+                      attr[i], attr[i+1]);
+        }
     }
 
     /* what about child RadialGradientBrush.Transform */
@@ -212,8 +226,9 @@ int RadialGradientBrush_paint(void *data, gs_state *pgs)
 
     sscanf(brush->Center, "%lg,%lg", &center[0], &center[1]);
     sscanf(brush->GradientOrigin, "%lg,%lg", &origin[0], &origin[1]);
-    sscanf(brush->RadiusX, "%lg", &radiusx);
-    sscanf(brush->RadiusY, "%lg", &radiusy);
+
+    radiusx = brush->RadiusX;
+    radiusy = brush->RadiusY;
 
 dputs(gs_state_memory(pgs), "i'm painting radial\n");
 
@@ -254,7 +269,7 @@ private int CommonGradientBrush_action(void *data, met_state_t *ms, int type)
     met_pattern_t *metpat =
 	(met_pattern_t *)gs_alloc_bytes(ms->memory,
 					sizeof(met_pattern_t), "GradientBrush_action");
-
+    metpat->visual = NULL;
     metpat->linear = NULL;
     metpat->radial = NULL;
     metpat->raster_image = NULL;

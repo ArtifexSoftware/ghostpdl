@@ -19,7 +19,11 @@
 
 #include "metparse.h"
 
-int met_record(gs_memory_t *mem, const data_element_t *data);
+/* record a cooked resource */
+int met_record(gs_memory_t *mem, const data_element_t *data, const char *el, bool open, int depth);
+/* play it back */
 int met_playback(met_state_t *ms);
+/* store it in the state */
+int met_store(met_state_t *ms);
 
 #endif				/* metrecorder_INCLUDED */

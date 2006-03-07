@@ -17,12 +17,18 @@
 #include "metrecorder.h"
 #include "gserror.h"
 #include "string_.h"
+#include "metutil.h"
 
 typedef struct metrecord_s metrecord_t;
 
 struct metrecord_s {
     data_element_t *data;
     struct metrecord_s *next;
+    /* NB should be debugging */
+    bool open;
+    char *element;
+    int depth;
+
 };
 
 /* NB static fixme */
@@ -31,7 +37,7 @@ private metrecord_t *head = NULL;
 private metrecord_t *tail = NULL;
 
 int
-met_record(gs_memory_t *mem, const data_element_t *data)
+met_record(gs_memory_t *mem, const data_element_t *data, const char *xmlel, bool open, int depth)
 {
     metrecord_t *node = (metrecord_t *)gs_alloc_bytes(mem, 
                                     sizeof(metrecord_t), "met record node");
@@ -49,7 +55,9 @@ met_record(gs_memory_t *mem, const data_element_t *data)
            gs_object_size(mem, data->cooked_data));
     el->cooked_data = cooked_data;
     node->data = el;
-
+    node->open = open;
+    node->element = met_strdup(mem, xmlel);
+    node->depth = depth;
     if (head == NULL) {
         head = tail = node;
     } else {
@@ -57,7 +65,7 @@ met_record(gs_memory_t *mem, const data_element_t *data)
     }
     return 0;
 }
-    
+
 int
 met_playback(met_state_t *ms)
 {
@@ -80,9 +88,11 @@ met_playback(met_state_t *ms)
             break;
 
         case met_action:
+            if (gs_debug_c('i')) dprintf2(ms->memory, "%d:opening %s\n", node->depth, node->element);
             code = (*procs->action)(data->cooked_data, ms);
             break;
         case met_done:
+            if (gs_debug_c('i')) dprintf2(ms->memory, "%d:closing %s\n", node->depth, node->element);
             code = (*procs->done)(data->cooked_data, ms);
             break;
         default:
@@ -98,4 +108,38 @@ met_playback(met_state_t *ms)
     } while (1);
 
     return code;
+}
+
+/* NB todo */
+private int 
+check_resource(met_state_t *ms, metrecord_t *first_node)
+{
+    gs_state *pgs = ms->pgs;
+    int code;
+    gs_gsave(pgs);
+
+    /* playback the resorce to the null device, checking for errors */
+    if (((code = gs_nulldevice(pgs)) >= 0) &&
+        ((code = met_playback(ms)) >= 0))
+        ;
+    gs_grestore(pgs);
+
+    if (code >= 0)
+        return 0;
+    else
+        return gs_rethrow(code, "bad resource");
+}
+    
+ 
+/* NB wrong should copy the resource */
+int
+met_store(met_state_t *ms)
+{
+    int code = 0;
+    //    code = check_resource(ms, head);
+    if (code == 0) {
+        ms->current_resource = head;
+        return code;
+    }
+    return gs_throw(code, "failed to store resource");
 }

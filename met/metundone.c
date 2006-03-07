@@ -57,7 +57,6 @@ UNDONE_STUB(PathGeometry_Transform);
 UNDONE_STUB(RadialGradientBrush_GradientStops);
 UNDONE_STUB(RadialGradientBrush_Transform);
 UNDONE_STUB(ResourceDictionary);
-UNDONE_STUB(VisualBrush);
 UNDONE_STUB(VisualBrush_Transform);
 UNDONE_STUB(VisualBrush_Visual);
 
@@ -113,9 +112,11 @@ ELEMENT_done(void *data, met_state_t *ms)
 
 const met_element_t met_element_procs_ELEMENT = {
     "ELEMENT",
-    ELEMENT_cook,
-    ELEMENT_action,
-    ELEMENT_done
+    {
+        ELEMENT_cook,
+        ELEMENT_action,
+        ELEMENT_done
+    }
 };
 
 #endif /* 0 */

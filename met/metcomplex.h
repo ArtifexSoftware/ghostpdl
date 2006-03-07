@@ -92,27 +92,27 @@ typedef struct CT_SolidColorBrush_s {
 } CT_SolidColorBrush;
 
 typedef struct CT_LinearGradientBrush_s {
-    char * Opacity;
-    char * Key;
-    char * ColorInterpolationMode;
-    char * SpreadMethod;
-    char * MappingMode;
-    char * Transform;
-    char * StartPoint;
-    char * EndPoint;
+    ST_ZeroOne Opacity;
+    ST_Name Key;
+    ST_ClrIntMode ColorInterpolationMode;
+    ST_SpreadMethod SpreadMethod;
+    ST_Name MappingMode;
+    ST_RscRefMatrix Transform;
+    ST_Point StartPoint;
+    ST_Point EndPoint;
 } CT_LinearGradientBrush;
 
 typedef struct CT_RadialGradientBrush_s {
-    char * Opacity;
-    char * Key;
-    char * ColorInterpolationMode;
-    char * SpreadMethod;
-    char * MappingMode;
-    char * Transform;
-    char * Center;
-    char * GradientOrigin;
-    char * RadiusX;
-    char * RadiusY;
+    ST_ZeroOne Opacity;
+    ST_Name Key;
+    ST_ClrIntMode ColorInterpolationMode;
+    ST_SpreadMethod SpreadMethod;
+    ST_Name MappingMode;
+    ST_RscRefMatrix Transform;
+    ST_Point Center;
+    ST_Point GradientOrigin;
+    ST_GEZero RadiusX;
+    ST_GEZero RadiusY;
 } CT_RadialGradientBrush;
 
 typedef struct CT_VisualBrush_s {

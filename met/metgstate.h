@@ -80,4 +80,9 @@ bool met_iscolorpattern(gs_state *pgs, ST_RscRefColor color);
 /* if set make an font outline path to be filled */
 void met_setcharpathmode(gs_state *pgs, bool mode);
 bool met_currentcharpathmode(gs_state *pgs);
+
+/* nb should be a resource type */
+void met_setvisualbrush(gs_state *pgs, void *vb);
+void *met_currentvisualbrush(gs_state *pgs);
+
 #endif /* metgstate_INCLUDED */

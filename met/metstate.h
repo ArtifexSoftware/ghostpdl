@@ -39,6 +39,7 @@ struct met_state_s {
     pl_dict_t font_dict;
     pl_dict_t pattern_dict;
     gs_font_dir *font_dir;
+    void *current_resource;
 };
 
 /* allocate a metro state */

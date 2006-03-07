@@ -31,6 +31,7 @@ met_state_alloc(gs_memory_t *mem)
        function somewhere */
     pl_dict_init(&pmets->font_dict, mem, pl_free_font);
     pmets->font_dir = gs_font_dir_alloc(mem);
+    pmets->current_resource = 0;
     return pmets;
 }
 

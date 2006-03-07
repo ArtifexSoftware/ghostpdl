@@ -31,6 +31,7 @@ typedef struct metgstate_s {
     bool charpathmode;
     ST_RscRefColor CharFill;
     met_path_child_t child;
+    void *VisualBrush;
     gs_memory_t *pmem;
 } metgstate_t;
 
@@ -223,12 +224,31 @@ ST_RscRefColor met_currentcharfillcolor(gs_state *pgs)
     return pmg->CharFill;
 }
 
+private metgstate_t *
+client_data(gs_state *pgs)
+{
+    return gs_state_client_data(pgs);
+}
+
+/* nb should be a resource type */
+void
+met_setvisualbrush(gs_state *pgs, void *vb)
+{
+    client_data(pgs)->VisualBrush = vb;
+}
+    
+void *met_currentvisualbrush(gs_state *pgs)
+{
+    return client_data(pgs)->VisualBrush;
+}
+
 private const gs_state_client_procs met_gstate_procs = {
     met_gstate_alloc,
     0,
     met_gstate_free,
     met_gstate_copy_for
 };
+
 
 /* constructor for gstate */
 void
@@ -243,6 +263,7 @@ met_gstate_init(gs_state *pgs, gs_memory_t *pmem)
     pmg->CharFill = 0;
     pmg->child = met_none;
     pmg->pmem = pmem;
+    pmg->VisualBrush = 0;
     gs_state_set_client(pgs, pmg, &met_gstate_procs, false);
 }
 

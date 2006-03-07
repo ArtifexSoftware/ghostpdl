@@ -72,9 +72,9 @@ parse_trace(const char *el, const char **attr, int indent)
         return;
     /* assume empty attribute means close element */
     if (!attr)
-        dprintf3(gs_mem_ptr, "%*s%s\n", indent + 1, "/", el);
+        dprintf4(gs_mem_ptr, "%*s%s:%d\n", indent + 1, "/", el, indent / 4);
     else
-        dprintf2(gs_mem_ptr, "%*s\n", indent + strlen(el), el);
+        dprintf3(gs_mem_ptr, "%*s:%d\n", indent + strlen(el), el, indent / 4);
     /* print the attributes if we have any.  aren't closing out the element */
     if (attr) {
         int i;
@@ -108,6 +108,7 @@ met_start(void *data, const char *el, const char **attr)
     met_parser_state_t *st = data;
     gs_memory_t *mem = st->memory;
     met_element_procs_t *metp = met_get_element_definition(el);
+    bool record_my_children = false;
     int code;
 
     parse_trace(el, attr, INDENT);
@@ -128,17 +129,15 @@ met_start(void *data, const char *el, const char **attr)
         }
         /* start recording */
         if (code == 1) { /* nb record me return value */
+            record_my_children = true;
             if (st->recording) {
                 gs_rethrow(code, "Fatal recursive recording not supported");
                 met_set_error(st, code);
             }
-            st->recording = true;
-            st->depth_at_record_start = st->depth;
-            dprintf2(mem, "starting recording at %s stack pos %d\n", el, st->depth);
         }
 
         if (st->recording) {
-            met_record(mem, element);
+            met_record(mem, element, el, /* open */ true, st->depth);
         } else {
             /* only cook if we are recording */
             code = (*metp->action)(element->cooked_data, st->mets);
@@ -150,7 +149,11 @@ met_start(void *data, const char *el, const char **attr)
         st->last_element++;
     }
     st->depth++;
-
+    if (record_my_children) {
+        st->recording = true;
+        st->depth_at_record_start = st->depth;
+        dprintf2(mem, "starting recording at %s stack pos %d\n", el, st->depth);
+    }
 }
 
 private void
@@ -172,18 +175,10 @@ met_end(void *data, const char *el)
         element = st->element_history[st->last_element];
         if (st->recording) {
             element.sel = met_done;
-            code = met_record(mem, &element);
+            code = met_record(mem, &element, el, false /* open */, st->depth);
             /* just free the cooked resource, the recorder made a copy. */
             gs_free_object(mem, element.cooked_data, "met parser");
             /* check if we have returned to the depth */
-            if (st->depth == st->depth_at_record_start) {
-                if (code >= 0) {
-                    code = met_playback(st->mets);
-                    if (code >= 0) {
-                        st->recording = false;
-                    }
-                }
-            }
         } else {
             code = (*metp->done)(element.cooked_data, st->mets);
         }
@@ -192,6 +187,17 @@ met_end(void *data, const char *el)
             met_set_error(st, code);
         }
     }
+
+    if (st->recording && (st->depth == st->depth_at_record_start)) {
+        if (code >= 0) {
+            dprintf2(mem, "stopping recording at %s stack pos %d\n", el, st->depth);
+            code = met_store(st->mets);
+            if (code >= 0) {
+                st->recording = false;
+            }
+        }
+    }
+
 }
 
 /* allocate the parser, and set the global memory pointer see above */
@@ -223,7 +229,7 @@ met_process_alloc(gs_memory_t *memory)
 
     stp->memory = memory;
     stp->parser = p;
-    stp->depth = 0;    
+    stp->depth = 0;
     stp->error_code = 0;
     stp->last_element = 0;
     stp->recording = false;

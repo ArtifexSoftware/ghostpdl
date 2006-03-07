@@ -382,8 +382,6 @@ Path_done(void *data, met_state_t *ms)
             
 
     } while (0);
-    /* hack nb fixme */
-
     gs_free_object(ms->memory, data, "Path_done");
     if (code < 0)
         return gs_rethrow(code, "Path done failed");
@@ -607,7 +605,7 @@ private int
 Path_Stroke_action(void *data, met_state_t *ms)
 {
     /* CT_CP_Brush *aPath_Stroke = data; */
-    
+    met_setpathchild(ms->pgs, met_stroke);
     return 0;
 
 }

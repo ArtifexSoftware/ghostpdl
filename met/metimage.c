@@ -189,6 +189,8 @@ met_PaintPattern(const gs_client_color *pcc, gs_state *pgs)
 	    code = LinearGradientBrush_paint(pmpat->linear, pgs);
 	if (pmpat->radial)
 	    code = RadialGradientBrush_paint(pmpat->radial, pgs);
+        if (pmpat->visual)
+            code = VisualBrush_paint(pmpat->visual, pgs);
 	gs_grestore(pgs);
 	if (code < 0)
 	    return gs_rethrow(code, "could not paint gradient pattern");
@@ -421,11 +423,11 @@ ImageBrush_action(void *data, met_state_t *ms)
 {
     /* create the pattern dictionary entry */
     CT_ImageBrush *aImageBrush = data;
-    met_pattern_t *pat = 
-        (met_pattern_t *)gs_alloc_bytes(ms->memory,
-        sizeof(met_pattern_t), "ImageBrush_action");
+    met_pattern_t *pat = (met_pattern_t *)gs_alloc_bytes(ms->memory,
+                         sizeof(met_pattern_t), "ImageBrush_action");
     xps_image_t *pim =  (xps_image_t *)gs_alloc_bytes(ms->memory,
         sizeof(xps_image_t), "ImageBrush_action");
+
 
     if (!pat || !pim)
         return -1;
