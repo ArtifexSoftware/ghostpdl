@@ -51,8 +51,9 @@
  * However, the LaserJet 6 (and probably the LJ 5 as well) draw rectangles
  * clockwise!  To draw rectangles clockwise, uncomment the following
  * #define.
+ * clj4550 and clj4600 draw counter-clockwise rectangles
  */
-#define DRAW_RECTANGLES_CLOCKWISE
+/*#define DRAW_RECTANGLES_CLOCKWISE*/
 /*
  * The H-P printers do really weird things for arcs, chords, or pies where
  * the width and/or height of the bounding box is negative.  To emulate
