@@ -18,7 +18,6 @@
 #  define metimage_INCLUDED
 
 #include "gsmatrix.h"
-#include "plrcnogc.h"
 
 /* type for the information derived directly from the raster file format */
 
