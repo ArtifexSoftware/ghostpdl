@@ -632,8 +632,8 @@ zlibfile(i_ctx_t *i_ctx_p)
     } else {
 	ref fref;
 
-	code = lib_file_open(i_ctx_p->lib_path, imemory, i_ctx_p, pname.fname, pname.len, cname, sizeof(cname),
-			     &clen, &fref);
+	code = lib_file_open(i_ctx_p->lib_path, imemory, i_ctx_p, pname.fname, pname.len, 
+			     (char *)cname, sizeof(cname), &clen, &fref);
 	if (code >= 0) {
 	    s = fptr(&fref);
 	    code = ssetfilename(s, cname, clen);

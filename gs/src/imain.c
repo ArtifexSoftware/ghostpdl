@@ -482,7 +482,7 @@ gs_main_lib_open(gs_main_instance * minst, const char *file_name, ref * pfile)
     /* extra stack space while running the file. */
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
 #define maxfn 2048
-    byte fn[maxfn];
+    char fn[maxfn];
     uint len;
 
     return lib_file_open(&minst->lib_path, imemory,
