@@ -118,7 +118,8 @@ romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
 	filelen = get_u32_big_endian(node_scan) & 0x7fffffff;	/* ignore compression bit */
 	blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
 	filename = (char *)(&(node_scan[1+(2*blocks)]));
-	if (strncmp(filename, fname, min(namelen, strlen(filename))) == 0) {
+	if ((namelen == strlen(filename)) && 
+	    (strncmp(filename, fname, namelen) == 0)) {
 	    node = node_scan;
 	    break;
 	}
