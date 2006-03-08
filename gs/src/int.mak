@@ -979,7 +979,7 @@ $(PSGEN)gs_init.ps : $(PSLIB)$(GS_INIT) $(GENINIT_XE) $(gconfig_h)
 # This changes infrequently, but is a potential point of bitrot, but since
 # unix-inst.mak uses this macro, problems should surface when testing installed
 # versions.
-EXTRA_INIT_FILES= Fontmap cidfmap FAPI xlatmap 
+EXTRA_INIT_FILES= Fontmap cidfmap xlatmap FAPIcidfmap FAPIconfig FAPIfontmap
 
 # Note: RESOURCE_LIST is first since those are CWD relative. Later files use -P prefix paths
 #	The init files are put in the lib/ directory (gs_init.ps + EXTRA_INIT_FILES)

@@ -67,7 +67,7 @@ install-libdata:
 	-mkdir -p $(gsdatadir)
 	-mkdir -p $(gsdatadir)/lib
 	$(SH) -c 'for f in \
-$(EXTRA_INIT_FILES) \
+$(EXTRA_INIT_FILES) Fontmap.GS \
 ht_ccsto.ps \
 acctest.ps addxchar.ps align.ps bdftops.ps \
 caption.ps cid2code.ps decrypt.ps docie.ps dumphint.ps \
