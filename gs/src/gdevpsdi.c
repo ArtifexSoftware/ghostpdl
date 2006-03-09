@@ -622,15 +622,11 @@ psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pdev,
 int
 psdf_setup_image_colors_filter(psdf_binary_writer *pbw, 
 			       gx_device_psdf *pdev, gs_pixel_image_t * pim, 
-			       const gs_imager_state *pis,
-			       gs_color_space_index output_cspace_index)
+			       const gs_imager_state *pis)
 {   /* fixme: currently it's a stub convertion to mask. */
     int code;
-    extern_st(st_color_space);
-    gs_memory_t *mem = pdev->v_memory;
     stream_state *ss = s_alloc_state(pdev->memory, s__image_colors_template.stype, 
 	"psdf_setup_image_colors_filter");
-    gs_color_space *cs;
     int i;
 
     if (ss == 0)
@@ -640,10 +636,6 @@ psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
     code = psdf_encode_binary(pbw, &s__image_colors_template, ss);
     if (code < 0)
 	return code;
-    cs = gs_alloc_struct(mem, gs_color_space, &st_color_space, 
-			    "psdf_setup_image_colors_filter");
-    if (cs == NULL)
-	return_error(gs_error_VMerror);
     s_image_colors_set_dimensions((stream_image_colors_state *)ss, 
 		    pim->Width, pim->Height, 
 		    gs_color_space_num_components(pim->ColorSpace), 
@@ -655,24 +647,5 @@ psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
 	pim->Decode[i * 2 + 0] = 0;
 	pim->Decode[i * 2 + 1] = 1;
     }
-    switch (output_cspace_index) {
-	case gs_color_space_index_DeviceGray:
-	    gs_cspace_init_DeviceGray(mem, cs);
-	    break;
-	case gs_color_space_index_DeviceRGB:
-	    gs_cspace_init_DeviceRGB(mem, cs); 
-	    break;
-	case gs_color_space_index_DeviceCMYK:
-	    gs_cspace_init_DeviceCMYK(mem, cs); 
-	    break;
-	default:
-	    /* Notify the user and terminate.
-	       Don't emit rangecheck becuause it would fall back
-	       to a default implementation (rasterisation). 
-	     */
-	    eprintf("Unsupported ProcessColorModel");
-	    return_error(gs_error_undefined);
-    }
-    pim->ColorSpace = cs;
     return 0;
 }

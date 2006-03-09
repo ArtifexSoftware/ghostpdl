@@ -368,8 +368,7 @@ int psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pde
 /* Set up an image colors filter. */
 int psdf_setup_image_colors_filter(psdf_binary_writer *pbw, 
 	gx_device_psdf *pdev, gs_pixel_image_t * pim,
-	const gs_imager_state *pis,
-	gs_color_space_index output_cspace_index);
+	const gs_imager_state *pis);
 
 /* ---------------- Symbolic data printing ---------------- */
 

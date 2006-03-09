@@ -238,6 +238,51 @@ pdf_begin_image_data_decoded(gx_device_pdf *pdev, int num_components, const gs_r
     return pdf_begin_image_data(pdev, &pie->writer, pi, cs_value, i);
 }
 
+private int
+make_device_color_space(gx_device_pdf *pdev, 
+			gs_color_space_index output_cspace_index, 
+			gs_color_space **ppcs)
+{
+    gs_color_space *cs;
+    gs_memory_t *mem = pdev->v_memory;
+
+    cs = gs_alloc_struct(mem, gs_color_space, &st_color_space, 
+			    "psdf_setup_image_colors_filter");
+    if (cs == NULL)
+	return_error(gs_error_VMerror);
+    switch (output_cspace_index) {
+	case gs_color_space_index_DeviceGray:
+	    gs_cspace_init_DeviceGray(mem, cs);
+	    break;
+	case gs_color_space_index_DeviceRGB:
+	    gs_cspace_init_DeviceRGB(mem, cs); 
+	    break;
+	case gs_color_space_index_DeviceCMYK:
+	    gs_cspace_init_DeviceCMYK(mem, cs); 
+	    break;
+	default:
+	    /* Notify the user and terminate.
+	       Don't emit rangecheck becuause it would fall back
+	       to a default implementation (rasterisation). 
+	     */
+	    eprintf("Unsupported ProcessColorModel");
+	    return_error(gs_error_undefined);
+    }
+    *ppcs = cs;
+    return 0;
+}
+
+private bool
+check_image_color_space(gs_pixel_image_t * pim, gs_color_space_index index)
+{
+    if (pim->ColorSpace->type->index == index)
+	return true;
+    if (pim->ColorSpace->type->index == gs_color_space_index_Indexed)
+	if (pim->ColorSpace->params.indexed.base_space.type->index == index)
+	    return true;
+    return false;
+}
+
 /*
  * Start processing an image.  This procedure takes extra arguments because
  * it has to do something slightly different for the parts of an ImageType 3
@@ -284,6 +329,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     const gs_range_t *pranges = 0;
     const pdf_color_space_names_t *names;
     bool convert_to_process_colors = false;
+    gs_color_space *pcs_device = NULL;
+    const gs_color_space *pcs_orig = NULL;
     pdf_lcvd_t *cvd = NULL;
 
     /*
@@ -583,21 +630,51 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    code = pdf_color_space(pdev, &cs_value, &pranges,
 				     pcs,
 				     names, in_line);
-	    if (code < 0) {
-	        const char *sname;
-
+	    if (code < 0)
 	        convert_to_process_colors = true;
-	        switch (pdev->pcm_color_info_index) {
-		    case gs_color_space_index_DeviceGray: sname = names->DeviceGray; break;
-		    case gs_color_space_index_DeviceRGB:  sname = names->DeviceRGB;  break;
-		    case gs_color_space_index_DeviceCMYK: sname = names->DeviceCMYK; break;
-		    default:
-		        eprintf("Unsupported ProcessColorModel.");
-		        return_error(gs_error_undefined);
-	        }
-	        cos_c_string_value(&cs_value, sname);
-	    }
         }
+    }
+    if ((pdev->params.ColorConversionStrategy == ccs_Gray &&
+	 !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceGray)) ||
+	(pdev->params.ColorConversionStrategy == ccs_sRGB &&
+	 !psdf_is_converting_image_to_RGB((const gx_device_psdf *)pdev, pis, &image[0].pixel) &&
+	 !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceGray) &&
+	 !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceRGB)) ||
+	(pdev->params.ColorConversionStrategy == ccs_CMYK &&
+	 !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceGray) &&
+	 !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceCMYK))) {
+	/* fixme : as a rudiment of old code, 
+	   the case psdf_is_converting_image_to_RGB 
+	   is handled with the 'cmyk_to_rgb' branch 
+	   in psdf_setup_image_filters. */
+	if ((pdev->params.ColorConversionStrategy == ccs_CMYK && 
+	     strcmp(pdev->color_info.cm_name, "DeviceCMYK")) ||
+	    (pdev->params.ColorConversionStrategy == ccs_sRGB && 
+	     strcmp(pdev->color_info.cm_name, "DeviceRGB")) ||
+	    (pdev->params.ColorConversionStrategy == ccs_Gray && 
+	     strcmp(pdev->color_info.cm_name, "DeviceGray"))) {
+	    eprintf("ColorConversionStrategy isn't compatible to ProcessColorModel.");
+	    return_error(gs_error_rangecheck);
+	}
+	convert_to_process_colors = true;
+    }
+    if (convert_to_process_colors) {
+        const char *sname;
+
+	switch (pdev->pcm_color_info_index) {
+	    case gs_color_space_index_DeviceGray: sname = names->DeviceGray; break;
+	    case gs_color_space_index_DeviceRGB:  sname = names->DeviceRGB;  break;
+	    case gs_color_space_index_DeviceCMYK: sname = names->DeviceCMYK; break;
+	    default:
+		eprintf("Unsupported ProcessColorModel.");
+		return_error(gs_error_undefined);
+	}
+	cos_c_string_value(&cs_value, sname);
+	pcs_orig = image[0].pixel.ColorSpace;
+	code = make_device_color_space(pdev, pdev->pcm_color_info_index, &pcs_device);
+	if (code < 0)
+  	    goto fail;
+	image[0].pixel.ColorSpace = pcs_device;
     }
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
 		    height, pnamed, in_line)) < 0 ||
@@ -620,16 +697,19 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	)
 	goto fail;
     if (convert_to_process_colors) {
+	image[0].pixel.ColorSpace = pcs_orig;
 	code = psdf_setup_image_colors_filter(&pie->writer.binary[0], 
-		    (gx_device_psdf *)pdev, &image[0].pixel, pis,
-		    pdev->pcm_color_info_index);
+		    (gx_device_psdf *)pdev, &image[0].pixel, pis);
 	if (code < 0)
   	    goto fail;
+	image[0].pixel.ColorSpace = pcs_device;
     }
     if (pie->writer.alt_writer_count > 1) {
         code = pdf_make_alt_stream(pdev, &pie->writer.binary[1]);
         if (code)
             goto fail;
+	if (convert_to_process_colors)
+	    image[1].pixel.ColorSpace = pcs_device;
 	code = psdf_setup_image_filters((gx_device_psdf *) pdev,
 				  &pie->writer.binary[1], &image[1].pixel,
 				  pmat, pis, false);
@@ -641,11 +721,12 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	} else if (code)
 	    goto fail;
 	else if (convert_to_process_colors) {
+	    image[1].pixel.ColorSpace = pcs_orig;
 	    code = psdf_setup_image_colors_filter(&pie->writer.binary[1], 
-		    (gx_device_psdf *)pdev, &image[1].pixel, pis,
-		    pdev->pcm_color_info_index);
+		    (gx_device_psdf *)pdev, &image[1].pixel, pis);
 	    if (code < 0)
   		goto fail;
+	    image[1].pixel.ColorSpace = pcs_device;
 	}
     }
     for (i = 0; i < pie->writer.alt_writer_count; i++) {
