@@ -215,12 +215,15 @@ private void
 pdf_make_uuid(const byte node[6], uint64_t uuid_time, ulong time_seq, char *buf, int buf_length)
 {   
     char b[40], *p = b;
+    ulong  uuid_time_lo = (ulong)(uuid_time & 0xFFFFFFFF);       /* MSVC 7.1.3088           */
+    ushort uuid_time_md = (ushort)((uuid_time >> 32) & 0xFFFF);  /* cannot compile this     */
+    ushort uuid_time_hi = (ushort)((uuid_time >> 48) & 0x0FFF);  /* as function arguments.  */
 
-    writehex(&p, (ulong)(uuid_time & 0xFFFFFFFF), 4); /* time_low */
+    writehex(&p, uuid_time_lo, 4); /* time_low */
     *(p++) = '-';
-    writehex(&p, (ushort)((uuid_time >> 32) & 0xFFFF), 2); /* time_mid */
+    writehex(&p, uuid_time_md, 2); /* time_mid */
     *(p++) = '-';
-    writehex(&p, (ushort)((uuid_time >> 48) & 0x0FFF) | (1 << 12), 2); /* time_hi_and_version */
+    writehex(&p, uuid_time_hi | (ushort)(1 << 12), 2); /* time_hi_and_version */
     *(p++) = '-';
     writehex(&p, (time_seq & 0x3F00) >> 8, 1); /* clock_seq_hi_and_reserved */
     writehex(&p, time_seq & 0xFF, 1); /* clock_seq & 0xFF */
