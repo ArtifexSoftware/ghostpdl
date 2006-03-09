@@ -69,7 +69,7 @@ met_record(gs_memory_t *mem, const data_element_t *data, const char *xmlel, bool
 int
 met_playback(met_state_t *ms)
 {
-    metrecord_t *node = head;
+    metrecord_t *node = ms->current_resource;
     int code = 0;
 
     if (node == NULL) {
@@ -110,35 +110,13 @@ met_playback(met_state_t *ms)
     return code;
 }
 
-/* NB todo */
-private int 
-check_resource(met_state_t *ms, metrecord_t *first_node)
-{
-    gs_state *pgs = ms->pgs;
-    int code;
-    gs_gsave(pgs);
-
-    /* playback the resorce to the null device, checking for errors */
-    if (((code = gs_nulldevice(pgs)) >= 0) &&
-        ((code = met_playback(ms)) >= 0))
-        ;
-    gs_grestore(pgs);
-
-    if (code >= 0)
-        return 0;
-    else
-        return gs_rethrow(code, "bad resource");
-}
-    
- 
-/* NB wrong should copy the resource */
 int
 met_store(met_state_t *ms)
 {
     int code = 0;
-    //    code = check_resource(ms, head);
     if (code == 0) {
         ms->current_resource = head;
+        head = NULL;
         return code;
     }
     return gs_throw(code, "failed to store resource");
