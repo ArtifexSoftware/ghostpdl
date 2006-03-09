@@ -1084,10 +1084,20 @@ ICC profiles are in some ways a special case of color mapping, but are
 not standard in PostScript.
 
 <dt>
-Color mapping:
 <dd>
 <a href="../src/gsicc.c">src/gsicc.c</a>,
 <a href="../src/gsicc.h">src/gsicc.h</a>,
+
+<p>
+The following files provide a callback mechanism to allow a client program 
+to specify a special case alternate tint transforms for Separation and DeviceN 
+color spaces. Among other uses this can be used to provide special handling for
+PANTONE colors 
+<dt>
+<dd>
+<a href="../src/gsnamecl.c">src/gsnamecl.c</a>,
+<a href="../src/gsnamecl.h">src/gsnamecl.h</a>,
+<a href="../src/gsncdemo.c">src/gsncdemo.c</a>,
 
 </dl>
 
