@@ -637,6 +637,7 @@ cos_array_add_real(cos_array_t *pca, floatp r)
     stream s;
     cos_value_t v;
 
+    s_init(&s, NULL);
     swrite_string(&s, str, sizeof(str));
     pprintg1(&s, "%g", r);
     return cos_array_add(pca, cos_string_value(&v, str, stell(&s)));
@@ -959,6 +960,7 @@ cos_dict_put_c_key_real(cos_dict_t *pcd, const char *key, floatp value)
     byte str[50];		/****** ADHOC ******/
     stream s;
 
+    s_init(&s, NULL);
     swrite_string(&s, str, sizeof(str));
     pprintg1(&s, "%g", value);
     return cos_dict_put_c_key_string(pcd, key, str, stell(&s));
@@ -1129,7 +1131,8 @@ cos_param_put_typed(gs_param_list * plist, gs_param_name pkey,
 	int len, skip;
 	byte *str;
 
-	ppp = param_printer_params_default;
+	s_init(&s, NULL);
+        ppp = param_printer_params_default;
 	ppp.prefix = ppp.suffix = ppp.item_prefix = ppp.item_suffix = 0;
 	ppp.print_ok = pclist->print_ok;
 	s_init_param_printer(&pplist, &ppp, &s);

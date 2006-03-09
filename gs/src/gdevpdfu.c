@@ -1449,6 +1449,7 @@ pdf_encrypt_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size
 	stream_write(pdev->strm, str, size);
 	return size;
     }
+    s_init(&sinp, NULL);
     sread_string(&sinp, str + 1, size);
     s_init(&sstr, NULL);
     sstr.close_at_eod = false;

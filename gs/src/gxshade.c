@@ -66,7 +66,8 @@ shade_next_init(shade_coord_stream_t * cs,
 	    )
 	    sreset(s);
     } else {
-	sread_string(&cs->ds, params->DataSource.data.str.data,
+	s_init(&cs->ds, NULL);
+        sread_string(&cs->ds, params->DataSource.data.str.data,
 		     params->DataSource.data.str.size);
 	cs->s = &cs->ds;
     }

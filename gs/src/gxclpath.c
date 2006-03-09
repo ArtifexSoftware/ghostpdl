@@ -307,6 +307,7 @@ cmd_write_ctm(const gs_matrix *m, byte *dp, int len)
 {
     stream s;
 
+    s_init(&s, NULL);
     swrite_string(&s, dp + 1, len);
     sput_matrix(&s, m);
     return 0;

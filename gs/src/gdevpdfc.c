@@ -407,6 +407,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 		       "pdf_color_space(table)");
 	return_error(gs_error_VMerror);
     }
+    s_init(&s, mem);
     swrite_string(&s, table, string_size);
     s_init(&es, mem);
     s_init_state((stream_state *)&st, &s_PSSE_template, NULL);

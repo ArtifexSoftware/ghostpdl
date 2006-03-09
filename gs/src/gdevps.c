@@ -1503,6 +1503,7 @@ psw_begin_image(gx_device * dev,
 	buffer = gs_alloc_bytes(mem, bsize, "psw_begin_image(buffer)");
 	bs = s_alloc(mem, "psw_begin_image(buffer stream)");
 	if (buffer && bs) {
+            s_init(bs, mem);
 	    swrite_string(bs, buffer, bsize);
 	} else {
 	    /* An allocation failed. */
