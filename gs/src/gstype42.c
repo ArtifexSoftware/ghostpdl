@@ -1206,7 +1206,6 @@ int
 gs_type42_font_info(gs_font *font, const gs_point *pscale, int members,
 	   gs_font_info_t *info)
 {
-    gs_font_type42 *pfont = (gs_font_type42 *)font;
     int code = gs_default_font_info(font, pscale, members, info);
 
     if (code < 0)

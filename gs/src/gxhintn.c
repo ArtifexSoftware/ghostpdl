@@ -1139,8 +1139,8 @@ private void t1_hinter_fix_missed_flex(t1_hinter * this)
         int offset_gd = (char *)p_gd - (char *)&this->pole[0];
 	t1_glyph_space_coord pixel_g = (!k ? this->pixel_gw : this->pixel_gh);
 	t1_glyph_space_coord threshold = pixel_g * 5 / 10;
-        t1_glyph_space_coord gc0, gc1, gc, gcj, gd, ge, gm;
-	int dir, prev_dir;
+        t1_glyph_space_coord gc0, gc1, gc, gcj, gd = 0, ge, gm;
+	int dir = 0, prev_dir;
 	bool wrapped = false;
 
 	gc = *member_prt(t1_glyph_space_coord, &this->pole[contour_beg], offset_gc);
