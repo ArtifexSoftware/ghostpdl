@@ -263,7 +263,7 @@ pdf_write_ccolor(gx_device_pdf * pdev, const gs_imager_state * pis,
 }
 
 private inline bool
-is_cspace_allowed_in_stradegy(gx_device_pdf * pdev, gs_color_space_index csi)
+is_cspace_allowed_in_strategy(gx_device_pdf * pdev, gs_color_space_index csi)
 {
     if (pdev->params.ColorConversionStrategy == ccs_CMYK && 
 	    csi != gs_color_space_index_DeviceCMYK &&
@@ -280,7 +280,7 @@ is_cspace_allowed_in_stradegy(gx_device_pdf * pdev, gs_color_space_index csi)
 }
 
 private inline bool
-is_pattern2_allowed_in_stradegy(gx_device_pdf * pdev, const gx_drawing_color *pdc)
+is_pattern2_allowed_in_strategy(gx_device_pdf * pdev, const gx_drawing_color *pdc)
 {
     const gs_pattern2_instance_t *pinst =
 	    (gs_pattern2_instance_t *)pdc->ccolor.pattern;
@@ -288,7 +288,7 @@ is_pattern2_allowed_in_stradegy(gx_device_pdf * pdev, const gx_drawing_color *pd
     const gs_color_space *pcs2 = gx_dc_pattern2_get_color_space(pdc);
     gs_color_space_index csi = gs_color_space_get_index(pcs2);
 
-    return true;
+    return is_cspace_allowed_in_strategy(pdev, csi);
 }
 
 /* Set the fill or stroke color. */
@@ -351,7 +351,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		    if (pdev->CompatibilityLevel <= 1.2) {
 			pcs2 = (const gs_color_space *)&pcs->params.indexed.base_space;
 			csi = gs_color_space_get_index(pcs2);
-			if (!is_cspace_allowed_in_stradegy(pdev, csi))
+			if (!is_cspace_allowed_in_strategy(pdev, csi))
 			    goto write_process_color;
 			if (csi == gs_color_space_index_Separation) {
 			    pcs2 = (const gs_color_space *)&pcs2->params.separation.alt_space;
@@ -365,7 +365,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 			pcs2 = (const gs_color_space *)&pcs->params.separation.alt_space;
 			check_pcs2:
 			csi = gs_color_space_get_index(pcs2);
-			if (!is_cspace_allowed_in_stradegy(pdev, csi))
+			if (!is_cspace_allowed_in_strategy(pdev, csi))
 			    goto write_process_color;
 			switch(gs_color_space_get_index(pcs2)) {
 			    case gs_color_space_index_DevicePixel :
@@ -432,7 +432,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		} else if (pdc->type == &gx_dc_pattern2) {
 		    if (pdev->CompatibilityLevel <= 1.2)
 	    		return_error(gs_error_rangecheck);
-		    if (!is_pattern2_allowed_in_stradegy(pdev, pdc))
+		    if (!is_pattern2_allowed_in_strategy(pdev, pdc))
 	    		return_error(gs_error_rangecheck);
 		    code1 = pdf_put_pattern2(pdev, pdc, ppscc, &pres);
 		} else
