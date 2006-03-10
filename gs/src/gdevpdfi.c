@@ -634,29 +634,31 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	        convert_to_process_colors = true;
         }
     }
-    if ((pdev->params.ColorConversionStrategy == ccs_Gray &&
-	 !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceGray)) ||
-	(pdev->params.ColorConversionStrategy == ccs_sRGB &&
-	 !psdf_is_converting_image_to_RGB((const gx_device_psdf *)pdev, pis, &image[0].pixel) &&
-	 !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceGray) &&
-	 !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceRGB)) ||
-	(pdev->params.ColorConversionStrategy == ccs_CMYK &&
-	 !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceGray) &&
-	 !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceCMYK))) {
-	/* fixme : as a rudiment of old code, 
-	   the case psdf_is_converting_image_to_RGB 
-	   is handled with the 'cmyk_to_rgb' branch 
-	   in psdf_setup_image_filters. */
-	if ((pdev->params.ColorConversionStrategy == ccs_CMYK && 
-	     strcmp(pdev->color_info.cm_name, "DeviceCMYK")) ||
-	    (pdev->params.ColorConversionStrategy == ccs_sRGB && 
-	     strcmp(pdev->color_info.cm_name, "DeviceRGB")) ||
-	    (pdev->params.ColorConversionStrategy == ccs_Gray && 
-	     strcmp(pdev->color_info.cm_name, "DeviceGray"))) {
-	    eprintf("ColorConversionStrategy isn't compatible to ProcessColorModel.");
-	    return_error(gs_error_rangecheck);
+    if (image[0].pixel.ColorSpace != NULL) { /* Not an imagemask. */
+	if ((pdev->params.ColorConversionStrategy == ccs_Gray &&
+	     !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceGray)) ||
+	    (pdev->params.ColorConversionStrategy == ccs_sRGB &&
+	     !psdf_is_converting_image_to_RGB((const gx_device_psdf *)pdev, pis, &image[0].pixel) &&
+	     !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceGray) &&
+	     !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceRGB)) ||
+	    (pdev->params.ColorConversionStrategy == ccs_CMYK &&
+	     !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceGray) &&
+	     !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceCMYK))) {
+	    /* fixme : as a rudiment of old code, 
+		the case psdf_is_converting_image_to_RGB 
+		is handled with the 'cmyk_to_rgb' branch 
+		in psdf_setup_image_filters. */
+	    if ((pdev->params.ColorConversionStrategy == ccs_CMYK && 
+		 strcmp(pdev->color_info.cm_name, "DeviceCMYK")) ||
+		(pdev->params.ColorConversionStrategy == ccs_sRGB && 
+		 strcmp(pdev->color_info.cm_name, "DeviceRGB")) ||
+		(pdev->params.ColorConversionStrategy == ccs_Gray && 
+		 strcmp(pdev->color_info.cm_name, "DeviceGray"))) {
+		eprintf("ColorConversionStrategy isn't compatible to ProcessColorModel.");
+		return_error(gs_error_rangecheck);
+	    }
+	    convert_to_process_colors = true;
 	}
-	convert_to_process_colors = true;
     }
     if (convert_to_process_colors) {
         const char *sname;
