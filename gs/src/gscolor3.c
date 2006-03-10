@@ -86,7 +86,7 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
 	code = gx_cpath_to_path(pgs->clip_path, &cpath);
 	if (code >= 0)
 	    code = gx_fill_path(&cpath, &devc, pgs, gx_rule_winding_number,
-				fixed_0, fixed_0);
+				pgs->fill_adjust.x, pgs->fill_adjust.y);
 	gx_path_free(&cpath, "gs_shfill");
     }
     gs_pattern_reference(&cc, -1);

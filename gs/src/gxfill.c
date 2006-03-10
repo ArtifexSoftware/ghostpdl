@@ -541,8 +541,6 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     return code;
 }
 
-#define OLD_CODE_COMPATIBILITY 1
-
 /*
  * Fill a path.  This is the default implementation of the driver
  * fill_path procedure.
@@ -575,9 +573,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	gx_path_init_local(&path_intersection, pdev->memory);
 	gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
 	code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule, 
-		    (gs_imager_state *)pis, 
-		    OLD_CODE_COMPATIBILITY && pdevc->type != &gx_dc_type_data_ht_colored 
-			    ? NULL : params);
+		    (gs_imager_state *)pis, params);
 	/* Do fill : */
 	if (code >= 0) {
 	    if (pdevc->type == &gx_dc_type_data_ht_colored) {
