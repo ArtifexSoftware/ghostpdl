@@ -451,11 +451,6 @@ build_text_params(gs_text_params_t *text, pl_font_t *pcf,
    return 0;
 }
 
-private bool is_Data_delimeter(char b) 
-{
-    return (b == ',') || (isspace(b));
-}
-
 /* action associated with this element. */
 private int
 Glyphs_action(void *data, met_state_t *ms)
@@ -531,25 +526,8 @@ Glyphs_done(void *data, met_state_t *ms)
       font matrix starts out as identity, later it will be
       concatenated to the graphics state ctm after scaling for point
       size. */
-   if (aGlyphs->RenderTransform) {
-       char transstring[strlen(aGlyphs->RenderTransform)];
-       strcpy(transstring, aGlyphs->RenderTransform);
-       /* nb wasteful */
-       char *args[strlen(aGlyphs->RenderTransform)];
-       char **pargs = args;
-
-       if ( 6 != met_split(transstring, args, is_Data_delimeter))
-	   return gs_throw(-1, "Glyphs RenderTransform number of args");
-       /* nb checking for sane arguments */
-       font_mat.xx = atof(pargs[0]);
-       font_mat.xy = atof(pargs[1]);
-       font_mat.yx = atof(pargs[2]);
-       font_mat.yy = atof(pargs[3]);
-       font_mat.tx = atof(pargs[4]);
-       font_mat.ty = atof(pargs[5]);
-   } else {
-       gs_make_identity(&font_mat);
-   }
+   if ((code = met_get_transform(&font_mat, aGlyphs->RenderTransform)) < 0)
+       return gs_rethrow(code, "render transform failed");
 
    /* move the character "cursor".  Note the render transform
       apparently applies to the coordinates of the origin argument as

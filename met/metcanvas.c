@@ -34,7 +34,7 @@
 #include "gxfixed.h" /* for gdevbbox.h stuff */
 #include "gxdevcli.h" /* for gdevbbox.h stuff */
 #include "gdevbbox.h"
-#include "gsrop.h"
+#include "metgstate.h"
 
 private int
 Canvas_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
@@ -98,31 +98,13 @@ Canvas_action(void *data, met_state_t *ms)
     if ((code = gs_gsave(pgs)) < 0)
         return gs_rethrow(code, "gsave failed");
 
-    /* NB code duplication with Glyphs render transform */
-   if (aCanvas->RenderTransform) {
-       char transstring[strlen(aCanvas->RenderTransform)];
-       strcpy(transstring, aCanvas->RenderTransform);
-       /* nb wasteful */
-       char *args[strlen(aCanvas->RenderTransform)];
-       char **pargs = args;
+    if ((code = met_get_transform(&canvas_mat, aCanvas->RenderTransform)) < 0)
+        return gs_rethrow(code, "transform failed");
 
-       if ( 6 != met_split(transstring, args, is_Data_delimeter))
-	   return gs_throw(-1, "Canvas RenderTransform number of args");
-       /* nb checking for sane arguments */
-       canvas_mat.xx = atof(pargs[0]);
-       canvas_mat.xy = atof(pargs[1]);
-       canvas_mat.yx = atof(pargs[2]);
-       canvas_mat.yy = atof(pargs[3]);
-       canvas_mat.tx = atof(pargs[4]);
-       canvas_mat.ty = atof(pargs[5]);
-   } else {
-       gs_make_identity(&canvas_mat);
-   }
+    if ((code = gs_concat(pgs, &canvas_mat)) < 0)
+        return gs_rethrow(code, "concat failed");
 
-   if ((code = gs_concat(pgs, &canvas_mat)) < 0)
-       return gs_rethrow(code, "concat failed");
-
-   return 0;
+    return 0;
 }
 
 private int

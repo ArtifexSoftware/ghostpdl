@@ -17,7 +17,7 @@
 #include "string_.h"
 #include <stdlib.h>
 #include "ctype_.h"
-
+#include "gserror.h"
 int
 met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *attr_name) 
 {
@@ -99,3 +99,36 @@ met_strdup(gs_memory_t *mem, const char *str)
         strcpy(s, str);
     return s;
 }
+
+/* these operators set the gs graphics state and don't effect the
+   metro client state */
+private bool is_Data_delimeter(char b) 
+{
+    return (b == ',') || (isspace(b));
+}
+
+int
+met_get_transform(gs_matrix *gsmat, ST_RscRefMatrix metmat)
+{
+    if (!metmat) {
+        gs_make_identity(gsmat);
+    } else {
+        char transstring[strlen(metmat)];
+        strcpy(transstring, metmat);
+        /* nb wasteful */
+        char *args[strlen(metmat)];
+        char **pargs = args;
+
+        if ( 6 != met_split(transstring, args, is_Data_delimeter))
+            return gs_throw(-1, "Canvas RenderTransform number of args");
+        /* nb checking for sane arguments */
+        gsmat->xx = atof(pargs[0]);
+        gsmat->xy = atof(pargs[1]);
+        gsmat->yx = atof(pargs[2]);
+        gsmat->yy = atof(pargs[3]);
+        gsmat->tx = atof(pargs[4]);
+        gsmat->ty = atof(pargs[5]);
+    }
+    return 0;
+}
+        
