@@ -688,7 +688,7 @@ gx_path_merge_contacting_contours(gx_path *ppath)
 		    if (ppath->segments->contents.subpath_current == sp1) {
 			ppath->segments->contents.subpath_current = sp1p;
 		    }
-		    gs_free_object(ppath->memory, sp1, "gx_path_merge_contacting_contours");
+		    gs_free_object(gs_memory_stable(ppath->memory), sp1, "gx_path_merge_contacting_contours");
 		    sp1 = 0; /* Safety. */
 		}
 		/* Insert the subpath 1 into the subpath 0 before sc0 :*/
