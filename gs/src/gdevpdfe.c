@@ -24,7 +24,6 @@
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
 #include "gdevpdtf.h"
-#include <stdint.h>
 
 /* Write XML data */
 private void
