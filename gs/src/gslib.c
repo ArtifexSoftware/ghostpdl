@@ -1,17 +1,14 @@
-/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
-  This software is provided AS-IS with no warranty, either express or
-  implied.
-  
-  This software is distributed under license and may not be copied,
-  modified or distributed except as expressly authorized under the terms
-  of the license contained in the file LICENSE in this distribution.
-  
-  For more information about licensing, please refer to
-  http://www.ghostscript.com/licensing/. For information on
-  commercial licensing, go to http://www.artifex.com/licensing/ or
-  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-  San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
 /* $Id$ */
@@ -524,7 +521,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
     };
     gs_color_space gray_cs;
 
-    gs_cspace_init_DeviceGray(&gray_cs);
+    gs_cspace_init_DeviceGray(mem, &gray_cs);
 
     /*
      * Neither ImageType 3 nor 4 needs a current color,
@@ -578,7 +575,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	void *info1;
         gs_color_space cs;
 
-        gs_cspace_init_DeviceGray(&cs);
+        gs_cspace_init_DeviceGray(mem, &cs);
 	gs_image_t_init(&image1, &cs);
 	/* image */
 	image1.ImageMatrix.xx = W;
@@ -1071,7 +1068,7 @@ test10(gs_state * pgs, gs_memory_t * mem)
     {
         gs_color_space cs;
 
-        gs_cspace_init_DeviceGray(&cs);
+        gs_cspace_init_DeviceGray(mem, &cs);
         gs_setcolorspace(pgs, &cs);
     }
     
