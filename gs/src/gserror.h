@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/*$RCSfile: gserror.h,v $ $Revision: 1.11 $ */
+/* $Id$ */
 /* Error return macros */
 
 #ifndef gserror_INCLUDED
