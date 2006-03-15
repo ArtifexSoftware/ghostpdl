@@ -424,9 +424,6 @@ s_jpxe_read(unsigned char *buffer, short component,
     unsigned char *p;
     int i;
 
-    if_debug3('w', "[w] jpxe read library requested %lu pixels, "
-		"row %lu column %lu\n", num, row, start);
-
     if (component < 0 || component >= state->components) {
 	dlprintf1("Luratech JP2 requested image data for unknown component %d", (int)component);
 	return cJP2_Error_Invalid_Component_Index;
@@ -458,8 +455,6 @@ s_jpxe_write(unsigned char *buffer,
 		JP2_Callback_Param param)
 {
     stream_jpxe_state *state = (stream_jpxe_state *)param;
-    if_debug3('w', "[w] jpxe write state %p %lu bytes at %lu\n",
-	state, size, pos);
 
     /* verify state */
     if (state == NULL) return cJP2_Error_Invalid_Pointer;
@@ -623,9 +618,6 @@ s_jpxe_process(stream_state *ss, stream_cursor_read *pr,
     long available;
     JP2_Error err;
 
-    if_debug2('w', "[w] jpxe process() called with insize=%ld out_size=%ld\n",
-	in_size, out_size);
-
     if (in_size > 0) {
 	/* allocate our input buffer if necessary */
 	if (state->inbuf == NULL) {
@@ -648,14 +640,10 @@ s_jpxe_process(stream_state *ss, stream_cursor_read *pr,
 	    state->insize *= 2;
 	}
 
-        if_debug1('w', "[w] jpxe process insize now %lu\n", state->insize);
-
 	/* copy available input */
 	memcpy(state->inbuf + state->infill, pr->ptr + 1, in_size);
 	state->infill += in_size;
 	pr->ptr += in_size;
-
-        if_debug1('w', "[w] jpxe process infill now %lu\n", state->infill);
     }
 
     if (last && state->outbuf == NULL) {
@@ -667,13 +655,11 @@ s_jpxe_process(stream_state *ss, stream_cursor_read *pr,
 	    dlprintf1("Luratech JP2 error %d compressing image data.\n", (int)err);
 	    return ERRC;
 	}
-	if_debug0('w', "[w] jpxe process compression complete\n");
      }
 
      if (state->outbuf != NULL) {
 	/* copy out any available output data */
 	available = min(out_size, state->outfill - state->offset);
-	if_debug2('w', "[w] jpxe process copying %ld bytes at offset %lu\n", available, state->offset);
 	memcpy(pw->ptr + 1, state->outbuf + state->offset, available);
 	pw->ptr += available;
 	state->offset += available;
