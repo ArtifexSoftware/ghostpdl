@@ -41,9 +41,14 @@ private dev_proc_print_page(jpx_print_page);
 
 private dev_proc_print_page(jpx_print_page);
 
+private const gx_device_procs jpxgray_procs =
+prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+		       gx_default_gray_map_rgb_color,
+		       gx_default_gray_map_color_rgb);
+
 /* Grayscale */
 const gx_device_printer gs_gdevjpx_device = {
-    prn_device_body(gx_device_jpx, prn_std_procs, "jpx",
+    prn_device_body(gx_device_jpx, jpxgray_procs, "jpx",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,	/* resolution */
 	0, 0, 0, 0,	/* margins */
