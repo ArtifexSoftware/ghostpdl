@@ -1473,8 +1473,8 @@ currentdict /postalias undef
 
 % <file> <is_symbolic> <Encoding|null> .loadpdfttfont <type42font>
 /.loadpdfttfont {
-  /prebuilt_encoding exch def     % for .pdfcharkeys
-  /is_symbolic exch def
+  /prebuilt_encoding gput     % for .pdfcharkeys
+  /is_symbolic gput
   //false 0 .loadttfonttables
   .makesfnts
   .getpost
