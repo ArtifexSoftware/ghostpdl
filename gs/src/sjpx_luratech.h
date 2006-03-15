@@ -15,8 +15,8 @@
 /* Definitions for JPXDecode filter (JPEG 2000) */
 /* we link to the Luratech CSDK for the actual decoding */
 
-#ifndef sjpx_INCLUDED
-#  define sjpx_INCLUDED
+#ifndef sjpx_luratech_INCLUDED
+#  define sjpx_luratech_ INCLUDED
 
 /* Requires scommon.h; strimpl.h if any templates are referenced */
 
@@ -36,6 +36,7 @@ typedef struct stream_jpxd_state_s
     unsigned long inbuf_size;
     unsigned long inbuf_fill;
     int ncomp;			/* number of image components */
+    int bpc;			/* sample bits per component */
     unsigned long width, height;
     unsigned long stride;
     unsigned char *image;	/* decoded image buffer */
@@ -49,4 +50,4 @@ stream_jpxd_state;
     "JPXDecode filter state")
 extern const stream_template s_jpxd_template;
 
-#endif /* sjpx_INCLUDED */
+#endif /* sjpx_luratech_INCLUDED */
