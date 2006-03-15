@@ -251,6 +251,9 @@ gdevsvga_h=$(GLSRC)gdevsvga.h
 # Out of order
 gdevdljm_h=$(GLSRC)gdevdljm.h $(gdevpcl_h)
 
+GDEVLDFJB2CC=$(CC_) $(I_)$(GLI_) $(II)$(LDF_JB2I_)$(_I) $(JB2CF_) $(GLF_)
+GDEVLWFJPXCC=$(CC_) $(I_)$(GLI_) $(II)$(LWF_JPXI_)$(_I) $(JPXCF_) $(GLF_)
+
 ###### ----------------------- Device support ----------------------- ######
 
 # Implement dynamic color management for 8-bit mapped color displays.
@@ -1253,6 +1256,29 @@ $(DD)perm.dev : $(DEVS_MAK) $(perm_) $(GLD)page.dev
 $(GLOBJ)gdevperm.$(OBJ) : $(GLSRC)gdevperm.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)
 	$(GLICCCC) $(GLO_)gdevperm.$(OBJ) $(C_) $(GLSRC)gdevperm.c
+
+### ------------------------ JBIG2 testing device ---------------------- ###
+
+gdevjbig2_=$(GLOBJ)gdevjbig2.$(OBJ)
+
+$(DD)gdevjbig2.dev : $(DEVS_MAK) $(gdevjbig2_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)gdevjbig2 $(gdevjbig2_)
+
+$(GLOBJ)gdevjbig2.$(OBJ) : $(GLSRC)gdevjbig2.c $(PDEVH)\
+ $(stream_h) $(strimpl_h) $(sjbig2_luratech_h)
+	$(GDEVLDFJB2CC) $(GLO_)gdevjbig2.$(OBJ) $(C_) $(GLSRC)gdevjbig2.c
+
+### ------------------------ JPX testing device ---------------------- 
+###
+
+gdevjpx_=$(GLOBJ)gdevjpx.$(OBJ)
+
+$(DD)gdevjpx.dev : $(DEVS_MAK) $(gdevjpx_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)gdevjpx $(gdevjpx_)
+
+$(GLOBJ)gdevjpx.$(OBJ) : $(GLSRC)gdevjpx.c $(PDEVH)\
+ $(stream_h) $(strimpl_h) $(sjpx_luratech_h)
+	$(GDEVLWFJPXCC) $(GLO_)gdevjpx.$(OBJ) $(C_) $(GLSRC)gdevjpx.c
 
 ### ------------------------- JPEG file format ------------------------- ###
 
