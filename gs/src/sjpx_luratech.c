@@ -45,13 +45,14 @@
 private_st_jpxd_state(); /* creates a gc object for our state,
 			    defined in sjpx.h */
 
+#define JPX_BUFFER_SIZE 1024
+
 /** callback for the codec library */
 
 /* memory allocation */
 private void * JP2_Callback_Conv
-s_jpxd_alloc(long size, JP2_Callback_Param param)
+s_jpx_alloc(long size, JP2_Callback_Param param)
 {
-    stream_jpxd_state *const state = (stream_jpxd_state *)param;
     void *result = malloc(size);
 
     return result;   
@@ -59,10 +60,8 @@ s_jpxd_alloc(long size, JP2_Callback_Param param)
 
 /* memory free */
 private JP2_Error JP2_Callback_Conv
-s_jpxd_free(void *ptr, JP2_Callback_Param param)
+s_jpx_free(void *ptr, JP2_Callback_Param param)
 {
-    stream_jpxd_state *const state = (stream_jpxd_state *)param;
-
     free(ptr);
 
     return cJP2_Error_OK;
@@ -83,7 +82,7 @@ s_jpxd_read_data(unsigned char *pucData,
 }
 
 /* write decompressed data into our image buffer */
-private JP2_Error
+private JP2_Error JP2_Callback_Conv
 s_jpxd_write_data(unsigned char * pucData,
 			       short sComponent,
 			       unsigned long ulRow,
@@ -125,9 +124,9 @@ s_jpxd_inbuf(stream_jpxd_state *state, stream_cursor_read * pr)
 
     /* allocate the input buffer if needed */
     if (state->inbuf == NULL) {
-	state->inbuf = malloc(1024);
+	state->inbuf = malloc(JPX_BUFFER_SIZE);
 	if (state->inbuf == NULL) return gs_error_VMerror;
-	state->inbuf_size = 1024;
+	state->inbuf_size = JPX_BUFFER_SIZE;
 	state->inbuf_fill = 0;
     }
 
@@ -176,6 +175,7 @@ s_jpxd_init(stream_state * ss)
     state->inbuf_fill = 0;
 
     state->ncomp = 0;
+    state->bpc = 0;
     state->width = 0;
     state->height = 0;
     state->stride = 0;
@@ -210,8 +210,8 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 	    /* initialize decompressor */
 	    err = JP2_Decompress_Start(&state->handle,
 		/* memory allocator callbacks */ 
-		s_jpxd_alloc, (JP2_Callback_Param)state,
-		s_jpxd_free, (JP2_Callback_Param)state,
+		s_jpx_alloc, (JP2_Callback_Param)state,
+		s_jpx_free,  (JP2_Callback_Param)state,
 		/* our read callback */
 		s_jpxd_read_data, (JP2_Callback_Param)state
 	    );
@@ -236,26 +236,8 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 		return ERRC;
 	    }
 	    state->ncomp = result;
-	    /* the library will only return dimensions from the whole 
-	       image if all channels have the same dimension (and aren't
-	       CMYK?) so use the dimensions of component 0 instead.
-	       Ideally, we'd use the size from the image dictionary. */
-	    err = JP2_Decompress_GetProp(state->handle,
-		cJP2_Prop_Width, &result, -1, 0);
-	    if (err != cJP2_Error_OK) {
-		dlprintf1("Luratech JP2 error %d decoding image width\n", (int)err);
-		return ERRC;
-	    }
-	    state->width = result;
-	    err = JP2_Decompress_GetProp(state->handle,
-		cJP2_Prop_Height, &result, -1, 0);
-	    if (err != cJP2_Error_OK) {
-		dlprintf1("Luratech JP2 error %d decoding image height\n", (int)err);
-		return ERRC;
-	    }
-	    state->height = result;
-	    if_debug3('w', "[w]jpxd image has %d components (%ldx%ld)\n", 
-		state->ncomp, state->width, state->height);
+
+	    if_debug1('w', "[w]jpxd image has %d components\n", state->ncomp);
 	
 	    {
 		const char *cspace = "unknown";
@@ -288,6 +270,11 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 		if_debug1('w', "[w]jpxd image colorspace is %s\n", cspace);
 	    }
 
+	    /* the library doesn't return the overall image dimensions
+	       or depth, so we take the maximum of the component values */
+	    state->width = 0;
+            state->height = 0;
+	    state->bpc = 0;
 	    {
 		int comp;
 		int width, height;
@@ -329,8 +316,17 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 			"[w]jpxd image component %d has %dx%d %s %d bit samples\n",
 			comp, width, height,
 			is_signed ? "signed" : "unsigned", bits);
+
+		    /* update image maximums */
+		    if (state->width < width) state->width = width;
+		    if (state->height < height) state->height = height;
+		    if (state->bpc < bits) state->bpc = bits;
 		}
 	    }
+	    if_debug3('w', "[w]jpxd decoding image at %ldx%ld"
+		" with %d bits per component\n", 
+		state->width, state->height, state->bpc);
+
 	}
 
 	if (state->handle != (JP2_Decomp_Handle)NULL && 
@@ -402,7 +398,7 @@ const stream_template s_jpxd_template = {
     &st_jpxd_state, 
     s_jpxd_init,
     s_jpxd_process,
-    1024, 1024, /* min in and out buffer sizes we can handle 
-                     should be ~32k,64k for efficiency? */
+    1024, 1024,   /* min in and out buffer sizes we want */
     s_jpxd_release
 };
+
