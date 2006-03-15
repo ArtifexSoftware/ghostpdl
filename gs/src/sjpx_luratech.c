@@ -398,7 +398,320 @@ const stream_template s_jpxd_template = {
     &st_jpxd_state, 
     s_jpxd_init,
     s_jpxd_process,
-    1024, 1024,   /* min in and out buffer sizes we want */
+    1024, 1024,   /* min in and out buffer sizes we can handle 
+                     should be ~32k,64k for efficiency? */
     s_jpxd_release
 };
 
+
+
+/*** encode support **/
+
+/* we provide a C-only encode filter for generating JPX image data
+   for embedding in PDF. */
+
+/* create a gc object for our state, defined in sjpx_luratech.h */
+private_st_jpxe_state();
+
+/* callback for uncompressed data input */
+private JP2_Error JP2_Callback_Conv
+s_jpxe_read(unsigned char *buffer, short component,
+		unsigned long row, unsigned long start,
+		unsigned long num, JP2_Callback_Param param)
+{
+    stream_jpxe_state *state = (stream_jpxe_state *)param;
+    unsigned long available, sentinel;
+    unsigned char *p;
+    int i;
+
+    if_debug3('w', "[w] jpxe read library requested %lu pixels, "
+		"row %lu column %lu\n", num, row, start);
+
+    if (component < 0 || component >= state->components) {
+	dlprintf1("Luratech JP2 requested image data for unknown component %d", (int)component);
+	return cJP2_Error_Invalid_Component_Index;
+    }
+
+    /* todo: handle subsampled components and bpc != 8 */
+
+    /* clip to array bounds */
+    sentinel = row*state->stride + (start + num)*state->components;
+    available = min(sentinel, state->infill);
+    num = min(num, available / state->components);
+
+    p = state->inbuf + state->stride*row + state->components*start;
+    if (state->components == 1)
+	memcpy(buffer, p, num);
+    else for (i = 0; i < num; i++) {
+	buffer[i] = p[component];
+	p += state->components;
+    }
+
+    if (available < sentinel) return cJP2_Error_Failure_Read;
+    else return cJP2_Error_OK;
+}
+
+/* callback for compressed data output */
+private JP2_Error JP2_Callback_Conv
+s_jpxe_write(unsigned char *buffer,
+		unsigned long pos, unsigned long size,
+		JP2_Callback_Param param)
+{
+    stream_jpxe_state *state = (stream_jpxe_state *)param;
+    if_debug3('w', "[w] jpxe write state %p %lu bytes at %lu\n",
+	state, size, pos);
+
+    /* verify state */
+    if (state == NULL) return cJP2_Error_Invalid_Pointer;
+
+    /* allocate the output buffer if necessary */
+    if (state->outbuf == NULL) {
+	state->outbuf = malloc(JPX_BUFFER_SIZE);
+	if (state->outbuf == NULL) {
+	    dprintf("jpx encode: failed to allocate output buffer.\n");
+	    return cJP2_Error_Failure_Malloc;
+	}
+	state->outsize = JPX_BUFFER_SIZE;
+    }
+
+    /* grow the output buffer if necessary */
+    if (pos+size > state->outsize) {
+	unsigned char *new = realloc(state->outbuf, state->outsize*2);
+	if (new == NULL) {
+	    dprintf1("jpx encode: failed to resize output buffer"
+		" beyond %lu bytes.\n", state->outsize);
+	    return cJP2_Error_Failure_Malloc;
+	}
+	state->outbuf = new;
+	state->outsize *= 2;
+    }
+
+    /* copy data into our buffer; we've assured there is enough room. */
+    memcpy(state->outbuf + pos, buffer, size);
+    /* update high water mark */
+    if (state->outfill < pos + size) state->outfill = pos + size;
+
+    return cJP2_Error_OK;
+}
+
+/* initialize the stream */
+private int
+s_jpxe_init(stream_state *ss)
+{
+    stream_jpxe_state *state = (stream_jpxe_state *)ss;
+    unsigned long value;
+    JP2_Error err;
+
+    /* width, height, bpc and colorspace are set by the client,
+       calculate the rest */
+    switch (state->colorspace) {
+	case gs_jpx_cs_gray: state->components = 1; break;
+	case gs_jpx_cs_rgb: state->components = 3; break;
+	case gs_jpx_cs_cmyk: state->components = 4; break;
+	default: state->components = 0;
+    }
+    state->stride = state->width * state->components;
+
+    /* null the input buffer */
+    state->inbuf = NULL;
+    state->insize = 0;
+    state->infill = 0;
+
+    /* null the output buffer */
+    state->outbuf = NULL;
+    state->outsize = 0;
+    state->outfill = 0;
+    state->offset = 0;
+
+    /* initialize the encoder */
+    err = JP2_Compress_Start(&state->handle,
+	/* memory allocator callbacks */
+	s_jpx_alloc, (JP2_Callback_Param)state,
+	s_jpx_free,  (JP2_Callback_Param)state,
+	state->components);
+    if (err != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d starting compressor\n", (int)err);
+	return ERRC;
+    }
+
+#if defined(JP2_LICENSE_NUM_1) && defined(JP2_LICENSE_NUM_2)
+    /* set license keys if appropriate */
+    error = JP2_Decompress_SetLicense(state->handle,
+	JP2_LICENSE_NUM_1, JP2_LICENSE_NUM_2);
+    if (error != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d setting license\n", (int)err);
+	return ERRC;
+    }
+#endif
+
+    /* install our callbacks */
+    err = JP2_Compress_SetProp(state->handle,
+	cJP2_Prop_Input_Parameter, (JP2_Property_Value)state, -1, -1);
+    if (err != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d setting input callback parameter.\n", (int)err);
+	return ERRC;
+    }
+    err = JP2_Compress_SetProp(state->handle,
+	cJP2_Prop_Input_Function, (JP2_Property_Value)s_jpxe_read, -1, -1);
+    if (err != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d setting input callback function.\n", (int)err);
+	return ERRC;
+    }
+    err = JP2_Compress_SetProp(state->handle,
+	cJP2_Prop_Write_Parameter, (JP2_Property_Value)state, -1, -1);
+    if (err != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d setting compressed output callback parameter.\n", (int)err);
+	return ERRC;
+    }
+    err = JP2_Compress_SetProp(state->handle,
+	cJP2_Prop_Write_Function, (JP2_Property_Value)s_jpxe_write, -1, -1);
+    if (err != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d setting compressed output callback function.\n", (int)err);
+	return ERRC;
+    }
+
+    /* set image parameters - the same for all components */
+    err = JP2_Compress_SetProp(state->handle, 
+	cJP2_Prop_Width, state->width, -1, -1);
+    if (err != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d setting width\n", (int)err);
+	return ERRC;
+    }
+    err = JP2_Compress_SetProp(state->handle, 
+	cJP2_Prop_Height, state->height, -1, -1);
+    if (err != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d setting height\n", (int)err);
+	return ERRC;
+    }
+    err = JP2_Compress_SetProp(state->handle, 
+	cJP2_Prop_Bits_Per_Sample, state->bpc, -1, -1);
+    if (err != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d setting bits per sample\n", (int)err);
+	return ERRC;
+    }
+  
+    switch (state->colorspace) {
+	case gs_jpx_cs_gray: value = cJP2_Colorspace_Gray; break;
+	case gs_jpx_cs_rgb: value = cJP2_Colorspace_RGBa; break;
+	case gs_jpx_cs_cmyk: value = cJP2_Colorspace_CMYKa; break;
+	default:
+	    dlprintf1("Unknown colorspace %d initializing JP2 encoder\n",
+		(int)state->colorspace);
+	    return ERRC;
+    }
+    err = JP2_Compress_SetProp(state->handle, 
+	cJP2_Prop_Extern_Colorspace, value, -1, -1);
+    if (err != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d setting colorspace\n", (int)err);
+	return ERRC;
+    }
+
+    /* we use the encoder's defaults for all other parameters */
+
+    return 0;
+}
+
+/* process input and return any encoded data.
+   see strimpl.h for return codes. */
+private int
+s_jpxe_process(stream_state *ss, stream_cursor_read *pr,
+		stream_cursor_write *pw, bool last)
+{
+    stream_jpxe_state *state = (stream_jpxe_state *)ss;
+    long in_size = pr->limit - pr->ptr;
+    long out_size = pw->limit - pw->ptr;
+    long available;
+    JP2_Error err;
+
+    if_debug2('w', "[w] jpxe process() called with insize=%ld out_size=%ld\n",
+	in_size, out_size);
+
+    if (in_size > 0) {
+	/* allocate our input buffer if necessary */
+	if (state->inbuf == NULL) {
+	    state->inbuf = malloc(JPX_BUFFER_SIZE);
+	    if (state->inbuf == NULL) {
+		dprintf("jpx encode: failed to allocate input buffer.\n");
+		return ERRC;
+	    }
+	    state->insize = JPX_BUFFER_SIZE;
+	}
+
+        /* grow our input buffer if necessary */
+	if (state->infill + in_size > state->insize) {
+	    unsigned char *new = realloc(state->inbuf, state->insize*2);
+	    if (new == NULL) {
+		dprintf("jpx encode: failed to resize input buffer.\n");
+		return ERRC;
+	    }
+	    state->inbuf = new;
+	    state->insize *= 2;
+	}
+
+        if_debug1('w', "[w] jpxe process insize now %lu\n", state->insize);
+
+	/* copy available input */
+	memcpy(state->inbuf + state->infill, pr->ptr + 1, in_size);
+	state->infill += in_size;
+	pr->ptr += in_size;
+
+        if_debug1('w', "[w] jpxe process infill now %lu\n", state->infill);
+    }
+
+    if (last && state->outbuf == NULL) {
+	/* We have all the data; call the compressor.
+	   our callback will automatically allocate the output buffer */
+	if_debug0('w', "[w] jpxe process compressing image data\n");
+	err = JP2_Compress_Image(state->handle);
+	if (err != cJP2_Error_OK) {
+	    dlprintf1("Luratech JP2 error %d compressing image data.\n", (int)err);
+	    return ERRC;
+	}
+	if_debug0('w', "[w] jpxe process compression complete\n");
+     }
+
+     if (state->outbuf != NULL) {
+	/* copy out any available output data */
+	available = min(out_size, state->outfill - state->offset);
+	if_debug2('w', "[w] jpxe process copying %ld bytes at offset %lu\n", available, state->offset);
+	memcpy(pw->ptr + 1, state->outbuf + state->offset, available);
+	pw->ptr += available;
+	state->offset += available;
+
+	/* do we have any more data? */
+	if (state->outfill - state->offset > 0) return 1;
+	else return EOFC; /* all done */
+    }
+
+    /* something went wrong above */
+    return last;
+}
+
+/* stream release. free all our state. */
+private void
+s_jpxe_release(stream_state *ss)
+{
+    stream_jpxe_state *state = (stream_jpxe_state *)ss;
+    JP2_Error err;
+
+    /* close the library compression context */
+    err = JP2_Compress_End(state->handle);
+    if (err != cJP2_Error_OK) {
+	/* we can't return an error, so only print on debug builds */
+	if_debug1('w', "[w]jpxe Luratech JP2 error %d"
+		" closing compression context", (int)err);
+    }
+    
+    /* free our own storage */
+    free(state->outbuf);
+    free(state->inbuf);
+}
+
+/* encoder stream template */
+const stream_template s_jpxe_template = {
+    &st_jpxe_state,
+    s_jpxe_init,
+    s_jpxe_process,
+    1024, 1024,	/* min in and out buffer sizes */
+    s_jpxe_release
+};

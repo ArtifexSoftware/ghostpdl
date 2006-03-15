@@ -50,4 +50,40 @@ stream_jpxd_state;
     "JPXDecode filter state")
 extern const stream_template s_jpxd_template;
 
+/* define colorspace enumeration for the input image data */
+typedef enum {
+  gs_jpx_cs_gray, /* single component grayscale image */
+  gs_jpx_cs_rgb,  /* three component (s)RGB image */
+  gs_jpx_cs_cmyk  /* four component CMYK image */
+} gs_jpx_cs;
+
+/* JPX encoder internal state */
+typedef struct stream_jpxe_state_s {
+    stream_state_common;	/* inherit base object from scommon.h */
+    JP2_Comp_Handle handle;	/* compression library context */
+
+    /* the following members must be set by the caller: */
+    unsigned long width, height;/* image dimensions */
+    gs_jpx_cs colorspace;	/* colorspace of the input image data */
+    unsigned int bpc;		/* sample depth of each channel in bits */
+
+    /* the remainder are handled internally: */
+    unsigned int components;	/* number of image channels */
+    unsigned long stride;	/* line length in bytes */
+    unsigned char *inbuf;	/* input image data buffer */
+    unsigned long insize;	/* allocated size of buffer */
+    unsigned long infill;	/* bytes written to the buffer */
+
+    unsigned char *outbuf;	/* output data buffer */
+    unsigned long outsize;	/* size of the data buffer in bytes */
+    unsigned long outfill;	/* bytes written to the buffer */
+    unsigned long offset;	/* bytes written from the buffer */
+} stream_jpxe_state;
+
+#define private_st_jpxe_state() \
+  gs_private_st_simple(st_jpxe_state, stream_jpxe_state, \
+    "jpx encode filter state")
+
+extern const stream_template s_jpxe_template;
+
 #endif /* sjpx_luratech_INCLUDED */
