@@ -11,9 +11,8 @@ if [ $# -lt 3 ] ; then
   echo "	       if 'test' argument is not present, then the status from"
   echo "	       'run' argument is used for success / fail."
   echo
-  echo "    Note: As pointed out by Dr. Igor Melichev, the binary search algorithm"
-  echo "          can produce incorrect results if the range of revisions contains"
-  echo "          more complex situations than: fail fail ... succeed suceed ..."
+  echo "    Note: The binary search algorithm can produce incorrect results if the range of"
+  echo "    revisions contains more complex situations than: fail fail ... succeed suceed ...""
   echo
   exit 1
 fi
