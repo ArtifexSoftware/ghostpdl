@@ -1169,7 +1169,7 @@ private void t1_hinter_fix_missed_flex(t1_hinter * this)
 	    ge = *member_prt(t1_glyph_space_coord, &this->pole[i], offset_gd);
 	    gc0 = gc - threshold; 
 	    gc1 = gc + threshold; 
-	    for (pj = i, j = i + 1, n = 0; ; pj = j, j++, n++, ge = gd, prev_dir = dir) {
+	    for (pj = i, j = i + 1, n = 0; ; pj = j, j++, n++) {
 		if (j == contour_end)
 		    j = contour_beg;
 		if (j == i)
@@ -1183,6 +1183,8 @@ private void t1_hinter_fix_missed_flex(t1_hinter * this)
 		dir = (gd > ge ? 1 : -1);
 		if (dir * prev_dir < 0)
 		    break;
+		ge = gd;
+		prev_dir = dir;
 	    }
 	    if (n < 6)
 		continue;
