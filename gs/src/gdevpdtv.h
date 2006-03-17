@@ -11,6 +11,8 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
+/* $Id$ */
+
 #ifndef gdevpdtv_INCLUDED
 #define gdevpdtv_INCLUDED
 

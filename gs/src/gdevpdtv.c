@@ -11,6 +11,8 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
+/* $Id$ */
+
 /*
  * Glyph attributes for every glyph <= GS_C_PDF_MAX_GOOD_GLYPH
  * packed 4 per byte least significant bits first.

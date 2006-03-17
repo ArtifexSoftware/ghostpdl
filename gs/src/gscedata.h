@@ -11,6 +11,8 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
+/* $Id$ */
+
 #ifndef gscedata_INCLUDED
 #  define gscedata_INCLUDED
 
