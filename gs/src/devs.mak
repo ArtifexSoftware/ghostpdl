@@ -1273,8 +1273,14 @@ $(GLOBJ)gdevjbig2.$(OBJ) : $(GLSRC)gdevjbig2.c $(PDEVH)\
 
 gdevjpx_=$(GLOBJ)gdevjpx.$(OBJ)
 
-$(DD)gdevjpx.dev : $(DEVS_MAK) $(gdevjpx_) $(GLD)page.dev
-	$(SETPDEV2) $(DD)gdevjpx $(gdevjpx_)
+$(DD)jpxrgb.dev : $(DEVS_MAK) $(gdevjpx_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)jpxrgb $(gdevjpx_)
+
+$(DD)jpxgray.dev : $(DEVS_MAK) $(gdevjpx_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)jpxgray $(gdevjpx_)
+
+$(DD)jpxcmyk.dev : $(DEVS_MAK) $(gdevjpx_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)jpxcmyk $(gdevjpx_)
 
 $(GLOBJ)gdevjpx.$(OBJ) : $(GLSRC)gdevjpx.c $(PDEVH)\
  $(stream_h) $(strimpl_h) $(sjpx_luratech_h)

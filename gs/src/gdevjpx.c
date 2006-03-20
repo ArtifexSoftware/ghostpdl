@@ -41,20 +41,96 @@ private dev_proc_print_page(jpx_print_page);
 
 private dev_proc_print_page(jpx_print_page);
 
+/* 24 bit RGB default */
+private const gx_device_procs jpxrgb_procs =
+prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+		       gx_default_rgb_map_rgb_color,
+		       gx_default_rgb_map_color_rgb);
+const gx_device_printer gs_jpxrgb_device = {
+    prn_device_std_body(gx_device_jpx, jpxrgb_procs, "jpx",
+	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+	X_DPI, Y_DPI,	/* resolution */
+	0, 0, 0, 0,	/* margins */
+	24,		/* bits per pixel */
+	jpx_print_page)
+};
+
+/* 8 bit Grayscale */
 private const gx_device_procs jpxgray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		       gx_default_gray_map_rgb_color,
 		       gx_default_gray_map_color_rgb);
-
-/* Grayscale */
-const gx_device_printer gs_gdevjpx_device = {
-    prn_device_body(gx_device_jpx, jpxgray_procs, "jpx",
+const gx_device_printer gs_jpxgray_device = {
+    prn_device_body(gx_device_jpx, jpxgray_procs, "jpxgray",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,	/* resolution */
 	0, 0, 0, 0,	/* margins */
 	1, 8, 255, 0, 256, 0, /* components, depth and min/max values */
 	jpx_print_page)
 };
+
+/* 32 bit CMKY */
+private dev_proc_map_color_rgb(jpx_cmyk_map_color_rgb);
+private dev_proc_map_cmyk_color(jpx_cmyk_map_cmyk_color);
+private const gx_device_procs jpxcmyk_procs = 
+{       gdev_prn_open,
+        gx_default_get_initial_matrix,
+        NULL,   /* sync_output */
+        gdev_prn_output_page,
+        gdev_prn_close,
+        NULL,
+        jpx_cmyk_map_color_rgb,
+        NULL,   /* fill_rectangle */
+        NULL,   /* tile_rectangle */
+        NULL,   /* copy_mono */
+        NULL,   /* copy_color */
+        NULL,   /* draw_line */
+        NULL,   /* get_bits */
+	gdev_prn_get_params,
+        gdev_prn_put_params,
+        jpx_cmyk_map_cmyk_color,
+        NULL,   /* get_xfont_procs */
+        NULL,   /* get_xfont_device */
+        NULL,   /* map_rgb_alpha_color */
+        gx_page_device_get_page_device  /* get_page_device */
+};
+const gx_device_printer gs_jpxcmyk_device = {
+    prn_device_std_body(gx_device_jpx, jpxcmyk_procs, "jpxcmyk",
+	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+	X_DPI, Y_DPI,	/* resolution */
+	0, 0, 0, 0,	/* margins */
+	32,		/* bits per pixel */
+	jpx_print_page)
+};
+
+/* private color conversion routines; 
+   we don't seem to have defaults for cmyk. */
+jpx_cmyk_map_color_rgb(gx_device * dev, gx_color_index color,
+                        gx_color_value prgb[3])
+{
+    int
+        not_k = color & 0xff,
+        r = not_k - ~(color >> 24),
+        g = not_k - ~((color >> 16) & 0xff),
+        b = not_k - ~((color >> 8) & 0xff);
+
+    prgb[0] = (r < 0 ? 0 : gx_color_value_from_byte(r));
+    prgb[1] = (g < 0 ? 0 : gx_color_value_from_byte(g));
+    prgb[2] = (b < 0 ? 0 : gx_color_value_from_byte(b));
+    return 0;
+}
+
+private gx_color_index
+jpx_cmyk_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
+{
+    gx_color_index color = ~(
+        gx_color_value_to_byte(cv[3]) +
+        ((uint)gx_color_value_to_byte(cv[2]) << 8) +
+        ((uint)gx_color_value_to_byte(cv[1]) << 16) +
+        ((uint)gx_color_value_to_byte(cv[0]) << 24));
+
+    return (color == gx_no_color_index ? color ^ 1 : color);
+}
 
 
 /* Send the page to the file. */
@@ -84,7 +160,15 @@ jpx_print_page(gx_device_printer * pdev, FILE * prn_stream)
 	(*state.template->set_defaults) ((stream_state *) & state);
     state.width = jdev->width;
     state.height = jdev->height;
-    state.colorspace = gs_jpx_cs_gray;
+    switch (jdev->color_info.depth) {
+	case 32: state.colorspace = gs_jpx_cs_cmyk; break;
+	case 24: state.colorspace = gs_jpx_cs_rgb; break;
+	case  8: state.colorspace = gs_jpx_cs_gray; break;
+	default:
+	    state.colorspace = gs_jpx_cs_gray; /* safest option */
+	    dlprintf1("unexpected color_info depth %d\n",
+					jdev->color_info.depth);
+    }
     state.bpc = 8; /* currently only 8 bits per component is supported */
 
     /* Set up the streams. */
