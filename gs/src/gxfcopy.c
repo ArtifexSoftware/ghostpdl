@@ -15,6 +15,7 @@
 /* Font copying for high-level output */
 #include "memory_.h"
 #include "gx.h"
+#include <stdlib.h>		/* for qsort */
 #include "gscencs.h"
 #include "gserrors.h"
 #include "gsline.h"		/* for BuildChar */
@@ -82,6 +83,7 @@ struct gs_copied_glyph_s {
 #define HAS_SBW1 4		/* has vmtx */
     byte used;			/* non-zero iff this entry is in use */
 				/* (if not, gdata.{data,size} = 0) */
+    int order_index;            /* Index for the ordered glyph set. */
 };
 /*
  * We use a special GC descriptor to avoid large GC overhead.
@@ -197,6 +199,7 @@ struct gs_copied_font_data_s {
     gs_subr_info_t global_subrs; /* (Type 2 and CIDFontType 0) */
     gs_font_cid0 *parent;	/* (Type 1 subfont) => parent CIDFontType 0 */
     gs_font_dir *dir;
+    bool ordered;
 };
 extern_st(st_gs_font_info);
 private 
@@ -483,6 +486,8 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
     gs_copied_glyph_t *pcg = 0;
     int code = copied_glyph_slot(cfdata, glyph, &pcg);
 
+    if (cfdata->ordered)
+	return_error(gs_error_unregistered); /* Must not happen. */
     switch (code) {
     case 0:			/* already defined */
 	if ((options & COPY_GLYPH_NO_OLD) ||
@@ -514,6 +519,7 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
 		pcg->gdata.data = str;
 		pcg->gdata.size = str_size;
 		pcg->used = HAS_DATA;
+		pcg->order_index = -1;
 		code = 0;
 		cfdata->num_glyphs++;
 	    }
@@ -539,6 +545,8 @@ copy_glyph_name(gs_font *font, gs_glyph glyph, gs_font *copied,
     gs_copied_glyph_name_t *pcgn;
     gs_const_string str;
 
+    if (cfdata->ordered)
+	return_error(gs_error_unregistered); /* Must not happen. */
     if (code < 0 ||
 	(code = font->procs.glyph_name(font, glyph, &str)) < 0
 	)
@@ -599,6 +607,8 @@ copied_char_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph)
     gs_copied_glyph_t *pslot;
     int code;
 
+    if (cfdata->ordered)
+	return_error(gs_error_unregistered); /* Must not happen. */
     if (Encoding == 0)
 	return_error(gs_error_invalidaccess);
     if (chr >= 256 || glyph >= GS_MIN_CID_GLYPH)
@@ -648,6 +658,17 @@ copied_enumerate_glyph(gs_font *font, int *pindex,
 {
     gs_copied_font_data_t *const cfdata = cf_data(font);
 
+    if (cfdata->ordered) {
+	if (*pindex >= cfdata->num_glyphs)
+	    *pindex = 0;
+	else {
+	    int i = cfdata->glyphs[*pindex].order_index;
+
+	    *pglyph = cfdata->names[i].glyph;
+	    ++(*pindex);
+	}
+	return 0;
+    }
     for (; *pindex < cfdata->glyphs_size; ++*pindex)
 	if (cfdata->glyphs[*pindex].used) {
 	    *pglyph =
@@ -2010,6 +2031,7 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
     cfdata->glyphs = glyphs;
     cfdata->glyphs_size = glyphs_size;
     cfdata->num_glyphs = 0;
+    cfdata->ordered = false;
     if (names)
 	memset(names, 0, glyphs_size * sizeof(*names));
     cfdata->names = names;
@@ -2329,4 +2351,55 @@ copied_drop_extension_glyphs(gs_font *copied)
 		cfdata->glyphs[k].used = false;
     }
     return 0;
+}
+
+compare_glyph_names(const void *pg1, const void *pg2)
+{
+    const gs_copied_glyph_name_t * gn1 = *(const gs_copied_glyph_name_t **)pg1;
+    const gs_copied_glyph_name_t * gn2 = *(const gs_copied_glyph_name_t **)pg2;
+
+    return bytes_compare(gn1->str.data, gn1->str.size, gn2->str.data, gn2->str.size);
+}
+
+
+/* Order font data to avoid a serialization indeterminism. */
+private int
+order_font_data(gs_copied_font_data_t *cfdata, gs_memory_t *memory)
+{
+    int i, j = 0;
+
+    gs_copied_glyph_name_t **a = (gs_copied_glyph_name_t **)gs_alloc_byte_array(memory, cfdata->num_glyphs, 
+	sizeof(gs_copied_glyph_name_t *), "order_font_data");
+    if (a == NULL)
+	return_error(gs_error_VMerror);
+    j = 0;
+    for (i = 0; i < cfdata->glyphs_size; i++) {
+	if (cfdata->glyphs[i].used) {
+	    if (j >= cfdata->num_glyphs)
+		return_error(gs_error_unregistered); /* Must not happen */
+	    a[j++] = &cfdata->names[i];
+	}
+    }
+    qsort(a, cfdata->num_glyphs, sizeof(int), compare_glyph_names);
+    for (; j >= 0; j--)
+	cfdata->glyphs[j].order_index = a[j] - cfdata->names;    
+    gs_free_object(memory, a, "order_font_data");
+    return 0;
+}
+
+/* Order font to avoid a serialization indeterminism. */
+int
+copied_order_font(gs_font *font)
+{
+
+    if (font->procs.enumerate_glyph != copied_enumerate_glyph)
+	return_error(gs_error_unregistered); /* Must not happen */
+    if (font->FontType != ft_encrypted && font->FontType != ft_encrypted2) {
+	 /* Don't need to order, because it is ordered by CIDs or glyph indices. */
+	return 0;
+    }
+    {	gs_copied_font_data_t * cfdata = cf_data(font);
+	cfdata->ordered = true;
+	return order_font_data(cfdata, font->memory);
+    }
 }

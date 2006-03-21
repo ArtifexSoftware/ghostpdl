@@ -443,6 +443,9 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 
     if (pbfont->written)
 	return 0;		/* already written */
+    code = copied_order_font((gs_font *)out_font);
+    if (code < 0)
+	return code;
     code = pdf_begin_data_stream(pdev, &writer, DATA_STREAM_BINARY | 
 			    /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
 			       See comment in pdf_begin_encrypt. */
