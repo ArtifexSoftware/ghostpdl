@@ -1305,7 +1305,7 @@ wts_screen_from_enum(const gs_wts_screen_enum_t *wse)
     byte *key = NULL;
     int key_size = 0; /* A stub. Was uninitialized when wse->t != WTS_SCREEN_J */
     int cell_off;
-    int cell_len;
+    int cell_len = -1;
     byte *cell_result;
 
     if (wse->t == WTS_SCREEN_J) {
@@ -1322,9 +1322,10 @@ wts_screen_from_enum(const gs_wts_screen_enum_t *wse)
 	memcpy(key + cell_off, wse->cell, wse->size * sizeof(bits32));
     }
 
-    cell_len = gp_cache_query(GP_CACHE_TYPE_WTS_CELL, key, key_size,
-			      (void **)&cell_result,
-			      wts_cache_alloc_callback, NULL);
+    if (key != NULL)
+	cell_len = gp_cache_query(GP_CACHE_TYPE_WTS_CELL, key, key_size,
+				  (void **)&cell_result,
+				  wts_cache_alloc_callback, NULL);
     if (cell_len >= 0) {
 	memcpy(wse->cell, cell_result, cell_len);
 	free(cell_result);
