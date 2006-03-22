@@ -1329,7 +1329,7 @@ wts_screen_from_enum(const gs_wts_screen_enum_t *wse)
 	memcpy(wse->cell, cell_result, cell_len);
 	free(cell_result);
     } else {
-	wts_sort_blue(wse);
+	wts_sort_blue((gs_wts_screen_enum_t *)wse);
 	cell_len = wse->size * sizeof(bits32);
 	gp_cache_insert(GP_CACHE_TYPE_WTS_CELL, key, key_size,
 			(void *)wse->cell, cell_len);
@@ -1392,7 +1392,7 @@ wts_size(const wts_screen_t *ws)
 wts_screen_t *
 gs_wts_from_buf(const byte *buf)
 {
-    wts_screen_t *ws = (const wts_screen_t *)buf;
+    wts_screen_t *ws = (wts_screen_t *)buf;
     wts_screen_t *result;
     int size = wts_size(ws);
     int cell_size; /* size of cell in bytes */
