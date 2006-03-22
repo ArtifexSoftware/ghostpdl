@@ -338,6 +338,7 @@ gx_ht_copy_ht_order(gx_ht_order * pdest, gx_ht_order * psrc, gs_memory_t * mem)
         memcpy(pdest->bit_data, psrc->bit_data,
 		psrc->num_bits * psrc->procs->bit_data_elt_size);
     pdest->wse = psrc->wse;
+    pdest->wts = psrc->wts;
     pdest->transfer = psrc->transfer;
     rc_increment(pdest->transfer);
     return 0;
@@ -1093,7 +1094,7 @@ gx_imager_dev_ht_install(
                 code = gs_error_VMerror;
             else
                 porder->wts = wts;
-        } else {
+        } else if (porder->wts == 0) {
             uint   w = porder->width, h = porder->full_height;
             int    dw = igcd(lcm_width, w), dh = igcd(lcm_height, h);
 

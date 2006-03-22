@@ -15,15 +15,22 @@
 #include "stdpre.h"
 #include <stdlib.h> /* for malloc */
 #include "gx.h"
+#include "gp.h" /* for persistent cache */
 #include "gxstate.h"
 #include "gsht.h"
 #include "math_.h"
+#include "string_.h"
 #include "gserrors.h"
 #include "gxfrac.h"
 #include "gxwts.h"
 #include "gswts.h"
 
-#define VERBOSE
+#define noDUMP_WTS
+#ifdef DUMP_WTS
+#include "fcntl_.h"
+#endif
+
+#define noVERBOSE
 
 #ifdef UNIT_TEST
 /**
@@ -49,6 +56,7 @@
 #define dlprintf6 printf
 #undef dlprintf7
 #define dlprintf7 printf
+
 #endif
 
 /* A datatype used for representing the product of two 32 bit integers.
@@ -106,6 +114,9 @@ typedef struct {
     int k;
     int l;
 } wts_vec_t;
+
+private int
+gs_wts_to_buf(const wts_screen_t *ws, byte **pbuf);
 
 private void
 wts_vec_set(wts_vec_t *wv, int u, int v, int k, int l)
@@ -739,6 +750,19 @@ wts_pick_cell_size_j(double sratiox, double sratioy, double sangledeg,
     return &wcpj->base;
 }
 
+typedef struct {
+    double sratiox;
+    double sratioy;
+    double sangledeg;
+    double memw;
+} wts_cell_size_key;
+
+private void *
+wts_cache_alloc_callback(void *data, int bytes)
+{
+    return malloc(bytes);
+}
+
 /**
  * wts_pick_cell_size: Choose cell size for WTS screen.
  * @ph: The halftone parameters.
@@ -757,16 +781,40 @@ wts_pick_cell_size(gs_screen_halftone *ph, const gs_matrix *pmat)
     double sratioy = 72.0 * fabs(pmat->yy) / ph->frequency;
     double octangle;
     double memw = 8.0;
+    wts_cell_size_key key;
+    int len;
 
     octangle = sangledeg;
     while (octangle >= 45.0) octangle -= 45.0;
     while (octangle < -45.0) octangle += 45.0;
+
+    /* try persistent cache */
+    key.sratiox = sratiox;
+    key.sratioy = sratioy;
+    key.sangledeg = sangledeg;
+    key.memw = memw;
+    len = gp_cache_query(GP_CACHE_TYPE_WTS_SIZE, (byte *)&key, sizeof(key),
+			 (void **)&result, wts_cache_alloc_callback, NULL);
+    if (len >= 0)
+	return result;
+
     if (fabs(octangle) < 1e-4)
 	result = wts_pick_cell_size_h(sratiox, sratioy, sangledeg, memw);
     else
 	result = wts_pick_cell_size_j(sratiox, sratioy, sangledeg, memw);
 
     if (result != NULL) {
+	int resultsize = 0;
+
+	/* insert computed cell size into cache */
+	if (result->t == WTS_SCREEN_H)
+	    resultsize = sizeof(gx_wts_cell_params_h_t);
+	else if (result->t == WTS_SCREEN_J)
+	    resultsize = sizeof(gx_wts_cell_params_j_t);
+	if (resultsize)
+	    gp_cache_insert(GP_CACHE_TYPE_WTS_SIZE, (byte *)&key, sizeof(key),
+			    (void *)result, resultsize);
+
 	ph->actual_frequency = ph->frequency;
 	ph->actual_angle = ph->angle;
     }
@@ -1071,7 +1119,7 @@ wts_blue_bump(gs_wts_screen_enum_t *wse)
 /**
  * wts_sort_blue: Sort cell using BlueDot.
  **/
-int
+static int
 wts_sort_blue(gs_wts_screen_enum_t *wse)
 {
     bits32 *cell = wse->cell;
@@ -1244,15 +1292,73 @@ wts_screen_from_enum_h(const gs_wts_screen_enum_t *wse)
     return &wsh->base;
 }
 
+typedef struct {
+    wts_screen_type t;
+    int width;
+    int height;
+} wts_key_j;
+
 wts_screen_t *
 wts_screen_from_enum(const gs_wts_screen_enum_t *wse)
 {
+    wts_screen_t *result = NULL;
+    byte *key = NULL;
+    int key_size;
+    int cell_off;
+    int cell_len;
+    byte *cell_result;
+
+    if (wse->t == WTS_SCREEN_J) {
+	wts_key_j k;
+	k.t = wse->t;
+	k.width = wse->width;
+	k.height = wse->height;
+	cell_off = sizeof(k);
+
+	key_size = cell_off + wse->size * sizeof(bits32);
+	key = (byte *)malloc(key_size);
+	/* todo: more params */
+	memcpy(key, &k, cell_off);
+	memcpy(key + cell_off, wse->cell, wse->size * sizeof(bits32));
+    }
+
+    cell_len = gp_cache_query(GP_CACHE_TYPE_WTS_CELL, key, key_size,
+			      (void **)&cell_result,
+			      wts_cache_alloc_callback, NULL);
+    if (cell_len >= 0) {
+	memcpy(wse->cell, cell_result, cell_len);
+	free(cell_result);
+    } else {
+	wts_sort_blue(wse);
+	cell_len = wse->size * sizeof(bits32);
+	gp_cache_insert(GP_CACHE_TYPE_WTS_CELL, key, key_size,
+			(void *)wse->cell, cell_len);
+    }
+    free(key);
+
     if (wse->t == WTS_SCREEN_J)
-	return wts_screen_from_enum_j(wse);
+	result = wts_screen_from_enum_j(wse);
     else if (wse->t == WTS_SCREEN_H)
-	return wts_screen_from_enum_h(wse);
-    else
-	return NULL;
+	result = wts_screen_from_enum_h(wse);
+
+#ifdef DUMP_WTS
+    {
+	static int dump_idx = 0;
+	char dump_fn[128];
+	int dump_fd;
+	byte *buf;
+	int size;
+
+	size = gs_wts_to_buf(result, &buf);
+	sprintf(dump_fn, "wts_dump_%d", dump_idx++);
+	dump_fd = open(dump_fn, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+	write(dump_fd, buf, size);
+	close(dump_fd);
+	free(buf);
+    }
+#endif
+
+    return result;
 }
 
 void
@@ -1264,7 +1370,66 @@ gs_wts_free_enum(gs_wts_screen_enum_t *wse)
 void
 gs_wts_free_screen(wts_screen_t * wts)
 {
+    /* todo: free cell */
     free(wts);
+}
+
+int
+wts_size(const wts_screen_t *ws)
+{
+    int size;
+
+    if (ws->type == WTS_SCREEN_RAT) {
+	size = sizeof(wts_screen_t);
+    } else if (ws->type == WTS_SCREEN_J) {
+	size = sizeof(wts_screen_j_t);
+    } else if (ws->type == WTS_SCREEN_H) {
+	size = sizeof(wts_screen_h_t);
+    }
+    return size;
+}
+
+wts_screen_t *
+gs_wts_from_buf(const byte *buf)
+{
+    wts_screen_t *ws = (const wts_screen_t *)buf;
+    wts_screen_t *result;
+    int size = wts_size(ws);
+    int cell_size; /* size of cell in bytes */
+
+    result = (wts_screen_t *)malloc(size);
+    if (result == NULL)
+	return NULL;
+    memcpy(result, ws, size);
+    cell_size = ws->cell_width * ws->cell_height * sizeof(wts_screen_sample_t);
+
+    result->samples = (wts_screen_sample_t *)malloc(cell_size);
+    if (result->samples == NULL) {
+	free(result);
+	return NULL;
+    }
+    memcpy(result->samples, buf + size, cell_size);
+
+    return result;
+}
+
+/* Return value is size of buf in bytes */
+private int
+gs_wts_to_buf(const wts_screen_t *ws, byte **pbuf)
+{
+    int size = wts_size(ws);
+    int cell_size = ws->cell_width * ws->cell_height * sizeof(wts_screen_sample_t);
+    byte *buf;
+
+    buf = (byte *)malloc(size + cell_size);
+    if (buf == NULL)
+	return -1;
+    memcpy(buf, ws, size);
+    ((wts_screen_t *)buf)->samples = NULL;
+    memcpy(buf + size, ws->samples, cell_size);
+    *pbuf = buf;
+
+    return size + cell_size;
 }
 
 #ifdef UNIT_TEST
@@ -1273,10 +1438,11 @@ dump_thresh(const wts_screen_t *ws, int width, int height)
 {
     int x, y;
     wts_screen_sample_t *s0;
+    int cx, cy
     int dummy;
 
-    wts_get_samples(ws, 0, 0, &s0, &dummy);
-
+    wts_get_samples(ws, 0, 0, &cx, &cy, &dummy);
+    s0 = ws->samples + cy * ws->cell_width + cx;
 
     printf("P5\n%d %d\n255\n", width, height);
     for (y = 0; y < height; y++) {
@@ -1284,7 +1450,8 @@ dump_thresh(const wts_screen_t *ws, int width, int height)
 	    wts_screen_sample_t *samples;
 	    int n_samples, i;
 
-	    wts_get_samples(ws, x, y, &samples, &n_samples);
+	    wts_get_samples(ws, x, y, &cx, &cy, &n_samples);
+	    samples = ws->samples + cy * ws->cell_width + cx;
 #if 1
 	    for (i = 0; x + i < width && i < n_samples; i++)
 		fputc(samples[i] >> 7, stdout);

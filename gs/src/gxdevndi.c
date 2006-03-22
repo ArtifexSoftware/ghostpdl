@@ -118,6 +118,7 @@ gx_render_device_DeviceN_wts(frac * pcolor,
 	cv[i] = 0;
     }
     pdevc->colors.wts.num_components = num_comp;
+    pdevc->phase = *ht_phase;
     return 0;
 }
 

@@ -279,7 +279,7 @@ private int
 gp_cache_read_entry(FILE *file, gp_cache_entry *item)
 {
     char line[256];
-    char fn[32];
+    char fn[36];
     int i;
     
     if (!fgets(line, 256, file)) return -1;
@@ -297,7 +297,7 @@ gp_cache_read_entry(FILE *file, gp_cache_entry *item)
     /* remember the filename */    
     if (item->filename) free(item->filename);
     item->filename = malloc(strlen(fn) + 1);
-    memcpy(item->filename, fn, strlen(fn));
+    strcpy(item->filename, fn);
     /* null other fields */
     item->key = NULL;
     item->keylen = 0;
@@ -407,7 +407,7 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
     FILE *file, *in, *out;
     gp_cache_entry item, item2;
     int code, hit = 0;
-    
+
     prefix = gp_cache_prefix();
     infn = gp_cache_indexfilename(prefix);
     {

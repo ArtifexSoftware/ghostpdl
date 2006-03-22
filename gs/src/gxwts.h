@@ -70,6 +70,6 @@ typedef struct {
 
 int
 wts_get_samples(const wts_screen_t *ws, int x, int y,
-		wts_screen_sample_t **samples, int *p_nsamples);
+		int *pcellx, int *pcelly, int *p_nsamples);
 
 #endif

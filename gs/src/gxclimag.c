@@ -914,7 +914,7 @@ cmd_put_halftone(gx_device_clist_writer * cldev, const gx_device_halftone * pdht
     dp += 2;
     enc_u_putw(ht_size, dp);
 
-    /* see if a spearate allocated buffer is required */
+    /* see if a separate allocated buffer is required */
     if (ht_size > cbuf_ht_seg_max_size) {
         pht_buff = gs_alloc_bytes( cldev->bandlist_memory,
                                    ht_size,

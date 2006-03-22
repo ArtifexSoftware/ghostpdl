@@ -542,9 +542,6 @@ gs_screen_currentpoint(gs_screen_enum * penum, gs_point * ppt)
     if (penum->order.wse) {
 	int code;
 	code = gs_wts_screen_enum_currentpoint(penum->order.wse, ppt);
-	if (code > 0) {
-	    wts_sort_blue(penum->order.wse);
-	}
 	return code;
     }
 

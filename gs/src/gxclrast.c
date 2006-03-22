@@ -1766,7 +1766,7 @@ read_ht_segment(
             pbuff = pht_buff->pbuff;
     }
 
-    /* if everything has be read, covert back to a halftone */
+    /* if everything has been read, convert back to a halftone */
     if (pbuff != 0) {
         code = gx_ht_read_and_install(pis, dev, pbuff, ht_size, mem);
 
