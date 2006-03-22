@@ -319,9 +319,6 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	    goto fail;
 	/* psdf_DCT_filter already did the psdf_encode_binary. */
 	return 0;
-    } else if (template == &s_LZWE_template) {
-	if (template->set_defaults)
-	    (*template->set_defaults) (st);
     }
     code = psdf_encode_binary(pbw, template, st);
     if (code >= 0)
