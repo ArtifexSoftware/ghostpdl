@@ -18,6 +18,9 @@
 %   uses Ghostscript's shellarguments facility to accept the font name
 %     on the command line.
 
+% Altered my master@iaas.msu.ru to work with fonts of more than 256 glyphs
+% and avoid FSType output
+
 /onechar 1 string def
 
 % c toupper - c
@@ -25,6 +28,37 @@
 	dup dup 8#141 ge exch 8#172 le and { 
 		8#40 sub
 	} if
+} bind def
+
+% print unencoded character metric data lines for glyphs in `v' array
+% and reset `v' -
+/printv {
+	% define a new font with v as its encoding vector
+	currentfont maxlength dict /f exch def
+	currentfont {
+		exch dup dup /FID ne exch /Encoding ne and { 
+			exch f 3 1 roll put
+		} { 
+			pop pop 
+		} ifelse
+	} forall
+	f /Encoding v put
+	f /FontName /temp put
+	% make this new font the current font
+	/temp f definefont setfont
+	% print a entry for each character not in old vector
+	/e currentfont /Encoding get def
+	0 1 255 {
+		dup e exch get
+		dup dup /.notdef ne exch s exch known not and { 
+			exch -1 printmetric
+		} { 
+			pop pop
+		} ifelse
+	} for
+	0 1 255 {
+		v exch /.notdef put
+	} for
 } bind def
 
 % printcharmetrics -
@@ -60,32 +94,12 @@
 			v i 3 -1 roll put
 			/i i 1 add def
 		} {
-			pop
+			printv
+			v 0 3 -1 roll put
+			/i 1 def
 		} ifelse
 	} forall
-	% define a new font with v as its encoding vector
-	currentfont maxlength dict /f exch def
-	currentfont {
-		exch dup dup /FID ne exch /Encoding ne and { 
-			exch f 3 1 roll put
-		} { 
-			pop pop 
-		} ifelse
-	} forall
-	f /Encoding v put
-	f /FontName /temp put
-	% make this new font the current font
-	/temp f definefont setfont
-	% print a entry for each character not in old vector
-	/e currentfont /Encoding get def
-	0 1 255 {
-		dup e exch get
-		dup dup /.notdef ne exch s exch known not and { 
-			exch -1 printmetric
-		} { 
-			pop pop
-		} ifelse
-	} for
+	printv
 	(EndCharMetrics) =
 } bind def
 
@@ -119,8 +133,12 @@
 
 	currentfont /FontInfo get {
 		exch
-		=string cvs dup dup 0 get 0 exch toupper put print
-		( ) print =
+		dup /FSType ne {
+			=string cvs dup dup 0 get 0 exch toupper put print
+			( ) print =
+		} {
+			pop pop
+		} ifelse
 	} forall
 
 		% Print the FontBBox
