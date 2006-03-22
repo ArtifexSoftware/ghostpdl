@@ -253,6 +253,7 @@ gdevdljm_h=$(GLSRC)gdevdljm.h $(gdevpcl_h)
 
 GDEVLDFJB2CC=$(CC_) $(I_)$(GLI_) $(II)$(LDF_JB2I_)$(_I) $(JB2CF_) $(GLF_)
 GDEVLWFJPXCC=$(CC_) $(I_)$(GLI_) $(II)$(LWF_JPXI_)$(_I) $(JPXCF_) $(GLF_)
+GDEVLWFJB2JPXCC=$(CC_) $(I_)$(GLI_)  $(II)$(LDF_JB2I_)$(_I) $(II)$(LWF_JPXI_)$(_I) $(JB2CF_) $(JPXCF_) $(GLF_)
 
 ###### ----------------------- Device support ----------------------- ######
 
@@ -732,14 +733,16 @@ $(GLOBJ)gdevpsdi.$(OBJ) : $(GLSRC)gdevpsdi.c $(GXERR)\
  $(gscspace_h)\
  $(scfx_h) $(sdct_h) $(sjpeg_h) $(slzwx_h) $(srlx_h) $(spngpx_h)\
  $(strimpl_h) $(szlibx_h)\
- $(gdevpsdf_h) $(gdevpsds_h) $(gxdevmem_h) $(gxcspace_h) $(gxparamx_h)
-	$(GLJCC) $(GLO_)gdevpsdi.$(OBJ) $(C_) $(GLSRC)gdevpsdi.c
+ $(gdevpsdf_h) $(gdevpsds_h) $(gxdevmem_h) $(gxcspace_h) $(gxparamx_h)\
+ $(sjbig2_luratech_h) $(sjpx_luratech_h)
+	$(GDEVLWFJB2JPXCC) $(GLO_)gdevpsdi.$(OBJ) $(C_) $(GLSRC)gdevpsdi.c
 
 $(GLOBJ)gdevpsdp.$(OBJ) : $(GLSRC)gdevpsdp.c $(GDEVH)\
  $(string__h) $(jpeglib__h)\
  $(scfx_h) $(sdct_h) $(slzwx_h) $(srlx_h) $(strimpl_h) $(szlibx_h)\
- $(gsparamx_h) $(gsutil_h) $(gdevpsdf_h) $(spprint_h)
-	$(GLJCC) $(GLO_)gdevpsdp.$(OBJ) $(C_) $(GLSRC)gdevpsdp.c
+ $(gsparamx_h) $(gsutil_h) $(gdevpsdf_h) $(spprint_h)\
+ $(sjbig2_luratech_h) $(sjpx_luratech_h)
+	$(GDEVLWFJB2JPXCC) $(GLO_)gdevpsdp.$(OBJ) $(C_) $(GLSRC)gdevpsdp.c
 
 $(GLOBJ)gdevpsds.$(OBJ) : $(GLSRC)gdevpsds.c $(GX) $(memory__h)\
  $(gserrors_h) $(gxdcconv_h) $(gdevpsds_h) $(gxbitmap_h)\

@@ -32,6 +32,12 @@
 #include "spngpx.h"
 #include "srlx.h"
 #include "szlibx.h"
+#ifdef USE_LDF_JB2
+#include "sjbig2_luratech.h"
+#endif
+#ifdef USE_LWF_JP2
+#include "sjpx_luratech.h"
+#endif
 
 /* Define parameter-setting procedures. */
 extern stream_state_proc_put_params(s_CF_put_params, stream_CF_state);
@@ -236,7 +242,8 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	 */
         if (lossless) {
             orig_template = template = lossless_template;
-        } else {
+        } else if (template == NULL || template == &s_zlibE_template || 
+		   template == &s_LZWE_template) {
             orig_template = template = &s_DCTE_template;
         }
 	dict = pdip->ACSDict;
@@ -319,6 +326,40 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	    goto fail;
 	/* psdf_DCT_filter already did the psdf_encode_binary. */
 	return 0;
+    } else {
+#	ifdef USE_LDF_JB2
+	    if (template == &s_jbig2encode_template) {
+		stream_jbig2encode_state *state = (stream_jbig2encode_state *)st;
+
+		/* Nothing to do ? */
+		st += 0; /* Debug purpose only : set a breakpoint here. */
+	    }
+#	endif
+#	ifdef USE_LWF_JP2
+	    if (template == &s_jpxe_template) {
+		stream_jpxe_state *state = (stream_jpxe_state *)st;
+		int ncomps = pim->ColorSpace->type->num_components(pim->ColorSpace);
+
+		/* HACK : We choose a JPX color space from the number of components :
+		   CIEBasedA goes as gs_jpx_cs_gray,
+		   CIEBasedABC and DeviceN(3) go as gs_jpx_cs_rgb,
+		   CIEBasedABCD and DeviceN(4) go as gs_jpx_cs_cmyk.
+		*/
+		switch (ncomps) {
+		    case 1 : state->colorspace = gs_jpx_cs_gray; break;
+		    case 3 : state->colorspace = gs_jpx_cs_rgb; break;
+		    case 4 : state->colorspace = gs_jpx_cs_cmyk; break;
+		    default:
+			return_error(gs_error_unregistered); /* Must not happen. */
+		}
+		state->width = pim->Width;
+		state->height = pim->Height;
+		state->bpc = pim->BitsPerComponent;
+		state->components = ncomps;
+		/* Other encode parameters are not implemented yet. 
+		   Therefore ACSDict is being ignored. */
+	    }
+#	endif
     }
     code = psdf_encode_binary(pbw, template, st);
     if (code >= 0)

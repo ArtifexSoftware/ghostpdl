@@ -303,14 +303,14 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 		 */
 		if (cl < (float)1.15)
 		    cl = (float)1.1;
-  		else if (cl < (float)1.25)
-  		    cl = (float)1.2;
- 		else if (cl < (float)1.35)
- 		    cl = (float)1.3;
- 		else if (cl < (float)1.45)
-  		    cl = (float)1.4;
-  		else
- 		    cl = (float)1.5;
+		else if (cl < (float)1.25)
+		    cl = (float)1.2;
+		else if (cl < (float)1.35)
+		    cl = (float)1.3;
+		else if (cl < (float)1.45)
+		    cl = (float)1.4;
+		else
+		    cl = (float)1.5;
 	    case 1:
 		break;
 	}
@@ -458,6 +458,21 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	    eprintf("Replacing the deprecated device parameter value UseDeviceDependentColor with Gray.\n");
 	    pdev->params.ColorConversionStrategy = ccs_Gray;
 	}
+    }
+    if (cl < 1.5 && pdev->params.ColorImage.Filter != NULL &&
+	    !strcmp(pdev->params.ColorImage.Filter, "JPXEncode")) {
+	eprintf("JPXEncode requires CompatibilityLevel >= 1.5 .\n");
+	ecode = gs_note_error(gs_error_rangecheck);
+    }
+    if (cl < 1.5 && pdev->params.GrayImage.Filter != NULL &&
+	    !strcmp(pdev->params.GrayImage.Filter, "JPXEncode")) {
+	eprintf("JPXEncode requires CompatibilityLevel >= 1.5 .\n");
+	ecode = gs_note_error(gs_error_rangecheck);
+    }
+    if (cl < 1.4  && pdev->params.MonoImage.Filter != NULL &&
+	    !strcmp(pdev->params.MonoImage.Filter, "JBIG2Encode")) {
+	eprintf("JBIG2Encode requires CompatibilityLevel >= 1.4 .\n");
+	ecode = gs_note_error(gs_error_rangecheck);
     }
     if (pdev->HaveTrueTypes && pdev->version == psdf_version_level2) {
 	pdev->version = psdf_version_level2_with_TT ;

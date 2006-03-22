@@ -28,6 +28,14 @@
 #include "spprint.h"
 #include "srlx.h"
 #include "szlibx.h"
+#ifdef USE_LDF_JB2
+#include "sjbig2_luratech.h"
+#endif
+#ifdef USE_LWF_JP2
+#include "sjpx_luratech.h"
+#endif
+
+
 
 /* Define a (bogus) GC descriptor for gs_param_string. */
 /* The only ones we use are GC-able and not persistent. */
@@ -91,6 +99,9 @@ private const psdf_image_filter_name Poly_filters[] = {
     {"DCTEncode", &s_DCTE_template},
     {"FlateEncode", &s_zlibE_template, psdf_version_ll3},
     {"LZWEncode", &s_LZWE_template},
+#ifdef USE_LWF_JP2
+    {"JPXEncode", &s_jpxe_template},
+#endif
     {0, 0}
 };
 
@@ -99,6 +110,9 @@ private const psdf_image_filter_name Mono_filters[] = {
     {"FlateEncode", &s_zlibE_template, psdf_version_ll3},
     {"LZWEncode", &s_LZWE_template},
     {"RunLengthEncode", &s_RLE_template},
+#ifdef USE_LDF_JB2
+    {"JBIG2Encode", &s_jbig2encode_template},
+#endif
     {0, 0}
 };
 
