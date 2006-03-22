@@ -2353,6 +2353,7 @@ copied_drop_extension_glyphs(gs_font *copied)
     return 0;
 }
 
+private int
 compare_glyph_names(const void *pg1, const void *pg2)
 {
     const gs_copied_glyph_name_t * gn1 = *(const gs_copied_glyph_name_t **)pg1;

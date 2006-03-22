@@ -281,7 +281,7 @@ begin_planes(gs_image_enum *penum)
     next_plane(penum);
 }
 
-int
+private int
 gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
 	    const gs_data_image_t * pim, gx_device * dev)
 {

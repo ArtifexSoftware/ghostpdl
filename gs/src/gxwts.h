@@ -68,8 +68,7 @@ typedef struct {
     int y1;
 } wts_screen_h_t;
 
-int
-wts_get_samples(const wts_screen_t *ws, int x, int y,
+int wts_get_samples(const wts_screen_t *ws, int x, int y,
 		wts_screen_sample_t **samples, int *p_nsamples);
 
 #endif

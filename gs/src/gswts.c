@@ -1051,7 +1051,7 @@ wts_sort_cell(gs_wts_screen_enum_t *wse)
  * Return value: newly allocated bump.
  **/
 private bits32 *
-wts_blue_bump(gs_wts_screen_enum_t *wse)
+wts_blue_bump(const gs_wts_screen_enum_t *wse)
 {
     const gx_wts_cell_params_t *wcp;
     int width = wse->width;
@@ -1120,7 +1120,7 @@ wts_blue_bump(gs_wts_screen_enum_t *wse)
  * wts_sort_blue: Sort cell using BlueDot.
  **/
 static int
-wts_sort_blue(gs_wts_screen_enum_t *wse)
+wts_sort_blue(const gs_wts_screen_enum_t *wse)
 {
     bits32 *cell = wse->cell;
     int width = wse->width;
@@ -1303,7 +1303,7 @@ wts_screen_from_enum(const gs_wts_screen_enum_t *wse)
 {
     wts_screen_t *result = NULL;
     byte *key = NULL;
-    int key_size;
+    int key_size = 0; /* A stub. Was uninitialized when wse->t != WTS_SCREEN_J */
     int cell_off;
     int cell_len;
     byte *cell_result;
@@ -1329,7 +1329,7 @@ wts_screen_from_enum(const gs_wts_screen_enum_t *wse)
 	memcpy(wse->cell, cell_result, cell_len);
 	free(cell_result);
     } else {
-	wts_sort_blue((gs_wts_screen_enum_t *)wse);
+	wts_sort_blue(wse);
 	cell_len = wse->size * sizeof(bits32);
 	gp_cache_insert(GP_CACHE_TYPE_WTS_CELL, key, key_size,
 			(void *)wse->cell, cell_len);
@@ -1377,7 +1377,7 @@ gs_wts_free_screen(wts_screen_t * wts)
 int
 wts_size(const wts_screen_t *ws)
 {
-    int size;
+    int size = 0; /* A stub. Was uninitialized when none of 3 cases below. */
 
     if (ws->type == WTS_SCREEN_RAT) {
 	size = sizeof(wts_screen_t);
@@ -1392,7 +1392,7 @@ wts_size(const wts_screen_t *ws)
 wts_screen_t *
 gs_wts_from_buf(const byte *buf)
 {
-    wts_screen_t *ws = (wts_screen_t *)buf;
+    const wts_screen_t *ws = (const wts_screen_t *)buf;
     wts_screen_t *result;
     int size = wts_size(ws);
     int cell_size; /* size of cell in bytes */
@@ -1413,6 +1413,7 @@ gs_wts_from_buf(const byte *buf)
     return result;
 }
 
+#if 0 /* Never called. */
 /* Return value is size of buf in bytes */
 private int
 gs_wts_to_buf(const wts_screen_t *ws, byte **pbuf)
@@ -1431,6 +1432,7 @@ gs_wts_to_buf(const wts_screen_t *ws, byte **pbuf)
 
     return size + cell_size;
 }
+#endif
 
 #ifdef UNIT_TEST
 private int
