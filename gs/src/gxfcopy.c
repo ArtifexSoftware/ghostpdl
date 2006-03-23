@@ -1463,15 +1463,25 @@ same_type42_hinting(gs_font_type42 *font0, gs_font_type42 *font1)
     for (i = 0; i < 3; i++) {
 	if (len[0][i] != 0) {
 	    const byte *data0, *data1;
+	    ulong length = len[0][i], size0, size1, size;
+	    ulong pos0 = pos[0][i], pos1 = pos[1][i];
 
-	    code = access_type42_data(font0, pos[0][i], len[0][i], &data0);
-	    if (code < 0)
-		return code;
-	    code = access_type42_data(font1, pos[1][i], len[1][i], &data1);
-	    if (code < 0)
-		return code;
-	    if (memcmp(data0, data1, len[1][i]))
-		return 0;
+	    while (length > 0) {
+		code = access_type42_data(font0, pos0, length, &data0);
+		if (code < 0)
+		    return code;
+		size0 = (code == 0 ? length : code);
+		code = access_type42_data(font1, pos1, length, &data1);
+		if (code < 0)
+		    return code;
+		size1 = (code == 0 ? length : code);
+		size = min(size0, size1);
+		if (memcmp(data0, data1, size))
+		    return 0;
+		pos0 += size;
+		pos1 += size;
+		length -= size;
+	    }
 	}
     }
     return 1;

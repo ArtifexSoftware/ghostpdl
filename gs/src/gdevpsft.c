@@ -131,26 +131,22 @@ put_table(byte tab[16], const char *tname, ulong checksum, ulong offset,
 private int
 write_range(stream *s, gs_font_type42 *pfont, ulong start, uint length)
 {
-    ulong base = start;
-    ulong limit = base + length;
+    ulong base = start, size = length;
 
     if_debug3('l', "[l]write_range pos = %ld, start = %lu, length = %u\n",
 	      stell(s), start, length);
-    while (base < limit) {
-	uint size = limit - base;
+    while (size > 0) {
 	const byte *ptr;
 	int code;
 
-	/* Write the largest block we can access consecutively. */
-	while ((code = pfont->data.string_proc(pfont, base, size, &ptr)) < 0) {
-	    if (size <= 1)
-		return code;
-	    size >>= 1;
-	}
-	if (code > 0 && size > code)
-	    size = code; /* Segmented data - see z42_string_proc. */
-	stream_write(s, ptr, size);
-	base += size;
+	code = pfont->data.string_proc(pfont, base, size, &ptr);
+	if (code < 0)
+	    return code;
+	if (!code)
+	    code = size;
+	stream_write(s, ptr, code);
+	base += code;
+	size -= code;
     }
     return 0;
 }
