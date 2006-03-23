@@ -971,13 +971,15 @@ typedef struct pdf_filter_names_s {
     const char *FlateDecode;
     const char *LZWDecode;
     const char *RunLengthDecode;
+    const char *JBIG2Decode;
+    const char *JPXDecode;
 } pdf_filter_names_t;
 #define PDF_FILTER_NAMES\
   "/ASCII85Decode", "/ASCIIHexDecode", "/CCITTFaxDecode",\
   "/DCTDecode",  "/DecodeParms", "/Filter", "/FlateDecode",\
-  "/LZWDecode", "/RunLengthDecode"
+  "/LZWDecode", "/RunLengthDecode,", "/JBIG2Decode", "/JPXDecode"
 #define PDF_FILTER_NAMES_SHORT\
-  "/A85", "/AHx", "/CCF", "/DCT", "/DP", "/F", "/Fl", "/LZW", "/RL"
+  "/A85", "/AHx", "/CCF", "/DCT", "/DP", "/F", "/Fl", "/LZW", "/RL", "/???", "/???"
 
 /* Write matrix values. */
 void pdf_put_matrix(gx_device_pdf *pdev, const char *before,

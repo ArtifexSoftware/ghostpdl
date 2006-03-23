@@ -331,8 +331,8 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	    if (template == &s_jbig2encode_template) {
 		stream_jbig2encode_state *state = (stream_jbig2encode_state *)st;
 
-		/* Nothing to do ? */
-		st += 0; /* Debug purpose only : set a breakpoint here. */
+		state->width = pim->Width;
+		state->height = pim->Height;
 	    }
 #	endif
 #	ifdef USE_LWF_JP2
