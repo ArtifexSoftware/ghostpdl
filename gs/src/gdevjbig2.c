@@ -64,7 +64,7 @@ jbig2_print_page(gx_device_printer * pdev, FILE * prn_stream)
     byte *jbuf = 0;
     uint jbuf_size;
     int lnum;
-    int code;
+    int code = 0;
     stream_jbig2encode_state state;
     stream fstrm, cstrm;
 
