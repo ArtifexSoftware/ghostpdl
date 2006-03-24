@@ -551,7 +551,7 @@ if
 %
 /image
   {
-    dup type /dicttype eq languagelevel 2 ge and
+    dup type /dicttype eq .languagelevel 2 ge and
       { 
         dup /ImageType get dup 2 eq
           {
@@ -636,7 +636,7 @@ if
 %
 /imagemask
   {
-    dup type /dicttype eq languagelevel 2 ge and
+    dup type /dicttype eq .languagelevel 2 ge and
       { dup /ImageType get //.imagemasktypes exch get exec }
       {
         //img_build_imagemask_dict exec
