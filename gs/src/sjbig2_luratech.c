@@ -118,7 +118,7 @@ s_jbig2decode_set_global_data(stream_state *ss, void *data)
 /* jbig2 and postscript have different senses of what pixel
    value is black, so we must invert the image */
 private void
-s_jbig2decode_invert_buffer(unsigned char *buf, int length)
+s_jbig2_invert_buffer(unsigned char *buf, int length)
 {
     int i;
     
@@ -215,7 +215,7 @@ s_jbig2_write(unsigned char *buffer,
     }
 
     memcpy(line, buffer, available);
-    s_jbig2decode_invert_buffer(line, available);
+    s_jbig2_invert_buffer(line, available);
 
     return cJB2_Error_OK;
 }
@@ -235,7 +235,7 @@ s_jbig2decode_inbuf(stream_jbig2decode_state *state, stream_cursor_read * pr)
     }
 
     /* grow the input buffer if needed */
-    if (state->insize < state->infill + in_size) {
+    while (state->insize < state->infill + in_size) {
         unsigned char *new;
         unsigned long new_size = state->insize;
 
@@ -481,6 +481,9 @@ s_jbig2encode_init(stream_state * ss)
     /* calculate a stride based on those values */
     state->stride = ((state->width - 1) >> 3) + 1;
 
+    state->line = malloc(state->stride);
+    if (state->line == NULL) return ERRC;
+
     /* null output buffer */
     state->outbuf = NULL;
     state->outsize = 0;
@@ -511,7 +514,9 @@ s_jbig2encode_process(stream_state * ss, stream_cursor_read * pr,
 	/* pass available full lines to the encoder library */
 	available = in_size;
 	while (available >= state->stride) {
-	   err = JB2_Compress_Line(state->cmp, pr->ptr + 1);
+	   memcpy(state->line, pr->ptr+1, state->stride);
+	   s_jbig2_invert_buffer(state->line, state->stride);
+	   err = JB2_Compress_Line(state->cmp, state->line);
 	   pr->ptr += state->stride;
 	   available = pr->limit - pr->ptr;
 	   if (err != cJB2_Error_OK) return ERRC;
@@ -555,6 +560,7 @@ s_jbig2encode_release(stream_state *ss)
     stream_jbig2encode_state *state = (stream_jbig2encode_state *)ss;
 
     if (state->outbuf != NULL) free(state->outbuf);
+    if (state->line != NULL) free(state->line);
 }
 
 /* stream template */

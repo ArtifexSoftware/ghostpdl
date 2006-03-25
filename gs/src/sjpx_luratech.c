@@ -470,7 +470,7 @@ s_jpxe_write(unsigned char *buffer,
     }
 
     /* grow the output buffer if necessary */
-    if (pos+size > state->outsize) {
+    while (pos+size > state->outsize) {
 	unsigned char *new = realloc(state->outbuf, state->outsize*2);
 	if (new == NULL) {
 	    dprintf1("jpx encode: failed to resize output buffer"
@@ -479,6 +479,8 @@ s_jpxe_write(unsigned char *buffer,
 	}
 	state->outbuf = new;
 	state->outsize *= 2;
+	if_debug1('s', "[s] jpxe output buffer resized to %lu bytes\n", 
+		state->outsize);
     }
 
     /* copy data into our buffer; we've assured there is enough room. */
@@ -506,6 +508,10 @@ s_jpxe_init(stream_state *ss)
 	default: state->components = 0;
     }
     state->stride = state->width * state->components;
+
+    if_debug3('w', "[w] jpxe init %lux%lu image with %d components\n",
+	state->width, state->height, state->components);
+    if_debug1('w', "[w] jpxe init image is %d bits per component\n", state->bpc);
 
     /* null the input buffer */
     state->inbuf = NULL;
@@ -630,7 +636,7 @@ s_jpxe_process(stream_state *ss, stream_cursor_read *pr,
 	}
 
         /* grow our input buffer if necessary */
-	if (state->infill + in_size > state->insize) {
+	while (state->infill + in_size > state->insize) {
 	    unsigned char *new = realloc(state->inbuf, state->insize*2);
 	    if (new == NULL) {
 		dprintf("jpx encode: failed to resize input buffer.\n");
