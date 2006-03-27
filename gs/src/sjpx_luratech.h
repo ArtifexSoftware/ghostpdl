@@ -16,7 +16,7 @@
 /* we link to the Luratech CSDK for the actual decoding */
 
 #ifndef sjpx_luratech_INCLUDED
-#  define sjpx_luratech_ INCLUDED
+#  define sjpx_luratech_INCLUDED
 
 /* Requires scommon.h; strimpl.h if any templates are referenced */
 
