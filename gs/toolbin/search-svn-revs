@@ -12,7 +12,7 @@ if [ $# -lt 3 ] ; then
   echo "	       'run' argument is used for success / fail."
   echo
   echo "    Note: The binary search algorithm can produce incorrect results if the range of"
-  echo "    revisions contains more complex situations than: fail fail ... succeed suceed ...""
+  echo "    revisions contains more complex situations than: fail fail ... succeed suceed ..."
   echo
   exit 1
 fi
