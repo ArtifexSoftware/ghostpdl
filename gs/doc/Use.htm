@@ -303,7 +303,7 @@ The <tt>-r</tt> option is also useful for controlling the density of pixels when
 Ghostscript also allows you to control where it sends its output. With a display device this isn't necessary as the device handles presenting the output on screen internally. Some specialized printer drivers operate this way as well, but most devices are general and need to be directed to a particular file or printer.
 
 <p>
-To send the output to a file, use the <tt>-sOutputFile=</tt> switch.
+To send the output to a file, use the <tt>-sOutputFile=</tt> switch or the <a href="#o_option"><tt>-o</tt> switch</a> (below).
 For instance, to direct all output into the file <tt>ABC.xyz</tt>, use
 
 <blockquote><b><tt>
@@ -373,10 +373,11 @@ specifications. Some examples are:
 
 
 <p><b>
-Note however that this features is not supported by all devices; in particular
-it does not work with document-oriented output devices like <tt>pdfwrite</tt> and
-<tt>pswrite</tt>. See the <tt>-dFirstPage</tt> and <tt>-dLastPage</tt> switches
-<a href="#PDF_switches">below</a> for a way to extract single pdf pages.
+Note however that the one page per file feature is not supported by all devices;
+in particular it does not work with document-oriented output devices like
+<tt>pdfwrite</tt> and <tt>pswrite</tt>. See the <tt>-dFirstPage</tt> and
+<tt>-dLastPage</tt> switches <a href="#PDF_switches">below</a> for a way to extract
+single pdf pages.
 </b>
 
 <p>
@@ -388,6 +389,25 @@ that shell to prefix variables for substitution, e.g.,
 gswin32c -sOutputFile=ABC%%03d.xyz
 </b></tt></blockquote>
 
+<h4><a name="o_option"></a>-o option:</h4>
+<p>
+As a convenient shorthand you can use the <tt>-o</tt> option followed by the output
+file specification as discussed above. The <tt>-o</tt> option also sets the
+<a href="Interaction_related_parameters"><tt>-dBATCH</tt> and <tt>-dNOPAUSE</tt> options</a>.
+This is intended to be a quick way to invoke ghostscript to convert one or more
+input files.
+
+For instance, to convert somefile.ps to JPEG image files, one per page, use:
+
+<blockquote><b><tt>
+gs -sDEVICE=jpeg -o out-%d.jpg somefile.ps
+</tt></b></blockquote>
+
+is equivalent to:
+
+<blockquote><b><tt>
+gs -sDEVICE=jpeg -sOutputFile=out-%d.jpg -dBATCH -dNOPAUSE somefile.ps
+</tt></b></blockquote>
 
 <h3><a name="Paper_size"></a>Choosing paper size</h3>
 
