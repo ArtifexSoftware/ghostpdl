@@ -607,6 +607,19 @@ s_jpxe_init(stream_state *ss)
 	return ERRC;
     }
 
+    err = JP2_Compress_SetProp(state->handle,
+	cJP2_Prop_Wavelet_Filter, cJP2_Wavelet_9_7, -1, -1);
+    if (err != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d setting wavelet filter\n", (int)err);
+	return ERRC;
+    }
+    err = JP2_Compress_SetProp(state->handle,
+	cJP2_Prop_Rate_Quality, 60, -1, -1);
+    if (err != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d setting compression quality\n", (int)err);
+	return ERRC;
+    }
+
     /* we use the encoder's defaults for all other parameters */
 
     return 0;
