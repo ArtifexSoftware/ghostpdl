@@ -477,6 +477,31 @@ run_stdin:
 		minst->name_table_size = (ulong) nsize << 10;
 	    }
 	    break;
+	case 'o':		/* set output file name and batch mode */
+	    {
+		const char *adef;
+		char *str;
+		ref value;
+		int len;
+
+		if (arg[0] == 0) {
+		    adef = arg_next(pal, &code);
+		    if (code < 0)
+			return code;
+		} else
+		    adef = arg;
+		if ((code = gs_main_init1(minst)) < 0)
+		    return code;
+		len = strlen(adef);
+		str = (char *)gs_alloc_bytes(minst->heap, (uint)len, "-o");
+		memcpy(str, adef, len);
+		make_const_string(&value, a_readonly | avm_foreign,
+				  len, (const byte *)str);
+		initial_enter_name("OutputFile", &value);
+		initial_enter_name("NOPAUSE", &vtrue);
+		initial_enter_name("BATCH", &vtrue);
+	    }
+	    break;
 	case 'P':		/* choose whether search '.' first */
 	    if (!strcmp(arg, ""))
 		minst->search_here_first = true;
