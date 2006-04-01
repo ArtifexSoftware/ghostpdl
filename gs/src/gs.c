@@ -21,6 +21,13 @@
 #include "ierrors.h"
 #include "gsmalloc.h"
 
+#ifdef __GNUC__
+#  if (__GNUC__ == 2 && __GNUC_MINOR__ == 96)
+#    define NEED_COMMIT_STACK 1
+#  endif
+#endif
+
+
 /* Define an optional array of strings for testing. */
 /*#define RUN_STRINGS */
 #ifdef RUN_STRINGS
@@ -35,14 +42,38 @@ private const char *run_strings[] =
 
 #endif
 
+#ifdef NEED_COMMIT_STACK
+/* 
+ * It is well known that GCC 2.96 for x86 sometimes forgets to adjust $esp
+ * and leaves automatic variables at small distance below the stack pointer.
+ * Apparently, when the access to the automatic variable causes a page fault
+ * Linux sends a SEGV signal if the access happens below the stack pointer.
+ * Pre-loading the stack pages resolves the problem.
+ */
+private void 
+commit_stack_pages( void )
+{
+    char buf[65536]; /* In most cases GS lives in 64K stack */
+    int i;
+    for ( i = 0; i < sizeof(buf) - 1; i += 1024)
+        buf[i] = 0;
+}
+#endif
+
+
 int
 main(int argc, char *argv[])
 {
-    int exit_status = 0;
-    gs_main_instance *minst = gs_main_alloc_instance(gs_malloc_init(NULL));
+    int exit_status, code;
+    gs_main_instance *minst;
 
-    int code = gs_main_init_with_args(minst, argc, argv);
-
+#ifdef NEED_COMMIT_STACK   /* hack for bug in gcc 2.96 */
+    commit_stack_pages();
+#endif
+    exit_status = 0;
+    minst = gs_main_alloc_instance(gs_malloc_init(NULL));
+    code = gs_main_init_with_args(minst, argc, argv);
+    
 #ifdef RUN_STRINGS
     {				/* Run a list of strings (for testing). */
 	const char **pstr = run_strings;
