@@ -20,6 +20,7 @@
 #include "gsfunc3.h"
 #include "gsparam.h"
 #include "gxfunc.h"
+#include "gxarith.h"
 #include "stream.h"
 
 /* ---------------- Utilities ---------------- */
@@ -344,7 +345,8 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
     for (i = 0; i < pfn->params.k; ++i) {
 	float b0 = (i == 0 ? d0 : pfn->params.Bounds[i - 1]);
 	float b1 = (i == k - 1 ? d1 : pfn->params.Bounds[i]);
-	const float small = 0.0000001 * (b1 - b0);
+	const float bsmall = (float)1e-6 * (b1 - b0);
+	float esmall;
 	float e0, e1;
 	float w0, w1;
 	float vv0, vv1;
@@ -352,33 +354,34 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
 
 	if (v0 >= b1)
 	    continue;
-	if (v0 >= b1 - small)
-	    continue; /* Ignore a small noize */
+	if (v0 >= b1 - bsmall)
+	    continue; /* Ignore a small noise */
 	vv0 = max(b0, v0);
 	vv1 = v1;
-	if (vv1 > b1 && v1 < b1 + small)
-	    vv1 = b1; /* Ignore a small noize */
+	if (vv1 > b1 && v1 < b1 + bsmall)
+	    vv1 = b1; /* Ignore a small noise */
 	if (vv0 == vv1)
 	    return 1;
 	if (vv0 < b1 && vv1 > b1)
 	    return 0; /* Consider stitches as monotonity beraks. */
 	e0 = pfn->params.Encode[2 * i];
 	e1 = pfn->params.Encode[2 * i + 1];
+	esmall = (float)1e-6 * any_abs(e1 - e0);
 	vb0 = max(vv0, b0);
 	vb1 = min(vv1, b1);
 	w0 = (float)(vb0 - b0) * (e1 - e0) / (b1 - b0) + e0;
 	w1 = (float)(vb1 - b0) * (e1 - e0) / (b1 - b0) + e0;
 	/* Note that w0 > w1 is now possible if e0 > e1. */
 	if (e0 > e1) {
-	    if (w0 > e0 && w0 - small <= e0)
-		w0 = e0; /* Suppress a small noize */
-	    if (w1 < e1 && w1 + small >= e1)
-		w1 = e1; /* Suppress a small noize */
+	    if (w0 > e0 && w0 - esmall <= e0)
+		w0 = e0; /* Suppress a small noise */
+	    if (w1 < e1 && w1 + esmall >= e1)
+		w1 = e1; /* Suppress a small noise */
 	} else {
-	    if (w0 < e0 && w0 + small >= e0)
-		w0 = e0; /* Suppress a small noize */
-	    if (w1 > e1 && w1 - small <= e1)
-		w1 = e1; /* Suppress a small noize */
+	    if (w0 < e0 && w0 + esmall >= e0)
+		w0 = e0; /* Suppress a small noise */
+	    if (w1 > e1 && w1 - esmall <= e1)
+		w1 = e1; /* Suppress a small noise */
 	}
 	if (w0 > w1)
 	    return gs_function_is_monotonic(pfn->params.Functions[i],

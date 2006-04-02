@@ -401,7 +401,7 @@ gx_curve_monotonize(gx_path * ppath, const curve_segment * pc)
 	double omt = 1 - ti, omt2 = omt * omt, omt3 = omt2 * omt;
 	double x = x0 * omt3 + 3 * pc->p1.x * omt2 * ti + 3 * pc->p2.x * omt * t2 + pc->pt.x * t3;
 	double y = y0 * omt3 + 3 * pc->p1.y * omt2 * ti + 3 * pc->p2.y * omt * t2 + pc->pt.y * t3;
-	double ddx = (c[i] & 1 ? 0 : ax * t2 + bx * ti + cx); /* Suppress noize. */
+	double ddx = (c[i] & 1 ? 0 : ax * t2 + bx * ti + cx); /* Suppress noise. */
 	double ddy = (c[i] & 2 ? 0 : ay * t2 + by * ti + cy);
 	fixed dx = (fixed)(ddx + 0.5);
 	fixed dy = (fixed)(ddy + 0.5);
@@ -412,7 +412,7 @@ gx_curve_monotonize(gx_path * ppath, const curve_segment * pc)
 	ry = (fixed)(dy * (t[i] - tp) / 3 + 0.5);
 	sx = (fixed)(x + 0.5);
 	sy = (fixed)(y + 0.5);
-	/* Suppress the derivative sign noize near a beak : */
+	/* Suppress the derivative sign noise near a peak : */
 	if ((double)(sx - px) * qx + (double)(sy - py) * qy < 0)
 	    qx = -qx, qy = -qy;
 	if ((double)(sx - px) * rx + (double)(sy - py) * ry < 0)
@@ -432,7 +432,7 @@ gx_curve_monotonize(gx_path * ppath, const curve_segment * pc)
     sy = pc->pt.y;
     rx = (fixed)((pc->pt.x - pc->p2.x) * tt + 0.5);
     ry = (fixed)((pc->pt.y - pc->p2.y) * tt + 0.5);
-    /* Suppress the derivative sign noize near peaks : */
+    /* Suppress the derivative sign noise near peaks : */
     if ((double)(sx - px) * qx + (double)(sy - py) * qy < 0)
 	qx = -qx, qy = -qy;
     if ((double)(sx - px) * rx + (double)(sy - py) * ry < 0)

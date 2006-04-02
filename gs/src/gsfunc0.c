@@ -838,7 +838,7 @@ get_scaled_range(const gs_function_Sd_t *const pfn,
     float d0 = pfn->params.Domain[i * 2 + 0], d1 = pfn->params.Domain[i * 2 + 1];
     float v0 = lower[i], v1 = upper[i];
     float e0, e1, w0, w1, w;
-    const float small_noize = (float)1e-6;
+    const float small_noise = (float)1e-6;
 
     if (v0 < d0 || v0 > d1)
 	return gs_error_rangecheck;
@@ -859,9 +859,9 @@ get_scaled_range(const gs_function_Sd_t *const pfn,
     if (w0 > w1) {
 	w = w0; w0 = w1; w1 = w;
     }
-    if (floor(w0 + 1) - w0 < small_noize * any_abs(e1 - e0))
+    if (floor(w0 + 1) - w0 < small_noise * any_abs(e1 - e0))
 	w0 = (floor(w0) + 1);
-    if (w1 - floor(w1) < small_noize * any_abs(e1 - e0))
+    if (w1 - floor(w1) < small_noise * any_abs(e1 - e0))
 	w1 = floor(w1);
     if (w0 > w1)
 	w0 = w1;

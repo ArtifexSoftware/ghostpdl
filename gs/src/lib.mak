@@ -2556,7 +2556,7 @@ $(GLOBJ)gscolor3.$(OBJ) : $(GLSRC)gscolor3.c $(GXERR)\
 	$(GLCC) $(GLO_)gscolor3.$(OBJ) $(C_) $(GLSRC)gscolor3.c
 
 $(GLOBJ)gsfunc3.$(OBJ) : $(GLSRC)gsfunc3.c $(math__h) $(memory__h) $(GXERR)\
- $(gsfunc3_h) $(gsparam_h) $(gxfunc_h) $(stream_h)
+ $(gsfunc3_h) $(gsparam_h) $(gxfunc_h) $(stream_h) $(gxarith_h)
 	$(GLCC) $(GLO_)gsfunc3.$(OBJ) $(C_) $(GLSRC)gsfunc3.c
 
 $(GLOBJ)gsptype2.$(OBJ) : $(GLSRC)gsptype2.c $(GXERR)\
