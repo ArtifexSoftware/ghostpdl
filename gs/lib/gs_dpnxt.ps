@@ -115,7 +115,7 @@ img_utils_dict begin
         //true
           //.colorimage
         stopped
-          { /alphaimage load $error /errorname get signalerror }
+          { /alphaimage .systemvar $error /errorname get signalerror }
         if
       }
     .bind systemdict begin odef end

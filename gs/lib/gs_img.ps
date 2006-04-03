@@ -416,12 +416,12 @@ def
   {
     % check for proper number of operands
     count 5 lt
-      { /imagemask load /stackunderflow signalerror }
+      { /imagemask .systemvar /stackunderflow signalerror }
     if
 
     % verify that polarity is a boolean
     2 index type /booleantype ne
-      { /imagemask load /typecheck signalerror }
+      { /imagemask .systemvar /typecheck signalerror }
     if
 
     % the imagemask dictionary can be built; do so
@@ -530,7 +530,7 @@ systemdict /setcolorscreen .knownget
              //false
                //.colorimage
              stopped
-               { /colorimage load  $error /errorname get signalerror }
+               { /colorimage .systemvar  $error /errorname get signalerror }
              if
           }
         .bind systemdict begin odef end
@@ -599,10 +599,10 @@ if
                 //.imagetypes 2 get
                 stopped
                 grestore
-                  { /image load $error /errorname get signalerror }
+                  { /image .systemvar $error /errorname get signalerror }
                 if
               }
-              { /image load /undefined signalerror }
+              { /image .systemvar /undefined signalerror }
             ifelse
           }
           {
@@ -611,7 +611,7 @@ if
             //.imagetypes exch get
             stopped
             grestore
-              { /image load $error /errorname get signalerror }
+              { /image .systemvar $error /errorname get signalerror }
             if
           }
         ifelse
@@ -620,7 +620,7 @@ if
         //false 1 //false
           //.colorimage
         stopped
-          { /image load $error /errorname get signalerror }
+          { /image .systemvar $error /errorname get signalerror }
         if
       }
     ifelse
@@ -644,7 +644,7 @@ if
         stopped
           {
             //img_unbuild_imagemask_dict exec
-            /imagemask load $error /errorname get signalerror
+            /imagemask .systemvar $error /errorname get signalerror
           }
         if
       }

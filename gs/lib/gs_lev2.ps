@@ -501,7 +501,7 @@ systemdict begin
 /quit {				% - quit -
   //systemdict begin serverdict /.jobsave get null eq
    { end //quit }
-   { /quit load /invalidaccess /signalerror load end exec }
+   { /quit .systemvar /invalidaccess /signalerror load end exec }
   ifelse
 } bind odef
 end

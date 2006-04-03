@@ -553,7 +553,7 @@ systemdict /setcolorspace .undef
   {
       { { /DeviceGray } cvlit  //setcolorspace //setcolor }
     stopped
-      { /setgray load $error /errorname get signalerror }
+      { /setgray .systemvar $error /errorname get signalerror }
     if
   }
 bind systemdict begin odef end
@@ -562,7 +562,7 @@ bind systemdict begin odef end
   {
       { { /DeviceRGB } cvlit //setcolorspace //setcolor }
     stopped
-      { /setrgbcolor load $error /errorname get signalerror }
+      { /setrgbcolor .systemvar $error /errorname get signalerror }
     if
   }
 bind systemdict begin odef end
@@ -574,7 +574,7 @@ bind systemdict begin odef end
       {
           { { /DeviceCMYK } cvlit //setcolorspace //setcolor }
         stopped
-          { /setcmykcolor load $error /errorname get signalerror }
+          { /setcmykcolor .systemvar $error /errorname get signalerror }
         if
       }
     bind systemdict begin odef end
@@ -966,7 +966,7 @@ bind def
   {
       { //.hsb_2_rgb exec setrgbcolor }
     stopped
-      { /sethsbcolor load $error /errorname get signalerror }
+      { /sethsbcolor .systemvar $error /errorname get signalerror }
     if
   }
 bind systemdict begin odef end
@@ -975,7 +975,7 @@ bind systemdict begin odef end
   {
       { currentrgbcolor //.rgb_2_hsb exec }
     stopped
-      { /currenthsbcolor load $error /errorname get signalerror }
+      { /currenthsbcolor .systemvar $error /errorname get signalerror }
     if
   }
 bind systemdict begin odef end
