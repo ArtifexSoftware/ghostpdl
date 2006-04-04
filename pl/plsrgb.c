@@ -347,6 +347,11 @@ int
 pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs)
 {
 
+    /* make sure we have a crd set up */
+    int code = pl_build_crd(pgs);
+    if ( code < 0 )
+        return code;
+
     if ( pl_pcs2_built == false ) {
         int code = gs_cspace_build_CIEABC(&pl_pcs2, NULL, gs_state_memory(pgs));
         if ( code < 0 )
