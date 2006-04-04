@@ -66,7 +66,8 @@ PNGO_=$(O_)$(PNGOBJ)
 PZGEN=$(ZGENDIR)$(D)
 
 # PI_ and PF_ are defined in gs.mak.
-PNGCC=$(CC_) $(I_)$(PI_)$(_I) $(PF_)
+PNGCCFLAGS=
+PNGCC=$(CC_) $(I_)$(PI_)$(_I) $(PF_) $(PNGCCFLAGS)
 
 # Define the name of this makefile.
 LIBPNG_MAK=$(GLSRC)libpng.mak
@@ -84,7 +85,7 @@ PDEP=$(AK)
 
 png_1=$(PNGOBJ)png.$(OBJ) $(PNGOBJ)pngmem.$(OBJ) $(PNGOBJ)pngerror.$(OBJ) $(PNGOBJ)pngset.$(OBJ)
 png_2=$(PNGOBJ)pngtrans.$(OBJ) $(PNGOBJ)pngwrite.$(OBJ) $(PNGOBJ)pngwtran.$(OBJ) $(PNGOBJ)pngwutil.$(OBJ)
-png_3=$(PNGOBJ)pngget.$(OBJ) $(PNGOBJ)pngread.$(OBJ) $(PNGOBJ)pngrio.$(OBJ) 
+png_3=$(PNGOBJ)pngget.$(OBJ) $(PNGOBJ)pngread.$(OBJ) $(PNGOBJ)pngrio.$(OBJ) $(PNGOBJ)pngrutil.$(OBJ) $(PNGOBJ)pngrtran.$(OBJ)
 
 # libpng modules
 
@@ -99,6 +100,12 @@ $(PNGOBJ)pngmem.$(OBJ) : $(PNGSRC)pngmem.c $(PDEP)
 
 $(PNGOBJ)pngerror.$(OBJ) : $(PNGSRC)pngerror.c $(PDEP)
 	$(PNGCC) $(PNGO_)pngerror.$(OBJ) $(C_) $(PNGSRC)pngerror.c
+
+$(PNGOBJ)pngrtran.$(OBJ) : $(PNGSRC)pngrtran.c $(PDEP)
+	$(PNGCC) $(PNGO_)pngrtran.$(OBJ) $(C_) $(PNGSRC)pngrtran.c
+
+$(PNGOBJ)pngrutil.$(OBJ) : $(PNGSRC)pngrutil.c $(PDEP)
+	$(PNGCC) $(PNGO_)pngrutil.$(OBJ) $(C_) $(PNGSRC)pngrutil.c
 
 $(PNGOBJ)pngset.$(OBJ) : $(PNGSRC)pngset.c $(PDEP)
 	$(PNGCC) $(PNGO_)pngset.$(OBJ) $(C_) $(PNGSRC)pngset.c
@@ -139,7 +146,7 @@ $(PNGGEN)libpng_1.dev : $(TOP_MAKEFILES) $(LIBPNG_MAK) $(ECHOGS_XE) $(PZGEN)zlib
 	$(ADDMOD) $(PNGGEN)libpng_1 -include $(PZGEN)zlibe.dev
 
 # Define the non-shared version of libpng.
-$(PNGGEN)libpng_0.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(png_1) $(png_2)\
+$(PNGGEN)libpng_0.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(png_1) $(png_2) $(png_3)\
  $(PZGEN)zlibe.dev $(PNGGEN)lpg$(PNGVERSION).dev
 	$(SETMOD) $(PNGGEN)libpng_0 $(png_1)
 	$(ADDMOD) $(PNGGEN)libpng_0 $(png_2)

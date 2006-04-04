@@ -8,6 +8,7 @@ GENDIR=./obj
 APPSRCDIR=.
 GLSRCDIR=../gs/src
 PSSRCDIR=../gs/src
+METSRCDIR=../met
 PCLSRCDIR=../pcl
 PLSRCDIR=../pl
 PXLSRCDIR=../pxl
@@ -27,6 +28,9 @@ ZSRCDIR=../gs/zlib
 ZGENDIR=$(GENDIR)
 ZOBJDIR=$(GENDIR)
 SHARE_ZLIB=0
+
+METGENDIR=$(GENDIR)
+METOBJDIR=$(GENDIR)
 
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.
@@ -57,9 +61,14 @@ JOBJDIR=$(GENDIR)
 ZGENDIR=$(GENDIR)
 ZOBJDIR=$(GENDIR)
 
+PSRCDIR=../gs/libpng
+# only relevant if not shared
+PNGCCFLAGS=-DPNG_USER_MEM_SUPPORTED
+SHARE_LIBPNG=1
+
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
-TARGET_DEVS=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev
+TARGET_DEVS=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev $(METOBJDIR)/met.dev
 
 # Executable path\name w/o the .EXE extension
 TARGET_XE=$(GENDIR)/pspcl6
@@ -67,10 +76,11 @@ TARGET_XE=$(GENDIR)/pspcl6
 PCL_TOP_OBJ=$(PCLOBJDIR)/pctop.$(OBJ)
 PXL_TOP_OBJ=$(PXLOBJDIR)/pxtop.$(OBJ)
 PSI_TOP_OBJ=$(PSIOBJDIR)/psitop.$(OBJ)
+MET_TOP_OBJ=$(METOBJDIR)/mettop.$(OBJ)
 
 # Main file's name
 MAIN_OBJ=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
-TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(PSI_TOP_OBJ)
+TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(PSI_TOP_OBJ) $(MET_TOP_OBJ)
 
 COMPILE_INITS=1
 
@@ -101,13 +111,13 @@ ifeq ($(PL_SCALER), ufst)
 XLDFLAGS=-Xlinker -L../pl/agfa/rts/lib/
 # agfa does not use normalized library names (ie we expect libif.a not
 # agfa's if_lib.a)
-EXTRALIBS=-lif -lfco -ltt
+EXTRALIBS=-lif -lfco -ltt -lexpat
 AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ -I../pl/agfa/rts/gray/ -DAGFA_FONT_TABLE
 endif
 
 ifeq ($(PL_SCALER), afs)
 LDFLAGS=
-EXTRALIBS=
+EXTRALIBS=-lexpat
 endif
 
 # Assorted definitions.  Some of these should probably be factored out....
@@ -133,6 +143,7 @@ CCLD=gcc
 
 DD='$(GLGENDIR)$(D)'
 
+# inclusion of png16.dev is temporary.  see pcl6_gcc.mak makefile.
 DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
  $(DD)ljet4.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
  $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev\
@@ -144,6 +155,7 @@ DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
 FEATURE_DEVS    = \
 		  $(DD)psl3.dev		\
 		  $(DD)pdf.dev		\
+	          $(DD)libpng_$(SHARE_LIBPNG).dev \
 		  $(DD)dpsnext.dev	\
                   $(DD)htxlib.dev	\
                   $(DD)roplib.dev	\
@@ -162,7 +174,7 @@ include $(PLSRCDIR)/pl.mak
 include $(PXLSRCDIR)/pxl.mak
 include $(PCLSRCDIR)/pcl.mak
 include $(PSISRCDIR)/psi.mak
-
+include $(METSRCDIR)/met.mak
 
 # Main program.
 
