@@ -186,7 +186,7 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
 		case gs_param_type_int:
 #if arch_sizeof_int < arch_sizeof_long
 		    if (pvalue->value.l != (int)pvalue->value.l)
-			return_error(gs_error_rangecheck);
+		      return_error(NULL, gs_error_rangecheck);
 #endif
 		    pvalue->value.i = (int)pvalue->value.l;
 		    goto ok;

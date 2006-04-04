@@ -453,7 +453,7 @@ zsetmaxlength(i_ctx_t *i_ctx_p)
     check_dict_write(imemory, *op1);
     check_type(imemory, *op, t_integer);
 #if arch_sizeof_int < arch_sizeof_long
-    check_int_leu(*op, max_uint);
+    check_int_leu(imemory, *op, max_uint);
 #else
     if (op->value.intval < 0)
 	return_error(imemory, e_rangecheck);
