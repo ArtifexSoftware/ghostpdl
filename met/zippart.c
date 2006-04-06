@@ -252,7 +252,7 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
 
     long len = 0;
     int error = 0;
-    char *p = &rpart->name[strlen(rpart->name) - 4];
+    char *p = &rpart->name[strlen(rpart->name) - 5];
 
     if ( gs_debug_c('i') ) 
 	dprintf1(NULL, "End of part %s\n", rpart->name );
@@ -261,8 +261,9 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
      * what rels are for...
      */
 
-    if ( !strncmp(rpart->name, "FixedPage_", 10) && 
-	 strncmp(p, "rels", 4 )) { /* feed met_process a Page */
+    /* feed met_process a Page */
+    if ( !strncmp(p, "fpage", 5 ) || (!strncmp(rpart->name, "FixedPage_", 10) && 
+				      strncmp(p+1, "rels", 4 ))) { 
 
 	++page;
 

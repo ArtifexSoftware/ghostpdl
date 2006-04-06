@@ -99,6 +99,42 @@ load_tt_font(zip_part_t *part, gs_memory_t *mem) {
     if ( size != len ) {
 	dprintf2(0, "BUG! zip_part_length != zip_part_read %d, %d\n", len, size);
     }
+
+    /* XOR unobfuscation of XPS fonts via GUID in fontname xor against first 32 bytes */
+    {
+	byte key[16];
+	byte *data = pfont_data + 6;
+
+	int partnamelen = strlen(part->name);
+	char *p = &part->name[partnamelen];
+	bool high = false;
+	int i = 0;
+	byte num;
+
+	for (; p > part->name && *p != '.'; --p) 
+	    /* skip extension */ ;
+
+	for (; p > part->name && *p != '/'; --p) {
+	    if ( isxdigit(*p) ) {
+		byte c = isdigit(*p) ? *p - 48 : tolower(*p) - 'a' + 10; 
+		if (high) {
+		    num += c << 4;
+		    key[i] = num; 
+		    ++i;
+		}
+	        else 
+		    num = c;
+		high = ! high;
+	    }
+	}
+	if (i == 16 ) {
+	    for (i=0; i < 16; ++i) 
+		data[i] = data[i] ^ key[i];
+	    for (i=0; i < 16; ++i) 
+		data[16+i] = data[16+i] ^ key[i];
+	}
+        /* else no obfuscation */
+    }
     
     //if (part->parent->inline_mode)
 	zip_part_free_all(part);
