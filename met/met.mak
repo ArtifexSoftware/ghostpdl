@@ -96,8 +96,10 @@ $(METOBJ)zipparse.$(OBJ): $(METSRC)zipparse.c $(zipparse_h) $(pltop_h) $(METINCL
 
 $(METOBJ)xps_image_jpeg.$(OBJ): $(METSRC)xps_image_jpeg.c $(xps_error_h) $(METINCLUDES)
 	$(METCCC) $(METSRC)xps_image_jpeg.c $(METO_)xps_image_jpeg.$(OBJ)
+
 $(METOBJ)xps_image_png.$(OBJ): $(METSRC)xps_image_png.c $(xps_error_h) $(METINCLUDES)
-	$(METCCC) $(METSRC)xps_image_png.c $(METO_)xps_image_png.$(OBJ)
+	$(METCCC) $(I_)$(PSRCDIR)$(_I) $(METSRC)xps_image_png.c $(METO_)xps_image_png.$(OBJ)
+
 $(METOBJ)xps_image_tiff.$(OBJ): $(METSRC)xps_image_tiff.c $(xps_error_h) $(METINCLUDES)
 	$(METCCC) $(METSRC)xps_image_tiff.c $(METO_)xps_image_tiff.$(OBJ)
 
