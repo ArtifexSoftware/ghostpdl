@@ -28,6 +28,8 @@ clean_gs:
 	GLOBJDIR=$(GLOBJDIR) clean
 	erase $(TARGET_XE).ilk
 	erase $(TARGET_XE).pdb
+	erase $(TARGET_XE).exp
+	erase $(TARGET_XE).lib
 
 # Define names of utility programs
 AUXGENDIR=$(GLGENDIR)

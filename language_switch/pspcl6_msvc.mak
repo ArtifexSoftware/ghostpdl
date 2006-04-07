@@ -1,154 +1,133 @@
+# The !ifndef-laden style of this makefile is designed to facilitate "deriving"
+# your own make file from it by setting your own custom options, then !including
+# this file. In its current form, this file will compile using default options
+# and locations.
+#
+# This file only defines the portions of the MSVC makefile that are different
+# between the present language switcher vs. the standard pcl6 makefile which
+# is !included near the bottom. All other settings default to the base makefile.
+
 # Define the name of this makefile.
-MAKEFILE=..\language_switch\pspcl6_msvc.mak
+MAKEFILE=$(MAKEFILE) ..\language_switch\pspcl6_msvc.mak
+
+# PLPLATFORM indicates should be set to 'ps' for language switch
+# builds and null otherwise.
+!ifndef PLPLATFORM
+PLPLATFORM=ps
+!endif
 
 # The build process will put all of its output in this directory:
+!ifndef GENDIR
 GENDIR=.\obj
+!endif
 
 # The sources are taken from these directories:
+!ifndef APPSRCDIR
 APPSRCDIR=.
-GLSRCDIR=..\gs\src
+!endif
+!ifndef PSSRCDIR
 PSSRCDIR=..\gs\src
-PCLSRCDIR=..\pcl
-PLSRCDIR=..\pl
-PXLSRCDIR=..\pxl
+!endif
+!ifndef PSISRCDIR
 PSISRCDIR=..\psi
-COMMONDIR=..\common
+!endif
+!ifndef MAINSRCDIR
 MAINSRCDIR=..\main
+!endif
+!ifndef PSLIBDIR
 PSLIBDIR=..\gs\lib
+!endif
+!ifndef ICCSRCDIR
 ICCSRCDIR=..\gs\icclib
-PSRCDIR=..\gs\libpng
-PVERSION=10012
-
-APP_CCC=$(CC_) -I..\pl -I..\gs\src -I.\obj $(C_)
-
-
-# specify the location of zlib.  We use zlib for bandlist compression.
-ZSRCDIR=..\gs\zlib
-ZGENDIR=$(GENDIR)
-ZOBJDIR=$(GENDIR)
-SHARE_ZLIB=0
-
-# specify the locate of the jpeg library.
-JSRCDIR=..\gs\jpeg
-JGENDIR=$(GENDIR)
-JOBJDIR=$(GENDIR)
-JVERSION=6
+!endif
 
 # If you want to build the individual packages in their own directories,
 # you can define this here, although normally you won't need to do this:
+!ifndef GLGENDIR
 GLGENDIR=$(GENDIR)
-ICCGENDIR=$(GENDIR)
-ICCOBJDIR=$(GENDIR)
-PSGENDIR=$(GENDIR)
-PSOBJDIR=$(GENDIR)
-GLOBJDIR=$(GENDIR)
-GLOBJ=$(GENDIR)
-GLGEN=$(GENDIR)
-PLGENDIR=$(GENDIR)
-PLOBJDIR=$(GENDIR)
-PXLGENDIR=$(GENDIR)
-PCLGENDIR=$(GENDIR)
-PSIGENDIR=$(GENDIR)
-PXLOBJDIR=$(GENDIR)
+!endif
+!ifndef PCLOBJDIR
 PCLOBJDIR=$(GENDIR)
+!endif
+!ifndef PXLOBJDIR
+PXLOBJDIR=$(GENDIR)
+!endif
+!ifndef ICCGENDIR
+ICCGENDIR=$(GENDIR)
+!endif
+!ifndef ICCOBJDIR
+ICCOBJDIR=$(GENDIR)
+!endif
+!ifndef PSGENDIR
+PSGENDIR=$(GENDIR)
+!endif
+!ifndef PSOBJDIR
+PSOBJDIR=$(GENDIR)
+!endif
+!ifndef GLGEN
+GLGEN=$(GENDIR)
+!endif
+!ifndef GLOBJ
+GLOBJ=$(GENDIR)
+!endif
+!ifndef PSIGENDIR
+PSIGENDIR=$(GENDIR)
+!endif
+!ifndef PSIOBJDIR
 PSIOBJDIR=$(GENDIR)
-JGENDIR=$(GENDIR)
-JOBJDIR=$(GENDIR)
-ZGENDIR=$(GENDIR)
-ZOBJDIR=$(GENDIR)
+!endif
 
-# Language and configuration.  These are actually platform-independent,
-# but we define them here just to keep all parameters in one place.
-TARGET_DEVS=$(PXLOBJDIR)\pxl.dev $(PCLOBJDIR)\pcl5c.dev $(PCLOBJDIR)\hpgl2c.dev
+!ifndef DD
+DD=$(GLGENDIR)
+!endif
 
 # Executable path\name w/o the .EXE extension
+!ifndef TARGET_XE
 TARGET_XE=$(GENDIR)\pspcl6
-MAIN_OBJ=$(PLOBJDIR)\plmain.$(OBJ) $(PLOBJDIR)\plimpl.$(OBJ)
-PCL_TOP_OBJ=$(PCLOBJDIR)\pctop.$(OBJ)
-PXL_TOP_OBJ=$(PXLOBJDIR)\pxtop.$(OBJ)
+!endif
+!ifndef PSI_TOP_OBJ
 PSI_TOP_OBJ=$(PSIOBJDIR)\psitop.$(OBJ)
-
-# Main file's name
-MAIN_OBJ=$(PLOBJDIR)\plmain.$(OBJ) $(PLOBJDIR)\plimpl.$(OBJ)
-TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(PSI_TOP_OBJ)
-
-# Debugging options
-DEBUG=1
-TDEBUG=1
-NOPRIVATE=0
+!endif
 
 # Banding options
+!ifndef BAND_LIST_STORAGE
 BAND_LIST_STORAGE=file
-BAND_LIST_COMPRESSOR=zlib
+!endif
 
-# Target options
-CPU_TYPE=586
-FPU_TYPE=0
+!ifndef COMPILE_INITS
+COMPILE_INITS=1
+!endif
 
-COMPILE_INITS=0
-
-# Define which major version of MSVC is being used (currently, 4, 5, & 6 supported)
-#       default to the latest version
-MSVC_VERSION=6
-
-D=\\
-DD=$(GLGENDIR)
-# note agfa gives it libraries incompatible names so they cannot be
-# properly found by the linker.  Change the library names to reflect the
-# following (i.e. the if library should be named libif.a
-# NB - this should all be done automatically by choosing the device
-# but it ain't.
-
-# The user is responsible for building the agfa or freetype libs.  We
-# don't overload the makefile with nonsense to build these libraries
-# on the fly. If the artifex font scaler is chosen the makefiles will
-# build the scaler automatically.
-
-# Pick a font system technology.  PCL and XL do not need to use the
-# same scaler, but it is necessary to tinker/hack the makefiles to get
-# it to work properly.
-
-# ufst - Agfa universal font scaler.
-# fts - freetype font system.
-# afs - artifex font scaler.
-# 3 mutually exclusive choices follow, pick one.
-
-PL_SCALER=afs
-PCL_FONT_SCALER=$(PL_SCALER)
-PXL_FONT_SCALER=$(PL_SCALER)
-
-# specify agfa library locations and includes.  This is ignored
-# if the current scaler is not the AGFA ufst.  Note we assume the agfa
-# directory is under the shared pcl pxl library ..\pl
-AGFA_ROOT=\cygwin\home\Administrator\ufst
-UFST_LIBDIR=$(AGFA_ROOT)\rts\lib
-AGFA_INCLUDES=$(I_)$(AGFA_ROOT)\rts\inc $(I_)$(AGFA_ROOT)\sys\inc $(I_)$(AGFA_ROOT)\rts\fco $(I_)$(AGFA_ROOT)\rts\gray -DMSVC
-
+!ifndef APP_CCC
+APP_CCC=$(CC_) -I..\pl -I..\gs\src -I.\obj $(C_)
+!endif
 
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
 # Note that the omission of -Dconst= rules out the use of gcc versions
 # between 2.7.0 and 2.7.2 inclusive.  (2.7.2.1 is OK.)
 
+!ifndef XCFLAGS
 XCFLAGS=/DPSI_INCLUDED
+!endif
+!ifndef PSICFLAGS
 PSICFLAGS=/DPSI_INCLUDED
+!endif
 
 # #define xxx_BIND is in std.h
 # putting compile time bindings here will have the side effect of having different options
-# based on application build.  PSI_INCLUDED is and example of this. 
+# based on application build.  PSI_INCLUDED is and example of this.
+!ifndef EXPERIMENT_CFLAGS
 EXPERIMENT_CFLAGS=
+!endif
 
-D=\\
+# Language and configuration.  These are actually platform-independent,
+# but we define them here just to keep all parameters in one place.
+!ifndef TARGET_DEVS
+TARGET_DEVS=$(PXLOBJDIR)\pxl.dev $(PCLOBJDIR)\pcl5c.dev $(PCLOBJDIR)\hpgl2c.dev
+!endif
 
-DEVICE_DEVS=$(DD)\ljet4.dev $(DD)\cljet5pr.dev $(DD)\cljet5c.dev\
- $(DD)\pcxmono.dev $(DD)\pcxgray.dev $(DD)\pcxcmyk.dev\
- $(DD)\pxlmono.dev $(DD)\pxlcolor.dev\
- $(DD)\tiffcrle.dev $(DD)\tiffg3.dev $(DD)\tiffg32d.dev $(DD)\tiffg4.dev\
- $(DD)\tifflzw.dev $(DD)\tiffpack.dev\
- $(DD)\tiff12nc.dev $(DD)\tiff24nc.dev\
- $(DD)\bmpmono.dev $(DD)\bmpamono.dev $(DD)\pbmraw.dev $(DD)\pgmraw.dev\
- $(DD)\ppmraw.dev $(DD)\jpeg.dev
-
+!ifndef FEATURE_DEVS    
 FEATURE_DEVS    = \
 		  $(DD)\psl3.dev		\
 		  $(DD)\pdf.dev		\
@@ -157,28 +136,8 @@ FEATURE_DEVS    = \
                   $(DD)\roplib.dev	\
 		  $(DD)\ttfont.dev	\
 		  $(DD)\pipe.dev
+!endif
 
-
-# Main program.
-
-default: $(TARGET_XE).exe
-	echo Done.
-
-clean: config-clean clean-not-config-clean
-
-clean-not-config-clean: pl.clean-not-config-clean pxl.clean-not-config-clean
-	$(RMN_) $(TARGET_XE)$(XE)
-
-config-clean: pl.config-clean pxl.config-clean
-	$(RMN_) *.tr $(GD)devs.tr$(CONFIG) $(GD)ld.tr
-	$(RMN_) $(PXLGEN)pconf.h $(PXLGEN)pconfig.h
-
-
-!include $(COMMONDIR)\msvc_top.mak
-
-# Subsystems
-!include $(PLSRCDIR)\plps.mak
-!include $(PCLSRCDIR)\pcl.mak
-!include $(PXLSRCDIR)\pxl.mak
+!include $(MAINSRCDIR)\pcl6_msvc.mak
 !include $(PSISRCDIR)\psi.mak
 

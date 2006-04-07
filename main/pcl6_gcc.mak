@@ -1,64 +1,71 @@
+# The "?=" style of this makefile is designed to facilitate "deriving"
+# your own make file from it by setting your own custom options, then include'ing
+# this file. In its current form, this file will compile using default options
+# and locations. It is recommended that you make any modifications to settings
+# in this file by creating your own makefile which includes this one.
+#
+
 # Define the name of this makefile.
-MAKEFILE=../main/pcl6_gcc.mak
+MAKEFILE+= ../main/pcl6_gcc.mak
 
 # define if this is a cygwin system.
-CYGWIN=
+CYGWIN?=
 
 # The build process will put all of its output in this directory:
-GENDIR=./obj
-PGGENDIR=./pgobj
+GENDIR?=./obj
+PGGENDIR?=./pgobj
 # The sources are taken from these directories:
-GLSRCDIR=../gs/src
-PCLSRCDIR=../pcl
-PLSRCDIR=../pl
-PXLSRCDIR=../pxl
-METSRCDIR=../met
-COMMONDIR=../common
-MAINSRCDIR=../main
+GLSRCDIR?=../gs/src
+PCLSRCDIR?=../pcl
+PLSRCDIR?=../pl
+PXLSRCDIR?=../pxl
+METSRCDIR?=../met
+COMMONDIR?=../common
+MAINSRCDIR?=../main
 
 # specify the location of zlib.  We use zlib for bandlist compression.
-ZSRCDIR=../gs/zlib
-ZGENDIR=$(GENDIR)
-ZOBJDIR=$(GENDIR)
-SHARE_ZLIB=0
-SHARE_LIBPNG=1
+ZSRCDIR?=../gs/zlib
+ZGENDIR?=$(GENDIR)
+ZOBJDIR?=$(GENDIR)
+SHARE_ZLIB?=0
+SHARE_LIBPNG?=0
 
-PSRCDIR=../gs/libpng
+PSRCDIR?=../gs/libpng
 # only relevant if not shared
-PNGCCFLAGS=-DPNG_USER_MEM_SUPPORTED
+PNGCCFLAGS?=-DPNG_USER_MEM_SUPPORTED
+
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.
-PLPLATFORM=
+PLPLATFORM?=
 
 # specify the locate of the jpeg library.
-JSRCDIR=../gs/jpeg
-JGENDIR=$(GENDIR)
-JOBJDIR=$(GENDIR)
-
+JSRCDIR?=../gs/jpeg
+JGENDIR?=$(GENDIR)
+JOBJDIR?=$(GENDIR)
 
 # If you want to build the individual packages in their own directories,
 # you can define this here, although normally you won't need to do this:
-GLGENDIR=$(GENDIR)
-GLOBJDIR=$(GENDIR)
-PLGENDIR=$(GENDIR)
-PLOBJDIR=$(GENDIR)
-PXLGENDIR=$(GENDIR)
-PCLGENDIR=$(GENDIR)
-METGENDIR=$(GENDIR)
-PXLOBJDIR=$(GENDIR)
-PCLOBJDIR=$(GENDIR)
-METOBJDIR=$(GENDIR)
+GLGENDIR?=$(GENDIR)
+GLOBJDIR?=$(GENDIR)
+PLGENDIR?=$(GENDIR)
+PLOBJDIR?=$(GENDIR)
+PXLGENDIR?=$(GENDIR)
+PCLGENDIR?=$(GENDIR)
+METGENDIR?=$(GENDIR)
+PXLOBJDIR?=$(GENDIR)
+PCLOBJDIR?=$(GENDIR)
+METOBJDIR?=$(GENDIR)
 
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
-TARGET_DEVS=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev $(METOBJDIR)/met.dev
-TARGET_XE=$(GENDIR)/pcl6
-TARGET_LIB=$(GENDIR)/pcl6.a
-MAIN_OBJ=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
-PCL_TOP_OBJ=$(PCLOBJDIR)/pctop.$(OBJ)
-PXL_TOP_OBJ=$(PXLOBJDIR)/pxtop.$(OBJ)
-MET_TOP_OBJ=$(METOBJDIR)/mettop.$(OBJ)
-TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(MET_TOP_OBJ)
+TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev $(METOBJDIR)/met.dev
+TARGET_XE?=$(GENDIR)/pcl6
+TARGET_LIB?=$(GENDIR)/pcl6.a
+MAIN_OBJ?=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
+PCL_TOP_OBJ?=$(PCLOBJDIR)/pctop.$(OBJ)
+PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
+MET_TOP_OBJ?=$(METOBJDIR)/mettop.$(OBJ)
+TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(MET_TOP_OBJ)
 
 # note agfa gives it libraries incompatible names so they cannot be
 # properly found by the linker.  Change the library names to reflect the
@@ -75,15 +82,15 @@ TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(MET_TOP_OBJ)
 # XL do not need to use the same scaler, but it is necessary to
 # tinker/hack the makefiles to get it to work properly.
 
-# PL_SCALER=ufst
-PL_SCALER=afs
+# PL_SCALER?=ufst
+PL_SCALER?=afs
 PCL_FONT_SCALER=$(PL_SCALER)
 PXL_FONT_SCALER=$(PL_SCALER)
 
 # to compile in the fonts uncomment the following (this option only
 # works with the artifex scaler on a unix platform)
 
-# ROMFONTS=true
+# ROMFONTS?=true
 
 # flags for UFST scaler.
 ifeq ($(PL_SCALER), ufst)
@@ -108,7 +115,6 @@ ifeq ($(ROMFONTS), true)
 PL_SCALER=afsr
 XLDFLAGS=-L../pl/ 
 EXTRALIBS=-lttffont
-
 endif
 
 endif
@@ -132,28 +138,28 @@ GX_COLOR_INDEX_DEFINE=
 # between 2.7.0 and 2.7.2 inclusive.  (2.7.2.1 is OK.)
 # disable assert() with -DNDEBUG
 
-GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG $(GX_COLOR_INDEX_DEFINE)
-# CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS)
-CFLAGS= $(GCFLAGS) $(XCFLAGS)
+GCFLAGS?=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG $(GX_COLOR_INDEX_DEFINE)
+# CFLAGS?=-g -O0 $(GCFLAGS) $(XCFLAGS)
+CFLAGS?= $(GCFLAGS) $(XCFLAGS)
 
-XINCLUDE=-I/usr/X11R6/include
-XLIBDIRS=-L/usr/X11R6/lib
-XLIBDIR=
-XLIBS=Xt SM ICE Xext X11
+XINCLUDE?=-I/usr/X11R6/include
+XLIBDIRS?=-L/usr/X11R6/lib
+XLIBDIR?=
+XLIBS?=Xt SM ICE Xext X11
 
-CCLD=gcc
+CCLD?=gcc
 
 DD='$(GLGENDIR)$(D)'
 
 
-DEVICES_DEVS=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
+DEVICES_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
    $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev $(DD)tr_rgb.dev\
    $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev $(DD)pswrite.dev $(DD)pdfwrite.dev\
    $(DD)pxlmono.dev $(DD)pxlcolor.dev\
    $(DD)bmpmono.dev $(DD)bmpsep8.dev \
    $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)jpeg.dev
 
-FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
+FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev\
              $(DD)ttflib.dev  $(DD)cielib.dev $(DD)pipe.dev $(DD)htxlib.dev\
 	     $(DD)gsnogc.dev $(DD)sdctd.dev $(DD)libpng_$(SHARE_LIBPNG).dev\

@@ -1,158 +1,70 @@
+# The "?=" style of this makefile is designed to facilitate "deriving"
+# your own make file from it by setting your own custom options, then include'ing
+# this file. In its current form, this file will compile using default options
+# and locations. It is recommended that you make any modifications to settings
+# in this file by creating your own makefile which includes this one.
+#
+# This file only defines the portions of the makefile that are different
+# between the present language switcher vs. the standard pcl6 makefile which
+# is included near the bottom. All other settings default to the base makefile.
+
 # Define the name of this makefile.
-MAKEFILE=../language_switch/pspcl6_gcc.mak
+MAKEFILE+= ../language_switch/pspcl6_gcc.mak
 
 # The build process will put all of its output in this directory:
-GENDIR=./obj
+# GENDIR is defined in the 'base' makefile, but we need its value immediately
+GENDIR?=./obj
 
 # The sources are taken from these directories:
-APPSRCDIR=.
-GLSRCDIR=../gs/src
-PSSRCDIR=../gs/src
-METSRCDIR=../met
-PCLSRCDIR=../pcl
-PLSRCDIR=../pl
-PXLSRCDIR=../pxl
-PSISRCDIR=../psi
-COMMONDIR=../common
-MAINSRCDIR=../main
-PSLIBDIR=../gs/lib
-ICCSRCDIR=../gs/icclib
-PSRCDIR=../gs/libpng
-PVERSION=10012
+APPSRCDIR?=.
+MAINSRCDIR?=../main
+PSSRCDIR?=../gs/src
+PSISRCDIR?=../psi
+PSLIBDIR?=../gs/lib
+ICCSRCDIR?=../gs/icclib
+PSRCDIR?=../gs/libpng
 
-APP_CCC=$(CC_) -I../pl -I../gs/src -I./obj $(C_)
-
-
-# specify the location of zlib.  We use zlib for bandlist compression.
-ZSRCDIR=../gs/zlib
-ZGENDIR=$(GENDIR)
-ZOBJDIR=$(GENDIR)
-SHARE_ZLIB=0
-
-METGENDIR=$(GENDIR)
-METOBJDIR=$(GENDIR)
+APP_CCC?=$(CC_) -I../pl -I../gs/src -I./obj $(C_)
 
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.
-PLPLATFORM=ps
-
-# specify the locate of the jpeg library.
-JSRCDIR=../gs/jpeg
-JGENDIR=$(GENDIR)
-JOBJDIR=$(GENDIR)
-JVERSION="6"
+PLPLATFORM?=ps
 
 # If you want to build the individual packages in their own directories,
 # you can define this here, although normally you won't need to do this:
-GLGENDIR=$(GENDIR)
-PSGENDIR=$(GENDIR)
-PSOBJDIR=$(GENDIR)
-GLOBJDIR=$(GENDIR)
-PLGENDIR=$(GENDIR)
-PLOBJDIR=$(GENDIR)
-PXLGENDIR=$(GENDIR)
-PCLGENDIR=$(GENDIR)
-PSIGENDIR=$(GENDIR)
-PXLOBJDIR=$(GENDIR)
-PCLOBJDIR=$(GENDIR)
-PSIOBJDIR=$(GENDIR)
-JGENDIR=$(GENDIR)
-JOBJDIR=$(GENDIR)
-ZGENDIR=$(GENDIR)
-ZOBJDIR=$(GENDIR)
-
-PSRCDIR=../gs/libpng
-# only relevant if not shared
-PNGCCFLAGS=-DPNG_USER_MEM_SUPPORTED
-SHARE_LIBPNG=1
-
-# Language and configuration.  These are actually platform-independent,
-# but we define them here just to keep all parameters in one place.
-TARGET_DEVS=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev $(METOBJDIR)/met.dev
+PSGENDIR?=$(GENDIR)
+PSOBJDIR?=$(GENDIR)
+PSIGENDIR?=$(GENDIR)
+PSIOBJDIR?=$(GENDIR)
+JGENDIR?=$(GENDIR)
+JOBJDIR?=$(GENDIR)
+ZGENDIR?=$(GENDIR)
+ZOBJDIR?=$(GENDIR)
 
 # Executable path\name w/o the .EXE extension
-TARGET_XE=$(GENDIR)/pspcl6
-
-PCL_TOP_OBJ=$(PCLOBJDIR)/pctop.$(OBJ)
-PXL_TOP_OBJ=$(PXLOBJDIR)/pxtop.$(OBJ)
-PSI_TOP_OBJ=$(PSIOBJDIR)/psitop.$(OBJ)
-MET_TOP_OBJ=$(METOBJDIR)/mettop.$(OBJ)
+TARGET_XE?=$(GENDIR)/pspcl6
 
 # Main file's name
-MAIN_OBJ=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
-TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(PSI_TOP_OBJ) $(MET_TOP_OBJ)
+PSI_TOP_OBJ?=$(PSIOBJDIR)/psitop.$(OBJ)
+TOP_OBJ+= $(PSI_TOP_OBJ)
 
-COMPILE_INITS=1
-
-# note agfa gives it libraries incompatible names so they cannot be
-# properly found by the linker.  Change the library names to reflect the
-# following (i.e. the if library should be named libif.a
-# NB - this should all be done automatically by choosing the device
-# but it ain't.
-
-# The user is responsible for building the agfa or freetype libs.  We
-# don't overload the makefile with nonsense to build these libraries
-# on the fly. If the artifex font scaler is chosen the makefiles will
-# build the scaler automatically.
-
-# Pick a font system technology.  PCL and XL do not need to use the
-# same scaler, but it is necessary to tinker/hack the makefiles to get
-# it to work properly.
-
-# ufst - Agfa universal font scaler.
-# afs - artifex font scaler.
-# 3 mutually exclusive choices follow, pick one.
-
-PL_SCALER=afs
-PCL_FONT_SCALER=$(PL_SCALER)
-PXL_FONT_SCALER=$(PL_SCALER)
-
-ifeq ($(PL_SCALER), ufst)
-XLDFLAGS=-Xlinker -L../pl/agfa/rts/lib/
-# agfa does not use normalized library names (ie we expect libif.a not
-# agfa's if_lib.a)
-EXTRALIBS=-lif -lfco -ltt -lexpat
-AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ -I../pl/agfa/rts/gray/ -DAGFA_FONT_TABLE
-endif
-
-ifeq ($(PL_SCALER), afs)
-LDFLAGS=
-EXTRALIBS=-lexpat
-endif
+COMPILE_INITS?=1
 
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
 # Note that the omission of -Dconst= rules out the use of gcc versions
 # between 2.7.0 and 2.7.2 inclusive.  (2.7.2.1 is OK.)
-PSICFLAGS=-DPSI_INCLUDED
+PSICFLAGS?=-DPSI_INCLUDED
 
 # #define xxx_BIND is in std.h
 # putting compile time bindings here will have the side effect of having different options
-# based on application build.  PSI_INCLUDED is and example of this. 
-EXPERIMENT_CFLAGS=
+# based on application build.  PSI_INCLUDED is and example of this.
+EXPERIMENT_CFLAGS?=
 
-GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG $(PSICFLAGS) $(EXPERIMENT_CFLAGS)
-CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS) $(PSICFLAGS)
+GCFLAGS?=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG $(PSICFLAGS) $(EXPERIMENT_CFLAGS)
+CFLAGS?=-g -O0 $(GCFLAGS) $(XCFLAGS) $(PSICFLAGS)
 
-XINCLUDE=-I/usr/X11R6/include
-XLIBDIRS=-L/usr/X11R6/lib
-XLIBDIR=
-XLIBS=Xt SM ICE Xext X11
-
-CCLD=gcc
-
-DD='$(GLGENDIR)$(D)'
-
-# inclusion of png16.dev is temporary.  see pcl6_gcc.mak makefile.
-DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
- $(DD)ljet4.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
- $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev\
- $(DD)pxlmono.dev $(DD)pxlcolor.dev  $(DD)bitcmyk.dev \
- $(DD)bmpmono.dev $(DD)bmpamono.dev \
- $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)pkmraw.dev\
- $(DD)jpeg.dev
-
-FEATURE_DEVS    = \
+FEATURE_DEVS    ?= \
 		  $(DD)psl3.dev		\
 		  $(DD)pdf.dev		\
 	          $(DD)libpng_$(SHARE_LIBPNG).dev \
@@ -162,30 +74,8 @@ FEATURE_DEVS    = \
 		  $(DD)ttfont.dev	\
 		  $(DD)pipe.dev
 
-SYNC=posync
-STDLIBS=-lm -lpthread
+# "Subclassed" makefile
+include $(MAINSRCDIR)/pcl6_gcc.mak
 
-
-# Generic makefile
-include $(COMMONDIR)/ugcc_top.mak
 # Subsystems
-
-include $(PLSRCDIR)/pl.mak
-include $(PXLSRCDIR)/pxl.mak
-include $(PCLSRCDIR)/pcl.mak
 include $(PSISRCDIR)/psi.mak
-include $(METSRCDIR)/met.mak
-
-# Main program.
-
-default: $(TARGET_XE)$(XE)
-	echo Done.
-
-clean: config-clean clean-not-config-clean
-
-clean-not-config-clean: pl.clean-not-config-clean pxl.clean-not-config-clean
-	$(RMN_) $(TARGET_XE)$(XE)
-
-config-clean: pl.config-clean pxl.config-clean
-	$(RMN_) *.tr $(GD)devs.tr$(CONFIG) $(GD)ld.tr
-	$(RMN_) $(PXLGEN)pconf.h $(PXLGEN)pconfig.h
