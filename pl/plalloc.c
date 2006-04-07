@@ -28,26 +28,26 @@ round_up_to_align(uint size)
 /* aceesors to get size and type given the pointer returned to the
    client, *not* the pointer returned by malloc or realloc */
 inline private uint
-get_size(byte *bptr)
+get_size(byte *ptr)
 {
     /* unpack the unsigned long we stored 2 words behind the object at
        alloc time... back up 2 */
-    uint size_offset = -round_up_to_align(1) * 2;
+    byte *bptr = ptr - (round_up_to_align(1) * 2);
     uint size;
     /* unpack */
-    memcpy(&size, &bptr[size_offset], sizeof(uint));
+    memcpy(&size, bptr, sizeof(uint));
     return size;
 }
 
 inline gs_memory_type_ptr_t
-get_type(char *bptr)
+get_type(char *ptr)
 {
     /* unpack the unsigned long we stored 1 word behind the object at
        alloc time... back up 1 */
     gs_memory_type_ptr_t type;
-    int type_offset = -round_up_to_align(1);
+    byte *bptr = ptr - round_up_to_align(1);
     /* unpack */
-    memcpy(&type, &bptr[type_offset], sizeof(gs_memory_type_ptr_t));
+    memcpy(&type, bptr, sizeof(gs_memory_type_ptr_t));
     return type;
 }
 
@@ -299,19 +299,20 @@ private void *
 pl_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_name_t cname)
 {
     byte *ptr;
-    byte *bptr = (byte *)obj;
+
     /* get the type from the old object */
     gs_memory_type_ptr_t objs_type = get_type(obj);
     /* type and size header size */
     ulong header_size = round_up_to_align(1) + round_up_to_align(1);
     /* get new object's size */
     ulong new_size = (objs_type->ssize * new_num_elements) + header_size;
+    byte *bptr = (byte *)obj - header_size;
     /* replace the size field */
-    ptr = (byte *)realloc(&bptr[-header_size], new_size);
+    ptr = (byte *)realloc(bptr, new_size);
     if ( !ptr ) 
 	return NULL;
 
-    pl_mem_node_remove(mem, &bptr[-header_size]);
+    pl_mem_node_remove(mem, bptr);
     pl_mem_node_add(mem, ptr, cname);
     /* da for debug allocator - so scripts can parse the trace */
     if_debug2(mem, 'A', "[da]:realloc:%x:%s\n", (uint)ptr, cname );
@@ -326,14 +327,15 @@ private void
 pl_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 {
     if ( ptr != NULL ) {
-	byte *bptr = (byte *)ptr;
 	uint header_size = round_up_to_align(1) + round_up_to_align(1);
+	byte *bptr = (byte *)ptr - header_size;
+
 #ifdef DEBUG
 	if ( gs_debug_c('@') )
-	    memset(&bptr[-header_size], 0xee, header_size + get_size(ptr));
+	    memset(bptr, 0xee, header_size + get_size(ptr));
 #endif
-	pl_mem_node_remove(mem, &bptr[-header_size]);
-	free(&bptr[-header_size]);
+	pl_mem_node_remove(mem, bptr);
+	free(bptr);
 	
 #ifdef DEBUG
 	/* da for debug allocator - so scripts can parse the trace */
