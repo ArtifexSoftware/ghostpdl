@@ -363,19 +363,23 @@ install_cid_data(
         return e_Range;
     cid.len = len;
     memcpy(&(cid.u.hdr), pbuff, sizeof(pcl_cid_hdr_t));
-    /* check if we should substitute colometric for a device color space */
-    if ( (pcl_cid_get_cspace(&cid) >= pcl_cspace_RGB) &&
-	 (pcl_cid_get_cspace(&cid) <= pcl_cspace_CMY) &&
-         pcs->useciecolor )
-	code = substitute_colorimetric_cs(pcs, &cid);
-    else {
-	cid.original_cspace = pcl_cspace_num;
-	if ( ((code = check_cid_hdr(pcs, &(cid.u.hdr))) >= 0) && (len > 6) )
-	    code = build_cid_longform[pbuff[0]](&cid, pbuff);
+    /* check the header this will also make corrections if possible */
+    code = check_cid_hdr(pcs, &(cid.u.hdr));
+    if (code >= 0) {
+        /* check if we should substitute colometric for a device color space */
+        if ( (pcl_cid_get_cspace(&cid) >= pcl_cspace_RGB) &&
+             (pcl_cid_get_cspace(&cid) <= pcl_cspace_CMY) &&
+             pcs->useciecolor )
+            code = substitute_colorimetric_cs(pcs, &cid);
+        else {
+            cid.original_cspace = pcl_cspace_num;
+            if (len > 6)
+                code = build_cid_longform[pbuff[0]](&cid, pbuff);
+        }
     }
     if (code < 0) {
         if (code == -1)
-            code = e_Range;     /* handle idiocy in pcommand.h */
+            code = e_Range;
         return code;
     } else
         return pcl_palette_set_cid(pcs, &cid, fixed, gl2);
