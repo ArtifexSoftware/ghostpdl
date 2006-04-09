@@ -646,9 +646,9 @@ hpgl_print_char(
 		    scale.y = -(ratio * inches_2_plu(1.0 / font->resolution.y));
 		}
             } else {
-		scale.x = hpgl_points_2_plu(pgls, pl_fp_pitch_cp(&pfs->params) /
-					    pl_fp_pitch_cp(&pfs->font->params) );
-                scale.y = scale.x;
+                double ratio = (double)pl_fp_pitch_cp(&pfs->params) / 
+                    pl_fp_pitch_cp(&pfs->font->params);
+                scale.y = scale.x = hpgl_points_2_plu(pgls, ratio);
 	    }
 
         } else {
