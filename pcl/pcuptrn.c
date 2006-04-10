@@ -429,12 +429,14 @@ download_pcl_pattern(
     if (pixinfo.data == 0)
         return e_Memory;
 
-    /* check for resolution fields; note that HP allows count < rsize + 8 */
-    /* -JJG rather than ensuring that there is at least 12 bytes of header */
-    /* data (which a proper header should contain if it has the resolution */
-    /* fields) instead determine if there are more than is necessary for   */
-    /* headers not containing resolution data.                             */
-    if (count >= patsize + 9) {
+    /* check for resolution fields; note that HP allows count < rsize
+       + 8 -JJG rather than ensuring that there is at least 12 bytes
+       of header data (which a proper header should contain if it has
+       the resolution fields) instead determine if there are more than
+       is necessary for headers not containing resolution data.  Only
+       relevant for uncolored patterns (format 0). */
+
+    if (format == 0 && count >= patsize + 9) {
         pcl_upattern1_t *   puptrn1 = (pcl_upattern1_t *)puptrn0;
 
         xres = (((uint)puptrn1->xres[0]) << 8) + puptrn1->xres[1];
