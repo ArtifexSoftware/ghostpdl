@@ -415,6 +415,17 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
         pl_dict_put(&pcs->soft_fonts, current_font_id,
                     current_font_id_size, plfont);
         plfont->pfont->procs.define_font = gs_no_define_font;
+        /* check unbound fonts have a legit vocabulary.  If the
+           vocabulary is bogus fall back to MSL, there is a closely
+           related hack above under the pcfh_intellifont_unbound
+           case */
+        if (!pl_font_is_bound(plfont)) {
+            pl_glyph_vocabulary_t gv = (pl_glyph_vocabulary_t)
+                (~plfont->character_complement[7] & 07);
+            if (gv != plgv_MSL && gv != plgv_Unicode) {
+                plfont->character_complement[7] = 0x7;
+            }
+        }
         return gs_definefont(pcs->font_dir, plfont->pfont);
 }
 

@@ -63,7 +63,7 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 	{ int num_codes = last_code - first_code + 1;
 	  int i;
 
-	  if ( num_codes <= 0 || count < psm_header_size + num_codes * 2 )
+	  if ( num_codes <= 0 || num_codes > 256 || count < psm_header_size + num_codes * 2 )
 	    return e_Range;
 	  header =
 	    (pl_symbol_map_t *)gs_alloc_bytes(mem,
