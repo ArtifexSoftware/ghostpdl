@@ -66,9 +66,12 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	      { hpgl_real_t pitch;
 	        if ( !hpgl_arg_c_real(pgls->memory, pargs, &pitch) )
 		  return e_Range;
-		if ( (pl_fp_pitch_per_inch(pfp) != pitch) && (pitch >= 0) )
-		  pl_fp_set_pitch_per_inch(pfp, pitch),
-		    pargs->phase |= 2;
+		if ( (pl_fp_pitch_per_inch(pfp) != pitch) && 
+                     (pitch >= 0) && (pitch < 32768.0) ) {
+                    pl_fp_set_pitch_per_inch(pfp, pitch > 7200.0 ? 7200.0 : pitch);
+                    pargs->phase |= 2;
+                }
+                         
 	      }
 	      break;
 	    case 4:		/* height */
