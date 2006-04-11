@@ -605,12 +605,10 @@ pop pop
 	      mark 1 index //.rfnstring { ResourceFileName } .internalstopped {
 	        cleartomark false
 	      } {
-	        dup status {
-	          pop pop pop pop
-	          (r) file
-	          exch pop exch pop true
-	        } {
+	        (r) { file } .internalstopped {
 	          cleartomark false
+		} {
+	          exch pop exch pop true
 	        } ifelse
 	      } ifelse
 	     } {
