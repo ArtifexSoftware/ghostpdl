@@ -994,7 +994,7 @@ add_raster_plane(
 
     /* enter raster mode implicitly if not already there */
     if (prast == 0) {
-        if ((code = pcl_enter_graphics_mode(pcs, IMPLICIT)) < 0)
+        if ((code = pcl_enter_graphics_mode(pcs, IMPLICIT)) != 0)
             return code;
         prast = (pcl_raster_t *)pcs->raster_state.pcur_raster;
     }
@@ -1315,7 +1315,7 @@ transfer_raster_row(
     code = add_raster_plane(pdata, arg_data_size(pargs), true, pcs);
 
     /* complete the row (execpt for adaptive compression) */
-    if (comp_mode != ADAPTIVE_COMPRESS && code >= 0)
+    if (comp_mode != ADAPTIVE_COMPRESS && code == 0)
         code = process_row((pcl_raster_t *)pcs->raster_state.pcur_raster, comp_mode);
 
     return code;

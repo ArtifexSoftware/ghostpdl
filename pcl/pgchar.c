@@ -75,12 +75,22 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	      }
 	      break;
 	    case 4:		/* height */
-	      { hpgl_real_t height;
-	        if ( !hpgl_arg_c_real(pgls->memory, pargs, &height) )
-		  return e_Range;
-		if ( (pfp->height_4ths != (uint)(height * 4)) && (height >= 0))
-		  pfp->height_4ths = (uint)(height * 4),
-		    pargs->phase |= 2;
+	      { 
+                  hpgl_real_t height;
+                  if ( !hpgl_arg_c_real(pgls->memory, pargs, &height) )
+                      return e_Range;
+                  if ( (pfp->height_4ths != (uint)(height * 4)) && (height >= 0)) {
+                      /* minimum height for practical purposes is one
+                         quarter point.  The HP Spec says 0 is legal
+                         but does not specify what a height of zero
+                         means.  The previous code truncated height,
+                         it probably should be rounded as in pcl but
+                         doing so would change a lot of files for no
+                         compelling reason so for now truncate. */
+                      uint trunc_height_4ths = (uint)(height * 4); 
+                      pfp->height_4ths = (trunc_height_4ths == 0 ? 1 : trunc_height_4ths);
+                      pargs->phase |= 2;
+                  }
 	      }
 	      break;
 	    case 5:		/* posture */

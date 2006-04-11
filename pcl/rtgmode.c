@@ -300,6 +300,10 @@ pcl_enter_graphics_mode(
     if (prstate->src_height_set && (src_hgt > prstate->src_height))
         src_hgt = prstate->src_height;
 
+    if (src_wid <= 0 || src_hgt <= 0) {
+        pcl_grestore(pcs);
+        return 1; /* hack, we want to return a non critical warning */
+    }
     /* determine (conservatively) if the region of interest has been
        marked */
     pcs->page_marked = true;
