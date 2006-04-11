@@ -1072,6 +1072,8 @@ palette_do_copy(
 	pcl_state_t *pcs2 = (pcl_state_t *)pcs;
         id_set_value(key, psaved->sel_palette_id);
         pl_dict_put(&pcs2->palette_store, id_key(key), 2, psaved->ppalet);
+        psaved->palette_stack = pcs2->palette_stack;
+        psaved->palette_store = pcs2->palette_store;
     }
     return 0;
 }
