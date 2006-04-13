@@ -54,7 +54,7 @@ hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
 	 (pgls->g.plot_height == 0) ) {
 	dprintf(pgls->memory, "bad picture frame coordinates\n");
 	return 0;
-    } else {
+    } else if ( pgls->g.scaling_type == hpgl_scaling_none ) {
 	hpgl_real_t vert_scale = (pgls->g.plot_size_vertical_specified) ?
  	    ((hpgl_real_t)pgls->g.picture_frame_height /
  	     (hpgl_real_t)pgls->g.plot_height) :
@@ -65,6 +65,8 @@ hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
  	    1.0;
 	hpgl_call(gs_scale(pgls->pgs, horz_scale, vert_scale));
     }
+    else 
+	hpgl_call(gs_scale(pgls->pgs, 1.0, 1.0));
     return 0;
 
 }
@@ -1527,8 +1529,15 @@ hpgl_draw_current_path(
          */
 	{
 	    gs_matrix save_ctm;
+	    int save_scaling_type = pgls->g.scaling_type;
+ 
 	    hpgl_call(gs_currentmatrix(pgs, &save_ctm));
+
+	    /* force no picture frame scaling */
+	    pgls->g.scaling_type = hpgl_scaling_anisotropic; 
 	    hpgl_call(hpgl_set_plu_ctm(pgls));
+	    pgls->g.scaling_type = save_scaling_type; 
+
 	    if ( !pgls->g.line.current.is_solid && (pgls->g.line.current.type == 0) )
 		hpgl_call(gs_reversepath(pgls->pgs));
             pcl_mark_page_for_path(pgls);

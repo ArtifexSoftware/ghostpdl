@@ -429,7 +429,11 @@ hpgl_PW(
     hpgl_real_t     width_plu;
     int             pmin = 0;
     int             pmax = pcl_palette_get_num_entries(pgls->ppalet) - 1;
-
+    hpgl_real_t     pf_factor = min( (hpgl_real_t)pgls->g.picture_frame_height
+				     / (hpgl_real_t)pgls->g.plot_height,
+				     (hpgl_real_t)pgls->g.picture_frame_width
+				     / (hpgl_real_t)pgls->g.plot_width
+				     );
     /*
      * we maintain the line widths in plotter units, irrespective
      * of current units (WU).
@@ -449,7 +453,7 @@ hpgl_PW(
 							         pgls->g.P2.x,
                                                                  pgls->g.P2.y
                                                                  ) )
-                    : mm_2_plu(param) );
+                    : mm_2_plu(param) * pf_factor );
 
     /*
      * PCLTRM 22-38 metric widths scaled scaled by the ratio of
@@ -457,11 +461,8 @@ hpgl_PW(
      * the line width in PU not MM.
      */
     if (pgls->g.pen.width_relative)
-	width_plu *= min( (hpgl_real_t)pgls->g.picture_frame_height
-                             / (hpgl_real_t)pgls->g.plot_height,
-			  (hpgl_real_t)pgls->g.picture_frame_width
-                             / (hpgl_real_t)pgls->g.plot_width
-                          );
+	width_plu *= pf_factor;
+
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     {
 	int   i;
