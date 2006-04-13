@@ -106,7 +106,7 @@ FEATURE_DEVS=$(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev\
 
 # The list of resources to be included in the %rom% file system.
 # This is in the top makefile since the file descriptors are platform specific
-RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdoimSet/ Resource/CIDFont/
+RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdiomSet/ Resource/CIDFont/
 
 COMPILE_INITS=0
 BAND_LIST_STORAGE=file

@@ -624,7 +624,7 @@ COMPILE_INITS=0
 !endif
 
 # This is in the top level makefile since it is platform dependent
-RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdoimSet/ Resource/CIDFont/
+RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdiomSet/ Resource/CIDFont/
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.
