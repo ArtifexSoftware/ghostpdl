@@ -479,10 +479,6 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
 	return (*pacs->type->remap_concrete_color)
 				(pconc, pacs, pdc, pis, dev, select);
     }
-#if ENABLE_NAMED_COLOR_CALLBACK
-    else if (pcs->params.device_n.named_color_params.use_named_color_callback) {
-    }
-#endif
     else {
 	gx_remap_concrete_devicen(pconc, pdc, pis, dev, select);
 	return 0;
