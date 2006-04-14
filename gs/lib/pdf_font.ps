@@ -954,24 +954,24 @@ end readonly def
 
         % Stack: pdfresource newfont
 
-  1 index /DW .knownget {
+  1 index /DW knownoget {
     1 index /DW 3 -1 roll put
   } {
     dup /DW .pdfDefaultDW put
   } ifelse
 
-  1 index /W .knownget {
+  1 index /W knownoget {
     dup 2 index /W 3 -1 roll put
     .pdfMakeInternalW 1 index /.internalW 3 -1 roll put
   } if
 
-  1 index /DW2 .knownget {
+  1 index /DW2 knownoget {
     1 index /DW2 3 -1 roll put
   } {
     dup /DW2 .pdfDefaultDW2 put
   } ifelse
 
-  1 index /W2 .knownget {
+  1 index /W2 knownoget {
     dup 2 index /W2 3 -1 roll put
     .pdfMakeInternalW2 1 index /.internalW2 3 -1 roll put
   } if
