@@ -91,6 +91,10 @@ void alloc_forget_save_in(gs_dual_memory_t *, alloc_save_t *);
 
 /* Release all memory -- like doing a restore "past the bottom". */
 int alloc_restore_all(gs_dual_memory_t *);
+#if NO_INVISIBLE_LEVELS
+/* Filter save change lists. */
+void alloc_save__filter_changes(gs_ref_memory_t *mem);
+#endif
 
 /* ------ Internals ------ */
 

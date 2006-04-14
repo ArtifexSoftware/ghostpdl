@@ -126,7 +126,7 @@ $(PSOBJ)iname.$(OBJ) : $(PSSRC)iname.c $(GH) $(memory__h) $(string__h)\
 $(PSOBJ)isave.$(OBJ) : $(PSSRC)isave.c $(GH) $(memory__h)\
  $(ierrors_h) $(gsexit_h) $(gsstruct_h) $(gsutil_h)\
  $(iastate_h) $(iname_h) $(inamedef_h) $(isave_h) $(isstate_h) $(ivmspace_h)\
- $(ipacked_h) $(store_h) $(stream_h)
+ $(ipacked_h) $(store_h) $(stream_h) $(igc_h)
 	$(PSCC) $(PSO_)isave.$(OBJ) $(C_) $(PSSRC)isave.c
 
 ### Include files

@@ -148,6 +148,7 @@ gc_validate_spaces(gs_ref_memory_t **spaces, int max_space, gc_state_t *gcst)
 #else  /* !DEBUG */
 #  define end_phase(str) DO_NOTHING
 #endif /* DEBUG */
+
 void
 gs_gc_reclaim(vm_spaces * pspaces, bool global)
 {
@@ -371,6 +372,20 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 
 	end_phase("finish trace");
     }
+
+#if NO_INVISIBLE_LEVELS
+    /* Filter save change lists with removing elements,
+       which point to unmarked blocks of refs. */
+    {
+	int i;
+
+	for_collected_spaces(i) {
+	    gs_ref_memory_t *mem = space_memories[i];
+
+	    alloc_save__filter_changes(mem);
+	}
+    }
+#endif
     /* Clear marks and relocation in spaces that are only being traced. */
     /* We have to clear the marks first, because we want the */
     /* relocation to wind up as o_untraced, not o_unmarked. */

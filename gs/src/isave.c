@@ -27,8 +27,10 @@
 #include "isstate.h"
 #include "store.h"		/* for ref_assign */
 #include "ivmspace.h"
+#if NO_INVISIBLE_LEVELS
+#include "igc.h"
+#endif
 #include "gsutil.h"		/* gs_next_ids prototype */
-
 
 /* Structure descriptor */
 private_st_alloc_save();
@@ -153,6 +155,11 @@ print_save(const char *str, uint spacen, const alloc_save_t *sav)
 	    str, spacen, (ulong)sav, (ulong)sav->client_data, (ulong)sav->id);
 }
 
+#if NO_INVISIBLE_LEVELS
+/* A link to igcref.c . */
+ptr_proc_reloc(igc_reloc_ref_ptr_nocheck, ref_packed);
+#endif
+
 /*
  * Structure for saved change chain for save/restore.  Because of the
  * garbage collector, we need to distinguish the cases where the change
@@ -165,6 +172,9 @@ struct alloc_change_s {
     ref contents;
 #define AC_OFFSET_STATIC (-2)	/* static object */
 #define AC_OFFSET_REF (-1)	/* dynamic ref */
+#if NO_INVISIBLE_LEVELS
+#define AC_OFFSET_ALLOCATED (-3) /* a newly allocated ref array */
+#endif
     short offset;		/* if >= 0, offset within struct */
 };
 
@@ -185,7 +195,18 @@ case 1:
     if (ptr->offset >= 0)
 	ENUM_RETURN((byte *) ptr->where - ptr->offset);
     else
+#if NO_INVISIBLE_LEVELS
+	if (ptr->offset != AC_OFFSET_ALLOCATED)
+	    ENUM_RETURN_REF(ptr->where);
+	else {
+	    /* Don't enumerate ptr->where, because it 
+	       needs a special processing with 
+	       alloc_save__filter_changes. */
+    	    ENUM_RETURN(0);
+	}
+#else
 	ENUM_RETURN_REF(ptr->where);
+#endif
 case 2:
     ENUM_RETURN_REF(&ptr->contents);
 ENUM_PTRS_END
@@ -198,6 +219,26 @@ private RELOC_PTRS_WITH(change_reloc_ptrs, alloc_change_t *ptr)
 	case AC_OFFSET_REF:
 	    RELOC_REF_PTR_VAR(ptr->where);
 	    break;
+#if NO_INVISIBLE_LEVELS
+	case AC_OFFSET_ALLOCATED:
+	    /* We know that ptr->where may point to an unmarked object
+	       because change_enum_ptrs skipped it,
+	       and we know it always points to same space 
+	       because we took a special care when calling alloc_save_change_alloc.
+	       Therefore we must skip the check for the mark,
+	       which would happen if we call the regular relocation function
+	       igc_reloc_ref_ptr from RELOC_REF_PTR_VAR. 
+	       Calling igc_reloc_ref_ptr_nocheck instead. */
+	    {	/* A sanity check. */
+		obj_header_t *pre = (obj_header_t *)ptr->where - 1, *pre1 = 0;
+
+		if (pre->o_type != &st_refs)
+		    pre1->o_type = 0; /* issue a segfault. */
+	    }
+	    if (ptr->where != 0 && !gcst->relocating_untraced)
+		ptr->where = igc_reloc_ref_ptr_nocheck(ptr->where, gcst);
+	    break;
+#endif
 	default:
 	    {
 		byte *obj = (byte *) ptr->where - ptr->offset;
@@ -249,8 +290,11 @@ alloc_save_print(alloc_change_t * cp, bool print_current)
 /* Forward references */
 private int  restore_resources(alloc_save_t *, gs_ref_memory_t *);
 private void restore_free(gs_ref_memory_t *);
-private long save_set_new(gs_ref_memory_t *, bool);
-private void save_set_new_changes(gs_ref_memory_t *, bool);
+private long save_set_new(gs_ref_memory_t *, bool, bool);
+private void save_set_new_changes(gs_ref_memory_t *, bool, bool);
+#if NO_INVISIBLE_LEVELS
+private bool check_l_mark(void *obj);
+#endif
 
 /* Initialize the save/restore machinery. */
 void
@@ -335,8 +379,9 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
     /* can have the attribute set are the ones on the changes chain, */
     /* and ones in objects allocated since the last save. */
     if (lmem->save_level > 1) {
-	long scanned = save_set_new(&lsave->state, false);
+	long scanned = save_set_new(&lsave->state, false, true);
 
+#if !NO_INVISIBLE_LEVELS
 	if ((lsave->state.total_scanned += scanned) > max_repeated_scan) {
 	    /* Do a second, invisible save. */
 	    alloc_save_t *rsave;
@@ -364,6 +409,9 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 		print_save("save", lmem->space, lsave);
 	    }
 	}
+#else
+	(void)scanned;
+#endif
     }
     alloc_set_in_save(dmem);
     return sid;
@@ -482,6 +530,85 @@ alloc_save_change(gs_dual_memory_t * dmem, const ref * pcont,
 
     return alloc_save_change_in(mem, pcont, where, cname);
 }
+
+#if NO_INVISIBLE_LEVELS
+/* Allocate a structure for recording an allocation event. */
+int
+alloc_save_change_alloc(gs_ref_memory_t *mem, client_name_t cname, ref_packed ***ppr)
+{
+    register alloc_change_t *cp;
+
+    if (mem->new_mask == 0)
+	return 0;		/* no saving */
+    cp = gs_alloc_struct((gs_memory_t *)mem, alloc_change_t,
+			 &st_alloc_change, "alloc_save_change");
+    if (cp == 0)
+	return_error(e_VMerror);
+    cp->next = mem->changes;
+    cp->where = 0;
+    cp->offset = AC_OFFSET_ALLOCATED;
+    make_null(&cp->contents);
+    mem->changes = cp;
+    *ppr = &cp->where;
+    return 1;
+}
+
+/* Remove an AC_OFFSET_ALLOCATED element. */
+void
+alloc_save_remove(gs_ref_memory_t *mem, ref_packed *obj, client_name_t cname)
+{
+    alloc_change_t **cpp = &mem->changes;
+    
+    for (; *cpp != NULL;) {
+	alloc_change_t *cp = *cpp;
+
+	if (cp->offset == AC_OFFSET_ALLOCATED && cp->where == obj) {
+	    if (mem->scan_limit == cp)
+		mem->scan_limit = cp->next;
+	    *cpp = cp->next;
+	    gs_free_object((gs_memory_t *)mem, cp, "alloc_save_remove");
+	} else
+	    cpp = &(*cpp)->next;
+    }
+}
+
+/* Filter save change lists. */
+private inline void
+alloc_save__filter_changes_in_space(gs_ref_memory_t *mem)
+{
+    /* This is a special function, which is called
+       from the garbager after setting marks and before collecting
+       unused space. Therefore it just resets marks for
+       elements being released instead releasing them really. */
+    alloc_change_t **cpp = &mem->changes;
+    
+    for (; *cpp != NULL; ) {
+	alloc_change_t *cp = *cpp;
+
+	if (cp->offset == AC_OFFSET_ALLOCATED && !check_l_mark(cp->where)) {
+	    obj_header_t *pre = (obj_header_t *)cp - 1;
+
+	    *cpp = cp->next;
+	    cp->where = 0;
+	    if (mem->scan_limit == cp)
+		mem->scan_limit = cp->next;
+	    o_set_unmarked(pre);
+	} else
+	    cpp = &(*cpp)->next;
+    }
+}
+
+/* Filter save change lists. */
+void
+alloc_save__filter_changes(gs_ref_memory_t *memory)
+{
+    gs_ref_memory_t *mem = memory;
+
+    for  (; mem; mem = &mem->saved->state)
+	alloc_save__filter_changes_in_space(mem);
+}
+
+#endif
 
 /* Return (the id of) the innermost externally visible save object, */
 /* i.e., the innermost save with a non-zero ID. */
@@ -693,7 +820,7 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	}
 	alloc_set_not_in_save(dmem);
     } else {			/* Set the l_new attribute in all slots that are now new. */
-	save_set_new(mem, true);
+	save_set_new(mem, true, false);
     }
 
     return sprev == save;
@@ -718,6 +845,11 @@ restore_space(gs_ref_memory_t * mem, gs_dual_memory_t *dmem)
 		dlputs("[U]restore");
 		alloc_save_print(cp, true);
 	    }
+#endif
+#if NO_INVISIBLE_LEVELS
+	    if (cp->offset == AC_OFFSET_ALLOCATED)
+		DO_NOTHING;
+	    else
 #endif
 	    if (r_is_packed(&cp->contents))
 		*cp->where = *(ref_packed *) & cp->contents;
@@ -890,7 +1022,7 @@ alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	if (mem->save_level != 0) {
 	    alloc_change_t *chp = mem->changes;
 
-	    save_set_new(&sprev->state, true);
+	    save_set_new(&sprev->state, true, false);
 	    /* Concatenate the changes chains. */
 	    if (chp == 0)
 		mem->changes = sprev->state.changes;
@@ -903,7 +1035,7 @@ alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	    combine_space(mem);	/* combine memory */
 	} else {
 	    forget_changes(mem);
-	    save_set_new(mem, false);
+	    save_set_new(mem, false, false);
 	    file_forget_save(mem);
 	    combine_space(mem);	/* combine memory */
 	    /* This is the outermost save, which might also */
@@ -911,7 +1043,7 @@ alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	    mem = save->space_global;
 	    if (mem != save->space_local && mem->saved != 0) {
 		forget_changes(mem);
-		save_set_new(mem, false);
+		save_set_new(mem, false, false);
 		file_forget_save(mem);
 		combine_space(mem);
 	    }
@@ -1014,6 +1146,11 @@ forget_changes(gs_ref_memory_t * mem)
 	ref_packed *prp = chp->where;
 
 	if_debug1('U', "[U]forgetting change 0x%lx\n", (ulong) chp);
+#if NO_INVISIBLE_LEVELS
+	if (chp->offset == AC_OFFSET_ALLOCATED)
+	    DO_NOTHING;
+	else
+#endif
 	if (!r_is_packed(prp))
 	    r_clear_attrs((ref *) prp, l_new);
 	next = chp->next;
@@ -1042,20 +1179,104 @@ file_forget_save(gs_ref_memory_t * mem)
     }
 }
 
-/* ------ Internal routines ------ */
+private inline uint
+mark_allocated(void *obj, bool to_new)
+{   
+    obj_header_t *pre = (obj_header_t *)obj - 1;
+    uint size = pre_obj_contents_size(pre);
+    ref_packed *prp = (ref_packed *) (pre + 1);
+    ref_packed *next = (ref_packed *) ((char *)prp + size);
+#ifdef ALIGNMENT_ALIASING_BUG
+		ref *rpref;
+# define RP_REF(rp) (rpref = (ref *)rp, rpref)
+#else
+# define RP_REF(rp) ((ref *)rp)
+#endif
+
+    if (pre->o_type != &st_refs) {
+	/* Must not happen. Can't continue. Emit a crash. */
+	int i = *(int *)0;
+
+	mark_allocated((void *)i, false); /* an untrivial use of i 
+					     against code optimization. */
+    }
+    /* We know that every block of refs ends with */
+    /* a full-size ref, so we only need the end check */
+    /* when we encounter one of those. */
+    if (to_new)
+	while (1) {
+	    if (r_is_packed(prp))
+		prp++;
+	    else {
+		RP_REF(prp)->tas.type_attrs |= l_new;
+		prp += packed_per_ref;
+		if (prp >= next)
+		    break;
+	    }
+    } else
+	while (1) {
+	    if (r_is_packed(prp))
+		prp++;
+	    else {
+		RP_REF(prp)->tas.type_attrs &= ~l_new;
+		prp += packed_per_ref;
+		if (prp >= next)
+		    break;
+	    }
+	}
+#undef RP_REF
+    return size;
+}
+
+#if NO_INVISIBLE_LEVELS
+/* Check if a block contains refs marked by garbager. */
+private bool
+check_l_mark(void *obj)
+{   
+    obj_header_t *pre = (obj_header_t *)obj - 1;
+    uint size = pre_obj_contents_size(pre);
+    ref_packed *prp = (ref_packed *) (pre + 1);
+    ref_packed *next = (ref_packed *) ((char *)prp + size);
+#ifdef ALIGNMENT_ALIASING_BUG
+		ref *rpref;
+# define RP_REF(rp) (rpref = (ref *)rp, rpref)
+#else
+# define RP_REF(rp) ((ref *)rp)
+#endif
+
+    /* We know that every block of refs ends with */
+    /* a full-size ref, so we only need the end check */
+    /* when we encounter one of those. */
+    while (1) {
+	if (r_is_packed(prp)) {
+	    if (r_has_pmark(prp))
+		return true;
+	    prp++;
+	} else {
+	    if (r_has_attr(RP_REF(prp), l_mark))
+		return true;
+	    prp += packed_per_ref;
+	    if (prp >= next)
+		return false;
+	}
+    }
+#undef RP_REF
+}
+#endif
 
 /* Set or reset the l_new attribute in every relevant slot. */
 /* This includes every slot on the current change chain, */
 /* and every (ref) slot allocated at this save level. */
 /* Return the number of bytes of data scanned. */
 private long
-save_set_new(gs_ref_memory_t * mem, bool to_new)
+save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 {
     long scanned = 0;
 
     /* Handle the change chain. */
-    save_set_new_changes(mem, to_new);
+    save_set_new_changes(mem, to_new, set_limit);
 
+#if !NO_INVISIBLE_LEVELS
     /* Handle newly allocated ref objects. */
     SCAN_MEM_CHUNKS(mem, cp) {
 	if (cp->has_refs) {
@@ -1068,43 +1289,8 @@ save_set_new(gs_ref_memory_t * mem, bool to_new)
 	    if (pre->o_type == &st_refs) {
 		/* These are refs, scan them. */
 		ref_packed *prp = (ref_packed *) (pre + 1);
-		ref_packed *next = (ref_packed *) ((char *)prp + size);
-#ifdef ALIGNMENT_ALIASING_BUG
-		ref *rpref;
-# define RP_REF(rp) (rpref = (ref *)rp, rpref)
-#else
-# define RP_REF(rp) ((ref *)rp)
-#endif
 
-		if_debug2('U', "[U]refs 0x%lx to 0x%lx\n",
-			  (ulong) prp, (ulong) next);
-		has_refs = true;
-		scanned += size;
-		/* We know that every block of refs ends with */
-		/* a full-size ref, so we only need the end check */
-		/* when we encounter one of those. */
-		if (to_new)
-		    while (1) {
-			if (r_is_packed(prp))
-			    prp++;
-			else {
-			    RP_REF(prp)->tas.type_attrs |= l_new;
-			    prp += packed_per_ref;
-			    if (prp >= next)
-				break;
-			}
-		} else
-		    while (1) {
-			if (r_is_packed(prp))
-			    prp++;
-			else {
-			    RP_REF(prp)->tas.type_attrs &= ~l_new;
-			    prp += packed_per_ref;
-			    if (prp >= next)
-				break;
-			}
-		    }
-#undef RP_REF
+		scanned += mark_allocated(prp, to_new);
 	    } else
 		scanned += sizeof(obj_header_t);
 	    END_OBJECTS_SCAN
@@ -1114,26 +1300,51 @@ save_set_new(gs_ref_memory_t * mem, bool to_new)
     END_CHUNKS_SCAN
 	if_debug2('u', "[u]set_new (%s) scanned %ld\n",
 		  (to_new ? "restore" : "save"), scanned);
+#endif
     return scanned;
 }
 
 /* Set or reset the l_new attribute on the changes chain. */
 private void
-save_set_new_changes(gs_ref_memory_t * mem, bool to_new)
+save_set_new_changes(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 {
     register alloc_change_t *chp = mem->changes;
     register uint new = (to_new ? l_new : 0);
+#if NO_INVISIBLE_LEVELS
+    long scanned = mem->total_scanned;
+#endif
 
     for (; chp; chp = chp->next) {
-	ref_packed *prp = chp->where;
+#if NO_INVISIBLE_LEVELS
+	if (chp->offset == AC_OFFSET_ALLOCATED) {
+	    if (chp->where != 0)
+		scanned += mark_allocated((void *)chp->where, to_new);
+	} else
+#endif
+	{
+	    ref_packed *prp = chp->where;
 
-	if_debug3('U', "[U]set_new 0x%lx: (0x%lx, %d)\n",
-		  (ulong)chp, (ulong)prp, new);
-	if (!r_is_packed(prp)) {
-	    ref *const rp = (ref *) prp;
+	    if_debug3('U', "[U]set_new 0x%lx: (0x%lx, %d)\n",
+		    (ulong)chp, (ulong)prp, new);
+	    if (!r_is_packed(prp)) {
+		ref *const rp = (ref *) prp;
 
-	    rp->tas.type_attrs =
-		(rp->tas.type_attrs & ~l_new) + new;
+		rp->tas.type_attrs =
+		    (rp->tas.type_attrs & ~l_new) + new;
+	    }
 	}
+#if NO_INVISIBLE_LEVELS
+	if (mem->scan_limit == chp)
+	    break;
+#endif
     }
+#if NO_INVISIBLE_LEVELS
+    if (set_limit) {
+	if (scanned >= max_repeated_scan) {
+	    mem->scan_limit = mem->changes;
+	    mem->total_scanned = 0;
+	} else
+	    mem->total_scanned = scanned;
+    }
+#endif
 }
