@@ -727,7 +727,7 @@ GSCONSOLE_XE=$(BINDIR)\$(GSCONSOLE).exe
 GSDLL_DLL=$(BINDIR)\$(GSDLL).dll
 GSDLL_OBJS=$(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_msdll.$(OBJ)
 
-!if $(DEBUGSYM) != 0
+!if $(TDEBUG) != 0
 $(PSGEN)lib32.rsp: $(TOP_MAKEFILES)
 	echo /NODEFAULTLIB:LIBC.lib > $(PSGEN)lib32.rsp
 	echo /NODEFAULTLIB:LIBCMT.lib >> $(PSGEN)lib32.rsp
