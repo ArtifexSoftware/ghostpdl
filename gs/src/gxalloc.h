@@ -26,7 +26,7 @@ typedef struct gs_ref_memory_s gs_ref_memory_t;
 #include "gsalloc.h"
 #include "gxobj.h"
 
-#define NO_INVISIBLE_LEVELS 0 /* old code = 0, new code = 1 */
+#define NO_INVISIBLE_LEVELS 1 /* old code = 0, new code = 1 */
 
 /* ================ Chunks ================ */
 
