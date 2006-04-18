@@ -528,8 +528,7 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	else if ( pxgs->color_space == eSRGB )
 	    ppt->type = pxpSRGB;
 	else {
-	    dprintf1(pxs->memory, "Warning unknown color space %d\n", pxgs->color_space);
-	    ppt->type = pxpGray;
+            return_error(pxs->memory, errorMissingAttribute);
 	}
 	/* NB depth?? - for range checking */
 	if ( ppt->type == eRGB || ppt->type == eSRGB ) {
@@ -606,6 +605,9 @@ const byte apxSetColorSpace[] = {
   pxaCRGBMinMax, pxaGammaGain, pxaPaletteDepth, pxaPaletteData, 0
 };
 
+/* it appears the 4600 does not support CRGB define this to enable support */
+/* #define SUPPORT_COLORIMETRIC */
+
 int
 pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 {	px_gstate_t *pxgs = pxs->pxgs;
@@ -617,6 +619,12 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 	    cspace = par->pv[1]->value.i;
 	else
 	    return_error(pxs->memory, errorIllegalAttributeValue);
+#ifndef SUPPORT_COLORIMETRIC
+        if ( cspace == eCRGB )
+            /* oddly the 4600 reports this a missing attribute, not
+               the expected illegal attribute */
+            return_error(pxs->memory, errorMissingAttribute);
+#endif
         /* substitute srgb if cie color is in effect */
 	if ( ( cspace == eRGB ) && pxs->useciecolor )
             cspace = eSRGB;

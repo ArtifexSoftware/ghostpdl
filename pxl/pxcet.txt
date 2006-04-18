@@ -168,3 +168,15 @@ incorrectly coded as (16,0) (little-endian) rather than (0,16) (big-endian).
 The resulting 4096-byte count causes the entire remainder of the file to be
 interpreted as a data stream; since this exceeds the length of the file, the
 test terminates.
+
+		Report on HP-PCL XL 2 0 protocol generated for
+		Laserjet 8000 with device reference Color Laserjet
+		4600
+                ==================================================
+
+C305.BIN page 13.  An undefined error code 0x15 is reported for
+operator 20 (SetBrushSource) on the 4600.  The color laserjet
+apparently cannot use the referenced pattern.  We print page 13
+without an error.
+
+
