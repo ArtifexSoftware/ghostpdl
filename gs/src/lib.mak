@@ -2609,6 +2609,7 @@ $(GLD)shadelib.dev : $(LIB_MAK) $(ECHOGS_XE) $(shadelib_)\
 
 # ---------------- Support for %rom% IODevice ----------------- #
 # This is used to access compressed, compiled-in support files
+gsiorom_h=$(GLSRC)gsiorom.h
 romfs_=$(GLOBJ)gsiorom.$(OBJ)
 $(GLD)romfs1.dev : $(LIB_MAK) $(ECHO_XE) $(romfs_)
 	$(SETMOD) $(GLD)romfs1 $(romfs_)
@@ -2620,12 +2621,20 @@ $(GLD)romfs0.dev :  $(LIB_MAK) $(ECHO_XE)
 	$(SETMOD) $(GLD)romfs0 
 
 # the following module is only included if the romfs.dev FEATURE is enabled
-$(GLOBJ)gsiorom.$(OBJ) : $(GLSRC)gsiorom.c $(GLSRC)gsiorom.h \
- $(std_h) $(gx_h) $(gserrors_h) $(gsstruct_h) $(gxiodev_h)
+$(GLOBJ)gsiorom.$(OBJ) : $(GLSRC)gsiorom.c $(gsiorom_h) \
+ $(std_h) $(gx_h) $(gserrors_h) $(gsstruct_h) $(gxiodev_h) $(stat__h)
 	$(GLCC) $(GLO_)gsiorom.$(OBJ) $(I_)$(ZI_)$(_I) $(C_) $(GLSRC)gsiorom.c
 
-$(GLOBJ)gsromfs.$(OBJ) : $(GLOBJ)gsromfs.c
+$(GLOBJ)gsromfs.$(OBJ) : $(GLOBJ)gsromfs.c $(time__h)
 	$(GLCC) $(GLO_)gsromfs.$(OBJ) $(C_) $(GLOBJ)gsromfs.c
+
+# Define the ZLIB modules needed by mnkromfs here to factor it out of top makefiles
+# Also put the .h dependencies here for the same reason
+MKROMFS_ZLIB_OBJS=$(GLOBJ)compress.$(OBJ) $(GLOBJ)deflate.$(OBJ) \
+	$(GLOBJ)zutil.$(OBJ) $(GLOBJ)adler32.$(OBJ) $(GLOBJ)crc32.$(OBJ) \
+	$(GLOBJ)trees.$(OBJ)
+MKROMFS_COMMON_DEPS=$(stdpre_h) $(stdint__h) $(gsiorom_h) \
+	$(gsmemret_h) $(gsmalloc_h) $(gsstype_h) $(gp_h) $(time__h)
 
 # The following is only and example since the %rom% IODevice is not exclusively
 # a PostScript feature (although it is usually used for COMPILE_INITS

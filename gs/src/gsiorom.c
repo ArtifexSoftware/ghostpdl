@@ -33,11 +33,13 @@
 #include "gsutil.h"
 #include "gxiodev.h"
 #include "stream.h"
+#include "stat_.h"
 #include "zlib.h"
 
 /* device method prototypes */
 private iodev_proc_init(romfs_init);
 private iodev_proc_open_file(romfs_open_file);
+private iodev_proc_file_status(romfs_file_status);
 private iodev_proc_enumerate_files(romfs_enumerate_files_init);
 private iodev_proc_enumerate_next(romfs_enumerate_next);
 private iodev_proc_enumerate_close(romfs_enumerate_close);
@@ -51,7 +53,7 @@ const gx_io_device gs_iodev_rom =
      romfs_open_file,
      iodev_no_fopen, iodev_no_fclose,
      iodev_no_delete_file, iodev_no_rename_file,
-     iodev_no_file_status,
+     romfs_file_status,
      romfs_enumerate_files_init, romfs_enumerate_next, romfs_enumerate_close, 
      iodev_no_get_params, iodev_no_put_params
     }
@@ -165,6 +167,40 @@ romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
 
     /* return success */
     return 0;
+}
+
+private int
+romfs_file_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
+{
+    extern const uint32_t *gs_romfs[];
+    extern const time_t gs_romfs_buildtime;
+    const uint32_t *node_scan = gs_romfs[0], *node = NULL;
+    uint32_t filelen, blocks;
+    int i;
+    char *filename;
+    uint namelen = strlen(fname);
+
+    memset(pstat, 0, sizeof(struct stat));
+    /* scan the inodes to find the requested file */
+    for (i=0; node_scan != 0; i++, node_scan = gs_romfs[i]) {
+	filelen = get_u32_big_endian(node_scan) & 0x7fffffff;	/* ignore compression bit */
+	blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
+	filename = (char *)(&(node_scan[1+(2*blocks)]));
+	if ((namelen == strlen(filename)) && 
+	    (strncmp(filename, fname, namelen) == 0)) {
+	    node = node_scan;
+	    break;
+	}
+    }
+    /* inode points to the file (or NULL if not found */
+    if (node == NULL)
+	return_error(gs_error_undefinedfilename);
+
+    /* fill in the values used by zstatus */
+    pstat->st_size = filelen;
+    pstat->st_mtime = gs_romfs_buildtime;
+    pstat->st_ctime = gs_romfs_buildtime;
+    return 0;	/* success */
 }
 
 private file_enum *

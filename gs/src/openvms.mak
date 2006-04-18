@@ -506,14 +506,12 @@ $(GENINIT_XE) : $(GLOBJDIR)geninit.$(OBJ)
 $(GLOBJ)geninit.$(OBJ) :  $(GLSRC)geninit.c $(GENINIT_DEPS)
 	$(CCAUX)/obj=$(GLOBJ)geninit.$(OBJ)  $(GLSRC)geninit.c
 
-MKROMFS_DEPS=$(GLOBJ)compress.$(OBJ) $(GLOBJ)deflate.$(OBJ) $(GLOBJ)zutil.$(OBJ) $(GLOBJ)adler32.$(OBJ) $(GLOBJ)crc32.$(OBJ) $(GLOBJ)trees.$(OBJ) 
+$(GLOBJ)mkromfs.$(OBJ) :  $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS)
+	$(CCAUX)/obj=$(GLOBJ)mkromfs.$(OBJ) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(GLSRC)mkromfs.c
 
-# what about include of zlib headers ??? (ZSRCDIR)
-$(GLOBJ)mkromfs.$(OBJ) :  $(GLSRC)mkromfs.c $(GLSRC)gsiorom.h
-	$(CCAUX)/obj=$(GLOBJ)mkromfs.$(OBJ)  $(GLSRC)mkromfs.c
-
-$(MKROMFS_XE): $(GLOBJDIR)mkromfs.$(OBJ) $(MKROMFS_DEPS)
-	LINK/EXE=$@ $(GLOBJ)mkromfs.$(OBJ) $(MKROMFS_DEPS)
+MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(GLOBJ)gp_vms.$(OBJ)
+$(MKROMFS_XE): $(GLSRC)mkromfs.c $(MKROMFS_OBJS)
+	LINK/EXE=$@ $(GLOBJ)mkromfs.$(OBJ) $(MKROMFS_OBJS)
 
 # Preliminary definitions
 

@@ -76,10 +76,13 @@ $(GENHT_XE): $(GLSRC)genht.c $(AK) $(GENHT_DEPS)
 $(GENINIT_XE): $(GLSRC)geninit.c $(AK) $(GENINIT_DEPS)
 	$(CCAUX) $(I_)$(GLSRCDIR)$(_I) $(O_)$(GENINIT_XE) $(GLSRC)geninit.c
 
-MKROMFS_DEPS=$(GLOBJ)compress.$(OBJ) $(GLOBJ)deflate.$(OBJ) $(GLOBJ)zutil.$(OBJ) $(GLOBJ)adler32.$(OBJ) $(GLOBJ)crc32.$(OBJ) $(GLOBJ)trees.$(OBJ) $(GLOBJ)gscdefs.$(OBJ) $(GLOBJ)gsmisc.$(OBJ) $(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)gslibctx.$(OBJ) $(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ) $(GLOBJ)gsutil.$(OBJ)
+MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(GLOBJ)gscdefs.$(OBJ) $(GLOBJ)gsmisc.$(OBJ) \
+ $(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)gslibctx.$(OBJ) $(GLOBJ)gp_getnv.$(OBJ) \
+ $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) \
+ $(GLOBJ)gp_stdia.$(OBJ) $(GLOBJ)gsutil.$(OBJ)
 
-$(MKROMFS_XE): $(GLSRC)mkromfs.c $(GLSRC)gsiorom.h $(MKROMFS_DEPS)
-	$(CCAUX) $(GENOPT) $(CFLAGS_DEBUG) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLOBJ)$(_I) $(I_)$(ZSRCDIR)$(_I) $(GLSRC)mkromfs.c $(O_)$(MKROMFS_XE) $(MKROMFS_DEPS) -lm
+$(MKROMFS_XE): $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS)
+	$(CCAUX) $(GENOPT) $(CFLAGS_DEBUG) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLOBJ)$(_I) $(I_)$(ZSRCDIR)$(_I) $(GLSRC)mkromfs.c $(O_)$(MKROMFS_XE) $(MKROMFS_OBJS) -lm
 
 # Query the environment to construct gconfig_.h.
 # The "else true;" is required because Ultrix's implementation of sh -e

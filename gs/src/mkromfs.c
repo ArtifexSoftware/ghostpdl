@@ -47,6 +47,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "time_.h"
 
 #include <zlib.h>
 
@@ -464,7 +465,9 @@ main(int argc, char *argv[])
 #else
     fprintf(out,"\t/* this code assumes a little endian target platform */\n");
 #endif
-    fprintf(out,"\n#include \"stdint_.h\"\n\n");
+    fprintf(out,"\n#include \"stdint_.h\"\n");
+    fprintf(out,"\n#include \"time_.h\"\n\n");
+    fprintf(out,"    time_t gs_romfs_buildtime = %ld;\n\n", time(NULL));
 
     /* process the remaining arguments (options interspersed with paths) */
     for (; atarg < argc; atarg++) {  

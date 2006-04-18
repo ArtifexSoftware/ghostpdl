@@ -632,16 +632,15 @@ $(GENINIT_XE): $(PSSRC)geninit.c $(GENINIT_DEPS)
 	$(CCAUX) /Fe$(GENINIT_XE) geninit.c
 !endif
 
-MKROMFS_DEPS=$(GLOBJ)compress.$(OBJ) $(GLOBJ)deflate.$(OBJ) $(GLOBJ)zutil.$(OBJ) $(GLOBJ)adler32.$(OBJ) $(GLOBJ)crc32.$(OBJ) $(GLOBJ)trees.$(OBJ) $(GLOBJ)gscdefs.$(OBJ) $(os2__)
-
-$(MKROMFS_XE): $(GLSRC)mkromfs.c $(GLSRC)gsiorom.h $(MKROMFS_DEPS)
+MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(GLOBJ)gscdefs.$(OBJ) $(os2__)
+$(MKROMFS_XE): $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS)
 !if $(EMX)
 	$(CCAUX) -o $(AUXGEN)genht $(GENOPT) $(CFLAGS_DEBUG) $(GLSRC)mkromfs.c
-	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)mkromfs $(MKROMFS_DEPS) $(MKROMFS_XE)
+	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)mkromfs $(MKROMFS_OBJS) $(MKROMFS_XE)
 	del $(AUXGEN)mkromfs
 !endif
 !if $(IBMCPP)
-	$(CCAUX) /Fe$(GENHT_XE) genht.c
+	$(CCAUX) /Fe$(MKROMFS_XE) mkromfs.c
 !endif
 	$(CCAUX) $(GENOPT) $(CFLAGS_DEBUG) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLOBJ)$(_I) $(I_)$(ZSRCDIR)$(_I) $(GLSRC)mkromfs.c $(O_)$(MKROMFS_XE) $(MKROMFS_DEPS) -lm
 
