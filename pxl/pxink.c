@@ -327,20 +327,7 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
 				real_value(porigin, 1), &mat);
 	  else
 	    gs_make_identity(&mat);
-	  /* unaccount for the pattern shift caused by screen phase in
-             the library...  I am not sure this is correct */
-	  {
-	      gs_point user_origin;
-	      gs_matrix cur_mat;
-	      gs_currentmatrix(pgs, &cur_mat);
-	      gs_distance_transform_inverse(pxgs->memory, pxgs->halftone.origin.x,
-			    pxgs->halftone.origin.y, &cur_mat, &user_origin);
-	      gs_matrix_translate( pxgs->memory, 
-				   &mat,
-				   -user_origin.x,
-				   -user_origin.y,
-				   &mat);
-	  }
+
 	  if ( pdsize )
 	    { dsize.x = real_value(pdsize, 0);
 	      dsize.y = real_value(pdsize, 1);
