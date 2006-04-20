@@ -1263,15 +1263,18 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
      */
     set_ctm = (bool)gdev_vector_stroke_scaling((gx_device_vector *)pdev,
 					       pis, &scale, &mat);
-    if (set_ctm && (pis->ctm.xx == 0) + (pis->ctm.xy == 0) + 
-	           (pis->ctm.yx == 0) + (pis->ctm.yy == 0) >= 3) {
+    if (set_ctm && ((pis->ctm.xx == 0 && pis->ctm.xy == 0) ||
+	            (pis->ctm.yx == 0 && pis->ctm.yy == 0))) {
  	/* Acrobat Reader 5 and Adobe Reader 6 issues 
- 	   the "Wrong operand type" error with such matrices.
+ 	   the "Wrong operand type" error with matrices, which have 3 zero coefs.
 	   Besides that, we found that Acrobat Reader 4, Acrobat Reader 5 
 	   and Adobe Reader 6 all store the current path in user space 
 	   and apply CTM in the time of stroking - See the bug 687901. 
 	   Therefore a precise conversion of Postscript to PDF isn't possible in this case.
-	   Adobe viewers render a line with a constant width instead. */
+	   Adobe viewers render a line with a constant width instead. 
+	   At last, with set_ctm == true we need the inverse matrix in 
+	   gdev_vector_dopath. Therefore we exclude projection matrices
+	   (see bug 688363). */
 	set_ctm = false;
 	scale = fabs(pis->ctm.xx + pis->ctm.xy + pis->ctm.yx + pis->ctm.yy) /* Using the non-zero coeff. */
 	        / sqrt(2); /* Empirically from Adobe. */
