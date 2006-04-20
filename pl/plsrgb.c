@@ -321,7 +321,7 @@ gs_color_space *pl_pcs;
 bool pl_pcs_built = false;
 extern const gs_color_space_type gs_color_space_type_CIEABC;
 
-private int
+int
 pl_build_and_set_sRGB_space(gs_state *pgs)
 {
     if ( pl_pcs_built == false ) {

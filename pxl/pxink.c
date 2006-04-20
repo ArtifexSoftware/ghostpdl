@@ -249,6 +249,7 @@ px_paint_pattern(const gs_client_color *pcc, gs_state *pgs)
 	 */
 	image.Width = rep_width;
 	image.Height = full_height;
+        image.CombineWithColor = true;
 	for ( x = 0; x < full_width; x += rep_width )
 	  { int y;
 
@@ -358,20 +359,32 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
 	    pxgs->brush.type = pxgs->pen.type = pxpNull;
 	    gs_newpath(pgs);
 	    px_initclip(pxs);
-	    /* 
-	     * Since the PaintProcs don't reference the saved color space or
-	     * color, reset these so that there isn't an extra retained
-	     * reference to the Pattern object.
-	     */
-            {
-                gs_color_space cs;
-                gs_color_space *pcs;
-
-                gs_cspace_init_DeviceGray(pxgs->memory, &cs);
-                pcs = &cs;
-                gs_setcolorspace(pgs, pcs);
-            }
 	  }
+          {
+              gs_color_space cs;
+              gs_color_space *pcs;
+              /* set the color space */
+              switch ( pxgs->color_space ) {
+              case eGray:
+                  gs_cspace_init_DeviceGray(pxgs->memory, &cs);
+                  pcs = &cs;
+                  gs_setcolorspace(pgs, pcs);
+                  break;
+              case eRGB:
+                  gs_cspace_init_DeviceRGB(pxgs->memory, &cs);
+                  pcs = &cs;
+                  gs_setcolorspace(pgs, pcs);
+                  break;
+              case eSRGB:
+              case eCRGB:
+                  if ( pl_build_and_set_sRGB_space(pgs) < 0 )
+                      /* should not happen */
+                      return_error(pxgs->memory, errorInsufficientMemory);
+                  break;
+              default:
+                  return_error(pxgs->memory, errorIllegalAttributeValue);
+              }
+          }
 	  code = gs_makepattern(pcc, &template, &mat, pgs, NULL);
 	  gs_grestore(pgs);
 	  return code;

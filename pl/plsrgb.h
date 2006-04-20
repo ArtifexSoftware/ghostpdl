@@ -29,4 +29,7 @@ int pl_build_crd(gs_state *pgs);
 /* free color spaces and the crd associated with setting up srgb */
 void pl_free_srgb(gs_state *pgs);
 
+/* build and set the rgb color space */
+int pl_build_and_set_sRGB_space(gs_state *pgs);
+
 #endif /* plsrgb_INCLUDED */
