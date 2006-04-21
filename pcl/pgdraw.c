@@ -54,7 +54,7 @@ hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
 	 (pgls->g.plot_height == 0) ) {
 	dprintf(pgls->memory, "bad picture frame coordinates\n");
 	return 0;
-    } else if ( pgls->g.scaling_type == hpgl_scaling_none ) {
+    } else if ( pgls->g.scaling_type != hpgl_scaling_point_factor ) {
 	hpgl_real_t vert_scale = (pgls->g.plot_size_vertical_specified) ?
  	    ((hpgl_real_t)pgls->g.picture_frame_height /
  	     (hpgl_real_t)pgls->g.plot_height) :
