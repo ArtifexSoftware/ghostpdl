@@ -409,14 +409,15 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
 	}
 	else {
             /* Undecodable string is shorter than the shortest character,
-             * there's no way except to return error.
+             * return 'gs_no_glyph' and update index to end-of-string 
              */
             if (gs_debug_c('J')) {
                 dlprintf2("[J]GCDN() left data in buffer (%d) is shorter than shortest defined character (%d)\n",
                   ssize, chr_size_shortest);
             }
             *pglyph = gs_no_glyph;
-            return_error(gs_error_rangecheck);
+	    *pindex += ssize;
+            return 0;			/* fixme: should return a code != 0 if caller needs to know */
 	}
     }
 }
