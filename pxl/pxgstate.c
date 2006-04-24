@@ -356,7 +356,11 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
     pim->BitsPerComponent = depth;
     if ( params->indexed )
 	pim->Decode[1] = (1 << depth) - 1;
-    return 0;
+    if (cie_space) {
+        return pl_setSRGB(pgs, 0.0, 0.0, 0.0);
+    } else {
+        return 0;
+    }
 }
 
 /* Check the setting of the clipping region. */

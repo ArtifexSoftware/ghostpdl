@@ -174,7 +174,7 @@ px_end_page_cleanup(px_state_t *pxs)
 	pxs->pxgs->stack_depth++;
 	pxPopGS(NULL, pxs);
 	pxNewPath(NULL, pxs);
-	px_purge_pattern_cache(pxs, ePagePattern);
+        px_purge_pattern_cache(pxs, ePagePattern);
 }
 
 /* Purge all */

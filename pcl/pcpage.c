@@ -370,6 +370,33 @@ new_page_size(
 }
 
 /*
+ * Define the known paper sizes.
+ *
+ * The values are taken from the H-P manual and are in 1/300" units,
+ * but the structure values are in centipoints (1/7200").
+ */
+#define p_size(t, n, w, h, offp, offl)                                  \
+    { (t), (n), { (w) * 24L, (h) * 24L, (offp) * 24L, (offl) * 24L } }
+
+private struct {
+    uint                    tag;
+    const char *            pname;
+    pcl_paper_size_t        psize;
+} paper_sizes[] = {
+    p_size(  1, "executive", 2175, 3150, 75, 60),
+    p_size(  2, "letter",    2550, 3300, 75, 60),
+    p_size(  3, "legal",     2550, 4200, 75, 60),
+    p_size(  6, "ledger",    3300, 5100, 75, 60),
+    p_size( 26, "a4",        2480, 3507, 71, 59),
+    p_size( 27, "a3",        3507, 4960, 71, 59),
+    p_size( 80, "monarch",   1162, 2250, 75, 60),
+    p_size( 81, "com_10",    1237, 2850, 75, 60),
+    p_size( 90, "dl",        1299, 2598, 71, 59),
+    p_size( 91, "c5",        1913, 2704, 71, 59),
+    p_size(100, "b5",        2078, 2952, 71, 59)
+};
+
+/*
  * Reset all parameters which must be reset whenever the logical page
  * orientation changes.
  *
@@ -394,6 +421,25 @@ new_logical_page(
     pxfmst->print_dir = 0;
     new_page_size(pcs, psize, reset_initial);
 }
+
+int
+new_logical_page_for_passthrough_snippet(pcl_state_t *pcs, int orient, int psize)
+{
+    int i;
+    for (i = 0; i < countof(paper_sizes); i++) {
+        if (psize == paper_sizes[i].tag) {
+            psize = &(paper_sizes[i].psize);
+            break;
+        }
+    }
+    if (psize == 0)
+        return -1;
+    new_logical_page(pcs, orient, psize, false);
+    return 0;
+
+}
+
+    
 
 /* page marking routines */
 
@@ -539,33 +585,6 @@ pcl_end_page(
 
 
 /* Commands */
-
-/*
- * Define the known paper sizes.
- *
- * The values are taken from the H-P manual and are in 1/300" units,
- * but the structure values are in centipoints (1/7200").
- */
-#define p_size(t, n, w, h, offp, offl)                                  \
-    { (t), (n), { (w) * 24L, (h) * 24L, (offp) * 24L, (offl) * 24L } }
-
-private struct {
-    uint                    tag;
-    const char *            pname;
-    pcl_paper_size_t        psize;
-} paper_sizes[] = {
-    p_size(  1, "executive", 2175, 3150, 75, 60),
-    p_size(  2, "letter",    2550, 3300, 75, 60),
-    p_size(  3, "legal",     2550, 4200, 75, 60),
-    p_size(  6, "ledger",    3300, 5100, 75, 60),
-    p_size( 26, "a4",        2480, 3507, 71, 59),
-    p_size( 27, "a3",        3507, 4960, 71, 59),
-    p_size( 80, "monarch",   1162, 2250, 75, 60),
-    p_size( 81, "com_10",    1237, 2850, 75, 60),
-    p_size( 90, "dl",        1299, 2598, 71, 59),
-    p_size( 91, "c5",        1913, 2704, 71, 59),
-    p_size(100, "b5",        2078, 2952, 71, 59)
-};
 
 /*
  * ESC & l <psize_enum> A
