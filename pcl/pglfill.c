@@ -320,6 +320,8 @@ hpgl_LT(
        (i.e. the 99 pattern only needs to be saved here */
     if ( !hpgl_arg_c_int(pgls->memory, pargs, &type) ) {
 	pgls->g.line.saved = pgls->g.line.current;
+        pgls->g.line.saved.pos.x = pgls->g.pos.x;
+        pgls->g.line.saved.pos.y = pgls->g.pos.y;
 	pgls->g.line.current.is_solid = true;
 	return 0;
     }
@@ -328,7 +330,9 @@ hpgl_LT(
        current selection (LT;) LT99 is ignored when a non-solid line
        type is in effect, of course the previous line may have been a
        solid line resulting in nop. */
-    if ( type == 99 && pgls->g.line.current.is_solid == true ) {
+    if ( type == 99 && pgls->g.line.current.is_solid == true &&
+	 pgls->g.line.saved.pos.x == pgls->g.pos.x &&
+	 pgls->g.line.saved.pos.y == pgls->g.pos.y ) {
 	pgls->g.line.current = pgls->g.line.saved;
 	return 0;
     }
@@ -358,7 +362,15 @@ hpgl_LT(
            NB have not checked if some of these get set if there is a
            range error for pattern length or mode.  An experiment for
            another day... */
-	pgls->g.line.current.is_solid = false;
+
+	if ( type == 0 ) { 
+	    /* Spec says this is for dots, on clj4550 its solid line type!
+	     * NB: need multiple device testing as its likely to be device specific.
+	     * fts 1435 1451 1830 1833.      */
+	    pgls->g.line.current.is_solid = true;
+	}
+	else
+	    pgls->g.line.current.is_solid = false;
         pgls->g.line.current.type = type;
 	pgls->g.line.current.pattern_length = length;
 	pgls->g.line.current.pattern_length_relative = mode;

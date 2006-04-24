@@ -1417,7 +1417,7 @@ hpgl_draw_current_path(
 
     if ( render_mode == hpgl_rm_vector_no_close )
 	render_mode = hpgl_rm_vector;
-    else
+    else 
 	hpgl_call(hpgl_close_path(pgls));
 
     hpgl_call(hpgl_set_drawing_state(pgls, render_mode));
@@ -1536,10 +1536,11 @@ hpgl_draw_current_path(
 	    hpgl_call(gs_currentmatrix(pgs, &save_ctm));
 
 	    /* force no picture frame scaling */
-	    pgls->g.scaling_type = hpgl_scaling_anisotropic; 
+	    pgls->g.scaling_type = hpgl_scaling_point_factor; 
 	    hpgl_call(hpgl_set_plu_ctm(pgls));
 	    pgls->g.scaling_type = save_scaling_type; 
 
+	    /* NB: what does reversing the path do? Currently DEAD code see pglfill.c */
 	    if ( !pgls->g.line.current.is_solid && (pgls->g.line.current.type == 0) )
 		hpgl_call(gs_reversepath(pgls->pgs));
             pcl_mark_page_for_path(pgls);

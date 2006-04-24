@@ -199,6 +199,7 @@ typedef struct pcl_hpgl_state_s {
 	    float pattern_length;
 	    bool pattern_length_relative;
 	    bool is_solid;
+	    gs_point pos;
 	  } current, saved;	/* enable saving for LT99 */
 	  int cap;
 	  int join;
