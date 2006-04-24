@@ -147,8 +147,10 @@ pl_mem_node_remove(gs_memory_t *mem, byte *addr)
             }
             
         }
-        if ( !found )
+        if ( !found ) {
             dprintf1(mem, "FAIL freeing wild pointer freed address %x not found\n", (uint)addr );
+	    return -1;
+	}
     }
   }
   return 0;
@@ -334,8 +336,8 @@ pl_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	if ( gs_debug_c('@') )
 	    memset(bptr, 0xee, header_size + get_size(ptr));
 #endif
-	pl_mem_node_remove(mem, bptr);
-	free(bptr);
+	if (!pl_mem_node_remove(mem, bptr))
+	    free(bptr);
 	
 #ifdef DEBUG
 	/* da for debug allocator - so scripts can parse the trace */
