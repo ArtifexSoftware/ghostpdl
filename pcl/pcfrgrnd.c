@@ -181,7 +181,6 @@ set_foreground(
 
     if ( pcs->personality == pcl5e )
 	return 0;
-    pcl_break_underline(pcs);
 
     /* check that the palette is complete */
     if ((code = pcl_palette_check_complete(pcs)) < 0)
