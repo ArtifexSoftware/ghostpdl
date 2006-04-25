@@ -105,11 +105,11 @@ const gx_device_printer gs_jpxcmyk_device = {
 
 /* private color conversion routines; 
    we don't seem to have defaults for cmyk. */
+private int
 jpx_cmyk_map_color_rgb(gx_device * dev, gx_color_index color,
                         gx_color_value prgb[3])
 {
-    int
-        not_k = color & 0xff,
+    int not_k = color & 0xff,
         r = not_k - ~(color >> 24),
         g = not_k - ~((color >> 16) & 0xff),
         b = not_k - ~((color >> 8) & 0xff);
@@ -170,6 +170,11 @@ jpx_print_page(gx_device_printer * pdev, FILE * prn_stream)
 					jdev->color_info.depth);
     }
     state.bpc = 8; /* currently only 8 bits per component is supported */
+
+    /* ask for lossless encoding */
+    /* state.lossless = 1; */
+    /* or, set the quality level different from the default */
+    /* state.quality = 35; */
 
     /* Set up the streams. */
     fbuf_size = max(512 /* arbitrary */ , state.template->min_out_size);

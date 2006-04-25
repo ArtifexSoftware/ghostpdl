@@ -425,7 +425,8 @@ s_jpxe_read(unsigned char *buffer, short component,
     int i;
 
     if (component < 0 || component >= state->components) {
-	dlprintf1("Luratech JP2 requested image data for unknown component %d", (int)component);
+	dlprintf2("Luratech JP2 requested image data for unknown component %d of %u\n",
+		(int)component, state->components);
 	return cJP2_Error_Invalid_Component_Index;
     }
 
@@ -491,6 +492,20 @@ s_jpxe_write(unsigned char *buffer,
     return cJP2_Error_OK;
 }
 
+/* set defaults for user-configurable parameters */
+private void
+s_jpxe_set_defaults(stream_state *ss)
+{
+    stream_jpxe_state *state = (stream_jpxe_state *)ss;
+
+    /* most common default colorspace */
+    state->colorspace = gs_jpx_cs_rgb;
+
+    /* default to lossy 60% quality */
+    state->lossless = 0;
+    state->quality = 60;
+}
+
 /* initialize the stream */
 private int
 s_jpxe_init(stream_state *ss)
@@ -512,6 +527,13 @@ s_jpxe_init(stream_state *ss)
     if_debug3('w', "[w] jpxe init %lux%lu image with %d components\n",
 	state->width, state->height, state->components);
     if_debug1('w', "[w] jpxe init image is %d bits per component\n", state->bpc);
+
+    if (state->lossless) {
+	if_debug0('w', "[w] jpxe image using lossless encoding\n");
+	state->quality = 100; /* implies lossless */
+    } else {
+	if_debug1('w', "[w] jpxe image quality level %d\n", state->quality);
+    }
 
     /* null the input buffer */
     state->inbuf = NULL;
@@ -607,6 +629,12 @@ s_jpxe_init(stream_state *ss)
 	return ERRC;
     }
 
+    if (state->lossless) {
+	/* the default encoding mode is lossless */
+	return 0;
+    }
+
+    /* otherwise, set 9,7 wavelets and quality-target mode */
     err = JP2_Compress_SetProp(state->handle,
 	cJP2_Prop_Wavelet_Filter, cJP2_Wavelet_9_7, -1, -1);
     if (err != cJP2_Error_OK) {
@@ -614,7 +642,7 @@ s_jpxe_init(stream_state *ss)
 	return ERRC;
     }
     err = JP2_Compress_SetProp(state->handle,
-	cJP2_Prop_Rate_Quality, 60, -1, -1);
+	cJP2_Prop_Rate_Quality, state->quality, -1, -1);
     if (err != cJP2_Error_OK) {
 	dlprintf1("Luratech JP2 error %d setting compression quality\n", (int)err);
 	return ERRC;
@@ -718,5 +746,6 @@ const stream_template s_jpxe_template = {
     s_jpxe_init,
     s_jpxe_process,
     1024, 1024,	/* min in and out buffer sizes */
-    s_jpxe_release
+    s_jpxe_release,
+    s_jpxe_set_defaults
 };

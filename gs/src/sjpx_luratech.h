@@ -67,6 +67,12 @@ typedef struct stream_jpxe_state_s {
     gs_jpx_cs colorspace;	/* colorspace of the input image data */
     unsigned int bpc;		/* sample depth of each channel in bits */
 
+    /* the following members can be optionally set by the caller: */
+    unsigned int quality;       /* compressed image quality target; 1-100
+					leave unset for the default */
+    int lossless;		/* set to 1 to specify lossless image
+					compression; overrides quality */
+
     /* the remainder are handled internally: */
     unsigned int components;	/* number of image channels */
     unsigned long stride;	/* line length in bytes */
