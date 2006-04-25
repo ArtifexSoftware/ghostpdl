@@ -1,0 +1,57 @@
+
+Libpng 1.2.10 - April 23, 2006
+
+This is a public release of libpng, intended for use in production codes.
+
+Files available for download:
+
+Source files with LF line endings (for Unix/Linux) and with a
+"configure" script
+
+   libpng-1.2.10.tar.gz
+   libpng-1.2.10.tar.bz2
+
+Source files with LF line endings (for Unix/Linux) without the
+"configure" script
+
+   libpng-1.2.10-no-config.tar.gz
+   libpng-1.2.10-no-config.tar.bz2
+
+Source files with CRLF line endings (for Windows), without the
+"configure" script
+
+   lpng1210.zip
+   lpng1210.tar.bz2
+
+Project files
+
+   libpng-1.2.10-project-netware.zip
+   libpng-1.2.10-project-wince.zip
+
+Other information:
+
+   libpng-1.2.10-README.txt
+   libpng-1.2.10-KNOWNBUGS.txt
+   libpng-1.2.10-LICENSE.txt
+   libpng-1.2.10-Y2K-compliance.txt
+
+Changes since the last public release (1.2.9):
+
+version 1.2.10 [April 23, 2006]
+  Revised Makefile.am to add -DPNG_CONFIGURE_LIBPNG to compile directive,
+    and modified pngconf.h to include config.h only when PNG_CONFIGURE_LIBPNG
+    is defined.
+  Added a configure check for compiling assembler code in pnggccrd.c
+  Change "exec_prefix=$prefix" to "exec_prefix=$(prefix)" in makefiles.
+  Ensure pngconf.h doesn't define both PNG_USE_PNGGCCRD and PNG_USE_PNGVCRD
+  Fixed "LN_FS" typo in makefile.sco and makefile.solaris.
+  Made the configure warning about versioned symbols less arrogant.
+  Added a note in libpng.txt that png_set_sig_bytes(8) can be used when
+    writing an embedded PNG without the 8-byte signature.
+
+Send comments/corrections/commendations to png-mng-implement at lists.sf.net
+(subscription required; visit 
+https://lists.sourceforge.net/lists/listinfo/png-mng-implement
+to subscribe) or to glennrp at users.sourceforge.net
+
+Glenn R-P
