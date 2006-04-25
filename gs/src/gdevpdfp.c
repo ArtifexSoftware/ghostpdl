@@ -186,10 +186,12 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     float cl = (float)pdev->CompatibilityLevel;
-    int code = gdev_psdf_get_params(dev, plist);
+    int code;
     int cdv = CoreDistVersion;
     int EmbedFontObjects = 1;
 
+    pdev->ParamCompatibilityLevel = cl;
+    code = gdev_psdf_get_params(dev, plist);
     if (code < 0 ||
 	(code = param_write_int(plist, ".EmbedFontObjects", &EmbedFontObjects)) < 0 ||
 	(code = param_write_int(plist, "CoreDistVersion", &cdv)) < 0 ||
@@ -416,6 +418,7 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	pdev->HavePDFWidths = true;
 	pdev->HaveStrokeColor = true;
     }
+    pdev->ParamCompatibilityLevel = cl;
     ecode = gdev_psdf_put_params(dev, plist);
     if (ecode < 0)
 	goto fail;

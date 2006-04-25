@@ -675,6 +675,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
   	    goto fail;
 	image[0].pixel.ColorSpace = pcs_device;
     }
+    pdev->ParamCompatibilityLevel = pdev->CompatibilityLevel;
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
 		    height, pnamed, in_line)) < 0 ||
 	/*

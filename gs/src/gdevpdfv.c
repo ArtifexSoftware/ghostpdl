@@ -441,6 +441,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 		return code;
 	}
 	pdf_image_writer_init(&writer);
+	pdev->ParamCompatibilityLevel = pdev->CompatibilityLevel;
 	if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false)) < 0 ||
 	    (code = psdf_setup_lossless_filters((gx_device_psdf *)pdev,
 						&writer.binary[0],

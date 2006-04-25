@@ -58,12 +58,13 @@ typedef struct psdf_image_params_s {
     bool Encode;
     const char *Filter;
     int Resolution;
+    const char *AutoFilterStrategy;
     const stream_template *filter_template;
 } psdf_image_params;
 
 #define psdf_image_param_defaults(af, res, dst, f, ft)\
   NULL/*ACSDict*/, 0/*false*/, af, -1, NULL/*Dict*/, 1/*true*/,\
-  dst, ds_Subsample, 1/*true*/, f, res, ft
+  dst, ds_Subsample, 1/*true*/, f, res, "/JPEG2000", ft
 
 /* Declare templates for default image compression filters. */
 extern const stream_template s_CFE_template;
@@ -213,6 +214,7 @@ typedef enum {
 	bool HaveCFF;\
 	bool HaveTrueTypes;\
 	bool HaveCIDSystem;\
+	double ParamCompatibilityLevel;\
 	psdf_distiller_params params
 
 typedef struct gx_device_psdf_s {
@@ -226,6 +228,7 @@ typedef struct gx_device_psdf_s {
 	true,\
 	true,\
 	false,\
+	1.3,\
 	 { psdf_general_param_defaults(ascii),\
 	   psdf_color_image_param_defaults,\
 	   psdf_gray_image_param_defaults,\

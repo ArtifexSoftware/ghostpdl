@@ -123,14 +123,15 @@ typedef struct psdf_image_param_names_s {
     float DownsampleThreshold_default;
     const psdf_image_filter_name *filter_names;
     const char *Filter;
-    gs_param_item_t items[8];	/* AutoFilter (not used for mono), */
+    const char *AutoFilterStrategy;
+    gs_param_item_t items[9];	/* AutoFilter (not used for mono), */
 				/* AntiAlias, */
 				/* Depth, Downsample, DownsampleThreshold, */
-				/* Encode, Resolution, end marker */
+				/* Encode, Resolution, AutoFilterStrategy, end marker */
 } psdf_image_param_names_t;
 #define pi(key, type, memb) { key, type, offset_of(psdf_image_params, memb) }
-#define psdf_image_param_names(acs, aa, af, de, di, ds, dt, dst, dstd, e, f, fns, r)\
-    acs, di, dt, dstd, fns, f, {\
+#define psdf_image_param_names(acs, aa, af, de, di, ds, dt, dst, dstd, e, f, fns, r, afs)\
+    acs, di, dt, dstd, fns, f, afs, {\
       pi(af, gs_param_type_bool, AutoFilter),\
       pi(aa, gs_param_type_bool, AntiAlias),\
       pi(de, gs_param_type_int, Depth),\
@@ -138,6 +139,7 @@ typedef struct psdf_image_param_names_s {
       pi(dst, gs_param_type_float, DownsampleThreshold),\
       pi(e, gs_param_type_bool, Encode),\
       pi(r, gs_param_type_int, Resolution),\
+      pi(afs, gs_param_type_int, AutoFilterStrategy),\
       gs_param_item_end\
     }
 
@@ -148,7 +150,7 @@ private const psdf_image_param_names_t Color_names = {
 	"DownsampleColorImages", "ColorImageDownsampleType",
 	"ColorImageDownsampleThreshold", 1.5,
 	"EncodeColorImages", "ColorImageFilter", Poly_filters,
-	"ColorImageResolution"
+	"ColorImageResolution", 0
     )
 };
 private const psdf_image_param_names_t Gray_names = {
@@ -158,7 +160,7 @@ private const psdf_image_param_names_t Gray_names = {
 	"DownsampleGrayImages", "GrayImageDownsampleType",
 	"GrayImageDownsampleThreshold", 2.0,
 	"EncodeGrayImages", "GrayImageFilter", Poly_filters,
-	"GrayImageResolution"
+	"GrayImageResolution", 0
     )
 };
 private const psdf_image_param_names_t Mono_names = {
@@ -168,7 +170,27 @@ private const psdf_image_param_names_t Mono_names = {
 	"DownsampleMonoImages", "MonoImageDownsampleType",
 	"MonoImageDownsampleThreshold", 2.0,
 	"EncodeMonoImages", "MonoImageFilter", Mono_filters,
-	"MonoImageResolution"
+	"MonoImageResolution", 0
+    )
+};
+private const psdf_image_param_names_t Color_names15 = {
+    psdf_image_param_names(
+	"ColorACSImageDict", "AntiAliasColorImages", "AutoFilterColorImages",
+	"ColorImageDepth", "ColorImageDict",
+	"DownsampleColorImages", "ColorImageDownsampleType",
+	"ColorImageDownsampleThreshold", 1.5,
+	"EncodeColorImages", "ColorImageFilter", Poly_filters,
+	"ColorImageResolution", "ColorAutoFilterStrategy"
+    )
+};
+private const psdf_image_param_names_t Gray_names15 = {
+    psdf_image_param_names(
+	"GrayACSImageDict", "AntiAliasGrayImages", "AutoFilterGrayImages",
+	"GrayImageDepth", "GrayImageDict",
+	"DownsampleGrayImages", "GrayImageDownsampleType",
+	"GrayImageDownsampleThreshold", 2.0,
+	"EncodeGrayImages", "GrayImageFilter", Poly_filters,
+	"GrayImageResolution", "GrayAutoFilterStrategy"
     )
 };
 #undef pi
@@ -317,6 +339,13 @@ psdf_get_image_params(gs_param_list * plist,
 				    pnames->filter_names[0].pname :
 				    params->Filter))) < 0
 	   /* (Resolution) */
+#ifdef USE_LWF_JP2
+	   || 
+	   (pnames->AutoFilterStrategy != 0 &&
+	   (code = psdf_write_name(plist, pnames->AutoFilterStrategy,
+				   (params->AutoFilterStrategy == 0 ?
+				   "JPEG2000" : params->AutoFilterStrategy))) < 0)
+#endif
 	)
 	DO_NOTHING;
     return code;
@@ -360,7 +389,9 @@ gdev_psdf_get_params(gx_device * dev, gs_param_list * plist)
 
     /* Color sampled image parameters */
 
-	(code = psdf_get_image_params(plist, &Color_names, &pdev->params.ColorImage)) < 0 ||
+    (code = psdf_get_image_params(plist, 
+			(pdev->ParamCompatibilityLevel >= 1.5 ? &Color_names15 : &Color_names), 
+			&pdev->params.ColorImage)) < 0 ||
 	(code = psdf_write_name(plist, "ColorConversionStrategy",
 		ColorConversionStrategy_names[(int)pdev->params.ColorConversionStrategy])) < 0 ||
 	(code = psdf_write_string_param(plist, "CalCMYKProfile",
@@ -374,7 +405,9 @@ gdev_psdf_get_params(gx_device * dev, gs_param_list * plist)
 
     /* Gray sampled image parameters */
 
-	(code = psdf_get_image_params(plist, &Gray_names, &pdev->params.GrayImage)) < 0 ||
+	(code = psdf_get_image_params(plist,
+			(pdev->ParamCompatibilityLevel >= 1.5 ? &Gray_names15 : &Gray_names), 
+			&pdev->params.GrayImage)) < 0 ||
 
     /* Mono sampled image parameters */
 
@@ -724,6 +757,42 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
 		      &ecode);
     /* (DownsampleThreshold) */
     /* (Encode) */
+#ifdef USE_LWF_JP2
+    /* Process AutoFilterStrategy before Filter, because it sets defaults 
+       for the latter. */
+    if (pnames->AutoFilterStrategy != NULL) {
+	switch (code = param_read_string(plist, pnames->AutoFilterStrategy, &fs)) {
+	    case 0:
+		{
+		    const psdf_image_filter_name *pn = pnames->filter_names;
+		    const char *param_name = 0;
+
+		    if (gs_param_string_eq(&fs, "/JPEG")) {
+			params->AutoFilterStrategy = "/JPEG";
+			param_name = "DCTEncode";
+		    } if (gs_param_string_eq(&fs, "/JPEG2000")) {
+			params->AutoFilterStrategy = "/JPEG2000";
+			param_name = "JPXEncode";
+		    } else {
+			ecode = gs_error_rangecheck;
+			goto ipe1;
+		    }
+		    while (pn->pname != 0 && !gs_param_string_eq(&fs, param_name))
+			pn++;
+		    if (pn->pname != 0 && pn->min_version <= pdev->version) {
+			params->Filter = pn->pname;
+			params->filter_template = pn->template;
+		    }
+		    break;
+		}
+	    default:
+		ecode = code;
+	    ipe1:param_signal_error(plist, pnames->AutoFilterStrategy, ecode);
+	    case 1:
+		break;
+        }
+    }
+#endif
     switch (code = param_read_string(plist, pnames->Filter, &fs)) {
 	case 0:
 	    {
@@ -814,7 +883,8 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
 
 	/* Color sampled image parameters */
 
-	ecode = psdf_put_image_params(pdev, plist, &Color_names,
+	ecode = psdf_put_image_params(pdev, plist,
+			(pdev->ParamCompatibilityLevel >= 1.5 ? &Color_names15 : &Color_names), 
 				      &params.ColorImage, ecode);
 	params.ColorConversionStrategy = (enum psdf_color_conversion_strategy)
 	    psdf_put_enum(plist, "ColorConversionStrategy",
@@ -831,7 +901,8 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
 
 	/* Gray sampled image parameters */
 
-	ecode = psdf_put_image_params(pdev, plist, &Gray_names,
+	ecode = psdf_put_image_params(pdev, plist,
+			(pdev->ParamCompatibilityLevel >= 1.5 ? &Gray_names15 : &Gray_names), 
 				      &params.GrayImage, ecode);
 
 	/* Mono sampled image parameters */
