@@ -509,6 +509,10 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 	    gx_cpath_intersect(path_clip, ppath, gx_rule_winding_number, pis)) < 0
 	    )
 	    goto out;
+	/* detect empty clip box result and skip filling */
+	if ((path_clip->path.bbox.p.x == path_clip->path.bbox.q.x) || 
+	    (path_clip->path.bbox.p.y == path_clip->path.bbox.q.y))
+	    goto out;
 	gx_make_clip_device(&path_dev, &path_clip->rect_list->list);
 	path_dev.target = dev;
 	path_dev.HWResolution[0] = dev->HWResolution[0];
