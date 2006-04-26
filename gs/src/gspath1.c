@@ -511,8 +511,10 @@ gs_reversepath(gs_state * pgs)
 	/* Not empty. */
 	gx_setcurrentpoint(pgs, fixed2float(rpath.position.x), 
 				fixed2float(rpath.position.y));
-	pgs->subpath_start.x = fixed2float(rpath.segments->contents.subpath_current->pt.x);
-	pgs->subpath_start.y = fixed2float(rpath.segments->contents.subpath_current->pt.y);
+	if (rpath.first_subpath != 0) {
+	    pgs->subpath_start.x = fixed2float(rpath.segments->contents.subpath_current->pt.x);
+	    pgs->subpath_start.y = fixed2float(rpath.segments->contents.subpath_current->pt.y);
+	}
     }
     gx_path_assign_free(ppath, &rpath);
     return 0;
