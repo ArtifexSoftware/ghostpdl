@@ -2681,7 +2681,7 @@ $(GLOBJ)gxfapi.$(OBJ) : $(GLSRC)gxfapi.c \
  $(gx_h) $(gxfapi_h) \
  $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
  $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
- $(UFST_ROOT)$(D)sys$(D)inc$(D)port.h
+ $(UFST_ROOT)$(D)sys$(D)inc$(D)ufstport.h
 	$(GLCC) $(UFST_CFLAGS) $(UFST_INC_) $(GLO_)gxfapi.$(OBJ) $(C_) $(GLSRC)gxfapi.c
 
 

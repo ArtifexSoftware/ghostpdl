@@ -1902,7 +1902,7 @@ $(PSOBJ)fapiufst.$(OBJ) : $(PSSRC)fapiufst.c $(AK)\
  $(ierrors_h) $(iplugin_h) $(ifapi_h) $(gxfapi_h) \
  $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
  $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
- $(UFST_ROOT)$(D)sys$(D)inc$(D)port.h\
+ $(UFST_ROOT)$(D)sys$(D)inc$(D)ufstport.h\
  $(UFST_ROOT)$(D)sys$(D)inc$(D)cgmacros.h\
  $(UFST_ROOT)$(D)rts$(D)psi$(D)t1isfnt.h\
  $(UFST_ROOT)$(D)rts$(D)tt$(D)sfntenum.h\
