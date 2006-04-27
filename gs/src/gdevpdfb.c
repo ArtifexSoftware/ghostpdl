@@ -93,7 +93,7 @@ pdf_copy_mask_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
 	(code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
 					    &piw->binary[0],
-					    (gs_pixel_image_t *)pim)) < 0 ||
+					    (gs_pixel_image_t *)pim, in_line)) < 0 ||
 	(code = pdf_begin_image_data(pdev, piw, (const gs_pixel_image_t *)pim,
 				     NULL, 0)) < 0
 	)
@@ -286,7 +286,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	/* Use the Distiller compression parameters. */
 	pdev->ParamCompatibilityLevel = pdev->CompatibilityLevel;
 	psdf_setup_image_filters((gx_device_psdf *) pdev, &writer.binary[0],
-				 (gs_pixel_image_t *)&image, NULL, NULL, true);
+				 (gs_pixel_image_t *)&image, NULL, NULL, true, in_line);
     }
     pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image,
 			 pcsvalue, 0);
@@ -409,9 +409,9 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 				&piw->pin->color_spaces, in_line)) < 0 ||
 	(for_pattern < 2 || nbytes < 512000 ?
 	    (code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
-			&piw->binary[0], (gs_pixel_image_t *)pim)) :
+			&piw->binary[0], (gs_pixel_image_t *)pim, false)) :
 	    (code = psdf_setup_image_filters((gx_device_psdf *) pdev,
-			&piw->binary[0], (gs_pixel_image_t *)pim, NULL, NULL, false))
+			&piw->binary[0], (gs_pixel_image_t *)pim, NULL, NULL, false, false))
 	) < 0 ||
 	(code = pdf_begin_image_data(pdev, piw, (const gs_pixel_image_t *)pim,
 				     &cs_value, 0)) < 0

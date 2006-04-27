@@ -445,7 +445,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false)) < 0 ||
 	    (code = psdf_setup_lossless_filters((gx_device_psdf *)pdev,
 						&writer.binary[0],
-						(gs_pixel_image_t *)&image)) < 0 ||
+						(gs_pixel_image_t *)&image, false)) < 0 ||
 	    (code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image, &cs_value, 0)) < 0
 	    )
 	    return code;

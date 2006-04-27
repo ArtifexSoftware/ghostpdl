@@ -690,10 +690,10 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	(code = (pie->writer.alt_writer_count == 1 ?
 		 psdf_setup_lossless_filters((gx_device_psdf *) pdev,
 					     &pie->writer.binary[0],
-					     &image[0].pixel) :
+					     &image[0].pixel, in_line) :
 		 psdf_setup_image_filters((gx_device_psdf *) pdev,
 					  &pie->writer.binary[0], &image[0].pixel,
-					  pmat, pis, true))) < 0
+					  pmat, pis, true, in_line))) < 0
 	)
 	goto fail;
     if (convert_to_process_colors) {
@@ -712,7 +712,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    image[1].pixel.ColorSpace = pcs_device;
 	code = psdf_setup_image_filters((gx_device_psdf *) pdev,
 				  &pie->writer.binary[1], &image[1].pixel,
-				  pmat, pis, false);
+				  pmat, pis, false, in_line);
 	if (code == gs_error_rangecheck) {
 	    /* setup_image_compression rejected the alternative compression. */
 	    pie->writer.alt_writer_count = 1;
@@ -756,7 +756,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
             goto fail;
 	code = psdf_setup_image_filters((gx_device_psdf *) pdev,
 				  &pie->writer.binary[i], &image[i].pixel,
-				  pmat, pis, true);
+				  pmat, pis, true, in_line);
 	if (code < 0)
   	    goto fail;
         psdf_setup_image_to_mask_filter(&pie->writer.binary[i], 

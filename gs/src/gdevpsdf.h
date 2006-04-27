@@ -344,13 +344,14 @@ bool psdf_is_converting_image_to_RGB(const gx_device_psdf * pdev,
 /* pis only provides UCR and BG information for CMYK => RGB conversion. */
 int psdf_setup_image_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
 			     gs_pixel_image_t *pim, const gs_matrix *pctm,
-			     const gs_imager_state * pis, bool lossless);
+			     const gs_imager_state * pis, bool lossless,
+			     bool in_line);
 
 /* Set up compression filters for a lossless image, with no downsampling, */
 /* no color space conversion, and only lossless filters. */
 /* Note that this may modify the image parameters. */
 int psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
-				gs_pixel_image_t *pim);
+				gs_pixel_image_t *pim, bool in_line);
 
 /* Finish writing binary data. */
 int psdf_end_binary(psdf_binary_writer * pbw);

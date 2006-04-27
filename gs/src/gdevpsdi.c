@@ -458,11 +458,13 @@ psdf_is_converting_image_to_RGB(const gx_device_psdf * pdev,
 
 private inline void 
 adjust_auto_filter_strategy(gx_device_psdf *pdev, 
-		psdf_image_params *params, gs_c_param_list *plist)
+		psdf_image_params *params, gs_c_param_list *plist, 
+		const gs_pixel_image_t * pim)
 {
 #ifdef USE_LWF_JP2
-    if (params->Depth > 1 && pdev->ParamCompatibilityLevel >= 1.5 
-	    && !strcmp(params->AutoFilterStrategy, "/JPEG2000")) {
+    if (params->Depth > 1 && pdev->ParamCompatibilityLevel >= 1.5 &&
+	    pim->ColorSpace->type->index != gs_color_space_index_Indexed &&
+	    !strcmp(params->AutoFilterStrategy, "/JPEG2000")) {
 	params->Filter = "/JPXEncode";
 	params->filter_template = &s_jpxe_template;
 	params->Dict = plist;
@@ -472,10 +474,12 @@ adjust_auto_filter_strategy(gx_device_psdf *pdev,
 
 private inline void 
 adjust_auto_filter_strategy_mono(gx_device_psdf *pdev, 
-		psdf_image_params *params, gs_c_param_list *plist)
+		psdf_image_params *params, gs_c_param_list *plist, 
+		const gs_pixel_image_t * pim)
 {
-#ifdef USE_LWF_JB2
-    if (pdev->ParamCompatibilityLevel >= 1.5) {
+#ifdef USE_LDF_JB2
+    if (pdev->ParamCompatibilityLevel >= 1.5 &&
+	    pim->ColorSpace->type->index != gs_color_space_index_Indexed) {
 	params->Filter = "/JBIG2Encode";
 	params->filter_template = &s_jbig2encode_template;
 	params->Dict = plist;
@@ -488,7 +492,7 @@ adjust_auto_filter_strategy_mono(gx_device_psdf *pdev,
 int
 psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 			 gs_pixel_image_t * pim, const gs_matrix * pctm,
-			 const gs_imager_state * pis, bool lossless)
+			 const gs_imager_state * pis, bool lossless, bool in_line)
 {
     /*
      * The following algorithms are per Adobe Tech Note # 5151,
@@ -557,16 +561,16 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 		params.Filter = pdev->params.MonoImage.Filter;
 		params.filter_template = pdev->params.MonoImage.filter_template;
 		params.Dict = pdev->params.MonoImage.Dict;
-		adjust_auto_filter_strategy_mono(pdev, &params, pdev->params.MonoImage.Dict);
+		adjust_auto_filter_strategy_mono(pdev, &params, pdev->params.MonoImage.Dict, pim);
 	    } else {
 		params.Filter = pdev->params.GrayImage.Filter;
 		params.filter_template = pdev->params.GrayImage.filter_template;
 		params.Dict = pdev->params.GrayImage.Dict;
-		adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict);
+		adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim);
 	    }
 	    code = setup_downsampling(pbw, &params, pim, pis, resolution, lossless);
 	} else {
-	    adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict);
+	    adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim);
 	    code = setup_image_compression(pbw, &params, pim, pis, lossless);
 	}
 	if (code < 0)
@@ -588,10 +592,10 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	if (params.Depth == -1)
 	    params.Depth = (cmyk_to_rgb ? 8 : bpc_out);
 	if (do_downsample(&params, pim, resolution)) {
-	    adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict);
+	    adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim);
 	    code = setup_downsampling(pbw, &params, pim, pis, resolution, lossless);
 	} else {
-	    adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict);
+	    adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim);
 	    code = setup_image_compression(pbw, &params, pim, pis, lossless);
 	}
 	if (code < 0)
@@ -623,7 +627,7 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 /* Note that this may modify the image parameters. */
 int
 psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
-			    gs_pixel_image_t *pim)
+			    gs_pixel_image_t *pim, bool in_line)
 {
     /*
      * Set up a device with modified parameters for computing the image
@@ -641,7 +645,7 @@ psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
     ipdev.params.GrayImage.Downsample = false;
     ipdev.params.GrayImage.Filter = "FlateEncode";
     ipdev.params.GrayImage.filter_template = &s_zlibE_template;
-    return psdf_setup_image_filters(&ipdev, pbw, pim, NULL, NULL, true);
+    return psdf_setup_image_filters(&ipdev, pbw, pim, NULL, NULL, true, in_line);
 }
 
 /* Set up image compression chooser. */
