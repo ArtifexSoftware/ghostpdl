@@ -48,7 +48,7 @@
 #include "gxht.h"		/* for gs_halftone */
 // #include "gdevcmap.h"
 #include "gshtx.h"
-
+#include "gxpath.h"
 /* Define whether we are processing captured data. */
 /*#define CAPTURE */
 
@@ -61,6 +61,7 @@ private int test5(gs_state *, gs_memory_t *);	/* images */
 private int test6(gs_state *, gs_memory_t *);	/* CIE API, snapping */
 private int test7(gs_state *, gs_memory_t *);	/* non-monot HT */
 private int test8(gs_state *, gs_memory_t *);	/* transp patterns */
+private int test9(gs_state *, gs_memory_t *);	/* type 42 font */
 
 private int (*tests[]) (gs_state *, gs_memory_t *) =
 {
@@ -71,7 +72,7 @@ private int (*tests[]) (gs_state *, gs_memory_t *) =
 #else
     0,
 #endif
-    test8, 0
+    test8, test9,
 #ifdef CAPTURE
 	test10
 #endif
@@ -291,7 +292,7 @@ gs_reloc_const_string(gs_const_string * sptr, gc_state_t * gcst)
 void
 gs_to_exit(const gs_memory_t *mem, int exit_status)
 {
-    gs_lib_finit(mem, exit_status, 0);
+    gs_lib_finit(exit_status, 0, mem);
 }
 
 void
@@ -951,6 +952,267 @@ test8(gs_state * pgs, gs_memory_t * mem)
 	gs_setpattern(pgs, &ccolor);
 	gs_settexturetransparent(pgs, false);
 	gs_rectfill(pgs, &r, 1);
+    }
+    return 0;
+}
+
+/* type42 test.  Lots of setup stuff here since the graphics library
+   leaves most font parsing to the client. */
+#include "gxfont.h"
+#include "gxchar.h"
+#include "gsgdata.h"
+#include "gxfont42.h"
+
+/* big endian accessors */
+#define get_uint16(bptr)\
+    (((bptr)[0] << 8) | (bptr)[1])
+#define get_int16(bptr)\
+    (((int)get_uint16(bptr) ^ 0x8000) - 0x8000)
+
+private int
+test9_get_int16(const byte *bptr)
+{	
+    return get_int16(bptr);
+}
+
+private uint
+test9_get_uint16(const byte *bptr)
+{	
+    return get_uint16(bptr);
+}
+
+private long
+test9_get_int32(const byte *bptr)
+{	
+    return ((long)get_int16(bptr) << 16) | get_uint16(bptr + 2);
+}
+
+private ulong
+test9_get_uint32(const byte *bptr)
+{	
+    return ((ulong)get_uint16(bptr) << 16) | get_uint16(bptr + 2);
+}
+
+/* ACCESS is braindamage from gstype42.c - */
+/* Set up a pointer to a substring of the font data. */
+/* Free variables: pfont, string_proc. */
+#define ACCESS(mem, base, length, vptr)\
+  BEGIN\
+    code = (*string_proc)(pfont, (ulong)(base), length, &vptr);\
+    if ( code < 0 ) return code;\
+    if ( code > 0 ) return_error(mem, gs_error_invalidfont);\
+  END
+
+/* find a tt table by name derived from plchar.c */
+ulong
+test9_tt_find_table(gs_font_type42 *pfont, const char *tname, uint *plen)
+{
+    const byte *OffsetTable;
+    int code;
+    uint numTables;
+    const byte *TableDirectory;
+    uint i;
+    ulong table_dir_offset = 0;
+    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
+	pfont->data.string_proc;
+
+    /* nb check return values */
+    ACCESS(pfont->memory, 0, 12, OffsetTable);
+    ACCESS(pfont->memory, table_dir_offset, 12, OffsetTable);
+    numTables = test9_get_uint16(OffsetTable + 4);
+    ACCESS(pfont->memory, table_dir_offset + 12, numTables * 16, TableDirectory);
+    for ( i = 0; i < numTables; ++i ) {
+        const byte *tab = TableDirectory + i * 16;
+        if ( !memcmp(tab, tname, 4) ) {
+            if ( plen )
+                *plen = test9_get_uint32(tab + 12);
+            return test9_get_uint32(tab + 8);
+        }
+    }
+    return 0;
+}
+
+/* encode, derived from plchar.c */
+private gs_glyph
+test9_tt_encode_char(gs_font *p42, gs_char chr, gs_glyph not_used)
+{
+    /* NB encode me */
+    return chr;
+}
+
+private gs_char
+test9_tt_decode_glyph(gs_font *p42, gs_glyph glyph)
+{
+    return GS_NO_CHAR;
+}
+
+private int
+test9_tt_glyph_name(gs_font *pf, gs_glyph glyph, gs_const_string *pstr)
+{
+    return 0;
+}
+
+private int
+test9_tt_string_proc(gs_font *p42, ulong offset, uint length, const byte **pdata)
+{
+    
+    /* NB bounds check offset + length - use gs_object_size for memory
+       buffers - if file read should fail */
+    *pdata = p42->client_data + offset;
+    return 0;
+}
+
+/* derived from plchar.c */
+private int
+test9_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont, gs_char chr, gs_glyph glyph)
+{
+    int code;
+    float sbw[4], w2[6];
+
+    code = gs_type42_get_metrics((gs_font_type42 *)pfont, glyph, sbw);
+    if (code < 0)
+        return code;
+    w2[0] = sbw[2], w2[1] = sbw[3];
+    /* don't ask me about the following, I just work here. */
+    { 
+#define pbfont ((gs_font_base *)pfont)
+
+        const gs_rect *pbbox =  &pbfont->FontBBox;
+#undef pbfont
+
+        w2[2] = pbbox->p.x, w2[3] = pbbox->p.y;
+        w2[4] = pbbox->q.x, w2[5] = pbbox->q.y;
+        if ( pfont->PaintType ) {   
+            double expand = max(1.415, gs_currentmiterlimit(pgs)) *
+                gs_currentlinewidth(pgs) / 2;
+
+            w2[2] -= expand, w2[3] -= expand;
+            w2[4] += expand, w2[5] += expand;
+        }
+    }
+
+    if ( (code = gs_moveto(pgs, 0.0, 0.0)) < 0 )
+        return code;
+
+    if ( (code = gs_setcachedevice(penum, pgs, w2)) < 0 )
+        return code;
+    
+    code = gs_type42_append(glyph,
+                            (gs_imager_state *)pgs,
+                            gx_current_path(pgs),
+                            &penum->log2_scale,
+                            gs_show_in_charpath(penum) != cpm_show,
+                            pfont->PaintType,
+                            (gs_font_type42 *)pfont);
+    if ( code >= 0 )
+        code = (pfont->PaintType ? gs_stroke(pgs) : gs_fill(pgs));
+    return code;
+}
+
+byte *
+test9_load_font_data(const char *filename, gs_memory_t * mem)
+{
+    FILE *in = fopen(filename, gp_fmode_rb);
+    byte *data;
+    ulong size;
+    if (in == NULL)
+        return NULL;
+    size = (fseek(in, 0L, SEEK_END), ftell(in));
+    rewind(in);
+    data = gs_alloc_bytes(mem, size, "test9_load_font data");
+    if ( data == 0 ) { 
+        fclose(in);
+        return NULL;
+    }
+
+    /* NB check size */
+    fread(data, 1, size, in);
+    fclose(in);
+    return data;
+}
+    
+/* windows ttfile name */
+
+#define TTF_FILENAME "/windows/fonts/A028-Ext.ttf"
+
+private int
+test9(gs_state * pgs, gs_memory_t * mem)
+{
+        
+    gs_font_type42 *p42 = gs_alloc_struct(mem, gs_font_type42,
+                                          &st_gs_font_type42,
+                                          "new p42");
+    gs_font_dir *pfont_dir = gs_font_dir_alloc(mem);
+
+    byte *pfont_data = test9_load_font_data(TTF_FILENAME, mem);
+    
+    if (!pfont_data || !pfont_dir || !p42)
+        return -1;
+
+    /* no shortage of things to initialize */
+    p42->next = p42->prev = 0;
+    p42->memory = mem;
+    p42->dir = pfont_dir;
+    p42->is_resource = false;
+    gs_notify_init(&p42->notify_list, gs_memory_stable(mem));
+    p42->base = p42;
+    p42->client_data = pfont_data;
+    p42->WMode = 0;
+    p42->PaintType = 0;
+    p42->StrokeWidth = 0;
+    p42->procs.init_fstack = gs_default_init_fstack;
+    p42->procs.next_char_glyph = gs_default_next_char_glyph;
+    p42->font_name.size = 0;
+    p42->key_name.size = 0;
+    p42->procs.glyph_name = test9_tt_glyph_name;
+    p42->procs.decode_glyph = test9_tt_decode_glyph;
+    p42->procs.define_font = gs_no_define_font;
+    p42->procs.make_font = gs_no_make_font;
+    p42->procs.font_info = gs_default_font_info;
+    p42->procs.glyph_info = gs_default_glyph_info;
+    p42->procs.glyph_outline = gs_no_glyph_outline;
+    p42->procs.encode_char = test9_tt_encode_char;
+    p42->procs.build_char = test9_tt_build_char;
+    p42->id = gs_next_ids(mem, 1);
+    gs_make_identity(&p42->FontMatrix);
+    p42->FontType = ft_TrueType;
+    p42->BitmapWidths = true;
+    p42->ExactSize = fbit_use_outlines;
+    p42->InBetweenSize = fbit_use_outlines;
+    p42->TransformedChar = fbit_use_outlines;
+    p42->FontBBox.p.x = p42->FontBBox.p.y =
+        p42->FontBBox.q.x = p42->FontBBox.q.y = 0;
+    uid_set_UniqueID(&p42->UID, p42->id);
+    p42->encoding_index = ENCODING_INDEX_UNKNOWN;
+    p42->nearest_encoding_index = ENCODING_INDEX_UNKNOWN;
+    /* Initialize Type 42 specific data. */
+    p42->data.string_proc = test9_tt_string_proc;
+    gs_type42_font_init(p42);
+    
+    gs_definefont(pfont_dir, (gs_font *)p42);
+    gs_setfont(pgs, (gs_font *)p42);
+    {
+        gs_text_params_t text_params;
+        gs_text_enum_t *penum;
+        byte *mystr = "the quick brown fox";
+        floatp FontRenderingEmSize = 20; /* XPS terminology */
+        gs_matrix fmat; /* font matrix */
+
+        text_params.operation = (TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH);
+        text_params.data.bytes = mystr;
+        text_params.size = strlen(mystr);
+
+        if (gs_moveto(pgs, 72.0, 72.0) != 0)
+            return -1;
+
+        gs_make_identity(&fmat);
+        if ((gs_matrix_scale(&fmat, FontRenderingEmSize, -FontRenderingEmSize, &fmat) != 0) ||
+            (gs_concat(pgs, &fmat) != 0) ||
+            (gs_text_begin(pgs, &text_params, mem, &penum) != 0) ||
+            (gs_text_process(penum) != 0))
+            return -1;
+
+        gs_text_release(penum, "test_9");
     }
     return 0;
 }
