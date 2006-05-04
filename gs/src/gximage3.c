@@ -243,7 +243,14 @@ gx_begin_image3_generic(gx_device * dev,
 	fabs(mi_pixel.ty - mi_mask.ty) >= 0.5
 	)
 	return_error(gs_error_rangecheck);
+#ifdef DEBUG
     {
+	/* Although the PLRM says that the Mask and Image *must* be the same size,  */
+	/* Adobe CPSI (and other RIPS) ignore this and process anyway. Note that we */
+	/* are not compatible if the Mask Height than the Data (pixel) Height. CPSI */
+	/* de-interleaves the mask from the data image and stops at the Mask Height */
+	/* Problem detected with Genoa 468-03 (part of file 468-01.ps)              */
+	/*****           fixme: When Data Image Height > Mask Height            *****/
 	gs_point ep, em;
 
 	if ((code = gs_point_transform(pim->Width, pim->Height, &mi_pixel,
@@ -254,8 +261,9 @@ gx_begin_image3_generic(gx_device * dev,
 	    )
 	    return code;
 	if (fabs(ep.x - em.x) >= 0.5 || fabs(ep.y - em.y) >= 0.5)
-	    return_error(gs_error_rangecheck);
+	    code = gs_error_rangecheck;	/* leave the check in for debug breakpoint */
     }
+#endif /* DEBUG */
     penum = gs_alloc_struct(mem, gx_image3_enum_t, &st_image3_enum,
 			    "gx_begin_image3");
     if (penum == 0)
