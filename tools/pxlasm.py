@@ -305,6 +305,10 @@ pxl_attribute_name_to_attribute_number_dict = {
     'YSpacingData' : 176,
 }
 
+def space_fill(match):
+    return ' ' * len(match.group())
+    
+
 class pxl_asm:
 
     def __init__(self, data):
@@ -319,18 +323,15 @@ class pxl_asm:
 
         # pointer to data
         self.index = 0
-        # NB this screws up file indexing - remove all comments
-        self.data = re.sub( '\/\/.*\n', '', self.data )
-
+        # replace comment and prologue with spaces, don't delete this
+        # stuff because we want the offset in the data to match the
+        # offset in the file when debugging.
+        self.data = re.sub( '\/\/.*\n', space_fill, self.data )
+        self.data = re.sub( '` HP-PCL.*\n', space_fill, self.data, 1)
         # print out big endian protocol and revision.  NB should check
         # revisions are the same.
         print "\033%-12345X@PJL ENTER LANGUAGE = PCLXL"
         print ") HP-PCL XL;" + self.protocol + ";" + self.revision
-
-        # skip over protocol and revision
-        while( data[self.index] != '\n' ):
-            self.index = self.index + 1
-        self.index = self.index + 1
 
         # saved size of last array parsed
         self.size_of_array = -1;
@@ -406,8 +407,9 @@ class pxl_asm:
 
     # get the next operator
     def operatorTag(self):
-        self.operator_position = self.operator_position + 1
         tag = self.next_string()
+        if ( not self.is_Embedded(tag) ):
+            self.operator_position = self.operator_position + 1
         if ( tag in pxl_tags_dict.keys() ):
             self.pack( 'B', pxl_tags_dict[tag] )
             self.consume_next_string()
@@ -711,15 +713,19 @@ class pxl_asm:
         
     def arrayType(self):
         if (self.singleValueArrayType() and self.arraySize()):
+            hex_dump_format = (self.pack_string == 'B')
             for num in range(0, self.size_of_array):
                 # reading byte data hex dump format
-                if ( self.pack_string == 'B' ):
+                if hex_dump_format:
                     n = self.next_hex_num()
                 # not hex dump format
                 else:
                     n = self.next_num()
                 self.pack(self.pack_string, n)
-            self.consume_to_char_plus_one('\n]')
+            if hex_dump_format:
+                self.consume_to_char_plus_one('\n]')
+            else:
+                self.consume_to_char_plus_one(']')
             return 1
         return 0
 
