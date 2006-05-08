@@ -839,7 +839,9 @@ def
 		% Stack: proto matrix global buildproc
   3 index dup length 1 add dict .copydict
   3 index 3 -1 roll exec 3 -1 roll .setglobal
-  1 index /Implementation 3 -1 roll put
+  % Hide the gs_pattern?_instance_t inside an array to match CPSI and make CET run
+  1 index /Implementation 3 -1 roll
+  2 array dup 3 -1 roll 0 exch put put
   readonly exch pop exch pop
 } odef
 

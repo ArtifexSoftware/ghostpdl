@@ -35,6 +35,7 @@
 #include "icolor.h"
 #include "idparam.h"
 #include "iname.h"
+#include "iutil.h"
 
 /* imported from gsht.c */
 extern  void    gx_set_effective_transfer(gs_state *);
@@ -203,11 +204,12 @@ zsetcolor(i_ctx_t * i_ctx_p)
     if ((n_comps = cs_num_components(pcs)) < 0) {
         n_comps = -n_comps;
         if (r_has_type(op, t_dictionary)) {
-            ref *   pImpl;
+            ref     *pImpl, pPatInst;
             int     ptype;
 
-            dict_find_string(op, "Implementation", &pImpl);
-            cc.pattern = r_ptr(pImpl, gs_pattern_instance_t);
+	    dict_find_string(op, "Implementation", &pImpl);
+	    code = array_get(imemory, pImpl, 0, &pPatInst);
+	    cc.pattern = r_ptr(&pPatInst, gs_pattern_instance_t);
             n_numeric_comps = ( pattern_instance_uses_base_space(cc.pattern)
                                   ? n_comps - 1
                                   : 0 );
