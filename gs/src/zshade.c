@@ -311,6 +311,8 @@ build_shading_1(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
 	gs_free_object(mem, params.Function, "Function");
 	return code;
     }
+    if (params.Function == 0)		/* Function is required */
+	return_error(e_undefined);
     return 0;
 }
 /* <dict> .buildshading1 <shading_struct> */
@@ -339,7 +341,7 @@ build_directional_shading(i_ctx_t *i_ctx_p, const ref * op, float *Coords, int n
 	)
 	return code;
     if (!*pFunction)
-	    return_error(e_undefined);
+	return_error(e_undefined);
     if (dict_find_string(op, "Extend", &pExtend) <= 0)
 	Extend[0] = Extend[1] = false;
     else {
@@ -403,6 +405,8 @@ build_shading_3(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
 	) {
 	gs_free_object(mem, params.Function, "Function");
     }
+    if (params.Function == 0)		/* Function is required */
+	return_error(e_undefined);
     return code;
 }
 /* <dict> .buildshading3 <shading_struct> */
