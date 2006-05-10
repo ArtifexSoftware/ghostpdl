@@ -309,6 +309,11 @@ px_initclip(px_state_t *pxs)
     return gx_clip_to_rectangle(pxs->pgs, &pxs->pxgs->initial_clip_rect);
 }
 
+private bool
+px_is_currentcolor_pattern(gs_state *pgs)
+{
+    return (gs_color_space_num_components(gs_currentcolorspace(pgs)) < 1);
+}
 
 /* Set up the color space information for a bitmap image or pattern. */
 int
@@ -321,6 +326,7 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
     gs_color_space base_pcs;
     gs_color_space *pbase_pcs;
     bool cie_space = false;
+    int code = 0;
     switch ( params->color_space ) {
     case eGray:
 	gs_cspace_init_DeviceGray(pgs->memory, &base_pcs);
@@ -356,11 +362,10 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
     pim->BitsPerComponent = depth;
     if ( params->indexed )
 	pim->Decode[1] = (1 << depth) - 1;
-    if (cie_space) {
-        return pl_setSRGB(pgs, 0.0, 0.0, 0.0);
-    } else {
-        return 0;
+    if (cie_space && !px_is_currentcolor_pattern(pgs)) {
+        code = pl_setSRGB(pgs, 0.0, 0.0, 0.0);
     }
+    return code;
 }
 
 /* Check the setting of the clipping region. */

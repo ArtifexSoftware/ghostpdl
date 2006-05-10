@@ -409,7 +409,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
           image.Height = pl_get_uint16(params + 6);
           /* Determine the amount of pseudo-bolding. */
           if ( plfont->bold_fraction != 0 ) { 
-              bold = (uint)(image.Height * plfont->bold_fraction + 0.5);
+              bold = (uint)(2 * image.Height * plfont->bold_fraction + 0.5);
               bold_lines = alloc_bold_lines(pgs->memory, image.Width, bold,
                                             "pl_bitmap_build_char(bold_line)");
               if ( bold_lines == 0 )
@@ -1021,7 +1021,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             iqx = (int)ceil(sbox.q.x), iqy = (int)ceil(sbox.q.y);
             /* Set up the memory device for the bitmap. */
             gs_make_mem_mono_device(&mdev, pgs->memory, pgs->device);
-            bold_added = (int)ceil((iqy - ipy) * bold_fraction);
+            bold_added = (int)(scale * bold_fraction * 2 + 0.5);
             mdev.width = iqx - ipx + bold_added;
             mdev.height = iqy - ipy;
             mdev.bitmap_memory = pgs->memory;

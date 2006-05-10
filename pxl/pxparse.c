@@ -462,11 +462,12 @@ top:	if ( st->data_left )
 		else
 		  { const char *format;
 		    const char *tname;
-
+                    bool operator = false;
 		    if ( tag < 0x40 )
 		      format = "%s\n", tname = px_tag_0_names[tag];
 		    else if ( tag < 0xc0 )
-		      format = "%s\n", tname = px_operator_names[tag - 0x40];
+                      format = "%s", tname = px_operator_names[tag - 0x40], 
+                          operator = true;
 		    else
 		      { tname = px_tag_c0_names[tag - 0xc0];
 			if ( tag < 0xf0 )
@@ -474,8 +475,11 @@ top:	if ( st->data_left )
 			else
 			  format = "%s\n";
 		      }
-		    if ( tname )
+		    if ( tname ) {
 		      dprintf1(memory, format, tname);
+                      if (operator)
+                          dprintf1(memory, " (%d)\n", st->operator_count+1);
+                    }
 		    else
 		      dputs(memory, "???\n");
 		  }

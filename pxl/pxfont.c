@@ -389,7 +389,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 
     {
 	pl_font_t *plfont = (pl_font_t *)pfont->client_data;
-	plfont->bold_fraction = pxgs->char_bold_value * 1.625;
+        plfont->bold_fraction = pxgs->char_bold_value;
 	/* we have to invalidate the cache for algorithmic bolding
 	   or vertical substitutes.  For the agfa scaler in
 	   particular there is no way of determining if the

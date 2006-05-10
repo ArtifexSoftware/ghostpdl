@@ -386,25 +386,35 @@ class pxl_dis:
     def attributeIDValue(self):
         return 1
 
+    def findTagKey(self, tag):
+        for key in pxl_tags_dict.keys():
+            if ( pxl_tags_dict[key] == tag ):
+                return key
+        return 0
+
     # get the next operator
     def operatorTag(self):
-        self.operator_position = self.operator_position + 1
         tag = unpack('B', self.data[self.index] )[0]
-        for k in pxl_tags_dict.keys():
-            if ( pxl_tags_dict[k] == tag ):
-                if ( k == "PopGS" ):
-                    self.graphics_state_level = self.graphics_state_level - 1
-                if ( k == "PushGS" ):
-                    self.graphics_state_level = self.graphics_state_level + 1
-                    
-                print "// Operator Position: %d Operator File Offset: %d Operator Hex Code: %X Level: %d" % (self.operator_position, self.index + self.skipped_over, tag, self.graphics_state_level)
-                print k
-                self.index = self.index + 1
+        key = self.findTagKey(tag)
+        if (not key):
+            return 0
+        if ( key == "PopGS" ):
+            self.graphics_state_level = self.graphics_state_level - 1
+        if ( key == "PushGS" ):
+            self.graphics_state_level = self.graphics_state_level + 1
+               
+        if (not self.isEmbedded(key)):
+            self.operator_position = self.operator_position + 1
+        print "// Op Pos: %d " % self.operator_position,
+        print "Op fOff: %d " % (self.index + self.skipped_over),
+        print "Op Hex: %X " % tag,
+        print "Level: %d" % self.graphics_state_level
+        print key
+        self.index = self.index + 1
                 # handle special cases
-                if ( self.is_Embedded(k) ):
-                    self.process_EmbeddedInfo(k)
-                return 1
-        return 0
+        if (self.isEmbedded(key)):
+            self.process_EmbeddedInfo(key)
+        return 1
 
     def Tag_ubyte(self):
         new_tag = unpack('B', self.data[self.index])[0]
@@ -689,7 +699,7 @@ class pxl_dis:
 
 
     # check for embedded tags.
-    def is_Embedded(self, name):
+    def isEmbedded(self, name):
         return ( name == 'embedded_data' or name == 'embedded_data_byte' )
 
     def process_EmbeddedInfo(self, name):
@@ -730,7 +740,7 @@ class pxl_dis:
                         print
                     self.index = self.index + 1
 		    # handle special cases
-		    if ( self.is_Embedded(k) ):
+		    if ( self.isEmbedded(k) ):
 			self.process_EmbeddedInfo(k)
                     return 1
         return 0
