@@ -161,7 +161,7 @@ $(PXLOBJ)pxfont.$(OBJ): $(PXLSRC)pxfont.c $(AK) $(math__h) $(stdio__h) $(string_
  $(gxchar_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
  $(plvalue_h)\
  $(pxfont_h) $(pxoper_h) $(pxstate_h)
-	$(PXLCCC) $(PXLSRC)pxfont.c $(PXLO_)pxfont.$(OBJ)
+	$(PXLCCC) $(AGFA_INCLUDES) $(PXLSRC)pxfont.c $(PXLO_)pxfont.$(OBJ)
 
 $(PXLOBJ)pxgstate.$(OBJ): $(PXLSRC)pxgstate.c $(AK) $(math__h) $(memory__h) $(stdio__h)\
  $(gscoord_h) $(gsimage_h) $(gsmemory_h) $(gspath_h) $(gspath2_h) $(gsrop_h)\

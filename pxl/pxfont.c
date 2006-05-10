@@ -108,9 +108,15 @@ px_set_char_matrix(px_state_t *pxs)
 	     * Rotate the bitmap to undo the effect of its built-in
 	     * orientation and add the page orientation rotation
 	     */
-	    gs_matrix_rotate(&mat, 
-			     90.0f * (pxfont->header[1] - pxs->orientation),
-			     &mat);
+#           ifdef AGFA_FONT_TABLE
+	      gs_matrix_rotate(&mat, 
+			       90.0 * (pxfont->header[1]), /* - pxs->orientation), */
+			       &mat);
+#           else
+	      gs_matrix_rotate(&mat, 
+			       90.0 * (pxfont->header[1] - pxs->orientation), 
+			       &mat);
+#           endif
 	  }
 	else
 	  { float char_size = pxgs->char_size;
