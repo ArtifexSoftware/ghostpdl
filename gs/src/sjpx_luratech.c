@@ -665,6 +665,23 @@ s_jpxe_process(stream_state *ss, stream_cursor_read *pr,
     long available;
     JP2_Error err;
 
+    /* HACK -- reinstall our callbacks in case the GC has moved our state structure */
+    /* this should be done instead from a pointer relocation callback, or initialization
+       moved entirely inside the process routine. */
+    err = JP2_Compress_SetProp(state->handle,
+	cJP2_Prop_Input_Parameter, (JP2_Property_Value)state, -1, -1);
+    if (err != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d setting input callback parameter.\n", (int)err);
+	return ERRC;
+    }
+    err = JP2_Compress_SetProp(state->handle,
+	cJP2_Prop_Write_Parameter, (JP2_Property_Value)state, -1, -1);
+    if (err != cJP2_Error_OK) {
+	dlprintf1("Luratech JP2 error %d setting compressed output callback parameter.\n", (int)err);
+	return ERRC;
+    }
+
+
     if (in_size > 0) {
 	/* allocate our input buffer if necessary */
 	if (state->inbuf == NULL) {
