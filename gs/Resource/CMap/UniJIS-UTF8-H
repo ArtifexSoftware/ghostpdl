@@ -3,9 +3,9 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%BeginResource: CMap (UniJIS-UTF8-H)
 %%Title: (UniJIS-UTF8-H Adobe Japan1 6)
-%%Version: 13.005
+%%Version: 13.006
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-2005 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2006 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -37,7 +37,7 @@ begincmap
 end def
 
 /CMapName /UniJIS-UTF8-H def
-/CMapVersion 13.005 def
+/CMapVersion 13.006 def
 /CMapType 1 def
 
 /XUID [1 10 25359] def
@@ -13682,6 +13682,7 @@ endcidchar
 <e291b4> <e291bf> 8071
 <e29280> <e29287> 8083
 <e29288> <e29290> 8062
+<e29291> <e29292> 20587
 <e2929c> <e292b5> 8112
 <e292b6> <e292bf> 10339
 <e29380> <e2938f> 10349
@@ -13700,10 +13701,10 @@ endcidchar
 <e29896> <e29897> 16233
 <e2989c> <e2989d> 8220
 <e299a8> <e299a9> 12098
-<e299b2> <e299bd> 16314
 endcidrange
 
 100 begincidrange
+<e299b2> <e299bd> 16314
 <e29db6> <e29dbe> 8286
 <e2a4b4> <e2a4b5> 16201
 <e2a7ba> <e2a7bb> 16207
@@ -13803,10 +13804,10 @@ endcidrange
 <e588b1> <e588b2> 19187
 <e5898b> <e5898c> 4261
 <e589b8> <e589b9> 19194
-<e58a95> <e58a97> 21198
 endcidrange
 
 100 begincidrange
+<e58a95> <e58a97> 21198
 <e58aac> <e58aad> 4279
 <e58ab6> <e58ab8> 21205
 <e58aba> <e58abb> 17323
@@ -13906,10 +13907,10 @@ endcidrange
 <e68598> <e6859a> 4887
 <e68680> <e68681> 21583
 <e68683> <e68684> 21585
-<e68692> <e68693> 17648
 endcidrange
 
 100 begincidrange
+<e68692> <e68693> 17648
 <e68780> <e68781> 21591
 <e6878e> <e6878f> 21593
 <e687ac> <e687ad> 21599
@@ -14009,10 +14010,10 @@ endcidrange
 <e78ba0> <e78ba1> 5628
 <e78c84> <e78c85> 14784
 <e78c98> <e78c99> 18067
-<e78cb6> <e78cb7> 3867
 endcidrange
 
 100 begincidrange
+<e78cb6> <e78cb7> 3867
 <e78cba> <e78cbb> 19538
 <e78d8e> <e78d8f> 5643
 <e78d9d> <e78da0> 21970
@@ -14112,10 +14113,10 @@ endcidrange
 <e8879f> <e887a0> 6290
 <e887b0> <e887b2> 22282
 <e887ba> <e887bb> 6293
-<e88881> <e88882> 6296
 endcidrange
 
 100 begincidrange
+<e88881> <e88882> 6296
 <e88893> <e88894> 19724
 <e889aa> <e889ab> 6317
 <e889b7> <e889b8> 6321
@@ -14215,10 +14216,10 @@ endcidrange
 <e984a2> <e984a3> 17160
 <e98586> <e98587> 18800
 <e98693> <e98694> 22701
-<e986ad> <e986ae> 15213
 endcidrange
 
 100 begincidrange
+<e986ad> <e986ae> 15213
 <e98780> <e98781> 6963
 <e98783> <e98784> 18809
 <e98793> <e98794> 22707
@@ -14318,10 +14319,10 @@ endcidrange
 <e9b18f> <e9b190> 17215
 <e9b1a9> <e9b1ab> 19060
 <e9b1ad> <e9b1ae> 19063
-<e9b497> <e9b498> 19073
 endcidrange
 
-55 begincidrange
+56 begincidrange
+<e9b497> <e9b498> 19073
 <e9b49d> <e9b49e> 17218
 <e9b4b3> <e9b4b4> 22988
 <e9b593> <e9b594> 22993

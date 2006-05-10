@@ -3,9 +3,9 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%BeginResource: CMap (UniJIS-UTF16-H)
 %%Title: (UniJIS-UTF16-H Adobe Japan1 6)
-%%Version: 1.005
+%%Version: 1.006
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-2005 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2006 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -37,7 +37,7 @@ begincmap
 end def
 
 /CMapName /UniJIS-UTF16-H def
-/CMapVersion 1.005 def
+/CMapVersion 1.006 def
 /CMapType 1 def
 
 /XUID [1 10 25611] def
@@ -13649,6 +13649,7 @@ endcidchar
 <2460> <2473> 7555
 <2474> <2487> 8071
 <2488> <2490> 8062
+<2491> <2492> 20587
 <249c> <24b5> 8112
 <24b6> <24cf> 10339
 <24d0> <24e9> 10313
@@ -13671,10 +13672,10 @@ endcidchar
 <29fa> <29fb> 16207
 <2b05> <2b07> 8207
 <2e8c> <2e8d> 13833
-<2ea1> <2ea2> 14689
 endcidrange
 
 100 begincidrange
+<2ea1> <2ea2> 14689
 <2ebe> <2ec0> 14197
 <2f14> <2f15> 4301
 <2f21> <2f22> 4538
@@ -13774,10 +13775,10 @@ endcidrange
 <52ba> <52bb> 17323
 <52f8> <52f9> 4293
 <530a> <530b> 14364
-<5327> <5329> 21226
 endcidrange
 
 100 begincidrange
+<5327> <5329> 21226
 <532b> <532c> 21229
 <5387> <5388> 21237
 <53c4> <53c5> 19217
@@ -13877,10 +13878,10 @@ endcidrange
 <61ec> <61ed> 21599
 <6208> <6209> 4930
 <6232> <6233> 4941
-<628d> <628f> 21614
 endcidrange
 
 100 begincidrange
+<628d> <628f> 21614
 <6292> <6293> 4954
 <62b6> <62b7> 21618
 <62be> <62bf> 21621
@@ -13980,10 +13981,10 @@ endcidrange
 <7318> <7319> 18067
 <7336> <7337> 3867
 <733a> <733b> 19538
-<734e> <734f> 5643
 endcidrange
 
 100 begincidrange
+<734e> <734f> 5643
 <735d> <7360> 21970
 <736e> <736f> 18078
 <7385> <7386> 14792
@@ -14083,10 +14084,10 @@ endcidrange
 <81dd> <81de> 19717
 <81df> <81e0> 6290
 <81f0> <81f2> 22282
-<81fa> <81fb> 6293
 endcidrange
 
 100 begincidrange
+<81fa> <81fb> 6293
 <8201> <8202> 6296
 <8213> <8214> 19724
 <826a> <826b> 6317
@@ -14186,10 +14187,10 @@ endcidrange
 <90c4> <90c5> 17154
 <90d8> <90d9> 22681
 <90fe> <90ff> 18792
-<9122> <9123> 17160
 endcidrange
 
 100 begincidrange
+<9122> <9123> 17160
 <9146> <9147> 18800
 <9193> <9194> 22701
 <91ad> <91ae> 15213
@@ -14289,10 +14290,10 @@ endcidrange
 <9b9f> <9ba0> 7314
 <9bd1> <9bd2> 7323
 <9c18> <9c1a> 19040
-<9c49> <9c4a> 19052
 endcidrange
 
-59 begincidrange
+60 begincidrange
+<9c49> <9c4a> 19052
 <9c4f> <9c50> 17215
 <9c69> <9c6b> 19060
 <9c6d> <9c6e> 19063
