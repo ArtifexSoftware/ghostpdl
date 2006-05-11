@@ -1281,70 +1281,73 @@ devn_unpack_row(gx_device * dev, int num_comp, gs_devn_params * pdevn_params,
 					 int width, byte * in, byte * out)
 {
     int i, comp_num, pixel_num;
-#if !USE_COMPRESSED_ENCODING
-    int bytes_pp = dev->color_info.depth >> 3;
 
-    /*
-     * For 'uncompressed' data, the number of bytes per pixel in the input
-     * raster line is defined by the device depth.  This may be more than
-     * the number of actual device components.
-     */
-    for (pixel_num = 0; pixel_num < width; pixel_num++) {
-	for (i = 0; i < num_comp; i++)
-	    *out++ = *in++;
-	in += bytes_pp - num_comp;
-    }
-    return 0;
+    if (pdevn_params->compressed_color_list == NULL) {
+        int bytes_pp = dev->color_info.depth >> 3;
 
-#else		/* USE_COMPRESSED_ENCODING */
-    int non_encodeable_count = 0;
-    int factor, bit_count, bit_mask;
-    comp_bit_map_list_t * pbitmap;
-    gx_color_index color;
-    gx_color_value solid_color = gx_max_color_value;
-
-    for (pixel_num = 0; pixel_num < width; pixel_num++) {
-	/*
-	 * Get the encoded color value.
-	 */
-	color = ((gx_color_index)(*in++)) << (NUM_GX_COLOR_INDEX_BITS - 8);
-	for (i = NUM_GX_COLOR_INDEX_BITS - 16; i >= 0; i -= 8)
-	    color |= ((gx_color_index)(*in++)) << i;
         /*
-         * Set all colorants to zero if we get a non encodeable color.
+         * For 'uncompressed' data, the number of bytes per pixel in the input
+         * raster line is defined by the device depth.  This may be more than
+         * the number of actual device components.
          */
-        if (color == NON_ENCODEABLE_COLOR) {
-            for (comp_num = 0; comp_num < num_comp; comp_num++)
-                *out++ = 0;
-	    non_encodeable_count++;
+        for (pixel_num = 0; pixel_num < width; pixel_num++) {
+	    for (i = 0; i < num_comp; i++)
+	        *out++ = *in++;
+	    in += bytes_pp - num_comp;
         }
-	else {
-    	    pbitmap = find_bit_map(color, pdevn_params->compressed_color_list);
-	    bit_count = num_comp_bits[pbitmap->num_non_solid_comp];
-	    bit_mask = (1 << bit_count) - 1;
-	    factor = comp_bit_factor[pbitmap->num_non_solid_comp];
-	    if (pbitmap->solid_not_100) {
-		solid_color = (factor * ((int)color & bit_mask)) >> 8;
-		color >>= bit_count;
-	    }
-            for (comp_num = 0; comp_num < num_comp; comp_num++) {
-		if (colorant_present(pbitmap, colorants, comp_num)) {
-		    if (colorant_present(pbitmap, solid_colorants, comp_num))
-       		        *out++ = solid_color >> 8;
-		    else {
-            	        *out++ = (factor * ((int)color & bit_mask)) >> 16;
-			if (comp_num == 3 && out[-1] != 0)
-			    comp_num = comp_num;
-	    	        color >>= bit_count;
-		    }
-		}
-		else
-            	    *out++ = 0;
-       	    }
-        }
+        return 0;
     }
-    return non_encodeable_count;
-#endif		/* USE_COMPRESSED_ENCODING */
+    else {
+        int non_encodeable_count = 0;
+        int factor, bit_count, bit_mask;
+        comp_bit_map_list_t * pbitmap;
+        gx_color_index color;
+        gx_color_value solid_color = gx_max_color_value;
+
+        for (pixel_num = 0; pixel_num < width; pixel_num++) {
+	    /*
+	     * Get the encoded color value.
+	     */
+	    color = ((gx_color_index)(*in++)) << (NUM_GX_COLOR_INDEX_BITS - 8);
+	    for (i = NUM_GX_COLOR_INDEX_BITS - 16; i >= 0; i -= 8)
+	        color |= ((gx_color_index)(*in++)) << i;
+            /*
+             * Set all colorants to zero if we get a non encodeable color.
+             */
+            if (color == NON_ENCODEABLE_COLOR) {
+                for (comp_num = 0; comp_num < num_comp; comp_num++)
+                    *out++ = 0;
+	        non_encodeable_count++;
+            }
+	    else {
+    	        pbitmap = find_bit_map(color,
+			       	pdevn_params->compressed_color_list);
+	        bit_count = num_comp_bits[pbitmap->num_non_solid_comp];
+	        bit_mask = (1 << bit_count) - 1;
+	        factor = comp_bit_factor[pbitmap->num_non_solid_comp];
+	        if (pbitmap->solid_not_100) {
+		    solid_color = (factor * ((int)color & bit_mask)) >> 8;
+		    color >>= bit_count;
+	        }
+                for (comp_num = 0; comp_num < num_comp; comp_num++) {
+		    if (colorant_present(pbitmap, colorants, comp_num)) {
+		        if (colorant_present(pbitmap,
+					       	solid_colorants, comp_num))
+       		            *out++ = solid_color >> 8;
+		        else {
+            	            *out++ = (factor * ((int)color & bit_mask)) >> 16;
+			    if (comp_num == 3 && out[-1] != 0)
+			        comp_num = comp_num;
+	    	            color >>= bit_count;
+		        }
+		    }
+		    else
+            	        *out++ = 0;
+       	        }
+            }
+        }
+        return non_encodeable_count;
+    }
 }
 
 
