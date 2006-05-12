@@ -170,6 +170,12 @@ JBIG2_LIB=jbig2dec
 SHARE_JBIG2=@SHARE_JBIG2@
 JBIG2SRCDIR=@JBIG2DIR@
 
+# uncomment the following to compile in the Luratech ldf_jb2 codec
+#JBIG2_LIB=luratech
+#SHARE_JBIG2=0
+#JBIG2SRCDIR=ldf_jb2
+#JBIG2_CFLAGS=-DUSE_LDF_JB2
+
 # Choose the library to use for (JPXDecode support)
 # whether to link to an external build or compile in from source
 # and source location and configuration flags for compiling in
@@ -177,6 +183,12 @@ JPX_LIB=jasper
 SHARE_JPX=@SHARE_JASPER@
 JPXSRCDIR=@JASPERDIR@
 JPX_CFLAGS=-DJAS_CONFIGURE
+
+# uncomment the following to compile in the Luratech lwf_jp2 codec
+#JPX_LIB=luratech
+#SHARE_JPX=0
+#JPXSRCDIR=lwf_jp2
+#JPX_CFLAGS=-DUSE_LWF_JP2 -DLINUX
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
@@ -372,7 +384,7 @@ EXTEND_NAMES=0
 DEVICE_DEVS=$(DISPLAY_DEV) @X11DEVS@
 
 DEVICE_DEVS1=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)bmp32b.dev
-DEVICE_DEVS2=#$(DD)rinkj.dev
+DEVICE_DEVS2=#$(DD)gdevjbig2.dev $(DD)gdevjpx.dev #$(DD)rinkj.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev $(DD)lj5mono.dev $(DD)lj5gray.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev $(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
 DEVICE_DEVS5=$(DD)uniprint.dev @IJSDEVS@
