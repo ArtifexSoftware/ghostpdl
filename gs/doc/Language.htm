@@ -176,23 +176,16 @@ a very few special devices.
 
 <p>
 Ghostscript can also interpret files in the Portable Document Format (PDF)
-1.3 format defined in the <a
-href="http://partners.adobe.com/asn/developer/PDFS/TN/PLRM.pdf"><em>Portable
-Document Format Reference Manual</em> Version 1.3</a> of March 11, 1999,
+1.6 format defined in the <a href="http://partners.adobe.com/public/developer/en/pdf/PDFReference16.pdf"><em>Portable
+Document Format Reference Manual</em> Version 1.6</a> of November, 2004,
 distributed by <a href="http://www.adobe.com/">Adobe Systems
-Incorporated</a>, except as noted below.  This facility is available only if
-the <b><tt>pdf</tt></b> feature was selected when Ghostscript was built.
+Incorporated</a>, except as noted below.  This facility can be 
+disabled by deselecting the <b><tt>pdf</tt></b> feature was selected 
+when Ghostscript is built. 
 
 <p>
-Ghostscript currently does not implement the following PDF 1.3 facilities:
-
-<ul>
-<li>Native <b><tt>Separation</tt></b> and <b><tt>DeviceN</tt></b> color
-spaces, as noted above for PostScript.
-
-<li>Native <b><tt>ICCBased</tt></b> color spaces -- these too always use the
-alternate space.
-</ul>
+Ghostscript currently implements the majority of non-interactive 
+features defined in the PDF reference.
 
 <p>
 Ghostscript also includes a number of
@@ -418,7 +411,7 @@ in PDF</a>". Note, however, that
 Ghostscript's model generalizes that of PDF 1.4 in that Ghostscript
 maintains separate alpha and mask values for opacity and shape, rather than
 a single value with a Boolean that says whether it represents opacity or
-shape.  EVERYTHING IN THIS SECTION IS SUBJECT TO CHANGE.
+shape.
 
 <h5><a name="Transparency_graphics_state_operators"></a>Graphics state
 operators</h5>
@@ -1633,9 +1626,7 @@ filters.  Recognized keys are:
 </blockquote>
 
 <p>
-See the Adobe <a
-href="http://partners.adobe.com/asn/developer/acrosdk/DOCS/pdfspec.pdf"><em>Portable
-Document Format Reference Manual</em></a> for details.
+See the Adobe <a href="http://partners.adobe.com/public/developer/pdf/index_reference.html"><em>PDF Reference Manual</em></a> for details.
 </dl>
 
 <dl>
