@@ -483,6 +483,7 @@ s_jbig2encode_init(stream_state * ss)
 
     state->line = malloc(state->stride);
     if (state->line == NULL) return ERRC;
+    state->linefill = 0;
 
     /* null output buffer */
     state->outbuf = NULL;
@@ -503,16 +504,35 @@ s_jbig2encode_process(stream_state * ss, stream_cursor_read * pr,
     stream_jbig2encode_state *state = (stream_jbig2encode_state *)ss;
     long in_size = pr->limit - pr->ptr;
     long out_size = pw->limit - pw->ptr;
-    long available;
+    long available, segment;
     JB2_Error err;
 
+    /* Be greedy in filling our internal line buffer so we always
+       make read progress on a stream. */
     if (in_size > 0) {
 	/* initialize the encoder if necessary */
 	if (state->cmp == (JB2_Handle_Compress)NULL)
 	    s_jbig2encode_start(state);
 
-	/* pass available full lines to the encoder library */
 	available = in_size;
+
+	/* try to fill the line buffer */
+	segment = state->stride - state->linefill;
+	if (segment > 0) {
+	    segment = (segment < available) ? segment : available;
+	    memcpy(state->line + state->linefill, pr->ptr+1, segment);
+	    pr->ptr += segment;
+	    available -= segment;
+	    state->linefill += segment;
+	}
+	/* pass a full line buffer to the encoder library */
+	if (state->linefill == state->stride) {
+	    s_jbig2_invert_buffer(state->line, state->stride);
+	    err = JB2_Compress_Line(state->cmp, state->line);
+	    state->linefill = 0;
+	    if (err != cJB2_Error_OK) return ERRC;
+	}
+	/* pass remaining full lines to the encoder library */
 	while (available >= state->stride) {
 	   memcpy(state->line, pr->ptr+1, state->stride);
 	   s_jbig2_invert_buffer(state->line, state->stride);
@@ -520,6 +540,13 @@ s_jbig2encode_process(stream_state * ss, stream_cursor_read * pr,
 	   pr->ptr += state->stride;
 	   available = pr->limit - pr->ptr;
 	   if (err != cJB2_Error_OK) return ERRC;
+	}
+	/* copy remaining data into the line buffer */
+	if (available > 0) {
+	    /* available is always < stride here */
+	    memcpy(state->line, pr->ptr+1, available);
+	    pr->ptr += available;
+	    state->linefill = available;
 	}
 	if (!last) return 0; /* request more data */
     }

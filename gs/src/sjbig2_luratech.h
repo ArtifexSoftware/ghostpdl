@@ -61,6 +61,7 @@ typedef struct stream_jbig2encode_state_s
     unsigned long width, height;
     unsigned long stride;	/* line length in bytes */
     unsigned char *line;	/* single line working buffer */
+    unsigned long linefill;	/* bytes in the working buffer */
     unsigned char *outbuf;	/* output data buffer */
     unsigned long outsize;	/* bytes available in the buffer */ 
     unsigned long outfill;	/* bytes written to the buffer */ 
