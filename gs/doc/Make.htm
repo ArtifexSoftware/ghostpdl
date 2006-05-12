@@ -519,6 +519,15 @@ files</a>.
 	<td><b><tt>./zlib</tt></b>
 </table></blockquote>
 
+<h4>Luratech compressor libraries</h4>
+
+<p>Ghostscript has optional support for the Luratech proprietary JBIG2 
+and JPEG 2000 implementations. If you have the source code for these 
+and wish the compile them into Ghostscript, the build system expects 
+them to be in directories named <b><tt>ldf_jb2</tt></b> and 
+<b><tt>lwf_jb2</tt></b> in the top level gs source directory, alongside 
+the other third-party libraries.
+
 <hr>
 
 <h2><a name="Bug_check"></a>How to check for post-release bug fixes</h2>
@@ -646,6 +655,14 @@ options, here we don't duplicate most of that documentation: we recommend
 strongly that you review the entire makefile specific for your operating
 system and compiler before building Ghostscript.
 
+<h3>Building against the Luratech compression libraries</h3>
+
+<p>
+To compile Ghostscript against the proprietary Luratech JBIG2 and JPEG 
+2000 implementations, edit the JBIG2_* and JPX_* defines in the 
+third-party library section of the toplevel makefile. The autoconf
+makefile has a commented-out example of the useful form.
+ 
 <h3><a name="Preparing_makefiles"></a>Changes for your environment</h3>
 
 <p>
@@ -1340,7 +1357,20 @@ without <b><tt>/O2</tt></b>.
   without stack checking. Don't change the setting <b><tt>TDEBUG=1</tt></b> in 
   <b><tt>msvc32.mak</tt></b>. 
 
-<h3><a name="Microsoft_build_64"></a>Microsoft Environment for 64-bit</h3>
+<h4>Building with the Luratech compression libraries</h4>
+
+<p>
+If you wish to compile Ghostscript with the Luratech JBIG2 and JPEG 2000 
+implementations, the source should be installed as described above under 
+<a href="#Unpack_libraries">unpacking third-party libraries</a>. If you 
+have an appropriately licensed source distribution this should already
+have been done.
+
+<p>
+To enable the Luratech code, you need to pass 
+<b><tt>JBIG2_LIB=ldf_jb2</tt></b> and 
+<b><tt>JPX_LIB=lwf_jp2</tt></b> on the <tt>nmake</tt> command line, or 
+add these defines to your Visual Studio project.
 
 Building Ghostscript for 64-bit Windows (AMD64 processor) requires
 Microsoft Visual Studio .NET 2005 beta on 64-bit Windows,
