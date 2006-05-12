@@ -105,8 +105,6 @@ px_lineprinter_font_alias_name(px_value_t *pfnv, px_state_t *pxs)
 private int 
 px_dingbats_font_alias_name(px_value_t *pfnv, px_state_t *pxs) 
 {    
-    uint size = pfnv->value.array.size; 
- 
     /* NB:coupling: depends on this being Dingbats font in plftable.c */ 
     static  const unsigned short Dingbats[16] = 
 	{'Z','a','p','f','D','i','n','g','b','a','t','s',' ',' ',' ',' '}; 
@@ -189,7 +187,27 @@ px_find_font(px_value_t *pfnv, uint symbol_set, px_font_t **ppxfont,
     /* Check if we know the font already. */
     /* Note that px_find_existing_font normalizes the font name. */
     code = px_find_existing_font(pfnv, ppxfont, pxs);
-    /* NB this logic doesn't make sense */
+    /* substitute for missing builtin font */
+
+    if (code < 0) {
+        px_value_t default_font_value;
+        /* the documentation states the default font chosen here
+           is device dependent */
+        const char *default_font = "Courier         ";
+        char message[px_max_error_line + 1];
+        default_font_value.type = pxd_ubyte | pxd_array;
+        default_font_value.value.array.data = default_font;
+        default_font_value.value.array.size = strlen(default_font);
+        code = px_find_existing_font(&default_font_value, ppxfont, pxs);
+        /* shouldn't fail */
+        if ( code < 0 )
+            return code;
+        message[0] = NULL;
+        px_concat_font_name(message, px_max_error_line, &default_font_value);
+        strcat(message, "substituted for ");
+        px_concat_font_name(message, px_max_error_line, pfnv);
+        code = px_record_warning(message, false, pxs);
+    }
     if ( code >= 0 )
 	return pl_load_resident_font_data_from_file(pxs->memory, *ppxfont);
     else
