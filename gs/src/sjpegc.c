@@ -84,7 +84,7 @@ gs_jpeg_error_exit(j_common_ptr cinfo)
     (jpeg_stream_data *) ((char *)cinfo -
 			  offset_of(jpeg_compress_data, cinfo));
 
-    longjmp(jcomdp->exit_jmpbuf, 1);
+    longjmp(find_jmp_buf(jcomdp->exit_jmpbuf), 1);
 }
 
 private void
@@ -147,7 +147,7 @@ gs_jpeg_log_error(stream_DCT_state * st)
 JQUANT_TBL *
 gs_jpeg_alloc_quant_table(stream_DCT_state * st)
 {
-    if (setjmp(st->data.common->exit_jmpbuf)) {
+    if (setjmp(find_jmp_buf(st->data.common->exit_jmpbuf))) {
 	gs_jpeg_log_error(st);
 	return NULL;
     }
@@ -158,7 +158,7 @@ gs_jpeg_alloc_quant_table(stream_DCT_state * st)
 JHUFF_TBL *
 gs_jpeg_alloc_huff_table(stream_DCT_state * st)
 {
-    if (setjmp(st->data.common->exit_jmpbuf)) {
+    if (setjmp(find_jmp_buf(st->data.common->exit_jmpbuf))) {
 	gs_jpeg_log_error(st);
 	return NULL;
     }
@@ -169,7 +169,7 @@ gs_jpeg_alloc_huff_table(stream_DCT_state * st)
 int
 gs_jpeg_destroy(stream_DCT_state * st)
 {
-    if (setjmp(st->data.common->exit_jmpbuf))
+    if (setjmp(find_jmp_buf(st->data.common->exit_jmpbuf)))
 	return_error(gs_jpeg_log_error(st));
     jpeg_destroy((j_common_ptr) & st->data.compress->cinfo);
     return 0;

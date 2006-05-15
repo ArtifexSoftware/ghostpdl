@@ -18,7 +18,7 @@
 #ifndef sdct_INCLUDED
 #  define sdct_INCLUDED
 
-#include <setjmp.h>		/* for jmp_buf */
+#include "setjmp_.h"		/* for jmp_buf */
 
 /* ------ DCT filters ------ */
 
@@ -47,7 +47,7 @@ struct jpeg_block_s {
 		/* the minimum buffer sizes depend on the image parameters. */\
 	stream_template template;\
 	struct jpeg_error_mgr err;\
-	jmp_buf exit_jmpbuf;\
+	gsfix_jmp_buf exit_jmpbuf;\
 	gs_memory_t *memory;	/* heap for library allocations */\
         jpeg_block_t *blocks;   /* ptr to allocated data block list */\
 		/* The following are documented in Adobe TN 5116. */\

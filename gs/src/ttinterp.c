@@ -219,7 +219,7 @@ static int nInstrCount=0;
 
 /* The following macro is used to disable algorithms,
    which could cause Apple's patent infringement. */
-#define THROW_PATENTED longjmp(CUR.trap, TT_Err_Invalid_Engine)
+#define THROW_PATENTED longjmp(find_jmp_buf(CUR.trap), TT_Err_Invalid_Engine)
 
 
 
@@ -5149,7 +5149,7 @@ static int nInstrCount=0;
 	save_ox = save_oy = save_cx = save_cy = NULL;
 #   endif
 
-    Result = setjmp(exc->trap);
+    Result = setjmp(find_jmp_buf(exc->trap));
     if (Result) {
 	CUR.error = Result;
 	goto _LExit;
