@@ -416,7 +416,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		}
 	    } else { /* TRANSPOSED */
 		switch (params->REFCORNER) {
-		case JBIG2_CORNER_TOPLEFT: y = T; x = T; break;
+		case JBIG2_CORNER_TOPLEFT: y = S; x = T; break;
 		case JBIG2_CORNER_TOPRIGHT: y = S - IB->width + 1; x = T; break;
 		case JBIG2_CORNER_BOTTOMLEFT: y = S; x = T - IB->height + 1; break;
 		case JBIG2_CORNER_BOTTOMRIGHT: y = S - IB->width + 1; x = T - IB->height + 1; break;
