@@ -906,7 +906,7 @@ pglfill_do_registration(
      * in polygon mode itself.`
      */
     HPGL_COMMAND('S', 'M', hpgl_SM, hpgl_cdf_pcl_rtl_both),
-    HPGL_COMMAND('S', 'P', hpgl_SP, hpgl_cdf_pcl_rtl_both|hpgl_cdf_polygon),
+    HPGL_COMMAND('S', 'P', hpgl_SP, hpgl_cdf_pcl_rtl_both), 
     HPGL_COMMAND('S', 'V', hpgl_SV, hpgl_cdf_pcl_rtl_both),
     HPGL_COMMAND('T', 'R', hpgl_TR, hpgl_cdf_pcl_rtl_both),
     HPGL_COMMAND('U', 'L', hpgl_UL, hpgl_cdf_pcl_rtl_both),
