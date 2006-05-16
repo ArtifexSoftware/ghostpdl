@@ -1118,22 +1118,22 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
     } else {
         int code = I->get_char_raster(I, &rast);
         if (code == e_limitcheck) {
-            /* The rerver provides an outline instead the raster. */
+            /* The server provides an outline instead the raster. */
             gs_imager_state *pis = (gs_imager_state *)pgs->show_gstate;
             gs_point pt;
-            if ((code = gs_currentpoint(pgs->show_gstate, &pt)) < 0)
+            if ((code = gs_currentpoint(pgs, &pt)) < 0)
 		return code;
-            if ((code = outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->show_gstate->path, !pbfont->PaintType)) < 0)
+            if ((code = outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->path, !pbfont->PaintType)) < 0)
 		return code;
-            if ((code = gs_imager_setflat(pis, gs_char_flatness(pis, 1.0))) < 0)
+            if ((code = gs_imager_setflat((gs_imager_state *)pgs, gs_char_flatness(pis, 1.0))) < 0)
 		return code;
             if (pbfont->PaintType) {
-                if ((code = gs_stroke(pgs->show_gstate)) < 0)
+                if ((code = gs_stroke(pgs)) < 0)
 		    return code;
             } else
-                if ((code = gs_fill(pgs->show_gstate)) < 0)
+                if ((code = gs_fill(pgs)) < 0)
 		    return code;
-            if ((code = gs_moveto(pgs->show_gstate, pt.x, pt.y)) < 0)
+            if ((code = gs_moveto(pgs, pt.x, pt.y)) < 0)
 		return code;
         } else {
 	    int rast_orig_x =   rast.orig_x - (int)(penum_s->fapi_glyph_shift.x * (1 << frac_pixel_shift));
@@ -1486,7 +1486,11 @@ retry_oversampling:
         if ((code = renderer_retcode(i_ctx_p, I, I->get_char_outline_metrics(I, &ff, &cr, &metrics))) < 0)
 	    return code;
     } else {
-        code = I->get_char_raster_metrics(I, &ff, &cr, &metrics);
+#if 0 /* Debug purpose only. */
+        code = e_limitcheck; 
+#else
+	code = I->get_char_raster_metrics(I, &ff, &cr, &metrics);
+#endif
         if (code == e_limitcheck) {
             if(log2_scale.x > 0 || log2_scale.y > 0) {
                 penum_s->fapi_log2_scale.x = log2_scale.x = penum_s->fapi_log2_scale.y = log2_scale.y = 0;
