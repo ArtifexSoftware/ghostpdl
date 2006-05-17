@@ -425,15 +425,23 @@ pdfdict begin
     QUIET not {				% Create warning message if not QUIET
       Generations 2 index lget 0 eq {	% Check if object is free ...
 	(   **** Warning: reference to free object: )
+        2 index =string cvs concatstrings ( ) concatstrings	% put obj #
+        exch =string cvs concatstrings ( R\n) concatstrings	% put gen #
       } {
 	(   **** Warning: wrong generation: )
+        2 index =string cvs concatstrings ( ) concatstrings	% put obj #
+        exch =string cvs concatstrings				% put gen #
+       	(, xref gen#: ) concatstrings 1 index Generations  % put xref gen #
+       	exch lget 1 sub =string cvs concatstrings (\n) concatstrings
       } ifelse
-      2 index =string cvs concatstrings ( ) concatstrings	% put obj #
-      exch =string cvs concatstrings ( R\n) concatstrings	% put gen #
       pdfformaterror			% Output warning message
     } {					% Else QUIET ...
-      pop				% Pop generation umber
-    } ifelse false			% Return false if gen # not match
+      pop				% Pop generation number
+    } ifelse
+    % We should return false for an incorrect generation number, however
+    % we are simply printing a warning and then returning true.  This makes
+    % Ghostscript tolerant of of bad generation numbers.
+    true
   } ifelse
 } bind def
 /R {		% <object#> <generation#> R <object>

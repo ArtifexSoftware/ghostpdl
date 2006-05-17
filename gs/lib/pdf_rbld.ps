@@ -73,10 +73,10 @@
   } ifelse
 } bind def
 
-% Print the contents of the xref array.  This actually consists of two
-% arrays (Objects and Generations).  Both are larrays.  larrays are a
-% special Ghostscript object which can be arrays with more than 64k
-% elements.
+% Print the contents of the xref array.  This actually consists of three
+% arrays (Objects, Generations, and ObjectStream).  All three are larrays.
+% larrays are a special Ghostscript object which can be arrays with more
+% than 64k elements.
 /print_xref				% - print_xref -
 { 0 1 Objects llength 1 sub		% stack: 0 1 <number of objects - 1>
   { dup =only				% print object number

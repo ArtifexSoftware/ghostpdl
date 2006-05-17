@@ -497,7 +497,12 @@ pdfdict begin
 	  search_objects
 	  exit
 	} if				% If the entry is invalid
-      } if				% If not in an object stream
+      } {
+	      % The object is in an object stream.  We currently do not rebuild
+	      % objects in an object stream.  So If we find one, then abort the
+	      % verification of the xref table entries.
+	pop exit			% Pop object number and then exit loop
+      } ifelse				% If not in an object stream
     } if				% If object entry is not free
     pop					% Remove object number
   } for
