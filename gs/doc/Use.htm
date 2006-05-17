@@ -3255,8 +3255,23 @@ Second, you can redirect PostScript fonts to FAPI, setting
 entries in <b><tt>lib/FAPIconfig</tt></b> file.
 
 <p>
-The file <b><tt>lib/FAPIfontmap</tt></b> defines a map table for FAPI-handled fonts.
-The format of <b><tt>lib/FAPIfontmap</tt></b> is explained below.
+The files <b><tt>lib/FAPIfontmap</tt></b> and <b><tt>lib/FAPIcidfmap</tt></b> 
+define a map table for FAPI-handled fonts.
+Their format is explained below.
+
+<p> If you want to run UFST with resident fonts only,
+and if those fonts reside in an FCO file (which actually represents
+a font collection in Agfa'a Microtype font format),
+you don't need <b><tt>lib/FAPIfontmap</tt></b> and <b><tt>lib/FAPIcidfmap</tt></b>.
+Instead that you should run Ghostscript with a special command line argument
+<b><tt>-sFCOfontfile=<em>path</em></tt></b>, where <b><tt><em>path</em></tt></b> specifies
+a disk path to the FCO file. In this case <b><tt>lib/FAPIfontmap</tt></b> is being ignored,
+so you don't need to study its format. 
+The mapping is taken from <b><tt>lib/FCOfontmap</tt></b>,
+which actually represents a permanent information defined by Agfa.
+<b><tt>lib/FAPIcidfmap</tt></b> works as usual, but probably you want to leave it empty
+because FCO doesn't emulate CID fonts. Note that you may need to edit <b><tt>lib/FAPIconfig</tt></b>
+to prevent the rendering of non-resident fonts with UFST.
 
 <p>
 Font files being handled with FAPI may reside in any directory in your hard disk.

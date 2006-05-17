@@ -112,6 +112,43 @@ currentdict end def
   } bind def
 currentdict end def
 
+/ReadFCOfontmap:   % - ReadFCOfontmap: name dict ...
+{
+  {
+    currentfile =string readline not {
+      pop exit
+    } if
+    dup length 0 ne {
+      0 () /SubFileDecode filter
+      dup token not {
+        /ReadFCOfontmap: cvx /rangecheck signalerror
+      } if
+      exch dup token not {
+        /ReadFCOfontmap: cvx /rangecheck signalerror
+      } if
+      exch dup token not {
+        /StandardEncoding
+      } {
+        dup type /nametype not {
+          /ReadFCOfontmap: cvx /rangecheck signalerror
+        } if
+      } ifelse
+      exch closefile
+      findencoding                   % index name enc
+      3 2 roll                       % name enc index
+      << /Path /FCOfontfile .systemvar 
+         /FontType 1 
+         /FAPI /AgfaUFST 
+         /SubfontId  9 8 roll 
+         /Encoding   11 10 roll 
+      >> % dup { exch == = } forall
+    } {
+      pop
+    } ifelse
+  } loop
+} bind def
+
+
 %----------------------------------The Redefintion---------------------
 
 /MappedCategoryRedefiner /ProcSet findresource /Redefine get /Redefine exch def
@@ -119,7 +156,7 @@ currentdict end def
 % Redefine the /Font category :
 4 dict begin
   /CategoryName /Font def
-  /MapFileName (FAPIfontmap) def
+  /MapFileName systemdict /FCOfontfile known {(FCOfontmap)} {(FAPIfontmap)} ifelse def
   /VerifyMap  { pop } bind def
   /PreprocessRecord  % <map> <Name> <raw_record> PreprocessRecord <map> <Name> <record> <bool>
   { //IsMyRecord exec dup {
