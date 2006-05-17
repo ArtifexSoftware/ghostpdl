@@ -718,6 +718,7 @@ dict_resize(ref * pdref, uint new_size, dict_stack_t *pds)
     dict *pdict = pdref->value.pdict;
     gs_ref_memory_t *mem = dict_memory(pdict);
     uint new_mask = imemory_new_mask(mem);
+    ushort orig_attrs = r_type_attrs(&pdict->values) & (a_all | a_executable);
     dict dnew;
     ref drto;
     int code;
@@ -767,6 +768,7 @@ dict_resize(ref * pdref, uint new_size, dict_stack_t *pds)
 	gs_free_ref_array(mem, &pdict->keys, "dict_resize(old keys)");
     ref_assign(&pdict->keys, &dnew.keys);
     ref_assign(&pdict->values, &dnew.values);
+    r_store_attrs(&pdict->values, a_all | a_executable, orig_attrs);
     ref_save_in(dict_memory(pdict), pdref, &pdict->maxlength,
 		"dict_resize(maxlength)");
     d_set_maxlength(pdict, new_size);
