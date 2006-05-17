@@ -165,7 +165,14 @@ pdfdict begin
     dup dup dup /true eq exch /false eq or exch /null eq or {
       exch pop exch pop //systemdict exch get
     } {
-      .pdftokenerror
+      % Hackish fix to detect missing whitespace after "endobj". Yet another
+      % problem that (you guessed it!) Adobe Acrobat ignores silently
+      256 string cvs (endobj) anchorsearch {
+        (   **** Missing whitespace after 'endobj'.\n) pdfformaterror
+        exch pop cvn get exch pop exec
+      } {
+        .pdftokenerror
+      } ifelse
     } ifelse
   } ifelse
 } bind def
