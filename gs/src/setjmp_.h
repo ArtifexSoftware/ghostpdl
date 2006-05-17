@@ -24,8 +24,6 @@ typedef struct {
     jmp_buf j;
 } gsfix_jmp_buf_test;
 
-/* Note: this value should be the same as ARCH_ALIGN_MEMORY_MOD, but
-   it's better to determine it at compile time, to ease cross-compile. */
 #define gsfix_jmp_buf_align ((size_t)&((gsfix_jmp_buf_test*)0)->j)
 
 typedef struct {
@@ -35,10 +33,10 @@ typedef struct {
 
 /* This could be moved into a function, but it's fairly harmless as a macro. */
 #define find_jmp_buf(gsfjb) 				\
-  (							\
+  (*(jmp_buf *)(					\
    ((size_t)(gsfjb).stuff + gsfix_jmp_buf_align) 	\
    & ~(size_t)(gsfix_jmp_buf_align-1)			\
-  )
+  ))
 
 #endif /* setjmp_INCLUDED */
 

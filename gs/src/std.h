@@ -42,7 +42,7 @@
  */
 #define ARCH_ALIGN_MEMORY_MOD\
   (((ARCH_ALIGN_LONG_MOD - 1) | (ARCH_ALIGN_PTR_MOD - 1) |\
-    (ARCH_ALIGN_DOUBLE_MOD - 1) | (ARCH_ALIGN_STRUCT_MOD - 1)) + 1)
+    (ARCH_ALIGN_DOUBLE_MOD - 1)) + 1)
 
 /* Define integer data type sizes in terms of log2s. */
 #define ARCH_SIZEOF_CHAR (1 << ARCH_LOG2_SIZEOF_CHAR)

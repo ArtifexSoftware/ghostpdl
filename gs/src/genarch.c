@@ -21,13 +21,11 @@
 #include <ctype.h>
 #include <stdio.h>
 /*
- * In theory, not all systems provide <string.h> or <setjmp.h>, or declare
- * memset in <string.h>, but at this point I don't think we care about any
- * that don't.
+ * In theory, not all systems provide <string.h> or declare memset 
+ * there, but at this point we don't think we care about any that don't.
  */
 #include <string.h>
 #include <time.h>
-#include <setjmp.h>
 
 /* We provide a _SIZEOF_ macro for GX_COLOR_INDEX_TYPE
    fallback to a generic int if no such type is defined.
@@ -106,11 +104,6 @@ main(int argc, char *argv[])
 	char c;
 	double d;
     } sd;
-    /* Some architectures have special alignment requirements for jmpbuf. */
-    struct {
-	char c;
-	jmp_buf j;
-    } sj;
     long lm1 = -1;
     long lr1 = lm1 >> 1, lr2 = lm1 >> 2;
     unsigned long um1 = ~(unsigned long)0;
@@ -154,8 +147,12 @@ main(int argc, char *argv[])
     define_int(f, "ARCH_ALIGN_PTR_MOD", OFFSET_IN(sp, p));
     define_int(f, "ARCH_ALIGN_FLOAT_MOD", OFFSET_IN(sf, f));
     define_int(f, "ARCH_ALIGN_DOUBLE_MOD", OFFSET_IN(sd, d));
-    define_int(f, "ARCH_ALIGN_STRUCT_MOD", OFFSET_IN(sj, j));
 #undef OFFSET_IN
+
+    /* Some architectures have special alignment requirements for   */
+    /* jmp_buf, and we used to provide ALIGN_STRUCT_MOD for that.   */
+    /* We've now dropped that in favor of aligning jmp_buf by hand. */
+    /* See setjmp_.h for the implementation of this.                */
 
     section(f, "Scalar sizes");
 
