@@ -66,12 +66,14 @@ main(int argc, char *argv[])
 {
     int exit_status, code;
     gs_main_instance *minst;
+    gs_memory_t *mem;
 
 #ifdef NEED_COMMIT_STACK   /* hack for bug in gcc 2.96 */
     commit_stack_pages();
 #endif
     exit_status = 0;
-    minst = gs_main_alloc_instance(gs_malloc_init(NULL));
+    mem = gs_malloc_init(NULL);
+    minst = gs_main_alloc_instance(mem);
     code = gs_main_init_with_args(minst, argc, argv);
     
 #ifdef RUN_STRINGS
@@ -115,6 +117,7 @@ main(int argc, char *argv[])
     }
 
     gs_to_exit_with_code(minst->heap, exit_status, code);
+    gs_malloc_release(mem);
 
     switch (exit_status) {
 	case 0:
