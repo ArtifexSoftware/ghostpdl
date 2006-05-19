@@ -190,7 +190,7 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
 	    if (ss->scan_line_size > (uint) jddp->template.min_out_size) {
 		/* Create a spare buffer for oversize scanline */
 		jddp->scanline_buffer =
-		    gs_alloc_bytes_immovable(jddp->memory,
+		    gs_alloc_bytes_immovable(gs_memory_stable(jddp->memory),
 					     ss->scan_line_size,
 					 "s_DCTD_process(scanline_buffer)");
 		if (jddp->scanline_buffer == NULL)
@@ -270,7 +270,7 @@ s_DCTD_release(stream_state * st)
 
     gs_jpeg_destroy(ss);
     if (ss->data.decompress->scanline_buffer != NULL)
-	gs_free_object(ss->data.common->memory,
+	gs_free_object(gs_memory_stable(ss->data.common->memory),
 		       ss->data.decompress->scanline_buffer,
 		       "s_DCTD_release(scanline_buffer)");
     gs_free_object(ss->data.common->memory, ss->data.decompress,
