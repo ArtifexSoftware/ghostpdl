@@ -10,7 +10,7 @@ Build a shared library object of ghostscript.
 
    cd ../../gs   # relative to the gslite directory.
    ln -s src/unix-gcc.mak Makefile
-   make sodebug
+   make sodebug # make so - production build.
    
 Build gslite:        
   

@@ -962,6 +962,7 @@ test8(gs_state * pgs, gs_memory_t * mem)
 #include "gxchar.h"
 #include "gsgdata.h"
 #include "gxfont42.h"
+#include "gxfcache.h"
 
 /* big endian accessors */
 #define get_uint16(bptr)\
@@ -1037,7 +1038,7 @@ private gs_glyph
 test9_tt_encode_char(gs_font *p42, gs_char chr, gs_glyph not_used)
 {
     /* NB encode me */
-    return chr;
+    return chr - 29;
 }
 
 private gs_char
@@ -1131,9 +1132,23 @@ test9_load_font_data(const char *filename, gs_memory_t * mem)
     return data;
 }
     
-/* windows ttfile name */
+/* windows tt file name */
 
 #define TTF_FILENAME "/windows/fonts/A028-Ext.ttf"
+
+/* TEST9 NB:
+
+   1) assumes character successfully renders to cache.  There should
+   be a charpath fallback if looking up the character in the cache
+   returns NULL.
+
+   2) Cache memory management needs investigation
+
+   3) This implementation is one character at a time.
+
+   4) needs encoding - fill in test9_tt_encode_char().
+
+*/
 
 private int
 test9(gs_state * pgs, gs_memory_t * mem)
@@ -1194,25 +1209,69 @@ test9(gs_state * pgs, gs_memory_t * mem)
     {
         gs_text_params_t text_params;
         gs_text_enum_t *penum;
-        byte *mystr = "the quick brown fox";
+        byte *mystr = "The quick brown fox";
         floatp FontRenderingEmSize = 20; /* XPS terminology */
         gs_matrix fmat; /* font matrix */
+        int code;
+        {
+            int i;
+            if (gs_moveto(pgs, 72.0, 72.0) != 0)
+                return -1;
 
-        text_params.operation = (TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH);
-        text_params.data.bytes = mystr;
-        text_params.size = strlen(mystr);
+            for (i = 0; i < strlen(mystr); i++) {
+                dprintf1(mem, "%d\n", i);
+                text_params.operation = (TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH);
+                text_params.data.bytes = mystr + i;
+                text_params.size = 1;
 
-        if (gs_moveto(pgs, 72.0, 72.0) != 0)
-            return -1;
 
-        gs_make_identity(&fmat);
-        if ((gs_matrix_scale(&fmat, FontRenderingEmSize, -FontRenderingEmSize, &fmat) != 0) ||
-            (gs_concat(pgs, &fmat) != 0) ||
-            (gs_text_begin(pgs, &text_params, mem, &penum) != 0) ||
-            (gs_text_process(penum) != 0))
-            return -1;
+                gs_make_identity(&fmat);
+                if ((gs_matrix_scale(&fmat, FontRenderingEmSize, FontRenderingEmSize, &fmat) != 0) ||
+                    (gs_setcharmatrix(pgs, &fmat) != 0) ||
+                    (gs_text_begin(pgs, &text_params, mem, &penum) != 0) ||
+                    (gs_text_process(penum) != 0)) {
+                    dprintf(mem, "text_failed\n");
+                    return -1;
+                }
+                {
+                    gs_show_enum *psenum = (gs_show_enum *)penum;
+                    cached_fm_pair *ppair;
+                    gs_fixed_point sub_pix_or = {0, 0};
+                    cached_char *cc;
+                    gs_matrix cmat;
+                    gs_currentcharmatrix(pgs, &cmat, true);
+                    code = gx_lookup_fm_pair(penum->current_font,
+                                             &cmat,
+                                             &penum->log2_scale,
+                                             /* NB design grid */
+                                             false,
+                                             &ppair);
 
-        gs_text_release(penum, "test_9");
+                    cc = gx_lookup_cached_char(penum->current_font, 
+                                               ppair, 
+                                               penum->returned.current_glyph,
+                                               /* nb next three assume
+                                                  no veritcal writing
+                                                  '0', bitdepth '1'
+                                                  and no sub pixel
+                                                  stuff */
+                                               0, 
+                                               1, 
+                                               &sub_pix_or);
+
+                    debug_dump_bitmap(mem,
+                                      cc_bits(cc), 
+                                      cc_raster(cc),
+                                      cc->height, "");
+                    /* update point (device space) */
+                    gx_path_add_relative_point(gx_current_path(pgs),
+                                               cc->wxy.x,
+                                               cc->wxy.y);
+                    gs_text_release(penum, "test_9");
+
+                }
+            }
+        }
     }
     return 0;
 }
