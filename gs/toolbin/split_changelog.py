@@ -22,14 +22,15 @@
 
 import string, re
 import xml.parsers.expat
-import sys
+import sys, codecs
 
 class Entry:
 	'''a class representing a single changelog entry'''
 	data = {}
 	has_details = False
-	r = re.compile('^[ ]*DETAILS[ :]*$', re.I)
-	c = re.compile('^[ ]*EXPECTED DIFFERENCES[ :]*$', re.I) 
+	r = re.compile('^[\[ ]*DETAILS[ :\]]*$', re.I)
+	c = re.compile('^[ ]*EXPECTED DIFFERENCES[ :]*$', re.I)
+	codec = codecs.getencoder("utf8") 
 	def reset(self):
 		self.data = {}
 		self.has_details = False
@@ -45,7 +46,8 @@ class Entry:
 		if self.r.search(value): self.has_details = True
 		if self.c.search(value): self.has_details = True
 	def write(self, file, details=True):
-		stamp = self.data['date'] + ' ' + self.data['time']
+		#stamp = self.data['date'] + ' ' + self.data['time']
+		stamp = self.data['date']
 		# construct the name anchor
 		label = ''
 		for c in stamp:
@@ -67,11 +69,12 @@ class Entry:
 			# skip the details unless wanted
 			if not details and self.r.search(line): break
 			if not details and self.c.search(line): break
-			file.write(line)
+			file.write(line.encode('utf8'))
 		file.write('</pre>\n')
 		file.write('<p>[')
-		file.write(string.join(map(string.join, zip(self.data['name'],self.data['revision'])),', '))
+		#file.write(string.join(map(string.join, zip(self.data['name'],self.data['revision'])),', '))
 		#file.write(string.join(self.data['name']))
+		file.write(string.join(self.data['path']))
 		file.write(']</p>\n')
 		file.write('</blockquote>\n')
 
@@ -99,11 +102,11 @@ def write_footer(file, details=True):
 def start_element(name, attrs):
 	#print 'Start element:', name, attrs
 	element.append(name)
-	if name == 'entry': e = Entry()
+	if name == 'logentry': e = Entry()
 def end_element(name):
 	#print 'End element:', name
 	element.pop()
-	if name == 'entry':
+	if name == 'logentry':
 		e.write(details, True)
 		e.write(changes, False)
 		e.reset()
@@ -112,9 +115,12 @@ def char_data(data):
 		# whitespace is meaningful inside the msg tag
 		# so treat it specially
 		e.addmsg(data)
-	elif element[-1] == 'name' or element[-1] == 'revision':
+	elif element[-1] == 'name' or element[-1] == 'path':
 		# keep an ordered list of these elements
-		e.listadd(element[-1], string.strip(data))
+		item = string.strip(data)
+		# hack off the prefix for mainline paths
+		if item[:10] == '/trunk/gs/': item = item[10:]
+		e.listadd(element[-1], item)
 	else:
 		data = string.strip(data)
 		if data:
@@ -134,7 +140,7 @@ p.CharacterDataHandler = char_data
 
 # open our files
 if len(sys.argv) != 4:
-	print 'usage: convert the output of cvs2cl --xml to html'
+	print 'usage: convert the output of svn log -v --xml to html'
 	print sys.argv[0] + ' <input xml> <output abbr> <output detailed>'
 	sys.exit(2)
 		
@@ -142,8 +148,8 @@ input = file(sys.argv[1], "r")
 changes_fn = sys.argv[2]
 details_fn = sys.argv[3]
 
-changes = file(changes_fn, "w")
-details = file(details_fn, "w")
+changes = file(changes_fn, "wb")
+details = file(details_fn, "wb")
 
 # read the input xml and write the output html
 write_header(changes, False)

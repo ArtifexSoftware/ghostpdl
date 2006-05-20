@@ -18,7 +18,7 @@
 # $Id$
 
 # Check various aspects of an about-to-be-released Ghostscript fileset.
-# Only applicable to filesets 6.0 and later (assumes use of CVS).
+# Only applicable to filesets 6.0 and later (assumes use of SVN).
 # Note: requires the GNU 'date' -r switch and - format character.
 
 set DIFFFILE t
@@ -221,7 +221,7 @@ check_version src/version.mak
 
 foreach doc $doclist {
     set dateline {^(! |<small>)(AFPL |Aladdin |GNU |)Ghostscript version ([0-9.]+), ([0-9]+ [A-Z][a-z]+ [0-9]+)(</small>|)$}
-    set idline {[$]Id: [^,]+,v ([^ ]+) ([0-9][0-9][0-9][0-9])/([0-9][0-9])/([0-9][0-9]) }
+    set idline {[$]Id: [^ ]+ ([0-9]+) ([0-9][0-9][0-9][0-9])-([0-9][0-9])-([0-9][0-9]) }
     if {![grep1 $dateline $doc dstr]} {
 	message "Can't find version # and date in $doc"
     } elseif {![grep1 $idline $doc idstr]} {
@@ -252,7 +252,7 @@ foreach doc $manlist {
     close $in
     # We must be careful not to include the string $,I,d,: in any pattern,
     # since CVS/RCS will substitute for it!
-    if {![regexp {^\.\\" [$]Id: ([^,]+),v ([0-9.]+) ([0-9][0-9][0-9][0-9])/([0-9][0-9])/([0-9][0-9])} $idline skip file idrevision idyear idmonth idday]} {
+    if {![regexp {^\.\\" [$]Id: ([^ ]+) ([0-9.]+) ([0-9][0-9][0-9][0-9])/([0-9][0-9])/([0-9][0-9])} $idline skip file idrevision idyear idmonth idday]} {
 	message "In $doc, can't parse $Id line: $idline"
 	continue
     }
