@@ -133,9 +133,9 @@ Please check there first for any news about releases or current work,
 and for information about where to download ghostscript and how to
 access the mailing lists.
 
-CVS access is through <a
-href="http://cvs.ghostscript.com/"
-class="offsite">cvs.ghostscript.com</a>.
+Development source access is through <a
+href="http://svn.ghostscript.com/"
+class="offsite">svn.ghostscript.com</a>.
 
 <p>
 It may also be helpful to
@@ -218,11 +218,12 @@ as the first step of preparing a new release.
 <h3>After a release</h3>
 
 <p>
-After making a release the release number in CVS is incremented. Thus versions built
-from cvs are always marked with a future (or unused) release number to avoid confusion.
+After making a release the release number in the repository is 
+incremented. Thus versions built from svn are always marked with a 
+future (or unused) release number to avoid confusion.
 
 <p>
-Additionally, After an N.00 or N.50 stable release, a branch is made in cvs so that development 
+Additionally, After an N.00 or N.50 stable release, a branch is made in svn so that development 
 can continue independently of changes to the stable series. When this happens, the minor release
 number is incremented by 10 (or 20) on the development branch (and by 1 on the new stable branch,
 as above) to avoid collisions.
@@ -230,7 +231,7 @@ as above) to avoid collisions.
 <p>
 While incrementing the release number after making a release may seem
 counter-intuitive, it ensures that, at any given time, the version
-number alone is sufficient to distinguish between the current CVS
+number alone is sufficient to distinguish between the current SVN
 state and a numbered release.
 
 <h2><a name="Making_distributions"></a>Making distributions</h2>
@@ -254,11 +255,6 @@ freely available from Scriptics
 (<a class="offsite" href="http://www.scriptics.com"><tt>http://www.scriptics.com</tt></a>), and
 Python, freely available from <a class="offsite"
 href="http://www.python.org"><tt>http://www.python.org</tt></a>.
-
-<p>
-To update the changelogs, you'll also need a recent version of the cvs2cl perl script. If
-not already installed on your system a copy can be found at
-<a class="offsite" href="http://www.red-bean.com/cvs2cl/cvs2cl.pl">http://www.red-bean.com/cvs2cl/cvs2cl.pl</a>.
 
 <p>
 The instructions below also refer to some files that are deliberately
@@ -302,8 +298,7 @@ closed bug and the list of open bugs.
 <p>
 Check in <b><tt>gscdef.c</tt></b> that the definition of
 <b><tt>GS_PRODUCT</tt></b> includes the appropriate one of "DEVELOPMENT
-RELEASE", "BETA RELEASE", or neither, and does not include "CVS
-PRE-RELEASE".
+RELEASE", "BETA RELEASE", or neither, and does not include "SVN PRE-RELEASE".
 
 <p>Run the source-consistency checks from the test suite:
 
@@ -311,12 +306,12 @@ PRE-RELEASE".
 toolbin/tests/check_all.py --gsroot=.
 </pre></blockquote>
 Where the argument of --gsroot is the path to the top level of the
-source tree. Fix any problems it indicates, and commit them to cvs.
+source tree. Fix any problems it indicates, and commit them to svn.
 
 <p>
 Check for patched configuration parameters, <b><tt>#define TEST</tt></b>s,
 version/date inconsistencies, and mismatches between the working directory
-and the CVS repository by running:
+and the SVN repository by running:
 
 <blockquote><pre>
 toolbin/pre.tcl
@@ -356,7 +351,7 @@ toolbin/pre.tcl
 
 <p>
 again. To confirm that everything is updated. You may have to commit to
-cvs after the update to satify the script that all the dates are
+svn after the update to satify the script that all the dates are
 correct.
 
 <p>
@@ -370,7 +365,7 @@ toolbin/gsmake.tcl check
 This script assumes the top level makefile is named '<tt>makefile</tt>'.
 
 <p>
-Fix any problems and commit to cvs.
+Fix any problems and commit to svn.
 
 <h3><a name="Testing"></a>Testing</h3>
 
@@ -428,7 +423,7 @@ edits.
 Run
 
 <blockquote><pre>
-cvs commit
+svn commit
 </pre></blockquote>
 
 <p>
@@ -437,26 +432,19 @@ to ensure the repository is up to date.
 <h3><a name="Changelog"></a>Updating the changelog</h3>
 
 <p>
-Create a new changelog by running either (for the main HEAD branch)
+Create a new changelog by running
 
 <blockquote><pre>
-cvs2cl.pl --utc -T --follow trunk --delta &lt;prev release tag&gt;:HEAD --xml -f doc/changelog.xml
+svn log -rHEAD:<i>rev</i> --xml --verbose > doc/changelog.xml
 </pre></blockquote>
 
-or (for a non-HEAD branch)
-
-<blockquote><pre>
-cvs2cl.pl --utc -T --follow &lt;branch&gt; --delta &lt;prev release tag&gt;:&lt;branch tag&gt; --xml -f doc/changelog.xml
-</pre></blockquote>
-e.g.
-<blockquote>
-<pre>cvs2cl.pl --utc -T --follow trunk --delta gs8_00:HEAD --xml -f doc/changelog.xml</pre>
-</blockquote>
+where <i>rev</i> is the revision number of the branch point for the 
+previous release.
 
 <p>
-This consolidates all the CVS logs since the previous release in a readable
-format. You may also wish to pass a file mapping cvs user names to real names
-with the <tt>-U</tt> option.
+This consolidates all the commit logs since the previous release in a 
+readable format. You may also wish to remap user names in the 
+<author/> tags of the output to the real names of the developers.
 
 <p>
 Create the html-format changes and details documents as follows:
@@ -478,10 +466,14 @@ toolbin/makehist.tcl
 This updates <b><tt>doc/History#.htm</tt></b> from
 <b><tt>doc/News.htm</tt></b> and <b><tt>doc/Changes.htm</tt></b>.
 
+<p><strong>N.B. this is currently broken; changelog updates have to be 
+manually copied into the History and Details files.
+
+<p>
 Then run
 
 <blockquote><pre>
-cvs commit
+svn commit
 </pre></blockquote>
 
 <p>
@@ -490,23 +482,24 @@ again to check in the Changes and history files.
 <h3><a name="Making_Tarballs"></a>Making the source distribution</h3>
 
 <p>
-First, tag the versions of the files in cvs with the release version
+First, tag the versions of the files in svn with the release version
 number.
 
 <blockquote>
-<pre><tt>cvs tag gs#_##</tt></pre>
+<pre><tt>svn cp svn+ssh://svn.ghostscript.com/svn/ghostscript/branches/ghostscript-#.## \
+    svn+ssh://svn.ghostscript.com/svn/ghostscript/tags/ghostscript-#.##</tt></pre>
 </blockquote>
 
 If you've already tagged this release (e.g. in making an earlier
-release candidate) you'll need to add the <tt>-r</tt> and <tt>-F</tt>
-options after 'cvs tag' to force moving the tag to the new revisions
-of changed files.
+release candidate) you'll need to svn rm the old tree first. We
+recommend just appending 'rc<i>n</i>' to the end of release candidate 
+tag names, or a '.<i>n</i>' tiny release number to post-release fixes.
 
 <p>
-Pull a fresh copy for distribution from the cvs repository:
+Pull a fresh copy for distribution from the repository:
 
 <blockquote><pre>
-<tt>cvs -z3 -d &lt;ghostscript cvsroot&gt; export -r gs#_## -d ghostscript-#.## gs</tt>
+<tt>svn export http://svn.ghostscript.com:8080/ghostscript/tags/ghostscript-#.##</tt>
 </pre></blockquote>
 
 
@@ -520,16 +513,9 @@ Generate the text versions of the README and PUBLIC documents:
 </blockquote>
 
 <p>
-Add copies of third-party libraries. Versions of the ijs and icc 
-libraries are included in Ghostscript cvs, so these are provided
-by the export. Source for zlib, libjpeg, and zlib are usually provided
-in the Windows and MacOS source releases, but not the unix tarballs.
-
-<p>
-Download and unpack the latest source release of 
-<a href="http://jbig2dec.sourceforge.net/">jbig2dec</a>, renaming the 
-directory to just <tt>jbig2dec</tt> on the top level of ghostscript 
-source directory.
+Add copies of needed third-party libraries for the release. Versions
+of the normally required ones are included in the repository so this
+is only needed when doing special feature releases.
 
 <p>
 For the unix source distributions only, generate the configure
@@ -544,8 +530,8 @@ This should create links to <tt>configure.ac</tt> and
 invoke autoconf to create the <tt>configure</tt> script.
 
 <p>
-Also, run <tt>autoconf</tt> in the ijs subdir to create the configure script
-for that package.
+Also, run <tt>./autogen.sh && make distclean</tt> in the ijs 
+subdir to create the configure script for that package.
 
 <p>
 Move back to directory containing the distribution code and make the
@@ -567,7 +553,7 @@ This creates the files
 <p>
 The important issue is that the tarballs unpack into a directory
 of the same name, and that the code be a pristine copy without
-build or CVS housekeeping files.
+build or .svn housekeeping files.
 
 <p>
 It is also customary to make a <tt>gs###src.zip</tt> archive for the
@@ -811,7 +797,7 @@ To: gs-announce
 </pre></blockquote>
 
 <p>
-Edit the Web pages in cvs and commit to reflect the new release.
+Edit the Web pages in svn and commit to reflect the new release.
 The Wisconsin server should update automatically.
 
 <h2><a name="After_releasing"></a>After releasing</h2>
@@ -822,7 +808,7 @@ href="#Release_numbering">Release numbering</a> above.
 
 <p>
 In <b><tt>gscdef.c</tt></b>, edit the definition of
-<b><tt>GS_PRODUCT</tt></b> to include "CVS PRE-RELEASE".
+<b><tt>GS_PRODUCT</tt></b> to include "SVN PRE-RELEASE".
 
 <p>
 Edit <b><tt>doc/News.htm</tt></b> to remove all the content.
