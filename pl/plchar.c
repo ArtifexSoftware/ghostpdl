@@ -999,13 +999,6 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             }
         }
 
-        {
-            gs_glyph verticals = pl_font_vertical_glyph(glyph, plfont);
-            if ( verticals != gs_no_glyph ) {
-                verticals = gs_no_glyph;
-            }
-        }
-
         /* Establish a current point. */
         if ( (code = gs_moveto(pgs, 0.0, 0.0)) < 0 )
             return code;
