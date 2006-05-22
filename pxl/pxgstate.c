@@ -567,7 +567,11 @@ const byte apxSetCharAttributes[] = {
 int
 pxSetCharAttributes(px_args_t *par, px_state_t *pxs)
 {
-    pxs->pxgs->writing_mode = par->pv[0]->value.i;
+    pxeWritingMode_t arg = par->pv[0]->value.i;
+    if ( arg != pxs->pxgs->writing_mode ) {
+        pxs->pxgs->writing_mode = arg;
+        px_purge_character_cache(pxs);
+    }
     return 0;
 }
 
@@ -1055,8 +1059,13 @@ const byte apxSetCharBoldValue[] = {
 };
 int
 pxSetCharBoldValue(px_args_t *par, px_state_t *pxs)
-{	pxs->pxgs->char_bold_value = real_value(par->pv[0], 0);
-	return 0;
+{	
+    float arg = real_value(par->pv[0], 0);
+    /* NB document me */
+    if ((pxs->pxgs->char_bold_value == 0) && (arg != 0))
+        px_purge_character_cache(pxs);
+    pxs->pxgs->char_bold_value = arg;
+    return 0;
 }
 
 const byte apxSetClipMode[] = {
@@ -1085,11 +1094,16 @@ pxSetCharSubMode(px_args_t *par, px_state_t *pxs)
 	 * is some reason for this.
 	 */
 	const px_value_t *psubs = par->pv[0];
+        pxeCharSubModeArray_t arg;
 
 	if ( psubs->value.array.size != 1 ||
 	     psubs->value.array.data[0] >= pxeCharSubModeArray_next
 	   )
 	  return_error(pxs->memory, errorIllegalAttributeValue);
-	pxs->pxgs->char_sub_mode = psubs->value.array.data[0];
+        arg = psubs->value.array.data[0];
+        if (pxs->pxgs->char_sub_mode != arg) {
+            pxs->pxgs->char_sub_mode = arg;
+            px_purge_character_cache(pxs);
+        }
 	return 0;
 }

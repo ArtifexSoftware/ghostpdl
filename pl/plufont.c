@@ -582,6 +582,7 @@ pl_load_mt_font(SW16 handle, gs_font_dir *pdir, gs_memory_t *mem,
                   plfont->font_type = plft_Unicode;
                   plfont->large_sizes = true;
                   plfont->is_xl_format = false;
+                  plfont->allow_vertical_substitutes = false;
                   pl_fill_in_mt_font(pfont, handle, unique_id);
                   code = gs_definefont(pdir, (gs_font *)pfont);
               }

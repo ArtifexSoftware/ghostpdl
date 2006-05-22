@@ -139,6 +139,7 @@ pl_load_romtt_font(gs_font_dir *pdir, gs_memory_t *mem, long unique_id, pl_font_
 	    plfont->large_sizes = true;
 	    plfont->offsets.GT = 0;
             plfont->is_xl_format = false;            
+            plfont->allow_vertical_substitutes = false;
 	    pl_fill_in_tt_font(pfont, font_data, unique_id);
 	    code = gs_definefont(pdir, (gs_font *)pfont);
 	    if ( code >= 0 ) { 

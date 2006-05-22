@@ -138,9 +138,6 @@ typedef struct gs_matrix_s gs_matrix;
 /*
  * We 'wrap' gs_fonts in our own structure.
  *
- * Note that we use the WMode of fonts in a slightly unusual way:
- * the low-order bit indicates that vertical substitutions should be used,
- * and the other 7 bits are a fraction for synthetic bolding.
  */
 #ifndef pl_font_t_DEFINED
 #  define pl_font_t_DEFINED
@@ -159,8 +156,9 @@ struct pl_font_s {
   ulong header_size;
 	/* Information extracted from the font or supplied by the client. */
   pl_font_scaling_technology_t scaling_technology;
-    bool is_xl_format;          /* this is required for the agfa ufst scaler */
+  bool is_xl_format;          /* this is required for the agfa ufst scaler */
   pl_font_type_t font_type;
+  bool allow_vertical_substitutes;
   /* Implementation of pl_font_char_width, see below */
   int (*char_width)(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth);
   int (*char_metrics)(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4]);

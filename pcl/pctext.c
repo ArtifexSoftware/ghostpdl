@@ -262,19 +262,22 @@ show_char_foreground(
 {
     int code = 0;
     gs_text_enum_t *penum;
-    const pl_font_t *plfont = pcs->font;
+    pl_font_t *plfont = pcs->font;
     gs_font *pfont = plfont->pfont;
     gs_text_params_t text;
 
-    if (pcs->text_path == -1 && ((pbuff[0] & 0xff00) != 0) && pcs->source_transparent) {
-    	/* -1 text path rotated text path; don't rotate 1 byte chars 
-    	 * NB no support for opaque text
-    	 * NB no support for centering about the center line of the glyph 
-    	 */
-    	pfont->WMode = 1;        /* enable vertical substitutions */
-    	gs_rotate(pcs->pgs, 90); /* caller will unrotate */
-    }
+    /* it is not clear if vertical substitutes are allowed in mode -1 */ 
+    if (pcs->text_path != 0)
+        plfont->allow_vertical_substitutes = true;
+    else
+        plfont->allow_vertical_substitutes = false;
 
+    /* set vertical writing if -1 which requires double bytes or 1 */
+    if ((pcs->text_path == -1 && ((pbuff[0] & 0xff00) != 0)) ||
+        (pcs->text_path == 1))
+    	pfont->WMode = 1;
+    else
+        pfont->WMode = 0;
     text.operation = TEXT_FROM_CHARS | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
     text.data.chars = pbuff;
     text.size = 1;
@@ -283,8 +286,6 @@ show_char_foreground(
         code = gs_text_process(penum);
     gs_text_release(penum, "show_char_foreground");
 
-    /* disable vert. sub. since WMode rotates character metrics which we don't want */
-    pfont->WMode = 0; 
     return code;
 }
 
@@ -926,17 +927,17 @@ pcl_text_path_direction(
 
     switch (direction) {
 
-      case 0:
-      case -1:
+    case 0:
+    case 1:
+    case -1:
 	break;
 
-      case 1: /* unsupported */     
-      default:
+    default:
 	return e_Range;
     }
 
     pcs->text_path = direction;
-    return e_Unimplemented;
+    return 0;
 }
 
 /* ------ Initialization ------ */

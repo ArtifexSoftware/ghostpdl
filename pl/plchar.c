@@ -564,6 +564,9 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
             /* foo NB what about the top side bearing in class 2 ? */
 
             if (wmode) {
+                /* NB BUG all other fonts work without this sign
+                   change it should already be accounted for in the
+                   character ctm */
                 factor = -factor;       /* lsb and width go down the page */
                 sbw[0] = 0, sbw[1] = lsb * factor;
                 sbw[2] = 0, sbw[3] = width * factor;
@@ -579,12 +582,29 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
       vertical.  We unpleasantly replace the glyph_index parameter
       passed to procedure to be consist with the pl_tt_build_char()
       debacle */
-    if ( pfont->WMode & 1 ) {
-        gs_glyph vertical = pl_font_vertical_glyph(glyph_index, plfont);
-        if ( vertical != gs_no_glyph )
-            glyph_index = vertical;
+    {
+        pl_font_t *plfont = pfont->client_data;
+        if (plfont->allow_vertical_substitutes) {
+            gs_glyph vertical = pl_font_vertical_glyph(glyph_index, plfont);
+            if ( vertical != gs_no_glyph )
+                glyph_index = vertical;
+        }
     }
-    return gs_type42_default_get_metrics(pfont, glyph_index, 0, sbw);
+
+    /* the graphics library does not do this correctly.  If there
+       aren't two sets of metrics WMode should be ignored.  We work
+       around that here. */
+
+    if (wmode == 1) {
+        const gs_type42_mtx_t *pmtx = &pfont->data.metrics[wmode];
+        if (pmtx->length == 0) {
+            wmode = 0;
+        }
+        else {
+            dprintf(pfont->memory, "Found vertical metrics\n");
+        }
+    }
+    return gs_type42_default_get_metrics(pfont, glyph_index, wmode, sbw);
 }
 
 
@@ -929,6 +949,7 @@ pl_tt_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_po
         return 0;
 }
 
+
 /* Render a TrueType character. */
 private int
 pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
@@ -944,7 +965,9 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
         float sbw[4], w2[6];
         int ipx, ipy, iqx, iqy;
         gx_device_memory mdev;
-
+        bool ctm_modified = false;
+        gs_matrix save_ctm;
+#define isDownloaded(p42) ((p42)->data.proc_data == 0)
 #ifdef CACHE_TRUETYPE_CHARS
 #  define tt_set_cache(penum, pgs, w2)\
      gs_setcachedevice(penum, pgs, w2)
@@ -976,19 +999,43 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             }
         }
 
-        /* Check for a vertical substitute. */
-        if ( pfont->WMode & 1 )
-          { pl_font_t *plfont = pfont->client_data;
-            gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
-
-            if ( vertical != gs_no_glyph )
-              glyph = vertical;
-          }
+        {
+            gs_glyph verticals = pl_font_vertical_glyph(glyph, plfont);
+            if ( verticals != gs_no_glyph ) {
+                verticals = gs_no_glyph;
+            }
+        }
 
         /* Establish a current point. */
-
         if ( (code = gs_moveto(pgs, 0.0, 0.0)) < 0 )
-          return code;
+            return code;
+
+        {
+            bool madesub = false;
+            /* Check for a vertical substitute. */
+            if ( plfont->allow_vertical_substitutes ) {
+                pl_font_t *plfont = pfont->client_data;
+                gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
+                if ( vertical != gs_no_glyph ) {
+                    glyph = vertical;
+                    madesub = true;
+                }
+            }
+            /* now check for rotation.  This is the ringer, fonts with
+               escapement 1 em get rotated.  If you hold an HP
+               engineer's head close to your ear you can hear the
+               ocean. */
+            if ( (pfont->WMode & 1) && sbw[2] == 1.0 ) {
+                /* save the ctm */
+                gs_currentmatrix(pgs, &save_ctm);
+                ctm_modified = true;
+                /* magic numbers - we don't completelely understand
+                   the translation magic used by HP.  This provides a
+                   good approximation */
+                gs_translate(pgs, 1.0/1.15, -(1.0 - 1.0/1.15));
+                gs_rotate(pgs, 90);
+            }
+        }
 
 
         /*
@@ -1021,7 +1068,13 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             iqx = (int)ceil(sbox.q.x), iqy = (int)ceil(sbox.q.y);
             /* Set up the memory device for the bitmap. */
             gs_make_mem_mono_device(&mdev, pgs->memory, pgs->device);
-            bold_added = (int)(scale * bold_fraction * 2 + 0.5);
+            /* due to rounding, bold added (integer) can be zero while
+               bold fraction (float) is non zero in which case we add
+               1 scan line.  We do not "0" bold simply because it is
+               inconvenient to back out at this point.  We don't have
+               any HP tests which would show measurable difference
+               either way (0 or 1). */
+            bold_added = max((int)(scale * bold_fraction * 2 + 0.5), 1);
             mdev.width = iqx - ipx + bold_added;
             mdev.height = iqy - ipy;
             mdev.bitmap_memory = pgs->memory;
@@ -1052,6 +1105,8 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
                                 pfont->PaintType, pfont42);
         if ( code >= 0 )
           code = (pfont->PaintType ? gs_stroke(pgs) : gs_fill(pgs));
+        if (ctm_modified)
+            gs_setmatrix(pgs, &save_ctm);
         if ( bold_added )
           gs_grestore(pgs);
         if ( code < 0 || !bold_added )
@@ -1077,7 +1132,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
           image.ImageMatrix.tx = -ipx;
           image.ImageMatrix.ty = -ipy;
           image.adjust = true;
-          code = tt_set_cache(penum, pgs, w2);
+          code = gs_setcharwidth(penum, pgs, w2[0], w2[1]);
           if ( code < 0 )
             goto out;
           code = image_bitmap_char(ienum, &image, mdev.base,
