@@ -58,14 +58,14 @@ METOBJDIR?=$(GENDIR)
 
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
-TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev $(METOBJDIR)/met.dev
+TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev
 TARGET_XE?=$(GENDIR)/pcl6
 TARGET_LIB?=$(GENDIR)/pcl6.a
 MAIN_OBJ?=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
 PCL_TOP_OBJ?=$(PCLOBJDIR)/pctop.$(OBJ)
 PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
 MET_TOP_OBJ?=$(METOBJDIR)/mettop.$(OBJ)
-TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(MET_TOP_OBJ)
+TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 
 # note agfa gives it libraries incompatible names so they cannot be
 # properly found by the linker.  Change the library names to reflect the
@@ -188,7 +188,6 @@ include $(COMMONDIR)/ugcc_top.mak
 include $(PLSRCDIR)/pl.mak
 include $(PXLSRCDIR)/pxl.mak
 include $(PCLSRCDIR)/pcl.mak
-include $(METSRCDIR)/met.mak
 
 # Main program.
 
