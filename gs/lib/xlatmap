@@ -37,13 +37,13 @@
 
 /PostScript
 [ % Since PostScript fonts were designed especially for PostScript,
-  (*) /Latin1 % fixme : other charsets
+  (*) /Unicode % fixme : other charsets
 ]
 
 /Intellifont
-[ (*) /Latin1 % fixme : other charsets
+[ (*) /FCO_Unicode % fixme : other charsets
 ]
 
 /Microtype
-[ (*) /Latin1 % fixme : other charsets
+[ (*) /FCO_Unicode % FCOfontmap may may overwrite this for a specific font.
 ]

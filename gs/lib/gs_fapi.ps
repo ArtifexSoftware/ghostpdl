@@ -121,27 +121,41 @@ currentdict end def
     dup length 0 ne {
       0 () /SubFileDecode filter
       dup token not {
-        /ReadFCOfontmap: cvx /rangecheck signalerror
-      } if
-      exch dup token not {
-        /ReadFCOfontmap: cvx /rangecheck signalerror
-      } if
-      exch dup token not {
-        /StandardEncoding
+        % A comment line
+        closefile
       } {
-        dup type /nametype not {
+        exch dup token not {
           /ReadFCOfontmap: cvx /rangecheck signalerror
         } if
+        exch dup token not {
+          /StandardEncoding
+        } {
+          dup type /nametype ne {
+            /ReadFCOfontmap: cvx /rangecheck signalerror
+          } if
+        } ifelse
+        findencoding                  
+        exch dup token not {
+          null
+        } {
+          dup type /nametype ne {
+            /ReadFCOfontmap: cvx /rangecheck signalerror
+          } if
+          /Decoding findresource
+        } ifelse                     
+        exch closefile                 % index name enc dec|null
+        4 3 roll                       % name enc dec|null index 
+        << /Path /FCOfontfile .systemvar 
+           /FontType 1 
+           /FAPI /AgfaUFST 
+           /SubfontId counttomark 2 add -1 roll 
+           /Decoding  counttomark 2 add -1 roll
+           dup null eq {
+             pop pop
+           } if
+           /Encoding  counttomark 2 add -1 roll
+        >> % dup { exch == = } forall
       } ifelse
-      exch closefile
-      findencoding                   % index name enc
-      3 2 roll                       % name enc index
-      << /Path /FCOfontfile .systemvar 
-         /FontType 1 
-         /FAPI /AgfaUFST 
-         /SubfontId  9 8 roll 
-         /Encoding   11 10 roll 
-      >> % dup { exch == = } forall
     } {
       pop
     } ifelse

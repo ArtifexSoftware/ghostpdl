@@ -42,7 +42,7 @@ ReadFCOfontmap:
 22     Bookman-LightItalic
 23     Bookman-Demi
 24     Bookman-DemiItalic
-25     Candid
+%   25     Candid       % Disabled due to unknown glyph names.
 26     Apple-Chancery
 27     Chicago
 28     Clarendon-Light
@@ -126,7 +126,7 @@ ReadFCOfontmap:
 106    Palatino-Italic
 107    Palatino-Bold
 108    Palatino-BoldItalic
-109    Symbol
+109    Symbol  SymbolEncoding  FCO_Symbol
 110    Taffy
 111    Times-Roman
 112    Times-Italic
@@ -151,4 +151,6 @@ ReadFCOfontmap:
 131    Univers-BoldExt
 132    Univers-BoldExtObl
 133    ZapfChancery-MediumItalic
-134    ZapfDingbats
+134    ZapfDingbats DingbatsEncoding FCO_Dingbats
+%   0      Wingdings       % A wrong font index, likely a bug in UFST documentation.
+
