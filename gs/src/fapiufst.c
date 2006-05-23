@@ -63,7 +63,7 @@ typedef struct {
     UW16 platformId;
     UW16 specificId;
     pcleo_glyph_list_elem *glyphs;
-    char decodingID[12];
+    char decodingID[40];
 } ufst_common_font_data;
 
 typedef struct { 
@@ -174,12 +174,12 @@ private UW16 get_font_type(FILE *f)
 }
 
     
-private int choose_decoding_PS(fapi_ufst_server *r, ufst_common_font_data *d, const char *cmapId)
-{ strncpy(d->decodingID, "Latin1", sizeof(d->decodingID));
-  /*    fixme : must depend on charset used in the font.
-        Particulartly Symbol fonts need a different decoding.
-  */
-  return 1;
+private int choose_decoding_general(fapi_ufst_server *r, ufst_common_font_data *d, const char *cmapId)
+{ 
+    if (!d->decodingID[0])
+	strncpy(d->decodingID, "Unicode", sizeof(d->decodingID));
+    /*    fixme : must depend on charset used in the font.  */
+    return 1;
 }
 
 private int choose_decoding_TT(fapi_ufst_server *r, ufst_common_font_data *d, const char *cmapId)
@@ -231,9 +231,9 @@ private void choose_decoding(fapi_ufst_server *r, ufst_common_font_data *d, cons
 {   if (xlatmap != 0)
         switch (d->font_type) {
             case FC_IF_TYPE: /* fixme */ break;
-            case FC_PST1_TYPE: scan_xlatmap(r, d, xlatmap, "PostScript", choose_decoding_PS); break;
+            case FC_PST1_TYPE: scan_xlatmap(r, d, xlatmap, "PostScript", choose_decoding_general); break;
             case FC_TT_TYPE:   scan_xlatmap(r, d, xlatmap, "TrueType", choose_decoding_TT); break;
-            case FC_FCO_TYPE:  scan_xlatmap(r, d, xlatmap, "PostScript", choose_decoding_PS/* fixme */); break;
+            case FC_FCO_TYPE:  scan_xlatmap(r, d, xlatmap, "Microtype", choose_decoding_general); break;
         } 
 }
 
@@ -745,7 +745,6 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
     fc->alignment = (font_scale->align_to_pixels ? GAGG : GAPP);
 #if 0 /* UFST 4.6 */
     fc->ssnum = 0x8000; /* no symset mapping */
-#endif
     if (ff->font_file_path == NULL && !ff->is_type1)
         fc->ssnum = RAW_GLYPH;
     else if (ff->font_file_path != NULL && ff->is_cid) {
@@ -762,14 +761,27 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
             /* fixme : other platform IDs */
         }
     }
+#else /* UFST 5.0 */
+    fc->ExtndFlags = 0;
+    if (d->font_type == FC_TT_TYPE)
+	fc->ssnum = USER_CMAP;
+    else if (d->font_type == FC_FCO_TYPE) {
+#if 0  /* Debug purpose only: search chars in UFST fonts. */
+	fc->ssnum = 'L' + (int)'1' * 256;
+#else
+	fc->ssnum = UNICODE;
+#endif
+    } else
+	fc->ExtndFlags = EF_NOSYMSETMAP; 
+#endif
     fc->format      |= FC_NON_Z_WIND;   /* NON_ZERO Winding required for TrueType */
     fc->format      |= FC_INCHES_TYPE;  /* output in units per inch */
     fc->user_platID = d->platformId;
     fc->user_specID = d->specificId;
 #if 0 /* UFST4.6 */
-    fc->ExtndFlags = EF_TT_CMAPTABL;
-#else
-    fc->ssnum = USER_CMAP;
+    if (d->font_type == FC_TT_TYPE)
+	fc->ExtndFlags = EF_TT_CMAPTABL;
+    fc->ExtndFlags = EF_NOSYMSETMAP
 #endif
     if (use_XL_format)
 	fc->ExtndFlags |= EF_XLFONT_TYPE;
@@ -968,7 +980,7 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
     memset(metrics, 0, sizeof(*metrics));
     metrics->bbox_x1 = -1;
     make_asciiz_char_name(PSchar_name, sizeof(PSchar_name), c);
-    CGIFchIdptr(&r->IFS, &cc, PSchar_name);
+    CGIFchIdptr(&r->IFS, &cc, PSchar_name); /* fixme : Likely only FC_PST1_TYPE needs it. */
     {   /* hack : Changing UFST internal data. Change to r->fc doesn't help, because Agfa thinks that the "outline/raster" is a property of current font. */
         r->IFS.fcCur.format &= ~FC_OUTPUT_MASK;
         r->IFS.fcCur.format |= format;
@@ -1026,9 +1038,9 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
 #if 1 /* UFST 5.0 */
     if (USBOUNDBOX && d->font_type == FC_FCO_TYPE) {
 	design_bbox[0] = r->IFS.USBBOXxmin;
-	design_bbox[1] = r->IFS.USBBOXymin;
+	design_bbox[1] = -r->IFS.USBBOXymax;
 	design_bbox[2] = r->IFS.USBBOXxmax;
-	design_bbox[3] = r->IFS.USBBOXymax;
+	design_bbox[3] = -r->IFS.USBBOXymin;
     } else {
 	/* fixme: UFST 5.0 doesn't provide this data. 
 	   Stubbing with Em box. 

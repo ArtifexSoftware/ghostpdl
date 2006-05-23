@@ -880,6 +880,7 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
     char *xlatmap = NULL;
     FAPI_server *I = pbfont->FAPI;
     FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
+    ref *Decoding_old;
     int code;
 
     if (font_file_path != NULL && pbfont->FAPI_font_data == NULL)
@@ -922,7 +923,7 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
     }
 
     /* Assign a Decoding : */
-    if (decodingID != 0 && *decodingID) {
+    if (decodingID != 0 && *decodingID && dict_find_string(pdr, "Decoding", &Decoding_old) <= 0) {
        ref Decoding;
 
        if (IsCIDFont(pbfont)) {
@@ -1198,7 +1199,7 @@ private int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev,
         in graphics library and in interpreter. Now we suppose that the renderer
         uses font cache, so redundant font opening isn't a big expense.
     */
-    FAPI_char_ref cr = {0, false, NULL, 0, 0, 0, 0, 0, FAPI_METRICS_NOTDEF};
+    FAPI_char_ref cr = {0, 0, {0}, 0, false, NULL, 0, 0, 0, 0, 0, FAPI_METRICS_NOTDEF};
     const gs_matrix * ctm = &ctm_only(igs);
     int scale;
     FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
@@ -1311,6 +1312,7 @@ retry_oversampling:
 	char_name = *op;
 
     /* Obtain the character code or glyph index : */
+    cr.char_codes_count = 1;
     if (bCID) {
         if (font_file_path != NULL) {
             ref *Decoding, *SubstNWP, src_type, dst_type;
@@ -1325,25 +1327,25 @@ retry_oversampling:
 				      client_char_code, &c, &src_type, &dst_type);
 	    if (code < 0)
 		return code;
-	    cr.char_code = c;
+	    cr.char_codes[0] = c;
 	    cr.is_glyph_index = (code == 0);
             /* fixme : process the narrow/wide/proportional mapping type,
 	       using src_type, dst_type. Should adjust the 'matrix' above.
                Call get_font_proportional_feature for proper choice.
             */
         } else
-            cr.char_code = client_char_code;
+            cr.char_codes[0] = client_char_code;
     } else if (is_TT_from_type42) {
         /* This font must not use 'cmap', so compute glyph index from CharStrings : */
 	ref *CharStrings, *glyph_index;
         if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0 || !r_has_type(CharStrings, t_dictionary))
             return_error(e_invalidfont);
         if (dict_find(CharStrings, &char_name, &glyph_index) < 0) {
-            cr.char_code = 0; /* .notdef */
+            cr.char_codes[0] = 0; /* .notdef */
             if ((code = name_ref(imemory, (const byte *)".notdef", 7, &char_name, -1)) < 0)
 		return code;
         } else if (r_has_type(glyph_index, t_integer))
-            cr.char_code = glyph_index->value.intval;
+            cr.char_codes[0] = glyph_index->value.intval;
         else
             return_error(e_invalidfont);
         cr.is_glyph_index = true;
@@ -1357,7 +1359,7 @@ retry_oversampling:
             PLRM3, "5.9.4 Subsetting and Incremental Definition of Glyphs".
         */
         if (r_has_type(op, t_integer))
-            cr.char_code = client_char_code;
+            cr.char_codes[0] = client_char_code;
         else {
             /* 
 	     * Reverse Encoding here, because it can be an incremental one. 
@@ -1366,7 +1368,7 @@ retry_oversampling:
 	     */
             ref *Encoding;
             if (dict_find_string(osp - 1, "Encoding", &Encoding) > 0)
-                cr.char_code = (uint)array_find(imemory, Encoding, op);
+                cr.char_codes[0] = (uint)array_find(imemory, Encoding, op);
             else
                 return_error(e_invalidfont);
         }
@@ -1379,12 +1381,51 @@ retry_oversampling:
 	    /* Translate from char name to encoding used with 3d party font technology : */
 	    ref *Decoding, *char_code;
             if (dict_find_string(osp - 1, "Decoding", &Decoding) > 0 && r_has_type(Decoding, t_dictionary)) {
-	        if (dict_find(Decoding, &char_name, &char_code) >= 0 && r_has_type(char_code, t_integer))
-		    int_param(char_code, 0xFFFF, &cr.char_code);
+		if (dict_find(Decoding, &char_name, &char_code) > 0) {
+		    code = 0;
+		    if (r_has_type(char_code, t_integer)) {
+			int_param(char_code, 0xFFFF, &cr.char_codes[0]);
+		    } else if (r_has_type(char_code, t_array) || r_has_type(char_code, t_shortarray)) {
+			int i;
+			ref v;
+
+			cr.char_codes_count = r_size(char_code);
+			if (cr.char_codes_count > count_of(cr.char_codes))
+			    code = gs_note_error(e_rangecheck);
+			if (code >= 0) {
+			    for (i = 0; i < cr.char_codes_count; i++) {
+				code = array_get(imemory, char_code, i, &v);
+				if (code < 0)
+				    break;
+				if (!r_has_type(char_code, t_integer)) {
+				    code = gs_note_error(e_rangecheck);
+				    break;
+				}
+				cr.char_codes[i] = v.value.intval;
+			    }
+			}
+		    } else
+			code = gs_note_error(e_rangecheck);
+		    if (code < 0) {
+			char buf[16];
+			int l = cr.char_name_length;
+
+			if (l > sizeof(buf) - 1)
+			    l = sizeof(buf) - 1;
+			memcpy(buf, cr.char_name, l);
+			buf[l] = 0;
+			eprintf1("Wrong decoding entry for the character '%s'.\n", buf);
+			return_error(e_rangecheck);
+		    }
+		}
 	    }
         }
-    } 
-
+    }
+    cr.char_code = cr.char_codes[0];
+    cr.client_char_code = client_char_code;
+#if 0 /* Debug purpose only: search chars in UFST fonts. */
+    cr.char_code = client_char_code; /* remove for release !!!!!!!!!!!!!!!! */
+#endif
     /* Provide glyph data for renderer : */
     if (!ff.is_cid) {
 	ref sname;

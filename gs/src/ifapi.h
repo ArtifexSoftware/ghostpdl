@@ -68,7 +68,10 @@ typedef enum {
 } FAPI_metrics_type;
 
 typedef struct {
-    int char_code;
+    int char_code;        /* Backwards compatibility. Depricated. */
+    int client_char_code; /* Debug purpose. */
+    int char_codes[4];
+    int char_codes_count;
     bool is_glyph_index; /* true if char_code contains glyph index */
     const unsigned char *char_name; /* to be used exclusively with char_code. */
     unsigned int char_name_length;
