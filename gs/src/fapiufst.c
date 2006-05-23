@@ -1038,9 +1038,9 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
 #if 1 /* UFST 5.0 */
     if (USBOUNDBOX && d->font_type == FC_FCO_TYPE) {
 	design_bbox[0] = r->IFS.USBBOXxmin;
-	design_bbox[1] = -r->IFS.USBBOXymax;
+	design_bbox[1] = r->IFS.USBBOXymin;
 	design_bbox[2] = r->IFS.USBBOXxmax;
-	design_bbox[3] = -r->IFS.USBBOXymin;
+	design_bbox[3] = r->IFS.USBBOXymax;
     } else {
 	/* fixme: UFST 5.0 doesn't provide this data. 
 	   Stubbing with Em box. 
