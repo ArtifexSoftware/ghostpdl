@@ -1284,12 +1284,12 @@ retry_oversampling:
             for X and Y. It is not clear what to do when base_font_matrix is anisotropic
             (i.e. dx != dy), but we did not meet such fonts before now.
         */
-        font_scale.matrix[0] =  (FracInt)(ctm->xx * FontMatrix_div / dx * 72 / dev->HWResolution[0] * scale);
-        font_scale.matrix[1] = -(FracInt)(ctm->xy * FontMatrix_div / dy * 72 / dev->HWResolution[0] * scale);
-        font_scale.matrix[2] =  (FracInt)(ctm->yx * FontMatrix_div / dx * 72 / dev->HWResolution[1] * scale);
-        font_scale.matrix[3] = -(FracInt)(ctm->yy * FontMatrix_div / dy * 72 / dev->HWResolution[1] * scale);
-        font_scale.matrix[4] =  (FracInt)(ctm->tx * FontMatrix_div / dx * 72 / dev->HWResolution[0] * scale);
-        font_scale.matrix[5] =  (FracInt)(ctm->ty * FontMatrix_div / dy * 72 / dev->HWResolution[1] * scale);
+        font_scale.matrix[0] =  (FracInt)(ctm->xx * FontMatrix_div / dx * 72 / dev->HWResolution[0] * scale + 0.5);
+        font_scale.matrix[1] = -(FracInt)(ctm->xy * FontMatrix_div / dy * 72 / dev->HWResolution[0] * scale + 0.5);
+        font_scale.matrix[2] =  (FracInt)(ctm->yx * FontMatrix_div / dx * 72 / dev->HWResolution[1] * scale + 0.5);
+        font_scale.matrix[3] = -(FracInt)(ctm->yy * FontMatrix_div / dy * 72 / dev->HWResolution[1] * scale + 0.5);
+        font_scale.matrix[4] =  (FracInt)(ctm->tx * FontMatrix_div / dx * 72 / dev->HWResolution[0] * scale + 0.5);
+        font_scale.matrix[5] =  (FracInt)(ctm->ty * FontMatrix_div / dy * 72 / dev->HWResolution[1] * scale + 0.5);
         /* Note: the ctm mapping here is upside down. */
     }
     font_scale.HWResolution[0] = (FracInt)((double)dev->HWResolution[0] * font_scale.subpixels[0] * scale);
