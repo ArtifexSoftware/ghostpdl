@@ -338,7 +338,7 @@ Ensure that the rasterizer is open.
 
 In the case of FreeType this means creating the FreeType library object.
 */
-static FAPI_retcode ensure_open(FAPI_server* a_server)
+static FAPI_retcode ensure_open(FAPI_server* a_server, const byte *server_param, int server_param_size)
 	{
 	FF_server* s = (FF_server*)a_server;
 	if (!s->m_freetype_library)

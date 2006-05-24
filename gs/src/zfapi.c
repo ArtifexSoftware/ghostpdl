@@ -734,6 +734,18 @@ private int zFAPIavailable(i_ctx_t *i_ctx_p)
     return 0;
 } 
 
+private void get_server_param(i_ctx_t *i_ctx_p, const char *subtype, const byte **server_param, int *server_param_size)
+{   ref *FAPIconfig, *options, *server_options;
+
+    if (dict_find_string(systemdict, ".FAPIconfig", &FAPIconfig) >= 0 && r_has_type(FAPIconfig, t_dictionary)) {
+	if (dict_find_string(FAPIconfig, "ServerOptions", &options) >= 0 && r_has_type(options, t_dictionary)) {
+	    if (dict_find_string(options, subtype, &server_options) >= 0 && r_has_type(server_options, t_string)) {
+		*server_param = server_options->value.const_bytes;
+		*server_param_size = r_size(server_options);
+	    }
+	}
+    }
+}
 
 private int FAPI_find_plugin(i_ctx_t *i_ctx_p, const char *subtype, FAPI_server **pI)
 {   i_plugin_holder *h = i_plugin_get_list(i_ctx_p);
@@ -743,8 +755,11 @@ private int FAPI_find_plugin(i_ctx_t *i_ctx_p, const char *subtype, FAPI_server 
        	if (!strcmp(h->I->d->type,"FAPI"))
 	    if (!strcmp(h->I->d->subtype, subtype)) {
 	        FAPI_server *I = *pI = (FAPI_server *)h->I;
+		const byte *server_param = NULL;
+		int server_param_size = 0;
 
-	        if ((code = renderer_retcode(i_ctx_p, I, I->ensure_open(I))) < 0)
+		get_server_param(i_ctx_p, subtype, &server_param, &server_param_size);
+	        if ((code = renderer_retcode(i_ctx_p, I, I->ensure_open(I, server_param, server_param_size))) < 0)
 		    return code;
 	        return 0;
 	    }
@@ -1069,10 +1084,12 @@ private int outline_char(i_ctx_t *i_ctx_p, FAPI_server *I, int import_shift_v, g
 
 private void compute_em_scale(const gs_font_base *pbfont, FAPI_metrics *metrics, double FontMatrix_div, double *em_scale_x, double *em_scale_y)
 {   /* optimize : move this stuff to FAPI_refine_font */
-    gs_matrix *m = &pbfont->base->FontMatrix;
+    gs_matrix *m = &pbfont->base->orig_FontMatrix;
     int rounding_x, rounding_y; /* Striking out the 'float' representation error in FontMatrix. */
     double sx, sy;
 
+    if (m->xx == 0 && m->xy == 0 && m->yx == 0 && m->yy == 0)
+	m = &pbfont->base->FontMatrix;
     sx = hypot(m->xx, m->xy) * metrics->em_x / FontMatrix_div;
     sy = hypot(m->yx, m->yy) * metrics->em_y / FontMatrix_div;
     rounding_x = (int)(0x00800000 / sx);
@@ -1249,9 +1266,14 @@ retry_oversampling:
     if (penum == 0)
 	return_error(e_undefined);
     scale = 1 << I->frac_shift;
-    {   gs_matrix *base_font_matrix = &pbfont->base->FontMatrix;
-        double dx = hypot(base_font_matrix->xx, base_font_matrix->xy);
-        double dy = hypot(base_font_matrix->yx, base_font_matrix->yy);
+    {   gs_matrix *base_font_matrix = &pbfont->base->orig_FontMatrix;
+        double dx, dy;
+
+	if (base_font_matrix->xx == 0 && base_font_matrix->xy == 0 &&
+	    base_font_matrix->yx == 0 && base_font_matrix->yy == 0)
+	    base_font_matrix = &pbfont->base->FontMatrix;
+        dx = hypot(base_font_matrix->xx, base_font_matrix->xy);
+        dy = hypot(base_font_matrix->yx, base_font_matrix->yy);
         /*  Trick : we need to restore the font scale from ctm, pbfont->FontMatrix,
             and base_font_matrix. We assume that base_font_matrix is
             a multiple of pbfont->FontMatrix with a constant from scalefont.
@@ -1740,10 +1762,14 @@ private int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *succes
     for (; h != 0; h = h->next) {
 	ref FAPI_ID;
         FAPI_server *I;
-       	if (strcmp(h->I->d->type, "FAPI"))
+	const byte *server_param = NULL;
+	int server_param_size = 0;
+
+	if (strcmp(h->I->d->type, "FAPI"))
             continue;
         I = (FAPI_server *)h->I;
-        if ((code = renderer_retcode(i_ctx_p, I, I->ensure_open(I))) < 0)
+	get_server_param(i_ctx_p, I->ig.d->subtype, &server_param, &server_param_size);
+        if ((code = renderer_retcode(i_ctx_p, I, I->ensure_open(I, server_param, server_param_size))) < 0)
 	    return code;
 	font_scale.HWResolution[0] = font_scale.HWResolution[1] = 72 << I->frac_shift;
 	font_scale.matrix[0] = font_scale.matrix[3] = 1 << I->frac_shift;

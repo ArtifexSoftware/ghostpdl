@@ -149,7 +149,7 @@ typedef int FAPI_descendant_code; /* Possible values are descendant font indices
 struct FAPI_server_s {
     i_plugin_instance ig;
     int frac_shift; /* The number of fractional bits in coordinates. */
-    FAPI_retcode (*ensure_open)(FAPI_server *server);
+    FAPI_retcode (*ensure_open)(FAPI_server *server, const byte * param, int param_size);
     FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, int subfont, const FAPI_font_scale *scale, const char *xlatmap, bool bVertical, FAPI_descendant_code dc);
     FAPI_retcode (*get_decodingID)(FAPI_server *server, FAPI_font *ff, const char **decodingID);
     FAPI_retcode (*get_font_bbox)(FAPI_server *server, FAPI_font *ff, int BBox[4]);

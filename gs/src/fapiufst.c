@@ -120,13 +120,24 @@ private inline void release_char_data_inline(fapi_ufst_server *r)
     }
 }
 
-private FAPI_retcode open_UFST(fapi_ufst_server *r)
+private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, int server_param_size)
 {   IFCONFIG   config_block;
     int code;
 
+    if (server_param_size >= 8 && !memcmp(server_param, "UFSTdir=", 8)) {
+	/* fixme: for now handling a single parameter only. */
+	int l = server_param_size - 8;
+
+	if (l > sizeof(config_block.ufstPath) - 1)
+	    l = sizeof(config_block.ufstPath) - 1;
+	memcpy(config_block.ufstPath, server_param + 8, l);
+	config_block.ufstPath[l] = 0;
+    } else {
+	strcpy(config_block.ufstPath, ".");
+	eprintf("Warning: UFSTdir is not specified, will search *.ss files in the curent directory.\n");
+    }
     config_block.bit_map_width = 1;
     config_block.num_files = 10;
-    strcpy(config_block.ufstPath, "."); /* fixme: stub. */
     config_block.typePath[0] = 0;
     if ((code = CGIFinit(&r->IFS)) != 0)
 	return code;
@@ -142,13 +153,17 @@ private FAPI_retcode open_UFST(fapi_ufst_server *r)
     return 0;
 }		      
 
-private FAPI_retcode ensure_open(FAPI_server *server)
+private FAPI_retcode ensure_open(FAPI_server *server, const byte *server_param, int server_param_size)
 {   fapi_ufst_server *r = If_to_I(server);
+    int code;
 
     if (r->bInitialized)
         return 0;
     r->bInitialized = 1;
-    return open_UFST(r);
+    code = open_UFST(r, server_param, server_param_size);
+    if (code < 0)
+	eprintf("Error opening the UFST font server.\n");
+    return code;
 }
 
 private UW16 get_font_type(FILE *f)
@@ -773,6 +788,7 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
 #endif
     } else
 	fc->ExtndFlags = EF_NOSYMSETMAP; 
+    fc->ExtndFlags |= EF_SUBSTHOLLOWBOX_TYPE;
 #endif
     fc->format      |= FC_NON_Z_WIND;   /* NON_ZERO Winding required for TrueType */
     fc->format      |= FC_INCHES_TYPE;  /* output in units per inch */
@@ -781,7 +797,7 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
 #if 0 /* UFST4.6 */
     if (d->font_type == FC_TT_TYPE)
 	fc->ExtndFlags = EF_TT_CMAPTABL;
-    fc->ExtndFlags = EF_NOSYMSETMAP
+    fc->ExtndFlags = EF_NOSYMSETMAP;
 #endif
     if (use_XL_format)
 	fc->ExtndFlags |= EF_XLFONT_TYPE;
@@ -1000,15 +1016,24 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
         /* There is no such char in the font, try the glyph 0 (notdef) : */
         const void *client_char_data = ff->char_data;
         UW16 c1 = 0, ssnum = r->IFS.fcCur.ssnum;
-        /* hack : Changing UFST internal data - see above. */
-        r->IFS.fcCur.ssnum = RAW_GLYPH;
+
+	if (d->font_type == FC_FCO_TYPE) {
+	    /* fixme : We couldn't find out how to make UFST to render a notdef character with FCO. 
+	       EF_SUBSTHOLLOWBOX_TYPE doesn't work with FC_FCO_TYPE, 
+	       and it never appears in the Agfa\rts\fco code. */
+	    /* hack : Render a space character. */
+	    c1 = 32;
+	} else {
+	    /* hack : Changing UFST internal data - see above. */
+	    r->IFS.fcCur.ssnum = RAW_GLYPH;
+	}
         r->callback_error = 0;
         ff->char_data = NULL;
         CGIFchIdptr(&r->IFS, &c1, (char *)".notdef");
 #if 0 /* The patched UFST 4.3. */
         code = CGIFchar_with_design_bbox(&r->IFS, c1, &result, (SW16)0, design_bbox, &design_escapement);
 #else
-	code = CGIFchar_handle(&r->IFS, cc, &result, (SW16)0);
+	code = CGIFchar_handle(&r->IFS, c1, &result, (SW16)0);
 #endif
         r->IFS.fcCur.ssnum = ssnum;
         ff->char_data = client_char_data;

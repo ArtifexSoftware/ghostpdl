@@ -57,7 +57,15 @@ languagelevel 2 .setlanguagelevel
 <<
 %% Replace 1 (FAPIconfig)
   (FAPIconfig) .runlibfile
+  /ServerOptions 2 dict
 >> def
+systemdict /.FAPIconfig //Config put
+
+systemdict /UFSTdir .knownget {
+  (UFSTdir=) exch concatstrings
+  //Config /ServerOptions get exch /AgfaUFST exch put
+} if
+
 
 %------------------Copy the FontEmulationProcs here : -------------------
 
