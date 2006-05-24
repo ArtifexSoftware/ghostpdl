@@ -3699,13 +3699,13 @@ dsc_get_real(const char *line, unsigned int len, unsigned int *offset)
 int
 dsc_stricmp(const char *s, const char *t)
 {
-    while (toupper(*s) == toupper(*t)) {
+    while (toupper((unsigned char)*s) == toupper((unsigned char)*t)) {
 	if (*s == '\0')
 	    return 0;
    	s++;
 	t++; 
     }
-    return (toupper(*s) - toupper(*t));
+    return (toupper((unsigned char)*s) - toupper((unsigned char)*t));
 }
 
 

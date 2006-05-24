@@ -6450,7 +6450,7 @@ static void icmTextDescription_dump(
 			fprintf(op,"    0x%04lx: ",i);
 			c += 10;
 			while (i < size && c < 75) {
-				if (isprint(p->desc[i])) {
+				if (isprint((unsigned char) p->desc[i])) {
 					fprintf(op,"%c",p->desc[i]);
 					c++;
 				} else {
@@ -7638,7 +7638,7 @@ static void icmUcrBg_dump(
 			fprintf(op,"      0x%04lx: ",i);
 			c += 10;
 			while (i < size && c < 73) {
-				if (isprint(p->string[i])) {
+				if (isprint((unsigned char) p->string[i])) {
 					fprintf(op,"%c",p->string[i]);
 					c++;
 				} else {
@@ -8527,7 +8527,7 @@ static void icmCrdInfo_dump(
 		fprintf(op,"      0x%04lx: ",i);
 		c += 10;
 		while (i < size && c < 73) {
-			if (isprint(p->ppname[i])) {
+			if (isprint((unsigned char) p->ppname[i])) {
 				fprintf(op,"%c",p->ppname[i]);
 				c++;
 			} else {
@@ -8559,7 +8559,7 @@ static void icmCrdInfo_dump(
 			fprintf(op,"      0x%04lx: ",i);
 			c += 10;
 			while (i < size && c < 73) {
-				if (isprint(p->crdname[t][i])) {
+				if (isprint((unsigned char) p->crdname[t][i])) {
 					fprintf(op,"%c",p->crdname[t][i]);
 					c++;
 				} else {

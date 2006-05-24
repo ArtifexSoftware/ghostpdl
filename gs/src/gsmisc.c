@@ -129,7 +129,7 @@ dprintf_file_tail(const char *file)
     const char *tail = file + strlen(file);
 
     while (tail > file &&
-	   (isalnum(tail[-1]) || tail[-1] == '.' || tail[-1] == '_')
+	   (isalnum((unsigned char)tail[-1]) || tail[-1] == '.' || tail[-1] == '_')
 	)
 	--tail;
     return tail;

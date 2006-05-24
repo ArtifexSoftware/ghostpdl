@@ -350,7 +350,7 @@ run_stdin:
 		    char *sarg;
 
 		    if (arg[0] == '@' ||
-			(arg[0] == '-' && !isdigit(arg[1]))
+			(arg[0] == '-' && !isdigit((unsigned char)arg[1]))
 			)
 			break;
 		    sarg = arg_copy(arg, minst->heap);
