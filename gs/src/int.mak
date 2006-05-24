@@ -28,8 +28,11 @@ PSO_=$(O_)$(PSOBJ)
 PSI_=$(PSSRCDIR) $(II)$(PSGENDIR) $(II)$(GLI_)
 PSF_=
 PSCC=$(CC_) $(I_)$(PSI_)$(_I) $(PSF_)
-PSJBIG2CC=$(CC_) $(I_)$(PSI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(PSF_)
-PSLDFJB2CC=$(CC_) $(I_)$(PSI_) $(II)$(LDF_JB2I_)$(_I) $(JB2CF_) $(PSF_)
+PSJBIG2CC=$(CC_) $(I_)$(JB2I_) $(II)$(PSI_)$(_I) $(JB2CF_) $(PSF_)
+PSJASCC=$(CC_) $(I_)$(JPXI_) $(II)$(PSI_)$(_I) $(JPXCF_) $(PSF)
+PSLDFJB2CC=$(CC_) $(I_)$(LDF_JB2I_) $(II)$(LDF_JB2I_) $(II)$(PSI_)$(_I) $(JB2CF_) $(PSF_)
+PSLWFJPXCC=$(CC_) $(I_)$(LWF_JPXI_) $(II)$(PSI_)$(_I) $(JPXCF_) $(PSF)
+
 # All top-level makefiles define PSD.
 #PSD=$(PSGEN)
 
@@ -1336,8 +1339,7 @@ fjpx_luratech=$(PSOBJ)zfjpx_luratech.$(OBJ)
 $(PSOBJ)zfjpx.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
  $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
  $(store_h) $(stream_h) $(strimpl_h) $(sjpx_h)
-	$(PSCC) $(I_)$(JPXI_)$(_I) $(JPXCF_) $(PSO_)zfjpx.$(OBJ) \
-		$(C_) $(PSSRC)zfjpx.c
+	$(PSJASCC) $(PSO_)zfjpx.$(OBJ) $(C_) $(PSSRC)zfjpx.c
 
 $(PSD)jpx_luratech.dev : $(INT_MAK) $(ECHOGS_XE) $(fjpx_luratech) $(GLD)sjpx.dev
 	$(SETMOD) $(PSD)jpx_luratech $(fjpx_luratech)
@@ -1348,8 +1350,8 @@ $(PSD)jpx_luratech.dev : $(INT_MAK) $(ECHOGS_XE) $(fjpx_luratech) $(GLD)sjpx.dev
 $(PSOBJ)zfjpx_luratech.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
  $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
  $(store_h) $(stream_h) $(strimpl_h) $(sjpx_luratech_h)
-	$(PSCC) $(I_)$(LWF_JPXI_)$(_I) $(JPXCF_) \
-		$(PSO_)zfjpx_luratech.$(OBJ) $(C_) $(PSSRC)zfjpx.c
+	$(PSLWFJPXCC) $(PSO_)zfjpx_luratech.$(OBJ) \
+		$(C_) $(PSSRC)zfjpx.c
 
 # ---------------- Binary tokens ---------------- #
 

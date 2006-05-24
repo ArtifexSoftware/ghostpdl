@@ -159,7 +159,7 @@ JAS_EXCF_=\
         $(D_)EXCLUDE_PNG_SUPPORT$(_D_)1$(_D)
 
 # define our specific compiler
-JAS_CC=$(CC_) $(CFLAGS) $(I_)$(JASGEN) $(II)$(JPXI_)$(_I) $(JPXCF_) $(JAS_EXCF_)
+JAS_CC=$(CC_) $(I_)$(JASGEN) $(II)$(JPXI_)$(_I) $(JPXCF_) $(JAS_EXCF_) $(CFLAGS)
 JASO_=$(O_)$(JASOBJ)
 
 # switch in the selected .dev

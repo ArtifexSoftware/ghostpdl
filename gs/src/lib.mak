@@ -30,7 +30,9 @@ GLICCCC=$(CC_) $(I_)$(GLI_) $(II)$(ICCI_)$(_I) $(ICCCF_) $(GLF_)
 GLJCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_)
 GLZCC=$(CC_) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(ZCF_) $(GLF_)
 GLJBIG2CC=$(CC_) $(I_)$(GLI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(GLF_)
-GLLDFJB2CC=$(CC_) $(I_)$(GLI_) $(II)$(LDF_JB2I_)$(_I) $(JB2CF_) $(GLF_)
+GLJASCC=$(CC_) $(I_)$(JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
+GLLDFJB2CC=$(CC_) $(I_)$(LDF_JB2I_) $(II)$(GLI_)$(_I) $(JB2CF_) $(GLF_)
+GLLWFJPXCC=$(CC_) $(I_)$(LWF_JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
 # All top-level makefiles define GLD.
 #GLD=$(GLGEN)
 
@@ -1424,8 +1426,7 @@ $(GLD)sjpx_jasper.dev : $(LIB_MAK) $(ECHOGS_XE) \
 $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
  $(memory__h) $(stdio__h) $(gsmalloc_h) $(gserror_h) $(gserrors_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_h)
-	$(GLCC) $(I_)$(JPXI_)$(_I) $(JPXCF_) $(GLO_)sjpx.$(OBJ) \
-		$(C_) $(GLSRC)sjpx.c
+	$(GLJASCC) $(GLO_)sjpx.$(OBJ) $(C_) $(GLSRC)sjpx.c
 
 # luratech version
 sjpx_luratech=$(GLOBJ)sjpx_luratech.$(OBJ)
@@ -1440,7 +1441,7 @@ $(GLD)luratech_jp2.dev : $(TOP_MAKEFILES) $(LIB_MAK) $(ECHOGS_XE)
 $(GLOBJ)sjpx_luratech.$(OBJ) : $(GLSRC)sjpx_luratech.c $(AK) \
  $(memory__h) $(stdio__h) $(gsmalloc_h) $(gserror_h) $(gserrors_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_luratech_h)
-	$(GLCC) $(I_)$(LWF_JPXI_)$(_I) $(JPXCF_) $(GLO_)sjpx_luratech.$(OBJ) \
+	$(GLLWFJPXCC) $(GLO_)sjpx_luratech.$(OBJ) \
 		$(C_) $(GLSRC)sjpx_luratech.c
 
 
