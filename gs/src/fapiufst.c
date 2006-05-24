@@ -33,8 +33,6 @@
 #define DOES_ANYONE_USE_THIS_STRUCTURE /* see TTPCLEO.H, UFST 4.2 */
 #include "ttpcleo.h"
 #undef  DOES_ANYONE_USE_THIS_STRUCTURE
-/* GS includes : */
-#include "gxfapi.h"
 
 GLOBAL const SW16 trace_sw = 0; /* UFST 4.3 wants it. */
 
@@ -372,7 +370,8 @@ private pcleo_glyph_list_elem * find_glyph(ufst_common_font_data *d, UW16 chId)
     return 0;
 }
 
-private LPUB8 gs_PCLchId2ptr(IF_STATE *pIFS, UW16 chId)
+/* UFST callback : */
+LPUB8 PCLchId2ptr(IF_STATE *pIFS, UW16 chId)
 {   fapi_ufst_server *r = IFS_to_I(pIFS);
     FAPI_font *ff = r->ff;
     ufst_common_font_data *d = (ufst_common_font_data *)r->fc.font_hdr - 1;
@@ -806,7 +805,6 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
     fc->dl_ssnum = (d->specificId << 4) | d->platformId;
     fc->ttc_index   = subfont;
     r->callback_error = 0;
-    gx_set_UFST_Callbacks(gs_PCLchId2ptr);
     code = CGIFfont(&r->IFS, fc);
     if (r->callback_error != 0)
 	return r->callback_error;

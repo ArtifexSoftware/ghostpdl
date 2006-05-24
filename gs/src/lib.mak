@@ -2485,10 +2485,9 @@ $(GLOBJ)gsclipsr.$(OBJ) : $(GLSRC)gsclipsr.c $(GXERR)\
 psl3lib_=$(GLOBJ)gsclipsr.$(OBJ) $(GLOBJ)gscdevn.$(OBJ) $(GLOBJ)gxdevndi.$(OBJ)
 
 $(GLD)psl3lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(psl3lib_)\
- $(GLD)imasklib.dev $(GLD)shadelib.dev $(GLD)gxfapiu$(UFST_BRIDGE).dev
+ $(GLD)imasklib.dev $(GLD)shadelib.dev
 	$(SETMOD) $(GLD)psl3lib $(psl3lib_)
 	$(ADDMOD) $(GLD)psl3lib -include $(GLD)imasklib $(GLD)shadelib
-	$(ADDMOD) $(GLD)psl3lib -include $(GLD)gxfapiu$(UFST_BRIDGE)
 
 # ---------------- Trapping ---------------- #
 
@@ -2663,34 +2662,6 @@ $(GLD)macres.dev : $(LIB_MAK) $(ECHOGS_XE) $(macres_)
 $(GLOBJ)gsiomacres.$(OBJ) : $(GLSRC)gsiomacres.c \
  $(std_h) $(gstypes_h) $(gsmemory_h) $(gxiodev_h)
 	$(GLCC) $(GLO_)gsiomacres.$(OBJ) $(C_) $(GLSRC)gsiomacres.c
-
-# ---------------- Font API ---------------- #
-
-# UFST bridge support :
-# (This stuff fixes Agfa's reentrancy problem with UFST callbacks.)
-# (To be removed after Agfa fixes the problem.)
-
-UFST_INC_1=$(I_)$(UFST_ROOT)$(D)sys$(D)inc$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)inc$(_I)  $(I_)$(UFST_ROOT)$(D)rts$(D)tt$(_I) 
-UFST_INC_=$(UFST_INC_1) $(I_)$(UFST_ROOT)$(D)rts$(D)fco$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)gray$(_I)
-
-gxfapi_h=$(GLSRC)gxfapi.h
-
-$(GLD)gxfapiu1.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gxfapi.$(OBJ)
-	$(SETMOD) $(GLD)gxfapiu1 $(GLOBJ)gxfapi.$(OBJ)
-
-$(GLOBJ)gxfapi.$(OBJ) : $(GLSRC)gxfapi.c \
- $(gx_h) $(gxfapi_h) \
- $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
- $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
- $(UFST_ROOT)$(D)sys$(D)inc$(D)ufstport.h
-	$(GLCC) $(UFST_CFLAGS) $(UFST_INC_) $(GLO_)gxfapi.$(OBJ) $(C_) $(GLSRC)gxfapi.c
-
-
-# stub for UFST bridge support	:
-
-$(GLD)gxfapiu.dev : $(LIB_MAK) $(ECHOGS_XE)
-	$(SETMOD) $(GLD)gxfapiu
-
 
 # ================ Platform-specific modules ================ #
 # Platform-specific code doesn't really belong here: this is code that is
