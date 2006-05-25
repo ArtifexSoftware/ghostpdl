@@ -831,7 +831,7 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
           } ifelse = flush
         } if
       } ifelse
-  .dofindfont
+  /Font findresource
 } bind def
 
 % Default font substitution does {pop /Courier} om many implementations.
