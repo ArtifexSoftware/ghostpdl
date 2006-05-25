@@ -1157,8 +1157,6 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
 	    int rast_orig_x =   rast.orig_x - (int)(penum_s->fapi_glyph_shift.x * (1 << frac_pixel_shift));
 	    int rast_orig_y = - rast.orig_y - (int)(penum_s->fapi_glyph_shift.y * (1 << frac_pixel_shift));
 
-            if ((code = renderer_retcode(i_ctx_p, I, code)) < 0)
-		return code;
             if (pgs->in_cachedevice == CACHE_DEVICE_CACHING) { /* Using GS cache */
                 /*  GS and renderer may transform coordinates few differently.
                     The best way is to make set_cache_device to take the renderer's bitmap metrics immediately,

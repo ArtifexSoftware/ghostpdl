@@ -713,7 +713,7 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
     */
     ufst_common_font_data *d = (ufst_common_font_data *)ff->server_font_data;
     const double scale = F_ONE;
-    double hx, hy, sx, sy;
+    double hx, hy;
     FAPI_retcode code;
     bool use_XL_format = ff->is_mtx_skipped;
 
@@ -738,8 +738,6 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
     r->tran_xx = font_scale->matrix[0] / scale, r->tran_xy = font_scale->matrix[1] / scale;
     r->tran_yx = font_scale->matrix[2] / scale, r->tran_yy = font_scale->matrix[3] / scale;
     hx = hypot(r->tran_xx, r->tran_xy), hy = hypot(r->tran_yx, r->tran_yy);
-    sx = r->tran_xx * r->tran_yx + r->tran_xy * r->tran_yy; 
-    sy = r->tran_xx * r->tran_yy - r->tran_xy * r->tran_yx;
     fc->xspot     = F_ONE;
     fc->yspot     = F_ONE;
     fc->fc_type   = FC_MAT2_TYPE;
@@ -1076,6 +1074,40 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
 	design_bbox[3] = du_emy;
     }
 #endif
+    {	/* Compensate the UFST rounding in MAKifbmheader (debugged with xngnews.pdf) :
+	   UFST rounds the glyph origin with floor(x + 0.5),
+	   and GS rounds with floor(x). Therefore we need to shift the UFST bitmap
+	   boundaries into half pixel in device space to get the proper origin
+	   in Ghostscript cache against cropping the glyph. 
+
+	   A right way would be to specify the half pixel offset to the glyph
+	   origin for the rendering glyph, but UFST has no interface for doing that.
+	   To get a compatible result we compute the displacement in design units 
+	   with the inverse transformation of the (0.5, 0.5) pixel distance. 
+
+	   fixme: Actually dx, dy is the FONTCONTEXT property,
+	   so it could be computed at once when the scaled font is created.
+	 */
+	const double half_pixel_x = 0.5, half_pixel_y = 0.5;
+	const double XX = r->tran_xx * r->fc.s.m2.xworld_res / 72 / du_emx;
+	const double XY = r->tran_xy * r->fc.s.m2.yworld_res / 72 / du_emy;
+	const double YX = r->tran_yx * r->fc.s.m2.xworld_res / 72 / du_emx;
+	const double YY = r->tran_yy * r->fc.s.m2.yworld_res / 72 / du_emy;
+	const double det = XX * YY - XY * YX;
+	const double deta = det < 0 ? -det : det;
+
+	if (deta > 0.0000001) {
+	    const double xx =  XX / det, xy = -YX / det;
+	    const double yx = -XY / det, yy =  YY / det;
+	    const SL32 dx = (SL32)(half_pixel_x * xx + half_pixel_y * xy + 0.5);
+	    const SL32 dy = (SL32)(half_pixel_x * yx + half_pixel_y * yy + 0.5);
+
+	    design_bbox[0] += dx;
+	    design_bbox[1] += dy;
+	    design_bbox[2] += dx;
+	    design_bbox[3] += dy;
+	}
+    }
     set_metrics(r, metrics, design_bbox, design_escapement, du_emx, du_emy);
     if (code == ERR_fixed_space)
         release_char_data_inline(r);
@@ -1131,7 +1163,7 @@ private FAPI_retcode get_char_raster(FAPI_server *server, FAPI_raster *rast)
             rast->orig_y = pbm->top_indent  * 16 + pbm->yorigin;
         } else
             rast->orig_x = rast->orig_y = 0;
-    }
+}
     return 0;
 }
 
