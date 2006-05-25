@@ -40,7 +40,7 @@ typedef struct fapi_ufst_server_s fapi_ufst_server;
 #define FSA_FROM_SERVER IF_STATE *pIFS = &r->IFS
 #else
 EXTERN IF_STATE if_state;
-#define FSA_FROM_SERVER IF_STATE *pIFS = &if_state
+#define FSA_FROM_SERVER IF_STATE *pIFS = &if_state;    (void)r; (void)pIFS;
 private fapi_ufst_server *static_server_ptr_for_ufst_callback = 0;
 #endif
 
@@ -515,8 +515,10 @@ private void enumerate_fco(fapi_ufst_server *r, const char *font_file_path)
         for (i = 0; ; i++) {
             UW16 size;
             TTFONTINFOTYPE *pBuffer;
+            UW16 code;
 	    FSA_FROM_SERVER;
-            UW16 code = CGIFfco_Access(FSA (LPUB8)font_file_path, i, TFATRIB_KEY, &size, NULL);
+	    
+	    code = CGIFfco_Access(FSA (LPUB8)font_file_path, i, TFATRIB_KEY, &size, NULL);
             if (code)
                 break;
             pBuffer = (TTFONTINFOTYPE *)malloc(size);
@@ -589,8 +591,8 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
     PCLETTO_FHDR *h;
     ufst_common_font_data *d;
     bool use_XL_format = ff->is_mtx_skipped;
-    FSA_FROM_SERVER;
     int code;
+    FSA_FROM_SERVER;
 
     *return_data = 0;
     r->fc.ttc_index = subfont;
@@ -843,8 +845,8 @@ private FAPI_retcode get_decodingID(FAPI_server *server, FAPI_font *ff, const ch
 private FAPI_retcode get_font_bbox(FAPI_server *server, FAPI_font *ff, int BBox[4])
 {   fapi_ufst_server *r = If_to_I(server);
     SW16 VLCPower = 0;
-    FSA_FROM_SERVER;
     int code;
+    FSA_FROM_SERVER;
 
     if ((code = CGIFbound_box(FSA BBox, &VLCPower)) < 0)
 	return code;
@@ -868,8 +870,8 @@ private FAPI_retcode get_font_proportional_feature(FAPI_server *server, FAPI_fon
     UB8 buf[74];
     UL32 length = sizeof(buf);
     FSA_FROM_SERVER;
-    *bProportional = false;
 
+    *bProportional = false;
     if (ff->font_file_path == NULL || ff->is_type1)
         return 0;
     if (CGIFtt_query(FSA (UB8 *)ff->font_file_path, *(UL32 *)"OS/2", (UW16)subfont, &length, buf) != 0)
@@ -931,8 +933,8 @@ private FAPI_retcode get_char_width(FAPI_server *server, FAPI_font *ff, FAPI_cha
     UW16 cc = (UW16)c->char_code;
     WIDTH_LIST_INPUT_ENTRY li[1];
     char PSchar_name[MAX_CHAR_NAME_LENGTH];
-    FSA_FROM_SERVER;
     int code;
+    FSA_FROM_SERVER;
 
     make_asciiz_char_name(PSchar_name, sizeof(PSchar_name), c);
     r->ff = ff;
@@ -999,11 +1001,6 @@ private inline void set_metrics(fapi_ufst_server *r, FAPI_metrics *metrics, SL32
     metrics->bbox_y0 = design_bbox[1];
     metrics->bbox_x1 = design_bbox[2];
     metrics->bbox_y1 = design_bbox[3];
-}
-
-private FAPI_retcode CGIFchar_with_design_bbox(IF_STATE *pIFS, UW16 c1, MEM_HANDLE *result, 
-					       SW16 alt_width, SL32 design_bbox[4], SW16 *design_escapement)
-{
 }
 
 private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref *c, FAPI_path *p, FAPI_metrics *metrics, UW16 format)
