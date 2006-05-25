@@ -92,6 +92,7 @@ struct FAPI_font_s {
     int subfont;
     bool is_type1; /* Only for non-disk fonts; dirty for disk fonts. */
     bool is_cid;
+    bool is_outline_font;
     bool is_mtx_skipped; /* Ugly. Only UFST needs. */
     void *client_ctx_p;
     void *client_font_data;

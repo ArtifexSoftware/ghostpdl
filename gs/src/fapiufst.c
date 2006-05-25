@@ -266,9 +266,9 @@ private LPUB8 get_TT_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
 
     /*
      * The client must set ff->is_mtx_skipped iff
-     * it requests replaced lsb for True Type.
-     * If it is set, replaced width to be supplied.
-     * This constraing is derived from UFST restriction :
+     * it requests a replaced lsb for True Type.
+     * If it is set, a replaced width to be supplied.
+     * This constraint is derived from UFST restriction :
      * the font header format must be compatible with
      * glyph header format.
      */

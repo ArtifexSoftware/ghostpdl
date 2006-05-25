@@ -682,6 +682,7 @@ private const FAPI_font ff_stub = {
     0, /* subfont */
     false, /* is_type1 */
     false, /* is_cid */
+    false, /* is_outline_font */
     false, /* is_mtx_skipped */
     0, /* client_ctx_p */
     0, /* client_font_data */
@@ -805,6 +806,7 @@ private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_fon
     ff.client_font_data2 = pdr;
     ff.server_font_data = pbfont->FAPI_font_data; /* Possibly pass it from zFAPIpassfont. */
     ff.is_cid = IsCIDFont(pbfont);
+    ff.is_outline_font = pbfont->PaintType != 0;
     ff.is_mtx_skipped = (get_MetricsCount(&ff) != 0);
     if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, subfont,
                                          font_scale, xlatmap, false, FAPI_TOPLEVEL_BEGIN))) < 0)
@@ -848,6 +850,7 @@ private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_fon
             ff.client_font_data2 = &f;
             ff.server_font_data = pbfont1->FAPI_font_data;
             ff.is_cid = true;
+	    ff.is_outline_font = pbfont1->PaintType != 0;
 	    ff.is_mtx_skipped = (get_MetricsCount(&ff) != 0);
             if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, 0, 
 	                                 font_scale, NULL, false, i))) < 0)
@@ -1303,6 +1306,7 @@ retry_oversampling:
     ff.server_font_data = pbfont->FAPI_font_data;
     ff.is_type1 = bIsType1GlyphData;
     ff.is_cid = bCID;
+    ff.is_outline_font = pbfont->PaintType != 0;
     ff.is_mtx_skipped = (get_MetricsCount(&ff) != 0);
     ff.client_ctx_p = i_ctx_p;
     if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, subfont, &font_scale, 
@@ -1543,7 +1547,7 @@ retry_oversampling:
     if (SHOW_IS(penum, TEXT_DO_NONE)) {
 	if ((code = renderer_retcode(i_ctx_p, I, I->get_char_width(I, &ff, &cr, &metrics))) < 0)
 	    return code;
-    } else if (igs->in_charpath) {
+    } else if (igs->in_charpath || ff.is_outline_font) {
         if ((code = renderer_retcode(i_ctx_p, I, I->get_char_outline_metrics(I, &ff, &cr, &metrics))) < 0)
 	    return code;
     } else {
