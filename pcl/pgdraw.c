@@ -1193,6 +1193,8 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 					     (draw ? hpgl_plot_draw_absolute :
 					     hpgl_plot_move_absolute), set_ctm));
 	  }
+	if (sweep_angle - 360.0  > -0.0001) 
+	    hpgl_call(hpgl_close_current_path(pgls));
 	return 0;
 }
 
