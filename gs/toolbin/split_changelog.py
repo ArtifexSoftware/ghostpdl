@@ -28,12 +28,15 @@ class Entry:
 	'''a class representing a single changelog entry'''
 	data = {}
 	has_details = False
+	has_differences = False
 	r = re.compile('^[\[ ]*DETAILS[ :\]]*$', re.I)
 	c = re.compile('^[ ]*EXPECTED DIFFERENCES[ :]*$', re.I)
+	d = re.compile('^[ ]*DIFFERENCES[ :]*$', re.I)
 	codec = codecs.getencoder("utf8") 
 	def reset(self):
 		self.data = {}
 		self.has_details = False
+		self.has_differences = False
 	def add(self, key, value):
 		if not self.data.has_key(key): self.data[key] = value
 		else: self.data[key] = string.join((self.data[key], value))
@@ -44,7 +47,8 @@ class Entry:
 		if not self.data.has_key('msg'): self.data['msg'] = []
 		self.data['msg'].append(value)
 		if self.r.search(value): self.has_details = True
-		if self.c.search(value): self.has_details = True
+		if self.c.search(value): self.has_differences = True
+		if self.d.search(value): self.has_differences = True
 	def write(self, file, details=True):
 		#stamp = self.data['date'] + ' ' + self.data['time']
 		stamp = self.data['date']
@@ -68,7 +72,8 @@ class Entry:
 		for line in self.data['msg']:
 			# skip the details unless wanted
 			if not details and self.r.search(line): break
-			if not details and self.c.search(line): break
+			if self.c.search(line): break
+			if self.d.search(line): break
 			file.write(line.encode('utf8'))
 		file.write('</pre>\n')
 		file.write('<p>[')
