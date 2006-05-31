@@ -254,7 +254,7 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
     if (strlen(fname) + 6 >= gp_file_name_sizeof)
 	return 0;		/* file name too long */
     strcat(fname, "XXXXXX");
-   mktemp(fname);
+    mktemp(fname);
     f = fopen(fname, mode);
    
     if (f == NULL)
