@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 /* $Id$ */
-/* Agfa UFST plugin */
+/* UFST plugin */
 
 /* GS includes : */
 #include "stdio_.h"
@@ -33,6 +33,7 @@
 #define DOES_ANYONE_USE_THIS_STRUCTURE /* see TTPCLEO.H, UFST 4.2 */
 #include "ttpcleo.h"
 #undef  DOES_ANYONE_USE_THIS_STRUCTURE
+#include "gp.h"
 
 typedef struct fapi_ufst_server_s fapi_ufst_server;
 
@@ -132,19 +133,47 @@ private inline void release_char_data_inline(fapi_ufst_server *r)
 private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, int server_param_size)
 {   IFCONFIG   config_block;
     int code;
+    SW16 fcHandle;
+    int l;
+    char sPlugIn[sizeof(config_block.ufstPath)] = ".";
+    bool bSSdir = false, bPlugIn = false;
+    const char *keySSdir = "UFST_SSdir=";
+    const int keySSdir_length = strlen(keySSdir);
+    const char *keyPlugIn = "UFST_PlugIn=";
+    const int keyPlugIn_length = strlen(keyPlugIn);
+    const char sep = gp_file_name_list_separator;
+    const byte *p = server_param, *e = server_param + server_param_size, *q;
     FSA_FROM_SERVER;
 
-    if (server_param_size >= 8 && !memcmp(server_param, "UFSTdir=", 8)) {
-	/* fixme: for now handling a single parameter only. */
-	int l = server_param_size - 8;
-
-	if (l > sizeof(config_block.ufstPath) - 1)
-	    l = sizeof(config_block.ufstPath) - 1;
-	memcpy(config_block.ufstPath, server_param + 8, l);
-	config_block.ufstPath[l] = 0;
-    } else {
+    strcpy(config_block.ufstPath, ".");
+    for (; p < e ; p = q + 1) {
+	q = (const byte *)strchr((const char *)p, sep);
+	if (q == 0)
+	    q = e;
+	if (!memcmp(p, keySSdir, keySSdir_length)) {
+	    l = q - p - keySSdir_length;
+	    if (l > sizeof(config_block.ufstPath) - 1)
+		l = sizeof(config_block.ufstPath) - 1;
+	    memcpy(config_block.ufstPath, p + keySSdir_length, l);
+	    config_block.ufstPath[l] = 0;
+	    bSSdir = true;
+	} else if (!memcmp(p, keyPlugIn, keyPlugIn_length)) {
+	    l = q - p - keyPlugIn_length;
+	    if (l > sizeof(sPlugIn) - 1)
+		l = sizeof(sPlugIn) - 1;
+	    memcpy(sPlugIn, p + keyPlugIn_length, l);
+	    sPlugIn[l] = 0;
+	    bPlugIn = true;
+	} else
+	    eprintf("Warning: Unknown UFST parameter ignored.\n");
+    }
+    if (!bSSdir) {
 	strcpy(config_block.ufstPath, ".");
-	eprintf("Warning: UFSTdir is not specified, will search *.ss files in the curent directory.\n");
+	eprintf("Warning: UFST_SSdir is not specified, will search *.ss files in the curent directory.\n");
+    }
+    if (!bPlugIn) {
+	strcpy(sPlugIn, ".");
+	eprintf("Warning: PlugIn is not specified, will search plugin files in the curent directory.\n");
     }
     config_block.bit_map_width = 1;
     config_block.num_files = 10;
@@ -159,6 +188,10 @@ private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, in
     if ((code = CGIFconfig(FSA &config_block)) != 0)
 	return code;
     if ((code = CGIFenter(FSA0)) != 0)
+	return code;
+    if ((code = CGIFfco_Open(FSA (byte *)sPlugIn, &fcHandle)) != 0)
+	return code;
+    if ((code = CGIFfco_Plugin(FSA fcHandle)) != 0)
 	return code;
     return 0;
 }		      
@@ -899,7 +932,7 @@ private FAPI_retcode can_retrieve_char_by_name(FAPI_server *server, FAPI_font *f
             *result = 1; 
             break;
         case FC_TT_TYPE : 
-#if 0 /* Doesn't work because Agfa can't retrive characters by name. 
+#if 0 /* Doesn't work because UFST can't retrive characters by name. 
                      It wants a char code together with the name. */
                 if (ff->font_file_path != NULL) {
                     UB8 buf[2];
@@ -1018,7 +1051,8 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
     metrics->bbox_x1 = -1;
     make_asciiz_char_name(PSchar_name, sizeof(PSchar_name), c);
     CGIFchIdptr(FSA &cc, PSchar_name); /* fixme : Likely only FC_PST1_TYPE needs it. */
-    {   /* hack : Changing UFST internal data. Change to r->fc doesn't help, because Agfa thinks that the "outline/raster" is a property of current font. */
+    {   /* hack : Changing UFST internal data. Change to r->fc doesn't help, 
+	   because UFST thinks that the "outline/raster" is a property of current font. */
         pIFS->fcCur.format &= ~FC_OUTPUT_MASK;
         pIFS->fcCur.format |= format;
     }
@@ -1045,11 +1079,9 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
         UW16 c1 = 0, ssnum = pIFS->fcCur.ssnum;
 
 	if (d->font_type == FC_FCO_TYPE) {
-	    /* fixme : We couldn't find out how to make UFST to render a notdef character with FCO. 
-	       EF_SUBSTHOLLOWBOX_TYPE doesn't work with FC_FCO_TYPE, 
-	       and it never appears in the Agfa\rts\fco code. */
-	    /* hack : Render a space character. */
-	    c1 = 32;
+	    /* EF_SUBSTHOLLOWBOX_TYPE must work against it. 
+	    Ensure the plugin plug__xi.fco is loaded. */
+	    return code;
 	} else {
 	    /* hack : Changing UFST internal data - see above. */
 	    pIFS->fcCur.ssnum = RAW_GLYPH;
@@ -1250,7 +1282,7 @@ private void gs_fapiufst_finit(i_plugin_instance *instance, i_plugin_client_memo
 
 private const i_plugin_descriptor ufst_descriptor = {
     "FAPI",
-    "AgfaUFST",
+    "UFST",
     gs_fapiufst_finit
 };
 

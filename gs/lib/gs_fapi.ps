@@ -61,11 +61,21 @@ languagelevel 2 .setlanguagelevel
 >> def
 systemdict /.FAPIconfig //Config put
 
-systemdict /UFSTdir .knownget {
-  (UFSTdir=) exch concatstrings
-  //Config /ServerOptions get exch /AgfaUFST exch put
+()
+systemdict /UFST_SSdir .knownget {
+  (UFST_SSdir=) exch concatstrings concatstrings
 } if
-
+systemdict /UFST_PlugIn .knownget {
+  1 index length 0 ne {
+    exch .filenamelistseparator concatstrings exch
+  } if
+  (UFST_PlugIn=) exch concatstrings concatstrings
+} if
+dup length 0 ne {
+  //Config /ServerOptions get exch /UFST exch put
+} { 
+  pop
+} ifelse
 
 %------------------Copy the FontEmulationProcs here : -------------------
 
@@ -155,7 +165,7 @@ currentdict end def
         4 3 roll                       % name enc dec|null index 
         << /Path /FCOfontfile .systemvar 
            /FontType 1 
-           /FAPI /AgfaUFST 
+           /FAPI /UFST 
            /SubfontId counttomark 2 add -1 roll 
            /Decoding  counttomark 2 add -1 roll
            dup null eq {

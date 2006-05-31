@@ -3215,10 +3215,10 @@ Ghostscript.symbolFonts: \
 <p>
 Font API (FAPI) is a new feature which allows to attach 3d party font renderers to Ghostscript.
 This section explains how to run Ghostscript with 3d party font renderers,
-such as Agfa UFST or Free Type.
+such as UFST or Free Type.
 
 <p>
-<em>Note: To run Ghostscript with UFST you need a license from Agfa Monotype.
+<em>Note: To run Ghostscript with UFST you need a license from Monotype Imaging.
 Please ignore issues about UFST if you haven't got it.
 </em>
 
@@ -3245,11 +3245,21 @@ Both bridges may run together.
 Some configurations of UFST need a path for finding symbol set files.
 If you compiled UFST with such configuration,
 you should run Ghostscript with a special command line argument 
-<b><tt>-sUFSTdir=<em>path</em></tt></b>, where <b><tt><em>path</em></tt></b> specifies
-a disk path to the UFST support directory, which Agfa Monotype distributes 
+<b><tt>-sUFST_SSdir=<em>path</em></tt></b>, where <b><tt><em>path</em></tt></b> specifies
+a disk path to the UFST support directory, which Monotype Imagong distributes 
 in <em><tt><b>ufst/fontdata/SUPPORT</em></tt></b>. If UFST needs it and the 
 command line argument is not specified, Ghostscript prints a warning and searches 
 symbol set files in the current directory.
+
+<p>
+Some UFST font collections need a path for finding an UFST plugin.
+If you run UFST with such font collection,
+you should run Ghostscript with a special command line argument 
+<b><tt>-sUFST_PlugIn=<em>path</em></tt></b>, where <b><tt><em>path</em></tt></b> specifies
+a disk path to the UFST plugin file, which Monotype Imaging distributes 
+in <em><tt><b>ufst/fontdata/MTFONTS/PCL45/MT3/plug__xi.fco</em></tt></b>. If UFST needs it and the 
+command line argument is not specified, Ghostscript prints a warning and searches 
+plugin file in the current directory.
 
 <p>
 There are 2 ways to handle fonts with a 3d party font renderer (FAPI). First, you can substitute
@@ -3261,14 +3271,14 @@ entries in <b><tt>lib/FAPIconfig</tt></b> file.
 <p> 
 If you want to run UFST with resident fonts only,
 and if those fonts reside in an FCO file (which actually represents
-a font collection in Agfa'a Microtype font format),
+a font collection in Microtype font format),
 you don't need <b><tt>lib/FAPIfontmap</tt></b> and <b><tt>lib/FAPIcidfmap</tt></b>.
 Instead that you should run Ghostscript with a special command line argument
 <b><tt>-sFCOfontfile=<em>path</em></tt></b>, where <b><tt><em>path</em></tt></b> specifies
 a disk path to the FCO file. In this case <b><tt>lib/FAPIfontmap</tt></b> is being ignored,
 so you don't need to study its format. 
 The mapping is taken from <b><tt>lib/FCOfontmap</tt></b>,
-which actually represents a permanent information defined by Agfa.
+which actually represents a permanent information defined by Monotype Imaging.
 <b><tt>lib/FAPIcidfmap</tt></b> works as usual, but probably you want to leave it empty
 because FCO doesn't emulate CID fonts. Note that you may need to edit <b><tt>lib/FAPIconfig</tt></b>
 to prevent the rendering of non-resident fonts with UFST.
@@ -3305,7 +3315,7 @@ The second element is a dictionary with entries :
 <tr>    <td>FAPI
         <td>name
         <td>Name of the renderer to be used with the font.
-            Only <b><tt>/AgfaUFST</tt></b> and <b><tt>/FreeType</tt></b> are now allowed.
+            Only <b><tt>/UFST</tt></b> and <b><tt>/FreeType</tt></b> are now allowed.
 <tr>    <td>SubfontId
         <td>integer
         <td>(optional) Index of the font in font collection, such as FCO or TTC.
@@ -3322,7 +3332,7 @@ The second element is a dictionary with entries :
 Example of FAPI font map record :
 <blockquote>
 <b><tt>
-/FCO1        &lt&lt /Path (/AFPL/Agfa/fontdata/MTFONTS/PCLPS3/MT1/PCLP3__F.fco) /FontType 1 /FAPI /AgfaUFST &gt&gt ;
+/FCO1        &lt&lt /Path (/AFPL/UFST/fontdata/MTFONTS/PCLPS3/MT1/PCLP3__F.fco) /FontType 1 /FAPI /UFST &gt&gt ;
 </tt></b>
 </blockquote>
 
@@ -3353,7 +3363,7 @@ but dictionaries must contain few different entries :
 <tr>    <td>FAPI
         <td>name
         <td>Name of the renderer to be used with the font.
-            Only <b><tt>/AgfaUFST</tt></b> and <b><tt>/FreeType</tt></b> are now allowed.
+            Only <b><tt>/UFST</tt></b> and <b><tt>/FreeType</tt></b> are now allowed.
 <tr>    <td>SubfontId
         <td>integer
         <td>(optional) Index of the font in font collection, such as FCO or TTC.
@@ -3370,7 +3380,7 @@ but dictionaries must contain few different entries :
 Example of FAPI CID font map record :
 <blockquote>
 <b><tt>
-/HeiseiKakuGo-W5  &lt&lt /Path (/WIN2000/Fonts/PMINGLIU.TTF) /CIDFontType 0 /FAPI /AgfaUFST /CSI [(Japan1) 2] &gt&gt ;
+/HeiseiKakuGo-W5  &lt&lt /Path (/WIN2000/Fonts/PMINGLIU.TTF) /CIDFontType 0 /FAPI /UFST /CSI [(Japan1) 2] &gt&gt ;
 </tt></b>
 </blockquote>
 
