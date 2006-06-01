@@ -1157,8 +1157,13 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
             if ((code = gs_moveto(pgs, pt.x, pt.y)) < 0)
 		return code;
         } else {
+#if 0 /* Debugged with 093-01.ps, the box 093-03. */
 	    int rast_orig_x =   rast.orig_x - (int)(penum_s->fapi_glyph_shift.x * (1 << frac_pixel_shift));
 	    int rast_orig_y = - rast.orig_y - (int)(penum_s->fapi_glyph_shift.y * (1 << frac_pixel_shift));
+#else
+	    int rast_orig_x =   rast.orig_x;
+	    int rast_orig_y = - rast.orig_y;
+#endif
 
             if (pgs->in_cachedevice == CACHE_DEVICE_CACHING) { /* Using GS cache */
                 /*  GS and renderer may transform coordinates few differently.
