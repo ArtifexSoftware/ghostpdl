@@ -14,8 +14,12 @@
 % San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 % $Id$
-% Mapping Postscript fonts to pclp3_xj.fco FCO members.
 
+% May add general FAPIfontmap records here like this :
+/Wingdings-Regular << /Path (F:/AFPL/ufst/fontdata/MTFONTS/PCL45/MT3/wd____xh.fco) /FontType 1 /FAPI /UFST 
+						/SubfontId 0 /Encoding /Wingdings /Decoding /FCO_Wingdings>> ;
+
+% Mapping Postscript fonts to pclp2_xj.fco FCO members :
 ReadFCOfontmap:
 0     Albertus-Medium
 1     Albertus-ExtraBold
@@ -44,7 +48,7 @@ ReadFCOfontmap:
 24    CGOmega-Italic
 25    CGOmega-Bold
 26    CGOmega-BoldItalic
-27    Symbol-
+27    SymbolMT
 28    CGTimes
 29    CGTimes-Italic
 30    CGTimes-Bold
@@ -100,5 +104,5 @@ ReadFCOfontmap:
 80    Times-BoldItalic
 81    ZapfChancery-MediumItalic
 82    ZapfDingbats DingbatsEncoding FCO_Dingbats
-% 0         Wingdings    % wrong font index in UFST documentation.
+% 0         Wingdings    % Defined in another FCO.
 
