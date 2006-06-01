@@ -264,7 +264,7 @@ os_get_params(gx_io_device * iodev, gs_param_list * plist)
 gx_io_device *
 gs_getiodevice(int index)
 {
-    if (index < 0 || index >= gx_io_device_table_count)
+    if (!io_device_table || index < 0 || index >= gx_io_device_table_count)
 	return 0;		/* index out of range */
     return io_device_table[index];
 }

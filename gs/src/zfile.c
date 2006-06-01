@@ -960,7 +960,12 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
     bool search_with_combine = false;
     char fmode[4] = { 'r', 0, 0, 0 };		/* room for binary suffix */
     stream *s;
+    gx_io_device *iodev = iodev_default;
 
+    /* when starting arg files (@ files) iodev_default is not yet set */
+    if (iodev == 0)
+        iodev = (gx_io_device *)gx_io_device_table[0];
+    
     strcat(fmode, gp_fmode_binary_suffix);
     if (gp_file_name_is_absolute(fname, flen)) {
        search_with_no_combine = true;
@@ -974,8 +979,7 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 
 	if (gp_file_name_reduce(fname, flen, buffer, &blen1) != gp_combine_success)
 	    goto skip;
-	/* when starting arg files (@ files) iodev_default is not yet set */
-	if (iodev_os_open_file((gx_io_device *)gx_io_device_table[0], (const char *)buffer, blen1,
+	if (iodev_os_open_file(iodev, (const char *)buffer, blen1,
 				(const char *)fmode, &s, (gs_memory_t *)mem) == 0) {
 	    if (starting_arg_file ||
 			check_file_permissions_aux(i_ctx_p, buffer, blen1) >= 0) {
@@ -983,7 +987,7 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 		make_stream_file(pfile, s, "r");
 		return 0;
 	    }
-	    iodev_os_fclose(iodev_default, s->file);
+	    iodev_os_fclose(iodev, s->file);
 	    return_error(e_invalidfileaccess);
 	}
 	skip:;
@@ -996,7 +1000,6 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 	    const ref *prdir = pfpath->list.value.refs + pi;
 	    const char *pstr = (const char *)prdir->value.const_bytes;
 	    uint plen = r_size(prdir), blen1 = blen;
-	    gx_io_device *iodev;
     	    gs_parsed_file_name_t pname;
 	    gp_file_name_combine_result r;
 
@@ -1010,10 +1013,9 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 		if (i_ctx_p == NULL)
 		    continue;		/* devices not yet initialized */
 		gs_parse_file_name(&pname, pstr, plen);
-		iodev = pname.iodev;
 		memcpy(buffer, pname.fname, pname.len);
 		memcpy(buffer+pname.len, fname, flen);
-		code = iodev->procs.open_file(iodev, buffer, pname.len + flen, fmode,
+		code = pname.iodev->procs.open_file(pname.iodev, buffer, pname.len + flen, fmode,
 					      &s, (gs_memory_t *)mem);
 		if (code < 0)
 		    continue;
@@ -1024,12 +1026,11 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 		*pclen = plen + flen;
 		return 0;
 	    } else {
-		iodev = iodev_default;
 		r = gp_file_name_combine_patch(pstr, plen, 
 			fname, flen, false, buffer, &blen1);
 		if (r != gp_combine_success)
 		    continue;
-		if (iodev_os_open_file(iodev_default, (const char *)buffer, blen1, (const char *)fmode,
+		if (iodev_os_open_file(iodev, (const char *)buffer, blen1, (const char *)fmode,
 					&s, (gs_memory_t *)mem) == 0) {
 		    if (starting_arg_file ||
 			check_file_permissions_aux(i_ctx_p, buffer, blen1) >= 0) {
@@ -1037,7 +1038,7 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 			make_stream_file(pfile, s, "r");
 			return 0;
 		    }
-		    iodev_os_fclose(iodev_default, s->file);
+		    iodev_os_fclose(iodev, s->file);
 		    return_error(e_invalidfileaccess);
 		}
 	    }
