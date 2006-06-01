@@ -1901,7 +1901,7 @@ $(PSD)fapiu1.dev : $(INT_MAK) $(ECHOGS_XE) \
 
 $(PSOBJ)fapiufst.$(OBJ) : $(PSSRC)fapiufst.c $(AK)\
  $(memory__h) $(stdio__h) $(math__h)\
- $(ierrors_h) $(iplugin_h) $(ifapi_h) $(gxfapi_h) \
+ $(ierrors_h) $(iplugin_h) $(ifapi_h) $(gxfapi_h) $(gp_h) \
  $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
  $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
  $(UFST_ROOT)$(D)sys$(D)inc$(D)ufstport.h\
