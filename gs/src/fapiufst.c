@@ -1080,8 +1080,11 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
 
 	if (d->font_type == FC_FCO_TYPE) {
 	    /* EF_SUBSTHOLLOWBOX_TYPE must work against it. 
-	    Ensure the plugin plug__xi.fco is loaded. */
-	    return code;
+	       Ensure the plugin plug__xi.fco is loaded. */
+	    /* fixme : Due to unknown reason EF_SUBSTHOLLOWBOX_TYPE
+	       doesn't work for some fonts. A test case is xgfddg.pdf .
+	       hack : render the space character. */
+	    c1 = 32;
 	} else {
 	    /* hack : Changing UFST internal data - see above. */
 	    pIFS->fcCur.ssnum = RAW_GLYPH;
