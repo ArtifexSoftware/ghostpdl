@@ -798,7 +798,7 @@ private int t1_hinter__set_stem_snap(t1_hinter * this, float * value, int count,
 	                                sizeof(this->stem_snap_vote0) / count_of(this->stem_snap_vote0), 
 					max(T1_MAX_STEM_SNAPS, count), s_stem_snap_vote_array))
     	    return_error(gs_error_VMerror);
-    if (count == 1 || float2fixed(value[count - 1] - value[0]) > pixel_g) {
+    if (count == 1 || count > 0 && float2fixed(value[count - 1] - value[0]) > pixel_g) {
 	for (i = 0; i < count; i++)
 	    this->stem_snap[hv][i] = float2fixed(value[i]);
 	this->stem_snap_count[hv] = count;
