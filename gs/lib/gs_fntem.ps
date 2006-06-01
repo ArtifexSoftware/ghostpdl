@@ -255,9 +255,18 @@ currentdict end def
  ISOLatin1Encoding /ISOLatin1Encoding
  SymbolEncoding /SymbolEncoding
  DingbatsEncoding /DingbatsEncoding
- /resourceforall where
-  { pop (*) { cvn dup findencoding exch } 1024 string /Encoding resourceforall }
- if
+ /resourceforall where {
+   pop (*) { cvn dup 
+     EncodingDirectory exch .knownget not {
+       % A work around bug 688710 :
+       % findencoding can't load resource files until gs_init.ps executes .fixresources . 
+       % It will happen after gs_init.ps runs INITFILES,
+       % from which the current file runs.
+       dup /Encoding findresource
+     } if
+     exch 
+   } 1024 string /Encoding resourceforall 
+ } if
 .dicttomark def
 
 /ChooseDecoding  % <font> ChooseDecoding <font>
