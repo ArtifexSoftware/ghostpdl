@@ -18,12 +18,24 @@
 #include "plfont.h"
 #include "plftable.h"
 
+/* The AGFA_FONT_TABLE definition is defined when the system is
+   compiled to use the MonoType font scaler.  It can also be defined
+   here locally withe AGFA_SCREENFONTS to use Monotype font names with
+   the TrueType screen fonts distributed with the UFST. The latter
+   configuration uses the artifex fontscaler. NB configuration is
+   awkward. */
 
+/* #define AGFA_FONT_TABLE */
+/* #define AGFA_SCREENFONTS */
 
 #ifdef AGFA_FONT_TABLE
-#define fontnames(agfaname, urwname) agfaname
+#ifdef AGFA_SCREENFONTS
+#define fontnames(agfascreenfontname, agfaname, urwname) agfascreenfontname
 #else
-#define fontnames(agfaname, urwname) urwname
+#define fontnames(agfascreenfontname, agfaname, urwname) agfaname
+#endif
+#else
+#define fontnames(agfascreenfontname, agfaname, urwname) urwname
 #endif
 
 
@@ -60,437 +72,437 @@ const font_resident_t resident_table[] = {
 #define EXBOLD          (4)
 
     {
-        fontnames("Courier", "NimbusMono"),
+        fontnames("Courier", "CourierMT", "NimbusMono-Reg"),
         {'C','o','u','r','i','e','r',' ',' ',' ',' ',' ',' ',' ',' ',' '},
         {0, 0, {60, 72000/60}, 0, REGULAR, NOBOLD, 4099}, cc_alphabetic
     },
 
     {
-        fontnames("CG Times", "NimbusRomanNo4 Light"),
+        fontnames("CGTimes", "CGTimes", "NimbusRomanNo4-Lig"),
         {'C','G',' ','T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ',' '},
         {0, 1, {30, 72000/30}, 0, REGULAR, NOBOLD, 4101},
         cc_alphabetic
     },
 
     {
-        fontnames("CG Times Bold", "NimbusRomanNo4 Bold"),
+        fontnames("CGTimesBold", "CGTimes-Bold", "NimbusRomanNo4-Bol"),
         {'C','G',' ','T','i','m','e','s',' ',' ',' ',' ',' ',' ','B','d'},
         {0, 1, {30, 72000/30}, 0, REGULAR, BOLD, 4101},
         cc_alphabetic
     },
 
     {
-        fontnames("CG Times Italic", "NimbusRomanNo4 Light Italic"),
+        fontnames("CGTimesItalic", "CGTimes-Italic", "NimbusRomanNo4-LigIta"),
         {'C','G',' ','T','i','m','e','s',' ',' ',' ',' ',' ',' ','I','t'},
         {0, 1, {30, 72000/30}, 0, ITALIC, NOBOLD, 4101},
         cc_alphabetic
     },
 
     {
-        fontnames("CG Times Bold Italic", "NimbusRomanNo4 Bold Italic"),
+        fontnames("CGTimesBoldItalic", "CGTimes-BoldItalic", "NimbusRomanNo4-BolIta"),
         {'C','G',' ','T','i','m','e','s',' ',' ',' ',' ','B','d','I','t'},
         {0, 1, {30, 72000/30}, 0, ITALIC, BOLD, 4101},
         cc_alphabetic
     },
 
     {
-        fontnames("CG Omega", "URWClassico"),
+        fontnames("CGOmega", "CGOmega", "URWClassico-Reg"),
         {'C','G',' ','O','m','e','g','a',' ',' ',' ',' ',' ',' ',' ',' '},
         {0, 1, {28, 72000/28}, 0, REGULAR, NOBOLD, 4113},
         cc_alphabetic
     },
 
     {
-        fontnames("CG Omega Bold", "URWClassico Bold"),
+        fontnames("CGOmegaBold", "CGOmega-Bold", "URWClassico-Bol"),
         {'C','G',' ','O','m','e','g','a',' ',' ',' ',' ',' ',' ','B','d'},
         {0, 1, {28, 72000/28}, 0, REGULAR, BOLD, 4113},
         cc_alphabetic
     },
 
     {
-        fontnames("CG Omega Italic", "URWClassico Italic"),
+        fontnames("CGOmegaItalic", "CGOmega-Italic", "URWClassico-Ita"),
         {'C','G',' ','O','m','e','g','a',' ',' ',' ',' ',' ',' ','I','t'},
         {0, 1, {28, 72000/28}, 0, ITALIC, NOBOLD, 4113},
         cc_alphabetic
     },
 
     {
-        fontnames("CG Omega Bold Italic", "URWClassico Bold Italic"),
+        fontnames("CGOmegaBoldItalic", "CGOmega-BoldItalic", "URWClassico-BolIta"),
         {'C','G',' ','O','m','e','g','a',' ',' ',' ',' ','B','d','I','t'},
         {0, 1, {28, 72000/28}, 0, ITALIC, BOLD, 4113},
         cc_alphabetic
     },
 
     {
-        fontnames("Coronet", "Coronet"),
+        fontnames("Coronet", "Coronet", "Coronet"),
         {'C','o','r','o','n','e','t',' ',' ',' ',' ',' ',' ',' ',' ',' '},
         {0, 1, {20, 72000/20}, 0, ITALIC, NOBOLD, 4116},
         cc_alphabetic
     },
 
     {
-        fontnames("Clarendon Condensed Bold", "ClarendonURWBolCon"),
+        fontnames("ClarendonCondensedBold", "Clarendon-Condensed-Bold", "ClarendonURW-BolCon"),
         {'C','l','a','r','e','n','d','o','n',' ',' ',' ','C','d','B','d'},
         {0, 1, {22, 72000/22}, 0, CONDENSED, BOLD, 4140},
         cc_alphabetic
     },
 
     {
-        fontnames("Univers Medium", "U001"), 
+        fontnames("UniversMedium", "Univers-Medium", "U001-Reg"), 
         {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ',' ',' ','M','d'},
         {0, 1, {33, 72000/33}, 0, REGULAR, NOBOLD, 4148},
         cc_alphabetic
     },
 
     {
-        fontnames("Univers Bold", "U001 Bold"), 
+        fontnames("UniversBold", "Univers-Bold", "U001-Bol"), 
         {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ',' ',' ','B','d'},
         {0, 1, {33, 72000/33}, 0, REGULAR, BOLD, 4148},
         cc_alphabetic
     },
 
     {
-        fontnames("Univers Medium Italic", "U001 Italic"), 
+        fontnames("UniversMediumItalic", "Univers-MediumItalic", "U001-Ita"), 
         {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ','M','d','I','t'},
         {0, 1, {33, 72000/33}, 0, ITALIC, NOBOLD, 4148},
         cc_alphabetic
     },
 
     {
-        fontnames("Univers Bold Italic", "U001 Bold Italic"),
+        fontnames("UniversBoldItalic", "Univers-BoldItalic", "U001-BolIta"),
         {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ','B','d','I','t'},
         {0, 1, {33, 72000/33}, 0, ITALIC, BOLD, 4148},
         cc_alphabetic
     },
     
     {
-        fontnames("Univers Condensed Medium", "U001Con"), 
+        fontnames("UniversCondensedMedium", "Univers-Condensed-Medium", "U001Con-Reg"), 
         {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ','C','d','M','d'},
         {0, 1, {22, 72000/22}, 0, CONDENSED, NOBOLD, 4148},
         cc_alphabetic
     },
 
     {
-        fontnames("Univers Condensed Bold", "U001Con Bold"),
+        fontnames("UniversCondensedBold", "Univers-Condensed-Bold", "U001Con-Bol"),
         {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ','C','d','B','d'},
         {0, 1, {22, 32550}, 0, CONDENSED, BOLD, 4148},
         cc_alphabetic
     },
 
     {
-        fontnames("Univers Condensed Medium Italic", "U001Con Italic"), 
+        fontnames("UniversCondensedMediumItalic", "Univers-Condensed-MediumItalic", "U001Con-Ita"), 
         {'U','n','i','v','e','r','s',' ',' ',' ','C','d','M','d','I','t'},
         {0, 1, {22, 72000/22}, 0, CONDENSEDITALIC, NOBOLD, 4148},
         cc_alphabetic
     },
     
     {
-        fontnames("Univers Condensed Bold Italic", "U001Con Bold Italic"), 
+        fontnames("UniversCondensedBoldItalic", "Univers-Condensed-BoldItalic", "U001Con-BolIta"), 
         {'U','n','i','v','e','r','s',' ',' ',' ','C','d','B','d','I','t'},
         {0, 1, {22, 72000/22}, 0, CONDENSEDITALIC, BOLD, 4148},
         cc_alphabetic
     },
 
     {
-        fontnames("Antique Olive", "AntiqueOlive"), 
+        fontnames("AntiqueOlive", "AntiqueOlive", "AntiqueOlive-Reg"), 
         {'A','n','t','i','q','O','l','i','v','e',' ',' ',' ',' ',' ',' '},
         {0, 1, {30, 72000/30}, 0, REGULAR, NOBOLD, 4168},
         cc_alphabetic
     },
 
     {
-        fontnames("Antique Olive Bold", "AntiqueOlive Bold"), 
+        fontnames("AntiqueOliveBold", "AntiqueOlive-Bold", "AntiqueOlive-Bol"), 
         {'A','n','t','i','q','O','l','i','v','e',' ',' ',' ',' ','B','d'},
         {0, 1, {33, 72000/33}, 0, REGULAR, BOLD, 4168}, 
         cc_alphabetic
     },
     
     {
-        fontnames("Antique Olive Italic", "AntiqueOlive Italic"),
+        fontnames("AntiqueOliveItalic", "AntiqueOlive-Italic", "AntiqueOlive-Ita"),
         {'A','n','t','i','q','O','l','i','v','e',' ',' ',' ',' ','I','t'},
         {0, 1, {30, 72000/30}, 0, ITALIC, NOBOLD, 4168},
         cc_alphabetic
     },
 
     {
-        fontnames("Garamond Antiqua", "GaramondNo8"), 
+        fontnames("GaramondAntiqua", "Garamond-Antiqua", "GaramondNo8-Reg"), 
         {'G','a','r','a','m','o','n','d',' ','A','n','t','i','q','u','a'},
         {0, 1, {26, 72000/26}, 0, REGULAR, NOBOLD, 4197}, cc_alphabetic
     },
 
     {
-        fontnames("Garamond Halbfett", "GaramondNo8 Medium"),
+        fontnames("GaramondHalbfett", "Garamond-Halbfett", "GaramondNo8-Med"),
         {'G','a','r','a','m','o','n','d',' ',' ',' ',' ',' ','H','l','b'},
         {0, 1, {28, 72000/28}, 0, REGULAR, BOLD, 4197}, cc_alphabetic
     },
 
     {
-        fontnames("Garamond Kursiv", "GaramondNo8 Italic"),
+        fontnames("GaramondKursiv", "Garamond-Kursiv", "GaramondNo8-Ita"),
         {'G','a','r','a','m','o','n','d',' ',' ',' ',' ','K','r','s','v'},
         {0, 1, {23, 72000/23}, 0, ITALIC, NOBOLD, 4197}, cc_alphabetic
     },
 
     {
-        fontnames("Garamond Kursiv Halbfett", "GaramondNo8 Medium Italic"), 
+        fontnames("GaramondKursivHalbfett", "Garamond-KursivHalbfett", "GaramondNo8-MedIta"), 
         {'G','a','r','a','m','o','n','d',' ','K','r','s','v','H','l','b'},
         {0, 1, {26, 72000/26}, 0, ITALIC, BOLD, 4197}, cc_alphabetic
     },
 
     {
-        fontnames("Marigold", "Mauritius"), 
+        fontnames("Marigold", "Marigold", "Mauritius-Reg"), 
         {'M','a','r','i','g','o','l','d',' ',' ',' ',' ',' ',' ',' ',' '},
         {0, 1, {22, 72000/22}, 0, REGULAR, NOBOLD, 4297},
         cc_alphabetic
     },
 
     {
-        fontnames("Albertus Medium", "A028 Medium"), 
+        fontnames("AlbertusMedium", "Albertus-Medium", "A028-Med"), 
         {'A','l','b','e','r','t','u','s',' ',' ',' ',' ',' ',' ','M','d'},
         {0, 1, {31, 72000/31}, 0, REGULAR, MEDIUMBOLD, 4362}, cc_alphabetic
     },
 
     {
-        fontnames("Albertus Extra Bold", "A028 Extrabold"), 
+        fontnames("AlbertusExtraBold", "Albertus-ExtraBold", "A028-Ext"), 
         {'A','l','b','e','r','t','u','s',' ',' ',' ',' ',' ',' ','X','b'},
         {0, 1, {37, 72000/37}, 0, REGULAR, EXBOLD, 4362}, cc_alphabetic
     },
 
     {
-        fontnames("Arial", "A030"), 
+        fontnames("Arial", "Arial", "A030-Reg"), 
         {'A','r','i','a','l',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
         {0, 1, {28, 72000/28}, 0, REGULAR, NOBOLD, 16602}, cc_alphabetic
     },
 
     {
-        fontnames("Arial Bold", "A030 Bold"), 
+        fontnames("Arial-BoldMT", "Arial-Bold", "A030-Bol"), 
         {'A','r','i','a','l',' ',' ',' ',' ',' ',' ',' ',' ',' ','B','d'},
         {0, 1, {28, 72000/28}, 0, REGULAR, BOLD, 16602}, cc_alphabetic
     },
 
     {
-        fontnames("Arial Italic", "A030 Italic"), 
+        fontnames("Arial-ItalicMT", "Arial-Italic", "A030-Ita"), 
         {'A','r','i','a','l',' ',' ',' ',' ',' ',' ',' ',' ',' ','I','t'},
         {0, 1, {28, 72000/28}, 0, ITALIC, NOBOLD, 16602}, cc_alphabetic
     },
 
     {
-        fontnames("Arial Bold Italic", "A030 Bold Italic"),
+        fontnames("Arial-BoldItalicMT", "Arial-BoldItalic", "A030-BolIta"),
         {'A','r','i','a','l',' ',' ',' ',' ',' ',' ',' ','B','d','I','t'},
         {0, 1, {28, 72000/28}, 0, ITALIC, BOLD, 16602}, cc_alphabetic
     },
 
     {
-        fontnames("Times New Roman", "NimbusRomanNo9"), 
+        fontnames("TimesNewRoman", "TimesNewRoman", "NimbusRomanNo9-Reg"), 
         {'T','i','m','e','s','N','e','w','R','m','n',' ',' ',' ',' ',' '},
         {0, 1, {25, 72000/25}, 0, REGULAR, NOBOLD, 16901},
         cc_alphabetic
     },
 
     {
-        fontnames("Times New Roman Bold", "NimbusRomanNo9 Medium"),
+        fontnames("TimesNewRoman-Bold", "TimesNewRoman-Bold", "NimbusRomanNo9-Med"),
         {'T','i','m','e','s','N','e','w','R','m','n',' ',' ',' ','B','d'},
         {0, 1, {25, 72000/25}, 0, REGULAR, BOLD, 16901},
         cc_alphabetic
     },
 
     {
-        fontnames("Times New Roman Bold Italic", "NimbusRomanNo9 Italic"),
+        fontnames("TimesNewRoman-BoldItalic", "TimesNewRoman-BoldItalic", "NimbusRomanNo9-Ita"),
         {'T','i','m','e','s','N','e','w','R','m','n',' ',' ',' ','I','t'},
         {0, 1, {25, 72000/25}, 0, ITALIC, NOBOLD, 16901},
         cc_alphabetic
     },
 
     {
-        fontnames("Times New Roman Italic", "NimbusRomanNo9 Medium Italic"), 
+        fontnames("TimesNewRoman-Italic", "TimesNewRoman-Italic", "NimbusRomanNo9-MedIta"), 
         {'T','i','m','e','s','N','e','w','R','m','n',' ','B','d','I','t'},
         {0, 1, {25, 72000/25}, 0, ITALIC, BOLD, 16901},
         cc_alphabetic
     },
 
     {
-        fontnames("Helvetica", "NimbusSanL"), 
+        fontnames("Helvetica", "Helvetica", "NimbusSanL-Regu"), 
         {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ',' ',' '},
         {0, 1, {28, 72000/28}, 0, REGULAR, NOBOLD, 24580}, cc_alphabetic
     },
 
     {
-        fontnames("Helvetica-Bold", "NimbusSanL Bold"), 
+        fontnames("Helvetica-Bold", "Helvetica-Bold", "NimbusSanL-Bold"), 
         {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ','B','d'},
         {0, 1, {28, 72000/28}, 0, REGULAR, BOLD, 24580}, cc_alphabetic
     },
 
     {
-        fontnames("Helvetica-BoldOblique", "NimbusSanL Bold Italic"),
+        fontnames("Helvetica-BoldOblique", "Helvetica-BoldOblique", "NimbusSanL-BoldItal"),
         {'H','e','l','v','e','t','i','c','a',' ',' ',' ','B','d','O','b'},
         {0, 1, {28, 72000/28}, 0, ITALIC, BOLD, 24580},
         cc_alphabetic
     },
 
     {
-        fontnames("Helvetica-Narrow", "NimbusSanLCon"),
+        fontnames("Helvetica-Narrow", "Helvetica-Narrow", "NimbusSanL-ReguCond"),
         {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ','N','r'},
         {0, 1, {23, 72000/23}, 0, CONDENSED, NOBOLD, 24580},
         cc_alphabetic
     },
 
     {
-        fontnames("Helvetica-Narrow-Bold", "NimbusSanLCon Bold"),
+        fontnames("Helvetica-Narrow-Bold", "Helvetica-Narrow-Bold", "NimbusSanL-BoldCond"),
         {'H','e','l','v','e','t','i','c','a',' ',' ',' ','N','r','B','d'},
         {0, 1, {23, 72000/23}, 0, CONDENSED, BOLD, 24580},
         cc_alphabetic
     },
 
     {
-        fontnames("Helvetica-Narrow-BoldOblique", "NimbusSanLCon Bold Italic"), 
+        fontnames("Helvetica-Narrow-BoldOblique", "Helvetica-Narrow-BoldOblique", "NimbusSanL-BoldCondItal"), 
         {'H','e','l','v','e','t','i','c','a',' ','N','r','B','d','O','b'},
         {0, 1, {23, 72000/23}, 0, CONDENSEDITALIC, BOLD, 24580}, cc_alphabetic
     },
 
     {
-        fontnames("Helvetica-Narrow-Oblique", "NimbusSanLCon Italic"), 
+        fontnames("Helvetica-Narrow-Oblique", "Helvetica-Narrow-Oblique", "NimbusSanL-ReguCondItal"), 
         {'H','e','l','v','e','t','i','c','a',' ',' ',' ','N','r','O','b'},
         {0, 1, {23, 72000/23}, 0, CONDENSEDITALIC, NOBOLD, 24580}, cc_alphabetic
     },
 
     {
-        fontnames("Helvetica-Oblique", "NimbusSanL Italic"),
+        fontnames("Helvetica-Oblique", "Helvetica-Oblique", "NimbusSanL-ReguItal"),
         {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ','O','b'},
         {0, 1, {28, 72000/28}, 0, ITALIC, NOBOLD, 24580}, cc_alphabetic
     },
 
     {
-        fontnames("Palatino-Roman", "URWPalladioL"),
+        fontnames("Palatino-Roman", "Palatino-Roman", "URWPalladioL-Roma"),
         {'P','a','l','a','t','i','n','o',' ',' ',' ',' ',' ','R','m','n'},
         {0, 1, {25, 72000/25}, 0, REGULAR, NOBOLD, 24591}, cc_alphabetic
     },
 
     {
-        fontnames("Palatino-Italic", "URWPalladioL Italic"), 
+        fontnames("Palatino-Italic", "Palatino-Italic", "URWPalladioL-Ital"), 
         {'P','a','l','a','t','i','n','o',' ',' ',' ',' ',' ',' ','I','t'},
         {0, 1, {25, 72000/25}, 0, ITALIC, NOBOLD, 24591}, cc_alphabetic
     },
 
     {
-        fontnames("Palatino-Bold", "URWPalladioL Bold"), 
+        fontnames("Palatino-Bold", "Palatino-Bold", "URWPalladioL-Bold"), 
         {'P','a','l','a','t','i','n','o',' ',' ',' ',' ',' ',' ','B','d'},
         {0, 1, {25, 72000/25}, 0, REGULAR, BOLD, 24591}, cc_alphabetic
     },
 
     {
-        fontnames("Palatino-BoldItalic", "URWPalladioL Bold Italic"), 
+        fontnames("Palatino-BoldItalic", "Palatino-BoldItalic", "URWPalladioL-BoldItal"), 
         {'P','a','l','a','t','i','n','o',' ',' ',' ',' ','B','d','I','t'},
         {0, 1, {25, 72000/25}, 0, ITALIC, BOLD, 24591}, cc_alphabetic
     },
 
     {
-        fontnames("AvantGarde-Book", "URWGothicL"),
+        fontnames("AvantGarde-Book", "AvantGarde-Book", "URWGothicL-Book"),
         {'I','T','C','A','v','a','n','t','G','a','r','d',' ',' ','B','k'},
         {0, 1, {28, 72000/28}, 0, REGULAR, NOBOLD, 24607}, cc_alphabetic
     },
 
     {
-        fontnames("AvantGarde-Demi", "URWGothicLDem"),
+        fontnames("AvantGarde-Demi", "AvantGarde-Demi", "URWGothicL-Demi"),
         {'I','T','C','A','v','a','n','t','G','a','r','d',' ',' ','D','b'},
         {0, 1, {28, 72000/28}, 0, REGULAR, BOLD, 24607}, cc_alphabetic
     },
 
     {
-        fontnames("AvantGarde-BookOblique", "URWGothicL Oblique"), 
+        fontnames("AvantGarde-BookOblique", "AvantGarde-BookOblique", "URWGothicL-DemiObli"),
         {'I','T','C','A','v','a','n','t','G','a','r','d','B','k','O','b'},
         {0, 1, {28, 72000/28}, 0, ITALIC, NOBOLD, 24607}, cc_alphabetic
     },
 
     {
-        fontnames("AvantGarde-DemiOblique", "URWGothicLDem Oblique"),
+        fontnames("AvantGarde-DemiOblique", "AvantGarde-DemiOblique", "URWGothicL-BookObli"),
         {'I','T','C','A','v','a','n','t','G','a','r','d','D','b','O','b'},
         {0, 1, {28, 72000/28}, 0, ITALIC, BOLD, 24607}, cc_alphabetic
     },
 
     {
-        fontnames("Bookman-Light", "URWBookmanL"),
+        fontnames("Bookman-Light", "Bookman-Light", "URWBookmanL-Ligh"),
         {'I','T','C','B','o','o','k','m','a','n',' ',' ',' ',' ','L','t'},
         {0, 1, {28, 72000/32}, 0, REGULAR, NOBOLD, 24623}, cc_alphabetic
     },
 
     {
-        fontnames("Bookman-Demi", "URWBookmanL Bold"),
+        fontnames("Bookman-Demi", "Bookman-Demi", "URWBookmanL-DemiBold"),
         {'I','T','C','B','o','o','k','m','a','n',' ',' ',' ',' ','D','b'},
         {0, 1, {34, 72000/34}, 0, REGULAR, BOLD, 24623}, cc_alphabetic
     },
 
     {
-        fontnames("Bookman-LightItalic", "URWBookmanL Italic"),
+        fontnames("Bookman-LightItalic", "Bookman-LightItalic", "URWBookmanL-LighItal"),
         {'I','T','C','B','o','o','k','m','a','n',' ',' ','L','t','I','t'},
         {0, 1, {30, 72000/30}, 0, ITALIC, NOBOLD, 24623}, cc_alphabetic
     },
 
     {
-        fontnames("Bookman-DemiItalic", "URWBookmanL Bold Italic"),
+        fontnames("Bookman-DemiItalic", "Bookman-DemiItalic", "URWBookmanL-DemiBoldItal"),
         {'I','T','C','B','o','o','k','m','a','n',' ',' ','D','b','I','t'},
         {0, 1, {34, 72000/34}, 0, ITALIC, BOLD, 24623}, cc_alphabetic
     },
 
     {
-        fontnames("NewCenturySchlbk-Bold", "CenturySchL Bold"), 
+        fontnames("NewCenturySchlbk-Bold", "NewCenturySchlbk-Bold", "CenturySchL-Bold"), 
         {'N','w','C','e','n','t','S','c','h','l','b','k',' ',' ','B','d'},
         {0, 1, {29, 72000/29}, 0, REGULAR, BOLD, 24703}, cc_alphabetic
     },
 
     {
-        fontnames("NewCenturySchlbk-BoldItalic", "CenturySchL Bold Italic"), 
+        fontnames("NewCenturySchlbk-BoldItalic", "NewCenturySchlbk-BoldItalic", "CenturySchL-BoldItal"), 
         {'N','w','C','e','n','t','S','c','h','l','b','k','B','d','I','t'},
         {0, 1, {29, 72000/29}, 0, ITALIC, BOLD, 24703}, cc_alphabetic
     },
 
     {
-        fontnames("NewCenturySchlbk-Italic", "CenturySchL Italic"), 
+        fontnames("NewCenturySchlbk-Italic", "NewCenturySchlbk-Italic", "CenturySchL-Ital"), 
         {'N','w','C','e','n','t','S','c','h','l','b','k',' ',' ','I','t'},
         {0, 1, {28, 72000/28}, 0, ITALIC, NOBOLD, 24703}, cc_alphabetic
     },
 
     {
-        fontnames("NewCenturySchlbk-Roman", "CenturySchL"), 
+        fontnames("NewCenturySchlbk-Roman", "NewCenturySchlbk-Roman", "CenturySchL-Roma"), 
         {'N','w','C','e','n','t','S','c','h','l','b','k',' ','R','m','n'},
         {0, 1, {28, 72000/28}, 0, REGULAR, NOBOLD, 24703}, cc_alphabetic
     },
 
     {
-        fontnames("Times-Roman", "NimbusRomanNo9L"), 
+        fontnames("Times-Roman", "Times-Roman", "NimbusRomNo9L-Regu"),
         {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ',' ','R','m','n'},
         {0, 1, {25, 72000/25}, 0, REGULAR, NOBOLD, 4101},
         cc_alphabetic
     },
 
     {
-        fontnames("Times-Bold", "NimbusRomanNo9L Bold"),
+        fontnames("Times-Bold", "Times-Bold", "NimbusRomNo9L-Medi"),
         {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ',' ',' ','B','d'},
         {0, 1, {25, 72000/25}, 0, REGULAR, BOLD, 4101},
         cc_alphabetic
     },
 
     {
-        fontnames("Times-Italic", "NimbusRomanNo9L Italic"), 
+        fontnames("Times-Italic", "Times-Italic", "NimbusRomNo9L-ReguItal"), 
         {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ',' ',' ','I','t'},
         {0, 1, {25, 72000/25}, 0, ITALIC, NOBOLD, 4101},
         cc_alphabetic
     },
 
     {
-        fontnames("Times-BoldItalic", "NimbusRomanNo9L Bold Italic"), 
+        fontnames("Times-BoldItalic", "Times-BoldItalic", "NimbusRomNo9L-MediItal"), 
         {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ','B','d','I','t'},
         {0, 1, {25, 72000/25}, 0, ITALIC, BOLD, 4101},
         cc_alphabetic
     },
 
     {
-        fontnames("ZapfChancery-MediumItalic", "URWChanceryLMed Italic"),
+        fontnames("ZapfChancery-MediumItalic", "ZapfChancery-MediumItalic", "URWChanceryL-MediItal"),
         {'Z','a','p','f','C','h','a','n','c','e','r','y','M','d','I','t'},
         {0, 1, {22, 72000/22},0, ITALIC, NOBOLD, face_val(43, agfa)}, 
         cc_alphabetic
     },
  
     {
-        fontnames("Symbol", "StandardSymL"),
+        fontnames("SymbolMT", "Symbol", "StandardSymL"),
         {'S','y','m','b','o','l',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
         {621, 1, {25, 72000/25}, 0, REGULAR, NOBOLD, 16686},
         cc_symbol
@@ -500,7 +512,7 @@ const font_resident_t resident_table[] = {
        confusion AGFA has 2 different fonts presumably Symbol and
        SymbolPS, each called Symbol. */
     {
-        fontnames("SymbPS", "StandardSymL"),
+        fontnames("SymbPS", "SymbPS", "StandardSymL"),
         {'S','y','m','b','o','l','P','S',' ',' ',' ',' ',' ',' ',' ',' '},
         {621, 1, {25, 72000/25}, 0, REGULAR, NOBOLD, 16686},
         cc_symbol
@@ -512,7 +524,7 @@ const font_resident_t resident_table[] = {
     */
 #ifdef AGFA_FONT_TABLE
     {
-        fontnames("Wingdings", "noname"),
+        fontnames("Wingdings-Regular", "Wingdings-Regular", "noname"),
         {'W','i','n','g','d','i','n','g','s',' ',' ',' ',' ',' ',' ',' '},
         {18540, 1, {100, 72000/100},0, REGULAR, NOBOLD, face_val(2730, agfa)},
         cc_dingbats
@@ -520,14 +532,14 @@ const font_resident_t resident_table[] = {
 #endif
 
     {
-        fontnames("ZapfDingbats", "Dingbats"), 
+        fontnames("ZapfDingbats", "ZapfDingbats", "Dingbats"), 
         {'Z','a','p','f','D','i','n','g','b','a','t','s',' ',' ',' ',' '},
         {18540, 1, {28, 72000/28},0, REGULAR, NOBOLD, face_val(2730, agfa)},
         cc_dingbats
     },
 
     {
-        fontnames("Courier-Bold", "NimbusMono Bold"), 
+        fontnames("CourierBold", "CourierMT-Bold", "NimbusMono-Bol"), 
         {'C','o','u','r','i','e','r',' ',' ',' ',' ',' ',' ',' ','B','d'},
         {0, 0, {60, 72000/60}, 0, REGULAR, BOLD, face_val(3, agfa)}, 
         cc_alphabetic
@@ -535,35 +547,35 @@ const font_resident_t resident_table[] = {
 
 
     {
-        fontnames("Courier Italic", "NimbusMono Italic"), 
+        fontnames("CourierItalic", "CourierMT-Italic", "NimbusMono-Ita"),
         {'C','o','u','r','i','e','r',' ',' ',' ',' ',' ',' ',' ','I','t'},
         {0, 0, {60, 72000/60}, 0, ITALIC, NOBOLD, face_val(3, agfa)},
         cc_alphabetic 
     },
 
     {
-        fontnames("Courier Bold Italic", "NimbusMono Bold Italic"), 
+        fontnames("CourierBoldItalic", "CourierMT-BoldItalic", "NimbusMono-BolIta"),
         {'C','o','u','r','i','e','r',' ',' ',' ',' ',' ','B','d','I','t'},
         {0, 0, {60, 72000/60}, 0, ITALIC, BOLD, face_val(3, agfa)},
         cc_alphabetic
     },
 
     {
-        fontnames("Letter Gothic", "LetterGothic"), 
+        fontnames("LetterGothic", "LetterGothic", "LetterGothic-Reg"), 
         {'L','e','t','t','e','r','G','o','t','h','i','c',' ',' ',' ',' '},
         {0, 0, {50, 72000/50}, 0, REGULAR, NOBOLD, face_val(6, agfa)},
         cc_alphabetic
     },
     
     {
-        fontnames("Letter Gothic Bold", "LetterGothic Bold"),
+        fontnames("LetterGothicBold", "LetterGothic-Bold", "LetterGothic-Bol"),
         {'L','e','t','t','e','r','G','o','t','h','i','c',' ',' ','B','d'},
         {0, 0, {50, 72000/50}, 0, REGULAR, BOLD, face_val(6, agfa)},
         cc_alphabetic
     },
 
     {
-        fontnames("Letter Gothic Italic", "LetterGothic Italic"),
+        fontnames("LetterGothicItalic", "LetterGothic-Italic", "LetterGothic-Ita"),
         {'L','e','t','t','e','r','G','o','t','h','i','c',' ',' ','I','t'},
         {0, 0, {50, 72000/50}, 0, ITALIC, NOBOLD, face_val(6, agfa)},
         cc_alphabetic
@@ -572,26 +584,26 @@ const font_resident_t resident_table[] = {
 
     {
         /* NB should be CourierPS */
-        fontnames("Courier", "NimbusMonL"),
+        fontnames("Courier", "Courier", "NimbusMonL-Regu"),
         {'C','o','u','r','i','e','r','P','S',' ',' ',' ',' ',' ',' ',' '},
         {0, 1, {60, 72000/60}, 0, REGULAR, NOBOLD, 24579},
         cc_alphabetic
     },
 
     {
-        fontnames("Courier-Bold", "NimbusMonL Bold"),
+        fontnames("Courier-Bold", "Courier-Bold", "NimbusMonL-Bold"),
         {'C','o','u','r','i','e','r','P','S',' ',' ',' ',' ',' ','B','d'},
         {0, 1, {60, 72000/60}, 0, REGULAR, BOLD, 24579}, cc_alphabetic
     },
 
     {
-        fontnames("Courier-BoldOblique", "NimbusMonL Bold Oblique"),
+        fontnames("Courier-BoldOblique", "Courier-BoldOblique", "NimbusMonL-BoldObli"),
         {'C','o','u','r','i','e','r','P','S',' ',' ',' ','B','d','O','b'},
         {0, 1, {60, 72000/60}, 0, ITALIC, BOLD, 24579}, cc_alphabetic
     },
 
     {
-        fontnames("Courier-Oblique", "NimbusMonL Oblique"),
+        fontnames("Courier-Oblique", "Courier-Oblique", "NimbusMonL-ReguObli"),
         {'C','o','u','r','i','e','r','P','S',' ',' ',' ',' ',' ','O','b'},
         {0, 1, {60, 72000/60}, 0, ITALIC, NOBOLD, 24579}, cc_alphabetic
     },
@@ -599,24 +611,24 @@ const font_resident_t resident_table[] = {
 #ifndef AGFA /* NB - line printer support seams to be completely
                 absent in the AGFA build */
 
-    {fontnames("noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','0','N'},
+    {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','0','N'},
      {0, 0, {50, 72000/50}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {fontnames("noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','0','U'},
+    {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','0','U'},
      {0, 0, {50, 72000/50}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {fontnames("noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','1','U'},
+    {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','1','U'},
      {0, 0, {50, 72000/50}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {fontnames("noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','2','U'},
+    {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','2','U'},
      {0, 0, {50, 72000/50}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {fontnames("noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','1','U'},
+    {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','1','U'},
      {0, 0, {50, 72000/50}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {fontnames("noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','2','N'},
+    {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','2','N'},
      {0, 0, {50, 72000/50}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {fontnames("noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','5','N'},
+    {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','5','N'},
      {0, 0, {50, 72000/50}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {fontnames("noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','8','U'},
+    {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','8','U'},
      {0, 0, {50, 72000/50}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
 #endif /* not AGFA and NB */
-    {fontnames("", ""), {'0','0'},
+    {fontnames("","", ""), {'0','0'},
      {0, 0, {0, 0}, 0, 0, 0, 0} }
 #undef AGFA
 #undef C

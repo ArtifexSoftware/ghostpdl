@@ -153,6 +153,10 @@ gs_private_st_element(st_pl_font_glyph_element_f, pl_font_glyph_t,
   "pl_font_glyph_t[]",
   pl_font_glyph_elt_enum_ptrs_f, pl_font_glyph_elt_reloc_ptrs_f, st_pl_font_glyph_f);
 
+int pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir, gs_memory_t *mem, const char *font_name);
+void pl_fill_in_mt_font(gs_font_base *pfont, SW16 data, long unique_id);
+
+
 pl_font_t *
 pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 {

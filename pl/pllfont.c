@@ -69,8 +69,11 @@ is_ttfile(FILE *ttfile)
 /* get the windows truetype font file name - position 4 in the name
    table.  Assumes file is a reasonable tt_file - use is_ttfile() to
    check before calling this procedure. */
+#define WINDOWSNAME 4
+#define PSNAME 6
+
 private 
-int get_windows_name_from_tt_file(FILE *tt_file, gs_memory_t *mem, char *pfontfilename)
+int get_name_from_tt_file(FILE *tt_file, gs_memory_t *mem, char *pfontfilename, int nameoffset)
 {
     /* check if an open file a ttfile saving and restoring the file position */
     fpos_t pos;     /* saved file position */
@@ -87,7 +90,7 @@ int get_windows_name_from_tt_file(FILE *tt_file, gs_memory_t *mem, char *pfontfi
     len = ftell( tt_file );
 
     /* allocate a buffer for the entire file */
-    ptt_font_data = gs_alloc_bytes( mem, len, "get_windows_name_from_tt_file" );
+    ptt_font_data = gs_alloc_bytes( mem, len, "get_name_from_tt_file" );
     if ( ptt_font_data == NULL )
 	return_error(mem, gs_error_VMerror );
 
@@ -97,7 +100,7 @@ int get_windows_name_from_tt_file(FILE *tt_file, gs_memory_t *mem, char *pfontfi
 	 ( fread( ptt_font_data, 1, len, tt_file ) == len ) )
 	; /* ok */
     else {
-	gs_free_object( mem, ptt_font_data, "get_windows_name_from_tt_file" );
+	gs_free_object( mem, ptt_font_data, "get_name_from_tt_file" );
 	return -1;
     }
 
@@ -116,8 +119,10 @@ int get_windows_name_from_tt_file(FILE *tt_file, gs_memory_t *mem, char *pfontfi
 		byte *name_recs = name_table + 6;
 		{
 		    /* 4th entry in the name table - the complete name */
-		    unsigned short length = pl_get_uint16( name_recs + (12 * 4) + 8 );
-		    unsigned short offset = pl_get_uint16( name_recs + (12 * 4) + 10 );
+		    unsigned short length = 
+                        pl_get_uint16( name_recs + (12 * nameoffset) + 8 );
+		    unsigned short offset = 
+                        pl_get_uint16( name_recs + (12 * nameoffset) + 10 );
 		    int k;
 		    for ( k = 0; k < length; k++ ) {
 			/* hack around unicode if necessary */
@@ -130,7 +135,7 @@ int get_windows_name_from_tt_file(FILE *tt_file, gs_memory_t *mem, char *pfontfi
 	    }
     }
     /* free up the data and restore the file position */
-    gs_free_object( mem, ptt_font_data, "get_windows_name_from_tt_file" );
+    gs_free_object( mem, ptt_font_data, "get_name_from_tt_file" );
     if ( fgetpos( tt_file, &pos ) )
 	return -1;
     /* null terminate the fontname string and return success.  Note
@@ -149,6 +154,42 @@ int get_windows_name_from_tt_file(FILE *tt_file, gs_memory_t *mem, char *pfontfi
 
     return 0;
 }
+
+#ifdef DEBUG
+private bool
+lookup_pjl_number(pl_dict_t *pfontdict, int pjl_font_number)
+{
+    pl_dict_enum_t dictp;
+    gs_const_string key;
+    void *value;
+    pl_dict_enum_begin(pfontdict, &dictp);
+    while ( pl_dict_enum_next(&dictp, &key, &value) ) {
+        pl_font_t *plfont = value;
+        if (plfont->params.pjl_font_number == pjl_font_number)
+            return true;
+    }
+    return false;
+}
+
+private void
+check_resident_fonts(pl_dict_t *pfontdict, gs_memory_t *mem)
+{
+    int i;
+    for (i = 0; 
+         strlen(resident_table[i].full_font_name) != 0;
+         i ++)
+        if (!lookup_pjl_number(pfontdict, i)) {
+            dprintf2(mem, "%s (entry %d) not found\n", resident_table[i].full_font_name, i);
+            dprintf(mem, "pxl unicode name:");
+            int j;
+            for (j = 0; 
+                 j < sizeof(resident_table[i].unicode_fontname); 
+                 j++)
+                dprintf1(mem, "'%c'", resident_table[i].unicode_fontname[j]);
+            dprintf(mem, "\n");
+        }
+}
+#endif
 
 /* NOTES ABOUT NB NB - if the font dir necessary */
  int
@@ -239,10 +280,13 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 		    continue;
 		}
 
-		if ( !is_ttfile( in ) )
+		if ( !is_ttfile( in ) ) {
+                   #ifdef DEBUG
+                    dprintf1(mem, "%s not a TrueType file\n", tmp_path_copy);
+                   #endif
 		    continue;
-
-		code = get_windows_name_from_tt_file( in, mem, buffer );
+                }
+		code = get_name_from_tt_file( in, mem, buffer, PSNAME);
 		if ( code < 0 ) {
 		    dprintf1(mem, "input output failure on TrueType File %s\n", tmp_path_copy );
 		    continue;
@@ -261,8 +305,14 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 			break;
 
 		/* hit sentinnel, nothing found */
-		if ( !strlen(residentp->full_font_name) )
+		if ( !strlen(residentp->full_font_name) ) {
+                   #ifdef DEBUG
+                    dprintf2(mem, "TrueType font %s in file %s not found in table\n", buffer, tmp_path_copy);
+                    code = get_name_from_tt_file( in, mem, buffer, WINDOWSNAME);
+                    dprintf1(mem, "Windows name %s\n", buffer);
+                   #endif
 		    continue;
+                }
 
 		/* load the font file into memory.  NOTE: this closes the file - argh... */
 		if ( pl_load_tt_font(in, pdir, mem,
@@ -307,6 +357,9 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 	    } /* next file */
 	} /* next directory */
     }
+#ifdef DEBUG
+    check_resident_fonts(pfontdict, mem);
+#endif
     if ( one_font_found )
         return true;
     else

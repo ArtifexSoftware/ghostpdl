@@ -573,8 +573,8 @@ pl_init_fc(
         pfc->s.m2.m[3] = -pfc->s.m2.m[3];
     }
 
-    /* support Format 16 headers (TrueType fonts only) */
-    pfc->ExtndFlags = 0;
+    /* always use our own symbol set mapping */
+    pfc->ExtndFlags = EF_NOSYMSETMAP;
     if (plfont->is_xl_format) {
         pfc->ExtndFlags = EF_XLFONT_TYPE;
         if ((pfont->WMode & 0x1) != 0)  /* vertical substitution */
@@ -593,7 +593,7 @@ pl_init_fc(
         pfc->pcl6bold = 0;
     /* set the format */
     pfc->format = FC_PCL6_EMU | FC_INCHES_TYPE;
-    pfc->format |= (need_outline ? FC_LINEAR_TYPE : FC_BITMAP_TYPE);
+    pfc->format |= (need_outline ? FC_CUBIC_TYPE : FC_BITMAP_TYPE);
 }
 
 /*
@@ -737,7 +737,7 @@ pl_ufst_make_char(
 
         /* if too large for a bitmap, try an outline */
         if (status >= ERR_bm_gt_oron && status <= ERRdu_pix_range) {
-            pfc->format = (pfc->format & ~FC_BITMAP_TYPE) | FC_LINEAR_TYPE;
+            pfc->format = (pfc->format & ~FC_BITMAP_TYPE) | FC_CUBIC_TYPE;
             if ((status = CGIFfont(FSA pfc)) == 0) {
                 CGIFchIdptr(FSA (VOID *)&chIdloc, NULL);
                 status = CGIFchar_handle(FSA chr, &memhdl, 0);

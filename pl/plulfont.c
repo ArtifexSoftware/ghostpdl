@@ -42,14 +42,18 @@ PIF_STATE pIFS = &IFS;
 private SW16  fcHndlPlAry[16];
 private SW16  fcHndlAry[16];
 
+/* NB fixme - we might as well require an environment variable for the
+   fco names and plugins, these change every UFST release */
+
+
 /* defaults for locations of font collection objects (fco's) and
    plugins the root data directory.  These are internally separated with
    ':' but environment variable use the gp separator */
 const char *UFSTFONTDIR="/usr/local/fontdata2/";
 
 /* default list of fcos and plugins - relative to UFSTFONTDIR */
-const char *UFSTFCOS="mtfonts/pclps2/mt1/pclp2__i.fco:mtfonts/pcl45/mt1/wd_____g.fco";
-const char *UFSTPLUGINS="mtfonts/pcl45/mt1/plug___i.fco";
+const char *UFSTFCOS="mtfonts/pclps2/mt3/pclp2_xj.fco:mtfonts/pcl45/mt3/wd____xh.fco";
+const char *UFSTPLUGINS="mtfonts/pcl45/mt3/plug__xi.fco";
 
 /* return a null terminated array of strings on the heap from
    str0:str1:str:.  Use gs separator */
@@ -238,120 +242,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 
     /* open and register the plug-in font collection object */
     plugins = pl_ufst_get_list(mem, "UFSTPLUGINS", UFSTPLUGINS);
-    for (k = 0; plugins[k]; k++) {
-        strcpy((char *)pthnm, ufst_root_dir);
-        strcat((char *)pthnm, plugins[k]);
-        if ((status = CGIFfco_Open(FSA pthnm, &fcHndlPlAry[k])) != 0) {
-            dprintf2(mem, "CGIFfco_Open error %d for %s\n", status, pthnm);
-            return FALSE;
-        }
-        if ((status = CGIFfco_Plugin(FSA fcHndlPlAry[k])) != 0) {
-            dprintf1(mem, "CGIFfco_Plugin error %d\n", status);
-            return FALSE;
-        }
-        /* enumerate the files in this plugin NB - we should eliminate
-           the code redundancy between these routines and fco loading code below */
-        for ( i = 0;
-              CGIFfco_Access(FSA pthnm, i, TFATRIB_KEY, &bSize, NULL) == 0;
-              i++, key[2] += 1 ) {
-            LPSB8   pBuffer = (LPSB8)gs_alloc_bytes( mem,
-                                                     bSize,
-                                                     "TTFONTINFO buffer" );
-
-            if (pBuffer == 0) {
-                dprintf1(mem, "VM error for built-in font %d", i);
-                continue;
-            }
-            status = CGIFfco_Access( FSA
-                                     pthnm,
-                                     i,
-                                     TFATRIB_KEY,
-                                     &bSize,
-                                     pBuffer );
-            if (status != 0)
-                dprintf1(mem, "CGIFfco_Access error %d\n", status);
-            else {
-                TTFONTINFOTYPE *    pfDesc = (TTFONTINFOTYPE *)pBuffer;
-                LPSB8               pname = pBuffer + pfDesc->tfName;
-                /* unfortunately agfa has 2 fonts named symbol.  We
-                   believe the font with internal number, NB, NB, NB  */
-                LPSB8               symname = "SymbPS";
-                int                 j;
-                if ( pfDesc->pcltFontNumber == 24463 )
-                    pname = symname;
-                for ( j = 0;
-                      strlen(resident_table[j].full_font_name) &&
-                      strcmp(resident_table[j].full_font_name, pname) != 0;
-                      j++ )
-                    ;
-                if ( strlen(resident_table[j].full_font_name) ) {
-                    pl_font_t * plfont;
-                    int         err_cd = pl_load_mt_font( fcHndlAry[k],
-                                                          pdir,
-                                                          mem,
-                                                          i,
-                                                          &plfont );
-                    if (err_cd != 0)
-                        dprintf2( mem, "Error %d while loading font %s\n",
-                                  err_cd,
-                                  pname );
-                    else {
-                        dprintf2( mem, "Loading %s from fco %s\n", pname, plugins[k] );
-                        uint    pitch_cp = (pfDesc->spaceBand * 100.0)
-                            / pfDesc->scaleFactor + 0.5;
-
-                        /* Record the differing points per inch value
-                           for Intellifont derived fonts. */
-
-                        if (pfDesc->scaleFactor == 8782) {
-                            plfont->pts_per_inch = 72.307;
-                            pitch_cp = (pfDesc->spaceBand * 100 * 72.0)
-                                         / (pfDesc->scaleFactor * 72.307) + 0.5;
-                        }
-                        dprintf3( mem, "scale factor=%d, pitch (cp)=%d per_inch_x100=%d\n", pfDesc->scaleFactor, pitch_cp, (uint)(720000.0/pitch_cp));
-                        if (resident_table[j].params.symbol_set != 0)
-                            plfont->font_type = plft_8bit;
-
-                        plfont->storage = storage;
-                        plfont->data_are_permanent = false;
-                        plfont->params = resident_table[j].params;
-
-                        /*
-                         * NB: though the TTFONTINFOTYPE structure has a
-                         * pcltChComp field, it is not filled in by the UFST
-                         * code (which just initializes it to 0). Hence, the
-                         * hard-coded information in the resident font
-                         * initialization structure is used.
-                         */
-                        memcpy( plfont->character_complement,
-                                resident_table[j].character_complement,
-                                8 );
-
-                        /* update some parameters from the file */
-                        pl_fp_set_pitch_cp(&plfont->params, pitch_cp);
-                        plfont->params.proportional_spacing =
-                                                         !pfDesc->isFixedPitch;
-                        plfont->params.style = pfDesc->pcltStyle;
-                        plfont->params.stroke_weight = pfDesc->pcltStrokeWt;
-                        plfont->params.typeface_family = pfDesc->pcltTypeFamily;
-			/* use the offset in the table as the pjl font number */
-			plfont->params.pjl_font_number = j;
-                        /* store the font in the built-in-fonts dictionary */
-			if ( use_unicode_names_for_keys )
-			    pl_dict_put( pfontdict, resident_table[j].unicode_fontname, 32, plfont );
-			else {
-			    key[2] = (byte)j;
-			    key[0] = key[1] = 0;
-			    pl_dict_put( pfontdict, key, sizeof(key), plfont );
-			}
-                    }
-                } else
-                    dprintf1(mem, "%s found in FCO but not used by PCL\n", pname);
-            }
-
-            gs_free_object(mem, pBuffer, "TTFONTINFO buffer");
-        }
-    }
     free_strs(mem, plugins);
 
     /*
@@ -394,7 +284,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                 dprintf1(mem, "CGIFfco_Access error %d\n", status);
             else {
                 TTFONTINFOTYPE *    pfDesc = (TTFONTINFOTYPE *)pBuffer;
-                LPSB8               pname = pBuffer + pfDesc->tfName;
+                LPSB8               pname = pBuffer + pfDesc->psname;
                 /* unfortunately agfa has 2 fonts named symbol.  We
                    believe the font with internal number, NB, NB, NB  */
                 LPSB8               symname = "SymbPS";
