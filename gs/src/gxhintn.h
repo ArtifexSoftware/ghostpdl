@@ -115,7 +115,7 @@ typedef struct t1_hinter_s
 {   fraction_matrix ctmf;
     fraction_matrix ctmi;
     unsigned int g2o_fraction_bits;
-    unsigned int max_import_coord;
+    unsigned long max_import_coord;
     int32_t g2o_fraction;
     t1_glyph_space_coord orig_gx, orig_gy; /* glyph origin in glyph space */
     t1_glyph_space_coord subglyph_orig_gx, subglyph_orig_gy; /* glyph origin in glyph space */
