@@ -82,7 +82,7 @@
  * For this process to work properly, the following changes need to made to
  * the device.
  *
- * 1.  The device source module needs to include gsequivc.c for a definition
+ * 1.  The device source module needs to include gsequivc.h for a definition
  *     of the relevant structures and routines.  An equivalent_cmyk_color_params
  *     structure needs to be added to the device's structure definition and
  *     it needs to be initialized.  For examples see the definition of the
@@ -100,12 +100,6 @@
  *     is created.  For example see the psd_write_header routine in
  *     src/gdevpsd.c.
  */
-
-/* Function protypes */
-private void capture_spot_equivalent_cmyk_colors(gx_device * pdev,
-		    const gs_state * pgs, const gs_client_color * pcc,
-		    const gs_color_space * pcs, int sep_num,
-		    equivalent_cmyk_color_params * pparams);
 
 #define compare_color_names(name, name_size, str, str_size) \
     (name_size == str_size && \
@@ -374,7 +368,7 @@ cmap_devicen_capture_cmyk_color(const frac * pcc, gx_device_color * pdc,
  * Note:  The color space (pcs) has already been modified to use the
  * alternate color space.
  */
-private void
+void
 capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     const gs_client_color * pcc, const gs_color_space * pcs,
     int sep_num, equivalent_cmyk_color_params * pparams)
