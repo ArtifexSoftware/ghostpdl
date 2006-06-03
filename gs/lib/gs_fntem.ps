@@ -256,14 +256,26 @@ currentdict end def
  SymbolEncoding /SymbolEncoding
  DingbatsEncoding /DingbatsEncoding
  /resourceforall where {
-   pop (*) { cvn dup 
+   pop (*) { dup cvn
      EncodingDirectory exch .knownget not {
-       % A work around bug 688710 :
+       % A work around bug 688710 on Linux :
        % findencoding can't load resource files until gs_init.ps executes .fixresources . 
        % It will happen after gs_init.ps runs INITFILES,
        % from which the current file runs.
-       dup /Encoding findresource
-     } if
+       % Windows build has no such problem.
+       (.svn) anchorsearch {
+         % HACK : skip .svn or */* names, which are subdirectories.
+         pop pop
+       } {
+         (/) search {
+           pop pop pop
+         } {
+           cvn dup /Encoding findresource
+         } ifelse
+       } ifelse
+     } {
+       exch cvn exch
+     } ifelse
      exch 
    } 1024 string /Encoding resourceforall 
  } if
