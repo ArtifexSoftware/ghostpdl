@@ -242,6 +242,18 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 
     /* open and register the plug-in font collection object */
     plugins = pl_ufst_get_list(mem, "UFSTPLUGINS", UFSTPLUGINS);
+    for (k = 0; plugins[k]; k++) {
+        strcpy((char *)pthnm, ufst_root_dir);
+        strcat((char *)pthnm, plugins[k]);
+        if ((status = CGIFfco_Open(FSA pthnm, &fcHndlPlAry[k])) != 0) {
+            dprintf2(mem, "CGIFfco_Open error %d for %s\n", status, pthnm);
+            return FALSE;
+        }
+        if ((status = CGIFfco_Plugin(FSA fcHndlPlAry[k])) != 0) {
+            dprintf1(mem, "CGIFfco_Plugin error %d\n", status);
+            return FALSE;
+        }
+    }
     free_strs(mem, plugins);
 
     /*
