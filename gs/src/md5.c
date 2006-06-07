@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
+  Copyright (C) 1999, 2000 artofcode LLC.  All rights reserved.
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,7 +21,7 @@
   ghost@aladdin.com
 
  */
-/*$RCSfile$ $Revision: 1899 $ */
+/* $Id:$ */
 /*
   Independent implementation of MD5 (RFC 1321).
 
