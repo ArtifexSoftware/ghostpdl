@@ -535,18 +535,19 @@
       % Build names array in the order they occur in the 'post' table
       /postpos glyphnames def
       /total_length postglyphs //string_array_size exec def
-      [ numglyphs 1 sub {
-	postpos total_length ge { exit } if
+      numglyphs array 0 1 numglyphs 1 sub {
+	postpos total_length ge { pop exit } if
 	% No name available, /postnames will be defined as an empty
 	% array and the glyph won't get a name attached.
 	postglyphs postpos //get_from_stringarray exec
         postglyphs postpos 1 add 2 index //getinterval_from_stringarray exec cvn
 	exch postpos add 1 add /postpos exch def
-      } repeat
-      ] /postnames exch def
-      [ 0 1 numglyphs 1 sub {
-	2 mul 34 add post_first exch getu16
-	dup 258 lt {
+        2 index 3 1 roll put
+      } for
+      /postnames exch def
+      numglyphs array 0 1 numglyphs 1 sub {
+	dup 2 mul 34 add postglyphs exch 2 //getinterval_from_stringarray exec 
+	dup 0 get 8 bitshift exch 1 get add dup 258 lt {
 	  MacGlyphEncoding exch get
 	} {
 	  dup 32768 ge {
@@ -569,7 +570,8 @@
 	    postremap 1 index .knownget { exch pop } if
 	  } ifelse
 	} ifelse
-      } for ]
+	2 index 3 1 roll put
+      } for
     }
     ifelse
   } bind
@@ -1135,7 +1137,8 @@ mark
   /CharStrings glyphencoding dup length 1 add dict	% +1 for .notdef
     0 1 3 index length 1 sub {
 		% Stack: glyphencoding dict index
-      2 index 1 index get 2 index 1 index known {
+      2 index 1 index get 2 index 1 index known
+      1 index /.notdef ne and {	%		ignore extra .notdef glyphs
 		% The same name maps to more than one glyph.
 		% Change the name.
 	pop dup .nname 3 index 2 index 2 index put
