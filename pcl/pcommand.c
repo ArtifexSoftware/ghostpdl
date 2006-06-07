@@ -59,7 +59,7 @@ float_value(
 
 
 /*
- * Set an integer parameter.
+ * "put" parameters to the device.
  */
   private int
 end_param1(
@@ -69,8 +69,6 @@ end_param1(
 {
     int                 code;
     gs_c_param_list_read(alist);
-    /* put the parameters using the target device, not the forwarding
-       device */
     code = gs_state_putdeviceparams(pcs->pgs, (gs_param_list *)alist);
     gs_c_param_list_release(alist);
     return code;
@@ -148,6 +146,17 @@ put_param1_float_array(
 
     gs_c_param_list_write(&list, pcs->memory);
     /* code = */param_write_float_array((gs_param_list *)&list, pkey, &pf_array);
+    return end_param1(&list, pcs);
+}
+
+int
+put_param1_string(pcl_state_t *pcs, gs_param_name pkey, const char *str)
+{
+    gs_c_param_list list;
+    gs_param_string paramstr;        
+    gs_c_param_list_write(&list, pcs->memory);
+    param_string_from_string(paramstr, str);
+    /* code = */param_write_string((gs_param_list *)&list, pkey, &paramstr);
     return end_param1(&list, pcs);
 }
 

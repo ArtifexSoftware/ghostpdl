@@ -882,15 +882,27 @@ set_render_algorithm(
     return pcl_palette_set_render_method(pcs, uint_arg(pargs));
 }
 
+/* set monochrome page device parameter.  NB needs testing.  We don't
+   currently have a device that does what we need with
+   ProcessColorModel.  We assume non color devices will simply ignore
+   the parameter.  */
+private int
+pcl_update_mono(pcl_state_t *pcs)
+{
+    if (pcs->monochrome_mode)
+        return put_param1_string(pcs, "ProcessColorModel", "DeviceGray");
+    else
+        return put_param1_string(pcs, "ProcessColorModel", "DeviceRGB");
+}
+            
 /*
  * ESC & b # M
  *
  * Set monochrome or normal print mode. 
  * Note  ForceMono=1 is similar to monochrome mode locked on. 
  *
- * NB: Unlike certain other commands, a monochrome print command always ejects
- *     the current page if it has been marked, even if no change in the print
- *     mode occurs.
+ * The monochrome print mode command is ignored if the page is dirty.
+ * 
  */
   private int
 set_print_mode(
@@ -907,16 +919,18 @@ set_print_mode(
     if (mode > 1)
         return 0;
 
-    if ((code = pcl_end_page_if_marked(pcs)) < 0)
-        return code;
-    pcl_home_cursor(pcs);
+    if (pcs->page_marked)
+        return 0;
 
-    pcs->monochrome_mode = false;
-    // NB     pcs->monochrome_mode = gx_set_cmap_procs_to_gray(pcs->pgs,
-    //                                                 gs_currentdevice(pcs->pgs),
-    //						     mode);
-    pcl_ht_set_print_mode(pcs, pcs->monochrome_mode);
-    return pcl_palette_set_render_method(pcs, pcs->render_mode);
+    if (mode == 1)
+        pcs->monochrome_mode = true;
+    else
+        pcs->monochrome_mode = false;
+
+    pcl_update_mono(pcs);
+    return 0;
+    
+
 }
 
 /*
@@ -1010,7 +1024,7 @@ palette_do_reset(
 
     } else if ((type & (pcl_reset_cold | pcl_reset_printer | pcl_reset_permanent)) != 0) {
        pcs->monochrome_mode = 0; 
-
+       pcl_update_mono(pcs);
        /* clear the palette stack and store */
         clear_palette_stack(pcs, pcs->memory);
 	clear_palette_store(pcs);
