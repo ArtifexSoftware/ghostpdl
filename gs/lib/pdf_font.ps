@@ -79,30 +79,33 @@ pdfdict begin
          dup dup dup /MacRomanEncoding eq
          exch /MacExpertEncoding eq or 
          exch /WinAnsiEncoding eq or
-           { exch pop findencoding
-           }
-           { pop
-           }
+           { exch pop findencoding }
+           { pop }
          ifelse
        }
-       { dup /BaseEncoding knownoget
-	   {
-             dup / eq
-               { pop
-                 (   **** Warning: Ignoring bad BaseEncoding name.\n)  pdfformaterror
-                 % as found in a PDF file from J.D.Edwards OneWorld (B7333), bug 687786
-               }
-               {
-                 findencoding 3 -1 roll pop exch
-               }
-             ifelse
-	   }
-	 if
-	 /Differences knownoget { updateencoding } if
+       { dup type /arraytype eq
+	 { exch pop
+	   (   **** Warning: Encoding is an array, not name or dictionary.\n)  pdfformaterror
+	 }
+	 { dup /BaseEncoding knownoget
+	     { dup / eq
+		 { pop
+		   (   **** Warning: Ignoring bad BaseEncoding name.\n)  pdfformaterror
+		   % as found in a PDF file from J.D.Edwards OneWorld (B7333), bug 687786
+		 }
+		 { findencoding 3 -1 roll pop exch }
+	       ifelse
+	     }
+	   if
+	   /Differences knownoget { updateencoding } if
+	 }
+	 ifelse
        }
-      ifelse
-    }
-   if
+       ifelse
+     } {
+      (   **** Warning: Encoding not present.\n)  pdfformaterror
+     }
+     ifelse
  } bdef
 
 /checkGlyphNames2Unicode % <dict> checkGlyphNames2Unicode -
