@@ -951,7 +951,7 @@ mark
   tabdict /name .knownget {
 		% Find the names from the 'name' table.
     /names exch def
-    /FontName names 6 findname not { names 4 findname not { curxuid 16 8 string cvrs } if } if
+    /FontName names 6 findname not { names 4 findname not { curxuid 16#ffffffff and 16 8 string cvrs } if } if
       /fontname 1 index def
     /FontInfo mark
       names 0 findname { /Notice exch } if
@@ -960,7 +960,7 @@ mark
       names 5 findname { /Version exch } if
   } {
 		% No name table, fabricate a FontName.
-    /FontName curxuid 16 8 string cvrs
+    /FontName curxuid 16#ffffffff and 16 8 string cvrs
       /fontname 1 index def
     /FontInfo mark
   } ifelse
