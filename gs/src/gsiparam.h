@@ -163,15 +163,22 @@ typedef struct gs_color_space_s gs_color_space;
 		 */\
 	gs_image_format_t format;\
 		/*\
-		 * Define the source color space (must be NULL for masks).\
-		 */\
-	const gs_color_space *ColorSpace;\
-		/*\
 		 * Define whether to use the drawing color as the\
 		 * "texture" for RasterOp.  For more information,\
 		 * see the discussion of RasterOp in Language.htm.\
 		 */\
-	bool CombineWithColor
+	bool CombineWithColor;\
+		/*\
+		 * Define the source color space (must be NULL for masks).\
+		 *\
+                 * Make the pointer the last element of the structure.\
+                 * Otherwise, the padding at the end overwrites the 1st\
+                 * member of the subclass, when the base structure is assigned\
+                 * to the subclass structure. Bugs 613909, 688725\
+                 */\
+	const gs_color_space *ColorSpace
+
+
 typedef struct gs_pixel_image_s {
     gs_pixel_image_common;
 } gs_pixel_image_t;
