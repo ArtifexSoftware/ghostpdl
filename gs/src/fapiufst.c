@@ -147,17 +147,17 @@ private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, in
 
     strcpy(config_block.ufstPath, ".");
     for (; p < e ; p = q + 1) {
-	q = (const byte *)strchr((const char *)p, sep);
-	if (q == 0)
-	    q = e;
-	if (!memcmp(p, keySSdir, keySSdir_length)) {
+	for (q = p; q < e && *q != sep; q++)
+	    /* DO_NOTHING */;
+	l = q - p;
+	if (l > keySSdir_length && !memcmp(p, keySSdir, keySSdir_length)) {
 	    l = q - p - keySSdir_length;
 	    if (l > sizeof(config_block.ufstPath) - 1)
 		l = sizeof(config_block.ufstPath) - 1;
 	    memcpy(config_block.ufstPath, p + keySSdir_length, l);
 	    config_block.ufstPath[l] = 0;
 	    bSSdir = true;
-	} else if (!memcmp(p, keyPlugIn, keyPlugIn_length)) {
+	} else if (l > keyPlugIn_length && !memcmp(p, keyPlugIn, keyPlugIn_length)) {
 	    l = q - p - keyPlugIn_length;
 	    if (l > sizeof(sPlugIn) - 1)
 		l = sizeof(sPlugIn) - 1;
@@ -185,6 +185,7 @@ private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, in
 #endif
     config_block.num_files = 10;
     config_block.bit_map_width = 1;
+    UFST_debug_on(FSA0);
     if ((code = CGIFconfig(FSA &config_block)) != 0)
 	return code;
     if ((code = CGIFenter(FSA0)) != 0)
@@ -656,8 +657,10 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
     d->is_disk_font = (ff->font_file_path != NULL);
     if (d->is_disk_font) {
         FILE *f = fopen(font_file_path, "rb"); /* note: gp_fopen isn't better since UFST calls fopen. */
-        if (f == NULL)
+	if (f == NULL) {
+	    eprintf1("fapiufst: Can't open %s\n", font_file_path);
             return e_undefinedfilename;
+	}
         memcpy(d + 1, font_file_path, strlen(font_file_path) + 1);
         d->font_type = get_font_type(f);
         fclose(f);

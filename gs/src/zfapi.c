@@ -1001,7 +1001,6 @@ private int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
 {   os_ptr op = osp;
     build_proc_refs build;
     gs_font *pfont;
-
     int code = font_param(op - 1, &pfont), code1;
     gs_font_base *pbfont = (gs_font_base *)pfont;
     ref *v;
