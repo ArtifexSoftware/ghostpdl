@@ -135,7 +135,7 @@ private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, in
     int code;
     SW16 fcHandle;
     int l;
-    char sPlugIn[sizeof(config_block.ufstPath)] = ".";
+    char sPlugIn[sizeof(config_block.ufstPath)] = "";
     bool bSSdir = false, bPlugIn = false;
     const char *keySSdir = "UFST_SSdir=";
     const int keySSdir_length = strlen(keySSdir);
@@ -145,7 +145,7 @@ private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, in
     const byte *p = server_param, *e = server_param + server_param_size, *q;
     FSA_FROM_SERVER;
 
-    strcpy(config_block.ufstPath, ".");
+    config_block.ufstPath[0] = 0;
     for (; p < e ; p = q + 1) {
 	for (q = p; q < e && *q != sep; q++)
 	    /* DO_NOTHING */;
@@ -167,14 +167,12 @@ private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, in
 	} else
 	    eprintf("Warning: Unknown UFST parameter ignored.\n");
     }
+#if !NO_SYMSET_MAPPING
     if (!bSSdir) {
 	strcpy(config_block.ufstPath, ".");
 	eprintf("Warning: UFST_SSdir is not specified, will search *.ss files in the curent directory.\n");
     }
-    if (!bPlugIn) {
-	strcpy(sPlugIn, ".");
-	eprintf("Warning: PlugIn is not specified, will search plugin files in the curent directory.\n");
-    }
+#endif
     config_block.bit_map_width = 1;
     config_block.num_files = 10;
     config_block.typePath[0] = 0;
@@ -190,10 +188,16 @@ private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, in
 	return code;
     if ((code = CGIFenter(FSA0)) != 0)
 	return code;
-    if ((code = CGIFfco_Open(FSA (byte *)sPlugIn, &fcHandle)) != 0)
-	return code;
-    if ((code = CGIFfco_Plugin(FSA fcHandle)) != 0)
-	return code;
+    if (bPlugIn) {
+	if ((code = CGIFfco_Open(FSA (byte *)sPlugIn, &fcHandle)) != 0)
+	    return code;
+	if ((code = CGIFfco_Plugin(FSA fcHandle)) != 0)
+	    return code;
+    } else {
+#ifdef FCO_RDR
+	eprintf("Warning: UFST_PlugIn is not specified, some characters may be missing.\n");
+#endif
+    }
     return 0;
 }		      
 
