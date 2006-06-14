@@ -684,6 +684,7 @@ private const FAPI_font ff_stub = {
     false, /* is_cid */
     false, /* is_outline_font */
     false, /* is_mtx_skipped */
+    false, /* is_vertical */
     0, /* client_ctx_p */
     0, /* client_font_data */
     0, /* client_font_data2 */
@@ -767,6 +768,15 @@ private int FAPI_find_plugin(i_ctx_t *i_ctx_p, const char *subtype, FAPI_server 
     return_error(e_invalidfont);
 }
 
+private inline void release_typeface(FAPI_server *I, void **server_font_data)
+{
+    I->release_typeface(I, *server_font_data);
+    I->face.font_id = gs_no_id;
+    if (I->ff.server_font_data == *server_font_data)
+	I->ff.server_font_data = 0;
+    *server_font_data = 0;
+}
+
 private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_font_base *pbfont, 
                               const char *font_file_path, const FAPI_font_scale *font_scale, 
 			      const char *xlatmap, int BBox[4], const char **decodingID)
@@ -777,7 +787,7 @@ private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_fon
      * a CIDFontType 0 (FontType 9) font while preparing its subfonts,
      * and/or perform a completion action with the top level font after
      * its descendants are prepared. Therefore with such fonts
-     * we first call get_scaled_font(..., FAPI_TOPLEVEL_BEGIN), then
+     * we first call get_scaled_font(..., FAPI_TOPLEVEL_BEGIN), then	
      * get_scaled_font(..., i) with eash descendant font index i,
      * and then get_scaled_font(..., FAPI_TOPLEVEL_COMPLETE).
      * For other fonts we don't call with 'i'.
@@ -792,14 +802,19 @@ private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_fon
      * get_scaled_font may be called for same font at second time,
      * so the renderen must check whether the data is already built.
      */
-    int code, bbox_set = 0, subfont = 0;
+    int code, bbox_set = 0;
     ref *SubfontId;
+    int subfont;
 
     I->ff = ff_stub;
     if (dict_find_string(pdr, "SubfontId", &SubfontId) >= 0 && r_has_type(SubfontId, t_integer))
         subfont = SubfontId->value.intval;
+    else
+	subfont = 0;
+    I->ff.subfont = subfont;
     I->ff.font_file_path = font_file_path;
     I->ff.is_type1 = IsType1GlyphData(pbfont);
+    I->ff.is_vertical = (pbfont->WMode != 0);
     I->ff.memory = imemory;
     I->ff.client_ctx_p = i_ctx_p;
     I->ff.client_font_data = pbfont;
@@ -808,21 +823,20 @@ private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_fon
     I->ff.is_cid = IsCIDFont(pbfont);
     I->ff.is_outline_font = pbfont->PaintType != 0;
     I->ff.is_mtx_skipped = (get_MetricsCount(&I->ff) != 0);
-    if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &I->ff, subfont,
-                                         font_scale, xlatmap, false, FAPI_TOPLEVEL_BEGIN))) < 0)
+    if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &I->ff,
+                                         font_scale, xlatmap, FAPI_TOPLEVEL_BEGIN))) < 0)
 	return code;
     pbfont->FAPI_font_data = I->ff.server_font_data; /* Save it back to GS font. */
     if (I->ff.server_font_data != 0) {
 	if ((code = renderer_retcode(i_ctx_p, I, I->get_font_bbox(I, &I->ff, BBox))) < 0) {
-	    I->release_typeface(I, I->ff.server_font_data);
+	    release_typeface(I, &pbfont->FAPI_font_data);
 	    return code;
 	}
 	bbox_set = 1;
     }
     if (xlatmap != NULL && pbfont->FAPI_font_data != NULL)
 	if ((code = renderer_retcode(i_ctx_p, I, I->get_decodingID(I, &I->ff, decodingID))) < 0) {
-	    I->release_typeface(I, pbfont->FAPI_font_data);
-	    pbfont->FAPI_font_data = 0;
+	    release_typeface(I, &pbfont->FAPI_font_data);
 	    return code;
 	}
     /* Prepare descendant fonts : */
@@ -836,6 +850,7 @@ private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_fon
             return_error(e_invalidfont);
         I->ff = ff_stub;
         I->ff.is_type1 = true;
+	I->ff.is_vertical = false; /* A subfont may be shared with another fonts. */
 	I->ff.memory = imemory;
 	I->ff.client_ctx_p = i_ctx_p;
         for (i = 0; i < n; i++) {
@@ -852,8 +867,9 @@ private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_fon
             I->ff.is_cid = true;
 	    I->ff.is_outline_font = pbfont1->PaintType != 0;
 	    I->ff.is_mtx_skipped = (get_MetricsCount(&I->ff) != 0);
-            if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &I->ff, 0, 
-	                                 font_scale, NULL, false, i))) < 0)
+	    I->ff.subfont = 0;
+            if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &I->ff,
+	                                 font_scale, NULL, i))) < 0)
 		break;
             pbfont1->FAPI_font_data = I->ff.server_font_data; /* Save it back to GS font. */
 	    /* Try to do something with the descendant font to ensure that it's working : */
@@ -861,8 +877,8 @@ private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_fon
 		break;
         }
 	if (i == n) {
-	    code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &I->ff, subfont, 
-	                                 font_scale, NULL, false, FAPI_TOPLEVEL_COMPLETE));
+	    code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &I->ff,
+	                                 font_scale, NULL, FAPI_TOPLEVEL_COMPLETE));
 	    if (code >= 0)
 		return bbox_set; /* Full success. */
 	}
@@ -871,19 +887,16 @@ private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_fon
             gs_font_type1 *pbfont1 = FDArray[i];
 
 	    if (pbfont1->FAPI_font_data != NULL)
-		I->release_typeface(I, pbfont1->FAPI_font_data);
-	    pbfont1->FAPI_font_data = 0;
+		release_typeface(I, &pbfont1->FAPI_font_data);
 	}
 	if (pbfont->FAPI_font_data != NULL)
-	    I->release_typeface(I, pbfont->FAPI_font_data);
-	pbfont->FAPI_font_data = 0;
+	    release_typeface(I, &pbfont->FAPI_font_data);
 	return_error(e_invalidfont);
     } else {
-	code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &I->ff, subfont, 
-	                                 font_scale, xlatmap, false, FAPI_TOPLEVEL_COMPLETE));
+	code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &I->ff,
+	                                 font_scale, xlatmap, FAPI_TOPLEVEL_COMPLETE));
         if (code < 0) {
-	    I->release_typeface(I, pbfont->FAPI_font_data);
-	    pbfont->FAPI_font_data = 0;
+	    release_typeface(I, &pbfont->FAPI_font_data);
 	    return code;
         }
 	return bbox_set;
@@ -979,9 +992,11 @@ private int notify_remove_font(void *proc_data, void *event_data)
 {   /* gs_font_finalize passes event_data == NULL, so check it here. */
     if (event_data == NULL) {
         gs_font_base *pbfont = proc_data;
+	FAPI_server *I = pbfont->FAPI;
 
-        if (pbfont->FAPI_font_data != 0)
-            pbfont->FAPI->release_typeface(pbfont->FAPI, pbfont->FAPI_font_data);
+	if (pbfont->FAPI_font_data != 0) {
+	    release_typeface(I, &pbfont->FAPI_font_data);
+	}
     }
     return 0;
 }
@@ -1224,12 +1239,10 @@ private int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev,
     FAPI_char_ref cr = {0, 0, {0}, 0, false, NULL, 0, 0, 0, 0, 0, FAPI_METRICS_NOTDEF};
     const gs_matrix * ctm = &ctm_only(igs);
     int scale;
-    FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
     FAPI_metrics metrics;
     FAPI_server *I = pbfont->FAPI;
     int client_char_code = 0;
     ref char_name, *SubfontId;
-    int subfont = 0;
     bool is_TT_from_type42 = (pbfont->FontType == ft_TrueType && font_file_path == NULL);
     bool is_embedded_type1 = ((pbfont->FontType == ft_encrypted ||
 			       pbfont->FontType == ft_encrypted2) && 
@@ -1245,6 +1258,7 @@ private int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev,
     gs_rect char_bbox;
     op_proc_t exec_cont = 0;
     int code;
+    bool align_to_pixels = gs_currentaligntopixels(pbfont->dir);
     enum {
 	SBW_DONE,
 	SBW_SCALE,
@@ -1264,15 +1278,32 @@ private int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev,
         gx_compute_text_oversampling(penum_s, (gs_font *)pbfont, alpha_bits, &log2_scale);
         penum_s->fapi_log2_scale = log2_scale;
     }
-retry_oversampling:
-    font_scale.subpixels[0] = 1 << log2_scale.x;
-    font_scale.subpixels[1] = 1 << log2_scale.y;
-    font_scale.align_to_pixels = gs_currentaligntopixels(pbfont->dir);
     if (penum == 0)
-	return_error(e_undefined);
+        return_error(e_undefined);
     scale = 1 << I->frac_shift;
-    {   gs_matrix *base_font_matrix = &pbfont->base->orig_FontMatrix;
+retry_oversampling:
+    if (I->face.font_id != pbfont->id ||
+	memcmp(&I->face.ctm, &ctm, sizeof(&I->face.ctm)) ||
+	I->face.log2_scale.x != log2_scale.x ||
+	I->face.log2_scale.y != log2_scale.y ||
+	I->face.align_to_pixels != align_to_pixels ||
+	I->face.HWResolution[0] != dev->HWResolution[0] ||
+	I->face.HWResolution[1] != dev->HWResolution[1]
+       ) {
+	FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
+        gs_matrix *base_font_matrix = &pbfont->base->orig_FontMatrix;
         double dx, dy;
+
+	I->face.font_id = pbfont->id;
+	I->face.ctm = *ctm;
+	I->face.log2_scale = log2_scale;
+	I->face.align_to_pixels = align_to_pixels;
+	I->face.HWResolution[0] = dev->HWResolution[0];
+	I->face.HWResolution[1] = dev->HWResolution[1];
+
+	font_scale.subpixels[0] = 1 << log2_scale.x;
+	font_scale.subpixels[1] = 1 << log2_scale.y;
+	font_scale.align_to_pixels = align_to_pixels;
 
 	if (base_font_matrix->xx == 0 && base_font_matrix->xy == 0 &&
 	    base_font_matrix->yx == 0 && base_font_matrix->yy == 0)
@@ -1296,30 +1327,32 @@ retry_oversampling:
         font_scale.matrix[4] =  (FracInt)(ctm->tx * FontMatrix_div / dx * 72 / dev->HWResolution[0] * scale + 0.5);
         font_scale.matrix[5] =  (FracInt)(ctm->ty * FontMatrix_div / dy * 72 / dev->HWResolution[1] * scale + 0.5);
         /* Note: the ctm mapping here is upside down. */
-    }
-    font_scale.HWResolution[0] = (FracInt)((double)dev->HWResolution[0] * font_scale.subpixels[0] * scale);
-    font_scale.HWResolution[1] = (FracInt)((double)dev->HWResolution[1] * font_scale.subpixels[1] * scale);
+	font_scale.HWResolution[0] = (FracInt)((double)dev->HWResolution[0] * font_scale.subpixels[0] * scale);
+	font_scale.HWResolution[1] = (FracInt)((double)dev->HWResolution[1] * font_scale.subpixels[1] * scale);
 
-    /* Prepare font data : */
-    if (dict_find_string(pdr, "SubfontId", &SubfontId) > 0 && r_has_type(SubfontId, t_integer))
-        subfont = SubfontId->value.intval;
-    I->ff.memory = pbfont->memory;
-    I->ff.font_file_path = font_file_path;
-    I->ff.client_font_data = pbfont;
-    I->ff.client_font_data2 = pdr;
-    I->ff.server_font_data = pbfont->FAPI_font_data;
-    I->ff.is_type1 = bIsType1GlyphData;
-    I->ff.is_cid = bCID;
-    I->ff.is_outline_font = pbfont->PaintType != 0;
-    I->ff.is_mtx_skipped = (get_MetricsCount(&I->ff) != 0);
-    I->ff.client_ctx_p = i_ctx_p;
-    if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &I->ff, subfont, &font_scale, 
-				 NULL, bVertical, 
+	/* Prepare font data : */
+	if (dict_find_string(pdr, "SubfontId", &SubfontId) > 0 && r_has_type(SubfontId, t_integer))
+	    I->ff.subfont = SubfontId->value.intval;
+	else
+	    I->ff.subfont = 0;
+	I->ff.memory = pbfont->memory;
+	I->ff.font_file_path = font_file_path;
+	I->ff.client_font_data = pbfont;
+	I->ff.client_font_data2 = pdr;
+	I->ff.server_font_data = pbfont->FAPI_font_data;
+	I->ff.is_type1 = bIsType1GlyphData;
+	I->ff.is_cid = bCID;
+	I->ff.is_outline_font = pbfont->PaintType != 0;
+	I->ff.is_mtx_skipped = (get_MetricsCount(&I->ff) != 0);
+	I->ff.is_vertical = bVertical;
+	I->ff.client_ctx_p = i_ctx_p;
+	if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &I->ff, &font_scale, 
+				 NULL,  
 				 (!bCID || (pbfont->FontType != ft_encrypted  &&
 				            pbfont->FontType != ft_encrypted2)
 				        ? FAPI_TOPLEVEL_PREPARED : FAPI_DESCENDANT_PREPARED)))) < 0)
-	return code;
-    /* fixme : it would be nice to call get_scaled_font at once for entire 'show' string. */
+	    return code;
+    }
 
     /* Obtain the character name : */
     if (bCID) {
@@ -1614,8 +1647,8 @@ retry_oversampling:
 	    char_bbox.p.x = 0;
 	    gs_distance_transform((metrics.bbox_x0 / em_scale_x - sbw[0]), 
 				  0, ctm, &penum_s->fapi_glyph_shift);
-	    penum_s->fapi_glyph_shift.x *= font_scale.subpixels[0];
-	    penum_s->fapi_glyph_shift.y *= font_scale.subpixels[1];
+	    penum_s->fapi_glyph_shift.x *= 1 << log2_scale.x;
+	    penum_s->fapi_glyph_shift.y *= 1 << log2_scale.y;
 	}
     }
     /*

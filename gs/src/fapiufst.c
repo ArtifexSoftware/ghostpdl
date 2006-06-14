@@ -623,7 +623,7 @@ private FAPI_retcode fco_open(fapi_ufst_server *r, const char *font_file_path, f
     return 0;
 }
 
-private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_path, int subfont, FAPI_font *ff, ufst_common_font_data **return_data)
+private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_path, FAPI_font *ff, ufst_common_font_data **return_data)
 {   ulong area_length = sizeof(ufst_common_font_data), tt_size = 0;
     LPUB8 buf;
     PCLETTO_FHDR *h;
@@ -633,7 +633,7 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
     FSA_FROM_SERVER;
 
     *return_data = 0;
-    r->fc.ttc_index = subfont;
+    r->fc.ttc_index = ff->subfont;
     if (ff->font_file_path == NULL) {
         area_length += PCLETTOFONTHDRSIZE;
         if (ff->is_type1) {
@@ -673,7 +673,7 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
             if ((code = fco_open(r, font_file_path, &e)) != 0)
 		return code;
             enumerate_fco(r, font_file_path); /* development perpose only */
-            d->font_id = (e->fcHandle << 16) | subfont;
+            d->font_id = (e->fcHandle << 16) | ff->subfont;
         }
     } else {
         d->font_type = (ff->is_type1 ? FC_PST1_TYPE : FC_TT_TYPE);
@@ -767,8 +767,8 @@ private void prepare_typeface(fapi_ufst_server *r, ufst_common_font_data *d)
         r->fc.format |= FC_EXTERN_TYPE;
 }
 
-private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int subfont, 
-         const FAPI_font_scale *font_scale, const char *xlatmap, bool bVertical, FAPI_descendant_code dc)
+private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, 
+         const FAPI_font_scale *font_scale, const char *xlatmap, FAPI_descendant_code dc)
 {   fapi_ufst_server *r = If_to_I(server);
     FONTCONTEXT *fc = &r->fc;
     /*  Note : UFST doesn't provide handles for opened fonts,
@@ -793,7 +793,7 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
     }
     ff->need_decrypt = 1;
     if (d == 0) {
-        if ((code = make_font_data(r, ff->font_file_path, subfont, ff, &d)) != 0)
+        if ((code = make_font_data(r, ff->font_file_path, ff, &d)) != 0)
 	    return code;
         ff->server_font_data = d;
         prepare_typeface(r, d);
@@ -863,10 +863,10 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
 #endif
     if (use_XL_format)
 	fc->ExtndFlags |= EF_XLFONT_TYPE;
-    if (bVertical)
+    if (ff->is_vertical)
         fc->ExtndFlags |= EF_UFSTVERT_TYPE;
     fc->dl_ssnum = (d->specificId << 4) | d->platformId;
-    fc->ttc_index   = subfont;
+    fc->ttc_index   = ff->subfont;
     r->callback_error = 0;
     code = CGIFfont(FSA fc);
     if (r->callback_error != 0)
@@ -905,7 +905,7 @@ private FAPI_retcode get_font_bbox(FAPI_server *server, FAPI_font *ff, int BBox[
     return 0;
 }
 
-private FAPI_retcode get_font_proportional_feature(FAPI_server *server, FAPI_font *ff, int subfont, bool *bProportional)
+private FAPI_retcode get_font_proportional_feature(FAPI_server *server, FAPI_font *ff, bool *bProportional)
 {   fapi_ufst_server *r = If_to_I(server);
     UB8 buf[74];
     UL32 length = sizeof(buf);
@@ -914,7 +914,7 @@ private FAPI_retcode get_font_proportional_feature(FAPI_server *server, FAPI_fon
     *bProportional = false;
     if (ff->font_file_path == NULL || ff->is_type1)
         return 0;
-    if (CGIFtt_query(FSA (UB8 *)ff->font_file_path, *(UL32 *)"OS/2", (UW16)subfont, &length, buf) != 0)
+    if (CGIFtt_query(FSA (UB8 *)ff->font_file_path, *(UL32 *)"OS/2", (UW16)ff->subfont, &length, buf) != 0)
         return 0; /* No OS/2 table - no chance to get the info. Use default == false. */
     *bProportional = (buf[35] == 9);
     return 0;

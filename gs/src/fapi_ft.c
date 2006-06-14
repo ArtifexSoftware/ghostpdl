@@ -177,7 +177,7 @@ static void free_fapi_glyph_data(FT_Incremental a_info,FT_Data* a_data)
 	}
 
 static FT_Error get_fapi_glyph_metrics(FT_Incremental a_info,FT_UInt a_glyph_index,
-									   FT_Bool a_vertical,FT_Incremental_MetricsRec* a_metrics)
+									   FT_Bool FT_Incremental_MetricsRec* a_metrics)
 	{
 	if (a_info->m_glyph_metrics_index == a_glyph_index)
 		{
@@ -436,17 +436,17 @@ static void transform_decompose(FT_Matrix* a_transform,
 /**
 Open a font and set its size.
 */
-static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int a_subfont,
+static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,
 									const FAPI_font_scale* a_font_scale,
-									const char* a_map,bool a_vertical,
+									const char* a_map,
 									FAPI_descendant_code a_descendant_code)
 	{
 	FF_server* s = (FF_server*)a_server;
 	FF_face* face = (FF_face*)a_font->server_font_data;
 	FT_Error ft_error = 0;
 
-	/* dpf("get_scaled_font enter: is_type1=%d is_cid=%d font_file_path='%s' a_subfont=%d a_descendant_code=%d\n",
-		a_font->is_type1,a_font->is_cid,a_font->font_file_path ? a_font->font_file_path : "",a_subfont,a_descendant_code); */
+	/* dpf("get_scaled_font enter: is_type1=%d is_cid=%d font_file_path='%s' a_descendant_code=%d\n",
+		a_font->is_type1,a_font->is_cid,a_font->font_file_path ? a_font->font_file_path : "",a_descendant_code); */
 
 	/*
 	If this font is the top level font of an embedded CID type 0 font (font type 9)
@@ -474,7 +474,7 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 		/* Load a typeface from a file. */
 		if (a_font->font_file_path)
 			{
-			ft_error = FT_New_Face(s->m_freetype_library,a_font->font_file_path,a_subfont,&ft_face);
+			ft_error = FT_New_Face(s->m_freetype_library,a_font->font_file_path,&ft_face);
 			if (!ft_error && ft_face)
 				ft_error = FT_Select_Charmap(ft_face,ft_encoding_unicode);
 			}
@@ -550,7 +550,7 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 				open_args.num_params = 1;
 				open_args.params = &ft_param;
 				}
-			ft_error = FT_Open_Face(s->m_freetype_library,&open_args,a_subfont,&ft_face);
+			ft_error = FT_Open_Face(s->m_freetype_library,&open_args,&ft_face);
 			}
 
 		if (ft_face)
@@ -651,8 +651,7 @@ static FAPI_retcode get_font_bbox(FAPI_server* a_server,FAPI_font* a_font,int a_
 Return a boolean value in a_proportional stating whether the font is proportional
 or fixed-width.
 */
-static FAPI_retcode get_font_proportional_feature(FAPI_server* a_server,FAPI_font* a_font,int a_subfont,
-												  bool* a_proportional)
+static FAPI_retcode get_font_proportional_feature(FAPI_server* a_server,FAPI_font* a_font,bool* a_proportional)
 	{
 	*a_proportional = true;
 	return 0;

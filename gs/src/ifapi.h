@@ -97,6 +97,7 @@ struct FAPI_font_s {
     bool is_cid;
     bool is_outline_font;
     bool is_mtx_skipped; /* Ugly. Only UFST needs. */
+    bool is_vertical;
     void *client_ctx_p;
     void *client_font_data;
     void *client_font_data2;
@@ -116,7 +117,6 @@ struct FAPI_face_s {
     gs_matrix ctm;
     gs_log2_scale_point log2_scale;
     bool align_to_pixels; 
-    double FontMatrix_div;
     float HWResolution[2];
 };
 
@@ -154,11 +154,12 @@ typedef struct { /* 1bit/pixel only, rows are byte-aligned. */
 typedef struct FAPI_server_s FAPI_server;
 #endif
 
-typedef int FAPI_descendant_code; /* Possible values are descendant font indices and 4 ones defined below. */
-#define FAPI_DESCENDANT_PREPARED -1 /* See FAPI_prepare_font in zfapi.c . */
-#define FAPI_TOPLEVEL_PREPARED -2
-#define FAPI_TOPLEVEL_BEGIN -3
-#define FAPI_TOPLEVEL_COMPLETE -4
+typedef enum FAPI_descendant_code_s {  /* Possible values are descendant font indices and 4 ones defined below. */
+    FAPI_DESCENDANT_PREPARED = -1, /* See FAPI_prepare_font in zfapi.c . */
+    FAPI_TOPLEVEL_PREPARED = -2,
+    FAPI_TOPLEVEL_BEGIN = -3,
+    FAPI_TOPLEVEL_COMPLETE = -4
+} FAPI_descendant_code;
 
 struct FAPI_server_s {
     i_plugin_instance ig;
@@ -166,10 +167,10 @@ struct FAPI_server_s {
     FAPI_face face;
     FAPI_font ff;
     FAPI_retcode (*ensure_open)(FAPI_server *server, const byte * param, int param_size);
-    FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, int subfont, const FAPI_font_scale *scale, const char *xlatmap, bool bVertical, FAPI_descendant_code dc);
+    FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, const FAPI_font_scale *scale, const char *xlatmap, FAPI_descendant_code dc);
     FAPI_retcode (*get_decodingID)(FAPI_server *server, FAPI_font *ff, const char **decodingID);
     FAPI_retcode (*get_font_bbox)(FAPI_server *server, FAPI_font *ff, int BBox[4]);
-    FAPI_retcode (*get_font_proportional_feature)(FAPI_server *server, FAPI_font *ff, int subfont, bool *bProportional);
+    FAPI_retcode (*get_font_proportional_feature)(FAPI_server *server, FAPI_font *ff, bool *bProportional);
     FAPI_retcode (*can_retrieve_char_by_name)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, int *result);
     FAPI_retcode (*can_replace_metrics)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, int *result);
     FAPI_retcode (*get_char_width)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_metrics *metrics);
