@@ -130,8 +130,8 @@ currentdict end def
   } bind def
 currentdict end def
 
-/ReadFCOfontmap:   % - ReadFCOfontmap: name dict ...
-{
+/ReadFCOfontmap:   % <path> ReadFCOfontmap: name dict ...
+{ /fontfile exch def
   {
     currentfile =string readline not {
       pop exit
@@ -163,7 +163,7 @@ currentdict end def
         } ifelse                     
         exch closefile                 % index name enc dec|null
         4 3 roll                       % name enc dec|null index 
-        << /Path /FCOfontfile .systemvar 
+        << /Path fontfile
            /FontType 1 
            /FAPI /UFST 
            /SubfontId counttomark 2 add -1 roll 
@@ -178,6 +178,7 @@ currentdict end def
       pop
     } ifelse
   } loop
+  currentdict /fontfile undef
 } bind def
 
 
@@ -188,7 +189,7 @@ currentdict end def
 % Redefine the /Font category :
 4 dict begin
   /CategoryName /Font def
-  /MapFileName systemdict /FCOfontfile known {(FCOfontmap)} {(FAPIfontmap)} ifelse def
+  /MapFileName systemdict /FCOmap known {/FCOmap .systemvar} {(FAPIfontmap)} ifelse def
   /VerifyMap  { pop } bind def
   /PreprocessRecord  % <map> <Name> <raw_record> PreprocessRecord <map> <Name> <record> <bool>
   { //IsMyRecord exec dup {

@@ -3242,46 +3242,11 @@ with the UFST bridge. Refer <a href="Make.htm#UFST_build">How to build Ghostscri
 Both bridges may run together.
 
 <p>
-Some configurations of UFST need a path for finding symbol set files.
-If you compiled UFST with such configuration,
-you should run Ghostscript with a special command line argument 
-<b><tt>-sUFST_SSdir=<em>path</em></tt></b>, where <b><tt><em>path</em></tt></b> specifies
-a disk path to the UFST support directory, which Monotype Imagong distributes 
-in <em><tt><b>ufst/fontdata/SUPPORT</em></tt></b>. If UFST needs it and the 
-command line argument is not specified, Ghostscript prints a warning and searches 
-symbol set files in the current directory.
-
-<p>
-Some UFST font collections need a path for finding an UFST plugin.
-If you run UFST with such font collection,
-you should run Ghostscript with a special command line argument 
-<b><tt>-sUFST_PlugIn=<em>path</em></tt></b>, where <b><tt><em>path</em></tt></b> specifies
-a disk path to the UFST plugin file, which Monotype Imaging distributes 
-in <em><tt><b>ufst/fontdata/MTFONTS/PCL45/MT3/plug__xi.fco</em></tt></b>. If UFST needs it and the 
-command line argument is not specified, Ghostscript prints a warning and searches 
-plugin file in the current directory.
-
-<p>
 There are 2 ways to handle fonts with a 3d party font renderer (FAPI). First, you can substitute
 any FAPI-handled font to a resident PostScript font, using special map files 
-<b><tt>lib/FAPIfontmap</tt></b> and <b><tt>lib/FAPIcidfmap</tt></b>.
+<b><tt>lib/FCOfontmap-*</tt></b>, <b><tt>lib/FAPIfontmap</tt></b> and <b><tt>lib/FAPIcidfmap</tt></b>.
 Second, you can redirect PostScript fonts to FAPI, setting
 entries in <b><tt>lib/FAPIconfig</tt></b> file.
-
-<p> 
-If you want to run UFST with resident fonts only,
-and if those fonts reside in an FCO file (which actually represents
-a font collection in Microtype font format),
-you don't need <b><tt>lib/FAPIfontmap</tt></b> and <b><tt>lib/FAPIcidfmap</tt></b>.
-Instead that you should run Ghostscript with a special command line argument
-<b><tt>-sFCOfontfile=<em>path</em></tt></b>, where <b><tt><em>path</em></tt></b> specifies
-a disk path to the FCO file. In this case <b><tt>lib/FAPIfontmap</tt></b> is being ignored,
-so you don't need to study its format. 
-The mapping is taken from <b><tt>lib/FCOfontmap</tt></b>,
-which actually represents a permanent information defined by Monotype Imaging.
-<b><tt>lib/FAPIcidfmap</tt></b> works as usual, but probably you want to leave it empty
-because FCO doesn't emulate CID fonts. Note that you may need to edit <b><tt>lib/FAPIconfig</tt></b>
-to prevent the rendering of non-resident fonts with UFST.
 
 <p>
 Font files being handled with FAPI may reside in any directory in your hard disk.
@@ -3385,8 +3350,6 @@ Example of FAPI CID font map record :
 </blockquote>
 
 
-
-
 <p>
 The control file <b><tt>lib/FAPIconfig</tt></b> defines 4 entries :
 
@@ -3426,6 +3389,59 @@ The control file <b><tt>lib/FAPIconfig</tt></b> defines 4 entries :
 
 <p>
 You may need to customize the file <b><tt>lib/xlatmap</tt></b>. Follow instructions in it.
+
+<p> 
+If you want to run UFST with resident fonts only,
+and if those fonts reside in an FCO file (which actually represents
+a font collection in Microtype font format),
+you don't need <b><tt>lib/FAPIfontmap</tt></b> and <b><tt>lib/FAPIcidfmap</tt></b>.
+Instead that you should run Ghostscript with special command line arguments
+<b><tt>-sFCOfontfile=<em>path</em></tt></b> <b><tt>-sFCOfontfile2=<em>path2</em></tt></b> 
+<b><tt>-sFCOmap=<em>map</em></tt></b>, where <b><tt><em>path</em></tt></b> specifies
+a disk path to the main FCO file, <b><tt><em>path2</em></tt></b> specifies
+a disk path to the Wingdings FCO file, <b><tt><em>map</em></tt></b> specifies
+a name for finding an FCO map file in <b><tt>gs/lib</tt></b>. 
+In this case <b><tt>lib/FAPIfontmap</tt></b> is being ignored,
+but its record may appear in the beginning of the FCO map file. 
+The map file is either
+<b><tt>FCOfontmap-PCLPS2</tt></b> or <b><tt>FCOfontmap-PCLPS3</tt></b> or <b><tt>FCOfontmap-PS3</tt></b>,
+which actually represents a permanent information defined by Monotype Imaging.
+When <b><tt>-sFCOmap=<em>map</em></tt></b> is specified,
+<b><tt>lib/FAPIcidfmap</tt></b> works as usual, but probably you want to leave it empty
+because FCO doesn't emulate CID fonts. Note that you may need to edit <b><tt>lib/FAPIconfig</tt></b>
+to prevent the rendering of non-resident fonts with UFST.
+
+<p>
+Files <b><tt>lib/FCOfontmap-*</tt></b> works with UFST only. They consist of 2 parts.
+The first part use same format as <b><tt>lib/FAPIfontmap</tt></b>,
+except file paths may be replaced with the command line argument.
+The second part starts with the line <b><tt>FCOfontfile ReadFCOfontmap:</tt></b>,
+where <b><tt>FCOfontfile</tt></b> actually is the command line argument name.
+It is followed with lines, each of which contains a number and 1, 2 or 3 names.
+The number is the font index in the FCO file, the first name
+is the Postscript font name, the secong is an Encoding resource name,
+and the third is a decoding resource name.
+
+<p>
+Some configurations of UFST need a path for finding symbol set files.
+If you compiled UFST with such configuration,
+you should run Ghostscript with a special command line argument 
+<b><tt>-sUFST_SSdir=<em>path</em></tt></b>, where <b><tt><em>path</em></tt></b> specifies
+a disk path to the UFST support directory, which Monotype Imagong distributes 
+in <em><tt><b>ufst/fontdata/SUPPORT</em></tt></b>. If UFST needs it and the 
+command line argument is not specified, Ghostscript prints a warning and searches 
+symbol set files in the current directory.
+
+<p>
+Some UFST font collections need a path for finding an UFST plugin.
+If you run UFST with such font collection,
+you should run Ghostscript with a special command line argument 
+<b><tt>-sUFST_PlugIn=<em>path</em></tt></b>, where <b><tt><em>path</em></tt></b> specifies
+a disk path to the UFST plugin file, which Monotype Imaging distributes 
+in <em><tt><b>ufst/fontdata/MTFONTS/PCL45/MT3/plug__xi.fco</em></tt></b>. If UFST needs it and the 
+command line argument is not specified, Ghostscript prints a warning and searches 
+plugin file in the current directory.
+
 
 <p>
 Note that UFST and Free Type cannot handle some Ghostscript fonts because

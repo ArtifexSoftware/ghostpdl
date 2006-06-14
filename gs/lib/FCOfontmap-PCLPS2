@@ -16,11 +16,10 @@
 % $Id$
 
 % May add general FAPIfontmap records here like this :
-/Wingdings-Regular << /Path (F:/AFPL/ufst/fontdata/MTFONTS/PCL45/MT3/wd____xh.fco) /FontType 1 /FAPI /UFST 
-						/SubfontId 0 /Encoding /Wingdings /Decoding /FCO_Wingdings>> ;
+/Wingdings-Regular << /Path FCOfontfile2 /FontType 1 /FAPI /UFST /SubfontId 0 /Encoding /Wingdings /Decoding /FCO_Wingdings>> ;
 
 % Mapping Postscript fonts to pclp2_xj.fco FCO members :
-ReadFCOfontmap:
+FCOfontfile ReadFCOfontmap:
 0     Albertus-Medium
 1     Albertus-ExtraBold
 2     AntiqueOlive
@@ -104,5 +103,4 @@ ReadFCOfontmap:
 80    Times-BoldItalic
 81    ZapfChancery-MediumItalic
 82    ZapfDingbats DingbatsEncoding FCO_Dingbats
-% 0         Wingdings    % Defined in another FCO.
-
+%EOF
