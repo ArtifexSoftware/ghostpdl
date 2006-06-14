@@ -942,7 +942,7 @@ def
 % <width> <height> <bits/sample> <matrix> <proc> <array> customcolorimage -
 /customcolorimage {
   gsave
-  [ /Separation 2 index 4 get /DeviceCMYK 4 index //buildcustomtinttransform exec] setcolorspace
+  [ /Separation 2 index 4 get /DeviceCMYK 5 -1 roll //buildcustomtinttransform exec] setcolorspace
   //args2dict exec image
   grestore
 } bind def
