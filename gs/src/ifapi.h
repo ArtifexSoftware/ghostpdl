@@ -18,6 +18,9 @@
 #  define ifapi_INCLUDED
 
 #include "iplugin.h"
+#include "gstypes.h"
+#include "gsmatrix.h"
+
 
 typedef int FracInt; /* A fractional integer with statically unknown number of fraction bits. 
                         The number of bits depends on plugin and is being specified in
@@ -107,6 +110,16 @@ struct FAPI_font_s {
     unsigned short (*serialize_tt_font)(FAPI_font *ff, void *buf, int buf_size);
 };
 
+typedef struct FAPI_face_s FAPI_face;
+struct FAPI_face_s {
+    gs_id font_id;
+    gs_matrix ctm;
+    gs_log2_scale_point log2_scale;
+    bool align_to_pixels; 
+    double FontMatrix_div;
+    float HWResolution[2];
+};
+
 typedef struct FAPI_path_s FAPI_path;
 struct FAPI_path_s {
     void *olh; /* Client's data. */
@@ -150,6 +163,8 @@ typedef int FAPI_descendant_code; /* Possible values are descendant font indices
 struct FAPI_server_s {
     i_plugin_instance ig;
     int frac_shift; /* The number of fractional bits in coordinates. */
+    FAPI_face face;
+    FAPI_font ff;
     FAPI_retcode (*ensure_open)(FAPI_server *server, const byte * param, int param_size);
     FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, int subfont, const FAPI_font_scale *scale, const char *xlatmap, bool bVertical, FAPI_descendant_code dc);
     FAPI_retcode (*get_decodingID)(FAPI_server *server, FAPI_font *ff, const char **decodingID);

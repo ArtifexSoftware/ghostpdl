@@ -846,6 +846,8 @@ static const FAPI_server TheFreeTypeServer =
 	{
     { &TheFreeTypeDescriptor },
     16, /* frac_shift */
+    {gs_no_id},
+    {0},
     ensure_open,
     get_scaled_font,
     get_decodingID,

@@ -1300,6 +1300,8 @@ private const FAPI_server If0 = {
     {   &ufst_descriptor
     },
     16, /* frac_shift */
+    {gs_no_id},
+    {0},
     ensure_open,
     get_scaled_font,
     get_decodingID,

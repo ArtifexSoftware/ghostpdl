@@ -77,7 +77,7 @@ inamedef_h=$(PSSRC)inamedef.h\
  $(gsstruct_h) $(inameidx_h) $(inames_h) $(inamestr_h)
 store_h=$(PSSRC)store.h $(ialloc_h) $(idosave_h)
 iplugin_h=$(PSSRC)iplugin.h
-ifapi_h=$(PSSRC)ifapi.h $(iplugin_h)
+ifapi_h=$(PSSRC)ifapi.h $(iplugin_h) $(gstypes_h) $(gsmatrix_h)
 zht2_h=$(PSSRC)zht2.h $(gscspace_h)
 zchar42_h=$(PSSRC)zchar42.h
 
