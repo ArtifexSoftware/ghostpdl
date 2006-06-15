@@ -34,6 +34,7 @@
 #include "ttpcleo.h"
 #undef  DOES_ANYONE_USE_THIS_STRUCTURE
 #include "gp.h"
+#include "gxfapiu.h"
 
 typedef struct fapi_ufst_server_s fapi_ufst_server;
 
@@ -201,6 +202,8 @@ private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, in
     return 0;
 }		      
 
+private LPUB8 impl_PCLchId2ptr(FSP UW16 chId);
+
 private FAPI_retcode ensure_open(FAPI_server *server, const byte *server_param, int server_param_size)
 {   fapi_ufst_server *r = If_to_I(server);
     int code;
@@ -209,8 +212,11 @@ private FAPI_retcode ensure_open(FAPI_server *server, const byte *server_param, 
         return 0;
     r->bInitialized = 1;
     code = open_UFST(r, server_param, server_param_size);
-    if (code < 0)
+    if (code < 0) {
 	eprintf("Error opening the UFST font server.\n");
+	return code;
+    }
+    gx_set_UFST_Callbacks(NULL, impl_PCLchId2ptr, NULL);
     return code;
 }
 
@@ -423,7 +429,7 @@ private pcleo_glyph_list_elem * find_glyph(ufst_common_font_data *d, UW16 chId)
 }
 
 /* UFST callback : */
-LPUB8 PCLchId2ptr(FSP UW16 chId)
+private LPUB8 impl_PCLchId2ptr(FSP UW16 chId)
 {   
 #if UFST_REENTRANT
     fapi_ufst_server *r = IFS_to_I(pIFS);
@@ -1338,6 +1344,10 @@ private void gs_fapiufst_finit(i_plugin_instance *this, i_plugin_client_memory *
 
     if (r->If.ig.d != &ufst_descriptor)
         return; /* safety */
+#if 0 /* Disabled against a reentrancy problem 
+	 in a single language build for host-based applications. */
+    gx_set_UFST_Callbacks(NULL, NULL, NULL);
+#endif
     release_char_data_inline(r);
     if (r->bInitialized) {
         CGIFexit(FSA0);

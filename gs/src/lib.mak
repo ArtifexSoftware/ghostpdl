@@ -2486,9 +2486,10 @@ $(GLOBJ)gsclipsr.$(OBJ) : $(GLSRC)gsclipsr.c $(GXERR)\
 psl3lib_=$(GLOBJ)gsclipsr.$(OBJ) $(GLOBJ)gscdevn.$(OBJ) $(GLOBJ)gxdevndi.$(OBJ)
 
 $(GLD)psl3lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(psl3lib_)\
- $(GLD)imasklib.dev $(GLD)shadelib.dev
+ $(GLD)imasklib.dev $(GLD)shadelib.dev $(GLD)gxfapiu$(UFST_BRIDGE).dev
 	$(SETMOD) $(GLD)psl3lib $(psl3lib_)
 	$(ADDMOD) $(GLD)psl3lib -include $(GLD)imasklib $(GLD)shadelib
+	$(ADDMOD) $(GLD)psl3lib -include $(GLD)gxfapiu$(UFST_BRIDGE)
 
 # ---------------- Trapping ---------------- #
 
@@ -2664,6 +2665,32 @@ $(GLOBJ)gsiomacres.$(OBJ) : $(GLSRC)gsiomacres.c \
  $(std_h) $(gstypes_h) $(gsmemory_h) $(gxiodev_h)
 	$(GLCC) $(GLO_)gsiomacres.$(OBJ) $(C_) $(GLSRC)gsiomacres.c
 
+# ---------------- Font API ---------------- #   
+    
+# UFST bridge support :   
+# This stuff dispatches UFST callbacks for a multilianual (PS, PCL) architecture.
+    
+UFST_INC_1=$(I_)$(UFST_ROOT)$(D)sys$(D)inc$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)inc$(_I)  $(I_)$(UFST_ROOT)$(D)rts$(D)tt$(_I)   
+UFST_INC_=$(UFST_INC_1) $(I_)$(UFST_ROOT)$(D)rts$(D)fco$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)gray$(_I)   
+    
+gxfapiu_h=$(GLSRC)gxfapiu.h   
+    
+$(GLD)gxfapiu1.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gxfapiu.$(OBJ)   
+	$(SETMOD) $(GLD)gxfapiu1 $(GLOBJ)gxfapiu.$(OBJ)   
+    
+$(GLOBJ)gxfapiu.$(OBJ) : $(GLSRC)gxfapiu.c\
+ $(gx_h) $(gxfapiu_h)\
+ $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
+ $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
+ $(UFST_ROOT)$(D)sys$(D)inc$(D)ufstport.h
+	$(GLCC) $(UFST_CFLAGS) $(UFST_INC_) $(GLO_)gxfapiu.$(OBJ) $(C_) $(GLSRC)gxfapiu.c
+    
+    
+# stub for UFST bridge support  :   
+    
+$(GLD)gxfapiu.dev : $(LIB_MAK) $(ECHOGS_XE)   
+	$(SETMOD) $(GLD)gxfapiu   
+  
 # ================ Platform-specific modules ================ #
 # Platform-specific code doesn't really belong here: this is code that is
 # shared among multiple platforms.
