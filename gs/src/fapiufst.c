@@ -1181,11 +1181,19 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
 	    const double yx = -XY / det, yy =  YY / det;
 	    const SL32 dx = (SL32)(half_pixel_x * xx + half_pixel_y * xy + 0.5);
 	    const SL32 dy = (SL32)(half_pixel_x * yx + half_pixel_y * yy + 0.5);
+	    const SL32 dxa = (dx < 0 ? -dx : dx);
+	    const SL32 dya = (dy < 0 ? -dy : dy);
 
-	    design_bbox[0] += dx;
-	    design_bbox[1] += dy;
-	    design_bbox[2] += dx;
-	    design_bbox[3] += dy;
+	    if (!ff->is_outline_font) {
+		design_bbox[0] += dxa;
+		design_bbox[1] += dya;
+		design_bbox[2] += dxa;
+		design_bbox[3] += dya;
+	    } else {
+		/* Expand against missing strokes when StrokeWidth is near 0 */
+		design_bbox[2] += dxa * 2;
+		design_bbox[3] += dya * 2;
+	    }
 	}
     }
     set_metrics(r, metrics, design_bbox, design_escapement, du_emx, du_emy);

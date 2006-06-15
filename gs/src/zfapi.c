@@ -1156,6 +1156,7 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
             /* The server provides an outline instead the raster. */
             gs_imager_state *pis = (gs_imager_state *)pgs->show_gstate;
             gs_point pt;
+
             if ((code = gs_currentpoint(pgs, &pt)) < 0)
 		return code;
             if ((code = outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->path, !pbfont->PaintType)) < 0)
@@ -1163,7 +1164,12 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
             if ((code = gs_imager_setflat((gs_imager_state *)pgs, gs_char_flatness(pis, 1.0))) < 0)
 		return code;
             if (pbfont->PaintType) {
-                if ((code = gs_stroke(pgs)) < 0)
+		float lw = gs_currentlinewidth(pgs);
+
+		gs_setlinewidth(pgs, pbfont->StrokeWidth);
+                code = gs_stroke(pgs);
+		gs_setlinewidth(pgs, lw);
+		if (code < 0)
 		    return code;
             } else
                 if ((code = gs_fill(pgs)) < 0)
@@ -1611,6 +1617,14 @@ retry_oversampling:
     char_bbox.p.y = metrics.bbox_y0 / em_scale_y;
     char_bbox.q.x = metrics.bbox_x1 / em_scale_x;
     char_bbox.q.y = metrics.bbox_y1 / em_scale_y;
+    if (pbfont->PaintType != 0) {
+	float w = pbfont->StrokeWidth / 2;
+
+	char_bbox.p.x -= w;
+	char_bbox.p.y -= w;
+	char_bbox.q.x += w;
+	char_bbox.q.y += w;
+    }
     penum_s->fapi_glyph_shift.x = penum_s->fapi_glyph_shift.y = 0;
     if (sbw_state == SBW_FROM_RENDERER) {
 	sbw[2] = metrics.escapement / em_scale_x;
