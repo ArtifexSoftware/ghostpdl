@@ -25,7 +25,7 @@
 % Generated for FCO from Symbol encoding with adding F000 
 % since MTFONTS/PS3/MT3/ps3___xh.fco wants so.
 
-16#F020 space
+16#0020 space   % Note : UFST uses 0x20 when others are 0xF0**.
 16#F021 exclam
 16#F022 universal
 16#F023 numbersign
