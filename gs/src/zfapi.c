@@ -1228,6 +1228,19 @@ private int fapi_finish_render(i_ctx_t *i_ctx_p)
     return code;
 }
 
+private const byte *
+find_substring(const byte *where, int length, const char *what)
+{
+    int l = strlen(what);
+    int n = length - l;
+    const byte *p = where;
+
+    for (; n >= 0; n--, p++)
+	if (!memcmp(p, what, l))
+	    return p;
+    return NULL;
+}
+
 #define GET_U16_MSB(p) (((uint)((p)[0]) << 8) + (p)[1])
 #define GET_S16_MSB(p) (int)((GET_U16_MSB(p) ^ 0x8000) - 0x8000)
 
@@ -1441,7 +1454,14 @@ retry_oversampling:
         }
     } else { /* a non-embedded font, i.e. a disk font */
         bool can_retrieve_char_by_name = false;
+	const byte *p, name_buf[30];
+
         obj_string_data(imemory, &char_name, &cr.char_name, &cr.char_name_length);
+	p = find_substring(cr.char_name, cr.char_name_length, gx_extendeg_glyph_name_separator);
+	if (p != NULL) {
+	    cr.char_name_length = p - cr.char_name;
+	    name_ref(pbfont->memory, cr.char_name, cr.char_name_length, &char_name, true);
+	}
         if ((code = renderer_retcode(i_ctx_p, I, I->can_retrieve_char_by_name(I, &I->ff, &cr, &can_retrieve_char_by_name))) < 0)
 	    return code;
         if (!can_retrieve_char_by_name) {
