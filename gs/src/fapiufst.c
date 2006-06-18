@@ -1075,6 +1075,16 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
     r->sb_x = c->sb_x;
     r->aw_x = c->aw_x;
     r->metrics_type = c->metrics_type;
+    if (d->font_type == FC_FCO_TYPE && r->fc.ExtndFlags & EF_SUBSTHOLLOWBOX_TYPE) {
+	if (c->char_name != NULL && c->char_name_length == 7 &&
+		!memcmp(c->char_name, ".notdef", 7)) {
+	    /* With EF_SUBSTHOLLOWBOX_TYPE and FCO,
+	       UFST paints a hollow box insted .notdef .
+	       For Adobe compatibility we substitute a space,
+	       because Adobe Type 1 fonts define .notdef as a space . */
+	    cc = 32;
+	}
+    }
 #if !UFST_REENTRANT
     static_server_ptr_for_ufst_callback = r;
 #endif
