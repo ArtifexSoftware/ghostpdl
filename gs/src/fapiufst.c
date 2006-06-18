@@ -1095,7 +1095,7 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
 	    /* EF_SUBSTHOLLOWBOX_TYPE must work against it. 
 	       Ensure the plugin plug__xi.fco is loaded. */
 	    /* fixme : Due to unknown reason EF_SUBSTHOLLOWBOX_TYPE
-	       doesn't work for some fonts. A test case is xgfddg.pdf .
+	       doesn't work for Symbol, Dingbats, Wingdings.
 	       hack : render the space character. */
 	    c1 = 32;
 	} else {
@@ -1137,10 +1137,22 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
     }
 #if 1 /* UFST 5.0 */
     if (USBOUNDBOX && d->font_type == FC_FCO_TYPE) {
-	design_bbox[0] = pIFS->USBBOXxmin;
-	design_bbox[1] = pIFS->USBBOXymin;
-	design_bbox[2] = pIFS->USBBOXxmax;
-	design_bbox[3] = pIFS->USBBOXymax;
+	if (pIFS->USBBOXorigScaleFactor /* fixme : Must we check this ? */
+	    && pIFS->USBBOXorigScaleFactor != pIFS->USBBOXscaleFactor) { 
+	    /* See fco_make_gaso_and_stats in fc_if.c . Debugged with hollow box in Helvetica. */
+	    /* Fixme : this looses a precision, an UFST bug has been reported. */
+	    int w = pIFS->USBBOXorigScaleFactor / 2;
+
+	    design_bbox[0] = pIFS->USBBOXxmin * pIFS->USBBOXscaleFactor / pIFS->USBBOXorigScaleFactor;
+	    design_bbox[1] = pIFS->USBBOXymin * pIFS->USBBOXscaleFactor / pIFS->USBBOXorigScaleFactor;
+	    design_bbox[2] = (pIFS->USBBOXxmax * pIFS->USBBOXscaleFactor + w) / pIFS->USBBOXorigScaleFactor;
+	    design_bbox[3] = (pIFS->USBBOXymax * pIFS->USBBOXscaleFactor + w) / pIFS->USBBOXorigScaleFactor;
+	} else {
+	    design_bbox[0] = pIFS->USBBOXxmin;
+	    design_bbox[1] = pIFS->USBBOXymin;
+	    design_bbox[2] = pIFS->USBBOXxmax;
+	    design_bbox[3] = pIFS->USBBOXymax;
+	}
     } else {
 	/* fixme: UFST 5.0 doesn't provide this data. 
 	   Stubbing with Em box. 
