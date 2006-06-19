@@ -114,8 +114,10 @@ currentdict /super.complete_instance currentdict /complete_instance get put
   /GetCSI //TranslateCSI def
   /IsActive //IsActive def
   /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
-  { //CIDFontOptions //complete_instance exec
+  { currentglobal 3 1 roll true setglobal
+    //CIDFontOptions //complete_instance exec
     2 copy //GetSize exec
+    4 3 roll setglobal
   } bind def
 currentdict end def
 
