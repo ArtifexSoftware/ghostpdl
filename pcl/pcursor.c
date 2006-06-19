@@ -275,11 +275,7 @@ pcl_set_cap_y(
             /* otherwise, round to a multiple of VMI distance */
             y += y0 - 1 - ((y - 1) % vmi_cp);
         }
-
-        if (relative && by_row_command)
-            pcs->cap.y = HOME_Y(pcs);
-        else
-            pcs->cap.y = y;
+        pcs->cap.y = y;
     }
 
     pcl_continue_underline(pcs);
