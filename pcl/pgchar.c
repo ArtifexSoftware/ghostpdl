@@ -442,6 +442,11 @@ hpgl_SI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( hpgl_arg_c_real(pgls->memory, pargs, &width_cm) )
 	  { if ( !hpgl_arg_c_real(pgls->memory, pargs, &height_cm) )
 	      return e_Range;
+            /* this isn't documented but HP seems to ignore the
+               command (retains previous value) if either parameter is
+               zero. NB probably should use epsilon have not tested. */
+            if (width_cm == 0.0 || height_cm == 0.0)
+                return e_Range;
 	    pgls->g.character.size.x = mm_2_plu(width_cm * 10);
 	    pgls->g.character.size.y = mm_2_plu(height_cm * 10);
 	    pgls->g.character.size_mode = hpgl_size_absolute;
@@ -466,9 +471,14 @@ hpgl_SL(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_SR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t width_pct, height_pct;
 
-	if ( hpgl_arg_c_real(pgls->memory, pargs, &width_pct) )
-	  { if ( !hpgl_arg_c_real(pgls->memory, pargs, &height_pct) )
-	      return e_Range;
+	if ( hpgl_arg_c_real(pgls->memory, pargs, &width_pct) ) { 
+            if ( !hpgl_arg_c_real(pgls->memory, pargs, &height_pct) )
+                return e_Range;
+            /* this isn't documented but HP seems to ignore the
+               command (retains previous value) if either parameter is
+               zero. NB probably should use epsilon have not tested. */
+            if (width_pct == 0.0 || height_pct == 0.0)
+                return e_Range;
 	    pgls->g.character.size.x = width_pct / 100;
 	    pgls->g.character.size.y = height_pct / 100;
 	  }

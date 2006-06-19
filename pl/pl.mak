@@ -52,7 +52,7 @@ plfont_h=$(PLSRC)plfont.h $(gsccode_h) $(plsymbol_h)
 ################ PJL ################
 
 
-PJLVERSION=1.38
+PJLVERSION=1.42
 
 # Translate pjl file system volume "0:" to a directory of your choice 
 # Use forward slash '/' not '\\'; no trailing slash 

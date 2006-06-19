@@ -162,7 +162,12 @@
  *         bottom text boundary is irrelevant
  *         "bottom" logical page boundary is irrelevant
  *
- * Wow - an even 10 different forms to accommodate.
+ *
+ *     k. for a relative vertical motion command relative movement can extend 
+ *        to the next logical page's lower boundary, where it is clamped.
+ *        This should could be grouped with item h.
+ *
+ * Wow - 11 different forms to accommodate.
  *
  * The special handling required by character and space induced horizontal
  * movement is handled in pctext.c (pcl_show_chars); all other movement is
@@ -216,12 +221,22 @@ pcl_set_cap_y(
     coord           y,
     bool            relative,
     bool            use_margins,
-    bool            by_row
+    bool            by_row,
+    bool            by_row_command
 )
 {
     coord           lim_y = pcs->xfm_state.pd_size.y;
     coord           max_y = pcs->margins.top + pcs->margins.length;
-    bool            page_eject = (by_row && relative);
+    bool            page_eject = by_row && relative;
+
+    /* this corresponds to rule 'k' above. */
+    if (relative && by_row_command) {
+        /* calculate the advance to the next logical page bound.  Note
+           margins are false if by_row_command is true. */
+        coord advance_max = 2 * lim_y - pcs->cap.y;
+        /* clamp */
+        y = (y < advance_max ? y : advance_max + HOME_Y(pcs));
+    }
 
     /* adjust the vertical position provided */
     if (relative)
@@ -261,7 +276,10 @@ pcl_set_cap_y(
             y += y0 - 1 - ((y - 1) % vmi_cp);
         }
 
-        pcs->cap.y = y;
+        if (relative && by_row_command)
+            pcs->cap.y = HOME_Y(pcs);
+        else
+            pcs->cap.y = y;
     }
 
     pcl_continue_underline(pcs);
@@ -282,14 +300,15 @@ do_horiz_motion(
     return;
 }
 
-#define do_vertical_move(pcs, pargs, mul, use_margins, by_row)  \
-    return pcl_set_cap_y( (pcs),                                \
-                          float_arg(pargs) * (mul),             \
-                          arg_is_signed(pargs),                 \
-                          (use_margins),                        \
-                          (by_row)                              \
-                          )
 
+private inline int
+do_vertical_move(pcl_state_t *pcs, pcl_args_t *pargs, float mul, 
+                 bool use_margins, bool by_row, bool by_row_command) 
+{
+    return pcl_set_cap_y(pcs, float_arg(pargs) * mul,
+                         arg_is_signed(pargs), use_margins, by_row,
+                         by_row_command);
+}
 
 /*
  * Control character action implementation.
@@ -322,7 +341,8 @@ pcl_do_LF(
                           pcs->vmi_cp,
                           true,
                           (pcs->perforation_skip == 1),
-                          true
+                          true,
+                          false
                           );
 }
 
@@ -338,7 +358,7 @@ pcl_do_FF(
     int             code = pcl_end_page_always(pcs);
 
     if (code >= 0) {
-        code = pcl_set_cap_y(pcs, 0L, false, false, true);
+        code = pcl_set_cap_y(pcs, 0L, false, false, true, false);
         pcl_continue_underline(pcs);	/* (after adjusting y!) */
     }
     return code;
@@ -353,7 +373,7 @@ pcl_home_cursor(
 )
 {
     pcl_set_cap_x(pcs, pcs->margins.left, false, false);
-    pcl_set_cap_y(pcs, 0L, false, false, true);
+    pcl_set_cap_y(pcs, 0L, false, false, true, false);
 }
 
 /*
@@ -571,7 +591,7 @@ vert_cursor_pos_rows(
     pcl_state_t *   pcs
 )
 {
-    do_vertical_move(pcs, pargs, pcs->vmi_cp, false, true);
+    return do_vertical_move(pcs, pargs, pcs->vmi_cp, false, true, true);
 }
 
 /*
@@ -583,7 +603,7 @@ vert_cursor_pos_decipoints(
     pcl_state_t *   pcs
 )
 {
-    do_vertical_move(pcs, pargs, 10.0, false, false);
+    return do_vertical_move(pcs, pargs, 10.0, false, false, false);
 }
 
 /*
@@ -597,7 +617,7 @@ vert_cursor_pos_units(
 {
     if ( pcs->personality == rtl )
         dprintf(pcs->memory, "Warning: device/resolution dependent units used\n" );
-    do_vertical_move(pcs, pargs, pcs->uom_cp, false, false);
+    return do_vertical_move(pcs, pargs, pcs->uom_cp, false, false, false);
 }
 
 /*
@@ -613,7 +633,8 @@ half_line_feed(
                           pcs->vmi_cp / 2,
                           true,
                           (pcs->perforation_skip == 1),
-                          true
+                          true,
+                          false
                           );
 }
 
@@ -677,6 +698,7 @@ push_pop_cursor(
         pcl_set_cap_x(pcs, (coord)ppt->x, false, false);
         pcl_set_cap_y( pcs,
                        (coord)ppt->y - pcs->margins.top,
+                       false,
                        false,
                        false,
                        false

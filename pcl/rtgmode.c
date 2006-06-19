@@ -343,6 +343,7 @@ pcl_end_graphics_mode(
                           (coord)(cur_pt.y + 0.5) - pcs->margins.top,
                           false,
                           false,
+                          false,
                           false
                           );
 }

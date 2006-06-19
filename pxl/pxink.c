@@ -544,7 +544,7 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
             return_error(pxs->memory, errorMissingAttribute);
 	}
 	/* NB depth?? - for range checking */
-	if ( ppt->type == eRGB || ppt->type == eSRGB ) {
+	if ( ppt->type == pxpRGB || ppt->type == pxpSRGB ) {
 	    
 	    ppt->value.rgb[0] = (float)par->pv[aPrimaryArray]->value.array.data[0] / 255.0;
 	    ppt->value.rgb[1] = (float)par->pv[aPrimaryArray]->value.array.data[1] / 255.0;

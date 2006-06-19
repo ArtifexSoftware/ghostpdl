@@ -841,7 +841,7 @@ set_top_margin(
 	   Floating/Fixed cap is an approximation, not fool proof.
 	 */
         if ( floating_cap && pcl_page_marked(pcs) == 0 )
-	   return pcl_set_cap_y(pcs, 0L, false, false, true);
+            return pcl_set_cap_y(pcs, 0L, false, false, true, false);
     }
     return 0;
 }

@@ -404,9 +404,7 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
      * If scaling is on but characters aren't using relative
      * sizing, we have to convert the deltas to user units.
      */
-    if ( pgls->g.scaling_type != hpgl_scaling_none &&
-	 pgls->g.character.size_mode != hpgl_size_relative
-	 )
+    if ( pgls->g.scaling_type != hpgl_scaling_none )
 	{ 
 	    gs_matrix mat;
 	    gs_point user_dxy;

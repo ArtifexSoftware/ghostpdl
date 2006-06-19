@@ -47,7 +47,8 @@ int pcl_set_cap_y(
     coord           y,                  /* position or distance */
     bool            relative,           /* y is distance (else position) */
     bool            use_margins,        /* apply text margins */
-    bool            by_row              /* LF, half LF, or by row */
+    bool            by_row,             /* LF, half LF */
+    bool            by_row_command      /* ESC & a <rows> R special case. */
 );
 
 void    pcl_do_CR(pcl_state_t * pcs);
