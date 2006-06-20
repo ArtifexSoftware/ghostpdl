@@ -26,7 +26,7 @@
 % that these entries are present in the built-in fonts.)
 /.buildfont1
  {
-   currentglobal exch
+   currentglobal 3 1 roll
    dup gcheck setglobal
    dup .fontbbox {
      pop pop pop pop
@@ -54,7 +54,7 @@
      ifelse
    } if
    //.buildfont1
-   exch setglobal
+   3 2 roll setglobal
  } bind def
 % If the diskfont feature isn't included, define a dummy .loadfontdict.
 /.loadfontdict where
