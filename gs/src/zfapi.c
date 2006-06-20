@@ -1177,22 +1177,17 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
             if ((code = gs_moveto(pgs, pt.x, pt.y)) < 0)
 		return code;
         } else {
-#if 0 /* Debugged with 093-01.ps, the box 093-03. */
-	    int rast_orig_x =   rast.orig_x - (int)(penum_s->fapi_glyph_shift.x * (1 << frac_pixel_shift));
-	    int rast_orig_y = - rast.orig_y - (int)(penum_s->fapi_glyph_shift.y * (1 << frac_pixel_shift));
-#else
 	    int rast_orig_x =   rast.orig_x;
 	    int rast_orig_y = - rast.orig_y;
-#endif
 
             if (pgs->in_cachedevice == CACHE_DEVICE_CACHING) { /* Using GS cache */
-                /*  GS and renderer may transform coordinates few differently.
-                    The best way is to make set_cache_device to take the renderer's bitmap metrics immediately,
-                    but we need to account CDevProc, which may truncate the bitmap.
-                    Perhaps GS overestimates the bitmap size,
-                    so now we only add a compensating shift - the dx and dy.
-                */ 
-		if (rast.width != 0) { 
+		/*  GS and renderer may transform coordinates few differently.
+		    The best way is to make set_cache_device to take the renderer's bitmap metrics immediately,
+		    but we need to account CDevProc, which may truncate the bitmap.
+		    Perhaps GS overestimates the bitmap size,
+		    so now we only add a compensating shift - the dx and dy.
+		*/              
+		if (rast.width != 0) {
 		    int shift_rd = _fixed_shift  - frac_pixel_shift;
 		    int rounding = 1 << (frac_pixel_shift - 1);
 		    int dx = arith_rshift_slow((pgs->ctm.tx_fixed >> shift_rd) + rast_orig_x + rounding, frac_pixel_shift);
@@ -1206,14 +1201,16 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
 				dy + rast.top_indent, dy + rast.top_indent + rast.black_height - dev1->height);
 		    if ((code = fapi_copy_mono(dev1, &rast, dx, dy)) < 0)
 			return code;
+		    penum_s->cc->offset.x += float2fixed(penum_s->fapi_glyph_shift.x);
+		    penum_s->cc->offset.y += float2fixed(penum_s->fapi_glyph_shift.y);
 		}
             } else { /* Not using GS cache */
 	        const gx_clip_path * pcpath = i_ctx_p->pgs->clip_path; 
                 const gx_drawing_color * pdcolor = penum->pdcolor;
 
 		if ((code = dev_proc(dev, fill_mask)(dev, rast.p, 0, rast.line_step, 0,
-			          (int)(penum_s->pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + 0.5), 
-			          (int)(penum_s->pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5), 
+			          (int)(penum_s->pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + penum_s->fapi_glyph_shift.x + 0.5), 
+			          (int)(penum_s->pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + penum_s->fapi_glyph_shift.y + 0.5), 
 			          rast.width, rast.height,
 			          pdcolor, 1, rop3_default, pcpath)) < 0)
 				    return code;
@@ -1464,7 +1461,7 @@ retry_oversampling:
         }
     } else { /* a non-embedded font, i.e. a disk font */
         bool can_retrieve_char_by_name = false;
-	const byte *p, name_buf[30];
+	const byte *p;
 
         obj_string_data(imemory, &char_name, &cr.char_name, &cr.char_name_length);
 	p = find_substring(cr.char_name, cr.char_name_length, gx_extendeg_glyph_name_separator);
