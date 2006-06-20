@@ -56,7 +56,7 @@ languagelevel 2 .setlanguagelevel
 /Config
 <<
 %% Replace 1 (FAPIconfig)
-  (FAPIconfig) .runlibfile
+  systemdict /FAPIconfig known {/FAPIconfig .systemvar} {(FAPIconfig)} ifelse .runlibfile
   /ServerOptions 2 dict
 >> def
 systemdict /.FAPIconfig //Config put
@@ -146,6 +146,9 @@ currentdict end def
         % A comment line
         closefile
       } {
+        dup /EndFCOfontmap cvx eq {
+          pop closefile exit
+        } if
         exch dup token not {
           /ReadFCOfontmap: cvx /rangecheck signalerror
         } if
@@ -193,7 +196,7 @@ currentdict end def
 % Redefine the /Font category :
 4 dict begin
   /CategoryName /Font def
-  /MapFileName systemdict /FCOmap known {/FCOmap .systemvar} {(FAPIfontmap)} ifelse def
+  /MapFileName systemdict /FAPIfontmap known {/FAPIfontmap .systemvar} {(FAPIfontmap)} ifelse def
   /VerifyMap  { pop } bind def
   /PreprocessRecord  % <map> <Name> <raw_record> PreprocessRecord <map> <Name> <record> <bool>
   { //IsMyRecord exec dup {
@@ -206,7 +209,7 @@ currentdict end Redefine
 % Redefine the /CIDFont category :
 4 dict begin
   /CategoryName /CIDFont def
-  /MapFileName (FAPIcidfmap) def
+  /MapFileName systemdict /FAPIcidfmap known {/FAPIcidfmap .systemvar} {(FAPIcidfmap)} ifelse def
   /VerifyMap  { pop } bind def
   /PreprocessRecord  % <map> <Name> <raw_record> PreprocessRecord <map> <Name> <record> <bool>
   { //IsMyRecord exec dup {

@@ -103,4 +103,5 @@ FCOfontfile ReadFCOfontmap:
 80    Times-BoldItalic
 81    ZapfChancery-MediumItalic
 82    ZapfDingbats DingbatsEncoding FCO_Dingbats
+EndFCOfontmap
 %EOF

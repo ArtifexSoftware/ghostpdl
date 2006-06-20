@@ -155,4 +155,5 @@ FCOfontfile ReadFCOfontmap:
 132    Univers-BoldExtObl
 133    ZapfChancery-MediumItalic
 134    ZapfDingbats DingbatsEncoding FCO_Dingbats
+EndFCOfontmap
 %EOF
