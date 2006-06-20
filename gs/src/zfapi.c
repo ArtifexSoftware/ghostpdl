@@ -1191,17 +1191,27 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
                     but we need to account CDevProc, which may truncate the bitmap.
                     Perhaps GS overestimates the bitmap size,
                     so now we only add a compensating shift - the dx and dy.
-                */              
-                int shift_rd = _fixed_shift  - frac_pixel_shift;
-                int rounding = 1 << (frac_pixel_shift - 1);
-                int dx = arith_rshift_slow((pgs->ctm.tx_fixed >> shift_rd) + rast_orig_x + rounding, frac_pixel_shift);
-                int dy = arith_rshift_slow((pgs->ctm.ty_fixed >> shift_rd) + rast_orig_y + rounding, frac_pixel_shift);
-                if ((code = fapi_copy_mono(dev1, &rast, dx, dy)) < 0)
-		    return code;
+                */ 
+		if (rast.width != 0) { 
+		    int shift_rd = _fixed_shift  - frac_pixel_shift;
+		    int rounding = 1 << (frac_pixel_shift - 1);
+		    int dx = arith_rshift_slow((pgs->ctm.tx_fixed >> shift_rd) + rast_orig_x + rounding, frac_pixel_shift);
+		    int dy = arith_rshift_slow((pgs->ctm.ty_fixed >> shift_rd) + rast_orig_y + rounding, frac_pixel_shift);
+
+		    if (dx + rast.left_indent < 0 || dx + rast.left_indent + rast.black_width > dev1->width)
+			eprintf2("Warning : Cropping a FAPI glyph while caching : dx=%d,%d.\n", 
+				dx + rast.left_indent, dx + rast.left_indent + rast.black_width - dev1->width);
+		    if (dy + rast.top_indent < 0 || dy + rast.top_indent + rast.black_height > dev1->height)
+			eprintf2("Warning : Cropping a FAPI glyph while caching : dx=%d,%d.\n", 
+				dy + rast.top_indent, dy + rast.top_indent + rast.black_height - dev1->height);
+		    if ((code = fapi_copy_mono(dev1, &rast, dx, dy)) < 0)
+			return code;
+		}
             } else { /* Not using GS cache */
 	        const gx_clip_path * pcpath = i_ctx_p->pgs->clip_path; 
                 const gx_drawing_color * pdcolor = penum->pdcolor;
-	        if ((code = dev_proc(dev, fill_mask)(dev, rast.p, 0, rast.line_step, 0,
+
+		if ((code = dev_proc(dev, fill_mask)(dev, rast.p, 0, rast.line_step, 0,
 			          (int)(penum_s->pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + 0.5), 
 			          (int)(penum_s->pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5), 
 			          rast.width, rast.height,

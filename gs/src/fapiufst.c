@@ -1176,21 +1176,23 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
 	design_bbox[3] = du_emy;
     }
 #endif
-    {	/* Compensate the UFST rounding in MAKifbmheader (debugged with xngnews.pdf) :
-	   UFST rounds the glyph origin with floor(x + 0.5),
-	   and GS rounds with floor(x). Therefore we need to shift the UFST bitmap
-	   boundaries into half pixel in device space to get the proper origin
-	   in Ghostscript cache against cropping the glyph. 
-
+    {	/* UFST performs a dual rounding of the glyph origin : first
+	   the scaled glyph design origin is rounded to pixels with floor(x + 0.5),
+	   second the glyph position is rounded to pixels with floor(x + 0.5).
+	   Ghostscript rounds with floor(x) due to the pixel-center-inside rule. 
+	   
 	   A right way would be to specify the half pixel offset to the glyph
 	   origin for the rendering glyph, but UFST has no interface for doing that.
-	   To get a compatible result we compute the displacement in design units 
-	   with the inverse transformation of the (0.5, 0.5) pixel distance. 
+	   Instead that, to prevent a possible cropping while copying a glyph to cache cell,
+	   we expand the design bbox in a value of a pixel size.
+	   We could not determine the necessary expansion theoretically,
+	   and choosen expansion coefficients empirically,
+	   which appears equal to 2 pixels.
 
-	   fixme: Actually dx, dy is the FONTCONTEXT property,
+	   fixme: Actually the expansion is the FONTCONTEXT property,
 	   so it could be computed at once when the scaled font is created.
 	 */
-	const double half_pixel_x = 0.5, half_pixel_y = 0.5;
+	const double expansion_x = 2, expansion_y = 2; /* pixels */ /* adesso5.pdf */
 	const double XX = r->tran_xx * r->fc.s.m2.xworld_res / 72 / du_emx;
 	const double XY = r->tran_xy * r->fc.s.m2.yworld_res / 72 / du_emy;
 	const double YX = r->tran_yx * r->fc.s.m2.xworld_res / 72 / du_emx;
@@ -1198,24 +1200,18 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
 	const double det = XX * YY - XY * YX;
 	const double deta = det < 0 ? -det : det;
 
-	if (deta > 0.0000001) {
-	    const double xx =  XX / det, xy = -YX / det;
-	    const double yx = -XY / det, yy =  YY / det;
-	    const SL32 dx = (SL32)(half_pixel_x * xx + half_pixel_y * xy + 0.5);
-	    const SL32 dy = (SL32)(half_pixel_x * yx + half_pixel_y * yy + 0.5);
-	    const SL32 dxa = (dx < 0 ? -dx : dx);
-	    const SL32 dya = (dy < 0 ? -dy : dy);
-
-	    if (!ff->is_outline_font) {
-		design_bbox[0] += dxa;
-		design_bbox[1] += dya;
-		design_bbox[2] += dxa;
-		design_bbox[3] += dya;
-	    } else {
-		/* Expand against missing strokes when StrokeWidth is near 0 */
-		design_bbox[2] += dxa * 2;
-		design_bbox[3] += dya * 2;
-	    }
+	if (deta > 0.0000000001) {
+	    const double xx =  YY / det, xy = -XY / det;
+	    const double yx = -YX / det, yy =  XX / det;
+	    const double dx = -(expansion_x * xx + expansion_y * xy);
+	    const double dy = -(expansion_x * yx + expansion_y * yy);
+	    const SL32 dxa = (SL32)((dx < 0 ? -dx : dx) + 0.5);
+	    const SL32 dya = (SL32)((dy < 0 ? -dy : dy) + 0.5);
+	    
+	    design_bbox[0] -= dxa;
+	    design_bbox[1] -= dya;
+	    design_bbox[2] += dxa;
+	    design_bbox[3] += dya;
 	}
     }
     set_metrics(r, metrics, design_bbox, design_escapement, du_emx, du_emy);
@@ -1265,12 +1261,16 @@ private FAPI_retcode get_char_raster(FAPI_server *server, FAPI_raster *rast)
     } else {
         IFBITMAP *pbm = (IFBITMAP *)r->char_data;
         rast->p = pbm->bm;
-        rast->height = pbm->depth;
-        rast->width = pbm->width << CHUNK_SHIFT;
-        rast->line_step = (pbm->width + (1 << (CHUNK_SHIFT - 3)) - 1) >> (CHUNK_SHIFT - 3);
+        rast->height = pbm->top_indent + pbm->black_depth;
+        rast->width = pbm->left_indent + pbm->black_width;
+        rast->line_step = pbm->width;
+	rast->left_indent = pbm->left_indent;
+	rast->top_indent = pbm->top_indent;
+	rast->black_width = pbm->black_width;
+	rast->black_height = pbm->black_depth;
         if (rast->width != 0) {
-            rast->orig_x = pbm->left_indent * 16 + pbm->xorigin;
-            rast->orig_y = pbm->top_indent  * 16 + pbm->yorigin;
+            rast->orig_x = pbm->xorigin;
+            rast->orig_y = pbm->yorigin;
         } else
             rast->orig_x = rast->orig_y = 0;
     }

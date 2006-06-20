@@ -147,6 +147,8 @@ typedef struct { /* 1bit/pixel only, rows are byte-aligned. */
     void *p;
     int width, height, line_step;
     int orig_x, orig_y; /* origin, 1/16s pixel */
+    int left_indent, top_indent;
+    int black_width, black_height;
 } FAPI_raster;
 
 #ifndef FAPI_server_DEFINED
