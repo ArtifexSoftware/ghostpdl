@@ -99,12 +99,11 @@ px_set_char_matrix(px_state_t *pxs)
 		 pxgs->char_scale.x != 1 || pxgs->char_scale.y != 1
 	       )
 	      return_error(pxs->memory, errorIllegalFontData);
-            /* NB not sure about intent here.  gs_make_scaling will
-               overwrite the default matrix. */
-	    gs_defaultmatrix(pxs->pgs, &mat);
-	    
+
 	    /* remove negative scale component */
-	    gs_make_scaling( 1, 1, &mat );
+	    gs_make_scaling( pxs->units_per_measure.x / pxfont->resolution.x,
+                             pxs->units_per_measure.y / pxfont->resolution.y,
+                             &mat );
 	    
 	    /*
 	     * Rotate the bitmap to undo the effect of its built-in
