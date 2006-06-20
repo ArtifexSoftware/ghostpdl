@@ -245,7 +245,9 @@ private int choose_decoding_general(fapi_ufst_server *r, ufst_common_font_data *
 }
 
 private int choose_decoding_TT(fapi_ufst_server *r, ufst_common_font_data *d, const char *cmapId)
-{   int platId, specId, i;
+{   
+#if TT_ROM || TT_DISK
+    int platId, specId, i;
     CMAP_QUERY q;
     UW16 font_access;
     bool failed;
@@ -267,6 +269,11 @@ private int choose_decoding_TT(fapi_ufst_server *r, ufst_common_font_data *d, co
             return 1;
         }
     return 0;
+#else
+    if (!d->decodingID[0])
+	strncpy(d->decodingID, "Unicode", sizeof(d->decodingID));
+    return 1;
+#endif
 }
 
 private void scan_xlatmap(fapi_ufst_server *r, ufst_common_font_data *d, const char *xlatmap, const char *font_kind, 
@@ -376,7 +383,9 @@ private LPUB8 get_TT_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
 }
 
 private LPUB8 get_T1_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
-{   ushort glyph_length = ff->get_glyph(ff, chId, 0, 0);
+{   
+#if PST1_SFNTI
+    ushort glyph_length = ff->get_glyph(ff, chId, 0, 0);
     LPUB8 q;
     pcleo_glyph_list_elem *g = (pcleo_glyph_list_elem *)r->client_mem.alloc(&r->client_mem, sizeof(pcleo_glyph_list_elem) + sizeof(PS_CHAR_HDR) + 2 + 2 + glyph_length + 1, "PSEO char");
     PS_CHAR_HDR *h;
@@ -410,6 +419,9 @@ private LPUB8 get_T1_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
     *q = 1; /* Decrypt flag */
     pIFS->ph = (byte *)h + sizeof(*h); /* A workaround for UFST4.6 bug in t1idecod.c (UNPACK_WORD uses pIFS->ph instead ph) */
     return (LPUB8)h;
+#else
+    return 0;
+#endif
 }
 
 private pcleo_glyph_list_elem * find_glyph(ufst_common_font_data *d, UW16 chId)
@@ -850,9 +862,11 @@ private FAPI_retcode get_font_proportional_feature(FAPI_server *server, FAPI_fon
     *bProportional = false;
     if (ff->font_file_path == NULL || ff->is_type1)
         return 0;
+#if TT_ROM || TT_DISK
     if (CGIFtt_query(FSA (UB8 *)ff->font_file_path, *(UL32 *)"OS/2", (UW16)ff->subfont, &length, buf) != 0)
         return 0; /* No OS/2 table - no chance to get the info. Use default == false. */
     *bProportional = (buf[35] == 9);
+#endif
     return 0;
 }
 
