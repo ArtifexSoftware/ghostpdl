@@ -1548,6 +1548,8 @@ show_cache_setup(gs_show_enum * penum)
     penum->dev_cache = dev;
     gs_make_mem_mono_device(dev2, mem, gs_currentdevice_inline(pgs));
     penum->dev_cache2 = dev2;
+    dev->HWResolution[0] = pgs->device->HWResolution[0];
+    dev->HWResolution[1] = pgs->device->HWResolution[1];
     /* Retain these devices, since they are referenced from the enumerator. */
     gx_device_retain((gx_device *)dev, true);
     gx_device_retain((gx_device *)dev2, true);

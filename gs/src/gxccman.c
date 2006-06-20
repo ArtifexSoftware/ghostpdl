@@ -497,6 +497,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     gx_device_memory mdev;
     gx_device_memory *pdev = dev;
     gx_device_memory *pdev2;
+    float HWResolution0 = dev->HWResolution[0], HWResolution1 = dev->HWResolution[1];
 
     if (dev == NULL) {
 	mdev.memory = 0;
@@ -536,6 +537,8 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 	pdev->width = iwidth;
 	pdev->height = iheight;
 	isize = gdev_mem_bitmap_size(pdev);
+	pdev->HWResolution[0] = HWResolution0;
+	pdev->HWResolution[1] = HWResolution1;
     } else {
 	/* Use an alpha-buffer device to compress as we go. */
 	/* Preserve the reference counts, if any. */
@@ -554,6 +557,8 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 	dev->height = 2 << log2_yscale;
 	isize = gdev_mem_bitmap_size(dev) +
 	    gdev_mem_bitmap_size(dev2);
+	dev->HWResolution[0] = HWResolution0 * (1 >> log2_xscale);
+	dev->HWResolution[1] = HWResolution1 * (1 >> log2_yscale);
     }
     icdsize = isize + sizeof_cached_char;
     cc = alloc_char(dir, icdsize);
