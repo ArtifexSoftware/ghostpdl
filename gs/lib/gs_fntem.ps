@@ -217,7 +217,8 @@ currentdict end def
 { begin
   dup length dict copy
   begin
-  dup NameKey exch cvn def
+  dup type /nametype ne { cvn } if
+  dup NameKey exch def
   currentglobal true setglobal
   make_procs TypeKey load .knownget {
     exec
