@@ -422,6 +422,8 @@ default_get_outline(gs_font_type42 * pfont, uint glyph_index,
     uint glyph_length;
     int code;
 
+     if (glyph_index >= pfont->data.trueNumGlyphs)
+ 	return_error(gs_error_invalidfont);
     glyph_start = get_glyph_offset(pfont, glyph_index);
     glyph_length = pfont->data.len_glyphs[glyph_index];
     if (glyph_length == 0)

@@ -104,6 +104,8 @@ z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
     }
     for (i = 0; i < gdbytes; ++i)
 	gnum = (gnum << 8) + data[i];
+    if (gnum >= pfont->data.trueNumGlyphs)
+	return_error(e_invalidfont);
     return gnum;
 }
 
