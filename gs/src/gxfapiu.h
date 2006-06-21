@@ -40,4 +40,15 @@ void gx_set_UFST_Callbacks(LPUB8 (*p_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  s
 
 void gx_reset_UFST_Callbacks(void);
 
+#if !UFST_REENTRANT
+/* The following 2 functions provide a locking of a 
+   global static UFST instance, which must be a singleton 
+   when UFST works for embedded multilanguage system. 
+   When setting a lock, the language swithing code
+   must initialize and uninitialize UFST by immediate calls.
+ */
+void gs_set_UFST_lock(bool lock);
+bool gs_get_UFST_lock(void);
+#endif /*!UFST_REENTRANT*/
+
 #endif /* gxfapiu_INCLUDED */

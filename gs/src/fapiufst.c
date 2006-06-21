@@ -208,13 +208,18 @@ private FAPI_retcode ensure_open(FAPI_server *server, const byte *server_param, 
     if (r->bInitialized)
         return 0;
     r->bInitialized = 1;
-    code = open_UFST(r, server_param, server_param_size);
-    if (code < 0) {
-	eprintf("Error opening the UFST font server.\n");
-	return code;
+#if !UFST_REENTRANT
+    if (!gs_get_UFST_lock())
+#endif
+    {
+	code = open_UFST(r, server_param, server_param_size);
+	if (code < 0) {
+	    eprintf("Error opening the UFST font server.\n");
+	    return code;
+	}
     }
     gx_set_UFST_Callbacks(NULL, impl_PCLchId2ptr, NULL);
-    return code;
+    return 0;
 }
 
 private UW16 get_font_type(FILE *f)
@@ -387,7 +392,8 @@ private LPUB8 get_T1_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
 #if PST1_SFNTI
     ushort glyph_length = ff->get_glyph(ff, chId, 0, 0);
     LPUB8 q;
-    pcleo_glyph_list_elem *g = (pcleo_glyph_list_elem *)r->client_mem.alloc(&r->client_mem, sizeof(pcleo_glyph_list_elem) + sizeof(PS_CHAR_HDR) + 2 + 2 + glyph_length + 1, "PSEO char");
+    pcleo_glyph_list_elem *g = (pcleo_glyph_list_elem *)r->client_mem.alloc(&r->client_mem, 
+		    sizeof(pcleo_glyph_list_elem) + sizeof(PS_CHAR_HDR) + 2 + 2 + glyph_length + 1, "PSEO char");
     PS_CHAR_HDR *h;
     ufst_common_font_data *d = (ufst_common_font_data *)r->fc.font_hdr - 1;
     FSA_FROM_SERVER;
@@ -491,7 +497,8 @@ private inline void pack_float(LPUB8 *p, float v)
 #define PACK_WORD(p, i, var) pack_word(&p, ff->get_word(ff, var, i))
 #define PACK_LONG(p, i, var) pack_long(&p, ff->get_long(ff, var, i))
 
-private void pack_pseo_word_array(fapi_ufst_server *r, FAPI_font *ff, UB8 **p, UW16 max_count, fapi_font_feature count_id, fapi_font_feature array_id)
+private void pack_pseo_word_array(fapi_ufst_server *r, FAPI_font *ff, UB8 **p, 
+				  UW16 max_count, fapi_font_feature count_id, fapi_font_feature array_id)
 {   UW16 k = min(ff->get_word(ff, count_id, 0), max_count), j;
 
     pack_word(p, k);
@@ -1307,8 +1314,12 @@ private void gs_fapiufst_finit(i_plugin_instance *this, i_plugin_client_memory *
 #endif
     release_char_data_inline(r);
     if (r->bInitialized) {
-        CGIFexit(FSA0);
+#	if UFST_REENTRANT
+	    CGIFexit(FSA0);
+#	else
+	    if (!gs_get_UFST_lock())
+		CGIFexit(FSA0);
+#	endif
     }
     mem->free(mem, r, "fapi_ufst_server");
 }
-

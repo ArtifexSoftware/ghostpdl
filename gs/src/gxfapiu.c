@@ -47,7 +47,7 @@ private LPUB8 stub_PCLglyphID2Ptr(FSP UW16 glyphID)
 }
 
 /*
-    The following 3 variables are defined statically 
+    The following 4 variables are defined statically 
     because the language switching project doesn't define 
     a general dynamic context for all interpreters.
  */
@@ -55,6 +55,9 @@ private LPUB8 stub_PCLglyphID2Ptr(FSP UW16 glyphID)
 private LPUB8 (*m_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  sym_code) = stub_PCLEO_charptr;
 private LPUB8 (*m_PCLchId2ptr)(FSP UW16 chId) = stub_PCLchId2ptr;
 private LPUB8 (*m_PCLglyphID2Ptr)(FSP UW16 glyphID) = stub_PCLglyphID2Ptr;
+#if !UFST_REENTRANT
+private bool global_UFST_lock = false;
+#endif
 
 
 LPUB8 PCLEO_charptr(FSP LPUB8 pfont_hdr, UW16  sym_code)
@@ -90,3 +93,20 @@ void gx_set_UFST_Callbacks(LPUB8 (*p_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  s
     m_PCLchId2ptr = (p_PCLchId2ptr != NULL ? p_PCLchId2ptr : stub_PCLchId2ptr);
     m_PCLglyphID2Ptr = (p_PCLglyphID2Ptr != NULL ? p_PCLglyphID2Ptr : stub_PCLglyphID2Ptr);
 }
+
+#if !UFST_REENTRANT
+/* The following 2 functions provide a locking of a 
+   global static UFST instance, which must be a singleton 
+   when UFST works for embedded multilanguage system. 
+   When setting a lock, the language swithing code
+   must initialize and uninitialise UFST by immediate calls.
+ */
+void gs_set_UFST_lock(bool lock)
+{
+    global_UFST_lock = lock;
+}
+bool gs_get_UFST_lock(void)
+{
+    return global_UFST_lock;
+}
+#endif /*!UFST_REENTRANT*/
