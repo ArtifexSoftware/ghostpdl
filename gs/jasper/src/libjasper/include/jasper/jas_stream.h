@@ -214,6 +214,9 @@ typedef struct {
 	  character putback. */
 	uchar *bufstart_;
 
+	/* The stream position of the character at bufstart_ */
+	long buftell_;
+
 	/* The buffer size. */
 	int bufsize_;
 

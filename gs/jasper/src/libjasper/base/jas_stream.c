@@ -158,6 +158,8 @@ static jas_stream_t *jas_stream_create()
 	stream->flags_ = 0;
 	stream->bufbase_ = 0;
 	stream->bufstart_ = 0;
+	stream->buftell_ = 0;		/* bufstart_ 'tell' */
+	/* position in the stream is buftell_ + (ptr_ - bufstart_) */
 	stream->bufsize_ = 0;
 	stream->ptr_ = 0;
 	stream->cnt_ = 0;
@@ -662,6 +664,21 @@ long jas_stream_seek(jas_stream_t *stream, long offset, int origin)
 	stream->flags_ &= ~JAS_STREAM_EOF;
 
 	if (stream->bufmode_ & JAS_STREAM_RDBUF) {
+		long curpos = stream->buftell_ + (stream->ptr_ - stream->bufstart_);
+		uchar *newptr;
+
+		/* if we are reading, and newpos is in current buffer, simply */
+		/* set the ptr_ and cnt_ and return (a common case, we hope)  */
+		newpos = (origin == SEEK_SET) ? offset : (origin == SEEK_CUR) ?
+			curpos + offset : -1;	/* -1 means we don't know */
+		newptr = stream->ptr_ + newpos - curpos;
+		if ((newptr >= stream->bufstart_) &&
+			(newptr < stream->bufstart_ + stream->cnt_)) {
+			/* we can just position in the buffer */
+			stream->cnt_ -= newptr - stream->ptr_;
+			stream->ptr_ = newptr;
+			return newpos;
+		}
 		if (origin == SEEK_CUR) {
 			offset -= stream->cnt_;
 		}
@@ -746,6 +763,7 @@ static void jas_stream_initbuf(jas_stream_t *stream, int bufmode, char *buf,
 	}
 	stream->bufstart_ = &stream->bufbase_[JAS_STREAM_MAXPUTBACK];
 	stream->ptr_ = stream->bufstart_;
+	stream->buftell_ = 0;			/* beginning of file */
 	stream->cnt_ = 0;
 	stream->bufmode_ |= bufmode & JAS_STREAM_BUFMODEMASK;
 }
@@ -788,6 +806,7 @@ int jas_stream_fillbuf(jas_stream_t *stream, int getflag)
 
 	/* Read new data into the buffer. */
 	stream->ptr_ = stream->bufstart_;
+	stream->buftell_ = (*stream->ops_->seek_)(stream->obj_, 0, SEEK_CUR);
 	if ((stream->cnt_ = (*stream->ops_->read_)(stream->obj_,
 	  (char *) stream->bufstart_, stream->bufsize_)) <= 0) {
 		if (stream->cnt_ < 0) {
