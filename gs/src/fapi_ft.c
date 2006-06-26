@@ -24,6 +24,7 @@ Started by Graham Asher, 6th June 2002.
 #include "write_t1.h"
 #include "write_t2.h"
 #include "math_.h"
+#include "gserror.h"
 
 /* FreeType headers */
 #include "freetype/freetype.h"
@@ -177,8 +178,9 @@ static void free_fapi_glyph_data(FT_Incremental a_info,FT_Data* a_data)
 	}
 
 static FT_Error get_fapi_glyph_metrics(FT_Incremental a_info,FT_UInt a_glyph_index,
-									   FT_Bool FT_Incremental_MetricsRec* a_metrics)
+									   FT_Bool bVertical, FT_Incremental_MetricsRec* a_metrics)
 	{
+	    /* fixme : bVertical is not implemented. */
 	if (a_info->m_glyph_metrics_index == a_glyph_index)
 		{
 		switch (a_info->m_metrics_type)
@@ -474,7 +476,7 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,
 		/* Load a typeface from a file. */
 		if (a_font->font_file_path)
 			{
-			ft_error = FT_New_Face(s->m_freetype_library,a_font->font_file_path,&ft_face);
+			ft_error = FT_New_Face(s->m_freetype_library,a_font->font_file_path,a_font->subfont,&ft_face);
 			if (!ft_error && ft_face)
 				ft_error = FT_Select_Charmap(ft_face,ft_encoding_unicode);
 			}
@@ -509,7 +511,7 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,
 				else
 					open_args.memory_size = FF_serialize_type2_font(a_font,own_font_data,length);
 				if (open_args.memory_size != length)
-				    return_error(gs_error_unregistered); /* Must not happen. */
+				    return_error(e_unregistered); /* Must not happen. */
 				ft_inc_int = new_inc_int(a_font);
 				if (!ft_inc_int)
 					{
@@ -550,7 +552,7 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,
 				open_args.num_params = 1;
 				open_args.params = &ft_param;
 				}
-			ft_error = FT_Open_Face(s->m_freetype_library,&open_args,&ft_face);
+			ft_error = FT_Open_Face(s->m_freetype_library,&open_args,a_font->subfont,&ft_face);
 			}
 
 		if (ft_face)
@@ -719,7 +721,7 @@ static FAPI_retcode get_char_raster(FAPI_server *a_server,FAPI_raster *a_raster)
 	{
 	FF_server* s = (FF_server*)a_server;
 	if (!s->m_bitmap_glyph)
-		return_error(gs_error_unregistered); /* Must not happen. */
+		return_error(e_unregistered); /* Must not happen. */
 	a_raster->p = s->m_bitmap_glyph->bitmap.buffer;
 	a_raster->width = s->m_bitmap_glyph->bitmap.width;
 	a_raster->height = s->m_bitmap_glyph->bitmap.rows;

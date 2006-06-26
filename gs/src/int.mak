@@ -1935,7 +1935,7 @@ $(PSD)fapif1.dev : $(INT_MAK) $(ECHOGS_XE) \
 	$(ADDMOD) $(PSD)fapif1 -link $(FT_LIB)$(FT_LIB_EXT)
 
 $(PSOBJ)fapi_ft.$(OBJ) : $(PSSRC)fapi_ft.c $(AK)\
- $(stdio__h) $(math__h) $(ifapi_h)\
+ $(stdio__h) $(math__h) $(ifapi_h) $(gserror_h)\
  $(FT_ROOT)$(D)include$(D)freetype$(D)freetype.h\
  $(FT_ROOT)$(D)include$(D)freetype$(D)ftincrem.h\
  $(FT_ROOT)$(D)include$(D)freetype$(D)ftglyph.h\
