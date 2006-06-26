@@ -765,12 +765,18 @@ define a title with DSC comments. Otherwise remove entire line from definition f
 Rather the PDF/X-3 standard requires colors to be adjusted at the
 document generation time, Ghostscript <em>does not</em> perform any
 special color conversion. Either colors to be adjusted in advance,
-or a proper color conversion to be specified in <b><tt>/DefaultGray</b></tt>,
+or a proper color conversion to be specified in <b><tt>DefaultGray</b></tt>,
 <b><tt>DefaultRGB</b></tt>,  <b><tt>DefaultCMYK</b></tt> resources of the  
-<b><tt>ColorSpace</b></tt> resource category,
-and the <b><tt>-dUseCIEColor</b></tt> option to be specified
-to remap device colors into CIE colors. 
-The choice of the ICC profile is also the user's responsibility.
+<b><tt>ColorSpace</b></tt> resource category.
+
+<P>
+If you want any color to be converted into CIE color,
+the <b><tt>-dUseCIEColor</b></tt> option to be specified
+in the command line. If it is not specified, 
+only RGB colors are being converted into CIE colors
+with using the <b><tt>DefaultRGB</b></tt> color space resource,
+but <b><tt>DeviceGray</b></tt> and <b><tt>DeviceCMYK</b></tt>
+colors are being passed identically.
 
 <p>Please note that if a graphic object can't embed into the output format,
 Ghostscript converts it into low level objects, using a device color space
