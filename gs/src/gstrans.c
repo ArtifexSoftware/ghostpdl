@@ -171,6 +171,7 @@ gs_trans_group_params_init(gs_transparency_group_params_t *ptgp)
     ptgp->ColorSpace = 0;	/* bogus, but can't do better */
     ptgp->Isolated = false;
     ptgp->Knockout = false;
+    ptgp->image_with_SMask = false;
 }
 
 int
@@ -205,6 +206,7 @@ gs_begin_transparency_group(gs_state *pgs,
     params.pdf14_op = PDF14_BEGIN_TRANS_GROUP;
     params.Isolated = ptgp->Isolated;
     params.Knockout = ptgp->Knockout;
+    params.image_with_SMask = ptgp->image_with_SMask;
     params.opacity = pgs->opacity;
     params.shape = pgs->shape;
     params.blend_mode = pgs->blend_mode;

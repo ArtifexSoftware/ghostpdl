@@ -637,6 +637,7 @@ struct gx_device_pdf_s {
     gs_id     image_mask_id;
     bool      image_mask_is_SMask;
     bool      image_mask_skip; /* A flag for pdf_begin_transparency_mask */
+    bool      image_with_SMask; /* A flag for pdf_begin_transparency_group. */
     gs_matrix converting_image_matrix;
     double    image_mask_scale;
     /* Temporary data for soft mask form. */

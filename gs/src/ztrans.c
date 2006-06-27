@@ -211,7 +211,8 @@ zbegintransparencygroup(i_ctx_t *i_ctx_p)
     check_dict_read(*dop);
     gs_trans_group_params_init(&params);
     if ((code = dict_bool_param(dop, "Isolated", false, &params.Isolated)) < 0 ||
-	(code = dict_bool_param(dop, "Knockout", false, &params.Knockout)) < 0
+	(code = dict_bool_param(dop, "Knockout", false, &params.Knockout)) < 0 ||
+	(code = dict_bool_param(dop, ".image_with_SMask", false, &params.image_with_SMask)) < 0
 	)
 	return code;
     code = rect_param(&bbox, op);

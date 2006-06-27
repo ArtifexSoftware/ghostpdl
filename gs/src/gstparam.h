@@ -82,6 +82,7 @@ typedef struct gs_transparency_group_params_s {
     const gs_color_space *ColorSpace;
     bool Isolated;
     bool Knockout;
+    bool image_with_SMask;
 } gs_transparency_group_params_t;
 
 /* Define the parameter structure for a transparency mask. */

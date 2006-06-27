@@ -70,6 +70,7 @@ struct gs_pdf14trans_params_s {
     /* Parameters from the gs_transparency_group_params_t structure */
     bool Isolated;
     bool Knockout;
+    bool image_with_SMask;
     gs_rect bbox;
     /*The transparency channel selector */
     gs_transparency_channel_selector_t csel;
