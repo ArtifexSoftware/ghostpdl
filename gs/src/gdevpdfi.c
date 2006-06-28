@@ -614,6 +614,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     pie->writer.alt_writer_count = (in_line || 
 				    (pim->Width <= 64 && pim->Height <= 64) ||
 				    pdev->transfer_not_identity ? 1 : 2);
+    if (image[0].pixel.ColorSpace != NULL &&
+	image[0].pixel.ColorSpace->type->index == gs_color_space_index_Indexed)
+	pie->writer.alt_writer_count = 1;
     image[1] = image[0];
     names = (in_line ? &pdf_color_space_names_short : &pdf_color_space_names);
     if (!is_mask) {

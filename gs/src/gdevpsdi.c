@@ -229,7 +229,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     int code;
 
 #   ifdef USE_LWF_JP2
-    if (lossless && template == &s_jpxe_template)
+    if (lossless && template == &s_jpxe_template && !Indexed)
 	lossless_template = &s_jpxe_template;
 #   endif
     if (!pdip->Encode)		/* no compression */
