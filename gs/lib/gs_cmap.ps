@@ -47,9 +47,7 @@
   CMAPDEBUG { (...FINISHED...\n) print } if
 } bind def
 
-% composefont doesn't appear in CMap files -- it's documented in
-% the "PostScript Language Reference Manual Supplement".
-/composefont {		% <name> <cmap|cmapname> <fonts> composefont <font>
+/.composefontdict {		% <name> <cmap|cmapname> <fonts> composefont <name> <font_dict>
   10 dict begin
     /CMap 2 index dup type /dicttype ne { /CMap findresource } if def
     /FDepVector 1 index cvlit def	% temporarily
@@ -76,8 +74,14 @@
     /FontName 3 index def
     CMap /WMode .knownget { /WMode exch def } if
     /FontType 0 def
-  pop pop currentdict end /Font defineresource
+  pop pop currentdict end 
 } bind odef
+
+% composefont doesn't appear in CMap files -- it's documented in
+% the "PostScript Language Reference Manual Supplement".
+/composefont {		% <name> <cmap|cmapname> <fonts> composefont <font>
+  .composefontdict /Font defineresource
+} bind def
 
 % ---------------- CMap operators ---------------- %
 

@@ -58,9 +58,10 @@ zbuildfont0(i_ctx_t *i_ctx_p)
     ref *pprefenc;
     gs_font_type0 *pfont;
     font_data *pdata;
-    ref save_FID;
+    ref save_FID, Glyph2Unicode;
     int i;
     int code = 0;
+    bool has_g2u;
 
     check_type(*op, t_dictionary);
     {
@@ -177,6 +178,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
     pfont->procs.define_font = ztype0_define_font;
     pfont->procs.make_font = ztype0_make_font;
     pfont->procs.next_char_glyph = gs_type0_next_char_glyph;
+    pfont->procs.decode_glyph = gs_font_map_glyph_to_unicode; /* PDF needs. */
     if (dict_find_string(op, "PrefEnc", &pprefenc) <= 0) {
 	ref nul;
 
@@ -184,6 +186,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 	if ((code = idict_put_string(op, "PrefEnc", &nul)) < 0)
 	    goto fail;
     }
+    get_GlyphNames2Unicode(i_ctx_p, (gs_font *)pfont, op);
     /* Fill in the font data */
     pdata = pfont_data(pfont);
     data.encoding_size = r_size(&pdata->Encoding);

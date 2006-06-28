@@ -924,9 +924,10 @@ end readonly def
   [
     3 index /DescendantFonts oget { exec resourcefont } forall
   ]			% subfonts
-  composefont   % composefont must insert FontInfo dictionary - see gs_cmap.ps .
-		% Stack: fontres font
-  2 copy null .processToUnicode
+  .composefontdict  % composefont must insert FontInfo dictionary - see gs_cmap.ps .
+		    % Stack: fontres name font
+  3 copy exch pop null .processToUnicode
+  /Font defineresource   % Stack: fontres font
   1 index /FontMatrix knownoget {
     dup aload pop true {0 0 1 0 0 1} {3 -1 roll eq and} forall {
       1 index exch makefont exch /FontName get exch definefont

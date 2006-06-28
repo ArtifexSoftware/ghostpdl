@@ -181,9 +181,11 @@ gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph)
 	 * can't be a default value for FontInfo.GlyphNames2Unicode .
 	 */
     }
-    UnicodeDecoding = zfont_get_to_unicode_map(font->dir);
-    if (UnicodeDecoding != NULL && r_type(UnicodeDecoding) == t_dictionary)
-	return gs_font_map_glyph_by_dict(font->memory, UnicodeDecoding, glyph);
+    if (glyph <= GS_MIN_CID_GLYPH) {
+	UnicodeDecoding = zfont_get_to_unicode_map(font->dir);
+	if (UnicodeDecoding != NULL && r_type(UnicodeDecoding) == t_dictionary)
+	    return gs_font_map_glyph_by_dict(font->memory, UnicodeDecoding, glyph);
+    }
     return GS_NO_CHAR; /* No map. */
 }
 
@@ -422,6 +424,25 @@ build_gs_outline_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     return 0;
 }
 
+void
+get_GlyphNames2Unicode(i_ctx_t *i_ctx_p, gs_font *pfont, ref *pdref)
+{
+    ref *pfontinfo = NULL, *g2u = NULL;
+    font_data *pdata;
+
+    if (dict_find_string(pdref, "FontInfo", &pfontinfo) <= 0 ||
+	    !r_has_type(pfontinfo, t_dictionary) ||
+	    dict_find_string(pfontinfo, "GlyphNames2Unicode", &g2u) <= 0 ||
+	    !r_has_type(pfontinfo, t_dictionary))
+	return;
+    /*
+     * Since build_gs_font may resize the dictionary and cause
+     * pointers to become invalid, save Glyph2Unicode
+     */
+    pdata = pfont_data(pfont);
+    ref_assign_new(&pdata->GlyphNames2Unicode, g2u);
+}
+
 /* Do the common work for building a font of any non-composite FontType. */
 /* The caller guarantees that *op is a dictionary. */
 int
@@ -434,19 +455,8 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     gs_uid uid;
     int code;
     gs_font_base *pfont;
-    ref *pfontinfo, *g2u = NULL, Glyph2Unicode;
+    ref Glyph2Unicode;
 
-    if (dict_find_string(op, "FontInfo", &pfontinfo) <= 0 ||
-	    !r_has_type(pfontinfo, t_dictionary) ||
-	    dict_find_string(pfontinfo, "GlyphNames2Unicode", &g2u) <= 0 ||
-	    !r_has_type(pfontinfo, t_dictionary))
-	g2u = NULL;
-    else
-	/*
-	 * Since build_gs_font may resize the dictionary and cause
-	 * pointers to become invalid, save Glyph2Unicode
-	 */
-	Glyph2Unicode = *g2u;
     code = font_bbox_param(imemory, op, bbox);
     if (code < 0)
 	return code;
@@ -469,11 +479,7 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     pfont->FAPI_font_data = 0;
     init_gs_simple_font(pfont, bbox, &uid);
     lookup_gs_simple_font_encoding(pfont);
-    if (g2u != NULL) {
-	font_data *pdata = pfont_data(pfont);
-
-	ref_assign_new(&pdata->GlyphNames2Unicode, &Glyph2Unicode);
-    }
+    get_GlyphNames2Unicode(i_ctx_p, (gs_font *)pfont, op);
     return 0;
 }
 
