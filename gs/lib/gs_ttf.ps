@@ -240,7 +240,7 @@
 	      getinterval exch
 		  % Stack: false string record
 		  % Check for 8- vs. 16-bit characters.
-	  is2byte { string2to1 } if true null 4 -1 roll exit
+	  is2byte { true } { dup is2byte2 } ifelse { string2to1 } if true null 4 -1 roll exit
 	    } {
 	      pop pop pop pop
 	      false
@@ -263,6 +263,22 @@
     { 1 getu16 1 eq }		% ISO
     { 1 getu16 1 eq }		% Microsoft
   } exch get exec
+} bind def
+
+% <string> is2byte2 <bool>
+/is2byte2 {
+  dup length 
+  dup 2 mod 0 ne {
+    pop pop false
+  } {            % s l
+    true exch   % s b l
+    1 sub 0 exch 2 exch {
+      2 index exch get 0 ne {
+        pop false exit
+      } if
+    } for
+    exch pop
+  } ifelse
 } bind def
 
 % <string2> string2to1 <string>
