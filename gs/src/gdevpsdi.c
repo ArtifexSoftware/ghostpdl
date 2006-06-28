@@ -464,6 +464,7 @@ adjust_auto_filter_strategy(gx_device_psdf *pdev,
 #ifdef USE_LWF_JP2
     if (!in_line && params->Depth > 1 && pdev->ParamCompatibilityLevel >= 1.5 &&
 	    pim->ColorSpace->type->index != gs_color_space_index_Indexed &&
+	    params->AutoFilter &&
 	    !strcmp(params->AutoFilterStrategy, "/JPEG2000")) {
 	params->Filter = "/JPXEncode";
 	params->filter_template = &s_jpxe_template;
@@ -479,6 +480,7 @@ adjust_auto_filter_strategy_mono(gx_device_psdf *pdev,
 {
 #ifdef USE_LDF_JB2
     if (!in_line && pdev->ParamCompatibilityLevel >= 1.5 &&
+	    params->AutoFilter &&
 	    pim->ColorSpace->type->index != gs_color_space_index_Indexed) {
 	params->Filter = "/JBIG2Encode";
 	params->filter_template = &s_jbig2encode_template;
