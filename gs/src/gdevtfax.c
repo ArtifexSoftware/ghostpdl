@@ -288,7 +288,7 @@ tiffg32d_print_page(gx_device_printer * dev, FILE * prn_stream)
     stream_CFE_state state;
     tiff_mono_directory dir;
 
-    gdev_fax_init_state(&state, (gx_device_fax *)dev);
+    gdev_fax_init_fax_state(&state, (gx_device_fax *)dev);
     state.K = (dev->y_pixels_per_inch < 100 ? 2 : 4);
     state.EndOfLine = true;
     state.EncodedByteAlign = true;
@@ -304,7 +304,7 @@ tiffg4_print_page(gx_device_printer * dev, FILE * prn_stream)
     stream_CFE_state state;
     tiff_mono_directory dir;
 
-    gdev_fax_init_state(&state, (gx_device_fax *)dev);
+    gdev_fax_init_fax_state(&state, (gx_device_fax *)dev);
     state.K = -1;
     /*state.EncodedByteAlign = false; *//* no fill_bits option for T6 */
     dir = dir_mono_template;
