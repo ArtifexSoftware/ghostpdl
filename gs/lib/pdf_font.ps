@@ -1331,6 +1331,21 @@ end readonly def
   addCIDmetrics dup /CIDFontName get exch /CIDFont defineresource
 } bdef
 
+% Read an embedded OpenType font.
+/readOTTOfont {		% <font-resource> <stream-dict> readOTTOfont <font>
+  1 index exch
+  PDFfile fileposition 3 1 roll
+  dup true resolvestream dup readfontfilter
+		% Stack: pos resource streamdict stream filter
+  3 index /FontDescriptor oget /FontName oget
+  1 index
+  .init_otto_font_file //true ReadData
+  closefile closefile pop
+  PDFfile 3 -1 roll setfileposition
+  /FontDescriptor oget /FontName oget pdfaddcachedfont
+  exch pop
+} bdef
+
 % ---------------- Font lookup ---------------- %
 
 % Some PDF files mis-identify font type of the embedded font streams or
@@ -1396,16 +1411,22 @@ end readonly def
     { exch pop readtype1
     } 2 bndef
 
-
   <01000401> <01000402> <01000403> <01000404> % Type 1C
     { exch pop
       dup /Subtype get
       fontloadprocs exch get exec
     } 4 bndef 
 
-  <00010000> (true) (typ1) (OTTO) (ttcf)  % TrueType OpenType
+  <00010000> (true) (typ1) (ttcf)  % TrueType OpenType
     { exch pop readtruetype
-    } 5 bndef
+    } 4 bndef
+
+  (OTTO)
+    { exch pop
+      readOTTOfont
+    } bdef
+
+
 currentdict end readonly def
 currentdict /bndef undef
 
