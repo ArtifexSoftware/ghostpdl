@@ -99,19 +99,19 @@ gsapi_delete_instance(void *lib)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
     if ((ctx != NULL)) {
+   	gs_main_instance *minst = get_minst_from_memory(ctx->memory);
+
 	ctx->caller_handle = NULL;
 	ctx->stdin_fn = NULL;
 	ctx->stdout_fn = NULL;
 	ctx->stderr_fn = NULL;
 	ctx->poll_fn = NULL;
-	get_minst_from_memory(ctx->memory)->display = NULL;
+	minst->display = NULL;
 	
-	/* NB: notice how no deletions are occuring, good bet this isn't thread ready
-	 */
+	/* Release the memory (frees up everything) */
+        gs_malloc_release(minst->heap);
 	
 	--gsapi_instance_counter;
-
-	
     }
 }
 
