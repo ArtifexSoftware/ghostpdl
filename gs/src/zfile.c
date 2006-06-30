@@ -11,7 +11,6 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id$ */
 /* Non-I/O file operators */
 #include "memory_.h"
 #include "string_.h"
@@ -220,7 +219,7 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
 }
 
 /* <name_string> <access_string> file <file> */
-private int
+int				/* exported for zsysvm.c */
 zfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -595,7 +594,7 @@ zfilenamesplit(i_ctx_t *i_ctx_p)
 
 /* <string> .libfile <file> true */
 /* <string> .libfile <string> false */
-private int
+int				/* exported for zsysvm.c */
 zlibfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

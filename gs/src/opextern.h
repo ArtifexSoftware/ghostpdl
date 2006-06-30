@@ -76,6 +76,9 @@ int zarray(i_ctx_t *);
 int zdict(i_ctx_t *);
 int zpackedarray(i_ctx_t *);
 int zstring(i_ctx_t *);
+int zfile(i_ctx_t *);
+int zlibfile(i_ctx_t *);
+int zSFD(i_ctx_t *);
 
 /* Operators exported for user path decoding. */
 /* Note that only operators defined in all configurations are declared here. */

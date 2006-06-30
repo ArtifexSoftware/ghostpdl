@@ -436,7 +436,7 @@ userdict /.echo.mode true put
 % To satisfy the Genoa FTS, executive must be a procedure, not an operator.
 /executive
 	{ { prompt
-	     { (%statementedit) (r) file } stopped
+	     { (%statementedit) (r) .systemvmfile } stopped
 	     { pop pop $error /errorname get /undefinedfilename eq
 		{ .clearerror exit } if		% EOF
 	       /handleerror .systemvar exec //null		% ioerror??
@@ -484,7 +484,7 @@ userdict /.echo.mode true put
 /putdeviceprops
 	{ .putdeviceprops { erasepage } if } odef
 /quit	{ /quit load 0 .quit } odef
-/run	{ dup type /filetype ne { (r) file } if
+/run	{ dup type /filetype ne { (r) .systemvmfile } if
 		% We must close the file when execution terminates,
 		% regardless of the state of the stack,
 		% and then propagate an error, if any.
@@ -630,7 +630,7 @@ currentdict /superexec .knownget {
 /copystring
 	{ dup length string copy } bind def
 /findlibfile {
-	.libfile { dup .filename pop exch true } { false } ifelse
+  .systemvmlibfile { dup .filename pop exch true } { false } ifelse
 } odef
 /.growdictlength	% get size for growing a dictionary
 	{ length 3 mul 2 idiv 1 add
@@ -807,16 +807,13 @@ userdict /.currentresourcefile //null put
 % given on the command line with -c.  We turn the string into a file so that
 % .runexec can do the right thing with a startjob.
 /.runstring {
-  .currentglobal exch true .setglobal
-  0 () .subfiledecode
-  exch .setglobal cvx { .runexec } execute0
+  0 0 .systemvmstring .systemvmSFD cvx { .runexec } execute0
 } bind def
 % Define the procedure that the C code uses to set up for executing
 % a string that may be received in pieces.
 /.runstringbegin {
-  .currentglobal true .setglobal
-  { .needinput } bind 0 () .subfiledecode
-  exch .setglobal cvx .runexec
+  1 .systemvmarray dup 0 /.needinput load put cvx	% { .needinput } in systemvm
+  0 0 .systemvmstring .systemvmSFD cvx .runexec
 } bind def
 
 % Define a special version of runlibfile that aborts on errors.
@@ -2223,16 +2220,5 @@ WRITESYSTEMDICT not { systemdict readonly pop } if
 % support DeviceN and spot color separations this will need to
 % be 'true' in some cases.
 userdict /AGM_preserve_spots false put
-
-% Start the job as encapsulated if requested, if not, perform an
-% outer save so that jobs which depend on global VM not being
-% restored will operate correctly.
-% 
-% Note that .setsafe is already in effect if in SAFER mode.
-% so an exitserver will restore with SAFER mode still in effect.
-JOBSERVER
-  { false 0 .startnewjob }
-  { NOOUTERSAVE not { save pop } if }	% do the outermost save unless disabled
-ifelse
 
 % The interpreter will run the initial procedure (start).

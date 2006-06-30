@@ -19,6 +19,8 @@
 #include "ialloc.h"
 #include "idict.h"
 #include "igstate.h"
+#include "imain.h"
+#include "imemory.h"
 #include "iname.h"
 #include "interp.h"
 #include "iparam.h"
@@ -26,6 +28,7 @@
 #include "gsmatrix.h"
 #include "gsstate.h"
 #include "gxdevice.h"
+#include "gxalloc.h"
 #include "gxgetbit.h"
 #include "store.h"
 
@@ -311,6 +314,9 @@ znulldevice(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+extern void print_resource_usage(const gs_main_instance *, gs_dual_memory_t *,
+                     const char *);
+
 /* <num_copies> <flush_bool> .outputpage - */
 private int
 zoutputpage(i_ctx_t *i_ctx_p)
@@ -325,6 +331,11 @@ zoutputpage(i_ctx_t *i_ctx_p)
     if (code < 0)
 	return code;
     pop(2);
+    if (gs_debug[':']) {
+	gs_main_instance *minst = get_minst_from_memory((gs_memory_t *)i_ctx_p->memory.current->non_gc_memory);
+
+	print_resource_usage(minst, &(i_ctx_p->memory), "Outputpage");
+    }
     return 0;
 }
 
@@ -412,7 +423,7 @@ zsetdevice(i_ctx_t *i_ctx_p)
 {
     gx_device *dev = gs_currentdevice(igs);
     os_ptr op = osp;
-    int code;
+    int code = 0;
 
     check_write_type(*op, t_device);
     if (dev->LockSafetyParams) {	  /* do additional checking if locked  */

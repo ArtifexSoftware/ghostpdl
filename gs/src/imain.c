@@ -11,7 +11,6 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id$ */
 /* Common support for interpreter front ends */
 #include "malloc_.h"
 #include "memory_.h"
@@ -350,10 +349,18 @@ gs_main_init2(gs_main_instance * minst)
 	 * both minst->display and  display_set_callback() are going away
 	*/
 	if (minst->display)
-	    code = display_set_callback(minst, minst->display);
-
-	if (code < 0)
+	if ((code = display_set_callback(minst, minst->display)) < 0)
 	    return code;
+
+#ifndef PSI_INCLUDED
+	if ((code = gs_main_run_string(minst, 
+		"JOBSERVER "
+		" { false 0 .startnewjob } "
+		" { NOOUTERSAVE not { save pop } if } "
+		"ifelse", 0, &exit_code, 
+		&error_object)) < 0)
+	   return code;
+#endif /* PSI_INCLUDED */
     }
     if (gs_debug_c(':'))
 	print_resource_usage(minst, &gs_imemory, "Start");

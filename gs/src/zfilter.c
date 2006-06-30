@@ -128,7 +128,7 @@ zRLD(i_ctx_t *i_ctx_p)
 /* <source> <EODcount> <EODstring> SubFileDecode/filter <file> */
 /* <source> <dict> <EODcount> <EODstring> SubFileDecode/filter <file> */
 /* <source> <dict> SubFileDecode/filter <file> *//* (LL3 only) */
-private int
+int				/* exported for zsysvm.c */
 zSFD(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

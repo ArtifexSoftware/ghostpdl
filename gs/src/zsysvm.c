@@ -124,6 +124,30 @@ zsystemvmstring(i_ctx_t *i_ctx_p)
     return specific_vm_op(i_ctx_p, zstring, avm_system);
 }
 
+/* <name_string> <access_string> .systemvmfile <file> */
+private int
+zsystemvmfile(i_ctx_t *i_ctx_p)
+{
+    return specific_vm_op(i_ctx_p, zfile, avm_system);
+}
+
+/* <string> .systemvmlibfile <file> true */
+/* <string> .systemvmlibfile <string> false */
+private int
+zsystemvmlibfile(i_ctx_t *i_ctx_p)
+{
+    return specific_vm_op(i_ctx_p, zlibfile, avm_system);
+}
+
+/* <source> <EODcount> <EODstring> .systemvmSFD <file> */
+/* <source> <dict> <EODcount> <EODstring> .systemvmSFD <file> */
+/* <source> <dict> .systemvmSFD <file> *//* (LL3 only) */
+private int
+zsystemvmSFD(i_ctx_t *i_ctx_p)
+{
+    return specific_vm_op(i_ctx_p, zSFD, avm_system);
+}
+
 /* <any> .systemvmcheck <bool> */
 private int
 zsystemvmcheck(i_ctx_t *i_ctx_p)
@@ -151,5 +175,8 @@ const op_def zsysvm_op_defs[] =
     {"1.systemvmdict", zsystemvmdict},
     {"1.systemvmpackedarray", zsystemvmpackedarray},
     {"1.systemvmstring", zsystemvmstring},
+    {"1.systemvmfile", zsystemvmfile},
+    {"1.systemvmlibfile", zsystemvmlibfile},
+    {"2.systemvmSFD", zsystemvmSFD},
     op_def_end(0)
 };

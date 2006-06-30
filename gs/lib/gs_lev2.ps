@@ -453,10 +453,6 @@ end		% serverdict
       serverdict /.jobsave null put
       serverdict /.jobsavelevel 0 put
       serverdict /.adminjob 3 -1 roll 1 gt put
-		% The Adobe documentation doesn't say what happens to the
-		% graphics state stack in this case, but an experiment
-		% produced results suggesting that a grestoreall occurs.
-      grestoreall
     } {
 			% Encapsulated job
       pop
