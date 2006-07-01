@@ -11,6 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
+/* $Id$ */
 /* Non-I/O file operators */
 #include "memory_.h"
 #include "string_.h"
