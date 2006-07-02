@@ -116,10 +116,9 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
 	double v0 = pc->paint.values[i];
 	const gs_range *const rangeDEFG = &pcie->RangeDEFG.ranges[i];
 	double value =
-	    (v0 < rangeDEFG->rmin ? 0.0 :
-	     v0 > rangeDEFG->rmax ? factor :
-	     (v0 - rangeDEFG->rmin) * factor /
-	       (rangeDEFG->rmax - rangeDEFG->rmin));
+	    (v0 < rangeDEFG->rmin ? 0.0 : factor *
+	    (v0 > rangeDEFG->rmax ? rangeDEFG->rmax - rangeDEFG->rmin :
+	     v0 - rangeDEFG->rmin ));
 	int vi = (int)value;
 	double vf = value - vi;
 	double v = pcie->caches_defg.DecodeDEFG[i].floats.values[vi];
@@ -175,10 +174,9 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
 	double v0 = pc->paint.values[i];
 	const gs_range *const rangeDEF = &pcie->RangeDEF.ranges[i];
 	double value =
-	    (v0 < rangeDEF->rmin ? 0.0 :
-	     v0 > rangeDEF->rmax ? factor :
-	     (v0 - rangeDEF->rmin) * factor /
-	       (rangeDEF->rmax - rangeDEF->rmin));
+	    (v0 < rangeDEF->rmin ? 0.0 : factor *
+	    (v0 > rangeDEF->rmax ? rangeDEF->rmax - rangeDEF->rmin :
+	     v0 - rangeDEF->rmin ));
 	int vi = (int)value;
 	double vf = value - vi;
 	double v = pcie->caches_def.DecodeDEF[i].floats.values[vi];
