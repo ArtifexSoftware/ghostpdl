@@ -28,6 +28,7 @@
 #include "gdevpdt.h"
 #include "smd5.h"
 #include "sarc4.h"
+#include "gpgetenv.h"
 
 /* Define the default language level and PDF compatibility level. */
 /* Acrobat 4 (PDF 1.3) is the default. */
@@ -243,6 +244,39 @@ pdf_open_temp_stream(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
     return 0;
 }
 
+private void
+write_time_zone(char *buf, int offset)
+{
+    char tz[20];
+    char *p = tz + 3;
+    int zl;
+    int code = gp_getenv("TZ", tz, &zl);
+
+    if (code != 0) {
+	buf[offset] = ')';
+	buf[offset + 1] = 0;
+	return;
+    }
+    p = tz + 3;
+    zl -= 3;
+    if (*p != '+' && *p != '-') {
+	buf[offset] = '+';
+	offset++;
+    } else {
+	buf[offset] = *p;
+	offset++;
+	p++;
+    }
+    memcpy(buf + offset, p, 2);
+    offset += 2;
+    p += 2;
+    if (*p != ':') {
+	memcpy(buf + offset, "'00'", 4); /* Set the default time zone 0. */
+	return;
+    }
+    memcpy(buf + offset, p, 3);
+}
+
 /* Initialize the IDs allocated at startup. */
 void
 pdf_initialize_ids(gx_device_pdf * pdev)
@@ -275,14 +309,15 @@ pdf_initialize_ids(gx_device_pdf * pdev)
     {
 	struct tm tms;
 	time_t t;
-	char buf[1+2+4+2+2+2+2+2+2+1+1]; /* (D:yyyymmddhhmmss)\0 */
+	char buf[1+2+4+2+2+2+2+2+2+1+1+7]; /* (D:yyyymmddhhmmssZhh'mm')\0 */
 
 	time(&t);
 	tms = *localtime(&t);
 	sprintf(buf,
-		"(D:%04d%02d%02d%02d%02d%02d)",
+		"(D:%04d%02d%02d%02d%02d%02dZhh'mm')",
 		tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
 		tms.tm_hour, tms.tm_min, tms.tm_sec);
+	write_time_zone(buf, 17);
 	cos_dict_put_c_key_string(pdev->Info, "/CreationDate", (byte *)buf,
 				  strlen(buf));
 	cos_dict_put_c_key_string(pdev->Info, "/ModDate", (byte *)buf,

@@ -153,7 +153,7 @@ pdf_xml_copy(stream *s, const char *data)
 
 /* --------------------------------------------  */
 
-private void
+private int
 pdf_xmp_time(char *buf, int buf_length)
 {
     /* We don't write a day time because we don't have a time zone. */
@@ -167,6 +167,90 @@ pdf_xmp_time(char *buf, int buf_length)
 	    "%04d-%02d-%02d",
 	    tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday);
     strncpy(buf, buf1, buf_length);
+    return strlen(buf);
+}
+
+private int
+pdf_xmp_convert_time(char *dt, int dtl, char *buf, int bufl)
+{   /* The 'dt' buffer is of same size as 'buf'. */
+    /* Input  sample : D:199812231952?08'00' */
+    /* Output sample : 1997-07-16T19:20:30+01:00 */
+    int l = dtl;
+
+    if (l > bufl)
+	l = bufl;
+    if (dt[0] == 'D' && dt[1] == ':') {
+	l -= 2;
+	memcpy(buf, dt + 2, l);
+    } else
+	memcpy(buf, dt, l);
+    memcpy(dt, buf, 4); /* year */
+    if (l <= 4)
+	return 4;
+
+    dt[4] = '-';
+    memcpy(dt + 5, buf + 4, 2); /* month */
+    if (l <= 6)
+	return 7;
+
+    dt[7] = '-';
+    memcpy(dt + 8, buf + 6, 2); /* day */
+    if (l <= 8)
+	return 10;
+
+    dt[10] = 'T';
+    memcpy(dt + 11, buf + 8, 2); /* hour */
+    dt[13] = ':';
+    memcpy(dt + 14, buf + 10, 2); /* minute */
+    if (l <= 12) {
+	dt[16] = 'Z'; /* Default time zone 0. */
+	return 17;
+    }
+
+    dt[16] = ':';
+    memcpy(dt + 17, buf + 12, 2); /* second */
+    if (l <= 14) {
+	dt[18] = 'Z'; /* Default time zone 0. */
+	return 19;
+    }
+
+    dt[19] = buf[14]; /* designator */
+    if (l <= 15)
+	return 20;
+    memcpy(dt + 20, buf + 15, 2); /* Time zone hour difference. */
+    if (l <= 17)
+	return 22;
+
+    dt[22] = ':';
+    /* Skipping '\'' in 'buf'. */
+    memcpy(dt + 23, buf + 18, 2); /* Time zone hour difference. */
+    return 25;
+}
+	
+private int
+pdf_get_docinfo_item(gx_device_pdf *pdev, const char *key, char *buf, int buf_length)
+{
+    const cos_value_t *v = cos_dict_find(pdev->Info, (const byte *)key, strlen(key));
+    int l;
+    const byte *s;
+
+    if (v != NULL && (v->value_type == COS_VALUE_SCALAR || 
+			v->value_type == COS_VALUE_CONST)) {
+	if (v->contents.chars.size > 2 && v->contents.chars.data[0] == '(') {
+	    s = v->contents.chars.data + 1;
+	    l = v->contents.chars.size - 2;
+	} else {
+	    s = v->contents.chars.data;
+	    l = v->contents.chars.size;
+	}
+    } else
+	return 0;
+    if (l < 0)
+	l = 0;
+    if (l > buf_length)
+	l = buf_length;
+    memcpy(buf, s, l);
+    return l;
 }
 
 private void
@@ -269,7 +353,8 @@ private char dd[]={'\'', 0xEF, 0xBB, 0xBF, '\'', 0};
 private int
 pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 {
-    char instance_uuid[40], document_uuid[40], date_time[40];
+    char instance_uuid[40], document_uuid[40], cre_date_time[40], mod_date_time[40], date_time_buf[40];
+    int cre_date_time_len, mod_date_time_len;
     int code;
     stream *s = pdev->strm;
 
@@ -279,7 +364,18 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
     code = pdf_make_document_uuid(pdev, digest, document_uuid, sizeof(document_uuid));
     if (code < 0)
 	return code;
-    pdf_xmp_time(date_time, sizeof(date_time));
+
+    
+    cre_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time));
+    if (!cre_date_time_len)
+	cre_date_time_len = pdf_xmp_time(cre_date_time, sizeof(cre_date_time));
+    else
+	cre_date_time_len = pdf_xmp_convert_time(cre_date_time, cre_date_time_len, date_time_buf, sizeof(date_time_buf));
+    mod_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", mod_date_time, sizeof(mod_date_time));
+    if (!mod_date_time_len)
+	mod_date_time_len = pdf_xmp_time(mod_date_time, sizeof(mod_date_time));
+    else
+	mod_date_time_len = pdf_xmp_convert_time(mod_date_time, mod_date_time_len, date_time_buf, sizeof(date_time_buf));
     pdf_xml_ins_beg(s, "xpacket");
     pdf_xml_attribute_name(s, "begin");
     pdf_xml_copy(s, dd);
@@ -313,22 +409,15 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 	    pdf_xml_attribute_name(s, "xmlns:xap");
 	    pdf_xml_attribute_value(s, "http://ns.adobe.com/xap/1.0/");
 	    pdf_xml_attribute_name(s, "xap:ModifyDate");
-	    pdf_xml_attribute_value(s, date_time);
+	    pdf_xml_attribute_value_data(s, (const byte *)mod_date_time, mod_date_time_len);
 	    pdf_xml_attribute_name(s, "xap:CreateDate");
-	    pdf_xml_attribute_value(s, date_time);
+	    pdf_xml_attribute_value_data(s, (const byte *)cre_date_time, cre_date_time_len);
 	    pdf_xml_tag_end(s);
 	    {
 		pdf_xml_tag_open_beg(s, "xap:CreatorTool");
 		pdf_xml_tag_end(s);
-		{
-		    char buf[10];
-
-		    sprintf(buf, "%d.%02d", (int)(gs_revision / 100), (int)(gs_revision % 100));
-		    pdf_xml_string_write(s, gs_product);
-		    pdf_xml_string_write(s, " ");
-		    pdf_xml_string_write(s, buf);
-		    pdf_xml_string_write(s, " PDF Writer");
-		}
+		pdf_xmp_write_docinfo_item(pdev, s,  "/Creator", "UnknownApplication",
+			pdf_xml_data_write);
 		pdf_xml_tag_close(s, "xap:CreatorTool");
 	    }
 	    pdf_xml_tag_close(s, "rdf:Description");
@@ -403,8 +492,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 		pdf_xml_attribute_value(s,"1");
 		pdf_xml_attribute_name(s, "pdfaid:conformance");
 		pdf_xml_attribute_value(s,"B");
-		pdf_xml_tag_end(s);
-		pdf_xml_tag_close(s, "rdf:Description");
+		pdf_xml_tag_end_empty(s);
 	   }
 	}
 	pdf_xml_copy(s, "</rdf:RDF>\n");

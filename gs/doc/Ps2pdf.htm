@@ -135,6 +135,43 @@ executable; otherwise the script assumes the executable is named
 different name, you must set <b><tt>GSC</tt></b> to the name of the
 executable.
 
+<p>
+The <b><tt>pdfwrite</tt></b> device uses the value of the environment variable <b><tt>TZ</tt></b>
+for generating values of <b><tt>CreationDate</tt></b> and <b><tt>ModDate</tt></b>
+keys of the <b><tt>Info</tt></b> dictionary, and for 
+<b><tt>CreateDate</tt></b> and <b><tt>ModifyDate</tt></b> keys of the document <b><tt>Metadata</tt></b>.
+If the environment variable is not set, the <b><tt>Info</tt></b> dictionary keys do not
+include a time zone specification, and <b><tt>Metadata</tt></b> (if presents)
+specifies the 0th time zone.
+
+Use the commonly known syntax to set the <b><tt>TZ</tt></b> environment variable:
+
+
+<blockquote><b><tt>
+tzn[+ | -]hh[:mm[:ss] ][dzn] 
+</b></tt></blockquote>
+
+<ul>
+<li><b><tt>tzn</tt></b>
+- Three-letter time-zone name, such as PST. You must specify the correct offset from local time to UTC
+(not unused by <b><tt>pdfwrite</tt></b>).
+
+<li><b><tt>hh</tt></b>
+- Difference in hours between UTC and local time. Optionally signed.
+
+<li><b><tt>mm</tt></b>
+- Minutes. Separated from hh by a colon (:).
+
+<li><b><tt>ss</tt></b>
+- Seconds. Separated from mm by a colon (:)
+(not unused by <b><tt>pdfwrite</tt></b>).
+
+<li><b><tt>dzn</tt></b>
+- Three-letter daylight-saving-time zone such as PDT. If daylight saving time is never in effect in the locality, set TZ without a value for dzn. The C run-time library assumes the United States' rules for implementing the calculation of Daylight Saving Time (DST)
+(not unused by <b><tt>pdfwrite</tt></b>).
+</ul>
+
+
 <hr>
 
 <h2><a name="Orientation"></a>Setting page orientation</h2>
@@ -833,6 +870,9 @@ Here is a sample command line to invoke Ghostscript for generating a PDF/X-3 doc
 gs -dPDFX -dBATCH -dNOPAUSE -dNOOUTERSAVE -dUseCIEColor -sDEVICE=pdfwrite -sOutputFile=out-x3.pdf PDFX_def.ps input.ps
 </tt></b></blockquote>
 
+<p>
+Note that the <b><tt>TZ</tt></b> environment variable is necessary for a proper generation 
+of the document the <b><tt>Metadata</tt></b>. See the <a href="#Usage">Usage</a> for details.
 
 <p>
 <hr>
@@ -854,6 +894,10 @@ Here is a sample command line to invoke Ghostscript for generating a PDF/A docum
 <blockquote><b><tt>
 gs -dPDFA -dBATCH -dNOPAUSE -dNOOUTERSAVE -dUseCIEColor -sDEVICE=pdfwrite -sOutputFile=out-a.pdf PDFA_def.ps input.ps
 </tt></b></blockquote>
+
+<p>
+Note that the <b><tt>TZ</tt></b> environment variable is necessary for a proper generation 
+of the document the <b><tt>Metadata</tt></b>. See the <a href="#Usage">Usage</a> for details.
 
 
 <p>
