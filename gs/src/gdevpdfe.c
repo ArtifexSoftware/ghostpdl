@@ -393,6 +393,19 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 	    }
 	    pdf_xml_tag_close(s, "rdf:Description");
 	    pdf_xml_newline(s);
+	    if (pdev->PDFA) {
+		pdf_xml_tag_open_beg(s, "rdf:Description");
+		pdf_xml_attribute_name(s, "rdf:about");
+		pdf_xml_attribute_value(s, "");
+		pdf_xml_attribute_name(s, "xmlns:pdfaid");
+		pdf_xml_attribute_value(s, "http://www.aiim.org/pdfa/ns/id.html");
+		pdf_xml_attribute_name(s, "pdfaid:part");
+		pdf_xml_attribute_value(s,"1");
+		pdf_xml_attribute_name(s, "pdfaid:conformance");
+		pdf_xml_attribute_value(s,"B");
+		pdf_xml_tag_end(s);
+		pdf_xml_tag_close(s, "rdf:Description");
+	   }
 	}
 	pdf_xml_copy(s, "</rdf:RDF>\n");
     }
