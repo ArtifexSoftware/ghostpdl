@@ -1046,6 +1046,14 @@ end readonly def
  { /DSCPageCount DSCPageCount 1 add store
  } bind def
 
+/get_media_box { % <pagedict> get_media_box <box>
+  /MediaBox pget not {
+    (   **** Page has no /MediaBox attribute. Using the current page size.\n)
+    pdfformaterror
+    [ 0 0 currentpagedevice /PageSize get aload pop ]
+  } if
+} bind def
+
 /.pdfshowpage_Install {	% <pagedict> [<prevproc>] .pdfshowpage_Install -
   exch
 	% We would like to clip to the CropBox here, but the subsequent
@@ -1054,7 +1062,7 @@ end readonly def
   dup /CropBox pget dup {exch pop} if systemdict /UseCropBox known and {
     dup /CropBox pget pop
   } {
-    dup /MediaBox pget pop	% There has to be a MediaBox
+    dup get_media_box
   } ifelse
   % stack: [<prevproc>] <pagedict> <Crop|Media Box>
   exch pop oforce_array normrect		% done with the pagedict
@@ -1146,7 +1154,7 @@ end readonly def
       1 index /CropBox pget dup {exch pop} if systemdict /UseCropBox known and {
         1 index /CropBox pget pop
       } {
-        1 index /MediaBox pget pop	% There has to be a MediaBox
+        1 index get_media_box
       } ifelse
       oforce_array normrect
       dup 0 get exch 1 get   % [] tx ty
@@ -1203,7 +1211,7 @@ end readonly def
       % (Adobe Tech Note 5407, sec 9.2)
       dup /Group knownoget {
 	1 index /CropBox knownoget not {
-	  1 index /MediaBox pget pop
+	  1 index get_media_box
 	} if oforce_array normrect .beginformgroup {
 	  showpagecontents
 	} stopped {
