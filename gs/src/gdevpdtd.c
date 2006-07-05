@@ -319,7 +319,7 @@ pdf_font_used_glyph(pdf_font_descriptor_t *pfd, gs_glyph glyph,
 
 /* Compute the FontDescriptor metrics for a font. */
 int
-pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
+pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 {
     gs_font_base *bfont = pdf_base_font_font(pfd->base_font, false);
     gs_glyph glyph, notdef;
@@ -373,12 +373,12 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
      * in gdevpdtd.h for why the following substitution is made.
      */
 #if 0
-#  define CONSIDER_FONT_SYMBOLIC(bfont) font_is_symbolic(bfont)
+#  define CONSIDER_FONT_SYMBOLIC(pdev, bfont) font_is_symbolic(bfont)
 #else
-#  define CONSIDER_FONT_SYMBOLIC(bfont)\
-  ((bfont)->encoding_index != ENCODING_INDEX_STANDARD)
+#  define CONSIDER_FONT_SYMBOLIC(pdev, bfont)\
+  ((bfont)->encoding_index != ENCODING_INDEX_STANDARD) && (!pdev->PDFA || bfont->FontType != ft_TrueType)
 #endif
-    if (CONSIDER_FONT_SYMBOLIC(bfont))
+    if (CONSIDER_FONT_SYMBOLIC(pdev, bfont))
 	desc.Flags |= FONT_IS_SYMBOLIC;
     /*
      * Scan the entire glyph space to compute Ascent, Descent, FontBBox, and
@@ -476,7 +476,7 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
     if (!(desc.Flags & FONT_IS_SYMBOLIC)) {
 	desc.Flags |= FONT_IS_ADOBE_ROMAN; /* required if not symbolic */
 	desc.XHeight = (int)x_height;
-	if (!small_present)
+	if (!small_present && (!pdev->PDFA || bfont->FontType != ft_TrueType))
 	    desc.Flags |= FONT_IS_ALL_CAPS;
 	desc.CapHeight = cap_height;
 	/*
@@ -526,10 +526,11 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
 	desc.Ascent = desc.FontBBox.q.y;
     desc.Descent = desc.FontBBox.p.y;
     if (!(desc.Flags & (FONT_IS_SYMBOLIC | FONT_IS_ALL_CAPS)) &&
-	(small_descent > desc.Descent / 3 || desc.XHeight > small_height * 0.9)
+	(small_descent > desc.Descent / 3 || desc.XHeight > small_height * 0.9) &&
+	(!pdev->PDFA || bfont->FontType != ft_TrueType)
 	)
 	desc.Flags |= FONT_IS_SMALL_CAPS;
-    if (fixed_width > 0) {
+    if (fixed_width > 0 && (!pdev->PDFA || bfont->FontType != ft_TrueType)) {
 	desc.Flags |= FONT_IS_FIXED_WIDTH;
 	desc.AvgWidth = desc.MaxWidth = desc.MissingWidth = fixed_width;
     }
@@ -552,7 +553,7 @@ pdf_finish_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     cos_dict_t *pcd = 0;
 
     if (!pfd->common.object->written &&
-	(code = pdf_compute_font_descriptor(pfd)) >= 0 &&
+	(code = pdf_compute_font_descriptor(pdev, pfd)) >= 0 &&
 	(!pfd->embed ||
 	 (code = pdf_write_embedded_font(pdev, pfd->base_font, 
 				&pfd->common.values.FontBBox, 
@@ -598,7 +599,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	pdf_font_descriptor_common_t fd;
 
 	fd = pfd->common;
-	if (pfd->embed && pfd->FontType == ft_TrueType &&
+	if (pfd->embed && pfd->FontType == ft_TrueType && !pdev->PDFA &&
 	    pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid)
 	    )
 	    fd.values.Flags =

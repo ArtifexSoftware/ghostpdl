@@ -121,7 +121,7 @@ int pdf_font_used_glyph(pdf_font_descriptor_t *pfd, gs_glyph glyph,
 /*
  * Compute the FontDescriptor metrics for a font.
  */
-int pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd);
+int pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd);
 
 /*
  * Finish a FontDescriptor by computing the metric values, and then
