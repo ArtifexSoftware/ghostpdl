@@ -485,7 +485,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 	    if (pdev->PDFA) {
 		pdf_xml_tag_open_beg(s, "rdf:Description");
 		pdf_xml_attribute_name(s, "rdf:about");
-		pdf_xml_attribute_value(s, "");
+		pdf_xml_attribute_value(s, instance_uuid);
 		pdf_xml_attribute_name(s, "xmlns:pdfaid");
 		pdf_xml_attribute_value(s, "http://www.aiim.org/pdfa/ns/id.html");
 		pdf_xml_attribute_name(s, "pdfaid:part");
@@ -522,6 +522,12 @@ pdf_document_metadata(gx_device_pdf *pdev)
 	if (pdev->EncryptMetadata)
 	    options |= DATA_STREAM_ENCRYPT;
 	code = pdf_open_aside(pdev, resourceOther, gs_no_id, &pres, true, options);
+	if (code < 0)
+	    return code;
+	code = cos_dict_put_c_key_string((cos_dict_t *)pres->object, "/Type", (const byte *)"/Metadata", 9);
+	if (code < 0)
+	    return code;
+	code = cos_dict_put_c_key_string((cos_dict_t *)pres->object, "/Subtype", (const byte *)"/XML", 4);
 	if (code < 0)
 	    return code;
 	code = pdf_write_document_metadata(pdev, digest);
