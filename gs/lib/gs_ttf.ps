@@ -200,8 +200,28 @@
   2 copy gets16 16 bitshift 3 1 roll 2 add getu16 add
 } bind def
 
+% <string|array> <index> getu16 <integer>
+/getu16a {
+  2 getinterval_from_stringarray 0 getu16
+} bind def
+
+% <string|array> <index> gets16 <integer>
+/gets16a {
+  2 getinterval_from_stringarray 0 gets16
+} bind def
+
+% <string|array> <index> getu32a <integer>
+/getu32a {
+  4 getinterval_from_stringarray 0 getu32
+} bind def
+
+% <string|array> <index> gets32a <integer>
+/gets32a {
+  4 getinterval_from_stringarray 0 gets32
+} bind def
+
 16#ffffffff 0 gt {  % 64-bit sign extension
-  { /curxuid /gets32 } {
+  { /curxuid /gets32 /gets32a} {
     mark 1 index load aload pop { 16#80000000 xor 16#80000000 sub } aload pop
     .packtomark cvx def
   } bind forall
@@ -293,7 +313,7 @@
 %       <encodingtable> proc <glypharray>
 /cmapformats mark
   0 {		% Apple standard 1-to-1 mapping.
-    6 256 getinterval { } forall 256 packedarray
+    6 256 getinterval_from_stringarray { } forall 256 packedarray
   } bind
   2 {		% Apple 16bit CJK (ShiftJIS etc)
 
@@ -306,11 +326,11 @@
 
     /sHK_sz 2 def
     /sH_sz 8 def
-    dup 2 getu16 /cmapf2_tblen exch def
+    dup 2 getu16a /cmapf2_tblen exch def
 
-    dup 4 getu16 /cmapf2_lang exch def
+    dup 4 getu16a /cmapf2_lang exch def
 
-    dup 6 256 sHK_sz mul getinterval /sHKs exch def
+    dup 6 256 sHK_sz mul getinterval_from_stringarray /sHKs exch def
 
     0		% initialization value for /sH_len
     0 1 255 {
@@ -323,7 +343,7 @@
     /sH_len exch def
 
     dup 6 256 sHK_sz mul add
-    cmapf2_tblen 1 index sub getinterval
+    cmapf2_tblen 1 index sub getinterval_from_stringarray
     /sH_gIA exch def
 
     /cmapf2_glyph_array 65535 array def
@@ -380,13 +400,13 @@
   4 {		% Microsoft/Adobe segmented mapping.
     /etab exch def
     /nseg2 etab 6 getu16 def
-    14 /endc etab 2 index nseg2 getinterval def
+    14 /endc etab 2 index nseg2 getinterval_from_stringarray def
 		% The Apple TrueType documentation omits the 2-byte
 		% 'reserved pad' that follows the endCount vector!
     2 add
-    nseg2 add /startc etab 2 index nseg2 getinterval def
-    nseg2 add /iddelta etab 2 index nseg2 getinterval def
-    nseg2 add /idroff etab 2 index nseg2 getinterval def
+    nseg2 add /startc etab 2 index nseg2 getinterval_from_stringarray def
+    nseg2 add /iddelta etab 2 index nseg2 getinterval_from_stringarray def
+    nseg2 add /idroff etab 2 index nseg2 getinterval_from_stringarray def
 		% The following hack allows us to properly handle
 		% idiosyncratic fonts that start at 0xf000:
     pop
@@ -441,14 +461,15 @@
       } {	% The +2 is for the 'reserved pad'.
         /gloff exch 14 nseg2 3 mul add 2 add i2 add add def
         0 1 ecode scode sub {
-	  2 mul gloff add etab exch getu16
+	  2 mul gloff add etab exch getu16a
 	  dup 0 ne { delta add 65535 and } if putglyph
 	} for
       } ifelse
     } for glyphs /glyphs null def	% for GC
   } bind
   6 {		% Single interval lookup.
-    dup 6 getu16 /firstcode exch def dup 8 getu16 /ng exch def
+    dup 6 getu16a /firstcode exch def
+    dup 8 getu16a /ng exch def
     firstcode ng add array
 		% Stack: tab array
 		% Fill elements 0 .. firstcode-1 with 0
@@ -457,19 +478,19 @@
 		% Stack: tab array subarray
 		% Fill elements firstcode .. firstcode+nvalue-1 with glyph values
     0 1 ng 1 sub {
-      dup 2 mul 10 add 4 index exch getu16 3 copy put pop pop
+      dup 2 mul 10 add 4 index exch getu16a 3 copy put pop pop
     } for pop exch pop
   } bind
 .dicttomark readonly def                % cmapformats
 
 % <cmaptab> cmaparray <glypharray>
 /cmaparray {
-  dup 0 getu16 cmapformats exch .knownget {
+  dup 0 getu16a cmapformats exch .knownget {
     TTFDEBUG {
-      (cmap: format ) print 1 index 0 getu16 = flush
+      (cmap: format ) print 1 index 0 getu16a = flush
     } if exec
   } {
-    (Can't handle format ) print 0 getu16 = flush
+    (Can't handle format ) print 0 getu16a = flush
     0 1 255 { } for 256 packedarray
   } ifelse
   TTFDEBUG {
@@ -609,8 +630,7 @@
 % Adobe requirement that each sfnts entry have even length.
 /readtables mark
 	% Ordinary tables
-  (cmap) //call.readtable
-  (head) 1 index
+  (head) //call.readtable
   (hhea) 1 index
   (maxp) 1 index
   (name) 1 index
@@ -618,7 +638,8 @@
   (post) //call.readbigtable
   (vhea) //call.readtable
 	% Big tables
-  (glyf) //call.readbigtable
+  (cmap) //call.readbigtable
+  (glyf) 1 index
   (loca) 1 index
   (hmtx) 1 index
   (vmtx) 1 index
@@ -1006,9 +1027,9 @@ mark
 		% The Apple cmap format is no help in determining the encoding.
 		% Look for a Microsoft table.  If we can't find one,
 		% just use the first table, whatever it is.
-  dup 4 8 getinterval exch             % the default
-  0 1 2 index 2 getu16 1 sub {
-    8 mul 4 add 1 index exch 8 getinterval
+  dup 4 8 getinterval_from_stringarray exch  % () [] % the default
+  0 1 2 index 2 getu16a 1 sub {              % () [] i
+    8 mul 4 add 1 index exch 8 getinterval_from_stringarray % () [] ()
     TTFDEBUG {
       (cmap: platform ) print dup 0 getu16 =only
       ( encoding ) print dup 2 getu16 = flush
@@ -1016,8 +1037,8 @@ mark
     dup 0 getu16 3 eq { exch 3 -1 roll pop exit } if pop
   } for
 		% Stack: subentry table
-  /cmapsub 2 index def
-  exch 4 getu32 1 index length 1 index sub getinterval
+  /cmapsub 2 index def  % () []
+  exch 4 getu32 1 index string_array_size 1 index sub getinterval_from_stringarray
   /cmaptab exch def
 } bind def
 
@@ -1042,10 +1063,11 @@ mark
     TTFDEBUG {
       (Seeking a cmap for platform=) print 1 index =only ( encoding=) print dup =
     } if
-    tabdict /cmap get                                   % bool [] i PlatID SpecID (cmap)
+    tabdict /cmap get                                    % bool [] i PlatID SpecID (cmap)
     dup /cmaptab exch def % temporary
-    0 1 2 index 2 getu16 1 sub {                         % bool [] i PlatID SpecID (cmap) j
-      8 mul 4 add 1 index exch 8 getinterval             % bool [] i PlatID SpecID (cmap) (cmapsub)
+    0 1 2 index 2 getu16a 1 sub {                        % bool [] i PlatID SpecID (cmap) j
+      8 mul 4 add 1 index exch 8
+      getinterval_from_stringarray                       % bool [] i PlatID SpecID (cmap) (cmapsub)
       TTFDEBUG {
         (cmap: platform ) print dup 0 getu16 =only
         ( encoding ) print dup 2 getu16 = flush
@@ -1295,11 +1317,11 @@ currentdict /postalias undef
   false exch tabdict /cmap get
 		% Some fonts have multiple cmaps with the same platform and
 		% encoding.  Use the first one we find.
-  0 1 2 index 2 getu16 1 sub {
+  0 1 2 index 2 getu16a 1 sub {
 		% Stack: false plat+enc cmap index
-    8 mul 4 add 1 index exch 8 getinterval 
+    8 mul 4 add 1 index exch 8 getinterval_from_stringarray
     dup 0 4 getinterval 3 index eq {
-      4 getu32 1 index exch 1 index length 1 index sub getinterval
+      4 getu32 1 index exch 1 index string_array_size 1 index sub getinterval_from_stringarray
       4 -1 roll not 4 2 roll exit
     } if pop
   } for
