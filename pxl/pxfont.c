@@ -134,6 +134,10 @@ px_set_char_matrix(px_state_t *pxs)
 		  if ( pxgs->char_shear.x != 0 || pxgs->char_shear.y != 0 )
 		    { gs_matrix smat;
 		      gs_make_identity(&smat);
+		      if( pxgs->char_shear.x == 1 && pxgs->char_shear.y == 1) {
+			  /* make 1 1 shear matrix invertable pxlfts2.0/t310.bin */
+			  pxgs->char_shear.y += 0.0001;
+		      }
 		      smat.yx = pxgs->char_shear.x;
 		      smat.xy = pxgs->char_shear.y;
 		      gs_matrix_multiply(&smat, &mat, &mat);
