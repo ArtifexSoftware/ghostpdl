@@ -930,6 +930,17 @@ pdfdict begin
     aload pop normrect_elems 4 array astore
 } bind def
 
+/fix_empty_rect_elems % </Name> <x1> <y1> <x2> <y2> fix_empty_rect_elems <x1> <y1> <x2'> <y2'>
+{  dup 3 index eq { //true } { 1 index 4 index eq } ifelse {
+     pop pop pop pop
+     (   **** Warning:  File has an empty ) pdfformaterror pdfstring cvs pdfformaterror
+     (. Using the current page size instead.\n) pdfformaterror
+     0 0 currentpagedevice /PageSize get aload pop
+   } {
+     5 -1 roll pop
+   } ifelse
+} bind def
+
 /boxrect		% <llx> <lly> <urx> <ury> boxrect <x> <y> <w> <h>
  { exch 3 index sub exch 2 index sub
  } bind def
@@ -1060,12 +1071,12 @@ end readonly def
 	% initgraphics would override it.  Instead, we have to handle it
 	% in graphicsbeginpage.
   dup /CropBox pget dup {exch pop} if systemdict /UseCropBox known and {
-    dup /CropBox pget pop
+    /CropBox exch /CropBox pget pop
   } {
-    dup get_media_box
+    /MediaBox exch get_media_box
   } ifelse
-  % stack: [<prevproc>] <pagedict> <Crop|Media Box>
-  exch pop oforce_array normrect		% done with the pagedict
+  % stack: [<prevproc>] /Crop|MediaBox <Crop|Media Box>
+  oforce_elems normrect_elems fix_empty_rect_elems 4 array astore
   systemdict /PDFFitPage known {
     PDFDEBUG { (Fiting PDF to imageable area of the page.) = flush } if
     currentpagedevice /.HWMargins get aload pop
@@ -1099,12 +1110,13 @@ end readonly def
 	% Stack: pagedict currentpagedict
   1 index /CropBox pget dup {exch pop} if systemdict /UseCropBox known and {
 			% Set the page size.
-    1 index /CropBox pget pop oforce_elems normrect_elems boxrect
+    1 index /CropBox pget pop /CropBox exch oforce_elems normrect_elems
+    fix_empty_rect_elems boxrect
     2 array astore /PageSize exch def pop pop
   } {
     1 index /MediaBox pget {
 			% Set the page size.
-      oforce_elems normrect_elems boxrect
+      /MediaBox exch oforce_elems normrect_elems fix_empty_rect_elems boxrect
       2 array astore /PageSize exch def pop pop
     } if
   } ifelse
@@ -1152,11 +1164,11 @@ end readonly def
         % do same here with the CropBox.
 
       1 index /CropBox pget dup {exch pop} if systemdict /UseCropBox known and {
-        1 index /CropBox pget pop
+        1 index /CropBox pget pop /CropBox exch
       } {
-        1 index get_media_box
+        1 index get_media_box /MediaBox exch
       } ifelse
-      oforce_array normrect
+      oforce_elems normrect_elems fix_empty_rect_elems 4 array astore
       dup 0 get exch 1 get   % [] tx ty
       2 index 0 get 2 index sub 3 index exch 0 exch put
       2 index 2 get 2 index sub 3 index exch 2 exch put
@@ -1210,9 +1222,12 @@ end readonly def
       % If the page has a Group, enclose contents in transparency group.
       % (Adobe Tech Note 5407, sec 9.2)
       dup /Group knownoget {
-	1 index /CropBox knownoget not {
-	  1 index get_media_box
-	} if oforce_array normrect .beginformgroup {
+	1 index /CropBox knownoget {
+          /CropBox exch
+        } {
+	  1 index get_media_box /MediaBox exch
+	} ifelse
+        oforce_elems normrect_elems fix_empty_rect_elems 4 array astore .beginformgroup {
 	  showpagecontents
 	} stopped {
 	  .discardtransparencygroup stop
