@@ -392,11 +392,6 @@ SYNC=winsync
 FEATURE_DEVS=$(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev $(GLD)imasklib.dev $(GLD)patlib.dev $(GLD)htxlib.dev $(GLD)roplib.dev $(GLD)devcmap.dev $(GLD)bbox.dev $(GLD)pipe.dev
 !endif
 
-# The list of resources to be included in the %rom% file system.
-# This is in the top makefile since the file descriptors are platform specific
-RD=$(PSRESDIR)/
-RESOURCE_LIST=$(RD)CMap/ $(RD)ColorSpace/ $(RD)Decoding/ $(RD)Font/ $(RD)Procset/ $(RD)IdiomSet/ $(RD)CIDFont/
-
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
