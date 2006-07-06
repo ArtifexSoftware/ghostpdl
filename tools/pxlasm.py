@@ -305,10 +305,6 @@ pxl_attribute_name_to_attribute_number_dict = {
     'YSpacingData' : 176,
 }
 
-def space_fill(match):
-    return ' ' * len(match.group())
-    
-
 class pxl_asm:
 
     def __init__(self, data):
@@ -323,15 +319,18 @@ class pxl_asm:
 
         # pointer to data
         self.index = 0
-        # replace comment and prologue with spaces, don't delete this
-        # stuff because we want the offset in the data to match the
-        # offset in the file when debugging.
-        self.data = re.sub( '\/\/.*\n', space_fill, self.data )
-        self.data = re.sub( '` HP-PCL.*\n', space_fill, self.data, 1)
+        # NB this screws up file indexing - remove all comments
+        self.data = re.sub( '\/\/.*\n', '', self.data )
+
         # print out big endian protocol and revision.  NB should check
         # revisions are the same.
         print "\033%-12345X@PJL ENTER LANGUAGE = PCLXL"
         print ") HP-PCL XL;" + self.protocol + ";" + self.revision
+
+        # skip over protocol and revision
+        while( data[self.index] != '\n' ):
+            self.index = self.index + 1
+        self.index = self.index + 1
 
         # saved size of last array parsed
         self.size_of_array = -1;
@@ -386,11 +385,11 @@ class pxl_asm:
             try:
                 sys.stdout.write(pack(format, args))
             except:
-
-                # shouldn't fail but if it does dump the remaining
-                # data into the stream and regenerate the failure.
-                sys.stdout.write(pack(format, args))
-    
+                sys.stderr.write("assemble failed at: ")
+                # dump surrounding context.
+                sys.stderr.write(self.data[self.index:self.index+40])
+                sys.stderr.write("\n")
+                raise
     # implicitly read when parsing the tag
     def attributeIDValue(self):
         return 1
