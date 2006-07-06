@@ -882,11 +882,17 @@ pl_font_scan_segments(const gs_memory_t *mem,
 		    /* Check for table sorted by horizontal glyph ID */
 		    { uint i;
 		      for ( i = 0; i < seg_size - 4; i += 4 )
-			if ( u16(sdata + i) >= u16(sdata + i + 4) )
+			if ( u16(sdata + i) > u16(sdata + i + 4) )
 			  return_scan_error(pfoe->illegal_VT_segment);
 		    }
 		    plfont->offsets.VT = segment - header;
 		    break;
+                  case id2('V', 'E'): /* nb unimplemented */
+                      break;
+                  case id2('V', 'R'): /* nb unimplemented */
+                      break;
+                  case id2('C', 'E'): /* nb unimplemented */
+                      break;
 		  default:
 		    if ( pfoe->illegal_font_segment < 0 )
 		      return_error(mem, pfoe->illegal_font_segment);
