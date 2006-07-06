@@ -134,10 +134,6 @@ px_set_char_matrix(px_state_t *pxs)
 		  if ( pxgs->char_shear.x != 0 || pxgs->char_shear.y != 0 )
 		    { gs_matrix smat;
 		      gs_make_identity(&smat);
-		      if( pxgs->char_shear.x == 1 && pxgs->char_shear.y == 1) {
-			  /* make 1 1 shear matrix invertable pxlfts2.0/t310.bin */
-			  pxgs->char_shear.y += 0.0001;
-		      }
 		      smat.yx = pxgs->char_shear.x;
 		      smat.xy = pxgs->char_shear.y;
 		      gs_matrix_multiply(&smat, &mat, &mat);
@@ -304,7 +300,6 @@ px_xyshow_begin(gs_state * pgs, const gs_char * str, uint size,
                 bool to_path, bool can_cache)
 {
     gs_text_params_t text;
-    int code;
 
     text.operation = TEXT_FROM_CHARS | TEXT_REPLACE_WIDTHS | TEXT_RETURN_WIDTH;
     if (to_path)
@@ -331,7 +326,6 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
     px_gstate_t *pxgs = pxs->pxgs;
     gs_text_enum_t *penum;
     const px_value_t *pstr = par->pv[0];
-    const char *str = (const char *)pstr->value.array.data;
     uint len = pstr->value.array.size;
     const px_value_t *pxdata = par->pv[1];
     const px_value_t *pydata = par->pv[2];
@@ -653,8 +647,7 @@ pxReadChar(px_args_t *par, px_state_t *pxs)
 	    case 1:		/* TrueType outline */
                 if ( false /* NB FIXME header[4] != plfst_TrueType */ )
 		code = gs_note_error(pxs->memory, errorFSTMismatch);
-	      else if ( data[1] != 0 && data[1] != 1 
-			/* && data[1] != 2  NB Needs to be tested uncomment to try */ )
+	      else if ( data[1] != 0 && data[1] != 1 && data[1] != 2 )
 		code = gs_note_error(pxs->memory, errorUnsupportedCharacterClass);
 	      else if ( size < 6 || size != 2 + pl_get_uint16(data + 2) )
 		code = gs_note_error(pxs->memory, errorIllegalCharacterData);
