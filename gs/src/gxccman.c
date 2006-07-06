@@ -496,14 +496,18 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     cached_char *cc;
     gx_device_memory mdev;
     gx_device_memory *pdev = dev;
-    gx_device_memory *pdev2;
-    float HWResolution0 = dev->HWResolution[0], HWResolution1 = dev->HWResolution[1];
-
+    gx_device_memory *pdev2;  
+    float HWResolution0 = 72, HWResolution1 = 72;  /* default for dev == NULL */
+    
     if (dev == NULL) {
 	mdev.memory = 0;
 	mdev.target = 0;
 	pdev = &mdev;
+    } else {
+	HWResolution0 = dev->HWResolution[0];
+	HWResolution1 = dev->HWResolution[1];
     }
+
     pdev2 = (dev2 == 0 ? pdev : dev2);
 
     /* Compute the scaled-down bitmap size, and test against */
