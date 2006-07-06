@@ -54,6 +54,9 @@ PSSRCDIR=.\src
 !ifndef PSLIBDIR
 PSLIBDIR=.\lib
 !endif
+!ifndef PSRESDIR
+PSRESDIR=.\Resource
+!endif
 !ifndef PSGENDIR
 PSGENDIR=.\obj
 !endif
@@ -83,7 +86,7 @@ GS_DOCDIR=$(GSROOTDIR)/doc
 # illegal escape.
 
 !ifndef GS_LIB_DEFAULT
-GS_LIB_DEFAULT=$(GSROOTDIR)/lib;$(GSROOTDIR)/Resource;$(AROOTDIR)/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/lib;$(GSROOTDIR)/Resource/Font;$(AROOTDIR)/fonts
 !endif
 
 # Define whether or not searching for initialization files should always
@@ -622,9 +625,6 @@ FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(P
 !ifndef COMPILE_INITS
 COMPILE_INITS=0
 !endif
-
-# This is in the top level makefile since it is platform dependent
-RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdiomSet/ Resource/CIDFont/
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.

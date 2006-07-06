@@ -28,6 +28,7 @@
 #include "string_.h"
 #include "gsiorom.h"
 #include "gx.h"
+#include "gpcheck.h"
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsutil.h"
@@ -87,6 +88,142 @@ get_u32_big_endian(const uint32_t *a)
     return v;
 }
 
+/* ------ Block streams, potentially compressed (read only) ------ */
+
+/* String stream procedures */
+private int
+    s_block_read_available(stream *, long *),
+    s_block_read_seek(stream *, long),
+    s_block_read_close(stream *),
+    s_block_read_process(stream_state *, stream_cursor_read *,
+			  stream_cursor_write *, bool);
+
+/* Initialize a stream for reading from a collection of blocks */
+void
+sread_block(register stream *s,  const byte *ptr, uint len, const uint32_t *node )
+{
+    static const stream_procs p = {
+	 s_block_read_available, s_block_read_seek, s_std_read_reset,
+	 s_std_read_flush, s_block_read_close, s_block_read_process,
+	 NULL		/* no read_switch */
+    };
+    s_std_init(s, (byte *)ptr, len, &p, s_mode_read + s_mode_seek);
+    s->end_status = 0;
+    s->file = (FILE *)node;	/* convenient place to put it for %rom% files */ 
+    s->file_modes = s->modes;
+    s->file_offset = 0;
+    s->file_limit = max_long;
+}
+
+/* Return the number of available bytes */
+private int
+s_block_read_available(stream *s, long *pl)
+{
+    uint32_t *node = (uint32_t *)s->file;
+    uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
+
+    *pl = filelen - s->position - (sbufptr(s) - s->cbuf);
+    if (*pl == 0 && s->close_at_eod)	/* EOF */
+	*pl = -1;
+    return 0;
+}
+
+/* Seek in a string being read.  Return 0 if OK, ERRC if not. */
+private int
+s_block_read_seek(register stream * s, long pos)
+{
+    uint32_t *node = (uint32_t *)s->file;
+    uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
+    uint end = s->srlimit - s->cbuf + 1;
+    long offset = pos - s->position;
+
+    if (pos < 0 || pos > filelen)
+	return ERRC;
+    if (offset < 0 || offset > end) {
+	/* Need to pull a different block into the buffer */
+	stream_cursor_write pw;
+
+	/* buffer stays aligned to blocks */
+	offset = pos % ROMFS_BLOCKSIZE;
+	s->position = pos - offset;
+	pw.ptr = s->cbuf - 1;
+	pw.limit = pw.ptr + s->cbsize;
+	if ((s->end_status = s_block_read_process((stream_state *)s, NULL, &pw, 0)) == ERRC)
+	    return ERRC;
+	if (s->end_status == 1)
+	    s->end_status = 0;
+	s->srptr = s->cbuf - 1;
+	s->srlimit = pw.ptr;		/* limit of the block just read */
+    } 
+    /* Now set the read pointer to the correct place in the buffer */
+    s->srptr = s->cbuf + offset - 1;
+    return 0;
+}
+
+private int
+s_block_read_close(stream * s)
+{
+    gs_free_object(s->memory, s->cbuf, "file_close(buffer)");
+    s->file = 0;			/* disconnect the node */
+    /* Increment the IDs to prevent further access. */
+    s->read_id = s->write_id = (s->read_id | s->write_id) + 1;
+    return 0;
+}
+
+private int
+s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
+		      stream_cursor_write * pw, bool last)
+{
+    int  code;
+    stream *s = (stream *)st;	/* no separate state */
+    uint32_t *node = (uint32_t *)s->file;
+    uint max_count = pw->limit - pw->ptr;
+    int status = 1;
+    int compression = ((get_u32_big_endian(node) & 0x80000000) != 0) ? 1 : 0;
+    uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
+    uint32_t blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
+    int iblock = (s->position + pw->ptr + 1 - s->cbuf) / ROMFS_BLOCKSIZE;
+    unsigned long block_length = get_u32_big_endian(node+1+(2*iblock));
+    unsigned const long block_offset = get_u32_big_endian(node+2+(2*iblock));
+    unsigned const char *block_data = ((unsigned char *)node) + block_offset;
+    int count = iblock < (blocks - 1) ? ROMFS_BLOCKSIZE : filelen - (ROMFS_BLOCKSIZE * iblock);
+
+    if (count > max_count) {
+	return ERRC;			/* should not happen */
+    }
+    if (block_data == NULL) {
+	return EOFC;
+    }
+    if (s->file_limit < max_long) {
+	long limit_count = s->file_offset + s->file_limit - s->position;
+
+	if (count > limit_count)
+	    count = limit_count;
+    }
+
+    if (count < ROMFS_BLOCKSIZE || iblock == (blocks - 1))
+	status = EOFC;			/* at EOF when not filling entire buffer */
+    /* get the block into the buffer */
+    if (compression) {
+	unsigned long buflen = ROMFS_BLOCKSIZE;
+
+	/* Decompress the data into this block */
+	code = uncompress (pw->ptr+1, &buflen, block_data, block_length);
+	if (count != buflen) {
+	    return ERRC;
+	}
+    } else {
+	/* not compressed -- just copy it */
+	memcpy(pw->ptr+1, block_data, block_length);
+	count = block_length;
+    }
+    if (count < 0)
+	count = 0;
+    pw->ptr += count;
+    process_interrupts(s->memory);
+    return status;
+}
+
 private int
 romfs_init(gx_io_device *iodev, gs_memory_t *mem)
 {
@@ -103,11 +240,12 @@ romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
     const char *access, stream **ps, gs_memory_t *mem)
 {
     extern const uint32_t *gs_romfs[];
+    int code;
     const uint32_t *node_scan = gs_romfs[0], *node = NULL;
     uint32_t filelen, blocks, decompress_len;
     int i, compression;
     char *filename;
-    byte *buf;
+    char fmode[4] = "\000\000\000\000";
 
     /* return an empty stream on error */
     *ps = NULL;
@@ -127,44 +265,14 @@ romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
     if (node == NULL)
 	return_error(gs_error_undefinedfilename);
 
-    /* return the uncompressed contents of the string */
-    compression = ((get_u32_big_endian(node) & 0x80000000) != 0) ? 1 : 0;
-    buf = gs_alloc_string(mem, filelen, "romfs buffer");
-    if (buf == NULL) {
-	if_debug0('s', "%rom%: could not allocate buffer\n");
-	return_error(gs_error_VMerror);
-    }
-    /* deflate the file into the buffer */
-    decompress_len = 0;
-    for (i=0; i<blocks; i++) {
-	unsigned long block_length = get_u32_big_endian(node+1+(2*i));
-	unsigned const long block_offset = get_u32_big_endian(node+2+(2*i));
-	unsigned const char *block_data = ((unsigned char *)node) + block_offset;
-	int code;
-
-	if (compression) {
-	    unsigned long buflen = ROMFS_BLOCKSIZE;
-
-	    /* Decompress the data into this block */
-	    code = uncompress (buf+(i*ROMFS_BLOCKSIZE), &buflen,
-				block_data, block_length);
-	    decompress_len += buflen;
-	} else {
-	    /* not compressed -- just copy it */
-	    memcpy(buf+(i*ROMFS_BLOCKSIZE), block_data, block_length);
-	    decompress_len += block_length;
-        }
-    }
-    if (decompress_len != filelen) {
-	unsigned long dl=decompress_len, fl=filelen;
-
-	eprintf2("romfs decompression length error. Was %ld should be %ld\n",
-		dl, fl);
-	return_error(gs_error_ioerror);
-    }
-    *ps = s_alloc(mem, "romfs");
-    sread_string(*ps, buf, filelen);
-
+    /* Initialize a stream for reading this romfs file using a common function */
+    /* we get a buffer that is larger than what we need for decompression */
+    /* we need extra space since some filters may leave data in the buffer when */
+    /* calling 'read_process' */
+    code = file_prepare_stream(fname, namelen, access, ROMFS_BLOCKSIZE+256, ps, &fmode, mem);
+    if (code < 0) 
+	return code;
+    sread_block(*ps, (*ps)->cbuf, (*ps)->cbsize, node);
     /* return success */
     return 0;
 }

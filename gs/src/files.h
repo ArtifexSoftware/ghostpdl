@@ -46,6 +46,9 @@ bool zis_stdin(const stream *);
 extern stream *const invalid_file_entry;
 /* Make an invalid file object. */
 void make_invalid_file(ref *);
+/* create a stream for a file object */
+int file_prepare_stream(const char *, uint, const char, 
+		 uint, stream **, char[4], gs_memory_t *);
 
 /*
  * Macros for checking file validity.

@@ -981,10 +981,15 @@ $(PSGEN)gs_init.ps : $(PSLIB)$(GS_INIT) $(GENINIT_XE) $(gconfig_h)
 # versions.
 EXTRA_INIT_FILES= Fontmap cidfmap xlatmap FAPIcidfmap FAPIconfig FAPIfontmap
 
-# Note: RESOURCE_LIST is first since those are CWD relative. Later files use -P prefix paths
 #	The init files are put in the lib/ directory (gs_init.ps + EXTRA_INIT_FILES)
+#	Resource files go into Resource/...
+
+RESOURCE_LIST=ColorSpace/ Decoding/ Font/ Procset/ IdiomSet/ CIDFont/ CMap/
+
+# PCLXL_ PJL and XPS hooks are for other parsers that may be built with a PS
+# language switch build.
 $(GLOBJ)gsromfs.c : $(MKROMFS_XE) $(PSGEN)gs_init.ps $(arch_h)
-	$(EXP)$(MKROMFS_XE) -o $(GLOBJ)gsromfs.c -c -X .svn $(RESOURCE_LIST) -d lib/ -P $(PSGEN) gs_init.ps -P $(PSLIB) $(EXTRA_INIT_FILES)
+	$(EXP)$(MKROMFS_XE) -o $(GLOBJ)gsromfs.c -c -X .svn -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSGEN) gs_init.ps -P $(PSLIB) $(EXTRA_INIT_FILES) $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS)
 
 # ---------------- Stochastic halftone ---------------- #
 

@@ -898,10 +898,9 @@ gp_file_name_combine_patch(const char *prefix, uint plen, const char *fname, uin
 /* Return 0 if successful, error code if not. */
 /* On a successful return, the C file name is in the stream buffer. */
 /* If fname==0, set up stream, and buffer. */
-private int
+int
 file_prepare_stream(const char *fname, uint len, const char *file_access, 
-		 uint buffer_size, stream ** ps, char fmode[4], 
-		 gx_io_device *iodev, gs_memory_t *mem)
+		 uint buffer_size, stream ** ps, char fmode[4], gs_memory_t *mem)
 {
     byte *buffer;
     register stream *s;
@@ -1134,8 +1133,7 @@ file_open_stream(const char *fname, uint len, const char *file_access,
 
     if (!iodev)
 	iodev = iodev_default;
-    code = file_prepare_stream(fname, len, file_access, buffer_size, ps, fmode, 
-			    (!iodev ? iodev_default : iodev), mem);
+    code = file_prepare_stream(fname, len, file_access, buffer_size, ps, fmode, mem);
     if (code < 0)
 	return code;
     if (fname == 0)

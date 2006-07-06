@@ -34,6 +34,7 @@ GLGENDIR=obj
 GLOBJDIR=obj
 PSSRCDIR=src
 PSLIBDIR=lib
+PSRESDIR=Resource
 PSGENDIR=obj
 PSOBJDIR=obj
 
@@ -58,7 +59,7 @@ GS_DOCDIR=$(docdir)
 # Define the default directory/ies for the runtime
 # initialization, resource and font files.  Separate multiple directories with a ;.
 
-GS_LIB_DEFAULT="$(gsdatadir)/lib;$(gsdatadir)/Resource;$(gsfontdir)"
+GS_LIB_DEFAULT="$(gsdatadir)/lib;$(gsdatadir)/Resource/Font;$(gsfontdir)"
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -263,10 +264,6 @@ SYNC=posync
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)fapi.dev
-
-# The list of resources to be included in the %rom% file system.
-# This is in the top makefile since the file descriptors are platform specific
-RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdiomSet/ Resource/CIDFont/
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.

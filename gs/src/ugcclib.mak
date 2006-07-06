@@ -17,6 +17,7 @@ BINDIR=./libobj
 GLSRCDIR=./src
 GLGENDIR=./libobj
 GLOBJDIR=./libobj
+PSRESDIR=./Resource
 DD=$(GLGENDIR)/
 GLD=$(GLGENDIR)/
 
@@ -28,7 +29,7 @@ include $(GLSRCDIR)/version.mak
 gsdir = /usr/local/share/ghostscript
 gsdatadir = $(gsdir)/$(GS_DOT_VERSION)
 GS_DOCDIR=$(gsdatadir)/doc
-GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource:$(gsdir)/fonts
+GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource/Font:$(gsdir)/fonts
 SEARCH_HERE_FIRST=1
 GS_INIT=gs_init.ps
 
@@ -103,10 +104,6 @@ SYNC=posync
 FEATURE_DEVS=$(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev\
  $(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)patlib.dev $(GLD)htxlib.dev \
  $(GLD)roplib.dev $(GLD)devcmap.dev
-
-# The list of resources to be included in the %rom% file system.
-# This is in the top makefile since the file descriptors are platform specific
-RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdiomSet/ Resource/CIDFont/
 
 COMPILE_INITS=0
 BAND_LIST_STORAGE=file
