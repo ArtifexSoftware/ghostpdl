@@ -213,7 +213,7 @@ void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len)
 	w2c.c.c2 = p[j++];
 	w2c.c.c3 = p[j++];
 	w2c.c.c4 = p[j++];
-	fprintf(out, "0x%08x,", w2c.w);
+	fprintf(out, "0x%08lx,", w2c.w);
 	if ((i & 7) == 7)
 	    fprintf(out, "\n\t");
     }
@@ -225,7 +225,7 @@ void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len)
         w2c.c.c2 = p[j+1];
       case 1:
         w2c.c.c1 = p[j];
-	fprintf(out, "0x%08x,", w2c.w);
+	fprintf(out, "0x%08lx,", w2c.w);
       default: ;
     }
     fprintf(out, "\n\t");
@@ -432,9 +432,9 @@ main(int argc, char *argv[])
  		"	    options and paths can be interspersed and are processed in order\n"
  		"	    options:\n"
  		"		-o outputfile	default: obj/gsromfs.c if this option present, must be first.\n"
- 		"		-P prefix	use prefix to find path. prefix not included in %rom%\n"
+ 		"		-P prefix	use prefix to find path. prefix not included in %%rom%%\n"
  		"		-X path		exclude the path from further processing.\n"
- 		"		-d string       directory in %rom file system (really just a prefix string on filename)\n"
+ 		"		-d string       directory in %%rom file system (just a prefix string on filename)\n"
  		"		-c		compression on\n"
  		"		-b		compression off (binary).\n"
  		"\n"
