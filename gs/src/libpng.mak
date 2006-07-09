@@ -84,6 +84,7 @@ PDEP=$(AK)
 
 png_1=$(PNGOBJ)png.$(OBJ) $(PNGOBJ)pngmem.$(OBJ) $(PNGOBJ)pngerror.$(OBJ) $(PNGOBJ)pngset.$(OBJ)
 png_2=$(PNGOBJ)pngtrans.$(OBJ) $(PNGOBJ)pngwrite.$(OBJ) $(PNGOBJ)pngwtran.$(OBJ) $(PNGOBJ)pngwutil.$(OBJ)
+png_3=$(PNGOBJ)pngread.$(OBJ) $(PNGOBJ)pngrutil.$(OBJ) $(PNGOBJ)pngrtran.$(OBJ) $(PNGOBJ)pngrio.$(OBJ) $(PNGOBJ)pngget.$(OBJ)
 
 # libpng modules
 
@@ -114,6 +115,22 @@ $(PNGOBJ)pngwtran.$(OBJ) : $(PNGSRC)pngwtran.c $(PDEP)
 $(PNGOBJ)pngwutil.$(OBJ) : $(PNGSRC)pngwutil.c $(PDEP)
 	$(PNGCC) $(PNGO_)pngwutil.$(OBJ) $(C_) $(PNGSRC)pngwutil.c
 
+$(PNGOBJ)pngread.$(OBJ) : $(PNGSRC)pngread.c $(PDEP)
+	$(PNGCC) $(PNGO_)pngread.$(OBJ) $(C_) $(PNGSRC)pngread.c
+
+$(PNGOBJ)pngrutil.$(OBJ) : $(PNGSRC)pngrutil.c $(PDEP)
+	$(PNGCC) $(PNGO_)pngrutil.$(OBJ) $(C_) $(PNGSRC)pngrutil.c
+
+$(PNGOBJ)pngrtran.$(OBJ) : $(PNGSRC)pngrtran.c $(PDEP)
+	$(PNGCC) $(PNGO_)pngrtran.$(OBJ) $(C_) $(PNGSRC)pngrtran.c
+
+$(PNGOBJ)pngrio.$(OBJ) : $(PNGSRC)pngrio.c $(PDEP)
+	$(PNGCC) $(PNGO_)pngrio.$(OBJ) $(C_) $(PNGSRC)pngrio.c
+
+$(PNGOBJ)pngget.$(OBJ) : $(PNGSRC)pngget.c $(PDEP)
+	$(PNGCC) $(PNGO_)pngget.$(OBJ) $(C_) $(PNGSRC)pngget.c
+
+
 # Define the version of libpng.dev that we are actually using.
 $(PNGGEN)libpng.dev : $(TOP_MAKEFILES) $(PNGGEN)libpng_$(SHARE_LIBPNG).dev
 	$(CP_) $(PNGGEN)libpng_$(SHARE_LIBPNG).dev $(PNGGEN)libpng.dev
@@ -125,10 +142,11 @@ $(PNGGEN)libpng_1.dev : $(TOP_MAKEFILES) $(LIBPNG_MAK) $(ECHOGS_XE) $(PZGEN)zlib
 	$(ADDMOD) $(PNGGEN)libpng_1 -include $(PZGEN)zlibe.dev
 
 # Define the non-shared version of libpng.
-$(PNGGEN)libpng_0.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(png_1) $(png_2)\
+$(PNGGEN)libpng_0.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(png_1) $(png_2) $(png_3)\
  $(PZGEN)zlibe.dev $(PNGGEN)lpg$(PNGVERSION).dev
 	$(SETMOD) $(PNGGEN)libpng_0 $(png_1)
 	$(ADDMOD) $(PNGGEN)libpng_0 $(png_2)
+	$(ADDMOD) $(PNGGEN)libpng_0 $(png_3)
 	$(ADDMOD) $(PNGGEN)libpng_0 -include $(PZGEN)zlibe.dev $(PNGGEN)lpg$(PNGVERSION).dev
 
 $(PNGGEN)lpg$(PNGVERSION).dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
