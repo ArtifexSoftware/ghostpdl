@@ -241,19 +241,19 @@ int gs_throw_imp(const char *func, const char *file, int line, int op, int code,
 
     /* throw */
     if (op == 0)
-	errprintf(NULL, "+ %s:%d: %s(): %s\n", file, line, func, msg);
+	errprintf("+ %s:%d: %s(): %s\n", file, line, func, msg);
 
     /* rethrow */
     if (op == 1)
-	errprintf(NULL, "| %s:%d: %s(): %s\n", file, line, func, msg);
+	errprintf("| %s:%d: %s(): %s\n", file, line, func, msg);
 
     /* catch */
     if (op == 2)
-	errprintf(NULL, "- %s:%d: %s(): %s\n", file, line, func, msg);
+	errprintf("- %s:%d: %s(): %s\n", file, line, func, msg);
 
     /* warn */
     if (op == 3)
-	errprintf(NULL, "  %s:%d: %s(): %s\n", file, line, func, msg);
+	errprintf("  %s:%d: %s(): %s\n", file, line, func, msg);
 
     return code;
 }
