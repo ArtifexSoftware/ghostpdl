@@ -157,6 +157,27 @@ zis_stdin(const stream *s)
 }
 
 private int
+    s_stdout_swrite_process(stream_state *, stream_cursor_read *,
+			 stream_cursor_write *, bool);
+
+/* Write a buffer to stdout, potentially writing to callback */
+private int
+s_stdout_write_process(stream_state * st, stream_cursor_read * ignore_pr,
+		     stream_cursor_write * pw, bool last)
+{
+    uint count = pr->limit - pr->ptr;
+    int written;
+
+    if (count == 0) 
+	return 0;
+    written = outwrite(st->memory, pr->ptr + 1, count);
+    if (written < count) {
+	return ERRC;
+    pr->ptr += written;
+    return 0;
+}
+
+private int
 stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 	    gs_memory_t * mem)
 {
@@ -176,6 +197,7 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 	swrite_file(s, gs_stdout, buf, STDOUT_BUF_SIZE);
 	s->save_close = s->procs.flush;
 	s->procs.close = file_close_file;
+	s->procs.process = s_stdout_write_process;
 	make_file(&ref_stdout, a_write | avm_system, s->write_id, s);
 	*ps = s;
 	return 1;

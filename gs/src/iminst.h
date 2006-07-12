@@ -72,7 +72,6 @@ struct gs_main_instance_s {
     gs_file_path lib_path;	/* library search list (GS_LIB) */
     long base_time[2];		/* starting usertime */
     void *readline_data;	/* data for gp_readline */
-    char stdin_buf[STDIN_BUF_SIZE];	/* for e_NeedStdin callout */
     char stdout_buf[STDOUT_BUF_SIZE];	/* for e_NeedStdout callout */
     char stderr_buf[STDERR_BUF_SIZE];	/* for e_NeedStderr callout */
     ref error_object;		/* Use by gsapi_*() */

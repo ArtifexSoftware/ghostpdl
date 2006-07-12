@@ -46,9 +46,6 @@ bool zis_stdin(const stream *);
 extern stream *const invalid_file_entry;
 /* Make an invalid file object. */
 void make_invalid_file(ref *);
-/* create a stream for a file object */
-int file_prepare_stream(const char *, uint, const char *,
-		 uint, stream **, char[4], gs_memory_t *);
 
 /*
  * Macros for checking file validity.
@@ -168,8 +165,4 @@ int zreadline_from(stream *s, gs_string *buf, gs_memory_t *bufmem,
 	/* for zfile.c */
 int zfilelineedit(i_ctx_t *i_ctx_p);
 
-	/* for zfproc.c */
-int zneedstdin(i_ctx_t *i_ctx_p);
-int zneedstdout(i_ctx_t *i_ctx_p);
-int zneedstderr(i_ctx_t *i_ctx_p);
 #endif /* files_INCLUDED */

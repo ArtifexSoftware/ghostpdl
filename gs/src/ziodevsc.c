@@ -81,52 +81,78 @@ stdio_close(stream *s)
 }
 
 private int
+    s_stdin_read_process(stream_state *, stream_cursor_read *,
+			 stream_cursor_write *, bool);
+
+private int
 stdin_init(gx_io_device * iodev, gs_memory_t * mem)
 {
     mem->gs_lib_ctx->stdin_is_interactive = true;
     return 0;
 }
 
-/* stdin stream implemented as procedure */
+/* Read from stdin into the buffer. */
+/* If interactive, only read one character. */
+private int
+s_stdin_read_process(stream_state * st, stream_cursor_read * ignore_pr,
+		     stream_cursor_write * pw, bool last)
+{
+    int wcount = (int)(pw->limit - pw->ptr);
+    int count;
+    gs_memory_t *mem = st->memory;
+
+    if (wcount <= 0)
+	return 0;
+
+    /* do the callout */
+    if (mem->gs_lib_ctx->stdin_fn)
+	count = (*mem->gs_lib_ctx->stdin_fn)
+	    (mem->gs_lib_ctx->caller_handle, (char *)pw->ptr + 1,
+	     mem->gs_lib_ctx->stdin_is_interactive ? 1 : wcount);
+    else
+	count = gp_stdin_read(pw->ptr + 1, wcount,
+		      mem->gs_lib_ctx->stdin_is_interactive,
+		      mem->gs_lib_ctx->fstdin);
+
+    pw->ptr += (count < 0) ? 0 : count;
+    return ((count < 0) ? ERRC : (count == 0) ? EOFC : count);
+}
+
 private int
 stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
-	    gs_memory_t * mem)
+	   gs_memory_t * mem)
 {
     i_ctx_t *i_ctx_p = (i_ctx_t *)iodev->state;	/* see above */
     stream *s;
-    int code;
 
     if (!streq1(access, 'r'))
 	return_error(e_invalidfileaccess);
     if (file_is_invalid(s, &ref_stdin)) {
-	/* procedure source */
-	gs_ref_memory_t *imem = (gs_ref_memory_t *)imemory_system;
-	ref rint;
+	/****** stdin SHOULD NOT LINE-BUFFER ******/
+	gs_memory_t *mem = imemory_system;
+	byte *buf;
+	static const stream_procs p = {
+	    s_std_noavailable, s_std_noseek, s_std_read_reset,
+	    s_std_read_flush, file_close_file, s_stdin_read_process
+	};
 
-	/* The procedure isn't used. */
-	/* Set it to literal 0 to recognised stdin. */
-	make_int(&rint, 0);
+	s = file_alloc_stream(mem, "stdin_open(stream)");
 
-	/* implement stdin as a procedure */
-	code = sread_proc(&rint, &s, imem);
-	if (code < 0)
-	    return code;
+	/* We want stdin to read only one character at a time, */
+	/* but it must have a substantial buffer, in case it is used */
+	/* by a stream that requires more than one input byte */
+	/* to make progress. */
+	buf = gs_alloc_bytes(mem, STDIN_BUF_SIZE, "stdin_open(buffer)");
+	if (s == 0 || buf == 0)
+	    return_error(e_VMerror);
+
+	s_std_init(s, buf, STDIN_BUF_SIZE, &p, s_mode_read);
+	s->file = 0;
+	s->file_modes = s->modes;
+	s->file_offset = 0;
+	s->file_limit = max_long;
 	s->save_close = s_std_null;
-	s->procs.close = stdio_close;
-	/* allocate buffer */
-	if (s->cbuf == 0) {
-	    int len = STDIN_BUF_SIZE;
-	    byte *buf = gs_alloc_bytes((gs_memory_t *)imemory_system,
-	    		len, "stdin_open");
-	    if (buf == 0)
-		return_error(e_VMerror);
-	    s->cbuf = buf;
-	    s->srptr = s->srlimit = s->swptr = buf - 1;
-	    s->swlimit = buf - 1 + len;
-	    s->bsize = s->cbsize = len;
-	}
-	s->state->min_left = 0;
-	make_file(&ref_stdin, a_read | avm_system, s->read_id, s);
+	make_file(&ref_stdin, a_readonly | avm_system, s->read_id, s);
 	*ps = s;
 	return 1;
     }
@@ -151,60 +177,62 @@ zget_stdin(i_ctx_t *i_ctx_p, stream ** ps)
     iodev->state = NULL;
     return min(code, 0);
 }
+
 /* Test whether a stream is stdin. */
 bool
 zis_stdin(const stream *s)
 {
-    /* Only stdin should be a procedure based stream, opened for
-     * reading and with a literal 0 as the procedure.
-     */
-    if (s_is_valid(s) && s_is_reading(s) && s_is_proc(s)) {
-        stream_proc_state *state = (stream_proc_state *)s->state;
-	if ((r_type(&(state->proc)) == t_integer) &&
-		(state->proc.value.intval == 0))
-	    return true;
-    }
-    return false;
+    return (s_is_valid(s) && s->procs.process == s_stdin_read_process);
 }
 
-/* stdout stream implemented as procedure */
+private int
+    s_stdout_swrite_process(stream_state *, stream_cursor_read *,
+			 stream_cursor_write *, bool);
+
+/* Write a buffer to stdout, potentially writing to callback */
+private int
+s_stdout_write_process(stream_state * st, stream_cursor_read *pr,
+		     stream_cursor_write *ignore_pw, bool last)
+{
+    uint count = pr->limit - pr->ptr;
+    int written;
+
+    if (count == 0) 
+	return 0;
+    written = outwrite(st->memory, pr->ptr + 1, count);
+    if (written < count)
+	return ERRC;
+    pr->ptr += written;
+    return 0;
+}
+
 private int
 stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 	    gs_memory_t * mem)
 {
     i_ctx_t *i_ctx_p = (i_ctx_t *)iodev->state;	/* see above */
     stream *s;
-    int code;
 
     if (!streq1(access, 'w'))
 	return_error(e_invalidfileaccess);
     if (file_is_invalid(s, &ref_stdout)) {
-	/* procedure source */
-	gs_ref_memory_t *imem = (gs_ref_memory_t *)imemory_system;
-	ref rint;
+	gs_memory_t *mem = imemory_system;
+	byte *buf;
+	static const stream_procs p = {
+	    s_std_noavailable, s_std_noseek, s_std_write_reset,
+	    s_std_write_flush, file_close_file, s_stdout_write_process
+	};
 
-	/* The procedure isn't used. */
-	/* Set it to literal 1 to recognised stdout. */
-	make_int(&rint, 1);
-
-	/* implement stdout as a procedure */
-	code = swrite_proc(&rint, &s, imem);
-	if (code < 0)
-	    return code;
+	s = file_alloc_stream(mem, "stdout_open(stream)");
+	buf = gs_alloc_bytes(mem, STDOUT_BUF_SIZE, "stdout_open(buffer)");
+	if (s == 0 || buf == 0)
+	    return_error(e_VMerror);
+	s_std_init(s, buf, STDOUT_BUF_SIZE, &p, s_mode_write);
+	s->file = 0;
+	s->file_modes = s->modes;
+	s->file_offset = 0;		/* in case we switch to reading later */
+	s->file_limit = max_long;	/* ibid. */
 	s->save_close = s->procs.flush;
-	s->procs.close = stdio_close;
-	/* allocate buffer */
-	if (s->cbuf == 0) {
-	    int len = STDOUT_BUF_SIZE;
-	    byte *buf = gs_alloc_bytes((gs_memory_t *)imemory_system,
-	    		len, "stdout_open");
-	    if (buf == 0)
-		return_error(e_VMerror);
-	    s->cbuf = buf;
-	    s->srptr = s->srlimit = s->swptr = buf - 1;
-	    s->swlimit = buf - 1 + len;
-	    s->bsize = s->cbsize = len;
-	}
 	make_file(&ref_stdout, a_write | avm_system, s->write_id, s);
 	*ps = s;
 	return 1;
@@ -212,6 +240,7 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
     *ps = s;
     return 0;
 }
+
 /* This is the public routine for getting the stdout stream. */
 int
 zget_stdout(i_ctx_t *i_ctx_p, stream ** ps)
@@ -231,44 +260,54 @@ zget_stdout(i_ctx_t *i_ctx_p, stream ** ps)
     return min(code, 0);
 }
 
-/* stderr stream implemented as procedure */
+private int
+    s_stderr_swrite_process(stream_state *, stream_cursor_read *,
+			 stream_cursor_write *, bool);
+
+/* Write a buffer to stderr, potentially writing to callback */
+private int
+s_stderr_write_process(stream_state * st, stream_cursor_read *pr,
+		     stream_cursor_write *ignore_pw, bool last)
+{
+    uint count = pr->limit - pr->ptr;
+    int written;
+
+    if (count == 0) 
+	return 0;
+    written = errwrite((const char *)(pr->ptr + 1), count);
+    if (written < count) 
+	return ERRC;
+    pr->ptr += written;
+    return 0;
+}
+
 private int
 stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
 	    gs_memory_t * mem)
 {
     i_ctx_t *i_ctx_p = (i_ctx_t *)iodev->state;	/* see above */
     stream *s;
-    int code;
 
     if (!streq1(access, 'w'))
 	return_error(e_invalidfileaccess);
     if (file_is_invalid(s, &ref_stderr)) {
-	/* procedure source */
-	gs_ref_memory_t *imem = (gs_ref_memory_t *)imemory_system;
-	ref rint;
+	gs_memory_t *mem = imemory_system;
+	byte *buf;
+	static const stream_procs p = {
+	    s_std_noavailable, s_std_noseek, s_std_write_reset,
+	    s_std_write_flush, file_close_file, s_stderr_write_process
+	};
 
-	/* The procedure isn't used. */
-	/* Set it to literal 2 to recognised stderr. */
-	make_int(&rint, 2);
-
-	/* implement stderr as a procedure */
-	code = swrite_proc(&rint, &s, imem);
-	if (code < 0)
-	    return code;
+	s = file_alloc_stream(mem, "stderr_open(stream)");
+	buf = gs_alloc_bytes(mem, STDERR_BUF_SIZE, "stderr_open(buffer)");
+	if (s == 0 || buf == 0)
+	    return_error(e_VMerror);
+	s_std_init(s, buf, STDERR_BUF_SIZE, &p, s_mode_write);
+	s->file = 0;
+	s->file_modes = s->modes;
+	s->file_offset = 0;		/* in case we switch to reading later */
+	s->file_limit = max_long;	/* ibid. */
 	s->save_close = s->procs.flush;
-	s->procs.close = stdio_close;
-	/* allocate buffer */
-	if (s->cbuf == 0) {
-	    int len = STDERR_BUF_SIZE;
-	    byte *buf = gs_alloc_bytes((gs_memory_t *)imemory_system,
-	    		len, "stderr_open");
-	    if (buf == 0)
-		return_error(e_VMerror);
-	    s->cbuf = buf;
-	    s->srptr = s->srlimit = s->swptr = buf - 1;
-	    s->swlimit = buf - 1 + len;
-	    s->bsize = s->cbsize = len;
-	}
 	make_file(&ref_stderr, a_write | avm_system, s->write_id, s);
 	*ps = s;
 	return 1;
@@ -276,6 +315,7 @@ stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
     *ps = s;
     return 0;
 }
+
 /* This is the public routine for getting the stderr stream. */
 int
 zget_stderr(i_ctx_t *i_ctx_p, stream ** ps)

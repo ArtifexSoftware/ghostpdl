@@ -816,31 +816,6 @@ zwritecvp_continue(i_ctx_t *i_ctx_p)
     return zwritecvp_at(i_ctx_p, op - 1, (uint) op->value.intval, false);
 }
 
-/* Callout for stdin */
-/* - .needstdin - */
-int
-zneedstdin(i_ctx_t *i_ctx_p)
-{
-    return e_NeedStdin;		/* Interpreter will exit to caller. */
-}
-
-/* Callout for stdout */
-/* - .needstdout - */
-int
-zneedstdout(i_ctx_t *i_ctx_p)
-{
-    return e_NeedStdout;	/* Interpreter will exit to caller. */
-}
-
-/* Callout for stderr */
-/* - .needstderr - */
-int
-zneedstderr(i_ctx_t *i_ctx_p)
-{
-    return e_NeedStderr;	/* Interpreter will exit to caller. */
-}
-
-
 
 /* ------ Initialization procedure ------ */
 
@@ -878,9 +853,6 @@ const op_def zfileio2_op_defs[] = {
     {"3%zreadstring_continue", zreadstring_continue},
     {"4%zwritecvp_continue", zwritecvp_continue},
     {"3%zwritehexstring_continue", zwritehexstring_continue},
-    {"0.needstdin", zneedstdin},
-    {"0.needstdout", zneedstdout},
-    {"0.needstderr", zneedstderr},
     op_def_end(0)
 };
 

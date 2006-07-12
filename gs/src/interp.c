@@ -520,9 +520,6 @@ again:
 	    epref = &doref;
 	    goto again;
 	case e_NeedInput:
-	case e_NeedStdin:
-	case e_NeedStdout:
-	case e_NeedStderr:
 	    return code;
     }
     /* Adjust osp in case of operand stack underflow */

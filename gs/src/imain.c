@@ -199,10 +199,8 @@ init2_make_string_array(i_ctx_t *i_ctx_p, const ref * srefs, const char *aname)
 }
 
 /*
- * Invoke the interpreter, handling stdio callouts
- * e_NeedStdin, e_NeedStdout and e_NeedStderr.
- * We don't yet pass callouts all the way out because they
- * occur within gs_main_init2() and swproc().
+ * Invoke the interpreter. This layer doesn't do much (previously stdio
+ * callouts were handled here instead of in the stream processing.
  */
 private int
 gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors, 
@@ -218,96 +216,6 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 
     code = gs_interpret(&minst->i_ctx_p, pref, 
 		user_errors, pexit_code, perror_object);
-    while ((code == e_NeedStdin) || (code == e_NeedStdout) || 
-	(code == e_NeedStderr)) {
-        i_ctx_p = minst->i_ctx_p;
-	if (code == e_NeedStdout) {
-	    /*
-	     * On entry:
-	     *  esp[0]  = string, data to write to stdout
-	     *  esp[-1] = bool, EOF (ignored)
-	     *  esp[-2] = array, procedure (ignored)
-	     *  esp[-3] = file, stdout stream
-	     * We print the string then pop these 4 items.
-	     */
-	    if (r_type(&esp[0]) == t_string) {
-		const char *str = (const char *)(esp[0].value.const_bytes); 
-		int count = esp[0].tas.rsize;
-		int rcode = 0;
-		if (str != NULL)
-		    rcode = outwrite(imemory, str, count);
-		if (rcode < 0)
-		    return_error(e_ioerror);
-	    }
-
-	    /* On return, we need to set 
-	     *  osp[-1] = string buffer, 
-	     *  osp[0] = file
-	     */
-	    gs_push_string(minst, (byte *)minst->stdout_buf, 
-		sizeof(minst->stdout_buf), false);
-	    gs_push_integer(minst, 0);	/* push integer */
-	    osp[0] = esp[-3];		/* then replace with file */
-	    /* remove items from execution stack */
-	    esp -= 4;
-	}
-	else if (code == e_NeedStderr) {
-	    if (r_type(&esp[0]) == t_string) {
-		const char *str = (const char *)(esp[0].value.const_bytes); 
-		int count = esp[0].tas.rsize;
-		int rcode = 0;
-		if (str != NULL)
-		    rcode = errwrite(str, count);
-		if (rcode < 0)
-		    return_error(e_ioerror);
-	    }
-	    gs_push_string(minst, (byte *)minst->stderr_buf, 
-		sizeof(minst->stderr_buf), false);
-	    gs_push_integer(minst, 0);
-	    osp[0] = esp[-3];
-	    esp -= 4;
-	}
-	else if (code == e_NeedStdin) {
-	    int count = sizeof(minst->stdin_buf);
-	    /*
-	     * On entry:
-	     *  esp[0]  = array, procedure (ignored)
-	     *  esp[-1] = file, stdin stream
-	     * We read from stdin then pop these 2 items.
-	     */
-	    if (minst->heap->gs_lib_ctx->stdin_fn)
-		count = (*minst->heap->gs_lib_ctx->stdin_fn)
-		    (minst->heap->gs_lib_ctx->caller_handle, 
-		     minst->stdin_buf, count);
-	    else
-		count = gp_stdin_read(minst->stdin_buf, count, 
-				      minst->heap->gs_lib_ctx->stdin_is_interactive,
-				      minst->heap->gs_lib_ctx->fstdin);
-	    if (count < 0)
-	        return_error(e_ioerror);
-
-	    /* On return, we need to set 
-	     *  osp[-1] = string buffer, 
-	     *  osp[0] = file
-	     */
-	    gs_push_string(minst, (byte *)minst->stdin_buf, count, false);
-	    gs_push_integer(minst, 0);	/* push integer */
-	    osp[0] = esp[-1];		/* then replace with file */
-	    /* remove items from execution stack */
-	    esp -= 2;
-	}
-	/*
-	 * To resume the interpreter, we call gs_interpret with a null ref.
-	 * This copies the literal null onto the operand stack.
-	 * To remove this we push a zpop onto the execution stack.
-	 */
-	make_null(&refnul);
-	make_oper(&refpop, 0, zpop); 
-	esp += 1;
-	*esp = refpop;
-	code = gs_interpret(&minst->i_ctx_p, &refnul, 
-		    user_errors, pexit_code, perror_object);
-    }
     return code;
 }
 
