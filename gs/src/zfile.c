@@ -894,44 +894,6 @@ gp_file_name_combine_patch(const char *prefix, uint plen, const char *fname, uin
     return gp_file_name_combine(prefix, plen, fname, flen, no_sibling, buffer, blen);
 }
 
-/* Prepare a stream with a file name. */
-/* Return 0 if successful, error code if not. */
-/* On a successful return, the C file name is in the stream buffer. */
-/* If fname==0, set up stream, and buffer. */
-int
-file_prepare_stream(const char *fname, uint len, const char *file_access, 
-		 uint buffer_size, stream ** ps, char fmode[4], gs_memory_t *mem)
-{
-    byte *buffer;
-    register stream *s;
-
-    /* Open the file, always in binary mode. */
-    strcpy(fmode, file_access);
-    strcat(fmode, gp_fmode_binary_suffix);
-    if (buffer_size == 0)
-	buffer_size = file_default_buffer_size;
-    if (len >= buffer_size)    /* we copy the file name into the buffer */
-	return_error(e_limitcheck);
-    /* Allocate the stream first, since it persists */
-    /* even after the file has been closed. */
-    s = file_alloc_stream(mem, "file_prepare_stream");
-    if (s == 0)
-	return_error(e_VMerror);
-    /* Allocate the buffer. */
-    buffer = gs_alloc_bytes(mem, buffer_size, "file_prepare_stream(buffer)");
-    if (buffer == 0)
-	return_error(e_VMerror);
-    if (fname != 0) {
-	memcpy(buffer, fname, len);
-	buffer[len] = 0;	/* terminate string */
-    } else
-	buffer[0] = 0;	/* safety */
-    s->cbuf = buffer;
-    s->bsize = s->cbsize = buffer_size;
-    *ps = s;
-    return 0;
-}
-
 private int
 check_file_permissions_aux(i_ctx_t *i_ctx_p, char *fname, uint flen)
 {   /* i_ctx_p is NULL running init files. */
