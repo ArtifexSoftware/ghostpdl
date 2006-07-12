@@ -253,10 +253,11 @@ write_time_zone(char *buf, int offset)
 
     t = time(NULL);
     tms = *gmtime(&t);
-#ifndef _MSC_VER
-    tms.tm_isdst = -1;
-#endif
+#ifdef _MSC_VER
     timeoffset = (int)difftime(mktime(&tms), t); /* tz+dst, seconds */
+#else
+    timeoffset = (int)difftime(t, mktime(&tms)); /* tz+dst, seconds */
+#endif
     if (timeoffset == 0)
 	strcpy(buf + offset, "Z)");
     else {
