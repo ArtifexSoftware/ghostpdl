@@ -16,6 +16,7 @@
 #include "stdio_.h"
 #include "ghost.h"
 #include "gpcheck.h"
+#include "gp.h"
 #include "oper.h"
 #include "stream.h"
 #include "gxiodev.h"		/* must come after stream.h */
@@ -66,19 +67,9 @@ const gx_io_device gs_iodev_stderr =
  * According to Adobe, it is legal to close the %std... files and then
  * re-open them later.  However, the re-opened file object is not 'eq' to
  * the original file object (in our implementation, it has a different
- * read_id or write_id).
+ * read_id or write_id). This is performed in 'file_close_file' by the
+ * call to file_close_disable.
  */
-
-private int
-stdio_close(stream *s)
-{
-    int code = (*s->save_close)(s);
-    if (code)
-	return code;
-    /* Increment the IDs to prevent further access. */
-    s->read_id = s->write_id = (s->read_id | s->write_id) + 1;
-    return 0;
-}
 
 private int
     s_stdin_read_process(stream_state *, stream_cursor_read *,
@@ -185,10 +176,6 @@ zis_stdin(const stream *s)
     return (s_is_valid(s) && s->procs.process == s_stdin_read_process);
 }
 
-private int
-    s_stdout_swrite_process(stream_state *, stream_cursor_read *,
-			 stream_cursor_write *, bool);
-
 /* Write a buffer to stdout, potentially writing to callback */
 private int
 s_stdout_write_process(stream_state * st, stream_cursor_read *pr,
@@ -259,10 +246,6 @@ zget_stdout(i_ctx_t *i_ctx_p, stream ** ps)
     iodev->state = NULL;
     return min(code, 0);
 }
-
-private int
-    s_stderr_swrite_process(stream_state *, stream_cursor_read *,
-			 stream_cursor_write *, bool);
 
 /* Write a buffer to stderr, potentially writing to callback */
 private int

@@ -206,9 +206,6 @@ private int
 gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors, 
 	int *pexit_code, ref * perror_object)
 {
-    i_ctx_t *i_ctx_p;
-    ref refnul;
-    ref refpop;
     int code;
 
     /* set interpreter pointer to lib_path */

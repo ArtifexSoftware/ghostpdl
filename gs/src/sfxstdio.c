@@ -43,6 +43,8 @@ private int
 
 extern const uint file_default_buffer_size;
 
+stream *file_alloc_stream(gs_memory_t *, client_name_t);
+
 /* Prepare a stream with a file name. */
 /* Return 0 if successful, error code if not. */
 /* On a successful return, the C file name is in the stream buffer. */

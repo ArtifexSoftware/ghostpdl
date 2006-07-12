@@ -183,7 +183,6 @@ s_handle_read_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
 {
     int npush = nstate + 4;
     stream *ps;
-    stream *psstdin;
 
     switch (status) {
 	case INTC:
@@ -305,8 +304,6 @@ s_handle_write_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
 			 const ref * pstate, int nstate, op_proc_t cont)
 {
     stream *ps;
-    stream *psstderr;
-    stream *psstdout;
     stream_proc_state *psst;
 
     switch (status) {
