@@ -246,7 +246,6 @@ pdf_open_temp_stream(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
 private void
 write_time_zone(char *buf, int offset)
 {
-
     time_t t;
     struct tm tms;
     int timeoffset, hours, minutes;
@@ -254,12 +253,19 @@ write_time_zone(char *buf, int offset)
 
     t = time(NULL);
     tms = *gmtime(&t);
+#ifndef _MSC_VER
+    tms.tm_isdst = -1;
+#endif
     timeoffset = (int)difftime(mktime(&tms), t); /* tz+dst, seconds */
-    s = (timeoffset >= 0 ? '+' : '-');
-    minutes = any_abs(timeoffset) / 60;
-    hours = minutes / 60;
-    minutes -= hours * 60;
-    sprintf(buf + offset, "%c%02d:%02d", s, hours, minutes);
+    if (timeoffset == 0)
+	strcpy(buf + offset, "Z)");
+    else {
+	s = (timeoffset >= 0 ? '+' : '-');
+	minutes = any_abs(timeoffset) / 60;
+	hours = minutes / 60;
+	minutes -= hours * 60;
+	sprintf(buf + offset, "%c%02d\'%02d\')", s, hours, minutes);
+    }
 }
 
 /* Initialize the IDs allocated at startup. */
