@@ -220,7 +220,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
         pl_font_t *plfont;
         byte *header;
         int code;
-
+        bool has_checksum;
         if ( count < 64 && pfh->HeaderFormat != pcfh_bitmap)
           return e_Range; /* pcfh_bitmap defaults short headers to 0 except underline position = 5; */ 
         desc_size =
@@ -231,18 +231,45 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
           case pcfh_bitmap:
           case pcfh_resolution_bitmap:
             fst = plfst_bitmap;
+            has_checksum = false;
             break;
           case pcfh_intellifont_bound:
           case pcfh_intellifont_unbound:
             fst = plfst_Intellifont;
+            /* intellifonts do have a checksum but we have seen
+                several fonts in tests that don't follow the
+                documentation.  It is possible intellifonts use a
+                different offset than truetype to begin the summation.
+                We have not investigated. */
+            has_checksum = false;
             break;
           case pcfh_truetype:
           case pcfh_truetype_large:
             fst = plfst_TrueType;
+            has_checksum = true;
             break;
           default:
             return_error(mem, gs_error_invalidfont);
           }
+
+        /* Fonts should include a final byte that makes the sum of the
+           bytes in the font 0 (mod 256).  The hp documentation says
+           byte 64 and up should contribute to the checksum.  All
+           known examples indicate byte 64 (index 63 of the array
+           below) is not included. */
+        if (has_checksum) {
+            ulong sum = 0;
+            int i;
+            for (i = count - 1; i >= 64; i--) {
+                sum += data[i];
+                sum %= 256;
+            }
+
+            if (sum != 0) {
+                dprintf(mem, "corrupt font\n");
+                return e_Range;
+            }
+        }
         /* Delete any previous font with this ID. */
         pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
         /* Create the generic font information. */

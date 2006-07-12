@@ -357,8 +357,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                         plfont->params.style = pfDesc->pcltStyle;
                         plfont->params.stroke_weight = pfDesc->pcltStrokeWt;
                         plfont->params.typeface_family = pfDesc->pcltTypeFamily;
-			/* use the offset in the table as the pjl font number */
-			plfont->params.pjl_font_number = j;
                         /* store the font in the built-in-fonts dictionary */
 			if ( use_unicode_names_for_keys )
 			    pl_dict_put( pfontdict, resident_table[j].unicode_fontname, 32, plfont );

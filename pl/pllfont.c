@@ -336,7 +336,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 		memcpy(plfont->character_complement,
 		       residentp->character_complement, 8);
 		/* use the offset in the table as the pjl font number */
-		plfont->params.pjl_font_number = (int)(residentp - resident_table);
 		/* for unicode keying of the dictionary use the unicode
 		   font name, otherwise use the keys. */
 		if ( use_unicode_names_for_keys )

@@ -74,13 +74,55 @@ dprint_font_params_t(const gs_memory_t *mem, const pl_font_params_t *pfp)
 		 pl_fp_pitch_cp(pfp) / 100.0, pfp->height_4ths / 4, pfp->style,
 		 pfp->stroke_weight, pfp->typeface_family);
 }
+
+#include "plftable.h"
+
+private void
+dprint_font_name(const gs_memory_t *mem, const pl_font_t *pfont) 
+{
+    int i;
+    bool found = false;
+
+    for (i = 0; strlen(resident_table[i].full_font_name); i++) {
+        if (!memcmp(&resident_table[i].params,
+                    &pfont->params, sizeof(pfont->params))) {
+
+            found = true;
+            break;
+        }
+    }
+    if (found) {
+        dprintf1(mem, "%s ", resident_table[i].full_font_name);
+    } else {
+        if (pfont->storage == pcds_internal) {
+            dprintf(mem, "internal font not found in resident table");
+            dprintf1(mem, "%s\n", pfont->font_file);
+        }
+        dprintf(mem, "external font ");
+    }
+}
+
 private void
 dprint_font_t(const gs_memory_t *mem, const pl_font_t *pfont)
-{	dprintf3(mem, "storage=%d scaling=%d type=%d ",
-		 pfont->storage, pfont->scaling_technology, pfont->font_type);
-	dprint_cc(mem, pfont->character_complement);
-	dputs(mem, ";\n   ");
-	dprint_font_params_t(mem, &pfont->params);
+{	
+    dprint_font_name(mem, pfont);
+    dprintf3(mem, "storage=%d scaling=%d type=%d ",
+             pfont->storage, pfont->scaling_technology, pfont->font_type);
+    dprint_cc(mem, pfont->character_complement);
+    dputs(mem, ";\n   ");
+    dprint_font_params_t(mem, &pfont->params);
+}
+
+private void
+dprintf_font_scoring(const gs_memory_t *mem, const char *type, const pl_font_t *pfont, match_score_t score)
+{
+    int i;
+    dprintf1(mem, "%s: ", type);
+    dprint_font_t(mem, pfont);
+    dputs(mem, "   score:");
+    for ( i = 0; i < score_limit; ++i )
+        dprintf2(mem, " %s: %d", score_name[i], score[i]);
+    dputs(mem, "\n");
 }
 
 #endif
@@ -144,28 +186,24 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 	 * requested pitch, (3) within these categories, nearer is better. */
 	if ( pfs->params.proportional_spacing )
 	    score[score_pitch] = 0;	/* should not influence score */
-	else
-	  { /* The magic hex constants here allow 24 bits + sign to resolve
-	     * the meaning of "close".  They are deliberately NOT #defined
-	     * elsewhere because they have no meaning outside this block.  */
-	    if ( pl_font_is_scalable(fp) )
-	      /* scalable; match is same as exact pitch. */
-	      score[score_pitch] = 0x2000000;
-	    else
-	      { 
-		  int delta = pl_fp_pitch_per_inch_x100(&fp->params) -
+	else { /* fixed space selection */
+            if ( pl_font_is_scalable(fp) )
+                /* scalable; match is same as exact pitch. */
+                score[score_pitch] = 0x2000000;
+	    else { 
+                int delta = pl_fp_pitch_per_inch_x100(&fp->params) -
 		    pl_fp_pitch_per_inch_x100(&pfs->params);
 
 		/* If within one unit, call it exact; otherwise give
 		 * preference to higher pitch than requested. */
 		if ( abs(delta) <= 1 )
-		  score[score_pitch] = 0x2000000;
+                    score[score_pitch] = 0x2000000;
 		else if ( delta > 0 )
-		  score[score_pitch] = 0x2000000 - delta;
+                    score[score_pitch] = 0x2000000 - delta;
 		else 
-		  score[score_pitch] = 0x1000000 + delta;
-	      }
-	  }
+                    score[score_pitch] = 0x1000000 + delta;
+            }
+        }
 	/* 4.  Height. */
 	/* Closest match scores highest (no preference for + or -). Otherwise
 	 * similar to pitch, and again, values assigned have no meaning out-
@@ -253,20 +291,12 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 	   other attributes are equal.  It in not clear if this is
 	   right. */
 	if ( fp->storage == pcds_internal )
-	    score[score_fontnumber] = 0x1000000 - fp->params.pjl_font_number;
+            score[score_fontnumber] = 0x1000000 - fp->params.pjl_font_number;
 	else
-	    score[score_fontnumber] = 0x1000000;
+            score[score_fontnumber] = 0x1000000;
 #ifdef DEBUG
 	if ( gs_debug_c('=') )
-	  { int i;
-
-	    dprintf1(pcs->memory, "[=]scoring 0x%lx: ", (ulong)fp);
-	    dprint_font_t(pcs->memory, fp);
-	    dputs(pcs->memory, "   score:");
-	    for ( i = 0; i < score_limit; ++i )
-	      dprintf2(pcs->memory, " %s: %d", score_name[i], score[i]);
-	    dputs(pcs->memory, "\n");
-	  }
+            dprintf_font_scoring(pcs->memory, "candidate", fp, score);
 #endif
 
 }
@@ -283,6 +313,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 	    pl_symbol_map_t *best_map = 0;
 	    pl_symbol_map_t *mapp;
 	    match_score_t best_match;
+            score_index_t i;
 
 #ifdef DEBUG
 	    if ( gs_debug_c('=') )
@@ -320,13 +351,20 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 		}
 	    }
 	    /* Initialize the best match to be worse than any real font. */
-	    best_match[0] = -1;
+            for (i=(score_index_t)0; i<score_limit; i++)
+                best_match[i] = -1;
+
 	    pl_dict_enum_begin(&pcs->soft_fonts, &dictp);
 	    while ( pl_dict_enum_next(&dictp, &key, &value) )
 	      { pl_font_t *fp = (pl_font_t *)value;
 		match_score_t match;
-		score_index_t i;
 		score_match(pcs, pfs, fp, &mapp, match);
+#ifdef DEBUG
+                if ( gs_debug_c('=') ) {
+                    if (best_match[0] != -1) /* skip sentinel */
+                        dprintf_font_scoring(pcs->memory, "best", best_font, best_match);
+                }
+#endif
 		for (i=(score_index_t)0; i<score_limit; i++)
 		  if ( match[i] != best_match[i] )
 		    {
@@ -336,14 +374,26 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 			  best_map = mapp;
 			  memcpy((void*)best_match, (void*)match,
 			      sizeof(match));
-			  if_debug1(pcs->memory, '=', 
-				    "   (***best so far, better %s***)\n", score_name[i]);
+#ifdef DEBUG
+                          if ( gs_debug_c('=') ) {
+                              dprintf_font_scoring(pcs->memory, "usurper", fp, best_match);
+                              dprintf1(pcs->memory, "   better %s***)\n", score_name[i]);
+
+                          }
+#endif
+
 			}
 		      break;
 		    }
 	      }
 	    if ( best_font == 0 )
 	      return e_Unimplemented;	/* no fonts */
+#ifdef DEBUG
+            if ( gs_debug_c('=') ) {
+                dprintf_font_scoring(pcs->memory, "champion", best_font, best_match);
+            }
+#endif
+
 	    pfs->font = best_font;
 	    pfs->map = best_map;
 	  }
