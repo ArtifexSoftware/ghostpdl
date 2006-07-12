@@ -243,32 +243,6 @@ pdf_open_temp_stream(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
     return 0;
 }
 
-private void
-write_time_zone(char *buf, int offset)
-{
-    time_t t;
-    struct tm tms;
-    int timeoffset, hours, minutes;
-    char s;
-
-    t = time(NULL);
-    tms = *gmtime(&t);
-#ifdef _MSC_VER
-    timeoffset = (int)difftime(mktime(&tms), t); /* tz+dst, seconds */
-#else
-    timeoffset = (int)difftime(t, mktime(&tms)); /* tz+dst, seconds */
-#endif
-    if (timeoffset == 0)
-	strcpy(buf + offset, "Z)");
-    else {
-	s = (timeoffset >= 0 ? '+' : '-');
-	minutes = any_abs(timeoffset) / 60;
-	hours = minutes / 60;
-	minutes -= hours * 60;
-	sprintf(buf + offset, "%c%02d\'%02d\')", s, hours, minutes);
-    }
-}
-
 /* Initialize the IDs allocated at startup. */
 void
 pdf_initialize_ids(gx_device_pdf * pdev)
@@ -304,12 +278,11 @@ pdf_initialize_ids(gx_device_pdf * pdev)
 	char buf[1+2+4+2+2+2+2+2+2+1+1+7]; /* (D:yyyymmddhhmmssZhh'mm')\0 */
 
 	time(&t);
-	tms = *localtime(&t);
+	tms = *gmtime(&t);
 	sprintf(buf,
-		"(D:%04d%02d%02d%02d%02d%02dZhh'mm')",
+		"(D:%04d%02d%02d%02d%02d%02dZ)",
 		tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
 		tms.tm_hour, tms.tm_min, tms.tm_sec);
-	write_time_zone(buf, 17);
 	cos_dict_put_c_key_string(pdev->Info, "/CreationDate", (byte *)buf,
 				  strlen(buf));
 	cos_dict_put_c_key_string(pdev->Info, "/ModDate", (byte *)buf,
