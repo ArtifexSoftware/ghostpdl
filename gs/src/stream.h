@@ -333,6 +333,10 @@ stream_state *s_alloc_state(gs_memory_t *, gs_memory_type_ptr_t, client_name_t);
 void s_init(stream *, gs_memory_t *);
 void s_init_state(stream_state *, const stream_template *, gs_memory_t *);
 
+/* create a stream for a file object */
+int file_prepare_stream(const char *, uint, const char *,
+		 uint, stream **, char[4], gs_memory_t *);
+
 /* Create a stream on a string or a file. */
 void sread_string(stream *, const byte *, uint),
     sread_string_reusable(stream *, const byte *, uint),
