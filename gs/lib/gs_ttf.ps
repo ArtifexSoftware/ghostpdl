@@ -1142,7 +1142,17 @@ mark
   } if
 		% Hack: if there is no usable post table but the cmap uses
 		% the Microsoft Unicode encoding, use ISOLatin1Encoding.
+     % if 'post' presents, .charkeys computes (with dropping minor details) :
+     %     CharStrings = glyphencoding^-1
+     %     Encoding = cmap*glyphencoding
+     % because 'post' maps glyph indices to glyph names.
+     % Otherwise .charkeys must compute (with dropping same details) :
+     %     CharStrings = glyphencoding^-1 * cmap
+     %     Encoding = glyphencoding
+     % because glyphencoding is stubbed with an encoding, 
+     % which maps char codes to glyph names.
   glyphencoding length 0 eq {
+    /have_post false def
     cmapsub 0 4 getinterval <00030001> eq {
     PDFDEBUG { (No post but have cmap 3.1, so use ISOLatin1Encoding) = } if
       /glyphencoding ISOLatin1Encoding dup length array copy def
@@ -1150,9 +1160,11 @@ mark
       PDFDEBUG { (No encoding info, use .GS_extended_SymbolEncoding) = } if
       /glyphencoding /.GS_extended_SymbolEncoding findencoding dup length array copy def
     } ifelse
-  } if
+  } {
+    /have_post true def
+  } ifelse
 		% If necessary, fabricate additional glyphencoding entries
-		% to cover all of loca, or truncate glyphencoding.
+		% to cover all of loca
   glyphencoding length numloca lt {
     /glyphencoding numloca array
       glyphencoding length dup 1 sub 0 1 3 2 roll {
@@ -1164,9 +1176,8 @@ mark
         1 index exch dup .nname put
       } for
     def
-  } {
-    /glyphencoding glyphencoding 0 numloca getinterval def
-  } ifelse
+  } if
+  /cmapa cmaptab cmaparray def
 		% Some badly designed Chinese fonts have a post table
 		% in which all glyphs other than 0 are named .null.
 		% Use CharStrings to keep track of the reverse map from
@@ -1175,7 +1186,16 @@ mark
   /CharStrings glyphencoding dup length 1 add dict	% +1 for .notdef
     0 1 3 index length 1 sub {
 		% Stack: glyphencoding dict index
-      2 index 1 index get 2 index 1 index known
+      2 index 1 index get 
+      have_post not { 
+        exch dup cmapa length lt {
+          cmapa exch get 
+        } { 
+          pop 0 % a stub for a while. Must skip the entry.
+        } ifelse
+        exch
+      } if
+      2 index 1 index known
       1 index /.notdef ne and {	%		ignore extra .notdef glyphs
 		% The same name maps to more than one glyph.
 		% Change the name.
@@ -1185,6 +1205,9 @@ mark
     } for exch pop
 		% If there is no .notdef entry, map it to glyph 0.
   dup /.notdef known not { dup /.notdef 0 put } if
+  TTFDEBUG { 
+    (CharStrings:)= dup { exch =string cvs print ( ) print == } forall
+  } if
   //postalias {
     2 index 1 index known {
       pop pop
@@ -1198,10 +1221,16 @@ mark
     } ifelse  
   } forall
   readonly
-  /Encoding
-    [ cmaptab cmaparray dup length 256 gt { 0 256 getinterval } if
-    { glyphencoding exch get } forall
-    counttomark 256 exch sub { /.notdef } repeat ]
+  /Encoding [
+      have_post {
+        cmapa dup length 256 gt { 0 256 getinterval } if
+        { glyphencoding exch get } forall
+      } {
+        glyphencoding  dup length 256 gt { 0 256 getinterval } if
+        aload pop
+      } ifelse
+      counttomark 256 exch sub { /.notdef } repeat 
+    ]
   TTFDEBUG { (Encoding: ) print dup === flush } if
 } bind def
 
@@ -1220,6 +1249,7 @@ currentdict /postalias undef
 
 % <file> .loadttfont <type42font>
 /.loadttfont {
+  TTFDEBUG { (.loadttfont) = } if
   //false 0 .loadttfonttables
   .makesfnts
   .getpost
@@ -1514,6 +1544,7 @@ currentdict /postalias undef
 
 % <file> <is_symbolic> <Encoding|null> .loadpdfttfont <type42font>
 /.loadpdfttfont {
+  TTFDEBUG { (.loadpdfttfont Encoding=) print dup == } if
   /prebuilt_encoding gput     % for .pdfcharkeys
   /is_symbolic gput
   //false 0 .loadttfonttables
