@@ -727,7 +727,7 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
 	    (page != NULL ? &page->text_rotation : &pdev->text_rotation);
 	int angle = -1;
 
-#define  Bug687800
+#define Bug687800
 #ifndef Bug687800 	/* Bug 687800 together with Bug687489.ps . */
 	const gs_point *pbox = &(page != NULL ? page : &pdev->pages[0])->MediaBox;
 
@@ -748,13 +748,22 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
 		angle = 90;
 	}
 
-	/* If not combinable, prefer text rotation : */
 	if (angle < 0) {
+#define Bug688793
+#ifdef  Bug688793
+	/* If not combinable, prefer dsc rotation : */
+	    if (dsc_orientation >= 0)
+		angle = dsc_orientation * 90;
+	    else
+		angle = ptr->Rotate;
+#else
+	/* If not combinable, prefer text rotation : */
 	    if (ptr->Rotate >= 0)
 		angle = ptr->Rotate;
 #ifdef Bug687800
 	    else
 		angle = dsc_orientation * 90;
+#endif
 #endif
 	}
 
@@ -858,6 +867,11 @@ pdf_close_page(gx_device_pdf * pdev)
     page->dsc_info = pdev->page_dsc_info;
     if (page->dsc_info.orientation < 0)
 	page->dsc_info.orientation = pdev->doc_dsc_info.orientation;
+#ifdef Bug688793
+    if (page->dsc_info.viewing_orientation < 0)
+       page->dsc_info.viewing_orientation =
+           pdev->doc_dsc_info.viewing_orientation;
+#endif
     if (page->dsc_info.bounding_box.p.x >= page->dsc_info.bounding_box.q.x ||
 	page->dsc_info.bounding_box.p.y >= page->dsc_info.bounding_box.q.y
 	)
