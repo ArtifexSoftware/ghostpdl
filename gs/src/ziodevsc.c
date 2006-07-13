@@ -101,7 +101,7 @@ s_stdin_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 	    (mem->gs_lib_ctx->caller_handle, (char *)pw->ptr + 1,
 	     mem->gs_lib_ctx->stdin_is_interactive ? 1 : wcount);
     else
-	count = gp_stdin_read(pw->ptr + 1, wcount,
+	count = gp_stdin_read((char *)pw->ptr + 1, wcount,
 		      mem->gs_lib_ctx->stdin_is_interactive,
 		      mem->gs_lib_ctx->fstdin);
 
@@ -186,7 +186,7 @@ s_stdout_write_process(stream_state * st, stream_cursor_read *pr,
 
     if (count == 0) 
 	return 0;
-    written = outwrite(st->memory, pr->ptr + 1, count);
+    written = outwrite(st->memory, (const char *)pr->ptr + 1, count);
     if (written < count)
 	return ERRC;
     pr->ptr += written;
