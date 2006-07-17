@@ -479,7 +479,8 @@ write_name(stream *s, const gs_const_string *font_name)
 /* ------ OS/2 ------ */
 
 /* Write a generated OS/2 table. */
-#define OS_2_LENGTH sizeof(ttf_OS_2_t)
+#define OS_2_LENGTH1 offset_of(ttf_OS_2_t, sxHeight[0]) /* OS/2 version 1. */
+#define OS_2_LENGTH2 sizeof(ttf_OS_2_t) /* OS/2 version 2. */
 private void
 update_OS_2(ttf_OS_2_t *pos2, uint first_glyph, int num_glyphs)
 {
@@ -504,15 +505,16 @@ write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
      * We don't bother to set most of the fields.  The really important
      * ones, which affect character mapping, are usFirst/LastCharIndex.
      * We also need to set usWeightClass and usWidthClass to avoid
-     * crashing ttfdump.
+     * crashing ttfdump. Version 1 86-byte structure has all the fields
+     * we need.
      */
     memset(&os2, 0, sizeof(os2));
     put_u16(os2.version, 1);
     put_u16(os2.usWeightClass, 400); /* Normal */
     put_u16(os2.usWidthClass, 5); /* Normal */
     update_OS_2(&os2, first_glyph, num_glyphs);
-    stream_write(s, &os2, sizeof(os2));
-    put_pad(s, sizeof(os2));
+    stream_write(s, &os2, offset_of(ttf_OS_2_t, sxHeight[0]));
+    put_pad(s, offset_of(ttf_OS_2_t, sxHeight[0]));
 }
 
 /* ------ post ------ */
@@ -688,7 +690,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     int have_hvhea[2];
     uint cmap_length = 0;
     ulong OS_2_start = 0;
-    uint OS_2_length = OS_2_LENGTH;
+    uint OS_2_length = OS_2_LENGTH1;
     int code;
 
     have_hvhea[0] = have_hvhea[1] = 0;
@@ -755,7 +757,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    if (writing_cid)
 		continue;
 	    have_OS_2 = true;
-	    if (length > OS_2_LENGTH)
+	    if (length > OS_2_LENGTH2)
 		return_error(gs_error_invalidfont);
 	    OS_2_start = start;
 	    OS_2_length = length;
