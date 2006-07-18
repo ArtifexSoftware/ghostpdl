@@ -414,7 +414,8 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	
 	/* no args case disables the soft clip window */
 	if ( i == 0 ) {
-	  pgls->g.soft_clip_window.state = inactive;
+	  pgls->g.soft_clip_window.active = false;
+          pgls->g.soft_clip_window.isbound = false;
 	  return 0;
 	}
 	/* HAS needs error checking */
@@ -422,7 +423,7 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	pgls->g.soft_clip_window.rect.p.y = wxy[1];
 	pgls->g.soft_clip_window.rect.q.x = wxy[2];
 	pgls->g.soft_clip_window.rect.q.y = wxy[3];
-	pgls->g.soft_clip_window.state = active;
+	pgls->g.soft_clip_window.active = true;
 	return 0;
 }
 
@@ -549,8 +550,20 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	switch ( i )
 	  {
 	  case 0:		/* set defaults */
-	    type = hpgl_scaling_none;
-	    break;
+              {
+                  /* a naked SC implies the soft clip window is bound
+                     to plotter units.  */
+                  gs_matrix umat;
+                  type = hpgl_scaling_none;
+                  hpgl_compute_user_units_to_plu_ctm(pgls, &umat);
+                  /* in-place */
+                  hpgl_call(gs_bbox_transform(pgls->memory, 
+                                              &pgls->g.soft_clip_window.rect,
+                                              &umat,
+                                              &pgls->g.soft_clip_window.rect));
+                  pgls->g.soft_clip_window.isbound = true;
+                  break;
+              }
 	  default:
 	    return e_Range;
 	  case 4:

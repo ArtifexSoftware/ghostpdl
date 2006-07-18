@@ -152,7 +152,6 @@ hpgl_set_plu_ctm(hpgl_state_t *pgls)
 	return 0;
 }
 
-/* The CTM maps PLU to device units; adjust it to handle scaling, if any. */
  int
 hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 {	floatp origin_x = pgls->g.P1.x, origin_y = pgls->g.P1.y;
@@ -503,10 +502,18 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
                space boxes replace the current box.  Note that IW
                coordinates are in current units and and the picture
                frame in pcl coordinates. */
-	    if ( pgls->g.soft_clip_window.state == active ) {
+	    if ( pgls->g.soft_clip_window.active ) {
 		gs_rect dev_soft_window_box;
 		gs_matrix ctm;
-		hpgl_call(gs_currentmatrix(pgls->pgs, &ctm));
+                if (pgls->g.soft_clip_window.isbound) {
+                    /* we need the plotter unit matrix */
+                    hpgl_call(gs_currentmatrix(pgls->pgs, &save_ctm));
+                    hpgl_call(hpgl_set_plu_ctm(pgls));
+                    hpgl_call(gs_currentmatrix(pgls->pgs, &ctm));
+                    hpgl_call(gs_setmatrix(pgls->pgs, &save_ctm));
+                } else {
+                    hpgl_call(gs_currentmatrix(pgls->pgs, &ctm));
+                }
 		hpgl_call(gs_bbox_transform(pgls->memory, 
 					    &pgls->g.soft_clip_window.rect,
 					    &ctm,

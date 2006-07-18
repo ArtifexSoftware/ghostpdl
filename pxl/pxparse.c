@@ -478,7 +478,7 @@ top:	if ( st->data_left )
 		    if ( tname ) {
 		      dprintf1(memory, format, tname);
                       if (operator)
-                          dprintf1(memory, " (%d)\n", st->operator_count+1);
+                          dprintf1(memory, " (%ld)\n", st->operator_count+1);
                     }
 		    else
 		      dputs(memory, "???\n");

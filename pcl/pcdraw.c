@@ -53,18 +53,10 @@ pcl_set_ctm(
     bool            use_pd
 )
 {
-    gs_setmatrix( pcs->pgs,
-                  ( use_pd ? &(pcs->xfm_state.pd2dev_mtx)
+    return gs_setmatrix( pcs->pgs,
+                         ( use_pd ? &(pcs->xfm_state.pd2dev_mtx)
                            : &(pcs->xfm_state.lp2dev_mtx) )
-                  );
-#ifdef DEBUG
-    {
-        gs_matrix mcur, minv;
-        gs_currentmatrix(pcs->pgs, &mcur);
-        if (gs_matrix_invert(pcs->memory, &mcur, &minv) < 0)
-            dprintf(pcs->memory, "non-invertible matrix\n");
-    }
-#endif
+                         );
 }
 
 /*

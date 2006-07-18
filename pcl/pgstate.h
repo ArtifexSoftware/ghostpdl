@@ -163,11 +163,9 @@ typedef struct pcl_hpgl_state_s {
 	} scaling_type;
 	hpgl_scaling_params_t scaling_params;
   	struct soft_clip_window_ {
-	  enum {
-	    active,                /* current unit window has be given */
-	    inactive,              /* use picture frame */
-	    bound                  /* bound to plotter units */
-	  } state;
+          bool active;          /* current unit window has be given,
+                                   if not use picture frame */
+          bool isbound;         /* bound to plotter units */
 	  gs_rect rect;		/* clipping window (IW) */
 	} soft_clip_window;
 	int rotation;
