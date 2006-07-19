@@ -126,7 +126,10 @@
 /search_start_trailer		% - search_start_trailer <trailer loc>
 { % Read the first 300 bytes and check for xref
   PDFfile 0 setfileposition
-  300 string 0 1 299 { 2 copy PDFfile read pop put pop } for
+  PDFfile bytesavailable post_eof_count sub	% location of end of data
+  300 .min			% block size to read
+  dup string 0 1 4 -1 roll 1 sub
+  { 2 copy PDFfile read pop put pop } for
   (xref) search {
     % found 'xref'
     exch pop exch pop length 4 add PDFfile exch setfileposition
@@ -142,7 +145,7 @@
       PDFfile fileposition	% get file position
     } if
   } {
-    pop 0			% no xref - should not happen
+    pop search_end_trailer	% no xref, should not happen, search end of file
   } ifelse
 } bind def
 
@@ -154,7 +157,7 @@
   % anything past the last %%EOF since this is not PDF data.
   PDFfile 0 setfileposition
   PDFfile bytesavailable post_eof_count sub	% location of end of data
-  dup 4096 .min			% block size to read
+  dup 65535 .min		% block size to read
 				% stack: <file end pos> <block size>
   % move file position to the start of the block
   2 copy sub PDFfile exch setfileposition
