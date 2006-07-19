@@ -271,7 +271,8 @@
 	      1 index 20 add 20 idiv 20 mul
 	      growPDFobjects
 	      % save xref parameters into ObjectStream, Objects and Generations
-	      1 index 0 4 index 3 index	% rearrange parms for setxrefentry
+	      1 index 0			% rearrange parms for setxrefentry
+	      4 index PDFoffset sub 3 index
 	      setxrefentry		% save parameters
 	      pop pop pop pop		% clear parameters
 	    } if			% check if name is 'obj'
