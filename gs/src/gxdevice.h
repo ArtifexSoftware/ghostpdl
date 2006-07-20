@@ -577,4 +577,6 @@ int gdev_write_output_media(int index, gs_param_dict * pdict,
 
 int gdev_end_output_media(gs_param_list * mlist, gs_param_dict * pdict);
 
+void gx_device_request_leadingedge(gx_device *dev, int le_req);
+
 #endif /* gxdevice_INCLUDED */

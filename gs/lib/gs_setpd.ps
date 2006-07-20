@@ -230,6 +230,7 @@ level2dict begin
 % on its own.
 /.dynamicppkeys mark
   /.MediaSize dup		% because it changes when PageSize is set
+%  /LeadingEdge dup
   /PageCount dup
   /Colors dup
   /BitsPerPixel dup
@@ -407,7 +408,9 @@ level2dict begin
 % The procedure leaves all its operands on the stack and returns
 % true iff the key/value pair should be presented to .putdeviceparams.
 /.presentspecial mark
-  .dynamicppkeys { pop //false } forall
+  .dynamicppkeys
+      { pop dup /LeadingEdge ne { //false } { pop } ifelse }
+  forall
 			% We must ignore an explicit request for .MediaSize,
 			% because media matching always handles this.
   /.MediaSize //false
@@ -418,7 +421,7 @@ level2dict begin
   /PageSize //false		% obsolete alias for .MediaSize
   /InputAttributes //false
   .inputattrkeys
-    { dup /PageSize eq
+       { dup dup /PageSize eq exch /LeadingEdge eq or
        { pop }
        { { 2 index /InputAttributes .knownget { //null eq } { //true } ifelse } }
       ifelse

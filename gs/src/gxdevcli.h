@@ -695,7 +695,7 @@ typedef struct gx_device_cached_colors_s {
 	gx_device_cached_colors_t cached_colors;\
 	int width;			/* width in pixels */\
 	int height;			/* height in pixels */\
-        int TrayOrientation;            /* default 0 ( 90 180 270 ) if device supports */\
+        int LeadingEdge;                /* see below */\
 	float MediaSize[2];		/* media dimensions in points */\
 	float ImagingBBox[4];		/* imageable region in points */\
 	  bool ImagingBBox_set;\
@@ -717,6 +717,23 @@ typedef struct gx_device_cached_colors_s {
 	gx_page_device_procs page_procs;	/* must be last */\
 		/* end of std_device_body */\
 	gx_device_procs procs	/* object procedures */
+
+#define LEADINGEDGE_MASK 3
+#define LEADINGEDGE_SET_MASK (1 << 2)
+#define LEADINGEDGE_REQ_BIT (1 << 3)
+#define LEADINGEDGE_REQ_VAL_SHIFT 4
+#define LEADINGEDGE_REQ_VAL (LEADINGEDGE_MASK << LEADINGEDGE_REQ_VAL_SHIFT)
+/*
+ * The lower two bits of LeadingEdge correspond to the pagedevice
+ * parameter of the same name. The next bit (hex value 4) is set if
+ * the LeadingEdge was set explicitly by the user using setpagedevice.
+ * Otherwise, the value is the default as determined by the device (or
+ * zero if the device has no logic for setting LeadingEdge based on
+ * other parameters (such as %MediaSource). This field replaces the
+ * earlier TrayOrientation, which had a similar purpose but was not
+ * compatible with the PostScript spec.
+ */
+
 /*
  * Note: x/y_pixels_per_inch are here only for backward compatibility.
  * They should not be used in new code.
@@ -753,7 +770,6 @@ typedef struct gx_device_cached_colors_s {
   if ( dev_proc(dev, p) == 0 ) set_dev_proc(dev, p, dproc)
 #define assign_dev_procs(todev, fromdev)\
   ((todev)->procs = (fromdev)->procs)
-
 
 /* ---------------- Device procedures ---------------- */
 

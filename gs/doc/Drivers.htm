@@ -25,55 +25,60 @@
 <li><a href="#KISS">Keeping things simple</a>
 <li><a href="#Structure">Driver structure</a>
 <ul>
-<li><a href="#Structure_definition">Structure definition</a>
-<li><a href="#Sophisticated">For sophisticated developers only</a>
+  <li><a href="#Structure_definition">Structure definition</a>
+  <li><a href="#Sophisticated">For sophisticated developers only</a>
 </ul>
 <li><a href="#coordinates_and_types">Coordinates and types</a>
 <ul>
-<li><a href="#Coordinate_system">Coordinate system</a>
-<li><a href="#Color_definition">Color definition</a>
+  <li><a href="#Coordinate_system">Coordinate system</a>
+  <li><a href="#Color_definition">Color definition</a>
 <ul>
-<li><a href="#sep_and_linear_fields">Separable and linear fields</a>
-<li><a href="#Changing_color_info_data">Changing color_info data</a>           
+  <li><a href="#sep_and_linear_fields">Separable and linear fields</a>
+  <li><a href="#Changing_color_info_data">Changing color_info data</a>           
 </ul>
 <li><a href="#Types">Types</a>
 </ul>
 <li><a href="#Coding_conventions">Coding conventions</a>
 <ul>
-<li><a href="#Allocating_storage">Allocating storage</a>
-<li><a href="#Driver_instance_allocation">Driver instance allocation</a>
+  <li><a href="#Allocating_storage">Allocating storage</a>
+  <li><a href="#Driver_instance_allocation">Driver instance allocation</a>
 </ul>
 <li><a href="#Printer_drivers">Printer drivers</a>
 <li><a href="#Driver_procedures">Driver procedures</a>
 <ul>
-<li><a href="#Life_cycle">Life cycle</a>
-<li><a href="#Open_close">Open, close, sync, copy</a>
-<li><a href="#Color_mapping">Color and alpha mapping</a>
-<li><a href="#Pixel_level_drawing">Pixel-level drawing</a>
+  <li><a href="#Life_cycle">Life cycle</a>
+  <li><a href="#Open_close">Open, close, sync, copy</a>
+  <li><a href="#Color_mapping">Color and alpha mapping</a>
+  <li><a href="#Pixel_level_drawing">Pixel-level drawing</a>
 <ul>
-<li><a href="#Bitmap_imaging">Bitmap imaging</a>
-<li><a href="#Pixmap_imaging">Pixmap imaging</a>
-<li><a href="#Compositing">Compositing</a>
+    <li><a href="#Bitmap_imaging">Bitmap imaging</a>
+    <li><a href="#Pixmap_imaging">Pixmap imaging</a>
+    <li><a href="#Compositing">Compositing</a>
   [<a href="#S_spec">S</a>, <a href="#T_spec">T</a>, <a href="#F_spec">f</a>,
    <a href="#Compositing_notes">Notes</a>]
 </ul>
-<li><a href="#Polygon_level_drawing">Polygon-level drawing</a>
-<li><a href="#Linear_color_drawing">Linear color drawing</a>
-<li><a href="#High_level_drawing">High-level drawing</a>
+  <li><a href="#Polygon_level_drawing">Polygon-level drawing</a>
+  <li><a href="#Linear_color_drawing">Linear color drawing</a>
+  <li><a href="#High_level_drawing">High-level drawing</a>
 <ul>
-<li><a href="#Paths">Paths</a>
-<li><a href="#Images">Images</a> [<a href="#Images_notes">Notes</a>]
-<li><a href="#Text">Text</a> [<a href="#Text_notes">Notes</a>]
-<li><a href="#Unicode">Unicode support for high level devices</a>
+    <li><a href="#Paths">Paths</a>
+    <li><a href="#Images">Images</a> [<a href="#Images_notes">Notes</a>]
+    <li><a href="#Text">Text</a> [<a href="#Text_notes">Notes</a>]
+    <li><a href="#Unicode">Unicode support for high level devices</a>
 </ul>
-<li><a href="#Reading_bits_back">Reading bits back</a>
-<li><a href="#Parameters">Parameters</a>
+  <li><a href="#Reading_bits_back">Reading bits back</a>
+  <li><a href="#Parameters">Parameters</a>
 <ul>
-<li><a href="#Default_CRD_parameters">Default color rendering dictionary (CRD) parameters</a>
+    <li><a href="#Default_CRD_parameters">Default color rendering dictionary (CRD) parameters</a>
 </ul>
-<li><a href="#External_fonts">External fonts</a>
-<li><a href="#Page_devices">Page devices</a>
-<li><a href="#Miscellaneous">Miscellaneous</a>
+  <li><a href="#External_fonts">External fonts</a>
+  <li><a href="#Page_devices">Page devices</a>
+  <li><a href="#Miscellaneous">Miscellaneous</a>
+</ul>
+<li><a href="#Tray">Tray selection</a>
+<ul>
+  <li><a href="#LeadingEdge">Tray rotation and the LeadingEdge parameter</a>
+  <li><a href="#LeadingPage">Interaction between LeadingEdge and PageSize</a>
 </ul>
 </ul></blockquote>
 
@@ -3066,6 +3071,179 @@ gs_fixed_rect&nbsp;*pbox))</tt></b> <b><em>[OPTIONAL]</em></b>
 clipping region.  For all but a few specialized devices, this is
 <em>((0,0),(width,height))</em>.
 </dl>
+
+<hr>
+
+<h2><a name="Tray"></a>Tray selection</h2>
+
+<!-- Note for documentation maintainers: tray selection overlaps -->
+<!-- significantly across the device interface and the PostScript -->
+<!-- language implementation of setpagedevice, while the rest of -->
+<!-- Drivers.htm focusses on lanugage-independent interfaces. Likely -->
+<!-- the documentation should be refactored a bit so that this section -->
+<!-- has a comfortable home. -->
+
+<p>The logic for selecting input trays, and modifying other parameters
+based on tray selection, can be complex and subtle, largely thanks to
+the requirement to be compatible with the PostScript language
+setpagedevice mechanism. This section will describe recipes for
+several common scenarios for tray selection, with special attention to
+the how the overall task factors into configuration options, generic
+logic provided by the PostScript language (or not, if the device is
+used with other PDL's), and implementation of the put_param /
+get_param device functions within the device.
+
+<p>In general, tray selection is determined primarily through the
+setpagedevice operator, which is part of the PostScript runtime.
+Ghostscript attempts to be as compatible as is reasonable with the
+PostScript standard, so for more details, see the description in the
+<a
+href="http://partners.adobe.com/public/developer/ps/index_specs.html">PostScript
+language specifications</a>, including the "supplements", which tend
+to have more detail about setpagedevice behavior than the PLRM book itself.
+
+<p>The first step is to set up an /InputAttributes dictionary matching
+the trays and so on available in the device. The standard Ghostscript
+initialization files set up a large InputAttributes dictionary with
+many "known" page sizes (the full list is in
+<b><tt>gs_statd.ps</tt></b>, under .setpagesize). It's possible to
+edit this list in the Ghostscript source, of course, but most of the
+time it is better to execute a snippet of PostScript code after the
+default initialization but before sending any actual jobs.
+
+<p>Simply setting a new /InputAttributes dictionary with setpagedevice
+will not work, because the the language specification for
+setpagedevice demands a "merging" behavior - paper tray keys present
+in the old dictionary will be preserved even if the key is not present
+in the new /InputAttributes dictionary. Here is a sample invocation
+that clears out all existing keys, and installs three new ones: a US letter
+page size for trays 0 and 1, and 11x17 for tray 1. Note that you must add at
+least one valid entry into the /InputAttributes dictionary; if all are
+<b><tt>null</tt></b>, then the setpagedevice will fail with a
+/configurationerror.
+
+<blockquote><b><tt>
+&lt;&lt; /InputAttributes<br />
+&nbsp;&nbsp;currentpagedevice /InputAttributes get<br />
+&nbsp;&nbsp;dup { pop 1 index exch null put } forall<br />
+<br />
+&nbsp;&nbsp;dup 0 &lt;&lt; /PageSize [612 792] &gt;&gt; put<br />
+&nbsp;&nbsp;dup 1 &lt;&lt; /PageSize [612 792] &gt;&gt; put<br />
+&nbsp;&nbsp;dup 2 &lt;&lt; /PageSize [792 1224] &gt;&gt; put<br />
+&gt;&gt; setpagedevice<br />
+</tt></b></blockquote>
+
+<p>After this code runs, then requesting a letter page size (612x792
+points) from setpagedevice will select tray 0, and requesting an 11x17
+size will select tray 2. To explicitly request tray 1, run:
+
+<blockquote><b><tt>
+&lt;&lt; /PageSize [612 792] /MediaPosition 1 &gt;&gt; setpagedevice
+</tt></b></blockquote>
+
+<p>At this point, the chosen tray is sent to the device as the
+(nonstandard) %MediaSource device parameter. Devices with switchable
+trays should implement this device parameter in the
+<b><tt>put_params</tt></b> procedure. Unlike the usual protocol for
+device parameters, it is not necessary for devices to also implement
+<b><tt>get_params</tt></b> querying of this paramter; it is
+effectively a write-only communication from the language to the
+device. Currently, among the devices that ship with Ghostscript, only
+PCL (gdevdjet.c) and PCL/XL (gdevpx.c) implement this parameter, but
+that list may well grow over time.
+
+If the device has dynamic configuration of trays, etc., then the
+easiest way to get that information into the tray selection logic is
+to send a setpagedevice request (if using the standard API, then using
+gsapi_run_string_continue) to update the /InputAttributes dictionary
+immediately before beginning a job.
+
+<h3><a name="LeadingEdge"></a>Tray rotation and the LeadingEdge parameter</h3>
+
+<p>Large, sophisticated printers often have multiple trays supporting
+both short-edge and long-edge feed. For example, if the paper path is
+11 inches wide, then 11x17 pages must always print short-edge, but
+letter size pages print with higher throughput if fed from long-edge
+trays. Generally, the device will expect the rasterized bitmap image
+to be rotated with respect to the page, so that it's always the same
+orientation with respect to the paper feed direction.
+
+<p>The simplest way to achieve this behavior is to call
+<b><tt>gx_device_request_leadingedge</tt></b> to request a LeadingEdge
+value
+<b><tt>LeadingEdge</tt></b> field in the device structure based on the
+%MediaSource tray selection index and knowledge of the device's
+trays. The default put_params implementation will then handle this
+request (it's done this way to preserve the transactional semantics of
+put_params; it needs the new value, but the changes can't actually be
+made until all params succeed). For example, if tray 0 is long-edge,
+while trays 1 and 2 are short-edge, the following code outline should
+select the appropriate rotation:
+
+<blockquote><b><tt>
+my_put_params(gx_device *pdev, gs_param_list *plist) {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;my_device *dev = (my_device *)pdev;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;int MediaSource = dev->myMediaSource;<br />
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp;code = param_read_int(plist, "%MediaSource", &MediaSource);<br />
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp;switch (MediaSource) {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;case 0:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gx_device_req_leadingedge(dev, 1);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;case 1:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;case 2:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gx_device_req_leadingedge(dev, 0);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...call default put_params, which makes the change...<br />
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp;dev->myMediaSource = MediaSource;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;return 0;<br />
+}
+</tt></b></blockquote>
+
+<p>Ghostscript also supports explicit rotation of the page through
+setting the /LeadingEdge parameter with setpagedevice. The above code
+snippet will simply override this request. To give manual setting
+through setpagedevice priority, don't change the LeadingEdge field in
+the device if its LEADINGEDGE_SET_MASK bit is set. In other words,
+simply enclose the above <tt>switch</tt> statement inside an <b><tt>if
+(!(dev->LeadingEdge & LEADINGEDGE_SET_MASK) { ... }</tt></b> statement.
+
+<!-- Note for doc maintainers: the following is much more of a -->
+<!-- discussion of the PS language than a device interface issue, but -->
+<!-- it is essential info for people implementing this stuff. -->
+
+<h3><a name="LeadingPage"></a>Interaction between LeadingEdge and PageSize</h3>
+
+<p>As of LanguageLevel 3, PostScript now has two mechanisms for rotating
+the imaging of the page: the LeadingEdge parameter described in detail
+above, and the automatic rotation as enabled by the /PageSize page
+device parameter (described in detail in Table 6.2 of the PLRM3).
+Briefly, the PageSize autorotation handles the case where the page
+size requested in setpagedevice matches the <i>swapped</i> size of the
+paper source (as set in the InputAttributesDictionary). This mechanism
+can be, and has been, used to implement long-edge feed, but has
+several disadvantages. Among other things, it's overly tied to the PostScript
+language, while the device code above will work with other
+languages. Also, it only specifies one direction of rotation (90
+degrees counterclockwise). Thus, given the choice, LeadingEdge is to
+be preferred.
+
+<p>If PageSize is used, the following things are different:
+
+<ul>
+<li>The PageSize array in InputAttributes is swapped, so it is [long
+short].
+<li>The .MediaSize device parameter is similarly swapped.
+<li>The initial matrix established by the device through the
+<b><tt>get_initial_matrix</tt></b> procedure is the same as for the
+non-rotated case.
+<li>The CTM rotation is done in the setpagedevice implementation.
+</ul>
+
+<!-- Why oh why does it all have to be so complicated? -->
 
 <!-- [2.0 end contents] ==================================================== -->
 

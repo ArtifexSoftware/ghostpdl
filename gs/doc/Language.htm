@@ -1800,6 +1800,24 @@ measurements</a> in the documentation on devices).
 </dl>
 
 <dl>
+<dt><b><tt>%MediaSource &lt;integer&gt;</tt></b>
+<dd>The input tray key as determined by setpagedevice. PostScript
+language programs don't set this parameter directly; they can
+<em>request</em> a particular tray through the MediaPosition
+setpagedevice parameter, but the setpagedevice logic need not
+necessarily honor the request. Devices which support switchable trays
+should implement %MediaSource in their put_params device procedure,
+but (unlike most other such parameters) need not implement
+corresponding reading logic in get_params.
+</dl>
+
+<dl>
+<dt><b><tt>%MediaDestination &lt;integer&gt;</tt></b>
+<dd>The output tray key as determined by setpagedevice. Handling by
+devices should be parallel to %MediaSource.
+</dl>
+
+<dl>
 <dt><b><tt>Name &lt;string&gt; (read-only)</tt></b>
 <dd>The device name.  Currently the same as <b><tt>OutputDevice</tt></b>.
 </dl>
@@ -1840,6 +1858,8 @@ In addition, the following are defined per Adobe's documentation for the
 <b><tt>HWResolution</tt></b><br>
 <b><tt>ImagingBBox</tt></b><br>
 <b><tt>Margins</tt></b><br>
+<b><tt>LeadingEdge</tt></b><br>
+<b><tt>MediaPosition</tt></b><br>
 <b><tt>NumCopies</tt></b> (for printers only)<br>
 <b><tt>Orientation</tt></b> (if supported)<br>
 <b><tt>OutputDevice</tt></b><br>

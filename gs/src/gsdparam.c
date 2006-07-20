@@ -168,6 +168,14 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 	)
 	return code;
 
+    /* If LeadingEdge was set explicitly, report it here. */
+    if (dev->LeadingEdge & LEADINGEDGE_SET_MASK) {
+	int leadingedge = dev->LeadingEdge & LEADINGEDGE_MASK;
+	code = param_write_int(plist, "LeadingEdge", &leadingedge);
+    }
+    if (code < 0)
+	return code;
+
     /* Fill in color information. */
 
     if (colors > 1) {
@@ -443,6 +451,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     int tab = dev->color_info.anti_alias.text_bits;
     int gab = dev->color_info.anti_alias.graphics_bits;
     gs_param_string cms;
+    int leadingedge = dev->LeadingEdge;
 
     /*
      * Template:
@@ -479,6 +488,17 @@ e:	param_signal_error(plist, param_name, ecode);\
 	ecode = code;
 #endif
     /*
+     * The actual value of LeadingEdge must be changed inside this routine,
+     * so that we can detect that it has been changed. Thus, instead of a
+     * device setting the value itself, it signals a request, which is
+     * now executed.
+     */
+    if (leadingedge & LEADINGEDGE_REQ_BIT) {
+	leadingedge = (leadingedge & LEADINGEDGE_SET_MASK) |
+	    ((leadingedge >> LEADINGEDGE_REQ_VAL_SHIFT) && LEADINGEDGE_MASK);
+    }
+
+    /*
      * The HWResolution, HWSize, and MediaSize parameters interact in
      * the following way:
      *      1. Setting HWResolution recomputes HWSize from MediaSize.
@@ -488,6 +508,13 @@ e:	param_signal_error(plist, param_name, ecode);\
      * in the order 1, 2, 3.  This does the right thing in the most
      * common case of setting more than one parameter, namely,
      * setting both HWResolution and HWSize.
+     *
+     * Changing of LeadingEdge is treated exactly the same as a
+     * change in HWResolution. In typical usage, MediaSize is
+     * short-edge (MediaSize[0] < MediaSize[1]), so if LeadingEdge
+     * is 1 or 3, then HWSize will become long-edge. For nonsquare
+     * resolutions, HWResolution[0] always corresponds with width
+     * (scan length), and [1] with height (number of scans).
      */
 
     BEGIN_ARRAY_PARAM(param_read_float_array, "HWResolution", hwra, 2, hwre) {
@@ -512,6 +539,26 @@ e:	param_signal_error(plist, param_name, ecode);\
 	else
 	    break;
     } END_ARRAY_PARAM(hwsa, hwse);
+    {
+	int t;
+
+	code = param_read_int(plist, "LeadingEdge", &t);
+	if (code < 0) {
+	    if (param_read_null(plist, "LeadingEdge") == 0) {
+		/* if param is null, clear explicitly-set flag */
+		leadingedge &= ~LEADINGEDGE_SET_MASK;
+		code = 0;
+	    } else {
+		ecode = code;
+	    }
+	} else if (code == 0) {
+	    if (t < 0 || t > 3)
+		param_signal_error(plist, "LeadingEdge",
+				   ecode = gs_error_rangecheck);
+	    else
+		leadingedge = LEADINGEDGE_SET_MASK | t;
+	}
+    }
     {
 	const float *res = (hwra.data == 0 ? dev->HWResolution : hwra.data);
 
@@ -699,12 +746,14 @@ nce:
     if (code < 0)
 	return code;
 
-    /* Now actually make the changes. */
-    /* Changing resolution or page size requires closing the device, */
-    /* but changing margins or ImagingBBox does not. */
-    /* In order not to close and reopen the device unnecessarily, */
-    /* we check for replacing the values with the same ones. */
-
+    /* 
+     * Now actually make the changes. Changing resolution, rotation
+     * (through LeadingEdge) or page size requires closing the device,
+     * but changing margins or ImagingBBox does not. In order not to
+     * close and reopen the device unnecessarily, we check for
+     * replacing the values with the same ones.
+     */
+    
     if (hwra.data != 0 &&
 	(dev->HWResolution[0] != hwra.data[0] ||
 	 dev->HWResolution[1] != hwra.data[1])
@@ -713,6 +762,19 @@ nce:
 	    gs_closedevice(dev);
 	gx_device_set_resolution(dev, hwra.data[0], hwra.data[1]);
     }
+    if ((leadingedge & LEADINGEDGE_MASK) !=
+	(dev->LeadingEdge & LEADINGEDGE_MASK)) {
+	/* If the LeadingEdge_set flag changes but the value of LeadingEdge
+	   itself does not, don't close device and recompute page size. */
+	dev->LeadingEdge = leadingedge;
+	if (dev->is_open)
+	    gs_closedevice(dev);
+	gx_device_set_resolution(dev, dev->HWResolution[0], dev->HWResolution[1]);
+    }
+    /* clear leadingedge request, preserve "set" flag */
+    dev->LeadingEdge &= LEADINGEDGE_MASK;
+    dev->LeadingEdge |= (leadingedge & LEADINGEDGE_SET_MASK);
+
     if (hwsa.data != 0 &&
 	(dev->width != hwsa.data[0] ||
 	 dev->height != hwsa.data[1])
@@ -757,6 +819,14 @@ nce:
     dev->LockSafetyParams = locksafe;
     gx_device_decache_colors(dev);
     return 0;
+}
+
+void
+gx_device_request_leadingedge(gx_device *dev, int le_req)
+{
+    dev->LeadingEdge = (dev->LeadingEdge & ~LEADINGEDGE_REQ_VAL) |
+	((le_req << LEADINGEDGE_REQ_VAL_SHIFT) & LEADINGEDGE_REQ_VAL) |
+	LEADINGEDGE_REQ_BIT;
 }
 
 /* Read TextAlphaBits or GraphicsAlphaBits. */
