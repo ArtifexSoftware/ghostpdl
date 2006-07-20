@@ -37,7 +37,7 @@
 
 typedef struct fapi_ufst_server_s fapi_ufst_server;
 
-#define DEBUG_STATIC_FCO 1
+#define DEBUG_STATIC_FCO 0
 
 #if DEBUG_STATIC_FCO
 static SW16 static_fcHandle[2];
