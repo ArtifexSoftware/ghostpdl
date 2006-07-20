@@ -279,8 +279,6 @@ is_cspace_allowed_in_strategy(gx_device_pdf * pdev, gs_color_space_index csi)
 private inline bool
 is_pattern2_allowed_in_strategy(gx_device_pdf * pdev, const gx_drawing_color *pdc)
 {
-    const gs_pattern2_instance_t *pinst =
-	    (gs_pattern2_instance_t *)pdc->ccolor.pattern;
     const gs_color_space *pcs2 = gx_dc_pattern2_get_color_space(pdc);
     gs_color_space_index csi = gs_color_space_get_index(pcs2);
 

@@ -455,7 +455,6 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     gs_uid uid;
     int code;
     gs_font_base *pfont;
-    ref Glyph2Unicode;
 
     code = font_bbox_param(imemory, op, bbox);
     if (code < 0)

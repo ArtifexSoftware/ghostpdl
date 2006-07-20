@@ -58,10 +58,9 @@ zbuildfont0(i_ctx_t *i_ctx_p)
     ref *pprefenc;
     gs_font_type0 *pfont;
     font_data *pdata;
-    ref save_FID, Glyph2Unicode;
+    ref save_FID;
     int i;
     int code = 0;
-    bool has_g2u;
 
     check_type(*op, t_dictionary);
     {
