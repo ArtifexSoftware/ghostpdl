@@ -28,6 +28,8 @@
 /* GS includes : */
 #include "gxfapiu.h"
 
+#define MAX_STATIC_FCO_COUNT 2
+
 /* -------------------- UFST callback dispatcher ------------- */
 
 /*  This code provides dispatching UFST callbacks to GS or PCL. */
@@ -52,11 +54,14 @@ private LPUB8 stub_PCLglyphID2Ptr(FSP UW16 glyphID)
     a general dynamic context for all interpreters.
  */
 
-private LPUB8 (*m_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  sym_code) = stub_PCLEO_charptr;
-private LPUB8 (*m_PCLchId2ptr)(FSP UW16 chId) = stub_PCLchId2ptr;
-private LPUB8 (*m_PCLglyphID2Ptr)(FSP UW16 glyphID) = stub_PCLglyphID2Ptr;
+static LPUB8 (*m_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  sym_code) = stub_PCLEO_charptr;
+static LPUB8 (*m_PCLchId2ptr)(FSP UW16 chId) = stub_PCLchId2ptr;
+static LPUB8 (*m_PCLglyphID2Ptr)(FSP UW16 glyphID) = stub_PCLglyphID2Ptr;
 #if !UFST_REENTRANT
-private bool global_UFST_lock = false;
+static bool global_UFST_lock = false;
+static fco_list_elem static_fco_list[MAX_STATIC_FCO_COUNT];
+static char static_fco_paths[MAX_STATIC_FCO_COUNT][gp_file_name_sizeof];
+static int static_fco_count = 0;
 #endif
 
 
@@ -110,3 +115,77 @@ bool gs_get_UFST_lock(void)
     return global_UFST_lock;
 }
 #endif /*!UFST_REENTRANT*/
+
+/* Access to the static FCO list for the language switching project. */
+
+fco_list_elem *gx_UFST_find_static_fco(const char *font_file_path)
+{   
+#if !UFST_REENTRANT
+    int i;
+
+    for (i = 0; i < static_fco_count; i++)
+	if (!strcmp(static_fco_list[i].file_path, font_file_path))
+	    return &static_fco_list[i];
+#endif
+    return NULL;
+}
+
+fco_list_elem *gx_UFST_find_static_fco_handle(SW16 fcHandle)
+{   
+#if !UFST_REENTRANT
+    int i;
+
+    for (i = 0; i < static_fco_count; i++)
+	if (static_fco_list[i].fcHandle == fcHandle)
+	    return &static_fco_list[i];
+#endif
+    return NULL;
+}
+
+UW16 gx_UFST_open_static_fco(const char *font_file_path, SW16 *result_fcHandle)
+{   
+#if !UFST_REENTRANT
+    SW16 fcHandle;
+    UW16 code;
+    fco_list_elem *e;
+
+    if (static_fco_count >= MAX_STATIC_FCO_COUNT)
+	return ERR_fco_NoMem;
+    code = CGIFfco_Open(FSA (UB8 *)font_file_path, &fcHandle);
+    if (code != 0)
+	return code;
+    e = &static_fco_list[static_fco_count];
+    strncpy(static_fco_paths[static_fco_count], font_file_path, 
+	    sizeof(static_fco_paths[static_fco_count]));
+    e->file_path = static_fco_paths[static_fco_count];
+    e->fcHandle = fcHandle;
+    e->open_count = -1; /* Unused for static FCOs. */
+    static_fco_count++;
+    *result_fcHandle = fcHandle;
+    return 0;
+#else
+    **result_fcHandle = -1;
+    return ERR_fco_NoMem;
+#endif
+}
+
+UW16 gx_UFST_close_static_fco(SW16 fcHandle)
+{   
+#if !UFST_REENTRANT
+    int i;
+
+    for (i = 0; i < static_fco_count; i++)
+	if (static_fco_list[i].fcHandle == fcHandle)
+	    break;
+    if (i >= static_fco_count)
+	return ERR_fco_NoMem;
+    CGIFfco_Close(FSA fcHandle);
+    for (i++; i < static_fco_count; i++) {
+	static_fco_list[i - 1] = static_fco_list[i];
+	strcpy(static_fco_paths[i - 1], static_fco_paths[i]);
+    }
+    static_fco_count--;
+#endif
+    return 0;
+}
+

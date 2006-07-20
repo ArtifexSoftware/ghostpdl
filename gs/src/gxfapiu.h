@@ -20,6 +20,8 @@
 #ifndef gxfapiu_INCLUDED
 #define gxfapiu_INCLUDED
 
+#include "gp.h"
+
 /* Set UFST callbacks. */
 /* Warning : the language switch progect doesn't guarantee
    that this function is called when switching
@@ -50,5 +52,21 @@ void gx_reset_UFST_Callbacks(void);
 void gs_set_UFST_lock(bool lock);
 bool gs_get_UFST_lock(void);
 #endif /*!UFST_REENTRANT*/
+
+typedef struct fco_list_elem_s fco_list_elem;
+struct fco_list_elem_s {
+    int open_count;
+    SW16 fcHandle;
+    char *file_path;
+    fco_list_elem *next;
+};
+
+/* Access to the static FCO list for the language switching project : */
+/* For the language switch : */
+UW16 gx_UFST_open_static_fco(const char *font_file_path, SW16 *result_fcHandle);
+UW16 gx_UFST_close_static_fco(SW16 fcHandle);
+/* For fapiufst.c : */
+fco_list_elem *gx_UFST_find_static_fco(const char *font_file_path);
+fco_list_elem *gx_UFST_find_static_fco_handle(SW16 fcHandle);
 
 #endif /* gxfapiu_INCLUDED */
