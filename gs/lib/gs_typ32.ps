@@ -82,8 +82,8 @@ systemdict /.removeglyphs .undef
 .cidfonttypes begin
 
 4	% CIDFontType 4 = FontType 32
-{ dup /FontType 32 put
-  dup /CharStrings 20 dict put
+{ dup /FontType 32 .forceput
+  dup /CharStrings 20 dict .forceput
   1 index exch .buildfont32 exch pop
 } bind def
 
