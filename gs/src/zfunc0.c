@@ -39,9 +39,8 @@ gs_build_function_0(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     int code;
 
     *(gs_function_params_t *) & params = *mnDR;
-    params.Encode = 0;
-    params.Decode = 0;
-    params.Size = 0;
+    params.Encode = params.Decode = params.Size =
+	params.pole = params.array_step = params.stream_step = NULL;
     if ((code = dict_find_string(op, "DataSource", &pDataSource)) <= 0)
 	return (code < 0 ? code : gs_note_error(e_rangecheck));
     switch (r_type(pDataSource)) {
