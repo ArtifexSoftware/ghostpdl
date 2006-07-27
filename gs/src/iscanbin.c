@@ -532,6 +532,8 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		value = sdecodelong(p + 5, num_format);
 		switch (osize) {
 		    case 0:
+			if (user_names_p == NULL)
+			    return_error(e_undefined);
 			code = array_get(imemory, user_names_p, value, op);
 			goto usn;
 		    case 0xffff:
