@@ -61,8 +61,10 @@ const font_resident_t resident_table[] = {
 #define ITALIC          (style_word(1, 0, 0))
 #define CONDENSEDITALIC (style_word(1, 1, 0))
 #define CONDENSED       (style_word(0, 1, 0))
+#define LIGHT           (-3)
 #define NOBOLD          (0)
 #define MEDIUMBOLD      (1)
+#define TWOBOLD         (2)
 #define BOLD            (3)
 #define EXBOLD          (4)
 
@@ -398,43 +400,43 @@ const font_resident_t resident_table[] = {
     {
         fontnames("AvantGarde-Demi", "AvantGarde-Demi", "URWGothicL-Demi"),
         {'I','T','C','A','v','a','n','t','G','a','r','d',' ',' ','D','b'},
-        {0, 1, {28, 72000/28}, 0, REGULAR, BOLD, 24607, 50}, cc_alphabetic
+        {0, 1, {28, 72000/28}, 0, REGULAR, TWOBOLD, 24607, 50}, cc_alphabetic
     },
 
     {
         fontnames("AvantGarde-BookOblique", "AvantGarde-BookOblique", "URWGothicL-DemiObli"),
         {'I','T','C','A','v','a','n','t','G','a','r','d','B','k','O','b'},
-        {0, 1, {28, 72000/28}, 0, ITALIC, NOBOLD, 24607, 51}, cc_alphabetic
+        {0, 1, {28, 72000/28}, 0, ITALIC, TWOBOLD, 24607, 51}, cc_alphabetic
     },
 
     {
         fontnames("AvantGarde-DemiOblique", "AvantGarde-DemiOblique", "URWGothicL-BookObli"),
         {'I','T','C','A','v','a','n','t','G','a','r','d','D','b','O','b'},
-        {0, 1, {28, 72000/28}, 0, ITALIC, BOLD, 24607, 52}, cc_alphabetic
+        {0, 1, {28, 72000/28}, 0, ITALIC, NOBOLD, 24607, 52}, cc_alphabetic
     },
 
     {
         fontnames("Bookman-Light", "Bookman-Light", "URWBookmanL-Ligh"),
         {'I','T','C','B','o','o','k','m','a','n',' ',' ',' ',' ','L','t'},
-        {0, 1, {28, 72000/32}, 0, REGULAR, NOBOLD, 24623, 53}, cc_alphabetic
+        {0, 1, {28, 72000/32}, 0, REGULAR, LIGHT, 24623, 53}, cc_alphabetic
     },
 
     {
         fontnames("Bookman-Demi", "Bookman-Demi", "URWBookmanL-DemiBold"),
         {'I','T','C','B','o','o','k','m','a','n',' ',' ',' ',' ','D','b'},
-        {0, 1, {34, 72000/34}, 0, REGULAR, BOLD, 24623, 54}, cc_alphabetic
+        {0, 1, {34, 72000/34}, 0, REGULAR, TWOBOLD, 24623, 54}, cc_alphabetic
     },
 
     {
         fontnames("Bookman-LightItalic", "Bookman-LightItalic", "URWBookmanL-LighItal"),
         {'I','T','C','B','o','o','k','m','a','n',' ',' ','L','t','I','t'},
-        {0, 1, {30, 72000/30}, 0, ITALIC, NOBOLD, 24623, 55}, cc_alphabetic
+        {0, 1, {30, 72000/30}, 0, ITALIC, LIGHT, 24623, 55}, cc_alphabetic
     },
 
     {
         fontnames("Bookman-DemiItalic", "Bookman-DemiItalic", "URWBookmanL-DemiBoldItal"),
         {'I','T','C','B','o','o','k','m','a','n',' ',' ','D','b','I','t'},
-        {0, 1, {34, 72000/34}, 0, ITALIC, BOLD, 24623, 56}, cc_alphabetic
+        {0, 1, {34, 72000/34}, 0, ITALIC, TWOBOLD, 24623, 56}, cc_alphabetic
     },
 
     {

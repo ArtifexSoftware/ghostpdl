@@ -59,71 +59,6 @@ set_gs_font(
 }
 
 /*
- * Mapping via symbol sets. Note that this applies only to unbound fonts.
- */
-  private gs_char
-map_symbol(
-    const pl_font_t *       pfont,
-    const pl_symbol_map_t * psm,
-    gs_char                 chr
-)
-{
-    uint                    first_code, last_code;
-
-    /*
-     * If there is no symbol map we assume the the character
-     * implicitly indexes the font.
-     * Assumes internal fonts are either plfst_TrueType or plfst_MicroType
-     */
-    if (psm == 0) {
-	if ( pfont->storage == pcds_internal )
-	    return chr + 0xf000;
-	return chr;
-    }
-
-    first_code = pl_get_uint16(psm->first_code);
-    last_code = pl_get_uint16(psm->last_code);
-
-    /*
-     * If chr is double-byte but the symbol map is only single-byte,
-     * just return chr (it is not clear this make any sense - jan, I
-     * agree - henry).  
-     */
-    if ((chr < first_code) || (chr > last_code))
-	return ((last_code <= 0xff) && (chr > 0xff) ? chr : 0xffff);
-    else {
-	pl_glyph_vocabulary_t fgv =  /* font glyph vocabulary */
-	    (pl_glyph_vocabulary_t)(~pfont->character_complement[7] & 07);
-	gs_char code = psm->codes[chr - first_code];
-
-	/* simple common case - the glyph vocabs match */
-	if ( pl_symbol_map_vocabulary(psm) == fgv )
-	    return code;
-	/* font wants unicode and we have mapped an msl symbol set */
-	if ( ( pl_symbol_map_vocabulary(psm) == plgv_MSL ) &&
-	     ( fgv == plgv_Unicode ) ) {
-	    if ( psm->mapping_type != PLGV_M2U_MAPPING )
-		/* font selection should not have given us this */
-		return_error(pfont->pfont->memory, gs_error_invalidfont);
-	    else
-		return pl_map_MSL_to_Unicode(code,
-		         (psm->id[0] << 8) + psm->id[1]);
-	}
-	/* font wants msl coding we have mapped unicode */
-	if ( ( pl_symbol_map_vocabulary(psm) == plgv_Unicode ) &&
-	     ( fgv == plgv_MSL ) ) {
-	    if ( psm->mapping_type != PLGV_U2M_MAPPING )
-		/* symbol set doesn't support the mapping - should not happen */
-		return_error(pfont->pfont->memory, gs_error_invalidfont);
-	    else
-		return pl_map_Unicode_to_MSL(code,
-        		 (psm->id[0] << 8) + psm->id[1]);
-	} else
-            return 0xffff;
-    }
-}
-
-/*
  * Check if a character code is considered "printable" by given symbol set.
  */
   private bool
@@ -206,6 +141,7 @@ get_next_char(
 {
     const byte *    pb = *ppb;
     int             len = *plen;
+    pl_font_t *     plfont = pcs->font;
     gs_char         chr;
     if (len <= 0)
         return 2;
@@ -216,7 +152,7 @@ get_next_char(
         len--;
         *pis_space = false;
     } else
-	*pis_space = (chr == ' ' &&  pcs->font->storage == pcds_internal);
+	*pis_space = (chr == ' ' &&  plfont->storage == pcds_internal);
     *ppb = pb;
     *plen = len;
     *porig_char = chr;
@@ -229,7 +165,9 @@ get_next_char(
 
     /* map the symbol. If it fails to map, quit now.  Unless we have a
        galley character */
-    chr = map_symbol(pcs->font, pcs->map, chr);
+    chr = pl_map_symbol(pcs->memory, pcs->map, chr,
+                        plfont->storage == pcds_internal,
+                        pl_complement_to_vocab(plfont->character_complement) == plgv_MSL);
     *pchr = chr;
     if (chr == 0xffff) {
         *pis_space = true;
@@ -239,7 +177,7 @@ get_next_char(
     /* check if the character is in the font and get the character
        width at the same time */
     if ( *pis_space == false )
-        if ( pl_font_char_width(pcs->font, (void *)(pcs->pgs), chr, pwidth) == 0 )
+        if ( pl_font_char_width(plfont, (void *)(pcs->pgs), chr, pwidth) == 0 )
             return 0;
     /*
      * If we get to this point deem the character an undefined

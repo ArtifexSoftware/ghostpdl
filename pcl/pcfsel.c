@@ -137,24 +137,23 @@ private int
 check_support(const pcl_state_t *pcs, uint symbol_set, const pl_font_t *fp,
     pl_symbol_map_t **mapp)
 {
-	pl_glyph_vocabulary_t gv = (pl_glyph_vocabulary_t)
-                                   (~fp->character_complement[7] & 07);
-	byte id[2];
-	id[0] = symbol_set >> 8;
-	id[1] = symbol_set;
-	*mapp = pcl_find_symbol_map(pcs, id, gv);
-	if ( *mapp == 0 )
-	  {
-	    id[0] = pcs->default_symbol_set_value >> 8;
-	    id[1] = (byte)(pcs->default_symbol_set_value);
-	    *mapp = pcl_find_symbol_map(pcs, id, gv);
-	    return 0; /* worst */
-	  }
-	if ( pcl_check_symbol_support((*mapp)->character_requirements,
-	    fp->character_complement) )
-	    return 2; /* best */
-	else
-	  return 1;
+    pl_glyph_vocabulary_t gv;
+    byte id[2];
+    id[0] = symbol_set >> 8;
+    id[1] = symbol_set;
+    gv = pl_complement_to_vocab(fp->character_complement);
+    *mapp = pcl_find_symbol_map(pcs, id, gv);
+     if ( *mapp == 0 ) {
+         id[0] = pcs->default_symbol_set_value >> 8;
+         id[1] = (byte)(pcs->default_symbol_set_value);
+         *mapp = pcl_find_symbol_map(pcs, id, gv);
+         return 0; /* worst */
+     }
+     if ( pcl_check_symbol_support((*mapp)->character_requirements,
+                                   fp->character_complement) )
+         return 2; /* best */
+     else
+         return 1;
 }
 
 /* Compute a font's score against selection parameters.  TRM 8-27.

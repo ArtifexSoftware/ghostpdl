@@ -282,7 +282,9 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 
 		if ( !is_ttfile( in ) ) {
                    #ifdef DEBUG
-                    dprintf1(mem, "%s not a TrueType file\n", tmp_path_copy);
+                    if ( gs_debug_c('=') ) {
+                        dprintf1(mem, "%s not a TrueType file\n", tmp_path_copy);
+                    }
                    #endif
 		    continue;
                 }
@@ -307,9 +309,11 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 		/* hit sentinnel, nothing found */
 		if ( !strlen(residentp->full_font_name) ) {
                    #ifdef DEBUG
-                    dprintf2(mem, "TrueType font %s in file %s not found in table\n", buffer, tmp_path_copy);
-                    code = get_name_from_tt_file( in, mem, buffer, WINDOWSNAME);
-                    dprintf1(mem, "Windows name %s\n", buffer);
+                    if ( gs_debug_c('=') ) {
+                        dprintf2(mem, "TrueType font %s in file %s not found in table\n", buffer, tmp_path_copy);
+                        code = get_name_from_tt_file( in, mem, buffer, WINDOWSNAME);
+                        dprintf1(mem, "Windows name %s\n", buffer);
+                    }
                    #endif
 		    continue;
                 }
@@ -357,7 +361,8 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 	} /* next directory */
     }
 #ifdef DEBUG
-    check_resident_fonts(pfontdict, mem);
+    if ( gs_debug_c('=') )
+        check_resident_fonts(pfontdict, mem);
 #endif
     if ( one_font_found )
         return true;

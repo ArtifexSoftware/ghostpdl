@@ -281,12 +281,14 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
         plfont->storage = pcds_temporary;
         plfont->data_are_permanent = false;
         if (fst == plfst_Intellifont) {
-            /* lunacy not worth explaining */
             uint gifct_offset;
             if ( pfh->HeaderFormat == pcfh_intellifont_bound )
                 gifct_offset = 78;
-            else
+            else {
                 gifct_offset = 78 + 8; /* + 8 for the character complement */
+                /* copy in the compliment while we are here. */
+                memcpy(plfont->character_complement, &data[78], 8);
+            }
             code = pl_swap_header(header, pl_get_uint16(header + gifct_offset));
             if ( code != 0 )
                 return code;
@@ -409,18 +411,6 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
             if ( code < 0 )
               return code;
             pl_fill_in_intelli_font(pfont, gs_next_ids(mem, 1));
-            if ( pfh->HeaderFormat == pcfh_intellifont_unbound ) {
-                bool zero_complement = true;
-                int i;
-                memcpy(plfont->character_complement, &data[78], 8);
-                for (i = 0; i < sizeof(plfont->character_complement); i++)
-                    if (plfont->character_complement[i] != 0x0) {
-                        zero_complement = false;
-                        break;
-                    }
-                if ( zero_complement ) 
-                    plfont->character_complement[7] = 0x7;
-            }
             /* pfh->Pitch is design unit width for scalable fonts. */
             { uint pitch_cp =
                 pl_get_uint16(pfh->Pitch) * 100 / 8782.0;
@@ -442,24 +432,14 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
         pl_dict_put(&pcs->soft_fonts, current_font_id,
                     current_font_id_size, plfont);
         plfont->pfont->procs.define_font = gs_no_define_font;
-        /* check unbound fonts have a legit vocabulary.  If the
-           vocabulary is bogus fall back to MSL, there is a closely
-           related hack above under the pcfh_intellifont_unbound
-           case */
-        if (!pl_font_is_bound(plfont)) {
-            pl_glyph_vocabulary_t gv = (pl_glyph_vocabulary_t)
-                (~plfont->character_complement[7] & 07);
-            if (gv != plgv_MSL && gv != plgv_Unicode) {
-                plfont->character_complement[7] = 0x7;
-            }
-        }
         return gs_definefont(pcs->font_dir, plfont->pfont);
 }
 
 private int /* ESC * c <char_code> E */
 pcl_character_code(pcl_args_t *pargs, pcl_state_t *pcs)
-{       pcs->character_code = uint_arg(pargs);
-        return 0;
+{       
+    pcs->character_code = uint_arg(pargs);
+    return 0;
 }
 
 private int /* ESC ( s <count> W */

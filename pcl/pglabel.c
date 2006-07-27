@@ -83,8 +83,9 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
         &pgls->g.font_selection[pgls->g.font_selected];
     const pl_symbol_map_t *psm = pfs->map;
     
-    return pl_map_symbol(psm, chr,
-                         pfs->font->storage == pcds_internal);
+    return pl_map_symbol(pgls->memory, psm, chr,
+                         pfs->font->storage == pcds_internal,
+                         false);
 }
 
 /* ------ Font selection ------- */
@@ -180,17 +181,18 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 /* Check whether the stick font supports a given symbol set. */
 private bool
 hpgl_stick_font_supports(const pcl_state_t *pcs, uint symbol_set)
-{	pl_glyph_vocabulary_t gv = (pl_glyph_vocabulary_t)
-                                   (~stick_character_complement[7] & 07);
-	byte id[2];
-	pl_symbol_map_t *map;
+{	
+    pl_glyph_vocabulary_t gv = 
+        pl_complement_to_vocab(stick_character_complement);
+    byte id[2];
+    pl_symbol_map_t *map;
 
-	id[0] = symbol_set >> 8;
-	id[1] = symbol_set;
-	if ( (map = pcl_find_symbol_map(pcs, id, gv)) == 0 )
-	  return false;
-	return pcl_check_symbol_support(map->character_requirements,
-					stick_character_complement);
+    id[0] = symbol_set >> 8;
+    id[1] = symbol_set;
+    if ( (map = pcl_find_symbol_map(pcs, id, gv)) == 0 )
+        return false;
+    return pcl_check_symbol_support(map->character_requirements,
+                                    stick_character_complement);
 }
 
 /* Recompute the current font if necessary. */

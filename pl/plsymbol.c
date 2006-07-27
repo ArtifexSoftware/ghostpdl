@@ -15,8 +15,11 @@
 /* Built-in PCL symbol sets */
 
 #include "stdpre.h"
-#include "plvalue.h"
+#include "std.h"
+#include "gdebug.h"
 #include "plsymbol.h"
+#include "plvocab.h"
+#include "plvalue.h"
 
 /* Define the MSL code for unmapped characters. */
 #define ffff 0xffff
@@ -2223,9 +2226,10 @@ const int pl_built_in_symbol_map_count =
 
 
 ulong
-pl_map_symbol(const pl_symbol_map_t *psm, uint chr, bool resident_font)
+pl_map_symbol(const gs_memory_t *mem, const pl_symbol_map_t *psm,
+              uint chr, bool resident_font, bool isFontMSL)
 {
-    uint first_code, last_code;
+    uint first_code, last_code, code;
     /*
      * If there is no symbol map we assume the the character
      * implicitly indexes the font.
@@ -2240,10 +2244,25 @@ pl_map_symbol(const pl_symbol_map_t *psm, uint chr, bool resident_font)
     first_code = pl_get_uint16(psm->first_code);
     last_code = pl_get_uint16(psm->last_code);
     if ((chr < first_code) || (chr > last_code))
-	return ((last_code <= 0xff) && (chr > 0xff) ? chr : 0xffff);
+	code = ((last_code <= 0xff) && (chr > 0xff) ? chr : 0xffff);
     else
-        return psm->codes[chr - first_code];
-}
-
+        code = psm->codes[chr - first_code];
+    /* we do not provide many of the symbol sets in MSL format.
+       Instead we may use a corresponding unicode symbol set and
+       convert the resulting unicode value to msl.  This will not
+       necessarily match HP. */
+    if (isFontMSL && (code != 0xffff) &&
+        (pl_symbol_map_vocabulary(psm) == plgv_Unicode)) {
+#ifdef DEBUG
+        if ( gs_debug_c('=') ) {
+            dprintf3(mem, "[=] unicode to msl conversion: chr=%d, unicode=0x%x, msl code=%d\n",
+                     chr, code, pl_map_Unicode_to_MSL(code, (psm->id[0] << 8) + psm->id[1]));
+        }
+#endif
+        return pl_map_Unicode_to_MSL(code, (psm->id[0] << 8) + psm->id[1]);
+    } else {
+        return code;
+    }
         
 
+}

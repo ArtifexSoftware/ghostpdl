@@ -277,21 +277,18 @@ px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr)
     uint len = pstr->value.array.size;
     int i;
     gs_char chr;
-    gs_char mchr;
     const pl_symbol_map_t *psm = pxs->pxgs->symbol_map;
 
-    if (pstr->type & pxd_ubyte) {
-	for (i=0; i < len; i++) {
-	    chr = str[i];
-	    mchr = pl_map_symbol(psm, chr, pxs->pxgs->base_font->storage == pxfsInternal);
-	    pchr[i] = mchr;
-	}
-    } else {
-	for (i=0; i < len; i++) {
-	    chr = uint16at(&str[i << 1], (pstr->type & pxd_big_endian));
-	    mchr = pl_map_symbol(psm, chr, pxs->pxgs->base_font->storage == pxfsInternal);
-	    pchr[i] = mchr;
-	}
+    for (i=0; i < len; i++) {
+        if (pstr->type & pxd_ubyte) {
+            chr = str[i];
+        } else {
+            chr = uint16at(&str[i << 1], (pstr->type & pxd_big_endian));
+        }
+        pchr[i] = pl_map_symbol(pxs->memory,
+                                psm, chr,
+                                pxs->pxgs->base_font->storage == pxfsInternal,
+                                false);
     }
 }
 

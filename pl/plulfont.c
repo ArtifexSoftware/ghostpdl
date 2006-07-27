@@ -376,7 +376,8 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     } /* end enumerate fco loop */
     free_strs(mem, fcos);
 #ifdef DEBUG
-    pl_check_fonts(mem, pfontdict, use_unicode_names_for_keys);
+    if (gs_debug_c['='] )
+        pl_check_fonts(mem, pfontdict, use_unicode_names_for_keys);
 #endif
     return TRUE;
 }
