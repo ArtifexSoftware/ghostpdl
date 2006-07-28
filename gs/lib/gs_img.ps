@@ -495,11 +495,18 @@ def
     % execute .image1 in a stopped context
       {
         gsave
-        0 .setoverprintmode             % disable overprint mode for images
-        //img_csary 2 index /IMG_NComps get get setcolorspace
-          { .alphaimage }
-          { .image1 }
-        ifelse
+	% The CET test file 12-02.ps creates colorimages with a width and
+	% height of 0.  Ignore these since that is what the CET expects.
+	1 index dup /Height get 0 eq exch /Width get 0 eq or
+          { pop pop }	% Ignore colorimage.  Pop bool and dict
+	  {
+            0 .setoverprintmode             % disable overprint mode for images
+            //img_csary 2 index /IMG_NComps get get setcolorspace
+              { .alphaimage }
+              { .image1 }
+            ifelse
+	  }
+	ifelse
       }
     stopped
     grestore
