@@ -525,6 +525,20 @@ lcvd_get_clipping_box_from_target(gx_device *dev, gs_fixed_rect *pbox)
 
     (*dev_proc(mdev->target, get_clipping_box))(mdev->target, pbox);
 }
+private void
+lcvd_get_clipping_box_shifted_from_mdev(gx_device *dev, gs_fixed_rect *pbox)
+{
+    fixed ofs;
+    pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
+
+    cvd->std_get_clipping_box((gx_device *)&cvd->mdev, pbox);
+    ofs = int2fixed(cvd->mdev.mapped_x);
+    pbox->p.x += ofs;
+    pbox->q.x += ofs;
+    ofs = int2fixed(cvd->mdev.mapped_y);
+    pbox->p.y += ofs;
+    pbox->q.y += ofs;
+}
 private int 
 lcvd_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 		gs_pattern1_instance_t *pinst, pattern_manage_t function)
@@ -756,7 +770,7 @@ write_image_with_clip(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
     int code, code1;
 
     if (cvd->write_matrix)
-	pdf_put_matrix(pdev, NULL, &cvd->m, " cm\n");
+	pdf_put_matrix(pdev, NULL, &cvd->m, " cm q\n");
     for(;;) {
 	int x1, y1;
 	
@@ -786,6 +800,8 @@ write_image_with_clip(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
 	    y = y1;
 	}
     }
+    if (cvd->write_matrix)
+	stream_puts(pdev->strm, "Q\n");
     return 0;
 }
 
@@ -967,13 +983,16 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     }
     cvd->std_fill_rectangle = dev_proc(&cvd->mdev, fill_rectangle);
     cvd->std_close_device = dev_proc(&cvd->mdev, close_device);
+    cvd->std_get_clipping_box = dev_proc(&cvd->mdev, get_clipping_box);
     if (!write_on_close) {
 	/* Type 3 images will write to the mask directly. */
 	dev_proc(&cvd->mdev, fill_rectangle) = (need_mask ? lcvd_fill_rectangle_shifted2 
 							  : lcvd_fill_rectangle_shifted);
-    } else
+	dev_proc(&cvd->mdev, get_clipping_box) = lcvd_get_clipping_box_from_target;
+    } else {
 	dev_proc(&cvd->mdev, fill_rectangle) = lcvd_fill_rectangle_shifted_from_mdev;
-    dev_proc(&cvd->mdev, get_clipping_box) = lcvd_get_clipping_box_from_target;
+	dev_proc(&cvd->mdev, get_clipping_box) = lcvd_get_clipping_box_shifted_from_mdev;
+    }
     dev_proc(&cvd->mdev, pattern_manage) = lcvd_pattern_manage;
     dev_proc(&cvd->mdev, fill_path) = lcvd_handle_fill_path_as_shading_coverage;
     cvd->m = *m;

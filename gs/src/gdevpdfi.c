@@ -383,6 +383,15 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 		       prect->q.y == pim3->Height))
 	    goto nyi;
 	if (pdev->CompatibilityLevel < 1.3 && !pdev->PatternImagemask) {
+	    if (pdf_must_put_clip_path(pdev, pcpath))
+		code = pdf_unclip(pdev);
+	    else 
+		code = pdf_open_page(pdev, PDF_IN_STREAM);
+	    if (code < 0)
+		return code;
+	    code = pdf_put_clip_path(pdev, pcpath);
+	    if (code < 0)
+		return code;
 	    gs_make_identity(&m);
 	    pmat1 = &m;
 	    m.tx = floor(pis->ctm.tx + 0.5); /* Round the origin against the image size distorsions */
@@ -471,6 +480,15 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    gs_matrix m, m1, mi;
 	    gs_image4_t pi4 = *(const gs_image4_t *)pic;
 
+	    if (pdf_must_put_clip_path(pdev, pcpath))
+		code = pdf_unclip(pdev);
+	    else 
+		code = pdf_open_page(pdev, PDF_IN_STREAM);
+	    if (code < 0)
+		return code;
+	    code = pdf_put_clip_path(pdev, pcpath);
+	    if (code < 0)
+		return code;
 	    gs_make_identity(&m1);
 	    gs_matrix_invert(&pic->ImageMatrix, &mi);
 	    gs_matrix_multiply(&mi, &ctm_only(pis), &m);
@@ -539,9 +557,6 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	code = pdf_prepare_image(pdev, pis);
     if (code < 0)
 	goto nyi;
-    code = pdf_put_clip_path(pdev, pcpath);
-    if (code < 0)
-	return code;
     if (prect)
 	rect = *prect;
     else {
@@ -610,6 +625,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    goto nyi;
 	}
     }
+    code = pdf_put_clip_path(pdev, pcpath);
+    if (code < 0)
+	return code;
     pdf_image_writer_init(&pie->writer);
     pie->writer.alt_writer_count = (in_line || 
 				    (pim->Width <= 64 && pim->Height <= 64) ||
@@ -1187,7 +1205,7 @@ pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
 	cvd->mdev.mapped_y = origin->y;
 	*pmcdev = (gx_device *)&cvd->mdev;
 	code = gx_default_begin_typed_image
-	    ((gx_device *)&cvd->mdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+	    ((gx_device *)&cvd->mdev, pis, pmat, pic, prect, pdcolor, NULL, mem,
 	    pinfo);
     } else {
 	code = pdf_make_mxd(pmcdev, midev, mem);
