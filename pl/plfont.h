@@ -63,10 +63,10 @@ typedef enum {
 #define pl_fp_pitch_per_inch_x100(pfp) ((pfp)->pitch.per_inch_x100)
 #define pl_fp_set_pitch_per_inch(pfp, cpi)\
   ((pfp)->pitch.cp = 7200.0 / (cpi),\
-   (pfp)->pitch.per_inch_x100 = (cpi) * 100)
+   (pfp)->pitch.per_inch_x100 = (cpi) * 100.0)
 typedef struct pl_font_pitch_s {
-  uint cp;
-  uint per_inch_x100;
+  floatp cp;
+  floatp per_inch_x100;
 } pl_font_pitch_t;
 #define fp_pitch_value_cp(cpv)\
   { (cpv), 720000 / (cpv) }

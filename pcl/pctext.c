@@ -490,6 +490,13 @@ pcl_show_chars_slow(
             if (wrap) {
                 if ( (use_rmargin && (cpt.x + width > rmargin)) ||
                      (cpt.x + width > page_size)                   ) {
+                    /* update the current position for the benefit of
+                       CR so it knows where to draw underlines if
+                       needed then restore the position.  NB don't
+                       like this business of mixing floats and ints -
+                       pcs->cap, tmppt, and cpt. */
+                    pcs->cap.x = cpt.x;
+                    pcs->cap.y = cpt.y;
 	            pcl_do_CR(pcs);
                     pcl_do_LF(pcs);
                     cpt.x = pcs->cap.x;
@@ -710,6 +717,9 @@ pcl_do_underline(
         float       y = pcs->underline_start.y + pcs->underline_position;
         int         code;
 
+        /* save the grapics state */
+        pcl_gsave(pcs);
+
         code = pcl_set_drawing_color( pcs,
                                       pcs->pattern_type,
                                       pcs->current_pattern_id,
@@ -729,6 +739,8 @@ pcl_do_underline(
 	gs_moveto(pgs, pcs->underline_start.x, y);
 	gs_lineto(pgs, pcs->cap.x, y);
 	gs_stroke(pgs);
+        
+        pcl_grestore(pcs);
     }
 
     /*
@@ -775,7 +787,7 @@ pcl_enable_underline(
     if (pcs->underline_enabled)
         return 0;
 
-    if (type == 0) {
+    if ((type == 0) || (type == 1)) {
 	pcs->underline_floating = false;
 	pcs->underline_position = dots(5);
     } else if (type == 3) {
