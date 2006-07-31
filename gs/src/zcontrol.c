@@ -101,8 +101,19 @@ zexec(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     check_op(1);
-    if (!r_has_attr(op, a_executable))
+    if (!r_has_attr(op, a_executable)) {
+	/*
+	 * We emulate an apparent bug in Adobe interpreters, which cause an
+	 * invalidaccess error when 'exec'ing a noaccess literal (other than
+	 * dictionaries).
+	 */
+	if (!r_has_attr(op, a_execute) && /* only true if noaccess */
+	    ref_type_uses_access(r_type(op)) &&
+	    !r_has_type(op, t_dictionary)) {
+	    return_error(e_invalidaccess);
+	}
 	return 0;		/* literal object just gets pushed back */
+    }
     check_estack(1);
     ++esp;
     ref_assign(esp, op);
