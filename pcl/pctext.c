@@ -494,7 +494,8 @@ pcl_show_chars_slow(
                        CR so it knows where to draw underlines if
                        needed then restore the position.  NB don't
                        like this business of mixing floats and ints -
-                       pcs->cap, tmppt, and cpt. */
+                       (pcs->cap and cpt). throughout this
+                       function. */
                     pcs->cap.x = cpt.x;
                     pcs->cap.y = cpt.y;
 	            pcl_do_CR(pcs);

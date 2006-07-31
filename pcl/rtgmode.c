@@ -213,7 +213,7 @@ pcl_enter_graphics_mode(
     if ( !prstate->scale_raster       ||
          !prstate->src_width_set      ||
          !prstate->src_height_set     ||
-         pcs->ppalet->pindexed->pfixed  ) {
+         (pcs->ppalet->pindexed->pfixed  && mode == IMPLICIT) ) {
         scale_x = 7200.0 / (floatp)prstate->resolution;
         scale_y = scale_x;
 
