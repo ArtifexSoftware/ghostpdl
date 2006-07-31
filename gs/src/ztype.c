@@ -184,16 +184,14 @@ znoaccess(i_ctx_t *i_ctx_p)
 
     check_op(1);
     if (r_has_type(op, t_dictionary)) {
-	/*
-	 * Setting noaccess on a read-only dictionary is an attempt to
-	 * change its value, which is forbidden (this is a subtle
-	 * point confirmed with Adobe).  Also, don't allow removing
-	 * read access to permanent dictionaries.
-	 */
-	if (dict_is_permanent_on_dstack(op) ||
-	    !r_has_attr(dict_access_ref(op), a_write)
-	    )
+	/* Don't allow removing read access to permanent dictionaries. */
+	if (dict_is_permanent_on_dstack(op))
 	    return_error(e_invalidaccess);
+	/*
+	 * Even though Red Book 3 says that changing the access of a
+	 * read-only dictionary is not allowed, Adobe interpreters allow
+	 * executing noaccess on a readonly or noaccess dictionary.
+	 */
     }
     return access_check(i_ctx_p, 0, true);
 }
