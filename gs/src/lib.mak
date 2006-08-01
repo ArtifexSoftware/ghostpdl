@@ -1107,7 +1107,7 @@ LIB_ALL=$(LIBs) $(LIBx) $(LIBd)
 # We include some optional library modules in the dependency list,
 # but not in the link, to catch compilation problems.
 LIB_O=$(GLOBJ)gdevmpla.$(OBJ) $(GLOBJ)gdevmrun.$(OBJ) $(GLOBJ)gshtx.$(OBJ) $(GLOBJ)gsnogc.$(OBJ)
-$(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev
+$(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev $(GLD)translib.dev
 	$(SETMOD) $(GLD)libs $(LIB0s)
 	$(ADDMOD) $(GLD)libs $(LIB1s)
 	$(ADDMOD) $(GLD)libs $(LIB2s)
@@ -1126,7 +1126,7 @@ $(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev
 	$(ADDCOMP) $(GLD)libs pdf14trans
 	$(ADDMOD) $(GLD)libs -init gshtscr
 	$(ADDMOD) $(GLD)libs -include $(GLD)gsiodevs
-
+	$(ADDMOD) $(GLD)libs -include $(GLD)translib
 $(GLD)libx.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBx)
 	$(SETMOD) $(GLD)libx $(LIB1x)
 	$(ADDMOD) $(GLD)libx $(LIB2x)
