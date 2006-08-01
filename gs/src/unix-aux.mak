@@ -28,8 +28,9 @@ UNIX_AUX_MAK=$(GLSRC)unix-aux.mak
 # Unix platforms other than System V, and also System V Release 4
 # (SVR4) platforms.
 unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ) $(GLOBJ)gp_unix_cache.$(OBJ)
-$(GLGEN)unix_.dev: $(unix__) $(GLD)nosync.dev
+$(GLGEN)unix_.dev: $(unix__) $(GLD)nosync.dev $(GLD)smd5.dev
 	$(SETMOD) $(GLGEN)unix_ $(unix__) -include $(GLD)nosync
+	$(ADDMOD) $(GLGEN)unix_ -include $(GLD)smd5
 
 $(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
  $(pipe__h) $(string__h) $(time__h)\
