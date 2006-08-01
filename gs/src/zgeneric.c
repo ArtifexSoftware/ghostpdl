@@ -71,9 +71,12 @@ zcopy_integer(i_ctx_t *i_ctx_p)
     int count, i;
     int code;
 
-    if ((ulong) op->value.intval > op - osbot) {
+    if ((ulong) op->value.intval > (ulong)(op - osbot)) {
 	/* There might be enough elements in other blocks. */
-	check_int_ltu(*op, ref_stack_count(&o_stack));
+	check_type(*op, t_integer);
+        if ((ulong)op->value.intval >= ref_stack_count(&o_stack)) 
+            return_error(e_stackunderflow);
+        check_int_ltu(*op, ref_stack_count(&o_stack));
 	count = op->value.intval;
     } else if (op1 + (count = op->value.intval) <= ostop) {
 	/* Fast case. */
@@ -591,7 +594,7 @@ copy_interval(i_ctx_t *i_ctx_p /* for ref_assign_old */, os_ptr prto,
 	    {	/* We don't have to worry about aliasing, because */
 		/* packed arrays are read-only and hence the destination */
 		/* can't be a packed array. */
-		int i;
+		uint i;
 		const ref_packed *packed = prfrom->value.packed;
 		ref *pdest = prto->value.refs + index;
 		ref elt;
