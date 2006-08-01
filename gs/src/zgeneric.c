@@ -151,6 +151,7 @@ zlength(i_ctx_t *i_ctx_p)
 private int
 zget(i_ctx_t *i_ctx_p)
 {
+    int code;
     os_ptr op = osp;
     os_ptr op1 = op - 1;
     ref *pvalue;
@@ -167,19 +168,19 @@ zget(i_ctx_t *i_ctx_p)
 	    check_int_ltu(*op, r_size(op1));
 	    make_int(op1, op1->value.bytes[(uint) op->value.intval]);
 	    break;
-	default: {
-	    int code;
-
+	case t_array:
+	case t_mixedarray:
+	case t_shortarray:
 	    check_type(*op, t_integer);
 	    check_read(*op1);
 	    code = array_get(imemory, op1, op->value.intval, op1);
-	    if (code < 0) {	/* Might be a stackunderflow reported as typecheck. */
-		if (code == e_typecheck)
-		    return_op_typecheck(op1);
-		else
-		    return code;
-	    }
-	}
+	    if (code < 0) 
+	        return code;
+	    break;
+        case t__invalid:
+            return_error(e_stackunderflow);
+        default:
+            return_error(e_typecheck); 
     }
     pop(1);
     return 0;
