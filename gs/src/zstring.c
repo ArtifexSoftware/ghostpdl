@@ -81,8 +81,8 @@ zanchorsearch(i_ctx_t *i_ctx_p)
     os_ptr op1 = op - 1;
     uint size = r_size(op);
 
-    check_read_type(*op1, t_string);
     check_read_type(*op, t_string);
+    check_read_type(*op1, t_string);
     if (size <= r_size(op1) && !memcmp(op1->value.bytes, op->value.bytes, size)) {
 	os_ptr op0 = op;
 
