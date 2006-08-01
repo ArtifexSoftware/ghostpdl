@@ -405,6 +405,7 @@ zforall(i_ctx_t *i_ctx_p)
     es_ptr cproc = ep + 4;
 
     check_estack(6);
+    check_proc(*op);
     switch (r_type(obj)) {
 	default:
 	    return_op_typecheck(obj);
@@ -428,7 +429,6 @@ zforall(i_ctx_t *i_ctx_p)
 	    make_op_estack(cproc, packedarray_continue);
 	    break;
     }
-    check_proc(*op);
     /*
      * Push:
      *   - a mark;
