@@ -49,7 +49,7 @@ private SW16  fcHndlAry[16];
 /* defaults for locations of font collection objects (fco's) and
    plugins the root data directory.  These are internally separated with
    ':' but environment variable use the gp separator */
-const char *UFSTFONTDIR="/usr/local/fontdata2/";
+const char *UFSTFONTDIR="/usr/local/fontdata5.0/";
 
 /* default list of fcos and plugins - relative to UFSTFONTDIR */
 const char *UFSTFCOS="mtfonts/pclps2/mt3/pclp2_xj.fco:mtfonts/pcl45/mt3/wd____xh.fco";
@@ -376,7 +376,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     } /* end enumerate fco loop */
     free_strs(mem, fcos);
 #ifdef DEBUG
-    if (gs_debug_c['='] )
+    if (gs_debug_c('=') )
         pl_check_fonts(mem, pfontdict, use_unicode_names_for_keys);
 #endif
     return TRUE;
