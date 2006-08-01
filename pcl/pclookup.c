@@ -52,7 +52,7 @@ set_lookup_tbl(
     pcl__lookup_tbl_t * ptbl = 0;
     int                 code = 0;
 
-    if ( pcs->personality == pcl5e )
+    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
 	return 0;
 
     /* check for clearing of lookup tables, and for incorrect size */
@@ -121,7 +121,7 @@ set_gamma_correction(
 {
     float               gamma = float_arg(pargs);
 
-    if ( pcs->personality == pcl5e )
+    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
 	return 0;
     if ((gamma < 0.0) || (gamma > (float)((1L << 15) - 1)))
         return 0;
@@ -142,13 +142,13 @@ lookup_do_registration(
     DEFINE_CLASS(pmem, '*')
     {
         'l', 'W',
-        PCL_COMMAND("Color Lookup Tables", set_lookup_tbl, pca_bytes)
+        PCL_COMMAND("Color Lookup Tables", set_lookup_tbl, pca_bytes | pca_raster_graphics)
     },
     {
         't', 'I',
         PCL_COMMAND( "Gamma Correction",
                      set_gamma_correction,
-                     pca_neg_ignore | pca_big_ignore
+                     pca_neg_ignore | pca_big_ignore | pca_raster_graphics
                      )
     },
     END_CLASS

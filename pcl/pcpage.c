@@ -555,7 +555,6 @@ pcl_end_page(
     /* allow the logical orientation command to be used again */
     pcs->orientation_set = false;
 
-    pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
     if ( pcs->end_page == pcl_end_page_top )
         code = gs_erasepage(pcs->pgs);
     pcs->page_marked = false;

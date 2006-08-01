@@ -72,6 +72,8 @@ download_dither_matrix(
     int                     code = 0;
     byte *                  bp;
 
+    if ( pcs->raster_state.graphics_mode )
+        return 0;
     /* check for legitimate parameter values */
     if (len < 7)
         return 0;
@@ -147,7 +149,7 @@ udither_do_registration(
     DEFINE_CLASS(pmem, '*')
     {
         'm', 'W',
-        PCL_COMMAND("Download Dither Matrix", download_dither_matrix, pca_bytes)
+        PCL_COMMAND("Download Dither Matrix", download_dither_matrix, pca_bytes | pca_raster_graphics)
     },
     END_CLASS
     return 0;

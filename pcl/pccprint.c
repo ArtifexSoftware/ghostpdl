@@ -34,6 +34,8 @@ pcl_logical_operation(
 {
     uint            rop = uint_arg(pargs);
 
+    if (pcs->raster_state.graphics_mode)
+        return 0;
     if (rop > 255)
 	return e_Range;
 
@@ -58,6 +60,8 @@ pcl_pixel_placement(
 {
     uint            i = uint_arg(pargs);
 
+    if (pcs->raster_state.graphics_mode)
+        return 0;
     if (i > 1)
 	return 0;
     pcs->pp_mode = i;
@@ -79,14 +83,14 @@ pccprint_do_registration(
         'l', 'O',
 	PCL_COMMAND( "Logical Operation",
                      pcl_logical_operation,
-		     pca_neg_ok | pca_big_error | pca_in_rtl
+		     pca_neg_ok | pca_big_error | pca_in_rtl | pca_raster_graphics
                      )
     },
     {
         'l', 'R',
         PCL_COMMAND( "Pixel Placement",
                      pcl_pixel_placement,
-		     pca_neg_ok | pca_big_ignore | pca_in_rtl
+		     pca_neg_ok | pca_big_ignore | pca_in_rtl | pca_raster_graphics
                      )
     },
     END_CLASS

@@ -179,7 +179,7 @@ set_foreground(
 {
     int                 code;
 
-    if ( pcs->personality == pcl5e )
+    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
 	return 0;
 
     /* check that the palette is complete */
@@ -210,7 +210,7 @@ frgrnd_do_registration(
     DEFINE_CLASS(mem, '*')
     {
         'v', 'S', 
-        PCL_COMMAND("Set Foreground", set_foreground, pca_neg_ok)
+        PCL_COMMAND("Set Foreground", set_foreground, pca_neg_ok | pca_raster_graphics)
     },
     END_CLASS
     return 0;

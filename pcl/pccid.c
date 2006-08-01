@@ -433,7 +433,7 @@ pcl_configure_image_data(
     pcl_state_t *       pcs
 )
 {
-    if ( pcs->personality == pcl5e )
+    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
 	return 0;
     return install_cid_data( uint_arg(pargs),
                              arg_data(pargs),
@@ -455,7 +455,7 @@ pcl_simple_color_space(
     pcl_state_t *       pcs
 )
 {
-    if ( pcs->personality == pcl5e )
+    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
 	return 0;
     return set_simple_color_mode(int_arg(pargs), pcs);
 }
@@ -482,7 +482,7 @@ set_view_illuminant(
     float               x, y;
     gs_vector3          wht_pt;
 
-    if ( pcs->personality == pcl5e )
+    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
 	return 0;
 
     if (len != 8)
@@ -544,15 +544,15 @@ pcl_cid_do_registration(
     DEFINE_CLASS(pmem, '*')
     {
         'v', 'W',
-        PCL_COMMAND("Configure Image Data", pcl_configure_image_data, pca_bytes | pca_in_rtl)
+        PCL_COMMAND("Configure Image Data", pcl_configure_image_data, pca_bytes | pca_in_rtl | pca_raster_graphics)
     },
     {
         'r', 'U',
-        PCL_COMMAND("Simple Color Mode", pcl_simple_color_space, pca_neg_ok | pca_in_rtl)
+        PCL_COMMAND("Simple Color Mode", pcl_simple_color_space, pca_neg_ok | pca_in_rtl | pca_raster_graphics)
     },
     {
         'i', 'W',
-        PCL_COMMAND("Set Viewing Illuminant", set_view_illuminant, pca_bytes | pca_in_rtl)
+        PCL_COMMAND("Set Viewing Illuminant", set_view_illuminant, pca_bytes | pca_in_rtl | pca_raster_graphics)
     },
     END_CLASS
     return 0;

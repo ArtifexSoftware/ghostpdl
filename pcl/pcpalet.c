@@ -267,7 +267,7 @@ push_pop_palette(
 {
     int             action = uint_arg(pargs);
 
-    if ( pcs->personality == pcl5e )
+    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
 	return 0;
 
     if (action == 0) {
@@ -739,7 +739,7 @@ set_sel_palette_id(
     uint            id = uint_arg(pargs);
     pcl_id_t        key;
 
-    if ( pcs->personality == pcl5e )
+    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
 	return 0;
 
     /* ignore attempts to select non-existent palettes */
@@ -766,7 +766,7 @@ set_ctrl_palette_id(
     pcl_state_t *   pcs
 )
 {
-    if ( pcs->personality == pcl5e )
+    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode)
 	return 0;
 
     pcs->ctrl_palette_id = uint_arg(pargs);
@@ -816,7 +816,7 @@ palette_control(
 {
     uint            action = uint_arg(pargs);
 
-    if ( pcs->personality == pcl5e )
+    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
 	return 0;
 
     switch (action) {
@@ -876,7 +876,7 @@ set_render_algorithm(
     pcl_state_t *   pcs
 )
 {
-    if ( pcs->personality == pcl5e )
+    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
 	return 0;
 
     return pcl_palette_set_render_method(pcs, uint_arg(pargs));
@@ -913,7 +913,7 @@ set_print_mode(
     uint            mode = uint_arg(pargs);
     int             code = 0;
 
-    if ( pcs->personality == pcl5e )
+    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
 	return 0;
 
     if (mode > 1)
@@ -947,14 +947,14 @@ palette_do_registration(
         'p', 'P',
         PCL_COMMAND( "Push/Pop Palette",
                      push_pop_palette,
-                     pca_neg_ok | pca_big_ignore | pca_in_rtl
+                     pca_neg_ok | pca_big_ignore | pca_in_rtl | pca_raster_graphics
                      )
     },
     {
         't', 'J',
         PCL_COMMAND( "Render Algorithm",
                      set_render_algorithm,
-                     pca_neg_ok | pca_big_ignore | pca_in_rtl
+                     pca_neg_ok | pca_big_ignore | pca_in_rtl | pca_raster_graphics
                      )
     },
     END_CLASS
@@ -964,28 +964,28 @@ palette_do_registration(
         'b', 'M',
         PCL_COMMAND( "Monochrome Printing",
                      set_print_mode,
-                     pca_neg_ok | pca_big_ignore | pca_in_rtl
+                     pca_neg_ok | pca_big_ignore | pca_in_rtl | pca_raster_graphics
                      )
     },
     {
         'p', 'S',
         PCL_COMMAND( "Select Palette",
                       set_sel_palette_id,
-                      pca_neg_ok | pca_big_ignore | pca_in_rtl
+                      pca_neg_ok | pca_big_ignore | pca_in_rtl | pca_raster_graphics
                       )
     },
     {
         'p', 'I',
         PCL_COMMAND( "Palette Control ID",
                      set_ctrl_palette_id,
-                     pca_neg_ok | pca_big_ignore | pca_in_rtl
+                     pca_neg_ok | pca_big_ignore | pca_in_rtl | pca_raster_graphics
                      )
     },
     {
         'p', 'C',
         PCL_COMMAND( "Palette Control",
                      palette_control,
-                     pca_neg_ok | pca_big_ignore | pca_in_rtl
+                     pca_neg_ok | pca_big_ignore | pca_in_rtl | pca_raster_graphics
                      )
     },
     END_CLASS
