@@ -51,7 +51,11 @@ zstring(i_ctx_t *i_ctx_p)
     byte *sbody;
     uint size;
 
-    check_int_leu(*op, max_string_size);
+    check_type(*op, t_integer);
+    if (op->value.intval < 0 ) 
+        return_error(e_rangecheck);
+    if (op->value.intval > max_string_size ) 
+        return_error(e_limitcheck); /* to match Distiller */
     size = op->value.intval;
     sbody = ialloc_string(size, "string");
     if (sbody == 0)
