@@ -272,10 +272,35 @@ typedef enum {
     upath_op_ucache = 11
 } upath_op;
 
+/* User path interpretation states */
+typedef enum {
+    UPS_INITIAL = 1,
+    UPS_UCACHE = 2,
+    UPS_PATH = 4
+} upath_state;
+
+typedef struct up_data_s {
+    byte num_args;
+    byte states_before;
+    byte state_after;
+} up_data_t;
+#define UP_DATA_PATH(n) {n, UPS_PATH, UPS_PATH}
+
 #define UPATH_MAX_OP 11
 #define UPATH_REPEAT 32
-static const byte up_nargs[UPATH_MAX_OP + 1] = {
-    4, 2, 2, 2, 2, 6, 6, 5, 5, 5, 0, 0
+static const up_data_t up_data[UPATH_MAX_OP + 1] = {
+    {4, UPS_INITIAL | UPS_UCACHE, UPS_PATH}, /* setbbox */
+    UP_DATA_PATH(2),
+    UP_DATA_PATH(2),
+    UP_DATA_PATH(2),
+    UP_DATA_PATH(2),
+    UP_DATA_PATH(6),
+    UP_DATA_PATH(6),
+    UP_DATA_PATH(5),
+    UP_DATA_PATH(5),
+    UP_DATA_PATH(5),
+    UP_DATA_PATH(0),
+    {0, UPS_INITIAL, UPS_UCACHE}	/* ucache */
 };
 
 /* Declare operator procedures not declared in opextern.h. */
@@ -522,9 +547,11 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 
 /* Append a user path to the current path. */
 private inline int
-upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p)
+upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs)
 {
+    upath_state ups = UPS_INITIAL;
     ref opcodes;
+
     check_read(*oppath);
     gs_newpath(igs);
 /****** ROUND tx AND ty ******/
@@ -556,9 +583,15 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p)
 	    else if (opx > UPATH_MAX_OP)
 		return_error(e_rangecheck);
 	    else {		/* operator */
+		const up_data_t data = up_data[opx];
+
+		*pnargs = data.num_args; /* in case of error */
+		if (!(ups & data.states_before))
+		    return_error(e_typecheck);
+		ups = data.state_after;
 		do {
 		    os_ptr op = osp;
-		    byte opargs = up_nargs[opx];
+		    byte opargs = data.num_args;
 
 		    while (opargs--) {
 			push(1);
@@ -594,7 +627,9 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p)
 	    ref rup;
 	    ref *defp;
 	    os_ptr op = osp;
+	    up_data_t data;
 
+	    *pnargs = argcount;
 	    array_get(imemory, arp, index, &rup);
 	    switch (r_type(&rup)) {
 		case t_integer:
@@ -619,8 +654,14 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p)
 		    for (opx = 0; opx <= UPATH_MAX_OP; opx++)
 			if (oproc == up_ops[opx])
 			    break;
-		    if (opx > UPATH_MAX_OP || argcount != up_nargs[opx])
+		    if (opx > UPATH_MAX_OP)
 			return_error(e_typecheck);
+		    data = up_data[opx];
+		    if (argcount != data.num_args)
+			return_error(e_typecheck);
+		    if (!(ups & data.states_before))
+			return_error(e_typecheck);
+		    ups = data.state_after;
 		    code = (*oproc)(i_ctx_p);
 		    if (code < 0)
 			return code;
@@ -638,10 +679,14 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p)
 private int
 upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 {
-    int code = upath_append_aux(oppath, i_ctx_p);
+    int nargs = 0;
+    int code = upath_append_aux(oppath, i_ctx_p, &nargs);
 
-    if (code < 0)
+    if (code < 0) {
+	/* Pop args on error, to match Adobe interpreters. */
+	pop(nargs);
 	return code;
+    }
     igs->current_point.x = fixed2float(igs->path->position.x);
     igs->current_point.y = fixed2float(igs->path->position.y);
     return 0;
