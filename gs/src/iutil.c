@@ -113,13 +113,20 @@ obj_eq(const gs_memory_t *mem, const ref * pref1, const ref * pref2)
 		name_string_ref(mem, pref2, &nref);
 		pref2 = &nref;
 		break;
-
-		/* differing array types can match if length is 0 */
-	    case t_array:
+		/*
+		 * Differing implementations of packedarray can be eq,
+		 * if the length is zero, but an array is never eq to a
+		 * packedarray.
+		 */
 	    case t_mixedarray:
 	    case t_shortarray:
-		return r_is_array(pref2) &&
-		       r_size(pref1) == 0 && r_size(pref2) == 0;
+		/*
+		 * Since r_type(pref1) is one of the above, this is a
+		 * clever fast check for r_type(pref2) being the other.
+		 */
+		return ((int)r_type(pref1) + (int)r_type(pref2) ==
+			t_mixedarray + t_shortarray) &&
+		    r_size(pref1) == 0 && r_size(pref2) == 0;
 	    default:
 		if (r_btype(pref1) != r_btype(pref2))
 		    return false;
