@@ -471,7 +471,17 @@ other:
 	break;
     }
     case t_real:
-	sprintf(buf, "%g", op->value.realval);
+	/*
+	 * The value 0.0001 is a boundary case that the Adobe interpreters
+	 * print in f-format but at least some gs versions print in
+	 * e-format, presumably because of differences in the underlying C
+	 * library implementation.  Work around this here.
+	 */
+	if (op->value.realval == (float)0.0001) {
+	    strcpy(buf, "0.0001");
+	} else {
+	    sprintf(buf, "%g", op->value.realval);
+	}
 	ensure_dot(buf);
 	break;
     default:
@@ -486,25 +496,14 @@ nl: if (size < start_pos)
     return (size > len);
 }
 /*
- * Make sure the converted form of a real number has a decimal point.  This
- * is needed for compatibility with Adobe (and other) interpreters.
+ * Make sure the converted form of a real number has at least one of an 'e'
+ * or a decimal point, so it won't be mistaken for an integer.
  */
 private void
 ensure_dot(char *buf)
 {
-    if (strchr(buf, '.') == NULL) {
-	char *ept = strchr(buf, 'e');
-
-	if (ept == NULL)
-	    strcat(buf, ".0");
-	else {
-	    /* Insert the .0 before the exponent.  What a nuisance! */
-	    char buf1[30];
-
-	    strcpy(buf1, ept);
-	    strcpy(ept, ".0");
-	    strcat(ept, buf1);
-	}
+    if (strchr(buf, '.') == NULL && strchr(buf, 'e') == NULL) {
+	strcat(buf, ".0");
     }
 }
 
