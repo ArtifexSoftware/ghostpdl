@@ -343,8 +343,7 @@ psuserparams /ProcessDSCComment {.checkprocesscomment} put
 
 (<<) cvn			% - << -mark-
   /mark load def
-(>>) cvn			% -mark- <key1> <value1> ... >> <dict>
-  /.dicttomark load def
+% (>> is defined primitively.)
 /languagelevel 2 def
 % When running in Level 2 mode, this interpreter is supposed to be
 % compatible with Adobe version 2017.
