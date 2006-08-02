@@ -422,9 +422,12 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
     case '+': sign = 1; ptr++; break;\
     default: sign = 0;\
   }
+#define refill2_back(styp,nback)\
+  BEGIN sptr -= nback; scan_type = styp; goto pause; END
 #define ensure2_back(styp,nback)\
-  if ( sptr >= endptr ) { sptr -= nback; scan_type = styp; goto pause; }
+  if ( sptr >= endptr ) refill2_back(styp,nback)
 #define ensure2(styp) ensure2_back(styp, 1)
+#define refill2(styp) refill2_back(styp, 1)
     byte s1[2];
     const byte *const decoder = scan_char_decoder;
     int status;
@@ -675,7 +678,13 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	    }
 	    break;
 	case '/':
-	    ensure2(scanning_none);
+	    /*
+	     * If the last thing in the input is a '/', don't try to read
+	     * any more data.
+	     */
+	    if (sptr >= endptr && s->end_status != EOFC) {
+		refill2(scanning_none);
+	    }
 	    c = scan_getc();
 	    if (!PDFScanRules && (c == '/')) {
 		name_type = 2;
