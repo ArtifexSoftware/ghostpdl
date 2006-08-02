@@ -355,7 +355,12 @@ zputinterval(i_ctx_t *i_ctx_p)
 
     switch (r_type(opto)) {
 	default:
-	    return_op_typecheck(opto);
+            return_error(e_typecheck);
+        case t__invalid:
+            if (r_type(op) != t_array && r_type(op) != t_string && r_type(op) != t__invalid)
+                return_error(e_typecheck); /* to match Distiller */
+            else
+                return_error(e_stackunderflow);
 	case t_mixedarray:
 	case t_shortarray:
 	    return_error(e_invalidaccess);
