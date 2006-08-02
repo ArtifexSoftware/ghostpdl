@@ -140,7 +140,7 @@ zclippath(i_ctx_t *i_ctx_p)
 
 /* <bool> .pathbbox <llx> <lly> <urx> <ury> */
 private int
-zpathbbox(i_ctx_t *i_ctx_p)
+z1pathbbox(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_rect box;
@@ -156,6 +156,26 @@ zpathbbox(i_ctx_t *i_ctx_p)
     make_real(op - 1, box.q.x);
     make_real(op, box.q.y);
     return 0;
+}
+
+/*
+ * In order to match Adobe output on a Genoa test, pathbbox must be an
+ * operator, not an operator procedure, even though it has a trivial
+ * definition as a procedure.
+ */
+private int
+zpathbbox(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code;
+
+    push(1);
+    make_false(op);
+    code = z1pathbbox(i_ctx_p);
+    if (code < 0) {
+	pop(1);			/* remove the Boolean */
+    }
+    return code;
 }
 
 /* <moveproc> <lineproc> <curveproc> <closeproc> pathforall - */
@@ -269,7 +289,8 @@ const op_def zpath1_op_defs[] =
     {"4pathforall", zpathforall},
     {"0reversepath", zreversepath},
     {"0strokepath", zstrokepath},
-    {"1.pathbbox", zpathbbox},
+    {"1.pathbbox", z1pathbbox},
+    {"0pathbbox", zpathbbox},
 		/* Internal operators */
     {"0%path_continue", path_continue},
     op_def_end(0)
