@@ -275,10 +275,20 @@ colorspacedict
                     //get_pattern_base_cspace exec dup //null eq
                       //setcspace_rangecheck
                     if
-                    exch 1 index //.cs_get_ncomps exec
-                    exch 1 index 3 add 1 roll
-                    //check_num_stack exec
-                    //.cs_get_ncomps exec 1 add -1 roll
+                    //.cs_get_ncomps exec
+		    % We cannot use check_num_stack since it does not
+		    % properly clean the stack.  The CET test 09-47n.ps has
+		    % a very bad test case with a faulty setpattern call with
+		    % no color values.  To properly handle that case and to
+		    % ensure that the stack is properly cleaned, we are
+		    % testing the type of the color values inline.
+		    1 exch 1 exch
+		      {
+		        index type dup /integertype ne exch /realtype ne and
+		          //setcolor_typecheck
+		        if
+		      }
+		    for
                   }
                   { pop }
                 ifelse
