@@ -782,8 +782,12 @@ hpgl_print_char(
 	/* If SP is a control code, get the width of the space character. */
 	if (ch == ' ') {
             space_code = hpgl_get_char_width(pgls, ' ', &space_width);
-            // NB fix me.  hpgl_get_width lies.
-            space_code = 1;
+            
+	    if ( 0 == space_code && 
+		 pl_font_is_scalable(font) && 
+		 pfs->params.proportional_spacing )
+		space_code = 1; /* NB hpgl_get_width lies. */
+
 	    if (space_code == 1) {
                 /* Space is a control code. */
 		if ( pl_font_is_scalable(font) ) {
@@ -792,7 +796,8 @@ hpgl_print_char(
 			    (coord_2_plu(pl_fp_pitch_cp(&pfs->font->params)
 					 * pfs->params.height_4ths / 4) ) / scale.x;
 		    else
-			space_width = 1.0; /* NB not sure */
+			space_width = 1.0; 
+		        /* error! NB scalable fixed pitch space_code == 0 */
 		} else
 		    space_width =
 			    ( coord_2_plu(pl_fp_pitch_cp(&pfs->font->params)) ) / scale.x;
