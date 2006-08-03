@@ -168,13 +168,14 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 	 */
 	pl_fp_set_pitch_cp(&font->params, 100.0*2/3);
 	pfs->font = font;
-	{ byte id[2];
+	{ 
+	    byte id[2];
 
-	  id[0] = pfs->params.symbol_set >> 8;
-	  id[1] = pfs->params.symbol_set & 255;
-	  pfs->map = pcl_find_symbol_map(pgls,
-					 id, plgv_Unicode);
-	}
+	    id[0] = pfs->params.symbol_set >> 8;
+	    id[1] = pfs->params.symbol_set & 0xff;
+	    pfs->map = pcl_find_symbol_map(pgls,
+					   id, plgv_Unicode);
+	} 
 	return 0;
 }
 
@@ -188,7 +189,7 @@ hpgl_stick_font_supports(const pcl_state_t *pcs, uint symbol_set)
     pl_symbol_map_t *map;
 
     id[0] = symbol_set >> 8;
-    id[1] = symbol_set;
+    id[1] = symbol_set & 0xff;
     if ( (map = pcl_find_symbol_map(pcs, id, gv)) == 0 )
         return false;
     return pcl_check_symbol_support(map->character_requirements,

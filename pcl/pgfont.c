@@ -31,17 +31,35 @@
 #include "pgfont.h"
 
 
-/* The client handles all encoding issues for these fonts. */
-/* The fonts themselves use Unicode indexing. */
+
+/* The client always asks for a Unicode indexed chr.
+ * The stick/arc fonts themselves use Roman-8 (8U) indexing.
+ */
+extern const pl_symbol_map_t map_8U_unicode;
 private gs_glyph
 hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph not_used)
-{	return (gs_glyph)chr;
+{	
+    int i;
+    /* reverse map unicode back to roman 8 */
+    if (chr < 0x00a1)
+	return (gs_glyph)chr;
+    else {
+	for (i = 0x00a1; i < 0x00ff; ++i)
+	    if (chr == map_8U_unicode.codes[i])
+		return (gs_glyph)i;
+
+    }	
+    return (gs_glyph)chr; /* this eventually will be a fail */
 }
 
-/* The stick font is fixed-pitch. */
+/* The stick font is fixed-pitch. 
+ */
 private int
 hpgl_stick_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_point *pwidth)
 {	
+    /* first map uni_code to roman-8 */
+    uni_code = (uint) hpgl_stick_arc_encode_char(NULL, uni_code, 0);
+
     /* NB need an interface function call to verify the character exists */
     if ( (uni_code >= 0x20)  && (uni_code <= 0xff) )
 	pwidth->x = hpgl_stick_arc_width(uni_code, HPGL_STICK_FONT);
@@ -55,6 +73,7 @@ private int
 hpgl_stick_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code, float metrics[4])
 {
     gs_point width;
+
     /* never a vertical substitute */
     metrics[1] = metrics[3] = 0;
     /* no lsb */
@@ -71,6 +90,9 @@ hpgl_stick_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code,
 private int
 hpgl_arc_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_point *pwidth)
 {	
+    /* first map uni_code to roman-8 */
+    uni_code = (uint) hpgl_stick_arc_encode_char(NULL, uni_code, 0);
+
     /* NB need an interface function call to verify the character exists */
     if ( (uni_code >= 0x20)  && (uni_code <= 0xff) ) {
         pwidth->x = hpgl_stick_arc_width(uni_code, HPGL_ARC_FONT)
@@ -135,7 +157,8 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 private int
 hpgl_stick_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_char ignore_chr, gs_glyph uni_code)
-{	return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code, HPGL_STICK_FONT);
+{	
+   return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code, HPGL_STICK_FONT);
 }
 private int
 hpgl_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,

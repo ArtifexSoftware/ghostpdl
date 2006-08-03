@@ -2763,7 +2763,7 @@ const short int stick_font_data[] = {
 
 /* offsets are array index into fontData for each beginning of character,
    data goes until next index (NB. there's an extra entry for end of data)
-   (character codes start with 32)
+   (character codes start with 32)    Roman-8 encoding for table indexes
 */
 const short int stick_font_offsets[] = {
     0,
@@ -4582,7 +4582,7 @@ const short int arc_font_data[] = {
 
 /* offsets are array index into fontData for each beginning of character,
    data goes until next index (NB. there's an extra entry for end of data)
-   (character codes start with 32)
+   (character codes start with 32) Roman-8 encoding for table indexes
 */
 const short int arc_font_offsets[] = {
     0,

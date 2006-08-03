@@ -33,7 +33,7 @@ hpgl_default_font_params(
     pcl_font_selection_t *  pfs
 )
 {
-    pfs->params.symbol_set = 277;	/* Roman-8 */
+    pfs->params.symbol_set = 277;  /* Roman-8 */
     pfs->params.proportional_spacing = false;
     pl_fp_set_pitch_per_inch(&pfs->params, 9);
     pfs->params.height_4ths = (int)(11.5*4);
