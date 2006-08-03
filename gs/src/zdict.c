@@ -496,12 +496,14 @@ const op_def zdict2_op_defs[] = {
     {"1.knownundef", zknownundef},
     {"2.setmaxlength", zsetmaxlength},
 	/*
-	 * In Level 2, >> is a synonym for .dicttomark.  By giving it its
-	 * own entry, it will not be "eq" to .dicttomark, but that doesn't
-	 * matter, since we're doing this only for the sake of Adobe-
-	 * compatible error stacks.
+	 * In Level 2, >> is a synonym for .dicttomark, and undef for
+	 * .undef.  By giving the former their own entries, they will not be
+	 * "eq" to .dicttomark and .undef, but that doesn't matter, since
+	 * we're doing this only for the sake of Adobe- compatible error
+	 * stacks.
 	 */
     op_def_begin_level2(),
     {"1>>", zdicttomark},
+    {"2undef", zundef},
     op_def_end(0)
 };
