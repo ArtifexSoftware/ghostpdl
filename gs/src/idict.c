@@ -263,9 +263,7 @@ dict_unpack(ref * pdref, dict_stack_t *pds)
 /*
  * Look up a key in a dictionary.  Store a pointer to the value slot
  * where found, or to the (value) slot for inserting.
- * Return 1 if found, 0 if not and there is room for a new entry,
- * or e_dictfull if the dictionary is full and the key is missing.
- * The caller is responsible for ensuring key is not a null.
+ * See idict.h for the possible return values.
  */
 int
 dict_find(const ref * pdref, const ref * pkey,
@@ -553,9 +551,17 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
     ref *pvslot;
     dict *pdict;
     uint index;
+    int code = dict_find(pdref, pkey, &pvslot);
 
-    if (dict_find(pdref, pkey, &pvslot) <= 0)
-	return (e_undefined);
+    switch (code) {
+    case 0:
+    case e_dictfull:
+	return_error(e_undefined);
+    case 1:
+	break;
+    default:			/* other error */
+	return code;
+    }
     /* Remove the entry from the dictionary. */
     pdict = pdref->value.pdict;
     index = pvslot - pdict->values.value.refs;

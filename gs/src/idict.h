@@ -124,7 +124,8 @@ int dict_put_string(ref * pdref, const char *kstr, const ref * pvalue,
 
 /*
  * Remove a key-value pair from a dictionary.
- * Return 0 or e_undefined.
+ * Return any of the same values as dict_put, except for 0 and e_dictfull
+ * which are converted to e_undefined.
  */
 int dict_undef(ref * pdref, const ref * key, dict_stack_t *pds);
 
