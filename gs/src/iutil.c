@@ -514,7 +514,11 @@ ensure_dot(char *buf)
     if (pe) {
         int i;
         sscanf(pe + 1, "%d", &i);
-        sprintf(pe + 1, "%+02d", i);
+        /* MSVC .net 2005 express doesn't support "%+02d" */
+        if (i >= 0)
+            sprintf(pe + 1, "+%02d", i);
+        else
+            sprintf(pe + 1, "-%02d", -i);
     } else if (strchr(buf, '.') == NULL) {
 	strcat(buf, ".0");
     }
