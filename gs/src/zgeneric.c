@@ -74,8 +74,10 @@ zcopy_integer(i_ctx_t *i_ctx_p)
     if ((ulong) op->value.intval > (ulong)(op - osbot)) {
 	/* There might be enough elements in other blocks. */
 	check_type(*op, t_integer);
-        if ((ulong)op->value.intval >= ref_stack_count(&o_stack)) 
+        if (op->value.intval >= (int)ref_stack_count(&o_stack)) 
             return_error(e_stackunderflow);
+        if (op->value.intval < 0) 
+            return_error(e_rangecheck);
         check_int_ltu(*op, ref_stack_count(&o_stack));
 	count = op->value.intval;
     } else if (op1 + (count = op->value.intval) <= ostop) {
