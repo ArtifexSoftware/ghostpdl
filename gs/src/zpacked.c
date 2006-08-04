@@ -45,11 +45,12 @@ zpackedarray(i_ctx_t *i_ctx_p)
     ref parr;
 
     check_type(*op, t_integer);
-    if (op->value.intval < 0 ||
-	(op->value.intval > op - osbot &&
-	 op->value.intval >= ref_stack_count(&o_stack))
-	)
+    if (op->value.intval < 0)
 	return_error(e_rangecheck);
+    if (op->value.intval > op - osbot &&
+	op->value.intval >= ref_stack_count(&o_stack)
+	)
+	return_error(e_stackunderflow);
     osp--;
     code = make_packed_array(&parr, &o_stack, (uint) op->value.intval,
 			     idmemory, "packedarray");
