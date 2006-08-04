@@ -786,12 +786,24 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
   { set_error(ecode); goto rwei; }
 #define return_with_code_iref()\
   { ierror.line = __LINE__; goto rweci; }
-#define return_with_error_code_op(nargs)\
-  return_with_code_iref()
 #define return_with_stackoverflow(objp)\
   { o_stack.requested = 1; return_with_error(e_stackoverflow, objp); }
 #define return_with_stackoverflow_iref()\
   { o_stack.requested = 1; return_with_error_iref(e_stackoverflow); }
+/*
+ * If control reaches the special operators (x_add, etc.) as a result of
+ * interpreting an executable name, iref points to the name, not the
+ * operator, so the name rather than the operator becomes the error object,
+ * which is wrong.  We detect and handle this case explicitly when an error
+ * occurs, so as not to slow down the non-error case.
+ */
+#define return_with_error_tx_op(err_code)\
+  if (r_has_type(IREF, t_name)) {\
+      return_with_error(err_code, pvalue);\
+  } else {\
+      return_with_error_iref(err_code);\
+  }
+
     int ticks_left = gs_interp_time_slice_ticks;
 
     /*
@@ -955,29 +967,31 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 	case plain_exec(tx_op_add):
 x_add:	    INCR(x_add);
 	    if ((code = zop_add(iosp)) < 0)
-		return_with_error_code_op(2);
+		return_with_error_tx_op(code);
 	    iosp--;
 	    next_either();
 	case plain_exec(tx_op_def):
 x_def:	    INCR(x_def);
 	    osp = iosp;	/* sync o_stack */
 	    if ((code = zop_def(i_ctx_p)) < 0)
-		return_with_error_code_op(2);
+		return_with_error_tx_op(code);
 	    iosp -= 2;
 	    next_either();
 	case plain_exec(tx_op_dup):
 x_dup:	    INCR(x_dup);
 	    if (iosp < osbot)
-		return_with_error_iref(e_stackunderflow);
-	    if (iosp >= ostop)
-		return_with_stackoverflow_iref();
+		return_with_error_tx_op(e_stackunderflow);
+	    if (iosp >= ostop) {
+		o_stack.requested = 1;
+                return_with_error_tx_op(e_stackoverflow);
+            }
 	    iosp++;
 	    ref_assign_inline(iosp, iosp - 1);
 	    next_either();
 	case plain_exec(tx_op_exch):
 x_exch:	    INCR(x_exch);
 	    if (iosp <= osbot)
-		return_with_error_iref(e_stackunderflow);
+		return_with_error_tx_op(e_stackunderflow);
 	    ref_assign_inline(&token, iosp);
 	    ref_assign_inline(iosp, iosp - 1);
 	    ref_assign_inline(iosp - 1, &token);
@@ -985,16 +999,16 @@ x_exch:	    INCR(x_exch);
 	case plain_exec(tx_op_if):
 x_if:	    INCR(x_if);
 	    if (!r_has_type(iosp - 1, t_boolean))
-		return_with_error_iref((iosp <= osbot ?
+		return_with_error_tx_op((iosp <= osbot ?
 					e_stackunderflow : e_typecheck));
 	    if (!r_is_proc(iosp))
-		return_with_error_iref(check_proc_failed(iosp));
+		return_with_error_tx_op(check_proc_failed(iosp));
 	    if (!iosp[-1].value.boolval) {
 		iosp -= 2;
 		next_either();
 	    }
 	    if (iesp >= estop)
-		return_with_error_iref(e_execstackoverflow);
+		return_with_error_tx_op(e_execstackoverflow);
 	    store_state_either(iesp);
 	    whichp = iosp;
 	    iosp -= 2;
@@ -1002,14 +1016,14 @@ x_if:	    INCR(x_if);
 	case plain_exec(tx_op_ifelse):
 x_ifelse:   INCR(x_ifelse);
 	    if (!r_has_type(iosp - 2, t_boolean))
-		return_with_error_iref((iosp < osbot + 2 ?
+		return_with_error_tx_op((iosp < osbot + 2 ?
 					e_stackunderflow : e_typecheck));
 	    if (!r_is_proc(iosp - 1))
-		return_with_error_iref(check_proc_failed(iosp - 1));
+		return_with_error_tx_op(check_proc_failed(iosp - 1));
 	    if (!r_is_proc(iosp))
-		return_with_error_iref(check_proc_failed(iosp));
+		return_with_error_tx_op(check_proc_failed(iosp));
 	    if (iesp >= estop)
-		return_with_error_iref(e_execstackoverflow);
+		return_with_error_tx_op(e_execstackoverflow);
 	    store_state_either(iesp);
 	    whichp = (iosp[-2].value.boolval ? iosp - 1 : iosp);
 	    iosp -= 3;
@@ -1032,25 +1046,25 @@ x_ifelse:   INCR(x_ifelse);
 x_index:    INCR(x_index);
 	    osp = iosp;	/* zindex references o_stack */
 	    if ((code = zindex(i_ctx_p)) < 0)
-		return_with_error_code_op(1);
+		return_with_error_tx_op(code);
 	    next_either();
 	case plain_exec(tx_op_pop):
 x_pop:	    INCR(x_pop);
 	    if (iosp < osbot)
-		return_with_error_iref(e_stackunderflow);
+		return_with_error_tx_op(e_stackunderflow);
 	    iosp--;
 	    next_either();
 	case plain_exec(tx_op_roll):
 x_roll:	    INCR(x_roll);
 	    osp = iosp;	/* zroll references o_stack */
 	    if ((code = zroll(i_ctx_p)) < 0)
-		return_with_error_code_op(2);
+		return_with_error_tx_op(code);
 	    iosp -= 2;
 	    next_either();
 	case plain_exec(tx_op_sub):
 x_sub:	    INCR(x_sub);
 	    if ((code = zop_sub(iosp)) < 0)
-		return_with_error_code_op(2);
+		return_with_error_tx_op(code);
 	    iosp--;
 	    next_either();
 	    /* Executable types. */
