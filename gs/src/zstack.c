@@ -65,7 +65,7 @@ zindex(i_ctx_t *i_ctx_p)
     register os_ptr opn;
 
     check_type(*op, t_integer);
-    if ((ulong)op->value.intval >= op - osbot) {
+    if ((ulong)op->value.intval >= (ulong)(op - osbot)) {
 	/* Might be in an older stack block. */
 	ref *elt;
 
@@ -73,7 +73,7 @@ zindex(i_ctx_t *i_ctx_p)
 	    return_error(e_rangecheck);
 	elt = ref_stack_index(&o_stack, op->value.intval + 1);
 	if (elt == 0)
-	    return_error(e_rangecheck);
+	    return_error(e_stackunderflow);
 	ref_assign(op, elt);
 	return 0;
     }
