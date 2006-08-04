@@ -505,11 +505,17 @@ nl: if (size < start_pos)
 /*
  * Make sure the converted form of a real number has at least one of an 'e'
  * or a decimal point, so it won't be mistaken for an integer.
+ * Re-format the exponent to satisfy Genoa CET test.
  */
 private void
 ensure_dot(char *buf)
 {
-    if (strchr(buf, '.') == NULL && strchr(buf, 'e') == NULL) {
+    char *pe = strchr(buf, 'e');
+    if (pe) {
+        int i;
+        sscanf(pe + 1, "%d", &i);
+        sprintf(pe + 1, "%+02d", i);
+    } else if (strchr(buf, '.') == NULL) {
 	strcat(buf, ".0");
     }
 }
