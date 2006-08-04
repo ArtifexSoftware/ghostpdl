@@ -112,7 +112,7 @@ zroll(i_ctx_t *i_ctx_p)
 
     check_type(*op1, t_integer);
     check_type(*op, t_integer);
-    if ((ulong) op1->value.intval > op1 - osbot) {
+    if ((ulong) op1->value.intval > (ulong)(op1 - osbot)) {
 	/*
 	 * The data might span multiple stack blocks.
 	 * There are efficient ways to handle this situation,
@@ -121,10 +121,10 @@ zroll(i_ctx_t *i_ctx_p)
 	 */
 	int left, i;
 
-	if (op1->value.intval < 0 ||
-	    op1->value.intval + 2 > ref_stack_count(&o_stack)
-	    )
+	if (op1->value.intval < 0) 
 	    return_error(e_rangecheck);
+	if (op1->value.intval + 2 > (int)ref_stack_count(&o_stack))
+	    return_error(e_stackunderflow);
 	count = op1->value.intval;
 	if (count <= 1) {
 	    pop(2);
