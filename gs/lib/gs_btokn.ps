@@ -282,6 +282,7 @@ cntdict /dicttype {
   (%stdout) (w) file 2 index 2 index writeobject pop pop
 } odef
 /writeobject {		% <file> <obj> <tag> writeobject -
+  2 .argindex pop	% check # of args
   3 copy exch
 		% We must allocate the array in local VM
 		% to avoid a possible invalidaccess.
@@ -293,7 +294,7 @@ cntdict /dicttype {
 /.objectprinttest {		% <obj> .objectprinttest -
 		% This is a pseudo-operator so it will restore the stack
 		% if it gets an error.
-  mark 0 0 3 index .cntobj cleartomark pop
+  mark 0 0 3 .argindex .cntobj cleartomark pop
 } bind odef
 /.printerror {
   $error /binary get .languagelevel 2 ge and {

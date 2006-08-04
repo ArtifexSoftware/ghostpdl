@@ -68,13 +68,13 @@ level2dict begin
 % ------ Fonts ------ %
 
 /selectfont		% <fontname> <size> selectfont -
- { 1 index findfont
+ { 1 .argindex findfont
    1 index dup type /arraytype eq { makefont } { scalefont } ifelse
    setfont pop pop
  } odef
 % undefinefont has to take local/global VM into account.
 /undefinefont		% <fontname> undefinefont -
- { .FontDirectory 1 index .undef
+ { .FontDirectory 1 .argindex .undef
    .currentglobal
     {		% Current mode is global; delete from local directory too.
       //systemdict /LocalFontDirectory .knownget

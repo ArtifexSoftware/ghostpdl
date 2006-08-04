@@ -113,7 +113,7 @@ end
 /sethalftone {		% <dict> sethalftone -
 	% We must create the new dictionary in the same VM as the
 	% operand; otherwise, invalidaccess errors may occur.
-  .currentglobal 1 index dup gcheck .setglobal
+  .currentglobal 1 .argindex dup gcheck .setglobal
   dup //.halftonetypes 1 index /HalftoneType get get exec exec
   .setglobal pop
 } odef
@@ -179,7 +179,7 @@ end
 % behavior of Adobe interpreters.
 /defineuserobject {		% <index> <value> defineuserobject -
   .UserObjects .knownget {
-    length dup 3 index le {
+    length dup 3 .argindex le {
 		% Stack: index value len
       2 index eq { 1 index 2 mul } { 1 index 1 add } ifelse
       .localvmarray .UserObjects get
@@ -189,15 +189,15 @@ end
       pop
     } ifelse
   } {
-    .UserObjects 3 index 1 add 10 .max .localvmarray put
+    .UserObjects 3 .argindex 1 add 10 .max .localvmarray put
   } ifelse
-  .UserObjects get 2 index 2 index put pop pop
+  .UserObjects get 2 .argindex 2 index put pop pop
 } odef
 /execuserobject {		% <index> execuserobject -
-  .UserObjects get 1 index get exch pop exec
+  .UserObjects get 1 .argindex get exch pop exec
 } odef
 /undefineuserobject {		% <index> undefineuserobject -
-  .UserObjects get 1 index null put pop
+  .UserObjects get 1 .argindex null put pop
 } odef
 
 % ------ Cache control ------ %

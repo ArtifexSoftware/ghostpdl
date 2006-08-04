@@ -82,6 +82,23 @@ zindex(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* <obj_n> ... <obj_0> <n> .argindex <obj_n> ... <obj_0> <obj_n> */
+int
+zargindex(i_ctx_t *i_ctx_p)
+{
+    int code = zindex(i_ctx_p);
+
+    /*
+     * Pseudo-operators should use .argindex rather than index to access
+     * their arguments on the stack, so that if there aren't enough, the
+     * result will be a stackunderflow rather than a rangecheck.  (This is,
+     * in fact, the only reason this operator exists.)
+     */
+    if (code == e_rangecheck && osp->value.intval >= 0)
+	code = gs_note_error(e_stackunderflow);
+    return code;
+}
+
 /* <obj_n-1> ... <obj_0> <n> <i> roll */
 /*      <obj_(i-1)_mod_ n> ... <obj_0> <obj_n-1> ... <obj_i_mod_n> */
 int
@@ -282,6 +299,7 @@ zcounttomark(i_ctx_t *i_ctx_p)
 
 const op_def zstack_op_defs[] =
 {
+    {"2.argindex", zargindex},
     {"0clear", zclear_stack},
     {"0cleartomark", zcleartomark},
     {"0count", zcount},

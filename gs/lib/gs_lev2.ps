@@ -50,7 +50,7 @@ level2dict begin
 } .bind def
 /.checksetparams {		% <newdict> <opname> <checkdict>
 				%   .checksetparams <newdict>
-  2 index {
+  2 .argindex {
 		% Stack: newdict opname checkdict key newvalue
     3 copy 3 1 roll .knownget {
       exec not {
@@ -109,7 +109,7 @@ level2dict begin
 systemdict begin
 /psuserparams 48 dict def
 /getuserparam {			% <name> getuserparam <value>
-  /userparams .systemvar 1 index get exch pop
+  /userparams .systemvar 1 .argindex get exch pop
 } odef
 % Fill in userparams (created by the interpreter) with current values.
 mark .currentuserparams
@@ -179,7 +179,7 @@ currentdict /pssystemparams known not {
   /pssystemparams 40 dict readonly def
 } if
 /getsystemparam {		% <name> getsystemparam <value>
-  //pssystemparams 1 index .knownget { exch pop } { .getsystemparam } ifelse
+  //pssystemparams 1 .argindex .knownget { exch pop } { .getsystemparam } ifelse
 } odef
 end
 /currentsystemparams {		% - currentsystemparams <dict>
@@ -188,6 +188,7 @@ end
 /setsystemparams {		% <dict> setsystemparams -
 	% Check that we will be able to set the PostScript-level
 	% system parameters.
+   dup pop		% check # of args
    /SAFETY .systemvar /safe get {
      % SAFER mode disallows some changes
      [ /GenericResourceDir /FontResourceDir /GenericResourcePathSep ] {
@@ -234,7 +235,7 @@ end
 
 % Redefine cache parameter setting to interact properly with userparams.
 /setcachelimit {
-  mark /MaxFontItem 2 index .dicttomark setuserparams pop
+  mark /MaxFontItem 2 .argindex .dicttomark setuserparams pop
 } .bind odef
 /setcacheparams {
 	% The MaxFontCache parameter is a system parameter, which we might
@@ -398,7 +399,7 @@ psuserparams /ProcessDSCComment {.checkprocesscomment} put
 
 % VMReclaim and VMThreshold are user parameters.
 /setvmthreshold {		% <int> setvmthreshold -
-  mark /VMThreshold 2 index .dicttomark setuserparams pop
+  mark /VMThreshold 2 .argindex .dicttomark setuserparams pop
 } odef
 /vmreclaim {			% <int> vmreclaim -
   dup 0 gt {
@@ -468,7 +469,7 @@ end		% serverdict
 /.startjob {			% <exit_bool> <password> <finish_proc>
 				%   .startjob <ok_bool>
   vmstatus pop pop serverdict /.jobsavelevel get eq
-  2 index .checkpassword 0 gt and {
+  2 .argindex .checkpassword 0 gt and {
     exch .checkpassword exch count 3 roll count 3 sub { pop } repeat
     cleardictstack
 		% Reset the e-stack back to the 2 .stopped in .runexec,
@@ -660,7 +661,7 @@ currentdict end
 
 % ------ Color spaces ------ %
 
-% Move setcolorsapce, setcolor, and colorspacedict to level2dict
+% Move setcolorspace, setcolor, and colorspacedict to level2dict
 level2dict /setcolorspace .cspace_util 1 index get put
 level2dict /setcolor .cspace_util 1 index get put
 level2dict /colorspacedict .cspace_util 1 index get put
@@ -692,7 +693,7 @@ level2dict /colorspacedict .cspace_util 1 index get put
 /findcolorrendering {		% <intentname> findcolorrendering
 				%   <crdname> <found>
   /ColorRendering /ProcSet findresource
-  1 index dup type /nametype eq { .namestring } if (.) concatstrings
+  1 .argindex dup type /nametype eq { .namestring } if (.) concatstrings
   1 index /GetPageDeviceName get exec dup type /nametype eq { .namestring } if (.) concatstrings
   2 index /GetHalftoneName get exec dup type /nametype eq { .namestring } if
   concatstrings concatstrings
@@ -829,7 +830,7 @@ def
 def
 
 /makepattern {			% <proto_dict> <matrix> makepattern <pattern>
-  //.patterntypes 2 index /PatternType get get
+  //.patterntypes 2 .argindex /PatternType get get
   .currentglobal false .setglobal exch
 		% Stack: proto matrix global buildproc
   3 index dup length 1 add dict .copydict
