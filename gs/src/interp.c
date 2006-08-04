@@ -798,10 +798,11 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
  * occurs, so as not to slow down the non-error case.
  */
 #define return_with_error_tx_op(err_code)\
-  if (r_has_type(IREF, t_name)) {\
-      return_with_error(err_code, pvalue);\
-  } else {\
-      return_with_error_iref(err_code);\
+  { if (r_has_type(IREF, t_name)) {\
+        return_with_error(err_code, pvalue);\
+    } else {\
+        return_with_error_iref(err_code);\
+    }\
   }
 
     int ticks_left = gs_interp_time_slice_ticks;
