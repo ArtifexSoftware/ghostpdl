@@ -31,7 +31,11 @@ zarray(i_ctx_t *i_ctx_p)
     uint size;
     int code;
 
-    check_int_leu(*op, max_array_size);
+    check_type(*op, t_integer);
+    if (op->value.intval < 0)
+	return_error(e_rangecheck);
+    if (op->value.intval > max_array_size)
+	return_error(e_limitcheck);
     size = op->value.intval;
     code = ialloc_ref_array((ref *)op, a_all, size, "array");
     if (code < 0)
