@@ -128,7 +128,7 @@ int zcvr(i_ctx_t *);
 
 /* Operators exported for CIE cache loading. */
 int zcvx(i_ctx_t *);
-int zexec(i_ctx_t *);		/* also for .runexec */
+int zexec(i_ctx_t *);		/* also for .runexec and .errorexec */
 int zfor(i_ctx_t *);
 
 /* Odds and ends */

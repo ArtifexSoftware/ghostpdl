@@ -486,7 +486,7 @@ userdict /.echo.mode true put
 		% We must close the file when execution terminates,
 		% regardless of the state of the stack,
 		% and then propagate an error, if any.
-	  cvx .runexec
+	  cvx null {.runexec} .errorexec
 	} odef
 % Execute a file.
 % Level 2 uses 2 .stop to clear the e-stack for a successful startjob:

@@ -134,6 +134,10 @@ private void set_gc_signal(i_ctx_t *, int *, int);
 private int copy_stack(i_ctx_t *, const ref_stack_t *, ref *);
 private int oparray_pop(i_ctx_t *);
 private int oparray_cleanup(i_ctx_t *);
+private int zerrorexec(i_ctx_t *);
+private int errorexec_find(i_ctx_t *, ref *);
+private int errorexec_pop(i_ctx_t *);
+private int errorexec_cleanup(i_ctx_t *);
 private int zsetstackprotect(i_ctx_t *);
 private int zcurrentstackprotect(i_ctx_t *);
 
@@ -240,20 +244,16 @@ const int gs_interp_num_special_ops = num_special_ops;	/* for iinit.c */
 const int tx_next_index = tx_next_op;
 
 /*
- * Define the interpreter operators, which include the extended-type
- * operators defined in the list above.  NOTE: if the size of this table
- * ever exceeds 15 real entries, it will have to be split.
+ * NOTE: if the size of either table below ever exceeds 15 real entries, it
+ * will have to be split.
  */
-const op_def interp_op_defs[] = {
+/* Define the extended-type operators per the list above. */
+const op_def interp1_op_defs[] = {
     /*
      * The very first entry, which corresponds to operator index 0,
      * must not contain an actual operator.
      */
     op_def_begin_dict("systemdict"),
-    /*
-     * The next entries must be the extended-type operators, in the
-     * correct order.
-     */
     {"2add", zadd},
     {"2def", zdef},
     {"1dup", zdup},
@@ -264,13 +264,16 @@ const op_def interp_op_defs[] = {
     {"1pop", zpop},
     {"2roll", zroll},
     {"2sub", zsub},
-    /*
-     * The remaining entries are internal operators.
-     */
+    op_def_end(0)
+};
+/* Define the internal interpreter operators. */
+const op_def interp2_op_defs[] = {
     {"0.currentstackprotect", zcurrentstackprotect},
     {"1.setstackprotect", zsetstackprotect},
+    {"2.errorexec", zerrorexec},
     {"0%interp_exit", interp_exit},
     {"0%oparray_pop", oparray_pop},
+    {"0%errorexec_pop", errorexec_pop},
     op_def_end(0)
 };
 
@@ -393,7 +396,7 @@ gs_interp_make_oper(ref * opref, op_proc_t proc, int idx)
 {
     int i;
 
-    for (i = num_special_ops; i > 0 && proc != interp_op_defs[i].proc; --i)
+    for (i = num_special_ops; i > 0 && proc != interp1_op_defs[i].proc; --i)
 	DO_NOTHING;
     if (i > 0)
 	make_tasv(opref, tx_op + (i - 1), a_executable, i, opproc, proc);
@@ -628,8 +631,11 @@ again:
     doref = *epref;
     epref = &doref;
     /* Push the error object on the operand stack if appropriate. */
-    if (!ERROR_IS_INTERRUPT(code))
+    if (!ERROR_IS_INTERRUPT(code)) {
+	/* Replace the error object if within an oparray or .errorexec. */
 	*++osp = *perror_object;
+	errorexec_find(i_ctx_p, osp);
+    }
     goto again;
 }
 private int
@@ -755,6 +761,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
     ref token;			/* token read from file or string, */
 				/* must be declared in this scope */
     register const ref *pvalue;
+    uint opindex;		/* needed for oparrays */
     os_ptr whichp;
 
     /*
@@ -1074,15 +1081,17 @@ x_sub:	    INCR(x_sub);
 	case plain_exec(t_oparray):
 	    /* Replace with the definition and go again. */
 	    INCR(exec_array);
+	    opindex = op_index(IREF);
 	    pvalue = IREF->value.const_refs;
 	  opst:		/* Prepare to call a t_oparray procedure in *pvalue. */
 	    store_state(iesp);
 	  oppr:		/* Record the stack depths in case of failure. */
-	    if (iesp >= estop - 3)
+	    if (iesp >= estop - 4)
 		return_with_error_iref(e_execstackoverflow);
-	    iesp += 4;
+	    iesp += 5;
 	    osp = iosp;		/* ref_stack_count_inline needs this */
-	    make_mark_estack(iesp - 3, es_other, oparray_cleanup);
+	    make_mark_estack(iesp - 4, es_other, oparray_cleanup);
+	    make_int(iesp - 3, opindex); /* for .errorexec effect */
 	    make_int(iesp - 2, ref_stack_count_inline(&o_stack));
 	    make_int(iesp - 1, ref_stack_count_inline(&d_stack));
 	    make_op_estack(iesp, oparray_pop);
@@ -1228,6 +1237,7 @@ remap:		    if (iesp + 2 >= estop) {
 		    goto bot;
 		case plain_exec(t_oparray):
 		    INCR(name_oparray);
+		    opindex = op_index(pvalue);
 		    pvalue = (const ref *)pvalue->value.const_refs;
 		    goto opst;
 		case plain_exec(t_operator):
@@ -1455,6 +1465,7 @@ remap:		    if (iesp + 2 >= estop) {
 			if (!op_index_is_operator(index)) {
 			    INCR(p_exec_oparray);
 			    store_state_short(iesp);
+			    opindex = index;
 			    /* Call the operator procedure. */
 			    index -= op_def_count;
 			    pvalue = (const ref *)
@@ -1705,7 +1716,7 @@ res:
 private int
 oparray_pop(i_ctx_t *i_ctx_p)
 {
-    esp -= 3;
+    esp -= 4;
     return o_pop_estack;
 }
 
@@ -1715,8 +1726,8 @@ private int
 oparray_cleanup(i_ctx_t *i_ctx_p)
 {				/* esp points just below the cleanup procedure. */
     es_ptr ep = esp;
-    uint ocount_old = (uint) ep[2].value.intval;
-    uint dcount_old = (uint) ep[3].value.intval;
+    uint ocount_old = (uint) ep[3].value.intval;
+    uint dcount_old = (uint) ep[4].value.intval;
     uint ocount = ref_stack_count(&o_stack);
     uint dcount = ref_stack_count(&d_stack);
 
@@ -1750,6 +1761,75 @@ oparray_find(i_ctx_t *i_ctx_p)
 	    )
 	    return ep;
     }
+    return 0;
+}
+
+/* <errorobj> <obj> .errorexec ... */
+/* Execute an object, substituting errorobj for the 'command' if an error */
+/* occurs during the execution.  Cf .execfile (in zfile.c). */
+private int
+zerrorexec(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code;
+
+    check_op(2);
+    check_estack(4);		/* mark/cleanup, errobj, pop, obj */
+    push_mark_estack(es_other, errorexec_cleanup);
+    *++esp = op[-1];
+    push_op_estack(errorexec_pop);
+    code = zexec(i_ctx_p);
+    if (code >= 0)
+	pop(1);
+    return code;
+}
+
+/*
+ * Find the innermost .errorexec or oparray.  If there is an oparray, or a
+ * .errorexec with errobj != null, store it in *perror_object and return 1,
+ * otherwise return 0;
+ */
+private int
+errorexec_find(i_ctx_t *i_ctx_p, ref *perror_object)
+{
+    long i;
+    const ref *ep;
+
+    for (i = 0; (ep = ref_stack_index(&e_stack, i)) != 0; ++i) {
+	if (r_is_estack_mark(ep)) {
+	    if (ep->value.opproc == oparray_cleanup) {
+		/* See oppr: above. */
+		uint opindex = (uint)ep[1].value.intval;
+		if (opindex == 0) /* internal operator, ignore */
+		    continue;
+		op_index_ref(opindex, perror_object);
+		return 1;
+	    }
+	    if (ep->value.opproc == oparray_no_cleanup)
+		return 0;	/* protection disabled */
+	    if (ep->value.opproc == errorexec_cleanup) {
+		if (r_has_type(ep + 1, t_null))
+		    return 0;
+		*perror_object = ep[1];	/* see .errorexec above */
+		return 1;
+	    }
+	}
+    }
+    return 0;
+}
+
+/* Pop the bookkeeping information on a normal exit from .errorexec. */
+private int
+errorexec_pop(i_ctx_t *i_ctx_p)
+{
+    esp -= 2;
+    return o_pop_estack;
+}
+
+/* Clean up when unwinding the stack on an error.  (No action needed.) */
+private int
+errorexec_cleanup(i_ctx_t *i_ctx_p)
+{
     return 0;
 }
 

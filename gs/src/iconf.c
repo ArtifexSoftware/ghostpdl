@@ -65,13 +65,15 @@ const uint build_function_type_table_count =
 /* Initialize the operators. */
 	/* Declare the externs. */
 #define oper_(xx_op_defs) extern const op_def xx_op_defs[];
-oper_(interp_op_defs)		/* Interpreter operators */
+oper_(interp1_op_defs)		/* Interpreter operators */
+oper_(interp2_op_defs)		/* ibid. */
 #include "gconf.h"
 #undef oper_
  
 const op_def *const op_defs_all[] = {
 #define oper_(defs) defs,
-    oper_(interp_op_defs)	/* Interpreter operators */
+    oper_(interp1_op_defs)	/* Interpreter operators */
+    oper_(interp2_op_defs)	/* ibid. */
 #include "gconf.h"
 #undef oper_ 
     0
