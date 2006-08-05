@@ -89,16 +89,17 @@ private int
 zastore(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    uint size = r_size(op);
+    uint size;
     int code;
 
+    if (!r_is_array(op))
+	return_op_typecheck(op);
+    size = r_size(op);
     /* Amazingly, the following is valid: 0 array noaccess astore */
-    if (size == 0) {
-        if (!r_is_array(op))
-	    return_op_typecheck(op);
+    if (size == 0)
         return 0;
-    }
-    check_write_type(*op, t_array);
+    if (!r_has_type_attrs(op, t_array, a_write)) 
+        return_error(e_invalidaccess);
     if (size > op - osbot) {
 	/* The store operation might involve other stack segments. */
 	ref arr;
