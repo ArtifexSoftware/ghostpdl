@@ -36,7 +36,7 @@
 #define gs_error_undefinedfilename (-22)
 #define gs_error_undefinedresult (-23)
 #define gs_error_VMerror (-25)
-#define gs_error_unregistered (-29)
+#define gs_error_unregistered (-28)
 
 #define gs_error_hit_detected (-99)
 

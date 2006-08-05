@@ -624,8 +624,14 @@ again:
 	return code;
     if (gs_errorname(i_ctx_p, code, &error_name) < 0)
 	return code;		/* out-of-range error code! */
+    /*
+     * For greater Adobe compatibility, only the standard PostScript errors
+     * are defined in errordict; the rest are in gserrordict.
+     */
     if (dict_find_string(systemdict, "errordict", &perrordict) <= 0 ||
-	dict_find(perrordict, &error_name, &epref) <= 0
+	(dict_find(perrordict, &error_name, &epref) <= 0 &&
+	 (dict_find_string(systemdict, "gserrordict", &perrordict) <= 0 ||
+	  dict_find(perrordict, &error_name, &epref) <= 0))
 	)
 	return code;		/* error name not in errordict??? */
     doref = *epref;

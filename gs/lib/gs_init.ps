@@ -461,7 +461,7 @@ userdict /.echo.mode true put
 % won't cause nested errors (Unexpected Error conditions).
 /handleerror
 	JOBSERVER {
-	  { /errordict .systemvar /.GShandleerror get .internalstopped pop } bind % always use .GShandleerror.
+	  { //systemdict /.GShandleerror get .internalstopped pop } bind % always use .GShandleerror.
 	} {
 	  { /errordict .systemvar /handleerror get .internalstopped pop } bind % PLRM standard errorhandling
 	} ifelse def
@@ -937,9 +937,7 @@ userdict /.currentresourcefile //null put
        % Genoa issue of setting /handleerror, and then calling it, without an error
        % being set.  We were erroring in this case, due to /command load failing.
 
-       /errordict .systemvar dup /handleerror get exch
-         //JOBSERVER { /.GShandleerror } { /handleerror } ifelse
-         get ne
+       /errordict .systemvar /handleerror /.GShandleerror .systemvar ne
          { /errordict .systemvar begin /handleerror load .internalstopped pop end
          }
          if
@@ -1055,11 +1053,30 @@ end
 %   files require it to have at least one empty slot.
 /errordict ErrorNames length 3 add dict
 .forcedef		% errordict is local, systemdict is global
-.setglobal		% contents of errordict are global
+.setglobal		% back to global VM
+% For greater Adobe compatibility, we put all non-standard errors in a
+%   separate dictionary, gserrordict.  It does not need to be in local VM,
+%   because PostScript programs do not access it.
+%   NOTE: the name gserrordict is known to the interpreter.
+/gserrordict 5 dict def
+% Register an error in errordict.  We make this a procedure because we only
+% register the Level 1 errors here: the rest are registered by "feature"
+% files.  However, ErrorNames contains all of the error names regardless of
+% what features are included, so we have to "know" that VMerror is the last
+% Level 1 error.
+/.registererror		% <name> .registererror -
+ { errordict exch .registererror2
+ } bind def
+/.registererror2	% <dict> <name> .registererror -
+ { .currentglobal true .setglobal	% create procs in global VM
+   3 1 roll
+   mark 1 index systemdict /.errorhandler get /exec load .packtomark cvx put
+   .setglobal
+ } bind def
+ErrorNames
+ { dup .registererror /VMerror eq {exit} if
+ } forall
 errordict begin
-  ErrorNames
-   { mark 1 index systemdict /.errorhandler get /exec load .packtomark cvx def
-   } forall
 % The handlers for interrupt and timeout are special; there is no
 % 'current object', so they push their own name.
    { /interrupt /timeout }
@@ -1068,12 +1085,14 @@ errordict begin
 /handleerror	% this key is 'well known' and some PS may redefine it
  { /.printerror .systemvar exec
  } bind def
-	% a private entry that we will always use under JOBSERVER mode
-/.GShandleerror
- { /.printerror .systemvar exec
- } bind def
- 
-end
+end		% errordict
+
+% Put non-standard errors in gserrordict.
+gserrordict /unknownerror errordict /unknownerror get put
+errordict /unknownerror .undef
+% Define a stable private copy of handleerror that we will always use under
+% JOBSERVER mode.
+/.GShandleerror errordict /handleerror get def
 
 % Define the [write]==[only] procedures.
 /.dict 8 dict dup

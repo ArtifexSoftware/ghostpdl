@@ -16,6 +16,11 @@
 % $Id$
 % Initialization file for Display PostScript functions.
 
+% ------ Errors ------ %
+
+% These errors are only defined in DPS.
+{ /invalidcontext /invalidid } { .registererror } forall
+
 % ------ Contexts ------ %
 
 % To create a context with private local VM, we use the .localfork
