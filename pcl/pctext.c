@@ -644,12 +644,14 @@ pcl_text(
 	    scale.x = scale.y = pl_fp_pitch_cp(&pfp->params)
 	                         * (100.0 / pl_fp_pitch_cp(&pfp->font->params))
 	                         * (7200.0 / (100.0 * ppi));
-	    if (1670 == pl_fp_pitch_per_inch_x100(&pfp->params) ) {
-		/* NB ArtLinePrinter.ttf : convert lineprinter glyphs to a taller aspect ratio 
-		 * 36x75 cell at 600dpi vs the fonts native 36x72 
-		 */
-		scale.y *= 1.0416667;
-	    }
+
+            /* hack for a scalable lineprinter font.  If a real
+               lineprinter bitmap font is available it will be handled
+               by the bitmap scaling case above */
+            if (pfp->font->params.typeface_family == 0) {
+                scale.x = scale.y = 850.0;
+            }
+
 	}
 	/*
 	 * Scalable fonts use an upright coordinate system,

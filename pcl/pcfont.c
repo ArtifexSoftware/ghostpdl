@@ -173,11 +173,11 @@ pcl_pitch(floatp cpi, pcl_state_t *pcs, int set)
 }
 private int /* ESC ( s <pitch> H */
 pcl_primary_pitch(pcl_args_t *pargs, pcl_state_t *pcs)
-{	return pcl_pitch(float_arg(pargs) + 0.005, pcs, 0);
+{	return pcl_pitch(float_arg(pargs), pcs, 0);
 }
 private int /* ESC ) s <pitch> H */
 pcl_secondary_pitch(pcl_args_t *pargs, pcl_state_t *pcs)
-{	return pcl_pitch(float_arg(pargs) + 0.005, pcs, 1);
+{	return pcl_pitch(float_arg(pargs), pcs, 1);
 }
 
 private int

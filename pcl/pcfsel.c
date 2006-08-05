@@ -156,6 +156,19 @@ check_support(const pcl_state_t *pcs, uint symbol_set, const pl_font_t *fp,
          return 1;
 }
 
+/* a font may be scalable but we want to treat it a bitmap for the
+   purpose of selection.  Right now lineprinter is the only example of
+   this */
+private bool
+font_is_scalable_selection_wise(const pl_font_t *fp)
+{
+    if (fp->params.typeface_family == 0)
+        return false;
+    else
+        return pl_font_is_scalable(fp);
+}
+    
+    
 /* Compute a font's score against selection parameters.  TRM 8-27.
  * Also set *mapp to the symbol map to be used if this font wins. */
 private void
@@ -186,16 +199,16 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 	if ( pfs->params.proportional_spacing )
 	    score[score_pitch] = 0;	/* should not influence score */
 	else { /* fixed space selection */
-            if ( pl_font_is_scalable(fp) )
-                /* scalable; match is same as exact pitch. */
-                score[score_pitch] = 0x2000000;
+            if ( fp->params.proportional_spacing )
+                /* scalable; match is worst possible */
+                score[score_pitch] = 0;
 	    else { 
                 int delta = pl_fp_pitch_per_inch_x100(&fp->params) -
 		    pl_fp_pitch_per_inch_x100(&pfs->params);
 
 		/* If within one unit, call it exact; otherwise give
 		 * preference to higher pitch than requested. */
-		if ( abs(delta) <= 1 )
+		if (font_is_scalable_selection_wise(fp) || (abs(delta) <= 10 ))
                     score[score_pitch] = 0x2000000;
 		else if ( delta > 0 )
                     score[score_pitch] = 0x2000000 - delta;
@@ -207,7 +220,7 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 	/* Closest match scores highest (no preference for + or -). Otherwise
 	 * similar to pitch, and again, values assigned have no meaning out-
 	 * side this code. */
-	if ( pl_font_is_scalable(fp) )
+	if ( font_is_scalable_selection_wise(fp) )
 	  score[score_height] = 0x1000000;
 	else
 	  { int delta = abs(pfs->params.height_4ths - fp->params.height_4ths);

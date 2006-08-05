@@ -141,10 +141,10 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
     gs_setcharwidth(penum, pgs, width / 1024.0 * 0.667, 0.0);
     gs_currentmatrix(pgs, &save_ctm);
     gs_scale(pgs, 1.0 / 1024.0 * .667, 1.0 / 1024.0 * .667);
-#undef scale
     gs_moveto(pgs, 0.0, 0.0);
     code = hpgl_stick_arc_segments(pfont->memory, (void *)pgs, uni_code, font_type);
     gs_setmatrix(pgs, &save_ctm);
+    dprintf4(pfont->memory, "xx=%g, xy=%g, yx=%g, yy=%g\n", save_ctm.xx, save_ctm.xy, save_ctm.yx, save_ctm.yy);
     if ( code < 0 )
 	return code;
     /* Set predictable join and cap styles. */
