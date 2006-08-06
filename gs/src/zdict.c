@@ -329,9 +329,14 @@ zdictstack(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     uint count = ref_stack_count(&d_stack);
 
-    check_write_type(*op, t_array);
     if (!level2_enabled)
 	count--;		/* see dstack.h */
+    if (!r_is_array(op))
+	return_op_typecheck(op);
+    if (r_size(op) < count)
+        return_error(e_rangecheck);
+    if (!r_has_type_attrs(op, t_array, a_write)) 
+        return_error(e_invalidaccess);
     return ref_stack_store(&d_stack, op, count, 0, 0, true, idmemory,
 			   "dictstack");
 }
