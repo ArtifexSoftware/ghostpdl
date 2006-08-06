@@ -42,7 +42,7 @@ num_array_format(const ref * op)
 		int format;
 
 		if (r_size(op) < 4 || bp[0] != bt_num_array_value)
-		    return_error(e_rangecheck);
+		    return_error(e_typecheck);
 		format = bp[1];
 		if (!num_is_valid(format) ||
 		    sdecodeshort(bp + 2, format) !=
@@ -86,7 +86,7 @@ num_array_get(const gs_memory_t *mem, const ref * op, int format, uint index, re
 	    case t_real:
 		return t_real;
 	    default:
-		return_error(e_rangecheck);
+		return_error(e_typecheck);
 	}
     } else {
 	uint nbytes = encoded_number_bytes(format);

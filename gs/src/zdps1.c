@@ -358,7 +358,7 @@ rect_get(local_rects_t * plr, os_ptr op, gs_memory_t *mem)
 	    format = code;
 	    count = num_array_size(op, format);
 	    if (count % 4)
-		return_error(e_rangecheck);
+		return_error(e_typecheck);
 	    count /= 4;
 	    break;
 	default:		/* better be 4 numbers */
