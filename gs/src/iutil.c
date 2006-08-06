@@ -846,9 +846,17 @@ make_floats(ref * op, const float *pval, int count)
 int
 check_proc_failed(const ref * pref)
 {
-    return (r_is_array(pref) ? e_invalidaccess :
-	    r_has_type(pref, t__invalid) ? e_stackunderflow :
-	    e_typecheck);
+    if (r_is_array(pref)) {
+        if (r_has_attr(pref, a_executable))
+            return e_invalidaccess;
+        else
+            return e_typecheck;
+    } else {
+        if (r_has_type(pref, t__invalid))
+            return e_stackunderflow;
+        else
+            return e_typecheck;
+    }
 }
 
 /* Compute the error code when a type check on the stack fails. */
