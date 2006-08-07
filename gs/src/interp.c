@@ -1012,11 +1012,11 @@ x_exch:	    INCR(x_exch);
 	    next_either();
 	case plain_exec(tx_op_if):
 x_if:	    INCR(x_if);
+	    if (!r_is_proc(iosp))
+		return_with_error_tx_op(check_proc_failed(iosp));
 	    if (!r_has_type(iosp - 1, t_boolean))
 		return_with_error_tx_op((iosp <= osbot ?
 					e_stackunderflow : e_typecheck));
-	    if (!r_is_proc(iosp))
-		return_with_error_tx_op(check_proc_failed(iosp));
 	    if (!iosp[-1].value.boolval) {
 		iosp -= 2;
 		next_either();
@@ -1029,13 +1029,13 @@ x_if:	    INCR(x_if);
 	    goto ifup;
 	case plain_exec(tx_op_ifelse):
 x_ifelse:   INCR(x_ifelse);
+	    if (!r_is_proc(iosp))
+		return_with_error_tx_op(check_proc_failed(iosp));
+	    if (!r_is_proc(iosp - 1))
+		return_with_error_tx_op(check_proc_failed(iosp - 1));
 	    if (!r_has_type(iosp - 2, t_boolean))
 		return_with_error_tx_op((iosp < osbot + 2 ?
 					e_stackunderflow : e_typecheck));
-	    if (!r_is_proc(iosp - 1))
-		return_with_error_tx_op(check_proc_failed(iosp - 1));
-	    if (!r_is_proc(iosp))
-		return_with_error_tx_op(check_proc_failed(iosp));
 	    if (iesp >= estop)
 		return_with_error_tx_op(e_execstackoverflow);
 	    store_state_either(iesp);

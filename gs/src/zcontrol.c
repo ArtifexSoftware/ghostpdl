@@ -264,8 +264,8 @@ zif(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(op[-1], t_boolean);
     check_proc(*op);
+    check_type(op[-1], t_boolean);
     if (op[-1].value.boolval) {
 	check_estack(1);
 	++esp;
@@ -282,9 +282,9 @@ zifelse(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(op[-2], t_boolean);
-    check_proc(op[-1]);
     check_proc(*op);
+    check_proc(op[-1]);
+    check_type(op[-2], t_boolean);
     check_estack(1);
     ++esp;
     if (op[-2].value.boolval) {
@@ -475,8 +475,8 @@ private int
 zrepeat(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    check_type(op[-1], t_integer);
     check_proc(*op);
+    check_type(op[-1], t_integer);
     if (op[-1].value.intval < 0)
 	return_error(e_rangecheck);
     check_estack(5);
