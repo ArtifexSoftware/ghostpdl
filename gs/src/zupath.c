@@ -161,6 +161,10 @@ in_path(os_ptr oppath, i_ctx_t *i_ctx_p, gx_device * phdev)
 	fr.q.y = fr.p.y + fixed_1;
 	code = gx_clip_to_rectangle(igs, &fr);
 	npop = 2;
+    } else if (code == e_stackunderflow) {
+	/* If 0 elements, definitely a stackunderflow; otherwise, */
+	/* only 1 number, also a stackunderflow. */
+	return code;
     } else {			/* Aperture is a user path. */
 	/* We have to set the clipping path without disturbing */
 	/* the current path. */
@@ -552,11 +556,13 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs)
     upath_state ups = UPS_INITIAL;
     ref opcodes;
 
+    if (r_has_type(oppath, t__invalid))
+	return_error(e_stackunderflow);
+    if (!r_is_array(oppath))
+	return_error(e_typecheck);
     check_read(*oppath);
     gs_newpath(igs);
 /****** ROUND tx AND ty ******/
-    if (!r_is_array(oppath))
-	return_error(e_typecheck);
     
     if ( r_size(oppath) == 2 &&
 	 array_get(imemory, oppath, 1, &opcodes) >= 0 &&
@@ -639,12 +645,10 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs)
 		    *op = rup;
 		    break;
 		case t_name:
-		    if (!r_has_attr(&rup, a_executable))
-			return_error(e_typecheck);
-		    if (dict_find(systemdict, &rup, &defp) <= 0)
-			return_error(e_undefined);
-		    if (r_btype(defp) != t_operator)
-			return_error(e_typecheck);
+		    if (!r_has_attr(&rup, a_executable) ||
+			dict_find(systemdict, &rup, &defp) <= 0 ||
+			r_btype(defp) != t_operator)
+			return_error(e_typecheck); /* all errors = typecheck */
 		    goto xop;
 		case t_operator:
 		    defp = &rup;
@@ -674,6 +678,8 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs)
 	if (argcount)
 	    return_error(e_typecheck);	/* leftover args */
     }
+    if (ups != UPS_PATH)
+	return_error(e_typecheck);	/* no setbbox */
     return 0;
 }
 private int
