@@ -142,7 +142,15 @@ hpgl_reset_overlay(hpgl_state_t *pgls)
 	hpgl_args_set_int(&args, 1);
 	hpgl_LO(&args, pgls);
 	/* we do this instead of calling SC directly */
-	pgls->g.scaling_type = hpgl_scaling_none;
+        if ( pgls->g.scaling_type != hpgl_scaling_none ) {
+            gs_point dpt, pt; /* device point and user point */
+            hpgl_call(hpgl_get_current_position(pgls, &pt));
+            hpgl_call(gs_transform(pgls->pgs, pt.x, pt.y, &dpt));
+            pgls->g.scaling_type = hpgl_scaling_none;
+            hpgl_call(hpgl_set_ctm(pgls));
+            hpgl_call(gs_itransform(pgls->pgs, dpt.x, dpt.y, &pt));
+            hpgl_call(hpgl_set_current_position(pgls, &pt));
+        }
 	pgls->g.fill_type = hpgl_even_odd_rule;
 	hpgl_args_set_int(&args,0);
 	hpgl_PM(&args, pgls);
