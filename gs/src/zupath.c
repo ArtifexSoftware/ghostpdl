@@ -164,7 +164,6 @@ in_path(os_ptr oppath, i_ctx_t *i_ctx_p, gx_device * phdev)
     } else if (code == e_stackunderflow) {
 	/* If 0 elements, definitely a stackunderflow; otherwise, */
 	/* only 1 number, also a stackunderflow. */
-	return code;
     } else {			/* Aperture is a user path. */
 	/* We have to set the clipping path without disturbing */
 	/* the current path. */
@@ -242,7 +241,7 @@ in_upath(i_ctx_t *i_ctx_p, gx_device * phdev)
     if (code < 0)
 	return code;
     if ((code = upath_append(op, i_ctx_p)) < 0 ||
-	(npop = in_path(op - 1, i_ctx_p, phdev)) < 0
+	(code = npop = in_path(op - 1, i_ctx_p, phdev)) < 0
 	) {
 	gs_grestore(igs);
 	return code;
