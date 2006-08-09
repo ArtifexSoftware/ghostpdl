@@ -878,17 +878,25 @@ read_matrix(const gs_memory_t *mem, const ref * op, gs_matrix * pmat)
     ref values[6];
     const ref *pvalues;
 
-    if (r_has_type(op, t_array))
-	pvalues = op->value.refs;
-    else {
-	int i;
+    switch (r_type(op)) {
+	case t_array:
+	    pvalues = op->value.refs;
+	    break;
+	case t_mixedarray:
+	case t_shortarray:
+	    {
+		int i;
 
-	for (i = 0; i < 6; ++i) {
-	    code = array_get(mem, op, (long)i, &values[i]);
-	    if (code < 0)
-		return code;
-	}
-	pvalues = values;
+		for (i = 0; i < 6; ++i) {
+		    code = array_get(mem, op, (long)i, &values[i]);
+		    if (code < 0)
+			return code;
+		}
+		pvalues = values;
+	    }
+	    break;
+	default:
+	    return_op_typecheck(op);
     }
     check_read(*op);
     if (r_size(op) != 6)
