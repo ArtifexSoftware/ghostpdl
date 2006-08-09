@@ -194,13 +194,23 @@
   % read block of data
   dup string 0 1 4 -1 roll 1 sub { 2 copy PDFfile read pop put pop } for
   % search for last occurance of 'startxref'
-  (startxref) { search not { exit } if pop } loop
-  % determine where the trailer is in the file
-  %   trailer loc = end loc - remaing string length
-  length sub 9 sub
-  % move the file to this position and read startxref and position
-  PDFfile exch setfileposition
-  PDFfile token pop pop PDFfile token pop
+  false				% Assume that startxref not present
+  exch (startxref) { 
+     search not { exit } if	% Exit loop when no more startxref's
+     pop 3 -1 roll pop true 3 1 roll	% Idicate that we have found starxref
+  } loop
+  exch				% Exch last string and 'found' flag
+  { 
+     % determine where the startxref is in the file
+     %   'startxref' loc = end loc - remaing string length - 9 bytes
+     length sub 9 sub
+     % move the file to this position and read startxref and position
+     PDFfile exch setfileposition PDFfile token
+     pop pop PDFfile token pop
+  } {
+     % startxref not found.  We will search the end of the file for trailer.
+     pop pop PDFfilelen
+  } ifelse
   % compare xref position to 1/2 the length of the file and search for trailer
   exch 2 div lt { search_start_trailer } { search_end_trailer } ifelse
   % get the trailer
@@ -215,8 +225,7 @@
 % stuff when we are scanning for objects.
 /determine_post_eof_count		% - determine_post_eof_count <count>
 { % Position to read block of data from the end of the file. 
-  PDFfile 0 setfileposition
-  PDFfile bytesavailable	% size of file
+  PDFfilelen			% size of file
   dup 4096 .min			% block size to read
   % stack: <file size> <file size> <block size>
   % move file position to the start of the block

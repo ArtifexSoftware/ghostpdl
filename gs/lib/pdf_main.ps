@@ -218,6 +218,7 @@ pdfdict begin
 %  /null null		% ibid.
   /R { /resolveR cvx 3 packedarray cvx } bind	% see Objects below
   /startxref /exit load
+  /startref /exit load	% Some application (unknown) misspells startxref
 .dicttomark readonly def
 
 % Because of EOL conversion, lines with fixed contents might be followed
@@ -406,7 +407,14 @@ pdfdict begin
 % entry in the prior trailer dictionary.
 /readxref		% <pos> readxref <trailerdict>
  {
-   PDFoffset add PDFfile exch setfileposition
+   PDFoffset add PDFfile exch
+   % Check that the given location is within the file.
+   dup PDFfilelen gt {
+       (   **** Warning:  Specified xref location is beyond end of file.\n)
+       pdfformaterror
+       /readxref cvx /invalidaccess signalerror
+   } if
+   setfileposition
 		% In some PDF files, this position actually points to
 		% white space before the xref line.  Skip over this here.
    {
@@ -467,7 +475,7 @@ pdfdict begin
 % Verify that each entry in the xref table is pointing at an object with
 % the correct object number and generation number.
 /verify_xref				% - verify_xref -
-{ PDFfile dup 0 setfileposition bytesavailable	% Determine the size of the file
+{ PDFfilelen
   1 1 Objects llength 1 sub	% stack: filesize 1 1 <number of objects - 1>
   {	% Check if the object is free (i.e. not used).  The values in
 	% Generations is the generation number plus 1.  If the value in
