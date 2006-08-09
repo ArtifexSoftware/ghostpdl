@@ -200,14 +200,16 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
     double scale_y = pdev->HWResolution[1] / 72.0;
     cos_dict_t *pcd = cos_stream_dict((cos_stream_t *)pres->object);
     cos_dict_t *pcd_Resources = cos_dict_alloc(pdev, "pdf_pattern(Resources)");
-    char buf[60];
+    float bbox[4];
     int code;
 
     if (pcd == NULL || pcd_Resources == NULL)
 	return_error(gs_error_VMerror);
     pdev->substream_Resources = pcd_Resources;
-    sprintf(buf, "[%g %g %g %g]", t->BBox.p.x, t->BBox.p.y, 
-				  t->BBox.q.x, t->BBox.q.y);
+    bbox[0] = t->BBox.p.x;
+    bbox[1] = t->BBox.p.y;
+    bbox[2] = t->BBox.q.x;
+    bbox[3] = t->BBox.q.y;
     /* The graphics library assumes a shifted origin to provide 
        positive bitmap pixel indices. Compensate it now. */
     smat.tx += pinst->step_matrix.tx;
@@ -230,7 +232,7 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
     if (code >= 0)
 	code = cos_dict_put_c_key_int(pcd, "/TilingType", t->TilingType);
     if (code >= 0)
-	code = cos_dict_put_string(pcd, (byte *)"/BBox", 5, (byte *)buf, strlen(buf));
+	code = cos_dict_put_c_key_floats(pcd, "/BBox", bbox, 4);
     if (code >= 0)
 	code = cos_dict_put_matrix(pcd, "/Matrix", &smat);
     if (code >= 0)
