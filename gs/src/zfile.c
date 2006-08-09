@@ -1176,29 +1176,6 @@ stream *
 file_alloc_stream(gs_memory_t * mem, client_name_t cname)
 {
     stream *s;
-    gs_ref_memory_t *imem = 0;
-
-    /*
-     * HACK: Figure out whether this is a gs_ref_memory_t.
-     * Avoiding this hack would require rippling a change
-     * from gs_memory_t to gs_ref_memory_t into the open_file and
-     * open_device procedures of gx_io_device, which in turn would
-     * impact other things we don't want to change.
-     */
-    if (mem->procs.free_object == gs_ref_memory_procs.free_object)
-	imem = (gs_ref_memory_t *) mem;
-
-    if (imem) {
-	/* Look first for a free stream allocated at this level. */
-	s = imem->streams;
-	while (s != 0) {
-	    if (!s_is_valid(s) && s->read_id != 0 /* i.e. !overflowed */ ) {
-		s->is_temp = 0;	/* not a temp stream */
-		return s;
-	    }
-	    s = s->next;
-	}
-    }
     s = s_alloc(mem, cname);
     if (s == 0)
 	return 0;
@@ -1210,16 +1187,8 @@ file_alloc_stream(gs_memory_t * mem, client_name_t cname)
      * crash when it tries to close open files.
      */
     s_disable(s);
-    if (imem) {
-	/* Add s to the list of files. */
-	if (imem->streams != 0)
-	    imem->streams->prev = s;
-	s->next = imem->streams;
-	imem->streams = s;
-    } else {
-	s->next = 0;
-    }
     s->prev = 0;
+    s->next = 0;
     return s;
 }
 
