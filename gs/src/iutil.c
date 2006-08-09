@@ -25,6 +25,7 @@
 #include "strimpl.h"
 #include "sstring.h"
 #include "idict.h"
+#include "ifont.h"		/* for FontID equality */
 #include "imemory.h"
 #include "iname.h"
 #include "ipacked.h"		/* for array_get */
@@ -83,6 +84,8 @@ refset_null_new(ref * to, uint size, uint new_mask)
 }
 
 /* Compare two objects for equality. */
+private bool fid_eq(const gs_memory_t *mem, const gs_font *pfont1,
+		    const gs_font *pfont2);
 bool
 obj_eq(const gs_memory_t *mem, const ref * pref1, const ref * pref2)
 {
@@ -176,21 +179,66 @@ obj_eq(const gs_memory_t *mem, const ref * pref1, const ref * pref2)
 	case t_astruct:
 	    return (pref1->value.pstruct == pref2->value.pstruct);
 	case t_fontID:
-	    {	/*
-		 * In the Adobe implementations, different scalings of a
-		 * font have "equal" FIDs, so we do the same.
-		 */
-		const gs_font *pfont1 = r_ptr(pref1, gs_font);
-		const gs_font *pfont2 = r_ptr(pref2, gs_font);
-
-		while (pfont1->base != pfont1)
-		    pfont1 = pfont1->base;
-		while (pfont2->base != pfont2)
-		    pfont2 = pfont2->base;
-		return (pfont1 == pfont2);
-	    }
+	    /* This is complicated enough to deserve a separate procedure. */
+	    return fid_eq(mem, r_ptr(pref1, gs_font), r_ptr(pref2, gs_font));
     }
     return false;		/* shouldn't happen! */
+}
+
+/*
+ * Compare two FontIDs for equality.  In the Adobe implementations,
+ * different scalings of a font have "equal" FIDs, so we do the same.
+ * Furthermore, in more recent Adobe interpreters, different *copies* of a
+ * font have equal FIDs -- at least for Type 1 and Type 3 fonts -- as long
+ * as the "contents" of the font are the same.  We aren't sure that the
+ * following matches the Adobe algorithm, but it's close enough to pass the
+ * Genoa CET.
+ */
+/* (This is a single-use procedure, for clearer code.) */
+private bool
+fid_eq(const gs_memory_t *mem, const gs_font *pfont1, const gs_font *pfont2)
+{
+    while (pfont1->base != pfont1)
+	pfont1 = pfont1->base;
+    while (pfont2->base != pfont2)
+	pfont2 = pfont2->base;
+    if (pfont1 == pfont2)
+	return true;
+    switch (pfont1->FontType) {
+    case 1: case 3:
+	if (pfont1->FontType == pfont2->FontType)
+	    break;
+    default:
+	return false;
+    }
+    /* The following, while peculiar, appears to match CPSI. */
+    {
+	const gs_uid *puid1 = &((const gs_font_base *)pfont1)->UID;
+	const gs_uid *puid2 = &((const gs_font_base *)pfont2)->UID;
+    if (uid_is_UniqueID(puid1) || uid_is_UniqueID(puid2) ||
+	((uid_is_XUID(puid1) || uid_is_XUID(puid2)) &&
+	 !uid_equal(puid1, puid2)))
+	return false;
+    }
+    {
+	const font_data *pfd1 = (const font_data *)pfont1->client_data;
+	const font_data *pfd2 = (const font_data *)pfont2->client_data;
+
+	if (!(obj_eq(mem, &pfd1->BuildChar, &pfd2->BuildChar) &&
+	      obj_eq(mem, &pfd1->BuildGlyph, &pfd2->BuildGlyph) &&
+	      obj_eq(mem, &pfd1->Encoding, &pfd2->Encoding) &&
+	      obj_eq(mem, &pfd1->CharStrings, &pfd2->CharStrings)))
+	    return false;
+	if (pfont1->FontType == 1) {
+	    ref *ppd1, *ppd2;
+
+	    if (dict_find_string(&pfd1->dict, "Private", &ppd1) > 0 &&
+		dict_find_string(&pfd2->dict, "Private", &ppd2) > 0 &&
+		!obj_eq(mem, ppd1, ppd2))
+		return false;
+	}
+    }
+    return true;	    
 }
 
 /* Compare two objects for identity. */
