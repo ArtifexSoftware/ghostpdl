@@ -691,15 +691,15 @@ gx_default_get_initial_matrix(gx_device * dev, register gs_matrix * pmat)
         pmat->xy = -ss_res;
         pmat->yx = -fs_res;
         pmat->yy = 0;
-        pmat->tx = dev->width;
-        pmat->ty = dev->height;
+        pmat->tx = (float)dev->width;
+        pmat->ty = (float)dev->height;
         break;
     case 2: /* 180 degrees */
         pmat->xx = -fs_res;
         pmat->xy = 0;
         pmat->yx = 0;
         pmat->yy = ss_res;
-        pmat->tx = dev->width;
+        pmat->tx = (float)dev->width;
         pmat->ty = 0;
         break;
     case 3: /* 270 degrees */
@@ -717,7 +717,7 @@ gx_default_get_initial_matrix(gx_device * dev, register gs_matrix * pmat)
         pmat->yx = 0;
         pmat->yy = -ss_res;
         pmat->tx = 0;
-        pmat->ty = dev->height;
+        pmat->ty = (float)dev->height;
 	/****** tx/y is WRONG for devices with ******/
 	/****** arbitrary initial matrix ******/
         break;
