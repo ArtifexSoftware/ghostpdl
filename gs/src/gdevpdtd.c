@@ -552,6 +552,8 @@ pdf_finish_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     int code = 0;
     cos_dict_t *pcd = 0;
 
+    if (pfd->common.object->id == -1)
+	return 0;
     if (!pfd->common.object->written &&
 	(code = pdf_compute_font_descriptor(pdev, pfd)) >= 0 &&
 	(!pfd->embed ||
