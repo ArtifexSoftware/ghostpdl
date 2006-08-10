@@ -389,14 +389,17 @@ pcl_updated_hmi(
     if (code < 0)
         return pcs->hmi_cp;     /* bad news; don't mark the HMI as valid. */
 
-    if (pl_font_is_scalable(plfont)) {
+    /* we check for typeface == 0 here (lineprinter) because we
+       frequently simulate lineprinter with a scalable truetype
+       font */
+    if (pl_font_is_scalable(plfont) && plfont->params.typeface_family != 0) {
         if (plfont->params.proportional_spacing)
             /* Scale the font's pitch by the requested height. */
             hmi = pl_fp_pitch_cp(&plfont->params) * pfs->params.height_4ths / 4;
         else
             hmi = pl_fp_pitch_cp(&(pfs->params));
     } else
-        hmi = pl_fp_pitch_cp(&(plfont->params));
+        hmi = pl_fp_pitch_cp(&(plfont->params)) * 10.0;
 
     /*
      * Round to a multiple of the unit of measure (see the "PCL 5 Printer

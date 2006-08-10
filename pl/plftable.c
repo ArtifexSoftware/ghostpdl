@@ -515,19 +515,17 @@ const font_resident_t resident_table[] = {
         cc_symbol
     },
 
-#ifdef AGFA_FONT_TABLE
     {
-        fontnames("Wingdings-Regular", "Wingdings-Regular", "noname"),
+        fontnames("Wingdings-Regular", "Wingdings-Regular", "WingSub"),
         {'W','i','n','g','d','i','n','g','s',' ',' ',' ',' ',' ',' ',' '},
         {18540, 1, {100, 72000.0/100.0},0, REGULAR, NOBOLD, 31402, 68},
         cc_dingbats
     },
-#endif
 
     {
         fontnames("ZapfDingbats", "ZapfDingbats", "Dingbats"), 
         {'Z','a','p','f','D','i','n','g','b','a','t','s',' ',' ',' ',' '},
-        {18540, 1, {28, 72000.0/28.0},0, REGULAR, NOBOLD, 45101, 69},
+        {460, 1, {28, 72000.0/28.0},0, REGULAR, NOBOLD, 45101, 69},
         cc_dingbats
     },
 

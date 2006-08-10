@@ -257,7 +257,7 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 		if ( code == 0 )
 		    *width = gs_width.x	* inches_2_plu(1.0 / pfs->font->resolution.x); 
 		else
-		    *width = coord_2_plu(pl_fp_pitch_cp(&pfs->font->params)); 
+		    *width = coord_2_plu(pl_fp_pitch_cp(&pfs->font->params) * 10); 
 		goto add;
 	    }
 	    else if ( code >= 0 ) { 
@@ -286,7 +286,7 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 	    if ( scode >= 0 )
 		extra = gs_width.x * hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0);
 	    else
-		extra = hpgl_points_2_plu(pgls, (pl_fp_pitch_cp(&pfs->params)) / 100.0);
+		extra = hpgl_points_2_plu(pgls, (pl_fp_pitch_cp(&pfs->params)) / 10.0);
 	    *width += extra * hpgl_get_character_extra_space_x(pgls);
 	} else {
 	    /* All characters have the same width, */
@@ -800,7 +800,7 @@ hpgl_print_char(
 		        /* error! NB scalable fixed pitch space_code == 0 */
 		} else
 		    space_width =
-			    ( coord_2_plu(pl_fp_pitch_cp(&pfs->font->params)) ) / scale.x;
+			    ( coord_2_plu(pl_fp_pitch_cp(&pfs->font->params) * 10.0) ) / scale.x;
 		space_width *= (1.0 + hpgl_get_character_extra_space_x(pgls));
             }
 	}

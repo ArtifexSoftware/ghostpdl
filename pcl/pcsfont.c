@@ -336,10 +336,10 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
                 plfont->resolution.x = plfont->resolution.y = 300;
             { ulong pitch_1024th_dots =
                 ((ulong)pl_get_uint16(pfh->Pitch) << 8) + pfh->PitchExtended;
-              uint pitch_cp = (uint)
+              floatp pitch_cp = (floatp)
                 (pitch_1024th_dots / 1024.0     /* dots */
                  / plfont->resolution.x /* => inches */
-                 * 7200.0);
+                 * 720.0);
 
               pl_fp_set_pitch_cp(&plfont->params, pitch_cp);
             }
@@ -391,7 +391,6 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
             if ( code < 0 )
               return code;
             pl_fill_in_tt_font(pfont, NULL, gs_next_ids(mem, 1));
-            /* pfh->Pitch is design unit width for scalable fonts. */
             { uint pitch_cp =
                 pl_get_uint16(pfh->Pitch) * 100 / pfont->data.unitsPerEm;
               pl_fp_set_pitch_cp(&plfont->params, pitch_cp);
@@ -411,7 +410,6 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
             if ( code < 0 )
               return code;
             pl_fill_in_intelli_font(pfont, gs_next_ids(mem, 1));
-            /* pfh->Pitch is design unit width for scalable fonts. */
             { uint pitch_cp =
                 pl_get_uint16(pfh->Pitch) * 100 / 8782.0;
               pl_fp_set_pitch_cp(&plfont->params, pitch_cp);
