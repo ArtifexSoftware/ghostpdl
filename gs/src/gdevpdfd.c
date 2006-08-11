@@ -42,12 +42,14 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			gx_color_index color)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
+    int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
     int code;
 
     /* Make a special check for the initial fill with white, */
     /* which shouldn't cause the page to be opened. */
-    if (color == pdev->white && !is_in_page(pdev))
-	return 0;
+    if (color == pdev->white && !is_in_page(pdev) && pdev->sbstack_depth == bottom)
+	if (x == 0 && y == 0 && w == pdev->width && h == pdev->height)
+	    return 0;
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
@@ -444,6 +446,7 @@ make_rect_scaling(const gx_device_pdf *pdev, const gs_fixed_rect *bbox,
 /*
  * Prepare a fill with a color anc a clipping path.
  * Return 1 if there is nothing to paint.
+ * Changes *box to the clipping box.
  */
 private int
 prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
@@ -451,14 +454,16 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
     bool new_clip;
+    int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
+    gs_fixed_rect cbox;
     int code;
 
     /*
      * Check for an empty clipping path.
      */
     if (pcpath) {
-	gx_cpath_outer_box(pcpath, box);
-	if (box->p.x >= box->q.x || box->p.y >= box->q.y)
+	gx_cpath_outer_box(pcpath, &cbox);
+	if (cbox.p.x >= cbox.q.x || cbox.p.y >= cbox.q.y)
 	    return 1;		/* empty clipping path */
     }
     if (gx_dc_is_pure(pdcolor)) {
@@ -467,9 +472,14 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
 	 * which shouldn't cause the page to be opened.
 	 */
 	if (gx_dc_pure_color(pdcolor) == pdev->white && 
-		!is_in_page(pdev) && pdev->sbstack_depth == 0)
-	    return 1;
+		!is_in_page(pdev) && pdev->sbstack_depth == bottom) {
+	    if (box->p.x == 0 && box->p.y == 0 && 
+		    box->q.x == int2fixed(pdev->width) && 
+		    box->q.y == int2fixed(pdev->height)) /* See gs_fillpage */
+		return 1;
+        }
     }
+    *box = cbox;
     new_clip = pdf_must_put_clip_path(pdev, pcpath);
     if (have_path || pdev->context == PDF_IN_NONE || new_clip) {
 	if (new_clip)
@@ -1055,7 +1065,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
      * drawing anything.
      */
     bool have_path;
-    gs_fixed_rect box = {{0, 0}, {0, 0}};
+    gs_fixed_rect box = {{0, 0}, {0, 0}}, box1;
 
     have_path = !gx_path_is_void(ppath);
     if (!have_path && !pdev->vg_initial_set) {
@@ -1064,6 +1074,12 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	pdf_reset_graphics(pdev);
 	return 0;
     }
+    if (have_path) {
+	code = gx_path_bbox(ppath, &box);
+	if (code < 0)
+	    return code;
+    }
+    box1 = box;
 
     code = prepare_fill_with_clip(pdev, pis, &box, have_path, pdcolor, pcpath);
     if (code == gs_error_rangecheck) {
@@ -1206,11 +1222,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	double scale;
 	gs_matrix smat;
 	gs_matrix *psmat = NULL;
-	gs_fixed_rect box1;
 
-	code = gx_path_bbox(ppath, &box1);
-	if (code < 0)
-	    return code;
 	if (pcpath) {
  	    rect_intersect(box1, box);
  	    if (box1.p.x > box1.q.x || box1.p.y > box1.q.y)
@@ -1383,7 +1395,7 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     const gx_clip_path *pcpath)
 {
     int code;
-    gs_fixed_rect box1 = *rect, box = {{0, 0}, {0, 0}};
+    gs_fixed_rect box1 = *rect, box = box1;
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     double scale;
     gs_matrix smat;
