@@ -2365,6 +2365,10 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
 			continue;
 		}
 		for (j = beg_range_pole; j <= end_range_pole;) {
+		    if (this->pole[j].type == closepath) {
+			j++;
+			continue;
+		    }
 		    if (t1_hinter__is_stem_hint_applicable(this, &this->hint[i], j, &quality)) {
 			fixed t; /* Type 1 spec implies that it is 0 for curves, 0.5 for bars */
 			int segment_index = t1_hinter__find_stem_middle(this, &t, j, horiz);
