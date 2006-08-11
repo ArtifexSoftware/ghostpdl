@@ -540,10 +540,10 @@ This parameter can be set and queried, but currently has no effect.
 
 <p>
 <a name="note_1">(note 1)</a>
-Currently, <b><tt>AutoFilterxxxImages</tt></b> doesn't examine the image to
-decide between JPEG and LZW or Flate compression: it always uses 
-Flate compression.  If you want to force JPEG compression, use
-<b><tt>-dAutoFilterxxxImages=false</tt></b>.
+<b><tt>-dAutoFilterxxxImages=false</tt></b> works since Ghostscript version 7.30.
+Older versions of Ghostscript don't examine the image to
+decide between JPEG and LZW or Flate compression: they always uses 
+Flate compression. 
 
 <p>
 <a name="note_2">(note 2)</a>
