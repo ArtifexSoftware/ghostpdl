@@ -67,9 +67,11 @@ gs_fillpage(gs_state * pgs)
     gx_device *dev;
     int code = 0;
     gs_logical_operation_t save_lop;
-    bool hl_color_available = gx_hld_is_hl_color_available((gs_imager_state *)pgs, 
-						    pgs->dev_color);
+    bool hl_color_available;
+
     gx_set_dev_color(pgs);
+    hl_color_available = gx_hld_is_hl_color_available((gs_imager_state *)pgs, 
+						    pgs->dev_color);
     dev = gs_currentdevice(pgs);
     /* Fill the page directly, ignoring clipping. */
     /* Use the default RasterOp. */
