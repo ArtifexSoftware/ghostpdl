@@ -309,6 +309,16 @@ def
   }
 .bind def
 
+%
+% Check the image types that can be used as data sources
+% <any> foo <bool>
+%
+/good_image_types mark
+  /filetype { pop //true } .bind
+  /stringtype 1 index
+  /arraytype //xcheck
+  /packedarraytype //xcheck
+.dicttomark readonly def
 
 %
 %   <width>  <height>  <bits/component>  <matrix>  <dsrc0> ...
@@ -356,7 +366,27 @@ def
           { 1 add }
         if
         dup count 9 sub gt
-          { /.colorimage cvx /stackunderflow signalerror }
+          {
+            % Adobe interpreters appear to test the arguments sequentially
+            % starting from the top of the stack and report the 1st error found.
+            % To satisfy CET test 12-02.PS we emulate this logic.
+            //true exch -1 1
+              { 3 add index
+                //good_image_types 1 index type .knownget
+                  { exec and
+                  }
+                  { pop pop //false
+                  }
+                ifelse
+              }
+            for
+              { /stackunderflow
+              }
+              { /typecheck
+              }
+            ifelse
+            /.colorimage cvx exch signalerror
+          }
         if
 
         % build the DataSource array in local VM
@@ -372,6 +402,7 @@ def
     8 1 roll //img_params_ary //img_build_dict exec exch
   }
 .bind def
+currentdict /good_image_types .undef
 
 %
 %   <?dict?>
@@ -392,7 +423,7 @@ def
         1 index type /booleantype eq
           {
             1 index
-              { 3 1 roll aload length 2 add -2 roll }
+              { 3 -1 roll aload length 2 add -2 roll }
             if
           }
         if

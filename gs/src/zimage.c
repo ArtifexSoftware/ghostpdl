@@ -87,13 +87,26 @@ data_image_params(const gs_memory_t *mem,
 	return 1;		/* no data source */
     }
     if (pip->MultipleDataSources) {
-	long i, n = num_components + (has_alpha ? 1 : 0);
+	ref *ds = pip->DataSource;
+        long i, n = num_components + (has_alpha ? 1 : 0);
         if (!r_is_array(pds))
             return_error(e_typecheck);
 	if (r_size(pds) != n)
 	    return_error(e_rangecheck);
 	for (i = 0; i < n; ++i)
-	    array_get(mem, pds, i, &pip->DataSource[i]);
+	    array_get(mem, pds, i, &ds[i]);
+        if (r_type(&ds[0]) == t_string) {
+            /* We don't have a problem with the strings of different length
+             * but Adobe does and CET tast 12-02.ps reports this as an error.
+             */
+	    if (has_alpha)
+                n--;
+            for (i = 1; i < n; ++i) {
+                if (r_type(&ds[i]) == t_string && r_size(&ds[i]) != r_size(&ds[0])) {
+	            return_error(e_rangecheck);
+                }
+            }
+        }
     } else
 	pip->DataSource[0] = *pds;
     return 0;
