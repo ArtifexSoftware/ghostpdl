@@ -389,11 +389,11 @@ AC_ARG_WITH(gs, AC_HELP_STRING([--with-gs=NAME],
 AC_SUBST(GS)
 
 dnl do we compile the postscript initialization files into Ghostscript?
-COMPILE_INITS="0"
-AC_ARG_ENABLE(compile-inits, AC_HELP_STRING([--enable-compile-inits],
-       [compile initialization files into Ghostscript]),[
-               if test x$enable_compile_inits = xyes; then
-                       COMPILE_INITS="1"
+COMPILE_INITS="1"
+AC_ARG_ENABLE(compile-inits, AC_HELP_STRING([--disable-compile-inits],
+       [don't compile in initialization files]),[
+               if test "x$enable_compile_inits" = xno; then
+                       COMPILE_INITS="0"
                fi])
 AC_SUBST(COMPILE_INITS)
 
