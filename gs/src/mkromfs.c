@@ -371,8 +371,8 @@ void process_path(char *path, const char *prefix, const char *add_prefix, Xlist_
 	fseek(in, 0, SEEK_END);
 	node->length = ftell(in);
 	blocks = (node->length+ROMFS_BLOCKSIZE-1) / ROMFS_BLOCKSIZE + 1;
-	node->data_lengths = calloc(blocks, sizeof(unsigned int));
-	node->data = calloc(blocks, sizeof(unsigned char *));
+	node->data_lengths = calloc(blocks, sizeof(*node->data_lengths));
+	node->data = calloc(blocks, sizeof(*node->data));
 	fclose(in);
 	in = fopen(found_path, "rb");
 	block = 0;
