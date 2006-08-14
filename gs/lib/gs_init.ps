@@ -380,6 +380,10 @@ userdict /#copies 1 put
     .beginpage
 } odef
 /currentmatrix {
+	dup type /arraytype ne
+	{ /currentmatrix load  /typecheck signalerror } if
+	dup length 6 ne
+	{ /currentmatrix load  /rangecheck signalerror } if
 	.currentmatrix 6 .argindex astore pop
 } odef
 % .currentnumcopies is redefined in Level 2.
@@ -466,8 +470,11 @@ userdict /.echo.mode true put
 	  { /errordict .systemvar /handleerror get .internalstopped pop } bind % PLRM standard errorhandling
 	} ifelse def
 /identmatrix [1.0 0.0 0.0 1.0 0.0 0.0] readonly def
-/identmatrix
-	{ dup 0 //identmatrix putinterval } odef
+/identmatrix {
+	dup type /arraytype ne { /identmatrix load  /typecheck signalerror } if
+	dup length 6 ne { /identmatrix load  /rangecheck signalerror } if
+	dup 0 //identmatrix putinterval
+} odef
 /languagelevel 1 def		% gs_lev2.ps may change this
 /makeimagedevice { false makewordimagedevice } odef
 /matrix	{ 6 array identmatrix } odef
@@ -547,6 +554,12 @@ odef
 	.setlinejoin
 } odef
 /setmatrix {
+	dup type /arraytype ne {
+	  dup type /packedarraytype ne {
+	    /setmatrix load  /typecheck signalerror
+	  } if
+	} if
+	dup length 6 ne { /setmatrix load  /rangecheck signalerror } if
 	dup aload pop .setmatrix pop
 } odef
 /showpage {
