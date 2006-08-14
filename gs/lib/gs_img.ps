@@ -640,17 +640,26 @@ if
                   { /image .systemvar $error /errorname get signalerror }
                 if
               }
-              { /image .systemvar /undefined signalerror }
+              { /image .systemvar /rangecheck signalerror
+              }
             ifelse
           }
           {
-            gsave
-            0 .setoverprintmode         % disable overprintmode for images
-            //.imagetypes exch get
-            stopped
-            grestore
-              { /image .systemvar $error /errorname get signalerror }
-            if
+            dup //.imagetypes exch .knownget
+              {
+                exch pop gsave
+                0 .setoverprintmode         % disable overprintmode for images
+                stopped
+                grestore
+                  { /image .systemvar $error /errorname get signalerror }
+                if
+              }
+              {
+                /image .systemvar exch type /integertype eq
+                  { /rangecheck } { /typecheck } 
+                ifelse signalerror
+              }
+            ifelse
           }
         ifelse
       }
@@ -675,7 +684,15 @@ if
 /imagemask
   {
     dup type /dicttype eq .languagelevel 2 ge and
-      { dup /ImageType get //.imagemasktypes exch get exec }
+      { dup /ImageType get
+        //.imagemasktypes exch .knownget
+          { exec
+          }
+          { % CET 12-08b.ps wamts /typecheck
+            /imagemask .systemvar /typecheck signalerror
+          }
+        ifelse
+      }
       {
         //img_build_imagemask_dict exec
           { .imagemask1 }
