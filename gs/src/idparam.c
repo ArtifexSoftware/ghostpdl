@@ -50,7 +50,7 @@ dict_bool_param(const ref * pdict, const char *kstr,
 /* Return 0 if found, 1 if defaulted, <0 if invalid. */
 /* If the parameter is null, return 2 without setting *pvalue. */
 /* Note that the default value may be out of range, in which case */
-/* a missing value will return e_rangecheck rather than 1. */
+/* a missing value will return e_undefined rather than 1. */
 int
 dict_int_null_param(const ref * pdict, const char *kstr, int minval,
 		    int maxval, int defaultval, int *pvalue)
@@ -85,8 +85,12 @@ dict_int_null_param(const ref * pdict, const char *kstr, int minval,
 	}
 	code = 0;
     }
-    if (ival < minval || ival > maxval)
-	return_error(e_rangecheck);
+    if (ival < minval || ival > maxval) {
+	if (code == 1)
+            return_error(e_undefined);
+        else
+            return_error(e_rangecheck);
+    }
     *pvalue = (int)ival;
     return code;
 }
@@ -105,7 +109,7 @@ dict_int_param(const ref * pdict, const char *kstr, int minval, int maxval,
 /* Get an unsigned integer parameter from a dictionary. */
 /* Return 0 if found, 1 if defaulted, <0 if invalid. */
 /* Note that the default value may be out of range, in which case */
-/* a missing value will return e_rangecheck rather than 1. */
+/* a missing value will return e_undefined rather than 1. */
 int
 dict_uint_param(const ref * pdict, const char *kstr,
 		uint minval, uint maxval, uint defaultval, uint * pvalue)
@@ -124,8 +128,12 @@ dict_uint_param(const ref * pdict, const char *kstr,
 	ival = (uint) pdval->value.intval;
 	code = 0;
     }
-    if (ival < minval || ival > maxval)
-	return_error(e_rangecheck);
+    if (ival < minval || ival > maxval) {
+	if (code == 1)
+            return_error(e_undefined);
+        else
+            return_error(e_rangecheck);
+    }
     *pvalue = ival;
     return code;
 }
