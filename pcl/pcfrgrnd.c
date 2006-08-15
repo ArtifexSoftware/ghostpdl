@@ -129,6 +129,7 @@ build_foreground(
             pal_entry += num_entries;
     }
 
+    pfrgrnd->is_cmy = (ppalet->pindexed->original_cspace == 1);
     pfrgrnd->color[0] = pindexed->palette.data[3 * pal_entry];
     pfrgrnd->color[1] = pindexed->palette.data[3 * pal_entry + 1];
     pfrgrnd->color[2] = pindexed->palette.data[3 * pal_entry + 2];

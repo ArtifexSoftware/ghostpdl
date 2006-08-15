@@ -912,7 +912,7 @@ pattern_set_pen(
     code = set_ht_crd_from_palette(pcs);
 
     if (code >= 0) {
-        gs_paint_color  paint;
+        gs_paint_color  paint = {0,0,0,0};
 
         convert_index_to_paint(pen, &paint);
         code = set_unpatterned_color(pcs, pindexed, NULL, &paint);
@@ -935,13 +935,28 @@ pattern_set_frgrnd(
         return code;
 
     /* check if a solid pattern should be substituted */
-    if ( for_image                          &&
-         ((pfrgrnd->pht != ppalet->pht)  ||
-          (pfrgrnd->pcrd != ppalet->pcrd)  )  ) {
-        code = set_frgrnd_pattern(pcs, pcl_pattern_get_solid_pattern(pcs), true);
-        if (code >= 0)
-            code = set_ht_crd_from_palette(pcs);
-    } else {
+    if ( for_image ) {
+	if ((pfrgrnd->pht != ppalet->pht)  ||
+	    (pfrgrnd->pcrd != ppalet->pcrd)  ) {
+	    code = set_frgrnd_pattern(pcs, pcl_pattern_get_solid_pattern(pcs), true);
+	    if (code >= 0)
+		code = set_ht_crd_from_palette(pcs);
+	    return code;
+	} 
+	else if ( (ppalet->pindexed->original_cspace == 1 && !pfrgrnd->is_cmy ) || 
+		  (ppalet->pindexed->original_cspace != 1 &&  pfrgrnd->is_cmy ) ) {
+	    const byte blk[] = {0, 0, 0};
+	    gs_paint_color  paint;
+	    
+	    /* NB: HP forces black foreground, as they can't handle different 
+	     * colorspaces in foreground and raster palette 
+	     */
+	    convert_color_to_paint(&blk, &paint);
+	    code = set_unpatterned_color(pcs, NULL, pfrgrnd->pbase, &paint);
+	    return code;
+	}
+    }
+    {
         gs_paint_color  paint;
 
         convert_color_to_paint(pfrgrnd->color, &paint);

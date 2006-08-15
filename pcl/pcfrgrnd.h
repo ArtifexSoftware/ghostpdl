@@ -59,10 +59,20 @@
  * The foreground structure is reference-counted. It is also assigned an
  * identifier, so that we can track when it is necessary to re-render
  * uncolored patterns.
+ *
+ * HP Bug is_cmy is set when the base colorspace of the foreground color
+ * is CMY.  
+ * if foreground colorspace is the different than palette's force black 
+ *   CMY foreground + RGB raster --> black + raster
+ *   RGB foreground + CMY raster --> black + raster
+ * else same colorspaces:
+ *   foreground + raster -> fg_color + raster
+ * This is an HP bug in the 4550 4600.    
  */
 struct pcl_frgrnd_s {
     rc_header       rc;
     pcl_gsid_t      id;
+    bool            is_cmy;   /* NB: see HP Bug above */
     byte            color[3];
     pcl_cs_base_t * pbase;
     pcl_ht_t *      pht;
