@@ -112,7 +112,7 @@ hpgl_ZZ(hpgl_args_t *pargs, hpgl_state_t *pgls)
 }
 #endif
 /* The part of the DF command applicable for overlay macros */
-void
+int
 hpgl_reset_overlay(hpgl_state_t *pgls)
 {	hpgl_args_t args;
 	hpgl_args_setup(&args);
@@ -179,29 +179,31 @@ hpgl_reset_overlay(hpgl_state_t *pgls)
 	hpgl_args_setup(&args);
 	hpgl_PP(&args, pgls);
 #endif
+        return 0;
 }
 
 /* DF; sets programmable features except P1 and P2 */
 int
 hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	hpgl_args_t args;
-	hpgl_reset_overlay(pgls);
+{	
+    hpgl_args_t args;
+    hpgl_call(hpgl_reset_overlay(pgls));
 
-	hpgl_args_setup(&args);
-	hpgl_FT(&args, pgls);
-	hpgl_args_setup(&args);
-	hpgl_IW(&args, pgls);
-        hpgl_set_line_attribute_defaults(pgls);
-	hpgl_args_setup(&args);
-	hpgl_LA(&args, pgls);
-	hpgl_set_line_pattern_defaults(pgls);
-	hpgl_args_setup(&args);
-	hpgl_RF(&args, pgls);
-	hpgl_args_set_int(&args, 0);
-	hpgl_SV(&args, pgls);
-	hpgl_args_setup(&args);
-	hpgl_UL(&args, pgls);
-	return 0;
+    hpgl_args_setup(&args);
+    hpgl_FT(&args, pgls);
+    hpgl_args_setup(&args);
+    hpgl_IW(&args, pgls);
+    hpgl_set_line_attribute_defaults(pgls);
+    hpgl_args_setup(&args);
+    hpgl_LA(&args, pgls);
+    hpgl_set_line_pattern_defaults(pgls);
+    hpgl_args_setup(&args);
+    hpgl_RF(&args, pgls);
+    hpgl_args_set_int(&args, 0);
+    hpgl_SV(&args, pgls);
+    hpgl_args_setup(&args);
+    hpgl_UL(&args, pgls);
+    return 0;
 }
 
 /*
@@ -240,8 +242,6 @@ hpgl_IN_implicit(
     /* defaults P1 and P2 */
     hpgl_args_setup(&args);
     hpgl_IP(&args, pgls);
-    hpgl_args_set_int(&args,1);
-    hpgl_SP(&args, pgls);
 
     /* pen width units - metric */
     hpgl_args_setup(&args);

@@ -136,8 +136,16 @@ hpgl_do_reset(
 
 	/* intialize subpolygon started hack flag */
 	pcs->g.subpolygon_started = false;
+
 	/* execute only the implicit portion of IN */
 	hpgl_IN_implicit(pcs);
+
+        /* we select the default pen 1 here, oddly, IN does not select
+           the default pen even though it sets pen widths and units of
+           measure */
+        hpgl_args_set_int(&hpgl_args,1);
+        hpgl_SP(&hpgl_args, pcs);
+
     }
     /* NB check all of these */
     if ((type & pcl_reset_page_params) != 0) {
@@ -158,7 +166,8 @@ hpgl_do_reset(
     }
 
     if ((type & pcl_reset_overlay) != 0) 
-        hpgl_reset_overlay(pcs);
+        /* ignore return */
+        (void)hpgl_reset_overlay(pcs);
 
     if ((type & (pcl_reset_plot_size)) != 0) {
 	/* this shouldn't happen.  Plot size side effects are handled
