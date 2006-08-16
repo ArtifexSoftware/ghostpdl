@@ -260,12 +260,17 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 	}
 
 	/* 7.  Typeface family. */
-	{ uint diff = pfs->params.typeface_family ^ fp->params.typeface_family;
-
-	  /* Give partial credit for the same typeface from a different */
-	  /* vendor. */
-	  score[score_typeface] =
-	    (diff == 0 ? 2 : !(diff & 0xfff) ? 1 : 0);
+	{ 
+            uint diff = pfs->params.typeface_family - fp->params.typeface_family;
+            if (diff == 0)
+                score[score_typeface] = 2;
+            else {
+                diff = (pfs->params.typeface_family & 0x7ff) - (fp->params.typeface_family & 0x7ff);
+                if (diff == 0)
+                    score[score_typeface] = 1;
+                else
+                    score[score_typeface] = 0;
+            }
 	}
 
 	/* 8. Location. */

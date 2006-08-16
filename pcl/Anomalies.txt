@@ -843,3 +843,19 @@ M3E-0,5!!4%<N-3M053(Q,C`L,SDT-CM033`[4$0[4%(M."PM,BPM-#8L+3$Q
 ?+#(R,2PM.#8W+"TQ-C<L.#@P.U!-,CM%4!LE,$$;10``
 `
 end
+
+
+---
+
+HP Color Laserjet 5C FTS printed on the Color Laserjet 4600
+
+panel 411 - The HP interpreter falls back to Times Bold Italic on line
+6.  On the previous line the brush font was properly selected, text
+printed with the font then typeface family 4128 is selected.
+Extracting out the non vendor bits results in typeface 32 which is the
+typeface number of the brush font.  There are no intervening relevant
+commands before the next sentence is printed so, we don't see how any
+other font than brush font could be selected and assume this is a bug
+in the HP printer.  Similarly we believe the Dom Casual downloaded
+font should be selected on lines 7 & 8.
+

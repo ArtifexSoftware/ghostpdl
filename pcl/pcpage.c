@@ -858,7 +858,13 @@ set_text_length(
 {
     coord           len = uint_arg(pargs) * pcs->vmi_cp;
 
-    if ((len != 0) && (pcs->margins.top + len <= pcs->xfm_state.pd_size.y) )
+    if (len == 0) {
+        len = pcs->xfm_state.pd_size.y - pcs->margins.top - inch2coord(1.0/2.0);
+        if (len < 0) {
+            len += inch2coord(1.0/2.0);
+        }
+    }
+    if ((len >= 0) && (pcs->margins.top + len <= pcs->xfm_state.pd_size.y) )
 	pcs->margins.length = len;
     return 0;
 }
