@@ -404,8 +404,11 @@ private int
 zustrokepath(i_ctx_t *i_ctx_p)
 {
     gx_path save;
-    int code, npop;
+    gs_matrix saved_matrix;
+    int npop, code = gs_currentmatrix(igs, &saved_matrix);
 
+    if (code < 0)
+	return code;
     /* Save and reset the path. */
     gx_path_init_local(&save, imemory);
     gx_path_assign_preserve(&save, igs->path);
@@ -414,6 +417,15 @@ zustrokepath(i_ctx_t *i_ctx_p)
 	) {
 	gx_path_assign_free(igs->path, &save);
 	return code;
+    }
+    /*
+     * If a matrix was specified then restore the previous matrix.
+     */
+    if (npop > 1) {
+        if ((code = gs_setmatrix(igs, &saved_matrix)) < 0) {
+	    gx_path_assign_free(igs->path, &save);
+	    return code;
+        }
     }
     gx_path_free(&save, "ustrokepath");
     pop(npop);
