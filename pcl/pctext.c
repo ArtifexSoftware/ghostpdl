@@ -521,8 +521,19 @@ pcl_show_chars_slow(
          * prior point.
          */
         tmp_x = cpt.x;
-        if (pcs->last_was_BS)
-            tmp_x += (pcs->last_width - width) / 2; 
+        if (pcs->last_was_BS) {
+            /* hack alert.  It seems if the last width is large, we
+             use the horizontal dimension of the page as a guess, the
+             centering is replaced by returning to the zero
+             coordinate.  It would take quite a bit of time to
+             investigate what the hp is doing in this pathological
+             case, so we have not done a detailed analysis.  This
+             solution prints the tests we have correctly. */
+            if (pcs->last_width > pcs->xfm_state.pd_size.x)
+                tmp_x = 0;
+            else
+                tmp_x += (pcs->last_width - width) / 2; 
+        }
 	if (pcs->text_path) {
 	    /* move to the lower right corner of the glyph to account for rotation without
 	     * translation of axis of rotation.
