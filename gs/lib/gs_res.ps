@@ -458,29 +458,31 @@ pop pop
         dup length 3 1 roll                              % args [ l (c/) (t)
         concatstrings                                    % args [ l (c/t)
 	[ 
-	  /LIBPATH .systemvar 2 index
-	  .generate_dir_list_templates                   % args (t) [ l [(pt)]
+	  true /LIBPATH .systemvar 3 index
+	  .generate_dir_list_templates_with_length       % args (t) [ l [(pt) Lp ...]
 	    % also add on the Resources as specified by the GenericResourceDir
-          [ currentsystemparams /GenericResourceDir get]
-	  counttomark 1 add index .generate_dir_list_templates
-            % Resource files on OpenVMS requires a separate template (gs:[dir.*]*)
-          [ currentsystemparams /GenericResourceDir get]
+          true [ currentsystemparams /GenericResourceDir get]
+	  counttomark 1 add index .generate_dir_list_templates_with_length
+            % Resource files on OpenVMS require a separate template (gs:[dir.*]*)
+          true [ currentsystemparams /GenericResourceDir get]
 	  counttomark 1 add index .file_name_separator (*)
-          concatstrings concatstrings .generate_dir_list_templates
+          concatstrings concatstrings .generate_dir_list_templates_with_length
 	  ] exch pop
-	{                                                % args [ l (pt)
-	  dup length 2 index sub exch                    % args [ l Lp (pt)
+	dup length 1 sub 0 exch 2 exch {                 % args [ l [] i
+	  2 copy get                                     % args [ l [] i (pt)
+	  exch 2 index exch 1 add get                    % args [ l [] (pt) Lp
+	  exch                                           % args [ l [] Lp (pt)
 
-	  {                                              % args [ l Lp (pf)
-	    dup length                                   % args [ l Lp (pf) Lpf
-	    2 index sub                                  % args [ l Lp (pf) Lf
-	    2 index exch                                 % args [ l Lp (pf) Lp Lf
-	    getinterval cvn dup                          % args [ l Lp /n /n
-	    4 2 roll                                     % args [ /n /n l Lp
+	  {                                              % args [ l [] Lp (pf)
+	    dup length                                   % args [ l [] Lp (pf) Lpf
+	    2 index sub                                  % args [ l [] Lp (pf) Lf
+	    2 index exch                                 % args [ l [] Lp (pf) Lp Lf
+	    getinterval cvn dup                          % args [ l [] Lp /n /n
+	    5 2 roll                                     % args [ /n /n l [] Lp
 	  } //.rfnstring filenameforall
-	  pop                                            % args [ l /n1 /n1 ... /nN /nN l
-	} forall                                         % args [ l /n1 /n1 ... /nN /nN
-	pop
+	  pop                                            % args [ /n1 /n1 ... /nN /nN l []
+	} for                                            % args [ /n1 /n1 ... /nN /nN l []
+	pop pop
 	.dicttomark % An easy way to exclude duplicates. % args <</n/n>>
 	  % {
 	  { pop } 0 get

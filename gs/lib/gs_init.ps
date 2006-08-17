@@ -1558,19 +1558,21 @@ devicedict /Default devicedict .defaultdevicename get put
    0 exch getinterval exch pop
 } bind def
 
-%   <dir_list> <template> .generate_dir_list_templates <t1> ... <tN>
+%   false <dir_list> <template> .generate_dir_list_templates_with_length <t1> ... <tN>
+%   true  <dir_list> <template> .generate_dir_list_templates_with_length <t1> <l1> ... <tN> <ln>
 %
 % Generates various valid templates combining a directory list with a given template.
+% With 'true' operand it also returns lengths of directory pathes.
 %
 % Example1 (DOS, Windows) :
-%       [(/gs/lib) (/gs/Resource/) (\gs8.00\Resource)] (*/*) -->
+%       false [(/gs/lib) (/gs/Resource/) (\gs8.00\Resource)] (*/*) -->
 %       (/gs/lib/*/*) (/gs/Resource/*/*) (\\gs8.00\\Resource/*/*)
 %
 % Example2 (OpenVMS) :
-%       [(gs:[lib]) (gs:[Resource]) (gs800:[Resource)] (*]*) -->
+%       false [(gs:[lib]) (gs:[Resource]) (gs800:[Resource)] (*]*) -->
 %       ((gs:[lib.*]*) [gs:[Resource.*]*) ([gs800:[Resource.*]*)
 %
-/.generate_dir_list_templates
+/.generate_dir_list_templates_with_length
 {                                                  % [dl] (templ)
   % We need to convert paths into templates,
   % because it can include '\' on DOS.
@@ -1585,58 +1587,76 @@ devicedict /Default devicedict .defaultdevicename get put
   %
 
   % Create the fake file name :
-  dup dup length string copy                       % [dl] (templ) (ffn)
-  (*) 0 get (?) 0 get (\\) 0 get (x) 0 get 0 0     % [dl] (templ) (ffn) * ? \ x i j
+  dup dup length string copy                       % b [dl] (templ) (ffn)
+  (*) 0 get (?) 0 get (\\) 0 get (x) 0 get 0 0     % b [dl] (templ) (ffn) * ? \ x i j
   { 1 index 7 index length ge { exit } if
-    6 index 2 index get                            % [dl] (templ) (ffn) * ? \ x i j c
-    dup 7 index eq                                 % [dl] (templ) (ffn) * ? \ x i j c bool
+    6 index 2 index get                            % b [dl] (templ) (ffn) * ? \ x i j c
+    dup 7 index eq                                 % b [dl] (templ) (ffn) * ? \ x i j c bool
     1 index 7 index eq or { % *?
       pop 2 index
-    } if                                           % [dl] (templ) (ffn) * ? \ x i j C
+    } if                                           % b [dl] (templ) (ffn) * ? \ x i j C
     dup 5 index eq {        % \
-      3 2 roll 1 add 3 1 roll                      % [dl] (templ) (ffn) * ? \ x i' j C
+      3 2 roll 1 add 3 1 roll                      % b [dl] (templ) (ffn) * ? \ x i' j C
       2 index 8 index length ge { pop exit } if
-      pop 6 index 2 index get                      % [dl] (templ) (ffn) * ? \ x i' j C'
+      pop 6 index 2 index get                      % b [dl] (templ) (ffn) * ? \ x i' j C'
     } if
-    7 index 2 index 3 2 roll put                   % [dl] (templ) (ffn) * ? \ x i' j
-    1 add exch 1 add exch                          % [dl] (templ) (ffn) * ? \ x i'' j'
-  } loop                                           % [dl] (templ) (ffn) * ? \ x i j
-  6 1 roll pop                                     % [dl] (templ) (ffn) j * ? \ x
-  exch pop exch pop exch pop exch                  % [dl] (templ) (ffn) x j
+    7 index 2 index 3 2 roll put                   % b [dl] (templ) (ffn) * ? \ x i' j
+    1 add exch 1 add exch                          % b [dl] (templ) (ffn) * ? \ x i'' j'
+  } loop                                           % b [dl] (templ) (ffn) * ? \ x i j
+  6 1 roll pop                                     % b [dl] (templ) (ffn) j * ? \ x
+  exch pop exch pop exch pop exch                  % b [dl] (templ) (ffn) x j
   { dup 3 index length ge { exit } if
     3 copy exch put
     1 add
   } loop
-  pop pop                                          % [dl] (templ) (ffn)
+  pop pop                                          % b [dl] (templ) (ffn)
 
   % An internal procedure : 
-  {                                 % {} [dl] (templ) (ffn) (dffn)
-    .makepathtemplate               % {} [dl] (templ) (ffn) (Dffn)
-    dup                             % {} [dl] (templ) (ffn) (Dffn) (Dffn)
-    3 index length dup              % {} [dl] (templ) (ffn) (Dffn) (Dffn) templL templL
-    2 index length                  % {} [dl] (templ) (ffn) (Dffn) (Dffn) templL templL DffnL
-    exch sub                        % {} [dl] (templ) (ffn) (Dffn) (Dffn) templL i
-    exch getinterval                % {} [dl] (templ) (ffn) (Dffn) (suffix)
-    3 index exch copy pop           % {} [dl] (templ) (ffn) (dt)
-    5 1 roll                        % (dt) {} [dl] (templ) (ffn)
+  {                                 % {} b [dl] (templ) (ffn) (dffn)
+    dup length 
+    1 sub % drop 'x', which was added above.
+    exch                            % {} b [dl] (templ) (ffn) ldffn (dffn)
+    .makepathtemplate               % {} b [dl] (templ) (ffn) ldffn (Dffn)
+    dup                             % {} b [dl] (templ) (ffn) ldffn (Dffn) (Dffn)
+    4 index length dup              % {} b [dl] (templ) (ffn) ldffn (Dffn) (Dffn) templL templL
+    2 index length                  % {} b [dl] (templ) (ffn) ldffn (Dffn) (Dffn) templL templL DffnL
+    exch sub                        % {} b [dl] (templ) (ffn) ldffn (Dffn) (Dffn) templL i
+    exch getinterval                % {} b [dl] (templ) (ffn) ldffn (Dffn) (suffix)
+    4 index exch copy pop           % {} b [dl] (templ) (ffn) ldffn (dt)
+    5 index {
+      exch                          % {} b [dl] (templ) (ffn) (dt) ldffn
+      7 2 roll                      % (dt) ldffn {} b [dl] (templ) (ffn)
+    } {
+      exch pop                      % {} b [dl] (templ) (ffn) (dt)
+      6 1 roll                      % (dt) {} b [dl] (templ) (ffn)
+    } ifelse
   }
-  4 1 roll                                         % {} [dl] (templ) (ffn)
+  5 1 roll                                         % {} b [dl] (templ) (ffn)
 
   % Generate templates :
   dup .file_name_is_absolute {
-    dup                                            % {} [dl] (templ) (ffn) (ffn)
-    4 index exec                                   % (t1) {} [dl] (templ) (ffn)
+    dup                                            % {} b [dl] (templ) (ffn) (ffn)
+    5 index exec                                   % (t1) {} b [dl] (templ) (ffn)
   } {
-    2 index {                                      % {} [dl] (templ) (ffn) (d)
-      1 index                                      % {} [dl] (templ) (ffn) (d) (ffn)
-      false .file_name_combine {                   % {} [dl] (templ) (ffn) (dffn)
-        4 index exec                               % (t1) {} [dl] (templ) (ffn)
-      } {                                          % {} [dl] (templ) (ffn) (d) (ffn)
-        pop pop                                    % {} [dl] (templ) (ffn)
+    2 index {                                      % ... {} b [dl] (templ) (ffn) (d)
+      1 index                                      % ... {} b [dl] (templ) (ffn) (d) (ffn)
+      false .file_name_combine {                   % ... {} b [dl] (templ) (ffn) (dffn)
+        5 index exec                               % ... (t1) ?l1 {} b [dl] (templ) (ffn)
+      } {                                          % ... {} b [dl] (templ) (ffn) (d) (ffn)
+        pop pop                                    % ... {} b [dl] (templ) (ffn)
       } ifelse
     } forall
-  } ifelse                                         % (t1) (t2) ... (tN) {} [dl] (templ) (ffn)
-  pop pop pop pop                                  % (t1) (t2) ... (tN)
+  } ifelse                                         % (t1) ?l1 (t2) ?l2 ... (tN) ?ln {} b [dl] (templ) (ffn)
+  pop pop pop pop pop                              % (t1) ?l1 (t2) ?l2 ... (tN) ?ln
+} bind def
+
+%   <dir_list> <template> .generate_dir_list_templates <t1> ... <tN>
+%
+% Generates various valid templates combining a directory list with a given template.
+% It's the 'false' case of the function above.
+%
+/.generate_dir_list_templates
+{ //false 3 1 roll //.generate_dir_list_templates_with_length exec
 } bind def
 
 % Load the initialization files for optional features.
