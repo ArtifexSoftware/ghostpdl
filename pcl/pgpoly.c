@@ -83,7 +83,7 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	if ( sweep == 360.0 ) /* HAS needs epsilon */
 	  hpgl_call(hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
-					 radius, 0.0, 360.0, chord, true,
+					 radius, start, 360.0, chord, true,
 					 hpgl_plot_draw_absolute, true));
 	else
 	/* draw the 2 lines and the arc using 3 point this does seem
