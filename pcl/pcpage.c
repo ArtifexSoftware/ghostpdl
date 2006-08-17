@@ -765,6 +765,11 @@ set_left_margin(
 {
     coord           lmarg = uint_arg(pargs) * pcl_hmi(pcs);
 
+    /* adjust underlining if the left margin passes to the right of
+       the underline start position */
+    if ((pcs->underline_enabled) && (lmarg > pcs->underline_start.x))
+        pcs->underline_start.x = lmarg;
+
     if (lmarg < pcs->margins.right) {
         pcs->margins.left = lmarg;
         if (pcs->cap.x < lmarg)
