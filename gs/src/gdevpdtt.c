@@ -447,8 +447,18 @@ pdf_remove_font_cache_elem(pdf_font_cache_elem_t *e0)
 				"pdf_remove_font_cache_elem");
 	    gs_free_object(pdev->pdf_memory, e0->real_widths, 
 				"pdf_remove_font_cache_elem");
+	    /* Clean pointers, because gs_free_object below may work idle
+	       when this function is called by a garbager notification.
+	       Leaving unclean pointers may cause 
+	       a further heap validation to fail
+	       since the unfreed structure points to freed areas.
+	       For instance, e0->next may point to an element, 
+	       which is really freed with a subsequent 'restore'.
+	       Bug 688837. */
+	    e0->next = 0;
 	    e0->glyph_usage = 0;
 	    e0->real_widths = 0;
+	    e0->pdev = 0;
 	    gs_free_object(pdev->pdf_memory, e0, 
 				"pdf_remove_font_cache_elem");
 	    return;
