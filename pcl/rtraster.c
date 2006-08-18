@@ -714,10 +714,12 @@ process_zero_rows(
     pcl_seed_row_t *    pseed_rows = prast->pseed_rows;
     int                 code = 0;
     int                 i;
+    int                 moveto_nrows = nrows;
 
     /* don't bother going beyond the end of the image */
-    if (nrows > rem_rows)
+    if (nrows > rem_rows) {
         nrows = rem_rows;
+    }
 
     /* if clipping the whole raster, just update rendered rows */
     if (prast->pcs->raster_state.clip_all) {
@@ -760,7 +762,7 @@ process_zero_rows(
         }
 
         prast->src_height -= nrows;
-        gs_translate(pgs, 0.0, (floatp)nrows);
+        gs_translate(pgs, 0.0, (floatp)moveto_nrows); /* HP bug CET21.04 pg 7 */
 
         return 0;
 
