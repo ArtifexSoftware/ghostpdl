@@ -38,8 +38,6 @@
 
 typedef struct fapi_ufst_server_s fapi_ufst_server;
 
-static SW16 static_fcHandle[3] = { 0, 0, 0 };
-
 #if UFST_REENTRANT
 #define FSA_FROM_SERVER IF_STATE *pIFS = &r->IFS
 #else

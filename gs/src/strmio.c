@@ -63,7 +63,7 @@ sfopen(const char *path, const char *mode, gs_memory_t *memory)
 	code = open_file(pfn.iodev, pfn.fname, pfn.len, mode, &s, mem);
     if (code < 0)
 	return NULL;
-    code = ssetfilename(s, path, strlen(path));
+    code = ssetfilename(s, (const byte *)path, strlen(path));
     if (code < 0) {
 	/* Only error is e_VMerror */
 	sclose(s);

@@ -59,6 +59,6 @@ void *gs_lib_ctx_get_interp_instance( gs_memory_t *mem );
 /* HACK to get at non garbage collection memory pointer 
  * 
  */
-const gs_memory_t * gs_lib_ctx_get_non_gc_memory_t(void);
+gs_memory_t * gs_lib_ctx_get_non_gc_memory_t(void);
  
 #endif /* GSLIBCTX_H */
