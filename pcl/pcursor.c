@@ -436,7 +436,12 @@ set_horiz_motion_index(
  * Contrary to HP's documentation ("PCL 5 Printer Language Technical Reference
  * Manual", October 1992 ed., p. 5-24), this command is NOT ignored if the
  * requested VMI is greater than the page length.
+ *
+ * Apparently this problem has been fixed in the Color Laserjet 4600.
+ * For the old behavior undefine the next definition.
  */
+
+#define HP_VERT_MOTION_NEW
   private int
 set_vert_motion_index(
     pcl_args_t *    pargs,
@@ -446,9 +451,15 @@ set_vert_motion_index(
     /* LMI :== 48.0 / lpi;  ie 0.16 = 48/300; 
      * convert to pcl_coord_scale (7200), roundup the float prior to truncation.
      */
-    pcs->vmi_cp = ((fabs(float_arg(pargs)) * 7200.0 / 48.0) + 0.5);
+    coord vcp = ((fabs(float_arg(pargs)) * 7200.0 / 48.0) + 0.5);
+#ifdef HP_VERT_MOTION_NEW
+    if (vcp <= pcs->xfm_state.pd_size.y)
+#endif
+        pcs->vmi_cp = vcp;
     return 0;
 }
+
+#undef HP_VERT_MOTION_NEW
 
 /*
  * ESC & l <lpi> D
