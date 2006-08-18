@@ -120,6 +120,8 @@ search_separator(const char **ip, const char *ipe, const char *item, int directi
  * directory references from the concatenation when possible.
  * The trailing zero byte is being added.
  *
+ * Also tolerates/skips leading IODevice specifiers such as %os% or %rom%
+ *
  * Examples : 
  *	"/gs/lib" + "../Resource/CMap/H" --> "/gs/Resource/CMap/H"
  *	"C:/gs/lib" + "../Resource/CMap/H" --> "C:/gs/Resource/CMap/H"
@@ -129,6 +131,8 @@ search_separator(const char **ip, const char *ipe, const char *item, int directi
  *		"DUA1:[GHOSTSCRIPT.RESOURCE.CMAP]H"
  *      "\\server\share/a/b///c/../d.e/./" + "../x.e/././/../../y.z/v.v" --> 
  *		"\\server\share/a/y.z/v.v"
+ *	"%rom%lib/" + "gs_init.ps" --> "%rom%lib/gs_init.ps
+ *	"" + "%rom%lib/gs_init.ps" --> "%rom%lib/gs_init.ps"
  */
 gp_file_name_combine_result
 gp_file_name_combine_generic(const char *prefix, uint plen, const char *fname, uint flen, 
@@ -141,12 +145,22 @@ gp_file_name_combine_generic(const char *prefix, uint plen, const char *fname, u
      */
     char *bp = buffer, *bpe = buffer + *blen;
     const char *ip, *ipe;
-    uint slen;
+    uint slen = 0;	/* initial use is as flag: 0 != no prefix */
     uint infix_type = 0; /* 0=none, 1=current, 2=parent. */
     uint infix_len = 0;
-    uint rlen = gp_file_name_root(fname, flen);
-    /* We need a special handling of infixes only immediately after a drive. */
+    uint rlen = 0;
 
+    /* Check for IODevice first since 'root' specifiers will follow %os% */
+    /* Note that IODevices are platform independent */
+    if (fname[0] == '%') {
+	slen = 1;		/* IODevices never append/insert the prefix */
+	for (rlen=1; rlen < flen; rlen++)
+	    if (fname[rlen] == '%')
+		break;
+    }
+    rlen += gp_file_name_root(fname+rlen, flen-rlen);
+    /* We need a special handling of infixes only immediately after a drive.
+     * or IODevice (such as %os%) */
     if (rlen != 0) {
         /* 'fname' is absolute, ignore the prefix. */
 	ip = fname;
@@ -159,7 +173,7 @@ gp_file_name_combine_generic(const char *prefix, uint plen, const char *fname, u
     }
     if (!append(&bp, bpe, &ip, rlen))
 	return gp_combine_small_buffer;
-    slen = gs_file_name_check_separator(bp, buffer - bp, bp); /* Backward search. */
+    slen += gs_file_name_check_separator(bp, buffer - bp, bp); /* Backward search. */
     if (rlen != 0 && slen == 0) {
 	/* Patch it against names like "c:dir" on Windows. */
 	const char *sep = gp_file_name_directory_separator();

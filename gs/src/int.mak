@@ -979,7 +979,7 @@ $(PSGEN)gs_init.ps : $(PSLIB)$(GS_INIT) $(GENINIT_XE) $(gconfig_h)
 # This changes infrequently, but is a potential point of bitrot, but since
 # unix-inst.mak uses this macro, problems should surface when testing installed
 # versions.
-EXTRA_INIT_FILES= Fontmap cidfmap xlatmap FAPIcidfmap FAPIconfig FAPIfontmap
+EXTRA_INIT_FILES= Fontmap cidfmap xlatmap FAPI FCOfontmap-PCLPS2 
 
 #	The init files are put in the lib/ directory (gs_init.ps + EXTRA_INIT_FILES)
 #	Resource files go into Resource/...
@@ -989,7 +989,7 @@ RESOURCE_LIST=ColorSpace/ Decoding/ Font/ Procset/ IdiomSet/ CIDFont/ CMap/
 # PCLXL_ PJL and XPS hooks are for other parsers that may be built with a PS
 # language switch build.
 $(GLOBJ)gsromfs.c : $(MKROMFS_XE) $(PSGEN)gs_init.ps $(arch_h)
-	$(EXP)$(MKROMFS_XE) -o $(GLOBJ)gsromfs.c -c -X .svn -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSGEN) gs_init.ps -P $(PSLIB) $(EXTRA_INIT_FILES) $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS)
+	$(EXP)$(MKROMFS_XE) -o $(GLOBJ)gsromfs.c -X .svn $(UFST_ROMFS_ARGS) $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) $(UFST_ROMGS_ARGS) -c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSGEN) gs_init.ps -P $(PSLIB) $(EXTRA_INIT_FILES) 
 
 # ---------------- Stochastic halftone ---------------- #
 
@@ -1899,7 +1899,7 @@ $(PSD)fapiu1.dev : $(INT_MAK) $(ECHOGS_XE) \
 	$(ADDMOD) $(PSD)fapiu1 -link $(UFST_LIB)tt_lib$(UFST_LIB_EXT) $(UFST_LIB)psi_lib$(UFST_LIB_EXT)
 
 $(PSOBJ)fapiufst.$(OBJ) : $(PSSRC)fapiufst.c $(AK)\
- $(memory__h) $(stdio__h) $(math__h)\
+ $(memory__h) $(stdio__h) $(math__h) $(strmio_h)\
  $(ierrors_h) $(iplugin_h) $(ifapi_h) $(gxfapi_h) $(gp_h) $(gxfapiu_h) \
  $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
  $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\

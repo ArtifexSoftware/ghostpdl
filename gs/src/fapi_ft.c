@@ -867,8 +867,7 @@ static const FAPI_server TheFreeTypeServer =
 
 plugin_instantiation_proc(gs_fapi_ft_instantiate);
 
-int gs_fapi_ft_instantiate(i_ctx_t *a_context,
-						   i_plugin_client_memory *a_memory,
+int gs_fapi_ft_instantiate( i_plugin_client_memory *a_memory,
 						   i_plugin_instance **a_plugin_instance)
 	{
 	FF_server *server = (FF_server *)a_memory->alloc(a_memory,

@@ -56,7 +56,7 @@ int i_plugin_init(i_ctx_t *i_ctx_p)
     i_plugin_make_memory(&client_mem, mem_raw);
     for (; *p != 0; p++) {
         i_plugin_instance *instance = 0;
-        code = (*p)(i_ctx_p, &client_mem, &instance);
+        code = (*p)(&client_mem, &instance);
         if (code != 0)
             return code;
         h = (i_plugin_holder *)gs_alloc_bytes_immovable(mem_raw, sizeof(i_plugin_holder), "plugin_holder");

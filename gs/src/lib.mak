@@ -1066,7 +1066,7 @@ $(GLOBJ)gdevemap.$(OBJ) : $(GLSRC)gdevemap.c $(AK) $(std_h)
 
 ###### Create a pseudo-"feature" for the entire graphics library.
 
-LIB0s=$(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)stream.$(OBJ)
+LIB0s=$(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)stream.$(OBJ) $(GLOBJ)strmio.$(OBJ)
 LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gsalpha.$(OBJ)
 LIB2s=$(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ)
 # Note: gschar.c is no longer required for a standard build;
@@ -1194,6 +1194,13 @@ $(GLOBJ)sfxfd.$(OBJ) : $(GLSRC)sfxfd.c $(AK)\
 
 $(GLOBJ)sfxboth.$(OBJ) : $(GLSRC)sfxboth.c $(GLSRC)sfxstdio.c $(GLSRC)sfxfd.c
 	$(GLCC) $(GLO_)sfxboth.$(OBJ) $(C_) $(GLSRC)sfxboth.c
+
+strmio_h=$(GLSRC)strmio.h
+
+$(GLOBJ)strmio.$(OBJ): $(GLSRC)strmio.c $(AK) \
+  $(memory__h) $(gdebug_h) $(gsfname_h)\
+  $(gsmalloc_h) $(gsmemret_h) $(strmio_h) $(stream_h)
+	$(GLCC) $(GLO_)strmio.$(OBJ) $(C_) $(GLSRC)strmio.c 
 
 # ---------------- BCP filters ---------------- #
 

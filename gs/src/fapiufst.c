@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 /* $Id$ */
-/* UFST plugin */
+/* Agfa UFST plugin */
 
 /* GS includes : */
 #include "stdio_.h"
@@ -20,6 +20,7 @@
 #include "ierrors.h"
 #include "iplugin.h"
 #include "ifapi.h"
+#include "strmio.h"
 /* UFST includes : */
 #undef true	/* GS/UFST definition conflict. */
 #undef false	/* GS/UFST definition conflict. */
@@ -37,11 +38,7 @@
 
 typedef struct fapi_ufst_server_s fapi_ufst_server;
 
-#define DEBUG_STATIC_FCO 0
-
-#if DEBUG_STATIC_FCO
-static SW16 static_fcHandle[2];
-#endif
+static SW16 static_fcHandle[3] = { 0, 0, 0 };
 
 #if UFST_REENTRANT
 #define FSA_FROM_SERVER IF_STATE *pIFS = &r->IFS
@@ -51,7 +48,9 @@ EXTERN IF_STATE if_state;
 private fapi_ufst_server *static_server_ptr_for_ufst_callback = 0;
 #endif
 
+#ifndef PSI_INCLUDED
 GLOBAL const SW16 trace_sw = 0; /* UFST 4.3 wants it. */
+#endif
 
 GLOBAL UW16  PCLswapHdr( FSP LPUB8 p, UW16 gifct ); /* UFST header doesn't define it. */
 
@@ -194,14 +193,6 @@ private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, in
 #endif
     }
 
-#if DEBUG_STATIC_FCO
-    code = gx_UFST_open_static_fco("F:/AFPL/ufst/fontdata/MTFONTS/PCLPS2/MT3/pclp2_xj.fco", &static_fcHandle[0]);
-    if (code != 0)
-	return code;
-    code = gx_UFST_open_static_fco("F:/AFPL/ufst/fontdata/MTFONTS/PCL45/MT3/wd____xh.fco", &static_fcHandle[1]);
-    if (code != 0)
-	return code;
-#endif
     return 0;
 }		      
 
@@ -228,11 +219,11 @@ private FAPI_retcode ensure_open(FAPI_server *server, const byte *server_param, 
     return 0;
 }
 
-private UW16 get_font_type(FILE *f)
+private UW16 get_font_type(stream *f)
 {   char buf[20], mark_PS[]="%!";
     int i;
 
-    if (fread(buf, 1, sizeof(buf), f) != sizeof(buf))
+    if (sfread(buf, 1, sizeof(buf), f) != sizeof(buf))
         return 0;
     if (buf[0] == 0x15 || buf[0] == 0x00) /* fixme : don't know how to do correctly. */
         return FC_FCO_TYPE;
@@ -662,14 +653,14 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
 	    d->font_id = (e->fcHandle << 16) | ff->subfont;
 	    d->font_type = FC_FCO_TYPE;
 	} else {
-	    FILE *f = fopen(font_file_path, "rb"); /* note: gp_fopen isn't better since UFST calls fopen. */
+	    stream *f = sfopen(font_file_path, "rb", (gs_memory_t *)(r->client_mem.client_data));
 	    if (f == NULL) {
 		eprintf1("fapiufst: Can't open %s\n", font_file_path);
 		return e_undefinedfilename;
 	    }
 	    memcpy(d + 1, font_file_path, strlen(font_file_path) + 1);
 	    d->font_type = get_font_type(f);
-	    fclose(f);
+	    sfclose(f);
 	    if (d->font_type == FC_FCO_TYPE) {
 		fco_list_elem *e;
 		if ((code = fco_open(r, font_file_path, &e)) != 0)
@@ -880,17 +871,20 @@ private FAPI_retcode get_font_bbox(FAPI_server *server, FAPI_font *ff, int BBox[
 
 private FAPI_retcode get_font_proportional_feature(FAPI_server *server, FAPI_font *ff, bool *bProportional)
 {   fapi_ufst_server *r = If_to_I(server);
-    UB8 buf[74];
-    UL32 length = sizeof(buf);
     FSA_FROM_SERVER;
 
     *bProportional = false;
     if (ff->font_file_path == NULL || ff->is_type1)
         return 0;
 #if TT_ROM || TT_DISK
+    { 
+	UB8 buf[74];
+	UL32 length = sizeof(buf);
+
     if (CGIFtt_query(FSA (UB8 *)ff->font_file_path, *(UL32 *)"OS/2", (UW16)ff->subfont, &length, buf) != 0)
         return 0; /* No OS/2 table - no chance to get the info. Use default == false. */
     *bProportional = (buf[35] == 9);
+    }
 #endif
     return 0;
 }
@@ -1311,7 +1305,7 @@ private const FAPI_server If0 = {
 
 plugin_instantiation_proc(gs_fapiufst_instantiate);      /* check prototype */
 
-int gs_fapiufst_instantiate(i_ctx_t *i_ctx_p, i_plugin_client_memory *client_mem, i_plugin_instance **p_instance)
+int gs_fapiufst_instantiate(i_plugin_client_memory *client_mem, i_plugin_instance **p_instance)
 {   fapi_ufst_server *r = (fapi_ufst_server *)client_mem->alloc(client_mem, sizeof(fapi_ufst_server), "fapi_ufst_server");
 
     if (r == 0)
@@ -1329,14 +1323,6 @@ private void gs_fapiufst_finit(i_plugin_instance *this, i_plugin_client_memory *
 
     if (r->If.ig.d != &ufst_descriptor)
         return; /* safety */
-#if DEBUG_STATIC_FCO
-    gx_UFST_close_static_fco(static_fcHandle[0]);
-    gx_UFST_close_static_fco(static_fcHandle[1]);
-#endif
-#if 0 /* Disabled against a reentrancy problem 
-	 in a single language build for host-based applications. */
-    gx_set_UFST_Callbacks(NULL, NULL, NULL);
-#endif
     release_char_data_inline(r);
     if (r->bInitialized) {
 #	if UFST_REENTRANT

@@ -54,7 +54,7 @@ struct i_plugin_client_memory_s { /* must be copying */
 };
 
 #define plugin_instantiation_proc(proc)\
-  int proc(i_ctx_t *, i_plugin_client_memory *client_mem, i_plugin_instance **instance)
+  int proc(i_plugin_client_memory *client_mem, i_plugin_instance **instance)
 
 #define extern_i_plugin_table()\
   typedef plugin_instantiation_proc((*i_plugin_instantiation_proc));\
