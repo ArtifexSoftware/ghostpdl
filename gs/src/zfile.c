@@ -63,8 +63,6 @@ private int zopen_file(i_ctx_t *, const gs_parsed_file_name_t *pfn,
 		       const char *file_access, stream **ps,
 		       gs_memory_t *mem);
 private iodev_proc_open_file(iodev_os_open_file);
-private void file_init_stream(stream *s, FILE *file, const char *fmode,
-			      byte *buffer, uint buffer_size);
 stream_proc_report_error(filter_report_error);
 
 /*
@@ -1048,66 +1046,6 @@ file_read_string(const byte *str, uint len, ref *pfile, gs_ref_memory_t *imem)
     return 0;
 }
 
-/*
- * Set up a file stream on an OS file.  The caller has allocated the
- * stream and buffer.
- */
-private void
-file_init_stream(stream *s, FILE *file, const char *fmode, byte *buffer,
-		 uint buffer_size)
-{
-    switch (fmode[0]) {
-    case 'a':
-	sappend_file(s, file, buffer, buffer_size);
-	break;
-    case 'r':
-	/* Defeat buffering for terminals. */
-	{
-	    struct stat rstat;
-
-	    fstat(fileno(file), &rstat);
-	    sread_file(s, file, buffer,
-		       (S_ISCHR(rstat.st_mode) ? 1 : buffer_size));
-	}
-	break;
-    case 'w':
-	swrite_file(s, file, buffer, buffer_size);
-    }
-    if (fmode[1] == '+')
-	s->file_modes |= s_mode_read | s_mode_write;
-    s->save_close = s->procs.close;
-    s->procs.close = file_close_file;
-}
-
-/* Open a file stream, optionally on an OS file. */
-/* Return 0 if successful, error code if not. */
-/* On a successful return, the C file name is in the stream buffer. */
-/* If fname==0, set up the file entry, stream, and buffer, */
-/* but don't open an OS file or initialize the stream. */
-int
-file_open_stream(const char *fname, uint len, const char *file_access,
-		 uint buffer_size, stream ** ps, gx_io_device *iodev,
-		 iodev_proc_fopen_t fopen_proc, gs_memory_t *mem)
-{
-    int code;
-    FILE *file;
-    char fmode[4];  /* r/w/a, [+], [b], null */
-
-    if (!iodev)
-	iodev = iodev_default;
-    code = file_prepare_stream(fname, len, file_access, buffer_size, ps, fmode, mem);
-    if (code < 0)
-	return code;
-    if (fname == 0)
-	return 0;
-    code = (*fopen_proc)(iodev, (char *)(*ps)->cbuf, fmode, &file,
-			 (char *)(*ps)->cbuf, (*ps)->bsize);
-    if (code < 0)
-	return code;
-    file_init_stream(*ps, file, fmode, (*ps)->cbuf, (*ps)->bsize);
-    return 0;
-}
-
 /* Report an error by storing it in the stream's error_string. */
 int
 filter_report_error(stream_state * st, const char *str)
@@ -1168,30 +1106,6 @@ filter_open(const char *file_access, uint buffer_size, ref * pfile,
     return 0;
 }
 
-/* Allocate and return a file stream. */
-/* Return 0 if the allocation failed. */
-/* The stream is initialized to an invalid state, so the caller need not */
-/* worry about cleaning up if a later step in opening the stream fails. */
-stream *
-file_alloc_stream(gs_memory_t * mem, client_name_t cname)
-{
-    stream *s;
-    s = s_alloc(mem, cname);
-    if (s == 0)
-	return 0;
-    s_init_ids(s);
-    s->is_temp = 0;		/* not a temp stream */
-    /*
-     * Disable the stream now (in case we can't open the file,
-     * or a filter init procedure fails) so that `restore' won't
-     * crash when it tries to close open files.
-     */
-    s_disable(s);
-    s->prev = 0;
-    s->next = 0;
-    return s;
-}
-
 /* ------ Stream closing ------ */
 
 /*
@@ -1224,41 +1138,6 @@ file_close_disable(stream * s)
     /* Increment the IDs to prevent further access. */
     s->read_id = s->write_id = (s->read_id | s->write_id) + 1;
     return file_close_finish(s);
-}
-
-/* Close a file stream.  This replaces the close procedure in the stream */
-/* for normal (OS) files and for filters. */
-int
-file_close_file(stream * s)
-{
-    stream *stemp = s->strm;
-    gs_memory_t *mem;
-    int code = file_close_disable(s);
-
-    if (code)
-	return code;
-    /*
-     * Check for temporary streams created for filters.
-     * There may be more than one in the case of a procedure-based filter,
-     * or if we created an intermediate stream to ensure
-     * a large enough buffer.  Note that these streams may have been
-     * allocated by file_alloc_stream, so we mustn't free them.
-     */
-    while (stemp != 0 && stemp->is_temp != 0) {
-	stream *snext = stemp->strm;
-
-	mem = stemp->memory;
-	if (stemp->is_temp > 1)
-	    gs_free_object(mem, stemp->cbuf,
-			   "file_close(temp stream buffer)");
-	s_disable(stemp);
-	stemp = snext;
-    }
-    mem = s->memory;
-    gs_free_object(mem, s->cbuf, "file_close(buffer)");
-    if (s->close_strm && stemp != 0)
-	return sclose(stemp);
-    return 0;
 }
 
 /* Close a file object. */

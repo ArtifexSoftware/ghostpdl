@@ -19,6 +19,7 @@
 #  define stream_INCLUDED
 
 #include "scommon.h"
+#include "gxiodev.h"
 #include "srdline.h"
 
 /* See scommon.h for documentation on the design of streams. */
@@ -336,6 +337,20 @@ void s_init_state(stream_state *, const stream_template *, gs_memory_t *);
 /* create a stream for a file object */
 int file_prepare_stream(const char *, uint, const char *,
 		 uint, stream **, char[4], gs_memory_t *);
+
+/* Set up a file stream on an OS file.  */
+void file_init_stream(stream *, FILE *, const char *, byte *, uint);
+
+/* Open a file stream, optionally on an OS file. */
+int file_open_stream(const char *, uint, const char *,
+		 uint, stream **, gx_io_device *,
+		 iodev_proc_fopen_t, gs_memory_t *);
+
+/* Allocate and return a file stream. */
+stream * file_alloc_stream(gs_memory_t *, client_name_t);
+
+/* Close a file stream. */
+int file_close_file(stream *);
 
 /* Create a stream on a string or a file. */
 void sread_string(stream *, const byte *, uint),
