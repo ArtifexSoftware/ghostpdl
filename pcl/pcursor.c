@@ -282,26 +282,35 @@ pcl_set_cap_y(
     return 0;
 }
 
+private inline float 
+motion_args(pcl_args_t *pargs, bool truncate)
+{
+    float arg = float_arg(pargs);
+    if (truncate)
+        arg = floor(arg);
+    return arg;
+}
+        
 /* some convenient short-hand for the cursor movement commands */
 
 private inline void
 do_horiz_motion(
    pcl_args_t  *pargs,
    pcl_state_t *pcs,
-   coord        mul
+   coord        mul,
+   bool          truncate_arg
 )
 {
-    float x = float_arg(pargs) * (float)mul;
-    pcl_set_cap_x(pcs, (coord)x, arg_is_signed(pargs), false);
+    pcl_set_cap_x(pcs, motion_args(pargs, truncate_arg) * mul, arg_is_signed(pargs), false);
     return;
 }
 
 
 private inline int
 do_vertical_move(pcl_state_t *pcs, pcl_args_t *pargs, float mul, 
-                 bool use_margins, bool by_row, bool by_row_command) 
+                 bool use_margins, bool by_row, bool by_row_command, bool truncate_arg) 
 {
-    return pcl_set_cap_y(pcs, float_arg(pargs) * mul,
+    return pcl_set_cap_y(pcs, motion_args(pargs, truncate_arg) * mul,
                          arg_is_signed(pargs), use_margins, by_row,
                          by_row_command);
 }
@@ -508,7 +517,7 @@ horiz_cursor_pos_columns(
     pcl_state_t *   pcs
 )
 {
-    do_horiz_motion(pargs, pcs, pcl_hmi(pcs));
+    do_horiz_motion(pargs, pcs, pcl_hmi(pcs), false);
     return 0;
 }
 
@@ -521,7 +530,7 @@ horiz_cursor_pos_decipoints(
     pcl_state_t *   pcs
 )
 {
-    do_horiz_motion(pargs, pcs, 10.0);
+    do_horiz_motion(pargs, pcs, 10.0, false);
     return 0;
 }
 
@@ -536,7 +545,7 @@ horiz_cursor_pos_units(
 {
     if ( pcs->personality == rtl )
         dprintf(pcs->memory, "Warning: device/resolution dependent units used\n" );
-    do_horiz_motion(pargs, pcs, pcs->uom_cp);
+    do_horiz_motion(pargs, pcs, pcs->uom_cp, true);
     return 0;
 }
 
@@ -601,7 +610,7 @@ vert_cursor_pos_rows(
     pcl_state_t *   pcs
 )
 {
-    return do_vertical_move(pcs, pargs, pcs->vmi_cp, false, true, true);
+    return do_vertical_move(pcs, pargs, pcs->vmi_cp, false, true, true, false);
 }
 
 /*
@@ -613,7 +622,7 @@ vert_cursor_pos_decipoints(
     pcl_state_t *   pcs
 )
 {
-    return do_vertical_move(pcs, pargs, 10.0, false, false, false);
+    return do_vertical_move(pcs, pargs, 10.0, false, false, false, false);
 }
 
 /*
@@ -627,7 +636,7 @@ vert_cursor_pos_units(
 {
     if ( pcs->personality == rtl )
         dprintf(pcs->memory, "Warning: device/resolution dependent units used\n" );
-    return do_vertical_move(pcs, pargs, pcs->uom_cp, false, false, false);
+    return do_vertical_move(pcs, pargs, pcs->uom_cp, false, false, false, true);
 }
 
 /*

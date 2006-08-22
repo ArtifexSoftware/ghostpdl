@@ -350,6 +350,7 @@ private int /* ESC & k <mode> S */
 pcl_set_pitch_mode(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int mode = int_arg(pargs);
 	floatp cpi;
+        int code = 0;
 
 	/*
 	 * The specification in the PCL5 Comparison Guide is:
@@ -362,13 +363,14 @@ pcl_set_pitch_mode(pcl_args_t *pargs, pcl_state_t *pcs)
 	  case 4: cpi = 12.0; break;
 	  default: return e_Range;
 	  }
-	/*
-	 * It's anybody's guess what this is supposed to do.
-	 * We're guessing that it sets the pitch of the currently
-	 * selected font parameter set (primary or secondary) to
-	 * the given pitch in characters per inch.
-	 */
-	return pcl_pitch(cpi, pcs, pcs->font_selected);
+
+        /* set the pitch in both primary and secondary font selection tables */
+        {
+            code = pcl_pitch(cpi, pcs, primary);
+            if (code == 0)
+                code = pcl_pitch(cpi, pcs, secondary);
+        }
+	return code;
 }
 
 /* Initialization */

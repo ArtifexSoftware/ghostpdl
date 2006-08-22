@@ -821,12 +821,15 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
               pl_dict_undef(&pcs->macros, current_macro_id, current_macro_id_size);
             break;
           case 100:
-              pcl_end_page_if_marked(pcs);
             /* media select */
+
             /* this is not sufficiently specified in the PCL
                comparison guide and interacts with the control panel
-               so we do not implement it (yet). */
-            return e_Unimplemented;
+               so we do not implement it completely.  We have verified
+               the following occurs: */
+
+              pcl_end_page_if_marked(pcs);
+              pcl_home_cursor(pcs);
           default:
             return e_Range;
           }

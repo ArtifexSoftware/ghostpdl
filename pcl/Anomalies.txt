@@ -859,3 +859,13 @@ other font than brush font could be selected and assume this is a bug
 in the HP printer.  Similarly we believe the Dom Casual downloaded
 font should be selected on lines 7 & 8.
 
+
+----
+
+HP Color Laserjet 4600 CET
+
+18-01.BIN page 25 - The vertical bar and checkerboard character are
+missing on this page.  The glyphs are not actually present in the
+downloaded font.  It will work properly with Monotype if the plugins
+are configured correctly.
+
