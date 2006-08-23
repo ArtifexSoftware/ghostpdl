@@ -120,7 +120,13 @@ search_separator(const char **ip, const char *ipe, const char *item, int directi
  * directory references from the concatenation when possible.
  * The trailing zero byte is being added.
  *
+ * Returns "gp_combine_success" if OK and sets '*blen' to the length of
+ * the combined string. If the combined string is too small for the buffer
+ * length passed in (as defined by the initial value of *blen), then the
+ * "gp_combine_small_buffer" code is returned.
+ *
  * Also tolerates/skips leading IODevice specifiers such as %os% or %rom%
+ * When there is a leading '%' in the 'fname' no other processing is done.
  *
  * Examples : 
  *	"/gs/lib" + "../Resource/CMap/H" --> "/gs/Resource/CMap/H"
@@ -156,6 +162,7 @@ gp_file_name_combine_generic(const char *prefix, uint plen, const char *fname, u
 	/* function only handles the default file system */
 	/* NOTE: %os% will subvert the normal processing of prefix and fname */
 	ip = fname;
+	*blen = flen;
 	if (!append(&bp, bpe, &ip, flen))
 	    return gp_combine_small_buffer;
 	return gp_combine_success;
