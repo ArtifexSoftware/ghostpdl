@@ -954,7 +954,7 @@ palette_do_registration(
         't', 'J',
         PCL_COMMAND( "Render Algorithm",
                      set_render_algorithm,
-                     pca_neg_ok | pca_big_ignore | pca_in_rtl | pca_raster_graphics
+                     pca_neg_ok | pca_big_ignore | pca_in_rtl 
                      )
     },
     END_CLASS
