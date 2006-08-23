@@ -362,8 +362,9 @@ set_graphics_resolution(
     pcl_state_t *   pcs
 )
 {
-    uint            res = uint_arg(pargs);
+    uint            res = arg_is_present(pargs) ? uint_arg(pargs) : 75;
     uint            qi = (uint)floor(600.0 / (floatp)res);
+
 
     /* HP does not allow 120 dpi as a resolution */
     qi = (qi == 0 ? 1 : (qi > 8 ? 8 : (qi == 5 ? 4 : qi)));

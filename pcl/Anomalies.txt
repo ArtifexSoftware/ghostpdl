@@ -869,3 +869,36 @@ missing on this page.  The glyphs are not actually present in the
 downloaded font.  It will work properly with Monotype if the plugins
 are configured correctly.
 
+----
+
+HP Color Laserjet 4600 CET printed on the Color Laserjet 4550
+
+21-09.BIN :
+
+	  4550 printer infinite loop raster width range test.
+
+
+21-10.BIN :
+
+	  4550 printer infinite loop raster height range test.
+
+
+21-10.BIN page 24, 25 and
+21-12.BIN page 17 :
+	  
+	  Raster height > raster sent and the palette
+0 entry is not white.  We zero fill with white, HP with Black or 
+the palette color at entry 0.  
+
+
+21-12.BIN page 19 :
+
+	   HP incorrectly renders the first image stretching it 
+in the X dimension.
+
+
+21-13.BIN page 2 :
+
+	   HP incorrectly renders 4 of the rasters on the page 
+Black triangles appear in a regular pattern across the raster  
+

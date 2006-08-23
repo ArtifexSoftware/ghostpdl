@@ -741,7 +741,7 @@ process_zero_rows(
         gs_state *  pgs = prast->pcs->pgs;
 
         close_raster(prast, false);
-        if ((prast->zero_is_black) || !prast->transparent) {
+        if ((prast->zero_is_black) || !prast->pcs->source_transparent ) {
             gs_rect tmp_rect;
             bool    invert = prast->zero_is_white;
 
@@ -749,20 +749,25 @@ process_zero_rows(
             tmp_rect.p.y = 0.0;
             tmp_rect.q.x = (double)npixels;
             tmp_rect.q.y = (double)nrows;
-            if (invert)
+            if (invert) {
                 gs_setrasterop( pgs,
                                 (gs_rop3_t)rop3_invert_S(gs_currentrasterop(pgs))
                                 );
-            gs_rectfill(pgs, &tmp_rect, 1);
-            if (invert)
+		gs_rectfill(pgs, &tmp_rect, 1 );
+
                 gs_setrasterop( pgs,
                                 (gs_rop3_t)rop3_invert_S(gs_currentrasterop(pgs))
                                 );
+	    } 
+	    else
+		gs_rectfill(pgs, &tmp_rect, 1);
             
         }
 
         prast->src_height -= nrows;
-        gs_translate(pgs, 0.0, (floatp)moveto_nrows); /* HP bug CET21.04 pg 7 */
+	/* NB HP bug CET21.04 pg 7 */
+	/* NB text cap move to moveto_nrows, but raster cap moveto nrows */
+        gs_translate(pgs, 0.0, (floatp)moveto_nrows); 
 
         return 0;
 
@@ -1079,7 +1084,7 @@ pcl_start_raster(
 
     prast->pmem = pcs->memory;
 
-    if ( pcs->source_transparent || pcs->pattern_transparent )
+    if ( pcs->source_transparent || pcs->pattern_transparent) 
         prast->transparent = true;
     else
         prast->transparent = false;
