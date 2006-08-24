@@ -253,6 +253,14 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
     if ( pgls->g.character.size_mode == hpgl_size_not_set ) {
 	if ( pfs->params.proportional_spacing ) {
 	    code = pl_font_char_width(pfs->font, (void *)(pgls->pgs), glyph, &gs_width);
+            /* hack until this code gets written properly, the
+               following should amount to a percentage of the
+               em-square the space character would occupy... */
+            if (code == 1) {
+                gs_width.y = 0;
+                gs_width.x = pl_fp_pitch_cp(&pfs->font->params) / 100.0;
+            }
+                
 	    if ( !pl_font_is_scalable(pfs->font) ) {
 		if ( code == 0 )
 		    *width = gs_width.x	* inches_2_plu(1.0 / pfs->font->resolution.x); 

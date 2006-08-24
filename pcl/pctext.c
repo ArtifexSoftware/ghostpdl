@@ -145,14 +145,13 @@ get_next_char(
     gs_char         chr;
     if (len <= 0)
         return 2;
+    *pis_space = false;
     chr = *pb++;
     len--;
     if (pcl_char_is_2_byte(chr, pcs->text_parsing_method) && (len > 0)) {
         chr = (chr << 8) + *pb++;
         len--;
-        *pis_space = false;
-    } else
-	*pis_space = (chr == ' ' &&  plfont->storage == pcds_internal);
+    }
     *ppb = pb;
     *plen = len;
     *porig_char = chr;

@@ -499,7 +499,11 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 					  pcl_get_command_definition(pcs->memory, 
 								     pst, 0, 0, chr);
 					if ( !cdefn )
-					  { /* Skip the ESC, and current char */
+					  { 
+                                              /* Skip the ESC, back up
+                                                    to the char following the
+                                                    ESC. */
+                                              --p;
 					    continue;
 					  }
 					if_debug1(pcs->memory, 'i', "   [%s]\n",

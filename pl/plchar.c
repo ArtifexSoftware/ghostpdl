@@ -911,7 +911,6 @@ pl_tt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, flo
     gs_glyph unused_glyph = gs_no_glyph;
     gs_glyph glyph = pl_tt_encode_char(plfont->pfont, char_code, unused_glyph);
     if ( glyph == gs_no_glyph ) {
-        dprintf(plfont->pfont->memory, "warning tt font glyph not found\n");
         return 1;
     }
     return gs_type42_get_metrics((gs_font_type42 *)plfont->pfont,
