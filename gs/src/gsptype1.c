@@ -404,7 +404,7 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst, const gs_state * saved,
     int code;
 
     /* Adjust the stepping matrix so all coefficients are >= 0. */
-    if (xx == 0 || yy == 0) {	/* We know that both xy and yx are non-zero. */
+    if (xx == 0 || yy == 0) { /* We know that both xy and yx are non-zero. */
 	double temp;
 
 	temp = xx, xx = yx, yx = temp;
