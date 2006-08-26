@@ -58,6 +58,13 @@ set_gs_font(
     gs_setfont(pcs->pgs, pfont);
 }
 
+/* uncomment the following definition to treat map type 0 as defined
+   in the specification.  The default is to use the behavior we have
+   observed on several HP devices.  Map type 0 is treated as map type
+   1. */
+
+/* #define USE_MAP_TYPE_IN_SPECIFICATION */
+
 /*
  * Check if a character code is considered "printable" by given symbol set.
  */
@@ -84,6 +91,11 @@ is_printable(
 	    /* PCL TRM 11-18 */
 	    map_type = pcs->font->font_type;
 	}
+
+#ifndef USE_MAP_TYPE_IN_SPECIFICATION
+        if ( map_type == 0 )
+            map_type = 1;
+#endif /* USE_MAP_TYPE_IN_SPECIFICATION */
 
 	if ( map_type == 0 )
 	    printable = (chr >= ' ') && (chr <= '\177'); 

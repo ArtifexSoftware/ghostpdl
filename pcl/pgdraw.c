@@ -181,24 +181,19 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 		range_y = pgls->g.scaling_params.pmax.y -
 		  pgls->g.scaling_params.pmin.y,
 		scale_y = window_y / range_y;
-
+#define SIGN(x) ((x) < 0 ? -1.0 : 1.0)
 	      
 	      if ( pgls->g.scaling_type == hpgl_scaling_isotropic ) {
-		  /* it is unclear what should happen if scale x and
-                     scale y have different signs for now we do
-                     nothing */
-		  if ( scale_x * scale_y < 0 )
-		      ;
-		  else if ( scale_x > scale_y ) { /* Reduce the X scaling. */
-		      origin_x += range_x * (scale_x - scale_y) *
-			(pgls->g.scaling_params.left / 100.0);
-		      scale_x = scale_y;
-		  } else if ( scale_y > scale_x ) { /* Reduce the Y scaling. */
-		      origin_y += range_y * (scale_y - scale_x) *
-			(pgls->g.scaling_params.bottom / 100.0);
-		      scale_y = scale_x;
-		  }
-	      }
+		  if ( fabs(scale_x) > fabs(scale_y) )  { /* Reduce the X scaling. */
+		      origin_x += SIGN(scale_x) * (range_x * (fabs(scale_x) - fabs(scale_y)) *
+                                                   (pgls->g.scaling_params.left / 100.0));
+                      scale_x = SIGN(scale_x) * fabs(scale_y);
+                  } else { /* Reduce the Y scaling. */
+		      origin_y += SIGN(scale_y) * (range_y * (fabs(scale_y) - fabs(scale_x)) *
+                                                   (pgls->g.scaling_params.bottom / 100.0));
+                      scale_y = SIGN(scale_y) * fabs(scale_x);
+                  }
+              }
 
 	      hpgl_call(gs_make_translation(origin_x, origin_y, pmat));
 	      hpgl_call(gs_matrix_scale(pmat, scale_x, scale_y, pmat));
