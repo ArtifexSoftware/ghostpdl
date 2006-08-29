@@ -349,8 +349,28 @@ int file_open_stream(const char *, uint, const char *,
 /* Allocate and return a file stream. */
 stream * file_alloc_stream(gs_memory_t *, client_name_t);
 
+/*
+ * Macros for checking file validity.
+ * NOTE: in order to work around a bug in the Borland 5.0 compiler,
+ * you must use file_is_invalid rather than !file_is_valid.
+ */
+#define file_is_valid(svar,op)\
+  (svar = fptr(op), (svar->read_id | svar->write_id) == r_size(op))
+#define file_is_invalid(svar,op)\
+  (svar = fptr(op), (svar->read_id | svar->write_id) != r_size(op))
+#define check_file(svar,op)\
+  BEGIN\
+    check_type(*(op), t_file);\
+    if ( file_is_invalid(svar, op) ) return_error(e_invalidaccess);\
+  END
+
 /* Close a file stream. */
 int file_close_file(stream *);
+
+int file_close_finish(stream *);
+
+/* Disable further access on the stream by mangling the id's */
+int file_close_disable(stream *);
 
 /* Create a stream on a string or a file. */
 void sread_string(stream *, const byte *, uint),

@@ -1219,6 +1219,40 @@ s_close_filters(stream **ps, stream *target)
     return 0;
 }
 
+/* ------ Stream closing ------ */
+
+/*
+ * Finish closing a file stream.  This used to check whether it was
+ * currentfile, but we don't have to do this any longer.  This replaces the
+ * close procedure for the std* streams, which cannot actually be closed.
+ *
+ * This is exported for ziodev.c.  */
+int
+file_close_finish(stream * s)
+{
+    return 0;
+}
+
+/*
+ * Close a file stream, but don't deallocate the buffer.  This replaces the
+ * close procedure for %lineedit and %statementedit.  (This is WRONG: these
+ * streams should allocate a new buffer each time they are opened, but that
+ * would overstress the allocator right now.)  This is exported for ziodev.c.
+ * This also replaces the close procedure for the string-reading stream
+ * created for gs_run_string.
+ */
+int
+file_close_disable(stream * s)
+{
+    int code = (*s->save_close)(s);
+
+    if (code)
+	return code;
+    /* Increment the IDs to prevent further access. */
+    s->read_id = s->write_id = (s->read_id | s->write_id) + 1;
+    return file_close_finish(s);
+}
+
 /* ------ NullEncode/Decode ------ */
 
 /* Process a buffer */

@@ -42,7 +42,8 @@ private int
 
 /* ------ File reading ------ */
 
-extern const uint file_default_buffer_size;
+#define DEFAULT_BUFFER_SIZE 2048
+const uint file_default_buffer_size = DEFAULT_BUFFER_SIZE;
 
 /* Prepare a stream with a file name. */
 /* Return 0 if successful, error code if not. */

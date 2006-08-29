@@ -48,21 +48,6 @@ extern stream *const invalid_file_entry;
 void make_invalid_file(ref *);
 
 /*
- * Macros for checking file validity.
- * NOTE: in order to work around a bug in the Borland 5.0 compiler,
- * you must use file_is_invalid rather than !file_is_valid.
- */
-#define file_is_valid(svar,op)\
-  (svar = fptr(op), (svar->read_id | svar->write_id) == r_size(op))
-#define file_is_invalid(svar,op)\
-  (svar = fptr(op), (svar->read_id | svar->write_id) != r_size(op))
-#define check_file(svar,op)\
-  BEGIN\
-    check_type(*(op), t_file);\
-    if ( file_is_invalid(svar, op) ) return_error(e_invalidaccess);\
-  END
-
-/*
  * If a file is open for both reading and writing, its read_id, write_id,
  * and stream procedures and modes reflect the current mode of use;
  * an id check failure will switch it to the other mode.
