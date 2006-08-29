@@ -157,6 +157,8 @@ hpgl_do_reset(
 	hpgl_PM(&hpgl_args, pcs);
 	hpgl_args_set_int(&hpgl_args,2);
 	hpgl_PM(&hpgl_args, pcs);
+        hpgl_args_setup(&hpgl_args);
+        hpgl_IP(&hpgl_args, pcs);
     }
 
     if ((type & pcl_reset_picture_frame) != 0) {

@@ -916,7 +916,7 @@ pl_tt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, flo
     return gs_type42_get_metrics((gs_font_type42 *)plfont->pfont,
                                   glyph, metrics);
 }
-    
+
 /* Get character existence and escapement for a TrueType font. */
 private int
 pl_tt_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
