@@ -27,11 +27,21 @@ typedef struct gx_device_jpeg_s {
     /* Additional parameters */
     int JPEGQ;			/* quality on IJG scale */
     float QFactor;		/* quality per DCTEncode conventions */
-    /* JPEGQ overrides QFactor if both are specified. */
+    /* JPEGQ overrides QFactor if both are specified. */    
+
+    /** 1.0 default 2.0 is twice as big 
+     */
+    gs_point ViewScale;
+
+    /** translation needs to have scalefactor multiplied in.
+     */
+    gs_point ViewTrans;
+
 } gx_device_jpeg;
 
 /* The device descriptor */
 private dev_proc_get_params(jpeg_get_params);
+private dev_proc_get_initial_matrix(jpeg_get_initial_matrix);
 private dev_proc_put_params(jpeg_put_params);
 private dev_proc_print_page(jpeg_print_page);
 private dev_proc_map_color_rgb(jpegcmyk_map_color_rgb);
@@ -47,29 +57,67 @@ private dev_proc_map_cmyk_color(jpegcmyk_map_cmyk_color);
 #  define Y_DPI 72
 #endif
 
-/* 24-bit color RGB */
+/* 24-bit color */
 
 private const gx_device_procs jpeg_procs =
-prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		       gx_default_rgb_map_rgb_color,
-		       gx_default_rgb_map_color_rgb,
-		       jpeg_get_params, jpeg_put_params);
+{
+    gdev_prn_open,
+    jpeg_get_initial_matrix,	/* get_initial_matrix */
+    NULL,			/* sync_output */
+    gdev_prn_output_page,
+    gdev_prn_close,
+    gx_default_rgb_map_rgb_color,/* map_rgb_color */
+    gx_default_rgb_map_color_rgb,
+    NULL,			/* fill_rectangle */
+    NULL,			/* tile_rectangle */
+    NULL,			/* copy_mono */
+    NULL,			/* copy_color */
+    NULL,			/* draw_line */
+    NULL,			/* get_bits */
+    jpeg_get_params,
+    jpeg_put_params,
+    NULL,
+    NULL,			/* get_xfont_procs */
+    NULL,			/* get_xfont_device */
+    NULL,			/* map_rgb_alpha_color */
+    gx_page_device_get_page_device
+};
 
 const gx_device_jpeg gs_jpeg_device =
 {prn_device_std_body(gx_device_jpeg, jpeg_procs, "jpeg",
 		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		     X_DPI, Y_DPI, 0, 0, 0, 0, 24, jpeg_print_page),
  0,				/* JPEGQ: 0 indicates not specified */
- 0.0				/* QFactor: 0 indicates not specified */
+ 0.0,				/* QFactor: 0 indicates not specified */
+ { 1.0, 1.0 },                  /* ViewScale 1 to 1 */ 
+ { 0.0, 0.0 }                   /* translation 0 */ 
 };
 
 /* 8-bit gray */
 
 private const gx_device_procs jpeggray_procs =
-prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		       gx_default_gray_map_rgb_color,
-		       gx_default_gray_map_color_rgb,
-		       jpeg_get_params, jpeg_put_params);
+{
+    gdev_prn_open,
+    jpeg_get_initial_matrix,	/* get_initial_matrix */
+    NULL,			/* sync_output */
+    gdev_prn_output_page,
+    gdev_prn_close,
+    gx_default_gray_map_rgb_color,/* map_rgb_color */
+    gx_default_gray_map_color_rgb,
+    NULL,			/* fill_rectangle */
+    NULL,			/* tile_rectangle */
+    NULL,			/* copy_mono */
+    NULL,			/* copy_color */
+    NULL,			/* draw_line */
+    NULL,			/* get_bits */
+    jpeg_get_params,
+    jpeg_put_params,
+    NULL,
+    NULL,			/* get_xfont_procs */
+    NULL,			/* get_xfont_device */
+    NULL,			/* map_rgb_alpha_color */
+    gx_page_device_get_page_device
+};
 
 const gx_device_jpeg gs_jpeggray_device =
 {prn_device_body(gx_device_jpeg, jpeggray_procs, "jpeggray",
@@ -78,9 +126,10 @@ const gx_device_jpeg gs_jpeggray_device =
 		 1, 8, 255, 0, 256, 0,
 		 jpeg_print_page),
  0,				/* JPEGQ: 0 indicates not specified */
- 0.0				/* QFactor: 0 indicates not specified */
+ 0.0,				/* QFactor: 0 indicates not specified */
+ { 1.0, 1.0 },                  /* ViewScale 1 to 1 */ 
+ { 0.0, 0.0 }                   /* translation 0 */ 
 };
-
 /* 32-bit CMYK */
 
 private const gx_device_procs jpegcmyk_procs =
@@ -111,7 +160,9 @@ const gx_device_jpeg gs_jpegcmyk_device =
 		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		     X_DPI, Y_DPI, 0, 0, 0, 0, 32, jpeg_print_page),
  0,				/* JPEGQ: 0 indicates not specified */
- 0.0				/* QFactor: 0 indicates not specified */
+ 0.0,				/* QFactor: 0 indicates not specified */
+ { 1.0, 1.0 },                  /* ViewScale 1 to 1 */ 
+ { 0.0, 0.0 }                   /* translation 0 */ 
 };
 
 
@@ -152,13 +203,25 @@ jpeg_get_params(gx_device * dev, gs_param_list * plist)
     gx_device_jpeg *jdev = (gx_device_jpeg *) dev;
     int code = gdev_prn_get_params(dev, plist);
     int ecode;
-
+    float float2double;
     if (code < 0)
 	return code;
 
     if ((ecode = param_write_int(plist, "JPEGQ", &jdev->JPEGQ)) < 0)
 	code = ecode;
     if ((ecode = param_write_float(plist, "QFactor", &jdev->QFactor)) < 0)
+	code = ecode;
+    float2double = jdev->ViewScale.x;
+    if ((ecode = param_write_float(plist, "ViewScaleX", &float2double)) < 0)
+	code = ecode;
+    float2double = jdev->ViewScale.y;
+    if ((ecode = param_write_float(plist, "ViewScaleY", &float2double)) < 0)
+	code = ecode;
+    float2double = jdev->ViewTrans.x;
+    if ((ecode = param_write_float(plist, "ViewTransX", &float2double)) < 0)
+	code = ecode;
+    float2double = jdev->ViewTrans.y;
+    if ((ecode = param_write_float(plist, "ViewTransY", &float2double)) < 0)
 	code = ecode;
 
     return code;
@@ -174,6 +237,8 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_name param_name;
     int jq = jdev->JPEGQ;
     float qf = jdev->QFactor;
+    float fparam;
+    int t;
 
     switch (code = param_read_int(plist, (param_name = "JPEGQ"), &jq)) {
 	case 0:
@@ -203,15 +268,136 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
 	    break;
     }
 
-    if (ecode < 0)
-	return ecode;
+
+    code = param_read_float(plist, (param_name = "ViewScaleX"), &fparam);
+    if ( code == 0 ) {
+	if (fparam < 1.0)
+	    param_signal_error(plist, param_name, gs_error_limitcheck);
+	else
+	    jdev->ViewScale.x = fparam;
+    }
+    else if ( code < 1 ) {
+	ecode = code;
+	param_signal_error(plist, param_name, code);
+    }
+
+    code = param_read_float(plist, (param_name = "ViewScaleY"), &fparam);
+    if ( code == 0 ) {
+	if (fparam < 1.0)
+	    param_signal_error(plist, param_name, gs_error_limitcheck);
+	else
+	    jdev->ViewScale.y = fparam;
+    }
+    else if ( code < 1 ) {
+	ecode = code;
+	param_signal_error(plist, param_name, code);
+    }
+
+    /* pixels in desired dpi, auto negative ( moves up and left ) */ 
+    code = param_read_float(plist, (param_name = "ViewTransX"), &fparam);
+    if ( code == 0 ) {
+	jdev->ViewTrans.x = fparam;
+    }
+    else if ( code < 1 ) {
+	ecode = code;
+	param_signal_error(plist, param_name, code);
+    }
+
+    code = param_read_float(plist, (param_name = "ViewTransY"), &fparam);
+    if ( code == 0 ) {
+	jdev->ViewTrans.y = fparam;
+    }
+    else if ( code < 1 ) {
+	ecode = code;
+	param_signal_error(plist, param_name, code);
+    }  
     code = gdev_prn_put_params(dev, plist);
     if (code < 0)
 	return code;
 
+    if (ecode < 0)
+	return ecode;
+
     jdev->JPEGQ = jq;
     jdev->QFactor = qf;
     return 0;
+}
+
+/******************************************************************
+ This device supports translation and scaling.
+
+0123456  
+
+0PPPPPPP  0 is origin
+PPPPPPPP  1 is x1,y1 (2,2)
+PP1vvvPP  2 is x2,y2 (6,6)
+PPvvvvPP  v is viewport, P is original page
+PPvvvvPP
+PPPPPP2P
+PPPPPPPP
+  
+Given a view port in pixels starting at x1,y1   
+where x1 < width, y1 < height in pixels
+
+ViewScaleX = desired Resolution / HWResolution ; 1.0 default 
+ViewScaleY = desired Resolution / HWResolution
+
+HWResolutionX = desired dpi at 1:1 scaling     ; 72dpi default  
+HWResolutionY = desired dpi at 1:1 scaling
+
+ViewTransX = x1 * ViewScaleX                   ; 0.0 default 
+ViewTransY = y1 * ViewScaleY
+
+if initial matrix multiplies ViewScaleX in then translation is limited to
+multiples of the HWResolution.
+
+***************************************************************************/
+
+private void
+jpeg_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
+{
+    gx_device_jpeg *pdev = (gx_device_jpeg *)dev;
+    floatp fs_res = (dev->HWResolution[0] / 72.0) * pdev->ViewScale.x; 
+    floatp ss_res = (dev->HWResolution[1] / 72.0) * pdev->ViewScale.y; 
+
+    /* NB this device has no paper margins */
+
+    switch(pdev->LeadingEdge) {
+    case 1:
+        pmat->xx = 0;
+        pmat->xy = -ss_res;
+        pmat->yx = -fs_res;
+        pmat->yy = 0;
+        pmat->tx = (pdev->width * pdev->ViewScale.x) - pdev->ViewTrans.x;
+        pmat->ty = (pdev->height * pdev->ViewScale.y) - pdev->ViewTrans.y;
+        break;
+    case 2:
+        pmat->xx = -fs_res;
+        pmat->xy = 0;
+        pmat->yx = 0;
+        pmat->yy = ss_res;
+        pmat->tx = (pdev->width * pdev->ViewScale.x) - pdev->ViewTrans.x;
+        pmat->ty = -pdev->ViewTrans.x;
+        break;
+    case 3:
+        pmat->xx = 0;
+        pmat->xy = ss_res;
+        pmat->yx = fs_res;
+        pmat->yy = 0;
+        pmat->tx = -pdev->ViewTrans.x;
+        pmat->ty = -pdev->ViewTrans.y;
+        break;
+    default:
+    case 0:
+        pmat->xx = fs_res;
+        pmat->xy = 0;
+        pmat->yx = 0;
+        pmat->yy = -ss_res;
+        pmat->tx = -pdev->ViewTrans.x;
+        pmat->ty = (pdev->height * pdev->ViewScale.y) - pdev->ViewTrans.y;
+        break;
+    }
+
 }
 
 /* Send the page to the file. */
