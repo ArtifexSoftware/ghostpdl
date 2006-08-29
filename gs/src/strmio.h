@@ -34,57 +34,48 @@ typedef struct gs_memory_s gs_memory_t;
  * file system transparently to the caller. The "%os%" prefix can be used
  * to explicilty access the host file system.
  */
-stream *
-sfopen(const char *path, const char *mode, gs_memory_t *mem);
+stream * sfopen(const char *path, const char *mode, gs_memory_t *mem);
 
 /*
  * Read a number of bytes from a stream, returning number read. Return count
  * will be less than count if EOF or error. Return count is number of elements.
  */
-int
-sfread(void *ptr, size_t size, size_t count, stream *s);	
+int sfread(void *ptr, size_t size, size_t count, stream *s);	
 
 /*
  * Read a byte from a stream
  */
-int
-sfgetc(stream *s);
+int sfgetc(stream *s);
 
 /*
  * Seek to a position in the stream. Returns the 0, or -1 if error
  */
-int
-sfseek(stream *s, long offset, int whence);
+int sfseek(stream *s, long offset, int whence);
 
 /*
  * Seek to beginning of the file
  */
-int
-srewind(stream *s);;
+int srewind(stream *s);;
 
 /*
  * Return the current position in the stream or -1 if error.
  */
-long
-sftell(stream *s);
+long sftell(stream *s);
 
 /*
  * Return the EOF status, or 0 if not at EOF.
  */
-int
-sfeof(stream *s);
+int sfeof(stream *s);
 
 /*
  * Return the error status, or 0 if no error
  */
-int
-sferror(stream *s);
+int sferror(stream *s);
 
 /*
  * close and free the stream. Any further access (including another call to sfclose())
  * to  the  stream results in undefined behaviour (reference to freed memory);
  */
-int
-sfclose(stream *s);
+int sfclose(stream *s);
 
 #endif /* strmio_INCLUDED */
