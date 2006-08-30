@@ -10,8 +10,10 @@
    or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
+
 /* $Id$ */
 /* "Plain bits" devices to measure rendering time. */
+
 #include "math_.h"
 #include "gdevprn.h"
 #include "gsparam.h"
@@ -19,6 +21,7 @@
 #include "gscrdp.h"
 #include "gxlum.h"
 #include "gdevdcrd.h"
+#include "gsutil.h" /* for bittags hack */
 
 /* Define the device parameters. */
 #ifndef X_DPI
@@ -29,13 +32,17 @@
 #endif
 
 /* The device descriptor */
+private dev_proc_get_color_mapping_procs(bittag_get_color_mapping_procs);
+private dev_proc_map_rgb_color(bittag_rgb_map_rgb_color);
+private dev_proc_map_color_rgb(bittag_map_color_rgb);
+private dev_proc_put_params(bittag_put_params);
 private dev_proc_map_rgb_color(bit_mono_map_color);
+private dev_proc_map_rgb_color(bit_forcemono_map_rgb_color);
 private dev_proc_map_color_rgb(bit_map_color_rgb);
 private dev_proc_map_cmyk_color(bit_map_cmyk_color);
 private dev_proc_get_params(bit_get_params);
 private dev_proc_put_params(bit_put_params);
 private dev_proc_print_page(bit_print_page);
-private dev_proc_decode_color(bit_decode_color);
 
 #define bit_procs(encode_color)\
 {	gdev_prn_open,\
@@ -90,7 +97,7 @@ private dev_proc_decode_color(bit_decode_color);
 	NULL,	/* get_color_mapping_procs */\
 	NULL,	/* get_color_comp_index */\
 	encode_color,		/* encode_color */\
-	bit_decode_color	/* decode_color */\
+	bit_map_color_rgb	/* decode_color */\
 }
 
 /*
@@ -134,6 +141,232 @@ const gx_device_printer gs_bitcmyk_device =
 		 4, 4, 1, 1, 2, 2, bit_print_page)
 };
 
+static const gx_device_procs bitrgbtags_procs =
+    { 
+        gdev_prn_open,                        /* open_device */
+        gx_default_get_initial_matrix,        /* initial_matrix */
+        ((void *)0),                        /* sync_output */
+        gdev_prn_output_page,                 /* output page */
+        gdev_prn_close,                       /* close_device */
+        bittag_rgb_map_rgb_color,             /* map rgb color */
+        bittag_map_color_rgb,                 /* map color rgb */
+        ((void *)0),                        /* fill_rectangle */
+        ((void *)0),                        /* tile rectangle */
+        ((void *)0),                        /* copy mono */
+        ((void *)0),                        /* copy color */
+        ((void *)0),                        /* obsolete draw line */
+        ((void *)0),                        /* get_bits */
+        gdev_prn_get_params,                  /* get params */
+        bittag_put_params,                    /* put params */
+        bittag_rgb_map_rgb_color,             /* map_cmyk_color */
+        ((void *)0),                        /* get_xfonts */
+        ((void *)0),                        /* get_xfont_device */
+        ((void *)0),                        /* map_rgb_alpha_color */
+        gx_page_device_get_page_device,       /* get_page_device */
+        ((void *)0),                        /* get_alpha_bits */
+        ((void *)0),                        /* copy_alpha */
+        ((void *)0),                        /* get_band */
+        ((void *)0),                        /* copy_rop */
+        ((void *)0),                       /* fill_path */
+        ((void *)0),                       /* stroke_path */
+        ((void *)0),                       /* fill_mask */
+        ((void *)0),                        /* fill_trapezoid */
+        ((void *)0),                        /* fill_parallelogram */
+        ((void *)0),                        /* fill_triangle */
+        ((void *)0),                        /* draw_thin_line */
+        ((void *)0),                        /* begin_image */
+        ((void *)0),                        /* image_data */
+        ((void *)0),                        /* end_image */
+        ((void *)0),                        /* strip_tile_rectangle */
+        ((void *)0),                        /* strip_copy_rop */
+        ((void *)0),                        /* get_clipping_box */
+        ((void *)0),                        /* begin_typed_image */
+        ((void *)0),                        /* get_bits_rectangle */
+        ((void *)0),                        /* map_color_rgb_alpha */
+        ((void *)0),                       /* create_compositor */
+        ((void *)0),                       /* get_hardware_params */
+        ((void *)0),                       /* text_begin */
+        ((void *)0),                       /* finish_copydevice */
+        ((void *)0),                       /* begin_transparency_group */
+        ((void *)0),                       /* end_transparency_group */
+        ((void *)0),                       /* begin_transparency_mask */
+        ((void *)0),                       /* end_transparency_mask */
+        ((void *)0),                       /* discard_transparency_layer */
+        bittag_get_color_mapping_procs,      /* get_color_mapping_procs */
+        ((void *)0),                       /* get_color_comp_index */
+        bittag_rgb_map_rgb_color,            /* encode_color */
+        bittag_map_color_rgb                 /* decode_color */
+    };
+
+const gx_device_printer gs_bitrgbtags_device =
+    {
+        sizeof(gx_device_printer),
+        &bitrgbtags_procs,
+        "bitrgbtags",
+        0 ,                             /* memory */
+        &st_device_printer,
+        0 ,                             /* stype_is_dynamic */
+        0 ,                             /* finalize */
+        { 0 } ,                         /* rc header */
+        0 ,                             /* retained */
+        0 ,                             /* is open */
+        0,                              /* max_fill_band */
+        {                               /* color infor */
+            4,                          /* max_components */
+            4,                          /* num_components */
+            GX_CINFO_POLARITY_ADDITIVE, /* polarity */
+            32,                         /* depth */                        
+            GX_CINFO_COMP_NO_INDEX,     /* gray index */
+            255 ,                         /* max_gray */
+            255 ,                         /* max_colors */
+            256 ,                         /* dither grays */
+            256 ,                         /* dither colors */
+            { 1, 1 } ,                  /* antialiasing */
+            GX_CINFO_UNKNOWN_SEP_LIN,   /* sep and linear */
+            { 0 } ,                     /* comp shift */
+            { 0 } ,                     /* comp bits */
+            { 0 } ,                     /* comp mask */
+            ( "DeviceRGB" ),            /* color model name */
+            GX_CINFO_OPMODE_UNKNOWN ,   /* overprint mode */
+            0                           /* process comps */
+        },
+        { 
+            ((gx_color_index)(~0)),
+            ((gx_color_index)(~0)) 
+        },
+        (int)((float)(85) * (X_DPI) / 10 + 0.5),
+        (int)((float)(110) * (Y_DPI) / 10 + 0.5),
+        0,
+        { 
+            (float)(((((int)((float)(85) * (X_DPI) / 10 + 0.5)) * 72.0 + 0.5) - 0.5) / (X_DPI)) ,
+            (float)(((((int)((float)(110) * (Y_DPI) / 10 + 0.5)) * 72.0 + 0.5) - 0.5) / (Y_DPI)) },
+        {
+            0,
+            0,
+            0,
+            0 
+        } ,
+        0 ,
+        { X_DPI, Y_DPI } ,
+        { X_DPI, Y_DPI },
+        {(float)(-(0) * (X_DPI)),
+         (float)(-(0) * (Y_DPI))},
+        {(float)((0) * 72.0),
+         (float)((0) * 72.0),
+         (float)((0) * 72.0),
+         (float)((0) * 72.0)},
+        0 ,
+        0 ,
+        1 ,
+        0 ,
+        0 ,
+        0 ,
+        0 ,
+        { 
+            gx_default_install,
+            gx_default_begin_page,
+            gx_default_end_page
+        },
+        { 0 },
+        { 0 },
+        { bit_print_page,
+          gx_default_print_page_copies,
+          { gx_default_create_buf_device,
+            gx_default_size_buf_device,
+            gx_default_setup_buf_device,
+            gx_default_destroy_buf_device },
+          gx_default_get_space_params,
+          gx_default_start_render_thread,
+          gx_default_open_render_device,
+          gx_default_close_render_device,
+          gx_default_buffer_page },
+        { 
+            PRN_MAX_BITMAP,
+            PRN_BUFFER_SPACE,
+            { 0, 0, 0 },
+            0 ,
+            BandingAlways },
+        { 0 },
+        0 ,
+        0 ,
+        0 ,
+        -1,
+        0 ,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0 ,
+        0,
+        0,
+        { 0 }
+    };
+
+static void
+cmyk_cs_to_rgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+{
+    color_cmyk_to_rgb(c, m, y, k, NULL, out);
+};
+
+static void
+static_rgb_cs_to_rgb_cm(gx_device * dev, const gs_imager_state *pis,
+				  frac r, frac g, frac b, frac out[])
+{
+    out[0] = r;
+    out[1] = g;
+    out[2] = b;
+}
+
+static void
+gray_cs_to_rgb_cm(gx_device * dev, frac gray, frac out[])
+{
+    out[0] = out[1] = out[2] = gray;
+}
+
+
+static const gx_cm_color_map_procs bittag_DeviceRGB_procs = {
+    gray_cs_to_rgb_cm, static_rgb_cs_to_rgb_cm, cmyk_cs_to_rgb_cm
+};
+
+private const gx_cm_color_map_procs *
+bittag_get_color_mapping_procs(const gx_device *dev)
+{
+    return &bittag_DeviceRGB_procs;
+}
+
+private gx_color_index
+bittag_rgb_map_rgb_color(gx_device * dev, const gx_color_value cv[])
+{
+    return
+        ((cv[2]) >> ((sizeof(gx_color_value) * 8) - 8)) +
+        ((uint) ((cv[1]) >> ((sizeof(gx_color_value) * 8) - 8)) << 8) +
+        ((ulong) ((cv[0]) >> ((sizeof(gx_color_value) * 8) - 8)) << 16) +
+        ((ulong)gs_current_object_tag() << 24);
+}
+
+private int
+bittag_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4])
+{
+    int depth = 24;
+    int ncomp = 3;
+    int bpc = depth / ncomp;
+    uint mask = (1 << bpc) - 1;
+
+#define cvalue(c) ((gx_color_value)((ulong)(c) * gx_max_color_value / mask))
+
+    gx_color_index cshift = color;
+    cv[2] = cvalue(cshift & mask);
+    cshift >>= bpc;
+    cv[1] = cvalue(cshift & mask);
+    cshift >>= bpc;
+    cv[0] = cvalue(cshift & mask);
+    return 0;
+#undef cvalue
+}
+
 /* Map gray to color. */
 /* Note that 1-bit monochrome is a special case. */
 private gx_color_index
@@ -144,6 +377,28 @@ bit_mono_map_color(gx_device * dev, const gx_color_value cv[])
     gx_color_value gray = cv[0];
 
     return (bpc == 1 ? gx_max_color_value - gray : gray) >> drop;
+}
+
+/* Map RGB to gray shade. */
+/* Only used in CMYK mode when put_params has set ForceMono=1 */
+private gx_color_index
+bit_forcemono_map_rgb_color(gx_device * dev, const gx_color_value cv[])
+{
+    gx_color_value color;
+    int bpc = dev->color_info.depth / 4;	/* This function is used in CMYK mode */
+    int drop = sizeof(gx_color_value) * 8 - bpc;
+    gx_color_value gray, red, green, blue;
+    red = cv[0]; green = cv[1]; blue = cv[2];
+    gray = red;
+    if ((red != green) || (green != blue))
+	gray = (red * (unsigned long)lum_red_weight +
+	     green * (unsigned long)lum_green_weight +
+	     blue * (unsigned long)lum_blue_weight +
+	     (lum_all_weights / 2))
+		/ lum_all_weights;
+
+    color = (gx_max_color_value - gray) >> drop;	/* color is in K channel */
+    return color;
 }
 
 /* Map color to RGB.  This has 3 separate cases, but since it is rarely */
@@ -194,51 +449,6 @@ bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4])
 	    break;
     }
     return 0;
-}
-
-/* 
- * Decode a gx_color_index back to the original color values.  This has 3
- * separate cases, but since it is rarely  used, we do a case test rather
- * than providing 3 separate routines.
- */
-private int
-bit_decode_color(gx_device * dev, gx_color_index color, gx_color_value * cv)
-{
-    int depth = dev->color_info.depth;
-    int ncomp = REAL_NUM_COMPONENTS(dev);
-    int bpc = depth / ncomp;
-    uint mask = (1 << bpc) - 1;
-
-    switch (ncomp) {
-	case 1:		/* gray */
-	    cv[0] =
-		(depth == 1 ? (color ? 0 : gx_max_color_value) :
-		 cvalue(color));
-	    break;
-	case 3:		/* RGB */
-	    {
-		gx_color_index cshift = color;
-
-		cv[2] = cvalue(cshift & mask);
-		cshift >>= bpc;
-		cv[1] = cvalue(cshift & mask);
-		cv[0] = cvalue(cshift >> bpc);
-	    }
-	    break;
-	case 4:		/* CMYK */
-	    {
-		gx_color_index cshift = color;
-
-		cv[3] = cvalue(cshift & mask);
-		cshift >>= bpc;
-		cv[2] = cvalue(cshift & mask);
-		cshift >>= bpc;
-		cv[1] = cvalue(cshift & mask);
-		cv[0] = cvalue(cshift >> bpc);
-	    }
-	    break;
-    }
-    return 0;
 #undef cvalue
 }
 
@@ -257,6 +467,12 @@ bit_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
 
+private int
+bittag_put_params(gx_device * pdev, gs_param_list * plist)
+{
+    gs_enable_object_tagging();
+    return gdev_prn_put_params(pdev, plist);
+}
 /* Get parameters.  We provide a default CRD. */
 private int
 bit_get_params(gx_device * pdev, gs_param_list * plist)
@@ -278,7 +494,7 @@ bit_get_params(gx_device * pdev, gs_param_list * plist)
 
     ecode = gdev_prn_get_params(pdev, plist);
     code = sample_device_crd_get_params(pdev, plist, "CRDDefault");
-	if (code < 0)
+    if (code < 0)
 	    ecode = code;
     if ((code = param_write_int(plist, "ForceMono", &forcemono)) < 0) {
 	ecode = code;

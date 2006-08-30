@@ -11,8 +11,9 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/*$Id$ */
+/* $Id$ */
 /* Driver text interface support */
+
 #include "memory_.h"
 #include "gstypes.h"
 #include "gdebug.h"
@@ -28,6 +29,7 @@
 #include "gxpath.h"
 #include "gxtext.h"
 #include "gzstate.h"
+#include "gsutil.h"
 
 /* GC descriptors */
 public_st_gs_text_params();
@@ -228,6 +230,7 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
 
     if (text->operation & TEXT_DO_DRAW) {
 	code = gx_effective_clip_path(pgs, &pcpath);
+        gs_set_object_tag(pgs, GS_TEXT_TAG);
 	if (code < 0)
 	    return code;
     }

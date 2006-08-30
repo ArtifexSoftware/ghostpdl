@@ -268,9 +268,8 @@ $(GLOBJ)gsserial.$(OBJ) : $(GLSRC)gsserial.c $(stdpre_h) $(gstypes_h)\
 	$(GLCC) $(GLO_)gsserial.$(OBJ) $(C_) $(GLSRC)gsserial.c
 
 $(GLOBJ)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
- $(gconfigv_h)\
- $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsrect_h) $(gstypes_h)\
- $(gsuid_h) $(gsutil_h)
+ $(gstypes_h) $(gconfigv_h) $(gserror_h) $(gserrors_h) $(gsmemory_h)\
+ $(gsrect_h) $(gsuid_h) $(gsutil_h) $(gzstate_h) $(gxdcolor_h)
 	$(GLCC) $(GLO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
 
 # MD5 digest
@@ -847,9 +846,9 @@ $(GLOBJ)gsmatrix.$(OBJ) : $(GLSRC)gsmatrix.c $(GXERR) $(math__h) $(memory__h)\
 	$(GLCC) $(GLO_)gsmatrix.$(OBJ) $(C_) $(GLSRC)gsmatrix.c
 
 $(GLOBJ)gspaint.$(OBJ) : $(GLSRC)gspaint.c $(GXERR) $(math__h) $(gpcheck_h)\
- $(gspaint_h) $(gspath_h) $(gsropt_h)\
- $(gxdevmem_h) $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h) $(gxpaint_h) $(gxhldevc_h)\
- $(gzcpath_h) $(gzpath_h) $(gzstate_h)
+ $(gsropt_h) $(gsfixed_h) $(gxmatrix_h) $(gspaint_h) $(gspath_h)\
+ $(gzpath_h) $(gxpaint_h) $(gzstate_h) $(gxdevice_h) $(gxdevmem_h)\
+ $(gzcpath_h) $(gxhldevc_h) $(gsutil_h)
 	$(GLCC) $(GLO_)gspaint.$(OBJ) $(C_) $(GLSRC)gspaint.c
 
 $(GLOBJ)gsparam.$(OBJ) : $(GLSRC)gsparam.c $(GXERR) $(memory__h) $(string__h)\
@@ -886,8 +885,9 @@ $(GLOBJ)gsstate.$(OBJ) : $(GLSRC)gsstate.c $(GXERR) $(memory__h)\
 	$(GLCC) $(GLO_)gsstate.$(OBJ) $(C_) $(GLSRC)gsstate.c
 
 $(GLOBJ)gstext.$(OBJ) : $(GLSRC)gstext.c $(memory__h) $(gdebug_h)\
- $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gxfcache_h)\
- $(gxdcolor_h) $(gxdevcli_h) $(gxfont_h) $(gxpath_h) $(gxtext_h) $(gzstate_h)
+ $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h)\
+ $(gxfcache_h) $(gxdevcli_h) $(gxdcolor_h) $(gxfont_h) $(gxpath_h)\
+ $(gxtext_h) $(gzstate_h) $(gsutil_h)
 	$(GLCC) $(GLO_)gstext.$(OBJ) $(C_) $(GLSRC)gstext.c
 
 # We make gsiodevs a separate module so the PS interpreter can replace it.

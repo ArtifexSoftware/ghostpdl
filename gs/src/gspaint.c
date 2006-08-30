@@ -29,6 +29,7 @@
 #include "gxdevmem.h"
 #include "gzcpath.h"
 #include "gxhldevc.h"
+#include "gsutil.h"
 
 /* Define the nominal size for alpha buffers. */
 #define abuf_nominal_SMALL 500
@@ -268,7 +269,18 @@ fill_with_rule(gs_state * pgs, int rule)
 	code = 0;
     } else {
 	int abits, acode, rcode = 0;
+        /* to distinguish text from vectors we hackly look at the
+           target device 1 bit per component is a cache and this is
+           text else it is a path */
 
+        if (gx_device_has_color(gs_currentdevice(pgs))) {
+	    gx_unset_dev_color(pgs);
+            gs_set_object_tag(pgs, GS_PATH_TAG);
+	}
+	else {
+	    gx_unset_dev_color(pgs);
+            gs_set_object_tag(pgs, GS_TEXT_TAG);
+	}
 	gx_set_dev_color(pgs);
 	code = gs_state_color_load(pgs);
 	if (code < 0)
@@ -328,12 +340,20 @@ gs_stroke(gs_state * pgs)
 	}
 	code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
 				     pgs->in_charpath);
-    } else if (gs_is_null_device(pgs->device)) {
+    } if (gs_is_null_device(pgs->device)) {
 	/* Handle separately to prevent gs_state_color_load. */
 	gs_newpath(pgs);
 	code = 0;
     } else {
 	int abits, acode, rcode = 0;
+
+        /* to distinguish text from vectors we hackly look at the
+           target device 1 bit per component is a cache and this is
+           text else it is a path */
+        if (gx_device_has_color(gs_currentdevice(pgs)))
+            gs_set_object_tag(pgs, GS_PATH_TAG);
+        else
+            gs_set_object_tag(pgs, GS_TEXT_TAG);
 
 	gx_set_dev_color(pgs);
 	code = gs_state_color_load(pgs);
@@ -411,6 +431,8 @@ gs_strokepath(gs_state * pgs)
     code = gx_path_assign_free(pgs->path, &spath);
     if (code < 0)
 	return code;
+    /* NB: needs testing with PCL */
     gx_setcurrentpoint(pgs, fixed2float(spath.position.x), fixed2float(spath.position.y));
     return 0;
+
 }

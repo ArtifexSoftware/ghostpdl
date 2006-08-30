@@ -1096,7 +1096,8 @@ $(DD)bitrgbtags.dev : $(DEVS_MAK) $(bit_) $(GLD)page.dev $(GLD)cielib.dev
 	$(ADDMOD) $(DD)bitrgbtags -include $(GLD)cielib
 
 $(GLOBJ)gdevbit.$(OBJ) : $(GLSRC)gdevbit.c $(PDEVH) $(math__h)\
- $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)
+ $(gsparam_h) $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h)\
+ $(gsutil_h)
 	$(GLCC) $(GLO_)gdevbit.$(OBJ) $(C_) $(GLSRC)gdevbit.c
 
 ### ------------------------- .BMP file formats ------------------------- ###
