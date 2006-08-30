@@ -6,6 +6,8 @@
 # This script requires GNU-compatible 'nm' and 'objdump' programs:
 # it has only been tested on (32- and 64-bit) x86 systems.
 
+# $Id: $
+
 USAGE = """\
 Usage: python ocheck.py [<cwd>] <ld-script> (--exclude [from]:[to]* |
          --query [from]:[to]* | --cycles | --verbose)*
