@@ -247,6 +247,8 @@ if p:
     for line in p.readlines():
         diff = diff + line
     p.close()
+else:
+    diff = diff + 'no changes\n'
 
 # Get updated baselines
 baselines = 'The following files had their baselines updated:\n'
@@ -255,7 +257,8 @@ if p:
     for line in p.fromchild.readlines():
         baselines = baselines + line
     p.wait()
-
+else:
+    baselines = baselines + 'no updates\n'
 baselines += "\n\n"
 
 # Prepend checkout times
@@ -264,9 +267,23 @@ times += "SVN checkout ended at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", ti
 times += "Testing revision " + revision + "\n"
 times += "\n"
 
+# Prepend host information
+p = os.popen('hostname -f')
+if p:
+    hostname = string.strip(p.readline())
+    p.close()
+else:
+    hostname = 'unknown host'
+host = "Running regression test on " + hostname + " ("
+p = os.popen('uname -m -o')
+if p:
+    host += string.strip(p.readline())
+    p.close()
+host += ')\n\n'
+
 # Build the report and capture it in a rotating log file
 log = open(gsconf.log_regression, "w")
-msg = times + baselines + diff
+msg = host + times + baselines + diff
 log.write(msg)
 log.write(regout)
 log.close()
