@@ -437,4 +437,8 @@ int s_close_filters(stream **ps, stream *target);
 extern const stream_template s_NullE_template;
 extern const stream_template s_NullD_template;
 
+	/* for ziodev.c */
+int file_close_finish(stream *);
+int file_close_disable(stream *);
+
 #endif /* stream_INCLUDED */

@@ -131,8 +131,6 @@ int filter_open(const char *, uint, ref *, const stream_procs *,
 void make_stream_file(ref *, stream *, const char *);
 
 	/* for ziodev.c */
-int file_close_finish(stream *);
-int file_close_disable(stream *);
 int file_close_file(stream *);
 
 	/* for gsmain.c, interp.c */

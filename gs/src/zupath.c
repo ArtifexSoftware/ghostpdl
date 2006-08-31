@@ -164,6 +164,7 @@ in_path(os_ptr oppath, i_ctx_t *i_ctx_p, gx_device * phdev)
     } else if (code == e_stackunderflow) {
 	/* If 0 elements, definitely a stackunderflow; otherwise, */
 	/* only 1 number, also a stackunderflow. */
+	npop = code;
     } else {			/* Aperture is a user path. */
 	/* We have to set the clipping path without disturbing */
 	/* the current path. */

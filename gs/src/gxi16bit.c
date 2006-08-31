@@ -97,6 +97,8 @@ mask_color16_matches(const frac *v, const gx_image_enum *penum,
     return true;
 }
 
+#if 0 /* unused due to unknown reason */
+
 /* Render an image with more than 8 bits per sample. */
 /* The samples have been expanded into fracs. */
 private int
@@ -323,3 +325,5 @@ err:
     penum->used.y = 0;
     return code;
 }
+
+#endif /* unused due to unknown reason */

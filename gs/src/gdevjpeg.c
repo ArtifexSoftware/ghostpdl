@@ -238,7 +238,6 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
     int jq = jdev->JPEGQ;
     float qf = jdev->QFactor;
     float fparam;
-    int t;
 
     switch (code = param_read_int(plist, (param_name = "JPEGQ"), &jq)) {
 	case 0:

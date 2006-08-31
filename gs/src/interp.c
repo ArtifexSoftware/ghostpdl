@@ -766,7 +766,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
     int code;
     ref token;			/* token read from file or string, */
 				/* must be declared in this scope */
-    register const ref *pvalue;
+    register const ref *pvalue = 0;
     uint opindex;		/* needed for oparrays */
     os_ptr whichp;
 

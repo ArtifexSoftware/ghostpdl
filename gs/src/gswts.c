@@ -115,9 +115,6 @@ typedef struct {
     int l;
 } wts_vec_t;
 
-private int
-gs_wts_to_buf(const wts_screen_t *ws, byte **pbuf);
-
 private void
 wts_vec_set(wts_vec_t *wv, int u, int v, int k, int l)
 {

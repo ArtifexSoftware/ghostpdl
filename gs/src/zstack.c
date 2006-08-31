@@ -83,7 +83,7 @@ zindex(i_ctx_t *i_ctx_p)
 }
 
 /* <obj_n> ... <obj_0> <n> .argindex <obj_n> ... <obj_0> <obj_n> */
-int
+private int
 zargindex(i_ctx_t *i_ctx_p)
 {
     int code = zindex(i_ctx_p);
