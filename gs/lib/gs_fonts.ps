@@ -475,10 +475,13 @@ buildfontdict 3 /.buildfont3 cvx put
         /ProvideUnicodeDecoding get exec
       } if
       readonly          % stack: name fontdict
-  } stopped { /invalidfont signalerror } if
+  } stopped { /.completefont cvx /invalidfont signalerror } if
 } bind odef
 /definefont
- { .completefont
+ {		% Run .completefont in a stopped context so that we can
+	 	% indicate that any errors come from definefont.
+   /.completefont load stopped
+   { /definefont cvx $error /errorname get signalerror } if
                 % If the current allocation mode is global, also enter
                 % the font in LocalFontDirectory.
    .currentglobal
@@ -536,7 +539,11 @@ buildfontdict 3 /.buildfont3 cvx put
                 % Don't bind in definefont, since Level 2 redefines it.
       /definefont .systemvar exec
     }
-    { .completefont pop exch pop
+    {	   % Run .completefont in a stopped context so that we can
+	   % indicate that any errors come from findfont.
+      /.completefont load stopped
+      { /findfont cvx $error /errorname get signalerror } if
+      pop exch pop
     }
    ifelse
    exch .setglobal
