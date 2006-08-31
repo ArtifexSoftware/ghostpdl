@@ -65,7 +65,7 @@ hpgl_is_printable(
 )
 {    
     if ( is_stick )
-	return (chr >= ' ') && (chr <= '\377');
+	return (chr >= ' ') && (chr <= 0xff);
     if ((psm == 0) || (psm->type >= 2))
         return true;
     else if (psm->type == 1)
@@ -1240,6 +1240,7 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 		    case CR :
 		      hpgl_call(hpgl_do_CR(pgls));
 		      continue;
+		    case VERT_TAB :
 		    case FF :
 		      /* does nothing */
 		      spaces = 0, lines = 0;
@@ -1262,21 +1263,20 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 		  continue;
 		}
 print:	     {
+		  const pcl_font_selection_t *pfs =
+		      &pgls->g.font_selection[pgls->g.font_selected];
+		  hpgl_call(hpgl_ensure_font(pgls));
 		  /* if this a printable character print it
 		     otherwise continue, a character can be
 		     printable and undefined in which case
 		     it is printed as a space character */
-		  const pcl_font_selection_t *pfs =
-		      &pgls->g.font_selection[pgls->g.font_selected];
 		  if ( !hpgl_is_printable(pfs->map, ch, 
-					  (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE ) )
+					  (pgls->g.font->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE ) )
 		      continue;
-	      }
-	      hpgl_call(hpgl_ensure_font(pgls));
-	      hpgl_call(hpgl_print_char(pgls, ch));
+		  hpgl_call(hpgl_print_char(pgls, ch));
 	    }
+	  }
 	}
-
 	pgls->g.label.char_count = 0;
 	return 0;
 }

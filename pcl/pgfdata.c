@@ -5054,6 +5054,12 @@ hpgl_stick_segments(const gs_memory_t *mem, void *data, uint char_index)
     short stop = count + offset;
     /* set up tables debending on stick or arc font */
     int i;
+
+    if ( (char_index < 0x20) || 
+	 (char_index > 0xff) || 
+	 ((char_index > 0x7f) && (char_index < 0xa0)) )
+	return 0; /* no glyph */
+
     /* all entries have 3 short entries */
     i = offset;
     while ( i < stop ) {
@@ -5091,6 +5097,12 @@ hpgl_arc_segments(const gs_memory_t *mem, void *data, uint char_index)
     /* set up tables debending on stick or arc font */
     int i;
     /* 3 entries for moveto and lineto and 5 for curveto */
+
+    if ( (char_index < 0x20) || 
+	 (char_index > 0xff) || 
+	 ((char_index > 0x7f) && (char_index < 0xa0)) )
+	return 0; /* no glyph */
+
     i = offset;
     while ( i < stop ) {
 	if ( arc_font_data[i] == FNT_LINETO ) {
@@ -5128,6 +5140,9 @@ hpgl_stick_width(uint char_index)
 private int
 hpgl_arc_width(uint char_index)
 {	
+    if ( char_index < 0x20 || (char_index < 0xa0 && char_index > 0x7f))
+	arc_font_widths[0];
+    /* else */
     return arc_font_widths[char_index - 0x20];
 }
 

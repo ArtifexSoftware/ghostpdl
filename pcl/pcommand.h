@@ -276,6 +276,7 @@ typedef enum {
 #define BS 0x8
 #define HT 0x9
 #define LF 0xa
+#define VERT_TAB 0xb
 #define FF 0xc
 #define CR 0xd
 #define SO 0xe
