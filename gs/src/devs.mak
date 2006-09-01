@@ -1491,6 +1491,54 @@ $(GLOBJ)gdevpnga.$(OBJ) : $(GLSRC)gdevpnga.c $(png__h)\
  $(gdevmem_h) $(gdevpccm_h) $(gdevprn_h)
 	$(CC_) $(I_)$(GLI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(GLO_)gdevpnga.$(OBJ) $(C_) $(GLSRC)gdevpnga.c
 
+
+### --------------------- WTS Halftoning drivers ----------------------  ###
+
+### IMDI from Argyll
+
+IMDISRCDIR=../gs/imdi/
+IMDISRC=../gs/imdi
+
+simdi_=$(GLOBJ)imdi.$(OBJ) $(GLOBJ)imdi_tab.$(OBJ)
+
+$(GLOBJ)imdi.$(OBJ) : $(IMDISRCDIR)imdi.c
+	$(GLCC) $(GLO_)imdi.$(OBJ) $(C_) $(IMDISRCDIR)imdi.c
+
+$(GLOBJ)imdi_tab.$(OBJ) : $(IMDISRCDIR)imdi_tab.c
+	$(GLCC) $(GLO_)imdi_tab.$(OBJ) $(C_) $(IMDISRCDIR)/imdi_tab.c
+
+$(DD)simdi.dev : $(DEVS_MAK) $(simdi_)
+	$(SETMOD) $(DD)simdi $(simdi_)
+
+### WTS halftoning CMYK device
+
+wts_=$(GLOBJ)gdevwts.$(OBJ)
+
+$(GLOBJ)gdevwts.$(OBJ) : $(GLSRC)gdevwts.c $(PDEVH)\
+ $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)
+	$(GLICCCC) -I$(IMDISRC) $(GLO_)gdevwts.$(OBJ) $(C_) $(GLSRC)gdevwts.c
+
+$(DD)wtscmyk.dev : $(DEVS_MAK) $(wts_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)wtscmyk $(wts_)
+
+$(DD)wtsimdi.dev : $(DEVS_MAK) $(wts_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)wtsimdi $(wts_)
+	$(ADDMOD) $(DD)wtsimdi -include $(GLD)sicclib
+	$(ADDMOD) $(DD)wtsimdi -include $(GLD)simdi
+
+### IMDI color converting device
+
+imdi_=$(GLOBJ)gdevimdi.$(OBJ)
+
+$(GLOBJ)gdevimdi.$(OBJ) : $(GLSRC)gdevimdi.c $(PDEVH) \
+    $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)
+	$(GLICCCC) -I$(IMDISRCDIR) $(GLO_)gdevimdi.$(OBJ) $(C_) $(GLSRC)gdevimdi.c
+
+$(DD)imdi.dev : $(DEVS_MAK) $(imdi_) $(GLD)page.dev $(GLD)sicclib.dev $(GLD)simdi.dev
+	$(SETPDEV2) $(DD)imdi $(imdi_)
+	$(ADDMOD) $(DD)imdi -include $(GLD)sicclib
+	$(ADDMOD) $(DD)imdi -include $(GLD)simdi
+
 ### ---------------------- PostScript image format ---------------------- ###
 ### These devices make it possible to print monochrome Level 2 files on a ###
 ###   Level 1 printer, by converting them to a bitmap in PostScript       ###
