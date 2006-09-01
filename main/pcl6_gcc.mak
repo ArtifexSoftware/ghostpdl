@@ -82,7 +82,7 @@ TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 # XL do not need to use the same scaler, but it is necessary to
 # tinker/hack the makefiles to get it to work properly.
 
-# PL_SCALER?=ufst
+#PL_SCALER?=ufst
 PL_SCALER?=afs
 PCL_FONT_SCALER=$(PL_SCALER)
 PXL_FONT_SCALER=$(PL_SCALER)
@@ -94,13 +94,14 @@ PXL_FONT_SCALER=$(PL_SCALER)
 
 # flags for UFST scaler.
 ifeq ($(PL_SCALER), ufst)
-AGFA_LIB=../pl/agfa/rts/lib/
+UFST_ROOT?=../ufst
+AGFA_LIB=$(UFST_ROOT)/rts/lib/
 # hack!!! we append this onto TOP_OBJ to avoid creating another
 # makefile variable.
 EXTRALIBS= $(AGFA_LIB)if_lib.a $(AGFA_LIB)fco_lib.a $(AGFA_LIB)tt_lib.a  $(AGFA_LIB)if_lib.a
 # agfa does not use normalized library names (ie we expect libif.a not
 # agfa's if_lib.a)
-AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ -I../pl/agfa/rts/gray/ -I../pl/agfa/rts/tt/ -DAGFA_FONT_TABLE -DGCCx86
+AGFA_INCLUDES=-I$(UFST_ROOT)/rts/inc/ -I$(UFST_ROOT)/sys/inc/ -I$(UFST_ROOT)/rts/fco/ -I$(UFST_ROOT)/rts/gray/ -I$(UFST_ROOT)/rts/tt/ -DAGFA_FONT_TABLE -DGCCx86
 endif
 
 # flags for artifex scaler
@@ -153,7 +154,7 @@ DD='$(GLGENDIR)$(D)'
 
 
 DEVICES_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
-   $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev $(DD)tr_rgb.dev\
+   $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev \
    $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev $(DD)pswrite.dev $(DD)pdfwrite.dev\
    $(DD)pxlmono.dev $(DD)pxlcolor.dev\
    $(DD)bmpmono.dev $(DD)bmpsep8.dev \
