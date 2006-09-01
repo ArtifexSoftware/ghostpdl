@@ -8,11 +8,15 @@
 # Define the name of this makefile.
 MAKEFILE+= ../main/pcl6_gcc.mak
 
+# Pick (uncomment) one font system technology ufst or afs (gs native)
+#PL_SCALER?=ufst
+PL_SCALER?=afs
+
 # define if this is a cygwin system.
 CYGWIN?=
 
 # The build process will put all of its output in this directory:
-GENDIR?=./obj
+GENDIR?=./obj-$(PL_SCALER)
 PGGENDIR?=./pgobj
 # The sources are taken from these directories:
 GLSRCDIR?=../gs/src
@@ -78,12 +82,6 @@ TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 # on the fly. If the artifex font scaler is chosen the makefiles will
 # build the scaler automatically.
 
-# Pick (uncomment) one font system technology ufst or artifex.  PCL and
-# XL do not need to use the same scaler, but it is necessary to
-# tinker/hack the makefiles to get it to work properly.
-
-#PL_SCALER?=ufst
-PL_SCALER?=afs
 PCL_FONT_SCALER=$(PL_SCALER)
 PXL_FONT_SCALER=$(PL_SCALER)
 

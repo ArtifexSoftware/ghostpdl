@@ -11,9 +11,16 @@
 # Define the name of this makefile.
 MAKEFILE+= ../language_switch/pspcl6_gcc.mak
 
+# Pick (uncomment) one font system technology ufst or artifex.  PCL and
+# XL do not need to use the same scaler, but it is necessary to
+# tinker/hack the makefiles to get it to work properly.
+
+#PL_SCALER?=ufst
+PL_SCALER?=afs
+
 # The build process will put all of its output in this directory:
 # GENDIR is defined in the 'base' makefile, but we need its value immediately
-GENDIR?=./obj
+GENDIR?=./obj-$(PL_SCALER)
 
 # The sources are taken from these directories:
 APPSRCDIR?=.
