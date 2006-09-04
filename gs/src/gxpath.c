@@ -50,6 +50,7 @@ public_st_path();
 private_st_path_segments();
 private_st_segment();
 private_st_line();
+private_st_dash();
 private_st_line_close();
 private_st_curve();
 private_st_subpath();
@@ -642,6 +643,28 @@ gx_path_add_lines_notes(gx_path *ppath, const gs_fixed_point *ppts, int count,
     return code;
 }
 
+/* Add a dash to the current path (lineto with a small length). */
+/* Only for internal use of the stroking algorithm. */
+int
+gx_path_add_dash_notes(gx_path * ppath, fixed x, fixed y, fixed dx, fixed dy, segment_notes notes)
+{
+    subpath *psub;
+    dash_segment *lp;
+
+    if (ppath->bbox_set)
+	check_in_bbox(ppath, x, y);
+    path_open();
+    path_alloc_segment(lp, dash_segment, &st_dash, s_dash, notes,
+		       "gx_dash_add_dash");
+    path_alloc_link(lp);
+    path_set_point(lp, x, y);
+    lp->tangent.x = dx;
+    lp->tangent.y = dy;
+    path_update_draw(ppath);
+    trace_segment("[P]", (segment *) lp);
+    return 0;
+}
+
 /* Add a rectangle to the current path. */
 /* This is a special case of adding a closed polygon. */
 int
@@ -991,6 +1014,12 @@ gx_print_segment(const segment * pseg)
 	case s_line:
 	    dprintf3("%s: %1.4f %1.4f lineto\n", out, px, py);
 	    break;
+	case s_dash:{
+    		const dash_segment *const pd = (const dash_segment *)pseg;
+
+		dprintf5("%s: %1.4f %1.4f %1.4f  %1.4f dash\n", out, pd->pt.x, pd->pt.y, pd->tangent.x, pd->tangent.y);
+		break;
+	    }
 	case s_line_close:{
 		const line_close_segment *const plc =
 		(const line_close_segment *)pseg;

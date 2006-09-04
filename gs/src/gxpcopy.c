@@ -181,6 +181,14 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 				       pseg->pt.x, pseg->pt.y, pseg->notes);
 		vd_lineto(pseg->pt.x, pseg->pt.y);
 		break;
+	    case s_dash: 
+		{
+		    const dash_segment *pd = (const dash_segment *)pseg;
+
+		    code = gx_path_add_dash_notes(ppath,
+				       pd->pt.x, pd->pt.y, pd->tangent.x, pd->tangent.y, pseg->notes);
+		    break;
+		}
 	    case s_line_close:
 		code = gx_path_close_subpath(ppath);
 		vd_closepath;

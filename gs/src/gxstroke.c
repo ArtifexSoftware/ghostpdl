@@ -114,6 +114,7 @@ gx_stroke_path_expansion(const gs_imager_state * pis, const gx_path * ppath,
 		    goto not_exact;
 		break;
 	    case s_line:
+	    case s_dash:
 	    case s_line_close:
 		if (!(pseg->pt.x == prev.x || pseg->pt.y == prev.y))
 		    goto not_exact;
@@ -207,7 +208,7 @@ typedef partial_line *pl_ptr;
 
 /* Other forward declarations */
 private bool width_is_thin(pl_ptr);
-private void adjust_stroke(pl_ptr, const gs_imager_state *, bool);
+private void adjust_stroke(pl_ptr, const gs_imager_state *, bool, bool);
 private int line_join_points(const gx_line_params * pgs_lp,
 			     pl_ptr plp, pl_ptr nplp,
 			     gs_fixed_point * join_points,
@@ -533,42 +534,56 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	fixed y = pseg->pt.y;
 	bool is_closed = ((const subpath *)pseg)->is_closed;
 	partial_line pl, pl_prev, pl_first;
+	bool zero_length = true;
 
 	while ((pseg = pseg->next) != 0 &&
 	       pseg->type != s_start
 	    ) {
 	    /* Compute the width parameters in device space. */
 	    /* We work with unscaled values, for speed. */
-	    fixed sx = pseg->pt.x, udx = sx - x;
-	    fixed sy = pseg->pt.y, udy = sy - y;
+	    fixed sx, udx, sy, udy;
+	    bool is_dash_segment = false;
+
+         d1:if (pseg->type != s_dash) {
+		sx = pseg->pt.x;
+		sy = pseg->pt.y;
+		udx = sx - x;
+		udy = sy - y;
+	    } else {
+		dash_segment *pd = (dash_segment *)pseg;
+
+		sx = pd->pt.x;
+		sy = pd->pt.y;
+		udx = pd->tangent.x;
+		udy = pd->tangent.y;
+		is_dash_segment = true;
+	    }
+	    zero_length &= ((udx | udy) == 0);
 
 	    pl.o.p.x = x, pl.o.p.y = y;
 	  d:pl.e.p.x = sx, pl.e.p.y = sy;
-	    if (!(udx | udy)) {	/* degenerate */
+	    if (!(udx | udy) || pseg->type == s_dash) {	/* degenerate or short */
 		/*
 		 * If this is the first segment of the subpath,
 		 * check the entire subpath for degeneracy.
 		 * Otherwise, ignore the degenerate segment.
 		 */
-		if (index != 0)
+		if (index != 0 && pseg->type != s_dash)
 		    continue;
 		/* Check for a degenerate subpath. */
 		while ((pseg = pseg->next) != 0 &&
 		       pseg->type != s_start
 		    ) {
+		    if (is_dash_segment)
+			break;
+		    if (pseg->type == s_dash)
+			goto d1;
 		    sx = pseg->pt.x, udx = sx - x;
 		    sy = pseg->pt.y, udy = sy - y;
 		    if (udx | udy)
 			goto d;
 		}
-		/*
-		 * The entire subpath is degenerate, but it includes
-		 * more than one point.  If the dot length is non-zero,
-		 * draw the caps, otherwise do nothing.
-		 */
-		if (pgs_lp->dot_length != 0)
-		    break;
-		if (pgs_lp->cap != gs_cap_round) {
+		if (pgs_lp->dot_length == 0 && pgs_lp->cap != gs_cap_round && !is_dash_segment) {
 		    /* From PLRM, stroke operator :
 		       If a subpath is degenerate (consists of a single-point closed path 
 		       or of two or more points at the same coordinates), 
@@ -576,25 +591,27 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		    break;
 		}
 		/*
-		 * Orient the dot according to the previous segment if
+		 * If the subpath is a dash, take the orientation from the dash segmnent.
+		 * Otherwise orient the dot according to the previous segment if
 		 * any, or else the next segment if any, or else
 		 * according to the specified dot orientation.
 		 */
 		{
 		    const segment *end = psub->prev;
 
-		    if (end != 0 && (end->pt.x != x || end->pt.y != y))
-			sx = end->pt.x, sy = end->pt.y;
+		    if (is_dash_segment) {
+			/* Nothing. */
+		    } else if (end != 0 && (end->pt.x != x || end->pt.y != y))
+			sx = end->pt.x, sy = end->pt.y,	udx = sx - x, udy = sy - y;
 		    else if (pseg != 0 &&
 			     (pseg->pt.x != x || pseg->pt.y != y)
 			)
-			sx = pseg->pt.x, sy = pseg->pt.y;
+			sx = pseg->pt.x, sy = pseg->pt.y, udx = sx - x, udy = sy - y;
 		}
 		/*
 		 * Compute the properly oriented dot length, and then
 		 * draw the dot like a very short line.
 		 */
-		udx = sx - x, udy = sy - y;
 		if ((udx | udy) == 0) {
 		    if (is_fzero(pgs_lp->dot_orientation.xy)) {
 			/* Portrait orientation, dot length = X */
@@ -604,32 +621,35 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 			udy = fixed_1;
 		    }
 		}
-		{
+		if (sx == x && sy == y && (pseg == NULL || pseg->type == s_start)) {
 		    double scale = device_dot_length /
-		    hypot((double)udx, (double)udy);
-
+				hypot((double)udx, (double)udy);
+		    fixed udx1, udy1;
 		    /*
 		     * If we're using butt caps, make sure the "line" is
-		     * long enough to show up.
+    		     * long enough to show up.
+		     * Don't apply this with always_thin, becase
+		     * draw thin line always rounds the length up.
 		     */
-		    if (pgs_lp->cap == gs_cap_butt) {
+		    if (!always_thin && pgs_lp->cap == gs_cap_butt) {
 			fixed dmax = max(any_abs(udx), any_abs(udy));
 
 			if (dmax * scale < fixed_1)
 			    scale = (float)fixed_1 / dmax;
 		    }
-		    udx = (fixed) (udx * scale);
-		    udy = (fixed) (udy * scale);
-		    if ((udx | udy) == 0)
-			udy = fixed_epsilon;
-		    sx = x + udx;
-		    sy = y + udy;
+		    udx1 = (fixed) (udx * scale);
+		    udy1 = (fixed) (udy * scale);
+		    sx = x + udx1;
+		    sy = y + udy1;
 		}
 		/*
 		 * Back up 1 segment to keep the bookkeeping straight.
 		 */
 		pseg = (pseg != 0 ? pseg->prev : psub->last);
-		goto d;
+		if (!is_dash_segment)
+		    goto d;
+		pl.e.p.x = sx;
+		pl.e.p.y = sy;
 	    }
 	    if (always_thin) {
 		pl.e.cdelta.x = pl.e.cdelta.y = 0;
@@ -692,7 +712,10 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		    pl.thin = width_is_thin(&pl);
 		}
 		if (!pl.thin) {
-		    adjust_stroke(&pl, pis, false);
+		    adjust_stroke(&pl, pis, false, 
+			    (pseg->prev == 0 || pseg->prev->type == s_start) && 
+			    (pseg->next == 0 || pseg->next->type == s_start) &&
+			    (zero_length || !is_closed));
 		    compute_caps(&pl);
 		}
 	    }
@@ -731,7 +754,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	    /* For some reason, the Borland compiler requires the cast */
 	    /* in the following statement. */
 	    pl_ptr lptr =
-		(!is_closed || join == gs_join_none ?
+		(!is_closed || join == gs_join_none || zero_length ?
 		 (pl_ptr) 0 : (pl_ptr) & pl_first);
 
 	    code = (*line_proc) (to_path, index - 1, &pl_prev, lptr, pdevc,
@@ -820,11 +843,9 @@ width_is_thin(pl_ptr plp)
     }
 }
 
-/* Adjust the endpoints and width of a stroke segment */
-/* to achieve more uniform rendering. */
-/* Only o.p, e.p, e.cdelta, and width have been set. */
+/* Adjust the endpoints and width of a stroke segment along a specified axis */
 private void
-adjust_stroke(pl_ptr plp, const gs_imager_state * pis, bool thin)
+adjust_stroke_transversal(pl_ptr plp, const gs_imager_state * pis, bool thin, bool horiz)
 {
     fixed *pw;
     fixed *pov;
@@ -832,9 +853,7 @@ adjust_stroke(pl_ptr plp, const gs_imager_state * pis, bool thin)
     fixed w, w2;
     fixed adj2;
 
-    if (!pis->stroke_adjust && plp->width.x != 0 && plp->width.y != 0)
-	return;			/* don't adjust */
-    if (any_abs(plp->width.x) < any_abs(plp->width.y)) {
+    if (horiz) {
 	/* More horizontal stroke */
 	pw = &plp->width.y, pov = &plp->o.p.y, pev = &plp->e.p.y;
 	adj2 = STROKE_ADJUSTMENT(thin, pis, y) << 1;
@@ -871,6 +890,73 @@ adjust_stroke(pl_ptr plp, const gs_imager_state * pis, bool thin)
 	    *pov = *pev = fixed_rounded(*pov);
 
     }
+}
+
+void adjust_stroke_longitude(pl_ptr plp, const gs_imager_state * pis, bool thin, bool horiz)
+{
+
+    fixed *pow = (horiz ? &plp->o.p.y : &plp->o.p.x);
+    fixed *pew = (horiz ? &plp->e.p.y : &plp->e.p.x);
+
+    /* Only adjust the endpoints if the line is horizontal or vertical. 
+       Debugged with pdfwrite->ppmraw 72dpi file2.pdf */
+    if (*pow == *pew) {
+	fixed *pov = (horiz ? &plp->o.p.x : &plp->o.p.y);
+	fixed *pev = (horiz ? &plp->e.p.x : &plp->e.p.y);
+	fixed length = any_abs(*pov - *pev);
+	fixed length_r, length_r_2;
+	fixed mv = (*pov + *pev) / 2, mv_r;
+	fixed adj2 = (horiz ? STROKE_ADJUSTMENT(thin, pis, x)
+			    : STROKE_ADJUSTMENT(thin, pis, y)) << 1;
+        
+	if (length > fixed_1) /* comparefiles/file2.pdf */
+	    return;
+	if (pis->line_params.cap == gs_cap_butt) {
+	    length_r = fixed_rounded(length);
+	    if (length_r < fixed_1)
+		length_r = fixed_1;
+	    length_r_2 = length_r / 2;
+	} else {
+	    /* Account width for proper placing cap centers. */
+	    fixed width = any_abs(horiz ? plp->width.y : plp->width.x);
+
+	    length_r = fixed_rounded(length + width * 2 + adj2);
+	    length_r_2 = fixed_rounded(length) / 2;
+	}
+	if (length_r & fixed_1)
+	    mv_r = fixed_floor(mv) + fixed_half;
+	else 
+	    mv_r = fixed_floor(mv);
+	if (*pov < *pev) {
+	    *pov = mv_r - length_r_2;
+	    *pev = mv_r + length_r_2;
+	} else {
+	    *pov = mv_r + length_r_2;
+	    *pev = mv_r - length_r_2;
+	}
+    }
+}
+
+/* Adjust the endpoints and width of a stroke segment */
+/* to achieve more uniform rendering. */
+/* Only o.p, e.p, e.cdelta, and width have been set. */
+private void
+adjust_stroke(pl_ptr plp, const gs_imager_state * pis, bool thin, bool adjust_longitude)
+{
+    bool horiz;
+
+    if (!pis->stroke_adjust && plp->width.x != 0 && plp->width.y != 0)
+	return;			/* don't adjust */
+    horiz = (any_abs(plp->width.x) <= any_abs(plp->width.y));
+    adjust_stroke_transversal(plp, pis, thin, horiz);
+    if (adjust_longitude)
+	adjust_stroke_longitude(plp, pis, thin, horiz);
+    /* fixme :
+       The best value for adjust_longitude is whether 
+       the dash is isolated and doesn't cover entire segment.
+       The current data structure can't pass this info.
+       Therefore we restrict adjust_stroke_longitude with 1 pixel length.
+    */
 }
 
 /* Compute the intersection of two lines.  This is a messy algorithm */
@@ -1059,7 +1145,7 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	/* We didn't set up the endpoint parameters before, */
 	/* because the line was thin.  Do it now. */
 	set_thin_widths(plp);
-	adjust_stroke(plp, pis, true);
+	adjust_stroke(plp, pis, true, first == 0 && nplp == 0);
 	compute_caps(plp);
     }
     /* Create an initial cap if desired. */

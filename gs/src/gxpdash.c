@@ -18,6 +18,7 @@
 #include "gsmatrix.h"		/* for gscoord.h */
 #include "gscoord.h"
 #include "gxfixed.h"
+#include "gxarith.h"
 #include "gsline.h"
 #include "gzline.h"
 #include "gzpath.h"
@@ -112,13 +113,20 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 	left = length;
 	while (left > elt_length) {	/* We are using up the line segment. */
 	    double fraction = elt_length / length;
-	    fixed nx = x + (fixed) (dx * fraction);
-	    fixed ny = y + (fixed) (dy * fraction);
+	    fixed fx = (fixed) (dx * fraction);
+	    fixed fy = (fixed) (dy * fraction);
+	    fixed nx = x + fx;
+	    fixed ny = y + fy;
 
 	    if (ink_on) {
-		if (drawing >= 0)
-		    code = gx_path_add_line_notes(ppath, nx, ny,
+		if (drawing >= 0) {
+		    if (left >= elt_length && any_abs(fx) + any_abs(fy) < fixed_half)
+			code = gx_path_add_dash_notes(ppath, nx, ny, udx, udy, 
+				notes & pseg->notes);
+		    else
+			code = gx_path_add_line_notes(ppath, nx, ny,
 						  notes & pseg->notes);
+		}
 		notes |= sn_not_first;
 	    } else {
 		if (drawing > 0)	/* done */
@@ -140,32 +148,57 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 	/* Handle the last dash of a segment. */
       on:if (ink_on) {
 	    if (drawing >= 0) {
-		code =
-		    (pseg->type == s_line_close && drawing > 0 ?
-		     gx_path_close_subpath_notes(ppath,
-						 notes & pseg->notes) :
-		     gx_path_add_line_notes(ppath, sx, sy,
-					    notes & pseg->notes));
+		if (pseg->type == s_line_close && drawing > 0)
+		    code = gx_path_close_subpath_notes(ppath,
+						 notes & pseg->notes);
+		else if (any_abs(sx - x) + any_abs(sy - y) < fixed_half)
+		    code = gx_path_add_dash_notes(ppath, sx, sy, udx, udy, 
+			    notes & pseg->notes);
+		else
+		    code = gx_path_add_line_notes(ppath, sx, sy,
+					notes & pseg->notes);
 		notes |= sn_not_first;
 	    }
 	} else {
 	    code = gx_path_add_point(ppath, sx, sy);
 	    notes &= ~sn_not_first;
 	    if (elt_length < fixed2float(fixed_epsilon) &&
-		(pseg->next == 0 || pseg->next->type == s_start)
-		) {		/*
+		(pseg->next == 0 || pseg->next->type == s_start || elt_length == 0)) {		
+				/*
 				 * Ink is off, but we're within epsilon of the end
-				 * of the dash element, and at the end of the
-				 * subpath.  "Stretch" a little so we get a dot.
+				 * of the dash element.  
+				 * "Stretch" a little so we get a dot.
+				 * Also if the next dash pattern is zero length,
+				 * use the last segment orientation.
 				 */
+		double elt_length1;
+
 		if (code < 0)
 		    return code;
-		elt_length = 0;
-		ink_on = true;
 		if (++index == count)
 		    index = 0;
-		elt_length = pattern[index] * scale;
-		goto on;
+		elt_length1 = pattern[index] * scale;
+		if (pseg->next == 0 || pseg->next->type == s_start) {
+		    elt_length = elt_length1;
+		    left = 0;
+		    ink_on = true;
+		    goto on;
+		}
+		/* Looking ahead one dash pattern element.
+		   If it is zero length, apply to the current segment 
+		   (at its end). */
+		if (elt_length1 == 0) {
+		    left = 0;
+		    code = gx_path_add_dash_notes(ppath, sx, sy, udx, udy,
+				    notes & pseg->notes);
+		    if (++index == count)
+			index = 0;
+		    elt_length = pattern[index] * scale;
+		    ink_on = false;
+		} else if (--index == 0) {
+		    /* Revert lookahead. */
+		    index = count - 1;
+		}
 	    }
 	    if (drawing > 0)	/* done */
 		return code;

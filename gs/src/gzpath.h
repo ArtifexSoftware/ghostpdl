@@ -36,7 +36,8 @@ typedef enum {
     s_start,
     s_line,
     s_line_close,
-    s_curve
+    s_curve,
+    s_dash /* only for internal use of the stroking algorithm */
 } segment_type;
 
 /* Define the common structure for all segments. */
@@ -76,6 +77,16 @@ typedef struct {
 #define private_st_line()	/* in gxpath.c */\
   gs_private_st_suffix_add0(st_line, line_segment, "line",\
     line_enum_ptrs, line_reloc_ptrs, st_segment)
+
+/* Dash segments (only for internal use of the stroking algorithm). */
+typedef struct {
+    segment_common
+    gs_fixed_point tangent;
+} dash_segment;
+
+#define private_st_dash()	/* in gxpath.c */\
+  gs_private_st_suffix_add0(st_dash, dash_segment, "dash",\
+    dash_enum_ptrs, dash_reloc_ptrs, st_segment)
 
 /* Line_close segments are for the lines appended by closepath. */
 /* They point back to the subpath being closed. */
