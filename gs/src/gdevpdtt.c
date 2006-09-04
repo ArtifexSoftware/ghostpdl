@@ -1085,7 +1085,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	 * this now.
 	 */
 	if (font->FontType == ft_TrueType &&
-	    pdev->CompatibilityLevel <= 1.2
+	    pdev->CompatibilityLevel <= 1.2 && !pdev->ForOPDFRead
 	    ) {
 	    int i;
 

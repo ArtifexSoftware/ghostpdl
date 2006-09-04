@@ -472,7 +472,7 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
 	 * which shouldn't cause the page to be opened.
 	 */
 	if (gx_dc_pure_color(pdcolor) == pdev->white && 
-		!is_in_page(pdev) && pdev->sbstack_depth == bottom) {
+		!is_in_page(pdev) && pdev->sbstack_depth <= bottom) {
 	    if (box->p.x == 0 && box->p.y == 0 && 
 		    box->q.x == int2fixed(pdev->width) && 
 		    box->q.y == int2fixed(pdev->height)) /* See gs_fillpage */
