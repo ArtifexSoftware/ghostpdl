@@ -1,0 +1,139 @@
+# $Id: $
+
+# Ghostscript error suppression file for Valgrind memcheck tool.
+#
+# The following are suspected bugs which should be either fixed or
+# identified as non-bugs and moved to vg_okay.supp
+# This file can be used for regression testing with Valgrind.
+
+{
+   <upath_append (zupath.c:707)>
+   Memcheck:Value4
+   fun:upath_append
+   fun:zuappend
+}
+{
+   <t1_hinter(short, bool, wchar_t) (gxhintn.c:582)>
+   Memcheck:Cond
+   fun:t1_hinter__sbw
+   fun:type2_sbw
+}
+{
+   <t1_hinter(short, bool, wchar_t) (gxhintn.c:582)>
+   Memcheck:Cond
+   fun:t1_hinter__sbw
+   fun:gs_type1_interpret
+}
+{
+   <pdf_process_string (gdevpdte.c:523)>
+   Memcheck:Cond
+   fun:pdf_process_string
+   fun:pdf_process_string_aux
+   fun:process_plain_text
+}
+{
+   <gx_general_fill_path (gxfill.c:172)>
+   Memcheck:Cond
+   fun:gx_general_fill_path
+   fun:gx_default_fill_path
+}
+# 014-01.ps
+{
+   <gc_trace_chunk (igc.c:745)>
+   Memcheck:Cond
+   fun:gc_trace_chunk
+   fun:gs_gc_reclaim
+}
+{
+   <process_composite_text (gdevpdtc.c:154)>
+   Memcheck:Cond
+   fun:process_composite_text
+   fun:pdf_text_process
+   fun:gs_text_process
+}
+{
+   <pdf_process_string (gdevpdte.c:523)>
+   Memcheck:Cond
+   fun:pdf_process_string
+   fun:pdf_process_string_aux
+   fun:process_composite_text
+}
+{
+   <scan_cmap_text (gdevpdtc.c:531)>
+   Memcheck:Cond
+   fun:scan_cmap_text
+   fun:process_cmap_text
+}
+{
+   <image_render_mono (gximono.c:150)>
+   Memcheck:Cond
+   fun:image_render_mono
+   fun:gx_image1_plane_data
+   fun:gx_image_plane_data_rows
+}
+{
+   <gs_point_transform2fixed (gsmatrix.c:392)>
+   Memcheck:Cond
+   fun:gs_point_transform2fixed
+   fun:shade_next_coords
+   fun:put_float_mesh_data
+}
+{
+   <pdf_put_name_chars_1_2 (gdevpdfu.c:1400)>
+   Memcheck:Cond
+   fun:pdf_put_name_chars_1_2
+   fun:pdf_put_name_chars
+   fun:pdf_put_name
+}
+{
+   <psf_convert_type1_to_type2 (gdevpsfx.c:643)>
+   Memcheck:Cond
+   fun:psf_convert_type1_to_type2
+   fun:cff_write_CharStrings_offsets
+   fun:psf_write_cid0_font
+}
+{
+   <type2_put_fixed (gdevpsfx.c:350)>
+   Memcheck:Cond
+   fun:type2_put_fixed
+   fun:psf_convert_type1_to_type2
+   fun:cff_write_CharStrings_offsets
+}
+{
+   <type2_put_int (gdevpsfx.c:323)>
+   Memcheck:Cond
+   fun:type2_put_int
+   fun:type2_put_fixed
+   fun:psf_convert_type1_to_type2
+}
+{
+   <type2_put_int (gdevpsfx.c:323)>
+   Memcheck:Cond
+   fun:type2_put_int
+   fun:type2_put_int
+   fun:type2_put_fixed
+   fun:psf_convert_type1_to_type2
+}
+{
+   <psf_convert_type1_to_type2 (gdevpsfx.c:643)>
+   Memcheck:Cond
+   fun:psf_convert_type1_to_type2
+   fun:cff_write_CharStrings_offsets
+   fun:cff_write_CharStrings
+}
+{
+   <memcpy (mac_replace_strmem.c:81)>
+   Memcheck:Cond
+   fun:memcpy
+   fun:sputs
+   fun:pdf_image_plane_data_alt
+   fun:pdf_image_plane_data
+}
+{
+   <jbig2_error (jbig2.c:106)>
+   Memcheck:Value4
+   fun:vfprintf
+   fun:vsnprintf
+   fun:jbig2_error
+   fun:jbig2_decode_refinement_region
+}
