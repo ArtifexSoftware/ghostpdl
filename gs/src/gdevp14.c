@@ -393,30 +393,34 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
 						 (buf->has_shape ? 1 : 0)));
     } else {
 	/* make copy of backdrop for compositing */
-	byte *buf_plane = buf->data;
-	byte *tos_plane = tos->data + buf->rect.p.x - tos->rect.p.x +
-	    (buf->rect.p.y - tos->rect.p.y) * tos->rowstride;
-	int width = buf->rect.q.x - buf->rect.p.x;
-	int y0 = buf->rect.p.y;
-	int y1 = buf->rect.q.y;
-	int i;
-	int n_chan_copy = buf->n_chan + (tos->has_shape ? 1 : 0);
+	int x0 = max(buf->rect.p.x, tos->rect.p.x);
+	int x1 = min(buf->rect.q.x, tos->rect.q.x);
+	int y0 = max(buf->rect.p.y, tos->rect.p.y);
+	int y1 = min(buf->rect.q.y, tos->rect.q.y);
 
-	for (i = 0; i < n_chan_copy; i++) {
-	    byte *buf_ptr = buf_plane;
-	    byte *tos_ptr = tos_plane;
-	    int y;
+	if (x0 < x1 && y0 < y1) {
+	    int width = x1 - x0;
+	    byte *buf_plane = buf->data + x0 - buf->rect.p.x + (y0 - buf->rect.p.y) * buf->rowstride;
+	    byte *tos_plane = tos->data + x0 - tos->rect.p.x + (y0 - tos->rect.p.y) * tos->rowstride;
+	    int i;
+	    int n_chan_copy = buf->n_chan + (tos->has_shape ? 1 : 0);
 
-	    for (y = y0; y < y1; ++y) {
-		memcpy (buf_ptr, tos_ptr, width); 
-		buf_ptr += buf->rowstride;
-		tos_ptr += tos->rowstride;
+	    for (i = 0; i < n_chan_copy; i++) {
+		byte *buf_ptr = buf_plane;
+		byte *tos_ptr = tos_plane;
+		int y;
+
+		for (y = y0; y < y1; ++y) {
+		    memcpy (buf_ptr, tos_ptr, width); 
+		    buf_ptr += buf->rowstride;
+		    tos_ptr += tos->rowstride;
+		}
+		buf_plane += buf->planestride;
+		tos_plane += tos->planestride;
 	    }
-	    buf_plane += buf->planestride;
-	    tos_plane += tos->planestride;
+	    if (has_shape && !tos->has_shape)
+		memset (buf_plane, 0, buf->planestride);
 	}
-	if (has_shape && !tos->has_shape)
-	    memset (buf_plane, 0, buf->planestride);
     }
 
     return 0;
@@ -428,17 +432,18 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
     pdf14_buf *tos = ctx->stack;
     pdf14_buf *nos = tos->saved;
     pdf14_buf *maskbuf = ctx->maskbuf;
-    int y0 = tos->rect.p.y;
-    int y1 = tos->rect.q.y;
-    if (y0 < y1) {
-	int x0 = tos->rect.p.x;
-	int x1 = tos->rect.q.x;
+    int y0 = max(tos->rect.p.y, nos->rect.p.y);
+    int y1 = min(tos->rect.q.y, nos->rect.q.y);
+    int x0 = max(tos->rect.p.x, nos->rect.p.x);
+    int x1 = min(tos->rect.q.x, nos->rect.q.x);
+    if (x0 < x1 && y0 < y1) {
 	int n_chan = ctx->n_chan;
 	int num_comp = n_chan - 1;
 	byte alpha = tos->alpha;
 	byte shape = tos->shape;
 	byte blend_mode = tos->blend_mode;
-	byte *tos_ptr = tos->data;
+	byte *tos_ptr = tos->data + x0 - tos->rect.p.x +
+	    (y0 - tos->rect.p.y) * tos->rowstride;
 	byte *nos_ptr = nos->data + x0 - nos->rect.p.x +
 	    (y0 - nos->rect.p.y) * nos->rowstride;
 	byte *mask_ptr = NULL;
