@@ -121,9 +121,6 @@ ifeq ($(PL_SCALER), afs)
 # The mkromfs arguments for including the PCL fonts if COMPILE_INITS=1
 PCLXL_ROMFS_ARGS?= -P ../urwfonts -d ttfonts /
 
-# substitue dingbats for missing wingdings font in PXL
-WING_DING_SUB=-DWINGDING_DINGBATS_SUB_ON
-
 XLDFLAGS=
 EXTRALIBS=
 UFST_OBJ=

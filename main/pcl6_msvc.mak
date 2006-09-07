@@ -165,11 +165,6 @@ PSI_TOP_OBJ=
 TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(PSI_TOP_OBJ)
 !endif
 
-# substitue dingbats for missin wingdings font in PXL
-!ifdnef WING_DING_SUB
-WING_DING_SUB=-DWINGDING_DINGBATS_SUB_ON
-!endif
-
 # Pick a font system technology.  PCL and XL do not need to use the
 # same scaler, but it is necessary to tinker with pl.mak to get it
 # to work properly.

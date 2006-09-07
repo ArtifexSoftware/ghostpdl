@@ -598,11 +598,7 @@ const font_resident_t resident_table[] = {
         {0, 0, {60, 72000.0/60.0}, 0, ITALIC, NOBOLD, 24579, 78}, cc_alphabetic
     },
 
-    /************** NB WRONG our lineprinter is unbound ****************/
-
-#ifndef AGFA /* NB - line printer support seams to be completely
-                absent in the AGFA build */
-
+    /************** NB SEMI-WRONG the artifex lineprinter is unbound ****************/
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','6','N'},
      {0, 0, {43.1, 72000.0/43.1}, 34, REGULAR, NOBOLD, 0, 88}, cc_alphabetic},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','9','N'},
@@ -623,10 +619,8 @@ const font_resident_t resident_table[] = {
      {0, 0, {43.1, 72000.0/43.1}, 34, REGULAR, NOBOLD, 0, 87}, cc_alphabetic},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','8','U'},
      {0, 0, {43.1, 72000.0/43.1}, 34, REGULAR, NOBOLD, 81}, cc_alphabetic},
-#endif /* not AGFA and NB */
     {fontnames("","", ""), {'0','0'},
      {0, 0, {0, 0}, 0, 0, 0, 0} }
-#undef AGFA
 #undef C
 #undef cc_alphabetic
 #undef cc_symbol

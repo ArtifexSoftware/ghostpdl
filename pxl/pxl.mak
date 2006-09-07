@@ -149,11 +149,10 @@ pxl_other_obj=$(pxl_other_obj1) $(pxl_other_obj2)
 
 # This implements finding fonts by name, but doesn't implement any operators
 # per se.
-# NOTE WING_DING_SUB undefined disables wingding font substitution 
 $(PXLOBJ)pxffont.$(OBJ): $(PXLSRC)pxffont.c $(AK) $(string__h)\
  $(gschar_h) $(gsmatrix_h) $(gx_h) $(gxfont_h) $(gxfont42_h)\
  $(pxfont_h) $(pxoper_h) $(pxstate_h) $(pjtop_h)
-	$(PXLCCC) $(WING_DING_SUB) $(PXLSRC)pxffont.c $(PXLO_)pxffont.$(OBJ)
+	$(PXLCCC) $(PXLSRC)pxffont.c $(PXLO_)pxffont.$(OBJ)
 
 $(PXLOBJ)pxfont.$(OBJ): $(PXLSRC)pxfont.c $(AK) $(math__h) $(stdio__h) $(string__h)\
  $(gdebug_h) $(gschar_h) $(gscoord_h) $(gserrors_h) $(gsimage_h)\
