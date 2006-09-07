@@ -11,7 +11,8 @@
 # Define the name of this makefile.
 MAKEFILE+= ../language_switch/pspcl6_gcc.mak
 
-# Choose Artifex or UFST font scalar
+# Pick (uncomment) one font system technology
+# afs (Artifex/gs native) or ufst (AGFA UFST)
 PL_SCALER?=afs
 #PL_SCALER?=ufst
 
