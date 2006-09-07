@@ -639,12 +639,6 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
                the expected illegal attribute */
             return_error(errorMissingAttribute);
 #endif
-#ifndef SUPPORT_COLORIMETRIC
-        if ( cspace == eCRGB )
-            /* oddly the 4600 reports this a missing attribute, not
-               the expected illegal attribute */
-            return_error(errorMissingAttribute);
-#endif
         /* substitute srgb if cie color is in effect */
 	if ( ( cspace == eRGB ) && pxs->useciecolor )
             cspace = eSRGB;
