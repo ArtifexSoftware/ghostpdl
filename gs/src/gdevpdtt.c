@@ -1293,11 +1293,13 @@ pdf_make_text_glyphs_table_unencoded(pdf_char_glyph_pairs_t *cgp,
 		gs_font *font, const gs_string *pstr, const gs_glyph *gdata, 
 		int *ps_encoding_index)
 {
-    int i, ei;
+    int i, ei, j;
     gs_char ch;
     gs_const_string gname;
     gs_glyph *gid = (gs_glyph *)pstr->data; /* pdf_text_process allocs enough space. */
+    gs_font_base *bfont;
     bool unknown = false;
+    int start_ei;
 
     /* Translate glyph name indices into gscencs.c indices. */
     for (i = 0; i < pstr->size; i++) {
@@ -1314,8 +1316,20 @@ pdf_make_text_glyphs_table_unencoded(pdf_char_glyph_pairs_t *cgp,
     }
     if (unknown)
 	return 0; /* Using global glyph names. */
-    /* Find an acceptable encodng. */
-    for (ei = 0; gs_c_known_encodings[ei]; ei++) {
+    /* Now we know it's a base font, bcause it has glyph names. */
+    bfont = (gs_font_base *)font;
+    start_ei = *ps_encoding_index;
+    if (start_ei < 0)
+	start_ei = bfont->nearest_encoding_index;
+    if (start_ei < 0)
+	start_ei = 0;
+    /* Find an acceptable encodng, starting from start_ei. 
+       We need a conservative search to minimize the probability 
+       of encoding conflicts.
+     */
+    for (j = 0, ei = start_ei; gs_c_known_encodings[j]; j++, ei++) {
+	if (!gs_c_known_encodings[ei])
+	    ei = 0;
 	cgp->num_unused_chars = 0;
 	cgp->num_all_chars = 0;
 	for (i = 0; i < pstr->size; i++) {
@@ -1535,6 +1549,8 @@ pdf_obtain_font_resource_unencoded(pdf_text_enum_t *penum,
     if (code < 0)
 	return code;
     /* *ppdfont is NULL if no resource attached. */
+    if (*ppdfont != NULL)
+	ps_encoding_index = (*ppdfont)->u.simple.preferred_encoding_index;
     if (penum->cgp == NULL) {
 	code = pdf_alloc_text_glyphs_table(pdev, penum, pstr);
 	if (code < 0)
@@ -1547,6 +1563,7 @@ pdf_obtain_font_resource_unencoded(pdf_text_enum_t *penum,
     code = pdf_obtain_font_resource_encoded(pdev, font, ppdfont, penum->cgp);
     if (code < 0)
 	return code;
+    (*ppdfont)->u.simple.preferred_encoding_index = ps_encoding_index;
     code = pdf_attached_font_resource(pdev, font, ppdfont, 
 			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
     if (code < 0)
