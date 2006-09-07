@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Indexed color space support */
 #include "memory_.h"
 #include "ghost.h"
@@ -48,17 +49,17 @@ zsetindexedspace(i_ctx_t *i_ctx_p)
     int num_entries;
     int code;
 
-    check_read_type(imemory, *op, t_array);
+    check_read_type(*op, t_array);
     if (r_size(op) != 4)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     pcsa = op->value.const_refs + 1;
-    check_type_only(imemory, pcsa[1], t_integer);
+    check_type_only(pcsa[1], t_integer);
     if (pcsa[1].value.intval < 0 || pcsa[1].value.intval > 4095)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     num_entries = (int)pcsa[1].value.intval + 1;
     cs = *gs_currentcolorspace(igs);
     if (!cs.type->can_be_base_space)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     cspace_old = istate->colorspace;
     /*
      * We can't count on C compilers to recognize the aliasing
@@ -74,12 +75,18 @@ zsetindexedspace(i_ctx_t *i_ctx_p)
     if (r_has_type(&pcsa[2], t_string)) {
 	int num_values = num_entries * cs_num_components(&cs);
 
-	check_read(imemory, pcsa[2]);
-	if (r_size(&pcsa[2]) != num_values)
-	    return_error(imemory, e_rangecheck);
+	check_read(pcsa[2]);
+	/*
+	 * The PDF and PS specifications state that the lookup table must have
+	 * the exact number of of data bytes needed.  However we have found
+	 * PDF files from Amyuni with extra data bytes.  Acrobat 6.0 accepts
+	 * these files without complaint, so we ignore the extra data.
+	 */
+	if (r_size(&pcsa[2]) < num_values)
+	    return_error(e_rangecheck);
 	memmove(&cs.params.indexed.base_space, &cs,
 		sizeof(cs.params.indexed.base_space));
-	gs_cspace_init(&cs, &gs_color_space_type_Indexed, imemory);
+	gs_cspace_init(&cs, &gs_color_space_type_Indexed, imemory, false);
 	cs.params.indexed.lookup.table.data = pcsa[2].value.const_bytes;
 	cs.params.indexed.lookup.table.size = num_values;
 	cs.params.indexed.use_proc = 0;
@@ -88,7 +95,7 @@ zsetindexedspace(i_ctx_t *i_ctx_p)
     } else {
 	gs_indexed_map *map;
 
-	check_proc(imemory, pcsa[2]);
+	check_proc(pcsa[2]);
 	/*
 	 * We have to call zcs_begin_map before moving the parameters,
 	 * since if the color space is a DeviceN or Separation space,
@@ -101,7 +108,7 @@ zsetindexedspace(i_ctx_t *i_ctx_p)
 	    return code;
 	memmove(&cs.params.indexed.base_space, &cs,
 		sizeof(cs.params.indexed.base_space));
-	gs_cspace_init(&cs, &gs_color_space_type_Indexed, imemory);
+	gs_cspace_init(&cs, &gs_color_space_type_Indexed, imemory, false);
 	cs.params.indexed.use_proc = 1;
 	*pproc = pcsa[2];
 	map->proc.lookup_index = lookup_indexed_map;
@@ -128,7 +135,7 @@ indexed_map1(i_ctx_t *i_ctx_p)
 
     if (i >= 0) {		/* i.e., not first time */
 	int m = (int)ep[csme_num_components].value.intval;
-	int code = float_params(imemory, op, m, &r_ptr(&ep[csme_map], gs_indexed_map)->values[i * m]);
+	int code = float_params(op, m, &r_ptr(&ep[csme_map], gs_indexed_map)->values[i * m]);
 
 	if (code < 0)
 	    return code;
@@ -139,7 +146,7 @@ indexed_map1(i_ctx_t *i_ctx_p)
 	    return o_pop_estack;
 	}
     }
-    push(imemory, 1);
+    push(1);
     ep[csme_index].value.intval = ++i;
     make_int(op, i);
     make_op_estack(ep + 1, indexed_map1);

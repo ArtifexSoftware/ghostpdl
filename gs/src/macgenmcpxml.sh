@@ -155,6 +155,7 @@ WriteSETTINGLIST()
         echo "</SETTING>"
         echo "<SETTING><NAME>SystemSearchPaths</NAME>"
             WritePathSetting SearchPath ":jbig2dec:" MacOS Project
+            WritePathSetting SearchPath ":jasper/src/libjasper/include:" MacOS Project
             WritePathSetting SearchPath ":obj:" MacOS Project
             WritePathSetting SearchPath ":MacOS Support:" MacOS CodeWarrior
             WritePathSetting SearchPath ":MSL:MSL_C" MacOS CodeWarrior
@@ -206,7 +207,7 @@ WriteSETTINGLIST()
 	  if test "$TARGETNAME" = "GhostscriptLib PPC (Debug)"; then
 	    WriteValueSetting MWFrontEnd_C_prefixname macos_classic_d_pre.h
 	  else
-	WriteValueSetting MWFrontEnd_C_prefixname 
+	    WriteValueSetting MWFrontEnd_C_prefixname
 	  fi
 	fi
 	
@@ -364,7 +365,7 @@ done
 #LIBS="console.stubs.c MSL\ ShLibRuntime.Lib MSL\ RuntimePPC.Lib"
 #CLASSICLIBS="MSL\ C.PPC.Lib InterfaceLib FontManager MathLib"
 
-# libs for codewarrior 7
+# libs for codewarrior 7 & 8
 LIBS=""
 CARBONLIBS="MSL_All_Carbon.Lib CarbonLib"
 CLASSICLIBS="MSL_All_PPC.Lib InterfaceLib FontManager MathLib"

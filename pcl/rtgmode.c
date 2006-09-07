@@ -201,12 +201,12 @@ pcl_enter_graphics_mode(
     cur_pt.x = (double)pcs->cap.x;
     cur_pt.y = (double)pcs->cap.y;
     pcl_xfm_to_logical_page_space(pcs, &cur_pt);
-    gs_point_transform(pcs->memory, cur_pt.x, cur_pt.y, &lp2rst, &cur_pt);
+    gs_point_transform(cur_pt.x, cur_pt.y, &lp2rst, &cur_pt);
 
     /* translate the origin of the forward transformation */
     if (((int)mode & 0x1) != 0)
         gmargin_cp = cur_pt.x;
-    gs_matrix_translate(pcs->memory, &rst2lp, gmargin_cp, cur_pt.y, &rst2lp);
+    gs_matrix_translate(&rst2lp, gmargin_cp, cur_pt.y, &rst2lp);
     prstate->gmargin_cp = gmargin_cp;
 
     /* set the matrix scale */
@@ -337,7 +337,7 @@ pcl_end_graphics_mode(
 
     /* transform the new point back to "pseudo print direction" space */
     pcl_invert_mtx(&(pcs->xfm_state.pd2dev_mtx), &dev2pd);
-    gs_point_transform(pcs->memory, cur_pt.x, cur_pt.y, &dev2pd, &cur_pt);
+    gs_point_transform(cur_pt.x, cur_pt.y, &dev2pd, &cur_pt);
     pcl_set_cap_x(pcs, (coord)(cur_pt.x + 0.5), false, false);
     return pcl_set_cap_y( pcs,
                           (coord)(cur_pt.y + 0.5) - pcs->margins.top,
@@ -606,7 +606,7 @@ gmode_do_registration(
     gs_memory_t *   pmem    /* ignored */
 )
 {
-    DEFINE_CLASS(pmem, '*')
+    DEFINE_CLASS('*')
     {
         't', 'R',
          PCL_COMMAND( "Raster Graphics Resolution",

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* File stream implementation using direct OS calls */
 /******
  ****** NOTE: THIS FILE MAY NOT COMPILE ON NON-UNIX PLATFORMS, AND MAY
@@ -56,13 +57,13 @@ private int
     s_fileno_available(stream *, long *),
     s_fileno_read_seek(stream *, long),
     s_fileno_read_close(stream *),
-    s_fileno_read_process(const gs_memory_t *mem, stream_state *, stream_cursor_read *,
+    s_fileno_read_process(stream_state *, stream_cursor_read *,
 			  stream_cursor_write *, bool);
 private int
     s_fileno_write_seek(stream *, long),
     s_fileno_write_flush(stream *),
     s_fileno_write_close(stream *),
-    s_fileno_write_process(const gs_memory_t *mem, stream_state *, stream_cursor_read *,
+    s_fileno_write_process(stream_state *, stream_cursor_read *,
 			   stream_cursor_write *, bool);
 private int
     s_fileno_switch(stream *, bool);
@@ -212,7 +213,7 @@ s_fileno_read_close(stream * s)
 /* Process a buffer for a file reading stream. */
 /* This is the first stream in the pipeline, so pr is irrelevant. */
 private int
-s_fileno_read_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * ignore_pr,
+s_fileno_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 		      stream_cursor_write * pw, bool last)
 {
     stream *s = (stream *)st;	/* no separate state */
@@ -243,7 +244,7 @@ again:
 	goto again;
     else
 	status = ERRC;
-    process_interrupts();
+    process_interrupts(s->memory);
     return status;
 }
 
@@ -309,7 +310,7 @@ s_fileno_write_close(register stream * s)
 /* Process a buffer for a file writing stream. */
 /* This is the last stream in the pipeline, so pw is irrelevant. */
 private int
-s_fileno_write_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_fileno_write_process(stream_state * st, stream_cursor_read * pr,
 		       stream_cursor_write * ignore_pw, bool last)
 {
     int nwrite, status;
@@ -320,7 +321,7 @@ again:
     /* Some versions of the DEC C library on AXP architectures */
     /* give an error on write if the count is zero! */
     if (count == 0) {
-	process_interrupts();
+	process_interrupts((stream*)st->memory);
 	return 0;
     }
     /* See above regarding the Mac MetroWorks compiler. */
@@ -332,7 +333,7 @@ again:
 	goto again;
     else
 	status = ERRC;
-    process_interrupts();
+    process_interrupts((stream *)st->memory);
     return status;
 }
 

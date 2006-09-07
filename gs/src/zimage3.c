@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* LanguageLevel 3 ImageTypes (3 & 4 - masked images) */
 #include "memory_.h"
 #include "ghost.h"
@@ -39,9 +40,9 @@ zimage3(i_ctx_t *i_ctx_p)
     int ignored;
     int code, mcode;
 
-    check_type(imemory, *op, t_dictionary);
-    check_dict_read(imemory, *op);
-    if ((code = dict_int_param(imemory, op, "InterleaveType", 1, 3, -1,
+    check_type(*op, t_dictionary);
+    check_dict_read(*op);
+    if ((code = dict_int_param(op, "InterleaveType", 1, 3, -1,
 			       &interleave_type)) < 0
 	)
 	return code;
@@ -49,14 +50,14 @@ zimage3(i_ctx_t *i_ctx_p)
     if (dict_find_string(op, "DataDict", &pDataDict) <= 0 ||
 	dict_find_string(op, "MaskDict", &pMaskDict) <= 0
 	)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
 				   (gs_pixel_image_t *)&image, &ip_data,
 				   12, false)) < 0 ||
 	(mcode = code = data_image_params(imemory, pMaskDict, &image.MaskDict,
 				   &ip_mask, false, 1, 12, false)) < 0 ||
-	(code = dict_int_param(imemory, pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
-	(code = dict_int_param(imemory, pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0
+	(code = dict_int_param(pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
+	(code = dict_int_param(pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0
 	)
 	return code;
     /*
@@ -66,7 +67,7 @@ zimage3(i_ctx_t *i_ctx_p)
 	ip_mask.MultipleDataSources ||
 	mcode != (image.InterleaveType != 3)
 	)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     if (image.InterleaveType == 3) {
 	/* Insert the mask DataSource before the data DataSources. */
 	memmove(&ip_data.DataSource[1], &ip_data.DataSource[0],
@@ -97,7 +98,7 @@ zimage4(i_ctx_t *i_ctx_p)
 			      12, false);
     if (code < 0)
 	return code;
-    code = dict_int_array_check_param(imemory, op, "MaskColor", num_components * 2,
+    code = dict_int_array_check_param(op, "MaskColor", num_components * 2,
 				      colors, 0, e_rangecheck);
     /* Clamp the color values to the unsigned range. */
     if (code == num_components) {
@@ -116,7 +117,7 @@ zimage4(i_ctx_t *i_ctx_p)
 	    }
 	}
     } else
-	return_error(imemory, code < 0 ? code : gs_note_error(imemory, e_rangecheck));
+	return_error(code < 0 ? code : gs_note_error(e_rangecheck));
     return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image, &ip.DataSource[0],
 			image.CombineWithColor, 1);
 }

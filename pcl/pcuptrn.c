@@ -103,11 +103,11 @@ free_pattern_rendering(const gs_memory_t *mem,
 )
 {
     if (pptrn->pcol_ccolor != 0) {
-        pcl_ccolor_release(mem, pptrn->pcol_ccolor);
+        pcl_ccolor_release(pptrn->pcol_ccolor);
         pptrn->pcol_ccolor = 0;
     }
     if (pptrn->pmask_ccolor != 0) {
-        pcl_ccolor_release(mem, pptrn->pmask_ccolor);
+        pcl_ccolor_release(pptrn->pmask_ccolor);
         pptrn->pmask_ccolor = 0;
     }
 }
@@ -127,7 +127,7 @@ pcl_pattern_free_pattern(
 
     free_pattern_rendering(pmem, pptrn);
     if (pptrn->ppat_data != 0)
-        pcl_pattern_data_release(pmem, pptrn->ppat_data);
+        pcl_pattern_data_release(pptrn->ppat_data);
     gs_free_object(pmem, pvptrn, cname);
 }
 
@@ -557,7 +557,7 @@ upattern_do_registration(
     gs_memory_t *   pmem
 )
 {
-    DEFINE_CLASS(pmem, '*')
+    DEFINE_CLASS('*')
     {
         'c', 'W',
         PCL_COMMAND("Download Pattern", download_pcl_pattern, pca_bytes)

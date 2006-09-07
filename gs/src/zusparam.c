@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* User and system parameter operators */
 #include "memory_.h"
 #include "string_.h"
@@ -104,12 +105,12 @@ zcheckpassword(i_ctx_t *i_ctx_p)
 	return code;
     params[1] = *op;
     array_param_list_read(&list, params, 2, NULL, false, iimemory);
-    if (dict_read_password(imemory, &pass, systemdict, "StartJobPassword") >= 0 &&
-	param_check_password(imemory, plist, &pass) == 0
+    if (dict_read_password(&pass, systemdict, "StartJobPassword") >= 0 &&
+	param_check_password(plist, &pass) == 0
 	)
 	result = 1;
-    if (dict_read_password(imemory, &pass, systemdict, "SystemParamsPassword") >= 0 &&
-	param_check_password(imemory, plist, &pass) == 0
+    if (dict_read_password(&pass, systemdict, "SystemParamsPassword") >= 0 &&
+	param_check_password(plist, &pass) == 0
 	)
 	result = 2;
     iparam_list_release(&list);
@@ -193,7 +194,7 @@ private const bool_param_def_t system_bool_params[] =
 private void
 current_RealFormat(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-#if arch_floats_are_IEEE
+#if ARCH_FLOATS_ARE_IEEE
     static const char *const rfs = "IEEE";
 #else
     static const char *const rfs = "not IEEE";
@@ -226,40 +227,40 @@ zsetsystemparams(i_ctx_t *i_ctx_p)
     gs_param_list *const plist = (gs_param_list *)&list;
     password pass;
 
-    check_type(imemory, *op, t_dictionary);
+    check_type(*op, t_dictionary);
     code = dict_param_list_read(&list, op, NULL, false, iimemory);
     if (code < 0)
 	return code;
-    code = dict_read_password(imemory, &pass, systemdict, "SystemParamsPassword");
+    code = dict_read_password(&pass, systemdict, "SystemParamsPassword");
     if (code < 0)
 	return code;
-    code = param_check_password(imemory, plist, &pass);
+    code = param_check_password(plist, &pass);
     if (code != 0) {
 	if (code > 0)
-	    code = gs_note_error(imemory, e_invalidaccess);
+	    code = gs_note_error(e_invalidaccess);
 	goto out;
     }
-    code = param_read_password(imemory, plist, "StartJobPassword", &pass);
+    code = param_read_password(plist, "StartJobPassword", &pass);
     switch (code) {
 	default:		/* invalid */
 	    goto out;
 	case 1:		/* missing */
 	    break;
 	case 0:
-	    code = dict_write_password(imemory, &pass, systemdict,
+	    code = dict_write_password(&pass, systemdict,
 				       "StartJobPassword",
 				       ! i_ctx_p->LockFilePermissions);
 	    if (code < 0)
 		goto out;
     }
-    code = param_read_password(imemory, plist, "SystemParamsPassword", &pass);
+    code = param_read_password(plist, "SystemParamsPassword", &pass);
     switch (code) {
 	default:		/* invalid */
 	    goto out;
 	case 1:		/* missing */
 	    break;
 	case 0:
-	    code = dict_write_password(imemory, &pass, systemdict,
+	    code = dict_write_password(&pass, systemdict,
 				       "SystemParamsPassword",
 				       ! i_ctx_p->LockFilePermissions);
 	    if (code < 0)
@@ -418,7 +419,6 @@ set_AlignToPixels(i_ctx_t *i_ctx_p, long val)
     gs_setaligntopixels(ifont_dir, (uint)val);
     return 0;
 }
-#if NEW_TT_INTERPRETER
 private long
 current_GridFitTT(i_ctx_t *i_ctx_p)
 {
@@ -430,7 +430,6 @@ set_GridFitTT(i_ctx_t *i_ctx_p, long val)
     gs_setgridfittt(ifont_dir, (uint)val);
     return 0;
 }
-#endif
 private const long_param_def_t user_long_params[] =
 {
     {"JobTimeout", 0, MAX_UINT_PARAM,
@@ -457,16 +456,9 @@ private const long_param_def_t user_long_params[] =
     {"MinScreenLevels", 0, MAX_UINT_PARAM,
      current_MinScreenLevels, set_MinScreenLevels},
     {"AlignToPixels", 0, 1,
-     current_AlignToPixels, set_AlignToPixels}
-#if NEW_TT_INTERPRETER
-    , {"GridFitTT", 0, 
-#   if TT_GRID_FITTING
-    3,
-#   else
-    1,
-#   endif
+     current_AlignToPixels, set_AlignToPixels},
+    {"GridFitTT", 0, 3, 
      current_GridFitTT, set_GridFitTT}
-#endif
 };
 
 /* Boolean values */
@@ -503,7 +495,7 @@ set_LockFilePermissions(i_ctx_t *i_ctx_p, bool val)
 {
     /* allow locking even if already locked */
     if (i_ctx_p->LockFilePermissions && !val)
-	return_error(imemory, e_invalidaccess);
+	return_error(e_invalidaccess);
     i_ctx_p->LockFilePermissions = val;
     return 0;
 }
@@ -530,7 +522,7 @@ set_user_params(i_ctx_t *i_ctx_p, const ref *paramdict)
     dict_param_list list;
     int code;
 
-    check_type(imemory, *paramdict, t_dictionary);
+    check_type(*paramdict, t_dictionary);
     code = dict_param_list_read(&list, paramdict, NULL, false, iimemory);
     if (code < 0)
 	return code;
@@ -608,7 +600,7 @@ setparams(i_ctx_t *i_ctx_p, gs_param_list * plist, const param_set * pset)
 		break;
 	    case 0:
 		if (val < pdef->min_value || val > pdef->max_value)
-		    return_error(imemory, e_rangecheck);
+		    return_error(e_rangecheck);
 		code = (*pdef->set)(i_ctx_p, val);
 		if (code < 0)
 		    return code;
@@ -701,14 +693,14 @@ currentparam1(i_ctx_t *i_ctx_p, const param_set * pset)
     ref sref;
     int code;
 
-    check_type(imemory, *op, t_name);
-    check_ostack(imemory, 2);
+    check_type(*op, t_name);
+    check_ostack(2);
     name_string_ref(imemory, (const ref *)op, &sref);
     code = current_param_list(i_ctx_p, pset, &sref);
     if (code < 0)
 	return code;
     if (osp == op)
-	return_error(imemory, e_undefined);
+	return_error(e_undefined);
     /* We know osp == op + 2. */
     ref_assign(op, op + 2);
     pop(2);

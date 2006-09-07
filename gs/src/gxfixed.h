@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Fixed-point arithmetic for Ghostscript */
 
 #ifndef gxfixed_INCLUDED
@@ -76,7 +77,7 @@ typedef ulong ufixed;		/* only used in a very few places */
 #define fixed_pre_pixround(x) ((x)+_fixed_pixround_v)
 #define fixed2int_pixround(x) fixed2int(fixed_pre_pixround(x))
 #define fixed_is_int(x) !((x)&_fixed_fraction_v)
-#if arch_ints_are_short & !arch_is_big_endian
+#if ARCH_INTS_ARE_SHORT & !ARCH_IS_BIG_ENDIAN
 /* Do some of the shifting and extraction ourselves. */
 #  define _fixed_hi(x) *((const uint *)&(x)+1)
 #  define _fixed_lo(x) *((const uint *)&(x))
@@ -101,6 +102,8 @@ typedef ulong ufixed;		/* only used in a very few places */
 #define fixed2long_ceiling(x) ((long)_fixed_rshift((x)+_fixed_fraction_v))
 #define fixed2long_pixround(x) ((long)_fixed_rshift((x)+_fixed_pixround_v))
 #define float2fixed(f) ((fixed)((f)*(float)fixed_scale))
+#define float2fixed_rounded(f) ((fixed)floor((f)*(float)fixed_scale + 0.5))
+
 /* Note that fixed2float actually produces a double result. */
 #define fixed2float(x) ((x)*(1.0/fixed_scale))
 
@@ -123,7 +126,7 @@ typedef ulong ufixed;		/* only used in a very few places */
 #endif
 
 #ifdef USE_FPU
-#  define USE_FPU_FIXED (USE_FPU < 0 && arch_floats_are_IEEE && arch_sizeof_long == 4)
+#  define USE_FPU_FIXED (USE_FPU < 0 && ARCH_FLOATS_ARE_IEEE && arch_sizeof_long == 4)
 #else
 #  define USE_FPU_FIXED 0
 #endif
@@ -183,16 +186,16 @@ fixed fixed_mult_quo(fixed A, fixed B, fixed C);
 #if USE_FPU_FIXED && arch_sizeof_short == 2
 #define NEED_SET_FMUL2FIXED
 int set_fmul2fixed_(fixed *, long, long);
-#define CHECK_FMUL2FIXED_VARS(mem, vr, vfa, vfb, dtemp)\
+#define CHECK_FMUL2FIXED_VARS(vr, vfa, vfb, dtemp)\
   set_fmul2fixed_(&vr, *(const long *)&vfa, *(const long *)&vfb)
 #define FINISH_FMUL2FIXED_VARS(vr, dtemp)\
   DO_NOTHING
 int set_dfmul2fixed_(fixed *, ulong, long, long);
-#  if arch_is_big_endian
-#  define CHECK_DFMUL2FIXED_VARS(mem, vr, vda, vfb, dtemp)\
+#  if ARCH_IS_BIG_ENDIAN
+#  define CHECK_DFMUL2FIXED_VARS(vr, vda, vfb, dtemp)\
      set_dfmul2fixed_(&vr, ((const ulong *)&vda)[1], *(const long *)&vfb, *(const long *)&vda)
 #  else
-#  define CHECK_DFMUL2FIXED_VARS(mem, vr, vda, vfb, dtemp)\
+#  define CHECK_DFMUL2FIXED_VARS(vr, vda, vfb, dtemp)\
      set_dfmul2fixed_(&vr, *(const ulong *)&vda, *(const long *)&vfb, ((const long *)&vda)[1])
 #  endif
 #define FINISH_DFMUL2FIXED_VARS(vr, dtemp)\
@@ -201,14 +204,14 @@ int set_dfmul2fixed_(fixed *, ulong, long, long);
 #else /* don't bother */
 
 #undef NEED_SET_FMUL2FIXED
-#define CHECK_FMUL2FIXED_VARS(mem, vr, vfa, vfb, dtemp)\
+#define CHECK_FMUL2FIXED_VARS(vr, vfa, vfb, dtemp)\
   (dtemp = (vfa) * (vfb),\
    (f_fits_in_bits(dtemp, fixed_int_bits) ? 0 :\
-    gs_note_error(mem, gs_error_limitcheck)))
+    gs_note_error(gs_error_limitcheck)))
 #define FINISH_FMUL2FIXED_VARS(vr, dtemp)\
   vr = float2fixed(dtemp)
-#define CHECK_DFMUL2FIXED_VARS(mem, vr, vda, vfb, dtemp)\
-  CHECK_FMUL2FIXED_VARS(mem, vr, vda, vfb, dtemp)
+#define CHECK_DFMUL2FIXED_VARS(vr, vda, vfb, dtemp)\
+  CHECK_FMUL2FIXED_VARS(vr, vda, vfb, dtemp)
 #define FINISH_DFMUL2FIXED_VARS(vr, dtemp)\
   FINISH_FMUL2FIXED_VARS(vr, dtemp)
 
@@ -227,11 +230,11 @@ int set_dfmul2fixed_(fixed *, ulong, long, long);
 int set_float2fixed_(fixed *, long, int);
 int set_double2fixed_(fixed *, ulong, long, int);
 
-# define set_float2fixed_vars(mem, vr,vf)\
+# define set_float2fixed_vars(vr,vf)\
     (sizeof(vf) == sizeof(float) ?\
-     set_float2fixed_(mem, &vr, *(const long *)&vf, fixed_fraction_bits) :\
-     set_double2fixed_(&vr, ((const ulong *)&vf)[arch_is_big_endian],\
-		       ((const long *)&vf)[1 - arch_is_big_endian],\
+     set_float2fixed_(&vr, *(const long *)&vf, fixed_fraction_bits) :\
+     set_double2fixed_(&vr, ((const ulong *)&vf)[ARCH_IS_BIG_ENDIAN],\
+		       ((const long *)&vf)[1 - ARCH_IS_BIG_ENDIAN],\
 		       fixed_fraction_bits))
 long fixed2float_(fixed, int);
 void set_fixed2double_(double *, fixed, int);
@@ -247,9 +250,9 @@ void set_fixed2double_(double *, fixed, int);
 #define set_ldexp_fixed2double(vd, x, exp)\
   set_fixed2double_(&vd, x, -(exp))
 #else
-# define set_float2fixed_vars(mem, vr,vf)\
+# define set_float2fixed_vars(vr,vf)\
     (f_fits_in_bits(vf, fixed_int_bits) ? (vr = float2fixed(vf), 0) :\
-     gs_note_error(mem, gs_error_limitcheck))
+     gs_note_error(gs_error_limitcheck))
 # define set_fixed2float_var(vf,x)\
     (vf = fixed2float(x), 0)
 # define set_ldexp_fixed2double(vd, x, exp)\

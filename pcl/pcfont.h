@@ -111,8 +111,8 @@ int pcl_set_current_font_environment(pcl_state_t *pcs);
 
 /* debugging to to print font parameters */
 #ifdef DEBUG
-void dprint_font_params_t(const gs_memory_t *mem, const pl_font_params_t *pfp);
+void dprint_font_params_t(const pl_font_params_t *pfp);
 #else
-#define dprint_font_params_t(mem, p) DO_NOTHING
+#define dprint_font_params_t(p) DO_NOTHING
 #endif /* DEBUG */
 #endif		/* pcfont_INCLUDED */

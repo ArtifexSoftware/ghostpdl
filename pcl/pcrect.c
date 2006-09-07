@@ -100,7 +100,7 @@ adjust_render_rectangle(
         gs_point    disp;
 
         gs_defaultmatrix(pgs, &dflt_mtx);
-        gs_distance_transform(pcs->memory, 1.0, 1.0, &dflt_mtx, &disp);
+        gs_distance_transform(1.0, 1.0, &dflt_mtx, &disp);
         if (disp.x < 0.0)
             rect.p.x += 1.0;
         else
@@ -228,7 +228,7 @@ pcrect_do_registration(
 )
 {
     /* Register commands */
-    DEFINE_CLASS(mem, '*')
+    DEFINE_CLASS('*')
     {
         'c', 'H',
 	PCL_COMMAND( "Horizontal Rectangle Size Decipoints",

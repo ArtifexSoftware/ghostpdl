@@ -1,17 +1,17 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
-
-# $RCSfile$ $Revision$
-# Partial makefile for Unix shared object target
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
+# Partial makefile for Unix shared library target
 
 # Useful make commands:
 #  make so		make ghostscript as a shared object
@@ -42,12 +42,26 @@ GSSOX_XE=$(BINDIR)/$(GSSOX_XENAME)
 GSSOX=$(BINDIR)/$(SOBINRELDIR)/$(GSSOX_XENAME)
 
 # shared library
-GS_SONAME=lib$(GS).so
+GS_SONAME_BASE=lib$(GS)
+
+# GNU/Linux
+GS_SOEXT=so
+GS_SONAME=$(GS_SONAME_BASE).$(GS_SOEXT)
 GS_SONAME_MAJOR=$(GS_SONAME).$(GS_VERSION_MAJOR)
-GS_SONAME_MAJOR_MINOR= $(GS_SONAME).$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR)
+GS_SONAME_MAJOR_MINOR=$(GS_SONAME).$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR)
+LDFLAGS_SO=-shared -Wl,-soname=$(GS_SONAME_MAJOR)
+
+# MacOS X
+#GS_SOEXT=dylib
+#GS_SONAME=$(GS_SONAME_BASE).$(GS_SOEXT)
+#GS_SONAME_MAJOR=$(GS_SONAME_BASE).$(GS_VERSION_MAJOR).$(GS_SOEXT)
+#GS_SONAME_MAJOR_MINOR=$(GS_SONAME_BASE).$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR).$(GS_SOEXT)
+#LDFLAGS_SO=-dynamiclib -flat-namespace
+#LDFLAGS_SO=-dynamiclib -install-name $(GS_SONAME_MAJOR_MINOR)
+
 GS_SO=$(BINDIR)/$(GS_SONAME)
-GS_SO_MAJOR=$(GS_SO).$(GS_VERSION_MAJOR)
-GS_SO_MAJOR_MINOR=$(GS_SO_MAJOR).$(GS_VERSION_MINOR)
+GS_SO_MAJOR=$(BINDIR)/$(GS_SONAME_MAJOR)
+GS_SO_MAJOR_MINOR=$(BINDIR)/$(GS_SONAME_MAJOR_MINOR)
 
 # Shared object is built by redefining GS_XE in a recursive make.
 
@@ -63,15 +77,16 @@ $(GS_SO_MAJOR): $(GS_SO_MAJOR_MINOR)
 
 # Build the small Ghostscript loaders, with Gtk+ and without
 
-$(GSSOX_XE): $(GS_SO) $(GLSRC)dxmain.c
-	$(GLCC) -g `gtk-config --cflags` -o $(GSSOX_XE) $(GLSRC)dxmain.c -L$(BINDIR) -l$(GS) `gtk-config --libs`
-
 $(GSSOC_XE): $(GS_SO) $(GLSRC)dxmainc.c
 	$(GLCC) -g -o $(GSSOC_XE) $(GLSRC)dxmainc.c -L$(BINDIR) -l$(GS)
 
+$(GSSOX_XE): $(GS_SO) $(GLSRC)dxmain.c
+	$(GLCC) -g `pkg-config --cflags gtk+-2.0` -o $(GSSOX_XE) $(GLSRC)dxmain.c -L$(BINDIR) -l$(GS) `pkg-config --libs gtk+-2.0`
+
+
 # ------------------------- Recursive make targets ------------------------- #
 
-SODEFS=LDFLAGS='$(LDFLAGS) $(CFLAGS_SO) -shared -Wl,-soname=$(GS_SONAME_MAJOR)'\
+SODEFS=LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)'\
  GS_XE=$(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR)\
  STDIO_IMPLEMENTATION=c\
  DISPLAY_DEV=$(DD)$(SOOBJRELDIR)/display.dev\

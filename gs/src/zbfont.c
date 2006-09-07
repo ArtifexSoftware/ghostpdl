@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Font creation utilities */
 #include "memory_.h"
 #include "string_.h"
@@ -46,8 +47,8 @@ zbuildfont3(i_ctx_t *i_ctx_p)
     build_proc_refs build;
     gs_font_base *pfont;
 
-    check_type(imemory, *op, t_dictionary);
-    code = build_gs_font_procs(imemory, op, &build);
+    check_type(*op, t_dictionary);
+    code = build_gs_font_procs(op, &build);
     if (code < 0)
 	return code;
     code = build_gs_simple_font(i_ctx_p, op, &pfont, ft_user_defined,
@@ -112,8 +113,7 @@ zfont_glyph_name(gs_font *font, gs_glyph index, gs_const_string *pstr)
 	int code;
 
 	sprintf(cid_name, "%lu", (ulong) index);
-	code = name_ref(font->memory, 
-			(const byte *)cid_name, strlen(cid_name),
+	code = name_ref(font->memory, (const byte *)cid_name, strlen(cid_name),
 			&nref, 1);
 	if (code < 0)
 	    return code;
@@ -181,9 +181,11 @@ gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph)
 	 * can't be a default value for FontInfo.GlyphNames2Unicode .
 	 */
     }
-    UnicodeDecoding = zfont_get_to_unicode_map(font->dir);
-    if (UnicodeDecoding != NULL && r_type(UnicodeDecoding) == t_dictionary)
-	return gs_font_map_glyph_by_dict(font->memory, UnicodeDecoding, glyph);
+    if (glyph <= GS_MIN_CID_GLYPH) {
+	UnicodeDecoding = zfont_get_to_unicode_map(font->dir);
+	if (UnicodeDecoding != NULL && r_type(UnicodeDecoding) == t_dictionary)
+	    return gs_font_map_glyph_by_dict(font->memory, UnicodeDecoding, glyph);
+    }
     return GS_NO_CHAR; /* No map. */
 }
 
@@ -225,28 +227,59 @@ build_proc_name_refs(const gs_memory_t *mem, build_proc_refs * pbuild,
 
 /* Get the BuildChar and/or BuildGlyph routines from a (base) font. */
 int
-build_gs_font_procs(const gs_memory_t *mem, os_ptr op, build_proc_refs * pbuild)
+build_gs_font_procs(os_ptr op, build_proc_refs * pbuild)
 {
     int ccode, gcode;
     ref *pBuildChar;
     ref *pBuildGlyph;
 
-    check_type(mem, *op, t_dictionary);
+    check_type(*op, t_dictionary);
     ccode = dict_find_string(op, "BuildChar", &pBuildChar);
     gcode = dict_find_string(op, "BuildGlyph", &pBuildGlyph);
     if (ccode <= 0) {
 	if (gcode <= 0)
-	    return_error(mem, e_invalidfont);
+	    return_error(e_invalidfont);
 	make_null(&pbuild->BuildChar);
     } else {
-	check_proc(mem, *pBuildChar);
+	check_proc(*pBuildChar);
 	pbuild->BuildChar = *pBuildChar;
     }
     if (gcode <= 0)
 	make_null(&pbuild->BuildGlyph);
     else {
-	check_proc(mem, *pBuildGlyph);
+	check_proc(*pBuildGlyph);
 	pbuild->BuildGlyph = *pBuildGlyph;
+    }
+    return 0;
+}
+
+private int font_with_same_UID_and_another_metrics(const gs_font *pfont0, const gs_font *pfont1)
+{
+    const gs_font_base *pbfont0 = (const gs_font_base *)pfont0;
+    const gs_font_base *pbfont1 = (const gs_font_base *)pfont1;
+
+
+    if (uid_equal(&pbfont0->UID, &pbfont1->UID)) {
+	const ref *pfdict0 = &pfont_data(gs_font_parent(pbfont0))->dict;
+	const ref *pfdict1 = &pfont_data(gs_font_parent(pbfont1))->dict;
+	ref *pmdict0, *pmdict1;
+
+	if (pbfont0->WMode || dict_find_string(pfdict0, "Metrics", &pmdict0) <= 0)
+	    pmdict0 = NULL;
+	if (pbfont1->WMode || dict_find_string(pfdict1, "Metrics", &pmdict1) <= 0)
+	    pmdict1 = NULL;
+	if (!pmdict0 != !pmdict1)
+	    return 1;
+	if (pmdict0 != NULL && !obj_eq(pfont0->memory, pmdict0, pmdict1))
+	    return 1;
+	if (!pbfont0->WMode || dict_find_string(pfdict0, "Metrics2", &pmdict0) <= 0)
+	    pmdict0 = NULL;
+	if (!pbfont0->WMode || dict_find_string(pfdict1, "Metrics2", &pmdict1) <= 0)
+	    pmdict1 = NULL;
+	if (!pmdict0 != !pmdict1)
+	    return 1;
+	if (pmdict0 != NULL && !obj_eq(pfont0->memory, pmdict0, pmdict1))
+	    return 1;
     }
     return 0;
 }
@@ -268,16 +301,16 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 
     if (dict_find_string(op, "CharStrings", &pcharstrings) <= 0) {
 	if (!(options & bf_CharStrings_optional))
-	    return_error(imemory, e_invalidfont);
+	    return_error(e_invalidfont);
     } else {
 	ref *ignore;
 
 	if (!r_has_type(pcharstrings, t_dictionary))
-	    return_error(imemory, e_invalidfont);
+	    return_error(e_invalidfont);
 	if ((options & bf_notdef_required) != 0 &&
 	    dict_find_string(pcharstrings, ".notdef", &ignore) <= 0
 	    )
-	    return_error(imemory, e_invalidfont);
+	    return_error(e_invalidfont);
 	/*
 	 * Since build_gs_simple_font may resize the dictionary and cause
 	 * pointers to become invalid, save CharStrings.
@@ -300,6 +333,16 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 	!dict_check_uid_param(op, &pfont->UID)
 	)
 	uid_set_invalid(&pfont->UID);
+    if (uid_is_valid(&pfont->UID)) {
+	const gs_font *pfont0 = (const gs_font *)pfont;
+	
+	code = gs_font_find_similar(ifont_dir, &pfont0, 
+		       font_with_same_UID_and_another_metrics);
+	if (code < 0)
+	    return code; /* Must not happen. */
+	if (code)
+	    uid_set_invalid(&pfont->UID);
+    }
     return 0;
 }
 
@@ -364,11 +407,11 @@ build_gs_outline_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     int painttype;
     float strokewidth;
     gs_font_base *pfont;
-    int code = dict_int_param(imemory, op, "PaintType", 0, 3, 0, &painttype);
+    int code = dict_int_param(op, "PaintType", 0, 3, 0, &painttype);
 
     if (code < 0)
 	return code;
-    code = dict_float_param(imemory, op, "StrokeWidth", 0.0, &strokewidth);
+    code = dict_float_param(op, "StrokeWidth", 0.0, &strokewidth);
     if (code < 0)
 	return code;
     code = build_base_font(i_ctx_p, op, ppfont, ftype, pstype, pbuild,
@@ -379,6 +422,25 @@ build_gs_outline_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     pfont->PaintType = painttype;
     pfont->StrokeWidth = strokewidth;
     return 0;
+}
+
+void
+get_GlyphNames2Unicode(i_ctx_t *i_ctx_p, gs_font *pfont, ref *pdref)
+{
+    ref *pfontinfo = NULL, *g2u = NULL;
+    font_data *pdata;
+
+    if (dict_find_string(pdref, "FontInfo", &pfontinfo) <= 0 ||
+	    !r_has_type(pfontinfo, t_dictionary) ||
+	    dict_find_string(pfontinfo, "GlyphNames2Unicode", &g2u) <= 0 ||
+	    !r_has_type(pfontinfo, t_dictionary))
+	return;
+    /*
+     * Since build_gs_font may resize the dictionary and cause
+     * pointers to become invalid, save Glyph2Unicode
+     */
+    pdata = pfont_data(pfont);
+    ref_assign_new(&pdata->GlyphNames2Unicode, g2u);
 }
 
 /* Do the common work for building a font of any non-composite FontType. */
@@ -393,13 +455,7 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     gs_uid uid;
     int code;
     gs_font_base *pfont;
-    ref *pfontinfo, *g2u = NULL;
 
-    if (dict_find_string(op, "FontInfo", &pfontinfo) <= 0 ||
-	    !r_has_type(pfontinfo, t_dictionary) ||
-	    dict_find_string(pfontinfo, "GlyphNames2Unicode", &g2u) <= 0 ||
-	    !r_has_type(pfontinfo, t_dictionary))
-	g2u = NULL;
     code = font_bbox_param(imemory, op, bbox);
     if (code < 0)
 	return code;
@@ -422,11 +478,7 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     pfont->FAPI_font_data = 0;
     init_gs_simple_font(pfont, bbox, &uid);
     lookup_gs_simple_font_encoding(pfont);
-    if (g2u != NULL) {
-	font_data *pdata = pfont_data(pfont);
-
-	ref_assign_new(&pdata->GlyphNames2Unicode, g2u);
-    }
+    get_GlyphNames2Unicode(i_ctx_p, (gs_font *)pfont, op);
     return 0;
 }
 
@@ -481,7 +533,7 @@ lookup_gs_simple_font_encoding(gs_font_base * pfont)
 	    for (i = esize; --i >= 0;) {
 		gs_const_string rstr;
 
-		gs_c_glyph_name(pfont->memory, gs_c_known_encode((gs_char)i, index), &rstr);
+		gs_c_glyph_name(gs_c_known_encode((gs_char)i, index), &rstr);
 		if (rstr.size == fstrs[i].size &&
 		    !memcmp(rstr.data, fstrs[i].data, rstr.size)
 		    )
@@ -515,7 +567,7 @@ sub_font_params(const gs_memory_t *mem, const ref *op, gs_matrix *pmat, gs_matri
     if (dict_find_string(op, "FontMatrix", &pmatrix) <= 0 ||
 	read_matrix(mem, pmatrix, pmat) < 0
 	)
-	return_error(mem, e_invalidfont);
+	return_error(e_invalidfont);
     if (dict_find_string(op, ".OrigFont", &porigfont) <= 0)
 	porigfont = NULL;
     if (pomat!= NULL) {
@@ -525,7 +577,12 @@ sub_font_params(const gs_memory_t *mem, const ref *op, gs_matrix *pmat, gs_matri
 	    )
 	    memset(pomat, 0, sizeof(*pomat));
     }
-    if (dict_find_string((porigfont != NULL ? porigfont : op), ".Alias", &pfontname) > 0) {
+    /* Use the FontInfo/OrigFontName key preferrentially (created by MS PSCRIPT driver) */
+    if ((dict_find_string((porigfont != NULL ? porigfont : op), "FontInfo", &pfontname) > 0) &&
+	r_has_type(pfontname, t_dictionary) &&
+        (dict_find_string(pfontname, "OrigFontName", &pfontname) > 0)) {
+	get_font_name(mem, pfname, pfontname);
+    } else if (dict_find_string((porigfont != NULL ? porigfont : op), ".Alias", &pfontname) > 0) {
         /* If we emulate the font, we want the requested name rather than a substitute. */
 	get_font_name(mem, pfname, pfontname);
     } else if (dict_find_string((porigfont != NULL ? porigfont : op), "FontName", &pfontname) > 0) {
@@ -562,26 +619,26 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	!r_has_type(pftype, t_integer) ||
 	pftype->value.intval != (int)ftype
 	)
-	return_error(imemory, e_invalidfont);
+	return_error(e_invalidfont);
     if (dict_find_string(op, "Encoding", &pencoding) <= 0) {
 	if (!(options & bf_Encoding_optional))
-	    return_error(imemory, e_invalidfont);
+	    return_error(e_invalidfont);
 	pencoding = 0;
     } else {
 	if (!r_is_array(pencoding))
-	    return_error(imemory, e_invalidfont);
+	    return_error(e_invalidfont);
     }
-    if ((code = dict_int_param(imemory, op, "WMode", 0, 1, 0, &wmode)) < 0 ||
-	(code = dict_bool_param(imemory, op, "BitmapWidths", false, &bitmapwidths)) < 0 ||
-	(code = dict_int_param(imemory, op, "ExactSize", 0, 2, fbit_use_bitmaps, &exactsize)) < 0 ||
-	(code = dict_int_param(imemory, op, "InBetweenSize", 0, 2, fbit_use_outlines, &inbetweensize)) < 0 ||
-	(code = dict_int_param(imemory, op, "TransformedChar", 0, 2, fbit_use_outlines, &transformedchar)) < 0
+    if ((code = dict_int_param(op, "WMode", 0, 1, 0, &wmode)) < 0 ||
+	(code = dict_bool_param(op, "BitmapWidths", false, &bitmapwidths)) < 0 ||
+	(code = dict_int_param(op, "ExactSize", 0, 2, fbit_use_bitmaps, &exactsize)) < 0 ||
+	(code = dict_int_param(op, "InBetweenSize", 0, 2, fbit_use_outlines, &inbetweensize)) < 0 ||
+	(code = dict_int_param(op, "TransformedChar", 0, 2, fbit_use_outlines, &transformedchar)) < 0
 	)
 	return code;
     code = dict_find_string(op, "FID", &pfid);
     if (code > 0) {
 	if (!r_has_type(pfid, t_fontID))
-	    return_error(imemory, e_invalidfont);
+	    return_error(e_invalidfont);
 	/*
 	 * If this font has a FID entry already, it might be a scaled font
 	 * made by makefont or scalefont; in a Level 2 environment, it might
@@ -592,8 +649,8 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	pfont = r_ptr(pfid, gs_font);
 	if (pfont->base == pfont) {	/* original font */
 	    if (!level2_enabled)
-		return_error(imemory, e_invalidfont);
-	    if (obj_eq(imemory, pfont_dict(pfont), op)) {
+		return_error(e_invalidfont);
+	    if (obj_eq(pfont->memory, pfont_dict(pfont), op)) {
 		*ppfont = pfont;
 		return 1;
 	    }
@@ -617,7 +674,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
     }
     /* This is a new font. */
     if (!r_has_attr(aop, a_write))
-	return_error(imemory, e_invalidaccess);
+	return_error(e_invalidaccess);
     {
 	ref encoding;
 
@@ -676,7 +733,7 @@ build_gs_sub_font(i_ctx_t *i_ctx_p, const ref *op, gs_font **ppfont,
     pdata = ialloc_struct(font_data, &st_font_data,
 			  "buildfont(data)");
     if (pfont == 0 || pdata == 0)
-	code = gs_note_error(imemory, e_VMerror);
+	code = gs_note_error(e_VMerror);
     else if (fid_op)
 	code = add_FID(i_ctx_p, fid_op, pfont, iimemory);
     if (code < 0) {

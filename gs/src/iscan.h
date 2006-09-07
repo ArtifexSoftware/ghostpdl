@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Token scanner state and interface */
 /* Requires gsstruct.h, ostack.h, stream.h */
 
@@ -110,7 +111,8 @@ extern_st(st_scanner_state);
 #define SCAN_PROCESS_COMMENTS 4	/* return scan_Comment for comments */
 				/* (all comments or only non-DSC) */
 #define SCAN_PROCESS_DSC_COMMENTS 8  /* return scan_DSC_Comment */
-#define SCAN_PDF_RULES 16	/* Special PDF scanning rules used */
+#define SCAN_PDF_RULES 16	/* PDF scanning rules (for names) */
+#define SCAN_PDF_INV_NUM 32	/* Adobe ignores invalid numbers */
 				/* This is for compatibility with Adobe */
 				/* Acrobat Reader			*/
 void scanner_state_init_options(scanner_state *sstate, int options);

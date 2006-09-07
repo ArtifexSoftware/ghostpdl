@@ -1,15 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-/*$Id$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+
+/* $Id$ */
 
 /*
  * This is a DSC parser, based on the DSC 3.0 spec, 
@@ -1437,18 +1439,18 @@ dsc_parse_pages(CDSC *dsc)
 	else {
 	    int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, 
 		dsc->line, dsc->line_length);
-	switch (rc) {
-	    case CDSC_RESPONSE_OK:
-		/* assume (atend) */
-		/* we should mark it as deferred */
-		break;
-	    case CDSC_RESPONSE_CANCEL:
-		/* ignore it */
-		break;
-	    case CDSC_RESPONSE_IGNORE_ALL:
-		return CDSC_NOTDSC;
+	    switch (rc) {
+		case CDSC_RESPONSE_OK:
+		    /* assume (atend) */
+		    /* we should mark it as deferred */
+		    break;
+		case CDSC_RESPONSE_CANCEL:
+		    /* ignore it */
+		    break;
+		case CDSC_RESPONSE_IGNORE_ALL:
+		    return CDSC_NOTDSC;
+	    }
 	}
-    }
     }
     else if (COMPARE(p, "(atend)")) {
 	if (dsc->scan_section != scan_comments)
@@ -1551,20 +1553,20 @@ dsc_parse_bounding_box(CDSC *dsc, CDSCBBOX** pbbox, int offset)
 	if (dsc->scan_section == scan_trailer)
 	    dsc_unknown(dsc);
 	else {
-	int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, 
-		dsc->line_length);
-	switch (rc) {
-	    case CDSC_RESPONSE_OK:
-		/* assume (atend) */
-		/* we should mark it as deferred */
-		break;
-	    case CDSC_RESPONSE_CANCEL:
-		/* ignore it */
-		break;
-	    case CDSC_RESPONSE_IGNORE_ALL:
-		return CDSC_NOTDSC;
+	    int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, 
+		    dsc->line_length);
+	    switch (rc) {
+		case CDSC_RESPONSE_OK:
+		    /* assume (atend) */
+		    /* we should mark it as deferred */
+		    break;
+		case CDSC_RESPONSE_CANCEL:
+		    /* ignore it */
+		    break;
+		case CDSC_RESPONSE_IGNORE_ALL:
+		    return CDSC_NOTDSC;
+	    }
 	}
-    }
     }
     else if (COMPARE(p, "(atend)")) {
 	if (dsc->scan_section == scan_trailer)
@@ -1689,20 +1691,20 @@ dsc_parse_float_bounding_box(CDSC *dsc, CDSCFBBOX** pbbox, int offset)
 	if (dsc->scan_section == scan_trailer)
 	    dsc_unknown(dsc);
 	else {
-	int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, 
-		dsc->line_length);
-	switch (rc) {
-	    case CDSC_RESPONSE_OK:
-		/* assume (atend) */
-		/* we should mark it as deferred */
-		break;
-	    case CDSC_RESPONSE_CANCEL:
-		/* ignore it */
-		break;
-	    case CDSC_RESPONSE_IGNORE_ALL:
-		return CDSC_NOTDSC;
+	    int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, 
+		    dsc->line_length);
+	    switch (rc) {
+		case CDSC_RESPONSE_OK:
+		    /* assume (atend) */
+		    /* we should mark it as deferred */
+		    break;
+		case CDSC_RESPONSE_CANCEL:
+		    /* ignore it */
+		    break;
+		case CDSC_RESPONSE_IGNORE_ALL:
+		    return CDSC_NOTDSC;
+	    }
 	}
-    }
     }
     else if (COMPARE(p, "(atend)")) {
 	if (dsc->scan_section == scan_trailer)
@@ -1773,18 +1775,18 @@ dsc_parse_orientation(CDSC *dsc, unsigned int *porientation, int offset)
 	else {
 	    int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, 
 		dsc->line, dsc->line_length);
-	switch (rc) {
-	    case CDSC_RESPONSE_OK:
-		/* assume (atend) */
-		/* we should mark it as deferred */
-		break;
-	    case CDSC_RESPONSE_CANCEL:
-		/* ignore it */
-		break;
-	    case CDSC_RESPONSE_IGNORE_ALL:
-		return CDSC_NOTDSC;
+	    switch (rc) {
+		case CDSC_RESPONSE_OK:
+		    /* assume (atend) */
+		    /* we should mark it as deferred */
+		    break;
+		case CDSC_RESPONSE_CANCEL:
+		    /* ignore it */
+		    break;
+		case CDSC_RESPONSE_IGNORE_ALL:
+		    return CDSC_NOTDSC;
+	    }
 	}
-    }
     }
     else if (COMPARE(p, "(atend)")) {
 	if (dsc->scan_section == scan_trailer)
@@ -1840,20 +1842,20 @@ dsc_parse_order(CDSC *dsc)
 	if (dsc->scan_section == scan_trailer)
 	    dsc_unknown(dsc);
 	else {
-	int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, 
-		dsc->line_length);
-	switch (rc) {
-	    case CDSC_RESPONSE_OK:
-		/* assume (atend) */
-		/* we should mark it as deferred */
-		break;
-	    case CDSC_RESPONSE_CANCEL:
-		/* ignore it */
-		break;
-	    case CDSC_RESPONSE_IGNORE_ALL:
-		return CDSC_NOTDSC;
+	    int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, 
+		    dsc->line_length);
+	    switch (rc) {
+		case CDSC_RESPONSE_OK:
+		    /* assume (atend) */
+		    /* we should mark it as deferred */
+		    break;
+		case CDSC_RESPONSE_CANCEL:
+		    /* ignore it */
+		    break;
+		case CDSC_RESPONSE_IGNORE_ALL:
+		    return CDSC_NOTDSC;
+	    }
 	}
-    }
     }
     else if (COMPARE(p, "(atend)")) {
 	if (dsc->scan_section == scan_trailer)
@@ -3697,13 +3699,13 @@ dsc_get_real(const char *line, unsigned int len, unsigned int *offset)
 int
 dsc_stricmp(const char *s, const char *t)
 {
-    while (toupper(*s) == toupper(*t)) {
+    while (toupper((unsigned char)*s) == toupper((unsigned char)*t)) {
 	if (*s == '\0')
 	    return 0;
    	s++;
 	t++; 
     }
-    return (toupper(*s) - toupper(*t));
+    return (toupper((unsigned char)*s) - toupper((unsigned char)*t));
 }
 
 

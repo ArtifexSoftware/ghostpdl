@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Image setup procedures for Ghostscript library */
 #include "memory_.h"
 #include "gx.h"
@@ -19,7 +20,6 @@
 #include "gscspace.h"
 #include "gsmatrix.h"		/* for gsiparam.h */
 #include "gsimage.h"
-#include "gsutil.h"
 #include "gxarith.h"		/* for igcd */
 #include "gxdevice.h"
 #include "gxiparam.h"
@@ -156,7 +156,6 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
 
     if (code < 0)
 	return code;
-    gs_set_object_tag(pgs, GS_IMAGE_TAG);
     if (uses_color) {
 	gx_set_dev_color(pgs);
         code = gs_state_color_load(pgs);
@@ -206,7 +205,7 @@ gs_image_init(gs_image_enum * penum, const gs_image_t * pim, bool multi,
 	    image.adjust = false;
     } else {
 	if (pgs->in_cachedevice)
-	    return_error(pgs->memory, gs_error_undefined);
+	    return_error(gs_error_undefined);
 	if (image.ColorSpace == NULL) {
             /* parameterless color space - no re-entrancy problems */
             static gs_color_space cs;
@@ -282,19 +281,15 @@ begin_planes(gs_image_enum *penum)
     next_plane(penum);
 }
 
-/* Start processing a general image. */
-int
-gs_image_enum_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
-		   const gs_data_image_t * pim, gs_state *pgs)
-{
-    return gs_image_common_init(penum, pie, pim, pgs->memory,
-				(pgs->in_charpath ? NULL :
-				 gs_currentdevice_inline(pgs)));
-}
 int
 gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
-	    const gs_data_image_t * pim, gs_memory_t * mem, gx_device * dev)
+	    const gs_data_image_t * pim, gx_device * dev)
 {
+    /*
+     * HACK : For a compatibility with gs_image_cleanup_and_free_enum,
+     * penum->memory must be initialized in advance 
+     * with the memory heap that owns *penum.
+     */
     int i;
 
     if (pim->Width == 0 || pim->Height == 0) {
@@ -302,7 +297,6 @@ gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
 	return 1;
     }
     image_enum_init(penum);
-    penum->memory = mem;
     penum->dev = dev;
     penum->info = pie;
     penum->num_planes = pie->num_planes;
@@ -328,6 +322,18 @@ gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
     penum->wanted_varies = true;
     begin_planes(penum);
     return 0;
+}
+
+/* Initialize an enumerator for a general image. 
+   penum->memory must be initialized in advance.
+*/
+int
+gs_image_enum_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
+		   const gs_data_image_t * pim, gs_state *pgs)
+{
+    return gs_image_common_init(penum, pie, pim,
+				(pgs->in_charpath ? NULL :
+				 gs_currentdevice_inline(pgs)));
 }
 
 /* Return the set of planes wanted. */
@@ -366,7 +372,7 @@ free_row_buffers(gs_image_enum *penum, int num_planes, client_name_t cname)
     int i;
 
     for (i = num_planes - 1; i >= 0; --i) {
-	if_debug3(penum->memory, 'b', "[b]free plane %d row (0x%lx,%u)\n",
+	if_debug3('b', "[b]free plane %d row (0x%lx,%u)\n",
 		  i, (ulong)penum->planes[i].row.data,
 		  penum->planes[i].row.size);
 	gs_free_string(gs_image_row_memory(penum), penum->planes[i].row.data,
@@ -388,7 +394,7 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
     gs_const_string plane_data[gs_image_max_planes];
 
     if (penum->planes[px].source.size != 0)
-	return_error(penum->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     for (i = 0; i < num_planes; i++)
 	plane_data[i].size = 0;
     plane_data[px].data = dbytes;
@@ -415,7 +421,7 @@ gs_image_next_planes(gs_image_enum * penum,
 	int pi;
 
 	for (pi = 0; pi < num_planes; ++pi)
-	    dprintf6(penum->memory, "[b]plane %d source=0x%lx,%u pos=%u data=0x%lx,%u\n",
+	    dprintf6("[b]plane %d source=0x%lx,%u pos=%u data=0x%lx,%u\n",
 		     pi, (ulong)penum->planes[pi].source.data,
 		     penum->planes[pi].source.size, penum->planes[pi].pos,
 		     (ulong)plane_data[pi].data, plane_data[pi].size);
@@ -459,11 +465,11 @@ gs_image_next_planes(gs_image_enum * penum,
 			     gs_resize_string(mem, old_data, old_size, raster,
 					      "gs_image_next(row)"));
 
-			if_debug5(penum->memory, 'b', "[b]plane %d row (0x%lx,%u) => (0x%lx,%u)\n",
+			if_debug5('b', "[b]plane %d row (0x%lx,%u) => (0x%lx,%u)\n",
 				  i, (ulong)old_data, old_size,
 				  (ulong)row, raster);
 			if (row == 0) {
-			    code = gs_note_error(penum->memory, gs_error_VMerror);
+			    code = gs_note_error(gs_error_VMerror);
 			    free_row_buffers(penum, i, "gs_image_next(row)");
 			    break;
 			}
@@ -511,7 +517,7 @@ gs_image_next_planes(gs_image_enum * penum,
 	} else {
 	    code = gx_image_plane_data_rows(penum->info, penum->image_planes,
 					    h, &h);
-	    if_debug2(penum->memory, 'b', "[b]used %d, code=%d\n", h, code);
+	    if_debug2('b', "[b]used %d, code=%d\n", h, code);
 	    penum->error = code < 0;
 	}
 	penum->y += h;
@@ -554,5 +560,15 @@ gs_image_cleanup(gs_image_enum * penum)
     if (penum->info != 0)
         code = gx_image_end(penum->info, !penum->error);
     /* Don't free the local enumerator -- the client does that. */
+    return code;
+}
+
+/* Clean up after processing an image and free the enumerator. */
+int
+gs_image_cleanup_and_free_enum(gs_image_enum * penum)
+{
+    int code = gs_image_cleanup(penum);
+
+    gs_free_object(penum->memory, penum, "gs_image_cleanup_and_free_enum");
     return code;
 }

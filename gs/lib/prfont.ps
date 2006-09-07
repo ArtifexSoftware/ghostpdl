@@ -22,7 +22,7 @@
 % Copyright transferred 2000/09/15 to artofcode LLC.  Send any questions to
 %   bug-gs@ghostscript.com.
 
-% $RCSfile$ $Revision$
+% $Id$
 
 % Example usages at bottom of file
 
@@ -174,7 +174,7 @@
      BlockStart dup BlockCount 1 sub add DoBlock
      F 10 scalefont setfont
      36 2.4 Inch moveto
-    0 32 BlockCount 32 sub 224 .min {
+    0 32 BlockCount 1 sub {
       0 -0.4 Inch rmoveto gsave
       dup 31 add BlockCount 1 sub .min
       exch BlockStart add exch BlockStart add DoLine
@@ -197,8 +197,10 @@
   DoTitle (, characters 0-127) show
   0 127 DoBlock
   F 10 scalefont setfont
-  36 2.0 Inch moveto 0 63 DoLine
-  36 1.5 Inch moveto 64 127 DoLine
+  36 2.0 Inch moveto   0  31 DoLine
+  36 1.6 Inch moveto  32  63 DoLine
+  36 1.2 Inch moveto  64  95 DoLine
+  36 0.8 Inch moveto  96 127 DoLine
   showpage
 
 	% Display the second 128 encoded characters.
@@ -206,8 +208,10 @@
   DoTitle (, characters 128-255) show
   128 255 DoBlock
   F 10 scalefont setfont
-  36 2.0 Inch moveto 128 191 DoLine
-  36 1.5 Inch moveto 192 255 DoLine
+  36 2.0 Inch moveto 128 159 DoLine
+  36 1.6 Inch moveto 160 191 DoLine
+  36 1.2 Inch moveto 192 223 DoLine
+  36 0.8 Inch moveto 224 255 DoLine
   showpage
 
   F /CharStrings known

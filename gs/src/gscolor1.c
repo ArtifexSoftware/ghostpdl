@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Level 1 extended color operators for Ghostscript library */
 #include "gx.h"
 #include "gserrors.h"
@@ -71,7 +72,7 @@ gs_setblackgeneration_remap(gs_state * pgs, gs_mapping_proc proc, bool remap)
 {
     rc_unshare_struct(pgs->black_generation, gx_transfer_map,
 		      &st_transfer_map, pgs->memory,
-		      return_error(pgs->memory, gs_error_VMerror),
+		      return_error(gs_error_VMerror),
 		      "gs_setblackgeneration");
     pgs->black_generation->proc = proc;
     pgs->black_generation->id = gs_next_ids(pgs->memory, 1);
@@ -101,7 +102,7 @@ gs_setundercolorremoval_remap(gs_state * pgs, gs_mapping_proc proc, bool remap)
 {
     rc_unshare_struct(pgs->undercolor_removal, gx_transfer_map,
 		      &st_transfer_map, pgs->memory,
-		      return_error(pgs->memory, gs_error_VMerror),
+		      return_error(gs_error_VMerror),
 		      "gs_setundercolorremoval");
     pgs->undercolor_removal->proc = proc;
     pgs->undercolor_removal->id = gs_next_ids(pgs->memory, 1);
@@ -168,13 +169,13 @@ gs_setcolortransfer_remap(gs_state * pgs, gs_mapping_proc red_proc,
 	gx_set_effective_transfer(pgs);
     return 0;
   fblue:
-    rc_assign(pgs->memory, ptran->green, old.green, "setcolortransfer");
+    rc_assign(ptran->green, old.green, "setcolortransfer");
   fgreen:
-    rc_assign(pgs->memory, ptran->red, old.red, "setcolortransfer");
+    rc_assign(ptran->red, old.red, "setcolortransfer");
   fred:
-    rc_assign(pgs->memory, ptran->gray, old.gray, "setcolortransfer");
+    rc_assign(ptran->gray, old.gray, "setcolortransfer");
   fgray:
-    return_error(pgs->memory, gs_error_VMerror);
+    return_error(gs_error_VMerror);
 }
 int
 gs_setcolortransfer(gs_state * pgs, gs_mapping_proc red_proc,

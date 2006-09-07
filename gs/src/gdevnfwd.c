@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* Null and forwarding device implementation */
 #include "gx.h"
 #include "gserrors.h"
@@ -27,7 +27,7 @@ gx_device_forward_finalize(gx_device *dev)
     gx_device *target = ((gx_device_forward *)dev)->target;
 
     ((gx_device_forward *)dev)->target = 0;
-    rc_decrement_only(dev->memory, target, "gx_device_forward_finalize");
+    rc_decrement_only(target, "gx_device_forward_finalize");
 }
 
 /* Set the target of a forwarding device. */
@@ -40,7 +40,7 @@ gx_device_set_target(gx_device_forward *fdev, gx_device *target)
      */
     if (target && !fdev->finalize)
 	fdev->finalize = gx_device_forward_finalize;
-    rc_assign(fdev->memory, fdev->target, target, "gx_device_set_target");
+    rc_assign(fdev->target, target, "gx_device_set_target");
 }
 
 /* Fill in NULL procedures in a forwarding device procedure record. */
@@ -100,6 +100,10 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, pattern_manage, gx_forward_pattern_manage);
     fill_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
     fill_dev_proc(dev, include_color_space, gx_forward_include_color_space);
+    fill_dev_proc(dev, fill_linear_color_scanline, gx_forward_fill_linear_color_scanline);
+    fill_dev_proc(dev, fill_linear_color_trapezoid, gx_forward_fill_linear_color_trapezoid);
+    fill_dev_proc(dev, fill_linear_color_triangle, gx_forward_fill_linear_color_triangle);
+    fill_dev_proc(dev, update_spot_equivalent_colors, gx_forward_update_spot_equivalent_colors);
     gx_device_fill_in_procs((gx_device *) dev);
 }
 
@@ -115,6 +119,16 @@ gx_device_forward_color_procs(gx_device_forward * dev)
     set_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
     set_dev_proc(dev, encode_color, gx_forward_encode_color);
     set_dev_proc(dev, decode_color, gx_forward_decode_color);
+}
+
+int
+gx_forward_close_device(gx_device * dev)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
+    return (tdev == 0) ? gx_default_close_device(dev)
+		       : dev_proc(tdev, close_device)(tdev);
 }
 
 void
@@ -182,7 +196,7 @@ gx_forward_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     gx_device *tdev = fdev->target;
 
     if (tdev == 0)
-	return_error(dev->memory, gs_error_Fatal);
+	return_error(gs_error_Fatal);
     return dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color);
 }
 
@@ -210,9 +224,23 @@ gx_forward_copy_mono(gx_device * dev, const byte * data,
     gx_device *tdev = fdev->target;
 
     if (tdev == 0)
-	return_error(dev->memory, gs_error_Fatal);
+	return_error(gs_error_Fatal);
     return dev_proc(tdev, copy_mono)
 	(tdev, data, dx, raster, id, x, y, w, h, zero, one);
+}
+
+int
+gx_forward_copy_alpha(gx_device * dev, const byte * data, int data_x,
+	   int raster, gx_bitmap_id id, int x, int y, int width, int height,
+		      gx_color_index color, int depth)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
+    if (tdev == 0)
+	return_error(gs_error_Fatal);
+    return dev_proc(tdev, copy_mono)
+	(tdev, data, data_x, raster, id, x, y, width, height, color, depth);
 }
 
 int
@@ -224,7 +252,7 @@ gx_forward_copy_color(gx_device * dev, const byte * data,
     gx_device *tdev = fdev->target;
 
     if (tdev == 0)
-	return_error(dev->memory, gs_error_Fatal);
+	return_error(gs_error_Fatal);
     return dev_proc(tdev, copy_color)
 	(tdev, data, dx, raster, id, x, y, w, h);
 }
@@ -317,7 +345,7 @@ gx_forward_get_page_device(gx_device * dev)
     if (tdev == 0)
 	return gx_default_get_page_device(dev);
     pdev = dev_proc(tdev, get_page_device)(tdev);
-    return (pdev == tdev ? dev : pdev);
+    return pdev;
 }
 
 int
@@ -677,15 +705,17 @@ gx_forward_get_color_mapping_procs(const gx_device * dev)
 }
 
 int
-gx_forward_get_color_comp_index(const gx_device * dev, const char * pname,
-						int name_size, int src_index)
+gx_forward_get_color_comp_index(gx_device * dev, const char * pname,
+					int name_size, int component_type)
 {
     const gx_device_forward * fdev = (const gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 
-	? gx_error_get_color_comp_index(dev, pname, name_size, src_index)
-	: dev_proc(tdev, get_color_comp_index)(tdev, pname, name_size, src_index));
+	? gx_error_get_color_comp_index(dev, pname,
+				name_size, component_type)
+	: dev_proc(tdev, get_color_comp_index)(tdev, pname,
+				name_size, component_type));
 }
 
 gx_color_index
@@ -723,8 +753,7 @@ gx_forward_pattern_manage(gx_device * dev, gx_bitmap_id id,
     if (tdev == 0)
 	return 0;
     else
-	dev_proc(tdev, pattern_manage)(tdev, id, pinst, function);
-    return 0;
+	return dev_proc(tdev, pattern_manage)(tdev, id, pinst, function);
 }
 
 int
@@ -739,7 +768,7 @@ gx_forward_fill_rectangle_hl_color(gx_device *dev,
     /* Note that clist sets fdev->target == fdev, 
        so this function is unapplicable to clist. */
     if (tdev == 0)
-	return_error(dev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     else
 	return dev_proc(tdev, fill_rectangle_hl_color)(tdev, rect, 
 						pis, pdcolor, NULL);
@@ -759,6 +788,61 @@ gx_forward_include_color_space(gx_device *dev, gs_color_space *cspace,
     else
 	return dev_proc(tdev, include_color_space)(tdev, cspace, res_name, name_length);
 }
+
+int 
+gx_forward_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
+	int i, int j, int w,
+	const frac31 *c, const int32_t *addx, const int32_t *mulx, int32_t divx)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+    dev_proc_fill_linear_color_scanline((*proc)) =
+	(tdev == 0 ? (tdev = dev, gx_default_fill_linear_color_scanline) :
+	 dev_proc(tdev, fill_linear_color_scanline));
+    return proc(tdev, fa, i, j, w, c, addx, mulx, divx);
+}
+
+int 
+gx_forward_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_attributes *fa,
+	const gs_fixed_point *p0, const gs_fixed_point *p1,
+	const gs_fixed_point *p2, const gs_fixed_point *p3,
+	const frac31 *c0, const frac31 *c1,
+	const frac31 *c2, const frac31 *c3)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+    dev_proc_fill_linear_color_trapezoid((*proc)) =
+	(tdev == 0 ? (tdev = dev, gx_default_fill_linear_color_trapezoid) :
+	 dev_proc(tdev, fill_linear_color_trapezoid));
+    return proc(tdev, fa, p0, p1, p2, p3, c0, c1, c2, c3);
+}
+
+int 
+gx_forward_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
+	const gs_fixed_point *p0, const gs_fixed_point *p1,
+	const gs_fixed_point *p2,
+	const frac31 *c0, const frac31 *c1, const frac31 *c2)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+    dev_proc_fill_linear_color_triangle((*proc)) =
+	(tdev == 0 ? (tdev = dev, gx_default_fill_linear_color_triangle) :
+	 dev_proc(tdev, fill_linear_color_triangle));
+    return proc(tdev, fa, p0, p1, p2, c0, c1, c2);
+}
+
+int 
+gx_forward_update_spot_equivalent_colors(gx_device *dev, const gs_state * pgs)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+    int code = 0;
+
+    if (tdev != NULL)
+	code = dev_proc(tdev, update_spot_equivalent_colors)(tdev, pgs);
+    return code;
+}
+
 
 /* ---------------- The null device(s) ---------------- */
 

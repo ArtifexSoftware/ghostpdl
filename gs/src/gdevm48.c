@@ -1,11 +1,15 @@
-/* Copyright (C) 2001-2002 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 /*$Id$ */
 /* 48-bit-per-pixel "memory" (stored bitmap) device */
 #include "memory_.h"
@@ -22,7 +26,7 @@ struct stats_mem48_s {
 	fprevc[257];
     double ftotal;
 } stats_mem48;
-static int prev_count;
+static int prev_count = 0;
 static gx_color_index prev_colors[256];
 # define INCR(v) (++(stats_mem48.v))
 #else
@@ -38,14 +42,13 @@ static gx_color_index prev_colors[256];
 
 /* Procedures */
 declare_mem_procs(mem_true48_copy_mono, mem_true48_copy_color, mem_true48_fill_rectangle);
-private dev_proc_copy_alpha(mem_true48_copy_alpha);
 
 /* The device descriptor. */
 const gx_device_memory mem_true48_device =
 mem_full_alpha_device("image48", 48, 0, mem_open,
 		 gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb,
      mem_true48_copy_mono, mem_true48_copy_color, mem_true48_fill_rectangle,
-		      gx_default_map_cmyk_color, mem_true48_copy_alpha,
+		      gx_default_map_cmyk_color, gx_default_copy_alpha,
 		 gx_default_strip_tile_rectangle, mem_default_strip_copy_rop,
 		      mem_get_bits_rectangle);
 
@@ -366,18 +369,6 @@ mem_true48_copy_color(gx_device * dev,
 
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     mem_copy_byte_rect(mdev, base, sourcex, sraster, x, y, w, h);
-    return 0;
-}
-
-/* Copy an alpha map. */
-private int
-mem_true48_copy_alpha(gx_device * dev, const byte * base, int sourcex,
-		   int sraster, gx_bitmap_id id, int x, int y, int w, int h,
-		      gx_color_index color, int depth)
-{
-    /*
-     * I do not know what to do about alpha.
-     */
     return 0;
 }
 

@@ -1,19 +1,14 @@
-/* Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
-  This file is part of AFPL Ghostscript.
-  
-  AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
-  distributor accepts any responsibility for the consequences of using it, or
-  for whether it serves any particular purpose or works at all, unless he or
-  she says so in writing.  Refer to the Aladdin Free Public License (the
-  "License") for full details.
-  
-  Every copy of AFPL Ghostscript must include a copy of the License, normally
-  in a plain ASCII text file named PUBLIC.  The License grants you the right
-  to copy, modify and redistribute AFPL Ghostscript, but only under certain
-  conditions described in the License.  Among other things, the License
-  requires that the copyright notice and this notice be preserved on all
-  copies.
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
 /* $Id$ */
@@ -34,25 +29,8 @@
 #include "gxistate.h"
 
 
-
-/*
- * The overprint compositor structure. This is exactly analogous to other
- * compositor structures, consisting of a the compositor common elements
- * and the overprint-specific parameters.
- *
- * In a modest violation of good coding practice, the gs_composite_common
- * fields are "known" to be simple (contain no pointers to garbage
- * collected memory), and we also know the gs_overprint_params_t structure
- * to be simple, so we just create a trivial structure descriptor for the
- * entire gs_overprint_s structure.
- */
-typedef struct gs_overprint_s {
-    gs_composite_common;
-    gs_overprint_params_t   params;
-} gs_overprint_t;
-
-gs_private_st_simple(st_overprint, gs_overprint_t, "gs_overprint_t");
-
+/* GC descriptor for gs_overprint_t */
+private_st_gs_overprint_t();
 
 /*
  * Utility routine for encoding or decoding a color index. We cannot use
@@ -95,14 +73,14 @@ write_color_index(gx_color_index cindex, byte * data, uint * psize)
 }
 
 private int
-read_color_index(const gs_memory_t *mem, gx_color_index * pcindex, const byte * data, uint size)
+read_color_index(gx_color_index * pcindex, const byte * data, uint size)
 {
     gx_color_index  cindex = 0;
     int             nbytes = 0, shift = 0;
 
     for (;; shift += 7, data++) {
         if (++nbytes > size)
-            return_error(mem, gs_error_rangecheck);
+            return_error(gs_error_rangecheck);
         else {
             int     c = *data;
 
@@ -151,8 +129,7 @@ c_overprint_equal(const gs_composite_t * pct0, const gs_composite_t * pct1)
  * list device.
  */
 private int
-c_overprint_write(const gs_memory_t *mem,
-		  const gs_composite_t * pct, byte * data, uint * psize)
+c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize)
 {
     const gs_overprint_params_t *   pparams = &((const gs_overprint_t *)pct)->params;
     byte                            flags = 0;
@@ -180,7 +157,7 @@ c_overprint_write(const gs_memory_t *mem,
     /* check for overflow */
     *psize = used;
     if (used > avail)
-        return_error(mem, gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     data[0] = flags;
     return 0;
 }
@@ -201,14 +178,14 @@ c_overprint_read(
     int                     code = 0, nbytes = 1;
 
     if (size < 1)
-        return_error(mem, gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     flags = *data;
     params.retain_any_comps = (flags & OVERPRINT_ANY_COMPS) != 0;
     params.retain_spot_comps = (flags & OVERPRINT_SPOT_COMPS) != 0;
 
     /* check if the drawn_comps array is present */
     if (params.retain_any_comps && !params.retain_spot_comps) {
-        code = read_color_index(mem, &params.drawn_comps, data + 1, size - 1);
+        code = read_color_index(&params.drawn_comps, data + 1, size - 1);
         if (code < 0)
             return code;
          nbytes += code;
@@ -229,7 +206,9 @@ const gs_composite_type_t   gs_composite_overprint_type = {
         c_overprint_create_default_compositor,  /* procs.create_default_compositor */
         c_overprint_equal,                      /* procs.equal */
         c_overprint_write,                      /* procs.write */
-        c_overprint_read                        /* procs.read */
+        c_overprint_read,                       /* procs.read */
+	gx_default_composite_clist_write_update,/* procs.composite_clist_write_update */
+	gx_default_composite_clist_read_update	/* procs.composite_clist_reade_update */
     }                                           /* procs */
 };
 
@@ -251,7 +230,7 @@ gs_create_overprint(
                        gs_overprint_t,
                        &st_overprint,
                        mem,
-                       return_error(mem, gs_error_VMerror),
+                       return_error(gs_error_VMerror),
                        "gs_create_overprint" );
     pct->type = &gs_composite_overprint_type;
     pct->id = gs_next_ids(mem, 1);
@@ -349,6 +328,7 @@ private dev_proc_open_device(overprint_open_device);
 private dev_proc_put_params(overprint_put_params);
 private dev_proc_get_page_device(overprint_get_page_device);
 private dev_proc_create_compositor(overprint_create_compositor);
+private dev_proc_get_color_comp_index(overprint_get_color_comp_index);
 
 private gx_device_procs no_overprint_procs = {
     overprint_open_device,              /* open_device */
@@ -401,7 +381,7 @@ private gx_device_procs no_overprint_procs = {
     0,                                  /* end_transparency_mask */
     0,                                  /* discard_transparency_layer */
     0,                                  /* get_color_mapping_procs */
-    0,                                  /* get_color_comp_index */
+    overprint_get_color_comp_index,	/* get_color_comp_index */
     0,                                  /* encode_color */
     0                                   /* decode_color */
 };
@@ -487,7 +467,7 @@ private gx_device_procs generic_overprint_procs = {
     0,                                  /* end_transparency_mask */
     0,                                  /* discard_transparency_layer */
     0,                                  /* get_color_mapping_procs */
-    0,                                  /* get_color_comp_index */
+    overprint_get_color_comp_index,	/* get_color_comp_index */
     0,                                  /* encode_color */
     0                                   /* decode_color */
 };
@@ -543,7 +523,7 @@ private gx_device_procs sep_overprint_procs = {
     0,                                  /* end_transparency_mask */
     0,                                  /* discard_transparency_layer */
     0,                                  /* get_color_mapping_procs */
-    0,                                  /* get_color_comp_index */
+    overprint_get_color_comp_index,	/* get_color_comp_index */
     0,                                  /* encode_color */
     0                                   /* decode_color */
 };
@@ -670,7 +650,7 @@ update_overprint_params(
     int                             ncomps = opdev->color_info.num_components;
 
     /* check if overprint is to be turned off */
-    if (!pparams->retain_any_comps || opdev->color_info.num_components == 1) {
+    if (!pparams->retain_any_comps) {
         /* if fill_rectangle forwards, overprint is already off */
         if (dev_proc(opdev, fill_rectangle) != gx_forward_fill_rectangle)
             memcpy( &opdev->procs,
@@ -703,7 +683,7 @@ update_overprint_params(
             pprocs->map_gray == 0                                         ||
             pprocs->map_rgb == 0                                          ||
             pprocs->map_cmyk == 0                                           )
-            return_error(dev->memory, gs_error_unknownerror);
+            return_error(gs_error_unknownerror);
 
         pprocs->map_gray(dev, frac_13, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
@@ -761,7 +741,7 @@ overprint_open_device(gx_device * dev)
 
     /* the overprint device must have a target */
     if (tdev == 0)
-        return_error(dev->memory, gs_error_unknownerror);
+        return_error(gs_error_unknownerror);
     if ((code = gs_opendevice(tdev)) >= 0)
         gx_device_copy_params(dev, tdev);
     return code;
@@ -788,11 +768,32 @@ overprint_put_params(gx_device * dev, gs_param_list * plist)
 }
 
 /*
- * The overprint device must never be confused with a page device. The
- * default procedure for forwarding devices, gx_forward_get_page_device,
- * will masquerade as a page device if its immediate target is a page
- * device. We are not certain why this is so, and it looks like an error
- * (see, for example, zcallinstall in zdevice2.c).
+ * If the target device 'auto detects' new spot colors, then it will
+ * change its color_info data.  Make sure that we have a current copy.
+ */
+int
+overprint_get_color_comp_index(gx_device * dev, const char * pname,
+					int name_size, int component_type)
+{
+    overprint_device_t * opdev = (overprint_device_t *)dev;
+    gx_device * tdev = opdev->target;
+    int code;
+
+    if (tdev == 0)
+	code = gx_error_get_color_comp_index(dev, pname,
+				name_size, component_type);
+    else {
+	code = dev_proc(tdev, get_color_comp_index)(tdev, pname,
+				name_size, component_type);
+        opdev->color_info = tdev->color_info;
+    }
+    return code;
+}
+
+/*
+ * The overprint device must never be confused with a page device.
+ * Thus, we always forward the request for the page device to the
+ * target, as should all forwarding devices.
  */
 private gx_device *
 overprint_get_page_device(gx_device * dev)
@@ -812,7 +813,7 @@ overprint_create_compositor(
     gx_device *             dev,
     gx_device **            pcdev,
     const gs_composite_t *  pct,
-    const gs_imager_state * pis,
+    gs_imager_state *	    pis,
     gs_memory_t *           memory )
 {
     if (pct->type != &gs_composite_overprint_type)
@@ -933,6 +934,11 @@ fill_in_procs(gx_device_procs * pprocs)
     memcpy( &tmpdev.color_info,
             &gs_overprint_device.color_info,
             sizeof(tmpdev.color_info) );
+    /*
+     * Prevent the check_device_separable routine from executing while we
+     * fill in the procs.  Our tmpdev is not complete enough for it.
+     */
+    tmpdev.color_info.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
     tmpdev.static_procs = 0;
     memcpy(&tmpdev.procs, pprocs, sizeof(tmpdev.procs));
     gx_device_forward_fill_in_procs(&tmpdev);
@@ -959,15 +965,14 @@ c_overprint_create_default_compositor(
     const gs_composite_t *  pct,
     gx_device **            popdev,
     gx_device *             tdev,
-    const gs_imager_state * pis,
+    gs_imager_state *	    pis,
     gs_memory_t *           mem )
 {
     const gs_overprint_t *  ovrpct = (const gs_overprint_t *)pct;
     overprint_device_t *    opdev = 0;
 
     /* see if there is anything to do */
-    if ( !ovrpct->params.retain_any_comps    ||
-         tdev->color_info.num_components <= 1  ) {
+    if ( !ovrpct->params.retain_any_comps) {
         *popdev = tdev;
         return 0;
     }
@@ -985,7 +990,7 @@ c_overprint_create_default_compositor(
                                        &st_overprint_device_t,
                                        "create overprint compositor" );
     if ((*popdev = (gx_device *)opdev) == 0)
-        return_error(mem, gs_error_VMerror);
+        return_error(gs_error_VMerror);
     gx_device_init( (gx_device *)opdev, 
                     (const gx_device *)&gs_overprint_device,
                     mem,

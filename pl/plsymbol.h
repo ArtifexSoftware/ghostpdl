@@ -82,7 +82,7 @@ extern const int pl_built_in_symbol_map_count;
    if the symbol set in null.  We cheat here and use a ulong instead
    of gs_char to avoid pulling in all the gs_char graphics library
    dependencies. */
-ulong pl_map_symbol(const gs_memory_t *mem, const pl_symbol_map_t *psm, 
+ulong pl_map_symbol(const pl_symbol_map_t *psm, 
                     uint chr, bool resident_font, bool isFontMSL);
 
 #endif				/* plsymbol_INCLUDED */

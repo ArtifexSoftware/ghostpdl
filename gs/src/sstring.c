@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* String and hexstring streams (filters) */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
@@ -34,7 +35,7 @@ s_AXE_init(stream_state * st)
 
 /* Process a buffer */
 private int
-s_AXE_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_AXE_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_AXE_state *const ss = (stream_AXE_state *) st;
@@ -49,7 +50,7 @@ s_AXE_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr
 
     if (last && ss->EndOfData)
 	wcount--;		/* leave room for '>' */
-    wcount -= (wcount + 64) / 65;	/* leave room for \n */
+    wcount -= (wcount + pos * 2) / 65; /* leave room for \n */
     wcount >>= 1;		/* 2 chars per input byte */
     count = (wcount < rcount ? (status = 1, wcount) : rcount);
     while (--count >= 0) {
@@ -86,11 +87,11 @@ s_AXD_init(stream_state * st)
 
 /* Process a buffer */
 private int
-s_AXD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_AXD_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_AXD_state *const ss = (stream_AXD_state *) st;
-    int code = s_hex_process(mem, pr, pw, &ss->odd, hex_ignore_whitespace);
+    int code = s_hex_process(pr, pw, &ss->odd, hex_ignore_whitespace);
 
     switch (code) {
 	case 0:
@@ -143,7 +144,7 @@ const stream_template s_AXD_template =
 
 /* Process a buffer */
 private int
-s_PSSE_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_PSSE_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     const byte *p = pr->ptr;
@@ -218,17 +219,18 @@ const stream_template s_PSSE_template =
 private_st_PSSD_state();
 
 /* Initialize the state */
-private int
+int
 s_PSSD_init(stream_state * st)
 {
     stream_PSSD_state *const ss = (stream_PSSD_state *) st;
 
-    return s_PSSD_init_inline(ss);
+    ss->from_string = false;
+    return s_PSSD_partially_init_inline(ss);
 }
 
 /* Process a buffer */
 private int
-s_PSSD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_PSSD_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     stream_PSSD_state *const ss = (stream_PSSD_state *) st;
@@ -361,7 +363,7 @@ const stream_template s_PSSD_template =
  * See strimpl.h for the definition of syntax.
  */
 int
-s_hex_process(const gs_memory_t *mem, stream_cursor_read * pr, stream_cursor_write * pw,
+s_hex_process(stream_cursor_read * pr, stream_cursor_write * pw,
 	      int *odd_digit, hex_syntax syntax)
 {
     const byte *p = pr->ptr;

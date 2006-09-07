@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Level 2 encoded number reading utilities for Ghostscript */
 #include "math_.h"
 #include "memory_.h"
@@ -31,7 +32,7 @@ const byte enc_num_bytes[] = {
 /* Set up to read from an encoded number array/string. */
 /* Return <0 for error, or a number format. */
 int
-num_array_format(const gs_memory_t *mem, const ref * op)
+num_array_format(const ref * op)
 {
     switch (r_type(op)) {
 	case t_string:
@@ -41,13 +42,13 @@ num_array_format(const gs_memory_t *mem, const ref * op)
 		int format;
 
 		if (r_size(op) < 4 || bp[0] != bt_num_array_value)
-		    return_error(mem, e_rangecheck);
+		    return_error(e_typecheck);
 		format = bp[1];
 		if (!num_is_valid(format) ||
 		    sdecodeshort(bp + 2, format) !=
 		    (r_size(op) - 4) / encoded_number_bytes(format)
 		    )
-		    return_error(mem, e_rangecheck);
+		    return_error(e_rangecheck);
 		return format;
 	    }
 	case t_array:
@@ -55,7 +56,7 @@ num_array_format(const gs_memory_t *mem, const ref * op)
 	case t_shortarray:
 	    return num_array;
 	default:
-	    return_error(mem, e_typecheck);
+	    return_error(e_typecheck);
     }
 }
 
@@ -85,14 +86,14 @@ num_array_get(const gs_memory_t *mem, const ref * op, int format, uint index, re
 	    case t_real:
 		return t_real;
 	    default:
-		return_error(mem, e_rangecheck);
+		return_error(e_typecheck);
 	}
     } else {
 	uint nbytes = encoded_number_bytes(format);
 
 	if (index >= (r_size(op) - 4) / nbytes)
 	    return t_null;
-	return sdecode_number(mem, op->value.bytes + 4 + index * nbytes,
+	return sdecode_number(op->value.bytes + 4 + index * nbytes,
 			      format, np);
     }
 }
@@ -112,7 +113,7 @@ static const double binary_scale[32] = {
 #undef EXPN2
 };
 int
-sdecode_number(const gs_memory_t *mem, const byte * str, int format, ref * np)
+sdecode_number(const byte * str, int format, ref * np)
 {
     switch (format & 0x170) {
 	case num_int32:
@@ -140,7 +141,7 @@ sdecode_number(const gs_memory_t *mem, const byte * str, int format, ref * np)
 	    np->value.realval = sdecodefloat(str, format);
 	    return t_real;
 	default:
-	    return_error(mem, e_syntaxerror);	/* invalid format?? */
+	    return_error(e_syntaxerror);	/* invalid format?? */
     }
 }
 
@@ -196,7 +197,7 @@ sdecodefloat(const byte * p, int format)
 	fnum = *(float *)&lnum;
     } else {
 	lnum = (bits32) sdecodelong(p, format);
-#if !arch_floats_are_IEEE
+#if !ARCH_FLOATS_ARE_IEEE
 	{
 	    /* We know IEEE floats take 32 bits. */
 	    /* Convert IEEE float to native float. */

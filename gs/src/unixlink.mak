@@ -1,16 +1,16 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
-
-# $RCSfile$ $Revision$
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
 # Partial makefile common to all Unix configurations.
 # This part of the makefile contains the linking steps.
 
@@ -61,4 +61,5 @@ $(GS_XE): $(ld_tr) $(ECHOGS_XE) $(XE_ALL)
 	DEVICE_DEVS9= DEVICE_DEVS10= DEVICE_DEVS11= DEVICE_DEVS12= \
 	DEVICE_DEVS13= DEVICE_DEVS14= DEVICE_DEVS15= DEVICE_DEVS16= \
 	DEVICE_DEVS17= DEVICE_DEVS18= DEVICE_DEVS19= DEVICE_DEVS20= \
+	DEVICE_DEVS_EXTRA= \
 	$(SH) <$(ldt_tr)

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Pixel differencing filters */
 #include "stdio_.h"		/* should be std.h, but needs NULL */
 #include "memory_.h"
@@ -26,8 +27,9 @@ private_st_PDiff_state();
 #define cBits2 5
 #define cBits4 10
 #define cBits8 15
+#define cBits16 20
 #define cEncode 0
-#define cDecode 20
+#define cDecode 25
 
 /* Set defaults */
 private void
@@ -56,7 +58,8 @@ s_PDiffE_init(stream_state * st)
     int bits_per_row =
 	ss->Colors * ss->BitsPerComponent * ss->Columns;
     static const byte cb_values[] = {
-	0, cBits1, cBits2, 0, cBits4, 0, 0, 0, cBits8
+	0, cBits1, cBits2, 0, cBits4, 0, 0, 0, cBits8,
+	0, 0, 0, 0, 0, 0, 0, cBits16
     };
 
     ss->row_count = (bits_per_row + 7) >> 3;
@@ -80,8 +83,7 @@ s_PDiffD_init(stream_state * st)
 
 /* Process a buffer.  Note that this handles both Encode and Decode. */
 private int
-s_PDiff_process(const gs_memory_t *mem,
-		stream_state * st, stream_cursor_read * pr,
+s_PDiff_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
     stream_PDiff_state *const ss = (stream_PDiff_state *) st;
@@ -89,8 +91,9 @@ s_PDiff_process(const gs_memory_t *mem,
     byte *q = pw->ptr;
     int count;
     int status = 0;
-    byte s0 = ss->prev[0];
-    byte t;
+    uint s0 = ss->prev[0];
+    byte t = 0;			/* avoid spurious compiler warnings */
+    int  ti;
     const byte end_mask = ss->end_mask;
     int colors = ss->Colors;
     int nb = (colors * ss->BitsPerComponent) >> 3;
@@ -101,7 +104,7 @@ row:
     if (ss->row_left == 0) {
 	ss->row_left = ss->row_count;
 	s0 = 0;
-	memset(ss->prev + 1, 0, s_PDiff_max_Colors - 1);
+	memset(&ss->prev[1], 0, sizeof(uint) * (s_PDiff_max_Colors - 1));
     }
     {
 	int rcount = pr->limit - p;
@@ -310,7 +313,7 @@ row:
 	    ENCODE1_LOOP(((t - (s0 << 4)) & 0xf0) | ((t - (t >> 4)) & 0xf));
 
 	case cEncode + cBits4 + 3: {
-	    byte s1 = ss->prev[1];
+	    uint s1 = ss->prev[1];
 
 	    LOOP_BY(1,
 		    (t = *p,
@@ -320,7 +323,7 @@ row:
 	} break;
 
 	case cEncode + cBits4 + 4: {
-	    byte s1 = ss->prev[1];
+	    uint s1 = ss->prev[1];
 
 	    LOOP_BY(2,
 		    (t = p[-1], q[-1] = SUB2X4(t, s0), s0 = t,
@@ -343,7 +346,7 @@ row:
 	    DECODE1_LOOP(*p + (s0 << 4), ADD2X4R4(t));
 
 	case cDecode + cBits4 + 3: {
-	    byte s1 = ss->prev[1];
+	    uint s1 = ss->prev[1];
 
 	    LOOP_BY(1, (t = (s0 << 4) + (s1 >> 4),
 			s0 = s1, s1 = *q = ADD2X4(*p, t)));
@@ -351,7 +354,7 @@ row:
 	} break;
 
 	case cDecode + cBits4 + 4: {
-	    byte s1 = ss->prev[1];
+	    uint s1 = ss->prev[1];
 
 	    LOOP_BY(2,
 		    (t = p[-1], s0 = q[-1] = ADD2X4(s0, t),
@@ -408,43 +411,132 @@ row:
 	    break;
 
 	case cEncode + cBits8 + 3: {
-	    byte s1 = ss->prev[1], s2 = ss->prev[2];
+	    uint s1 = ss->prev[1], s2 = ss->prev[2];
 
 	    LOOP_BY(3, (ENCODE8(s0, -2), ENCODE8(s1, -1),
 			ENCODE8(s2, 0)));
-	    ss->prev[1] = s1, ss->prev[2] = s2;
+	    ss->prev[0] = s0, ss->prev[1] = s1, ss->prev[2] = s2;
 	    goto enc8;
 	}
 
 	case cDecode + cBits8 + 3: {
-	    byte s1 = ss->prev[1], s2 = ss->prev[2];
+	    uint s1 = ss->prev[1], s2 = ss->prev[2];
 
 	    LOOP_BY(3, (DECODE8(s0, -2), DECODE8(s1, -1),
 			DECODE8(s2, 0)));
-	    ss->prev[1] = s1, ss->prev[2] = s2;
+	    ss->prev[0] = s0, ss->prev[1] = s1, ss->prev[2] = s2;
 	    goto dec8;
 	} break;
 
 	case cEncode + cBits8 + 4: {
-	    byte s1 = ss->prev[1], s2 = ss->prev[2], s3 = ss->prev[3];
+	    uint s1 = ss->prev[1], s2 = ss->prev[2], s3 = ss->prev[3];
 
 	    LOOP_BY(4, (ENCODE8(s0, -3), ENCODE8(s1, -2),
 			ENCODE8(s2, -1), ENCODE8(s3, 0)));
-	    ss->prev[1] = s1, ss->prev[2] = s2, ss->prev[3] = s3;
+	    ss->prev[0] = s0, ss->prev[1] = s1, ss->prev[2] = s2, ss->prev[3] = s3;
 	    goto enc8;
 	} break;
 
 	case cDecode + cBits8 + 4: {
-	    byte s1 = ss->prev[1], s2 = ss->prev[2], s3 = ss->prev[3];
+	    uint s1 = ss->prev[1], s2 = ss->prev[2], s3 = ss->prev[3];
 
 	    LOOP_BY(4, (DECODE8(s0, -3), DECODE8(s1, -2),
 			DECODE8(s2, -1), DECODE8(s3, 0)));
-	    ss->prev[1] = s1, ss->prev[2] = s2, ss->prev[3] = s3;
+	    ss->prev[0] = s0, ss->prev[1] = s1, ss->prev[2] = s2, ss->prev[3] = s3;
 	    goto dec8;
 	} break;
 
 #undef ENCODE8
 #undef DECODE8
+
+	    /* 16 bits per component */
+
+#define ENCODE16(s, d) (ti = ((p[d-1] << 8) + p[d]), s = ti - s,\
+	    q[d-1] = s >> 8, q[d] = s & 0xff, s = ti)
+#define DECODE16(s, d) (s = 0xffff & (s + ((p[d-1] << 8) + p[d])), \
+	    q[d-1] = s >> 8, q[d] = s & 0xff)
+
+	case cEncode + cBits16 + 0:
+	case cEncode + cBits16 + 2:
+	    ss->prev[0] = s0;
+	    for (; count >= colors*2; count -= colors*2)
+		for (ci = 0; ci < colors; ++ci) {
+		    uint k;
+                    ti =  (int)*++p << 8;
+		    ti += (int)*++p;
+                    k = ti - ss->prev[ci];
+		    *++q = k >> 8;
+                    *++q = k & 0xff;
+		    ss->prev[ci] = ti;
+		}
+	    s0 = ss->prev[0];
+    enc16:   /* Handle leftover bytes. */
+	    if (last && !status)
+		for (ci = 0; ci < count; ++ci)
+		    *++q = *++p - ss->prev[ci],
+			ss->prev[ci] = *p;
+	    break;
+
+	case cDecode + cBits16 + 0:
+	case cDecode + cBits16 + 2:
+	    ss->prev[0] = s0;
+	    for (; count >= colors*2; count -= colors*2)
+		for (ci = 0; ci < colors; ++ci) {
+		    ti = (int)*++p << 8;
+		    ss->prev[ci] += ti + *++p;
+		    *++q = ss->prev[ci] >> 8;
+		    *++q = ss->prev[ci] & 0xff;
+		}
+	    s0 = ss->prev[0];
+    dec16:   /* Ignore leftover bytes. */
+	    break;
+
+	case cEncode + cBits16 + 1:
+           LOOP_BY(2, ENCODE16(s0, 0));
+           break;
+
+	case cDecode + cBits16 + 1:
+           LOOP_BY(2, DECODE16(s0, 0));
+           break;
+
+	case cEncode + cBits16 + 3: {
+	    uint s1 = ss->prev[1], s2 = ss->prev[2];
+
+	    LOOP_BY(6, (ENCODE16(s0, -4), ENCODE16(s1, -2),
+			ENCODE16(s2, 0)));
+	    ss->prev[0] = s0, ss->prev[1] = s1, ss->prev[2] = s2;
+	    goto enc16;
+	}
+
+	case cDecode + cBits16 + 3: {
+	    uint s1 = ss->prev[1], s2 = ss->prev[2];
+
+	    LOOP_BY(6, (DECODE16(s0, -4), DECODE16(s1, -2),
+			DECODE16(s2, 0)));
+	    ss->prev[0] = s0, ss->prev[1] = s1, ss->prev[2] = s2;
+	    goto dec16;
+	} break;
+
+	case cEncode + cBits16 + 4: {
+	    uint s1 = ss->prev[1], s2 = ss->prev[2], s3 = ss->prev[3];
+
+	    LOOP_BY(8, (ENCODE16(s0, -6), ENCODE16(s1, -4),
+			ENCODE16(s2, -2), ENCODE16(s3, 0)));
+	    ss->prev[0] = s0, ss->prev[1] = s1, ss->prev[2] = s2, ss->prev[3] = s3;
+	    goto enc16;
+	} break;
+
+	case cDecode + cBits16 + 4: {
+	    uint s1 = ss->prev[1], s2 = ss->prev[2], s3 = ss->prev[3];
+
+	    LOOP_BY(8, (DECODE16(s0, -6), DECODE16(s1, -4),
+			DECODE16(s2, -2), DECODE16(s3, 0)));
+	    ss->prev[0] = s0, ss->prev[1] = s1, ss->prev[2] = s2, ss->prev[3] = s3;
+	    goto dec16;
+	} break;
+
+#undef ENCODE16
+#undef DECODE16
 
     }
 #undef LOOP_BY

@@ -1,11 +1,15 @@
-/* Copyright (C) 1996, 2001, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 /* $Id$ */
 
 #ifndef dwimg_INCLUDED
@@ -13,6 +17,19 @@
 
 
 /* Windows Image Window structure */
+
+typedef struct IMAGE_DEVICEN_S IMAGE_DEVICEN;
+struct IMAGE_DEVICEN_S {
+    int used;		/* non-zero if in use */
+    int visible;	/* show on window */
+    char name[64];
+    int cyan;
+    int magenta;
+    int yellow;
+    int black;
+    int menu;		/* non-zero if menu item added to system menu */
+};
+#define IMAGE_DEVICEN_MAX 8
 
 typedef struct IMAGE_S IMAGE;
 struct IMAGE_S {
@@ -26,11 +43,16 @@ struct IMAGE_S {
     BITMAPINFOHEADER bmih;
     HPALETTE palette;
     int bytewidth;
-    int sep;		/* CMYK separations to display */
+    int devicen_gray;	/* true if a single separation should be shown gray */
+    IMAGE_DEVICEN devicen[IMAGE_DEVICEN_MAX];
 
     /* periodic redrawing */
-    SYSTEMTIME update_time;
-    int update_interval;
+    UINT update_timer;		/* identifier */
+    int update_tick;		/* timer duration in milliseconds */
+    int update_count;		/* Number of WM_TIMER messages received */
+    int update_interval;	/* Number of WM_TIMER until refresh */
+    int pending_update;		/* We have asked for periodic updates */
+    int pending_sync;		/* We have asked for a SYNC */
 
     /* Window scrolling stuff */
     int cxClient, cyClient;
@@ -65,6 +87,7 @@ void image_page(IMAGE *img);
 void image_presize(IMAGE *img, int new_width, int new_height, int new_raster, 
    unsigned int new_format);
 void image_poll(IMAGE *img);
+void image_updatesize(IMAGE *img);
 
 
 #endif /* dwimg_INCLUDED */

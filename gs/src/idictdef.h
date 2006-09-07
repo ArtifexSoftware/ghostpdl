@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Internals of dictionary implementation */
 
 #ifndef idictdef_INCLUDED
@@ -91,8 +92,8 @@
  */
 /* packed_search_body also uses kp and kbot as free variables. */
 #define packed_search_value_pointer (pdict->values.value.refs + (kp - kbot))
-#define packed_search_body(mem,found1,found2,del,miss)\
-    { if_debug2(mem,'D', "[D]probe 0x%lx: 0x%x\n", (ulong)kp, *kp);\
+#define packed_search_body(found1,found2,del,miss)\
+    { if_debug2('D', "[D]probe 0x%lx: 0x%x\n", (ulong)kp, *kp);\
       if ( *kp == kpack )\
        { found1;\
 	 found2;\
@@ -104,13 +105,13 @@
 	 else { del; }\
        }\
     }
-#define packed_search_1(mem,found1,found2,del,miss)\
+#define packed_search_1(found1,found2,del,miss)\
    const ref_packed *kbot = pdict->keys.value.packed;\
    register const ref_packed *kp;\
    for ( kp = kbot + dict_hash_mod(hash, size) + 1; ; kp-- )\
-     packed_search_body(mem,found1,found2,del,miss)
-#define packed_search_2(mem,found1,found2,del,miss)\
+     packed_search_body(found1,found2,del,miss)
+#define packed_search_2(found1,found2,del,miss)\
    for ( kp += size; ; kp-- )\
-     packed_search_body(mem,found1,found2,del,miss)
+     packed_search_body(found1,found2,del,miss)
 
 #endif /* idictdef_INCLUDED */

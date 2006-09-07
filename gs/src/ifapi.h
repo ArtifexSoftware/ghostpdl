@@ -1,10 +1,15 @@
-/* Copyright (C) 2002 artofcode LLC. All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Font API interface */
@@ -13,6 +18,9 @@
 #  define ifapi_INCLUDED
 
 #include "iplugin.h"
+#include "gstypes.h"
+#include "gsmatrix.h"
+
 
 typedef int FracInt; /* A fractional integer with statically unknown number of fraction bits. 
                         The number of bits depends on plugin and is being specified in
@@ -63,7 +71,10 @@ typedef enum {
 } FAPI_metrics_type;
 
 typedef struct {
-    int char_code;
+    int char_code;        /* Backwards compatibility. Depricated. */
+    int client_char_code; /* Debug purpose. */
+    int char_codes[4];
+    int char_codes_count;
     bool is_glyph_index; /* true if char_code contains glyph index */
     const unsigned char *char_name; /* to be used exclusively with char_code. */
     unsigned int char_name_length;
@@ -84,7 +95,9 @@ struct FAPI_font_s {
     int subfont;
     bool is_type1; /* Only for non-disk fonts; dirty for disk fonts. */
     bool is_cid;
-    bool is_mtx_skipped; /* Ugly. UFST needs only */
+    bool is_outline_font;
+    bool is_mtx_skipped; /* Ugly. Only UFST needs. */
+    bool is_vertical;
     void *client_ctx_p;
     void *client_font_data;
     void *client_font_data2;
@@ -96,6 +109,15 @@ struct FAPI_font_s {
     unsigned short (*get_subr) (FAPI_font *ff, int index,     byte *buf, ushort buf_length);
     unsigned short (*get_glyph)(FAPI_font *ff, int char_code, byte *buf, ushort buf_length);
     unsigned short (*serialize_tt_font)(FAPI_font *ff, void *buf, int buf_size);
+};
+
+typedef struct FAPI_face_s FAPI_face;
+struct FAPI_face_s {
+    gs_id font_id;
+    gs_matrix ctm;
+    gs_log2_scale_point log2_scale;
+    bool align_to_pixels; 
+    float HWResolution[2];
 };
 
 typedef struct FAPI_path_s FAPI_path;
@@ -125,6 +147,8 @@ typedef struct { /* 1bit/pixel only, rows are byte-aligned. */
     void *p;
     int width, height, line_step;
     int orig_x, orig_y; /* origin, 1/16s pixel */
+    int left_indent, top_indent;
+    int black_width, black_height;
 } FAPI_raster;
 
 #ifndef FAPI_server_DEFINED
@@ -132,20 +156,23 @@ typedef struct { /* 1bit/pixel only, rows are byte-aligned. */
 typedef struct FAPI_server_s FAPI_server;
 #endif
 
-typedef int FAPI_descendant_code; /* Possible values are descendant font indices and 4 ones defined below. */
-#define FAPI_DESCENDANT_PREPARED -1 /* See FAPI_prepare_font in zfapi.c . */
-#define FAPI_TOPLEVEL_PREPARED -2
-#define FAPI_TOPLEVEL_BEGIN -3
-#define FAPI_TOPLEVEL_COMPLETE -4
+typedef enum FAPI_descendant_code_s {  /* Possible values are descendant font indices and 4 ones defined below. */
+    FAPI_DESCENDANT_PREPARED = -1, /* See FAPI_prepare_font in zfapi.c . */
+    FAPI_TOPLEVEL_PREPARED = -2,
+    FAPI_TOPLEVEL_BEGIN = -3,
+    FAPI_TOPLEVEL_COMPLETE = -4
+} FAPI_descendant_code;
 
 struct FAPI_server_s {
     i_plugin_instance ig;
     int frac_shift; /* The number of fractional bits in coordinates. */
-    FAPI_retcode (*ensure_open)(FAPI_server *server);
-    FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, int subfont, const FAPI_font_scale *scale, const char *xlatmap, bool bVertical, FAPI_descendant_code dc);
+    FAPI_face face;
+    FAPI_font ff;
+    FAPI_retcode (*ensure_open)(FAPI_server *server, const byte * param, int param_size);
+    FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, const FAPI_font_scale *scale, const char *xlatmap, FAPI_descendant_code dc);
     FAPI_retcode (*get_decodingID)(FAPI_server *server, FAPI_font *ff, const char **decodingID);
     FAPI_retcode (*get_font_bbox)(FAPI_server *server, FAPI_font *ff, int BBox[4]);
-    FAPI_retcode (*get_font_proportional_feature)(FAPI_server *server, FAPI_font *ff, int subfont, bool *bProportional);
+    FAPI_retcode (*get_font_proportional_feature)(FAPI_server *server, FAPI_font *ff, bool *bProportional);
     FAPI_retcode (*can_retrieve_char_by_name)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, int *result);
     FAPI_retcode (*can_replace_metrics)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, int *result);
     FAPI_retcode (*get_char_width)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_metrics *metrics);

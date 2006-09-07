@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* ImageType 3x image implementation */
 /****** THE REAL WORK IS NYI ******/
 #include "math_.h"		/* for ceil, floor */
@@ -115,7 +116,6 @@ typedef struct image3x_channel_values_s {
     gs_int_rect rect;
     gs_image_t image;
 } image3x_channel_values_t;
-private bool is_multiple(int x, int y);
 private int check_image3x_mask(const gs_image3x_t *pim,
 			       const gs_image3x_mask_t *pimm,
 			       const image3x_channel_values_t *ppcv,
@@ -145,11 +145,11 @@ gx_begin_image3x_generic(gx_device * dev,
 
     /* Validate the parameters. */
     if (pim->Height <= 0)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     penum = gs_alloc_struct(mem, gx_image3x_enum_t, &st_image3x_enum,
 			    "gx_begin_image3x");
     if (penum == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     /* Initialize pointers now in case we bail out. */
     penum->mask[0].info = 0, penum->mask[0].mdev = 0, penum->mask[0].data = 0;
     penum->mask[1].info = 0, penum->mask[1].mdev = 0, penum->mask[1].data = 0;
@@ -161,8 +161,8 @@ gx_begin_image3x_generic(gx_device * dev,
 	pixel.rect.q.x = pim->Width;
 	pixel.rect.q.y = pim->Height;
     }
-    if ((code = gs_matrix_invert(mem, &pim->ImageMatrix, &pixel.matrix)) < 0 ||
-	(code = gs_point_transform(mem, pim->Width, pim->Height, &pixel.matrix,
+    if ((code = gs_matrix_invert(&pim->ImageMatrix, &pixel.matrix)) < 0 ||
+	(code = gs_point_transform(pim->Width, pim->Height, &pixel.matrix,
 				   &pixel.corner)) < 0 ||
 	(code = check_image3x_mask(pim, &pim->Opacity, &pixel, &mask[0],
 				   &penum->mask[0], mem)) < 0 ||
@@ -190,7 +190,7 @@ gx_begin_image3x_generic(gx_device * dev,
 			    penum->num_components + 7) >> 3,
 			   "gx_begin_image3x(pixel.data)");
 	if (penum->pixel.data == 0) {
-	    code = gs_note_error(mem, gs_error_VMerror);
+	    code = gs_note_error(gs_error_VMerror);
 	    goto out1;
 	}
     }
@@ -216,13 +216,13 @@ gx_begin_image3x_generic(gx_device * dev,
 	pmcs =  gs_alloc_struct(mem, gs_color_space, &st_color_space,
 				"gx_begin_image3x_generic");
 	if (pmcs == 0)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	gs_cspace_init_DevicePixel(mem, pmcs, penum->mask[i].depth);
 	mrect.p.x = mrect.p.y = 0;
 	mrect.q.x = penum->mask[i].width;
 	mrect.q.y = penum->mask[i].height;
 	if ((code = gs_matrix_multiply(&mask[i].matrix, pmat, &mat)) < 0 ||
-	    (code = gs_bbox_transform(mem, &mrect, &mat, &mrect)) < 0
+	    (code = gs_bbox_transform(&mrect, &mat, &mrect)) < 0
 	    )
 	    return code;
 	origin[i].x = (int)floor(mrect.p.x);
@@ -257,12 +257,15 @@ gx_begin_image3x_generic(gx_device * dev,
 	    m_mat.tx -= origin[i].x;
 	    m_mat.ty -= origin[i].y;
 	    /*
-	     * Note that pis = NULL here, since we don't want to have to
-	     * create another imager state with default log_op, etc.
+	     * Peter put in a comment that said " Note that pis = NULL here,
+	     * since we don't want to have to create another imager state with
+	     * default log_op, etc." and passed NULL instead of pis to this
+	     * routine.  However Image type 1 need the imager state (see
+	     * bug 688348) thus his optimization was removed.
 	     * dcolor = NULL is OK because this is an opaque image with
 	     * CombineWithColor = false.
 	     */
-	    code = gx_device_begin_typed_image(mdev, NULL, &m_mat,
+	    code = gx_device_begin_typed_image(mdev, pis, &m_mat,
 			       (const gs_image_common_t *)&mask[i].image,
 					       &mask[i].rect, NULL, NULL,
 					       mem, &penum->mask[i].info);
@@ -308,7 +311,7 @@ gx_begin_image3x_generic(gx_device * dev,
 		++pi;
 		break;
 	    default:		/* can't happen */
-		code = gs_note_error(mem, gs_error_Fatal);
+		code = gs_note_error(gs_error_Fatal);
 		goto out3;
 	    }
 	}
@@ -351,11 +354,6 @@ gx_begin_image3x_generic(gx_device * dev,
     return code;
 }
 private bool
-is_multiple(int x, int y)
-{
-    return (x % y == 0 || y % x == 0);
-}
-private bool
 check_image3x_extent(floatp mask_coeff, floatp data_coeff)
 {
     if (mask_coeff == 0)
@@ -385,28 +383,25 @@ check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
 	return 0;
     }
     if (mask_height <= 0)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     switch (pimm->InterleaveType) {
 	/*case interleave_scan_lines:*/	/* not supported */
 	default:
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	case interleave_chunky:
 	    if (mask_width != pim->Width ||
 		mask_height != pim->Height ||
 		pimm->MaskDict.BitsPerComponent != pim->BitsPerComponent ||
 		pim->format != gs_image_format_chunky
 		)
-		return_error(mem, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	    break;
-	    if (!is_multiple(mask_height, pim->Height))
-		return_error(mem, gs_error_rangecheck);
-	    /* falls through */
 	case interleave_separate_source:
 	    switch (pimm->MaskDict.BitsPerComponent) {
-	    case 1: case 2: case 4: case 8:
+		    case 1: case 2: case 4: case 8: case 12: case 16:
 		break;
 	    default:
-		return_error(mem, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	    }
     }
     if (!check_image3x_extent(pim->ImageMatrix.xx,
@@ -418,9 +413,9 @@ check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
 	!check_image3x_extent(pim->ImageMatrix.yy,
 			      pimm->MaskDict.ImageMatrix.yy)
 	)
-	return_error(mem, gs_error_rangecheck);
-    if ((code = gs_matrix_invert(mem, &pimm->MaskDict.ImageMatrix, &pmcv->matrix)) < 0 ||
-	(code = gs_point_transform(mem, mask_width, mask_height,
+	return_error(gs_error_rangecheck);
+    if ((code = gs_matrix_invert(&pimm->MaskDict.ImageMatrix, &pmcv->matrix)) < 0 ||
+	(code = gs_point_transform(mask_width, mask_height,
 				   &pmcv->matrix, &pmcv->corner)) < 0
 	)
 	return code;
@@ -429,7 +424,7 @@ check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
 	fabs(ppcv->corner.x - pmcv->corner.x) >= 0.5 ||
 	fabs(ppcv->corner.y - pmcv->corner.y) >= 0.5
 	)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     pmcv->rect.p.x = ppcv->rect.p.x * mask_width / pim->Width;
     pmcv->rect.p.y = ppcv->rect.p.y * mask_height / pim->Height;
     pmcv->rect.q.x = (ppcv->rect.q.x * mask_width + pim->Width - 1) /
@@ -449,7 +444,7 @@ check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
 			   (pmcs->width * pimm->MaskDict.BitsPerComponent + 7) >> 3,
 			   "gx_begin_image3x(mask data)");
 	if (pmcs->data == 0)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
     }
     pmcs->y = pmcs->skip = 0;
     return 0;
@@ -460,8 +455,7 @@ check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
  * from channel 2 now, 0 if we want both.
  */
 private int
-channel_next(const gs_memory_t *mem, 
-	     const image3x_channel_state_t *pics1,
+channel_next(const image3x_channel_state_t *pics1,
 	     const image3x_channel_state_t *pics2)
 {
     /*
@@ -479,7 +473,7 @@ channel_next(const gs_memory_t *mem,
 
 #ifdef DEBUG
     if (current < 0)
-	lprintf4(mem, "channel_next invariant fails: %d/%d < %d/%d\n",
+	lprintf4("channel_next invariant fails: %d/%d < %d/%d\n",
 		 pics1->y, pics1->full_height,
 		 pics2->y, pics2->full_height);
 #endif
@@ -498,15 +492,16 @@ make_midx_default(gx_device **pmidev, gx_device *dev, int width, int height,
     int code;
 
     if (mdproto == 0)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     midev = gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
 			    "make_mid_default");
     if (midev == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     gs_make_mem_device(midev, mdproto, mem, 0, NULL);
     midev->bitmap_memory = mem;
     midev->width = width;
     midev->height = height;
+    check_device_separable((gx_device *)midev);
     gx_device_fill_in_procs((gx_device *)midev);
     code = dev_proc(midev, open_device)((gx_device *)midev);
     if (code < 0) {
@@ -546,7 +541,7 @@ make_mcdex_default(gx_device *dev, const gs_imager_state *pis,
     int code;
 
     if (bbdev == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     gx_device_bbox_init(bbdev, dev, mem);
     gx_device_bbox_fwd_open_close(bbdev, false);
     code = dev_proc(bbdev, begin_typed_image)
@@ -744,7 +739,7 @@ gx_image3x_plane_data(gx_image_enum_common_t * info,
 		}
 	}
     }
-    if_debug7(penum->memory, 'b', "[b]image3x h=%d %sopacity.y=%d %sopacity.y=%d %spixel.y=%d\n",
+    if_debug7('b', "[b]image3x h=%d %sopacity.y=%d %sopacity.y=%d %spixel.y=%d\n",
 	      h, (mask_plane[0].data ? "+" : ""), penum->mask[0].y,
 	      (mask_plane[1].data ? "+" : ""), penum->mask[1].y,
 	      (pixel_planes[0].data ? "+" : ""), penum->pixel.y);
@@ -788,12 +783,12 @@ gx_image3x_planes_wanted(const gx_image_enum_common_t * info, byte *wanted)
 
     if (sso & sss) {
 	/* Both masks have separate sources. */
-	int mask_next = channel_next(penum->memory, &penum->mask[1], &penum->pixel);
+	int mask_next = channel_next(&penum->mask[1], &penum->pixel);
 
 	memset(wanted + 2, (mask_next <= 0 ? 0xff : 0), info->num_planes - 2);
 	wanted[1] = (mask_next >= 0 ? 0xff : 0);
 	if (wanted[1]) {
-	    mask_next = channel_next(penum->memory, &penum->mask[0], &penum->mask[1]);
+	    mask_next = channel_next(&penum->mask[0], &penum->mask[1]);
 	    wanted[0] = mask_next >= 0;
 	} else
 	    wanted[0] = 0;
@@ -802,7 +797,7 @@ gx_image3x_planes_wanted(const gx_image_enum_common_t * info, byte *wanted)
 	/* Only one separate source. */
 	const image3x_channel_state_t *pics =
 	    (sso ? &penum->mask[0] : &penum->mask[1]);
-	int mask_next = channel_next(penum->memory, pics, &penum->pixel);
+	int mask_next = channel_next(pics, &penum->pixel);
 
 	wanted[0] = (mask_next >= 0 ? 0xff : 0);
 	memset(wanted + 1, (mask_next <= 0 ? 0xff : 0), info->num_planes - 1);

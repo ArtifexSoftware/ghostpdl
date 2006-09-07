@@ -1,19 +1,19 @@
-/* Portions Copyright (C) 2001, 2004 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Dropout prevention for a character rasterization. */
 
-#include <assert.h>
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
@@ -53,7 +53,6 @@ void init_section(section *sect, int i0, int i1)
 private margin * alloc_margin(line_list * ll)
 {   margin *m;
 
-    assert(ll->pseudo_rasterization);
     if (ll->free_margin_list != 0) {
 	m = ll->free_margin_list;
 	ll->free_margin_list = ll->free_margin_list->next;
@@ -102,13 +101,17 @@ private int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
     int i0 = ii0, i1 = ii1;
     margin *m0 = set->margin_touched, *m1;
 
-    assert(ii0 >= 0);     /* assert(ii1 <= ll->bbox_width); */
+    if (!ll->fo->pseudo_rasterization)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    if (ii0 < 0 || ii1 > ll->bbox_width)
+	return_error(gs_error_unregistered); /* Must not happen. */
     set->margin_touched = 0; /* safety */
     /* Find contacting elements. */
     if (m0 != 0) {
 	margin  *m_last = m0, *mb, *me;
 
-	assert(set->margin_list != 0);
+	if (set->margin_list == 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	if (i1 < m0->ibeg) {
 	    do {
 		m0 = m0->prev;
@@ -187,7 +190,7 @@ private int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
     /* Insert after m0 */
     m1 = alloc_margin(ll);
     if (m1 == 0)
-	return_error(ll->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     if (m0 != 0) {
 	m1->next = m0->next;
 	m1->prev = m0;
@@ -244,7 +247,8 @@ private int margin_boundary(line_list * ll, margin_set * set, active_line * alp,
 	    xp0 += fixed_1;
 	    i0++;
 	}
-	assert(i0 >= 0);
+	if (i0 < 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	for (i = i0, xp = xp0; xp < xmax && i < ll->bbox_width; xp += fixed_1, i++) {
 	    fixed y = (alp == 0 ? yy0 : Y_AT_X(alp, xp));
 	    fixed dy = y - set->y;
@@ -288,7 +292,8 @@ private int margin_boundary(line_list * ll, margin_set * set, active_line * alp,
 	    if (*b == -1 || (*b != -2 && ( ud ? *b > h : *b < h)))
 		*b = h;
 	}
-	assert(i0 >= 0 && i <= ll->bbox_width);
+	if (i0 < 0 || i > ll->bbox_width)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 #	endif
     if (i > i0)
 	return store_margin(ll, set, i0, i);
@@ -322,7 +327,7 @@ int continue_margin_common(line_list * ll, margin_set * set, active_line * flp, 
 	    s->x1 = max(s->x1, xu);
 	    x_pixel+=0; /* Just a place for breakpoint */
 	}
-	code = store_margin(ll, &ll->margin_set1, i0, i1);
+	code = store_margin(ll, set, i0, i1);
 	if (code < 0)
 	    return code;
 	/* fixme : after ADJUST_SERIF becames permanent,
@@ -349,7 +354,8 @@ private inline int mark_margin_interior(line_list * ll, margin_set * set, active
     ii0 = i0 - ll->bbox_left;
     ii1 = fixed2int_var_pixround(x1) - ll->bbox_left;
     if (ii0 < ii1) {
-	assert(ii0 >= 0 && ii1 <= ll->bbox_width);
+	if (ii0 < 0 || ii1 > ll->bbox_width)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	for (i = ii0; i < ii1; i++) {
 	    sect[i].y0 = sect[i].y1 = -2;
 	    vd_circle(int2fixed(i + ll->bbox_left) + fixed_half, y, 3, RGB(255, 0, 0));
@@ -447,12 +453,10 @@ private inline int process_h_list(line_list * ll, active_line * hlp, active_line
 int process_h_lists(line_list * ll, active_line * plp, active_line * flp, active_line * alp,
 		    fixed y0, fixed y1)
 {   
-#   if CURVED_TRAPEZOID_FILL
-	if (y0 == y1) {
-	    /*  fixme : Must not happen. Remove. */
-	    return 0;
-	}
-#   endif
+    if (y0 == y1) {
+	/*  fixme : Must not happen. Remove. */
+	return 0;
+    }
     if (ll->h_list0 != 0) {
 	int code = process_h_list(ll, ll->h_list0, plp, flp, alp, 1, y0, y1);
 
@@ -476,17 +480,16 @@ private inline int compute_padding(section *s)
 	    fixed_half - s->y0 < s->y1 - fixed_half ? 1 : 0);
 }
 
-private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0, int i1)
+private int fill_margin(gx_device * dev, const line_list * ll, margin_set *ms, int i0, int i1)
 {   /* Returns the new index (positive) or return code (negative). */
     section *sect = ms->sect;
     int iy = fixed2int_var_pixround(ms->y);
     int i, ir, h = -2, code;
-    dev_proc_fill_rectangle((*fill_rect)) = dev_proc(dev, fill_rectangle);
-    const gx_device_color * pdevc = ll->pdevc;
-    gs_logical_operation_t lop = ll->lop;
-    bool fill_direct = ll->fill_direct;
+    const fill_options * const fo = ll->fo;
+    const bool FILL_DIRECT = fo->fill_direct;
 
-    assert(i0 >= 0); /* assert(i1 <= ll->bbox_width); */
+    if (i0 < 0 || i1 > ll->bbox_width)
+	return_error(gs_error_unregistered); /* Must not happen. */
     ir = i0;
     for (i = i0; i < i1; i++) {
 	int y0 = sect[i].y0, y1 = sect[i].y1, hh;
@@ -553,7 +556,7 @@ private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0,
 	if (h != hh) {
 	    if (h >= 0) {
 		VD_RECT(ir + ll->bbox_left, iy + h, i - ir, 1, VD_MARG_COLOR);
-		code = LOOP_FILL_RECTANGLE_DIRECT(ir + ll->bbox_left, iy + h, i - ir, 1);
+		code = LOOP_FILL_RECTANGLE_DIRECT(fo, ir + ll->bbox_left, iy + h, i - ir, 1);
 		if (code < 0)
 		    return code;
 	    }
@@ -563,7 +566,7 @@ private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0,
     }
     if (h >= 0) {
 	VD_RECT(ir + ll->bbox_left, iy + h, i - ir, 1, VD_MARG_COLOR);
-	code = LOOP_FILL_RECTANGLE_DIRECT(ir + ll->bbox_left, iy + h, i - ir, 1);
+	code = LOOP_FILL_RECTANGLE_DIRECT(fo, ir + ll->bbox_left, iy + h, i - ir, 1);
 	if (code < 0)
 	    return code;
     }

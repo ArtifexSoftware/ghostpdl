@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generate C code for compiling halftones into ROM. */
 #include "malloc_.h"
 #include "stdio_.h"
@@ -101,7 +102,7 @@ top:
     *pstr = str + 1;
     return true;
 }
-int
+private int
 parse_halftone(gx_device_halftone_resource_t *phtr, byte **pThresholds,
 	       char **pprefix, char **pcont)
 {
@@ -229,7 +230,7 @@ parse_halftone(gx_device_halftone_resource_t *phtr, byte **pThresholds,
 }
 
 /* Write a halftone as a C procedure. */
-int
+private int
 write_halftone(FILE *out, gx_device_halftone_resource_t *phtr,
 	       const char *prefix, int index)
 {
@@ -265,9 +266,12 @@ write_halftone(FILE *out, gx_device_halftone_resource_t *phtr,
 	    index, phtr->rname, phtr->HalftoneType, phtr->Width, phtr->Height,
 	    phtr->num_levels, index, index,
 	    ht_order_procs_short.bit_data_elt_size);
+
+    return 0;
 }
 
 /* Main program */
+int
 main(int argc, char *argv[])
 {
     char *iname;

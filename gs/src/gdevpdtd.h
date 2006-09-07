@@ -1,10 +1,15 @@
-/* Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* FontDescriptor structure and API for pdfwrite */
@@ -116,7 +121,7 @@ int pdf_font_used_glyph(pdf_font_descriptor_t *pfd, gs_glyph glyph,
 /*
  * Compute the FontDescriptor metrics for a font.
  */
-int pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd);
+int pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd);
 
 /*
  * Finish a FontDescriptor by computing the metric values, and then
@@ -125,10 +130,24 @@ int pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd);
 int pdf_finish_FontDescriptor(gx_device_pdf *pdev,
 			      pdf_font_descriptor_t *pfd);
 
+int pdf_finish_font_descriptors(gx_device_pdf *pdev,
+			int (*finish_proc)(gx_device_pdf *,
+					   pdf_font_descriptor_t *));
 /*
  * Write a FontDescriptor.
  */
 int pdf_write_FontDescriptor(gx_device_pdf *pdev,
 			     pdf_font_descriptor_t *pfd);
+
+/*
+ * Release a FontDescriptor components.
+ */
+int pdf_release_FontDescriptor_components(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd);
+
+/*
+ * Mark a FontDescriptor used in a text.
+ */
+int pdf_mark_font_descriptor_used(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd);
+
 
 #endif /* gdevpdtd_INCLUDED */

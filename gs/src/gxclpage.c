@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Page object management */
 #include "gdevprn.h"
 #include "gxcldev.h"
@@ -23,17 +24,17 @@ gdev_prn_save_page(gx_device_printer * pdev, gx_saved_page * page,
 {
     /* Make sure we are banding. */
     if (!pdev->buffer_space)
-	return_error(pdev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     if (strlen(pdev->dname) >= sizeof(page->dname))
-	return_error(pdev->memory, gs_error_limitcheck);
+	return_error(gs_error_limitcheck);
     {
 	gx_device_clist_writer * const pcldev =
 	    (gx_device_clist_writer *)pdev;
 	int code;
 
 	if ((code = clist_end_page(pcldev)) < 0 ||
-	    (code = clist_fclose(pdev->memory, pcldev->page_cfile, pcldev->page_cfname, false)) < 0 ||
-	    (code = clist_fclose(pdev->memory, pcldev->page_bfile, pcldev->page_bfname, false)) < 0
+	    (code = clist_fclose(pcldev->page_cfile, pcldev->page_cfname, false)) < 0 ||
+	    (code = clist_fclose(pcldev->page_bfile, pcldev->page_bfname, false)) < 0
 	    )
 	    return code;
 	/* Save the device information. */
@@ -71,24 +72,24 @@ gdev_prn_render_pages(gx_device_printer * pdev,
 		memcmp(&page->device.color_info, &pdev->color_info,
 		       sizeof(pdev->color_info)) != 0
 		)
-		return_error(pdev->memory, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	    /* Currently we don't allow translation in Y. */
 	    if (ppages[i].offset.y != 0)
-		return_error(pdev->memory, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	    /* Make sure the band parameters are compatible. */
 	    if (page->info.band_params.BandBufferSpace !=
 		pdev->buffer_space ||
 		page->info.band_params.BandWidth !=
 		pdev->width
 		)
-		return_error(pdev->memory, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	    /* Currently we require all band heights to be the same. */
 	    if (i == 0)
 		params = page->info.band_params;
 	    else if (page->info.band_params.BandHeight !=
 		     params.BandHeight
 		)
-		return_error(pdev->memory, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	}
     }
     /* Set up the page list in the device. */
@@ -107,8 +108,8 @@ gdev_prn_render_pages(gx_device_printer * pdev,
 	for (i = 0; i < count; ++i) {
 	    const gx_saved_page *page = ppages[i].page;
 
-	    clist_unlink(pdev->memory, page->info.cfname);
-	    clist_unlink(pdev->memory, page->info.bfname);
+	    clist_unlink(page->info.cfname);
+	    clist_unlink(page->info.bfname);
 	}
 	return code;
     }

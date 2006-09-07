@@ -1,16 +1,16 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
-
-# $RCSfile$ $Revision$
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
 # Partial makefile common to all Unix configurations.
 # This makefile contains the build rules for the auxiliary programs such as
 # echogs, and the 'platform' modules.
@@ -27,14 +27,19 @@ UNIX_AUX_MAK=$(GLSRC)unix-aux.mak
 
 # Unix platforms other than System V, and also System V Release 4
 # (SVR4) platforms.
-unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
-$(GLGEN)unix_.dev: $(unix__) $(GLD)nosync.dev
+unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ) $(GLOBJ)gp_unix_cache.$(OBJ)
+$(GLGEN)unix_.dev: $(unix__) $(GLD)nosync.dev $(GLD)smd5.dev
 	$(SETMOD) $(GLGEN)unix_ $(unix__) -include $(GLD)nosync
+	$(ADDMOD) $(GLGEN)unix_ -include $(GLD)smd5
 
 $(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
  $(pipe__h) $(string__h) $(time__h)\
  $(gx_h) $(gsexit_h) $(gp_h)
 	$(GLCC) $(GLO_)gp_unix.$(OBJ) $(C_) $(GLSRC)gp_unix.c
+
+$(GLOBJ)gp_unix_cache.$(OBJ): $(GLSRC)gp_unix_cache.c $(AK)\
+ $(stdio__h) $(string__h) $(time__h) $(gconfigd_h) $(gp_h) $(md5_h)
+	$(GLCC) $(GLO_)gp_unix_cache.$(OBJ) $(C_) $(GLSRC)gp_unix_cache.c
 
 # assume all Unix platforms support unbuffered read
 $(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
@@ -71,6 +76,14 @@ $(GENHT_XE): $(GLSRC)genht.c $(AK) $(GENHT_DEPS)
 
 $(GENINIT_XE): $(GLSRC)geninit.c $(AK) $(GENINIT_DEPS)
 	$(CCAUX) $(I_)$(GLSRCDIR)$(_I) $(O_)$(GENINIT_XE) $(GLSRC)geninit.c
+
+MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(GLOBJ)gscdefs.$(OBJ) $(GLOBJ)gsmisc.$(OBJ) \
+ $(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)gslibctx.$(OBJ) $(GLOBJ)gp_getnv.$(OBJ) \
+ $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) \
+ $(GLOBJ)gp_stdia.$(OBJ) $(GLOBJ)gsutil.$(OBJ)
+
+$(MKROMFS_XE): $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS)
+	$(CCAUX) $(GENOPT) $(CFLAGS_DEBUG) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLOBJ)$(_I) $(I_)$(ZSRCDIR)$(_I) $(GLSRC)mkromfs.c $(O_)$(MKROMFS_XE) $(MKROMFS_OBJS) -lm
 
 # Query the environment to construct gconfig_.h.
 # The "else true;" is required because Ultrix's implementation of sh -e

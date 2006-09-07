@@ -2226,7 +2226,7 @@ const int pl_built_in_symbol_map_count =
 
 
 ulong
-pl_map_symbol(const gs_memory_t *mem, const pl_symbol_map_t *psm,
+pl_map_symbol(const pl_symbol_map_t *psm,
               uint chr, bool resident_font, bool isFontMSL)
 {
     uint first_code, last_code, code;
@@ -2255,7 +2255,7 @@ pl_map_symbol(const gs_memory_t *mem, const pl_symbol_map_t *psm,
         (pl_symbol_map_vocabulary(psm) == plgv_Unicode)) {
 #ifdef DEBUG
         if ( gs_debug_c('=') ) {
-            dprintf3(mem, "[=] unicode to msl conversion: chr=%d, unicode=0x%x, msl code=%d\n",
+            dprintf3("[=] unicode to msl conversion: chr=%d, unicode=0x%x, msl code=%d\n",
                      chr, code, pl_map_Unicode_to_MSL(code, (psm->id[0] << 8) + psm->id[1]));
         }
 #endif
@@ -2263,6 +2263,5 @@ pl_map_symbol(const gs_memory_t *mem, const pl_symbol_map_t *psm,
     } else {
         return code;
     }
-        
 
 }

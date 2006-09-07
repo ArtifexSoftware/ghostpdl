@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Definitions for stored bitmaps for Ghostscript */
 
 #ifndef gxbitmap_INCLUDED
@@ -42,18 +43,18 @@ typedef gs_bitmap_id gx_bitmap_id;
  * aligned, and then must *ensure* that that alignment is not lost.  (The
  * assumption is not true in some MSVC implementations, but even in those
  * implementations, the alignment is sufficient to satisfy the hardware.
- * See gsmemory.h for more information about this.)
+ * See gsmemraw.h for more information about this.)
  * 
  * The padding requirement is that if the last data byte being operated on
  * is at offset B relative to the start of the scan line, bytes up to and
  * including offset ROUND_UP(B + 1, align_bitmap_mod) - 1 may be accessed,
  * and therefore must be allocated (not cause hardware-level access faults).
  */
-/* We assume arch_align_long_mod is 1-4 or 8. */
-#if arch_align_long_mod <= 4
+/* We assume ARCH_ALIGN_LONG_MOD is 1-4 or 8. */
+#if ARCH_ALIGN_LONG_MOD <= 4
 #  define log2_align_bitmap_mod 2
 #else
-#if arch_align_long_mod == 8
+#if ARCH_ALIGN_LONG_MOD == 8
 #  define log2_align_bitmap_mod 3
 #endif
 #endif

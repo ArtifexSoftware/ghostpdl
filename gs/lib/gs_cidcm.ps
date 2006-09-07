@@ -1,16 +1,19 @@
-% Portions Copyright (C) 2001 artofcode LLC.
-% Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-% Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-% This software is based in part on the work of the Independent JPEG Group.
-% All Rights Reserved.
-%
-% This software is distributed under license and may not be copied, modified
-% or distributed except as expressly authorized under the terms of that
-% license.  Refer to licensing information at http://www.artifex.com/ or
-% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-% San Rafael, CA  94903, (415)492-9861, for further information.
+%    Copyright (C) 2000 artofcode LLC.  All rights reserved.
 % 
-% $RCSfile$ $Revision$
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+% $Id$
 % Extending Font resource category with CIDFont-CMap fonts.
 
 languagelevel 2 .setlanguagelevel currentglobal true setglobal
@@ -125,19 +128,23 @@ currentdict end def
   %
   % Returns an empty dictionary if no CIDSystemInfo is found.
 
+  RESMPDEBUG { (cidcm GetCIDSystemInfoFromFile beg) = } if
   //.prs_dict begin
   /.prsFile exch def
   /.prsResult //.prs_empty def
   /.prsDictCount countdictstack def
+  RESMPDEBUG { (cidcm GetCIDSystemInfoFromFile will PrescanFile.) = } if
   { //PrescanFile } stopped pop
   //.prs_dict /.prsResult get
   end
+  RESMPDEBUG { (cidcm GetCIDSystemInfoFromFile end) = } if
 } bind def
 
 /GetCIDSystemInfo {     % <InstName> <CatName> GetCIDSystemInfo <CSI>
   
   % Retrieve CSI, using caches.
 
+  RESMPDEBUG { (cidcm GetCIDSystemInfo beg) = } if
   /Category findresource begin                % /InstName
   dup ResourceStatus 
   {
@@ -151,13 +158,17 @@ currentdict end def
       } if
       dup type /nametype eq
       {
+        RESMPDEBUG { (cidcm GetCIDSystemInfo got a name.) = } if
         //.prs_dict Category get              % /InstName CSIs
         dup 2 index known
         //enable_cache and {
+          RESMPDEBUG { (cidcm GetCIDSystemInfo from cache.) = } if
           exch get                            % CSI
         } {
+          RESMPDEBUG { (cidcm GetCIDSystemInfo from file.) = } if
           exch                                % CSIs /InstName
           dup //path_buffer ResourceFileName  % CSIs /InstName (path)
+          RESMPDEBUG { (cidcm GetCIDSystemInfo from file ) print dup = } if
           currentglobal exch true setglobal   % CSIs /InstName g (path)
           mark exch                           % CSIs /InstName g [ (path)
           { (r) file                          % CSIs /InstName g [ file
@@ -170,6 +181,13 @@ currentdict end def
           exch setglobal                      % CSIs /InstName CSI
           dup 4 1 roll                        % CSI CSIs /InstName CSI
           put                                 % CSI
+          RESMPDEBUG {
+            (cidcm GetCIDSystemInfo got from file : <<) print
+            dup { exch //=string cvs print ( ) print
+                       //=string cvs print ( ) print
+            } forall
+            (>>) =
+          } if
         } ifelse
       } if
     } ifelse
@@ -177,6 +195,7 @@ currentdict end def
     pop //.prs_empty
   } ifelse
   end
+  RESMPDEBUG { (cidcm GetCIDSystemInfo end) = } if
 } bind def
 
 /IsCompatibleCSI {  % <CSI-M> <CSI-F> IsCompatibleCSI <bool>

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Rest of (client) halftone definitions */
 
 #ifndef gxht_INCLUDED
@@ -162,7 +163,7 @@ extern_st(st_ht_component_element);
 typedef struct gs_multiple_halftone_s {
     gs_halftone_component *components;
     uint num_comp;
-    int (*get_colorname_string)(const gs_memory_t * mem, gs_separation_name colorname_index,
+    int (*get_colorname_string)(const gs_memory_t *mem, gs_separation_name colorname_index,
 		unsigned char **ppstr, unsigned int *pname_size);
 } gs_multiple_halftone;
 

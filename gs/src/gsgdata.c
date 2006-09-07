@@ -1,10 +1,15 @@
-/* Copyright (C) 2001 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Support for glyph data access */
@@ -34,12 +39,11 @@ gs_public_st_composite(st_glyph_data, gs_glyph_data_t, "gs_glyph_data_t",
 
 /* Replace glyph data by a substring. */
 int
-gs_glyph_data_substring(const gs_memory_t *mem,
-			gs_glyph_data_t *pgd, uint offset, uint size)
+gs_glyph_data_substring(gs_glyph_data_t *pgd, uint offset, uint size)
 {
     if (offset > pgd->bits.size || size > pgd->bits.size - offset)
-	return_error(mem, gs_error_rangecheck);
-    return pgd->procs->substring(mem, pgd, offset, size);
+	return_error(gs_error_rangecheck);
+    return pgd->procs->substring(pgd, offset, size);
 }
 
 /* Free the data for a glyph. */
@@ -58,8 +62,7 @@ glyph_data_free_permanent(gs_glyph_data_t *pgd, client_name_t cname)
 {
 }
 private int
-glyph_data_substring_permanent(const gs_memory_t *mem, 
-			       gs_glyph_data_t *pgd, uint offset, uint size)
+glyph_data_substring_permanent(gs_glyph_data_t *pgd, uint offset, uint size)
 {
     pgd->bits.data += offset;
     pgd->bits.size = size;
@@ -74,14 +77,13 @@ glyph_data_free_by_font(gs_glyph_data_t *pgd, client_name_t cname)
 			     &pgd->bits, cname);
 }
 private int
-glyph_data_substring_by_font(const gs_memory_t *mem, 
-			     gs_glyph_data_t *pgd, uint offset, uint size)
+glyph_data_substring_by_font(gs_glyph_data_t *pgd, uint offset, uint size)
 {
     gs_font *const font = pgd->proc_data;
     byte *data = (byte *)pgd->bits.data; /* break const */
 
     if (pgd->bits.bytes)	/* object, not string */
-	return glyph_data_substring_permanent(mem, pgd, offset, size);
+	return glyph_data_substring_permanent(pgd, offset, size);
     if (offset > 0)
 	memmove(data, data + offset, size);
     pgd->bits.data = 

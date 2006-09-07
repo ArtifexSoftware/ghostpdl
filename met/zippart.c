@@ -77,8 +77,7 @@ zip_part_length(zip_part_t *rpart)
 	len += blk->writeoffset;
 	if (blk->writeoffset != ZIP_BLOCK_SIZE) {
 	    ;
-	    dprintf2(NULL, 
-		     "Wasted Space! zip_part_length != zip_part_read %ld, %d\n", 
+	    dprintf2("Wasted Space! zip_part_length != zip_part_read %ld, %d\n", 
 		     blk->writeoffset, ZIP_BLOCK_SIZE);
 	}
 	    
@@ -202,7 +201,7 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 	    return gs_rethrow(error, "seek set 0 error");
 	int size = zip_part_read(&buf, 4, rpart);
 	if ( size != 4 )
-	    dprintf(rpart->parent->memory, "bad len\n");
+	    dprintf("bad len\n");
     }
     
     if (1) {
@@ -223,7 +222,7 @@ zip_page_test( zip_state_t *pzip, zip_part_t *rpart )
 		fname[i] = *ptr;
 	fname[i]=0;
 
-	dprintf1(rpart->parent->memory, "Zip File Name %s\n", fname);
+	dprintf1("Zip File Name %s\n", fname);
 
 	if ((fp = fopen(fname, "w")) == NULL)
 	    return gs_throw1(-1, "couldn't open %s", fname);
@@ -255,7 +254,7 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
     char *p = &rpart->name[strlen(rpart->name) - 5];
 
     if ( gs_debug_c('i') ) 
-	dprintf1(NULL, "End of part %s\n", rpart->name );
+	dprintf1("End of part %s\n", rpart->name );
     
     /* NB: its not cool to string compare to find FixedPages to parse thats 
      * what rels are for...
@@ -288,7 +287,7 @@ zip_page( met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, zip_part
 	    while ( 0 == zip_read_blk_next_blk(rpart) );
 	}
 	else
-	    dprintf1(pzip->memory, "Zero length part %s\n", rpart->name );
+	    dprintf1("Zero length part %s\n", rpart->name );
 	/* auto deletion of FixedPage after parsing */
 	//if ( pzip->inline_mode == false )
 	//    zip_part_free_all( rpart );

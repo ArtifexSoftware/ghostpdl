@@ -1,22 +1,24 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* DCTEncode filter creation */
 #include "memory_.h"
 #include "stdio_.h"		/* for jpeglib.h */
 #include "jpeglib_.h"
 #include "ghost.h"
 #include "oper.h"
+#include "gsmemory.h"
 #include "ialloc.h"
 #include "idict.h"
 #include "idparam.h"
@@ -46,12 +48,11 @@ zDCTE(i_ctx_t *i_ctx_p)
     const ref *dop;
     uint dspace;
 
-    s_stack_init(&state, mem);
     /* First allocate space for IJG parameters. */
     jcdp = gs_alloc_struct_immovable(mem, jpeg_compress_data,
       &st_jpeg_compress_data, "zDCTE");
     if (jcdp == 0)
-	return_error(mem, e_VMerror);
+	return_error(e_VMerror);
     if (s_DCTE_template.set_defaults)
 	(*s_DCTE_template.set_defaults) ((stream_state *) & state);
     state.data.compress = jcdp;

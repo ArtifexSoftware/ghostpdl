@@ -219,7 +219,7 @@ VisualBrush_done(void *data, met_state_t *ms)
             double scaley = (vport.q.y - vport.p.y) / (vbox.q.y - vbox.p.y);
             gs_matrix_scale(&mat, scalex, scaley, &mat);
         }
-        gs_matrix_translate(mem, &mat, -vbox.p.x, vbox.p.y, &mat);
+        gs_matrix_translate(&mat, -vbox.p.x, vbox.p.y, &mat);
 
         /* nb defaults to RGB */
         gs_cspace_init_DeviceRGB(mem, &cs);

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Interface to procedures in iutil2.c */
 
 #ifndef iutil2_INCLUDED
@@ -29,16 +30,16 @@ typedef struct password_s {
 # define NULL_PASSWORD {0, {0}}
 
 /* Transmit a password to or from a parameter list. */
-int param_read_password(const gs_memory_t *mem, gs_param_list *, const char *, password *);
-int param_write_password(const gs_memory_t *mem, gs_param_list *, const char *, const password *);
+int param_read_password(gs_param_list *, const char *, password *);
+int param_write_password(gs_param_list *, const char *, const password *);
 
 /* Check a password from a parameter list. */
 /* Return 0 if OK, 1 if not OK, or an error code. */
-int param_check_password(const gs_memory_t *mem, gs_param_list *, const password *);
+int param_check_password(gs_param_list *, const password *);
 
 /* Read a password from, or write a password into, a dictionary */
 /* (presumably systemdict). */
-int dict_read_password(const gs_memory_t *mem, password *, const ref *, const char *);
-int dict_write_password(const gs_memory_t *mem, const password *, ref *, const char *, bool);
+int dict_read_password(password *, const ref *, const char *);
+int dict_write_password(const password *, ref *, const char *, bool);
 
 #endif /* iutil2_INCLUDED */

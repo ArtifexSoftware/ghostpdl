@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* RasterOp-compositing implementation */
 #include "gx.h"
 #include "gserrors.h"
@@ -33,7 +34,9 @@ private const gs_composite_type_t gs_composite_rop_type =
 	c_rop_create_default_compositor,
 	c_rop_equal,
 	c_rop_write,
-	c_rop_read
+	c_rop_read,
+	gx_default_composite_clist_write_update,
+	gx_default_composite_clist_read_update
     }
 };
 
@@ -154,8 +157,8 @@ private const gx_device_composite_rop gs_composite_rop_device =
 /* Create a RasterOp compositor. */
 int
 c_rop_create_default_compositor(const gs_composite_t * pcte,
-	   gx_device ** pcdev, gx_device * dev, const gs_imager_state * pis,
-				gs_memory_t * mem)
+	gx_device ** pcdev, gx_device * dev, gs_imager_state * pis,
+	gs_memory_t * mem)
 {
     gs_logical_operation_t log_op = prcte->params.log_op;
     const gx_device_color *texture = prcte->params.texture;

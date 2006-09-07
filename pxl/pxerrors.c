@@ -65,7 +65,7 @@ pxerrors_init(px_state_t *pxs)
 	int code;
 
 	if ( pxfont == 0 || penum == 0 )
-	  code = gs_note_error(pxs->memory, errorInsufficientMemory);
+	  code = gs_note_error(errorInsufficientMemory);
 	else
 	  { pxfont->storage = pxfsInternal;
 	    pxfont->font_type = plft_Unicode; /* as good as any */
@@ -282,8 +282,7 @@ px_error_page_show(const char *message, int ytop, px_state_t *pxs)
 	    if ( code >= 0 )
 	      { code = gs_show_next(penum);
 		if ( code > 0 )
-		  code = gs_note_error(pxs->memory, 
-				       errorBadFontData);	/* shouldn't happen! */
+		  code = gs_note_error(errorBadFontData);	/* shouldn't happen! */
 	      }
 	    if ( code < 0 )
 	      gs_show_enum_release(penum, NULL);

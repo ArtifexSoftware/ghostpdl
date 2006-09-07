@@ -174,23 +174,23 @@ typedef struct pcl_lookup_tbl_s {
 /*
  * Copy, init, and release macros.
  */
-#define pcl_lookup_tbl_init_from(mem, pto, pfrom)    \
+#define pcl_lookup_tbl_init_from(pto, pfrom)    \
     BEGIN                                       \
-    rc_increment(mem, pfrom);                        \
+    rc_increment(pfrom);                        \
     (pto) = (pfrom);                            \
     END
 
-#define pcl_lookup_tbl_copy_from(mem, pto, pfrom)            \
+#define pcl_lookup_tbl_copy_from(pto, pfrom)            \
     BEGIN                                               \
     if ((pto) != (pfrom)) {                             \
-        rc_increment(mem, pfrom);                            \
-        rc_decrement(mem, pto, "pcl_lookup_tbl_copy_from");  \
+        rc_increment(pfrom);                            \
+        rc_decrement(pto, "pcl_lookup_tbl_copy_from");  \
         (pto) = (pfrom);                                \
     }                                                   \
     END
 
-#define pcl_lookup_tbl_release(mem, plktbl)              \
-    rc_decrement(mem, plktbl, "pcl_lookup_tbl_release")
+#define pcl_lookup_tbl_release(plktbl)              \
+    rc_decrement(plktbl, "pcl_lookup_tbl_release")
 
 /*
  * Get the color space type of a lookup table.

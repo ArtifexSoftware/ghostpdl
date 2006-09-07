@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generic substitute for math.h */
 
 #ifndef math__INCLUDED
@@ -56,13 +57,13 @@
 #endif
 
 /* Define the hypot procedure on those few systems that don't provide it. */
-#ifdef _IBMR2
+#if defined(_IBMR2)
 /* The RS/6000 has hypot, but math.h doesn't declare it! */
 extern double hypot(double, double);
-#else
-#  if !defined(__TURBOC__) && !defined(BSD4_2) && !defined(VMS) && !defined(__MWERKS__)
-#    define hypot(x,y) sqrt((x)*(x)+(y)*(y))
-#  endif
+#elif defined(_MSC_VER)
+#  define hypot(x,y) _hypot(x,y)
+#elif !defined(__TURBOC__) && !defined(BSD4_2) && !defined(VMS) && !defined(__MWERKS__) && !defined(HAVE_HYPOT)
+#  define hypot(x,y) sqrt((double)(x)*(x)+(double)(y)*(y))
 #endif
 
 #ifdef OSK
@@ -70,16 +71,11 @@ extern double hypot(double, double);
 extern double atan2(), ldexp();
 #endif
 
-
-/* Intercept calls on sqrt for debugging.
- * NB sqrt no longer prints out anything 
-*/
-#if 0
-  extern double gs_sqrt(double);
-# ifdef DEBUG
-#  undef sqrt
-#  define sqrt(x) gs_sqrt(x)
-# endif /* DEBUG */
-#endif 
+/* Intercept calls on sqrt for debugging. */
+extern double gs_sqrt(double, const char *, int);
+#ifdef DEBUG
+#undef sqrt
+#define sqrt(x) gs_sqrt(x, __FILE__, __LINE__)
+#endif /* DEBUG */
 
 #endif /* math__INCLUDED */

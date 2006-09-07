@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Burrows/Wheeler block sorting compression filters */
 #include "stdio_.h"
 #include "memory_.h"
@@ -62,7 +63,7 @@ s_buffered_block_init(stream_state * st)
 /* In the latter case, also set filling = false. */
 /* Note that this procedure doesn't take pw as an argument. */
 private int
-s_buffered_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr, bool last)
+s_buffered_process(stream_state * st, stream_cursor_read * pr, bool last)
 {
     stream_buffered_state *const ss = (stream_buffered_state *) st;
     register const byte *p = pr->ptr;
@@ -223,7 +224,7 @@ bwbse_sort(const byte * buffer, uint * indices, int N)
 
 /* Encode a buffer */
 private int
-s_BWBSE_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_BWBSE_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
     stream_BWBS_state *const ss = (stream_BWBS_state *) st;
@@ -239,7 +240,7 @@ s_BWBSE_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * 
 	        return 1;
 
 	/* Continue filling the buffer. */
-	status = s_buffered_process(mem, st, pr, last);
+	status = s_buffered_process(st, pr, last);
 	if (!status)
 	    return 0;
 	ss->N = N = ss->bpos;
@@ -449,7 +450,7 @@ bwbsd_construct_offsets(stream_BWBS_state * sst, int *po, int N)
 
 /* Decode a buffer */
 private int
-s_BWBSD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_BWBSD_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
     stream_BWBS_state *const ss = (stream_BWBS_state *) st;
@@ -494,7 +495,7 @@ s_BWBSD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * 
 	ss->bsize = N;
     }
     if (ss->filling) {		/* Continue filling the buffer. */
-	if (!s_buffered_process(mem, st, pr, last))
+	if (!s_buffered_process(st, pr, last))
 	    return 0;
 	/* Construct the inverse sort order. */
 #ifdef SHORT_OFFSETS

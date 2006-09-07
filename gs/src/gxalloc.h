@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Structure definitions for standard allocator */
 /* Requires gsmemory.h, gsstruct.h */
 
@@ -24,6 +25,8 @@ typedef struct gs_ref_memory_s gs_ref_memory_t;
 
 #include "gsalloc.h"
 #include "gxobj.h"
+
+#define NO_INVISIBLE_LEVELS 1 /* old code = 0, new code = 1 */
 
 /* ================ Chunks ================ */
 
@@ -214,7 +217,19 @@ extern_st(st_chunk);
 			}\
 		}\
 	}
+#ifdef DEBUG
+#  define END_OBJECTS_SCAN\
+			}\
+		}\
+		if ( pre != end )\
+		{	lprintf2("Chunk parsing error, 0x%lx != 0x%lx\n",\
+				 (ulong)pre, (ulong)end);\
+		    /*gs_abort((const gs_memory_t *)NULL);*/	\
+		}\
+	}
+#else
 #  define END_OBJECTS_SCAN END_OBJECTS_SCAN_NO_ABORT
+#endif
 
 /* Initialize a chunk. */
 /* This is exported for save/restore. */
@@ -263,12 +278,12 @@ void alloc_free_chunk(chunk_t *, gs_ref_memory_t *);
 /* define the list of variables being printed as a macro. */
 #define dprintf_chunk_format\
   "%s 0x%lx (0x%lx..0x%lx, 0x%lx..0x%lx..0x%lx)\n"
-#define dprintf_chunk(mem, msg, cp)\
-  dprintf7(mem, dprintf_chunk_format,\
+#define dprintf_chunk(msg, cp)\
+  dprintf7(dprintf_chunk_format,\
 	   msg, (ulong)(cp), (ulong)(cp)->cbase, (ulong)(cp)->cbot,\
 	   (ulong)(cp)->ctop, (ulong)(cp)->climit, (ulong)(cp)->cend)
-#define if_debug_chunk(mem, c, msg, cp)\
-  if_debug7(mem, c, dprintf_chunk_format,\
+#define if_debug_chunk(c, msg, cp)\
+  if_debug7(c, dprintf_chunk_format,\
 	    msg, (ulong)(cp), (ulong)(cp)->cbase, (ulong)(cp)->cbot,\
 	    (ulong)(cp)->ctop, (ulong)(cp)->climit, (ulong)(cp)->cend)
 
@@ -322,6 +337,9 @@ struct gs_ref_memory_s {
 				/* its own chunk: must be */
 				/* 1 mod obj_align_mod */
     uint space;			/* a_local, a_global, a_system */
+#   if IGC_PTR_STABILITY_CHECK
+    unsigned space_id:3; /* r_space_bits + 1 bit for "instability". */
+#   endif
     /* Callers can change the following dynamically */
     /* (through a procedural interface). */
     gs_memory_gc_status_t gc_status;
@@ -364,6 +382,9 @@ struct gs_ref_memory_s {
     /* Sharing / saved state information */
     int num_contexts;		/* # of contexts sharing this VM */
     struct alloc_change_s *changes;
+#if NO_INVISIBLE_LEVELS
+    struct alloc_change_s *scan_limit;
+#endif
     struct alloc_save_s *saved;
     long total_scanned;
     struct alloc_save_s *reloc_saved;	/* for GC */
@@ -380,7 +401,7 @@ extern_st(st_ref_memory);
 #define public_st_ref_memory()	/* in gsalloc.c */\
   gs_public_st_composite(st_ref_memory, gs_ref_memory_t,\
     "gs_ref_memory", ref_memory_enum_ptrs, ref_memory_reloc_ptrs)
-#define st_ref_memory_max_ptrs 4  /* streams, names_array, changes, saved */
+#define st_ref_memory_max_ptrs 5  /* streams, names_array, changes, scan_limit, saved */
 
 /* Define the procedures for the standard allocator. */
 /* We export this for subclasses. */
@@ -436,12 +457,12 @@ extern const dump_control_t dump_control_all;
 /* Print one object with the given options. */
 /* Relevant options: type_addresses, no_types, pointers, pointed_strings, */
 /* contents. */
-void debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t *control);
+void debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t * control);
 
 /* Print the contents of a chunk with the given options. */
 /* Relevant options: all. */
-void debug_dump_chunk(const gs_memory_t *mem, const chunk_t *cp, const dump_control_t *control);
-void debug_print_chunk(const gs_memory_t *mem, const chunk_t *cp);	/* default options */
+void debug_dump_chunk(const gs_memory_t *mem, const chunk_t * cp, const dump_control_t * control);
+void debug_print_chunk(const gs_memory_t *mem, const chunk_t * cp);	/* default options */
 
 /* Print the contents of all chunks managed by an allocator. */
 /* Relevant options: all. */

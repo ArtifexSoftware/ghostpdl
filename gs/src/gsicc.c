@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Implementation of the ICCBased color space family */
 
 #include "math_.h"
@@ -143,7 +144,8 @@ private const gs_color_space_type gs_color_space_type_CIEICC = {
     gx_spot_colors_set_overprint,   /* set_overprint */
     gx_adjust_cspace_CIEICC,        /* adjust_cspace_count */
     gx_no_adjust_color_count,       /* adjust_color_count */
-    gx_serialize_CIEICC		    /* serialize */
+    gx_serialize_CIEICC,		    /* serialize */
+    gx_cspace_is_linear_default
 };
 
 
@@ -255,7 +257,7 @@ gx_concretize_CIEICC(
 
     /* verify and update the stream pointer */
     if (picc_info->file_id != (instrp->read_id | instrp->write_id))
-        return_error(pis->memory, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     ((icmFileGs *)picc->fp)->strp = instrp;
 
     /* translate the input components */
@@ -278,7 +280,7 @@ gx_concretize_CIEICC(
      * should not occur in practice.
      */
     if (picc_info->plu->lookup(picc_info->plu, outv, inv) > 1)
-        return_error(pis->memory, gs_error_unregistered);
+        return_error(gs_error_unregistered);
 
     /* if the output is in the CIE L*a*b* space, convert to XYZ */
     if (picc_info->pcs_is_cielab) {
@@ -328,11 +330,11 @@ gx_concretize_CIEICC(
 private void
 gx_adjust_cspace_CIEICC(const gs_color_space * pcs, int delta)
 {
-    const gs_icc_params *picc_params = &pcs->params.icc;
+    const gs_icc_params *   picc_params = &pcs->params.icc;
 
-    rc_adjust_const(pcs->pmem, picc_params->picc_info, delta, "gx_adjust_cspace_CIEICC");
+    rc_adjust_const(picc_params->picc_info, delta, "gx_adjust_cspace_CIEICC");
     picc_params->alt_space.type->adjust_cspace_count(
-            (const gs_color_space *)&picc_params->alt_space, delta );
+                (const gs_color_space *)&picc_params->alt_space, delta );
 }
 
 /*
@@ -421,7 +423,7 @@ gx_wrap_icc_stream(stream *strp)
 }
 
 int
-gx_load_icc_profile(const gs_memory_t *mem, gs_cie_icc *picc_info)
+gx_load_icc_profile(gs_cie_icc *picc_info)
 {
     stream *        instrp = picc_info->instrp;
     icc *           picc;
@@ -430,7 +432,7 @@ gx_load_icc_profile(const gs_memory_t *mem, gs_cie_icc *picc_info)
 	
     /* verify that the file is legitimate */
     if (picc_info->file_id != (instrp->read_id | instrp->write_id))
-	return_error(mem, gs_error_ioerror);
+	return_error(gs_error_ioerror);
     /*
      * Load the top-level ICC profile.
      *
@@ -446,7 +448,7 @@ gx_load_icc_profile(const gs_memory_t *mem, gs_cie_icc *picc_info)
      * are stored in "foreign" memory.
      */
     if ((picc = new_icc()) == NULL)
-	return_error(mem, gs_error_limitcheck);
+	return_error(gs_error_limitcheck);
     {
 	icProfileClassSignature profile_class;
 	icColorSpaceSignature   cspace_type;
@@ -572,7 +574,7 @@ gx_load_icc_profile(const gs_memory_t *mem, gs_cie_icc *picc_info)
 	picc->del(picc);
     if (pfile != NULL)
 	pfile->del(pfile);
-    return_error(mem, gs_error_rangecheck);
+    return_error(gs_error_rangecheck);
 }
 
 /*
@@ -589,7 +591,7 @@ gx_install_CIEICC(const gs_color_space * pcs, gs_state * pgs)
 
     /* update the stub information used by the joint caches */
     gx_cie_load_common_cache(&picc_info->common, pgs);
-    gx_cie_common_complete(pgs->memory, &picc_info->common);
+    gx_cie_common_complete(&picc_info->common);
     return gs_cie_cs_complete(pgs, true);
 }
 
@@ -621,7 +623,7 @@ gs_cspace_build_CIEICC(
                                     pmem );
 
     if (picc_info == NULL)
-        return_error(pmem, gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     gx_set_common_cie_defaults(&picc_info->common, client_data);
     /*
@@ -670,9 +672,9 @@ gx_serialize_CIEICC(const gs_color_space * pcs, stream * s)
     if (code < 0)
 	return code;
     if (sseek(picc->instrp, 0) < 0)
-	return_error(s->memory, gs_error_unregistered); /* Unimplemented. */
+	return_error(gs_error_unregistered); /* Unimplemented. */
     if (savailable(picc->instrp, &avail) != 0)
-	return_error(s->memory, gs_error_unregistered); /* Unimplemented. */
+	return_error(gs_error_unregistered); /* Unimplemented. */
     code = sputs(s, (byte *)&avail, sizeof(avail), &n);
     if (code < 0)
 	return code;

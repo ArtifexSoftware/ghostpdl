@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Definitions common to stream clients and implementors */
 
 #ifndef scommon_INCLUDED
@@ -109,7 +110,7 @@ typedef union stream_cursor_s {
 
 /* Process a buffer.  See strimpl.h for details. */
 #define stream_proc_process(proc)\
-  int proc(const gs_memory_t *, stream_state *, stream_cursor_read *,\
+  int proc(stream_state *, stream_cursor_read *,\
     stream_cursor_write *, bool)
 
 /* Release the stream state when closing. */
@@ -158,7 +159,6 @@ stream_proc_report_error(s_no_report_error);
 #define stream_state_common\
 	const stream_template *template;\
 	gs_memory_t *memory;\
-        bool isheap;\
 	stream_proc_report_error((*report_error));\
         int min_left; /* required bytes for lookahead */ \
 	char error_string[STREAM_MAX_ERROR_STRING + 1]

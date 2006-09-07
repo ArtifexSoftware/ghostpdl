@@ -1,13 +1,17 @@
-%  Portions Copyright (C) 2002, 2003 artofcode LLC.
-%  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-%  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-%  All Rights Reserved.
-%
-%  This software is distributed under license and may not be copied, modified
-%  or distributed except as expressly authorized under the terms of that
-%  license.  Refer to licensing information at http://www.artifex.com/ or
-%  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-%  San Rafael, CA  94903, (415)492-9861, for further information. */
+%    Copyright (C) 2001, 2002 Aladdin Enterprises.  All rights reserved.
+% 
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 % $Id$
 % Pattern color space method dictionary.
@@ -238,6 +242,7 @@ colorspacedict
     % implementations are gs_pattern1_instance_t and
     % gs_pattern2_instance_t. It is unfortunate to have to expose such
     % internal names at this level, but not easily avoided.
+    % For CPSI/CET compatibility we 'hide' this inside an array
     %
     /cs_prepare_color
       {
@@ -251,8 +256,7 @@ colorspacedict
           }
           {
             dup /Implementation .knownget
-              {
-                type dup dup
+              { 0 get type dup dup
                 /gs_pattern1_instance_t ne exch /gs_pattern2_instance_t ne and
                 exch xcheck not
                 or
@@ -271,10 +275,20 @@ colorspacedict
                     //get_pattern_base_cspace exec dup //null eq
                       //setcspace_rangecheck
                     if
-                    exch 1 index //.cs_get_ncomps exec
-                    exch 1 index 3 add 1 roll
-                    //check_num_stack exec
-                    //.cs_get_ncomps exec 1 add -1 roll
+                    //.cs_get_ncomps exec
+		    % We cannot use check_num_stack since it does not
+		    % properly clean the stack.  The CET test 09-47n.ps has
+		    % a very bad test case with a faulty setpattern call with
+		    % no color values.  To properly handle that case and to
+		    % ensure that the stack is properly cleaned, we are
+		    % testing the type of the color values inline.
+		    1 exch 1 exch
+		      {
+		        index type dup /integertype ne exch /realtype ne and
+		          //setcolor_typecheck
+		        if
+		      }
+		    for
                   }
                   { pop }
                 ifelse

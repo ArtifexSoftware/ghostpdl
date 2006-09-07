@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generic font operators */
 #include "ghost.h"
 #include "oper.h"
@@ -27,6 +28,7 @@
 #include "isave.h"
 #include "store.h"
 #include "ivmspace.h"
+#include "gscencs.h"
 
 /* Forward references */
 private int make_font(i_ctx_t *, const gs_matrix *);
@@ -40,7 +42,7 @@ gs_font_dir *ifont_dir = 0;	/* needed for buildfont */
 bool
 zfont_mark_glyph_name(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data)
 {
-    return (glyph >= gs_min_cid_glyph || glyph == gs_no_glyph ? false :
+    return (glyph >= gs_c_min_std_encoding_glyph || glyph == gs_no_glyph ? false :
 	    name_mark_index(mem, (uint) glyph));
 }
 
@@ -77,7 +79,7 @@ zscalefont(i_ctx_t *i_ctx_p)
     double scale;
     gs_matrix mat;
 
-    if ((code = real_param(imemory, op, &scale)) < 0)
+    if ((code = real_param(op, &scale)) < 0)
 	return code;
     if ((code = gs_make_scaling(scale, scale, &mat)) < 0)
 	return code;
@@ -103,7 +105,7 @@ zsetfont(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_font *pfont;
-    int code = font_param(imemory, op, &pfont);
+    int code = font_param(op, &pfont);
 
     if (code < 0 || (code = gs_setfont(igs, pfont)) < 0)
 	return code;
@@ -117,7 +119,7 @@ zcurrentfont(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     *op = *pfont_dict(gs_currentfont(igs));
     return 0;
 }
@@ -130,7 +132,7 @@ zcachestatus(i_ctx_t *i_ctx_p)
     uint status[7];
 
     gs_cachestatus(ifont_dir, status);
-    push(imemory, 7);
+    push(7);
     make_uint_array(op - 6, status, 7);
     return 0;
 }
@@ -141,7 +143,7 @@ zsetcachelimit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_int_leu(imemory, *op, max_uint);
+    check_int_leu(*op, max_uint);
     gs_setcachelimit(ifont_dir, (uint) op->value.intval);
     pop(1);
     return 0;
@@ -157,7 +159,7 @@ zsetcacheparams(i_ctx_t *i_ctx_p)
     os_ptr opp = op;
 
     for (i = 0; i < 3 && !r_has_type(opp, t_mark); i++, opp--) {
-	check_int_leu(imemory, *opp, max_uint);
+	check_int_leu(*opp, max_uint);
 	params[i] = opp->value.intval;
     }
     switch (i) {
@@ -185,7 +187,7 @@ zcurrentcacheparams(i_ctx_t *i_ctx_p)
     params[0] = gs_currentcachesize(ifont_dir);
     params[1] = gs_currentcachelower(ifont_dir);
     params[2] = gs_currentcacheupper(ifont_dir);
-    push(imemory, 4);
+    push(4);
     make_mark(op - 3);
     make_uint_array(op - 2, params, 3);
     return 0;
@@ -197,7 +199,7 @@ zregisterfont(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_font *pfont;
-    int code = font_param(imemory, op, &pfont);
+    int code = font_param(op, &pfont);
 
     if (code < 0)
 	return code;
@@ -214,7 +216,7 @@ zsetupUnicodeDecoder(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_type(imemory, *op, t_dictionary);
+    check_type(*op, t_dictionary);
     code = setup_unicode_decoder(i_ctx_p, op);
     if (code < 0)
 	return code;
@@ -243,7 +245,7 @@ const op_def zfont_op_defs[] =
 
 /* Validate a font parameter. */
 int
-font_param(const gs_memory_t *mem, const ref * pfdict, gs_font ** ppfont)
+font_param(const ref * pfdict, gs_font ** ppfont)
 {	/*
 	 * Check that pfdict is a read-only dictionary, that it has a FID
 	 * entry whose value is a fontID, and that the fontID points to a
@@ -254,18 +256,18 @@ font_param(const gs_memory_t *mem, const ref * pfdict, gs_font ** ppfont)
     gs_font *pfont;
     const font_data *pdata;
 
-    check_type(mem, *pfdict, t_dictionary);
+    check_type(*pfdict, t_dictionary);
     if (dict_find_string(pfdict, "FID", &pid) <= 0 ||
 	!r_has_type(pid, t_fontID)
 	)
-	return_error(mem, e_invalidfont);
+	return_error(e_invalidfont);
     pfont = r_ptr(pid, gs_font);
     pdata = pfont->client_data;
-    if (!obj_eq(mem, &pdata->dict, pfdict))
-	return_error(mem, e_invalidfont);
+    if (!obj_eq(pfont->memory, &pdata->dict, pfdict))
+	return_error(e_invalidfont);
     *ppfont = pfont;
     if (pfont == 0)
-	return_error(mem, e_invalidfont);	/* unregistered font */
+	return_error(e_invalidfont);	/* unregistered font */
     return 0;
 }
 
@@ -294,7 +296,7 @@ make_font(i_ctx_t *i_ctx_p, const gs_matrix * pmat)
     int code;
     ref *pencoding = 0;
 
-    code = font_param(imemory, fp, &oldfont);
+    code = font_param(fp, &oldfont);
     if (code < 0)
 	return code;
     {
@@ -304,7 +306,7 @@ make_font(i_ctx_t *i_ctx_p, const gs_matrix * pmat)
 	if (dict_find_string(fp, "Encoding", &pencoding) > 0 &&
 	    !r_is_array(pencoding)
 	    )
-	    code = gs_note_error(imemory, e_invalidfont);
+	    code = gs_note_error(e_invalidfont);
 	else {
 		/*
 		 * Temporarily substitute the new dictionary
@@ -330,7 +332,7 @@ make_font(i_ctx_t *i_ctx_p, const gs_matrix * pmat)
 	!obj_eq(imemory, pencoding, &pfont_data(newfont)->Encoding)
 	) {
 	if (newfont->FontType == ft_composite)
-	    return_error(imemory, e_rangecheck);
+	    return_error(e_rangecheck);
 	/* We should really do validity checking here.... */
 	ref_assign(&pfont_data(newfont)->Encoding, pencoding);
 	lookup_gs_simple_font_encoding((gs_font_base *) newfont);
@@ -376,7 +378,7 @@ zdefault_make_font(gs_font_dir * pdir, const gs_font * oldfont,
     if ((pdata = gs_alloc_struct(mem, font_data, &st_font_data,
 				 "make_font(font_data)")) == 0
 	)
-	return_error(mem, e_VMerror);
+	return_error(e_VMerror);
     /*
      * This dictionary is newly created: it's safe to pass NULL as the
      * dstack pointer to dict_copy and dict_put_string.
@@ -446,13 +448,15 @@ purge_if_name_removed(const gs_memory_t *mem, cached_char * cc, void *vsave)
 }
 
 /* Remove entries from font and character caches. */
-void
+int 
 font_restore(const alloc_save_t * save)
 {
     gs_font_dir *pdir = ifont_dir;
+    const gs_memory_t *mem = 0;
+    int code;
 
     if (pdir == 0)		/* not initialized yet */
-	return;
+	return 0;
 
     /* Purge original (unscaled) fonts. */
 
@@ -463,8 +467,11 @@ otop:
 	for (pfont = pdir->orig_fonts; pfont != 0;
 	     pfont = pfont->next
 	    ) {
+	    mem = pfont->memory;
 	    if (alloc_is_since_save((char *)pfont, save)) {
-		gs_purge_font(pfont);
+		code = gs_purge_font(pfont);
+		if (code < 0)
+		    return code;
 		goto otop;
 	    }
 	}
@@ -480,7 +487,9 @@ top:
 	     pfont = pfont->next
 	    ) {
 	    if (alloc_is_since_save((char *)pfont, save)) {
-		gs_purge_font(pfont);
+		code = gs_purge_font(pfont);
+		if (code < 0)
+		    return code;
 		goto top;
 	    }
 	}
@@ -500,14 +509,18 @@ top:
 		     alloc_is_since_save((char *)pair->UID.xvalues,
 					 save))
 		    ) {
-		    gs_purge_fm_pair(pdir, pair, 0);
+		    code = gs_purge_fm_pair(pdir, pair, 0);
+		    if (code < 0)
+			return code;
 		    continue;
 		}
 		if (pair->font != 0 &&
 		    alloc_is_since_save((char *)pair->font, save)
 		    ) {
 		    if (!uid_is_valid(&pair->UID)) {
-			gs_purge_fm_pair(pdir, pair, 0);
+			code = gs_purge_fm_pair(pdir, pair, 0);
+			if (code < 0)
+			    return code;
 			continue;
 		    }
 		    /* Don't discard pairs with a surviving UID. */
@@ -515,8 +528,11 @@ top:
 		}
 		if (pair->xfont != 0 &&
 		    alloc_is_since_save((char *)pair->xfont, save)
-		    )
-		    gs_purge_fm_pair(pdir, pair, 1);
+		    ) {
+		    code = gs_purge_fm_pair(pdir, pair, 1);
+		    if (code < 0)
+			return code;
+		}
 	    }
     }
 
@@ -527,7 +543,7 @@ top:
     if (alloc_any_names_since_save(save))
 	gx_purge_selected_cached_chars(pdir, purge_if_name_removed,
 				       (void *)save);
-
+    return 0;
 }
 
 /* ------ Font procedures for PostScript fonts ------ */
@@ -621,7 +637,7 @@ setup_unicode_decoder(i_ctx_t *i_ctx_p, ref *Decoding)
     gs_unicode_decoder *pud = gs_alloc_struct(imemory, gs_unicode_decoder, 
                              &st_unicode_decoder, "setup_unicode_decoder");
     if (pud == NULL)
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     ref_assign_new(&pud->data, Decoding);
     ifont_dir->glyph_to_unicode_table = pud;
     return 0;

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Definition of device halftones */
 
 #ifndef gxdht_INCLUDED
@@ -84,7 +85,7 @@ typedef struct gx_ht_cell_params_s {
 } gx_ht_cell_params_t;
 
 /* Compute the derived values from the defining values. */
-void gx_compute_cell_values(const gs_memory_t *mem, gx_ht_cell_params_t *);
+void gx_compute_cell_values(gx_ht_cell_params_t *);
 
 /*
  * The whitening order is represented by a pair of arrays.
@@ -178,7 +179,7 @@ typedef struct gx_ht_order_procs_s {
     /* Note that for 16-bit threshold values, */
     /* each value is 2 bytes in big-endian order (Adobe spec). */
 
-    int (*construct_order)(const gs_memory_t *mem, gx_ht_order *order, const byte *thresholds);
+    int (*construct_order)(gx_ht_order *order, const byte *thresholds);
 
     /* Return the (x,y) coordinate of an element of bit_data. */
 
@@ -187,7 +188,7 @@ typedef struct gx_ht_order_procs_s {
 
     /* Update a halftone cache tile to match this order. */
 
-    int (*render)(const gs_memory_t *mem, gx_ht_tile *tile, int new_bit_level,
+    int (*render)(gx_ht_tile *tile, int new_bit_level,
 		  const gx_ht_order *order);
 
     /* Draw a halftone shade into a 1 bit deep buffer. */
@@ -289,7 +290,9 @@ typedef struct gx_device_halftone_s gx_device_halftone;
 #endif
 
 /*
- * Device Halftone Structure definition
+ * Device Halftone Structure definition.  See comments before
+ * gx_imager_dev_ht_install() for more information on this structure and its
+ * fields.
  */
 struct gx_device_halftone_s {
     gx_ht_order order;		/* must be first, for subclassing */
@@ -302,7 +305,8 @@ struct gx_device_halftone_s {
     gs_halftone_type type;
     gx_ht_order_component *components;
 
-    uint num_comp;
+    uint num_comp;		/* Number of components in the halftone */
+    uint num_dev_comp;		/* Number of process color model components */
     /* The following are computed from the above. */
     int lcm_width, lcm_height;	/* LCM of primary color tile sizes, */
     /* max_int if overflowed */
@@ -316,7 +320,7 @@ extern_st(st_device_halftone);
 #define st_device_halftone_max_ptrs (st_ht_order_max_ptrs + 1)
 
 /* Complete a halftone order defined by a threshold array. */
-void gx_ht_complete_threshold_order(const gs_memory_t *mem, gx_ht_order *porder);
+void gx_ht_complete_threshold_order(gx_ht_order *porder);
 
 /* Release a gx_device_halftone by freeing its components. */
 /* (Don't free the gx_device_halftone itself.) */

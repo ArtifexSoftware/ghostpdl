@@ -1,13 +1,17 @@
-%  Portions Copyright (C) 2002, 2004 artofcode LLC.
-%  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-%  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-%  All Rights Reserved.
-%
-%  This software is distributed under license and may not be copied, modified
-%  or distributed except as expressly authorized under the terms of that
-%  license.  Refer to licensing information at http://www.artifex.com/ or
-%  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-%  San Rafael, CA  94903, (415)492-9861, for further information. */
+%    Copyright (C) 2000 artofcode LLC.  All rights reserved.
+% 
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 % $Id$
 % A procset for Postscript font emulation
@@ -82,12 +86,14 @@ currentdict end def
 %---------------------------CIDFont---------------------------
 
 /TranslateCSI   % <record> TranslateCSI <CSI>
-{ begin
+{ RESMPDEBUG { (fntem TranslateCSI beg ) = } if
+  begin
   << /Registry (Adobe) 
      /Ordering CSI aload pop 
      /Supplement exch 
   >>
   end
+  RESMPDEBUG { (fntem TranslateCSI end ) = } if
 } bind def
 
 /CIDFontCommon
@@ -211,7 +217,8 @@ currentdict end def
 { begin
   dup length dict copy
   begin
-  1 index NameKey exch def
+  dup type /nametype ne { cvn } if
+  dup NameKey exch def
   currentglobal true setglobal
   make_procs TypeKey load .knownget {
     exec
@@ -249,9 +256,30 @@ currentdict end def
  ISOLatin1Encoding /ISOLatin1Encoding
  SymbolEncoding /SymbolEncoding
  DingbatsEncoding /DingbatsEncoding
- /resourceforall where
-  { pop (*) { cvn dup findencoding exch } 1024 string /Encoding resourceforall }
- if
+ /resourceforall where {
+   pop (*) { dup cvn
+     EncodingDirectory exch .knownget not {
+       % A work around bug 688710 on Linux :
+       % findencoding can't load resource files until gs_init.ps executes .fixresources . 
+       % It will happen after gs_init.ps runs INITFILES,
+       % from which the current file runs.
+       % Windows build has no such problem.
+       (.svn) anchorsearch {
+         % HACK : skip .svn or */* names, which are subdirectories.
+         pop pop
+       } {
+         (/) search {
+           pop pop pop
+         } {
+           cvn dup /Encoding findresource
+         } ifelse
+       } ifelse
+     } {
+       exch cvn exch
+     } ifelse
+     exch 
+   } 1024 string /Encoding resourceforall 
+ } if
 .dicttomark def
 
 /ChooseDecoding  % <font> ChooseDecoding <font>

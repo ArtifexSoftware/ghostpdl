@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Halftone definition operators */
 #include "ghost.h"
 #include "memory_.h"
@@ -44,14 +45,14 @@ zcurrenthalftone(i_ctx_t *i_ctx_p)
     gs_currenthalftone(igs, &ht);
     switch (ht.type) {
 	case ht_type_screen:
-	    push(imemory, 4);
+	    push(4);
 	    make_real(op - 3, ht.params.screen.frequency);
 	    make_real(op - 2, ht.params.screen.angle);
 	    op[-1] = istate->screen_procs.gray;
 	    make_int(op, 1);
 	    break;
 	case ht_type_colorscreen:
-	    push(imemory, 13);
+	    push(13);
 	    {
 		os_ptr opc = op - 12;
 		gs_screen_halftone *pht = 
@@ -82,7 +83,7 @@ zcurrenthalftone(i_ctx_t *i_ctx_p)
 	    make_int(op, 2);
 	    break;
 	default:		/* Screen was set by sethalftone. */
-	    push(imemory, 2);
+	    push(2);
 	    op[-1] = istate->halftone;
 	    make_int(op, 0);
 	    break;
@@ -96,7 +97,7 @@ zcurrentscreenlevels(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_int(op, gs_currentscreenlevels(igs));
     return 0;
 }
@@ -125,12 +126,13 @@ zsetscreen(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_screen_halftone screen;
     gx_ht_order order;
-    int code = zscreen_params(imemory, op, &screen);
+    int code = zscreen_params(op, &screen);
     gs_memory_t *mem;
+    int space_index = r_space_index(op);
 
     if (code < 0)
 	return code;
-    mem = (gs_memory_t *)idmemory->spaces_indexed[r_space_index(op)];
+    mem = (gs_memory_t *)idmemory->spaces_indexed[space_index];
     /*
      * Allocate the halftone in the same VM space as the procedure.
      * This keeps the space relationships consistent.
@@ -140,23 +142,24 @@ zsetscreen(i_ctx_t *i_ctx_p)
     if (code < 0)
 	return code;
     return zscreen_enum_init(i_ctx_p, &order, &screen, op, 3,
-			     setscreen_finish, mem);
+			     setscreen_finish, space_index);
 }
 /* We break out the body of this operator so it can be shared with */
 /* the code for Type 1 halftones in sethalftone. */
 int
 zscreen_enum_init(i_ctx_t *i_ctx_p, const gx_ht_order * porder,
 		  gs_screen_halftone * psp, ref * pproc, int npop,
-		  int (*finish_proc)(i_ctx_t *), gs_memory_t * mem)
+		  int (*finish_proc)(i_ctx_t *), int space_index)
 {
     gs_screen_enum *penum;
+    gs_memory_t * mem = (gs_memory_t *)idmemory->spaces_indexed[space_index]; 
     int code;
 
     check_estack(snumpush + 1);
-    penum = gs_screen_enum_alloc(imemory, "setscreen");
+    penum = gs_screen_enum_alloc(mem, "setscreen");
     if (penum == 0)
-	return_error(imemory, e_VMerror);
-    make_istruct(esp + snumpush, 0, penum);	/* do early for screen_cleanup in case of error */
+	return_error(e_VMerror);
+    make_struct(esp + snumpush, space_index << r_space_shift, penum);	/* do early for screen_cleanup in case of error */
     code = gs_screen_enum_init_memory(penum, porder, igs, psp, mem);
     if (code < 0) {
 	screen_cleanup(i_ctx_p);
@@ -178,7 +181,7 @@ screen_sample(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_screen_enum *penum = senum;
     gs_point pt;
-    int code = gs_screen_currentpoint(imemory, penum, &pt);
+    int code = gs_screen_currentpoint(penum, &pt);
     ref proc;
 
     switch (code) {
@@ -194,7 +197,7 @@ screen_sample(i_ctx_t *i_ctx_p)
 	case 0:
 	    ;
     }
-    push(imemory, 2);
+    push(2);
     make_real(op - 1, pt.x);
     make_real(op, pt.y);
     proc = sproc;
@@ -208,11 +211,11 @@ set_screen_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double value;
-    int code = real_param(imemory, op, &value);
+    int code = real_param(op, &value);
 
     if (code < 0)
 	return code;
-    code = gs_screen_next(imemory, senum, value);
+    code = gs_screen_next(senum, value);
     if (code < 0)
 	return code;
     pop(1);
@@ -234,7 +237,9 @@ setscreen_finish(i_ctx_t *i_ctx_p)
 private int
 screen_cleanup(i_ctx_t *i_ctx_p)
 {
-    ifree_object(esp[snumpush].value.pstruct, "screen_cleanup");
+    gs_screen_enum *penum = r_ptr(esp + snumpush, gs_screen_enum);
+
+    gs_free_object(penum->halftone.rc.memory, penum, "screen_cleanup");
     return 0;
 }
 
@@ -242,14 +247,14 @@ screen_cleanup(i_ctx_t *i_ctx_p)
 
 /* Get parameters for a single screen. */
 int
-zscreen_params(const gs_memory_t *mem, os_ptr op, gs_screen_halftone * phs)
+zscreen_params(os_ptr op, gs_screen_halftone * phs)
 {
     double fa[2];
-    int code = num_params(mem, op - 1, 2, fa);
+    int code = num_params(op - 1, 2, fa);
 
     if (code < 0)
 	return code;
-    check_proc(mem, *op);
+    check_proc(*op);
     phs->frequency = fa[0];
     phs->angle = fa[1];
     return 0;

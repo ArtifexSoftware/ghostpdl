@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Pattern color mapping for Ghostscript library */
 #include "math_.h"
 #include "memory_.h"
@@ -149,6 +150,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, client_name_t cname)
     gx_device_init((gx_device *)adev,
 		   (const gx_device *)&gs_pattern_accum_device,
 		   mem, true);
+    check_device_separable((gx_device *)adev);
     gx_device_forward_fill_in_procs((gx_device_forward *)adev);
     return adev;
 }
@@ -200,7 +202,7 @@ pattern_accum_open(gx_device * dev)
 		                "pattern_accum_open(mask)"
                                 );
         if (mask == 0)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
         gs_make_mem_mono_device(mask, mem, 0);
         PDSET(mask);
         mask->bitmap_memory = mem;
@@ -222,7 +224,7 @@ pattern_accum_open(gx_device * dev)
 				       &st_device_memory,
 				       "pattern_accum_open(bits)");
 		if (bits == 0)
-		    code = gs_note_error(mem, gs_error_VMerror);
+		    code = gs_note_error(gs_error_VMerror);
 		else {
 		    gs_make_mem_device(bits,
 			gdev_mem_device_for_bits(target->color_info.depth),
@@ -353,7 +355,7 @@ pattern_accum_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
     if (padev->bits)
 	return (*dev_proc(padev->target, get_bits_rectangle))
 	    (padev->target, prect, params, unread);
-    return_error(dev->memory, gs_error_Fatal); /* can't happen */
+    return_error(gs_error_Fatal); /* can't happen */
 }
 
 /* ------ Color space implementation ------ */
@@ -417,7 +419,7 @@ ensure_pattern_cache(gs_imager_state * pis)
 			       gx_pat_cache_default_bits());
 
 	if (pcache == 0)
-	    return_error(pis->memory, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	pis->pattern_cache = pcache;
     }
     return 0;
@@ -638,7 +640,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
      */
     adev = gx_pattern_accum_alloc(mem, "gx_pattern_load");
     if (adev == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     gx_device_set_target((gx_device_forward *)adev, dev);
     adev->instance = pinst;
     adev->bitmap_memory = mem;
@@ -647,7 +649,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
 	goto fail;
     saved = gs_gstate(pinst->saved);
     if (saved == 0) {
-	code = gs_note_error(mem, gs_error_VMerror);
+	code = gs_note_error(gs_error_VMerror);
 	goto fail;
     }
     if (saved->pattern_cache == 0)
@@ -664,17 +666,17 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     code = gx_pattern_cache_add_entry((gs_imager_state *)pis, adev, &ctile);
     if (code >= 0) {
 	if (!gx_pattern_cache_lookup(pdc, pis, dev, select)) {
-	    lprintf(dev->memory, "Pattern cache lookup failed after insertion!\n");
-	    code = gs_note_error(mem, gs_error_Fatal);
+	    lprintf("Pattern cache lookup failed after insertion!\n");
+	    code = gs_note_error(gs_error_Fatal);
 	}
     }
 #ifdef DEBUG
     if (gs_debug_c('B')) {
         if (adev->mask)
-	    debug_dump_bitmap(dev->memory, adev->mask->base, adev->mask->raster,
+	    debug_dump_bitmap(adev->mask->base, adev->mask->raster,
 			      adev->mask->height, "[B]Pattern mask");
 	if (adev->bits)
-	    debug_dump_bitmap(dev->memory, ((gx_device_memory *) adev->target)->base,
+	    debug_dump_bitmap(((gx_device_memory *) adev->target)->base,
 			      ((gx_device_memory *) adev->target)->raster,
 			      adev->target->height, "[B]Pattern bits");
     }
@@ -721,7 +723,7 @@ gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
 	else if (pdc->type == gx_dc_type_ht_colored)
 	    pdc->type = &gx_dc_colored_masked;
 	else
-	    return_error(pis->memory, gs_error_unregistered);
+	    return_error(gs_error_unregistered);
     } else
 	color_set_null_pattern(pdc);
     pdc->mask.id = pinst->id;

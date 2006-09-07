@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Type, attribute, and conversion operators */
 #include "math_.h"
 #include "memory_.h"
@@ -71,7 +72,7 @@ ztype(i_ctx_t *i_ctx_p)
 	return code;
     if (!r_has_type(&tnref, t_name)) {
 	/* Must be either a stack underflow or a t_[a]struct. */
-	check_op(imemory, 2);
+	check_op(2);
 	{			/* Get the type name from the structure. */
 	    const char *sname =
 		gs_struct_type_name_string(gs_object_type(imemory,
@@ -98,7 +99,7 @@ ztypenames(i_ctx_t *i_ctx_p)
     static const char *const tnames[] = { REF_TYPE_NAME_STRINGS };
     int i;
 
-    check_ostack(imemory, t_next_index);
+    check_ostack(t_next_index);
     for (i = 0; i < t_next_index; i++) {
 	ref *const rtnp = op + 1 + i;
 
@@ -123,7 +124,7 @@ zcvlit(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref *aop;
 
-    check_op(imemory, 1);
+    check_op(1);
     aop = ACCESS_REF(op);
     r_clear_attrs(aop, a_executable);
     return 0;
@@ -137,7 +138,7 @@ zcvx(i_ctx_t *i_ctx_p)
     ref *aop;
     uint opidx;
 
-    check_op(imemory, 1);
+    check_op(1);
     /*
      * If the object is an internal operator, we can't allow it to
      * exist in executable form anywhere outside the e-stack.
@@ -146,7 +147,7 @@ zcvx(i_ctx_t *i_ctx_p)
 	((opidx = op_index(op)) == 0 ||
 	 op_def_is_internal(op_index_def(opidx)))
 	)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     aop = ACCESS_REF(op);
     r_set_attrs(aop, a_executable);
     return 0;
@@ -158,7 +159,7 @@ zxcheck(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_op(imemory, 1);
+    check_op(1);
     make_bool(op, (r_has_attr(ACCESS_REF(op), a_executable) ? 1 : 0));
     return 0;
 }
@@ -169,9 +170,9 @@ zexecuteonly(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_op(imemory, 1);
+    check_op(1);
     if (r_has_type(op, t_dictionary))
-	return_error(imemory, e_typecheck);
+	return_error(e_typecheck);
     return access_check(i_ctx_p, a_execute, true);
 }
 
@@ -181,18 +182,16 @@ znoaccess(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_op(imemory, 1);
+    check_op(1);
     if (r_has_type(op, t_dictionary)) {
+	/* Don't allow removing read access to permanent dictionaries. */
+	if (dict_is_permanent_on_dstack(op))
+	    return_error(e_invalidaccess);
 	/*
-	 * Setting noaccess on a read-only dictionary is an attempt to
-	 * change its value, which is forbidden (this is a subtle
-	 * point confirmed with Adobe).  Also, don't allow removing
-	 * read access to permanent dictionaries.
+	 * Even though Red Book 3 says that changing the access of a
+	 * read-only dictionary is not allowed, Adobe interpreters allow
+	 * executing noaccess on a readonly or noaccess dictionary.
 	 */
-	if (dict_is_permanent_on_dstack(op) ||
-	    !r_has_attr(dict_access_ref(op), a_write)
-	    )
-	    return_error(imemory, e_invalidaccess);
     }
     return access_check(i_ctx_p, 0, true);
 }
@@ -243,7 +242,7 @@ zcvi(i_ctx_t *i_ctx_p)
 	    fval = op->value.realval;
 	    break;
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
 	case t_string:
 	    {
 		ref str, token;
@@ -252,7 +251,7 @@ zcvi(i_ctx_t *i_ctx_p)
 		ref_assign(&str, op);
 		code = scan_string_token(i_ctx_p, &str, &token);
 		if (code > 0)	/* anything other than a plain token */
-		    code = gs_note_error(imemory, e_syntaxerror);
+		    code = gs_note_error(e_syntaxerror);
 		if (code < 0)
 		    return code;
 		switch (r_type(&token)) {
@@ -263,12 +262,12 @@ zcvi(i_ctx_t *i_ctx_p)
 			fval = token.value.realval;
 			break;
 		    default:
-			return_error(imemory, e_typecheck);
+			return_error(e_typecheck);
 		}
 	    }
     }
     if (!REAL_CAN_BE_INT(fval))
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     make_int(op, (long)fval);	/* truncates towards 0 */
     return 0;
 }
@@ -279,7 +278,7 @@ zcvn(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_read_type(imemory, *op, t_string);
+    check_read_type(*op, t_string);
     return name_from_string(imemory, op, op);
 }
 
@@ -296,7 +295,7 @@ zcvr(i_ctx_t *i_ctx_p)
 	case t_real:
 	    return 0;
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
 	case t_string:
 	    {
 		ref str, token;
@@ -305,7 +304,7 @@ zcvr(i_ctx_t *i_ctx_p)
 		ref_assign(&str, op);
 		code = scan_string_token(i_ctx_p, &str, &token);
 		if (code > 0)	/* anything other than a plain token */
-		    code = gs_note_error(imemory, e_syntaxerror);
+		    code = gs_note_error(e_syntaxerror);
 		if (code < 0)
 		    return code;
 		switch (r_type(&token)) {
@@ -316,7 +315,7 @@ zcvr(i_ctx_t *i_ctx_p)
 			*op = token;
 			return 0;
 		    default:
-			return_error(imemory, e_typecheck);
+			return_error(e_typecheck);
 		}
 	    }
     }
@@ -329,11 +328,11 @@ zcvrs(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int radix;
 
-    check_type(imemory, op[-1], t_integer);
+    check_type(op[-1], t_integer);
     if (op[-1].value.intval < 2 || op[-1].value.intval > 36)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     radix = op[-1].value.intval;
-    check_write_type(imemory, *op, t_string);
+    check_write_type(*op, t_string);
     if (radix == 10) {
 	switch (r_type(op - 2)) {
 	    case t_integer:
@@ -347,7 +346,7 @@ zcvrs(i_ctx_t *i_ctx_p)
 		    return 0;
 		}
 	    default:
-		return_op_typecheck(imemory, op - 2);
+		return_op_typecheck(op - 2);
 	}
     } else {
 	ulong ival;
@@ -364,11 +363,11 @@ zcvrs(i_ctx_t *i_ctx_p)
 		    float fval = op[-2].value.realval;
 
 		    if (!REAL_CAN_BE_INT(fval))
-			return_error(imemory, e_rangecheck);
+			return_error(e_rangecheck);
 		    ival = (ulong) (long)fval;
 		} break;
 	    default:
-		return_op_typecheck(imemory, op - 2);
+		return_op_typecheck(op - 2);
 	}
 	do {
 	    int dit = ival % radix;
@@ -378,7 +377,7 @@ zcvrs(i_ctx_t *i_ctx_p)
 	}
 	while (ival);
 	if (endp - dp > r_size(op))
-	    return_error(imemory, e_rangecheck);
+	    return_error(e_rangecheck);
 	memcpy(op->value.bytes, dp, (uint) (endp - dp));
 	r_set_size(op, endp - dp);
     }
@@ -394,8 +393,8 @@ zcvs(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_op(imemory, 2);
-    check_write_type(imemory, *op, t_string);
+    check_op(2);
+    check_write_type(*op, t_string);
     code = convert_to_string(imemory, op - 1, op);
     if (code >= 0)
 	pop(1);
@@ -445,7 +444,7 @@ access_check(i_ctx_t *i_ctx_p,
 	    aop = dict_access_ref(op);
 	    if (modify) {
 		if (!r_has_attrs(aop, access))
-		    return_error(imemory, e_invalidaccess);
+		    return_error(e_invalidaccess);
 		ref_save(op, aop, "access_check(modify)");
 		r_clear_attrs(aop, a_all);
 		r_set_attrs(aop, access);
@@ -462,7 +461,7 @@ access_check(i_ctx_t *i_ctx_p,
 	case t_device:;
 	    if (modify) {
 		if (!r_has_attrs(op, access))
-		    return_error(imemory, e_invalidaccess);
+		    return_error(e_invalidaccess);
 		r_clear_attrs(op, a_all);
 		r_set_attrs(op, access);
 		return 0;
@@ -470,7 +469,7 @@ access_check(i_ctx_t *i_ctx_p,
 	    aop = op;
 	    break;
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
     }
     return (r_has_attrs(aop, access) ? 1 : 0);
 }

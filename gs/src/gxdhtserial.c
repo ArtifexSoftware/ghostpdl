@@ -1,16 +1,20 @@
-/* Copyright (C) 2002 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Serialization and de-serialization for (traditional) halftones */
 
 #include "memory_.h"
-#include <assert.h>
 #include "gx.h"
 #include "gscdefs.h"
 #include "gserrors.h"
@@ -109,8 +113,9 @@ gx_ht_read_tf(
     gx_transfer_map *   pmap;
 
     /* read the type byte */
-    if (--size < 0)
-        return_error(mem, gs_error_rangecheck);
+    if (size == 0)
+        return_error(gs_error_rangecheck);
+    --size;
     tf_type = (gx_ht_tf_type_t)*data++;
 
     /* if no transfer function, exit now */
@@ -124,7 +129,7 @@ gx_ht_read_tf(
                        gx_transfer_map,
                        &st_transfer_map,
                        mem,
-                       return_error(mem, gs_error_VMerror),
+                       return_error(gs_error_VMerror),
                        "gx_ht_read_tf" );
 
     pmap->id = gs_next_ids(mem, 1);
@@ -139,11 +144,37 @@ gx_ht_read_tf(
         *ppmap = pmap;
         return 1 + sizeof(pmap->values);
     } else {
-        rc_decrement(mem, pmap, "gx_ht_read_tf");
-        return_error(mem, gs_error_rangecheck);
+        rc_decrement(pmap, "gx_ht_read_tf");
+        return_error(gs_error_rangecheck);
     }
 }
 
+private int
+gx_ht_write_component_wts(const wts_screen_t *wts, byte *data, uint *psize)
+{
+    uint hdr_size = wts_size(wts);
+    uint cell_nsamples = wts->cell_width * wts->cell_height;
+    uint cell_size = cell_nsamples * sizeof(wts_screen_sample_t);
+    uint req_size = 1 + hdr_size + cell_size;
+
+    if (req_size > *psize) {
+        *psize = req_size;
+        return gs_error_rangecheck;
+    }
+
+    /* identify this as a wts halftone. */
+    *data++ = (byte)gx_ht_wts;
+
+    /* copy in wts header */
+    memcpy(data, wts, hdr_size);
+    ((wts_screen_t *)data)->samples = NULL;
+    data += hdr_size;
+
+    /* copy in treshold cell */
+    memcpy(data, wts->samples, cell_size);
+    *psize = req_size;
+    return 0;
+}
 
 /*
  * Serialize a halftone component. The only part that is serialized is the
@@ -157,14 +188,14 @@ gx_ht_read_tf(
  *    gs_error_rangecheck, with *psize set to the size required, if the
  *        original *psize was not large enough
  *
- *    some other error code, with *psize unchange, in the event of an
+ *    some other error code, with *psize unchanged, in the event of an
  *        error other than lack of space
  */
 private int
-gx_ht_write_component( const gs_memory_t *mem, 
-		       const gx_ht_order_component *   pcomp,
-		       byte *                          data,
-		       uint *                          psize )
+gx_ht_write_component(
+    const gx_ht_order_component *   pcomp,
+    byte *                          data,
+    uint *                          psize )
 {
     const gx_ht_order *             porder = &pcomp->corder;
     byte *                          data0 = data;
@@ -184,10 +215,10 @@ gx_ht_write_component( const gs_memory_t *mem,
      * This leaves the order itself.
      *
      * Check if we are a well-tempered-screening order. Serialization of these
-     * is not yet implemented.
+     * is handled in a separate function.
      */
     if (porder->wts != 0)
-       return_error(mem, gs_error_unknownerror);     /* not yet supported */
+	return gx_ht_write_component_wts(porder->wts, data, psize);
 
     /*
      * The following order fields are not transmitted:
@@ -262,6 +293,26 @@ gx_ht_write_component( const gs_memory_t *mem,
     return code;
 }
 
+private int
+gx_ht_read_component_wts(gx_ht_order_component *pcomp,
+			 const byte *data, uint size,
+			 gs_memory_t *mem)
+{
+    const wts_screen_t *ws = (const wts_screen_t *)data;
+    int hdr_size = wts_size(ws);
+    int cell_size = ws->cell_width * ws->cell_height *
+	sizeof(wts_screen_sample_t);
+
+    memset(&pcomp->corder, 0, sizeof(pcomp->corder));
+
+    pcomp->corder.wts = gs_wts_from_buf(data);
+    pcomp->cname = 0;
+    if (pcomp->corder.wts == NULL)
+	return -1;
+
+    return 1 + hdr_size + cell_size;
+}
+
 /*
  * Reconstruct a halftone component from its serial representation. The
  * buffer provided is expected to be large enough to hold the entire
@@ -291,13 +342,14 @@ gx_ht_read_component(
     const gx_dht_proc *     phtrp = gx_device_halftone_list;
 
     /* check the order type */
-    if (--size < 0)
-        return_error(mem, gs_error_rangecheck);
+    if (size == 0)
+        return_error(gs_error_rangecheck);
+    --size;
     order_type = (gx_ht_order_type_t)*data++;
 
     /* currently only the traditional halftone order are supported */
     if (order_type != gx_ht_traditional)
-       return_error(mem, gs_error_unknownerror);
+	return gx_ht_read_component_wts(pcomp, data, size, mem);
 
     /*
      * For performance reasons, the number encoding macros do not
@@ -309,14 +361,14 @@ gx_ht_read_component(
      * that the data provided holds the entire halftone.
      */
     if (size < 7)
-        return_error(mem, gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     enc_u_getw(new_order.width, data);
     enc_u_getw(new_order.height, data);
     enc_u_getw(new_order.shift, data);
     enc_u_getw(new_order.num_levels, data);
     enc_u_getw(new_order.num_bits, data);
     if (data >= data_lim)
-        return_error(mem, gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     new_order.procs = &ht_order_procs_table[*data++];
 
     /* calculate the space required for levels and bit data */
@@ -325,7 +377,7 @@ gx_ht_read_component(
 
     /* + 1 below is for the minimal transfer function */
     if (data + bits_size + levels_size + 1 > data_lim)
-        return_error(mem, gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
 
     /*
      * Allocate the levels and bit data structures. The gx_ht_alloc_ht_order
@@ -457,10 +509,10 @@ gx_ht_write(
     byte *                      data,
     uint *                      psize )
 {
-    int                         num_comps = dev->color_info.num_components;
+    int                         num_dev_comps = pdht->num_dev_comp;
     int                         i, code;
-    uint                        req_size = 1, used_size = 1;
-                                /* 1 for halftone type */
+    uint                        req_size = 2, used_size = 2;
+                                /* 1 for halftone type, 1 for num_dev_comps */
 
     /*
      * With the introduction of color models, there should never be a
@@ -470,7 +522,8 @@ gx_ht_write(
      *
      * NB: the pdht->order field is ignored by this code.
      */
-    assert(pdht != 0 && pdht->components != 0);
+    if (pdht == 0 || pdht->components == 0)
+	return_error(gs_error_unregistered); /* Must not happen. */
 
     /*
      * The following fields do not need to be transmitted:
@@ -479,37 +532,33 @@ gx_ht_write(
      *
      *  rc, id      Recreated by the allocation code on the renderer.
      *
-     *  num_comp    Must be the same as dev->color_info.num_components,
-     *              which must be the same on both the writer and the
-     *              rendered. Indeed, the entire color model must be the
-     *              same for writer and renderer.
-     *
      *  lcm_width,  Can be recreated by the de-serialization code on the
      *  lcm_height  the renderer. Since halftones are transmitted
      *              infrequently (for normal jobs), the time required
      *              for re-calculation is not significant.
      *
-     * Hence, the only fields that must be serialized are the type and
-     * the components.
+     * Hence, the only fields that must be serialized are the type,and
+     * the number of components.  (The number of components for the halftone
+     * may not match the device's if we are compositing with a process color
+     * model which does not match the output device.
      *
      * Several halftone components may be identical, but there is
      * currently no simple way to determine this. Halftones are normally
      * transmitted only once per page, so it is not clear that use of
      * such information would significantly reduce command list size.
      */
-    assert(pdht->num_comp == num_comps);
 
     /* calculate the required data space */
     for ( i = 0, code = gs_error_rangecheck;
-          i < num_comps && code == gs_error_rangecheck;
+          i < num_dev_comps && code == gs_error_rangecheck;
           i++) {
         uint     tmp_size = 0;
 
         /* sanity check */
-        assert(i == pdht->components[i].comp_number);
+        if (i != pdht->components[i].comp_number)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 
-        code = gx_ht_write_component( dev->memory, 
-				      &pdht->components[i],
+        code = gx_ht_write_component( &pdht->components[i],
                                       data,
                                       &tmp_size );
         req_size += tmp_size;
@@ -524,13 +573,14 @@ gx_ht_write(
 
     /* the halftone type is known to fit in a byte */
     *data++ = (byte)pdht->type;
+    /* the number of components is known to fit in a byte */
+    *data++ = (byte)num_dev_comps;
 
     /* serialize the halftone components */
-    for (i = 0, code = 0; i < num_comps && code == 0; i++) {
+    for (i = 0, code = 0; i < num_dev_comps && code == 0; i++) {
         uint    tmp_size = req_size - used_size;
 
-        code = gx_ht_write_component( dev->memory,
-				      &pdht->components[i],
+        code = gx_ht_write_component( &pdht->components[i],
                                       data,
                                       &tmp_size );
         used_size += tmp_size;
@@ -571,7 +621,7 @@ gx_ht_read_and_install(
     gx_ht_order_component   components[GX_DEVICE_COLOR_MAX_COMPONENTS];
     const byte *            data0 = data;
     gx_device_halftone      dht;
-    int                     num_comps = dev->color_info.num_components;
+    int                     num_dev_comps;
     int                     i, code;
 
     /* fill in some fixed fields */
@@ -579,7 +629,6 @@ gx_ht_read_and_install(
     memset(&dht.rc, 0, sizeof(dht.rc));
     dht.id = gs_no_id;      /* updated during installation */
     dht.components = components;
-    dht.num_comp = num_comps;
     dht.lcm_width = 1;      /* recalculated during installation */
     dht.lcm_height = 1;
 
@@ -587,12 +636,14 @@ gx_ht_read_and_install(
     memset(components, 0, sizeof(components));
 
     /* get the halftone type */
-    if (size-- < 1)
-        return_error(mem, gs_error_rangecheck);
+    if (size < 2)
+        return_error(gs_error_rangecheck);
     dht.type = (gs_halftone_type)(*data++);
+    num_dev_comps = dht.num_dev_comp = dht.num_comp = *data++;
+    size -= 2;
 
     /* process the component orders */
-    for (i = 0, code = 0; i < num_comps && code >= 0; i++) {
+    for (i = 0, code = 0; i < num_dev_comps && code >= 0; i++) {
         components[i].comp_number = i;
         code = gx_ht_read_component(&components[i], data, size, mem);
         if (code >= 0) {
@@ -602,18 +653,8 @@ gx_ht_read_and_install(
     }
 
     /* if everything is OK, install the halftone */
-    if (code >= 0) {
-        /* The following assignment guarantees the imager state will
-           take ownership of the memory associated with the components
-           of the halftone, specifically the order bit data and order
-           level data (see gx_ht_alloc_ht_order()).  Unfortunately, to
-           completely address this issue gx_imager_dev_ht_install()
-           procedure needs to be reconsidered.  Its weirdness is
-           fairly well documented above the
-           gx_imager_dev_ht_install()'s definition. */
-        dht.rc.memory = mem;
+    if (code >= 0)
         code = gx_imager_dev_ht_install(pis, &dht, dht.type, dev);
-    }
 
     /*
      * If installation failed, discard the allocated elements. We can't
@@ -621,7 +662,7 @@ gx_ht_read_and_install(
      * array is on the stack rather than in the heap.
      */
     if (code < 0) {
-        for (i = 0; i < num_comps; i++)
+        for (i = 0; i < num_dev_comps; i++)
             gx_ht_order_release(&components[i].corder, mem, false);
     }
 

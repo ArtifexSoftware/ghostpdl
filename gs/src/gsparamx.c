@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Extended parameter dictionary utilities */
 #include "string_.h"
 #include "gserror.h"
@@ -113,7 +114,7 @@ param_put_long(gs_param_list * plist, gs_param_name param_name,
 
 /* Copy one parameter list to another, recursively if necessary. */
 int
-param_list_copy(const gs_memory_t *mem, gs_param_list *plto, gs_param_list *plfrom)
+param_list_copy(gs_param_list *plto, gs_param_list *plfrom)
 {
     gs_param_enumerator_t key_enum;
     gs_param_key_t key;
@@ -132,13 +133,13 @@ param_list_copy(const gs_memory_t *mem, gs_param_list *plto, gs_param_list *plfr
 	gs_param_typed_value copy;
 
 	if (key.size > sizeof(string_key) - 1) {
-	    code = gs_note_error(mem, gs_error_rangecheck);
+	    code = gs_note_error(gs_error_rangecheck);
 	    break;
 	}
 	memcpy(string_key, key.data, key.size);
 	string_key[key.size] = 0;
 	if ((code = param_read_typed(plfrom, string_key, &value)) != 0) {
-	    code = (code > 0 ? gs_note_error(mem, gs_error_unknownerror) : code);
+	    code = (code > 0 ? gs_note_error(gs_error_unknownerror) : code);
 	    break;
 	}
 	gs_param_list_set_persistent_keys(plto, key.persistent);
@@ -156,7 +157,7 @@ param_list_copy(const gs_memory_t *mem, gs_param_list *plto, gs_param_list *plfr
 	    if ((code = param_begin_write_collection(plto, string_key,
 						     &copy.value.d,
 						     coll_type)) < 0 ||
-		(code = param_list_copy(mem, copy.value.d.list,
+		(code = param_list_copy(copy.value.d.list,
 					value.value.d.list)) < 0 ||
 		(code = param_end_write_collection(plto, string_key,
 						   &copy.value.d)) < 0)

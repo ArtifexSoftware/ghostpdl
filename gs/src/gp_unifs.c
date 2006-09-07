@@ -1,17 +1,19 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* "Unix-like" file system platform routines for Ghostscript */
+
 #include "memory_.h"
 #include "string_.h"
 #include "stdio_.h"		/* for FILENAME_MAX */
@@ -28,7 +30,7 @@
 /* Provide a definition of the maximum path length in case the system
  * headers don't define it. This should be gp_file_name_sizeof from
  * gp.h once that value is properly sent in a system-dependent way.
- * HP-UX 11i 11.11 incorrectly defines FILENAME_MAX as 14 .
+ * HP-UX 11i 11.11 incorrectly defines FILENAME_MAX as 14.
  */
 #ifdef FILENAME_MAX
 #  if FILENAME_MAX < 80  /* arbitrary */
@@ -56,8 +58,7 @@ const char gp_current_directory_name[] = ".";
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const gs_memory_t *mem, 
-		     const char *prefix, char fname[gp_file_name_sizeof],
+gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 		     const char *mode)
 {	/* The -8 is for XXXXXX plus a possible final / and -. */
     int prefix_length = strlen(prefix);
@@ -83,10 +84,14 @@ gp_open_scratch_file(const gs_memory_t *mem,
 #ifdef HAVE_MKSTEMP
     {
 	    int file;
+	    char ofname[gp_file_name_sizeof];
+
+	    /* save the old filename template in case mkstemp fails */
+	    memcpy(ofname, fname, gp_file_name_sizeof);
 
 	    file = mkstemp(fname);
 	    if (file < -1) {
-		    eprintf1(mem, "**** Could not open temporary file %s\n", fname);
+		    eprintf1("**** Could not open temporary file %s\n", ofname);
 		    return NULL;
 	    }
 	    fp = fdopen(file, mode);
@@ -98,7 +103,7 @@ gp_open_scratch_file(const gs_memory_t *mem,
     fp = gp_fopentemp(fname, mode);
 #endif
     if (fp == NULL)
-	eprintf1(mem, "**** Could not open temporary file %s\n", fname);
+	eprintf1("**** Could not open temporary file %s\n", fname);
     return fp;
 }
 
@@ -147,6 +152,30 @@ gs_private_st_ptrs3(st_file_enum, struct file_enum_s, "file_enum",
 	  file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern, work, dstack);
 
 /* Private procedures */
+
+/* Do a wild-card match. */
+#ifdef DEBUG
+private bool
+wmatch(const byte * str, uint len, const byte * pstr, uint plen,
+       const string_match_params * psmp)
+{
+    bool match = string_match(str, len, pstr, plen, psmp);
+
+    if (gs_debug_c('e')) {
+	int i;
+	dlputs("[e]string_match(\"");
+	for (i=0; i<len; i++)
+	    errprintf("%c", str[i]);
+	dputs("\", \"");
+	for (i=0; i<plen; i++)
+	    errprintf("%c", pstr[i]);
+	dprintf1("\") = %s\n", (match ? "TRUE" : "false"));
+    }
+    return match;
+}
+#define string_match wmatch
+#endif
+
 /* Search a string backward for a character. */
 /* (This substitutes for strrchr, which some systems don't provide.) */
 private char *
@@ -259,7 +288,7 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 
 /* Enumerate the next file. */
 uint
-gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uint maxlen)
+gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 {
     const dir_entry *de;
     char *work = pfen->work;
@@ -271,7 +300,7 @@ gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uin
 
     if (pfen->first_time) {
 	pfen->dirp = ((worklen == 0) ? opendir(".") : opendir(work));
-	if_debug1(mem, 'e', "[e]file_enum:First-Open '%s'\n", work);
+	if_debug1('e', "[e]file_enum:First-Open '%s'\n", work);
 	pfen->first_time = false;
 	if (pfen->dirp == 0) {	/* first opendir failed */
 	    gp_enumerate_files_close(pfen);
@@ -282,7 +311,7 @@ gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uin
     if (de == 0) {		/* No more entries in this directory */
 	char *p;
 
-	if_debug0(mem, 'e', "[e]file_enum:Closedir\n");
+	if_debug0('e', "[e]file_enum:Closedir\n");
 	closedir(pfen->dirp);
 	/* Back working directory and matching pattern up one level */
 	p = rchr(work, '/', worklen);
@@ -300,10 +329,10 @@ gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uin
 	    pathead = 0;
 
 	if (popdir(pfen)) {	/* Back up the directory tree. */
-	    if_debug1(mem, 'e', "[e]file_enum:Dir popped '%s'\n", work);
+	    if_debug1('e', "[e]file_enum:Dir popped '%s'\n", work);
 	    goto top;
 	} else {
-	    if_debug0(mem, 'e', "[e]file_enum:Dirstack empty\n");
+	    if_debug0('e', "[e]file_enum:Dirstack empty\n");
 	    gp_enumerate_files_close(pfen);
 	    return ~(uint) 0;
 	}
@@ -362,7 +391,7 @@ gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uin
 	    char save_end = pattern[pathead];
 
 	    pattern[pathead] = 0;
-	    if_debug2(mem, 'e', "[e]file_enum:fname='%s', p='%s'\n",
+	    if_debug2('e', "[e]file_enum:fname='%s', p='%s'\n",
 		      work, pattern);
 	    pattern[pathead] = save_end;
 	}
@@ -396,7 +425,7 @@ gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uin
 	    } else
 		DO_NOTHING;	/* >>> e_VMerror!!! */
 
-	    if_debug1(mem, 'e', "[e]file_enum:Dir pushed '%s'\n",
+	    if_debug1('e', "[e]file_enum:Dir pushed '%s'\n",
 		      work);
 	    worklen = len;
 	    pfen->dirp = dp;
@@ -417,7 +446,7 @@ gp_enumerate_files_close(file_enum * pfen)
 {
     gs_memory_t *mem = pfen->memory;
 
-    if_debug0(mem, 'e', "[e]file_enum:Cleanup\n");
+    if_debug0('e', "[e]file_enum:Cleanup\n");
     while (popdir(pfen))	/* clear directory stack */
 	DO_NOTHING;
     gs_free_object(mem, (byte *) pfen->work,

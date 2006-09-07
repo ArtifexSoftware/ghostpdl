@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Filters included in Level 1 systems: NullEncode/Decode, PFBDecode, */
 /*   SubFileDecode. */
 #include "stdio_.h"		/* includes std.h */
@@ -34,7 +35,7 @@ s_PFBD_init(stream_state * st)
 
 /* Process a buffer */
 private int
-s_PFBD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_PFBD_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     stream_PFBD_state *const ss = (stream_PFBD_state *) st;
@@ -170,8 +171,7 @@ s_SFD_init(stream_state * st)
 
 /* Refill the buffer */
 private int
-s_SFD_process(const gs_memory_t *mem,
-	      stream_state * st, stream_cursor_read * pr,
+s_SFD_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_SFD_state *const ss = (stream_SFD_state *) st;

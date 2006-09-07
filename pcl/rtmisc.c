@@ -168,7 +168,7 @@ rtmisc_do_registration(
 {
     /* Register commands */
     /* Chapter 4 */
-    DEFINE_CLASS(mem, '%')
+    DEFINE_CLASS('%')
     /* Chapter 18 */
     {
         0, 'B',
@@ -187,7 +187,7 @@ rtmisc_do_registration(
     END_CLASS
 
     /* Comparison Guide */
-    DEFINE_CLASS(mem, '&')
+    DEFINE_CLASS('&')
     {
         'b', 'W',
 	PCL_COMMAND( "Appletalk Configuration",

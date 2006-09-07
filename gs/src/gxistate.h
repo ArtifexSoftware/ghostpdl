@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Imager state definition */
 
 #ifndef gxistate_INCLUDED
@@ -27,6 +28,8 @@
 #include "gxmatrix.h"
 #include "gxtmap.h"
 #include "gscspace.h"
+#include "gstrans.h"
+#include "gsnamecl.h"
 
 /*
   Define the subset of the PostScript graphics state that the imager library
@@ -183,6 +186,9 @@ typedef struct gx_transfer_s {
 
 typedef struct gs_devicen_color_map_s {
     bool use_alt_cspace;
+#if ENABLE_NAMED_COLOR_CALLBACK
+    bool use_named_color_callback;
+#endif
     separation_type sep_type;
     uint num_components;	/* Input - Duplicate of value in gs_device_n_params */
     uint num_colorants;		/* Number of colorants - output */ 
@@ -192,10 +198,6 @@ typedef struct gs_devicen_color_map_s {
 
 
 /* Define the imager state structure itself. */
-typedef struct gs_transparency_source_s {
-    float alpha;		/* constant alpha */
-    gs_transparency_mask_t *mask;
-} gs_transparency_source_t;
 /*
  * Note that the ctm member is a gs_matrix_fixed.  As such, it cannot be
  * used directly as the argument for procedures like gs_point_transform.
@@ -207,10 +209,15 @@ typedef struct gs_transparency_source_s {
 	void *client_data;\
 	gx_line_params line_params;\
 	gs_matrix_fixed ctm;\
+	bool current_point_valid;\
+	gs_point current_point;\
+	gs_point subpath_start;\
+	bool clamp_coordinates;\
 	gs_logical_operation_t log_op;\
 	gx_color_value alpha;\
 	gs_blend_mode_t blend_mode;\
 	gs_transparency_source_t opacity, shape;\
+	gs_id soft_mask_id;\
 	bool text_knockout;\
 	uint text_rendering_mode;\
 	gs_transparency_state_t *transparency_stack;\
@@ -218,7 +225,7 @@ typedef struct gs_transparency_source_s {
 	int overprint_mode;\
 	int effective_overprint_mode;\
 	float flatness;\
-	gs_fixed_point fill_adjust;	/* fattening for fill */\
+	gs_fixed_point fill_adjust; /* A path expansion for fill; -1 = dropout prevention*/\
 	bool stroke_adjust;\
 	bool accurate_curves;\
 	bool have_pattern_streams;\
@@ -251,8 +258,9 @@ struct gs_imager_state_s {
 #define gs_imager_state_initial(scale)\
   0, 0, { gx_line_params_initial },\
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
+  false, {0, 0}, {0, 0}, false, \
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
-   { 1.0, 0 }, { 1.0, 0 }, 0/*false*/, 0, 0, 0/*false*/, 0, 0, 1.0,\
+   { 1.0, 0 }, { 1.0, 0 }, 0, 0/*false*/, 0, 0, 0/*false*/, 0, 0, 1.0,\
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 0/*false*/, 1.0,\
   gx_default_get_cmap_procs
 

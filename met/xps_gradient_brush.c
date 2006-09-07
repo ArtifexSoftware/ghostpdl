@@ -177,7 +177,7 @@ int LinearGradientBrush_paint(void *data, gs_state *pgs)
     stops[6] = 0.0;
     stops[7] = 0.5;
 
-dputs(gs_state_memory(pgs), "i'm painting linear\n");
+    dputs("i'm painting linear\n");
 
     sscanf(brush->StartPoint, "%lg,%lg", &start[0], &start[1]);
     sscanf(brush->EndPoint, "%lg,%lg", &end[0], &end[1]);
@@ -230,7 +230,7 @@ int RadialGradientBrush_paint(void *data, gs_state *pgs)
     radiusx = brush->RadiusX;
     radiusy = brush->RadiusY;
 
-dputs(gs_state_memory(pgs), "i'm painting radial\n");
+    dputs("i'm painting radial\n");
 
     if (!brush->SpreadMethod)
 	spread = XPS_PAD;

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Initialization support for compiled fonts */
 
 #include "string_.h"
@@ -125,15 +126,15 @@ cfont_put_next(ref * pdict, key_enum * kep, const ref * pvalue)
 	gs_const_string gstr;
 
 	if (glyph == GS_NO_GLYPH)
-	    code = gs_note_error(mem, e_undefined);
-	else if ((code = gs_c_glyph_name(mem, glyph, &gstr)) >= 0)
-	    code = name_ref(mem, gstr.data, gstr.size, &kname, 0);
+	    code = gs_note_error(e_undefined);
+	else if ((code = gs_c_glyph_name(glyph, &gstr)) >= 0)
+	    code = name_ref(imemory, gstr.data, gstr.size, &kname, 0);
 	kp->num_enc_keys--;
     } else {			/* must have kp->num_str_keys != 0 */
 	code = cfont_next_string(&kep->strings);
 	if (code != 1)
-	    return (code < 0 ? code : gs_note_error(mem, e_Fatal));
-	code = name_ref(mem, kep->strings.next.value.const_bytes,
+	    return (code < 0 ? code : gs_note_error(e_Fatal));
+	code = name_ref(imemory, kep->strings.next.value.const_bytes,
 			r_size(&kep->strings.next), &kname, 0);
 	kp->num_str_keys--;
     }
@@ -162,6 +163,7 @@ cfont_ref_dict_create(i_ctx_t *i_ctx_p, ref *pdict,
 	if (code < 0)
 	    return code;
     }
+    r_store_attrs(dict_access_ref(pdict), a_all, kp->dict_attrs);
     return 0;
 }
 
@@ -193,6 +195,7 @@ cfont_string_dict_create(i_ctx_t *i_ctx_p, ref *pdict,
 	if (code < 0)
 	    return code;
     }
+    r_store_attrs(dict_access_ref(pdict), a_all, kp->dict_attrs);
     return 0;
 }
 
@@ -224,6 +227,7 @@ cfont_num_dict_create(i_ctx_t *i_ctx_p, ref * pdict,
 	if (code < 0)
 	    return code;
     }
+    r_store_attrs(dict_access_ref(pdict), a_all, kp->dict_attrs);
     return 0;
 }
 
@@ -246,7 +250,7 @@ cfont_name_array_create(i_ctx_t *i_ctx_p, ref * parray, cfont_string_array ksa,
 	int code = cfont_next_string(&senum);
 
 	if (code != 1)
-	    return (code < 0 ? code : gs_note_error(imemory, e_Fatal));
+	    return (code < 0 ? code : gs_note_error(e_Fatal));
 	code = name_ref(imemory, senum.next.value.const_bytes,
 			r_size(&senum.next), &nref, 0);
 	if (code < 0)
@@ -320,12 +324,12 @@ cfont_ref_from_string(i_ctx_t *i_ctx_p, ref * pref, const char *str, uint len)
     scanner_state sstate;
     stream s;
     int code;
-    
-    s_stack_init(&s, imemory);
+
     scanner_state_init(&sstate, false);
+    s_init(&s, imemory);
     sread_string(&s, (const byte *)str, len);
     code = scan_token(i_ctx_p, &s, pref, &sstate);
-    return (code <= 0 ? code : gs_note_error(imemory, e_Fatal));
+    return (code <= 0 ? code : gs_note_error(e_Fatal));
 }
 
 /* ------ Initialization ------ */
@@ -355,16 +359,16 @@ zgetccfont(i_ctx_t *i_ctx_p)
 
     code = ccfont_fprocs(&nfonts, &fprocs);
     if (code != ccfont_version)
-	return_error(imemory, e_invalidfont);
+	return_error(e_invalidfont);
 
     if (r_has_type(op, t_null)) {
 	make_int(op, nfonts);
 	return 0;
     }
-    check_type(imemory, *op, t_integer);
+    check_type(*op, t_integer);
     index = op->value.intval;
     if (index < 0 || index >= nfonts)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
 
     return (*fprocs[index]) (i_ctx_p, &ccfont_procs, op);
 }

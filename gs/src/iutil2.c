@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Level 2 utilities for Ghostscript interpreter */
 #include "memory_.h"
 #include "string_.h"
@@ -29,7 +30,7 @@
 /* Read a password from a parameter list. */
 /* Return 0 if present, 1 if absent, or an error code. */
 int
-param_read_password(const gs_memory_t *mem, gs_param_list * plist, const char *kstr, password * ppass)
+param_read_password(gs_param_list * plist, const char *kstr, password * ppass)
 {
     gs_param_string ps;
     long ipass;
@@ -41,7 +42,7 @@ param_read_password(const gs_memory_t *mem, gs_param_list * plist, const char *k
     switch (code) {
 	case 0:		/* OK */
 	    if (ps.size > MAX_PASSWORD)
-		return_error(mem, e_limitcheck);
+		return_error(e_limitcheck);
 	    /* Copy the data back. */
 	    memcpy(ppass->data, ps.data, ps.size);
 	    ppass->size = ps.size;
@@ -62,7 +63,7 @@ param_read_password(const gs_memory_t *mem, gs_param_list * plist, const char *k
 }
 /* Write a password to a parameter list. */
 int
-param_write_password(const gs_memory_t *mem, gs_param_list * plist, const char *kstr,
+param_write_password(gs_param_list * plist, const char *kstr,
 		     const password * ppass)
 {
     gs_param_string ps;
@@ -70,18 +71,18 @@ param_write_password(const gs_memory_t *mem, gs_param_list * plist, const char *
     ps.data = (const byte *)ppass->data, ps.size = ppass->size,
 	ps.persistent = false;
     if (ps.size > MAX_PASSWORD)
-	return_error(mem, e_limitcheck);
+	return_error(e_limitcheck);
     return param_write_string(plist, kstr, &ps);
 }
 
 /* Check a password from a parameter list. */
 /* Return 0 if OK, 1 if not OK, or an error code. */
 int
-param_check_password(const gs_memory_t *mem, gs_param_list * plist, const password * ppass)
+param_check_password(gs_param_list * plist, const password * ppass)
 {
     if (ppass->size != 0) {
 	password pass;
-	int code = param_read_password(mem, plist, "Password", &pass);
+	int code = param_read_password(plist, "Password", &pass);
 
 	if (code)
 	    return code;
@@ -98,50 +99,49 @@ param_check_password(const gs_memory_t *mem, gs_param_list * plist, const passwo
 /* Read a password from, or write a password into, a dictionary */
 /* (presumably systemdict). */
 private int
-dict_find_password(const gs_memory_t *mem, ref ** ppvalue, const ref * pdref, const char *kstr)
+dict_find_password(ref ** ppvalue, const ref * pdref, const char *kstr)
 {
     ref *pvalue;
 
     if (dict_find_string(pdref, kstr, &pvalue) <= 0)
-	return_error(mem, e_undefined);
+	return_error(e_undefined);
     if (!r_has_type(pvalue, t_string) ||
 	r_has_attrs(pvalue, a_read) ||
 	pvalue->value.const_bytes[0] >= r_size(pvalue)
 	)
-	return_error(mem, e_rangecheck);
+	return_error(e_rangecheck);
     *ppvalue = pvalue;
     return 0;
 }
 int
-dict_read_password(const gs_memory_t *mem,
-		   password * ppass, const ref * pdref, const char *pkey)
+dict_read_password(password * ppass, const ref * pdref, const char *pkey)
 {
     ref *pvalue;
-    int code = dict_find_password(mem ,&pvalue, pdref, pkey);
+    int code = dict_find_password(&pvalue, pdref, pkey);
 
     if (code < 0)
 	return code;
     if (pvalue->value.const_bytes[0] > MAX_PASSWORD)
-	return_error(mem, e_rangecheck);	/* limitcheck? */
+	return_error(e_rangecheck);	/* limitcheck? */
     memcpy(ppass->data, pvalue->value.const_bytes + 1,
 	   (ppass->size = pvalue->value.const_bytes[0]));
     return 0;
 }
 int
-dict_write_password(const gs_memory_t *mem, const password * ppass, ref * pdref, const char *pkey,
+dict_write_password(const password * ppass, ref * pdref, const char *pkey,
 			bool change_allowed)
 {
     ref *pvalue;
-    int code = dict_find_password(mem, &pvalue, pdref, pkey);
+    int code = dict_find_password(&pvalue, pdref, pkey);
 
     if (code < 0)
 	return code;
     if (ppass->size >= r_size(pvalue))
-	return_error(mem, e_rangecheck);
+	return_error(e_rangecheck);
     if (!change_allowed &&
     	bytes_compare(pvalue->value.bytes + 1, pvalue->value.bytes[0],
 	    ppass->data, ppass->size) != 0)
-	return_error(mem, e_invalidaccess);
+	return_error(e_invalidaccess);
     memcpy(pvalue->value.bytes + 1, ppass->data,
 	   (pvalue->value.bytes[0] = ppass->size));
     return 0;

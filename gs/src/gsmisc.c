@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Miscellaneous utilities for Ghostscript library */
 
 /*
@@ -45,6 +46,7 @@ orig_sqrt(double x)
 #include "gxfarith.h"
 #include "gxfixed.h"
 
+/* ------ Redirected stdout and stderr  ------ */
 
 #include <stdarg.h>
 #define PRINTF_BUF_LENGTH 1024
@@ -69,7 +71,7 @@ int outprintf(const gs_memory_t *mem, const char *fmt, ...)
     return count;
 }
 
-int errprintf(const gs_memory_t *mem, const char *fmt, ...)
+int errprintf(const char *fmt, ...)
 {
     int count;
     char buf[PRINTF_BUF_LENGTH];
@@ -78,12 +80,12 @@ int errprintf(const gs_memory_t *mem, const char *fmt, ...)
     va_start(args, fmt);
 
     count = vsprintf(buf, fmt, args);
-    errwrite(mem, buf, count);
+    errwrite(buf, count);
     if (count >= PRINTF_BUF_LENGTH) {
 	count = sprintf(buf, 
 	    "PANIC: printf exceeded %d bytes.  Stack has been corrupted.\n", 
 	    PRINTF_BUF_LENGTH);
-	errwrite(mem, buf, count);
+	errwrite(buf, count);
     }
     va_end(args);
     return count;
@@ -91,9 +93,11 @@ int errprintf(const gs_memory_t *mem, const char *fmt, ...)
 
 /* ------ Debugging ------ */
 
-/* We define gs_debug even if DEBUG isn't defined, */
+/* Ghostscript writes debugging output to gs_debug_out. */
+/* We define gs_debug and gs_debug_out even if DEBUG isn't defined, */
 /* so that we can compile individual modules with DEBUG set. */
 char gs_debug[128];
+FILE *gs_debug_out;
 
 /* Test whether a given debugging option is selected. */
 /* Upper-case letters automatically include their lower-case counterpart. */
@@ -115,9 +119,9 @@ const char *const dprintf_file_only_format = "%10s(unkn): ";
  * stdout/stderr are implemented on DLL/shared library builds.
  */
 void
-dflush(const gs_memory_t *mem)
+dflush(void)
 {
-    errflush(mem);
+    errflush();
 }
 private const char *
 dprintf_file_tail(const char *file)
@@ -125,32 +129,32 @@ dprintf_file_tail(const char *file)
     const char *tail = file + strlen(file);
 
     while (tail > file &&
-	   (isalnum(tail[-1]) || tail[-1] == '.' || tail[-1] == '_')
+	   (isalnum((unsigned char)tail[-1]) || tail[-1] == '.' || tail[-1] == '_')
 	)
 	--tail;
     return tail;
 }
 #if __LINE__			/* compiler provides it */
 void
-dprintf_file_and_line(const gs_memory_t *mem, const char *file, int line)
+dprintf_file_and_line(const char *file, int line)
 {
     if (gs_debug['/'])
-	dpf(mem, dprintf_file_and_line_format,
+	dpf(dprintf_file_and_line_format,
 		dprintf_file_tail(file), line);
 }
 #else
 void
-dprintf_file_only(const gs_memory_t *mem, const char *file)
+dprintf_file_only(const char *file)
 {
     if (gs_debug['/'])
-	dpf(mem, dprintf_file_only_format, dprintf_file_tail(file));
+	dpf(dprintf_file_only_format, dprintf_file_tail(file));
 }
 #endif
 void
 printf_program_ident(const gs_memory_t *mem, const char *program_name, long revision_number)
 {
     if (program_name)
-	outprintf(mem, (revision_number ? "%s " : "%s"), program_name);
+        outprintf(mem, (revision_number ? "%s " : "%s"), program_name);
     if (revision_number) {
 	int fpart = revision_number % 100;
 
@@ -158,31 +162,30 @@ printf_program_ident(const gs_memory_t *mem, const char *program_name, long revi
     }
 }
 void
-eprintf_program_ident(const gs_memory_t *mem, 
-		      const char *program_name,
+eprintf_program_ident(const char *program_name,
 		      long revision_number)
 {
     if (program_name) {
-	epf(mem, (revision_number ? "%s " : "%s"), program_name);
+	epf((revision_number ? "%s " : "%s"), program_name);
 	if (revision_number) {
 	    int fpart = revision_number % 100;
 
-	    epf(mem, "%d.%02d", (int)(revision_number / 100), fpart);
+	    epf("%d.%02d", (int)(revision_number / 100), fpart);
 	}
-	epf(mem, ": ");
+	epf(": ");
     }
 }
 #if __LINE__			/* compiler provides it */
 void
-lprintf_file_and_line(const gs_memory_t *mem, const char *file, int line)
+lprintf_file_and_line(const char *file, int line)
 {
-    epf(mem, "%s(%d): ", file, line);
+    epf("%s(%d): ", file, line);
 }
 #else
 void
-lprintf_file_only(const gs_memory_t *mem, FILE * f, const char *file)
+lprintf_file_only(FILE * f, const char *file)
 {
-    epf(mem, "%s(?): ", file);
+    epf("%s(?): ", file);
 }
 #endif
 
@@ -190,14 +193,14 @@ lprintf_file_only(const gs_memory_t *mem, FILE * f, const char *file)
 /* modules were compiled with DEBUG set. */
 #undef gs_log_error		/* in case DEBUG isn't set */
 int
-gs_log_error(const gs_memory_t *mem, int err, const char *file, int line)
+gs_log_error(int err, const char *file, int line)
 {
     if (gs_log_errors) {
 	if (file == NULL)
-	    dprintf2(mem, "* returning error %d (%s)\n", err, gs_errstr(err));
+	    dprintf1("Returning error %d.\n", err);
 	else
-	    dprintf4(mem, "* %s:%d: returning error %d (%s)\n",
-		     (const char *)file, line, err, gs_errstr(err));
+	    dprintf3("%s(%d): Returning error %d.\n",
+		     (const char *)file, line, err);
     }
     return err;
 }
@@ -209,10 +212,10 @@ gs_return_check_interrupt(const gs_memory_t *mem, int code)
     if (code < 0)
 	return code;
     {
-	int icode = gp_check_interrupts();
+	int icode = gp_check_interrupts(mem);
 
 	return (icode == 0 ? code :
-		gs_note_error(mem, (icode > 0 ? gs_error_interrupt : icode)));
+		gs_note_error((icode > 0 ? gs_error_interrupt : icode)));
     }
 }
 
@@ -223,7 +226,7 @@ int gs_throw_imp(const char *func, const char *file, int line, int op, int code,
     va_list ap;
 
     va_start(ap, fmt);
-    vsnprintf(msg, sizeof msg, fmt, ap);
+    vsprintf(msg, fmt, ap);
     msg[sizeof(msg) - 1] = 0;
     va_end(ap);
 
@@ -238,19 +241,19 @@ int gs_throw_imp(const char *func, const char *file, int line, int op, int code,
 
     /* throw */
     if (op == 0)
-	errprintf(NULL, "+ %s:%d: %s(): %s\n", file, line, func, msg);
+	errprintf("+ %s:%d: %s(): %s\n", file, line, func, msg);
 
     /* rethrow */
     if (op == 1)
-	errprintf(NULL, "| %s:%d: %s(): %s\n", file, line, func, msg);
+	errprintf("| %s:%d: %s(): %s\n", file, line, func, msg);
 
     /* catch */
     if (op == 2)
-	errprintf(NULL, "- %s:%d: %s(): %s\n", file, line, func, msg);
+	errprintf("- %s:%d: %s(): %s\n", file, line, func, msg);
 
     /* warn */
     if (op == 3)
-	errprintf(NULL, "  %s:%d: %s(): %s\n", file, line, func, msg);
+	errprintf("  %s:%d: %s(): %s\n", file, line, func, msg);
 
     return code;
 }
@@ -278,6 +281,7 @@ const char *gs_errstr(int code)
     case gs_error_Fatal: return "Fatal";
     }
 }
+
 
 /* ------ Substitutes for missing C library functions ------ */
 
@@ -453,77 +457,53 @@ gs_realloc(void *old_ptr, size_t old_size, size_t new_size)
 
 /* Dump a region of memory. */
 void
-debug_dump_bytes(const gs_memory_t *mem, const byte * from, const byte * to, const char *msg)
+debug_dump_bytes(const byte * from, const byte * to, const char *msg)
 {
     const byte *p = from;
 
     if (from < to && msg)
-	dprintf1(mem, "%s:\n", msg);
+	dprintf1("%s:\n", msg);
     while (p != to) {
 	const byte *q = min(p + 16, to);
 
-	dprintf1(mem, "0x%lx:", (ulong) p);
+	dprintf1("0x%lx:", (ulong) p);
 	while (p != q)
-	    dprintf1(mem, " %02x", *p++);
-	dputc(mem, '\n');
-    }
-}
-
-
-void
-debug_dump_bits(const gs_memory_t *mem, const byte * from, const byte * to, const char *msg)
-{
-    const byte *p = from;
-
-    if (from < to && msg)
-	dprintf1(mem, "%s:\n", msg);
-    while (p != to) {
-	const byte *q = min(p + 16, to);
-
-	dprintf1(mem, "0x%lx:", (ulong) p);
-	while (p != q) {
-            int i;
-            for (i = 7; i >= 0; i--) {
-                dprintf1(mem, "%d", (*p & (1 << i)) != 0 ? 1 : 0);
-            }
-            p++;
-        }
-        dputc(mem, '\n');
+	    dprintf1(" %02x", *p++);
+	dputc('\n');
     }
 }
 
 /* Dump a bitmap. */
 void
-debug_dump_bitmap(const gs_memory_t *mem, 
-		  const byte * bits, uint raster, uint height, const char *msg)
+debug_dump_bitmap(const byte * bits, uint raster, uint height, const char *msg)
 {
     uint y;
     const byte *data = bits;
 
     for (y = 0; y < height; ++y, data += raster)
-	debug_dump_bits(mem, data, data + raster, (y == 0 ? msg : NULL));
+	debug_dump_bytes(data, data + raster, (y == 0 ? msg : NULL));
 }
 
 /* Print a string. */
 void
-debug_print_string(const gs_memory_t *mem, const byte * chrs, uint len)
+debug_print_string(const byte * chrs, uint len)
 {
     uint i;
 
     for (i = 0; i < len; i++)
-	dputc(mem, chrs[i]);
-    dflush(mem);
+	dputc(chrs[i]);
+    dflush();
 }
 
 /* Print a string in hexdump format. */
 void
-debug_print_string_hex(const gs_memory_t *mem, const byte * chrs, uint len)
+debug_print_string_hex(const byte * chrs, uint len)
 {
     uint i;
 
     for (i = 0; i < len; i++)
-        dprintf1(mem, "%02x", chrs[i]);
-    dflush(mem);
+        dprintf1("%02x", chrs[i]);
+    dflush();
 }
 
 /*
@@ -1011,22 +991,17 @@ fixed_mult_quo(fixed signed_A, fixed B, fixed C)
 #undef half_bits
 #undef half_mask
 
-#if 0
-/* NB changing the prototypes of c libary functions isn't a good idea
- * hence forth sqrt will no longer be tracable.
- */
-
 /* Trace calls on sqrt when debugging. */
 double
 gs_sqrt(double x, const char *file, int line)
 {
     if (gs_debug_c('~')) {
-	dprintf3(mem, "[~]sqrt(%g) at %s:%d\n", x, (const char *)file, line);
-	dflush(mem);
+	dprintf3("[~]sqrt(%g) at %s:%d\n", x, (const char *)file, line);
+	dflush();
     }
     return orig_sqrt(x);
 }
-#endif 
+
 /*
  * Define sine and cosine functions that take angles in degrees rather than
  * radians, and that are implemented efficiently on machines with slow
@@ -1223,10 +1198,16 @@ gs_sincos_degrees(double ang, gs_sincos_t * psincos)
 static const int isincos[5] =
 {0, 1, 0, -1, 0};
 
+/* GCC with -ffast-math compiles ang/90. as ang*(1/90.), losing precission.
+ * This doesn't happen when the numeral is replaced with a non-const variable.
+ * So we define the variable to work around the GCC problem. 
+ */
+static double const_90_degrees = 90.;
+
 double
 gs_sin_degrees(double ang)
 {
-    double quot = ang / 90;
+    double quot = ang / const_90_degrees;
 
     if (floor(quot) == quot) {
 	/*
@@ -1241,7 +1222,7 @@ gs_sin_degrees(double ang)
 double
 gs_cos_degrees(double ang)
 {
-    double quot = ang / 90;
+    double quot = ang / const_90_degrees;
 
     if (floor(quot) == quot) {
 	/* See above re the following line. */
@@ -1253,7 +1234,7 @@ gs_cos_degrees(double ang)
 void
 gs_sincos_degrees(double ang, gs_sincos_t * psincos)
 {
-    double quot = ang / 90;
+    double quot = ang / const_90_degrees;
 
     if (floor(quot) == quot) {
 	/* See above re the following line. */
@@ -1279,11 +1260,11 @@ gs_sincos_degrees(double ang, gs_sincos_t * psincos)
  * gs_error_undefinedresult.
  */
 int
-gs_atan2_degrees(const gs_memory_t *mem, double y, double x, double *pangle)
+gs_atan2_degrees(double y, double x, double *pangle)
 {
     if (y == 0) {	/* on X-axis, special case */
 	if (x == 0)
-	    return_error(mem, gs_error_undefinedresult);
+	    return_error(gs_error_undefinedresult);
 	*pangle = (x < 0 ? 180 : 0);
     } else {
 	double result = atan2(y, x) * radians_to_degrees;

@@ -1,7 +1,5 @@
 #!/usr/bin/perl
-# $RCSfile$ $Revision$
-
-# $RCSfile$ $Revision$
+# $Id$
 
 #   (C) 1997 Anthony Shipman
 # 

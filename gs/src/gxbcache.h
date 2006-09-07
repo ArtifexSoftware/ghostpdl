@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Bitmap cache structures */
 
 #ifndef gxbcache_INCLUDED
@@ -58,7 +59,7 @@ typedef struct gx_cached_bits_s {
  * that an immediately following bitmap will be properly aligned.
  */
 #define align_cached_bits_mod\
-  (max(align_bitmap_mod, max(arch_align_ptr_mod, arch_align_long_mod)))
+  (max(align_bitmap_mod, max(ARCH_ALIGN_PTR_MOD, ARCH_ALIGN_LONG_MOD)))
 
 /*
  * We may allocate a bitmap cache in chunks, so as not to tie up memory
@@ -104,8 +105,7 @@ void gx_bits_cache_chunk_init(gx_bits_cache_chunk *, byte *, uint);
 /* Attempt to allocate an entry.  If successful, set *pcbh and return 0. */
 /* If there isn't enough room, set *pcbh to an entry requiring freeing, */
 /* or to 0 if we are at the end of the chunk, and return -1. */
-int gx_bits_cache_alloc(const gs_memory_t *mem,
-			gx_bits_cache *, ulong, gx_cached_bits_head **);
+int gx_bits_cache_alloc(gx_bits_cache *, ulong, gx_cached_bits_head **);
 
 /* Shorten an entry by a given amount. */
 void gx_bits_cache_shorten(gx_bits_cache *, gx_cached_bits_head *,

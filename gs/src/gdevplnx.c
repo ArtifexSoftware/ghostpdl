@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$*/
+/* $Id$*/
 /* Plane extraction device */
 #include "gx.h"
 #include "gserrors.h"
@@ -339,7 +340,7 @@ begin_tiling(tiling_state_t *pts, gx_device_plane_extract *edev,
 	pts->buffer.data =
 	    gs_alloc_bytes(edev->memory, full_size, "begin_tiling");
 	if (!pts->buffer.data)
-	    return_error(edev->memory, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	pts->buffer.size = full_size;
 	pts->buffer.raster = width_raster;
 	pts->buffer.on_heap = true;
@@ -387,10 +388,11 @@ plane_device_init(gx_device_plane_extract *edev, gx_device *target,
 {
     /* Check for compatibility of the plane specification. */
     if (render_plane->depth > plane_dev->color_info.depth)
-	return_error(edev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     gx_device_init((gx_device *)edev,
 		   (const gx_device *)&gs_plane_extract_device,
 		   edev->memory, true);
+    check_device_separable((gx_device *)edev);
     gx_device_forward_fill_in_procs((gx_device_forward *)edev);
     gx_device_set_target((gx_device_forward *)edev, target);
     gx_device_copy_params((gx_device *)edev, target);
@@ -887,8 +889,15 @@ plane_cmap_rgb_alpha(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
 				(gx_device *)edev, select);
     reduce_drawing_color(pdc, edev, &dcolor, &lop);
 }
+private bool
+plane_cmap_is_halftoned(const gs_imager_state *pis_image, gx_device *dev)
+{
+    return false;
+}
+
 private const gx_color_map_procs plane_color_map_procs = {
-    plane_cmap_gray, plane_cmap_rgb, plane_cmap_cmyk, plane_cmap_rgb_alpha
+    plane_cmap_gray, plane_cmap_rgb, plane_cmap_cmyk, plane_cmap_rgb_alpha,
+    NULL, NULL, plane_cmap_is_halftoned
 };
 private const gx_color_map_procs *
 plane_get_cmap_procs(const gs_imager_state *pis, const gx_device *dev)

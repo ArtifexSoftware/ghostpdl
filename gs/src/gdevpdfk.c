@@ -1,10 +1,15 @@
-/* Copyright (C) 2001 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Lab and ICCBased color space writing */
@@ -32,7 +37,7 @@ pdf_cie_add_ranges(cos_dict_t *pcd, const gs_range *prange, int n, bool clamp)
     int code = 0, i;
 
     if (pca == 0)
-	return_error(pcd->pdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     for (i = 0; i < n; ++i) {
 	floatp rmin = prange[i].rmin, rmax = prange[i].rmax;
 
@@ -40,8 +45,8 @@ pdf_cie_add_ranges(cos_dict_t *pcd, const gs_range *prange, int n, bool clamp)
 	    if (rmin < 0) rmin = 0;
 	    if (rmax > 1) rmax = 1;
 	}
-	if ((code = cos_array_add_real(pcd->pdev->memory, pca, rmin)) < 0 ||
-	    (code = cos_array_add_real(pcd->pdev->memory, pca, rmax)) < 0
+	if ((code = cos_array_add_real(pca, rmin)) < 0 ||
+	    (code = cos_array_add_real(pca, rmax)) < 0
 	    )
 	    break;
     }
@@ -170,10 +175,10 @@ pdf_convert_cie_to_lab(gx_device_pdf *pdev, cos_array_t *pca,
     int code;
 
     /****** NOT IMPLEMENTED YET, REQUIRES TRANSFORMING VALUES ******/
-    if (1) return_error(pdev->memory, gs_error_rangecheck);
+    if (1) return_error(gs_error_rangecheck);
     pcd = cos_dict_alloc(pdev, "pdf_convert_cie_to_lab(dict)");
     if (pcd == 0)
-	return_error(pdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     if ((code = lab_range(ranges, pcs, pciec, prange, pdev->pdf_memory)) < 0 ||
 	(code = pdf_put_lab_color_space(pca, pcd, ranges)) < 0 ||
 	(code = pdf_finish_cie_space(pca, pcd, pciec)) < 0
@@ -213,7 +218,7 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
 	if (rmin < 0.0 || rmax > 1.0) {
 	    /* We'll have to scale the inputs.  :-( */
 	    if (pprange == 0)
-		return_error(pdev->memory, gs_error_rangecheck); /* scaling not allowed */
+		return_error(gs_error_rangecheck); /* scaling not allowed */
 	    *pprange = prange;
 	    scale_inputs = true;
 	}
@@ -227,7 +232,7 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
 
     /* Create a stream for the output. */
     if ((pcstrm = cos_stream_alloc(pdev, "pdf_make_iccbased(stream)")) == 0) {
-	code = gs_note_error(pdev->memory, gs_error_VMerror);
+	code = gs_note_error(gs_error_VMerror);
 	goto fail;
     }
 

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Default device parameters for Ghostscript library */
 #include "memory_.h"		/* for memcpy */
 #include "string_.h"		/* for strlen */
@@ -69,7 +70,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     /* Standard page device parameters: */
 
-    int mns = 1;
     bool seprs = false;
     gs_param_string dns, pcms;
     gs_param_float_array msa, ibba, hwra, ma;
@@ -81,6 +81,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     /* Non-standard parameters: */
 
     int colors = dev->color_info.num_components;
+    int mns = colors;
     int depth = dev->color_info.depth;
     int GrayValues = dev->color_info.max_gray + 1;
     int HWSize[2];
@@ -116,6 +117,12 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     /* Transmit the values. */
 
+#if ENABLE_NAMED_COLOR_CALLBACK
+    /* The named color callback pointer */
+    code = named_color_callback_get_params(dev, plist);
+    if (code < 0)
+	return code;
+#endif
     if (
 
 	/* Standard parameters */
@@ -157,16 +164,24 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 				&dev->color_info.anti_alias.text_bits)) < 0 ||
 	(code = param_write_int(plist, "GraphicsAlphaBits",
 				&dev->color_info.anti_alias.graphics_bits)) < 0 ||
-	(code = param_write_int(plist, "TrayOrientation", &dev->TrayOrientation)) < 0 ||
 	(code = param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams)) < 0 
 	)
+	return code;
+
+    /* If LeadingEdge was set explicitly, report it here. */
+    if (dev->LeadingEdge & LEADINGEDGE_SET_MASK) {
+	int leadingedge = dev->LeadingEdge & LEADINGEDGE_MASK;
+	code = param_write_int(plist, "LeadingEdge", &leadingedge);
+    }
+    if (code < 0)
 	return code;
 
     /* Fill in color information. */
 
     if (colors > 1) {
 	int RGBValues = dev->color_info.max_color + 1;
-	long ColorValues = (depth >= 32 ? -1 : 1L << depth);
+	long ColorValues = (depth >= (8 * arch_sizeof_color_index) ? -1
+							: 1L << depth);
 
 	if ((code = param_write_int(plist, "RedValues", &RGBValues)) < 0 ||
 	    (code = param_write_int(plist, "GreenValues", &RGBValues)) < 0 ||
@@ -436,6 +451,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     int tab = dev->color_info.anti_alias.text_bits;
     int gab = dev->color_info.anti_alias.graphics_bits;
     gs_param_string cms;
+    int leadingedge = dev->LeadingEdge;
 
     /*
      * Template:
@@ -447,12 +463,12 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
      *   } END_ARRAY_PARAM(pxxa, pxxe);
      */
 
-#define BEGIN_ARRAY_PARAM(mem, pread, pname, pa, psize, e)\
+#define BEGIN_ARRAY_PARAM(pread, pname, pa, psize, e)\
     BEGIN\
     switch (code = pread(plist, (param_name = pname), &(pa))) {\
       case 0:\
 	if ((pa).size != psize) {\
-	  ecode = gs_note_error(mem, gs_error_rangecheck);\
+	  ecode = gs_note_error(gs_error_rangecheck);\
 	  (pa).data = 0;	/* mark as not filled */\
 	} else
 #define END_ARRAY_PARAM(pa, e)\
@@ -465,6 +481,23 @@ e:	param_signal_error(plist, param_name, ecode);\
     }\
     END
 
+#if ENABLE_NAMED_COLOR_CALLBACK
+    /* The named_color callback pointer */
+    code = named_color_callback_put_params(dev, plist);
+    if (code < 0)
+	ecode = code;
+#endif
+    /*
+     * The actual value of LeadingEdge must be changed inside this routine,
+     * so that we can detect that it has been changed. Thus, instead of a
+     * device setting the value itself, it signals a request, which is
+     * now executed.
+     */
+    if (leadingedge & LEADINGEDGE_REQ_BIT) {
+	leadingedge = (leadingedge & LEADINGEDGE_SET_MASK) |
+	    ((leadingedge >> LEADINGEDGE_REQ_VAL_SHIFT) && LEADINGEDGE_MASK);
+    }
+
     /*
      * The HWResolution, HWSize, and MediaSize parameters interact in
      * the following way:
@@ -475,49 +508,57 @@ e:	param_signal_error(plist, param_name, ecode);\
      * in the order 1, 2, 3.  This does the right thing in the most
      * common case of setting more than one parameter, namely,
      * setting both HWResolution and HWSize.
+     *
+     * Changing of LeadingEdge is treated exactly the same as a
+     * change in HWResolution. In typical usage, MediaSize is
+     * short-edge (MediaSize[0] < MediaSize[1]), so if LeadingEdge
+     * is 1 or 3, then HWSize will become long-edge. For nonsquare
+     * resolutions, HWResolution[0] always corresponds with width
+     * (scan length), and [1] with height (number of scans).
      */
 
-    BEGIN_ARRAY_PARAM(dev->memory, param_read_float_array, "HWResolution", hwra, 2, hwre) {
+    BEGIN_ARRAY_PARAM(param_read_float_array, "HWResolution", hwra, 2, hwre) {
 	if (hwra.data[0] <= 0 || hwra.data[1] <= 0)
-	    ecode = gs_note_error(dev->memory, gs_error_rangecheck);
+	    ecode = gs_note_error(gs_error_rangecheck);
 	else
 	    break;
     } END_ARRAY_PARAM(hwra, hwre);
-    BEGIN_ARRAY_PARAM(dev->memory, param_read_int_array, "HWSize", hwsa, 2, hwsa) {
+    BEGIN_ARRAY_PARAM(param_read_int_array, "HWSize", hwsa, 2, hwsa) {
 	/* We need a special check to handle the nullpage device, */
 	/* whose size is legitimately [0 0]. */
 	if ((hwsa.data[0] <= 0 && hwsa.data[0] != dev->width) ||
 	    (hwsa.data[1] <= 0 && hwsa.data[1] != dev->height)
 	)
-	    ecode = gs_note_error(dev->memory, gs_error_rangecheck);
+	    ecode = gs_note_error(gs_error_rangecheck);
 #define max_coord (max_fixed / fixed_1)
 #if max_coord < max_int
 	else if (hwsa.data[0] > max_coord || hwsa.data[1] > max_coord)
-	    ecode = gs_note_error(dev->memory, gs_error_limitcheck);
+	    ecode = gs_note_error(gs_error_limitcheck);
 #endif
 #undef max_coord
 	else
 	    break;
     } END_ARRAY_PARAM(hwsa, hwse);
-
     {
 	int t;
-	if ((code = param_read_int(plist, "TrayOrientation", &t)) != 1 ) {
-	    /* gsdevice.c sets height/width and rotates for 90/270 case
-	     * changes in height/width will reallocate the page buffer 
-	     */ 
-	    if (code < 0)
+
+	code = param_read_int(plist, "LeadingEdge", &t);
+	if (code < 0) {
+	    if (param_read_null(plist, "LeadingEdge") == 0) {
+		/* if param is null, clear explicitly-set flag */
+		leadingedge &= ~LEADINGEDGE_SET_MASK;
+		code = 0;
+	    } else {
 		ecode = code;
-	    else if (t != 0 && t != 90 && t != 180 && t != 270)
-		param_signal_error(plist, "TrayOrientation",
-				   ecode = gs_error_rangecheck);
-	    else {
-		dev->TrayOrientation = t;
 	    }
+	} else if (code == 0) {
+	    if (t < 0 || t > 3)
+		param_signal_error(plist, "LeadingEdge",
+				   ecode = gs_error_rangecheck);
+	    else
+		leadingedge = LEADINGEDGE_SET_MASK | t;
 	}
     }
-
-
     {
 	const float *res = (hwra.data == 0 ? dev->HWResolution : hwra.data);
 
@@ -544,18 +585,18 @@ e:	param_signal_error(plist, param_name, ecode);\
 #endif
     }
 
-    BEGIN_ARRAY_PARAM(dev->memory, param_read_float_array, "Margins", ma, 2, me) {
+    BEGIN_ARRAY_PARAM(param_read_float_array, "Margins", ma, 2, me) {
 	break;
     } END_ARRAY_PARAM(ma, me);
-    BEGIN_ARRAY_PARAM(dev->memory, param_read_float_array, ".HWMargins", hwma, 4, hwme) {
+    BEGIN_ARRAY_PARAM(param_read_float_array, ".HWMargins", hwma, 4, hwme) {
 	break;
     } END_ARRAY_PARAM(hwma, hwme);
     /* MarginsHWResolution cannot be changed, only checked. */
-    BEGIN_ARRAY_PARAM(dev->memory, param_read_float_array, ".MarginsHWResolution", mhwra, 2, mhwre) {
+    BEGIN_ARRAY_PARAM(param_read_float_array, ".MarginsHWResolution", mhwra, 2, mhwre) {
 	if (mhwra.data[0] != dev->MarginsHWResolution[0] ||
 	    mhwra.data[1] != dev->MarginsHWResolution[1]
 	)
-	    ecode = gs_note_error(dev->memory, gs_error_rangecheck);
+	    ecode = gs_note_error(gs_error_rangecheck);
 	else
 	    break;
     } END_ARRAY_PARAM(mhwra, mhwre);
@@ -603,7 +644,7 @@ nce:
     switch (code = param_read_bool(plist, (param_name = ".LockSafetyParams"), &locksafe)) {
 	case 0:
 	    if (dev->LockSafetyParams && !locksafe)
-		code = gs_note_error(dev->memory, gs_error_invalidaccess);
+		code = gs_note_error(gs_error_invalidaccess);
 	    else
 		break;
 	default:
@@ -631,7 +672,7 @@ nce:
 	    if (ibba.size != 4 ||
 		ibba.data[2] < ibba.data[0] || ibba.data[3] < ibba.data[1]
 		)
-		ecode = gs_note_error(dev->memory, gs_error_rangecheck);
+		ecode = gs_note_error(gs_error_rangecheck);
 	    else
 		break;
 	    goto ibbe;
@@ -655,13 +696,11 @@ nce:
 	if ((code = param_check_string(plist, "ProcessColorModel", pcms, (pcms != NULL))) < 0)
 	    ecode = code;
     }
-    if ((code = param_check_int(plist, "MaxSeparations", 1, true)) < 0)
-	ecode = code;
+    IGNORE_INT_PARAM("MaxSeparations")
     if ((code = param_check_bool(plist, "Separations", false, true)) < 0)
 	ecode = code;
 
-    BEGIN_ARRAY_PARAM(dev->memory, 
-		      param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
+    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
 	break;
     } END_ARRAY_PARAM(scna, scne);
 
@@ -679,13 +718,13 @@ nce:
 	ecode = code;
     if ((code = param_check_long(plist, "PageCount", dev->PageCount, true)) < 0)
 	ecode = code;
-    if ((code = param_check_int(plist, "RedValues", RGBValues, colors > 1)) < 0)
+    if ((code = param_check_int(plist, "RedValues", RGBValues, true)) < 0)
 	ecode = code;
-    if ((code = param_check_int(plist, "GreenValues", RGBValues, colors > 1)) < 0)
+    if ((code = param_check_int(plist, "GreenValues", RGBValues, true)) < 0)
 	ecode = code;
-    if ((code = param_check_int(plist, "BlueValues", RGBValues, colors > 1)) < 0)
+    if ((code = param_check_int(plist, "BlueValues", RGBValues, true)) < 0)
 	ecode = code;
-    if ((code = param_check_long(plist, "ColorValues", ColorValues, colors > 1)) < 0)
+    if ((code = param_check_long(plist, "ColorValues", ColorValues, true)) < 0)
 	ecode = code;
     if (param_read_string(plist, "HWColorMap", &cms) != 1) {
 	byte palette[3 << 8];
@@ -707,12 +746,14 @@ nce:
     if (code < 0)
 	return code;
 
-    /* Now actually make the changes. */
-    /* Changing resolution or page size requires closing the device, */
-    /* but changing margins or ImagingBBox does not. */
-    /* In order not to close and reopen the device unnecessarily, */
-    /* we check for replacing the values with the same ones. */
-
+    /* 
+     * Now actually make the changes. Changing resolution, rotation
+     * (through LeadingEdge) or page size requires closing the device,
+     * but changing margins or ImagingBBox does not. In order not to
+     * close and reopen the device unnecessarily, we check for
+     * replacing the values with the same ones.
+     */
+    
     if (hwra.data != 0 &&
 	(dev->HWResolution[0] != hwra.data[0] ||
 	 dev->HWResolution[1] != hwra.data[1])
@@ -721,6 +762,19 @@ nce:
 	    gs_closedevice(dev);
 	gx_device_set_resolution(dev, hwra.data[0], hwra.data[1]);
     }
+    if ((leadingedge & LEADINGEDGE_MASK) !=
+	(dev->LeadingEdge & LEADINGEDGE_MASK)) {
+	/* If the LeadingEdge_set flag changes but the value of LeadingEdge
+	   itself does not, don't close device and recompute page size. */
+	dev->LeadingEdge = leadingedge;
+	if (dev->is_open)
+	    gs_closedevice(dev);
+	gx_device_set_resolution(dev, dev->HWResolution[0], dev->HWResolution[1]);
+    }
+    /* clear leadingedge request, preserve "set" flag */
+    dev->LeadingEdge &= LEADINGEDGE_MASK;
+    dev->LeadingEdge |= (leadingedge & LEADINGEDGE_SET_MASK);
+
     if (hwsa.data != 0 &&
 	(dev->width != hwsa.data[0] ||
 	 dev->height != hwsa.data[1])
@@ -737,16 +791,6 @@ nce:
 	    gs_closedevice(dev);
 	gx_device_set_page_size(dev, msa.data[0], msa.data[1]);
     }
-    if (dev->TrayOrientation != 0 &&
-	hwra.data == 0 &&
-	hwsa.data == 0 &&
-	msa.data == 0 ) {
-	/* handle the default everything but TrayOrientation case */
-	if (dev->is_open)
-	    gs_closedevice(dev);
-	gx_device_set_resolution(dev, dev->HWResolution[0], dev->HWResolution[1]);
-    }
-
     if (ma.data != 0) {
 	dev->Margins[0] = ma.data[0];
 	dev->Margins[1] = ma.data[1];
@@ -775,6 +819,14 @@ nce:
     dev->LockSafetyParams = locksafe;
     gx_device_decache_colors(dev);
     return 0;
+}
+
+void
+gx_device_request_leadingedge(gx_device *dev, int le_req)
+{
+    dev->LeadingEdge = (dev->LeadingEdge & ~LEADINGEDGE_REQ_VAL) |
+	((le_req << LEADINGEDGE_REQ_VAL_SHIFT) & LEADINGEDGE_REQ_VAL) |
+	LEADINGEDGE_REQ_BIT;
 }
 
 /* Read TextAlphaBits or GraphicsAlphaBits. */
@@ -809,16 +861,16 @@ param_MediaSize(gs_param_list * plist, gs_param_name pname,
     int ecode = 0;
     int code;
 
-    BEGIN_ARRAY_PARAM(plist->memory, param_read_float_array, pname, *pa, 2, mse) {
+    BEGIN_ARRAY_PARAM(param_read_float_array, pname, *pa, 2, mse) {
 	float width_new = pa->data[0] * res[0] / 72;
 	float height_new = pa->data[1] * res[1] / 72;
 
 	if (width_new < 0 || height_new < 0)
-	    ecode = gs_note_error(plist->memory, gs_error_rangecheck);
+	    ecode = gs_note_error(gs_error_rangecheck);
 #define max_coord (max_fixed / fixed_1)
 #if max_coord < max_int
 	else if (width_new > max_coord || height_new > max_coord)
-	    ecode = gs_note_error(plist->memory, gs_error_limitcheck);
+	    ecode = gs_note_error(gs_error_limitcheck);
 #endif
 #undef max_coord
 	else
@@ -840,7 +892,7 @@ param_check_bool(gs_param_list * plist, gs_param_name pname, bool value,
 	case 0:
 	    if (is_defined && new_value == value)
 		break;
-	    code = gs_note_error(plist->memory, gs_error_rangecheck);
+	    code = gs_note_error(gs_error_rangecheck);
 	    goto e;
 	default:
 	    if (param_read_null(plist, pname) == 0)
@@ -862,7 +914,7 @@ param_check_long(gs_param_list * plist, gs_param_name pname, long value,
 	case 0:
 	    if (is_defined && new_value == value)
 		break;
-	    code = gs_note_error(plist->memory, gs_error_rangecheck);
+	    code = gs_note_error(gs_error_rangecheck);
 	    goto e;
 	default:
 	    if (param_read_null(plist, pname) == 0)
@@ -887,7 +939,7 @@ param_check_bytes(gs_param_list * plist, gs_param_name pname, const byte * str,
 			size)
 		)
 		break;
-	    code = gs_note_error(plist->memory, gs_error_rangecheck);
+	    code = gs_note_error(gs_error_rangecheck);
 	    goto e;
 	default:
 	    if (param_read_null(plist, pname) == 0)

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PatternType 1 filling algorithms */
 #include "math_.h"
 #include "gx.h"
@@ -84,7 +85,8 @@ tile_fill_init(tile_fill_state_t * ptfs, const gx_device_color * pdevc,
 		  m_tile->tmask.rep_height);
     } else
 	px = py = 0;
-    return tile_clip_initialize(&ptfs->cdev, ptfs->tmask, dev, px, py, dev->memory);
+    return tile_clip_initialize(&ptfs->cdev, ptfs->tmask, dev, px, py, dev->memory); 
+    /* leak ? was NULL memoryptr */
 }
 
 /*
@@ -120,8 +122,8 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 
 	bbox.p.x = x0, bbox.p.y = y0;
 	bbox.q.x = x1, bbox.q.y = y1;
-	gs_bbox_transform_inverse(ptfs->pcdev->memory, &bbox, &step_matrix, &ibbox);
-	if_debug10(ptfs->pcdev->memory, 'T',
+	gs_bbox_transform_inverse(&bbox, &step_matrix, &ibbox);
+	if_debug10('T',
 	  "[T]x,y=(%d,%d) w,h=(%d,%d) => (%g,%g),(%g,%g), offset=(%g,%g)\n",
 		   x0, y0, w0, h0,
 		   ibbox.p.x, ibbox.p.y, ibbox.q.x, ibbox.q.y,
@@ -143,7 +145,7 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 	i1 = (int)ceil(u1);
 	j1 = (int)ceil(v1);
     }
-    if_debug4(ptfs->pcdev->memory, 'T', "[T]i=(%d,%d) j=(%d,%d)\n", i0, i1, j0, j1);
+    if_debug4('T', "[T]i=(%d,%d) j=(%d,%d)\n", i0, i1, j0, j1);
     for (i = i0; i < i1; i++)
 	for (j = j0; j < j1; j++) {
 	    int x = (int)(step_matrix.xx * i +
@@ -154,7 +156,7 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 	    int h = tbits_or_tmask->size.y;
 	    int xoff, yoff;
 
-	    if_debug4(ptfs->pcdev->memory, 'T', "[T]i=%d j=%d x,y=(%d,%d)", i, j, x, y);
+	    if_debug4('T', "[T]i=%d j=%d x,y=(%d,%d)", i, j, x, y);
 	    if (x < x0)
 		xoff = x0 - x, x = x0, w -= xoff;
 	    else
@@ -167,7 +169,7 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 		w = x1 - x;
 	    if (y + h > y1)
 		h = y1 - y;
-	    if_debug6(ptfs->pcdev->memory, 'T', "=>(%d,%d) w,h=(%d,%d) x/yoff=(%d,%d)\n",
+	    if_debug6('T', "=>(%d,%d) w,h=(%d,%d) x/yoff=(%d,%d)\n",
 		      x, y, w, h, xoff, yoff);
 	    if (w > 0 && h > 0) {
 		if (ptfs->pcdev == (gx_device *) & ptfs->cdev)
@@ -378,7 +380,7 @@ gx_dc_colored_masked_fill_rect(const gx_device_color * pdevc,
 	return code;
     if (state.pcdev == dev || ptile->is_simple)
 	return (*gx_dc_type_data_ht_colored.fill_rectangle)
-	    (pdevc, x, y, w, h, state.pcdev, lop, source); 
+	    (pdevc, x, y, w, h, state.pcdev, lop, source);
     else {
 	state.lop = lop;
 	state.source = source;

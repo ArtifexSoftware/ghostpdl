@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Interface to platform-specific routines */
 /* Requires gsmemory.h */
 
@@ -72,13 +73,13 @@ const char *gp_strerror(int);
  * Read the current time (in seconds since an implementation-defined epoch)
  * into ptm[0], and fraction (in nanoseconds) into ptm[1].
  */
-void gp_get_realtime(const gs_memory_t *mem, long ptm[2]);
+void gp_get_realtime(long ptm[2]);
 
 /*
  * Read the current user CPU time (in seconds) into ptm[0],
  * and fraction (in nanoseconds) into ptm[1].
  */
-void gp_get_usertime(const gs_memory_t *mem, long ptm[2]);
+void gp_get_usertime(long ptm[2]);
 
 /* ------ Reading lines from stdin ------ */
 
@@ -178,8 +179,7 @@ extern const char gp_fmode_wb[];
  *
  * Return value: Opened file object, or NULL on error.
  **/
-FILE *gp_open_scratch_file(const gs_memory_t *mem,
-                           const char *prefix,
+FILE *gp_open_scratch_file(const char *prefix,
 			   char fname[gp_file_name_sizeof],
 			   const char *mode);
 
@@ -281,6 +281,40 @@ int gp_read_macresource(byte *buf, const char *fname,
                                      const uint type, const ushort id);
 
 
+/* ------ persistent cache interface ------ */
+
+/*
+ * This is used for access to data cached between invocations of 
+ * Ghostscript. It is generally used for saving reusable data that
+ * is expensive to compute. Concurrent access by multiple instances
+ * is safe. Because of this care should be taken to use a new data
+ * type when the format of the cached data changes.
+ *
+ * Generic data buffers are stored under a combination of type and
+ * key. It is up the to client to interpret the data buffer appropriately.
+ * An insert overwrites any previous entry under that type and key.
+ * A query if successful uses the passed callback to allocate a buffer
+ * and fills it with the retrieved data. The caller is thus responsible
+ * for the buffer's memory management.
+ * 
+ * See zmisc.c for postscript test operators and an example implementation.
+ */
+
+/* return 0 on successful insert, non-zero otherwise */
+int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen);
+
+/* return the length of the buffer on success, a negative value otherwise */
+typedef void *(*gp_cache_alloc)(void *userdata, int bytes);
+int gp_cache_query(int type, byte* key, int keylen, void **buffer,
+    gp_cache_alloc alloc, void *userdata);
+
+/* cache data types */
+#define GP_CACHE_TYPE_TEST 0
+#define GP_CACHE_TYPE_FONTMAP 1
+#define GP_CACHE_TYPE_WTS_SIZE 2
+#define GP_CACHE_TYPE_WTS_CELL 3
+
+
 /* ------ Printer accessing ------ */
 
 /*
@@ -297,7 +331,7 @@ int gp_read_macresource(byte *buf, const char *fname,
  * for spooling.  If the file name is null and no default printer is
  * available, this procedure returns 0.
  */
-FILE *gp_open_printer(const gs_memory_t *mem, char fname[gp_file_name_sizeof], int binary_mode);
+FILE *gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode);
 
 /*
  * Close the connection to the printer.  Note that this is only called
@@ -336,7 +370,7 @@ file_enum *gp_enumerate_files_init(const char *pat, uint patlen,
  * returns max length +1.  If there are no more files, the procedure
  * returns -1.
  */
-uint gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uint maxlen);
+uint gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen);
 
 /*
  * Clean up a file enumeration.  This is only called to abandon

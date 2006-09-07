@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Conversion between device color spaces for Ghostscript */
 #include "gx.h"
 #include "gsdcolor.h"		/* for gxcmap.h */
@@ -97,7 +98,7 @@ color_rgb_to_cmyk(frac r, frac g, frac b, const gs_imager_state * pis,
 #endif
     }
     cmyk[3] = bg;
-    if_debug7(pis->memory, 'c', "[c]RGB 0x%x,0x%x,0x%x -> CMYK 0x%x,0x%x,0x%x,0x%x\n",
+    if_debug7('c', "[c]RGB 0x%x,0x%x,0x%x -> CMYK 0x%x,0x%x,0x%x,0x%x\n",
 	      r, g, b, cmyk[0], cmyk[1], cmyk[2], cmyk[3]);
 }
 
@@ -150,6 +151,6 @@ color_cmyk_to_rgb(frac c, frac m, frac y, frac k, const gs_imager_state * pis,
 #endif
 	    }
     }
-    if_debug7(pis->memory, 'c', "[c]CMYK 0x%x,0x%x,0x%x,0x%x -> RGB 0x%x,0x%x,0x%x\n",
+    if_debug7('c', "[c]CMYK 0x%x,0x%x,0x%x,0x%x -> RGB 0x%x,0x%x,0x%x\n",
 	      c, m, y, k, rgb[0], rgb[1], rgb[2]);
 }

@@ -128,7 +128,7 @@ $(PLOBJ)plchar.$(OBJ): $(PLSRC)plchar.c $(AK) $(math__h) $(memory__h) $(stdio__h
  $(plfont_h) $(plvalue_h)
 	$(PLCCC) $(PLSRC)plchar.c $(PLO_)plchar.$(OBJ)
 
-# agfa character module.
+# agfa ufst character module.
 $(PLOBJ)pluchar.$(OBJ): $(PLSRC)pluchar.c $(AK) $(math__h) $(memory__h) $(stdio__h)\
  $(gdebug_h)\
  $(gsbittab_h) $(gschar_h) $(gscoord_h) $(gserror_h) $(gserrors_h) $(gsimage_h)\
@@ -137,7 +137,7 @@ $(PLOBJ)pluchar.$(OBJ): $(PLSRC)pluchar.c $(AK) $(math__h) $(memory__h) $(stdio_
  $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxpath_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
  $(gxchar_h) $(gxfcache_h) $(plfont_h) $(plvalue_h)
-	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)pluchar.c $(PLO_)pluchar.$(OBJ)
+	$(PLCCC) $(UFST_INCLUDES) $(PLSRC)pluchar.c $(PLO_)pluchar.$(OBJ)
 
 $(PLOBJ)pldict.$(OBJ): $(PLSRC)pldict.c $(AK) $(memory__h)\
  $(gsmemory_h) $(gsstruct_h) $(gstypes_h)\
@@ -175,7 +175,7 @@ $(PLOBJ)plufont.$(OBJ): $(PLSRC)plufont.c $(AK) $(memory__h) $(stdio__h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)\
  $(gxfont_h) $(gxfont42_h)\
  $(plfont_h) $(plvalue_h)
-	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plufont.c $(PLO_)plufont.$(OBJ)
+	$(PLCCC) $(UFST_INCLUDES) $(PLSRC)plufont.c $(PLO_)plufont.$(OBJ)
 
 $(PLOBJ)plplatf$(PLPLATFORM).$(OBJ): $(PLSRC)plplatf$(PLPLATFORM).c $(AK) $(string__h)\
  $(string__h)\
@@ -185,10 +185,10 @@ $(PLOBJ)plplatf$(PLPLATFORM).$(OBJ): $(PLSRC)plplatf$(PLPLATFORM).c $(AK) $(stri
 
 plftable_h=$(PLSRC)plftable.h
 
-# hack - need AGFA included for -DAGFA_FONT_TABLE
+# hack - need ufst included for -DAGFA_FONT_TABLE
 $(PLOBJ)plftable.$(OBJ): $(PLSRC)plftable.c $(AK) $(plftable_h)\
   $(ctype__h) $(gstypes_h) $(plfont_h)
-	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plftable.c $(PLO_)plftable.$(OBJ)
+	$(PLCCC) $(UFST_INCLUDES) $(PLSRC)plftable.c $(PLO_)plftable.$(OBJ)
 
 $(PLOBJ)pltop.$(OBJ): $(PLSRC)pltop.c $(AK) $(string__h)\
  $(gdebug_h) $(gsnogc_h) $(gsdevice_h) $(gsmemory_h) $(gsstruct_h)\
@@ -220,22 +220,27 @@ $(PLOBJ)plalloc.$(OBJ): $(PLSRC)plalloc.c $(AK) \
 	$(PLCCC) $(PLSRC)plalloc.c $(PLO_)plalloc.$(OBJ)
 
 # ufst font loading module.
+uconfig_h=$(PLOBJ)uconfig.h
+
+$(uconfig_h): $(PLSRC)pl.mak
+	$(GLGEN)echogs$(XE) -e .h -w $(PLOBJ)uconfig -x 23 "define UFSTFONTDIR" -s -x 22 $(UFSTFONTDIR) -x 22
+
 $(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(pllfont_h) $(AK)\
-        $(stdio__h) $(string__h) $(gpgetenv_h) $(gsmemory_h) $(gp_h) $(gstypes_h)\
-        $(plfont_h) $(pldict_h) $(pllfont_h) $(plvalue_h)\
-	$(plftable_h)
-	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plulfont.c $(PLO_)plulfont.$(OBJ)
+	$(stdio__h) $(string__h) $(gpgetenv_h) $(gsmemory_h) $(gp_h) $(gstypes_h)\
+	$(plfont_h) $(pldict_h) $(pllfont_h) $(plvalue_h)\
+	$(plftable_h) $(uconfig_h)
+	$(PLCCC) $(UFST_INCLUDES) $(PLSRC)plulfont.c $(PLO_)plulfont.$(OBJ)
 
 # artifex font loading module.
 $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(pllfont_h) $(AK)\
-        $(ctype__h) $(stdio__h) $(string__h)\
+	$(ctype__h) $(stdio__h) $(string__h)\
 	$(gx_h) $(gp_h) $(gsccode_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
 	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h) $(plvalue_h) $(plftable_h)
 	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
 
 # artifex rom font loading module
 $(PLOBJ)pllrfont.$(OBJ): $(PLSRC)pllrfont.c $(pllfont_h) $(romfnttab_h) $(AK)\
-        $(ctype__h) $(stdio__h) $(string__h)\
+	$(ctype__h) $(stdio__h) $(string__h)\
 	$(gx_h) $(gp_h) $(gsccode_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
 	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h) $(plvalue_h)\
 	$(plftable_h) $(zlib_h)

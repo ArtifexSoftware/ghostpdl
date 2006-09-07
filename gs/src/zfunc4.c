@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PostScript language support for FunctionType 4 (PS Calculator) Functions */
 #include "memory_.h"
 #include "ghost.h"
@@ -24,7 +25,6 @@
 #include "iname.h"
 #include "dstack.h"
 #include "ialloc.h"
-
 /*
  * FunctionType 4 functions are not defined in the PostScript language.  We
  * provide support for them because they are needed for PDF 1.3.  In
@@ -120,6 +120,28 @@ psc_fixup(byte *p, byte *to)
     p[2] = (byte)skip;
 }
 
+/* Check whether the ref is a given operator or resolves to it */
+private bool
+resolves_to_oper(i_ctx_t *i_ctx_p, const ref *pref, const op_proc_t proc)
+{
+    if (!r_has_attr(pref, a_executable))
+        return false;
+    if (r_btype(pref) == t_operator) {
+        return pref->value.opproc == proc;
+    } else if (r_btype(pref) == t_name) {
+        ref * val;
+        if (dict_find(systemdict, pref, &val) <= 0)
+	    return false;
+        if (r_btype(val) != t_operator)
+	    return false;
+        if (!r_has_attr(val, a_executable))
+	    return false;
+        return val->value.opproc == proc;
+    }
+   else
+      return false;
+}
+
 /*
  * Check a calculator function for validity, optionally storing its encoded
  * representation and add the size of the encoded representation to *psize.
@@ -130,7 +152,7 @@ psc_fixup(byte *p, byte *to)
 private int
 check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int *psize)
 {
-    long i;
+    uint i;
     uint size = r_size(pref);
 
     for (i = 0; i < size; ++i) {
@@ -147,7 +169,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 
 #if ARCH_SIZEOF_INT < ARCH_SIZEOF_LONG
 	    if (i != elt.value.intval) /* check for truncation */
-		return_error(imemory, e_rangecheck);
+		return_error(e_rangecheck);
 #endif
 	    if (i == (byte)i) {
 		*p = PtCr_byte;
@@ -174,7 +196,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 	    break;
 	case t_name:
 	    if (!r_has_attr(&elt, a_executable))
-		return_error(imemory, e_rangecheck);
+		return_error(e_rangecheck);
 	    name_string_ref(imemory, &elt, &elt);
 	    if (!bytes_compare(elt.value.bytes, r_size(&elt),
 			       (const byte *)"true", 4)) {
@@ -190,11 +212,11 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 	    }
 	    /* Check if the name is a valid operator in systemdict */
 	    if (dict_find(systemdict, &elt, &delp) <= 0)
-		return_error(imemory, e_undefined);
+		return_error(e_undefined);
 	    if (r_btype(delp) != t_operator)
-		return_error(imemory, e_typecheck);
+		return_error(e_typecheck);
 	    if (!r_has_attr(delp, a_executable))
-		return_error(imemory, e_rangecheck);
+		return_error(e_rangecheck);
 	    elt = *delp;
 	    /* Fall into the operator case */
 	case t_operator: {
@@ -206,13 +228,13 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 		    ++*psize;
 		    goto next;
 		}
-	    return_error(imemory, e_rangecheck);
+	    return_error(e_rangecheck);
 	}
 	default: {
 	    if (!r_is_proc(&elt))
-		return_error(imemory, e_typecheck);
+		return_error(e_typecheck);
 	    if (depth == MAX_PSC_FUNCTION_NESTING)
-		return_error(imemory, e_limitcheck);
+		return_error(e_limitcheck);
 	    if ((code = array_get(imemory, pref, ++i, &elt2)) < 0)
 		return code;
 	    *psize += 3;
@@ -220,19 +242,16 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 	    if (code < 0)
 		return code;
 	    /* Check for {proc} if | {proc1} {proc2} ifelse */
-#define R_IS_OPER(pref, proc)\
-  (r_btype(pref) == t_operator && r_has_attr(pref, a_executable) &&\
-   (pref)->value.opproc == proc)
-	    if (R_IS_OPER(&elt2, zif)) {
+	    if (resolves_to_oper(i_ctx_p, &elt2, zif)) {
 		if (ops) {
 		    *p = PtCr_if;
 		    psc_fixup(p, ops + *psize);
 		}
 	    } else if (!r_is_proc(&elt2))
-		return_error(imemory, e_rangecheck);
-	    else if ((code == array_get(imemory, pref, ++i, &elt3)) < 0)
+		return_error(e_rangecheck);
+    	    else if ((code == array_get(imemory, pref, ++i, &elt3)) < 0)
 		return code;
-	    else if (R_IS_OPER(&elt3, zifelse)) {
+	    else if (resolves_to_oper(i_ctx_p, &elt3, zifelse)) {
 		if (ops) {
 		    *p = PtCr_if;
 		    psc_fixup(p, ops + *psize + 3);
@@ -246,8 +265,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 		if (ops)
 		    psc_fixup(p, ops + *psize);
 	    } else
-		return_error(imemory, e_rangecheck);
-#undef R_IS_OPER
+		return_error(e_rangecheck);
 	}
 	}
     next:
@@ -275,11 +293,11 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     params.ops.data = 0;	/* in case of failure */
     params.ops.size = 0;	/* ditto */
     if (dict_find_string(op, "Function", &proc) <= 0) {
-	code = gs_note_error(imemory, e_rangecheck);
+	code = gs_note_error(e_rangecheck);
 	goto fail;
     }
     if (!r_is_proc(proc)) {
-	code = gs_note_error(imemory, e_typecheck);
+	code = gs_note_error(e_typecheck);
 	goto fail;
     }
     size = 0;
@@ -288,7 +306,7 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
 	goto fail;
     ops = gs_alloc_string(mem, size + 1, "gs_build_function_4(ops)");
     if (ops == 0) {
-	code = gs_note_error(imemory, e_VMerror);
+	code = gs_note_error(e_VMerror);
 	goto fail;
     }
     size = 0;
@@ -302,5 +320,5 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     /* free_params will free the ops string */
 fail:
     gs_function_PtCr_free_params(&params, mem);
-    return (code < 0 ? code : gs_note_error(imemory, e_rangecheck));
+    return (code < 0 ? code : gs_note_error(e_rangecheck));
 }

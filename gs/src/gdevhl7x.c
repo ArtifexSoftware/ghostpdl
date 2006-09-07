@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/* $RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /*
  * Brother HL 720 and 730 driver for Ghostscript
  *
@@ -358,7 +358,8 @@ hl7x0_print_page(gx_device_printer *pdev, FILE *printStream, int ptype,
   int num_rows = dev_print_scan_lines(pdev);
   int result;
   int sizeOfBuffer   = MaxLineLength(x_dpi) + 30; 
-  Byte * storage      = (Byte *) gs_malloc(sizeOfBuffer + line_size,
+  Byte * storage      = (Byte *) gs_malloc(pdev->memory, 
+					   sizeOfBuffer + line_size,
 					   1,
 					   "hl7x0_print_page");
 	/*	bool dup = pdev->Duplex; */
@@ -398,7 +399,7 @@ hl7x0_print_page(gx_device_printer *pdev, FILE *printStream, int ptype,
 	dumpToPrinter(&formFeedCommand, printStream);
 		
 	/* free temporary storage */
-	gs_free((char *)storage, storage_size_words, 1, "hl7X0_print_page");
+	gs_free(pdev->memory, (char *)storage, storage_size_words, 1, "hl7X0_print_page");
 
 	return 0; /* If we reach this line, it means there was no error */
 }

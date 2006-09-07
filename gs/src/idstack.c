@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Implementation of dictionary stacks */
 #include "ghost.h"
 #include "idict.h"
@@ -60,8 +61,7 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 	    INCR(probes[1]);
     }
     if (gs_debug_c('d') && !(stats_dstack.lookups % 1000))
-	dlprintf3(dict_mem(pdict), 
-		  "[d]lookups=%ld probe1=%ld probe2=%ld\n",
+	dlprintf3("[d]lookups=%ld probe1=%ld probe2=%ld\n",
 		  stats_dstack.lookups, stats_dstack.probes[0],
 		  stats_dstack.probes[1]);
     return pvalue;
@@ -113,9 +113,9 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 	    ref dnref;
 
 	    name_index_ref(mem, nidx, &dnref);
-	    dlputs(mem, "[D]lookup ");
+	    dlputs("[D]lookup ");
 	    debug_print_name(mem, &dnref);
-	    dprintf3(mem, " in 0x%lx(%u/%u)\n",
+	    dprintf3(" in 0x%lx(%u/%u)\n",
 		     (ulong) pdict, dict_length(pdref),
 		     dict_maxlength(pdref));
 	}
@@ -123,12 +123,10 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 #define INCR_DEPTH(pdref)\
   INCR(depth[min(MAX_STATS_DEPTH, pds->stack.p - pdref)])
 	if (dict_is_packed(pdict)) {
-	    packed_search_1(mem, 
-			    INCR_DEPTH(pdref),
+	    packed_search_1(INCR_DEPTH(pdref),
 			    return packed_search_value_pointer,
 			    DO_NOTHING, goto miss);
-	    packed_search_2(mem, 
-			    INCR_DEPTH(pdref),
+	    packed_search_2(INCR_DEPTH(pdref),
 			    return packed_search_value_pointer,
 			    DO_NOTHING, break);
 	  miss:;
@@ -171,7 +169,7 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 	uint size = ref_stack_count(&pds->stack);
 	ref *pvalue;	
 	
-	dict *pdict = pdref->value.pdict;
+	dict *pdict = pds->stack.p->value.pdict;
 	const gs_memory_t *mem = dict_mem(pdict);
 
 	name_index_ref(mem, nidx, &key);
@@ -198,8 +196,7 @@ dstack_set_top(dict_stack_t * pds)
     ds_ptr dsp = pds->stack.p;
     dict *pdict = dsp->value.pdict;
 
-    if_debug3(dict_mem(pdict), 
-	      'd', "[d]dsp = 0x%lx -> 0x%lx, key array type = %d\n",
+    if_debug3('d', "[d]dsp = 0x%lx -> 0x%lx, key array type = %d\n",
 	      (ulong) dsp, (ulong) pdict, r_type(&pdict->keys));
     if (dict_is_packed(pdict) &&
 	r_has_attr(dict_access_ref(dsp), a_read)
@@ -246,7 +243,7 @@ dstack_gc_cleanup(dict_stack_t * pds)
 				 * we can skip the entire dictionary.
 				 */
 		if (old_pvalue == pvalue) {
-		    if_debug1(dict_mem(pdict),'d', "[d]skipping dstack entry %d\n",
+		    if_debug1('d', "[d]skipping dstack entry %d\n",
 			      dsi - 1);
 		    break;
 		}

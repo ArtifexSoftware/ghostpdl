@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Internal procedures for halftones */
 /* Requires gxdevice.h, gxdcolor.h */
 
@@ -24,7 +25,7 @@
 #include "gxhttile.h"
 
 /* Sort a sampled halftone order by sample value. */
-void gx_sort_ht_order(const gs_memory_t *mem, gx_ht_bit *, uint);
+void gx_sort_ht_order(gx_ht_bit *, uint);
 
 /* (Internal) procedures for constructing halftone orders. */
 int gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
@@ -38,10 +39,10 @@ int gx_ht_alloc_threshold_order(gx_ht_order * porder, uint width,
 				gs_memory_t * mem);
 int gx_ht_alloc_client_order(gx_ht_order * porder, uint width, uint height,
 			     uint num_levels, uint num_bits, gs_memory_t * mem);
-void gx_ht_construct_spot_order(const gs_memory_t *mem, gx_ht_order *);
-int gx_ht_construct_threshold_order(const gs_memory_t *mem, gx_ht_order *, const byte *);
+void gx_ht_construct_spot_order(gx_ht_order *);
+int gx_ht_construct_threshold_order(gx_ht_order *, const byte *);
 void gx_ht_construct_bit(gx_ht_bit * bit, int width, int bit_num);
-void gx_ht_construct_bits(const gs_memory_t *mem, gx_ht_order *);
+void gx_ht_construct_bits(gx_ht_order *);
 
 /* Halftone enumeration structure */
 struct gs_screen_enum_s {
@@ -120,8 +121,7 @@ struct gx_ht_cache_s {
 				/* 1 if fit */
     gx_bitmap_id base_id;	/* the base id, to which */
 				/* we add the halftone level */
-    gx_ht_tile *(*render_ht)(const gs_memory_t *mem,
-			     gx_ht_cache *, int); /* rendering procedure */
+    gx_ht_tile *(*render_ht)(gx_ht_cache *, int); /* rendering procedure */
 };
 
 /* Define the sizes of the halftone cache. */
@@ -133,7 +133,7 @@ struct gx_ht_cache_s {
 #define max_ht_bits_SMALL 1000
 
 /* Define the size of the halftone tile cache. */
-#define max_tile_bytes_LARGE 4096
+#define max_tile_bytes_LARGE 65536
 #define max_tile_bytes_SMALL 512
 #if arch_small_memory
 #  define max_tile_cache_bytes max_tile_bytes_SMALL
@@ -191,8 +191,8 @@ int gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
 		       gs_color_select_t select, int *ppx);
 
 /* Make a given level current in a halftone cache. */
-#define gx_render_ht(mem, pcache, b_level)\
-  ((pcache)->render_ht(mem, pcache, b_level))
+#define gx_render_ht(pcache, b_level)\
+  ((pcache)->render_ht(pcache, b_level))
 
 /* ------ Device halftone management ------ */
 
@@ -238,7 +238,7 @@ void gx_set_effective_transfer(gs_state * pgs);
  *
  * A negative value is returned if the color name is not found.
  */
-int gs_color_name_component_number(const gx_device * dev, const char * pname,
+int gs_color_name_component_number(gx_device * dev, const char * pname,
 				int name_size, int halftonetype);
 /*
  * See gs_color_name_component_number for main description.

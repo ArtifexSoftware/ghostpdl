@@ -1,22 +1,28 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Image processing streams for PostScript and PDF writers */
 #include "gx.h"
 #include "memory_.h"
 #include "gserrors.h"
 #include "gxdcconv.h"
 #include "gdevpsds.h"
+#include "gxbitmap.h"
+#include "gxcspace.h"
+#include "gsdcolor.h"
+#include "gscspace.h"
+#include "gxdevcli.h"
 
 /* ---------------- Convert between 1/2/4/12 and 8 bits ---------------- */
 
@@ -100,7 +106,7 @@ s_12_init(stream_state * st)
 	  }\
 	}
 private int
-s_N_8_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_N_8_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     BEGIN_1248;
@@ -171,7 +177,7 @@ s_N_8_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr
 
 /* 12-to-8 "expansion" */
 private int
-s_12_8_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_12_8_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     BEGIN_1248;
@@ -217,7 +223,7 @@ s_12_8_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * p
 	  }\
 	}
 private int
-s_8_N_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_8_N_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     BEGIN_1248;
@@ -325,7 +331,7 @@ s_C2R_set_defaults(stream_state * st)
 
 /* Process one buffer. */
 private int
-s_C2R_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_C2R_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_C2R_state *const ss = (stream_C2R_state *) st;
@@ -404,7 +410,7 @@ s_IE_init(stream_state * st)
 
 /* Process a buffer. */
 private int
-s_IE_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_IE_process(stream_state * st, stream_cursor_read * pr,
 	     stream_cursor_write * pw, bool last)
 {
     stream_IE_state *const ss = (stream_IE_state *) st;
@@ -599,7 +605,7 @@ s_Subsample_init(stream_state * st)
 
 /* Process one buffer. */
 private int
-s_Subsample_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_Subsample_process(stream_state * st, stream_cursor_read * pr,
 		    stream_cursor_write * pw, bool last)
 {
     stream_Subsample_state *const ss = (stream_Subsample_state *) st;
@@ -619,7 +625,7 @@ s_Subsample_process(const gs_memory_t *mem, stream_state * st, stream_cursor_rea
     int x = ss->x, y = ss->y;
     int status = 0;
 
-    if_debug4(ss->memory, 'w', "[w]subsample: x=%d, y=%d, rcount=%ld, wcount=%ld\n",
+    if_debug4('w', "[w]subsample: x=%d, y=%d, rcount=%ld, wcount=%ld\n",
 	      x, y, (long)(rlimit - p), (long)(wlimit - q));
     for (; rlimit - p >= spp; p += spp) {
 	if (((y % yf == yf2 && y < ylimit) || y == ylast) &&
@@ -635,7 +641,7 @@ s_Subsample_process(const gs_memory_t *mem, stream_state * st, stream_cursor_rea
 	if (++x == width)
 	    x = 0, ++y;
     }
-    if_debug5(ss->memory, 'w',
+    if_debug5('w',
 	      "[w]subsample: x'=%d, y'=%d, read %ld, wrote %ld, status = %d\n",
 	      x, y, (long)(p - pr->ptr), (long)(q - pw->ptr), status);
     pr->ptr = p;
@@ -694,7 +700,7 @@ s_Average_release(stream_state * st)
 
 /* Process one buffer. */
 private int
-s_Average_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_Average_process(stream_state * st, stream_cursor_read * pr,
 		  stream_cursor_write * pw, bool last)
 {
     stream_Average_state *const ss = (stream_Average_state *) st;
@@ -784,7 +790,7 @@ s_compr_chooser_set_dimensions(stream_compr_chooser_state * ss, int width,
     ss->bits_per_sample = bits_per_sample;
     ss->sample = gs_alloc_bytes(ss->memory, width * depth, "s_compr_chooser_set_dimensions");
     if (ss->sample == 0)
-	return_error(ss->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     return 0;
 }
 
@@ -795,13 +801,6 @@ s_compr_chooser_release(stream_state * st)
     stream_compr_chooser_state *const ss = (stream_compr_chooser_state *) st;
 
     gs_free_object(ss->memory, ss->sample, "s_compr_chooser_release");
-}
-
-/* An auxiliary proc for the choice. */
-private inline bool
-much_bigger__PLR(int n1, int n2)
-{
-    return n1 >= 10000 && n2 < n1 / 3 && n2 > 100; /* arbitrary */
 }
 
 /* Estimate a row for photo/lineart recognition. */
@@ -818,8 +817,9 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 	Note that we deal with horizontal frequencies only.
 	Dealing with vertical ones would be too expensive.
     */
-    const int delta = 256 / 16; /* about 1/16 of the range */
-    const int max_lineart_boundary_width = 3/* pixels */;
+    const int delta = 256 / 16; /* about 1/16 of the color range */
+    const int max_lineart_boundary_width = 3; /* pixels */
+    const int max_gradient_constant = 10; /* pixels */
     int i, j0 = 0, j1 = 0;
     int w0 = p[0], w1 = p[0], v;
     ulong plateau_count = 0, lower_plateaus = 0;
@@ -829,8 +829,13 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
     for (i = 1; i < ss->width; i++) {
 	v = p[i];
 	if (!lower) {
-	    if (w1 < v)
-		w1 = v, upper = true;
+	    if (w1 < v) {
+		if (!upper)
+		    j1 = i - 1;
+		w1 = v;
+		upper = true;
+	    } else if (w1 == v && j1 < i - max_gradient_constant)
+		j1 = i - max_gradient_constant; /* inner constant plateaw */
 	    else if (upper && w1 - delta > v) {
 		/* end of upper plateau at w1-delta...w1 */
 		for (j0 = i - 1; j0 > j1 && w1 - delta <= p[j0]; j0--) DO_NOTHING;
@@ -845,11 +850,18 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 		}
 		j1 = i;
 		upper = false;
+		w0 = w1;
+		continue;
 	    }
 	}
 	if (!upper) {
-	    if (w0 > v)
-		w0 = v, lower = true;
+	    if (w0 > v) {
+		if (!lower)
+		    j1 = i - 1;
+		w0 = v; 
+		lower = true;
+	    } else if (w0 == v && j1 < i - max_gradient_constant)
+		j1 = i - max_gradient_constant; /* inner constant plateaw */
 	    else if (lower && w0 + delta < v) {
 		/* end of lower plateau at w0...w0+delta */
 		for (j0 = i - 1; j0 > j1 && w0 + delta >= p[j0]; j0--) DO_NOTHING;
@@ -864,6 +876,7 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 		}
 		j1 = i;
 		lower = false;
+		w1 = w0;
 	    }
 	}
     }
@@ -880,10 +893,10 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 	ss->upper_plateaus += upper_plateaus;
 	ss->gradients += gradients;
 	plateaus = min(ss->lower_plateaus, ss->upper_plateaus); /* (fore/back)ground */
-	if (much_bigger__PLR(plateaus, ss->gradients))
-	    ss->choice = 2; /* choice is made : lineart */
-	else if (much_bigger__PLR(ss->gradients, plateaus))
+	if (ss->gradients >= 10000 && ss->gradients > plateaus / 6)
 	    ss->choice = 1; /* choice is made : photo */
+	else if (plateaus >= 100000 && plateaus / 5000 >= ss->gradients)
+	    ss->choice = 2; /* choice is made : lineart */
     }
 }
 
@@ -950,7 +963,7 @@ s_compr_chooser__unpack_and_recognize(stream_compr_chooser_state *const ss,
 
 /* Process a buffer. */
 private int
-s_compr_chooser_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_compr_chooser_process(stream_state * st, stream_cursor_read * pr,
 	     stream_cursor_write * pw, bool last)
 {
     stream_compr_chooser_state *const ss = (stream_compr_chooser_state *) st;
@@ -973,12 +986,216 @@ s_compr_chooser__get_choice(stream_compr_chooser_state *ss, bool force)
 {
     ulong plateaus = min(ss->lower_plateaus, ss->upper_plateaus);
 
+    if (ss->choice)
+	return ss->choice;
     if (force) {
-	if (ss->gradients > plateaus / 3/* arbitrary */)
-	    return 2;
-	else if (plateaus > ss->gradients)
-	    return 1;
+	if (ss->gradients > plateaus / 12) /* messenger16.pdf, page 3. */
+	    return 1; /* photo */
+	else if (plateaus / 5000 >= ss->gradients)
+	    return 2; /* lineart */
     }
-    return ss->choice;
+    return 0;
 }
+
+/* ---------------- Am image color conversion filter ---------------- */
+
+private_st_image_colors_state();
+
+/* Initialize the state. */
+private int
+s_image_colors_init(stream_state * st)
+{
+    stream_image_colors_state *const ss = (stream_image_colors_state *) st;
+
+    ss->width = ss->height = ss->depth = ss->bits_per_sample = 0;
+    ss->output_bits_buffer = 0;
+    ss->output_bits_buffered = 0;
+    ss->output_depth = 1;
+    ss->output_component_index = ss->output_depth;
+    ss->output_bits_per_sample = 1;
+    ss->output_component_bits_written = 0;
+    ss->raster = 0;
+    ss->row_bits = 0;
+    ss->row_bits_passed = 0;
+    ss->row_alignment_bytes = 0;
+    ss->row_alignment_bytes_left = 0;
+    ss->input_component_index = 0;
+    ss->input_bits_buffer = 0;
+    ss->input_bits_buffered = 0;
+    ss->convert_color = 0;
+    ss->pcs = 0;
+    ss->pdev = 0;
+    ss->pis = 0;
+    return 0;
+}
+
+private int 
+s_image_colors_convert_color_to_mask(stream_image_colors_state *ss)
+{
+    int i, ii;
+
+    for (i = ii = 0; i < ss->depth; i++, ii += 2)
+	if (ss->input_color[i] < ss->MaskColor[ii] ||
+	    ss->input_color[i] > ss->MaskColor[ii + 1])
+	    break;
+    ss->output_color[0] = (i < ss->depth ? 1 : 0);
+    return 0;
+}
+
+private int
+s_image_colors_convert_to_device_color(stream_image_colors_state * ss)
+{
+    gs_client_color cc;
+    gx_device_color dc;
+    int i, code;
+    double v0 = (1 << ss->bits_per_sample) - 1;
+    double v1 = (1 << ss->output_bits_per_sample) - 1;
+
+    for (i = 0; i < ss->depth; i++)
+	cc.paint.values[i] = ss->input_color[i] * 
+		(ss->Decode[i * 2 + 1] - ss->Decode[i * 2]) / v0 + ss->Decode[i * 2];
+
+    code = ss->pcs->type->remap_color(&cc, ss->pcs, &dc, ss->pis,
+			      ss->pdev, gs_color_select_texture);
+    if (code < 0)
+	return code;
+    for (i = 0; i < ss->output_depth; i++) {
+	uint m = (1 << ss->pdev->color_info.comp_bits[i]) - 1;
+	uint w = (dc.colors.pure >> ss->pdev->color_info.comp_shift[i]) & m;
+
+	ss->output_color[i] = (uint)(v1 * w / m + 0.5);
+    }
+    return 0;
+}
+
+/* Set masc colors dimensions. */
+void
+s_image_colors_set_mask_colors(stream_image_colors_state * ss, uint *MaskColor)
+{
+    ss->convert_color = s_image_colors_convert_color_to_mask;
+    memcpy(ss->MaskColor, MaskColor, ss->depth * sizeof(MaskColor[0]) * 2);
+}
+
+/* Set image dimensions. */
+void
+s_image_colors_set_dimensions(stream_image_colors_state * ss, 
+			       int width, int height, int depth, int bits_per_sample)
+{
+    ss->width = width;
+    ss->height = height;
+    ss->depth = depth;
+    ss->bits_per_sample = bits_per_sample;
+    ss->row_bits = bits_per_sample * depth * width;
+    ss->raster = bitmap_raster(ss->row_bits);
+    ss->row_alignment_bytes = 0; /* (ss->raster * 8 - ss->row_bits) / 8) doesn't work. */
+}
+
+void
+s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
+			       const gs_color_space *pcs, const gs_imager_state *pis,
+			       float *Decode)
+{
+    ss->output_depth = pdev->color_info.num_components;
+    ss->output_component_index = ss->output_depth;
+    ss->output_bits_per_sample = pdev->color_info.comp_bits[0]; /* Same precision for all components. */
+    ss->convert_color = s_image_colors_convert_to_device_color;
+    ss->pdev = pdev;
+    ss->pcs = pcs;
+    ss->pis = pis;
+    memcpy(ss->Decode, Decode, ss->depth * sizeof(Decode[0]) * 2);
+}
+
+
+/* Process a buffer. */
+private int
+s_image_colors_process(stream_state * st, stream_cursor_read * pr,
+	     stream_cursor_write * pw, bool last)
+{
+    stream_image_colors_state *const ss = (stream_image_colors_state *) st;
+
+    for (;;) {
+	if (pw->ptr >= pw->limit)
+	    return 1;
+	if (ss->row_bits_passed >= ss->row_bits) {
+	    ss->row_alignment_bytes_left = ss->row_alignment_bytes;
+	    ss->input_bits_buffered = 0;
+	    ss->input_bits_buffer = 0; /* Just to simplify the debugging. */
+	    if (ss->output_bits_buffered) {
+		*(++pw->ptr) = ss->output_bits_buffer;
+		ss->output_bits_buffered = 0;
+		ss->output_bits_buffer = 0;
+	    }
+	    ss->row_bits_passed = 0;
+	    continue;
+	}
+	if (ss->row_alignment_bytes_left) {
+	    uint k = pr->limit - pr->ptr;
+
+	    if (k > ss->row_alignment_bytes_left)
+		k = ss->row_alignment_bytes_left;
+	    pr->ptr += k;
+	    ss->row_alignment_bytes_left -= k;
+	    if (pr->ptr >= pr->limit)
+		return 0;
+	}
+	if (ss->output_component_index < ss->output_depth) {
+	    for (;ss->output_component_index < ss->output_depth;) {
+		uint fitting = (uint)(8 - ss->output_bits_buffered);
+		uint v, w, u, n, m;
+
+		if (pw->ptr >= pw->limit)
+		    return 1;
+		v = ss->output_color[ss->output_component_index];
+		n = ss->output_bits_per_sample - ss->output_component_bits_written; /* no. of bits left */
+		w = v - ((v >> n) << n); /* the current component without written bits. */
+		if (fitting > n)
+		    fitting = n; /* no. of bits to write. */
+		m = n - fitting; /* no. of bits will left. */
+		u = w >> m;  /* bits to write (near lsb). */
+		ss->output_bits_buffer |= u << (8 - ss->output_bits_buffered - fitting);
+		ss->output_bits_buffered += fitting;
+		if (ss->output_bits_buffered >= 8) {
+		    *(++pw->ptr) = ss->output_bits_buffer;
+		    ss->output_bits_buffered = 0;
+		    ss->output_bits_buffer = 0;
+		}
+		ss->output_component_bits_written += fitting;
+		if (ss->output_component_bits_written >= ss->output_bits_per_sample) {
+		    ss->output_component_index++;
+		    ss->output_component_bits_written = 0;
+		}
+	    }
+	    ss->row_bits_passed += ss->bits_per_sample * ss->depth;
+	    continue;
+	}
+	if (ss->input_bits_buffered < ss->bits_per_sample) {
+	    if (pr->ptr >= pr->limit)
+		return 0;
+	    ss->input_bits_buffer = (ss->input_bits_buffer << 8) | *++pr->ptr;
+	    ss->input_bits_buffered += 8;
+	    /* fixme: delay shifting the input ptr until input_bits_buffer is cleaned. */
+	}
+	if (ss->input_bits_buffered >= ss->bits_per_sample) {
+	    uint w;
+
+	    ss->input_bits_buffered -= ss->bits_per_sample;
+	    ss->input_color[ss->input_component_index] = w = ss->input_bits_buffer >> ss->input_bits_buffered;
+	    ss->input_bits_buffer &= ~(w << ss->input_bits_buffered);
+	    ss->input_component_index++;
+	    if (ss->input_component_index >= ss->depth) {
+		int code = ss->convert_color(ss);
+
+		if (code < 0)
+		    return ERRC;
+		ss->output_component_index = 0;
+		ss->input_component_index = 0;
+	    }
+	}
+    }
+}
+
+const stream_template s__image_colors_template = {
+    &st_stream_image_colors_state, s_image_colors_init, s_image_colors_process, 1, 1,
+    NULL, NULL
+};
 

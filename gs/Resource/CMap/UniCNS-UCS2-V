@@ -4,10 +4,10 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%IncludeResource: CMap (UniCNS-UCS2-H)
 %%BeginResource: CMap (UniCNS-UCS2-V)
-%%Title: (UniCNS-UCS2-V Adobe CNS1 0)
-%%Version: 9.001
+%%Title: (UniCNS-UCS2-V Adobe CNS1 3)
+%%Version: 12.001
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-1998 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2001 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -37,11 +37,11 @@ begincmap
 /CIDSystemInfo 3 dict dup begin
   /Registry (Adobe) def
   /Ordering (CNS1) def
-  /Supplement 0 def
+  /Supplement 3 def
 end def
 
 /CMapName /UniCNS-UCS2-V def
-/CMapVersion 9.001 def
+/CMapVersion 12.001 def
 /CMapType 1 def
 
 /XUID [1 10 25393] def
@@ -52,8 +52,8 @@ end def
 <2013> <2013> 120
 <2014> <2014> 122
 <2025> <2025> 109
-<300a> <300b> 146
 <3008> <3009> 150
+<300a> <300b> 146
 <300c> <300d> 154
 <300e> <300f> 158
 <3010> <3011> 142

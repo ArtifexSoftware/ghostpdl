@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Type 42 font creation operator */
 #include "memory_.h"
 #include "ghost.h"
@@ -24,6 +25,7 @@
 #include "idict.h"
 #include "idparam.h"
 #include "ifont42.h"
+#include "ichar1.h"
 #include "iname.h"
 #include "store.h"
 
@@ -36,6 +38,7 @@ private font_proc_enumerate_glyph(z42_gdir_enumerate_glyph);
 private font_proc_encode_char(z42_encode_char);
 private font_proc_glyph_info(z42_glyph_info);
 private font_proc_glyph_outline(z42_glyph_outline);
+private font_proc_font_info(z42_font_info);
 
 /* <string|name> <font_dict> .buildfont11/42 <string|name> <font> */
 /* Build a type 11 (TrueType CID-keyed) or 42 (TrueType) font. */
@@ -54,13 +57,13 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
     code = build_proc_name_refs(imemory, &build, bcstr, bgstr);
     if (code < 0)
 	return code;
-    check_type(imemory, *op, t_dictionary);
+    check_type(*op, t_dictionary);
     /*
      * Since build_gs_primitive_font may resize the dictionary and cause
      * pointers to become invalid, we save sfnts and GlyphDirectory.
      */
     if ((code = font_string_array_param(imemory, op, "sfnts", &sfnts)) < 0 ||
-	(code = font_GlyphDirectory_param(imemory, op, &GlyphDirectory)) < 0
+	(code = font_GlyphDirectory_param(op, &GlyphDirectory)) < 0
 	)
 	return code;
     code = build_gs_primitive_font(i_ctx_p, op, (gs_font_base **)ppfont,
@@ -77,6 +80,7 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
     code = gs_type42_font_init(pfont);
     if (code < 0)
 	return code;
+    pfont->procs.font_info = z42_font_info;
     /*
      * If the font has a GlyphDictionary, this replaces loca and glyf for
      * accessing character outlines.  In this case, we use alternate
@@ -123,7 +127,7 @@ font_string_array_param(const gs_memory_t *mem, os_ptr op, const char *kstr, ref
     int code;
 
     if (dict_find_string(op, kstr, &pvsa) <= 0)
-	return_error(mem, e_invalidfont);
+	return_error(e_invalidfont);
     *psa = *pvsa;
     /*
      * We only check the first element of the array now, as a sanity test;
@@ -132,7 +136,7 @@ font_string_array_param(const gs_memory_t *mem, os_ptr op, const char *kstr, ref
     if ((code = array_get(mem, pvsa, 0L, &rstr0)) < 0)
 	return code;
     if (!r_has_type(&rstr0, t_string))
-	return_error(mem, e_typecheck);
+	return_error(e_typecheck);
     return 0;
 }
 
@@ -141,14 +145,14 @@ font_string_array_param(const gs_memory_t *mem, os_ptr op, const char *kstr, ref
  * or an error code.
  */
 int
-font_GlyphDirectory_param(const gs_memory_t *mem, os_ptr op, ref *pGlyphDirectory)
+font_GlyphDirectory_param(os_ptr op, ref *pGlyphDirectory)
 {
     ref *pgdir;
 
     if (dict_find_string(op, "GlyphDirectory", &pgdir) <= 0)
 	make_null(pGlyphDirectory);
     else if (!r_has_type(pgdir, t_dictionary) && !r_is_array(pgdir))
-	return_error(mem, e_typecheck);
+	return_error(e_typecheck);
     else
 	*pGlyphDirectory = *pgdir;
     return 0;
@@ -169,6 +173,8 @@ string_array_access_proc(const gs_memory_t *mem,
     ulong left = offset;
     uint index = 0;
 
+    if (length == 0)
+        return 0;
     for (;; ++index) {
 	ref rstr;
 	int code = array_get(mem, psa, index, &rstr);
@@ -177,7 +183,7 @@ string_array_access_proc(const gs_memory_t *mem,
 	if (code < 0)
 	    return code;
 	if (!r_has_type(&rstr, t_string))
-	    return_error(mem, e_typecheck);
+	    return_error(e_typecheck);
 	/*
 	 * NOTE: According to the Adobe documentation, each sfnts
 	 * string should have even length.  If the length is odd,
@@ -255,7 +261,7 @@ font_gdir_get_outline(const gs_memory_t *mem,
     if (code < 0) {
 	gs_glyph_data_from_null(pgd);
     } else if (!r_has_type(pgdef, t_string)) {
-	return_error(mem, e_typecheck);
+	return_error(e_typecheck);
     } else {
 	gs_glyph_data_from_string(pgd, pgdef->value.const_bytes, r_size(pgdef),
 				  NULL);
@@ -333,17 +339,18 @@ z42_encode_char(gs_font *font, gs_char chr, gs_glyph_space_t glyph_space)
 }
 private int
 z42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
-		  gx_path *ppath)
+		  gx_path *ppath, double sbw[4])
 {
     return gs_type42_glyph_outline(font, WMode, glyph_to_index(font, glyph),
-				   pmat, ppath);
+				   pmat, ppath, sbw);
 }
 private int
 z42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	       int members, gs_glyph_info_t *info)
-{
-    return gs_type42_glyph_info(font, glyph_to_index(font, glyph),
-				pmat, members, info);
+{   /* fixme : same as z1_glyph_info. */
+    int wmode = font->WMode;
+
+    return z1_glyph_info_generic(font, glyph, pmat, members, info, gs_type42_glyph_info, wmode);
 }
 
 /* Procedure for accessing the sfnts array.
@@ -354,7 +361,18 @@ private int
 z42_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
 		const byte ** pdata)
 {
-    return string_array_access_proc(pfont->memory,
-				    &pfont_data(pfont)->u.type42.sfnts, 2,
+    return string_array_access_proc(pfont->memory, &pfont_data(pfont)->u.type42.sfnts, 2,
 				    offset, length, pdata);
 }
+
+private int
+z42_font_info(gs_font *font, const gs_point *pscale, int members,
+	   gs_font_info_t *info)
+{
+    int code = zfont_info(font, pscale, members, info);
+
+    if (code < 0)
+	return code;
+    return gs_truetype_font_info(font, pscale, members, info);
+}
+

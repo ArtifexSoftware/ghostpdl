@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /*
  * OS/2 printer device
  *
@@ -77,8 +77,8 @@ private dev_proc_put_params(os2prn_put_params);
 private dev_proc_get_params(os2prn_get_params);
 
 private void os2prn_set_bpp(gx_device * dev, int depth);
-private int os2prn_get_queue_list(OS2QL * ql);
-private void os2prn_free_queue_list(OS2QL * ql);
+private int os2prn_get_queue_list(gs_memory_t *mem, OS2QL * ql);
+private void os2prn_free_queue_list(gs_memory_t *mem, OS2QL * ql);
 int os2prn_get_printer(OS2QL * ql);
 
 private gx_device_procs os2prn_procs =
@@ -154,7 +154,7 @@ os2prn_open(gx_device * dev)
     opdev->hab = WinQueryAnchorBlock(hwndtext);
     opdev->newframe = 0;
 
-    if (os2prn_get_queue_list(&opdev->ql))
+    if (os2prn_get_queue_list(dev->memory, &opdev->ql))
 	return gs_error_limitcheck;
 
     if (opdev->queue_name[0] == '\0') {
@@ -207,7 +207,7 @@ os2prn_open(gx_device * dev)
 	errprintf("DevOpenDC for printer error 0x%x\n", eid);
 	return gs_error_limitcheck;
     }
-    os2prn_free_queue_list(&opdev->ql);
+    os2prn_free_queue_list(dev->memory, &opdev->ql);
 
     /* find out resolution of printer */
     /* this is returned in pixels/metre */
@@ -439,7 +439,7 @@ os2prn_print_page(gx_device_printer * pdev, FILE * file)
 
     yslice = 65535 / bmp_raster;
     bmp_raster_multi = bmp_raster * yslice;
-    row = (byte *) gs_malloc(bmp_raster_multi, 1, "bmp file buffer");
+    row = (byte *) gs_malloc(pdev->memory, bmp_raster_multi, 1, "bmp file buffer");
     if (row == 0)		/* can't allocate row buffer */
 	return_error(gs_error_VMerror);
 
@@ -547,7 +547,7 @@ os2prn_print_page(gx_device_printer * pdev, FILE * file)
 
   bmp_done:
     if (row)
-	gs_free((char *)row, bmp_raster_multi, 1, "bmp file buffer");
+	gs_free(pdev->memory, (char *)row, bmp_raster_multi, 1, "bmp file buffer");
 
     return code;
 }
@@ -613,7 +613,7 @@ os2prn_set_bpp(gx_device * dev, int depth)
 /* Get list of queues from SplEnumQueue */
 /* returns 0 if OK, non-zero for error */
 private int
-os2prn_get_queue_list(OS2QL * ql)
+os2prn_get_queue_list(gs_memory_t *mem, OS2QL * ql)
 {
     SPLERR splerr;
     USHORT jobCount;
@@ -633,7 +633,7 @@ os2prn_get_queue_list(OS2QL * ql)
 			  &cReturned, &cTotal,
 			  &cbNeeded, NULL);
     if (splerr == ERROR_MORE_DATA || splerr == NERR_BufTooSmall) {
-	pBuf = gs_malloc(cbNeeded, 1, "OS/2 printer device info buffer");
+	pBuf = gs_malloc(mem, cbNeeded, 1, "OS/2 printer device info buffer");
 	ql->prq = (PRQINFO3 *) pBuf;
 	if (ql->prq != (PRQINFO3 *) NULL) {
 	    ql->len = cbNeeded;
@@ -666,9 +666,9 @@ os2prn_get_queue_list(OS2QL * ql)
 
 
 private void
-os2prn_free_queue_list(OS2QL * ql)
+os2prn_free_queue_list(gs_memory_t *mem, OS2QL * ql)
 {
-    gs_free((char *)ql->prq, ql->len, 1, "os2prn queue list");
+    gs_free(mem, (char *)ql->prq, ql->len, 1, "os2prn queue list");
     ql->prq = NULL;
     ql->len = 0;
     ql->defqueue = 0;

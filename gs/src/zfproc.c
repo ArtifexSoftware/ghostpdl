@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Procedure-based filter stream support */
 #include "memory_.h"
 #include "ghost.h"
@@ -68,7 +69,7 @@ s_proc_init(ref * sop, stream ** psstrm, uint mode,
     if (sstrm == 0 || state == 0) {
 	gs_free_object(mem, state, "s_proc_init(state)");
 	/*gs_free_object(mem, sstrm, "s_proc_init(stream)"); *//* just leave it on the file list */
-	return_error(mem, e_VMerror);
+	return_error(e_VMerror);
     }
     s_std_init(sstrm, NULL, 0, procs, mode);
     sstrm->procs.process = temp->process;
@@ -153,8 +154,7 @@ sread_proc(ref * sop, stream ** psstrm, gs_ref_memory_t *imem)
 
 /* Handle an input request. */
 private int
-s_proc_read_process(const gs_memory_t *mem,
-		    stream_state * st, stream_cursor_read * ignore_pr,
+s_proc_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 		    stream_cursor_write * pw, bool last)
 {
     /* Move data from the string returned by the procedure */
@@ -183,7 +183,6 @@ s_handle_read_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
 {
     int npush = nstate + 4;
     stream *ps;
-    stream *psstdin;
 
     switch (status) {
 	case INTC:
@@ -191,7 +190,7 @@ s_handle_read_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
 	case CALLC:
 	    break;
 	default:
-	    return_error(imemory, e_ioerror);
+	    return_error(e_ioerror);
     }
     /* Find the stream whose buffer needs refilling. */
     for (ps = fptr(fop); ps->strm != 0;)
@@ -205,14 +204,6 @@ s_handle_read_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
     esp[-1] = *fop;
     r_clear_attrs(esp - 1, a_executable);
     *esp = ((stream_proc_state *) ps->state)->proc;
-
-    /* If stream is stdin, ask for callout. */
-    zget_stdin(i_ctx_p, &psstdin);
-    if (ps == psstdin) {
-	check_estack(1);
-	esp += 1;
-	make_op_estack(esp, zneedstdin);
-    }
     return o_push_estack;
 }
 /* Continue a read operation after returning from a procedure callout. */
@@ -227,8 +218,8 @@ s_proc_read_continue(i_ctx_t *i_ctx_p)
     stream *ps;
     stream_proc_state *ss;
 
-    check_file(imemory, ps, op);
-    check_read_type(imemory, *opbuf, t_string);
+    check_file(ps, op);
+    check_read_type(*opbuf, t_string);
     while ((ps->end_status = 0, ps->strm) != 0)
 	ps = ps->strm;
     ss = (stream_proc_state *) ps->state;
@@ -268,8 +259,7 @@ swrite_proc(ref * sop, stream ** psstrm, gs_ref_memory_t *imem)
 
 /* Handle an output request. */
 private int
-s_proc_write_process(const gs_memory_t *mem,
-		     stream_state * st, stream_cursor_read * pr,
+s_proc_write_process(stream_state * st, stream_cursor_read * pr,
 		     stream_cursor_write * ignore_pw, bool last)
 {
     /* Move data from the stream buffer to the string */
@@ -277,7 +267,8 @@ s_proc_write_process(const gs_memory_t *mem,
     stream_proc_state *const ss = (stream_proc_state *) st;
     uint rcount = pr->limit - pr->ptr;
 
-    if (rcount > 0) {
+    /* if 'last' return CALLC even when rcount == 0. ss->eof terminates */
+    if (rcount > 0 || (last && !ss->eof)) {
 	uint wcount = r_size(&ss->data) - ss->index;
 	uint count = min(rcount, wcount);
 
@@ -313,8 +304,6 @@ s_handle_write_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
 			 const ref * pstate, int nstate, op_proc_t cont)
 {
     stream *ps;
-    stream *psstderr;
-    stream *psstdout;
     stream_proc_state *psst;
 
     switch (status) {
@@ -323,7 +312,7 @@ s_handle_write_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
 	case CALLC:
 	    break;
 	default:
-	    return_error(imemory, e_ioerror);
+	    return_error(e_ioerror);
     }
     /* Find the stream whose buffer needs emptying. */
     for (ps = fptr(fop); ps->strm != 0;)
@@ -345,15 +334,6 @@ s_handle_write_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
     esp[-2] = psst->proc;
     *esp = psst->data;
     r_set_size(esp, psst->index);
-
-    /* If stream is stdout/err, ask for callout. */
-    zget_stdout(i_ctx_p, &psstdout);
-    zget_stderr(i_ctx_p, &psstderr);
-    if ((ps == psstderr) || (ps == psstdout)) {
-	check_estack(1);
-	esp += 1;
-	make_op_estack(esp, (ps == psstderr) ? zneedstderr : zneedstdout);
-    }
     return o_push_estack;
 }
 /* Continue a write operation after returning from a procedure callout. */
@@ -368,8 +348,8 @@ s_proc_write_continue(i_ctx_t *i_ctx_p)
     stream *ps;
     stream_proc_state *ss;
 
-    check_file(imemory, ps, op);
-    check_write_type(imemory, *opbuf, t_string);
+    check_file(ps, op);
+    check_write_type(*opbuf, t_string);
     while (ps->strm != 0) {
 	if (ps->end_status == CALLC)
 	    ps->end_status = 0;

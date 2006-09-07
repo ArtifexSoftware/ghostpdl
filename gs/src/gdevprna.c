@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generic asynchronous printer driver support */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */
@@ -145,7 +146,7 @@ gdev_prn_async_write_open(gx_device_printer * pwdev, int max_raster,
 	/* Allocate the page queue, then initialize it */
 	/* Use bandlist memory since it's shared between rdr & wtr */
 	if ((pwdev->page_queue = gx_page_queue_alloc(pwdev->bandlist_memory)) == 0)
-	    code = gs_note_error(pdev->memory, gs_error_VMerror);
+	    code = gs_note_error(gs_error_VMerror);
 	else
 	    /* Allocate from clist allocator since it is thread-safe */
 	    code = gx_page_queue_init(pwdev->page_queue, pwdev->bandlist_memory);
@@ -170,7 +171,7 @@ gdev_prn_async_write_open(gx_device_printer * pwdev, int max_raster,
 
 	/* Start renderer thread & wait for its successful open of device */
 	if (!(open_semaphore = gx_semaphore_alloc(prdev->memory)))
-	    code = gs_note_error(pwdev->memory, gs_error_VMerror);
+	    code = gs_note_error(gs_error_VMerror);
 	else {
 	    gdev_prn_start_render_params thread_params;
 
@@ -180,7 +181,7 @@ gdev_prn_async_write_open(gx_device_printer * pwdev, int max_raster,
 	    code = (*pwdev->printer_procs.start_render_thread)
 		(&thread_params);
 	    if (code >= 0)
-		gx_semaphore_wait(pwdev->memory, open_semaphore);
+		gx_semaphore_wait(open_semaphore);
 	    code = thread_params.open_code;
 	    gx_semaphore_free(open_semaphore);
 	}
@@ -358,10 +359,10 @@ gdev_prn_async_render_thread(
 	  ((gx_device_clist *) pwdev)->writer.page_tile_cache_size !=
 	    ((gx_device_clist *) prdev)->writer.page_tile_cache_size) {
 	gdev_prn_async_render_close_device(prdev);
-	code = gs_note_error(prdev->memory, gs_error_VMerror);
+	code = gs_note_error(gs_error_VMerror);
     }
     params->open_code = code;
-    gx_semaphore_signal(prdev->memory, params->open_semaphore);
+    gx_semaphore_signal(params->open_semaphore);
     if (code < 0)
 	return code;
 
@@ -713,7 +714,7 @@ alloc_bandlist_memory(gs_memory_t ** final_allocator,
 #else
     data_allocator = (gs_memory_t *)gs_malloc_memory_init();
     if (!data_allocator)
-	return_error(base_allocator, gs_error_VMerror);
+	return_error(gs_error_VMerror);
 #endif
     locked_allocator = (gs_memory_locked_t *)
 	gs_alloc_bytes_immovable(data_allocator, sizeof(gs_memory_locked_t),
@@ -731,7 +732,7 @@ alloc_err:
     else if (data_allocator)
 	gs_memory_free_all(data_allocator, FREE_ALL_EVERYTHING,
 			   "alloc_bandlist_memory(data allocator)");
-    return (code < 0 ? code : gs_note_error(data_allocator, gs_error_VMerror));
+    return (code < 0 ? code : gs_note_error(gs_error_VMerror));
 }
 
 /* Free a bandlist allocator. */
@@ -760,7 +761,7 @@ alloc_render_memory(gs_memory_t **final_allocator,
     int i, code;
 
     if (rmem == 0)
-	return_error(base_allocator, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     code = ialloc_add_chunk(rmem, space, "alloc_render_memory");
     if (code < 0) {
 	gs_memory_free_all((gs_memory_t *)rmem, FREE_ALL_EVERYTHING,

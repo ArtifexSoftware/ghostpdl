@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generic allocator support */
 #include "memory_.h"
 #include "gdebug.h"
@@ -103,7 +104,7 @@ gs_resize_struct_array(gs_memory_t *mem, void *obj, uint num_elements,
 	return gs_alloc_struct_array(mem, num_elements, void, pstype, cname);
 #ifdef DEBUG
     if (gs_object_type(mem, obj) != pstype) {
-	lprintf3(mem, "resize_struct_array 0x%lx, type was 0x%lx, expected 0x%lx!\n",
+	lprintf3("resize_struct_array 0x%lx, type was 0x%lx, expected 0x%lx!\n",
 		 (ulong)obj, (ulong)gs_object_type(mem, obj), (ulong)pstype);
 	return 0;
     }
@@ -124,7 +125,6 @@ gs_raw_alloc_struct_immovable(gs_memory_t * rmem,
 {
     return gs_alloc_bytes_immovable(rmem, gs_struct_type_size(pstype), cname);
 }
-
 
 /* No-op freeing procedures */
 void
@@ -250,27 +250,27 @@ rc_object_type_name(const void *vp, const rc_header *prc)
 void
 rc_trace_init_free(const void *vp, const rc_header *prc)
 {
-    dprintf3(prc->memory, "[^]%s 0x%lx init = %ld\n",
+    dprintf3("[^]%s 0x%lx init = %ld\n",
 	     rc_object_type_name(vp, prc), (ulong)vp, (long)prc->ref_count);
 }
 void
 rc_trace_free_struct(const void *vp, const rc_header *prc, client_name_t cname)
 {
-    dprintf3(prc->memory, "[^]%s 0x%lx => free (%s)\n",
+    dprintf3("[^]%s 0x%lx => free (%s)\n",
 	      rc_object_type_name(vp, prc),
 	      (ulong)vp, client_name_string(cname));
 }
 void
 rc_trace_increment(const void *vp, const rc_header *prc)
 {
-    dprintf3(prc->memory, "[^]%s 0x%lx ++ => %ld\n",
+    dprintf3("[^]%s 0x%lx ++ => %ld\n",
 	      rc_object_type_name(vp, prc),
 	      (ulong)vp, (long)prc->ref_count);
 }
 void
 rc_trace_adjust(const void *vp, const rc_header *prc, int delta)
 {
-    dprintf4(prc->memory, "[^]%s 0x%lx %+d => %ld\n",
+    dprintf4("[^]%s 0x%lx %+d => %ld\n",
 	     rc_object_type_name(vp, prc),
 	     (ulong)vp, delta, (long)(prc->ref_count + delta));
 }
@@ -285,10 +285,7 @@ rc_free_struct_only(gs_memory_t * mem, void *data, client_name_t cname)
 	gs_free_object(mem, data, cname);
 }
 
-
 /* ---------------- Basic-structure GC procedures ---------------- */
-
-extern const gs_memory_t * gcst_get_const_memory_t_ptr(gc_state_t *gcst);
 
 /* Enumerate pointers */
 ENUM_PTRS_BEGIN_PROC(basic_enum_ptrs)
@@ -299,9 +296,8 @@ ENUM_PTRS_BEGIN_PROC(basic_enum_ptrs)
     /* with number of elements 0 and allocation not passing 'element' */
     if (size == 0) {
 #ifdef DEBUG
-	dprintf2(mem, 
-		 "  basic_enum_ptrs: Attempt to enum 0 size structure at 0x%lx, type: %s\n",
-		 (unsigned long) vptr, pstype->sname);
+	dprintf2("  basic_enum_ptrs: Attempt to enum 0 size structure at 0x%lx, type: %s\n",
+		 (ulong)vptr, pstype->sname);
 #endif
 	return 0;
     }
@@ -312,9 +308,8 @@ ENUM_PTRS_BEGIN_PROC(basic_enum_ptrs)
 #ifdef DEBUG
 	/* some extra checking to make sure we aren't out of bounds */
 	if (ppe->offset > size - sizeof(void *)) {
-	    dprintf4(mem, 
-		     "  basic_enum_ptrs: Attempt to enum ptr with offset=%d beyond size=%d: structure at 0x%lx, type: %s\n",
-		     ppe->offset, size, (unsigned long)vptr, pstype->sname);
+	    dprintf4("  basic_enum_ptrs: Attempt to enum ptr with offset=%d beyond size=%d: structure at 0x%lx, type: %s\n",
+		     ppe->offset, size, (ulong)vptr, pstype->sname);
 	    return 0;
 	}
 #endif
@@ -363,4 +358,3 @@ RELOC_PTRS_BEGIN(basic_reloc_ptrs)
 		      (void *)((char *)vptr + psd->super_offset),
 		      pstype->ssize);
 } RELOC_PTRS_END
-

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Transparency parameter definitions */
 
 #ifndef gstparam_INCLUDED
@@ -71,11 +72,17 @@ typedef struct gs_transparency_mask_s {
 #  define gs_color_space_DEFINED
 typedef struct gs_color_space_s gs_color_space;
 #endif
+#ifndef gs_function_DEFINED
+typedef struct gs_function_s gs_function_t;
+#  define gs_function_DEFINED
+#endif
+
 /* (Update gs_trans_group_params_init if these change.) */
 typedef struct gs_transparency_group_params_s {
     const gs_color_space *ColorSpace;
     bool Isolated;
     bool Knockout;
+    bool image_with_SMask;
 } gs_transparency_group_params_t;
 
 /* Define the parameter structure for a transparency mask. */
@@ -83,16 +90,32 @@ typedef enum {
     TRANSPARENCY_MASK_Alpha,
     TRANSPARENCY_MASK_Luminosity
 } gs_transparency_mask_subtype_t;
+
 #define GS_TRANSPARENCY_MASK_SUBTYPE_NAMES\
   "Alpha", "Luminosity"
+
+/* See the gx_transparency_mask_params_t type below */
 /* (Update gs_trans_mask_params_init if these change.) */
 typedef struct gs_transparency_mask_params_s {
     gs_transparency_mask_subtype_t subtype;
-    bool has_Background;
+    int Background_components;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    int (*TransferFunction)(const gs_memory_t *mem, floatp in, float *out, void *proc_data);
-    void *TransferFunction_data;
+    float GrayBackground;
+    int (*TransferFunction)(floatp in, float *out, void *proc_data);
+    gs_function_t *TransferFunction_data;
 } gs_transparency_mask_params_t;
+
+#define MASK_TRANSFER_FUNCTION_SIZE 256
+
+/* The post clist version of transparency mask parameters */
+typedef struct gx_transparency_mask_params_s {
+    gs_transparency_mask_subtype_t subtype;
+    int Background_components;
+    float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    float GrayBackground;
+    bool function_is_identity;
+    byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
+} gx_transparency_mask_params_t;
 
 /* Select the opacity or shape parameters. */
 typedef enum {

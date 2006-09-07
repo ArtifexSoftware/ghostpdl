@@ -31,9 +31,13 @@
 #include "plvalue.h"
 
 /* agfa stuff */
+#undef true
+#undef false
+#undef frac_bits
 #include "cgconfig.h"     /* this must be first  */
 #include "ufstport.h"         /* this must be second */
 #include "shareinc.h"
+#include "strmio.h"
 
 /* Structure descriptors */
 private_st_pl_font();
@@ -97,7 +101,7 @@ extern gs_char last_char;
 private gs_char
 pl_decode_glyph(gs_font *font,  gs_glyph glyph)
 {	
-    dprintf(font->memory, "Pdfwrite is not supported with AGFA UFST!\n");
+    dprintf("Pdfwrite is not supported with AGFA UFST!\n");
     // NB glyph is unicode for builtin fonts 
     // this fails for downloaded fonts where there is often 
     // no association other than sequential numbering 
@@ -396,7 +400,7 @@ pl_font_scan_segments(const gs_memory_t *mem,
 	ulong seg_size;
 	int illegal_font_data = pfoe->illegal_font_data;
 #define return_scan_error(err)\
-  return_error(mem, (err) ? (err) : illegal_font_data);
+  return_error((err) ? (err) : illegal_font_data);
 
 	if ( memcmp(null_segment, "\377\377", 2) /* NULL segment header */ )
 	  return_scan_error(pfoe->missing_required_segment);
@@ -420,19 +424,19 @@ pl_font_scan_segments(const gs_memory_t *mem,
 
 	      seg_size = (large_sizes ? u32(segment + 2) : u16(segment + 2));
 	      if ( seg_size + 2 + wsize > end - segment )
-		  return_error(mem, illegal_font_data);
+		  return_error(illegal_font_data);
 	      /* Handle segments common to all fonts. */
 	      switch ( seg_id )
 		{
 		case 0xffff:		/* NULL segment ID */
 		  if ( segment != null_segment )
-		      return_error(mem, illegal_font_data);
+		      return_error(illegal_font_data);
 		  continue;
 		case id2('V','I'):
 		  continue;
 		case id2('C', 'C'):
 		  if ( seg_size != 8 )
-		      return_error(mem, illegal_font_data);
+		      return_error(illegal_font_data);
 		  memcpy(plfont->character_complement, sdata, 8);
 		  continue;
 		default:
@@ -456,7 +460,7 @@ pl_font_scan_segments(const gs_memory_t *mem,
 		    break;
 		  default:
 		    if ( pfoe->illegal_font_segment < 0 )
-			return_error(mem, pfoe->illegal_font_segment);
+			return_error(pfoe->illegal_font_segment);
 		  }
 	      else		/* fst == plfst_TrueType */
 		switch ( seg_id )
@@ -499,14 +503,14 @@ pl_font_scan_segments(const gs_memory_t *mem,
 		    break;
 		  default:
 		    if ( pfoe->illegal_font_segment < 0 )
-			return_error(mem, pfoe->illegal_font_segment);
+			return_error(pfoe->illegal_font_segment);
 		  }
 #undef id2
 	    }
 	  if ( !found )
 	    return_scan_error(pfoe->missing_required_segment);
 	  if ( segment != end )
-	      return_error(mem, illegal_font_data);
+	      return_error(illegal_font_data);
 	  plfont->large_sizes = large_sizes;
 	  plfont->scaling_technology = fst;
 	  return 0;
@@ -521,9 +525,9 @@ pl_free_tt_fontfile_buffer(gs_memory_t *mem, byte *ptt_font_data)
 }
 
 int 
-pl_alloc_tt_fontfile_buffer(FILE *in, gs_memory_t *mem, byte **pptt_font_data, ulong *size)
+pl_alloc_tt_fontfile_buffer(stream *in, gs_memory_t *mem, byte **pptt_font_data, ulong *size)
 {
-    ulong len = (fseek(in, 0L, SEEK_END), ftell(in));
+    ulong len = (sfseek(in, 0L, SEEK_END), sftell(in));
     *size = 6 + len;	/* leave room for segment header */
     if ( *size != (uint)(*size) ) { 
 	/*
@@ -531,17 +535,17 @@ pl_alloc_tt_fontfile_buffer(FILE *in, gs_memory_t *mem, byte **pptt_font_data, u
 	 * The error message is bogus, but there isn't any more
 	 * appropriate one.
 	 */
-	fclose(in);
-	return_error(mem, gs_error_VMerror);
+	sfclose(in);
+	return_error(gs_error_VMerror);
     }
-    rewind(in);
+    srewind(in);
     *pptt_font_data = gs_alloc_bytes(mem, *size, "pl_tt_load_font data");
     if ( *pptt_font_data == 0 ) {
-	fclose(in);
-	return_error(mem, gs_error_VMerror);
+	sfclose(in);
+	return_error(gs_error_VMerror);
     }
-    fread(*pptt_font_data + 6, 1, len, in);
-    fclose(in);
+    sfread(*pptt_font_data + 6, 1, len, in);
+    sfclose(in);
     return 0;
 }
 
@@ -574,7 +578,7 @@ pl_load_mt_font(SW16 handle, gs_font_dir *pdir, gs_memory_t *mem,
           int code;
 
 	  if ( pfont == 0 || plfont == 0 )
-	    code = gs_note_error(mem, gs_error_VMerror);
+	    code = gs_note_error(gs_error_VMerror);
           else
           {   /* Initialize general font boilerplate. */
               code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem, "illegal font");

@@ -88,11 +88,11 @@ met_playback(met_state_t *ms)
             break;
 
         case met_action:
-            if (gs_debug_c('i')) dprintf2(ms->memory, "%d:opening %s\n", node->depth, node->element);
+            if (gs_debug_c('i')) dprintf2("%d:opening %s\n", node->depth, node->element);
             code = (*procs->action)(data->cooked_data, ms);
             break;
         case met_done:
-            if (gs_debug_c('i')) dprintf2(ms->memory, "%d:closing %s\n", node->depth, node->element);
+            if (gs_debug_c('i')) dprintf2("%d:closing %s\n", node->depth, node->element);
             code = (*procs->done)(data->cooked_data, ms);
             break;
         default:

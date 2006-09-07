@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Adobe Type 1 charstring interpreter */
 #include "math_.h"
 #include "memory_.h"
@@ -124,14 +125,14 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    /* This is a number, decode it and push it on the stack. */
 
 	    if (c < c_pos2_0) {	/* 1-byte number */
-		decode_push_num1(pfont->memory, csp, cstack, c);
+		decode_push_num1(csp, cstack, c);
 	    } else if (c < cx_num4) {	/* 2-byte number */
-		decode_push_num2(pfont->memory, csp, cstack, c, cip, state, encrypted);
+		decode_push_num2(csp, cstack, c, cip, state, encrypted);
 	    } else if (c == cx_num4) {	/* 4-byte number */
 		long lw;
 
 		decode_num4(lw, cip, state, encrypted);
-		CS_CHECK_PUSH(pfont->memory, csp, cstack);
+		CS_CHECK_PUSH(csp, cstack);
 		*++csp = int2fixed(lw);
 		if (lw != fixed2long(*csp)) {
 		    /*
@@ -143,7 +144,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    c0 = *cip++;
 		    charstring_next(c0, state, c, encrypted);
 		    if (c < c_num1)
-			return_error(pfont->memory, gs_error_rangecheck);
+			return_error(gs_error_rangecheck);
 		    if (c < c_pos2_0)
 			decode_num1(denom, c);
 		    else if (c < cx_num4)
@@ -151,20 +152,20 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    else if (c == cx_num4)
 			decode_num4(denom, cip, state, encrypted);
 		    else
-			return_error(pfont->memory, gs_error_invalidfont);
+			return_error(gs_error_invalidfont);
 		    c0 = *cip++;
 		    charstring_next(c0, state, c, encrypted);
 		    if (c != cx_escape)
-			return_error(pfont->memory, gs_error_rangecheck);
+			return_error(gs_error_rangecheck);
 		    c0 = *cip++;
 		    charstring_next(c0, state, c, encrypted);
 		    if (c != ce1_div)
-			return_error(pfont->memory, gs_error_rangecheck);
+			return_error(gs_error_rangecheck);
 		    *csp = float2fixed((double)lw / denom);
 		}
 	    } else		/* not possible */
-		return_error(pfont->memory, gs_error_invalidfont);
-	  pushed:if_debug3(pfont->memory, '1', "[1]%d: (%d) %f\n",
+		return_error(gs_error_invalidfont);
+	  pushed:if_debug3('1', "[1]%d: (%d) %f\n",
 		      (int)(csp - cstack), c, fixed2float(*csp));
 	    continue;
 	}
@@ -174,9 +175,9 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    {char1_command_names};
 
 	    if (c1names[c] == 0)
-		dlprintf2(pfont->memory, "[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+		dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
 	    else
-		dlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+		dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
 			  c1names[c]);
 	}
 #endif
@@ -190,13 +191,13 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    case c_undef0:
 	    case c_undef2:
 	    case c_undef17:
-		return_error(pfont->memory, gs_error_invalidfont);
+		return_error(gs_error_invalidfont);
 	    case c_callsubr:
 		c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
 		code = pdata->procs.subr_data
 		    (pfont, c, false, &ipsp[1].cs_data);
 		if (code < 0)
-		    return_error(pfont->memory, code);
+		    return_error(code);
 		--csp;
 		ipsp->ip = cip, ipsp->dstate = state;
 		++ipsp;
@@ -246,11 +247,15 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 code = t1_hinter__rcurveto(h, cs0, cs1, cs2, cs3, cs4, cs5);
 		goto cc;
 	    case cx_endchar:
-                code = t1_hinter__endchar(h, (pcis->seac_accent >= 0));
-		if (code < 0)
-		    return code;
-                if (pcis->seac_accent < 0)
+                if (pcis->seac_accent < 0) {
                     code = t1_hinter__endglyph(h);
+		    if (code < 0)
+			return code;
+		    code = gx_setcurrentpoint_from_path(pcis->pis, pcis->path);
+		    if (code < 0)
+			return code;
+		} else
+		    pcis->seac_flag = true;
 		code = gs_type1_endchar(pcis);
 		if (code == 1) {
 		    /* do accent of seac */
@@ -278,9 +283,21 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 code = t1_hinter__closepath(h);
 		goto cc;
 	    case c1_hsbw:
-                if (!h->seac_flag)
-                    code = t1_hinter__sbw(h, cs0, fixed_0, cs1, fixed_0);
-                else
+                if (!pcis->seac_flag) {
+		    fixed sbx = cs0, sby = fixed_0, wx = cs1, wy = fixed_0;
+
+		    if (pcis->seac_accent < 0) {
+			if (pcis->sb_set) {
+			    sbx = pcis->lsb.x;
+			    sby = pcis->lsb.y;
+			}
+			if (pcis->width_set) {
+			    wx = pcis->width.x;
+			    wy = pcis->width.y;
+			}
+		    }
+		    code = t1_hinter__sbw(h, sbx, sby, wx, wy);
+                } else
                     code = t1_hinter__sbw_seac(h, pcis->adxy.x, pcis->adxy.y);
 		if (code < 0)
 		    return code;
@@ -329,9 +346,9 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 		    {char1_extended_command_names};
 
 		    if (ce1names[c] == 0)
-			dlprintf2(pfont->memory, "[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+			dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
 		    else
-			dlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+			dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
 				  ce1names[c]);
 		}
 #endif
@@ -362,7 +379,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			cip = ipsp->cs_data.bits.data;
 			goto call;
 		    case ce1_sbw:
-                        if (!h->seac_flag)
+                        if (!pcis->seac_flag)
                             code = t1_hinter__sbw(h, cs0, cs1, cs2, cs3);
                         else
                             code = t1_hinter__sbw_seac(h, cs0 + pcis->adxy.x , cs1 + pcis->adxy.y);
@@ -410,7 +427,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 				    inext;
 				case 2:
 				    if (pcis->flex_count >= flex_max)
-					return_error(pfont->memory, gs_error_invalidfont);
+					return_error(gs_error_invalidfont);
 				    code = t1_hinter__flex_point(h);
 				    if (code < 0)
 					return code;
@@ -433,7 +450,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 				case 14:
 				    num_results = 1;
 				  blend:
-				    code = gs_type1_blend(pfont->memory, pcis, csp,
+				    code = gs_type1_blend(pcis, csp,
 							  num_results);
 				    if (code < 0)
 					return code;
@@ -463,12 +480,12 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    if (scount < 1 || csp[-1] < 0 ||
 				csp[-1] > int2fixed(scount - 1)
 				)
-				return_error(pfont->memory, gs_error_invalidfont);
+				return_error(gs_error_invalidfont);
 			    n = fixed2int_var(csp[-1]);
 			    code = (*pdata->procs.push_values)
 				(pcis->callback_data, csp - (n + 1), n);
 			    if (code < 0)
-				return_error(pfont->memory, code);
+				return_error(code);
 			    scount -= n + 1;
 			    /* Exit to caller */
 			    ipsp->ip = cip, ipsp->dstate = state;
@@ -485,20 +502,20 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    pcis->ignore_pops--;
 			    inext;
 			}
-			CS_CHECK_PUSH(pfont->memory, csp, cstack);
+			CS_CHECK_PUSH(csp, cstack);
 			++csp;
 			code = (*pdata->procs.pop_value)
 			    (pcis->callback_data, csp);
 			if (code < 0)
-			    return_error(pfont->memory, code);
+			    return_error(code);
 			goto pushed;
 		    case ce1_setcurrentpoint:
-			t1_hinter__setcurrentpoint(h, cs0, cs1);
 			cs0 += pcis->adxy.x;
 			cs1 += pcis->adxy.y;
+			t1_hinter__setcurrentpoint(h, cs0, cs1);
 			cnext;
 		    default:
-			return_error(pfont->memory, gs_error_invalidfont);
+			return_error(gs_error_invalidfont);
 		}
 		/*NOTREACHED */
 
@@ -506,7 +523,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 
 	      case_c1_undefs:
 	    default:		/* pacify compiler */
-		return_error(pfont->memory, gs_error_invalidfont);
+		return_error(gs_error_invalidfont);
 	}
     }
 }

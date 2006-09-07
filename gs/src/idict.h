@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Interfaces for Ghostscript dictionary package */
 
 #ifndef idict_INCLUDED
@@ -71,8 +72,8 @@ int dict_alloc(gs_ref_memory_t *, uint maxlength, ref * pdref);
  * Check a dictionary for read or write permission.
  * Note: this does NOT check the type of its operand!
  */
-#define check_dict_read(mem, dref) check_read(mem, *dict_access_ref(&dref))
-#define check_dict_write(mem, dref) check_write(mem, *dict_access_ref(&dref))
+#define check_dict_read(dref) check_read(*dict_access_ref(&dref))
+#define check_dict_write(dref) check_write(*dict_access_ref(&dref))
 
 /*
  * Look up a key in a dictionary.  Store a pointer to the value slot
@@ -93,8 +94,6 @@ int dict_find(const ref * pdref, const ref * key, ref ** ppvalue);
  * Return 1 if found, <= 0 if not.
  */
 int dict_find_string(const ref * pdref, const char *kstr, ref ** ppvalue);
-int dict_find_string_mem(const gs_memory_t *mem,
-			 const ref * pdref, const char *kstr, ref ** ppvalue);
 
 /*
  * Enter a key-value pair in a dictionary.
@@ -125,7 +124,8 @@ int dict_put_string(ref * pdref, const char *kstr, const ref * pvalue,
 
 /*
  * Remove a key-value pair from a dictionary.
- * Return 0 or e_undefined.
+ * Return any of the same values as dict_put, except for 0 and e_dictfull
+ * which are converted to e_undefined.
  */
 int dict_undef(ref * pdref, const ref * key, dict_stack_t *pds);
 

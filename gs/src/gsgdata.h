@@ -1,10 +1,15 @@
-/* Copyright (C) 2001 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Interface for glyph data access */
@@ -54,6 +59,7 @@ struct gs_glyph_data_s {
     gs_const_bytestring bits;	/* pointer to actual data returned here */
     const gs_glyph_data_procs_t *procs;
     void *proc_data;
+    gs_memory_t *memory;	/* allocator to use (may be different than font) */
 };
 extern_st(st_glyph_data);
 #define ST_GLYPH_DATA_NUM_PTRS 2
@@ -67,7 +73,7 @@ struct gs_glyph_data_procs_s {
   void proc(gs_glyph_data_t *pgd, client_name_t cname)
     GS_PROC_GLYPH_DATA_FREE((*free));
 #define GS_PROC_GLYPH_DATA_SUBSTRING(proc)\
-  int proc(const gs_memory_t *mem, gs_glyph_data_t *pgd, uint offset, uint size)
+  int proc(gs_glyph_data_t *pgd, uint offset, uint size)
     GS_PROC_GLYPH_DATA_SUBSTRING((*substring));
 };
 
@@ -75,8 +81,7 @@ struct gs_glyph_data_procs_s {
  * Replace glyph data by a substring.  If the data were allocated by
  * get_outline et al, this frees the part of the data outside the substring.
  */
-int gs_glyph_data_substring(const gs_memory_t *mem,
-			    gs_glyph_data_t *pgd, uint offset, uint size);
+int gs_glyph_data_substring(gs_glyph_data_t *pgd, uint offset, uint size);
 
 /*
  * Free the data for a glyph if they were allocated by get_outline et al.

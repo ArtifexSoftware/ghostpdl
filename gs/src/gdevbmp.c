@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* .BMP file format output drivers */
 #include "gdevprn.h"
 #include "gdevpccm.h"
@@ -86,7 +86,7 @@ const gx_device_printer gs_bmp16_device = {
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
-	   3, 4, 3, 2, 4, 3, bmp_print_page)
+	   3, 4, 1, 1, 2, 2, bmp_print_page)
 };
 
 /* 8-bit (SuperVGA-style) color. */
@@ -100,7 +100,7 @@ const gx_device_printer gs_bmp256_device = {
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
-	   3, 8, 6, 6, 7, 7, bmp_print_page)
+	   3, 8, 5, 5, 6, 6, bmp_print_page)
 };
 
 /* 24-bit color. */
@@ -142,7 +142,8 @@ bmp_print_page(gx_device_printer * pdev, FILE * file)
     int code;		/* return code */
 
     if (row == 0)		/* can't allocate row buffer */
-	return_error(pdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
+    memset(row+raster, 0, bmp_raster - raster); /* clear the padding bytes */
 
     /* Write the file header. */
 
@@ -170,7 +171,7 @@ private int
 bmp_cmyk_print_page(gx_device_printer * pdev, FILE * file)
 {
     int plane_depth = pdev->color_info.depth / 4;
-    uint raster = bitmap_raster(pdev->width * plane_depth);
+    uint raster = (pdev->width * plane_depth + 7) >> 3;
     /* BMP scan lines are padded to 32 bits. */
     uint bmp_raster = raster + (-(int)raster & 3);
     byte *row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
@@ -179,14 +180,15 @@ bmp_cmyk_print_page(gx_device_printer * pdev, FILE * file)
     int plane;
 
     if (row == 0)		/* can't allocate row buffer */
-	return_error(pdev->memory, gs_error_VMerror);
-
+	return_error(gs_error_VMerror);
+    memset(row+raster, 0, bmp_raster - raster); /* clear the padding bytes */
+    
     for (plane = 0; plane <= 3; ++plane) {
 	gx_render_plane_t render_plane;
 
 	/* Write the page header. */
 
-	code = write_bmp_separated_header(pdev, file);
+    	code = write_bmp_separated_header(pdev, file);
 	if (code < 0)
 	    break;
 

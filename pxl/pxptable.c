@@ -44,83 +44,83 @@
 #define none {0}
 #define none5 none, none, none, none, none
 
-#define ok_iff(mem, test)\
-  ((test) ? 0 : gs_note_error(mem, errorIllegalAttributeValue))
+#define ok_iff(test)\
+  ((test) ? 0 : gs_note_error(errorIllegalAttributeValue))
 
 private int
-checkCharAngle(const gs_memory_t *mem, const px_value_t *pv)
+checkCharAngle(const px_value_t *pv)
 {       real v = real_value(pv, 0);
-        return ok_iff(mem, v >= -360 && v <= 360);
+        return ok_iff(v >= -360 && v <= 360);
 }
 private int
-checkCharBoldValue(const gs_memory_t *mem, const px_value_t *pv)
-{       return ok_iff(mem, pv->value.r >= 0 && pv->value.r <= 1);
+checkCharBoldValue(const px_value_t *pv)
+{       return ok_iff(pv->value.r >= 0 && pv->value.r <= 1);
 }
 private int
-checkCharScale(const gs_memory_t *mem, const px_value_t *pv)
+checkCharScale(const px_value_t *pv)
 {       real x = real_value(pv, 0), y = real_value(pv, 1);
-        return ok_iff(mem, x >= -32768 && x <= 32767 && y >= -32768 && y <= 32767);
+        return ok_iff(x >= -32768 && x <= 32767 && y >= -32768 && y <= 32767);
 }
 #define checkCharShear checkCharScale
 private int
-checkDestinationSize(const gs_memory_t *mem, const px_value_t *pv)
-{       return ok_iff(mem, pv->value.ia[0] != 0 && pv->value.ia[1] != 0);
+checkDestinationSize(const px_value_t *pv)
+{       return ok_iff(pv->value.ia[0] != 0 && pv->value.ia[1] != 0);
 }
 private int
-checkDitherMatrixDataType(const gs_memory_t *mem, const px_value_t *pv)
-{       return ok_iff(mem, pv->value.i == eUByte);
+checkDitherMatrixDataType(const px_value_t *pv)
+{       return ok_iff(pv->value.i == eUByte);
 }
 private int
-checkDitherMatrixDepth(const gs_memory_t *mem, const px_value_t *pv)
-{       return ok_iff(mem, pv->value.i == e8Bit);
+checkDitherMatrixDepth(const px_value_t *pv)
+{       return ok_iff(pv->value.i == e8Bit);
 }
 private int
-checkDitherMatrixSize(const gs_memory_t *mem, const px_value_t *pv)
-{       return ok_iff(mem, pv->value.i >= 1 && pv->value.i <= 256);
+checkDitherMatrixSize(const px_value_t *pv)
+{       return ok_iff(pv->value.i >= 1 && pv->value.i <= 256);
 }
 private int
-checkGrayLevel(const gs_memory_t *mem, const px_value_t *pv)
-{       return ok_iff(mem, pv->type & pxd_any_real ?
+checkGrayLevel(const px_value_t *pv)
+{       return ok_iff(pv->type & pxd_any_real ?
                       pv->value.r >= 0 && pv->value.r <= 1 :
                       true);
 }
 
 private int
-checkPageAngle(const gs_memory_t *mem, const px_value_t *pv)
+checkPageAngle(const px_value_t *pv)
 {       
     /* XL 1.0 generates an error for non-orthogonal page angles */
     return 0;
 }
 
 private int
-checkPageScale(const gs_memory_t *mem, const px_value_t *pv)
+checkPageScale(const px_value_t *pv)
 {       real x = real_value(pv, 0), y = real_value(pv, 1);
-        return ok_iff(mem, x >= 0 && x <= 32767 && y >= 0 && y <= 32767);
+        return ok_iff(x >= 0 && x <= 32767 && y >= 0 && y <= 32767);
 }
 private int
-checkRGBColor(const gs_memory_t *mem, const px_value_t *pv)
+checkRGBColor(const px_value_t *pv)
 {       if ( pv->value.array.size != 3 )
-          return_error(mem, errorIllegalArraySize);
+          return_error(errorIllegalArraySize);
         if ( pv->type & pxd_any_real )
           { /* Check for values between 0 and 1. */
             uint i;
             for ( i = 0; i < pv->value.array.size; ++i )
               { real v = real_elt(pv, i);
                 if ( v < 0.0 || v > 1.0 )
-                  return_error(mem, errorIllegalAttributeValue);
+                  return_error(errorIllegalAttributeValue);
               }
           }
         return 0;
 }
 private int
-checkSourceHeight(const gs_memory_t *mem, const px_value_t *pv)
-{       return ok_iff(mem, pv->value.i >= 1);
+checkSourceHeight(const px_value_t *pv)
+{       return ok_iff(pv->value.i >= 1);
 }
 #define checkSourceWidth checkSourceHeight
 private int
-checkUnitsPerMeasure(const gs_memory_t *mem, const px_value_t *pv)
+checkUnitsPerMeasure(const px_value_t *pv)
 {       real x = real_value(pv, 0), y = real_value(pv, 1);
-        return ok_iff(mem, x > 0 && x <= 65535 && y > 0 && y <= 65535);
+        return ok_iff(x > 0 && x <= 65535 && y > 0 && y <= 65535);
 }
 #undef ok_iff
 
@@ -505,7 +505,7 @@ const char *px_operator_names[0x80] = {
 private const byte apxBadOperator[] = {0, 0};
 private int
 pxBadOperator(px_args_t *par, px_state_t *pxs)
-{       return_error(pxs->memory, errorIllegalTag);
+{       return_error(errorIllegalTag);
 }
 
 odef(pxBeginSession, apxBeginSession);

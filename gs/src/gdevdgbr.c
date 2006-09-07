@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* Default implementation of device get_bits[_rectangle] */
 #include "memory_.h"
 #include "gx.h"
@@ -24,7 +24,7 @@
 int
 gx_no_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 {
-    return_error(dev->memory, gs_error_unknownerror);
+    return_error(gs_error_unknownerror);
 }
 int
 gx_default_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
@@ -288,7 +288,7 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
 	!(options & (GB_OFFSET_0 | GB_OFFSET_SPECIFIED)) ||
 	!(options & (GB_RASTER_STANDARD | GB_RASTER_SPECIFIED))
 	)
-	return_error(dev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     if (options & GB_PACKING_CHUNKY) {
 	byte *data = params->data[0];
 	int end_bit = (x_offset + w) * depth;
@@ -371,7 +371,7 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
 	for (i = 0; i < num_planes; ++i)
 	    if (params->data[i] != 0) {
 		if (plane >= 0)
-		    return_error(dev->memory, gs_error_rangecheck); /* > 1 plane */
+		    return_error(gs_error_rangecheck); /* > 1 plane */
 		plane = i;
 	    }
 	source.data.read = src_base;
@@ -388,7 +388,7 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
 				  (num_planes - 1 - plane) * dest_depth,
 				  w, h);
     } else
-	return_error(dev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     return code;
 }
 
@@ -479,7 +479,7 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
                     map_procs->map_cmyk(dev, sc[0], sc[1], sc[2], sc[3], dc);
                     break;
                 default:
-                    return_error(dev->memory, gs_error_rangecheck);
+                    return_error(gs_error_rangecheck);
                 }
 
                 for (j = 0; j < dev->color_info.num_components; j++)
@@ -520,7 +520,7 @@ gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
 	 * We don't support general depths yet, or conversion between
 	 * different formats.  Punt.
 	 */
-	return_error(dev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     }
 
     /* Pick the representation that's most likely to be useful. */
@@ -534,7 +534,7 @@ gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
 	params->options = options &= ~GB_COLORS_STANDARD_ALL | GB_COLORS_GRAY,
 	    dest_bytes = 1;
     else
-	return_error(dev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     /* Recompute the destination raster based on the color space. */
     if (options & GB_RASTER_STANDARD) {
 	uint end_byte = (x_offset + w) * dest_bytes;
@@ -617,7 +617,7 @@ int
 gx_no_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		       gs_get_bits_params_t * params, gs_int_rect ** unread)
 {
-    return_error(dev->memory, gs_error_unknownerror);
+    return_error(gs_error_unknownerror);
 }
 
 int
@@ -661,15 +661,17 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 				 "gx_default_get_bits_rectangle");
 
 	    if (row == 0) {
-		code = gs_note_error(dev->memory, gs_error_VMerror);
+		code = gs_note_error(gs_error_VMerror);
 		goto ret;
 	    }
 	}
-	code = (*dev_proc(dev, get_bits))
-	    (dev, prect->p.y, row, &params->data[0]);
+	code = (*dev_proc(dev, get_bits)) (dev, prect->p.y, row,
+		(params->options & GB_RETURN_POINTER) ? &params->data[0]
+						      : NULL );
 	if (code >= 0) {
 	    if (row != data) {
-		if (prect->p.x == 0 && params->data[0] != row) {
+		if (prect->p.x == 0 && params->data[0] != row
+		    && params->options & GB_RETURN_POINTER) {
 		    /*
 		     * get_bits returned an appropriate pointer: we can
 		     * avoid doing any copying.
@@ -685,7 +687,7 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		    tdev.line_ptrs = &tdev.base;
 		    tdev.base = data;
 		    code = (*dev_proc(&mem_mono_device, copy_mono))
-			((gx_device *) & tdev, params->data[0], prect->p.x * depth,
+			((gx_device *) & tdev, row, prect->p.x * depth,
 			 min_raster, gx_no_bitmap_id, 0, 0, width_bits, 1,
 			 (gx_color_index) 0, (gx_color_index) 1);
 		    params->data[0] = data;
@@ -723,7 +725,7 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 	row = gs_alloc_bytes(dev->memory, (bits_per_pixel * w + 7) >> 3,
 			     "gx_default_get_bits_rectangle");
 	if (row == 0) {
-	    code = gs_note_error(dev->memory, gs_error_VMerror);
+	    code = gs_note_error(gs_error_VMerror);
 	} else {
 	    uint dev_raster = gx_device_raster(dev, true);
 	    uint raster =
@@ -774,7 +776,7 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 #ifdef DEBUG
 
 void
-debug_print_gb_options(const gs_memory_t *mem, gx_bitmap_format_t options)
+debug_print_gb_options(gx_bitmap_format_t options)
 {
     static const char *const option_names[] = {
 	GX_BITMAP_FORMAT_NAMES
@@ -782,37 +784,37 @@ debug_print_gb_options(const gs_memory_t *mem, gx_bitmap_format_t options)
     const char *prev = "   ";
     int i;
 
-    dlprintf1(mem, "0x%lx", (ulong) options);
+    dlprintf1("0x%lx", (ulong) options);
     for (i = 0; i < sizeof(options) * 8; ++i)
 	if ((options >> i) & 1) {
-	    dprintf2(mem, "%c%s",
+	    dprintf2("%c%s",
 		     (!memcmp(prev, option_names[i], 3) ? '|' : ','),
 		     option_names[i]);
 	    prev = option_names[i];
 	}
-    dputc(mem, '\n');
+    dputc('\n');
 }
 
 void 
-debug_print_gb_planes(const gs_memory_t *mem, const gs_get_bits_params_t * params, int num_planes)
+debug_print_gb_planes(const gs_get_bits_params_t * params, int num_planes)
 {
     gs_get_bits_options_t options = params->options;
     int i;
 
-    debug_print_gb_options(mem, options);
+    debug_print_gb_options(options);
     for (i = 0; i < num_planes; ++i)
-	dprintf2(mem, "data[%d]=0x%lx ", i, (ulong)params->data[i]);
+	dprintf2("data[%d]=0x%lx ", i, (ulong)params->data[i]);
     if (options & GB_OFFSET_SPECIFIED)
-	dprintf1(mem, "x_offset=%d ", params->x_offset);
+	dprintf1("x_offset=%d ", params->x_offset);
     if (options & GB_RASTER_SPECIFIED)
-	dprintf1(mem, "raster=%u", params->raster);
-    dputc(mem, '\n');
+	dprintf1("raster=%u", params->raster);
+    dputc('\n');
 }
 
 void 
-debug_print_gb_params(const gs_memory_t *mem, const gs_get_bits_params_t * params)
+debug_print_gb_params(const gs_get_bits_params_t * params)
 {
-    debug_print_gb_planes(mem, params, 1);
+    debug_print_gb_planes(params, 1);
 }
 
 

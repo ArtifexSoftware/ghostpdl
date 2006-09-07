@@ -1,14 +1,17 @@
-#  Portions Copyright (C) 2003, 2005 artofcode LLC.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2003-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information. */
-
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
 # $Id$
+
 # makefile for jbig2dec library code.
 # Users of this makefile must define the following:
 #	SHARE_JBIG2 - whether to compile in or link to the library
@@ -17,9 +20,10 @@
 # gs.mak and friends define the following:
 #	JBIG2OBJDIR - the output obj directory
 #	JBIG2GENDIR - generated (.dev) file directory
-#	JB2I_ and JB2CF_ - include dir and cflags
-# and the usual gs portability stuff.
+#	JB2I_ JB2CF_ - include and cflags for compiling the lib
 
+# We define the jbig2dec.dev target and its dependencies
+#
 # This partial makefile compiles the jbig2dec library for use in
 # Ghostscript.
 
@@ -30,7 +34,9 @@ JBIG2SRC=$(JBIG2SRCDIR)$(D)
 JBIG2GEN=$(JBIG2OBJDIR)$(D)
 JBIG2OBJ=$(JBIG2OBJDIR)$(D)
 
-# This list is only known good for jbig2dec v0.2-0.4
+# This makefile is only known to work with jbig2dec v0.7 and later
+# to use an earlier version, remove unknown files from
+# the OBJS lists below
 
 libjbig2_OBJS1=\
 	$(JBIG2OBJ)jbig2.$(OBJ) \
@@ -38,12 +44,13 @@ libjbig2_OBJS1=\
         $(JBIG2OBJ)jbig2_arith_iaid.$(OBJ) \
         $(JBIG2OBJ)jbig2_arith_int.$(OBJ) \
         $(JBIG2OBJ)jbig2_generic.$(OBJ) \
+        $(JBIG2OBJ)jbig2_refinement.$(OBJ) \
         $(JBIG2OBJ)jbig2_huffman.$(OBJ) \
         $(JBIG2OBJ)jbig2_image.$(OBJ) \
         $(JBIG2OBJ)jbig2_mmr.$(OBJ)
 
 libjbig2_OBJS2=\
-        $(JBIG2OBJ)jbig2_page.$(OBJ) \
+	$(JBIG2OBJ)jbig2_page.$(OBJ) \
         $(JBIG2OBJ)jbig2_segment.$(OBJ) \
         $(JBIG2OBJ)jbig2_symbol_dict.$(OBJ) \
         $(JBIG2OBJ)jbig2_text.$(OBJ) \
@@ -85,17 +92,17 @@ JBIG2_CC=$(CC_) $(CFLAGS) $(I_)$(JBIG2GENDIR) $(II)$(JB2I_)$(_I) $(JB2CF_)
 JBIG2O_=$(O_)$(JBIG2OBJ)
 
 # switch in the version of libjbig2.dev we're actually using
-$(JBIG2GEN)libjbig2.dev : $(TOP_MAKEFILES) $(JBIG2GEN)libjbig2_$(SHARE_JBIG2).dev
-	$(CP_) $(JBIG2GEN)libjbig2_$(SHARE_JBIG2).dev $(JBIG2GEN)libjbig2.dev
+$(JBIG2GEN)jbig2dec.dev : $(TOP_MAKEFILES) $(JBIG2GEN)jbig2dec_$(SHARE_JBIG2).dev
+	$(CP_) $(JBIG2GEN)jbig2dec_$(SHARE_JBIG2).dev $(JBIG2GEN)jbig2dec.dev
 
 # dev file for shared (separately built) jbig2dec library
-$(JBIG2GEN)libjbig2_1.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE)
-	$(SETMOD) $(JBIG2GEN)libjbig2_1 -lib jbig2dec
+$(JBIG2GEN)jbig2dec_1.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(JBIG2GEN)jbig2dec_1 -lib jbig2dec
 
 # dev file for compiling our own from source
-$(JBIG2GEN)libjbig2_0.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE) $(libjbig2_OBJS)
-	$(SETMOD) $(JBIG2GEN)libjbig2_0 $(libjbig2_OBJS1)
-	$(ADDMOD) $(JBIG2GEN)libjbig2_0 $(libjbig2_OBJS2)
+$(JBIG2GEN)jbig2dec_0.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE) $(libjbig2_OBJS)
+	$(SETMOD) $(JBIG2GEN)jbig2dec_0 $(libjbig2_OBJS1)
+	$(ADDMOD) $(JBIG2GEN)jbig2dec_0 $(libjbig2_OBJS2)
 
 # explicit rules for building the source files. 
 
@@ -123,6 +130,9 @@ $(JBIG2OBJ)jbig2_arith_int.$(OBJ) : $(JBIG2SRC)jbig2_arith_int.c $(libjbig2_HDRS
 $(JBIG2OBJ)jbig2_generic.$(OBJ) : $(JBIG2SRC)jbig2_generic.c $(libjbig2_HDRS) $(JBIG2DEP)
 	$(JBIG2_CC) $(JBIG2O_)jbig2_generic.$(OBJ) $(C_) $(JBIG2SRC)jbig2_generic.c
 
+$(JBIG2OBJ)jbig2_refinement.$(OBJ) : $(JBIG2SRC)jbig2_refinement.c $(libjbig2_HDRS) $(JBIG2DEP)
+	$(JBIG2_CC) $(JBIG2O_)jbig2_refinement.$(OBJ) $(C_) $(JBIG2SRC)jbig2_refinement.c
+ 
 $(JBIG2OBJ)jbig2_huffman.$(OBJ) : $(JBIG2SRC)jbig2_huffman.c $(libjbig2_HDRS) $(JBIG2DEP)
 	$(JBIG2_CC) $(JBIG2O_)jbig2_huffman.$(OBJ) $(C_) $(JBIG2SRC)jbig2_huffman.c
 

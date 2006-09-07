@@ -83,7 +83,7 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
         &pgls->g.font_selection[pgls->g.font_selected];
     const pl_symbol_map_t *psm = pfs->map;
     
-    return pl_map_symbol(pgls->memory, psm, chr,
+    return pl_map_symbol(psm, chr,
                          pfs->font->storage == pcds_internal,
                          false);
 }
@@ -141,7 +141,7 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
         
 
         if ( pfont == 0 )
-            return_error(pgls->memory, e_Memory);
+            return_error(e_Memory);
         code = pl_fill_in_font((gs_font *)pfont, font, pgls->font_dir,
                                pgls->memory, "stick/arc font");
         if ( code < 0 )
@@ -339,7 +339,7 @@ hpgl_slant_transform_distance(hpgl_state_t *pgls, gs_point *dxy, gs_point *s_dxy
 	gs_point tmp_dxy = *dxy;
 	gs_make_identity(&smat);
 	smat.yx = pgls->g.character.slant;
-	hpgl_call(gs_distance_transform(pgls->memory, tmp_dxy.x, tmp_dxy.y, &smat, s_dxy));
+	hpgl_call(gs_distance_transform(tmp_dxy.x, tmp_dxy.y, &smat, s_dxy));
     }
     return 0;
 }
@@ -359,7 +359,7 @@ hpgl_rotation_transform_distance(hpgl_state_t *pgls, gs_point *dxy, gs_point *r_
 	rmat.xy = rise / denom;
 	rmat.yx = -rmat.xy;
 	rmat.yy = rmat.xx;
-	hpgl_call(gs_distance_transform(pgls->memory, tmp_dxy.x, tmp_dxy.y, &rmat, r_dxy));
+	hpgl_call(gs_distance_transform(tmp_dxy.x, tmp_dxy.y, &rmat, r_dxy));
     }
     return 0;
 }
@@ -420,7 +420,7 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
 	    gs_matrix mat;
 	    gs_point user_dxy;
 	    hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
-	    hpgl_call(gs_distance_transform_inverse(pgls->memory, dx, dy, &mat, &user_dxy));
+	    hpgl_call(gs_distance_transform_inverse(dx, dy, &mat, &user_dxy));
 	    dx = user_dxy.x;
 	    dy = user_dxy.y;
 	}
@@ -523,7 +523,7 @@ hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
 			       "hpgl_resize_label_buffer");
 
 	    if ( new_mem == 0 )
-	      return_error(pgls->memory, e_Memory);
+	      return_error(e_Memory);
 	    pgls->g.label.buffer = new_mem;
 	    pgls->g.label.buffer_size = new_size;
 	  }
@@ -1046,7 +1046,7 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 	    }
 	    break;
 	default:
-	    dprintf(pgls->memory, "unknown label parameter");
+	    dprintf("unknown label parameter");
 
 	}
     /* a relative move to the new position */
@@ -1324,7 +1324,7 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    have_16bits = !have_16bits; 
 	    prev_ch = ch;           
 	    ch = *++p;          
-	    if_debug1(pgls->memory, 'I',
+	    if_debug1('I',
 		      (ch == '\\' ? " \\%c" : ch >= 33 && ch <= 126 ? " %c" :
 		       " \\%03o"),
 		      ch);

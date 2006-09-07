@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* .BMP file format driver utilities */
 #include "gdevprn.h"
 #include "gdevbmp.h"
@@ -116,7 +116,7 @@ write_bmp_depth_header(gx_device_printer *pdev, FILE *file, int depth,
 		     sizeof_bmp_file_header +
 		     sizeof(bmp_info_header) + quads);
 	if (fwrite((const char *)&fhdr, 1, sizeof(fhdr), file) != sizeof(fhdr))
-	    return_error(pdev->memory, gs_error_ioerror);
+	    return_error(gs_error_ioerror);
     }
 
     /* Write the info header. */
@@ -145,7 +145,7 @@ write_bmp_depth_header(gx_device_printer *pdev, FILE *file, int depth,
 	BMP_ASSIGN_DWORD(ihdr.clrUsed, 0);
 	BMP_ASSIGN_DWORD(ihdr.clrImportant, 0);
 	if (fwrite((const char *)&ihdr, 1, sizeof(ihdr), file) != sizeof(ihdr))
-	    return_error(pdev->memory, gs_error_ioerror);
+	    return_error(gs_error_ioerror);
     }
 
     /* Write the palette. */
@@ -203,7 +203,7 @@ write_bmp_separated_header(gx_device_printer *pdev, FILE *file)
     }
     return write_bmp_depth_header(pdev, file, plane_depth,
 				  (const byte *)palette,
-				  bitmap_raster(pdev->width * plane_depth));
+				  (pdev->width*plane_depth + 7) >> 3);
 }
 
 /* 24-bit color mappers (taken from gdevmem2.c). */

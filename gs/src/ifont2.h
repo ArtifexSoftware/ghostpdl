@@ -1,23 +1,21 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Type 2 font utilities 2 */
 
 #ifndef ifont2_INCLUDED
 #  define ifont2_INCLUDED
-
-/* Declare the Type 2 interpreter. */
-extern charstring_interpret_proc(gs_type2_interpret);
 
 /* Default value of lenIV */
 #define DEFAULT_LENIV_2 (-1)
@@ -27,8 +25,7 @@ extern charstring_interpret_proc(gs_type2_interpret);
  * entry in a CIDFontType 0 font), beyond those common to Type 1 and Type 2
  * fonts.
  */
-int type2_font_params(const gs_memory_t *mem, 
-		      const_os_ptr op, charstring_font_refs_t *pfr,
+int type2_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
 		      gs_type1_data *pdata1);
 
 #endif /* ifont2_INCLUDED */

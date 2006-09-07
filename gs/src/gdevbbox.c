@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/*$Id$ */
 /* Device for tracking bounding box */
 #include "math_.h"
 #include "memory_.h"
@@ -218,7 +218,7 @@ bbox_copy_params(gx_device_bbox * bdev, bool remap_colors)
 
     if (tdev != 0)
 	gx_device_copy_params((gx_device *)bdev, tdev);
-    if (remap_colors && bdev->is_open) {
+    if (remap_colors) {
 	bdev->black = gx_device_black((gx_device *)bdev);
 	bdev->white = gx_device_white((gx_device *)bdev);
 	bdev->transparent =
@@ -251,7 +251,7 @@ bbox_close_device(gx_device * dev)
 
 /* Initialize a bounding box device. */
 void
-gx_device_bbox_init(gx_device_bbox *dev, gx_device *target, gs_memory_t *mem)
+gx_device_bbox_init(gx_device_bbox * dev, gx_device * target, gs_memory_t *mem)
 {
     gx_device_init((gx_device *) dev, (const gx_device *)&gs_bbox_device,
 		   (target ? target->memory : mem), true);
@@ -269,6 +269,9 @@ gx_device_bbox_init(gx_device_bbox *dev, gx_device *target, gs_memory_t *mem)
 	set_dev_proc(dev, pattern_manage, gx_forward_pattern_manage);
 	set_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
 	set_dev_proc(dev, include_color_space, gx_forward_include_color_space);
+	set_dev_proc(dev, update_spot_equivalent_colors,
+				gx_forward_update_spot_equivalent_colors);
+	set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
 	gx_device_set_target((gx_device_forward *)dev, target);
     } else {
 	gx_device_fill_in_procs((gx_device *)dev);
@@ -323,7 +326,7 @@ gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox)
 	dbox.q.x = fixed2float(bbox.q.x);
 	dbox.q.y = fixed2float(bbox.q.y);
 	gs_deviceinitialmatrix((gx_device *)dev, &mat);
-	gs_bbox_transform_inverse(dev->memory, &dbox, &mat, pbbox);
+	gs_bbox_transform_inverse(&dbox, &mat, pbbox);
     }
 }
 
@@ -362,10 +365,10 @@ bbox_output_page(gx_device * dev, int num_copies, int flush)
 	gs_rect bbox;
 
 	gx_device_bbox_bbox(bdev, &bbox);
-	dlprintf4(dev->memory, "%%%%BoundingBox: %d %d %d %d\n",
+	dlprintf4("%%%%BoundingBox: %d %d %d %d\n",
 		  (int)floor(bbox.p.x), (int)floor(bbox.p.y),
 		  (int)ceil(bbox.q.x), (int)ceil(bbox.q.y));
-	dlprintf4(dev->memory, "%%%%HiResBoundingBox: %f %f %f %f\n",
+	dlprintf4("%%%%HiResBoundingBox: %f %f %f %f\n",
 		  bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
     }
     return gx_forward_output_page(dev, num_copies, flush);
@@ -518,7 +521,11 @@ bbox_get_params(gx_device * dev, gs_param_list * plist)
     bbox[2] = fixed2float(fbox.q.x);
     bbox[3] = fixed2float(fbox.q.y);
     bba.data = bbox, bba.size = 4, bba.persistent = false;
-    return param_write_float_array(plist, "PageBoundingBox", &bba);
+    code = param_write_float_array(plist, "PageBoundingBox", &bba);
+    if (code < 0)
+        return code;
+    code = param_write_bool(plist, "WhiteIsOpaque", &bdev->white_is_opaque);
+    return code;
 }
 
 /* We implement put_params to ensure that we keep the important */
@@ -530,6 +537,7 @@ bbox_put_params(gx_device * dev, gs_param_list * plist)
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     int code;
     int ecode = 0;
+    bool white_is_opaque = bdev->white_is_opaque;
     gs_param_name param_name;
     gs_param_float_array bba;
 
@@ -538,26 +546,38 @@ bbox_put_params(gx_device * dev, gs_param_list * plist)
     switch (code) {
 	case 0:
 	    if (bba.size != 4) {
-		ecode = gs_note_error(dev->memory, gs_error_rangecheck);
+		ecode = gs_note_error(gs_error_rangecheck);
 		goto e;
 	    }
 	    break;
 	default:
 	    ecode = code;
-	  e:param_signal_error(plist, param_name, ecode);
+	    e:param_signal_error(plist, param_name, ecode);
 	case 1:
 	    bba.data = 0;
+    }
+
+    switch (code = param_read_bool(plist, (param_name = "WhiteIsOpaque"), &white_is_opaque)) {
+	default:
+	    ecode = code;
+	    param_signal_error(plist, param_name, ecode);
+	case 0:
+        case 1:
+	    break;
     }
 
     code = gx_forward_put_params(dev, plist);
     if (ecode < 0)
 	code = ecode;
-    if (code >= 0 && bba.data != 0) {
-	BBOX_INIT_BOX(bdev);
-	BBOX_ADD_RECT(bdev, float2fixed(bba.data[0]), float2fixed(bba.data[1]),
-		      float2fixed(bba.data[2]), float2fixed(bba.data[3]));
+    if (code >= 0) {
+        if( bba.data != 0) {
+	    BBOX_INIT_BOX(bdev);
+	    BBOX_ADD_RECT(bdev, float2fixed(bba.data[0]), float2fixed(bba.data[1]),
+	    	          float2fixed(bba.data[2]), float2fixed(bba.data[3]));
+        }
+        bdev->white_is_opaque = white_is_opaque;
     }
-    bbox_copy_params(bdev, true);
+    bbox_copy_params(bdev, bdev->is_open);
     return code;
 }
 
@@ -742,7 +762,7 @@ bbox_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    return 0;
 	adjust = params->adjust;
 	if (params->fill_zero_width)
-	    gx_adjust_if_empty(dev->memory, &ibox, &adjust);
+	    gx_adjust_if_empty(&ibox, &adjust);
 	adjust_box(&ibox, adjust);
 	/*
 	 * If the path lies within the already accumulated box, just draw
@@ -916,14 +936,14 @@ bbox_image_begin(const gs_imager_state * pis, const gs_matrix * pmat,
 
     if (pmat == 0)
 	pmat = &ctm_only(pis);
-    if ((code = gs_matrix_invert(memory, &pic->ImageMatrix, &mat)) < 0 ||
+    if ((code = gs_matrix_invert(&pic->ImageMatrix, &mat)) < 0 ||
 	(code = gs_matrix_multiply(&mat, pmat, &mat)) < 0
 	)
 	return code;
     pbe = gs_alloc_struct(memory, bbox_image_enum, &st_bbox_image_enum,
 			  "bbox_image_begin");
     if (pbe == 0)
-	return_error(memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     pbe->memory = memory;
     pbe->matrix = mat;
     pbe->pcpath = pcpath;
@@ -1038,7 +1058,7 @@ bbox_image_plane_data(gx_image_enum_common_t * info,
     sbox.p.y = pbe->y;
     sbox.q.x = pbe->x1;
     sbox.q.y = pbe->y = min(pbe->y + height, pbe->height);
-    gs_bbox_transform_only(dev->memory, &sbox, &pbe->matrix, corners);
+    gs_bbox_transform_only(&sbox, &pbe->matrix, corners);
     gs_points_bbox(corners, &dbox);
     ibox.p.x = float2fixed(dbox.p.x);
     ibox.p.y = float2fixed(dbox.p.y);
@@ -1142,7 +1162,7 @@ private const gx_device_bbox_procs_t box_procs_forward = {
 private int
 bbox_create_compositor(gx_device * dev,
 		       gx_device ** pcdev, const gs_composite_t * pcte,
-		       const gs_imager_state * pis, gs_memory_t * memory)
+		       gs_imager_state * pis, gs_memory_t * memory)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     gx_device *target = bdev->target;
@@ -1166,14 +1186,17 @@ bbox_create_compositor(gx_device * dev,
 	int code = (*dev_proc(target, create_compositor))
 	    (target, &cdev, pcte, pis, memory);
 
-	if (code < 0)
+	/* If the target did not create a new compositor then we are done. */
+	if (code < 0 || target == cdev) {
+	    *pcdev = dev;
 	    return code;
+	}
 	bbcdev = gs_alloc_struct_immovable(memory, gx_device_bbox,
 					   &st_device_bbox,
 					   "bbox_create_compositor");
 	if (bbcdev == 0) {
 	    (*dev_proc(cdev, close_device)) (cdev);
-	    return_error(memory, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	}
 	gx_device_bbox_init(bbcdev, target, memory);
 	gx_device_set_target((gx_device_forward *)bbcdev, cdev);
@@ -1199,7 +1222,7 @@ bbox_text_begin(gx_device * dev, gs_imager_state * pis,
 
     if (bdev->target != NULL) {
         /* See note on imaging_dev in gxtext.h */
-        rc_assign(dev->memory, (*ppenum)->imaging_dev, dev, "bbox_text_begin");
+        rc_assign((*ppenum)->imaging_dev, dev, "bbox_text_begin");
     }
 
     return code;

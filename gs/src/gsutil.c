@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Utilities for Ghostscript library */
 #include "string_.h"
 #include "memory_.h"
@@ -23,9 +24,10 @@
 #include "gsuid.h"
 #include "gsutil.h"		/* for prototypes */
 
-#include "gx.h"
 #include "gzstate.h"
 #include "gxdcolor.h"
+
+
 
 /* ------ Unique IDs ------ */
 
@@ -64,7 +66,7 @@ memflip8x8(const byte * inp, int line_size, byte * outp, int dist)
     /* Check for all 8 bytes being the same. */
     /* This is especially worth doing for the case where all are zero. */
     if (aceg == bdfh && (aceg >> 8) == (aceg & 0xffffff)) {
-	if (aceg == 0)
+	if (aceg == 0 || aceg == 0xffffffff)
 	    goto store;
 	*outp = (byte)-(int)((aceg >> 7) & 1);
 	outp[dist] = (byte)-(int)((aceg >> 6) & 1);
@@ -236,7 +238,7 @@ uid_copy(gs_uid *puid, gs_memory_t *mem, client_name_t cname)
 	    gs_alloc_byte_array(mem, xsize, sizeof(long), cname);
 
 	if (xvalues == 0)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	memcpy(xvalues, uid_XUID_values(puid), xsize * sizeof(long));
 	puid->xvalues = xvalues;
     }
@@ -295,12 +297,16 @@ gs_enable_object_tagging()
         BITTAG = GS_UNKNOWN_TAG;
 }
 
+
 void
 gs_set_object_tag(gs_state * pgs, const gs_object_tag_type_t tag)
 {
     if (BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS) {
 	if ( BITTAG != tag ) {
+	    /* mkromfs breaks this dependance 
+	       NB: needs to be fixed.
 	    gx_unset_dev_color(pgs);
+	    **/
 	    BITTAG = tag;
 	    /* the assumption is made that the caller will:
 	     * gx_set_dev_color(pgs);

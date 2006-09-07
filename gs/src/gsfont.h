@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generic font and font cache interface */
 
 #ifndef gsfont_INCLUDED
@@ -54,6 +55,10 @@ gs_font_dir *gs_font_dir_alloc2_limits(gs_memory_t * struct_mem,
 /* Use gs_definefont only with original (unscaled) fonts! */
 int gs_definefont(gs_font_dir *, gs_font *);
 
+/* Find a sililar registered font of same type. */
+int gs_font_find_similar(const gs_font_dir * pdir, const gs_font **ppfont, 
+			   int (*similar)(const gs_font *, const gs_font *));
+
 /* gs_scalefont and gs_makefont return 0 if the scaled font */
 /* was already in the cache, 1 if a new font was created. */
 int gs_scalefont(gs_font_dir *, const gs_font *, floatp, gs_font **);
@@ -62,9 +67,9 @@ int gs_setfont(gs_state *, gs_font *);
 gs_font *gs_currentfont(const gs_state *);
 gs_font *gs_rootfont(const gs_state *);
 void gs_set_currentfont(gs_state *, gs_font *);
-void gs_purge_font(gs_font *);
+int  gs_purge_font(gs_font *);
 /* Locate a gs_font by gs_id. */
-gs_font *gs_find_font_by_id(gs_font_dir *pdir, gs_id id);
+gs_font *gs_find_font_by_id(gs_font_dir *pdir, gs_id id, gs_matrix *FontMatrix);
 
 /* Font cache parameter operations */
 void gs_cachestatus(const gs_font_dir *, uint[7]);
@@ -78,9 +83,7 @@ uint gs_currentcacheupper(const gs_font_dir *);
 int gs_setcacheupper(gs_font_dir *, uint);
 uint gs_currentaligntopixels(const gs_font_dir *);
 int gs_setaligntopixels(gs_font_dir *, uint);
-#if NEW_TT_INTERPRETER
 uint gs_currentgridfittt(const gs_font_dir *);
 int gs_setgridfittt(gs_font_dir *, uint);
-#endif
 
 #endif /* gsfont_INCLUDED */

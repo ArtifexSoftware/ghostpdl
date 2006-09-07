@@ -1090,7 +1090,7 @@ pcl_start_raster(
         prast->transparent = false;
     prast->src_height_set = pcs->raster_state.src_height_set;
     prast->pcs = pcs;
-    pcl_cs_indexed_init_from(pcs->memory, prast->pindexed, pindexed);
+    pcl_cs_indexed_init_from(prast->pindexed, pindexed);
 
     prast->pen = 0;
     prast->plane_index = 0;
@@ -1258,11 +1258,11 @@ pcl_complete_raster(pcl_state_t *pcs)
     }
 
     if (prast->pindexed != 0) {
-        pcl_cs_indexed_release(pcs->memory, prast->pindexed);
+        pcl_cs_indexed_release(prast->pindexed);
         prast->pindexed = 0;
     }
     if (prast->mask_pindexed != 0) {
-        pcl_cs_indexed_release(pcs->memory, prast->mask_pindexed);
+        pcl_cs_indexed_release(prast->mask_pindexed);
         prast->mask_pindexed = 0;
     }
 
@@ -1382,7 +1382,7 @@ raster_do_registration(
     gs_memory_t *   pmem    /* ignored */
 )
 {
-    DEFINE_CLASS(pmem, '*')
+    DEFINE_CLASS('*')
     {
         'b', 'V',
         PCL_COMMAND( "Transfer Raster Plane",

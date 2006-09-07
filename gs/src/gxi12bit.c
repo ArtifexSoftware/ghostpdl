@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* 12-bit image procedures */
 #include "gx.h"
 #include "memory_.h"
@@ -34,9 +35,10 @@
 
 private const byte *
 sample_unpack_12(byte * bptr, int *pdata_x, const byte * data,
-		 int data_x, uint dsize, const sample_lookup_t * ignore_ptab,
-		 int spread)
+		 int data_x, uint dsize, const sample_map *ignore_smap, int spread,
+		 int ignore_num_components_per_plane)
 {
+    /* Assuming an identity map for all components. */
     register frac *bufp = (frac *) bptr;
     uint dskip = (data_x >> 1) * 3;
     const byte *psrc = data + dskip;
@@ -108,7 +110,7 @@ gs_image_class_2_fracs(gx_image_enum * penum)
 		penum->mask_color.values[i] =
 		    bits2frac(penum->mask_color.values[i], 12);
 	}
-	if_debug0(penum->memory, 'b', "[b]render=frac\n");
+	if_debug0('b', "[b]render=frac\n");
 	return &image_render_frac;
     }
     return 0;
@@ -196,7 +198,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
     yrun = ytf = dda_current(pnext.y);
     pdyx = dda_current(penum->dda.row.x) - penum->cur.x;
     pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
-    if_debug5(penum->memory, 'b', "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
+    if_debug5('b', "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
 	      penum->y, data_x, w, fixed2float(xl), fixed2float(ytf));
     memset(&run, 0, sizeof(run));
     memset(&next, 0, sizeof(next));
@@ -231,10 +233,10 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		decode_frac(next.v[1], cc, 1);
 		decode_frac(next.v[2], cc, 2);
 		decode_frac(next.v[3], cc, 3);
-		if_debug4(penum->memory, 'B', "[B]cc[0..3]=%g,%g,%g,%g\n",
+		if_debug4('B', "[B]cc[0..3]=%g,%g,%g,%g\n",
 			  cc.paint.values[0], cc.paint.values[1],
 			  cc.paint.values[2], cc.paint.values[3]);
-		if_debug1(penum->memory, 'B', "[B]cc[3]=%g\n",
+		if_debug1('B', "[B]cc[3]=%g\n",
 			  cc.paint.values[3]);
 		break;
 	    case 3:		/* may be RGB */
@@ -256,7 +258,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		decode_frac(next.v[0], cc, 0);
 		decode_frac(next.v[1], cc, 1);
 		decode_frac(next.v[2], cc, 2);
-		if_debug3(penum->memory, 'B', "[B]cc[0..2]=%g,%g,%g\n",
+		if_debug3('B', "[B]cc[0..2]=%g,%g,%g\n",
 			  cc.paint.values[0], cc.paint.values[1],
 			  cc.paint.values[2]);
 		break;
@@ -275,7 +277,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		    goto f;
 		}
 		decode_frac(next.v[0], cc, 0);
-		if_debug1(penum->memory, 'B', "[B]cc[0]=%g\n",
+		if_debug1('B', "[B]cc[0]=%g\n",
 			  cc.paint.values[0]);
 		break;
 	    default:		/* DeviceN */
@@ -297,11 +299,11 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 			decode_frac(next.v[i], cc, i);
 #ifdef DEBUG
 		    if (gs_debug_c('B')) {
-			dprintf2(penum->memory, "[B]cc[0..%d]=%g", spp - 1,
+			dprintf2("[B]cc[0..%d]=%g", spp - 1,
 				 cc.paint.values[0]);
 			for (i = 1; i < spp; ++i)
-			    dprintf1(penum->memory, ",%g", cc.paint.values[i]);
-			dputs(penum->memory, "\n");
+			    dprintf1(",%g", cc.paint.values[i]);
+			dputs("\n");
 		    }
 #endif
 		}
@@ -312,11 +314,25 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 	if (mcode < 0)
 	    goto fill;
 f:
-	if_debug7(penum->memory, 'B', "[B]0x%x,0x%x,0x%x,0x%x -> %ld,%ld,0x%lx\n",
+	if (sizeof(pdevc_next->colors.binary.color[0]) <= sizeof(ulong))
+	    if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> 0x%lx,0x%lx,0x%lx\n",
 		  next.v[0], next.v[1], next.v[2], next.v[3],
-		  pdevc_next->colors.binary.color[0],
-		  pdevc_next->colors.binary.color[1],
-		  (ulong) pdevc_next->type);
+		  (ulong)pdevc_next->colors.binary.color[0],
+		  (ulong)pdevc_next->colors.binary.color[1],
+		  (ulong)pdevc_next->type);
+	else
+	    if_debug9('B', "[B]0x%x,0x%x,0x%x,0x%x -> 0x%08lx%08lx,0x%08lx%08lx,0x%lx\n",
+		  next.v[0], next.v[1], next.v[2], next.v[3],
+		  (ulong)(pdevc_next->colors.binary.color[0] >> 
+			8 * (sizeof(pdevc_next->colors.binary.color[0]) - sizeof(ulong))),
+		  (ulong)pdevc_next->colors.binary.color[0],
+		  (ulong)(pdevc_next->colors.binary.color[1] >> 
+			8 * (sizeof(pdevc_next->colors.binary.color[1]) - sizeof(ulong))),
+		  (ulong)pdevc_next->colors.binary.color[1],
+		  (ulong)pdevc_next->type);
+/* NB: sizeof gx_color_index is 4 or 8 bytes! */
+
+
 	/* Even though the supplied colors don't match, */
 	/* the device colors might. */
 	if (!dev_color_eq(devc1, devc2)) {

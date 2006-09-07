@@ -1,16 +1,19 @@
-% Portions Copyright (C) 2001 artofcode LLC.
-% Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-% Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-% This software is based in part on the work of the Independent JPEG Group.
-% All Rights Reserved.
-%
-% This software is distributed under license and may not be copied, modified
-% or distributed except as expressly authorized under the terms of that
-% license.  Refer to licensing information at http://www.artifex.com/ or
-% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-% San Rafael, CA  94903, (415)492-9861, for further information.
+%    Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
 % 
-% $RCSfile$ $Revision$
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+% $Id$
 % Initialization file for Level 2 functions.
 % When this is run, systemdict is still writable,
 % but (almost) everything defined here goes into level2dict.
@@ -47,7 +50,7 @@ level2dict begin
 } .bind def
 /.checksetparams {		% <newdict> <opname> <checkdict>
 				%   .checksetparams <newdict>
-  2 index {
+  2 .argindex {
 		% Stack: newdict opname checkdict key newvalue
     3 copy 3 1 roll .knownget {
       exec not {
@@ -73,19 +76,31 @@ level2dict begin
 /.copyparam {			% <value> .copyparam <value'>
   dup type /arraytype eq {
     .currentglobal true .setglobal exch 
-    dup xcheck exch		% original executable state
-    [ exch {
-      dup type dup /arraytype eq exch /stringtype eq or {
-        .copyparam	% recurse to handle composite array elements
-      } if
-    } forall ]
+    dup wcheck exch dup xcheck exch		% original attributes
+    dup length array exch dup {	% stack: destination_array original_array original_array
+      dup type /arraytype eq {
+	dup 2 index ne {	% avoid recursion
+          .copyparam	% recurse to handle composite array elements
+        } {
+	  % this array self referenced, do it again (yuk!)
+	  pop 1 index		% get copy of destination array
+	} ifelse
+      } {
+        dup type /stringtype eq {
+	  .copyparam
+        } if 
+      }
+      ifelse 3 1 roll		% keep arrays on top
+    } forall pop astore
     exch { cvx } if		% set executable state
+    exch not { readonly } if	% set readonly attribute as original
     exch .setglobal
   } if
   dup type /stringtype eq {
+    dup wcheck exch	% save attr for setting readonly
     .currentglobal true .setglobal
     1 index length string exch .setglobal
-    copy readonly
+    copy exch not { readonly } if
   } if
 } .bind def
 
@@ -94,7 +109,7 @@ level2dict begin
 systemdict begin
 /psuserparams 48 dict def
 /getuserparam {			% <name> getuserparam <value>
-  /userparams .systemvar 1 index get exch pop
+  /userparams .systemvar 1 .argindex get exch pop
 } odef
 % Fill in userparams (created by the interpreter) with current values.
 mark .currentuserparams
@@ -126,6 +141,17 @@ end
 	pop dup .getuserparam
       } if
       .copyparam
+      % special protection for the security related parameters
+      [ /PermitFileReading /PermitFileWriting /PermitFileControl ]
+      { 2 index eq { % force all strings to readonly but make sure the
+		     % array is in the correct VM space (local/global).
+	currentglobal exch dup gcheck setglobal
+	dup length array exch { readonly exch } forall astore
+	exch setglobal
+        } if
+      } forall
+      % protect top level of parameters that we copied
+      dup type dup /arraytype eq exch /stringtype eq or { readonly } if
       /userparams .systemvar 3 1 roll .forceput  % userparams is read-only
     } {
       pop pop
@@ -153,7 +179,7 @@ currentdict /pssystemparams known not {
   /pssystemparams 40 dict readonly def
 } if
 /getsystemparam {		% <name> getsystemparam <value>
-  //pssystemparams 1 index .knownget { exch pop } { .getsystemparam } ifelse
+  //pssystemparams 1 .argindex .knownget { exch pop } { .getsystemparam } ifelse
 } odef
 end
 /currentsystemparams {		% - currentsystemparams <dict>
@@ -162,6 +188,7 @@ end
 /setsystemparams {		% <dict> setsystemparams -
 	% Check that we will be able to set the PostScript-level
 	% system parameters.
+   dup pop		% check # of args
    /SAFETY .systemvar /safe get {
      % SAFER mode disallows some changes
      [ /GenericResourceDir /FontResourceDir /GenericResourcePathSep ] {
@@ -188,6 +215,8 @@ end
     { //pssystemparams 2 index known
        {		% Stack: key newvalue
 	 .copyparam
+	 % protect top level parameters that we copied
+         dup type dup /arraytype eq exch /stringtype eq or { readonly } if
 	 //pssystemparams 3 1 roll .forceput	% pssystemparams is read-only
        }
        { pop pop
@@ -206,7 +235,7 @@ end
 
 % Redefine cache parameter setting to interact properly with userparams.
 /setcachelimit {
-  mark /MaxFontItem 2 index .dicttomark setuserparams pop
+  mark /MaxFontItem 2 .argindex .dicttomark setuserparams pop
 } .bind odef
 /setcacheparams {
 	% The MaxFontCache parameter is a system parameter, which we might
@@ -240,8 +269,13 @@ end
     type /arraytype eq {
       currentuserparams /LockFilePermissions get {
         5 { pop } repeat /setuserparams /invalidaccess signalerror
+      }{
+        % in addition to validating the value, ensure the value is read/only
+        dup { readonly exch } forall
+        .currentglobal exch dup gcheck .setglobal length array exch .setglobal
+	astore readonly
       }
-      if
+      ifelse
     } {
       5 { pop } repeat /setuserparams /typecheck signalerror
     }
@@ -310,8 +344,7 @@ psuserparams /ProcessDSCComment {.checkprocesscomment} put
 
 (<<) cvn			% - << -mark-
   /mark load def
-(>>) cvn			% -mark- <key1> <value1> ... >> <dict>
-  /.dicttomark load def
+% (>> is defined primitively.)
 /languagelevel 2 def
 % When running in Level 2 mode, this interpreter is supposed to be
 % compatible with Adobe version 2017.
@@ -366,7 +399,7 @@ psuserparams /ProcessDSCComment {.checkprocesscomment} put
 
 % VMReclaim and VMThreshold are user parameters.
 /setvmthreshold {		% <int> setvmthreshold -
-  mark /VMThreshold 2 index .dicttomark setuserparams pop
+  mark /VMThreshold 2 .argindex .dicttomark setuserparams pop
 } odef
 /vmreclaim {			% <int> vmreclaim -
   dup 0 gt {
@@ -420,10 +453,6 @@ end		% serverdict
       serverdict /.jobsave null put
       serverdict /.jobsavelevel 0 put
       serverdict /.adminjob 3 -1 roll 1 gt put
-		% The Adobe documentation doesn't say what happens to the
-		% graphics state stack in this case, but an experiment
-		% produced results suggesting that a grestoreall occurs.
-      grestoreall
     } {
 			% Encapsulated job
       pop
@@ -435,11 +464,12 @@ end		% serverdict
   clear cleardictstack
   initgraphics
   false setglobal
+  2 vmreclaim	% Make sure GC'ed memory is reclaimed and freed.
 } bind def
 /.startjob {			% <exit_bool> <password> <finish_proc>
 				%   .startjob <ok_bool>
   vmstatus pop pop serverdict /.jobsavelevel get eq
-  2 index .checkpassword 0 gt and {
+  2 .argindex .checkpassword 0 gt and {
     exch .checkpassword exch count 3 roll count 3 sub { pop } repeat
     cleardictstack
 		% Reset the e-stack back to the 2 .stopped in .runexec,
@@ -467,7 +497,7 @@ systemdict begin
 /quit {				% - quit -
   //systemdict begin serverdict /.jobsave get null eq
    { end //quit }
-   { /quit load /invalidaccess /signalerror load end exec }
+   { /quit .systemvar /invalidaccess /signalerror load end exec }
   ifelse
 } bind odef
 end
@@ -631,7 +661,7 @@ currentdict end
 
 % ------ Color spaces ------ %
 
-% Move setcolorsapce, setcolor, and colorspacedict to level2dict
+% Move setcolorspace, setcolor, and colorspacedict to level2dict
 level2dict /setcolorspace .cspace_util 1 index get put
 level2dict /setcolor .cspace_util 1 index get put
 level2dict /colorspacedict .cspace_util 1 index get put
@@ -663,9 +693,9 @@ level2dict /colorspacedict .cspace_util 1 index get put
 /findcolorrendering {		% <intentname> findcolorrendering
 				%   <crdname> <found>
   /ColorRendering /ProcSet findresource
-  1 index .namestring (.) concatstrings
-  1 index /GetPageDeviceName get exec .namestring (.) concatstrings
-  2 index /GetHalftoneName get exec .namestring
+  1 .argindex dup type /nametype eq { .namestring } if (.) concatstrings
+  1 index /GetPageDeviceName get exec dup type /nametype eq { .namestring } if (.) concatstrings
+  2 index /GetHalftoneName get exec dup type /nametype eq { .namestring } if
   concatstrings concatstrings
   dup /ColorRendering resourcestatus {
     pop pop exch pop exch pop true
@@ -800,12 +830,19 @@ def
 def
 
 /makepattern {			% <proto_dict> <matrix> makepattern <pattern>
-  //.patterntypes 2 index /PatternType get get
+  //.patterntypes 2 .argindex /PatternType get get
   .currentglobal false .setglobal exch
 		% Stack: proto matrix global buildproc
   3 index dup length 1 add dict .copydict
   3 index 3 -1 roll exec 3 -1 roll .setglobal
-  1 index /Implementation 3 -1 roll put
+  % Create an 'Implementation' entry for the pattern dict.  The PRLM 3rd says
+  % this about the contents of Implementation:  "The type and value of this
+  % entry are implementation-dependent."  The CET (page 2 of 18-02f) expects
+  % that this entry be an array and that the second element of the array be a
+  % gstate.  We put our pattern instance struct into the first element of the
+  % array.
+  1 index /Implementation 3 -1 roll gstate 2 array astore
+  put				% put Implementation into the pattern dict.
   readonly exch pop exch pop
 } odef
 
@@ -815,5 +852,114 @@ def
   } if setcolor
 } odef
 
+% The following functions emulate the actions of findcmykcustomcolor and
+% setcustomcolor.  These functions are described in Adobe's TN 5044.  That
+% same document also says "The following “operators” are not defined in the
+% PostScript Language Reference Manual, but should be used as pseudo-operators
+% in your PostScript language output. Separation applications from Adobe
+% Systems and other vendors will redefine these convention operators to
+% separate your documents.  Your application should conditionally define
+% procedures with these special names, as shown later in this document."
+%
+% We are providing these functions because we have found files created by
+% "QuarkXPress: pictwpstops filter 1.0" which produce bad shading dictionaries
+% if these operators are not defined. 
+
+% Conditionally disable the TN 5044 psuedo-ops if NO_TN5044 specified
+/NO_TN5044 where { pop (%END TN 5044 psuedo-ops) .skipeof } if
+
+% TN 5044 does not define the contents of the array.  We are simply putting
+% the values given into an array.  This is consistent with what we see when
+% testing with Adobe Distiller 6.0.
+%   <cyan> <magenta> <yellow> <black> <key> findcmykcustomcolor <array>
+/findcmykcustomcolor { 5 array astore } bind def
+
+% Build a tint transform function for use by setcustomcolor.  This function
+% is for a Separation color space which has a DeviceCMYK base color space
+% (i.e. 1 input and 4 outputs).  The input to buildcustomtinttransform is the
+% array created by findcmykcustomcolor.  The resulting function is:
+%   { dup cyan mul exch dup magenta mul exch dup yellow mul exch black mul }
+%   Where cyan, magenta, yellow, and black are values from the array.
+/buildcustomtinttransform	% <array> buildcustomtinttransform <function>
+{ [ /dup load 2 index 0 get /mul load
+  /exch load /dup load 6 index 1 get /mul load
+  /exch load /dup load 10 index 2 get /mul load
+  /exch load 13 index 3 get /mul load
+  ] cvx bind
+  exch pop			% Remove the input array
+} bind def
+
+% Set a custom color based upon a tint and array which describes the custom
+% color.  See findcmykcustomcolor.  First we create and then set a Separation
+% colorspace.  Then we set the specified color.
+% Note that older Adobe ProcSets apparently allow for 'null' as the tint
+% for some reason, so an alternate operational mode is tolerated:
+% 					    null setcustomcolor -
+/setcustomcolor			% <array> <tint> setcustomcolor -
+{ dup //null ne {
+    % Start building Separation colorspace
+    [ /Separation 3 index 4 get	% Get separation name from array's key
+    /DeviceCMYK
+    5 index //buildcustomtinttransform exec] % build the tint transform function
+    setcolorspace			% Set the Separation color space as current
+    setcolor			% Set the tint as the current color
+    pop				% Remove the input array
+  }
+  { pop }	% 'null' as the tint is ignored
+  ifelse
+} bind def
+
+% This proc is supposed to implement a version of overprinting. TN 5044 says
+% that this proc is not used by any shipping host-based application. We have
+% only found it being used in a proc set in files by Canvas from Deneba Systems.
+% Even their proc set does not actually do any overprinting.  However their
+% files crash if this is not defined.  Thus we have a copy of this proc but
+% we are simply checking for inputs being -1 and if so then we set the value
+% to 0.
+/setcmykoverprint {
+  4 { dup -1 eq { pop 0 } if 4 1 roll } repeat setcmykcolor
+} bind def
+
+/separation_all [/Separation /All /DeviceCMYK { dup dup dup } bind ] readonly def
+
+% Collect the arguments into the image dictionary
+% <width> <height> <bits/sample> <matrix> <proc> args2dict <dict>
+/args2dict {
+  10 dict begin
+  {1 0} 1
+  { /ImageType /Decode /DataSource /ImageMatrix /BitsPerComponent /Height /Width
+  } { exch def } forall
+  currentdict end
+} bind def
+
+% Prints (1-gray) on all separations.
+% <gray> setseparationgray -
+/setseparationgray {
+  //separation_all setcolorspace
+  1 exch sub setcolor
+} bind def
+
+% Renders an image whose sample values specify the amount of the custom color.
+% <width> <height> <bits/sample> <matrix> <proc> <array> customcolorimage -
+/customcolorimage {
+  gsave
+  [ /Separation 2 index 4 get /DeviceCMYK 5 -1 roll //buildcustomtinttransform exec] setcolorspace
+  //args2dict exec image
+  grestore
+} bind def
+
+% Renders an image on all process and custom color plates.
+% <width> <height> <bits/sample> <matrix> <proc>
+/separationimage {
+  gsave
+  //separation_all setcolorspace
+  //args2dict exec image
+  grestore
+} bind def
+
+{ /buildcustomtinttransform /separation_all /args2dict }
+{ currentdict exch undef } forall
+
+%END TN 5044 psuedo-ops
 
 end				% level2dict

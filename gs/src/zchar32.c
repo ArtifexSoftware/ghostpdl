@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Type 32 font glyph operators */
 #include "ghost.h"
 #include "oper.h"
@@ -39,7 +40,7 @@ zmakeglyph32(i_ctx_t *i_ctx_p)
     int code;
     byte *str;
 
-    check_array(imemory, op[-4]);
+    check_array(op[-4]);
     msize = r_size(op - 4);
     switch (msize) {
 	case 10:
@@ -49,14 +50,14 @@ zmakeglyph32(i_ctx_t *i_ctx_p)
 	    long_form = false;
 	    break;
 	default:
-	    return_error(imemory, e_rangecheck);
+	    return_error(e_rangecheck);
     }
-    code = num_params(imemory, op[-4].value.refs + msize - 1, msize, metrics);
+    code = num_params(op[-4].value.refs + msize - 1, msize, metrics);
     if (code < 0)
 	return code;
     if (~code & 0x3c)		/* check llx .. ury for integers */
-	return_error(imemory, e_typecheck);
-    check_read_type(imemory, op[-3], t_string);
+	return_error(e_typecheck);
+    check_read_type(op[-3], t_string);
     llx = (int)metrics[2];
     lly = (int)metrics[3];
     urx = (int)metrics[4];
@@ -65,16 +66,16 @@ zmakeglyph32(i_ctx_t *i_ctx_p)
     height = ury - lly;
     raster = (width + 7) >> 3;
     if (width < 0 || height < 0 || r_size(op - 3) != raster * height)
-	return_error(imemory, e_rangecheck);
-    check_int_leu(imemory, op[-2], 65535);
-    code = font_param(imemory, op - 1, &pfont);
+	return_error(e_rangecheck);
+    check_int_leu(op[-2], 65535);
+    code = font_param(op - 1, &pfont);
     if (code < 0)
 	return code;
     if (pfont->FontType != ft_CID_bitmap)
-	return_error(imemory, e_invalidfont);
-    check_write_type(imemory, *op, t_string);
+	return_error(e_invalidfont);
+    check_write_type(*op, t_string);
     if (r_size(op) < 22)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     str = op->value.bytes;
     if (long_form || metrics[0] != (wx = (int)metrics[0]) ||
 	metrics[1] != 0 || height == 0 ||
@@ -125,13 +126,13 @@ zremoveglyphs(i_ctx_t *i_ctx_p)
     int code;
     font_cid_range_t range;
 
-    check_int_leu(imemory, op[-2], 65535);
-    check_int_leu(imemory, op[-1], 65535);
-    code = font_param(imemory, op, &range.font);
+    check_int_leu(op[-2], 65535);
+    check_int_leu(op[-1], 65535);
+    code = font_param(op, &range.font);
     if (code < 0)
 	return code;
     if (range.font->FontType != ft_CID_bitmap)
-	return_error(imemory, e_invalidfont);
+	return_error(e_invalidfont);
     range.cid_min = gs_min_cid_glyph + op[-2].value.intval;
     range.cid_max = gs_min_cid_glyph + op[-1].value.intval;
     gx_purge_selected_cached_chars(range.font->dir, select_cid_range,
@@ -151,18 +152,18 @@ zgetmetrics32(i_ctx_t *i_ctx_p)
     int i, n = 6;
     os_ptr wop;
 
-    check_read_type(imemory, *op, t_string);
+    check_read_type(*op, t_string);
     data = op->value.const_bytes;
     size = r_size(op);
     if (size < 5)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     if (data[0]) {
 	/* Short form. */
 	int llx = (int)data[3] - 128, lly = (int)data[4] - 128;
 
 	n = 6;
 	size = 5;
-	push(imemory, 8);
+	push(8);
 	make_int(op - 6, data[2]); /* wx */
 	make_int(op - 5, 0);	/* wy */
 	make_int(op - 4, llx);
@@ -173,17 +174,17 @@ zgetmetrics32(i_ctx_t *i_ctx_p)
 	if (data[1]) {
 	    /* Long form, both WModes. */
 	    if (size < 22)
-		return_error(imemory, e_rangecheck);
+		return_error(e_rangecheck);
 	    n = 10;
 	    size = 22;
 	} else {
 	    /* Long form, WMode = 0 only. */
 	    if (size < 14)
-		return_error(imemory, e_rangecheck);
+		return_error(e_rangecheck);
 	    n = 6;
 	    size = 14;
 	}
-	push(imemory, 2 + n);
+	push(2 + n);
 	for (i = 0; i < n; ++i)
 	    make_int(op - n + i,
 		     ((int)((data[2 * i + 2] << 8) + data[2 * i + 3]) ^ 0x8000)

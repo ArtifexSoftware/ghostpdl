@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* CIE color rendering dictionary creation */
 #include "math_.h"
 #include "memory_.h"
@@ -24,7 +25,7 @@
 #include "gscolor2.h"		/* for gs_set/currentcolorrendering */
 #include "gscrdp.h"
 #include "gxarith.h"
-#include "gxdevcli.h"   /* make the device pointer real for memory access */
+
 /* ---------------- Writing ---------------- */
 
 /* Internal procedures for writing parameter values. */
@@ -42,7 +43,7 @@ write_floats(gs_param_list * plist, gs_param_name key,
     gs_param_float_array fa;
 
     if (p == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     memcpy(p, values, size * sizeof(float));
 
     fa.data = p;
@@ -101,7 +102,7 @@ write_proc3(gs_param_list * plist, gs_param_name key,
 					  "write_proc3");
 
     if (values == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     for (i = 0; i < 3; ++i) {
 	double base = domain->ranges[i].rmin;
 	double scale = (domain->ranges[i].rmax - base) / (size - 1);
@@ -139,7 +140,7 @@ param_put_cie_render1(gs_param_list * plist, gs_cie_render * pcrd,
 		      gs_memory_t * mem)
 {
     int crd_type = GX_DEVICE_CRD1_TYPE;
-    int code = gs_cie_render_sample(mem, pcrd); /* we need RenderTableT_is_id' */
+    int code = gs_cie_render_sample(pcrd); /* we need RenderTableT_is_id' */
 
     if (code < 0)
 	return code;
@@ -158,7 +159,7 @@ param_put_cie_render1(gs_param_list * plist, gs_cie_render * pcrd,
     }
     else if (pcrd->TransformPQR.proc != TransformPQR_default.proc) {
 	/* We have no way to represent the procedure, so return an error. */
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     }
     if ((code = param_write_int(plist, "ColorRenderingType", &crd_type)) < 0 ||
 	(code = write_vector3(plist, "WhitePoint", &pcrd->points.WhitePoint, mem)) < 0
@@ -203,7 +204,7 @@ param_put_cie_render1(gs_param_list * plist, gs_cie_render * pcrd,
 	gs_param_int_array ia;
 
 	if (size == 0 || table == 0)
-	    code = gs_note_error(mem, gs_error_VMerror);
+	    code = gs_note_error(gs_error_VMerror);
 	else {
 	    memcpy(size, pcrd->RenderTable.lookup.dims, sizeof(int) * n);
 
@@ -236,7 +237,7 @@ param_put_cie_render1(gs_param_list * plist, gs_cie_render * pcrd,
 		int i;
 
 		if (values == 0)
-		    return_error(mem, gs_error_VMerror);
+		    return_error(gs_error_VMerror);
 		for (i = 0; i < m; ++i) {
 		    double scale = 255.0 / (size - 1);
 		    int j;
@@ -271,8 +272,7 @@ load_vector3(gs_vector3 * pvec, const float *p)
     pvec->u = p[0], pvec->v = p[1], pvec->w = p[2];
 }
 private int
-read_floats(const gs_memory_t *mem, 
-	    gs_param_list * plist, gs_param_name key, float *values, int count)
+read_floats(gs_param_list * plist, gs_param_name key, float *values, int count)
 {
     gs_param_float_array fa;
     int code = param_read_float_array(plist, key, &fa);
@@ -280,17 +280,17 @@ read_floats(const gs_memory_t *mem,
     if (code)
 	return code;
     if (fa.size != count)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     memcpy(values, fa.data, sizeof(float) * count);
 
     return 0;
 }
 private int
-read_vector3(const gs_memory_t *mem, gs_param_list * plist, gs_param_name key,
+read_vector3(gs_param_list * plist, gs_param_name key,
 	     gs_vector3 * pvec, const gs_vector3 * dflt)
 {
     float values[3];
-    int code = read_floats(mem, plist, key, values, 3);
+    int code = read_floats(plist, key, values, 3);
 
     switch (code) {
 	case 1:		/* not defined */
@@ -305,11 +305,10 @@ read_vector3(const gs_memory_t *mem, gs_param_list * plist, gs_param_name key,
     return code;
 }
 private int
-read_matrix3(const gs_memory_t *mem, 
-	     gs_param_list * plist, gs_param_name key, gs_matrix3 * pmat)
+read_matrix3(gs_param_list * plist, gs_param_name key, gs_matrix3 * pmat)
 {
     float values[9];
-    int code = read_floats(mem, plist, key, values, 9);
+    int code = read_floats(plist, key, values, 9);
 
     switch (code) {
 	case 1:		/* not defined */
@@ -325,11 +324,10 @@ read_matrix3(const gs_memory_t *mem,
     return code;
 }
 private int
-read_range3(const gs_memory_t *mem, 
-	    gs_param_list * plist, gs_param_name key, gs_range3 * prange)
+read_range3(gs_param_list * plist, gs_param_name key, gs_range3 * prange)
 {
     float values[6];
-    int code = read_floats(mem, plist, key, values, 6);
+    int code = read_floats(plist, key, values, 6);
 
     switch (code) {
 	case 1:		/* not defined */
@@ -348,10 +346,10 @@ read_range3(const gs_memory_t *mem,
     return code;
 }
 private int
-read_proc3(const gs_memory_t *mem, gs_param_list * plist, gs_param_name key,
+read_proc3(gs_param_list * plist, gs_param_name key,
 	   float values[gx_cie_cache_size * 3])
 {
-    return read_floats(mem, plist, key, values, gx_cie_cache_size * 3);
+    return read_floats(plist, key, values, gx_cie_cache_size * 3);
 }
 
 /* Read a CRD from a device parameter. */
@@ -371,9 +369,9 @@ gs_cie_render1_param_initialize(gs_cie_render * pcrd, gs_param_list * plist,
 	return code;
     if (dcode < 0)
 	return dcode;
-    gs_cie_render_init(dev->memory, pcrd);
-    gs_cie_render_sample(dev->memory, pcrd);
-    return gs_cie_render_complete(dev->memory, pcrd);
+    gs_cie_render_init(pcrd);
+    gs_cie_render_sample(pcrd);
+    return gs_cie_render_complete(pcrd);
 }
 
 /* Define the structure for passing Encode values as "client data". */
@@ -508,21 +506,21 @@ param_get_cie_render1(gs_cie_render * pcrd, gs_param_list * plist,
     pcrd->status = CIE_RENDER_STATUS_BUILT;
     if ((code = param_read_int(plist, "ColorRenderingType", &crd_type)) < 0 ||
 	crd_type != GX_DEVICE_CRD1_TYPE ||
-	(code = read_vector3(dev->memory, plist, "WhitePoint", &pcrd->points.WhitePoint,
+	(code = read_vector3(plist, "WhitePoint", &pcrd->points.WhitePoint,
 			     NULL)) < 0 ||
-	(code = read_vector3(dev->memory, plist, "BlackPoint", &pcrd->points.BlackPoint,
+	(code = read_vector3(plist, "BlackPoint", &pcrd->points.BlackPoint,
 			     &BlackPoint_default)) < 0 ||
-	(code = read_matrix3(dev->memory, plist, "MatrixPQR", &pcrd->MatrixPQR)) < 0 ||
-	(code = read_range3(dev->memory, plist, "RangePQR", &pcrd->RangePQR)) < 0 ||
+	(code = read_matrix3(plist, "MatrixPQR", &pcrd->MatrixPQR)) < 0 ||
+	(code = read_range3(plist, "RangePQR", &pcrd->RangePQR)) < 0 ||
 	/* TransformPQR is handled specially below. */
-	(code = read_matrix3(dev->memory, plist, "MatrixLMN", &pcrd->MatrixLMN)) < 0 ||
+	(code = read_matrix3(plist, "MatrixLMN", &pcrd->MatrixLMN)) < 0 ||
 	(code_lmn = code =
-	 read_proc3(dev->memory, plist, "EncodeLMNValues", data.lmn)) < 0 ||
-	(code = read_range3(dev->memory, plist, "RangeLMN", &pcrd->RangeLMN)) < 0 ||
-	(code = read_matrix3(dev->memory, plist, "MatrixABC", &pcrd->MatrixABC)) < 0 ||
+	 read_proc3(plist, "EncodeLMNValues", data.lmn)) < 0 ||
+	(code = read_range3(plist, "RangeLMN", &pcrd->RangeLMN)) < 0 ||
+	(code = read_matrix3(plist, "MatrixABC", &pcrd->MatrixABC)) < 0 ||
 	(code_abc = code =
-	 read_proc3(dev->memory, plist, "EncodeABCValues", data.abc)) < 0 ||
-	(code = read_range3(dev->memory, plist, "RangeABC", &pcrd->RangeABC)) < 0
+	 read_proc3(plist, "EncodeABCValues", data.abc)) < 0 ||
+	(code = read_range3(plist, "RangeABC", &pcrd->RangeABC)) < 0
 	)
 	return code;
     /* Handle the sampled functions. */
@@ -536,7 +534,7 @@ param_get_cie_render1(gs_cie_render * pcrd, gs_param_list * plist,
 	    /* The procedure name must be null-terminated: */
 	    /* see param_put_cie_render1 above. */
 	    if (pname.size < 1 || pname.data[pname.size - 1] != 0)
-		return_error(dev->memory, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	    pcrd->TransformPQR.proc = TransformPQR_lookup_proc_name;
 	    pcrd->TransformPQR.proc_name = (const char *)pname.data;
 	    switch (code = param_read_string(plist, "TransformPQRData", &pdata)) {
@@ -575,7 +573,7 @@ param_get_cie_render1(gs_cie_render * pcrd, gs_param_list * plist,
     } else if (code < 0)
 	return code;
     else if (rt_size.size != 4)
-	return_error(dev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     else {
 	gs_param_string_array rt_values;
 	gs_const_string *table;
@@ -583,21 +581,21 @@ param_get_cie_render1(gs_cie_render * pcrd, gs_param_list * plist,
 
 	for (j = 0; j < rt_size.size; ++j)
 	    if (rt_size.data[j] < 1)
-		return_error(dev->memory, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	code = param_read_string_array(plist, "RenderTableTable", &rt_values);
 	if (code < 0)
 	    return code;
 	if (code > 0 || rt_values.size != rt_size.data[0])
-	    return_error(dev->memory, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	/* Note: currently n = 3 (rt_size.size = 4) always. */
 	for (j = 0; j < rt_values.size; ++j)
 	    if (rt_values.data[j].size !=
 		rt_size.data[1] * rt_size.data[2] * rt_size.data[3])
-		return_error(dev->memory, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	pcrd->RenderTable.lookup.n = n = rt_size.size - 1;
 	pcrd->RenderTable.lookup.m = m = rt_size.data[n];
 	if (n > 4 || m > 4)
-	    return_error(dev->memory, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	memcpy(pcrd->RenderTable.lookup.dims, rt_size.data, n * sizeof(int));
 	table =
 	    gs_alloc_struct_array(pcrd->rc.memory,
@@ -605,24 +603,24 @@ param_get_cie_render1(gs_cie_render * pcrd, gs_param_list * plist,
 				  gs_const_string, &st_const_string_element,
 				  "RenderTable table");
 	if (table == 0)
-	    return_error(dev->memory, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	for (j = 0; j < pcrd->RenderTable.lookup.dims[0]; ++j) {
 	    table[j].data = rt_values.data[j].data;
 	    table[j].size = rt_values.data[j].size;
 	}
 	pcrd->RenderTable.lookup.table = table;
 	pcrd->RenderTable.T = RenderTableT_from_data;
-	code_t = code = read_floats(dev->memory, plist, "RenderTableTValues", data.t,
+	code_t = code = read_floats(plist, "RenderTableTValues", data.t,
 				    gx_cie_cache_size * m);
 	if (code > 0)
 	    pcrd->RenderTable.T = RenderTableT_default;
 	else if (code == 0)
 	    pcrd->RenderTable.T = RenderTableT_from_data;
     }
-    if ((code = gs_cie_render_init(dev->memory, pcrd)) >= 0 &&
-	(code = gs_cie_render_sample(dev->memory, pcrd)) >= 0
+    if ((code = gs_cie_render_init(pcrd)) >= 0 &&
+	(code = gs_cie_render_sample(pcrd)) >= 0
 	)
-	code = gs_cie_render_complete(dev->memory, pcrd);
+	code = gs_cie_render_complete(pcrd);
     /* Clean up before exiting. */
     pcrd->client_data = 0;
     if (code_lmn == 0)

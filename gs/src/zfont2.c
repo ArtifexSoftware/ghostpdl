@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Type 2 font creation operators */
 #include "ghost.h"
 #include "oper.h"
@@ -40,7 +41,7 @@ subr_bias(const ref * psubrs)
  * fonts.
  */
 int
-type2_font_params(const gs_memory_t *mem, const_os_ptr op, charstring_font_refs_t *pfr,
+type2_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
 		  gs_type1_data *pdata1)
 {
     int code;
@@ -53,16 +54,16 @@ type2_font_params(const gs_memory_t *mem, const_os_ptr op, charstring_font_refs_
     /* Get information specific to Type 2 fonts. */
     if (dict_find_string(pfr->Private, "GlobalSubrs", &temp) > 0) {
 	if (!r_is_array(temp))
-	    return_error(mem, e_typecheck);
+	    return_error(e_typecheck);
         pfr->GlobalSubrs = temp;
     }
     pdata1->gsubrNumberBias = subr_bias(pfr->GlobalSubrs);
-    if ((code = dict_uint_param(mem, pfr->Private, "gsubrNumberBias",
+    if ((code = dict_uint_param(pfr->Private, "gsubrNumberBias",
 				0, max_uint, pdata1->gsubrNumberBias,
 				&pdata1->gsubrNumberBias)) < 0 ||
-	(code = dict_float_param(mem, pfr->Private, "defaultWidthX", 0.0,
+	(code = dict_float_param(pfr->Private, "defaultWidthX", 0.0,
 				 &dwx)) < 0 ||
-	(code = dict_float_param(mem, pfr->Private, "nominalWidthX", 0.0,
+	(code = dict_float_param(pfr->Private, "nominalWidthX", 0.0,
 				 &nwx)) < 0
 	)
 	return code;
@@ -74,7 +75,7 @@ type2_font_params(const gs_memory_t *mem, const_os_ptr op, charstring_font_refs_
 	if (dict_find_string(pfr->Private, "initialRandomSeed", &pirs) <= 0)
 	    pdata1->initialRandomSeed = 0;
 	else if (!r_has_type(pirs, t_integer))
-	    return_error(mem, e_typecheck);
+	    return_error(e_typecheck);
 	else
 	    pdata1->initialRandomSeed = pirs->value.intval;
     }
@@ -95,10 +96,10 @@ zbuildfont2(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    code = charstring_font_get_refs(imemory, op, &refs);
+    code = charstring_font_get_refs(op, &refs);
     if (code < 0)
 	return code;
-    code = type2_font_params(imemory, op, &refs, &data1);
+    code = type2_font_params(op, &refs, &data1);
     if (code < 0)
 	return code;
     return build_charstring_font(i_ctx_p, op, &build, ft_encrypted2, &refs,

@@ -544,7 +544,7 @@ horiz_cursor_pos_units(
 )
 {
     if ( pcs->personality == rtl )
-        dprintf(pcs->memory, "Warning: device/resolution dependent units used\n" );
+        dprintf("Warning: device/resolution dependent units used\n" );
     do_horiz_motion(pargs, pcs, pcs->uom_cp, true);
     return 0;
 }
@@ -635,7 +635,7 @@ vert_cursor_pos_units(
 )
 {
     if ( pcs->personality == rtl )
-        dprintf(pcs->memory, "Warning: device/resolution dependent units used\n" );
+        dprintf("Warning: device/resolution dependent units used\n" );
     return do_vertical_move(pcs, pargs, pcs->uom_cp, false, false, false, true);
 }
 
@@ -706,14 +706,14 @@ push_pop_cursor(
 
         ppt->x = (double)pcs->cap.x;
         ppt->y = (double)pcs->cap.y;
-        gs_point_transform( pcs->memory, ppt->x, ppt->y, &(pcs->xfm_state.pd2lp_mtx), ppt);
+        gs_point_transform( ppt->x, ppt->y, &(pcs->xfm_state.pd2lp_mtx), ppt);
 
     } else if ((type == 1) && (pcs->cursor_stk_size > 0)) {
         gs_point *  ppt = &(pcs->cursor_stk[--pcs->cursor_stk_size]);
         gs_matrix   lp2pd;
 
         pcl_invert_mtx(&(pcs->xfm_state.pd2lp_mtx), &lp2pd);
-        gs_point_transform(pcs->memory, ppt->x, ppt->y, &lp2pd, ppt);
+        gs_point_transform(ppt->x, ppt->y, &lp2pd, ppt);
         pcl_set_cap_x(pcs, (coord)ppt->x, false, false);
         pcl_set_cap_y( pcs,
                        (coord)ppt->y - pcs->margins.top,
@@ -760,7 +760,7 @@ pcursor_do_registration(
 )
 {
 
-    DEFINE_CLASS(pmem, '&')
+    DEFINE_CLASS('&')
     {
         'k', 'H',
         PCL_COMMAND( "Horizontal Motion Index",
@@ -826,7 +826,7 @@ pcursor_do_registration(
     },
     END_CLASS
 
-    DEFINE_CLASS(pmem, '*')
+    DEFINE_CLASS('*')
     {
         'p', 'X',
         PCL_COMMAND( "Horizontal Cursor Position Units",
@@ -843,12 +843,12 @@ pcursor_do_registration(
     },
     END_CLASS
 
-    DEFINE_CONTROL(pmem, CR, "CR", cmd_CR)
-    DEFINE_CONTROL(pmem, BS, "BS", cmd_BS)
-    DEFINE_CONTROL(pmem, HT, "HT", cmd_HT)
-    DEFINE_ESCAPE(pmem, '=', "Half Line Feed", half_line_feed)
-    DEFINE_CONTROL(pmem, LF, "LF", cmd_LF)
-    DEFINE_CONTROL(pmem, FF, "FF", cmd_FF)
+    DEFINE_CONTROL(CR, "CR", cmd_CR)
+    DEFINE_CONTROL(BS, "BS", cmd_BS)
+    DEFINE_CONTROL(HT, "HT", cmd_HT)
+    DEFINE_ESCAPE('=', "Half Line Feed", half_line_feed)
+    DEFINE_CONTROL(LF, "LF", cmd_LF)
+    DEFINE_CONTROL(FF, "FF", cmd_FF)
 
     return 0;
 }

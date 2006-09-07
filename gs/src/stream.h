@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Definitions for Ghostscript stream package */
 /* Requires stdio.h */
 
@@ -18,6 +19,7 @@
 #  define stream_INCLUDED
 
 #include "scommon.h"
+#include "gxiodev.h"
 #include "srdline.h"
 
 /* See scommon.h for documentation on the design of streams. */
@@ -329,11 +331,46 @@ stream_state *s_alloc_state(gs_memory_t *, gs_memory_type_ptr_t, client_name_t);
  * Initialize a separately allocated stream or stream state, as if allocated
  * by s_alloc[_state].
  */
-void s_init(stream *s, gs_memory_t *null_if_on_stack, const gs_memory_t *never_null);
-void s_init_state(stream_state *, const stream_template *, gs_memory_t *, const gs_memory_t *);
+void s_init(stream *, gs_memory_t *);
+void s_init_state(stream_state *, const stream_template *, gs_memory_t *);
 
-/* must be called to initialize a stream allocated on the stack */
-void s_stack_init(stream *, const gs_memory_t *);
+/* create a stream for a file object */
+int file_prepare_stream(const char *, uint, const char *,
+		 uint, stream **, char[4], gs_memory_t *);
+
+/* Set up a file stream on an OS file.  */
+void file_init_stream(stream *, FILE *, const char *, byte *, uint);
+
+/* Open a file stream, optionally on an OS file. */
+int file_open_stream(const char *, uint, const char *,
+		 uint, stream **, gx_io_device *,
+		 iodev_proc_fopen_t, gs_memory_t *);
+
+/* Allocate and return a file stream. */
+stream * file_alloc_stream(gs_memory_t *, client_name_t);
+
+/*
+ * Macros for checking file validity.
+ * NOTE: in order to work around a bug in the Borland 5.0 compiler,
+ * you must use file_is_invalid rather than !file_is_valid.
+ */
+#define file_is_valid(svar,op)\
+  (svar = fptr(op), (svar->read_id | svar->write_id) == r_size(op))
+#define file_is_invalid(svar,op)\
+  (svar = fptr(op), (svar->read_id | svar->write_id) != r_size(op))
+#define check_file(svar,op)\
+  BEGIN\
+    check_type(*(op), t_file);\
+    if ( file_is_invalid(svar, op) ) return_error(e_invalidaccess);\
+  END
+
+/* Close a file stream. */
+int file_close_file(stream *);
+
+int file_close_finish(stream *);
+
+/* Disable further access on the stream by mangling the id's */
+int file_close_disable(stream *);
 
 /* Create a stream on a string or a file. */
 void sread_string(stream *, const byte *, uint),
@@ -359,7 +396,7 @@ int sfilename(stream *, gs_const_string *);
 void swrite_position_only(stream *);
 
 /* Standard stream initialization */
-void s_std_init(stream *, byte *, uint, const stream_procs *, int /*mode */);
+void s_std_init(stream *, byte *, uint, const stream_procs *, int /*mode */ );
 
 /* Standard stream finalization */
 void s_disable(stream *);

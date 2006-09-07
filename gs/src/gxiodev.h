@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Structure and default implementation of IODvices */
 /* Requires gsmemory.h */
 
@@ -92,24 +93,24 @@ struct gx_io_device_procs_s {
     /* and again in 3.20 to return the real fname separately */
 
 #define iodev_proc_fopen(proc)\
-  int proc(const gs_memory_t *mem, gx_io_device *iodev, const char *fname, const char *access,\
+  int proc(gx_io_device *iodev, const char *fname, const char *access,\
 	   FILE **pfile, char *rfname, uint rnamelen)
     iodev_proc_fopen((*fopen));
 
 #define iodev_proc_fclose(proc)\
-  int proc(const gs_memory_t *mem, gx_io_device *iodev, FILE *file)
+  int proc(gx_io_device *iodev, FILE *file)
     iodev_proc_fclose((*fclose));
 
 #define iodev_proc_delete_file(proc)\
-  int proc(const gs_memory_t *mem, gx_io_device *iodev, const char *fname)
+  int proc(gx_io_device *iodev, const char *fname)
     iodev_proc_delete_file((*delete_file));
 
 #define iodev_proc_rename_file(proc)\
-  int proc(const gs_memory_t *mem, gx_io_device *iodev, const char *from, const char *to)
+  int proc(gx_io_device *iodev, const char *from, const char *to)
     iodev_proc_rename_file((*rename_file));
 
 #define iodev_proc_file_status(proc)\
-  int proc(const gs_memory_t *mem, gx_io_device *iodev, const char *fname, struct stat *pstat)
+  int proc(gx_io_device *iodev, const char *fname, struct stat *pstat)
     iodev_proc_file_status((*file_status));
 
 #define iodev_proc_enumerate_files(proc)\
@@ -118,7 +119,7 @@ struct gx_io_device_procs_s {
     iodev_proc_enumerate_files((*enumerate_files));
 
 #define iodev_proc_enumerate_next(proc)\
-  uint proc(const gs_memory_t *mem, file_enum *pfen, char *ptr, uint maxlen)
+  uint proc(file_enum *pfen, char *ptr, uint maxlen)
     iodev_proc_enumerate_next((*enumerate_next));
 
 #define iodev_proc_enumerate_close(proc)\
@@ -172,7 +173,7 @@ int gs_putdevparams(gx_io_device *, gs_param_list *);
 
 /* Convert an OS error number to a PostScript error */
 /* if opening a file fails. */
-int gs_fopen_errno_to_code(const gs_memory_t *mem, int);
+int gs_fopen_errno_to_code(int);
 
 /* Test whether a string is equal to a character. */
 /* (This is used for access testing in file_open procedures.) */

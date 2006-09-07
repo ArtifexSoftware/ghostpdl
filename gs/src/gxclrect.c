@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Rectangle-oriented command writing for command list */
 #include "gx.h"
 #include "gserrors.h"
@@ -91,13 +92,13 @@ cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    code = set_cmd_put_op(dp, cldev, pcls, op + 0x10, 3);
 	    if (code < 0)
 		return code;
-	    if_debug3(cldev->memory, 'L', "    rs2:%d,%d,0,%d\n",
+	    if_debug3('L', "    rs2:%d,%d,0,%d\n",
 		      dx, dwidth, dheight);
 	} else {
 	    code = set_cmd_put_op(dp, cldev, pcls, op + 0x10, 5);
 	    if (code < 0)
 		return code;
-	    if_debug4(cldev->memory, 'L', "    rs4:%d,%d,%d,%d\n",
+	    if_debug4('L', "    rs4:%d,%d,%d,%d\n",
 		      dx, dwidth, dy, dheight);
 	    dp[3] = dy - rmin;
 	    dp[4] = dheight - rmin;
@@ -124,7 +125,7 @@ cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	code = set_cmd_put_op(dp, cldev, pcls, op, rcsize);
 	if (code < 0)
 	    return code;
-	if_debug5(cldev->memory, 'L', "    r%d:%d,%d,%d,%d\n",
+	if_debug5('L', "    r%d:%d,%d,%d,%d\n",
 		  rcsize - 1, dx, dwidth, dy, dheight);
 	cmd_put_rect(&pcls->rect, dp + 1);
     }
@@ -304,10 +305,10 @@ copy:{
 	}
 	op += compress;
 	if (dx) {
-	    *dp++ = cmd_count_op(dev->memory, cmd_opv_set_misc, 2);
+	    *dp++ = cmd_count_op(cmd_opv_set_misc, 2);
 	    *dp++ = cmd_set_misc_data_x + dx;
 	}
-	*dp++ = cmd_count_op(dev->memory, op, csize);
+	*dp++ = cmd_count_op(op, csize);
 	cmd_put2w(x, y, dp);
 	cmd_put2w(w1, height, dp);
 	pcls->rect = rect;
@@ -398,10 +399,10 @@ copy:{
 	    }
 	    op += compress;
 	    if (dx) {
-		*dp++ = cmd_count_op(dev->memory, cmd_opv_set_misc, 2);
+		*dp++ = cmd_count_op(cmd_opv_set_misc, 2);
 		*dp++ = cmd_set_misc_data_x + dx;
 	    }
-	    *dp++ = cmd_count_op(dev->memory, op, csize);
+	    *dp++ = cmd_count_op(op, csize);
 	    cmd_put2w(x, y, dp);
 	    cmd_put2w(w1, height, dp);
 	    pcls->rect = rect;
@@ -427,7 +428,7 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
 
     /* If the target can't perform copy_alpha, exit now */
     if (depth > 1 && (cdev->disable_mask & clist_disable_copy_alpha) != 0)
-	return_error(dev->memory, gs_error_unknownerror);
+	return_error(gs_error_unknownerror);
 
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     y0 = y;
@@ -504,10 +505,10 @@ copy:{
 	    }
 	    op += compress;
 	    if (dx) {
-		*dp++ = cmd_count_op(dev->memory, cmd_opv_set_misc, 2);
+		*dp++ = cmd_count_op(cmd_opv_set_misc, 2);
 		*dp++ = cmd_set_misc_data_x + dx;
 	    }
-	    *dp++ = cmd_count_op(dev->memory, op, csize);
+	    *dp++ = cmd_count_op(op, csize);
 	    *dp++ = depth;
 	    cmd_put2w(x, y, dp);
 	    cmd_put2w(w1, height, dp);

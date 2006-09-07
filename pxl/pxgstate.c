@@ -83,9 +83,9 @@ px_paint_rc_adjust(px_paint_t *ppt, int delta, gs_memory_t *mem)
 	     */
 	    cspace.type = &gs_color_space_type_Pattern;
 	    cspace.params.pattern.has_base_space = false;
-	    (*cspace.type->adjust_color_count)(mem, &ppt->value.pattern.color,
+	    (*cspace.type->adjust_color_count)(&ppt->value.pattern.color,
 					       &cspace, delta);
-	    rc_adjust_only(mem, ppt->value.pattern.pattern, delta,
+	    rc_adjust_only(ppt->value.pattern.pattern, delta,
 			   "px_paint_rc_adjust");
 	  }
 }
@@ -171,7 +171,7 @@ copy:	      if ( phtt->data )
 		{ byte *str = gs_alloc_string(pxfrom->memory, phtt->size,
 					      "px_gstate_client_copy(thresholds)");
 		  if ( str == 0 )
-		    return_error(pxfrom->memory, errorInsufficientMemory);
+		    return_error(errorInsufficientMemory);
 		  memcpy(str, phtt->data, phtt->size);
 		  phtt->data = str;
 		}
@@ -338,18 +338,18 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
     case eCRGB:
         if ( pl_cspace_init_SRGB(&pbase_pcs, pgs) < 0 )
             /* should not happen */
-            return_error(pgs->memory, errorInsufficientMemory);
+            return_error(errorInsufficientMemory);
         cie_space = true;
 	break;
     default:
-	return_error(pgs->memory, errorIllegalAttributeValue);
+	return_error(errorIllegalAttributeValue);
     }
 
     if ( params->indexed ) { 
         memmove(&pcs->params.indexed.base_space, 
                 (cie_space ? pbase_pcs : &base_pcs),
                 sizeof(pcs->params.indexed.base_space));
-	gs_cspace_init(pcs, &gs_color_space_type_Indexed, pgs->memory);
+	gs_cspace_init(pcs, &gs_color_space_type_Indexed, pgs->memory, true);
 	pcs->params.indexed.hival = (1 << depth) - 1;
 	pcs->params.indexed.lookup.table.data = palette->data;
 	pcs->params.indexed.lookup.table.size = palette->size;
@@ -371,7 +371,7 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
 /* Check the setting of the clipping region. */
 #define check_clip_region(par, pxs)\
   if ( par->pv[0]->value.i == eExterior && pxs->pxgs->clip_mode != eEvenOdd )\
-    return_error(pxs->memory, errorClipModeMismatch)
+    return_error(errorClipModeMismatch)
 
 /* Record the most recent character transformation. */
 private void
@@ -739,9 +739,9 @@ pxSetLineDash(px_args_t *par, px_state_t *pxs)
 	    int code;
 
 	    if ( par->pv[2] )
-	      return_error(pxgs->memory, errorIllegalAttributeCombination);
+	      return_error(errorIllegalAttributeCombination);
 	    if ( size > MAX_DASH_ELEMENTS )
-	      return_error(pxgs->memory, errorIllegalArraySize);
+	      return_error(errorIllegalArraySize);
 
 	    /*
 	     * The H-P documentation gives no clue about what a negative
@@ -858,12 +858,12 @@ shrink:		  if ( inext == 0 )
 	  }
 	else if ( par->pv[2] )
 	  { if ( par->pv[1] )
-	      return_error(pxgs->memory, errorIllegalAttributeCombination);
+	      return_error(errorIllegalAttributeCombination);
 	    pxgs->dashed = false;
 	    return gs_setdash(pgs, NULL, 0, 0.0);
 	  }
 	else
-	  return_error(pxgs->memory, errorMissingAttribute);
+	  return_error(errorMissingAttribute);
 }
 
 const byte apxSetLineCap[] = {
@@ -880,7 +880,7 @@ int
 pxBeginUserDefinedLineCap(px_args_t *par, px_state_t *pxs)
 {
 
-    dprintf(pxs->memory, "undocumented\n" );
+    dprintf("undocumented\n" );
     return 0;
 }
 
@@ -890,7 +890,7 @@ int
 pxEndUserDefinedLineCap(px_args_t *par, px_state_t *pxs)
 {
 
-    dprintf(pxs->memory, "undocumented\n" );
+    dprintf("undocumented\n" );
     return 0;
 }
 
@@ -996,8 +996,7 @@ pxSetPageScale(px_args_t *par, px_state_t *pxs)
             sy = pxs->units_per_measure.y / suy;
             /* check for overflow.  NB we should do a better job here */
             if ( fabs(sx) > 1000.0 ) {
-                dprintf2(pxs->memory, 
-			 "warning probable overflow avoided for scaling factors %f %f\n", 
+                dprintf2("warning probable overflow avoided for scaling factors %f %f\n", 
 			 sx, sy );
                 sx = sy = 1;
             }
@@ -1099,7 +1098,7 @@ pxSetCharSubMode(px_args_t *par, px_state_t *pxs)
 	if ( psubs->value.array.size != 1 ||
 	     psubs->value.array.data[0] >= pxeCharSubModeArray_next
 	   )
-	  return_error(pxs->memory, errorIllegalAttributeValue);
+	  return_error(errorIllegalAttributeValue);
         arg = psubs->value.array.data[0];
         if (pxs->pxgs->char_sub_mode != arg) {
             pxs->pxgs->char_sub_mode = arg;

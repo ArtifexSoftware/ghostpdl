@@ -5072,12 +5072,12 @@ hpgl_stick_segments(const gs_memory_t *mem, void *data, uint char_index)
 	    i += 3;
 	}
 	else
-	    return_error(mem, gs_error_invalidfont);
+	    return_error(gs_error_invalidfont);
     }
 
     /* table must be corrupt if the loop didn't stop at stop */
     if ( i != stop )
-	return_error(mem, gs_error_invalidfont);
+	return_error(gs_error_invalidfont);
     return 0;
 }
 
@@ -5120,12 +5120,12 @@ hpgl_arc_segments(const gs_memory_t *mem, void *data, uint char_index)
 	    i += 7;
 	}
 	else
-	    return_error(mem, gs_error_invalidfont);
+	    return_error(gs_error_invalidfont);
     }
 
     /* table must be corrupt if the loop didn't stop at stop */
     if ( i != stop )
-	return_error(mem, gs_error_invalidfont);
+	return_error(gs_error_invalidfont);
     return 0;
 }
 	

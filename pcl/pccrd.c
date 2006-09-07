@@ -66,7 +66,6 @@ private const gs_matrix3    dflt_MatrixLMN = { {  3.51, -1.07,  0.06 },
  */
   private int
 dflt_TransformPQR_proc(
-    const gs_memory_t   *mem,
     int                 cmp_indx,
     floatp              val,
     const gs_cie_wbsd * cs_wbsd,
@@ -101,7 +100,7 @@ free_crd(
     pcl_crd_t *     pcrd = (pcl_crd_t *)pvcrd;
 
     if (pcrd->pgscrd != 0)
-        rc_decrement(pmem, pcrd->pgscrd, cname);
+        rc_decrement(pcrd->pgscrd, cname);
     gs_free_object(pmem, pvcrd, cname);
 }
 
@@ -314,7 +313,7 @@ pcl_crd_set_view_illuminant(
                                      );
 
     if (pcrd != pold)
-	rc_decrement(pcs->memory, pold, "pcl set viewing illuminant");
+	rc_decrement(pold, "pcl set viewing illuminant");
     return code;
 }
 
@@ -338,7 +337,7 @@ pcl_crd_set_crd(
              ((code = pcl_crd_build_default_crd(pcs)) < 0)  )
             return code;
         pcrd = pcs->pcl_default_crd;
-        pcl_crd_init_from(pcs->memory, *ppcrd, pcrd);
+        pcl_crd_init_from(*ppcrd, pcrd);
     }
 
     /* see if there is anything to do */
@@ -346,6 +345,6 @@ pcl_crd_set_crd(
         return 0;
 
     if ((code = gs_setcolorrendering(pcs->pgs, pcrd->pgscrd)) >= 0)
-        pcl_crd_copy_from(pcs->memory, pcs->pids->pcrd, pcrd);
+        pcl_crd_copy_from(pcs->pids->pcrd, pcrd);
     return code;
 }

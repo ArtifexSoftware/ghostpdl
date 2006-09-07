@@ -2,40 +2,95 @@ gslt (gs lite)
 
 graphics library client, sans pdl's, based on Peter's gslib.c in gs/src/.
 
+simple APIs for image and font loading have been built on top of this
+stripped down Ghostscript build.
+
+File descriptions:
+
+gslt.h is a header that allows basic use of the Ghostscript graphics 
+library without including the discipline of all the general headers.
+
+gslt_font_api.h declares the simplified OpenType font loading API.
+gslt_image.h declares the simplified image loading API.
+
+Currently only JPEG, PNG, and an appropriate subset of TIFF image 
+formats are supported.
+
+There are three test and example clients for the three APIs that show
+how they can be used and verify that the implementation works.
+
+gslt_test.c - test general drawing routines. Invoke with an output 
+              device name and test number to run.
+gslt_font_api_test.c - OpenType font load and draw example. The
+              test font name is hardcoded in the file.
+gslt_image_test.c - test image loading routines. Invoke with an
+              image filename on the commandline.
+
+While these are intended to work on a stripped-down Ghostscript build,
+any recent version will work. Note that $(GLD)roplib.dev may need to
+be added to FEATURE_DEVS in the top-level Ghostscript makefile for 
+gslt_test.c to link properly; this example used PCL-style Raster 
+Operations in one test and these are not normally included in the main 
+Ghostscript build.
 
 BUILD
 -----
 
 Build a shared library object of ghostscript.
 
-   cd ../../gs   # relative to the gslite directory.
+On *nix:
+
+   cd gs   # relative to the gslite directory.
+
    ln -s src/unix-gcc.mak Makefile
-   make sodebug # make so - production build.
+ or
+   ./configure
+
+   make sodebug # make so for a production build.
    
-Build gslite:        
-  
-   cd - # back to the gslite directory
+   cd .. # back to the gslite directory
    make depend
    make
-   
+   make check # verify implementation
+
+On MS Windows and other systems:
+
+   build a libgs.dll as usual
+   create a new project with:
+	gslt.h
+	gslt_init.c
+	gslt_alloc.h
+	gslt_alloc.c
+	gslt_font_api.h
+	gslt_font_api.c
+	gslt_image.h
+	gslt_image.c
+	gslt_image_jpeg.c
+	gslt_image_png.c
+	gslt_image_tiff.c
+    link this with libgs.dll to create a gslt library.
+
+    compile each of the *_test.c examples, linking against
+    gslt and libgs.dll to verify the implementation.
+
 RUN
 ---
 
-The shared library can either be put in a well defined place or
-something like this will work if you run the client from the same
-directory each time:
+On Unix-like systems, the shared library can either be put in a well 
+defined place or something like this will work if you run the client 
+from the same directory each time:
 
-export LD_LIBRARY_PATH=../../gs/sobin/
+export LD_LIBRARY_PATH=./gs/sobin/
 
 Take care to avoid a common problem: use `ldd gslt' to verify the
 shared library (libgs.so.n) is the one you built above and not one
 installed say in /usr/lib/
 
-gslt <device> <testnumber>
+./gslt_test <device> <testnumber>
 
 example:
 
-gslt x11 5
+./gslt_test x11 5
 
 The first argument is the device, see the ghostscript library makefile
 for supported devices.
@@ -44,4 +99,19 @@ example 2:
 
 run all of the tests:
 
-for x in 1 2 3 4 5 6 7 8 9; do gslt x11 $x; done
+for x in 1 2 3 4 5 6 7 8 9; do gslt_test x11 $x; done
+
+Likewise, to run the font_api test, edit the source file to set a valid 
+path to a test font, recompile and run:
+
+./gslt_font_api_test
+
+To test the image loading library run for example:
+
+./gslt_image_test tiger.jpeg
+./gslt_image_test tiger.png
+./gslt_image_test tiger.tiff
+
+Each invokation will try to load the specified image file and save the 
+output to 'out.pnm' which can be examined with an image editor.
+

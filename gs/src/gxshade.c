@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Shading rendering support */
 #include "math_.h"
 #include "gx.h"
@@ -24,6 +25,7 @@
 #include "gxdht.h"		/* for computing # of different colors */
 #include "gxpaint.h"
 #include "gxshade.h"
+#include "gxshade4.h"
 #include "gsicc.h"
 
 /* Define a maximum smoothness value. */
@@ -39,6 +41,7 @@ private int cs_next_packed_decoded(shade_coord_stream_t *, int,
 				   const float[2], float *);
 private int cs_next_array_decoded(shade_coord_stream_t *, int,
 				  const float[2], float *);
+private bool cs_eod(const shade_coord_stream_t * cs);
 
 /* Initialize a packed value stream. */
 void
@@ -60,7 +63,8 @@ shade_next_init(shade_coord_stream_t * cs,
 	    )
 	    sreset(s);
     } else {
-	sread_string(&cs->ds, params->DataSource.data.str.data,
+	s_init(&cs->ds, NULL);
+        sread_string(&cs->ds, params->DataSource.data.str.data,
 		     params->DataSource.data.str.size);
 	cs->s = &cs->ds;
     }
@@ -71,7 +75,16 @@ shade_next_init(shade_coord_stream_t * cs,
 	cs->get_value = cs_next_packed_value;
 	cs->get_decoded = cs_next_packed_decoded;
     }
+    cs->is_eod = cs_eod;
     cs->left = 0;
+    cs->ds_EOF = false;
+}
+
+/* Check for the End-Of-Data state form a stream. */
+private bool
+cs_eod(const shade_coord_stream_t * cs)
+{
+    return cs->ds_EOF;
 }
 
 /* Get the next (integer) value from a packed value stream. */
@@ -94,8 +107,10 @@ cs_next_packed_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 	for (; needed >= 8; needed -= 8) {
 	    int b = sgetc(cs->s);
 
-	    if (b < 0)
-		return_error(cs->s->memory, gs_error_rangecheck);
+	    if (b < 0) {
+	        cs->ds_EOF = true;
+		return_error(gs_error_rangecheck);
+	    }
 	    value = (value << 8) + b;
 	}
 	if (needed == 0) {
@@ -104,8 +119,10 @@ cs_next_packed_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 	} else {
 	    int b = sgetc(cs->s);
 
-	    if (b < 0)
-		return_error(cs->s->memory, gs_error_rangecheck);
+	    if (b < 0) {
+	        cs->ds_EOF = true;
+		return_error(gs_error_rangecheck);
+	    }
 	    cs->bits = b;
 	    cs->left = left = 8 - needed;
 	    *pvalue = (value << needed) + (b >> left);
@@ -125,12 +142,15 @@ cs_next_array_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
     uint read;
 
     if (sgets(cs->s, (byte *)&value, sizeof(float), &read) < 0 ||
-	read != sizeof(float) || value < 0 ||
-	(num_bits != 0 && num_bits < sizeof(uint) * 8 &&
+	read != sizeof(float)) {
+	cs->ds_EOF = true;
+	return_error(gs_error_rangecheck);
+    }
+    if (value < 0 || (num_bits != 0 && num_bits < sizeof(uint) * 8 &&
 	 value >= (1 << num_bits)) ||
 	value != (uint)value
 	)
-	return_error(cs->s->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     *pvalue = (uint) value;
     return 0;
 }
@@ -167,8 +187,10 @@ cs_next_array_decoded(shade_coord_stream_t * cs, int num_bits,
 
     if (sgets(cs->s, (byte *)&value, sizeof(float), &read) < 0 ||
 	read != sizeof(float)
-    )
-	return_error(cs->s->memory, gs_error_rangecheck);
+    ) {
+	cs->ds_EOF = true;
+	return_error(gs_error_rangecheck);
+    }
     *pvalue = value;
     return 0;
 }
@@ -201,7 +223,7 @@ shade_next_coords(shade_coord_stream_t * cs, gs_fixed_point * ppt,
 
 	if ((code = cs->get_decoded(cs, num_bits, decode, &x)) < 0 ||
 	    (code = cs->get_decoded(cs, num_bits, decode + 2, &y)) < 0 ||
-	    (code = gs_point_transform2fixed(cs->s->memory, cs->pctm, x, y, &ppt[i])) < 0
+	    (code = gs_point_transform2fixed(cs->pctm, x, y, &ppt[i])) < 0
 	    )
 	    break;
     }
@@ -227,7 +249,7 @@ shade_next_color(shade_coord_stream_t * cs, float *pc)
 	if (code < 0)
 	    return code;
 	if (ci >= gs_cspace_indexed_num_entries(pcs))
-	    return_error(cs->s->memory, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	code = gs_cspace_indexed_lookup(&pcs->params.indexed, (int)ci, &cc);
 	if (code < 0)
 	    return code;
@@ -247,12 +269,13 @@ shade_next_color(shade_coord_stream_t * cs, float *pc)
 
 /* Get the next vertex for a mesh element. */
 int
-shade_next_vertex(shade_coord_stream_t * cs, mesh_vertex_t * vertex)
+shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex)
 {
     int code = shade_next_coords(cs, &vertex->p, 1);
 
+    vertex->c.cc.paint.values[1] = 0; /* safety. (patch_fill may assume 2 arguments) */
     if (code >= 0)
-	code = shade_next_color(cs, vertex->cc);
+	code = shade_next_color(cs, vertex->c.cc.paint.values);
     return code;
 }
 
@@ -322,32 +345,15 @@ top:
 	     max_error * (ranges[ci].rmax - ranges[ci].rmin));
 }
 
-/* Transform a bounding box into device space. */
-int
-shade_bbox_transform2fixed(const gs_rect * rect, const gs_imager_state * pis,
-			   gs_fixed_rect * rfixed)
-{
-    gs_rect dev_rect;
-    int code = gs_bbox_transform(pis->memory, rect, &ctm_only(pis), &dev_rect);
-
-    if (code >= 0) {
-	rfixed->p.x = float2fixed(dev_rect.p.x);
-	rfixed->p.y = float2fixed(dev_rect.p.y);
-	rfixed->q.x = float2fixed(dev_rect.q.x);
-	rfixed->q.y = float2fixed(dev_rect.q.y);
-    }
-    return code;
-}
-
 /* Fill one piece of a shading. */
 int
 shade_fill_path(const shading_fill_state_t * pfs, gx_path * ppath,
-		gx_device_color * pdevc)
+		gx_device_color * pdevc, const gs_fixed_point *fill_adjust)
 {
     gx_fill_params params;
 
     params.rule = -1;		/* irrelevant */
-    params.adjust = pfs->pis->fill_adjust;
+    params.adjust = *fill_adjust;
     params.flatness = 0;	/* irrelevant */
     params.fill_zero_width = false;
     return (*dev_proc(pfs->dev, fill_path)) (pfs->dev, pfs->pis, ppath,

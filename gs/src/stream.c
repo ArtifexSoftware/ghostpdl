@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Stream package for Ghostscript interpreter */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
@@ -74,7 +75,7 @@ stream_finalize(void *vptr)
 {
     stream *const st = vptr;
 
-    if_debug2(st->memory, 'u', "[u]%s 0x%lx\n",
+    if_debug2('u', "[u]%s 0x%lx\n",
 	      (!s_is_valid(st) ? "already closed:" :
 	       st->is_temp ? "is_temp set:" :
 	       st->file == 0 ? "not file:" :
@@ -96,10 +97,9 @@ private const stream_template s_no_template = {
 
 /* Allocate a stream and initialize it minimally. */
 void
-s_init(stream *s, gs_memory_t * mem, const gs_memory_t *cmem)
+s_init(stream *s, gs_memory_t * mem)
 {
-    s->memory = (gs_memory_t *)cmem;
-    s->isheap = (mem != NULL);
+    s->memory = mem;
     s->report_error = s_no_report_error;
     s->min_left = 0;
     s->error_string[0] = 0;
@@ -114,28 +114,21 @@ s_alloc(gs_memory_t * mem, client_name_t cname)
 {
     stream *s = gs_alloc_struct(mem, stream, &st_stream, cname);
 
-    if_debug2(mem, 's', "[s]alloc(%s) = 0x%lx\n",
+    if_debug2('s', "[s]alloc(%s) = 0x%lx\n",
 	      client_name_string(cname), (ulong) s);
     if (s == 0)
 	return 0;
-    s_init(s, mem, mem);
+    s_init(s, mem);
     return s;
-}
-
-void s_stack_init(stream *s, const gs_memory_t *mem)
-{
-    s->memory = (gs_memory_t *)mem;
-    s->isheap = false;
 }
 
 /* Allocate a stream state and initialize it minimally. */
 void
 s_init_state(stream_state *st, const stream_template *template,
-	     gs_memory_t *mem, const gs_memory_t *cmem)
+	     gs_memory_t *mem)
 {
     st->template = template;
-    st->memory = (gs_memory_t *)cmem;
-    st->isheap = (mem != NULL);
+    st->memory = mem;
     st->report_error = s_no_report_error;
     st->min_left = 0;
 }
@@ -145,12 +138,12 @@ s_alloc_state(gs_memory_t * mem, gs_memory_type_ptr_t stype,
 {
     stream_state *st = gs_alloc_struct(mem, stream_state, stype, cname);
 
-    if_debug3(mem, 's', "[s]alloc_state %s(%s) = 0x%lx\n",
+    if_debug3('s', "[s]alloc_state %s(%s) = 0x%lx\n",
 	      client_name_string(cname),
 	      client_name_string(stype->sname),
 	      (ulong) st);
     if (st)
-	s_init_state(st, NULL, mem, mem);
+	s_init_state(st, NULL, mem);
     return st;
 }
 
@@ -176,10 +169,7 @@ s_std_init(register stream * s, byte * ptr, uint len, const stream_procs * pp,
     s->file = 0;
     s->file_name.data = 0;	/* in case stream is on stack */
     s->file_name.size = 0;
-
-    if ( s->isheap != true && s->isheap != false )
-	if_debug0(s->memory, 's', "This should crash nicely\n");
-    if_debug4(s->memory, 's', "[s]init 0x%lx, buf=0x%lx, len=%u, modes=%d\n",
+    if_debug4('s', "[s]init 0x%lx, buf=0x%lx, len=%u, modes=%d\n",
 	      (ulong) s, (ulong) ptr, len, modes);
 }
 
@@ -317,7 +307,7 @@ s_disable(register stream * s)
 	s->file_name.size = 0;
     }
     /****** SHOULD DO MORE THAN THIS ******/
-    if_debug1(s->memory, 's', "[s]disable 0x%lx\n", (ulong) s);
+    if_debug1('s', "[s]disable 0x%lx\n", (ulong) s);
 }
 
 /* Implement flushing for encoding filters. */
@@ -332,16 +322,29 @@ s_filter_write_flush(register stream * s)
 }
 
 /* Close a filter.  If this is an encoding filter, flush it first. */
+/* If CloseTarget was specified (close_strm), then propagate the sclose */
 int
 s_filter_close(register stream * s)
 {
+    int status;
+    bool close = s->close_strm;
+    stream *stemp = s->strm;
+
     if (s_is_writing(s)) {
 	int status = s_process_write_buf(s, true);
 
 	if (status != 0 && status != EOFC)
 	    return status;
+        status = sflush(stemp);
+	if (status != 0 && status != EOFC)
+	    return status;
     }
-    return s_std_close(s);
+    status = s_std_close(s);
+    if (status != 0 && status != EOFC)
+	return status;
+    if (close && stemp != 0)
+	return sclose(stemp);
+    return status;
 }
 
 /* Disregard a stream error message. */
@@ -389,7 +392,7 @@ stell(stream * s)
 int
 spseek(stream * s, long pos)
 {
-    if_debug3(s->memory, 's', "[s]seek 0x%lx to %ld, position was %ld\n",
+    if_debug3('s', "[s]seek 0x%lx to %ld, position was %ld\n",
 	      (ulong) s, pos, stell(s));
     return (*(s)->procs.seek) (s, pos);
 }
@@ -419,7 +422,7 @@ sclose(register stream * s)
 	stream_proc_release((*release)) = st->template->release;
 	if (release != 0)
 	    (*release) (st);
-	if (st != (stream_state *) s && st->isheap)
+	if (st != (stream_state *) s && st->memory != 0)
 	    gs_free_object(st->memory, st, "s_std_close");
 	s->state = (stream_state *) s;
     }
@@ -795,13 +798,13 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 		eof = strm->end_status == EOFC;
 	    }
 	    pw = (prev == 0 ? pbuf : &curr->cursor.w);
-	    if_debug4(s->memory, 's', "[s]read process 0x%lx, nr=%u, nw=%u, eof=%d\n",
+	    if_debug4('s', "[s]read process 0x%lx, nr=%u, nw=%u, eof=%d\n",
 		      (ulong) curr, (uint) (pr->limit - pr->ptr),
 		      (uint) (pw->limit - pw->ptr), eof);
 	    oldpos = pw->ptr;
-	    status = (*curr->procs.process) (s->memory, curr->state, pr, pw, eof);
+	    status = (*curr->procs.process) (curr->state, pr, pw, eof);
 	    pr->limit += left;
-	    if_debug5(s->memory, 's', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d, position=%ld\n",
+	    if_debug5('s', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d, position=%ld\n",
 		      (ulong) curr, (uint) (pr->limit - pr->ptr),
 		      (uint) (pw->limit - pw->ptr), status, s->position);
 	    if (strm == 0 || status != 0)
@@ -814,8 +817,9 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 	    MOVE_AHEAD(curr, prev);
 	    stream_compact(curr, false);
 	}
-	/* If curr reached EOD and is a filter stream, close it. */
-	if (strm != 0 && status == EOFC &&
+	/* If curr reached EOD and is a filter or file stream, close it. */
+	/* (see PLRM 3rd, sec 3.8.2, p80) */
+	if ((strm != 0 || curr->file) && status == EOFC &&
 	    curr->cursor.r.ptr >= curr->cursor.r.limit &&
 	    curr->close_at_eod
 	    ) {
@@ -874,7 +878,7 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
 		pr = pbuf;
 	    else
 		pr = &curr->cursor.r;
-	    if_debug5(curr->memory, 's',
+	    if_debug5('s',
 		      "[s]write process 0x%lx(%s), nr=%u, nw=%u, end=%d\n",
 		      (ulong)curr,
 		      gs_struct_type_name(curr->state->template->stype),
@@ -882,8 +886,8 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
 		      (uint)(pw->limit - pw->ptr), end);
 	    status = curr->end_status;
 	    if (status >= 0) {
-		status = (*curr->procs.process)(curr->memory, curr->state, pr, pw, end);
-		if_debug5(curr->memory, 's',
+		status = (*curr->procs.process)(curr->state, pr, pw, end);
+		if_debug5('s',
 			  "[s]after write 0x%lx, nr=%u, nw=%u, end=%d, status=%d\n",
 			  (ulong) curr, (uint) (pr->limit - pr->ptr),
 			  (uint) (pw->limit - pw->ptr), end, status);
@@ -907,7 +911,7 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
 		break;
 	    if (!curr->is_temp)
 		++depth;
-	    if_debug1(curr->memory, 's', "[s]moving ahead, depth = %d\n", depth);
+	    if_debug1('s', "[s]moving ahead, depth = %d\n", depth);
 	    MOVE_AHEAD(curr, prev);
 	    stream_compact(curr, false);
 	}
@@ -922,7 +926,7 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
 	     * otherwise leave it alone.
 	     */
 	    while (prev) {
-		if_debug0(curr->memory, 's', "[s]unwinding\n");
+		if_debug0('s', "[s]unwinding\n");
 		MOVE_BACK(curr, prev);
 		if (status >= 0)
 		    curr->end_status = 0;
@@ -934,7 +938,7 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
 	MOVE_BACK(curr, prev);
 	if (!curr->is_temp)
 	    --depth;
-	if_debug1(curr->memory, 's', "[s]moving back, depth = %d\n", depth);
+	if_debug1('s', "[s]moving back, depth = %d\n", depth);
     }
 }
 
@@ -980,9 +984,9 @@ private int
     s_string_available(stream *, long *),
     s_string_read_seek(stream *, long),
     s_string_write_seek(stream *, long),
-    s_string_read_process(const gs_memory_t *, stream_state *, stream_cursor_read *,
+    s_string_read_process(stream_state *, stream_cursor_read *,
 			  stream_cursor_write *, bool),
-    s_string_write_process(const gs_memory_t *, stream_state *, stream_cursor_read *,
+    s_string_write_process(stream_state *, stream_cursor_read *,
 			   stream_cursor_write *, bool);
 
 /* Initialize a stream for reading a string. */
@@ -1066,8 +1070,6 @@ swrite_string(register stream * s, byte * ptr, uint len)
 	s_std_null, s_std_null, s_string_write_process
     };
 
-    /* set isheap boolean */
-    s->isheap = false;
     s_std_init(s, ptr, len, &p, s_mode_write + s_mode_seek);
     s->cbuf_string.data = ptr;
     s->cbuf_string.size = len;
@@ -1087,8 +1089,7 @@ s_string_write_seek(register stream * s, long pos)
 /* to contain all of the data in the string, if we are ever asked */
 /* to refill the buffer, we should signal EOF. */
 private int
-s_string_read_process(const gs_memory_t *mem, 
-		      stream_state * st, stream_cursor_read * ignore_pr,
+s_string_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 		      stream_cursor_write * pw, bool last)
 {
     return EOFC;
@@ -1096,8 +1097,7 @@ s_string_read_process(const gs_memory_t *mem,
 /* Similarly, if we are ever asked to empty the buffer, it means that */
 /* there has been an overrun (unless we are closing the stream). */
 private int
-s_string_write_process(const gs_memory_t *mem,
-		       stream_state * st, stream_cursor_read * pr,
+s_string_write_process(stream_state * st, stream_cursor_read * pr,
 		       stream_cursor_write * ignore_pw, bool last)
 {
     return (last ? EOFC : ERRC);
@@ -1106,9 +1106,8 @@ s_string_write_process(const gs_memory_t *mem,
 /* ------ Position-tracking stream ------ */
 
 private int
-s_write_position_process(const gs_memory_t *,
-			 stream_state *, stream_cursor_read *,
-			 stream_cursor_write *, bool);
+    s_write_position_process(stream_state *, stream_cursor_read *,
+			     stream_cursor_write *, bool);
 
 /* Set up a write stream that just keeps track of the position. */
 void
@@ -1121,7 +1120,7 @@ swrite_position_only(stream *s)
 }
 
 private int
-s_write_position_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_write_position_process(stream_state * st, stream_cursor_read * pr,
 			 stream_cursor_write * ignore_pw, bool last)
 {
     pr->ptr = pr->limit;	/* discard data */
@@ -1220,12 +1219,45 @@ s_close_filters(stream **ps, stream *target)
     return 0;
 }
 
+/* ------ Stream closing ------ */
+
+/*
+ * Finish closing a file stream.  This used to check whether it was
+ * currentfile, but we don't have to do this any longer.  This replaces the
+ * close procedure for the std* streams, which cannot actually be closed.
+ *
+ * This is exported for ziodev.c.  */
+int
+file_close_finish(stream * s)
+{
+    return 0;
+}
+
+/*
+ * Close a file stream, but don't deallocate the buffer.  This replaces the
+ * close procedure for %lineedit and %statementedit.  (This is WRONG: these
+ * streams should allocate a new buffer each time they are opened, but that
+ * would overstress the allocator right now.)  This is exported for ziodev.c.
+ * This also replaces the close procedure for the string-reading stream
+ * created for gs_run_string.
+ */
+int
+file_close_disable(stream * s)
+{
+    int code = (*s->save_close)(s);
+
+    if (code)
+	return code;
+    /* Increment the IDs to prevent further access. */
+    s->read_id = s->write_id = (s->read_id | s->write_id) + 1;
+    return file_close_finish(s);
+}
+
 /* ------ NullEncode/Decode ------ */
 
 /* Process a buffer */
 private int
-s_Null_process(const gs_memory_t *mem, 
-	       stream_state * st, stream_cursor_read * pr,
+s_Null_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     return stream_move(pr, pw);

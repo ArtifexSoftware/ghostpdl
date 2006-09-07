@@ -1,20 +1,20 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* Default polygon and image drawing device procedures */
-#include <assert.h>
 #include "math_.h"
 #include "memory_.h"
+#include "stdint_.h"
 #include "gx.h"
 #include "gpcheck.h"
 #include "gserrors.h"
@@ -65,10 +65,21 @@ typedef struct trap_line_s {
     int di;
     fixed df;
 	/*
-	 * The current position within the scan line is x + xf/h + 1.
+	 * The intersection of the line with a scan line is x + xf/h + 1.
 	 * (The 1 refers to the least significant bit of x, not fixed_1;
 	 * similarly, the quotient refers to the l.s.b. of x.)
 	 * We know -h <= xf < 0.
+	 *
+	 * This rational value preciselly represents the mathematical line
+	 * (with no machine arithmetic error).
+	 *
+	 * Note that the fractional part is negative to simplify
+	 * some conditions in the Bresenham algorithm.
+	 * Due to that some expressions are inobvious.
+	 * We believe that it's a kind of archaic
+	 * for the modern hyperthreading architecture,
+	 * we still keep it because the code passed a huge testing
+	 * on various platforms.
 	 */
     fixed x, xf;
 	/*
@@ -78,6 +89,19 @@ typedef struct trap_line_s {
 	 */
     fixed ldi, ldf;
 } trap_line;
+
+
+/*
+ * The linear color trapezoid fill algorithm uses trap_color structures to keep track of
+ * the color change during the Bresenham loop.
+ */
+typedef struct trap_gradient_s {
+	frac31 *c; /* integer part of the color in frac32 units. */
+	int32_t *f; /* the fraction part numerator */
+	int32_t *num; /* the gradient numerator */
+	int32_t den; /* color gradient denominator */
+} trap_gradient;
+
 
 /*
  * Compute the di and df members of a trap_line structure.  The x extent
@@ -136,26 +160,422 @@ compute_ldx(trap_line *tl, fixed ys)
     }
 }
 
+private inline int
+init_gradient(trap_gradient *g, const gs_fill_attributes *fa,
+		const gs_linear_color_edge *e, const gs_linear_color_edge *e1,
+		const trap_line *l, fixed ybot, int num_components)
+{
+    int i;
+    int64_t c;
+    int32_t d;
+
+    if (e->c1 == NULL || e->c0 == NULL)
+	g->den = 0; /* A wedge - the color is axial along another edge. */
+    else {
+	bool ends_from_fa = (e1->c1 == NULL || e1->c0 == NULL);
+
+	if (ends_from_fa)
+	    g->den = fa->yend - fa->ystart;
+	else {
+	    g->den = e->end.y - e->start.y;
+	    if (g->den != l->h)
+		return_error(gs_error_unregistered); /* Must not happen. */
+	}
+	for (i = 0; i < num_components; i++) {
+	    g->num[i] = e->c1[i] - e->c0[i];
+	    c = (int64_t)g->num[i] * (uint32_t)(ybot - 
+		    (ends_from_fa ? fa->ystart : e->start.y));
+	    d = (int32_t)(c / g->den);
+	    g->c[i] = e->c0[i] + d;
+	    c -= (int64_t)d * g->den;
+	    if (c < 0) {
+		g->c[i]--;
+		c += g->den;
+	    }
+	    g->f[i] = (int32_t)c;
+	}
+    }
+    return 0;
+}
+
+private inline void
+step_gradient(trap_gradient *g, int num_components)
+{
+    int i;
+
+    if (g->den == 0)
+	return;
+    for (i = 0; i < num_components; i++) {
+	int64_t fc = g->f[i] + (int64_t)g->num[i] * fixed_1;
+	int32_t fc32;
+
+	g->c[i] += (int32_t)(fc / g->den);
+	fc32 = (int32_t)(fc -  fc / g->den * g->den);
+	if (fc32 < 0) {
+	    fc32 += g->den;
+	    g->c[i]--;
+	}
+	g->f[i] = fc32;
+    }
+}
+
+private inline bool
+check_gradient_overflow(const gs_linear_color_edge *le, const gs_linear_color_edge *re,
+		int num_components)
+{
+    if (le->c1 == NULL || re->c1 == NULL) {
+	/* A wedge doesn't use a gradient by X. */
+	return false;
+    } else {
+	/* Check whether set_x_gradient, fill_linear_color_scanline can overflow. 
+
+	   dev_proc(dev, fill_linear_color_scanline) can perform its computation in 32-bit fractions,
+	   so we assume it never overflows. Devices which implement it with no this
+	   assumption must implement the check in gx_default_fill_linear_color_trapezoid,
+	   gx_default_fill_linear_color_triangle with a function other than this one.
+
+	   Since set_x_gradient perform computations in int64_t, which provides 63 bits
+	   while multiplying a 32-bits color value to a coordinate,
+	   we must restrict the X span with 63 - 32 = 31 bits.
+	 */
+	int32_t xl = min(le->start.x, le->end.x);
+	int32_t xr = min(re->start.x, re->end.x);
+	/* The pixel span boundaries : */
+	return arith_rshift_1(xr) - arith_rshift_1(xl) >= 0x3FFFFFFE;
+    }
+}
+
+
+private inline int
+set_x_gradient_nowedge(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *rg, 
+	     const trap_line *l, const trap_line *r, int il, int ir, int num_components)
+{
+    /* Ignoring the ending coordinats fractions, 
+       so the gridient is slightly shifted to the left (in <1 'fixed' unit). */
+    int32_t xl = l->x - (l->xf == -l->h ? 1 : 0) - fixed_half; /* Revert the GX_FILL_TRAPEZOID shift. */
+    int32_t xr = r->x - (r->xf == -r->h ? 1 : 0) - fixed_half; /* Revert the GX_FILL_TRAPEZOID shift. */
+    /* The pixel span boundaries : */
+    int32_t x0 = int2fixed(il) + fixed_half; /* Shift to the pixel center. */
+    int32_t x1 = int2fixed(ir) + fixed_half; /* Shift to the pixel center. */
+    int i;
+
+#   ifdef DEBUG
+	if (arith_rshift_1(xr) - arith_rshift_1(xl) >= 0x3FFFFFFE) /* Can overflow ? */
+	    return_error(gs_error_unregistered); /* Must not happen. */
+#   endif
+    xg->den = fixed2int(x1 - x0);
+    for (i = 0; i < num_components; i++) {
+	/* Ignoring the ending colors fractions, 
+	   so the color gets a slightly smaller value
+	   (in <1 'frac31' unit), but it's not important due to 
+	   the further conversion to [0, 1 << cinfo->comp_bits[j]], 
+	   which drops the fraction anyway. */
+	int32_t cl = lg->c[i];
+	int32_t cr = rg->c[i];
+	int32_t c0 = (int32_t)(cl + ((int64_t)cr - cl) * (x0 - xl) / (xr - xl));
+	int32_t c1 = (int32_t)(cl + ((int64_t)cr - cl) * (x1 - xl) / (xr - xl));
+
+	xg->c[i] = c0;
+	xg->f[i] = 0; /* Insufficient bits to compute it better. 
+	                 The color so the color gets a slightly smaller value
+			 (in <1 'frac31' unit), but it's not important due to 
+			 the further conversion to [0, 1 << cinfo->comp_bits[j]], 
+			 which drops the fraction anyway. 
+			 So setting 0 appears pretty good and fast. */
+	xg->num[i] = c1 - c0;
+    }
+    return 0;
+}
+
+private inline int
+set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *rg, 
+	     const trap_line *l, const trap_line *r, int il, int ir, int num_components)
+{
+    if (lg->den == 0 || rg->den == 0) {
+	/* A wedge doesn't use a gradient by X. */
+	int i;
+
+	xg->den = 1;
+	for (i = 0; i < num_components; i++) {
+	    xg->c[i] = (lg->den == 0 ? rg->c[i] : lg->c[i]);
+	    xg->f[i] = 0; /* Compatible to set_x_gradient_nowedge. */
+	    xg->num[i] = 0;
+	}
+	return 0;
+    } else
+	return set_x_gradient_nowedge(xg, lg, rg, l, r, il, ir, num_components);
+}
+
 /*
  * Fill a trapezoid.
- * Since we need 2 statically defined variants of this algorithm,
+ * Since we need several statically defined variants of this algorithm,
  * we stored it in gxdtfill.h and include it configuring with
  * macros defined here.
  */
-#define GX_FILL_TRAPEZOID gx_default_fill_trapezoid
+#define LINEAR_COLOR 0 /* Common for shading variants. */
+#define EDGE_TYPE gs_fixed_edge  /* Common for non-shading variants. */
+#define FILL_ATTRS gs_logical_operation_t  /* Common for non-shading variants. */
+
+#define GX_FILL_TRAPEZOID private int gx_fill_trapezoid_as_fd
 #define CONTIGUOUS_FILL 0
 #define SWAP_AXES 1
-#define FLAGS_TYPE bool
+#define FILL_DIRECT 1
 #include "gxdtfill.h"
-
 #undef GX_FILL_TRAPEZOID
 #undef CONTIGUOUS_FILL 
 #undef SWAP_AXES
-#define FLAGS_TYPE int
-#define GX_FILL_TRAPEZOID gx_fill_trapezoid_narrow
+#undef FILL_DIRECT
+
+#define GX_FILL_TRAPEZOID private int gx_fill_trapezoid_as_nd
+#define CONTIGUOUS_FILL 0
+#define SWAP_AXES 1
+#define FILL_DIRECT 0
+#include "gxdtfill.h"
+#undef GX_FILL_TRAPEZOID
+#undef CONTIGUOUS_FILL 
+#undef SWAP_AXES
+#undef FILL_DIRECT
+
+#define GX_FILL_TRAPEZOID private int gx_fill_trapezoid_ns_fd
+#define CONTIGUOUS_FILL 0
+#define SWAP_AXES 0
+#define FILL_DIRECT 1
+#include "gxdtfill.h"
+#undef GX_FILL_TRAPEZOID
+#undef CONTIGUOUS_FILL 
+#undef SWAP_AXES
+#undef FILL_DIRECT
+
+#define GX_FILL_TRAPEZOID private int gx_fill_trapezoid_ns_nd
+#define CONTIGUOUS_FILL 0
+#define SWAP_AXES 0
+#define FILL_DIRECT 0
+#include "gxdtfill.h"
+#undef GX_FILL_TRAPEZOID
+#undef CONTIGUOUS_FILL 
+#undef SWAP_AXES
+#undef FILL_DIRECT
+
+#define GX_FILL_TRAPEZOID int gx_fill_trapezoid_cf_fd
 #define CONTIGUOUS_FILL 1
 #define SWAP_AXES 0
+#define FILL_DIRECT 1
 #include "gxdtfill.h"
+#undef GX_FILL_TRAPEZOID
+#undef CONTIGUOUS_FILL 
+#undef SWAP_AXES
+#undef FILL_DIRECT
+
+#define GX_FILL_TRAPEZOID int gx_fill_trapezoid_cf_nd
+#define CONTIGUOUS_FILL 1
+#define SWAP_AXES 0
+#define FILL_DIRECT 0
+#include "gxdtfill.h"
+#undef GX_FILL_TRAPEZOID
+#undef CONTIGUOUS_FILL 
+#undef SWAP_AXES
+#undef FILL_DIRECT
+
+#undef EDGE_TYPE
+#undef LINEAR_COLOR
+#undef FILL_ATTRS
+
+#define LINEAR_COLOR 1 /* Common for shading variants. */
+#define EDGE_TYPE gs_linear_color_edge /* Common for shading variants. */
+#define FILL_ATTRS const gs_fill_attributes *  /* Common for non-shading variants. */
+
+#define GX_FILL_TRAPEZOID private int gx_fill_trapezoid_ns_lc
+#define CONTIGUOUS_FILL 0
+#define SWAP_AXES 0
+#define FILL_DIRECT 1
+#include "gxdtfill.h"
+#undef GX_FILL_TRAPEZOID
+#undef CONTIGUOUS_FILL 
+#undef SWAP_AXES
+#undef FILL_DIRECT
+
+#define GX_FILL_TRAPEZOID private int gx_fill_trapezoid_as_lc
+#define CONTIGUOUS_FILL 0
+#define SWAP_AXES 1
+#define FILL_DIRECT 1
+#include "gxdtfill.h"
+#undef GX_FILL_TRAPEZOID
+#undef CONTIGUOUS_FILL 
+#undef SWAP_AXES
+#undef FILL_DIRECT
+
+#undef EDGE_TYPE
+#undef LINEAR_COLOR
+#undef FILL_ATTRS
+
+
+int
+gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
+    const gs_fixed_edge * right, fixed ybot, fixed ytop, bool swap_axes,
+    const gx_device_color * pdevc, gs_logical_operation_t lop)
+{
+    bool fill_direct = color_writes_pure(pdevc, lop);
+
+    if (swap_axes) {
+	if (fill_direct)	
+	    return gx_fill_trapezoid_as_fd(dev, left, right, ybot, ytop, 0, pdevc, lop);
+	else
+	    return gx_fill_trapezoid_as_nd(dev, left, right, ybot, ytop, 0, pdevc, lop);
+    } else {
+	if (fill_direct)	
+	    return gx_fill_trapezoid_ns_fd(dev, left, right, ybot, ytop, 0, pdevc, lop);
+	else
+	    return gx_fill_trapezoid_ns_nd(dev, left, right, ybot, ytop, 0, pdevc, lop);
+    }
+}
+
+private inline void
+middle_frac31_color(frac31 *c, const frac31 *c0, const frac31 *c2, int num_components)
+{
+    /* Assuming non-negative values. */
+    int i;
+
+    for (i = 0; i < num_components; i++)
+	c[i] = (int32_t)(((uint32_t)c0[i] + (uint32_t)c2[i]) >> 1);
+}
+
+private inline int
+fill_linear_color_trapezoid_nocheck(gx_device *dev, const gs_fill_attributes *fa,
+	const gs_linear_color_edge *le, const gs_linear_color_edge *re)
+{
+    fixed y02 = max(le->start.y, re->start.y), ymin = max(y02, fa->clip->p.y);
+    fixed y13 = min(le->end.y, re->end.y), ymax = min(y13, fa->clip->q.y);
+    int code;
+
+    code = (fa->swap_axes ? gx_fill_trapezoid_as_lc : gx_fill_trapezoid_ns_lc)(dev, 
+	    le, re, ymin, ymax, 0, NULL, fa);
+    if (code < 0)
+	return code;
+    return !code;
+}
+
+
+/*  Fill a trapezoid with a linear color.
+    [p0 : p1] - left edge, from bottom to top.
+    [p2 : p3] - right edge, from bottom to top.
+    The filled area is within Y-spans of both edges.
+
+    This implemetation actually handles a bilinear color,
+    in which the generatrix keeps a parallelizm to the X axis.
+    In general a bilinear function doesn't keep the generatrix parallelizm, 
+    so the caller must decompose/approximate such functions.
+
+    Return values : 
+    1 - success;
+    0 - Too big. The area isn't filled. The client must decompose the area.
+    <0 - error.
+ */
+int 
+gx_default_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_attributes *fa,
+	const gs_fixed_point *p0, const gs_fixed_point *p1,
+	const gs_fixed_point *p2, const gs_fixed_point *p3,
+	const frac31 *c0, const frac31 *c1,
+	const frac31 *c2, const frac31 *c3)
+{
+    gs_linear_color_edge le, re;
+    int num_components = dev->color_info.num_components;
+
+    le.start = *p0;
+    le.end = *p1;
+    le.c0 = c0;
+    le.c1 = c1;
+    le.clip_x = fa->clip->p.x;
+    re.start = *p2;
+    re.end = *p3;
+    re.c0 = c2;
+    re.c1 = c3;
+    re.clip_x = fa->clip->q.x;
+    if (check_gradient_overflow(&le, &re, num_components))
+        return 0;
+    return fill_linear_color_trapezoid_nocheck(dev, fa, &le, &re);
+}
+
+private inline int 
+fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
+	const gs_fixed_point *p0, const gs_fixed_point *p1,
+	const gs_fixed_point *p2,
+	const frac31 *c0, const frac31 *c1, const frac31 *c2)
+{   /* p0 must be the lowest vertex. */
+    int code;
+    gs_linear_color_edge e0, e1, e2;
+    int num_components = dev->color_info.num_components;
+
+    if (p0->y == p1->y)
+	return gx_default_fill_linear_color_trapezoid(dev, fa, p0, p2, p1, p2, c0, c2, c1, c2);
+    if (p1->y == p2->y)
+	return gx_default_fill_linear_color_trapezoid(dev, fa, p0, p2, p0, p1, c0, c2, c0, c1);
+    e0.start = *p0;
+    e0.end = *p2;
+    e0.c0 = c0;
+    e0.c1 = c2;
+    e0.clip_x = fa->clip->p.x;
+    e1.start = *p0;
+    e1.end = *p1;
+    e1.c0 = c0;
+    e1.c1 = c1;
+    e1.clip_x = fa->clip->q.x;
+    if (p0->y < p1->y && p1->y < p2->y) {
+	e2.start = *p1;
+	e2.end = *p2;
+	e2.c0 = c1;
+	e2.c1 = c2;
+	e2.clip_x = fa->clip->q.x;
+	if (check_gradient_overflow(&e0, &e1, num_components))
+	    return 0;
+	if (check_gradient_overflow(&e0, &e2, num_components))
+	    return 0;
+	code = fill_linear_color_trapezoid_nocheck(dev, fa, &e0, &e1);
+	if (code <= 0) /* Sic! */
+	    return code;
+	return fill_linear_color_trapezoid_nocheck(dev, fa, &e0, &e2);
+    } else { /* p0->y < p2->y && p2->y < p1->y */
+	e2.start = *p2;
+	e2.end = *p1;
+	e2.c0 = c2;
+	e2.c1 = c1;
+	e2.clip_x = fa->clip->q.x;
+	if (check_gradient_overflow(&e0, &e1, num_components))
+	    return 0;
+	if (check_gradient_overflow(&e2, &e1, num_components))
+	    return 0;
+	code = fill_linear_color_trapezoid_nocheck(dev, fa, &e0, &e1);
+	if (code <= 0) /* Sic! */
+	    return code;
+	return fill_linear_color_trapezoid_nocheck(dev, fa, &e2, &e1);
+    }
+}
+
+/*  Fill a triangle with a linear color. */
+int 
+gx_default_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
+	const gs_fixed_point *p0, const gs_fixed_point *p1,
+	const gs_fixed_point *p2,
+	const frac31 *c0, const frac31 *c1, const frac31 *c2)
+{
+    fixed dx1 = p1->x - p0->x, dy1 = p1->y - p0->y;
+    fixed dx2 = p2->x - p0->x, dy2 = p2->y - p0->y;
+    
+    if ((int64_t)dx1 * dy2 < (int64_t)dx2 * dy1) {
+	const gs_fixed_point *p = p1;
+	const frac31 *c = c1;
+	
+	p1 = p2; 
+	p2 = p;
+	c1 = c2;
+	c2 = c;
+    }
+    if (p0->y <= p1->y && p0->y <= p2->y)
+	return fill_linear_color_triangle(dev, fa, p0, p1, p2, c0, c1, c2);
+    if (p1->y <= p0->y && p1->y <= p2->y)
+	return fill_linear_color_triangle(dev, fa, p1, p2, p0, c1, c2, c0);
+    else
+	return fill_linear_color_triangle(dev, fa, p2, p0, p1, c2, c0, c1);
+}
 
 /* Fill a parallelogram whose points are p, p+a, p+b, and p+a+b. */
 /* We should swap axes to get best accuracy, but we don't. */

@@ -1,14 +1,15 @@
-#   Portions Copyright (C) 2003 artofcode LLC.
-#   Portions Copyright (C) 1997, 2003 Artifex Software Inc.
-#   This software is based in part on the work of the Independent JPEG Group.
-#   All Rights Reserved.
+#  Copyright (C) 2001-2006 artofcode LLC.
+#  All Rights Reserved.
 #
-#   This software is distributed under license and may not be copied, modified
-#   or distributed except as expressly authorized under the terms of that
-#   license.  Refer to licensing information at http://www.artifex.com/ or
-#   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#   San Rafael, CA  94903, (415)492-9861, for further information. 
-
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
+#
+#  This software is distributed under license and may not be copied, modified
+#  or distributed except as expressly authorized under the terms of that
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
 # $Id$
 # makefile template for/from the autoconf build.
 # @configure_input@
@@ -68,6 +69,11 @@ GS_DOCDIR=$(docdir)
 
 GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource:$(gsdir)/fonts
 
+# Define the default directory for cached data files
+# this must be a single path.
+
+GS_CACHE_DIR="~/.ghostscript/cache/"
+
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
 # and confusion problems, but users insist on it.
@@ -99,10 +105,12 @@ GENOPT=
 
 # -DHAVE_MKSTEMP
 #	uses mkstemp instead of mktemp
-#		This gets rid of several security warnings that look
-#		ominous.  Enable this if you wish to get rid of them.
+#		This uses the more secure temporary file creation call
+#		Enable this if it is available on your platform.
+# -DHAVE_HYPOT
+#	use the system hypot() call
 
-CAPOPT= @HAVE_MKSTEMP@
+CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@
 
 # Define the name of the executable file.
 
@@ -158,8 +166,29 @@ ZSRCDIR=@ZLIBDIR@
 ZLIB_NAME=z
 
 # Choose shared or compiled in libjbig2dec and source location
+JBIG2_LIB=jbig2dec
 SHARE_JBIG2=@SHARE_JBIG2@
 JBIG2SRCDIR=@JBIG2DIR@
+
+# uncomment the following to compile in the Luratech ldf_jb2 codec
+#JBIG2_LIB=luratech
+#SHARE_JBIG2=0
+#JBIG2SRCDIR=ldf_jb2
+#JBIG2_CFLAGS=-DUSE_LDF_JB2
+
+# Choose the library to use for (JPXDecode support)
+# whether to link to an external build or compile in from source
+# and source location and configuration flags for compiling in
+JPX_LIB=jasper
+SHARE_JPX=@SHARE_JASPER@
+JPXSRCDIR=@JASPERDIR@
+JPX_CFLAGS=-DJAS_CONFIGURE
+
+# uncomment the following to compile in the Luratech lwf_jp2 codec
+#JPX_LIB=luratech
+#SHARE_JPX=0
+#JPXSRCDIR=lwf_jp2
+#JPX_CFLAGS=-DUSE_LWF_JP2 -DLINUX
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
@@ -192,7 +221,7 @@ CC=@CC@
 CCLD=$(CC)
 
 # Define the default gcc flags.
-GCFLAGS=@GCFLAGS@
+GCFLAGS=@CPPFLAGS@ @GCFLAGS@ @CFLAGS@
 
 # Define the added flags for standard, debugging, profiling 
 # and shared object builds.
@@ -229,7 +258,7 @@ CFLAGS=$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)
 # XLDFLAGS can be set from the command line.
 XLDFLAGS=
 
-LDFLAGS=$(XLDFLAGS)
+LDFLAGS=@LDFLAGS@ $(XLDFLAGS)
 
 # Define any extra libraries to link into the executable.
 # ISC Unix 2.2 wants -linet.
@@ -270,13 +299,13 @@ XINCLUDE=@X_CFLAGS@
 #XLIBS=Xt SM ICE Xext X11
 
 # We use the autoconf macro AC_PATH_XTRA which defines X_LIBS with
-# the -L (or whatever). It also defines X_EXTRA_LIBS which
-# should be slotted into XLIBS below and X_PRE_LIBS which should go
-# before -lX11. We do not handle these and should, but they are empty
-# on most modern platforms.
+# the -L (or whatever). It also defines X_PRE_LIBS and X_EXTRA_LIBS 
+# all three of which are stripped and slotted into XLIBS below.
+# Usually however, all but X_LIBS are empty on modern platforms.
 XLIBDIRS=@X_LIBS@
 XLIBDIR=
-XLIBS=Xt Xext X11
+#XLIBS=Xt Xext X11
+XLIBS=@XLIBS@
 
 # Define whether this platform has floating point hardware:
 #	FPU_TYPE=2 means floating point is faster than fixed point.
@@ -303,12 +332,16 @@ SYNC=nosync
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)fapi.dev @JBIG2DEVS@
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)fapi.dev @JBIG2DEVS@ @JPXDEVS@
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(GLD)pipe.dev
 # The following is strictly for testing.
-FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev @JBIG2DEVS@
+FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev $(GLD)romfs.dev @JBIG2DEVS@ @JPXDEVS@
 #FEATURE_DEVS=$(FEATURE_DEVS_ALL)
+
+# The list of resources to be included in the %rom% file system.
+# This is in the top makefile since the file descriptors are platform specific
+RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Fonts/ Resource/Procset/ Resource/IdiomSet/ Resource/CIDFont/
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -321,8 +354,7 @@ COMPILE_INITS=@COMPILE_INITS@
 BAND_LIST_STORAGE=file
 
 # Choose which compression method to use when storing band lists in memory.
-# The choices are 'lzw' or 'zlib'.  lzw is not recommended, because the
-# LZW-compatible code in Ghostscript doesn't actually compress its input.
+# The choices are 'lzw' or 'zlib'.
 
 BAND_LIST_COMPRESSOR=zlib
 
@@ -352,28 +384,28 @@ EXTEND_NAMES=0
 DEVICE_DEVS=$(DISPLAY_DEV) @X11DEVS@
 
 DEVICE_DEVS1=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)bmp32b.dev
-DEVICE_DEVS2=
+DEVICE_DEVS2=#$(DD)gdevjbig2.dev $(DD)gdevjpx.dev #$(DD)rinkj.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev $(DD)lj5mono.dev $(DD)lj5gray.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev $(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
 DEVICE_DEVS5=$(DD)uniprint.dev @IJSDEVS@
 DEVICE_DEVS6=$(DD)bj10e.dev $(DD)bj200.dev $(DD)bjc600.dev $(DD)bjc800.dev
-DEVICE_DEVS7=$(DD)faxg3.dev $(DD)faxg32d.dev $(DD)faxg4.dev
+DEVICE_DEVS7=$(DD)faxg3.dev $(DD)faxg32d.dev $(DD)faxg4.dev $(DD)cfax.dev
 DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
 DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
 DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
-DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev
+DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev $(DD)tiffgray.dev $(DD)tiff32nc.dev $(DD)tiffsep.dev
 DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
 #DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
 DEVICE_DEVS13=@PNGDEVS@
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
-DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
 DEVICE_DEVS16=$(DD)bbox.dev
 
 DEVICE_DEVS17=
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=$(DD)cljet5.dev $(DD)cljet5c.dev
-DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev
+DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev
 
 # ---------------------------- End of options --------------------------- #
 
@@ -391,10 +423,7 @@ AK=
 
 CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
-CCAUX=$(CC) 
-CC_LEAF=$(CC_)
-# note gcc can't use -fomit-frame-pointer with -pg.
-CC_LEAF_PG=$(CC_)
+CCAUX=$(CC) $(GCFLAGS)
 # These are the specific warnings we have to turn off to compile those
 # specific few files that need this.  We may turn off others in the future.
 CC_NO_WARN=$(CC_)
@@ -411,6 +440,9 @@ include $(GLSRCDIR)/jpeg.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
 include $(GLSRCDIR)/jbig2.mak
+include $(GLSRCDIR)/jasper.mak
+include $(GLSRCDIR)/ldf_jb2.mak
+include $(GLSRCDIR)/lwf_jp2.mak
 include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak
@@ -424,13 +456,17 @@ include $(GLSRCDIR)/unixinst.mak
 # Clean up after the autotools scripts
 # configure.ac and Makefile.in are symlinks from a subdir 
 # (created by autogen.sh) and so are safe to remove
-distclean: clean config-clean
-	-$(RM) -r $(BINDIR) $(GLOBJDIR) $(PSOBJDIR)
-	-$(RM) -r autom4te.cache
-	-$(RM) config.log config.status
-	-$(RM) Makefile
+distclean : clean config-clean
+	-$(RM_) -r $(BINDIR) $(GLOBJDIR) $(PSOBJDIR)
+	-$(RM_) -r autom4te.cache
+	-$(RM_) config.log config.status
+	-$(RM_) Makefile
 
-maintainer-clean: distclean
-	-$(RM) configure.ac
-	-$(RM) configure
-	-$(RM) Makefile.in
+maintainer-clean : distclean
+	-$(RM_) configure.ac
+	-$(RM_) configure
+	-$(RM_) Makefile.in
+
+check : default
+	$(NO_OP)
+

@@ -1,16 +1,19 @@
-% Portions Copyright (C) 2001 artofcode LLC.
-% Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-% Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-% This software is based in part on the work of the Independent JPEG Group.
-% All Rights Reserved.
-%
-% This software is distributed under license and may not be copied, modified
-% or distributed except as expressly authorized under the terms of that
-% license.  Refer to licensing information at http://www.artifex.com/ or
-% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-% San Rafael, CA  94903, (415)492-9861, for further information.
+%    Copyright (C) 2000, 2001 Aladdin Enterprises.  All rights reserved.
 % 
-% $RCSfile$ $Revision$
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+% $Id$
 % PDF linearizer ("optimizer").
 
 .currentglobal true .setglobal
@@ -420,6 +423,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   pdffindpageref
   dup 0 get 3 1 roll
   4 dict begin
+  /filter_params 10 darray def
   /images 10 darray def
   /fontfiles 10 darray def
   {
@@ -446,6 +450,15 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 	exch dup /XObject eq {
 	  pop oforce {
 	    dup oforce /Subtype get /Image eq {
+              dup oforce /DecodeParms .knownget {
+                oforce {
+                  exch /JBIG2Globals eq {
+                    filter_params exch dadd
+                  } {
+                    pop
+                  } ifelse
+                } forall
+              } if
 	      images exch dadd
 	    } {
 	      omvisit
@@ -464,6 +477,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
     dup /Contents .knownget { omvisit } if
 		% Visit Image XObjects.  We don't try to visit them in
 		% reference order.
+    filter_params { omvisit } daforall
     images { omvisit } daforall
 		% Visit FontFile streams.  We don't try to visit them in
 		% reference order.
@@ -526,7 +540,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
     } forall ]
   } forall ]
 
-		% Collect the shared objects.
+                % Collect the shared objects.
   [ 1 1 marks llength 1 sub {
     marks 1 index lget dup 1 le exch 255 eq or { pop } if
   } for ]
@@ -788,7 +802,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
         exch dup                 % 1st [] [] 
         length 1 sub get 0 get   % 1st last 
         true
-    } {
+      } {
         pop false
       } ifelse
     } ifelse
@@ -816,7 +830,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   FirstPageLength OtherPageLengths { .min } forall
   /minpl exch def
 
-	% Calculate least contents length.
+        % Calculate least contents length.
   FirstPageNs 0 get Objects exch lget contentslength
   OtherPageNs { 0 get Objects exch lget contentslength .min } forall
   /mincl exch def
@@ -846,7 +860,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 
                 % Table F.3 Page offset hint table, header section
 
-		% 1: Least number of objects in a page:
+                % 1: Least number of objects in a page:
   FirstPageNs length OtherPageNs { length .min } forall
   /minnop 1 index def 32 bwn
 		% 2: Location of first page's Page object:
@@ -922,10 +936,10 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 		% 6: Contents offsets:
                 % Following Implementation Note 133 section 6 is empty.
   maxscobits 0 gt {
-  [FirstPageNs OtherPageNs aload pop] {
-    0 get Objects exch lget contentsstart { minsco sub } { 0 } ifelse
-    maxscobits bwn
-  } forall
+    [FirstPageNs OtherPageNs aload pop] {
+       0 get Objects exch lget contentsstart { minsco sub } { 0 } ifelse
+       maxscobits bwn
+    } forall
     bits bitflush
   } if
 
@@ -998,6 +1012,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   /IDict exch def
   /OFile exch def
   /starttime exch def
+  /ToWrite 100 dict def
   /now {
     QUIET { pop } { print (, t = ) print realtime starttime sub = flush } ifelse
   } def
@@ -1168,7 +1183,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   XRef PHSN omap CatalogStart ld_put
   (Adjusted positions) now
 
-	% Construct the hint tables (part 5).
+        % Construct the hint tables (part 5).
 
   { writePageOffsetHints } totemp
   pop /PHSTempStart exch def

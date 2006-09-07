@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Ghostscript DLL loader for OS/2 */
 /* For WINDOWCOMPAT (console mode) application */
 
@@ -980,14 +981,14 @@ display_callback display = {
 int
 main(int argc, char *argv[])
 {
-    int code;
+    int code, code1;
     int exit_code;
     int exit_status;
     int nargc;
     char **nargv;
     char dformat[64];
     ULONG version[3];
-    gs_main_instance *instance;
+    void *instance;
 
     if (DosQuerySysInfo(QSV_VERSION_MAJOR, QSV_VERSION_REVISION, 
 	    &version, sizeof(version)))
@@ -1046,7 +1047,9 @@ main(int argc, char *argv[])
 	code = gsdll.init_with_args(instance, nargc, nargv);
 	if (code == 0) 
 	    code = gsdll.run_string(instance, start_string, 0, &exit_code);
-	gsdll.exit(instance);
+	code1 = gsdll.exit(instance);
+	if (code == 0 || (code == e_Quit && code1 != 0))
+	    code = code1;
 
 	gsdll.delete_instance(instance);
     }

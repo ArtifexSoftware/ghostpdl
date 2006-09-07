@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* Portable Bit/Gray/PixMap drivers */
 #include "gdevprn.h"
 #include "gscdefs.h"
@@ -113,7 +113,6 @@ private dev_proc_put_params(ppm_put_params);
 private dev_proc_copy_alpha(pnm_copy_alpha);
 private dev_proc_begin_typed_image(pnm_begin_typed_image);
 
-
 /* We need to initialize uses_color when opening the device, */
 /* and after each showpage. */
 private dev_proc_open_device(ppm_open);
@@ -135,30 +134,30 @@ private int pam_print_page(gx_device_printer * pdev, FILE * pstream);
 /* The device procedures */
 
 /* See gdevprn.h for the template for the following. */
-#define pgpm_procs(p_open, p_initial_matrix, p_get_params, p_map_rgb_color, p_map_color_rgb, p_map_cmyk_color) {\
-	p_open, p_initial_matrix, NULL, ppm_output_page, gdev_prn_close,\
+#define pgpm_procs(p_open, p_get_params, p_map_rgb_color, p_map_color_rgb, p_map_cmyk_color) {\
+	p_open, NULL, NULL, ppm_output_page, gdev_prn_close,\
 	p_map_rgb_color, p_map_color_rgb, NULL, NULL, NULL, NULL, NULL, NULL,\
 	p_get_params, ppm_put_params,\
 	p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device\
 }
 
 private const gx_device_procs pbm_procs =
-    pgpm_procs(gdev_prn_open, NULL, gdev_prn_get_params,
+    pgpm_procs(gdev_prn_open, gdev_prn_get_params,
 	       gdev_prn_map_rgb_color, gdev_prn_map_color_rgb, NULL);
 private const gx_device_procs pgm_procs =
-    pgpm_procs(ppm_open, NULL, gdev_prn_get_params,
+    pgpm_procs(ppm_open, gdev_prn_get_params,
 	       pgm_map_rgb_color, pgm_map_color_rgb, NULL);
 private const gx_device_procs ppm_procs =
-    pgpm_procs(ppm_open, NULL, ppm_get_params,
+    pgpm_procs(ppm_open, ppm_get_params,
 	       gx_default_rgb_map_rgb_color, ppm_map_color_rgb, NULL);
 private const gx_device_procs pnm_procs =
-    pgpm_procs(ppm_open, NULL, ppm_get_params,
+    pgpm_procs(ppm_open, ppm_get_params,
 	       ppm_map_rgb_color, ppm_map_color_rgb, NULL);
 private const gx_device_procs pkm_procs =
-    pgpm_procs(ppm_open, NULL, ppm_get_params,
+    pgpm_procs(ppm_open, ppm_get_params,
 	       NULL, cmyk_1bit_map_color_rgb, cmyk_1bit_map_cmyk_color);
 private const gx_device_procs pam_procs =
-    pgpm_procs(ppm_open, NULL, ppm_get_params,
+    pgpm_procs(ppm_open, ppm_get_params,
 	       NULL, cmyk_8bit_map_color_rgb, cmyk_8bit_map_cmyk_color);
 
 /* The device descriptors themselves */
@@ -322,14 +321,40 @@ pgm_map_color_rgb(gx_device * dev, gx_color_index color,
     return 0;
 }
 
+/*
+ * Pre gs8.00 version of RGB mapping for 24-bit true (RGB) color devices
+ * It is kept here for backwards comparibility since the gs8.00 version
+ * has changed in functionality.  The new one requires that the device be
+ * 'separable'.  This routine is logically separable but does not require
+ * the various color_info fields associated with separability (comp_shift,
+ * comp_bits, and comp_mask) be setup.
+ */
+
+private gx_color_index
+gx_old_default_rgb_map_rgb_color(gx_device * dev,
+		       gx_color_value r, gx_color_value g, gx_color_value b)
+{
+    if (dev->color_info.depth == 24)
+	return gx_color_value_to_byte(b) +
+	    ((uint) gx_color_value_to_byte(g) << 8) +
+	    ((ulong) gx_color_value_to_byte(r) << 16);
+    else {
+	int bpc = dev->color_info.depth / 3;
+	int drop = sizeof(gx_color_value) * 8 - bpc;
+
+	return ((((r >> drop) << bpc) + (g >> drop)) << bpc) + (b >> drop);
+    }
+}
+
 /* Map an RGB color to a PPM color tuple. */
 /* Keep track of whether the image is black-and-white, gray, or colored. */
 private gx_color_index
 ppm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
-    gx_color_index color = gx_default_encode_color(pdev, cv);
-    int bpc = pdev->color_info.depth / 3;
+    gx_color_index color = 
+	    gx_old_default_rgb_map_rgb_color(pdev, cv[0], cv[1], cv[2]);
+    uint bpc = pdev->color_info.depth / 3;
     gx_color_index mask =
 	((gx_color_index)1 << (pdev->color_info.depth - bpc)) - 1;
     if (!(((color >> bpc) ^ color) & mask)) { /* gray shade */
@@ -404,8 +429,8 @@ private int
 ppm_get_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
-    int code = gdev_prn_get_params_planar(pdev, plist, &bdev->UsePlanarBuffer);
-    return code;
+
+    return gdev_prn_get_params_planar(pdev, plist, &bdev->UsePlanarBuffer);
 }
 
 private int
@@ -418,7 +443,6 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
     int ecode = 0;
     int code;
     long v;
-    int t;
     const char *vname;
 
     save_info = pdev->color_info;
@@ -459,7 +483,6 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
 		 pdev->color_info.dither_colors = (int)v) - 1;
 	}
     }
-
     if ((code = ecode) < 0 ||
 	(code = gdev_prn_put_params_planar(pdev, plist, &bdev->UsePlanarBuffer)) < 0
 	)
@@ -541,7 +564,7 @@ pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
     int code = 0;
 
     if (data == 0)
-	return_error(pdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     /* Hack.  This should be done in the callers.  */
     if (magic == '9')
 	fprintf(pstream, "%11d %11d %11d %11d %11d ",
@@ -978,7 +1001,7 @@ psm_print_page(gx_device_printer * pdev, FILE * pstream)
     int plane;
 
     if (data == 0)
-	return_error(pdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     for (plane = 0; plane < pdev->color_info.num_components; ++plane) {
 	int lnum, band_end;
 	/*
@@ -1024,7 +1047,7 @@ psm_print_page(gx_device_printer * pdev, FILE * pstream)
 		    memset(data, 0, raster);
 #ifdef DEBUG
 		if (plane == 0)
-		    if_debug4(pdev->memory, ':',
+		    if_debug4(':',
 			      "[:]%4d - %4d mask = 0x%lx, slow_rop = %d\n",
 			      lnum, band_end - 1, (ulong)colors_used.or,
 			      colors_used.slow_rop);

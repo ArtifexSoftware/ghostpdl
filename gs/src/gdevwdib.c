@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* MS Windows 3.n driver for Ghostscript using a DIB for buffering. */
 #include "gdevmswn.h"
 #include "gxdevmem.h"
@@ -434,11 +435,10 @@ win_dib_make_dib(gx_device_win * dev, int orgx, int orgy, int wx, int wy)
     int palcount;
     int i;
     UINT lwidth;		/* line width in bytes rounded up to multiple of 4 bytes */
-
-#ifdef USE_SEGMENTS
     int loffset;		/* byte offset to start of line */
-    UINT lseg;			/* bytes remaining in this segment */
 
+#if USE_SEGMENTS
+    UINT lseg;			/* bytes remaining in this segment */
 #endif
 
     if (orgx + wx > wdev->width)
@@ -538,13 +538,12 @@ win_dib_alloc_bitmap(gx_device_win * dev, gx_device * param_dev)
     gx_device_memory mdev;
     HGLOBAL hmdata;
     byte FAR *base;
-    byte FAR *ptr_base;
     uint ptr_size;
     uint raster;
-
-#ifdef USE_SEGMENTS
     ulong data_size;
 
+#if USE_SEGMENTS
+   byte FAR *ptr_base;
 #endif
 
 #ifdef __WIN32__

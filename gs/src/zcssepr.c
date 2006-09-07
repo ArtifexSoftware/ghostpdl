@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Separation color space support */
 #include "memory_.h"
 #include "ghost.h"
@@ -62,17 +63,18 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
     gs_function_t *pfn = NULL;
     separation_type sep_type;
     int code;
+    const gs_memory_t * mem = imemory;
 
     /* Verify that we have an array as our input parameter */
-    check_read_type(imemory, *op, t_array);
+    check_read_type(*op, t_array);
     if (r_size(op) != 4)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
 
     /* The alternate color space has been selected as the current color space */
     pacs = gs_currentcolorspace(igs);
     cs = *pacs;
     if (!cs.type->can_be_alt_space)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
 
     /*
      * pcsa is a pointer to element 1 (2nd element)  in the Separation colorspace
@@ -83,9 +85,9 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
     sname = *pcsa;
     switch (r_type(&sname)) {
 	default:
-	    return_error(imemory, e_typecheck);
+	    return_error(e_typecheck);
 	case t_string:
-	    code = name_from_string(imemory, &sname, &sname);
+	    code = name_from_string(mem, &sname, &sname);
 	    if (code < 0)
 		return code;
 	    /* falls through */
@@ -93,19 +95,19 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
 	    break;
     }
 
-    if ((code = name_ref(imemory, (const byte *)"All", 3, &name_all, 0)) < 0)
+    if ((code = name_ref(mem, (const byte *)"All", 3, &name_all, 0)) < 0)
 	return code;
-    if ((code = name_ref(imemory, (const byte *)"None", 4, &name_none, 0)) < 0)
+    if ((code = name_ref(mem, (const byte *)"None", 4, &name_none, 0)) < 0)
 	return code;
     sep_type = ( name_eq(&sname, &name_all) ? SEP_ALL :
 	         name_eq(&sname, &name_none) ? SEP_NONE : SEP_OTHER);
 
     /* Check tint transform procedure. */
     /* See comment above about psca */
-    check_proc(imemory, pcsa[2]);
+    check_proc(pcsa[2]);
     pfn = ref_function(pcsa + 2);
     if (pfn == NULL)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
 
     cspace_old = istate->colorspace;
     /* See zcsindex.c for why we use memmove here. */
@@ -116,14 +118,14 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
     if (code < 0)
 	return code;
     pmap = cs.params.separation.map;
-    gs_cspace_init(&cs, &gs_color_space_type_Separation, imemory);
+    gs_cspace_init(&cs, &gs_color_space_type_Separation, imemory, false);
     cs.params.separation.sep_type = sep_type;
-    cs.params.separation.sep_name = name_index(imemory, &sname);
+    cs.params.separation.sep_name = name_index(mem, &sname);
     cs.params.separation.get_colorname_string = gs_get_colorname_string;
     istate->colorspace.procs.special.separation.layer_name = pcsa[0];
     istate->colorspace.procs.special.separation.tint_transform = pcsa[2];
     if (code >= 0)
-        code = gs_cspace_set_sepr_function(imemory, &cs, pfn);
+        code = gs_cspace_set_sepr_function(&cs, pfn);
     if (code >= 0)
 	code = gs_setcolorspace(igs, &cs);
     if (code < 0) {
@@ -131,8 +133,7 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
 	ifree_object(pmap, ".setseparationspace(pmap)");
 	return code;
     }
-    rc_decrement(imemory, 
-		 pmap, ".setseparationspace(pmap)");  /* build sets rc = 1 */
+    rc_decrement(pmap, ".setseparationspace(pmap)");  /* build sets rc = 1 */
     pop(1);
     return 0;
 }
@@ -143,7 +144,7 @@ zcurrentoverprint(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_bool(op, gs_currentoverprint(igs));
     return 0;
 }
@@ -154,7 +155,7 @@ zsetoverprint(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(imemory, *op, t_boolean);
+    check_type(*op, t_boolean);
     gs_setoverprint(igs, op->value.boolval);
     pop(1);
     return 0;
@@ -166,7 +167,7 @@ zcurrentoverprintmode(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_int(op, gs_currentoverprintmode(igs));
     return 0;
 }
@@ -177,7 +178,7 @@ zsetoverprintmode(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int param;
-    int code = int_param(imemory, op, max_int, &param);
+    int code = int_param(op, max_int, &param);
 
     if (code < 0 || (code = gs_setoverprintmode(igs, param)) < 0)
 	return code;

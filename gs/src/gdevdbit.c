@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/*$Id$ */
 /* Default device bitmap copying implementation */
 #include "gx.h"
 #include "gpcheck.h"
@@ -152,7 +152,7 @@ gx_no_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	   int raster, gx_bitmap_id id, int x, int y, int width, int height,
 		 gx_color_index color, int depth)
 {
-    return_error(dev->memory, gs_error_unknownerror);
+    return_error(gs_error_unknownerror);
 }
 
 int
@@ -187,7 +187,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	lin = gs_alloc_bytes(mem, in_size, "copy_alpha(lin)");
 	lout = gs_alloc_bytes(mem, out_size, "copy_alpha(lout)");
 	if (lin == 0 || lout == 0) {
-	    code = gs_note_error(mem, gs_error_VMerror);
+	    code = gs_note_error(gs_error_VMerror);
 	    goto out;
 	}
 	(*dev_proc(dev, decode_color)) (dev, color, color_cv);
@@ -256,7 +256,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 			int i;
 
 			(*dev_proc(dev, decode_color)) (dev, previous, cv);
-#if arch_ints_are_short
+#if ARCH_INTS_ARE_SHORT
 #  define b_int long
 #else
 #  define b_int int
@@ -296,7 +296,7 @@ gx_no_copy_rop(gx_device * dev,
 	       int x, int y, int width, int height,
 	       int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    return_error(dev->memory, gs_error_unknownerror);	/* not implemented */
+    return_error(gs_error_unknownerror);	/* not implemented */
 }
 
 int
@@ -347,17 +347,17 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	int ptx, pty;
 	const byte *ptp = tiles->data;
 
-	dlprintf4(dev->memory, "[t]tile %dx%d raster=%d id=%lu;",
+	dlprintf4("[t]tile %dx%d raster=%d id=%lu;",
 		  tiles->size.x, tiles->size.y, tiles->raster, tiles->id);
-	dlprintf6(dev->memory, " x,y=%d,%d w,h=%d,%d p=%d,%d\n",
+	dlprintf6(" x,y=%d,%d w,h=%d,%d p=%d,%d\n",
 		  x, y, w, h, px, py);
-	dlputs(dev->memory, "");
+	dlputs("");
 	for (pty = 0; pty < tiles->size.y; pty++) {
-	    dprintf(dev->memory, "   ");
+	    dprintf("   ");
 	    for (ptx = 0; ptx < tiles->raster; ptx++)
-		dprintf1(dev->memory, "%3x", *ptp++);
+		dprintf1("%3x", *ptp++);
 	}
-	dputc(dev->memory, '\n');
+	dputc('\n');
     }
 #endif
 
@@ -412,11 +412,11 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     (proc_color != 0 ?\
      (*proc_color)(dev, row, srcx, raster, id, tx, ty, tw, th) :\
      (*proc_mono)(dev, row, srcx, raster, id, tx, ty, tw, th, color0, color1));\
-  if (code < 0) return_error(dev->memory, code);\
+  if (code < 0) return_error(code);\
   return_if_interrupt(dev->memory)
 #ifdef DEBUG
 #define copy_tile(srcx, tx, ty, tw, th, tid)\
-  if_debug6(dev->memory, 't', "   copy id=%lu sx=%d => x=%d y=%d w=%d h=%d\n",\
+  if_debug6('t', "   copy id=%lu sx=%d => x=%d y=%d w=%d h=%d\n",\
 	    tid, srcx, tx, ty, tw, th);\
   real_copy_tile(srcx, tx, ty, tw, th, tid)
 #else
@@ -507,7 +507,7 @@ gx_no_strip_copy_rop(gx_device * dev,
 		     int x, int y, int width, int height,
 		     int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    return_error(dev->memory, gs_error_unknownerror);	/* not implemented */
+    return_error(gs_error_unknownerror);	/* not implemented */
 }
 
 /* ---------------- Unaligned copy operations ---------------- */

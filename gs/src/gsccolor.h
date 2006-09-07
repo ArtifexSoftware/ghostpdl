@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Client color structure definition */
 
 #ifndef gsccolor_INCLUDED
@@ -27,9 +28,10 @@ typedef struct gs_pattern_instance_s gs_pattern_instance_t;
 /*
  * Define the maximum number of components in a client color.
  * This must be at least 4, and should be at least 6 to accommodate
- * hexachrome DeviceN color spaces.
+ * hexachrome DeviceN color spaces.  It is currently set to the maximum
+ * size allowed by the size of a gx_color_index
  */
-#define GS_CLIENT_COLOR_MAX_COMPONENTS 16
+#define GS_CLIENT_COLOR_MAX_COMPONENTS (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
 
 /* Paint (non-Pattern) colors */
 typedef struct gs_paint_color_s {

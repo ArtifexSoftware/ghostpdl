@@ -1,21 +1,25 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
-#include <windows.h>
+/* $Id$ */
+/* dwmainc.c */
+
+#include "windows_.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <io.h>
 #include <fcntl.h>
+#include <process.h>
 #include "ierrors.h"
 #include "iapi.h"
 #include "vdtrace.h"
@@ -33,7 +37,7 @@
 #endif
 
 GSDLL gsdll;
-struct gs_main_instance_s *instance;
+void *instance;
 BOOL quitnow = FALSE;
 HANDLE hthread;
 DWORD thread_id;
@@ -83,6 +87,7 @@ gsdll_stderr(void *instance, const char *str, int len)
 #define DISPLAY_SIZE WM_USER+103
 #define DISPLAY_SYNC WM_USER+104
 #define DISPLAY_PAGE WM_USER+105
+#define DISPLAY_UPDATE WM_USER+106
 
 /*
 #define DISPLAY_DEBUG
@@ -116,6 +121,9 @@ static void winthread(void *arg)
 		break;
 	    case DISPLAY_PAGE:
 		image_page((IMAGE *)msg.lParam);
+		break;
+	    case DISPLAY_UPDATE:
+		image_poll((IMAGE *)msg.lParam);
 		break;
 	    default:
 		TranslateMessage(&msg);
@@ -213,8 +221,10 @@ int display_sync(void *handle, void *device)
     fprintf(stdout, "display_sync(0x%x, 0x%x)\n", handle, device);
 #endif
     img = image_find(handle, device);
-    if (img)
+    if (img && !img->pending_sync) {
+	img->pending_sync = 1;
 	PostThreadMessage(thread_id, DISPLAY_SYNC, 0, (LPARAM)img);
+    }
     return 0;
 }
 
@@ -234,10 +244,12 @@ int display_page(void *handle, void *device, int copies, int flush)
 int display_update(void *handle, void *device, 
     int x, int y, int w, int h)
 {
-    /* Unneeded for polling - we are running Windows on another thread. */
-    /* Eventually we will add code here which provides progressive 
-     * update of the display during rendering.
-     */
+    IMAGE *img;
+    img = image_find(handle, device);
+    if (img && !img->pending_update && !img->pending_sync) {
+	img->pending_update = 1;
+	PostThreadMessage(thread_id, DISPLAY_UPDATE, 0, (LPARAM)img);
+    }
     return 0;
 }
 
@@ -271,6 +283,21 @@ int display_memfree(void *handle, void *device, void *mem)
 }
 #endif
 
+int display_separation(void *handle, void *device, 
+   int comp_num, const char *name,
+   unsigned short c, unsigned short m,
+   unsigned short y, unsigned short k)
+{
+    IMAGE *img;
+#ifdef DISPLAY_DEBUG
+    fprintf(stdout, "display_separation(0x%x, 0x%x, %d '%s' %d,%d,%d,%d)\n", 
+	handle, device, comp_num, name, (int)c, (int)m, (int)y, (int)k);
+#endif
+    img = image_find(handle, device);
+    if (img)
+        image_separation(img, comp_num, name, c, m, y, k);
+    return 0;
+}
 
 
 display_callback display = { 
@@ -287,11 +314,12 @@ display_callback display = {
     display_update,
 #ifdef DISPLAY_DEBUG_USE_ALLOC
     display_memalloc,	/* memalloc */
-    display_memfree	/* memfree */
+    display_memfree,	/* memfree */
 #else
     NULL,	/* memalloc */
-    NULL	/* memfree */
+    NULL,	/* memfree */
 #endif
+    display_separation
 };
 
 
@@ -306,6 +334,7 @@ int main(int argc, char *argv[])
     char **nargv;
     char buf[256];
     char dformat[64];
+    char ddpi[64];
 
     if (!_isatty(fileno(stdin)))
         _setmode(fileno(stdin), _O_BINARY);
@@ -356,6 +385,7 @@ int main(int argc, char *argv[])
 		DISPLAY_DEPTH_1 | DISPLAY_LITTLEENDIAN | DISPLAY_BOTTOMFIRST;
 	HDC hdc = GetDC(NULL);	/* get hdc for desktop */
 	int depth = GetDeviceCaps(hdc, PLANES) * GetDeviceCaps(hdc, BITSPIXEL);
+	sprintf(ddpi, "-dDisplayResolution=%d", GetDeviceCaps(hdc, LOGPIXELSY));
         ReleaseDC(NULL, hdc);
 	if (depth == 32)
  	    format = DISPLAY_COLORS_RGB | DISPLAY_UNUSED_LAST | 
@@ -375,18 +405,28 @@ int main(int argc, char *argv[])
 		DISPLAY_DEPTH_4 | DISPLAY_LITTLEENDIAN | DISPLAY_BOTTOMFIRST;
         sprintf(dformat, "-dDisplayFormat=%d", format);
     }
-    nargc = argc + 1;
+    nargc = argc + 2;
     nargv = (char **)malloc((nargc + 1) * sizeof(char *));
     nargv[0] = argv[0];
     nargv[1] = dformat;
-    memcpy(&nargv[2], &argv[1], argc * sizeof(char *));
+    nargv[2] = ddpi;
+    memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
 
+#if defined(_MSC_VER) || defined(__BORLANDC__)
+    __try {
+#endif
     code = gsdll.init_with_args(instance, nargc, nargv);
     if (code == 0)
 	code = gsdll.run_string(instance, start_string, 0, &exit_code);
     code1 = gsdll.exit(instance);
     if (code == 0 || (code == e_Quit && code1 != 0))
 	code = code1;
+#if defined(_MSC_VER) || defined(__BORLANDC__)
+    } __except(exception_code() == EXCEPTION_STACK_OVERFLOW) {
+        code = e_Fatal;
+        fprintf(stderr, "*** C stack overflow. Quiting...\n");
+    }
+#endif
 
     gsdll.delete_instance(instance);
 

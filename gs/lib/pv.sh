@@ -1,5 +1,5 @@
 #!/bin/sh -f
-# $RCSfile$ $Revision$
+# $Id$
 #
 # pv - preview a specified page of a dvi file in a Ghostscript window
 # usage: pv page file
@@ -25,6 +25,11 @@ fi
 # are held on the system."  So we have deleted this line, and also removed
 # the -D switch from the call of dvips below.
 #
+
+# This definition is changed on install to match the
+# executable name set in the makefile
+GS_EXECUTABLE=gs
+
 TEMPDIR=.
 PAGE=$1
 shift
@@ -33,5 +38,5 @@ shift
 trap "rm -rf $TEMPDIR/$FILE.$$.pv" 0 1 2 15
 #dvips -D$RESOLUTION -p $PAGE -n 1 $FILE $* -o $FILE.$$.pv
 dvips -p $PAGE -n 1 $FILE $* -o $FILE.$$.pv
-gs $FILE.$$.pv
+$GS_EXECUTABLE $FILE.$$.pv
 exit 0

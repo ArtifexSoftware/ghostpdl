@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Ghostscript language interpreter */
 #include "memory_.h"
 #include "string_.h"
@@ -23,9 +24,7 @@
 #include "iastruct.h"
 #include "icontext.h"
 #include "icremap.h"
-#ifdef GS_DEBUGGER
 #include "idebug.h"
-#endif
 #include "igstate.h"		/* for handling e_RemapColor */
 #include "inamedef.h"
 #include "iname.h"		/* for the_name_table */
@@ -77,7 +76,7 @@ public_st_op_stack();
 private int
 no_reschedule(i_ctx_t **pi_ctx_p)
 {
-    return_error( (const gs_memory_t *)(*pi_ctx_p)->memory.current, e_invalidcontext);
+    return_error(e_invalidcontext);
 }
 int (*gs_interp_reschedule_proc)(i_ctx_t **) = no_reschedule;
 
@@ -135,6 +134,10 @@ private void set_gc_signal(i_ctx_t *, int *, int);
 private int copy_stack(i_ctx_t *, const ref_stack_t *, ref *);
 private int oparray_pop(i_ctx_t *);
 private int oparray_cleanup(i_ctx_t *);
+private int zerrorexec(i_ctx_t *);
+private int errorexec_find(i_ctx_t *, ref *);
+private int errorexec_pop(i_ctx_t *);
+private int errorexec_cleanup(i_ctx_t *);
 private int zsetstackprotect(i_ctx_t *);
 private int zcurrentstackprotect(i_ctx_t *);
 
@@ -241,20 +244,16 @@ const int gs_interp_num_special_ops = num_special_ops;	/* for iinit.c */
 const int tx_next_index = tx_next_op;
 
 /*
- * Define the interpreter operators, which include the extended-type
- * operators defined in the list above.  NOTE: if the size of this table
- * ever exceeds 15 real entries, it will have to be split.
+ * NOTE: if the size of either table below ever exceeds 15 real entries, it
+ * will have to be split.
  */
-const op_def interp_op_defs[] = {
+/* Define the extended-type operators per the list above. */
+const op_def interp1_op_defs[] = {
     /*
      * The very first entry, which corresponds to operator index 0,
      * must not contain an actual operator.
      */
     op_def_begin_dict("systemdict"),
-    /*
-     * The next entries must be the extended-type operators, in the
-     * correct order.
-     */
     {"2add", zadd},
     {"2def", zdef},
     {"1dup", zdup},
@@ -265,13 +264,16 @@ const op_def interp_op_defs[] = {
     {"1pop", zpop},
     {"2roll", zroll},
     {"2sub", zsub},
-    /*
-     * The remaining entries are internal operators.
-     */
+    op_def_end(0)
+};
+/* Define the internal interpreter operators. */
+const op_def interp2_op_defs[] = {
     {"0.currentstackprotect", zcurrentstackprotect},
     {"1.setstackprotect", zsetstackprotect},
+    {"2.errorexec", zerrorexec},
     {"0%interp_exit", interp_exit},
     {"0%oparray_pop", oparray_pop},
+    {"0%errorexec_pop", errorexec_pop},
     op_def_end(0)
 };
 
@@ -290,8 +292,7 @@ gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict,
     if (code >= 0)
 	code = context_state_load(pcst);
     if (code < 0)
-	lprintf1((const gs_memory_t *)dmem, 
-		 "Fatal error %d in gs_interp_init!", code);
+	lprintf1("Fatal error %d in gs_interp_init!", code);
     *pi_ctx_p = pcst;
     return code;
 }
@@ -395,7 +396,7 @@ gs_interp_make_oper(ref * opref, op_proc_t proc, int idx)
 {
     int i;
 
-    for (i = num_special_ops; i > 0 && proc != interp_op_defs[i].proc; --i)
+    for (i = num_special_ops; i > 0 && proc != interp1_op_defs[i].proc; --i)
 	DO_NOTHING;
     if (i > 0)
 	make_tasv(opref, tx_op + (i - 1), a_executable, i, opproc, proc);
@@ -450,286 +451,6 @@ gs_interpret(i_ctx_t **pi_ctx_p, ref * pref, int user_errors, int *pexit_code,
     set_gc_signal(i_ctx_p, NULL, 0);
     return code;
 }
-#ifdef GS_DEBUGGER
-/* read character at file position offset and don't update the file pointer */
-private int
-read_at_dont_move(FILE *fp, unsigned long offset, char *ch)
-{
-    
-    if ( fseek( fp, offset, SEEK_SET ) ) {
-        printf( "seek failed\n" );
-        return 1;
-    }
-    if ( fread( ch, 1, 1, fp ) != 1 ) {
-        printf( "read failed\n" );
-        return 1;
-    }
-    if ( fseek( fp, offset, SEEK_SET ) ) {
-        printf( "seek failed\n" );
-        return 1;
-    }
-    return 0;
-}
-
-private int
-print_line_and_pos(FILE *fp, unsigned long start_offset)
-{
-    char current_char;    
-    int offset = start_offset;
-    char line_buffer[1024];
-    char *pline_buffer;
-    if ( fseek( fp, offset, SEEK_SET ) ) {
-        printf( "seek failed\n" );
-        return 1;
-    }
-
-    /* see the crazy scanner (iscan.c) to understand why we need this. */
-    while ( (read_at_dont_move(fp, offset, &current_char)  == 0) ) {
-        if (!isspace(current_char))
-            break;
-        if (offset == 0)
-            break;
-        offset--;
-    }
-    /* beginning of file nothing to search for */
-    if ( offset == 0 )
-        ;
-    /* starting at newline shouldn't usualy happen */
-    else if ( 0 ) /* ( current_char == '\n' ) */ {
-        printf( "newline is not a possible token\n" );
-        return 1;
-    } else {
-        while ( 1 ) {
-            /* backed up to the beginning */
-            if ( offset == 0 )
-                break;
-            if ( read_at_dont_move(fp, offset, &current_char)  != 0 )
-                return 1;
-            /* backed up to end of last line */
-            if ( current_char == '\n' ) {
-                offset++;
-                break;
-            } else
-                offset--;
-        }
-    }
-    if ( fseek( fp, offset, SEEK_SET ) ) {
-        printf( "seek failed\n" );
-        return 1;
-    }
-    pline_buffer = fgets( &line_buffer, sizeof(line_buffer), fp );
-    if ( pline_buffer == 0 ) {
-        printf( "fgets failed\n" );
-        return 1;
-    }
-    /* restore position */
-    if ( fseek( fp, start_offset, SEEK_SET ) ) {
-        printf( "seek failed\n" );
-        return 1;
-    }
-    {
-        int line_delta = start_offset - offset;
-        int i;
-        /* hack */
-        if ( line_delta < 0 ) line_delta = 0;
-        for ( i = 0 ; i < line_delta; i++ )
-            printf("%c", line_buffer[i]);
-        printf("<<");
-
-        for ( i = line_delta; line_buffer[i] != '\0'; i++ )
-            printf("%c", line_buffer[i]);
-    }
-    return 0;
-}
-extern bool trace_line_number;
-
-static char global_filename[1024];
-static char Next_filename[1024];
-static bool have_filename = false;
-static bool checking_for_new_file_name = false;
-static char last_command[1024];
-static char bp_file_buffer[1024];
-static bool inited = false;
-static bool just_file_set = false;
-static char just_file[1024];
-private int stop_buffer[1024];
-private bool stop_set = false;
-static bool debug_init_files = true;
-
-int
-interact_at_offset(gs_memory_t *mem, char *filename, ref *pref, i_ctx_t *i_ctx_p, uint depth)
-{
-    char line_buffer[1024];
-    char *pline_buffer = line_buffer;
-    unsigned long offset = pref->offset;
-    FILE *fp = fopen( filename, "r" );
-    bool done = false;
-    bool is_lib_file = (filename[0] == '.' && filename[1] == '/');
-    int code = 0;
-    static bool stepping = true;
-    static bool nexting = false;
-    static bool upping = false;
-    static int current_depth = 0;
-    static bool bp_name_set = false;
-    static bool bp_offset_set = false;
-    static bool tracing = false;
-    
-    static long bp_offset;
-    /* probably a file reference should check better */
-    if ( offset == 0 ) {
-        fclose(fp);
-        return 0;
-    }
-
-    if ( inited == false ) {
-        strcpy(last_command, "n");
-        inited = true;
-        just_file_set = false;
-    }
-    
-    if ( just_file_set && ( strcmp(filename, just_file) != 0 ) ) {
-        fclose(fp);
-        return 0;
-    }
-
-    if ( !have_filename || (strcmp(filename, global_filename) != 0) ) {
-        have_filename = true;
-        strcpy(global_filename, filename);
-    }
-
-    if ( checking_for_new_file_name ) {
-        /* file hasn't changed  continue */
-        if (strcmp(filename, Next_filename) == 0) {
-            fclose(fp);
-            return 0;
-        } else {
-            checking_for_new_file_name = false;
-            /* drop through */
-        }
-    }
-
- l:  if ( ( stepping ) ||
-          ( tracing ) ||
-          ( bp_offset_set && bp_offset == offset && bp_name_set && !strcmp(bp_file_buffer, filename) ) ||
-          (nexting && depth <= current_depth ) ||
-          (upping && depth < current_depth)) {
-        code = print_line_and_pos(fp, offset);
-        printf("PSDB %s:%d ->", filename, offset);
-        if ( tracing ) {
-            printf("\n");
-            goto j;
-        }
-        pline_buffer = gets(pline_buffer);
-p:     if ( pline_buffer == NULL ) {
-            printf("Bye\n");
-            done = true;
-        } else if ( strlen(pline_buffer) == 0 ) {
-            strcpy(pline_buffer, last_command);
-            goto p;
-        } else if ( strncmp(pline_buffer, "w", 1) == 0 ) {
-            printf( "filename %s offset %d\n", filename, offset );
-            goto l;
-        } else if ( strncmp(pline_buffer, "o", 1) == 0 ) {
-            debug_dump_stack(mem, &o_stack, "Operand stack");
-            goto l;
-        } else if ( strncmp(pline_buffer, "e", 1) == 0 ) {
-            debug_dump_stack(mem, &e_stack, "Exec stack");
-            goto l;
-        } else if ( strncmp(pline_buffer, "l", 1) == 0 ) {
-            debug_init_files = !debug_init_files;
-            goto l;
-        } else if ( strncmp(pline_buffer, "d", 1) == 0 ) {
-            debug_dump_stack(mem, &d_stack, "Dictionary stack");
-            goto l;
-        } else if ( strncmp(pline_buffer, "r", 1) == 0 ) {
-            debug_print_ref(mem, pref);
-            printf("\n");
-            goto l;
-        } else if ( strncmp(pline_buffer, "c", 1) == 0 ) {
-            stepping = false;
-            nexting = false;
-        } else if ( strncmp(pline_buffer, "t", 1) == 0 ) {
-            tracing = !tracing;
-        } else if ( strncmp(pline_buffer, "N", 1) == 0 ) {
-            checking_for_new_file_name = true;
-            nexting = true;
-            strcpy(Next_filename, filename);
-            stepping = false;
-        } else if ( strncmp(pline_buffer, "n", 1) == 0 ) {
-            current_depth = depth;
-            nexting = true;
-            stepping = false;
-            upping = false;
-        } else if ( strncmp(pline_buffer, "s", 1) == 0 ) {
-            stepping = true;
-            nexting = false;
-            upping = false;
-        } else if ( strncmp(pline_buffer, "u", 1) == 0 ) {
-            current_depth = depth;
-            stepping = false;
-            nexting = false;
-            upping = true;
-        } else if ( strncmp(pline_buffer, "j", 1) == 0 ) {
-            just_file_set = !just_file_set;
-            strcpy(just_file, filename);
-            goto l;
-        } else if ( strncmp(pline_buffer, "b", 1) == 0 ) {
-            
-            char *colon_offset = index(pline_buffer, ':');
-            if ( colon_offset ) {
-                if (strncpy(bp_file_buffer, pline_buffer + 2, colon_offset - pline_buffer - 2) ) {
-                    bp_name_set = true;
-                    if ( strstr( pline_buffer, colon_offset + 1 ) ) {
-                        long tmp;
-                        tmp = strtol(strstr( pline_buffer, colon_offset + 1), (char **)NULL, 10);
-                        /* reasonable values hack nb */
-                        if ( tmp >= 0 && tmp < 0xfffffff ) {
-                            bp_offset_set = true;
-                            bp_offset = tmp;
-                        }
-                    }
-                }
-            }
-            goto l;
-        } else if ( strncmp(pline_buffer, "a", 1) == 0 ) {
-            char *colon_offset = index(pline_buffer, ':');
-            if ( colon_offset ) {
-                if (strncpy(bp_file_buffer, pline_buffer + 2, colon_offset - pline_buffer - 2) ) {
-                    bp_name_set = true;
-                    if ( strstr( pline_buffer, colon_offset + 1 ) ) {
-                        long tmp;
-                        tmp = strtol(strstr( pline_buffer, colon_offset + 1), (char **)NULL, 10);
-                        /* reasonable values hack nb */
-                        if ( tmp >= 0 && tmp < 0xfffffff ) {
-                            bp_offset_set = true;
-                            bp_offset = tmp;
-                        }
-                    }
-                }
-            }
-            goto l;
-        } else if ( strncmp(pline_buffer, "h", 1) == 0 ) {
-            printf("Data\n");
-            printf("o Operand Stack           e Exec Stack\n");
-            printf("d Dictionary Stack        r Current Reference\n");
-            printf("Control\n");
-            printf("w Where (NI)              n Next (current level or higher)\n");
-            printf("s Step                    u Up one level\n");
-            printf("c Continue                b Break\n");
-            printf("j Just file for bp        t toggle tracing\n");
-            printf("l toggle init file debugging\n");
-            goto l;
-        }
-    }
-
-    if ( pline_buffer && (strlen( pline_buffer ) != 0) )
-        strcpy(last_command, pline_buffer);
-j:  fclose(fp);
-    return code;
-}
-
-#endif /* GS_DEBUGGER */
-
 private int
 gs_call_interp(i_ctx_t **pi_ctx_p, ref * pref, int user_errors,
 	       int *pexit_code, ref * perror_object)
@@ -802,9 +523,6 @@ again:
 	    epref = &doref;
 	    goto again;
 	case e_NeedInput:
-	case e_NeedStdin:
-	case e_NeedStdout:
-	case e_NeedStderr:
 	    return code;
     }
     /* Adjust osp in case of operand stack underflow */
@@ -906,15 +624,24 @@ again:
 	return code;
     if (gs_errorname(i_ctx_p, code, &error_name) < 0)
 	return code;		/* out-of-range error code! */
+    /*
+     * For greater Adobe compatibility, only the standard PostScript errors
+     * are defined in errordict; the rest are in gserrordict.
+     */
     if (dict_find_string(systemdict, "errordict", &perrordict) <= 0 ||
-	dict_find(perrordict, &error_name, &epref) <= 0
+	(dict_find(perrordict, &error_name, &epref) <= 0 &&
+	 (dict_find_string(systemdict, "gserrordict", &perrordict) <= 0 ||
+	  dict_find(perrordict, &error_name, &epref) <= 0))
 	)
 	return code;		/* error name not in errordict??? */
     doref = *epref;
     epref = &doref;
     /* Push the error object on the operand stack if appropriate. */
-    if (!ERROR_IS_INTERRUPT(code))
+    if (!ERROR_IS_INTERRUPT(code)) {
+	/* Replace the error object if within an oparray or .errorexec. */
 	*++osp = *perror_object;
+	errorexec_find(i_ctx_p, osp);
+    }
     goto again;
 }
 private int
@@ -975,7 +702,7 @@ gs_errorname(i_ctx_t *i_ctx_p, int code, ref * perror_name)
     if (dict_find_string(systemdict, "errordict", &perrordict) <= 0 ||
 	dict_find_string(systemdict, "ErrorNames", &pErrorNames) <= 0
 	)
-	return_error(imemory, e_undefined);	/* errordict or ErrorNames not found?! */
+	return_error(e_undefined);	/* errordict or ErrorNames not found?! */
     return array_get(imemory, pErrorNames, (long)(-code - 1), perror_name);
 }
 
@@ -994,7 +721,7 @@ gs_errorinfo_put_string(i_ctx_t *i_ctx_p, const char *str)
 	!r_has_type(pderror, t_dictionary) ||
 	idict_put_string(pderror, "errorinfo", &rstr) < 0
 	)
-	return_error(imemory, e_Fatal);
+	return_error(e_Fatal);
     return 0;
 }
 
@@ -1040,6 +767,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
     ref token;			/* token read from file or string, */
 				/* must be declared in this scope */
     register const ref *pvalue;
+    uint opindex;		/* needed for oparrays */
     os_ptr whichp;
 
     /*
@@ -1071,12 +799,25 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
   { set_error(ecode); goto rwei; }
 #define return_with_code_iref()\
   { ierror.line = __LINE__; goto rweci; }
-#define return_with_error_code_op(nargs)\
-  return_with_code_iref()
 #define return_with_stackoverflow(objp)\
   { o_stack.requested = 1; return_with_error(e_stackoverflow, objp); }
 #define return_with_stackoverflow_iref()\
   { o_stack.requested = 1; return_with_error_iref(e_stackoverflow); }
+/*
+ * If control reaches the special operators (x_add, etc.) as a result of
+ * interpreting an executable name, iref points to the name, not the
+ * operator, so the name rather than the operator becomes the error object,
+ * which is wrong.  We detect and handle this case explicitly when an error
+ * occurs, so as not to slow down the non-error case.
+ */
+#define return_with_error_tx_op(err_code)\
+  { if (r_has_type(IREF, t_name)) {\
+        return_with_error(err_code, pvalue);\
+    } else {\
+        return_with_error_iref(err_code);\
+    }\
+  }
+
     int ticks_left = gs_interp_time_slice_ticks;
 
     /*
@@ -1140,8 +881,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
     if (iosp >= osbot &&
 	(r_type(iosp) == t__invalid || r_type(iosp) >= tx_next_op)
 	) {
-	lprintf(imemory, 
-		"Invalid value on o-stack!\n");
+	lprintf("Invalid value on o-stack!\n");
 	return_with_error_iref(e_Fatal);
     }
     if (gs_debug['I'] ||
@@ -1155,65 +895,19 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 
 	osp = iosp;
 	esp = iesp;
-	dlprintf5(imemory, 
-		  "d%u,e%u<%u>0x%lx(%d): ",
+	dlprintf5("d%u,e%u<%u>0x%lx(%d): ",
 		  ref_stack_count(&d_stack), ref_stack_count(&e_stack),
 		  ref_stack_count(&o_stack), (ulong)IREF, icount);
 	debug_print_ref(imemory, IREF);
 	if (iosp >= osbot) {
-	    dputs(imemory, " // ");
+	    dputs(" // ");
 	    debug_print_ref(imemory, iosp);
 	}
-	dputc(imemory, '\n');
+	dputc('\n');
 	osp = save_osp;
 	esp = save_esp;
+	fflush(dstderr);
     }
-#ifdef GS_DEBUGGER
-    {
-        os_ptr save_osp = osp;	/* avoid side-effects */
-	es_ptr save_esp = esp;
-        if ( (long) IREF->pfile != -1 ) {
-            uint file_index = IREF->pfile & 0x0000ffff;
-            uint depth = (IREF->pfile >> 16);
-
-            /* check for reasonable values */
-            if (depth > 100) {
-                dprintf(imemory, "corrupt reference\n");
-                debug_print_ref(imemory, IREF);
-                dputc(imemory, '\n');
-            } else {
-                bool interact;
-                if ( debug_init_files ) {
-                    interact = true;
-                } else { /* user disabled debugging of init file */
-                    if (file_index == 0 ||
-                        (strncmp( file_table[file_index], "./", 2 ) == 0)) {
-                        interact = false;
-                    } else {
-                        interact = true;
-                    }
-                }
-                if ( interact )
-                    interact_at_offset(imemory,
-                                       file_index == 0 ?
-                                       /* nb hack because gs_init doesn't set stream data */
-                                       "./gs_init.ps" :
-                                       file_table[file_index],
-                                       IREF, i_ctx_p, depth);
-            }
-        } else {
-            static int print_all_refs_without_symbols = false;
-            if ( print_all_refs_without_symbols ) {
-                dprintf(imemory, "debugger could not set file or offset for:\n");
-                debug_print_ref(imemory, IREF);
-                dputc(imemory, '\n');
-            }
-        }
-        osp = save_osp;
-	esp = save_esp;
-
-    }
-#endif
 #endif
 /* Objects that have attributes (arrays, dictionaries, files, and strings) */
 /* use lit and exec; other objects use plain and plain_exec. */
@@ -1286,62 +980,64 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 	    /* Special operators. */
 	case plain_exec(tx_op_add):
 x_add:	    INCR(x_add);
-	    if ((code = zop_add(imemory, iosp)) < 0)
-		return_with_error_code_op(2);
+	    if ((code = zop_add(iosp)) < 0)
+		return_with_error_tx_op(code);
 	    iosp--;
 	    next_either();
 	case plain_exec(tx_op_def):
 x_def:	    INCR(x_def);
 	    osp = iosp;	/* sync o_stack */
 	    if ((code = zop_def(i_ctx_p)) < 0)
-		return_with_error_code_op(2);
+		return_with_error_tx_op(code);
 	    iosp -= 2;
 	    next_either();
 	case plain_exec(tx_op_dup):
 x_dup:	    INCR(x_dup);
 	    if (iosp < osbot)
-		return_with_error_iref(e_stackunderflow);
-	    if (iosp >= ostop)
-		return_with_stackoverflow_iref();
+		return_with_error_tx_op(e_stackunderflow);
+	    if (iosp >= ostop) {
+		o_stack.requested = 1;
+                return_with_error_tx_op(e_stackoverflow);
+            }
 	    iosp++;
 	    ref_assign_inline(iosp, iosp - 1);
 	    next_either();
 	case plain_exec(tx_op_exch):
 x_exch:	    INCR(x_exch);
 	    if (iosp <= osbot)
-		return_with_error_iref(e_stackunderflow);
+		return_with_error_tx_op(e_stackunderflow);
 	    ref_assign_inline(&token, iosp);
 	    ref_assign_inline(iosp, iosp - 1);
 	    ref_assign_inline(iosp - 1, &token);
 	    next_either();
 	case plain_exec(tx_op_if):
 x_if:	    INCR(x_if);
-	    if (!r_has_type(iosp - 1, t_boolean))
-		return_with_error_iref((iosp <= osbot ?
-					e_stackunderflow : e_typecheck));
 	    if (!r_is_proc(iosp))
-		return_with_error_iref(check_proc_failed(iosp));
+		return_with_error_tx_op(check_proc_failed(iosp));
+	    if (!r_has_type(iosp - 1, t_boolean))
+		return_with_error_tx_op((iosp <= osbot ?
+					e_stackunderflow : e_typecheck));
 	    if (!iosp[-1].value.boolval) {
 		iosp -= 2;
 		next_either();
 	    }
 	    if (iesp >= estop)
-		return_with_error_iref(e_execstackoverflow);
+		return_with_error_tx_op(e_execstackoverflow);
 	    store_state_either(iesp);
 	    whichp = iosp;
 	    iosp -= 2;
 	    goto ifup;
 	case plain_exec(tx_op_ifelse):
 x_ifelse:   INCR(x_ifelse);
-	    if (!r_has_type(iosp - 2, t_boolean))
-		return_with_error_iref((iosp < osbot + 2 ?
-					e_stackunderflow : e_typecheck));
-	    if (!r_is_proc(iosp - 1))
-		return_with_error_iref(check_proc_failed(iosp - 1));
 	    if (!r_is_proc(iosp))
-		return_with_error_iref(check_proc_failed(iosp));
+		return_with_error_tx_op(check_proc_failed(iosp));
+	    if (!r_is_proc(iosp - 1))
+		return_with_error_tx_op(check_proc_failed(iosp - 1));
+	    if (!r_has_type(iosp - 2, t_boolean))
+		return_with_error_tx_op((iosp < osbot + 2 ?
+					e_stackunderflow : e_typecheck));
 	    if (iesp >= estop)
-		return_with_error_iref(e_execstackoverflow);
+		return_with_error_tx_op(e_execstackoverflow);
 	    store_state_either(iesp);
 	    whichp = (iosp[-2].value.boolval ? iosp - 1 : iosp);
 	    iosp -= 3;
@@ -1364,25 +1060,25 @@ x_ifelse:   INCR(x_ifelse);
 x_index:    INCR(x_index);
 	    osp = iosp;	/* zindex references o_stack */
 	    if ((code = zindex(i_ctx_p)) < 0)
-		return_with_error_code_op(1);
+		return_with_error_tx_op(code);
 	    next_either();
 	case plain_exec(tx_op_pop):
 x_pop:	    INCR(x_pop);
 	    if (iosp < osbot)
-		return_with_error_iref(e_stackunderflow);
+		return_with_error_tx_op(e_stackunderflow);
 	    iosp--;
 	    next_either();
 	case plain_exec(tx_op_roll):
 x_roll:	    INCR(x_roll);
 	    osp = iosp;	/* zroll references o_stack */
 	    if ((code = zroll(i_ctx_p)) < 0)
-		return_with_error_code_op(2);
+		return_with_error_tx_op(code);
 	    iosp -= 2;
 	    next_either();
 	case plain_exec(tx_op_sub):
 x_sub:	    INCR(x_sub);
-	    if ((code = zop_sub(imemory, iosp)) < 0)
-		return_with_error_code_op(2);
+	    if ((code = zop_sub(iosp)) < 0)
+		return_with_error_tx_op(code);
 	    iosp--;
 	    next_either();
 	    /* Executable types. */
@@ -1391,15 +1087,17 @@ x_sub:	    INCR(x_sub);
 	case plain_exec(t_oparray):
 	    /* Replace with the definition and go again. */
 	    INCR(exec_array);
+	    opindex = op_index(IREF);
 	    pvalue = IREF->value.const_refs;
 	  opst:		/* Prepare to call a t_oparray procedure in *pvalue. */
 	    store_state(iesp);
 	  oppr:		/* Record the stack depths in case of failure. */
-	    if (iesp >= estop - 3)
+	    if (iesp >= estop - 4)
 		return_with_error_iref(e_execstackoverflow);
-	    iesp += 4;
+	    iesp += 5;
 	    osp = iosp;		/* ref_stack_count_inline needs this */
-	    make_mark_estack(iesp - 3, es_other, oparray_cleanup);
+	    make_mark_estack(iesp - 4, es_other, oparray_cleanup);
+	    make_int(iesp - 3, opindex); /* for .errorexec effect */
 	    make_int(iesp - 2, ref_stack_count_inline(&o_stack));
 	    make_int(iesp - 1, ref_stack_count_inline(&d_stack));
 	    make_op_estack(iesp, oparray_pop);
@@ -1545,6 +1243,7 @@ remap:		    if (iesp + 2 >= estop) {
 		    goto bot;
 		case plain_exec(t_oparray):
 		    INCR(name_oparray);
+		    opindex = op_index(pvalue);
 		    pvalue = (const ref *)pvalue->value.const_refs;
 		    goto opst;
 		case plain_exec(t_operator):
@@ -1594,7 +1293,7 @@ remap:		    if (iesp + 2 >= estop) {
 		stream *s;
 		scanner_state sstate;
 
-		check_read_known_file(imemory, s, IREF, return_with_error_iref(e_invalidaccess));
+		check_read_known_file(s, IREF, return_with_error_iref);
 	    rt:
 		if (iosp >= ostop)	/* check early */
 		    return_with_stackoverflow_iref();
@@ -1705,8 +1404,7 @@ remap:		    if (iesp + 2 >= estop) {
 		scanner_state sstate;
 
 		scanner_state_init_options(&sstate, SCAN_FROM_STRING);
-
-		s_init(&ss, NULL, imemory);
+		s_init(&ss, NULL);
 		sread_string(&ss, IREF->value.bytes, r_size(IREF));
 		osp = iosp;	/* scan_token uses ostack */
 		code = scan_token(i_ctx_p, &ss, &token, &sstate);
@@ -1740,7 +1438,7 @@ remap:		    if (iesp + 2 >= estop) {
 		    case scan_EOF:	/* end of string */
 			goto bot;
 		    case scan_Refill:	/* error */
-			code = gs_note_error(imemory, e_syntaxerror);
+			code = gs_note_error(e_syntaxerror);
 		    default:	/* error */
 			return_with_code_iref();
 		}
@@ -1773,6 +1471,7 @@ remap:		    if (iesp + 2 >= estop) {
 			if (!op_index_is_operator(index)) {
 			    INCR(p_exec_oparray);
 			    store_state_short(iesp);
+			    opindex = index;
 			    /* Call the operator procedure. */
 			    index -= op_def_count;
 			    pvalue = (const ref *)
@@ -1977,7 +1676,7 @@ res:
     } else
 	code = 0;
     ticks_left = gs_interp_time_slice_ticks;
-    set_code_on_interrupt(&code);
+    set_code_on_interrupt(imemory, &code);
     goto sched;
 
     /* Error exits. */
@@ -2016,14 +1715,14 @@ res:
     esp = iesp;
     osp = iosp;
     ref_assign_inline(perror_object, ierror.obj);
-    return gs_log_error(imemory, ierror.code, __FILE__, ierror.line);
+    return gs_log_error(ierror.code, __FILE__, ierror.line);
 }
 
 /* Pop the bookkeeping information for a normal exit from a t_oparray. */
 private int
 oparray_pop(i_ctx_t *i_ctx_p)
 {
-    esp -= 3;
+    esp -= 4;
     return o_pop_estack;
 }
 
@@ -2033,8 +1732,8 @@ private int
 oparray_cleanup(i_ctx_t *i_ctx_p)
 {				/* esp points just below the cleanup procedure. */
     es_ptr ep = esp;
-    uint ocount_old = (uint) ep[2].value.intval;
-    uint dcount_old = (uint) ep[3].value.intval;
+    uint ocount_old = (uint) ep[3].value.intval;
+    uint dcount_old = (uint) ep[4].value.intval;
     uint ocount = ref_stack_count(&o_stack);
     uint dcount = ref_stack_count(&d_stack);
 
@@ -2071,6 +1770,75 @@ oparray_find(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* <errorobj> <obj> .errorexec ... */
+/* Execute an object, substituting errorobj for the 'command' if an error */
+/* occurs during the execution.  Cf .execfile (in zfile.c). */
+private int
+zerrorexec(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code;
+
+    check_op(2);
+    check_estack(4);		/* mark/cleanup, errobj, pop, obj */
+    push_mark_estack(es_other, errorexec_cleanup);
+    *++esp = op[-1];
+    push_op_estack(errorexec_pop);
+    code = zexec(i_ctx_p);
+    if (code >= 0)
+	pop(1);
+    return code;
+}
+
+/*
+ * Find the innermost .errorexec or oparray.  If there is an oparray, or a
+ * .errorexec with errobj != null, store it in *perror_object and return 1,
+ * otherwise return 0;
+ */
+private int
+errorexec_find(i_ctx_t *i_ctx_p, ref *perror_object)
+{
+    long i;
+    const ref *ep;
+
+    for (i = 0; (ep = ref_stack_index(&e_stack, i)) != 0; ++i) {
+	if (r_is_estack_mark(ep)) {
+	    if (ep->value.opproc == oparray_cleanup) {
+		/* See oppr: above. */
+		uint opindex = (uint)ep[1].value.intval;
+		if (opindex == 0) /* internal operator, ignore */
+		    continue;
+		op_index_ref(opindex, perror_object);
+		return 1;
+	    }
+	    if (ep->value.opproc == oparray_no_cleanup)
+		return 0;	/* protection disabled */
+	    if (ep->value.opproc == errorexec_cleanup) {
+		if (r_has_type(ep + 1, t_null))
+		    return 0;
+		*perror_object = ep[1];	/* see .errorexec above */
+		return 1;
+	    }
+	}
+    }
+    return 0;
+}
+
+/* Pop the bookkeeping information on a normal exit from .errorexec. */
+private int
+errorexec_pop(i_ctx_t *i_ctx_p)
+{
+    esp -= 2;
+    return o_pop_estack;
+}
+
+/* Clean up when unwinding the stack on an error.  (No action needed.) */
+private int
+errorexec_cleanup(i_ctx_t *i_ctx_p)
+{
+    return 0;
+}
+
 /* <bool> .setstackprotect - */
 /* Set whether to protect the stack for the innermost oparray. */
 private int
@@ -2079,9 +1847,9 @@ zsetstackprotect(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref *ep = oparray_find(i_ctx_p);
 
-    check_type(imemory, *op, t_boolean);
+    check_type(*op, t_boolean);
     if (ep == 0)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     ep->value.opproc =
 	(op->value.boolval ? oparray_cleanup : oparray_no_cleanup);
     pop(1);
@@ -2097,8 +1865,8 @@ zcurrentstackprotect(i_ctx_t *i_ctx_p)
     ref *ep = oparray_find(i_ctx_p);
 
     if (ep == 0)
-	return_error(imemory, e_rangecheck);
-    push(imemory, 1);
+	return_error(e_rangecheck);
+    push(1);
     make_bool(op, ep->value.opproc == oparray_cleanup);
     return 0;
 }

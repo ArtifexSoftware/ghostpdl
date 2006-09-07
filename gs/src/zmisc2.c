@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Miscellaneous Level 2 operators */
 #include "memory_.h"
 #include "string_.h"
@@ -38,7 +39,7 @@ zlanguagelevel(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_int(op, LANGUAGE_LEVEL);
     return 0;
 }
@@ -50,7 +51,7 @@ zsetlanguagelevel(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code = 0;
 
-    check_type(imemory, *op, t_integer);
+    check_type(*op, t_integer);
     if (op->value.intval != LANGUAGE_LEVEL) {
 	code = set_language_level(i_ctx_p, (int)op->value.intval);
 	if (code < 0)
@@ -94,9 +95,9 @@ set_language_level(i_ctx_t *i_ctx_p, int new_level)
 	new_level >
 	(dict_find_string(systemdict, "ll3dict", &level2dict) > 0 ? 3 : 2)
 	)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     if (dict_find_string(systemdict, "level2dict", &level2dict) <= 0)
-	return_error(imemory, e_undefined);
+	return_error(e_undefined);
     /*
      * As noted in dstack.h, we allocate the extra d-stack entry for
      * globaldict even in Level 1 mode; in Level 1 mode, this entry
@@ -117,11 +118,11 @@ set_language_level(i_ctx_t *i_ctx_p, int new_level)
 		code = dict_find_string(level2dict, "globaldict", &pdict);
 		if (code > 0) {
 		    if (!r_has_type(pdict, t_dictionary))
-			return_error(imemory, e_typecheck);
+			return_error(e_typecheck);
 		    *pgdict = *pdict;
 		}
 		/* Set other flags for Level 2 operation. */
-		dict_auto_expand = true;
+		imemory->gs_lib_ctx->dict_auto_expand = true;
 		}
 		code = swap_level_dict(i_ctx_p, "level2dict");
 		if (code < 0)
@@ -149,11 +150,11 @@ set_language_level(i_ctx_t *i_ctx_p, int new_level)
 
 		while ((index = dict_next(pgdict, index, &elt[0])) >= 0)
 		    if (r_has_type(&elt[0], t_name))
-			name_invalidate_value_cache(imemory, &elt[0]);
+		        name_invalidate_value_cache(imemory, &elt[0]);
 		/* Overwrite globaldict in the dictionary stack. */
 		*pgdict = *systemdict;
 		/* Set other flags for Level 1 operation. */
-		dict_auto_expand = false;
+		imemory->gs_lib_ctx->dict_auto_expand = false;
 		}
 		code = swap_level_dict(i_ctx_p, "level2dict");
 		break;
@@ -161,7 +162,7 @@ set_language_level(i_ctx_t *i_ctx_p, int new_level)
 		code = swap_level_dict(i_ctx_p, "ll3dict");
 		break;
 	    default:		/* not possible */
-		return_error(imemory, e_Fatal);
+		return_error(e_Fatal);
 	}
 	break;
     }
@@ -190,7 +191,7 @@ swap_level_dict(i_ctx_t *i_ctx_p, const char *dict_name)
      * move if their containing dictionary is resized.
      */
     if (dict_find_string(systemdict, dict_name, &pleveldict) <= 0)
-	return_error(imemory, e_undefined);
+	return_error(e_undefined);
     rleveldict = *pleveldict;
     index = dict_first(&rleveldict);
     while ((index = dict_next(&rleveldict, index, &elt[0])) >= 0)
@@ -208,7 +209,7 @@ swap_level_dict(i_ctx_t *i_ctx_p, const char *dict_name)
 		continue;
 	    rsubdict = *psubdict;
 	    while ((isub = dict_next(&elt[1], isub, &subelt[0])) >= 0)
-		if (!obj_eq(imemory, &subelt[0], &elt[0])) {
+	        if (!obj_eq(imemory, &subelt[0], &elt[0])) {
 		    /* don't swap dict itself */
 		    int code = swap_entry(i_ctx_p, subelt, &rsubdict, &elt[1]);
 

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Standard IODevice implementation */
 #include "memory_.h"
 #include "stdio_.h"
@@ -72,12 +73,12 @@ zgetiodevice(i_ctx_t *i_ctx_p)
     gx_io_device *iodev;
     const byte *dname;
 
-    check_type(imemory, *op, t_integer);
+    check_type(*op, t_integer);
     if (op->value.intval != (int)op->value.intval)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     iodev = gs_getiodevice((int)(op->value.intval));
     if (iodev == 0)		/* index out of range */
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     dname = (const byte *)iodev->dname;
     if (dname == 0)
 	make_null(op);
@@ -123,44 +124,44 @@ zfilelineedit(i_ctx_t *i_ctx_p)
      */
     gs_string *const buf = &str;
 
-    check_type(imemory, *op, t_string);		/* line assembled so far */
+    check_type(*op, t_string);		/* line assembled so far */
     buf->data = op->value.bytes;
     buf->size = op->tas.rsize;
-    check_type(imemory, *(op-1), t_integer);	/* index */
+    check_type(*(op-1), t_integer);	/* index */
     count = (op-1)->value.intval;
-    check_type(imemory, *(op-2), t_boolean);	/* statementedit/lineedit */
+    check_type(*(op-2), t_boolean);	/* statementedit/lineedit */
     statement = (op-2)->value.boolval;
-    check_read_file(imemory, ins, op - 3);	/* %stdin */
+    check_read_file(ins, op - 3);	/* %stdin */
 
     /* extend string */
     initial_buf_size = statement ? STATEMENTEDIT_BUF_SIZE : LINEEDIT_BUF_SIZE;
     if (initial_buf_size > max_string_size)
-	return_error(imemory, e_limitcheck);
+	return_error(e_limitcheck);
     if (!buf->data || (buf->size < initial_buf_size)) {
 	count = 0;
-	buf->data = gs_alloc_string(imemory, initial_buf_size, 
+	buf->data = gs_alloc_string(imemory_system, initial_buf_size, 
 	    "zfilelineedit(buffer)");
 	if (buf->data == 0)
-	    return_error(imemory, e_VMerror);
+	    return_error(e_VMerror);
         op->value.bytes = buf->data;
 	op->tas.rsize = buf->size = initial_buf_size;
     }
 
 rd:
-    code = zreadline_from(ins, buf, imemory, &count, &in_eol);
+    code = zreadline_from(ins, buf, imemory_system, &count, &in_eol);
     if (buf->size > max_string_size) {
 	/* zreadline_from reallocated the buffer larger than
 	 * is valid for a PostScript string.
 	 * Return an error, but first realloc the buffer
 	 * back to a legal size.
 	 */
-	byte *nbuf = gs_resize_string(imemory, buf->data, buf->size, 
+	byte *nbuf = gs_resize_string(imemory_system, buf->data, buf->size, 
 		max_string_size, "zfilelineedit(shrink buffer)");
 	if (nbuf == 0)
-	    return_error(imemory, e_VMerror);
+	    return_error(e_VMerror);
 	op->value.bytes = buf->data = nbuf;
 	op->tas.rsize = buf->size = max_string_size;
-	return_error(imemory, e_limitcheck);
+	return_error(e_limitcheck);
     }
 
     op->value.bytes = buf->data; /* zreadline_from sometimes resizes the buffer. */
@@ -168,12 +169,12 @@ rd:
 
     switch (code) {
 	case EOFC:
-	    code = gs_note_error(imemory, e_undefinedfilename);
+	    code = gs_note_error(e_undefinedfilename);
 	    /* falls through */
 	case 0:
 	    break;
 	default:
-	    code = gs_note_error(imemory, e_ioerror);
+	    code = gs_note_error(e_ioerror);
 	    break;
 	case CALLC:
 	    {
@@ -191,17 +192,17 @@ rd:
 		byte *nbuf;
 
 		if (nsize >= max_string_size) {
-		    code = gs_note_error(imemory, e_limitcheck);
+		    code = gs_note_error(e_limitcheck);
 		    break;
 		}
 		else if (nsize >= max_string_size / 2)
 		    nsize= max_string_size;
 		else
 		    nsize = buf->size * 2;
-		nbuf = gs_resize_string(imemory, buf->data, buf->size, nsize,
+		nbuf = gs_resize_string(imemory_system, buf->data, buf->size, nsize,
 					"zfilelineedit(grow buffer)");
 		if (nbuf == 0) {
-		    code = gs_note_error(imemory, e_VMerror);
+		    code = gs_note_error(e_VMerror);
 		    break;
 		}
 		op->value.bytes = buf->data = nbuf;
@@ -227,21 +228,21 @@ rd:
 
 	    nsize = buf->size + 1;
 	    if (nsize > max_string_size) {
- 		return_error(imemory, e_limitcheck);
+		return_error(gs_note_error(e_limitcheck));
 	    }
 	    else {
-		nbuf = gs_resize_string(imemory, buf->data, buf->size, nsize,
+		nbuf = gs_resize_string(imemory_system, buf->data, buf->size, nsize,
 					"zfilelineedit(grow buffer)");
 		if (nbuf == 0) {
-		    code = gs_note_error(imemory, e_VMerror);
-		    return_error(imemory, code);
+		    code = gs_note_error(e_VMerror);
+		    return_error(code);
 		}
 		op->value.bytes = buf->data = nbuf;
 		op->tas.rsize = buf->size = nsize;
 	    }
 	}
 	buf->data[count++] = char_EOL;
-	s_init(ts, NULL, imemory);
+	s_init(ts, NULL);
 	sread_string(ts, buf->data, count);
 sc:
 	scanner_state_init_check(&state, false, true);
@@ -261,16 +262,16 @@ sc:
 		return code;
 	}
     }
-    buf->data = gs_resize_string(imemory, buf->data, buf->size, count,
+    buf->data = gs_resize_string(imemory_system, buf->data, buf->size, count,
 			   "zfilelineedit(resize buffer)");
     if (buf->data == 0)
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     op->value.bytes = buf->data;
     op->tas.rsize = buf->size;
 
-    s = file_alloc_stream(imemory, "zfilelineedit(stream)");
+    s = file_alloc_stream(imemory_system, "zfilelineedit(stream)");
     if (s == 0)
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
 
     sread_string(s, buf->data, count);
     s->save_close = s->procs.close;
@@ -281,7 +282,7 @@ sc:
     code = ssetfilename(s, (const byte *)filename, strlen(filename)+1);
     if (code < 0) {
 	sclose(s);
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     }
 
     pop(3);

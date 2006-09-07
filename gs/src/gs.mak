@@ -1,16 +1,16 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
-
-# $RCSfile$ $Revision$
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
 # Generic makefile, common to all platforms, products, and configurations.
 # The platform-specific makefiles `include' this file.
 
@@ -26,6 +26,8 @@
 #	GS - the name of the executable (without the extension, if any).
 #	GS_LIB_DEFAULT - the default directory/ies for searching for the
 #	    initialization and font files at run time.
+#	GS_CACHE_DIR - the default directory for caching data between
+#	    ghostscript invocations.
 #	SEARCH_HERE_FIRST - the default setting of -P (whether or not to
 #	    look for files in the current directory first).
 #	GS_DOCDIR - the directory where documentation will be available
@@ -51,11 +53,21 @@
 #	    and linking libgz/libz explicitly.
 #	ZLIB_NAME - the name of the shared zlib, either gz (for libgz, -lgz)
 #	    or z (for libz, -lz).
+#	JBIG2_LIB - choice of which jbig2 implementation to use
 #	SHARE_JBIG2 - normally 0; if set to 1, asks the linker to use
 #	    an existing complied libjbig2dec instead of compiling and linking
 #	    in from a local copy of the source
 #	JBIG2SRCDIR - the name of the jbig2dec library source directory
 #	    typically 'jbig2dec' or 'jbig2dec-/version/'
+#	JPX_LIB - choice of which jpeg2k implementation to use
+#	SHARE_JPX - if set to 1, asks the linker to use an existing
+#	    complied jpeg2k library. if set to 0, asks to compile and 
+#	    link from a local copy of the source using our custom 
+#	    makefile.
+#	JPXSRCDIR - the name of the jpeg2k library source directory
+#	    e.g. 'jasper' or 'jasper-/version/'
+#	JPX_CFLAGS - any platform-specific flags that are required
+#	    to properly compile in the jpeg2k library source
 #	ICCSRCDIR - the name of the ICC lib source dir, currently
 #	    always icclib (compiled in statically)
 #	DEVICE_DEVS - the devices to include in the executable.
@@ -120,7 +132,8 @@
 #	COMPILE_INITS - normally 0; if set to 1, compiles the PostScript
 #	    language initialization files (gs_init.ps et al) into the
 #	    executable, eliminating the need for these files to be present
-#	    at run time.
+#	    at run time. Files will be placed in the %rom% device as files.
+#	    Also the 'Resource/*' files will be built into the %rom% device.
 #	BAND_LIST_STORAGE - normally file; if set to memory, stores band
 #	    lists in memory (with compression if needed).
 #	BAND_LIST_COMPRESSOR - normally zlib: selects the compression method
@@ -199,6 +212,8 @@
 #	gconfigv.h - this indicates the status of certain machine-
 #	    and configuration-specific features derived from definitions
 #	    in the platform-specific makefile.
+#	gconfigd.h - this is used for configuration-specific definitions
+#	    such as paths that must be defined by all top-level makefiles.
 
 #**************** PATCHES
 JGENDIR=$(GLGENDIR)
@@ -209,6 +224,8 @@ ZGENDIR=$(GLGENDIR)
 ZOBJDIR=$(GLOBJDIR)
 JBIG2GENDIR=$(GLGENDIR)
 JBIG2OBJDIR=$(GLOBJDIR)
+JPXGENDIR=$(GLGENDIR)
+JPXOBJDIR=$(GLOBJDIR)
 ICCGENDIR=$(GLGENDIR)
 ICCOBJDIR=$(GLOBJDIR)
 IJSGENDIR=$(GLGENDIR)
@@ -233,11 +250,13 @@ GENCONF_XE=$(AUXGEN)genconf$(XEAUX)
 GENDEV_XE=$(AUXGEN)gendev$(XEAUX)
 GENHT_XE=$(AUXGEN)genht$(XEAUX)
 GENINIT_XE=$(AUXGEN)geninit$(XEAUX)
+MKROMFS_XE=$(AUXGEN)mkromfs$(XEAUX)
 
 # Define the names of the generated header files.
 # gconfig*.h and gconfx*.h are generated dynamically.
 gconfig_h=$(GLGENDIR)$(D)gconfxx.h
 gconfigf_h=$(GLGENDIR)$(D)gconfxc.h
+gconfigd_h=$(GLGENDIR)$(D)gconfigd.h
 
 all default : $(GS_XE)
 	$(NO_OP)
@@ -306,7 +325,11 @@ ZI_=$(ZSRCDIR)
 ZF_=
 ZCF_=$(D_)SHARE_ZLIB=$(SHARE_ZLIB)$(_D)
 JB2I_=$(JBIG2SRCDIR)
-JB2CF_=
+JB2CF_=$(JBIG2_CFLAGS)
+LDF_JB2I_=$(JBIG2SRCDIR)$(D)source$(D)libraries
+JPXI_=$(JPXSRCDIR)$(D)src$(D)libjasper$(D)include
+LWF_JPXI_=$(JPXSRCDIR)$(D)library$(D)source
+JPXCF_=$(JPX_CFLAGS)
 
 ######################## How to define new 'features' #######################
 #
@@ -354,7 +377,7 @@ DEVS_ALL=$(GLGENDIR)$(D)$(PLATFORM).dev\
  $(DEVICE_DEVS10) $(DEVICE_DEVS11) $(DEVICE_DEVS12) $(DEVICE_DEVS13) \
  $(DEVICE_DEVS14) $(DEVICE_DEVS15) $(DEVICE_DEVS16) $(DEVICE_DEVS17) \
  $(DEVICE_DEVS18) $(DEVICE_DEVS19) $(DEVICE_DEVS20) $(DEVICE_DEVS21) \
- $(DEVICE_DEVS_EXTRA)
+ $(DEVICE_DEVS_EXTRA) $(PSD)romfs$(COMPILE_INITS).dev 
 
 devs_tr=$(GLGENDIR)$(D)devs.tr
 $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
@@ -384,6 +407,7 @@ $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS20)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS21)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS_EXTRA)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(PSD)romfs$(COMPILE_INITS).dev
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) - $(GLGENDIR)$(D)libcore
 
 # GCONFIG_EXTRAS can be set on the command line.
@@ -392,20 +416,25 @@ $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
 GCONFIG_EXTRAS=
 
 ld_tr=$(GLGENDIR)$(D)ld.tr
-$(gconfig_h) : \
+$(ld_tr) : \
   $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(DEVS_ALL) $(GLGENDIR)$(D)libcore.dev
 	$(EXP)$(GENCONF_XE) $(devs_tr) -h $(gconfig_h) $(CONFILES) $(CONFLDTR) $(ld_tr)
-	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_LIB_DEFAULT -x 2022 $(GS_LIB_DEFAULT) -x 22
-	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u SEARCH_HERE_FIRST -s $(SEARCH_HERE_FIRST)
-	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_DOCDIR -x 2022 $(GS_DOCDIR) -x 22
-	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_INIT -x 2022 $(GS_INIT) -x 22
-	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_REVISION -s $(GS_REVISION)
-	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_REVISIONDATE -s $(GS_REVISIONDATE)
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) $(GCONFIG_EXTRAS)
 
-$(ld_tr) $(GLGENDIR)$(D)lib.tr : $(gconfig_h)
+$(gconfig_h) : $(ld_tr)
+	$(NO_OP)
 	
 # The line above is an empty command; don't delete.
+
+# save our set of makefile variables that are defined in every build (paths, etc.)
+$(gconfigd_h) : $(ECHOGS_XE) $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)/version.mak
+	$(EXP)$(ECHOGS_XE) -w $(gconfigd_h) -x 23 define -s -u GS_LIB_DEFAULT -x 2022 $(GS_LIB_DEFAULT) -x 22
+	$(EXP)$(ECHOGS_XE) -a $(gconfigd_h) -x 23 define -s -u GS_CACHE_DIR -x 2022 $(GS_CACHE_DIR) -x 22
+	$(EXP)$(ECHOGS_XE) -a $(gconfigd_h) -x 23 define -s -u SEARCH_HERE_FIRST -s $(SEARCH_HERE_FIRST)
+	$(EXP)$(ECHOGS_XE) -a $(gconfigd_h) -x 23 define -s -u GS_DOCDIR -x 2022 $(GS_DOCDIR) -x 22
+	$(EXP)$(ECHOGS_XE) -a $(gconfigd_h) -x 23 define -s -u GS_INIT -x 2022 $(GS_INIT) -x 22
+	$(EXP)$(ECHOGS_XE) -a $(gconfigd_h) -x 23 define -s -u GS_REVISION -s $(GS_REVISION)
+	$(EXP)$(ECHOGS_XE) -a $(gconfigd_h) -x 23 define -s -u GS_REVISIONDATE -s $(GS_REVISIONDATE)
 
 obj_tr=$(GLGENDIR)$(D)obj.tr
 $(obj_tr) : $(ld_tr)

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Command list reading for Ghostscript. */
 #include "memory_.h"
 #include "gx.h"
@@ -66,7 +67,7 @@ s_band_read_init(stream_state * st)
 }
 
 private int
-s_band_read_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * ignore_pr,
+s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 		    stream_cursor_write * pw, bool last)
 {
     stream_band_read_state *const ss = (stream_band_read_state *) st;
@@ -89,7 +90,7 @@ s_band_read_process(const gs_memory_t *mem, stream_state * st, stream_cursor_rea
 	    }
 	    q += count;
 	    left -= count;
-	    process_interrupts();
+	    process_interrupts(st->memory);
 	    continue;
 	}
 rb:
@@ -112,7 +113,7 @@ rb:
 		goto rb;
 	    clist_fseek(cfile, pos, SEEK_SET, ss->page_cfname);
 	    left = (uint) (ss->b_this.pos - pos);
-	    if_debug5(mem, 'l', "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u\n",
+	    if_debug5('l', "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u\n",
 		      bmin, bmax,
 		      clist_ftell(bfile) - 2 * sizeof(ss->b_this),
 		      pos, left);
@@ -223,7 +224,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
     if (prect->p.x < 0 || prect->q.x > dev->width ||
 	y < 0 || end_y > dev->height
 	)
-	return_error(dev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     if (line_count <= 0 || prect->p.x >= prect->q.x)
 	return 0;
 
@@ -351,7 +352,7 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count,
 	band_num_lines = band_end_line - band_begin_line;
 
 	if (y < 0 || y > dev->height)
-	    return_error(dev->memory, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	code = crdev->buf_procs.setup_buf_device
 	    (bdev, mdata, raster, NULL, 0, band_num_lines, band_num_lines);
 	band_rect.p.x = 0;
@@ -435,7 +436,7 @@ clist_render_rectangle(gx_device_clist *cdev, const gs_int_rect *prect,
 	crdev->yplane = *render_plane;
     else
 	crdev->yplane.index = -1;
-    if_debug2(bdev->memory, 'l', "[l]rendering bands (%d,%d)\n", band_first, band_last);
+    if_debug2('l', "[l]rendering bands (%d,%d)\n", band_first, band_last);
     if (clear)
 	dev_proc(bdev, fill_rectangle)
 	    (bdev, 0, 0, bdev->width, bdev->height, gx_device_white(bdev));
@@ -482,7 +483,8 @@ clist_playback_file_bands(clist_playback_action action,
     stream_band_read_state rs;
 
     /* setup stream */
-    s_init_state((stream_state *)&rs, &s_band_read_template, NULL, cdev->memory);
+    s_init_state((stream_state *)&rs, &s_band_read_template,
+		 (gs_memory_t *)0);
     rs.band_first = band_first;
     rs.band_last = band_last;
     rs.page_info = *page_info;
@@ -508,8 +510,9 @@ clist_playback_file_bands(clist_playback_action action,
 	    s_std_read_flush, s_std_close, s_band_read_process
 	};
 
-	s_stack_init( &s, cdev->memory);
 	s_band_read_init((stream_state *)&rs);
+	  /* The stream doesn't need a memory, but we'll need to access s.memory->gs_lib_ctx. */
+	s_init(&s, mem);
 	s_std_init(&s, sbuf, cbuf_size, &no_procs, s_mode_read);
 	s.foreign = 1;
 	s.state = (stream_state *)&rs;
@@ -518,9 +521,9 @@ clist_playback_file_bands(clist_playback_action action,
 
     /* Close the files if we just opened them. */
     if (opened_bfile && rs.page_bfile != 0)
-	clist_fclose(cdev->memory, rs.page_bfile, rs.page_bfname, false);
+	clist_fclose(rs.page_bfile, rs.page_bfname, false);
     if (opened_cfile && rs.page_cfile != 0)
-	clist_fclose(cdev->memory, rs.page_cfile, rs.page_cfname, false);
+	clist_fclose(rs.page_cfile, rs.page_cfname, false);
 
     return code;
 }

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Number scanner for Ghostscript interpreter */
 #include "math_.h"
 #include "ghost.h"
@@ -31,9 +32,8 @@
  * if not, set *psp to the first character beyond the number and return 1.
  */
 int
-scan_number(const gs_memory_t *mem, 
-	    const byte * str, const byte * end, int sign,
-	    ref * pref, const byte ** psp, const bool PDFScanRules)
+scan_number(const byte * str, const byte * end, int sign,
+	    ref * pref, const byte ** psp, const bool PDFScanInvNum)
 {
     const byte *sp = str;
 #define GET_NEXT(cvar, sp, end_action)\
@@ -63,14 +63,14 @@ scan_number(const gs_memory_t *mem,
 #define WOULD_OVERFLOW(val, d, maxv)\
   (val >= maxv / 10 && (val > maxv / 10 || d > (int)(maxv % 10)))
 
-    GET_NEXT(c, sp, return_error(mem, e_syntaxerror));
+    GET_NEXT(c, sp, return_error(e_syntaxerror));
     if (!IS_DIGIT(d, c)) {
 	if (c != '.')
-	    return_error(mem, e_syntaxerror);
+	    return_error(e_syntaxerror);
 	/* Might be a number starting with '.'. */
-	GET_NEXT(c, sp, return_error(mem, e_syntaxerror));
+	GET_NEXT(c, sp, return_error(e_syntaxerror));
 	if (!IS_DIGIT(d, c))
-	    return_error(mem, e_syntaxerror);
+	    return_error(e_syntaxerror);
 	ival = 0;
 	goto i2r;
     }
@@ -124,7 +124,7 @@ scan_number(const gs_memory_t *mem,
 		ulong uval = 0, lmax;
 
 		if (sign || radix < min_radix || radix > max_radix)
-		    return_error(mem, e_syntaxerror);
+		    return_error(e_syntaxerror);
 		/* Avoid multiplies for power-of-2 radix. */
 		if (!(radix & (radix - 1))) {
 		    int shift;
@@ -146,7 +146,7 @@ scan_number(const gs_memory_t *mem,
 			    shift = 5, lmax = max_ulong >> 5;
 			    break;
 			default:	/* can't happen */
-			    return_error(mem, e_rangecheck);
+			    return_error(e_rangecheck);
 		    }
 		    for (;; uval = (uval << shift) + d) {
 			GET_NEXT(c, sp, break);
@@ -157,7 +157,7 @@ scan_number(const gs_memory_t *mem,
 			    break;
 			}
 			if (uval > lmax)
-			    return_error(mem, e_limitcheck);
+			    return_error(e_limitcheck);
 		    }
 		} else {
 		    int lrem = max_ulong % radix;
@@ -174,7 +174,7 @@ scan_number(const gs_memory_t *mem,
 			if (uval >= lmax &&
 			    (uval > lmax || d > lrem)
 			    )
-			    return_error(mem, e_limitcheck);
+			    return_error(e_limitcheck);
 		    }
 		}
 		make_int(pref, uval);
@@ -196,10 +196,14 @@ i2l:
 		) {
 		GET_NEXT(c, sp, c = EOFC);
 		dval = -(double)min_long;
-		if (c == 'e' || c == 'E' || c == '.') {
+		if (c == 'e' || c == 'E') {
 		    exp10 = 0;
 		    goto fs;
-		} else if (!IS_DIGIT(d, c)) {
+		} else if (c == '.') {
+                    GET_NEXT(c, sp, c = EOFC);
+		    exp10 = 0;
+		    goto fd;
+                } else if (!IS_DIGIT(d, c)) {
 		    lval = min_long;
 		    break;
 		}
@@ -228,7 +232,7 @@ i2l:
 	    exp10 = 0;
 	    goto le;
 	case '#':
-	    return_error(mem, e_syntaxerror);
+	    return_error(e_syntaxerror);
     }
 lret:
     make_int(pref, (sign < 0 ? -lval : lval));
@@ -261,7 +265,7 @@ l2d:
 	    exp10 = 0;
 	    goto fs;
 	case '#':
-	    return_error(mem, e_syntaxerror);
+	    return_error(e_syntaxerror);
     }
 
     /* We saw a '.' while accumulating an integer in ival. */
@@ -272,11 +276,11 @@ i2r:
 	 * PostScript gives an error on numbers with a '-' following a '.'
 	 * Adobe Acrobat Reader (PDF) apparently doesn't treat this as an
 	 * error. Experiments show that the numbers following the '-' are
-	 * ignored, so we swallow the fractional part. PDFScanRules enables
+	 * ignored, so we swallow the fractional part. PDFScanInvNum enables
 	 * this compatibility kloodge.
 	 */
 	if (c == '-') {
-	    if (!PDFScanRules)
+	    if (!PDFScanInvNum)
 		break;
 	    do {
 		GET_NEXT(c, sp, c = EOFC);
@@ -308,7 +312,7 @@ l2r:
     while (IS_DIGIT(d, c) || c == '-') {
 	/* Handle bogus '-' following '.' as in i2r above.	*/
 	if (c == '-') {
-	    if (!PDFScanRules)
+	    if (!PDFScanInvNum)
 		break;
 	    do {
 		GET_NEXT(c, sp, c = EOFC);
@@ -348,16 +352,16 @@ fe:
 		int esign = 0;
 		int iexp;
 
-		GET_NEXT(c, sp, return_error(mem, e_syntaxerror));
+		GET_NEXT(c, sp, return_error(e_syntaxerror));
 		switch (c) {
 		    case '-':
 			esign = 1;
 		    case '+':
-			GET_NEXT(c, sp, return_error(mem, e_syntaxerror));
+			GET_NEXT(c, sp, return_error(e_syntaxerror));
 		}
 		/* Scan the exponent.  We limit it arbitrarily to 999. */
 		if (!IS_DIGIT(d, c))
-		    return_error(mem, e_syntaxerror);
+		    return_error(e_syntaxerror);
 		iexp = d;
 		for (;; iexp = iexp * 10 + d) {
 		    GET_NEXT(c, sp, break);
@@ -367,7 +371,7 @@ fe:
 			break;
 		    }
 		    if (iexp > 99)
-			return_error(mem, e_limitcheck);
+			return_error(e_limitcheck);
 		}
 		if (esign)
 		    exp10 -= iexp;
@@ -402,10 +406,10 @@ fe:
      */
     if (dval >= 0) {
 	if (dval > MAX_FLOAT)
-	    return_error(mem, e_limitcheck);
+	    return_error(e_limitcheck);
     } else {
 	if (dval < -MAX_FLOAT)
-	    return_error(mem, e_limitcheck);
+	    return_error(e_limitcheck);
     }
 rret:
     make_real(pref, dval);

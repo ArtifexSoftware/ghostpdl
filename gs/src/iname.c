@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Name lookup for Ghostscript interpreter */
 #include "memory_.h"
 #include "string_.h"
@@ -52,24 +53,23 @@ private void name_scan_sub(name_table *, uint, bool);
 /* Debugging printout */
 #ifdef DEBUG
 private void
-name_print(const gs_memory_t *mem,
-	   const char *msg, const name_table *nt, uint nidx, const int *pflag)
+name_print(const char *msg, const name_table *nt, uint nidx, const int *pflag)
 {
     const name_string_t *pnstr = names_index_string_inline(nt, nidx);
     const name *pname = names_index_ptr_inline(nt, nidx);
     const byte *str = pnstr->string_bytes;
 
-    dlprintf1(mem, "[n]%s", msg);
+    dlprintf1("[n]%s", msg);
     if (pflag)
-	dprintf1(mem, "(%d)", *pflag);
-    dprintf2(mem, " (0x%lx#%u)", (ulong)pname, nidx);
-    debug_print_string(mem, str, pnstr->string_size);
-    dprintf2(mem, "(0x%lx,%u)\n", (ulong)str, pnstr->string_size);
+	dprintf1("(%d)", *pflag);
+    dprintf2(" (0x%lx#%u)", (ulong)pname, nidx);
+    debug_print_string(str, pnstr->string_size);
+    dprintf2("(0x%lx,%u)\n", (ulong)str, pnstr->string_size);
 }
-#  define if_debug_name(mem, msg, nt, nidx, pflag)\
-     if ( gs_debug_c('n') ) name_print(mem, msg, nt, nidx, pflag)
+#  define if_debug_name(msg, nt, nidx, pflag)\
+     if ( gs_debug_c('n') ) name_print(msg, nt, nidx, pflag)
 #else
-#  define if_debug_name(mem, msg, nt, nidx, pflag) DO_NOTHING
+#  define if_debug_name(msg, nt, nidx, pflag) DO_NOTHING
 #endif
 
 /* Initialize a name table */
@@ -183,9 +183,9 @@ names_ref(name_table *nt, const byte *ptr, uint size, ref *pref, int enterflag)
     }
     /* Name was not in the table.  Make a new entry. */
     if (enterflag < 0)
-	return_error(nt->memory, e_undefined);
+	return_error(e_undefined);
     if (size > max_name_string)
-	return_error(nt->memory, e_limitcheck);
+	return_error(e_limitcheck);
     nidx = nt->free;
     if (nidx == 0) {
 	int code = name_alloc_sub(nt);
@@ -200,7 +200,7 @@ names_ref(name_table *nt, const byte *ptr, uint size, ref *pref, int enterflag)
 					     "names_ref(string)");
 
 	if (cptr == 0)
-	    return_error(nt->memory, e_VMerror);
+	    return_error(e_VMerror);
 	memcpy(cptr, ptr, size);
 	pnstr->string_bytes = cptr;
 	pnstr->foreign_string = 0;
@@ -214,7 +214,7 @@ names_ref(name_table *nt, const byte *ptr, uint size, ref *pref, int enterflag)
     nt->free = name_next_index(nidx, pnstr);
     set_name_next_index(nidx, pnstr, *phash);
     *phash = nidx;
-    if_debug_name(nt->memory, "new name", nt, nidx, &enterflag);
+    if_debug_name("new name", nt, nidx, &enterflag);
  mkn:
     make_name(pref, nidx, pname);
     return 0;
@@ -392,7 +392,7 @@ names_trace_finish(name_table * nt, gc_state_t * gcst)
 		prev = nidx;
 		pnprev = pnstr;
 	    } else {
-		if_debug_name(nt->memory, "GC remove name", nt, nidx, NULL);
+		if_debug_name("GC remove name", nt, nidx, NULL);
 		/* Zero out the string data for the GC. */
 		pnstr->string_bytes = 0;
 		pnstr->string_size = 0;
@@ -474,7 +474,7 @@ name_alloc_sub(name_table * nt)
 
     for (;; ++sub_index) {
 	if (sub_index > nt->max_sub_count)
-	    return_error(mem, e_limitcheck);
+	    return_error(e_limitcheck);
 	if (nt->sub[sub_index].names == 0)
 	    break;
     }
@@ -489,7 +489,7 @@ name_alloc_sub(name_table * nt)
     if (sub == 0 || ssub == 0) {
 	gs_free_object(mem, ssub, "name_alloc_sub(string sub-table)");
 	gs_free_object(mem, sub, "name_alloc_sub(sub-table)");
-	return_error(mem, e_VMerror);
+	return_error(e_VMerror);
     }
     memset(sub, 0, sizeof(name_sub_table));
     memset(ssub, 0, sizeof(name_string_sub_table_t));
@@ -510,7 +510,7 @@ name_alloc_sub(name_table * nt)
 	for (i0 = 0; i0 < NT_HASH_SIZE; i0 += 16) {
 	    int i;
 
-	    dlprintf1(mem, "[n]chain %d:", i0);
+	    dlprintf1("[n]chain %d:", i0);
 	    for (i = i0; i < i0 + 16; i++) {
 		int n = 0;
 		uint nidx;
@@ -520,9 +520,9 @@ name_alloc_sub(name_table * nt)
 					    names_index_string_inline(nt, nidx))
 		    )
 		    n++;
-		dprintf1(mem, " %d", n);
+		dprintf1(" %d", n);
 	    }
-	    dputc(mem, '\n');
+	    dputc('\n');
 	}
     }
 #endif

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/*$Id$ */
 /* Higher-level path operations for band lists */
 #include "math_.h"
 #include "memory_.h"
@@ -285,6 +286,30 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
 	*punknown |= clip_path_known;
 }
 
+/* Compute the written CTM length. */
+int
+cmd_write_ctm_return_length(gx_device_clist_writer * cldev, const gs_matrix *m)
+{
+    stream s;
+
+    s_init(&s, cldev->memory);
+    swrite_position_only(&s);
+    sput_matrix(&s, m);
+    return (uint)stell(&s);
+}
+
+/* Write out CTM. */
+int
+cmd_write_ctm(const gs_matrix *m, byte *dp, int len)
+{
+    stream s;
+
+    s_init(&s, NULL);
+    swrite_string(&s, dp + 1, len);
+    sput_matrix(&s, m);
+    return 0;
+}
+
 /* Write out values of any unknown parameters. */
 int
 cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
@@ -371,18 +396,14 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	pcls->known |= fill_adjust_known;
     }
     if (unknown & ctm_known) {
-	stream s;
-	uint len;
+	int len = cmd_write_ctm_return_length(cldev, &ctm_only(&cldev->imager_state));
 
-	s_stack_init(&s, cldev->memory);
-	swrite_position_only(&s);
-	sput_matrix(&s, (const gs_matrix *)&cldev->imager_state.ctm);
-	len = (uint)stell(&s);
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_ctm, len + 1);
 	if (code < 0)
 	    return code;
-	swrite_string(&s, dp + 1, len);
-	sput_matrix(&s, (const gs_matrix *)&cldev->imager_state.ctm);
+	code = cmd_write_ctm(&ctm_only(&cldev->imager_state), dp, len);
+	if (code < 0)
+	    return code;
 	pcls->known |= ctm_known;
     }
     if (unknown & dash_known) {
@@ -680,7 +701,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	cdev->imager_state.line_params.dash.pattern = 0;
 	gx_set_dash_adapt(&cdev->imager_state.line_params.dash,
 			  pis->line_params.dash.adapt);
-	gx_set_dot_length(cdev->memory, &cdev->imager_state.line_params,
+	gx_set_dot_length(&cdev->imager_state.line_params,
 			  pis->line_params.dot_length,
 			  pis->line_params.dot_length_absolute);
     }
@@ -697,7 +718,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     }
     if (state_neq(line_params.miter_limit)) {
 	unknown |= miter_limit_known;
-	gx_set_miter_limit(cdev->memory, &cdev->imager_state.line_params,
+	gx_set_miter_limit(&cdev->imager_state.line_params,
 			   pis->line_params.miter_limit);
     }
     if (state_neq(ctm.xx) || state_neq(ctm.xy) ||
@@ -886,11 +907,11 @@ cmd_put_segment(cmd_segment_writer * psw, byte op,
     if (gs_debug_c('L')) {
 	int j;
 
-	dlprintf2(psw->cldev->memory, "[L]  %s:%d:", cmd_sub_op_names[op >> 4][op & 0xf],
+	dlprintf2("[L]  %s:%d:", cmd_sub_op_names[op >> 4][op & 0xf],
 		  (int)notes);
 	for (j = 0; j < i; ++j)
-	    dprintf1(psw->cldev->memory, " %g", fixed2float(operands[j]));
-	dputs(psw->cldev->memory, "\n");
+	    dprintf1(" %g", fixed2float(operands[j]));
+	dputs("\n");
     }
 #endif
 
@@ -922,7 +943,7 @@ cmd_put_segment(cmd_segment_writer * psw, byte op,
 			operands[1] == -psw->delta_first.y
 			) {
 			cmd_uncount_op(cmd_opv_rm2lineto, psw->len);
-			*psw->dp = cmd_count_op(psw->cldev->memory, cmd_opv_rm3lineto, psw->len);
+			*psw->dp = cmd_count_op(cmd_opv_rm3lineto, psw->len);
 			return 0;
 		    }
 		    break;
@@ -1076,7 +1097,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     /* 0 if newpath/closepath */
 
 
-    if_debug4(cldev->memory, 'p', "[p]initial (%g,%g), clip [%g..%g)\n",
+    if_debug4('p', "[p]initial (%g,%g), clip [%g..%g)\n",
 	      fixed2float(px), fixed2float(py),
 	      fixed2float(ymin), fixed2float(ymax));
     gx_path_enum_init(&cenum, ppath);
@@ -1109,7 +1130,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		/* All done. */
 		pcls->rect.x = fixed2int_var(px);
 		pcls->rect.y = fixed2int_var(py);
-		if_debug2(cldev->memory, 'p', "[p]final (%d,%d)\n",
+		if_debug2('p', "[p]final (%d,%d)\n",
 			  pcls->rect.x, pcls->rect.y);
 		return set_cmd_put_op(dp, cldev, pcls, path_op, 1);
 	    case gs_pe_moveto:
@@ -1124,7 +1145,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		start_skip = false;
 		if ((start_side = side = which_side(B)) != 0) {
 		    out.x = A, out.y = B;
-		    if_debug3(cldev->memory, 'p', "[p]skip moveto (%g,%g) side %d\n",
+		    if_debug3('p', "[p]skip moveto (%g,%g) side %d\n",
 			      fixed2float(out.x), fixed2float(out.y),
 			      side);
 		    continue;
@@ -1132,7 +1153,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		C = A - px, D = B - py;
 		first.x = px = A, first.y = py = B;
 		code = cmd_put_rmoveto(&writer, &C);
-		if_debug2(cldev->memory, 'p', "[p]moveto (%g,%g)\n",
+		if_debug2('p', "[p]moveto (%g,%g)\n",
 			  fixed2float(px), fixed2float(py));
 		break;
 	    case gs_pe_lineto:
@@ -1146,7 +1167,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			    start_skip = true;
 			out.x = A, out.y = B;
 			out_notes = notes;
-			if_debug3(cldev->memory, 'p', "[p]skip lineto (%g,%g) side %d\n",
+			if_debug3('p', "[p]skip lineto (%g,%g) side %d\n",
 				  fixed2float(out.x), fixed2float(out.y),
 				  side);
 			continue;
@@ -1162,7 +1183,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			if (code < 0)
 			    return code;
 			px = out.x, py = out.y;
-			if_debug3(cldev->memory, 'p', "[p]catchup %s (%g,%g) for line\n",
+			if_debug3('p', "[p]catchup %s (%g,%g) for line\n",
 				  (open < 0 ? "moveto" : "lineto"),
 				  fixed2float(px), fixed2float(py));
 		    }
@@ -1174,7 +1195,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		    open = 1;
 		    code = cmd_put_rlineto(&writer, &C, notes);
 		}
-		if_debug3(cldev->memory, 'p', "[p]lineto (%g,%g) side %d\n",
+		if_debug3('p', "[p]lineto (%g,%g) side %d\n",
 			  fixed2float(px), fixed2float(py), side);
 		break;
 	    case gs_pe_closepath:
@@ -1190,7 +1211,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			case gs_pe_moveto:
 			    break;
 			default:
-			    lprintf1(cldev->memory, "closepath followed by %d, not end/moveto!\n",
+			    lprintf1("closepath followed by %d, not end/moveto!\n",
 				     op);
 		    }
 		}
@@ -1204,7 +1225,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			if (code < 0)
 			    return code;
 			px = out.x, py = out.y;
-			if_debug2(cldev->memory, 'p', "[p]catchup line (%g,%g) for close\n",
+			if_debug2('p', "[p]catchup line (%g,%g) for close\n",
 				  fixed2float(px), fixed2float(py));
 		    }
 		    if (open > 0 && start_skip) {	/* Draw the closing line back to the start. */
@@ -1213,7 +1234,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			if (code < 0)
 			    return code;
 			px = start.x, py = start.y;
-			if_debug2(cldev->memory, 'p', "[p]draw close to (%g,%g)\n",
+			if_debug2('p', "[p]draw close to (%g,%g)\n",
 				  fixed2float(px), fixed2float(py));
 		    }
 		}
@@ -1238,7 +1259,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		open = 0;
 		px = first.x, py = first.y;
 		code = cmd_put_segment(&writer, cmd_opv_closepath, &A, sn_none);
-		if_debug0(cldev->memory, 'p', "[p]close\n");
+		if_debug0('p', "[p]close\n");
 		break;
 	    case gs_pe_curveto:
 		{
@@ -1265,7 +1286,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 				    start_skip = true;
 				out.x = E, out.y = F;
 				out_notes = notes;
-				if_debug3(cldev->memory, 'p', "[p]skip curveto (%g,%g) side %d\n",
+				if_debug3('p', "[p]skip curveto (%g,%g) side %d\n",
 				     fixed2float(out.x), fixed2float(out.y),
 					  side);
 				continue;
@@ -1286,7 +1307,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			    if (code < 0)
 				return code;
 			    px = out.x, py = out.y;
-			    if_debug3(cldev->memory, 'p', "[p]catchup %s (%g,%g) for curve\n",
+			    if_debug3('p', "[p]catchup %s (%g,%g) for curve\n",
 				      (open < 0 ? "moveto" : "lineto"),
 				      fixed2float(px), fixed2float(py));
 			}
@@ -1299,7 +1320,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			const fixed *optr = vs;
 			byte op;
 
-			if_debug7(cldev->memory, 'p', "[p]curveto (%g,%g; %g,%g; %g,%g) side %d\n",
+			if_debug7('p', "[p]curveto (%g,%g; %g,%g; %g,%g) side %d\n",
 				  fixed2float(A), fixed2float(B),
 				  fixed2float(C), fixed2float(D),
 				  fixed2float(E), fixed2float(F), side);
@@ -1344,7 +1365,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		}
 		break;
 	    default:
-		return_error(cldev->memory, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	}
 	if (code < 0)
 	    return code;

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Device operators for Ghostscript library */
 #include "ctype_.h"
 #include "memory_.h"		/* for memchr, memcpy */
@@ -161,7 +162,7 @@ gs_copyscanlines(gx_device * dev, int start_y, byte * data, uint size,
 	    /* Might just be an overrun. */
 	    if (start_y + i == dev->height)
 		break;
-	    return_error(dev->memory, code);
+	    return_error(code);
 	}
     }
     if (plines_copied != NULL)
@@ -250,7 +251,7 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
 	    gs_alloc_bytes_immovable(mem->non_gc_memory, sizeof(*std),
 				     "gs_copydevice(stype)");
 	if (!a_std)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	*a_std = *std;
 	new_std = a_std;
     } else if (std != 0 && std->ssize == dev->params_size) {
@@ -262,7 +263,7 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
 	    gs_alloc_bytes_immovable(mem->non_gc_memory, sizeof(*std),
 				     "gs_copydevice(stype)");
 	if (!a_std)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	gx_device_make_struct_type(a_std, dev);
 	new_std = a_std;
     }
@@ -273,7 +274,7 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
     new_dev = gs_alloc_struct_immovable(mem, gx_device, new_std,
 					"gs_copydevice(device)");
     if (new_dev == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     gx_device_init(new_dev, dev, mem, false);
     gx_device_set_procs(new_dev);
     new_dev->stype = new_std;
@@ -310,12 +311,13 @@ gs_opendevice(gx_device *dev)
 {
     if (dev->is_open)
 	return 0;
+    check_device_separable(dev);
     gx_device_fill_in_procs(dev);
     {
 	int code = (*dev_proc(dev, open_device))(dev);
 
 	if (code < 0)
-	    return_error(dev->memory, code);
+	    return_error(code);
 	dev->is_open = true;
 	return 1;
     }
@@ -412,7 +414,7 @@ gs_setdevice_no_init(gs_state * pgs, gx_device * dev)
 	if (code < 0)
 	    return code;
     }
-    rc_assign(pgs->memory, pgs->device, dev, "gs_setdevice_no_init");
+    rc_assign(pgs->device, dev, "gs_setdevice_no_init");
     gs_state_update_device(pgs);
     return pgs->overprint ? gs_do_set_overprint(pgs) : 0;
 }
@@ -436,8 +438,27 @@ gs_make_null_device(gx_device_null *dev_null, gx_device *dev,
     gx_device_init((gx_device *)dev_null, (const gx_device *)&gs_null_device,
 		   mem, true);
     gx_device_set_target((gx_device_forward *)dev_null, dev);
-    if (dev)
-	gx_device_copy_color_params((gx_device *)dev_null, dev);
+    if (dev) {
+	/* The gx_device_copy_color_params() call below should
+	   probably copy over these new-style color mapping procs, as
+	   well as the old-style (map_rgb_color and friends). However,
+	   the change was made here instead, to minimize the potential
+	   impact of the patch.
+	*/
+	gx_device *dn = (gx_device *)dev_null;
+	set_dev_proc(dn, get_color_mapping_procs, gx_forward_get_color_mapping_procs);
+	set_dev_proc(dn, get_color_comp_index, gx_forward_get_color_comp_index);
+	set_dev_proc(dn, encode_color, gx_forward_encode_color);
+	set_dev_proc(dn, decode_color, gx_forward_decode_color);
+	gx_device_copy_color_params(dn, dev);
+    }
+}
+
+/* Is a null device ? */
+bool gs_is_null_device(gx_device *dev)
+{
+    /* Assuming null_fill_path isn't used elswhere. */
+    return dev->procs.fill_path == gs_null_device.procs.fill_path;
 }
 
 /* Mark a device as retained or not retained. */
@@ -448,7 +469,7 @@ gx_device_retain(gx_device *dev, bool retained)
 
     if (delta) {
 	dev->retained = retained; /* do first in case dev is freed */
-	rc_adjust_only(dev->memory, dev, delta, "gx_device_retain");
+	rc_adjust_only(dev, delta, "gx_device_retain");
     }
 }
 
@@ -484,7 +505,7 @@ gs_closedevice(gx_device * dev)
 	code = (*dev_proc(dev, close_device))(dev);
 	dev->is_open = false;
 	if (code < 0)
-	    return_error(dev->memory, code);
+	    return_error(code);
     }
     return code;
 }
@@ -496,7 +517,7 @@ gs_closedevice(gx_device * dev)
 void
 gx_set_device_only(gs_state * pgs, gx_device * dev)
 {
-    rc_assign(pgs->memory, pgs->device, dev, "gx_set_device_only");
+    rc_assign(pgs->device, dev, "gx_set_device_only");
 }
 
 /* Compute the size of one scan line for a device, */
@@ -546,22 +567,31 @@ gx_device_set_margins(gx_device * dev, const float *margins /*[4] */ ,
     }
 }
 
-
-/* Handle 90 and 270 degree rotation of the Tray
- * Device must support TrayOrientation in its InitialMatrix and get/put params
- */
 private void
-gx_device_TrayOrientationRotate(gx_device *dev)
+gx_device_set_hwsize_from_media(gx_device *dev)
 {
-  if ( dev->TrayOrientation == 90 || dev->TrayOrientation == 270) {
-    /* page sizes don't rotate, height and width do rotate 
-     * HWResolution, HWSize, and MediaSize parameters interact, 
-     * and must be set before TrayOrientation
-     */
-    floatp tmp = dev->height;
-    dev->height = dev->width;
-    dev->width = tmp;
-  }
+    int rot = (dev->LeadingEdge & 1);
+    floatp rot_media_x = rot ? dev->MediaSize[1] : dev->MediaSize[0];
+    floatp rot_media_y = rot ? dev->MediaSize[0] : dev->MediaSize[1];
+
+    dev->width = (int)(rot_media_x * dev->HWResolution[0] / 72.0 + 0.5);
+    dev->height = (int)(rot_media_y * dev->HWResolution[1] / 72.0 + 0.5);
+}
+
+private void
+gx_device_set_media_from_hwsize(gx_device *dev)
+{
+    int rot = (dev->LeadingEdge & 1);
+    floatp x = dev->width * 72.0 / dev->HWResolution[0];
+    floatp y = dev->height * 72.0 / dev->HWResolution[1];
+
+    if (rot) {
+	dev->MediaSize[1] = x;
+	dev->MediaSize[0] = y;
+    } else {
+	dev->MediaSize[0] = x;
+	dev->MediaSize[1] = y;
+    }
 }
 
 /* Set the width and height, updating MediaSize to remain consistent. */
@@ -570,9 +600,7 @@ gx_device_set_width_height(gx_device * dev, int width, int height)
 {
     dev->width = width;
     dev->height = height;
-    dev->MediaSize[0] = width * 72.0 / dev->HWResolution[0];
-    dev->MediaSize[1] = height * 72.0 / dev->HWResolution[1];
-    gx_device_TrayOrientationRotate(dev);
+    gx_device_set_media_from_hwsize(dev);
 }
 
 /* Set the resolution, updating width and height to remain consistent. */
@@ -581,9 +609,7 @@ gx_device_set_resolution(gx_device * dev, floatp x_dpi, floatp y_dpi)
 {
     dev->HWResolution[0] = x_dpi;
     dev->HWResolution[1] = y_dpi;
-    dev->width = (int)(dev->MediaSize[0] * x_dpi / 72.0 + 0.5);
-    dev->height = (int)(dev->MediaSize[1] * y_dpi / 72.0 + 0.5);
-    gx_device_TrayOrientationRotate(dev);
+    gx_device_set_hwsize_from_media(dev);
 }
 
 /* Set the MediaSize, updating width and height to remain consistent. */
@@ -592,9 +618,7 @@ gx_device_set_media_size(gx_device * dev, floatp media_width, floatp media_heigh
 {
     dev->MediaSize[0] = media_width;
     dev->MediaSize[1] = media_height;
-    dev->width = (int)(media_width * dev->HWResolution[0] / 72.0 + 0.499);
-    dev->height = (int)(media_height * dev->HWResolution[1] / 72.0 + 0.499);
-    gx_device_TrayOrientationRotate(dev);
+    gx_device_set_hwsize_from_media(dev);
 }
 
 /*
@@ -611,6 +635,11 @@ gx_device_copy_color_procs(gx_device *dev, const gx_device *target)
     dev_proc_map_color_rgb((*to_rgb)) =
 	dev_proc(dev, map_color_rgb);
 
+    /* The logic in this function seems a bit stale; it sets the
+       old-style color procs, but not the new ones
+       (get_color_mapping_procs, get_color_comp_index, encode_color,
+       and decode_color). It should probably copy those as well.
+    */
     if (from_cmyk == gx_forward_map_cmyk_color ||
 	from_cmyk == cmyk_1bit_map_cmyk_color ||
 	from_cmyk == cmyk_8bit_map_cmyk_color) {
@@ -687,10 +716,9 @@ gx_device_copy_params(gx_device *dev, const gx_device *target)
  * If there was a format, then return the max_width
  */
 private int
-gx_parse_output_format(const gs_memory_t *mem, 
-		       gs_parsed_file_name_t *pfn, const char **pfmt)
+gx_parse_output_format(gs_parsed_file_name_t *pfn, const char **pfmt)
 {
-    bool have_format = false, field = 0;
+    bool have_format = false, field;
     int width[2], int_width = sizeof(int) * 3, w = 0;
     uint i;
 
@@ -698,34 +726,51 @@ gx_parse_output_format(const gs_memory_t *mem,
     width[0] = width[1] = 0;
     for (i = 0; i < pfn->len; ++i)
 	if (pfn->fname[i] == '%') {
-	    if (i + 1 < pfn->len && pfn->fname[i + 1] == '%')
+	    if (i + 1 < pfn->len && pfn->fname[i + 1] == '%') {
+		i++;
 		continue;
-	    if (have_format)	/* more than one % */
-		return_error(mem, gs_error_undefinedfilename);
-	    have_format = true;
-	sw:
-	    if (++i == pfn->len)
-		return_error(mem, gs_error_undefinedfilename);
-	    switch (pfn->fname[i]) {
-		case 'l':
-		    int_width = sizeof(long) * 3;
-		case ' ': case '#': case '+': case '-':
-		    goto sw;
-		case '.':
-		    if (field)
-			return_error(mem, gs_error_undefinedfilename);
-		    field = 1;
-		    continue;
-		case '0': case '1': case '2': case '3': case '4':
-		case '5': case '6': case '7': case '8': case '9':
-		    width[field] = width[field] * 10 + pfn->fname[i] - '0';
-		    goto sw;
-		case 'd': case 'i': case 'u': case 'o': case 'x': case 'X':
-		    *pfmt = &pfn->fname[i];
-		    continue;
-		default:
-		    return_error(mem, gs_error_undefinedfilename);
 	    }
+	    if (have_format)	/* more than one % */
+		return_error(gs_error_undefinedfilename);
+	    have_format = true;
+	    field = -1; /* -1..3 for the 5 components of "%[flags][width][.precision][l]type" */
+	    for (;;)
+		if (++i == pfn->len)
+		    return_error(gs_error_undefinedfilename);
+		else {
+		    switch (field) {
+			case -1: /* flags */
+			    if (strchr(" #+-", pfn->fname[i]))
+				continue;
+			    else
+				field++;
+			    /* falls through */
+			default: /* width (field = 0) and precision (field = 1) */
+			    if (strchr("0123456789", pfn->fname[i])) {
+				width[field] = width[field] * 10 + pfn->fname[i] - '0';
+				continue;
+			    } else if (0 == field && '.' == pfn->fname[i]) {
+				field++;
+				continue;
+			    } else
+				field = 2;
+			    /* falls through */
+			case 2: /* "long" indicator */
+			    field++;
+			    if ('l' == pfn->fname[i]) {
+				int_width = sizeof(long) * 3;
+				continue;
+			    }
+			    /* falls through */
+			case 3: /* type */
+			    if (strchr("diuoxX", pfn->fname[i])) {
+				*pfmt = &pfn->fname[i];
+				break;
+			    } else
+				return_error(gs_error_undefinedfilename);
+		    }
+		    break;
+		}
 	}
     if (have_format) {
 	/* Calculate a conservative maximum width. */
@@ -743,8 +788,7 @@ gx_parse_output_format(const gs_memory_t *mem,
  * is currently allowed.
  */
 int
-gx_parse_output_file_name(const gs_memory_t *mem,
-			  gs_parsed_file_name_t *pfn, const char **pfmt,
+gx_parse_output_file_name(gs_parsed_file_name_t *pfn, const char **pfmt,
 			  const char *fname, uint fnlen)
 {
     int code;
@@ -760,13 +804,13 @@ gx_parse_output_file_name(const gs_memory_t *mem,
      * If the file name begins with a %, it might be either an IODevice
      * or a %nnd format.  Check (carefully) for this case.
      */
-    code = gs_parse_file_name(mem, pfn, fname, fnlen);
+    code = gs_parse_file_name(pfn, fname, fnlen);
     if (code < 0) {
 	if (fname[0] == '%') {
 	    /* not a recognized iodev -- may be a leading format descriptor */
 	    pfn->len = fnlen;
 	    pfn->fname = fname;
-	    code = gx_parse_output_format(mem, pfn, pfmt);
+	    code = gx_parse_output_format(pfn, pfmt);
 	} 
 	if (code < 0)
 	    return code;
@@ -781,15 +825,15 @@ gx_parse_output_file_name(const gs_memory_t *mem,
 	} else
 	    pfn->iodev = iodev_default;
 	if (!pfn->iodev)
-	    return_error(mem, gs_error_undefinedfilename);
+	    return_error(gs_error_undefinedfilename);
     }
     if (!pfn->fname)
 	return 0;
-    code = gx_parse_output_format(mem, pfn, pfmt);
+    code = gx_parse_output_format(pfn, pfmt);
     if (code < 0)
         return code;
     if (strlen(pfn->iodev->dname) + pfn->len + code >= gp_file_name_sizeof)
-	return_error(mem, gs_error_undefinedfilename);
+	return_error(gs_error_undefinedfilename);
     return 0;
 }
 
@@ -801,18 +845,18 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
     gs_parsed_file_name_t parsed;
     const char *fmt;
     char pfname[gp_file_name_sizeof];
-    int code = gx_parse_output_file_name(dev->memory, &parsed, &fmt, fname, strlen(fname));
+    int code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname));
 
     if (code < 0)
 	return code;
     if (parsed.iodev && !strcmp(parsed.iodev->dname, "%stdout%")) {
 	if (parsed.fname)
-	    return_error(dev->memory, gs_error_undefinedfilename);
+	    return_error(gs_error_undefinedfilename);
 	*pfile = dev->memory->gs_lib_ctx->fstdout;
 	/* Force stdout to binary. */
 	return gp_setmode_binary(*pfile, true);
     }
-    if (fmt) {
+    if (fmt) {						/* filename includes "%nnd" */
 	long count1 = dev->PageCount + 1;
 
 	while (*fmt != 'l' && *fmt != '%')
@@ -821,6 +865,11 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
 	    sprintf(pfname, parsed.fname, count1);
 	else
 	    sprintf(pfname, parsed.fname, (int)count1);
+    } else if (parsed.len && strchr(parsed.fname, '%'))	/* filename with "%%" but no "%nnd" */
+	sprintf(pfname, parsed.fname);
+    else
+	pfname[0] = 0; /* 0 to use "fname", not "pfname" */
+    if (pfname[0]) {
 	parsed.fname = pfname;
 	parsed.len = strlen(parsed.fname);
     }
@@ -828,21 +877,21 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
 	char fmode[4];
 
 	if (!parsed.fname)
-	    return_error(dev->memory, gs_error_undefinedfilename);
+	    return_error(gs_error_undefinedfilename);
 	strcpy(fmode, gp_fmode_wb);
   	if (positionable)
   	    strcat(fmode, "+");
- 	code = parsed.iodev->procs.fopen(dev->memory, parsed.iodev, parsed.fname, fmode,
+ 	code = parsed.iodev->procs.fopen(parsed.iodev, parsed.fname, fmode,
   					 pfile, NULL, 0);
  	if (code)
-     	    eprintf1(dev->memory, "**** Could not open the file %s .\n", parsed.fname);
+     	    eprintf1("**** Could not open the file %s .\n", parsed.fname);
  	return code;
     }
-    *pfile = gp_open_printer(dev->memory, (fmt ? pfname : fname), binary);
+    *pfile = gp_open_printer((pfname[0] ? pfname : fname), binary);
     if (*pfile)
   	return 0;
-    eprintf1(dev->memory, "**** Could not open the file %s .\n", (fmt ? pfname : fname));
-    return_error(dev->memory, gs_error_invalidfileaccess);
+    eprintf1("**** Could not open the file %s .\n", (pfname[0] ? pfname : fname));
+    return_error(gs_error_invalidfileaccess);
 }
 
 /* Close the output file for a device. */
@@ -852,7 +901,7 @@ gx_device_close_output_file(const gx_device * dev, const char *fname,
 {
     gs_parsed_file_name_t parsed;
     const char *fmt;
-    int code = gx_parse_output_file_name(dev->memory, &parsed, &fmt, fname, strlen(fname));
+    int code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname));
 
     if (code < 0)
 	return code;
@@ -861,7 +910,7 @@ gx_device_close_output_file(const gx_device * dev, const char *fname,
 	    return 0;
 	/* NOTE: fname is unsubstituted if the name has any %nnd formats. */
 	if (parsed.iodev != iodev_default)
-	    return parsed.iodev->procs.fclose(dev->memory, parsed.iodev, file);
+	    return parsed.iodev->procs.fclose(parsed.iodev, file);
     }
     gp_close_printer(file, (parsed.fname ? parsed.fname : fname));
     return 0;

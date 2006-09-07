@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Level 1 extended color operators */
 #include "ghost.h"
 #include "oper.h"
@@ -35,7 +36,7 @@ zcurrentblackgeneration(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     *op = istate->black_generation;
     return 0;
 }
@@ -46,7 +47,7 @@ zcurrentcolortransfer(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 4);
+    push(4);
     op[-3] = istate->transfer_procs.red;
     op[-2] = istate->transfer_procs.green;
     op[-1] = istate->transfer_procs.blue;
@@ -60,7 +61,7 @@ zcurrentundercolorremoval(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     *op = istate->undercolor_removal;
     return 0;
 }
@@ -72,8 +73,8 @@ zsetblackgeneration(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_proc(imemory, *op);
-    check_ostack(imemory, zcolor_remap_one_ostack - 1);
+    check_proc(*op);
+    check_ostack(zcolor_remap_one_ostack - 1);
     check_estack(1 + zcolor_remap_one_estack);
     code = gs_setblackgeneration_remap(igs, gs_mapped_transfer, false);
     if (code < 0)
@@ -93,11 +94,11 @@ zsetcolortransfer(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_proc(imemory, op[-3]);
-    check_proc(imemory, op[-2]);
-    check_proc(imemory, op[-1]);
-    check_proc(imemory, *op);
-    check_ostack(imemory, zcolor_remap_one_ostack * 4 - 4);
+    check_proc(op[-3]);
+    check_proc(op[-2]);
+    check_proc(op[-1]);
+    check_proc(*op);
+    check_ostack(zcolor_remap_one_ostack * 4 - 4);
     check_estack(1 + zcolor_remap_one_estack * 4);
     istate->transfer_procs.red = op[-3];
     istate->transfer_procs.green = op[-2];
@@ -139,8 +140,8 @@ zsetundercolorremoval(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_proc(imemory, *op);
-    check_ostack(imemory, zcolor_remap_one_ostack - 1);
+    check_proc(*op);
+    check_ostack(zcolor_remap_one_ostack - 1);
     check_estack(1 + zcolor_remap_one_estack);
     code = gs_setundercolorremoval_remap(igs, gs_mapped_transfer, false);
     if (code < 0)

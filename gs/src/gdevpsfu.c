@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PostScript/PDF font writing utilities */
 #include "memory_.h"
 #include <stdlib.h>		/* for qsort */
@@ -128,7 +129,7 @@ psf_add_subset_pieces(gs_glyph *glyphs, uint *pcount, uint max_count,
 	    if (code < 0)
 		continue;
 	    if (count + info.num_pieces > max_count)
-		return_error(font->memory, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	}
 	info.pieces = &glyphs[count];
 	code = font->procs.glyph_info(font, glyphs[i], NULL,
@@ -214,6 +215,7 @@ psf_check_outline_glyphs(gs_font_base *pfont, psf_glyph_enum_t *ppge,
 
 	if (code < 0)
 	    return code;
+	gdata.memory = pfont->memory;
 	code = glyph_data(pfont, glyph, &gdata, &ignore_font);
 	/*
 	 * If the glyph isn't defined by a CharString, glyph_data will
@@ -251,7 +253,7 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
 
     if (subset_glyphs) {
 	if (subset_size > countof(pglyphs->subset_data))
-	    return_error(pfont->memory, gs_error_limitcheck);
+	    return_error(gs_error_limitcheck);
 	memcpy(pglyphs->subset_data, orig_subset_glyphs,
 	       sizeof(gs_glyph) * subset_size);
 	subset_glyphs = pglyphs->subset_data;
@@ -308,7 +310,7 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
 	    return code;
 	/* Subset fonts require .notdef. */
 	if (notdef == gs_no_glyph)
-	    return_error(pfont->memory, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	/* Remove undefined glyphs. */
 	for (i = 0, keep_size = 0; i < subset_size; ++i) {
 	    gs_glyph_info_t info;

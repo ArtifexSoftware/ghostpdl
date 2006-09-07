@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Private Adobe Type 1 / Type 2 charstring interpreter definitions */
 
 #ifndef gxtype1_INCLUDED
@@ -111,6 +112,7 @@ struct gs_type1_state_s {
 				/* 0 if not done & needed, 1 if done */
     bool sb_set;		/* true if lsb is preset */
     bool width_set;		/* true if width is set (for seac parts) */
+    bool seac_flag;		/* true if executing the accent */
     /* (Type 2 charstrings only) */
     int num_hints;		/* number of hints (Type 2 only) */
     gs_fixed_point lsb;		/* left side bearing (char coords) */
@@ -163,18 +165,18 @@ typedef fixed *cs_ptr;
     }\
   END
 
-#define CS_CHECK_PUSH(mem, csp, cstack)\
+#define CS_CHECK_PUSH(csp, cstack)\
   BEGIN\
     if (csp >= &cstack[countof(cstack)-1])\
-      return_error(mem, gs_error_invalidfont);\
+      return_error(gs_error_invalidfont);\
   END
 
 /* Decode a 1-byte number. */
 #define decode_num1(var, c)\
   (var = c_value_num1(c))
-#define decode_push_num1(mem, csp, cstack, c)\
+#define decode_push_num1(csp, cstack, c)\
   BEGIN\
-    CS_CHECK_PUSH(mem, csp, cstack);\
+    CS_CHECK_PUSH(csp, cstack);\
     *++csp = int2fixed(c_value_num1(c));\
   END
 
@@ -188,19 +190,19 @@ typedef fixed *cs_ptr;
 	   c_value_neg2(c, 0) - cn);\
     charstring_skip_next(c2, state, encrypted);\
   END
-#define decode_push_num2(mem, csp, cstack, c, cip, state, encrypted)\
+#define decode_push_num2(csp, cstack, c, cip, state, encrypted)\
   BEGIN\
     uint c2 = *cip++;\
     int cn;\
 \
-    CS_CHECK_PUSH(mem, csp, cstack);\
+    CS_CHECK_PUSH(csp, cstack);\
     cn = charstring_this(c2, state, encrypted);\
     if ( c < c_neg2_0 )\
-      { if_debug2(mem, '1', "[1] (%d)+%d\n", c_value_pos2(c, 0), cn);\
+      { if_debug2('1', "[1] (%d)+%d\n", c_value_pos2(c, 0), cn);\
         *++csp = int2fixed(c_value_pos2(c, 0) + (int)cn);\
       }\
     else\
-      { if_debug2(mem, '1', "[1] (%d)-%d\n", c_value_neg2(c, 0), cn);\
+      { if_debug2('1', "[1] (%d)-%d\n", c_value_neg2(c, 0), cn);\
         *++csp = int2fixed(c_value_neg2(c, 0) - (int)cn);\
       }\
     charstring_skip_next(c2, state, encrypted);\
@@ -236,11 +238,14 @@ int gs_type1_sbw(gs_type1_state * pcis, fixed sbx, fixed sby,
 		 fixed wx, fixed wy);
 
 /* blend returns the number of values to pop. */
-int gs_type1_blend(const gs_memory_t *mem, gs_type1_state *pcis, fixed *csp, int num_results);
+int gs_type1_blend(gs_type1_state *pcis, fixed *csp, int num_results);
 
 int gs_type1_seac(gs_type1_state * pcis, const fixed * cstack,
 		  fixed asb_diff, ip_state_t * ipsp);
 
 int gs_type1_endchar(gs_type1_state * pcis);
+
+/* Get the metrics (l.s.b. and width) from the Type 1 interpreter. */
+void type1_cis_get_metrics(const gs_type1_state * pcis, double psbw[4]);
 
 #endif /* gxtype1_INCLUDED */

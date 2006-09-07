@@ -1,14 +1,15 @@
-/* Portions Copyright (C) 2001, 2004 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Definition of error codes */
@@ -61,7 +62,7 @@ extern const char *const gs_error_names[];
 #define e_undefinedfilename (-22)
 #define e_undefinedresult (-23)
 #define e_unmatchedmark (-24)
-#define e_VMerror (-25)
+#define e_VMerror (-25)		/* must be the last Level 1 error */
 
 #define LEVEL1_ERROR_NAMES\
  "unknownerror", "dictfull", "dictstackoverflow", "dictstackunderflow",\
@@ -71,22 +72,28 @@ extern const char *const gs_error_names[];
  "stackunderflow", "syntaxerror", "timeout", "typecheck", "undefined",\
  "undefinedfilename", "undefinedresult", "unmatchedmark", "VMerror"
 
-		/* ------ Additional Level 2 and DPS errors ------ */
+	/* ------ Additional Level 2 errors (also in DPS) ------ */
 
 #define e_configurationerror (-26)
-#define e_invalidcontext (-27)
-#define e_undefinedresource (-28)
-#define e_unregistered (-29)
+#define e_undefinedresource (-27)
+#define e_unregistered (-28)
+
+#define LEVEL2_ERROR_NAMES\
+ "configurationerror", "undefinedresource", "unregistered"
+
+	/* ------ Additional DPS errors ------ */
+
+#define e_invalidcontext (-29)
 /* invalidid is for the NeXT DPS extension. */
 #define e_invalidid (-30)
 
-#define LEVEL2_ERROR_NAMES\
- "configurationerror", "invalidcontext", "undefinedresource",\
- "unregistered", "invalidid"
+#define DPS_ERROR_NAMES\
+ "invalidcontext", "invalidid"
 
-#define ERROR_NAMES   LEVEL1_ERROR_NAMES, LEVEL2_ERROR_NAMES
+#define ERROR_NAMES\
+ LEVEL1_ERROR_NAMES, LEVEL2_ERROR_NAMES, DPS_ERROR_NAMES
 
-		/* ------ Pseudo-errors used internally ------ */
+	/* ------ Pseudo-errors used internally ------ */
 
 /*
  * Internal code for a fatal error.
@@ -132,21 +139,6 @@ extern const char *const gs_error_names[];
  * Internal code for requesting more input from run_string.
  */
 #define e_NeedInput (-106)
-
-/*
- * Internal code for stdin callout.
- */
-#define e_NeedStdin (-107)
-
-/*
- * Internal code for stdout callout.
- */
-#define e_NeedStdout (-108)
-
-/*
- * Internal code for stderr callout.
- */
-#define e_NeedStderr (-109)
 
 /*
  * Internal code for a normal exit when usage info is displayed.

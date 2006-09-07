@@ -1,16 +1,16 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
-
-# $RCSfile$ $Revision$
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
 # makefile for Unix/ANSI C/X11 configuration.
 
 # ------------------------------- Options ------------------------------- #
@@ -27,6 +27,7 @@ GLGENDIR=./obj
 GLOBJDIR=./obj
 PSSRCDIR=./src
 PSLIBDIR=./lib
+PSRESDIR=./Resource
 PSGENDIR=./obj
 PSOBJDIR=./obj
 
@@ -139,7 +140,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10205
+PVERSION=10208
 
 # Choose whether to use a shared version of the PNG library, and if so,
 # what its name is.
@@ -163,6 +164,7 @@ ZLIB_NAME=z
 
 # Choose shared or compiled in libjbig2dec and source location
 SHARE_JBIG2=0
+JBIG2_LIB=jbig2dec
 JBIG2SRCDIR=jbig2dec
 
 # Define the directory where the icclib source are stored.
@@ -173,7 +175,7 @@ ICCSRCDIR=icclib
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
- 
+
 IJSSRCDIR=ijs
 IJSEXECTYPE=unix
 
@@ -313,8 +315,7 @@ COMPILE_INITS=0
 BAND_LIST_STORAGE=file
 
 # Choose which compression method to use when storing band lists in memory.
-# The choices are 'lzw' or 'zlib'.  lzw is not recommended, because the
-# LZW-compatible code in Ghostscript doesn't actually compress its input.
+# The choices are 'lzw' or 'zlib'.
 
 BAND_LIST_COMPRESSOR=zlib
 
@@ -342,11 +343,11 @@ DEVICE_DEVS7=$(DD)faxg3.dev $(DD)faxg32d.dev $(DD)faxg4.dev
 DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
 DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev
 DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
-DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev
+DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev $(DD)tiffgray.dev $(DD)tiff32nc.dev $(DD)tiffsep.dev
 DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
 DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
-DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
-DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
 DEVICE_DEVS16=$(DD)bbox.dev
 # Overflow from DEVS9
 DEVICE_DEVS17=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
@@ -405,8 +406,8 @@ include $(GLSRCDIR)/unixinst.mak
 # this makefile is intended to be hand edited so we don't distribute
 # the (presumedly modified) version in the top level directory
 distclean : clean config-clean
-        -$(RM) Makefile
+	-$(RM) Makefile
 
 maintainer-clean : distclean
-        # nothing special to do
+	# nothing special to do
 

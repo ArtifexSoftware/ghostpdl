@@ -72,14 +72,14 @@ parse_trace(const char *el, const char **attr, int indent)
         return;
     /* assume empty attribute means close element */
     if (!attr)
-        dprintf4(gs_mem_ptr, "%*s%s:%d\n", indent + 1, "/", el, indent / 4);
+        dprintf4("%*s%s:%d\n", indent + 1, "/", el, indent / 4);
     else
-        dprintf3(gs_mem_ptr, "%*s:%d\n", indent + strlen(el), el, indent / 4);
+        dprintf3("%*s:%d\n", indent + strlen(el), el, indent / 4);
     /* print the attributes if we have any.  aren't closing out the element */
     if (attr) {
         int i;
         for (i = 0; attr[i]; i += 2)
-            dprintf3(gs_mem_ptr, "%*s='%.256s'\n",
+            dprintf3("%*s='%.256s'\n",
                      indent + strlen(attr[i]),
                      attr[i], attr[i + 1]);
     }
@@ -152,7 +152,7 @@ met_start(void *data, const char *el, const char **attr)
     if (record_my_children) {
         st->recording = true;
         st->depth_at_record_start = st->depth;
-        dprintf2(mem, "starting recording at %s stack pos %d\n", el, st->depth);
+        dprintf2("starting recording at %s stack pos %d\n", el, st->depth);
     }
 }
 
@@ -190,7 +190,7 @@ met_end(void *data, const char *el)
 
     if (st->recording && (st->depth == st->depth_at_record_start)) {
         if (code >= 0) {
-            dprintf2(mem, "stopping recording at %s stack pos %d\n", el, st->depth);
+            dprintf2("stopping recording at %s stack pos %d\n", el, st->depth);
             code = met_store(st->mets);
             if (code >= 0) {
                 st->recording = false;

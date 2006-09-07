@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Line parameter definitions */
 
 #ifndef gslparam_INCLUDED
@@ -21,7 +22,8 @@ typedef enum {
     gs_cap_butt = 0,
     gs_cap_round = 1,
     gs_cap_square = 2,
-    gs_cap_triangle = 3		/* not supported by PostScript */
+    gs_cap_triangle = 3,		/* not supported by PostScript */
+    gs_cap_unknown = 4
 } gs_line_cap;
 
 #define gs_line_cap_max 3
@@ -32,7 +34,8 @@ typedef enum {
     gs_join_round = 1,
     gs_join_bevel = 2,
     gs_join_none = 3,		/* not supported by PostScript */
-    gs_join_triangle = 4	/* not supported by PostScript */
+    gs_join_triangle = 4,	/* not supported by PostScript */
+    gs_join_unknown = 5
 } gs_line_join;
 
 #define gs_line_join_max 4

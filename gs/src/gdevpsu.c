@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PostScript-writing utilities */
 #include "math_.h"
 #include "time_.h"
@@ -28,12 +29,12 @@
 
 /* Write a 0-terminated array of strings as lines. */
 int
-psw_print_lines(const gs_memory_t *mem, FILE *f, const char *const lines[])
+psw_print_lines(FILE *f, const char *const lines[])
 {
     int i;
     for (i = 0; lines[i] != 0; ++i) {
 	if (fprintf(f, "%s\n", lines[i]) < 0)
-            return_error(mem, gs_error_ioerror);
+            return_error(gs_error_ioerror);
     }
     return 0;
 }
@@ -56,6 +57,7 @@ psw_print_procset_name(FILE *f, const gx_device *dev,
     byte buf[100];		/* arbitrary */
     stream s;
 
+    s_init(&s, dev->memory);
     swrite_file(&s, f, buf, sizeof(buf));
     psw_put_procset_name(&s, dev, pdpc);
     sflush(&s);
@@ -163,7 +165,7 @@ int
 psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
 		      gx_device_pswrite_common_t *pdpc, bool ascii)
 {
-    psw_print_lines(dev->memory, f, (pdpc->ProduceEPS ? psw_eps_header : psw_ps_header));
+    psw_print_lines(f, (pdpc->ProduceEPS ? psw_eps_header : psw_ps_header));
     if (pbbox) {
 	psw_print_bbox(f, pbbox);
 	pdpc->bbox_position = 0;
@@ -194,7 +196,7 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
 	fprintf(f, "%%%%LanguageLevel: %d\n", (int)pdpc->LanguageLevel);
     else if (pdpc->LanguageLevel == 1.5)
 	fputs("%%Extensions: CMYK\n", f);
-    psw_print_lines(dev->memory, f, psw_begin_prolog);
+    psw_print_lines(f, psw_begin_prolog);
     fprintf(f, "%% %s\n", gs_copyright);
     fputs("%%BeginResource: procset ", f);
     fflush(f);
@@ -203,10 +205,10 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
     fflush(f);
     psw_print_procset_name(f, dev, pdpc);
     fputs(" 80 dict dup begin\n", f);
-    psw_print_lines(dev->memory, f, psw_ps_procset);
+    psw_print_lines(f, psw_ps_procset);
     fflush(f);
     if (ferror(f))
-        return_error(dev->memory, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -214,9 +216,9 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
  * End the file header.
  */
 int
-psw_end_file_header(const gs_memory_t *mem, FILE *f)
+psw_end_file_header(FILE *f)
 {
-    return psw_print_lines(mem, f, psw_end_prolog);
+    return psw_print_lines(f, psw_end_prolog);
 }
 
 /*
@@ -231,7 +233,7 @@ psw_end_file(FILE *f, const gx_device *dev,
         return 0;	/* clients should be more careful */
     fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", (long)page_count);
     if (ferror(f))
-        return_error(dev->memory, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     if (dev->PageCount > 0 && pdpc->bbox_position != 0) {
 	if (pdpc->bbox_position >= 0) {
 	    long save_pos = ftell(f);
@@ -240,7 +242,7 @@ psw_end_file(FILE *f, const gx_device *dev,
 	    psw_print_bbox(f, pbbox);
             fputc('%', f);
             if (ferror(f))
-                return_error(dev->memory, gs_error_ioerror);
+                return_error(gs_error_ioerror);
             fseek(f, save_pos, SEEK_SET);
 	} else
 	    psw_print_bbox(f, pbbox);
@@ -248,7 +250,7 @@ psw_end_file(FILE *f, const gx_device *dev,
     if (!pdpc->ProduceEPS)
 	fputs("%%EOF\n", f);
     if (ferror(f))
-        return_error(dev->memory, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -307,7 +309,7 @@ psw_write_page_header(stream *s, const gx_device *dev,
 		 72.0 / dev->HWResolution[0], 72.0 / dev->HWResolution[1]);
     stream_puts(s, "%%EndPageSetup\ngsave mark\n");
     if (s->end_status == ERRC)
-        return_error(dev->memory, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -316,14 +318,14 @@ psw_write_page_header(stream *s, const gx_device *dev,
  * the stream, because we may have to do it during finalization.
  */
 int
-psw_write_page_trailer(const gs_memory_t *mem, FILE *f, int num_copies, int flush)
+psw_write_page_trailer(FILE *f, int num_copies, int flush)
 {
+    fprintf(f, "cleartomark end end pagesave restore\n");
     if (num_copies != 1)
 	fprintf(f, "userdict /#copies %d put\n", num_copies);
-    fprintf(f, "cleartomark end end pagesave restore %s\n%%%%PageTrailer\n",
-	    (flush ? "showpage" : "copypage"));
+    fprintf(f, " %s\n%%%%PageTrailer\n", (flush ? "showpage" : "copypage"));
     fflush(f);
     if (ferror(f))
-        return_error(mem, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return 0;
 }

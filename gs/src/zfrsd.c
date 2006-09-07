@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* ReusableStreamDecode filter support */
 #include "memory_.h"
 #include "ghost.h"
@@ -52,7 +53,7 @@ zrsdparams(i_ctx_t *i_ctx_p)
     if (dict_find_string(op, "Filter", &pFilter) > 0) {
 	if (!r_is_array(pFilter)) {
 	    if (!r_has_type(pFilter, t_name))
-		return_error(imemory, e_typecheck);
+		return_error(e_typecheck);
 	    make_array(&filter1_array, a_readonly, 1, pFilter);
 	    pFilter = &filter1_array;
 	}
@@ -66,9 +67,9 @@ zrsdparams(i_ctx_t *i_ctx_p)
 	    make_array(&parms1_array, a_readonly, 1, pDecodeParms);
 	    pDecodeParms = &parms1_array;
 	} else if (!r_is_array(pDecodeParms))
-	    return_error(imemory, e_typecheck);
+	    return_error(e_typecheck);
 	else if (r_size(pFilter) != r_size(pDecodeParms))
-	    return_error(imemory, e_rangecheck);
+	    return_error(e_rangecheck);
     } else
 	pDecodeParms = 0;
     for (i = 0; i < r_size(pFilter); ++i) {
@@ -76,23 +77,23 @@ zrsdparams(i_ctx_t *i_ctx_p)
 
 	array_get(imemory, pFilter, (long)i, &f);
 	if (!r_has_type(&f, t_name))
-	    return_error(imemory, e_typecheck);
+	    return_error(e_typecheck);
 	name_string_ref(imemory, &f, &fname);
 	if (r_size(&fname) < 6 ||
 	    memcmp(fname.value.bytes + r_size(&fname) - 6, "Decode", 6)
 	    )
-	    return_error(imemory, e_rangecheck);
+	    return_error(e_rangecheck);
 	if (pDecodeParms) {
 	    array_get(imemory, pDecodeParms, (long)i, &dp);
 	    if (!(r_has_type(&dp, t_dictionary) || r_has_type(&dp, t_null)))
-		return_error(imemory, e_typecheck);
+		return_error(e_typecheck);
 	}
     }
-    if ((code = dict_int_param(imemory, op, "Intent", 0, 3, 0, &Intent)) < 0 ||
-	(code = dict_bool_param(imemory, op, "AsyncRead", false, &AsyncRead)) < 0
+    if ((code = dict_int_param(op, "Intent", 0, 3, 0, &Intent)) < 0 ||
+	(code = dict_bool_param(op, "AsyncRead", false, &AsyncRead)) < 0
 	)
 	return code;
-    push(imemory, 1);
+    push(1);
     op[-1] = *pFilter;
     if (pDecodeParms)
 	*op = *pDecodeParms;
@@ -126,20 +127,20 @@ zreusablestream(i_ctx_t *i_ctx_p)
     bool close_source;
     int code;
 
-    check_type(imemory, *op, t_boolean);
+    check_type(*op, t_boolean);
     close_source = op->value.boolval;
     if (r_has_type(source_op, t_string)) {
 	uint size = r_size(source_op);
 
-	check_read(imemory, *source_op);
+	check_read(*source_op);
 	code = make_rss(i_ctx_p, source_op, source_op->value.const_bytes,
 			size, r_space(source_op), 0L, size, false);
     } else if (r_has_type(source_op, t_astruct)) {
 	uint size = gs_object_size(imemory, source_op->value.pstruct);
 
 	if (gs_object_type(imemory, source_op->value.pstruct) != &st_bytes)
-	    return_error(imemory, e_rangecheck);
-	check_read(imemory, *source_op);
+	    return_error(e_rangecheck);
+	check_read(*source_op);
 	code = make_rss(i_ctx_p, source_op,
 			(const byte *)source_op->value.pstruct, size,
 			r_space(source_op), 0L, size, true);
@@ -148,7 +149,7 @@ zreusablestream(i_ctx_t *i_ctx_p)
 	stream *source;
 	stream *s;
 
-	check_read_file(imemory, source, source_op);
+	check_read_file(source, source_op);
 	s = source;
 rs:
 	if (s->cbuf_string.data != 0) {	/* string stream */
@@ -162,7 +163,7 @@ rs:
 			    offset, min(avail, length), false);
 	} else if (s->file != 0) { /* file stream */
 	    if (~s->modes & (s_mode_read | s_mode_seek))
-		return_error(imemory, e_ioerror);
+		return_error(e_ioerror);
 	    code = make_rfs(i_ctx_p, source_op, s, offset + stell(s), length);
 	} else if (s->state->template == &s_SFD_template) {
 	    /* SubFileDecode filter */
@@ -170,7 +171,7 @@ rs:
 		(const stream_SFD_state *)s->state;
 
 	    if (sfd_state->eod.size != 0)
-		return_error(imemory, e_rangecheck);
+		return_error(e_rangecheck);
 	    offset += sfd_state->skip_count - sbufavailable(s);
 	    if (sfd_state->count != 0) {
 		long left = max(sfd_state->count, 0) + sbufavailable(s);
@@ -182,7 +183,7 @@ rs:
 	    goto rs;
 	}
 	else			/* some other kind of stream */
-	    return_error(imemory, e_rangecheck);
+	    return_error(e_rangecheck);
 	if (close_source) {
 	    stream *rs = fptr(source_op);
 
@@ -204,10 +205,10 @@ make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data, uint size,
     long left = min(length, size - offset);
 
     if (icurrent_space < string_space)
-	return_error(imemory, e_invalidaccess);
+	return_error(e_invalidaccess);
     s = file_alloc_stream(imemory, "make_rss");
     if (s == 0)
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     sread_string_reusable(s, data + offset, max(left, 0));
     if (is_bytestring)
 	s->cbuf_string.data = 0;	/* byte array, not string */
@@ -225,12 +226,12 @@ make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs, long offset, long length)
     int code;
 
     if (sfilename(fs, &fname) < 0)
-	return_error(imemory, e_ioerror);
-    code = gs_parse_file_name(imemory, &pname, (const char *)fname.data, fname.size);
+	return_error(e_ioerror);
+    code = gs_parse_file_name(&pname, (const char *)fname.data, fname.size);
     if (code < 0)
 	return code;
     if (pname.len == 0)		/* %stdin% etc. won't have a filename */
-	return_error(imemory, e_invalidfileaccess); /* can't reopen */
+	return_error(e_invalidfileaccess); /* can't reopen */
     if (pname.iodev == NULL)
 	pname.iodev = iodev_default;
     /* Open the file again, to be independent of the source. */
@@ -241,7 +242,7 @@ make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs, long offset, long length)
 	return code;
     if (sread_subfile(s, offset, length) < 0) {
 	sclose(s);
-	return_error(imemory, e_ioerror);
+	return_error(e_ioerror);
     }
     s->close_at_eod = false;
     make_stream_file(op, s, "r");

@@ -1,18 +1,20 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PatternType 2 implementation */
 #include "gx.h"
+#include "gserrors.h"
 #include "gscspace.h"
 #include "gsshade.h"
 #include "gsmatrix.h"           /* for gspcolor.h */
@@ -93,6 +95,7 @@ gs_pattern2_make_pattern(gs_client_color * pcc,
         return code;
     pinst = (gs_pattern2_instance_t *)pcc->pattern;
     pinst->template = *ptemp;
+    pinst->shfill = false;
     return 0;
 }
 
@@ -103,6 +106,20 @@ gs_pattern2_get_pattern(const gs_pattern_instance_t *pinst)
     return (const gs_pattern_template_t *)
         &((const gs_pattern2_instance_t *)pinst)->template;
 }
+
+/* Set the 'shfill' flag to a PatternType 2 pattern instance. */
+int
+gs_pattern2_set_shfill(gs_client_color * pcc)
+{
+    gs_pattern2_instance_t *pinst;
+
+    if (pcc->pattern->type != &gs_pattern2_type)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    pinst = (gs_pattern2_instance_t *)pcc->pattern;
+    pinst->shfill = true;
+    return 0;
+}
+
 
 /* ---------------- Rendering ---------------- */
 
@@ -187,37 +204,17 @@ gs_pattern2_set_color(const gs_client_color * pcc, gs_state * pgs)
     return code;
 }
 
-/* Fill path or rect, with adjustment, and with a PatternType 2 color. */
+/* Fill path or rect, and with a PatternType 2 color. */
 int
-gx_dc_pattern2_fill_path_adjusted(const gx_device_color * pdevc, 
+gx_dc_pattern2_fill_path(const gx_device_color * pdevc, 
                               gx_path * ppath, gs_fixed_rect * rect, 
                               gx_device * dev)
 {
     gs_pattern2_instance_t *pinst =
         (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
-    gs_state *pgs = pinst->saved;
-    gs_point save_adjust;
-    int code;
 
-    /* We don't want any adjustment of the box. */
-    gs_currentfilladjust(pgs, &save_adjust);
-
-    /*
-     * We should set the fill adjustment to zero here, so that we don't
-     * get multiply-written pixels as a result of filling abutting
-     * triangles.  However, numerical inaccuracies in the shading
-     * algorithms can cause pixel dropouts, and a non-zero adjustment
-     * is by far the easiest way to work around them as a stopgap.
-     * NOTE: This makes shadings not interact properly with
-     * non-idempotent RasterOps (not a problem in practice, since
-     * PostScript doesn't have RasterOps and PCL doesn't have shadings).
-     */
-    gs_setfilladjust(pgs, 0.5, 0.5);
-    /****** DOESN'T HANDLE RASTER OP ******/
-    code = gs_shading_fill_path(pinst->template.Shading, ppath, rect, dev,
-                                (gs_imager_state *)pgs, true);
-    gs_setfilladjust(pgs, save_adjust.x, save_adjust.y);
-    return code;
+    return gs_shading_fill_path_adjusted(pinst->template.Shading, ppath, rect, dev,
+                                (gs_imager_state *)pinst->saved, !pinst->shfill);
 }
 
 /* Fill a rectangle with a PatternType 2 color. */
@@ -232,7 +229,7 @@ gx_dc_pattern2_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     rect.p.y = int2fixed(y);
     rect.q.x = int2fixed(x + w);
     rect.q.y = int2fixed(y + h);
-    return gx_dc_pattern2_fill_path_adjusted(pdevc, NULL, &rect,  dev);
+    return gx_dc_pattern2_fill_path(pdevc, NULL, &rect,  dev);
 }
 
 /* Compare two PatternType 2 colors for equality. */
@@ -261,6 +258,82 @@ gx_dc_pattern2_save_dc(
 
     psdc->type = pdevc->type;
     psdc->colors.pattern2.id = pinst->pattern_id;
+    psdc->colors.pattern2.shfill = pinst->shfill;
+}
+
+/* Transform a shading bounding box into device space. */
+/* This is just a bridge to an old code. */
+int
+gx_dc_pattern2_shade_bbox_transform2fixed(const gs_rect * rect, const gs_imager_state * pis,
+			   gs_fixed_rect * rfixed)
+{
+    gs_rect dev_rect;
+    int code = gs_bbox_transform(rect, &ctm_only(pis), &dev_rect);
+
+    if (code >= 0) {
+	rfixed->p.x = float2fixed(dev_rect.p.x);
+	rfixed->p.y = float2fixed(dev_rect.p.y);
+	rfixed->q.x = float2fixed(dev_rect.q.x);
+	rfixed->q.y = float2fixed(dev_rect.q.y);
+    }
+    return code;
+}
+
+/* Get a shading bbox. Returns 1 on success. */
+int
+gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox)
+{
+    gs_pattern2_instance_t *pinst =
+        (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
+    int code;
+
+    if (!pinst->template.Shading->params.have_BBox)
+	return 0;
+    code = gx_dc_pattern2_shade_bbox_transform2fixed(
+		&pinst->template.Shading->params.BBox, (gs_imager_state *)pinst->saved, bbox);
+    if (code < 0)
+	return code;
+    return 1;
+}
+
+/* Get a shading color space. */
+const gs_color_space *
+gx_dc_pattern2_get_color_space(const gx_device_color * pdevc)
+{
+    gs_pattern2_instance_t *pinst =
+        (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
+    const gs_shading_t *psh = pinst->template.Shading;
+
+    return psh->params.ColorSpace;
 }
 
 
+/* Check device color for a possibly self-overlapping shading. */
+bool
+gx_dc_pattern2_can_overlap(const gx_device_color *pdevc)
+{
+    gs_pattern2_instance_t * pinst;
+
+    if (pdevc->type != &gx_dc_pattern2)
+	return false;
+    pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
+    switch (pinst->template.Shading->head.type) {
+	case 3: case 6: case 7:
+	    return true;
+	default:
+	    return false;
+    }
+}
+
+/* Check whether a pattern color has a background. */
+bool gx_dc_pattern2_has_background(const gx_device_color *pdevc)
+{
+    gs_pattern2_instance_t * pinst;
+    const gs_shading_t *Shading;
+
+    if (pdevc->type != &gx_dc_pattern2)
+	return false;
+    pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
+    Shading = pinst->template.Shading;
+    return !pinst->shfill && Shading->params.Background != NULL;
+}

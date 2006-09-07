@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* CCITTFax decoding filter */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
@@ -66,6 +67,7 @@ s_CFD_init(stream_state * st)
     ss->cbit = 0;
     ss->uncomp_run = 0;
     ss->rows_left = (ss->Rows <= 0 || ss->EndOfBlock ? -1 : ss->Rows + 1);
+    ss->row = 0;
     ss->rpos = ss->wpos = raster - 1;
     ss->eol_count = 0;
     ss->invert = white;
@@ -113,7 +115,7 @@ s_CFD_release(stream_state * st)
 #else
 #  define IF_DEBUG(expr) DO_NOTHING
 #endif
-#define get_run(mem, decode, initial_bits, min_bits, runlen, str, locl, outl)\
+#define get_run(decode, initial_bits, min_bits, runlen, str, locl, outl)\
     BEGIN\
 	const cfd_node *np;\
 	int clen;\
@@ -133,14 +135,14 @@ s_CFD_release(stream_state * st)
 		skip_bits(initial_bits);\
 		ensure_bits(clen, outl);		/* can't goto outl */\
 		np = &decode[np->run_length + peek_var_bits(clen)];\
-		if_debug4(mem, 'W', "%s xcode=0x%x,%d rlen=%d\n", str,\
+		if_debug4('W', "%s xcode=0x%x,%d rlen=%d\n", str,\
 			  (init_bits << np->code_length) +\
 			    peek_var_bits(np->code_length),\
 			  initial_bits + np->code_length,\
 			  np->run_length);\
 		skip_bits(np->code_length);\
 	} else {\
-    locl:	if_debug4(mem, 'W', "%s code=0x%x,%d rlen=%d\n", str,\
+    locl:	if_debug4('W', "%s code=0x%x,%d rlen=%d\n", str,\
 			  peek_var_bits(clen), clen, np->run_length);\
 		skip_bits(clen);\
 	}\
@@ -199,8 +201,7 @@ private int cf_decode_1d(stream_CFD_state *, stream_cursor_read *);
 private int cf_decode_2d(stream_CFD_state *, stream_cursor_read *);
 private int cf_decode_uncompressed(stream_CFD_state *, stream_cursor_read *);
 private int
-s_CFD_process(const gs_memory_t *mem,
-	      stream_state * st, stream_cursor_read * pr,
+s_CFD_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_CFD_state *const ss = (stream_CFD_state *) st;
@@ -221,9 +222,8 @@ s_CFD_process(const gs_memory_t *mem,
     {
 	hcd_declare_state;
 	hcd_load_state();
-	if_debug8(st->memory, 'w', "\
-[w]CFD_process top: eol_count=%d, k_left=%d, rows_left=%d\n\
-    bits=0x%lx, bits_left=%d, read %u, wrote %u%s\n",
+	if_debug8('w', "[w]CFD_process top: eol_count=%d, k_left=%d, rows_left=%d\n"
+    		"    bits=0x%lx, bits_left=%d, read %u, wrote %u%s\n",
 		  eol_count, k_left, rows_left,
 		  (ulong) bits, bits_left,
 		  (uint) (p - rstart), (uint) (pw->ptr - wstart),
@@ -279,10 +279,9 @@ s_CFD_process(const gs_memory_t *mem,
 	    if (status)
 		goto out;
 	}
-	if (rows_left > 0 && --rows_left == 0) {
-	    status = EOFC;
-	    goto out;
-	}
+	ss->row++;
+	if (rows_left > 0 && --rows_left == 0) 
+	    goto ck_eol;	/* handle EOD if it is present */
 	if (ss->K != 0) {
 	    byte *prev_bits = ss->lprev;
 
@@ -307,8 +306,14 @@ s_CFD_process(const gs_memory_t *mem,
     }
     /* If we're between scan lines, scan for EOLs. */
     if (ss->wpos < 0) {
+	    /*
+	     * According to Adobe, the decoder should always check for
+	     * the EOD sequence, regardless of EndOfBlock: the Red Book's
+	     * documentation of EndOfBlock is wrong.
+	     */
+ck_eol:
 	while ((status = cf_decode_eol(ss, pr)) > 0) {
-	    if_debug0(ss->memory, 'w', "[w]EOL\n");
+	    if_debug0('w', "[w]EOL\n");
 	    /* If we are in a Group 3 mixed regime, */
 	    /* check the next bit for 1- vs. 2-D. */
 	    if (ss->K > 0) {
@@ -320,15 +325,14 @@ s_CFD_process(const gs_memory_t *mem,
 		hcd_store_state();
 	    }
 	    ++eol_count;
-	    /*
-	     * According to Adobe, the decoder should always check for
-	     * the EOD sequence, regardless of EndOfBlock: the Red Book's
-	     * documentation of EndOfBlock is wrong.
-	     */
 	    if (eol_count == (ss->K < 0 ? 2 : 6)) {
 		status = EOFC;
 		goto out;
 	    }
+	}
+	if (rows_left == 0) {
+	    status = EOFC;
+	    goto out;
 	}
 	if (status == 0)	/* input empty while scanning EOLs */
 	    goto out;
@@ -347,16 +351,16 @@ s_CFD_process(const gs_memory_t *mem,
     }
     /* Now decode actual data. */
     if (k_left < 0) {
-	if_debug0(st->memory, 'w', "[w2]new row\n");
+	if_debug0('w', "[w2]new row\n");
 	status = cf_decode_2d(ss, pr);
     } else if (k_left == 0) {
-	if_debug0(st->memory, 'w', "[w1]new row\n");
+	if_debug0('w', "[w1]new row\n");
 	status = cf_decode_1d(ss, pr);
     } else {
-	if_debug1(st->memory, 'w', "[w1]new 2-D row, %d left\n", k_left);
+	if_debug1('w', "[w1]new 2-D row, %d left\n", k_left);
 	status = cf_decode_2d(ss, pr);
     }
-    if_debug3(st->memory, 'w', "[w]CFD status = %d, wpos = %d, cbit = %d\n",
+    if_debug3('w', "[w]CFD status = %d, wpos = %d, cbit = %d\n",
 	      status, ss->wpos, ss->cbit);
   check:switch (status) {
 	case 1:		/* output full */
@@ -445,7 +449,7 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
     int bcnt;
 
     cfd_load_state();
-    if_debug1(ss->memory, 'w', "[w1]entry run_color = %d\n", ss->run_color);
+    if_debug1('w', "[w1]entry run_color = %d\n", ss->run_color);
     if (ss->run_color > 0)
 	goto db;
     else
@@ -455,7 +459,7 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
     if (q_at_stop())
 	goto done;
   dw:				/* Decode a white run. */
-    get_run(ss->memory, cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
+    get_run(cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
 	    bcnt, "[w1]white", dwl, out0);
     if (bcnt < 0) {		/* exceptional situation */
 	switch (bcnt) {
@@ -483,7 +487,7 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
     }
     run_color = 1;
   db:				/* Decode a black run. */
-    get_run(ss->memory, cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
+    get_run(cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
 	    bcnt, "[w1]black", dbl, out1);
     if (bcnt < 0) {		/* All exceptional codes are invalid here. */
 /****** WRONG, uncompressed IS ALLOWED ******/
@@ -507,7 +511,7 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
 	status = 1;
   out:cfd_store_state();
     ss->run_color = run_color;
-    if_debug1(ss->memory, 'w', "[w1]exit run_color = %d\n", run_color);
+    if_debug1('w', "[w1]exit run_color = %d\n", run_color);
     return status;
   out0:			/* We already set run_color to 0 or -1. */
     status = 0;
@@ -539,7 +543,7 @@ cf_decode_2d(stream_CFD_state * ss, stream_cursor_read * pr)
     count = ((endptr - q) << 3) + qbit;
     endptr[1] = 0xa0;		/* a byte with some 0s and some 1s, */
     /* to ensure run scan will stop */
-    if_debug1(ss->memory, 'W', "[w2]raster=%d\n", raster);
+    if_debug1('W', "[w2]raster=%d\n", raster);
     switch (ss->run_color) {
 	case -2:
 	    ss->run_color = 0;
@@ -562,14 +566,14 @@ cf_decode_2d(stream_CFD_state * ss, stream_cursor_read * pr)
     /* If invert == invert_white, white and black have their */
     /* correct meanings; if invert == ~invert_white, */
     /* black and white are interchanged. */
-    if_debug1(ss->memory, 'W', "[w2]%4d:\n", count);
+    if_debug1('W', "[w2]%4d:\n", count);
 #ifdef DEBUG
     /* Check the invariant between q, qbit, and count. */
     {
 	int pcount = (endptr - q) * 8 + qbit;
 
 	if (pcount != count)
-	    dlprintf2(ss->memory, "[w2]Error: count=%d pcount=%d\n",
+	    dlprintf2("[w2]Error: count=%d pcount=%d\n",
 		      count, pcount);
     }
 #endif
@@ -601,7 +605,7 @@ v0:	    skip_bits(1);
 	    else
 		goto hbb;
 	case 0:		/* everything else */
-	    get_run(ss->memory, cf_2d_decode, cfd_2d_initial_bits, cfd_2d_min_bits,
+	    get_run(cf_2d_decode, cfd_2d_initial_bits, cfd_2d_min_bits,
 		    rlen, "[w2]", d2l, out0);
 	    /* rlen may be run2_pass, run_uncompressed, or */
 	    /* 0..countof(cf2_run_vertical)-1. */
@@ -647,37 +651,37 @@ v0:	    skip_bits(1);
 	if ((prev_data & count_bit[prev_count & 7]) &&
 	    (prev_count < init_count || invert != invert_white)
 	    ) {			/* Look for changing white first. */
-	    if_debug1(ss->memory, 'W', " data=0x%x", prev_data);
+	    if_debug1('W', " data=0x%x", prev_data);
 	    skip_black_pixels(prev_data, prev_q,
 			      prev_count, invert, plen);
 	    if (prev_count < end_count)		/* overshot */
 		prev_count = end_count;
-	    if_debug1(ss->memory, 'W', " b1 other=%d", prev_count);
+	    if_debug1('W', " b1 other=%d", prev_count);
 	}
 	if (prev_count != end_count) {
-	    if_debug1(ss->memory, 'W', " data=0x%x", prev_data);
+	    if_debug1('W', " data=0x%x", prev_data);
 	    skip_white_pixels(prev_data, prev_q,
 			      prev_count, invert, plen);
 	    if (prev_count < end_count)		/* overshot */
 		prev_count = end_count;
-	    if_debug1(ss->memory, 'W', " b1 same=%d", prev_count);
+	    if_debug1('W', " b1 same=%d", prev_count);
 	}
 	/* b1 = prev_count; */
 	if (rlen == run2_pass) {	/* Pass mode.  Find b2. */
 	    if (prev_count != end_count) {
-		if_debug1(ss->memory, 'W', " data=0x%x", prev_data);
+		if_debug1('W', " data=0x%x", prev_data);
 		skip_black_pixels(prev_data, prev_q,
 				  prev_count, invert, plen);
 		if (prev_count < end_count)	/* overshot */
 		    prev_count = end_count;
 	    }
 	    /* b2 = prev_count; */
-	    if_debug2(ss->memory, 'W', " b2=%d, pass %d\n",
+	    if_debug2('W', " b2=%d, pass %d\n",
 		      prev_count, count - prev_count);
 	} else {		/* Vertical coding. */
 	    /* Remember that count counts *down*. */
 	    prev_count += rlen - vertical_0;	/* a1 */
-	    if_debug2(ss->memory, 'W', " vertical %d -> %d\n",
+	    if_debug2('W', " vertical %d -> %d\n",
 		      rlen - vertical_0, prev_count);
 	}
 	/* Now either invert or skip from count */
@@ -704,13 +708,17 @@ v0:	    skip_bits(1);
     /* falls through */
   out:cfd_store_state();
     ss->invert = invert;
+    /* Ignore an error (missing EOFB/RTC when EndOfBlock == true) */
+    /* if we have finished all rows. */
+    if (status == ERRC && ss->Rows > 0 && ss->row > ss->Rows)
+	status = EOFC;
     return status;
     /*
      * We handle horizontal decoding here, so that we can
      * branch back into it if we run out of input data.
      */
     /* White, then black. */
-  hww:get_run(ss->memory, cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
+  hww:get_run(cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
 	      rlen, " white", wwl, outww);
     if ((count -= rlen) < end_count) {
 	status = ERRC;
@@ -718,7 +726,7 @@ v0:	    skip_bits(1);
     }
     skip_data(rlen, hww);
     /* Handle the second half of a white-black horizontal code. */
-  hwb:get_run(ss->memory, cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
+  hwb:get_run(cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
 	      rlen, " black", wbl, outwb);
     if ((count -= rlen) < end_count) {
 	status = ERRC;
@@ -731,7 +739,7 @@ v0:	    skip_bits(1);
   outwb:ss->run_color = 1;
     goto out0;
     /* Black, then white. */
-  hbb:get_run(ss->memory, cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
+  hbb:get_run(cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
 	      rlen, " black", bbl, outbb);
     if ((count -= rlen) < end_count) {
 	status = ERRC;
@@ -739,7 +747,7 @@ v0:	    skip_bits(1);
     }
     invert_data(rlen, black_byte, goto hbb, ihbb);
     /* Handle the second half of a black-white horizontal code. */
-  hbw:get_run(ss->memory, cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
+  hbw:get_run(cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
 	      rlen, " white", bwl, outbw);
     if ((count -= rlen) < end_count) {
 	status = ERRC;
@@ -781,11 +789,11 @@ cf_decode_uncompressed(stream * s)
 	    break;
 	}
 	if (rlen == cfd_uncompressed_initial_bits) {	/* Longest representable white run */
-	    if_debug1(s->memory, 'W', "[wu]%d\n", rlen);
+	    if_debug1('W', "[wu]%d\n", rlen);
 	    if ((qbit -= cfd_uncompressed_initial_bits) < 0)
 		qbit += 8, q++;
 	} else {
-	    if_debug1(s->memory, 'W', "[wu]%d+1\n", rlen);
+	    if_debug1('W', "[wu]%d+1\n", rlen);
 	    if (qbit -= rlen < 0)
 		qbit += 8, q++;
 	    *q ^= 1 << qbit;
@@ -798,7 +806,7 @@ cf_decode_uncompressed(stream * s)
     np = &cf_uncompressed_decode[rlen + peek_var_bits(clen)];
     rlen = np->run_length;
     skip_bits(np->code_length);
-    if_debug1(s->memory, 'w', "[wu]exit %d\n", rlen);
+    if_debug1('w', "[wu]exit %d\n", rlen);
     if (rlen >= 0) {		/* Valid exit code, rlen = 2 * run length + next polarity */
 	if ((qbit -= rlen >> 1) < 0)
 	    qbit += 8, q++;

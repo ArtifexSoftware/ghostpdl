@@ -39,6 +39,7 @@
 #include "plparse.h"
 #include "pltop.h"
 #include "gzstate.h"
+#include "uconfig.h"	/* for UFSTFONTDIR */
 /* Forward decls */
 
 /************************************************************/
@@ -106,6 +107,14 @@ ps_impl_allocate_interp(
 /* NB FIX ME fold into the instance like other languages. */
 // ps_interp_instance_t *global_psi = NULL;
 
+/* defaults for locations of font collection objects (fco's) and
+   plugins the root data directory.  These are internally separated with
+   ':' but environment variable use the gp separator */
+#ifndef UFSTFONTDIR
+	/* not using UFST */
+#  define UFSTFONTDIR ""
+#endif
+
 /* Do per-instance interpreter allocation/init. No device is set yet */
 private int   /* ret 0 ok, else -ve error code */
 ps_impl_allocate_interp_instance(
@@ -115,33 +124,36 @@ ps_impl_allocate_interp_instance(
 )
 {
 	int code = 0, exit_code;
-	int argc = 3;  
-	/* NB: DITHERPPI should be computed from the resolution */
-	const char *argv[] = { "", "-dNOPAUSE", "-dQUIET", ""};
+	const char *argv[] = { 
+	    "",
+	    "-dNOPAUSE",
+	    "-dQUIET",
+	    "-dJOBSERVER", 
+	    "-dESTACKPRINT", // NB: debuggging postscript Needs to be removed. 
+	    "-sUFST_PlugIn=" UFSTFONTDIR "mtfonts/pcl45/mt3/plug__xi.fco",
+            "-sFCOfontfile=" UFSTFONTDIR "mtfonts/pclps2/mt3/pclp2_xj.fco",
+            "-sFCOfontfile2=" UFSTFONTDIR "mtfonts/pcl45/mt3/wd____xh.fco",
+	    "-sFAPIfontmap=FCOfontmap-PCLPS2",
+	    "-sFAPIconfig=FAPIconfig-FCO"
+	};
+	int argc = 10;  /* sending extra UFST arguments doesn't bother PS */
 
 	ps_interp_instance_t *psi  /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
-	    = (ps_interp_instance_t *)gs_alloc_bytes( mem,
-						      sizeof(ps_interp_instance_t),
-						      "ps_allocate_interp_instance(ps_interp_instance_t)"
-						      );
+	    = (ps_interp_instance_t *)
+	    gs_alloc_bytes( mem,
+			    sizeof(ps_interp_instance_t),
+			    "ps_allocate_interp_instance(ps_interp_instance_t)"	
+			    );
+
+
 	/* If allocation error, deallocate & return */
 	if (!psi) {
 	  return gs_error_VMerror;
 	}
-	//        global_psi = psi;
 	/* Setup pointer to mem used by PostScript */
 	psi->plmemory = mem;
-	{
-#if 0
-	    // foo try segregation of memory spaces
-	    gs_memory_t * psmem = gs_malloc_init(mem);
-	    psi->minst = gs_main_alloc_instance(psmem);
-#else
-	    // use one memory space
-	    psi->minst = gs_main_alloc_instance(mem);
+	psi->minst = gs_main_alloc_instance(mem);
 
-#endif
-	}
 	*instance = (pl_interp_instance_t *)psi;
 	code = gs_main_init_with_args(psi->minst, argc, (char**)argv);
 	if (code<0)
@@ -149,22 +161,16 @@ ps_impl_allocate_interp_instance(
 
 	/* General init of PS interp instance */
 	
-	code = gsapi_run_string_begin(psi->minst, 0, &exit_code);
-
-	/* Because PS uses its own 'heap' allocator, we restore to the pl 
-	 * allocator before returning (PostScript will use minst->heap)	  
-	 */
-	if (code<0)
+	if ((code = gs_main_run_string_begin(psi->minst, 0, &exit_code, &psi->minst->error_object)) < 0)
 	    return exit_code;
-
-	/* Return success */
-
 
         /* inialize fresh job to false so that we can check for a pdf
            file next job. */
         psi->fresh_job = true;
         /* default is a postscript stream */
         psi->pdf_stream = false;
+
+	/* Return success */
 	return 0;
 }
 
@@ -216,9 +222,10 @@ ps_impl_set_device(
   gx_device              *device        /* device to set (open or closed) */
 )
 {
-    int code;
+    int code = 0;
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
     gs_state *pgs = psi->minst->i_ctx_p->pgs;
+
     gs_opendevice(device);
     /* Set the device into the gstate */
     code = gs_setdevice_no_erase(pgs, device);
@@ -251,13 +258,13 @@ ps_impl_init_job(
 )
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-    static const char *buf = "currentpagedevice setpagedevice false 0 startjob pop\n";  /* encapsulate the job */
-    int code, exit_code;
+    static const char *buf = "\004";  /* use ^D to start a new encapsulated job */
+    int exit_code;
+
     /* starting a new job */
     psi->fresh_job = true;
-    
-    code = gsapi_run_string_continue(psi->minst, buf, strlen(buf), 0, &exit_code);
-    return 0; 
+    gsapi_run_string_continue(psi->plmemory->gs_lib_ctx, buf, strlen(buf), 0, &exit_code); /* ^D */
+    return 0;
 }
 
 /* Parse a buffer full of data */
@@ -291,8 +298,7 @@ ps_impl_process(
                    returning */
                 strcpy(fmode, "w+");
                 strcat(fmode, gp_fmode_binary_suffix);
-                psi->pdf_filep = gp_open_scratch_file(psi->plmemory, 
-						      gp_scratch_file_name_prefix,
+                psi->pdf_filep = gp_open_scratch_file(gp_scratch_file_name_prefix,
                                                       psi->pdf_file_name, fmode);
                 if ( psi->pdf_filep == NULL )
                     psi->pdf_stream = false;
@@ -315,7 +321,7 @@ ps_impl_process(
             code = gs_error_invalidfileaccess;
     } else {
         /* Send the buffer to Ghostscript */
-        code = gsapi_run_string_continue(psi->minst, (const char *)(cursor->ptr + 1),
+        code = gsapi_run_string_continue(psi->plmemory->gs_lib_ctx, (const char *)(cursor->ptr + 1),
                                          avail, 0, &exit_code);
         /* needs more input this is not an error */
         if ( code == e_NeedInput )
@@ -388,7 +394,7 @@ ps_impl_dnit_job(
 {
     int code = 0; 
     int exit_code = 0;
-    static const char *buf = "\n.endjob\n";  /* restore to begin job state */
+    static const char *buf = "\n.endjob\n";  /* restore to initial state, non-encapsualted */
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
 
     /* take care of a stored pdf file */
@@ -403,7 +409,7 @@ ps_impl_dnit_job(
         /* run the temporary pdf spool file */
         sprintf(buf, "(%s) run\n", psi->pdf_file_name);
         /* Send the buffer to Ghostscript */
-        code = gsapi_run_string_continue(psi->minst, buf, strlen(buf), 0, &exit_code);
+        code = gsapi_run_string_continue(psi->plmemory->gs_lib_ctx, buf, strlen(buf), 0, &exit_code);
 
         /* indicate we are done with the pdf stream */
         psi->pdf_stream = false;
@@ -411,15 +417,20 @@ ps_impl_dnit_job(
         /* handle errors... normally job deinit failures are
            considered fatal but pdf runs the spooled job when the job
            is deinitialized so handle error processing here and return code is always 0. */
-        if ( code < 0 ) {
-            errprintf(psi->minst->heap, "PDF interpreter exited with exit code %d\n", exit_code);
-            errprintf(psi->minst->heap, "Flushing to EOJ\n");
+        if (( code < 0) && (code != e_NeedInput)) {
+            errprintf("PDF interpreter exited with exit code %d\n", exit_code);
+            errprintf("Flushing to EOJ\n");
         }
         code = 0;
     }
 
-    gsapi_run_string_continue(psi->minst, buf, strlen(buf), 0, &exit_code); /* .endjob */
-    return 0; /* should be return zrestore(psi->minst->i_ctx_p); */
+    /* We use string_end to send an EOF in case the job was reading in a loop */
+    gsapi_run_string_end(psi->plmemory->gs_lib_ctx, 0, &exit_code);	/* sends EOF to PS process */
+    gsapi_run_string_begin(psi->plmemory->gs_lib_ctx, 0, &exit_code);	/* prepare to send .endjob */
+    gsapi_run_string_continue(psi->plmemory->gs_lib_ctx, buf, strlen(buf), 0, &exit_code); /* .endjob */
+    /* Note the above will restore to the server save level and will not be encapsulated */
+
+    return 0;
 }
 
 /* Remove a device from an interperter instance */
@@ -444,7 +455,7 @@ ps_impl_deallocate_interp_instance(
 	gs_memory_t *mem = psi->plmemory;
 	
 	/* do total dnit of interp state */
-	code = gsapi_run_string_end(psi->minst, 0, &exit_code);
+	code = gsapi_run_string_end(mem->gs_lib_ctx, 0, &exit_code);
 
 	gs_free_object(mem, psi, "ps_impl_deallocate_interp_instance(ps_interp_instance_t)");
 

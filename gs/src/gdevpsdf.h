@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Common output syntax and parameters for PostScript and PDF writers */
 
 #ifndef gdevpsdf_INCLUDED
@@ -57,12 +58,13 @@ typedef struct psdf_image_params_s {
     bool Encode;
     const char *Filter;
     int Resolution;
+    const char *AutoFilterStrategy;
     const stream_template *filter_template;
 } psdf_image_params;
 
 #define psdf_image_param_defaults(af, res, dst, f, ft)\
   NULL/*ACSDict*/, 0/*false*/, af, -1, NULL/*Dict*/, 1/*true*/,\
-  dst, ds_Subsample, 1/*true*/, f, res, ft
+  dst, ds_Subsample, 1/*true*/, f, res, "/JPEG2000", ft
 
 /* Declare templates for default image compression filters. */
 extern const stream_template s_CFE_template;
@@ -117,12 +119,14 @@ typedef struct psdf_distiller_params_s {
 	ccs_UseDeviceDependentColor, /* not in Acrobat Distiller 4.0 */
 	ccs_UseDeviceIndependentColor,
 	ccs_UseDeviceIndependentColorForImages,
-	ccs_sRGB
+	ccs_sRGB,
+	ccs_CMYK,
+	ccs_Gray
     } ColorConversionStrategy;
 #define psdf_ccs_names\
 	"LeaveColorUnchanged", "UseDeviceDependentColor",\
 	"UseDeviceIndependentColor", "UseDeviceIndependentColorForImages",\
-	"sRGB"
+	"sRGB", "CMYK", "Gray"
     bool PreserveHalftoneInfo;
     bool PreserveOverprintSettings;
     enum psdf_transfer_function_info {
@@ -197,6 +201,7 @@ typedef enum {
     psdf_version_level1 = 1000,	/* Red Book Level 1 */
     psdf_version_level1_color = 1100,	/* Level 1 + colorimage + CMYK color */
     psdf_version_level2 = 2000,	/* Red Book Level 2 */
+    psdf_version_level2_with_TT = 2010,	/* Adobe release 2010 with Type 42 fonts */
     psdf_version_level2_plus = 2017,	/* Adobe release 2017 */
     psdf_version_ll3 = 3010	/* LanguageLevel 3, release 3010 */
 } psdf_version;
@@ -206,7 +211,12 @@ typedef enum {
 	gx_device_vector_common;\
 	psdf_version version;\
 	bool binary_ok;		/* derived from ASCII85EncodePages */\
+	bool HaveCFF;\
+	bool HaveTrueTypes;\
+	bool HaveCIDSystem;\
+	double ParamCompatibilityLevel;\
 	psdf_distiller_params params
+
 typedef struct gx_device_psdf_s {
     gx_device_psdf_common;
 } gx_device_psdf;
@@ -215,13 +225,16 @@ typedef struct gx_device_psdf_s {
 	vector_initial_values,\
 	version,\
 	!(ascii),\
+	true,\
+	true,\
+	false,\
+	1.3,\
 	 { psdf_general_param_defaults(ascii),\
 	   psdf_color_image_param_defaults,\
 	   psdf_gray_image_param_defaults,\
 	   psdf_mono_image_param_defaults,\
 	   psdf_font_param_defaults\
 	 }
-
 /* st_device_psdf is never instantiated per se, but we still need to */
 /* extern its descriptor for the sake of subclasses. */
 extern_st(st_device_psdf);
@@ -321,19 +334,24 @@ int psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
 		    int Columns, int Rows, int Colors,
 		    psdf_binary_writer *pbw /* may be NULL */);
 
+/* Decive whether to convert an image to RGB. */
+bool psdf_is_converting_image_to_RGB(const gx_device_psdf * pdev, 
+		const gs_imager_state * pis, const gs_pixel_image_t * pim);
+
 /* Set up compression and downsampling filters for an image. */
 /* Note that this may modify the image parameters. */
 /* If pctm is NULL, downsampling is not used. */
 /* pis only provides UCR and BG information for CMYK => RGB conversion. */
 int psdf_setup_image_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
 			     gs_pixel_image_t *pim, const gs_matrix *pctm,
-			     const gs_imager_state * pis, bool lossless);
+			     const gs_imager_state * pis, bool lossless,
+			     bool in_line);
 
 /* Set up compression filters for a lossless image, with no downsampling, */
 /* no color space conversion, and only lossless filters. */
 /* Note that this may modify the image parameters. */
 int psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
-				gs_pixel_image_t *pim);
+				gs_pixel_image_t *pim, bool in_line);
 
 /* Finish writing binary data. */
 int psdf_end_binary(psdf_binary_writer * pbw);
@@ -343,6 +361,15 @@ int psdf_setup_compression_chooser(psdf_binary_writer *pbw,
 				   gx_device_psdf *pdev,
 				   int width, int height, int depth,
 				   int bits_per_sample);
+
+/* Set up an "image to mask" filter. */
+int psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pdev,
+	    int width, int height, int depth, int bits_per_sample, uint *MaskColor);
+
+/* Set up an image colors filter. */
+int psdf_setup_image_colors_filter(psdf_binary_writer *pbw, 
+	gx_device_psdf *pdev, gs_pixel_image_t * pim,
+	const gs_imager_state *pis);
 
 /* ---------------- Symbolic data printing ---------------- */
 

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/*$Id$ */
 /* Pure and null device color implementation */
 #include "gx.h"
 #include "memory_.h"
@@ -252,7 +253,7 @@ gx_dc_no_fill_rectangle(const gx_device_color *pdevc, int x, int y,
     if (w <= 0 || h <= 0)
 	return 0;
     if (lop_uses_T(lop))
-	return_error(dev->memory, gs_error_Fatal);
+	return_error(gs_error_Fatal);
     set_nonclient_dev_color(&filler, 0);   /* any valid value for dev will do */
     return gx_dc_pure_fill_rectangle(&filler, x, y, w, h, dev, lop, source);
 }
@@ -265,7 +266,7 @@ gx_dc_no_fill_masked(const gx_device_color *pdevc, const byte *data,
 {
     if (w <= 0 || h <= 0)
 	return 0;
-    return_error(dev->memory, gs_error_Fatal);
+    return_error(gs_error_Fatal);
 }
 
 private bool
@@ -702,7 +703,7 @@ gx_dc_write_color(
         *psize = 1;
         *pdata = 0xff;
     } else {
-        if (depth < 8 * sizeof(gx_color_index))
+        if (depth < 8 * arch_sizeof_color_index)
             color &= ((gx_color_index)1 << depth) - 1;
         while (--num_bytes >= 0) {
             pdata[num_bytes] = color & 0xff;
@@ -751,8 +752,8 @@ gx_dc_read_color(
         return 1;
     }
 
-    /* num_bytes > sizeof(gx_color_index), discard first byte */
-    for (i = (num_bytes >= sizeof(gx_color_index) ? 1 : 0); i < num_bytes; i++)
+    /* num_bytes > arch_sizeof_color_index, discard first byte */
+    for (i = (num_bytes >= arch_sizeof_color_index ? 1 : 0); i < num_bytes; i++)
         color = (color << 8) | pdata[i];
     *pcolor = color;
     return num_bytes;

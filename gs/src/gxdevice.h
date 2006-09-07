@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Definitions for device implementors */
 
 #ifndef gxdevice_INCLUDED
@@ -101,6 +102,7 @@
 #define std_device_part3_()\
 	0/*PageCount*/, 0/*ShowpageCount*/, 1/*NumCopies*/, 0/*NumCopies_set*/,\
 	0/*IgnoreNumCopies*/, 0/*UseCIEColor*/, 0/*LockSafetyParams*/,\
+	INIT_NAMED_COLOR_PTR	/* 'Named color' callback pointer */\
 	{ gx_default_install, gx_default_begin_page, gx_default_end_page }
 /*
  * We need a number of different variants of the std_device_ macro simply
@@ -268,6 +270,10 @@ dev_proc_finish_copydevice(gx_default_finish_copydevice);
 dev_proc_pattern_manage(gx_default_pattern_manage);
 dev_proc_fill_rectangle_hl_color(gx_default_fill_rectangle_hl_color);
 dev_proc_include_color_space(gx_default_include_color_space);
+dev_proc_fill_linear_color_scanline(gx_default_fill_linear_color_scanline);
+dev_proc_fill_linear_color_trapezoid(gx_default_fill_linear_color_trapezoid);
+dev_proc_fill_linear_color_triangle(gx_default_fill_linear_color_triangle);
+dev_proc_update_spot_equivalent_colors(gx_default_update_spot_equivalent_colors);
 /* BACKWARD COMPATIBILITY */
 #define gx_non_imaging_create_compositor gx_null_create_compositor
 
@@ -291,8 +297,11 @@ dev_proc_decode_color(cmyk_1bit_map_color_cmyk);
 dev_proc_map_cmyk_color(cmyk_8bit_map_cmyk_color);
 dev_proc_map_color_rgb(cmyk_8bit_map_color_rgb);
 dev_proc_decode_color(cmyk_8bit_map_color_cmyk);
+dev_proc_encode_color(gx_default_8bit_map_gray_color);
+dev_proc_decode_color(gx_default_8bit_map_color_gray);
 
 /* Default implementations for forwarding devices */
+dev_proc_close_device(gx_forward_close_device);
 dev_proc_get_initial_matrix(gx_forward_get_initial_matrix);
 dev_proc_sync_output(gx_forward_sync_output);
 dev_proc_output_page(gx_forward_output_page);
@@ -340,6 +349,10 @@ dev_proc_decode_color(gx_forward_decode_color);
 dev_proc_pattern_manage(gx_forward_pattern_manage);
 dev_proc_fill_rectangle_hl_color(gx_forward_fill_rectangle_hl_color);
 dev_proc_include_color_space(gx_forward_include_color_space);
+dev_proc_fill_linear_color_scanline(gx_forward_fill_linear_color_scanline);
+dev_proc_fill_linear_color_trapezoid(gx_forward_fill_linear_color_trapezoid);
+dev_proc_fill_linear_color_triangle(gx_forward_fill_linear_color_triangle);
+dev_proc_update_spot_equivalent_colors(gx_forward_update_spot_equivalent_colors);
 
 /* ---------------- Implementation utilities ---------------- */
 
@@ -353,6 +366,11 @@ void gx_device_forward_fill_in_procs(gx_device_forward *);
 /* Forward the color mapping procedures from a device to its target. */
 void gx_device_forward_color_procs(gx_device_forward *);
 
+/*
+ * Check if the device's encode_color routine uses 'separable' bit encodings
+ * for each colorant.  For more info see the routine's header.
+ */
+void check_device_separable(gx_device * dev);
 /*
  * If a device has a linear and separable encode color function then
  * set up the comp_bits, comp_mask, and comp_shift fields.
@@ -397,8 +415,7 @@ void gx_device_copy_params(gx_device *dev, const gx_device *target);
  * character in *pfmt, otherwise store 0 there.  Note that an empty name
  * is currently allowed.
  */
-int gx_parse_output_file_name(const gs_memory_t *mem,
-			      gs_parsed_file_name_t *pfn,
+int gx_parse_output_file_name(gs_parsed_file_name_t *pfn,
 			      const char **pfmt, const char *fname,
 			      uint len);
 
@@ -415,12 +432,17 @@ int gx_device_close_output_file(const gx_device * dev, const char *fname,
 				FILE *file);
 
 /*
+ * Define the number of levels for a colorant above which we do not halftone.
+ */
+#define MIN_CONTONE_LEVELS 31
+
+/*
  * Determine whether a given device needs to halftone.  Eventually this
  * should take an imager state as an additional argument.
  */
 #define gx_device_must_halftone(dev)\
   ((gx_device_has_color(dev) ? (dev)->color_info.max_color :\
-    (dev)->color_info.max_gray) < 31)
+    (dev)->color_info.max_gray) < MIN_CONTONE_LEVELS)
 
 /*
  * Do generic work for output_page.  All output_page procedures must call
@@ -554,5 +576,7 @@ int gdev_write_output_media(int index, gs_param_dict * pdict,
 			    const gdev_output_media_t * pom);
 
 int gdev_end_output_media(gs_param_list * mlist, gs_param_dict * pdict);
+
+void gx_device_request_leadingedge(gx_device *dev, int le_req);
 
 #endif /* gxdevice_INCLUDED */

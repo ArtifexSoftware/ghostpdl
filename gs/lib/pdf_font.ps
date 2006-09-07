@@ -1,18 +1,34 @@
-% Portions Copyright (C) 2001 artofcode LLC.
-% Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-% Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-% This software is based in part on the work of the Independent JPEG Group.
-% All Rights Reserved.
-%
-% This software is distributed under license and may not be copied, modified
-% or distributed except as expressly authorized under the terms of that
-% license.  Refer to licensing information at http://www.artifex.com/ or
-% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-% San Rafael, CA  94903, (415)492-9861, for further information.
+%    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 % 
-% $RCSfile$ $Revision$
-% pdf_font.ps
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+% $Id$
 % PDF font operations.
+
+% Finding a font by name can't give a proper result when PDF font names aren't unique.
+% But it is only the way to obtain a font in Postscript after a font file is executed.
+% Therefore using a FontName (and findfont) is allowed only
+% immediately after a font file is executed.
+% In all other cases the font to be found by a pointer through PDF structures.
+%
+% This ideal logics can't work for documents,
+% which define a font resource with an embedded font,
+% and another font resource with same BaseFont but with no embedded font
+% (and possibly with no font descriptor).
+% Our testbase does contain such examples.
+% In this case we do find font by FontName (with findfont),
+% since there is no other way to get a reasonable result.
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
 .currentglobal true .setglobal
@@ -70,8 +86,17 @@ pdfdict begin
          ifelse
        }
        { dup /BaseEncoding knownoget
-	  { findencoding 3 -1 roll pop exch
-	  }
+	   {
+             dup / eq
+               { pop
+                 (   **** Warning: Ignoring bad BaseEncoding name.\n)  pdfformaterror
+                 % as found in a PDF file from J.D.Edwards OneWorld (B7333), bug 687786
+               }
+               {
+                 findencoding 3 -1 roll pop exch
+               }
+             ifelse
+	   }
 	 if
 	 /Differences knownoget { updateencoding } if
        }
@@ -80,10 +105,24 @@ pdfdict begin
    if
  } bdef
 
+/checkGlyphNames2Unicode % <dict> checkGlyphNames2Unicode -
+{
+  PDFDEBUG {
+    dup /FontInfo .knownget { 
+      /GlyphNames2Unicode .knownget { 
+        (Has GlyphNames2Unicode) =
+        pop % { exch == ==} forall 
+      } if 
+    } if
+  } if
+  pop
+} bind def
+
 % Define a font using it's FontName as the key.
 % Adjust a font according to the Encoding and Widths in the font resource.
 /adjustfont {		% <font-resource> <font> adjustfont <font'>
   getfontencoding
+  3 copy .processToUnicode
   getfontmetrics 5 -1 roll pop .updatefont { dup /FontName get exch definefont } if
 } bind def
 
@@ -125,15 +164,21 @@ pdfdict begin
 } bdef
 
 /unique_name {  % <dict> </root> unique_name </unique> 
+  %
+  %  Note : this function interacts with pdf_write_encoding in src/gdevpdtw.c
+  %  and with copied_drop_extension_glyphs in src\gxfcopy.c
+  %  by adding a reserved substring (~GS~).
+  %
   .namestring       % <<>> (root)
   0 1 65535 {
     5 string cvs    % <<>> (root) (0)
-    1 index exch    % <<>> (root) (root) (0)
-    concatstrings   % <<>> (root) (root0)
-    dup             % <<>> (root) (root0) (root0)
-    3 index exch    % <<>> (root) (root0) <<>> (root0)
+    (~GS~) exch concatstrings
+    1 index exch    % <<>> (root) (root) (~GS~0)
+    concatstrings   % <<>> (root) (root~GS~0)
+    dup             % <<>> (root) (root~GS~0) (root~GS~0)
+    3 index exch    % <<>> (root) (root~GS~0) <<>> (root~GS~0)
     known not {
-      exch pop exit % <<>> (root0)
+      exch pop exit % <<>> (root~GS~0)
     } if
     pop
   } for
@@ -177,7 +222,7 @@ pdfdict begin
 	     /MissingWidth knownoget not { 1000	} if
 	   } { 1000 } ifelse
          } {
-	   get
+	   oget
 	 } ifelse
 	 	% Stack: font font-res mscale first-char index charname width
 	 4 index mul
@@ -186,39 +231,49 @@ pdfdict begin
 		% Work around a bug in pdfTeX, which can generate Encoding
 		% vectors containing nulls :
 	   1 index //null eq { exit } if
-		% There is a hack here to deal with encodings where the
-		% same character appears more than once, because the Metrics
-		% dictionary works by character name, not by character code.
-		% We prefer to take (1) non-zero width, and (2) width for 
-		% the character name which appears in Differences. If the
-		% character name appears in Differences, use the Width that
-		% corresponds to the index in differences.
-	   dup 0 eq { exit } if
-	   Metrics 2 index .knownget not { 0 } if 0 ne {
-	     5 index /Encoding knownoget not { exit } if
-	     dup type /dicttype ne { pop exit } if
-	     /Differences knownoget not { exit } if
-	     3 index 3 index //match_in_diff exec not { exit } if
-	   } if
-                % Create a new glyph for a character that maps to an existing glyph
-                % with a different width and passes all the tests above.
            Metrics 2 index .knownget {
              1 index ne
            } {
              //false
            } ifelse {
+             % Two or more Encoding elements refer same glyph name,
+             % and Widths specify different wihts for it.
+             % Since a Postscript font can't have different 
+             % Metrics for same glyph name, 
+             % we generate an unique name, and create a new 
+             % Charstrings entry with same glyph value.
              GlyphMap //null eq {
                /Encoding Encoding dup length array copy def
                /GlyphMap 4 dict def
              } if
-             Metrics 2 index //unique_name exec
-                % Stack: font font-res mscale first-char index charname width new_name
-             Encoding 4 index 2 index put
-             GlyphMap 1 index 5 -1 roll put
-             exch
-                % Stack: font font-res mscale first-char index new_name width
+             % To prevent too many new names, check whether
+             % we can use one already created for same glyph.
+             //true
+             GlyphMap {                           % f r s c i n w b n1 n2
+               4 index eq {                       % f r s c i n w b n1
+                 dup Metrics exch get             % f r s c i n w b n1 w1
+                 3 index eq {                     % f r s c i n w b n1
+                   4 3 roll pop                   % f r s c i w b n1
+                   3 1 roll pop                   % f r s c i n1 w
+                   Encoding 3 index 3 index put
+                   //false                        % f r s c i n1 w b
+                   exit
+                 } {
+                   pop
+                 } ifelse
+               } {                                % f r s c i n w b n1
+                 pop
+               } ifelse
+             } forall                             % f r s c i n w b
+             { % Do create a new name.
+               Metrics 2 index //unique_name exec % f r s c i n w nn
+               Encoding 4 index 2 index put
+               GlyphMap 1 index 5 -1 roll put     % f r s c i w nn
+               exch
+                  % Stack: font font-res mscale first-char index new_name width
+             } if
            } if
-	   2 copy Metrics 3 1 roll put
+           2 copy Metrics 3 1 roll put
 	   exit
 	 } loop
 	 pop pop pop
@@ -253,6 +308,178 @@ pdfdict begin
 currentdict /unique_name undef
 currentdict /match_in_diff undef
 
+/ToUnicodeCMapReader 3 dict def
+//ToUnicodeCMapReader begin
+  /defineresource % <name> <dict> <cat-name> defineresource <dict> 
+  {
+    pop 
+    dup userdict exch /.lastToUnicode exch put
+    exch pop
+  } bind def
+  /CIDSystemInfo 
+  { 
+    (   **** Warning: ToUnicode CMap has invalid syntax near CIDSystemInfo.\n)  pdfformaterror
+    /CIDSystemInfo 
+  } bind def % A work around a bug in Altona.Page_3.2002-09-27.pdf - a slash is missed.
+  /CMapName
+  {
+    (   **** Warning: ToUnicode CMap has no CMapName.\n\
+        See the comment to revision 6201 in gs/doc/ps2pdf.htm#Problems .\n) pdfformaterror
+    /CMap1   % arbitrary, PDF defineresource tolerates non-unique names
+  } bind def % A work around incorrect ToUnicode CMap generated by GS before rev. 6201.
+end
+
+/string2number     % <string> string2number <number>
+{ 0 exch dup 0 exch 1 exch length 1 sub {     % n () i
+    1 index exch get                          % n () v
+    3 2 roll 256 mul add exch                 % v+n*256 ()
+  } for
+  pop                                         % N
+} bind def
+
+/copy&def    % <key> <value> <bool> copy&def -
+{
+  { true
+  } {
+    currentdict gcheck { 
+      dup gcheck not
+    } {
+      false
+    } ifelse
+  } ifelse
+  { currentglobal currentdict gcheck setglobal 
+    exch dup length string copy exch 
+    setglobal
+  } if
+  def
+} bind def
+
+/.convert_ToUnicode-into-g2u % <GlyphNames2Unicode> <Encoding|null> <CMap> .convert_ToUnicode-into-g2u -
+{
+  PDFDEBUG {
+    (.convert_ToUnicode-into-g2u beg) =
+  } if
+  3 2 roll begin
+  /.CodeMapData get % About the data format see gs_cmap.ps, the comment after "CMap operators".
+  1 get % code maps
+  { 
+    PDFDEBUG {
+      dup ==
+    } if
+    dup length 1 sub 0 exch 5 exch {           % e [] i
+      2 copy get                               % e [] i (prefix)
+      string2number                            % e [] i prefix
+      2 index 2 index 1 add get                % e [] i prefix (key_size,?is_range,value_type,value_size)
+      dup 0 get 8 mul                          % e [] i prefix (key_size,?is_range,value_type,value_size) key_size*8
+      3 2 roll exch bitshift exch              % e [] i prefix<<key_size*8 (key_size,?is_range,value_type,value_size)
+      dup 0 get exch 3 get                     % e [] i offset key_size value_size
+      4 index 4 index 2 add get                % e [] i offset key_size value_size (keys)
+      5 index 5 index 3 add get                % e [] i offset key_size value_size (keys) (values)
+      PDFDEBUG {
+        ( offset=) print 4 index =string cvs print
+        ( key_size=) print 3 index =string cvs print
+        ( value_size=) print 2 index =
+        ( keys=)   print 1 index ==
+        ( values=) print dup ==
+      } if
+      1 index length 0 eq {
+        % A single pair.
+        exch pop exch pop exch pop exch        % e [] i (values) offset
+        4 index null ne {
+          4 index exch get
+        } if                                   % e [] i (values) cid|name
+        exch 
+        PDFDEBUG {
+          ( defined single: ) print 1 index =string cvs print ( ) print dup ==
+        } if
+        false copy&def                         % e [] i
+        pop                                    % e []
+      } {
+        % A range.                             % e [] i offset key_size value_size (keys) (values)
+        dup length string copy % protect the original string from modifications below.
+        0 4 index 2 mul 3 index length 1 sub { % e [] i offset key_size value_size (keys) (values) j
+          2 index 1 index 6 index getinterval          
+          string2number                        % e [] i offset key_size value_size (keys) (values) j keyL
+          PDFDEBUG {
+              ( keyL=) print dup =string cvs print
+          } if
+          3 index 2 index 7 index add 7 index getinterval
+          string2number                        % e [] i offset key_size value_size (keys) (values) j keyL keyH
+          PDFDEBUG {
+              ( keyH=) print dup =
+          } if
+          3 2 roll 6 index idiv 5 index mul    % e [] i offset key_size value_size (keys) (values) keyL keyH J
+          3 index exch 6 index getinterval     % e [] i offset key_size value_size (keys) (values) keyL keyH (valueL)
+          3 1 roll 1 exch {                    % e [] i offset key_size value_size (keys) (values) (value) k
+            9 index null ne {
+              9 index exch get                 % e [] i offset key_size value_size (keys) (values) (value) name
+            } if                               % e [] i offset key_size value_size (keys) (values) (value) cid|name
+            1 index                            % e [] i offset key_size value_size (keys) (values) (value) cid|name (value)
+            PDFDEBUG {
+              ( defined from range: ) print 1 index =string cvs print ( ) print dup ==
+            } if
+            true copy&def                      % e [] i offset key_size value_size (keys) (values) (value)
+            % Assuming the lowest byte of 'value' changes, others don't.
+            dup dup length 1 sub               % e [] i offset key_size value_size (keys) (values) (value) (value) l
+            2 copy get                         % e [] i offset key_size value_size (keys) (values) (value) (value) l v
+            % Modulo 256 increment prevents a rangecheck error when the result is stored in a string.
+            % The adjustment can happen only at the end of the loop where the string is discarded. Bug 688535.
+            1 add 255 and put                  % e [] i offset key_size value_size (keys) (values) (value')
+          } for                                % e [] i offset key_size value_size (keys) (values) (value)
+        } for
+        pop pop pop pop pop pop pop            % e []
+      } ifelse
+    } for
+    pop                                        % e
+  } forall
+  end
+  pop                                          %
+  PDFDEBUG {
+    (.convert_ToUnicode-into-g2u end) =
+  } if
+} bind def
+
+/.processToUnicode   % <font-resource> <font-dict> <encoding|null> .processToUnicode -
+{
+  % Currently pdfwrite is only device which can handle GlyphNames2Unicoide to 
+  % generate a ToUnicode CMaps. So don't bother with other devices.
+  currentdevice .devicename /pdfwrite eq {
+    PDFDEBUG {
+      (.processToUnicode beg) =
+    } if
+    2 index /ToUnicode knownoget {
+      dup type /nametype eq {
+        % Bug687351.pdf defines /ToUnicode /Identity-H, what is incorrect.
+        (   **** Warning: Ignoring bad ToUnicode CMap.\n)  pdfformaterror
+        pop
+      } {
+        PDFfile fileposition exch
+        false resolvestream
+        //ToUnicodeCMapReader begin
+          cvx exec
+        end
+        PDFfile exch setfileposition
+        1 index /FontInfo .knownget not {
+          1 index /FontInfo 5 dict dup 4 1 roll put
+        } if
+        dup /GlyphNames2Unicode .knownget not {
+          currentglobal exch dup gcheck setglobal
+          dup /GlyphNames2Unicode 100 dict dup 4 1 roll .forceput
+          3 2 roll setglobal
+        } if                                 % font-res font-dict encoding|null font-info g2u
+        exch pop exch                        % font-res font-dict g2u encoding|null
+        userdict /.lastToUnicode get         % font-res font-dict g2u Encoding|null CMap
+        .convert_ToUnicode-into-g2u          % font-res font-dict
+        null                                 % font-res font-dict null
+      } ifelse
+    } if
+    PDFDEBUG {
+      (.processToUnicode end) =
+    } if
+  } if
+  pop pop pop
+} bind def
+
 % ---------------- Descriptors ---------------- %
 
 % Partial descriptors for the 14 built-in fonts.  Note that
@@ -280,13 +507,14 @@ currentdict /match_in_diff undef
 
 % ---------------- Utilities ---------------- %
 
+
 /.pdforigfontcache_g 20 dict def
 currentglobal false setglobal
 systemdict /.pdforigfontcache_l 20 dict .forceput
 setglobal
 
-% Cache original fonts to prevent adjustfont to accumulate changes.
-/pdfcachefont {   % <font_name> pdfcachefont <font>
+% Find an original font, using cache to prevent adjustfont to accumulate changes.
+/pdffindcachedfont {   % <font_name> pdffindcachedfont <font>
   dup //.pdforigfontcache_g exch .knownget {
     exch pop
   } {
@@ -301,6 +529,30 @@ setglobal
   } ifelse
 } bind def
 
+% Add original font to cache to prevent adjustfont to accumulate changes.
+/pdfaddcachedfont {   % <font_name> pdfaddcachedfont <font>
+  dup findfont dup                   % name font font
+  dup gcheck { //.pdforigfontcache_g } {.pdforigfontcache_l} ifelse
+  4 2 roll                           % font d name font
+  put                                % font
+} bind def
+
+/.remove_font_name_prefix {  % <name>  .remove_font_name_prefix <name>
+  dup .namestring (+) search {
+    true exch
+    { dup 65 lt exch 90 gt or {
+        pop false exit
+      } if
+    } forall
+    { pop exch pop cvn
+    } {
+      pop pop
+    } ifelse
+  } {
+    pop
+  } ifelse
+} bind def
+
 % Find a font (except for embedded ones), and adjust its encoding if necessary.
 /.pdfdfndict mark
   /defaultfontname /Helvetica
@@ -309,7 +561,7 @@ setglobal
 		% If the font isn't available, synthesize one based on
 		% its descriptor.
   dup /Font resourcestatus {
-    pop pop pdfcachefont
+    pop pop pdffindcachedfont
   } {
     1 index /FontDescriptor knownoget {
 		% Stack: font-res fontname fontdesc
@@ -325,15 +577,17 @@ setglobal
                 % /FontName key, we substitue /BaseFont for the value of /FontName.
                 % Yet another case of broken PDF's that Adobe Reader accepts.
       1 index dup /FontName known {
-        /FontName oget exch
+        /FontName oget
       } {
         (   **** FontDescriptor missing required /FontName key. BaseFont name used.\n)
         pdfformaterror
-        pop 2 index exch	% grab the BaseFont from the stack.
+        pop 2 index		% grab the BaseFont from the stack.
       } ifelse
-		% Analyzes font name and extract "Narrow" property
-		% which is not described by the FontDescriptor Flags.
-      0 2 index .fontnameproperties 4 and or
+      .remove_font_name_prefix
+      exch
+		% Analyzes font name and extract "Bold" and "Narrow" properties
+		% which are not described by the FontDescriptor Flags.
+      0 2 index .fontnameproperties 6 and or
 		% Rebind the default font name to Helvetica so that
 		% fonts with no properties are handled correctly.
       //.pdfdfndict begin .substitutefontname end
@@ -346,7 +600,7 @@ setglobal
 	(Substituting font ) print dup =only
 	( for ) print 2 index =only (.) = flush
       } if
-      pdfcachefont
+      pdffindcachedfont
 		% Stack: font-res fontname fontdesc font
 		% If this is a small-caps font, replace the CharString
 		% entries for a..z.
@@ -378,7 +632,7 @@ setglobal
       definefont
     } {
 		% No descriptor available, use the default algorithm.
-      pdfcachefont
+      pdffindcachedfont
     } ifelse
   } ifelse
   exch pop
@@ -390,26 +644,17 @@ setglobal
  { dup /BaseFont get pdffindfont
  } bdef
 
-% The state dictionary for the embedded Type 1 font reading procedure
-% has the following keys and values:
-%	data - stream (filter)
-%	buffer, buffer2 - string
-%	hexify - procedure to convert buffer to hex if needed
-%	leftstr - string containing (non-negative) integer
-%	sectionstr - string containing a character 0 .. 3
-%	stream - (stream) dictionary
-%	proc - procedure of the form {-dict- type1read}
-%       pfbhdr - string containing 16#80 if PFB, 0 otherwise
-% When the procedure is executing, this dictionary is current.
-% leftstr and sectionstr are strings so that we can change their values
-% reliably in case the font executes a restore!
-% We also have to do something special about embedded fonts that
-% execute definefont more than once -- that is the function of topFontDict.
-
 % Read an embedded Type 1 font.
 /readfontfilter {	% <proc> readfontfilter <filter>
   0 () /SubFileDecode filter
 } bdef
+
+% When Type 1 font reading procedure is executing, a copy of this dictionary is current.
+% We have to do something special about embedded fonts that execute definefont
+% more than once -- that is the function of topFontDict.
+% The whole type1 stream can be executed directly. There's no need to process
+% Length1, 2, 3 keys.
+
 /readtype1dict 5 dict dup begin
   /definefont {
     dup topFontDict eq topFontDict null eq or {
@@ -418,38 +663,55 @@ setglobal
     } if
     //systemdict /definefont get exec
   } bdef
+
+  /undef_proc_warning {
+    /Repaired true store	% flag that we have warnings
+    UndefProcList exch 2 copy .knownget { 1 add } { 1 } ifelse put
+  } bdef
+
+  /missing-type1-procs 6 dict begin
+    /-| { string currentfile exch readstring pop /-| //undef_proc_warning exec } executeonly bdef
+    /RD { string currentfile exch readstring pop /RD //undef_proc_warning exec } executeonly bdef
+    /|- { noaccess def /|- //undef_proc_warning exec } executeonly bdef
+    /ND { noaccess def /ND //undef_proc_warning exec } executeonly bdef
+    /|  { noaccess put /|  //undef_proc_warning exec } executeonly bdef
+    /NP { noaccess put /NP //undef_proc_warning exec } executeonly bdef
+  currentdict end readonly def
+
   /eexec {
 	% Assume the font dictionary is directly below the file on the stack
     count 0 gt { /topFontDict 2 index cvlit store } if
     //.eexec_param_dict /eexecDecode filter
-    //systemdict begin readtype1dictcopy begin cvx stopped
-    currentdict readtype1dictcopy eq { end } if
-    currentdict //systemdict eq { end } if
-     { stop } if
+
+    //missing-type1-procs begin
+    /userdict .systemvar begin
+    //systemdict begin
+    readtype1dictcopy begin cvx stopped
+
+    { currentdict end //missing-type1-procs eq { exit } if } loop
+    { stop } if
   } bdef
+
+  currentdict dup
+  /undef_proc_warning undef
+  /missing-type1-procs undef
+
 end readonly def
+
 /readtype1 {		% <font-resource> <stream-dict> readtype1 <font>
-		% Read the definition, using a procedure-based filter
-		% that turns binary/hex conversion on and off
-		% at the right times.
-   1 index exch
-   PDFfile fileposition 3 1 roll
-   11 dict begin
-     /leftstr (          ) 10 string copy def
-       dup /Length1 oget leftstr cvs pop
-     /sectionstr <00> 1 string copy def
-     /pfbhdr <00> 1 string copy def
-     /stream 1 index def
-     true resolvestream /data exch def
-     /buffer 1000 string def		% arbitrary
-     /buffer2 buffer length 2.1 div cvi 1 sub string def
-     /hexify /buf2hex load def
-   currentdict end
-   /type1read cvx 2 array astore cvx dup 0 get /proc 2 index put
-   readfontfilter
+   1 index exch                       % res res stream
+   PDFfile fileposition 3 1 roll      % res pos res stream
+   dup /PFB known exch                % res pos res pfb? stream
+   true resolvestream                 % res pos res pfb? file
+   exch {
+     //false /PFBDecode filter
+   } if
 		% Some buggy embedded fonts leave extra junk on the stack,
 		% so we have to make a closure that records the stack depth
-		% in a fail-safe way.
+		% in a fail-safe way. This code also removes the mark when
+                % the implied cleartomark is not executed, i.e. Length3 == 0.
+                % Also restore dictstack depth.
+                % 
    //systemdict begin
 		% The PDF specification is somewhat muddy about whether
 		% an embedded font's name is supposed to be the BaseFont
@@ -460,157 +722,13 @@ end readonly def
    1 index /BaseFont oget /savedFontName exch def
    /topFontDict null def
    /readtype1dictcopy currentdict def
-    { run } aload pop count 1 sub 2 packedarray cvx exec
-   end end
+    { cvx exec } aload pop count 2 sub 3 packedarray cvx exec
+    % clean up the dictstack
+    { currentdict /topFontDict known not { end } { end end exit } ifelse } loop
    count exch sub { pop } repeat
    PDFfile 3 -1 roll setfileposition
-   /BaseFont oget findfont
+   /BaseFont oget pdfaddcachedfont
    exch pop
- } bdef
-
-% Execute the appropriate reading procedure.
-/type1read		% <dict> type1read <string>
- { begin leftstr cvi
-    { type1read0 type1read1 type1read2 type1read3 } sectionstr 0 get get exec
-   (          ) leftstr copy cvs pop end
- } bdef
-
-% Read the next block of data into the buffer.
-/type1readdata		% <left> <buffer> type1readdata <substring> <left'>
- { 0 2 index 2 index length .min getinterval
-		% Adobe requires readstring to signal an error if given
-		% an empty string.  Work around this nonsense here.
-   dup length 0 ne { data exch readstring pop } if
-   dup length 3 -1 roll exch sub
-   PDFDEBUG
-    { dup =only ( read ) print
-      1 index length =only (: ) print
-      1 index == flush
-    } if
- } bdef
-
-% Read the initial byte to see if we need to skip a 6 byte PFB header
-/type1read0 { 		% <left> type1read0 <string> <left'>
-  sectionstr 0 1 put	% either way we go to the next stage
-  pfbhdr type1readdata
-  1 index 0 get 16#80 eq {
-    (   **** Warning: Embedded Type1 font in PFB format is not valid PDF.\n)
-    pdfformaterror
-    PDFDEBUG { (skipping PFB header) = flush } if
-    exch pop buffer 0 5 getinterval type1readdata exch
-    dup 4 get 256 mul 1 index 3 get add 256 mul
-    1 index 2 get add 256 mul 1 index 1 get add
-    PDFDEBUG { (PFB segment length = ) print dup = } if
-    exch pop  % discard the string keeping the PFB segment length
-    2 copy ne {
-      (   **** Warning: Type 1 PFB segment length and Length 1 value do not match.\n)
-      pdfformaterror
-      exch 	% keep the PFB length instead
-    } if
-    pop
-    buffer type1readdata	% go ahead and read a block
-  }
-  if	% if not PFB, return pfbhdr string (first char of file, usually %).
-} bdef
-
-% Read the next block of the initial text portion.
-/type1read1 {		% <left> type1read1 <string> <left'>
-  PDFDEBUG { (read1 ) print } if
-  dup 0 eq {
-    pop sectionstr 0 2 put
-    stream /Length2 oget
-			% Determine whether to hexify data for eexec.
-    dup 8 lt {
-      type1read2	% Hexify.
-    } {
-      PDFDEBUG { (read2 ) print } if
-      pfbhdr 0 get 16#80 eq {
-        % eat 6 more bytes of PFB junk before proceeding
-	PDFDEBUG { (skipping PFB header in segment 2) = flush } if
-	buffer 0 6 getinterval type1readdata exch
-        dup 5 get 256 mul 1 index 4 get add 256 mul
-	1 index 3 get add 256 mul 1 index 2 get add
-        PDFDEBUG { (PFB segment length = ) print dup = } if
-	exch pop  % discard the string keeping the PFB segment length
-	2 copy ne {
-          (   **** Warning: Type 1 PFB segment length and Length 2 value do not match.\n)
-          pdfformaterror
-	  exch 		% keep the PFB length instead
-	} if
-	  pop
-      } if
-      buffer2 type1readdata exch
-			% The check doesn't have to be 100% accurate:
-			% hexifying is always OK.
-      dup 0 8 getinterval 0 exch { or } forall
-      128 ge {
-	/hexify { } store
-	/buffer2 buffer def	% We don't need an intermediate buffer.
-      } if hexify exch
-    } ifelse
-  } {
-    buffer type1readdata
-  } ifelse
-} bdef
-
-% Convert a string from binary to hex for eexec.
-% Free variables: buffer.
-/buf2hex {		% <string> buf2hex <hexstring>
-  buffer /ASCIIHexEncode filter dup 3 -1 roll writestring closefile
-  buffer (>) search pop exch pop exch pop
-} bdef
-
-% Read the next block of the encrypted portion.
-/type1trailer
-(0000000000000000000000000000000000000000000000000000000000000000\n\
-0000000000000000000000000000000000000000000000000000000000000000\n\
-0000000000000000000000000000000000000000000000000000000000000000\n\
-0000000000000000000000000000000000000000000000000000000000000000\n\
-0000000000000000000000000000000000000000000000000000000000000000\n\
-0000000000000000000000000000000000000000000000000000000000000000\n\
-0000000000000000000000000000000000000000000000000000000000000000\n\
-0000000000000000000000000000000000000000000000000000000000000000\n\
-cleartomark\n)
-readonly def
-/type1read2 {		% <left> type1read2 <string> <left'>
-  PDFDEBUG { (read2 ) print } if
-   dup 0 eq
-    { pop sectionstr 0 3 put
-      stream /Length3 oget
-      dup 0 eq
-       { PDFDEBUG { (trailer ) print } if
-	 type1trailer exch
-       }
-       { 
-         pfbhdr 0 get 16#80 eq {
-           % eat 6 more bytes of PFB junk before proceeding
-	   PDFDEBUG { (skipping PFB header in segment 3) = flush } if
-	   buffer 0 6 getinterval type1readdata exch
-           dup 5 get 256 mul 1 index 4 get add 256 mul
-	   1 index 3 get add 256 mul 1 index 2 get add
-           PDFDEBUG { (PFB segment length = ) print dup = } if
-	   exch pop  % discard the string keeping the PFB segment length
-	   2 copy ne {
-           (   **** Warning: Type 1 PFB segment length and Length 3 value do not match.\n)
-           pdfformaterror
-	     exch 	% keep the PFB length instead
-	   } if
-	   pop
-         } if
-         type1read3
-       }
-      ifelse
-    }
-    { buffer2 type1readdata exch hexify exch
-    }
-   ifelse
-} bdef
-
-% Read the next block of the final text portion.
-% When finished, this procedure returns an empty string.
-/type1read3		% <left> type1read3 <string> <left'>
- { PDFDEBUG { (read3 ) print } if
-   buffer type1readdata
  } bdef
 
 % ---------------- Type 3 fonts ---------------- %
@@ -618,7 +736,21 @@ readonly def
 /buildType3 {		% <Type3-font-resource> buildType3 <font>
   8 dict begin
     /FontType 3 def
-    /Resources 1 index /Resources knownoget { oforce } { 0 dict } ifelse def
+		% If the font does not contain a Resources entry, then we use
+		% the resources from our current context.  Page 391 of the PDF
+		% 1.6 spec says that the Resources dict is optional and if not
+		% present then we should use the Resources for the page.
+		% However we have a test file (687989) which uses a Type3 font
+		% inside a form XObject and the desired Resources are in the
+		% XObject dict and not in the Page dict.  So we are going to
+		% the parent object to find resources instead of only going to
+		% the page dict when a font does not specify its required
+		% resources.
+    /Resources 1 index /Resources knownoget {
+       oforce
+    } {
+       LocalResources
+    } ifelse def
     /FontBBox 1 index /FontBBox get cvx def
     /FontMatrix 1 index /FontMatrix oget def
     /CharProcs 1 index /CharProcs oget def
@@ -628,7 +760,7 @@ readonly def
       /LastChar 1 index /LastChar oget def
     } if
     /FontName 1 index /Name .knownget not { 
-       PDFfile fileposition 16 10 string cvrs cvn
+       PDFfile fileposition 16 32 string cvrs cvn
     } if def
 
     /Encoding .notdefEncoding 2 index getencoding def
@@ -655,6 +787,7 @@ readonly def
       PDFfile exch setfileposition
       end end
     } bdef
+    dup currentdict Encoding .processToUnicode
     FontName currentdict end definefont exch pop
 } bdef
 /.adjustcharwidth {	% <wx> <wy> .adjustcharwidth <wx'> <wy'>
@@ -683,8 +816,8 @@ readonly def
 
 /buildTrueType {	% <TrueType-font-resource> buildTrueType <font>
   dup /BaseFont oget
-  (   **** Warning: Fonts with Subtype = /TrueType should be embedded.\n) pdfformaterror
-  (                 But ) pdfformaterror dup =string cvs pdfformaterror ( is not embedded.\n) pdfformaterror
+  /Repaired true store	% flag that we had warnings
+  TTFWarnList 1 index true put	% Add fontname to the list
   dup TTfonts exch .knownget {
     QUIET not {
       (Substituting font ) print dup =only
@@ -701,8 +834,6 @@ readonly def
 
 % Read an embedded TrueType font.
 /readtruetype {		% <font-resource> <stream-dict> readtruetype <font>
-		% This is much simpler than readtype1, because we don't
-		% have to deal with the tripartite .PFB format.
   1 index exch
   PDFfile fileposition 3 1 roll
   true resolvestream readfontfilter
@@ -710,7 +841,7 @@ readonly def
   1 index /Subtype get /CIDFontType2 eq {
     .loadttcidfont
 		% Stack: filepos fontres cidfont
-      } {
+  } {
 		                          % filepos fontres stream
     1 index /FontDescriptor oget          % filepos fontres stream fd   
     /Flags get 4 and 0 ne                 % filepos fontres stream is_symbolic
@@ -718,9 +849,9 @@ readonly def
       2 index null exch getencoding       % filepos fontres stream is_symbolic Encoding
       dup 4 index exch                    % filepos fontres stream is_symbolic Encoding fontres Encoding
       /prebuilt_encoding exch put         % filepos fontres stream is_symbolic Encoding
-        } {
+    } {
       null
-        } ifelse
+    } ifelse
     .loadpdfttfont
   } ifelse
   exch pop
@@ -790,8 +921,9 @@ readonly def
   [
     3 index /DescendantFonts oget { exec resourcefont } forall
   ]			% subfonts
-  composefont
+  composefont   % composefont must insert FontInfo dictionary - see gs_cmap.ps .
 		% Stack: fontres font
+  2 copy null .processToUnicode
   1 index /FontMatrix knownoget {
     dup aload pop true {0 0 1 0 0 1} {3 -1 roll eq and} forall {
       1 index exch makefont exch /FontName get exch definefont
@@ -822,24 +954,24 @@ readonly def
 
         % Stack: pdfresource newfont
 
-  1 index /DW .knownget {
+  1 index /DW knownoget {
     1 index /DW 3 -1 roll put
   } {
     dup /DW .pdfDefaultDW put
   } ifelse
 
-  1 index /W .knownget {
+  1 index /W knownoget {
     dup 2 index /W 3 -1 roll put
     .pdfMakeInternalW 1 index /.internalW 3 -1 roll put
   } if
 
-  1 index /DW2 .knownget {
+  1 index /DW2 knownoget {
     1 index /DW2 3 -1 roll put
   } {
     dup /DW2 .pdfDefaultDW2 put
   } ifelse
 
-  1 index /W2 .knownget {
+  1 index /W2 knownoget {
     dup 2 index /W2 3 -1 roll put
     .pdfMakeInternalW2 1 index /.internalW2 3 -1 roll put
   } if
@@ -879,7 +1011,7 @@ readonly def
     /putMTXEntry <<
       /arraytype   {
          [
-           [Mi Mi Mi1 length add 1 sub]
+           [Mi Mi Mi1 length itemSize idiv add 1 sub]
            true
            [
              0 itemSize Mi1 length 1 sub {
@@ -916,7 +1048,7 @@ readonly def
 
   exch
   {
-    {
+    { 
       dup 0 get {} forall      % Stack: <cid> <entry> <cid_0> <cid_1>
       3 index lt { pop pop false exit } if
       2 index exch sub dup 0 lt { pop pop false exit } if
@@ -933,7 +1065,6 @@ readonly def
 /CIDWProc {		% <w0x> <w0y> <llx> <lly> <urx> <ury>
 			%   <w1x> <w1y> <vx> <vy> <cid> <font> CIDWproc
 			%   <w0x'> ... <vy'>
-
   begin % push <font> to currentdict
     % <w1x> <w1y> <vx> <vy> won't be used and replaced, discard now
     5 1 roll pop pop pop pop
@@ -961,7 +1092,9 @@ readonly def
       exit
     } loop
 
-    1000 div                    % <w0x'> (normalized W)
+    FontType 11 eq {
+      1000 div                  % <w0x'> (normalized W)
+    } if
     0                           % <w0y'>
 
     % Stack: <w0x> <w0y> <llx> <lly> <urx> <ury> <cid> <w0x'> <w0y'>
@@ -999,14 +1132,13 @@ readonly def
 
     exch pop                            % discard <cid>
 
-
     % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> { [<vy'> <w1y'>] | [<w1y'> <vx'> <vy'>] }
     dup length 2 eq {                   % this is DW2
-      {1000 div} forall exch
-      4 index 7 index add 2 div         % <vx'> = (<urx> + <llx>) / 2
+      FontType 11 eq {{1000 div}} {{}} ifelse forall exch
+      8 index 2 div                     % <vx'> = <w0x'> / 2
       exch
     }{                                  % assume W2
-      {1000 div} forall
+      FontType 11 eq {{1000 div}} {{}} ifelse forall
     } ifelse
   end                                   % recover currentdict
 
@@ -1074,7 +1206,7 @@ readonly def
       pop pop /CIDFont findresource
       exit
     } if
-
+    .remove_font_name_prefix
     dup dup length string cvs
     (,Bold) tailmatch {
       exch pop
@@ -1095,11 +1227,11 @@ readonly def
     } if
     pop
 
-    1 index /CIDSystemInfo get begin Registry (-) Ordering end
+    1 index /CIDSystemInfo oget begin Registry (-) Ordering end
     concatstrings concatstrings
     cvn
     QUIET not {
-      (Substituting ) print dup ==only
+      (Substituting CID font resource) print dup ==only
       ( for ) print 1 index ==only (.\n) print
     } if
     exch pop
@@ -1109,11 +1241,11 @@ readonly def
 } bdef
 
 /buildCIDType0 {	% <CIDFontType0-font-resource> buildCIDType0 <font>
-  dup /BaseFont get exch 1 index findCIDFont
+  dup /BaseFont get findCIDFont exch pop
 } bdef
 
 /buildCIDType2 {	% <CIDFontType2-font-resource> buildCIDType2 <font>
-  dup /BaseFont get exch 1 index findCIDFont
+  dup /BaseFont get findCIDFont exch pop
 } bdef
 
 /processCIDToGIDMap { % <fontres> <cidfont> processCIDToGIDMap <fontres> <cidfont>
@@ -1124,23 +1256,19 @@ readonly def
     } {
       true resolvestream
 		% Stack: filepos fontres font mapstream
-      dup 2 index /CIDCount oget dup 32767 le {
-        2 mul string readstring pop
+	% Can't know the length of the decompressed stream, so allocate a big buffer...
+      dup 65534 string readstring {
+   	% Length exceeded max string size, use an array of two strings
+   	1 index 65534 string readstring pop   % maybe a null string - not important.
+      	2 array astore
+      	        % Stack: filepos fontres font mapstream array 
+      	dup 1 get length 65534 add
       } {
-	  % Length exceeded max string size, use an array of two strings
-          % stack: filepos fontres font mapstream mapstream CIDCount
-        1 index 32767 string readstring not {
-          (   **** Warning: CIDToGIDMap length of ) pdfformaterror
-          dup length 2 div cvi =string cvs pdfformaterror
-          (, expected length of ) pdfformaterror
-          exch =string cvs pdfformaterror
-          (.\n) pdfformaterror
-          exch pop
-        } {
-          3 1 roll 32767 sub string readstring pop 
-	  2 array astore
-        } ifelse
+        dup length
       } ifelse
+      2 idiv
+    	% Stack: filepos fontres font mapstream array/string CIDCount
+      3 index exch /CIDCount exch put
       exch closefile exch
       dup /CIDMap 4 -1 roll put
     } ifelse
@@ -1178,7 +1306,7 @@ readonly def
   1 index FRD
   closefile closefile pop
   PDFfile 3 -1 roll setfileposition
-  /FontDescriptor oget /FontName oget findfont
+  /FontDescriptor oget /FontName oget pdfaddcachedfont
   exch pop
 } bdef
 
@@ -1201,6 +1329,13 @@ readonly def
 
 % ---------------- Font lookup ---------------- %
 
+% Some PDF files mis-identify font type of the embedded font streams or
+% include raw PFB font streams. Length1, Length2, Length3 may be wrong or
+% missing. Adobe Acrobat corrects these errors transparently to the user.
+%
+% We ignore the font type keys and recognize the font type by the 1st 4 bytes
+% of the font stream. The PFB stream is recognized by the 1st 2 bytes.
+
 /fonttypeprocs mark		% <font-resource> -proc- <font>
   /Type0 //buildType0
   /Type1 //buildType1
@@ -1219,47 +1354,125 @@ readonly def
   /CIDFontType2 //adjustCIDType2
 .dicttomark readonly def
 
-/resourcefont			% <font-resource> resourcefont <font>
-{ dup /PSFont .knownget
-  { /FID knownoget { type /fonttype eq } { //false } ifelse }
-  { //false }
-  ifelse
-  { /PSFont get }
-  { dup dup /FontDescriptor knownoget {	% Stack: font-res font-res font-desc
+% Bind a proc and define n names
+% /name ... /name {proc} n bndef -
+/bndef
+  { exch bind exch
+    { dup 3 1 roll def } repeat
+    pop
+  } bdef
+
+% Prototype for all procedures: <res> <desc> <stream> foo <font>
+/font_tag_dict 13 dict begin
+
+  % When the font stream is absent or cannot be read we load the font by the name.
+  /no_stream 
+    { pop pop 
+      dup /Subtype get  % res res /subtype
+      fonttypeprocs exch dup / eq {
+        (   **** Warning: Font missing required Subtype, /Type1 assumed.\n)
+	pdfformaterror
+        pop /Type1
+      } if
+      get exec 
+    } bdef
+
+  /bad_stream 
+    { (   **** Warning: Error reading font stream, loading font by the name\n)
+      pdfformaterror
+      //no_stream exec
+    } bdef
+
+  <8001>          % PFB 
+    { dup /PFB //true put
+      exch pop readtype1
+    } bdef
+
+  (%!PS) (%!Fo)   % Type1
+    { exch pop readtype1
+    } 2 bndef
+
+
+  <01000401> <01000402> <01000403> <01000404> % Type 1C
+    { exch pop
+      dup /Subtype get
+      fontloadprocs exch get exec
+    } 4 bndef 
+
+  <00010000> (true) (typ1) (OTTO) (ttcf)  % TrueType OpenType
+    { exch pop readtruetype
+    } 5 bndef
+currentdict end readonly def
+currentdict /bndef undef
+
+/resourcefont                   % <font-resource> resourcefont <font>
+{ dup /PSFont .knownget {
+    /FID knownoget { type /fonttype eq } { //false } ifelse 
+  } {
+    //false 
+  } ifelse {
+    /PSFont get 
+  } {
+    dup dup /FontDescriptor knownoget {
+                                          % font-res font-res font-desc
       dup /FontObject .knownget {
-	3 1 roll pop pop
-      } {
-	dup /FontFile knownoget
-	{ dup /Length oget 0 eq
-	  { pop pop dup /Subtype get fonttypeprocs exch get exec }
-	{ exch pop readtype1 }
-	  ifelse
-	}
-	{ dup /FontFile2 knownoget
-	  { exch pop readtruetype }
-	  { /FontFile3 knownoget
-	    { dup /Subtype get fontloadprocs exch get exec }
-            { dup /Subtype get fonttypeprocs exch get exec }
-	    ifelse
-	  }
-	  ifelse
-	}
-	ifelse
-	1 index /FontDescriptor oget
-	1 index /FontObject exch put	    % Save pointer to the font
-      }
-      ifelse
-    }
-    { dup /Subtype get fonttypeprocs exch get exec }
-    ifelse
-	% Stack: font-res font
+                                          % res res desc obj
+          3 1 roll pop pop                % res obj
+      } { 
+        dup /FontFile knownoget not {
+          dup /FontFile2 knownoget not {
+            dup /FontFile3 knownoget not {
+              //null
+            } if
+          } if
+        } if
+                                          % res res desc stream
+        dup //null ne {
+          PDFfile fileposition 
+          1 index //true resolvestream dup
+          4 string readstring not { /bad_stream } if
+	  exch closefile
+          PDFfile 3 -1 roll setfileposition
+          dup length 4 lt { pop /bad_stream } if
+        } {
+          /no_stream
+	} ifelse
+                                          % res res desc stream tag	      
+
+        //font_tag_dict 1 index known not {
+          dup 0 2 getinterval <8001> eq {
+            0 2 getinterval               % res res desc stream pfb_tag
+	  } { 
+            (12345678>\n) dup /ASCIIHexEncode filter dup 4 -1 roll writestring closefile
+            (   **** Warning: unrecognized font file starts with <) exch concatstrings
+	    pdfformaterror
+	    /no_stream                    % res res desc stream unknown_tag
+          } ifelse    
+	} if		
+	      
+	//font_tag_dict exch get exec
+   
+        1 index /FontDescriptor oget      % res font desc
+        1 index /FontObject exch put      % Save pointer to the font
+      } ifelse
+    } {
+      dup /Subtype get fonttypeprocs exch dup / eq {
+        (   **** Warning: Font missing required Subtype, /Type1 assumed.\n)
+        pdfformaterror
+        pop /Type1
+      } if 
+      get exec
+    } ifelse
+        % Stack: font-res font
     1 index 3 1 roll
     1 index /Subtype get
     //adjustfonttypes exch .knownget { exec } { exch pop } ifelse
     dup 3 1 roll /PSFont exch put
-  }
-  ifelse
+  } ifelse
+  dup checkGlyphNames2Unicode
 } bdef
+
+currentdict /font_tag_dict undef
 
 drawopdict begin
   /d0 {
@@ -1273,7 +1486,7 @@ drawopdict begin
       % it to 0 since this is apparently what Acrobat Reader 4 and 5 do,
       % but if the specification is ever changed to allow non-zero wy, this
       % will not work.
-      5 -1 roll pop 0 5 1 roll	% set wy to 0
+      5 -1 roll pop 0 5 1 roll	  % set wy to 0
     } if
 
     2 copy                           % ... llx lly urx ury | urx ury 
@@ -1283,7 +1496,7 @@ drawopdict begin
       % The bounding box is empty and likely incorrect. Don't cache.
       pop pop pop pop .adjustcharwidth setcharwidth
     } {
-    6 -2 roll .adjustcharwidth 6 2 roll setcachedevice
+      6 -2 roll .adjustcharwidth 6 2 roll setcachedevice
     } ifelse
   } bdef
   /Tf {

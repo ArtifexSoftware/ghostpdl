@@ -76,13 +76,13 @@ add_lines(px_args_t *par, px_state_t *pxs,
 	if ( par->pv[0] )
 	  { /* Single segment, specified as argument. */
 	    if ( par->pv[1] || par->pv[2] )
-	      return_error(pxs->memory, errorIllegalAttributeCombination);
+	      return_error(errorIllegalAttributeCombination);
 	    return (*line_proc)(pxs->pgs, real_value(par->pv[0], 0),
 				real_value(par->pv[0], 1));
 	  }
 	/* Multiple segments, specified in source data. */
 	if ( !(par->pv[1] && par->pv[2]) )
-	  return_error(pxs->memory, errorMissingAttribute);
+	  return_error(errorMissingAttribute);
 	{ integer num_points = par->pv[1]->value.i;
 	  pxeDataType_t type = (pxeDataType_t)par->pv[2]->value.i;
 	  int point_size = (type == eUByte || type == eSByte ? 2 : 4);
@@ -114,7 +114,7 @@ add_lines(px_args_t *par, px_state_t *pxs,
 		  py = sint16at(dp + 2, pxs->data_source_big_endian);
 		  break;
 		default:		/* can't happen, pacify compiler */
-		  return_error(pxs->memory, errorIllegalAttributeValue);
+		  return_error(errorIllegalAttributeValue);
 		}
 	      code = (*line_proc)(pxs->pgs, (floatp)px, (floatp)py);
 	      if ( code < 0 )
@@ -138,7 +138,7 @@ add_curves(px_args_t *par, px_state_t *pxs,
 	if ( par->pv[2] && par->pv[3] && par->pv[4] )
 	  { /* Single curve, specified as argument. */
 	    if ( par->pv[0] || par->pv[1] )
-	      return_error(pxs->memory, errorIllegalAttributeCombination);
+	      return_error(errorIllegalAttributeCombination);
 	    return (*curve_proc)(pxs->pgs, real_value(par->pv[2], 0),
 				 real_value(par->pv[2], 1),
 				 real_value(par->pv[3], 0),
@@ -149,17 +149,17 @@ add_curves(px_args_t *par, px_state_t *pxs,
 	/* Multiple segments, specified in source data. */
 	else if ( par->pv[0] && par->pv[1] )
 	  { if ( par->pv[2] || par->pv[3] || par->pv[4] )
-	      return_error(pxs->memory, errorIllegalAttributeCombination);
+	      return_error(errorIllegalAttributeCombination);
 	  }
 	else
-	  return_error(pxs->memory, errorMissingAttribute);
+	  return_error(errorMissingAttribute);
 	{ integer num_points = par->pv[0]->value.i;
 	  pxeDataType_t type = (pxeDataType_t)par->pv[1]->value.i;
 	  int point_size = (type == eUByte || type == eSByte ? 2 : 4);
 	  int segment_size = point_size * 3;
 
 	  if ( num_points % 3 )
-	    return_error(pxs->memory, errorIllegalDataLength);
+	    return_error(errorIllegalDataLength);
 	  while ( par->source.position < num_points * point_size )
 	    { const byte *dp = par->source.data;
 	      int points[6];
@@ -190,7 +190,7 @@ add_curves(px_args_t *par, px_state_t *pxs,
 		      = sint16at(dp + i, pxs->data_source_big_endian);
 		  break;
 		default:		/* can't happen, pacify compiler */
-		  return_error(pxs->memory, errorIllegalAttributeValue);
+		  return_error(errorIllegalAttributeValue);
 		}
 	      code = (*curve_proc)(pxs->pgs,
 				   (floatp)points[0], (floatp)points[1],
@@ -292,7 +292,7 @@ setup_arc(px_arc_params_t *params, const px_value_t *pbox,
 	    real dy4 = real_value(pp4, 1) - yc;
 	    
 	    if ( (dx3 == 0 && dy3 == 0) || (dx4 == 0 && dy4 == 0) )
-	      return_error(pxs->memory, errorIllegalAttributeValue);
+	      return_error(errorIllegalAttributeValue);
 	    { double ang3 = atan2(dy3 * xr, dx3 * yr) * radians_to_degrees;
 	      double ang4 = atan2(dy4 * xr, dx4 * yr) * radians_to_degrees;
 
@@ -356,7 +356,7 @@ paint_path(px_state_t *pxs, bool reset)
 	      }
 	    save_path = gx_path_alloc(pxs->memory, "paint_path(save_path)");
 	    if ( save_path == 0 )
-	      return_error(pxs->memory, errorInsufficientMemory);
+	      return_error(errorInsufficientMemory);
 	    gx_path_assign_preserve(save_path, ppath);
 	    code = (*fill_proc)(pgs);
 	    if ( code < 0 )
@@ -377,7 +377,7 @@ paint_path(px_state_t *pxs, bool reset)
 	  { save_path =
 	      gx_path_alloc(pxs->memory, "paint_path(save_path)");
 	    if ( save_path == 0 )
-	      return_error(pxs->memory, errorInsufficientMemory);
+	      return_error(errorInsufficientMemory);
 	    gx_path_assign_preserve(save_path, ppath);
 	  }
 	else
@@ -709,8 +709,8 @@ pxRectanglePath(px_args_t *par, px_state_t *pxs)
 	  { floatp t = x1; x1 = x2; x2 = t; }
 	if ( y1 > y2 )
 	  { floatp t = y1; y1 = y2; y2 = t; }
-	if ( (code = gs_point_transform2fixed(pxs->memory, pctm, x1, y1, &p1)) < 0 ||
-	     (code = gs_point_transform2fixed(pxs->memory, pctm, x2, y2, &p2)) < 0 ||
+	if ( (code = gs_point_transform2fixed(pctm, x1, y1, &p1)) < 0 ||
+	     (code = gs_point_transform2fixed(pctm, x2, y2, &p2)) < 0 ||
 	     (code = gx_path_add_point(ppath, p1.x, p1.y)) < 0
 	   )
 	  return code;
@@ -719,13 +719,13 @@ pxRectanglePath(px_args_t *par, px_state_t *pxs)
 	 * DRAW_RECTANGLES_CLOCKWISE means clockwise on the page, which is
 	 * counter-clockwise in user space.
 	 */
-	if ( (code = gs_point_transform2fixed(pxs->memory, pctm, x2, y1, &lines[0])) < 0 ||
-	     (code = gs_point_transform2fixed(pxs->memory, pctm, x1, y2, &lines[2])) < 0
+	if ( (code = gs_point_transform2fixed(pctm, x2, y1, &lines[0])) < 0 ||
+	     (code = gs_point_transform2fixed(pctm, x1, y2, &lines[2])) < 0
 	   )
 	  return code;
 #else
-	if ( (code = gs_point_transform2fixed(pxs->memory, pctm, x1, y2, &lines[0])) < 0 ||
-	     (code = gs_point_transform2fixed(pxs->memory, pctm, x2, y1, &lines[2])) < 0
+	if ( (code = gs_point_transform2fixed(pctm, x1, y2, &lines[0])) < 0 ||
+	     (code = gs_point_transform2fixed(pctm, x2, y1, &lines[2])) < 0
 	   )
 	  return code;
 #endif
@@ -766,7 +766,7 @@ pxRoundRectanglePath(px_args_t *par, px_state_t *pxs)
 	 * of order.
 	 */
 	if ( xd < 0 || yd < 0 )
-	  return_error(pxs->memory, errorIllegalAttributeValue);
+	  return_error(errorIllegalAttributeValue);
 	if ( xr == 0 || yr == 0 )
 	  return pxRectanglePath(par, pxs);
 	gs_currentmatrix(pgs, &save_ctm);

@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* Definitions for interpreter support for file objects */
 /* Requires stream.h */
 
@@ -33,7 +33,6 @@
 int zget_stdin(i_ctx_t *, stream **);
 int zget_stdout(i_ctx_t *, stream **);
 int zget_stderr(i_ctx_t *, stream **);
-extern bool gs_stdin_is_interactive;
 /* Test whether a stream is stdin. */
 bool zis_stdin(const stream *);
 
@@ -49,62 +48,46 @@ extern stream *const invalid_file_entry;
 void make_invalid_file(ref *);
 
 /*
- * Macros for checking file validity.
- * NOTE: in order to work around a bug in the Borland 5.0 compiler,
- * you must use file_is_invalid rather than !file_is_valid.
- */
-#define file_is_valid(svar,op)\
-  (svar = fptr(op), (svar->read_id | svar->write_id) == r_size(op))
-#define file_is_invalid(svar,op)\
-  (svar = fptr(op), (svar->read_id | svar->write_id) != r_size(op))
-#define check_file(mem,svar,op)\
-  BEGIN\
-    check_type(mem, *(op), t_file);\
-    if ( file_is_invalid(svar, op) ) return_error(mem, e_invalidaccess);\
-  END
-
-/*
  * If a file is open for both reading and writing, its read_id, write_id,
  * and stream procedures and modes reflect the current mode of use;
  * an id check failure will switch it to the other mode.
  */
-int file_switch_to_read(const gs_memory_t *mem, const ref *);
+int file_switch_to_read(const ref *);
 
-#define check_read_known_file_else(mem, svar,op,error_return,invalid_action)\
+#define check_read_file(svar,op)\
+  BEGIN\
+    check_read_type(*(op), t_file);\
+    check_read_known_file(svar, op, return);\
+  END
+#define check_read_known_file(svar,op,error_return)\
+  check_read_known_file_else(svar, op, error_return, svar = invalid_file_entry)
+#define check_read_known_file_else(svar,op,error_return,invalid_action)\
   BEGIN\
     svar = fptr(op);\
     if (svar->read_id != r_size(op)) {\
 	if (svar->read_id == 0 && svar->write_id == r_size(op)) {\
-	    int fcode = file_switch_to_read(mem, op);\
+	    int fcode = file_switch_to_read(op);\
+\
 	    if (fcode < 0)\
-		 error_return(mem, fcode);\
+		 error_return(fcode);\
 	} else {\
 	    invalid_action;	/* closed or reopened file */\
 	}\
     }\
   END
-#define check_read_known_file(mem, svar,op,error_return)\
-  check_read_known_file_else(mem, svar, op, error_return, svar = invalid_file_entry)
+int file_switch_to_write(const ref *);
 
-#define check_read_file(mem,svar,op)\
+#define check_write_file(svar,op)\
   BEGIN\
-    check_read_type(mem, *(op), t_file);\
-    check_read_known_file(mem, svar, op, return_error);\
+    check_write_type(*(op), t_file);\
+    check_write_known_file(svar, op, return);\
   END
-
-int file_switch_to_write(const gs_memory_t *mem, const ref *);
-
-#define check_write_file(mem, svar,op)\
-  BEGIN\
-    check_write_type(mem, *(op), t_file);\
-    check_write_known_file(mem, svar, op, return_error);\
-  END
-#define check_write_known_file(mem, svar,op,error_return)\
+#define check_write_known_file(svar,op,error_return)\
   BEGIN\
     svar = fptr(op);\
     if ( svar->write_id != r_size(op) )\
-	{	int fcode = file_switch_to_write(mem, op);\
-		if ( fcode < 0 ) error_return(mem, fcode);\
+	{	int fcode = file_switch_to_write(op);\
+		if ( fcode < 0 ) error_return(fcode);\
 	}\
   END
 
@@ -122,8 +105,9 @@ typedef struct gs_file_path_s *gs_file_path_ptr;
 FILE *lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *);
 
 	/* for imain.c */
-int lib_file_open(const gs_file_path_ptr pfpath, i_ctx_t *, const char *, uint, byte *, uint, 
-		  uint *, ref *, gs_memory_t *);
+int
+lib_file_open(gs_file_path_ptr, const gs_memory_t *, i_ctx_t *,      
+		       const char *, uint, char *, int, uint *, ref *pfile);
 
 	/* for imain.c */
 #ifndef gs_ref_memory_DEFINED
@@ -166,8 +150,4 @@ int zreadline_from(stream *s, gs_string *buf, gs_memory_t *bufmem,
 	/* for zfile.c */
 int zfilelineedit(i_ctx_t *i_ctx_p);
 
-	/* for zfproc.c */
-int zneedstdin(i_ctx_t *i_ctx_p);
-int zneedstdout(i_ctx_t *i_ctx_p);
-int zneedstderr(i_ctx_t *i_ctx_p);
 #endif /* files_INCLUDED */

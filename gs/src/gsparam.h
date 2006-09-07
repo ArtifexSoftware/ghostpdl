@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Client interface to parameter dictionaries */
 
 #ifndef gsparam_INCLUDED
@@ -69,7 +70,6 @@ typedef enum {
 
 #define _param_array_struct(sname,etype)\
   struct sname { const etype *data; uint size; bool persistent; }
-typedef _param_array_struct(gs_param_string_s, byte) gs_param_string;
 typedef _param_array_struct(gs_param_int_array_s, int) gs_param_int_array;
 typedef _param_array_struct(gs_param_float_array_s, float) gs_param_float_array;
 typedef _param_array_struct(gs_param_string_array_s, gs_param_string) gs_param_string_array;
@@ -527,6 +527,12 @@ typedef struct gs_c_param_list_s {
 #define private_st_c_param_list()	/* in gsparam.c */\
   gs_private_st_ptrs2(st_c_param_list, gs_c_param_list, "c_param_list",\
     c_param_list_enum_ptrs, c_param_list_reloc_ptrs, head, target)
+
+/* Define a GC descriptor for gs_param_string. */
+/* This structure descriptor is only for non persistent gs_param_strings. */
+#define private_st_gs_param_string()	/* in gdevdevn.c */\
+  gs_private_st_composite(st_gs_param_string, gs_param_string, "gs_param_string",\
+			param_string_enum_ptrs, param_string_reloc_ptrs)
 
 /* Set the target of a C parameter list. */
 void gs_c_param_list_set_target(gs_c_param_list *, gs_param_list *);

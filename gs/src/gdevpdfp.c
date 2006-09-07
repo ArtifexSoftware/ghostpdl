@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Get/put parameters for PDF-writing driver */
 #include "memory_.h"
 #include "string_.h"
@@ -69,8 +70,39 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("ReAssignCharacters", gs_param_type_bool, ReAssignCharacters),
     pi("ReEncodeCharacters", gs_param_type_bool, ReEncodeCharacters),
     pi("FirstObjectNumber", gs_param_type_long, FirstObjectNumber),
-    pi("CompressFonts", gs_param_type_bool, CompressFonts),    
+    pi("CompressFonts", gs_param_type_bool, CompressFonts),
+    pi("PrintStatistics", gs_param_type_bool, PrintStatistics),
     pi("MaxInlineImageSize", gs_param_type_long, MaxInlineImageSize),
+
+	/* PDF Encryption */
+    pi("OwnerPassword", gs_param_type_string, OwnerPassword),
+    pi("UserPassword", gs_param_type_string, UserPassword),
+    pi("KeyLength", gs_param_type_int, KeyLength),
+    pi("Permissions", gs_param_type_int, Permissions),
+    pi("EncryptionR", gs_param_type_int, EncryptionR),
+    pi("NoEncrypt", gs_param_type_string, NoEncrypt),
+
+	/* Target viewer capabilities (Ghostscript-specific)  */
+    pi("ForOPDFRead", gs_param_type_bool, ForOPDFRead),
+    pi("PatternImagemask", gs_param_type_bool, PatternImagemask),
+    pi("MaxClipPathSize", gs_param_type_int, MaxClipPathSize),
+    pi("MaxShadingBitmapSize", gs_param_type_int, MaxShadingBitmapSize),
+    pi("MaxViewerMemorySize", gs_param_type_int, MaxViewerMemorySize),
+    pi("HaveTrueTypes", gs_param_type_bool, HaveTrueTypes),
+    pi("HaveCIDSystem", gs_param_type_bool, HaveCIDSystem),
+    pi("HaveTransparency", gs_param_type_bool, HaveTransparency),
+    pi("OPDFReadProcsetPath", gs_param_type_string, OPDFReadProcsetPath),
+    pi("CompressEntireFile", gs_param_type_bool, CompressEntireFile),
+    pi("PDFX", gs_param_type_bool, PDFX),
+    pi("PDFA", gs_param_type_bool, PDFA),
+    pi("DocumentUUID", gs_param_type_string, DocumentUUID),
+    pi("InstanceUUID", gs_param_type_string, InstanceUUID),
+    pi("DocumentTimeSeq", gs_param_type_int, DocumentTimeSeq),
+
+    /* PDF/X parameters */
+    pi("PDFXTrimBoxToMediaBoxOffset", gs_param_type_float_array, PDFXTrimBoxToMediaBoxOffset),
+    pi("PDFXSetBleedBoxToMediaBox", gs_param_type_bool, PDFXSetBleedBoxToMediaBox),
+    pi("PDFXBleedBoxToTrimBoxOffset", gs_param_type_float_array, PDFXBleedBoxToTrimBoxOffset),
 #undef pi
     gs_param_item_end
 };
@@ -82,48 +114,23 @@ private const gs_param_item_t pdf_param_items[] = {
   Architectural issues
   --------------------
 
-  Must disable all color conversions, so that driver gets original color
-    and color space -- needs "protean" device color space
   Must optionally disable application of TR, BG, UCR similarly.  Affects:
     PreserveHalftoneInfo
     PreserveOverprintSettings
     TransferFunctionInfo
     UCRandBGInfo
 
-  * = requires architectural change to complete
-
   Current limitations
   -------------------
 
   Non-primary elements in HalftoneType 5 are not written correctly
-  Doesn't recognize Default TR/HT/BG/UCR
-  Optimization is a separate program
-
-  Optimizations
-  -------------
-
-  Create shared resources for Indexed (and other) color spaces
-  Remember image XObject IDs for sharing
-  Remember image and pattern MD5 fingerprints for sharing -- see
-    CD-ROM from dhoff@margnat.com
-  Merge font subsets?  (k/ricktest.ps, from rick@dgii.com re file output
-    size ps2pdf vs. pstoedit)
-  Minimize tables for embedded TT fonts (requires renumbering glyphs)
-  Clip off image data outside bbox of clip path?
 
   Acrobat Distiller 3
   -------------------
 
-  ---- Other functionality ----
-
-  Compress forms, Type 3 fonts, and Cos streams
-
   ---- Image parameters ----
 
   AntiAlias{Color,Gray,Mono}Images
-  AutoFilter{Color,Gray}Images
-    Needs to scan image
-  Convert CIE images to Device if can't represent color space
 
   ---- Other parameters ----
 
@@ -151,21 +158,10 @@ private const gs_param_item_t pdf_param_items[] = {
 
   xxxDownsampleType = /Bicubic
     Add new filter (or use siscale?) & to setup (gdevpsdi.c)
-  Binding
-    ? not sure where this goes (check with AD4)
   DetectBlends
     Idiom recognition?  PatternType 2 patterns / shfill?  (see AD4)
   DoThumbnails
     Also output to memory device -- resolution issue
-  EndPage / StartPage
-    Only affects AR? -- see what AD4 produces
-  ###Profile
-    Output in ICCBased color spaces
-  ColorConversionStrategy
-  * Requires suppressing CIE => Device color conversion
-    Convert other CIE spaces to ICCBased
-  CannotEmbedFontPolicy
-    Check when trying to embed font -- how to produce warning?
 
   ---- Job-level control ----
 
@@ -190,10 +186,12 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     float cl = (float)pdev->CompatibilityLevel;
-    int code = gdev_psdf_get_params(dev, plist);
+    int code;
     int cdv = CoreDistVersion;
     int EmbedFontObjects = 1;
 
+    pdev->ParamCompatibilityLevel = cl;
+    code = gdev_psdf_get_params(dev, plist);
     if (code < 0 ||
 	(code = param_write_int(plist, ".EmbedFontObjects", &EmbedFontObjects)) < 0 ||
 	(code = param_write_int(plist, "CoreDistVersion", &cdv)) < 0 ||
@@ -220,7 +218,10 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     float cl = (float)pdev->CompatibilityLevel;
     bool locked = pdev->params.LockDistillerParams;
     gs_param_name param_name;
+    enum psdf_color_conversion_strategy save_ccs = pdev->params.ColorConversionStrategy;
+  
 
+    pdev->pdf_memory = gs_memory_stable(pdev->memory);
     /*
      * If this is a pseudo-parameter (pdfmark or DSC),
      * don't bother checking for any real ones.
@@ -232,7 +233,9 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	code = param_read_string_array(plist, (param_name = "pdfmark"), &ppa);
 	switch (code) {
 	    case 0:
-		pdf_open_document(pdev);
+		code = pdf_open_document(pdev);
+		if (code < 0)
+		    return code;
 		code = pdfmark_process(pdev, &ppa);
 		if (code >= 0)
 		    return code;
@@ -247,7 +250,9 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	code = param_read_string_array(plist, (param_name = "DSC"), &ppa);
 	switch (code) {
 	    case 0:
-		pdf_open_document(pdev);
+		code = pdf_open_document(pdev);
+		if (code < 0)
+		    return code;
 		code = pdf_dsc_process(pdev, &ppa);
 		if (code >= 0)
 		    return code;
@@ -295,20 +300,40 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 		param_signal_error(plist, param_name, ecode);
 	    case 0:
 		/*
-		 * Must be 1.2, 1.3, or 1.4.  Per Adobe documentation, substitute
+		 * Must be 1.2, 1.3, 1.4, or 1.5.  Per Adobe documentation, substitute
 		 * the nearest achievable value.
 		 */
-		if (cl < (float)1.25)
+		if (cl < (float)1.15)
+		    cl = (float)1.1;
+		else if (cl < (float)1.25)
 		    cl = (float)1.2;
-		else if (cl >= (float)1.35)
+		else if (cl < (float)1.35)
+		    cl = (float)1.3;
+		else if (cl < (float)1.45)
 		    cl = (float)1.4;
 		else
-		    cl = (float)1.3;
+		    cl = (float)1.5;
 	    case 1:
 		break;
 	}
+	{   /* HACK : gs_param_list_s::memory is documented in gsparam.h as
+	       "for allocating coerced arrays". Not sure why zputdeviceparams
+	       sets it to the current memory space, while the device
+	       assumes to store them in the device's memory space.
+	       As a hackish workaround we temporary replace it here.
+	       Doing so because we don't want to change the global code now
+	       because we're unable to test it with all devices.
+	       Bug 688531 "Segmentation fault running pdfwrite from 219-01.ps".
 
-	code = gs_param_read_items(plist, pdev, pdf_param_items);
+	       This solution to be reconsidered after fixing 
+	       the bug 688533 "zputdeviceparams specifies a wrong memory space.".
+ 	    */
+	    gs_memory_t *mem = plist->memory;
+
+	    plist->memory = pdev->pdf_memory;
+	    code = gs_param_read_items(plist, pdev, pdf_param_items);
+	    plist->memory = mem;
+	}
 	if (code < 0)
 	    ecode = code;
 	{
@@ -344,21 +369,117 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 				   pcm_names, ecode);
 	    if (pcm >= 0) {
 		pdf_set_process_color_model(pdev, pcm);
-		pdf_set_initial_color(pdev, &pdev->saved_fill_color, &pdev->saved_stroke_color);
+		pdf_set_initial_color(pdev, &pdev->saved_fill_color, &pdev->saved_stroke_color,
+				&pdev->fill_used_process_color, &pdev->stroke_used_process_color);
 	    }
 	}
     }
     if (ecode < 0)
 	goto fail;
+    if (pdev->PDFX && pdev->PDFA) {
+	ecode = gs_note_error(gs_error_rangecheck);
+	param_signal_error(plist, "PDFA", ecode);
+	goto fail;
+    }
+    if (pdev->PDFX && pdev->ForOPDFRead) {
+	ecode = gs_note_error(gs_error_rangecheck);
+	param_signal_error(plist, "PDFX", ecode);
+	goto fail;
+    }
+    if (pdev->PDFA && pdev->ForOPDFRead) {
+	ecode = gs_note_error(gs_error_rangecheck);
+	param_signal_error(plist, "PDFA", ecode);
+	goto fail;
+    }
+    if (pdev->PDFA)
+	 pdev->HaveTransparency = false;
     /*
      * We have to set version to the new value, because the set of
      * legal parameter values for psdf_put_params varies according to
      * the version.
      */
+    if (pdev->PDFX)
+	cl = (float)1.3; /* Instead pdev->CompatibilityLevel = 1.2; - see below. */
+    if (pdev->PDFA && cl < 1.4)
+	cl = (float)1.4;
     pdev->version = (cl < 1.2 ? psdf_version_level2 : psdf_version_ll3);
+    if (pdev->ForOPDFRead) {
+	pdev->ResourcesBeforeUsage = true;
+	pdev->HaveCFF = false;
+	pdev->HavePDFWidths = false;
+	pdev->HaveStrokeColor = false;
+	cl = (float)1.2; /* Instead pdev->CompatibilityLevel = 1.2; - see below. */
+	pdev->MaxInlineImageSize = max_long; /* Save printer's RAM from saving temporary image data.
+					        Immediate images doen't need buffering. */
+	pdev->version = psdf_version_level2;
+    } else {
+	pdev->ResourcesBeforeUsage = false;
+	pdev->HaveCFF = true;
+	pdev->HavePDFWidths = true;
+	pdev->HaveStrokeColor = true;
+    }
+    pdev->ParamCompatibilityLevel = cl;
     ecode = gdev_psdf_put_params(dev, plist);
     if (ecode < 0)
 	goto fail;
+    if ((pdev->params.ColorConversionStrategy == ccs_CMYK &&
+	 strcmp(pdev->color_info.cm_name, "DeviceCMYK")) ||
+	(pdev->params.ColorConversionStrategy == ccs_sRGB &&
+	  strcmp(pdev->color_info.cm_name, "DeviceRGB")) ||
+	(pdev->params.ColorConversionStrategy == ccs_Gray &&
+	  strcmp(pdev->color_info.cm_name, "DeviceGray"))) {
+	eprintf("ColorConversionStrategy is incompatible to ProcessColorModel.\n");
+	ecode = gs_note_error(gs_error_rangecheck);
+	pdev->params.ColorConversionStrategy = save_ccs;
+    }
+    if (pdev->params.ColorConversionStrategy == ccs_UseDeviceIndependentColor) {
+	if (!pdev->UseCIEColor) {
+	    eprintf("Set UseCUEColor for UseDeviceIndependentColor to work properly.\n");
+	    ecode = gs_note_error(gs_error_rangecheck);
+	    pdev->UseCIEColor = true;
+	}
+    }
+    if (pdev->params.ColorConversionStrategy == ccs_UseDeviceIndependentColorForImages) {
+	if (!pdev->UseCIEColor) {
+	    eprintf("UseDeviceDependentColorForImages is not supported. Use UseDeviceIndependentColor.\n");
+	    pdev->params.ColorConversionStrategy = ccs_UseDeviceIndependentColor;
+	    if (!pdev->UseCIEColor) {
+		eprintf("Set UseCUEColor for UseDeviceIndependentColor to work properly.\n");
+		ecode = gs_note_error(gs_error_rangecheck);
+		pdev->UseCIEColor = true;
+	    }
+	}
+    }
+    if (pdev->params.ColorConversionStrategy == ccs_UseDeviceDependentColor) {
+	if (!strcmp(pdev->color_info.cm_name, "DeviceCMYK")) {
+	    eprintf("Replacing the deprecated device parameter value UseDeviceDependentColor with CMYK.\n");
+	    pdev->params.ColorConversionStrategy = ccs_CMYK;
+	} else if (!strcmp(pdev->color_info.cm_name, "DeviceRGB")) {
+	    eprintf("Replacing the deprecated device parameter value UseDeviceDependentColor with sRGB.\n");
+	    pdev->params.ColorConversionStrategy = ccs_sRGB;
+	} else {
+	    eprintf("Replacing the deprecated device parameter value UseDeviceDependentColor with Gray.\n");
+	    pdev->params.ColorConversionStrategy = ccs_Gray;
+	}
+    }
+    if (cl < 1.5 && pdev->params.ColorImage.Filter != NULL &&
+	    !strcmp(pdev->params.ColorImage.Filter, "JPXEncode")) {
+	eprintf("JPXEncode requires CompatibilityLevel >= 1.5 .\n");
+	ecode = gs_note_error(gs_error_rangecheck);
+    }
+    if (cl < 1.5 && pdev->params.GrayImage.Filter != NULL &&
+	    !strcmp(pdev->params.GrayImage.Filter, "JPXEncode")) {
+	eprintf("JPXEncode requires CompatibilityLevel >= 1.5 .\n");
+	ecode = gs_note_error(gs_error_rangecheck);
+    }
+    if (cl < 1.4  && pdev->params.MonoImage.Filter != NULL &&
+	    !strcmp(pdev->params.MonoImage.Filter, "JBIG2Encode")) {
+	eprintf("JBIG2Encode requires CompatibilityLevel >= 1.4 .\n");
+	ecode = gs_note_error(gs_error_rangecheck);
+    }
+    if (pdev->HaveTrueTypes && pdev->version == psdf_version_level2) {
+	pdev->version = psdf_version_level2_with_TT ;
+    }
     /*
      * Acrobat Reader doesn't handle user-space coordinates larger than
      * MAX_USER_COORD.  To compensate for this, reduce the resolution so

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* High-level interface to stand-alone halftone/transfer objects */
 
 #ifndef gshtx_INCLUDED
@@ -83,26 +84,26 @@ typedef gs_mapping_closure_proc_t gs_ht_transfer_proc;	/* see gxtmap.h */
 
 extern int gs_ht_build(gs_ht ** ppht, uint num_comps, gs_memory_t * pmem);
 
-extern int gs_ht_set_spot_comp( const gs_memory_t *mem,
-				gs_ht * pht,
-				int component_index,
-				floatp freq,
-				floatp angle,
-				float (*spot_func) (floatp, floatp),
-				bool accurate,
-				gs_ht_transfer_proc transfer,
-				const void *client_data
-				);
-
-extern int gs_ht_set_threshold_comp( const gs_memory_t *mem,
+extern int gs_ht_set_spot_comp(
 				     gs_ht * pht,
 				     int component_index,
-				     int width,
-				     int height,
-				     const gs_const_string * thresholds,
+				     floatp freq,
+				     floatp angle,
+				     float (*spot_func) (floatp, floatp),
+				     bool accurate,
 				     gs_ht_transfer_proc transfer,
 				     const void *client_data
-				     );
+			       );
+
+extern int gs_ht_set_threshold_comp(
+					  gs_ht * pht,
+					  int component_index,
+					  int width,
+					  int height,
+					  const gs_const_string * thresholds,
+					  gs_ht_transfer_proc transfer,
+					  const void *client_data
+				    );
 
 /*
  * This procedure specifies a (possibly non-monotonic) halftone of size
@@ -113,30 +114,30 @@ extern int gs_ht_set_threshold_comp( const gs_memory_t *mem,
  *
  * Note that the client is responsible for releasing the mask data.
  */
-extern int gs_ht_set_mask_comp( const gs_memory_t *mem, 
-				gs_ht * pht,
-				int component_index,
-				int width,
-				int height,
-				int num_levels,
-				const byte * masks,	/* width x height x num_levels */
-				gs_ht_transfer_proc transfer,
-				const void *client_data
-				);
+extern int gs_ht_set_mask_comp(
+				     gs_ht * pht,
+				     int component_index,
+				     int width,
+				     int height,
+				     int num_levels,
+				     const byte * masks,	/* width x height x num_levels */
+				     gs_ht_transfer_proc transfer,
+				     const void *client_data
+			       );
 
-extern void gs_ht_reference(const gs_memory_t *mem, gs_ht * pht);
-extern void gs_ht_release(const gs_memory_t *mem, gs_ht * pht);
+extern void gs_ht_reference(gs_ht * pht);
+extern void gs_ht_release(gs_ht * pht);
 
-#define gs_ht_assign(mem, pto, pfrom)    \
+#define gs_ht_assign(pto, pfrom)    \
     BEGIN                           \
-        gs_ht_reference(mem, pfrom);     \
+        gs_ht_reference(pfrom);     \
         if (pto != 0)               \
-            gs_ht_release(mem, pto);     \
+            gs_ht_release(pto);     \
         pto = pfrom;                \
     END
 
-#define gs_ht_init_ptr(mem, pto, pfrom)          \
-    BEGIN gs_ht_reference(mem, pfrom); pto = pfrom; END
+#define gs_ht_init_ptr(pto, pfrom)          \
+    BEGIN gs_ht_reference(pfrom); pto = pfrom; END
 
 extern int gs_ht_install(gs_state * pgs, gs_ht * pht);
 

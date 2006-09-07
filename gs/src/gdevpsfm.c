@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Write a CMap */
 #include "gx.h"
 #include "gserrors.h"
@@ -95,7 +96,8 @@ cmap_put_system_info(stream *s, const gs_cid_system_info_t *pcidsi)
 
 /* Write one code map. */
 private int
-cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
+cmap_put_code_map(const gs_memory_t *mem,
+		  stream *s, int which, const gs_cmap_t *pcmap,
 		  const cmap_operators_t *pcmo,
 		  psf_put_name_chars_proc_t put_name_chars, 
 		  int font_index_only)
@@ -106,7 +108,7 @@ cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
     int code;
 
     for (gs_cmap_lookups_enum_init(pcmap, which, &lenum);
-	 (code = gs_cmap_enum_next_lookup(s->memory, &lenum)) == 0; ) {
+	 (code = gs_cmap_enum_next_lookup(&lenum)) == 0; ) {
 	gs_cmap_lookups_enum_t counter;
 	int num_entries = 0;
 	int gi;
@@ -119,7 +121,7 @@ cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
 	}
 	/* Count the number of entries in this lookup range. */
 	counter = lenum;
-	while (gs_cmap_enum_next_entry(s->memory, &counter) == 0)
+	while (gs_cmap_enum_next_entry(&counter) == 0)
 	    ++num_entries;
 	for (gi = 0; gi < num_entries; gi += 100) {
 	    int i = gi, ni = min(i + 100, num_entries);
@@ -148,7 +150,7 @@ cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
 		long value;
 		int value_size;
 
-		DISCARD(gs_cmap_enum_next_entry(s->memory, &lenum)); /* can't fail */
+		DISCARD(gs_cmap_enum_next_entry(&lenum)); /* can't fail */
 		value_size = lenum.entry.value.size;
 		for (j = 0; j <= lenum.entry.key_is_range; ++j) {
 		    stream_putc(s, '<');
@@ -169,7 +171,7 @@ cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
 		    break;
 		case CODE_VALUE_GLYPH: {
 		    gs_const_string str;
-		    int code = pcmap->glyph_name((gs_glyph)value, &str,
+		    int code = pcmap->glyph_name(mem, (gs_glyph)value, &str,
 						 pcmap->glyph_name_data);
 
 		    if (code < 0)
@@ -181,7 +183,7 @@ cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
 		}
 		    break;
 		default:	/* not possible */
-		    return_error(s->memory, gs_error_unregistered);
+		    return_error(gs_error_unregistered);
 		}
 		stream_putc(s, '\n');
 	    }
@@ -195,7 +197,8 @@ cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
 
 /* Write a CMap in its standard (source) format. */
 int
-psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
+psf_write_cmap(const gs_memory_t *mem, 
+	       stream *s, const gs_cmap_t *pcmap,
 	       psf_put_name_chars_proc_t put_name_chars,
 	       const gs_const_string *alt_cmap_name, int font_index_only)
 {
@@ -207,7 +210,7 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
     case 0: case 1: case 2:
 	break;
     default:
-	return_error(s->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     }
 
     /* Write the header. */
@@ -229,11 +232,11 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
     /* Write the fixed entries. */
 
     pprintd1(s, "/CMapType %d def\n", pcmap->CMapType);
+    stream_puts(s, "/CMapName/");
+    put_name_chars(s, cmap_name->data, cmap_name->size);
+    stream_puts(s, " def\n");
     if (!pcmap->ToUnicode) {
 	pprintg1(s, "/CMapVersion %g def\n", pcmap->CMapVersion);
-	stream_puts(s, "/CMapName/");
-	put_name_chars(s, cmap_name->data, cmap_name->size);
-	stream_puts(s, " def\n");
 	stream_puts(s, "/CIDSystemInfo");
 	if (font_index_only >= 0 && font_index_only < pcmap->num_fonts) {
 	    cmap_put_system_info(s, pcidsi + font_index_only);
@@ -291,11 +294,11 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
     {
 	int code;
 
-	code = cmap_put_code_map(s, 1, pcmap, &cmap_notdef_operators,
+	code = cmap_put_code_map(mem, s, 1, pcmap, &cmap_notdef_operators,
 			         put_name_chars, font_index_only);
 	if (code < 0)
 	    return code;
-	code = cmap_put_code_map(s, 0, pcmap, &cmap_cid_operators,
+	code = cmap_put_code_map(mem, s, 0, pcmap, &cmap_cid_operators,
 			         put_name_chars, font_index_only);
 	if (code < 0)
 	    return code;

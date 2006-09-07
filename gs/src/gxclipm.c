@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Mask clipping device */
 #include "memory_.h"
 #include "gx.h"
@@ -87,7 +88,11 @@ const gx_device_mask_clip gs_mask_clip_device =
   gx_forward_decode_color,
   gx_forward_pattern_manage,
   gx_forward_fill_rectangle_hl_color,
-  gx_forward_include_color_space
+  gx_forward_include_color_space,
+  gx_forward_fill_linear_color_scanline,
+  gx_forward_fill_linear_color_trapezoid,
+  gx_forward_fill_linear_color_triangle,
+  gx_forward_update_spot_equivalent_colors
  }
 };
 
@@ -220,7 +225,7 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
 	int cx = mx0;
 	const byte *tp = tile_row;
 
-	if_debug1(cdev->memory, 'B', "[B]clip runs y=%d:", cy - cdev->phase.y);
+	if_debug1('B', "[B]clip runs y=%d:", cy - cdev->phase.y);
 	while (cx < mx1) {
 	    int len;
 	    int tx1, tx, ty;
@@ -263,7 +268,7 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
 		}
 	    }
 	    tx = cx - cdev->phase.x;
-	    if_debug2(cdev->memory, 'B', " %d-%d,", tx1, tx);
+	    if_debug2('B', " %d-%d,", tx1, tx);
 	    ty = cy - cdev->phase.y;
 	    /* Detect vertical rectangles. */
 	    if (prev.p.x == tx1 && prev.q.x == tx && prev.q.y == ty)
@@ -280,7 +285,7 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
 		prev.q.y = ty + 1;
 	    }
 	}
-	if_debug0(cdev->memory, 'B', "\n");
+	if_debug0('B', "\n");
 	tile_row += cdev->tiles.raster;
     }
     if (prev.q.y > prev.p.y) {

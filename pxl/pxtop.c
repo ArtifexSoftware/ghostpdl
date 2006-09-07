@@ -108,7 +108,7 @@ px_stream_header_process(
 	    default:
 	      /* Initialize state to avoid confusion */
 	      px_top_init(process->st, process->pxs, true);
-	      return gs_note_error(process->pxs->memory, errorUnsupportedBinding);
+	      return gs_note_error(errorUnsupportedBinding);
 	      }
 	    break;
 	  case PSHPSkipping:
@@ -121,7 +121,7 @@ px_stream_header_process(
 	  case PSHPDone:
 	  default:
 	    /* Shouldn't ever come here */
-	    return gs_note_error(process->pxs->memory, errorIllegalStreamHeader);
+	    return gs_note_error(errorIllegalStreamHeader);
 	    }
 	  }
 
@@ -515,12 +515,12 @@ pxl_impl_report_errors(
 	   code, st, pxs)) >= 0
 	)
 	  { if ( (report & eBackChannel) || force_to_cout )
-	      errprintf(pxli->memory, message);
+	      errprintf(message);
 	    if ( report & eErrorPage )
 	      y = px_error_page_show(message, y, pxs);
 	  }
 	if ( ((report & pxeErrorReport_next) && file_position != -1L) || force_to_cout )
-	  errprintf(pxli->memory, "file position of error = %ld\n", file_position);
+	  errprintf("file position of error = %ld\n", file_position);
 	if ( report & eErrorPage )
 	  { px_args_t args;
 	    args.pv[0] = 0;
@@ -579,7 +579,7 @@ pxl_impl_deallocate_interp_instance(
 	/* free halftone cache */
         //	gs_free_ht_cache(mem, pxli->pgs);
 	/* Unwind allocation */ 
-        gs_state_free_view_clip(pxli->pgs);
+        // NB might not be needed 8.53 // gs_state_free_view_clip(pxli->pgs);
 	gs_state_free(pxli->pgs);
 	px_process_release(pxli->st);
 	px_state_release(pxli->pxs);

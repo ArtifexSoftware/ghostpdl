@@ -1,8 +1,18 @@
-/* Copyright (C) 1999, 2000, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
 
-// $RCSfile$ $Revision$
+// $Id$
 
 #include <windows.h>
 #include "dwsetup.h"
@@ -25,20 +35,24 @@ BEGIN
     ICON            IDR_MAIN,IDC_STATIC,11,17,20,20
     LTEXT           "This installs",IDC_STATIC,56,6,232,8
     LTEXT           "Product Name",IDC_PRODUCT_NAME,72,16,216,8
-    LTEXT           "Copyright (C) 1994-2003 artofcode LLC, Benicia, California, U.S.A.  All rights reserved. See the file PUBLIC for more details.\n\nRequires 20 Mbytes disk space.",
-                    IDC_COPYRIGHT,56,30,232,48
+    LTEXT           "Copyright (C) 1994-2005 artofcode LLC, Benicia, California, U.S.A.  All rights reserved.\n\nRequires 25 Mbytes disk space.",
+                    IDC_COPYRIGHT,56,30,232,40
 
-    LTEXT           "Install to directory",IDC_STATIC,8,92,56,8
-    CONTROL         "Install Fonts",IDC_INSTALL_FONTS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,160,90,85,12
-    EDITTEXT        IDC_TARGET_DIR,8,104,220,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "Browse...",IDC_BROWSE_DIR,240,103,50,14
+    LTEXT           "Install to directory",IDC_STATIC,8,72,56,8
+    EDITTEXT        IDC_TARGET_DIR,8,84,220,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse...",IDC_BROWSE_DIR,240,83,50,14
 
-    LTEXT           "Add shortcuts to",IDC_STATIC,8,132,52,8
+    LTEXT           "Add shortcuts to",IDC_STATIC,8,112,52,8
     CONTROL         "All Users",IDC_ALLUSERS,"Button",
-		    BS_AUTOCHECKBOX | WS_TABSTOP,160,130,44,10
-    EDITTEXT        IDC_TARGET_GROUP,8,144,220,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "Browse...",IDC_BROWSE_GROUP,240,143,50,14
+		    BS_AUTOCHECKBOX | WS_TABSTOP,160,110,44,10
+    EDITTEXT        IDC_TARGET_GROUP,8,124,220,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse...",IDC_BROWSE_GROUP,240,123,50,14
+
+    CONTROL         "Install Ghostscript Fonts",IDC_INSTALL_FONTS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,142,220,12
+    CONTROL         "Use Windows TrueType fonts for Chinese, Japanese and Korean",IDC_CJK_FONTS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,156,220,12
+
     PUSHBUTTON      "Cancel",IDCANCEL,8,178,50,14
     PUSHBUTTON      "Help",IDC_README,124,178,50,14
 END
@@ -123,7 +137,7 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     IDS_APPNAME             "AFPL Ghostscript Setup"
-    IDS_TARGET_DIR          "C:\\gs"
+    IDS_TARGET_DIR          "gs"
     IDS_TARGET_GROUP        "Ghostscript"
 END
 

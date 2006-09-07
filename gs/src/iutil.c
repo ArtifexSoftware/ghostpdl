@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Utilities for Ghostscript interpreter */
 #include "math_.h"		/* for fabs */
 #include "memory_.h"
@@ -24,6 +25,7 @@
 #include "strimpl.h"
 #include "sstring.h"
 #include "idict.h"
+#include "ifont.h"		/* for FontID equality */
 #include "imemory.h"
 #include "iname.h"
 #include "ipacked.h"		/* for array_get */
@@ -82,6 +84,8 @@ refset_null_new(ref * to, uint size, uint new_mask)
 }
 
 /* Compare two objects for equality. */
+private bool fid_eq(const gs_memory_t *mem, const gs_font *pfont1,
+		    const gs_font *pfont2);
 bool
 obj_eq(const gs_memory_t *mem, const ref * pref1, const ref * pref2)
 {
@@ -112,13 +116,20 @@ obj_eq(const gs_memory_t *mem, const ref * pref1, const ref * pref2)
 		name_string_ref(mem, pref2, &nref);
 		pref2 = &nref;
 		break;
-
-		/* differing array types can match if length is 0 */
-	    case t_array:
+		/*
+		 * Differing implementations of packedarray can be eq,
+		 * if the length is zero, but an array is never eq to a
+		 * packedarray.
+		 */
 	    case t_mixedarray:
 	    case t_shortarray:
-		return r_is_array(pref2) &&
-		       r_size(pref1) == 0 && r_size(pref2) == 0;
+		/*
+		 * Since r_type(pref1) is one of the above, this is a
+		 * clever fast check for r_type(pref2) being the other.
+		 */
+		return ((int)r_type(pref1) + (int)r_type(pref2) ==
+			t_mixedarray + t_shortarray) &&
+		    r_size(pref1) == 0 && r_size(pref2) == 0;
 	    default:
 		if (r_btype(pref1) != r_btype(pref2))
 		    return false;
@@ -168,21 +179,66 @@ obj_eq(const gs_memory_t *mem, const ref * pref1, const ref * pref2)
 	case t_astruct:
 	    return (pref1->value.pstruct == pref2->value.pstruct);
 	case t_fontID:
-	    {	/*
-		 * In the Adobe implementations, different scalings of a
-		 * font have "equal" FIDs, so we do the same.
-		 */
-		const gs_font *pfont1 = r_ptr(pref1, gs_font);
-		const gs_font *pfont2 = r_ptr(pref2, gs_font);
-
-		while (pfont1->base != pfont1)
-		    pfont1 = pfont1->base;
-		while (pfont2->base != pfont2)
-		    pfont2 = pfont2->base;
-		return (pfont1 == pfont2);
-	    }
+	    /* This is complicated enough to deserve a separate procedure. */
+	    return fid_eq(mem, r_ptr(pref1, gs_font), r_ptr(pref2, gs_font));
     }
     return false;		/* shouldn't happen! */
+}
+
+/*
+ * Compare two FontIDs for equality.  In the Adobe implementations,
+ * different scalings of a font have "equal" FIDs, so we do the same.
+ * Furthermore, in more recent Adobe interpreters, different *copies* of a
+ * font have equal FIDs -- at least for Type 1 and Type 3 fonts -- as long
+ * as the "contents" of the font are the same.  We aren't sure that the
+ * following matches the Adobe algorithm, but it's close enough to pass the
+ * Genoa CET.
+ */
+/* (This is a single-use procedure, for clearer code.) */
+private bool
+fid_eq(const gs_memory_t *mem, const gs_font *pfont1, const gs_font *pfont2)
+{
+    while (pfont1->base != pfont1)
+	pfont1 = pfont1->base;
+    while (pfont2->base != pfont2)
+	pfont2 = pfont2->base;
+    if (pfont1 == pfont2)
+	return true;
+    switch (pfont1->FontType) {
+    case 1: case 3:
+	if (pfont1->FontType == pfont2->FontType)
+	    break;
+    default:
+	return false;
+    }
+    /* The following, while peculiar, appears to match CPSI. */
+    {
+	const gs_uid *puid1 = &((const gs_font_base *)pfont1)->UID;
+	const gs_uid *puid2 = &((const gs_font_base *)pfont2)->UID;
+    if (uid_is_UniqueID(puid1) || uid_is_UniqueID(puid2) ||
+	((uid_is_XUID(puid1) || uid_is_XUID(puid2)) &&
+	 !uid_equal(puid1, puid2)))
+	return false;
+    }
+    {
+	const font_data *pfd1 = (const font_data *)pfont1->client_data;
+	const font_data *pfd2 = (const font_data *)pfont2->client_data;
+
+	if (!(obj_eq(mem, &pfd1->BuildChar, &pfd2->BuildChar) &&
+	      obj_eq(mem, &pfd1->BuildGlyph, &pfd2->BuildGlyph) &&
+	      obj_eq(mem, &pfd1->Encoding, &pfd2->Encoding) &&
+	      obj_eq(mem, &pfd1->CharStrings, &pfd2->CharStrings)))
+	    return false;
+	if (pfont1->FontType == 1) {
+	    ref *ppd1, *ppd2;
+
+	    if (dict_find_string(&pfd1->dict, "Private", &ppd1) > 0 &&
+		dict_find_string(&pfd2->dict, "Private", &ppd2) > 0 &&
+		!obj_eq(mem, ppd1, ppd2))
+		return false;
+	}
+    }
+    return true;	    
 }
 
 /* Compare two objects for identity. */
@@ -215,12 +271,12 @@ obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, uint
 	return 0;
     }
     case t_string:
-	check_read(mem, *op);
+	check_read(*op);
 	*pchars = op->value.bytes;
 	*plen = r_size(op);
 	return 0;
     default:
-	return_error(mem, e_typecheck);
+	return_error(e_typecheck);
     }
 }
 
@@ -243,7 +299,7 @@ obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, uint
 private void ensure_dot(char *);
 int
 obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
-	int full_print, uint start_pos, gs_memory_t *mem)
+	int full_print, uint start_pos, const gs_memory_t *mem)
 {
     char buf[50];  /* big enough for any float, double, or struct name */
     const byte *data = (const byte *)buf;
@@ -302,7 +358,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 	    if (start_pos > 0)
 		return obj_cvp(op, str, len, prlen, 0, start_pos - 1, mem);
 	    if (len < 1)
-		return_error(mem, e_rangecheck);
+		return_error(e_rangecheck);
 	    code = obj_cvp(op, str + 1, len - 1, prlen, 0, 0, mem);
 	    if (code < 0)
 		return code;
@@ -327,7 +383,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 
 		if (start_pos == 0) {
 		    if (len < 1)
-			return_error(mem, e_rangecheck);
+			return_error(e_rangecheck);
 		    str[0] = '(';
 		    skip = 0;
 		    wstr = str + 1;
@@ -343,7 +399,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 
 		    w.ptr = (byte *)buf - 1;
 		    w.limit = w.ptr + min(skip + len1, sizeof(buf));
-		    status = s_PSSE_template.process(mem, NULL, &r, &w, false);
+		    status = s_PSSE_template.process(NULL, &r, &w, false);
 		    written = w.ptr - ((byte *)buf - 1);
 		    if (written > skip) {
 			written -= skip;
@@ -361,14 +417,14 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 		if (status == 0) {
 #ifdef DEBUG
 		    if (skip > (truncate ? 4 : 1)) {
-			return_error(mem, e_Fatal);
+			return_error(e_Fatal);
 		    }
 #endif
 		}
 		w.ptr = wstr - 1;
 		w.limit = str - 1 + len;
 		if (status == 1)
-		    status = s_PSSE_template.process(mem, NULL, &r, &w, false);
+		    status = s_PSSE_template.process(NULL, &r, &w, false);
 		*prlen = w.ptr - (str - 1);
 		if (status != 0)
 		    return 1;
@@ -398,13 +454,13 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 	    }
 	    data = (const byte *)
 		gs_struct_type_name_string(
-			gs_object_type(mem,
-			       (const obj_header_t *)op->value.pstruct));
+		     gs_object_type((gs_memory_t *)mem,
+				    (const obj_header_t *)op->value.pstruct));
 	    size = strlen((const char *)data);
 	    if (size > 4 && !memcmp(data + size - 4, "type", 4))
 		size -= 4;
 	    if (size > sizeof(buf) - 2)
-		return_error(mem, e_rangecheck);
+		return_error(e_rangecheck);
 	    buf[0] = '-';
 	    memcpy(buf + 1, data, size);
 	    buf[size + 1] = '-';
@@ -417,10 +473,10 @@ other:
 		int rtype = r_btype(op);
 
 		if (rtype > countof(type_strings))
-		    return_error(mem, e_rangecheck);
+		    return_error(e_rangecheck);
 		data = (const byte *)type_strings[rtype];
 		if (data == 0)
-		    return_error(mem, e_rangecheck);
+		    return_error(e_rangecheck);
 	    }
 	    goto rs;
 	}
@@ -434,7 +490,7 @@ other:
 	sprintf(buf, "%ld", op->value.intval);
 	break;
     case t_string:
-	check_read(mem, *op);
+	check_read(*op);
 	/* falls through */
     case t_name:
 	code = obj_string_data(mem, op, &data, &size);
@@ -470,7 +526,17 @@ other:
 	break;
     }
     case t_real:
-	sprintf(buf, "%g", op->value.realval);
+	/*
+	 * The value 0.0001 is a boundary case that the Adobe interpreters
+	 * print in f-format but at least some gs versions print in
+	 * e-format, presumably because of differences in the underlying C
+	 * library implementation.  Work around this here.
+	 */
+	if (op->value.realval == (float)0.0001) {
+	    strcpy(buf, "0.0001");
+	} else {
+	    sprintf(buf, "%g", op->value.realval);
+	}
 	ensure_dot(buf);
 	break;
     default:
@@ -478,32 +544,31 @@ other:
     }
 rs: size = strlen((const char *)data);
 nl: if (size < start_pos)
-	return_error(mem, e_rangecheck);
+	return_error(e_rangecheck);
     size -= start_pos;
     *prlen = min(size, len);
     memmove(str, data + start_pos, *prlen);
     return (size > len);
 }
 /*
- * Make sure the converted form of a real number has a decimal point.  This
- * is needed for compatibility with Adobe (and other) interpreters.
+ * Make sure the converted form of a real number has at least one of an 'e'
+ * or a decimal point, so it won't be mistaken for an integer.
+ * Re-format the exponent to satisfy Genoa CET test.
  */
 private void
 ensure_dot(char *buf)
 {
-    if (strchr(buf, '.') == NULL) {
-	char *ept = strchr(buf, 'e');
-
-	if (ept == NULL)
-	    strcat(buf, ".0");
-	else {
-	    /* Insert the .0 before the exponent.  What a nuisance! */
-	    char buf1[30];
-
-	    strcpy(buf1, ept);
-	    strcpy(ept, ".0");
-	    strcat(ept, buf1);
-	}
+    char *pe = strchr(buf, 'e');
+    if (pe) {
+        int i;
+        sscanf(pe + 1, "%d", &i);
+        /* MSVC .net 2005 express doesn't support "%+02d" */
+        if (i >= 0)
+            sprintf(pe + 1, "+%02d", i);
+        else
+            sprintf(pe + 1, "-%02d", -i);
+    } else if (strchr(buf, '.') == NULL) {
+	strcat(buf, ".0");
     }
 }
 
@@ -519,14 +584,14 @@ int
 obj_cvs(const gs_memory_t *mem, const ref * op, byte * str, uint len, uint * prlen,
 	const byte ** pchars)
 {
-    int code = obj_cvp(op, str, len, prlen, 0, 0, (gs_memory_t *)mem);
+    int code = obj_cvp(op, str, len, prlen, 0, 0, mem);  /* NB: NULL memptr */
 
     if (code != 1 && pchars) {
 	*pchars = str;
 	return code;
     }
     obj_string_data(mem, op, pchars, prlen);
-    return gs_note_error(mem, e_rangecheck);
+    return gs_note_error(e_rangecheck);
 }
 
 /* Find the index of an operator that doesn't have one stored in it. */
@@ -575,7 +640,7 @@ int
 array_get(const gs_memory_t *mem, const ref * aref, long index_long, ref * pref)
 {
     if ((ulong)index_long >= r_size(aref))
-	return_error(mem, e_rangecheck);
+	return_error(e_rangecheck);
     switch (r_type(aref)) {
 	case t_array:
 	    {
@@ -602,7 +667,7 @@ array_get(const gs_memory_t *mem, const ref * aref, long index_long, ref * pref)
 	    }
 	    break;
 	default:
-	    return_error(mem, e_typecheck);
+	    return_error(e_typecheck);
     }
     return 0;
 }
@@ -692,7 +757,7 @@ ref_to_string(const ref * pref, gs_memory_t * mem, client_name_t cname)
 /* The stack underflow check (check for t__invalid) is harmless */
 /* if the operands come from somewhere other than the stack. */
 int
-num_params(const gs_memory_t *mem, const ref * op, int count, double *pval)
+num_params(const ref * op, int count, double *pval)
 {
     int mask = 0;
 
@@ -708,9 +773,9 @@ num_params(const gs_memory_t *mem, const ref * op, int count, double *pval)
 		mask++;
 		break;
 	    case t__invalid:
-		return_error(mem, e_stackunderflow);
+		return_error(e_stackunderflow);
 	    default:
-		return_error(mem, e_typecheck);
+		return_error(e_typecheck);
 	}
 	op--;
     }
@@ -720,7 +785,7 @@ num_params(const gs_memory_t *mem, const ref * op, int count, double *pval)
 }
 /* float_params doesn't bother to keep track of the mask. */
 int
-float_params(const gs_memory_t *mem, const ref * op, int count, float *pval)
+float_params(const ref * op, int count, float *pval)
 {
     for (pval += count; --count >= 0; --op)
 	switch (r_type(op)) {
@@ -731,9 +796,9 @@ float_params(const gs_memory_t *mem, const ref * op, int count, float *pval)
 		*--pval = (float)op->value.intval;
 		break;
 	    case t__invalid:
-		return_error(mem, e_stackunderflow);
+		return_error(e_stackunderflow);
 	    default:
-		return_error(mem, e_typecheck);
+		return_error(e_typecheck);
 	}
     return 0;
 }
@@ -746,7 +811,7 @@ process_float_array(const gs_memory_t *mem, const ref * parray, int count, float
 
     /* we assume parray is an array of some type, of adequate length */
     if (r_has_type(parray, t_array))
-        return float_params(mem, parray->value.refs + count - 1, count, pval);
+        return float_params(parray->value.refs + count - 1, count, pval);
 
     /* short/mixed array; convert the entries to refs */
     while (count > 0 && code >= 0) {
@@ -757,7 +822,7 @@ process_float_array(const gs_memory_t *mem, const ref * parray, int count, float
         for (i = 0; i < subcount && code >= 0; i++)
             code = array_get(mem, parray, (long)(i + indx0), &ref_buff[i]);
         if (code >= 0)
-            code = float_params(mem, ref_buff + subcount - 1, subcount, pval);
+            code = float_params(ref_buff + subcount - 1, subcount, pval);
         count -= subcount;
         pval += subcount;
         indx0 += subcount;
@@ -770,7 +835,7 @@ process_float_array(const gs_memory_t *mem, const ref * parray, int count, float
 /* The only possible error is e_typecheck. */
 /* If an error is returned, the return value is not updated. */
 int
-real_param(const gs_memory_t *mem, const ref * op, double *pparam)
+real_param(const ref * op, double *pparam)
 {
     switch (r_type(op)) {
 	case t_integer:
@@ -780,15 +845,15 @@ real_param(const gs_memory_t *mem, const ref * op, double *pparam)
 	    *pparam = op->value.realval;
 	    break;
 	default:
-	    return_error(mem, e_typecheck);
+	    return_error(e_typecheck);
     }
     return 0;
 }
 int
-float_param(const gs_memory_t *mem, const ref * op, float *pparam)
+float_param(const ref * op, float *pparam)
 {
     double dval;
-    int code = real_param(mem, op, &dval);
+    int code = real_param(op, &dval);
 
     if (code >= 0)
 	*pparam = (float)dval;	/* can't overflow */
@@ -797,9 +862,9 @@ float_param(const gs_memory_t *mem, const ref * op, float *pparam)
 
 /* Get an integer parameter in a given range. */
 int
-int_param(const gs_memory_t *mem, const ref * op, int max_value, int *pparam)
+int_param(const ref * op, int max_value, int *pparam)
 {
-    check_int_leu(mem, *op, max_value);
+    check_int_leu(*op, max_value);
     *pparam = (int)op->value.intval;
     return 0;
 }
@@ -829,9 +894,17 @@ make_floats(ref * op, const float *pval, int count)
 int
 check_proc_failed(const ref * pref)
 {
-    return (r_is_array(pref) ? e_invalidaccess :
-	    r_has_type(pref, t__invalid) ? e_stackunderflow :
-	    e_typecheck);
+    if (r_is_array(pref)) {
+        if (r_has_attr(pref, a_executable))
+            return e_invalidaccess;
+        else
+            return e_typecheck;
+    } else {
+        if (r_has_type(pref, t__invalid))
+            return e_stackunderflow;
+        else
+            return e_typecheck;
+    }
 }
 
 /* Compute the error code when a type check on the stack fails. */
@@ -853,22 +926,30 @@ read_matrix(const gs_memory_t *mem, const ref * op, gs_matrix * pmat)
     ref values[6];
     const ref *pvalues;
 
-    if (r_has_type(op, t_array))
-	pvalues = op->value.refs;
-    else {
-	int i;
+    switch (r_type(op)) {
+	case t_array:
+	    pvalues = op->value.refs;
+	    break;
+	case t_mixedarray:
+	case t_shortarray:
+	    {
+		int i;
 
-	for (i = 0; i < 6; ++i) {
-	    code = array_get(mem, op, (long)i, &values[i]);
-	    if (code < 0)
-		return code;
-	}
-	pvalues = values;
+		for (i = 0; i < 6; ++i) {
+		    code = array_get(mem, op, (long)i, &values[i]);
+		    if (code < 0)
+			return code;
+		}
+		pvalues = values;
+	    }
+	    break;
+	default:
+	    return_op_typecheck(op);
     }
-    check_read(mem, *op);
+    check_read(*op);
     if (r_size(op) != 6)
-	return_error(mem, e_rangecheck);
-    code = float_params(mem, pvalues + 5, 6, (float *)pmat);
+	return_error(e_rangecheck);
+    code = float_params(pvalues + 5, 6, (float *)pmat);
     return (code < 0 ? code : 0);
 }
 
@@ -882,9 +963,9 @@ write_matrix_in(ref * op, const gs_matrix * pmat, gs_dual_memory_t *idmemory,
     const float *pel;
     int i;
 
-    check_write_type((const gs_memory_t *)imem, *op, t_array);
+    check_write_type(*op, t_array);
     if (r_size(op) != 6)
-	return_error((const gs_memory_t *)imem, e_rangecheck);
+	return_error(e_rangecheck);
     aptr = op->value.refs;
     pel = (const float *)pmat;
     for (i = 5; i >= 0; i--, aptr++, pel++) {

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Color mapping procedures */
 /* Requires gxdcolor.h. */
 
@@ -49,6 +50,8 @@ typedef struct gx_device_color_s gx_device_color;
 #define cmap_proc_devicen(proc)\
   void proc(const frac *, gx_device_color *, const gs_imager_state *, \
 	       gx_device *, gs_color_select_t)
+#define cmap_proc_is_halftoned(proc)\
+  bool proc(const gs_imager_state *, gx_device *)
 
 /*
  * List of mapping functions from the standard color spaces to the
@@ -113,6 +116,7 @@ struct gx_color_map_procs_s {
     cmap_proc_rgb_alpha((*map_rgb_alpha));
     cmap_proc_separation((*map_separation));
     cmap_proc_devicen((*map_devicen));
+    cmap_proc_is_halftoned((*is_halftoned));
 };
 typedef struct gx_color_map_procs_s gx_color_map_procs;
 
@@ -188,10 +192,20 @@ extern cm_map_proc_cmyk(gx_error_cmyk_cs_to_cmyk_cm);
     dev_t_proc_get_color_mapping_procs(proc, gx_device)
 
 /*
+  Define the options for the component_type parameter to get_color_comp_index
+  routines.  Note:  This information is currently being used by the routines
+  for identifying when they are being given a separation name.  Some devices
+  automaticaly add separations to the device's components if the separation
+  is not previously known and there is room in the device.
+*/
+#define NO_COMP_NAME_TYPE	0
+#define SEPARATION_NAME		1
+
+/*
   Convert a color component name into a colorant index.
 */
 #define dev_t_proc_get_color_comp_index(proc, dev_t) \
-    int (proc)(const dev_t * dev, const char * pname, int name_size, int src_index)
+    int (proc)(dev_t * dev, const char * pname, int name_size, int component_type)
 
 #define dev_proc_get_color_comp_index(proc) \
     dev_t_proc_get_color_comp_index(proc, gx_device)
@@ -225,6 +239,7 @@ dev_proc_get_color_comp_index(gx_error_get_color_comp_index);
 dev_proc_get_color_comp_index(gx_default_DevGray_get_color_comp_index);
 dev_proc_get_color_comp_index(gx_default_DevRGB_get_color_comp_index);
 dev_proc_get_color_comp_index(gx_default_DevCMYK_get_color_comp_index);
+dev_proc_get_color_comp_index(gx_default_DevRGBK_get_color_comp_index);
 
 /*
  * These are the default routines for getting the color space conversion
@@ -234,6 +249,7 @@ dev_proc_get_color_mapping_procs(gx_error_get_color_mapping_procs);
 dev_proc_get_color_mapping_procs(gx_default_DevGray_get_color_mapping_procs);
 dev_proc_get_color_mapping_procs(gx_default_DevRGB_get_color_mapping_procs);
 dev_proc_get_color_mapping_procs(gx_default_DevCMYK_get_color_mapping_procs);
+dev_proc_get_color_mapping_procs(gx_default_DevRGBK_get_color_mapping_procs);
 
 /*
  * These are the default routines for converting a colorant value list

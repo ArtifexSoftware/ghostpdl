@@ -207,7 +207,7 @@ met_PaintPattern(const gs_client_color *pcc, gs_state *pgs)
 
 
     if (gs_debug_c('b'))
-	dprintf5(mem, "paint_image cs=%d n=%d bpc=%d w=%d h=%d\n",
+	dprintf5("paint_image cs=%d n=%d bpc=%d w=%d h=%d\n",
 		 pmim->colorspace, pmim->comps, pmim->bits, pmim->width, pmim->height);
 
     /* should be just save the ctm */
@@ -387,7 +387,7 @@ make_pattern(ST_Name ImageSource, met_pattern_t *metpat, met_state_t *ms)
 				((vport.q.y - vport.p.y) / (vbox.q.y - vbox.p.y)));
             gs_matrix_scale(&mat, scalex, scaley, &mat);
         }
-        gs_matrix_translate(mem, &mat, -vbox.p.x, vbox.p.y, &mat);
+        gs_matrix_translate(&mat, -vbox.p.x, vbox.p.y, &mat);
 
         /* nb defaults to RGB */
         gs_cspace_init_DeviceRGB(mem, &cs);

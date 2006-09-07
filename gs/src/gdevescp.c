@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$*/
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$*/
 /*
  * Epson 'ESC/P 2' language printer driver.
  *
@@ -111,8 +111,8 @@ escp2_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	int band_size = 24;	/* 1, 8, or 24 */
 	int in_size = line_size * band_size;
 
-	byte *buf1 = (byte *)gs_malloc(in_size, 1, "escp2_print_page(buf1)");
-	byte *buf2 = (byte *)gs_malloc(in_size, 1, "escp2_print_page(buf2)");
+	byte *buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "escp2_print_page(buf1)");
+	byte *buf2 = (byte *)gs_malloc(pdev->memory, in_size, 1, "escp2_print_page(buf2)");
 	byte *in = buf1;
 	byte *out = buf2;
 
@@ -142,9 +142,9 @@ escp2_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
 	if ( buf1 == 0 || buf2 == 0 )
 	{	if ( buf1 ) 
-		  gs_free((char *)buf1, in_size, 1, "escp2_print_page(buf1)");
+		  gs_free(pdev->memory, (char *)buf1, in_size, 1, "escp2_print_page(buf1)");
 		if ( buf2 ) 
-		  gs_free((char *)buf2, in_size, 1, "escp2_print_page(buf2)");
+		  gs_free(pdev->memory, (char *)buf2, in_size, 1, "escp2_print_page(buf2)");
 		return_error(gs_error_VMerror);
 	}
 
@@ -404,7 +404,7 @@ escp2_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	fputs("\f\033@", prn_stream);
 	fflush(prn_stream);
 
-	gs_free((char *)buf2, in_size, 1, "escp2_print_page(buf2)");
-	gs_free((char *)buf1, in_size, 1, "escp2_print_page(buf1)");
+	gs_free(pdev->memory, (char *)buf2, in_size, 1, "escp2_print_page(buf2)");
+	gs_free(pdev->memory, (char *)buf1, in_size, 1, "escp2_print_page(buf1)");
 	return 0;
 }

@@ -1,16 +1,23 @@
-/* Copyright (C) 2002 artofcode LLC. All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
-/* Type 1 hinter, a new algorithm, prototypes */
+/* Type 1 hinter, prototypes */
 
 #ifndef gxhintn_INCLUDED
 #  define gxhintn_INCLUDED
+
+#include "stdint_.h"
 
 #ifndef gs_type1_data_DEFINED
 #define gs_type1_data_DEFINED
@@ -27,17 +34,15 @@ typedef struct gs_type42_data_s gs_type42_data;
 typedef struct gx_path_s gx_path;
 #endif
 
-
 #define T1_MAX_STEM_SNAPS 12
 #define T1_MAX_ALIGNMENT_ZONES 6
 #define T1_MAX_CONTOURS 10
 #define T1_MAX_POLES (100 + T1_MAX_CONTOURS) /* Must be grater than 8 for 'flex'. */
 #define T1_MAX_HINTS 30
 
-typedef int int32;
 typedef fixed t1_glyph_space_coord; /* measured in original glyph space units */
-typedef int32 t1_hinter_space_coord; /* measured in internal outliner's space units */
-typedef int32 int19;
+typedef int32_t t1_hinter_space_coord; /* measured in internal outliner's space units */
+typedef int32_t int19;
 
 enum t1_hint_type
 {   hstem, vstem, dot
@@ -52,7 +57,7 @@ enum t1_zone_type
 };
 
 enum t1_align_type
-{   unaligned, aligned, topzn, botzn
+{   unaligned, weak, aligned, topzn, botzn
 };
 
 typedef struct {
@@ -61,7 +66,7 @@ typedef struct {
 
 typedef struct {
     int19 xx, xy, yx, yy;
-    int32 denominator;
+    int32_t denominator;
     unsigned int bitshift;
 } fraction_matrix;
 
@@ -72,22 +77,33 @@ typedef struct t1_pole_s /* a pole of outline */
     enum t1_pole_type type;
     int contour_index;
     enum t1_align_type aligned_x, aligned_y;
+    t1_glyph_space_coord boundary_length_x, boundary_length_y;
 } t1_pole;
 
 typedef struct t1_hint_s
 {   enum t1_hint_type type;
     t1_glyph_space_coord g0, g1; /* starting and ending transversal coord of the stem */
     t1_glyph_space_coord ag0, ag1; /* starting and ending transversal aligned coord of the stem */
+    bool b0, b1;  /* g0, g1 correspond to a real stem. */
     enum t1_align_type aligned0, aligned1; /* ag0, ag1 is aligned */
+    int q0, q1; /* Stem quality tangent. */
     unsigned int stem3_index; /* 1,2,3 for stem3 (not used yet), 0 for other types */
     int range_index; /* type 2 only */
+    int side_mask;
+    short stem_snap_index0, stem_snap_index1; /* Applicable StemSnap* index range. */
+    t1_glyph_space_coord boundary_length0, boundary_length1;
 } t1_hint;
 
 typedef struct t1_hint_range_s
 {   short beg_pole, end_pole;
-    int contour_index;
     int next;
-} t1_hint_range; /* type 2 only */
+} t1_hint_range;
+
+typedef struct t1_hint_applying_s
+{   int pole;
+    int opposite;
+    int next;
+} t1_hint_applying;
 
 typedef struct t1_zone_s /* alignment zone */
 {   enum t1_zone_type type;
@@ -99,8 +115,8 @@ typedef struct t1_hinter_s
 {   fraction_matrix ctmf;
     fraction_matrix ctmi;
     unsigned int g2o_fraction_bits;
-    unsigned int max_import_coord;
-    int32 g2o_fraction;
+    unsigned long max_import_coord;
+    int32_t g2o_fraction;
     t1_glyph_space_coord orig_gx, orig_gy; /* glyph origin in glyph space */
     t1_glyph_space_coord subglyph_orig_gx, subglyph_orig_gy; /* glyph origin in glyph space */
     fixed orig_dx, orig_dy; /* glyph origin in device space */
@@ -116,6 +132,7 @@ typedef struct t1_hinter_s
     bool grid_fit_x, grid_fit_y;
     bool charpath_flag;
     bool path_opened;
+    bool autohinting;
     t1_glyph_space_coord blue_shift, blue_fuzz;
     t1_pole pole0[T1_MAX_POLES], *pole;
     t1_hint hint0[T1_MAX_HINTS], *hint;
@@ -123,18 +140,23 @@ typedef struct t1_hinter_s
     int contour0[T1_MAX_CONTOURS], *contour;
     t1_glyph_space_coord stem_snap0[2][T1_MAX_STEM_SNAPS + 1]; /* StdWH + StemSnapH, StdWV + StemSnapV */
     t1_glyph_space_coord *stem_snap[2];
+    int stem_snap_vote0[T1_MAX_STEM_SNAPS + 1];
+    int *stem_snap_vote;
     t1_hint_range hint_range0[T1_MAX_HINTS], *hint_range;
+    t1_hint_applying hint_applying0[T1_MAX_HINTS * 4], *hint_applying;
     int stem_snap_count[2], max_stem_snap_count[2]; /* H, V */
+    int stem_snap_vote_count, max_stem_snap_vote_count;
     int contour_count, max_contour_count;
     int zone_count, max_zone_count;
     int pole_count, max_pole_count;
     int hint_count, max_hint_count;
     int hint_range_count, max_hint_range_count;
+    int hint_applying_count, max_hint_applying_count;
     int primary_hint_count;
     int flex_count;
     int FontType; /* 1 or 2 */
+    bool have_flex;
     bool ForceBold;
-    bool seac_flag;
     bool keep_stem_width;
     bool suppress_overshoots;
     double BlueScale;
@@ -147,7 +169,10 @@ typedef struct t1_hinter_s
     int19 heigt_transform_coef_rat;
     int19 width_transform_coef_inv;
     int19 heigt_transform_coef_inv;
+    int32_t pixel_o_x, pixel_o_y; /* pixel size in the outline space. */
+    t1_glyph_space_coord pixel_gw, pixel_gh; /* pixel size in the glyph space (maybe transpozed). */
     t1_glyph_space_coord overshoot_threshold;
+    t1_glyph_space_coord ymin, ymax, ymid;
     gx_path *output_path;
     gs_memory_t *memory;
 } t1_hinter;
@@ -180,10 +205,10 @@ int  t1_hinter__drop_hints(t1_hinter * this);
 int  t1_hinter__dotsection(t1_hinter * this);
 int  t1_hinter__hstem(t1_hinter * this, fixed x0, fixed x1);
 int  t1_hinter__vstem(t1_hinter * this, fixed y0, fixed y1);
+int  t1_hinter__overall_hstem(t1_hinter * this, fixed x0, fixed x1, int side_mask);
 int  t1_hinter__hstem3(t1_hinter * this, fixed x0, fixed y1, fixed x2, fixed y3, fixed x4, fixed y5);
 int  t1_hinter__vstem3(t1_hinter * this, fixed y0, fixed y1, fixed y2, fixed y3, fixed y4, fixed y5);
 
-int  t1_hinter__endchar(t1_hinter * this, bool seac_flag);
 int  t1_hinter__endglyph(t1_hinter * this);
 int  t1_hinter__is_x_fitting(t1_hinter * this);
 

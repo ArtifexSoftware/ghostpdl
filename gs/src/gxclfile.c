@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* File-based command list implementation */
 #include "stdio_.h"
 #include "string_.h"
@@ -33,32 +34,31 @@ clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 {
     if (*fname == 0) {
 	if (fmode[0] == 'r')
-	    return_error(mem, gs_error_invalidfileaccess);
+	    return_error(gs_error_invalidfileaccess);
 	*pcf =
-	    (clist_file_ptr) gp_open_scratch_file(mem, gp_scratch_file_name_prefix,
+	    (clist_file_ptr) gp_open_scratch_file(gp_scratch_file_name_prefix,
 						  fname, fmode);
     } else
 	*pcf = gp_fopen(fname, fmode);
     if (*pcf == NULL) {
-	eprintf1(mem, "Could not open the scratch file %s.\n", fname);
-	return_error(mem, gs_error_invalidfileaccess);
+	eprintf1("Could not open the scratch file %s.\n", fname);
+	return_error(gs_error_invalidfileaccess);
     }
     return 0;
 }
 
 int
-clist_fclose(const gs_memory_t *mem, 
-	     clist_file_ptr cf, const char *fname, bool delete)
+clist_fclose(clist_file_ptr cf, const char *fname, bool delete)
 {
-    return (fclose((FILE *) cf) != 0 ? gs_note_error(mem, gs_error_ioerror) :
-	    delete ? clist_unlink(mem, fname) :
+    return (fclose((FILE *) cf) != 0 ? gs_note_error(gs_error_ioerror) :
+	    delete ? clist_unlink(fname) :
 	    0);
 }
 
 int
-clist_unlink(const gs_memory_t *mem, const char *fname)
+clist_unlink(const char *fname)
 {
-    return (unlink(fname) != 0 ? gs_note_error(mem, gs_error_ioerror) : 0);
+    return (unlink(fname) != 0 ? gs_note_error(gs_error_ioerror) : 0);
 }
 
 /* ------ Writing ------ */
@@ -112,7 +112,7 @@ clist_fread_chars(void *data, uint len, clist_file_ptr cf)
 /* ------ Position/status ------ */
 
 int
-clist_set_memory_warning(const gs_memory_t *mem, clist_file_ptr cf, int bytes_left)
+clist_set_memory_warning(clist_file_ptr cf, int bytes_left)
 {
     return 0;			/* no-op */
 }

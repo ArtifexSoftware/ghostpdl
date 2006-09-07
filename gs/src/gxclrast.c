@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/*$Id$ */
 /* Command list interpreter/rasterizer */
 #include "memory_.h"
 #include "gx.h"
@@ -56,19 +57,19 @@ extern const gs_color_space_type gs_color_space_type_Indexed;
 /* Print a bitmap for tracing */
 #ifdef DEBUG
 private void
-cmd_print_bits(const gs_memory_t *mem, const byte * data, int width, int height, int raster)
+cmd_print_bits(const byte * data, int width, int height, int raster)
 {
     int i, j;
 
-    dlprintf3(mem, "[L]width=%d, height=%d, raster=%d\n",
+    dlprintf3("[L]width=%d, height=%d, raster=%d\n",
 	      width, height, raster);
     for (i = 0; i < height; i++) {
 	const byte *row = data + i * raster;
 
-	dlprintf(mem, "[L]");
+	dlprintf("[L]");
 	for (j = 0; j < raster; j++)
-	    dprintf1(mem, " %02x", row[j]);
-	dputc(mem,'\n');
+	    dprintf1(" %02x", row[j]);
+	dputc('\n');
     }
 }
 #else
@@ -81,6 +82,7 @@ cmd_print_bits(const gs_memory_t *mem, const byte * data, int width, int height,
     if ( *p < 0x80 ) var = *p++;\
     else { const byte *_cbp; var = cmd_get_w(p, &_cbp); p = _cbp; }\
   END
+
 private long
 cmd_get_w(const byte * p, const byte ** rp)
 {
@@ -135,7 +137,7 @@ top_up_cbuf(command_buf_t *pcb, const byte *cbp)
 	nread = 1;
     }
     set_cb_end(pcb, cb_top + nread);
-    process_interrupts();
+    process_interrupts(pcb->s->memory);
     return pcb->data;
 }
 
@@ -184,7 +186,7 @@ typedef struct ht_buff_s {
  * Render one band to a specified target device.  Note that if
  * action == setup, target may be 0.
  */
-private int read_set_tile_size(const gs_memory_t *mem, command_buf_t *pcb, tile_slot *bits);
+private int read_set_tile_size(command_buf_t *pcb, tile_slot *bits);
 private int read_set_bits(command_buf_t *pcb, tile_slot *bits,
                           int compress, gx_clist_state *pcls,
                           gx_strip_bitmap *tile, tile_slot **pslot,
@@ -196,7 +198,7 @@ private int read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
                                  gs_color_space *pcolor_space,
                                  gs_memory_t *mem);
 private int read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
-                             const gs_color_space *pcs, gs_memory_t *mem);
+                             const gs_color_space *pcs);
 private int read_put_params(command_buf_t *pcb, gs_imager_state *pis,
                             gx_device_clist_reader *cdev,
                             gs_memory_t *mem);
@@ -208,7 +210,7 @@ private int read_ht_segment(ht_buff_t *, command_buf_t *, gs_imager_state *,
 			    gx_device *, gs_memory_t *);
 
 private const byte *cmd_read_rect(int, gx_cmd_rect *, const byte *);
-private const byte *cmd_read_matrix(gs_matrix *, const byte *, gs_memory_t *mem);
+private const byte *cmd_read_matrix(gs_matrix *, const byte *);
 private const byte *cmd_read_short_bits(command_buf_t *pcb, byte *data,
                                         int width_bytes, int height,
                                         uint raster, const byte *cbp);
@@ -218,8 +220,7 @@ private int cmd_select_map(cmd_map_index, cmd_map_contents,
 private int cmd_create_dev_ht(gx_device_halftone **, gs_memory_t *);
 private int cmd_resize_halftone(gx_device_halftone **, uint,
                                 gs_memory_t *);
-private int clist_decode_segment(const gs_memory_t *mem,
-				 gx_path *, int, fixed[6],
+private int clist_decode_segment(gx_path *, int, fixed[6],
                                  gs_fixed_point *, int, int,
                                  segment_notes);
 private int clist_do_polyfill(gx_device *, gx_path *,
@@ -240,11 +241,10 @@ clist_playback_band(clist_playback_action playback_action,
 #define data_bits_size cbuf_size
     byte *data_bits = 0;
     register const byte *cbp;
-    int dev_depth = cdev->color_info.depth;
-    int dev_depth_bytes = (dev_depth + 7) >> 3;
-    int odd_delta_shift = (dev_depth_bytes - 3) * 8;
+    int dev_depth;		/* May vary due to compositing devices */
+    int dev_depth_bytes;
+    int odd_delta_shift;
     int num_zero_bytes;
-    gx_color_index delta_offset = cmd_delta_offsets[dev_depth_bytes];
     gx_device *tdev;
     gx_clist_state state;
     gx_color_index *set_colors;
@@ -355,7 +355,7 @@ in:				/* Initialize for a new page. */
     data_bits = gs_alloc_bytes(mem, data_bits_size,
 			       "clist_playback_band(data_bits)");
     if (data_bits == 0) {
-	code = gs_note_error(mem, gs_error_VMerror);
+	code = gs_note_error(gs_error_VMerror);
 	goto out;
     }
     while (code >= 0) {
@@ -374,7 +374,7 @@ in:				/* Initialize for a new page. */
 	    if (cbuf.end_status < 0) {	/* End of file or error. */
 		if (cbp == cbuf.end) {
 		    code = (cbuf.end_status == EOFC ? 0 :
-			    gs_note_error(mem, gs_error_ioerror));
+			    gs_note_error(gs_error_ioerror));
 		    break;
 		}
 	    } else {
@@ -387,20 +387,20 @@ in:				/* Initialize for a new page. */
 	    const char *const *sub = cmd_sub_op_names[op >> 4];
 
 	    if (sub)
-		dlprintf1(mem, "[L]%s:", sub[op & 0xf]);
+		dlprintf1("[L]%s:", sub[op & 0xf]);
 	    else
-		dlprintf2(mem, "[L]%s %d:", cmd_op_names[op >> 4], op & 0xf);
+		dlprintf2("[L]%s %d:", cmd_op_names[op >> 4], op & 0xf);
 	}
 #endif
 	switch (op >> 4) {
 	    case cmd_op_misc >> 4:
 		switch (op) {
 		    case cmd_opv_end_run:
-			if_debug0(mem, 'L', "\n");
+			if_debug0('L', "\n");
 			continue;
 		    case cmd_opv_set_tile_size:
 			cbuf.ptr = cbp;
-			code = read_set_tile_size(mem, &cbuf, &tile_bits);
+			code = read_set_tile_size(&cbuf, &tile_bits);
 			cbp = cbuf.ptr;
 			if (code < 0)
 			    goto out;
@@ -408,7 +408,7 @@ in:				/* Initialize for a new page. */
 		    case cmd_opv_set_tile_phase:
 			cmd_getw(state.tile_phase.x, cbp);
 			cmd_getw(state.tile_phase.y, cbp);
-			if_debug2(mem, 'L', " (%d,%d)\n",
+			if_debug2('L', " (%d,%d)\n",
 				  state.tile_phase.x,
 				  state.tile_phase.y);
 			goto set_phase;
@@ -429,7 +429,7 @@ in:				/* Initialize for a new page. */
 			bits.cb_depth = *cbp++ >> 2;
 			cmd_getw(bits.width, cbp);
 			cmd_getw(bits.height, cbp);
-			if_debug4(mem, 'L', " compress=%d depth=%d size=(%d,%d)",
+			if_debug4('L', " compress=%d depth=%d size=(%d,%d)",
 				  compress, bits.cb_depth,
 				  bits.width, bits.height);
 			bits.cb_raster =
@@ -439,7 +439,7 @@ in:				/* Initialize for a new page. */
 			goto stb;
 		    case cmd_opv_set_tile_color:
 			set_colors = state.tile_colors;
-			if_debug0(mem, 'L', "\n");
+			if_debug0('L', "\n");
 			continue;
 		    case cmd_opv_set_misc:
 			{
@@ -449,7 +449,7 @@ in:				/* Initialize for a new page. */
 				case cmd_set_misc_lop >> 6:
 				    cmd_getw(state.lop, cbp);
 				    state.lop = (state.lop << 6) + (cb & 0x3f);
-				    if_debug1(mem, 'L', " lop=0x%x\n", state.lop);
+				    if_debug1('L', " lop=0x%x\n", state.lop);
 				    if (state.lop_enabled)
 					imager_state.log_op = state.lop;
 				    break;
@@ -459,7 +459,7 @@ in:				/* Initialize for a new page. */
 				    else
 					data_x = 0;
 				    data_x = (data_x << 5) + (cb & 0x1f);
-				    if_debug1(mem, 'L', " data_x=%d\n", data_x);
+				    if_debug1('L', " data_x=%d\n", data_x);
 				    break;
 				case cmd_set_misc_map >> 6:
 				    {
@@ -481,7 +481,7 @@ in:				/* Initialize for a new page. */
 					    cbp++;
 					else {
 					    *pcomp_num = (int) *cbp++;
-				    	    if_debug1(mem, 'L', " comp_num=%d",
+				    	    if_debug1('L', " comp_num=%d",
 							    *pcomp_num);
 					}
 					if (cont == cmd_map_other) {
@@ -491,11 +491,11 @@ in:				/* Initialize for a new page. */
 						uint i;
 
 						for (i = 0; i < count / sizeof(*mdata); ++i)
-						    dprintf1(mem, " 0x%04x", mdata[i]);
-						dputc(mem, '\n');
+						    dprintf1(" 0x%04x", mdata[i]);
+						dputc('\n');
 					    }
 					} else {
-					    if_debug0(mem, 'L', " none\n");
+					    if_debug0('L', " none\n");
 #endif
 					}
 				    }
@@ -508,7 +508,7 @@ in:				/* Initialize for a new page. */
 
 				    halftone_type = cb & 0x3f;
 				    cmd_getw(num_comp, cbp);
-				    if_debug2(mem, 'L', " halftone type=%d num_comp=%u\n",
+				    if_debug2('L', " halftone type=%d num_comp=%u\n",
 					      halftone_type, num_comp);
 				    code = cmd_resize_halftone(
 							&imager_state.dev_ht,
@@ -525,15 +525,15 @@ in:				/* Initialize for a new page. */
 		    case cmd_opv_enable_lop:
 			state.lop_enabled = true;
 			imager_state.log_op = state.lop;
-			if_debug0(mem, 'L', "\n");
+			if_debug0('L', "\n");
 			continue;
 		    case cmd_opv_disable_lop:
 			state.lop_enabled = false;
 			imager_state.log_op = lop_default;
-			if_debug0(mem, 'L', "\n");
+			if_debug0('L', "\n");
 			continue;
 		    case cmd_opv_end_page:
-			if_debug0(mem, 'L', "\n");
+			if_debug0('L', "\n");
 			/*
 			 * Do end-of-page cleanup, then reinitialize if
 			 * there are more pages to come.
@@ -550,6 +550,8 @@ in:				/* Initialize for a new page. */
 			    gx_color_index delta = 0;
 			    uint data;
 
+			    dev_depth = cdev->color_info.depth;
+			    dev_depth_bytes = (dev_depth + 7) >> 3;
 		            switch (dev_depth_bytes) {
 				/* For cases with an even number of bytes */
 			        case 8:
@@ -580,23 +582,28 @@ in:				/* Initialize for a new page. */
 				        ((data & 0xf0) << 4) + (data & 0x0f));
 			        case 3:
 			            data = *cbp++;
+				    odd_delta_shift = (dev_depth_bytes - 3) * 8;
 			            delta |= ((gx_color_index)
 				        ((data & 0xe0) << 3) + (data & 0x1f)) << odd_delta_shift;
 				    data = *cbp++;
 			            delta |= ((gx_color_index) ((data & 0xf8) << 2) + (data & 0x07))
 				    			<< (odd_delta_shift + 11);
 		            }
-		            *pcolor += delta - delta_offset;;
+		            *pcolor += delta - cmd_delta_offsets[dev_depth_bytes];
 			}
-			if_debug1(mem, 'L', " 0x%lx\n", *pcolor);
+			if (sizeof(*pcolor) <= sizeof(ulong))
+			    if_debug1('L', " 0x%lx\n", (ulong)*pcolor);
+			else
+			    if_debug2('L', " 0x%8lx%08lx\n", 
+				(ulong)(*pcolor >> 8*(sizeof(*pcolor) - sizeof(ulong))), (ulong)*pcolor);
 			continue;
 		    case cmd_opv_set_copy_color:
 			state.color_is_alpha = 0;
-			if_debug0(mem, 'L', "\n");
+			if_debug0('L', "\n");
 			continue;
 		    case cmd_opv_set_copy_alpha:
 			state.color_is_alpha = 1;
-			if_debug0(mem, 'L', "\n");
+			if_debug0('L', "\n");
 			continue;
 		    default:
 			goto bad_op;
@@ -622,6 +629,8 @@ in:				/* Initialize for a new page. */
 		else {
 		    gx_color_index color = 0;
 
+		    dev_depth = cdev->color_info.depth;
+		    dev_depth_bytes = (dev_depth + 7) >> 3;
 		    switch (dev_depth_bytes - num_zero_bytes) {
 			case 8:
 			    color = (gx_color_index) * cbp++;
@@ -645,7 +654,11 @@ in:				/* Initialize for a new page. */
 		    color <<= num_zero_bytes * 8;
 		    *pcolor = color;
 		}
-	        if_debug1(mem, 'L', " 0x%lx\n", *pcolor);
+		if (sizeof(*pcolor) <= sizeof(ulong))
+		    if_debug1('L', " 0x%lx\n", (ulong)*pcolor);
+		else
+		    if_debug2('L', " 0x%8lx%08lx\n", 
+			(ulong)(*pcolor >> 8*(sizeof(*pcolor) - sizeof(ulong))), (ulong)*pcolor);
 		continue;
 	    case cmd_op_fill_rect >> 4:
 	    case cmd_op_tile_rect >> 4:
@@ -683,17 +696,17 @@ in:				/* Initialize for a new page. */
 		if (state.color_is_alpha) {
 		    if (!(op & 8))
 			depth = *cbp++;
-		} else
-		    depth = dev_depth;
+		} else 
+		    depth = cdev->color_info.depth;
 	      copy:cmd_getw(state.rect.x, cbp);
 		cmd_getw(state.rect.y, cbp);
 		if (op & 8) {	/* Use the current "tile". */
 #ifdef DEBUG
 		    if (state_slot->index != state.tile_index) {
-			lprintf2(mem, "state_slot->index = %d, state.tile_index = %d!\n",
+			lprintf2("state_slot->index = %d, state.tile_index = %d!\n",
 				 state_slot->index,
 				 state.tile_index);
-			code = gs_note_error(mem, gs_error_ioerror);
+			code = gs_note_error(gs_error_ioerror);
 			goto out;
 		    }
 #endif
@@ -720,12 +733,12 @@ in:				/* Initialize for a new page. */
 		    /* even after decompression if compressed. */
 #ifdef DEBUG
 		    if (bytes > cbuf_size) {
-			lprintf6(mem, "bitmap size exceeds buffer!  width=%d raster=%d height=%d\n    file pos %ld buf pos %d/%d\n",
+			lprintf6("bitmap size exceeds buffer!  width=%d raster=%d height=%d\n    file pos %ld buf pos %d/%d\n",
 				 state.rect.width, raster,
 				 state.rect.height,
 				 stell(s), (int)(cbp - cbuf.data),
 				 (int)(cbuf.end - cbuf.data));
-			code = gs_note_error(mem, gs_error_ioerror);
+			code = gs_note_error(gs_error_ioerror);
 			goto out;
 		    }
 #endif
@@ -755,11 +768,10 @@ in:				/* Initialize for a new page. */
 				{
 				    stream_RLD_state sstate;
 
-				    clist_rld_init(&sstate, s->memory);
+				    clist_rld_init(&sstate);
 				    /* The process procedure can't fail. */
 				    (*s_RLD_template.process)
-					(s->memory, 
-					 (stream_state *)&sstate, &r, &w, true);
+					((stream_state *)&sstate, &r, &w, true);
 				}
 				break;
 			    case cmd_compress_cfe:
@@ -768,11 +780,10 @@ in:				/* Initialize for a new page. */
 
 				    clist_cfd_init(&sstate,
 				    width_bytes << 3 /*state.rect.width */ ,
-						   state.rect.height, NULL, mem);
+						   state.rect.height, mem);
 				    /* The process procedure can't fail. */
 				    (*s_CFD_template.process)
-					(s->memory,
-					 (stream_state *)&sstate, &r, &w, true);
+					((stream_state *)&sstate, &r, &w, true);
 				    (*s_CFD_template.release)
 					((stream_state *)&sstate);
 				}
@@ -795,9 +806,9 @@ in:				/* Initialize for a new page. */
 		    }
 #ifdef DEBUG
 		    if (gs_debug_c('L')) {
-			dprintf2(mem, " depth=%d, data_x=%d\n",
+			dprintf2(" depth=%d, data_x=%d\n",
 				 depth, data_x);
-			cmd_print_bits(mem, source, state.rect.width,
+			cmd_print_bits(source, state.rect.width,
 				       state.rect.height, raster);
 		    }
 #endif
@@ -812,7 +823,7 @@ in:				/* Initialize for a new page. */
 	      sti:state_slot =
 		    (tile_slot *) (cdev->chunk.data +
 				 cdev->tile_table[state.tile_index].offset);
-		if_debug2(mem, 'L', " index=%u offset=%lu\n",
+		if_debug2('L', " index=%u offset=%lu\n",
 			  state.tile_index,
 			  cdev->tile_table[state.tile_index].offset);
 		state_tile.data = (byte *) (state_slot + 1);
@@ -878,7 +889,7 @@ set_phase:	/*
 		    case cmd_opv_set_fill_adjust:
 			cmd_get_value(imager_state.fill_adjust.x, cbp);
 			cmd_get_value(imager_state.fill_adjust.y, cbp);
-			if_debug2(mem, 'L', " (%g,%g)\n",
+			if_debug2('L', " (%g,%g)\n",
 				  fixed2float(imager_state.fill_adjust.x),
 				  fixed2float(imager_state.fill_adjust.y));
 			continue;
@@ -886,11 +897,11 @@ set_phase:	/*
 			{
 			    gs_matrix mat;
 
-			    cbp = cmd_read_matrix(&mat, cbp, mem);
+			    cbp = cmd_read_matrix(&mat, cbp);
 			    mat.tx -= x0;
 			    mat.ty -= y0;
 			    gs_imager_setmatrix(&imager_state, &mat);
-			    if_debug6(mem, 'L', " [%g %g %g %g %g %g]\n",
+			    if_debug6('L', " [%g %g %g %g %g %g]\n",
 				      mat.xx, mat.xy, mat.yx, mat.yy,
 				      mat.tx, mat.ty);
 			}
@@ -917,20 +928,20 @@ set_phase:	/*
 					NULL);
 			    gx_set_dash_adapt(&imager_state.line_params.dash,
 					      (nb & 0x80) != 0);
-			    gx_set_dot_length(mem, &imager_state.line_params,
+			    gx_set_dot_length(&imager_state.line_params,
 					      dot_length,
 					      (nb & 0x40) != 0);
 #ifdef DEBUG
 			    if (gs_debug_c('L')) {
 				int i;
 
-				dprintf4(mem, " dot=%g(mode %d) adapt=%d offset=%g [",
+				dprintf4(" dot=%g(mode %d) adapt=%d offset=%g [",
 					 dot_length,
 					 (nb & 0x40) != 0,
 					 (nb & 0x80) != 0, offset);
 				for (i = 0; i < n; ++i)
-				    dprintf1(mem, "%g ", dash_pattern[i]);
-				dputs(mem, "]\n");
+				    dprintf1("%g ", dash_pattern[i]);
+				dputs("]\n");
 			    }
 #endif
 			    cbp += n * sizeof(float);
@@ -938,16 +949,16 @@ set_phase:	/*
 			break;
 		    case cmd_opv_enable_clip:
 			pcpath = (use_clip ? &clip_path : NULL);
-			if_debug0(mem, 'L', "\n");
+			if_debug0('L', "\n");
 			break;
 		    case cmd_opv_disable_clip:
 			pcpath = NULL;
-			if_debug0(mem, 'L', "\n");
+			if_debug0('L', "\n");
 			break;
 		    case cmd_opv_begin_clip:
 			pcpath = NULL;
 			in_clip = true;
-			if_debug0(mem, 'L', "\n");
+			if_debug0('L', "\n");
 			code = gx_cpath_reset(&clip_path);
 			if (code < 0)
 			    goto out;
@@ -967,7 +978,7 @@ set_phase:	/*
 			    imager_state.fill_adjust.y = fixed_half;
 			break;
 		    case cmd_opv_end_clip:
-			if_debug0(mem, 'L', "\n");
+			if_debug0('L', "\n");
 			gx_cpath_accum_end(&clip_accum, &clip_path);
 			tdev = target;
 			/*
@@ -1007,7 +1018,7 @@ set_phase:	/*
 			break;
 		    case cmd_opv_begin_image_rect:
 			cbuf.ptr = cbp;
-			code = read_begin_image(&cbuf, &image.c, pcs, mem);
+			code = read_begin_image(&cbuf, &image.c, pcs);
 			cbp = cbuf.ptr;
 			if (code < 0)
 			    goto out;
@@ -1020,14 +1031,14 @@ set_phase:	/*
 			    image_rect.q.x = image.d.Width - diff;
 			    cmd_getw(diff, cbp);
 			    image_rect.q.y = image.d.Height - diff;
-			    if_debug4(mem, 'L', " rect=(%d,%d),(%d,%d)",
+			    if_debug4('L', " rect=(%d,%d),(%d,%d)",
 				      image_rect.p.x, image_rect.p.y,
 				      image_rect.q.x, image_rect.q.y);
 			}
 			goto ibegin;
 		    case cmd_opv_begin_image:
 			cbuf.ptr = cbp;
-			code = read_begin_image(&cbuf, &image.c, pcs, mem);
+			code = read_begin_image(&cbuf, &image.c, pcs);
 			cbp = cbuf.ptr;
 			if (code < 0)
 			    goto out;
@@ -1035,9 +1046,9 @@ set_phase:	/*
 			image_rect.p.y = 0;
 			image_rect.q.x = image.d.Width;
 			image_rect.q.y = image.d.Height;
-			if_debug2(mem,  'L', " size=(%d,%d)",
+			if_debug2('L', " size=(%d,%d)",
 				  image.d.Width, image.d.Height);
-ibegin:			if_debug0(mem, 'L', "\n");
+ibegin:			if_debug0('L', "\n");
 			{
 			    code = (*dev_proc(tdev, begin_typed_image))
 				(tdev, &imager_state, NULL,
@@ -1051,7 +1062,7 @@ ibegin:			if_debug0(mem, 'L', "\n");
 		    case cmd_opv_image_plane_data:
 			cmd_getw(data_height, cbp);
 			if (data_height == 0) {
-			    if_debug0(mem, 'L', " done image\n");
+			    if_debug0('L', " done image\n");
 			    code = gx_image_end(image_info, true);
 			    if (code < 0)
 				goto out;
@@ -1084,7 +1095,7 @@ ibegin:			if_debug0(mem, 'L', "\n");
 		    case cmd_opv_image_data:
 			cmd_getw(data_height, cbp);
 			if (data_height == 0) {
-			    if_debug0(mem, 'L', " done image\n");
+			    if_debug0('L', " done image\n");
 			    code = gx_image_end(image_info, true);
 			    if (code < 0)
 				goto out;
@@ -1095,7 +1106,7 @@ ibegin:			if_debug0(mem, 'L', "\n");
 			    int plane;
 
 			    cmd_getw(bytes_per_plane, cbp);
-			    if_debug2(mem, 'L', " height=%u raster=%u\n",
+			    if_debug2('L', " height=%u raster=%u\n",
 				      data_height, bytes_per_plane);
 			    for (plane = 0;
 				 plane < image_info->num_planes;
@@ -1131,7 +1142,7 @@ idata:			data_size = 0;
 				    gs_alloc_bytes(mem, data_size,
 						   "clist image_data");
 				if (rdata == 0) {
-				    code = gs_note_error(mem, gs_error_VMerror);
+				    code = gs_note_error(gs_error_VMerror);
 				    goto out;
 				}
 			    } else
@@ -1166,8 +1177,7 @@ idata:			data_size = 0;
 			    for (plane = 0; plane < image_info->num_planes;
 				 ++plane)
 				if (planes[plane].data != 0)
-				    cmd_print_bits(mem,
-						   planes[plane].data,
+				    cmd_print_bits(planes[plane].data,
 						   image_rect.q.x -
 						   image_rect.p.x,
 						   data_height,
@@ -1199,6 +1209,12 @@ idata:			data_size = 0;
 				break;
 			    case cmd_opv_ext_create_compositor:
 				cbuf.ptr = cbp;
+				/*
+				 * The screen phase may have been changed during
+				 * the processing of masked images.
+				 */
+				gx_imager_setscreenphase(&imager_state,
+					    -x0, -y0, gs_color_select_all);
 				code = read_create_compositor(&cbuf, &imager_state,
 							      cdev, mem, &target);
 				cbp = cbuf.ptr;
@@ -1232,7 +1248,7 @@ idata:			data_size = 0;
 
 				    pdct = gx_get_dc_type_from_index(*cbp++);
 				    if (pdct == 0) {
-					code = gs_note_error(mem, gs_error_rangecheck);
+					code = gs_note_error(gs_error_rangecheck);
 					goto out;
 				    }
 				    enc_u_getw(color_size, cbp);
@@ -1268,7 +1284,7 @@ idata:			data_size = 0;
 		    if (!in_path) {
 			ppos.x = int2fixed(state.rect.x);
 			ppos.y = int2fixed(state.rect.y);
-			if_debug2(mem, 'L', " (%d,%d)", state.rect.x,
+			if_debug2('L', " (%d,%d)", state.rect.x,
 				  state.rect.y);
 			notes = sn_none;
 			in_path = true;
@@ -1283,7 +1299,7 @@ idata:			data_size = 0;
 				vs[i++] =
 				    ((fixed) ((b ^ 0x20) - 0x20) << 13) +
 				    ((int)cbp[1] << 5) + (cbp[2] >> 3);
-				if_debug1(mem, 'L', " %g", fixed2float(vs[i - 1]));
+				if_debug1('L', " %g", fixed2float(vs[i - 1]));
 				cbp += 2;
 				v = (int)((*cbp & 7) ^ 4) - 4;
 				break;
@@ -1306,7 +1322,7 @@ idata:			data_size = 0;
 				v = (b ^ 0xd0) - 0x10;
 				vs[i] =
 				    ((v << 8) + cbp[1]) << (_fixed_shift - 2);
-				if_debug1(mem, 'L', " %g", fixed2float(vs[i]));
+				if_debug1('L', " %g", fixed2float(vs[i]));
 				cbp += 2;
 				continue;
 			    default /*case 7 */ :
@@ -1320,10 +1336,10 @@ idata:			data_size = 0;
 			/* the Borland C++ 4.5 compiler incorrectly */
 			/* sign-extends the result of the shift. */
 			vs[i] = (v << 16) + (uint) (cbp[-2] << 8) + cbp[-1];
-			if_debug1(mem, 'L', " %g", fixed2float(vs[i]));
+			if_debug1('L', " %g", fixed2float(vs[i]));
 		    }
-		    if_debug0(mem, 'L', "\n");
-		    code = clist_decode_segment(mem, &path, op, vs, &ppos,
+		    if_debug0('L', "\n");
+		    code = clist_decode_segment(&path, op, vs, &ppos,
 						x0, y0, notes);
 		    if (code < 0)
 			goto out;
@@ -1334,7 +1350,7 @@ idata:			data_size = 0;
 		    gx_path fpath;
 		    gx_path * ppath = &path;
 
-		    if_debug0(mem, 'L', "\n");
+		    if_debug0('L', "\n");
 		    /* if in clip, flatten path first */
 		    if (in_clip) {
 			gx_path_init_local(&fpath, mem);
@@ -1390,22 +1406,22 @@ idata:			data_size = 0;
 		    goto out;
 		continue;
 	    default:
-	      bad_op:lprintf5(mem, "Bad op %02x band y0 = %d file pos %ld buf pos %d/%d\n",
+	      bad_op:lprintf5("Bad op %02x band y0 = %d file pos %ld buf pos %d/%d\n",
 		 op, y0, stell(s), (int)(cbp - cbuf.data), (int)(cbuf.end - cbuf.data));
 		{
 		    const byte *pp;
 
 		    for (pp = cbuf.data; pp < cbuf.end; pp += 10) {
-			dlprintf1(mem, "%4d:", (int)(pp - cbuf.data));
-			dprintf10(mem, " %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+			dlprintf1("%4d:", (int)(pp - cbuf.data));
+			dprintf10(" %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
 				  pp[0], pp[1], pp[2], pp[3], pp[4],
 				  pp[5], pp[6], pp[7], pp[8], pp[9]);
 		    }
 		}
-		code = gs_note_error(mem, gs_error_Fatal);
+		code = gs_note_error(gs_error_Fatal);
 		goto out;
 	}
-	if_debug4(mem, 'L', " x=%d y=%d w=%d h=%d\n",
+	if_debug4('L', " x=%d y=%d w=%d h=%d\n",
 		  state.rect.x, state.rect.y, state.rect.width,
 		  state.rect.height);
 	switch (op >> 4) {
@@ -1520,7 +1536,7 @@ idata:			data_size = 0;
 	target = orig_target;
     }
     if (code < 0)
-	return_error(mem, code);
+	return_error(code);
     /* Check whether we have more pages to process. */
     if (playback_action != playback_action_setup && 
 	(cbp < cbuf.end || !seofp(s))
@@ -1540,7 +1556,7 @@ idata:			data_size = 0;
  */
 
 private int
-read_set_tile_size(const gs_memory_t *mem, command_buf_t *pcb, tile_slot *bits)
+read_set_tile_size(command_buf_t *pcb, tile_slot *bits)
 {
     const byte *cbp = pcb->ptr;
     uint rep_width, rep_height;
@@ -1567,7 +1583,7 @@ read_set_tile_size(const gs_memory_t *mem, command_buf_t *pcb, tile_slot *bits)
 	cmd_getw(bits->rep_shift, cbp);
     else
 	bits->rep_shift = 0;
-    if_debug6(mem, 'L', " depth=%d size=(%d,%d), rep_size=(%d,%d), rep_shift=%d\n",
+    if_debug6('L', " depth=%d size=(%d,%d), rep_size=(%d,%d), rep_shift=%d\n",
 	      bits->cb_depth, bits->width,
 	      bits->height, rep_width,
 	      rep_height, bits->rep_shift);
@@ -1605,7 +1621,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 
     cmd_getw(index, cbp);
     cmd_getw(offset, cbp);
-    if_debug2(mem, 'L', " index=%d offset=%lu\n", pcls->tile_index, offset);
+    if_debug2('L', " index=%d offset=%lu\n", pcls->tile_index, offset);
     pcls->tile_index = index;
     cdev->tile_table[pcls->tile_index].offset = offset;
     slot = (tile_slot *)(cdev->chunk.data + offset);
@@ -1645,9 +1661,9 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 	    {
 		stream_RLD_state sstate;
 
-		clist_rld_init(&sstate, mem);
+		clist_rld_init(&sstate);
 		(*s_RLD_template.process)
-		    (mem, (stream_state *)&sstate, &r, &w, true);
+		    ((stream_state *)&sstate, &r, &w, true);
 	    }
 	    break;
 	case cmd_compress_cfe:
@@ -1656,15 +1672,15 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 
 		clist_cfd_init(&sstate,
 			       width_bytes << 3 /*width_bits */ ,
-			       rep_height, NULL, mem);
+			       rep_height, mem);
 		(*s_CFD_template.process)
-		    (mem, (stream_state *)&sstate, &r, &w, true);
+		    ((stream_state *)&sstate, &r, &w, true);
 		(*s_CFD_template.release)
 		    ((stream_state *)&sstate);
 	    }
 	    break;
 	default:
-	    return_error(mem, gs_error_unregistered);
+	    return_error(gs_error_unregistered);
 	}
 	cbp = r.ptr + 1;
     } else if (rep_height > 1 && width_bytes != bits->cb_raster) {
@@ -1686,7 +1702,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 				  bits->height);
 #ifdef DEBUG
     if (gs_debug_c('L'))
-	cmd_print_bits(mem, data, bits->width, bits->height, bits->cb_raster);
+	cmd_print_bits(data, bits->width, bits->height, bits->cb_raster);
 #endif
     pcb->ptr = cbp;
     return 0;
@@ -1709,7 +1725,7 @@ read_alloc_ht_buff(ht_buff_t * pht_buff, uint ht_size, gs_memory_t * mem)
     if (ht_size > cbuf_ht_seg_max_size) {
         pht_buff->pbuff = gs_alloc_bytes(mem, ht_size, "read_alloc_ht_buff");
         if (pht_buff->pbuff == 0)
-            return_error(mem, gs_error_VMerror);
+            return_error(gs_error_VMerror);
     }
     pht_buff->ht_size = ht_size;
     pht_buff->read_size = 0;
@@ -1739,18 +1755,18 @@ read_ht_segment(
     if (pht_buff->pbuff == 0) {
         /* if not separate buffer, must be only one segment */
         if (seg_size != ht_size)
-            return_error(mem, gs_error_unknownerror);
+            return_error(gs_error_unknownerror);
         pbuff = cbp;
     } else {
         if (seg_size + pht_buff->read_size > pht_buff->ht_size)
-            return_error(mem, gs_error_unknownerror);
+            return_error(gs_error_unknownerror);
         memcpy(pht_buff->pcurr, cbp, seg_size);
         pht_buff->pcurr += seg_size;
         if ((pht_buff->read_size += seg_size) == ht_size)
             pbuff = pht_buff->pbuff;
     }
 
-    /* if everything has be read, covert back to a halftone */
+    /* if everything has been read, convert back to a halftone */
     if (pbuff != 0) {
         code = gx_ht_read_and_install(pis, dev, pbuff, ht_size, mem);
 
@@ -1782,7 +1798,7 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
 	cb = *cbp++;
 	pis->line_params.cap = (gs_line_cap)((cb >> 3) & 7);
 	pis->line_params.join = (gs_line_join)(cb & 7);
-	if_debug2(pis->memory, 'L', " cap=%d join=%d\n",
+	if_debug2('L', " cap=%d join=%d\n",
 		  pis->line_params.cap, pis->line_params.join);
     }
     if (mask & cj_ac_sa_known) {
@@ -1790,27 +1806,27 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
 	pis->line_params.curve_join = ((cb >> 2) & 7) - 1;
 	pis->accurate_curves = (cb & 2) != 0;
 	pis->stroke_adjust = cb & 1;
-	if_debug3(pis->memory, 'L', " CJ=%d AC=%d SA=%d\n",
+	if_debug3('L', " CJ=%d AC=%d SA=%d\n",
 		  pis->line_params.curve_join, pis->accurate_curves,
 		  pis->stroke_adjust);
     }
     if (mask & flatness_known) {
 	cmd_get_value(pis->flatness, cbp);
-	if_debug1(pis->memory, 'L', " flatness=%g\n", pis->flatness);
+	if_debug1('L', " flatness=%g\n", pis->flatness);
     }
     if (mask & line_width_known) {
 	float width;
 
 	cmd_get_value(width, cbp);
-	if_debug1(pis->memory, 'L', " line_width=%g\n", width);
+	if_debug1('L', " line_width=%g\n", width);
 	gx_set_line_width(&pis->line_params, width);
     }
     if (mask & miter_limit_known) {
 	float limit;
 
 	cmd_get_value(limit, cbp);
-	if_debug1(pis->memory, 'L', " miter_limit=%g\n", limit);
-	gx_set_miter_limit(pis->memory, &pis->line_params, limit);
+	if_debug1('L', " miter_limit=%g\n", limit);
+	gx_set_miter_limit(&pis->line_params, limit);
     }
     if (mask & op_bm_tk_known) {
 	cb = *cbp++;
@@ -1820,26 +1836,26 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
 	pis->overprint_mode = (cb >> 1) & 1;
 	pis->effective_overprint_mode = pis->overprint_mode;
 	pis->overprint = cb & 1;
-	if_debug4(pis->memory, 'L', " BM=%d TK=%d OPM=%d OP=%d\n",
+	if_debug4('L', " BM=%d TK=%d OPM=%d OP=%d\n",
 		  pis->blend_mode, pis->text_knockout, pis->overprint_mode,
 		  pis->overprint);
     }
     if (mask & segment_notes_known) {
 	cb = *cbp++;
 	*pnotes = (segment_notes)(cb & 0x3f);
-	if_debug1(pis->memory, 'L', " notes=%d\n", *pnotes);
+	if_debug1('L', " notes=%d\n", *pnotes);
     }
     if (mask & opacity_alpha_known) {
 	cmd_get_value(pis->opacity.alpha, cbp);
-	if_debug1(pis->memory, 'L', " opacity.alpha=%g\n", pis->opacity.alpha);
+	if_debug1('L', " opacity.alpha=%g\n", pis->opacity.alpha);
     }
     if (mask & shape_alpha_known) {
 	cmd_get_value(pis->shape.alpha, cbp);
-	if_debug1(pis->memory, 'L', " shape.alpha=%g\n", pis->shape.alpha);
+	if_debug1('L', " shape.alpha=%g\n", pis->shape.alpha);
     }
     if (mask & alpha_known) {
 	cmd_get_value(pis->alpha, cbp);
-	if_debug1(pis->memory, 'L', " alpha=%u\n", pis->alpha);
+	if_debug1('L', " alpha=%u\n", pis->alpha);
     }
     pcb->ptr = cbp;
     return 0;
@@ -1862,7 +1878,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
      */
     static gs_color_space gray_cs, rgb_cs, cmyk_cs;
 
-    if_debug3(mem, 'L', " %d%s%s\n", index,
+    if_debug3('L', " %d%s%s\n", index,
 	      (b & 8 ? " (indexed)" : ""),
 	      (b & 4 ? "(proc)" : ""));
     switch (index) {
@@ -1879,7 +1895,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
         pcs = &cmyk_cs;
 	break;
     default:
-	code = gs_note_error(mem, gs_error_rangecheck);	/* others are NYI */
+	code = gs_note_error(gs_error_rangecheck);	/* others are NYI */
 	goto out;
     }
 
@@ -1918,12 +1934,12 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 	    map->proc.lookup_index = lookup_indexed_map;
 	    pcolor_space->params.indexed.lookup.map = map;
 	    data = (byte *)map->values;
-	    data_size = num_values * sizeof(map->values[0]);	
+	    data_size = num_values * sizeof(map->values[0]);
 	} else {
 	    byte *table = gs_alloc_string(mem, num_values, "color_space indexed table");
 
 	    if (table == 0) {
-		code = gs_note_error(mem, gs_error_VMerror);
+		code = gs_note_error(gs_error_VMerror);
 		goto out;
 	    }
 	    pcolor_space->params.indexed.lookup.table.data = table;
@@ -1948,16 +1964,16 @@ out:
 
 private int
 read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
-		 const gs_color_space *pcs, gs_memory_t *mem)
+		 const gs_color_space *pcs)
 {
     uint index = *(pcb->ptr)++;
     const gx_image_type_t *image_type = gx_image_type_table[index];
     stream s;
     int code;
 
-    s_stack_init(&s, mem);
     /* This is sloppy, but we don't have enough information to do better. */
     pcb->ptr = top_up_cbuf(pcb, pcb->ptr);
+    s_init(&s, NULL);
     sread_string(&s, pcb->ptr, pcb->end - pcb->ptr);
     code = image_type->sget(pic, &s, pcs);
     pcb->ptr = sbufptr(&s);
@@ -1978,7 +1994,7 @@ read_put_params(command_buf_t *pcb, gs_imager_state *pis,
     int code = 0;
 
     cmd_get_value(param_length, cbp);
-    if_debug1(mem, 'L', " length=%d\n", param_length);
+    if_debug1('L', " length=%d\n", param_length);
     if (param_length == 0) {
 	code = 1;		/* empty list */
 	goto out;
@@ -1995,7 +2011,7 @@ read_put_params(command_buf_t *pcb, gs_imager_state *pis,
 	param_buf = gs_alloc_bytes(mem, param_length,
 				   "clist put_params");
 	if (param_buf == 0) {
-	    code = gs_note_error(mem, gs_error_VMerror);
+	    code = gs_note_error(gs_error_VMerror);
 	    goto out;
 	}
 	alloc_data_on_heap = true;
@@ -2017,7 +2033,7 @@ read_put_params(command_buf_t *pcb, gs_imager_state *pis,
      */
     gs_c_param_list_write(&param_list, mem);
     code = gs_param_list_unserialize
-	( mem, (gs_param_list *)&param_list, param_buf );
+	( (gs_param_list *)&param_list, param_buf );
     if (code >= 0 && code != param_length)
 	code = gs_error_unknownerror;  /* must match */
     if (code >= 0) {
@@ -2069,7 +2085,7 @@ read_create_compositor(
     /* find the appropriate compositor method vector */
     comp_id = *cbp++;
     if ((pcomp_type = gs_find_compositor(comp_id)) == 0)
-        return_error(mem, gs_error_unknownerror);
+        return_error(gs_error_unknownerror);
 
     /* de-serialize the compositor */
     code = pcomp_type->procs.read(&pcomp, cbp, pcb->end - cbp, mem);
@@ -2084,8 +2100,16 @@ read_create_compositor(
      * change the target device.
      */
     code = dev_proc(tdev, create_compositor)(tdev, &tdev, pcomp, pis, mem);
-    if (code >= 0 && tdev != *ptarget)
+    if (code >= 0 && tdev != *ptarget) {
+        rc_increment(tdev);
         *ptarget = tdev;
+    }
+
+    /* Perform any updates for the clist device required */
+    code = pcomp->type->procs.clist_compositor_read_update(pcomp,
+		    			(gx_device *)cdev, tdev, pis, mem);
+    if (code < 0)
+        return code;
 
     /* free the compositor object */
     if (pcomp != 0)
@@ -2151,11 +2175,11 @@ cmd_read_rect(int op, gx_cmd_rect * prect, const byte * cbp)
 
 /* Read a transformation matrix. */
 private const byte *
-cmd_read_matrix(gs_matrix * pmat, const byte * cbp, gs_memory_t *mem)
+cmd_read_matrix(gs_matrix * pmat, const byte * cbp)
 {
     stream s;
 
-    s_stack_init(&s, mem);
+    s_init(&s, NULL);
     sread_string(&s, cbp, 1 + sizeof(*pmat));
     sget_matrix(&s, pmat);
     return cbp + stell(&s);
@@ -2184,19 +2208,19 @@ cmd_select_map(cmd_map_index map_index, cmd_map_contents cont,
     *pcomp_num = NULL;		/* Only used for color transfer maps */
     switch (map_index) {
 	case cmd_map_transfer:
-	    if_debug0(mem, 'L', " transfer");
+	    if_debug0('L', " transfer");
 	    rc_unshare_struct(pis->set_transfer.gray, gx_transfer_map,
-		&st_transfer_map, mem, return_error(mem, gs_error_VMerror),
+		&st_transfer_map, mem, return_error(gs_error_VMerror),
 		"cmd_select_map(default_transfer)");
 	    map = pis->set_transfer.gray;
 	    /* Release all current maps */
-	    rc_decrement(mem, pis->set_transfer.red, "cmd_select_map(red)");
+	    rc_decrement(pis->set_transfer.red, "cmd_select_map(red)");
 	    pis->set_transfer.red = NULL;
 	    pis->set_transfer.red_component_num = -1;
-	    rc_decrement(mem, pis->set_transfer.green, "cmd_select_map(green)");
+	    rc_decrement(pis->set_transfer.green, "cmd_select_map(green)");
 	    pis->set_transfer.green = NULL;
 	    pis->set_transfer.green_component_num = -1;
-	    rc_decrement(mem, pis->set_transfer.blue, "cmd_select_map(blue)");
+	    rc_decrement(pis->set_transfer.blue, "cmd_select_map(blue)");
 	    pis->set_transfer.blue = NULL;
 	    pis->set_transfer.blue_component_num = -1;
 	    goto transfer2;
@@ -2218,10 +2242,10 @@ cmd_select_map(cmd_map_index map_index, cmd_map_contents cont,
 transfer1:  {
 		int i = map_index - cmd_map_transfer_0;
 
-	        if_debug1(mem, 'L', " transfer[%d]", i);
+	        if_debug1('L', " transfer[%d]", i);
 	    }
 	    rc_unshare_struct(*pmap, gx_transfer_map, &st_transfer_map, mem,
-		return_error(mem, gs_error_VMerror), "cmd_select_map(transfer)");
+		return_error(gs_error_VMerror), "cmd_select_map(transfer)");
 	    map = *pmap;
 
 transfer2:  if (cont != cmd_map_other) {
@@ -2232,23 +2256,23 @@ transfer2:  if (cont != cmd_map_other) {
 	    }
 	    break;
 	case cmd_map_black_generation:
-	    if_debug0(mem, 'L', " black generation");
+	    if_debug0('L', " black generation");
 	    pmap = &pis->black_generation;
 	    cname = "cmd_select_map(black generation)";
 	    goto alloc;
 	case cmd_map_undercolor_removal:
-	    if_debug0(mem, 'L', " undercolor removal");
+	    if_debug0('L', " undercolor removal");
 	    pmap = &pis->undercolor_removal;
 	    cname = "cmd_select_map(undercolor removal)";
 alloc:	    if (cont == cmd_map_none) {
-		rc_decrement(mem, *pmap, cname);
+		rc_decrement(*pmap, cname);
 		*pmap = 0;
 		*pmdata = 0;
 		*pcount = 0;
 		return 0;
 	    }
 	    rc_unshare_struct(*pmap, gx_transfer_map, &st_transfer_map,
-			      mem, return_error(mem, gs_error_VMerror), cname);
+			      mem, return_error(gs_error_VMerror), cname);
 	    map = *pmap;
 	    if (cont == cmd_map_identity) {
 		gx_set_identity_transfer(map);
@@ -2277,7 +2301,7 @@ cmd_create_dev_ht(gx_device_halftone **ppdht, gs_memory_t *mem)
 	rc_header rc;
 
 	rc_alloc_struct_1(pdht, gx_device_halftone, &st_device_halftone, mem,
-			  return_error(mem, gs_error_VMerror),
+			  return_error(gs_error_VMerror),
 			  "cmd_create_dev_ht");
 	rc = pdht->rc;
 	memset(pdht, 0, sizeof(*pdht));
@@ -2319,7 +2343,7 @@ cmd_resize_halftone(gx_device_halftone **ppdht, uint num_comp,
 					 "cmd_resize_halftone");
 		if (pcomp == 0) {
 		    pdht->num_comp = num_comp;	/* attempt consistency */
-		    return_error(mem, gs_error_VMerror);
+		    return_error(gs_error_VMerror);
 		}
 	    }
 	} else {
@@ -2333,7 +2357,7 @@ cmd_resize_halftone(gx_device_halftone **ppdht, uint num_comp,
 		pcomp = gs_resize_object(mem, pdht->components, num_comp,
 					 "cmd_resize_halftone");
 	    if (pcomp == 0)
-		return_error(mem, gs_error_VMerror);
+		return_error(gs_error_VMerror);
 	    memset(&pcomp[pdht->num_comp], 0,
 		   sizeof(*pcomp) * (num_comp - pdht->num_comp));
 	}
@@ -2347,9 +2371,8 @@ cmd_resize_halftone(gx_device_halftone **ppdht, uint num_comp,
 
 /* Decode a path segment. */
 private int
-clist_decode_segment(const gs_memory_t *mem, 
-		     gx_path * ppath, int op, fixed vs[6],
-		     gs_fixed_point * ppos, int x0, int y0, segment_notes notes)
+clist_decode_segment(gx_path * ppath, int op, fixed vs[6],
+		 gs_fixed_point * ppos, int x0, int y0, segment_notes notes)
 {
     fixed px = ppos->x - int2fixed(x0);
     fixed py = ppos->y - int2fixed(y0);
@@ -2450,7 +2473,7 @@ vhc:	    E = B + D, F = D = A + C, C = B, B = A, A = 0;
 	    px = A, py = B;
 	    break;
 	default:
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
     }
 #undef A
 #undef B

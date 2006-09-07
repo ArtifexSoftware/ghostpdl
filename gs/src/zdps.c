@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Display PostScript extensions */
 #include "ghost.h"
 #include "oper.h"
@@ -42,16 +43,16 @@ zsetscreenphase(i_ctx_t *i_ctx_p)
     int code;
     long x, y;
 
-    check_type(imemory, op[-2], t_integer);
-    check_type(imemory, op[-1], t_integer);
-    check_type(imemory, *op, t_integer);
+    check_type(op[-2], t_integer);
+    check_type(op[-1], t_integer);
+    check_type(*op, t_integer);
     x = op[-1].value.intval;
     y = op->value.intval;
     if (x != (int)x || y != (int)y ||
 	op[-2].value.intval < -1 ||
 	op[-2].value.intval >= gs_color_select_count
 	)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     code = gs_setscreenphase(igs, (int)x, (int)y,
 			     (gs_color_select_t) op[-2].value.intval);
     if (code >= 0)
@@ -67,16 +68,16 @@ zcurrentscreenphase(i_ctx_t *i_ctx_p)
     gs_int_point phase;
     int code;
 
-    check_type(imemory, *op, t_integer);
+    check_type(*op, t_integer);
     if (op->value.intval < -1 ||
 	op->value.intval >= gs_color_select_count
 	)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     code = gs_currentscreenphase(igs, &phase,
 				 (gs_color_select_t)op->value.intval);
     if (code < 0)
 	return code;
-    push(imemory, 1);
+    push(1);
     make_int(op - 1, phase.x);
     make_int(op, phase.y);
     return 0;
@@ -91,8 +92,8 @@ zimage2(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_type(imemory, *op, t_dictionary);
-    check_dict_read(imemory, *op);
+    check_type(*op, t_dictionary);
+    check_dict_read(*op);
     {
 	gs_image2_t image;
 	ref *pDataSource;
@@ -101,31 +102,31 @@ zimage2(i_ctx_t *i_ctx_p)
 	if ((code = dict_matrix_param(imemory, op, "ImageMatrix",
 				      &image.ImageMatrix)) < 0 ||
 	    (code = dict_find_string(op, "DataSource", &pDataSource)) < 0 ||
-	    (code = dict_float_param(imemory, op, "XOrigin", 0.0,
+	    (code = dict_float_param(op, "XOrigin", 0.0,
 				     &image.XOrigin)) != 0 ||
-	    (code = dict_float_param(imemory, op, "YOrigin", 0.0,
+	    (code = dict_float_param(op, "YOrigin", 0.0,
 				     &image.YOrigin)) != 0 ||
-	    (code = dict_float_param(imemory, op, "Width", 0.0,
+	    (code = dict_float_param(op, "Width", 0.0,
 				     &image.Width)) != 0 ||
 	    image.Width <= 0 ||
-	    (code = dict_float_param(imemory, op, "Height", 0.0,
+	    (code = dict_float_param(op, "Height", 0.0,
 				     &image.Height)) != 0 ||
 	    image.Height <= 0 ||
-	    (code = dict_bool_param(imemory, op, "PixelCopy", false,
+	    (code = dict_bool_param(op, "PixelCopy", false,
 				    &image.PixelCopy)) < 0
 	    )
-	    return (code < 0 ? code : gs_note_error(imemory, e_rangecheck));
-	check_stype(imemory, *pDataSource, st_igstate_obj);
+	    return (code < 0 ? code : gs_note_error(e_rangecheck));
+	check_stype(*pDataSource, st_igstate_obj);
 	image.DataSource = igstate_ptr(pDataSource);
 	{
 	    ref *ignoref;
 
 	    if (dict_find_string(op, "UnpaintedPath", &ignoref) > 0) {
-		check_dict_write(imemory, *op);
+		check_dict_write(*op);
 		image.UnpaintedPath = gx_path_alloc(imemory,
 						    ".image2 UnpaintedPath");
 		if (image.UnpaintedPath == 0)
-		    return_error(imemory, e_VMerror);
+		    return_error(e_VMerror);
 	    } else
 		image.UnpaintedPath = 0;
 	}
@@ -192,8 +193,8 @@ zdefineusername(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref uname;
 
-    check_int_ltu(imemory, op[-1], max_array_size);
-    check_type(imemory, *op, t_name);
+    check_int_ltu(op[-1], max_array_size);
+    check_type(*op, t_name);
     if (user_names_p == 0) {
 	int code = create_names_array(&user_names_p, imemory_local,
 				      "defineusername");
@@ -201,7 +202,8 @@ zdefineusername(i_ctx_t *i_ctx_p)
 	if (code < 0)
 	    return code;
     }
-    if (array_get(imemory, user_names_p, op[-1].value.intval, &uname) >= 0) {
+    if (array_get(imemory, user_names_p, 
+		  op[-1].value.intval, &uname) >= 0) {
 	switch (r_type(&uname)) {
 	    case t_null:
 		break;
@@ -210,7 +212,7 @@ zdefineusername(i_ctx_t *i_ctx_p)
 		    goto ret;
 		/* falls through */
 	    default:
-		return_error(imemory, e_invalidaccess);
+		return_error(e_invalidaccess);
 	}
     } else {			/* Expand the array. */
 	ref new_array;

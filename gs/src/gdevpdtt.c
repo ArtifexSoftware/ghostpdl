@@ -1,10 +1,15 @@
-/* Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Text processing for pdfwrite. */
@@ -14,6 +19,8 @@
 #include "gserrors.h"
 #include "gscencs.h"
 #include "gscedata.h"
+#include "gsmatrix.h"
+#include "gzstate.h"
 #include "gxfcache.h"		/* for orig_fonts list */
 #include "gxfont.h"
 #include "gxfont0.h"
@@ -25,6 +32,7 @@
 #include "gxstate.h"		
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
+#include "gdevpdfo.h"
 #include "gdevpdtx.h"
 #include "gdevpdtd.h"
 #include "gdevpdtf.h"
@@ -45,7 +53,7 @@ pdf_text_resync(gs_text_enum_t *pte, const gs_text_enum_t *pfrom)
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
 
     if ((pte->text.operation ^ pfrom->text.operation) & ~TEXT_FROM_ANY)
-	return_error(pte->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     if (penum->pte_default) {
 	int code = gs_text_resync(penum->pte_default, pfrom);
 
@@ -72,7 +80,7 @@ pdf_text_current_width(const gs_text_enum_t *pte, gs_point *pwidth)
 
     if (penum->pte_default)
 	return gs_text_current_width(penum->pte_default, pwidth);
-    return_error(pte->memory, gs_error_rangecheck); /* can't happen */
+    return_error(gs_error_rangecheck); /* can't happen */
 }
 private int
 pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
@@ -84,8 +92,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
     switch (control) {
     case TEXT_SET_CHAR_WIDTH:
     case TEXT_SET_CACHE_DEVICE:
-	pdev->char_width.x = pw[0];
-	pdev->char_width.y = pw[1];
+	gs_distance_transform(pw[0], pw[1], &ctm_only(pte->pis), &pdev->char_width);
 	break;
     case TEXT_SET_CACHE_DEVICE2:
 	/*
@@ -94,106 +101,105 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	 * width for Widths array. Therefore we don't check 
 	 * gs_rootfont(pgs)->WMode and don't use pw[6:7].
 	 */
-	pdev->char_width.x = pw[0];
-	pdev->char_width.y = pw[1];
+	gs_distance_transform(pw[0], pw[1], &ctm_only(pte->pis), &pdev->char_width);
 	if (penum->cdevproc_callout) {
 	    memcpy(penum->cdevproc_result, pw, sizeof(penum->cdevproc_result));
 	    return 0;
 	}
 	break;
     default:
-	return_error(pdev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     }
     if (penum->current_font->FontType == ft_user_defined && 
+	    penum->outer_CID == GS_NO_GLYPH &&
 	    !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
 	int code;
-	gs_font *font = penum->orig_font;
-	gs_char ch;
 	gs_glyph glyph;
-	gs_const_string gnstr;
-	gs_matrix m;
 
-	if (penum->text.operation & TEXT_FROM_SINGLE_GLYPH) {
-	    byte buf[1];
-	    int char_code_length;
-
-	    glyph = pte->text.data.d_glyph;
-	    code = pdf_encode_glyph((gs_font_base *)font, glyph, 
-			buf, sizeof(buf), &char_code_length);
-	    if (code < 0) {
-		/* Must not happen, becuse pdf_encode_glyph was passed in process_plain_text.*/
-		ch = GS_NO_CHAR;
-	    } else if (char_code_length != 1) {
-		/* Must not happen with type 3 fonts.*/
-		ch = GS_NO_CHAR;
-	    } else
-		ch = buf[0];
-	} else {
-	    ch = penum->text.data.bytes[penum->index];
-	    glyph = font->procs.encode_char(font, ch, GLYPH_SPACE_NAME);
-	    /*
-	     * If glyph == GS_NO_GLYPH, we should replace it with 
-	     * a notdef glyph, but we don't know how to do with Type 3 fonts.
-	     */
-	}
-	if (glyph != GS_NO_GLYPH && ch != GS_NO_CHAR) {
+        glyph = penum->returned.current_glyph;
+	if (glyph != GS_NO_GLYPH && penum->output_char_code != GS_NO_CHAR) {
 	    gs_show_enum *penum_s;
 	    extern_st(st_gs_show_enum);
 	    gs_fixed_rect clip_box;
+	    double pw1[10];
+	    int narg = (control == TEXT_SET_CHAR_WIDTH ? 2 : 
+			control == TEXT_SET_CACHE_DEVICE ? 6 : 10), i;
 
 	    if (penum->pte_default == NULL)
-		return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
+		return_error(gs_error_unregistered); /* Must not happen. */
 	    /* Check to verify the structure type is really gs_show_enum */
 	    if (gs_object_type(penum->pte_default->memory, penum->pte_default) != &st_gs_show_enum) {
 		/* Must not happen with PS interpreter. 
 		   Other clients should conform. */
-		return_error(pdev->memory, gs_error_unregistered); 
+		return_error(gs_error_unregistered); 
 	    }
 	    penum_s = (gs_show_enum *)penum->pte_default;
-	    code = font->procs.glyph_name(font, glyph, &gnstr);
-	    if (code < 0)
-		return_error(font->memory, gs_error_unregistered); /* Must not happen. */
-	    gs_make_identity(&m);
-	    gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
+	    /* BuildChar could change the scale before calling setcachedevice (Bug 687290). 
+	       We must scale the setcachedevice arguments because we assumed
+	       identity scale before entering the charproc.
+	       For now we only handle scaling matrices.
+	    */
+	    for (i = 0; i < narg; i += 2) {
+		gs_point p;
+
+		gs_point_transform(pw[i], pw[i + 1], &ctm_only(penum_s->pgs), &p);
+		pw1[i] = p.x;
+		pw1[i + 1] = p.y;
+	    }
 	    if (control != TEXT_SET_CHAR_WIDTH) {
-		clip_box.p.x = float2fixed(pw[2]);
-		clip_box.p.y = float2fixed(pw[3]);
-		clip_box.q.x = float2fixed(pw[4]);
-		clip_box.q.y = float2fixed(pw[5]);
+		clip_box.p.x = float2fixed(pw1[2]);
+		clip_box.p.y = float2fixed(pw1[3]);
+		clip_box.q.x = float2fixed(pw1[4]);
+		clip_box.q.y = float2fixed(pw1[5]);
 	    } else {
 		/*
 		 * We have no character bbox, but we need one to install the clipping
-		 * to the graphic state of the PS interpreter. FontBBox looks likely
-		 * to provide it, but it is not neccesserily correct in the case 
-		 * of setcharwidth, because the latter doesn't assume a character caching 
-		 * (instead it assumes a direct rendering).
-		 * We hewristically estimate a bbox, which should be big enough 
-		 * for most cases.
+		 * to the graphic state of the PS interpreter. Since some fonts don't
+		 * provide a proper FontBBox (Bug 687239 supplies a zero one),
+		 * we set an "infinite" clipping here.
+		 * We also detected that min_int, max_int don't work here with
+		 * comparefiles/Bug687044.ps, therefore we divide them by 2.
 		 */
-		gs_font_base *bfont = (gs_font_base *)font;
-
-		clip_box.p.x = float2fixed(min(bfont->FontBBox.p.x, -bfont->FontBBox.q.x) * 2);
-		clip_box.p.y = float2fixed(min(bfont->FontBBox.p.y, -bfont->FontBBox.q.y) * 2);
-		clip_box.q.x = float2fixed(max(bfont->FontBBox.q.x, -bfont->FontBBox.p.x) * 2);
-		clip_box.q.y = float2fixed(max(bfont->FontBBox.q.y, -bfont->FontBBox.p.y) * 2);
+		clip_box.p.x = clip_box.p.y = min_int / 2;
+		clip_box.q.x = clip_box.q.y = max_int / 2;
 	    }
 	    code = gx_clip_to_rectangle(penum_s->pgs, &clip_box);
 	    if (code < 0)
 		return code;
-	    code = pdf_install_charproc_accum(pdev, pte->orig_font, 
-			pw, control, ch, &gnstr);
+	    code = pdf_set_charproc_attrs(pdev, pte->current_font, 
+			pw1, narg, control, penum->output_char_code);
 	    if (code < 0)
 		return code;
-	    if (control == TEXT_SET_CHAR_WIDTH) {
-		/* Prevent writing the clipping path to charproc.
-		   See the comment above.
-		   Note that the clipping in the graphic state will be used while 
-		   fallbacks to default implementations of graphic objects. 
-		   Hopely such fallbacks are rare. */
-		pdev->clip_path_id = gx_get_clip_path_id(penum_s->pgs);
-	    }
+	    /* Prevent writing the clipping path to charproc.
+	       See the comment above and bugs 687678, 688327.
+	       Note that the clipping in the graphic state will be used while 
+	       fallbacks to default implementations of graphic objects. 
+	       Hopely such fallbacks are rare. */
+	    pdev->clip_path_id = gx_get_clip_path_id(penum_s->pgs);
 	    penum->charproc_accum = true;
 	    return code;
+	} else {
+	    gs_matrix m;
+	    pdf_resource_t *pres = pdev->accumulating_substream_resource;
+
+	    /* pdf_text_process started a charproc stream accumulation,
+	       but now we re-decided to go with the default implementation.
+	       Cancel the stream now.
+	     */
+	    code = pdf_exit_substream(pdev);
+	    if (code < 0)
+		return code;
+	    code = pdf_cancel_resource(pdev, pres, resourceCharProc);
+	    if (code < 0)
+		return code;
+	    pdf_forget_resource(pdev, pres, resourceCharProc);
+	    /* pdf_text_process had set an identity CTM for the
+	       charproc stream accumulation, but now we re-decided
+	       to go with the default implementation.
+	       Need to restore the correct CTM and add
+	       changes, which the charproc possibly did. */
+	    gs_matrix_multiply((gs_matrix *)&pdev->charproc_ctm, (gs_matrix *)&penum->pis->ctm, &m);
+	    gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
 	}
     }
     if (penum->pte_default) {
@@ -202,7 +208,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	else
 	    return gs_text_set_cache(penum->pte_default, pw, control);
     }
-    return_error(penum->memory, gs_error_unregistered); /* can't happen */
+    return_error(gs_error_unregistered); /* can't happen */
 }
 private int
 pdf_text_retry(gs_text_enum_t *pte)
@@ -211,7 +217,7 @@ pdf_text_retry(gs_text_enum_t *pte)
 
     if (penum->pte_default)
 	return gs_text_retry(penum->pte_default);
-    return_error(pte->memory, gs_error_rangecheck); /* can't happen */
+    return_error(gs_error_rangecheck); /* can't happen */
 }
 private void
 pdf_text_release(gs_text_enum_t *pte, client_name_t cname)
@@ -222,7 +228,16 @@ pdf_text_release(gs_text_enum_t *pte, client_name_t cname)
 	gs_text_release(penum->pte_default, cname);
 	penum->pte_default = 0;
     }
+    pdf_text_release_cgp(penum);
     gx_default_text_release(pte, cname);
+}
+void
+pdf_text_release_cgp(pdf_text_enum_t *penum)
+{
+    if (penum->cgp) {
+	gs_free_object(penum->memory, penum->cgp, "pdf_text_release");
+	penum->cgp = 0;
+    }
 }
 
 /* Begin processing text. */
@@ -235,14 +250,16 @@ private const gs_text_enum_procs_t pdf_text_procs = {
 };
 
 private int
-pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_imager_state * pis, 
-	    const gx_device_color * pdcolor, const gx_clip_path * pcpath,
-	    const gs_text_params_t *text)
+pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
 {
+    gs_imager_state * pis = pte->pis;
+    const gx_device_color * pdcolor = pte->pdcolor;
+    const gx_clip_path * pcpath = pte->pcpath;
+    const gs_text_params_t *text = &pte->text;
     bool new_clip = false; /* Quiet compiler. */
     int code;
 
-    if (!(text->operation & TEXT_DO_NONE)) {
+    if (!(text->operation & TEXT_DO_NONE) || pis->text_rendering_mode == 3) {
 	new_clip = pdf_must_put_clip_path(pdev, pcpath);
 	if (new_clip)
 	    code = pdf_unclip(pdev);
@@ -273,9 +290,11 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_imager_state * pis,
 
 	if ((code =
 	     pdf_set_drawing_color(pdev, pis, pdcolor, &pdev->saved_stroke_color,
+				   &pdev->stroke_used_process_color,
 				   &psdf_set_stroke_color_commands)) < 0 ||
 	    (code =
 	     pdf_set_drawing_color(pdev, pis, pdcolor, &pdev->saved_fill_color,
+				   &pdev->fill_used_process_color,
 				   &psdf_set_fill_color_commands)) < 0
 	    )
 	    return code;
@@ -326,16 +345,21 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	    )
 	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
 					 pcpath, mem, ppte);
+    else if (text->operation & TEXT_DO_ANY_CHARPATH)
+	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
+					 pcpath, mem, ppte);
 
     /* Allocate and initialize the enumerator. */
 
     rc_alloc_struct_1(penum, pdf_text_enum_t, &st_pdf_text_enum, mem,
-		      return_error(mem, gs_error_VMerror), "gdev_pdf_text_begin");
+		      return_error(gs_error_VMerror), "gdev_pdf_text_begin");
     penum->rc.free = rc_free_text_enum;
     penum->pte_default = 0; 
     penum->charproc_accum = false;
     penum->cdevproc_callout = false;
     penum->returned.total_width.x = penum->returned.total_width.y = 0;
+    penum->cgp = NULL;
+    penum->output_char_code = GS_NO_CHAR;
     code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf_text_procs,
 			     dev, pis, text, font, path, pdcolor, pcpath, mem);
     if (code < 0) {
@@ -397,7 +421,7 @@ pdf_font_cache_elem_id(gs_font *font)
 #endif
 }
 
-private pdf_font_cache_elem_t **
+pdf_font_cache_elem_t **
 pdf_locate_font_cache_elem(gx_device_pdf *pdev, gs_font *font)
 {
     pdf_font_cache_elem_t **e = &pdev->font_cache;
@@ -479,7 +503,7 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
 			    "pdf_attach_font_resource");
 	gs_free_object(pdev->pdf_memory, e->real_widths, 
 			    "alloc_font_cache_elem_arrays");
-	return_error(pdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     }
     e->num_chars = num_chars;
     e->num_widths = num_widths;
@@ -487,6 +511,15 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
     memset(e->real_widths, 0, num_widths * sizeof(*e->real_widths));
     return 0;
 }
+
+int
+pdf_free_font_cache(gx_device_pdf *pdev)
+{
+    /* fixme : release elements. */
+    pdev->font_cache = NULL;
+    return 0;
+}
+
 
 /*
  * Retrive font resource attached to a font,
@@ -537,7 +570,7 @@ pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
     pdf_font_cache_elem_t *e, **pe = pdf_locate_font_cache_elem(pdev, font);
 
     if (pdfont->FontType != font->FontType)
-	return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
+	return_error(gs_error_unregistered); /* Must not happen. */
     font_cache_elem_array_sizes(pdev, font, &num_widths, &num_chars);
     len = (num_chars + 7) / 8;
     if (pe != NULL) {
@@ -554,7 +587,7 @@ pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
 		pdf_font_cache_elem_t, &st_pdf_font_cache_elem,
 			    "pdf_attach_font_resource");
 	if (e == NULL)
-	    return_error(pdev->memory, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	e->pdfont = pdfont;
 	e->font_id = pdf_font_cache_elem_id(font);
 	e->num_chars = 0;
@@ -647,7 +680,7 @@ pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
 	}
 	return 0;
     default:
-	return_error(font->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     }
 }
 
@@ -663,17 +696,34 @@ font_orig_scale(const gs_font *font, double *sx)
     return 0;
 }
 
+/* 
+ * Check the Encoding compatibility 
+ */
+bool
+pdf_check_encoding_compatibility(const pdf_font_resource_t *pdfont, 
+	    const pdf_char_glyph_pair_t *pairs, int num_chars)
+{
+    int i;
+
+    for (i = 0; i < num_chars; ++i) {
+	gs_char ch = pairs[i].chr;
+	pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
+
+	if (pairs[i].glyph == pet->glyph)
+	    continue;
+	if (pet->glyph != GS_NO_GLYPH) /* encoding conflict */
+	    return false;
+    }
+    return true;
+}
 
 /*
  * Check font resource for encoding compatibility.
  */
 private bool
 pdf_is_compatible_encoding(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
-			   gs_font *font,
-			   gs_glyph *glyphs, gs_char *chars, int num_chars)
+			   gs_font *font, const pdf_char_glyph_pair_t *pairs, int num_chars)
 {   
-    int i;
-
     /*
      * This crude version of the code ignores
      * the possibility of re-encoding characters.
@@ -708,16 +758,7 @@ pdf_is_compatible_encoding(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
     case ft_encrypted:
     case ft_encrypted2:
     case ft_TrueType:
-	for (i = 0; i < num_chars; ++i) {
-	    gs_char ch = chars[i];
-	    pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
-
-	    if (glyphs[i] == pet->glyph)
-		continue;
-	    if (pet->glyph != GS_NO_GLYPH) /* encoding conflict */
-		return false;
-	}
-	return true;
+	return pdf_check_encoding_compatibility(pdfont, pairs, num_chars);
     case ft_CID_encrypted:
     case ft_CID_TrueType:
 	{
@@ -738,8 +779,8 @@ pdf_is_compatible_encoding(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
 private int
 pdf_find_font_resource(gx_device_pdf *pdev, gs_font *font,
 		       pdf_resource_type_t type,
-		       pdf_font_resource_t **ppdfont, 
-		       gs_glyph *glyphs, gs_char *chars, int num_chars)
+		       pdf_font_resource_t **ppdfont,
+		       pdf_char_glyph_pairs_t *cgp)
 {
     pdf_resource_t **pchain = pdev->resources[type].chains;
     pdf_resource_t *pres;
@@ -763,13 +804,14 @@ pdf_find_font_resource(gx_device_pdf *pdev, gs_font *font,
 		    continue;
 	    } else
 		cfont = pdf_font_resource_font(pdfont, false);
-	    if (chars != NULL &&
-		!pdf_is_compatible_encoding(pdev, pdfont, font, glyphs, chars, num_chars))
+	    if (!pdf_is_CID_font(ofont) &&
+		!pdf_is_compatible_encoding(pdev, pdfont, font, cgp->s, cgp->num_all_chars))
 		continue;
 	    if (cfont == 0)
 		continue;
 	    code = gs_copied_can_copy_glyphs((const gs_font *)cfont, ofont, 
-					     glyphs, num_chars, true);
+			    &cgp->s[cgp->unused_offset].glyph, cgp->num_unused_chars, 
+			    sizeof(pdf_char_glyph_pair_t), true);
 	    if (code == gs_error_unregistered) /* Debug purpose only. */
 		return code;
 	    if(code > 0) {
@@ -815,7 +857,7 @@ pdf_find_type0_font_resource(gx_device_pdf *pdev, const pdf_font_resource_t *pds
 
 private int pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 		       pdf_font_resource_t **ppdfont, 
-		       gs_glyph *glyphs, gs_char *chars, int num_chars);
+		       pdf_char_glyph_pairs_t *cgp);
 
 /*
  * Create or find a CID font resource object for a glyph set.
@@ -823,38 +865,53 @@ private int pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 int
 pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont, 
 			    pdf_font_resource_t **ppdsubf, 
-			    gs_glyph *glyphs, int num_glyphs)
+			    pdf_char_glyph_pairs_t *cgp)
 {
     int code = 0;
 
     pdf_attached_font_resource(pdev, subfont, ppdsubf, NULL, NULL, NULL, NULL);
-    if (*ppdsubf == NULL) {
-	code = pdf_find_font_resource(pdev, subfont,
-				      resourceCIDFont, ppdsubf, 
-				      glyphs, NULL, num_glyphs); 
+    if (*ppdsubf != NULL) {
+	const gs_font_base *cfont = pdf_font_resource_font(*ppdsubf, false);
+
+	code = gs_copied_can_copy_glyphs((const gs_font *)cfont, subfont, 
+			&cgp->s[cgp->unused_offset].glyph, cgp->num_unused_chars, 
+			sizeof(pdf_char_glyph_pair_t), true);
+	if (code > 0)
+	    return 0;
 	if (code < 0)
 	    return code;
-	if (*ppdsubf == NULL) {
-	    code = pdf_make_font_resource(pdev, subfont, ppdsubf, 
-					  NULL, NULL, 0);
-	    if (code < 0)
-		return code;
-	}
-	code = pdf_attach_font_resource(pdev, subfont, *ppdsubf);
-    } else {
-	/* If composite fonts share subfonts, their 
-	 * subfont resources to be shared as well.
-	 */
+	*ppdsubf = NULL;
     }
-    return code;
+    code = pdf_find_font_resource(pdev, subfont,
+				  resourceCIDFont, ppdsubf, cgp);
+    if (code < 0)
+	return code;
+    if (*ppdsubf == NULL) {
+	code = pdf_make_font_resource(pdev, subfont, ppdsubf, cgp);
+	if (code < 0)
+	    return code;
+    }
+    return pdf_attach_font_resource(pdev, subfont, *ppdsubf);
 }
 
 /*
  * Refine index of BaseEncoding.
  */
 private int 
-pdf_refine_encoding_index(int index, bool is_standard)
+pdf_refine_encoding_index(const gx_device_pdf *pdev, int index, bool is_standard)
 {
+    if (pdev->ForOPDFRead) {
+	/*
+	* Allow Postscript encodings only.
+	*/
+	switch (index) {
+
+	    case ENCODING_INDEX_STANDARD: return index;
+	    case ENCODING_INDEX_ISOLATIN1: return index;
+	    default:
+		return ENCODING_INDEX_STANDARD;
+	}
+    }
     /*
      * Per the PDF 1.3 documentation, there are only 3 BaseEncoding
      * values allowed for non-embedded fonts.  Pick one here.
@@ -874,6 +931,56 @@ pdf_refine_encoding_index(int index, bool is_standard)
 }
 
 /*
+ * Create a font resource object for a gs_font of Type 3.
+ */
+int
+pdf_make_font3_resource(gx_device_pdf *pdev, gs_font *font,
+		       pdf_font_resource_t **ppdfont)
+{
+    const gs_font_base *bfont = (const gs_font_base *)font;
+    pdf_font_resource_t *pdfont;
+    byte *cached;
+    int code;
+
+    cached = gs_alloc_bytes(pdev->pdf_memory, 256/8, "pdf_make_font3_resource");
+    if (cached == NULL)
+	return_error(gs_error_VMerror);
+    code = font_resource_encoded_alloc(pdev, &pdfont, bfont->id, 
+		    ft_user_defined, pdf_write_contents_bitmap);
+    if (code < 0) {
+	gs_free_object(pdev->pdf_memory, cached, "pdf_make_font3_resource");
+	return code;
+    }
+    memset(cached, 0, 256 / 8);
+    pdfont->mark_glyph = font->dir->ccache.mark_glyph; /* For pdf_font_resource_enum_ptrs. */
+    pdfont->u.simple.s.type3.bitmap_font = false;
+    pdfont->u.simple.BaseEncoding = pdf_refine_encoding_index(pdev,
+			bfont->nearest_encoding_index, true);
+    pdfont->u.simple.s.type3.char_procs = NULL;
+    pdfont->u.simple.s.type3.cached = cached;
+    pdfont->u.simple.s.type3.FontBBox.p.x = (int)floor(bfont->FontBBox.p.x);
+    pdfont->u.simple.s.type3.FontBBox.p.y = (int)floor(bfont->FontBBox.p.y);
+    pdfont->u.simple.s.type3.FontBBox.q.x = (int)ceil(bfont->FontBBox.q.x);
+    pdfont->u.simple.s.type3.FontBBox.q.y = (int)ceil(bfont->FontBBox.q.y);
+    pdfont->u.simple.s.type3.FontMatrix = bfont->FontMatrix;
+    pdfont->u.simple.s.type3.Resources = cos_dict_alloc(pdev, "pdf_make_font3_resource");
+    if (pdfont->u.simple.s.type3.Resources == NULL)
+	return_error(gs_error_VMerror);
+    /* Adobe viewers have a precision problem with small font matrices : */
+    while (any_abs(pdfont->u.simple.s.type3.FontMatrix.xx) < 0.001 &&
+	   any_abs(pdfont->u.simple.s.type3.FontMatrix.xy) < 0.001 &&
+	   any_abs(pdfont->u.simple.s.type3.FontMatrix.yx) < 0.001 &&
+	   any_abs(pdfont->u.simple.s.type3.FontMatrix.yy) < 0.001) {
+	pdfont->u.simple.s.type3.FontMatrix.xx *= 10;
+	pdfont->u.simple.s.type3.FontMatrix.xy *= 10;
+	pdfont->u.simple.s.type3.FontMatrix.yx *= 10;
+	pdfont->u.simple.s.type3.FontMatrix.yy *= 10;
+    }
+    *ppdfont = pdfont;
+    return 0;
+}
+
+/*
  * Create a font resource object for a gs_font.  Return 1 iff the
  * font was newly created (it's a roudiment, keeping reverse compatibility).
  * This procedure is only intended to be called
@@ -882,7 +989,7 @@ pdf_refine_encoding_index(int index, bool is_standard)
 private int
 pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 		       pdf_font_resource_t **ppdfont, 
-		       gs_glyph *glyphs, gs_char *chars, int num_chars)
+		       pdf_char_glyph_pairs_t *cgp)
 {
     int index = -1;
     int BaseEncoding = ENCODING_INDEX_UNKNOWN;
@@ -896,20 +1003,42 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	pdev->text->outline_fonts->standard_fonts;
     int code = 0;
 
-    embed = pdf_font_embed_status(pdev, base_font, &index, glyphs, num_chars);
+    if (pdev->version < psdf_version_level2_with_TT) {
+	switch(font->FontType) {
+	    case ft_TrueType:
+	    case ft_CID_TrueType:
+		return_error(gs_error_undefined);
+	    default:
+		break;
+	}
+    }
+    if (pdev->ForOPDFRead && !pdev->HaveCIDSystem) {
+	switch(font->FontType) {
+	    case ft_CID_encrypted:
+	    case ft_CID_TrueType:
+		return_error(gs_error_undefined);
+	    default:
+		break;
+	}
+    }
+    if (!pdev->HaveCFF) {
+	if (font->FontType == ft_encrypted2)
+	    return_error(gs_error_undefined);
+    }
+    embed = pdf_font_embed_status(pdev, base_font, &index, cgp->s, cgp->num_all_chars);
     if (embed == FONT_EMBED_STANDARD) {
 	pdf_standard_font_t *psf = &psfa[index];
 
 	if (psf->pdfont == NULL ||
 		!pdf_is_compatible_encoding(pdev, psf->pdfont, font,
-			glyphs, chars, num_chars)) {
+			cgp->s, cgp->num_all_chars)) {
 	    code = pdf_font_std_alloc(pdev, ppdfont, (psf->pdfont == NULL), base_font->id,
 				      (gs_font_base *)base_font, index);
 	    if (code < 0)
 		return code;
 	    if (psf->pdfont == NULL)
 		psf->pdfont = *ppdfont;
-	    (*ppdfont)->u.simple.BaseEncoding = pdf_refine_encoding_index(
+	    (*ppdfont)->u.simple.BaseEncoding = pdf_refine_encoding_index(pdev,
 		((const gs_font_base *)base_font)->nearest_encoding_index, true);
 	    code = 1;
 	} else
@@ -928,26 +1057,12 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	font_alloc = pdf_font_simple_alloc;
 	break;
     case ft_user_defined:
-	{
-	    const gs_font_base *bfont = (const gs_font_base *)font;
-
-	    code = font_resource_encoded_alloc(pdev, &pdfont, bfont->id, 
-			    ft_user_defined, pdf_write_contents_bitmap);
-	    if (code < 0)
-		return code;
-	    pdfont->u.simple.s.type3.bitmap_font = false;
-	    pdfont->u.simple.BaseEncoding = pdf_refine_encoding_index(
-				bfont->nearest_encoding_index, true);
-	    pdfont->u.simple.s.type3.FontBBox.p.x = (int)bfont->FontBBox.p.x;
-	    pdfont->u.simple.s.type3.FontBBox.p.y = (int)bfont->FontBBox.p.y;
-	    pdfont->u.simple.s.type3.FontBBox.q.x = (int)bfont->FontBBox.q.x;
-	    pdfont->u.simple.s.type3.FontBBox.q.y = (int)bfont->FontBBox.q.y;
-	    pdfont->u.simple.s.type3.FontMatrix = bfont->FontMatrix;
-	    *ppdfont = pdfont;
-	    return 1;
-	}
+	code = pdf_make_font3_resource(pdev, font, ppdfont);
+	if (code < 0)
+	    return code;
+	return 1;
     default:
-	return_error(pdev->memory, gs_error_invalidfont);
+	return_error(gs_error_invalidfont);
     }
 
     /* Create an appropriate font resource and descriptor. */
@@ -975,7 +1090,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 		    )
 		    continue;
 		/* Can't embed, punt. */
-		return_error(pdev->memory, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	    }
 	}
     }
@@ -994,7 +1109,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	 * Hopely other viewers can ignore Encoding in such case. Actually in this case 
 	 * an Encoding doesn't add an useful information.
 	 */
-	BaseEncoding = pdf_refine_encoding_index(
+	BaseEncoding = pdf_refine_encoding_index(pdev,
 	    ((const gs_font_base *)base_font)->nearest_encoding_index, false);
     }
     if ((code = pdf_font_descriptor_alloc(pdev, &pfd,
@@ -1005,11 +1120,23 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	return code;
     code = 1;
 
-    if (!pdf_is_CID_font(font))
+    if (!pdf_is_CID_font(font)) {
 	pdfont->u.simple.BaseEncoding = BaseEncoding;
+	pdfont->mark_glyph = font->dir->ccache.mark_glyph;
+    }
 
     *ppdfont = pdfont;
     return 1;
+}
+
+/* Get a synthesized Type 3 font scale. */
+void 
+pdf_font3_scale(gx_device_pdf *pdev, gs_font *font, double *scale)
+{
+    pdf_font_resource_t *pdfont;
+
+    pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL);
+    *scale = pdfont->u.simple.s.type3.FontMatrix.xx;
 }
 
 /*
@@ -1062,26 +1189,24 @@ pdf_next_char_glyph(gs_text_enum_t *penum, const gs_string *pstr,
 }
 
 private void
-store_glyphs(gs_glyph *glyphs, int glyphs_offset,
-	     gs_char *chars, int chars_offset,
+store_glyphs(pdf_char_glyph_pairs_t *cgp, 
 	     byte *glyph_usage, int char_cache_size,
-	     int *num_all_chars, int *num_unused_chars,
 	     gs_char char_code, gs_char cid, gs_glyph glyph)
 {
     int j;
 
-    for (j = 0; j < *num_all_chars; j++)
-	if (chars[j] == cid)
+    for (j = 0; j < cgp->num_all_chars; j++)
+	if (cgp->s[j].chr == cid)
 	    break;
-    if (j < *num_all_chars)
+    if (j < cgp->num_all_chars)
 	return;
-    glyphs[*num_all_chars] = glyph;
-    chars[*num_all_chars] = char_code;
-    (*num_all_chars)++;
+    cgp->s[cgp->num_all_chars].glyph = glyph;
+    cgp->s[cgp->num_all_chars].chr = char_code;
+    cgp->num_all_chars++;
     if (glyph_usage == 0 || !(glyph_usage[cid / 8] & (0x80 >> (cid & 7)))) {
-	glyphs[glyphs_offset + *num_unused_chars] = glyph;
-    	chars[glyphs_offset + *num_unused_chars] = char_code;
-	(*num_unused_chars)++;
+	cgp->s[cgp->unused_offset + cgp->num_unused_chars].glyph = glyph;
+    	cgp->s[cgp->unused_offset + cgp->num_unused_chars].chr = char_code;
+	cgp->num_unused_chars++;
     }
     /* We are disliked that gs_copied_can_copy_glyphs can get redundant
      * glyphs, if Encoding specifies several codes for same glyph. 
@@ -1094,47 +1219,45 @@ store_glyphs(gs_glyph *glyphs, int glyphs_offset,
 
 /* Allocate storage for the glyph set of the text. */
 private int
-pdf_alloc_text_glyphs_table(gx_device_pdf *pdev, const gs_text_enum_t *penum, const gs_string *pstr, 
-	    gs_glyph glyphs0[], int glyphs0_size, 
-	    gs_glyph **glyphs, int *glyphs_offset, gs_char **chars)
+pdf_alloc_text_glyphs_table(gx_device_pdf *pdev, pdf_text_enum_t *penum, const gs_string *pstr)
 {
-    const int buf_elem_size = sizeof(gs_glyph) * 2 + sizeof(gs_char) * 2;
-
-    *glyphs_offset = (pstr != NULL ? pstr->size : penum->text.size);
-    if (*glyphs_offset * buf_elem_size > glyphs0_size) {
-	*glyphs = (gs_glyph *)gs_alloc_bytes(pdev->memory, 
-		buf_elem_size * *glyphs_offset, "pdf_encode_string");
-	if (*glyphs == 0)
-	    return_error(pdev->memory, gs_error_VMerror);
-    }
-    *chars = (gs_char *)(*glyphs + *glyphs_offset * 2);
+    const int go = (pstr != NULL ? pstr->size : penum->text.size);
+    const int struct_size = sizeof(pdf_char_glyph_pairs_t) + 
+			    sizeof(pdf_char_glyph_pair_t) * (2 * go - 1);
+    pdf_char_glyph_pairs_t *cgp = (pdf_char_glyph_pairs_t *)gs_alloc_bytes(penum->memory, 
+		struct_size, "pdf_alloc_text_glyphs_table");
+    if (cgp == NULL)
+	return_error(gs_error_VMerror);
+    penum->cgp = cgp;
+    cgp->unused_offset = go;
+    cgp->num_all_chars = 0;
+    cgp->num_unused_chars = 0;
     return 0;
 }
 
 /* Build the glyph set of the text. */
 private int
-pdf_make_text_glyphs_table(const gs_text_enum_t *penum, const gs_string *pstr, 
-		gs_glyph *glyphs, int glyphs_offset, gs_char *chars, 
-		byte *glyph_usage, int char_cache_size, int *num_all_chars, int *num_unused_chars)
+pdf_make_text_glyphs_table(pdf_text_enum_t *penum, const gs_string *pstr, 
+		byte *glyph_usage, int char_cache_size)
 {
-    gs_text_enum_t scan = *penum;
+    gs_text_enum_t scan = *(gs_text_enum_t *)penum;
     gs_font *font = (gs_font *)penum->current_font;
     bool font_is_simple = pdf_is_simple_font(font);
+    pdf_char_glyph_pairs_t *cgp = penum->cgp;
     gs_char char_code, cid;
     gs_glyph glyph;
     int code;
 
-    *num_unused_chars = 0;
-    *num_all_chars = 0;
-
+    cgp->num_unused_chars = 0;
+    cgp->num_all_chars = 0;
     if (pstr != NULL) {
 	scan.text.data.bytes = pstr->data;
 	scan.text.size = pstr->size;
+	scan.index = 0;
         /* if TEXT_FROM_CHARS the data was converted to bytes earlier */
         if ( scan.text.operation & TEXT_FROM_CHARS )
             scan.text.operation = ((scan.text.operation & ~TEXT_FROM_CHARS) | TEXT_FROM_STRING);
     }
-
     for (;;) {
 	code = pdf_next_char_glyph(&scan, pstr, font, font_is_simple, 
 				   &char_code, &cid, &glyph);
@@ -1144,13 +1267,11 @@ pdf_make_text_glyphs_table(const gs_text_enum_t *penum, const gs_string *pstr,
 	    continue;
 	if (code < 0)
 	    return code;
-	if (*num_all_chars > glyphs_offset)
-	    return gs_error_unregistered; /* Must not happen. */
+	if (cgp->num_all_chars > cgp->unused_offset)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	if (glyph_usage != 0 && cid > char_cache_size)
 	    continue;
-	store_glyphs(glyphs, glyphs_offset,	chars, glyphs_offset,
-		     glyph_usage, char_cache_size,
-		     num_all_chars, num_unused_chars,
+	store_glyphs(cgp, glyph_usage, char_cache_size,
 		     char_code, cid, glyph);
     }
     return 0;
@@ -1158,14 +1279,15 @@ pdf_make_text_glyphs_table(const gs_text_enum_t *penum, const gs_string *pstr,
 
 /* Build the glyph set of the glyphshow text, and re_encode the text. */
 private int
-pdf_make_text_glyphs_table_unencoded(gs_font *font, const gs_string *pstr, const gs_glyph *gdata, 
-		gs_glyph *glyphs, int glyphs_offset, gs_char *chars, 
-		int *num_all_chars, int *num_unused_chars, int *ps_encoding_index)
+pdf_make_text_glyphs_table_unencoded(pdf_char_glyph_pairs_t *cgp,
+		gs_font *font, const gs_string *pstr, const gs_glyph *gdata, 
+		int *ps_encoding_index)
 {
     int i, ei;
     gs_char ch;
     gs_const_string gname;
     gs_glyph *gid = (gs_glyph *)pstr->data; /* pdf_text_process allocs enough space. */
+    bool unknown = false;
 
     /* Translate glyph name indices into gscencs.c indices. */
     for (i = 0; i < pstr->size; i++) {
@@ -1174,23 +1296,25 @@ pdf_make_text_glyphs_table_unencoded(gs_font *font, const gs_string *pstr, const
 	if (code < 0)
 	    return code;
 	gid[i] = gs_c_name_glyph(gname.data, gname.size);
-	if (gid[i] == GS_NO_GLYPH)
-	    return gs_error_rangecheck;
+	if (gid[i] == GS_NO_GLYPH) {
+	    /* Use global glyph name. */
+	    gid[i] = gdata[i];
+	    unknown = true;
+	}
     }
-
+    if (unknown)
+	return 0; /* Using global glyph names. */
     /* Find an acceptable encodng. */
     for (ei = 0; gs_c_known_encodings[ei]; ei++) {
-	*num_unused_chars = 0;
-	*num_all_chars = 0;
+	cgp->num_unused_chars = 0;
+	cgp->num_all_chars = 0;
 	for (i = 0; i < pstr->size; i++) {
 	    ch = gs_c_decode(gid[i], ei);
 	    if (ch == GS_NO_CHAR)
 		break;
 	    /* pstr->data[i] = (byte)ch; Can't do because pstr->data and gid 
 	       are same pointer. Will do in a separate pass below. */
-	    store_glyphs(glyphs, glyphs_offset,	chars, glyphs_offset,
-			 NULL, 0,
-			 num_all_chars, num_unused_chars,
+	    store_glyphs(cgp, NULL, 0,
 			 ch, ch, gdata[i]);
 	}
 	*ps_encoding_index = ei;
@@ -1200,34 +1324,37 @@ pdf_make_text_glyphs_table_unencoded(gs_font *font, const gs_string *pstr, const
 	    return 0;
 	}
     }
-    return gs_error_rangecheck;
+    return_error(gs_error_rangecheck);
 }
 
 
 /* Get/make font resource for the font with a known encoding. */
 private int
 pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font,
-	pdf_font_resource_t **ppdfont, int num_unused_chars, int num_all_chars,
-	gs_glyph *glyphs, int glyphs_offset, gs_char *chars)
+	pdf_font_resource_t **ppdfont, pdf_char_glyph_pairs_t *cgp)
 {
     int code;
+    pdf_font_resource_t *pdfont_not_allowed = NULL;
 
     if (*ppdfont != 0) {
 	gs_font_base *cfont = pdf_font_resource_font(*ppdfont, false);
         
 	if (font->FontType != ft_user_defined) {
 	    code = gs_copied_can_copy_glyphs((gs_font *)cfont, font, 
-			glyphs + glyphs_offset, num_unused_chars, false);
+			&cgp->s[cgp->unused_offset].glyph, cgp->num_unused_chars, 
+			sizeof(pdf_char_glyph_pair_t), true);
 	    if (code < 0)
 		return code;
 	} else
 	    code = 1;
-	if (code == 0)
+	if (code == 0) {
+	    pdfont_not_allowed = *ppdfont;
 	    *ppdfont = 0;
-	else if(!pdf_is_compatible_encoding(pdev, *ppdfont, font,
-			glyphs + glyphs_offset, chars + glyphs_offset, 
-			num_unused_chars))
+	} else if(!pdf_is_compatible_encoding(pdev, *ppdfont, font,
+			cgp->s, cgp->num_all_chars)) {
+	    pdfont_not_allowed = *ppdfont;
 	    *ppdfont = 0;
+	}
     }
     if (*ppdfont == 0) {
 	gs_font *base_font = font;
@@ -1247,21 +1374,22 @@ pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font,
 	/* Find or make font resource. */
 	pdf_attached_font_resource(pdev, base_font, ppdfont, NULL, NULL, NULL, NULL);
 	if (*ppdfont != NULL && base_font != font) {
-	    if(!pdf_is_compatible_encoding(pdev, *ppdfont, 
-				    base_font, glyphs, chars, num_all_chars))
+	    if (pdfont_not_allowed == *ppdfont)
+		*ppdfont = NULL;	
+	    else if(!pdf_is_compatible_encoding(pdev, *ppdfont, 
+				    base_font, cgp->s, cgp->num_all_chars))
 		*ppdfont = NULL;
 	}
-	if (*ppdfont == NULL) {
+	if (*ppdfont == NULL || *ppdfont == pdfont_not_allowed) {
 	    pdf_resource_type_t type = 
 		(pdf_is_CID_font(base_font) ? resourceCIDFont 
 					    : resourceFont);
-    	    code = pdf_find_font_resource(pdev, base_font, type, ppdfont, 
-					  glyphs, chars, num_all_chars); 
+	    *ppdfont = NULL;
+    	    code = pdf_find_font_resource(pdev, base_font, type, ppdfont, cgp);
 	    if (code < 0)
 		return code;
 	    if (*ppdfont == NULL) {
-		code = pdf_make_font_resource(pdev, base_font, ppdfont, 
-					      glyphs, chars, num_all_chars);
+		code = pdf_make_font_resource(pdev, base_font, ppdfont, cgp);
 		if (code < 0)
 		    return code;
 	    }
@@ -1292,12 +1420,12 @@ pdf_mark_text_glyphs(const gs_text_enum_t *penum, const gs_string *pstr,
     if (pstr != NULL) {
 	scan.text.data.bytes = pstr->data;
 	scan.text.size = pstr->size;
+	scan.index = 0;
         /* if TEXT_FROM_CHARS the data was converted to bytes earlier */
         if ( scan.text.operation & TEXT_FROM_CHARS )
             scan.text.operation = 
                 ((scan.text.operation & ~TEXT_FROM_CHARS) | TEXT_FROM_STRING);
     }
-
     for (;;) {
 	int code = pdf_next_char_glyph(&scan, pstr, font, font_is_simple, 
 				       &char_code, &cid, &glyph);
@@ -1326,7 +1454,7 @@ pdf_mark_text_glyphs_unencoded(const gs_text_enum_t *penum, const gs_string *pst
 	byte ch = pstr->data[i];
 
 	if (ch >= char_cache_size)
-	    return gs_error_rangecheck;
+	    return_error(gs_error_rangecheck);
 	glyph_usage[ch / 8] |= 0x80 >> (ch & 7);
     }
     return 0;
@@ -1336,15 +1464,11 @@ pdf_mark_text_glyphs_unencoded(const gs_text_enum_t *penum, const gs_string *pst
  * Create or find a font resource object for a text.
  */
 int
-pdf_obtain_font_resource(const gs_text_enum_t *penum, 
+pdf_obtain_font_resource(pdf_text_enum_t *penum, 
 	    const gs_string *pstr, pdf_font_resource_t **ppdfont)
 {
     gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
     gs_font *font = (gs_font *)penum->current_font;
-    int num_unused_chars, num_all_chars;
-    int glyphs_offset;
-    gs_glyph glyphs0[200], *glyphs = glyphs0;
-    gs_char *chars;
     byte *glyph_usage = 0;
     double *real_widths;
     int char_cache_size, width_cache_size;
@@ -1352,51 +1476,41 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 
     if (font->FontType == ft_composite) {
 	/* Must not happen, because we always split composite fonts into descendents. */
-	return_error(pdev->memory, gs_error_unregistered);
+	return_error(gs_error_unregistered);
     }
     code = pdf_attached_font_resource(pdev, font, ppdfont,
 			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
     /* *ppdfont is NULL if no resource attached. */
     if (code < 0)
 	return code;
-    code = pdf_alloc_text_glyphs_table(pdev, penum, pstr, glyphs0, sizeof(glyphs0), &glyphs, &glyphs_offset, &chars);
+    if (penum->cgp == NULL) {
+	code = pdf_alloc_text_glyphs_table(pdev, penum, pstr);
+	if (code < 0)
+	    return code;
+	code = pdf_make_text_glyphs_table(penum, pstr,
+			    glyph_usage, char_cache_size);
+	if (code < 0)
+	    return code;
+    }
+    code = pdf_obtain_font_resource_encoded(pdev, font, ppdfont, penum->cgp);
     if (code < 0)
 	return code;
-    code = pdf_make_text_glyphs_table(penum, pstr, glyphs, glyphs_offset, chars, 
-			glyph_usage, char_cache_size, &num_all_chars, &num_unused_chars);
-    if (code < 0)
-	goto out;
-    code = pdf_obtain_font_resource_encoded(pdev, font, ppdfont, 
-		    num_unused_chars, num_all_chars,
-		    glyphs, glyphs_offset, chars);
-    if (code < 0)
-	goto out;
     code = pdf_attached_font_resource(pdev, font, ppdfont, 
 			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
     if (code < 0)
 	return code;
-    code = pdf_mark_text_glyphs(penum, pstr, glyph_usage, char_cache_size);
-    if (code < 0)
-	goto out;
-out:
-    if (glyphs != glyphs0)
-	gs_free_object(pdev->memory, glyphs, "pdf_encode_string");
-    return code;
+    return pdf_mark_text_glyphs((const gs_text_enum_t *)penum, pstr, glyph_usage, char_cache_size);
 }
 
 /*
  * Create or find a font resource object for a glyphshow text.
  */
 int
-pdf_obtain_font_resource_unencoded(const gs_text_enum_t *penum, 
+pdf_obtain_font_resource_unencoded(pdf_text_enum_t *penum, 
 	    const gs_string *pstr, pdf_font_resource_t **ppdfont, const gs_glyph *gdata)
 {
     gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
     gs_font *font = (gs_font *)penum->current_font;
-    int num_unused_chars, num_all_chars;
-    int glyphs_offset;
-    gs_glyph glyphs0[200], *glyphs = glyphs0;
-    gs_char *chars;
     byte *glyph_usage = 0;
     double *real_widths = 0;
     int char_cache_size = 0, width_cache_size = 0;
@@ -1404,36 +1518,31 @@ pdf_obtain_font_resource_unencoded(const gs_text_enum_t *penum,
 
     if (font->FontType == ft_composite) {
 	/* Must not happen, because we always split composite fonts into descendents. */
-	return_error(pdev->memory, gs_error_unregistered);
+	return_error(gs_error_unregistered);
     }
     code = pdf_attached_font_resource(pdev, font, ppdfont,
 			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
     if (code < 0)
 	return code;
     /* *ppdfont is NULL if no resource attached. */
-    code = pdf_alloc_text_glyphs_table(pdev, penum, pstr, glyphs0, sizeof(glyphs0), &glyphs, &glyphs_offset, &chars);
+    if (penum->cgp == NULL) {
+	code = pdf_alloc_text_glyphs_table(pdev, penum, pstr);
+	if (code < 0)
+	    return code;
+	code = pdf_make_text_glyphs_table_unencoded(penum->cgp, font, pstr, gdata,
+			    &ps_encoding_index);
+	if (code < 0)
+	    return code;
+    }
+    code = pdf_obtain_font_resource_encoded(pdev, font, ppdfont, penum->cgp);
     if (code < 0)
 	return code;
-    code = pdf_make_text_glyphs_table_unencoded(font, pstr, gdata, glyphs, glyphs_offset, chars, 
-			&num_all_chars, &num_unused_chars, &ps_encoding_index);
-    if (code < 0)
-	goto out;
-    code = pdf_obtain_font_resource_encoded(pdev, font, ppdfont, 
-		    num_unused_chars, num_all_chars,
-		    glyphs, glyphs_offset, chars);
-    if (code < 0)
-	goto out;
     code = pdf_attached_font_resource(pdev, font, ppdfont, 
 			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
     if (code < 0)
 	return code;
-    code = pdf_mark_text_glyphs_unencoded(penum, pstr, glyph_usage, char_cache_size);
-    if (code < 0)
-	goto out;
-out:
-    if (glyphs != glyphs0)
-	gs_free_object(pdev->memory, glyphs, "pdf_encode_string");
-    return code;
+    return pdf_mark_text_glyphs_unencoded((const gs_text_enum_t *)penum, 
+		    pstr, glyph_usage, char_cache_size);
 }
 
 private inline bool
@@ -1476,6 +1585,31 @@ pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *
     return 0;
 }
 
+gs_char
+pdf_find_glyph(pdf_font_resource_t *pdfont, gs_glyph glyph)
+{
+    if (pdfont->FontType != ft_user_defined)
+	return GS_NO_CHAR;
+    else {
+	pdf_encoding_element_t *pet = pdfont->u.simple.Encoding;
+	int i, i0 = -1;
+	
+	if (pdfont->u.simple.FirstChar > pdfont->u.simple.LastChar)
+	    return (gs_char)0;
+	for (i = pdfont->u.simple.FirstChar; i <= pdfont->u.simple.LastChar; i++, pet++) {
+	    if (pet->glyph == glyph)
+		return (gs_char)i;
+	    if (i0 == -1 && pet->glyph == GS_NO_GLYPH)
+		i0 = i;
+	}
+	if (i0 != -1)
+	    return (gs_char)i0;
+	if (i < 256)
+	    return (gs_char)i;
+	return GS_NO_CHAR;	
+    }
+}
+
 /*
  * Compute the cached values in the text processing state from the text
  * parameters, current_font, and pis->ctm.  Return either an error code (<
@@ -1485,10 +1619,10 @@ pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *
  * values in ppts->values, not just the ones that need to be set now.
  */
 private int
-transform_delta_inverse(const gs_memory_t *mem, const gs_point *pdelta, const gs_matrix *pmat,
+transform_delta_inverse(const gs_point *pdelta, const gs_matrix *pmat,
 			gs_point *ppt)
 {
-    int code = gs_distance_transform_inverse(mem, pdelta->x, pdelta->y, pmat, ppt);
+    int code = gs_distance_transform_inverse(pdelta->x, pdelta->y, pmat, ppt);
     gs_point delta;
 
     if (code < 0)
@@ -1496,7 +1630,7 @@ transform_delta_inverse(const gs_memory_t *mem, const gs_point *pdelta, const gs
     if (ppt->y == 0)
 	return 0;
     /* Check for numerical fuzz. */
-    code = gs_distance_transform(mem, ppt->x, 0.0, pmat, &delta);
+    code = gs_distance_transform(ppt->x, 0.0, pmat, &delta);
     if (code < 0)
 	return 0;		/* punt */
     if (fabs(delta.x - pdelta->x) < 0.01 && fabs(delta.y - pdelta->y) < 0.01) {
@@ -1530,7 +1664,9 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     {
 	gs_font_base *cfont = pdf_font_resource_font(pdfont, false);
 
-	if (cfont != 0) {
+	if (pdfont->FontType == ft_user_defined)
+	    orig_matrix = pdfont->u.simple.s.type3.FontMatrix;
+	else if (cfont != 0) {
 	    /*
 	     * The text matrix to be computed relatively to the 
 	     * embedded font matrix.
@@ -1548,7 +1684,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
 
     /* Compute the scaling matrix and combined matrix. */
 
-    gs_matrix_invert(penum->memory, &orig_matrix, &smat);
+    gs_matrix_invert(&orig_matrix, &smat);
     gs_matrix_multiply(&smat, pfmat, &smat);
     tmat = ctm_only(penum->pis);
     tmat.tx = tmat.ty = 0;
@@ -1569,7 +1705,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
 	if (penum->current_font->WMode == 0) {
 	    gs_point pt;
 
-	    code = transform_delta_inverse(penum->memory, &penum->text.delta_all, &smat, &pt);
+	    code = transform_delta_inverse(&penum->text.delta_all, &smat, &pt);
 	    if (code >= 0 && pt.y == 0)
 		c_s = pt.x * size;
 	    else
@@ -1582,7 +1718,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     if (penum->text.operation & TEXT_ADD_TO_SPACE_WIDTH) {
 	gs_point pt;
 
-	code = transform_delta_inverse(penum->memory, &penum->text.delta_space, &smat, &pt);
+	code = transform_delta_inverse(&penum->text.delta_space, &smat, &pt);
 	if (code >= 0 && pt.y == 0 && penum->text.space.s_char == 32)
 	    w_s = pt.x * size;
 	else
@@ -1704,11 +1840,11 @@ get_missing_width(gs_font_base *cfont, int wmode, double scale_c,
     if (wmode) {
 	pwidths->Width.xy.x = pwidths->real_width.xy.x = 0;
 	pwidths->Width.xy.y = pwidths->real_width.xy.y =
-		finfo.MissingWidth * scale_c;
+		- finfo.MissingWidth * scale_c;
 	pwidths->Width.w = pwidths->real_width.w =
 		pwidths->Width.xy.y;
-	pwidths->Width.v.x = pwidths->Width.xy.y / 2;
-	pwidths->Width.v.y = pwidths->Width.xy.y;
+	pwidths->Width.v.x = - pwidths->Width.xy.y / 2;
+	pwidths->Width.v.y = - pwidths->Width.xy.y;
     } else {
 	pwidths->Width.xy.x = pwidths->real_width.xy.x =
 		finfo.MissingWidth * scale_c;
@@ -1748,10 +1884,11 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
     int code, rcode = 0;
     gs_point v;
     int allow_cdevproc_callout = (orig_font->FontType == ft_CID_TrueType 
+		|| orig_font->FontType == ft_CID_encrypted 
 		? GLYPH_INFO_CDEVPROC : 0); /* fixme : allow more font types. */
 
     if (ofont->FontType == ft_composite)
-	return gs_error_unregistered; /* Must not happen. */
+	return_error(gs_error_unregistered); /* Must not happen. */
     code = font_orig_scale((const gs_font *)cfont, &sxc);
     if (code < 0)
 	return code;
@@ -1766,15 +1903,30 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
     if (glyph == GS_NO_GLYPH)
 	return get_missing_width(cfont, wmode, scale_c, pwidths);
     code = cfont->procs.glyph_info((gs_font *)cfont, glyph, NULL,
+				    GLYPH_INFO_WIDTH0 |
 				    (GLYPH_INFO_WIDTH0 << wmode) |
 				    GLYPH_INFO_OUTLINE_WIDTHS |
 				    (GLYPH_INFO_VVECTOR0 << wmode),
 				    &info);
+    /* For CID fonts the PDF spec requires the x-component of v-vector
+       to be equal to half glyph width, and AR5 takes it from W, DW.
+       So make a compatibe data here.
+     */
     if (code == gs_error_undefined || !(info.members & (GLYPH_INFO_WIDTH0 << wmode))) {
 	code = get_missing_width(cfont, wmode, scale_c, pwidths);
 	if (code < 0)
-	    return code;
-	v = pwidths->Width.v;
+	    v.y = 0;
+	else 
+	    v.y = pwidths->Width.v.y;
+	if (wmode && pdf_is_CID_font(ofont)) {
+	    pdf_glyph_widths_t widths1;
+
+	    if (get_missing_width(cfont, 0, scale_c, &widths1) < 0)
+		v.x = 0;
+	    else
+		v.x = widths1.Width.w / 2;
+	} else
+	    v.x = pwidths->Width.v.x;
     } else if (code < 0)
 	return code;
     else {
@@ -1782,15 +1934,36 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 	if (code < 0)
 	    return code;
 	rcode |= code;
-	if (info.members & (GLYPH_INFO_VVECTOR0 | GLYPH_INFO_VVECTOR1)) {
-	    v.x = info.v.x * scale_c;
+	if (info.members & (GLYPH_INFO_VVECTOR0 << wmode)) {
 	    v.y = info.v.y * scale_c;
 	} else
-	    v.x = v.y = 0;
+	    v.y = 0;
+	if (wmode && pdf_is_CID_font(ofont)) {
+	    if (info.members & (GLYPH_INFO_WIDTH0 << wmode)) {
+		v.x = info.width[0].x * scale_c / 2;
+	    } else {
+		pdf_glyph_widths_t widths1;
+		
+		if (get_missing_width(cfont, 0, scale_c, &widths1) < 0)
+		    v.x = 0;
+		else
+		    v.x = widths1.Width.w / 2;
+	    }
+	} else {
+	    if (info.members  & (GLYPH_INFO_VVECTOR0 << wmode)) {
+		v.x = info.v.x * scale_c;
+	    } else
+		v.x = 0;
+	}
     }
     pwidths->Width.v = v;
+#if 0
     if (code > 0)
 	pwidths->Width.xy.x = pwidths->Width.xy.y = pwidths->Width.w = 0;
+#else /* Skip only if not paralel to the axis. */
+    if (code > 0 && !pdf_is_CID_font(ofont))
+	pwidths->Width.xy.x = pwidths->Width.xy.y = pwidths->Width.w = 0;
+#endif
     if (cdevproc_result == NULL) {
 	code = ofont->procs.glyph_info(ofont, glyph, NULL,
 					    (GLYPH_INFO_WIDTH0 << wmode) |
@@ -1802,7 +1975,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 	    if (allow_cdevproc_callout)
 		return TEXT_PROCESS_CDEVPROC;
 	    else
-		return gs_error_rangecheck;
+		return_error(gs_error_rangecheck);
 	}
     } else {
 	info.width[0].x = cdevproc_result[0];
@@ -1828,11 +2001,81 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 	if (code < 0)
 	    return code;
 	rcode |= code;
+	pwidths->real_width.v.x = info.v.x * scale_o;
+	pwidths->real_width.v.y = info.v.y * scale_o;
     }
-    pwidths->real_width.v.x = info.v.x * scale_o;
-    pwidths->real_width.v.y = info.v.y * scale_o;
     return rcode;
 }
+
+private int
+pdf_choose_output_char_code(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_char *pch)
+{
+    gs_char ch;
+    gs_font *font = penum->current_font;
+
+    if (penum->text.operation & TEXT_FROM_SINGLE_GLYPH) {
+	byte buf[1];
+	int char_code_length;
+	gs_glyph glyph = penum->text.data.d_glyph;
+	int code = pdf_encode_glyph((gs_font_base *)font, glyph, 
+		    buf, sizeof(buf), &char_code_length);
+
+	if (code < 0) {
+	    /* Must not happen, becuse pdf_encode_glyph was passed in process_plain_text.*/
+	    ch = GS_NO_CHAR;
+	} else if (char_code_length != 1) {
+	    /* Must not happen with type 3 fonts.*/
+	    ch = GS_NO_CHAR;
+	} else
+	    ch = buf[0];
+    } else if (penum->orig_font->FontType == ft_composite) {
+	gs_font_type0 *font0 = (gs_font_type0 *)penum->orig_font;
+	gs_glyph glyph = penum->returned.current_glyph;
+	
+	if (font0->data.FMapType == fmap_CMap) {
+	    pdf_font_resource_t *pdfont;
+	    int code = pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL); 
+
+	    if (code < 0)
+		return code;
+	    ch = pdf_find_glyph(pdfont, glyph);
+	} else
+	    ch = penum->returned.current_char;
+    } else {
+	ch = penum->returned.current_char;
+	/* Keep for records : glyph = font->procs.encode_char(font, ch, GLYPH_SPACE_NAME); */
+	/*
+	 * If glyph == GS_NO_GLYPH, we should replace it with 
+	 * a notdef glyph, but we don't know how to do with Type 3 fonts.
+	 */
+    }
+    *pch = ch;
+    return 0;
+}
+
+private int
+pdf_choose_output_glyph_hame(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_const_string *gnstr, gs_glyph glyph)
+{
+    if (penum->orig_font->FontType == ft_composite) {
+	char buf[6];
+	byte *p;
+
+	gnstr->size = 5;
+	p = (byte *)gs_alloc_string(pdev->pdf_memory, gnstr->size, "pdf_text_set_cache");
+	if (p == NULL)
+	    return_error(gs_error_VMerror);
+	sprintf(buf, "g%04x", glyph & 0xFFFF);
+	memcpy(p, buf, 5);
+	gnstr->data = p;
+    } else {
+	int code = penum->orig_font->procs.glyph_name(penum->orig_font, glyph, gnstr);
+
+	if (code < 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+    }
+    return 0;
+}
+
 /* ---------------- Main entry ---------------- */
 
 /*
@@ -1877,11 +2120,23 @@ pdf_text_process(gs_text_enum_t *pte)
 	gs_glyph glyphs[BUF_SIZE / sizeof(gs_glyph)];
     } buf;
 
-    if (!penum->pte_default || !penum->charproc_accum) {
+    if (!penum->pte_default && !penum->charproc_accum) {
 	/* Don't need to sync before exiting charproc. */
-	code = pdf_prepare_text_drawing(pdev, pte->pis, pte->pdcolor, pte->pcpath, &pte->text);
+	code = pdf_prepare_text_drawing(pdev, pte);
+	if (code == gs_error_rangecheck) {
+	    /* Fallback to the default implermentation for handling 
+	       a transparency with CompatibilityLevel<=1.3 . */
+	    goto default_impl;
+	}
 	if (code < 0)
 	    return code;
+    }
+    if (!penum->pte_default) {
+	pdev->charproc_just_accumulated = false;
+	if (penum->cdevproc_callout) {
+	    /* Restore after TEXT_PROCESS_CDEVPROC in scan_cmap_text. */
+	    penum->current_font = penum->orig_font;
+	}
     }
     code = -1;		/* to force default implementation */
 
@@ -1892,7 +2147,13 @@ pdf_text_process(gs_text_enum_t *pte)
     pte_default = penum->pte_default;
     if (pte_default) {
 	if (penum->charproc_accum) {
-	    code = pdf_end_charproc_accum(pdev);
+	    gs_const_string gnstr;
+
+	    code = pdf_choose_output_glyph_hame(pdev, penum, &gnstr, pte_default->returned.current_glyph);
+	    if (code < 0)
+		return code;
+	    code = pdf_end_charproc_accum(pdev, penum->current_font, penum->cgp, 
+			pte_default->returned.current_glyph, penum->output_char_code, &gnstr);
 	    if (code < 0)
 		return code;
 	    penum->charproc_accum = false;
@@ -1906,12 +2167,48 @@ pdf_text_process(gs_text_enum_t *pte)
 	pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
 	code = gs_text_process(pte_default);
 	pdev->pte = NULL;	 /* CAUTION: See comment in gdevpdfx.h . */
-	if (pte->current_font->FontType != ft_user_defined)
-	    gs_text_enum_copy_dynamic(pte, pte_default, true);
-	else {
+	pdev->charproc_just_accumulated = false;
+	if (code == TEXT_PROCESS_RENDER) {
 	    penum->returned.current_char = pte_default->returned.current_char;
 	    penum->returned.current_glyph = pte_default->returned.current_glyph;
+	    pdev->charproc_ctm = penum->pis->ctm;
+	    if (penum->current_font->FontType == ft_user_defined && 
+		    penum->outer_CID == GS_NO_GLYPH &&
+		    !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
+		/* The condition above must be consistent with one in pdf_text_set_cache,
+		   which decides to apply pdf_set_charproc_attrs. */
+		gs_matrix m;
+
+		code = pdf_start_charproc_accum(pdev);
+		if (code < 0)
+		    return code;
+		pdf_viewer_state_from_imager_state(pdev, pte->pis, pte->pdcolor);
+		/* Set line params to unallowed values so that
+		   they'll synchronize with writing them out on the first use. 
+		   Doing so because PDF viewer inherits them from the 
+		   contents stream when executing the charproc,
+		   but at this moment we don't know in what contexts
+		   it will be used. */
+		pdev->state.line_params.half_width = -1;
+		pdev->state.line_params.cap = gs_cap_unknown;
+		pdev->state.line_params.join = gs_join_unknown;
+		pdev->state.line_params.miter_limit = -1;
+		pdev->state.line_params.dash.pattern_size = -1;
+		/* Must set an identity CTM for the charproc accumulation.
+		   The function show_proceed (called from gs_text_process above) 
+		   executed gsave, so we are safe to change CTM now.
+		   Note that BuildChar may change CTM before calling setcachedevice. */
+		gs_make_identity(&m);
+		gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
+		/* Choose a character code to use with the charproc. */
+		code = pdf_choose_output_char_code(pdev, penum, &penum->output_char_code);
+		if (code < 0)
+		    return code;
+		return TEXT_PROCESS_RENDER;
+	    } else
+		code += 0; /* A fgood place for breakpoint. */
 	}
+	gs_text_enum_copy_dynamic(pte, pte_default, true);
 	if (code)
 	    return code;
 	gs_text_release(pte_default, "pdf_text_process");
@@ -1950,9 +2247,10 @@ pdf_text_process(gs_text_enum_t *pte)
      * of bytes, gs_chars, or gs_glyphs.
      */
 
-    if (operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES))
-	DO_NOTHING;
-    else if (operation & TEXT_FROM_CHARS)
+    if (operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES)) {
+	if (size < sizeof(gs_glyph))
+	    size = sizeof(gs_glyph); /* for process_cid_text */
+    } else if (operation & TEXT_FROM_CHARS)
 	size *= sizeof(gs_char);
     else if (operation & TEXT_FROM_SINGLE_CHAR)
 	size = sizeof(gs_char);
@@ -1969,7 +2267,7 @@ pdf_text_process(gs_text_enum_t *pte)
 	byte *buf = gs_alloc_string(pte->memory, size, "pdf_text_process");
 
 	if (buf == 0)
-	    return_error(pte->memory, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	code = process(pte, buf, size);
 	gs_free_string(pte->memory, buf, size, "pdf_text_process");
     }
@@ -1982,6 +2280,9 @@ pdf_text_process(gs_text_enum_t *pte)
 	    return code;
 	if (code == gs_error_VMerror)
 	    return code;
+	if (code == gs_error_invalidfont) /* Bug 688370. */
+	    return code;
+ default_impl:
 	/* Fall back to the default implementation. */
 	code = pdf_default_text_begin(pte, &pte->text, &pte_default);
 	if (code < 0)
@@ -1999,7 +2300,7 @@ pdf_text_process(gs_text_enum_t *pte)
      * output font. Then it installs pte_default and falls back to default
      * implementation with PS interpreter callout. The callout executes 
      * BuildChar/BuildGlyph with setcachedevice. The latter calls
-     * pdf_install_charproc_accum, which sets up an accumulator 
+     * pdf_set_charproc_attrs, which sets up an accumulator 
      * of graphic objects to a pdf_begin_resource stream.
      * When the callout completes, pdf_text_process calls pdf_end_charproc_accum
      * and later resumes the normal (non-default) text enumeration, repeating the 

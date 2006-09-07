@@ -180,7 +180,7 @@ pcl_do_registrations(
 	if ( (*init)->do_registration ) {
 	    code = (*(*init)->do_registration)(pst, pcs->memory);
 	    if (code < 0) {
-		lprintf1(pcs->memory, "Error %d during initialization!\n", code);
+		lprintf1("Error %d during initialization!\n", code);
 		return code;
 	    }
 	}

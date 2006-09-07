@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* Functions for managing the device filter stack */
 
 #include "ctype_.h"
@@ -53,8 +53,8 @@ gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df)
     dfs = gs_alloc_struct(mem, gs_device_filter_stack_t,
 			  &st_gs_device_filter_stack, "gs_push_device_filter");
     if (dfs == NULL)
-	return_error(mem, gs_error_VMerror);
-    rc_increment(pgs->memory, pgs->device);
+	return_error(gs_error_VMerror);
+    rc_increment(pgs->device);
     dfs->next_device = pgs->device;
     code = df->push(df, mem, pgs, &new_dev, pgs->device);
     if (code < 0) {
@@ -66,7 +66,7 @@ gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df)
     dfs->df = df;
     rc_init(dfs, mem, 1);
     gs_setdevice_no_init(pgs, new_dev);
-    rc_decrement_only(pgs->memory, new_dev, "gs_push_device_filter");
+    rc_decrement_only(new_dev, "gs_push_device_filter");
     return code;
 }
 
@@ -79,17 +79,17 @@ gs_pop_device_filter(gs_memory_t *mem, gs_state *pgs)
     int code;
 
     if (dfs_tos == NULL)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     df = dfs_tos->df;
     pgs->dfilter_stack = dfs_tos->next;
     code = df->prepop(df, mem, pgs, tos_device);
-    rc_increment(mem, tos_device);
+    rc_increment(tos_device);
     gs_setdevice_no_init(pgs, dfs_tos->next_device);
-    rc_decrement_only(mem, dfs_tos->next_device, "gs_pop_device_filter");
+    rc_decrement_only(dfs_tos->next_device, "gs_pop_device_filter");
     dfs_tos->df = NULL;
-    rc_decrement_only(mem, dfs_tos, "gs_pop_device_filter");
+    rc_decrement_only(dfs_tos, "gs_pop_device_filter");
     code = df->postpop(df, mem, pgs, tos_device);
-    rc_decrement_only(mem, tos_device, "gs_pop_device_filter");
+    rc_decrement_only(tos_device, "gs_pop_device_filter");
     return code;
 }
 

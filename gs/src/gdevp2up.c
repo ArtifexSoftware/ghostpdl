@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* A "2-up" PCX device for testing page objects. */
 #include "gdevprn.h"
 #include "gdevpccm.h"
@@ -51,7 +51,7 @@ gx_device_2up gs_pcx2up_device =
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
 		 0, 0, 0, 0,	/* margins */
-		 3, 8, 6, 6, 7, 7, pcx2up_print_page)
+		 3, 8, 5, 5, 6, 6, pcx2up_print_page)
 };
 
 /* Open the device.  We reimplement this to force banding with */
@@ -112,6 +112,7 @@ pcx2up_print_page(gx_device_printer * pdev, FILE * file)
 	if (prdev == 0)
 	    return_error(gs_error_VMerror);
 	memcpy(prdev, prdev_template, prdev_size);
+        check_device_separable((gx_device *)rdev);
 	gx_device_fill_in_procs(rdev);
 	set_dev_proc(prdev, open_device,
 		     dev_proc(&gs_pcx256_device, open_device));

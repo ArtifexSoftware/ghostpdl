@@ -72,7 +72,7 @@ hpgl_CO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		    }
 		    break;
 		default:
-		    dprintf(pgls->memory, "HPGL CO automata is in an unknown state\n" );
+		    dprintf("HPGL CO automata is in an unknown state\n" );
 		    pargs->source.ptr = p;
 		    return 0;
 		}
@@ -306,7 +306,7 @@ hpgl_picture_frame_coords(hpgl_state_t *pgls, gs_int_rect *gl2_win)
 	  gs_rect pcl_win; /* pcl window */
 
 	  gs_currentmatrix(pgls->pgs, &mat);
-	  hpgl_call(gs_bbox_transform_inverse(pgls->memory, &dev_win, &mat, &pcl_win));
+	  hpgl_call(gs_bbox_transform_inverse(&dev_win, &mat, &pcl_win));
 /* Round all coordinates to the nearest integer. */
 #define set_round(e) gl2_win->e = (int)floor(pcl_win.e + 0.5)
 	  set_round(p.x);
@@ -565,8 +565,7 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
                   type = hpgl_scaling_none;
                   hpgl_compute_user_units_to_plu_ctm(pgls, &umat);
                   /* in-place */
-                  hpgl_call(gs_bbox_transform(pgls->memory, 
-                                              &pgls->g.soft_clip_window.rect,
+                  hpgl_call(gs_bbox_transform(&pgls->g.soft_clip_window.rect,
                                               &umat,
                                               &pgls->g.soft_clip_window.rect));
                   pgls->g.soft_clip_window.isbound = true;

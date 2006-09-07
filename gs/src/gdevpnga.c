@@ -1,16 +1,19 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
+/* Test driver for PDF 1.4 transparency stuff */
+
 #include "gdevprn.h"
 #include "gdevpccm.h"
 #include "gscdefs.h"
@@ -634,13 +637,20 @@ pnga_output_page(gx_device *dev, int num_copies, int flush)
     const char *software_key = "Software";
     char software_text[256];
     png_text text_png;
+    char prefix[] = "pnga_png";
+    char fname[gp_file_name_sizeof];
     FILE *file;
 
     pdf14_buf *buf = pdev->ctx->stack;
     int planestride = buf->planestride;
     byte *buf_ptr = buf->data;
 
-    file = fopen ("/tmp/tmp.png", "wb"); /* todo: suck from OutputFile */
+    file = gp_open_scratch_file(prefix, fname, "wb");
+    if (file == NULL) {
+	code = gs_note_error(gs_error_invalidfileaccess);
+	goto done;
+    }
+    /* todo: suck from OutputFile instead */
 
     if_debug0('v', "[v]pnga_output_page\n");
 
@@ -748,6 +758,7 @@ pnga_get_marking_device(gx_device *dev, const gs_imager_state *pis)
     if (code < 0)
 	return NULL;
 
+    check_device_separable((gx_device *)mdev);
     gx_device_fill_in_procs((gx_device *)mdev);
     mdev->pnga_dev = pdev;
     mdev->opacity = pis->opacity.alpha;

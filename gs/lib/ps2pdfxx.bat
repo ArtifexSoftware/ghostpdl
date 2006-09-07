@@ -1,5 +1,5 @@
 @echo off
-@rem $RCSfile$ $Revision$
+@rem $Id$
 rem Internal batch file for calling pdfwrite driver.
 
 rem The files that call this one (ps2pdf*.bat) write the command-line

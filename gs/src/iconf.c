@@ -1,21 +1,22 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Configuration-dependent tables and initialization for interpreter */
 #include "stdio_.h"		/* stdio for stream.h */
 #include "gstypes.h"
 #include "gsmemory.h"		/* for iminst.h */
-#include "gconf.h"
+#include "gconfigd.h"
 #include "iref.h"
 #include "ivmspace.h"
 #include "opdef.h"
@@ -30,13 +31,7 @@ const gs_main_instance gs_main_instance_init_values =
 
 /* Set up the .ps file name string array. */
 /* We fill in the lengths at initialization time. */
-#ifdef GS_DEBUGGER
-#define ref_debug unsigned long line_number; unsigned long line_number2
-#else
-#define ref_debug
-#endif
-
-#define ref_(t) struct { struct tas_s tas; t value; ref_debug}
+#define ref_(t) struct { struct tas_s tas; t value; }
 #define string_(s,len)\
  { { (t_string<<r_type_shift) + a_readonly + avm_foreign, len }, s },
 #define psfile_(fns,len) string_(fns,len)
@@ -70,13 +65,15 @@ const uint build_function_type_table_count =
 /* Initialize the operators. */
 	/* Declare the externs. */
 #define oper_(xx_op_defs) extern const op_def xx_op_defs[];
-oper_(interp_op_defs)		/* Interpreter operators */
+oper_(interp1_op_defs)		/* Interpreter operators */
+oper_(interp2_op_defs)		/* ibid. */
 #include "gconf.h"
 #undef oper_
  
 const op_def *const op_defs_all[] = {
 #define oper_(defs) defs,
-    oper_(interp_op_defs)	/* Interpreter operators */
+    oper_(interp1_op_defs)	/* Interpreter operators */
+    oper_(interp2_op_defs)	/* ibid. */
 #include "gconf.h"
 #undef oper_ 
     0

@@ -1,18 +1,18 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/*$Id$ */
 /* Color halftone rendering for Ghostscript imaging library */
-#include <assert.h>
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
@@ -198,7 +198,8 @@ gx_dc_ht_colored_write(
     byte *                          pdata0 = pdata;
 
     /* sanity check */
-    assert(pdevc->colors.colored.num_components == num_comps);
+    if (pdevc->colors.colored.num_components != num_comps)
+	return_error(gs_error_unregistered); /* Must not happen. */
 
     /* check if saved color is of the same type */
     if (psdc != 0 && psdc->type != pdevc->type)
@@ -378,8 +379,9 @@ gx_dc_ht_colored_read(
      * exhausted the buffer. This should not cause a problem in
      * practice.
      */
-    if (--size < 0)
-        return_error(mem, gs_error_rangecheck);
+    if (size == 0)
+        return_error(gs_error_rangecheck);
+    size--;
     flag_bits = *pdata++;
 
     /* read the other components provided */
@@ -389,15 +391,17 @@ gx_dc_ht_colored_read(
             int             num_bytes = (num_comps + 7) >> 3;
             int             i, shift = 0;
 
-            if ((size -= num_bytes) < 0)
-                return_error(mem, gs_error_rangecheck);
+            if (size < num_bytes)
+                return_error(gs_error_rangecheck);
+	    size -= num_bytes;
             for (i = 0; i < num_bytes; i++, shift += 8)
                 base_mask |= (gx_color_index)(*pdata++) << shift;
             for (i = 0; i < num_comps; i++, base_mask >>= 1)
                 devc.colors.colored.c_base[i] = base_mask & 0x1;
         } else {
-            if ((size -= num_comps) < 0)
-                return_error(mem, gs_error_rangecheck);
+            if (size < num_comps)
+                return_error(gs_error_rangecheck);
+	    size -= num_comps;
             memcpy(devc.colors.colored.c_base, pdata, num_comps);
             pdata += num_comps;
         }
@@ -410,7 +414,7 @@ gx_dc_ht_colored_read(
         int             i;
 
         if (size < 1)
-            return_error(mem, gs_error_rangecheck);
+            return_error(gs_error_rangecheck);
 
         if (num_comps > 8 * sizeof(uint)) {
             enc_u_getw(tmp_mask, pdata);
@@ -425,7 +429,7 @@ gx_dc_ht_colored_read(
         for (i = 0; i < num_comps; i++, plane_mask >>= 1) {
             if ((plane_mask & 0x1) != 0) {
                 if (size - (pdata - pdata_start) < 1)
-                    return_error(mem, gs_error_rangecheck);
+                    return_error(gs_error_rangecheck);
                 enc_u_getw(devc.colors.colored.c_level[i], pdata);
             } else
                 devc.colors.colored.c_level[i] = 0;
@@ -439,7 +443,7 @@ gx_dc_ht_colored_read(
         const byte *    pdata_start = pdata;
 
         if (size < 1)
-            return_error(mem, gs_error_rangecheck);
+            return_error(gs_error_rangecheck);
         enc_u_getw(devc.colors.colored.alpha, pdata);
         size -= pdata - pdata_start;
     }
@@ -507,7 +511,7 @@ typedef struct color_values_pair_s {
 #define SET_HT_COLORS_PROC(proc)\
   int proc(\
 	      color_values_pair_t *pvp,\
-	      gx_color_index colors[1 << MAX_DCC],\
+	      gx_color_index colors[MAX_DCC_16],\
 	      const gx_const_strip_bitmap *sbits[MAX_DCC],\
 	      const gx_device_color *pdevc,\
 	      gx_device *dev,\
@@ -808,7 +812,7 @@ private const gx_const_strip_bitmap ht_no_bitmap = {
     else if (!invert) {\
 	pvp->values[1][i] = fractional_color(q + 1, max_color);\
 	sbits[i] = (const gx_const_strip_bitmap *)\
-	    &gx_render_ht(dev->memory, caches[i], r)->tiles;\
+	    &gx_render_ht(caches[i], r)->tiles;\
     } else {                                                        \
 	const gx_device_halftone *pdht = pdc->colors.colored.c_ht;  \
 	int nlevels =\
@@ -819,14 +823,14 @@ private const gx_const_strip_bitmap ht_no_bitmap = {
 	pvp->values[1][i] = pvp->values[0][i];                   \
 	pvp->values[0][i] = fractional_color(q + 1, max_color);   \
 	sbits[i] = (const gx_const_strip_bitmap *)\
-	    &gx_render_ht(dev->memory, caches[i], nlevels - r)->tiles;    \
+	    &gx_render_ht(caches[i], nlevels - r)->tiles;    \
     }\
   END
 
 /* Set up the colors and the individual plane halftone bitmaps. */
 private int
 set_ht_colors_le_4(color_values_pair_t *pvp /* only used internally */,
-		   gx_color_index colors[MAX_DCC_16],
+		   gx_color_index colors[MAX_DCC_16] /* 16 used */,
 		   const gx_const_strip_bitmap * sbits[MAX_DCC],
 		   const gx_device_color * pdc, gx_device * dev,
 		   gx_ht_cache * caches[MAX_DCC], int nplanes)
@@ -950,7 +954,7 @@ c2:	    case 2:
 /* Set up colors using the standard 1-bit CMYK mapping. */
 private int
 set_cmyk_1bit_colors(color_values_pair_t *ignore_pvp,
-		     gx_color_index colors[MAX_DCC_16 /*16 used*/],
+		     gx_color_index colors[MAX_DCC_16] /*2 used*/,
 		     const gx_const_strip_bitmap * sbits[MAX_DCC /*4 used*/],
 		     const gx_device_color * pdc, gx_device * dev,
 		     gx_ht_cache * caches[MAX_DCC /*4 used*/],
@@ -985,7 +989,7 @@ set_cmyk_1bit_colors(color_values_pair_t *ignore_pvp,
 \
 	mask0 |= mask;\
 	sbits[3 - i] = (const gx_const_strip_bitmap *)\
-	    &gx_render_ht(dev->memory, caches[i], nlevels - r)->tiles;\
+	    &gx_render_ht(caches[i], nlevels - r)->tiles;\
     }\
   END
 	 /* Suppress a compiler warning about signed/unsigned constants. */
@@ -1014,7 +1018,7 @@ set_cmyk_1bit_colors(color_values_pair_t *ignore_pvp,
  */
 private int
 set_ht_colors_gt_4(color_values_pair_t *pvp,
-		   gx_color_index colors[MAX_DCC_16],
+		   gx_color_index colors[MAX_DCC_16 /* 2 * nplanes */],
 		   const gx_const_strip_bitmap * sbits[MAX_DCC],
 		   const gx_device_color * pdc, gx_device * dev,
 		   gx_ht_cache * caches[MAX_DCC], int nplanes)
@@ -1074,8 +1078,7 @@ typedef struct tile_cursor_s {
  * (data and bit_shift).
  */
 private void
-init_tile_cursor(const gs_memory_t *mem,
-		 int i, tile_cursor_t *ptc, const gx_const_strip_bitmap *btile,
+init_tile_cursor(int i, tile_cursor_t *ptc, const gx_const_strip_bitmap *btile,
 		 int endx, int lasty)
 {
     int tw = btile->size.x;
@@ -1089,10 +1092,10 @@ init_tile_cursor(const gs_memory_t *mem,
     ptc->xbits = ((tw - 1) & 7) + 1;
     ptc->tdata = btile->data;
     ptc->raster = btile->raster;
-    ptc->row = ptc->tdata + by * ptc->raster;
+    ptc->row = ptc->tdata + by * (int)ptc->raster;
     ptc->data = ptc->row + ptc->xoffset;
     ptc->bit_shift = ptc->xshift;
-    if_debug6(mem, 'h', "[h]plane %d: size=%d,%d shift=%d bx=%d by=%d\n",
+    if_debug6('h', "[h]plane %d: size=%d,%d shift=%d bx=%d by=%d\n",
 	      i, tw, btile->size.y, btile->shift, bx, by);
 }
 
@@ -1165,7 +1168,7 @@ set_color_ht_le_4(byte *dest_data, uint dest_raster, int px, int py,
 	plane_mask =
 	    "\000\010\004\014\002\012\006\016\001\011\005\015\003\013\007\017"[plane_mask];
     }
-    if_debug6(ignore_dev->memory, 'h',
+    if_debug6('h',
 	      "[h]color_ht_le_4: x=%d y=%d w=%d h=%d plane_mask=0x%lu depth=%d\n",
 	      px, py, w, h, (ulong)plane_mask, depth);
 
@@ -1175,13 +1178,13 @@ set_color_ht_le_4(byte *dest_data, uint dest_raster, int px, int py,
 	int lasty = h - 1 + py;
 
 	if (plane_mask & 1)
-	    init_tile_cursor(ignore_dev->memory, 0, &cursor[0], sbits[0], endx, lasty);
+	    init_tile_cursor(0, &cursor[0], sbits[0], endx, lasty);
 	if (plane_mask & 2)
-	    init_tile_cursor(ignore_dev->memory, 1, &cursor[1], sbits[1], endx, lasty);
+	    init_tile_cursor(1, &cursor[1], sbits[1], endx, lasty);
 	if (plane_mask & 4)
-	    init_tile_cursor(ignore_dev->memory, 2, &cursor[2], sbits[2], endx, lasty);
+	    init_tile_cursor(2, &cursor[2], sbits[2], endx, lasty);
 	if (plane_mask & 8)
-	    init_tile_cursor(ignore_dev->memory, 3, &cursor[3], sbits[3], endx, lasty);
+	    init_tile_cursor(3, &cursor[3], sbits[3], endx, lasty);
     }
 
     /* Now compute the actual tile. */
@@ -1357,7 +1360,7 @@ set_color_ht_gt_4(byte *dest_data, uint dest_raster, int px, int py,
 	for (pmax = 0; (plane_mask >> pmax) > 1; )
 	    ++pmax;
     }
-    if_debug6(dev->memory, 'h',
+    if_debug6('h',
 	      "[h]color_ht_gt_4: x=%d y=%d w=%d h=%d plane_mask=0x%lu depth=%d\n",
 	      px, py, w, h, (ulong)plane_mask, depth);
 
@@ -1369,7 +1372,7 @@ set_color_ht_gt_4(byte *dest_data, uint dest_raster, int px, int py,
 
 	for (i = pmin; i <= pmax; ++i)
 	    if ((plane_mask >> i) & 1)
-		init_tile_cursor(dev->memory, i, &cursor[i], sbits[i], endx, lasty);
+		init_tile_cursor(i, &cursor[i], sbits[i], endx, lasty);
     }
 
     /* Pre-load the color value for the non halftoning planes. */

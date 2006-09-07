@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* Default and device-independent RasterOp algorithms */
 #include "memory_.h"
 #include "gx.h"
@@ -46,33 +46,33 @@ trace_copy_rop(const char *cname, gx_device * dev,
 	       int x, int y, int width, int height,
 	       int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    dlprintf4(dev->memory, "%s: dev=0x%lx(%s) depth=%d\n",
+    dlprintf4("%s: dev=0x%lx(%s) depth=%d\n",
 	      cname, (ulong) dev, dev->dname, dev->color_info.depth);
-    dlprintf4(dev->memory, "  source data=0x%lx x=%d raster=%u id=%lu colors=",
+    dlprintf4("  source data=0x%lx x=%d raster=%u id=%lu colors=",
 	      (ulong) sdata, sourcex, sraster, (ulong) id);
     if (scolors)
-	dprintf2(dev->memory, "(%lu,%lu);\n", scolors[0], scolors[1]);
+	dprintf2("(%lu,%lu);\n", scolors[0], scolors[1]);
     else
-	dputs(dev->memory, "none;\n");
+	dputs("none;\n");
     if (textures)
-	dlprintf8(dev->memory, "  textures=0x%lx size=%dx%d(%dx%d) raster=%u shift=%d(%d)",
+	dlprintf8("  textures=0x%lx size=%dx%d(%dx%d) raster=%u shift=%d(%d)",
 		  (ulong) textures, textures->size.x, textures->size.y,
 		  textures->rep_width, textures->rep_height,
 		  textures->raster, textures->shift, textures->rep_shift);
     else
-	dlputs(dev->memory, "  textures=none");
+	dlputs("  textures=none");
     if (tcolors)
-	dprintf2(dev->memory, " colors=(%lu,%lu)\n", tcolors[0], tcolors[1]);
+	dprintf2(" colors=(%lu,%lu)\n", tcolors[0], tcolors[1]);
     else
-	dputs(dev->memory, " colors=none\n");
-    dlprintf7(dev->memory, "  rect=(%d,%d),(%d,%d) phase=(%d,%d) op=0x%x\n",
+	dputs(" colors=none\n");
+    dlprintf7("  rect=(%d,%d),(%d,%d) phase=(%d,%d) op=0x%x\n",
 	      x, y, x + width, y + height, phase_x, phase_y,
 	      (uint) lop);
     if (gs_debug_c('B')) {
 	if (sdata)
-	    debug_dump_bitmap(dev->memory, sdata, sraster, height, "source bits");
+	    debug_dump_bitmap(sdata, sraster, height, "source bits");
 	if (textures && textures->data)
-	    debug_dump_bitmap(dev->memory, textures->data, textures->raster,
+	    debug_dump_bitmap(textures->data, textures->raster,
 			      textures->size.y, "textures bits");
     }
 }
@@ -117,7 +117,7 @@ gx_default_strip_copy_rop(gx_device * dev,
 		       x, y, width, height, phase_x, phase_y, lop);
 #endif
     if (mdproto == 0)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     if (sdata == 0) {
 	fit_fill(dev, x, y, width, height);
     } else {
@@ -140,7 +140,7 @@ gx_default_strip_copy_rop(gx_device * dev,
     if (rop3_uses_D(gs_transparent_rop(lop))) {
 	row = gs_alloc_bytes(mem, draster * block_height, "copy_rop row");
 	if (row == 0) {
-	    code = gs_note_error(mem, gs_error_VMerror);
+	    code = gs_note_error(gs_error_VMerror);
 	    goto out;
 	}
     }
@@ -250,36 +250,29 @@ pack_cmyk_1bit_from_standard(gx_device * dev, byte * dest, int destx,
 
 }
 
-private void
-pack_cmyk_8bit_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
-			     int width, int depth, int src_depth)
+private gx_color_index
+map_rgb_to_color_via_cmyk(gx_device * dev, const gx_color_value rgbcv[])
 {
-    byte *dp = dest;
-    const byte *sp = src;
-    int x;
+    gx_color_value cmykcv[4];
+    
+    cmykcv[0] = gx_max_color_value - rgbcv[0];
+    cmykcv[1] = gx_max_color_value - rgbcv[1];
+    cmykcv[2] = gx_max_color_value - rgbcv[2];
+    cmykcv[3] = (cmykcv[0] < cmykcv[1] ? min(cmykcv[0], cmykcv[2]) : min(cmykcv[1], cmykcv[2]));
 
-    for (x = width; --x >= 0;) { 
-	byte c, m, y, k;
+    cmykcv[0] -= cmykcv[3];
+    cmykcv[1] -= cmykcv[3];
+    cmykcv[2] -= cmykcv[3];
 
-	c = 0xff - *sp++;
-	m = 0xff - *sp++;
-	y = 0xff - *sp++;
-	
-	/* 100% undercolor removal */
-	k = (c < m) ? min(c,y) : min(m, y);
-
-	*dp++ = c - k;
-	*dp++ = m - k;
-	*dp++ = y - k;
-	*dp++ = k;
-
-    }
+    return (*dev_proc(dev, map_cmyk_color)) (dev, cmykcv);
 }
-
 private void
 pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
 		   int width, int depth, int src_depth)
 {
+    dev_proc_map_rgb_color((*map)) =
+	(dev->color_info.num_components == 4 ?
+	 map_rgb_to_color_via_cmyk : dev_proc(dev, map_rgb_color));
     int bit_x = destx * depth;
     byte *dp = dest + (bit_x >> 3);
     int shift = (~bit_x & 7) + 1;
@@ -287,7 +280,7 @@ pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
     const byte *sp = src;
     int x;
 
-    for (x = width; --x >= 0;) { 
+    for (x = width; --x >= 0;) {
 	byte vr, vg, vb;
 	gx_color_index pixel;
 	byte chop = 0x1;
@@ -307,14 +300,14 @@ pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
 	    cv[0] = gx_color_value_from_byte(vr);
 	    cv[1] = gx_color_value_from_byte(vg);
 	    cv[2] = gx_color_value_from_byte(vb);
-
-            pixel = dev_proc(dev, map_rgb_color)(dev, cv);
+	    pixel = (*map) (dev, cv);
 	    if (pixel != gx_no_color_index)
 		break;
 	    /* Reduce the color accuracy and try again. */
 	    vr = (vr >= 0x80 ? vr | chop : vr & ~chop);
 	    vg = (vg >= 0x80 ? vg | chop : vg & ~chop);
 	    vb = (vb >= 0x80 ? vb | chop : vb & ~chop);
+	    chop <<= 1;
 	}
 	if ((shift -= depth) >= 0)
 	    buf += (byte)(pixel << shift);
@@ -361,10 +354,7 @@ mem_default_strip_copy_rop(gx_device * dev,
     int rop_depth = (gx_device_has_color(dev) ? 24 : 8);
     void (*pack)(gx_device *, byte *, int, const byte *, int, int, int) =
 	(dev_proc(dev, map_cmyk_color) == cmyk_1bit_map_cmyk_color &&
-	 rop_depth == 24 ? pack_cmyk_1bit_from_standard : 
-	 dev_proc(dev, map_color_rgb) == cmyk_8bit_map_color_rgb &&
-	 rop_depth == 24 ? pack_cmyk_8bit_from_standard : 
-	 pack_from_standard);
+	 rop_depth == 24 ? pack_cmyk_1bit_from_standard : pack_from_standard);
     const gx_bitmap_format_t no_expand_options =
 	GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_DEPTH_ALL |
 	GB_PACKING_CHUNKY | GB_RETURN_ALL | GB_ALIGN_STANDARD |
@@ -420,7 +410,7 @@ mem_default_strip_copy_rop(gx_device * dev,
 	  else {\
 	    buf = gs_alloc_bytes(mem, num_bytes, cname);\
 	    if (buf == 0) {\
-	      code = gs_note_error(mem, gs_error_VMerror);\
+	      code = gs_note_error(gs_error_VMerror);\
 	      goto out;\
 	    }\
 	  }\
@@ -434,7 +424,7 @@ mem_default_strip_copy_rop(gx_device * dev,
 		       x, y, width, height, phase_x, phase_y, lop);
 #endif
     if (mdproto == 0)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     if (sdata == 0) {
 	fit_fill(dev, x, y, width, height);
     } else {

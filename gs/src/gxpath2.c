@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/*$Id$ */
 /* Path tracing procedures for Ghostscript library */
 #include "math_.h"
 #include "gx.h"
@@ -29,7 +30,7 @@ int
 gx_path_current_point(const gx_path * ppath, gs_fixed_point * ppt)
 {
     if (!path_position_valid(ppath))
-	return_error(ppath->memory, gs_error_nocurrentpoint);
+	return_error(gs_error_nocurrentpoint);
     /* Copying the coordinates individually */
     /* is much faster on a PC, and almost as fast on other machines.... */
     ppt->x = ppath->position.x, ppt->y = ppath->position.y;
@@ -43,7 +44,7 @@ gx_path_subpath_start_point(const gx_path * ppath, gs_fixed_point * ppt)
     const subpath *psub = ppath->current_subpath;
 
     if (!psub)
-	return_error(ppath->memory, gs_error_nocurrentpoint);
+	return_error(gs_error_nocurrentpoint);
     *ppt = psub->pt;
     return 0;
 }
@@ -389,7 +390,7 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 					     prev->pt.y);
 		    break;
 		default:	/* not possible */
-		    return_error(ppath->memory, gs_error_Fatal);
+		    return_error(gs_error_Fatal);
 	    }
 	} while (code >= 0);
 	return code;		/* only reached if code < 0 */
@@ -478,8 +479,8 @@ gx_path_enum_next(gs_path_enum * penum, gs_fixed_point ppts[3])
 	    return gs_pe_curveto;
 #undef pcseg
 	default:
-	    lprintf1(penum->path->memory, "bad type %x in gx_path_enum_next!\n", pseg->type);
-	    return_error(penum->path->memory, gs_error_Fatal);
+	    lprintf1("bad type %x in gx_path_enum_next!\n", pseg->type);
+	    return_error(gs_error_Fatal);
     }
 }
 

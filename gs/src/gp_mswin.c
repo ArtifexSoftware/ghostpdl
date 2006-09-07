@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /*
  * Microsoft Windows platform support for Ghostscript.
  *
@@ -89,6 +90,23 @@ gp_do_exit(int exit_status)
     exit(exit_status);
 }
 
+/* ------ Persistent data cache ------*/
+
+/* insert a buffer under a (type, key) pair */
+int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
+{
+    /* not yet implemented */
+    return 0;
+}
+
+/* look up a (type, key) in the cache */
+int gp_cache_query(int type, byte* key, int keylen, void **buffer,
+    gp_cache_alloc alloc, void *userdata)
+{
+    /* not yet implemented */
+    return -1;
+}
+
 /* ------ Printer accessing ------ */
 
 /* Forward references */
@@ -98,14 +116,14 @@ private int gp_printfile(const char *, const char *);
 /* standard printer connected to the machine, if any. */
 /* Return NULL if the connection could not be opened. */
 FILE *
-gp_open_printer(const gs_memory_t *mem, char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
     if (is_printer(fname)) {
 	FILE *pfile;
 
 	/* Open a scratch file, which we will send to the */
 	/* actual printer in gp_close_printer. */
-	pfile = gp_open_scratch_file(mem, gp_scratch_file_name_prefix,
+	pfile = gp_open_scratch_file(gp_scratch_file_name_prefix,
 				     win_prntmp, "wb");
 	return pfile;
     } else if (fname[0] == '|') 	/* pipe */
@@ -128,7 +146,7 @@ gp_close_printer(FILE * pfile, const char *fname)
 
 
 /* Dialog box to select printer port */
-BOOL CALLBACK
+DLGRETURN CALLBACK
 SpoolDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LPSTR entry;
@@ -543,7 +561,7 @@ gp_printfile_gs16spl(const char *filename, const char *port)
     hwndspl = FindWindow(NULL, "GS Win32s/Win16 spooler");
 
     while (IsWindow(hwndspl)) {
-	gp_check_interrupts();
+	gp_check_interrupts(NULL);
     }
 
     return 0;
@@ -667,7 +685,7 @@ FILE *mswin_popen(const char *cmd, const char *mode)
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const gs_memory_t *mem, const char *prefix, char *fname, const char *mode)
+gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
 {
     UINT n;
     DWORD l;
@@ -682,7 +700,7 @@ gp_open_scratch_file(const gs_memory_t *mem, const char *prefix, char *fname, co
 	int plen = sizeof(sTempDir);
 
 	if (gp_gettmpdir(sTempDir, &plen) != 0)
-    l = GetTempPath(sizeof(sTempDir), sTempDir);
+	    l = GetTempPath(sizeof(sTempDir), sTempDir);
 	else
 	    l = strlen(sTempDir);
     } else {
@@ -749,7 +767,7 @@ gp_open_scratch_file(const gs_memory_t *mem, const char *prefix, char *fname, co
 	}
     }
     if (f == NULL)
-	eprintf1(mem, "**** Could not open temporary file '%s'\n", fname);
+	eprintf1("**** Could not open temporary file '%s'\n", fname);
     return f;
 }
 

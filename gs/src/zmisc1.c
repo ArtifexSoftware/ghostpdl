@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Miscellaneous Type 1 font operators */
 #include "memory_.h"
 #include "ghost.h"
@@ -22,7 +23,6 @@
 #include "idict.h"
 #include "idparam.h"
 #include "ifilter.h"
-#include "ialloc.h"
 
 /* <state> <from_string> <to_string> .type1encrypt <new_state> <substring> */
 /* <state> <from_string> <to_string> .type1decrypt <new_state> <substring> */
@@ -46,15 +46,15 @@ type1crypt(i_ctx_t *i_ctx_p,
     crypt_state state;
     uint ssize;
 
-    check_type(imemory, op[-2], t_integer);
+    check_type(op[-2], t_integer);
     state = op[-2].value.intval;
     if (op[-2].value.intval != state)
-	return_error(imemory, e_rangecheck);	/* state value was truncated */
-    check_read_type(imemory, op[-1], t_string);
-    check_write_type(imemory, *op, t_string);
+	return_error(e_rangecheck);	/* state value was truncated */
+    check_read_type(op[-1], t_string);
+    check_write_type(*op, t_string);
     ssize = r_size(op - 1);
     if (r_size(op) < ssize)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     discard((*proc)(op->value.bytes, op[-1].value.const_bytes, ssize,
 		    &state));	/* can't fail */
     op[-2].value.intval = state;
@@ -67,16 +67,16 @@ type1crypt(i_ctx_t *i_ctx_p,
 /* Get the seed parameter for eexecEncode/Decode. */
 /* Return npop if OK. */
 private int
-eexec_param(const gs_memory_t *mem, os_ptr op, ushort * pcstate)
+eexec_param(os_ptr op, ushort * pcstate)
 {
     int npop = 1;
 
     if (r_has_type(op, t_dictionary))
 	++npop, --op;
-    check_type(mem, *op, t_integer);
+    check_type(*op, t_integer);
     *pcstate = op->value.intval;
     if (op->value.intval != *pcstate)
-	return_error(mem, e_rangecheck);	/* state value was truncated */
+	return_error(e_rangecheck);	/* state value was truncated */
     return npop;
 }
 
@@ -87,7 +87,7 @@ zexE(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     stream_exE_state state;
-    int code = eexec_param(imemory, op, &state.cstate);
+    int code = eexec_param(op, &state.cstate);
 
     if (code < 0)
 	return code;
@@ -108,12 +108,12 @@ zexD(i_ctx_t *i_ctx_p)
 	uint cstate;
         bool is_eexec;
 
-	check_dict_read(imemory, *op);
-	if ((code = dict_uint_param(imemory, op, "seed", 0, 0xffff, 0x10000,
+	check_dict_read(*op);
+	if ((code = dict_uint_param(op, "seed", 0, 0xffff, 0x10000,
 				    &cstate)) < 0 ||
-	    (code = dict_int_param(imemory, op, "lenIV", 0, max_int, 4,
+	    (code = dict_int_param(op, "lenIV", 0, max_int, 4,
 				   &state.lenIV)) < 0 ||
-	    (code = dict_bool_param(imemory, op, "eexec", false,
+	    (code = dict_bool_param(op, "eexec", false,
 				   &is_eexec)) < 0
 	    )
 	    return code;
@@ -122,7 +122,7 @@ zexD(i_ctx_t *i_ctx_p)
 	code = 1;
     } else {
         state.binary = 1;
-	code = eexec_param(imemory, op, &state.cstate);
+	code = eexec_param(op, &state.cstate);
     }
     if (code < 0)
 	return code;

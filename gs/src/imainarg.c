@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Command line parsing and dispatching */
 #include "ctype_.h"
 #include "memory_.h"
@@ -193,11 +194,11 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 	    (char *)gs_alloc_bytes(minst->heap, len, "GS_OPTIONS");
 
 	    gp_getenv(GS_OPTIONS, opts, &len);	/* can't fail */
-	    if (arg_push_memory_string(minst->heap, &args, opts, minst->heap))
+	    if (arg_push_memory_string(&args, opts, minst->heap))
 		return e_Fatal;
 	}
     }
-    while ((arg = arg_next(minst->heap, &args, &code)) != 0) {
+    while ((arg = arg_next(&args, &code)) != 0) {
 	switch (*arg) {
 	    case '-':
 		code = swproc(minst, arg, &args);
@@ -276,7 +277,7 @@ run_stdin:
 	    pal->expand_ats = false;
 	case '@':		/* ditto with @-expansion */
 	    {
-		const char *psarg = arg_next(minst->heap, pal, &code);
+		const char *psarg = arg_next(pal, &code);
 
 		if (code < 0)
 		    return e_Fatal;
@@ -294,7 +295,7 @@ run_stdin:
 		code = run_string(minst, "userdict/ARGUMENTS[", 0);
 		if (code < 0)
 		    return code;
-		while ((arg = arg_next(minst->heap, pal, &code)) != 0) {
+		while ((arg = arg_next(pal, &code)) != 0) {
 		    char *fname = arg_copy(arg, minst->heap);
 		    if (fname == NULL)
 			return e_Fatal;
@@ -345,11 +346,11 @@ run_stdin:
 		if (code < 0)
 		    return code;
 		pal->expand_ats = false;
-		while ((arg = arg_next(minst->heap, pal, &code)) != 0) {
+		while ((arg = arg_next(pal, &code)) != 0) {
 		    char *sarg;
 
 		    if (arg[0] == '@' ||
-			(arg[0] == '-' && !isdigit(arg[1]))
+			(arg[0] == '-' && !isdigit((unsigned char)arg[1]))
 			)
 			break;
 		    sarg = arg_copy(arg, minst->heap);
@@ -365,7 +366,7 @@ run_stdin:
 		    char *p = arg_copy(arg, minst->heap);
 		    if (p == NULL)
 			return e_Fatal;
-		    arg_push_string(minst->heap, pal, p);
+		    arg_push_string(pal, p);
 		}
 		pal->expand_ats = ats;
 		break;
@@ -384,8 +385,11 @@ run_stdin:
 	    }
 	    break;
 	case 'f':		/* run file of arbitrary name */
-	    if (*arg != 0)
-		argproc(minst, arg);
+	    if (*arg != 0) {
+		code = argproc(minst, arg);
+		if (code < 0)
+		    return code;
+	    }
 	    break;
 	case 'F':		/* run file with buffer_size = 1 */
 	    if (!*arg) {
@@ -395,8 +399,10 @@ run_stdin:
 		uint bsize = minst->run_buffer_size;
 
 		minst->run_buffer_size = 1;
-		argproc(minst, arg);
+		code = argproc(minst, arg);
 		minst->run_buffer_size = bsize;
+		if (code < 0)
+		    return code;
 	    }
 	    break;
 	case 'g':		/* define device geometry */
@@ -448,7 +454,7 @@ run_stdin:
 		unsigned msize = 0;
 
 		sscanf((const char *)arg, "%u", &msize);
-#if arch_ints_are_short
+#if ARCH_INTS_ARE_SHORT
 		if (msize <= 0 || msize >= 64) {
 		    puts(minst->heap, "-M must be between 1 and 63");
 		    return e_Fatal;
@@ -462,13 +468,38 @@ run_stdin:
 		unsigned nsize = 0;
 
 		sscanf((const char *)arg, "%d", &nsize);
-#if arch_ints_are_short
+#if ARCH_INTS_ARE_SHORT
 		if (nsize < 2 || nsize > 64) {
 		    puts(minst->heap, "-N must be between 2 and 64");
 		    return e_Fatal;
 		}
 #endif
 		minst->name_table_size = (ulong) nsize << 10;
+	    }
+	    break;
+	case 'o':		/* set output file name and batch mode */
+	    {
+		const char *adef;
+		char *str;
+		ref value;
+		int len;
+
+		if (arg[0] == 0) {
+		    adef = arg_next(pal, &code);
+		    if (code < 0)
+			return code;
+		} else
+		    adef = arg;
+		if ((code = gs_main_init1(minst)) < 0)
+		    return code;
+		len = strlen(adef);
+		str = (char *)gs_alloc_bytes(minst->heap, (uint)len, "-o");
+		memcpy(str, adef, len);
+		make_const_string(&value, a_readonly | avm_foreign,
+				  len, (const byte *)str);
+		initial_enter_name("OutputFile", &value);
+		initial_enter_name("NOPAUSE", &vtrue);
+		initial_enter_name("BATCH", &vtrue);
 	    }
 	    break;
 	case 'P':		/* choose whether search '.' first */
@@ -548,7 +579,7 @@ run_stdin:
 			stream astream;
 			scanner_state state;
 
-			s_stack_init(&astream, imemory);
+			s_init(&astream, NULL);
 			sread_string(&astream,
 				     (const byte *)eqp, strlen(eqp));
 			scanner_state_init(&state, false);
@@ -562,7 +593,7 @@ run_stdin:
 					     a_executable)) {
 			    ref nsref;
 
-			    name_string_ref(imemory, &value, &nsref);
+			    name_string_ref(minst->heap, &value, &nsref);
 #define string_is(nsref, str, len)\
   (r_size(&(nsref)) == (len) &&\
    !strncmp((const char *)(nsref).value.const_bytes, str, (len)))
@@ -586,7 +617,7 @@ run_stdin:
 					       (uint) len, "-s");
 
 			if (str == 0) {
-			    lprintf(minst->heap, "Out of memory!\n");
+			    lprintf("Out of memory!\n");
 			    return e_Fatal;
 			}
 			memcpy(str, eqp, len);
@@ -707,7 +738,7 @@ run_buffered(gs_main_instance * minst, const char *arg)
 
     if (in == 0) {
 	outprintf(minst->heap, "Unable to open %s for reading", arg);
-	return_error(minst->heap, e_invalidfileaccess);
+	return_error(e_invalidfileaccess);
     }
     code = gs_main_init2(minst);
     if (code < 0)
@@ -752,8 +783,8 @@ runarg(gs_main_instance * minst, const char *pre, const char *arg,
     }
     line = (char *)gs_alloc_bytes(minst->heap, len, "argproc");
     if (line == 0) {
-	lprintf(minst->heap, "Out of memory!\n");
-	return_error(minst->heap, e_VMerror);
+	lprintf("Out of memory!\n");
+	return_error(e_VMerror);
     }
     strcpy(line, pre);
     esc_strcat(line, arg);
@@ -786,7 +817,7 @@ run_finish(gs_main_instance *minst, int code, int exit_code,
 	case 0:
 	    break;
 	case e_Fatal:
-	    eprintf1(minst->heap, "Unrecoverable error, exit code %d\n", exit_code);
+	    eprintf1("Unrecoverable error, exit code %d\n", exit_code);
 	    break;
 	default:
 	    gs_main_dump_stack(minst, code, perror_object);
@@ -827,7 +858,7 @@ try_stdout_redirect(gs_main_instance * minst,
 	    }
 	    else if ((minst->heap->gs_lib_ctx->fstdout2 = 
 		      fopen(filename, "w")) == (FILE *)NULL)
-		return_error(minst->heap, e_invalidfileaccess);
+		return_error(e_invalidfileaccess);
 	    minst->heap->gs_lib_ctx->stdout_is_redirected = 1;
 	}
 	return 0;

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Driver text interface implementation support */
 
 #ifndef gxtext_INCLUDED
@@ -91,6 +92,8 @@ rc_free_proc(rc_free_text_enum);
     /* knows the entire list of dynamically changing elements. */\
     rc_header rc;\
     gs_font *current_font; /* changes for composite fonts */\
+    gs_glyph outer_CID; /* When a Type 3 is a FMapType 9 descendent. */\
+    bool is_pure_color; /* The text is painted with a pure color. */\
     gs_log2_scale_point log2_scale;	/* for oversampling */\
     cached_fm_pair *pair; /* corresponds to the current_font and CTM*(1<<log2_scale) */\
     uint index;			/* index within string */\
@@ -99,19 +102,15 @@ rc_free_proc(rc_free_text_enum);
     int cmap_code;		/* hack for FMapType 9 composite fonts, */\
 				/* the value returned by decode_next */\
     gs_point FontBBox_as_Metrics2;  /* used with FontType 9,11 && WMode 1 */\
+    ulong text_enum_id; /* debug purpose only - not used by algorythm. */\
     /* The following is controlled by a device. */\
     bool device_disabled_grid_fitting;\
     /* The following are used to return information to the client. */\
     gs_text_returned_t returned
 /* The typedef is in gstext.h. */
-/*typedef*/ struct gs_text_enum_s {
+struct gs_text_enum_s {
     gs_text_enum_common;
-} /*gs_text_enum_t*/;
-
-#if NEW_TT_INTERPRETER
-    /* The 'pair' field is added to the macro above. */
-    /* A definition of cached_fm_pair is added above */
-#endif
+};
 
 /*
  * Notes on the imaging_dev field of device enumeration structures:
@@ -149,7 +148,7 @@ rc_free_proc(rc_free_text_enum);
  * approach will fail.
  */
 
-#define st_gs_text_enum_max_ptrs (st_gs_text_params_max_ptrs + 7)
+#define st_gs_text_enum_max_ptrs (st_gs_text_params_max_ptrs + 8)
 /*extern_st(st_gs_text_enum); */
 #define public_st_gs_text_enum()	/* in gstext.c */\
   gs_public_st_composite(st_gs_text_enum, gs_text_enum_t, "gs_text_enum_t",\

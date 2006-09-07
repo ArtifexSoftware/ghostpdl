@@ -11,7 +11,7 @@
  * OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
  */
 
-/* $RCSfile$ $Revision$ */
+/* $Id$ */
 /*
  * gs device to generate inferno bitmaps
  *
@@ -99,13 +99,14 @@ inferno_device far_data gs_inferno_device =
  * rgb and color map entries
  */
 private gx_color_index 
-inferno_rgb2cmap(gx_device *dev, gx_color_value red,
-  gx_color_value green, gx_color_value blue) {
+inferno_rgb2cmap(gx_device *dev, const gx_color_value cv[]) {
 	int shift;
 	inferno_device *bdev = (inferno_device*) dev;
 	int nbits = bdev->nbits;
 	int mask = (1<<nbits)-1;
+	gx_color_value red, green, blue;
 
+	red = cv[0]; green = cv[1]; blue = cv[2];
 	/* make the colors the size we want */
 	if(gx_color_value_bits > nbits) {
 		shift = gx_color_value_bits - nbits;

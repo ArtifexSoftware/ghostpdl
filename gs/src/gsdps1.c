@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Display PostScript graphics additions for Ghostscript library */
 #include "math_.h"
 #include "gx.h"
@@ -52,13 +53,13 @@ gs_setbbox(gs_state * pgs, floatp llx, floatp lly, floatp urx, floatp ury)
     int code;
 
     if (llx > urx || lly > ury)
-	return_error(pgs->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     /* Transform box to device coordinates. */
     ubox.p.x = llx;
     ubox.p.y = lly;
     ubox.q.x = urx;
     ubox.q.y = ury;
-    if ((code = gs_bbox_transform(pgs->memory, &ubox, &ctm_only(pgs), &dbox)) < 0)
+    if ((code = gs_bbox_transform(&ubox, &ctm_only(pgs), &dbox)) < 0)
 	return code;
     /* Round the corners in opposite directions. */
     /* Because we can't predict the magnitude of the dbox values, */
@@ -68,7 +69,7 @@ gs_setbbox(gs_state * pgs, floatp llx, floatp lly, floatp urx, floatp ury)
 	dbox.q.x >= fixed2float(max_fixed - box_rounding_slop_fixed + fixed_epsilon) ||
 	dbox.q.y >= fixed2float(max_fixed - box_rounding_slop_fixed + fixed_epsilon)
 	)
-	return_error(pgs->memory, gs_error_limitcheck);
+	return_error(gs_error_limitcheck);
     bbox.p.x =
 	(fixed) floor(dbox.p.x * fixed_scale) - box_rounding_slop_fixed;
     bbox.p.y =
@@ -174,9 +175,9 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
 	for (i = 0; i < count; ++i) {
 	    gs_fixed_point p, q;
 	    gs_fixed_rect draw_rect;
-
-	    if (gs_point_transform2fixed(pgs->memory, &pgs->ctm, pr[i].p.x, pr[i].p.y, &p) < 0 ||
-	    gs_point_transform2fixed(pgs->memory, &pgs->ctm, pr[i].q.x, pr[i].q.y, &q) < 0
+	    
+	    if (gs_point_transform2fixed(&pgs->ctm, pr[i].p.x, pr[i].p.y, &p) < 0 ||
+		gs_point_transform2fixed(&pgs->ctm, pr[i].q.x, pr[i].q.y, &q) < 0
 		) {		/* Switch to the slow algorithm. */
 		goto slow;
 	    }

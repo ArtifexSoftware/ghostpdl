@@ -1,19 +1,24 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Sample unpacking procedures */
 #include "gx.h"
 #include "gxsample.h"
+#include "gxfixed.h"
+#include "gximage.h"
+/* #include "gxsamplp.h" Do not remove - this file is included below. */
+
 
 /* ---------------- Lookup tables ---------------- */
 
@@ -79,154 +84,38 @@ const bits32 lookup4x1to32_inverted[16] = {
 
 const byte *
 sample_unpack_copy(byte * bptr, int *pdata_x, const byte * data, int data_x,
-		uint dsize, const sample_lookup_t * ignore_ptab, int spread)
+		uint dsize, const sample_map *ignore_smap, int spread,
+		int ignore_num_components_per_plane)
 {				/* We're going to use the data right away, so no copying is needed. */
     *pdata_x = data_x;
     return data;
 }
 
-const byte *
-sample_unpack_1(byte * bptr, int *pdata_x, const byte * data, int data_x,
-		uint dsize, const sample_lookup_t * ptab, int spread)
-{
-    const byte *psrc = data + (data_x >> 3);
-    int left = dsize - (data_x >> 3);
+#define MULTIPLE_MAPS 0
+#define TEMPLATE_sample_unpack_1 sample_unpack_1
+#define TEMPLATE_sample_unpack_2 sample_unpack_2
+#define TEMPLATE_sample_unpack_4 sample_unpack_4
+#define TEMPLATE_sample_unpack_8 sample_unpack_8
 
-    if (spread == 1) {
-	bits32 *bufp = (bits32 *) bptr;
-	const bits32 *map = &ptab->lookup4x1to32[0];
-	uint b;
+#include "gxsamplp.h"
 
-	if (left & 1) {
-	    b = psrc[0];
-	    bufp[0] = map[b >> 4];
-	    bufp[1] = map[b & 0xf];
-	    psrc++, bufp += 2;
-	}
-	left >>= 1;
-	while (left--) {
-	    b = psrc[0];
-	    bufp[0] = map[b >> 4];
-	    bufp[1] = map[b & 0xf];
-	    b = psrc[1];
-	    bufp[2] = map[b >> 4];
-	    bufp[3] = map[b & 0xf];
-	    psrc += 2, bufp += 4;
-	}
-    } else {
-	byte *bufp = bptr;
-	const byte *map = &ptab->lookup8[0];
+#undef MULTIPLE_MAPS
+#undef TEMPLATE_sample_unpack_1
+#undef TEMPLATE_sample_unpack_2
+#undef TEMPLATE_sample_unpack_4
+#undef TEMPLATE_sample_unpack_8
 
-	while (left--) {
-	    uint b = *psrc++;
 
-	    *bufp = map[b >> 7];
-	    bufp += spread;
-	    *bufp = map[(b >> 6) & 1];
-	    bufp += spread;
-	    *bufp = map[(b >> 5) & 1];
-	    bufp += spread;
-	    *bufp = map[(b >> 4) & 1];
-	    bufp += spread;
-	    *bufp = map[(b >> 3) & 1];
-	    bufp += spread;
-	    *bufp = map[(b >> 2) & 1];
-	    bufp += spread;
-	    *bufp = map[(b >> 1) & 1];
-	    bufp += spread;
-	    *bufp = map[b & 1];
-	    bufp += spread;
-	}
-    }
-    *pdata_x = data_x & 7;
-    return bptr;
-}
+#define MULTIPLE_MAPS 1
+#define TEMPLATE_sample_unpack_1 sample_unpack_1_interleaved
+#define TEMPLATE_sample_unpack_2 sample_unpack_2_interleaved
+#define TEMPLATE_sample_unpack_4 sample_unpack_4_interleaved
+#define TEMPLATE_sample_unpack_8 sample_unpack_8_interleaved
 
-const byte *
-sample_unpack_2(byte * bptr, int *pdata_x, const byte * data, int data_x,
-		uint dsize, const sample_lookup_t * ptab, int spread)
-{
-    const byte *psrc = data + (data_x >> 2);
-    int left = dsize - (data_x >> 2);
+#include "gxsamplp.h"
 
-    if (spread == 1) {
-	bits16 *bufp = (bits16 *) bptr;
-	const bits16 *map = &ptab->lookup2x2to16[0];
-
-	while (left--) {
-	    uint b = *psrc++;
-
-	    *bufp++ = map[b >> 4];
-	    *bufp++ = map[b & 0xf];
-	}
-    } else {
-	byte *bufp = bptr;
-	const byte *map = &ptab->lookup8[0];
-
-	while (left--) {
-	    unsigned b = *psrc++;
-
-	    *bufp = map[b >> 6];
-	    bufp += spread;
-	    *bufp = map[(b >> 4) & 3];
-	    bufp += spread;
-	    *bufp = map[(b >> 2) & 3];
-	    bufp += spread;
-	    *bufp = map[b & 3];
-	    bufp += spread;
-	}
-    }
-    *pdata_x = data_x & 3;
-    return bptr;
-}
-
-const byte *
-sample_unpack_4(byte * bptr, int *pdata_x, const byte * data, int data_x,
-		uint dsize, const sample_lookup_t * ptab, int spread)
-{
-    byte *bufp = bptr;
-    const byte *psrc = data + (data_x >> 1);
-    int left = dsize - (data_x >> 1);
-    const byte *map = &ptab->lookup8[0];
-
-    while (left--) {
-	uint b = *psrc++;
-
-	*bufp = map[b >> 4];
-	bufp += spread;
-	*bufp = map[b & 0xf];
-	bufp += spread;
-    }
-    *pdata_x = data_x & 1;
-    return bptr;
-}
-
-const byte *
-sample_unpack_8(byte * bptr, int *pdata_x, const byte * data, int data_x,
-		uint dsize, const sample_lookup_t * ptab, int spread)
-{
-    byte *bufp = bptr;
-    const byte *psrc = data + data_x;
-
-    *pdata_x = 0;
-    if (spread == 1) {
-	if (ptab->lookup8[0] != 0 ||
-	    ptab->lookup8[255] != 255
-	    ) {
-	    uint left = dsize - data_x;
-	    const byte *map = &ptab->lookup8[0];
-
-	    while (left--)
-		*bufp++ = map[*psrc++];
-	} else {		/* No copying needed, and we'll use the data right away. */
-	    return psrc;
-	}
-    } else {
-	int left = dsize - data_x;
-	const byte *map = &ptab->lookup8[0];
-
-	for (; left--; psrc++, bufp += spread)
-	    *bufp = map[*psrc];
-    }
-    return bptr;
-}
+#undef TEMPLATE_sample_unpack_1
+#undef TEMPLATE_sample_unpack_2
+#undef TEMPLATE_sample_unpack_4
+#undef TEMPLATE_sample_unpack_8
+#undef MULTIPLE_MAPS

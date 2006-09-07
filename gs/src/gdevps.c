@@ -1,19 +1,21 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PostScript-writing driver */
 #include "math_.h"
 #include "memory_.h"
+#include "string_.h"
 #include "time_.h"
 #include "gx.h"
 #include "gserrors.h"
@@ -347,13 +349,13 @@ psw_begin_file(gx_device_pswrite *pdev, const gs_rect *pbbox)
     if ((code = psw_begin_file_header(f, (gx_device *)pdev, pbbox,
 			  &pdev->pswrite_common,
 			  pdev->params.ASCII85EncodePages)) < 0 ||
-        (code = psw_print_lines(pdev->memory, f, psw_procset)) < 0 ||
-        (code = psw_print_lines(pdev->memory, f, p1)) < 0 ||
-        (code = psw_print_lines(pdev->memory, f, p2)) < 0 ||
-        (code = psw_end_file_header(pdev->memory, f)) < 0)
+        (code = psw_print_lines(f, psw_procset)) < 0 ||
+        (code = psw_print_lines(f, p1)) < 0 ||
+        (code = psw_print_lines(f, p2)) < 0 ||
+        (code = psw_end_file_header(f)) < 0)
         return code;
     if(fflush(f) == EOF)
-        return_error(pdev->memory, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -424,7 +426,7 @@ psw_image_stream_setup(gx_device_pswrite * pdev, bool binary_ok)
 			      "psw_image_stream_setup");
 
 	    if (st == 0)
-		code = gs_note_error(pdev->v_memory, gs_error_VMerror);
+		code = gs_note_error(gs_error_VMerror);
 	    else {
 		code = psdf_encode_binary(pdev->image_writer,
 					  &s_AXE_template, st);
@@ -473,7 +475,7 @@ psw_put_bits(stream * s, const byte * data, int data_x_bit, uint raster,
 		stream_putc(s, (byte)((*src << shift) & (byte)(0xff00 >> wleft)));
 	}
         if (s->end_status == ERRC)
-            return_error(s->memory, gs_error_ioerror);
+            return_error(gs_error_ioerror);
     }
     return 0;
 }
@@ -527,7 +529,7 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 	pprintd2(s, "%d %d ", x, y);
 	pprints2(s, "%s %s\n", str, imagestr);
         if (s->end_status == ERRC)
-            return_error(pdev->memory, gs_error_ioerror);
+            return_error(gs_error_ioerror);
 	return 0;
     }
     pprintd4(s, "%d %d %d %d ", x, y, width, height);
@@ -561,7 +563,7 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 	sprintf(endstr, "\n%s\n", imagestr);
     }
     if (s->end_status == ERRC)
-        return_error(pdev->memory, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     /*
      * In principle, we should put %%BeginData: / %%EndData around all data
      * sections.  However, as long as the data are ASCII (not binary), they
@@ -585,6 +587,7 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 	 */
 	stream poss;
 
+	s_init(s, pdev->memory);
 	swrite_position_only(&poss);
 	pdev->strm = &poss;
 	code = psw_put_image(pdev, op, encode, data, data_x, raster,
@@ -601,7 +604,7 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
     }
     stream_puts(s, endstr);
     if (s->end_status == ERRC)
-        return_error(pdev->memory, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -650,7 +653,7 @@ psw_is_separate_pages(gx_device_vector *const vdev)
 {
     const char *fmt;
     gs_parsed_file_name_t parsed;
-    int code = gx_parse_output_file_name(vdev->memory, &parsed, &fmt, vdev->fname, strlen(vdev->fname));
+    int code = gx_parse_output_file_name(&parsed, &fmt, vdev->fname, strlen(vdev->fname));
     
     return (code >= 0 && fmt != 0);
 }
@@ -698,7 +701,7 @@ psw_setcolors(gx_device_vector * vdev, const gs_imager_state * pis1,
 {
     const gs_imager_state * pis = NULL; /* High level color is not implemented yet. */
     if (!gx_dc_is_pure(pdc))
-	return_error(vdev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     /* PostScript only keeps track of a single color. */
     gx_hld_save_color(pis, pdc, &vdev->saved_fill_color);
     gx_hld_save_color(pis, pdc, &vdev->saved_stroke_color);
@@ -723,7 +726,7 @@ psw_setcolors(gx_device_vector * vdev, const gs_imager_state * pis1,
 	else
 	    pprintd3(s, "%d %d %d rG\n", r, g, b);
         if (s->end_status == ERRC)
-            return_error(vdev->memory, gs_error_ioerror);
+            return_error(gs_error_ioerror);
     }
     return 0;
 }
@@ -739,7 +742,7 @@ psw_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
 	     fixed2float(x0), fixed2float(y0),
 	     fixed2float(x1 - x0), fixed2float(y1 - y0));
     if ((gdev_vector_stream(vdev))->end_status == ERRC)
-        return_error(vdev->memory, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -786,7 +789,7 @@ psw_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 	stream_puts(s, "Q q\n");
 	gdev_vector_reset(vdev);
         if (s->end_status == ERRC)
-            return_error(vdev->memory, gs_error_ioerror);
+            return_error(gs_error_ioerror);
     }
     return 0;
 }
@@ -811,7 +814,7 @@ psw_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
     pdev->path_state.num_points = 1;
     pdev->path_state.move = 1;
     if (s->end_status == ERRC)
-        return_error(vdev->memory, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -850,7 +853,7 @@ psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 	pdev->path_state.dprev[0].x = dx;
 	pdev->path_state.dprev[0].y = dy;
         if (s->end_status == ERRC)
-            return_error(vdev->memory, gs_error_ioerror);
+            return_error(gs_error_ioerror);
     }
     return 0;
 }
@@ -884,7 +887,7 @@ psw_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
     pdev->path_state.num_points = 0;
     pdev->path_state.move = 0;
     if (s->end_status == ERRC)
-        return_error(pdev->memory, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -900,7 +903,7 @@ psw_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
     pdev->path_state.num_points = 0;
     pdev->path_state.move = 0;
     if ((gdev_vector_stream(vdev))->end_status == ERRC)
-        return_error(vdev->memory, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -928,7 +931,7 @@ psw_endpath(gx_device_vector * vdev, gx_path_type_t type)
     if (type & gx_path_type_clip)
 	pprints1(s, "Y%s\n", star);
     if (s->end_status == ERRC)
-        return_error(vdev->memory, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -981,7 +984,7 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
     /* Check for a legitimate empty page. */
     CHECK_BEGIN_PAGE(pdev);
     sflush(s);			/* sync stream and file */
-    code = psw_write_page_trailer(dev->memory, vdev->file, num_copies, flush);
+    code = psw_write_page_trailer(vdev->file, num_copies, flush);
     if(code < 0)
         return code;
     vdev->in_page = false;
@@ -989,7 +992,7 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
     gdev_vector_reset(vdev);
     image_cache_reset(pdev);
     if (ferror(vdev->file))
-	return_error(vdev->memory, gs_error_ioerror);
+	return_error(gs_error_ioerror);
 
     dev->PageCount ++;
     if (psw_is_separate_pages(vdev)) {
@@ -1172,7 +1175,7 @@ psw_close_printer(gx_device * dev)
 	     */
 
 	    stream *s = vdev->strm;
-	    code = psw_write_page_trailer(dev->memory, vdev->file, 1, 1);
+	    code = psw_write_page_trailer(vdev->file, 1, 1);
             if(code < 0)
                 return code;
 	    sflush(s);
@@ -1325,7 +1328,7 @@ psw_stroke_path(gx_device * dev, const gs_imager_state * pis,
 		stream_puts(s, "concat\n");
 	    }
             if (s->end_status == ERRC)
-                return_error(vdev->memory, gs_error_ioerror);
+                return_error(gs_error_ioerror);
         }
 	code = gdev_vector_dopath(vdev, ppath, gx_path_type_stroke,
 				  (set_ctm ? &mat : (const gs_matrix *)0));
@@ -1410,7 +1413,7 @@ psw_begin_image(gx_device * dev,
     pie = gs_alloc_struct(mem, gdev_vector_image_enum_t,
 			  &st_vector_image_enum, "psw_begin_image");
     if (pie == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     if (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
 		   prect->q.x == pim->Width && prect->q.y == pim->Height)
 	)
@@ -1497,6 +1500,7 @@ psw_begin_image(gx_device * dev,
 	buffer = gs_alloc_bytes(mem, bsize, "psw_begin_image(buffer)");
 	bs = s_alloc(mem, "psw_begin_image(buffer stream)");
 	if (buffer && bs) {
+            s_init(bs, mem);
 	    swrite_string(bs, buffer, bsize);
 	} else {
 	    /* An allocation failed. */
@@ -1536,7 +1540,7 @@ psw_begin_image(gx_device * dev,
 	(*dev_proc(dev, get_initial_matrix)) (dev, &imat);
 	gs_matrix_scale(&imat, 72.0 / dev->HWResolution[0],
 			72.0 / dev->HWResolution[1], &imat);
-	gs_matrix_invert(dev->memory, &imat, &imat);
+	gs_matrix_invert(&imat, &imat);
 	gs_matrix_multiply(&ctm_only(pis), &imat, &imat);
 	psw_put_matrix(s, &imat);
 	pprintd2(s, "concat\n%d %d ", pie->width, pie->height);
@@ -1586,7 +1590,7 @@ psw_begin_image(gx_device * dev,
             gs_free_object(mem, bs, "psw_begin_image(buffer stream)");
             gs_free_object(mem, buffer, "psw_begin_image(buffer)");
             gs_free_object(mem, pie, "psw_begin_image");
-            return_error(mem, gs_error_ioerror);
+            return_error(gs_error_ioerror);
         }
     }
     *pinfo = (gx_image_enum_common_t *) pie;
@@ -1614,13 +1618,13 @@ psw_image_plane_data(gx_image_enum_common_t * info,
 
     for (pi = 0; pi < pie->num_planes; ++pi) {
 	if (pie->bits_per_row != pie->width * info->plane_depths[pi])
-	    return_error(pdev->memory, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	psw_put_bits(pdev->image_stream, planes[pi].data,
 		     planes[pi].data_x * info->plane_depths[pi],
 		     planes[pi].raster, pie->bits_per_row,
 		     *rows_used);
         if (pdev->image_stream->end_status == ERRC)
-            return_error(pdev->memory, gs_error_ioerror);
+            return_error(gs_error_ioerror);
     }
     pie->y += *rows_used;
     return code;
@@ -1664,7 +1668,7 @@ psw_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 	}
 	stream_puts(s, "\nQ\n");
         if (s->end_status == ERRC)
-            return_error(s->memory, gs_error_ioerror);
+            return_error(gs_error_ioerror);
     }
     return code;
 }

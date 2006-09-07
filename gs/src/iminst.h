@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Definition of interpreter instance */
 /* Requires stdio_.h, gsmemory.h, iref.h, iapi.h */
 
@@ -71,14 +72,12 @@ struct gs_main_instance_s {
     gs_file_path lib_path;	/* library search list (GS_LIB) */
     long base_time[2];		/* starting usertime */
     void *readline_data;	/* data for gp_readline */
-    char stdin_buf[STDIN_BUF_SIZE];	/* for e_NeedStdin callout */
-    char stdout_buf[STDOUT_BUF_SIZE];	/* for e_NeedStdout callout */
-    char stderr_buf[STDERR_BUF_SIZE];	/* for e_NeedStderr callout */
     ref error_object;		/* Use by gsapi_*() */
 #if 1
     /* needs to be removed */
     display_callback *display;	/* callback structure for display device */
 #endif
+
     /* The following are updated dynamically. */
     i_ctx_t *i_ctx_p;		/* current interpreter context state */
 };

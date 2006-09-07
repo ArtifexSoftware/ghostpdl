@@ -11,16 +11,14 @@
 # Define the name of this makefile.
 MAKEFILE+= ../language_switch/pspcl6_gcc.mak
 
-# Pick (uncomment) one font system technology ufst or artifex.  PCL and
-# XL do not need to use the same scaler, but it is necessary to
-# tinker/hack the makefiles to get it to work properly.
-
-#PL_SCALER?=ufst
+# Pick (uncomment) one font system technology
+# afs (Artifex/gs native) or ufst (AGFA UFST)
 PL_SCALER?=afs
+#PL_SCALER?=ufst
 
 # The build process will put all of its output in this directory:
 # GENDIR is defined in the 'base' makefile, but we need its value immediately
-GENDIR?=./obj-$(PL_SCALER)
+GENDIR?=./obj
 
 # The sources are taken from these directories:
 APPSRCDIR?=.
@@ -55,13 +53,34 @@ TARGET_XE?=$(GENDIR)/pspcl6
 PSI_TOP_OBJ?=$(PSIOBJDIR)/psitop.$(OBJ)
 TOP_OBJ+= $(PSI_TOP_OBJ)
 
+# Choose COMPILE_INITS=1 for init files and fonts in ROM (otherwise =0)
 COMPILE_INITS?=1
+
+# defines for building PSI against UFST
+ifeq ($(PL_SCALER), ufst)
+
+ifeq ($(COMPILE_INITS), 1)
+UFSTFONTDIR=%rom%fontdata/
+else
+UFSTFONTDIR=/usr/local/fontdata5.0/
+endif
+
+UFST_ROOT?=../ufst
+FAPI_DEFS?= -DUFST_BRIDGE=1 -DUFST_LIB_EXT=.a -DGCCx86 -DUFST_ROOT=$(UFST_ROOT)
+UFST_BRIDGE=1
+UFST_LIB_EXT=.a
+endif
+
+GX_COLOR_INDEX_DEFINE?=-DGX_COLOR_INDEX_TYPE="unsigned long long"
+# Stupid autoconf coupling 
+HAVE_STDINT_H_DEFINE?=-DHAVE_STDINT_H
 
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
 # Note that the omission of -Dconst= rules out the use of gcc versions
 # between 2.7.0 and 2.7.2 inclusive.  (2.7.2.1 is OK.)
 PSICFLAGS?=-DPSI_INCLUDED
+
 
 # #define xxx_BIND is in std.h
 # putting compile time bindings here will have the side effect of having different options
@@ -71,6 +90,7 @@ EXPERIMENT_CFLAGS?=
 GCFLAGS?=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG $(PSICFLAGS) $(EXPERIMENT_CFLAGS)
 CFLAGS?=-g -O0 $(GCFLAGS) $(XCFLAGS) $(PSICFLAGS)
 
+ifeq ($(PL_SCALER), ufst)
 FEATURE_DEVS    ?= \
 		  $(DD)psl3.dev		\
 		  $(DD)pdf.dev		\
@@ -79,7 +99,18 @@ FEATURE_DEVS    ?= \
                   $(DD)htxlib.dev	\
                   $(DD)roplib.dev	\
 		  $(DD)ttfont.dev	\
+		  $(DD)fapi.dev		\
 		  $(DD)pipe.dev
+else
+FEATURE_DEVS    ?= \
+		  $(DD)psl3.dev		\
+		  $(DD)pdf.dev		\
+		  $(DD)dpsnext.dev	\
+                  $(DD)htxlib.dev	\
+                  $(DD)roplib.dev	\
+		  $(DD)ttfont.dev	\
+		  $(DD)pipe.dev
+endif
 
 # "Subclassed" makefile
 include $(MAINSRCDIR)/pcl6_gcc.mak

@@ -1,17 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$*/
-/* H-P and Canon colour printer drivers */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$*/
+/* HP and Canon colour printer drivers */
 
 /****************************************************************
  * The code in this file was contributed by the authors whose names and/or
@@ -396,7 +396,7 @@ typedef struct {
     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, x_dpi, y_dpi, 0, 0, 0, 0,\
     (bpp == 32 ? 4 : (bpp == 1 || bpp == 8) ? 1 : 3), bpp,\
     (bpp >= 8 ? 255 : 1), (bpp >= 8 ? 255 : bpp > 1 ? 1 : 0),\
-    (bpp >= 8 ? 5 : 2), (bpp >= 8 ? 5 : bpp > 1 ? 2 : 0),\
+    (bpp >= 8 ? 256 : 2), (bpp >= 8 ? 256 : bpp > 1 ? 2 : 0),\
     print_page, 0 /* cmyk */, correct)
 
 #define prn_cmyk_colour_device(dtype, procs, dev_name, x_dpi, y_dpi, bpp, print_page, correct)\
@@ -404,7 +404,7 @@ typedef struct {
     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, x_dpi, y_dpi, 0, 0, 0, 0,\
     ((bpp == 1 || bpp == 4) ? 1 : 4), bpp,\
     (bpp > 8 ? 255 : 1), (1 << (bpp >> 2)) - 1, /* max_gray, max_color */\
-    (bpp > 8 ? 5 : 2), (bpp > 8 ? 5 : bpp > 1 ? 2 : 0),\
+    (bpp > 8 ? 256 : 2), (bpp > 8 ? 256 : bpp > 1 ? 2 : 0),\
     print_page, 1 /* cmyk */, correct)
 
 #define bjc_device(dtype, p, d, x, y, b, pp, c) \
@@ -974,7 +974,7 @@ bjc_get_params(gx_device *pdev, gs_param_list *plist)
     gs_param_string pquality;
     gs_param_string dithering;
 
-    if (code < 0) return_error(pdev->memory, code);
+    if (code < 0) return_error(code);
 
     if ((ncode = param_write_bool(plist, BJC_OPTION_MANUALFEED,
 	&bjcparams.manualFeed)) < 0) {
@@ -1811,7 +1811,7 @@ private int ep_num_comps, ep_plane_size, img_rows=BJC_HEAD_ROWS;
 
 
 private int
-ep_print_image(const gs_memory_t *mem, FILE *prn_stream, char cmd, byte *data, int size)
+ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
 {
   static int ln_idx=0, vskip1=0, vskip2=0, real_rows;
   int i;
@@ -1831,7 +1831,7 @@ ep_print_image(const gs_memory_t *mem, FILE *prn_stream, char cmd, byte *data, i
     } else if (size >= img_rows - (ln_idx+vskip2) || ln_idx+vskip2 >= min_rows) {
       /* The 'I' cmd must precede 'B' cmd! */
       vskip2 += size;
-      ep_print_image(mem, prn_stream, 'F', 0, 0); /* flush and reset status */
+      ep_print_image(prn_stream, 'F', 0, 0); /* flush and reset status */
     } else {
       vskip2 += size;
     }
@@ -1941,7 +1941,7 @@ ep_print_image(const gs_memory_t *mem, FILE *prn_stream, char cmd, byte *data, i
 	p0 = p2;
       }
     }
-    return ep_print_image(mem, prn_stream, 'R', 0, vskip2 + ln_idx); 
+    return ep_print_image(prn_stream, 'R', 0, vskip2 + ln_idx); 
   case 'R':			/* Reset status */
     ln_idx = 0;
     vskip1 = size;
@@ -1949,7 +1949,7 @@ ep_print_image(const gs_memory_t *mem, FILE *prn_stream, char cmd, byte *data, i
     memset(ep_storage, 0, ep_storage_size_words * W);
     return 0;
   default:			/* This should not happen */
-    errprintf(mem, "ep_print_image: illegal command character `%c'.\n", cmd);
+    errprintf("ep_print_image: illegal command character `%c'.\n", cmd);
     return 1;
   }
 
@@ -2063,7 +2063,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
    */
 
   if (storage == 0 || ep_storage == 0) /* can't allocate working area */
-    return_error(pdev->memory, gs_error_VMerror);
+    return_error(gs_error_VMerror);
   else {
     int i, j;
     byte *p = out_data = out_row = (byte *)storage;
@@ -2357,7 +2357,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
       /* Skip blank lines if any */
       if (num_blank_lines > 0) {
 	if (ptype == ESC_P) {
-	  ep_print_image(pdev->memory, prn_stream, 'B', 0, num_blank_lines);
+	  ep_print_image(prn_stream, 'B', 0, num_blank_lines);
 	} else if (ptype == BJC600 || ptype == BJC800) {
 	    bjc_v_skip(num_blank_lines, pdev, prn_stream);
 	} else if (num_blank_lines < this_pass) {
@@ -2617,8 +2617,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 				out_count, out_data, pdev, prn_stream);
 	      if (i == 0) bjc_v_skip(1, pdev, prn_stream);
 	    } else if (ptype == ESC_P)
-		ep_print_image(pdev->memory, 
-			       prn_stream, (char)i, plane_data[scan][i], plane_size);
+		ep_print_image(prn_stream, (char)i, plane_data[scan][i], plane_size);
 	    else
 	      fprintf(prn_stream, "\033*b%d%c", out_count, "WVVV"[i]);
 	    if (ptype < ESC_P)
@@ -2627,8 +2626,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 	  
 	} /* Transfer Raster Graphics ... */
 	if (ptype == ESC_P)
-	    ep_print_image(pdev->memory, 
-			   prn_stream, 'I', 0, 0); /* increment line index */
+	    ep_print_image(prn_stream, 'I', 0, 0); /* increment line index */
 	scan = 1 - scan;          /* toggle scan direction */
       }	  /* Printing non-blank lines */
     }     /* for lnum ... */
@@ -2652,7 +2650,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   else if (ptype == BJC600 || ptype == BJC800)
       ;				/* Already done */
   else if (ptype == ESC_P) {
-    ep_print_image(pdev->memory, prn_stream, 'F', 0, 0); /* flush print buffer */
+    ep_print_image(prn_stream, 'F', 0, 0); /* flush print buffer */
     fputs("\014\033@", prn_stream);	/* reset after eject page */
   } else 
     fputs("\033&l0H", prn_stream);
@@ -2954,10 +2952,10 @@ gdev_pcl_map_color_rgb(gx_device *pdev, gx_color_index color,
     }
     break;
   case 24:
-    { gx_color_value c = (gx_color_value)color ^ 0xffffff;
-      prgb[0] = gx_color_value_from_byte(c >> 16);
-      prgb[1] = gx_color_value_from_byte((c >> 8) & 0xff);
-      prgb[2] = gx_color_value_from_byte(c & 0xff);
+    { gx_color_index c = color ^ 0xffffff;
+      prgb[0] = gx_color_value_from_byte((gx_color_value)(c >> 16));
+      prgb[1] = gx_color_value_from_byte((gx_color_value)((c >> 8) & 0xff));
+      prgb[2] = gx_color_value_from_byte((gx_color_value)(c & 0xff));
     }
     break;
   case 32:
@@ -3270,18 +3268,18 @@ cce:  default: return gs_error_rangecheck;
       ci->max_gray = (bpp >= 8 ? 255 : 1);
 
       if (ci->num_components == 1) {
-	  ci->dither_grays = (bpp >= 8 ? 5 : 2);
-	  ci->dither_colors = (bpp >= 8 ? 5 : bpp > 1 ? 2 : 0);
+	  ci->dither_grays = (bpp >= 8 ? 256 : 2);
+	  ci->dither_colors = (bpp >= 8 ? 256 : bpp > 1 ? 2 : 0);
       } else {
-	  ci->dither_grays = (bpp > 8 ? 5 : 2);
-	  ci->dither_colors = (bpp > 8 ? 5 : bpp > 1 ? 2 : 0);
+	  ci->dither_grays = (bpp > 8 ? 256 : 2);
+	  ci->dither_colors = (bpp > 8 ? 256 : bpp > 1 ? 2 : 0);
       }
   } else {
       ci->num_components = (bpp == 1 || bpp == 8 ? 1 : 3);
       ci->max_color = (bpp >= 8 ? 255 : bpp > 1 ? 1 : 0);
       ci->max_gray = (bpp >= 8 ? 255 : 1);
-      ci->dither_grays = (bpp >= 8 ? 5 : 2);
-      ci->dither_colors = (bpp >= 8 ? 5 : bpp > 1 ? 2 : 0);
+      ci->dither_grays = (bpp >= 8 ? 256 : 2);
+      ci->dither_colors = (bpp >= 8 ? 256 : bpp > 1 ? 2 : 0);
   }
 
   ci->depth = ((bpp > 1) && (bpp < 8) ? 8 : bpp);
@@ -3444,7 +3442,7 @@ cdj_param_check_bytes(gs_param_list *plist, gs_param_name pname,
                              size)
                    )
                   break;
-                code = gs_note_error(plist->memory, gs_error_rangecheck);
+                code = gs_note_error(gs_error_rangecheck);
                 goto e;
           default:
                 if ( param_read_null(plist, pname) == 0 )
@@ -3468,7 +3466,7 @@ cdj_param_check_float(gs_param_list *plist, gs_param_name pname, floatp fval,
           case 0:
                 if ( is_defined && new_value == fval)
                   break;
-                code = gs_note_error(plist->memory, gs_error_rangecheck);
+                code = gs_note_error(gs_error_rangecheck);
                 goto e;
           default:
                 if ( param_read_null(plist, pname) == 0 )

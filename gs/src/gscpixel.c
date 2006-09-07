@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* DevicePixel color space and operation definition */
 #include "gx.h"
 #include "gserrors.h"
@@ -40,12 +41,13 @@ private const gs_color_space_type gs_color_space_type_DevicePixel = {
     gx_default_remap_color, gx_no_install_cspace,
     gx_set_overprint_DevicePixel,
     gx_no_adjust_cspace_count, gx_no_adjust_color_count,
-    gx_serialize_DevicePixel
+    gx_serialize_DevicePixel,
+    gx_cspace_is_linear_default
 };
 
 /* Initialize a DevicePixel color space. */
 int
-gs_cspace_init_DevicePixel(const gs_memory_t *mem, gs_color_space * pcs, int depth)
+gs_cspace_init_DevicePixel(gs_memory_t *mem, gs_color_space * pcs, int depth)
 {
     switch (depth) {
 	case 1:
@@ -57,9 +59,9 @@ gs_cspace_init_DevicePixel(const gs_memory_t *mem, gs_color_space * pcs, int dep
 	case 32:
 	    break;
 	default:
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
     }
-    gs_cspace_init(pcs, &gs_color_space_type_DevicePixel, (gs_memory_t *)mem); /*const cast*/
+    gs_cspace_init(pcs, &gs_color_space_type_DevicePixel, mem, false);
     pcs->params.pixel.depth = depth;
     return 0;
 }

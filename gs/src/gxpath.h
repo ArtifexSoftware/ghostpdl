@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Fixed-point path procedures */
 /* Requires gxfixed.h */
 
@@ -136,6 +137,7 @@ int gx_path_new(gx_path *),
     gx_path_add_point(gx_path *, fixed, fixed),
     gx_path_add_relative_point(gx_path *, fixed, fixed),
     gx_path_add_line_notes(gx_path *, fixed, fixed, segment_notes),
+    gx_path_add_dash_notes(gx_path * ppath, fixed x, fixed y, fixed dx, fixed dy, segment_notes notes),
     gx_path_add_lines_notes(gx_path *, const gs_fixed_point *, int, segment_notes),
     gx_path_add_rectangle(gx_path *, fixed, fixed, fixed, fixed),
     gx_path_add_char_path(gx_path *, gx_path *, gs_char_path_mode),
@@ -178,10 +180,8 @@ typedef enum {
     pco_none = 0,
     pco_monotonize = 1,		/* make curves monotonic */
     pco_accurate = 2,		/* flatten with accurate tangents at ends */
-    pco_for_stroke = 4		/* flatten taking line width into account */
-#if CURVED_TRAPEZOID_FILL
-    , pco_small_curves = 8	/* make curves small */
-#endif
+    pco_for_stroke = 4,		/* flatten taking line width into account */
+    pco_small_curves = 8	/* make curves small */
 } gx_path_copy_options;
 
 /* Path accessors */
@@ -194,11 +194,7 @@ int gx_path_subpath_start_point(const gx_path *, gs_fixed_point *);
 bool gx_path_has_curves(const gx_path *),
     gx_path_is_void(const gx_path *),	/* no segments */
     gx_path_is_null(const gx_path *),	/* nothing at all */
-#if CURVED_TRAPEZOID_FILL
     gx_path__check_curves(const gx_path * ppath, gx_path_copy_options options, fixed fixed_flat);
-#else
-    gx_path_is_monotonic(const gx_path * ppath);
-#endif
 typedef enum {
     prt_none = 0,
     prt_open = 1,		/* only 3 sides */
@@ -259,6 +255,14 @@ segment_notes
 gx_path_enum_notes(const gs_path_enum *);
 bool gx_path_enum_backup(gs_path_enum *);
 
+/* An auxiliary function to add a path point with a specified transformation. */
+int gs_moveto_aux(gs_imager_state *pis, gx_path *ppath, floatp x, floatp y);
+int gx_setcurrentpoint_from_path(gs_imager_state *pis, gx_path *path);
+
+/* Path optimization for the filling algorithm. */
+
+int gx_path_merge_contacting_contours(gx_path *ppath);
+
 /* ------ Clipping paths ------ */
 
 /* Opaque type for a clipping path */
@@ -278,6 +282,13 @@ int gx_effective_clip_path(gs_state *, gx_clip_path **);
 #  define gx_clip_list_DEFINED
 typedef struct gx_clip_list_s gx_clip_list;
 #endif
+
+/* Opaque type for fill parameters. */
+#ifndef gx_fill_params_DEFINED
+#  define gx_fill_params_DEFINED
+typedef struct gx_fill_params_s gx_fill_params;
+#endif
+
 
 /* Opaque type for a clipping path enumerator. */
 typedef struct gs_cpath_enum_s gs_cpath_enum;
@@ -317,6 +328,8 @@ int
     gx_cpath_clip(gs_state *, gx_clip_path *, /*const*/ gx_path *, int),
     gx_cpath_intersect(gx_clip_path *, /*const*/ gx_path *, int,
 		       gs_imager_state *),
+    gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
+		   int rule, gs_imager_state *pis, const gx_fill_params * params),
     gx_cpath_scale_exp2_shared(gx_clip_path *pcpath, int log2_scale_x,
 			       int log2_scale_y, bool list_shared,
 			       bool segments_shared),
@@ -326,12 +339,12 @@ bool
     gx_cpath_outer_box(const gx_clip_path *, gs_fixed_rect *),
     gx_cpath_includes_rectangle(const gx_clip_path *, fixed, fixed,
 				fixed, fixed);
+const gs_fixed_rect *cpath_is_rectangle(const gx_clip_path * pcpath);
 
 /* Enumerate a clipping path.  This interface does not copy the path. */
 /* However, it does write into the path's "visited" flags. */
 int gx_cpath_enum_init(gs_cpath_enum *, gx_clip_path *);
-int gx_cpath_enum_next(const gs_memory_t *mem,
-		       gs_cpath_enum *, gs_fixed_point[3]);		/* 0 when done */
+int gx_cpath_enum_next(gs_cpath_enum *, gs_fixed_point[3]);		/* 0 when done */
 
 segment_notes
 gx_cpath_enum_notes(const gs_cpath_enum *);

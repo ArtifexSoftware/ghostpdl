@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generic image enumeration and cleanup */
 #include "gx.h"
 #include "memory_.h"
@@ -39,6 +40,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
     int y_end = min(y + height, penum->rect.h);
     int width_spp = penum->rect.w * penum->spp;
     int num_planes = penum->num_planes;
+    int num_components_per_plane = 1;
 
 #define BCOUNT(plane)		/* bytes per data row */\
   (((penum->rect.w + (plane).data_x) * penum->spp * penum->bps / num_planes\
@@ -70,6 +72,10 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 	penum->used.y = 0;
     } else
 	memset(offsets, 0, num_planes * sizeof(offsets[0]));
+    if (num_planes == 1 && penum->plane_depths[0] != penum->bps) {
+	/* A single plane with multiple components. */
+	num_components_per_plane = penum->plane_depths[0] / penum->bps;
+    }
     for (; penum->y < y_end; penum->y++) {
 	int px;
 	const byte *buffer;
@@ -83,7 +89,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 	    sourcex = 0;
 	    for (px = 0; px < num_planes; px += penum->bps)
 		repack_bit_planes(planes, offsets, penum->bps, penum->buffer,
-				  penum->rect.w, &penum->map[0].table,
+				  penum->rect.w, &penum->map[px].table,
 				  penum->spread);
 	    for (px = 0; px < num_planes; ++px)
 		offsets[px] += planes[px].raster;
@@ -98,7 +104,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 		(*penum->unpack)(penum->buffer, &sourcex,
 				 planes[0].data + offsets[0],
 				 planes[0].data_x, BCOUNT(planes[0]),
-				 &penum->map[0].table, penum->spread);
+				 &penum->map[0], penum->spread, num_components_per_plane);
 
 	    offsets[0] += planes[0].raster;
 	    for (px = 1; px < num_planes; ++px) {
@@ -106,13 +112,13 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 				 &ignore_data_x,
 				 planes[px].data + offsets[px],
 				 planes[px].data_x, BCOUNT(planes[px]),
-				 &penum->map[px].table, penum->spread);
+				 &penum->map[px], penum->spread, 1);
 		offsets[px] += planes[px].raster;
 	    }
 	}
 #ifdef DEBUG
 	if (gs_debug_c('b'))
-	    dprintf1(penum->memory, "[b]image1 y=%d\n", y);
+	    dprintf1("[b]image1 y=%d\n", y);
 	if (gs_debug_c('B')) {
 	    int i, n = width_spp;
 
@@ -120,10 +126,10 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 		n *= 2;
 	    else if (penum->bps == 1 && penum->unpack_bps == 8)
 		n = (n + 7) / 8;
-	    dlputs(penum->memory, "[B]row:");
+	    dlputs("[B]row:");
 	    for (i = 0; i < n; i++)
-		dprintf1(penum->memory, " %02x", buffer[i]);
-	    dputs(penum->memory, "\n");
+		dprintf1(" %02x", buffer[i]);
+	    dputs("\n");
 	}
 #endif
 	penum->cur.x = dda_current(penum->dda.row.x);
@@ -154,7 +160,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 			penum->hci = fixed2int_pixround(yn) - penum->yci;
 			if (penum->hci == 0)
 			    goto mt;
-			if_debug2(penum->memory, 'b', "[b]yci=%d, hci=%d\n",
+			if_debug2('b', "[b]yci=%d, hci=%d\n",
 				  penum->yci, penum->hci);
 		    }
 		    break;
@@ -179,7 +185,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 			penum->wci = fixed2int_pixround(xn) - penum->xci;
 			if (penum->wci == 0)
 			    goto mt;
-			if_debug2(penum->memory, 'b', "[b]xci=%d, wci=%d\n",
+			if_debug2('b', "[b]xci=%d, wci=%d\n",
 				  penum->xci, penum->wci);
 		    }
 		    break;
@@ -196,7 +202,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 	    dda_advance(penum->dda.pixel0.y, x_used);
 	    penum->used.x = 0;
 	}
-	if_debug2(penum->memory, 'b', "[b]pixel0 x=%g, y=%g\n",
+	if_debug2('b', "[b]pixel0 x=%g, y=%g\n",
 		  fixed2float(dda_current(penum->dda.pixel0.x)),
 		  fixed2float(dda_current(penum->dda.pixel0.y)));
 	code = (*penum->render)(penum, buffer, sourcex + x_used,
@@ -414,7 +420,7 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
     gs_memory_t *mem = penum->memory;
     stream_image_scale_state *scaler = penum->scaler;
 
-    if_debug2(penum->memory, 'b', "[b]%send_image, y=%d\n",
+    if_debug2('b', "[b]%send_image, y=%d\n",
 	      (penum->y < penum->rect.h ? "premature " : ""), penum->y);
     if (draw_last) {
 	int code = gx_image_flush(info);

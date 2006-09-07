@@ -1,18 +1,20 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/*$Id$ */
 /* setscreen operator for Ghostscript library */
 #include "memory_.h"
+#include "string_.h"
 #include <stdlib.h>		/* for qsort */
 #include "gx.h"
 #include "gserrors.h"
@@ -164,7 +166,7 @@ gs_currentscreen(const gs_state * pgs, gs_screen_halftone * phsp)
 	    *phsp = pgs->halftone->params.colorscreen.screens.colored.gray;
 	    return 0;
 	default:
-	    return_error(pgs->memory, gs_error_undefined);
+	    return_error(gs_error_undefined);
     }
 }
 
@@ -194,7 +196,7 @@ gx_imager_setscreenphase(gs_imager_state * pis, int x, int y,
 	    gx_imager_setscreenphase(pis, x, y, (gs_color_select_t) i);
 	return 0;
     } else if (select < 0 || select >= gs_color_select_count)
-	return_error(pis->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     pis->screen_phase[select].x = x;
     pis->screen_phase[select].y = y;
     return 0;
@@ -222,7 +224,7 @@ gs_currentscreenphase_pis(const gs_imager_state * pis, gs_int_point * pphase,
 		      gs_color_select_t select)
 {
     if (select < 0 || select >= gs_color_select_count)
-	return_error(pis->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     *pphase = pis->screen_phase[select];
     return 0;
 }
@@ -255,8 +257,8 @@ gx_ht_process_screen_memory(gs_screen_enum * penum, gs_state * pgs,
 
     if (code < 0)
 	return code;
-    while ((code = gs_screen_currentpoint(mem, penum, &pt)) == 0)
-	if ((code = gs_screen_next(mem, penum, (*phsp->spot_function) (pt.x, pt.y))) < 0)
+    while ((code = gs_screen_currentpoint(penum, &pt)) == 0)
+	if ((code = gs_screen_next(penum, (*phsp->spot_function) (pt.x, pt.y))) < 0)
 	    return code;
     return 0;
 }
@@ -293,7 +295,7 @@ gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
 	    (uint *)gs_alloc_byte_array(mem, porder->num_levels, sizeof(uint),
 				        "alloc_ht_order_data(levels)");
 	if (porder->levels == 0)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
     } else
 	porder->levels = 0;
 
@@ -305,7 +307,7 @@ gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
 	if (porder->bit_data == 0) {
 	    gs_free_object(mem, porder->levels, "alloc_ht_order_data(levels)");
 	    porder->levels = 0;
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	}
     } else
 	porder->bit_data = 0;
@@ -336,8 +338,9 @@ gx_ht_copy_ht_order(gx_ht_order * pdest, gx_ht_order * psrc, gs_memory_t * mem)
         memcpy(pdest->bit_data, psrc->bit_data,
 		psrc->num_bits * psrc->procs->bit_data_elt_size);
     pdest->wse = psrc->wse;
+    pdest->wts = psrc->wts;
     pdest->transfer = psrc->transfer;
-    rc_increment(mem, pdest->transfer);
+    rc_increment(pdest->transfer);
     return 0;
 }
 
@@ -381,7 +384,7 @@ gx_ht_alloc_order(gx_ht_order * porder, uint width, uint height,
     int code;
 
     order = *porder;
-    gx_compute_cell_values(mem, &order.params);
+    gx_compute_cell_values(&order.params);
     code = gx_ht_alloc_ht_order(&order, width, height, num_levels,
 				width * height, strip_shift,
 				&ht_order_procs_default, mem);
@@ -407,7 +410,7 @@ gx_ht_alloc_threshold_order(gx_ht_order * porder, uint width, uint height,
     int code;
 
     order = *porder;
-    gx_compute_cell_values(mem, &order.params);
+    gx_compute_cell_values(&order.params);
     code = gx_ht_alloc_ht_order(&order, width, height, num_levels,
 				width * height, 0, procs, mem);
     if (code < 0)
@@ -429,7 +432,7 @@ gx_ht_alloc_client_order(gx_ht_order * porder, uint width, uint height,
     order.params.R = 1;
     order.params.M1 = height, order.params.N1 = 0;
     order.params.R1 = 1;
-    gx_compute_cell_values(mem, &order.params);
+    gx_compute_cell_values(&order.params);
     code = gx_ht_alloc_ht_order(&order, width, height, num_levels,
 				num_bits, 0, &ht_order_procs_default, mem);
     if (code < 0)
@@ -449,7 +452,7 @@ compare_samples(const void *p1, const void *p2)
 }
 /* Sort the halftone order by sample value. */
 void
-gx_sort_ht_order(const gs_memory_t *mem, gx_ht_bit * recs, uint N)
+gx_sort_ht_order(gx_ht_bit * recs, uint N)
 {
     int i;
 
@@ -461,9 +464,9 @@ gx_sort_ht_order(const gs_memory_t *mem, gx_ht_bit * recs, uint N)
     if (gs_debug_c('H')) {
 	uint i;
 
-	dlputs(mem, "[H]Sorted samples:\n");
+	dlputs("[H]Sorted samples:\n");
 	for (i = 0; i < N; i++)
-	    dlprintf3(mem, "%5u: %5u: %u\n",
+	    dlprintf3("%5u: %5u: %u\n",
 		      i, recs[i].offset, recs[i].mask);
     }
 #endif
@@ -476,7 +479,7 @@ gx_sort_ht_order(const gs_memory_t *mem, gx_ht_bit * recs, uint N)
  * the invariants that must be restored.
  */
 void
-gx_ht_construct_spot_order(const gs_memory_t *mem, gx_ht_order * porder)
+gx_ht_construct_spot_order(gx_ht_order * porder)
 {
     uint width = porder->width;
     uint num_levels = porder->num_levels;	/* = width x strip */
@@ -490,8 +493,8 @@ gx_ht_construct_spot_order(const gs_memory_t *mem, gx_ht_order * porder)
     gx_ht_bit *bp = bits + num_bits - 1;
     uint i;
 
-    gx_sort_ht_order(mem, bits, num_levels);
-    if_debug5(mem, 'h',
+    gx_sort_ht_order(bits, num_levels);
+    if_debug5('h',
 	      "[h]spot order: num_levels=%u w=%u h=%u strip=%u shift=%u\n",
 	      num_levels, width, porder->orig_height, strip, shift);
     /* Fill in the levels array, replicating the bits vertically */
@@ -513,7 +516,7 @@ gx_ht_construct_spot_order(const gs_memory_t *mem, gx_ht_order * porder)
 	porder->height = full_height;
 	porder->shift = 0;
     }
-    gx_ht_construct_bits(mem, porder);
+    gx_ht_construct_bits(porder);
 }
 
 /* Construct a single offset/mask. */
@@ -545,7 +548,7 @@ gx_ht_construct_bit(gx_ht_bit * bit, int width, int bit_num)
 /* porder->bits[i].offset contains the index of the bit position */
 /* that is i'th in the whitening order. */
 void
-gx_ht_construct_bits(const gs_memory_t *mem, gx_ht_order * porder)
+gx_ht_construct_bits(gx_ht_order * porder)
 {
     uint i;
     gx_ht_bit *phb;
@@ -556,11 +559,11 @@ gx_ht_construct_bits(const gs_memory_t *mem, gx_ht_order * porder)
 	gx_ht_construct_bit(phb, porder->width, phb->offset);
 #ifdef DEBUG
     if (gs_debug_c('H')) {
-	dlprintf1(mem, "[H]Halftone order bits 0x%lx:\n", (ulong)porder->bit_data);
+	dlprintf1("[H]Halftone order bits 0x%lx:\n", (ulong)porder->bit_data);
 	for (i = 0, phb = (gx_ht_bit *)porder->bit_data;
 	     i < porder->num_bits;
 	     i++, phb++)
-	    dlprintf3(mem, "%4d: %u:0x%lx\n", i, phb->offset,
+	    dlprintf3("%4d: %u:0x%lx\n", i, phb->offset,
 		      (ulong) phb->mask);
     }
 #endif
@@ -582,7 +585,7 @@ gx_ht_order_release(gx_ht_order * porder, gs_memory_t * mem, bool free_cache)
     if (porder->wts != 0 && porder->width != ht_wts_suppress_release)
         gs_wts_free_screen(porder->wts);
     porder->wts = 0;
-    rc_decrement(mem, porder->transfer, "gx_ht_order_release(transfer)");
+    rc_decrement(porder->transfer, "gx_ht_order_release(transfer)");
     porder->transfer = 0;
     if (porder->data_memory != 0) {
 	gs_free_object(porder->data_memory, porder->bit_data,
@@ -624,7 +627,11 @@ gx_device_halftone_release(gx_device_halftone * pdht, gs_memory_t * mem)
  *
  * Two other checks are also made.  If the name is "Default" then a value
  * of GX_DEVICE_COLOR_MAX_COMPONENTS is returned.  This is done to
- * simplify the handling of default halftones.
+ * simplify the handling of default halftones.  Note:  The device also
+ * uses GX_DEVICE_COLOR_MAX_COMPONENTS to indicate colorants which are
+ * known but not being used due to the SeparationOrder parameter.  In this
+ * case we return -1 since the colorant is not currently being used by the
+ * device.
  *
  * If the halftone type is colorscreen or multiple colorscreen, then we
  * also check for Red/Cyan, Green/Magenta, Blue/Yellow, and Gray/Black
@@ -634,16 +641,16 @@ gx_device_halftone_release(gx_device_halftone * pdht, gs_memory_t * mem)
  * A negative value is returned if the color name is not found.
  */
 int
-gs_color_name_component_number(const gx_device * dev, const char * pname,
+gs_color_name_component_number(gx_device * dev, const char * pname,
 				int name_size, int halftonetype)
 {
     int num_colorant;
 
 #define check_colorant_name(dev, name) \
-    ((*dev_proc(dev, get_color_comp_index)) (dev, name, strlen(name), 0))
+    ((*dev_proc(dev, get_color_comp_index)) (dev, name, strlen(name), NO_COMP_NAME_TYPE))
 
 #define check_colorant_name_length(dev, name, length) \
-    ((*dev_proc(dev, get_color_comp_index)) (dev, name, length, 0))
+    ((*dev_proc(dev, get_color_comp_index)) (dev, name, length, NO_COMP_NAME_TYPE))
 
 #define check_name(str, pname, length) \
     ((strlen(str) == length) && (strncmp(pname, str, length) == 0))
@@ -652,8 +659,18 @@ gs_color_name_component_number(const gx_device * dev, const char * pname,
      * Check if this is a device colorant.
      */
     num_colorant = check_colorant_name_length(dev, pname, name_size);
-    if (num_colorant >= 0)
+    if (num_colorant >= 0) {
+	/*
+	 * The device will return GX_DEVICE_COLOR_MAX_COMPONENTS if the
+	 * colorant is logically present in the device but not being used
+	 * because a SeparationOrder parameter is specified.  Since we are
+	 * using this value to indicate 'Default', we use -1 to indicate
+	 * that the colorant is not really being used.
+	 */
+	if (num_colorant == GX_DEVICE_COLOR_MAX_COMPONENTS)
+	    num_colorant = -1;
 	return num_colorant;
+    }
 
     /*
      * Check if this is the default component
@@ -674,6 +691,15 @@ gs_color_name_component_number(const gx_device * dev, const char * pname,
 	    num_colorant = check_colorant_name(dev, "Yellow");
 	else if (check_name("Gray", pname, name_size))
 	    num_colorant = check_colorant_name(dev, "Black");
+	/*
+	 * The device will return GX_DEVICE_COLOR_MAX_COMPONENTS if the
+	 * colorant is logically present in the device but not being used
+	 * because a SeparationOrder parameter is specified.  Since we are
+	 * using this value to indicate 'Default', we use -1 to indicate
+	 * that the colorant is not really being used.
+	 */
+	if (num_colorant == GX_DEVICE_COLOR_MAX_COMPONENTS)
+	    num_colorant = -1;
 
 #undef check_colorant_name
 #undef check_colorant_name_length
@@ -693,7 +719,7 @@ int
 gs_cname_to_colorant_number(gs_state * pgs, byte * pname, uint name_size,
 		int halftonetype)
 {
-    const gx_device * dev = pgs->device;
+    gx_device * dev = pgs->device;
 
     return gs_color_name_component_number(dev, (char *)pname, name_size,
 		    halftonetype);
@@ -747,7 +773,13 @@ gs_cname_to_colorant_number(gs_state * pgs, byte * pname, uint name_size,
  *  num_comp    For the operand halftone, this is the number of halftone
  *              components included in the specification. For the device
  *              halftone in the imager state, this is always the same as
- *              the number of color model components.
+ *              the number of color model components (see num_dev_comp).
+ *
+ *  num_dev_comp The number of components in the device process color model
+ *		when the operand halftone was created.  With some compositor
+ *		devices (for example PDF 1.4) we can have differences in the
+ *		process color model of the compositor versus the output device.
+ *		These compositor devices do not halftone.
  *
  *  components  For the operand halftone, this field is non-null only if
  *              multiple halftones are provided. In that case, the size
@@ -932,7 +964,7 @@ gx_imager_dev_ht_install(
     const gx_device *       dev )
 {
     gx_device_halftone      dht;
-    int                     num_comps = dev->color_info.num_components;
+    int                     num_comps = pdht->num_dev_comp;
     int                     i, code = 0;
     bool                    used_default = false;
     int                     lcm_width = 1, lcm_height = 1;
@@ -952,8 +984,8 @@ gx_imager_dev_ht_install(
                           &st_ht_order_component_element,
                           "gx_imager_dev_ht_install(components)" );
     if (dht.components == NULL)
-	return_error(pis->memory, gs_error_VMerror);
-    dht.num_comp = num_comps;
+	return_error(gs_error_VMerror);
+    dht.num_comp = dht.num_dev_comp = num_comps;
     /* lcm_width, lcm_height are filled in later */
 
     /* initialize the components array */
@@ -1062,7 +1094,7 @@ gx_imager_dev_ht_install(
                 code = gs_error_VMerror;
             else
                 porder->wts = wts;
-        } else {
+        } else if (porder->wts == 0) {
             uint   w = porder->width, h = porder->full_height;
             int    dw = igcd(lcm_width, w), dh = igcd(lcm_height, h);
 
@@ -1154,24 +1186,15 @@ gx_imager_dev_ht_install(
                      comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS  ) {
                     if (p_s_order->wse != 0)
                         gs_wts_free_enum(p_s_order->wse);
-                    /* FIXME - clearing pointers is fine if the
-                       halftone was moved but if it was copied
-                       clearing results in a memory leak */
                     memset(p_s_order, 0, sizeof(*p_s_order));
                 } else if ( comp_num == GX_DEVICE_COLOR_MAX_COMPONENTS &&
                             used_default                                 )
-                    /* FIXME - clearing pointers is fine if the
-                       halftone was moved but if it was copied
-                       clearing results in a memory leak */
                     memset(p_s_order, 0, sizeof(*p_s_order));
             }
         }
         if (used_default) {
             if (wse0 != 0)
                 gs_wts_free_enum(wse0);
-            /* FIXME - clearing pointers is fine if the
-               halftone was moved but if it was copied
-               clearing results in a memory leak */
             memset(&pdht->order, 0, sizeof(pdht->order));
         }
 
@@ -1213,13 +1236,14 @@ gx_ht_install(gs_state * pgs, const gs_halftone * pht,
     gs_halftone *new_ht;
     int code;
 
+    pdht->num_dev_comp = pgs->device->color_info.num_components;
     if (old_ht != 0 && old_ht->rc.memory == mem &&
 	old_ht->rc.ref_count == 1
 	)
 	new_ht = old_ht;
     else
 	rc_alloc_struct_1(new_ht, gs_halftone, &st_halftone,
-			  mem, return_error(mem, gs_error_VMerror),
+			  mem, return_error(gs_error_VMerror),
 			  "gx_ht_install(new halftone)");
     code = gx_imager_dev_ht_install((gs_imager_state *) pgs,
 			     pdht, pht->type, gs_currentdevice_inline(pgs));
@@ -1236,7 +1260,7 @@ gx_ht_install(gs_state * pgs, const gs_halftone * pht,
     gx_device_halftone_release(pdht, pdht->rc.memory);
 
     if (new_ht != old_ht)
-	rc_decrement(mem, old_ht, "gx_ht_install(old halftone)");
+	rc_decrement(old_ht, "gx_ht_install(old halftone)");
     {
 	rc_header rc;
 
@@ -1254,7 +1278,7 @@ gx_ht_install(gs_state * pgs, const gs_halftone * pht,
  * A value of -1 indicates that the name is not valid.
  */
 #define check_colorant_name(name, dev) \
-   ((*dev_proc(dev, get_color_comp_index)) (dev, name, strlen(name), 0))
+   ((*dev_proc(dev, get_color_comp_index)) (dev, name, strlen(name), NO_NAME_TYPE))
 
 /* Reestablish the effective transfer functions, taking into account */
 /* any overrides from halftone dictionaries. */

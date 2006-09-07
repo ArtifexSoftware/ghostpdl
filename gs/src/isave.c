@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Save/restore manager for Ghostscript interpreter */
 #include "ghost.h"
 #include "memory_.h"
@@ -26,8 +27,10 @@
 #include "isstate.h"
 #include "store.h"		/* for ref_assign */
 #include "ivmspace.h"
+#if NO_INVISIBLE_LEVELS
+#include "igc.h"
+#endif
 #include "gsutil.h"		/* gs_next_ids prototype */
-
 
 /* Structure descriptor */
 private_st_alloc_save();
@@ -148,10 +151,14 @@ private const long min_inner_chunk_space = sizeof(chunk_head_t) + 500;
 private void
 print_save(const char *str, uint spacen, const alloc_save_t *sav)
 {
-  if_debug5(sav->state.stable_memory, 
-	    'u', "[u]%s space %u 0x%lx: cdata = 0x%lx, id = %lu\n",\
+  if_debug5('u', "[u]%s space %u 0x%lx: cdata = 0x%lx, id = %lu\n",\
 	    str, spacen, (ulong)sav, (ulong)sav->client_data, (ulong)sav->id);
 }
+
+#if NO_INVISIBLE_LEVELS
+/* A link to igcref.c . */
+ptr_proc_reloc(igc_reloc_ref_ptr_nocheck, ref_packed);
+#endif
 
 /*
  * Structure for saved change chain for save/restore.  Because of the
@@ -165,6 +172,9 @@ struct alloc_change_s {
     ref contents;
 #define AC_OFFSET_STATIC (-2)	/* static object */
 #define AC_OFFSET_REF (-1)	/* dynamic ref */
+#if NO_INVISIBLE_LEVELS
+#define AC_OFFSET_ALLOCATED (-3) /* a newly allocated ref array */
+#endif
     short offset;		/* if >= 0, offset within struct */
 };
 
@@ -185,7 +195,18 @@ case 1:
     if (ptr->offset >= 0)
 	ENUM_RETURN((byte *) ptr->where - ptr->offset);
     else
+#if NO_INVISIBLE_LEVELS
+	if (ptr->offset != AC_OFFSET_ALLOCATED)
+	    ENUM_RETURN_REF(ptr->where);
+	else {
+	    /* Don't enumerate ptr->where, because it 
+	       needs a special processing with 
+	       alloc_save__filter_changes. */
+    	    ENUM_RETURN(0);
+	}
+#else
 	ENUM_RETURN_REF(ptr->where);
+#endif
 case 2:
     ENUM_RETURN_REF(&ptr->contents);
 ENUM_PTRS_END
@@ -198,6 +219,26 @@ private RELOC_PTRS_WITH(change_reloc_ptrs, alloc_change_t *ptr)
 	case AC_OFFSET_REF:
 	    RELOC_REF_PTR_VAR(ptr->where);
 	    break;
+#if NO_INVISIBLE_LEVELS
+	case AC_OFFSET_ALLOCATED:
+	    /* We know that ptr->where may point to an unmarked object
+	       because change_enum_ptrs skipped it,
+	       and we know it always points to same space 
+	       because we took a special care when calling alloc_save_change_alloc.
+	       Therefore we must skip the check for the mark,
+	       which would happen if we call the regular relocation function
+	       igc_reloc_ref_ptr from RELOC_REF_PTR_VAR. 
+	       Calling igc_reloc_ref_ptr_nocheck instead. */
+	    {	/* A sanity check. */
+		obj_header_t *pre = (obj_header_t *)ptr->where - 1, *pre1 = 0;
+
+		if (pre->o_type != &st_refs)
+		    pre1->o_type = 0; /* issue a segfault. */
+	    }
+	    if (ptr->where != 0 && !gcst->relocating_untraced)
+		ptr->where = igc_reloc_ref_ptr_nocheck(ptr->where, gcst);
+	    break;
+#endif
 	default:
 	    {
 		byte *obj = (byte *) ptr->where - ptr->offset;
@@ -221,25 +262,25 @@ gs_private_st_complex_only(st_alloc_change, alloc_change_t, "alloc_change",
 /* Debugging printout */
 #ifdef DEBUG
 private void
-alloc_save_print(const gs_memory_t *mem, alloc_change_t * cp, bool print_current)
+alloc_save_print(alloc_change_t * cp, bool print_current)
 {
-    dprintf2(mem, " 0x%lx: 0x%lx: ", (ulong) cp, (ulong) cp->where);
+    dprintf2(" 0x%lx: 0x%lx: ", (ulong) cp, (ulong) cp->where);
     if (r_is_packed(&cp->contents)) {
 	if (print_current)
-	    dprintf2(mem, "saved=%x cur=%x\n", *(ref_packed *) & cp->contents,
+	    dprintf2("saved=%x cur=%x\n", *(ref_packed *) & cp->contents,
 		     *cp->where);
 	else
-	    dprintf1(mem, "%x\n", *(ref_packed *) & cp->contents);
+	    dprintf1("%x\n", *(ref_packed *) & cp->contents);
     } else {
 	if (print_current)
-	    dprintf6(mem, "saved=%x %x %lx cur=%x %x %lx\n",
+	    dprintf6("saved=%x %x %lx cur=%x %x %lx\n",
 		     r_type_attrs(&cp->contents), r_size(&cp->contents),
 		     (ulong) cp->contents.value.intval,
 		     r_type_attrs((ref *) cp->where),
 		     r_size((ref *) cp->where),
 		     (ulong) ((ref *) cp->where)->value.intval);
 	else
-	    dprintf3(mem, "%x %x %lx\n",
+	    dprintf3("%x %x %lx\n",
 		     r_type_attrs(&cp->contents), r_size(&cp->contents),
 		     (ulong) cp->contents.value.intval);
     }
@@ -247,10 +288,13 @@ alloc_save_print(const gs_memory_t *mem, alloc_change_t * cp, bool print_current
 #endif
 
 /* Forward references */
-private void restore_resources(alloc_save_t *, gs_ref_memory_t *);
+private int  restore_resources(alloc_save_t *, gs_ref_memory_t *);
 private void restore_free(gs_ref_memory_t *);
-private long save_set_new(gs_ref_memory_t *, bool);
-private void save_set_new_changes(gs_ref_memory_t *, bool);
+private long save_set_new(gs_ref_memory_t *, bool, bool);
+private void save_set_new_changes(gs_ref_memory_t *, bool, bool);
+#if NO_INVISIBLE_LEVELS
+private bool check_l_mark(void *obj);
+#endif
 
 /* Initialize the save/restore machinery. */
 void
@@ -335,8 +379,9 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
     /* can have the attribute set are the ones on the changes chain, */
     /* and ones in objects allocated since the last save. */
     if (lmem->save_level > 1) {
-	long scanned = save_set_new(&lsave->state, false);
+	long scanned = save_set_new(&lsave->state, false, true);
 
+#if !NO_INVISIBLE_LEVELS
 	if ((lsave->state.total_scanned += scanned) > max_repeated_scan) {
 	    /* Do a second, invisible save. */
 	    alloc_save_t *rsave;
@@ -344,11 +389,18 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 	    rsave = alloc_save_space(lmem, dmem, 0L);
 	    if (rsave != 0) {
 		rsave->client_data = cdata;
+#if 0 /* Bug 688153 */
 		rsave->id = lsave->id;
 		print_save("save", lmem->space, rsave);
 		lsave->id = 0;	/* mark as invisible */
 		rsave->state.save_level--; /* ditto */
 		lsave->client_data = 0;
+#else
+		rsave->id = 0;  /* mark as invisible */
+		print_save("save", lmem->space, rsave);
+		rsave->state.save_level--; /* ditto */
+		rsave->client_data = 0;
+#endif
 		/* Inherit the allocated space count -- */
 		/* we need this for triggering a GC. */
 		rsave->state.inherited =
@@ -357,6 +409,9 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 		print_save("save", lmem->space, lsave);
 	    }
 	}
+#else
+	(void)scanned;
+#endif
     }
     alloc_set_in_save(dmem);
     return sid;
@@ -389,8 +444,7 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
 		break;		/* maybe should fail */
 	    alloc_init_chunk(inner, cp->cbot, cp->ctop, cp->sreloc != 0, cp);
 	    alloc_link_chunk(inner, mem);
-	    if_debug2((const gs_memory_t *)mem, 
-		      'u', "[u]inner chunk: cbot=0x%lx ctop=0x%lx\n",
+	    if_debug2('u', "[u]inner chunk: cbot=0x%lx ctop=0x%lx\n",
 		      (ulong) inner->cbot, (ulong) inner->ctop);
 	    if (cp == save_mem.pcc)
 		new_pcc = inner;
@@ -401,8 +455,7 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
 
     save = gs_alloc_struct((gs_memory_t *) mem, alloc_save_t,
 			   &st_alloc_save, "alloc_save_space(save)");
-    if_debug2((const gs_memory_t *)mem, 
-	      'u', "[u]save space %u at 0x%lx\n",
+    if_debug2('u', "[u]save space %u at 0x%lx\n",
 	      mem->space, (ulong) save);
     if (save == 0) {
 	/* Free the inner chunk structures.  This is the easiest way. */
@@ -416,8 +469,7 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
     save->is_current = (dmem->current == mem);
     save->id = sid;
     mem->saved = save;
-    if_debug2((const gs_memory_t *)mem, 
-	      'u', "[u%u]file_save 0x%lx\n",
+    if_debug2('u', "[u%u]file_save 0x%lx\n",
 	      mem->space, (ulong) mem->streams);
     mem->streams = 0;
     mem->total_scanned = 0;
@@ -449,7 +501,7 @@ alloc_save_change_in(gs_ref_memory_t *mem, const ref * pcont,
     else if (r_is_struct(pcont))
 	cp->offset = (byte *) where - (byte *) pcont->value.pstruct;
     else {
-	lprintf3((const gs_memory_t *)mem, "Bad type %u for save!  pcont = 0x%lx, where = 0x%lx\n",
+	lprintf3("Bad type %u for save!  pcont = 0x%lx, where = 0x%lx\n",
 		 r_type(pcont), (ulong) pcont, (ulong) where);
 	gs_abort((const gs_memory_t *)mem);
     }
@@ -462,8 +514,8 @@ alloc_save_change_in(gs_ref_memory_t *mem, const ref * pcont,
     mem->changes = cp;
 #ifdef DEBUG
     if (gs_debug_c('U')) {
-	dlprintf1((const gs_memory_t *)mem, "[U]save(%s)", client_name_string(cname));
-	alloc_save_print((const gs_memory_t *)mem, cp, false);
+	dlprintf1("[U]save(%s)", client_name_string(cname));
+	alloc_save_print(cp, false);
     }
 #endif
     return 0;
@@ -478,6 +530,85 @@ alloc_save_change(gs_dual_memory_t * dmem, const ref * pcont,
 
     return alloc_save_change_in(mem, pcont, where, cname);
 }
+
+#if NO_INVISIBLE_LEVELS
+/* Allocate a structure for recording an allocation event. */
+int
+alloc_save_change_alloc(gs_ref_memory_t *mem, client_name_t cname, ref_packed ***ppr)
+{
+    register alloc_change_t *cp;
+
+    if (mem->new_mask == 0)
+	return 0;		/* no saving */
+    cp = gs_alloc_struct((gs_memory_t *)mem, alloc_change_t,
+			 &st_alloc_change, "alloc_save_change");
+    if (cp == 0)
+	return_error(e_VMerror);
+    cp->next = mem->changes;
+    cp->where = 0;
+    cp->offset = AC_OFFSET_ALLOCATED;
+    make_null(&cp->contents);
+    mem->changes = cp;
+    *ppr = &cp->where;
+    return 1;
+}
+
+/* Remove an AC_OFFSET_ALLOCATED element. */
+void
+alloc_save_remove(gs_ref_memory_t *mem, ref_packed *obj, client_name_t cname)
+{
+    alloc_change_t **cpp = &mem->changes;
+    
+    for (; *cpp != NULL;) {
+	alloc_change_t *cp = *cpp;
+
+	if (cp->offset == AC_OFFSET_ALLOCATED && cp->where == obj) {
+	    if (mem->scan_limit == cp)
+		mem->scan_limit = cp->next;
+	    *cpp = cp->next;
+	    gs_free_object((gs_memory_t *)mem, cp, "alloc_save_remove");
+	} else
+	    cpp = &(*cpp)->next;
+    }
+}
+
+/* Filter save change lists. */
+private inline void
+alloc_save__filter_changes_in_space(gs_ref_memory_t *mem)
+{
+    /* This is a special function, which is called
+       from the garbager after setting marks and before collecting
+       unused space. Therefore it just resets marks for
+       elements being released instead releasing them really. */
+    alloc_change_t **cpp = &mem->changes;
+    
+    for (; *cpp != NULL; ) {
+	alloc_change_t *cp = *cpp;
+
+	if (cp->offset == AC_OFFSET_ALLOCATED && !check_l_mark(cp->where)) {
+	    obj_header_t *pre = (obj_header_t *)cp - 1;
+
+	    *cpp = cp->next;
+	    cp->where = 0;
+	    if (mem->scan_limit == cp)
+		mem->scan_limit = cp->next;
+	    o_set_unmarked(pre);
+	} else
+	    cpp = &(*cpp)->next;
+    }
+}
+
+/* Filter save change lists. */
+void
+alloc_save__filter_changes(gs_ref_memory_t *memory)
+{
+    gs_ref_memory_t *mem = memory;
+
+    for  (; mem; mem = &mem->saved->state)
+	alloc_save__filter_changes_in_space(mem);
+}
+
+#endif
 
 /* Return (the id of) the innermost externally visible save object, */
 /* i.e., the innermost save with a non-zero ID. */
@@ -506,8 +637,7 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
     const char *const ptr = (const char *)vptr;
     register const gs_ref_memory_t *mem = save->space_local;
 
-    if_debug2((const gs_memory_t *)mem, 
-	      'U', "[U]is_since_save 0x%lx, 0x%lx:\n",
+    if_debug2('U', "[U]is_since_save 0x%lx, 0x%lx:\n",
 	      (ulong) ptr, (ulong) save);
     if (mem->saved == 0) {	/* This is a special case, the final 'restore' from */
 	/* alloc_restore_all. */
@@ -518,16 +648,15 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
     for (;; mem = &mem->saved->state) {
 	const chunk_t *cp;
 
-	if_debug1((const gs_memory_t *)mem, 'U', "[U]checking mem=0x%lx\n", (ulong) mem);
+	if_debug1('U', "[U]checking mem=0x%lx\n", (ulong) mem);
 	for (cp = mem->cfirst; cp != 0; cp = cp->cnext) {
 	    if (ptr_is_within_chunk(ptr, cp)) {
-		if_debug3((const gs_memory_t *)mem, 
-			  'U', "[U+]in new chunk 0x%lx: 0x%lx, 0x%lx\n",
+		if_debug3('U', "[U+]in new chunk 0x%lx: 0x%lx, 0x%lx\n",
 			  (ulong) cp,
 			  (ulong) cp->cbase, (ulong) cp->cend);
 		return true;
 	    }
-	    if_debug1((const gs_memory_t *)mem, 'U', "[U-]not in 0x%lx\n", (ulong) cp);
+	    if_debug1('U', "[U-]not in 0x%lx\n", (ulong) cp);
 	}
 	if (mem->saved == save) {	/* We've checked all the more recent saves, */
 	    /* must be OK. */
@@ -536,24 +665,22 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
     }
 
     /*
-     * If we're about to do a global restore (save level = 1),
+     * If we're about to do a global restore (a restore to the level 0),
      * and there is only one context using this global VM
      * (the normal case, in which global VM is saved by the
      * outermost save), we also have to check the global save.
      * Global saves can't be nested, which makes things easy.
      */
-    if (mem->save_level == 1 &&
+    if (save->state.save_level == 0 /* Restoring to save level 0 - see bug 688157, 688161 */ &&
 	(mem = save->space_global) != save->space_local &&
 	save->space_global->num_contexts == 1
 	) {
 	const chunk_t *cp;
 
-	if_debug1((const gs_memory_t *)mem, 
-		  'U', "[U]checking global mem=0x%lx\n", (ulong) mem);
+	if_debug1('U', "[U]checking global mem=0x%lx\n", (ulong) mem);
 	for (cp = mem->cfirst; cp != 0; cp = cp->cnext)
 	    if (ptr_is_within_chunk(ptr, cp)) {
-		if_debug3((const gs_memory_t *)mem, 
-			  'U', "[U+]  new chunk 0x%lx: 0x%lx, 0x%lx\n",
+		if_debug3('U', "[U+]  new chunk 0x%lx: 0x%lx, 0x%lx\n",
 			  (ulong) cp, (ulong) cp->cbase, (ulong) cp->cend);
 		return true;
 	    }
@@ -579,12 +706,16 @@ alloc_name_is_since_save(const gs_memory_t *mem,
 }
 bool
 alloc_name_index_is_since_save(const gs_memory_t *mem,
-			       uint nidx, const alloc_save_t * save)
+			       uint nidx, const alloc_save_t *save)
 {
-    ref nref;
+    const name_string_t *pnstr;
 
-    nref.value.pname = name_index_ptr(mem, nidx);
-    return alloc_name_is_since_save(mem, &nref, save);
+    if (!save->restore_names)
+	return false;
+    pnstr = names_index_string_inline(mem->gs_lib_ctx->gs_name_table, nidx);
+    if (pnstr->foreign_string)
+	return false;
+    return alloc_is_since_save(pnstr->string_bytes, save);
 }
 
 /* Check whether any names have been created since a given save */
@@ -631,7 +762,7 @@ alloc_save_client_data(const alloc_save_t * save)
 private void restore_finalize(gs_ref_memory_t *);
 private void restore_space(gs_ref_memory_t *, gs_dual_memory_t *);
 
-bool
+int
 alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 {
     /* Get save->space_* now, because the save object will be freed. */
@@ -639,6 +770,7 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
     gs_ref_memory_t *gmem = save->space_global;
     gs_ref_memory_t *mem = lmem;
     alloc_save_t *sprev;
+    int code;
 
     /* Finalize all objects before releasing resources or undoing changes. */
     do {
@@ -667,7 +799,9 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 
 	sprev = mem->saved;
 	sid = sprev->id;
-	restore_resources(sprev, mem);	/* release other resources */
+	code = restore_resources(sprev, mem);	/* release other resources */
+	if (code < 0)
+	    return code;
 	restore_space(mem, dmem);	/* release memory */
 	if (sid != 0)
 	    break;
@@ -679,12 +813,14 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	/* need to restore global VM. */
 	mem = gmem;
 	if (mem != lmem && mem->saved != 0) {
-	    restore_resources(mem->saved, mem);
+	    code = restore_resources(mem->saved, mem);
+	    if (code < 0)
+		return code;
 	    restore_space(mem, dmem);
 	}
 	alloc_set_not_in_save(dmem);
     } else {			/* Set the l_new attribute in all slots that are now new. */
-	save_set_new(mem, true);
+	save_set_new(mem, true, false);
     }
 
     return sprev == save;
@@ -706,9 +842,14 @@ restore_space(gs_ref_memory_t * mem, gs_dual_memory_t *dmem)
 	while (cp) {
 #ifdef DEBUG
 	    if (gs_debug_c('U')) {
-		dlputs((const gs_memory_t *)mem, "[U]restore");
-		alloc_save_print((const gs_memory_t *)mem, cp, true);
+		dlputs("[U]restore");
+		alloc_save_print(cp, true);
 	    }
+#endif
+#if NO_INVISIBLE_LEVELS
+	    if (cp->offset == AC_OFFSET_ALLOCATED)
+		DO_NOTHING;
+	    else
 #endif
 	    if (r_is_packed(&cp->contents))
 		*cp->where = *(ref_packed *) & cp->contents;
@@ -742,7 +883,7 @@ restore_space(gs_ref_memory_t * mem, gs_dual_memory_t *dmem)
 
 /* Restore to the initial state, releasing all resources. */
 /* The allocator is no longer usable after calling this routine! */
-void
+int
 alloc_restore_all(gs_dual_memory_t * dmem)
 {
     /*
@@ -753,10 +894,14 @@ alloc_restore_all(gs_dual_memory_t * dmem)
     gs_ref_memory_t *gmem = dmem->space_global;
     gs_ref_memory_t *smem = dmem->space_system;
     gs_ref_memory_t *mem;
+    int code;
 
     /* Restore to a state outside any saves. */
-    while (lmem->save_level != 0)
-	discard(alloc_restore_step_in(dmem, lmem->saved));
+    while (lmem->save_level != 0) {
+	code = alloc_restore_step_in(dmem, lmem->saved);
+	if (code < 0)
+	    return code;
+    }
 
     /* Finalize memory. */
     restore_finalize(lmem);
@@ -776,7 +921,9 @@ alloc_restore_all(gs_dual_memory_t * dmem)
 
 	empty_save.spaces = dmem->spaces;
 	empty_save.restore_names = false;	/* don't bother to release */
-	restore_resources(&empty_save, NULL);
+	code = restore_resources(&empty_save, NULL);
+	if (code < 0)
+	    return code;
     }
 
     /* Finally, release memory. */
@@ -791,7 +938,7 @@ alloc_restore_all(gs_dual_memory_t * dmem)
 	}
     }
     restore_free(smem);
-
+    return 0;
 }
 
 /*
@@ -812,8 +959,7 @@ restore_finalize(gs_ref_memory_t * mem)
 	    struct_proc_finalize((*finalize)) =
 	    pre->o_type->finalize;
 	if (finalize != 0) {
-	    if_debug2((const gs_memory_t *)mem, 
-		      'u', "[u]restore finalizing %s 0x%lx\n",
+	    if_debug2('u', "[u]restore finalizing %s 0x%lx\n",
 		      struct_type_name_string(pre->o_type),
 		      (ulong) (pre + 1));
 	    (*finalize) (pre + 1);
@@ -824,25 +970,28 @@ restore_finalize(gs_ref_memory_t * mem)
 }
 
 /* Release resources for a restore */
-private void
+private int
 restore_resources(alloc_save_t * sprev, gs_ref_memory_t * mem)
 {
+    int code;
 #ifdef DEBUG
     if (mem) {
 	/* Note restoring of the file list. */
-	if_debug4((const gs_memory_t *)mem, 
-		  'u', "[u%u]file_restore 0x%lx => 0x%lx for 0x%lx\n",
+	if_debug4('u', "[u%u]file_restore 0x%lx => 0x%lx for 0x%lx\n",
 		  mem->space, (ulong)mem->streams,
 		  (ulong)sprev->state.streams, (ulong) sprev);
     }
 #endif
 
     /* Remove entries from font and character caches. */
-    font_restore(sprev);
+    code = font_restore(sprev);
+    if (code < 0)
+	return code;
 
     /* Adjust the name table. */
     if (sprev->restore_names)
 	names_restore(mem->gs_lib_ctx->gs_name_table, sprev);
+    return 0;
 }
 
 /* Release memory for a restore. */
@@ -873,7 +1022,7 @@ alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	if (mem->save_level != 0) {
 	    alloc_change_t *chp = mem->changes;
 
-	    save_set_new(&sprev->state, true);
+	    save_set_new(&sprev->state, true, false);
 	    /* Concatenate the changes chains. */
 	    if (chp == 0)
 		mem->changes = sprev->state.changes;
@@ -886,7 +1035,7 @@ alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	    combine_space(mem);	/* combine memory */
 	} else {
 	    forget_changes(mem);
-	    save_set_new(mem, false);
+	    save_set_new(mem, false, false);
 	    file_forget_save(mem);
 	    combine_space(mem);	/* combine memory */
 	    /* This is the outermost save, which might also */
@@ -894,7 +1043,7 @@ alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	    mem = save->space_global;
 	    if (mem != save->space_local && mem->saved != 0) {
 		forget_changes(mem);
-		save_set_new(mem, false);
+		save_set_new(mem, false, false);
 		file_forget_save(mem);
 		combine_space(mem);
 	    }
@@ -996,8 +1145,12 @@ forget_changes(gs_ref_memory_t * mem)
     for (; chp; chp = next) {
 	ref_packed *prp = chp->where;
 
-	if_debug1((const gs_memory_t *)mem, 
-		  'U', "[U]forgetting change 0x%lx\n", (ulong) chp);
+	if_debug1('U', "[U]forgetting change 0x%lx\n", (ulong) chp);
+#if NO_INVISIBLE_LEVELS
+	if (chp->offset == AC_OFFSET_ALLOCATED)
+	    DO_NOTHING;
+	else
+#endif
 	if (!r_is_packed(prp))
 	    r_clear_attrs((ref *) prp, l_new);
 	next = chp->next;
@@ -1013,8 +1166,7 @@ file_forget_save(gs_ref_memory_t * mem)
     stream *streams = mem->streams;
     stream *saved_streams = save->state.streams;
 
-    if_debug4((const gs_memory_t *)mem, 
-	      'u', "[u%d]file_forget_save 0x%lx + 0x%lx for 0x%lx\n",
+    if_debug4('u', "[u%d]file_forget_save 0x%lx + 0x%lx for 0x%lx\n",
 	      mem->space, (ulong) streams, (ulong) saved_streams,
 	      (ulong) save);
     if (streams == 0)
@@ -1027,33 +1179,13 @@ file_forget_save(gs_ref_memory_t * mem)
     }
 }
 
-/* ------ Internal routines ------ */
-
-/* Set or reset the l_new attribute in every relevant slot. */
-/* This includes every slot on the current change chain, */
-/* and every (ref) slot allocated at this save level. */
-/* Return the number of bytes of data scanned. */
-private long
-save_set_new(gs_ref_memory_t * mem, bool to_new)
-{
-    long scanned = 0;
-
-    /* Handle the change chain. */
-    save_set_new_changes(mem, to_new);
-
-    /* Handle newly allocated ref objects. */
-    SCAN_MEM_CHUNKS(mem, cp) {
-	if (cp->has_refs) {
-	    bool has_refs = false;
-
-	    SCAN_CHUNK_OBJECTS(cp)
-		DO_ALL
-		if_debug3((const gs_memory_t *)mem, 'U', "[U]set_new scan(0x%lx(%u), %d)\n",
-			  (ulong) pre, size, to_new);
-	    if (pre->o_type == &st_refs) {
-		/* These are refs, scan them. */
-		ref_packed *prp = (ref_packed *) (pre + 1);
-		ref_packed *next = (ref_packed *) ((char *)prp + size);
+private inline uint
+mark_allocated(void *obj, bool to_new)
+{   
+    obj_header_t *pre = (obj_header_t *)obj - 1;
+    uint size = pre_obj_contents_size(pre);
+    ref_packed *prp = (ref_packed *) (pre + 1);
+    ref_packed *next = (ref_packed *) ((char *)prp + size);
 #ifdef ALIGNMENT_ALIASING_BUG
 		ref *rpref;
 # define RP_REF(rp) (rpref = (ref *)rp, rpref)
@@ -1061,35 +1193,104 @@ save_set_new(gs_ref_memory_t * mem, bool to_new)
 # define RP_REF(rp) ((ref *)rp)
 #endif
 
-		if_debug2((const gs_memory_t *)mem, 'U', "[U]refs 0x%lx to 0x%lx\n",
-			  (ulong) prp, (ulong) next);
-		has_refs = true;
-		scanned += size;
-		/* We know that every block of refs ends with */
-		/* a full-size ref, so we only need the end check */
-		/* when we encounter one of those. */
-		if (to_new)
-		    while (1) {
-			if (r_is_packed(prp))
-			    prp++;
-			else {
-			    RP_REF(prp)->tas.type_attrs |= l_new;
-			    prp += packed_per_ref;
-			    if (prp >= next)
-				break;
-			}
-		} else
-		    while (1) {
-			if (r_is_packed(prp))
-			    prp++;
-			else {
-			    RP_REF(prp)->tas.type_attrs &= ~l_new;
-			    prp += packed_per_ref;
-			    if (prp >= next)
-				break;
-			}
-		    }
+    if (pre->o_type != &st_refs) {
+	/* Must not happen. Can't continue. Emit a crash. */
+	int i = *(int *)0;
+
+	mark_allocated((void *)i, false); /* an untrivial use of i 
+					     against code optimization. */
+    }
+    /* We know that every block of refs ends with */
+    /* a full-size ref, so we only need the end check */
+    /* when we encounter one of those. */
+    if (to_new)
+	while (1) {
+	    if (r_is_packed(prp))
+		prp++;
+	    else {
+		RP_REF(prp)->tas.type_attrs |= l_new;
+		prp += packed_per_ref;
+		if (prp >= next)
+		    break;
+	    }
+    } else
+	while (1) {
+	    if (r_is_packed(prp))
+		prp++;
+	    else {
+		RP_REF(prp)->tas.type_attrs &= ~l_new;
+		prp += packed_per_ref;
+		if (prp >= next)
+		    break;
+	    }
+	}
 #undef RP_REF
+    return size;
+}
+
+#if NO_INVISIBLE_LEVELS
+/* Check if a block contains refs marked by garbager. */
+private bool
+check_l_mark(void *obj)
+{   
+    obj_header_t *pre = (obj_header_t *)obj - 1;
+    uint size = pre_obj_contents_size(pre);
+    ref_packed *prp = (ref_packed *) (pre + 1);
+    ref_packed *next = (ref_packed *) ((char *)prp + size);
+#ifdef ALIGNMENT_ALIASING_BUG
+		ref *rpref;
+# define RP_REF(rp) (rpref = (ref *)rp, rpref)
+#else
+# define RP_REF(rp) ((ref *)rp)
+#endif
+
+    /* We know that every block of refs ends with */
+    /* a full-size ref, so we only need the end check */
+    /* when we encounter one of those. */
+    while (1) {
+	if (r_is_packed(prp)) {
+	    if (r_has_pmark(prp))
+		return true;
+	    prp++;
+	} else {
+	    if (r_has_attr(RP_REF(prp), l_mark))
+		return true;
+	    prp += packed_per_ref;
+	    if (prp >= next)
+		return false;
+	}
+    }
+#undef RP_REF
+}
+#endif
+
+/* Set or reset the l_new attribute in every relevant slot. */
+/* This includes every slot on the current change chain, */
+/* and every (ref) slot allocated at this save level. */
+/* Return the number of bytes of data scanned. */
+private long
+save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit)
+{
+    long scanned = 0;
+
+    /* Handle the change chain. */
+    save_set_new_changes(mem, to_new, set_limit);
+
+#if !NO_INVISIBLE_LEVELS
+    /* Handle newly allocated ref objects. */
+    SCAN_MEM_CHUNKS(mem, cp) {
+	if (cp->has_refs) {
+	    bool has_refs = false;
+
+	    SCAN_CHUNK_OBJECTS(cp)
+		DO_ALL
+		if_debug3('U', "[U]set_new scan(0x%lx(%u), %d)\n",
+			  (ulong) pre, size, to_new);
+	    if (pre->o_type == &st_refs) {
+		/* These are refs, scan them. */
+		ref_packed *prp = (ref_packed *) (pre + 1);
+
+		scanned += mark_allocated(prp, to_new);
 	    } else
 		scanned += sizeof(obj_header_t);
 	    END_OBJECTS_SCAN
@@ -1097,30 +1298,53 @@ save_set_new(gs_ref_memory_t * mem, bool to_new)
 	}
     }
     END_CHUNKS_SCAN
-	if_debug2((const gs_memory_t *)mem, 
-		  'u', "[u]set_new (%s) scanned %ld\n",
+	if_debug2('u', "[u]set_new (%s) scanned %ld\n",
 		  (to_new ? "restore" : "save"), scanned);
+#endif
     return scanned;
 }
 
 /* Set or reset the l_new attribute on the changes chain. */
 private void
-save_set_new_changes(gs_ref_memory_t * mem, bool to_new)
+save_set_new_changes(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 {
     register alloc_change_t *chp = mem->changes;
     register uint new = (to_new ? l_new : 0);
+#if NO_INVISIBLE_LEVELS
+    long scanned = mem->total_scanned;
+#endif
 
     for (; chp; chp = chp->next) {
-	ref_packed *prp = chp->where;
+#if NO_INVISIBLE_LEVELS
+	if (chp->offset == AC_OFFSET_ALLOCATED) {
+	    if (chp->where != 0)
+		scanned += mark_allocated((void *)chp->where, to_new);
+	} else
+#endif
+	{
+	    ref_packed *prp = chp->where;
 
-	if_debug3((const gs_memory_t *)mem, 
-		  'U', "[U]set_new 0x%lx: (0x%lx, %d)\n",
-		  (ulong)chp, (ulong)prp, new);
-	if (!r_is_packed(prp)) {
-	    ref *const rp = (ref *) prp;
+	    if_debug3('U', "[U]set_new 0x%lx: (0x%lx, %d)\n",
+		    (ulong)chp, (ulong)prp, new);
+	    if (!r_is_packed(prp)) {
+		ref *const rp = (ref *) prp;
 
-	    rp->tas.type_attrs =
-		(rp->tas.type_attrs & ~l_new) + new;
+		rp->tas.type_attrs =
+		    (rp->tas.type_attrs & ~l_new) + new;
+	    }
 	}
+#if NO_INVISIBLE_LEVELS
+	if (mem->scan_limit == chp)
+	    break;
+#endif
     }
+#if NO_INVISIBLE_LEVELS
+    if (set_limit) {
+	if (scanned >= max_repeated_scan) {
+	    mem->scan_limit = mem->changes;
+	    mem->total_scanned = 0;
+	} else
+	    mem->total_scanned = scanned;
+    }
+#endif
 }

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Miscellaneous support for platform facilities */
 
 #include "unistd_.h"
@@ -119,6 +120,14 @@ search_separator(const char **ip, const char *ipe, const char *item, int directi
  * directory references from the concatenation when possible.
  * The trailing zero byte is being added.
  *
+ * Returns "gp_combine_success" if OK and sets '*blen' to the length of
+ * the combined string. If the combined string is too small for the buffer
+ * length passed in (as defined by the initial value of *blen), then the
+ * "gp_combine_small_buffer" code is returned.
+ *
+ * Also tolerates/skips leading IODevice specifiers such as %os% or %rom%
+ * When there is a leading '%' in the 'fname' no other processing is done.
+ *
  * Examples : 
  *	"/gs/lib" + "../Resource/CMap/H" --> "/gs/Resource/CMap/H"
  *	"C:/gs/lib" + "../Resource/CMap/H" --> "C:/gs/Resource/CMap/H"
@@ -128,6 +137,8 @@ search_separator(const char **ip, const char *ipe, const char *item, int directi
  *		"DUA1:[GHOSTSCRIPT.RESOURCE.CMAP]H"
  *      "\\server\share/a/b///c/../d.e/./" + "../x.e/././/../../y.z/v.v" --> 
  *		"\\server\share/a/y.z/v.v"
+ *	"%rom%lib/" + "gs_init.ps" --> "%rom%lib/gs_init.ps
+ *	"" + "%rom%lib/gs_init.ps" --> "%rom%lib/gs_init.ps"
  */
 gp_file_name_combine_result
 gp_file_name_combine_generic(const char *prefix, uint plen, const char *fname, uint flen, 
@@ -146,6 +157,16 @@ gp_file_name_combine_generic(const char *prefix, uint plen, const char *fname, u
     uint rlen = gp_file_name_root(fname, flen);
     /* We need a special handling of infixes only immediately after a drive. */
 
+    if ( flen > 0 && fname[0] == '%') {
+    	/* IoDevice -- just return the fname as-is since this */
+	/* function only handles the default file system */
+	/* NOTE: %os% will subvert the normal processing of prefix and fname */
+	ip = fname;
+	*blen = flen;
+	if (!append(&bp, bpe, &ip, flen))
+	    return gp_combine_small_buffer;
+	return gp_combine_success;
+    }
     if (rlen != 0) {
         /* 'fname' is absolute, ignore the prefix. */
 	ip = fname;

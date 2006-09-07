@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Additional PostScript Level 1 path routines for Ghostscript library */
 #include "math_.h"
 #include "gx.h"
@@ -56,6 +57,30 @@ typedef struct arc_curve_params_s {
 
 /* Forward declarations */
 private int arc_add(const arc_curve_params_t *arc, bool is_quadrant);
+
+
+int
+gx_setcurrentpoint_from_path(gs_imager_state *pis, gx_path *path)
+{
+    gs_point pt;
+
+    pt.x = fixed2float(path->position.x);
+    pt.y = fixed2float(path->position.y);
+    gx_setcurrentpoint(pis, pt.x, pt.y);
+    pis->current_point_valid = true;
+    return 0;
+}
+
+private inline int
+gs_arc_add_inline(gs_state *pgs, bool cw, floatp xc, floatp yc, floatp rad, 
+		    floatp a1, floatp a2, bool add)
+{
+    int code = gs_imager_arc_add(pgs->path, (gs_imager_state *)pgs, cw, xc, yc, rad, a1, a2, add);
+
+    if (code < 0)
+	return code;
+    return gx_setcurrentpoint_from_path((gs_imager_state *)pgs, pgs->path);
+}
 
 int
 gs_arc(gs_state * pgs,
@@ -317,6 +342,8 @@ floatp ax1, floatp ay1, floatp ax2, floatp ay2, floatp arad, float retxy[4])
 	    arc.pt.x = ax1;
 	    arc.pt.y = ay1;
 	    code = arc_add(&arc, false);
+	    if (code == 0)
+		code = gx_setcurrentpoint_from_path((gs_imager_state *)pgs, pgs->path);
 	}
     }
     if (retxy != 0) {
@@ -341,9 +368,15 @@ arc_add(const arc_curve_params_t * arc, bool is_quadrant)
     int code;
 
     if ((arc->action != arc_nothing &&
-	 (code = gs_point_transform2fixed(pis->memory, &pis->ctm, x0, y0, &p0)) < 0) ||
-	(code = gs_point_transform2fixed(pis->memory, &pis->ctm, xt, yt, &pt)) < 0 ||
-	(code = gs_point_transform2fixed(pis->memory, &pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0 ||
+#if !PRECISE_CURRENTPOINT
+	 (code = gs_point_transform2fixed(&pis->ctm, x0, y0, &p0)) < 0) ||
+	(code = gs_point_transform2fixed(&pis->ctm, xt, yt, &pt)) < 0 ||
+	(code = gs_point_transform2fixed(&pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0 ||
+#else
+	 (code = gs_point_transform2fixed_rounding(&pis->ctm, x0, y0, &p0)) < 0) ||
+	(code = gs_point_transform2fixed_rounding(&pis->ctm, xt, yt, &pt)) < 0 ||
+	(code = gs_point_transform2fixed_rounding(&pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0 ||
+#endif
 	(code =
 	 (arc->action == arc_nothing ?
 	  (p0.x = path->position.x, p0.y = path->position.y, 0) :
@@ -392,7 +425,7 @@ arc_add(const arc_curve_params_t * arc, bool is_quadrant)
     p2.x = p3.x + (fixed)((pt.x - p3.x) * fraction);
     p2.y = p3.y + (fixed)((pt.y - p3.y) * fraction);
 add:
-    if_debug8(pis->memory, 'r',
+    if_debug8('r',
 	      "[r]Arc f=%f p0=(%f,%f) pt=(%f,%f) p3=(%f,%f) action=%d\n",
 	      fraction, x0, y0, xt, yt, arc->p3.x, arc->p3.y,
 	      (int)arc->action);
@@ -400,6 +433,21 @@ add:
     return gx_path_add_curve_notes(path, p0.x, p0.y, p2.x, p2.y, p3.x, p3.y,
 				   arc->notes | sn_from_arc);
 }
+
+void
+make_quadrant_arc(gs_point *p, const gs_point *c, 
+	const gs_point *p0, const gs_point *p1, double r)
+{
+    p[0].x = c->x + p0->x * r;
+    p[0].y = c->y + p0->y * r;
+    p[1].x = c->x + p0->x * r + p1->x * r * quarter_arc_fraction;
+    p[1].y = c->y + p0->y * r + p1->y * r * quarter_arc_fraction;
+    p[2].x = c->x + p0->x * r * quarter_arc_fraction + p1->x * r;
+    p[2].y = c->y + p0->y * r * quarter_arc_fraction + p1->y * r;
+    p[3].x = c->x + p1->x * r;
+    p[3].y = c->y + p1->y * r;
+}
+
 
 /* ------ Path transformers ------ */
 
@@ -459,6 +507,15 @@ gs_reversepath(gs_state * pgs)
 	gx_path_free(&rpath, "gs_reversepath");
 	return code;
     }
+    if (pgs->current_point_valid) {
+	/* Not empty. */
+	gx_setcurrentpoint(pgs, fixed2float(rpath.position.x), 
+				fixed2float(rpath.position.y));
+	if (rpath.first_subpath != 0) {
+	    pgs->subpath_start.x = fixed2float(rpath.segments->contents.subpath_current->pt.x);
+	    pgs->subpath_start.y = fixed2float(rpath.segments->contents.subpath_current->pt.y);
+	}
+    }
     gx_path_assign_free(ppath, &rpath);
     return 0;
 }
@@ -479,7 +536,7 @@ gs_upathbbox(gs_state * pgs, gs_rect * pbox, bool include_moveto)
     if (path_last_is_moveto(pgs->path) && include_moveto) {
 	gs_fixed_point pt;
 
-	gx_path_current_point_inline(pgs->memory, pgs->path, &pt);
+	gx_path_current_point_inline(pgs->path, &pt);
 	if (pt.x < fbox.p.x)
 	    fbox.p.x = pt.x;
 	if (pt.y < fbox.p.y)
@@ -494,7 +551,7 @@ gs_upathbbox(gs_state * pgs, gs_rect * pbox, bool include_moveto)
     dbox.p.y = fixed2float(fbox.p.y);
     dbox.q.x = fixed2float(fbox.q.x);
     dbox.q.y = fixed2float(fbox.q.y);
-    return gs_bbox_transform_inverse(pgs->memory, &dbox, &ctm_only(pgs), pbox);
+    return gs_bbox_transform_inverse(&dbox, &ctm_only(pgs), pbox);
 }
 
 /* ------ Enumerators ------ */
@@ -511,7 +568,7 @@ gs_path_enum_copy_init(gs_path_enum * penum, const gs_state * pgs, bool copy)
 	int code;
 
 	if (copied_path == 0)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	code = gx_path_copy(pgs->path, copied_path);
 	if (code < 0) {
 	    gx_path_free(copied_path, "gs_path_enum_init");
@@ -542,22 +599,22 @@ gs_path_enum_next(gs_path_enum * penum, gs_point ppts[3])
 	case gs_pe_closepath:
 	    break;
 	case gs_pe_curveto:
-	    if ((code = gs_point_transform_inverse(penum->memory, 
-						   fixed2float(fpts[1].x),
-						   fixed2float(fpts[1].y),
-						   &penum->mat, &ppts[1])) < 0 ||
-		(code = gs_point_transform_inverse(penum->memory, 
-						   fixed2float(fpts[2].x),
-						   fixed2float(fpts[2].y),
-						   &penum->mat, &ppts[2])) < 0)
+	    if ((code = gs_point_transform_inverse(
+						      fixed2float(fpts[1].x),
+						      fixed2float(fpts[1].y),
+					      &penum->mat, &ppts[1])) < 0 ||
+		(code = gs_point_transform_inverse(
+						      fixed2float(fpts[2].x),
+						      fixed2float(fpts[2].y),
+						&penum->mat, &ppts[2])) < 0)
 		return code;
 	    /* falls through */
 	case gs_pe_moveto:
 	case gs_pe_lineto:
-	    if ((code = gs_point_transform_inverse(penum->memory, 
-						   fixed2float(fpts[0].x),
-						   fixed2float(fpts[0].y),
-						   &penum->mat, &ppts[0])) < 0)
+	    if ((code = gs_point_transform_inverse(
+						      fixed2float(fpts[0].x),
+						      fixed2float(fpts[0].y),
+						&penum->mat, &ppts[0])) < 0)
 		return code;
 	default:		/* error */
 	    break;

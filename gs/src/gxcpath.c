@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Implementation of clipping paths, other than actual clipping */
 #include "gx.h"
 #include "gserrors.h"
@@ -19,6 +20,7 @@
 #include "gsline.h"
 #include "gxdevice.h"
 #include "gxfixed.h"
+#include "gxpaint.h"
 #include "gscoord.h"		/* needs gsmatrix.h */
 #include "gxistate.h"
 #include "gzpath.h"
@@ -134,7 +136,7 @@ cpath_alloc_list(gx_clip_rect_list ** prlist, gs_memory_t * mem,
 		 client_name_t cname)
 {
     rc_alloc_struct_1(*prlist, gx_clip_rect_list, &st_clip_rect_list, mem,
-		      return_error(mem, gs_error_VMerror), cname);
+		      return_error(gs_error_VMerror), cname);
     (*prlist)->rc.free = rc_free_cpath_list;
     return 0;
 }
@@ -144,16 +146,16 @@ gx_cpath_init_contained_shared(gx_clip_path * pcpath,
 {
     if (shared) {
 	if (shared->path.segments == &shared->path.local_segments) {
-	    lprintf1(mem, "Attempt to share (local) segments of clip path 0x%lx!\n",
+	    lprintf1("Attempt to share (local) segments of clip path 0x%lx!\n",
 		     (ulong) shared);
-	    return_error(mem, gs_error_Fatal);
+	    return_error(gs_error_Fatal);
 	}
 	*pcpath = *shared;
 	pcpath->path.memory = mem;
 	pcpath->path.allocation = path_allocated_contained;
-	rc_increment(mem, pcpath->path.segments);
-	rc_increment(mem, pcpath->rect_list);
-	rc_increment(mem, pcpath->path_list);
+	rc_increment(pcpath->path.segments);
+	rc_increment(pcpath->rect_list);
+	rc_increment(pcpath->path_list);
     } else {
 	int code = cpath_alloc_list(&pcpath->rect_list, mem, cname);
 
@@ -199,17 +201,17 @@ gx_cpath_init_local_shared(gx_clip_path * pcpath, const gx_clip_path * shared,
 {
     if (shared) {
 	if (shared->path.segments == &shared->path.local_segments) {
-	    lprintf1(mem, "Attempt to share (local) segments of clip path 0x%lx!\n",
+	    lprintf1("Attempt to share (local) segments of clip path 0x%lx!\n",
 		     (ulong) shared);
-	    return_error(mem, gs_error_Fatal);
+	    return_error(gs_error_Fatal);
 	}
 	pcpath->path = shared->path;
 	pcpath->path.allocation = path_allocated_on_stack;
-	rc_increment(mem, pcpath->path.segments);
+	rc_increment(pcpath->path.segments);
 	pcpath->rect_list = shared->rect_list;
-	rc_increment(mem, pcpath->rect_list);
+	rc_increment(pcpath->rect_list);
 	pcpath->path_list = shared->path_list;
-	rc_increment(mem, pcpath->path_list);
+	rc_increment(pcpath->path_list);
 	cpath_share_own_contents(pcpath, shared);
     } else {
 	gx_path_init_local(&pcpath->path, mem);
@@ -237,7 +239,7 @@ gx_cpath_unshare(gx_clip_path * pcpath)
 	    return code;
 	/* Copy the rectangle list. */
 /**************** NYI ****************/
-	rc_decrement(pcpath->path.memory, rlist, "gx_cpath_unshare");
+	rc_decrement(rlist, "gx_cpath_unshare");
     }
     return code;
 }
@@ -246,8 +248,8 @@ gx_cpath_unshare(gx_clip_path * pcpath)
 void
 gx_cpath_free(gx_clip_path * pcpath, client_name_t cname)
 {
-    rc_decrement(pcpath->path.memory, pcpath->rect_list, cname);
-    rc_decrement(pcpath->path.memory, pcpath->path_list, cname);
+    rc_decrement(pcpath->rect_list, cname);
+    rc_decrement(pcpath->path_list, cname);
     /* Clean up pointers for GC. */
     pcpath->rect_list = 0;
     pcpath->path_list = 0;
@@ -283,7 +285,7 @@ gx_cpath_assign_preserve(gx_clip_path * pcpto, gx_clip_path * pcpfrom)
 
 	    if (code < 0)
 		return code;
-	    rc_decrement(pcpto->path.memory, pcpto->rect_list, "gx_cpath_assign");
+	    rc_decrement(pcpto->rect_list, "gx_cpath_assign");
 	} else {
 	    /* Use pcpto's list object. */
 	    rc_free_cpath_list_local(tolist->rc.memory, tolist,
@@ -291,12 +293,13 @@ gx_cpath_assign_preserve(gx_clip_path * pcpto, gx_clip_path * pcpfrom)
 	}
 	tolist->list = fromlist->list;
 	pcpfrom->rect_list = tolist;
-	rc_increment(pcpfrom->path.memory, tolist);
+	rc_increment(tolist);
     } else {
 	/* We can use pcpfrom's list object. */
-	rc_increment(pcpfrom->path.memory, fromlist);
-	rc_decrement(pcpfrom->path.memory, pcpto->rect_list, "gx_cpath_assign");
+	rc_increment(fromlist);
+	rc_decrement(pcpto->rect_list, "gx_cpath_assign");
     }
+    rc_increment(pcpfrom->path_list);
     path = pcpto->path, *pcpto = *pcpfrom, pcpto->path = path;
     return 0;
 }
@@ -333,7 +336,7 @@ private void
 rc_free_cpath_path_list(gs_memory_t * mem, void *vplist, client_name_t cname)
 {
     gx_cpath_path_list *plist = (gx_cpath_path_list *)vplist;
-    rc_decrement(mem, plist->next, cname);
+    rc_decrement(plist->next, cname);
     gx_path_free(&plist->path, cname);
     gs_free_object(plist->path.memory, plist, cname);
 }
@@ -351,15 +354,17 @@ gx_cpath_path_list_new(gs_memory_t *mem, gx_clip_path *pcpath, int rule,
 						  &st_cpath_path_list, cname);
 
     if (pcplist == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     rc_init_free(pcplist, mem, 1, rc_free_cpath_path_list);
     if (pcpath!=NULL && !pcpath->path_valid) {
 	code = gx_path_init_contained_shared(&pcplist->path, NULL, mem, cname);
 	if (code < 0)
 	    return code;
 	code = gx_cpath_to_path(pcpath, &pcplist->path);
-    } else 
-	code = gx_path_init_contained_shared(&pcplist->path, ppfrom, mem, cname);
+    } else {
+	gx_path_init_local(&pcplist->path, mem);
+	code = gx_path_assign_preserve(&pcplist->path, ppfrom);
+    }
     if (code < 0)
 	return code;
     pcplist->next = next;
@@ -383,7 +388,7 @@ gx_cpath_to_path(gx_clip_path * pcpath, gx_path * ppath)
 
 	gx_path_init_local(&rpath, pcpath->path.memory);
 	gx_cpath_enum_init(&cenum, pcpath);
-	while ((code = gx_cpath_enum_next(pcpath->path.memory, &cenum, pts)) != 0) {
+	while ((code = gx_cpath_enum_next(&cenum, pts)) != 0) {
 	    switch (code) {
 		case gs_pe_moveto:
 		    code = gx_path_add_point(&rpath, pts[0].x, pts[0].y);
@@ -404,7 +409,7 @@ gx_cpath_to_path(gx_clip_path * pcpath, gx_path * ppath)
 		    break;
 		default:
 		    if (code >= 0)
-			code = gs_note_error(pcpath->path.memory, gs_error_unregistered);
+			code = gs_note_error(gs_error_unregistered);
 	    }
 	    if (code < 0)
 		break;
@@ -493,7 +498,7 @@ cpath_set_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox)
 
 	if (code < 0)
 	    return code;
-	rc_decrement(pcpath->path.memory, rlist, "gx_cpath_from_rectangle");
+	rc_decrement(rlist, "gx_cpath_from_rectangle");
 	rlist = pcpath->rect_list;
     }
     cpath_init_rectangle(pcpath, pbox);
@@ -517,6 +522,20 @@ gx_cpath_reset(gx_clip_path * pcpath)
     return gx_cpath_from_rectangle(pcpath, &null_rect);
 }
 
+/* If a clipping path is a rectangle, return the rectangle. */
+const gs_fixed_rect *
+cpath_is_rectangle(const gx_clip_path * pcpath)
+{
+    if (pcpath->path_valid)
+	return NULL;
+    if (pcpath->inner_box.p.x != pcpath->path.bbox.p.x ||
+	pcpath->inner_box.p.y != pcpath->path.bbox.p.y ||
+	pcpath->inner_box.q.x != pcpath->path.bbox.q.x ||
+	pcpath->inner_box.q.y != pcpath->path.bbox.q.y)
+	return NULL;
+    return &pcpath->inner_box;
+}
+
 /* Intersect a new clipping path with an old one. */
 /* Flatten the new path first (in a copy) if necessary. */
 int
@@ -526,9 +545,10 @@ gx_cpath_clip(gs_state *pgs, gx_clip_path *pcpath,
     return gx_cpath_intersect(pcpath, ppath_orig, rule,
 			      (gs_imager_state *)pgs);
 }
+
 int
-gx_cpath_intersect(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
-		   int rule, gs_imager_state *pis)
+gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
+		   int rule, gs_imager_state *pis, const gx_fill_params * params)
 {
     gx_path fpath;
     /*const*/ gx_path *ppath = ppath_orig;
@@ -562,6 +582,28 @@ gx_cpath_intersect(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
 	    new_box.q = new_box.p;
 	    changed = 1;
 	} else {
+	    if (params != NULL) {
+		/* Called from gx_default_fill_path for converting 
+		   a filling path into a clipping path.  
+		   Apply same adjustment as for filling the path. */
+		gs_fixed_point adjust = params->adjust;
+		fixed adjust_xl, adjust_xu, adjust_yl, adjust_yu;
+
+		if (adjust.x == -1)
+		    adjust_xl = adjust_xu = adjust_yl = adjust_yu = 0;
+		else {
+		    if (params->fill_zero_width)
+			gx_adjust_if_empty(&new_box, &adjust);
+		    adjust_xl = (adjust.x == fixed_half ? fixed_half - fixed_epsilon : adjust.x);
+		    adjust_yl = (adjust.y == fixed_half ? fixed_half - fixed_epsilon : adjust.y);
+		    adjust_xu = adjust.x;
+		    adjust_yu = adjust.y;
+		}
+		new_box.p.x = int2fixed(fixed2int_pixround(new_box.p.x - adjust_xl));
+		new_box.p.y = int2fixed(fixed2int_pixround(new_box.p.y - adjust_yl));
+		new_box.q.x = int2fixed(fixed2int_pixround(new_box.q.x + adjust_xu));
+		new_box.q.y = int2fixed(fixed2int_pixround(new_box.q.y + adjust_yu));
+	    }
 	    /* Intersect the two rectangles if necessary. */
 	    if (old_box.p.x > new_box.p.x)
 		new_box.p.x = old_box.p.x, ++changed;
@@ -580,7 +622,7 @@ gx_cpath_intersect(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
 	    return 0;
 	}
 	/* Release the existing path. */
-	rc_decrement(pis->memory, pcpath->path_list, "gx_cpath_intersect");
+	rc_decrement(pcpath->path_list, "gx_cpath_intersect");
 	pcpath->path_list = NULL;
 	gx_path_new(&pcpath->path);
 	ppath->bbox = new_box;
@@ -606,7 +648,8 @@ gx_cpath_intersect(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
 	    if (code < 0)
 		goto ex;
 	}
-	code = gx_cpath_intersect_path_slow(pcpath, ppath, rule, pis);
+	code = gx_cpath_intersect_path_slow(pcpath, (params != NULL ? ppath_orig : ppath), 
+			    rule, pis, params);
 	if (code < 0)
 	    goto ex;
 	if (path_valid) {
@@ -622,6 +665,14 @@ ex:
 	gx_path_free(ppath, "gx_cpath_clip");
     return code;
 }
+int
+gx_cpath_intersect(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
+		   int rule, gs_imager_state *pis)
+{
+    return gx_cpath_intersect_with_params(pcpath, ppath_orig,
+		   rule, pis, NULL);
+}
+
 
 /* Scale a clipping path by a power of 2. */
 int
@@ -738,7 +789,7 @@ gx_cpath_enum_init(gs_cpath_enum * penum, gx_clip_path * pcpath)
 /* Enumerate the next segment of a clipping path. */
 /* In general, this produces a path made up of zillions of tiny lines. */
 int
-gx_cpath_enum_next(const gs_memory_t *mem, gs_cpath_enum * penum, gs_fixed_point pts[3])
+gx_cpath_enum_next(gs_cpath_enum * penum, gs_fixed_point pts[3])
 {
     if (penum->using_path)
 	return gx_path_enum_next(&penum->path_enum, pts);
@@ -898,7 +949,7 @@ gx_cpath_enum_next(const gs_memory_t *mem, gs_cpath_enum * penum, gs_fixed_point
 		break;
 
 	    default:
-		return_error(mem, gs_error_unknownerror);
+		return_error(gs_error_unknownerror);
 	}
 
       out:			/* Store the state before exiting. */
@@ -938,11 +989,11 @@ gx_clip_list_free(gx_clip_list * clp, gs_memory_t * mem)
 
 /* Print a clipping list. */
 private void
-gx_clip_list_print(const gs_memory_t *mem, const gx_clip_list *list)
+gx_clip_list_print(const gx_clip_list *list)
 {
     const gx_clip_rect *pr;
 
-    dlprintf3(mem, "   list count=%d xmin=%d xmax=%d\n",
+    dlprintf3("   list count=%d xmin=%d xmax=%d\n",
 	     list->count, list->xmin, list->xmax);
     switch (list->count) {
 	case 0:
@@ -955,7 +1006,7 @@ gx_clip_list_print(const gs_memory_t *mem, const gx_clip_list *list)
 	    pr = list->head;
     }
     for (; pr != 0; pr = pr->next)
-	dlprintf4(mem, "   rect: (%d,%d),(%d,%d)\n",
+	dlprintf4("   rect: (%d,%d),(%d,%d)\n",
 		  pr->xmin, pr->ymin, pr->xmax, pr->ymax);
 }
 
@@ -966,22 +1017,20 @@ gx_cpath_print(const gx_clip_path * pcpath)
     if (pcpath->path_valid)
 	gx_path_print(&pcpath->path);
     else
-	dlputs(pcpath->path.memory, "   (path not valid)\n");
-    dlprintf4(pcpath->path.memory, 
-	      "   inner_box=(%g,%g),(%g,%g)\n",
+	dlputs("   (path not valid)\n");
+    dlprintf4("   inner_box=(%g,%g),(%g,%g)\n",
 	      fixed2float(pcpath->inner_box.p.x),
 	      fixed2float(pcpath->inner_box.p.y),
 	      fixed2float(pcpath->inner_box.q.x),
 	      fixed2float(pcpath->inner_box.q.y));
-    dlprintf4(pcpath->path.memory, 
-	      "     outer_box=(%g,%g),(%g,%g)",
+    dlprintf4("     outer_box=(%g,%g),(%g,%g)",
 	      fixed2float(pcpath->outer_box.p.x),
 	      fixed2float(pcpath->outer_box.p.y),
 	      fixed2float(pcpath->outer_box.q.x),
 	      fixed2float(pcpath->outer_box.q.y));
-    dprintf2(pcpath->path.memory, "     rule=%d list.refct=%ld\n",
+    dprintf2("     rule=%d list.refct=%ld\n",
 	     pcpath->rule, pcpath->rect_list->rc.ref_count);
-    gx_clip_list_print(pcpath->path.memory, gx_cpath_list(pcpath));
+    gx_clip_list_print(gx_cpath_list(pcpath));
 }
 
 #endif /* DEBUG */

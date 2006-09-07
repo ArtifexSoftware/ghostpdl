@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Definitions for Ghostscript operators */
 
 #ifndef oper_INCLUDED
@@ -58,22 +59,22 @@ int check_type_failed(const ref *);
  * check_type_only is for checking subsidiary objects obtained from
  * places other than the stack.
  */
-#define return_op_typecheck(mem, op)\
-  return_error(mem, check_type_failed(op))
-#define check_type(mem, orf,typ)\
-  if ( !r_has_type(&orf,typ) ) return_op_typecheck(mem, &orf)
-#define check_stype(mem, orf,styp)\
-  if ( !r_has_stype(&orf,imemory,styp) ) return_op_typecheck(mem, &orf)
-#define check_array(mem, orf)\
-  check_array_else(orf, return_op_typecheck(mem, &orf))
-#define check_type_access(mem, orf,typ,acc1)\
+#define return_op_typecheck(op)\
+  return_error(check_type_failed(op))
+#define check_type(orf,typ)\
+  if ( !r_has_type(&orf,typ) ) return_op_typecheck(&orf)
+#define check_stype(orf,styp)\
+  if ( !r_has_stype(&orf,imemory,styp) ) return_op_typecheck(&orf)
+#define check_array(orf)\
+  check_array_else(orf, return_op_typecheck(&orf))
+#define check_type_access(orf,typ,acc1)\
   if ( !r_has_type_attrs(&orf,typ,acc1) )\
-    return_error(mem, (!r_has_type(&orf,typ) ? check_type_failed(&orf) :\
+    return_error((!r_has_type(&orf,typ) ? check_type_failed(&orf) :\
 		  e_invalidaccess))
-#define check_read_type(mem, orf,typ)\
-  check_type_access(mem, orf,typ,a_read)
-#define check_write_type(mem, orf,typ)\
-  check_type_access(mem, orf,typ,a_write)
+#define check_read_type(orf,typ)\
+  check_type_access(orf,typ,a_read)
+#define check_write_type(orf,typ)\
+  check_type_access(orf,typ,a_write)
 
 /* Macro for as yet unimplemented operators. */
 /* The if ( 1 ) is to prevent the compiler from complaining about */

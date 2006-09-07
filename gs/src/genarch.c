@@ -1,30 +1,39 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
-/* Generate a header file (arch.h) with parameters */
-/* reflecting the machine architecture and compiler characteristics. */
+/* $Id$ */
+/*
+ * Generate a header file (arch.h) with parameters
+ * reflecting the machine architecture and compiler characteristics.
+ */
 
 #include "stdpre.h"
 #include <ctype.h>
 #include <stdio.h>
 /*
- * In theory, not all systems provide <string.h> or <setjmp.h>, or declare
- * memset in <string.h>, but at this point I don't think we care about any
- * that don't.
+ * In theory, not all systems provide <string.h> or declare memset 
+ * there, but at this point we don't think we care about any that don't.
  */
 #include <string.h>
 #include <time.h>
-#include <setjmp.h>
+
+/* We provide a _SIZEOF_ macro for GX_COLOR_INDEX_TYPE
+   fallback to a generic int if no such type is defined.
+   This default must be kept in sync with the one in gxcindex.h
+   or ARCH_SIZEOF_GX_COLOR_INDEX will be incorrect for such builds. */
+#ifndef GX_COLOR_INDEX_TYPE
+#define GX_COLOR_INDEX_TYPE ulong
+#endif
 
 /* We should write the result on stdout, but the original Turbo C 'make' */
 /* can't handle output redirection (sigh). */
@@ -33,17 +42,6 @@ private void
 section(FILE * f, const char *str)
 {
     fprintf(f, "\n\t /* ---------------- %s ---------------- */\n\n", str);
-}
-
-private clock_t
-time_clear(char *buf, int bsize, int nreps)
-{
-    clock_t t = clock();
-    int i;
-
-    for (i = 0; i < nreps; ++i)
-	memset(buf, 0, bsize);
-    return clock() - t;
 }
 
 private void
@@ -106,11 +104,6 @@ main(int argc, char *argv[])
 	char c;
 	double d;
     } sd;
-    /* Some architectures have special alignment requirements for jmpbuf. */
-    struct {
-	char c;
-	jmp_buf j;
-    } sj;
     long lm1 = -1;
     long lr1 = lm1 >> 1, lr2 = lm1 >> 2;
     unsigned long um1 = ~(unsigned long)0;
@@ -154,8 +147,12 @@ main(int argc, char *argv[])
     define_int(f, "ARCH_ALIGN_PTR_MOD", OFFSET_IN(sp, p));
     define_int(f, "ARCH_ALIGN_FLOAT_MOD", OFFSET_IN(sf, f));
     define_int(f, "ARCH_ALIGN_DOUBLE_MOD", OFFSET_IN(sd, d));
-    define_int(f, "ARCH_ALIGN_STRUCT_MOD", OFFSET_IN(sj, j));
 #undef OFFSET_IN
+
+    /* Some architectures have special alignment requirements for   */
+    /* jmp_buf, and we used to provide ALIGN_STRUCT_MOD for that.   */
+    /* We've now dropped that in favor of aligning jmp_buf by hand. */
+    /* See setjmp_.h for the implementation of this.                */
 
     section(f, "Scalar sizes");
 
@@ -163,6 +160,14 @@ main(int argc, char *argv[])
     define_int(f, "ARCH_LOG2_SIZEOF_SHORT", ilog2(size_of(short)));
     define_int(f, "ARCH_LOG2_SIZEOF_INT", ilog2(size_of(int)));
     define_int(f, "ARCH_LOG2_SIZEOF_LONG", ilog2(size_of(long)));
+#ifndef _MSC_VER
+    /* MSVC does not provide 'long long' but we need this on some archs
+       to define a 64 bit type. A corresponding #ifdef in stdint_.h handles
+       that case for MSVC. Most other platforms do support long long if
+       they have a 64 bit type at all */
+    define_int(f, "ARCH_LOG2_SIZEOF_LONG_LONG", ilog2(size_of(long long)));
+#endif
+    define_int(f, "ARCH_SIZEOF_GX_COLOR_INDEX", sizeof(GX_COLOR_INDEX_TYPE));
     define_int(f, "ARCH_SIZEOF_PTR", size_of(char *));
     define_int(f, "ARCH_SIZEOF_FLOAT", size_of(float));
     define_int(f, "ARCH_SIZEOF_DOUBLE", size_of(double));
@@ -205,67 +210,6 @@ main(int argc, char *argv[])
     define(f, "ARCH_MAX_ULONG");
     fprintf(f, "((unsigned long)~0L + (unsigned long)0)\n");
 #undef PRINT_MAX
-
-    section(f, "Cache sizes");
-
-    /*
-     * Determine the primary and secondary cache sizes by looking for a
-     * non-linearity in the time required to fill blocks with memset.
-     */
-    {
-#define MAX_BLOCK (1 << 22)	/* max 4M cache */
-	static char buf[MAX_BLOCK];
-	int bsize = 1 << 10;
-	int nreps = 1;
-	clock_t t = 0;
-	clock_t t_eps;
-
-	/*
-	 * Increase the number of repetitions until the time is
-	 * long enough to exceed the likely uncertainty.
-	 */
-
-	while ((t = time_clear(buf, bsize, nreps)) == 0)
-	    nreps <<= 1;
-	t_eps = t;
-	while ((t = time_clear(buf, bsize, nreps)) < t_eps * 10)
-	    nreps <<= 1;
-
-	/*
-	 * Increase the block size until the time jumps non-linearly.
-	 */
-	for (; bsize <= MAX_BLOCK;) {
-	    clock_t dt = time_clear(buf, bsize, nreps);
-
-	    if (dt > t + (t >> 1)) {
-		t = dt;
-		break;
-	    }
-	    bsize <<= 1;
-	    nreps >>= 1;
-	    if (nreps == 0)
-		nreps = 1, t <<= 1;
-	}
-	define_int(f, "ARCH_CACHE1_SIZE", bsize >> 1);
-	/*
-	 * Do the same thing a second time for the secondary cache.
-	 */
-	if (nreps > 1)
-	    nreps >>= 1, t >>= 1;
-	for (; bsize <= MAX_BLOCK;) {
-	    clock_t dt = time_clear(buf, bsize, nreps);
-
-	    if (dt > t * 1.25) {
-		t = dt;
-		break;
-	    }
-	    bsize <<= 1;
-	    nreps >>= 1;
-	    if (nreps == 0)
-		nreps = 1, t <<= 1;
-	}
-	define_int(f, "ARCH_CACHE2_SIZE", bsize >> 1);
-    }
 
     section(f, "Miscellaneous");
 

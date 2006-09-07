@@ -3,9 +3,9 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%BeginResource: CMap (Identity)
 %%Title: (Identity Adobe Japan1 2)
-%%Version: 6.001
+%%Version: 11.001
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-1997 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-1998 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -37,11 +37,11 @@ begincmap
 end def
 
 /CMapName /Adobe-Japan1-2 def
-/CMapVersion 6.001 def
+/CMapVersion 11.001 def
 /CMapType 1 def
 
-/UIDOffset 480 def
-/XUID [1 10 25358] def
+/UIDOffset 1065 def
+/XUID [1 10 25531] def
 
 /WMode 0 def
 

@@ -1,10 +1,15 @@
-/* Copyright (C) 2002 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /*$Id$ */
 /* Gimp (XCF) export device, supporting DeviceN color models. */
@@ -209,8 +214,8 @@ const xcf_device gs_xcf_device =
     	 GX_DEVICE_COLOR_MAX_COMPONENTS, 3,	/* MaxComponents, NumComp */
 	 GX_CINFO_POLARITY_ADDITIVE,		/* Polarity */
 	 24, 0,			/* Depth, Gray_index, */
-	 255, 255, 1, 1,	/* MaxGray, MaxColor, DitherGray, DitherColor */
-	 GX_CINFO_SEP_LIN,      /* Linear & Seperable */
+	 255, 255, 256, 256,	/* MaxGray, MaxColor, DitherGray, DitherColor */
+	 GX_CINFO_UNKNOWN_SEP_LIN, /* Let check_device_separable set up values */
 	 "DeviceN",		/* Process color model name */
 	 xcf_print_page),	/* Printer page print routine */
     /* DeviceN device specific parameters */
@@ -233,8 +238,8 @@ const xcf_device gs_xcfcmyk_device =
     	 GX_DEVICE_COLOR_MAX_COMPONENTS, 4,	/* MaxComponents, NumComp */
 	 GX_CINFO_POLARITY_SUBTRACTIVE,		/* Polarity */
 	 32, 0,			/* Depth, Gray_index, */
-	 255, 255, 1, 1,	/* MaxGray, MaxColor, DitherGray, DitherColor */
-	 GX_CINFO_SEP_LIN,      /* Linear & Separable */
+	 255, 255, 256, 256,	/* MaxGray, MaxColor, DitherGray, DitherColor */
+	 GX_CINFO_UNKNOWN_SEP_LIN, /* Let check_device_separable set up values */
 	 "DeviceN",		/* Process color model name */
 	 xcf_print_page),	/* Printer page print routine */
     /* DeviceN device specific parameters */
@@ -284,7 +289,7 @@ cmyk_cs_to_spotrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[
     color_cmyk_to_rgb(c, m, y, k, NULL, out);
     for(; i>0; i--)			/* Clear spot colors */
         out[2 + i] = 0;
-};
+}
 
 private void
 gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
@@ -326,7 +331,7 @@ cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out
     out[3] = k;
     for(i = 0; i < n; i++)			/* Clear spot colors */
 	out[4 + i] = 0;
-};
+}
 
 private void
 cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
@@ -338,7 +343,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
     int i;
 
     if (luo != NULL) {
-	double in[3];
+	double in[4];
 	double tmp[MAX_CHAN];
 	int outn = xdev->lu_cmyk_outn;
 
@@ -360,7 +365,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 	for(i = 0; i < n; i++)			/* Clear spot colors */
 	    out[4 + i] = 0;
     }
-};
+}
 
 private void
 gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
@@ -587,18 +592,18 @@ xcf_open_profile(xcf_device *xdev, char *profile_fn, icmLuBase **pluo,
     icc *icco;
     icmLuBase *luo;
 
-    dlprintf1(xdev->memory, "xcf_open_profile %s\n", profile_fn);
+    dlprintf1("xcf_open_profile %s\n", profile_fn);
     fp = new_icmFileStd_name(profile_fn, (char *)"r");
     if (fp == NULL)
-	return_error(xdev->memory, gs_error_undefinedfilename);
+	return_error(gs_error_undefinedfilename);
     icco = new_icc();
     if (icco == NULL)
-	return_error(xdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     if (icco->read(icco, fp, 0))
-	return_error(xdev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     luo = icco->get_luobj(icco, icmFwd, icmDefaultIntent, icmSigDefaultData, icmLuOrdNorm);
     if (luo == NULL)
-	return_error(xdev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     *pluo = luo;
     luo->spaces(luo, NULL, NULL, NULL, poutn, NULL, NULL, NULL, NULL);
     return 0;
@@ -722,12 +727,12 @@ bpc_to_depth(int ncomp, int bpc)
     	return (ncomp * bpc + 7) & 0xf8;
 }
 
-#define BEGIN_ARRAY_PARAM(mem, pread, pname, pa, psize, e)\
+#define BEGIN_ARRAY_PARAM(pread, pname, pa, psize, e)\
     BEGIN\
     switch (code = pread(plist, (param_name = pname), &(pa))) {\
       case 0:\
 	if ((pa).size != psize) {\
-	  ecode = gs_note_error(mem, gs_error_rangecheck);\
+	  ecode = gs_note_error(gs_error_rangecheck);\
 	  (pa).data = 0;	/* mark as not filled */\
 	} else
 #define END_ARRAY_PARAM(pa, e)\
@@ -812,8 +817,7 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
     gs_param_string pcm;
     xcf_color_model color_model = pdevn->color_model;
 
-    BEGIN_ARRAY_PARAM(pdev->memory, 
-		      param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
+    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
 	break;
     } END_ARRAY_PARAM(scna, scne);
 
@@ -926,7 +930,8 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
  * number if the name is found.  It returns a negative value if not found.
  */
 private int
-xcf_get_color_comp_index(const gx_device * dev, const char * pname, int name_size, int src_index)
+xcf_get_color_comp_index(gx_device * dev, const char * pname, int name_size,
+					int component_type)
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     const fixed_colorant_names_list * list = ((const xcf_device *)dev)->std_colorant_names;
@@ -1100,7 +1105,7 @@ xcf_write_header(xcf_write_ctx *xc, xcf_device *pdev)
     int bytes_pp = xc->base_bytes_pp + n_extra_channels;
     int channel_idx;
 
-    xcf_write(xc, "gimp xcf file", 14);
+    xcf_write(xc, (const byte *)"gimp xcf file", 14);
     xcf_write_32(xc, xc->width);
     xcf_write_32(xc, xc->height);
     xcf_write_32(xc, 0);
@@ -1117,7 +1122,7 @@ xcf_write_header(xcf_write_ctx *xc, xcf_device *pdev)
     for (channel_idx = 0; channel_idx < n_extra_channels; channel_idx++) {
 	const gs_param_string *separation_name =
 	    pdev->separation_names.names[channel_idx];
-	dlprintf1(pdev->memory, "tile offset: %d\n", tile_offset);
+	dlprintf1("tile offset: %d\n", tile_offset);
 	xcf_write_32(xc, tile_offset);
 	tile_offset += xcf_channel_size(xc, separation_name->size);
     }
@@ -1128,7 +1133,7 @@ xcf_write_header(xcf_write_ctx *xc, xcf_device *pdev)
     xcf_write_32(xc, xc->height);
     xcf_write_32(xc, 0);
     xcf_write_32(xc, strlen(layer_name) + 1);
-    xcf_write(xc, layer_name, strlen(layer_name) + 1);
+    xcf_write(xc, (const byte *)layer_name, strlen(layer_name) + 1);
 
     /* layer props */
     xcf_write_32(xc, 0);
@@ -1335,7 +1340,7 @@ xcf_write_footer(xcf_write_ctx *xc, xcf_device *pdev)
 	int offset;
 	int tile_idx;
 
-	dlprintf2(pdev->memory, "actual tile offset: %d %d\n", xc->offset, sizeof(gx_color_index));
+	dlprintf2("actual tile offset: %d %d\n", xc->offset, (int)arch_sizeof_color_index);
 	xcf_write_32(xc, xc->width);
 	xcf_write_32(xc, xc->height);
 	xcf_write_32(xc, separation_name->size + 1);

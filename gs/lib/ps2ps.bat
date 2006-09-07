@@ -1,5 +1,5 @@
 @echo off 
-@rem $RCSfile$ $Revision$
+@rem $Id$
 @rem "Distill" PostScript.
 
 if %1/==/ goto usage
@@ -15,6 +15,7 @@ goto cp
 :doit
 rem Watcom C deletes = signs, so use # instead.
 %GSC% -q -sDEVICE#pswrite -sOutputFile#%2 @_.at %1
+if exist _.at erase _.at
 goto end
 
 :usage

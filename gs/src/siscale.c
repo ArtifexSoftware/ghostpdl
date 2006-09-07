@@ -1,21 +1,21 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Image scaling filters */
 #include "math_.h"
 #include "memory_.h"
 #include "stdio_.h"
-#include <assert.h>
 #include "gconfigv.h"
 #include "gdebug.h"
 #include "strimpl.h"
@@ -35,7 +35,7 @@
 
 typedef int PixelWeight;
 
-#  if arch_ints_are_short
+#  if ARCH_INTS_ARE_SHORT
 typedef long AccumTmp;
 #  else
 typedef int AccumTmp;
@@ -291,8 +291,7 @@ calculate_contrib(
 
 /* Apply filter to zoom horizontally from src to tmp. */
 private void
-zoom_x(const gs_memory_t *mem,
-       PixelTmp * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
+zoom_x(PixelTmp * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
        int tmp_width, int WidthIn, int Colors, const CLIST * contrib,
        const CONTRIB * items)
 {
@@ -306,7 +305,7 @@ zoom_x(const gs_memory_t *mem,
 	PixelTmp *tp = tmp + c;
 	const CLIST *clp = contrib;
 
-	if_debug1(mem, 'W', "[W]zoom_x color %d:", c);
+	if_debug1('W', "[W]zoom_x color %d:", c);
 
 #define zoom_x_loop(PixelIn, PixelIn2)\
 		const PixelIn *raster = (const PixelIn *)src + c;\
@@ -331,7 +330,7 @@ zoom_x(const gs_memory_t *mem,
 			  }\
 			}\
 			{ PixelIn2 pixel = unscale_AccumTmp(weight, fraction_bits);\
-			  if_debug1(mem, 'W', " %ld", (long)pixel);\
+			  if_debug1('W', " %ld", (long)pixel);\
 			  *tp =\
 			    (PixelTmp)CLAMP(pixel, minPixelTmp, maxPixelTmp);\
 			}\
@@ -340,13 +339,13 @@ zoom_x(const gs_memory_t *mem,
 	if (sizeofPixelIn == 1) {
 	    zoom_x_loop(byte, int)
 	} else {		/* sizeofPixelIn == 2 */
-#if arch_ints_are_short
+#if ARCH_INTS_ARE_SHORT
 	    zoom_x_loop(bits16, long)
 #else
 	    zoom_x_loop(bits16, int)
 #endif
 	}
-	if_debug0(mem, 'W', "\n");
+	if_debug0('W', "\n");
     }
 }
 
@@ -357,8 +356,7 @@ zoom_x(const gs_memory_t *mem,
  * without regard to the number of samples per pixel.
  */
 private void
-zoom_y(const gs_memory_t *mem,
-       void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
+zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
        const PixelTmp * tmp, int WidthOut, int tmp_width,
        int Colors, const CLIST * contrib, const CONTRIB * items)
 {
@@ -373,7 +371,7 @@ zoom_y(const gs_memory_t *mem,
 	(sizeof(PixelTmp) - sizeofPixelOut) * 8 + num_weight_bits;
 #endif
 
-    if_debug0(mem, 'W', "[W]zoom_y: ");
+    if_debug0('W', "[W]zoom_y: ");
 
 #define zoom_y_loop(PixelOut)\
 	for ( kc = 0; kc < kn; ++kc ) {\
@@ -385,7 +383,7 @@ zoom_y(const gs_memory_t *mem,
 		    weight += *pp * cp->weight;\
 		}\
 		{ PixelTmp2 pixel = unscale_AccumTmp(weight, fraction_bits);\
-		  if_debug1(mem, 'W', " %d", pixel);\
+		  if_debug1('W', " %d", pixel);\
 		  ((PixelOut *)dst)[kc] =\
 		    (PixelOut)CLAMP(pixel, 0, max_weight);\
 		}\
@@ -396,7 +394,7 @@ zoom_y(const gs_memory_t *mem,
     } else {			/* sizeofPixelOut == 2 */
 	zoom_y_loop(bits16)
     }
-    if_debug0(mem, 'W', "\n");
+    if_debug0('W', "\n");
 }
 
 /* ------ Stream implementation ------ */
@@ -437,7 +435,7 @@ calculate_dst_contrib(stream_IScale_state * ss, int y)
     }
 #ifdef DEBUG
     if (gs_debug_c('w')) {
-	dprintf1(ss->memory, "[w]calc dest contrib for y = %d\n", y);
+	dprintf1("[w]calc dest contrib for y = %d\n", y);
     }
 #endif
 }
@@ -511,8 +509,7 @@ s_IScale_init(stream_state * st)
 
 /* Process a buffer.  Note that this handles Encode and Decode identically. */
 private int
-s_IScale_process(const gs_memory_t *mem, 
-		 stream_state * st, stream_cursor_read * pr,
+s_IScale_process(stream_state * st, stream_cursor_read * pr,
 		 stream_cursor_write * pw, bool last)
 {
     stream_IScale_state *const ss = (stream_IScale_state *) st;
@@ -537,7 +534,7 @@ s_IScale_process(const gs_memory_t *mem,
 		row = ss->dst;
 	    }
 	    /* Apply filter to zoom vertically from tmp to dst. */
-	    zoom_y(ss->memory, row, ss->sizeofPixelOut, ss->params.MaxValueOut, ss->tmp,
+	    zoom_y(row, ss->sizeofPixelOut, ss->params.MaxValueOut, ss->tmp,
 		   ss->params.WidthOut, ss->tmp_width, ss->params.Colors,
 		   &ss->dst_next_list, ss->dst_items);
 	    /* Idiotic C coercion rules allow T* and void* to be */
@@ -569,9 +566,8 @@ s_IScale_process(const gs_memory_t *mem,
 
 	if (rleft == 0)
 	    return 0;		/* need more input */
-#ifdef DEBUG
-	assert(ss->src_y < ss->params.HeightIn);
-#endif
+	if (ss->src_y >= ss->params.HeightIn)
+	    return ERRC;
 	if (rleft >= rcount) {	/* We're going to fill up a row. */
 	    const byte *row;
 
@@ -585,10 +581,9 @@ s_IScale_process(const gs_memory_t *mem,
 		ss->src_offset = 0;
 	    }
 	    /* Apply filter to zoom horizontally from src to tmp. */
-	    if_debug2(ss->memory, 'w', "[w]zoom_x y = %d to tmp row %d\n",
+	    if_debug2('w', "[w]zoom_x y = %d to tmp row %d\n",
 		      ss->src_y, (ss->src_y % MAX_ISCALE_SUPPORT));
-	    zoom_x(ss->memory, 
-		   ss->tmp + (ss->src_y % MAX_ISCALE_SUPPORT) *
+	    zoom_x(ss->tmp + (ss->src_y % MAX_ISCALE_SUPPORT) *
 		   ss->tmp_width * ss->params.Colors, row,
 		   ss->sizeofPixelIn, ss->tmp_width, ss->params.WidthIn,
 		   ss->params.Colors, ss->contrib, ss->items);

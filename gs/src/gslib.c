@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Test program for Ghostscript library */
 /* Capture stdin/out/err before gsio.h redefines them. */
 #include "stdio_.h"
@@ -125,6 +126,7 @@ main(int argc, const char *argv[])
 /****** WRONG ******/
     gs_lib_device_list(&list, NULL);
     gs_copydevice(&dev, list[0], mem);
+    check_device_separable(dev);
     gx_device_fill_in_procs(dev);
     bbdev =
 	gs_alloc_struct_immovable(mem, gx_device_bbox, &st_device_bbox,
@@ -274,15 +276,15 @@ gs_reloc_const_string(gs_const_string * sptr, gc_state_t * gcst)
 
 /* Other stubs */
 void
-gs_to_exit(int exit_status)
+gs_to_exit(const gs_memory_t *mem, int exit_status)
 {
-    gs_lib_finit(exit_status, 0);
+    gs_lib_finit(mem, exit_status, 0);
 }
 
 void
-gs_abort(void)
+gs_abort(const gs_memory_t *mem)
 {
-    gs_to_exit(1); /* cleanup */
+    gs_to_exit(mem, 1); /* cleanup */
     gp_do_exit(1); /* system independent exit() */	
 }
 
@@ -519,7 +521,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
     };
     gs_color_space gray_cs;
 
-    gs_cspace_init_DeviceGray(&gray_cs);
+    gs_cspace_init_DeviceGray(mem, &gray_cs);
 
     /*
      * Neither ImageType 3 nor 4 needs a current color,
@@ -573,7 +575,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	void *info1;
         gs_color_space cs;
 
-        gs_cspace_init_DeviceGray(&cs);
+        gs_cspace_init_DeviceGray(mem, &cs);
 	gs_image_t_init(&image1, &cs);
 	/* image */
 	image1.ImageMatrix.xx = W;
@@ -1066,7 +1068,7 @@ test10(gs_state * pgs, gs_memory_t * mem)
     {
         gs_color_space cs;
 
-        gs_cspace_init_DeviceGray(&cs);
+        gs_cspace_init_DeviceGray(mem, &cs);
         gs_setcolorspace(pgs, &cs);
     }
     

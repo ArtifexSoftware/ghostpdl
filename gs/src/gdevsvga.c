@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* SuperVGA display drivers */
 #include "memory_.h"
 #include "gconfigv.h"		/* for USE_ASM */
@@ -174,13 +175,13 @@ svga_close(gx_device * dev)
 /* for compatibility with the older display modes: */
 /* these are indexed as 0.0.R0.G0.B0.R1.G1.B1. */
 gx_color_index
-svga_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		   gx_color_value b)
+svga_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     ushort rgb;
+    gx_color_value r = cv[0], g = cv[1], b = cv[2];
 
     if (fb_dev->fixed_colors) {
-	gx_color_index ci = pc_8bit_map_rgb_color(dev, r, g, b);
+	gx_color_index ci = pc_8bit_map_rgb_color(dev, cv);
 
 	/* Here is where we should permute the index to match */
 	/* the old color map... but we don't yet. */

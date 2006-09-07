@@ -1,16 +1,16 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
-
-# $RCSfile$ $Revision$
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
 # makefile for OpenVMS VAX and Alpha using MMK
 #
 # Please contact Jim Dunham (dunham@omtool.com) if you have questions.
@@ -123,7 +123,7 @@ BUILD_TIME_GS=GS
 .ifdef SYSLIB
 JSRCDIR=sys$library:
 .else
-JSRCDIR=[--.jpeg-6b]
+JSRCDIR=[--.jpeg]
 .endif
 JVERSION=6
 
@@ -135,9 +135,9 @@ JVERSION=6
 .ifdef SYSLIB
 PSRCDIR=sys$library:
 .else
-PSRCDIR=[--.libpng-1_2_5]
+PSRCDIR=[--.libpng]
 .endif
-PVERSION=10205
+PVERSION=10208
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
@@ -145,15 +145,26 @@ PVERSION=10205
 .ifdef SYSLIB
 ZSRCDIR=sys$library:
 .else
-ZSRCDIR=[--.zlib-1_1_4]
+ZSRCDIR=[--.zlib]
 .endif
 
 # Define the directory where the jbig2dec library sources are stored.
 # See jbig2.mak for more information
+
+JBIG2_LIB=jbig2dec
 .ifdef SYSLIB
 JBIG2SRCDIR=sys$library:
 .else
-JBIG2SRCDIR=[--.jbig2dec-0_2]
+JBIG2SRCDIR=[--.jbig2dec]
+.endif
+
+# Define the jpeg2k library and source directory
+
+JPX_LIB=jasper
+.ifdef SYSLIB
+JPXSRCDIR=sys$library:
+.else
+JPXSRCDIR=[--.jasper]
 .endif
 
 # Define the directory where the icclib source are stored.
@@ -283,8 +294,7 @@ COMPILE_INITS=0
 BAND_LIST_STORAGE=file
 
 # Choose which compression method to use when storing band lists in memory.
-# The choices are 'lzw' or 'zlib'.  lzw is not recommended, because the
-# LZW-compatible code in Ghostscript doesn't actually compress its input.
+# The choices are 'lzw' or 'zlib'.
 
 BAND_LIST_COMPRESSOR=zlib
 

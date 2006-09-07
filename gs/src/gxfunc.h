@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Internal definitions for Functions */
 
 #ifndef gxfunc_INCLUDED
@@ -36,12 +37,7 @@ void fn_common_free_params(gs_function_params_t * params, gs_memory_t * mem);
 void fn_common_free(gs_function_t * pfn, bool free_params, gs_memory_t * mem);
 
 /* Check the values of m, n, Domain, and (if supplied) Range. */
-int fn_check_mnDR(const gs_memory_t *mem, const gs_function_params_t * params, int m, int n);
-
-/* Get the monotonicity of a function over its Domain. */
-int fn_domain_is_monotonic(const gs_memory_t *mem,
-			   const gs_function_t *pfn,
-			   gs_function_effort_t effort);
+int fn_check_mnDR(const gs_function_params_t * params, int m, int n);
 
 /* Generic get_info implementation (no Functions or DataSource). */
 FN_GET_INFO_PROC(gs_function_get_info_default);

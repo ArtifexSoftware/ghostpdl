@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/*$Id$ */
 /* Halftone rendering for imaging library */
 #include "memory_.h"
 #include "gx.h"
@@ -208,18 +209,17 @@ gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
 }
 
 /* Render a given level into a halftone cache. */
-private int render_ht(const gs_memory_t *mem, 
-		      gx_ht_tile *, int, const gx_ht_order *,
+private int render_ht(gx_ht_tile *, int, const gx_ht_order *,
 		      gx_bitmap_id);
 private gx_ht_tile *
-gx_render_ht_default(const gs_memory_t *mem, gx_ht_cache * pcache, int b_level)
+gx_render_ht_default(gx_ht_cache * pcache, int b_level)
 {
     const gx_ht_order *porder = &pcache->order;
     int level = porder->levels[b_level];
     gx_ht_tile *bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
 
     if (bt->level != level) {
-	int code = render_ht(mem, bt, level, porder, pcache->base_id + b_level);
+	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
 
 	if (code < 0)
 	    return 0;
@@ -228,14 +228,14 @@ gx_render_ht_default(const gs_memory_t *mem, gx_ht_cache * pcache, int b_level)
 }
 /* Faster code if num_tiles == 1. */
 private gx_ht_tile *
-gx_render_ht_1_tile(const gs_memory_t *mem, gx_ht_cache * pcache, int b_level)
+gx_render_ht_1_tile(gx_ht_cache * pcache, int b_level)
 {
     const gx_ht_order *porder = &pcache->order;
     int level = porder->levels[b_level];
     gx_ht_tile *bt = &pcache->ht_tiles[0];
 
     if (bt->level != level) {
-	int code = render_ht(mem, bt, level, porder, pcache->base_id + b_level);
+	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
 
 	if (code < 0)
 	    return 0;
@@ -244,14 +244,14 @@ gx_render_ht_1_tile(const gs_memory_t *mem, gx_ht_cache * pcache, int b_level)
 }
 /* Faster code if levels_per_tile == 1. */
 private gx_ht_tile *
-gx_render_ht_1_level(const gs_memory_t *mem, gx_ht_cache * pcache, int b_level)
+gx_render_ht_1_level(gx_ht_cache * pcache, int b_level)
 {
     const gx_ht_order *porder = &pcache->order;
     int level = porder->levels[b_level];
     gx_ht_tile *bt = &pcache->ht_tiles[level];
 
     if (bt->level != level) {
-	int code = render_ht(mem, bt, level, porder, pcache->base_id + b_level);
+	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
 
 	if (code < 0)
 	    return 0;
@@ -292,7 +292,7 @@ gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
     gx_ht_cache *pcache = porder->cache;
 
     if (pcache->order.bit_data != porder->bit_data)
-	gx_ht_init_cache(dev->memory, pcache, porder);
+	gx_ht_init_cache(pis->memory, pcache, porder);
     /*
      * We do not load the cache now.  Instead we wait until we are ready
      * to actually render the color.  This allows multiple colors to be
@@ -309,7 +309,7 @@ gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
  * Load the half tone tile in the halftone cache.
  */
 private int
-gx_dc_ht_binary_load_cache(const gs_memory_t *mem, const gx_device_color * pdevc)
+gx_dc_ht_binary_load_cache(const gx_device_color * pdevc)
 {
     int component_index = pdevc->colors.binary.b_index;
     const gx_ht_order *porder =
@@ -320,10 +320,10 @@ gx_dc_ht_binary_load_cache(const gs_memory_t *mem, const gx_device_color * pdevc
     gx_ht_tile *bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
 
     if (bt->level != level) {
-	int code = render_ht(mem, bt, level, porder, pcache->base_id + b_level);
+	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
 
 	if (code < 0)
-	    return_error(mem, gs_error_Fatal);
+	    return_error(gs_error_Fatal);
     }
     ((gx_device_color *)pdevc)->colors.binary.b_tile = bt;
     return 0;
@@ -339,7 +339,7 @@ gx_dc_ht_binary_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     gx_rop_source_t no_source;
 
     /* Load the halftone cache for the color */
-    gx_dc_ht_binary_load_cache(dev->memory, pdevc);
+    gx_dc_ht_binary_load_cache(pdevc);
     /*
      * Observation of H-P devices and documentation yields confusing
      * evidence about whether white pixels in halftones are always
@@ -382,7 +382,7 @@ gx_dc_ht_binary_fill_masked(const gx_device_color * pdevc, const byte * data,
      * than one device color has been set and they use the same cache
      * entry.
      */
-    int code = gx_dc_ht_binary_load_cache(dev->memory, pdevc);
+    int code = gx_dc_ht_binary_load_cache(pdevc);
 
     if (code < 0)
 	return code;
@@ -604,8 +604,9 @@ gx_dc_ht_binary_read(
     devc.colors.binary.b_tile = 0;
 
     /* verify the minimum amount of information */
-    if ((size -= 1) < 0)
-        return_error(mem, gs_error_rangecheck);
+    if (size == 0)
+        return_error(gs_error_rangecheck);
+    size --;
     flag_bits = *pdata++;
 
     /* read the other information provided */
@@ -633,13 +634,14 @@ gx_dc_ht_binary_read(
         const byte *    pdata_start = pdata;
 
         if (size < 1)
-            return_error(dev->memory, gs_error_rangecheck);
+            return_error(gs_error_rangecheck);
         enc_u_getw(devc.colors.binary.b_level, pdata);
         size -= pdata - pdata_start;
     }
     if ((flag_bits & dc_ht_binary_has_index) != 0) {
-        if (--size < 0)
-            return_error(dev->memory, gs_error_rangecheck);
+        if (size == 0)
+            return_error(gs_error_rangecheck);
+	--size;
         devc.colors.binary.b_index = *pdata++;
     }
 
@@ -686,7 +688,7 @@ gx_dc_ht_binary_get_nonzero_comps(
         int     mask = 0x1, comp_bits = 0;
 
         for (i = 0; i < ncomps; i++, mask <<= 1) {
-            if (cvals_0[i] != cvals_1[i])
+            if (cvals_0[i] != 0 || cvals_1[i] != 0)
                 comp_bits |= mask;
         }
         *pcomp_bits = comp_bits;
@@ -790,25 +792,24 @@ gx_ht_init_cache(const gs_memory_t *mem, gx_ht_cache * pcache, const gx_ht_order
  * not the index in the levels vector.
  */
 private int
-render_ht(const gs_memory_t *mem, gx_ht_tile * pbt, int level /* [1..num_bits-1] */ ,
+render_ht(gx_ht_tile * pbt, int level /* [1..num_bits-1] */ ,
 	  const gx_ht_order * porder, gx_bitmap_id new_id)
 {
     byte *data = pbt->tiles.data;
     int code;
 
-    if_debug7(mem, 
-	      'H', "[H]Halftone cache slot 0x%lx: old=%d, new=%d, w=%d(%d), h=%d(%d):\n",
+    if_debug7('H', "[H]Halftone cache slot 0x%lx: old=%d, new=%d, w=%d(%d), h=%d(%d):\n",
 	      (ulong) data, pbt->level, level,
 	      pbt->tiles.size.x, porder->width,
 	      pbt->tiles.size.y, porder->num_bits / porder->width);
 #ifdef DEBUG
     if (level < 0 || level > porder->num_bits) {
-	lprintf3(mem, "Error in render_ht: level=%d, old level=%d, num_bits=%d\n",
+	lprintf3("Error in render_ht: level=%d, old level=%d, num_bits=%d\n",
 		 level, pbt->level, porder->num_bits);
-	return_error(mem, gs_error_Fatal);
+	return_error(gs_error_Fatal);
     }
 #endif
-    code = porder->procs->render(mem, pbt, level, porder);
+    code = porder->procs->render(pbt, level, porder);
     if (code < 0)
 	return code;
     pbt->level = level;
@@ -838,12 +839,12 @@ render_ht(const gs_memory_t *mem, gx_ht_tile * pbt, int level /* [1..num_bits-1]
 	const byte *ptr = p + wb * pbt->tiles.size.y;
 
 	while (p < ptr) {
-	    dprintf8(mem, " %d%d%d%d%d%d%d%d",
+	    dprintf8(" %d%d%d%d%d%d%d%d",
 		     *p >> 7, (*p >> 6) & 1, (*p >> 5) & 1,
 		     (*p >> 4) & 1, (*p >> 3) & 1, (*p >> 2) & 1,
 		     (*p >> 1) & 1, *p & 1);
 	    if ((++p - data) % wb == 0)
-		dputc(mem, '\n');
+		dputc('\n');
 	}
     }
 #endif

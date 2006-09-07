@@ -1,16 +1,19 @@
-% Portions Copyright (C) 2001 artofcode LLC.
-% Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-% Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-% This software is based in part on the work of the Independent JPEG Group.
-% All Rights Reserved.
-%
-% This software is distributed under license and may not be copied, modified
-% or distributed except as expressly authorized under the terms of that
-% license.  Refer to licensing information at http://www.artifex.com/ or
-% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-% San Rafael, CA  94903, (415)492-9861, for further information.
+%    Copyright (C) 1994-2003 artofcode LLC.  All rights reserved.
 % 
-% $RCSfile$ $Revision$
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+% $Id$
 % pdf_base.ps
 % Basic parser for PDF reader.
 
@@ -83,9 +86,14 @@ pdfdict begin
 { exch pop
   1 index 2 () /SubFileDecode filter dup (x) readhexstring
 		% Stack: post pre stream char t/f
-  not { /.pdftoken cvx /syntaxerror signalerror } if
-  exch closefile concatstrings
-  exch 2 1 index length 2 sub getinterval
+  not {	% tolerate, but complain about bad syntax
+    pop closefile (#) concatstrings exch
+    (   **** Warning: Invalid hex following '#' name escape, using literal '#' in name.\n)
+    pdfformaterror
+  } {
+    exch closefile concatstrings
+    exch 2 1 index length 2 sub getinterval
+  } ifelse
   (#) search { name#escape } if concatstrings
 } bind def
 
@@ -96,29 +104,53 @@ pdfdict begin
   BXlevel 0 le {
     (   **** Unknown operator: ') pdfformaterror
     dup =string cvs pdfformaterror 
-    % Attempt a retry scan of the element after changing to PDFScanRules
-    << /PDFScanRules true >> setuserparams
+    % Attempt a retry scan of the element after changing to PDFScanInvNum
+    << /PDFScanInvNum true >> setuserparams
     =string cvs
     token pop exch pop dup type
     dup /integertype eq exch /realtype eq or {
       exch pop exch pop
       (', processed as number, value: ) pdfformaterror
       dup =string cvs pdfformaterror (\n) pdfformaterror
+     << /PDFScanInvNum null >> setuserparams    % reset to default scanning rules
       false 	% suppress any stack cleanup
     } {
       % error was non-recoverable with modified scanning rules
-      (\n) pdfformaterror
+    ('\n) pdfformaterror
       true
     } ifelse
   } {
     true
   } ifelse
   { % clean up the operand stack if this was non-recoverable
-    pop pop count exch sub { pop } repeat	% pop all the operands
+  pop pop count exch sub { pop } repeat	% pop all the operands
   } if
 } bind def
 /.pdfexectoken {		% <count> <opdict> <exectoken> .pdfexectoken ?
-  PDFDEBUG { dup == flush } if
+  PDFDEBUG {
+    pdfdict /PDFSTEPcount known not { pdfdict /PDFSTEPcount 1 .forceput } if
+    PDFSTEP {
+      pdfdict /PDFtokencount 2 copy .knownget { 1 add } { 1 } ifelse .forceput
+      PDFSTEPcount 1 gt {
+	pdfdict /PDFSTEPcount PDFSTEPcount 1 sub .forceput
+      } {
+        dup ==only
+        (    step # ) print PDFtokencount =only 
+	( ? ) print flush 1 false .outputpage
+	(%stdin) (r) file 255 string readline {
+	  token {
+            exch pop pdfdict /PDFSTEPcount 3 -1 roll .forceput
+	  } {
+	    pdfdict /PDFSTEPcount 1 .forceput
+	  } ifelse % token
+	} {
+	  pop /PDFSTEP false def	 % EOF on stdin
+	} ifelse % readline
+      } ifelse % PDFSTEPcount > 1
+    } {
+      dup ==only () = flush
+    } ifelse % PDFSTEP
+  } if % PDFDEBUG
   2 copy .knownget {
     exch pop exch pop exch pop exec
   } {
@@ -133,7 +165,14 @@ pdfdict begin
     dup dup dup /true eq exch /false eq or exch /null eq or {
       exch pop exch pop //systemdict exch get
     } {
-      .pdftokenerror
+      % Hackish fix to detect missing whitespace after "endobj". Yet another
+      % problem that (you guessed it!) Adobe Acrobat ignores silently
+      256 string cvs (endobj) anchorsearch {
+        (   **** Missing whitespace after 'endobj'.\n) pdfformaterror
+        exch pop cvn get exch pop exec
+      } {
+        .pdftokenerror
+      } ifelse
     } ifelse
   } ifelse
 } bind def
@@ -148,10 +187,18 @@ pdfdict begin
 	  .pdfexectoken
 	} {
 	  .pdffixname
-	  exch pop exch pop PDFDEBUG { dup ==only ( ) print flush } if
+	  exch pop exch pop PDFDEBUG {
+            PDFSTEPcount 1 le {
+              dup ==only ( ) print flush
+            } if
+          } if
 	} ifelse
       } {
-	exch pop exch pop PDFDEBUG { dup ==only ( ) print flush } if
+	exch pop exch pop PDFDEBUG {
+          PDFSTEPcount 1 le {
+            dup ==only ( ) print flush
+          } if
+        } if
       } ifelse
     } {
       (%%EOF) cvn cvx .pdfexectoken
@@ -339,15 +386,25 @@ pdfdict begin
 /oforce_elems { % <array> oforce_elems <first> ... <last>
   { oforce } forall
 } bind def
+/oforce_recursive { % <any> oforce_recursive <any>
+  oforce dup type dup /arraytype eq {
+    pop [ exch { oforce_recursive } forall ]
+  } {
+    /dicttype eq {
+     << exch { oforce_recursive exch oforce exch } forall >> 
+    } if
+  } ifelse
+} bind def
+
 % A null value in a dictionary is equivalent to an omitted key;
 % we must check for this specially.
 /knownoget {	% <dict> <key> knownoget <value> true
 		% <dict> <key> knownoget false
 		% See oget above regarding this procedure.
   .knownget {
-    oforce dup null eq { pop false } { true } ifelse
+    oforce dup //null eq { pop //false } { //true } ifelse
   } {
-    false
+    //false
   } ifelse
 } bind def
 
@@ -368,15 +425,23 @@ pdfdict begin
     QUIET not {				% Create warning message if not QUIET
       Generations 2 index lget 0 eq {	% Check if object is free ...
 	(   **** Warning: reference to free object: )
+        2 index =string cvs concatstrings ( ) concatstrings	% put obj #
+        exch =string cvs concatstrings ( R\n) concatstrings	% put gen #
       } {
 	(   **** Warning: wrong generation: )
+        2 index =string cvs concatstrings ( ) concatstrings	% put obj #
+        exch =string cvs concatstrings				% put gen #
+       	(, xref gen#: ) concatstrings 1 index Generations  % put xref gen #
+       	exch lget 1 sub =string cvs concatstrings (\n) concatstrings
       } ifelse
-      2 index =string cvs concatstrings ( ) concatstrings	% put obj #
-      exch =string cvs concatstrings ( R\n) concatstrings	% put gen #
       pdfformaterror			% Output warning message
     } {					% Else QUIET ...
-      pop				% Pop generation umber
-    } ifelse false			% Return false if gen # not match
+      pop				% Pop generation number
+    } ifelse
+    % We should return false for an incorrect generation number, however
+    % we are simply printing a warning and then returning true.  This makes
+    % Ghostscript tolerant of of bad generation numbers.
+    true
   } ifelse
 } bind def
 /R {		% <object#> <generation#> R <object>
@@ -561,9 +626,10 @@ pdfdict begin
   pop pop pop pop		% Remove objstream, N, (obj#], and [objects]
 } bind def
 
-% When resolving an object reference, we stop at the endobj.
+% When resolving an object reference, we stop at the endobj or endstream.
 /resolveopdict mark
   valueopdict { } forall
+  /endstream { endobj exit } bind
   /endobj { endobj exit } bind
                 % OmniForm generates PDF file with endobj missing in some
                 % objects. AR ignores this. So we have to do it too.
@@ -571,13 +637,17 @@ pdfdict begin
 .dicttomark readonly def
 
 /resolveR {		% <object#> <generation#> resolveR <object>
-  PDFDEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
+  PDFDEBUG {
+    PDFSTEPcount 1 le {
+      (%Resolving: ) print 2 copy 2 array astore ==
+    } if
+  } if
   1 index resolved? {		% If object has already been resolved ...
     exch pop exch pop		% then clear stack and return object
   } {				% Else if not resolved ...
     PDFfile fileposition 3 1 roll	% Save current file position
     1 index Objects exch lget		% Get location of object from xref
-    3 1 roll checkgeneration {		% Verify the genration number
+    3 1 roll checkgeneration {		% Verify the generation number
 			% Stack: savepos objpos obj#
        ObjectStream 1 index lget dup 0 eq { % Check if obj in not an objstream
 	 pop exch PDFoffset add PDFfile exch setfileposition
@@ -655,7 +725,11 @@ pdfdict begin
 	10 eq { exit } if
       } loop	% scan past \n
       dup /FilePosition PDFfile fileposition put
-      PDFDEBUG { (%FilePosition: ) print dup /FilePosition get == } if
+      PDFDEBUG {
+        PDFSTEPcount 1 le {
+          (%FilePosition: ) print dup /FilePosition get ==
+        } if
+      } if
     } if
     % Some (bad) PDf files have invalid stream lengths.  This causes problems
     % if we reposition beyond the end of the file.  So we compare the given
@@ -691,7 +765,8 @@ pdfdict begin
   } if
   /endstream ne { 
     (   **** Warning: stream Length incorrect.\n) pdfformaterror
-    cvx endobj exit % exit from .pdfrun now.
+    dup /Length 0 put	% prevent the use of the incorrect length.
+    cvx endobj exit   % exit from .pdfrun now.
   } if
   cvx
 } bind def
@@ -711,19 +786,22 @@ pdfdict begin
 /filterparms {		% <dict> <DPkey> <Fkey> filterparms
 			%   <dict> <parms> <filternames>
   2 index exch knownoget {
+    oforce_recursive
     exch 2 index exch knownoget {
 		% Both filters and parameters.
+      oforce_recursive
       exch dup type /nametype eq {
-	1 array astore exch 1 array astore exch
+	1 array astore exch
+	dup type /arraytype ne { 1 array astore } if exch
       } if
     } {
 		% Filters, but no parameters.
-      null exch
+      //null exch
       dup type /nametype eq { 1 array astore } if
     } ifelse
   } {
 		% No filters: ignore parameters, if any.
-    pop null { }
+    pop //null { }
   } ifelse
 } bind def
 /filtername {		% <filtername> filtername <filtername'>
@@ -753,7 +831,7 @@ pdfdict begin
 
 % JBIG2 streams have an optional 'globals' stream obj for
 % sharing redundant data between page images. Here we resolve
-% that  stream reference (if any) and run it through the decoder,
+% that stream reference (if any) and run it through the decoder,
 % creating a special -jbig2globalctx- postscript object our
 % JBIG2Decode filter implementation looks for in the parm dict.
 /jbig2cachectx { % <parmdict> jbig2cachectx <parmdict>
@@ -808,6 +886,10 @@ pdfdict begin
       } ifelse
       2 index /IDFlag known { pop } { () /SubFileDecode filter } ifelse
     } {
+                % Stack: readdata? dict parms source filternames
+      exch 3 index /Length knownoget {
+        dup 0 ne { () /SubFileDecode filter } { pop } ifelse
+      } if exch
       applyfilters
     } ifelse
   } ifelse

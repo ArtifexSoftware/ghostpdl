@@ -1,14 +1,15 @@
-/* Portions Copyright (C) 2001, 2005 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* State and interface definitions for a spot analyzer device. */
@@ -53,6 +54,7 @@ struct gx_san_trap_s {
     const segment *l; /* Outline pointer : left boundary. */
     const segment *r; /* Outline pointer : right boundary. */
     int dir_l, dir_r; /* Outline direction : left, right. */
+    bool leftmost, rightmost;
     /* The topology reconstrustor work data : */
     gx_san_trap *next; /* Next with same ytop. */
     gx_san_trap *prev; /* Prev with same ytop. */
@@ -82,6 +84,7 @@ typedef struct gx_san_sect_s gx_san_sect;
 struct gx_san_sect_s {
     fixed xl, yl, xr, yr;
     const segment *l, *r;
+    int side_mask;
 };
 
 /* A spot analyzer device. */
@@ -98,6 +101,7 @@ struct gx_device_spot_analyzer_s {
     gx_san_trap *top_band;
     gx_san_trap *bot_current;
     /* The stem recognizer work data (no GC invocations) : */
+    fixed xmin, xmax;
 };
 
 extern_st(st_device_spot_analyzer);
@@ -105,7 +109,7 @@ extern_st(st_device_spot_analyzer);
     gs_public_st_suffix_add4_final(st_device_spot_analyzer, gx_device_spot_analyzer,\
 	    "gx_device_spot_analyzer", device_spot_analyzer_enum_ptrs,\
 	    device_spot_analyzer_reloc_ptrs, gx_device_finalize, st_device,\
-	    trap_buffer, cont_buffer_last, cont_buffer, cont_buffer_last)
+	    trap_buffer, trap_buffer_last, cont_buffer, cont_buffer_last)
 
 /* -------------- Interface methods ----------------------------- */
 
@@ -129,7 +133,7 @@ void gx_san_end(const gx_device_spot_analyzer *padev);
 
 /* Generate stems. */
 int gx_san_generate_stems(gx_device_spot_analyzer *padev, 
-		void *client_data,
+		bool overall_hints, void *client_data,
 		int (*handler)(void *client_data, gx_san_sect *ss));
 
 #endif /* gzspotan_INCLUDED */

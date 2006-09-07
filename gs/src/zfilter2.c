@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Additional filter creation */
 #include "memory_.h"
 #include "ghost.h"
@@ -40,8 +41,8 @@ zCFE(i_ctx_t *i_ctx_p)
     stream_CFE_state cfs;
     int code;
 
-    check_type(imemory, *op, t_dictionary);
-    check_dict_read(imemory, *op);
+    check_type(*op, t_dictionary);
+    check_dict_read(*op);
     code = zcf_setup(op, (stream_CF_state *)&cfs, iimemory);
     if (code < 0)
 	return code;
@@ -60,7 +61,7 @@ filter_write_predictor(i_ctx_t *i_ctx_p, int npop,
     stream_PNGP_state pps;
 
     if (r_has_type(op, t_dictionary)) {
-	if ((code = dict_int_param(imemory, op, "Predictor", 0, 15, 1, &predictor)) < 0)
+	if ((code = dict_int_param(op, "Predictor", 0, 15, 1, &predictor)) < 0)
 	    return code;
 	switch (predictor) {
 	    case 0:		/* identity */
@@ -80,7 +81,7 @@ filter_write_predictor(i_ctx_t *i_ctx_p, int npop,
 		code = zpp_setup(op, &pps);
 		break;
 	    default:
-		return_error(imemory, e_rangecheck);
+		return_error(e_rangecheck);
 	}
 	if (code < 0)
 	    return code;
@@ -126,11 +127,6 @@ filter_write_predictor(i_ctx_t *i_ctx_p, int npop,
 
 /* <target> LZWEncode/filter <file> */
 /* <target> <dict> LZWEncode/filter <file> */
-/*
- * Note: the default implementation of this filter, in slzwce.c,
- * does not use any algorithms that could reasonably be claimed
- * to be subject to Unisys' Welch Patent.
- */
 private int
 zLZWE(i_ctx_t *i_ctx_p)
 {

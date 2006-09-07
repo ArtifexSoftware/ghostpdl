@@ -1,13 +1,15 @@
-#  Portions Copyright (C) 2003, 2005 artofcode LLC.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information. */
-
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
 # $Id$
 # makefile for MacOS X/darwin/gcc/framework configuration.
 
@@ -25,6 +27,7 @@ GLGENDIR=./obj
 GLOBJDIR=./obj
 PSSRCDIR=./src
 PSLIBDIR=./lib
+PSRESDIR=./Resource
 PSGENDIR=./obj
 PSOBJDIR=./obj
 
@@ -68,7 +71,7 @@ GS_DOCDIR=$(docdir)
 # Define the default directory/ies for the runtime
 # initialization, resource and font files.  Separate multiple directories with a :.
 
-GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource:$(datadir)/fonts:/Library/Fonts:/System/Library/Fonts
+GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource/Font:$(datadir)/fonts:/Library/Fonts:/System/Library/Fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -100,9 +103,11 @@ GENOPT=
 # Choose capability options.
 
 # -DHAVE_MKSTEMP
-#	uses mkstemp instead of mktemp
-#		This gets rid of several security warnings that look
-#		ominous.  Enable this if you wish to get rid of them.
+#       uses mkstemp instead of mktemp
+#               This uses the more secure temporary file creation call
+#               Enable this if it is available on your platform.
+# -DHAVE_HYPOT
+#       use the system hypot() call
 
 CAPOPT= -DHAVE_MKSTEMP
 
@@ -149,7 +154,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10205
+PVERSION=10208
 
 # Choose whether to use a shared version of the PNG library, and if so,
 # what its name is.
@@ -173,6 +178,7 @@ ZLIB_NAME=z
 
 # Choose shared or compiled in libjbig2dec and source location
 
+JBIG2_LIB=jbig2dec
 SHARE_JBIG2=0
 JBIG2SRCDIR=jbig2dec
 
@@ -184,7 +190,7 @@ ICCSRCDIR=icclib
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
- 
+
 IJSSRCDIR=ijs
 IJSEXECTYPE=unix
 
@@ -199,7 +205,7 @@ RANLIB=ranlib
 
 # Define the name of the C compiler.
 
-CC=gcc
+CC=cc
 
 # Define the name of the linker for the final link step.
 # Normally this is the same as the C compiler.
@@ -211,12 +217,13 @@ CCLD=$(CC)
 # the 2.7.0-2.7.2 optimizer bug, either "-Dconst=" or
 # "-Wcast-qual -Wwrite-strings" is automatically included.
 
-GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -fno-builtin -fno-common
+GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes \
+	-fno-builtin -fno-common -DHAVE_STDINT_H
 
 # Define the added flags for standard, debugging, profiling 
 # and shared object builds.
 
-CFLAGS_STANDARD=-O2 -traditional-cpp
+CFLAGS_STANDARD=
 CFLAGS_DEBUG=-g -O
 CFLAGS_PROFILE=-pg -O2
 CFLAGS_SO=-dynamic
@@ -338,8 +345,7 @@ COMPILE_INITS=0
 BAND_LIST_STORAGE=file
 
 # Choose which compression method to use when storing band lists in memory.
-# The choices are 'lzw' or 'zlib'.  lzw is not recommended, because the
-# LZW-compatible code in Ghostscript doesn't actually compress its input.
+# The choices are 'lzw' or 'zlib'.
 
 BAND_LIST_COMPRESSOR=zlib
 
@@ -385,8 +391,8 @@ DEVICE_DEVS11=
 DEVICE_DEVS12=
 #DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
 DEVICE_DEVS13=$(DD)png16.dev $(DD)png256.dev $(DD)pngalpha.dev
-DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
-DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
 DEVICE_DEVS16=$(DD)bbox.dev
 DEVICE_DEVS17=
 DEVICE_DEVS18=

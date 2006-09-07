@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Adobe Type 2 charstring interpreter */
 #include "math_.h"
 #include "memory_.h"
@@ -53,8 +54,8 @@ private int
 type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state_t * ipsp,
 	  bool explicit_width)
 {
-    fixed wx;
     t1_hinter *h = &pcis->h;
+    fixed sbx = fixed_0, sby = fixed_0, wx, wy = fixed_0;
     int code;
 
     if (explicit_width) {
@@ -63,7 +64,17 @@ type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state_t * ipsp,
 	--csp;
     } else
 	wx = pcis->pfont->data.defaultWidthX;
-    code = t1_hinter__sbw(h, fixed_0, fixed_0, wx, fixed_0);
+    if (pcis->seac_accent < 0) {
+	if (pcis->sb_set) {
+	    sbx = pcis->lsb.x;
+	    sby = pcis->lsb.y;
+	}
+	if (pcis->width_set) {
+	    wx = pcis->width.x;
+	    wy = pcis->width.y;
+	}
+    }
+    code = t1_hinter__sbw(h, sbx, sby, wx, wy);
     if (code < 0)
 	return code;
     gs_type1_sbw(pcis, fixed_0, fixed_0, wx, fixed_0);
@@ -178,19 +189,19 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    /* This is a number, decode it and push it on the stack. */
 
 	    if (c < c_pos2_0) {	/* 1-byte number */
-		decode_push_num1(pfont->memory, csp, cstack, c);
+		decode_push_num1(csp, cstack, c);
 	    } else if (c < cx_num4) {	/* 2-byte number */
-		decode_push_num2(pfont->memory, csp, cstack, c, cip, state, encrypted);
+		decode_push_num2(csp, cstack, c, cip, state, encrypted);
 	    } else if (c == cx_num4) {	/* 4-byte number */
 		long lw;
 
 		decode_num4(lw, cip, state, encrypted);
 		/* 32-bit numbers are 16:16. */
-		CS_CHECK_PUSH(pfont->memory, csp, cstack);
+		CS_CHECK_PUSH(csp, cstack);
 		*++csp = arith_rshift(lw, 16 - _fixed_shift);
 	    } else		/* not possible */
-		return_error(pfont->memory, gs_error_invalidfont);
-	  pushed:if_debug3(pfont->memory, '1', "[1]%d: (%d) %f\n",
+		return_error(gs_error_invalidfont);
+	  pushed:if_debug3('1', "[1]%d: (%d) %f\n",
 		      (int)(csp - cstack), c, fixed2float(*csp));
 	    continue;
 	}
@@ -200,9 +211,9 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    {char2_command_names};
 
 	    if (c2names[c] == 0)
-		dlprintf2(pfont->memory, "[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+		dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
 	    else
-		dlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+		dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
 			  c2names[c]);
 	}
 #endif
@@ -215,7 +226,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    case c_undef0:
 	    case c_undef2:
 	    case c_undef17:
-		return_error(pfont->memory, gs_error_invalidfont);
+		return_error(gs_error_invalidfont);
 	    case c_callsubr:
 		c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
 		code = pdata->procs.subr_data
@@ -291,7 +302,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		}
 		goto pp;
 	    case cx_endchar:
-		/*
+  		/*
 		 * It is a feature of Type 2 CharStrings that if endchar is
 		 * invoked with 4 or 5 operands, it is equivalent to the
 		 * Type 1 seac operator. In this case, the asb operand of
@@ -303,7 +314,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		 */
 		if (csp >= cstack + 3) {
 		    check_first_operator(csp > cstack + 3);
-		    code = gs_type1_seac(pcis, cstack, pcis->lsb.x, ipsp);
+		    code = gs_type1_seac(pcis, cstack, 0, ipsp);
 		    if (code < 0)
 			return code;
 		    clear;
@@ -315,11 +326,11 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		 * In this case, there might be a width on the stack.
 		 */
 		check_first_operator(csp >= cstack);
-		code = t1_hinter__endchar(h, (pcis->seac_accent >= 0));
-		if (code < 0)
-		    return code;
 		if (pcis->seac_accent < 0) {
 		    code = t1_hinter__endglyph(h);
+		    if (code < 0)
+			return code;
+		    code = gx_setcurrentpoint_from_path(pcis->pis, pcis->path);
 		    if (code < 0)
 			return code;
 		} else
@@ -341,7 +352,17 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		return code;
 	    case cx_rmoveto:
 		/* See vmoveto above re closing the subpath. */
-		check_first_operator(csp > cstack + 1);
+		check_first_operator(!((csp - cstack) & 1));
+		if (csp > cstack + 1) {
+		  /* Some Type 2 charstrings omit the vstemhm operator before rmoveto, 
+		     even though this is only allowed before hintmask and cntrmask.
+		     Thanks to Felix Pahl.
+		   */
+		  type2_vstem(pcis, csp - 2, cstack);
+		  cstack [0] = csp [-1];
+		  cstack [1] = csp [ 0];
+		  csp = cstack + 1;
+		}
                 code = t1_hinter__rmoveto(h, csp[-1], *csp);
 		goto move;
 	    case cx_hmoveto:
@@ -412,9 +433,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		 * A hintmask at the beginning of the CharString is
 		 * equivalent to vstemhm + hintmask.  For simplicity, we use
 		 * this interpretation everywhere.
-		 *
-		 * Even though the Adobe documentation doesn't say this,
-		 * it appears that the same holds true for cntrmask.
 		 */
 	    case c2_cntrmask:
 		check_first_operator(!((csp - cstack) & 1));
@@ -432,16 +450,16 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 
 		    for (i = 0; i < pcis->num_hints; ++cip, i += 8) {
 			charstring_next(*cip, state, mask[i >> 3], encrypted);
-			if_debug1(pfont->memory, '1', " 0x%02x", mask[i >> 3]);
+			if_debug1('1', " 0x%02x", mask[i >> 3]);
 		    }
-		    if_debug0(pfont->memory, '1', "\n");
+		    if_debug0('1', "\n");
 		    ipsp->ip = cip;
 		    ipsp->dstate = state;
 		    if (c == c2_cntrmask) {
 			/****** NYI ******/
 		    } else {	/* hintmask or equivalent */
-			if_debug0(pfont->memory, '1', "[1]hstem hints:\n");
-			if_debug0(pfont->memory, '1', "[1]vstem hints:\n");
+			if_debug0('1', "[1]hstem hints:\n");
+			if_debug0('1', "[1]vstem hints:\n");
 			code = t1_hinter__hint_mask(h, mask);
 			if (code < 0)
 			    return code;
@@ -508,7 +526,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    ++cip;
 		    charstring_next(*cip, state, c2, encrypted);
 		    ++cip;
-		    CS_CHECK_PUSH(pfont->memory, csp, cstack);
+		    CS_CHECK_PUSH(csp, cstack);
 		    *++csp = int2fixed((((c1 ^ 0x80) - 0x80) << 8) + c2);
 		}
 		goto pushed;
@@ -526,9 +544,9 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    {char2_extended_command_names};
 
 		    if (ce2names[c] == 0)
-			dlprintf2(pfont->memory, "[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+			dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
 		    else
-			dlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+			dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
 				  ce2names[c]);
 		}
 #endif
@@ -610,7 +628,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			csp -= 3;
 			break;
 		    case ce2_random:
-			CS_CHECK_PUSH(pfont->memory, csp, cstack);
+			CS_CHECK_PUSH(csp, cstack);
 			++csp;
 			/****** NYI ******/
 			break;
@@ -629,7 +647,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			    *csp = float2fixed(sqrt(fixed2float(*csp)));
 			break;
 		    case ce2_dup:
-			CS_CHECK_PUSH(pfont->memory, csp, cstack);
+			CS_CHECK_PUSH(csp, cstack);
 			csp[1] = *csp;
 			++csp;
 			break;
@@ -652,7 +670,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 
 			    csp -= 2;
 			    if (count < 0 || count > csp + 1 - cstack)
-				return_error(pfont->memory, gs_error_invalidfont);
+				return_error(gs_error_invalidfont);
 			    if (count == 0)
 				break;
 			    if (distance < 0)
@@ -688,14 +706,12 @@ flex:			{
 			    double flex_depth;
 
 			    if ((code =
-				 gs_distance_transform(pfont->memory, 
-						       fixed2float(x_join),
+				 gs_distance_transform(fixed2float(x_join),
 						       fixed2float(y_join),
 						       &ctm_only(pcis->pis),
 						       &join)) < 0 ||
 				(code =
-				 gs_distance_transform(pfont->memory, 
-						       fixed2float(x_end),
+				 gs_distance_transform(fixed2float(x_end),
 						       fixed2float(y_end),
 						       &ctm_only(pcis->pis),
 						       &end)) < 0
@@ -762,7 +778,7 @@ flex:			{
 
 	      case_c2_undefs:
 	    default:		/* pacify compiler */
-		return_error(pfont->memory, gs_error_invalidfont);
+		return_error(gs_error_invalidfont);
 	}
     }
 }

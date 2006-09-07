@@ -1,16 +1,19 @@
-% Portions Copyright (C) 2001 artofcode LLC.
-% Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-% Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-% This software is based in part on the work of the Independent JPEG Group.
-% All Rights Reserved.
-%
-% This software is distributed under license and may not be copied, modified
-% or distributed except as expressly authorized under the terms of that
-% license.  Refer to licensing information at http://www.artifex.com/ or
-% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-% San Rafael, CA  94903, (415)492-9861, for further information.
+%    Copyright (C) 1994, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 % 
-% $RCSfile$ $Revision$
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+% $Id$
 % Initialization file for Level 2 resource machinery.
 % When this is run, systemdict is still writable,
 % but (almost) everything defined here goes into level2dict.
@@ -132,7 +135,7 @@ setglobal
 		% empty .Instances dictionary with the real one later.
 	  readonly
 	} {
-	  /defineresource load /typecheck signalerror
+	  /defineresource .systemvar /typecheck signalerror
 	} ifelse
 } bind def
 /FindResource		% (redefined below)
@@ -154,7 +157,7 @@ setglobal
 	     /UndefineResource }
 	   { 2 index exch known and }
 	  forall
-	  not { /defineresource load /invalidaccess signalerror } if
+	  not { /defineresource .systemvar /invalidaccess signalerror } if
 	  true
 	} bind def
 
@@ -184,7 +187,7 @@ odef
 	currentdict /InstanceType known {
 	  dup type InstanceType ne {
 	    dup type /packedarraytype eq InstanceType /arraytype eq and
-	    not { /defineresource load /typecheck signalerror } if
+	    not { /defineresource .systemvar /typecheck signalerror } if
 	  } if
 	} if
 	/DefineResource .resourceexec
@@ -220,76 +223,76 @@ odef
 % ResourceFileName.
 systemdict begin
 
-  %     - .default_resource_dir <string>
-  /.default_resource_dir {
-    .file_name_parent .file_name_directory_separator concatstrings
-    (Resource) concatstrings
-    /LIBPATH .systemvar {
-      dup .file_name_current eq {
-        pop
+%     - .default_resource_dir <string>
+/.default_resource_dir {
+  .file_name_parent .file_name_directory_separator concatstrings
+  (Resource) concatstrings
+  /LIBPATH .systemvar {
+    dup .file_name_current eq {
+      pop
+    } {
+      1 index false .file_name_combine {
+        exch pop exit
       } {
-        1 index false .file_name_combine {
-          exch pop exit
-        } {
-          pop pop
-        } ifelse
+        pop pop
       } ifelse
-    } forall
-  } bind def
-
-  %  <path> <name> <string> .resource_dir_name <path> <name> <string>
-  /.resource_dir_name
-  {  systemdict 2 index .knownget {
-       exch pop
-       systemdict 1 index undef
-     } {
-      dup () ne {
-        .file_name_directory_separator concatstrings
-      } if
-      2 index exch false .file_name_combine not {
-        (Error: .default_resource_dir returned ) print exch print ( that can't combine with ) print =
-        /.default_resource_dir /configurationerror .signalerror
-      } if
     } ifelse
-  } bind def
+  } forall
+} bind def
+
+%  <path> <name> <string> .resource_dir_name <path> <name> <string>
+/.resource_dir_name
+{  systemdict 2 index .knownget {
+     exch pop
+     systemdict 1 index undef
+   } {
+     dup () ne {
+     .file_name_directory_separator concatstrings
+    } if
+    2 index exch false .file_name_combine not {
+      (Error: .default_resource_dir returned ) print exch print ( that can't combine with ) print =
+      /.default_resource_dir cvx /configurationerror .signalerror
+    } if
+  } ifelse
+} bind def
 
 currentdict /pssystemparams known not {
   /pssystemparams 10 dict readonly def
 } if
 pssystemparams begin
-    .default_resource_dir
-    /FontResourceDir (Font) .resource_dir_name
-       readonly .forcedef	% pssys'params is r-o
-    /GenericResourceDir () .resource_dir_name
-       readonly .forcedef	% pssys'params is r-o
-    pop % .default_resource_dir
-    /GenericResourcePathSep
-    	.file_name_separator readonly .forcedef		% pssys'params is r-o
-    (%diskFontResourceDir) cvn (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
-    (%diskGenericResourceDir) cvn (/Resource/) readonly .forcedef	% pssys'params is r-o
+  .default_resource_dir
+  /FontResourceDir (Font) .resource_dir_name
+     readonly .forcedef	% pssys'params is r-o
+  /GenericResourceDir () .resource_dir_name
+     readonly .forcedef	% pssys'params is r-o
+  pop % .default_resource_dir
+  /GenericResourcePathSep
+  	.file_name_separator readonly .forcedef		% pssys'params is r-o
+  (%diskFontResourceDir) cvn (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
+  (%diskGenericResourceDir) cvn (/Resource/) readonly .forcedef	% pssys'params is r-o
 end
 end
 
-  % Check if GenericResourceDir presents in LIBPATH.
+% Check if GenericResourceDir presents in LIBPATH.
 
-  % The value of GenericResourceDir must end with directory separator.
-  % We use .file_name_combine to check it. 
-  % Comments use OpenVMS syntax, because it is the most complicated case.
-  (x) pssystemparams /GenericResourcePathSep get
-  (y) concatstrings concatstrings dup length              % (x]y) l1
-  pssystemparams /GenericResourceDir get dup length exch  % (x]y) l1 l2 (dir)
-  3 index true .file_name_combine not {
-    exch
-    (File name ) print print ( cant combine with ) print =
-    /GenericResourceDir cvx /configurationerror signalerror
-  } if
-  dup length                                              % (x]y) l1 l2 (dir.x]y) l
-  4 2 roll add                                            % (x]y) (dir.x]y) l ll
-  ne {
-    (GenericResourceDir value does not end with directory separator.\n) =
-    /GenericResourceDir cvx /configurationerror signalerror
-  } if
-  pop pop
+% The value of GenericResourceDir must end with directory separator.
+% We use .file_name_combine to check it. 
+% Comments use OpenVMS syntax, because it is the most complicated case.
+(x) pssystemparams /GenericResourcePathSep get
+(y) concatstrings concatstrings dup length              % (x]y) l1
+pssystemparams /GenericResourceDir get dup length exch  % (x]y) l1 l2 (dir)
+3 index true .file_name_combine not {
+  exch
+  (File name ) print print ( cant combine with ) print =
+  /GenericResourceDir cvx /configurationerror signalerror
+} if
+dup length                                              % (x]y) l1 l2 (dir.x]y) l
+4 2 roll add                                            % (x]y) (dir.x]y) l ll
+ne {
+  (GenericResourceDir value does not end with directory separator.\n) =
+  /GenericResourceDir cvx /configurationerror signalerror
+} if
+pop pop
 
 % Define the generic algorithm for computing resource file names.
 /.rfnstring 8192 string def
@@ -376,7 +379,7 @@ end
 	     0 2 copy get { readonly } .internalstopped pop
 	     dup 4 1 roll put exch pop exch pop
 	   }
-	   { /defineresource load /typecheck signalerror
+	   { /defineresource .systemvar /typecheck signalerror
 	   }
 	ifelse
 } .bind executeonly		% executeonly to prevent access to .forcedef
@@ -407,13 +410,13 @@ end
 	  dup ResourceStatus {
 	    pop 1 gt {
 	      .DoLoadResource .getvminstance not {
-		/findresource load /undefinedresource signalerror
+		/findresource .systemvar /undefinedresource signalerror
 	      } if 0 get
 	    } {
 	      .GetInstance pop 0 get
 	    } ifelse
 	  } {
-	   /findresource load /undefinedresource signalerror
+	   /findresource .systemvar /undefinedresource signalerror
 	  } ifelse
 	} ifelse
 } bind
@@ -449,37 +452,45 @@ end
 	//.globalresourceforall {exec} 0 get 3 .localpackedarray cvx
 	.Instances exch cvx {forall} 0 get 1 index 0 get
 	currentdict end 3 .execn begin
-	  mark                                             % args [
-          Category .namestring .file_name_separator concatstrings
-          2 index 0 get                                    % args [ (c/) (t)
-          dup length 3 1 roll                              % args [ l (c/) (t)
-          concatstrings                                    % args [ l (c/t)
-	  [ exch
-	    /LIBPATH .systemvar exch
-	    .generate_dir_list_templates ]                 % args [ l [(pt)]
-	  {                                                % args [ l (pt)
-	    dup length 2 index sub exch                    % args [ l Lp (pt)
+        mark                                             % args [
+        Category .namestring .file_name_separator concatstrings
+        2 index 0 get                                    % args [ (c/) (t)
+        dup length 3 1 roll                              % args [ l (c/) (t)
+        concatstrings                                    % args [ l (c/t)
+	[ 
+	  /LIBPATH .systemvar 2 index
+	  .generate_dir_list_templates                   % args (t) [ l [(pt)]
+	    % also add on the Resources as specified by the GenericResourceDir
+          [ currentsystemparams /GenericResourceDir get]
+	  counttomark 1 add index .generate_dir_list_templates
+            % Resource files on OpenVMS requires a separate template (gs:[dir.*]*)
+          [ currentsystemparams /GenericResourceDir get]
+	  counttomark 1 add index .file_name_separator (*)
+          concatstrings concatstrings .generate_dir_list_templates
+	  ] exch pop
+	{                                                % args [ l (pt)
+	  dup length 2 index sub exch                    % args [ l Lp (pt)
 
-	    {                                              % args [ l Lp (pf)
-	      dup length                                   % args [ l Lp (pf) Lpf
-	      2 index sub                                  % args [ l Lp (pf) Lf
-	      2 index exch                                 % args [ l Lp (pf) Lp Lf
-	      getinterval cvn dup                          % args [ l Lp /n /n
-	      4 2 roll                                     % args [ /n /n l Lp
-	    } //.rfnstring filenameforall
-	    pop                                            % args [ l /n1 /n1 ... /nN /nN l
-	  } forall                                         % args [ l /n1 /n1 ... /nN /nN
-	  pop
-	  .dicttomark % An easy way to exclude duplicates. % args <</n/n>>
-	    % {
-	    { pop } 0 get
-            2 index 2 get { cvs 0 } aload pop 5 index
-            //.externalresourceforall {exec} 0 get
-            % }
-          7 .localpackedarray cvx
-          3 2 roll pop % args
-	  { forall } 0 get
-  	  currentdict end 2 .execn begin
+	  {                                              % args [ l Lp (pf)
+	    dup length                                   % args [ l Lp (pf) Lpf
+	    2 index sub                                  % args [ l Lp (pf) Lf
+	    2 index exch                                 % args [ l Lp (pf) Lp Lf
+	    getinterval cvn dup                          % args [ l Lp /n /n
+	    4 2 roll                                     % args [ /n /n l Lp
+	  } //.rfnstring filenameforall
+	  pop                                            % args [ l /n1 /n1 ... /nN /nN l
+	} forall                                         % args [ l /n1 /n1 ... /nN /nN
+	pop
+	.dicttomark % An easy way to exclude duplicates. % args <</n/n>>
+	  % {
+	  { pop } 0 get
+          2 index 2 get { cvs 0 } aload pop 5 index
+          //.externalresourceforall {exec} 0 get
+          % }
+        7 .localpackedarray cvx
+        3 2 roll pop % args
+	{ forall } 0 get
+  	currentdict end 2 .execn begin
 } bind
 /ResourceFileName
 	  {                                             % /in (scr)
@@ -489,6 +500,7 @@ end
             3 1 roll                                    % (scr) (c) (/) (n)
 	    concatstrings concatstrings                 % (scr) (c/n)
             /GenericResourceDir getsystemparam .file_name_is_absolute not {
+              /GenericResourceDir getsystemparam exch concatstrings
 	      findlibfile
 	      {                                         % (scr) (p/c/n) file
 	        pop exch copy true                      % (p/c/n) true
@@ -593,12 +605,10 @@ end
 	      mark 1 index //.rfnstring { ResourceFileName } .internalstopped {
 	        cleartomark false
 	      } {
-	        dup status {
-	          pop pop pop pop
-	          (r) file
-	          exch pop exch pop true
-	        } {
+	        (r) { file } .internalstopped {
 	          cleartomark false
+		} {
+	          exch pop exch pop true
 	        } ifelse
 	      } ifelse
 	     } {
@@ -672,20 +682,20 @@ counttomark 2 idiv
 		% We can at least require that the key and value match.
    /DefineResource
 	{ currentglobal not
-	   { /defineresource load /invalidaccess signalerror }
+	   { /defineresource .systemvar /invalidaccess signalerror }
 	   { 2 copy ne
-	      { /defineresource load /rangecheck signalerror }
+	      { /defineresource .systemvar /rangecheck signalerror }
 	      { dup .Instances 4 -2 roll .growput }
 	     ifelse
 	   }
 	  ifelse
 	} bind
    /UndefineResource
-	{ /undefineresource load /invalidaccess signalerror } bind
+	{ /undefineresource .systemvar /invalidaccess signalerror } bind
    /FindResource
 	{ .Instances 1 index .knownget
 	   { exch pop }
-	   { /findresource load /undefinedresource signalerror }
+	   { /findresource .systemvar /undefinedresource signalerror }
 	  ifelse
 	} bind
    /ResourceStatus
@@ -1032,5 +1042,3 @@ end				% level2dict
 
 %% Replace 1 (gs_resmp.ps)
 (gs_resmp.ps)  dup runlibfile VMDEBUG
-%% Replace 1 (gs_resst.ps)
-(gs_resst.ps)  dup runlibfile VMDEBUG

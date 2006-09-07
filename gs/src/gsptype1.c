@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PatternType 1 pattern implementation */
 #include "math_.h"
 #include "gx.h"
@@ -36,6 +37,11 @@
 #include "gsimage.h"
 #include "gsiparm4.h"
 #include "gsovrc.h"
+
+/* Temporary switches for experimanting with Adobe compatibility. */
+#define ADJUST_SCALE_FOR_THIN_LINES 0	/* Old code = 0 */
+#define ADJUST_SCALE_BY_GS_TRADITION 0	/* Old code = 1 */
+#define ADJUST_AS_ADOBE 1		/* Old code = 0 *//* This one is closer to Adobe. */
 
 /* GC descriptors */
 private_st_pattern1_template();
@@ -84,14 +90,14 @@ gs_cspace_build_Pattern1(gs_color_space ** ppcspace,
 
     if (pbase_cspace != 0) {
 	if (gs_color_space_num_components(pcspace) < 0)		/* Pattern space */
-	    return_error(pmem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
     }
     code = gs_cspace_alloc(&pcspace, &gs_color_space_type_Pattern, pmem);
     if (code < 0)
 	return code;
     if (pbase_cspace != 0) {
 	pcspace->params.pattern.has_base_space = true;
-	gs_cspace_init_from(pmem, (gs_color_space *) & (pcspace->params.pattern.base_space),
+	gs_cspace_init_from((gs_color_space *) & (pcspace->params.pattern.base_space),
 			    pbase_cspace
 	    );
     } else
@@ -109,7 +115,7 @@ gs_pattern1_init(gs_pattern1_template_t * ppat)
 
 /* Make an instance of a PatternType 1 pattern. */
 private int compute_inst_matrix(gs_pattern1_instance_t * pinst,
-				const gs_state * saved, gs_rect * pbbox);
+	const gs_state * saved, gs_rect * pbbox, int width, int height);
 int
 gs_makepattern(gs_client_color * pcc, const gs_pattern1_template_t * pcp,
 	       const gs_matrix * pmat, gs_state * pgs, gs_memory_t * mem)
@@ -129,6 +135,9 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     gs_state *saved;
     gs_rect bbox;
     gs_fixed_rect cbox;
+    gx_device * pdev = pgs->device;
+    int dev_width = pdev->width;
+    int dev_height = pdev->height;
     int code = gs_make_pattern_common(pcc, (const gs_pattern_template_t *)pcp,
 				      pmat, pgs, mem,
 				      &st_pattern1_instance);
@@ -148,17 +157,18 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 	    gx_set_device_color_1(saved);
 	    break;
 	default:
-	    code = gs_note_error(mem, gs_error_rangecheck);
+	    code = gs_note_error(gs_error_rangecheck);
 	    goto fsaved;
     }
     inst.template = *pcp;
-    code = compute_inst_matrix(&inst, saved, &bbox);
+    code = compute_inst_matrix(&inst, saved, &bbox, dev_width, dev_height);
     if (code < 0)
 	goto fsaved;
+
 #define mat inst.step_matrix
-    if_debug6(pgs->memory, 't', "[t]step_matrix=[%g %g %g %g %g %g]\n",
+    if_debug6('t', "[t]step_matrix=[%g %g %g %g %g %g]\n",
 	      mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
-    if_debug4(pgs->memory, 't', "[t]bbox=(%g,%g),(%g,%g)\n",
+    if_debug4('t', "[t]bbox=(%g,%g),(%g,%g)\n",
 	      bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
     {
 	float bbw = bbox.q.x - bbox.p.x;
@@ -166,8 +176,13 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 
 	/* If the step and the size agree to within 1/2 pixel, */
 	/* make them the same. */
-	inst.size.x = (int)(bbw + 0.8);		/* 0.8 is arbitrary */
-	inst.size.y = (int)(bbh + 0.8);
+	if (ADJUST_SCALE_BY_GS_TRADITION) {
+	    inst.size.x = (int)(bbw + 0.8);		/* 0.8 is arbitrary */
+	    inst.size.y = (int)(bbh + 0.8);
+	} else {
+	    inst.size.x = (int)ceil(bbw);
+	    inst.size.y = (int)ceil(bbh);
+	}
 
 	if (inst.size.x == 0 || inst.size.y == 0) {
 	    /*
@@ -178,41 +193,81 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 	} else {
 	    /* Check for singular stepping matrix. */
 	    if (fabs(mat.xx * mat.yy - mat.xy * mat.yx) < 1.0e-6) {
-		code = gs_note_error(pgs->memory, gs_error_rangecheck);
+		code = gs_note_error(gs_error_rangecheck);
 		goto fsaved;
 	    }
-	    if (mat.xy == 0 && mat.yx == 0 &&
+	    if (ADJUST_SCALE_BY_GS_TRADITION &&
+	        mat.xy == 0 && mat.yx == 0 &&
 		fabs(fabs(mat.xx) - bbw) < 0.5 &&
 		fabs(fabs(mat.yy) - bbh) < 0.5
 		) {
 		gs_scale(saved, fabs(inst.size.x / mat.xx),
 			 fabs(inst.size.y / mat.yy));
-		code = compute_inst_matrix(&inst, saved, &bbox);
+		code = compute_inst_matrix(&inst, saved, &bbox,
+						dev_width, dev_height);
 		if (code < 0)
 		    goto fsaved;
-		if_debug2(pgs->memory, 't',
+		if (ADJUST_SCALE_FOR_THIN_LINES) {
+		    /* To allow thin lines at a cell boundary 
+		       to be painted inside the cell,
+		       we adjust the scale so that 
+		       the scaled width is in fixed_1 smaller */
+		    gs_scale(saved, (fabs(inst.size.x) - 1.0 / fixed_scale) / fabs(inst.size.x),
+				    (fabs(inst.size.y) - 1.0 / fixed_scale) / fabs(inst.size.y));
+		}
+		if_debug2('t',
 			  "[t]adjusted XStep & YStep to size=(%d,%d)\n",
 			  inst.size.x, inst.size.y);
-		if_debug4(pgs->memory, 't', "[t]bbox=(%g,%g),(%g,%g)\n",
+		if_debug4('t', "[t]bbox=(%g,%g),(%g,%g)\n",
 			  bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
+	    } else if (ADJUST_AS_ADOBE) {
+		if (mat.xy == 0 && mat.yx == 0 &&
+		    fabs(fabs(mat.xx) - bbw) < 0.5 &&
+		    fabs(fabs(mat.yy) - bbh) < 0.5
+		    ) {
+		    if (inst.step_matrix.xx <= 2) { 
+			/* Prevent a degradation - see -r72 mspro.pdf */
+			gs_scale(saved, fabs(inst.size.x / mat.xx), 1);
+			inst.step_matrix.xx = (float)inst.size.x;
+		    } else {
+			inst.step_matrix.xx = (float)floor(inst.step_matrix.xx + 0.5);
+			/* To allow thin lines at a cell boundary 
+			   to be painted inside the cell,
+			   we adjust the scale so that 
+			   the scaled width is in fixed_1 smaller */
+			if (bbw >= inst.size.x - 1.0 / fixed_scale)
+			    gs_scale(saved, (fabs(inst.size.x) - 1.0 / fixed_scale) / fabs(inst.size.x), 1);
+		    }
+		    if (inst.step_matrix.yy <= 2) {
+			gs_scale(saved, 1, fabs(inst.size.y / mat.yy));
+			inst.step_matrix.yy = (float)inst.size.y;
+		    } else {
+			inst.step_matrix.yy = (float)floor(inst.step_matrix.yy + 0.5);
+			if (bbh >= inst.size.y - 1.0 / fixed_scale)
+			    gs_scale(saved, 1, (fabs(inst.size.y) - 1.0 / fixed_scale) / fabs(inst.size.y));
+		    }
+		    code = gs_bbox_transform(&inst.template.BBox, &ctm_only(saved), &bbox);
+		    if (code < 0)
+			goto fsaved;
+		}
 	    }
 	}
     }
-    if ((code = gs_bbox_transform_inverse(pgs->memory, &bbox, &mat, &inst.bbox)) < 0)
+    if ((code = gs_bbox_transform_inverse(&bbox, &mat, &inst.bbox)) < 0)
 	goto fsaved;
-    if_debug4(pgs->memory, 't', "[t]ibbox=(%g,%g),(%g,%g)\n",
+    if_debug4('t', "[t]ibbox=(%g,%g),(%g,%g)\n",
 	      inst.bbox.p.x, inst.bbox.p.y, inst.bbox.q.x, inst.bbox.q.y);
     inst.is_simple = (fabs(mat.xx) == inst.size.x && mat.xy == 0 &&
 		      mat.yx == 0 && fabs(mat.yy) == inst.size.y);
-    if_debug6(pgs->memory, 't',
+    if_debug6('t',
 	      "[t]is_simple? xstep=(%g,%g) ystep=(%g,%g) size=(%d,%d)\n",
 	      inst.step_matrix.xx, inst.step_matrix.xy,
 	      inst.step_matrix.yx, inst.step_matrix.yy,
 	      inst.size.x, inst.size.y);
     /* Absent other information, instances always require a mask. */
     inst.uses_mask = true;
-    gx_translate_to_fixed(saved, float2fixed(mat.tx - bbox.p.x),
-			  float2fixed(mat.ty - bbox.p.y));
+    gx_translate_to_fixed(saved, float2fixed_rounded(mat.tx - bbox.p.x),
+			         float2fixed_rounded(mat.ty - bbox.p.y));
     mat.tx = bbox.p.x;
     mat.ty = bbox.p.y;
 #undef mat
@@ -231,19 +286,125 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     gs_free_object(mem, pinst, "gs_makepattern");
     return code;
 }
+
+/*
+ * Clamp the bound box for a pattern to the region of the pattern that will
+ * actually be on our page.  We need to do this becuase some applications
+ * create patterns which specify a bounding box which is much larger than
+ * the page.  We allocate a buffer for holding the pattern.  We need to
+ * prevent this buffer from getting too large.
+ */
+private int
+clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
+		    int width, int height, const gs_matrix * pmat)
+{
+    double xstep = pinst->template.XStep;
+    double ystep = pinst->template.YStep;
+    double xmin = pbbox->q.x;
+    double xmax = pbbox->p.x;
+    double ymin = pbbox->q.y;
+    double ymax = pbbox->p.y;
+    int ixpat, iypat, iystart;
+    double xpat, ypat;
+    double xlower, xupper, ylower, yupper;
+    double xdev, ydev;
+    gs_rect dev_page, pat_page;
+    gs_point dev_pat_origin, dev_step;
+    int code;
+
+    /*
+     * Scan across the page.  We determine the region to be scanned
+     * by working in the pattern coordinate space.  This is logically
+     * simpler since XStep and YStep are on axis in the pattern space.
+     */
+    /*
+     * Convert the page dimensions from device coordinates into the
+     * pattern coordinate frame.
+     */
+    dev_page.p.x = dev_page.p.y = 0;
+    dev_page.q.x = width;
+    dev_page.q.y = height;
+    code = gs_bbox_transform_inverse(&dev_page, pmat, &pat_page);
+    if (code < 0)
+	return code;
+    /*
+     * Determine the location of the pattern origin in device coordinates.
+     */
+    gs_point_transform(0.0, 0.0, pmat, &dev_pat_origin);
+    /*
+     * Determine our starting point.  We start with a postion that puts the
+     * pattern below and to the left of the page (in pattern space) and scan
+     * until the pattern is above and right of the page.
+     */
+    ixpat = (int) floor((pat_page.p.x - pinst->template.BBox.q.x) / xstep);
+    iystart = (int) floor((pat_page.p.y - pinst->template.BBox.q.y) / ystep);
+
+    /* Now do the scan */
+    for (; ; ixpat++) {
+        xpat = ixpat * xstep;
+	for (iypat = iystart; ; iypat++) {
+            ypat = iypat * ystep;
+            /*
+	     * Calculate the shift in the pattern's location.
+	     */
+	    gs_point_transform(xpat, ypat, pmat, &dev_step);
+	    xdev = dev_step.x - dev_pat_origin.x;
+	    ydev = dev_step.y - dev_pat_origin.y;
+	    /*
+	     * Check if the pattern bounding box intersects the page.
+	     */
+	    xlower = (xdev + pbbox->p.x > 0) ? pbbox->p.x : -xdev;
+	    xupper = (xdev + pbbox->q.x < width) ? pbbox->q.x : -xdev + width;
+	    ylower = (ydev + pbbox->p.y > 0) ? pbbox->p.y : -ydev;
+	    yupper = (ydev + pbbox->q.y < height) ? pbbox->q.y : -ydev + height;
+	    if (xlower < xupper && ylower < yupper) {
+		/*
+		 * The pattern intersects the page.  Expand required area if
+		 * needed.
+		 */
+		if (xlower < xmin)
+		    xmin = xlower;
+		if (xupper > xmax)
+		    xmax = xupper;
+		if (ylower < ymin)
+		    ymin = ylower;
+		if (yupper > ymax)
+		    ymax = yupper;
+	    }
+	    if (ypat > pat_page.q.y - pinst->template.BBox.p.y)
+	        break;
+	}
+	if (xpat > pat_page.q.x - pinst->template.BBox.p.x)
+	    break;
+    }
+    /* Update the bounding box. */
+    if (xmin < xmax && ymin < ymax) {
+	pbbox->p.x = xmin;
+	pbbox->q.x = xmax;
+	pbbox->p.y = ymin;
+	pbbox->q.y = ymax;
+    } else {
+	/* The pattern is never on the page.  Set bbox = 1, 1 */
+	pbbox->p.x = pbbox->p.y = 0;
+	pbbox->q.x = pbbox->q.y = 1;
+    }
+    return 0;
+}
+
 /* Compute the stepping matrix and device space instance bounding box */
 /* from the step values and the saved matrix. */
 private int
 compute_inst_matrix(gs_pattern1_instance_t * pinst, const gs_state * saved,
-		    gs_rect * pbbox)
+			    gs_rect * pbbox, int width, int height)
 {
     double xx = pinst->template.XStep * saved->ctm.xx;
     double xy = pinst->template.XStep * saved->ctm.xy;
     double yx = pinst->template.YStep * saved->ctm.yx;
     double yy = pinst->template.YStep * saved->ctm.yy;
+    int code;
 
     /* Adjust the stepping matrix so all coefficients are >= 0. */
-    if (xx == 0 || yy == 0) {	/* We know that both xy and yx are non-zero. */
+    if (xx == 0 || yy == 0) { /* We know that both xy and yx are non-zero. */
 	double temp;
 
 	temp = xx, xx = yx, yx = temp;
@@ -260,8 +421,18 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst, const gs_state * saved,
     pinst->step_matrix.yy = yy;
     pinst->step_matrix.tx = saved->ctm.tx;
     pinst->step_matrix.ty = saved->ctm.ty;
-    return gs_bbox_transform(saved->memory, &pinst->template.BBox, &ctm_only(saved),
-			     pbbox);
+    code = gs_bbox_transform(&pinst->template.BBox, &ctm_only(saved), pbbox);
+    /*
+     * Some applications produce patterns that are larger than the page.
+     * If the bounding box for the pattern is larger than the page. clamp
+     * the pattern to the page size.
+     */
+    if (code >= 0 &&
+	(pbbox->q.x - pbbox->p.x > width || pbbox->q.y - pbbox->p.y > height))
+	code = clamp_pattern_bbox(pinst, pbbox, width,
+					height, &ctm_only(saved));
+
+    return code;
 }
 
 /* Test whether a PatternType 1 pattern uses a base space. */
@@ -429,7 +600,7 @@ mask_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
     gs_image1_t mask;
 
     if (pen == 0)
-	return_error(pgs->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     gs_image_t_init_mask(&mask, true);
     mask.Width = pbitmap->size.x;
     mask.Height = pbitmap->size.y;
@@ -466,7 +637,7 @@ image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
     int code;
 
     if (pen == 0)
-	return_error(pgs->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
 
     if (ppmap->pcspace == 0) {
         gs_cspace_init_DeviceGray(pgs->memory, &cs);
@@ -523,10 +694,9 @@ bitmap_paint(gs_image_enum * pen, gs_data_image_t * pim,
     else
 	for (n = pim->Height; n > 0 && code >= 0; dp += raster, --n)
 	    code = gs_image_next(pen, dp, nbytes, &used);
-    code1 = gs_image_cleanup(pen);
+    code1 = gs_image_cleanup_and_free_enum(pen);
     if (code >= 0 && code1 < 0)
 	code = code1;
-    gs_free_object(gs_state_memory(pgs), pen, "bitmap_paint");
     return code;
 }
 
@@ -560,12 +730,12 @@ gs_makepixmappattern(
     /* check that the data is legitimate */
     if ((mask) || (pcspace == 0)) {
 	if (pbitmap->pix_depth != 1)
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	pcspace = 0;
     } else if (gs_color_space_get_index(pcspace) != gs_color_space_index_Indexed)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     if (pbitmap->num_comps != 1)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
 
     /* allocate and initialize a pixmap_info structure for the paint proc */
     if (mem == 0)
@@ -576,7 +746,7 @@ gs_makepixmappattern(
 			    "makepximappattern"
 	);
     if (ppmap == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     ppmap->bitmap = *pbitmap;
     ppmap->pcspace = pcspace;
     ppmap->white_index = white_index;
@@ -822,8 +992,16 @@ gx_dc_pattern_save_dc(
     gx_device_color_saved * psdc )
 {
     psdc->type = pdevc->type;
-    psdc->colors.pattern.id = pdevc->ccolor.pattern->pattern_id;
-    psdc->colors.pattern.phase = pdevc->phase;
+    if (pdevc->ccolor_valid) {
+	psdc->colors.pattern.id = pdevc->ccolor.pattern->pattern_id;
+	psdc->colors.pattern.phase = pdevc->phase;
+    } {
+	/* The client color has been changed to a non-pattern color,
+	   but device color has not been created yet. 
+	 */
+	psdc->colors.pattern.id = gs_no_id;
+	psdc->colors.pattern.phase.x = psdc->colors.pattern.phase.y = 0;
+    }
 }
 
 /*
@@ -1016,7 +1194,7 @@ gx_dc_pattern_write(
     byte *                          data,
     uint *                          psize )
 {
-    return_error(dev->memory, gs_error_unknownerror);
+    return_error(gs_error_unknownerror);
 }
 
 int
@@ -1029,5 +1207,5 @@ gx_dc_pattern_read(
     uint                    size,
     gs_memory_t *           mem )
 {
-    return_error(dev->memory, gs_error_unknownerror);
+    return_error(gs_error_unknownerror);
 }

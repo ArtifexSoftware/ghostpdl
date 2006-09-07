@@ -1,14 +1,15 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* idisp.c */
 /* $Id$ */
@@ -40,9 +41,10 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "idisp.h"
+#include "gdevdevn.h"
+#include "gsequivc.h"
 #include "gdevdsp.h"
 #include "gdevdsp2.h"
-#include "ialloc.h"
 
 int
 display_set_callback(gs_main_instance *minst, display_callback *callback)
@@ -68,21 +70,21 @@ display_set_callback(gs_main_instance *minst, display_callback *callback)
        return code;
 
     op = osp;
-    check_type(imemory, *op, t_boolean);
+    check_type(*op, t_boolean);
     if (op->value.boolval) {
 	/* display device was included in Ghostscript so we need
 	 * to set the callback structure pointer within it.
 	 * If the device is already open, close it before
 	 * setting callback, then reopen it.
 	 */
-	check_read_type(imemory, op[-1], t_device);
+	check_read_type(op[-1], t_device);
 	dev = op[-1].value.pdevice;
 	
 	was_open = dev->is_open;
 	if (was_open) {
 	    code = gs_closedevice(dev);
 	    if (code < 0)
-		return_error(imemory, code);
+		return_error(code);
 	}
 
 	ddev = (gx_device_display *) dev;
@@ -91,8 +93,8 @@ display_set_callback(gs_main_instance *minst, display_callback *callback)
 	if (was_open) {
 	    code = gs_opendevice(dev);
 	    if (code < 0) {
-		dprintf(minst->heap, "**** Unable to open the display device, quitting.\n");
-		return_error(imemory, code);
+		dprintf("**** Unable to open the display device, quitting.\n");
+		return_error(code);
 	    }
 	}
 	pop(1);	/* device */

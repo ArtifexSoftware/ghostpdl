@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generic printer driver support */
 #include "ctype_.h"
 #include "gdevprn.h"
@@ -21,6 +22,7 @@
 #include "gxclio.h"
 #include "gxgetbit.h"
 #include "gdevplnx.h"
+#include "gstrans.h"
 
 /*#define DEBUGGING_HACKS*/
 
@@ -52,7 +54,8 @@ const gx_device_procs prn_std_procs =
 /* Forward references */
 int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev, 
 				  gdev_prn_space_params *old_space,
-				  int old_width, int old_height);
+			          int old_width, int old_height,
+			          bool old_page_uses_transparency);
 
 /* ------ Open/close ------ */
 
@@ -111,7 +114,7 @@ gdev_prn_setup_as_command_list(gx_device *pdev, gs_memory_t *buffer_memory,
     for (; fp_ && (fp_[1] & 0xff000000) == 0x08000000; fp_ = (ulong *)*fp_)\
 	dprintf2("  fp=0x%lx ip=0x%lx\n", (ulong)fp_, fp_[1]);\
   END
-    dputs(pdev->memory, "alloc buffer:\n");
+dputs("alloc buffer:\n");
 BACKTRACE(pdev);
 #endif /*DEBUGGING_HACKS*/
     for ( space = space_params->BufferSpace; ; ) {
@@ -126,7 +129,7 @@ BACKTRACE(pdev);
 	    break;
     }
     if (base == 0)
-	return_error(pdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     *the_memory = base;
 
     /* Try opening the command list, to see if we allocated */
@@ -140,7 +143,8 @@ open_c:
 		      (ppdev->bandlist_memory == 0 ? pdev->memory->non_gc_memory:
 		       ppdev->bandlist_memory),
 		      ppdev->free_up_bandlist_memory,
-		      ppdev->clist_disable_mask);
+		      ppdev->clist_disable_mask,
+		      ppdev->page_uses_transparency);
     code = (*gs_clist_device_procs.open_device)( (gx_device *)pcldev );
     if (code < 0) {
 	/* If there wasn't enough room, and we haven't */
@@ -234,6 +238,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
     ppdev->orig_procs = pdev->procs;
     for ( pass = 1; pass <= (reallocate ? 2 : 1); ++pass ) {
 	ulong mem_space;
+	ulong pdf14_trans_buffer_size = 0;
 	byte *base = 0;
 	bool bufferSpace_is_default = false;
 	gdev_prn_space_params space_params;
@@ -263,7 +268,11 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	memset(ppdev->skip, 0, sizeof(ppdev->skip));
 	ppdev->printer_procs.buf_procs.size_buf_device
 	    (&buf_space, pdev, NULL, pdev->height, false);
-	mem_space = buf_space.bits + buf_space.line_ptrs;
+	if (ppdev->page_uses_transparency)
+	    pdf14_trans_buffer_size = new_height
+		* (ESTIMATED_PDF14_ROW_SPACE(new_width) >> 3);
+	mem_space = buf_space.bits + buf_space.line_ptrs
+		    + pdf14_trans_buffer_size;
 
 	/* Compute desired space params: never use the space_params as-is. */
 	/* Rather, give the dev-specific driver a chance to adjust them. */
@@ -323,7 +332,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 		the_memory = 0;
 	    }
 	    if (space_params.banding_type == BandingNever) {
-		ecode = gs_note_error(pdev->memory, gs_error_VMerror);
+		ecode = gs_note_error(gs_error_VMerror);
 		continue;
 	    }
 	    code = gdev_prn_setup_as_command_list(pdev, buffer_memory,
@@ -352,7 +361,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 		gs_free_object(buffer_memory, base, "printer buffer");
 		pdev->procs = ppdev->orig_procs;
 		ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of procs */
-		return_error(pdev->memory, code);
+		return_error(code);
 	    }
 	    pmemdev->base = base;
 	}
@@ -386,6 +395,12 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	COPY_PROC(get_color_comp_index);
 	COPY_PROC(encode_color);
 	COPY_PROC(decode_color);
+	COPY_PROC(begin_image);
+	COPY_PROC(text_begin);
+	COPY_PROC(fill_path);
+	COPY_PROC(stroke_path);
+	COPY_PROC(fill_rectangle_hl_color);
+	COPY_PROC(update_spot_equivalent_colors);
 #undef COPY_PROC
 	/* If using a command list, already opened the device. */
 	if (is_command_list)
@@ -473,6 +488,8 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
 	(code = param_write_long(plist, "BandBufferSpace", &ppdev->space_params.band.BandBufferSpace)) < 0 ||
 	(code = param_write_bool(plist, "OpenOutputFile", &ppdev->OpenOutputFile)) < 0 ||
 	(code = param_write_bool(plist, "ReopenPerPage", &ppdev->ReopenPerPage)) < 0 ||
+	(code = param_write_bool(plist, "PageUsesTransparency",
+			 	&ppdev->page_uses_transparency)) < 0 ||
 	(ppdev->Duplex_set >= 0 &&
 	 (code = (ppdev->Duplex_set ?
 		  param_write_bool(plist, "Duplex", &ppdev->Duplex) :
@@ -488,12 +505,12 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
 
 /* Validate an OutputFile name by checking any %-formats. */
 private int
-validate_output_file(const gs_memory_t *mem, const gs_param_string * ofs)
+validate_output_file(const gs_param_string * ofs)
 {
     gs_parsed_file_name_t parsed;
     const char *fmt;
 
-    return gx_parse_output_file_name(mem, &parsed, &fmt, (const char *)ofs->data,
+    return gx_parse_output_file_name(&parsed, &fmt, (const char *)ofs->data,
 				     ofs->size) >= 0;
 }
 
@@ -508,6 +525,8 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     bool is_open = pdev->is_open;
     bool oof = ppdev->OpenOutputFile;
     bool rpp = ppdev->ReopenPerPage;
+    bool page_uses_transparency = ppdev->page_uses_transparency;
+    bool old_page_uses_transparency = ppdev->page_uses_transparency;
     bool duplex;
     int duplex_set = -1;
     int width = pdev->width;
@@ -529,6 +548,16 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     }
 
     switch (code = param_read_bool(plist, (param_name = "ReopenPerPage"), &rpp)) {
+	default:
+	    ecode = code;
+	    param_signal_error(plist, param_name, ecode);
+	case 0:
+	case 1:
+	    break;
+    }
+
+    switch (code = param_read_bool(plist, (param_name = "PageUsesTransparency"),
+			    				&page_uses_transparency)) {
 	default:
 	    ecode = code;
 	    param_signal_error(plist, param_name, ecode);
@@ -595,7 +624,7 @@ label:\
 	        code = gs_error_invalidaccess;
 	    }
 	    else
-		code = validate_output_file(pdev->memory, &ofs);
+		code = validate_output_file(&ofs);
 	    if (code >= 0)
 		break;
 	    /* falls through */
@@ -636,6 +665,7 @@ label:\
 
     ppdev->OpenOutputFile = oof;
     ppdev->ReopenPerPage = rpp;
+    ppdev->page_uses_transparency = page_uses_transparency;
     if (duplex_set >= 0) {
 	ppdev->Duplex = duplex;
 	ppdev->Duplex_set = duplex_set;
@@ -645,7 +675,8 @@ label:\
     /* If necessary, free and reallocate the printer memory. */
     /* Formerly, would not reallocate if device is not open: */
     /* we had to patch this out (see News for 5.50). */
-    code = gdev_prn_maybe_realloc_memory(ppdev, &save_sp, width, height);
+    code = gdev_prn_maybe_realloc_memory(ppdev, &save_sp, width, height,
+		    				old_page_uses_transparency);
     if (code < 0)
 	return code;
 
@@ -711,7 +742,7 @@ gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
 							  num_copies);
 	fflush(ppdev->file);
 	errcode =
-	    (ferror(ppdev->file) ? gs_note_error(pdev->memory, gs_error_ioerror) : 0);
+	    (ferror(ppdev->file) ? gs_note_error(gs_error_ioerror) : 0);
 	if (!upgraded_copypage)
 	    closecode = gdev_prn_close_printer(pdev);
     }
@@ -758,7 +789,7 @@ gx_default_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 	 */
 	fflush(pdev->file);
 	errcode =
-	    (ferror(pdev->file) ? gs_note_error(pdev->memory, gs_error_ioerror) : 0);
+	    (ferror(pdev->file) ? gs_note_error(gs_error_ioerror) : 0);
 	closecode = gdev_prn_close_printer((gx_device *)pdev);
 	pdev->PageCount++;
 	code = (errcode < 0 ? errcode : closecode < 0 ? closecode :
@@ -801,7 +832,7 @@ gx_render_plane_init(gx_render_plane_t *render_plane, const gx_device *dev,
     int plane_depth = dev->color_info.depth / num_planes;
 
     if (index < 0 || index >= num_planes)
-	return_error(dev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     render_plane->index = index;
     render_plane->depth = plane_depth;
     render_plane->shift = plane_depth * (num_planes - 1 - index);
@@ -944,13 +975,6 @@ gdev_create_buf_device(create_buf_device_proc_t cbd_proc, gx_device **pbdev,
 	return code;
     /* Retain this device -- it will be freed explicitly. */
     gx_device_retain(*pbdev, true);
-    /* a not-so-obvious check if this is a plane extraction device */
-    if (!gs_device_is_memory(*pbdev))
-	/* Like the buffer device the plane device is freed explicitly
-           so it also needs to be retained, see
-           gx_default_destroy_buf_device */
-	gx_device_retain(((gx_device_plane_extract *)*pbdev)->plane_dev, true);
-
     return code;
 }
 
@@ -974,18 +998,19 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target,
 	depth = target->color_info.depth;
     mdproto = gdev_mem_device_for_bits(depth);
     if (mdproto == 0)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     if (mem) {
 	mdev = gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
 			       "create_buf_device");
 	if (mdev == 0)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
     } else {
 	mdev = (gx_device_memory *)*pbdev;
     }
     if (target == (gx_device *)mdev) {
 	/* The following is a special hack for setting up printer devices. */
 	assign_dev_procs(mdev, mdproto);
+        check_device_separable((gx_device *)mdev);
 	gx_device_fill_in_procs((gx_device *)mdev);
     } else
 	gs_make_mem_device(mdev, mdproto, mem, (for_band ? 1 : 0),
@@ -1005,7 +1030,7 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target,
 
 	if (edev == 0) {
 	    gx_default_destroy_buf_device((gx_device *)mdev);
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	}
 	edev->memory = mem;
 	plane_device_init(edev, target, (gx_device *)mdev, render_plane,
@@ -1054,16 +1079,7 @@ gx_default_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
     /****** HACK ******/
     if ((gx_device *)mdev == bdev && mdev->num_planes)
 	raster = bitmap_raster(mdev->planes[0].depth * mdev->width);
-
-    if (ptrs == 0 && mdev->line_ptrs) {
-        /* HACK covers up miss use of interface,
-	 * when mdev->line_ptrs are to be reused caller should set ptrs = line_ptrs
-	 * otherwise the line_ptrs will be reallocated causing a leak.
-	 */
-	ptrs = mdev->line_ptrs;
-    }
     if (ptrs == 0) {
-
 	/*
 	 * Allocate line pointers now; free them when we close the device.
 	 * Note that for multi-planar devices, we have to allocate using
@@ -1076,7 +1092,7 @@ gx_default_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
 				 setup_height),
 				sizeof(byte *), "setup_buf_device");
 	if (ptrs == 0)
-	    return_error(mdev->memory, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	mdev->line_pointer_memory = mdev->memory;
 	mdev->foreign_line_pointers = false;
     }
@@ -1119,7 +1135,7 @@ gdev_prn_get_lines(gx_device_printer *pdev, int y, int height,
     int plane;
 
     if (y < 0 || height < 0 || y + height > pdev->height)
-	return_error(pdev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     rect.p.x = 0, rect.p.y = y;
     rect.q.x = pdev->width, rect.q.y = y + height;
     params.options =
@@ -1206,7 +1222,7 @@ gdev_prn_close_printer(gx_device * pdev)
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     gs_parsed_file_name_t parsed;
     const char *fmt;
-    int code = gx_parse_output_file_name(pdev->memory, &parsed, &fmt, ppdev->fname,
+    int code = gx_parse_output_file_name(&parsed, &fmt, ppdev->fname,
 					 strlen(ppdev->fname));
 
     if ((code >= 0 && fmt) /* file per page */ ||
@@ -1222,7 +1238,8 @@ gdev_prn_close_printer(gx_device * pdev)
 int
 gdev_prn_maybe_realloc_memory(gx_device_printer *prdev, 
 			      gdev_prn_space_params *old_sp,
-			      int old_width, int old_height)
+			      int old_width, int old_height,
+			      bool old_page_uses_transparency)
 {
     int code = 0;
     gx_device *const pdev = (gx_device *)prdev;
@@ -1238,7 +1255,8 @@ gdev_prn_maybe_realloc_memory(gx_device_printer *prdev,
      */
     if (prdev->is_open &&
 	(memcmp(&prdev->space_params, old_sp, sizeof(*old_sp)) != 0 ||
-	 prdev->width != old_width || prdev->height != old_height )
+	 prdev->width != old_width || prdev->height != old_height ||
+	 prdev->page_uses_transparency != old_page_uses_transparency)
 	) {
 	int new_width = prdev->width;
 	int new_height = prdev->height;

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* ImageType 2 image implementation */
 #include "math_.h"
 #include "memory_.h"
@@ -26,7 +27,6 @@
 #include "gxiparam.h"
 #include "gxpath.h"
 #include "gscolor2.h"
-#include "gzstate.h"
 
 /* Forward references */
 private dev_proc_begin_typed_image(gx_begin_image2);
@@ -71,7 +71,7 @@ image2_set_data(const gs_image2_t * pim, image2_data_t * pid)
     sbox.q.x = (sbox.p.x = pim->XOrigin) + pim->Width;
     sbox.q.y = (sbox.p.y = pim->YOrigin) + pim->Height;
     gs_currentmatrix(pgs, &smat);
-    gs_bbox_transform(pgs->memory, &sbox, &smat, &dbox);
+    gs_bbox_transform(&sbox, &smat, &dbox);
     pid->bbox.p.x = (int)floor(dbox.p.x);
     pid->bbox.p.y = (int)floor(dbox.p.y);
     pid->bbox.q.x = (int)ceil(dbox.q.x);
@@ -124,11 +124,11 @@ gx_begin_image2(gx_device * dev,
          memcmp( &dev->color_info,
                  &sdev->color_info,
                  sizeof(dev->color_info) ) != 0  )
-        return_error(mem, gs_error_typecheck);
+        return_error(gs_error_typecheck);
 
 /****** ONLY HANDLE depth <= 8 FOR PixelCopy ******/
     if (pixel_copy && depth <= 8)
-        return_error(mem, gs_error_unregistered);
+        return_error(gs_error_unregistered);
 
     gs_image_t_init(&idata.image, gs_currentcolorspace((const gs_state *)pis));
 
@@ -146,16 +146,16 @@ gx_begin_image2(gx_device * dev,
 	return code;
 /****** ONLY HANDLE SIMPLE CASES FOR NOW ******/
     if (idata.bbox.p.x != floor(idata.origin.x))
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     if (!(idata.bbox.p.y == floor(idata.origin.y) ||
 	  idata.bbox.q.y == ceil(idata.origin.y))
 	)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     source_size = (idata.image.Width * depth + 7) >> 3;
     row_size = max(3 * idata.image.Width, source_size);
     row = gs_alloc_bytes(mem, row_size, "gx_begin_image2");
     if (row == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     if (pixel_copy) {
 	idata.image.BitsPerComponent = depth;
 	has_alpha = false;	/* no separate alpha channel */

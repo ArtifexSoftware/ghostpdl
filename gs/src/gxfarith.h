@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Floating point arithmetic macros for Ghostscript library */
 
 #ifndef gxfarith_INCLUDED
@@ -28,7 +29,7 @@
  * slow (or no) floating point hardware.
  */
 
-# if USE_FPU <= 0 && arch_floats_are_IEEE && (arch_sizeof_float == arch_sizeof_int || arch_sizeof_float == arch_sizeof_long)
+# if USE_FPU <= 0 && ARCH_FLOATS_ARE_IEEE && (arch_sizeof_float == arch_sizeof_int || arch_sizeof_float == arch_sizeof_long)
 
 #  if arch_sizeof_float == arch_sizeof_int
 typedef int _f_int_t;
@@ -134,6 +135,6 @@ void gs_sincos_degrees(double angle, gs_sincos_t * psincos);
  * the PostScript quadrant rules.  Note that it may return
  * gs_error_undefinedresult.
  */
-int gs_atan2_degrees(const gs_memory_t *mem, double y, double x, double *pangle);
+int gs_atan2_degrees(double y, double x, double *pangle);
 
 #endif /* gxfarith_INCLUDED */

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Support for CID-keyed fonts */
 #include "memory_.h"
 #include "gx.h"
@@ -159,9 +160,11 @@ gs_font_cid0_enumerate_glyph(gs_font *font, int *pindex,
 	gs_glyph_data_t gdata;
 	int fidx;
 	gs_glyph glyph = (gs_glyph)(gs_min_cid_glyph + (*pindex)++);
-	int code = pfont->cidata.glyph_data((gs_font_base *)pfont, glyph,
-					    &gdata, &fidx);
+	int code;
 
+	gdata.memory = pfont->memory;
+	code = pfont->cidata.glyph_data((gs_font_base *)pfont, glyph,
+					    &gdata, &fidx);
 	if (code < 0 || gdata.bits.size == 0)
 	    continue;
 	*pglyph = glyph;
@@ -171,17 +174,33 @@ gs_font_cid0_enumerate_glyph(gs_font *font, int *pindex,
     *pindex = 0;
     return 0;
 }
-/* Get the FontMatrix for the current type0 font 	*/
-/* Assumes that the glyph has already been accessed and	*/
-/* the index is valid.					*/
+
+/* Return the font from the FDArray at the given index */
 const gs_font *
 gs_cid0_indexed_font(const gs_font *font, int fidx)
 {
     gs_font_cid0 *const pfont = (gs_font_cid0 *)font;
 
     if (font->FontType != ft_CID_encrypted) {
-	eprintf1(font->memory, "Unexpected font type: %d\n", font->FontType);
+	eprintf1("Unexpected font type: %d\n", font->FontType);
         return 0;
     }
     return (const gs_font*) (pfont->cidata.FDArray[fidx]);
+}
+
+/* Check whether a CID font has a Type 2 subfont. */
+bool
+gs_cid0_has_type2(const gs_font *font)
+{
+    gs_font_cid0 *const pfont = (gs_font_cid0 *)font;
+    int i;
+
+    if (font->FontType != ft_CID_encrypted) {
+	eprintf1("Unexpected font type: %d\n", font->FontType);
+        return false;
+    }
+    for (i = 0; i < pfont->cidata.FDArray_size; i++)
+	if (((const gs_font *)pfont->cidata.FDArray[i])->FontType == ft_encrypted2)
+	    return true;
+    return false;
 }

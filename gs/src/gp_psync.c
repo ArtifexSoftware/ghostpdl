@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* POSIX pthreads threads / semaphore / monitor implementation */
 #include "std.h"
 #include "malloc_.h"
@@ -53,11 +54,11 @@ gp_semaphore_sizeof(void)
  * This procedure should really check errno and return something
  * more informative....
  */
-#define SEM_ERROR_CODE(mem, scode)\
-  (scode != 0 ? gs_note_error(mem, gs_error_ioerror) : 0)
+#define SEM_ERROR_CODE(scode)\
+  (scode != 0 ? gs_note_error(gs_error_ioerror) : 0)
 
 int
-gp_semaphore_open(const gs_memory_t *mem, gp_semaphore * sema)
+gp_semaphore_open(gp_semaphore * sema)
 {
     pt_semaphore_t * const sem = (pt_semaphore_t *)sema;
     int scode;
@@ -68,11 +69,11 @@ gp_semaphore_open(const gs_memory_t *mem, gp_semaphore * sema)
     scode = pthread_mutex_init(&sem->mutex, NULL);
     if (scode == 0)
 	scode = pthread_cond_init(&sem->cond, NULL);
-    return SEM_ERROR_CODE(mem, scode);
+    return SEM_ERROR_CODE(scode);
 }
 
 int
-gp_semaphore_close(const gs_memory_t *mem, gp_semaphore * sema)
+gp_semaphore_close(gp_semaphore * sema)
 {
     pt_semaphore_t * const sem = (pt_semaphore_t *)sema;
     int scode, scode2;
@@ -81,18 +82,18 @@ gp_semaphore_close(const gs_memory_t *mem, gp_semaphore * sema)
     scode2 = pthread_mutex_destroy(&sem->mutex);
     if (scode == 0)
 	scode = scode2;
-    return SEM_ERROR_CODE(mem, scode);
+    return SEM_ERROR_CODE(scode);
 }
 
 int
-gp_semaphore_wait(const gs_memory_t *mem, gp_semaphore * sema)
+gp_semaphore_wait(gp_semaphore * sema)
 {
     pt_semaphore_t * const sem = (pt_semaphore_t *)sema;
     int scode, scode2;
 
     scode = pthread_mutex_lock(&sem->mutex);
     if (scode != 0)
-	return SEM_ERROR_CODE(mem, scode);
+	return SEM_ERROR_CODE(scode);
     while (sem->count == 0) {
         scode = pthread_cond_wait(&sem->cond, &sem->mutex);
         if (scode != 0)
@@ -103,24 +104,24 @@ gp_semaphore_wait(const gs_memory_t *mem, gp_semaphore * sema)
     scode2 = pthread_mutex_unlock(&sem->mutex);
     if (scode == 0)
 	scode = scode2;
-    return SEM_ERROR_CODE(mem, scode);
+    return SEM_ERROR_CODE(scode);
 }
 
 int
-gp_semaphore_signal(const gs_memory_t *mem, gp_semaphore * sema)
+gp_semaphore_signal(gp_semaphore * sema)
 {
     pt_semaphore_t * const sem = (pt_semaphore_t *)sema;
     int scode, scode2;
 
     scode = pthread_mutex_lock(&sem->mutex);
     if (scode != 0)
-	return SEM_ERROR_CODE(mem, scode);
+	return SEM_ERROR_CODE(scode);
     if (sem->count++ == 0)
 	scode = pthread_cond_signal(&sem->cond);
     scode2 = pthread_mutex_unlock(&sem->mutex);
     if (scode == 0)
 	scode = scode2;
-    return SEM_ERROR_CODE(mem, scode);
+    return SEM_ERROR_CODE(scode);
 }
 
 
@@ -133,7 +134,7 @@ gp_monitor_sizeof(void)
 }
 
 int
-gp_monitor_open(const gs_memory_t *mem, gp_monitor * mona)
+gp_monitor_open(gp_monitor * mona)
 {
     pthread_mutex_t * const mon = (pthread_mutex_t *)mona;
     int scode;
@@ -141,37 +142,37 @@ gp_monitor_open(const gs_memory_t *mem, gp_monitor * mona)
     if (!mona)
 	return -1;		/* monitors are not movable */
     scode = pthread_mutex_init(mon, NULL);
-    return SEM_ERROR_CODE(mem, scode);
+    return SEM_ERROR_CODE(scode);
 }
 
 int
-gp_monitor_close(const gs_memory_t *mem, gp_monitor * mona)
+gp_monitor_close(gp_monitor * mona)
 {
     pthread_mutex_t * const mon = (pthread_mutex_t *)mona;
     int scode;
 
     scode = pthread_mutex_destroy(mon);
-    return SEM_ERROR_CODE(mem, scode);
+    return SEM_ERROR_CODE(scode);
 }
 
 int
-gp_monitor_enter(const gs_memory_t *mem, gp_monitor * mona)
+gp_monitor_enter(gp_monitor * mona)
 {
     pthread_mutex_t * const mon = (pthread_mutex_t *)mona;
     int scode;
 
     scode = pthread_mutex_lock(mon);
-    return SEM_ERROR_CODE(mem, scode);
+    return SEM_ERROR_CODE(scode);
 }
 
 int
-gp_monitor_leave(const gs_memory_t *mem, gp_monitor * mona)
+gp_monitor_leave(gp_monitor * mona)
 {
     pthread_mutex_t * const mon = (pthread_mutex_t *)mona;
     int scode;
 
     scode = pthread_mutex_unlock(mon);
-    return SEM_ERROR_CODE(mem, scode);
+    return SEM_ERROR_CODE(scode);
 }
 
 
@@ -201,8 +202,7 @@ gp_thread_begin_wrapper(void *thread_data /* gp_thread_creation_closure_t * */)
 }
 
 int
-gp_create_thread(const gs_memory_t *mem, 
-		 gp_thread_creation_callback_t proc, void *proc_data)
+gp_create_thread(gp_thread_creation_callback_t proc, void *proc_data)
 {
     gp_thread_creation_closure_t *closure =
 	(gp_thread_creation_closure_t *)malloc(sizeof(*closure));
@@ -211,7 +211,7 @@ gp_create_thread(const gs_memory_t *mem,
     int code;
 
     if (!closure)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     closure->proc = proc;
     closure->proc_data = proc_data;
     pthread_attr_init(&attr);
@@ -220,7 +220,7 @@ gp_create_thread(const gs_memory_t *mem,
 			  closure);
     if (code) {
 	free(closure);
-	return_error(mem, gs_error_ioerror);
+	return_error(gs_error_ioerror);
     }
     return 0;
 }

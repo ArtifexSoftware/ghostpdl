@@ -1,7 +1,18 @@
 #!/bin/sh
-# $RCSfile$ $Revision$
+# $Id$
 
-tmpfile=/tmp/ps2epsi$$
+# This definition is changed on install to match the
+# executable name set in the makefile
+GS_EXECUTABLE=gs
+
+# try to create a temporary file securely
+tmpdir=/tmp/ps2epsi.$$
+(umask 077 && mkdir $tmpdir)
+if test ! -d $tmpdir; then
+	echo "failed: could not create temporary file"
+	exit 1
+fi
+tmpfile=$tmpdir/ps2epsi$$
 
 export outfile
 
@@ -51,8 +62,9 @@ awk 'F==1	{
 		}
 	' U="$USERNAME$LOGNAME"  F=1 - F=2 "${infile}" >$tmpfile
 
-gs -q -dNOPAUSE -dSAFER -dDELAYSAFER -r72 -sDEVICE=bit -sOutputFile=/dev/null $tmpfile ps2epsi.ps $tmpfile <"${infile}" 1>&2
+$GS_EXECUTABLE -q -dNOPAUSE -dSAFER -dDELAYSAFER -r72 -sDEVICE=bit -sOutputFile=/dev/null $tmpfile ps2epsi.ps $tmpfile <"${infile}" 1>&2
 rm -f $tmpfile
+rm -rf $tmpdir
 
 (
 cat << BEGINEPS
@@ -62,8 +74,8 @@ save countdictstack mark newpath /showpage {} def /setpagedevice {pop} def
 BEGINEPS
 
 cat "${infile}" |
-sed -e '/^%%BeginPreview:/,/^%%EndPreview[^!-~]*$/d' -e '/^%!PS-Adobe/d'\
-	-e '/^%%[A-Za-z][A-Za-z]*[^!-~]*$/d' -e '/^%%[A-Za-z][A-Za-z]*: /d'
+sed -e '/^%%BeginPreview:/,/^%%EndPreview[^!-\~]*$/d' -e '/^%!PS-Adobe/d'\
+	-e '/^%%[A-Za-z][A-Za-z]*[^!-\~]*$/d' -e '/^%%[A-Za-z][A-Za-z]*: /d'
 
 cat << ENDEPS
 %%Trailer

@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* Fax devices */
 #include "gdevprn.h"
 #include "strimpl.h"
@@ -160,7 +160,7 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
     /* Now initialize the encoder. */
     code = temp->init(ss);
     if (code < 0)
-	return_error(mem, gs_error_limitcheck);	/* bogus, but as good as any */
+	return_error(gs_error_limitcheck);	/* bogus, but as good as any */
 
     /* Allocate the buffers. */
     in = gs_alloc_bytes(mem, temp->min_in_size + max_size + 1,
@@ -168,7 +168,7 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
 #define OUT_SIZE 1000
     out = gs_alloc_bytes(mem, OUT_SIZE, "gdev_stream_print_page(out)");
     if (in == 0 || out == 0) {
-	code = gs_note_error(mem, gs_error_VMerror);
+	code = gs_note_error(gs_error_VMerror);
 	goto done;
     }
     /* Set up the processing loop. */
@@ -182,11 +182,11 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
     for (lnum = row_first; ;) {
 	int status;
 
-	if_debug7(mem, 'w', "[w]lnum=%d r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", lnum,
+	if_debug7('w', "[w]lnum=%d r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", lnum,
 		  (ulong)in, (ulong)r.ptr, (ulong)r.limit,
 		  (ulong)out, (ulong)w.ptr, (ulong)w.limit);
-	status = temp->process(mem, ss, &r, &w, lnum == row_end);
-	if_debug7(mem, 'w', "...%d, r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", status,
+	status = temp->process(ss, &r, &w, lnum == row_end);
+	if_debug7('w', "...%d, r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", status,
 		  (ulong)in, (ulong)r.ptr, (ulong)r.limit,
 		  (ulong)out, (ulong)w.ptr, (ulong)w.limit);
 	switch (status) {

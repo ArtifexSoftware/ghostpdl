@@ -1,10 +1,15 @@
-/* Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Text state management for pdfwrite */
@@ -138,10 +143,9 @@ append_text_move(pdf_text_state_t *pts, floatp dw)
  * Set *pdist to the distance (dx,dy), in the space defined by *pmat.
  */
 private int
-set_text_distance(const gs_memory_t *mem, 
-		  gs_point *pdist, floatp dx, floatp dy, const gs_matrix *pmat)
+set_text_distance(gs_point *pdist, floatp dx, floatp dy, const gs_matrix *pmat)
 {
-    int code = gs_distance_transform_inverse(mem, dx, dy, pmat, pdist);
+    int code = gs_distance_transform_inverse(dx, dy, pmat, pdist);
     double rounded;
 
     if (code < 0)
@@ -180,7 +184,7 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 	double dw, dnotw, tdw;
 	int code;
 
-	code = set_text_distance(pdev->memory, &dist, dx, dy, pmat);
+	code = set_text_distance(&dist, dx, dy, pmat);
 	if (code < 0)
 	    return code;
 	if (pts->wmode)
@@ -244,7 +248,7 @@ pdf_set_text_matrix(gx_device_pdf * pdev)
 	gs_point dist;
 	int code;
 
-	code = set_text_distance(pdev->memory, &dist, pts->start.x - pts->line_start.x,
+	code = set_text_distance(&dist, pts->start.x - pts->line_start.x,
 			  pts->start.y - pts->line_start.y, &pts->in.matrix);
 	if (code < 0)
 	    return code;
@@ -353,6 +357,11 @@ pdf_from_stream_to_text(gx_device_pdf *pdev)
     return 0;
 }
 
+int
+pdf_get_stoted_text_size(pdf_text_state_t *state)
+{
+    return state->buffer.count_chars;
+}
 
 /*
  *  Flush text from buffer.
@@ -363,6 +372,16 @@ flush_text_buffer(gx_device_pdf *pdev)
     pdf_text_state_t *pts = pdev->text->text_state;
     stream *s = pdev->strm;
 
+    if (pts->buffer.count_chars != 0) {
+	pdf_font_resource_t *pdfont = pts->in.pdfont;
+	int code = pdf_assign_font_object_id(pdev, pdfont);
+
+	if (code < 0)
+	    return code;
+	code = pdf_add_resource(pdev, pdev->substream_Resources, "/Font", (pdf_resource_t *)pdfont);
+	if (code < 0)
+	    return code;
+    }
     if (pts->buffer.count_moves > 0) {
 	int i, cur = 0;
 
@@ -416,7 +435,10 @@ sync_text_state(gx_device_pdf *pdev)
     if (pts->out.pdfont != pts->in.pdfont || pts->out.size != pts->in.size) {
 	pdf_font_resource_t *pdfont = pts->in.pdfont;
 
-	pprints1(s, "/%s ", ((pdf_resource_t *)pts->in.pdfont)->rname);
+	code = pdf_assign_font_object_id(pdev, pdfont);
+	if (code < 0)
+	    return code;
+	pprints1(s, "/%s ", pdfont->rname);
 	pprintg1(s, "%g Tf\n", pts->in.size);
 	pts->out.pdfont = pdfont;
 	pts->out.size = pts->in.size;
@@ -427,7 +449,7 @@ sync_text_state(gx_device_pdf *pdev)
 	pts->wmode =
 	    (pdfont->FontType == ft_composite ?
 	     pdfont->u.type0.WMode : 0);
-	code = pdf_used_charproc_fonts(pdev, pdfont);
+	code = pdf_used_charproc_resources(pdev, pdfont);
 	if (code < 0)
 	    return code;
     }
@@ -552,12 +574,10 @@ pdf_set_text_state_values(gx_device_pdf *pdev,
  * scaling implied by the font size) to device space.
  */
 int
-pdf_text_distance_transform(const gs_memory_t *mem, 
-			    floatp wx, floatp wy, 
-			    const pdf_text_state_t *pts,
+pdf_text_distance_transform(floatp wx, floatp wy, const pdf_text_state_t *pts,
 			    gs_point *ppt)
 {
-    return gs_distance_transform(mem, wx, wy, &pts->in.matrix, ppt);
+    return gs_distance_transform(wx, wy, &pts->in.matrix, ppt);
 }
 
 /*

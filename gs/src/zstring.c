@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* String operators */
 #include "memory_.h"
 #include "ghost.h"
@@ -32,11 +33,11 @@ zbytestring(i_ctx_t *i_ctx_p)
     byte *sbody;
     uint size;
 
-    check_int_leu(imemory, *op, max_int);
+    check_int_leu(*op, max_int);
     size = (uint)op->value.intval;
     sbody = ialloc_bytes(size, ".bytestring");
     if (sbody == 0)
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     make_astruct(op, a_all | icurrent_space, sbody);
     memset(sbody, 0, size);
     return 0;
@@ -50,11 +51,15 @@ zstring(i_ctx_t *i_ctx_p)
     byte *sbody;
     uint size;
 
-    check_int_leu(imemory, *op, max_string_size);
+    check_type(*op, t_integer);
+    if (op->value.intval < 0 ) 
+        return_error(e_rangecheck);
+    if (op->value.intval > max_string_size ) 
+        return_error(e_limitcheck); /* to match Distiller */
     size = op->value.intval;
     sbody = ialloc_string(size, "string");
     if (sbody == 0)
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     make_string(op, a_all | icurrent_space, size, sbody);
     memset(sbody, 0, size);
     return 0;
@@ -66,7 +71,7 @@ znamestring(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(imemory, *op, t_name);
+    check_type(*op, t_name);
     name_string_ref(imemory, op, op);
     return 0;
 }
@@ -80,12 +85,12 @@ zanchorsearch(i_ctx_t *i_ctx_p)
     os_ptr op1 = op - 1;
     uint size = r_size(op);
 
-    check_read_type(imemory, *op1, t_string);
-    check_read_type(imemory, *op, t_string);
+    check_read_type(*op, t_string);
+    check_read_type(*op1, t_string);
     if (size <= r_size(op1) && !memcmp(op1->value.bytes, op->value.bytes, size)) {
 	os_ptr op0 = op;
 
-	push(imemory, 1);
+	push(1);
 	*op0 = *op1;
 	r_set_size(op0, size);
 	op1->value.bytes += size;
@@ -109,8 +114,8 @@ zsearch(i_ctx_t *i_ctx_p)
     byte *ptr;
     byte ch;
 
-    check_read_type(imemory, *op1, t_string);
-    check_read_type(imemory, *op, t_string);
+    check_read_type(*op1, t_string);
+    check_read_type(*op, t_string);
     if (size > r_size(op1)) {	/* can't match */
 	make_false(op);
 	return 0;
@@ -134,7 +139,7 @@ found:
     op->tas.type_attrs = op1->tas.type_attrs;
     op->value.bytes = ptr;
     r_set_size(op, size);
-    push(imemory, 2);
+    push(2);
     op[-1] = *op1;
     r_set_size(op - 1, ptr - op[-1].value.bytes);
     op1->value.bytes = ptr + size;
@@ -150,8 +155,8 @@ zstringbreak(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     uint i, j;
 
-    check_read_type(imemory, op[-1], t_string);
-    check_read_type(imemory, *op, t_string);
+    check_read_type(op[-1], t_string);
+    check_read_type(*op, t_string);
     /* We can't use strpbrk here, because C doesn't allow nulls in strings. */
     for (i = 0; i < r_size(op - 1); ++i)
 	for (j = 0; j < r_size(op); ++j)
@@ -173,10 +178,10 @@ zstringmatch(i_ctx_t *i_ctx_p)
     os_ptr op1 = op - 1;
     bool result;
 
-    check_read_type(imemory, *op, t_string);
+    check_read_type(*op, t_string);
     switch (r_type(op1)) {
 	case t_string:
-	    check_read(imemory, *op1);
+	    check_read(*op1);
 	    goto cmp;
 	case t_name:
 	    name_string_ref(imemory, op1, op1);	/* can't fail */

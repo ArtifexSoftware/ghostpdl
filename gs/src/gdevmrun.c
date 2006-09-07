@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* Run-length encoded memory device */
 #include "memory_.h"
 #include "gx.h"
@@ -620,29 +620,29 @@ run_fill_rectangle(gx_device *dev, int x, int y, int w, int h,
 #ifdef DEBUG
 
 void
-debug_print_run(const gs_memory_t *mem, const run *data, run_index index, const char *prefix)
+debug_print_run(const run *data, run_index index, const char *prefix)
 {
     const run *pr = data + index;
 
-    dlprintf6(mem, "%s%5d: length = %3d, value = 0x%lx, prev = %5u, next = %5u\n",
+    dlprintf6("%s%5d: length = %3d, value = 0x%lx, prev = %5u, next = %5u\n",
 	      prefix, index, pr->length, (ulong)pr->value, pr->prev, pr->next);
 }
 
 void
-debug_print_run_line(const gs_memory_t *mem, const run_line *line, const char *prefix)
+debug_print_run_line(const run_line *line, const char *prefix)
 {
     const run *data = CONST_RL_DATA(line);
 
-    dlprintf5(mem, "%sruns at 0x%lx: zero = 0x%lx, free = %u, xcur = %u,\n",
+    dlprintf5("%sruns at 0x%lx: zero = 0x%lx, free = %u, xcur = %u,\n",
 	      prefix, (ulong)data, (ulong)line->zero, line->free, line->xcur);
-    dlprintf3(mem, "%s  rpcur = {ptr = 0x%lx, index = %u}\n",
+    dlprintf3("%s  rpcur = {ptr = 0x%lx, index = %u}\n",
 	      prefix, (ulong)line->rpcur.ptr, line->rpcur.index);
     {
 	const_run_ptr rpc;
 
 	RP_TO_START(rpc, data);
 	while (!RP_AT_END(rpc)) {
-	    debug_print_run(mem, data, rpc.index, prefix);
+	    debug_print_run(data, rpc.index, prefix);
 	    RP_TO_NEXT(rpc, data, rpc);
 	}
     }

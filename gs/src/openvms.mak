@@ -1,16 +1,16 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
-
-# $RCSfile$ $Revision$
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
 # makefile for OpenVMS VAX and Alpha
 #
 # Please contact Jim Dunham (dunham@omtool.com) if you have questions.
@@ -64,8 +64,7 @@ GS_DOCDIR=GS_DOC
 # Define the default directory/ies for the runtime
 # initialization and font files.  Separate multiple directories with ,.
 
-GS_LIB_DEFAULT=GS_LIB
-#GS_LIB_DEFAULT=SYS$COMMON:[GS],SYS$COMMON:[GS.FONT]
+GS_LIB_DEFAULT=GS_ROOT:[LIB],GS_ROOT:[RESOURCE],GS_ROOT:[FONT]
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -116,7 +115,7 @@ BUILD_TIME_GS=GS
 # You may need to change this if the IJG library version changes.
 # See jpeg.mak for more information.
 
-JSRCDIR=[.jpeg-6b]
+JSRCDIR=[.jpeg]
 JVERSION=6
 
 # Define the directory where the PNG library sources are stored,
@@ -124,18 +123,24 @@ JVERSION=6
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
-PSRCDIR=[.libpng-1_2_5]
-PVERSION=10205
+PSRCDIR=[.libpng]
+PVERSION=10208
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
-ZSRCDIR=[.zlib-1_1_4]
+ZSRCDIR=[.zlib]
 
-# Define the jbig2dec library source location.
+# Define the jbig2 library and source location.
 # See jbig2.mak for more information.
 
-JBIG2SRCDIR=[.jbig2dec-0_2]
+JBIG2_LIB=jbig2dec
+JBIG2SRCDIR=[.jbig2dec]
+
+# Define the jpeg2k library and source location.
+
+JPX_LIB=jasper
+JPXSRCDIR=jasper
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
@@ -149,7 +154,7 @@ ICCSRCDIR=[.icclib]
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
- 
+
 #IJSSRCDIR=[.ijs]
 #IJSEXECTYPE=unix
 
@@ -159,6 +164,7 @@ SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
 SHARE_JBIG2=0
+SHARE_JPX=0
 
 # Define the path to X11 include files
 
@@ -227,11 +233,11 @@ DEVICE_DEVS7=$(DD)faxg3.dev $(DD)faxg32d.dev $(DD)faxg4.dev
 DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
 DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev
 DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
-DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev
+DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev $(DD)tiffgray.dev $(DD)tiff32nc.dev $(DD)tiffsep.dev
 DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
 DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
-DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
-DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
 DEVICE_DEVS16=$(DD)bbox.dev
 # Overflow from DEVS9
 DEVICE_DEVS17=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
@@ -244,6 +250,17 @@ DEVICE_DEVS21=
 
 FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev
 
+# ***********************************************************************************
+#
+#    The following probably won't work without code changes to src/mkromfs.c to
+#    change the VMS style of directory references to PostScript style, but we
+#    have it here in case it works.
+#
+# ***********************************************************************************
+# The list of resources to be included in the %rom% file system.
+# This is in the top makefile since the file descriptors are platform specific
+RESOURCE_LIST=[Resource.CMap] [Resource.ColorSpace] [Resource.Decoding] [Resource.Fonts] [Resource.Procset] [Resource.IdiomSet] [Resource.CIDFont]
+
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
@@ -255,8 +272,7 @@ COMPILE_INITS=0
 BAND_LIST_STORAGE=file
 
 # Choose which compression method to use when storing band lists in memory.
-# The choices are 'lzw' or 'zlib'.  lzw is not recommended, because the
-# LZW-compatible code in Ghostscript doesn't actually compress its input.
+# The choices are 'lzw' or 'zlib'.
 
 BAND_LIST_COMPRESSOR=zlib
 
@@ -347,7 +363,7 @@ XEAUX=.exe
 BEGINFILES=$(GLGENDIR)OPENVMS.OPT $(GLGENDIR)OPENVMS.COM
 
 # Define the C invocation for auxiliary programs (echogs, genarch).
-  
+
 CCAUX=CC/DECC
 
 # Define the C invocation for normal compilation.
@@ -489,6 +505,13 @@ $(GENINIT_XE) : $(GLOBJDIR)geninit.$(OBJ)
 
 $(GLOBJ)geninit.$(OBJ) :  $(GLSRC)geninit.c $(GENINIT_DEPS)
 	$(CCAUX)/obj=$(GLOBJ)geninit.$(OBJ)  $(GLSRC)geninit.c
+
+$(GLOBJ)mkromfs.$(OBJ) :  $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS)
+	$(CCAUX)/obj=$(GLOBJ)mkromfs.$(OBJ) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(GLSRC)mkromfs.c
+
+MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(GLOBJ)gp_vms.$(OBJ)
+$(MKROMFS_XE): $(GLSRC)mkromfs.c $(MKROMFS_OBJS)
+	LINK/EXE=$@ $(GLOBJ)mkromfs.$(OBJ) $(MKROMFS_OBJS)
 
 # Preliminary definitions
 

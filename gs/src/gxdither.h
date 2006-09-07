@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Interface to gxdither.c */
 
 #ifndef gxdither_INCLUDED
@@ -30,13 +31,11 @@ typedef struct gx_device_halftone_s gx_device_halftone;
  *  dev = pointer to device data structure
  *  pht = pointer to halftone data structure
  *  ht_phase  = halftone phase
- *  gray_colorspace = true -> current color space is DeviceGray.
  *  This is part of a kludge to minimize differences in the
  *  regression testing.
  */
 int gx_render_device_DeviceN(frac * pcolor, gx_device_color * pdevc,
-	gx_device * dev, gx_device_halftone * pdht,
-	const gs_int_point * ht_phase, bool gray_colorspace);
+    gx_device * dev, gx_device_halftone * pdht, const gs_int_point * ht_phase);
 /*
  * Reduce a colored halftone with 0 or 1 varying plane(s) to a pure color
  * or a binary halftone.

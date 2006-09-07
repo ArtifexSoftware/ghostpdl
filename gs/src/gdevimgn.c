@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
- 
-/*$RCSfile$ $Revision$*/
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/ 
+/* $Id$*/
 /*
  * Imagen ImPRESS printer driver - version 1.4
  *
@@ -351,7 +351,7 @@ imagen_print_page(gx_device_printer *pdev, FILE *prn_stream)
 { 
   int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev); 
   /* input buffer: one line of bytes rasterized by gs */
-  byte *in = (byte *)gs_malloc(BIGSIZE, line_size / BIGSIZE + 1,
+  byte *in = (byte *)gs_malloc(pdev->memory, BIGSIZE, line_size / BIGSIZE + 1,
 	"imagen_print_page(in)"); 
   /* output buffer: 32 lines, interleaved into imPress swatches */
   byte *out; 
@@ -397,10 +397,10 @@ imagen_print_page(gx_device_printer *pdev, FILE *prn_stream)
   DebugMsg(2,"Swatch count = %d\n",swatchCount);
   DebugMsg(2,"Line size = %d\n",line_size );
 
-  out = (byte *)gs_malloc(TotalBytesPerSw , swatchCount + 1, 
+  out = (byte *)gs_malloc(pdev->memory, TotalBytesPerSw , swatchCount + 1, 
 		    "imagen_print_page(out)"); 
 
-  swatchMap = (byte *)gs_malloc(BIGSIZE,swatchCount / BIGSIZE + 1,
+  swatchMap = (byte *)gs_malloc(pdev->memory, BIGSIZE,swatchCount / BIGSIZE + 1,
 	"imagen_print_page(swatchMap)" );
  
   if ( in == 0 || out == 0 ) 
@@ -549,10 +549,10 @@ imagen_print_page(gx_device_printer *pdev, FILE *prn_stream)
  
   fflush(prn_stream); 
  
-  gs_free((char *)swatchMap, BIGSIZE, swatchCount / BIGSIZE + 1,
+  gs_free(pdev->memory, (char *)swatchMap, BIGSIZE, swatchCount / BIGSIZE + 1,
 	"imagen_print_page(swatchMap)" );
-  gs_free((char *)out, TotalBytesPerSw, swatchCount+1, "imagen_print_page(out)"); 
-  gs_free((char *)in, BIGSIZE, line_size / BIGSIZE + 1, "imagen_print_page(in)"); 
+  gs_free(pdev->memory, (char *)out, TotalBytesPerSw, swatchCount+1, "imagen_print_page(out)"); 
+  gs_free(pdev->memory, (char *)in, BIGSIZE, line_size / BIGSIZE + 1, "imagen_print_page(in)"); 
   /* ----------------------------------------- */
 
   DebugMsg(1,"Debug: Grey: %d \n",totalGreySwatches);

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* ASCII85Decode filter */
 #include "std.h"
 #include "strimpl.h"
@@ -33,18 +34,35 @@ s_A85D_init(stream_state * st)
 /* Process a buffer */
 private int a85d_finish(int, ulong, stream_cursor_write *);
 private int
-s_A85D_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_A85D_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     stream_A85D_state *const ss = (stream_A85D_state *) st;
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
-    const byte *rlimit = pr->limit;
+    /* stop processing early unless the target is empty (last == true)  */
+    /* to make sure we consume the EOD marker correctly. The EOD marker */
+    /* might be as many as 6 characters after the last valid data char  */
+    /* D <cr> <lf> '~' <cr> <lf> '>' where 'D' is a data character.     */
+    const byte *rlimit = pr->limit - (last ? 0 : 7); /* max EOD len + 1 */
+    const byte *r = rlimit;
     byte *wlimit = pw->limit;
     int ccount = ss->odd;
     ulong word = ss->word;
     int status = 0;
 
+    /* scan to make sure that an EOD isn't fully contained in the */
+    /* last part of the buffer (between rlimit and pr->limit).    */
+    while (r < pr->limit) {
+	if (*++r == '~') 
+	    while (r < pr->limit)
+		if (*++r == '>') {
+		    /* we have both characters of a complete EOD. */
+		    rlimit = pr->limit; /* go ahead and process everything */
+		    r = rlimit;		/* break out of the while loops */
+		    break;
+		}
+    }
     while (p < rlimit) {
 	int ch = *++p;
 	uint ccode = ch - '!';
@@ -90,6 +108,7 @@ s_A85D_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * p
 	else if (ch == '~') {
 	    int i = 1;
 
+	    rlimit = pr->limit;		/* Here we use the real "limit" */
 	    /* Handle odd bytes. */
 	    if (p == rlimit) {
 		if (last)

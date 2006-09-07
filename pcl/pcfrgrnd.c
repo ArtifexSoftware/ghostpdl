@@ -34,11 +34,11 @@ free_foreground(
     pcl_frgrnd_t *  pfrgrnd = (pcl_frgrnd_t *)pvfrgrnd;
 
     if (pfrgrnd->pbase != 0)
-        pcl_cs_base_release(pmem, pfrgrnd->pbase);
+        pcl_cs_base_release(pfrgrnd->pbase);
     if (pfrgrnd->pht != 0)
-        pcl_ht_release(pmem, pfrgrnd->pht);
+        pcl_ht_release(pfrgrnd->pht);
     if (pfrgrnd->pcrd != 0)
-        pcl_crd_release(pmem, pfrgrnd->pcrd);
+        pcl_crd_release(pfrgrnd->pcrd);
     gs_free_object(pmem, pvfrgrnd, cname);
 }
 
@@ -107,14 +107,14 @@ build_foreground(
          (pal_entry == 1)     ) {
         is_default = true;
         if (pcs->pdflt_frgrnd != 0) {
-            pcl_frgrnd_copy_from(pmem, *ppfrgrnd, pcs->pdflt_frgrnd);
+            pcl_frgrnd_copy_from(*ppfrgrnd, pcs->pdflt_frgrnd);
             return 0;
         }
     }
 
     /* release the existing foreground */
     if (pfrgrnd != 0) {
-        rc_decrement(pmem, pfrgrnd, "build pcl foreground");
+        rc_decrement(pfrgrnd, "build pcl foreground");
         *ppfrgrnd = 0;
     }
 
@@ -133,12 +133,12 @@ build_foreground(
     pfrgrnd->color[0] = pindexed->palette.data[3 * pal_entry];
     pfrgrnd->color[1] = pindexed->palette.data[3 * pal_entry + 1];
     pfrgrnd->color[2] = pindexed->palette.data[3 * pal_entry + 2];
-    pcl_cs_base_init_from(pmem, pfrgrnd->pbase, ppalet->pindexed->pbase);
-    pcl_ht_init_from(pmem, pfrgrnd->pht, ppalet->pht);
-    pcl_crd_init_from(pmem, pfrgrnd->pcrd, ppalet->pcrd);
+    pcl_cs_base_init_from(pfrgrnd->pbase, ppalet->pindexed->pbase);
+    pcl_ht_init_from(pfrgrnd->pht, ppalet->pht);
+    pcl_crd_init_from(pfrgrnd->pcrd, ppalet->pcrd);
 
     if (is_default)
-        pcl_frgrnd_init_from(pmem, pcs->pdflt_frgrnd, pfrgrnd);
+        pcl_frgrnd_init_from(pcs->pdflt_frgrnd, pfrgrnd);
 
     return 0;
 }
@@ -208,7 +208,7 @@ frgrnd_do_registration(
     gs_memory_t *mem
 )
 {
-    DEFINE_CLASS(mem, '*')
+    DEFINE_CLASS('*')
     {
         'v', 'S', 
         PCL_COMMAND("Set Foreground", set_foreground, pca_neg_ok | pca_raster_graphics)
@@ -221,9 +221,9 @@ private void
 frgrnd_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {
     if ( type & (pcl_reset_permanent) ) {
-        rc_decrement(pcs->memory, pcs->pfrgrnd, "foreground reset pfrgrnd");
-        rc_decrement(pcs->memory, pcs->pdflt_frgrnd, "foreground reset pdflt_frgrnd");
-	rc_decrement(pcs->memory, pcs->pwhite_cs, "foreground reset p_white_cs");
+        rc_decrement(pcs->pfrgrnd, "foreground reset pfrgrnd");
+        rc_decrement(pcs->pdflt_frgrnd, "foreground reset pdflt_frgrnd");
+	rc_decrement(pcs->pwhite_cs, "foreground reset p_white_cs");
     }
 }
 
@@ -235,9 +235,9 @@ frgrnd_do_copy(
 )
 {
     if ((operation & (pcl_copy_before_call | pcl_copy_before_overlay)) != 0)
-        pcl_frgrnd_init_from(pcs->memory, psaved->pfrgrnd, pcs->pfrgrnd);
+        pcl_frgrnd_init_from(psaved->pfrgrnd, pcs->pfrgrnd);
     else if ((operation & pcl_copy_after) != 0)
-        pcl_frgrnd_release(pcs->memory, ((pcl_state_t *)pcs)->pfrgrnd);
+        pcl_frgrnd_release(((pcl_state_t *)pcs)->pfrgrnd);
     return 0;
 }
 

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Internal definitions for "objects" for pdfwrite driver. */
 
 #ifndef gdevpdfo_INCLUDED
@@ -69,8 +70,12 @@ typedef struct cos_stream_piece_s cos_stream_piece_t;
 	cos_proc_release((*release));
 
 #define cos_proc_write(proc)\
-  int proc(const cos_object_t *pco, gx_device_pdf *pdev)
+  int proc(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
 	cos_proc_write((*write));
+
+#define cos_proc_equal(proc)\
+  int proc(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
+	cos_proc_equal((*equal));
 
 } /*cos_object_procs_t*/;
 /*typedef const cos_object_procs_t *cos_type_t;*/
@@ -198,7 +203,7 @@ int cos_become(cos_object_t *, cos_type_t);
 cos_proc_release(cos_release);
 #define COS_RELEASE(pc, cname) cos_release(COS_OBJECT(pc), cname)
 cos_proc_write(cos_write);
-#define COS_WRITE(pc, pdev) cos_write(CONST_COS_OBJECT(pc), pdev)
+#define COS_WRITE(pc, pdev) cos_write(CONST_COS_OBJECT(pc), pdev, (pc)->id)
 
 /* Make a value to store into a composite object. */
 const cos_value_t *cos_string_value(cos_value_t *, const byte *, uint);
@@ -225,7 +230,7 @@ int cos_array_add(cos_array_t *, const cos_value_t *);
 int cos_array_add_no_copy(cos_array_t *, const cos_value_t *);
 int cos_array_add_c_string(cos_array_t *, const char *);
 int cos_array_add_int(cos_array_t *, int);
-int cos_array_add_real(const gs_memory_t *mem, cos_array_t *, floatp);
+int cos_array_add_real(cos_array_t *, floatp);
 int cos_array_add_object(cos_array_t *, cos_object_t *);
 /* add adds at the end, unadd removes the last element */
 int cos_array_unadd(cos_array_t *, cos_value_t *);
@@ -236,10 +241,12 @@ int cos_dict_put_no_copy(cos_dict_t *, const byte *, uint,
 int cos_dict_put_c_key(cos_dict_t *, const char *, const cos_value_t *);
 int cos_dict_put_c_key_string(cos_dict_t *, const char *, const byte *, uint);
 int cos_dict_put_c_key_int(cos_dict_t *, const char *, int);
+int cos_dict_put_c_key_bool(cos_dict_t *pcd, const char *key, bool value);
 int cos_dict_put_c_key_real(cos_dict_t *, const char *, floatp);
 int cos_dict_put_c_key_floats(cos_dict_t *, const char *, const float *, uint);
 int cos_dict_put_c_key_object(cos_dict_t *, const char *, cos_object_t *);
 int cos_dict_put_string(cos_dict_t *, const byte *, uint, const byte *, uint);
+int cos_dict_put_string_copy(cos_dict_t *pcd, const char *key, const char *value);
 int cos_dict_put_c_strings(cos_dict_t *, const char *, const char *);
 /* move all the elements from one dict to another */
 int cos_dict_move_all(cos_dict_t *, cos_dict_t *);
@@ -247,6 +254,7 @@ int cos_dict_move_all(cos_dict_t *, cos_dict_t *);
 int cos_stream_add(cos_stream_t *, uint);
 int cos_stream_add_bytes(cos_stream_t *, const byte *, uint);
 int cos_stream_add_stream_contents(cos_stream_t *, stream *);
+int cos_stream_release_pieces(cos_stream_t *pcs);
 cos_dict_t *cos_stream_dict(cos_stream_t *);
 
 /*
@@ -271,6 +279,9 @@ const cos_array_element_t *
 /* Look up a key in a dictionary. */
 const cos_value_t *cos_dict_find(const cos_dict_t *, const byte *, uint);
 const cos_value_t *cos_dict_find_c_key(const cos_dict_t *, const char *);
+/* Process all entries in a dictionary. */
+int cos_dict_forall(const cos_dict_t *pcd, void *client_data, 
+	int (*proc)(void *client_data, const byte *key_data, uint key_size, const cos_value_t *v));
 
 /* Set up a parameter list that writes into a Cos dictionary. */
 typedef struct cos_param_list_writer_s {

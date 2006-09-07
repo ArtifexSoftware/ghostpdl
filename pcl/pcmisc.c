@@ -46,12 +46,12 @@ pcmisc_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem)
 {		/* Register commands */
-	DEFINE_CLASS_COMMAND_ARGS(mem, '&', 's', 'C', "End of Line Wrap",
+	DEFINE_CLASS_COMMAND_ARGS('&', 's', 'C', "End of Line Wrap",
 				  pcl_end_of_line_wrap,
 				  pca_neg_error|pca_big_error)
-	DEFINE_ESCAPE_ARGS(mem, 'Y', "Enable Display Functions",
+	DEFINE_ESCAPE_ARGS('Y', "Enable Display Functions",
 			   pcl_enable_display_functions, pca_in_macro)
-	DEFINE_ESCAPE_ARGS(mem, 'Z', "Disable Display Functions",
+	DEFINE_ESCAPE_ARGS('Z', "Disable Display Functions",
 			   pcl_disable_display_functions, pca_in_macro)
 	return 0;
 }

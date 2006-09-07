@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Structures for CIE color algorithms */
 /* (requires gscspace.h, gscolor2.h) */
 
@@ -58,7 +59,7 @@
  * Define the threshold for interpolating.
  * This is computationally expensive.
  */
-#define CIE_INTERPOLATE_THRESHOLD 0.01
+#define CIE_INTERPOLATE_THRESHOLD 0.001
 
 /*
  * Define whether to interpolate in the RenderTable.  Currently this is a
@@ -245,8 +246,7 @@ typedef struct gs_cie_render_proc3_s {
  * Note also that since TransformPQR can fail (if the driver doesn't
  * recognize the proc_name), it must return a failure code.
  */
-typedef int (*gs_cie_transform_proc)(const gs_memory_t *mem,
-				     int, floatp, const gs_cie_wbsd *,
+typedef int (*gs_cie_transform_proc)(int, floatp, const gs_cie_wbsd *,
 				     gs_cie_render *, float *);
 typedef struct gs_cie_transform_proc3_s {
     gs_cie_transform_proc proc;
@@ -662,14 +662,14 @@ typedef struct gs_sample_loop_params_s {
 } gs_sample_loop_params_t;
 #define SAMPLE_LOOP_VALUE(i, lp)\
   ( (((lp).N - (i)) * (lp).A + (i) * (lp).B) / (lp).N )
-void gs_cie_cache_init(const gs_memory_t *mem, cie_cache_params *, gs_sample_loop_params_t *,
+void gs_cie_cache_init(cie_cache_params *, gs_sample_loop_params_t *,
 		       const gs_range *, client_name_t);
 
 void gs_cie_cache_to_fracs(const cie_cache_floats *, cie_cache_fracs *);
-void gs_cie_defg_complete(const gs_memory_t *mem, gs_cie_defg *);
-void gs_cie_def_complete(const gs_memory_t *mem, gs_cie_def *);
-void gs_cie_abc_complete(const gs_memory_t *mem, gs_cie_abc *);
-void gs_cie_a_complete(const gs_memory_t *mem, gs_cie_a *);
+void gs_cie_defg_complete(gs_cie_defg *);
+void gs_cie_def_complete(gs_cie_def *);
+void gs_cie_abc_complete(gs_cie_abc *);
+void gs_cie_a_complete(gs_cie_a *);
 gx_cie_joint_caches *gx_currentciecaches(gs_state *);
 const gs_cie_common *gs_cie_cs_common(const gs_state *);
 int gs_cie_cs_complete(gs_state *, bool);
@@ -684,8 +684,7 @@ float gs_cie_cached_value(floatp, const cie_cache_floats *);
  * Compute the source and destination WhitePoint and BlackPoint for
  * the TransformPQR procedure.
  */
-int gs_cie_compute_points_sd(const gs_memory_t *mem,
-			     gx_cie_joint_caches *pjc,
+int gs_cie_compute_points_sd(gx_cie_joint_caches *pjc,
 			     const gs_cie_common * pcie,
 			     const gs_cie_render * pcrd);
 
@@ -694,7 +693,7 @@ int gs_cie_compute_points_sd(const gs_memory_t *mem,
  * procedure values, moving the CRD from "built" to "inited" status.
  * If the CRD is already in "inited" or a later status, do nothing.
  */
-int gs_cie_render_init(const gs_memory_t *mem, gs_cie_render *);
+int gs_cie_render_init(gs_cie_render *);
 
 /*
  * Sample the EncodeLMN, EncodeABC, and RenderTableT CRD procedures, and
@@ -702,7 +701,7 @@ int gs_cie_render_init(const gs_memory_t *mem, gs_cie_render *);
  * If the CRD is already in "sampled" or a later status, do nothing;
  * otherwise, if the CRD is not in "inited" status, return an error.
  */
-int gs_cie_render_sample(const gs_memory_t *mem, gs_cie_render *);
+int gs_cie_render_sample(gs_cie_render *);
 
 /*
  * Finish preparing a CRD for installation, by restricting and/or
@@ -711,7 +710,7 @@ int gs_cie_render_sample(const gs_memory_t *mem, gs_cie_render *);
  * nothing; otherwise, if the CRD is not in "sampled" status, return an
  * error.
  */
-int gs_cie_render_complete(const gs_memory_t *mem, gs_cie_render *);
+int gs_cie_render_complete(gs_cie_render *);
 
 /* ---------------- Procedures ---------------- */
 
@@ -796,7 +795,7 @@ extern int
  * NB: the caller is responsible for deallocating the color table data
  *     when no longer needed.  */
 extern int
-    gs_cie_defx_set_lookup_table(const gs_memory_t *mem, gs_color_space * pcspace, int *pdims,
+    gs_cie_defx_set_lookup_table(gs_color_space * pcspace, int *pdims,
 				 const gs_const_string * ptable);
 
 /* Serialize common CIE elements. */

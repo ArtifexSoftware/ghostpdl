@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /*
  * Microsoft Windows 3.n printer driver for Ghostscript.
  * Original version by Russell Lang and
@@ -591,7 +592,6 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
 	    ShowWindow(wdev->hDlgModeless, SW_HIDE);
     }
 
-  bmp_done:
     GlobalUnlock(hrow);
     GlobalFree(hrow);
 
@@ -893,7 +893,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     }
 
     /* now try to match the printer name against the [Devices] section */
-    if ((devices = gs_malloc(4096, 1, "win_pr2_getdc")) == (char *)NULL)
+    if ((devices = gs_malloc(wdev->memory, 4096, 1, "win_pr2_getdc")) == (char *)NULL)
 	return FALSE;
     GetProfileString("Devices", NULL, "", devices, 4096);
     p = devices;
@@ -904,7 +904,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     }
     if (*p == '\0')
 	p = NULL;
-    gs_free(devices, 4096, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, devices, 4096, 1, "win_pr2_getdc");
     if (p == NULL)
 	return FALSE;		/* doesn't match an available printer */
 
@@ -923,12 +923,12 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 	if (!OpenPrinter(device, &hprinter, NULL))
 	    return FALSE;
 	size = DocumentProperties(NULL, hprinter, device, NULL, NULL, 0);
-	if ((podevmode = gs_malloc(size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
+	if ((podevmode = gs_malloc(wdev->memory, size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
 	    ClosePrinter(hprinter);
 	    return FALSE;
 	}
-	if ((pidevmode = gs_malloc(size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
-	    gs_free(podevmode, size, 1, "win_pr2_getdc");
+	if ((pidevmode = gs_malloc(wdev->memory, size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
+	    gs_free(wdev->memory, podevmode, size, 1, "win_pr2_getdc");
 	    ClosePrinter(hprinter);
 	    return FALSE;
 	}
@@ -953,12 +953,12 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 	    return FALSE;
 	}
 	size = pfnExtDeviceMode(NULL, hlib, NULL, device, output, NULL, NULL, 0);
-	if ((podevmode = gs_malloc(size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
+	if ((podevmode = gs_malloc(wdev->memory, size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
 	    FreeLibrary(hlib);
 	    return FALSE;
 	}
-	if ((pidevmode = gs_malloc(size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
-	    gs_free(podevmode, size, 1, "win_pr2_getdc");
+	if ((pidevmode = gs_malloc(wdev->memory, size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
+	    gs_free(wdev->memory, podevmode, size, 1, "win_pr2_getdc");
 	    FreeLibrary(hlib);
 	    return FALSE;
 	}
@@ -969,7 +969,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     /* now find out what paper sizes are available */
     devcapsize = pfnDeviceCapabilities(device, output, DC_PAPERSIZE, NULL, NULL);
     devcapsize *= sizeof(POINT);
-    if ((devcap = gs_malloc(devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
+    if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
 	return FALSE;
     n = pfnDeviceCapabilities(device, output, DC_PAPERSIZE, devcap, NULL);
     paperwidth = (int)(wdev->MediaSize[0] * 254 / 72);
@@ -1003,27 +1003,27 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 	    }
 	}
     }
-    gs_free(devcap, devcapsize, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
     
     /* get the dmPaperSize */
     devcapsize = pfnDeviceCapabilities(device, output, DC_PAPERS, NULL, NULL);
     devcapsize *= sizeof(WORD);
-    if ((devcap = gs_malloc(devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
+    if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
 	return FALSE;
     n = pfnDeviceCapabilities(device, output, DC_PAPERS, devcap, NULL);
     if ((paperindex >= 0) && (paperindex < n))
 	papersize = ((WORD *) devcap)[paperindex];
-    gs_free(devcap, devcapsize, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
 
     /* get the paper name */
     devcapsize = pfnDeviceCapabilities(device, output, DC_PAPERNAMES, NULL, NULL);
     devcapsize *= 64;
-    if ((devcap = gs_malloc(devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
+    if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
 	return FALSE;
     n = pfnDeviceCapabilities(device, output, DC_PAPERNAMES, devcap, NULL);
     if ((paperindex >= 0) && (paperindex < n))
 	strcpy(papername, devcap + paperindex * 64);
-    gs_free(devcap, devcapsize, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
 
     memcpy(pidevmode, podevmode, size);
 
@@ -1100,8 +1100,8 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 	}
     }
 
-    gs_free(pidevmode, size, 1, "win_pr2_getdc");
-    gs_free(podevmode, size, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, pidevmode, size, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, podevmode, size, 1, "win_pr2_getdc");
 
     if (wdev->hdcprn != (HDC) NULL)
 	return TRUE;		/* success */
@@ -1537,7 +1537,7 @@ CancelDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 BOOL CALLBACK 
 AbortProc2(HDC hdcPrn, int code)
 {
-    process_interrupts();
+    process_interrupts(NULL);
     if (code == SP_OUTOFDISK)
 	return (FALSE);		/* cancel job */
     return (TRUE);

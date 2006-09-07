@@ -1,13 +1,17 @@
-%  Portions Copyright (C) 2002, 2003 artofcode LLC.
-%  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-%  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-%  All Rights Reserved.
-%
-%  This software is distributed under license and may not be copied, modified
-%  or distributed except as expressly authorized under the terms of that
-%  license.  Refer to licensing information at http://www.artifex.com/ or
-%  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-%  San Rafael, CA  94903, (415)492-9861, for further information. */
+% (C) 2002 Artifex, Inc.  All rights reserved.
+% 
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 % $Id$
 % image, colorimage, and imagemask implementation
@@ -305,6 +309,16 @@ def
   }
 .bind def
 
+%
+% Check the image types that can be used as data sources
+% <any> foo <bool>
+%
+/good_image_types mark
+  /filetype { pop //true } .bind
+  /stringtype 1 index
+  /arraytype //xcheck
+  /packedarraytype //xcheck
+.dicttomark readonly def
 
 %
 %   <width>  <height>  <bits/component>  <matrix>  <dsrc0> ...
@@ -352,7 +366,27 @@ def
           { 1 add }
         if
         dup count 9 sub gt
-          { /.colorimage cvx /stackunderflow signalerror }
+          {
+            % Adobe interpreters appear to test the arguments sequentially
+            % starting from the top of the stack and report the 1st error found.
+            % To satisfy CET test 12-02.PS we emulate this logic.
+            //true exch -1 1
+              { 3 add index
+                //good_image_types 1 index type .knownget
+                  { exec and
+                  }
+                  { pop pop //false
+                  }
+                ifelse
+              }
+            for
+              { /stackunderflow
+              }
+              { /typecheck
+              }
+            ifelse
+            /.colorimage cvx exch signalerror
+          }
         if
 
         % build the DataSource array in local VM
@@ -368,6 +402,7 @@ def
     8 1 roll //img_params_ary //img_build_dict exec exch
   }
 .bind def
+currentdict /good_image_types .undef
 
 %
 %   <?dict?>
@@ -388,7 +423,7 @@ def
         1 index type /booleantype eq
           {
             1 index
-              { 3 1 roll aload length 2 add -2 roll }
+              { 3 -1 roll aload length 2 add -2 roll }
             if
           }
         if
@@ -412,12 +447,12 @@ def
   {
     % check for proper number of operands
     count 5 lt
-      { /imagemask load /stackunderflow signalerror }
+      { /imagemask .systemvar /stackunderflow signalerror }
     if
 
     % verify that polarity is a boolean
     2 index type /booleantype ne
-      { /imagemask load /typecheck signalerror }
+      { /imagemask .systemvar /typecheck signalerror }
     if
 
     % the imagemask dictionary can be built; do so
@@ -491,11 +526,18 @@ def
     % execute .image1 in a stopped context
       {
         gsave
-        0 .setoverprintmode             % disable overprint mode for images
-        //img_csary 2 index /IMG_NComps get get setcolorspace
-          { .alphaimage }
-          { .image1 }
-        ifelse
+	% The CET test file 12-02.ps creates colorimages with a width and
+	% height of 0.  Ignore these since that is what the CET expects.
+	1 index dup /Height get 0 eq exch /Width get 0 eq or
+          { pop pop }	% Ignore colorimage.  Pop bool and dict
+	  {
+            0 .setoverprintmode             % disable overprint mode for images
+            //img_csary 2 index /IMG_NComps get get setcolorspace
+              { .alphaimage }
+              { .image1 }
+            ifelse
+	  }
+	ifelse
       }
     stopped
     grestore
@@ -526,7 +568,7 @@ systemdict /setcolorscreen .knownget
              //false
                //.colorimage
              stopped
-               { /colorimage load  $error /errorname get signalerror }
+               { /colorimage .systemvar  $error /errorname get signalerror }
              if
           }
         .bind systemdict begin odef end
@@ -547,7 +589,7 @@ if
 %
 /image
   {
-    dup type /dicttype eq languagelevel 2 ge and
+    dup type /dicttype eq .languagelevel 2 ge and
       { 
         dup /ImageType get dup 2 eq
           {
@@ -595,20 +637,29 @@ if
                 //.imagetypes 2 get
                 stopped
                 grestore
-                  { /image load $error /errorname get signalerror }
+                  { /image .systemvar $error /errorname get signalerror }
                 if
               }
-              { /image load /undefined signalerror }
+              { /image .systemvar /rangecheck signalerror
+              }
             ifelse
           }
           {
-            gsave
-            0 .setoverprintmode         % disable overprintmode for images
-            //.imagetypes exch get
-            stopped
-            grestore
-              { /image load $error /errorname get signalerror }
-            if
+            dup //.imagetypes exch .knownget
+              {
+                exch pop gsave
+                0 .setoverprintmode         % disable overprintmode for images
+                stopped
+                grestore
+                  { /image .systemvar $error /errorname get signalerror }
+                if
+              }
+              {
+                /image .systemvar exch type /integertype eq
+                  { /rangecheck } { /typecheck } 
+                ifelse signalerror
+              }
+            ifelse
           }
         ifelse
       }
@@ -616,7 +667,7 @@ if
         //false 1 //false
           //.colorimage
         stopped
-          { /image load $error /errorname get signalerror }
+          { /image .systemvar $error /errorname get signalerror }
         if
       }
     ifelse
@@ -632,15 +683,23 @@ if
 %
 /imagemask
   {
-    dup type /dicttype eq languagelevel 2 ge and
-      { dup /ImageType get //.imagemasktypes exch get exec }
+    dup type /dicttype eq .languagelevel 2 ge and
+      { dup /ImageType get
+        //.imagemasktypes exch .knownget
+          { exec
+          }
+          { % CET 12-08b.ps wamts /typecheck
+            /imagemask .systemvar /typecheck signalerror
+          }
+        ifelse
+      }
       {
         //img_build_imagemask_dict exec
           { .imagemask1 }
         stopped
           {
             //img_unbuild_imagemask_dict exec
-            /imagemask load $error /errorname get signalerror
+            /imagemask .systemvar $error /errorname get signalerror
           }
         if
       }

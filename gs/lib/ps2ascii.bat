@@ -1,5 +1,5 @@
 @echo off
-@rem $RCSfile$ $Revision$
+@rem $Id$
 
 call gssetgs.bat
 if '%1'=='' goto a0

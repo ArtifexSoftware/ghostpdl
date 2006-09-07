@@ -72,7 +72,7 @@ int pl_main_make_gstate(pl_main_instance_t *pmi, gs_state **ppgs);
 
 #ifdef DEBUG
 /* Print memory and time usage. */
-void pl_print_usage(const gs_memory_t *mem, const pl_main_instance_t *pmi,
+void pl_print_usage(const pl_main_instance_t *pmi,
                     const char *msg);
 #endif
 

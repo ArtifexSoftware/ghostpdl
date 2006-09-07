@@ -1,17 +1,19 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/* $RCSfile$ $Revision$ */
-/* "uniprint" -- Ugly Printer Driver by Gunther Hess (gunther@elmos.de) */
+/* $Id$ */
+/* gdevupd.c Revision: 1.88 */
+/* "uniprint" -- Ugly Printer Driver by Gunther Hess (ghess@elmos.de) */
 
 /* Revision-History:
    23-Mar-1997 -  1.43: First published version
@@ -79,6 +81,8 @@ There are two compile-time options for this driver:
 /* ------------------------------------------------------------------- */
 /* Required Header-Files                                               */
 /* ------------------------------------------------------------------- */
+
+#include "stdint_.h"
 
 #ifndef   hess_test_INCLUDED /* A private test-Option */
 
@@ -260,8 +264,8 @@ upd_device far_data gs_uniprint_device = { /** */
       1, /**  color_info.depth         1/2/4/8/16/24/32 */
       1, /**  color_info.max_gray      # of distinct gray levels -1 (255/1) */
       0, /**  color_info.max_color     # of distinct color levels -1 (255/1/0)*/
-      1, /**  color_info.dither_grays  size of gray ramp for dithering (5/2) */
-      0, /**  color_info.dither_colors size of color cube ditto (5/2/0) */
+      2, /**  color_info.dither_grays  size of gray ramp for dithering (256/2) */
+      0, /**  color_info.dither_colors size of color cube ditto (256/2/0) */
       upd_print_page),                     /** Print-procedure */
       { NULL, 0, true },                   /** Driver-Version */
       NULL                                 /** upd-field: Initially none */
@@ -374,53 +378,53 @@ static const char *const *const upd_choice[] = {
 */
 
 static const char *const upd_flags[] = {      /** */
-#define B_REVDIR            ((uint32) 1<<0)   /** FS-Dir-Flag */
+#define B_REVDIR            ((uint32_t) 1<<0)   /** FS-Dir-Flag */
 "upFSReverseDirection",                       /** FS-Dir-Flag */
-#define B_FIXDIR            ((uint32) 1<<1)   /** Do not alter FS-direction */
+#define B_FIXDIR            ((uint32_t) 1<<1)   /** Do not alter FS-direction */
 "upFSFixedDirection",                         /** Do not alter FS-direction */
-#define B_FSWHITE           ((uint32) 1<<2)   /** Process white in FS */
+#define B_FSWHITE           ((uint32_t) 1<<2)   /** Process white in FS */
 "upFSProcessWhiteSpace",                      /** Process white in FS */
-#define B_FSZERO            ((uint32) 1<<3)   /** Zero FS-Initialization */
+#define B_FSZERO            ((uint32_t) 1<<3)   /** Zero FS-Initialization */
 "upFSZeroInit",                               /** Zero FS-Initialization */
 
-#define B_PAGEWIDTH         ((uint32) 1<<4)   /** Adjust Width in BOP */
+#define B_PAGEWIDTH         ((uint32_t) 1<<4)   /** Adjust Width in BOP */
 "upAdjustPageWidthCommand",                   /** Adjust Page-Width in BOP */
-#define B_PAGELENGTH        ((uint32) 1<<5)   /** Adjust Length in BOP */
+#define B_PAGELENGTH        ((uint32_t) 1<<5)   /** Adjust Length in BOP */
 "upAdjustPageLengthCommand",                  /** Adjust Page-Length in BOP */
-#define B_TOPMARGIN         ((uint32) 1<<6)   /** Adjust Top-Margin in BOP */
+#define B_TOPMARGIN         ((uint32_t) 1<<6)   /** Adjust Top-Margin in BOP */
 "upAdjustTopMarginCommand",                   /** Adjust Top-Margin in BOP */
-#define B_BOTTOMMARGIN      ((uint32) 1<<7)   /** Adjust Bottom-Margin in BOP */
+#define B_BOTTOMMARGIN      ((uint32_t) 1<<7)   /** Adjust Bottom-Margin in BOP */
 "upAdjustBottomMarginCommand",                /** Adjust Bottom-Margin in BOP */
-#define B_RESOLUTION        ((uint32) 1<<8)   /** Adjust Resolution in BOP */
+#define B_RESOLUTION        ((uint32_t) 1<<8)   /** Adjust Resolution in BOP */
 "upAdjustResolutionCommand",                  /** Adjust Resolution in BOP */
-#define B_MEDIASIZE         ((uint32) 1<<9)   /** Adjust Mediasize in BOP */
+#define B_MEDIASIZE         ((uint32_t) 1<<9)   /** Adjust Mediasize in BOP */
 "upAdjustMediaSize",                          /** Adjust Mediasize in BOP */
 
-#define B_XABS              ((uint32) 1<<10)  /** Use Absolute X-Values */
+#define B_XABS              ((uint32_t) 1<<10)  /** Use Absolute X-Values */
 "upFormatXabsolute",                          /** Use Absolute X-Values */
-#define B_YABS              ((uint32) 1<<11)  /** Use Absolute Y-Values */
+#define B_YABS              ((uint32_t) 1<<11)  /** Use Absolute Y-Values */
 "upFormatYabsolute",                          /** Use Absolute Y-Values */
 
-#define B_MAP               ((uint32) 1<<12)  /** Mapping Initialized */
+#define B_MAP               ((uint32_t) 1<<12)  /** Mapping Initialized */
 "upColorModelInitialized",                    /** Mapping Initialized */
-#define B_BUF               ((uint32) 1<<13)  /** Raster-Buffer Initialized */
+#define B_BUF               ((uint32_t) 1<<13)  /** Raster-Buffer Initialized */
 "upRasterBufferInitialized",                  /** Raster-Buffer Initialized */
-#define B_RENDER            ((uint32) 1<<14)  /** Rendering Initialized */
+#define B_RENDER            ((uint32_t) 1<<14)  /** Rendering Initialized */
 "upRenderingInitialized",                     /** Rendering Initialized */
-#define B_FORMAT            ((uint32) 1<<15)  /** Formatter Initialized */
+#define B_FORMAT            ((uint32_t) 1<<15)  /** Formatter Initialized */
 "upOutputFormatInitialized",                  /** Formatter Initialized */
-#define B_ABORT             ((uint32) 1<<16)  /** Abort on Interrupt */
+#define B_ABORT             ((uint32_t) 1<<16)  /** Abort on Interrupt */
 "upOutputAborted",                            /** Abort on Interrupt */
-#define B_ERROR             ((uint32) 1<<17)  /** Severe Error detected */
+#define B_ERROR             ((uint32_t) 1<<17)  /** Severe Error detected */
 "upErrorDetected",                            /** Severe Error detected */
 
-#define B_OPEN              ((uint32) 1<<18)  /** Open-Command written */
+#define B_OPEN              ((uint32_t) 1<<18)  /** Open-Command written */
 "upWroteData",                                /** Open-Command written */
 
-#define B_YFLIP             ((uint32) 1<<19)  /** Mirrored printing (hr) */
+#define B_YFLIP             ((uint32_t) 1<<19)  /** Mirrored printing (hr) */
 "upYFlip",                                    /** Mirrored printing (hr) */
 
-#define B_REDUCEK           ((uint32) 1<<20)  /** CMY->Black Reduction */
+#define B_REDUCEK           ((uint32_t) 1<<20)  /** CMY->Black Reduction */
 "upFSReduceK"
 
 };
@@ -575,7 +579,7 @@ static const char *const upd_float_a[] = {    /** */
 /* ------------------------------------------------------------------- */
 
 /**
-int32 and uint32 are 32Bit-Integer-Types used in the
+int32_t and uint32_t are 32Bit-Integer-Types used in the
 Floyd-Steinberg Algorithm and instead of gx_color_index. The
 8-Byte long's on some 64Bit-Machines are apparently useless,
 since gdevprn.c does (currently) support only 32-Bit Rasterdata.
@@ -586,16 +590,12 @@ since gdevprn.c does (currently) support only 32-Bit Rasterdata.
 #undef UINT32_MAX
 
 #if     arch_log2_sizeof_int < 2  /* int is too small */
-   typedef          long  int32;
 #define                   INT32_MIN  LONG_MIN
 #define                   INT32_MAX  LONG_MAX
-   typedef unsigned long uint32;
 #define                  UINT32_MAX ULONG_MAX
 #else                             /* int is sufficient */
-   typedef          int   int32;
 #define                   INT32_MIN   INT_MIN
 #define                   INT32_MAX   INT_MAX
-   typedef unsigned int  uint32;
 #define                  UINT32_MAX  UINT_MAX
 #endif                            /* use int or long ? */
 
@@ -607,7 +607,7 @@ To be exact, it's not "4" but rather "UPD_CMAP_MAX", which is a synonym.
 
 typedef struct updcmap_s { /** */
    gx_color_value      *code;      /** Values related to codes */
-   uint32               bitmsk;    /** Mask, right justified */
+   uint32_t               bitmsk;    /** Mask, right justified */
    int                  bitshf;    /** Shift to right-justify */
    int                  xfer;      /** Index to the Xfer-Array */
    int                  bits;      /** # of Bits */
@@ -622,11 +622,11 @@ typedef const updcmap_t *updcmap_pc;
 */
 
 typedef struct updcomp_s {  /* Parameters for Floyd-Steinberg */
-   int32                offset;    /* Offset added to scaled values */
-   int32                scale;     /* Scale for the raw values */
-   int32                threshold; /* Val must be larger than this to fire */
-   int32                spotsize;  /* subtracted from Val when fired */
-   uint32               bitmsk;    /* Mask */
+   int32_t                offset;    /* Offset added to scaled values */
+   int32_t                scale;     /* Scale for the raw values */
+   int32_t                threshold; /* Val must be larger than this to fire */
+   int32_t                spotsize;  /* subtracted from Val when fired */
+   uint32_t               bitmsk;    /* Mask */
    int                  bitshf;    /* shift */
    int                  bits;      /* # of Bits */
    int                  cmap;      /* Index for the Parameter-name */
@@ -646,8 +646,8 @@ typedef struct updscan_s { /* Single Scanline (1 Bit/Pixel) */
 #define UPD_CMAP_MAX     4 /** Number of Colormaps provided */
 #define UPD_VALPTR_MAX  32 /** Number of valbuf-Pointers */
 
-#define upd_proc_pxlget(name) uint32 name(upd_p upd)
-#define upd_proc_render(name) int name(const gs_memory_t *mem, upd_p upd)
+#define upd_proc_pxlget(name) uint32_t name(upd_p upd)
+#define upd_proc_render(name) int name(upd_p upd)
 #define upd_proc_writer(name) int name(upd_p upd,FILE *out)
 
 struct upd_s { /* All upd-specific data */
@@ -670,14 +670,14 @@ struct upd_s { /* All upd-specific data */
    upd_proc_writer(     (*writer));
 
    updscan_p             *scnbuf;     /* Output-Values */
-   int32                 *valbuf;     /* Floyd-Steinberg-Buffer */
+   int32_t                 *valbuf;     /* Floyd-Steinberg-Buffer */
    void                  *valptr[UPD_VALPTR_MAX];
 
    byte                  *outbuf;     /* Output-Buffer */
    upd_proc_render(     (*start_render)); /* Setup for rendering */
    upd_proc_writer(     (*start_writer)); /* Setup for writilg */
 
-   uint32                 flags;      /** Some flags */
+   uint32_t                 flags;      /** Some flags */
    int                    pdwidth;    /** pdev-width upon open */
    int                    pdheight;   /** pdev-height upon open */
 
@@ -754,7 +754,7 @@ and this is what "upd_truncate" does, in the most general manner i can
 think of and with O(log(n)) in time. "upd_expand" is required for the
 reverse mapping-functions and is a constant-time `algorithm'.
 */
-private inline uint32   upd_truncate(upd_pc,int,gx_color_value);
+private inline uint32_t   upd_truncate(upd_pc,int,gx_color_value);
 
 /* ------------------------------------------------------------------- */
 /* Return the gx_color_value for a given component                     */
@@ -763,7 +763,7 @@ private inline gx_color_value
 upd_expand(upd_pc upd,int i,gx_color_index ci0)
 {
    const updcmap_pc cmap = upd->cmap + i;    /* Writing-Shortcut */
-   uint32 ci = (uint32)((ci0 >> cmap->bitshf) & cmap->bitmsk); /* Extract the component */
+   uint32_t ci = (uint32_t)((ci0 >> cmap->bitshf) & cmap->bitmsk); /* Extract the component */
 
    if(!cmap->rise) ci = cmap->bitmsk - ci;   /* Invert, if necessary */
 /* no Truncation/Expansion on full range */
@@ -785,14 +785,14 @@ private void            upd_open_render(   upd_device *udev);
 private void            upd_close_render(  upd_device *udev);
 
 private void            upd_open_fscomp(   upd_device *udev);
-private int             upd_fscomp(const gs_memory_t *mem, upd_p upd);
+private int             upd_fscomp(        upd_p upd);
 private void            upd_close_fscomp(  upd_device *udev);
 
 private void            upd_open_fscmyk(   upd_device *udev);
-private int             upd_fscmyk(const gs_memory_t *mem, upd_p upd);
+private int             upd_fscmyk(        upd_p upd);
 
 private void            upd_open_fscmy_k(  upd_device *udev);
-private int             upd_fscmy_k(const gs_memory_t *mem,  upd_p upd);
+private int             upd_fscmy_k(       upd_p upd);
 
 /**
 I hope that the formatting stuff can be kept simple and thus most
@@ -866,8 +866,8 @@ private int             upd_wrtescnm(      upd_p upd, FILE *out);
 /**
 Generalized Pixel Get & Read
 */
-private uint32 upd_pxlfwd(const gs_memory_t *mem, upd_p upd);
-private uint32 upd_pxlrev(const gs_memory_t *mem, upd_p upd);
+private uint32_t upd_pxlfwd(upd_p upd);
+private uint32_t upd_pxlrev(upd_p upd);
 #define upd_pxlget(UPD) (*UPD->pxlget)(UPD)
 
 private void *upd_cast(const void *);
@@ -894,7 +894,7 @@ Here are several Macros, named "UPD_MM_*" to deal with that.
          memset(tmp,0,(Nelts)*sizeof(Which[0]));                      \
          Which = (void *) tmp;                                        \
       } else {                                                        \
-          return_error(mem, gs_error_VMerror);                             \
+          return_error(gs_error_VMerror);                             \
       }                                                               \
    }
 
@@ -937,7 +937,7 @@ Here are several Macros, named "UPD_MM_*" to deal with that.
    }
 
 /** UPD_MM_CPY_VALUE Copies a simple Value */
-#define UPD_MM_CPY_VALUE(To,From)  To = From
+#define UPD_MM_CPY_VALUE(mem,To,From)  To = From
 
 #define UPD_MM_CPY_VALUE_3(mem,To,From)  To = From
 
@@ -954,13 +954,13 @@ Here are several Macros, named "UPD_MM_*" to deal with that.
 /** UPD_MM_CPY_APARAM Creates a copy of a nested gs-parameter */
 #define UPD_MM_CPY_APARAM(mem, To,From)                                     \
    if(From.data && From.size) {                                        \
-      UPD_MM_GET_ARRAY(mem, To.data,From.size);                             \
+       UPD_MM_GET_ARRAY(mem, To.data,From.size);			       \
       if(To.data) {                                                    \
          gs_param_string *tmp2 = (gs_param_string *) upd_cast(To.data);\
          uint iii;                                                     \
          To.size = From.size;                                          \
          for(iii = 0; To.size > iii; ++iii)                            \
-            UPD_MM_CPY_PARAM(mem, tmp2[iii],From.data[iii]);                \
+	     UPD_MM_CPY_PARAM(mem, tmp2[iii],From.data[iii]);	       \
       }                                                                \
    }
 
@@ -1055,7 +1055,7 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
  */
    if(!upd || B_OK4GO != (upd->flags & (B_OK4GO | B_ERROR))) {
 #if UPD_MESSAGES & (UPD_M_ERROR | UPD_M_TOPCALLS)
-         errprintf(pdev->memory, "CALL-REJECTED upd_print_page(0x%05lx,0x%05lx)\n",
+         errprintf("CALL-REJECTED upd_print_page(0x%05lx,0x%05lx)\n",
              (long) udev,(long) out);
 #endif
       return gs_error_undefined;
@@ -1097,7 +1097,7 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
    upd->yscnbuf   = 0; /* Next free scnbuf-Line */
 
 /* Rendering & Writing Setup, if available */
-   if(upd->start_render) (*upd->start_render)(pdev->memory, upd);
+   if(upd->start_render) (*upd->start_render)(upd);
    if(upd->start_writer) (*upd->start_writer)(upd,out);
 
 /* How many scanlines do we need ? */
@@ -1139,7 +1139,7 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
 
          }
 
-         if(0 > (*upd->render)(udev->memory, upd)) {
+         if(0 > (*upd->render)(upd)) {
 #if UPD_MESSAGES & UPD_M_WARNING
             errprintf("Rendering aborted with error, yscnbuf = %4d\n",
                upd->yscnbuf);
@@ -1196,13 +1196,19 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
 /*
  * If necessary, write the close-sequence
  */
-   if((NULL != udev->fname  ) && strchr(udev->fname,'%')) {
+    {
+	gs_parsed_file_name_t parsed;
+	const char *fmt;
 
-      if(0  <   upd->strings[S_CLOSE].size)
-         fwrite(upd->strings[S_CLOSE].data,1,upd->strings[S_CLOSE].size,out);
-
-      upd->flags &= ~B_OPEN;
-   }
+	if (NULL != udev->fname &&
+	    0 <= gx_parse_output_file_name(&parsed, &fmt, udev->fname, strlen(udev->fname)) &&
+	    fmt
+	    ) {
+	    if (0 < upd->strings[S_CLOSE].size)
+		fwrite(upd->strings[S_CLOSE].data,1,upd->strings[S_CLOSE].size,out);
+	    upd->flags &= ~B_OPEN;
+	}
+    }
 
 /*
  * clean up, and return status
@@ -1420,10 +1426,10 @@ buffer for the raw raster-data
         for(i = 0; countof(upd_flags) > i; ++i) {
           if(upd_flags[i]) {
             errprintf("%*s = %s\n",ln,upd_flags[i],
-               ((uint32) 1 << i) & upd->flags ? "true" : "false");
+               ((uint32_t) 1 << i) & upd->flags ? "true" : "false");
           } else {
             errprintf("%*s[%2d] = %s\n",ln-4,"upd_flags",i,
-               ((uint32) 1 << i) & upd->flags ? "true" : "false");
+               ((uint32_t) 1 << i) & upd->flags ? "true" : "false");
 
           }
         }
@@ -1530,10 +1536,10 @@ upd_close(gx_device *pdev)
    if(0 > Err) {                                                        \
       errprintf("RETURN-%d: %d upd_get_params(0x%05lx,0x%05lx)\n", \
          __LINE__,Err,(long) Dev,(long) List);                          \
-      return_error(Dev->memory, Err);                                                \
+      return_error(Err);                                                \
    }
 #else
-#define UPD_EXIT_GET(Err,Dev,List) if(0 > Err) return_error(Dev->memory, Err);
+#define UPD_EXIT_GET(Err,Dev,List) if(0 > Err) return_error(Err);
 #endif
 
 private int
@@ -1580,7 +1586,7 @@ upd_get_params(gx_device *pdev, gs_param_list *plist)
    for(i = 0; i < countof(upd_flags); ++i) {
       if(!upd_flags[i]) continue; /* Flag-Export disabled */
       if(upd) {
-         bool value = upd->flags & ((uint32) 1 << i);
+         bool value = upd->flags & ((uint32_t) 1 << i);
          error = param_write_bool(plist,upd_flags[i],&value);
       } else {
          error = param_write_null(plist,upd_flags[i]);
@@ -1669,7 +1675,7 @@ upd_put_params(gx_device *pdev, gs_param_list *plist)
 
    float                  MarginsHWResolution[2],Margins[2];
    gx_device_color_info   color_info;
-   uint32                 flags      = 0;
+   uint32_t                 flags      = 0;
    int                   *choice     = NULL;
    int                   *ints       = NULL;
    gs_param_int_array    *int_a      = NULL;
@@ -1792,9 +1798,9 @@ out on this copies.
    if(upd) {
      flags = upd->flags;
      UPD_MM_CPY_ARRAY(udev->memory, choice,  upd->choice,  countof(upd_choice),
-        UPD_MM_CPY_VALUE_3);
+        UPD_MM_CPY_VALUE);
      UPD_MM_CPY_ARRAY(udev->memory, ints,    upd->ints,    countof(upd_ints),
-        UPD_MM_CPY_VALUE_3);
+        UPD_MM_CPY_VALUE);
      UPD_MM_CPY_ARRAY(udev->memory, int_a,   upd->int_a,   countof(upd_int_a),
         UPD_MM_CPY_PARAM);
      UPD_MM_CPY_ARRAY(udev->memory, strings, upd->strings, countof(upd_strings),
@@ -1837,7 +1843,7 @@ out on this copies.
 
 /** Import the Boolean Values */
    for(i = 0; countof(upd_flags) > i; ++i) {
-      uint32 bit  = (uint32) 1 << i;
+      uint32_t bit  = (uint32_t) 1 << i;
       bool   flag = flags & bit ? true : false;
       if(!upd_flags[i]) continue;
       UPD_PARAM_READ(param_read_bool,upd_flags[i],flag);
@@ -2031,7 +2037,7 @@ In addition to that, Resolution & Margin-Parameters are tested & adjusted.
          nbits = 0;
          for(i = 0; i < ncomp; ++i) if(nbits < int_a[IA_COMPBITS].data[i])
             nbits = int_a[IA_COMPBITS].data[i];
-         if(2 < nbits) ip[4] = 5;
+         if(2 < nbits) ip[4] = 256;
          else          ip[4] = 2;
       }                /* Gray-Ramp */
 
@@ -2039,7 +2045,7 @@ In addition to that, Resolution & Margin-Parameters are tested & adjusted.
          nbits = 0;
          for(i = 0; i < ncomp; ++i) if(nbits < int_a[IA_COMPBITS].data[i])
             nbits = int_a[IA_COMPBITS].data[i];
-         if(2 < nbits) ip[5] = 5;
+         if(2 < nbits) ip[5] = 256;
          else          ip[5] = 2;
       }                             /* Color-Ramp */
 
@@ -2142,7 +2148,7 @@ transferred into the device-structure. In the case of "uniprint", this may
 
 
 #if UPD_MESSAGES & UPD_M_TOPCALLS
-      errprintf(udev->memory, "RETURN: %d = upd_put_params(0x%05lx,0x%05lx)\n",
+      errprintf("RETURN: %d = upd_put_params(0x%05lx,0x%05lx)\n",
          error,(long) udev, (long) plist);
 #endif
 
@@ -2740,10 +2746,10 @@ upd_rgb_novcolor(gx_device *pdev, const gx_color_value cv[])
 /* Truncate a gx_color_value to the desired number of bits.            */
 /* ------------------------------------------------------------------- */
 
-private uint32
+private uint32_t
 upd_truncate(upd_pc upd,int i,gx_color_value v) {
    const updcmap_pc cmap = upd->cmap + i;
-   int32           s; /* step size */
+   int32_t           s; /* step size */
    gx_color_value *p; /* value-pointer */
 
    if(0 == cmap->bits) {                          /* trivial case */
@@ -2775,7 +2781,7 @@ upd_truncate(upd_pc upd,int i,gx_color_value v) {
 
    if(!cmap->rise) v = cmap->bitmsk - v; /* Again reverse, if necessary */
 
-   return ((uint32) v) << cmap->bitshf;
+   return ((uint32_t) v) << cmap->bitshf;
 }
 
 /* ------------------------------------------------------------------- */
@@ -2862,7 +2868,7 @@ upd_open_map(upd_device *udev)
    if(imap) { /* Check number of Bits & Shifts */
 
 #if      UPD_MESSAGES & UPD_M_WARNING
-      uint32 used = 0,bitmsk;
+      uint32_t used = 0,bitmsk;
 #endif
       bool success = true;
 
@@ -2929,7 +2935,7 @@ upd_open_map(upd_device *udev)
 
 #if            UPD_MESSAGES & UPD_M_WARNING
 
-               bitmsk   = ((uint32) 1 << upd->int_a[IA_COMPBITS].data[imap]) -1;
+               bitmsk   = ((uint32_t) 1 << upd->int_a[IA_COMPBITS].data[imap]) -1;
                bitmsk <<= upd->int_a[IA_COMPSHIFT].data[imap];
 
                if(used & bitmsk) errprintf(
@@ -2972,7 +2978,7 @@ upd_open_map(upd_device *udev)
          imap = 0;
 
 #if      UPD_MESSAGES & UPD_M_ERROR
-            errprintf(udev->memory, "upd_open_map: could not allocate code-arrays\n");
+            errprintf("upd_open_map: could not allocate code-arrays\n");
 #        endif
 
       }
@@ -2991,7 +2997,7 @@ upd_open_map(upd_device *udev)
       for(imap = 0; UPD_CMAP_MAX > imap; ++imap) {
 
          const updcmap_p cmap = upd->cmap + imap;
-         uint32 ly,iy;
+         uint32_t ly,iy;
          float ystep,xstep,fx,fy;
 
 /*       Variables & Macro for Range-Normalization */
@@ -3307,7 +3313,7 @@ upd_close_render(upd_device *udev)
 /* upd_open_fscomp: Initialize Component-Floyd-Steinberg               */
 /* ------------------------------------------------------------------- */
 #if UPD_MESSAGES & UPD_M_FSBUF
-static int32 fs_emin[UPD_VALPTR_MAX],fs_emax[UPD_VALPTR_MAX];
+static int32_t fs_emin[UPD_VALPTR_MAX],fs_emax[UPD_VALPTR_MAX];
 #endif
 private void
 upd_open_fscomp(upd_device *udev)
@@ -3341,7 +3347,7 @@ initial test checks it's integrity.
                (UPD_CMAP_MAX <= order[icomp])   ) {
                success = false;
 #if UPD_MESSAGES & UPD_M_WARNING
-	       errprintf(udev->memory,
+                  errprintf(
                    "upd_open_fscomp: %d is illegal component-index\n",
                    order[icomp]);
 #endif
@@ -3362,7 +3368,7 @@ If anything was ok. up to now, memory get's allocated.
          upd->valptr[icomp] = gs_malloc(udev->memory, 1,sizeof(updcomp_t),"upd/fscomp");
          if(NULL == upd->valptr[icomp]) {
 #if UPD_MESSAGES & UPD_M_ERROR
-            errprintf(udev->memory,
+            errprintf(
                "upd_open_fscomp: could not allocate %d. updcomp\n",
                icomp);
 #endif
@@ -3383,7 +3389,7 @@ If anything was ok. up to now, memory get's allocated.
          memset(upd->valbuf,0,need*sizeof(upd->valbuf[0]));
       } else {
 #if UPD_MESSAGES & UPD_M_ERROR
-         errprintf(udev->memory,
+         errprintf(
             "upd_open_fscomp: could not allocate %u words for valbuf\n",need);
 #endif
          icomp = 0;
@@ -3396,9 +3402,9 @@ If anything was ok. up to now, memory get's allocated.
       for(icomp = 0; upd->ncomp > icomp; ++icomp) {
 
          const updcomp_p comp   = upd->valptr[icomp];
-         const int32     nsteps = upd->cmap[order[icomp]].bitmsk;
+         const int32_t     nsteps = upd->cmap[order[icomp]].bitmsk;
          float ymin,ymax;
-         int32 highmod,highval;
+         int32_t highmod,highval;
          int i;
 
          comp->threshold = nsteps;
@@ -3429,41 +3435,41 @@ If anything was ok. up to now, memory get's allocated.
          }
          if(1.0 < ymax) ymax = 1.0;
 
-         comp->spotsize = ((int32) 1 << 28) - 1;
+         comp->spotsize = ((int32_t) 1 << 28) - 1;
 
          for(i = 0; i < 32; ++i) { /* Attempt Ideal */
 
-            highval = (int32)((ymax-ymin) * (double) comp->spotsize + 0.5);
+            highval = (int32_t)((ymax-ymin) * (double) comp->spotsize + 0.5);
 
             if(!(highmod = highval % nsteps)) break; /* Gotcha */
 
             highval += nsteps - highmod;
-            comp->spotsize = (int32)((double) highval / (ymax-ymin) + 0.5);
+            comp->spotsize = (int32_t)((double) highval / (ymax-ymin) + 0.5);
 
             if(!(comp->spotsize % 2)) comp->spotsize++;
 
          }                         /* Attempt Ideal */
 
-         comp->offset    = (int32)(ymin * (double) comp->spotsize + (double) 0.5);
+         comp->offset    = (int32_t)(ymin * (double) comp->spotsize + (double) 0.5);
          comp->scale     = highval / nsteps;
          comp->threshold = comp->spotsize / 2;
 
 #if UPD_MESSAGES & UPD_M_SETUP
-         errprintf(udev->memory,
+         errprintf(
              "Values for %d. Component after %d iterations\n",comp->cmap+1,i);
-         errprintf(udev->memory,
+         errprintf(
              "steps:     %10ld, Bits: %d\n",(long) comp->bitmsk,comp->bits);
-         errprintf(udev->memory,
+         errprintf(
              "xfer:      %10d Points, %s\n",
              upd->float_a[upd->cmap[comp->cmap].xfer].size,
              upd->cmap[comp->cmap].rise ? "rising" : "falling");
-         errprintf(udev->memory,
+         errprintf(
              "offset:    %10d 0x%08x\n",comp->offset,comp->offset);
-         errprintf(udev->memory,
+         errprintf(
              "scale:     %10d 0x%08x\n",comp->scale,comp->scale);
-         errprintf(udev->memory,
+         errprintf(
              "threshold: %10d 0x%08x\n",comp->threshold,comp->threshold);
-         errprintf(udev->memory,
+         errprintf(
              "spotsize:  %10d 0x%08x\n",comp->spotsize,comp->spotsize);
 #endif
       }
@@ -3475,7 +3481,7 @@ Optional Random Initialization of the value-Buffer
       for(icomp = 0; icomp < upd->ncomp; ++icomp) {
          const updcomp_p comp = upd->valptr[icomp];
          int i;
-         int32 lv = INT32_MAX, hv = INT32_MIN, v;
+         int32_t lv = INT32_MAX, hv = INT32_MIN, v;
          float scale;
          for(i = icomp; i < upd->nvalbuf; i += upd->ncomp) {
             v = rand();
@@ -3484,9 +3490,9 @@ Optional Random Initialization of the value-Buffer
             upd->valbuf[i] = v;
          }
          scale = (float) comp->threshold / (float) (hv - lv);
-         lv   += (int32)(comp->threshold / (2*scale));
+         lv   += (int32_t)(comp->threshold / (2*scale));
          for(i = icomp; i < upd->nvalbuf; i += upd->ncomp)
-            upd->valbuf[i] = (int32)(scale * (upd->valbuf[i] - lv));
+            upd->valbuf[i] = (int32_t)(scale * (upd->valbuf[i] - lv));
       }
    }
 
@@ -3518,11 +3524,10 @@ upd_close_fscomp(upd_device *udev)
          updcomp_p comp = upd->valptr[icomp];
          if(!comp) continue;
          if(!comp->spotsize) continue;
-         errprintf(udev->memory, 
-		   "%d. Component: %6.3f <= error <= %6.3f\n",
-		   icomp+1,
-		   (double) fs_emin[icomp] / (double) comp->spotsize,
-		   (double) fs_emax[icomp] / (double) comp->spotsize);
+         errprintf("%d. Component: %6.3f <= error <= %6.3f\n",
+             icomp+1,
+             (double) fs_emin[icomp] / (double) comp->spotsize,
+             (double) fs_emax[icomp] / (double) comp->spotsize);
       }
 
    }
@@ -3553,7 +3558,7 @@ upd_close_fscomp(upd_device *udev)
    FS_GOAL computes the desired Pixel-Value
 */
 #define FS_GOAL(Raw,I)                                                     \
-   pixel[I] = (int32)(Raw) * comp[I]->scale +    comp[I]->offset           \
+   pixel[I] = (int32_t)(Raw) * comp[I]->scale +    comp[I]->offset           \
             + rowerr[I]  + colerr[I] -       ((colerr[I]+4)>>3);           \
    if(         pixel[I] < 0)                    pixel[I] = 0;              \
    else if(    pixel[I] >    comp[I]->spotsize) pixel[I] = comp[I]->spotsize;
@@ -3583,17 +3588,17 @@ upd_close_fscomp(upd_device *udev)
    }             /* Inc/Dec Bit */
 
 private int
-upd_fscomp(const gs_memory_t *mem, upd_p upd)
+upd_fscomp(upd_p upd)
 {
    const updscan_p  scan    = upd->scnbuf[upd->yscnbuf & upd->scnmsk];
    const updcomp_p *comp    = (updcomp_p *) upd->valptr;
-   int32 *const     pixel  = upd->valbuf;
-   int32 *const     colerr = pixel  + upd->ncomp;
-   int32           *rowerr = colerr + upd->ncomp;
+   int32_t *const     pixel  = upd->valbuf;
+   int32_t *const     colerr = pixel  + upd->ncomp;
+   int32_t           *rowerr = colerr + upd->ncomp;
    int              pwidth = upd->rwidth;
    int              dir,ibyte;
    int              iblack,bblack,pxlset;
-   uint32       ci;
+   uint32_t       ci;
    byte         bit;
    bool         first = true;
 /*
@@ -3622,11 +3627,11 @@ upd_fscomp(const gs_memory_t *mem, upd_p upd)
       }
 
       if(!(upd->flags & B_FSWHITE)) {
-         upd_pxlfwd(mem, upd);
+         upd_pxlfwd(upd);
          while((0 < pwidth) && !upd_pxlget(upd)) pwidth--;
       }
 
-      upd_pxlrev(mem, upd);
+      upd_pxlrev(upd);
 
    } else {                       /* This one forward */
 
@@ -3642,11 +3647,11 @@ upd_fscomp(const gs_memory_t *mem, upd_p upd)
       }
 
       if(!(upd->flags & B_FSWHITE)) {
-         upd_pxlrev(mem, upd);
+         upd_pxlrev(upd);
          while((0 < pwidth) && !upd_pxlget(upd)) pwidth--;
       }
 
-      upd_pxlfwd(mem, upd);
+      upd_pxlfwd(upd);
 
    }                              /* reverse or forward */
 /*
@@ -3792,14 +3797,14 @@ upd_open_fscmyk(upd_device *udev)
 /* ------------------------------------------------------------------- */
 
 private int
-upd_fscmyk(const gs_memory_t *mem, upd_p upd)
+upd_fscmyk(upd_p upd)
 {
    const updscan_p  scan   = upd->scnbuf[upd->yscnbuf & upd->scnmsk];
-   int32 *const     pixel  = upd->valbuf;
+   int32_t *const     pixel  = upd->valbuf;
    const updcomp_p *comp   = (updcomp_p *) upd->valptr;
-   int32 *const     colerr = pixel  + 4;
-   int32           *rowerr = colerr + 4;
-   int32            pwidth = upd->rwidth;
+   int32_t *const     colerr = pixel  + 4;
+   int32_t           *rowerr = colerr + 4;
+   int32_t            pwidth = upd->rwidth;
    int              dir,ibyte;
    byte             bit,*data;
    bool             first = false;
@@ -3818,7 +3823,7 @@ upd_fscmyk(const gs_memory_t *mem, upd_p upd)
 
       if(!(upd->flags & B_FSWHITE)) {
          data = upd->gsscan;
-         while(0 < pwidth && !*(uint32 *)data) pwidth--, data += 4;
+         while(0 < pwidth && !*(uint32_t *)data) pwidth--, data += 4;
          if(0 >= pwidth) {
             if(0 < upd->nlimits) upd_limits(upd,false);
             return 0;
@@ -3831,7 +3836,7 @@ upd_fscmyk(const gs_memory_t *mem, upd_p upd)
 
       if(!(upd->flags & B_FSWHITE)) {
          data = upd->gsscan + 4 * (upd->rwidth-1);
-         while(0 < pwidth && !*(uint32 *)data) pwidth--, data -= 4;
+         while(0 < pwidth && !*(uint32_t *)data) pwidth--, data -= 4;
          if(0 >= pwidth) {
             if(0 < upd->nlimits) upd_limits(upd,false);
             return 0;
@@ -3863,7 +3868,7 @@ upd_fscmyk(const gs_memory_t *mem, upd_p upd)
  * Skip over leading white-space
  */
    if(!(upd->flags & B_FSWHITE)) {
-      while(0 < pwidth && !*((uint32 *)data)) {
+      while(0 < pwidth && !*((uint32_t *)data)) {
          pwidth--;
          if(B_YFLIP  & upd->flags) data -= dir;
          else                      data += dir;
@@ -3980,16 +3985,16 @@ upd_open_fscmy_k(upd_device *udev)
 /* ------------------------------------------------------------------- */
 
 private int
-upd_fscmy_k(const gs_memory_t *mem, upd_p upd)
+upd_fscmy_k(upd_p upd)
 {
    const updscan_p  scan    = upd->scnbuf[upd->yscnbuf & upd->scnmsk];
    const updcomp_p *comp    = (updcomp_p *) upd->valptr;
-   int32 *const     pixel  = upd->valbuf;
-   int32 *const     colerr = pixel  + upd->ncomp;
-   int32           *rowerr = colerr + upd->ncomp;
+   int32_t *const     pixel  = upd->valbuf;
+   int32_t *const     colerr = pixel  + upd->ncomp;
+   int32_t           *rowerr = colerr + upd->ncomp;
    int              pwidth = upd->rwidth;
    int              dir,ibyte;
-   uint32       ci;
+   uint32_t       ci;
    byte         bit;
    bool         first = true;
 /*
@@ -4016,11 +4021,11 @@ upd_fscmy_k(const gs_memory_t *mem, upd_p upd)
       }
 
       if(!(upd->flags & B_FSWHITE)) {
-         upd_pxlfwd(mem, upd);
+         upd_pxlfwd(upd);
          while((0 < pwidth) && !upd_pxlget(upd)) pwidth--;
       }
 
-      upd_pxlrev(mem, upd);
+      upd_pxlrev(upd);
 
    } else {                       /* This one forward */
 
@@ -4036,11 +4041,11 @@ upd_fscmy_k(const gs_memory_t *mem, upd_p upd)
       }
 
       if(!(upd->flags & B_FSWHITE)) {
-         upd_pxlrev(mem, upd);
+         upd_pxlrev(upd);
          while((0 < pwidth) && !upd_pxlget(upd)) pwidth--;
       }
 
-      upd_pxlfwd(mem, upd);
+      upd_pxlfwd(upd);
 
    }                              /* reverse or forward */
 /*
@@ -4394,7 +4399,7 @@ upd_open_writer(upd_device *udev)
 /** Determine required number of scan-Buffers */
 
    if(success) { /* Compute nscnbuf */
-      int32 want,use;
+      int32_t want,use;
 
       want  = upd->ints[I_NYPASS];
       want *= upd->ints[I_PINS2WRITE];
@@ -4641,7 +4646,7 @@ private int
 upd_open_rascomp(upd_device *udev)
 {
    const upd_p upd = udev->upd;
-   int32 noutbuf;
+   int32_t noutbuf;
    int error = 0;
 
    noutbuf = upd->pwidth;
@@ -4680,7 +4685,7 @@ upd_start_rascomp(upd_p upd, FILE *out) {
 
 /** if no begin-sequence externally set */
    if(0 == upd->strings[S_BEGIN].size) {
-      int32 val;
+      int32_t val;
 
 /**   ras_magic */
       val = 0x59a66a95;
@@ -4748,7 +4753,7 @@ upd_start_rascomp(upd_p upd, FILE *out) {
          for(rgb = 16; 0 <= rgb; rgb -= 8) {
             int entry;
             for(entry = 0; entry < 16; ++entry) {
-               uint32 rgbval = 0;
+               uint32_t rgbval = 0;
 
                if(entry & (1<<upd->cmap[0].comp)) {
 
@@ -4909,7 +4914,7 @@ It must hold:
   5. The Data
 */
    if(0 <= error) {
-      int32 i,noutbuf,need;
+      int32_t i,noutbuf,need;
 
       if(0 < upd->strings[S_YMOVE].size) {
          noutbuf = upd->strings[S_YMOVE].size + 2;
@@ -5556,7 +5561,7 @@ It must hold:
   5. The Data
 */
    if(0 <= error) {
-      int32 i,noutbuf,need;
+      int32_t i,noutbuf,need;
       /* Y-Positioning */
       if(0 < upd->strings[S_YMOVE].size) {
          noutbuf = upd->strings[S_YMOVE].size + 2;
@@ -6933,7 +6938,7 @@ upd_open_wrtrtl(upd_device *udev)
 
          default:
 #if UPD_MESSAGES & UPD_M_ERROR
-           errprintf(udev->memory, "UNIPRINT-Coding error, wrrtl, state = %d\n",state);
+           errprintf("UNIPRINT-Coding error, wrrtl, state = %d\n",state);
 #endif
            state = 0;
          break;
@@ -6957,7 +6962,7 @@ It must hold:
   2. Component-Data
 */
    if(0 <= error) {
-      int32 ny,noutbuf;
+      int32_t ny,noutbuf;
       char  tmp[16];
 
       if(0 < upd->strings[S_YMOVE].size) {
@@ -7252,8 +7257,8 @@ private upd_proc_pxlget(upd_pxlget32r); /* 32 Bit Reverse */
 
 /* Initialize Forward-Run */
 
-private uint32
-upd_pxlfwd(const gs_memory_t *mem, upd_p upd)
+private uint32_t
+upd_pxlfwd(upd_p upd)
 {
    if(!(upd->pxlptr = upd->gsscan)) {
 
@@ -7270,155 +7275,155 @@ upd_pxlfwd(const gs_memory_t *mem, upd_p upd)
          case 32: upd->pxlget = upd_pxlget32f; break;
          default:
 #if UPD_MESSAGES & UPD_M_ERROR
-           errprintf(mem, "upd_pxlfwd: unsupported depth (%d)\n",
+           errprintf("upd_pxlfwd: unsupported depth (%d)\n",
               upd->int_a[IA_COLOR_INFO].data[1]);
 #endif
            upd->pxlget = upd_pxlgetnix;
            break;
       }
    }
-   return (uint32) 0;
+   return (uint32_t) 0;
 }
 
 /* 1 Bit Forward */
 
-private uint32
+private uint32_t
 upd_pxlget1f1(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f2;
-   return *upd->pxlptr   & 0x80 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x80 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1f2(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f3;
-   return *upd->pxlptr   & 0x40 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x40 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1f3(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f4;
-   return *upd->pxlptr   & 0x20 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x20 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1f4(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f5;
-   return *upd->pxlptr   & 0x10 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x10 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1f5(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f6;
-   return *upd->pxlptr   & 0x08 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x08 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1f6(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f7;
-   return *upd->pxlptr   & 0x04 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x04 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1f7(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f8;
-   return *upd->pxlptr   & 0x02 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x02 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1f8(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f1;
-   return *upd->pxlptr++ & 0x01 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr++ & 0x01 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
 /* 2 Bit Forward */
 
-private uint32
+private uint32_t
 upd_pxlget2f1(upd_p upd)
 {
    upd->pxlget = upd_pxlget2f2;
-   return ((uint32) (*upd->pxlptr  ) & (uint32) 0xC0) >> 6;
+   return ((uint32_t) (*upd->pxlptr  ) & (uint32_t) 0xC0) >> 6;
 }
 
-private uint32
+private uint32_t
 upd_pxlget2f2(upd_p upd)
 {
    upd->pxlget = upd_pxlget2f3;
-   return ((uint32) (*upd->pxlptr  ) & (uint32) 0x30) >> 4;
+   return ((uint32_t) (*upd->pxlptr  ) & (uint32_t) 0x30) >> 4;
 }
 
-private uint32
+private uint32_t
 upd_pxlget2f3(upd_p upd)
 {
    upd->pxlget = upd_pxlget2f4;
-   return ((uint32) (*upd->pxlptr  ) & (uint32) 0x0C) >> 2;
+   return ((uint32_t) (*upd->pxlptr  ) & (uint32_t) 0x0C) >> 2;
 }
 
-private uint32
+private uint32_t
 upd_pxlget2f4(upd_p upd)
 {
    upd->pxlget = upd_pxlget2f1;
-   return  (uint32) (*upd->pxlptr++) & (uint32) 0x03;
+   return  (uint32_t) (*upd->pxlptr++) & (uint32_t) 0x03;
 }
 
 
 /* 4 Bit Forward */
-private uint32
+private uint32_t
 upd_pxlget4f1(upd_p upd)
 {
    upd->pxlget = upd_pxlget4f2;
-   return ((uint32) (*upd->pxlptr  ) & (uint32) 0xF0) >> 4;
+   return ((uint32_t) (*upd->pxlptr  ) & (uint32_t) 0xF0) >> 4;
 }
 
-private uint32
+private uint32_t
 upd_pxlget4f2(upd_p upd)
 {
    upd->pxlget = upd_pxlget4f1;
-   return  (uint32) (*upd->pxlptr++) & (uint32) 0x0F;
+   return  (uint32_t) (*upd->pxlptr++) & (uint32_t) 0x0F;
 }
 
 
 /* 8 Bit Forward */
-private uint32
+private uint32_t
 upd_pxlget8f(upd_p upd)
 {
-   return (uint32) (*upd->pxlptr++);
+   return (uint32_t) (*upd->pxlptr++);
 }
 
 
 /* 16 Bit Forward */
-private uint32
+private uint32_t
 upd_pxlget16f(upd_p upd)
 {
-   uint32 ci  = (uint32) (*upd->pxlptr++) << 8;
+   uint32_t ci  = (uint32_t) (*upd->pxlptr++) << 8;
                   ci |=                   *upd->pxlptr++;
    return         ci;
 }
 
 /* 24 Bit Forward */
-private uint32
+private uint32_t
 upd_pxlget24f(upd_p upd)
 {
-   uint32 ci  = (uint32) (*upd->pxlptr++) << 16;
-          ci |= (uint32) (*upd->pxlptr++) <<  8;
+   uint32_t ci  = (uint32_t) (*upd->pxlptr++) << 16;
+          ci |= (uint32_t) (*upd->pxlptr++) <<  8;
           ci |=           *upd->pxlptr++;
    return ci;
 }
 
 /* 32 Bit Forward */
-private uint32
+private uint32_t
 upd_pxlget32f(upd_p upd)
 {
-   uint32 ci  = (uint32) (*upd->pxlptr++) << 24;
-                  ci |= (uint32) (*upd->pxlptr++) << 16;
-                  ci |= (uint32) (*upd->pxlptr++) <<  8;
+   uint32_t ci  = (uint32_t) (*upd->pxlptr++) << 24;
+                  ci |= (uint32_t) (*upd->pxlptr++) << 16;
+                  ci |= (uint32_t) (*upd->pxlptr++) <<  8;
                   ci |=                   *upd->pxlptr++;
    return         ci;
 }
@@ -7426,16 +7431,16 @@ upd_pxlget32f(upd_p upd)
 
 /* Dummy-Routine */
 
-private uint32
+private uint32_t
 upd_pxlgetnix(upd_p upd)
 {
-   return (uint32) 0;
+   return (uint32_t) 0;
 }
 
 /* Initialize Reverse-Run */
 
-private uint32
-upd_pxlrev(const gs_memory_t *mem, upd_p upd)
+private uint32_t
+upd_pxlrev(upd_p upd)
 {
    const uint width = upd->pwidth < upd->gswidth ? upd->pwidth : upd->gswidth;
 
@@ -7444,7 +7449,7 @@ upd_pxlrev(const gs_memory_t *mem, upd_p upd)
       upd->pxlget = upd_pxlgetnix;
 
    } else {
-      uint32 ofs = (uint32) upd->int_a[IA_COLOR_INFO].data[1] * (width-1);
+      uint32_t ofs = (uint32_t) upd->int_a[IA_COLOR_INFO].data[1] * (width-1);
 
       upd->pxlptr += ofs>>3;
 
@@ -7486,155 +7491,155 @@ upd_pxlrev(const gs_memory_t *mem, upd_p upd)
             break;
          default:
 #if UPD_MESSAGES & UPD_M_ERROR
-           errprintf(mem, "upd_pxlrev: unsupported depth (%d)\n",
+           errprintf("upd_pxlrev: unsupported depth (%d)\n",
               upd->int_a[IA_COLOR_INFO].data[1]);
 #endif
            upd->pxlget = upd_pxlgetnix;
            break;
       }
    }
-   return (uint32) 0;
+   return (uint32_t) 0;
 }
 
 /* 1 Bit Reverse */
 
-private uint32
+private uint32_t
 upd_pxlget1r1(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r8;
-   return *upd->pxlptr-- & 0x80 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr-- & 0x80 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1r2(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r1;
-   return *upd->pxlptr   & 0x40 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x40 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1r3(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r2;
-   return *upd->pxlptr   & 0x20 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x20 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1r4(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r3;
-   return *upd->pxlptr   & 0x10 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x10 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1r5(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r4;
-   return *upd->pxlptr   & 0x08 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x08 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1r6(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r5;
-   return *upd->pxlptr   & 0x04 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x04 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1r7(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r6;
-   return *upd->pxlptr   & 0x02 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x02 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32
+private uint32_t
 upd_pxlget1r8(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r7;
-   return *upd->pxlptr   & 0x01 ? (uint32) 1 : (uint32) 0;
+   return *upd->pxlptr   & 0x01 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
 /* 2 Bit Reverse */
 
-private uint32
+private uint32_t
 upd_pxlget2r1(upd_p upd)
 {
    upd->pxlget = upd_pxlget2r4;
-   return ((uint32) (*upd->pxlptr--) & (uint32) 0xC0) >> 6;
+   return ((uint32_t) (*upd->pxlptr--) & (uint32_t) 0xC0) >> 6;
 }
 
-private uint32
+private uint32_t
 upd_pxlget2r2(upd_p upd)
 {
    upd->pxlget = upd_pxlget2r1;
-   return ((uint32) (*upd->pxlptr  ) & (uint32) 0x30) >> 4;
+   return ((uint32_t) (*upd->pxlptr  ) & (uint32_t) 0x30) >> 4;
 }
 
-private uint32
+private uint32_t
 upd_pxlget2r3(upd_p upd)
 {
    upd->pxlget = upd_pxlget2r2;
-   return ((uint32) (*upd->pxlptr  ) & (uint32) 0x0C) >> 2;
+   return ((uint32_t) (*upd->pxlptr  ) & (uint32_t) 0x0C) >> 2;
 }
 
-private uint32
+private uint32_t
 upd_pxlget2r4(upd_p upd)
 {
    upd->pxlget = upd_pxlget2r3;
-   return  (uint32) (*upd->pxlptr  ) & (uint32) 0x03;
+   return  (uint32_t) (*upd->pxlptr  ) & (uint32_t) 0x03;
 }
 
 /* 4 Bit Reverse */
 
-private uint32
+private uint32_t
 upd_pxlget4r1(upd_p upd)
 {
    upd->pxlget = upd_pxlget4r2;
-   return ((uint32) (*upd->pxlptr--) & (uint32) 0xF0) >> 4;
+   return ((uint32_t) (*upd->pxlptr--) & (uint32_t) 0xF0) >> 4;
 }
 
-private uint32
+private uint32_t
 upd_pxlget4r2(upd_p upd)
 {
    upd->pxlget = upd_pxlget4r1;
-   return  (uint32) (*upd->pxlptr  ) & (uint32) 0x0F;
+   return  (uint32_t) (*upd->pxlptr  ) & (uint32_t) 0x0F;
 }
 
 
 /* 8 Bit Reverse */
-private uint32
+private uint32_t
 upd_pxlget8r(upd_p upd)
 {
-   return (uint32) (*upd->pxlptr--);
+   return (uint32_t) (*upd->pxlptr--);
 }
 
 
 /* 16 Bit Reverse */
-private uint32
+private uint32_t
 upd_pxlget16r(upd_p upd)
 {
-   uint32 ci  =                   *upd->pxlptr--;
-                  ci |= (uint32) (*upd->pxlptr--) << 8;
+   uint32_t ci  =                   *upd->pxlptr--;
+                  ci |= (uint32_t) (*upd->pxlptr--) << 8;
    return         ci;
 }
 
 /* 24 Bit Reverse */
-private uint32
+private uint32_t
 upd_pxlget24r(upd_p upd)
 {
-   uint32 ci  =           *upd->pxlptr--;
-          ci |= (uint32) (*upd->pxlptr--) <<  8;
-          ci |= (uint32) (*upd->pxlptr--) << 16;
+   uint32_t ci  =           *upd->pxlptr--;
+          ci |= (uint32_t) (*upd->pxlptr--) <<  8;
+          ci |= (uint32_t) (*upd->pxlptr--) << 16;
    return ci;
 }
 
 /* 32 Bit Reverse */
-private uint32
+private uint32_t
 upd_pxlget32r(upd_p upd)
 {
-   uint32 ci  =                   *upd->pxlptr--;
-                  ci |= (uint32) (*upd->pxlptr--) <<  8;
-                  ci |= (uint32) (*upd->pxlptr--) << 16;
-                  ci |= (uint32) (*upd->pxlptr--) << 24;
+   uint32_t ci  =                   *upd->pxlptr--;
+                  ci |= (uint32_t) (*upd->pxlptr--) <<  8;
+                  ci |= (uint32_t) (*upd->pxlptr--) << 16;
+                  ci |= (uint32_t) (*upd->pxlptr--) << 24;
    return         ci;
 }

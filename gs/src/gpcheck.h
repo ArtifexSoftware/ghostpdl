@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Interrupt check interface */
 
 #ifndef gpcheck_INCLUDED
@@ -32,25 +33,25 @@
 int gs_return_check_interrupt(const gs_memory_t *mem, int code);
 
 #ifdef CHECK_INTERRUPTS
-int gp_check_interrupts(void);
-#  define process_interrupts() discard(gp_check_interrupts())
+int gp_check_interrupts(const gs_memory_t *mem);
+#  define process_interrupts(mem) discard(gp_check_interrupts(mem))
 #  define return_if_interrupt(mem)\
-    { int icode_ = gp_check_interrupts();\
+    { int icode_ = gp_check_interrupts(mem);	\
       if ( icode_ )\
-	return gs_note_error(mem, (icode_ > 0 ? gs_error_interrupt : icode_));\
+	return gs_note_error((icode_ > 0 ? gs_error_interrupt : icode_));\
     }
-#  define return_check_interrupt(mem, code)\
+#  define return_check_interrupt(mem, code)	\
     return gs_return_check_interrupt(mem, code)
-#  define set_code_on_interrupt(pcode)\
+#  define set_code_on_interrupt(mem, pcode)	\
     if (*(pcode) == 0)\
-     *(pcode) = (gp_check_interrupts() != 0) ? gs_error_interrupt : 0;
+     *(pcode) = (gp_check_interrupts(mem) != 0) ? gs_error_interrupt : 0;
 #else
-#  define gp_check_interrupts() 0
-#  define process_interrupts() DO_NOTHING
-#  define return_if_interrupt(mem) DO_NOTHING
-#  define return_check_interrupt(mem, code)\
+#  define gp_check_interrupts(mem) 0
+#  define process_interrupts(mem) DO_NOTHING
+#  define return_if_interrupt(mem)	DO_NOTHING
+#  define return_check_interrupt(mem, code)	\
     return (code)
-#  define set_code_on_interrupt(pcode) DO_NOTHING
+#  define set_code_on_interrupt(mem, code) DO_NOTHING
 #endif
 
 #endif /* gpcheck_INCLUDED */

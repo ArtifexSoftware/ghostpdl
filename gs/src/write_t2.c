@@ -1,10 +1,15 @@
-/* Copyright (C) 2002-2003 artofcode LLC. All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 
@@ -19,8 +24,6 @@ Started by Graham Asher, 9th August 2002.
 #include "ghost.h"
 #include "gxfont.h"
 #include "gxfont1.h"
-
-#include <assert.h>
 
 /*
 Public structures and functions in this file are prefixed with FF_ because they are part of
@@ -265,12 +268,11 @@ static void write_subrs_index(FAPI_font* a_fapi_font,WRF_output* a_output)
 	unsigned char* data_start = 0;
 	int i;
 	int count = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_Subrs_count,0);
-	assert(count >= 0);
 
 	WRF_wbyte(a_output,(unsigned char)(count >> 8));
 	WRF_wbyte(a_output,(unsigned char)(count & 0xFF));
 
-	if (count == 0)
+	if (count <= 0)
 		return;
 
 	WRF_wbyte(a_output,4); /* offset size = 4 bytes */

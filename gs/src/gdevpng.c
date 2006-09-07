@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PNG (Portable Network Graphics) Format.  Pronounced "ping". */
 /* lpd 1999-09-24: changes PNG_NO_STDIO to PNG_NO_CONSOLE_IO for libpng
    versions 1.0.3 and later. */
@@ -89,7 +90,7 @@ const gx_device_printer gs_png16_device = {
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
-	   3, 4, 3, 2, 4, 3, png_print_page)
+	   3, 4, 1, 1, 2, 2, png_print_page)
 };
 
 /* 8-bit (SuperVGA-style) color. */
@@ -103,7 +104,7 @@ const gx_device_printer gs_png256_device = {
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
-	   3, 8, 6, 6, 7, 7, png_print_page)
+	   3, 8, 5, 5, 6, 6, png_print_page)
 };
 
 /* 8-bit gray */
@@ -130,6 +131,19 @@ prn_device(png16m_procs, "png16m",
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
 	   24, png_print_page);
+
+/* 48 bit color. */
+
+private const gx_device_procs png48_procs =
+prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
+const gx_device_printer gs_png48_device =
+prn_device(png48_procs, "png48",
+	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+	   X_DPI, Y_DPI,
+	   0, 0, 0, 0,		/* margins */
+	   48, png_print_page);
+
 
 /* 32-bit RGBA */
 /* pngalpha device is 32-bit RGBA, with the alpha channel
@@ -262,13 +276,13 @@ png_print_page(gx_device_printer * pdev, FILE * file)
     png_text text_png;
 
     if (row == 0 || png_ptr == 0 || info_ptr == 0) {
-	code = gs_note_error(pdev->memory, gs_error_VMerror);
+	code = gs_note_error(gs_error_VMerror);
 	goto done;
     }
     /* set error handling */
     if (setjmp(png_ptr->jmpbuf)) {
 	/* If we get here, we had a problem reading the file */
-	code = gs_note_error(pdev->memory, gs_error_VMerror);
+	code = gs_note_error(gs_error_VMerror);
 	goto done;
     }
     code = 0;			/* for normal path */
@@ -299,6 +313,13 @@ png_print_page(gx_device_printer * pdev, FILE * file)
 		background.gray = 0;
 		png_set_bKGD(png_ptr, info_ptr, &background);
 	    }
+	    break;
+	case 48:
+	    info_ptr->bit_depth = 16;
+	    info_ptr->color_type = PNG_COLOR_TYPE_RGB;
+#if defined(ARCH_IS_BIG_ENDIAN) && (!ARCH_IS_BIG_ENDIAN) 
+	    png_set_swap(png_ptr);
+#endif
 	    break;
 	case 24:
 	    info_ptr->bit_depth = 8;
@@ -333,7 +354,7 @@ png_print_page(gx_device_printer * pdev, FILE * file)
 	    (void *)gs_alloc_bytes(mem, 256 * sizeof(png_color),
 				   "png palette");
 	if (info_ptr->palette == 0) {
-	    code = gs_note_error(mem, gs_error_VMerror);
+	    code = gs_note_error(gs_error_VMerror);
 	    goto done;
 	}
 	info_ptr->num_palette = num_colors;
@@ -534,8 +555,6 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	   int raster, gx_bitmap_id id, int x, int y, int width, int height,
 		      gx_color_index color, int depth)
 {				/* This might be called with depth = 1.... */
-    gs_memory_t *mem = dev->memory;
-
     if (depth == 1)
 	return (*dev_proc(dev, copy_mono)) (dev, data, data_x, raster, id,
 					    x, y, width, height,
@@ -546,6 +565,7 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
      */
     {
 	const byte *row;
+	gs_memory_t *mem = dev->memory;
 	int bpp = dev->color_info.depth;
 	int ncomps = dev->color_info.num_components;
 	uint in_size = gx_device_raster(dev, false);
@@ -562,7 +582,7 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	lin = gs_alloc_bytes(mem, in_size, "copy_alpha(lin)");
 	lout = gs_alloc_bytes(mem, out_size, "copy_alpha(lout)");
 	if (lin == 0 || lout == 0) {
-	    code = gs_note_error(mem, gs_error_VMerror);
+	    code = gs_note_error(gs_error_VMerror);
 	    goto out;
 	}
 	(*dev_proc(dev, decode_color)) (dev, color, color_cv);
@@ -633,8 +653,5 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	gs_free_object(mem, lin, "copy_alpha(lin)");
 	return code;
     }
-
-    /* shouldn't reach */
-    return_error(mem, gs_error_unknownerror);
 }
 

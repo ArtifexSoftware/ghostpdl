@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* IBM PC frame buffer (EGA/VGA) drivers */
 #include "memory_.h"
 #include "gconfigv.h"		/* for USE_ASM */
@@ -174,21 +175,21 @@ svga16_put_params(gx_device * dev, gs_param_list * plist)
 }
 
 /* Map a r-g-b color to an EGA color code. */
-#define Nb gx_color_value_bits
 private gx_color_index
-ega0_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		   gx_color_value b)
+ega0_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
-    return pc_4bit_map_rgb_color(dev, r, r, r);
+    return pc_4bit_map_rgb_color(dev, cv);
 }
 private gx_color_index
-ega1_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		   gx_color_value b)
+ega1_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
-#define cvtop (gx_color_value)(1 << (Nb - 1))
-    return pc_4bit_map_rgb_color(dev, r & cvtop, g & cvtop, b & cvtop);
+    const gx_color_value cvtop = (1 << (gx_color_value_bits - 1));
+    gx_color_value cvt[3];
+    cvt[0] = cv[0] & cvtop;
+    cvt[1] = cv[1] & cvtop;
+    cvt[2] = cv[2] & cvtop;
+    return pc_4bit_map_rgb_color(dev, cvt);
 }
-#undef Nb
 
 /* Map a color code to r-g-b. */
 #define icolor (int)color

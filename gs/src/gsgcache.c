@@ -1,10 +1,15 @@
-/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Glyph data cache methods. */
@@ -70,13 +75,14 @@ struct gs_glyph_cache_s {
 gs_private_st_ptrs4(st_glyph_cache, gs_glyph_cache, "gs_glyph_cache",
     gs_glyph_cache_enum_ptrs, gs_glyph_cache_reloc_ptrs, list, memory, pfont, s);
 
-
+GS_NOTIFY_PROC(gs_glpyh_cache__release);
 
 gs_glyph_cache *
 gs_glyph_cache__alloc(gs_font_type42 *pfont, stream *s,
 			get_glyph_data_from_file read_data)
 { 
-    gs_glyph_cache *gdcache = (gs_glyph_cache *)gs_alloc_struct(pfont->memory,
+    gs_memory_t *mem = pfont->memory->stable_memory;
+    gs_glyph_cache *gdcache = (gs_glyph_cache *)gs_alloc_struct(mem,
 	    gs_glyph_cache, &st_glyph_cache, "gs_glyph_cache");
     if (gdcache == 0)
 	return 0;
@@ -84,20 +90,36 @@ gs_glyph_cache__alloc(gs_font_type42 *pfont, stream *s,
     gdcache->list = NULL;
     gdcache->pfont = pfont;
     gdcache->s = s;
-    gdcache->memory = pfont->memory;
+    /*
+    * The cache elements need to be in stable memory so they don't
+    * get removed by 'restore' (elements can be created at a different
+    * save level than the current level)
+    */
+    gdcache->memory = mem;
     gdcache->read_data = read_data;
+    gs_font_notify_register((gs_font *)pfont, gs_glyph_cache__release, (void *)gdcache);
     return gdcache;
 }
 
-void
-gs_glyph_cache__release(gs_glyph_cache *this)
-{   gs_glyph_cache_elem *e = this->list;
-    
+int
+gs_glyph_cache__release(void *data, void *event)
+{   
+    gs_glyph_cache *this = (gs_glyph_cache *)data;
+    gs_glyph_cache_elem *e = this->list;
+    gs_font_type42 *pfont = this->pfont;
+
     while (e != NULL) {
+	gs_glyph_cache_elem *next_e;
+
+	next_e = e->next;
 	e->gd.procs->free(&e->gd, "gs_glyph_cache__release");
 	gs_free_object(this->memory, e, "gs_glyph_cache_elem__release");
+	e = next_e;
     }
     this->list = NULL; 
+    gs_font_notify_unregister((gs_font *)pfont, gs_glyph_cache__release, (void *)this);
+    gs_free_object(this->memory, this, "gs_glyph_cache__release");
+    return 0;
 }
 
 private gs_glyph_cache_elem **
@@ -107,8 +129,9 @@ gs_glyph_cache_elem__locate(gs_glyph_cache *this, uint glyph_index)
     int count = 0; /* debug purpose only */
 
     for (; *e != 0; e = &(*e)->next, count++) {
-	if ((*e)->glyph_index == glyph_index)
+	if ((*e)->glyph_index == glyph_index) {
 	    return e;
+	}
 	if ((*e)->lock_count == 0)
 	    p_unlocked = e;
     }
@@ -132,12 +155,11 @@ gs_glyph_cache_elem__free_data(gs_glyph_data_t *pgd, client_name_t cname)
     e->lock_count--;
 }
 private int
-gs_glyph_cache_elem__substring(const gs_memory_t *mem, 
-			       gs_glyph_data_t *pgd, uint offset, uint size)
+gs_glyph_cache_elem__substring(gs_glyph_data_t *pgd, uint offset, uint size)
 {   gs_glyph_cache_elem *e = (gs_glyph_cache_elem *)pgd->proc_data;
 
     e->lock_count++;
-    return_error(mem, gs_error_unregistered); /* Unsupported; should not happen. */
+    return_error(gs_error_unregistered); /* Unsupported; should not happen. */
 }			       
 
 private const gs_glyph_data_procs_t gs_glyph_cache_elem_procs = {
@@ -161,14 +183,15 @@ gs_get_glyph_data_cached(gs_font_type42 *pfont, uint glyph_index, gs_glyph_data_
 	    e->gd.procs->free(&e->gd, "gs_get_glyph_data_cached");
 	    gs_glyph_cache_elem__move_to_head(gdcache, pe);
 	} else {
-	    /* Allocate new head element : */
+	    /* Allocate new head element. */
 	    e = (gs_glyph_cache_elem *)gs_alloc_struct(gdcache->memory,
 		gs_glyph_cache_elem, &st_glyph_cache_elem, "gs_glyph_cache_elem");
 	    if (e == NULL)
-		return_error(pfont->memory, gs_error_VMerror);
+		return_error(gs_error_VMerror);
 	    memset(e, 0, sizeof(*e));
 	    e->next = gdcache->list;
 	    gdcache->list = e;
+	    e->gd.memory = gdcache->memory;
 	}
         /* Load the element's data : */
 	code = (*gdcache->read_data)(pfont, gdcache->s, glyph_index, &e->gd);

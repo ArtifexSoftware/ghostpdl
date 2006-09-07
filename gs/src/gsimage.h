@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generic image rendering interface */
 /* Requires gsstate.h */
 
@@ -134,11 +135,10 @@ typedef struct gx_device_s gx_device;
 /* Initialize an enumerator for an ImageType 1 image. */
 int gs_image_init(gs_image_enum * penum, const gs_image_t * pim,
 		  bool MultipleDataSources, gs_state * pgs);
-/* Initialize an enumerator for a general image. */
-int gs_image_common_init(gs_image_enum * penum,
-			 gx_image_enum_common_t * pie,
-			 const gs_data_image_t * pim,
-			 gs_memory_t * mem, gx_device * dev);
+
+/* Initialize an enumerator for a general image. 
+   penum->memory must be initialized in advance.
+*/
 int gs_image_enum_init(gs_image_enum * penum,
 		       gx_image_enum_common_t * pie,
 		       const gs_data_image_t * pim, gs_state *pgs);
@@ -186,5 +186,8 @@ int gs_image_next(gs_image_enum * penum, const byte * dbytes,
 
 /* Clean up after processing an image. */
 int gs_image_cleanup(gs_image_enum * penum);
+
+/* Clean up after processing an image and free the enumerator. */
+int gs_image_cleanup_and_free_enum(gs_image_enum * penum);
 
 #endif /* gsimage_INCLUDED */

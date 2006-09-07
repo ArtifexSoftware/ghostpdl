@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Definitions and declarations for clist implementation in memory. */
 
 #ifndef gxclmem_INCLUDED
@@ -116,10 +117,10 @@ typedef struct MEMFILE {
 
 #define memfile_fopen(fname, fmode, pcf, mem, data_mem, compress)\
   clist_fopen(fname, fmode, pcf, mem, data_mem, compress)
-#define memfile_fclose(mem, cf, fname, delete)\
-  clist_fclose(mem, cf, fname, delete)
-#define memfile_unlink(mem, fname)\
-  clist_unlink(mem, fname)
+#define memfile_fclose(cf, fname, delete)\
+  clist_fclose(cf, fname, delete)
+#define memfile_unlink(fname)\
+  clist_unlink(fname)
 
 #define memfile_space_available(req)\
   clist_space_available(req)
@@ -129,7 +130,7 @@ typedef struct MEMFILE {
 #define memfile_fread_chars(data, len, cf)\
   clist_fread_chars(data, len, cf)
 
-#define memfile_set_memory_warning(mem, cf, nbytes) clist_set_memory_warning(mem, cf, nbytes)
+#define memfile_set_memory_warning(cf, nbytes) clist_set_memory_warning(cf, nbytes)
 #define memfile_ferror_code(cf) clist_ferror_code(cf)
 #define memfile_ftell(cf) clist_ftell(cf)
 #define memfile_rewind(cf, discard, fname) clist_rewind(cf, discard, fname)

@@ -1,27 +1,28 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Error return macros */
 
 #ifndef gserror_INCLUDED
 #  define gserror_INCLUDED
 
-int gs_log_error(const gs_memory_t *mem, int, const char *, int);
+int gs_log_error(int, const char *, int);
 #ifndef DEBUG
-#  define gs_log_error(mem, err, file, line) (err)
+#  define gs_log_error(err, file, line) (err)
 #endif
-#define gs_note_error(mem, err) gs_log_error(mem, err, __FILE__, __LINE__)
-#define return_error(mem, err) return gs_note_error(mem, err)
+#define gs_note_error(err) gs_log_error(err, __FILE__, __LINE__)
+#define return_error(err) return gs_note_error(err)
 
 
 

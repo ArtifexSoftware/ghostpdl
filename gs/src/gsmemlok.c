@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Monitor-locked heap memory allocator */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */
@@ -94,7 +95,7 @@ gs_memory_locked_init(
 
     /* Allocate a monitor to serialize access to structures within */
     lmem->monitor = gx_monitor_alloc(target);
-    return (lmem->monitor ? 0 : gs_note_error(target, gs_error_VMerror));
+    return (lmem->monitor ? 0 : gs_note_error(gs_error_VMerror));
 }
 
 /* Release a locked memory manager. */
@@ -125,17 +126,17 @@ gs_memory_locked_target(const gs_memory_locked_t *lmem)
 #define DO_MONITORED(call_target)\
 	gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;\
 \
-	gx_monitor_enter(mem, lmem->monitor);\
+	gx_monitor_enter(lmem->monitor);\
 	call_target;\
-	gx_monitor_leave(mem, lmem->monitor)
+	gx_monitor_leave(lmem->monitor)
 
 #define RETURN_MONITORED(result_type, call_target)\
 	gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;\
 	result_type temp;\
 \
-	gx_monitor_enter(mem, lmem->monitor);\
+	gx_monitor_enter(lmem->monitor);\
 	temp = call_target;\
-	gx_monitor_leave(mem, lmem->monitor);\
+	gx_monitor_leave(lmem->monitor);\
 	return temp
 
 /* Procedures */
@@ -352,7 +353,7 @@ gs_locked_stable(gs_memory_t * mem)
 	gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;
 	gs_memory_t *stable;
 
-	gx_monitor_enter(mem, lmem->monitor);
+	gx_monitor_enter(lmem->monitor);
 	stable = gs_memory_stable(lmem->target);
 	if (stable == lmem->target)
 	    mem->stable_memory = mem;
@@ -369,7 +370,7 @@ gs_locked_stable(gs_memory_t * mem)
 		    mem->stable_memory = (gs_memory_t *)locked_stable;
 	    }
 	}
-	gx_monitor_leave(mem, lmem->monitor);
+	gx_monitor_leave(lmem->monitor);
     }
     return mem->stable_memory;
 }

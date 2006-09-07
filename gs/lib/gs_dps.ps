@@ -1,17 +1,25 @@
-% Portions Copyright (C) 2001 artofcode LLC.
-% Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-% Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-% This software is based in part on the work of the Independent JPEG Group.
-% All Rights Reserved.
-%
-% This software is distributed under license and may not be copied, modified
-% or distributed except as expressly authorized under the terms of that
-% license.  Refer to licensing information at http://www.artifex.com/ or
-% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-% San Rafael, CA  94903, (415)492-9861, for further information.
+%    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 % 
-% $RCSfile$ $Revision$
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+% $Id$
 % Initialization file for Display PostScript functions.
+
+% ------ Errors ------ %
+
+% These errors are only defined in DPS.
+{ /invalidcontext /invalidid } { .registererror } forall
 
 % ------ Contexts ------ %
 
@@ -134,7 +142,7 @@
 				%   localfork <context>
   .currentglobal true .setglobal 3 index
   dup .proccheck not {
-    pop .setglobal /localfork cvx /typecheck signalerror
+    pop .setglobal /localfork .systemvar /typecheck signalerror
   } if
   {exec .initlocaldicts} aload pop
   3 1 roll 3 packedarray cvx
@@ -151,7 +159,7 @@
 /fork {			% <mark> <obj1> ... <objN> <proc> fork <context>
   .currentglobal false .setglobal 1 index
   dup .proccheck not {
-    pop .setglobal /fork cvx /typecheck signalerror
+    pop .setglobal /fork .systemvar /typecheck signalerror
   } if
   {exec .postfork} aload pop
   3 1 roll 3 packedarray cvx

@@ -247,7 +247,7 @@ check_cid_hdr(
         if (pcid->bits_per_primary[i] == 0)
             pcid->bits_per_primary[i] = 8;
 	if ( pcs->personality == pcl5e && pcid->bits_per_primary[i] != 1 )
-	    dprintf(pcs->memory, "pcl5e personality with color primaries\n" );
+	    dprintf("pcl5e personality with color primaries\n" );
     }
 
 
@@ -541,7 +541,7 @@ pcl_cid_do_registration(
     gs_memory_t *   pmem
 )
 {
-    DEFINE_CLASS(pmem, '*')
+    DEFINE_CLASS('*')
     {
         'v', 'W',
         PCL_COMMAND("Configure Image Data", pcl_configure_image_data, pca_bytes | pca_in_rtl | pca_raster_graphics)

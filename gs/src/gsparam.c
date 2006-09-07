@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Support for parameter lists */
 #include "memory_.h"
 #include "string_.h"
@@ -119,7 +120,7 @@ gs_param_read_items(gs_param_list * plist, void *obj,
 		break;
 	    case 0:
 		if (typed.type != pi->type)	/* shouldn't happen! */
-		    ecode = gs_note_error(plist->memory, gs_error_typecheck);
+		    ecode = gs_note_error(gs_error_typecheck);
 		else
 		    memcpy(pvalue, &typed.value, xfer_item_sizes[pi->type]);
 	}
@@ -186,7 +187,7 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
 		case gs_param_type_int:
 #if arch_sizeof_int < arch_sizeof_long
 		    if (pvalue->value.l != (int)pvalue->value.l)
-		      return_error(NULL, gs_error_rangecheck);
+		      return_error(gs_error_rangecheck);
 #endif
 		    pvalue->value.i = (int)pvalue->value.l;
 		    goto ok;
@@ -218,7 +219,7 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
 						"int array => float array");
 
 			if (fv == 0)
-			    return_error(mem, gs_error_VMerror);
+			    return_error(gs_error_VMerror);
 			for (i = 0; i < size; ++i)
 			    fv[i] = (float)pvalue->value.ia.data[i];
 			pvalue->value.fa.data = fv;
@@ -249,7 +250,7 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
 	default:
 	    break;
     }
-    return_error(mem, gs_error_typecheck);
+    return_error(gs_error_typecheck);
   ok:pvalue->type = req_type;
     return 0;
 }

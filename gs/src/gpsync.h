@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Interface to platform-dependent synchronization primitives */
 
 #if !defined(gpsync_INCLUDED)
@@ -36,10 +37,10 @@ uint gp_semaphore_sizeof(void);
  * Hack: gp_semaphore_open(0) succeeds iff it's OK for the memory manager
  * to move a gp_semaphore in memory.
  */
-int gp_semaphore_open(const gs_memory_t *mem, gp_semaphore * sema);
-int gp_semaphore_close(const gs_memory_t *mem, gp_semaphore * sema);
-int gp_semaphore_wait(const gs_memory_t *mem, gp_semaphore * sema);
-int gp_semaphore_signal(const gs_memory_t *mem, gp_semaphore * sema);
+int gp_semaphore_open(gp_semaphore * sema);
+int gp_semaphore_close(gp_semaphore * sema);
+int gp_semaphore_wait(gp_semaphore * sema);
+int gp_semaphore_signal(gp_semaphore * sema);
 
 /*
  * Monitors support enter/leave semantics: at most one thread can have
@@ -54,16 +55,16 @@ uint gp_monitor_sizeof(void);
  * Hack: gp_monitor_open(0) succeeds iff it's OK for the memory manager
  * to move a gp_monitor in memory.
  */
-int gp_monitor_open(const gs_memory_t *mem, gp_monitor * mon);
-int gp_monitor_close(const gs_memory_t *mem, gp_monitor * mon);
-int gp_monitor_enter(const gs_memory_t *mem, gp_monitor * mon);
-int gp_monitor_leave(const gs_memory_t *mem, gp_monitor * mon);
+int gp_monitor_open(gp_monitor * mon);
+int gp_monitor_close(gp_monitor * mon);
+int gp_monitor_enter(gp_monitor * mon);
+int gp_monitor_leave(gp_monitor * mon);
 
 /*
  * A new thread starts by calling a procedure, passing it a void * that
  * allows it to gain access to whatever data it needs.
  */
 typedef void (*gp_thread_creation_callback_t) (void *);
-int gp_create_thread(const gs_memory_t *mem, gp_thread_creation_callback_t, void *);
+int gp_create_thread(gp_thread_creation_callback_t, void *);
 
 #endif /* !defined(gpsync_INCLUDED) */

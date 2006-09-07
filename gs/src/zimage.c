@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Image operators */
 #include "math_.h"
 #include "memory_.h"
@@ -48,7 +49,8 @@ private int image_cleanup(i_ctx_t *);
 
 /* Extract and check the parameters for a gs_data_image_t. */
 int
-data_image_params(const gs_memory_t *mem, const ref *op, gs_data_image_t *pim,
+data_image_params(const gs_memory_t *mem, 
+		  const ref *op, gs_data_image_t *pim,
 		  image_params *pip, bool require_DataSource,
 		  int num_components, int max_bits_per_component,
 		  bool has_alpha)
@@ -57,23 +59,23 @@ data_image_params(const gs_memory_t *mem, const ref *op, gs_data_image_t *pim,
     int decode_size;
     ref *pds;
 
-    check_type(mem, *op, t_dictionary);
-    check_dict_read(mem, *op);
-    if ((code = dict_int_param(mem, op, "Width", 0, max_int_in_fixed / 2,
+    check_type(*op, t_dictionary);
+    check_dict_read(*op);
+    if ((code = dict_int_param(op, "Width", 0, max_int_in_fixed / 2,
 			       -1, &pim->Width)) < 0 ||
-	(code = dict_int_param(mem, op, "Height", 0, max_int_in_fixed / 2,
+	(code = dict_int_param(op, "Height", 0, max_int_in_fixed / 2,
 			       -1, &pim->Height)) < 0 ||
 	(code = dict_matrix_param(mem, op, "ImageMatrix",
 				  &pim->ImageMatrix)) < 0 ||
-	(code = dict_bool_param(mem, op, "MultipleDataSources", false,
+	(code = dict_bool_param(op, "MultipleDataSources", false,
 				&pip->MultipleDataSources)) < 0 ||
-	(code = dict_int_param(mem, op, "BitsPerComponent", 1,
+	(code = dict_int_param(op, "BitsPerComponent", 1,
 			       max_bits_per_component, -1,
 			       &pim->BitsPerComponent)) < 0 ||
 	(code = decode_size = dict_floats_param(mem, op, "Decode",
 						num_components * 2,
 						&pim->Decode[0], NULL)) < 0 ||
-	(code = dict_bool_param(mem, op, "Interpolate", false,
+	(code = dict_bool_param(op, "Interpolate", false,
 				&pim->Interpolate)) < 0
 	)
 	return code;
@@ -81,17 +83,30 @@ data_image_params(const gs_memory_t *mem, const ref *op, gs_data_image_t *pim,
     /* Extract and check the data sources. */
     if ((code = dict_find_string(op, "DataSource", &pds)) <= 0) {
 	if (require_DataSource)
-	    return (code < 0 ? code : gs_note_error(mem, e_rangecheck));
+	    return (code < 0 ? code : gs_note_error(e_rangecheck));
 	return 1;		/* no data source */
     }
     if (pip->MultipleDataSources) {
-	long i, n = num_components + (has_alpha ? 1 : 0);
+	ref *ds = pip->DataSource;
+        long i, n = num_components + (has_alpha ? 1 : 0);
         if (!r_is_array(pds))
-            return_error(mem, e_typecheck);
+            return_error(e_typecheck);
 	if (r_size(pds) != n)
-	    return_error(mem, e_rangecheck);
+	    return_error(e_rangecheck);
 	for (i = 0; i < n; ++i)
-            array_get(mem, pds, i, &pip->DataSource[i]);
+	    array_get(mem, pds, i, &ds[i]);
+        if (r_type(&ds[0]) == t_string) {
+            /* We don't have a problem with the strings of different length
+             * but Adobe does and CET tast 12-02.ps reports this as an error.
+             */
+	    if (has_alpha)
+                n--;
+            for (i = 1; i < n; ++i) {
+                if (r_type(&ds[i]) == t_string && r_size(&ds[i]) != r_size(&ds[0])) {
+	            return_error(e_rangecheck);
+                }
+            }
+        }
     } else
 	pip->DataSource[0] = *pds;
     return 0;
@@ -108,7 +123,7 @@ pixel_image_params(i_ctx_t *i_ctx_p, const ref *op, gs_pixel_image_t *pim,
     int code;
 
     if (num_components < 1)
-	return_error(imemory, e_rangecheck);	/* Pattern space not allowed */
+	return_error(e_rangecheck);	/* Pattern space not allowed */
     pim->ColorSpace = gs_currentcolorspace(igs);
     code = data_image_params(imemory, op, (gs_data_image_t *) pim, pip, true,
 			     num_components, max_bits_per_component,
@@ -118,7 +133,7 @@ pixel_image_params(i_ctx_t *i_ctx_p, const ref *op, gs_pixel_image_t *pim,
     pim->format =
 	(pip->MultipleDataSources ? gs_image_format_component_planar :
 	 gs_image_format_chunky);
-    return dict_bool_param(imemory, op, "CombineWithColor", false,
+    return dict_bool_param(op, "CombineWithColor", false,
 			   &pim->CombineWithColor);
 }
 
@@ -152,7 +167,7 @@ image1_setup(i_ctx_t * i_ctx_p, bool has_alpha)
                                op,
                                (gs_pixel_image_t *)&image,
                                &ip,
-			       (level2_enabled ? 12 : 8),
+			       (level2_enabled ? 16 : 8),
                                has_alpha );
     if (code < 0)
 	return code;
@@ -188,7 +203,7 @@ zimagemask1(i_ctx_t *i_ctx_p)
     if (code < 0)
 	return code;
     if (ip.MultipleDataSources)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image, &ip.DataSource[0],
 			true, 1);
 }
@@ -258,7 +273,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 	switch (r_type(pp)) {
 	    case t_file:
 		if (!level2_enabled)
-		    return_error(imemory, e_typecheck);
+		    return_error(e_typecheck);
 		/* Check for aliasing. */
 		{
 		    int pi;
@@ -276,27 +291,30 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 		if (r_type(pp) != r_type(sources)) {
     		    if (pie != NULL)
 		        gx_image_end(pie, false);    /* Clean up pie */
-		    return_error(imemory, e_typecheck);
+		    return_error(e_typecheck);
 		}
-		check_read(imemory, *pp);
+		check_read(*pp);
 		break;
 	    default:
 		if (!r_is_proc(sources)) {
     		    if (pie != NULL)
 		        gx_image_end(pie, false);    /* Clean up pie */
-		    return_error(imemory, e_typecheck);
+		    return_error(e_typecheck);
 		}
-		check_proc(imemory, *pp);
+		check_proc(*pp);
 	}
 	*ep = *pp;
     }
-    if ((penum = gs_image_enum_alloc(imemory, "image_setup")) == 0)
-	return_error(imemory, e_VMerror);
+    /* Always place the image enumerator into local memory,
+       because pie may have local objects inherited from igs,
+       which may be local when the current allocation mode is global. 
+       Bug 688140. */
+    if ((penum = gs_image_enum_alloc(imemory_local, "image_setup")) == 0)
+	return_error(e_VMerror);
     code = gs_image_enum_init(penum, pie, (const gs_data_image_t *)pim, igs);
     if (code != 0) {		/* error, or empty image */
-	int code1 = gs_image_cleanup(penum);
+	int code1 = gs_image_cleanup_and_free_enum(penum);
 
-	ifree_object(penum, "image_setup");
 	if (code >= 0)		/* empty image */
 	    pop(npop);
 	if (code >= 0 && code1 < 0)
@@ -307,7 +325,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
     esp += inumpush - 1;
     make_int(ETOP_PLANE_INDEX(esp), 0);
     make_int(ETOP_NUM_SOURCES(esp), num_sources);
-    make_istruct(esp, 0, penum);
+    make_struct(esp, avm_local, penum);
     switch (r_type(sources)) {
 	case t_file:
 	    push_op_estack(image_file_continue);
@@ -347,11 +365,11 @@ image_proc_continue(i_ctx_t *i_ctx_p)
     int i, code;
 
     if (!r_has_type_attrs(op, t_string, a_read)) {
-	check_op(imemory, 1);
+	check_op(1);
 	/* Procedure didn't return a (readable) string.  Quit. */
 	esp = zimage_pop_estack(esp);
 	image_cleanup(i_ctx_p);
-	return_error(imemory, !r_has_type(op, t_string) ? e_typecheck : e_invalidaccess);
+	return_error(!r_has_type(op, t_string) ? e_typecheck : e_invalidaccess);
     }
     size = r_size(op);
     if (size == 0 && ETOP_SOURCE(esp, 0)[1].value.intval == 0)
@@ -453,7 +471,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
 						NULL, 0, image_file_continue);
 		default:
 		    /* case ERRC: */
-		    return_error(imemory, e_ioerror);
+		    return_error(e_ioerror);
 		}
 		break;		/* for EOFC */
 	    }
@@ -546,10 +564,8 @@ image_cleanup(i_ctx_t *i_ctx_p)
 {
     es_ptr ep_top = esp + NUM_PUSH(EBOT_NUM_SOURCES(esp)->value.intval);
     gs_image_enum *penum = r_ptr(ep_top, gs_image_enum);
-    int code = gs_image_cleanup(penum);
-
-    ifree_object(penum, "image_cleanup");
-    return code;
+    
+    return gs_image_cleanup_and_free_enum(penum);
 }
 
 /* ------ Initialization procedure ------ */

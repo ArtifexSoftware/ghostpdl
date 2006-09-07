@@ -1,19 +1,19 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Write an embedded TrueType font */
 #include "memory_.h"
-#include <assert.h>
 #include <stdlib.h>		/* for qsort */
 #include "gx.h"
 #include "gscencs.h"
@@ -131,26 +131,22 @@ put_table(byte tab[16], const char *tname, ulong checksum, ulong offset,
 private int
 write_range(stream *s, gs_font_type42 *pfont, ulong start, uint length)
 {
-    ulong base = start;
-    ulong limit = base + length;
+    ulong base = start, size = length;
 
-    if_debug3(s->memory, 'l', "[l]write_range pos = %ld, start = %lu, length = %u\n",
+    if_debug3('l', "[l]write_range pos = %ld, start = %lu, length = %u\n",
 	      stell(s), start, length);
-    while (base < limit) {
-	uint size = limit - base;
+    while (size > 0) {
 	const byte *ptr;
 	int code;
 
-	/* Write the largest block we can access consecutively. */
-	while ((code = pfont->data.string_proc(pfont, base, size, &ptr)) < 0) {
-	    if (size <= 1)
-		return code;
-	    size >>= 1;
-	}
-	if (code > 0 && size > code)
-	    size = code; /* Segmented data - see z42_string_proc. */
-	stream_write(s, ptr, size);
-	base += size;
+	code = pfont->data.string_proc(pfont, base, size, &ptr);
+	if (code < 0)
+	    return code;
+	if (!code)
+	    code = size;
+	stream_write(s, ptr, code);
+	base += code;
+	size -= code;
     }
     return 0;
 }
@@ -160,16 +156,19 @@ write_range(stream *s, gs_font_type42 *pfont, ulong start, uint length)
  * If no glyph can be found, return -1 and store the name in *pstr.
  */
 private int
-mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr)
+mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr, int *index)
 {
     gs_glyph glyph = font->procs.encode_char(font, (gs_char)ch,
 					     GLYPH_SPACE_NAME);
     int code;
 
-    if (glyph == gs_no_glyph)
+    if (glyph == gs_no_glyph) {
+	*index = 0;
 	return 0;		/* .notdef */
+    }
     code = font->procs.glyph_name(font, glyph, pstr);
-    assert(code >= 0);
+    if (code < 0)
+	return code;
     if (glyph < gs_min_cid_glyph) {
 	gs_char mac_char;
 	gs_glyph mac_glyph;
@@ -180,17 +179,25 @@ mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr)
 	    mac_char = ch - 29;
 	else if (ch >= 128 && ch <= 255)
 	    mac_char = ch - 30;
-	else
-	    return -1;
+	else {
+	    *index = -1;
+	    return 0;
+	}
 	mac_glyph = gs_c_known_encode(mac_char, ENCODING_INDEX_MACGLYPH);
-	if (mac_glyph == gs_no_glyph)
-	    return -1;
-	code = gs_c_glyph_name(font->memory, mac_glyph, &mstr);
-	assert(code >= 0);
-	if (!bytes_compare(pstr->data, pstr->size, mstr.data, mstr.size))
-	    return (int)mac_char;
+	if (mac_glyph == gs_no_glyph) {
+	    *index = -1;
+	    return 0;
+	}
+	code = gs_c_glyph_name(mac_glyph, &mstr);
+	if (code < 0)
+	    return code;
+	if (!bytes_compare(pstr->data, pstr->size, mstr.data, mstr.size)) {
+	    *index = (int)mac_char;
+	    return 0;
+	}
     }
-    return -1;
+    *index = -1;
+    return 0;
 }
 
 /* ---------------- Individual tables ---------------- */
@@ -381,6 +388,7 @@ size_cmap(gs_font *font, uint first_code, int num_glyphs, gs_glyph max_glyph,
 {
     stream poss;
 
+    s_init(&poss, NULL);
     swrite_position_only(&poss);
     write_cmap(&poss, font, first_code, num_glyphs, max_glyph, options, 0);
     return stell(&poss);
@@ -394,7 +402,7 @@ write_mtx(stream *s, gs_font_type42 *pfont, const gs_type42_mtx_t *pmtx,
 {
     uint num_metrics = pmtx->numMetrics;
     uint len = num_metrics * 4;
-    double factor = pfont->data.unitsPerEm * (wmode ? -1 : 1);
+    double factor = (double)pfont->data.unitsPerEm * (wmode ? -1 : 1);
     float sbw[4];
     uint i;
 
@@ -471,7 +479,8 @@ write_name(stream *s, const gs_const_string *font_name)
 /* ------ OS/2 ------ */
 
 /* Write a generated OS/2 table. */
-#define OS_2_LENGTH sizeof(ttf_OS_2_t)
+#define OS_2_LENGTH1 offset_of(ttf_OS_2_t, sxHeight[0]) /* OS/2 version 1. */
+#define OS_2_LENGTH2 sizeof(ttf_OS_2_t) /* OS/2 version 2. */
 private void
 update_OS_2(ttf_OS_2_t *pos2, uint first_glyph, int num_glyphs)
 {
@@ -496,15 +505,16 @@ write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
      * We don't bother to set most of the fields.  The really important
      * ones, which affect character mapping, are usFirst/LastCharIndex.
      * We also need to set usWeightClass and usWidthClass to avoid
-     * crashing ttfdump.
+     * crashing ttfdump. Version 1 86-byte structure has all the fields
+     * we need.
      */
     memset(&os2, 0, sizeof(os2));
     put_u16(os2.version, 1);
     put_u16(os2.usWeightClass, 400); /* Normal */
     put_u16(os2.usWidthClass, 5); /* Normal */
     update_OS_2(&os2, first_glyph, num_glyphs);
-    stream_write(s, &os2, sizeof(os2));
-    put_pad(s, sizeof(os2));
+    stream_write(s, &os2, offset_of(ttf_OS_2_t, sxHeight[0]));
+    put_pad(s, offset_of(ttf_OS_2_t, sxHeight[0]));
 }
 
 /* ------ post ------ */
@@ -533,7 +543,7 @@ typedef struct post_s {
  * If necessary, compute the length of the post table.  Note that we
  * only generate post entries for characters in the Encoding.
  */
-private void
+private int
 compute_post(gs_font *font, post_t *post)
 {
     int i;
@@ -542,8 +552,11 @@ compute_post(gs_font *font, post_t *post)
 	gs_const_string str;
 	gs_glyph glyph = font->procs.encode_char(font, (gs_char)i,
 						 GLYPH_SPACE_INDEX);
-	int mac_index = mac_glyph_index(font, i, &str);
+	int mac_index;
 
+	int code = mac_glyph_index(font, i, &str, &mac_index);
+	if (code < 0)
+	    return code;
 	if (mac_index != 0) {
 	    post->glyphs[post->count].char_index = i;
 	    post->glyphs[post->count].size =
@@ -571,10 +584,11 @@ compute_post(gs_font *font, post_t *post)
 	post->glyph_count = post->glyphs[post->count - 1].glyph_index + 1;
     }
     post->length += post->glyph_count * 2;
+    return 0;
 }
 
 /* Write the post table */
-private void
+private int
 write_post(stream *s, gs_font *font, post_t *post)
 {
     byte post_initial[32 + 2];
@@ -592,8 +606,11 @@ write_post(stream *s, gs_font *font, post_t *post)
     for (i = 0, name_index = 258, glyph_index = 0; i < post->count; ++i) {
 	gs_const_string str;
 	int ch = post->glyphs[i].char_index;
-	int mac_index = mac_glyph_index(font, ch, &str);
+	int mac_index;
+	int code = mac_glyph_index(font, ch, &str, &mac_index);
 
+	if (code < 0)
+	    return code;
 	for (; glyph_index < post->glyphs[i].glyph_index; ++glyph_index)
 	    put_ushort(s, 0);
 	glyph_index++;
@@ -610,14 +627,18 @@ write_post(stream *s, gs_font *font, post_t *post)
     for (i = 0; i < post->count; ++i) {
 	gs_const_string str;
 	int ch = post->glyphs[i].char_index;
-	int mac_index = mac_glyph_index(font, ch, &str);
+	int mac_index;
+	int code = mac_glyph_index(font, ch, &str, &mac_index);
 
+	if (code < 0)
+	    return code;
 	if (mac_index < 0) {
 	    spputc(s, (byte)str.size);
 	    stream_write(s, str.data, str.size);
 	}
     }
     put_pad(s, post->length);
+    return 0;
 }
 
 /* ---------------- Main program ---------------- */
@@ -669,7 +690,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     int have_hvhea[2];
     uint cmap_length = 0;
     ulong OS_2_start = 0;
-    uint OS_2_length = OS_2_LENGTH;
+    uint OS_2_length = OS_2_LENGTH1;
     int code;
 
     have_hvhea[0] = have_hvhea[1] = 0;
@@ -694,7 +715,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	uint length;
 
 	if (numTables == MAX_NUM_TABLES)
-	    return_error(font->memory, gs_error_limitcheck);
+	    return_error(gs_error_limitcheck);
 	ACCESS(12 + i * 16, 16, tab);
 	start = u32(tab + 8);
 	length = u32(tab + 12);
@@ -706,8 +727,9 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	switch (u32(tab)) {
 	case W('h','e','a','d'):
-	    if (length != 54)
-		return_error(font->memory, gs_error_invalidfont);
+	    if (length < 54)
+		return_error(gs_error_invalidfont);
+	    length = 54; /* bug 688409 fig2.eps has length=56. */
 	    ACCESS(start, length, data);
 	    memcpy(head, data, length);
 	    continue;
@@ -735,8 +757,8 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    if (writing_cid)
 		continue;
 	    have_OS_2 = true;
-	    if (length > OS_2_LENGTH)
-		return_error(font->memory, gs_error_invalidfont);
+	    if (length > OS_2_LENGTH2)
+		return_error(gs_error_invalidfont);
 	    OS_2_start = start;
 	    OS_2_length = length;
 	    continue;
@@ -781,9 +803,10 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	gs_glyph_data_t glyph_data;
 
 	if (glyph < gs_min_cid_glyph)
-	    return_error(s->memory, gs_error_invalidfont);
+	    return_error(gs_error_invalidfont);
 	glyph_index = glyph  & ~GS_GLYPH_TAG;
-	if_debug1(s->memory, 'L', "[L]glyph_index %u\n", glyph_index);
+	if_debug1('L', "[L]glyph_index %u\n", glyph_index);
+	glyph_data.memory = pfont->memory;
 	if ((code = pfont->data.get_outline(pfont, glyph_index, &glyph_data)) >= 0) {
 	    /* Since indexToLocFormat==0 assumes even glyph lengths,
 	       round it up here. If later we choose indexToLocFormat==1,
@@ -794,7 +817,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    glyf_length += l;
 	    if (l != glyph_data.bits.size)
 		glyf_alignment++;
-	    if_debug1(s->memory, 'L', "[L]  size %u\n", glyph_data.bits.size);
+	    if_debug1('L', "[L]  size %u\n", glyph_data.bits.size);
 	    gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
 	}
     }
@@ -820,7 +843,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	if (glyf_length == 0)
 	    glyf_length = 1;
     }
-    if_debug2(s->memory, 'l', "[l]max_glyph = %lu, glyf_length = %lu\n",
+    if_debug2('l', "[l]max_glyph = %lu, glyf_length = %lu\n",
 	      (ulong)max_glyph, (ulong)glyf_length);
 
     /*
@@ -829,9 +852,11 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
     if (!have_post) {
 	memset(&post, 0, sizeof(post));
-	if (options & WRITE_TRUETYPE_POST)
-	    compute_post(font, &post);
-	else
+	if (options & WRITE_TRUETYPE_POST) {
+	    code = compute_post(font, &post);
+	    if (code < 0)
+		return code;
+	} else
 	    post.length = 32;	/* dummy table */
     }
 
@@ -855,7 +880,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	+ !have_OS_2		/* OS/2 */
 	+ !have_cmap + !have_name + !have_post;
     if (numTables_out >= MAX_NUM_TABLES)
-	return_error(font->memory, gs_error_limitcheck);
+	return_error(gs_error_limitcheck);
     offset = 12 + numTables_out * 16;
     for (i = 0; i < numTables; ++i) {
 	byte *tab = &tables[i * 16];
@@ -1009,10 +1034,11 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	/* Write glyf. */
 
-	    psf_enumerate_glyphs_reset(penum);
+	psf_enumerate_glyphs_reset(penum);
 	for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
 	    gs_glyph_data_t glyph_data;
 
+	    glyph_data.memory = pfont->memory;
 	    if ((code = pfont->data.get_outline(pfont,
 						glyph & ~GS_GLYPH_TAG,
 						&glyph_data)) >= 0
@@ -1025,12 +1051,12 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 		if (glyph_data.bits.size < l)
 		    stream_write(s, &zero, 1);
 		offset += l;
-		if_debug2(s->memory, 'L', "[L]glyf index = %u, size = %u\n",
+		if_debug2('L', "[L]glyf index = %u, size = %u\n",
 			  i, glyph_data.bits.size);
 		gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
 	    }
 	}
-	if_debug1(s->memory, 'l', "[l]glyf final offset = %lu\n", offset);
+	if_debug1('l', "[l]glyf final offset = %lu\n", offset);
 	/* Add a dummy byte if necessary to make glyf non-empty. */
 	while (offset < glyf_length)
 	    stream_putc(s, 0), ++offset;
@@ -1046,6 +1072,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	    for (; glyph_prev <= glyph_index; ++glyph_prev)
 		put_loca(s, offset, indexToLocFormat);
+	    glyph_data.memory = pfont->memory;
 	    if ((code = pfont->data.get_outline(pfont, glyph_index,
 						&glyph_data)) >= 0
 		) {
@@ -1085,9 +1112,11 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	/* If necessary, write post. */
 
 	if (!have_post) {
-	    if (options & WRITE_TRUETYPE_POST)
-		write_post(s, font, &post);
-	    else {
+	    if (options & WRITE_TRUETYPE_POST) {
+		code = write_post(s, font, &post);
+		if (code < 0)
+		    return code;
+	    } else {
 		byte post_initial[32 + 2];
 
 		memset(post_initial, 0, 32);

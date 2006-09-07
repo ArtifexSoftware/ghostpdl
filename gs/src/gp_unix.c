@@ -1,17 +1,19 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Unix-specific routines for Ghostscript */
+
 #include "pipe_.h"
 #include "string_.h"
 #include "time_.h"
@@ -32,7 +34,6 @@
 #else
 extern void exit(int);
 extern char *getenv(const char *);
-
 #endif
 
 /* Do platform-dependent initialization. */
@@ -80,14 +81,14 @@ gp_read_macresource(byte *buf, const char *filename,
 /* Read the current time (in seconds since Jan. 1, 1970) */
 /* and fraction (in nanoseconds). */
 void
-gp_get_realtime(const gs_memory_t *mem, long *pdt)
+gp_get_realtime(long *pdt)
 {
     struct timeval tp;
 
 #if gettimeofday_no_timezone	/* older versions of SVR4 */
     {
 	if (gettimeofday(&tp) == -1) {
-	    lprintf(mem, "Ghostscript: gettimeofday failed!\n");
+	    lprintf("Ghostscript: gettimeofday failed!\n");
 	    tp.tv_sec = tp.tv_usec = 0;
 	}
     }
@@ -96,7 +97,7 @@ gp_get_realtime(const gs_memory_t *mem, long *pdt)
 	struct timezone tzp;
 
 	if (gettimeofday(&tp, &tzp) == -1) {
-	    lprintf(mem, "Ghostscript: gettimeofday failed!\n");
+	    lprintf("Ghostscript: gettimeofday failed!\n");
 	    tp.tv_sec = tp.tv_usec = 0;
 	}
     }
@@ -118,7 +119,7 @@ gp_get_realtime(const gs_memory_t *mem, long *pdt)
 /* Read the current user CPU time (in seconds) */
 /* and fraction (in nanoseconds).  */
 void
-gp_get_usertime(const gs_memory_t *mem, long *pdt)
+gp_get_usertime(long *pdt)
 {
 #if use_times_for_usertime
     struct tms tms;
@@ -130,7 +131,7 @@ gp_get_usertime(const gs_memory_t *mem, long *pdt)
     pdt[0] = ticks / ticks_per_sec;
     pdt[1] = (ticks % ticks_per_sec) * (1000000000 / ticks_per_sec);
 #else
-    gp_get_realtime(mem, pdt);	/* Use an approximation on other hosts.  */
+    gp_get_realtime(pdt);	/* Use an approximation on other hosts.  */
 #endif
 }
 
@@ -147,7 +148,7 @@ gp_getenv_display(void)
 
 /* Open a connection to a printer.  See gp.h for details. */
 FILE *
-gp_open_printer(const gs_memory_t *mem, char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
     const char *fmode = (binary_mode ? "wb" : "w");
 

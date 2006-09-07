@@ -1,16 +1,19 @@
-% Portions Copyright (C) 2001 artofcode LLC.
-% Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-% Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-% This software is based in part on the work of the Independent JPEG Group.
-% All Rights Reserved.
-%
-% This software is distributed under license and may not be copied, modified
-% or distributed except as expressly authorized under the terms of that
-% license.  Refer to licensing information at http://www.artifex.com/ or
-% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-% San Rafael, CA  94903, (415)492-9861, for further information.
+%    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 % 
-% $RCSfile$ $Revision$
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+% $Id$
 % The current implementation of setpagedevice has the following limitations:
 %	- It doesn't attempt to "interact with the user" for Policy = 2.
 
@@ -197,11 +200,15 @@ level2dict begin
       % see note above about pagetype executable array contents.
       load dup 0 get exch 1 get 2 array astore .dicttomark
     } forall
-    % Add one last entry which is the 4 element range array (non-standard)
-    counttomark 2 idiv 
+    % If NORANGEPAGESIZE is defined, (-dNORANGEPAGESIZE), then don't add
+    % the 'match any' PageSize entry
+    systemdict /NORANGEPAGESIZE known not {
+      % Add one last entry which is the 4 element range array (non-standard)
+      counttomark 2 idiv 
 	% PageSize with either dimension 0 will be detected in
 	% match_page_size, so we can allow it here
-    mark /PageSize [0 dup 16#7ffff dup] .dicttomark
+      mark /PageSize [0 dup 16#7ffff dup] .dicttomark
+    } if
     .dicttomark
   }
   (%MediaSource) 0
@@ -223,6 +230,7 @@ level2dict begin
 % on its own.
 /.dynamicppkeys mark
   /.MediaSize dup		% because it changes when PageSize is set
+%  /LeadingEdge dup
   /PageCount dup
   /Colors dup
   /BitsPerPixel dup
@@ -288,6 +296,15 @@ level2dict begin
 	     }
 	    ifelse
       } forall
+      % If the device is the distiller device, update distillerparams that
+      % may have been changed by setdistillerparams
+      currentdevice .devicename /pdfwrite eq {
+	currentdistillerparams {
+	      % Stack: current key value
+	  2 index 2 index .knownget { 1 index ne } { //true } ifelse
+	  { 2 index 3 1 roll put } { pop pop } ifelse
+	} forall
+      } if
 		% If the dictionary was global and is now local, copy
 		% any global subsidiary dictionaries to local VM.  This
 		% too is to work around the Word Perfect bug (see above).
@@ -361,7 +378,7 @@ level2dict begin
 
 % Define the keys used in input attribute matching.
 /.inputattrkeys [
-  /PageSize /MediaColor /MediaWeight /MediaType /InsertSheet
+  /PageSize /MediaColor /MediaWeight /MediaType /InsertSheet /ManualFeed
 	% The following are documented in Adobe's supplement for v2017.
   /LeadingEdge /MediaClass
 ] readonly def
@@ -391,7 +408,9 @@ level2dict begin
 % The procedure leaves all its operands on the stack and returns
 % true iff the key/value pair should be presented to .putdeviceparams.
 /.presentspecial mark
-  .dynamicppkeys { pop //false } forall
+  .dynamicppkeys
+      { pop dup /LeadingEdge ne { //false } { pop } ifelse }
+  forall
 			% We must ignore an explicit request for .MediaSize,
 			% because media matching always handles this.
   /.MediaSize //false
@@ -402,7 +421,7 @@ level2dict begin
   /PageSize //false		% obsolete alias for .MediaSize
   /InputAttributes //false
   .inputattrkeys
-    { dup /PageSize eq
+       { dup dup /PageSize eq exch /LeadingEdge eq or
        { pop }
        { { 2 index /InputAttributes .knownget { //null eq } { //true } ifelse } }
       ifelse
@@ -487,7 +506,7 @@ level2dict begin
 	pop dup 4 index exch get 2 array astore
 	$error /errorinfo 3 -1 roll put
 	cleartomark
-	/setpagedevice load /configurationerror signalerror
+	/setpagedevice .systemvar /configurationerror signalerror
   } bind
   1 {		% Roll back the failed request to its previous status.
 SETPDDEBUG { (Rolling back.) = pstack flush } if
@@ -580,7 +599,7 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
    4 index /RollFedMedia .knownget not { //false } if
    matrix .matchpagesize not {
 		% This is a "can't happen" condition!
-     /setpagedevice load /rangecheck signalerror
+     /setpagedevice .systemvar /rangecheck signalerror
    } if
    2 array astore
  } bind def
@@ -720,7 +739,7 @@ SETPDDEBUG { (Recovering.) = pstack flush } if
       .trysetparams		% shouldn't fail!
       dup type /booleantype ne
        { 2 { counttomark 1 add 1 roll cleartomark } repeat
-         /setpagedevice load exch signalerror
+         /setpagedevice .systemvar exch signalerror
        }
       if
     }

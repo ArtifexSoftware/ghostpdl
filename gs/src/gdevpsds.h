@@ -1,22 +1,24 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Image processing stream interface for PostScript and PDF writers */
 
 #ifndef gdevpsds_INCLUDED
 #  define gdevpsds_INCLUDED
 
 #include "strimpl.h"
+#include "gsiparam.h"
 
 /* ---------------- Depth conversion ---------------- */
 
@@ -170,5 +172,58 @@ s_compr_chooser_set_dimensions(stream_compr_chooser_state * st, int width,
 
 /* Get choice */
 uint s_compr_chooser__get_choice(stream_compr_chooser_state *st, bool force);
+
+/* ---------------- Am image color conversion filter ---------------- */
+
+#ifndef gx_device_DEFINED
+#  define gx_device_DEFINED
+typedef struct gx_device_s gx_device;
+#endif
+
+typedef struct stream_image_colors_state_s stream_image_colors_state;
+
+struct stream_image_colors_state_s {
+    stream_state_common;
+    uint width, height, depth, bits_per_sample;
+    byte output_bits_buffer;
+    uint output_bits_buffered;
+    uint output_component_bits_written;
+    uint output_component_index;
+    uint output_depth, output_bits_per_sample;
+    uint raster;
+    uint row_bits;
+    uint row_bits_passed;
+    uint row_alignment_bytes;
+    uint row_alignment_bytes_left;
+    uint input_component_index;
+    uint input_bits_buffer;
+    uint input_bits_buffered;
+    uint input_color[GS_IMAGE_MAX_COLOR_COMPONENTS];
+    uint output_color[GS_IMAGE_MAX_COLOR_COMPONENTS];
+    uint MaskColor[GS_IMAGE_MAX_COLOR_COMPONENTS * 2];
+    float Decode[GS_IMAGE_MAX_COLOR_COMPONENTS * 2];
+    const gs_color_space *pcs;
+    gx_device *pdev;
+    const gs_imager_state *pis;
+    int (*convert_color)(stream_image_colors_state *);
+};
+
+#define private_st_image_colors_state()	/* in gdevpsds.c */\
+  gs_private_st_ptrs3(st_stream_image_colors_state, stream_image_colors_state,\
+    "stream_image_colors_state", stream_image_colors_enum_ptrs,\
+    stream_image_colors_reloc_ptrs, pcs, pdev, pis)
+
+extern const stream_template s_image_colors_template;
+
+void s_image_colors_set_dimensions(stream_image_colors_state * st, 
+			       int width, int height, int depth, int bits_per_sample);
+
+void s_image_colors_set_mask_colors(stream_image_colors_state * ss, uint *MaskColor);
+
+void s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
+			       const gs_color_space *pcs, const gs_imager_state *pis,
+			       float *Decode);
+
+extern const stream_template s__image_colors_template;
 
 #endif /* gdevpsds_INCLUDED */

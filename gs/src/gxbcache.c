@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Bitmap cache implementation */
 #include "memory_.h"
 #include "gx.h"
@@ -55,8 +56,7 @@ gx_bits_cache_chunk_init(gx_bits_cache_chunk * bck, byte * data, uint size)
 /* If there isn't enough room, set *pcbh to an entry requiring freeing, */
 /* or to 0 if we are at the end of the chunk, and return -1. */
 int
-gx_bits_cache_alloc(const gs_memory_t *mem, 
-		    gx_bits_cache * bc, ulong lsize, gx_cached_bits_head ** pcbh)
+gx_bits_cache_alloc(gx_bits_cache * bc, ulong lsize, gx_cached_bits_head ** pcbh)
 {
 #define ssize ((uint)lsize)
     ulong lsize1 = lsize + sizeof(gx_cached_bits_head);
@@ -83,7 +83,7 @@ gx_bits_cache_alloc(const gs_memory_t *mem,
 	    return -1;
 	}
 	fsize += cbh_next->size;
-	if_debug2(mem, 'K', "[K]merging free bits 0x%lx(%u)\n",
+	if_debug2('K', "[K]merging free bits 0x%lx(%u)\n",
 		  (ulong) cbh_next, cbh_next->size);
 	cbh_next = (gx_cached_bits_head *) ((byte *) cbh + fsize);
     }
@@ -91,7 +91,7 @@ gx_bits_cache_alloc(const gs_memory_t *mem,
 	cbh_next = (gx_cached_bits_head *) ((byte *) cbh + ssize);
 	cbh_next->size = fsize - ssize;
 	cb_head_set_free(cbh_next);
-	if_debug2(mem, 'K', "[K]shortening bits 0x%lx by %u (initial)\n",
+	if_debug2('K', "[K]shortening bits 0x%lx by %u (initial)\n",
 		  (ulong) cbh, fsize - ssize);
     }
     gs_alloc_fill(cbh, gs_alloc_fill_block, ssize);

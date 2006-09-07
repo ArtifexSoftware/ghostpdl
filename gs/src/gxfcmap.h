@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Internal CMap structure definitions */
 
 /* This file should be called gxcmap.h, except that name is already used. */
@@ -164,8 +165,7 @@ typedef struct gs_cmap_procs_s {
      * See gsfcmap.h for details.
      */
 
-    int (*decode_next)(const gs_memory_t *mem,
-		       const gs_cmap_t *pcmap, const gs_const_string *str,
+    int (*decode_next)(const gs_cmap_t *pcmap, const gs_const_string *str,
 		       uint *pindex, uint *pfidx,
 		       gs_char *pchr, gs_glyph *pglyph);
 
@@ -187,7 +187,7 @@ typedef struct gs_cmap_procs_s {
      * Check if the cmap is identity.
      */
 
-    bool (*is_identity)(const gs_memory_t *mem, const gs_cmap_t *pcmap, int font_index_only);
+    bool (*is_identity)(const gs_cmap_t *pcmap, int font_index_only);
 
 } gs_cmap_procs_t;
 
@@ -220,8 +220,8 @@ struct gs_cmap_ranges_enum_s {
 };
 
 typedef struct gs_cmap_lookups_enum_procs_s {
-    int (*next_lookup)(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum);
-    int (*next_entry)(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum);
+    int (*next_lookup)(gs_cmap_lookups_enum_t *penum);
+    int (*next_entry)(gs_cmap_lookups_enum_t *penum);
 } gs_cmap_lookups_enum_procs_t;
 struct gs_cmap_lookups_enum_s {
     /*
@@ -284,8 +284,8 @@ int gs_cmap_enum_next_range(gs_cmap_ranges_enum_t *penum);
  */
 void gs_cmap_lookups_enum_init(const gs_cmap_t *pcmap, int which,
 			       gs_cmap_lookups_enum_t *penum);
-int gs_cmap_enum_next_lookup(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum);
-int gs_cmap_enum_next_entry(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum);
+int gs_cmap_enum_next_lookup(gs_cmap_lookups_enum_t *penum);
+int gs_cmap_enum_next_entry(gs_cmap_lookups_enum_t *penum);
 
 /* ---------------- Implementation procedures ---------------- */
 
@@ -316,13 +316,13 @@ void gs_cmap_lookups_enum_setup(gs_cmap_lookups_enum_t *penum,
 /* 
  * Check for identity CMap. Uses a fast check for special cases.
  */
-bool gs_cmap_is_identity(const gs_memory_t *mem, const gs_cmap_t *pcmap, int font_index_only);
+bool gs_cmap_is_identity(const gs_cmap_t *pcmap, int font_index_only);
 
 /* 
  * For a random CMap, compute whether it is identity.
  * It is not applicable to gs_cmap_ToUnicode_t due to
  * different sizes of domain keys and range values.
  */
-bool gs_cmap_compute_identity(const gs_memory_t *mem, const gs_cmap_t *pcmap, int font_index_only);
+bool gs_cmap_compute_identity(const gs_cmap_t *pcmap, int font_index_only);
 
 #endif /* gxfcmap_INCLUDED */

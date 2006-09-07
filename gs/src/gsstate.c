@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Miscellaneous graphics state operators for Ghostscript library */
 #include "gx.h"
 #include "memory_.h"
@@ -237,6 +238,8 @@ gs_state_alloc(gs_memory_t * mem)
 
     /* Initialize other things not covered by initgraphics */
 
+    pgs->path = gx_path_alloc(gstate_path_memory(mem), "gs_state_alloc(path)");
+    pgs->clip_path = gx_cpath_alloc(mem, "gs_state_alloc(clip_path)");
     pgs->clip_stack = 0;
     pgs->view_clip = gx_cpath_alloc(mem, "gs_state_alloc(view_clip)");
     pgs->view_clip->rule = 0;	/* no clipping */
@@ -270,15 +273,6 @@ gs_state_alloc(gs_memory_t * mem)
 fail:
     gs_state_free(pgs);
     return 0;
-}
-
-void
-gs_state_free_view_clip(gs_state *pgs)
-{
-    if (pgs->view_clip) {
-        gx_cpath_free(pgs->view_clip, "gs_state_free_view_clip(view_clip)");
-        pgs->view_clip = 0;
-    }
 }
 
 /* Set the client data in a graphics state. */
@@ -317,7 +311,7 @@ gs_gsave(gs_state * pgs)
 				  copy_for_gsave);
 
     if (pnew == 0)
-	return_error(pgs->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     /*
      * It isn't clear from the Adobe documentation whether gsave retains
      * the current clip stack or clears it.  The following statement
@@ -325,12 +319,12 @@ gs_gsave(gs_state * pgs)
      *	rc_increment(pnew->clip_stack);
      */
     pnew->clip_stack = 0;
-    rc_increment(pgs->memory, pnew->dfilter_stack);
+    rc_increment(pnew->dfilter_stack);
     pgs->saved = pnew;
     if (pgs->show_gstate == pgs)
 	pgs->show_gstate = pnew->show_gstate = pnew;
     pgs->level++;
-    if_debug2(pgs->memory, 'g', "[g]gsave -> 0x%lx, level = %d\n",
+    if_debug2('g', "[g]gsave -> 0x%lx, level = %d\n",
 	      (ulong) pnew, pgs->level);
     return 0;
 }
@@ -352,7 +346,7 @@ gs_gsave_for_save(gs_state * pgs, gs_state ** psaved)
 	    gx_cpath_alloc_shared(old_cpath, pgs->memory,
 				  "gs_gsave_for_save(view_clip)");
 	if (new_cpath == 0)
-	    return_error(pgs->memory, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
     } else {
 	new_cpath = 0;
     }
@@ -382,7 +376,7 @@ gs_grestore_only(gs_state * pgs)
     gs_transparency_state_t *tstack = pgs->transparency_stack;
     bool prior_overprint = pgs->overprint;
 
-    if_debug2(pgs->memory, 'g', "[g]grestore 0x%lx, level was %d\n",
+    if_debug2('g', "[g]grestore 0x%lx, level was %d\n",
 	      (ulong) saved, pgs->level);
     if (!saved)
 	return 1;
@@ -482,11 +476,12 @@ gs_state_copy(gs_state * pgs, gs_memory_t * mem)
 
     pgs->view_clip = 0;
     pnew = gstate_clone(pgs, mem, "gs_gstate", copy_for_gstate);
-    rc_increment(pgs->memory, pnew->clip_stack);
-    rc_increment(pgs->memory, pnew->dfilter_stack);
+    rc_increment(pnew->clip_stack);
+    rc_increment(pnew->dfilter_stack);
     pgs->view_clip = view_clip;
     if (pnew == 0)
 	return 0;
+    pnew->saved = 0;
     /*
      * Prevent dangling references from the show_gstate pointer.  If
      * this context is its own show_gstate, set the pointer in the clone
@@ -676,7 +671,7 @@ gs_setoverprintmode(gs_state * pgs, int mode)
     int     code = 0;
 
     if (mode < 0 || mode > 1)
-	return_error(pgs->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     pgs->overprint_mode = mode;
     if (pgs->overprint && prior_mode != mode)
         code = gs_do_set_overprint(pgs);
@@ -825,7 +820,7 @@ gstate_alloc_parts(gs_state * parts, const gs_state * shared,
 	parts->dev_color == 0
 	) {
 	gstate_free_parts(parts, mem, cname);
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     }
     return 0;
 }
@@ -896,7 +891,7 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
     }
     gs_imager_state_copied((gs_imager_state *)pgs);
     /* Don't do anything to clip_stack. */
-    rc_increment(pgs->memory, pgs->device);
+    rc_increment(pgs->device);
     *parts.color_space = *pfrom->color_space;
     *parts.ccolor = *pfrom->ccolor;
     *parts.dev_color = *pfrom->dev_color;
@@ -928,9 +923,9 @@ gstate_free_contents(gs_state * pgs)
     gs_memory_t *mem = pgs->memory;
     const char *const cname = "gstate_free_contents";
 
-    rc_decrement(mem, pgs->device, cname);
-    rc_decrement(mem, pgs->clip_stack, cname);
-    rc_decrement(mem, pgs->dfilter_stack, cname);
+    rc_decrement(pgs->device, cname);
+    rc_decrement(pgs->clip_stack, cname);
+    rc_decrement(pgs->dfilter_stack, cname);
     cs_adjust_counts(pgs, -1);
     if (pgs->client_data != 0)
 	(*pgs->client_procs.free) (pgs->client_data, mem);
@@ -983,11 +978,11 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
     *parts.dev_color = *pfrom->dev_color;
     cs_adjust_counts(pto, 1);
     /* Handle references from gstate object. */
-#define RCCOPY(cmem, element)\
-    rc_pre_assign(cmem, pto->element, pfrom->element, cname)
-    RCCOPY(pto->memory, device);
-    RCCOPY(pto->memory, clip_stack);
-    RCCOPY(pto->memory, dfilter_stack);
+#define RCCOPY(element)\
+    rc_pre_assign(pto->element, pfrom->element, cname)
+    RCCOPY(device);
+    RCCOPY(clip_stack);
+    RCCOPY(dfilter_stack);
     {
 	struct gx_pattern_cache_s *pcache = pto->pattern_cache;
 	void *pdata = pto->client_data;

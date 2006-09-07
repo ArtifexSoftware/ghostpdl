@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$*/
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$*/
 /* MGR device driver */
 #include "gdevprn.h"
 #include "gdevpccm.h"
@@ -81,7 +81,7 @@ gx_device_mgr far_data gs_mgrgray4_device =
 gx_device_mgr far_data gs_mgrgray8_device =
   mgr_prn_device(mgrN_procs,  "mgrgray8",1,  8, 8, 255,   0, 0, 0, mgrN_print_page);
 gx_device_mgr far_data gs_mgr4_device =
-  mgr_prn_device(cmgr4_procs, "mgr4",    3,  8, 4,   1,   1, 4, 3, cmgrN_print_page);
+  mgr_prn_device(cmgr4_procs, "mgr4",    3,  8, 4,   1,   1, 2, 2, cmgrN_print_page);
 gx_device_mgr far_data gs_mgr8_device =
   mgr_prn_device(cmgr8_procs, "mgr8",    3,  8, 8, 255, 255, 6, 5, cmgrN_print_page);
 
@@ -103,7 +103,7 @@ mgr_begin_page(gx_device_mgr *bdev, FILE *pstream, mgr_cursor *pcur)
 {	struct b_header head;
 	uint line_size =
 		gdev_prn_raster((gx_device_printer *)bdev) + 3;
-	byte *data = (byte *)gs_malloc(line_size, 1, "mgr_begin_page");
+	byte *data = (byte *)gs_malloc(bdev->memory, line_size, 1, "mgr_begin_page");
 	if ( data == 0 )
 		return_error(gs_error_VMerror);
 
@@ -127,7 +127,8 @@ mgr_begin_page(gx_device_mgr *bdev, FILE *pstream, mgr_cursor *pcur)
 private int
 mgr_next_row(mgr_cursor *pcur)
 {	if ( pcur->lnum >= pcur->dev->height )
-	   {	gs_free((char *)pcur->data, pcur->line_size, 1,
+	{	gs_free(((gx_device_printer *)pcur->dev)->memory,
+			(char *)pcur->data, pcur->line_size, 1,
 			"mgr_next_row(done)");
 		return 1;
 	   }
@@ -204,7 +205,7 @@ mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 	}
 
 	if ( bdev->mgr_depth != 8 )
-        	data = (byte *)gs_malloc(mgr_line_size, 1, "mgrN_print_page");
+	    data = (byte *)gs_malloc(pdev->memory, mgr_line_size, 1, "mgrN_print_page");
         
 	while ( !(code = mgr_next_row(&cur)) )
 	   {
@@ -239,7 +240,7 @@ mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 		}  
 	   }
 	if (bdev->mgr_depth != 8)
-        	gs_free((char *)data, mgr_line_size, 1, "mgrN_print_page(done)");
+	    gs_free(bdev->memory, (char *)data, mgr_line_size, 1, "mgrN_print_page(done)");
 
 	if (bdev->mgr_depth == 2) {
             for (i = 0; i < 4; i++) {
@@ -284,7 +285,7 @@ cmgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 	if (bdev->mgr_depth == 4 && mgr_wide & 1)
             mgr_wide++;
 	mgr_line_size = mgr_wide / (8 / bdev->mgr_depth);
-       	data = (byte *)gs_malloc(mgr_line_size, 1, "cmgrN_print_page");
+       	data = (byte *)gs_malloc(pdev->memory, mgr_line_size, 1, "cmgrN_print_page");
 
        	if ( bdev->mgr_depth == 8 ) {
             memset( table, 0, sizeof(table) );
@@ -322,7 +323,7 @@ cmgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 				break;
 		}  
 	   }
-       	gs_free((char *)data, mgr_line_size, 1, "cmgrN_print_page(done)");
+       	gs_free(bdev->memory, (char *)data, mgr_line_size, 1, "cmgrN_print_page(done)");
        	
 	if (bdev->mgr_depth == 4) {
             for (i = 0; i < 16; i++) {
@@ -360,11 +361,11 @@ cmgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 /* (1/6, 1/2, and 5/6), instead of the obvious 8x8x4. */
 
 gx_color_index
-mgr_8bit_map_rgb_color(gx_device *dev, gx_color_value r, gx_color_value g,
-  gx_color_value b)
-{	uint rv = r / (gx_max_color_value / 7 + 1);
-	uint gv = g / (gx_max_color_value / 7 + 1);
-	uint bv = b / (gx_max_color_value / 7 + 1);
+mgr_8bit_map_rgb_color(gx_device *dev, const gx_color_value cv[])
+{
+	uint rv = cv[0] / (gx_max_color_value / 7 + 1);
+	uint gv = cv[1] / (gx_max_color_value / 7 + 1);
+	uint bv = cv[2] / (gx_max_color_value / 7 + 1);
 	return (gx_color_index)
 		(rv == gv && gv == bv ? rv + (256-7) :
 		 (rv << 5) + (gv << 2) + (bv >> 1));

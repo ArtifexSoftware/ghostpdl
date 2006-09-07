@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* CCITTFax filter parameter setting and reading */
 #include "std.h"
 #include "gserror.h"
@@ -41,8 +42,8 @@ private const gs_param_item_t s_CF_param_items[] =
     gs_param_item_end
 };
 
-/* Define a limit on the Rows parameter, close to max_int. */
-#define cf_max_height 32000
+/* Define a limit on the Rows parameter, was too low at 32000 */
+#define cf_max_height 1000000
 
 /* Get non-default CCITTFax filter parameters. */
 stream_state_proc_get_params(s_CF_get_params, stream_CF_state);		/* check */
@@ -80,7 +81,7 @@ s_CF_put_params(gs_param_list * plist, stream_CF_state * ss)
 	 state.DecodedByteAlign < 1 || state.DecodedByteAlign > 16 ||
 	 (state.DecodedByteAlign & (state.DecodedByteAlign - 1)) != 0)
 	)
-	code = gs_note_error(ss->memory, gs_error_rangecheck);
+	code = gs_note_error(gs_error_rangecheck);
     if (code >= 0)
 	*ss = state;
     return code;

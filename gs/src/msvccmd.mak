@@ -1,16 +1,16 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
-
-# $RCSfile$ $Revision$
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
 # Command definition section for Microsoft Visual C++ 4.x/5.x,
 # Windows NT or Windows 95 platform.
 # Created 1997-05-22 by L. Peter Deutsch from msvc4/5 makefiles.
@@ -54,8 +54,8 @@ RO_=$(O_)
 
 # Define the arguments for genconf.
 
-CONFILES=-p %%s -l $(GLGENDIR)\lib.tr
-CONFLDTR=-o
+CONFILES=-p %%s
+CONFLDTR=-ol
 
 # Define the generic compilation flags.
 
@@ -67,17 +67,38 @@ PCFBASM=
 # Make sure we get the right default target for make.
 
 dosdefault: default
+	$(NO_OP)
 
 # Define the compilation flags.
 
+# MSVC 8 (2005) warns about deprecated unsafe common functions like strcpy.
+!if ($(MSVC_VERSION) == 8) || defined(WIN64)
+VC8WARN=/wd4996 /wd4224
+!else
+VC8WARN=
+!endif
+
+!if ($(MSVC_VERSION) < 8)
+CDCC=/Gi /ZI
+!else
+CDCC=/ZI
+!endif
+
 !if "$(CPU_FAMILY)"=="i386"
 
+!if ($(MSVC_VERSION) >= 8) || defined(WIN64)
+# MSVC 8 (2005) attempts to produce code good for all processors.
+# and doesn't used /G5 or /GB.
+# MSVC 8 (2005) avoids buggy 0F instructions.
+CPFLAGS=
+!else
 !if $(CPU_TYPE)>500
 CPFLAGS=/G5 $(QI0f)
 !else if $(CPU_TYPE)>400
 CPFLAGS=/GB $(QI0f)
 !else
 CPFLAGS=/GB $(QI0f)
+!endif
 !endif
 
 !if $(FPU_TYPE)>0 && $(MSVC_VERSION)<5
@@ -122,33 +143,59 @@ CD=/DDEBUG
 CD=
 !endif
 
+# Precompiled headers
+!if $(MSVC_VERSION) >= 8
+CPCH=/Fp$(GLOBJDIR)\gs.pch
+!else
+CPCH=/YX /Fp$(GLOBJDIR)\gs.pch
+!endif
+
 !if $(TDEBUG)!=0
 # /Fd designates the directory for the .pdb file.
 # Note that it must be followed by a space.
-CT=/Zi /Od /Fd$(GLOBJDIR) $(NULL)
-LCT=/DEBUG
+CT=/Od /Fd$(GLOBJDIR) $(NULL) $(CDCC) $(CPCH)
+LCT=/DEBUG /INCREMENTAL:YES
 COMPILE_FULL_OPTIMIZED=    # no optimization when debugging
 COMPILE_WITH_FRAMES=    # no optimization when debugging
 COMPILE_WITHOUT_FRAMES=    # no optimization when debugging
+CMT=/MTd
 !else
+!if $(DEBUGSYM)==0
 CT=
 LCT=
-
+CMT=/MT
+!else
+CT=/Zi /Fd$(GLOBJDIR) $(NULL)
+LCT=/DEBUG
+CMT=/MTd
+!endif
 !if $(MSVC_VERSION) == 5
 # NOTE: With MSVC++ 5.0, /O2 produces a non-working executable.
 # We believe the following list of optimizations works around this bug.
 COMPILE_FULL_OPTIMIZED=/GF /Ot /Oi /Ob2 /Oy /Oa- /Ow-
 !else
-COMPILE_FULL_OPTIMIZED=/GF /O2
+COMPILE_FULL_OPTIMIZED=/GF /O2 /Ob2
 !endif
 COMPILE_WITH_FRAMES=
 COMPILE_WITHOUT_FRAMES=/Oy
 !endif
 
+!if $(MSVC_VERSION) >= 8
+# MSVC 8 (2005) always does stack probes and checking.
+CS=
+!else
 !if $(DEBUG)!=0 || $(TDEBUG)!=0
 CS=/Ge
 !else
 CS=/Gs
+!endif
+!endif
+
+!if ($(MSVC_VERSION) == 7) && defined(WIN64)
+# Need to specify DDK include directories before .NET 2003 directories.
+MSINCFLAGS=-I"$(INCDIR64A)" -I"$(INCDIR64B)"
+!else
+MSINCFLAGS=
 !endif
 
 # Specify output object name
@@ -159,14 +206,11 @@ COMPILE_FOR_DLL=
 COMPILE_FOR_EXE=
 COMPILE_FOR_CONSOLE_EXE=
 
-# Specify warning message level
-WARNOPT=/W2
-
 # The /MT is for multi-threading.  We would like to make this an option,
 # but it's too much work right now.
-GENOPT=$(CP) $(CD) $(CT) $(CS) $(WARNOPT) /nologo /MT
+GENOPT=$(CP) $(CD) $(CT) $(CS) $(WARNOPT) $(VC8WARN) /nologo $(CMT)
 
-CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS)
+CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS) $(MSINCFLAGS)
 CC=$(COMP) /c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
 CPP=$(COMPCPP) /c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
 !if $(MAKEDLL)
@@ -175,13 +219,8 @@ WX=$(COMPILE_FOR_DLL)
 WX=$(COMPILE_FOR_EXE)
 !endif
 
-
-!ifndef COMPILE_INITS
-COMPILE_INITS=0
-!endif
-
 !if $(COMPILE_INITS)
-ZM=/Zm600
+ZM=/Zm1200
 !else
 ZM=
 !endif
@@ -196,11 +235,9 @@ CC_NO_WARN=$(CC_)
 
 # Compiler for auxiliary programs
 
-CCAUX=$(COMPAUX) /O
+CCAUX=$(COMPAUX) $(VC8WARN) $(CFLAGS)
 
 # Compiler for Windows programs.
-# /Ze enables MS-specific extensions (this is also the default).
-
-CCWINFLAGS=$(COMPILE_FULL_OPTIMIZED) /Ze
+CCWINFLAGS=$(COMPILE_FULL_OPTIMIZED)
 
 #end msvccmd.mak

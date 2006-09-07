@@ -98,23 +98,23 @@ typedef struct pcl_frgrnd_s     pcl_frgrnd_t;
 /*
  * The usual init, copy,and release macros.
  */
-#define pcl_frgrnd_init_from(mem, pto, pfrom)    \
+#define pcl_frgrnd_init_from(pto, pfrom)    \
     BEGIN                                   \
-    rc_increment(mem, pfrom);                    \
+    rc_increment(pfrom);                    \
     (pto) = (pfrom);                        \
     END
 
-#define pcl_frgrnd_copy_from(mem, pto, pfrom)            \
+#define pcl_frgrnd_copy_from(pto, pfrom)            \
     BEGIN                                           \
     if ((pto) != (pfrom)) {                         \
-        rc_increment(mem, pfrom);                        \
-        rc_decrement(mem, pto, "pcl_frgrnd_copy_from");  \
+        rc_increment(pfrom);                        \
+        rc_decrement(pto, "pcl_frgrnd_copy_from");  \
         (pto) = (pfrom);                            \
     }                                               \
     END
 
-#define pcl_frgrnd_release(mem, pbase)           \
-    rc_decrement(mem, pbase, "pcl_frgrnd_release")
+#define pcl_frgrnd_release(pbase)           \
+    rc_decrement(pbase, "pcl_frgrnd_release")
 
 /*
  * Get the base color space type from a foreground object

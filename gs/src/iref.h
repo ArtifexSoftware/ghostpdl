@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Object structure and type definitions for Ghostscript */
 
 #ifndef iref_INCLUDED
@@ -403,10 +404,6 @@ struct ref_s {
 	struct gx_device_s *pdevice;
 	obj_header_t *pstruct;
     } value;
-#ifdef GS_DEBUGGER
-    unsigned long offset;
-    unsigned long pfile;
-#endif
 };
 
 /* ---------------- Private ref macros ---------------- */
@@ -555,9 +552,9 @@ struct ref_s {
 #define arch_sizeof_ref sizeof(ref)
 /* Define the required alignment for refs. */
 /* We assume all alignment values are powers of 2. */
-#define arch_align_ref_mod\
- (((arch_align_long_mod - 1) | (arch_align_float_mod - 1) |\
-   (arch_align_ptr_mod - 1)) + 1)
+#define ARCH_ALIGN_REF_MOD\
+ (((ARCH_ALIGN_LONG_MOD - 1) | (ARCH_ALIGN_FLOAT_MOD - 1) |\
+   (ARCH_ALIGN_PTR_MOD - 1)) + 1)
 
 /* Define the maximum size of an array or a string. */
 /* The maximum array size is determined by the fact that */

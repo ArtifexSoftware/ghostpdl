@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Utilities for "vector" devices */
 #include "math_.h"
 #include "memory_.h"
@@ -70,7 +71,7 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
      * which requires (untransformed) device coordinates.
      */
     if (rtype != prt_none &&
-	!((type & gx_path_type_stroke) && rtype == prt_open) &&
+	(!(type & gx_path_type_stroke) || rtype == prt_closed) &&
 	(pmat == 0 || is_xxyy(pmat) || is_xyyx(pmat)) &&
 	(state.scale_mat.xx == 1.0 && state.scale_mat.yy == 1.0 &&
 	 is_xxyy(&state.scale_mat) &&
@@ -78,9 +79,9 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
 	) {
 	gs_point p, q;
 
-	gs_point_transform_inverse(vdev->memory, (floatp)rbox.p.x, (floatp)rbox.p.y,
+	gs_point_transform_inverse((floatp)rbox.p.x, (floatp)rbox.p.y,
 				   &state.scale_mat, &p);
-	gs_point_transform_inverse(vdev->memory, (floatp)rbox.q.x, (floatp)rbox.q.y,
+	gs_point_transform_inverse((floatp)rbox.q.x, (floatp)rbox.q.y,
 				   &state.scale_mat, &q);
 	code = vdev_proc(vdev, dorect)(vdev, (fixed)p.x, (fixed)p.y,
 				       (fixed)q.x, (fixed)q.y, type);
@@ -301,7 +302,7 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
 	vdev->strmbuf = 0;
 	fclose(vdev->file);
 	vdev->file = 0;
-	return_error(vdev->v_memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     }
     vdev->strmbuf_size = strmbuf_size;
     swrite_file(vdev->strm, vdev->file, vdev->strmbuf, strmbuf_size);
@@ -312,7 +313,8 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
      */
     vdev->strm->procs.close = vdev->strm->procs.flush;
     if (vdev->bbox_device) {
-	gx_device_bbox_init(vdev->bbox_device, NULL, vdev->memory);
+	gx_device_bbox_init(vdev->bbox_device, NULL, vdev->v_memory);
+        rc_increment(vdev->bbox_device);
 	gx_device_set_resolution((gx_device *) vdev->bbox_device,
 				 vdev->HWResolution[0],
 				 vdev->HWResolution[1]);
@@ -368,7 +370,7 @@ gdev_vector_update_color(gx_device_vector * vdev,
     int code;
     bool hl_color = (*vdev_proc(vdev, can_handle_hl_color)) (vdev, pis, pdcolor);
     const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
-
+    
     gx_hld_save_color(pis_for_hl_color, pdcolor, &temp);
     if (gx_hld_saved_color_equal(&temp, sc))
 	return 0;
@@ -442,7 +444,7 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
 	float half_width = pis->line_params.half_width * scale;
 
 	if (pattern_size > max_dash)
-	    return_error(vdev->v_memory, gs_error_limitcheck);
+	    return_error(gs_error_limitcheck);
 	if (dash_offset != vdev->state.line_params.dash.offset ||
 	    pattern_size != vdev->state.line_params.dash.pattern_size ||
 	    (pattern_size != 0 &&
@@ -477,7 +479,7 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
 
 	    if (code < 0)
 		return code;
-	    gx_set_miter_limit(vdev->memory, &vdev->state.line_params,
+	    gx_set_miter_limit(&vdev->state.line_params,
 			       pis->line_params.miter_limit);
 	}
 	if (pis->line_params.cap != vdev->state.line_params.cap) {
@@ -515,8 +517,8 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
 	int code = gdev_vector_update_color(vdev, pis, pdcolor, 
 		    &vdev->saved_stroke_color, vdev_proc(vdev, setstrokecolor));
 
-	    if (code < 0)
-		return code;
+	if (code < 0)
+	    return code;
     }
     return 0;
 }
@@ -617,30 +619,37 @@ gdev_vector_dopath_segment(gdev_vector_dopath_state_t *state, int pe_op,
 
     switch (pe_op) {
 	case gs_pe_moveto:
-	    gs_point_transform_inverse(vdev->memory,
-                                       fixed2float(vs[0].x),
+	    code = gs_point_transform_inverse(fixed2float(vs[0].x),
 				       fixed2float(vs[0].y), pmat, &vp[0]);
+	    if (code < 0)
+		return code;
 	    if (state->first)
 		state->start = vp[0], state->first = false;
 	    code = vdev_proc(vdev, moveto)
-		(vdev, state->prev.x, state->prev.y, vp[0].x, vp[0].y,
+		(vdev, 0/*unused*/, 0/*unused*/, vp[0].x, vp[0].y,
 		 state->type);
 	    state->prev = vp[0];
 	    break;
 	case gs_pe_lineto:
-	    gs_point_transform_inverse(vdev->memory, fixed2float(vs[0].x),
+	    code = gs_point_transform_inverse(fixed2float(vs[0].x),
 				       fixed2float(vs[0].y), pmat, &vp[0]);
+	    if (code < 0)
+		return code;
 	    code = vdev_proc(vdev, lineto)
 		(vdev, state->prev.x, state->prev.y, vp[0].x, vp[0].y,
 		 state->type);
 	    state->prev = vp[0];
 	    break;
 	case gs_pe_curveto:
-	    gs_point_transform_inverse(vdev->memory, fixed2float(vs[0].x),
+	    code = gs_point_transform_inverse(fixed2float(vs[0].x),
 				       fixed2float(vs[0].y), pmat, &vp[0]);
-	    gs_point_transform_inverse(vdev->memory, fixed2float(vs[1].x),
+	    if (code < 0)
+		return code;
+	    code = gs_point_transform_inverse(fixed2float(vs[1].x),
 				       fixed2float(vs[1].y), pmat, &vp[1]);
-	    gs_point_transform_inverse(vdev->memory, fixed2float(vs[2].x),
+	    if (code < 0)
+		return code;
+	    gs_point_transform_inverse(fixed2float(vs[2].x),
 				       fixed2float(vs[2].y), pmat, &vp[2]);
 	    code = vdev_proc(vdev, curveto)
 		(vdev, state->prev.x, state->prev.y, vp[0].x, vp[0].y,
@@ -794,16 +803,21 @@ gdev_vector_close_file(gx_device_vector * vdev)
     gs_free_object(vdev->v_memory, vdev->bbox_device,
 		   "vector_close(bbox_device)");
     vdev->bbox_device = 0;
-    sclose(vdev->strm);
-    gs_free_object(vdev->v_memory, vdev->strm, "vector_close(strm)");
-    vdev->strm = 0;
-    gs_free_object(vdev->v_memory, vdev->strmbuf, "vector_close(strmbuf)");
-    vdev->strmbuf = 0;
+    if (vdev->strm) {
+	sclose(vdev->strm);
+	gs_free_object(vdev->v_memory, vdev->strm, "vector_close(strm)");
+	vdev->strm = 0;
+	gs_free_object(vdev->v_memory, vdev->strmbuf, "vector_close(strmbuf)");
+	vdev->strmbuf = 0;
+    }
     vdev->file = 0;
-    err = ferror(f);
-    /* We prevented sclose from closing the file. */
-    if (fclose(f) != 0 || err != 0)
-	return_error(vdev->v_memory, gs_error_ioerror);
+    if (f) {
+	err = ferror(f);
+	/* We prevented sclose from closing the file. */
+	if (gx_device_close_output_file((gx_device *)vdev, vdev->fname, f) != 0 
+		|| err != 0)
+	    return_error(gs_error_ioerror);
+    }
     return 0;
 }
 
@@ -880,7 +894,7 @@ gdev_vector_end_image(gx_device_vector * vdev,
 				       "gdev_vector_end_image(fill)");
 
 	    if (row == 0)
-		return_error(vdev->v_memory, gs_error_VMerror);
+		return_error(gs_error_VMerror);
 /****** FILL VALUE IS WRONG ******/
 	    memset(row, (byte) pad, bytes_per_row);
 	    for (; pie->y < pie->height; pie->y++)

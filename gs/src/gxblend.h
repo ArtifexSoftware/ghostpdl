@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* PDF 1.4 blending functions */
 
 #ifndef gxblend_INCLUDED
@@ -46,7 +46,7 @@ typedef bits16 ArtPixMaxDepth;
  * mode. I wouldn't be surprised if it required an API change.
  **/
 void
-art_blend_pixel(const gs_memory_t *mem, ArtPixMaxDepth * dst, const ArtPixMaxDepth * backdrop,
+art_blend_pixel(ArtPixMaxDepth * dst, const ArtPixMaxDepth * backdrop,
 		const ArtPixMaxDepth * src, int n_chan,
 		gs_blend_mode_t blend_mode);
 
@@ -76,7 +76,7 @@ art_blend_pixel(const gs_memory_t *mem, ArtPixMaxDepth * dst, const ArtPixMaxDep
  * mode. I wouldn't be surprised if it required an API change.
  **/
 void
-art_blend_pixel_8(const gs_memory_t *mem, byte *dst, const byte *backdrop,
+art_blend_pixel_8(byte *dst, const byte *backdrop,
 		  const byte *src, int n_chan, gs_blend_mode_t blend_mode);
 
 /**
@@ -119,8 +119,8 @@ byte art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask);
  * be accessed.
  **/
 void
-art_pdf_composite_pixel_alpha_8(const gs_memory_t *mem, 
-				byte *dst, const byte *src, int n_chan,
+art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
+
 				gs_blend_mode_t blend_mode);
 
 /**
@@ -156,8 +156,7 @@ art_pdf_uncomposite_group_8(byte *dst,
  * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
  **/
 void
-art_pdf_recomposite_group_8(const gs_memory_t *mem,
-			    byte *dst, byte *dst_alpha_g,
+art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
 			    const byte *src, byte src_alpha_g,
 			    int n_chan,
 
@@ -176,8 +175,7 @@ art_pdf_recomposite_group_8(const gs_memory_t *mem,
  * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
  **/
 void
-art_pdf_composite_group_8(const gs_memory_t *mem,
-			  byte *dst, byte *alpha_g,
+art_pdf_composite_group_8(byte *dst, byte *alpha_g,
 			  const byte *src,
 
 			  int n_chan, byte alpha, gs_blend_mode_t blend_mode);
@@ -195,8 +193,7 @@ art_pdf_composite_group_8(const gs_memory_t *mem,
  * is interpreted as shape.
  **/
 void
-art_pdf_composite_knockout_simple_8(const gs_memory_t *mem,
-				    byte *dst,
+art_pdf_composite_knockout_simple_8(byte *dst,
 				    byte *dst_shape,
 
 				    const byte *src,
@@ -216,8 +213,7 @@ art_pdf_composite_knockout_simple_8(const gs_memory_t *mem,
  * alpha channel of @src is interpreted as alpha.
  **/
 void
-art_pdf_composite_knockout_isolated_8(const gs_memory_t *mem,
-				      byte *dst,
+art_pdf_composite_knockout_isolated_8(byte *dst,
 				      byte *dst_shape,
 				      const byte *src,
 				      int n_chan,
@@ -242,8 +238,7 @@ art_pdf_composite_knockout_isolated_8(const gs_memory_t *mem,
  * routine.
  **/
 void
-art_pdf_composite_knockout_8(const gs_memory_t *mem,
-			     byte *dst,
+art_pdf_composite_knockout_8(byte *dst,
 			     byte *dst_alpha_g,
 			     const byte *backdrop,
 			     const byte *src,

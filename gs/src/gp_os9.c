@@ -1,17 +1,19 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* OSK-specific routines for Ghostscript */
+
 #include "pipe_.h"
 #include "string_.h"
 #include "time_.h"
@@ -99,6 +101,24 @@ gp_get_usertime(long *pdt)
     return gp_get_realtime(pdt);	/* not yet implemented */
 }
 
+
+/* ------ Persistent data cache ------*/
+
+/* insert a buffer under a (type, key) pair */
+int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
+{
+    /* not yet implemented */
+    return 0;
+}
+
+/* look up a (type, key) in the cache */
+int gp_cache_query(int type, byte* key, int keylen, void **buffer,
+    gp_cache_alloc alloc, void *userdata)
+{
+    /* not yet implemented */
+    return -1;
+}
+
 /* ------ Printer accessing ------ */
 
 /* Open a connection to a printer.  A null file name means use the */
@@ -106,7 +126,7 @@ gp_get_usertime(long *pdt)
 /* "|command" opens an output pipe. */
 /* Return NULL if the connection could not be opened. */
 FILE *
-gp_open_printer(const gs_memory_t *mem, char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
     return
 	(strlen(fname) == 0 ? 0 :

@@ -1,24 +1,24 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* DCT decoding filter stream */
 #include "memory_.h"
 #include "stdio_.h"
 #include "jpeglib_.h"
 #include "jerror_.h"
 #include "gdebug.h"
-#include "gsmemory.h"		/* for gsmalloc.h */
-#include "gsmalloc.h"		/* for gs_memory_default */
+#include "gsmemory.h"
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"
@@ -103,8 +103,7 @@ s_DCTD_init(stream_state * st)
 
 /* Process a buffer */
 private int
-s_DCTD_process(const gs_memory_t *mem,
-	       stream_state * st, stream_cursor_read * pr,
+s_DCTD_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     stream_DCT_state *const ss = (stream_DCT_state *) st;
@@ -112,7 +111,7 @@ s_DCTD_process(const gs_memory_t *mem,
     struct jpeg_source_mgr *src = jddp->dinfo.src;
     int code;
 
-    if_debug3(st->memory, 'w', "[wdd]process avail=%u, skip=%u, last=%d\n",
+    if_debug3('w', "[wdd]process avail=%u, skip=%u, last=%d\n",
 	      (uint) (pr->limit - pr->ptr), (uint) jddp->skip, last);
     if (jddp->skip != 0) {
 	long avail = pr->limit - pr->ptr;
@@ -184,14 +183,14 @@ s_DCTD_process(const gs_memory_t *mem,
 		return 0;
 	    ss->scan_line_size =
 		jddp->dinfo.output_width * jddp->dinfo.output_components;
-	    if_debug4(st->memory, 'w', "[wdd]width=%u, components=%d, scan_line_size=%u, min_out_size=%u\n",
+	    if_debug4('w', "[wdd]width=%u, components=%d, scan_line_size=%u, min_out_size=%u\n",
 		      jddp->dinfo.output_width,
 		      jddp->dinfo.output_components,
 		      ss->scan_line_size, jddp->template.min_out_size);
 	    if (ss->scan_line_size > (uint) jddp->template.min_out_size) {
 		/* Create a spare buffer for oversize scanline */
 		jddp->scanline_buffer =
-		    gs_alloc_bytes_immovable(jddp->memory,
+		    gs_alloc_bytes_immovable(gs_memory_stable(jddp->memory),
 					     ss->scan_line_size,
 					 "s_DCTD_process(scanline_buffer)");
 		if (jddp->scanline_buffer == NULL)
@@ -207,7 +206,7 @@ s_DCTD_process(const gs_memory_t *mem,
 		uint tomove = min(jddp->bytes_in_scanline,
 				  avail);
 
-		if_debug2(st->memory, 'w', "[wdd]moving %u/%u\n",
+		if_debug2('w', "[wdd]moving %u/%u\n",
 			  tomove, avail);
 		memcpy(pw->ptr + 1, jddp->scanline_buffer +
 		       (ss->scan_line_size - jddp->bytes_in_scanline),
@@ -231,7 +230,7 @@ s_DCTD_process(const gs_memory_t *mem,
 		read = gs_jpeg_read_scanlines(ss, &samples, 1);
 		if (read < 0)
 		    return ERRC;
-		if_debug3(st->memory, 'w', "[wdd]read returns %d, used=%u, faked_eoi=%d\n",
+		if_debug3('w', "[wdd]read returns %d, used=%u, faked_eoi=%d\n",
 			  read,
 			  (uint) (src->next_input_byte - 1 - pr->ptr),
 			  (int)jddp->faked_eoi);
@@ -271,7 +270,7 @@ s_DCTD_release(stream_state * st)
 
     gs_jpeg_destroy(ss);
     if (ss->data.decompress->scanline_buffer != NULL)
-	gs_free_object(ss->data.common->memory,
+	gs_free_object(gs_memory_stable(ss->data.common->memory),
 		       ss->data.decompress->scanline_buffer,
 		       "s_DCTD_release(scanline_buffer)");
     gs_free_object(ss->data.common->memory, ss->data.decompress,

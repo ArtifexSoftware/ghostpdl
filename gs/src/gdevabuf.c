@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* Alpha-buffering memory devices */
 #include "memory_.h"
 #include "gx.h"
@@ -212,7 +212,7 @@ abuf_flush_block(gx_device_memory * adev, int y)
 	bbox.p.x &= alpha_mask;
 	bbox.q.x = (bbox.q.x + ~alpha_mask) & alpha_mask;
 	width = bbox.q.x - bbox.p.x;
-	bits_compress_scaled(adev->memory, bits, bbox.p.x, width, block_height,
+	bits_compress_scaled(bits, bbox.p.x, width, block_height,
 			     adev->raster, bits, draster, &adev->log2_scale,
 			     adev->log2_alpha_bits);
 	return (*dev_proc(target, copy_alpha)) (target,
@@ -277,7 +277,7 @@ y_transfer_init(y_transfer * pyt, gx_device * dev, int ty, int th)
     pyt->transfer_height = 0;
 }
 /* while ( yt.height_left > 0 ) { y_transfer_next(&yt, mdev); ... } */
-private void
+private int
 y_transfer_next(y_transfer * pyt, gx_device * dev)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
@@ -292,7 +292,10 @@ y_transfer_next(y_transfer * pyt, gx_device * dev)
 
     if (ty == my + mh) {	/* Add a new block at my1. */
 	if (mh == mdev->height) {
-	    abuf_flush_block(mdev, my);
+	    int code = abuf_flush_block(mdev, my);
+
+	    if (code < 0)
+		return code;
 	    mdev->mapped_y = my += bh;
 	    if ((mdev->mapped_start = ms += bh) == mh)
 		mdev->mapped_start = ms = 0;
@@ -314,7 +317,7 @@ y_transfer_next(y_transfer * pyt, gx_device * dev)
 	tby -= mdev->height;
 	tbh = ms + mh - dev->height - tby;
     }
-    if_debug7(mdev->memory, 'V',
+    if_debug7('V',
 	      "[V]abuf: my=%d, mh=%d, ms=%d, ty=%d, th=%d, tby=%d, tbh=%d\n",
 	      my, mh, ms, ty, th, tby, tbh);
     if (tbh > th)
@@ -322,6 +325,7 @@ y_transfer_next(y_transfer * pyt, gx_device * dev)
     pyt->height_left = th - tbh;
     pyt->transfer_y = tby;
     pyt->transfer_height = tbh;
+    return 0;
 }
 
 /* Copy a monobit image. */
@@ -334,7 +338,7 @@ mem_abuf_copy_mono(gx_device * dev,
     y_transfer yt;
 
     if (zero != gx_no_color_index || one == gx_no_color_index)
-	return_error(dev->memory, gs_error_undefinedresult);
+	return_error(gs_error_undefinedresult);
     x -= mdev->mapped_x;
     fit_copy_xyw(dev, base, sourcex, sraster, id, x, y, w, h);	/* don't limit h */
     if (w <= 0 || h <= 0)
@@ -342,7 +346,10 @@ mem_abuf_copy_mono(gx_device * dev,
     mdev->save_color = one;
     y_transfer_init(&yt, dev, y, h);
     while (yt.height_left > 0) {
-	y_transfer_next(&yt, dev);
+	int code = y_transfer_next(&yt, dev);
+
+	if (code < 0)
+	    return code;
 	(*dev_proc(&mem_mono_device, copy_mono)) (dev,
 					   base + (yt.y_next - y) * sraster,
 					  sourcex, sraster, gx_no_bitmap_id,
@@ -367,7 +374,10 @@ mem_abuf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     mdev->save_color = color;
     y_transfer_init(&yt, dev, y, h);
     while (yt.height_left > 0) {
-	y_transfer_next(&yt, dev);
+	int code = y_transfer_next(&yt, dev);
+
+	if (code < 0)
+	    return code;
 	(*dev_proc(&mem_mono_device, fill_rectangle)) (dev,
 				    x, yt.transfer_y, w, yt.transfer_height,
 						       (gx_color_index) 1);

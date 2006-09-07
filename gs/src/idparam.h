@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Interface to idparam.c */
 
 #ifndef idparam_INCLUDED
@@ -39,20 +40,17 @@ typedef struct gs_uid_s gs_uid;
  * pdict referring to an empty dictionary.  Routines with "null" in their
  * name return 2 if the parameter is null, without setting *pvalue.
  */
-int dict_bool_param(const gs_memory_t *mem, const ref * pdict, const char *kstr,
+int dict_bool_param(const ref * pdict, const char *kstr,
 		    bool defaultval, bool * pvalue);
-int dict_int_param(const gs_memory_t *mem, const ref * pdict, const char *kstr,
+int dict_int_param(const ref * pdict, const char *kstr,
 		   int minval, int maxval, int defaultval, int *pvalue);
-int dict_int_null_param(const gs_memory_t *mem, 
-			const ref * pdict, const char *kstr,
+int dict_int_null_param(const ref * pdict, const char *kstr,
 			int minval, int maxval, int defaultval,
 			int *pvalue);
-int dict_uint_param(const gs_memory_t *mem, 
-		    const ref * pdict, const char *kstr,
+int dict_uint_param(const ref * pdict, const char *kstr,
 		    uint minval, uint maxval, uint defaultval,
 		    uint * pvalue);
-int dict_float_param(const gs_memory_t *mem, 
-		     const ref * pdict, const char *kstr,
+int dict_float_param(const ref * pdict, const char *kstr,
 		     floatp defaultval, float *pvalue);
 /*
  * There are 3 variants of the procedures for getting array parameters.
@@ -67,31 +65,28 @@ int dict_float_param(const gs_memory_t *mem,
  *	  Equivalent to _xxx_check_param(..., rangecheck, rangecheck).
  * All can return other error codes (e.g., typecheck).
  */
-int dict_int_array_check_param(const gs_memory_t *mem, 
-			       const ref * pdict, const char *kstr,
+int dict_int_array_check_param(const ref * pdict, const char *kstr,
 			       uint len, int *ivec,
 			       int under_error, int over_error);
-int dict_int_array_param(const gs_memory_t *mem, 
-			 const ref * pdict, const char *kstr,
+int dict_int_array_param(const ref * pdict, const char *kstr,
 			 uint maxlen, int *ivec);
-int dict_ints_param(const gs_memory_t *mem, 
-		    const ref * pdict, const char *kstr,
+int dict_ints_param(const ref * pdict, const char *kstr,
 		    uint len, int *ivec);
 /*
  * For _float_array_param, if the parameter is missing and defaultvec is
  * not NULL, copy (max)len elements from defaultvec to fvec and return
  * (max)len.
  */
-int dict_float_array_check_param(const gs_memory_t *mem, 
+int dict_float_array_check_param(const gs_memory_t *mem,
 				 const ref * pdict, const char *kstr,
 				 uint len, float *fvec,
 				 const float *defaultvec,
 				 int under_error, int over_error);
-int dict_float_array_param(const gs_memory_t *mem, 
+int dict_float_array_param(const gs_memory_t *mem,
 			   const ref * pdict, const char *kstr,
 			   uint maxlen, float *fvec,
 			   const float *defaultvec);
-int dict_floats_param(const gs_memory_t *mem, 
+int dict_floats_param(const gs_memory_t *mem,
 		      const ref * pdict, const char *kstr,
 		      uint len, float *fvec,
 		      const float *defaultvec);
@@ -102,8 +97,7 @@ int dict_floats_param(const gs_memory_t *mem,
  *      defaultval = true means substitute an empty procedure.
  * In either case, return 1.
  */
-int dict_proc_param(const gs_memory_t *mem, 
-		    const ref * pdict, const char *kstr, ref * pproc,
+int dict_proc_param(const ref * pdict, const char *kstr, ref * pproc,
 		    bool defaultval);
 int dict_matrix_param(const gs_memory_t *mem, 
 		      const ref * pdict, const char *kstr,

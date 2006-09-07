@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* "Operators" for LanguageLevel 3 color facilities */
 #include "gx.h"
 #include "gserrors.h"
@@ -70,7 +71,10 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
 			   pgs->memory);
     if (code < 0)
 	return code;
-    gs_cspace_init(&cs, &gs_color_space_type_Pattern, pgs->memory);
+    code = gs_pattern2_set_shfill(&cc);
+    if (code < 0)
+	return code;
+    gs_cspace_init(&cs, &gs_color_space_type_Pattern, pgs->memory, false);
     cs.params.pattern.has_base_space = false;
     code = cs.type->remap_color(&cc, &cs, &devc, (gs_imager_state *)pgs,
 				pgs->device, gs_color_select_texture);
@@ -79,9 +83,9 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
 	code = gx_cpath_to_path(pgs->clip_path, &cpath);
 	if (code >= 0)
 	    code = gx_fill_path(&cpath, &devc, pgs, gx_rule_winding_number,
-				fixed_0, fixed_0);
+				pgs->fill_adjust.x, pgs->fill_adjust.y);
 	gx_path_free(&cpath, "gs_shfill");
     }
-    gs_pattern_reference(pgs->memory, &cc, -1);
+    gs_pattern_reference(&cc, -1);
     return code;
 }

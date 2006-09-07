@@ -52,7 +52,7 @@ hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
 	 (pgls->g.picture_frame_width == 0) ||
 	 (pgls->g.plot_width == 0) ||
 	 (pgls->g.plot_height == 0) ) {
-	dprintf(pgls->memory, "bad picture frame coordinates\n");
+	dprintf("bad picture frame coordinates\n");
 	return 0;
     } else if ( pgls->g.scaling_type != hpgl_scaling_point_factor ) {
 	hpgl_real_t vert_scale = (pgls->g.plot_size_vertical_specified) ?
@@ -165,7 +165,7 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 	    hpgl_call(gs_make_translation(origin_x, origin_y, pmat));
 	    hpgl_call(gs_matrix_scale(pmat, pgls->g.scaling_params.factor.x,
 				      pgls->g.scaling_params.factor.y, pmat));
-	    hpgl_call(gs_matrix_translate(pgls->memory, pmat, 
+	    hpgl_call(gs_matrix_translate(pmat, 
 					  -pgls->g.scaling_params.pmin.x,
 					  -pgls->g.scaling_params.pmin.y, pmat));
 	    break;
@@ -197,7 +197,7 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 
 	      hpgl_call(gs_make_translation(origin_x, origin_y, pmat));
 	      hpgl_call(gs_matrix_scale(pmat, scale_x, scale_y, pmat));
-	      hpgl_call(gs_matrix_translate(pgls->memory, pmat, 
+	      hpgl_call(gs_matrix_translate(pmat, 
 					    -pgls->g.scaling_params.pmin.x,
 					    -pgls->g.scaling_params.pmin.y, pmat));
 	      break;
@@ -248,7 +248,7 @@ hpgl_get_line_pattern_length(hpgl_state_t *pgls)
 	    isotropic_user_box.p = pgls->g.scaling_params.pmin;
 	    isotropic_user_box.q = pgls->g.scaling_params.pmax;
 
-	    hpgl_call(gs_bbox_transform(pgls->memory, &isotropic_user_box, 
+	    hpgl_call(gs_bbox_transform(&isotropic_user_box, 
 					&user_to_plu_mat,
 					&isotropic_plu_box));
 
@@ -423,8 +423,7 @@ vector:
 
       default:
 	/* shouldn't happen; we must have a mode to properly parse hpgl file. */
-	dprintf(pgls->memory, 
-		"warning no hpgl rendering mode set using vector mode\n");
+	dprintf("warning no hpgl rendering mode set using vector mode\n");
 	goto vector;
     }
 
@@ -484,8 +483,7 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	    pcl_clip_box.q.x = pcl_clip_box.p.x + pgls->g.picture_frame_width;
 	    pcl_clip_box.q.y = pcl_clip_box.p.y + pgls->g.picture_frame_height;
 	    
-	    hpgl_call(gs_bbox_transform(pgls->memory, 
-					&pcl_clip_box,
+	    hpgl_call(gs_bbox_transform(&pcl_clip_box,
 					&pcl_ctm,
 					&dev_clip_box));
 	    /* the clip box defined by the picture frame appears to be
@@ -509,8 +507,7 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
                 } else {
                     hpgl_call(gs_currentmatrix(pgls->pgs, &ctm));
                 }
-		hpgl_call(gs_bbox_transform(pgls->memory, 
-					    &pgls->g.soft_clip_window.rect,
+		hpgl_call(gs_bbox_transform(&pgls->g.soft_clip_window.rect,
 					    &ctm,
 					    &dev_soft_window_box));
 		/* Enlarge IW by 1 device dot to compensate for it's 
@@ -889,7 +886,7 @@ hpgl_set_drawing_color(
 		goto fill;
 
 	  default:
-	    dprintf(pgls->memory, "hpgl_set_drawing_color: internal error illegal fill\n");
+	    dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
 	    return 0;
 	}
 	break;
@@ -956,7 +953,7 @@ fill:
 
             break;
 	  default:
-	    dprintf(pgls->memory, "hpgl_set_drawing_color: internal error illegal fill\n");
+	    dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
 	    break;
 	}
 	break;
@@ -1001,13 +998,13 @@ fill:
             break;
 
 	  default:
-	    dprintf(pgls->memory, "hpgl_set_drawing_color: internal error illegal fill\n");
+	    dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
 	    break;
 	}
 	break;
 
       default:
-	dprintf(pgls->memory, "hpgl_set_drawing_color: internal error illegal mode\n");
+	dprintf("hpgl_set_drawing_color: internal error illegal mode\n");
 	break;
     }
 
@@ -1383,8 +1380,7 @@ hpgl_set_special_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t rende
 	adjust.y = -1;           
 	/* determine the adjustment in device space */
 	hpgl_call(gs_defaultmatrix(pgls->pgs, &default_matrix));
-	hpgl_call(gs_distance_transform(pgls->memory, 
-					adjust.x, adjust.y, &default_matrix, &distance));
+	hpgl_call(gs_distance_transform(adjust.x, adjust.y, &default_matrix, &distance));
 	/* translate all points in the path by the adjustment.  */
 	hpgl_call(gx_path_translate(ppath,
                   float2fixed(distance.x / fabs(distance.x)),
@@ -1548,7 +1544,7 @@ hpgl_draw_current_path(
 	    break;
 	}
     default :
-        dprintf(pgls->memory, "unknown render mode\n");
+        dprintf("unknown render mode\n");
     }
 
     return 0;

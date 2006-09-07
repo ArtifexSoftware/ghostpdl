@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Pattern color */
 #include "ghost.h"
 #include "oper.h"
@@ -36,6 +37,7 @@
 #include "ipcolor.h"
 #include "store.h"
 #include "gzstate.h"
+#include "memory_.h"
 
 /* Imported from gspcolor.c */
 extern const gs_color_space_type gs_color_space_type_Pattern;
@@ -67,7 +69,7 @@ int_pattern_alloc(int_pattern **ppdata, const ref *op, gs_memory_t *mem)
 	gs_alloc_struct(mem, int_pattern, &st_int_pattern, "int_pattern");
 
     if (pdata == 0)
-	return_error(mem, e_VMerror);
+	return_error(e_VMerror);
     pdata->dict = *op;
     *ppdata = pdata;
     return 0;
@@ -87,20 +89,20 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     gs_client_color cc_instance;
     ref *pPaintProc;
 
-    check_type(imemory, *op1, t_dictionary);
-    check_dict_read(imemory, *op1);
+    check_type(*op1, t_dictionary);
+    check_dict_read(*op1);
     gs_pattern1_init(&template);
     if ((code = read_matrix(imemory, op, &mat)) < 0 ||
 	(code = dict_uid_param(op1, &template.uid, 1, imemory, i_ctx_p)) != 1 ||
-	(code = dict_int_param(imemory, op1, "PaintType", 1, 2, 0, &template.PaintType)) < 0 ||
-	(code = dict_int_param(imemory, op1, "TilingType", 1, 3, 0, &template.TilingType)) < 0 ||
+	(code = dict_int_param(op1, "PaintType", 1, 2, 0, &template.PaintType)) < 0 ||
+	(code = dict_int_param(op1, "TilingType", 1, 3, 0, &template.TilingType)) < 0 ||
 	(code = dict_floats_param(imemory, op1, "BBox", 4, BBox, NULL)) < 0 ||
-	(code = dict_float_param(imemory, op1, "XStep", 0.0, &template.XStep)) != 0 ||
-	(code = dict_float_param(imemory, op1, "YStep", 0.0, &template.YStep)) != 0 ||
+	(code = dict_float_param(op1, "XStep", 0.0, &template.XStep)) != 0 ||
+	(code = dict_float_param(op1, "YStep", 0.0, &template.YStep)) != 0 ||
 	(code = dict_find_string(op1, "PaintProc", &pPaintProc)) <= 0
 	)
-	return_error(imemory, (code < 0 ? code : e_rangecheck));
-    check_proc(imemory, *pPaintProc);
+	return_error((code < 0 ? code : e_rangecheck));
+    check_proc(*pPaintProc);
     template.BBox.p.x = BBox[0];
     template.BBox.p.y = BBox[1];
     template.BBox.q.x = BBox[2];
@@ -131,29 +133,28 @@ zsetpatternspace(i_ctx_t *i_ctx_p)
     int code;
 
     if (!r_is_array(op))
-        return_error(imemory, e_typecheck);
-    check_read(imemory, *op);
+        return_error(e_typecheck);
+    check_read(*op);
     switch (r_size(op)) {
 	case 1:		/* no base space */
 	    cs.params.pattern.has_base_space = false;
 	    break;
 	default:
-	    return_error(imemory, e_rangecheck);
+	    return_error(e_rangecheck);
 	case 2:
 	    cs = *gs_currentcolorspace(igs);
 	    if (cs_num_components(&cs) < 0)	/* i.e., Pattern space */
-		return_error(imemory, e_rangecheck);
-	    /* We can't count on C compilers to recognize the aliasing */
-	    /* that would be involved in a direct assignment, so.... */
+		return_error(e_rangecheck);
 	    {
-		gs_paint_color_space cs_paint;
-
-		cs_paint = *(gs_paint_color_space *) & cs;
-		cs.params.pattern.base_space = cs_paint;
+		/* We can't count on C compilers to recognize the aliasing */
+		/* that would be involved in a direct assignment */
+		/* cs.params.pattern.base_space = *(gs_paint_color_space *)&cs; */
+		/* At least MSVC7 chocks with it. */
+		memmove(&cs.params.pattern.base_space, &cs, sizeof(gs_paint_color_space));
 	    }
 	    cs.params.pattern.has_base_space = true;
     }
-    gs_cspace_init(&cs, &gs_color_space_type_Pattern, imemory);
+    gs_cspace_init(&cs, &gs_color_space_type_Pattern, imemory, false);
     code = gs_setcolorspace(igs, &cs);
     if (code < 0) {
 	ref_stack_pop_to(&e_stack, edepth);
@@ -188,7 +189,7 @@ zPaintProc(const gs_client_color * pcc, gs_state * pgs)
     r_ptr(&gs_int_gstate(pgs)->remap_color_info,
 	  int_remap_color_info_t)->proc =
 	pattern_paint_prepare;
-    return_error(gs_state_memory(pgs), e_RemapColor);
+    return_error(e_RemapColor);
 }
 /* Prepare to run the PaintProc. */
 private int
@@ -215,7 +216,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
     if (internal_accum) {
 	pdev = gx_pattern_accum_alloc(imemory, "pattern_paint_prepare");
 	if (pdev == 0)
-	    return_error(imemory, e_VMerror);
+	    return_error(e_VMerror);
 	pdev->instance = pinst;
 	pdev->bitmap_memory = gstate_pattern_cache(pgs)->memory;
 	code = (*dev_proc(pdev, open_device)) ((gx_device *) pdev);

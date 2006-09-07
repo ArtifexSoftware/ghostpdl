@@ -1,14 +1,15 @@
-/* Portions Copyright (C) 2001, 2004 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Common structures for the filling algorithm and dropout prevention. */
@@ -71,13 +72,10 @@ struct active_line_s {
 #define DIR_UP 1
 #define DIR_HORIZONTAL 0	/* (these are handled specially) */
 #define DIR_DOWN (-1)
-    int curve_k;		/* # of subdivisions for curves,-1 for lines */
-    curve_cursor cursor;	/* cursor for curves, unused for lines */
-#if CURVED_TRAPEZOID_FILL
-    /* fixme : use an union {cursor, {fi, last}}, because they are used exclusively. */
+    bool monotonic_x;		/* "false" means "don't know"; only for scanline. */
+    bool monotonic_y;		/* "false" means "don't know"; only for scanline. */
     gx_flattened_iterator fi;
     bool more_flattened;
-#endif
 /*
  * "Pending" lines (not reached in the Y ordering yet) use next and prev
  * to order lines by increasing starting Y.  "Active" lines (being scanned)
@@ -88,6 +86,24 @@ struct active_line_s {
 /* Link together active_lines allocated individually */
     active_line *alloc_next;
 };
+
+typedef struct fill_options_s {
+    bool pseudo_rasterization;  /* See comment about "pseudo-rasterization". */
+    fixed ymin, ymax;
+    const gx_device_color * pdevc;
+    gs_logical_operation_t lop;
+    bool fill_direct;
+    fixed fixed_flat;
+    bool fill_by_trapezoids;
+    fixed adjust_left, adjust_right;
+    fixed adjust_below, adjust_above;
+    gx_device *dev;
+    const gs_fixed_rect * pbox;
+    bool is_spotan;
+    int rule;
+    dev_proc_fill_rectangle((*fill_rect));
+    dev_proc_fill_trapezoid((*fill_trap));
+} fill_options;
 
 /* Line list structure */
 #ifndef line_list_DEFINED
@@ -109,7 +125,9 @@ struct line_list_s {
     margin *free_margin_list; 
     int local_margin_alloc_count;
     int bbox_left, bbox_width;
-    bool pseudo_rasterization;  /* See comment about "pseudo-rasterization". */
+    int main_dir;
+    fixed y_break;
+    const fill_options * const fo;
     /* Put the arrays last so the scalars will have */
     /* small displacements. */
     /* Allocate a few active_lines locally */
@@ -125,24 +143,12 @@ struct line_list_s {
     margin local_margins[MAX_LOCAL_ACTIVE];
     section local_section0[MAX_LOCAL_SECTION];
     section local_section1[MAX_LOCAL_SECTION];
-    const gx_device_color * pdevc;
-    gs_logical_operation_t lop;
-    bool fill_direct;
-    fixed fixed_flat;
-    bool fill_by_trapezoids;
-    fixed adjust_below, adjust_above;
-    fixed ymin, ymax;
-#if CURVED_TRAPEZOID_FILL
-    int main_dir;
-#endif
 };
 
-#define LOOP_FILL_RECTANGLE(x, y, w, h)\
-  gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop)
-#define LOOP_FILL_RECTANGLE_DIRECT(x, y, w, h)\
-  (fill_direct ?\
-   (*fill_rect)(dev, x, y, w, h, pdevc->colors.pure) :\
-   gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop))
+#define LOOP_FILL_RECTANGLE_DIRECT(fo, x, y, w, h)\
+  (/*fo->fill_direct*/FILL_DIRECT ?\
+   (fo)->fill_rect((fo)->dev, x, y, w, h, (fo)->pdevc->colors.pure) :\
+   gx_fill_rectangle_device_rop(x, y, w, h, (fo)->pdevc, (fo)->dev, (fo)->lop))
 
 /* ---------------- Statistics ---------------- */
 
@@ -165,6 +171,6 @@ extern stats_fill_t stats_fill;
 #  define INCR_BY(x,n) DO_NOTHING
 #endif
 
-#endif /* gxfdrop_INCLUDED */
+#endif /* gxfill_INCLUDED */
 
 

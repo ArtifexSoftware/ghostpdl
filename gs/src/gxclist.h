@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Command list definitions for Ghostscript. */
 /* Requires gxdevice.h and gxdevmem.h */
 
@@ -162,6 +163,7 @@ typedef struct gx_clist_state_s gx_clist_state;
 	uint data_size;			/* size of buffer */\
 	gx_band_params_t band_params;	/* band buffering parameters */\
 	bool do_not_open_or_close_bandfiles;	/* if true, do not open/close bandfiles */\
+	bool page_uses_transparency;	/* if true then page uses PDF 1.4 transparency */\
 		/* Following are used for both writing and reading. */\
 	gx_bits_cache_chunk chunk;	/* the only chunk of bits */\
 	gx_bits_cache bits;\
@@ -276,7 +278,7 @@ extern_st(st_device_clist);
   (st_device_forward_max_ptrs + st_imager_state_num_ptrs + 1)
 
 /* setup before opening clist device */
-#define clist_init_params(xclist, xdata, xdata_size, xtarget, xbuf_procs, xband_params, xexternal, xmemory, xfree_bandlist, xdisable)\
+#define clist_init_params(xclist, xdata, xdata_size, xtarget, xbuf_procs, xband_params, xexternal, xmemory, xfree_bandlist, xdisable, pageusestransparency)\
     BEGIN\
 	(xclist)->common.data = (xdata);\
 	(xclist)->common.data_size = (xdata_size);\
@@ -287,6 +289,7 @@ extern_st(st_device_clist);
 	(xclist)->common.bandlist_memory = (xmemory);\
 	(xclist)->writer.free_up_bandlist_memory = (xfree_bandlist);\
 	(xclist)->writer.disable_mask = (xdisable);\
+	(xclist)->writer.page_uses_transparency = (pageusestransparency);\
     END
 
 /* Determine whether this clist device is able to recover VMerrors */
@@ -306,7 +309,7 @@ int clist_close_output_file(gx_device *dev);
  * Close and delete the contents of the band files associated with a
  * page_info structure (a page that has been separated from the device).
  */
-int clist_close_page_info(const gs_memory_t *mem, gx_band_page_info_t *ppi);
+int clist_close_page_info(gx_band_page_info_t *ppi);
 
 /*
  * Compute the colors-used information in the page_info structure from the

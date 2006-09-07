@@ -1,16 +1,16 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
-
-# $RCSfile$ $Revision$
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
 # makefile for Microsoft Visual C++ 4.1 or later, Windows NT or Windows 95 LIBRARY.
 #
 # All configurable options are surrounded by !ifndef/!endif to allow 
@@ -106,6 +106,9 @@ BINDIR=.\bin
 !endif
 !ifndef GLSRCDIR
 GLSRCDIR=.\src
+!ifndef PSRESDIR
+PSRESDIR=.\Resource
+!endif
 !endif
 !ifndef GLGENDIR
 GLGENDIR=.\obj
@@ -136,7 +139,7 @@ JVERSION=6
 
 !ifndef PSRCDIR
 PSRCDIR=libpng
-PVERSION=10205
+PVERSION=10208
 !endif
 
 # Define the directory where the zlib sources are stored.
@@ -146,11 +149,29 @@ PVERSION=10205
 ZSRCDIR=zlib
 !endif
 
-# Define the jbig2dec library source location.
+# Define the jbig2 library and source location.
 # See jbig2.mak for more information.
+
+!ifndef JBIG2_LIB
+JBIG2_LIB=jbig2dec
+!endif
 
 !ifndef JBIG2SRCDIR
 JBIG2SRCDIR=jbig2dec
+!endif
+
+# Define the jasper library source location.
+# See jasper.mak for more information.
+
+!ifndef JPX_LIB
+JPX_LIB=jasper
+!endif
+
+# Alternatively, you can build a separate DLL
+# and define SHARE_JPX=1 in src/winlib.mak
+
+!ifndef JPXSRCDIR
+JPXSRCDIR=jasper
 !endif
 
 # Define the directory where the icclib source are stored.
@@ -219,6 +240,54 @@ COMPBASE=$(DEVSTUDIO)\VC98
 SHAREDBASE=$(DEVSTUDIO)\Common\MSDev98
 !endif
 !endif
+
+!if $(MSVC_VERSION) == 7
+! ifndef DEVSTUDIO
+!if $(MSVC_MINOR_VERSION) == 0
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio .NET
+!else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio .NET 2003
+!endif
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+COMPBASE=$(DEVSTUDIO)\Vc7
+SHAREDBASE=$(DEVSTUDIO)\Vc7
+!ifdef WIN64
+# Windows Server 2003 DDK is needed for the 64-bit compiler
+# but it won't install on Windows XP 64-bit.
+DDKBASE=c:\winddk\3790
+COMPDIR64=$(DDKBASE)\bin\win64\x86\amd64
+LINKLIBPATH=/LIBPATH:"$(DDKBASE)\lib\wnet\amd64"
+INCDIR64A=$(DDKBASE)\inc\wnet
+INCDIR64B=$(DDKBASE)\inc\crt
+!endif
+!endif
+!endif
+
+!if $(MSVC_VERSION) == 8
+! ifndef DEVSTUDIO
+!ifdef WIN64
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 8
+!else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 8
+!endif
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC
+!ifdef WIN64
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\AMD64"
+!endif
+!endif
+!endif
+
 
 # Some environments don't want to specify the path names for the tools at all.
 # Typical definitions for such an environment would be:
@@ -371,6 +440,10 @@ SYNC=winsync
 FEATURE_DEVS=$(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev $(GLD)imasklib.dev $(GLD)patlib.dev $(GLD)htxlib.dev $(GLD)roplib.dev $(GLD)devcmap.dev $(GLD)bbox.dev $(GLD)pipe.dev
 !endif
 
+# The list of resources to be included in the %rom% file system.
+# This is in the top makefile since the file descriptors are platform specific
+
+
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
@@ -386,8 +459,7 @@ BAND_LIST_STORAGE=file
 !endif
 
 # Choose which compression method to use when storing band lists in memory.
-# The choices are 'lzw' or 'zlib'.  lzw is not recommended, because the
-# LZW-compatible code in Ghostscript doesn't actually compress its input.
+# The choices are 'lzw' or 'zlib'.
 
 !ifndef BAND_LIST_COMPRESSOR
 BAND_LIST_COMPRESSOR=zlib
@@ -483,7 +555,7 @@ $(GLOBJ)gp_mslib.$(OBJ): $(GLSRC)gp_mslib.c $(AK)
 mslib32__=$(GLOBJ)gp_mslib.$(OBJ)
 
 $(GLGEN)mslib32_.dev: $(mslib32__) $(ECHOGS_XE) $(GLGEN)mswin32_.dev
-        $(SETMOD) $(GLGEN)mslib32_ $(mslib32__)
+	$(SETMOD) $(GLGEN)mslib32_ $(mslib32__)
 	$(ADDMOD) $(GLGEN)mslib32_ -include $(GLGEN)mswin32_.dev
 
 # ----------------------------- Main program ------------------------------ #
@@ -496,6 +568,6 @@ $(GS_XE):  $(GS_ALL) $(DEVS_ALL) $(LIB_ONLY) $(LIBCTR)
 	echo $(GLOBJ)gscdefs.obj >> $(GLGENDIR)\gslib32.tr
 	echo  /SUBSYSTEM:CONSOLE > $(GLGENDIR)\gslib32.rsp
 	echo  /OUT:$(GS_XE) >> $(GLGENDIR)\gslib32.rsp
-        $(LINK) $(LCT) @$(GLGENDIR)\gslib32.rsp $(GLOBJ)gslib @$(GLGENDIR)\gslib32.tr @$(LIBCTR) $(INTASM) @$(GLGENDIR)\lib.tr
+	$(LINK) $(LCT) @$(GLGENDIR)\gslib32.rsp $(GLOBJ)gslib @$(GLGENDIR)\gslib32.tr @$(LIBCTR) $(INTASM)
 	-del $(GLGENDIR)\gslib32.rsp
 	-del $(GLGENDIR)\gslib32.tr

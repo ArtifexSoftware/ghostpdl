@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Common code for ImageType 1 and 4 initialization */
 #include "gx.h"
 #include "math_.h"
@@ -125,30 +126,30 @@ gx_image_enum_alloc(const gs_image_common_t * pic,
     gx_image_enum *penum;
 
     if (width < 0 || height < 0)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     switch (pim->format) {
     case gs_image_format_chunky:
     case gs_image_format_component_planar:
 	switch (bpc) {
-	case 1: case 2: case 4: case 8: case 12: break;
-	default: return_error(mem, gs_error_rangecheck);
+	case 1: case 2: case 4: case 8: case 12: case 16: break;
+	default: return_error(gs_error_rangecheck);
 	}
 	break;
     case gs_image_format_bit_planar:
 	if (bpc < 1 || bpc > 8)
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
     }
     if (prect) {
 	if (prect->p.x < 0 || prect->p.y < 0 ||
 	    prect->q.x < prect->p.x || prect->q.y < prect->p.y ||
 	    prect->q.x > width || prect->q.y > height
 	    )
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
     }
     penum = gs_alloc_struct(mem, gx_image_enum, &st_gx_image_enum,
 			    "gx_default_begin_image");
     if (penum == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     if (prect) {
 	penum->rect.x = prect->p.x;
 	penum->rect.y = prect->p.y;
@@ -160,9 +161,9 @@ gx_image_enum_alloc(const gs_image_common_t * pic,
     }
 #ifdef DEBUG
     if (gs_debug_c('b')) {
-	dlprintf2(mem, "[b]Image: w=%d h=%d", width, height);
+	dlprintf2("[b]Image: w=%d h=%d", width, height);
 	if (prect)
-	    dprintf4(mem, " ((%d,%d),(%d,%d))",
+	    dprintf4(" ((%d,%d),(%d,%d))",
 		     prect->p.x, prect->p.y, prect->q.x, prect->q.y);
     }
 #endif
@@ -206,16 +207,16 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 
     if (pmat == 0)
 	pmat = &ctm_only(pis);
-    if ((code = gs_matrix_invert(mem, &pim->ImageMatrix, &mat)) < 0 ||
+    if ((code = gs_matrix_invert(&pim->ImageMatrix, &mat)) < 0 ||
 	(code = gs_matrix_multiply(&mat, pmat, &mat)) < 0
 	) {
 	gs_free_object(mem, penum, "gx_default_begin_image");
 	return code;
     }
     penum->matrix = mat;
-    if_debug6(mem, 'b', " [%g %g %g %g %g %g]\n",
+    if_debug6('b', " [%g %g %g %g %g %g]\n",
 	      mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
-    /* following works for 1, 2, 4, 8, 12 */
+    /* following works for 1, 2, 4, 8, 12, 16 */
     index_bps = (bps < 8 ? bps >> 1 : (bps >> 2) + 1);
     mtx = float2fixed(mat.tx);
     mty = float2fixed(mat.ty);
@@ -250,7 +251,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     if (masked) {	/* This is imagemask. */
 	if (bps != 1 || pcs != NULL || penum->alpha || decode[0] == decode[1]) {
 	    gs_free_object(mem, penum, "gx_default_begin_image");
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	}
 	/* Initialize color entries 0 and 255. */
 	set_nonclient_dev_color(&penum->icolor0, gx_no_color_index);
@@ -269,7 +270,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	spp = cs_num_components(pcs);
 	if (spp < 0) {		/* Pattern not allowed */
 	    gs_free_object(mem, penum, "gx_default_begin_image");
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	}
 	if (penum->alpha)
 	    ++spp;
@@ -363,7 +364,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     buffer = gs_alloc_bytes(mem, bsize, "image buffer");
     if (buffer == 0) {
 	gs_free_object(mem, penum, "gx_default_begin_image");
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     }
     penum->bps = bps;
     penum->unpack_bps = bps;
@@ -384,7 +385,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	break;
     default:
 	/* No other cases are possible (checked by gx_image_enum_alloc). */
-	return_error(mem, gs_error_Fatal);
+	return_error(gs_error_Fatal);
     }
     penum->num_planes = nplanes;
     penum->spread = spread;
@@ -412,8 +413,8 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 #ifdef DEBUG
     if (gs_debug_c('*')) {
 	if (penum->use_rop)
-	    dprintf1(mem, "[%03x]", lop);
-	dprintf5(mem, "%c%d%c%dx%d ",
+	    dprintf1("[%03x]", lop);
+	dprintf5("%c%d%c%dx%d ",
 		 (masked ? (color_is_pure(pdcolor) ? 'm' : 'h') : 'i'),
 		 bps,
 		 (penum->posture == image_portrait ? ' ' :
@@ -485,10 +486,10 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 		mty = (((mty + diff) | fixed_half) & -fixed_half) - diff;
 	    }
 	}
-	if_debug5(mem, 'b', "[b]Image: %sspp=%d, bps=%d, mt=(%g,%g)\n",
+	if_debug5('b', "[b]Image: %sspp=%d, bps=%d, mt=(%g,%g)\n",
 		  (masked? "masked, " : ""), spp, bps,
 		  fixed2float(mtx), fixed2float(mty));
-	if_debug9(mem, 'b',
+	if_debug9('b',
 		  "[b]   cbox=(%g,%g),(%g,%g), obox=(%g,%g),(%g,%g), clip_image=0x%x\n",
 		  fixed2float(cbox.p.x), fixed2float(cbox.p.y),
 		  fixed2float(cbox.q.x), fixed2float(cbox.q.y),
@@ -528,23 +529,43 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->used.x = 0;
     penum->used.y = 0;
     {
-	static const sample_unpack_proc_t procs[4] = {
-	    sample_unpack_1, sample_unpack_2,
-	    sample_unpack_4, sample_unpack_8
-	};
+	static sample_unpack_proc_t procs[2][6] = {
+	{   sample_unpack_1, sample_unpack_2,
+	    sample_unpack_4, sample_unpack_8,
+	    0, 0
+	}, 
+	{   sample_unpack_1_interleaved, sample_unpack_2_interleaved,
+	    sample_unpack_4_interleaved, sample_unpack_8_interleaved,
+	    0, 0
+	}};
+	int num_planes = penum->num_planes;
+	bool interleaved = (num_planes == 1 && penum->plane_depths[0] != penum->bps);
 	int i;
 
-	if (index_bps == 4) {
-	    if ((penum->unpack = sample_unpack_12_proc) == 0) {		/* 12-bit samples are not supported. */
+	procs[0][4] = procs[1][4] = sample_unpack_12_proc;
+	procs[0][5] = procs[1][5] = sample_unpack_16_proc;
+	if (interleaved) {
+	    int num_components = penum->plane_depths[0] / penum->bps;
+
+	    for (i = 1; i < num_components; i++) {
+		if (decode[0] != decode[i * 2 + 0] ||
+		    decode[1] != decode[i * 2 + 1])
+		    break;
+	    }
+	    if (i == num_components)
+		interleaved = false; /* Use single table. */
+	}
+	if (index_bps >= 4) {
+	    if ((penum->unpack = procs[interleaved][index_bps]) == 0) {		/* bps case not supported. */
 		gx_default_end_image(dev,
 				     (gx_image_enum_common_t *) penum,
 				     false);
-		return_error(mem, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	    }
 	} else {
-	    penum->unpack = procs[index_bps];
-	    if_debug1(mem, 'b', "[b]unpack=%d\n", bps);
+	    penum->unpack = procs[interleaved][index_bps];
 	}
+	if_debug1('b', "[b]unpack=%d\n", bps);
 	/* Set up pixel0 for image class procedures. */
 	penum->dda.pixel0 = penum->dda.strip;
 	for (i = 0; i < gx_image_class_table_count; ++i)
@@ -554,7 +575,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	    /* No available class can handle this image. */
 	    gx_default_end_image(dev, (gx_image_enum_common_t *) penum,
 				 false);
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	}
     }
     if (penum->clip_image && pcpath) {	/* Set up the clipping device. */
@@ -566,7 +587,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	    gx_default_end_image(dev,
 				 (gx_image_enum_common_t *) penum,
 				 false);
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	}
 	gx_make_clip_translate_device(cdev, gx_cpath_list(pcpath), 0, 0, mem);
 	gx_device_retain((gx_device *)cdev, true); /* will free explicitly */

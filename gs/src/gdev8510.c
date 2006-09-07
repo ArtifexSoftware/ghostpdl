@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$*/
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$*/
 /*
  * C.Itoh M8510 printer driver for ghostscript.
  *
@@ -42,9 +42,9 @@ private int
 m8510_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
 	int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
-	byte *in1 = (byte *) gs_malloc(8, line_size, "m8510_print_page(in1)");
-	byte *in2 = (byte *) gs_malloc(8, line_size, "m8510_print_page(in2)");
-	byte *out = (byte *) gs_malloc(8, line_size, "m8510_print_page(out)");
+	byte *in1 = (byte *) gs_malloc(pdev->memory, 8, line_size, "m8510_print_page(in1)");
+	byte *in2 = (byte *) gs_malloc(pdev->memory, 8, line_size, "m8510_print_page(in2)");
+	byte *out = (byte *) gs_malloc(pdev->memory, 8, line_size, "m8510_print_page(out)");
 	int lnum = 0;
 	int code = 0;
 	byte *inp, *in_end, *outp;
@@ -95,9 +95,9 @@ m8510_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	fflush(prn_stream);
 
 out:;
-	if (out) gs_free((char *) out, 8, line_size, "m8510_print_page(out)");
-	if (in2) gs_free((char *) in2, 8, line_size, "m8510_print_page(in2)");
-	if (in1) gs_free((char *) in1, 8, line_size, "m8510_print_page(in1)");
+	if (out) gs_free(pdev->memory, (char *) out, 8, line_size, "m8510_print_page(out)");
+	if (in2) gs_free(pdev->memory, (char *) in2, 8, line_size, "m8510_print_page(in2)");
+	if (in1) gs_free(pdev->memory, (char *) in1, 8, line_size, "m8510_print_page(in1)");
 
 	return code;
 }

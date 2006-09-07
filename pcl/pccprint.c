@@ -78,7 +78,7 @@ pccprint_do_registration(
 )
 {
     /* Register commands */
-    DEFINE_CLASS(pmem, '*')
+    DEFINE_CLASS('*')
     {
         'l', 'O',
 	PCL_COMMAND( "Logical Operation",

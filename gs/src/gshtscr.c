@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Screen (Type 1) halftone processing for Ghostscript library */
 #include "math_.h"
 #include "gx.h"
@@ -131,7 +132,7 @@ gs_gshtscr_init(gs_memory_t *mem)
 
 /* Compute the derived values of a halftone tile. */
 void
-gx_compute_cell_values(const gs_memory_t *mem, gx_ht_cell_params_t * phcp)
+gx_compute_cell_values(gx_ht_cell_params_t * phcp)
 {
     const int M = phcp->M, N = phcp->N, M1 = phcp->M1, N1 = phcp->N1;
     const uint m = any_abs(M), n = any_abs(N);
@@ -172,13 +173,13 @@ gx_compute_cell_values(const gs_memory_t *mem, gx_ht_cell_params_t * phcp)
         phcp->S = imod(-shift, phcp->W);
     } else
         phcp->S = 0;
-    if_debug12(mem, 'h', "[h]MNR=(%d,%d)/%d, M'N'R'=(%d,%d)/%d => C=%lu, D=%d, D'=%d, W=%u, W'=%u, S=%d\n",
+    if_debug12('h', "[h]MNR=(%d,%d)/%d, M'N'R'=(%d,%d)/%d => C=%lu, D=%d, D'=%d, W=%u, W'=%u, S=%d\n",
                M, N, phcp->R, M1, N1, phcp->R1,
                C, D, D1, phcp->W, phcp->W1, phcp->S);
 }
 
 /* Forward references */
-private int pick_cell_size(const gs_memory_t *mem, gs_screen_halftone * ph,
+private int pick_cell_size(gs_screen_halftone * ph,
      const gs_matrix * pmat, ulong max_size, uint min_levels, bool accurate,
 			   gx_ht_cell_params_t * phcp);
 
@@ -252,14 +253,14 @@ gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
     int code;
 
     if (phsp->frequency < 0.1)
-        return_error(mem, gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     gs_deviceinitialmatrix(gs_currentdevice(pgs), &imat);
-    code = pick_cell_size(mem, phsp, &imat, max_size,
+    code = pick_cell_size(phsp, &imat, max_size,
                           screen_min_screen_levels, accurate,
                           &porder->params);
     if (code < 0)
         return code;
-    gx_compute_cell_values(mem, &porder->params);
+    gx_compute_cell_values(&porder->params);
     porder->screen_params.matrix = imat;
     porder->screen_params.max_size = max_size;
     return gs_screen_order_alloc(porder, mem);
@@ -304,8 +305,7 @@ gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
 /* ph->frequency and ph->angle are input parameters; */
 /* the routine sets ph->actual_frequency and ph->actual_angle. */
 private int
-pick_cell_size(const gs_memory_t *mem, 
-	       gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
+pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
                uint min_levels, bool accurate, gx_ht_cell_params_t * phcp)
 {
     const bool landscape = (pmat->xy != 0.0 || pmat->yx != 0.0);
@@ -343,10 +343,9 @@ pick_cell_size(const gs_memory_t *mem,
         gs_matrix rmat;
 
         gs_make_rotation(a0 * reflection + rotation, &rmat);
-        gs_distance_transform(mem, 72.0 / f0, 0.0, &rmat, &uv0);
-        gs_distance_transform(mem, u0, v0, pmat, &uv0);
-        if_debug10(mem, 'h', 
-		   "[h]Requested: f=%g a=%g mat=[%g %g %g %g] max_size=%lu min_levels=%u =>\n     u=%g v=%g\n",
+        gs_distance_transform(72.0 / f0, 0.0, &rmat, &uv0);
+        gs_distance_transform(u0, v0, pmat, &uv0);
+        if_debug10('h', "[h]Requested: f=%g a=%g mat=[%g %g %g %g] max_size=%lu min_levels=%u =>\n     u=%g v=%g\n",
                    ph->frequency, ph->angle,
                    pmat->xx, pmat->xy, pmat->yx, pmat->yy,
                    max_size, min_levels, u0, v0);
@@ -355,7 +354,7 @@ pick_cell_size(const gs_memory_t *mem,
     /* Adjust u and v to reasonable values. */
 
     if (u0 == 0 && v0 == 0)
-        return_error(mem, gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     while ((fabs(u0) + fabs(v0)) * rt < 4)
         ++rt;
   try_size:
@@ -375,8 +374,8 @@ pick_cell_size(const gs_memory_t *mem,
 
                 p.M1 = (int)floor(p.M / T + 0.5);
                 p.N1 = (int)floor(p.N * T + 0.5);
-                gx_compute_cell_values(mem, &p);
-                if_debug3(mem, 'h', "[h]trying m=%d, n=%d, r=%d\n", p.M, p.N, rt);
+                gx_compute_cell_values(&p);
+                if_debug3('h', "[h]trying m=%d, n=%d, r=%d\n", p.M, p.N, rt);
                 wt = p.W;
                 if (wt >= max_short)
                     continue;
@@ -412,14 +411,14 @@ pick_cell_size(const gs_memory_t *mem,
                  */
                 a_err = a_diff;
 
-                if_debug5(mem, 'h', " ==> d=%d, wt=%ld, wt_size=%ld, f=%g, a=%g\n",
+                if_debug5('h', " ==> d=%d, wt=%ld, wt_size=%ld, f=%g, a=%g\n",
                           p.D, wt, bitmap_raster(wt) * wt, ft, at);
 
                 {
-                /*
+                    /*
 		     * Compute the error in position between ideal location.
 		     * and the current integer location.
-                 */
+		     */
 
 		    double error =
 			(fn0 - p.N) * (fn0 - p.N) + (fm0 - p.M) * (fm0 - p.M);
@@ -436,7 +435,7 @@ pick_cell_size(const gs_memory_t *mem,
                 *phcp = p;
                 f = ft, a = at;
                 better = true;
-                if_debug3(mem, 'h', "*** best wt_size=%ld, f_diff=%g, a_diff=%g\n",
+                if_debug3('h', "*** best wt_size=%ld, f_diff=%g, a_diff=%g\n",
                           wt_size, f_diff, a_diff);
                 /*
                  * We want a maximum relative frequency error of 1% and a
@@ -460,12 +459,12 @@ pick_cell_size(const gs_memory_t *mem,
                                  * take what we've got; if R = 1, give up.
                                  */
         if (rt == 1)
-            return_error(mem, gs_error_rangecheck);
+            return_error(gs_error_rangecheck);
     }
 
     /* Deliver the results. */
   done:
-    if_debug5(mem, 'h', "[h]Chosen: f=%g a=%g M=%d N=%d R=%d\n",
+    if_debug5('h', "[h]Chosen: f=%g a=%g M=%d N=%d R=%d\n",
               f, a, phcp->M, phcp->N, phcp->R);
     ph->actual_frequency = f;
     ph->actual_angle = a;
@@ -521,9 +520,9 @@ gs_screen_enum_init_memory(gs_screen_enum * penum, const gx_ht_order * porder,
 	    penum->mat.yy = Q * (R1 * M);
 	    penum->mat.tx = -1.0;
 	    penum->mat.ty = -1.0;
-	    gs_matrix_invert(mem, &penum->mat, &penum->mat_inv);
+	    gs_matrix_invert(&penum->mat, &penum->mat_inv);
 	}
-	if_debug7(mem, 'h', "[h]Screen: (%dx%d)/%d [%f %f %f %f]\n",
+	if_debug7('h', "[h]Screen: (%dx%d)/%d [%f %f %f %f]\n",
 		  porder->width, porder->height, porder->params.R,
 		  penum->mat.xx, penum->mat.xy,
 		  penum->mat.yx, penum->mat.yy);
@@ -533,7 +532,7 @@ gs_screen_enum_init_memory(gs_screen_enum * penum, const gx_ht_order * porder,
 
 /* Report current point for sampling */
 int
-gs_screen_currentpoint(const gs_memory_t *mem, gs_screen_enum * penum, gs_point * ppt)
+gs_screen_currentpoint(gs_screen_enum * penum, gs_point * ppt)
 {
     gs_point pt;
     int code;
@@ -543,26 +542,23 @@ gs_screen_currentpoint(const gs_memory_t *mem, gs_screen_enum * penum, gs_point 
     if (penum->order.wse) {
 	int code;
 	code = gs_wts_screen_enum_currentpoint(penum->order.wse, ppt);
-	if (code > 0) {
-	    wts_sort_blue(mem, penum->order.wse);
-	}
 	return code;
     }
 
     if (penum->y >= penum->strip) {     /* all done */
-        gx_ht_construct_spot_order(mem, &penum->order);
+        gx_ht_construct_spot_order(&penum->order);
         return 1;
     }
     /* We displace the sampled coordinates very slightly */
     /* in order to reduce the likely number of points */
     /* for which the spot function returns the same value. */
-    if ((code = gs_point_transform(mem, penum->x + 0.501, penum->y + 0.498, &penum->mat, &pt)) < 0)
+    if ((code = gs_point_transform(penum->x + 0.501, penum->y + 0.498, &penum->mat, &pt)) < 0)
         return code;
 
     /* find the spot center in device coords : */
     sx = ceil( pt.x / 2 ) * 2;
     sy = ceil( pt.y / 2 ) * 2;
-    if ((code = gs_point_transform(mem, sx, sy, &penum->mat_inv, &spot_center)) < 0)
+    if ((code = gs_point_transform(sx, sy, &penum->mat_inv, &spot_center)) < 0)
         return code;
 
     /* shift the spot center to nearest pixel center : */
@@ -570,7 +566,7 @@ gs_screen_currentpoint(const gs_memory_t *mem, gs_screen_enum * penum, gs_point 
     spot_center.y = floor(spot_center.y) + 0.5;
 
     /* compute the spot function arguments for the shifted spot : */
-    if ((code = gs_distance_transform(mem, penum->x - spot_center.x + 0.501, 
+    if ((code = gs_distance_transform(penum->x - spot_center.x + 0.501, 
                                       penum->y - spot_center.y + 0.498,
                                       &penum->mat, &pt)) < 0)
         return code;
@@ -591,24 +587,24 @@ gs_screen_currentpoint(const gs_memory_t *mem, gs_screen_enum * penum, gs_point 
 
 /* Record next halftone sample */
 int
-gs_screen_next(const gs_memory_t *mem, gs_screen_enum * penum, floatp value)
+gs_screen_next(gs_screen_enum * penum, floatp value)
 {
     if (penum->order.wse) {
-	return gs_wts_screen_enum_next (mem, penum->order.wse, value);
+	return gs_wts_screen_enum_next (penum->order.wse, value);
     } else {
 	ht_sample_t sample;
 	int width = penum->order.width;
 	gx_ht_bit *bits = (gx_ht_bit *)penum->order.bit_data;
 
 	if (value < -1.0 || value > 1.0)
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	sample = (ht_sample_t) ((value + 1) * max_ht_sample);
 #ifdef DEBUG
 	if (gs_debug_c('H')) {
 	    gs_point pt;
 
-	    gs_screen_currentpoint(mem, penum, &pt);
-	    dlprintf6(mem, "[H]sample x=%d y=%d (%f,%f): %f -> %u\n",
+	    gs_screen_currentpoint(penum, &pt);
+	    dlprintf6("[H]sample x=%d y=%d (%f,%f): %f -> %u\n",
 		      penum->x, penum->y, pt.x, pt.y, value, sample);
 	}
 #endif

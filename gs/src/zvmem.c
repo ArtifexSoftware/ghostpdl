@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* "Virtual memory" operators */
 #include "ghost.h"
 #include "gsstruct.h"
@@ -72,13 +73,13 @@ zsave(i_ctx_t *i_ctx_p)
     vmsave = ialloc_struct(vm_save_t, &st_vm_save, "zsave");
     ialloc_set_space(idmemory, space);
     if (vmsave == 0)
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     sid = alloc_save_state(idmemory, vmsave);
     if (sid == 0) {
 	ifree_object(vmsave, "zsave");
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     }
-    if_debug2(imemory, 'u', "[u]vmsave 0x%lx, id = %lu\n",
+    if_debug2('u', "[u]vmsave 0x%lx, id = %lu\n",
 	      (ulong) vmsave, (ulong) sid);
     code = gs_gsave_for_save(igs, &prev);
     if (code < 0)
@@ -87,7 +88,7 @@ zsave(i_ctx_t *i_ctx_p)
     if (code < 0)
 	return code;
     vmsave->gsave = prev;
-    push(imemory, 1);
+    push(1);
     make_tav(op, t_save, 0, saveid, sid);
     if (I_VALIDATE_AFTER_SAVE)
 	ivalidate_clean_spaces(i_ctx_p);
@@ -109,7 +110,7 @@ zrestore(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if_debug2(imemory, 'u', "[u]vmrestore 0x%lx, id = %lu\n",
+    if_debug2('u', "[u]vmrestore 0x%lx, id = %lu\n",
 	      (ulong) alloc_save_client_data(asave),
 	      (ulong) op->value.saveid);
     if (I_VALIDATE_BEFORE_RESTORE)
@@ -148,7 +149,10 @@ zrestore(i_ctx_t *i_ctx_p)
 	 */
 	vmsave->gsave = 0;
 	/* Now it's safe to restore the state of memory. */
-	last = alloc_restore_state_step(asave);
+	code = alloc_restore_state_step(asave);
+	if (code < 0)
+	    return code;
+	last = code;
     }
     while (!last);
     {
@@ -178,14 +182,14 @@ restore_check_operand(os_ptr op, alloc_save_t ** pasave,
     ulong sid;
     alloc_save_t *asave;
 
-    check_type((const gs_memory_t *)idmem->current, *op, t_save);
+    check_type(*op, t_save);
     vmsave = r_ptr(op, vm_save_t);
     if (vmsave == 0)		/* invalidated save */
-	return_error((const gs_memory_t *)idmem->current, e_invalidrestore);
+	return_error(e_invalidrestore);
     sid = op->value.saveid;
     asave = alloc_find_save(idmem, sid);
     if (asave == 0)
-	return_error((const gs_memory_t *)idmem->current, e_invalidrestore);
+	return_error(e_invalidrestore);
     *pasave = asave;
     return 0;
 }
@@ -229,7 +233,7 @@ restore_check_stack(const ref_stack_t * pstack, const alloc_save_t * asave,
 		    /* Names are special because of how they are allocated. */
 		    if (alloc_name_is_since_save((const gs_memory_t *)pstack->memory,
 						 stkp, asave))
-			return_error((const gs_memory_t *)pstack->memory, e_invalidrestore);
+			return_error(e_invalidrestore);
 		    continue;
 		case t_string:
 		    /* Don't check empty executable strings */
@@ -256,7 +260,7 @@ restore_check_stack(const ref_stack_t * pstack, const alloc_save_t * asave,
 		    continue;
 	    }
 	    if (alloc_is_since_save(ptr, asave))
-		return_error((const gs_memory_t *)pstack->memory, e_invalidrestore);
+		return_error(e_invalidrestore);
 	}
     } while (ref_stack_enum_next(&rsenum));
     return 0;		/* OK */
@@ -333,7 +337,7 @@ zvmstatus(i_ctx_t *i_ctx_p)
 	mstat.used += sstat.used;
     }
     gs_memory_status(imemory->non_gc_memory, &dstat);
-    push(imemory, 3);
+    push(3);
     make_int(op - 2, imemory_save_level(iimemory_local));
     make_int(op - 1, mstat.used);
     make_int(op, mstat.allocated + dstat.allocated - dstat.used);

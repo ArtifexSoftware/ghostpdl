@@ -1,10 +1,15 @@
-/* Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Font copying for high-level output */
@@ -105,6 +110,8 @@ int gs_copy_glyph(gs_font *font, gs_glyph glyph, gs_font *copied);
  * return an invalidaccess error rather than 1.  If options includes
  * COPY_GLYPH_NO_NEW, then if the top-level glyph has *not* already been
  * copied, return an undefined error rather than 0.
+ *
+ * Returns an error if a glyph is added after calling copied_order_font.
  */
 #define COPY_GLYPH_NO_OLD 1
 #define COPY_GLYPH_NO_NEW 2
@@ -147,6 +154,24 @@ int gs_copy_font_complete(gs_font *font, gs_font *copied);
  * 0 (incompatible), 1 (compatible), < 0 (error)
  */
 int gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont, 
-		    gs_glyph *glyphs, int num_glyphs, bool check_hinting);
+		    gs_glyph *glyphs, int num_glyphs, int glyphs_step, 
+		    bool check_hinting);
+
+/* Extension glyphs may be added to a font to resolve 
+   glyph name conflicts while conwerting a PDF Widths into Metrics.
+   This function drops them before writing out an embedded font. */
+int copied_drop_extension_glyphs(gs_font *cfont);
+
+/* Order font to avoid a serialization indeterminism. 
+   An indeterminizm can happen due to PS name indices 
+   depend on memory allocation.
+   Must not add glyphs after calling this function.
+   After calling this function, enumerate_glyph 
+   enumerates glyphs in the alphabetic order of glyph names.
+   Currently works for Type 1,2 only,
+   because other fonts type don't use PS name indices
+   when enumerate glyphs.
+*/
+int copied_order_font(gs_font *font);
 
 #endif /* gxfcopy_INCLUDED */

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* ICCBased color operators */
 
 #include "math_.h"
@@ -78,8 +79,8 @@ zseticcspace(i_ctx_t * i_ctx_p)
 
     /* verify the DataSource entry */
     if (dict_find_string(op, "DataSource", &pstrmval) <= 0)
-        return_error(imemory, e_undefined);
-    check_read_file(imemory, s, pstrmval);
+        return_error(e_undefined);
+    check_read_file(s, pstrmval);
 
     /*
      * Verify that the current color space can be a alternative color space.
@@ -89,7 +90,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
     palt_cs = gs_currentcolorspace(igs);
     if ( !palt_cs->type->can_be_alt_space                                ||
          gs_color_space_get_index(palt_cs) == gs_color_space_index_CIEICC  )
-        return_error(imemory, e_rangecheck);
+        return_error(e_rangecheck);
 
     /*
      * Fetch and verify the Range array.
@@ -116,7 +117,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
     for (i = 0; i < 2 * ncomps && range_buff[i + 1] >= range_buff[i]; i += 2)
         ;
     if (i != 2 * ncomps)
-        return_error(imemory, e_rangecheck);
+        return_error(e_rangecheck);
 
     /* build the color space object */
     code = gs_cspace_build_CIEICC(&pcs, NULL, gs_state_memory(igs));
@@ -142,7 +143,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
      */
     gx_increment_cspace_count(palt_cs);
 
-    code = gx_load_icc_profile(s->memory, picc_info);
+    code = gx_load_icc_profile(picc_info);
     if (code < 0)
 	return code;
 

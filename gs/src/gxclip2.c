@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Mask clipping for patterns */
 #include "memory_.h"
 #include "gx.h"
@@ -88,7 +89,11 @@ private const gx_device_tile_clip gs_tile_clip_device =
   gx_forward_decode_color,
   gx_forward_pattern_manage,
   gx_forward_fill_rectangle_hl_color,
-  gx_forward_include_color_space
+  gx_forward_include_color_space,
+  gx_forward_fill_linear_color_scanline,
+  gx_forward_fill_linear_color_trapezoid,
+  gx_forward_fill_linear_color_triangle,
+  gx_forward_update_spot_equivalent_colors
  }
 };
 
@@ -204,7 +209,7 @@ tile_clip_copy_mono(gx_device * dev,
       tp++, tbit = 0x80;\
     tx++;\
   } END
-#define FOR_RUNS(mem, data_row, tx1, tx, ty)\
+#define FOR_RUNS(data_row, tx1, tx, ty)\
 	const byte *data_row = data;\
 	int cy = (y + cdev->phase.y) % cdev->tiles.rep_height;\
 	const byte *tile_row = cdev->tiles.data + cy * cdev->tiles.raster;\
@@ -229,7 +234,7 @@ tile_clip_copy_mono(gx_device * dev,
 	    do {\
 	      t_next(tx);\
 	    } while ( tx < x + w && (*tp & tbit) != 0 );\
-	    if_debug3(mem, 'T', "[T]run x=(%d,%d), y=%d\n", tx1, tx, ty);
+	    if_debug3('T', "[T]run x=(%d,%d), y=%d\n", tx1, tx, ty);
 /* (body goes here) */
 #define END_FOR_RUNS()\
 	  }\
@@ -247,7 +252,7 @@ tile_clip_copy_color(gx_device * dev,
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
-    FOR_RUNS(dev->memory, data_row, txrun, tx, ty) {
+    FOR_RUNS(data_row, txrun, tx, ty) {
 	/* Copy the run. */
 	int code = (*dev_proc(cdev->target, copy_color))
 	(cdev->target, data_row, sourcex + txrun - x, raster,
@@ -268,7 +273,7 @@ tile_clip_copy_alpha(gx_device * dev,
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
-    FOR_RUNS(dev->memory, data_row, txrun, tx, ty) {
+    FOR_RUNS(data_row, txrun, tx, ty) {
 	/* Copy the run. */
 	int code = (*dev_proc(cdev->target, copy_alpha))
 	(cdev->target, data_row, sourcex + txrun - x, raster,
@@ -292,7 +297,7 @@ tile_clip_strip_copy_rop(gx_device * dev,
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
-    FOR_RUNS(dev->memory, data_row, txrun, tx, ty) {
+    FOR_RUNS(data_row, txrun, tx, ty) {
 	/* Copy the run. */
 	int code = (*dev_proc(cdev->target, strip_copy_rop))
 	(cdev->target, data_row, sourcex + txrun - x, raster,

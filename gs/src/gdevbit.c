@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* "Plain bits" devices to measure rendering time. */
 #include "math_.h"
 #include "gdevprn.h"
@@ -456,7 +456,7 @@ bit_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
     int bpc = dev->color_info.depth / 4;
     int drop = sizeof(gx_color_value) * 8 - bpc;
     gx_color_index color =
-    ((((((cv[0] >> drop) << bpc) +
+    (((((((gx_color_index) cv[0] >> drop) << bpc) +
 	(cv[1] >> drop)) << bpc) +
       (cv[2] >> drop)) << bpc) +
     (cv[3] >> drop);
@@ -515,11 +515,11 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
     int v;
     int ecode = 0;
     int code;
-    static const byte depths[4][8] = {
-	{1, 2, 0, 4, 8, 0, 0, 8},
+    static const byte depths[4][16] = {
+	{1, 2, 0, 4, 8, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 16},
 	{0},
-	{4, 8, 0, 16, 16, 0, 0, 24},
-	{4, 8, 0, 16, 32, 0, 0, 32}
+	{4, 8, 0, 16, 16, 0, 0, 24, 0, 0, 0, 40, 0, 0, 0, 48},
+	{4, 8, 0, 16, 32, 0, 0, 32, 0, 0, 0, 48, 0, 0, 0, 64}
     };
     const char *vname;
 
@@ -543,6 +543,8 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 		case  16: bpc = 4; break;
 		case  32: bpc = 5; break;
 		case 256: bpc = 8; break;
+		case 4096: bpc = 12; break;
+		case 65536: bpc = 16; break;
 		default:
 		    param_signal_error(plist, vname,
 				       ecode = gs_error_rangecheck);
@@ -619,7 +621,7 @@ bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int lnum = 0, bottom = pdev->height;
 
     if (in == 0)
-	return_error(pdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     for (; lnum < bottom; ++lnum) {
 	gdev_prn_get_bits(pdev, lnum, in, &data);
 	if (!nul)

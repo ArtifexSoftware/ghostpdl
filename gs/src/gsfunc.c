@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generic Function support */
 #include "memory_.h"
 #include "gx.h"
@@ -35,11 +36,11 @@ alloc_function_array(uint count, gs_function_t *** pFunctions,
     gs_function_t **ptr;
 
     if (count == 0)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     ptr = gs_alloc_struct_array(mem, count, gs_function_t *,
 				&st_function_ptr_element, "Functions");
     if (ptr == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     memset(ptr, 0, sizeof(*ptr) * count);
     *pFunctions = ptr;
     return 0;
@@ -64,37 +65,20 @@ fn_common_free(gs_function_t * pfn, bool free_params, gs_memory_t * mem)
 
 /* Check the values of m, n, Domain, and (if supplied) Range. */
 int
-fn_check_mnDR(const gs_memory_t *mem, const gs_function_params_t * params, int m, int n)
+fn_check_mnDR(const gs_function_params_t * params, int m, int n)
 {
     int i;
 
     if (m <= 0 || n <= 0)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     for (i = 0; i < m; ++i)
 	if (params->Domain[2 * i] > params->Domain[2 * i + 1])
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
     if (params->Range != 0)
 	for (i = 0; i < n; ++i)
 	    if (params->Range[2 * i] > params->Range[2 * i + 1])
-		return_error(mem, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
     return 0;
-}
-
-/* Get the monotonicity of a function over its Domain. */
-int
-fn_domain_is_monotonic(const gs_memory_t *mem, const gs_function_t *pfn, gs_function_effort_t effort)
-{
-#define MAX_M 16		/* arbitrary */
-    float lower[MAX_M], upper[MAX_M];
-    int i;
-
-    if (pfn->params.m > MAX_M)
-	return gs_error_undefined;
-    for (i = 0; i < pfn->params.m; ++i) {
-	lower[i] = pfn->params.Domain[2 * i];
-	upper[i] = pfn->params.Domain[2 * i + 1];
-    }
-    return gs_function_is_monotonic(mem, pfn, lower, upper, effort);
 }
 
 /* Return default function information. */
@@ -162,7 +146,7 @@ fn_scale_pairs(const float **ppvalues, const float *pvalues, int npairs,
 
 	*ppvalues = out;
 	if (out == 0)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	if (pranges) {
 	    /* Allocate and compute scaled ranges. */
 	    int i;
@@ -210,9 +194,6 @@ fn_common_serialize(const gs_function_t * pfn, stream *s)
 
     if (code < 0)
 	return code;
-    code = sputs(s, (const byte *)&pfn->head.is_monotonic, sizeof(pfn->head.is_monotonic), &n);
-    if (code < 0)
-	return code;
     code = sputs(s, (const byte *)&p->m, sizeof(p->m), &n);
     if (code < 0)
 	return code;
@@ -223,7 +204,7 @@ fn_common_serialize(const gs_function_t * pfn, stream *s)
     if (code < 0)
 	return code;
     if (p->Range == NULL && p->n * 2 > count_of(dummy))
-	return_error(s->memory, gs_error_unregistered); /* Unimplemented. */
+	return_error(gs_error_unregistered); /* Unimplemented. */
     return sputs(s, (const byte *)(p->Range != NULL ? &p->Range[0] : dummy), 
 	    sizeof(p->Range[0]) * p->n * 2, &n);
 }

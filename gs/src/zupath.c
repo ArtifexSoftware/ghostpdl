@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Operators related to user paths */
 #include "ghost.h"
 #include "oper.h"
@@ -148,7 +149,7 @@ in_path(os_ptr oppath, i_ctx_t *i_ctx_p, gx_device * phdev)
 
     if (code < 0)
 	return code;
-    code = num_params(imemory, oppath, 2, uxy);
+    code = num_params(oppath, 2, uxy);
     if (code >= 0) {		/* Aperture is a single pixel. */
 	gs_point dxy;
 	gs_fixed_rect fr;
@@ -160,6 +161,9 @@ in_path(os_ptr oppath, i_ctx_t *i_ctx_p, gx_device * phdev)
 	fr.q.y = fr.p.y + fixed_1;
 	code = gx_clip_to_rectangle(igs, &fr);
 	npop = 2;
+    } else if (code == e_stackunderflow) {
+	/* If 0 elements, definitely a stackunderflow; otherwise, */
+	/* only 1 number, also a stackunderflow. */
     } else {			/* Aperture is a user path. */
 	/* We have to set the clipping path without disturbing */
 	/* the current path. */
@@ -237,7 +241,7 @@ in_upath(i_ctx_t *i_ctx_p, gx_device * phdev)
     if (code < 0)
 	return code;
     if ((code = upath_append(op, i_ctx_p)) < 0 ||
-	(npop = in_path(op - 1, i_ctx_p, phdev)) < 0
+	(code = npop = in_path(op - 1, i_ctx_p, phdev)) < 0
 	) {
 	gs_grestore(igs);
 	return code;
@@ -271,10 +275,35 @@ typedef enum {
     upath_op_ucache = 11
 } upath_op;
 
+/* User path interpretation states */
+typedef enum {
+    UPS_INITIAL = 1,
+    UPS_UCACHE = 2,
+    UPS_PATH = 4
+} upath_state;
+
+typedef struct up_data_s {
+    byte num_args;
+    byte states_before;
+    byte state_after;
+} up_data_t;
+#define UP_DATA_PATH(n) {n, UPS_PATH, UPS_PATH}
+
 #define UPATH_MAX_OP 11
 #define UPATH_REPEAT 32
-static const byte up_nargs[UPATH_MAX_OP + 1] = {
-    4, 2, 2, 2, 2, 6, 6, 5, 5, 5, 0, 0
+static const up_data_t up_data[UPATH_MAX_OP + 1] = {
+    {4, UPS_INITIAL | UPS_UCACHE, UPS_PATH}, /* setbbox */
+    UP_DATA_PATH(2),
+    UP_DATA_PATH(2),
+    UP_DATA_PATH(2),
+    UP_DATA_PATH(2),
+    UP_DATA_PATH(6),
+    UP_DATA_PATH(6),
+    UP_DATA_PATH(5),
+    UP_DATA_PATH(5),
+    UP_DATA_PATH(5),
+    UP_DATA_PATH(0),
+    {0, UPS_INITIAL, UPS_UCACHE}	/* ucache */
 };
 
 /* Declare operator procedures not declared in opextern.h. */
@@ -401,7 +430,7 @@ zupath(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(imemory, *op, t_boolean);
+    check_type(*op, t_boolean);
     return make_upath(i_ctx_p, op, igs, igs->path, op->value.boolval);
 }
 int
@@ -432,7 +461,7 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 		    size += 1;
 		    continue;
 		default:
-		    return_error(imemory, e_unregistered);
+		    return_error(e_unregistered);
 	    }
 	}
     }
@@ -443,7 +472,7 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
     /* Construct the path. */
     next = rupath->value.refs;
     if (with_ucache) {
-	if ((code = name_enter_string(imemory, "ucache", next)) < 0)
+        if ((code = name_enter_string(pgs->memory, "ucache", next)) < 0)
 	    return code;
 	r_set_attrs(next, a_executable | l_new);
 	++next;
@@ -465,7 +494,7 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 	make_real_new(next + 2, bbox.q.x);
 	make_real_new(next + 3, bbox.q.y);
 	next += 4;
-	if ((code = name_enter_string(imemory, "setbbox", next)) < 0)
+	if ((code = name_enter_string(pgs->memory, "setbbox", next)) < 0)
 	    return code;
 	r_set_attrs(next, a_executable | l_new);
 	++next;
@@ -506,9 +535,9 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 		    opstr = "closepath";
 		    break;
 		default:
-		    return_error(imemory, e_unregistered);
+		    return_error(e_unregistered);
 	    }
-	    if ((code = name_enter_string(imemory, opstr, next)) < 0)
+	    if ((code = name_enter_string(pgs->memory, opstr, next)) < 0)
 		return code;
 	    r_set_attrs(next, a_executable);
 	    ++next;
@@ -520,15 +549,19 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 /* ------ Internal routines ------ */
 
 /* Append a user path to the current path. */
-private int
-upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
+private inline int
+upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs)
 {
+    upath_state ups = UPS_INITIAL;
     ref opcodes;
-    check_read(imemory, *oppath);
+
+    if (r_has_type(oppath, t__invalid))
+	return_error(e_stackunderflow);
+    if (!r_is_array(oppath))
+	return_error(e_typecheck);
+    check_read(*oppath);
     gs_newpath(igs);
 /****** ROUND tx AND ty ******/
-    if (!r_is_array(oppath))
-	return_error(imemory, e_typecheck);
     
     if ( r_size(oppath) == 2 &&
 	 array_get(imemory, oppath, 1, &opcodes) >= 0 &&
@@ -541,7 +574,7 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 	uint ocount, i = 0;
 
         array_get(imemory, oppath, 0, &operands);
-        code = num_array_format(imemory, &operands);
+        code = num_array_format(&operands);
 	if (code < 0)
 	    return code;
 	format = code;
@@ -553,14 +586,20 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 	    if (opx > UPATH_REPEAT)
 		repcount = opx - UPATH_REPEAT;
 	    else if (opx > UPATH_MAX_OP)
-		return_error(imemory, e_rangecheck);
+		return_error(e_rangecheck);
 	    else {		/* operator */
+		const up_data_t data = up_data[opx];
+
+		*pnargs = data.num_args; /* in case of error */
+		if (!(ups & data.states_before))
+		    return_error(e_typecheck);
+		ups = data.state_after;
 		do {
 		    os_ptr op = osp;
-		    byte opargs = up_nargs[opx];
+		    byte opargs = data.num_args;
 
 		    while (opargs--) {
-			push(imemory, 1);
+			push(1);
 			code = num_array_get(imemory, &operands, format, i++, op);
 			switch (code) {
 			    case t_integer:
@@ -570,7 +609,7 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 				r_set_type_attrs(op, t_real, 0);
 				break;
 			    default:
-				return_error(imemory, e_typecheck);
+				return_error(e_typecheck);
 			}
 		    }
 		    code = (*up_ops[opx])(i_ctx_p);
@@ -593,45 +632,68 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 	    ref rup;
 	    ref *defp;
 	    os_ptr op = osp;
+	    up_data_t data;
 
+	    *pnargs = argcount;
 	    array_get(imemory, arp, index, &rup);
 	    switch (r_type(&rup)) {
 		case t_integer:
 		case t_real:
 		    argcount++;
-		    push(imemory, 1);
+		    push(1);
 		    *op = rup;
 		    break;
 		case t_name:
-		    if (!r_has_attr(&rup, a_executable))
-			return_error(imemory, e_typecheck);
-		    if (dict_find(systemdict, &rup, &defp) <= 0)
-			return_error(imemory, e_undefined);
-		    if (r_btype(defp) != t_operator)
-			return_error(imemory, e_typecheck);
+		    if (!r_has_attr(&rup, a_executable) ||
+			dict_find(systemdict, &rup, &defp) <= 0 ||
+			r_btype(defp) != t_operator)
+			return_error(e_typecheck); /* all errors = typecheck */
 		    goto xop;
 		case t_operator:
 		    defp = &rup;
 		  xop:if (!r_has_attr(defp, a_executable))
-			return_error(imemory, e_typecheck);
+			return_error(e_typecheck);
 		    oproc = real_opproc(defp);
 		    for (opx = 0; opx <= UPATH_MAX_OP; opx++)
 			if (oproc == up_ops[opx])
 			    break;
-		    if (opx > UPATH_MAX_OP || argcount != up_nargs[opx])
-			return_error(imemory, e_typecheck);
+		    if (opx > UPATH_MAX_OP)
+			return_error(e_typecheck);
+		    data = up_data[opx];
+		    if (argcount != data.num_args)
+			return_error(e_typecheck);
+		    if (!(ups & data.states_before))
+			return_error(e_typecheck);
+		    ups = data.state_after;
 		    code = (*oproc)(i_ctx_p);
 		    if (code < 0)
 			return code;
 		    argcount = 0;
 		    break;
 		default:
-		    return_error(imemory, e_typecheck);
+		    return_error(e_typecheck);
 	    }
 	}
 	if (argcount)
-	    return_error(imemory, e_typecheck);	/* leftover args */
+	    return_error(e_typecheck);	/* leftover args */
     }
+    if (ups != UPS_PATH)
+	return_error(e_typecheck);	/* no setbbox */
+    return 0;
+}
+private int
+upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
+{
+    int nargs = 0;
+    int code = upath_append_aux(oppath, i_ctx_p, &nargs);
+
+    if (code < 0) {
+	/* Pop args on error, to match Adobe interpreters. */
+	pop(nargs);
+	return code;
+    }
+    igs->current_point.x = fixed2float(igs->path->position.x);
+    igs->current_point.y = fixed2float(igs->path->position.y);
     return 0;
 }
 

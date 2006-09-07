@@ -336,7 +336,7 @@ pjl_check_font_path(char *path_list, gs_memory_t *mem)
 	strcpy(tmp_path_and_pattern, dirname);
 	strcat(tmp_path_and_pattern, pattern);
 	fe = gp_enumerate_files_init(tmp_path_and_pattern, strlen(tmp_path_and_pattern), mem);
-	if ( (gp_enumerate_files_next(mem, fe, fontfilename, PJL_PATH_NAME_LENGTH) ) == -1 ) {
+	if ( (gp_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH) ) == -1 ) {
 	    tmp_pathp = NULL;
 	} else {
 	    /* wind through the rest of the files.  This should close
@@ -344,8 +344,7 @@ pjl_check_font_path(char *path_list, gs_memory_t *mem)
                gp_enumerate_files_close() does not close the current
                directory */
 	    while ( 1 ) {
-		int fstatus = (int)gp_enumerate_files_next(mem, fe,
-							   fontfilename, PJL_PATH_NAME_LENGTH);
+		int fstatus = (int)gp_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH);
 		/* we don't care if the file does not fit (return +1) */
 		if ( fstatus == -1 )
 		    break;
@@ -434,7 +433,7 @@ pjl_verify_file_operation(pjl_parser_state_t *pst, char *fname)
     /* make sure we are playing in the pjl sandbox */
     if ( 0 != strncmp(PJL_VOLUME_0, fname, strlen(PJL_VOLUME_0))
 	 && 0 != strncmp(PJL_VOLUME_1, fname, strlen(PJL_VOLUME_1)) ) {
-	dprintf1(pst->mem, "illegal path name %s\n", fname);
+	dprintf1("illegal path name %s\n", fname);
 	return -1;
     }
     /* make sure we are not currently writing to a file.
@@ -457,7 +456,7 @@ pjl_warn_exists(const gs_memory_t *mem, char *fname)
     /* issue a warning if the file exists */
     if ( (fpdownload = fopen(fname, gp_fmode_rb) ) != NULL ) {
 	fclose(fpdownload);
-	dprintf1(mem, "warning file exists overwriting %s\n", fname);
+	dprintf1("warning file exists overwriting %s\n", fname);
     }
 }
 
@@ -478,7 +477,7 @@ pjl_setup_file_for_writing(pjl_parser_state_t *pst, char *pathname, int size, bo
 	if (append)
 	    strcat(fmode, "+");
 	if ( (fp = fopen(fname, gp_fmode_wb)) == NULL) {
-	    dprintf(pst->mem, "warning file open for writing failed\n" );
+	    dprintf("warning file open for writing failed\n" );
 	    return NULL;
 	}
     }
@@ -569,8 +568,7 @@ pjl_search_for_file(pjl_parser_state_t *pst, char *pathname, char *filename, cha
     fe = gp_enumerate_files_init(fontfilename, strlen(fontfilename), pst->mem);
     if ( fe ) {
 	do {
-	    uint fstatus = gp_enumerate_files_next(pst->mem, 
-						   fe, fontfilename, PJL_PATH_NAME_LENGTH);
+	    uint fstatus = gp_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH);
 	    /* done */
 	    if ( fstatus == ~(uint)0 )
 		return 0;
@@ -601,14 +599,13 @@ pjl_fsdirlist(pjl_parser_state_t *pst, char *pathname, int entry, int count)
     fe = gp_enumerate_files_init(fontfilename, strlen(fontfilename), pst->mem);
     if ( fe ) {
 	do {
-	    uint fstatus = gp_enumerate_files_next(pst->mem, fe, 
-						   fontfilename, PJL_PATH_NAME_LENGTH);
+	    uint fstatus = gp_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH);
 	    /* done */
 	    if ( fstatus == ~(uint)0 )
 		return 0;
 	    fontfilename[fstatus] = '\0';
 	    /* NB - debugging output only */
-	    dprintf1(pst->mem, "%s\n", fontfilename);
+	    dprintf1("%s\n", fontfilename);
 	} while (1);
     }
     /* should not get here */
@@ -1123,7 +1120,7 @@ private int
 get_next_file_clear_buffer(const gs_memory_t *mem, file_enum *pfen, char *ptr, uint maxlen)
 {
     memset(ptr, '\0', maxlen);
-    return gp_enumerate_files_next(mem, pfen, ptr, maxlen);
+    return gp_enumerate_files_next(pfen, ptr, maxlen);
 }
 int
 pjl_build_resident_tt_font_table(pjl_parser_state *pst, gs_memory_t *mem)
@@ -1159,12 +1156,12 @@ pjl_build_resident_tt_font_table(pjl_parser_state *pst, gs_memory_t *mem)
 	len = sizeof(fontfilename);
 	while ( (code = get_next_file_clear_buffer(mem, fe, fontfilename, len)) >= 0 ) {
 	    if ( code > len ) {
-		dprintf(mem, "filename exceeds file name storage buffer length\n");
+		dprintf("filename exceeds file name storage buffer length\n");
 	    } else {
 		/* open the file */
-		FILE *in = fopen(fontfilename, "rb");
+		stream *in = sfopen(fontfilename, "rb", mem);
 		if ( in == NULL ) /* shouldn't happen */
-		    dprintf1(mem, "cannot open file %s\n", fontfilename);
+		    dprintf1("cannot open file %s\n", fontfilename);
 		/* check if we have this fontfilename in the list, if so
 		   add it to the table */
 		{
@@ -1308,8 +1305,7 @@ pjl_process_destroy(pjl_parser_state *pst, gs_memory_t *mem)
 pjl_register_permanent_soft_font_deletion(pjl_parser_state *pst, int font_number)
 {
     if ( (font_number > MAX_PERMANENT_FONTS - 1) || (font_number < 0) ) {
-	dprintf(pst->mem, 
-		"pjparse.c:pjl_register_permanent_soft_font_deletion() bad font number\n");
+	dprintf("pjparse.c:pjl_register_permanent_soft_font_deletion() bad font number\n");
 	return 0;
     }
     /* if the font is present. */
@@ -1361,8 +1357,7 @@ pjl_register_permanent_soft_font_addition(pjl_parser_state *pst)
 	}
     /* yikes, shouldn't happen */
     if ( !slot_found ) {
-	dprintf(pst->mem, 
-		"pjparse.c:pjl_register_permanent_soft_font_addition()\
+	dprintf("pjparse.c:pjl_register_permanent_soft_font_addition()\
                  font table full recycling font number 0\n");
 	font_num = 0;
     }

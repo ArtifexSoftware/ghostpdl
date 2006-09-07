@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Character rendering operator definitions and support procedures */
 /* Requires gstext.h */
 
@@ -60,7 +61,7 @@ int op_show_continue(i_ctx_t *);
 int op_show_continue_pop(i_ctx_t *, int);
 int op_show_continue_dispatch(i_ctx_t *, int, int);
 int op_show_free(i_ctx_t *, int);
-void glyph_ref(const gs_memory_t *, gs_glyph, ref *);
+void glyph_ref(const gs_memory_t *mem, gs_glyph, ref *);
 int finish_stringwidth(i_ctx_t *);
 
 /* Exported by zchar.c for zcharout.c */

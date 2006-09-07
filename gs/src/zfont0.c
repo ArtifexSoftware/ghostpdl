@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Composite font creation operator */
 #include "ghost.h"
 #include "oper.h"
@@ -61,7 +62,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
     int i;
     int code = 0;
 
-    check_type(imemory, *op, t_dictionary);
+    check_type(*op, t_dictionary);
     {
 	ref *pfmaptype;
 	ref *pfdepvector;
@@ -73,7 +74,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 	    dict_find_string(op, "FDepVector", &pfdepvector) <= 0 ||
 	    !r_is_array(pfdepvector)
 	    )
-	    return_error(imemory, e_invalidfont);
+	    return_error(e_invalidfont);
 	data.FMapType = (fmap_type) pfmaptype->value.intval;
 	/*
 	 * Adding elements below could cause the font dictionary to be
@@ -88,7 +89,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 	gs_font *psub;
 
 	array_get(imemory, &fdepvector, i, &fdep);
-	if ((code = font_param(imemory, &fdep, &psub)) < 0)
+	if ((code = font_param(&fdep, &psub)) < 0)
 	    return code;
 	/*
 	 * Check the inheritance rules.  Allowed configurations
@@ -107,7 +108,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 		 !(data.FMapType == fmap_escape ||
 		   data.FMapType == fmap_double_escape))
 		)
-		return_error(imemory, e_invalidfont);
+		return_error(e_invalidfont);
 	}
     }
     switch (data.FMapType) {
@@ -131,7 +132,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 		(data.subs_width = (int)*psubsvector->value.bytes + 1) > 4 ||
 		    (svsize - 1) % data.subs_width != 0
 		    )
-		    return_error(imemory, e_invalidfont);
+		    return_error(e_invalidfont);
 		data.subs_size = (svsize - 1) / data.subs_width;
 		data.SubsVector.data = psubsvector->value.bytes + 1;
 		data.SubsVector.size = svsize - 1;
@@ -176,6 +177,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
     pfont->procs.define_font = ztype0_define_font;
     pfont->procs.make_font = ztype0_make_font;
     pfont->procs.next_char_glyph = gs_type0_next_char_glyph;
+    pfont->procs.decode_glyph = gs_font_map_glyph_to_unicode; /* PDF needs. */
     if (dict_find_string(op, "PrefEnc", &pprefenc) <= 0) {
 	ref nul;
 
@@ -183,6 +185,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 	if ((code = idict_put_string(op, "PrefEnc", &nul)) < 0)
 	    goto fail;
     }
+    get_GlyphNames2Unicode(i_ctx_p, (gs_font *)pfont, op);
     /* Fill in the font data */
     pdata = pfont_data(pfont);
     data.encoding_size = r_size(&pdata->Encoding);
@@ -190,7 +193,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 	(uint *) ialloc_byte_array(data.encoding_size, sizeof(uint),
 				   "buildfont0(Encoding)");
     if (data.Encoding == 0) {
-	code = gs_note_error(imemory, e_VMerror);
+	code = gs_note_error(e_VMerror);
 	goto fail;
     }
     /* Fill in the encoding vector, checking to make sure that */
@@ -200,11 +203,11 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 
 	array_get(imemory, &pdata->Encoding, i, &enc);
 	if (!r_has_type(&enc, t_integer)) {
-	    code = gs_note_error(imemory, e_typecheck);
+	    code = gs_note_error(e_typecheck);
 	    goto fail;
 	}
 	if ((ulong) enc.value.intval >= data.fdep_size) {
-	    code = gs_note_error(imemory, e_rangecheck);
+	    code = gs_note_error(e_rangecheck);
 	    goto fail;
 	}
 	data.Encoding[i] = (uint) enc.value.intval;
@@ -214,14 +217,14 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 			    &st_gs_font_ptr_element,
 			    "buildfont0(FDepVector)");
     if (data.FDepVector == 0) {
-	code = gs_note_error(imemory, e_VMerror);
+	code = gs_note_error(e_VMerror);
 	goto fail;
     }
     for (i = 0; i < data.fdep_size; i++) {
 	ref fdep;
 	ref *pfid;
 
-	array_get(imemory, &fdepvector, i, &fdep);
+	array_get(pfont->memory, &fdepvector, i, &fdep);
 	/* The lookup can't fail, because of the pre-check above. */
 	dict_find_string(&fdep, "FID", &pfid);
 	data.FDepVector[i] = r_ptr(pfid, gs_font);
@@ -320,7 +323,7 @@ ensure_char_entry(i_ctx_t *i_ctx_p, os_ptr op, const char *kstr,
 	*pvalue = (byte) default_value;
 	return idict_put_string(op, kstr, &ent);
     } else {
-	check_int_leu_only(imemory, *pentry, 255);
+	check_int_leu_only(*pentry, 255);
 	*pvalue = (byte) pentry->value.intval;
 	return 0;
     }

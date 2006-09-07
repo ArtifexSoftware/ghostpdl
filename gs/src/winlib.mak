@@ -1,16 +1,16 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
-
-# $RCSfile$ $Revision$
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
 # Common makefile section for 32-bit MS Windows.
 
 # This makefile must be acceptable to Microsoft Visual C++, Watcom C++,
@@ -24,6 +24,7 @@ SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
 SHARE_JBIG2=0
+SHARE_JPX=0
 
 # Define the platform name.
 
@@ -105,6 +106,9 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\zlib.mak
 !include $(GLSRCDIR)\libpng.mak
 !include $(GLSRCDIR)\jbig2.mak
+!include $(GLSRCDIR)\jasper.mak
+!include $(GLSRCDIR)\ldf_jb2.mak
+!include $(GLSRCDIR)\lwf_jp2.mak
 !include $(GLSRCDIR)\icclib.mak
 !include $(GLSRCDIR)\ijs.mak
 !include $(GLSRCDIR)\devs.mak

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/*$Id$ */
 /* Internal definitions for Ghostscript command lists. */
 
 #ifndef gxcldev_INCLUDED
@@ -35,11 +36,11 @@
 #define cmd_mask_compress_any\
   ((1 << cmd_compress_rle) | (1 << cmd_compress_cfe))
 /* Exported by gxclutil.c */
-void clist_rle_init(stream_RLE_state *ss, const gs_memory_t *cmem);
-void clist_rld_init(stream_RLD_state *ss, const gs_memory_t *cmem);
-void clist_cfe_init(stream_CFE_state *ss, int width, gs_memory_t *mem, const gs_memory_t *cmem);
+void clist_rle_init(stream_RLE_state *ss);
+void clist_rld_init(stream_RLD_state *ss);
+void clist_cfe_init(stream_CFE_state *ss, int width, gs_memory_t *mem);
 void clist_cfd_init(stream_CFD_state *ss, int width, int height,
-		    gs_memory_t *mem, const gs_memory_t *cmem);
+		    gs_memory_t *mem);
 
 /*
  * A command always consists of an operation followed by operands;
@@ -357,11 +358,12 @@ int cmd_put_params(gx_device_clist_writer *, gs_param_list *);
 
 /* Conditionally keep command statistics. */
 #ifdef DEBUG
-int cmd_count_op(const gs_memory_t *mem, int op, uint size);
+int cmd_count_op(int op, uint size);
 void cmd_uncount_op(int op, uint size);
+void cmd_print_stats(void);
 #  define cmd_count_add1(v) (v++)
 #else
-#  define cmd_count_op(mem, op, size) (op)
+#  define cmd_count_op(op, size) (op)
 #  define cmd_uncount_op(op, size) DO_NOTHING
 #  define cmd_count_add1(v) DO_NOTHING
 #endif
@@ -380,7 +382,7 @@ byte *cmd_put_op(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint siz
 #define set_cmd_put_op(dp, cldev, pcls, op, csize)\
   ( (dp = cmd_put_op(cldev, pcls, csize)) == 0 ?\
       (cldev)->error_code :\
-    (*dp = cmd_count_op((const gs_memory_t *)cldev->memory, op, csize), 0) )
+    (*dp = cmd_count_op(op, csize), 0) )
 
 /* Add a command for all bands or a range of bands. */
 byte *cmd_put_range_op(gx_device_clist_writer * cldev, int band_min,
@@ -392,7 +394,7 @@ byte *cmd_put_range_op(gx_device_clist_writer * cldev, int band_min,
 #define set_cmd_put_range_op(dp, cldev, op, bmin, bmax, csize)\
   ( (dp = cmd_put_range_op(cldev, bmin, bmax, csize)) == 0 ?\
       (cldev)->error_code :\
-    (*dp = cmd_count_op((const gs_memory_t *)cldev->memory, op, csize), 0) )
+    (*dp = cmd_count_op(op, csize), 0) )
 #define set_cmd_put_all_op(dp, cldev, op, csize)\
   set_cmd_put_range_op(dp, cldev, op, 0, (cldev)->nbands - 1, csize)
 
@@ -703,6 +705,11 @@ int clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
 /* ------ Exported by gxclimag.c ------ */
 
+/*
+ * Write out any necessary color mapping data.
+ */
+int cmd_put_color_mapping(gx_device_clist_writer * cldev,
+				  const gs_imager_state * pis);
 /*
  * Add commands to represent a full (device) halftone.
  * (This routine should probably be in some other module.)

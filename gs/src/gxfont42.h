@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Type 42 font data definition */
 
 #ifndef gxfont42_INCLUDED
@@ -61,6 +62,7 @@ struct gs_type42_data_s {
     uint indexToLocFormat;	/* from head */
     gs_type42_mtx_t metrics[2];	/* hhea/hmtx, vhea/vmtx (indexed by WMode) */
     ulong loca;			/* offset to loca table */
+    ulong name_offset;		/* offset to name table */		
     /*
      * TrueType fonts specify the number of glyphs in two different ways:
      * the size of the loca table, and an explicit value in maxp.  Currently
@@ -75,10 +77,10 @@ struct gs_type42_data_s {
      */
     uint numGlyphs;		/* from size of loca */
     uint trueNumGlyphs;		/* from maxp */
+    uint *len_glyphs;		/* built from the loca table */
     gs_glyph_cache *gdcache;
-#if NEW_TT_INTERPRETER
     bool warning_patented;
-#endif
+    bool warning_bad_instruction;
 };
 #define gs_font_type42_common\
     gs_font_base_common;\
@@ -89,9 +91,10 @@ struct gs_font_type42_s {
 
 extern_st(st_gs_font_type42);
 #define public_st_gs_font_type42()	/* in gstype42.c */\
-  gs_public_st_suffix_add2_final(st_gs_font_type42, gs_font_type42,\
+  gs_public_st_suffix_add3_final(st_gs_font_type42, gs_font_type42,\
     "gs_font_type42", font_type42_enum_ptrs, font_type42_reloc_ptrs,\
-    gs_font_finalize, st_gs_font_base, data.proc_data, data.gdcache)
+    gs_font_finalize, st_gs_font_base, data.proc_data, data.len_glyphs, \
+    data.gdcache)
 
 /*
  * Because a Type 42 font contains so many cached values,
@@ -102,16 +105,9 @@ extern_st(st_gs_font_type42);
 int gs_type42_font_init(gs_font_type42 *);
 
 /* Append the outline of a TrueType character to a path. */
-#if NEW_TT_INTERPRETER
 int gs_type42_append(uint glyph_index, gs_imager_state * pis,
 		 gx_path * ppath, const gs_log2_scale_point * pscale,
 		 bool charpath_flag, int paint_type, cached_fm_pair *pair);
-#else
-int gs_type42_append(uint glyph_index, gs_imager_state * pis,
-		     gx_path * ppath, const gs_log2_scale_point * pscale,
-		     bool charpath_flag, int paint_type,
-		     gs_font_type42 * pfont);
-#endif
 
 /* Get the metrics of a TrueType character. */
 int gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
@@ -133,5 +129,10 @@ font_proc_glyph_outline(gs_type42_glyph_outline);
 /* Get glyph info by glyph index. */
 int gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		     int members, gs_glyph_info_t *info, uint glyph_index);
+
+int gs_type42_font_info(gs_font *font, const gs_point *pscale, int members,
+	   gs_font_info_t *info);
+int gs_truetype_font_info(gs_font *font, const gs_point *pscale, int members,
+	   gs_font_info_t *info);
 
 #endif /* gxfont42_INCLUDED */

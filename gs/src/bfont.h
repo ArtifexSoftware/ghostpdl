@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-/*$Id$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
+/* $Id$ */
 /* Interpreter internal routines and data needed for building fonts */
 /* Requires gxfont.h */
 
@@ -45,9 +46,10 @@ typedef enum {
 } build_font_options_t;
 
 /* In zbfont.c */
-int build_proc_name_refs(const gs_memory_t *mem, build_proc_refs * pbuild,
+int build_proc_name_refs(const gs_memory_t *mem, 
+			 build_proc_refs * pbuild,
 			 const char *bcstr, const char *bgstr);
-int build_gs_font_procs(const gs_memory_t *mem, os_ptr, build_proc_refs *);
+int build_gs_font_procs(os_ptr, build_proc_refs *);
 #define BUILD_BASE_FONT_PROC(proc)\
   int proc(i_ctx_t *, os_ptr, gs_font_base **, font_type,\
 	   gs_memory_type_ptr_t, const build_proc_refs *,\
@@ -71,10 +73,11 @@ int build_gs_sub_font(i_ctx_t *, const ref *, gs_font **,
 		      font_type, gs_memory_type_ptr_t,
 		      const build_proc_refs *, const ref *, ref *);
 int define_gs_font(gs_font *);
-void get_font_name(const gs_memory_t *mem, ref * pfname, const ref * op);
+void get_font_name(const gs_memory_t *mem, ref *pfname, const ref *op);
 void copy_font_name(gs_font_name * pfstr, const ref * pfname);
 gs_glyph zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored);
 gs_char gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph);
 const ref *zfont_get_to_unicode_map(gs_font_dir *dir);
+void get_GlyphNames2Unicode(i_ctx_t *i_ctx_p, gs_font *pfont, ref *pdref);
 
 #endif /* bfont_INCLUDED */

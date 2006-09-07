@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Context state operations */
 #include "ghost.h"
 #include "gsstruct.h"		/* for gxalloc.h */
@@ -98,7 +99,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
 	pcst = gs_alloc_struct((gs_memory_t *) mem, gs_context_state_t,
 			       &st_context_state, "context_state_alloc");
 	if (pcst == 0)
-	    return_error((gs_memory_t *) mem, e_VMerror);
+	    return_error(e_VMerror);
     }
     code = gs_interp_alloc_stacks(mem, pcst);
     if (code < 0)
@@ -112,7 +113,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
     pcst->dict_stack.userdict_index = 0;
     pcst->pgs = int_gstate_alloc(dmem);
     if (pcst->pgs == 0) {
-	code = gs_note_error((gs_memory_t *) mem, e_VMerror);
+	code = gs_note_error(e_VMerror);
 	goto x1;
     }
     pcst->memory = *dmem;
@@ -193,7 +194,7 @@ context_state_load(gs_context_state_t * i_ctx_p)
 			    dstack->userdict_index);
 	ref *plocaldicts;
 
-	if (dict_find_string_mem(imemory, puserdict, "localdicts", &plocaldicts) > 0 &&
+	if (dict_find_string(puserdict, "localdicts", &plocaldicts) > 0 &&
 	    r_has_type(plocaldicts, t_dictionary)
 	    ) {
 	    dict_copy(plocaldicts, system_dict, dstack);
@@ -236,7 +237,7 @@ context_state_store(gs_context_state_t * pcst)
 	i_ctx_t *i_ctx_p = pcst;
 
 	if (dict_find_string(systemdict, "userparams", &puserparams) < 0)
-	    return_error(imemory, e_Fatal);
+	    return_error(e_Fatal);
 	pcst->userparams = *puserparams;
     }
     return 0;

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* setcolorscreen operator */
 #include "ghost.h"
 #include "memory_.h"
@@ -52,7 +53,7 @@ zsetcolorscreen(i_ctx_t *i_ctx_p)
 
     for (i = 0; i < 4; i++) {
 	os_ptr op1 = op - 9 + i * 3;
-	int code = zscreen_params(imemory, op1, &cscreen.screens.indexed[i]);
+	int code = zscreen_params(op1, &cscreen.screens.indexed[i]);
 
 	if (code < 0)
 	    return code;
@@ -67,7 +68,7 @@ zsetcolorscreen(i_ctx_t *i_ctx_p)
     rc_alloc_struct_0(pdht, gx_device_halftone, &st_device_halftone,
 		      mem, pdht = 0, "setcolorscreen(device halftone)");
     if (pht == 0 || pdht == 0)
-	code = gs_note_error(mem, e_VMerror);
+	code = gs_note_error(e_VMerror);
     else {
 	pht->type = ht_type_colorscreen;
 	pht->params.colorscreen = cscreen;
@@ -88,7 +89,7 @@ zsetcolorscreen(i_ctx_t *i_ctx_p)
 	    code = zscreen_enum_init(i_ctx_p,
 				     &pdht->components[(i + 1) & 3].corder,
 				&pht->params.colorscreen.screens.indexed[i],
-				     &sprocs[i], 0, 0, mem);
+				     &sprocs[i], 0, 0, space);
 	    if (code < 0) {
 		esp = esp0;
 		break;

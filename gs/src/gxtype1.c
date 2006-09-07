@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Adobe Type 1 font interpreter support */
 #include "math_.h"
 #include "memory_.h"
@@ -80,6 +81,13 @@ private RELOC_PTRS_WITH(gs_type1_state_reloc_ptrs, gs_type1_state *pcis)
     }
 } RELOC_PTRS_END
 
+/* Define a string to interact with unique_name in lib/pdf_font.ps .
+   The string is used to resolve glyph name conflict while
+   converting PDF Widths into Metrics.
+ */
+const char gx_extendeg_glyph_name_separator[] = "~GS~";
+
+
 /* ------ Interpreter services ------ */
 
 #define s (*ps)
@@ -98,7 +106,7 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     const gs_log2_scale_point *plog2_subpixels =
 	(FORCE_HINTS_TO_BIG_PIXELS ? (psubpixels != NULL ? psubpixels : plog2_scale) : &no_scale);
 
-    if_debug0(pis->memory, '1', "[1]gs_type1_interp_init\n");
+    if_debug0('1', "[1]gs_type1_interp_init\n");
     pcis->pfont = pfont;
     pcis->pis = pis;
     pcis->path = ppath;
@@ -113,6 +121,7 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     pcis->init_done = -1;
     pcis->sb_set = false;
     pcis->width_set = false;
+    pcis->seac_flag = false;
     pcis->num_hints = 0;
     pcis->seac_accent = -1;
     pcis->log2_subpixels = *plog2_subpixels;
@@ -157,7 +166,7 @@ gs_type1_finish_init(gs_type1_state * pcis)
     const int max_coeff_bits = 11;	/* max coefficient in char space */
 
     /* Set up the fixed version of the transformation. */
-    gx_matrix_to_fixed_coeff(pis->memory, &ctm_only(pis), &pcis->fc, max_coeff_bits);
+    gx_matrix_to_fixed_coeff(&ctm_only(pis), &pcis->fc, max_coeff_bits);
 
     /* Set the current point of the path to the origin, */
     pcis->origin.x = pcis->path->position.x;
@@ -188,7 +197,7 @@ gs_type1_sbw(gs_type1_state * pcis, fixed lsbx, fixed lsby, fixed wx, fixed wy)
     if (!pcis->width_set)
 	pcis->width.x = wx, pcis->width.y = wy,
 	    pcis->width_set = true;
-    if_debug4(pcis->pis->memory, '1', "[1]sb=(%g,%g) w=(%g,%g)\n",
+    if_debug4('1', "[1]sb=(%g,%g) w=(%g,%g)\n",
 	      fixed2float(pcis->lsb.x), fixed2float(pcis->lsb.y),
 	      fixed2float(pcis->width.x), fixed2float(pcis->width.y));
     return 0;
@@ -197,7 +206,7 @@ gs_type1_sbw(gs_type1_state * pcis, fixed lsbx, fixed lsby, fixed wx, fixed wy)
 /* Blend values for a Multiple Master font instance. */
 /* The stack holds values ... K*N othersubr#. */
 int
-gs_type1_blend(const gs_memory_t *mem, gs_type1_state *pcis, fixed *csp, int num_results)
+gs_type1_blend(gs_type1_state *pcis, fixed *csp, int num_results)
 {
     gs_type1_data *pdata = &pcis->pfont->data;
     int num_values = fixed2int_var(csp[-1]);
@@ -209,7 +218,7 @@ gs_type1_blend(const gs_memory_t *mem, gs_type1_state *pcis, fixed *csp, int num
     if (num_values < num_results ||
 	num_values % num_results != 0
 	)
-	return_error(mem, gs_error_invalidfont);
+	return_error(gs_error_invalidfont);
     base = csp - 1 - num_values;
     deltas = base + num_results - 1;
     for (j = 0; j < num_results;
@@ -273,6 +282,7 @@ gs_type1_endchar(gs_type1_state * pcis)
 	gs_const_string gstr;
 	int code;
 
+	agdata.memory = pfont->memory;
 	pcis->seac_accent = -1;
 	/* Reset the coordinate system origin */
 	pcis->asb_diff = pcis->save_asb - pcis->save_lsb.x;
@@ -297,7 +307,7 @@ gs_type1_endchar(gs_type1_state * pcis)
 	    buf0[l0] = 0;
 	    memcpy(buf1, gstr.data, l1);
 	    buf1[l1] = 0;
-	    eprintf2(pis->memory, "The font '%s' misses the glyph '%s' . Continue skipping the glyph.", buf0, buf1);
+	    eprintf2("The font '%s' misses the glyph '%s' . Continue skipping the glyph.", buf0, buf1);
 	    return 0;
 	}
 	if (code < 0)
@@ -307,11 +317,22 @@ gs_type1_endchar(gs_type1_state * pcis)
 	pcis->ipstack[0].cs_data = agdata;
 	return 1;
     }
-    pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
+    if (pcis->pfont->PaintType == 0)
+	pis->fill_adjust.x = pis->fill_adjust.y = -1;
     /* Set the flatness for curve rendering. */
     if (!pcis->no_grid_fitting)
 	gs_imager_setflat(pis, pcis->flatness);
     return 0;
+}
+
+/* Get the metrics (l.s.b. and width) from the Type 1 interpreter. */
+void
+type1_cis_get_metrics(const gs_type1_state * pcis, double psbw[4])
+{
+    psbw[0] = fixed2float(pcis->lsb.x);
+    psbw[1] = fixed2float(pcis->lsb.y);
+    psbw[2] = fixed2float(pcis->width.x);
+    psbw[3] = fixed2float(pcis->width.y);
 }
 
 /* ------ Font procedures ------ */
@@ -369,17 +390,17 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
 	if (c >= c_num1) {
 	    /* This is a number, decode it and push it on the stack. */
 	    if (c < c_pos2_0) {	/* 1-byte number */
-		decode_push_num1(pfont->memory, csp, cstack, c);
+		decode_push_num1(csp, cstack, c);
 	    } else if (c < cx_num4) {	/* 2-byte number */
-		decode_push_num2(pfont->memory, csp, cstack, c, cip, state, encrypted);
+		decode_push_num2(csp, cstack, c, cip, state, encrypted);
 	    } else if (c == cx_num4) {	/* 4-byte number */
 		long lw;
 
 		decode_num4(lw, cip, state, encrypted);
-		CS_CHECK_PUSH(pfont->memory, csp, cstack);
+		CS_CHECK_PUSH(csp, cstack);
 		*++csp = int2fixed(lw);
 	    } else		/* not possible */
-		return_error(pfont->memory, gs_error_invalidfont);
+		return_error(gs_error_invalidfont);
 	    continue;
 	}
 #define cnext CLEAR_CSTACK(cstack, csp); goto top
@@ -391,7 +412,7 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
 	    code = pdata->procs.subr_data
 		(pfont, c, false, &ipsp[1].cs_data);
 	    if (code < 0)
-		return_error(pfont->memory, code);
+		return_error(code);
 	    --csp;
 	    ipsp->ip = cip, ipsp->dstate = state;
 	    ++ipsp;
@@ -510,6 +531,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     if (default_members == members)
 	return code;		/* all done */
 
+    gdata.memory = pfont->memory;
     if ((code = pdata->procs.glyph_data(pfont, glyph, &gdata)) < 0)
 	return code;		/* non-existent glyph */
 
@@ -546,11 +568,11 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	code = pdata->interpret(&cis, &gdata, &value);
 	switch (code) {
 	case 0:		/* done with no [h]sbw, error */
-	    code = gs_note_error(font->memory, gs_error_invalidfont);
+	    code = gs_note_error(gs_error_invalidfont);
 	default:		/* code < 0, error */
 	    return code;
 	case type1_result_callothersubr:	/* unknown OtherSubr */
-	    return_error(font->memory, gs_error_rangecheck); /* can't handle it */
+	    return_error(gs_error_rangecheck); /* can't handle it */
 	case type1_result_sbw:
 	    info->width[wmode].x = fixed2float(cis.width.x);
 	    info->width[wmode].y = fixed2float(cis.width.y);
@@ -563,4 +585,17 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 
     gs_glyph_data_free(&gdata, "gs_type1_glyph_info");
     return code;
+}
+
+/* Get font parent (a Type 9 font). */
+const gs_font_base *
+gs_font_parent(const gs_font_base *pbfont)
+{
+    if (pbfont->FontType == ft_encrypted || pbfont->FontType == ft_encrypted2) {
+	const gs_font_type1 *pfont1 = (const gs_font_type1 *)pbfont;
+
+	if (pfont1->data.parent != NULL)
+	    return pfont1->data.parent;
+    }
+    return pbfont;
 }

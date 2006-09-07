@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* file system stuff for MS-Windows WIN32 and MS-Windows NT */
 /* hacked from gp_dosfs.c by Russell Lang */
 
@@ -119,7 +120,7 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     /* a final '\' in the string is also discarded.		    */
     for (i = 0, j=0; i < patlen; i++) {
 	if (pat[i] == '\\') {
-		    i++;
+	    i++;
 	    if (i == patlen)
 		break;		/* '\' at end ignored */
 	}
@@ -128,8 +129,8 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     /* Scan for last path separator to determine 'head_size' (directory part) */
     for (i = 0; i < j; i++) {
 	if(pattern[i] == '/' || pattern[i] == '\\' || pattern[i] == ':')
-		hsize = i + 1;
-	}
+	hsize = i+1;
+    }
     pattern[j] = 0;
     pfen->pattern = pattern;
     pfen->patlen = j;
@@ -144,7 +145,7 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 
 /* Enumerate the next file. */
 uint
-gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uint maxlen)
+gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 {
     int code = 0;
     uint len;

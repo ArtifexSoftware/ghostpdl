@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Operand stack operators */
 #include "memory_.h"
 #include "ghost.h"
@@ -25,7 +26,7 @@ zpop(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_op(imemory, 1);
+    check_op(1);
     pop(1);
     return 0;
 }
@@ -37,7 +38,7 @@ zexch(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref next;
 
-    check_op(imemory, 2);
+    check_op(2);
     ref_assign_inline(&next, op - 1);
     ref_assign_inline(op - 1, op);
     ref_assign_inline(op, &next);
@@ -50,8 +51,8 @@ zdup(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_op(imemory, 1);
-    push(imemory, 1);
+    check_op(1);
+    push(1);
     ref_assign_inline(op, op - 1);
     return 0;
 }
@@ -63,22 +64,39 @@ zindex(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     register os_ptr opn;
 
-    check_type(imemory, *op, t_integer);
-    if ((ulong)op->value.intval >= op - osbot) {
+    check_type(*op, t_integer);
+    if ((ulong)op->value.intval >= (ulong)(op - osbot)) {
 	/* Might be in an older stack block. */
 	ref *elt;
 
 	if (op->value.intval < 0)
-	    return_error(imemory, e_rangecheck);
+	    return_error(e_rangecheck);
 	elt = ref_stack_index(&o_stack, op->value.intval + 1);
 	if (elt == 0)
-	    return_error(imemory, e_rangecheck);
+	    return_error(e_stackunderflow);
 	ref_assign(op, elt);
 	return 0;
     }
     opn = op + ~(int)op->value.intval;
     ref_assign_inline(op, opn);
     return 0;
+}
+
+/* <obj_n> ... <obj_0> <n> .argindex <obj_n> ... <obj_0> <obj_n> */
+int
+zargindex(i_ctx_t *i_ctx_p)
+{
+    int code = zindex(i_ctx_p);
+
+    /*
+     * Pseudo-operators should use .argindex rather than index to access
+     * their arguments on the stack, so that if there aren't enough, the
+     * result will be a stackunderflow rather than a rangecheck.  (This is,
+     * in fact, the only reason this operator exists.)
+     */
+    if (code == e_rangecheck && osp->value.intval >= 0)
+	code = gs_note_error(e_stackunderflow);
+    return code;
 }
 
 /* <obj_n-1> ... <obj_0> <n> <i> roll */
@@ -92,9 +110,9 @@ zroll(i_ctx_t *i_ctx_p)
     register os_ptr from, to;
     register int n;
 
-    check_type(imemory, *op1, t_integer);
-    check_type(imemory, *op, t_integer);
-    if ((ulong) op1->value.intval > op1 - osbot) {
+    check_type(*op1, t_integer);
+    check_type(*op, t_integer);
+    if ((ulong) op1->value.intval > (ulong)(op1 - osbot)) {
 	/*
 	 * The data might span multiple stack blocks.
 	 * There are efficient ways to handle this situation,
@@ -103,10 +121,10 @@ zroll(i_ctx_t *i_ctx_p)
 	 */
 	int left, i;
 
-	if (op1->value.intval < 0 ||
-	    op1->value.intval + 2 > ref_stack_count(&o_stack)
-	    )
-	    return_error(imemory, e_rangecheck);
+	if (op1->value.intval < 0) 
+	    return_error(e_rangecheck);
+	if (op1->value.intval + 2 > (int)ref_stack_count(&o_stack))
+	    return_error(e_stackunderflow);
 	count = op1->value.intval;
 	if (count <= 1) {
 	    pop(2);
@@ -194,7 +212,7 @@ zroll(i_ctx_t *i_ctx_p)
 	/* Move everything up, then top elements down. */
 	if (mod >= ostop - op) {
 	    o_stack.requested = mod;
-	    return_error(imemory, e_stackoverflow);
+	    return_error(e_stackoverflow);
 	}
 	pop(2);
 	op -= 2;
@@ -206,7 +224,7 @@ zroll(i_ctx_t *i_ctx_p)
 	mod = count - mod;
 	if (mod >= ostop - op) {
 	    o_stack.requested = mod;
-	    return_error(imemory, e_stackoverflow);
+	    return_error(e_stackoverflow);
 	}
 	pop(2);
 	op -= 2;
@@ -234,7 +252,7 @@ zcount(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_int(op, ref_stack_count(&o_stack) - 1);
     return 0;
 }
@@ -245,7 +263,7 @@ zmark(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_mark(op);
     return 0;
 }
@@ -257,7 +275,7 @@ zcleartomark(i_ctx_t *i_ctx_p)
     uint count = ref_stack_counttomark(&o_stack);
 
     if (count == 0)
-	return_error(imemory, e_unmatchedmark);
+	return_error(e_unmatchedmark);
     ref_stack_pop(&o_stack, count);
     return 0;
 }
@@ -271,8 +289,8 @@ zcounttomark(i_ctx_t *i_ctx_p)
     uint count = ref_stack_counttomark(&o_stack);
 
     if (count == 0)
-	return_error(imemory, e_unmatchedmark);
-    push(imemory, 1);
+	return_error(e_unmatchedmark);
+    push(1);
     make_int(op, count - 1);
     return 0;
 }
@@ -281,6 +299,7 @@ zcounttomark(i_ctx_t *i_ctx_p)
 
 const op_def zstack_op_defs[] =
 {
+    {"2.argindex", zargindex},
     {"0clear", zclear_stack},
     {"0cleartomark", zcleartomark},
     {"0count", zcount},

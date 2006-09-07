@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$*/
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$*/
 /* Ricoh 4081 laser printer driver */
 #include "gdevprn.h"
 
@@ -36,14 +36,14 @@ r4081_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	
 	int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
 	int out_size = ((pdev->width + 7) & -8) ;
-	byte *out = (byte *)gs_malloc(out_size, 1, "r4081_print_page(out)");
+	byte *out = (byte *)gs_malloc(pdev->memory, out_size, 1, "r4081_print_page(out)");
 	int lnum = 0;
 	int last = pdev->height;
 
 	/* Check allocations */
 	if ( out == 0 )
 	{	if ( out )
-			gs_free((char *)out, out_size, 1,
+			gs_free(pdev->memory, (char *)out, out_size, 1,
 				"r4081_print_page(out)");
 		return -1;
 	}
@@ -84,6 +84,6 @@ r4081_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	/* Eject the page and reinitialize the printer */
 	fputs("\f\033\rP", prn_stream);
 
-	gs_free((char *)out, out_size, 1, "r4081_print_page(out)");
+	gs_free(pdev->memory, (char *)out, out_size, 1, "r4081_print_page(out)");
 	return 0;
 }

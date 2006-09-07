@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* CIE color rendering operators */
 #include "math_.h"
 #include "ghost.h"
@@ -44,7 +45,7 @@ zcurrentcolorrendering(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     *op = istate->colorrendering.dict;
     return 0;
 }
@@ -60,8 +61,8 @@ zbuildcolorrendering1(i_ctx_t *i_ctx_p)
     gs_cie_render *pcrd;
     ref_cie_render_procs procs;
 
-    check_read_type(imemory, *op, t_dictionary);
-    check_dict_read(imemory, *op);
+    check_read_type(*op, t_dictionary);
+    check_dict_read(*op);
     code = gs_cie_render1_build(&pcrd, mem, ".buildcolorrendering1");
     if (code < 0)
 	return code;
@@ -70,7 +71,7 @@ zbuildcolorrendering1(i_ctx_t *i_ctx_p)
     (code = cache_colorrendering1(i_ctx_p, pcrd, &procs,
 				  (gs_ref_memory_t *) mem)) < 0
 	) {
-	rc_free_struct((const gs_memory_t *)&(i_ctx_p->memory), pcrd, ".buildcolorrendering1");
+	rc_free_struct(pcrd, ".buildcolorrendering1");
 	esp = ep;
 	return code;
     }
@@ -91,7 +92,7 @@ zbuilddevicecolorrendering1(i_ctx_t *i_ctx_p)
     gs_cie_render *pcrd = 0;
     int code;
 
-    check_type(imemory, *op, t_dictionary);
+    check_type(*op, t_dictionary);
     code = dict_param_list_read(&list, op, NULL, false, iimemory);
     if (code < 0)
 	return code;
@@ -106,7 +107,7 @@ zbuilddevicecolorrendering1(i_ctx_t *i_ctx_p)
     }
     iparam_list_release(&list);
     if (code < 0) {
-	rc_free_struct(mem, pcrd, ".builddevicecolorrendering1");
+	rc_free_struct(pcrd, ".builddevicecolorrendering1");
 	return code;
     }
     istate->colorrendering.dict = *op;
@@ -123,8 +124,8 @@ zsetcolorrendering1(i_ctx_t *i_ctx_p)
     ref_cie_render_procs procs;
     int code;
 
-    check_type(imemory, op[-1], t_dictionary);
-    check_stype(imemory, *op, st_cie_render1);
+    check_type(op[-1], t_dictionary);
+    check_stype(*op, st_cie_render1);
     code = zcrd1_proc_params(imemory, op - 1, &procs);
     if (code < 0)
 	return code;
@@ -149,8 +150,8 @@ zsetdevicecolorrendering1(i_ctx_t *i_ctx_p)
     int code;
     ref_cie_render_procs procs;
 
-    check_type(imemory, op[-1], t_dictionary);
-    check_stype(imemory, *op, st_cie_render1);
+    check_type(op[-1], t_dictionary);
+    check_stype(*op, st_cie_render1);
     code = gs_setcolorrendering(igs, r_ptr(op, gs_cie_render));
     if (code < 0)
 	return code;
@@ -178,19 +179,19 @@ zcrd1_proc_params(const gs_memory_t *mem,
       (code = dict_proc3_param(mem, op, "EncodeABC", &pcprocs->EncodeABC)) < 0 ||
     (code = dict_proc3_param(mem, op, "TransformPQR", &pcprocs->TransformPQR)) < 0
 	)
-	return (code < 0 ? code : gs_note_error(mem, e_rangecheck));
+	return (code < 0 ? code : gs_note_error(e_rangecheck));
     if (dict_find_string(op, "RenderTable", &pRT) > 0) {
 	const ref *prte;
 	int size;
 	int i;
 
-	check_read_type(mem, *pRT, t_array);
+	check_read_type(*pRT, t_array);
 	size = r_size(pRT);
 	if (size < 5)
-	    return_error(mem, e_rangecheck);
+	    return_error(e_rangecheck);
 	prte = pRT->value.const_refs;
 	for (i = 5; i < size; i++)
-	    check_proc_only(mem, prte[i]);
+	    check_proc_only(prte[i]);
 	make_const_array(&pcprocs->RenderTableT, a_readonly | r_space(pRT),
 			 size - 5, prte + 5);
     } else
@@ -208,7 +209,7 @@ zcrd1_params(os_ptr op, gs_cie_render * pcrd,
     gx_color_lookup_table *const prtl = &pcrd->RenderTable.lookup;
     ref *pRT;
 
-    if ((code = dict_int_param(mem, op, "ColorRenderingType", 1, 1, 0, &ignore)) < 0 ||
+    if ((code = dict_int_param(op, "ColorRenderingType", 1, 1, 0, &ignore)) < 0 ||
 	(code = zcrd1_proc_params(mem, op, pcprocs)) < 0 ||
 	(code = dict_matrix3_param(mem, op, "MatrixLMN", &pcrd->MatrixLMN)) < 0 ||
 	(code = dict_range3_param(mem, op, "RangeLMN", &pcrd->RangeLMN)) < 0 ||
@@ -216,20 +217,20 @@ zcrd1_params(os_ptr op, gs_cie_render * pcrd,
 	(code = dict_range3_param(mem, op, "RangeABC", &pcrd->RangeABC)) < 0 ||
 	(code = cie_points_param(mem, op, &pcrd->points)) < 0 ||
 	(code = dict_matrix3_param(mem, op, "MatrixPQR", &pcrd->MatrixPQR)) < 0 ||
-	(code = dict_range3_param(mem, op, "RangePQR", &pcrd->RangePQR)) < 0
+	(code = dict_range3_param(mem,op, "RangePQR", &pcrd->RangePQR)) < 0
 	)
 	return code;
     if (dict_find_string(op, "RenderTable", &pRT) > 0) {
 	const ref *prte = pRT->value.const_refs;
 
 	/* Finish unpacking and checking the RenderTable parameter. */
-	check_type_only(mem, prte[4], t_integer);
+	check_type_only(prte[4], t_integer);
 	if (!(prte[4].value.intval == 3 || prte[4].value.intval == 4))
-	    return_error(mem, e_rangecheck);
+	    return_error(e_rangecheck);
 	prtl->n = 3;
 	prtl->m = prte[4].value.intval;
 	if (r_size(pRT) != prtl->m + 5)
-	    return_error(mem, e_rangecheck);
+	    return_error(e_rangecheck);
 	code = cie_table_param(pRT, prtl, mem);
 	if (code < 0)
 	    return code;
@@ -251,8 +252,7 @@ cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
 		      gs_ref_memory_t * imem)
 {
     es_ptr ep = esp;
-    int code = gs_cie_render_init((const gs_memory_t *)&(i_ctx_p->memory),
-				  pcrd);	/* sets Domain values */
+    int code = gs_cie_render_init(pcrd);	/* sets Domain values */
     int i;
 
     if (code < 0 ||
@@ -309,7 +309,7 @@ cie_cache_render_finish(i_ctx_t *i_ctx_p)
     pcrd->EncodeLMN = EncodeLMN_from_cache;
     pcrd->EncodeABC = EncodeABC_from_cache;
     pcrd->RenderTable.T = RenderTableT_from_cache;
-    code = gs_cie_render_complete((const gs_memory_t *)&(i_ctx_p->memory), pcrd);
+    code = gs_cie_render_complete(pcrd);
     if (code < 0)
 	return code;
     pop(1);
@@ -338,7 +338,7 @@ cie_cache_joint(i_ctx_t *i_ctx_p, const ref_cie_render_procs * pcrprocs,
     if (pcrd == 0)		/* cache is not set up yet */
 	return 0;
     if (pjc == 0)		/* must already be allocated */
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     if (r_has_type(&pcrprocs->TransformPQR, t_null)) {
 	/*
 	 * This CRD came from a driver, not from a PostScript dictionary.
@@ -346,7 +346,7 @@ cie_cache_joint(i_ctx_t *i_ctx_p, const ref_cie_render_procs * pcrprocs,
 	 */
 	return gs_cie_cs_complete(pgs, true);
     }
-    gs_cie_compute_points_sd((const gs_memory_t *)&(i_ctx_p->memory), pjc, pcie, pcrd);
+    gs_cie_compute_points_sd(pjc, pcie, pcrd);
     code = ialloc_ref_array(&pqr_procs, a_readonly, 3 * (1 + 4 + 4 * 6),
 			    "cie_cache_common");
     if (code < 0)
@@ -386,8 +386,8 @@ cie_exec_tpqr(i_ctx_t *i_ctx_p)
     uint space = r_space(op - 1);
     int i;
 
-    check_op(imemory, 3);
-    push(imemory, 4);
+    check_op(3);
+    push(4);
     *op = op[-4];		/* proc */
     op[-1] = op[-6];		/* v */
     for (i = 0; i < 4; i++)
@@ -407,7 +407,7 @@ cie_post_exec_tpqr(i_ctx_t *i_ctx_p)
     ref vref;
 
     if (count < 2)
-	return_error(imemory, e_unmatchedmark);
+	return_error(e_unmatchedmark);
     vref = *op;
     ref_stack_pop(&o_stack, count - 1);
     *osp = vref;
@@ -448,7 +448,7 @@ ztpqr_scale_wb_common(i_ctx_t *i_ctx_p, int idx)
     int code;
     int i;
 
-    code = real_param(imemory, op, &Ps);
+    code = real_param(op, &Ps);
     if (code < 0) return code;
 
     for (i = 0; i < 4; i++) {
@@ -456,12 +456,12 @@ ztpqr_scale_wb_common(i_ctx_t *i_ctx_p, int idx)
 
 	code = array_get(imemory, op - 4 + i, idx, &tmp);
 	if (code >= 0)
-	    code = real_param(imemory, &tmp, &a[i]);
+	    code = real_param(&tmp, &a[i]);
 	if (code < 0) return code;
     }
 
     if (a[0] == a[1])
-	return_error(imemory, e_undefinedresult);
+	return_error(e_undefinedresult);
     result = a[3] + (a[2] - a[3]) * (Ps - a[1]) / (a[0] - a[1]);
     make_real(op - 4, result);
     pop(4);

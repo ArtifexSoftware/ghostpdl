@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Definitions for FunctionType 0 (Sampled) Functions */
 
 #ifndef gsfunc0_INCLUDED
@@ -33,6 +34,10 @@ typedef struct gs_function_Sd_params_s {
     const float *Encode;	/* 2 x m, optional */
     const float *Decode;	/* 2 x n, optional */
     const int *Size;		/* m */
+    double *pole;               /* cached poles (internal data) */
+    int *array_step;		/* pole array element step by dimensions */
+    int *stream_step;		/* sample stream element step by dimensions */
+    int array_size;		/* The number of elements in the pole array. */
 } gs_function_Sd_params_t;
 
 #define private_st_function_Sd()	/* in gsfunc.c */\

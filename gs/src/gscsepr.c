@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Separation color space and operation definition */
 #include "memory_.h"
 #include "gx.h"
@@ -57,7 +58,8 @@ const gs_color_space_type gs_color_space_type_Separation = {
     gx_remap_Separation, gx_install_Separation,
     gx_set_overprint_Separation,
     gx_adjust_cspace_Separation, gx_no_adjust_color_count,
-    gx_serialize_Separation
+    gx_serialize_Separation,
+    gx_cspace_is_linear_default
 };
 
 /* GC procedures */
@@ -99,7 +101,7 @@ gx_concrete_space_Separation(const gs_color_space * pcs,
      * Verify that the color space and imager state info match.
      */
     if (pcs->id != pis->color_component_map.cspace_id)
-	dprintf(pis->memory, "gx_concretze_space_Separation: color space id mismatch");
+	dprintf("gx_concretze_space_Separation: color space id mismatch");
 #endif
 
     /*
@@ -124,16 +126,45 @@ check_Separation_component_name(const gs_color_space * pcs, gs_state * pgs);
 private int
 gx_install_Separation(const gs_color_space * pcs, gs_state * pgs)
 {
-    int code = check_Separation_component_name(pcs, pgs);
+    int code;
+#if ENABLE_NAMED_COLOR_CALLBACK
+    /*
+     * Check if we want to use the named color callback color processing for
+     * this color space.
+     */
+    bool use_named_color_callback =
+	    named_color_callback_install_Separation(pgs->color_space, pgs);
 
+    pgs->color_component_map.use_named_color_callback =
+	   					 use_named_color_callback;
+    if (use_named_color_callback) {
+	/*
+	 * We are using the callback instead of the alternate tint transform
+	 * for this color space.
+	 */
+        pgs->color_space->params.separation.use_alt_cspace =
+            pgs->color_component_map.use_alt_cspace = false;
+        pgs->color_component_map.cspace_id = pcs->id;
+        return 0;
+    }
+#endif
+
+    code = check_Separation_component_name(pcs, pgs);
     if (code < 0)
        return code;
     pgs->color_space->params.separation.use_alt_cspace =
 	using_alt_color_space(pgs);
     if (pgs->color_space->params.separation.use_alt_cspace)
-        return (*pcs->params.separation.alt_space.type->install_cspace)
+        code = (*pcs->params.separation.alt_space.type->install_cspace)
 	((const gs_color_space *) & pcs->params.separation.alt_space, pgs);
-    return 0;
+    /*
+     * Give the device an opportunity to capture equivalent colors for any
+     * spot colors which might be present in the color space.
+     */
+    if (code >= 0)
+        code = dev_proc(pgs->device, update_spot_equivalent_colors)
+							(pgs->device, pgs);
+    return code;
 }
 
 /* Set the overprint information appropriate to a separation color space */
@@ -171,7 +202,7 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_state * pgs)
 private void
 gx_adjust_cspace_Separation(const gs_color_space * pcs, int delta)
 {
-    rc_adjust_const(pcs->pmem, pcs->params.separation.map, delta,
+    rc_adjust_const(pcs->params.separation.map, delta,
 		    "gx_adjust_Separation");
     (*pcs->params.separation.alt_space.type->adjust_cspace_count)
 	((const gs_color_space *)&pcs->params.separation.alt_space, delta);
@@ -193,12 +224,12 @@ gs_build_Separation(
     int code;
 
     if (palt_cspace == 0 || !palt_cspace->type->can_be_alt_space)
-	return_error(pmem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
 
     code = alloc_device_n_map(&pcssepr->map, pmem, "gs_cspace_build_Separation");
     if (pcssepr->map == NULL) {
 	gs_free_object(pmem, pcspace, "gs_cspace_build_Separation");
-	return_error(pmem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     }
     return 0;
 }
@@ -224,7 +255,7 @@ gs_cspace_build_Separation(
     int code;
 
     if (palt_cspace == 0 || !palt_cspace->type->can_be_alt_space)
-	return_error(pmem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
 
     code = gs_cspace_alloc(&pcspace, &gs_color_space_type_Separation, pmem);
     if (code < 0)
@@ -236,7 +267,7 @@ gs_cspace_build_Separation(
 	return code;
     }
     pcssepr->sep_name = sname;
-    gs_cspace_init_from(pmem, (gs_color_space *) & pcssepr->alt_space, palt_cspace);
+    gs_cspace_init_from((gs_color_space *) & pcssepr->alt_space, palt_cspace);
     *ppcspace = pcspace;
     return 0;
 }
@@ -258,7 +289,7 @@ gs_cspace_set_sepr_proc(gs_color_space * pcspace,
     gs_device_n_map *pimap;
 
     if (gs_color_space_get_index(pcspace) != gs_color_space_index_Separation)
-	return_error(pcspace->pmem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     pimap = pcspace->params.separation.map;
     pimap->tint_transform = proc;
     pimap->tint_transform_data = proc_data;
@@ -272,7 +303,7 @@ gs_cspace_set_sepr_proc(gs_color_space * pcspace,
  * Set the Separation tint transformation procedure to a Function.
  */
 int
-gs_cspace_set_sepr_function(const gs_memory_t *mem, const gs_color_space *pcspace, gs_function_t *pfn)
+gs_cspace_set_sepr_function(const gs_color_space *pcspace, gs_function_t *pfn)
 {
     gs_device_n_map *pimap;
 
@@ -281,7 +312,7 @@ gs_cspace_set_sepr_function(const gs_memory_t *mem, const gs_color_space *pcspac
 	  gs_color_space_num_components((const gs_color_space *)
 					&pcspace->params.separation.alt_space)
 	)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     pimap = pcspace->params.separation.map;
     pimap->tint_transform = map_devn_using_function;
     pimap->tint_transform_data = pfn;
@@ -324,7 +355,7 @@ gx_remap_Separation(const gs_client_color * pcc, const gs_color_space * pcs,
     if (pcs->params.separation.sep_type != SEP_NONE)
 	code = gx_default_remap_color(pcc, pcs, pdc, pis, dev, select);
     else {
-    color_set_null(pdc);
+        color_set_null(pdc);
     }
     /* Save original color space and color info into dev color */
     pdc->ccolor.paint.values[0] = pcc->paint.values[0];
@@ -343,7 +374,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 	(const gs_color_space *)&pcs->params.separation.alt_space;
     
     if (pcs->params.separation.sep_type == SEP_OTHER &&
-        pcs->params.separation.use_alt_cspace) {
+	pcs->params.separation.use_alt_cspace) {
         gs_device_n_map *map = pcs->params.separation.map;
 
 	/* Check the 1-element cache first. */
@@ -377,9 +408,15 @@ gx_remap_concrete_Separation(const frac * pconc,  const gs_color_space * pcs,
      * Verify that the color space and imager state info match.
      */
     if (pcs->id != pis->color_component_map.cspace_id)
-	dprintf(pis->memory, "gx_remap_concrete_Separation: color space id mismatch");
+	dprintf("gx_remap_concrete_Separation: color space id mismatch");
 #endif
 
+#if ENABLE_NAMED_COLOR_CALLBACK
+    if (pis->color_component_map.use_named_color_callback) {
+	return gx_remap_concrete_named_color_Separation(pconc, pcs, pdc,
+						       	pis, dev, select);
+    }
+#endif
     if (pis->color_component_map.use_alt_cspace) {
         const gs_color_space *pacs =
 	    (const gs_color_space *)&pcs->params.separation.alt_space;
@@ -407,7 +444,7 @@ check_Separation_component_name(const gs_color_space * pcs, gs_state * pgs)
     uint name_size;
     gs_devicen_color_map * pcolor_component_map
 	= &pgs->color_component_map;
-    const gx_device * dev = pgs->device;
+    gx_device * dev = pgs->device;
 
     pcolor_component_map->num_components = 1;
     pcolor_component_map->cspace_id = pcs->id;
@@ -433,7 +470,7 @@ check_Separation_component_name(const gs_color_space * pcs, gs_state * pgs)
     /*
      * Get the character string and length for the component name.
      */
-    pcs->params.separation.get_colorname_string(pgs->memory, name, &pname, &name_size);
+    pcs->params.separation.get_colorname_string(dev->memory, name, &pname, &name_size);
     /*
      * Compare the colorant name to the device's.  If the device's
      * compare routine returns GX_DEVICE_COLOR_MAX_COMPONENTS then the
@@ -441,7 +478,7 @@ check_Separation_component_name(const gs_color_space * pcs, gs_state * pgs)
      * SeparationOrder list.
      */
     colorant_number = (*dev_proc(dev, get_color_comp_index))
-				    (dev, (const char *)pname, name_size, 0);
+		(dev, (const char *)pname, name_size, SEPARATION_NAME);
     if (colorant_number >= 0) {		/* If valid colorant name */
 	pcolor_component_map->color_map[0] =
 		    (colorant_number == GX_DEVICE_COLOR_MAX_COMPONENTS) ? -1
@@ -498,7 +535,7 @@ gx_serialize_Separation(const gs_color_space * pcs, stream * s)
 
     if (code < 0)
 	return code;
-    code = sputs(s, (byte *)&p->sep_name, sizeof(p->sep_name), &n);
+    code = sputs(s, (const byte *)&p->sep_name, sizeof(p->sep_name), &n);
     if (code < 0)
 	return code;
     code = cs_serialize((const gs_color_space *)&p->alt_space, s);
@@ -507,6 +544,6 @@ gx_serialize_Separation(const gs_color_space * pcs, stream * s)
     code = gx_serialize_device_n_map(pcs, p->map, s);
     if (code < 0)
 	return code;
-    return sputs(s, (byte *)&p->sep_type, sizeof(p->sep_type), &n);
+    return sputs(s, (const byte *)&p->sep_type, sizeof(p->sep_type), &n);
     /* p->use_alt_cspace isn't a property of the space. */
 }

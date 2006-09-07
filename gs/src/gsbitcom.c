@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Oversampled bitmap compression */
 #include "std.h"
 #include "gstypes.h"
@@ -92,7 +93,7 @@ static const byte *const compress_tables[4][4] = {
  * same is true for srcx.
  */
 void
-bits_compress_scaled(const gs_memory_t *mem, const byte * src, int srcx, uint width, uint height,
+bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
 		     uint sraster, byte * dest, uint draster,
 		     const gs_log2_scale_point *plog2_scale, int log2_out_bits)
 {
@@ -201,7 +202,7 @@ bits_compress_scaled(const gs_memory_t *mem, const byte * src, int srcx, uint wi
 		    uint shifted_mask = mask << in_shift;
 		    byte in;
 
-		    if_debug3(mem, 'B', "[B]count(%d,%d)=%d\n",
+		    if_debug3('B', "[B]count(%d,%d)=%d\n",
 			      (width - w) / xscale,
 			      (height - h) / yscale, count);
 		    if (yscale > 1) {	/* Look at the next "lower" cell. */
@@ -213,7 +214,7 @@ bits_compress_scaled(const gs_memory_t *mem, const byte * src, int srcx, uint wi
 				 (in &= s[index]) != 0;
 				)
 				lower += half_byte_1s[in >> in_shift];
-			    if_debug1(mem, 'B', "[B]  lower adds %d\n",
+			    if_debug1('B', "[B]  lower adds %d\n",
 				      lower);
 			    if (lower <= orig_count)
 				count += lower;
@@ -228,7 +229,7 @@ bits_compress_scaled(const gs_memory_t *mem, const byte * src, int srcx, uint wi
 				 index += sraster
 				)
 				upper += half_byte_1s[in >> in_shift];
-			    if_debug1(mem, 'B', "[B]  upper adds %d\n",
+			    if_debug1('B', "[B]  upper adds %d\n",
 				      upper);
 			    if (upper < orig_count)
 				count += upper;
@@ -251,7 +252,7 @@ bits_compress_scaled(const gs_memory_t *mem, const byte * src, int srcx, uint wi
 
 				left += bits5_trailing_1s[bits & mask1];
 			    }
-			    if_debug1(mem, 'B', "[B]  left adds %d\n",
+			    if_debug1('B', "[B]  left adds %d\n",
 				      left);
 			    if (left < orig_count)
 				count += left;
@@ -270,7 +271,7 @@ bits_compress_scaled(const gs_memory_t *mem, const byte * src, int srcx, uint wi
 
 				right += bits5_leading_1s[(bits & mask1) << (4 - xscale)];
 			    }
-			    if_debug1(mem, 'B', "[B]  right adds %d\n",
+			    if_debug1('B', "[B]  right adds %d\n",
 				      right);
 			    if (right <= orig_count)
 				count += right;

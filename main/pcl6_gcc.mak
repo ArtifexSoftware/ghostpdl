@@ -16,7 +16,7 @@ PL_SCALER?=afs
 CYGWIN?=
 
 # The build process will put all of its output in this directory:
-GENDIR?=./obj-$(PL_SCALER)
+GENDIR?=./obj
 PGGENDIR?=./pgobj
 # The sources are taken from these directories:
 GLSRCDIR?=../gs/src
@@ -37,6 +37,9 @@ SHARE_LIBPNG?=0
 PSRCDIR?=../gs/libpng
 # only relevant if not shared
 PNGCCFLAGS?=-DPNG_USER_MEM_SUPPORTED
+
+# Choose COMPILE_INITS=1 for init files and fonts in ROM (otherwise =0)
+COMPILE_INITS?=0
 
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.
@@ -71,7 +74,7 @@ PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
 MET_TOP_OBJ?=$(METOBJDIR)/mettop.$(OBJ)
 TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 
-# note agfa gives it libraries incompatible names so they cannot be
+# note agfa gives its libraries incompatible names so they cannot be
 # properly found by the linker.  Change the library names to reflect the
 # following (i.e. the if library should be named libif.a
 # NB - this should all be done automatically by choosing the device
@@ -81,6 +84,9 @@ TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 # don't overload the makefile with nonsense to build these libraries
 # on the fly. If the artifex font scaler is chosen the makefiles will
 # build the scaler automatically.
+
+# PCL and XL do not need to use the same scaler, but it is necessary to
+# tinker/hack the makefiles to get it to work properly.
 
 PCL_FONT_SCALER=$(PL_SCALER)
 PXL_FONT_SCALER=$(PL_SCALER)
@@ -93,23 +99,34 @@ PXL_FONT_SCALER=$(PL_SCALER)
 # flags for UFST scaler.
 ifeq ($(PL_SCALER), ufst)
 UFST_ROOT?=../ufst
-AGFA_LIB=$(UFST_ROOT)/rts/lib/
+UFST_LIB=$(UFST_ROOT)/rts/lib/
 # hack!!! we append this onto TOP_OBJ to avoid creating another
 # makefile variable.
-EXTRALIBS= $(AGFA_LIB)if_lib.a $(AGFA_LIB)fco_lib.a $(AGFA_LIB)tt_lib.a  $(AGFA_LIB)if_lib.a
+
+EXTRALIBS?= $(UFST_LIB)if_lib.a $(UFST_LIB)fco_lib.a $(UFST_LIB)tt_lib.a  $(UFST_LIB)if_lib.a
 # agfa does not use normalized library names (ie we expect libif.a not
 # agfa's if_lib.a)
-AGFA_INCLUDES=-I$(UFST_ROOT)/rts/inc/ -I$(UFST_ROOT)/sys/inc/ -I$(UFST_ROOT)/rts/fco/ -I$(UFST_ROOT)/rts/gray/ -I$(UFST_ROOT)/rts/tt/ -DAGFA_FONT_TABLE -DGCCx86
+UFST_INCLUDES?=-I$(UFST_ROOT)/rts/inc/ -I$(UFST_ROOT)/sys/inc/ -I$(UFST_ROOT)/rts/fco/ -I$(UFST_ROOT)/rts/gray/ -I$(UFST_ROOT)/rts/tt/ -DAGFA_FONT_TABLE -DUFST_UNIX_BRIDGE=1 -DUFST_LIB_EXT=.a -DGCCx86 -DUFST_ROOT=$(UFST_ROOT)
+
+# fco's are binary (-b), the following is only used if COMPILE_INITS=1
+UFST_ROMFS_ARGS=-b \
+-P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
+-P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
+-c
 endif
 
 # flags for artifex scaler
 ifeq ($(PL_SCALER), afs)
 
-# substitue dingbats for missin wingdings font in PXL
+# The mkromfs arguments for including the PCL fonts if COMPILE_INITS=1
+PCLXL_ROMFS_ARGS?= -P ../urwfonts -d ttfonts /
+
+# substitue dingbats for missing wingdings font in PXL
 WING_DING_SUB=-DWINGDING_DINGBATS_SUB_ON
+
 XLDFLAGS=
 EXTRALIBS=
-AGFA_OBJ=
+UFST_OBJ=
 ifeq ($(ROMFONTS), true)
 PL_SCALER=afsr
 XLDFLAGS=-L../pl/ 
@@ -125,11 +142,13 @@ EXTRALIBS+=-lexpat
 # carries a performance burden.  Use this definition (uncomment) for
 # devicen support.
 
-# GX_COLOR_INDEX_DEFINE=-DGX_COLOR_INDEX_TYPE="unsigned long long"
+GX_COLOR_INDEX_DEFINE?=-DGX_COLOR_INDEX_TYPE="unsigned long long"
 
 # and this definition if devicen support is not required
 
-GX_COLOR_INDEX_DEFINE=
+# GX_COLOR_INDEX_DEFINE=
+
+HAVE_STDINT_H_DEFINE?=-DHAVE_STDINT_H
 
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
@@ -137,7 +156,7 @@ GX_COLOR_INDEX_DEFINE=
 # between 2.7.0 and 2.7.2 inclusive.  (2.7.2.1 is OK.)
 # disable assert() with -DNDEBUG
 
-GCFLAGS?=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG $(GX_COLOR_INDEX_DEFINE)
+GCFLAGS?=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG  $(HAVE_STDINT_H_DEFINE) $(GX_COLOR_INDEX_DEFINE)
 # CFLAGS?=-g -O0 $(GCFLAGS) $(XCFLAGS)
 CFLAGS?= $(GCFLAGS) $(XCFLAGS)
 
@@ -166,16 +185,17 @@ FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)cidlib.dev $(DD)psf1lib.dev $(DD)psf0lib.dev $(DD)lzwd.dev 
 
 # cygwin does not have threads at this time, so we don't include the
-# thread library or asyncronous devices.  Also cygwin does not include
-# X by default so we do not include the X devices either.
+# thread library or asyncronous devices.
 
 ifeq ($(CYGWIN), TRUE)
 SYNC=
-STDLIBS=-lm -ldl
+STDLIBS=-lm
 DEVICE_DEVS=$(DEVICES_DEVS)
+DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS)
 else
 SYNC=posync
-STDLIBS=-lm -lpthread -ldl
+# some systems may need -ldl as well as pthread
+STDLIBS=-lm -lpthread
 DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS) $(DD)bmpamono.dev $(DD)bmpa16m.dev
 endif
 

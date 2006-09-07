@@ -82,9 +82,9 @@ free_indexed_cspace(
 {
     pcl_cs_indexed_t *  pindexed = (pcl_cs_indexed_t *)pvindexed;
 
-    pcl_cs_base_release(pmem, pindexed->pbase);
+    pcl_cs_base_release(pindexed->pbase);
     if (pindexed->pcspace != 0) {
-        gs_cspace_release(pmem, pindexed->pcspace);
+        gs_cspace_release(pindexed->pcspace);
         gs_free_object(pmem, pindexed->pcspace, cname);
     }
     if (pindexed->palette.data != 0)
@@ -125,7 +125,7 @@ alloc_indexed_cspace(
                        );
     pindexed->rc.free = free_indexed_cspace;
     pindexed->pfixed = false;
-    pcl_cs_base_init_from(pmem, pindexed->pbase, pbase);
+    pcl_cs_base_init_from(pindexed->pbase, pbase);
     pindexed->pcspace = 0;
     pindexed->num_entries = 0;
     pindexed->palette.data = 0;
@@ -180,7 +180,7 @@ unshare_indexed_cspace(
     /* check if there is anything to do */
     if (pindexed->rc.ref_count == 1)
         return 0;
-    rc_decrement(pindexed->rc.memory, pindexed, "unshare PCL indexed color space");
+    rc_decrement(pindexed, "unshare PCL indexed color space");
 
     /* allocate a new indexed color space */
     code = alloc_indexed_cspace( ppindexed,
@@ -765,7 +765,7 @@ pcl_cs_indexed_update_lookup_tbl(
 
     /* the base space was updated, so re-build the indexed color space */
     if (pindexed->pcspace != 0) {
-        gs_cspace_release(pindexed->rc.memory, pindexed->pcspace);
+        gs_cspace_release(pindexed->pcspace);
         gs_free_object( pindexed->rc.memory,
                         pindexed->pcspace,
                         "update_lookup_tbl"
@@ -933,14 +933,14 @@ pcl_cs_indexed_build_cspace(
     if (pfixed && (pcid->u.hdr.bits_per_index == dflt_cid_hdr.bits_per_index)) {
         is_default = true;
         if (pcs->pdflt_cs_indexed != 0) {
-            pcl_cs_indexed_copy_from(pmem, *ppindexed, pcs->pdflt_cs_indexed);
+            pcl_cs_indexed_copy_from(*ppindexed, pcs->pdflt_cs_indexed);
             return 0;
         }
     }
 
     /* release the existing color space, if present */
     if (pindexed != 0)
-        rc_decrement(pmem, pindexed, "build indexed color space");
+        rc_decrement(pindexed, "build indexed color space");
 
     /* build the base color space */
     if ((code = pcl_cs_base_build_cspace(&pbase, pcid, pmem)) < 0)
@@ -948,13 +948,13 @@ pcl_cs_indexed_build_cspace(
 
     /* build the indexed color space */
     if ((code = alloc_indexed_cspace(ppindexed, pbase, pmem)) < 0) {
-        pcl_cs_base_release(pmem, pbase);
+        pcl_cs_base_release(pbase);
         return code;
     }
     pindexed = *ppindexed;
 
     /* release our extra reference of the base color space */
-    pcl_cs_base_release(pmem, pbase);
+    pcl_cs_base_release(pbase);
     pbase = 0;
 
     /* copy the header of the configure image data structure */
@@ -1007,7 +1007,7 @@ pcl_cs_indexed_build_cspace(
 
     /* record if this is the default */
     if (is_default)
-        pcl_cs_indexed_init_from(pcs->memory, pcs->pdflt_cs_indexed, pindexed);
+        pcl_cs_indexed_init_from(pcs->pdflt_cs_indexed, pindexed);
 
     return 0;
 }
@@ -1037,7 +1037,7 @@ pcl_cs_indexed_build_default_cspace(
                                             pmem
                                             );
     } else {
-        pcl_cs_indexed_copy_from(pcs->memory, *ppindexed, pcs->pdflt_cs_indexed);
+        pcl_cs_indexed_copy_from(*ppindexed, pcs->pdflt_cs_indexed);
         return 0;
     }
 }

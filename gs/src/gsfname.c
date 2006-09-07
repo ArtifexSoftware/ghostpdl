@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* File name utilities */
 #include "memory_.h"
 #include "gserror.h"
@@ -25,14 +26,14 @@
 /* According to the Adobe documentation, %device and %device% */
 /* are equivalent; both return name==NULL. */
 int
-gs_parse_file_name(const gs_memory_t *mem, gs_parsed_file_name_t * pfn, const char *pname, uint len)
+gs_parse_file_name(gs_parsed_file_name_t * pfn, const char *pname, uint len)
 {
     uint dlen;
     const char *pdelim;
     gx_io_device *iodev;
 
     if (len == 0)
-	return_error(mem, gs_error_undefinedfilename); /* null name not allowed */
+	return_error(gs_error_undefinedfilename); /* null name not allowed */
     if (pname[0] != '%') {	/* no device */
 	pfn->memory = 0;
 	pfn->iodev = NULL;
@@ -52,7 +53,7 @@ gs_parse_file_name(const gs_memory_t *mem, gs_parsed_file_name_t * pfn, const ch
     }
     iodev = gs_findiodevice((const byte *)pname, dlen);
     if (iodev == 0)
-	return_error(mem, gs_error_undefinedfilename);
+	return_error(gs_error_undefinedfilename);
     pfn->memory = 0;
     pfn->iodev = iodev;
     pfn->fname = pdelim;
@@ -65,12 +66,12 @@ int
 gs_parse_real_file_name(gs_parsed_file_name_t * pfn, const char *pname,
 			uint len, gs_memory_t *mem, client_name_t cname)
 {
-    int code = gs_parse_file_name(mem, pfn, pname, len);
+    int code = gs_parse_file_name(pfn, pname, len);
 
     if (code < 0)
 	return code;
     if (pfn->len == 0)
-	return_error(mem, gs_error_invalidfileaccess);	/* device only */
+	return_error(gs_error_invalidfileaccess);	/* device only */
     return gs_terminate_file_name(pfn, mem, cname);
 }
 
@@ -89,7 +90,7 @@ gs_terminate_file_name(gs_parsed_file_name_t * pfn, gs_memory_t *mem,
     /* Copy the file name to a C string. */
     fname = (char *)gs_alloc_string(mem, len + 1, cname);
     if (fname == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     memcpy(fname, pfn->fname, len);
     fname[len] = 0;
     pfn->memory = mem;

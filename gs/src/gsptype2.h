@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Client interface to PatternType 2 Patterns */
 
 #ifndef gsptype2_INCLUDED
@@ -51,6 +52,7 @@ typedef struct gx_device_color_s gx_device_color;
 typedef struct gs_pattern2_instance_s {
     gs_pattern_instance_common;
     gs_pattern2_template_t template;
+    bool shfill;
 } gs_pattern2_instance_t;
 
 #define private_st_pattern2_instance() /* in gsptype2.c */\
@@ -66,6 +68,11 @@ typedef struct gx_path_s gx_path;
 #ifndef gx_device_DEFINED
 #define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
+#endif
+
+#ifndef gs_color_space_DEFINED
+#  define gs_color_space_DEFINED
+typedef struct gs_color_space_s gs_color_space;
 #endif
 
 extern const gx_device_color_type_t gx_dc_pattern2;
@@ -85,9 +92,27 @@ void gs_pattern2_init(gs_pattern2_template_t *);
 /* Check device color for Pattern Type 2. */
 bool gx_dc_is_pattern2_color(const gx_device_color *pdevc);
 
-/* Fill path or rect, with adjustment, and with a PatternType 2 color. */
-int gx_dc_pattern2_fill_path_adjusted(const gx_device_color * pdevc, 
+/* Fill path or rect, and with a PatternType 2 color. */
+int gx_dc_pattern2_fill_path(const gx_device_color * pdevc, 
 			      gx_path * ppath, gs_fixed_rect * rect, 
 			      gx_device * dev);
 
+/* Set the 'shfill' flag to a PatternType 2 pattern instance. */
+int gs_pattern2_set_shfill(gs_client_color * pcc);
+
+/* Transform a shading bounding box into device space. */
+int gx_dc_pattern2_shade_bbox_transform2fixed(const gs_rect * rect,
+	const gs_imager_state * pis, gs_fixed_rect * rfixed);
+
+/* Get a shading bbox. Returns 1 on success. */
+int gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox);
+
+/* Get a shading color space. */
+const gs_color_space *gx_dc_pattern2_get_color_space(const gx_device_color * pdevc);
+
+/* Check device color for a possibly self-overlapping shading. */
+bool gx_dc_pattern2_can_overlap(const gx_device_color *pdevc);
+
+/* Check whether a pattern color has a background. */
+bool gx_dc_pattern2_has_background(const gx_device_color *pdevc);
 #endif /* gsptype2_INCLUDED */

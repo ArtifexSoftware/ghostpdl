@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generic PostScript language interface to Functions */
 #include "memory_.h"
 #include "ghost.h"
@@ -131,14 +132,14 @@ zexecfunction(i_ctx_t *i_ctx_p)
     if (!r_is_struct(op) ||
 	!r_has_masked_attrs(op, a_executable | a_execute, a_executable | a_all)
 	)
-	return_error(imemory, e_typecheck);
+	return_error(e_typecheck);
     {
 	gs_function_t *pfn = (gs_function_t *) op->value.pstruct;
 	int m = pfn->params.m, n = pfn->params.n;
 	int diff = n - (m + 1);
 
 	if (diff > 0)
-	    check_ostack(imemory, diff);
+	    check_ostack(diff);
 	{
 	    float params[20];	/* arbitrary size, just to avoid allocs */
 	    float *in;
@@ -151,17 +152,17 @@ zexecfunction(i_ctx_t *i_ctx_p)
 		in = (float *)ialloc_byte_array(m + n, sizeof(float),
 						"%execfunction(in/out)");
 		if (in == 0)
-		    code = gs_note_error(imemory, e_VMerror);
+		    code = gs_note_error(e_VMerror);
 	    }
 	    out = in + m;
 	    if (code < 0 ||
-		(code = float_params(imemory, op - 1, m, in)) < 0 ||
-		(code = gs_function_evaluate(imemory, pfn, in, out)) < 0
+		(code = float_params(op - 1, m, in)) < 0 ||
+		(code = gs_function_evaluate(pfn, in, out)) < 0
 		)
 		DO_NOTHING;
 	    else {
 		if (diff > 0)
-		    push(imemory, diff);	/* can't fail */
+		    push(diff);	/* can't fail */
 		else if (diff < 0) {
 		    pop(-diff);
 		    op = osp;
@@ -189,7 +190,7 @@ zisencapfunction(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_function_t *pfn;
 
-    check_proc(imemory, *op);
+    check_proc(*op);
     pfn = ref_function(op);
     make_bool(op, pfn != NULL);
     return 0;
@@ -211,16 +212,16 @@ fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
     gs_function_params_t params;
 
     if (depth > MAX_SUB_FUNCTION_DEPTH)
-	return_error(imemory, e_limitcheck);
-    check_type(imemory, *op, t_dictionary);
-    code = dict_int_param(imemory, op, "FunctionType", 0, max_int, -1, &type);
+	return_error(e_limitcheck);
+    check_type(*op, t_dictionary);
+    code = dict_int_param(op, "FunctionType", 0, max_int, -1, &type);
     if (code < 0)
 	return code;
     for (i = 0; i < build_function_type_table_count; ++i)
 	if (build_function_type_table[i].type == type)
 	    break;
     if (i == build_function_type_table_count)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     /* Collect parameters common to all function types. */
     params.Domain = 0;
     params.Range = 0;
@@ -257,21 +258,22 @@ fn_build_float_array(const ref * op, const char *kstr, bool required,
 
     *pparray = 0;
     if (dict_find_string(op, kstr, &par) <= 0)
-	return (required ? gs_note_error(mem, e_rangecheck) : 0);
+	return (required ? gs_note_error(e_rangecheck) : 0);
     if (!r_is_array(par))
-	return_error(mem, e_typecheck);
+	return_error(e_typecheck);
     {
 	uint size = r_size(par);
 	float *ptr = (float *)
 	    gs_alloc_byte_array(mem, size, sizeof(float), kstr);
 
 	if (ptr == 0)
-	    return_error(mem, e_VMerror);
-	code = dict_float_array_check_param(mem, op, kstr, size, ptr, NULL,
+	    return_error(e_VMerror);
+	code = dict_float_array_check_param(mem, op, kstr, size, 
+					    ptr, NULL,
 					    0, e_rangecheck);
 	if (code < 0 || (even && (code & 1) != 0)) {
 	    gs_free_object(mem, ptr, kstr);
-	    return(code < 0 ? code : gs_note_error(mem, e_rangecheck));
+	    return(code < 0 ? code : gs_note_error(e_rangecheck));
 	}
 	*pparray = ptr;
     }
@@ -294,23 +296,24 @@ fn_build_float_array_forced(const ref * op, const char *kstr, bool required,
 
     *pparray = 0;
     if (dict_find_string(op, kstr, &par) <= 0)
-	return (required ? gs_note_error(mem, e_rangecheck) : 0);
+	return (required ? gs_note_error(e_rangecheck) : 0);
 
     if( r_is_array(par) )
 	size = r_size(par);
     else if(r_type(par) == t_integer || r_type(par) == t_real)
         size = 1;
     else
-	return_error(mem, e_typecheck);
+	return_error(e_typecheck);
     ptr = (float *)gs_alloc_byte_array(mem, size, sizeof(float), kstr);
 
     if (ptr == 0)
-        return_error(mem, e_VMerror);
+        return_error(e_VMerror);
     if(r_is_array(par) )    
-        code = dict_float_array_check_param(mem, op, kstr, size, ptr, NULL,
+        code = dict_float_array_check_param(mem, op, kstr, 
+					    size, ptr, NULL,
 					    0, e_rangecheck);
     else {
-        code = dict_float_param(mem, op, kstr, 0., ptr); /* defailt cannot happen */
+        code = dict_float_param(op, kstr, 0., ptr); /* defailt cannot happen */
         if( code == 0 )
             code = 1;
     }

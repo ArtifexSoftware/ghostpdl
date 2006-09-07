@@ -22,7 +22,7 @@ currentglobal true setglobal
 [ /CIEBasedABC
   3 dict begin
      /WhitePoint [ 0.9505 1.0 1.089 ] def
-     /DecodeLMN  [ { 1.8 exp } { 1.8 exp } { 1.8 exp } ]  def
+     /DecodeLMN  [ { 1.8 exp } bind dup dup ] def
      /MatrixLMN  [ 0.4439 0.2522 0.0436 0.3341 0.6371 0.1387 0.1725 0.1107 0.9067 ] def
   currentdict end
 ]

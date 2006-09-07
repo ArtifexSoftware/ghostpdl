@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Matrix operators */
 #include "ghost.h"
 #include "oper.h"
@@ -22,7 +23,7 @@
 /* Forward references */
 private int common_transform(i_ctx_t *,
 		int (*)(gs_state *, floatp, floatp, gs_point *),
-		int (*)(const gs_memory_t *mem, floatp, floatp, const gs_matrix *, gs_point *));
+		int (*)(floatp, floatp, const gs_matrix *, gs_point *));
 
 /* - initmatrix - */
 private int
@@ -52,7 +53,7 @@ zcurrentmatrix(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    push(imemory, 6);
+    push(6);
     code = make_floats(op - 5, &mat.xx, 6);
     if (code < 0)
 	pop(6);
@@ -65,7 +66,7 @@ zsetmatrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_matrix mat;
-    int code = float_params(imemory, op, 6, &mat.xx);
+    int code = float_params(op, 6, &mat.xx);
 
     if (code < 0)
 	return code;
@@ -107,7 +108,7 @@ ztranslate(i_ctx_t *i_ctx_p)
     int code;
     double trans[2];
 
-    if ((code = num_params(imemory, op, 2, trans)) >= 0) {
+    if ((code = num_params(op, 2, trans)) >= 0) {
 	code = gs_translate(igs, trans[0], trans[1]);
 	if (code < 0)
 	    return code;
@@ -115,12 +116,12 @@ ztranslate(i_ctx_t *i_ctx_p)
 	gs_matrix mat;
 
 	/* The num_params failure might be a stack underflow. */
-	check_op(imemory, 2);
-	if ((code = num_params(imemory, op - 1, 2, trans)) < 0 ||
+	check_op(2);
+	if ((code = num_params(op - 1, 2, trans)) < 0 ||
 	    (code = gs_make_translation(trans[0], trans[1], &mat)) < 0 ||
 	    (code = write_matrix(op, &mat)) < 0
 	    ) {			/* Might be a stack underflow. */
-	    check_op(imemory, 3);
+	    check_op(3);
 	    return code;
 	}
 	op[-2] = *op;
@@ -138,7 +139,7 @@ zscale(i_ctx_t *i_ctx_p)
     int code;
     double scale[2];
 
-    if ((code = num_params(imemory, op, 2, scale)) >= 0) {
+    if ((code = num_params(op, 2, scale)) >= 0) {
 	code = gs_scale(igs, scale[0], scale[1]);
 	if (code < 0)
 	    return code;
@@ -146,12 +147,12 @@ zscale(i_ctx_t *i_ctx_p)
 	gs_matrix mat;
 
 	/* The num_params failure might be a stack underflow. */
-	check_op(imemory, 2);
-	if ((code = num_params(imemory, op - 1, 2, scale)) < 0 ||
+	check_op(2);
+	if ((code = num_params(op - 1, 2, scale)) < 0 ||
 	    (code = gs_make_scaling(scale[0], scale[1], &mat)) < 0 ||
 	    (code = write_matrix(op, &mat)) < 0
 	    ) {			/* Might be a stack underflow. */
-	    check_op(imemory, 3);
+	    check_op(3);
 	    return code;
 	}
 	op[-2] = *op;
@@ -169,7 +170,7 @@ zrotate(i_ctx_t *i_ctx_p)
     int code;
     double ang;
 
-    if ((code = real_param(imemory, op, &ang)) >= 0) {
+    if ((code = real_param(op, &ang)) >= 0) {
 	code = gs_rotate(igs, ang);
 	if (code < 0)
 	    return code;
@@ -177,12 +178,12 @@ zrotate(i_ctx_t *i_ctx_p)
 	gs_matrix mat;
 
 	/* The num_params failure might be a stack underflow. */
-	check_op(imemory, 1);
-	if ((code = num_params(imemory, op - 1, 1, &ang)) < 0 ||
+	check_op(1);
+	if ((code = num_params(op - 1, 1, &ang)) < 0 ||
 	    (code = gs_make_rotation(ang, &mat)) < 0 ||
 	    (code = write_matrix(op, &mat)) < 0
 	    ) {			/* Might be a stack underflow. */
-	    check_op(imemory, 2);
+	    check_op(2);
 	    return code;
 	}
 	op[-1] = *op;
@@ -263,7 +264,7 @@ zidtransform(i_ctx_t *i_ctx_p)
 private int
 common_transform(i_ctx_t *i_ctx_p,
 	int (*ptproc)(gs_state *, floatp, floatp, gs_point *),
-	int (*matproc)(const gs_memory_t *, floatp, floatp, const gs_matrix *, gs_point *))
+	int (*matproc)(floatp, floatp, const gs_matrix *, gs_point *))
 {
     os_ptr op = osp;
     double opxy[2];
@@ -285,10 +286,10 @@ common_transform(i_ctx_t *i_ctx_p,
 	    gs_matrix *pmat = &mat;
 
 	    if ((code = read_matrix(imemory, op, pmat)) < 0 ||
-		(code = num_params(imemory, op - 1, 2, opxy)) < 0 ||
-		(code = (*matproc) (imemory, opxy[0], opxy[1], pmat, &pt)) < 0
+		(code = num_params(op - 1, 2, opxy)) < 0 ||
+		(code = (*matproc) (opxy[0], opxy[1], pmat, &pt)) < 0
 		) {		/* Might be a stack underflow. */
-		check_op(imemory, 3);
+		check_op(3);
 		return code;
 	    }
 	    op--;
@@ -296,7 +297,7 @@ common_transform(i_ctx_t *i_ctx_p,
 	    goto out;
 	}
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
     }
     switch (r_type(op - 1)) {
 	case t_real:
@@ -306,7 +307,7 @@ common_transform(i_ctx_t *i_ctx_p,
 	    opxy[0] = (op - 1)->value.intval;
 	    break;
 	default:
-	    return_op_typecheck(imemory, op - 1);
+	    return_op_typecheck(op - 1);
     }
     if ((code = (*ptproc) (igs, opxy[0], opxy[1], &pt)) < 0)
 	return code;
@@ -325,7 +326,7 @@ zinvertmatrix(i_ctx_t *i_ctx_p)
     int code;
 
     if ((code = read_matrix(imemory, op - 1, &m)) < 0 ||
-	(code = gs_matrix_invert(imemory, &m, &m)) < 0 ||
+	(code = gs_matrix_invert(&m, &m)) < 0 ||
 	(code = write_matrix(op, &m)) < 0
 	)
 	return code;

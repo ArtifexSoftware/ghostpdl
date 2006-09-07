@@ -1,16 +1,16 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
-
-# $RCSfile$ $Revision$
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
 # makefile for DesqView/X/gcc/X11 configuration.
 
 #include $(COMMONDIR)/gccdefs.mak
@@ -34,6 +34,7 @@ GLGENDIR=obj
 GLOBJDIR=obj
 PSSRCDIR=src
 PSLIBDIR=lib
+PSRESDIR=Resource
 PSGENDIR=obj
 PSOBJDIR=obj
 
@@ -58,7 +59,7 @@ GS_DOCDIR=$(docdir)
 # Define the default directory/ies for the runtime
 # initialization, resource and font files.  Separate multiple directories with a ;.
 
-GS_LIB_DEFAULT="$(gsdatadir)/lib;$(gsdatadir)/Resource;$(gsfontdir)"
+GS_LIB_DEFAULT="$(gsdatadir)/lib;$(gsdatadir)/Resource/Font;$(gsfontdir)"
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -123,7 +124,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10205
+PVERSION=10208
 
 # Choose whether to use a shared version of the PNG library (-lpng).
 # See gs.mak and Make.htm for more information.
@@ -143,6 +144,7 @@ ZLIB_NAME=gz
 
 # Choose shared or compiled in libjbig2dec and source location
 
+JBIG2_LIB=jbig2dec
 SHARE_JBIG2=0
 JBIG2SRCDIR=jbig2dec
 
@@ -158,7 +160,7 @@ ICCSRCDIR=icclib
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
- 
+
 #IJSSRCDIR=ijs
 #IJSEXECTYPE=unix
 
@@ -274,8 +276,7 @@ COMPILE_INITS=0
 BAND_LIST_STORAGE=file
 
 # Choose which compression method to use when storing band lists in memory.
-# The choices are 'lzw' or 'zlib'.  lzw is not recommended, because the
-# LZW-compatible code in Ghostscript doesn't actually compress its input.
+# The choices are 'lzw' or 'zlib'. 
 
 BAND_LIST_COMPRESSOR=zlib
 
@@ -303,7 +304,7 @@ DEVICE_DEVS7=
 DEVICE_DEVS8=
 DEVICE_DEVS9=pbm.dev pbmraw.dev pgm.dev pgmraw.dev pgnm.dev pgnmraw.dev pnm.dev pnmraw.dev ppm.dev ppmraw.dev
 DEVICE_DEVS10=tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev tifflzw.dev tiffpack.dev
-DEVICE_DEVS11=tiff12nc.dev tiff24nc.dev
+DEVICE_DEVS11=tiff12nc.dev tiff24nc.dev tiffgray.dev tiff32nc.dev tiffsep.dev
 DEVICE_DEVS12=psmono.dev psgray.dev bit.dev bitrgb.dev bitcmyk.dev
 DEVICE_DEVS13=
 DEVICE_DEVS14=

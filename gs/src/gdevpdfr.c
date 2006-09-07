@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Named object pdfmark processing */
 #include "memory_.h"
 #include "string_.h"
@@ -46,7 +47,7 @@ pdf_find_named(gx_device_pdf * pdev, const gs_param_string * pname,
     const cos_value_t *pvalue;
 
     if (!pdf_objname_is_valid(pname->data, pname->size))
-	return_error(pdev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     if ((pvalue = cos_dict_find(pdev->local_named_objects, pname->data,
 				pname->size)) != 0 ||
 	(pvalue = cos_dict_find(pdev->global_named_objects, pname->data,
@@ -55,7 +56,7 @@ pdf_find_named(gx_device_pdf * pdev, const gs_param_string * pname,
 	*ppco = pvalue->contents.object;
 	return 0;
     }
-    return_error(pdev->memory, gs_error_undefined);
+    return_error(gs_error_undefined);
 }
 
 /*
@@ -72,7 +73,7 @@ pdf_create_named(gx_device_pdf *pdev, const gs_param_string *pname,
 
     *ppco = pco = cos_object_alloc(pdev, "pdf_create_named");
     if (pco == 0)
-	return_error(pdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     pco->id =
 	(id == -1 ? 0L : id == 0 ? pdf_obj_ref(pdev) : id);
     if (pname) {
@@ -144,7 +145,7 @@ pdf_refer_named(gx_device_pdf * pdev, const gs_param_string * pname_orig,
 	return code;
  cpage:
     if (pdf_page_id(pdev, page_number) <= 0)
-	return_error(pdev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     *ppco = COS_OBJECT(pdev->pages[page_number - 1].Page);
     return 0;
 }
@@ -166,7 +167,7 @@ pdf_make_named(gx_device_pdf * pdev, const gs_param_string * pname,
 	if (code < 0)
 	    return code;
 	if (cos_type(pco) != cos_type_generic)
-	    return_error(pdev->memory, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	if (assign_id && pco->id == 0)
 	    pco->id = pdf_obj_ref(pdev);
 	cos_become(pco, cotype);
@@ -203,7 +204,7 @@ pdf_get_named(gx_device_pdf * pdev, const gs_param_string * pname,
     if (code < 0)
 	return code;
     if (cos_type(*ppco) != cotype)
-	return_error(pdev->memory, gs_error_typecheck);
+	return_error(gs_error_typecheck);
     return code;
 }
 
@@ -227,7 +228,7 @@ pdf_push_namespace(gx_device_pdf *pdev)
 	)
 	return code;
     if (pcd == 0 || pca == 0)
-	return_error(pdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     pdev->local_named_objects = pcd;
     pdev->NI_stack = pca;
     return 0;
@@ -272,7 +273,7 @@ pdf_pop_namespace(gx_device_pdf *pdev)
  * that pre-processes the arguments for pdfmarks, in lib/gs_pdfwr.ps.
  */
 int
-pdf_scan_token(const gs_memory_t *mem, const byte **pscan, const byte * end, const byte **ptoken)
+pdf_scan_token(const byte **pscan, const byte * end, const byte **ptoken)
 {
     const byte *p = *pscan;
 
@@ -283,7 +284,7 @@ pdf_scan_token(const gs_memory_t *mem, const byte **pscan, const byte * end, con
 	    *ptoken = ++p;
 	    while (*p != 0)
 		if (++p >= end)
-		    return_error(mem, gs_error_syntaxerror);	/* no terminator */
+		    return_error(gs_error_syntaxerror);	/* no terminator */
 	    *pscan = p;
 	    return 1;
 	}
@@ -296,7 +297,7 @@ pdf_scan_token(const gs_memory_t *mem, const byte **pscan, const byte * end, con
     switch (*p) {
     case '%':
     case ')':
-	return_error(mem, gs_error_syntaxerror);
+	return_error(gs_error_syntaxerror);
     case '(': {
 	/* Skip over the string. */
 	byte buf[50];		/* size is arbitrary */
@@ -305,7 +306,7 @@ pdf_scan_token(const gs_memory_t *mem, const byte **pscan, const byte * end, con
 	stream_PSSD_state ss;
 	int status;
 
-	s_PSSD_init_inline(&ss);
+	s_PSSD_init((stream_state *)&ss);
 	r.ptr = p;		/* skip the '(' */
 	r.limit = end - 1;
 	w.limit = buf + sizeof(buf) - 1;
@@ -313,7 +314,7 @@ pdf_scan_token(const gs_memory_t *mem, const byte **pscan, const byte * end, con
 	    /* One picky compiler complains if we initialize to buf - 1. */
 	    w.ptr = buf;  w.ptr--;
 	    status = (*s_PSSD_template.process)
-		(mem, (stream_state *) & ss, &r, &w, true);
+		((stream_state *) & ss, &r, &w, true);
 	}
 	while (status == 1);
 	*pscan = r.ptr + 1;
@@ -321,7 +322,7 @@ pdf_scan_token(const gs_memory_t *mem, const byte **pscan, const byte * end, con
     }
     case '<':
 	if (end - p < 2)
-	    return_error(mem, gs_error_syntaxerror);
+	    return_error(gs_error_syntaxerror);
 	if (p[1] != '<') {
 	    /*
 	     * We need the cast because some compilers declare memchar as
@@ -329,12 +330,12 @@ pdf_scan_token(const gs_memory_t *mem, const byte **pscan, const byte * end, con
 	     */
 	    p = (const byte *)memchr(p + 1, '>', end - p - 1);
 	    if (p == 0)
-		return_error(mem, gs_error_syntaxerror);
+		return_error(gs_error_syntaxerror);
 	}
 	goto m2;
     case '>':
 	if (end - p < 2 || p[1] != '>')
-	    return_error(mem, gs_error_syntaxerror);
+	    return_error(gs_error_syntaxerror);
 m2:	*pscan = p + 2;
 	return 1;
     case '[': case ']': case '{': case '}':
@@ -349,7 +350,7 @@ m2:	*pscan = p + 2;
 	++p;
     *pscan = p;
     if (p == *ptoken)		/* no chars scanned, i.e., not ctype_name */
-	return_error(mem, gs_error_syntaxerror);
+	return_error(gs_error_syntaxerror);
     return 1;
 }
 /*
@@ -357,8 +358,7 @@ m2:	*pscan = p + 2;
  * single tokens.
  */
 int
-pdf_scan_token_composite(const gs_memory_t *mem, 
-			 const byte **pscan, const byte * end,
+pdf_scan_token_composite(const byte **pscan, const byte * end,
 			 const byte **ptoken_orig)
 {
     int level = 0;
@@ -367,16 +367,16 @@ pdf_scan_token_composite(const gs_memory_t *mem,
     int code;
 
     do {
-	code = pdf_scan_token(mem, pscan, end, ptoken);
+	code = pdf_scan_token(pscan, end, ptoken);
 	if (code <= 0)
 	    return (code < 0 || level == 0 ? code :
-		    gs_note_error(mem, gs_error_syntaxerror));
+		    gs_note_error(gs_error_syntaxerror));
 	switch (**ptoken) {
 	case '<': case '[': case '{':
 	    ++level; break;
 	case '>': case ']': case '}':
 	    if (level == 0)
-		return_error(mem, gs_error_syntaxerror);
+		return_error(gs_error_syntaxerror);
 	    --level; break;
 	}
 	ptoken = &ignore_token;
@@ -398,7 +398,7 @@ pdfmark_next_object(const byte * scan, const byte * end, const byte **pname,
      */
     int code;
 
-    while ((code = pdf_scan_token(pdev->memory, &scan, end, pname)) != 0) {
+    while ((code = pdf_scan_token(&scan, end, pname)) != 0) {
 	gs_param_string sname;
 
 	if (code < 0) {
@@ -409,7 +409,7 @@ pdfmark_next_object(const byte * scan, const byte * end, const byte **pname,
 	    continue;
 	/* Back up over the { and rescan as a single token. */
 	scan = *pname;
-	code = pdf_scan_token_composite(pdev->memory, &scan, end, pname);
+	code = pdf_scan_token_composite(&scan, end, pname);
 	if (code < 0) {
 	    ++scan;
 	    continue;
@@ -463,7 +463,7 @@ pdf_replace_names(gx_device_pdf * pdev, const gs_param_string * from,
     }
     sto = gs_alloc_bytes(pdev->pdf_memory, size, "pdf_replace_names");
     if (sto == 0)
-	return_error(pdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     to->data = sto;
     to->size = size;
     /* Do a second pass to do the actual substitutions. */

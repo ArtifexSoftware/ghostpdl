@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PostScript image output device */
 #include "gdevprn.h"
 #include "gdevpsu.h"
@@ -51,14 +52,14 @@ ps_image_write_headers(FILE *f, gx_device_printer *pdev,
 	bbox.q.x = pdev->width / pdev->HWResolution[0] * 72.0;
 	bbox.q.y = pdev->height / pdev->HWResolution[1] * 72.0;
 	psw_begin_file_header(f, (gx_device *)pdev, &bbox, pdpc, false);
-	psw_print_lines(pdev->memory, f, setup);
-	psw_end_file_header(pdev->memory, f);
+	psw_print_lines(f, setup);
+	psw_end_file_header(f);
     }
     {
 	byte buf[100];		/* arbitrary */
 	stream s;
 
-	s_stack_init(&s, pdev->memory);
+	s_init(&s, pdev->memory);
 	swrite_file(&s, f, buf, sizeof(buf));
 	psw_write_page_header(&s, (gx_device *)pdev, pdpc, true, pdev->PageCount + 1, 10);
 	sflush(&s);
@@ -168,7 +169,7 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
     gx_device_pswrite_common_t pswrite_common;
 
     if (line == 0)
-	return_error(pdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     pswrite_common = psmono_values;
 
     /* If this is the first page of the file, */
@@ -226,7 +227,7 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 			 prn_stream);
 	    }
             if (ferror(prn_stream))
-	        return_error(pdev->memory, gs_error_ioerror);
+	        return_error(gs_error_ioerror);
         }
 	/* Write the remaining data, if any. */
 	write_data_run(p, left, prn_stream, invert);
@@ -234,10 +235,10 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
     /* Clean up and return. */
     fputs("\n", prn_stream);
-    psw_write_page_trailer(pdev->memory, prn_stream, 1, true);
+    psw_write_page_trailer(prn_stream, 1, true);
     gs_free_object(pdev->memory, line, "psmono_print_page");
     if (ferror(prn_stream))
-	return_error(pdev->memory, gs_error_ioerror);
+	return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -353,21 +354,17 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
     gx_device_pswrite_common_t pswrite_common;
     pswrite_common = psrgb_values;
 
-    s_stack_init( &fs, mem );
-    s_stack_init( &a85s, mem );
-    s_stack_init( &rls, mem );
-    s_stack_init( &a85state, mem );
-    s_stack_init( &rlstate, mem );
-
     if (lbuf == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     ps_image_write_headers(prn_stream, pdev, psrgb_setup, &pswrite_common);
     fprintf(prn_stream, "%d %d rgbimage\n", width, pdev->height);
+    s_init(&fs, mem);
     swrite_file(&fs, prn_stream, fsbuf, sizeof(fsbuf));
     fs.memory = 0;
 
     if (s_A85E_template.set_defaults)
 	(*s_A85E_template.set_defaults) ((stream_state *) & a85state);
+    s_init(&a85s, mem);
     s_std_init(&a85s, a85sbuf, sizeof(a85sbuf), &s_filter_write_procs,
 	       s_mode_write);
     a85s.memory = 0;
@@ -379,6 +376,7 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
     a85s.strm = &fs;
 
     (*s_RLE_template.set_defaults) ((stream_state *) & rlstate);
+    s_init(&rls, mem);
     s_std_init(&rls, rlsbuf, sizeof(rlsbuf), &s_filter_write_procs,
 	       s_mode_write);
     rls.memory = 0;
@@ -400,17 +398,17 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
 	    for (i = 0, p = data + c; i < width; ++i, p += 3)
 		sputc(&rls, *p);
             if (rls.end_status == ERRC)
-              return_error(mem, gs_error_ioerror);
+              return_error(gs_error_ioerror);
 	}
     }
     sclose(&rls);
     sclose(&a85s);
     sflush(&fs);
     fputs("\n", prn_stream);
-    psw_write_page_trailer(mem, prn_stream, 1, true);
+    psw_write_page_trailer(prn_stream, 1, true);
     gs_free_object(mem, lbuf, "psrgb_print_page(lbuf)");
     if (ferror(prn_stream))
-        return_error(mem, gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return 0;
 }
 

@@ -3,9 +3,9 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%BeginResource: CMap (EUC-H)
 %%Title: (EUC-H Adobe Japan1 1)
-%%Version: 5.008
+%%Version: 10.001
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-1996 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-1998 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -37,7 +37,7 @@ begincmap
 end def
 
 /CMapName /EUC-H def
-/CMapVersion 5.008 def
+/CMapVersion 10.001 def
 /CMapType 1 def
 
 /UIDOffset 680 def

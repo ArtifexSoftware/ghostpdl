@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Alpha-compositing implementation */
 #include "memory_.h"
 #include "gx.h"
@@ -58,8 +59,7 @@ typedef struct const_pixel_row_s {
  * alpha data to test whether there are any actual values that would
  * generate a non-unity alpha result.
  */
-int composite_values(const gs_memory_t *mem, 
-		     const pixel_row_t * pdest,
+int composite_values(const pixel_row_t * pdest,
 		     const const_pixel_row_t * psource,
 		     int values_per_pixel, uint num_pixels,
 		     const gs_composite_params_t * pcp);
@@ -99,7 +99,9 @@ const gs_composite_type_t gs_composite_alpha_type =
 	c_alpha_create_default_compositor,
 	c_alpha_equal,
 	c_alpha_write,
-	c_alpha_read
+	c_alpha_read,
+	gx_default_composite_clist_write_update,
+	gx_default_composite_clist_read_update
     }
 };
 typedef struct gs_composite_alpha_s {
@@ -118,7 +120,7 @@ gs_create_composite_alpha(gs_composite_t ** ppcte,
     gs_composite_alpha_t *pcte;
 
     rc_alloc_struct_0(pcte, gs_composite_alpha_t, &st_composite_alpha,
-		      mem, return_error(mem, gs_error_VMerror),
+		      mem, return_error(gs_error_VMerror),
 		      "gs_create_composite_alpha");
     pcte->type = &gs_composite_alpha_type;
     pcte->id = gs_next_ids(mem, 1);
@@ -143,7 +145,7 @@ c_alpha_equal(const gs_composite_t * pcte, const gs_composite_t * pcte2)
 }
 
 private int
-c_alpha_write(const gs_memory_t *mem, const gs_composite_t * pcte, byte * data, uint * psize)
+c_alpha_write(const gs_composite_t * pcte, byte * data, uint * psize)
 {
     uint size = *psize;
     uint used;
@@ -152,14 +154,14 @@ c_alpha_write(const gs_memory_t *mem, const gs_composite_t * pcte, byte * data, 
 	used = 1 + sizeof(pacte->params.delta);
 	if (size < used) {
 	    *psize = used;
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	}
 	memcpy(data + 1, &pacte->params.delta, sizeof(pacte->params.delta));
     } else {
 	used = 1;
 	if (size < used) {
 	    *psize = used;
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	}
     }
     *data = (byte) pacte->params.op;
@@ -175,11 +177,11 @@ c_alpha_read(gs_composite_t ** ppcte, const byte * data, uint size,
     int code, nbytes = 1;
 
     if (size < 1 || *data > composite_op_last)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     params.op = *data;
     if (params.op == composite_Dissolve) {
 	if (size < 1 + sizeof(params.delta))
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	memcpy(&params.delta, data + 1, sizeof(params.delta));
 	nbytes += sizeof(params.delta);
     }
@@ -259,8 +261,8 @@ private const gx_device_composite_alpha gs_composite_alpha_device =
 /* Create an alpha compositor. */
 private int
 c_alpha_create_default_compositor(const gs_composite_t * pcte,
-	   gx_device ** pcdev, gx_device * dev, const gs_imager_state * pis,
-				  gs_memory_t * mem)
+	   gx_device ** pcdev, gx_device * dev, gs_imager_state * pis,
+	   gs_memory_t * mem)
 {
     gx_device_composite_alpha *cdev;
 
@@ -275,7 +277,7 @@ c_alpha_create_default_compositor(const gs_composite_t * pcte,
 				  "create default alpha compositor");
     *pcdev = (gx_device *)cdev;
     if (cdev == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     gx_device_init((gx_device *)cdev,
 		   (const gx_device *)&gs_composite_alpha_device, mem, true);
     gx_device_copy_params((gx_device *)cdev, dev);
@@ -443,7 +445,7 @@ dca_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 				(target->color_info.depth * w + 7) >> 3,
 				"dca_fill_rectangle(native)");
     if (std_row == 0 || native_row == 0) {
-	code = gs_note_error(dev->memory, gs_error_VMerror);
+	code = gs_note_error(gs_error_VMerror);
 	goto out;
     }
     rect.p.x = x, rect.q.x = x + w;
@@ -486,7 +488,7 @@ dca_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 	    (std_params.options & GB_ALPHA_FIRST ? gs_image_alpha_first :
 	     std_params.options & GB_ALPHA_LAST ? gs_image_alpha_last :
 	     gs_image_alpha_none);
-	code = composite_values(dev->memory, &dest, &source,
+	code = composite_values(&dest, &source,
 				dev->color_info.num_components, w, &cp);
 	if (code < 0)
 	    break;
@@ -551,9 +553,8 @@ dca_copy_alpha(gx_device * dev, const byte * data, int data_x,
  * later if necessary.
  */
 int
-composite_values(const gs_memory_t *mem,
-		 const pixel_row_t * pdest, const const_pixel_row_t * psource,
-		 int values_per_pixel, uint num_pixels, const gs_composite_params_t * pcp)
+composite_values(const pixel_row_t * pdest, const const_pixel_row_t * psource,
+   int values_per_pixel, uint num_pixels, const gs_composite_params_t * pcp)
 {
     int dest_bpv = pdest->bits_per_value;
     int source_bpv = psource->bits_per_value;
@@ -626,7 +627,7 @@ composite_values(const gs_memory_t *mem,
 		 * The operation could produce non-unity alpha values, but
 		 * the destination can't store them.  Return an error.
 		 */
-		return_error(mem, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	    }
 	}
 	/* Preload the output byte buffer if necessary. */
@@ -783,7 +784,7 @@ composite_values(const gs_memory_t *mem,
 			result = (uint) (source_v * source_delta + dest_v * dest_delta);
 			break;
 		    default:
-			return_error(mem, gs_error_rangecheck);
+			return_error(gs_error_rangecheck);
 		}
 		/*
 		 * Store the result.  We don't have to worry about

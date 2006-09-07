@@ -3,9 +3,9 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%BeginResource: CMap (KSC-Johab-H)
 %%Title: (KSC-Johab-H Adobe Korea1 1)
-%%Version: 4.003
+%%Version: 10.001
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-1997 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-1999 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -37,7 +37,7 @@ begincmap
 end def
 
 /CMapName /KSC-Johab-H def
-/CMapVersion 4.003 def
+/CMapVersion 10.001 def
 /CMapType 1 def
 
 /UIDOffset 560 def
@@ -58,6 +58,33 @@ endnotdefrange
 
 100 begincidrange
 <20> <7e> 1
+<8442> <8448> 358
+<8449> <8451> 366
+<8453> <8453> 375
+<8454> <8458> 377
+<8459> <845d> 383
+<8461> <8461> 388
+<8481> <8481> 389
+<84a1> <84a1> 390
+<84c1> <84c1> 391
+<84e1> <84e1> 392
+<8541> <8541> 393
+<8561> <8561> 394
+<8581> <8581> 395
+<85a1> <85a1> 396
+<85c1> <85c1> 397
+<85e1> <85e1> 398
+<8641> <8641> 399
+<8661> <8661> 400
+<8681> <8681> 401
+<86a1> <86a1> 402
+<86c1> <86c1> 403
+<86e1> <86e1> 404
+<8741> <8741> 405
+<8761> <8761> 406
+<8781> <8781> 407
+<87a1> <87a1> 408
+<8841> <8841> 358
 <8861> <8862> 1086
 <8863> <8864> 9333
 <8865> <8865> 1088
@@ -130,6 +157,9 @@ endnotdefrange
 <896a> <8970> 9445
 <8971> <8971> 1151
 <8973> <8973> 1152
+endcidrange
+
+100 begincidrange
 <8974> <8974> 9452
 <8975> <8977> 1153
 <8978> <897a> 9453
@@ -157,9 +187,6 @@ endnotdefrange
 <89ae> <89af> 9487
 <89b0> <89b1> 1169
 <89b3> <89b3> 1171
-endcidrange
-
-100 begincidrange
 <89b4> <89b4> 9489
 <89b5> <89b5> 1172
 <89b6> <89b6> 9490
@@ -233,6 +260,9 @@ endcidrange
 <8aa9> <8aa9> 1219
 <8aaa> <8ab1> 9600
 <8ab3> <8ab5> 9608
+endcidrange
+
+100 begincidrange
 <8ab6> <8ab7> 1220
 <8ab8> <8abd> 9611
 <8ac1> <8ac1> 1222
@@ -260,9 +290,6 @@ endcidrange
 <8b53> <8b5d> 9678
 <8b61> <8b62> 1234
 <8b63> <8b64> 9689
-endcidrange
-
-100 begincidrange
 <8b65> <8b65> 1236
 <8b66> <8b67> 9691
 <8b68> <8b6a> 1237
@@ -294,6 +321,7 @@ endcidrange
 <8bb9> <8bbb> 9746
 <8bbc> <8bbc> 1256
 <8bbd> <8bbd> 9749
+<8c41> <8c41> 359
 <8c61> <8c63> 1257
 <8c64> <8c64> 9750
 <8c65> <8c65> 1260
@@ -335,6 +363,9 @@ endcidrange
 <8cea> <8cf0> 9842
 <8cf1> <8cf1> 1286
 <8cf3> <8cf3> 1287
+endcidrange
+
+100 begincidrange
 <8cf4> <8cf4> 9849
 <8cf5> <8cf7> 1288
 <8cf8> <8cfd> 9850
@@ -363,9 +394,6 @@ endcidrange
 <8d82> <8d91> 9900
 <8d93> <8d9d> 9916
 <8da1> <8da2> 1304
-endcidrange
-
-100 begincidrange
 <8da3> <8da4> 9927
 <8da5> <8da5> 1306
 <8da6> <8da6> 9929
@@ -438,6 +466,9 @@ endcidrange
 <8ed6> <8ed6> 1350
 <8ed7> <8edd> 10097
 <8ee1> <8ee1> 1351
+endcidrange
+
+100 begincidrange
 <8ee2> <8ee4> 10104
 <8ee5> <8ee5> 1352
 <8ee6> <8ee8> 10107
@@ -466,9 +497,6 @@ endcidrange
 <8f76> <8f76> 10164
 <8f77> <8f77> 1367
 <8f78> <8f7a> 10165
-endcidrange
-
-100 begincidrange
 <8f7b> <8f7b> 1368
 <8f7c> <8f7d> 10168
 <8f81> <8f91> 10170
@@ -486,6 +514,7 @@ endcidrange
 <8fb6> <8fb6> 10211
 <8fb7> <8fb7> 1376
 <8fb8> <8fbd> 10212
+<9041> <9041> 361
 <9061> <9063> 1377
 <9064> <9064> 10218
 <9065> <9065> 1380
@@ -540,6 +569,9 @@ endcidrange
 <9141> <9142> 1422
 <9143> <9144> 10313
 <9145> <9145> 1424
+endcidrange
+
+100 begincidrange
 <9146> <9148> 10315
 <9149> <9149> 1425
 <914a> <9150> 10318
@@ -569,9 +601,6 @@ endcidrange
 <91a1> <91a2> 1442
 <91a3> <91a4> 10377
 <91a5> <91a5> 1444
-endcidrange
-
-100 begincidrange
 <91a6> <91a8> 10379
 <91a9> <91a9> 1445
 <91aa> <91aa> 10382
@@ -643,6 +672,9 @@ endcidrange
 <92e1> <92e1> 1482
 <92e2> <92e4> 10561
 <92e5> <92e5> 1483
+endcidrange
+
+100 begincidrange
 <92e6> <92e8> 10564
 <92e9> <92e9> 1484
 <92ea> <92f0> 10567
@@ -672,9 +704,6 @@ endcidrange
 <9377> <9378> 1502
 <9379> <937b> 10618
 <937c> <937c> 1504
-endcidrange
-
-100 begincidrange
 <937d> <937d> 10621
 <9381> <9381> 1505
 <9382> <9384> 10622
@@ -700,6 +729,7 @@ endcidrange
 <93b8> <93bb> 10660
 <93bc> <93bc> 1517
 <93bd> <93bd> 10664
+<9441> <9441> 364
 <9461> <9463> 1518
 <9464> <9464> 10665
 <9465> <9465> 1521
@@ -745,6 +775,9 @@ endcidrange
 <94f8> <94f8> 10759
 <94f9> <94f9> 1558
 <94fa> <94fb> 10760
+endcidrange
+
+100 begincidrange
 <94fc> <94fc> 1559
 <94fd> <94fd> 10762
 <9541> <9542> 1560
@@ -775,9 +808,6 @@ endcidrange
 <95a1> <95a2> 1576
 <95a3> <95a4> 10831
 <95a5> <95a5> 1578
-endcidrange
-
-100 begincidrange
 <95a6> <95a7> 10833
 <95a8> <95a9> 1579
 <95aa> <95aa> 10835
@@ -848,6 +878,9 @@ endcidrange
 <96e1> <96e1> 1613
 <96e2> <96e4> 11018
 <96e5> <96e5> 1614
+endcidrange
+
+100 begincidrange
 <96e6> <96e8> 11021
 <96e9> <96e9> 1615
 <96ea> <96f1> 11024
@@ -878,9 +911,6 @@ endcidrange
 <9771> <9771> 1630
 <9773> <9773> 1631
 <9774> <9774> 11073
-endcidrange
-
-100 begincidrange
 <9775> <9775> 1632
 <9776> <9776> 11074
 <9777> <9777> 1633
@@ -899,6 +929,7 @@ endcidrange
 <97b4> <97b4> 11119
 <97b5> <97b8> 1642
 <97b9> <97bd> 11120
+<9841> <9841> 365
 <9861> <9862> 1646
 <9863> <9864> 11125
 <9865> <9865> 1648
@@ -950,6 +981,9 @@ endcidrange
 <9953> <9953> 1682
 <9954> <9954> 11246
 <9955> <9957> 1683
+endcidrange
+
+100 begincidrange
 <9958> <995d> 11247
 <9961> <9961> 1686
 <9962> <9971> 11253
@@ -981,9 +1015,6 @@ endcidrange
 <9a46> <9a51> 11386
 <9a53> <9a5d> 11398
 <9a61> <9a71> 11409
-endcidrange
-
-100 begincidrange
 <9a73> <9a7d> 11426
 <9a81> <9a82> 1698
 <9a83> <9a84> 11437
@@ -1046,12 +1077,16 @@ endcidrange
 <9bb6> <9bb6> 11620
 <9bb7> <9bb7> 1731
 <9bb8> <9bbd> 11621
+<9c41> <9c41> 366
 <9c61> <9c62> 1732
 <9c63> <9c64> 11627
 <9c65> <9c65> 1734
 <9c66> <9c68> 11629
 <9c69> <9c69> 1735
 <9c6a> <9c70> 11632
+endcidrange
+
+100 begincidrange
 <9c71> <9c71> 1736
 <9c73> <9c73> 1737
 <9c74> <9c74> 11639
@@ -1084,9 +1119,6 @@ endcidrange
 <9ce3> <9ce4> 11713
 <9ce5> <9ce5> 1760
 <9ce6> <9ce8> 11715
-endcidrange
-
-100 begincidrange
 <9ce9> <9ce9> 1761
 <9cea> <9cf0> 11718
 <9cf1> <9cf1> 1762
@@ -1155,6 +1187,9 @@ endcidrange
 <9e42> <9e44> 11866
 <9e45> <9e45> 1802
 <9e46> <9e48> 11869
+endcidrange
+
+100 begincidrange
 <9e49> <9e49> 1803
 <9e4a> <9e50> 11872
 <9e51> <9e51> 1804
@@ -1187,9 +1222,6 @@ endcidrange
 <9e94> <9e94> 11921
 <9e95> <9e95> 1820
 <9e96> <9e96> 11922
-endcidrange
-
-100 begincidrange
 <9e97> <9e97> 1821
 <9e98> <9e9d> 11923
 <9ea1> <9ea1> 1822
@@ -1255,8 +1287,12 @@ endcidrange
 <9fb6> <9fb6> 12081
 <9fb7> <9fb7> 1858
 <9fb8> <9fbd> 12082
+<a041> <a041> 374
 <a061> <a062> 1859
 <a063> <a064> 12088
+endcidrange
+
+100 begincidrange
 <a065> <a065> 1861
 <a066> <a066> 12090
 <a067> <a06b> 1862
@@ -1290,9 +1326,6 @@ endcidrange
 <a0b7> <a0b7> 1887
 <a0b8> <a0bd> 12137
 <a0c1> <a0d1> 12143
-endcidrange
-
-100 begincidrange
 <a0d3> <a0dd> 12160
 <a0e1> <a0e2> 1888
 <a0e3> <a0e4> 12171
@@ -1360,6 +1393,9 @@ endcidrange
 <a1e1> <a1f1> 12296
 <a1f3> <a1fd> 12313
 <a241> <a241> 1931
+endcidrange
+
+100 begincidrange
 <a242> <a244> 12324
 <a245> <a245> 1932
 <a246> <a248> 12327
@@ -1393,9 +1429,6 @@ endcidrange
 <a295> <a295> 1952
 <a296> <a296> 12378
 <a297> <a297> 1953
-endcidrange
-
-100 begincidrange
 <a298> <a29a> 12379
 <a29b> <a29b> 1954
 <a29c> <a29c> 12382
@@ -1459,9 +1492,13 @@ endcidrange
 <a3ba> <a3ba> 12544
 <a3bb> <a3bb> 1987
 <a3bc> <a3bd> 12545
+<a441> <a441> 375
 <a461> <a465> 1988
 <a466> <a467> 12547
 <a468> <a46c> 1993
+endcidrange
+
+100 begincidrange
 <a46d> <a470> 12549
 <a471> <a471> 1998
 <a473> <a473> 1999
@@ -1496,9 +1533,6 @@ endcidrange
 <a4e1> <a4e2> 2017
 <a4e3> <a4e4> 12630
 <a4e5> <a4e5> 2019
-endcidrange
-
-100 begincidrange
 <a4e6> <a4e7> 12632
 <a4e8> <a4e9> 2020
 <a4ea> <a4ea> 12634
@@ -1565,6 +1599,9 @@ endcidrange
 <a5f6> <a5f6> 2062
 <a5f7> <a5fd> 12773
 <a641> <a642> 2063
+endcidrange
+
+100 begincidrange
 <a643> <a644> 12780
 <a645> <a645> 2065
 <a646> <a648> 12782
@@ -1599,9 +1636,6 @@ endcidrange
 <a6aa> <a6b1> 12850
 <a6b3> <a6b5> 12858
 <a6b6> <a6b6> 2086
-endcidrange
-
-100 begincidrange
 <a6b7> <a6bd> 12861
 <a6c1> <a6c1> 2087
 <a6c2> <a6d1> 12868
@@ -1655,6 +1689,7 @@ endcidrange
 <a7b6> <a7b6> 13001
 <a7b7> <a7b9> 2114
 <a7ba> <a7bd> 13002
+<a841> <a841> 376
 <a861> <a862> 2117
 <a863> <a864> 13006
 <a865> <a865> 2119
@@ -1667,6 +1702,9 @@ endcidrange
 <a873> <a873> 2123
 <a874> <a874> 13017
 <a875> <a877> 2124
+endcidrange
+
+100 begincidrange
 <a878> <a87c> 13018
 <a87d> <a87d> 2127
 <a881> <a882> 2128
@@ -1702,9 +1740,6 @@ endcidrange
 <a957> <a957> 2150
 <a958> <a95d> 13134
 <a961> <a962> 2151
-endcidrange
-
-100 begincidrange
 <a963> <a970> 13140
 <a971> <a971> 2153
 <a973> <a973> 2154
@@ -1770,6 +1805,9 @@ endcidrange
 <ab74> <ab7d> 13463
 <ab81> <ab91> 13473
 <ab93> <ab9d> 13490
+endcidrange
+
+100 begincidrange
 <aba1> <aba2> 2182
 <aba3> <aba4> 13501
 <aba5> <aba5> 2184
@@ -1783,6 +1821,7 @@ endcidrange
 <abb6> <abb6> 13514
 <abb7> <abb7> 2189
 <abb8> <abbd> 13515
+<ac41> <ac41> 378
 <ac61> <ac62> 2190
 <ac63> <ac63> 13521
 <ac64> <ac65> 2192
@@ -1805,9 +1844,6 @@ endcidrange
 <ac91> <ac91> 2208
 <ac93> <ac93> 2209
 <ac94> <ac94> 13547
-endcidrange
-
-100 begincidrange
 <ac95> <ac97> 2210
 <ac98> <ac9d> 13548
 <aca1> <aca2> 2213
@@ -1872,6 +1908,9 @@ endcidrange
 <ad82> <ad84> 13648
 <ad85> <ad85> 2260
 <ad86> <ad88> 13651
+endcidrange
+
+100 begincidrange
 <ad89> <ad89> 2261
 <ad8a> <ad91> 13654
 <ad93> <ad96> 13662
@@ -1908,9 +1947,6 @@ endcidrange
 <ade5> <ade5> 2280
 <ade6> <ade8> 13715
 <ade9> <ade9> 2281
-endcidrange
-
-100 begincidrange
 <adea> <adf0> 13718
 <adf1> <adf1> 2282
 <adf3> <adf4> 13725
@@ -1975,6 +2011,9 @@ endcidrange
 <aee1> <aee2> 2319
 <aee3> <aee4> 13840
 <aee5> <aee5> 2321
+endcidrange
+
+100 begincidrange
 <aee6> <aee8> 13842
 <aee9> <aee9> 2322
 <aeea> <aef0> 13845
@@ -2011,9 +2050,6 @@ endcidrange
 <af81> <af91> 13901
 <af93> <af9d> 13918
 <afa1> <afa2> 2342
-endcidrange
-
-100 begincidrange
 <afa3> <afa4> 13929
 <afa5> <afa5> 2344
 <afa6> <afa7> 13931
@@ -2028,6 +2064,7 @@ endcidrange
 <afb8> <afbb> 13941
 <afbc> <afbc> 2352
 <afbd> <afbd> 13945
+<b041> <b041> 379
 <b061> <b062> 2353
 <b063> <b063> 13946
 <b064> <b065> 2355
@@ -2077,6 +2114,9 @@ endcidrange
 <b149> <b149> 2383
 <b14a> <b151> 14064
 <b153> <b15d> 14072
+endcidrange
+
+100 begincidrange
 <b161> <b171> 14083
 <b173> <b17d> 14100
 <b181> <b184> 14111
@@ -2114,9 +2154,6 @@ endcidrange
 <b246> <b248> 14210
 <b249> <b249> 2402
 <b24a> <b250> 14213
-endcidrange
-
-100 begincidrange
 <b251> <b251> 2403
 <b253> <b253> 2404
 <b254> <b25d> 14220
@@ -2180,9 +2217,13 @@ endcidrange
 <b3b3> <b3b3> 2436
 <b3b4> <b3b4> 14440
 <b3b5> <b3b5> 2437
+endcidrange
+
+100 begincidrange
 <b3b6> <b3b6> 14441
 <b3b7> <b3b7> 2438
 <b3b8> <b3bd> 14442
+<b441> <b441> 380
 <b461> <b462> 2439
 <b463> <b464> 14448
 <b465> <b467> 2441
@@ -2217,9 +2258,6 @@ endcidrange
 <b4ad> <b4b0> 14486
 <b4b1> <b4b1> 2469
 <b4b3> <b4b3> 2470
-endcidrange
-
-100 begincidrange
 <b4b4> <b4b4> 14490
 <b4b5> <b4b5> 2471
 <b4b6> <b4b6> 14491
@@ -2282,6 +2320,9 @@ endcidrange
 <b58a> <b590> 14569
 <b591> <b591> 2523
 <b593> <b593> 2524
+endcidrange
+
+100 begincidrange
 <b594> <b594> 14576
 <b595> <b596> 2525
 <b597> <b59d> 14577
@@ -2320,9 +2361,6 @@ endcidrange
 <b5f1> <b5f1> 2552
 <b5f3> <b5f4> 14631
 <b5f5> <b5f5> 2553
-endcidrange
-
-100 begincidrange
 <b5f6> <b5f6> 14633
 <b5f7> <b5f7> 2554
 <b5f8> <b5fd> 14634
@@ -2385,6 +2423,9 @@ endcidrange
 <b6d1> <b6d1> 2593
 <b6d3> <b6d3> 2594
 <b6d4> <b6d6> 14730
+endcidrange
+
+100 begincidrange
 <b6d7> <b6d7> 2595
 <b6d8> <b6dd> 14733
 <b6e1> <b6e2> 2596
@@ -2423,9 +2464,6 @@ endcidrange
 <b76a> <b76e> 14783
 <b76f> <b76f> 2617
 <b770> <b770> 14788
-endcidrange
-
-100 begincidrange
 <b771> <b771> 2618
 <b773> <b773> 2619
 <b774> <b774> 14789
@@ -2455,6 +2493,7 @@ endcidrange
 <b7b9> <b7bb> 14824
 <b7bc> <b7bc> 2646
 <b7bd> <b7bd> 14827
+<b841> <b841> 381
 <b861> <b862> 2647
 <b863> <b864> 14828
 <b865> <b865> 2649
@@ -2487,6 +2526,9 @@ endcidrange
 <b8a8> <b8a8> 14865
 <b8a9> <b8a9> 2673
 <b8aa> <b8b0> 14866
+endcidrange
+
+100 begincidrange
 <b8b1> <b8b1> 2674
 <b8b3> <b8b6> 14873
 <b8b7> <b8b7> 2675
@@ -2526,9 +2568,6 @@ endcidrange
 <b956> <b956> 14939
 <b957> <b957> 2696
 <b958> <b95d> 14940
-endcidrange
-
-100 begincidrange
 <b961> <b961> 2697
 <b962> <b964> 14946
 <b965> <b965> 2698
@@ -2590,6 +2629,9 @@ endcidrange
 <ba61> <ba62> 2733
 <ba63> <ba64> 15078
 <ba65> <ba65> 2735
+endcidrange
+
+100 begincidrange
 <ba66> <ba71> 15080
 <ba73> <ba76> 15092
 <ba77> <ba77> 2736
@@ -2629,9 +2671,6 @@ endcidrange
 <bb41> <bb41> 2757
 <bb42> <bb44> 15194
 <bb45> <bb45> 2758
-endcidrange
-
-100 begincidrange
 <bb46> <bb48> 15197
 <bb49> <bb49> 2759
 <bb4a> <bb50> 15200
@@ -2669,6 +2708,7 @@ endcidrange
 <bbb9> <bbba> 15278
 <bbbb> <bbbc> 2780
 <bbbd> <bbbd> 15280
+<bc41> <bc41> 382
 <bc61> <bc62> 2782
 <bc63> <bc64> 15281
 <bc65> <bc65> 2784
@@ -2692,6 +2732,9 @@ endcidrange
 <bc8a> <bc90> 15303
 <bc91> <bc91> 2797
 <bc93> <bc93> 2798
+endcidrange
+
+100 begincidrange
 <bc94> <bc94> 15310
 <bc95> <bc97> 2799
 <bc98> <bc9d> 15311
@@ -2732,9 +2775,6 @@ endcidrange
 <bda5> <bda5> 2820
 <bda6> <bda8> 15471
 <bda9> <bda9> 2821
-endcidrange
-
-100 begincidrange
 <bdaa> <bdb0> 15474
 <bdb1> <bdb1> 2822
 <bdb3> <bdb3> 2823
@@ -2795,6 +2835,9 @@ endcidrange
 <bf42> <bf51> 15689
 <bf53> <bf5d> 15705
 <bf61> <bf61> 2851
+endcidrange
+
+100 begincidrange
 <bf62> <bf70> 15716
 <bf71> <bf71> 2852
 <bf73> <bf74> 15731
@@ -2816,6 +2859,7 @@ endcidrange
 <bfb7> <bfb8> 2861
 <bfb9> <bfbc> 15783
 <bfbd> <bfbd> 2863
+<c041> <c041> 383
 <c061> <c062> 2864
 <c063> <c064> 15787
 <c065> <c065> 2866
@@ -2835,9 +2879,6 @@ endcidrange
 <c086> <c088> 15806
 <c089> <c089> 2878
 <c08a> <c090> 15809
-endcidrange
-
-100 begincidrange
 <c091> <c091> 2879
 <c093> <c093> 2880
 <c094> <c094> 15816
@@ -2897,6 +2938,9 @@ endcidrange
 <c198> <c19d> 15956
 <c1a1> <c1a2> 2913
 <c1a3> <c1a4> 15962
+endcidrange
+
+100 begincidrange
 <c1a5> <c1a5> 2915
 <c1a6> <c1a8> 15964
 <c1a9> <c1a9> 2916
@@ -2938,9 +2982,6 @@ endcidrange
 <c273> <c27d> 16070
 <c281> <c282> 2934
 <c283> <c284> 16081
-endcidrange
-
-100 begincidrange
 <c285> <c285> 2936
 <c286> <c288> 16083
 <c289> <c289> 2937
@@ -3000,6 +3041,9 @@ endcidrange
 <c378> <c37d> 16211
 <c381> <c391> 16217
 <c393> <c39d> 16234
+endcidrange
+
+100 begincidrange
 <c3a1> <c3a2> 2966
 <c3a3> <c3a4> 16245
 <c3a5> <c3a5> 2968
@@ -3013,6 +3057,7 @@ endcidrange
 <c3b6> <c3b6> 16256
 <c3b7> <c3b7> 2975
 <c3b8> <c3bd> 16257
+<c441> <c441> 384
 <c461> <c462> 2976
 <c463> <c464> 16263
 <c465> <c465> 2978
@@ -3041,9 +3086,6 @@ endcidrange
 <c4a3> <c4b1> 16302
 <c4b3> <c4b6> 16317
 <c4b7> <c4b7> 2995
-endcidrange
-
-100 begincidrange
 <c4b8> <c4bd> 16321
 <c4c1> <c4d1> 16327
 <c4d3> <c4dd> 16344
@@ -3102,6 +3144,9 @@ endcidrange
 <c5c3> <c5c4> 16460
 <c5c5> <c5c5> 3033
 <c5c6> <c5c8> 16462
+endcidrange
+
+100 begincidrange
 <c5c9> <c5c9> 3034
 <c5ca> <c5d0> 16465
 <c5d1> <c5d1> 3035
@@ -3144,9 +3189,6 @@ endcidrange
 <c6b7> <c6b7> 3053
 <c6b8> <c6bd> 16599
 <c6c1> <c6c1> 3054
-endcidrange
-
-100 begincidrange
 <c6c2> <c6d1> 16605
 <c6d3> <c6d6> 16621
 <c6d7> <c6d7> 3055
@@ -3198,12 +3240,16 @@ endcidrange
 <c7b6> <c7b6> 16737
 <c7b7> <c7b7> 3082
 <c7b8> <c7bd> 16738
+<c841> <c841> 385
 <c861> <c862> 3083
 <c863> <c864> 16744
 <c865> <c865> 3085
 <c866> <c868> 16746
 <c869> <c86a> 3086
 <c86b> <c870> 16749
+endcidrange
+
+100 begincidrange
 <c871> <c871> 3088
 <c873> <c873> 3089
 <c874> <c874> 16755
@@ -3247,9 +3293,6 @@ endcidrange
 <c949> <c949> 3117
 <c94a> <c950> 16858
 <c951> <c951> 3118
-endcidrange
-
-100 begincidrange
 <c953> <c953> 3119
 <c954> <c954> 16865
 <c955> <c955> 3120
@@ -3307,6 +3350,9 @@ endcidrange
 <ca83> <ca84> 17047
 <ca85> <ca85> 3146
 <ca86> <ca88> 17049
+endcidrange
+
+100 begincidrange
 <ca89> <ca89> 3147
 <ca8a> <ca90> 17052
 <ca91> <ca91> 3148
@@ -3350,9 +3396,6 @@ endcidrange
 <cb65> <cb65> 3169
 <cb66> <cb67> 17166
 <cb68> <cb69> 3170
-endcidrange
-
-100 begincidrange
 <cb6a> <cb6a> 17168
 <cb6b> <cb6b> 3172
 <cb6c> <cb70> 17169
@@ -3383,6 +3426,7 @@ endcidrange
 <cbb6> <cbb6> 17219
 <cbb7> <cbb7> 3188
 <cbb8> <cbbd> 17220
+<cc41> <cc41> 386
 <cc61> <cc63> 3189
 <cc64> <cc64> 17226
 <cc65> <cc65> 3192
@@ -3409,6 +3453,9 @@ endcidrange
 <cc94> <cc94> 17254
 <cc95> <cc97> 3207
 <cc98> <cc9d> 17255
+endcidrange
+
+100 begincidrange
 <cca1> <cca2> 3210
 <cca3> <ccb1> 17261
 <ccb3> <ccbd> 17276
@@ -3453,9 +3500,6 @@ endcidrange
 <cd82> <cd88> 17375
 <cd89> <cd89> 3237
 <cd8a> <cd91> 17382
-endcidrange
-
-100 begincidrange
 <cd93> <cd93> 3238
 <cd94> <cd94> 17390
 <cd95> <cd95> 3239
@@ -3512,6 +3556,9 @@ endcidrange
 <ce98> <ce9d> 17534
 <cea1> <cea1> 3267
 <cea2> <ceb1> 17540
+endcidrange
+
+100 begincidrange
 <ceb3> <ceb6> 17556
 <ceb7> <ceb7> 3268
 <ceb8> <cebd> 17560
@@ -3556,9 +3603,6 @@ endcidrange
 <cfa3> <cfa4> 17689
 <cfa5> <cfa5> 3288
 <cfa6> <cfa8> 17691
-endcidrange
-
-100 begincidrange
 <cfa9> <cfa9> 3289
 <cfaa> <cfb0> 17694
 <cfb1> <cfb1> 3290
@@ -3568,6 +3612,7 @@ endcidrange
 <cfb6> <cfb6> 17702
 <cfb7> <cfb7> 3293
 <cfb8> <cfbd> 17703
+<d041> <d041> 387
 <d061> <d062> 3294
 <d063> <d064> 17709
 <d065> <d065> 3296
@@ -3614,6 +3659,9 @@ endcidrange
 <d0f4> <d0f4> 17812
 <d0f5> <d0f5> 3321
 <d0f6> <d0f6> 17813
+endcidrange
+
+100 begincidrange
 <d0f7> <d0f7> 3322
 <d0f8> <d0fd> 17814
 <d141> <d142> 3323
@@ -3659,9 +3707,6 @@ endcidrange
 <d1b1> <d1b1> 3349
 <d1b3> <d1b3> 3350
 <d1b4> <d1b4> 17894
-endcidrange
-
-100 begincidrange
 <d1b5> <d1b5> 3351
 <d1b6> <d1b6> 17895
 <d1b7> <d1b7> 3352
@@ -3717,6 +3762,9 @@ endcidrange
 <d289> <d289> 3380
 <d28a> <d28d> 17995
 <d28e> <d28e> 3381
+endcidrange
+
+100 begincidrange
 <d28f> <d290> 17999
 <d291> <d291> 3382
 <d293> <d294> 18001
@@ -3762,9 +3810,6 @@ endcidrange
 <d346> <d348> 18078
 <d349> <d349> 3406
 <d34a> <d350> 18081
-endcidrange
-
-100 begincidrange
 <d351> <d351> 3407
 <d353> <d354> 18088
 <d355> <d355> 3408
@@ -3813,13 +3858,16 @@ endcidrange
 <d931> <d97e> 101
 <d991> <d9e5> 179
 <da31> <da7e> 264
-<da91> <dad3> 342
+<da91> <daa0> 342
 <dad5> <dafe> 409
 <db31> <db3a> 451
 <db40> <db49> 461
 <db51> <db68> 471
 <db71> <db7e> 495
 <db91> <db9a> 509
+endcidrange
+
+100 begincidrange
 <dba1> <dbe4> 519
 <dc31> <dc7e> 587
 <dc91> <dc91> 665
@@ -3865,9 +3913,6 @@ endcidrange
 <e391> <e3d3> 4067
 <e3d4> <e3d4> 4374
 <e3d5> <e3d5> 4156
-endcidrange
-
-100 begincidrange
 <e3d6> <e3d7> 4134
 <e3d8> <e3d8> 4375
 <e3d9> <e3da> 4136
@@ -3923,6 +3968,9 @@ endcidrange
 <e474> <e474> 4564
 <e475> <e478> 4566
 <e479> <e47a> 4571
+endcidrange
+
+100 begincidrange
 <e47b> <e47b> 4576
 <e47c> <e47e> 4181
 <e491> <e491> 4184
@@ -3968,9 +4016,6 @@ endcidrange
 <e9a5> <e9a5> 5079
 <e9a6> <e9d4> 5124
 <e9d5> <e9d5> 5109
-endcidrange
-
-100 begincidrange
 <e9d6> <e9f3> 5171
 <e9f4> <e9f4> 7607
 <e9f5> <e9fe> 5201
@@ -4026,6 +4071,9 @@ endcidrange
 <edfd> <edfd> 5936
 <edfe> <edfe> 4444
 <ee31> <ee31> 4447
+endcidrange
+
+100 begincidrange
 <ee32> <ee33> 5937
 <ee34> <ee34> 4449
 <ee35> <ee36> 5939
@@ -4071,9 +4119,6 @@ endcidrange
 <ee91> <ee91> 4481
 <ee92> <ee92> 5987
 <ee93> <ee93> 4482
-endcidrange
-
-100 begincidrange
 <ee94> <ee94> 5460
 <ee95> <ee96> 5988
 <ee97> <ee97> 4483
@@ -4129,6 +4174,9 @@ endcidrange
 <ef9b> <ef9b> 5800
 <ef9c> <ef9c> 6153
 <ef9d> <ef9d> 4556
+endcidrange
+
+100 begincidrange
 <ef9e> <ef9f> 6154
 <efa0> <efa0> 4557
 <efa1> <efa6> 6156
@@ -4174,9 +4222,6 @@ endcidrange
 <f0cd> <f0ce> 6366
 <f0cf> <f0d1> 4600
 <f0d2> <f0d2> 5552
-endcidrange
-
-92 begincidrange
 <f0d3> <f0d7> 6368
 <f0d8> <f0d8> 4603
 <f0d9> <f0fe> 6373
@@ -4232,6 +4277,9 @@ endcidrange
 <f44d> <f44d> 5731
 <f44e> <f47e> 6972
 <f491> <f49b> 7021
+endcidrange
+
+37 begincidrange
 <f49c> <f49c> 5771
 <f49d> <f4b0> 7032
 <f4b1> <f4b1> 4191

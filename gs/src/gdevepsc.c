@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$*/
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$*/
 /* Epson color dot-matrix printer driver by dave@exlog.com */
 #include "gdevprn.h"
 
@@ -168,7 +168,7 @@ epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
 	/* Check allocations */
 	if ( in == 0 || out == 0 )
-	   {	if ( in ) gs_free(pdev->memory, (char *)in, in_size+1, 1, "epsc_print_page(in)");
+	    {	if ( in ) gs_free(pdev->memory, (char *)in, in_size+1, 1, "epsc_print_page(in)");
 		if ( out ) gs_free(pdev->memory, (char *)out, out_size+1, 1, "epsc_print_page(out)");
 		return -1;
 	   }
@@ -182,12 +182,12 @@ epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 		color_line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
 		color_in_size = color_line_size * (8 * y_mult);
 		if((color_in = (byte *)gs_malloc(pdev->memory, color_in_size+1, 1,
-			"epsc_print_page(color)")) == 0)
-			{
+						 "epsc_print_page(color)")) == 0)
+		    {
 			gs_free(pdev->memory, (char *)in, in_size+1, 1, "epsc_print_page(in)");
 			gs_free(pdev->memory, (char *)out, out_size+1, 1, "epsc_print_page(out)");
 			return(-1);
-			}
+		    }
 		}
 	else
 		{
@@ -416,7 +416,7 @@ epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	gs_free(pdev->memory, (char *)out, out_size+1, 1, "epsc_print_page(out)");
 	gs_free(pdev->memory, (char *)in, in_size+1, 1, "epsc_print_page(in)");
 	if (gx_device_has_color(pdev))
-		gs_free(pdev->memory, (char *)color_in, color_in_size+1, 1, "epsc_print_page(rin)");
+	    gs_free(pdev->memory, (char *)color_in, color_in_size+1, 1, "epsc_print_page(rin)");
 	return 0;
 }
 

@@ -1,19 +1,14 @@
-/* Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
-  This file is part of AFPL Ghostscript.
-  
-  AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
-  distributor accepts any responsibility for the consequences of using it, or
-  for whether it serves any particular purpose or works at all, unless he or
-  she says so in writing.  Refer to the Aladdin Free Public License (the
-  "License") for full details.
-  
-  Every copy of AFPL Ghostscript must include a copy of the License, normally
-  in a plain ASCII text file named PUBLIC.  The License grants you the right
-  to copy, modify and redistribute AFPL Ghostscript, but only under certain
-  conditions described in the License.  Among other things, the License
-  requires that the copyright notice and this notice be preserved on all
-  copies.
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
 /* $Id$ */
@@ -23,7 +18,7 @@
 #  define gsovrc_INCLUDED
 
 #include "gsstype.h"
-#include "gscompt.h"
+#include "gxcomp.h"
 
 /*
  * Overprint compositor.
@@ -274,6 +269,28 @@ struct gs_overprint_params_s {
      */
     gx_color_index  drawn_comps;
 };
+
+/*
+ * The overprint compositor structure. This is exactly analogous to other
+ * compositor structures, consisting of a the compositor common elements
+ * and the overprint-specific parameters.
+ */
+typedef struct gs_overprint_s {
+    gs_composite_common;
+    gs_overprint_params_t   params;
+} gs_overprint_t;
+
+/*
+ * In a modest violation of good coding practice, the gs_composite_common
+ * fields are "known" to be simple (contain no pointers to garbage
+ * collected memory), and we also know the gs_overprint_params_t structure
+ * to be simple, so we just create a trivial structure descriptor for the
+ * entire gs_overprint_s structure.
+ */
+#define private_st_gs_overprint_t()	/* In gsovrc.c */\
+  gs_private_st_simple(st_overprint, gs_overprint_t, "gs_overprint_t");
+
+
 
 /* some elementary macros for manipulating drawn_comps */
 #define gs_overprint_set_drawn_comp(drawn_comps, i) \

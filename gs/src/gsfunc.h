@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generic definitions for Functions */
 
 #ifndef gsfunc_INCLUDED
@@ -43,13 +44,6 @@ typedef int gs_function_type_t;
     int n;			/* # of outputs */\
     const float *Range		/* 2 x n, optional except for type 0 */
 
-/* Define calculation effort values (currently only used for monotonicity). */
-typedef enum {
-    EFFORT_EASY = 0,
-    EFFORT_MODERATE = 1,
-    EFFORT_ESSENTIAL = 2
-} gs_function_effort_t;
-
 /* Define abstract types. */
 #ifndef gs_data_source_DEFINED
 #  define gs_data_source_DEFINED
@@ -77,13 +71,13 @@ typedef struct gs_function_info_s {
 
 /* Evaluate a function. */
 #define FN_EVALUATE_PROC(proc)\
-  int proc(const gs_memory_t *mem, const gs_function_t * pfn, const float *in, float *out)
+  int proc(const gs_function_t * pfn, const float *in, float *out)
 typedef FN_EVALUATE_PROC((*fn_evaluate_proc_t));
 
 /* Test whether a function is monotonic. */
 #define FN_IS_MONOTONIC_PROC(proc)\
-    int proc(const gs_memory_t *mem, const gs_function_t * pfn, const float *lower, \
-	   const float *upper, gs_function_effort_t effort)
+  int proc(const gs_function_t * pfn, const float *lower,\
+	   const float *upper, uint *mask)
 typedef FN_IS_MONOTONIC_PROC((*fn_is_monotonic_proc_t));
 
 /* Get function information. */
@@ -140,7 +134,6 @@ typedef struct gs_function_procs_s {
 typedef struct gs_function_head_s {
     gs_function_type_t type;
     gs_function_procs_t procs;
-    int is_monotonic;		/* cached when function is created */
 } gs_function_head_t;
 struct gs_function_s {
     gs_function_head_t head;
@@ -188,25 +181,19 @@ int alloc_function_array(uint count, gs_function_t *** pFunctions,
 			 gs_memory_t *mem);
 
 /* Evaluate a function. */
-#define gs_function_evaluate(mem, pfn, in, out)\
-  ((pfn)->head.procs.evaluate)(mem, pfn, in, out)
+#define gs_function_evaluate(pfn, in, out)\
+  ((pfn)->head.procs.evaluate)(pfn, in, out)
 
 /*
- * Test whether a function is monotonic on a given (closed) interval.  If
- * the test requires too much effort, the procedure may return
- * gs_error_undefined; normally, it returns 0 for false, >0 for true,
- * gs_error_rangecheck if any part of the interval is outside the function's
- * domain.  If lower[i] > upper[i], the result is not defined.
+ * Test whether a function is monotonic on a given (closed) interval.
+ * return 1 = monotonic, 0 = not or don't know, <0 = error..
+ * Sets mask : 1 bit per dimension : 
+ *    1 - non-monotonic or don't know, 
+ *    0 - monotonic.
+ * If lower[i] > upper[i], the result may be not defined.
  */
-#define gs_function_is_monotonic(mem, pfn, lower, upper, effort)	\
-    ((pfn)->head.procs.is_monotonic)(mem, pfn, lower, upper, effort)
-/*
- * If the function is monotonic, is_monotonic returns the direction of
- * monotonicity for output value N in bits 2N and 2N+1.  (Functions with
- * more than sizeof(int) * 4 - 1 outputs are never identified as monotonic.)
- */
-#define FN_MONOTONIC_INCREASING 1
-#define FN_MONOTONIC_DECREASING 2
+#define gs_function_is_monotonic(pfn, lower, upper, mask)\
+  ((pfn)->head.procs.is_monotonic)(pfn, lower, upper, mask)
 
 /* Get function information. */
 #define gs_function_get_info(pfn, pfi)\

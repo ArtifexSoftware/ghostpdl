@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Font object structure */
 /* Requires gsmatrix.h, gxdevice.h */
 
@@ -275,10 +276,11 @@ typedef struct gs_font_procs_s {
      * because for font descendents it is inherited from an upper font.
      * This is especially important for Type 42 fonts with hmtx and vmtx.
      */
+    /* Currently glyph_outline retrieves sbw only with type 1,2,9 fonts. */
 
 #define font_proc_glyph_outline(proc)\
   int proc(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,\
-	   gx_path *ppath)
+	   gx_path *ppath, double sbw[4])
     font_proc_glyph_outline((*glyph_outline));
 
     /*
@@ -469,10 +471,24 @@ gs_font_base *
 		     const gs_font_procs *procs, gs_font_dir *dir,
 		     client_name_t cname);
 
+/* Define a string to interact with unique_name in lib/pdf_font.ps .
+   The string is used to resolve glyph name conflict while
+   converting PDF Widths into Metrics.
+ */
+extern const char gx_extendeg_glyph_name_separator[];
+
 /*
  * Test whether a glyph is the notdef glyph for a base font.
  * The test is somewhat adhoc: perhaps this should be a virtual procedure.
  */
 bool gs_font_glyph_is_notdef(gs_font_base *bfont, gs_glyph glyph);
+
+/* Get font parent (a Type 9 font). */
+const gs_font_base *gs_font_parent(const gs_font_base *pbfont);
+
+#ifdef DEBUG
+/* Reserve a text enumerator instance id. */
+ulong gs_next_text_enum_id(const gs_font *font);
+#endif
 
 #endif /* gxfont_INCLUDED */

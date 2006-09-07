@@ -21,7 +21,7 @@
 
 /*
  * zstream.h - C++ interface to the 'zlib' general purpose compression library
- * $RCSfile$ $Revision$
+ * $Id$
  */
 
 #include <strstream.h>

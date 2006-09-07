@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Utilities for PCL XL generation */
 #include "math_.h"
 #include "string_.h"
@@ -28,9 +29,13 @@
 int
 px_write_file_header(stream *s, const gx_device *dev)
 {
+    static const char *const enter_pjl_header =
+        "\033%-12345X@PJL SET RENDERMODE=";
+    static const char *const rendermode_gray = "GRAYSCALE";
+    static const char *const rendermode_color = "COLOR";
     static const char *const file_header =
-	"\033%-12345X@PJL ENTER LANGUAGE = PCLXL\n\
-) HP-PCL XL;1;1;Comment Copyright Aladdin Enterprises 1996\000\n";
+	"\n@PJL ENTER LANGUAGE = PCLXL\n\
+) HP-PCL XL;1;1;Comment Copyright artofcode LLC 2005\000\n";
     static const byte stream_header[] = {
 	DA(pxaUnitsPerMeasure),
 	DUB(0), DA(pxaMeasure),
@@ -40,6 +45,16 @@ px_write_file_header(stream *s, const gx_device *dev)
 	DUB(eBinaryLowByteFirst), DA(pxaDataOrg),
 	pxtOpenDataSource
     };
+
+    px_put_bytes(s, (const byte *)enter_pjl_header,
+		 strlen(enter_pjl_header));
+
+    if (dev->color_info.num_components == 1)
+	px_put_bytes(s, (const byte *)rendermode_gray,
+		     strlen(rendermode_gray));
+    else
+	px_put_bytes(s, (const byte *)rendermode_color,
+		     strlen(rendermode_color));
 
     /* We have to add 2 to the strlen because the next-to-last */
     /* character is a null. */
@@ -65,7 +80,8 @@ px_write_page_header(stream *s, const gx_device *dev)
 
 /* Write the media selection command if needed, updating the media size. */
 int
-px_write_select_media(stream *s, const gx_device *dev, pxeMediaSize_t *pms)
+px_write_select_media(stream *s, const gx_device *dev, 
+		      pxeMediaSize_t *pms, byte *media_source)
 {
 #define MSD(ms, res, w, h)\
   { ms, (float)((w) * 1.0 / (res)), (float)((h) * 1.0 / res) },
@@ -81,6 +97,7 @@ px_write_select_media(stream *s, const gx_device *dev, pxeMediaSize_t *pms)
 	h = dev->height / dev->HWResolution[1];
     int i;
     pxeMediaSize_t size;
+    byte tray = eAutoSelect;
 
     /* The default is eLetterPaper, media size 0. */
     for (i = countof(media_sizes) - 2; i > 0; --i)
@@ -94,15 +111,13 @@ px_write_select_media(stream *s, const gx_device *dev, pxeMediaSize_t *pms)
      * be specified, but MediaSource is optional.
      */
     px_put_uba(s, (byte)size, pxaMediaSize);
-    if (!pms || size != *pms) {
-	static const byte page_header_2[] = {
-	    DUB(eAutoSelect), DA(pxaMediaSource)
-	};
 
-	PX_PUT_LIT(s, page_header_2);
-	if (pms)
-	    *pms = size;
-    }
+    if (media_source != NULL)
+	tray = *media_source;
+    px_put_uba(s, tray, pxaMediaSource);
+    if (pms)
+	*pms = size;
+
     return 0;
 }
 

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* X Windows driver initialization/finalization */
 #include "memory_.h"
 #include "x_.h"
@@ -92,7 +93,7 @@ gdev_x_open(gx_device_X * xdev)
     Display *dpy;
     XColor xc;
     int zero = 0;
-    int xid_height, xid_width;
+    int xid_height = 0, xid_width = 0;
     int code;
 
 #ifdef DEBUG
@@ -107,16 +108,16 @@ gdev_x_open(gx_device_X * xdev)
     if (!(xdev->dpy = XOpenDisplay((char *)NULL))) {
 	char *dispname = getenv("DISPLAY");
 
-	eprintf1(xdev->memory, "Cannot open X display `%s'.\n",
+	eprintf1("Cannot open X display `%s'.\n",
 		 (dispname == NULL ? "(null)" : dispname));
-	return_error(xdev->memory, gs_error_ioerror);
+	return_error(gs_error_ioerror);
     }
     xdev->dest = 0;
     if ((window_id = getenv("GHOSTVIEW"))) {
 	if (!(xdev->ghostview = sscanf(window_id, "%ld %ld",
 				       &(xdev->win), &(xdev->dest)))) {
-	    eprintf(xdev->memory, "Cannot get Window ID from ghostview.\n");
-	    return_error(xdev->memory, gs_error_ioerror);
+	    eprintf("Cannot get Window ID from ghostview.\n");
+	    return_error(gs_error_ioerror);
 	}
     }
     if (xdev->pwin != (Window) None) {	/* pick up the destination window parameters if specified */
@@ -175,12 +176,12 @@ gdev_x_open(gx_device_X * xdev)
 			    &left_margin, &bottom_margin,
 			    &right_margin, &top_margin);
 	    if (!(nitems == 8 || nitems == 12)) {
-		eprintf(xdev->memory, "Cannot get ghostview property.\n");
-		return_error(xdev->memory, gs_error_ioerror);
+		eprintf("Cannot get ghostview property.\n");
+		return_error(gs_error_ioerror);
 	    }
 	    if (xdev->dest && xdev->bpixmap) {
-		eprintf(xdev->memory, "Both destination and backing pixmap specified.\n");
-		return_error(xdev->memory, gs_error_rangecheck);
+		eprintf("Both destination and backing pixmap specified.\n");
+		return_error(gs_error_rangecheck);
 	    }
 	    if (xdev->dest) {
 		Window root;
@@ -243,8 +244,8 @@ gdev_x_open(gx_device_X * xdev)
 	    xdev->ImagingBBox_set = true;
 
 	} else if (xdev->pwin == (Window) None) {
-	    eprintf(xdev->memory, "Cannot get ghostview property.\n");
-	    return_error(xdev->memory, gs_error_ioerror);
+	    eprintf("Cannot get ghostview property.\n");
+	    return_error(gs_error_ioerror);
 	}
     } else {
 	Screen *scr = DefaultScreenOfDisplay(xdev->dpy);
@@ -267,8 +268,8 @@ gdev_x_open(gx_device_X * xdev)
     xvinfo.visualid = XVisualIDFromVisual(xvinfo.visual);
     xdev->vinfo = XGetVisualInfo(xdev->dpy, VisualIDMask, &xvinfo, &nitems);
     if (xdev->vinfo == NULL) {
-	eprintf(xdev->memory, "Cannot get XVisualInfo.\n");
-	return_error(xdev->memory, gs_error_ioerror);
+	eprintf("Cannot get XVisualInfo.\n");
+	return_error(gs_error_ioerror);
     }
     /* Buggy X servers may cause a Bad Access on XFreeColors. */
     x_error_handler.orighandler = XSetErrorHandler(x_catch_free_colors);
@@ -300,6 +301,9 @@ gdev_x_open(gx_device_X * xdev)
 	XCloseDisplay(xdev->dpy);
 	return code;
     }
+    /* Now that the color map is setup check if the device is separable. */
+    check_device_separable((gx_device *)xdev);
+
     gdev_x_setup_fontmap(xdev);
 
     if (!xdev->ghostview) {
@@ -602,11 +606,14 @@ x_set_buffer(gx_device_X * xdev)
 	COPY_PROC(text_begin);
 #undef COPY_PROC
 	if (xdev->is_buffered) {
+    	    check_device_separable((gx_device *)xdev);
 	    gx_device_forward_fill_in_procs((gx_device_forward *)xdev);
 	    xdev->box_procs = gdev_x_box_procs;
 	    xdev->box_proc_data = xdev;
-	} else
+	} else {
+    	    check_device_separable((gx_device *)xdev);
 	    gx_device_fill_in_procs((gx_device *)xdev);
+	}
     }
     return 0;
 }
@@ -628,7 +635,7 @@ gdev_x_clear_window(gx_device_X * xdev)
 		if (x_error_handler.alloc_error) {
 		    xdev->useBackingPixmap = False;
 #ifdef DEBUG
-		    eprintf(xdev->memory, "Warning: Failed to allocated backing pixmap.\n");
+		    eprintf("Warning: Failed to allocated backing pixmap.\n");
 #endif
 		    if (xdev->bpixmap) {
 			XFreePixmap(xdev->dpy, xdev->bpixmap);

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$*/
+/* $Id$*/
 /* SPARCprinter driver for Ghostscript */
 #include "gdevprn.h"
 #include <stdio.h>
@@ -123,17 +124,17 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
   lpvipage.resolution = (pdev->x_pixels_per_inch == 300 ? DPI300 : DPI400);
   if (ioctl(fileno(prn),LPVIIOC_SETPAGE,&lpvipage)!=0)
     {
-    errprintf(sparc_print_page: LPVIIOC_SETPAGE failed\n");
+    errprintf("sparc_print_page: LPVIIOC_SETPAGE failed\n");
     return -1;
     }
   out_size=lpvipage.bitmap_width*lpvipage.page_length;
-  out_buf=gs_malloc(out_size,1,"sparc_print_page: out_buf");
+  out_buf=gs_malloc(pdev->memory, out_size,1,"sparc_print_page: out_buf");
   gdev_prn_copy_scan_lines(pdev,0,out_buf,out_size);
   while (write(fileno(prn),out_buf,out_size)!=out_size)
     {
     if (ioctl(fileno(prn),LPVIIOC_GETERR,&lpvierr)!=0)
       {
-      errprintf(sparc_print_page: LPVIIOC_GETERR failed\n");
+      errprintf("sparc_print_page: LPVIIOC_GETERR failed\n");
       return -1;
       }
     switch (lpvierr.err_type)
@@ -143,7 +144,7 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
           {
           errprintf(
             "sparc_print_page: Printer Problem with unknown reason...");
-          dflush(mem);
+          dflush();
           warning=1;
           }
 	sleep(5);
@@ -178,6 +179,6 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
     errprintf("OK.\n");
     warning=0;
     }
-  gs_free(out_buf,out_size,1,"sparc_print_page: out_buf");
+  gs_free(pdev->memory, out_buf,out_size,1,"sparc_print_page: out_buf");
   return 0;
   }

@@ -50,7 +50,7 @@
 void
 px_free_pattern(gs_memory_t *mem, void *vptr, client_name_t cname)
 {	px_pattern_t *pattern = vptr;
-	rc_decrement(mem, pattern, cname);
+	rc_decrement(pattern, cname);
 }
 /* Define the real freeing procedure for patterns. */
 private void
@@ -141,9 +141,9 @@ begin_bitmap(px_bitmap_params_t *params, px_bitmap_enum_t *benum,
 	params->color_space = pxgs->color_space;
 	if ( par->pv[0]->value.i == eIndexedPixel )
 	  { if ( pxgs->palette.data == 0 )
-	      return_error(pxs->memory,  errorMissingPalette);
+	      return_error(errorMissingPalette);
 	    if ( pxgs->palette.size != (1 << depth) * num_components )
-	      return_error(pxs->memory,  errorImagePaletteMismatch);
+	      return_error( errorImagePaletteMismatch);
 	    params->indexed = true;
 	    num_components = 1;
 	  }
@@ -161,7 +161,7 @@ begin_bitmap(px_bitmap_params_t *params, px_bitmap_enum_t *benum,
 private int
 stream_error(stream_state * st, const char *str)
 {
-    dprintf1(st->memory, "pxl stream error %s\n", str );
+    dprintf1("pxl stream error %s\n", str );
     return 0;
 }
 
@@ -199,7 +199,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
         /* set this early for safe error exit */
         jddp->scanline_buffer = NULL;
         if ( gs_jpeg_create_decompress(ss) < 0 )
-            return_error(ss->memory, errorInsufficientMemory);
+            return_error(errorInsufficientMemory);
         (*s_DCTD_template.init)((stream_state *)ss);
         jddp->template = s_DCTD_template;
         benum->initialized = true;
@@ -212,7 +212,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 
         w.ptr = data + pos_in_row - 1;
         w.limit = data + data_per_row - 1;
-        (*s_DCTD_template.process)(ss->memory, (stream_state *)ss, &r, &w, false);
+        (*s_DCTD_template.process)((stream_state *)ss, &r, &w, false);
         used = w.ptr + 1 - data - pos_in_row;
         pos_in_row += used;
         par->source.position += used;
@@ -298,7 +298,7 @@ read_rle_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 
         w.ptr = data + pos_in_row - 1;
         w.limit = data + data_per_row - 1;
-        (*s_RLD_template.process)(ss->memory, (stream_state *)ss, &r, &w, false);
+        (*s_RLD_template.process)((stream_state *)ss, &r, &w, false);
         used = w.ptr + 1 - data - pos_in_row;
         pos_in_row += used;
         par->source.position += used;
@@ -309,7 +309,7 @@ read_rle_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 		    
             w.ptr = pad - 1;
             w.limit = w.ptr + data_per_row_padded - pos_in_row;
-            (*s_RLD_template.process)(ss->memory, (stream_state *)ss, &r, &w, false);
+            (*s_RLD_template.process)((stream_state *)ss, &r, &w, false);
             used = w.ptr + 1 - pad;
             pos_in_row += used;
             par->source.position += used;
@@ -532,7 +532,7 @@ pxBeginImage(px_args_t *par, px_state_t *pxs)
 	int code;
 
 	if ( gs_currentpoint(pgs, &origin) < 0 )
-	  return_error(pxs->memory, errorCurrentCursorUndefined);
+	  return_error(errorCurrentCursorUndefined);
 	/*
 	 * If the current logical operation doesn't involve the texture,
 	 * don't set a null brush, which would cause the image not to
@@ -564,13 +564,13 @@ pxBeginImage(px_args_t *par, px_state_t *pxs)
 			  &st_px_image_enum, "setup_bitmap(pxenum)");
 
 	if ( pxenum == 0 )
-	  return_error(pxs->memory, errorInsufficientMemory);
+	  return_error(errorInsufficientMemory);
 	{ 
             pxenum->raster = round_up(benum.data_per_row, align_bitmap_mod);
             pxenum->row = gs_alloc_byte_array(pxs->memory, 1, pxenum->raster,
                                               "pxReadImage(row)");
 	  if ( pxenum->row == 0 )
-	    code = gs_note_error(pxs->memory, errorInsufficientMemory);
+	    code = gs_note_error(errorInsufficientMemory);
 	  else 
 	    code = px_image_color_space(&pxenum->color_space, &pxenum->image,
 					&params, (const gs_string *)&pxgs->palette, pgs);
@@ -592,7 +592,7 @@ pxBeginImage(px_args_t *par, px_state_t *pxs)
 	  gs_matrix_scale(&dmat, params.dest_width, params.dest_height,
 			  &dmat);
 	  /* The ImageMatrix is dmat' * imat. */
-	  gs_matrix_invert(pxs->memory, &dmat, &dmat);
+	  gs_matrix_invert(&dmat, &dmat);
 	  gs_matrix_multiply(&dmat, &imat, &pxenum->image.ImageMatrix);
 	}
 	pxenum->image.CombineWithColor = true;
@@ -686,7 +686,7 @@ pxBeginRastPattern(px_args_t *par, px_state_t *pxs)
 	if ( code < 0 )
 	  return code;
 	rc_alloc_struct_1(pattern, px_pattern_t, &st_px_pattern, mem,
-			  return_error(mem, errorInsufficientMemory),
+			  return_error(errorInsufficientMemory),
 			  "raster pattern");
 	pattern->rc.free = rc_free_px_pattern;
 	data = gs_alloc_byte_array(mem, params.height, benum.data_per_row,
@@ -708,7 +708,7 @@ pxBeginRastPattern(px_args_t *par, px_state_t *pxs)
 	    gs_free_string(mem, pdata, psize, "raster pattern palette");
 	    gs_free_object(mem, data, "raster pattern data");
 	    gs_free_object(mem, pattern, "raster pattern");
-	    return_error(mem, errorInsufficientMemory);
+	    return_error(errorInsufficientMemory);
 	  }
 	pxenum->benum = benum;
 	pxenum->pattern_id = par->pv[5]->value.i;
@@ -777,7 +777,7 @@ pxEndRastPattern(px_args_t *par, px_state_t *pxs)
 	    pdict = &pxs->session_pattern_dict;
 	    break;
 	  default:		/* can't happen */
-	    return_error(pxs->memory, errorIllegalAttributeValue);
+	    return_error(errorIllegalAttributeValue);
 	  }
 	key.type = pxd_array | pxd_ubyte;
 	key.value.array.data = (byte *)&id;
@@ -838,7 +838,7 @@ pxScanLineRel(px_args_t *par, px_state_t *pxs)
 	      return pxNeedData;
 	    xystart_type = data[0];
 	    if ( xystart_type != eSInt16 )
-	      return_error(pxs->memory, errorIllegalDataValue);
+	      return_error(errorIllegalDataValue);
 	    par->source.position =
 	      ((ulong)xystart_type << 28) +
 		(par->pv[0] ? par->pv[0]->value.i : 1) + 1;
@@ -869,7 +869,7 @@ pxScanLineRel(px_args_t *par, px_state_t *pxs)
 	    pxs->scan_point.y1 = ystart + 0.5;
 	    par->source.count = uint16at(data + 4, big_endian);
 	    if ( par->source.count == 0 )
-	      { code = gs_note_error(pxs->memory, errorIllegalDataValue);
+	      { code = gs_note_error(errorIllegalDataValue);
 	        break;
 	      }
 	    xpair_type = data[6];
@@ -904,7 +904,7 @@ pxScanLineRel(px_args_t *par, px_state_t *pxs)
 	      used = 4;
 	      break;
 	    default:
-	      code = gs_note_error(pxs->memory, errorIllegalDataValue);
+	      code = gs_note_error(errorIllegalDataValue);
 	      goto out;		/* 2-level break; */
 	    }
 	  if ( rcount == countof(rlist) )

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Matrix operators for Ghostscript library */
 #include "math_.h"
 #include "memory_.h"
@@ -112,12 +113,12 @@ gs_matrix_multiply(const gs_matrix * pm1, const gs_matrix * pm2, gs_matrix * pmr
 
 /* Invert a matrix.  Return gs_error_undefinedresult if not invertible. */
 int
-gs_matrix_invert(const gs_memory_t *mem, const gs_matrix * pm, gs_matrix * pmr)
+gs_matrix_invert(const gs_matrix * pm, gs_matrix * pmr)
 {				/* We have to be careful about fetch/store order, */
     /* because pm might be the same as pmr. */
     if (is_xxyy(pm)) {
 	if (is_fzero(pm->xx) || is_fzero(pm->yy))
-	    return_error(mem, gs_error_undefinedresult);
+	    return_error(gs_error_undefinedresult);
 	pmr->tx = -(pmr->xx = 1.0 / pm->xx) * pm->tx;
 	pmr->xy = 0.0;
 	pmr->yx = 0.0;
@@ -127,7 +128,7 @@ gs_matrix_invert(const gs_memory_t *mem, const gs_matrix * pm, gs_matrix * pmr)
 	double mxx = pm->xx, mtx = pm->tx;
 
 	if (det == 0)
-	    return_error(mem, gs_error_undefinedresult);
+	    return_error(gs_error_undefinedresult);
 	pmr->xx = pm->yy / det;
 	pmr->xy = -pm->xy / det;
 	pmr->yx = -pm->yx / det;
@@ -140,11 +141,10 @@ gs_matrix_invert(const gs_memory_t *mem, const gs_matrix * pm, gs_matrix * pmr)
 
 /* Translate a matrix, possibly in place. */
 int
-gs_matrix_translate(const gs_memory_t *mem, 
-		    const gs_matrix * pm, floatp dx, floatp dy, gs_matrix * pmr)
+gs_matrix_translate(const gs_matrix * pm, floatp dx, floatp dy, gs_matrix * pmr)
 {
     gs_point trans;
-    int code = gs_distance_transform(mem, dx, dy, pm, &trans);
+    int code = gs_distance_transform(dx, dy, pm, &trans);
 
     if (code < 0)
 	return code;
@@ -197,7 +197,7 @@ gs_matrix_rotate(const gs_matrix * pm, floatp ang, gs_matrix * pmr)
 
 /* Transform a point. */
 int
-gs_point_transform(const gs_memory_t *mem, floatp x, floatp y, const gs_matrix * pmat,
+gs_point_transform(floatp x, floatp y, const gs_matrix * pmat,
 		   gs_point * ppt)
 {
     ppt->x = x * pmat->xx + pmat->tx;
@@ -212,35 +212,35 @@ gs_point_transform(const gs_memory_t *mem, floatp x, floatp y, const gs_matrix *
 /* Inverse-transform a point. */
 /* Return gs_error_undefinedresult if the matrix is not invertible. */
 int
-gs_point_transform_inverse(const gs_memory_t *mem, floatp x, floatp y, const gs_matrix * pmat,
+gs_point_transform_inverse(floatp x, floatp y, const gs_matrix * pmat,
 			   gs_point * ppt)
 {
     if (is_xxyy(pmat)) {
 	if (is_fzero(pmat->xx) || is_fzero(pmat->yy))
-	    return_error(mem, gs_error_undefinedresult);
+	    return_error(gs_error_undefinedresult);
 	ppt->x = (x - pmat->tx) / pmat->xx;
 	ppt->y = (y - pmat->ty) / pmat->yy;
 	return 0;
     } else if (is_xyyx(pmat)) {
 	if (is_fzero(pmat->xy) || is_fzero(pmat->yx))
-	    return_error(mem, gs_error_undefinedresult);
+	    return_error(gs_error_undefinedresult);
 	ppt->x = (y - pmat->ty) / pmat->xy;
 	ppt->y = (x - pmat->tx) / pmat->yx;
 	return 0;
     } else {			/* There are faster ways to do this, */
 	/* but we won't implement one unless we have to. */
 	gs_matrix imat;
-	int code = gs_matrix_invert(mem, pmat, &imat);
+	int code = gs_matrix_invert(pmat, &imat);
 
 	if (code < 0)
 	    return code;
-	return gs_point_transform(mem, x, y, &imat, ppt);
+	return gs_point_transform(x, y, &imat, ppt);
     }
 }
 
 /* Transform a distance. */
 int
-gs_distance_transform(const gs_memory_t *mem, floatp dx, floatp dy, const gs_matrix * pmat,
+gs_distance_transform(floatp dx, floatp dy, const gs_matrix * pmat,
 		      gs_point * pdpt)
 {
     pdpt->x = dx * pmat->xx;
@@ -255,24 +255,24 @@ gs_distance_transform(const gs_memory_t *mem, floatp dx, floatp dy, const gs_mat
 /* Inverse-transform a distance. */
 /* Return gs_error_undefinedresult if the matrix is not invertible. */
 int
-gs_distance_transform_inverse(const gs_memory_t *mem, floatp dx, floatp dy,
+gs_distance_transform_inverse(floatp dx, floatp dy,
 			      const gs_matrix * pmat, gs_point * pdpt)
 {
     if (is_xxyy(pmat)) {
 	if (is_fzero(pmat->xx) || is_fzero(pmat->yy))
-	    return_error(mem, gs_error_undefinedresult);
+	    return_error(gs_error_undefinedresult);
 	pdpt->x = dx / pmat->xx;
 	pdpt->y = dy / pmat->yy;
     } else if (is_xyyx(pmat)) {
 	if (is_fzero(pmat->xy) || is_fzero(pmat->yx))
-	    return_error(mem, gs_error_undefinedresult);
+	    return_error(gs_error_undefinedresult);
 	pdpt->x = dy / pmat->xy;
 	pdpt->y = dx / pmat->yx;
     } else {
 	double det = pmat->xx * pmat->yy - pmat->xy * pmat->yx;
 
 	if (det == 0)
-	    return_error(mem, gs_error_undefinedresult);
+	    return_error(gs_error_undefinedresult);
 	pdpt->x = (dx * pmat->yy - dy * pmat->yx) / det;
 	pdpt->y = (dy * pmat->xx - dx * pmat->xy) / det;
     }
@@ -304,28 +304,25 @@ gs_points_bbox(const gs_point pts[4], gs_rect * pbox)
 /* Transform or inverse-transform a bounding box. */
 /* Return gs_error_undefinedresult if the matrix is not invertible. */
 private int
-bbox_transform_either_only(const gs_memory_t *mem,
-			   const gs_rect * pbox_in, const gs_matrix * pmat,
+bbox_transform_either_only(const gs_rect * pbox_in, const gs_matrix * pmat,
 			   gs_point pts[4],
-     int (*point_xform) (const gs_memory_t *, floatp, floatp, const gs_matrix *, gs_point *))
+     int (*point_xform) (floatp, floatp, const gs_matrix *, gs_point *))
 {
     int code;
 
-    if ((code = (*point_xform) (mem, pbox_in->p.x, pbox_in->p.y, pmat, &pts[0])) < 0 ||
-	(code = (*point_xform) (mem, pbox_in->p.x, pbox_in->q.y, pmat, &pts[1])) < 0 ||
-	(code = (*point_xform) (mem, pbox_in->q.x, pbox_in->p.y, pmat, &pts[2])) < 0 ||
-     (code = (*point_xform) (mem, pbox_in->q.x, pbox_in->q.y, pmat, &pts[3])) < 0
+    if ((code = (*point_xform) (pbox_in->p.x, pbox_in->p.y, pmat, &pts[0])) < 0 ||
+	(code = (*point_xform) (pbox_in->p.x, pbox_in->q.y, pmat, &pts[1])) < 0 ||
+	(code = (*point_xform) (pbox_in->q.x, pbox_in->p.y, pmat, &pts[2])) < 0 ||
+     (code = (*point_xform) (pbox_in->q.x, pbox_in->q.y, pmat, &pts[3])) < 0
 	)
 	DO_NOTHING;
     return code;
 }
 
 private int
-bbox_transform_either(const gs_memory_t *mem, 
-		      const gs_rect * pbox_in, const gs_matrix * pmat,
+bbox_transform_either(const gs_rect * pbox_in, const gs_matrix * pmat,
 		      gs_rect * pbox_out,
-		      int (*point_xform) (const gs_memory_t *, 
-					  floatp, floatp, const gs_matrix *, gs_point *))
+     int (*point_xform) (floatp, floatp, const gs_matrix *, gs_point *))
 {
     int code;
 
@@ -338,29 +335,29 @@ bbox_transform_either(const gs_memory_t *mem,
      */
     gs_point pts[4];
 
-    if ((code = bbox_transform_either_only(mem, pbox_in, pmat, pts, point_xform)) < 0)
+    if ((code = bbox_transform_either_only(pbox_in, pmat, pts, point_xform)) < 0)
 	return code;
     return gs_points_bbox(pts, pbox_out);
 }
 int
-gs_bbox_transform(const gs_memory_t *mem, const gs_rect * pbox_in, const gs_matrix * pmat,
+gs_bbox_transform(const gs_rect * pbox_in, const gs_matrix * pmat,
 		  gs_rect * pbox_out)
 {
-    return bbox_transform_either(mem, pbox_in, pmat, pbox_out,
+    return bbox_transform_either(pbox_in, pmat, pbox_out,
 				 gs_point_transform);
 }
 int
-gs_bbox_transform_only(const gs_memory_t *mem, const gs_rect * pbox_in, const gs_matrix * pmat,
+gs_bbox_transform_only(const gs_rect * pbox_in, const gs_matrix * pmat,
 		       gs_point points[4])
 {
-    return bbox_transform_either_only(mem, pbox_in, pmat, points,
+    return bbox_transform_either_only(pbox_in, pmat, points,
 				      gs_point_transform);
 }
 int
-gs_bbox_transform_inverse(const gs_memory_t *mem, const gs_rect * pbox_in, const gs_matrix * pmat,
+gs_bbox_transform_inverse(const gs_rect * pbox_in, const gs_matrix * pmat,
 			  gs_rect * pbox_out)
 {
-    return bbox_transform_either(mem, pbox_in, pmat, pbox_out,
+    return bbox_transform_either(pbox_in, pmat, pbox_out,
 				 gs_point_transform_inverse);
 }
 
@@ -385,7 +382,7 @@ gs_matrix_fixed_from_matrix(gs_matrix_fixed *pfmat, const gs_matrix *pmat)
 
 /* Transform a point with a fixed-point result. */
 int
-gs_point_transform2fixed(const gs_memory_t *mem, const gs_matrix_fixed * pmat,
+gs_point_transform2fixed(const gs_matrix_fixed * pmat,
 			 floatp x, floatp y, gs_fixed_point * ppt)
 {
     fixed px, py, t;
@@ -397,43 +394,43 @@ gs_point_transform2fixed(const gs_memory_t *mem, const gs_matrix_fixed * pmat,
 	/* fixed at the end. */
 	gs_point fpt;
 
-	gs_point_transform(mem, x, y, (const gs_matrix *)pmat, &fpt);
+	gs_point_transform(x, y, (const gs_matrix *)pmat, &fpt);
 	if (!(f_fits_in_fixed(fpt.x) && f_fits_in_fixed(fpt.y)))
-	    return_error(mem, gs_error_limitcheck);
+	    return_error(gs_error_limitcheck);
 	ppt->x = float2fixed(fpt.x);
 	ppt->y = float2fixed(fpt.y);
 	return 0;
     }
     if (!is_fzero(pmat->xy)) {	/* Hope for 90 degree rotation */
-	if ((code = CHECK_DFMUL2FIXED_VARS(mem, px, y, pmat->yx, xtemp)) < 0 ||
-	    (code = CHECK_DFMUL2FIXED_VARS(mem, py, x, pmat->xy, ytemp)) < 0
+	if ((code = CHECK_DFMUL2FIXED_VARS(px, y, pmat->yx, xtemp)) < 0 ||
+	    (code = CHECK_DFMUL2FIXED_VARS(py, x, pmat->xy, ytemp)) < 0
 	    )
 	    return code;
 	FINISH_DFMUL2FIXED_VARS(px, xtemp);
 	FINISH_DFMUL2FIXED_VARS(py, ytemp);
 	if (!is_fzero(pmat->xx)) {
-	    if ((code = CHECK_DFMUL2FIXED_VARS(mem, t, x, pmat->xx, xtemp)) < 0)
+	    if ((code = CHECK_DFMUL2FIXED_VARS(t, x, pmat->xx, xtemp)) < 0)
 		return code;
 	    FINISH_DFMUL2FIXED_VARS(t, xtemp);
 	    if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
 	        return code;
 	}
 	if (!is_fzero(pmat->yy)) {
-	    if ((code = CHECK_DFMUL2FIXED_VARS(mem, t, y, pmat->yy, ytemp)) < 0)
+	    if ((code = CHECK_DFMUL2FIXED_VARS(t, y, pmat->yy, ytemp)) < 0)
 		return code;
 	    FINISH_DFMUL2FIXED_VARS(t, ytemp);
 	    if ((code = CHECK_SET_FIXED_SUM(py, py, t)) < 0)
 	        return code;
 	}
     } else {
-	if ((code = CHECK_DFMUL2FIXED_VARS(mem, px, x, pmat->xx, xtemp)) < 0 ||
-	    (code = CHECK_DFMUL2FIXED_VARS(mem, py, y, pmat->yy, ytemp)) < 0
+	if ((code = CHECK_DFMUL2FIXED_VARS(px, x, pmat->xx, xtemp)) < 0 ||
+	    (code = CHECK_DFMUL2FIXED_VARS(py, y, pmat->yy, ytemp)) < 0
 	    )
 	    return code;
 	FINISH_DFMUL2FIXED_VARS(px, xtemp);
 	FINISH_DFMUL2FIXED_VARS(py, ytemp);
 	if (!is_fzero(pmat->yx)) {
-	    if ((code = CHECK_DFMUL2FIXED_VARS(mem, t, y, pmat->yx, ytemp)) < 0)
+	    if ((code = CHECK_DFMUL2FIXED_VARS(t, y, pmat->yx, ytemp)) < 0)
 		return code;
 	    FINISH_DFMUL2FIXED_VARS(t, ytemp);
 	    if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
@@ -446,30 +443,49 @@ gs_point_transform2fixed(const gs_memory_t *mem, const gs_matrix_fixed * pmat,
     return 0;
 }
 
+#if PRECISE_CURRENTPOINT
+/* Transform a point with a fixed-point result. */
+/* Used for the best precision of the current point,
+   see comment in clamp_point_aux. */
+int
+gs_point_transform2fixed_rounding(const gs_matrix_fixed * pmat,
+			 floatp x, floatp y, gs_fixed_point * ppt)
+{
+    gs_point fpt;
+
+    gs_point_transform(x, y, (const gs_matrix *)pmat, &fpt);
+    if (!(f_fits_in_fixed(fpt.x) && f_fits_in_fixed(fpt.y)))
+	return_error(gs_error_limitcheck);
+    ppt->x = float2fixed_rounded(fpt.x);
+    ppt->y = float2fixed_rounded(fpt.y);
+    return 0;
+}
+#endif
+
 /* Transform a distance with a fixed-point result. */
 int
-gs_distance_transform2fixed(const gs_memory_t *mem, const gs_matrix_fixed * pmat,
+gs_distance_transform2fixed(const gs_matrix_fixed * pmat,
 			    floatp dx, floatp dy, gs_fixed_point * ppt)
 {
     fixed px, py, t;
     double xtemp, ytemp;
     int code;
 
-    if ((code = CHECK_DFMUL2FIXED_VARS(mem, px, dx, pmat->xx, xtemp)) < 0 ||
-	(code = CHECK_DFMUL2FIXED_VARS(mem, py, dy, pmat->yy, ytemp)) < 0
+    if ((code = CHECK_DFMUL2FIXED_VARS(px, dx, pmat->xx, xtemp)) < 0 ||
+	(code = CHECK_DFMUL2FIXED_VARS(py, dy, pmat->yy, ytemp)) < 0
 	)
 	return code;
     FINISH_DFMUL2FIXED_VARS(px, xtemp);
     FINISH_DFMUL2FIXED_VARS(py, ytemp);
     if (!is_fzero(pmat->yx)) {
-	if ((code = CHECK_DFMUL2FIXED_VARS(mem, t, dy, pmat->yx, ytemp)) < 0)
+	if ((code = CHECK_DFMUL2FIXED_VARS(t, dy, pmat->yx, ytemp)) < 0)
 	    return code;
 	FINISH_DFMUL2FIXED_VARS(t, ytemp);
 	if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
 	    return code;
     }
     if (!is_fzero(pmat->xy)) {
-	if ((code = CHECK_DFMUL2FIXED_VARS(mem, t, dx, pmat->xy, xtemp)) < 0)
+	if ((code = CHECK_DFMUL2FIXED_VARS(t, dx, pmat->xy, xtemp)) < 0)
 	    return code;
 	FINISH_DFMUL2FIXED_VARS(t, xtemp);
 	if ((code = CHECK_SET_FIXED_SUM(py, py, t)) < 0)
@@ -566,7 +582,7 @@ sget_matrix(stream *s, gs_matrix *pmat)
 
 	    status = sgets(s, (byte *)&value, sizeof(value), &nread);
 	    if (status < 0 && status != EOFC)
-		return_error(s->memory, gs_error_ioerror);
+		return_error(gs_error_ioerror);
 	    coeff[i] = value;
 	    switch ((b >> 6) & 3) {
 		case 1:
@@ -579,14 +595,14 @@ sget_matrix(stream *s, gs_matrix *pmat)
 		    status = sgets(s, (byte *)&coeff[i ^ 3],
 				   sizeof(coeff[0]), &nread);
 		    if (status < 0 && status != EOFC)
-			return_error(s->memory, gs_error_ioerror);
+			return_error(gs_error_ioerror);
 	    }
 	}
     for (; i < 6; ++i, b <<= 1)
 	if (b & 0x80) {
 	    status = sgets(s, (byte *)&coeff[i], sizeof(coeff[0]), &nread);
 	    if (status < 0 && status != EOFC)
-		return_error(s->memory, gs_error_ioerror);
+		return_error(gs_error_ioerror);
 	} else
 	    coeff[i] = 0.0;
     pmat->xx = coeff[0];

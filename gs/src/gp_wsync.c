@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* MS Windows (Win32) thread / semaphore / monitor implementation */
 /* original multi-threading code by John Desrosiers */
 #include "malloc_.h"
@@ -35,7 +36,7 @@ gp_semaphore_sizeof(void)
 }
 
 int	/* if sema <> 0 rets -ve error, 0 ok; if sema == 0, 0 movable, 1 fixed */
-gp_semaphore_open(const gs_memory_t *mem,
+gp_semaphore_open(
 		  gp_semaphore * sema	/* create semaphore here */
 )
 {
@@ -45,13 +46,13 @@ gp_semaphore_open(const gs_memory_t *mem,
 	winSema->handle = CreateSemaphore(NULL, 0, max_int, NULL);
 	return
 	    (winSema->handle != NULL ? 0 :
-	     gs_note_error(mem, gs_error_unknownerror));
+	     gs_note_error(gs_error_unknownerror));
     } else
 	return 0;		/* Win32 semaphores handles may be moved */
 }
 
 int
-gp_semaphore_close(const gs_memory_t *mem,
+gp_semaphore_close(
 		   gp_semaphore * sema	/* semaphore to affect */
 )
 {
@@ -64,7 +65,7 @@ gp_semaphore_close(const gs_memory_t *mem,
 }
 
 int				/* rets 0 ok, -ve error */
-gp_semaphore_wait(const gs_memory_t *mem,
+gp_semaphore_wait(
 		  gp_semaphore * sema	/* semaphore to affect */
 )
 {
@@ -76,7 +77,7 @@ gp_semaphore_wait(const gs_memory_t *mem,
 }
 
 int				/* rets 0 ok, -ve error */
-gp_semaphore_signal(const gs_memory_t *mem,
+gp_semaphore_signal(
 		    gp_semaphore * sema	/* semaphore to affect */
 )
 {
@@ -101,7 +102,7 @@ gp_monitor_sizeof(void)
 }
 
 int	/* if sema <> 0 rets -ve error, 0 ok; if sema == 0, 0 movable, 1 fixed */
-gp_monitor_open(const gs_memory_t *mem,
+gp_monitor_open(
 		gp_monitor * mon	/* create monitor here */
 )
 {
@@ -115,7 +116,7 @@ gp_monitor_open(const gs_memory_t *mem,
 }
 
 int
-gp_monitor_close(const gs_memory_t *mem,
+gp_monitor_close(
 		 gp_monitor * mon	/* monitor to affect */
 )
 {
@@ -126,7 +127,7 @@ gp_monitor_close(const gs_memory_t *mem,
 }
 
 int				/* rets 0 ok, -ve error */
-gp_monitor_enter(const gs_memory_t *mem,
+gp_monitor_enter(
 		 gp_monitor * mon	/* monitor to affect */
 )
 {
@@ -137,7 +138,7 @@ gp_monitor_enter(const gs_memory_t *mem,
 }
 
 int				/* rets 0 ok, -ve error */
-gp_monitor_leave(const gs_memory_t *mem, 
+gp_monitor_leave(
 		 gp_monitor * mon	/* monitor to affect */
 )
 {
@@ -170,7 +171,7 @@ gp_thread_begin_wrapper(
 
 /* Call a function on a brand new thread */
 int				/* 0 ok, -ve error */
-gp_create_thread(const gs_memory_t *mem,
+gp_create_thread(
 		 gp_thread_creation_callback_t function,	/* function to start */
 		 void *data	/* magic data to pass to thread fn */
 )
@@ -197,6 +198,6 @@ gp_create_thread(const gs_memory_t *mem,
      */
     if (~BEGIN_THREAD(gp_thread_begin_wrapper, 0, closure) != 0)
 	return 0;
-    return_error(mem, gs_error_unknownerror);
+    return_error(gs_error_unknownerror);
 }
 

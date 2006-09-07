@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Packed array operators */
 #include "ghost.h"
 #include "ialloc.h"
@@ -30,7 +31,7 @@ zcurrentpacking(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     ref_assign(op, &ref_array_packing);
     return 0;
 }
@@ -43,12 +44,13 @@ zpackedarray(i_ctx_t *i_ctx_p)
     int code;
     ref parr;
 
-    check_type(imemory, *op, t_integer);
-    if (op->value.intval < 0 ||
-	(op->value.intval > op - osbot &&
-	 op->value.intval >= ref_stack_count(&o_stack))
+    check_type(*op, t_integer);
+    if (op->value.intval < 0)
+	return_error(e_rangecheck);
+    if (op->value.intval > op - osbot &&
+	op->value.intval >= ref_stack_count(&o_stack)
 	)
-	return_error(imemory, e_rangecheck);
+	return_error(e_stackunderflow);
     osp--;
     code = make_packed_array(&parr, &o_stack, (uint) op->value.intval,
 			     idmemory, "packedarray");
@@ -65,7 +67,7 @@ zsetpacking(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref cont;
 
-    check_type(imemory, *op, t_boolean);
+    check_type(*op, t_boolean);
     make_struct(&cont, avm_local, ref_array_packing_container);
     ref_assign_old(&cont, &ref_array_packing, op, "setpacking");
     pop(1);
@@ -221,7 +223,7 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
 	    while (--i >= 0) {
 		--psrc;
 		--pmove;
-		packed_get((const gs_memory_t *)imem, psrc, pmove);
+		packed_get(imem->non_gc_memory, psrc, pmove);
 	    }
 	}
 	pshort = pdest += packed_per_ref;

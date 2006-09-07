@@ -1,16 +1,18 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
+
 /* Public Application Programming Interface to Ghostscript interpreter */
 
 #include "string_.h"
@@ -26,16 +28,11 @@
 #include "gsmalloc.h"
 #include "gslibctx.h"
 
-/*
- * GLOBAL WARNING GLOBAL WARNING GLOBAL WARNING GLOBAL WARNING
- *
- *                 The nasty global variables
- *
- * GLOBAL WARNING GLOBAL WARNING GLOBAL WARNING GLOBAL WARNING
+/* number of threads to allow per process
+ * currently more than 1 is guarenteed to fail 
  */
-int gsapi_instance_counter = 0;
-/* extern gs_main_instance *gs_main_instance_default(); */
-
+static int gsapi_instance_counter = 0;
+static const int gsapi_instance_max = 1;
 
 /* Return revision numbers and strings of Ghostscript. */
 /* Used for determining if wrong GSDLL loaded. */
@@ -52,33 +49,44 @@ gsapi_revision(gsapi_revision_t *pr, int rvsize)
     return 0;
 }
 
-/* Create a new instance of Ghostscript. */
-/* We do not support multiple instances, so make sure
- * we use the default instance only once.
+/* Create a new instance of Ghostscript. 
+ * First instance per process call with *pinstance == NULL
+ * next instance in a proces call with *pinstance == copy of valid_instance pointer
+ * *pinstance is set to a new instance pointer.
  */
 GSDLLEXPORT int GSDLLAPI 
-gsapi_new_instance(gs_main_instance **pinstance, void *caller_handle)
+gsapi_new_instance(void **pinstance, void *caller_handle)
 {
-    gs_main_instance *minst;
-    gs_memory_t *mem;
-    if (gsapi_instance_counter != 0) {
-	*pinstance = NULL;
+    gs_memory_t *mem = NULL;
+    gs_main_instance *minst = NULL;
+
+    if (pinstance == NULL)
 	return e_Fatal;
+
+    /* limited to 1 instance, till it works :) */
+    if ( gsapi_instance_counter >= gsapi_instance_max ) 
+	return e_Fatal;
+    ++gsapi_instance_counter;
+
+    if (*pinstance == NULL)
+	/* first instance in this process */
+	mem = gs_malloc_init(NULL);
+    else {
+	/* nothing different for second thread initialization 
+	 * seperate memory, ids, only stdio is process shared.
+	 */
+	mem = gs_malloc_init(NULL);
+	
     }
-    gsapi_instance_counter++;
-    
-    mem = gs_malloc_init(NULL);
     minst = gs_main_alloc_instance(mem);
-    
+    mem->gs_lib_ctx->top_of_system = (void*) minst;
     mem->gs_lib_ctx->caller_handle = caller_handle;
     mem->gs_lib_ctx->stdin_fn = NULL;
     mem->gs_lib_ctx->stdout_fn = NULL;
     mem->gs_lib_ctx->stderr_fn = NULL;
+    mem->gs_lib_ctx->poll_fn = NULL;
 
-    // hack 
-    // minst->poll_fn = NULL;
-    minst->i_ctx_p = NULL;
-    *pinstance = minst;
+    *pinstance = (void*)(mem->gs_lib_ctx);
     return 0;
 }
 
@@ -87,63 +95,75 @@ gsapi_new_instance(gs_main_instance **pinstance, void *caller_handle)
  * we use the default instance only once.
  */
 GSDLLEXPORT void GSDLLAPI 
-gsapi_delete_instance(gs_main_instance *minst)
+gsapi_delete_instance(void *lib)
 {
-    if ((gsapi_instance_counter > 0) && (minst != NULL)) {
-	minst->heap->gs_lib_ctx->caller_handle = NULL;
-	minst->heap->gs_lib_ctx->stdin_fn = NULL;
-	minst->heap->gs_lib_ctx->stdout_fn = NULL;
-	minst->heap->gs_lib_ctx->stderr_fn = NULL;
-	minst->heap->gs_lib_ctx->poll_fn = NULL;
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if ((ctx != NULL)) {
+   	gs_main_instance *minst = get_minst_from_memory(ctx->memory);
+
+	ctx->caller_handle = NULL;
+	ctx->stdin_fn = NULL;
+	ctx->stdout_fn = NULL;
+	ctx->stderr_fn = NULL;
+	ctx->poll_fn = NULL;
 	minst->display = NULL;
-	gsapi_instance_counter--;
+	
+	/* Release the memory (frees up everything) */
+        gs_malloc_release(minst->heap);
+	
+	--gsapi_instance_counter;
     }
 }
 
 /* Set the callback functions for stdio */
 GSDLLEXPORT int GSDLLAPI 
-gsapi_set_stdio(gs_main_instance *minst,
+gsapi_set_stdio(void *lib,
     int(GSDLLCALL *stdin_fn)(void *caller_handle, char *buf, int len),
     int(GSDLLCALL *stdout_fn)(void *caller_handle, const char *str, int len),
     int(GSDLLCALL *stderr_fn)(void *caller_handle, const char *str, int len))
 {
-    if (minst == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
 	return e_Fatal;
-    minst->heap->gs_lib_ctx->stdin_fn = stdin_fn;
-    minst->heap->gs_lib_ctx->stdout_fn = stdout_fn;
-    minst->heap->gs_lib_ctx->stderr_fn = stderr_fn;
+    ctx->stdin_fn = stdin_fn;
+    ctx->stdout_fn = stdout_fn;
+    ctx->stderr_fn = stderr_fn;
     return 0;
 }
 
 /* Set the callback function for polling */
 GSDLLEXPORT int GSDLLAPI 
-gsapi_set_poll(gs_main_instance *minst, 
+gsapi_set_poll(void *lib, 
     int(GSDLLCALL *poll_fn)(void *caller_handle))
 {
-    if (minst == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
 	return e_Fatal;
-    minst->heap->gs_lib_ctx->poll_fn = poll_fn;
+    ctx->poll_fn = poll_fn;
     return 0;
 }
 
 /* Set the display callback structure */
 GSDLLEXPORT int GSDLLAPI 
-gsapi_set_display_callback(gs_main_instance *minst, display_callback *callback)
+gsapi_set_display_callback(void *lib, display_callback *callback)
 {
-    if (minst == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
 	return e_Fatal;
-    minst->display = callback;
+    get_minst_from_memory(ctx->memory)->display = callback;
+    /* not in a language switched build */
     return 0;
 }
 
 
 /* Initialise the interpreter */
 GSDLLEXPORT int GSDLLAPI 
-gsapi_init_with_args(gs_main_instance *minst, int argc, char **argv)
+gsapi_init_with_args(void *lib, int argc, char **argv)
 {
-    if (minst == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
 	return e_Fatal;
-    return gs_main_init_with_args(minst, argc, argv);
+    return gs_main_init_with_args(get_minst_from_memory(ctx->memory), argc, argv);
 }
 
 
@@ -155,78 +175,90 @@ gsapi_init_with_args(gs_main_instance *minst, int argc, char **argv)
 
 /* Setup up a suspendable run_string */
 GSDLLEXPORT int GSDLLAPI 
-gsapi_run_string_begin(gs_main_instance *minst, int user_errors, 
+gsapi_run_string_begin(void *lib, int user_errors, 
 	int *pexit_code)
 {
-    if (minst == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
 	return e_Fatal;
 
-    return gs_main_run_string_begin(minst, 
-	user_errors, pexit_code, &minst->error_object);
+    return gs_main_run_string_begin(get_minst_from_memory(ctx->memory), 
+				    user_errors, pexit_code, 
+				    &(get_minst_from_memory(ctx->memory)->error_object));
 }
 
 
 GSDLLEXPORT int GSDLLAPI 
-gsapi_run_string_continue(gs_main_instance *minst, 
+gsapi_run_string_continue(void *lib, 
 	const char *str, uint length, int user_errors, int *pexit_code)
 {
-    if (minst == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
 	return e_Fatal;
 
-    return gs_main_run_string_continue(minst,
-	str, length, user_errors, pexit_code, &minst->error_object);
+    return gs_main_run_string_continue(get_minst_from_memory(ctx->memory),
+				       str, length, user_errors, pexit_code, 
+				       &(get_minst_from_memory(ctx->memory)->error_object));
 }
 
 GSDLLEXPORT int GSDLLAPI 
-gsapi_run_string_end(gs_main_instance *minst, 
+gsapi_run_string_end(void *lib, 
 	int user_errors, int *pexit_code)
 {
-    if (minst == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
 	return e_Fatal;
 
-    return gs_main_run_string_end(minst,
-	user_errors, pexit_code, &minst->error_object);
+    return gs_main_run_string_end(get_minst_from_memory(ctx->memory),
+				  user_errors, pexit_code, 
+				  &(get_minst_from_memory(ctx->memory)->error_object));
 }
 
 GSDLLEXPORT int GSDLLAPI 
-gsapi_run_string_with_length(gs_main_instance *minst, 
+gsapi_run_string_with_length(void *lib, 
 	const char *str, uint length, int user_errors, int *pexit_code)
 {
-    if (minst == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
 	return e_Fatal;
 
-    return gs_main_run_string_with_length(minst,
-	str, length, user_errors, pexit_code, &minst->error_object);
+    return gs_main_run_string_with_length(get_minst_from_memory(ctx->memory),
+					  str, length, user_errors, pexit_code, 
+					  &(get_minst_from_memory(ctx->memory)->error_object));
 }
 
 GSDLLEXPORT int GSDLLAPI 
-gsapi_run_string(gs_main_instance *minst, 
+gsapi_run_string(void *lib, 
 	const char *str, int user_errors, int *pexit_code)
 {
-    return gsapi_run_string_with_length(minst, 
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    return gsapi_run_string_with_length(get_minst_from_memory(ctx->memory),
 	str, (uint)strlen(str), user_errors, pexit_code);
 }
 
 GSDLLEXPORT int GSDLLAPI 
-gsapi_run_file(gs_main_instance *minst, const char *file_name, 
+gsapi_run_file(void *lib, const char *file_name, 
 	int user_errors, int *pexit_code)
 {
-    if (minst == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
 	return e_Fatal;
 
-    return gs_main_run_file(minst,
-	file_name, user_errors, pexit_code, &minst->error_object);
+    return gs_main_run_file(get_minst_from_memory(ctx->memory),
+			    file_name, user_errors, pexit_code, 
+			    &(get_minst_from_memory(ctx->memory)->error_object));
 }
 
 
 /* Exit the interpreter */
 GSDLLEXPORT int GSDLLAPI 
-gsapi_exit(gs_main_instance *minst)
+gsapi_exit(void *lib)
 {
-    if (minst == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
 	return e_Fatal;
 
-    gs_to_exit(minst->heap, 0);
+    gs_to_exit(ctx->memory, 0);
     return 0;
 }
 

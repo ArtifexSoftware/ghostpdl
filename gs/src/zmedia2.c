@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Media matching for setpagedevice */
 #include "math_.h"
 #include "memory_.h"
@@ -25,7 +26,7 @@
 /* <pagedict> <attrdict> <policydict> <keys> .matchmedia <key> true */
 /* <pagedict> <attrdict> <policydict> <keys> .matchmedia false */
 /* <pagedict> null <policydict> <keys> .matchmedia null true */
-private int zmatch_page_size(const gs_memory_t *mem, 
+private int zmatch_page_size(const gs_memory_t *mem,
 			     const ref * pvreq, const ref * pvmed,
 			     int policy, int orient, bool roll,
 			     float *best_mismatch, gs_matrix * pmat,
@@ -51,6 +52,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
     os_ptr pkeys = op;		/* *const */
     int policy_default;
     float best_mismatch = (float)max_long;	/* adhoc */
+    float mepos_penalty;
     float mbest = best_mismatch;
     match_record_t match;
     ref no_priority;
@@ -63,21 +65,21 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 	ref key, dict;
     } aelt;
     if (r_has_type(pattr, t_null)) {
-	check_op(imemory, 4);
+	check_op(4);
 	make_null(op - 3);
 	make_true(op - 2);
 	pop(2);
 	return 0;
     }
-    check_type(imemory, *preq, t_dictionary);
-    check_dict_read(imemory, *preq);
-    check_type(imemory, *pattr, t_dictionary);
-    check_dict_read(imemory, *pattr);
-    check_type(imemory, *ppol, t_dictionary);
-    check_dict_read(imemory, *ppol);
-    check_array(imemory, *pkeys);
-    check_read(imemory, *pkeys);
-    switch (code = dict_int_null_param(imemory, preq, "MediaPosition", 0, 0x7fff,
+    check_type(*preq, t_dictionary);
+    check_dict_read(*preq);
+    check_type(*pattr, t_dictionary);
+    check_dict_read(*pattr);
+    check_type(*ppol, t_dictionary);
+    check_dict_read(*ppol);
+    check_array(*pkeys);
+    check_read(*pkeys);
+    switch (code = dict_int_null_param(preq, "MediaPosition", 0, 0x7fff,
 				       0, &mepos)) {
 	default:
 	    return code;
@@ -86,7 +88,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 	    mepos = -1;
 	case 0:;
     }
-    switch (code = dict_int_null_param(imemory, preq, "Orientation", 0, 3,
+    switch (code = dict_int_null_param(preq, "Orientation", 0, 3,
 				       0, &orient)) {
 	default:
 	    return code;
@@ -95,16 +97,16 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 	    orient = -1;
 	case 0:;
     }
-    code = dict_bool_param(imemory, preq, "RollFedMedia", false, &roll);
+    code = dict_bool_param(preq, "RollFedMedia", false, &roll);
     if (code < 0)
 	return code;
-    code = dict_int_param(imemory, ppol, "PolicyNotFound", 0, 7, 0,
+    code = dict_int_param(ppol, "PolicyNotFound", 0, 7, 0,
 			  &policy_default);
     if (code < 0)
 	return code;
     if (dict_find_string(pattr, "Priority", &ppriority) > 0) {
-	check_array_only(imemory, *ppriority);
-	check_read(imemory, *ppriority);
+	check_array_only(*ppriority);
+	check_read(*ppriority);
     } else {
 	make_empty_array(&no_priority, a_readonly);
 	ppriority = &no_priority;
@@ -116,13 +118,12 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 	 ) {
 	if (r_has_type(&aelt.dict, t_dictionary) &&
 	    r_has_attr(dict_access_ref(&aelt.dict), a_read) &&
-	    r_has_type(&aelt.key, t_integer) &&
-	    (mepos < 0 || aelt.key.value.intval == mepos)
+	    r_has_type(&aelt.key, t_integer)
 	    ) {
 	    bool match_all;
 	    uint ki, pi;
 
-	    code = dict_bool_param(imemory, &aelt.dict, "MatchAll", false,
+	    code = dict_bool_param(&aelt.dict, "MatchAll", false,
 				   &match_all);
 	    if (code < 0)
 		return code;
@@ -147,7 +148,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 		}
 		/* Look for the Policies entry for this key. */
 		if (dict_find(ppol, &key, &ppvalue) > 0) {
-		    check_type_only(imemory, *ppvalue, t_integer);
+		    check_type_only(*ppvalue, t_integer);
 		    policy = ppvalue->value.intval;
 		} else
 		    policy = policy_default;
@@ -175,6 +176,10 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 		} else if (!obj_eq(imemory, prvalue, pmvalue))
 		    goto no;
 	    }
+
+	    mepos_penalty = (mepos < 0 || aelt.key.value.intval == mepos) ?
+		0 : .001;
+
 	    /* We have a match. Save the match in case no better match is found */
 	    if (r_has_type(&match.match_key, t_null)) 
 		match.match_key = aelt.key;
@@ -183,13 +188,13 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 	     * regardless of priority. If the match is the same, then update 
 	     * to the current only if the key value is lower.
 	     */
-	    if (best_mismatch <= mbest) {
-		if (best_mismatch < mbest  ||
+	    if (best_mismatch + mepos_penalty <= mbest) {
+		if (best_mismatch + mepos_penalty < mbest  ||
 		    (r_has_type(&match.match_key, t_integer) &&
 		     match.match_key.value.intval > aelt.key.value.intval)) {
 		    reset_match(&match);
 		    match.match_key = aelt.key;
-		    mbest = best_mismatch;
+		    mbest = best_mismatch + mepos_penalty;
 		}
 	    }
 	    /* In case of a tie, see if the new match has priority. */
@@ -236,14 +241,14 @@ zmatchpagesize(i_ctx_t *i_ctx_p)
     bool roll;
     int code;
 
-    check_type(imemory, op[-3], t_integer);
+    check_type(op[-3], t_integer);
     if (r_has_type(op - 2, t_null))
 	orient = -1;
     else {
-	check_int_leu(imemory, op[-2], 3);
+	check_int_leu(op[-2], 3);
 	orient = (int)op[-2].value.intval;
     }
-    check_type(imemory, op[-1], t_boolean);
+    check_type(op[-1], t_boolean);
     roll = op[-1].value.boolval;
     code = zmatch_page_size(imemory, 
 			    op - 5, op - 4, (int)op[-3].value.intval,
@@ -271,12 +276,11 @@ zmatchpagesize(i_ctx_t *i_ctx_p)
 }
 /* Match the PageSize.  See below for details. */
 private int
-match_page_size(const gs_memory_t *mem, 
-		const gs_point * request,
-		const gs_rect * medium,
-		int policy, int orient, bool roll,
-		float *best_mismatch, gs_matrix * pmat,
-		gs_point * pmsize);
+match_page_size(const gs_point * request,
+			     const gs_rect * medium,
+			     int policy, int orient, bool roll,
+			     float *best_mismatch, gs_matrix * pmat,
+			     gs_point * pmsize);
 private int
 zmatch_page_size(const gs_memory_t *mem, const ref * pvreq, const ref * pvmed,
 		 int policy, int orient, bool roll,
@@ -289,13 +293,13 @@ zmatch_page_size(const gs_memory_t *mem, const ref * pvreq, const ref * pvmed,
     /* array_get checks array types and size. */
     /* This allows normal or packed arrays to be used */
     if ((code = array_get(mem, pvreq, 1, &rv[1])) < 0)
-        return_error(mem, code);
+        return_error(code);
     nr = r_size(pvreq);
     if ((code = array_get(mem, pvmed, 1, &rv[3])) < 0)
-        return_error(mem, code);
+        return_error(code);
     nm = r_size(pvmed);
     if (!((nm == 2 || nm == 4) && (nr == 2 || nr == nm)))
-	return_error(mem, e_rangecheck);
+	return_error(e_rangecheck);
     {
 	uint i;
 	double v[6];
@@ -303,8 +307,8 @@ zmatch_page_size(const gs_memory_t *mem, const ref * pvreq, const ref * pvmed,
 
 	array_get(mem, pvreq, 0, &rv[0]);
 	for (i = 0; i < 4; ++i)
-	    array_get(mem, pvmed, i % nm, &rv[i + 2]);
-	if ((code = num_params(mem, rv + 5, 6, v)) < 0)
+	    array_get(mem,pvmed, i % nm, &rv[i + 2]);
+	if ((code = num_params(rv + 5, 6, v)) < 0)
 	    return code;
 	{
 	    gs_point request;
@@ -313,7 +317,7 @@ zmatch_page_size(const gs_memory_t *mem, const ref * pvreq, const ref * pvmed,
 	    request.x = v[0], request.y = v[1];
 	    medium.p.x = v[2], medium.p.y = v[3],
 		medium.q.x = v[4], medium.q.y = v[5];
-	    return match_page_size(mem, &request, &medium, policy, orient,
+	    return match_page_size(&request, &medium, policy, orient,
 				   roll, best_mismatch, pmat, pmsize);
 	}
     }
@@ -331,20 +335,19 @@ zmatch_page_size(const gs_memory_t *mem, const ref * pvreq, const ref * pvmed,
  * NOTE: The algorithm here doesn't work properly for variable-size media
  * when the match isn't exact.  We'll fix it if we ever need to.
  */
-private void make_adjustment_matrix(const gs_memory_t *mem, 
-				    const gs_point * request,
+private void make_adjustment_matrix(const gs_point * request,
 				    const gs_rect * medium,
 				    gs_matrix * pmat,
 				    bool scale, int rotate);
 private int
-match_page_size(const gs_memory_t *mem, const gs_point * request, const gs_rect * medium, int policy,
+match_page_size(const gs_point * request, const gs_rect * medium, int policy,
 		int orient, bool roll, float *best_mismatch, gs_matrix * pmat,
 		gs_point * pmsize)
 {
     double rx = request->x, ry = request->y;
 
     if ((rx <= 0) || (ry <= 0))
-	return_error(mem, e_rangecheck);
+	return_error(e_rangecheck);
     if (policy == 7) {
 		/* (Adobe) hack: just impose requested values */
 	*best_mismatch = 0;
@@ -365,7 +368,7 @@ match_page_size(const gs_memory_t *mem, const gs_point * request, const gs_rect 
 	/* As the comment in gs_setpd.ps says "Devices that care will provide  */
 	/* a real InputAttributes dictionary (most without a range pagesize)   */
         if ( fit_direct && fit_rotated) {
-	    make_adjustment_matrix(mem, request, medium, pmat, false, orient < 0 ? 0 : orient);
+	    make_adjustment_matrix(request, medium, pmat, false, orient < 0 ? 0 : orient);
 	    if (medium->p.x < medium->q.x || medium->p.y < medium->q.y)
 		*best_mismatch = (float)0.001;		/* fudge a match to a range as a small number */
 	    else	/* should be 0 for an exact match */
@@ -374,14 +377,14 @@ match_page_size(const gs_memory_t *mem, const gs_point * request, const gs_rect 
         } else if ( fit_direct ) {
             int rotate = orient < 0 ? 0 : orient;
 
-	    make_adjustment_matrix(mem, request, medium, pmat, false, (rotate + 1) & 2);
+	    make_adjustment_matrix(request, medium, pmat, false, (rotate + 1) & 2);
 	    *best_mismatch = fabs((medium->p.x - rx) * (medium->q.x - rx)) +
 	    			fabs((medium->p.y - ry) * (medium->q.y - ry)) + 
             			    (pmat->xx == 0.0 || (rotate & 1) == 1 ? 0.01 : 0);	/* rotated */
         } else if ( fit_rotated ) {
             int rotate = (orient < 0 ? 1 : orient);
 
-	    make_adjustment_matrix(mem, request, medium, pmat, false, rotate | 1);
+	    make_adjustment_matrix(request, medium, pmat, false, rotate | 1);
 	    *best_mismatch = fabs((medium->p.y - rx) * (medium->q.y - rx)) +
 	    			fabs((medium->p.x - ry) * (medium->q.x - ry)) + 
             			    (pmat->xx == 0.0 || (rotate & 1) == 1 ? 0.01 : 0);	/* rotated */
@@ -412,7 +415,7 @@ match_page_size(const gs_memory_t *mem, const gs_point * request, const gs_rect 
 		    break;
 	    }
 	    if (adjust)
-	        make_adjustment_matrix(mem, request, medium, pmat, !larger, rotate);
+	        make_adjustment_matrix(request, medium, pmat, !larger, rotate);
 	    else {
 	        gs_rect req_rect;
                 if(rotate & 1) { 
@@ -423,7 +426,7 @@ match_page_size(const gs_memory_t *mem, const gs_point * request, const gs_rect 
                     req_rect.p.y = ry;
                 }
 	        req_rect.q = req_rect.p;
-	        make_adjustment_matrix(mem, request, &req_rect, pmat, false, rotate);
+	        make_adjustment_matrix(request, &req_rect, pmat, false, rotate);
 	    }
 	    *best_mismatch = fabs(mismatch);
         }
@@ -447,10 +450,8 @@ match_page_size(const gs_memory_t *mem, const gs_point * request, const gs_rect 
  * we must adjust its size in that dimension to match the request.
  * We recognize this by an unreasonably small medium->p.{x,y}.
  */
-#define MIN_MEDIA_SIZE 9
 private void 
-make_adjustment_matrix(const gs_memory_t *mem, 
-		       const gs_point * request, const gs_rect * medium,
+make_adjustment_matrix(const gs_point * request, const gs_rect * medium,
 		       gs_matrix * pmat, bool scale, int rotate)
 {
     double rx = request->x, ry = request->y;
@@ -462,11 +463,23 @@ make_adjustment_matrix(const gs_memory_t *mem,
 
 	rx = ry, ry = temp;
     }
-    /* Adjust the medium size if flexible. */ 
-    if (medium->p.x < MIN_MEDIA_SIZE && mx > rx)
-	mx = rx;
-    if (medium->p.y < MIN_MEDIA_SIZE && my > ry)
-	my = ry;
+    /* If 'medium' is flexible, adjust 'mx' and 'my' towards 'rx' and 'ry',
+       respectively. Note that 'mx' and 'my' have just acquired the largest
+       permissible value, medium->q. */
+    if (medium->p.x < mx) {	/* non-empty width range */
+	if (rx < medium->p.x)
+	    mx = medium->p.x;	/* use minimum of the range */
+	else if (rx < mx)
+	    mx = rx;		/* fits */
+		/* else leave mx == medium->q.x, i.e., the maximum */
+    }
+    if (medium->p.y < my) {	/* non-empty height range */
+	if (ry < medium->p.y)
+	    my = medium->p.y;	/* use minimum of the range */
+	else if (ry < my)
+	    my = ry;		/* fits */
+	    /* else leave my == medium->q.y, i.e., the maximum */
+    }
 
     /* Translate to align the centers. */ 
     gs_make_translation(mx / 2, my / 2, pmat);
@@ -486,7 +499,7 @@ make_adjustment_matrix(const gs_memory_t *mem,
     }
     /* Now translate the origin back, */ 
     /* using the original, unswapped request. */ 
-    gs_matrix_translate(mem, pmat, -request->x / 2, -request->y / 2, pmat);
+    gs_matrix_translate(pmat, -request->x / 2, -request->y / 2, pmat);
 }
 #undef MIN_MEDIA_SIZE
 

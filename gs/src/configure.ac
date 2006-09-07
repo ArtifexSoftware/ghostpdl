@@ -1,3 +1,17 @@
+dnl  Copyright (C) 2001-2006 artofcode LLC.
+dnl  All Rights Reserved.
+
+dnl  This software is provided AS-IS with no warranty, either express or
+dnl  implied.
+
+dnl  This software is distributed under license and may not be copied, modified
+dnl  or distributed except as expressly authorized under the terms of that
+dnl  license.  Refer to licensing information at http://www.artifex.com/
+dnl  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+dnl  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+
+dnl $Id$
+
 dnl Process this file with autoconf to produce a configure script
 
 dnl ------------------------------------------------
@@ -38,7 +52,7 @@ else
     cflags_to_try=
     optflags_to_try="-O"
 fi
-	
+
 AC_MSG_CHECKING([supported compiler flags])
 old_cflags=$CFLAGS
 echo
@@ -84,12 +98,22 @@ AC_STRUCT_ST_BLOCKS
 AC_HEADER_TIME
 AC_STRUCT_TM
 
+dnl see if we're on a system that puts the *int*_t types 
+dnl from stdint.h in sys/types.h
+if test "x$ac_cv_header_stdint_h" != xyes; then
+    AC_CHECK_TYPES([int8_t, int16_t, int32_t, uint8_t, uint16_t, uint32_t],,,[#include <sys/types.h>])
+    if test "$ac_cv_type_uint8_t" = yes; then
+        AC_DEFINE([SYS_TYPES_HAS_STDINT_TYPES])
+	GCFLAGS="$GCFLAGS -DSYS_TYPES_HAS_STDINT_TYPES"
+    fi
+fi
+
 dnl we aren't interested in all of DEFS, so manually insert
 dnl the flags we care about
 if test "$ac_cv_c_const" != yes; then
 	GCFLAGS="$GCFLAGS -Dconst="
 fi
-if test "$ac_cv_header_stdint_h" = yes; then
+if test "x$ac_cv_header_stdint_h" = xyes; then
 	GCFLAGS="$GCFLAGS -DHAVE_STDINT_H"
 fi
 
@@ -109,7 +133,7 @@ uint64_type="none"
    else
     AC_CHECK_SIZEOF(u_int64_t)
     if test $ac_cv_sizeof_u_int64_t = 8; then
-	unit64_type="u_int64_t"
+	uint64_type="u_int64_t"
     fi
    fi
   fi
@@ -134,21 +158,28 @@ dnl build, so that the D_MAX_BLOCKS_IN_MCU patch will be applied.
 dnl A more sophisticated approach would be to test the shared lib
 dnl to see whether it has already been patched.
 LIBJPEGDIR=src
-if test -d jpeg; then
-	AC_MSG_RESULT([yes])
+if test -f jpeg/jpeglib.h; then
+	AC_MSG_RESULT([jpeg])
 	SHARE_LIBJPEG=0
 	LIBJPEGDIR=jpeg
+elif test -f jpeg-6b/jpeglib.h; then
+	AC_MSG_RESULT([jpeg-6b])
+	SHARE_LIBJPEG=0
+	LIBJPEGDIR=jpeg-6b
 else
 	AC_MSG_RESULT([no])
-	AC_CHECK_LIB(jpeg, jpeg_set_defaults, [SHARE_LIBJPEG=1], [
-		AC_MSG_ERROR([I wasn't able to find a copy
+	AC_CHECK_LIB(jpeg, jpeg_set_defaults, [
+	  AC_CHECK_HEADERS([jpeglib.h], [SHARE_LIBJPEG=1])
+	])
+fi
+if test -z "$SHARE_LIBJPEG"; then
+  AC_MSG_ERROR([I wasn't able to find a copy
   of the jpeg library. This is required for compiling
   ghostscript. Please download a copy of the source,
   e.g. from http://www.ijg.org/, unpack it at the
   top level of the gs source tree, and rename
   the directory to 'jpeg'.
-		])
-	])
+  ])
 fi
 AC_SUBST(SHARE_LIBJPEG)
 AC_SUBST(LIBJPEGDIR)
@@ -175,36 +206,41 @@ if test -d zlib; then
 	ZLIBDIR=zlib
 else
 	AC_MSG_RESULT([no])
-	AC_CHECK_LIB(z, deflate, [SHARE_ZLIB=1], [
-		AC_MSG_ERROR([I did not find a copy of zlib on your system.
-Please either install it, or unpack a copy of the source in a
-local directory named 'zlib'. See http://www.gzip.org/zlib/
-for more information.
-		])
+	AC_CHECK_LIB(z, deflate, [
+	  AC_CHECK_HEADERS(zlib.h, [SHARE_ZLIB=1])
 	])
+fi
+if test -z "$SHARE_ZLIB"; then
+  AC_MSG_ERROR([I did not find a copy of zlib on your system.
+  Please either install it, or unpack a copy of the source in a
+  local directory named 'zlib'. See http://www.gzip.org/zlib/
+  for more information.
+  ])
 fi
 AC_SUBST(SHARE_ZLIB)
 AC_SUBST(ZLIBDIR)
 
 dnl png for the png output device; it also requires zlib
 LIBPNGDIR=src
+PNGDEVS=''
+PNGDEVS_ALL='$(DD)png48.dev $(DD)png16m.dev $(DD)pnggray.dev $(DD)pngmono.dev $(DD)png256.dev $(DD)png16.dev $(DD)pngalpha.dev'
 AC_MSG_CHECKING([for local png library source])
-if test -d libpng; then
+if test -f libpng/pngread.c; then
 	AC_MSG_RESULT([yes])
 	SHARE_LIBPNG=0
 	LIBPNGDIR=libpng
-	PNGDEVS='$(DD)png16m.dev $(DD)pnggray.dev $(DD)pngmono.dev $(DD)png256.dev $(DD)png16.dev $(DD)pngalpha.dev'
+	PNGDEVS="$PNGDEVS_ALL"
 else
 	AC_MSG_RESULT([no])
 	AC_CHECK_LIB(png, png_check_sig, [
+	  AC_CHECK_HEADERS(png.h, [
 		SHARE_LIBPNG=1
-		PNGDEVS='$(DD)png16m.dev $(DD)pnggray.dev $(DD)pngmono.dev $(DD)png256.dev $(DD)png16.dev $(DD)pngalpha.dev'
-	], [
-		SHARE_LIBPNG=0
-		AC_MSG_RESULT([no])
-		AC_MSG_NOTICE([disabling png output devices])
-		PNGDEVS=''
-	], [-lz])
+		PNGDEVS="$PNGDEVS_ALL"
+	  ], [SHARE_LIBPNG=0])
+	], [SHARE_LIBPNG=0], [-lz])
+fi
+if test -z "$PNGDEVS"; then
+  AC_MSG_NOTICE([disabling png output devices])
 fi
 AC_SUBST(SHARE_LIBPNG)
 AC_SUBST(LIBPNGDIR)
@@ -262,6 +298,70 @@ AC_SUBST(JBIG2DIR)
 AC_SUBST(SHARE_JBIG2)
 AC_SUBST(JBIG2DEVS)
 
+dnl look for the jasper JPEG 2000 library
+AC_ARG_WITH(jasper, AC_HELP_STRING([--with-jasper],[link to the JasPer library for JPEG 2000]))
+JASPERDIR=src
+SHARE_JASPER=0
+JPXDEVS=''
+if test x$with_jasper != xno; then
+  AC_MSG_CHECKING([for local jasper library source])
+  for d in jasper jasper-1.7*; do
+    test -d "$d" && JASPERDIR=$d && break
+  done
+  if test "x$JASPERDIR" != xsrc; then
+    AC_MSG_RESULT([$JASPERDIR])
+    AC_MSG_CHECKING([for local jasper configure script])
+    if test -x $JASPERDIR/configure; then
+      AC_MSG_RESULT([yes])
+      echo
+      echo "Running jasper configure script..."
+      olddir=`pwd`
+      cd $JASPERDIR && ./configure
+      cd $olddir
+      echo
+      echo "Continuing with Ghostscript configuration..."
+    else
+      AC_MSG_RESULT([no])
+      AC_MSG_CHECKING([for local jasper autogen.sh script])
+      if test -x $JASPERDIR/autogen.sh; then
+        AC_MSG_RESULT([yes])
+        echo
+        echo "Running jasper autogen script..."
+        olddir=`pwd`
+        cd $JASPERDIR && ./autogen.sh
+        cd $olddir
+        echo
+        echo "Continuing with Ghostscript configuration..."
+      else
+        AC_MSG_ERROR([
+Unable to find $JASPERDIR/src/libjasper/include/jas_config.h,
+or generate generate such a file for this system. You will
+have to build one by hand, or configure, build and install
+the jasper library separately.
+
+You can also pass --without-jasper to configure to disable
+JPEG 2000 PDF image support entirely.
+])
+      fi
+    fi
+  else
+    AC_MSG_RESULT([no])
+    AC_CHECK_LIB([jasper], [jas_image_create], [
+	SHARE_JASPER=1
+    ], [
+	AC_MSG_WARN([disabling support for JPEG 2000 images])
+        with_jasper=no
+    ])
+  fi
+fi
+if test x$with_jasper != xno; then
+  JPXDEVS='$(PSD)jpx.dev'
+fi
+
+AC_SUBST(JASPERDIR)
+AC_SUBST(SHARE_JASPER)
+AC_SUBST(JPXDEVS)
+
 dnl optional X11 for display devices
 AC_PATH_XTRA
 XLIBS=''
@@ -289,11 +389,11 @@ AC_ARG_WITH(gs, AC_HELP_STRING([--with-gs=NAME],
 AC_SUBST(GS)
 
 dnl do we compile the postscript initialization files into Ghostscript?
-COMPILE_INITS="0"
-AC_ARG_ENABLE(compile-inits, AC_HELP_STRING([--enable-compile-inits],
-       [compile initialization files into Ghostscript]),[
-               if test x$enable_compile_inits = xyes; then
-                       COMPILE_INITS="1"
+COMPILE_INITS="1"
+AC_ARG_ENABLE(compile-inits, AC_HELP_STRING([--disable-compile-inits],
+       [don't compile in initialization files]),[
+               if test "x$enable_compile_inits" = xno; then
+                       COMPILE_INITS="0"
                fi])
 AC_SUBST(COMPILE_INITS)
 
@@ -303,6 +403,9 @@ dnl --------------------------------------------------
 
 AC_CHECK_FUNCS([mkstemp], [HAVE_MKSTEMP=-DHAVE_MKSTEMP])
 AC_SUBST(HAVE_MKSTEMP)
+
+AC_CHECK_FUNCS([hypot], [HAVE_HYPOT=-DHAVE_HYPOT])
+AC_SUBST(HAVE_HYPOT)
 
 AC_FUNC_FORK
 AC_PROG_GCC_TRADITIONAL

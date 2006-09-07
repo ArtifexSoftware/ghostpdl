@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PCX file format drivers */
 #include "gdevprn.h"
 #include "gdevpccm.h"
@@ -54,7 +55,7 @@ const gx_device_printer gs_pcxgray_device =
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
 		 0, 0, 0, 0,	/* margins */
-		 1, 8, 255, 0, 256, 0, pcx256_print_page)
+		 1, 8, 255, 255, 256, 256, pcx256_print_page)
 };
 
 /* 4-bit planar (EGA/VGA-style) color. */
@@ -69,7 +70,7 @@ const gx_device_printer gs_pcx16_device =
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
 		 0, 0, 0, 0,	/* margins */
-		 3, 4, 3, 2, 4, 3, pcx16_print_page)
+		 3, 4, 1, 1, 2, 2, pcx16_print_page)
 };
 
 /* Chunky 8-bit (SuperVGA-style) color. */
@@ -83,7 +84,7 @@ const gx_device_printer gs_pcx256_device =
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
 		 0, 0, 0, 0,	/* margins */
-		 3, 8, 6, 6, 7, 7, pcx256_print_page)
+		 3, 8, 5, 5, 6, 6, pcx256_print_page)
 };
 
 /* 24-bit color, 3 8-bit planes. */
@@ -325,7 +326,7 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
     int code = 0;		/* return code */
 
     if (line == 0)		/* can't allocate line buffer */
-	return_error(pdev->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
 
     /* Fill in the other variable entries in the header struct. */
 
@@ -404,7 +405,7 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
 		    break;
 
 		default:
-		    code = gs_note_error(pdev->memory, gs_error_rangecheck);
+		    code = gs_note_error(gs_error_rangecheck);
 		    goto pcx_done;
 
 	    }

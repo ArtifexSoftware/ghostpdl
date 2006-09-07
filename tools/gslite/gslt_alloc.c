@@ -16,27 +16,28 @@ extern const gs_memory_struct_type_t st_bytes;
 inline private uint
 round_up_to_align(uint size)
 {
-    return (size + (arch_align_double_mod - 1)) & -arch_align_double_mod;
+    uint result = (size + (ARCH_ALIGN_MEMORY_MOD - 1)) & -ARCH_ALIGN_MEMORY_MOD;
+    return result;
 }
 
-/* aceesors to get size and type given the pointer returned to the
+/* accessors to get size and type given the pointer returned to the
    client, *not* the pointer returned by malloc or realloc */
 inline private uint
 get_size(byte *bptr)
 {
-    /* unpack the unsigned long we stored 2 words behind the object at
+    /* unpack the unsigned int we stored 2 words behind the object at
        alloc time... back up 2 */
-    uint size_offset = -round_up_to_align(1) * 2;
+    int size_offset = -round_up_to_align(1) * 2;
     uint size;
     /* unpack */
     memcpy(&size, &bptr[size_offset], sizeof(uint));
     return size;
 }
 
-inline gs_memory_type_ptr_t
-get_type(char *bptr)
+inline private gs_memory_type_ptr_t
+get_type(byte *bptr)
 {
-    /* unpack the unsigned long we stored 1 word behind the object at
+    /* unpack the pointer we stored 1 word behind the object at
        alloc time... back up 1 */
     gs_memory_type_ptr_t type;
     int type_offset = -round_up_to_align(1);
@@ -45,16 +46,15 @@ get_type(char *bptr)
     return type;
 }
 
-/* aceesors to get size and typen give the pointer that was returned
-   by malloc or realloc, *not* the pointer returned by malloc or
-   realloc */
-inline void
+/* accessors to set size and typen give the pointer that was returned
+   by malloc or realloc, *not* the pointer returned to the client */
+inline private void
 set_size(byte *bptr, uint size)
 {
     memcpy(bptr, &size, sizeof(size));
 }
 
-inline void
+inline private void
 set_type(byte *bptr, gs_memory_type_ptr_t type)
 {
     memcpy(&bptr[round_up_to_align(1)], &type, sizeof(type));
@@ -71,7 +71,7 @@ gslt_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t
     /* NB apparently there is code floating around that does 0 size
        mallocs.  sigh. */
     if ( size == 0 )
-	return 0;
+	return NULL;
 
     /* use 2 starting machine words for size and type - assumes
        malloc() returns on max boundary and first 2 words will hold
@@ -85,7 +85,7 @@ gslt_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t
 	if ( !ptr )
 	    return NULL;
 #ifdef DEBUG
-	if_debug2(mem, 'A', "[da]:malloc:%x:%s\n", &ptr[minsize * 2], cname );
+	if_debug2('A', "[da]:malloc:%p:%s\n", &ptr[minsize * 2], cname );
 #endif
 	/* set the type and size */
 	set_type(ptr, type);
@@ -162,7 +162,7 @@ gslt_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_n
     byte *bptr = (byte *)obj;
     /* get the type from the old object */
     gs_memory_type_ptr_t objs_type = get_type(obj);
-    /* type and size header size */
+    /* type-and-size header size */
     ulong header_size = round_up_to_align(1) + round_up_to_align(1);
     /* get new object's size */
     ulong new_size = (objs_type->ssize * new_num_elements) + header_size;
@@ -172,7 +172,7 @@ gslt_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_n
 	return NULL;
 
     /* da for debug allocator - so scripts can parse the trace */
-    if_debug2(mem, 'A', "[da]:realloc:%x:%s\n", ptr, cname );
+    if_debug2('A', "[da]:realloc:%p:%s\n", ptr, cname );
     /* we reset size and type - the type in case realloc moved us */
     set_size(ptr, new_size - header_size);
     set_type(ptr, objs_type);
@@ -185,16 +185,16 @@ gslt_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 {
     if ( ptr != NULL ) {
 	byte *bptr = (byte *)ptr;
-	uint header_size = round_up_to_align(1) + round_up_to_align(1);
+	uint header_size = round_up_to_align(1) * 2;
 #ifdef DEBUG
 	if ( gs_debug_c('@') )
-	    memset(&bptr[-header_size], 0xee, header_size + get_size(ptr));
+	    memset(bptr-header_size, 0xee, header_size + get_size(ptr));
 #endif
-	free(&bptr[-header_size]);
+	free(bptr-header_size);
 	
 #ifdef DEBUG
 	    /* da for debug allocator - so scripts can parse the trace */
-	if_debug2(mem, 'A', "[da]:free:%x:%s\n", ptr, cname );
+	if_debug2('A', "[da]:free:%p:%s\n", ptr, cname );
 #endif
     }
 }

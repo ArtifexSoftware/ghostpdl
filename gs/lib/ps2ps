@@ -1,6 +1,10 @@
 #!/bin/sh
-# $RCSfile$ $Revision$
+# $Id$
 # "Distill" PostScript.
+
+# This definition is changed on install to match the
+# executable name set in the makefile
+GS_EXECUTABLE=gs
 
 OPTIONS="-dSAFER"
 while true
@@ -18,4 +22,4 @@ if [ $# -ne 2 ]; then
 	exit 1
 fi
 
-exec gs -q -sDEVICE=pswrite "-sOutputFile=$2" -dNOPAUSE -dBATCH $OPTIONS "$1"
+exec $GS_EXECUTABLE -q -sDEVICE=pswrite "-sOutputFile=$2" -dNOPAUSE -dBATCH $OPTIONS "$1"

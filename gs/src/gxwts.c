@@ -1,11 +1,15 @@
-/* Copyright (C) 2002 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 /*$Id$ */
 /* Rendering using Well Tempered Screening. */
 #include "stdpre.h"
@@ -76,13 +80,14 @@ mul_shr_16 (int a, int b)
 #if 0
 private int
 wts_get_samples_rat(const wts_screen_t *ws, int x, int y,
-		    wts_screen_sample_t **samples, int *p_nsamples)
+		    int *pcellx, int *pcelly, int *p_nsamples)
 {
     int d = y / ws->cell_height;
     int r = y % ws->cell_height;
     int x_ix = ((d * ws->cell_shift) + x) % ws->cell_width;
     *p_nsamples = ws->cell_width - x_ix;
-    *samples = ws->samples + x_ix + r * ws->cell_width;
+    *pcellx = x_ix;
+    *pcelly = y_ix;
     return 0;
 }
 #endif
@@ -90,7 +95,7 @@ wts_get_samples_rat(const wts_screen_t *ws, int x, int y,
 /* Implementation of wts_get_samples for Screen J. */
 private int
 wts_get_samples_j(const wts_screen_t *ws, int x, int y,
-		  wts_screen_sample_t **samples, int *p_nsamples)
+		  int *pcellx, int *pcelly, int *p_nsamples)
 {
     const wts_screen_j_t *wsj = (const wts_screen_j_t *)ws;
     /* int d = y / ws->cell_height; */
@@ -126,7 +131,8 @@ wts_get_samples_j(const wts_screen_t *ws, int x, int y,
 	   x, y, x_ix, y_ix, nsamples, ccount);
 #endif
     *p_nsamples = nsamples;
-    *samples = ws->samples + x_ix + y_ix * ws->cell_width;
+    *pcellx = x_ix;
+    *pcelly = y_ix;
     return 0;
 }
 
@@ -155,7 +161,7 @@ wts_screen_h_offset(int x, double p1, int m1, int m2)
 /* Implementation of wts_get_samples for Screen H. */
 private int
 wts_get_samples_h(const wts_screen_t *ws, int x, int y,
-		  wts_screen_sample_t **samples, int *p_nsamples)
+		  int *pcellx, int *pcelly, int *p_nsamples)
 {
     const wts_screen_h_t *wsh = (const wts_screen_h_t *)ws;
     int x_ix = wts_screen_h_offset(x, wsh->px,
@@ -163,7 +169,8 @@ wts_get_samples_h(const wts_screen_t *ws, int x, int y,
     int y_ix = wts_screen_h_offset(y, wsh->py,
 				   wsh->y1, ws->cell_height - wsh->y1);
     *p_nsamples = (x_ix >= wsh->x1 ? ws->cell_width : wsh->x1) - x_ix;
-    *samples = ws->samples + x_ix + y_ix * ws->cell_width;
+    *pcellx = x_ix;
+    *pcelly = y_ix;
     return 0;
 }
 
@@ -192,12 +199,12 @@ wts_get_samples_h(const wts_screen_t *ws, int x, int y,
  **/
 int
 wts_get_samples(const wts_screen_t *ws, int x, int y,
-		wts_screen_sample_t **samples, int *p_nsamples)
+		int *pcellx, int *pcelly, int *p_nsamples)
 {
     if (ws->type == WTS_SCREEN_J)
-	return wts_get_samples_j(ws, x, y, samples, p_nsamples);
+	return wts_get_samples_j(ws, x, y, pcellx, pcelly, p_nsamples);
     if (ws->type == WTS_SCREEN_H)
-	return wts_get_samples_h(ws, x, y, samples, p_nsamples);
+	return wts_get_samples_h(ws, x, y, pcellx, pcelly, p_nsamples);
     else
 	return -1;
 }
@@ -266,8 +273,10 @@ wts_draw(wts_screen_t *ws, wts_screen_sample_t shade,
 	for (xo = 0; xo < w; xo += imax) {
 	    wts_screen_sample_t *samples;
 	    int n_samples, i;
+	    int cx, cy;
 
-	    wts_get_samples(ws, x + xo, y + yo, &samples, &n_samples);
+	    wts_get_samples(ws, x + xo, y + yo, &cx, &cy, &n_samples);
+	    samples = ws->samples + cy * ws->cell_width + cx;
 	    imax = min(w - xo, n_samples);
 	    for (i = 0; i < imax; i++) {
 		if (shade > samples[i])
@@ -339,7 +348,7 @@ gx_dc_wts_write(
     uint *                          psize )
 {
     /* not yet implemented */
-    return_error(dev->memory, gs_error_unknownerror);
+    return_error(gs_error_unknownerror);
 }
 
 private int
@@ -353,7 +362,7 @@ gx_dc_wts_read(
     gs_memory_t *           mem )
 {
     /* not yet implemented */
-    return_error(dev->memory, gs_error_unknownerror);
+    return_error(gs_error_unknownerror);
 }
 
 

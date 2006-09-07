@@ -1,14 +1,15 @@
-/* Portions Copyright (C) 2001, 2004 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* A bridge to True Type interpreter. */
@@ -41,14 +42,15 @@ struct gx_ttfReader_s {
 	Since we don't want to change Free Type function prototypes, 
 	we place the gx_ttfReader instance into the global memory,
 	to provide an access to it through TExecution_Context.
-	Due to that, the field 'glyph_data' may contain pointers from global 
+	Due to that, the fields 'pfont' and 'glyph_data' may contain pointers from global 
 	to local memory. They must be NULL when a garbager is invoked.
 	We reset them whan the TT interpreter exits.
      */
 };
 
-gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem, gs_font_type42 *pfont);
+gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem);
 void gx_ttfReader__destroy(gx_ttfReader *this);
+void gx_ttfReader__set_font(gx_ttfReader *this, gs_font_type42 *pfont);
 ttfFont *ttfFont__create(gs_font_dir *dir);
 void ttfFont__destroy(ttfFont *this, gs_font_dir *dir);
 int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_font_type42 *pfont,

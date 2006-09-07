@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Definitions for shading */
 
 #ifndef gsshade_INCLUDED
@@ -70,11 +71,12 @@ typedef struct gx_device_s gx_device;
  * clipping device if necessary.
  */
 #define SHADING_FILL_RECTANGLE_PROC(proc)\
-  int proc(const gs_shading_t *psh, const gs_rect *prect, gx_device *dev,\
+  int proc(const gs_shading_t *psh, const gs_rect *prect,\
+	   const gs_fixed_rect *prect_clip, gx_device *dev,\
 	   gs_imager_state *pis)
 typedef SHADING_FILL_RECTANGLE_PROC((*shading_fill_rectangle_proc_t));
-#define gs_shading_fill_rectangle(psh, prect, dev, pis)\
-  ((psh)->head.procs.fill_rectangle(psh, prect, dev, pis))
+#define gs_shading_fill_rectangle(psh, prect, prect_clip, dev, pis)\
+  ((psh)->head.procs.fill_rectangle(psh, prect, prect_clip, dev, pis))
 
 /* Define the generic shading structures. */
 typedef struct gs_shading_procs_s {
@@ -245,7 +247,7 @@ int gs_shading_Tpp_init(gs_shading_t ** ppsh,
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
 #endif
-int gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
+int gs_shading_fill_path_adjusted(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 			 const gs_fixed_rect *prect, gx_device *dev,
 			 gs_imager_state *pis, bool fill_background);
 

@@ -1,21 +1,22 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* CGM (Computer Graphics Metafile) driver */
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gxdevice.h"
+#include "gp.h"
 #include "gsparam.h"
 #include "gdevcgml.h"
 #include "gdevpccm.h"
@@ -26,11 +27,9 @@
 	  do masked copy_mono with cell array if possible
  ****************/
 
-#define fname_size 80
-
 typedef struct gx_device_cgm_s {
     gx_device_common;
-    char fname[fname_size + 1];
+    char fname[gp_file_name_sizeof];
     FILE *file;
     cgm_state *st;
     bool in_picture;
@@ -91,7 +90,7 @@ cgm_device("cgmmono", 1, 1, 2,
 	   gx_default_map_rgb_color, gx_default_w_b_map_color_rgb);
 
 gx_device_cgm gs_cgm8_device =
-cgm_device("cgm8", 8, 6, 7,
+cgm_device("cgm8", 8, 5, 6,
 	   pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 
 gx_device_cgm gs_cgm24_device =
@@ -251,7 +250,7 @@ cgm_put_params(gx_device * dev, gs_param_list * plist)
 	        ecode = gs_note_error(gs_error_invalidaccess);
 		goto ofe;
 	    }
-	    if (ofs.size > fname_size)
+	    if (ofs.size >= gp_file_name_sizeof)
 		ecode = gs_error_limitcheck;
 	    else
 		break;
@@ -386,13 +385,12 @@ cgm_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     cgm_color fill_color;
     cgm_point points[2];
     cgm_result result;
-
+    
     fit_fill(dev, x, y, w, h);
     if (!cdev->in_picture) {	/* Check for erasepage. */
-	if (color == (*dev_proc(dev, map_rgb_color)) (dev,
-				     gx_max_color_value, gx_max_color_value,
-						      gx_max_color_value)
-	    )
+	gx_color_value blank[3] = {gx_max_color_value, gx_max_color_value, 
+				   gx_max_color_value};
+	if (color == (*dev_proc(dev, encode_color)) (dev, blank))
 	    return 0;
 	cgm_begin_picture(cdev);
     }

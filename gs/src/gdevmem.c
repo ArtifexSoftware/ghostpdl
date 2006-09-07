@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* Generic "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -22,6 +22,7 @@
 #include "gxgetbit.h"
 #include "gxdevmem.h"		/* semi-public definitions */
 #include "gdevmem.h"		/* private definitions */
+#include "gstrans.h"
 
 /* Structure descriptor */
 public_st_device_memory();
@@ -171,6 +172,7 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
 				   (target == 0 || 
                                     dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE));
     }
+    check_device_separable((gx_device *)dev);
     gx_device_fill_in_procs((gx_device *)dev);
 }
 /* Make a monobit memory device.  This is never a page device. */
@@ -184,6 +186,7 @@ gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
     set_dev_proc(dev, get_page_device, gx_default_get_page_device);
     gx_device_set_target((gx_device_forward *)dev, target);
     gdev_mem_mono_set_inverted(dev, true);
+    check_device_separable((gx_device *)dev);
     gx_device_fill_in_procs((gx_device *)dev);
 }
 
@@ -240,19 +243,37 @@ gdev_mem_data_size(const gx_device_memory * dev, int width, int height)
  * compute the maximum height.
  */
 int
-gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size)
+gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
+		bool page_uses_transparency)
 {
-    ulong max_height = size /
-	(bitmap_raster(width * dev->color_info.depth) +
-	 sizeof(byte *) * max(dev->num_planes, 1));
-    int height = (int)min(max_height, max_int);
+    int height;
+    ulong max_height;
 
-    /*
-     * Because of alignment rounding, the just-computed height might
-     * be too large by a small amount.  Adjust it the easy way.
-     */
-    while (gdev_mem_data_size(dev, width, height) > size)
-	--height;
+    if (page_uses_transparency) {
+        /*
+         * If the device is using PDF 1.4 transparency then we will need to
+         * also allocate image buffers for doing the blending operations.
+         * We can only estimate the space requirements.  However since it
+	 * is only an estimate, we may exceed our desired buffer space while
+	 * processing the file.
+	 */
+        max_height = size / (bitmap_raster(width
+		* dev->color_info.depth + ESTIMATED_PDF14_ROW_SPACE(width))
+		+ sizeof(byte *) * max(dev->num_planes, 1));
+        height = (int)min(max_height, max_int);
+    } else {
+	/* For non PDF 1.4 transparency, we can do an exact calculation */
+        max_height = size /
+	    (bitmap_raster(width * dev->color_info.depth) +
+	     sizeof(byte *) * max(dev->num_planes, 1));
+        height = (int)min(max_height, max_int);
+        /*
+         * Because of alignment rounding, the just-computed height might
+         * be too large by a small amount.  Adjust it the easy way.
+         */
+        while (gdev_mem_data_size(dev, width, height) > size)
+	    --height;
+    }
     return height;
 }
 
@@ -265,7 +286,7 @@ mem_open(gx_device * dev)
 
     /* Check that we aren't trying to open a planar device as chunky. */
     if (mdev->num_planes)
-	return_error(dev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     return gdev_mem_open_scan_lines(mdev, dev->height);
 }
 int
@@ -274,17 +295,17 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
     bool line_pointers_adjacent = true;
 
     if (setup_height < 0 || setup_height > mdev->height)
-	return_error(mdev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     if (mdev->bitmap_memory != 0) {
 	/* Allocate the data now. */
 	ulong size = gdev_mem_bitmap_size(mdev);
 
 	if ((uint) size != size)
-	    return_error(mdev->memory, gs_error_limitcheck);
+	    return_error(gs_error_limitcheck);
 	mdev->base = gs_alloc_bytes(mdev->bitmap_memory, (uint)size,
 				    "mem_open");
 	if (mdev->base == 0)
-	    return_error(mdev->memory, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	mdev->foreign_bits = false;
     } else if (mdev->line_pointer_memory != 0) {
 	/* Allocate the line pointers now. */
@@ -294,7 +315,7 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
 				sizeof(byte *) * max(mdev->num_planes, 1),
 				"gdev_mem_open_scan_lines");
 	if (mdev->line_ptrs == 0)
-	    return_error(mdev->memory, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	mdev->foreign_line_pointers = false;
 	line_pointers_adjacent = false;
     }
@@ -326,7 +347,7 @@ gdev_mem_set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
 
     if (num_planes) {
 	if (base && !mdev->plane_depth)
-	    return_error(mdev->memory, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	planes = mdev->planes;
     } else {
 	planes = &plane1;
@@ -404,17 +425,17 @@ mem_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 	    (GB_OFFSET_0 | GB_OFFSET_SPECIFIED | GB_OFFSET_ANY) |
 	    (GB_RASTER_STANDARD | GB_RASTER_SPECIFIED | GB_RASTER_ANY) |
 	    GB_PACKING_CHUNKY | GB_COLORS_NATIVE | GB_ALPHA_NONE;
-	return_error(dev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     }
     if ((w <= 0) | (h <= 0)) {
 	if ((w | h) < 0)
-	    return_error(dev->memory, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	return 0;
     }
     if (x < 0 || w > dev->width - x ||
 	y < 0 || h > dev->height - y
 	)
-	return_error(dev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     {
 	gs_get_bits_params_t copy_params;
 	byte *base = scan_line_base(mdev, y);
@@ -525,33 +546,59 @@ mem_mapped_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte br = gx_color_value_to_byte(cv[0]);
-    byte bg = gx_color_value_to_byte(cv[1]);
-    byte bb = gx_color_value_to_byte(cv[2]);
+    
     register const byte *pptr = mdev->palette.data;
     int cnt = mdev->palette.size;
     const byte *which = 0;	/* initialized only to pacify gcc */
     int best = 256 * 3;
 
-    while ((cnt -= 3) >= 0) {
-	register int diff = *pptr - br;
+    if (mdev->color_info.num_components != 1) {
+	/* not 1 component, assume three */
+	/* The comparison is rather simplistic, treating differences in	*/
+	/* all components as equal. Better choices would be 'distance'	*/
+	/* in HLS space or other, but these would be much slower.	*/
+	/* At least exact matches will be found.			*/
+	byte bg = gx_color_value_to_byte(cv[1]);
+	byte bb = gx_color_value_to_byte(cv[2]);
 
-	if (diff < 0)
-	    diff = -diff;
-	if (diff < best) {	/* quick rejection */
-	    int dg = pptr[1] - bg;
+	while ((cnt -= 3) >= 0) {
+	    register int diff = *pptr - br;
 
-	    if (dg < 0)
-		dg = -dg;
-	    if ((diff += dg) < best) {	/* quick rejection */
-		int db = pptr[2] - bb;
+	    if (diff < 0)
+		diff = -diff;
+	    if (diff < best) {	/* quick rejection */
+		    int dg = pptr[1] - bg;
 
-		if (db < 0)
-		    db = -db;
-		if ((diff += db) < best)
-		    which = pptr, best = diff;
+		if (dg < 0)
+		    dg = -dg;
+		if ((diff += dg) < best) {	/* quick rejection */
+		    int db = pptr[2] - bb;
+
+		    if (db < 0)
+			db = -db;
+		    if ((diff += db) < best)
+			which = pptr, best = diff;
+		}
 	    }
+	    if (diff == 0)	/* can't get any better than 0 diff */
+		break;
+	    pptr += 3;
 	}
-	pptr += 3;
+    } else {
+	/* Gray scale conversion. The palette is made of three equal	*/
+	/* components, so this case is simpler.				*/
+	while ((cnt -= 3) >= 0) {
+	    register int diff = *pptr - br;
+
+	    if (diff < 0)
+		diff = -diff;
+	    if (diff < best) {	/* quick rejection */
+		which = pptr, best = diff;
+	    }
+	    if (diff == 0)
+		break;
+	    pptr += 3;
+	}
     }
     return (gx_color_index) ((which - mdev->palette.data) / 3);
 }

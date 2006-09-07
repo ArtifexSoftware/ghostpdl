@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Type 1 / Type 2 font data definition */
 
 #ifndef gxfont1_INCLUDED
@@ -100,6 +101,7 @@ struct gs_type1_data_s {
     gs_type1_data_procs_t procs;
     charstring_interpret_proc((*interpret));
     void *proc_data;		/* data for procs */
+    gs_font_base *parent;	/* the type 9 font, if this font is is a type 9 descendent. */
     int lenIV;			/* -1 means no encryption */
 				/* (undocumented feature!) */
     uint subroutineNumberBias;	/* added to operand of callsubr */
@@ -146,9 +148,9 @@ struct gs_font_type1_s {
 
 extern_st(st_gs_font_type1);
 #define public_st_gs_font_type1()	/* in gstype1.c */\
-  gs_public_st_suffix_add1_final(st_gs_font_type1, gs_font_type1,\
+  gs_public_st_suffix_add2_final(st_gs_font_type1, gs_font_type1,\
     "gs_font_type1", font_type1_enum_ptrs, font_type1_reloc_ptrs,\
-    gs_font_finalize, st_gs_font_base, data.proc_data)
+    gs_font_finalize, st_gs_font_base, data.parent, data.proc_data)
 
 /* Export font procedures so they can be called from the interpreter. */
 font_proc_glyph_info(gs_type1_glyph_info);

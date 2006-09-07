@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Internal definitions for interpreter CIE color handling */
 
 #ifndef icie_INCLUDED
@@ -30,26 +31,28 @@ int dict_ranges_param(const gs_memory_t *mem,
 		      gs_range * prange);
 
 /* Get 3 ranges from a dictionary. */
-int dict_range3_param(const gs_memory_t *mem, const ref *pdref, const char *kstr,
+int dict_range3_param(const gs_memory_t *mem,
+		      const ref *pdref, const char *kstr,
 		      gs_range3 *prange3);
 
 /* Get a 3x3 matrix parameter from a dictionary. */
-int dict_matrix3_param(const gs_memory_t *mem, 
-		       const ref *pdref, const char *kstr,
+int dict_matrix3_param(const gs_memory_t *mem, const ref *pdref, 
+		       const char *kstr,
 		       gs_matrix3 *pmat3);
 
 /* Get an array of procedures from a dictionary. */
 /* We know count <= countof(empty_procs). */
-int dict_proc_array_param(const gs_memory_t *mem,
-			  const ref * pdict, const char *kstr,
+int dict_proc_array_param(const gs_memory_t *mem, const ref *pdict, 
+			  const char *kstr,
 			  uint count, ref * pparray);
 
 /* Get 3 procedures from a dictionary. */
-int dict_proc3_param(const gs_memory_t *mem, 
-		     const ref *pdref, const char *kstr, ref proc3[3]);
+int dict_proc3_param(const gs_memory_t *mem, const ref *pdref, 
+		     const char *kstr, ref proc3[3]);
 
 /* Get WhitePoint and BlackPoint values. */
-int cie_points_param(const gs_memory_t *mem, const ref * pdref, gs_cie_wb * pwb);
+int cie_points_param(const gs_memory_t *mem, 
+		     const ref * pdref, gs_cie_wb * pwb);
 
 /* Process a 3- or 4-dimensional lookup table from a dictionary. */
 /* The caller has set pclt->n and pclt->m. */

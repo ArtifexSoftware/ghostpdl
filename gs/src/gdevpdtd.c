@@ -1,10 +1,15 @@
-/* Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* FontDescriptor implementation for pdfwrite */
@@ -208,12 +213,14 @@ pdf_font_descriptor_alloc(gx_device_pdf *pdev, pdf_font_descriptor_t **ppfd,
 {
     pdf_font_descriptor_t *pfd;
     pdf_base_font_t *pbfont;
-    int code = pdf_base_font_alloc(pdev, &pbfont, font, &font->FontMatrix, false, !embed);
+    int code = pdf_base_font_alloc(pdev, &pbfont, font, 
+		(font->orig_FontMatrix.xx == 0 && font->orig_FontMatrix.xy == 0 
+		    ? &font->FontMatrix : &font->orig_FontMatrix), false, !embed);
 
     if (code < 0)
 	return code;
     code = pdf_alloc_resource(pdev, resourceFontDescriptor,
-			      font->id, (pdf_resource_t **)&pfd, 0L);
+			      font->id, (pdf_resource_t **)&pfd, -1L);
     if (code < 0) {
 	gs_free_object(pdev->pdf_memory, pbfont,
 		       "pdf_font_descriptor_alloc(base_font)");
@@ -312,7 +319,7 @@ pdf_font_used_glyph(pdf_font_descriptor_t *pfd, gs_glyph glyph,
 
 /* Compute the FontDescriptor metrics for a font. */
 int
-pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
+pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 {
     gs_font_base *bfont = pdf_base_font_font(pfd->base_font, false);
     gs_glyph glyph, notdef;
@@ -341,7 +348,7 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
 
 	desc.FontBBox.p.x = (int)(bfont->FontBBox.p.x * scale);
 	desc.FontBBox.p.y = (int)(bfont->FontBBox.p.y * scale);
-	desc.FontBBox.p.x = (int)(bfont->FontBBox.p.x * scale);
+	desc.FontBBox.q.x = (int)(bfont->FontBBox.q.x * scale);
 	desc.FontBBox.q.y = (int)(bfont->FontBBox.q.y * scale);
 	desc.Ascent = desc.FontBBox.q.y;
 	members &= ~GLYPH_INFO_BBOX;
@@ -366,12 +373,12 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
      * in gdevpdtd.h for why the following substitution is made.
      */
 #if 0
-#  define CONSIDER_FONT_SYMBOLIC(bfont) font_is_symbolic(bfont)
+#  define CONSIDER_FONT_SYMBOLIC(pdev, bfont) font_is_symbolic(bfont)
 #else
-#  define CONSIDER_FONT_SYMBOLIC(bfont)\
-  ((bfont)->encoding_index != ENCODING_INDEX_STANDARD)
+#  define CONSIDER_FONT_SYMBOLIC(pdev, bfont)\
+  ((bfont)->encoding_index != ENCODING_INDEX_STANDARD) && (!pdev->PDFA || bfont->FontType != ft_TrueType)
 #endif
-    if (CONSIDER_FONT_SYMBOLIC(bfont))
+    if (CONSIDER_FONT_SYMBOLIC(pdev, bfont))
 	desc.Flags |= FONT_IS_SYMBOLIC;
     /*
      * Scan the entire glyph space to compute Ascent, Descent, FontBBox, and
@@ -469,7 +476,7 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
     if (!(desc.Flags & FONT_IS_SYMBOLIC)) {
 	desc.Flags |= FONT_IS_ADOBE_ROMAN; /* required if not symbolic */
 	desc.XHeight = (int)x_height;
-	if (!small_present)
+	if (!small_present && (!pdev->PDFA || bfont->FontType != ft_TrueType))
 	    desc.Flags |= FONT_IS_ALL_CAPS;
 	desc.CapHeight = cap_height;
 	/*
@@ -519,10 +526,11 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
 	desc.Ascent = desc.FontBBox.q.y;
     desc.Descent = desc.FontBBox.p.y;
     if (!(desc.Flags & (FONT_IS_SYMBOLIC | FONT_IS_ALL_CAPS)) &&
-	(small_descent > desc.Descent / 3 || desc.XHeight > small_height * 0.9)
+	(small_descent > desc.Descent / 3 || desc.XHeight > small_height * 0.9) &&
+	(!pdev->PDFA || bfont->FontType != ft_TrueType)
 	)
 	desc.Flags |= FONT_IS_SMALL_CAPS;
-    if (fixed_width > 0) {
+    if (fixed_width > 0 && (!pdev->PDFA || bfont->FontType != ft_TrueType)) {
 	desc.Flags |= FONT_IS_FIXED_WIDTH;
 	desc.AvgWidth = desc.MaxWidth = desc.MissingWidth = fixed_width;
     }
@@ -542,14 +550,19 @@ int
 pdf_finish_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 {
     int code = 0;
+    cos_dict_t *pcd = 0;
 
+    if (pfd->common.object->id == -1)
+	return 0;
     if (!pfd->common.object->written &&
-	(code = pdf_compute_font_descriptor(pfd)) >= 0 &&
+	(code = pdf_compute_font_descriptor(pdev, pfd)) >= 0 &&
 	(!pfd->embed ||
 	 (code = pdf_write_embedded_font(pdev, pfd->base_font, 
-				&pfd->common.values.FontBBox, pfd->common.rid)) >= 0)
-	)
-	DO_NOTHING;
+				&pfd->common.values.FontBBox, 
+				pfd->common.rid, &pcd)) >= 0)
+	) {
+        pdf_set_FontFile_object(pfd->base_font, pcd);
+    }
     return code;
 }
 
@@ -563,6 +576,8 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     stream *s;
 
     if (pfd->common.object->written)
+	return 0;
+    if (pfd->common.object->id == -1)
 	return 0;
 
     /* If this is a CIDFont subset, write the CIDSet now. */
@@ -586,7 +601,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	pdf_font_descriptor_common_t fd;
 
 	fd = pfd->common;
-	if (pfd->embed && pfd->FontType == ft_TrueType &&
+	if (pfd->embed && pfd->FontType == ft_TrueType && !pdev->PDFA &&
 	    pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid)
 	    )
 	    fd.values.Flags =
@@ -625,5 +640,35 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     stream_puts(s, ">>\n");
     pdf_end_separate(pdev);
     pfd->common.object->written = true;
+    {	const cos_object_t *pco = (const cos_object_t *)pdf_get_FontFile_object(pfd->base_font);
+	if (pco != NULL) {
+	    code = COS_WRITE_OBJECT(pco, pdev);
+	    if (code < 0)
+		return code;
+	}
+    }
+    return 0;
+}
+
+/*
+ * Release a FontDescriptor components.
+ */
+int
+pdf_release_FontDescriptor_components(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
+{
+    gs_free_object(pdev->pdf_memory, pfd->base_font, "pdf_release_FontDescriptor_components");
+    pfd->base_font = NULL;
+    /* fixme: underimplemented. */
+    return 0;
+}
+
+/*
+ * Mark a FontDescriptor used in a text.
+ */
+int 
+pdf_mark_font_descriptor_used(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
+{
+    if (pfd != NULL && pfd->common.object->id == -1)
+	pdf_reserve_object_id(pdev, (pdf_resource_t *)&pfd->common, 0);
     return 0;
 }

@@ -49,6 +49,8 @@ ls_install:
 ls_test:
 	cd tools; ../language_switch/obj/pspcl6 -dTextAlphaBits=4 owl.pcl tiger.px3 ../gs/examples/tiger.ps
 
+
+
 # NB - this does not remove the fonts.  blowing away /windows/fonts
 # might be unexpected on some systems and we don't enumerate the font
 # names here so they could be removed individually.
@@ -57,5 +59,13 @@ ls_clean:
 	make -C language_switch -f pspcl6_gcc.mak clean
 	rm -f fonts /usr/local/bin/pspcl6
 
+# shortcuts for common build types.
 
-PHONY: clean test install product profile ls_clean ls_test ls_install ls_product ls_profile 
+ls_udebug:
+	make -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" debug
+
+ls_uclean:
+	make -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" clean
+
+
+PHONY: clean test install product profile ls_clean ls_test ls_install ls_product ls_profile ls_udebug

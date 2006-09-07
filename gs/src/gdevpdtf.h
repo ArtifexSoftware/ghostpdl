@@ -1,10 +1,15 @@
-/* Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Font and CMap resource structure and API for pdfwrite */
@@ -96,6 +101,16 @@ typedef struct pdf_base_font_s pdf_base_font_t;
 typedef struct pdf_font_descriptor_s pdf_font_descriptor_t;
 #endif
 
+#ifndef pdf_char_glyph_pair_DEFINED
+#  define pdf_char_glyph_pair_DEFINED
+typedef struct pdf_char_glyph_pair_s pdf_char_glyph_pair_t;
+#endif
+
+struct pdf_char_glyph_pair_s {
+    gs_char chr;
+    gs_glyph glyph;
+};
+
 /*
  * The write_contents procedure is set by the implementation when the
  * font resource is created.  It is called after generic code has opened
@@ -129,6 +144,56 @@ typedef struct pdf_encoding_element_s {
     "pdf_encoding_element_t[]", pdf_encoding_elt_enum_ptrs,\
     pdf_encoding_elt_reloc_ptrs, st_pdf_encoding1)
 
+
+struct pdf_base_font_s {
+    /*
+     * For the standard 14 fonts, copied == complete is a complete copy
+     * of the font, and DO_SUBSET = NO.
+     *
+     * For fonts that MAY be subsetted, copied is a partial copy,
+     * complete is a complete copy, and DO_SUBSET = UNKNOWN until
+     * pdf_font_do_subset is called.
+     *
+     * For fonts that MUST be subsetted, copied == complete is a partial
+     * copy, and DO_SUBSET = YES.
+     */
+    gs_font_base *copied;
+    gs_font_base *complete;
+    enum {
+	DO_SUBSET_UNKNOWN = 0,
+	DO_SUBSET_NO,
+	DO_SUBSET_YES
+    } do_subset;
+    bool is_standard;
+    /*
+     * For CIDFonts, which are always subsetted, num_glyphs is CIDCount.
+     * For optionally subsetted fonts, num_glyphs is the count of glyphs
+     * in the font when originally copied.  Note that if the font is
+     * downloaded incrementally, num_glyphs may be 0.
+     */
+    int num_glyphs;
+    byte *CIDSet;		/* for CIDFonts */
+    gs_string font_name;
+    bool written;
+    cos_dict_t *FontFile;
+};
+#define private_st_pdf_base_font()\
+BASIC_PTRS(pdf_base_font_ptrs) {\
+    GC_OBJ_ELT(pdf_base_font_t, copied),\
+    GC_OBJ_ELT(pdf_base_font_t, complete),\
+    GC_OBJ_ELT(pdf_base_font_t, CIDSet),\
+    GC_OBJ_ELT(pdf_base_font_t, FontFile),\
+    GC_STRING_ELT(pdf_base_font_t, font_name)\
+};\
+gs_private_st_basic(st_pdf_base_font, pdf_base_font_t, "pdf_base_font_t",\
+		    pdf_base_font_ptrs, pdf_base_font_data);
+
+
+typedef struct {
+    gs_id id;
+    pdf_resource_type_t type;
+} pdf_resource_ref_t;
+
 /*
  * Widths are the widths in the outlines: this is what PDF interpreters
  * use, and what will be written in the PDF file.  real_widths are the
@@ -153,6 +218,8 @@ struct pdf_font_resource_s {
 				/* (not used for Type 0 or Type 3) */
     pdf_resource_t *res_ToUnicode; /* CMap (not used for CIDFonts) */
     gs_cmap_t *cmap_ToUnicode;	   /* CMap (not used for CIDFonts) */
+    gs_glyph_mark_proc_t mark_glyph;
+    void *mark_glyph_data;	/* closure data */
     union {
 
 	struct /*type0*/ {
@@ -183,6 +250,7 @@ struct pdf_font_resource_s {
  	    gs_id glyphshow_font_id;
 	    double *Widths2;	/* [count * 2] (x, y) */
 	    double *v;		/* [count] */
+	    byte *used2;	/* [(count + 7) / 8] */
 	    pdf_font_resource_t *parent;
 
 	} cidfont;
@@ -215,13 +283,11 @@ struct pdf_font_resource_s {
 		struct /*type3*/ {
 		    gs_int_rect FontBBox;
 		    gs_matrix FontMatrix;
-		    pdf_char_proc_t *char_procs;
+		    pdf_char_proc_ownership_t *char_procs;
 		    int max_y_offset;
 		    bool bitmap_font;
-		    gs_id used_fonts[10]; /* IDs of fonts uzed in charproc streams.
-					     For a while restrict with 10 fonts.
-					     Should be enough for known cases (251-01.ps) */
-		    int used_fonts_count;
+		    cos_dict_t *Resources;
+		    byte *cached;
 		} type3;
 
 	    } s;
@@ -297,6 +363,14 @@ pdf_outline_fonts_t *pdf_outline_fonts_alloc(gs_memory_t *mem);
 pdf_standard_font_t *pdf_standard_fonts(const gx_device_pdf *pdev);
 
 /*
+ * Clean the standard fonts array.
+ */
+void pdf_clean_standard_fonts(const gx_device_pdf *pdev);
+
+/* Free font cache. */
+int pdf_free_font_cache(gx_device_pdf *pdev);
+
+/*
  * Allocate specific types of font resource.
  */
 int pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
@@ -311,10 +385,11 @@ int pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 int pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			   gs_id rid, pdf_font_descriptor_t *pfd);
 int pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, 
-		    int wmode, double **w, double **v);
+		    int wmode, double **w, double **w0, double **v);
 int font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			    gs_id rid, font_type ftype,
 			    pdf_font_write_contents_proc_t write_contents);
+int pdf_assign_font_object_id(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
 
 /* Resize font resource arrays. */
 int pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, 
@@ -335,7 +410,7 @@ gs_font_base *pdf_font_resource_font(const pdf_font_resource_t *pdfont, bool com
  */
 pdf_font_embed_t pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font,
 				       int *pindex,
-				       gs_glyph *glyphs, int num_glyphs);
+				       pdf_char_glyph_pair_t *pairs, int num_glyphs);
 
 /*
  * Compute the BaseFont of a font according to the algorithm described

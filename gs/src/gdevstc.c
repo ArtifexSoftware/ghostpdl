@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$*/
+/* $Id$*/
 /* Epson Stylus-Color Printer-Driver */
 
 /***
@@ -279,11 +280,11 @@ stc_print_setup(stcolor_device *sd)
             sd->stc.escp_init.size       = need;
             sd->stc.escp_init.persistent = false;
          }  else {                                             /* Replace */
-             return_error(sd->memory, gs_error_VMerror);
+             return_error(gs_error_VMerror);
          }
       }
 
-      if(need != 39) return_error(sd->memory, gs_error_unregistered);
+      if(need != 39) return_error(gs_error_unregistered);
 
       memcpy(bp,
 /*                       1 1 11  1 11  1   1 1  2 22 2  2 22  2 22 3  3 3333  3 33*/
@@ -324,11 +325,11 @@ stc_print_setup(stcolor_device *sd)
             sd->stc.escp_release.size       = need;
             sd->stc.escp_release.persistent = false;
          }  else {                                             /* Replace */
-             return_error(sd->memory, gs_error_VMerror);
+             return_error(gs_error_VMerror);
          }
       }
 
-      if(need != 3) return_error(sd->memory, gs_error_unregistered);
+      if(need != 3) return_error(gs_error_unregistered);
 
       memcpy(bp,"\033@\f",need);
 
@@ -363,7 +364,7 @@ stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 #define OK4GO        ((flags &   STCOK4GO)              != 0)
 #define SORRY        ( flags &= ~STCOK4GO)
 
-   if(0 > (npass = stc_print_setup(sd))) return_error(sd->memory, npass);
+   if(0 > (npass = stc_print_setup(sd))) return_error(npass);
 
    npass = sd->stc.escp_v / sd->stc.escp_u;
 
@@ -1897,7 +1898,7 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
 
       stc_freedata(sd->memory, &sd->stc);
 
-      return_error(sd->memory, code);
+      return_error(code);
    }
 
 }
@@ -2407,7 +2408,8 @@ stc_map_color_cmyk10(gx_device *pdev, gx_color_index color,
 
    c    =   stc_expand(sd,3,(color>>2)&0x3ff);
 
-   switch(color & 3) {
+   /* cast the 64 bit switch argument to work around broken HPUX 10 cc */
+   switch((int)(color & 3)) {
      case 0:
         m = stc_expand(sd,1,(color>>22) & 0x3ff);
         y = stc_expand(sd,2,(color>>12) & 0x3ff);

@@ -1,22 +1,27 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Internal matrix routines for Ghostscript library */
 
 #ifndef gxmatrix_INCLUDED
 #  define gxmatrix_INCLUDED
 
 #include "gsmatrix.h"
+
+/* The following switch is for developmenty purpose only. 
+   PRECISE_CURRENTPOINT 0 must not go to production due to no clamping. */
+#define PRECISE_CURRENTPOINT 1 /* Old code compatible with dropped clamping = 0, new code = 1 */
 
 /*
  * Define a matrix with a cached fixed-point copy of the translation.
@@ -25,22 +30,29 @@
  * tx/ty values may be too large to fit in a fixed values; txy_fixed_valid
  * is false if this is the case, and true otherwise.
  */
-typedef struct gs_matrix_fixed_s {
+struct gs_matrix_fixed_s {
     _matrix_body;
     fixed tx_fixed, ty_fixed;
     bool txy_fixed_valid;
-} gs_matrix_fixed;
+};
+
+#ifndef gs_matrix_fixed_DEFINED
+#define gs_matrix_fixed_DEFINED
+typedef struct gs_matrix_fixed_s gs_matrix_fixed;
+#endif
 
 /* Make a gs_matrix_fixed from a gs_matrix. */
 int gs_matrix_fixed_from_matrix(gs_matrix_fixed *, const gs_matrix *);
 
 /* Coordinate transformations to fixed point. */
-int gs_point_transform2fixed(const gs_memory_t *mem, 
-			     const gs_matrix_fixed *, floatp, floatp,
+int gs_point_transform2fixed(const gs_matrix_fixed *, floatp, floatp,
 			     gs_fixed_point *);
-int gs_distance_transform2fixed(const gs_memory_t *mem, 
-				const gs_matrix_fixed *, floatp, floatp,
+int gs_distance_transform2fixed(const gs_matrix_fixed *, floatp, floatp,
 				gs_fixed_point *);
+#if PRECISE_CURRENTPOINT
+int gs_point_transform2fixed_rounding(const gs_matrix_fixed * pmat,
+			 floatp x, floatp y, gs_fixed_point * ppt);
+#endif
 
 /*
  * Define the fixed-point coefficient structure for avoiding

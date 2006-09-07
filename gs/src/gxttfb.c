@@ -1,14 +1,15 @@
-/* Portions Copyright (C) 2001, 2004 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* A bridge to True Type interpreter. */
@@ -30,11 +31,9 @@
 #include "gdebug.h"
 #include "memory_.h"
 #include "math_.h"
-#if TT_GRID_FITTING
-#   include "gxistate.h"
-#   include "gxpaint.h"
-#   include "gzspotan.h"
-#endif
+#include "gxistate.h"
+#include "gxpaint.h"
+#include "gzspotan.h"
 #include <stdarg.h>
 
 gs_public_st_composite(st_gx_ttfReader, gx_ttfReader,
@@ -43,24 +42,20 @@ gs_public_st_composite(st_gx_ttfReader, gx_ttfReader,
 private 
 ENUM_PTRS_WITH(gx_ttfReader_enum_ptrs, gx_ttfReader *mptr)
     {
-	/* The field 'glyph_data' may contain pointers from global to local memory
-	   ( see a comment in gxttfb.h).
+	/* The fields 'pfont' and 'glyph_data' may contain pointers from global 
+	   to local memory ( see a comment in gxttfb.h).
 	   They must be NULL when a garbager is invoked.
 	   Due to that we don't enumerate and don't relocate them.
-	if (index < 2 + ST_GLYPH_DATA_NUM_PTRS)
-	    return ENUM_USING(st_glyph_data, &mptr->glyph_data, sizeof(mptr->glyph_data), index - 2);
 	 */
 	DISCARD(mptr);
 	return 0;
     }
-    ENUM_PTR(0, gx_ttfReader, pfont);
-    ENUM_PTR(1, gx_ttfReader, memory);
+    ENUM_PTR(0, gx_ttfReader, memory);
 ENUM_PTRS_END
 
 private RELOC_PTRS_WITH(gx_ttfReader_reloc_ptrs, gx_ttfReader *mptr)
-    RELOC_PTR(gx_ttfReader, pfont);
+    DISCARD(mptr);
     RELOC_PTR(gx_ttfReader, memory);
-    RELOC_USING(st_glyph_data, &mptr->glyph_data, sizeof(mptr->glyph_data));
 RELOC_PTRS_END
 
 private bool gx_ttfReader__Eof(ttfReader *this)
@@ -82,21 +77,13 @@ private void gx_ttfReader__Read(ttfReader *this, void *p, int n)
     if (!r->error) {
 	if (r->extra_glyph_index != -1) {
 	    q = r->glyph_data.bits.data + r->pos;
-#ifdef NEEDS_MEMORY_POINTER
 	    r->error = (r->glyph_data.bits.size - r->pos < n ? 
 			    gs_note_error(gs_error_invalidfont) : 0);
-#else
-            r->error = (r->glyph_data.bits.size - r->pos < n ? gs_error_invalidfont : 0);
-#endif
 	} else {
 	    r->error = r->pfont->data.string_proc(r->pfont, (ulong)r->pos, (ulong)n, &q);
 	    if (r->error > 0) {
 		/* Need a loop with pfont->data.string_proc . Not implemented yet. */
-#ifdef NEEDS_MEMORY_POINTER
-	    r->error = gs_note_error(gs_error_invalidfont)
-#else
-            r->error = gs_error_invalidfont;
-#endif
+		r->error = gs_note_error(gs_error_unregistered);
 	    }
 	}
     }
@@ -140,6 +127,7 @@ private int gx_ttfReader__LoadGlyph(ttfReader *this, int glyph_index, const byte
 	             It's enough because ttfOutliner__BuildGlyphOutline
 		     is optimized for that, and pfont->data.get_outline 
 		     implements a charstring cache. */
+    r->glyph_data.memory = pfont->memory;
     code = pfont->data.get_outline(pfont, (uint)glyph_index, &r->glyph_data);
     r->extra_glyph_index = glyph_index;
     r->pos = 0;
@@ -147,11 +135,7 @@ private int gx_ttfReader__LoadGlyph(ttfReader *this, int glyph_index, const byte
 	r->error = code;
     else if (code > 0) {
 	/* Should not happen. */
-#ifdef NEEDS_MEMORY_POINTER
-	    r->error = gs_note_error(gs_error_invalidfont)
-#else
-            r->error = gs_error_invalidfont;
-#endif
+	r->error = gs_note_error(gs_error_unregistered);
     } else {
 	*p = r->glyph_data.bits.data;
 	*size = r->glyph_data.bits.size;
@@ -179,7 +163,7 @@ private void gx_ttfReader__Reset(gx_ttfReader *this)
     this->pos = 0;
 }
 
-gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem, gs_font_type42 *pfont)
+gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem)
 {
     gx_ttfReader *r = gs_alloc_struct(mem, gx_ttfReader, &st_gx_ttfReader, "gx_ttfReader__create");
 
@@ -195,7 +179,7 @@ gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem, gs_font_type42 *pfont)
 	r->error = false;
 	r->extra_glyph_index = -1;
 	memset(&r->glyph_data, 0, sizeof(r->glyph_data));
-	r->pfont = pfont;
+	r->pfont = NULL;
 	r->memory = mem;
 	gx_ttfReader__Reset(r);
     }
@@ -207,32 +191,61 @@ void gx_ttfReader__destroy(gx_ttfReader *this)
     gs_free_object(this->memory, this, "gx_ttfReader__destroy");
 }
 
+void gx_ttfReader__set_font(gx_ttfReader *this, gs_font_type42 *pfont)
+{
+    this->pfont = pfont;
+}
+
+
 /*----------------------------------------------*/
 
-#if NEW_TT_INTERPRETER
 private void DebugRepaint(ttfFont *ttf)
 {
 }
 
-private void DebugPrint(ttfFont *ttf, const char *fmt, ...)
+private int DebugPrint(ttfFont *ttf, const char *fmt, ...)
 {
-#ifdef NEEDS_MEMORY_POINTER
     char buf[500];
     va_list args;
     int count;
+
     if (gs_debug_c('Y')) {
 	va_start(args, fmt);
 	count = vsprintf(buf, fmt, args);
-	outwrite(buf, count);
+	/* NB: moved debug output from stdout to stderr
+	 */
+	errwrite(buf, count);
 	va_end(args);
     }
-#endif
+    return 0;
 }
-#endif
+
+private void WarnBadInstruction(gs_font_type42 *pfont, int glyph_index)
+{
+    char buf[gs_font_name_max + 1];
+    int l;
+    gs_font_type42 *base_font = pfont;
+
+    while ((gs_font_type42 *)base_font->base != base_font)
+	base_font = (gs_font_type42 *)base_font->base;
+    if (!base_font->data.warning_bad_instruction) {
+	l = min(sizeof(buf) - 1, base_font->font_name.size);
+	memcpy(buf, base_font->font_name.chars, l);
+	buf[l] = 0;
+	if (glyph_index >= 0)
+	    eprintf2("Failed to interpret TT instructions for glyph index %d of font %s. "
+			"Continue ignoring instructions of the font.\n", 
+			glyph_index, buf);
+	else
+	    eprintf1("Failed to interpret TT instructions in font %s. "
+			"Continue ignoring instructions of the font.\n", 	    
+			buf);
+	base_font->data.warning_bad_instruction = true;
+    }
+}
 
 private void WarnPatented(gs_font_type42 *pfont, ttfFont *ttf, const char *txt)
 {
-#if NEW_TT_INTERPRETER
     if (!ttf->design_grid) {
 	char buf[gs_font_name_max + 1];
 	int l;
@@ -244,11 +257,10 @@ private void WarnPatented(gs_font_type42 *pfont, ttfFont *ttf, const char *txt)
 	    l = min(sizeof(buf) - 1, base_font->font_name.size);
 	    memcpy(buf, base_font->font_name.chars, l);
 	    buf[l] = 0;
-	    eprintf2(pfont->memory, "%s %s requires a patented True Type interpreter.\n", txt, buf);
+	    eprintf2("%s %s requires a patented True Type interpreter.\n", txt, buf);
 	    base_font->data.warning_patented = true;
 	}
     }
-#endif
 }
 
 /*----------------------------------------------*/
@@ -261,7 +273,6 @@ typedef struct gx_ttfMemory_s {
 gs_private_st_simple(st_gx_ttfMemory, gx_ttfMemory, "gx_ttfMemory");
 /* st_gx_ttfMemory::memory points to a root. */
 
-#if NEW_TT_INTERPRETER 
 private void *gx_ttfMemory__alloc_bytes(ttfMemory *this, int size,  const char *cname)
 {
     gs_memory_t *mem = ((gx_ttfMemory *)this)->memory;
@@ -282,7 +293,6 @@ private void gx_ttfMemory__free(ttfMemory *this, void *p,  const char *cname)
 
     gs_free_object(mem, p, cname);
 }
-#endif
 
 /*----------------------------------------------*/
 
@@ -315,13 +325,8 @@ private void decompose_matrix(const gs_font_type42 *pfont, const gs_matrix * cha
     if (char_size->x <= 2 && char_size->y <= 2) {
     	/* Disable the grid fitting for very small fonts. */
 	design_grid1 = true;
-    } else {
-#if NEW_TT_INTERPRETER
+    } else
 	design_grid1 = design_grid || !(gs_currentgridfittt(pfont->dir) & 1);
-#else
-	design_grid1 = design_grid; /* gs_currentgridfittt is undefined. */;
-#endif
-    }
     *dg = design_grid1;
     subpix_origin->x = (atp ? 0 : reminder(char_tm->tx, scale_x) / scale_x);
     subpix_origin->y = (atp ? 0 : reminder(char_tm->ty, scale_y) / scale_y);
@@ -337,7 +342,6 @@ private void decompose_matrix(const gs_font_type42 *pfont, const gs_matrix * cha
 
 ttfFont *ttfFont__create(gs_font_dir *dir)
 {
-#if NEW_TT_INTERPRETER 
     gs_memory_t *mem = dir->memory;
     gx_ttfMemory *m = gs_alloc_struct(mem, gx_ttfMemory, &st_gx_ttfMemory, "ttfFont__create");
     ttfFont *ttf;
@@ -350,39 +354,29 @@ ttfFont *ttfFont__create(gs_font_dir *dir)
     m->memory = mem;
     if(ttfInterpreter__obtain(&m->super, &dir->tti))
 	return 0;
-#if TT_GRID_FITTING
     if(gx_san__obtain(mem->stable_memory, &dir->san))
 	return 0;
-#endif
     ttf = gs_alloc_struct(mem, ttfFont, &st_ttfFont, "ttfFont__create");
     if (ttf == NULL)
 	return 0;
-    ttfFont__init(ttf, &m->super, DebugRepaint, DebugPrint);
+    ttfFont__init(ttf, &m->super, DebugRepaint, (gs_debug_c('Y') ? DebugPrint : NULL));
     return ttf;
-#else
-    return 0;
-#endif
 }
 
 void ttfFont__destroy(ttfFont *this, gs_font_dir *dir)
 {   
-#if NEW_TT_INTERPRETER 
     ttfMemory *mem = this->tti->ttf_memory;
 
     ttfFont__finit(this);
     mem->free(mem, this, "ttfFont__destroy");
     ttfInterpreter__release(&dir->tti);
-#if TT_GRID_FITTING
     gx_san__release(&dir->san);
-#endif
-#endif
 }
 
 int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_font_type42 *pfont,
     	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
 	       bool design_grid)
 {
-#if NEW_TT_INTERPRETER 
     gs_point char_size, subpix_origin;
     gs_matrix post_transform;
     /* 
@@ -398,11 +392,15 @@ int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_fo
 	case fNoError:
 	    return 0;
 	case fMemoryError:
-	    return_error(pfont->memory, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	case fUnimplemented:
-	    return_error(pfont->memory, gs_error_unregistered);
+	    return_error(gs_error_unregistered);
+	case fBadInstruction:
+	    WarnBadInstruction(pfont, -1);
+	    goto recover;
 	case fPatented:
 	    WarnPatented(pfont, this, "The font");
+	recover:
 	    this->patented = true;
 	    return 0;
 	default:
@@ -410,12 +408,9 @@ int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_fo
 
 		if (code < 0)
 		    return code;
-		return_error(pfont->memory, gs_error_invalidfont);
+		return_error(gs_error_invalidfont);
 	    }
     }
-#else
-    return 0;
-#endif
 }
 
 /*----------------------------------------------*/
@@ -425,9 +420,7 @@ typedef struct gx_ttfExport_s {
     gx_path *path;
     gs_fixed_point w;
     int error;
-#if TT_GRID_FITTING
     bool monotonize;
-#endif
 } gx_ttfExport;
 
 private void gx_ttfExport__MoveTo(ttfExport *this, FloatPoint *p)
@@ -451,18 +444,16 @@ private void gx_ttfExport__CurveTo(ttfExport *this, FloatPoint *p0, FloatPoint *
     gx_ttfExport *e = (gx_ttfExport *)this;
 
     if (!e->error) {
-#	if TT_GRID_FITTING
-	    if (e->monotonize) {
-		curve_segment s;
-    
-		s.notes = sn_none;
-		s.p1.x = float2fixed(p0->x), s.p1.y = float2fixed(p0->y), 
-		s.p2.x = float2fixed(p1->x), s.p2.y = float2fixed(p1->y), 
-		s.pt.x = float2fixed(p2->x), s.pt.y = float2fixed(p2->y);
-		e->error = gx_curve_monotonize(e->path, &s);
-	    } else
-#	endif
-	e->error = gx_path_add_curve_notes(e->path, float2fixed(p0->x), float2fixed(p0->y), 
+	if (e->monotonize) {
+	    curve_segment s;
+
+	    s.notes = sn_none;
+	    s.p1.x = float2fixed(p0->x), s.p1.y = float2fixed(p0->y), 
+	    s.p2.x = float2fixed(p1->x), s.p2.y = float2fixed(p1->y), 
+	    s.pt.x = float2fixed(p2->x), s.pt.y = float2fixed(p2->y);
+	    e->error = gx_curve_monotonize(e->path, &s);
+	} else
+    	    e->error = gx_path_add_curve_notes(e->path, float2fixed(p0->x), float2fixed(p0->y), 
 				     float2fixed(p1->x), float2fixed(p1->y), 
 				     float2fixed(p2->x), float2fixed(p2->y), sn_none);
     }
@@ -494,8 +485,6 @@ private void gx_ttfExport__DebugPaint(ttfExport *this)
 }
 
 /*----------------------------------------------*/
-
-#if TT_GRID_FITTING
 
 private int
 path_to_hinter(t1_hinter *h, gx_path *path)
@@ -562,6 +551,7 @@ transpose_path(gx_path *path)
 typedef struct {
     t1_hinter super;
     int transpose;
+    fixed midx;
 } t1_hinter_aux;
 
 private int 
@@ -569,9 +559,31 @@ stem_hint_handler(void *client_data, gx_san_sect *ss)
 {
     t1_hinter_aux *h = (t1_hinter_aux *)client_data;
 
-    return (h->transpose ? t1_hinter__hstem : t1_hinter__vstem)
-		(&h->super, ss->xl, ss->xr);
+    if (ss->side_mask == 3) {
+	/* Orient horizontal hints to help with top/bottom alignment zones. 
+	   Otherwize glyphs may get a random height due to serif adjustsment. */
+	if (ss->xl > h->midx && h->transpose)
+	    return (h->transpose ? t1_hinter__hstem : t1_hinter__vstem)
+			(&h->super, ss->xr, ss->xl - ss->xr);
+	else
+	    return (h->transpose ? t1_hinter__hstem : t1_hinter__vstem)
+			(&h->super, ss->xl, ss->xr - ss->xl);
+    } else
+	return t1_hinter__overall_hstem(&h->super, ss->xl, ss->xr - ss->xl, ss->side_mask);
 }
+
+#define OVERALL_HINT 0 /* Overall hints help to emulate Type 1 alignment zones
+                          (except for overshoot suppression.)
+			  For example, without it comparefiles/type42_glyph_index.ps
+			  some glyphs have different height due to 
+			  serifs are aligned in same way as horizontal stems,
+			  but both sides of a stem have same priority.
+
+			  This stuff appears low useful, because horizontal
+			  hint orientation performs this job perfectly.
+			  fixme : remove.
+			  fixme : remove side_mask from gxhintn.c .
+			  */
 
 private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path, 
 	gs_font_type42 *pfont, const gs_log2_scale_point *pscale, gx_ttfExport *e, ttfOutliner *o)
@@ -608,8 +620,7 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
     t1_hinter__init(&h.super, path); /* Will export to */
     code = t1_hinter__set_mapping(&h.super, &ctm_temp,
 			&fm, &fmb,
-			pscale->x, pscale->x,
-			atp ? 0 : pscale->x, atp ? 0 : pscale->y, /* Not sure */
+			pscale->x, pscale->x, 0, 0,
 			ctm_temp.tx_fixed, ctm_temp.ty_fixed, atp);
     if (code < 0)
 	return code;
@@ -623,6 +634,9 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 	code = t1_hinter__set_font42_data(&h.super, FontType, &pfont->data, false);
 	if (code < 0)
 	    return code;
+	code = t1_hinter__sbw(&h.super, sbx, sby, e->w.x, e->w.y);
+	if (code < 0)
+	    return code;
 	gx_path_bbox(path, &bbox);
 	if (code < 0)
 	    return code;
@@ -634,6 +648,7 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 	params.fill_zero_width = false;
 
 	for (h.transpose = 0; h.transpose < 2; h.transpose++) {
+	    h.midx = (padev->xmin + padev->xmax) / 2;
 	    if (h.transpose)
 		transpose_path(path);
 	    gx_san_begin(padev);
@@ -641,7 +656,8 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 			    &is_stub, path, &params, &devc_stub, NULL);
 	    gx_san_end(padev);
 	    if (code >= 0)
-		code = gx_san_generate_stems(padev, &h, stem_hint_handler);
+		code = gx_san_generate_stems(padev, OVERALL_HINT && h.transpose, 
+				&h, stem_hint_handler);
 	    if (h.transpose)
 		transpose_path(path);
 	    if (code < 0)
@@ -651,9 +667,6 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 	/*  fixme : Storing hints permanently would be useful.
 	    Note that if (gftt & 1), the outline and hints are already scaled.
 	*/
-	code = t1_hinter__sbw(&h.super, sbx, sby, e->w.x, e->w.y);
-	if (code < 0)
-	    return code;
 	code = path_to_hinter(&h.super, path);
 	if (code < 0)
 	    return code;
@@ -668,7 +681,6 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
     }
     return code;
 }
-#endif
 
 int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int glyph_index, 
 	const gs_matrix *m, const gs_log2_scale_point *pscale, 
@@ -682,12 +694,8 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     /* so that TTC never comes here. */
     FloatMatrix m1;
     bool dg;
-#   if TT_GRID_FITTING
     uint gftt = gs_currentgridfittt(pfont->dir);
     bool ttin = (gftt & 1);
-#   else
-    uint gftt = 0;
-#   endif
     /*	gs_currentgridfittt values (binary) :
 	00 - no grid fitting;
 	01 - Grid fit with TT interpreter; On failure warn and render unhinted.
@@ -716,40 +724,39 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     e.path = path;
     e.w.x = 0;
     e.w.y = 0;
-#   if TT_GRID_FITTING
-	e.monotonize = auth;
-#   endif
+    e.monotonize = auth;
     gx_ttfReader__Reset(r);
     ttfOutliner__init(&o, ttf, &r->super, &e.super, true, false, pfont->WMode != 0);
     switch(ttfOutliner__Outline(&o, glyph_index, subpix_origin.x, subpix_origin.y, &m1)) {
+	case fBadInstruction:
+	    WarnBadInstruction(pfont, glyph_index);
+	    goto recover;
 	case fPatented:
 	    /* The returned outline did not apply a bytecode (it is not grid-fitted). */
 	    if (!auth)
 		WarnPatented(pfont, ttf, "Some glyphs of the font");
-#	    if TT_GRID_FITTING
-		if (!design_grid && auth)
-		    return grid_fit(pfont->dir->san, path, pfont, pscale, &e, &o);
-#	    endif
+	recover :
+	    if (!design_grid && auth)
+		return grid_fit(pfont->dir->san, path, pfont, pscale, &e, &o);
 	    /* Falls through. */
 	case fNoError:
-#	    if TT_GRID_FITTING
-		if (!design_grid && !ttin && auth)
-		    return grid_fit(pfont->dir->san, path, pfont, pscale, &e, &o);
-#	    endif
+	    if (!design_grid && !ttin && auth)
+		return grid_fit(pfont->dir->san, path, pfont, pscale, &e, &o);
 	    ttfOutliner__DrawGlyphOutline(&o);
 	    if (e.error)
 		return e.error;
 	    return 0;
 	case fMemoryError:
-	    return_error(pfont->memory, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	case fUnimplemented:
-	    return_error(pfont->memory, gs_error_unregistered);
+	    return_error(gs_error_unregistered);
 	default:
 	    {	int code = r->super.Error(&r->super);
 
 		if (code < 0)
 		    return code;
-		return_error(pfont->memory, gs_error_invalidfont);
+		return_error(gs_error_invalidfont);
 	    }
     }
 }
+    

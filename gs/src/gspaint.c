@@ -1,22 +1,22 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Painting procedures for Ghostscript library */
 #include "math_.h"		/* for fabs */
 #include "gx.h"
 #include "gpcheck.h"
 #include "gserrors.h"
-#include "gsutil.h"
 #include "gsropt.h"		/* for gxpaint.h */
 #include "gxfixed.h"
 #include "gxmatrix.h"		/* for gs_state */
@@ -29,6 +29,7 @@
 #include "gxdevmem.h"
 #include "gzcpath.h"
 #include "gxhldevc.h"
+#include "gsutil.h"
 
 /* Define the nominal size for alpha buffers. */
 #define abuf_nominal_SMALL 500
@@ -67,10 +68,11 @@ gs_fillpage(gs_state * pgs)
     gx_device *dev;
     int code = 0;
     gs_logical_operation_t save_lop;
-    bool hl_color_available = gx_hld_is_hl_color_available((gs_imager_state *)pgs, 
-						    pgs->dev_color);
-    gs_set_object_tag(pgs, GS_UNTOUCHED_TAG);
+    bool hl_color_available;
+
     gx_set_dev_color(pgs);
+    hl_color_available = gx_hld_is_hl_color_available((gs_imager_state *)pgs, 
+						    pgs->dev_color);
     dev = gs_currentdevice(pgs);
     /* Fill the page directly, ignoring clipping. */
     /* Use the default RasterOp. */
@@ -235,17 +237,19 @@ alpha_buffer_init(gs_state * pgs, fixed extra_x, fixed extra_y, int alpha_bits)
 }
 
 /* Release an alpha buffer. */
-private void
+private int
 alpha_buffer_release(gs_state * pgs, bool newpath)
 {
     gx_device_memory *mdev =
-    (gx_device_memory *) gs_currentdevice_inline(pgs);
+	(gx_device_memory *) gs_currentdevice_inline(pgs);
+    int code = (*dev_proc(mdev, close_device)) ((gx_device *) mdev);
 
-    (*dev_proc(mdev, close_device)) ((gx_device *) mdev);
-    scale_paths(pgs, -mdev->log2_scale.x, -mdev->log2_scale.y,
+    if (code >= 0)
+	scale_paths(pgs, -mdev->log2_scale.x, -mdev->log2_scale.y,
 		!(newpath && !gx_path_is_shared(pgs->path)));
     /* Reference counting will free mdev. */
     gx_set_device_only(pgs, mdev->target);
+    return code;
 }
 
 /* Fill the current path using a specified rule. */
@@ -259,15 +263,22 @@ fill_with_rule(gs_state * pgs, int rule)
     if (pgs->in_charpath)
 	code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
 				     pgs->in_charpath);
-    else {
-	int abits, acode;
+    else if (gs_is_null_device(pgs->device)) {
+	/* Handle separately to prevent gs_state_color_load - bug 688308. */
+	gs_newpath(pgs);
+	code = 0;
+    } else {
+	int abits, acode, rcode = 0;
         /* to distinguish text from vectors we hackly look at the
            target device 1 bit per component is a cache and this is
            text else it is a path */
-        if (gx_device_has_color(gs_currentdevice(pgs)))
+
+        if (gx_device_has_color(gs_currentdevice(pgs))) {
             gs_set_object_tag(pgs, GS_PATH_TAG);
-        else
+	}
+	else {
             gs_set_object_tag(pgs, GS_TEXT_TAG);
+	}
 	gx_set_dev_color(pgs);
 	code = gs_state_color_load(pgs);
 	if (code < 0)
@@ -283,9 +294,11 @@ fill_with_rule(gs_state * pgs, int rule)
 	code = gx_fill_path(pgs->path, pgs->dev_color, pgs, rule,
 			    pgs->fill_adjust.x, pgs->fill_adjust.y);
 	if (acode > 0)
-	    alpha_buffer_release(pgs, code >= 0);
+	    rcode = alpha_buffer_release(pgs, code >= 0);
 	if (code >= 0)
 	    gs_newpath(pgs);
+	if (code >= 0 && rcode < 0)
+	    code = rcode;
 
     }
     return code;
@@ -325,8 +338,12 @@ gs_stroke(gs_state * pgs)
 	}
 	code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
 				     pgs->in_charpath);
+    } if (gs_is_null_device(pgs->device)) {
+	/* Handle separately to prevent gs_state_color_load. */
+	gs_newpath(pgs);
+	code = 0;
     } else {
-	int abits, acode;
+	int abits, acode, rcode = 0;
 
         /* to distinguish text from vectors we hackly look at the
            target device 1 bit per component is a cache and this is
@@ -385,11 +402,13 @@ gs_stroke(gs_state * pgs)
 	    gs_setflat(pgs, orig_flatness);
 	    gx_path_free(&spath, "gs_stroke");
 	    if (acode > 0)
-		alpha_buffer_release(pgs, code >= 0);
+		rcode = alpha_buffer_release(pgs, code >= 0);
 	} else
 	    code = gx_stroke_fill(pgs->path, pgs);
 	if (code >= 0)
 	    gs_newpath(pgs);
+	if (code >= 0 && rcode < 0)
+	    code = rcode;
     }
     return code;
 }
@@ -407,5 +426,11 @@ gs_strokepath(gs_state * pgs)
 	gx_path_free(&spath, "gs_strokepath");
 	return code;
     }
-    return gx_path_assign_free(pgs->path, &spath);
+    code = gx_path_assign_free(pgs->path, &spath);
+    if (code < 0)
+	return code;
+    /* NB: needs testing with PCL */
+    gx_setcurrentpoint(pgs, fixed2float(spath.position.x), fixed2float(spath.position.y));
+    return 0;
+
 }

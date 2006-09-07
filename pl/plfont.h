@@ -19,6 +19,7 @@
 
 #include "gsccode.h"
 #include "plsymbol.h"
+#include "strmio.h"
 
 /* ---------------- PCL-specified definitions ---------------- */
 
@@ -264,11 +265,11 @@ int pl_font_scan_segments(const gs_memory_t *mem,
                           const pl_font_offset_errors_t *pfoe);
 
 /* Load a built-in (TrueType) font from external storage. */
-int pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
+int pl_load_tt_font(stream *in, gs_font_dir *pdir, gs_memory_t *mem,
                     long unique_id, pl_font_t **pplfont, char *font_name);
 
 /* allocate, read in and free tt font files to and from memory */
-int pl_alloc_tt_fontfile_buffer(FILE *in, gs_memory_t *mem, byte **pptt_font_data, ulong *size);
+int pl_alloc_tt_fontfile_buffer(stream *in, gs_memory_t *mem, byte **pptt_font_data, ulong *size);
 int pl_free_tt_fontfile_buffer(gs_memory_t *mem, byte *ptt_font_data);
 
 
@@ -317,5 +318,9 @@ int pl_store_resident_font_data_in_file(char *font_file, gs_memory_t *mem, pl_fo
 int pl_prepend_xl_dummy_header(gs_memory_t *mem, byte **ppheader);
 /* agfa requires swapping downloaded intellifont headers */
 int pl_swap_header(byte *header, uint gifct);
+
+/* UFST callbacks if needed */
+void plu_set_callbacks(void);
+
 
 #endif				/* plfont_INCLUDED */

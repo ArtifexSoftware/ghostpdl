@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Level 2 "Virtual memory" operators */
 #include "ghost.h"
 #include "oper.h"
@@ -33,7 +34,7 @@ private int
 zsetglobal(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    check_type(imemory, *op, t_boolean);
+    check_type(*op, t_boolean);
     ialloc_set_space(idmemory,
 		     (op->value.boolval ? avm_global : avm_local));
     pop(1);
@@ -46,7 +47,7 @@ zcurrentglobal(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_bool(op, ialloc_space(idmemory) != avm_local);
     return 0;
 }
@@ -57,7 +58,7 @@ zgcheck(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_op(imemory, 1);
+    check_op(1);
     make_bool(op, (r_is_local(op) ? false : true));
     return 0;
 }
@@ -75,7 +76,7 @@ int
 set_vm_threshold(i_ctx_t *i_ctx_p, long val)
 {
     if (val < -1)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     else if (val == -1)
 	val = (gs_debug_c('.') ? DEFAULT_VM_THRESHOLD_SMALL :
 	       DEFAULT_VM_THRESHOLD_LARGE);
@@ -97,7 +98,7 @@ set_vm_reclaim(i_ctx_t *i_ctx_p, long val)
 	gs_memory_set_vm_reclaim(idmemory->space_local, (val == 0));
 	return 0;
     } else
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
 }
 
 /*
@@ -111,13 +112,13 @@ zvmreclaim(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(imemory, *op, t_integer);
+    check_type(*op, t_integer);
     if (op->value.intval == 1 || op->value.intval == 2) {
 	/* Force the interpreter to store its state and exit. */
 	/* The interpreter's caller will do the actual GC. */
-	return_error(imemory, e_VMreclaim);
+	return_error(e_VMreclaim);
     }
-    return_error(imemory, e_rangecheck);
+    return_error(e_rangecheck);
 }
 
 /* ------ Initialization procedure ------ */

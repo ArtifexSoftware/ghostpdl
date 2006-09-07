@@ -1,21 +1,17 @@
-/* Copyright (C) 1989 - 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
+/* $Id$ */
 
 #ifndef __CARBON__
 //#include "MacHeaders"
@@ -165,7 +161,7 @@ getenv(const char * env) {
 //		FSMakeFSSpec(pFile.vRefNum, pFile.parID,thepfname, &pfile);
 		convertSpecToPath(&pFile, fpath, 256);
 //		sprintf(fpath,"%s",fpath);
-		p = (char*)gs_malloc(1, (size_t) ( 4*strlen(fpath) + 40), "getenv");
+		p = (char*)malloc((size_t) ( 4*strlen(fpath) + 40));
 		sprintf(p,"%s,%sGhostscript:lib,%sGhostscript:fonts",
 						(char *)&fpath[0],(char *)&fpath[0],
 						(char *)&fpath[0] );
@@ -281,7 +277,7 @@ mac_std_init(void)
 
 
 private int
-mac_stdin_read_process(const gs_memory_t *mem, stream_state *st, stream_cursor_read *ignore_pr,
+mac_stdin_read_process(stream_state *st, stream_cursor_read *ignore_pr,
   stream_cursor_write *pw, bool last)
 {
     uint count = pw->limit - pw->ptr;
@@ -294,7 +290,7 @@ mac_stdin_read_process(const gs_memory_t *mem, stream_state *st, stream_cursor_r
 
 
 private int
-mac_stdout_write_process(const gs_memory_t *mem, stream_state *st, stream_cursor_read *pr,
+mac_stdout_write_process(stream_state *st, stream_cursor_read *pr,
   stream_cursor_write *ignore_pw, bool last)
 {	uint count = pr->limit - pr->ptr;
  
@@ -305,7 +301,7 @@ mac_stdout_write_process(const gs_memory_t *mem, stream_state *st, stream_cursor
 }
 
 private int
-mac_stderr_write_process(const gs_memory_t *mem, stream_state *st, stream_cursor_read *pr,
+mac_stderr_write_process(stream_state *st, stream_cursor_read *pr,
   stream_cursor_write *ignore_pw, bool last)
 {	uint count = pr->limit - pr->ptr;
 
@@ -322,43 +318,6 @@ mac_std_available(register stream * s, long *pl)
     return 0;		// OK
 }
 
-/* ====== Substitute for stdio ====== */
-
-/* These are used instead of the stdio version. */
-/* The declarations must be identical to that in <stdio.h>. */
-int
-fprintf(FILE *file, const char *fmt, ...)
-{
-	int		count;
-	va_list	args;
-	char	buf[1024];
-	
-	va_start(args,fmt);
-	
-	if (file != stdout  &&  file != stderr) {
-		count = vfprintf(file, fmt, args);
-	}
-	else {
-		count = vsprintf(buf, fmt, args);
-		return fwrite(buf, strlen(buf), 1, file);
-	}
-	
-	va_end(args);
-	return count;
-}
-
-int
-fputs(const char *string, FILE *file)
-{
-	if (file != stdout  &&  file != stderr) {
-		return fwrite(string, strlen(string), 1, file);
-	}
-	else {
-		return fwrite(string, strlen(string), 1, file);
-	}
-}
-
-
 /* ------ Printer accessing ------ */
 
 /* These should NEVER be called. */
@@ -369,14 +328,12 @@ fputs(const char *string, FILE *file)
 /* Return NULL if the connection could not be opened. */
 
 FILE *
-gp_open_printer (const gs_memory_t *mem, char *fname, int binary_mode)
+gp_open_printer (char *fname, int binary_mode)
 {
-	if (strlen(fname) == 1  &&  fname[0] == '-')
-		return stdout;
-	else if (strlen(fname) == 0)
-		return gp_open_scratch_file(mem, gp_scratch_file_name_prefix, fname, binary_mode ? "wb" : "w");
-	else
-		return gp_fopen(fname, binary_mode ? "wb" : "b");
+    if (strlen(fname) == 0)
+        return gp_open_scratch_file(gp_scratch_file_name_prefix, fname, binary_mode ? "wb" : "w");
+    else
+        return gp_fopen(fname, binary_mode ? "wb" : "b");
 }
 
 /* Close the connection to the printer. */
@@ -384,9 +341,8 @@ gp_open_printer (const gs_memory_t *mem, char *fname, int binary_mode)
 void
 gp_close_printer (FILE *pfile, const char *fname)
 {
-	fclose(pfile);
+    fclose(pfile);
 }
-
 
 
 /* Define whether case is insignificant in file names. */
@@ -418,22 +374,22 @@ gp_open_scratch_file (const char *prefix, char fname[gp_file_name_sizeof], const
 {
     char thefname[256];
     Str255 thepfname;
-	OSErr myErr;
-	short foundVRefNum;
-	long foundDirID;
-	FSSpec fSpec;
-	FILE *f;
+    OSErr myErr;
+    short foundVRefNum;
+    long foundDirID;
+    FSSpec fSpec;
+    FILE *f;
     int prefix_length = strlen(prefix);
 
     if (prefix_length > gp_file_name_sizeof) return NULL;
-	strcpy (fname, (char *) prefix);
-	{
-		char newName[50];
+    strcpy (fname, (char *) prefix);
+      {
+	char newName[50];
 
-		tmpnam (newName);
+	tmpnam (newName);
 	if ( prefix_length + strlen(newName) > gp_file_name_sizeof ) return NULL;
-		strcat (fname, newName);
-	}
+	strcat (fname, newName);
+      }
 
    if ( strlen(fname) > 255 ) return NULL;
    if ( strrchr(fname,':') == NULL ) {
@@ -442,7 +398,7 @@ gp_open_scratch_file (const char *prefix, char fname[gp_file_name_sizeof], const
 		myErr = FindFolder(kOnSystemDisk,kTemporaryFolderType,kCreateFolder,
 			&foundVRefNum, &foundDirID);
 		if ( myErr != noErr ) {
-			fprintf(stderr,"Can't find temp folder.\n");
+			eprintf("Can't find temp folder.\n");
 			return (NULL);
 		}
 		FSMakeFSSpec(foundVRefNum, foundDirID,thepfname, &fSpec);
@@ -456,7 +412,7 @@ gp_open_scratch_file (const char *prefix, char fname[gp_file_name_sizeof], const
 
     f = gp_fopen (thefname, mode);
     if (f == NULL)
-	eprintf1(mem, "**** Could not open temporary file %s\n", fname);
+	eprintf1("**** Could not open temporary file %s\n", fname);
     return f;
 }
 
@@ -487,7 +443,7 @@ gp_read_macresource(byte *buf, const char *fname, const uint type, const ushort 
     /* load resource */
     resource = Get1Resource((ResType)type, (SInt16)id);
     if (resource == NULL) goto fin;
-    
+          
     /* allocate res */
     /* GetResourceSize() is probably good enough */
     //size = GetResourceSizeOnDisk(resource);
@@ -626,9 +582,9 @@ uint gp_file_name_root(const char *fname, uint len)
    	HFSUniStr255 volumeName;
    	FSRef rootDirectory;
    	int index, match;
-
+   	
     if (len > 0 && fname[0] == ':')
-	return 0; /* A relative path, no root. */
+		return 0; /* A relative path, no root. */
 
 	/* iterate over mounted volumes and compare our path */
 	index = 1;
@@ -658,9 +614,9 @@ uint gp_file_name_root(const char *fname, uint len)
    we essentially leave this unimplemented on Classic */
 uint gp_file_name_root(const char *fname, uint len)
 {
-    return 0;
+	return 0;
 }
-
+   
 #endif /* __CARBON__ */
 
 
@@ -957,7 +913,7 @@ void gp_enumerate_fonts_free(void *enum_state)
 	
 	FMDisposeFontIterator(Iterator);
 	
-    /* free any gs_malloc() stuff here */
+    /* free any malloc'd stuff here */
     if (state->name) free(state->name);
     if (state->path) free(state->path);
     if (state->last_container_path) free(state->last_container_path);
@@ -1048,7 +1004,7 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
     	state->path = malloc(len);
     	snprintf(state->path, len, "%%macresource%%%s#POST", fontpath);
     }
-#if DEBUG
+#ifdef DEBUG
     dlprintf2("fontenum: returning '%s' in '%s'\n", state->name, state->path);
 #endif
     *fontname = state->name;

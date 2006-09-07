@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Default implementation of parameter lists */
 #include "memory_.h"
 #include "string_.h"
@@ -261,8 +262,7 @@ c_param_add(gs_c_param_list * plist, gs_param_name pkey)
 
 /*  Write a dynamically typed parameter to a list. */
 private int
-c_param_write(const gs_memory_t *mem,
-	      gs_c_param_list * plist, gs_param_name pkey, void *pvalue,
+c_param_write(gs_c_param_list * plist, gs_param_name pkey, void *pvalue,
 	      gs_param_type type)
 {
     unsigned top_level_sizeof = 0;
@@ -270,7 +270,7 @@ c_param_write(const gs_memory_t *mem,
     gs_c_param *pparam = c_param_add(plist, pkey);
 
     if (pparam == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     memcpy(&pparam->value, pvalue, gs_param_type_sizes[(int)type]);
     pparam->type = type;
 
@@ -305,7 +305,7 @@ c_param_write(const gs_memory_t *mem,
 					     "c_param_write data");
 		    if (top_level_memory == 0) {
 			gs_free_object(plist->memory, pparam, "c_param_write entry");
-			return_error(plist->memory, gs_error_VMerror);
+			return_error(gs_error_VMerror);
 		    }
 		    memcpy(top_level_memory, pparam->value.s.data, top_level_sizeof);
 		}
@@ -350,7 +350,7 @@ c_param_begin_write_collection(gs_param_list * plist, gs_param_name pkey,
 			      "c_param_begin_write_collection");
 
     if (dlist == 0)
-	return_error(plist->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     gs_c_param_list_write(dlist, cplist->memory);
     dlist->coll_type = coll_type;
     pvalue->list = (gs_param_list *) dlist;
@@ -363,7 +363,7 @@ c_param_end_write_collection(gs_param_list * plist, gs_param_name pkey,
     gs_c_param_list *const cplist = (gs_c_param_list *)plist;
     gs_c_param_list *dlist = (gs_c_param_list *) pvalue->list;
 
-    return c_param_write(cplist->memory, cplist, pkey, pvalue->list,
+    return c_param_write(cplist, pkey, pvalue->list,
 		    (dlist->coll_type == gs_param_collection_dict_int_keys ?
 		     gs_param_type_dict_int_keys :
 		     dlist->coll_type == gs_param_collection_array ?
@@ -387,7 +387,7 @@ c_param_write_typed(gs_param_list * plist, gs_param_name pkey,
 	    coll_type = gs_param_collection_array;
 	    break;
 	default:
-	    return c_param_write(cplist->memory, cplist, pkey, &pvalue->value, pvalue->type);
+	    return c_param_write(cplist, pkey, &pvalue->value, pvalue->type);
     }
     return c_param_begin_write_collection
 	(plist, pkey, &pvalue->value.d, coll_type);
@@ -406,7 +406,7 @@ c_param_request(gs_param_list * plist, gs_param_name pkey)
 	return 0;
     pparam = c_param_add(cplist, pkey);
     if (pparam == 0)
-	return_error(cplist->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     pparam->type = gs_param_type_any; /* mark as undefined */
     cplist->head = pparam;
     return 0;
@@ -504,7 +504,7 @@ c_param_read_typed(gs_param_list * plist, gs_param_name pkey,
 		 = (void *)gs_alloc_bytes_immovable(cplist->memory,
 						    fa.size * sizeof(float),
 			     "gs_c_param_read alternate float array")) == 0)
-		      return_error(cplist->memory, gs_error_VMerror);
+		      return_error(gs_error_VMerror);
 
 	    for (element = 0; element < fa.size; ++element)
 		((float *)(pparam->alternate_typed_data))[element]
@@ -535,16 +535,16 @@ c_param_begin_read_collection(gs_param_list * plist, gs_param_name pkey,
     switch (pparam->type) {
 	case gs_param_type_dict:
 	    if (coll_type != gs_param_collection_dict_any)
-		return_error(plist->memory, gs_error_typecheck);
+		return_error(gs_error_typecheck);
 	    break;
 	case gs_param_type_dict_int_keys:
 	    if (coll_type == gs_param_collection_array)
-		return_error(plist->memory, gs_error_typecheck);
+		return_error(gs_error_typecheck);
 	    break;
 	case gs_param_type_array:
 	    break;
 	default:
-	    return_error(plist->memory, gs_error_typecheck);
+	    return_error(gs_error_typecheck);
     }
     gs_c_param_list_read(&pparam->value.d);
     pvalue->list = (gs_param_list *) & pparam->value.d;

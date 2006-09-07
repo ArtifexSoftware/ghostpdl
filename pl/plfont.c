@@ -30,6 +30,7 @@
 #include "gxfont42.h"
 #include "plfont.h"
 #include "plvalue.h"
+#include "strmio.h"
 
 /* Structure descriptors */
 private_st_pl_font();
@@ -351,7 +352,7 @@ pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
             pstr->size = strlen(pstr->data);
             return 0;
         } else {
-	    dprintf1(NULL, "glyph index %lx out of range", (ulong)glyph);
+	    dprintf1("glyph index %lx out of range", (ulong)glyph);
 	    return -1; 
         }
     }
@@ -377,13 +378,13 @@ pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
             /* format 1.0 (mac encoding) is a simple table see the TT
                spec.  We don't implement this because we don't see it
                in practice */
-            dprintf1( pfont->memory, "unkonwn post table format %lX\n", format);
+            dprintf1("unkonwn post table format %lX\n", format);
             return -1;
         }
         /* skip over the post header */
         numGlyphs = u16(postp + 32);
         if ( glyph < 0 || glyph > numGlyphs - 1) {
-            dprintf1( pfont->memory, "glyph index %lx out of range", glyph);
+            dprintf1("glyph index %lx out of range", glyph);
             return -1;
         }
         /* glyph name index starts at post + 34 each entry is 2 bytes */
@@ -418,7 +419,7 @@ pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
             /* sanity check */
             if ( pstr->data + pstr->size > postp + table_length ||
                  pstr->data - 1 < postp) {
-                dprintf(pfont->memory, "data out of range\n");
+                dprintf("data out of range\n");
                 return -1;
             }
             /* sigh - we have to allocate a copy of the data - by the
@@ -737,6 +738,10 @@ pl_fill_in_tt_font(gs_font_type42 *pfont, void *data, long unique_id)
 	pfont->data.proc_data = data;
 	pl_tt_init_procs(pfont);
 	gs_type42_font_init(pfont);
+	/* disable unused FAPI */
+	pfont->FAPI = 0;
+	pfont->FAPI_font_data = 0;
+
 	pl_tt_finish_init(pfont, !data);
 }
 
@@ -746,7 +751,7 @@ pl_fill_in_intelli_font(gs_font_base *pfont, long unique_id)
 {	/* Intellifonts have an 8782-unit design space. */
  	{ gs_matrix mat;
 	  gs_make_scaling(1.0/8782, 1.0/8782, &mat);
-	  gs_matrix_translate(pfont->memory, &mat, -2980.0, -5380.0, &pfont->FontMatrix);
+	  gs_matrix_translate(&mat, -2980.0, -5380.0, &pfont->FontMatrix);
 	}
 	pfont->FontType = ft_user_defined;
 	pfont->BitmapWidths = true;
@@ -786,7 +791,7 @@ pl_font_scan_segments(const gs_memory_t *mem,
 	int illegal_font_data = pfoe->illegal_font_data;
 
 #define return_scan_error(err)\
-  return_error(mem, (err) ? (err) : illegal_font_data);
+  return_error((err) ? (err) : illegal_font_data);
 
 	if ( memcmp(null_segment, "\377\377", 2) /* NULL segment header */ )
 	  return_scan_error(pfoe->missing_required_segment);
@@ -810,19 +815,19 @@ pl_font_scan_segments(const gs_memory_t *mem,
 
 	      seg_size = (large_sizes ? u32(segment + 2) : u16(segment + 2));
 	      if ( seg_size + 2 + wsize > end - segment )
-		return_error(mem, illegal_font_data);
+		return_error(illegal_font_data);
 	      /* Handle segments common to all fonts. */
 	      switch ( seg_id )
 		{
 		case 0xffff:		/* NULL segment ID */
 		  if ( segment != null_segment )
-		    return_error(mem, illegal_font_data);
+		    return_error(illegal_font_data);
 		  continue;
 		case id2('V','I'):
 		  continue;
 		case id2('C', 'C'):
 		  if ( seg_size != 8 )
-		    return_error(mem, illegal_font_data);
+		    return_error(illegal_font_data);
 		  memcpy(plfont->character_complement, sdata, 8);
 		  continue;
 		default:
@@ -846,7 +851,7 @@ pl_font_scan_segments(const gs_memory_t *mem,
 		    break;
 		  default:
 		    if ( pfoe->illegal_font_segment < 0 )
-		      return_error(mem, pfoe->illegal_font_segment);
+		      return_error(pfoe->illegal_font_segment);
 		  }
 	      else		/* fst == plfst_TrueType */
 		switch ( seg_id )
@@ -895,14 +900,14 @@ pl_font_scan_segments(const gs_memory_t *mem,
                       break;
 		  default:
 		    if ( pfoe->illegal_font_segment < 0 )
-		      return_error(mem, pfoe->illegal_font_segment);
+		      return_error(pfoe->illegal_font_segment);
 		  }
 #undef id2
 	    }
 	  if ( !found )
 	    return_scan_error(pfoe->missing_required_segment);
 	  if ( segment != end )
-	    return_error(mem, illegal_font_data);
+	    return_error(illegal_font_data);
 	  plfont->large_sizes = large_sizes;
 	  plfont->scaling_technology = fst;
 	  return 0;
@@ -917,9 +922,9 @@ pl_free_tt_fontfile_buffer(gs_memory_t *mem, byte *ptt_font_data)
 }
 
 int 
-pl_alloc_tt_fontfile_buffer(FILE *in, gs_memory_t *mem, byte **pptt_font_data, ulong *size)
+pl_alloc_tt_fontfile_buffer(stream *in, gs_memory_t *mem, byte **pptt_font_data, ulong *size)
 {
-    ulong len = (fseek(in, 0L, SEEK_END), ftell(in));
+    ulong len = (sfseek(in, 0L, SEEK_END), sftell(in));
     *size = 6 + len;	/* leave room for segment header */
     if ( *size != (uint)(*size) ) { 
 	/*
@@ -927,23 +932,23 @@ pl_alloc_tt_fontfile_buffer(FILE *in, gs_memory_t *mem, byte **pptt_font_data, u
 	 * The error message is bogus, but there isn't any more
 	 * appropriate one.
 	 */
-	fclose(in);
-	return_error(mem, gs_error_VMerror);
+	sfclose(in);
+	return_error(gs_error_VMerror);
     }
-    rewind(in);
+    srewind(in);
     *pptt_font_data = gs_alloc_bytes(mem, *size, "pl_tt_load_font data");
     if ( *pptt_font_data == 0 ) {
-	fclose(in);
-	return_error(mem, gs_error_VMerror);
+	sfclose(in);
+	return_error(gs_error_VMerror);
     }
-    fread(*pptt_font_data + 6, 1, len, in);
-    fclose(in);
+    sfread(*pptt_font_data + 6, 1, len, in);
+    sfclose(in);
     return 0;
 }
 
 /* Load a built-in (TrueType) font from external storage. */
 int
-pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
+pl_load_tt_font(stream *in, gs_font_dir *pdir, gs_memory_t *mem,
   long unique_id, pl_font_t **pplfont, char *font_name)
 {	
     byte *tt_font_datap;
@@ -954,14 +959,14 @@ pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
     /* get the data from the file */
     code = pl_alloc_tt_fontfile_buffer(in, mem, &tt_font_datap, &size);
     if ( code < 0 )
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     /* Make a Type 42 font out of the TrueType data. */
     pfont = gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42,
 			    "pl_tt_load_font(gs_font_type42)");
     plfont = pl_alloc_font(mem, "pl_tt_load_font(pl_font_t)");
 
     if ( pfont == 0 || plfont == 0 )
-	code = gs_note_error(mem, gs_error_VMerror);
+	code = gs_note_error(gs_error_VMerror);
     else { /* Initialize general font boilerplate. */
 	code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem, font_name);
 	if ( code >= 0 ) { /* Initialize TrueType font boilerplate. */
@@ -994,11 +999,11 @@ pl_load_resident_font_data_from_file(gs_memory_t *mem, pl_font_t *plfont)
     ulong len, size;
     byte *data;
     if (plfont->font_file && !plfont->font_file_loaded) {
-	FILE *in = fopen(plfont->font_file, gp_fmode_rb);
+	stream *in = sfopen(plfont->font_file, gp_fmode_rb, mem);
 	if ( in == NULL )
 	    return -1;
 	/* note this is exactly the same as the code in pl_load_tt_font */
-	len = (fseek(in, 0L, SEEK_END), ftell(in));
+	len = (sfseek(in, 0L, SEEK_END), sftell(in));
 	size = 6 + len;	/* leave room for segment header */
 
 	if ( size != (uint)size ) { 
@@ -1007,17 +1012,17 @@ pl_load_resident_font_data_from_file(gs_memory_t *mem, pl_font_t *plfont)
 	     * The error message is bogus, but there isn't any more
 	     * appropriate one.
 	     */
-	    fclose(in);
-	    return_error(mem, gs_error_VMerror);
+	    sfclose(in);
+	    return_error(gs_error_VMerror);
 	}
-	rewind(in);
+	srewind(in);
 	data = gs_alloc_bytes(mem, size, "pl_tt_load_font data");
 	if ( data == 0 ) { 
-	    fclose(in);
-	    return_error(mem, gs_error_VMerror);
+	    sfclose(in);
+	    return_error(gs_error_VMerror);
 	}
-	fread(data + 6, 1, len, in);
-	fclose(in);
+	sfread(data + 6, 1, len, in);
+	sfclose(in);
 	plfont->header = data;
 	plfont->header_size = size;
 	plfont->font_file_loaded = true;

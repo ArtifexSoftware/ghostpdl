@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Implementation of (path-based) clipping */
 #include "gx.h"
 #include "gxdevice.h"
@@ -96,7 +97,11 @@ private const gx_device_clip gs_clip_device =
   gx_forward_decode_color,
   gx_forward_pattern_manage,
   gx_forward_fill_rectangle_hl_color,
-  gx_forward_include_color_space
+  gx_forward_include_color_space,
+  gx_default_fill_linear_color_scanline,
+  gx_default_fill_linear_color_trapezoid,
+  gx_default_fill_linear_color_triangle,
+  gx_forward_update_spot_equivalent_colors
  }
 };
 
@@ -150,10 +155,10 @@ clip_enumerate_rest(gx_device_clip * rdev,
 
 #ifdef DEBUG
     if (INCR(loops) % clip_interval == 0 && gs_debug_c('q')) {
-	dprintf5(rdev->memory, "[q]loops=%ld out=%ld in_y=%ld in=%ld in1=%ld\n",
+	dprintf5("[q]loops=%ld out=%ld in_y=%ld in=%ld in1=%ld\n",
 		 stats_clip.loops, stats_clip.out, stats_clip.in,
 		 stats_clip.in_y, stats_clip.in1);
-	dprintf4(rdev->memory, "[q]   down=%ld up=%ld x=%ld no_x=%ld\n",
+	dprintf4("[q]   down=%ld up=%ld x=%ld no_x=%ld\n",
 		 stats_clip.down, stats_clip.up, stats_clip.x,
 		 stats_clip.no_x);
     }
@@ -196,7 +201,7 @@ clip_enumerate_rest(gx_device_clip * rdev,
 	const int ymax = rptr->ymax;
 	int yec = min(ymax, ye);
 
-	if_debug2(rdev->memory, 'Q', "[Q]yc=%d yec=%d\n", yc, yec);
+	if_debug2('Q', "[Q]yc=%d yec=%d\n", yc, yec);
 	do {
 	    int xc = rptr->xmin;
 	    int xec = rptr->xmax;
@@ -206,8 +211,8 @@ clip_enumerate_rest(gx_device_clip * rdev,
 	    if (xec > xe)
 		xec = xe;
 	    if (xec > xc) {
-		clip_rect_print(rdev->memory, 'Q', "match", rptr);
-		if_debug2(rdev->memory, 'Q', "[Q]xc=%d xec=%d\n", xc, xec);
+		clip_rect_print('Q', "match", rptr);
+		if_debug2('Q', "[Q]xc=%d xec=%d\n", xc, xec);
 		INCR(x);
 /*
  * Conditionally look ahead to detect unclipped vertical strips.  This is

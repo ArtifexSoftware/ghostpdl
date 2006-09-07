@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Filter creation */
 #include "memory_.h"
 #include "ghost.h"
@@ -60,7 +61,7 @@ zPFBD(i_ctx_t *i_ctx_p)
     os_ptr sop = osp;
     stream_PFBD_state state;
 
-    check_type(imemory, *sop, t_boolean);
+    check_type(*sop, t_boolean);
     state.binary_to_hex = sop->value.boolval;
     return filter_read(i_ctx_p, 1, &s_PFBD_template, (stream_state *)&state, 0);
 }
@@ -77,13 +78,13 @@ zPSSE(i_ctx_t *i_ctx_p)
 
 /* Common setup for RLE and RLD filters. */
 private int
-rl_setup(const gs_memory_t *mem, os_ptr dop, bool * eod)
+rl_setup(os_ptr dop, bool * eod)
 {
     if (r_has_type(dop, t_dictionary)) {
 	int code;
 
-	check_dict_read(mem, *dop);
-	if ((code = dict_bool_param(mem, dop, "EndOfData", true, eod)) < 0)
+	check_dict_read(*dop);
+	if ((code = dict_bool_param(dop, "EndOfData", true, eod)) < 0)
 	    return code;
 	return 1;
     } else {
@@ -101,11 +102,11 @@ zRLE(i_ctx_t *i_ctx_p)
     stream_RLE_state state;
     int code;
 
-    check_op(imemory, 2);
-    code = rl_setup(imemory, op - 1, &state.EndOfData);
+    check_op(2);
+    code = rl_setup(op - 1, &state.EndOfData);
     if (code < 0)
 	return code;
-    check_int_leu(imemory, *op, max_uint);
+    check_int_leu(*op, max_uint);
     state.record_size = op->value.intval;
     return filter_write(i_ctx_p, 1, &s_RLE_template, (stream_state *) & state, 0);
 }
@@ -117,7 +118,7 @@ zRLD(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     stream_RLD_state state;
-    int code = rl_setup(imemory, op, &state.EndOfData);
+    int code = rl_setup(op, &state.EndOfData);
 
     if (code < 0)
 	return code;
@@ -127,7 +128,7 @@ zRLD(i_ctx_t *i_ctx_p)
 /* <source> <EODcount> <EODstring> SubFileDecode/filter <file> */
 /* <source> <dict> <EODcount> <EODstring> SubFileDecode/filter <file> */
 /* <source> <dict> SubFileDecode/filter <file> *//* (LL3 only) */
-private int
+int				/* exported for zsysvm.c */
 zSFD(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -141,21 +142,26 @@ zSFD(i_ctx_t *i_ctx_p)
 	int count;
 	int code;
 
-	check_dict_read(imemory, *op);
-	if ((code = dict_int_param(imemory, op, "EODCount", 0, max_int, -1, &count)) < 0)
+	check_dict_read(*op);
+	/*
+	 * The PLRM-3rd says that EODCount is a required parameter.  However
+	 * Adobe accepts files without this value and apparently defaults to
+	 * zero.  Thus we are doing the same.
+	 */
+	if ((code = dict_int_param(op, "EODCount", 0, max_int, 0, &count)) < 0)
 	    return code;
 	if (dict_find_string(op, "EODString", &sop) <= 0)
-	    return_error(imemory, e_rangecheck);
+	    return_error(e_rangecheck);
 	state.count = count;
 	npop = 0;
     } else {
-	check_type(imemory, sop[-1], t_integer);
+	check_type(sop[-1], t_integer);
 	if (sop[-1].value.intval < 0)
-	    return_error(imemory, e_rangecheck);
+	    return_error(e_rangecheck);
 	state.count = sop[-1].value.intval;
 	npop = 2;
     }
-    check_read_type(imemory, *sop, t_string);
+    check_read_type(*sop, t_string);
     state.eod.data = sop->value.const_bytes;
     state.eod.size = r_size(sop);
     return filter_read(i_ctx_p, npop, &s_SFD_template,
@@ -184,8 +190,8 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
 
     /* Skip over an optional dictionary parameter. */
     if (r_has_type(sop, t_dictionary)) {
-	check_dict_read(imemory, *sop);
-	if ((code = dict_bool_param(imemory, sop, "CloseSource", false, &close)) < 0)
+	check_dict_read(*sop);
+	if ((code = dict_bool_param(sop, "CloseSource", false, &close)) < 0)
 	    return code;
 	--sop;
     }
@@ -196,22 +202,22 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
     use_space = max(use_space, r_space(sop));
     switch (r_type(sop)) {
 	case t_string:
-	    check_read(imemory, *sop);
+	    check_read(*sop);
 	    ialloc_set_space(idmemory, use_space);
 	    sstrm = file_alloc_stream(imemory, "filter_read(string stream)");
 	    if (sstrm == 0) {
-		code = gs_note_error(imemory, e_VMerror);
+		code = gs_note_error(e_VMerror);
 		goto out;
 	    }
 	    sread_string(sstrm, sop->value.bytes, r_size(sop));
 	    sstrm->is_temp = 1;
 	    break;
 	case t_file:
-	    check_read_known_file(imemory, sstrm, sop, return);
+	    check_read_known_file(sstrm, sop, return);
 	    ialloc_set_space(idmemory, use_space);
 	    goto ens;
 	default:
-	    check_proc(imemory, *sop);
+	    check_proc(*sop);
 	    ialloc_set_space(idmemory, use_space);
 	    code = sread_proc(sop, &sstrm, iimemory);
 	    if (code < 0)
@@ -263,8 +269,8 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
 
     /* Skip over an optional dictionary parameter. */
     if (r_has_type(sop, t_dictionary)) {
-	check_dict_read(imemory, *sop);
-	if ((code = dict_bool_param(imemory, sop, "CloseTarget", false, &close)) < 0)
+	check_dict_read(*sop);
+	if ((code = dict_bool_param(sop, "CloseTarget", false, &close)) < 0)
 	    return code;
 	--sop;
     }
@@ -275,22 +281,22 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
     use_space = max(use_space, r_space(sop));
     switch (r_type(sop)) {
 	case t_string:
-	    check_write(imemory, *sop);
+	    check_write(*sop);
 	    ialloc_set_space(idmemory, use_space);
 	    sstrm = file_alloc_stream(imemory, "filter_write(string)");
 	    if (sstrm == 0) {
-		code = gs_note_error(imemory, e_VMerror);
+		code = gs_note_error(e_VMerror);
 		goto out;
 	    }
 	    swrite_string(sstrm, sop->value.bytes, r_size(sop));
 	    sstrm->is_temp = 1;
 	    break;
 	case t_file:
-	    check_write_known_file(imemory, sstrm, sop, return_error);
+	    check_write_known_file(sstrm, sop, return);
 	    ialloc_set_space(idmemory, use_space);
 	    goto ens;
 	default:
-	    check_proc(imemory, *sop);
+	    check_proc(*sop);
 	    ialloc_set_space(idmemory, use_space);
 	    code = swrite_proc(sop, &sstrm, iimemory);
 	    if (code < 0)
@@ -328,8 +334,7 @@ filter_write_simple(i_ctx_t *i_ctx_p, const stream_template * template)
 /* Define a byte-at-a-time NullDecode filter for intermediate buffers. */
 /* (The standard NullDecode filter can read ahead too far.) */
 private int
-s_Null1D_process(const gs_memory_t *mem, 
-		 stream_state * st, stream_cursor_read * pr,
+s_Null1D_process(stream_state * st, stream_cursor_read * pr,
 		 stream_cursor_write * pw, bool last)
 {
     if (pr->ptr >= pr->limit)
@@ -347,8 +352,7 @@ private const stream_template s_Null1D_template = {
 /* any data from its source. Used by PDF interpreter for unknown    */
 /* filter types.                                                    */
 private int
-s_EOFD_process(const gs_memory_t *mem, 
-	       stream_state * st, stream_cursor_read * pr,
+s_EOFD_process(stream_state * st, stream_cursor_read * pr,
 		 stream_cursor_write * pw, bool last)
 {
     return EOFC;
@@ -389,7 +393,7 @@ filter_ensure_buf(stream ** ps, uint min_buf_size, gs_ref_memory_t *imem,
 				   "filter_ensure_buf");
 
 	if (buf == 0)
-	    return_error((const gs_memory_t *)imem, e_VMerror);
+	    return_error(e_VMerror);
 	s->cbuf = buf;
 	s->srptr = s->srlimit = s->swptr = buf - 1;
 	s->swlimit = buf - 1 + len;

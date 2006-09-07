@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* C heap allocator */
 #include "malloc_.h"
 #include "gdebug.h"
@@ -23,7 +24,7 @@
 #include "gsmalloc.h"
 #include "gsmemlok.h"		/* locking (multithreading) wrapper */
 #include "gsmemret.h"		/* retrying wrapper */
-#include "gslibctx.h"
+
 
 /* ------ Heap allocator ------ */
 
@@ -96,13 +97,13 @@ struct gs_malloc_block_s {
     malloc_block_data;
 /* ANSI C does not allow zero-size arrays, so we need the following */
 /* unnecessary and wasteful workaround: */
-#define _npad (-size_of(struct malloc_block_data_s) & (arch_align_memory_mod - 1))
-    byte _pad[(_npad == 0 ? arch_align_memory_mod : _npad)];
+#define _npad (-size_of(struct malloc_block_data_s) & (ARCH_ALIGN_MEMORY_MOD - 1))
+    byte _pad[(_npad == 0 ? ARCH_ALIGN_MEMORY_MOD : _npad)];
 #undef _npad
 };
 
 /* Initialize a malloc allocator. */
-private long heap_available(const gs_memory_t *mem);
+private long heap_available(void);
 gs_malloc_memory_t *
 gs_malloc_memory_init(void)
 {
@@ -128,7 +129,7 @@ gs_malloc_memory_init(void)
 #define max_malloc_probes 20
 #define malloc_probe_size 64000
 private long
-heap_available(const gs_memory_t *mem)
+heap_available()
 {
     long avail = 0;
     void *probes[max_malloc_probes];
@@ -137,7 +138,7 @@ heap_available(const gs_memory_t *mem)
     for (n = 0; n < max_malloc_probes; n++) {
 	if ((probes[n] = malloc(malloc_probe_size)) == 0)
 	    break;
-	if_debug2(mem, 'a', "[a]heap_available probe[%d]=0x%lx\n",
+	if_debug2('a', "[a]heap_available probe[%d]=0x%lx\n",
 		  n, (ulong) probes[n]);
 	avail += malloc_probe_size;
     }
@@ -177,7 +178,7 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 
 	    /*
 	     * We would like to check that malloc aligns blocks at least as
-	     * strictly as the compiler (as defined by arch_align_memory_mod).
+	     * strictly as the compiler (as defined by ARCH_ALIGN_MEMORY_MOD).
 	     * However, Microsoft VC 6 does not satisfy this requirement.
 	     * See gsmemory.h for more explanation.
 	     */
@@ -199,7 +200,7 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
     }
 #ifdef DEBUG
     if (gs_debug_c('a') || msg != ok_msg)
-	dlprintf4(mem, "[a+]gs_malloc(%s)(%u) = 0x%lx: %s\n",
+	dlprintf4("[a+]gs_malloc(%s)(%u) = 0x%lx: %s\n",
 		  client_name_string(cname), size, (ulong) ptr, msg);
 #endif
     return ptr;
@@ -290,7 +291,7 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     gs_memory_type_ptr_t pstype;
     struct_proc_finalize((*finalize));
 
-    if_debug3(mem, 'a', "[a-]gs_free(%s) 0x%lx(%u)\n",
+    if_debug3('a', "[a-]gs_free(%s) 0x%lx(%u)\n",
 	      client_name_string(cname), (ulong) ptr,
 	      (ptr == 0 ? 0 : ((gs_malloc_block_t *) ptr)[-1].size));
     if (ptr == 0)
@@ -298,7 +299,7 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     pstype = ((gs_malloc_block_t *) ptr)[-1].type;
     finalize = pstype->finalize;
     if (finalize != 0) {
-	if_debug3(mem, 'u', "[u]finalizing %s 0x%lx (%s)\n",
+	if_debug3('u', "[u]finalizing %s 0x%lx (%s)\n",
 		  struct_type_name_string(pstype),
 		  (ulong) ptr, client_name_string(cname));
 	(*finalize) (ptr);
@@ -333,9 +334,11 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 		}
 	    }
 	}
-	lprintf2(mem, "%s: free 0x%lx not found!\n",
+	lprintf2("%s: free 0x%lx not found!\n",
 		 client_name_string(cname), (ulong) ptr);
-	free((char *)((gs_malloc_block_t *) ptr - 1));
+	/* NB: Why free a known bad pointer ?
+	 * free((char *)((gs_malloc_block_t *) ptr - 1));
+	 */
     }
 }
 private byte *
@@ -348,7 +351,7 @@ gs_heap_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num
 		      client_name_t cname)
 {
     if (gs_heap_object_type(mem, data) != &st_bytes)
-	lprintf2(mem, "%s: resizing non-string 0x%lx!\n",
+	lprintf2("%s: resizing non-string 0x%lx!\n",
 		 client_name_string(cname), (ulong) data);
     return gs_heap_resize_object(mem, data, new_num, cname);
 }
@@ -380,7 +383,7 @@ gs_heap_status(gs_memory_t * mem, gs_memory_status_t * pstat)
 {
     gs_malloc_memory_t *mmem = (gs_malloc_memory_t *) mem;
 
-    pstat->allocated = mmem->used + heap_available(mem);
+    pstat->allocated = mmem->used + heap_available();
     pstat->used = mmem->used;
 }
 private void
@@ -406,7 +409,7 @@ gs_heap_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 
 	for (; bp != 0; bp = np) {
 	    np = bp->next;
-	    if_debug3(mem, 'a', "[a]gs_heap_free_all(%s) 0x%lx(%u)\n",
+	    if_debug3('a', "[a]gs_heap_free_all(%s) 0x%lx(%u)\n",
 		      client_name_string(bp->cname), (ulong) (bp + 1),
 		      bp->size);
 	    gs_alloc_fill(bp + 1, gs_alloc_fill_free, bp->size);
@@ -417,12 +420,18 @@ gs_heap_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 	free(mem);
 }
 
+/* disable these for now as it makes debugging easier. */
+#define NO_RETRYING_NO_LOCKED 1
+ 
+
+
 /* ------ Wrapping ------ */
 
 /* Create the retrying and the locked wrapper for the heap allocator. */
 int
 gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents)
 {
+#ifndef NO_RETRYING_NO_LOCKED
     gs_memory_t *cmem = (gs_memory_t *)contents;
     gs_memory_locked_t *lmem = (gs_memory_locked_t *)
 	gs_alloc_bytes_immovable(cmem, sizeof(gs_memory_locked_t),
@@ -431,7 +440,7 @@ gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents)
     int code;
 
     if (lmem == 0)
-	return_error(cmem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     code = gs_memory_locked_init(lmem, cmem);
     if (code < 0) {
 	gs_free_object(cmem, lmem, "gs_malloc_wrap(locked)");
@@ -445,7 +454,7 @@ gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents)
     if (rmem == 0) {
 	gs_memory_locked_release(lmem);
 	gs_free_object(cmem, lmem, "gs_malloc_wrap(locked)");
-	return_error(cmem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     }
     code = gs_memory_retrying_init(rmem, (gs_memory_t *)lmem);
     if (code < 0) {
@@ -457,24 +466,33 @@ gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents)
 
     *wrapped = (gs_memory_t *)rmem;
     return 0;
+#else
+    *wrapped = (gs_memory_t *)contents;
+    return 0;
+#endif
 }
 
 /* Get the wrapped contents. */
 gs_malloc_memory_t *
 gs_malloc_wrapped_contents(gs_memory_t *wrapped)
 {
+#ifndef NO_RETRYING_NO_LOCKED
     gs_memory_retrying_t *rmem = (gs_memory_retrying_t *)wrapped;
     gs_memory_locked_t *lmem =
 	(gs_memory_locked_t *)gs_memory_retrying_target(rmem);
     if (lmem) 
 	return (gs_malloc_memory_t *)gs_memory_locked_target(lmem);
     return (gs_malloc_memory_t *) wrapped;
+#else
+    return (gs_malloc_memory_t *) wrapped;
+#endif
 }
 
 /* Free the wrapper, and return the wrapped contents. */
 gs_malloc_memory_t *
 gs_malloc_unwrap(gs_memory_t *wrapped)
 {
+#ifndef NO_RETRYING_NO_LOCKED
     gs_memory_retrying_t *rmem = (gs_memory_retrying_t *)wrapped;
     gs_memory_locked_t *lmem = 0;
     gs_memory_t *contents = wrapped;
@@ -491,7 +509,9 @@ gs_malloc_unwrap(gs_memory_t *wrapped)
     else {
 	return (gs_malloc_memory_t *)contents;
     }
-	
+#else	
+    return (gs_malloc_memory_t *) wrapped;
+#endif
 }
 
 

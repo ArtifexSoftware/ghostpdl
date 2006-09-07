@@ -165,32 +165,37 @@ PSI_TOP_OBJ=
 TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(PSI_TOP_OBJ)
 !endif
 
+# substitue dingbats for missin wingdings font in PXL
+!ifdnef WING_DING_SUB
+WING_DING_SUB=-DWINGDING_DINGBATS_SUB_ON
+!endif
+
 # Pick a font system technology.  PCL and XL do not need to use the
 # same scaler, but it is necessary to tinker with pl.mak to get it
 # to work properly.
 # ufst - Agfa universal font scaler.
-# afs - artifex font scaler.
-!ifndef PCL_FONT_SCALER
-PCL_FONT_SCALER=afs
-!endif
-!ifndef PXL_FONT_SCALER
-PXL_FONT_SCALER=afs
-!endif
+# afs  - Artifex font scaler.
 !ifndef PL_SCALER
 PL_SCALER=afs
+#PL_SCALER=ufst
+!endif
+!ifndef PCL_FONT_SCALER
+PCL_FONT_SCALER=$(PL_SCALER)
+!endif
+!ifndef PXL_FONT_SCALER
+PXL_FONT_SCALER=$(PL_SCALER)
 !endif
 
 # specify agfa library locations and includes.  This is ignored
-# if the current scaler is not the AGFA ufst.  Note we assume the agfa
-# directory is under the shared pcl pxl library ..\pl
-!ifndef AGFA_ROOT
-AGFA_ROOT=\cygwin\home\Administrator\ufst
+# if the current scaler is not the AGFA ufst.
+!ifndef UFST_ROOT
+UFST_ROOT=\cygwin\home\Administrator\ufst
 !endif
 !ifndef UFST_LIBDIR
-UFST_LIBDIR=$(AGFA_ROOT)\rts\lib
+UFST_LIBDIR=$(UFST_ROOT)\rts\lib
 !endif
-!ifndef AGFA_INCLUDES
-AGFA_INCLUDES=$(I_)$(AGFA_ROOT)\rts\inc $(I_)$(AGFA_ROOT)\sys\inc $(I_)$(AGFA_ROOT)\rts\fco $(I_)$(AGFA_ROOT)\rts\gray -DMSVC
+!ifndef UFST_INCLUDES
+UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray -DMSVC
 !endif
 
 # Language and configuration.  These are actually platform-independent,
@@ -243,6 +248,9 @@ default: $(TARGET_XE).exe
         echo Done.
 
 clean: config-clean clean-not-config-clean
+
+config-clean:
+	$(RMN_) $(PXLGEN)\pconf.h $(PXLGEN)\pconfig.h
 
 #### Implementation stub
 $(PLOBJDIR)\plimpl.$(OBJ): $(PLSRCDIR)\plimpl.c \

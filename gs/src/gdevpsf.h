@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PostScript/PDF font writing interface */
 
 #ifndef gdevpsf_INCLUDED
@@ -119,11 +120,12 @@ bool psf_sorted_glyphs_include(const gs_glyph *glyphs, int count,
  * Type 1, Type 2, and CIDFontType 0 fonts, but someday it might also
  * be usable with TrueType (Type 42) and CIDFontType 2 fonts.
  */
-#define MAX_CFF_SUBGLYPHS 2048 /* 1280 used, Bug 686875. */
+#define MAX_CFF_MISC_STRINGS 40
+#define MAX_CFF_STD_STRINGS 500 /* 391 entries used */
 typedef struct psf_outline_glyphs_s {
     gs_glyph notdef;
     /* gs_glyph subset_data[256 * 3 + 1]; *3 for seac, +1 for .notdef */
-    gs_glyph subset_data[MAX_CFF_SUBGLYPHS];
+    gs_glyph *subset_data;
     gs_glyph *subset_glyphs;	/* 0 or subset_data */
     uint subset_size;
 } psf_outline_glyphs_t;
@@ -219,7 +221,7 @@ int psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 typedef struct gs_cmap_s gs_cmap_t;
 #endif
 typedef int (*psf_put_name_chars_proc_t)(stream *, const byte *, uint);
-int psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
+int psf_write_cmap(const gs_memory_t *mem, stream *s, const gs_cmap_t *pcmap,
 		   psf_put_name_chars_proc_t put_name_chars,
 		   const gs_const_string *alt_cmap_name, int font_index_only);
 /* ------ Exported by gdevpsft.c ------ */

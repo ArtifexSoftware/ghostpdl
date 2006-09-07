@@ -222,23 +222,23 @@ typedef struct pcl_ht_s         pcl_ht_t;
 /*
  * The usual init, copy,and release macros.
  */
-#define pcl_ht_init_from(mem, pto, pfrom)    \
+#define pcl_ht_init_from(pto, pfrom)    \
     BEGIN                               \
-    rc_increment(mem, pfrom);                \
+    rc_increment(pfrom);                \
     (pto) = (pfrom);                    \
     END
 
-#define pcl_ht_copy_from(mem, pto, pfrom)            \
+#define pcl_ht_copy_from(pto, pfrom)            \
     BEGIN                                       \
     if ((pto) != (pfrom)) {                     \
-        rc_increment(mem, pfrom);                    \
-        rc_decrement(mem, pto, "pcl_ht_copy_from");  \
+        rc_increment(pfrom);                    \
+        rc_decrement(pto, "pcl_ht_copy_from");  \
         (pto) = (pfrom);                        \
     }                                           \
     END
 
-#define pcl_ht_release(mem, pht)             \
-    rc_decrement(mem, pht, "pcl_ht_release")
+#define pcl_ht_release(pht)             \
+    rc_decrement(pht, "pcl_ht_release")
 
 /*
  * The following routine is intended to initialize the forwarding devices used

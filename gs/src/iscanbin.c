@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Ghostscript binary token scanner and writer */
 #include "math_.h"
 #include "memory_.h"
@@ -181,11 +182,11 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 			return scan_Refill;
 		    }
 		    if (p[1] != 0) /* reserved, must be 0 */
-			return_error(imemory, e_syntaxerror);
+			return_error(e_syntaxerror);
 		    top_size = sdecodeushort(p + 2, num_format);
 		    lsize = sdecodelong(p + 4, num_format);
 		    if ((size = lsize) != lsize)
-			return_error(imemory, e_limitcheck);
+			return_error(e_limitcheck);
 		    hsize = 8;
 		} else {
 		    /* Normal header (1-byte array size, 2-byte length). */
@@ -194,7 +195,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 		    hsize = 4;
 		}
 		if (size < hsize)
-		    return_error(imemory, e_syntaxerror);
+		    return_error(e_syntaxerror);
 		/* Preallocate an array large enough for the worst case, */
 		/* namely, all objects and no strings. */
 		code = ialloc_ref_array(&pbs->bin_array,
@@ -228,14 +229,14 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 	case BT_FIXED:
 	    num_format = p[1];
 	    if (!num_is_valid(num_format))
-		return_error(imemory, e_syntaxerror);
+		return_error(e_syntaxerror);
 	    wanted = 1 + encoded_number_bytes(num_format);
 	    if (rcnt < wanted) {
 		s_end_inline(s, p - 1, rlimit);
 		pstate->s_scan_type = scanning_none;
 		return scan_Refill;
 	    }
-	    code = sdecode_number(imemory, p + 2, num_format, pref);
+	    code = sdecode_number(p + 2, num_format, pref);
 	    goto rnum;
 	case BT_INT32_MSB:
 	case BT_INT32_LSB:
@@ -244,7 +245,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 	case BT_FLOAT_IEEE_MSB:
 	case BT_FLOAT_IEEE_LSB:
 	case BT_FLOAT_NATIVE:
-	    code = sdecode_number(imemory, p + 1, num_format, pref);
+	    code = sdecode_number(p + 1, num_format, pref);
 	  rnum:
 	    switch (code) {
 		case t_integer:
@@ -252,7 +253,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 		    r_set_type(pref, code);
 		    break;
 		case t_null:
-		    return_error(imemory, e_syntaxerror);
+		    return_error(e_syntaxerror);
 		default:
 		    return code;
 	    }
@@ -261,7 +262,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 	case BT_BOOLEAN:
 	    arg = p[1];
 	    if (arg & ~1)
-		return_error(imemory, e_syntaxerror);
+		return_error(e_syntaxerror);
 	    make_bool(pref, arg);
 	    s_end_inline(s, p + 1, rlimit);
 	    return 0;
@@ -288,7 +289,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 		byte *str = ialloc_string(arg, "string token");
 
 		if (str == 0)
-		    return_error(imemory, e_VMerror);
+		    return_error(e_VMerror);
 		s_end_inline(s, p, rlimit);
 		pstate->s_da.base = pstate->s_da.next = str;
 		pstate->s_da.limit = str + arg;
@@ -312,7 +313,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 	    if (code < 0)
 		return code;
 	    if (!r_has_type(pref, t_name))
-		return_error(imemory, e_undefined);
+		return_error(e_undefined);
 	    s_end_inline(s, p + 1, rlimit);
 	    return 0;
 	case BT_EXECNAME_USER:
@@ -321,14 +322,14 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 	    if (code < 0)
 		return code;
 	    if (!r_has_type(pref, t_name))
-		return_error(imemory, e_undefined);
+		return_error(e_undefined);
 	    r_set_attrs(pref, a_executable);
 	    s_end_inline(s, p + 1, rlimit);
 	    return 0;
 	case BT_NUM_ARRAY:
 	    num_format = p[1];
 	    if (!num_is_valid(num_format))
-		return_error(imemory, e_syntaxerror);
+		return_error(e_syntaxerror);
 	    arg = sdecodeushort(p + 2, num_format);
 	    code = ialloc_ref_array(&pbs->bin_array, a_all, arg,
 				    "number array token");
@@ -347,7 +348,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 	    }
 	    return code;
     }
-    return_error(imemory, e_syntaxerror);
+    return_error(e_syntaxerror);
 }
 
 /* Get a system or user name. */
@@ -355,7 +356,7 @@ private int
 scan_bin_get_name(const gs_memory_t *mem, const ref *pnames /*t_array*/, int index, ref *pref)
 {
     if (pnames == 0)
-	return_error(mem, e_rangecheck);
+	return_error(e_rangecheck);
     return array_get(mem, pnames, (long)index, pref);
 }
 
@@ -403,7 +404,7 @@ scan_bin_num_array_continue(i_ctx_t *i_ctx_p, stream * s, ref * pref,
 	    pstate->s_scan_type = scanning_binary;
 	    return scan_Refill;
 	}
-	code = sdecode_number(imemory, sbufptr(s), pbs->num_format, np);
+	code = sdecode_number(sbufptr(s), pbs->num_format, np);
 	switch (code) {
 	    case t_integer:
 	    case t_real:
@@ -411,7 +412,7 @@ scan_bin_num_array_continue(i_ctx_t *i_ctx_p, stream * s, ref * pref,
 		sbufskip(s, wanted);
 		break;
 	    case t_null:
-		return_error(imemory, e_syntaxerror);
+		return_error(e_syntaxerror);
 	    default:
 		return code;
 	}
@@ -460,7 +461,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 	    return scan_Refill;
 	}
 	if (p[2] != 0) /* reserved, must be 0 */
-	    return_error(imemory, e_syntaxerror);
+	    return_error(e_syntaxerror);
 	attrs = (p[1] & 128 ? a_executable : 0);
 	switch (p[1] & 0x7f) {
 	    case BS_TYPE_NULL:
@@ -500,7 +501,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		if (value < max_array_index * SIZEOF_BIN_SEQ_OBJ ||
 		    value + osize > size
 		    )
-		    return_error(imemory, e_syntaxerror);
+		    return_error(e_syntaxerror);
 		if (value < min_string_index) {
 		    /* We have to (re)allocate the strings. */
 		    uint str_size = size - value;
@@ -513,7 +514,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 			sbase = ialloc_string(str_size,
 					      "bos strings");
 		    if (sbase == 0)
-			return_error(imemory, e_VMerror);
+			return_error(e_VMerror);
 		    pstate->s_da.is_dynamic = true;
 		    pstate->s_da.base = pstate->s_da.next = sbase;
 		    pstate->s_da.limit = sbase + str_size;
@@ -531,6 +532,8 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		value = sdecodelong(p + 5, num_format);
 		switch (osize) {
 		    case 0:
+			if (user_names_p == NULL)
+			    return_error(e_undefined);
 			code = array_get(imemory, user_names_p, value, op);
 			goto usn;
 		    case 0xffff:
@@ -539,7 +542,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 			if (code < 0)
 			    return code;
 			if (!r_has_type(op, t_name))
-			    return_error(imemory, e_undefined);
+			    return_error(e_undefined);
 			r_set_attrs(op, attrs);
 			break;
 		    default:
@@ -554,7 +557,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		if (value + osize > min_string_index ||
 		    value & (SIZEOF_BIN_SEQ_OBJ - 1)
 		    )
-		    return_error(imemory, e_syntaxerror);
+		    return_error(e_syntaxerror);
 		{
 		    uint aindex = value / SIZEOF_BIN_SEQ_OBJ;
 
@@ -568,14 +571,14 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 	    case BS_TYPE_DICTIONARY:	/* EXTENSION */
 		osize = sdecodeushort(p + 3, num_format);
 		if ((osize & 1) != 0 && osize != 1)
-		    return_error(imemory, e_syntaxerror);
+		    return_error(e_syntaxerror);
 		atype = t_mixedarray;	/* mark as dictionary */
 		goto arr;
 	    case BS_TYPE_MARK:
 		make_mark(op);
 		break;
 	    default:
-		return_error(imemory, e_syntaxerror);
+		return_error(e_syntaxerror);
 	}
     }
     s_end_inline(s, p, rlimit);
@@ -658,7 +661,7 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		    ref *defp = dict_find_name(op);
 
 		    if (defp == 0)
-			return_error(imemory, e_undefined);
+			return_error(e_undefined);
 		    store_check_space(space, defp);
 		    ref_assign(op, defp);
 		}
@@ -720,7 +723,7 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		ref rdict;
 
 		if (r_has_type(piref, t_mixedarray))	/* ref to indirect */
-		    return_error(imemory, e_syntaxerror);
+		    return_error(e_syntaxerror);
 		ref_assign(&rdict, piref);
 		r_copy_attrs(&rdict, a_executable, op);
 		ref_assign(op, &rdict);
@@ -758,7 +761,7 @@ encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, long *ref_offset,
 	    type = BS_TYPE_REAL;
 	    if (sizeof(obj->value.realval) != sizeof(int)) {
 		/* The PLRM allocates exactly 4 bytes for reals. */
-		return_error(imemory, e_rangecheck);
+		return_error(e_rangecheck);
 	    }
 	    value = *(const int *)&obj->value.realval;
 #if !(ARCH_FLOATS_ARE_IEEE && BYTE_SWAP_IEEE_NATIVE_REALS)
@@ -796,7 +799,7 @@ nos:
 	    obj = &nstr;
 	    goto nos;
 	default:
-	    return_error(imemory, e_rangecheck);
+	    return_error(e_rangecheck);
     }
     {
 	byte s0 = (byte) size, s1 = (byte) (size >> 8);

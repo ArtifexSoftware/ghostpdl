@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Level 2 / Display PostScript graphics extensions */
 #include "ghost.h"
 #include "oper.h"
@@ -27,6 +28,9 @@
 
 /* Forward references */
 private int gstate_unshare(i_ctx_t *);
+
+/* Declare exported procedures (for zupath.c) */
+int zsetbbox(i_ctx_t *);
 
 /* Structure descriptors */
 public_st_igstate_obj();
@@ -55,7 +59,7 @@ zsetstrokeadjust(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(imemory, *op, t_boolean);
+    check_type(*op, t_boolean);
     gs_setstrokeadjust(igs, op->value.boolval);
     pop(1);
     return 0;
@@ -67,7 +71,7 @@ zcurrentstrokeadjust(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_bool(op, gs_currentstrokeadjust(igs));
     return 0;
 }
@@ -93,7 +97,7 @@ gstate_check_space(i_ctx_t *i_ctx_p, int_gstate *isp, uint space)
      */
 #if 1				/* ****** WORKAROUND ****** */
     if (space != avm_local && imemory_save_level(iimemory) > 0)
-	return_error(imemory, e_invalidaccess);
+	return_error(e_invalidaccess);
 #endif				/* ****** END ****** */
 #define gsref_check(p) store_check_space(space, p)
     int_gstate_map_refs(isp, gsref_check);
@@ -116,15 +120,15 @@ zgstate(i_ctx_t *i_ctx_p)
 	return code;
     pigo = ialloc_struct(igstate_obj, &st_igstate_obj, "gstate");
     if (pigo == 0)
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     pnew = gs_state_copy(igs, imemory);
     if (pnew == 0) {
 	ifree_object(pigo, "gstate");
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     }
     isp = gs_int_gstate(pnew);
     int_gstate_map_refs(isp, ref_mark_new);
-    push(imemory, 1);
+    push(1);
     /*
      * Since igstate_obj isn't a ref, but only contains a ref, save won't
      * clear its l_new bit automatically, and restore won't set it
@@ -149,9 +153,9 @@ zcopy_gstate(i_ctx_t *i_ctx_p)
     gs_memory_t *mem;
     int code;
 
-    check_stype(imemory, *op, st_igstate_obj);
-    check_stype(imemory, *op1, st_igstate_obj);
-    check_write(imemory, *op);
+    check_stype(*op, st_igstate_obj);
+    check_stype(*op1, st_igstate_obj);
+    check_write(*op);
     code = gstate_unshare(i_ctx_p);
     if (code < 0)
 	return code;
@@ -185,8 +189,8 @@ zcurrentgstate(i_ctx_t *i_ctx_p)
     int code;
     gs_memory_t *mem;
 
-    check_stype(imemory, *op, st_igstate_obj);
-    check_write(imemory, *op);
+    check_stype(*op, st_igstate_obj);
+    check_write(*op);
     code = gstate_unshare(i_ctx_p);
     if (code < 0)
 	return code;
@@ -214,8 +218,8 @@ zsetgstate(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_stype(imemory, *op, st_igstate_obj);
-    check_read(imemory, *op);
+    check_stype(*op, st_igstate_obj);
+    check_read(*op);
     code = gs_setgstate(igs, igstate_ptr(op));
     if (code < 0)
 	return code;
@@ -348,17 +352,17 @@ rect_get(local_rects_t * plr, os_ptr op, gs_memory_t *mem)
 	case t_mixedarray:
 	case t_shortarray:
 	case t_string:
-	    code = num_array_format(mem, op);
+	    code = num_array_format(op);
 	    if (code < 0)
 		return code;
 	    format = code;
 	    count = num_array_size(op, format);
 	    if (count % 4)
-		return_error(mem, e_rangecheck);
+		return_error(e_typecheck);
 	    count /= 4;
 	    break;
 	default:		/* better be 4 numbers */
-	    code = num_params(mem, op, 4, rv);
+	    code = num_params(op, 4, rv);
 	    if (code < 0)
 		return code;
 	    plr->pr = plr->rl;
@@ -374,7 +378,7 @@ rect_get(local_rects_t * plr, os_ptr op, gs_memory_t *mem)
 	pr = (gs_rect *)gs_alloc_byte_array(mem, count, sizeof(gs_rect),
 					    "rect_get");
 	if (pr == 0)
-	    return_error(mem, e_VMerror);
+	    return_error(e_VMerror);
     }
     plr->pr = pr;
     for (n = 0; n < count; n++, pr++) {
@@ -418,7 +422,7 @@ zsetbbox(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     double box[4];
 
-    int code = num_params(imemory, op, 4, box);
+    int code = num_params(op, 4, box);
 
     if (code < 0)
 	return code;
@@ -469,7 +473,7 @@ gstate_unshare(i_ctx_t *i_ctx_p)
     /* Copy the gstate. */
     pnew = gs_gstate(pgs);
     if (pnew == 0)
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     isp = gs_int_gstate(pnew);
     int_gstate_map_refs(isp, ref_mark_new);
     ref_do_save(op, pgsref, "gstate_unshare");

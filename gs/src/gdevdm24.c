@@ -1,25 +1,24 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-#include "gdevprn.h"
-
-
-/*$RCSfile$ $Revision$*/
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$*/
 /* High-res 24Dot-matrix printer driver */
 
 /* Supported printers 
  *  NEC P6 and similar, implemented by Andreas Schwab (schwab@ls5.informatik.uni-dortmund.de)
  *  Epson LQ850, implemented by Christian Felsch (felsch@tu-harburg.d400.de)
  */
+
+#include "gdevprn.h"
 
 /* Driver for NEC P6 */
 private dev_proc_print_page (necp6_print_page);
@@ -58,9 +57,9 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
   int bits_per_column = (y_high ? 48 : 24);
   uint line_size = gdev_prn_raster (pdev);
   uint in_size = line_size * bits_per_column;
-  byte *in = (byte *) gs_malloc (in_size, 1, "dot24_print_page (in)");
+  byte *in = (byte *) gs_malloc (pdev->memory, in_size, 1, "dot24_print_page (in)");
   uint out_size = ((pdev->width + 7) & -8) * 3;
-  byte *out = (byte *) gs_malloc (out_size, 1, "dot24_print_page (out)");
+  byte *out = (byte *) gs_malloc (pdev->memory, out_size, 1, "dot24_print_page (out)");
   int y_passes = (y_high ? 2 : 1);
   int dots_per_space = xres / 10;	/* pica space = 1/10" */
   int bytes_per_space = dots_per_space * 3;
@@ -70,9 +69,9 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
   if (in == 0 || out == 0)
     {
       if (out)
-	gs_free ((char *) out, out_size, 1, "dot24_print_page (out)");
+	gs_free (pdev->memory, (char *) out, out_size, 1, "dot24_print_page (out)");
       if (in)
-	gs_free ((char *) in, in_size, 1, "dot24_print_page (in)");
+	gs_free (pdev->memory, (char *) in, in_size, 1, "dot24_print_page (in)");
       return_error (gs_error_VMerror);
     }
 
@@ -223,8 +222,8 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
   fputs ("\f\033@", prn_stream);
   fflush (prn_stream);
 
-  gs_free ((char *) out, out_size, 1, "dot24_print_page (out)");
-  gs_free ((char *) in, in_size, 1, "dot24_print_page (in)");
+  gs_free (pdev->memory, (char *) out, out_size, 1, "dot24_print_page (out)");
+  gs_free (pdev->memory, (char *) in, in_size, 1, "dot24_print_page (in)");
 
   return 0;
 }

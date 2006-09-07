@@ -1,19 +1,14 @@
-/* Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
-  This file is part of AFPL Ghostscript.
-  
-  AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
-  distributor accepts any responsibility for the consequences of using it, or
-  for whether it serves any particular purpose or works at all, unless he or
-  she says so in writing.  Refer to the Aladdin Free Public License (the
-  "License") for full details.
-  
-  Every copy of AFPL Ghostscript must include a copy of the License, normally
-  in a plain ASCII text file named PUBLIC.  The License grants you the right
-  to copy, modify and redistribute AFPL Ghostscript, but only under certain
-  conditions described in the License.  Among other things, the License
-  requires that the copyright notice and this notice be preserved on all
-  copies.
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
 /* $Id$ */
@@ -235,10 +230,10 @@ gx_overprint_generic_fill_rectangle(
     /* allocate space for a scanline of color indices */
     pcolor_buff = (gx_color_index *)
                       gs_alloc_bytes( mem,
-                                      w * sizeof(gx_color_index),
+                                      w *  arch_sizeof_color_index,
                                       "overprint generic fill rectangle" );
     if (pcolor_buff == 0)
-        return gs_note_error(mem, gs_error_VMerror);
+        return gs_note_error(gs_error_VMerror);
 
     /* allocate a buffer for the returned data */
     raster = bitmap_raster(end_x - start_x);
@@ -247,7 +242,7 @@ gx_overprint_generic_fill_rectangle(
         gs_free_object( mem,
                         pcolor_buff,
                         "overprint generic fill rectangle" );
-        return gs_note_error(mem, gs_error_VMerror);
+        return gs_note_error(gs_error_VMerror);
     }
 
     /*
@@ -477,7 +472,7 @@ gx_overprint_sep_fill_rectangle_1(
     raster = bitmap_raster(w * depth);
     gb_buff = gs_alloc_bytes(mem, raster, "overprint sep fill rectangle 1");
     if (gb_buff == 0)
-        return gs_note_error(mem, gs_error_VMerror);
+        return gs_note_error(gs_error_VMerror);
 
     /*
      * Initialize the get_bits parameters. The selection of options is
@@ -557,15 +552,15 @@ gx_overprint_sep_fill_rectangle_2(
     pcolor = (byte *)&color;
     pmask = (byte *)&retain_mask;
 #if arch_is_big_endian
-    pcolor += sizeof(gx_color_index) - byte_depth;
-    pmask += sizeof(gx_color_index) - byte_depth;
+    pcolor += arch_sizeof_color_index - byte_depth;
+    pmask += arch_sizeof_color_index - byte_depth;
 #endif
 
     /* allocate a buffer for the returned data */
     raster = bitmap_raster(w * (byte_depth << 3));
     gb_buff = gs_alloc_bytes(mem, raster, "overprint sep fill rectangle 2");
     if (gb_buff == 0)
-        return gs_note_error(mem, gs_error_VMerror);
+        return gs_note_error(gs_error_VMerror);
 
     /*
      * Initialize the get_bits parameters. The selection of options is

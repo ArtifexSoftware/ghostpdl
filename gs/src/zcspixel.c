@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* DevicePixel color space support */
 #include "ghost.h"
 #include "oper.h"
@@ -30,11 +31,11 @@ zsetdevicepixelspace(i_ctx_t *i_ctx_p)
     gs_color_space cs;
     int code;
 
-    check_read_type(imemory, *op, t_array);
+    check_read_type(*op, t_array);
     if (r_size(op) != 2)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     array_get(imemory, op, 1L, &depth);
-    check_type_only(imemory, depth, t_integer);
+    check_type_only(depth, t_integer);
     code = gs_cspace_init_DevicePixel(imemory, &cs, (int)depth.value.intval);
     if (code < 0)
 	return code;

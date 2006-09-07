@@ -1,17 +1,22 @@
-/* Copyright (C) 2003 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* jbig2decode filter implementation -- hooks in libjbig2dec */
 
 #include "stdint_.h"
 #include "memory_.h"
-#include "stdio_.h" /* for debug printouts */
+#include "stdio_.h" /* sprintf() for debug output */
 
 #include "gserrors.h"
 #include "gserror.h"
@@ -37,34 +42,37 @@ private int
 s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity severity,
 	       int32_t seg_idx)
 {
+    stream_jbig2decode_state *const state = 
+	(stream_jbig2decode_state *) error_callback_data;
     const char *type;
     char segment[22];
-    
+    int code = 0;
+
     switch (severity) {
-#ifdef DEBUG   /* verbose reporting when debugging */
         case JBIG2_SEVERITY_DEBUG:
             type = "DEBUG"; break;;
         case JBIG2_SEVERITY_INFO:
             type = "info"; break;;
         case JBIG2_SEVERITY_WARNING:
             type = "WARNING"; break;;
-#else  /* suppress most messages in normal operation */
-        case JBIG2_SEVERITY_DEBUG:
-        case JBIG2_SEVERITY_INFO:
-        case JBIG2_SEVERITY_WARNING:
-            return 0;
-            break;;
-#endif /* DEBUG */
         case JBIG2_SEVERITY_FATAL:
-            type = "FATAL ERROR decoding image:"; break;;
+            type = "FATAL ERROR decoding image:";
+            /* pass the fatal error upstream if possible */
+	    code = gs_error_ioerror;
+	    if (state != NULL) state->error = code; 
+	    break;;
         default: type = "unknown message:"; break;;
     }
     if (seg_idx == -1) segment[0] = '\0';
     else sprintf(segment, "(segment 0x%02x)", seg_idx);
-    
-    dlprintf3("jbig2dec %s %s %s\n", type, msg, segment);
 
-    return 0;
+    if (severity == JBIG2_SEVERITY_FATAL) {
+	dlprintf3("jbig2dec %s %s %s\n", type, msg, segment);
+    } else {
+	if_debug3('w', "[w] jbig2dec %s %s %s\n", type, msg, segment);
+    }
+
+    return code;
 }
 
 /* invert the bits in a buffer */
@@ -82,14 +90,15 @@ s_jbig2decode_invert_buffer(unsigned char *buf, int length)
 /* parse a globals stream packed into a gs_bytestring for us by the postscript
    layer and stuff the resulting context into a pointer for use in later decoding */
 public int
-s_jbig2decode_make_global_ctx(byte *data, uint length, Jbig2GlobalCtx **global_ctx)
+s_jbig2decode_make_global_data(byte *data, uint length, void **result)
 {
     Jbig2Ctx *ctx = NULL;
+    int code;
     
     /* the cvision encoder likes to include empty global streams */
     if (length == 0) {
-        if_debug0('s', "[s] ignoring zero-length jbig2 global stream.\n");
-    	*global_ctx = NULL;
+        if_debug0('w', "[w] ignoring zero-length jbig2 global stream.\n");
+    	*result = NULL;
     	return 0;
     }
     
@@ -98,20 +107,35 @@ s_jbig2decode_make_global_ctx(byte *data, uint length, Jbig2GlobalCtx **global_c
                             s_jbig2decode_error, NULL);
     
     /* parse the global bitstream */
-    jbig2_data_in(ctx, data, length);
+    code = jbig2_data_in(ctx, data, length);
     
+    if (code) {
+	/* error parsing the global stream */
+	*result = NULL;
+	return code;
+    }
+
     /* canonize and store our global state */
-    *global_ctx = jbig2_make_global_ctx(ctx);
+    *result = jbig2_make_global_ctx(ctx);
     
-    return 0; /* todo: check for failure */
+    return 0; /* todo: check for allocation failure */
+}
+
+/* release a global ctx pointer */
+public void
+s_jbig2decode_free_global_data(void *data)
+{
+    Jbig2GlobalCtx *global_ctx = (Jbig2GlobalCtx*)data;
+
+    jbig2_global_ctx_free(global_ctx);
 }
 
 /* store a global ctx pointer in our state structure */
 public int
-s_jbig2decode_set_global_ctx(stream_state *ss, Jbig2GlobalCtx *global_ctx)
+s_jbig2decode_set_global_data(stream_state *ss, void *data)
 {
     stream_jbig2decode_state *state = (stream_jbig2decode_state*)ss;
-    state->global_ctx = global_ctx;
+    state->global_ctx = (Jbig2GlobalCtx*)data;
     return 0;
 }
 
@@ -129,7 +153,7 @@ s_jbig2decode_init(stream_state * ss)
     state->decode_ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED,
                 global_ctx, s_jbig2decode_error, ss);
     state->image = 0;
-    
+    state->error = 0;
     return 0; /* todo: check for allocation failure */
 }
 
@@ -137,7 +161,7 @@ s_jbig2decode_init(stream_state * ss)
    see strimpl.h for return codes.
  */
 private int
-s_jbig2decode_process(gs_memory_t *mem, stream_state * ss, stream_cursor_read * pr,
+s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
 		  stream_cursor_write * pw, bool last)
 {
     stream_jbig2decode_state *const state = (stream_jbig2decode_state *) ss;
@@ -158,6 +182,8 @@ s_jbig2decode_process(gs_memory_t *mem, stream_state * ss, stream_cursor_read * 
         if (last == 1) {
             jbig2_complete_page(state->decode_ctx);
         }
+	/* handle fatal decoding errors reported through our callback */
+	if (state->error) return state->error;
     }
     if (out_size > 0) {
         if (image == NULL) {
@@ -209,9 +235,11 @@ s_jbig2decode_set_defaults(stream_state *ss)
     stream_jbig2decode_state *const state = (stream_jbig2decode_state *) ss;
     
     /* state->global_ctx is not owned by us */
+    state->global_ctx = NULL;
     state->decode_ctx = NULL;
     state->image = NULL;
     state->offset = 0;
+    state->error = 0;
 }
 
 

@@ -1,10 +1,15 @@
-/* Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Create a CIDFontType 2 font from a Type 42 font. */
@@ -27,7 +32,7 @@ identity_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
     ulong cid = glyph - gs_min_cid_glyph;
 
     if (cid >= pfont->cidata.common.CIDCount)
-	return_error(pfont->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     return (int)cid;
 }
 int
@@ -39,7 +44,7 @@ gs_font_cid2_from_type42(gs_font_cid2 **ppfcid, gs_font_type42 *pfont42,
 			"gs_font_cid2_from_type42");
 
     if (pfcid == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
 
     /* CIDFontType 2 is a subclass (extension) of FontType 42. */
     memcpy(pfcid, pfont42, sizeof(*pfont42));
@@ -89,11 +94,10 @@ gs_private_st_suffix_add1(st_cmap_tt_16bit_format4, gs_cmap_tt_16bit_format4_t,
   st_cmap, font);
 
 private int
-tt_16bit_format4_decode_next(const gs_memory_t *mem,
-			     const gs_cmap_t * pcmap_in,
-			     const gs_const_string * pstr,
-			     uint * pindex, uint * pfidx,
-			     gs_char * pchr, gs_glyph * pglyph)
+tt_16bit_format4_decode_next(const gs_cmap_t * pcmap_in,
+		       const gs_const_string * pstr,
+		       uint * pindex, uint * pfidx,
+		       gs_char * pchr, gs_glyph * pglyph)
 {
     const gs_cmap_tt_16bit_format4_t *pcmap =
 	(const gs_cmap_tt_16bit_format4_t *)pcmap_in;
@@ -164,7 +168,7 @@ tt_16bit_format4_enum_ranges(const gs_cmap_t *pcmap,
     gs_cmap_ranges_enum_setup(pre, pcmap, &tt_16bit_format4_range_procs);
 }
 private int
-tt_16bit_format4_next_lookup(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum)
+tt_16bit_format4_next_lookup(gs_cmap_lookups_enum_t *penum)
 {
     if (penum->index[0] == 0) {
 	penum->entry.key_size = 2;
@@ -178,7 +182,7 @@ tt_16bit_format4_next_lookup(const gs_memory_t *mem, gs_cmap_lookups_enum_t *pen
     return 1;
 }
 private int
-tt_16bit_format4_next_entry(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum)
+tt_16bit_format4_next_entry(gs_cmap_lookups_enum_t *penum)
 {
     /* index[1] is segment # << 17 + first code. */
     uint segment2 = penum->index[1] >> 16;
@@ -264,7 +268,7 @@ gs_cmap_from_type42_cmap(gs_cmap_t **ppcmap, gs_font_type42 *pfont,
     uint segCount2;
 
     if (origin == 0)
-	return_error(mem, gs_error_invalidfont);
+	return_error(gs_error_invalidfont);
 
     /*
      * Find the desired cmap sub-table, if any.
@@ -288,7 +292,7 @@ gs_cmap_from_type42_cmap(gs_cmap_t **ppcmap, gs_font_type42 *pfont,
 	    break;
 	}
 	if (i >= cmap_count)	/* not found */
-	    return_error(mem, gs_error_invalidfont);
+	    return_error(gs_error_invalidfont);
 	ACCESS(offset + 6, 2, ttdata);
 	segCount2 = U16(ttdata);
     }

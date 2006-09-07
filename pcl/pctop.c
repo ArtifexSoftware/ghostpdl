@@ -498,7 +498,7 @@ pcl_impl_report_errors(
 	uint count;
 
 	while ( (count = pcl_status_read(buf, sizeof(buf), &pcli->pcs)) != 0 )
-	  errwrite(pcli->memory, buf, count);
+	  errwrite(buf, count);
 
 	return 0;
 }
@@ -525,19 +525,17 @@ pcl_impl_remove_device(
 	/* return to the original graphic state w/color mapper, bbox, target */
 	code = pcl_grestore(&pcli->pcs);
 	if (code < 0 )
-	    dprintf1(pcli->memory, 
-		     "error code %d restoring gstate, continuing\n", code );
+	    dprintf1("error code %d restoring gstate, continuing\n", code );
 	/* return to original gstate w/bbox, target */
 	code = gs_grestore_only(pcli->pcs.pgs);	/* destroys gs_save stack */
 	if (code < 0 )
-	    dprintf1(pcli->memory, 
-		     "error code %d destroying gstate, continuing\n", code );
+	    dprintf1("error code %d destroying gstate, continuing\n", code );
 
 	/* Deselect bbox. Bbox has been prevented from auto-closing/deleting */
 	code = gs_nulldevice(pcli->pcs.pgs);
 	if ( code < 0 )
-	    dprintf1(pcli->memory, 
-		     "error code %d installing nulldevice, continuing\n", code );
+	    dprintf1("error code %d installing nulldevice, continuing\n", code );
+	//return pcl_do_resets(&pcli->pcs, pcl_reset_printer);
 	return pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
 }
 
@@ -551,7 +549,7 @@ pcl_impl_deallocate_interp_instance(
 	gs_memory_t *mem = pcli->memory;
         /* free memory used by the parsers */
         if ( pcl_parser_shutdown(&pcli->pst, mem ) < 0 ) {
-            dprintf(mem, "Undefined error shutting down parser, continuing\n" );
+            dprintf("Undefined error shutting down parser, continuing\n" );
         }
         /* this should have a shutdown procedure like pcl above */
         gs_free_object(mem, 
@@ -563,7 +561,7 @@ pcl_impl_deallocate_interp_instance(
 
 	/* free halftone cache in gs state */
         // NB	gs_free_ht_cache(mem, pcli->pcs.pgs);
-        gs_state_free_view_clip(pcli->pcs.pgs);
+        // NB might not be needed in 8.53 // gs_state_free_view_clip(pcli->pcs.pgs);
 	gs_state_free(pcli->pcs.pgs);
 	/* remove pcl's gsave grestore stack */
 	pcl_free_gstate_stk(&pcli->pcs);

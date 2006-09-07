@@ -167,40 +167,38 @@ typedef struct {
 } pcl_grouped_command_definition_t;
 
 /* Register (a) command definition(s). */
-void pcl_define_control_command(const gs_memory_t *mem, int/*char*/,
-                                 const pcl_command_definition_t *, pcl_parser_state_t *);
-#define DEFINE_CONTROL(mem, chr, cname, proc)\
+void pcl_define_control_command(int/*char*/,
+                                const pcl_command_definition_t *, pcl_parser_state_t *);
+#define DEFINE_CONTROL(chr, cname, proc)\
 { static const pcl_command_definition_t defn_ = PCL_COMMAND(cname, proc, 0);\
-  pcl_define_control_command(mem, chr, &defn_, pcl_parser_state);\
+  pcl_define_control_command(chr, &defn_, pcl_parser_state);\
 }
-void pcl_define_escape_command(const gs_memory_t *mem, int/*char*/,
+void pcl_define_escape_command(int/*char*/,
                                const pcl_command_definition_t *, pcl_parser_state_t *);
-#define DEFINE_ESCAPE_ARGS(mem, chr, cname, proc, acts)\
+#define DEFINE_ESCAPE_ARGS(chr, cname, proc, acts)\
 { static const pcl_command_definition_t defn_ = PCL_COMMAND(cname, proc, acts);\
-  pcl_define_escape_command(mem, chr, &defn_, pcl_parser_state);\
+  pcl_define_escape_command(chr, &defn_, pcl_parser_state);\
 }
-#define DEFINE_ESCAPE(mem, chr, cname, proc)\
-  DEFINE_ESCAPE_ARGS(mem, chr, cname, proc, 0)
-void pcl_define_class_command(const gs_memory_t *mem, 
-			      int/*char*/, int/*char*/, int/*char*/,
+#define DEFINE_ESCAPE(chr, cname, proc)\
+  DEFINE_ESCAPE_ARGS(chr, cname, proc, 0)
+void pcl_define_class_command(int/*char*/, int/*char*/, int/*char*/,
                               const pcl_command_definition_t *, pcl_parser_state_t *);
-#define DEFINE_CLASS_COMMAND_ARGS(mem, cls, group, chr, cname, proc, acts)\
+#define DEFINE_CLASS_COMMAND_ARGS(cls, group, chr, cname, proc, acts)\
 { static const pcl_command_definition_t defn_ = PCL_COMMAND(cname, proc, acts);\
-  pcl_define_class_command(mem, cls, group, chr, &defn_, pcl_parser_state);\
+  pcl_define_class_command(cls, group, chr, &defn_, pcl_parser_state);\
 }
 #define DEFINE_CLASS_COMMAND(cls, group, chr, cname, proc)\
   DEFINE_CLASS_COMMAND_ARGS(cls, group, chr, cname, proc, 0)
-void pcl_define_class_commands(const gs_memory_t *mem, int/*char*/,
+void pcl_define_class_commands(int/*char*/,
                                const pcl_grouped_command_definition_t *,
                                pcl_parser_state_t *);
-#define DEFINE_CLASS(mem, cls)\
+#define DEFINE_CLASS(cls)\
 { const byte class_ = cls;\
-  const gs_memory_t *mem_ = mem;\
   static const pcl_grouped_command_definition_t defs_[] = {
 #define END_CLASS\
     {0, 0}\
   };\
-  pcl_define_class_commands(mem_, class_, defs_, pcl_parser_state);\
+  pcl_define_class_commands(class_, defs_, pcl_parser_state);\
 }
 
 /*

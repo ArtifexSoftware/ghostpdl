@@ -135,8 +135,7 @@ typedef struct pcl_xfm_state_s {
  * Convert a point from "semi print direction" space to logical page space.
  */
 #define pcl_xfm_to_logical_page_space(pcs, ppt)    \
-    gs_point_transform( pcs->memory,                    \
-			(ppt)->x,                       \
+    gs_point_transform(	(ppt)->x,                       \
                         (ppt)->y,                       \
                         &((pcs)->xfm_state.pd2lp_mtx),  \
                         ppt                             \

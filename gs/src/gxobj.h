@@ -1,22 +1,29 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Memory manager implementation structures for Ghostscript */
 
 #ifndef gxobj_INCLUDED
 #  define gxobj_INCLUDED
 
 #include "gxbitmap.h"
+
+#ifdef DEBUG
+#define IGC_PTR_STABILITY_CHECK 0
+#else
+#define IGC_PTR_STABILITY_CHECK 0
+#endif
 
 /* ================ Objects ================ */
 
@@ -87,6 +94,9 @@ typedef struct obj_header_data_s {
 	gs_memory_type_ptr_t type;
 	uint reloc;
     } t;
+#   if IGC_PTR_STABILITY_CHECK
+    unsigned space_id:3; /* r_space_bits + 1 bit for "instability". */
+#   endif
 } obj_header_data_t;
 
 /*
@@ -97,10 +107,10 @@ typedef struct obj_header_data_s {
  *
  * Note: OBJECTS ARE NOT GUARANTEED to be aligned any more strictly than
  * required by the hardware, regardless of the value of obj_align_mod.
- * See gsmemory.h for more information about this.
+ * See gsmemraw.h for more information about this.
  */
 #define obj_align_mod\
-  (((arch_align_memory_mod - 1) |\
+  (((ARCH_ALIGN_MEMORY_MOD - 1) |\
     (align_bitmap_mod - 1) |\
     (obj_back_scale - 1)) + 1)
 /* The only possible values for obj_align_mod are 4, 8, or 16.... */

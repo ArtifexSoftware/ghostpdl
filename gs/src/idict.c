@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Dictionary implementation */
 #include "math_.h"		/* for frexp */
 #include "string_.h"		/* for strlen */
@@ -51,9 +52,6 @@
  */
 const uint dict_max_size = max_array_size - 1;
 
-/* Define whether dictionaries expand automatically when full. */
-bool dict_auto_expand = false;
-
 /* Define whether dictionaries are packed by default. */
 bool dict_default_pack = true;
 
@@ -77,9 +75,9 @@ struct stats_dict_s {
 } stats_dict;
 
 /* Wrapper for dict_find */
-int real_dict_find(const ref *pdref, const ref *key, ref **ppvalue);
+int real_dict_find(const ref * pdref, const ref * key, ref ** ppvalue);
 int
-dict_find(const ref *pdref, const ref *pkey, ref **ppvalue)
+dict_find(const ref * pdref, const ref * pkey, ref ** ppvalue)
 {
     dict *pdict = pdref->value.pdict;
     int code = real_dict_find(pdref, pkey, ppvalue);
@@ -101,7 +99,7 @@ dict_find(const ref *pdref, const ref *pkey, ref **ppvalue)
     }
     /* Do the cheap flag test before the expensive remainder test. */
     if (gs_debug_c('d') && !(stats_dict.lookups % 1000))
-	dlprintf3(dict_mem(pdict), "[d]lookups=%ld probe1=%ld probe2=%ld\n",
+	dlprintf3("[d]lookups=%ld probe1=%ld probe2=%ld\n",
 		  stats_dict.lookups, stats_dict.probe1, stats_dict.probe2);
     return code;
 }
@@ -187,7 +185,7 @@ dict_create_contents(uint size, const ref * pdref, bool pack)
     register uint i;
 
     if (asize == 0 || asize > max_array_size - 1)	/* too large */
-	return_error((const gs_memory_t *)mem, e_limitcheck);
+	return_error(e_limitcheck);
     asize++;			/* allow room for wraparound entry */
     code = gs_alloc_ref_array(mem, &pdict->values, a_all, asize,
 			      "dict_create_contents(values)");
@@ -265,9 +263,7 @@ dict_unpack(ref * pdref, dict_stack_t *pds)
 /*
  * Look up a key in a dictionary.  Store a pointer to the value slot
  * where found, or to the (value) slot for inserting.
- * Return 1 if found, 0 if not and there is room for a new entry,
- * or e_dictfull if the dictionary is full and the key is missing.
- * The caller is responsible for ensuring key is not a null.
+ * See idict.h for the possible return values.
  */
 int
 dict_find(const ref * pdref, const ref * pkey,
@@ -298,7 +294,7 @@ dict_find(const ref * pdref, const ref * pkey,
 	    int code;
 
 	    if (!r_has_attr(pkey, a_read))
-		return_error(mem, e_invalidaccess);
+		return_error(e_invalidaccess);
 	    code = name_ref(mem, pkey->value.bytes, r_size(pkey), &nref, 1);
 	    if (code < 0)
 		return code;
@@ -332,7 +328,7 @@ dict_find(const ref * pdref, const ref * pkey,
 	nidx = 0;		/* only to pacify gcc */
 	break;
     case t_null:		/* not allowed as a key */
-	return_error(mem, e_typecheck);
+	return_error(e_typecheck);
     default:
 	hash = r_btype(pkey) * 99;	/* yech */
 	kpack = packed_key_impossible;
@@ -343,12 +339,10 @@ dict_find(const ref * pdref, const ref * pkey,
     if (dict_is_packed(pdict)) {
 	const ref_packed *pslot = 0;
 
-	packed_search_1(mem, 
-			*ppvalue = packed_search_value_pointer,
+	packed_search_1(*ppvalue = packed_search_value_pointer,
 			return 1,
 			if (pslot == 0) pslot = kp, goto miss);
-	packed_search_2(mem, 
-			*ppvalue = packed_search_value_pointer,
+	packed_search_2(*ppvalue = packed_search_value_pointer,
 			return 1,
 			if (pslot == 0) pslot = kp, goto miss);
 	/*
@@ -357,12 +351,12 @@ dict_find(const ref * pdref, const ref * pkey,
 	 * we must return dictfull if length = maxlength.
 	 */
 	if (pslot == 0 || d_length(pdict) == d_maxlength(pdict))
-	    return_error(mem, e_dictfull);
+	    return_error(e_dictfull);
 	*ppvalue = pdict->values.value.refs + (pslot - kbot);
 	return 0;
       miss:			/* Key is missing, not double wrap.  See above re dictfull. */
 	if (d_length(pdict) == d_maxlength(pdict))
-	    return_error(mem, e_dictfull);
+	    return_error(e_dictfull);
 	if (pslot == 0)
 	    pslot = kp;
 	*ppvalue = pdict->values.value.refs + (pslot - kbot);
@@ -385,7 +379,7 @@ dict_find(const ref * pdref, const ref * pkey,
 		if (kp == kbot) {	/* wrap */
 		    if (wrap++) {	/* wrapped twice */
 			if (pslot == 0)
-			    return_error(mem, e_dictfull);
+			    return_error(e_dictfull);
 			break;
 		    }
 		    kp += size + 1;
@@ -395,14 +389,14 @@ dict_find(const ref * pdref, const ref * pkey,
 		} else		/* key not found */
 		    break;
 	    } else {
-		if (obj_eq(mem, kp, pkey)) {
+	        if (obj_eq(mem, kp, pkey)) {
 		    *ppvalue = pdict->values.value.refs + (kp - kbot);
 		    return 1;
 		}
 	    }
 	}
 	if (d_length(pdict) == d_maxlength(pdict))
-	    return_error(mem, e_dictfull);
+	    return_error(e_dictfull);
 	*ppvalue = pdict->values.value.refs +
 	    ((pslot != 0 ? pslot : kp) - kbot);
 	return 0;
@@ -418,26 +412,17 @@ dict_find_string(const ref * pdref, const char *kstr, ref ** ppvalue)
 {
     int code;
     ref kname;
-    dict *pdict = pdref->value.pdict;
+    if ( pdref != 0 ) {
+	dict *pdict = pdref->value.pdict;
 
-    if ((code = name_ref(dict_mem(pdict), 
-			 (const byte *)kstr, strlen(kstr), &kname, -1)) < 0)
-	return code;
-    return dict_find(pdref, &kname, ppvalue);
+	if ((code = name_ref(dict_mem(pdict), 
+			     (const byte *)kstr, strlen(kstr), &kname, -1)) < 0)
+	    return code;
+	return dict_find(pdref, &kname, ppvalue);
+    }
+    return 0;
 }
 
-int
-dict_find_string_mem(const gs_memory_t *mem,
-		 const ref * pdref, const char *kstr, ref ** ppvalue)
-{
-    int code;
-    ref kname;
-
-    if ((code = name_ref(mem, 
-			 (const byte *)kstr, strlen(kstr), &kname, -1)) < 0)
-	return code;
-    return dict_find(pdref, &kname, ppvalue);
-}
 /*
  * Enter a key-value pair in a dictionary.
  * See idict.h for the possible return values.
@@ -455,8 +440,7 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 
     /* Check the value. */
     store_check_dest(pdref, pvalue);
-  top:if ((code = dict_find(pdref, pkey, &pvslot)) <= 0) {
-        /* not found *//* Check for overflow */
+  top:if ((code = dict_find(pdref, pkey, &pvslot)) <= 0) {	/* not found *//* Check for overflow */
 	ref kname;
 	uint index;
 
@@ -464,8 +448,8 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 	    case 0:
 		break;
 	    case e_dictfull:
-		if (!dict_auto_expand)
-		    return_error(pmem, e_dictfull);
+		if (!pmem->gs_lib_ctx->dict_auto_expand)
+		    return_error(e_dictfull);
 		code = dict_grow(pdref, pds);
 		if (code < 0)
 		    return code;
@@ -479,7 +463,7 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 	    int code;
 
 	    if (!r_has_attr(pkey, a_read))
-		return_error(pmem, e_invalidaccess);
+		return_error(e_invalidaccess);
 	    code = name_from_string(pmem, pkey, &kname);
 	    if (code < 0)
 		return code;
@@ -507,7 +491,7 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 	} else {
 	    ref *kp = pdict->keys.value.refs + index;
 
-	    if_debug2(pmem, 'd', "[d]0x%lx: fill key at 0x%lx\n",
+	    if_debug2('d', "[d]0x%lx: fill key at 0x%lx\n",
 		      (ulong) pdict, (ulong) kp);
 	    store_check_dest(pdref, pkey);
 	    ref_assign_old_in(mem, &pdict->keys, kp, pkey,
@@ -522,17 +506,16 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 	    if (pname->pvalue == pv_no_defn &&
 		CAN_SET_PVALUE_CACHE(pds, pdref, mem)
 		) {		/* Set the cache. */
-		if_debug0(pmem, 'd', "[d]set cache\n");
+		if_debug0('d', "[d]set cache\n");
 		pname->pvalue = pvslot;
 	    } else {		/* The cache can't be used. */
-		if_debug0(pmem, 'd', "[d]no cache\n");
+		if_debug0('d', "[d]no cache\n");
 		pname->pvalue = pv_other;
 	    }
 	}
 	rcode = 1;
     }
-    if_debug8(pmem, 'd', 
-	      "[d]0x%lx: put key 0x%lx 0x%lx\n  value at 0x%lx: old 0x%lx 0x%lx, new 0x%lx 0x%lx\n",
+    if_debug8('d', "[d]0x%lx: put key 0x%lx 0x%lx\n  value at 0x%lx: old 0x%lx 0x%lx, new 0x%lx 0x%lx\n",
 	      (ulong) pdref->value.pdict,
 	      ((const ulong *)pkey)[0], ((const ulong *)pkey)[1],
 	      (ulong) pvslot,
@@ -568,9 +551,17 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
     ref *pvslot;
     dict *pdict;
     uint index;
+    int code = dict_find(pdref, pkey, &pvslot);
 
-    if (dict_find(pdref, pkey, &pvslot) <= 0)
-	return (e_undefined);
+    switch (code) {
+    case 0:
+    case e_dictfull:
+	return_error(e_undefined);
+    case 1:
+	break;
+    default:			/* other error */
+	return code;
+    }
     /* Remove the entry from the dictionary. */
     pdict = pdref->value.pdict;
     index = pvslot - pdict->values.value.refs;
@@ -578,7 +569,7 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
     if (dict_is_packed(pdict)) {
 	ref_packed *pkp = pdict->keys.value.writable_packed + index;
 
-	if_debug3((const gs_memory_t *)mem, 'd', "[d]0x%lx: removing key at 0%lx: 0x%x\n",
+	if_debug3('d', "[d]0x%lx: removing key at 0%lx: 0x%x\n",
 		  (ulong)pdict, (ulong)pkp, (uint)*pkp);
 	/* See the initial comment for why it is safe not to save */
 	/* the change if the keys array itself is new. */
@@ -605,8 +596,7 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
     } else {			/* not packed */
 	ref *kp = pdict->keys.value.refs + index;
 
-	if_debug4((const gs_memory_t *)mem, 
-		  'd', "[d]0x%lx: removing key at 0%lx: 0x%lx 0x%lx\n",
+	if_debug4('d', "[d]0x%lx: removing key at 0%lx: 0x%lx 0x%lx\n",
 		  (ulong)pdict, (ulong)kp, ((ulong *)kp)[0], ((ulong *)kp)[1]);
 	make_null_old_in(mem, &pdict->keys, kp, "dict_undef(key)");
 	/*
@@ -630,8 +620,7 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
 #ifdef DEBUG
 	    /* Check the the cache is correct. */
 	    if (!(pds && dstack_dict_is_permanent(pds, pdref)))
-		lprintf1((const gs_memory_t *)mem, 
-			 "dict_undef: cached name value pointer 0x%lx is incorrect!\n",
+		lprintf1("dict_undef: cached name value pointer 0x%lx is incorrect!\n",
 			 (ulong) pname->pvalue);
 #endif
 	    /* Clear the cache */
@@ -735,13 +724,14 @@ dict_resize(ref * pdref, uint new_size, dict_stack_t *pds)
     dict *pdict = pdref->value.pdict;
     gs_ref_memory_t *mem = dict_memory(pdict);
     uint new_mask = imemory_new_mask(mem);
+    ushort orig_attrs = r_type_attrs(&pdict->values) & (a_all | a_executable);
     dict dnew;
     ref drto;
     int code;
 
     if (new_size < d_length(pdict)) {
-	if (!dict_auto_expand)
-	    return_error((const gs_memory_t *)mem, e_dictfull);
+	if (!mem->gs_lib_ctx->dict_auto_expand)
+	    return_error(e_dictfull);
 	new_size = d_length(pdict);
     }
     make_tav(&drto, t_dictionary, r_space(pdref) | a_all | new_mask,
@@ -784,6 +774,7 @@ dict_resize(ref * pdref, uint new_size, dict_stack_t *pds)
 	gs_free_ref_array(mem, &pdict->keys, "dict_resize(old keys)");
     ref_assign(&pdict->keys, &dnew.keys);
     ref_assign(&pdict->values, &dnew.values);
+    r_store_attrs(&pdict->values, a_all | a_executable, orig_attrs);
     ref_save_in(dict_memory(pdict), pdref, &pdict->maxlength,
 		"dict_resize(maxlength)");
     d_set_maxlength(pdict, new_size);
@@ -850,8 +841,7 @@ dict_next(const ref * pdref, int index, ref * eltp /* ref eltp[2] */ )
 	    (!dict_is_packed(pdict) && !r_has_type(eltp, t_null))
 	    ) {
 	    eltp[1] = *vp;
-	    if_debug6(dict_mem(pdict), 
-		      'd', "[d]0x%lx: index %d: %lx %lx, %lx %lx\n",
+	    if_debug6('d', "[d]0x%lx: index %d: %lx %lx, %lx %lx\n",
 		      (ulong) pdict, index,
 		      ((ulong *) eltp)[0], ((ulong *) eltp)[1],
 		      ((ulong *) vp)[0], ((ulong *) vp)[1]);

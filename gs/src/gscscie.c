@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* CIE color space management */
 #include "math_.h"
 #include "gx.h"
@@ -54,7 +55,8 @@ const gs_color_space_type gs_color_space_type_CIEDEFG = {
     gx_default_remap_color, gx_install_CIE,
     gx_spot_colors_set_overprint,
     gx_adjust_cspace_CIEDEFG, gx_no_adjust_color_count,
-    gx_serialize_CIEDEFG
+    gx_serialize_CIEDEFG,
+    gx_cspace_is_linear_default
 };
 
 /* CIEBasedDEF */
@@ -73,7 +75,8 @@ const gs_color_space_type gs_color_space_type_CIEDEF = {
     gx_default_remap_color, gx_install_CIE,
     gx_spot_colors_set_overprint,
     gx_adjust_cspace_CIEDEF, gx_no_adjust_color_count,
-    gx_serialize_CIEDEF
+    gx_serialize_CIEDEF,
+    gx_cspace_is_linear_default
 };
 
 /* CIEBasedABC */
@@ -92,7 +95,8 @@ const gs_color_space_type gs_color_space_type_CIEABC = {
     gx_remap_CIEABC, gx_install_CIE,
     gx_spot_colors_set_overprint,
     gx_adjust_cspace_CIEABC, gx_no_adjust_color_count,
-    gx_serialize_CIEABC
+    gx_serialize_CIEABC,
+    gx_cspace_is_linear_default
 };
 
 /* CIEBasedA */
@@ -111,7 +115,8 @@ const gs_color_space_type gs_color_space_type_CIEA = {
     gx_default_remap_color, gx_install_CIE,
     gx_spot_colors_set_overprint,
     gx_adjust_cspace_CIEA, gx_no_adjust_color_count,
-    gx_serialize_CIEA
+    gx_serialize_CIEA,
+    gx_cspace_is_linear_default
 };
 
 private gs_color_space rgb_cs, cmyk_cs;
@@ -147,25 +152,25 @@ gx_install_CIE(const gs_color_space * pcs, gs_state * pgs)
 private void
 gx_adjust_cspace_CIEDEFG(const gs_color_space * pcs, int delta)
 {
-    rc_adjust_const(pcs->pmem, pcs->params.defg, delta, "gx_adjust_cspace_CIEDEFG");
+    rc_adjust_const(pcs->params.defg, delta, "gx_adjust_cspace_CIEDEFG");
 }
 
 private void
 gx_adjust_cspace_CIEDEF(const gs_color_space * pcs, int delta)
 {
-    rc_adjust_const(pcs->pmem, pcs->params.def, delta, "gx_adjust_cspace_CIEDEF");
+    rc_adjust_const(pcs->params.def, delta, "gx_adjust_cspace_CIEDEF");
 }
 
 private void
 gx_adjust_cspace_CIEABC(const gs_color_space * pcs, int delta)
 {
-    rc_adjust_const(pcs->pmem, pcs->params.abc, delta, "gx_adjust_cspace_CIEABC");
+    rc_adjust_const(pcs->params.abc, delta, "gx_adjust_cspace_CIEABC");
 }
 
 private void
 gx_adjust_cspace_CIEA(const gs_color_space * pcs, int delta)
 {
-    rc_adjust_const(pcs->pmem, pcs->params.a, delta, "gx_adjust_cspace_CIEA");
+    rc_adjust_const(pcs->params.a, delta, "gx_adjust_cspace_CIEA");
 }
 
 /* ---------------- Procedures ---------------- */
@@ -262,7 +267,7 @@ gs_cspace_build_CIEA(gs_color_space ** ppcspace, void *client_data,
     gx_build_cie_space(ppcspace, &gs_color_space_type_CIEA, &st_cie_a, pmem);
 
     if (pciea == 0)
-	return_error(pmem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
 
     gx_set_common_cie_defaults(&pciea->common, client_data);
     pciea->common.install_cspace = gx_install_CIEA;
@@ -283,7 +288,7 @@ gs_cspace_build_CIEABC(gs_color_space ** ppcspace, void *client_data,
 		       pmem);
 
     if (pabc == 0)
-	return_error(pmem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
 
     set_cie_abc_defaults(pabc, client_data);
     pabc->common.install_cspace = gx_install_CIEABC;
@@ -301,7 +306,7 @@ gs_cspace_build_CIEDEF(gs_color_space ** ppcspace, void *client_data,
 		       pmem);
 
     if (pdef == 0)
-	return_error(pmem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
 
     set_cie_abc_defaults((gs_cie_abc *) pdef, client_data);
     pdef->common.install_cspace = gx_install_CIEDEF;
@@ -323,7 +328,7 @@ gs_cspace_build_CIEDEFG(gs_color_space ** ppcspace, void *client_data,
 		       pmem);
 
     if (pdefg == 0)
-	return_error(pmem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
 
     set_cie_abc_defaults((gs_cie_abc *) pdefg, client_data);
     pdefg->common.install_cspace = gx_install_CIEDEFG;
@@ -339,7 +344,7 @@ gs_cspace_build_CIEDEFG(gs_color_space ** ppcspace, void *client_data,
 /* ------ Accessors ------ */
 
 int
-gs_cie_defx_set_lookup_table(const gs_memory_t *mem, gs_color_space * pcspace, int *pdims,
+gs_cie_defx_set_lookup_table(gs_color_space * pcspace, int *pdims,
 			     const gs_const_string * ptable)
 {
     gx_color_lookup_table *plktblp;
@@ -353,7 +358,7 @@ gs_cie_defx_set_lookup_table(const gs_memory_t *mem, gs_color_space * pcspace, i
 	    plktblp->dims[3] = pdims[3];
 	    break;
 	default:
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
     }
 
     plktblp->dims[0] = pdims[0];

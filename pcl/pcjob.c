@@ -199,16 +199,13 @@ pcl_set_unit_of_measure(pcl_args_t *pargs, pcl_state_t *pcs)
 
 /* Initialization */
 private int
-pcjob_do_registration(
-    pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *mem
-)
+pcjob_do_registration(pcl_parser_state_t *pcl_parser_state)
 {		/* Register commands */
-	DEFINE_ESCAPE_ARGS(mem, 'E', "Printer Reset", pcl_printer_reset, pca_in_rtl)
-	DEFINE_CLASS(mem, '%')
+	DEFINE_ESCAPE_ARGS('E', "Printer Reset", pcl_printer_reset, pca_in_rtl)
+	DEFINE_CLASS('%')
 	  {0, 'X', {pcl_exit_language, pca_neg_ok|pca_big_error|pca_in_rtl}},
 	END_CLASS
-	DEFINE_CLASS(mem, '&')
+	DEFINE_CLASS('&')
 	  {'l', 'X',
 	     PCL_COMMAND("Number of Copies", pcl_number_of_copies,
 			 pca_neg_ignore|pca_big_clamp)},

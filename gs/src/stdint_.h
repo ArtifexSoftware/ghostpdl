@@ -1,14 +1,15 @@
-/* Portions Copyright (C) 2001, 2004 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Generic substitute for stdint.h */
@@ -17,10 +18,14 @@
 #  define stdint__INCLUDED
 
 /*
- * This is here primarily because we must include std.h before
- * any file that includes sys/types.h.
+ * ensure our standard defines have been included
  */
 #include "std.h"
+
+/* Define some stdint.h types. The jbig2dec headers and ttf bytecode
+ * interpreter require these and they're generally useful to have around
+ * now that there's a standard.
+ */
 
 /* Some systems are guaranteed to have stdint.h
  * but don't use the autoconf detection
@@ -31,13 +36,18 @@
 # endif
 #endif
 
-/* Define some stdint.h types. The jbig2dec headers require these and 
- * they're generally useful to have around now that there's a standard.
- */
-#ifdef HAVE_STDINT_H
+
+/* try a generic header first */
+#if defined(HAVE_STDINT_H)
 # include <stdint.h>
 # define STDINT_TYPES_DEFINED
-#else
+#elif defined(SYS_TYPES_HAS_STDINT_TYPES)
+  /* std.h will have included sys/types.h */
+# define STDINT_TYPES_DEFINED
+#endif
+
+/* try platform-specific defines */
+#ifndef STDINT_TYPES_DEFINED
 # if defined(__WIN32__) /* MSVC currently doesn't provide C99 headers */
    typedef signed char             int8_t;
    typedef short int               int16_t;
@@ -48,12 +58,10 @@
    typedef unsigned int            uint32_t;
    typedef unsigned __int64        uint64_t;
 #  define STDINT_TYPES_DEFINED
-# endif
-# if defined(__VMS) /* OpenVMS provides these types in inttypes.h */
+# elif defined(__VMS) /* OpenVMS provides these types in inttypes.h */
 #  include <inttypes.h>
 #  define STDINT_TYPES_DEFINED
-# endif
-# if defined(__CYGWIN__)
+# elif defined(__CYGWIN__)
    /* Cygwin defines the signed versions in sys/types.h */
    /* but uses a u_ prefix for the unsigned versions */
    typedef u_int8_t                uint8_t;
@@ -64,7 +72,7 @@
 # endif
    /* other archs may want to add defines here, 
       or use the fallbacks in std.h */
-#endif /* !HAVE_STDINT_H */
+#endif
 
 /* fall back to tests based on arch.h */
 #ifndef STDINT_TYPES_DEFINED
@@ -106,6 +114,13 @@ typedef unsigned int uint64_t;
 #  if ARCH_SIZEOF_LONG == 8
 typedef signed long int64_t;
 typedef unsigned long uint64_t;
+#  else
+#   ifdef ARCH_SIZEOF_LONG_LONG
+#    if ARCH_SIZEOF_LONG_LONG == 8
+typedef signed long long int64_t;
+typedef unsigned long long uint64_t;
+#    endif
+#   endif
 #  endif
 # endif
 #  define STDINT_TYPES_DEFINED

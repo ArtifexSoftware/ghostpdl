@@ -1,16 +1,16 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* CoStar LabelWriter II, II Plus driver for Ghostscript */
 /* Contributed by Mike McCauley mikem@open.com.au        */
 
@@ -50,7 +50,7 @@ coslw_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     int line_size_words = (line_size + W - 1) / W;
     uint storage_size_words = line_size_words * 8;	/* data, out_row, out_row_alt, prev_row */
-    word *storage = (ulong *) gs_malloc(storage_size_words, W,
+    word *storage = (ulong *) gs_malloc(pdev->memory, storage_size_words, W,
 					"coslw_print_page");
 
     word *data_words;
@@ -137,7 +137,7 @@ coslw_print_page(gx_device_printer * pdev, FILE * prn_stream)
     fputs("\033E", prn_stream);
 
     /* free temporary storage */
-    gs_free((char *)storage, storage_size_words, W, "coslw_print_page");
+    gs_free(pdev->memory, (char *)storage, storage_size_words, W, "coslw_print_page");
 
     return code;
 }

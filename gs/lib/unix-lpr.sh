@@ -1,5 +1,5 @@
 #!/bin/sh
-# $RCSfile$ $Revision$
+# $Id$
 #
 # Unix lpr filter. The default setup sends output directly to a pipe,
 # which requires the Ghostscript process to fork, and thus may cause 
@@ -15,6 +15,10 @@
 # but it may be restored by commenting out the lines referring to
 # 'gsoutput' and uncommenting the lines referring to 'gspipe'.
 #
+
+# This definition is changed on install to match the
+# executable name set in the makefile
+GS_EXECUTABLE=gs
 
 PBMPLUSPATH=/usr/local/bin
 PSFILTERPATH=/usr/local/lib/ghostscript
@@ -149,7 +153,8 @@ echo "\
     } { pop } ifelse
   } if
 quit"
-) | gs -q -dNOPAUSE -sDEVICE=${device} -dBitsPerPixel=${bpp} $colorspec \
+) | $GS_EXECUTABLE -q -dNOPAUSE -sDEVICE=${device} \
+		-dBitsPerPixel=${bpp} $colorspec \
 		-sOutputFile=\|"${gsoutput}" -
 #		-sOutputFile=${gspipe} -
 

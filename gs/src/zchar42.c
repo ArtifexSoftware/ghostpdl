@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Type 42 character display operator */
 #include "ghost.h"
 #include "oper.h"
@@ -96,7 +97,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_font *pfont;
-    int code = font_param(imemory, op - 3, &pfont);
+    int code = font_param(op - 3, &pfont);
     gs_font_base *const pbfont = (gs_font_base *) pfont;
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
     op_proc_t cont = (pbfont->PaintType == 0 ? type42_fill : type42_stroke), exec_cont = 0;
@@ -109,7 +110,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 	(pfont->FontType != ft_TrueType &&
 	 pfont->FontType != ft_CID_TrueType)
 	)
-	return_error(pfont->memory, e_undefined);
+	return_error(e_undefined);
     /*
      * Any reasonable implementation would execute something like
      *  1 setmiterlimit 0 setlinejoin 0 setlinecap
@@ -129,8 +130,8 @@ ztype42execchar(i_ctx_t *i_ctx_p)
      * The definition must be a Type 42 glyph index.
      * Note that we do not require read access: this is deliberate.
      */
-    check_type(pfont->memory, *op, t_integer);
-    check_ostack(pfont->memory, 3);		/* for lsb values */
+    check_type(*op, t_integer);
+    check_ostack(3);		/* for lsb values */
     /* Establish a current point. */
     code = gs_moveto(igs, 0.0, 0.0);
     if (code < 0)
@@ -152,7 +153,7 @@ type42_fill(i_ctx_t *i_ctx_p)
     int code;
     gs_fixed_point fa = i_ctx_p->pgs->fill_adjust;
 
-    i_ctx_p->pgs->fill_adjust.x = i_ctx_p->pgs->fill_adjust.y = 0;
+    i_ctx_p->pgs->fill_adjust.x = i_ctx_p->pgs->fill_adjust.y = -1;
     code = type42_finish(i_ctx_p, gs_fill);
     i_ctx_p->pgs->fill_adjust = fa; /* Not sure whether we need to restore it,
                                        but this isn't harmful. */
@@ -178,8 +179,8 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
     os_ptr opc = op;
 
     if (!r_has_type(op - 3, t_dictionary)) {
-	check_op(imemory, 6);
-	code = num_params(imemory, op, 2, sbxy);
+	check_op(6);
+	code = num_params(op, 2, sbxy);
 	if (code < 0)
 	    return code;
 	sbpt.x = sbxy[0];
@@ -187,30 +188,23 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 	psbpt = &sbpt;
 	opc -= 2;
     }
-    check_type(imemory, *opc, t_integer);
-    code = font_param(imemory, opc - 3, &pfont);
+    check_type(*opc, t_integer);
+    code = font_param(opc - 3, &pfont);
     if (code < 0)
 	return code;
     if (penum == 0 || (pfont->FontType != ft_TrueType &&
 		       pfont->FontType != ft_CID_TrueType)
 	)
-	return_error(imemory, e_undefined);
+	return_error(e_undefined);
     /*
      * We have to disregard penum->pis and penum->path, and render to
      * the current gstate and path.  This is a design bug that we will
      * have to address someday!
      */
-#if NEW_TT_INTERPRETER
     code = gs_type42_append((uint)opc->value.intval, (gs_imager_state *)igs,
 			    igs->path, &penum->log2_scale,
 			    (penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0,
 			    pfont->PaintType, penum->pair);
-#else
-    code = gs_type42_append((uint)opc->value.intval, (gs_imager_state *)igs,
-			    igs->path, &penum->log2_scale,
-			    (penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0,
-			    pfont->PaintType, (gs_font_type42 *)pfont);
-#endif
     if (code < 0)
 	return code;
     pop((psbpt == 0 ? 4 : 6));

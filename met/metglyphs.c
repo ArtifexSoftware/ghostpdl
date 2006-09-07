@@ -97,7 +97,7 @@ load_tt_font(zip_part_t *part, gs_memory_t *mem) {
     // zip_part_length BUG, length is long, read is correct !!
     size = zip_part_read(pfont_data + 6, len, part);
     if ( size != len ) {
-	dprintf2(0, "BUG! zip_part_length != zip_part_read %d, %d\n", len, size);
+	dprintf2("BUG! zip_part_length != zip_part_read %d, %d\n", len, size);
     }
 
     /* XOR unobfuscation of XPS fonts via GUID in fontname xor against first 32 bytes */
@@ -571,7 +571,7 @@ Glyphs_done(void *data, met_state_t *ms)
       matrix! */
    {
        gs_point pt;
-       if ((code = gs_point_transform(mem, aGlyphs->OriginX, aGlyphs->OriginY,
+       if ((code = gs_point_transform(aGlyphs->OriginX, aGlyphs->OriginY,
                                       &font_mat, &pt)) != 0)
            return gs_rethrow(code, "gs_point_transform");
        if ((code = gs_moveto(pgs, pt.x, pt.y)) != 0)

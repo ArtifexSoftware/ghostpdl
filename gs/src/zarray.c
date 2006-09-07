@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Array operators */
 #include "memory_.h"
 #include "ghost.h"
@@ -30,7 +31,11 @@ zarray(i_ctx_t *i_ctx_p)
     uint size;
     int code;
 
-    check_int_leu(imemory, *op, max_array_size);
+    check_type(*op, t_integer);
+    if (op->value.intval < 0)
+	return_error(e_rangecheck);
+    if (op->value.intval > max_array_size)
+	return_error(e_limitcheck);
     size = op->value.intval;
     code = ialloc_ref_array((ref *)op, a_all, size, "array");
     if (code < 0)
@@ -49,8 +54,8 @@ zaload(i_ctx_t *i_ctx_p)
 
     ref_assign(&aref, op);
     if (!r_is_array(&aref))
-	return_op_typecheck(imemory, op);
-    check_read(imemory, aref);
+	return_op_typecheck(op);
+    check_read(aref);
     asize = r_size(&aref);
     if (asize > ostop - op) {	/* Use the slow, general algorithm. */
 	int code = ref_stack_push(&o_stack, asize);
@@ -74,7 +79,7 @@ zaload(i_ctx_t *i_ctx_p)
 	for (i = 0; i < asize; i++, pdest++, packed = packed_next(packed))
 	    packed_get(imemory, packed, pdest);
     }
-    push(imemory, asize);
+    push(asize);
     ref_assign(op, &aref);
     return 0;
 }
@@ -87,14 +92,20 @@ zastore(i_ctx_t *i_ctx_p)
     uint size;
     int code;
 
-    check_write_type(imemory, *op, t_array);
+    if (!r_is_array(op))
+	return_op_typecheck(op);
     size = r_size(op);
+    /* Amazingly, the following is valid: 0 array noaccess astore */
+    if (size == 0)
+        return 0;
+    if (!r_has_type_attrs(op, t_array, a_write)) 
+        return_error(e_invalidaccess);
     if (size > op - osbot) {
 	/* The store operation might involve other stack segments. */
 	ref arr;
 
 	if (size >= ref_stack_count(&o_stack))
-	    return_error(imemory, e_stackunderflow);
+	    return_error(e_stackunderflow);
 	arr = *op;
 	code = ref_stack_store(&o_stack, &arr, size, 1, 0, true, idmemory,
 			       "astore");

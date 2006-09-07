@@ -1,15 +1,21 @@
-/* Copyright (C) 2002 artofcode LLC. All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Font copying for high-level output */
 #include "memory_.h"
 #include "gx.h"
+#include <stdlib.h>		/* for qsort */
 #include "gscencs.h"
 #include "gserrors.h"
 #include "gsline.h"		/* for BuildChar */
@@ -30,6 +36,8 @@
 #include "gzstate.h"		/* for path for BuildChar */
 #include "gdevpsf.h"
 
+#define GLYPHS_SIZE_IS_PRIME 1 /* Old code = 0, new code = 1. */
+
 /* ================ Types and structures ================ */
 
 typedef struct gs_copied_glyph_s gs_copied_glyph_t;
@@ -40,7 +48,7 @@ typedef struct gs_copied_font_procs_s {
     int (*copy_glyph)(gs_font *font, gs_glyph glyph, gs_font *copied,
 		      int options);
     int (*add_encoding)(gs_font *copied, gs_char chr, gs_glyph glyph);
-    int (*named_glyph_slot)(const gs_memory_t *mem, gs_copied_font_data_t *cfdata, gs_glyph glyph,
+    int (*named_glyph_slot)(gs_copied_font_data_t *cfdata, gs_glyph glyph,
 			    gs_copied_glyph_t **pslot);
     /* Font procedures */
     font_proc_encode_char((*encode_char));
@@ -75,6 +83,7 @@ struct gs_copied_glyph_s {
 #define HAS_SBW1 4		/* has vmtx */
     byte used;			/* non-zero iff this entry is in use */
 				/* (if not, gdata.{data,size} = 0) */
+    int order_index;            /* Index for the ordered glyph set. */
 };
 /*
  * We use a special GC descriptor to avoid large GC overhead.
@@ -130,6 +139,9 @@ private ENUM_PTRS_WITH(copied_glyph_name_enum_ptrs, gs_copied_glyph_name_t *pcgn
 		 ENUM_CONST_STRING(&p->str));
      }
      return 0;
+     /* We should mark glyph name here, but we have no access to 
+        the gs_font_dir instance. Will mark in gs_copied_font_data_enum_ptrs.
+      */
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(copied_glyph_name_reloc_ptrs, gs_copied_glyph_name_t *pcgn)
 {
@@ -170,7 +182,8 @@ struct gs_copied_font_data_s {
     gs_font_info_t info;	/* from the original font, must be first */
     const gs_copied_font_procs_t *procs;
     gs_copied_glyph_t *glyphs;	/* [glyphs_size] */
-    uint glyphs_size;		/* (a power of 2 for Type 1/2) */
+    uint glyphs_size;		/* (a power of 2 or a prime number for Type 1/2) */
+    uint num_glyphs;		/* The number of glyphs copied. */
     gs_glyph notdef;		/* CID 0 or .notdef glyph */
     /*
      * We don't use a union for the rest of the data, because some of the
@@ -185,13 +198,44 @@ struct gs_copied_font_data_s {
     gs_subr_info_t subrs;	/* (Type 1/2 and CIDFontType 0) */
     gs_subr_info_t global_subrs; /* (Type 2 and CIDFontType 0) */
     gs_font_cid0 *parent;	/* (Type 1 subfont) => parent CIDFontType 0 */
+    gs_font_dir *dir;
+    bool ordered;
 };
 extern_st(st_gs_font_info);
-gs_private_st_suffix_add11(st_gs_copied_font_data, gs_copied_font_data_t,
-  "gs_copied_font_data_t", gs_copied_font_data_enum_ptrs,
-  gs_copied_font_data_reloc_ptrs, st_gs_font_info, glyphs, names, extra_names,
-  data, Encoding, CIDMap, subrs.data, subrs.starts, global_subrs.data,
-  global_subrs.starts, parent);
+private 
+ENUM_PTRS_WITH(gs_copied_font_data_enum_ptrs, gs_copied_font_data_t *cfdata)
+    if (index == 12) {
+	gs_copied_glyph_name_t *names = cfdata->names;
+	gs_copied_glyph_extra_name_t *en = cfdata->extra_names;
+	int i;
+
+	if (names != NULL)
+	    for (i = 0; i < cfdata->glyphs_size; ++i)
+		if (names[i].glyph < gs_c_min_std_encoding_glyph)
+		    cfdata->dir->ccache.mark_glyph(mem, names[i].glyph, NULL);
+	for (; en != NULL; en = en->next)
+	    if (en->name.glyph < gs_c_min_std_encoding_glyph)
+		cfdata->dir->ccache.mark_glyph(mem, en->name.glyph, NULL);
+    }
+    return ENUM_USING(st_gs_font_info, &cfdata->info, sizeof(gs_font_info_t), index - 12);
+    ENUM_PTR3(0, gs_copied_font_data_t, glyphs, names, extra_names);
+    ENUM_PTR3(3, gs_copied_font_data_t, data, Encoding, CIDMap);
+    ENUM_PTR3(6, gs_copied_font_data_t, subrs.data, subrs.starts, global_subrs.data);
+    ENUM_PTR3(9, gs_copied_font_data_t, global_subrs.starts, parent, dir);
+ENUM_PTRS_END
+
+private RELOC_PTRS_WITH(gs_copied_font_data_reloc_ptrs, gs_copied_font_data_t *cfdata)
+{
+    RELOC_PTR3(gs_copied_font_data_t, glyphs, names, extra_names);
+    RELOC_PTR3(gs_copied_font_data_t, data, Encoding, CIDMap);
+    RELOC_PTR3(gs_copied_font_data_t, subrs.data, subrs.starts, global_subrs.data);
+    RELOC_PTR3(gs_copied_font_data_t, global_subrs.starts, parent, dir);
+    RELOC_USING(st_gs_font_info, &cfdata->info, sizeof(gs_font_info_t));
+}
+RELOC_PTRS_END
+
+gs_private_st_composite(st_gs_copied_font_data, gs_copied_font_data_t, "gs_copied_font_data_t",\
+    gs_copied_font_data_enum_ptrs, gs_copied_font_data_reloc_ptrs);
 
 inline private gs_copied_font_data_t *
 cf_data(const gs_font *font)
@@ -216,7 +260,7 @@ copy_string(gs_memory_t *mem, gs_const_string *pstr, client_name_t cname)
     str = gs_alloc_string(mem, size, cname);
     pstr->data = str;
     if (str == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     memcpy(str, data, size);
     return 0;
 }
@@ -242,7 +286,7 @@ copied_Encoding_alloc(gs_font *copied)
     int i;
 
     if (Encoding == 0)
-	return_error(copied->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     for (i = 0; i < 256; ++i)
 	Encoding[i] = GS_NO_GLYPH;
     cfdata->Encoding = Encoding;
@@ -264,7 +308,8 @@ copied_data_alloc(gs_font *copied, stream *s, uint extra, int code)
 	return code;
     fdata = gs_alloc_bytes(copied->memory, len + extra, "copied_data_alloc");
     if (fdata == 0)
-	return_error(copied->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
+    s_init(s, copied->memory);
     swrite_string(s, fdata, len);
     cfdata->data = fdata;
     cfdata->data_size = len + extra;
@@ -284,6 +329,7 @@ copy_subrs(gs_font_type1 *pfont, bool global, gs_subr_info_t *psi,
     byte *data;
     uint *starts;
 
+    gdata.memory = pfont->memory;
     /* Scan the font to determine the size of the subrs. */
     for (i = 0, size = 0;
 	 (code = pfont->data.procs.subr_data(pfont, i, global, &gdata)) !=
@@ -304,7 +350,7 @@ copy_subrs(gs_font_type1 *pfont, bool global, gs_subr_info_t *psi,
 	if (data == 0 || starts == 0) {
 	    gs_free_object(mem, starts, "copy_subrs(starts)");
 	    gs_free_object(mem, data, "copy_subrs(data)");
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	}
 
 	/* Copy the data. */
@@ -337,8 +383,7 @@ copy_subrs(gs_font_type1 *pfont, bool global, gs_subr_info_t *psi,
  * pointer and return 0.
  */
 private int
-copied_glyph_slot(const gs_memory_t *mem, 
-		  gs_copied_font_data_t *cfdata, gs_glyph glyph,
+copied_glyph_slot(gs_copied_font_data_t *cfdata, gs_glyph glyph,
 		  gs_copied_glyph_t **pslot)
 {
     uint gsize = cfdata->glyphs_size;
@@ -347,54 +392,59 @@ copied_glyph_slot(const gs_memory_t *mem,
     if (glyph >= GS_MIN_GLYPH_INDEX) {
 	/* CIDFontType 2 uses glyph indices for slots.  */
 	if (glyph - GS_MIN_GLYPH_INDEX >= gsize)
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	*pslot = &cfdata->glyphs[glyph - GS_MIN_GLYPH_INDEX];
     } else if (glyph >= GS_MIN_CID_GLYPH) {
 	/* CIDFontType 0 uses CIDS for slots.  */
 	if (glyph - GS_MIN_CID_GLYPH >= gsize)
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	*pslot = &cfdata->glyphs[glyph - GS_MIN_CID_GLYPH];
     } else if (cfdata->names == 0)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     else {
-	int code = cfdata->procs->named_glyph_slot(mem, cfdata, glyph, pslot);
+	int code = cfdata->procs->named_glyph_slot(cfdata, glyph, pslot);
 
 	if (code < 0)
 	    return code;
     }
     if (!(*pslot)->used)
-	return_error(mem, gs_error_undefined);
+	return_error(gs_error_undefined);
     return 0;
 }
 private int
-named_glyph_slot_none(const gs_memory_t *mem,
-		      gs_copied_font_data_t *cfdata, gs_glyph glyph,
+named_glyph_slot_none(gs_copied_font_data_t *cfdata, gs_glyph glyph,
 			gs_copied_glyph_t **pslot)
 {
-    return_error(mem, gs_error_rangecheck);
+    return_error(gs_error_rangecheck);
 }
 private int
-named_glyph_slot_hashed(const gs_memory_t *mem,
-			gs_copied_font_data_t *cfdata, gs_glyph glyph,
+named_glyph_slot_hashed(gs_copied_font_data_t *cfdata, gs_glyph glyph,
 			gs_copied_glyph_t **pslot)
 {
     uint gsize = cfdata->glyphs_size;
     gs_copied_glyph_name_t *names = cfdata->names;
     uint hash = (uint)glyph % gsize;
     /*
-     * gsize is a power of 2, so an odd reprobe interval guarantees that we
+     * gsize is either a prime number or a power of 2.
+     * If it is prime, any positive reprobe below gsize guarantees that we
+     * will touch every slot.
+     * If it is a power of 2, any odd reprobe guarantees that we
      * will touch every slot.
      */
     uint hash2 = ((uint)glyph / gsize * 2 + 1) % gsize;
+    uint tries = gsize;
 
-    while (names[hash].str.data != 0 && names[hash].glyph != glyph)
+    while (names[hash].str.data != 0 && names[hash].glyph != glyph) {
 	hash = (hash + hash2) % gsize;
+	if (!tries)
+	    return gs_error_undefined;
+	tries--;
+    }
     *pslot = &cfdata->glyphs[hash];
     return 0;
 }
 private int
-named_glyph_slot_linear(const gs_memory_t *mem,
-			gs_copied_font_data_t *cfdata, gs_glyph glyph,
+named_glyph_slot_linear(gs_copied_font_data_t *cfdata, gs_glyph glyph,
 			gs_copied_glyph_t **pslot)
 {
     {
@@ -417,7 +467,7 @@ named_glyph_slot_linear(const gs_memory_t *mem,
 		return 0;
 	    }
     }
-    return_error(mem, gs_error_rangecheck);
+    return_error(gs_error_rangecheck);
 }
 
 /*
@@ -433,9 +483,11 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
 {
     gs_copied_font_data_t *const cfdata = cf_data(copied);
     uint size = pgdata->bits.size;
-    gs_copied_glyph_t *pcg;
-    int code = copied_glyph_slot(font->memory, cfdata, glyph, &pcg);
+    gs_copied_glyph_t *pcg = 0;
+    int code = copied_glyph_slot(cfdata, glyph, &pcg);
 
+    if (cfdata->ordered)
+	return_error(gs_error_unregistered); /* Must not happen. */
     switch (code) {
     case 0:			/* already defined */
 	if ((options & COPY_GLYPH_NO_OLD) ||
@@ -444,23 +496,22 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
 	    memcmp(pcg->gdata.data + prefix_bytes,
 		   pgdata->bits.data, size)
 	    )
-	    code = gs_note_error(font->memory, gs_error_invalidaccess);
+	    code = gs_note_error(gs_error_invalidaccess);
 	else
 	    code = 1;
 	break;
     case gs_error_undefined:
 	if (options & COPY_GLYPH_NO_NEW)
-	    code = gs_note_error(font->memory, gs_error_undefined);
+	    code = gs_note_error(gs_error_undefined);
+	else if (pcg == NULL)
+	    code = gs_note_error(gs_error_undefined);
 	else {
 	    uint str_size = prefix_bytes + size;
 	    byte *str = gs_alloc_string(copied->memory, str_size,
 					"copy_glyph_data(data)");
 
 	    if (str == 0)
-                if (str_size == 0)
-                    code = gs_note_error(font->memory, gs_error_undefined);
-                else
-                    code = gs_note_error(font->memory, gs_error_VMerror);
+		code = gs_note_error(gs_error_VMerror);
 	    else {
 		if (prefix_bytes)
 		    memcpy(str, prefix, prefix_bytes);
@@ -468,7 +519,9 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
 		pcg->gdata.data = str;
 		pcg->gdata.size = str_size;
 		pcg->used = HAS_DATA;
+		pcg->order_index = -1;
 		code = 0;
+		cfdata->num_glyphs++;
 	    }
 	}
     default:
@@ -488,17 +541,19 @@ copy_glyph_name(gs_font *font, gs_glyph glyph, gs_font *copied,
     gs_glyph known_glyph;
     gs_copied_font_data_t *const cfdata = cf_data(copied);
     gs_copied_glyph_t *pcg;
-    int code = copied_glyph_slot(font->memory, cfdata, copied_glyph, &pcg);
+    int code = copied_glyph_slot(cfdata, copied_glyph, &pcg);
     gs_copied_glyph_name_t *pcgn;
     gs_const_string str;
 
+    if (cfdata->ordered)
+	return_error(gs_error_unregistered); /* Must not happen. */
     if (code < 0 ||
 	(code = font->procs.glyph_name(font, glyph, &str)) < 0
 	)
 	return code;
     /* Try to share a permanently allocated known glyph name. */
     if ((known_glyph = gs_c_name_glyph(str.data, str.size)) != GS_NO_GLYPH)
-	gs_c_glyph_name(font->memory, known_glyph, &str);
+	gs_c_glyph_name(known_glyph, &str);
     else if ((code = copy_string(copied->memory, &str, "copy_glyph_name")) < 0)
 	return code;
     pcgn = cfdata->names + (pcg - cfdata->glyphs);
@@ -513,7 +568,7 @@ copy_glyph_name(gs_font *font, gs_glyph glyph, gs_font *copied,
 			    "copy_glyph_name(extra_name)");
 
 	if (extra_name == 0)
-	    return_error(copied->memory, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	extra_name->next = cfdata->extra_names;
 	extra_name->gid = pcg - cfdata->glyphs;
 	cfdata->extra_names = extra_name;
@@ -552,15 +607,17 @@ copied_char_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph)
     gs_copied_glyph_t *pslot;
     int code;
 
+    if (cfdata->ordered)
+	return_error(gs_error_unregistered); /* Must not happen. */
     if (Encoding == 0)
-	return_error(copied->memory, gs_error_invalidaccess);
-    if (chr < 0 || chr >= 256 || glyph >= GS_MIN_CID_GLYPH)
-	return_error(copied->memory, gs_error_rangecheck);
-    code = copied_glyph_slot(copied->memory, cfdata, glyph, &pslot);
+	return_error(gs_error_invalidaccess);
+    if (chr >= 256 || glyph >= GS_MIN_CID_GLYPH)
+	return_error(gs_error_rangecheck);
+    code = copied_glyph_slot(cfdata, glyph, &pslot);
     if (code < 0)
 	return code;
     if (Encoding[chr] != glyph && Encoding[chr] != GS_NO_GLYPH)
-	return_error(copied->memory, gs_error_invalidaccess);
+	return_error(gs_error_invalidaccess);
     Encoding[chr] = glyph;
     return 0;
 }
@@ -569,7 +626,7 @@ copied_char_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph)
 private int
 copied_no_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph)
 {
-    return_error(copied->memory, gs_error_invalidaccess);
+    return_error(gs_error_invalidaccess);
 }
 
 /* ---------------- Font procedures ---------------- */
@@ -579,7 +636,7 @@ copied_font_info(gs_font *font, const gs_point *pscale, int members,
 		 gs_font_info_t *info)
 {
     if (pscale != 0)
-	return_error(font->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     *info = cf_data(font)->info;
     return 0;
 }
@@ -590,7 +647,7 @@ copied_encode_char(gs_font *copied, gs_char chr, gs_glyph_space_t glyph_space)
     gs_copied_font_data_t *const cfdata = cf_data(copied);
     const gs_glyph *Encoding = cfdata->Encoding;
 
-    if (chr < 0 || chr >= 256 || Encoding == 0)
+    if (chr >= 256 || Encoding == 0)
 	return GS_NO_GLYPH;
     return Encoding[chr];
 }
@@ -601,6 +658,17 @@ copied_enumerate_glyph(gs_font *font, int *pindex,
 {
     gs_copied_font_data_t *const cfdata = cf_data(font);
 
+    if (cfdata->ordered) {
+	if (*pindex >= cfdata->num_glyphs)
+	    *pindex = 0;
+	else {
+	    int i = cfdata->glyphs[*pindex].order_index;
+
+	    *pglyph = cfdata->names[i].glyph;
+	    ++(*pindex);
+	}
+	return 0;
+    }
     for (; *pindex < cfdata->glyphs_size; ++*pindex)
 	if (cfdata->glyphs[*pindex].used) {
 	    *pglyph =
@@ -623,9 +691,9 @@ copied_glyph_name(gs_font *font, gs_glyph glyph, gs_const_string *pstr)
     gs_copied_glyph_t *pcg;
 
     if (glyph >= GS_MIN_CID_GLYPH)
-	return_error(font->memory, gs_error_rangecheck);
-    if (copied_glyph_slot(font->memory, cfdata, glyph, &pcg) < 0)
-	return_error(font->memory, gs_error_undefined);
+	return_error(gs_error_rangecheck);
+    if (copied_glyph_slot(cfdata, glyph, &pcg) < 0)
+	return_error(gs_error_undefined);
     *pstr = cfdata->names[pcg - cfdata->glyphs].str;
     return 0;
 }
@@ -637,7 +705,8 @@ copied_build_char(gs_text_enum_t *pte, gs_state *pgs, gs_font *font,
     int wmode = font->WMode;
     int code;
     gs_glyph_info_t info;
-    double wxy[2];
+    double wxy[6];
+    double sbw_stub[4]; /* Currently glyph_outline retrieves sbw only with type 1,2,9 fonts. */
 
     if (glyph == GS_NO_GLYPH) {
 	glyph = font->procs.encode_char(font, chr, GLYPH_SPACE_INDEX);
@@ -665,7 +734,7 @@ copied_build_char(gs_text_enum_t *pte, gs_state *pgs, gs_font *font,
     wxy[5] = info.bbox.q.y;
     if ((code = gs_text_setcachedevice(pte, wxy)) < 0 ||
 	(code = font->procs.glyph_outline(font, wmode, glyph, &ctm_only(pgs),
-					  pgs->path)) < 0
+					  pgs->path, sbw_stub)) < 0
 	)
 	return code;
     if (font->PaintType != 0) {
@@ -690,33 +759,38 @@ compare_arrays(const float *v0, int l0, const float *v1, int l1)
 
 private int
 compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs, 
-			   int num_glyphs, int level)
+			   int num_glyphs, int glyphs_step, int level)
 {
     /* 
      * Checking widths because we can synthesize fonts from random fonts 
      * having same FontName and FontType. 
      * We must request width explicitely because Type 42 stores widths 
      * separately from outline data. We could skip it for Type 1, which doesn't.
+     * We don't care of Metrics, Metrics2 because copied font never has them.
      */
     int i, WMode = ofont->WMode;
     int members = (GLYPH_INFO_WIDTH0 << WMode) | GLYPH_INFO_OUTLINE_WIDTHS | GLYPH_INFO_NUM_PIECES;
     gs_matrix mat;
+    gs_copied_font_data_t *const cfdata = cf_data(cfont);
+    int num_new_glyphs = 0;
 
-    /*
-     *	We don't care of Metrics, Metrics2 because copied font never has them.
-     * 	Perhaps we request and compare widths because True Type 
-     *	stores them separately from glyph data.
-     */
     gs_make_identity(&mat);
     for (i = 0; i < num_glyphs; i++) {
-	gs_glyph glyph = glyphs[i], pieces0[40], *pieces = pieces0;
+	gs_glyph glyph = *(gs_glyph *)((byte *)glyphs + i * glyphs_step);
+	gs_glyph pieces0[40], *pieces = pieces0;
 	gs_glyph_info_t info0, info1;
 	int code0 = ofont->procs.glyph_info((gs_font *)ofont, glyph, &mat, members, &info0);
 	int code1 = cfont->procs.glyph_info((gs_font *)cfont, glyph, &mat, members, &info1);
 	int code2, code;
 
-	if (code0 == gs_error_undefined || code1 == gs_error_undefined)
+	if (code0 == gs_error_undefined)
 	    continue;
+	if (code1 == gs_error_undefined) {
+	    num_new_glyphs++;
+	    if (num_new_glyphs > cfdata->glyphs_size - cfdata->num_glyphs)
+		return 0;
+	    continue;
+	}
 	if (code0 < 0)
 	    return code0;
 	if (code1 < 0)
@@ -730,12 +804,12 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 	    return 0;
 	if (info0.num_pieces > 0) {
 	    if(level > 5)
-		return_error(cfont->memory, gs_error_rangecheck); /* abnormal glyph recursion */
+		return_error(gs_error_rangecheck); /* abnormal glyph recursion */
 	    if (info0.num_pieces > countof(pieces0) / 2) {
 		pieces = (gs_glyph *)gs_alloc_bytes(cfont->memory, 
 		    sizeof(glyphs) * info0.num_pieces * 2, "compare_glyphs");
 		if (pieces == 0)
-		    return_error(cfont->memory, gs_error_VMerror);
+		    return_error(gs_error_VMerror);
 	    }
 	    info0.pieces = pieces;
 	    info1.pieces = pieces + info0.num_pieces;
@@ -746,15 +820,21 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 	    if (code0 >= 0 && code1 >= 0) {
 		code2 = memcmp(info0.pieces, info1.pieces, info0.num_pieces * sizeof(*pieces));
 		if (!code2)
-		    code = compare_glyphs(cfont, ofont, pieces, info0.num_pieces, level + 1);
+		    code = compare_glyphs(cfont, ofont, pieces, info0.num_pieces, glyphs_step, level + 1);
 		else
 		    code = 0; /* Quiet compiler. */
 	    } else
 		code2 = code = 0;
 	    if (pieces != pieces0)
 		gs_free_object(cfont->memory, pieces, "compare_glyphs");
-	    if (code0 == gs_error_undefined || code1 == gs_error_undefined)
+	    if (code0 == gs_error_undefined)
 		continue;
+	    if (code1 == gs_error_undefined) {
+		num_new_glyphs++;
+		if (num_new_glyphs > cfdata->glyphs_size - cfdata->num_glyphs)
+		    return 0;
+		continue;
+	    }
 	    if (code0 < 0)
 		return code0;
 	    if (code1 < 0)
@@ -771,6 +851,8 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 		    gs_font_type1 *font0 = (gs_font_type1 *)cfont;
 		    gs_font_type1 *font1 = (gs_font_type1 *)ofont;
 
+		    gdata0.memory = font0->memory;
+		    gdata1.memory = font1->memory;
 		    code0 = font0->data.procs.glyph_data(font0, glyph, &gdata0);
 		    code1 = font1->data.procs.glyph_data(font1, glyph, &gdata1);
 		    break;
@@ -782,6 +864,8 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 		    uint glyph_index0 = font0->data.get_glyph_index(font0, glyph);
 		    uint glyph_index1 = font1->data.get_glyph_index(font1, glyph);
 
+		    gdata0.memory = font0->memory;
+		    gdata1.memory = font1->memory;
 		    code0 = font0->data.get_outline(font0, glyph_index0, &gdata0);
 		    code1 = font1->data.get_outline(font1, glyph_index1, &gdata1);
 		    break;
@@ -791,12 +875,14 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 		    gs_font_cid0 *font1 = (gs_font_cid0 *)ofont;
 		    int fidx0, fidx1;
 
+		    gdata0.memory = font0->memory;
+		    gdata1.memory = font1->memory;
 		    code0 = font0->cidata.glyph_data((gs_font_base *)font0, glyph, &gdata0, &fidx0);
 		    code1 = font1->cidata.glyph_data((gs_font_base *)font1, glyph, &gdata1, &fidx1);
 		    break;
 		}
 		default:
-		    return_error(cfont->memory, gs_error_unregistered); /* unimplemented */
+		    return_error(gs_error_unregistered); /* unimplemented */
 	    }
 	    if (code0 < 0) {
 		if (code1 >= 0)
@@ -829,7 +915,7 @@ copied_type1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph,
 {
     gs_copied_font_data_t *const cfdata = cf_data((gs_font *)pfont);
     gs_copied_glyph_t *pslot;
-    int code = copied_glyph_slot(pfont->memory, cfdata, glyph, &pslot);
+    int code = copied_glyph_slot(cfdata, glyph, &pslot);
 
     if (code < 0)
 	return code;
@@ -847,7 +933,7 @@ copied_type1_subr_data(gs_font_type1 * pfont, int subr_num, bool global,
 	(global ? &cfdata->global_subrs : &cfdata->subrs);
 
     if (subr_num < 0 || subr_num >= psi->count)
-	return_error(pfont->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     gs_glyph_data_from_string(pgd, psi->data + psi->starts[subr_num],
 			      psi->starts[subr_num + 1] -
 			        psi->starts[subr_num],
@@ -865,10 +951,16 @@ copied_type1_seac_data(gs_font_type1 * pfont, int ccode,
      */
     gs_glyph glyph = gs_c_known_encode((gs_char)ccode, ENCODING_INDEX_STANDARD);
     gs_glyph glyph1;
-
+    int code;
 
     if (glyph == GS_NO_GLYPH)
-	return_error(pfont->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
+    code = gs_c_glyph_name(glyph, gstr);
+    if (code < 0)
+	return code;
+    code = pfont->dir->global_glyph_code(pfont->memory, gstr, &glyph1);
+    if (code < 0)
+	return code;
     if (pglyph)
 	*pglyph = glyph1;
     if (pgd)
@@ -880,13 +972,13 @@ copied_type1_seac_data(gs_font_type1 * pfont, int ccode,
 private int
 copied_type1_push_values(void *callback_data, const fixed *values, int count)
 {
-    return gs_error_unregistered;
+    return_error(gs_error_unregistered);
 }
 
 private int
 copied_type1_pop_value(void *callback_data, fixed *value)
 {
-    return gs_error_unregistered;
+    return_error(gs_error_unregistered);
 }
 
 private int
@@ -926,9 +1018,11 @@ copy_glyph_type1(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_glyph_data_t gdata;
     gs_font_type1 *font1 = (gs_font_type1 *)font;
-    int code = font1->data.procs.glyph_data(font1, glyph, &gdata);
+    int code;
     int rcode;
 
+    gdata.memory = font->memory;
+    code = font1->data.procs.glyph_data(font1, glyph, &gdata);
     if (code < 0)
 	return code;
     code = copy_glyph_data(font, glyph, copied, options, &gdata, NULL, 0);
@@ -942,7 +1036,7 @@ copy_glyph_type1(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 
 private int
 copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
-			   const gs_matrix *pmat, gx_path *ppath)
+			   const gs_matrix *pmat, gx_path *ppath, double sbw[4])
 {   /* 
      * 'WMode' may be inherited from an upper font.
      * We ignore in because Type 1,2 charstrings do not depend on it.
@@ -955,15 +1049,17 @@ copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
      */
     gs_glyph_data_t gdata;
     gs_font_type1 *const pfont1 = (gs_font_type1 *)font;
-    int code = pfont1->data.procs.glyph_data(pfont1, glyph, &gdata);
+    int code;
     const gs_glyph_data_t *pgd = &gdata;
     gs_type1_state cis;
     gs_imager_state gis;
 
+    gdata.memory = pfont1->memory;
+    code = pfont1->data.procs.glyph_data(pfont1, glyph, &gdata);
     if (code < 0)
 	return code;
     if (pgd->bits.size <= max(pfont1->data.lenIV, 0))
-	return_error(font->memory, gs_error_invalidfont);
+	return_error(gs_error_invalidfont);
     /* Initialize just enough of the imager state. */
     if (pmat)
 	gs_matrix_fixed_from_matrix(&gis.ctm, pmat);
@@ -990,9 +1086,10 @@ copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
 	default:		/* code < 0, error */
 	    return code;
 	case type1_result_callothersubr:	/* unknown OtherSubr */
-	    return_error(font->memory, gs_error_rangecheck); /* can't handle it */
+	    return_error(gs_error_rangecheck); /* can't handle it */
 	case type1_result_sbw:	/* [h]sbw, just continue */
 	    pgd = 0;
+    	    type1_cis_get_metrics(&cis, sbw);
 	}
     }
 }
@@ -1011,23 +1108,30 @@ same_type1_subrs(const gs_font_type1 *cfont, const gs_font_type1 *ofont,
     int i, code = 0;
     bool exit = false;
 
+    gdata0.memory = cfont->memory;
+    gdata1.memory = ofont->memory;
     /* Scan the font to determine the size of the subrs. */
     for (i = 0; !exit; i++) {
 	int code0 = cfont->data.procs.subr_data((gs_font_type1 *)cfont, 
 						i, global, &gdata0);
 	int code1 = ofont->data.procs.subr_data((gs_font_type1 *)ofont, 
 						i, global, &gdata1);
+	bool missing0, missing1;
 	
+	if (code0 == gs_error_rangecheck && code1 == gs_error_rangecheck)
+	    return 1; /* Both arrays exceeded. */
 	/*  Some fonts use null for skiping elements in subrs array. 
 	    This gives typecheck.
 	*/
-	if ((code0 == gs_error_rangecheck || code0 == gs_error_typecheck) && 
-	    (code1 == gs_error_rangecheck || code1 == gs_error_typecheck))
-	    return 1;
-	if ((code0 == gs_error_rangecheck || code0 == gs_error_typecheck) != 
-	    (code1 == gs_error_rangecheck || code1 == gs_error_typecheck))
-	    exit = true;
-	else if (code0 < 0)
+	missing0 = (code0 == gs_error_rangecheck || code0 == gs_error_typecheck);
+	missing1 = (code1 == gs_error_rangecheck || code1 == gs_error_typecheck);
+	if (missing0 && missing1)
+	    continue;
+	if (missing0 && !missing1)
+	    return 0; /* The copy has insufficient subrs. */
+	if (missing1)
+	    continue;
+	if (code0 < 0)
 	    code = code0, exit = true;
 	else if (code1 < 0)
 	    code = code1, exit = true;
@@ -1105,7 +1209,7 @@ copied_type42_string_proc(gs_font_type42 *font, ulong offset, uint len,
     gs_copied_font_data_t *const cfdata = font->data.proc_data;
 
     if (offset + len > cfdata->data_size)
-	return_error(font->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     *pstr = cfdata->data + offset;
     return 0;
 }
@@ -1118,7 +1222,7 @@ copied_type42_get_outline(gs_font_type42 *font, uint glyph_index,
     gs_copied_glyph_t *pcg;
 
     if (glyph_index >= cfdata->glyphs_size)
-	return_error(font->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     pcg = &cfdata->glyphs[glyph_index];
     if (!pcg->used)
 	gs_glyph_data_from_null(pgd);
@@ -1136,10 +1240,10 @@ copied_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
     gs_copied_glyph_t *pcg;
 
     if (glyph_index >= cfdata->glyphs_size)
-	return_error(pfont->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     pcg = &cfdata->glyphs[glyph_index];
     if (!(pcg->used & (HAS_SBW0 << wmode)))
-	return_error(pfont->memory, gs_error_undefined);
+	return_error(gs_error_undefined);
     return gs_type42_default_get_metrics(pfont, glyph_index, wmode, sbw);
 }
 
@@ -1148,10 +1252,10 @@ copied_type42_get_glyph_index(gs_font_type42 *font, gs_glyph glyph)
 {
     gs_copied_font_data_t *const cfdata = cf_data((gs_font *)font);
     gs_copied_glyph_t *pcg;
-    int code = copied_glyph_slot(font->memory, cfdata, glyph, &pcg);
+    int code = copied_glyph_slot(cfdata, glyph, &pcg);
 
     if (code < 0)
-	return_error(font->memory, gs_error_undefined);
+	return GS_NO_GLYPH;
     return pcg - cfdata->glyphs;
 }
 
@@ -1174,6 +1278,7 @@ copy_font_type42(gs_font *font, gs_font *copied)
     code = copied_Encoding_alloc(copied);
     if (code < 0)
 	return code;
+    s_init(&fs, font->memory);
     swrite_position_only(&fs);
     code = (font->FontType == ft_TrueType ? psf_write_truetype_stripped(&fs, font42)
 					  : psf_write_cid2_stripped(&fs, (gs_font_cid2 *)font42));
@@ -1189,6 +1294,8 @@ copy_font_type42(gs_font *font, gs_font *copied)
     code = gs_type42_font_init(copied42);
     if (code < 0)
 	goto fail2;
+    /* gs_type42_font_init overwrites font_info. */
+    copied->procs.font_info = copied_font_info;
     /* gs_type42_font_init overwrites enumerate_glyph. */
     copied42->procs.enumerate_glyph = copied_enumerate_glyph;
     copied42->data.get_glyph_index = copied_type42_get_glyph_index;
@@ -1226,7 +1333,7 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 		font->FontType == ft_CID_TrueType 
 		    ? fontCID2->cidata.CIDMap_proc(fontCID2, glyph)
 		    : font42->data.get_glyph_index(font42, glyph));
-    int code = font42->data.get_outline(font42, gid, &gdata);
+    int code;
     int rcode;
     gs_copied_font_data_t *const cfdata = cf_data(copied);
     gs_copied_glyph_t *pcg;
@@ -1234,6 +1341,8 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
     double factor = font42->data.unitsPerEm;
     int i;
 
+    gdata.memory = font42->memory;
+    code = font42->data.get_outline(font42, gid, &gdata);
     if (code < 0)
 	return code;
     code = copy_glyph_data(font, gid + GS_MIN_GLYPH_INDEX, copied, options,
@@ -1244,7 +1353,7 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
     if (glyph < GS_MIN_CID_GLYPH)
 	code = copy_glyph_name(font, glyph, copied,
 			       gid + GS_MIN_GLYPH_INDEX);
-    DISCARD(copied_glyph_slot(font->memory, cfdata, gid + GS_MIN_GLYPH_INDEX, &pcg)); /* can't fail */
+    DISCARD(copied_glyph_slot(cfdata, gid + GS_MIN_GLYPH_INDEX, &pcg)); /* can't fail */
     for (i = 0; i < 2; ++i) {
 	if (font42->data.get_metrics(font42, gid, i, sbw) >= 0) {
 	    int sb = (int)(sbw[i] * factor + 0.5);
@@ -1271,13 +1380,13 @@ copied_type42_encode_char(gs_font *copied, gs_char chr,
     const gs_glyph *Encoding = cfdata->Encoding;
     gs_glyph glyph;
 
-    if (chr < 0 || chr >= 256 || Encoding == 0)
+    if (chr >= 256 || Encoding == 0)
 	return GS_NO_GLYPH;
     glyph = Encoding[chr];
     if (glyph_space == GLYPH_SPACE_INDEX) {
 	/* Search linearly for the glyph by name. */
 	gs_copied_glyph_t *pcg;
-	int code = named_glyph_slot_linear(copied->memory, cfdata, glyph, &pcg);
+	int code = named_glyph_slot_linear(cfdata, glyph, &pcg);
 
 	if (code < 0 || !pcg->used)
 	    return GS_NO_GLYPH;
@@ -1312,7 +1421,8 @@ same_type42_hinting(gs_font_type42 *font0, gs_font_type42 *font1)
 {
     gs_type42_data *d0 = &font0->data, *d1 = &font1->data;
     gs_font_type42 *font[2];
-    uint pos[2][3], len[2][3];
+    uint pos[2][3];
+    uint len[2][3] = {{0,0,0}, {0,0,0}};
     int i, j, code;
 
     if (d0->unitsPerEm != d1->unitsPerEm)
@@ -1351,16 +1461,28 @@ same_type42_hinting(gs_font_type42 *font0, gs_font_type42 *font1)
 	    return 0;
     }
     for (i = 0; i < 3; i++) {
-	const byte *data0, *data1;
+	if (len[0][i] != 0) {
+	    const byte *data0, *data1;
+	    ulong length = len[0][i], size0, size1, size;
+	    ulong pos0 = pos[0][i], pos1 = pos[1][i];
 
-	code = access_type42_data(font0, pos[0][i], len[0][i], &data0);
-	if (code < 0)
-	    return code;
-	code = access_type42_data(font1, pos[1][i], len[1][i], &data1);
-	if (code < 0)
-	    return code;
-	if (memcmp(data0, data1, len[1][i]))
-	    return 0;
+	    while (length > 0) {
+		code = access_type42_data(font0, pos0, length, &data0);
+		if (code < 0)
+		    return code;
+		size0 = (code == 0 ? length : code);
+		code = access_type42_data(font1, pos1, length, &data1);
+		if (code < 0)
+		    return code;
+		size1 = (code == 0 ? length : code);
+		size = min(size0, size1);
+		if (memcmp(data0, data1, size))
+		    return 0;
+		pos0 += size;
+		pos1 += size;
+		length -= size;
+	    }
+	}
     }
     return 1;
 }
@@ -1387,7 +1509,7 @@ copied_cid0_glyph_data(gs_font_base *font, gs_glyph glyph,
     gs_font_cid0 *fcid0 = (gs_font_cid0 *)font;
     gs_copied_font_data_t *const cfdata = cf_data((gs_font *)font);
     gs_copied_glyph_t *pcg;
-    int code = copied_glyph_slot(font->memory, cfdata, glyph, &pcg);
+    int code = copied_glyph_slot(cfdata, glyph, &pcg);
     int fdbytes = fcid0->cidata.FDBytes;
     int i;
 
@@ -1396,7 +1518,7 @@ copied_cid0_glyph_data(gs_font_base *font, gs_glyph glyph,
     if (code < 0) {
 	if (pgd)
 	    gs_glyph_data_from_null(pgd);
-	return_error(font->memory, gs_error_undefined);
+	return_error(gs_error_undefined);
     }
     if (pfidx)
 	for (i = 0; i < fdbytes; ++i)
@@ -1426,7 +1548,7 @@ cid0_subfont(gs_font *copied, gs_glyph glyph, gs_font_type1 **pfont1)
 	gs_font_cid0 *font0 = (gs_font_cid0 *)copied;
 
 	if (fidx >= font0->cidata.FDArray_size)
-	    return_error(copied->memory, gs_error_unregistered); /* Must not happen. */
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	*pfont1 = font0->cidata.FDArray[fidx];
     }
     return code;
@@ -1453,6 +1575,8 @@ copied_cid0_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 
 	if (code < 0)
 	    return code;
+	info->width[0].x = 0;
+	info->width[0].y = 0;
 	info->width[1].x = 0;
 	info->width[1].y = -finfo.BBox.q.x; /* Sic! */
 	info->v.x = finfo.BBox.q.x / 2;
@@ -1466,7 +1590,7 @@ copied_cid0_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 
 private int
 copied_cid0_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
-			  const gs_matrix *pmat, gx_path *ppath)
+			  const gs_matrix *pmat, gx_path *ppath, double sbw[4])
 {
     gs_font_type1 *subfont1;
     int code = cid0_subfont(font, glyph, &subfont1);
@@ -1474,7 +1598,7 @@ copied_cid0_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
     if (code < 0)
 	return code;
     return subfont1->procs.glyph_outline((gs_font *)subfont1, WMode, glyph, pmat,
-					 ppath);
+					 ppath, sbw);
 }
 
 private int
@@ -1489,7 +1613,7 @@ copy_font_cid0(gs_font *font, gs_font *copied)
     int i = 0, code;
 
     if (FDArray == 0)
-	return_error(font->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     code = copy_font_cid_common(font, copied, &copied0->cidata.common);
     if (code < 0)
 	goto fail;
@@ -1511,6 +1635,7 @@ copy_font_cid0(gs_font *font, gs_font *copied)
 	if (code < 0)
 	    goto fail;
 	subcopy1 = (gs_font_type1 *)subcopy;
+	subcopy1->data.parent = NULL;
 	subdata = cf_data(subcopy);
 	subdata->parent = copied0;
 	gs_free_object(copied->memory, subdata->Encoding,
@@ -1554,17 +1679,19 @@ copy_glyph_cid0(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
     gs_font_cid0 *copied0 = (gs_font_cid0 *)copied;
     int fdbytes = copied0->cidata.FDBytes;
     int fidx;
-    int code = fcid0->cidata.glyph_data((gs_font_base *)font, glyph,
-					&gdata, &fidx);
+    int code;
     byte prefix[MAX_FDBytes];
     int i;
 
+    gdata.memory = font->memory;
+    code = fcid0->cidata.glyph_data((gs_font_base *)font, glyph,
+		&gdata, &fidx);
     if (code < 0)
 	return code;
     for (i = fdbytes - 1; i >= 0; --i, fidx >>= 8)
 	prefix[i] = (byte)fidx;
     if (fidx != 0)
-	return_error(font->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     return copy_glyph_data(font, glyph, copied, options, &gdata, prefix, fdbytes);
 }
 
@@ -1578,9 +1705,6 @@ private int
 same_cid0_hinting(const gs_font_cid0 *cfont, const gs_font_cid0 *ofont)
 {
     int i;
-
-    if (cfont->cidata.FDBytes != ofont->cidata.FDBytes)
-	return 0;
 
     if (cfont->cidata.FDArray_size != ofont->cidata.FDArray_size)
 	return 0;
@@ -1604,7 +1728,9 @@ copied_cid2_CIDMap_proc(gs_font_cid2 *fcid2, gs_glyph glyph)
     const ushort *CIDMap = cfdata->CIDMap;
 
     if (glyph < GS_MIN_CID_GLYPH || cid >= fcid2->cidata.common.CIDCount)
-	return_error(fcid2->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
+    if (CIDMap[cid] == 0xffff)
+	return -1;	
     return CIDMap[cid];
 }
 
@@ -1614,7 +1740,7 @@ copied_cid2_get_glyph_index(gs_font_type42 *font, gs_glyph glyph)
     int glyph_index = copied_cid2_CIDMap_proc((gs_font_cid2 *)font, glyph);
 
     if (glyph_index < 0)
-	return GS_MIN_CID_GLYPH;
+	return GS_NO_GLYPH;
     return glyph_index;
 }
 
@@ -1624,13 +1750,13 @@ copy_font_cid2(gs_font *font, gs_font *copied)
     gs_font_cid2 *copied2 = (gs_font_cid2 *)copied;
     gs_copied_font_data_t *const cfdata = cf_data(copied);
     int code;
-    int glyphs_size = cfdata->glyphs_size; /* See gs_copy_font, case ft_CID_TrueType. */
+    int CIDCount = copied2->cidata.common.CIDCount;
     ushort *CIDMap = (ushort *)
-	gs_alloc_byte_array(copied->memory, glyphs_size, sizeof(ushort),
+	gs_alloc_byte_array(copied->memory, CIDCount, sizeof(ushort),
 			    "copy_font_cid2(CIDMap");
 
     if (CIDMap == 0)
-	return_error(copied->memory, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     code = copy_font_cid_common(font, copied, &copied2->cidata.common);
     if (code < 0 ||
 	(code = copy_font_type42(font, copied)) < 0
@@ -1639,7 +1765,7 @@ copy_font_cid2(gs_font *font, gs_font *copied)
 	return code;
     }
     cfdata->notdef = GS_MIN_CID_GLYPH;
-    memset(CIDMap, 0, glyphs_size * sizeof(*CIDMap));
+    memset(CIDMap, 0xff, CIDCount * sizeof(*CIDMap));
     cfdata->CIDMap = CIDMap;
     copied2->cidata.MetricsCount = 0;
     copied2->cidata.CIDMap_proc = copied_cid2_CIDMap_proc;
@@ -1651,30 +1777,58 @@ copy_font_cid2(gs_font *font, gs_font *copied)
     return 0;
 }
 
+private int expand_CIDMap(gs_font_cid2 *copied2, uint CIDCount)
+{
+    ushort *CIDMap;
+    gs_copied_font_data_t *const cfdata = cf_data((gs_font *)copied2);
+
+    if (CIDCount <= copied2->cidata.common.CIDCount)
+	return 0;
+    CIDMap = (ushort *)
+	gs_alloc_byte_array(copied2->memory, CIDCount, sizeof(ushort),
+			    "copy_font_cid2(CIDMap");
+    if (CIDMap == 0)
+	return_error(gs_error_VMerror);
+    memcpy(CIDMap, cfdata->CIDMap, copied2->cidata.common.CIDCount * sizeof(*CIDMap));
+    memset(CIDMap + copied2->cidata.common.CIDCount, 0xFF, 
+	    (CIDCount - copied2->cidata.common.CIDCount) * sizeof(*CIDMap));
+    cfdata->CIDMap = CIDMap;
+    copied2->cidata.common.CIDCount = CIDCount;
+    return 0;
+}
+
 private int
 copy_glyph_cid2(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_font_cid2 *fcid2 = (gs_font_cid2 *)font;
     gs_copied_font_data_t *const cfdata = cf_data(copied);
+    gs_font_cid2 *copied2 = (gs_font_cid2 *)copied;
     int gid;
     int code;
 
     if (!(options & COPY_GLYPH_BY_INDEX)) {
 	uint cid = glyph - GS_MIN_CID_GLYPH;
+	int CIDCount;
 
+	code = expand_CIDMap(copied2, cid + 1);
+	if (code < 0)
+	    return code;
+	CIDCount = copied2->cidata.common.CIDCount;
         gid = fcid2->cidata.CIDMap_proc(fcid2, glyph);
-    if (gid < 0 || gid >= cfdata->glyphs_size)
-	return_error(font->memory, gs_error_rangecheck);
-    if (cfdata->CIDMap[cid] != 0 && cfdata->CIDMap[cid] != gid)
-	    return_error(font->memory, gs_error_invalidaccess);
+	if (gid < 0 || gid >= cfdata->glyphs_size)
+	    return_error(gs_error_rangecheck);
+	if (cid > CIDCount)
+	    return_error(gs_error_invalidaccess);
+	if (cfdata->CIDMap[cid] != 0xffff && cfdata->CIDMap[cid] != gid)
+	    return_error(gs_error_invalidaccess);
 	code = copy_glyph_type42(font, glyph, copied, options);
-    if (code < 0)
-	return code;
-    cfdata->CIDMap[cid] = gid;
+	if (code < 0)
+	    return code;
+        cfdata->CIDMap[cid] = gid;
     } else {
 	gid = glyph - GS_MIN_GLYPH_INDEX;
 	if (gid < 0 || gid >= cfdata->glyphs_size)
-	    return_error(font->memory, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	code = copy_glyph_type42(font, glyph, copied, options);
 	if (code < 0)
 	    return code;
@@ -1717,6 +1871,18 @@ private const gs_font_procs copied_font_procs = {
     copied_build_char
 };
 
+#if GLYPHS_SIZE_IS_PRIME
+private const int some_primes[] = {
+    /* Arbitrary choosen prime numbers, being reasonable for a Type 1|2 font size. 
+       We start with 257 to fit 256 glyphs and .notdef .
+       Smaller numbers aren't useful, because we don't know whether a font
+       will add more glyphs incrementally when we allocate its stable copy.
+    */
+    257, 359, 521, 769, 1031, 2053, 
+    3079, 4099, 5101, 6101, 7109, 8209, 10007, 12007, 14009, 
+    16411, 20107, 26501, 32771, 48857, 65537};
+#endif
+
 /*
  * Copy a font, aside from its glyphs.
  */
@@ -1758,6 +1924,25 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
 					       &glyph), index != 0)
 		++glyphs_size;
 	}
+#if GLYPHS_SIZE_IS_PRIME
+	/*
+	 * Make glyphs_size a prime number to ensure termination of the loop in
+	 * named_glyphs_slot_hashed, q.v.
+	 * Also reserve additional slots for the case of font merging and
+	 * for possible font increments.
+	 */
+	glyphs_size = glyphs_size * 3 / 2;
+	if (glyphs_size < 257)
+	    glyphs_size = 257;
+	{ int i;
+	    for (i = 0; i < count_of(some_primes); i++)
+		if (glyphs_size <= some_primes[i])
+		    break;
+	    if (i >= count_of(some_primes))
+		return_error(gs_error_rangecheck);
+	    glyphs_size = some_primes[i];
+	}
+#else
 	/*
 	 * Make names_size a power of 2 to ensure termination of the loop in
 	 * named_glyphs_slot_hashed, q.v.
@@ -1767,6 +1952,7 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
 	    glyphs_size = (glyphs_size | (glyphs_size - 1)) + 1;
 	if (glyphs_size < 256)	/* probably incremental font */
 	    glyphs_size = 256;
+#endif
 	have_names = true;
 	break;
     case ft_CID_encrypted:
@@ -1779,7 +1965,7 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
 	glyphs_size = ((gs_font_cid2 *)font)->data.trueNumGlyphs;
 	break;
     default:
-	return_error(font->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     }
 
     /* Get the font_info for copying. */
@@ -1809,10 +1995,11 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
     if (glyphs == 0 || (names == 0 && have_names) || copied == 0 ||
 	cfdata == 0
 	) {
-	code = gs_note_error(mem, gs_error_VMerror);
+	code = gs_note_error(gs_error_VMerror);
 	goto fail;
     }
     cfdata->info = info;
+    cfdata->dir = font->dir;
     if ((code = (copy_string(mem, &cfdata->info.Copyright,
 			     "gs_copy_font(Copyright)") |
 		 copy_string(mem, &cfdata->info.Notice,
@@ -1853,6 +2040,8 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
     memset(glyphs, 0, glyphs_size * sizeof(*glyphs));
     cfdata->glyphs = glyphs;
     cfdata->glyphs_size = glyphs_size;
+    cfdata->num_glyphs = 0;
+    cfdata->ordered = false;
     if (names)
 	memset(names, 0, glyphs_size * sizeof(*names));
     cfdata->names = names;
@@ -1906,21 +2095,23 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
 		      int options)
 {
     int code;
-#define MAX_GLYPH_PIECES 32	/* arbitrary, but 10 is too small */
+#define MAX_GLYPH_PIECES 64	/* arbitrary, but 32 is too small - bug 687698. */
     gs_glyph glyphs[MAX_GLYPH_PIECES];
     uint count = 1, i;
 
     if (copied->procs.font_info != copied_font_info)
-	return_error(font->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     code = cf_data(copied)->procs->copy_glyph(font, glyph, copied, options);
     if (code != 0)
 	return code;
     /* Copy any sub-glyphs. */
     glyphs[0] = glyph;
-    psf_add_subset_pieces(glyphs, &count, MAX_GLYPH_PIECES, MAX_GLYPH_PIECES,
+    code = psf_add_subset_pieces(glyphs, &count, MAX_GLYPH_PIECES, MAX_GLYPH_PIECES,
 			  font);
+    if (code < 0)
+	return code;
     if (count > MAX_GLYPH_PIECES)
-	return_error(font->memory, gs_error_limitcheck);
+	return_error(gs_error_limitcheck);
     for (i = 1; i < count; ++i) {
 	code = gs_copy_glyph_options(font, glyphs[i], copied,
 				     (options & ~COPY_GLYPH_NO_OLD) | COPY_GLYPH_BY_INDEX);
@@ -1950,8 +2141,9 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
 	gs_glyph_data_t gdata;
 	gs_char chars[2];
 
+	gdata.memory = font->memory;
 	/* Since we just copied the glyph, copied_glyph_slot can't fail. */
-	DISCARD(copied_glyph_slot(font->memory, cf_data(copied), glyph, &pcg));
+	DISCARD(copied_glyph_slot(cf_data(copied), glyph, &pcg));
 	gs_glyph_data_from_string(&gdata, pcg->gdata.data, pcg->gdata.size,
 				  NULL);
 	code = gs_type1_piece_codes((gs_font_type1 *)font, &gdata, chars);
@@ -1976,7 +2168,7 @@ gs_copied_font_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph)
     gs_copied_font_data_t *const cfdata = cf_data(copied);
 
     if (copied->procs.font_info != copied_font_info)
-	return_error(copied->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     return cfdata->procs->add_encoding(copied, chr, glyph);
 }
 
@@ -2005,8 +2197,12 @@ gs_copy_font_complete(gs_font *font, gs_font *copied)
 	     code >= 0 &&
 		 (font->procs.enumerate_glyph(font, &index, space, &glyph),
 		  index != 0);
-	     )
+	    ) {
+	    if (font->FontType == ft_TrueType && 
+		    glyph >= GS_MIN_CID_GLYPH && glyph < GS_MIN_GLYPH_INDEX)
+		return_error(gs_error_invalidfont); /* bug 688370. */
 	    code = gs_copy_glyph(font, glyph, copied);
+	}
 	/* For Type 42 fonts, if we copied by name, now copy again by index. */
 	if (space == GLYPH_SPACE_NAME && font->FontType == ft_TrueType)
 	    space = GLYPH_SPACE_INDEX;
@@ -2017,9 +2213,20 @@ gs_copy_font_complete(gs_font *font, gs_font *copied)
 	for (index = 0; code >= 0 && index < 256; ++index) {
 	    glyph = font->procs.encode_char(font, (gs_char)index,
 					    GLYPH_SPACE_NAME);
-	    if (glyph != GS_NO_GLYPH)
+	    if (glyph != GS_NO_GLYPH) {
 		code = gs_copied_font_add_encoding(copied, (gs_char)index,
 						   glyph);
+		if (code == gs_error_undefined) {
+		    /* Skip Encoding entries, which point to undefiuned glyphs - 
+		       happens with 033-52-5873.pdf. */
+		    code = 0; 
+		}
+		if (code == gs_error_rangecheck) {
+		    /* Skip Encoding entries, which point to undefiuned glyphs - 
+		       happens with 159.pdf. */
+		    code = 0; 
+		}
+	    }
 	}
     if (copied->FontType != ft_composite) {
 	gs_font_base *bfont = (gs_font_base *)font;
@@ -2040,7 +2247,8 @@ gs_copy_font_complete(gs_font *font, gs_font *copied)
  */
 int
 gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont, 
-			  gs_glyph *glyphs, int num_glyphs, bool check_hinting)
+			  gs_glyph *glyphs, int num_glyphs, int glyphs_step,
+			  bool check_hinting)
 {   
     int code = 0;
 
@@ -2091,11 +2299,118 @@ gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont,
 					 (const gs_font_cid2 *)ofont);
 		break;
 	    default:
-		return_error(cfont->memory, gs_error_unregistered); /* Must not happen. */
+		return_error(gs_error_unregistered); /* Must not happen. */
 	}
 	if (code <= 0) /* an error or false */
 	    return code; 
     }
-    return compare_glyphs(cfont, ofont, glyphs, num_glyphs, 0);
+    return compare_glyphs(cfont, ofont, glyphs, num_glyphs, glyphs_step, 0);
 }
 
+/* Extension glyphs may be added to a font to resolve 
+   glyph name conflicts while conwerting a PDF Widths into Metrics.
+   This function drops them before writing out an embedded font. */
+int
+copied_drop_extension_glyphs(gs_font *copied)
+{
+    /* 	Note : This function drops 'used' flags for some glyphs
+	and truncates glyph names. Can't use the font
+	for outlining|rasterization|width after applying it.
+     */
+    gs_copied_font_data_t *const cfdata = cf_data(copied);
+    uint gsize = cfdata->glyphs_size, i;
+    const int sl = strlen(gx_extendeg_glyph_name_separator);
+
+    for (i = 0; i < gsize; i++) {
+	gs_copied_glyph_t *pslot = &cfdata->glyphs[i];
+	gs_copied_glyph_name_t *name;
+	int l, j, k, i0;
+
+	if (!pslot->used)
+	    continue;
+	name = &cfdata->names[i];
+	l = name->str.size - sl;
+
+	for (j = 0; j < l; j ++)
+	    if (!memcmp(gx_extendeg_glyph_name_separator, name->str.data + j, sl))
+		break;
+	if (j >= l)
+	    continue;
+	/* Found an extension name.
+	   Find the corresponding non-extended one. */
+	i0 = i;
+	for (k = 0; k < gsize; k++)
+	    if (cfdata->glyphs[k].used && 
+		    cfdata->names[k].str.size == j &&
+		    !memcmp(cfdata->names[k].str.data, name->str.data, j) &&
+		    !bytes_compare(pslot->gdata.data, pslot->gdata.size,
+			    cfdata->glyphs[k].gdata.data, cfdata->glyphs[k].gdata.size)) {
+		i0 = k;
+		break;
+	    }
+	/* Truncate the extended glyph name. */
+	cfdata->names[i0].str.size = j;
+	/* Drop others with same prefix. */
+	for (k = 0; k < gsize; k++)
+	    if (k != i0 && cfdata->glyphs[k].used && 
+		    cfdata->names[k].str.size >= j + sl &&
+		    !memcmp(cfdata->names[k].str.data, name->str.data, j) &&
+		    !memcmp(gx_extendeg_glyph_name_separator, name + j, sl) &&
+		    !bytes_compare(pslot->gdata.data, pslot->gdata.size,
+			    cfdata->glyphs[k].gdata.data, cfdata->glyphs[k].gdata.size))
+		cfdata->glyphs[k].used = false;
+    }
+    return 0;
+}
+
+private int
+compare_glyph_names(const void *pg1, const void *pg2)
+{
+    const gs_copied_glyph_name_t * gn1 = *(const gs_copied_glyph_name_t **)pg1;
+    const gs_copied_glyph_name_t * gn2 = *(const gs_copied_glyph_name_t **)pg2;
+
+    return bytes_compare(gn1->str.data, gn1->str.size, gn2->str.data, gn2->str.size);
+}
+
+
+/* Order font data to avoid a serialization indeterminism. */
+private int
+order_font_data(gs_copied_font_data_t *cfdata, gs_memory_t *memory)
+{
+    int i, j = 0;
+
+    gs_copied_glyph_name_t **a = (gs_copied_glyph_name_t **)gs_alloc_byte_array(memory, cfdata->num_glyphs, 
+	sizeof(gs_copied_glyph_name_t *), "order_font_data");
+    if (a == NULL)
+	return_error(gs_error_VMerror);
+    j = 0;
+    for (i = 0; i < cfdata->glyphs_size; i++) {
+	if (cfdata->glyphs[i].used) {
+	    if (j >= cfdata->num_glyphs)
+		return_error(gs_error_unregistered); /* Must not happen */
+	    a[j++] = &cfdata->names[i];
+	}
+    }
+    qsort(a, cfdata->num_glyphs, sizeof(*a), compare_glyph_names);
+    for (; j >= 0; j--)
+	cfdata->glyphs[j].order_index = a[j] - cfdata->names;    
+    gs_free_object(memory, a, "order_font_data");
+    return 0;
+}
+
+/* Order font to avoid a serialization indeterminism. */
+int
+copied_order_font(gs_font *font)
+{
+
+    if (font->procs.enumerate_glyph != copied_enumerate_glyph)
+	return_error(gs_error_unregistered); /* Must not happen */
+    if (font->FontType != ft_encrypted && font->FontType != ft_encrypted2) {
+	 /* Don't need to order, because it is ordered by CIDs or glyph indices. */
+	return 0;
+    }
+    {	gs_copied_font_data_t * cfdata = cf_data(font);
+	cfdata->ordered = true;
+	return order_font_data(cfdata, font->memory);
+    }
+}

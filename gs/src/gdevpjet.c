@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$*/
+/* $Id$*/
 /* H-P PaintJet, PaintJet XL, and DEC LJ250 drivers. */
 /* Thanks to Rob Reiss (rob@moray.berkeley.edu) for the PaintJet XL */
 /* modifications. */
@@ -98,17 +99,17 @@ pj_common_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_origin,
 {
 #define DATA_SIZE (LINE_SIZE * 8)
 	byte *data =
-		(byte *)gs_malloc(DATA_SIZE, 1,
+	        (byte *)gs_malloc(pdev->memory, DATA_SIZE, 1,
 				  "paintjet_print_page(data)");
 	byte *plane_data =
-		(byte *)gs_malloc(LINE_SIZE * 3, 1,
+		(byte *)gs_malloc(pdev->memory, LINE_SIZE * 3, 1,
 				  "paintjet_print_page(plane_data)");
 	if ( data == 0 || plane_data == 0 )
 	{	if ( data )
-			gs_free((char *)data, DATA_SIZE, 1,
+			gs_free(pdev->memory, (char *)data, DATA_SIZE, 1,
 				"paintjet_print_page(data)");
 		if ( plane_data )
-			gs_free((char *)plane_data, LINE_SIZE * 3, 1,
+			gs_free(pdev->memory, (char *)plane_data, LINE_SIZE * 3, 1,
 				"paintjet_print_page(plane_data)");
 		return_error(gs_error_VMerror);
 	}
@@ -206,8 +207,8 @@ pj_common_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_origin,
 	/* end the page */
 	fputs(end_page, prn_stream);
 
-	gs_free((char *)data, DATA_SIZE, 1, "paintjet_print_page(data)");
-	gs_free((char *)plane_data, LINE_SIZE * 3, 1, "paintjet_print_page(plane_data)");
+	gs_free(pdev->memory, (char *)data, DATA_SIZE, 1, "paintjet_print_page(data)");
+	gs_free(pdev->memory, (char *)plane_data, LINE_SIZE * 3, 1, "paintjet_print_page(plane_data)");
 
 	return 0;
 }

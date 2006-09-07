@@ -1,22 +1,24 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Dash expansion for paths */
 #include "math_.h"
 #include "gx.h"
 #include "gsmatrix.h"		/* for gscoord.h */
 #include "gscoord.h"
 #include "gxfixed.h"
+#include "gxarith.h"
 #include "gsline.h"
 #include "gzline.h"
 #include "gzpath.h"
@@ -80,10 +82,17 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 	double scale = 1;
 	double left;
 
-	if (!(udx | udy))	/* degenerate */
+	if (!(udx | udy)) {	/* degenerate */
+	    if (gs_currentlinecap((const gs_state *)pis) != gs_cap_round) {
+		/* From PLRM, stroke operator :
+		   If a subpath is degenerate (consists of a single-point closed path 
+		   or of two or more points at the same coordinates), 
+		   stroke paints it only if round line caps have been specified */
+		continue;
+	    }
 	    dx = 0, dy = 0, length = 0;
-	else {
-	    gs_point d;
+	} else {
+  	    gs_point d;
 
 	    dx = udx, dy = udy;	/* scaled as fixed */
 	    gs_imager_idtransform(pis, dx, dy, &d);
@@ -104,13 +113,20 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 	left = length;
 	while (left > elt_length) {	/* We are using up the line segment. */
 	    double fraction = elt_length / length;
-	    fixed nx = x + (fixed) (dx * fraction);
-	    fixed ny = y + (fixed) (dy * fraction);
+	    fixed fx = (fixed) (dx * fraction);
+	    fixed fy = (fixed) (dy * fraction);
+	    fixed nx = x + fx;
+	    fixed ny = y + fy;
 
 	    if (ink_on) {
-		if (drawing >= 0)
-		    code = gx_path_add_line_notes(ppath, nx, ny,
+		if (drawing >= 0) {
+		    if (left >= elt_length && any_abs(fx) + any_abs(fy) < fixed_half)
+			code = gx_path_add_dash_notes(ppath, nx, ny, udx, udy, 
+				notes & pseg->notes);
+		    else
+			code = gx_path_add_line_notes(ppath, nx, ny,
 						  notes & pseg->notes);
+		}
 		notes |= sn_not_first;
 	    } else {
 		if (drawing > 0)	/* done */
@@ -132,32 +148,57 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 	/* Handle the last dash of a segment. */
       on:if (ink_on) {
 	    if (drawing >= 0) {
-		code =
-		    (pseg->type == s_line_close && drawing > 0 ?
-		     gx_path_close_subpath_notes(ppath,
-						 notes & pseg->notes) :
-		     gx_path_add_line_notes(ppath, sx, sy,
-					    notes & pseg->notes));
+		if (pseg->type == s_line_close && drawing > 0)
+		    code = gx_path_close_subpath_notes(ppath,
+						 notes & pseg->notes);
+		else if (any_abs(sx - x) + any_abs(sy - y) < fixed_half)
+		    code = gx_path_add_dash_notes(ppath, sx, sy, udx, udy, 
+			    notes & pseg->notes);
+		else
+		    code = gx_path_add_line_notes(ppath, sx, sy,
+					notes & pseg->notes);
 		notes |= sn_not_first;
 	    }
 	} else {
 	    code = gx_path_add_point(ppath, sx, sy);
 	    notes &= ~sn_not_first;
 	    if (elt_length < fixed2float(fixed_epsilon) &&
-		(pseg->next == 0 || pseg->next->type == s_start)
-		) {		/*
+		(pseg->next == 0 || pseg->next->type == s_start || elt_length == 0)) {		
+				/*
 				 * Ink is off, but we're within epsilon of the end
-				 * of the dash element, and at the end of the
-				 * subpath.  "Stretch" a little so we get a dot.
+				 * of the dash element.  
+				 * "Stretch" a little so we get a dot.
+				 * Also if the next dash pattern is zero length,
+				 * use the last segment orientation.
 				 */
+		double elt_length1;
+
 		if (code < 0)
 		    return code;
-		elt_length = 0;
-		ink_on = true;
 		if (++index == count)
 		    index = 0;
-		elt_length = pattern[index] * scale;
-		goto on;
+		elt_length1 = pattern[index] * scale;
+		if (pseg->next == 0 || pseg->next->type == s_start) {
+		    elt_length = elt_length1;
+		    left = 0;
+		    ink_on = true;
+		    goto on;
+		}
+		/* Looking ahead one dash pattern element.
+		   If it is zero length, apply to the current segment 
+		   (at its end). */
+		if (elt_length1 == 0) {
+		    left = 0;
+		    code = gx_path_add_dash_notes(ppath, sx, sy, udx, udy,
+				    notes & pseg->notes);
+		    if (++index == count)
+			index = 0;
+		    elt_length = pattern[index] * scale;
+		    ink_on = false;
+		} else if (--index == 0) {
+		    /* Revert lookahead. */
+		    index = count - 1;
+		}
 	    }
 	    if (drawing > 0)	/* done */
 		return code;

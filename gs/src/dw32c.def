@@ -1,4 +1,4 @@
+;	'Ghostscript Interpreter'
 NAME		GSWIN32C
-DESCRIPTION	'Ghostscript Interpreter'
 HEAPSIZE	256
 STACKSIZE	65536

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* String GC routines for Ghostscript */
 #include "memory_.h"
 #include "ghost.h"
@@ -18,17 +19,16 @@
 #include "gsstruct.h"
 #include "iastate.h"
 #include "igcstr.h"
-#include "igc.h"
 
 /* Forward references */
 private bool gc_mark_string(const byte *, uint, bool, const chunk_t *);
 
 /* (Un)mark the strings in a chunk. */
 void
-gc_strings_set_marks(const gs_memory_t *cmem, chunk_t * cp, bool mark)
+gc_strings_set_marks(chunk_t * cp, bool mark)
 {
     if (cp->smark != 0) {
-	if_debug3(cmem, '6', "[6]clearing string marks 0x%lx[%u] to %d\n",
+	if_debug3('6', "[6]clearing string marks 0x%lx[%u] to %d\n",
 		  (ulong) cp->smark, cp->smark_size, (int)mark);
 	memset(cp->smark, 0, cp->smark_size);
 	if (mark)
@@ -112,24 +112,22 @@ gc_mark_string(const byte * ptr, uint size, bool set, const chunk_t * cp)
 
 /* Mark a string.  Return true if any new marks. */
 bool
-gc_string_mark(const gs_memory_t *mem, const byte * ptr, uint size, bool set, gc_state_t * gcst)
+gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
 {
     const chunk_t *cp;
     bool marks;
 
     if (size == 0)
 	return false;
-#define dprintstr(mem)\
-  dputc(mem, '(');\
-  debug_print_string(mem, ptr, min(size, 20));\
-  dputs(mem, (size <= 20 ? ")" : "...)"))
-
+#define dprintstr()\
+  dputc('('); fwrite(ptr, 1, min(size, 20), dstderr);\
+  dputs((size <= 20 ? ")" : "...)"))
     if (!(cp = gc_locate(ptr, gcst))) {		/* not in a chunk */
 #ifdef DEBUG
 	if (gs_debug_c('5')) {
-	    dlprintf2(mem, "[5]0x%lx[%u]", (ulong) ptr, size);
-	    dprintstr(mem);
-	    dputs(mem, " not in a chunk\n");
+	    dlprintf2("[5]0x%lx[%u]", (ulong) ptr, size);
+	    dprintstr();
+	    dputs(" not in a chunk\n");
 	}
 #endif
 	return false;
@@ -138,7 +136,7 @@ gc_string_mark(const gs_memory_t *mem, const byte * ptr, uint size, bool set, gc
 	return false;
 #ifdef DEBUG
     if (ptr < cp->ctop) {
-	lprintf4(mem, "String pointer 0x%lx[%u] outside [0x%lx..0x%lx)\n",
+	lprintf4("String pointer 0x%lx[%u] outside [0x%lx..0x%lx)\n",
 		 (ulong) ptr, size, (ulong) cp->ctop, (ulong) cp->climit);
 	return false;
     } else if (ptr + size > cp->climit) {	/*
@@ -157,7 +155,7 @@ gc_string_mark(const gs_memory_t *mem, const byte * ptr, uint size, bool set, gc
 	while (ptr == scp->climit && scp->outer != 0)
 	    scp = scp->outer;
 	if (ptr + size > scp->climit) {
-	    lprintf4(mem, "String pointer 0x%lx[%u] outside [0x%lx..0x%lx)\n",
+	    lprintf4("String pointer 0x%lx[%u] outside [0x%lx..0x%lx)\n",
 		     (ulong) ptr, size,
 		     (ulong) scp->ctop, (ulong) scp->climit);
 	    return false;
@@ -167,11 +165,11 @@ gc_string_mark(const gs_memory_t *mem, const byte * ptr, uint size, bool set, gc
     marks = gc_mark_string(ptr, size, set, cp);
 #ifdef DEBUG
     if (gs_debug_c('5')) {
-	dlprintf4(mem, "[5]%s%smarked 0x%lx[%u]",
+	dlprintf4("[5]%s%smarked 0x%lx[%u]",
 		  (marks ? "" : "already "), (set ? "" : "un"),
 		  (ulong) ptr, size);
-	dprintstr(mem);
-	dputc(mem, '\n');
+	dprintstr();
+	dputc('\n');
     }
 #endif
     return marks;
@@ -180,11 +178,11 @@ gc_string_mark(const gs_memory_t *mem, const byte * ptr, uint size, bool set, gc
 /* Clear the relocation for strings. */
 /* This requires setting the marks. */
 void
-gc_strings_clear_reloc(const gs_memory_t *cmem, chunk_t * cp)
+gc_strings_clear_reloc(chunk_t * cp)
 {
     if (cp->sreloc != 0) {
-	gc_strings_set_marks(cmem, cp, true);
-	if_debug1(cmem, '6', "[6]clearing string reloc 0x%lx\n",
+	gc_strings_set_marks(cp, true);
+	if_debug1('6', "[6]clearing string reloc 0x%lx\n",
 		  (ulong) cp->sreloc);
 	gc_strings_set_reloc(cp);
     }
@@ -271,7 +269,6 @@ igc_reloc_string(gs_string * sptr, gc_state_t * gcst)
     uint reloc;
     const byte *bitp;
     byte byt;
-    const gs_memory_t *cmem = gcst->spaces.memories.named.system->stable_memory;
 
     if (sptr->size == 0) {
 	sptr->data = 0;
@@ -305,20 +302,28 @@ igc_reloc_string(gs_string * sptr, gc_state_t * gcst)
     }
     byt = *bitp & (0xff >> (8 - (offset & 7)));
     reloc -= byte_count_one_bits(byt);
-    if_debug2(cmem, '5', "[5]relocate string 0x%lx to 0x%lx\n",
+    if_debug2('5', "[5]relocate string 0x%lx to 0x%lx\n",
 	      (ulong) ptr, (ulong) (cp->sdest - reloc));
     sptr->data = cp->sdest - reloc;
 }
 void
 igc_reloc_const_string(gs_const_string * sptr, gc_state_t * gcst)
-{				/* We assume the representation of byte * and const byte * is */
+{   /* We assume the representation of byte * and const byte * is */
     /* the same.... */
     igc_reloc_string((gs_string *) sptr, gcst);
+}
+void
+igc_reloc_param_string(gs_param_string * sptr, gc_state_t * gcst)
+{   
+    if (!sptr->persistent) {
+	/* We assume that gs_param_string is a subclass of gs_string. */
+	igc_reloc_string((gs_string *)sptr, gcst);
+    }
 }
 
 /* Compact the strings in a chunk. */
 void
-gc_strings_compact(const gs_memory_t *cmem, chunk_t * cp)
+gc_strings_compact(chunk_t * cp)
 {
     if (cp->smark != 0) {
 	byte *hi = cp->climit;
@@ -337,24 +342,24 @@ gc_strings_compact(const gs_memory_t *cmem, chunk_t * cp)
 	    for (; i < n; i += R) {
 		uint j;
 
-		dlprintf1(cmem, "[4]0x%lx: ", (ulong) (base + i));
+		dlprintf1("[4]0x%lx: ", (ulong) (base + i));
 		for (j = i; j < i + R; j++) {
 		    byte ch = base[j];
 
 		    if (ch <= 31) {
-			dputc(cmem, '^');
-			dputc(cmem, ch + 0100);
+			dputc('^');
+			dputc(ch + 0100);
 		    } else
-			dputc(cmem, ch);
+			dputc(ch);
 		}
-		dputc(cmem, ' ');
+		dputc(' ');
 		for (j = i; j < i + R; j++)
-		    dputc(cmem, (cp->smark[j >> 3] & (1 << (j & 7)) ?
+		    dputc((cp->smark[j >> 3] & (1 << (j & 7)) ?
 			   '+' : '.'));
 #undef R
 		if (!(i & (string_data_quantum - 1)))
-		    dprintf1(cmem, " %u", cp->sreloc[i >> log2_string_data_quantum]);
-		dputc(cmem, '\n');
+		    dprintf1(" %u", cp->sreloc[i >> log2_string_data_quantum]);
+		dputc('\n');
 	    }
 	}
 #endif

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Internal definitions for bitmap operations */
 
 #ifndef gxbitops_INCLUDED
@@ -44,8 +45,8 @@
 #  define chunk_bit_mask cbit_mask(chunk)
 #define calign_bytes(ct)\
   (sizeof(ct) == 1 ? 1:\
-   sizeof(ct) == sizeof(short) ? arch_align_short_mod :\
-   sizeof(ct) == sizeof(int) ? arch_align_int_mod : arch_align_long_mod)
+   sizeof(ct) == sizeof(short) ? ARCH_ALIGN_SHORT_MOD :\
+   sizeof(ct) == sizeof(int) ? ARCH_ALIGN_INT_MOD : ARCH_ALIGN_LONG_MOD)
 #  define chunk_align_bytes calign_bytes(chunk)
 #define calign_bit_mask(ct) (calign_bytes(ct)*8-1)
 #  define chunk_align_bit_mask calign_bit_mask(chunk)
@@ -75,7 +76,7 @@
 /* Define whether this is a machine where chunks are long, */
 /* but the machine can't shift a long by its full width. */
 #define arch_cant_shift_full_chunk\
-  (arch_is_big_endian && !arch_ints_are_short && !arch_can_shift_full_long)
+  (ARCH_IS_BIG_ENDIAN && !ARCH_INTS_ARE_SHORT && !ARCH_CAN_SHIFT_FULL_LONG)
 
 /* Pointer arithmetic macros. */
 #define inc_ptr(ptr,delta)\

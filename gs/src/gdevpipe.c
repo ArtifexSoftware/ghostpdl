@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* %pipe% IODevice */
 #include "errno_.h"
 #include "pipe_.h"
@@ -38,8 +39,7 @@ const gx_io_device gs_iodev_pipe = {
 /* The file device procedures */
 
 private int
-pipe_fopen(const gs_memory_t *mem, 
-	   gx_io_device * iodev, const char *fname, const char *access,
+pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
 	   FILE ** pfile, char *rfname, uint rnamelen)
 {
     errno = 0;
@@ -48,21 +48,21 @@ pipe_fopen(const gs_memory_t *mem,
      * mode, even though pipes are not positionable.  Detect this here.
      */
     if (strchr(access, '+'))
-	return_error(mem, gs_error_invalidfileaccess);
+	return_error(gs_error_invalidfileaccess);
     /*
      * The OSF/1 1.3 library doesn't include const in the
      * prototype for popen, so we have to break const here.
      */
     *pfile = popen((char *)fname, (char *)access);
     if (*pfile == NULL)
-	return_error(mem, gs_fopen_errno_to_code(mem, errno));
+	return_error(gs_fopen_errno_to_code(errno));
     if (rfname != NULL)
 	strcpy(rfname, fname);
     return 0;
 }
 
 private int
-pipe_fclose(const gs_memory_t *mem, gx_io_device * iodev, FILE * file)
+pipe_fclose(gx_io_device * iodev, FILE * file)
 {
     pclose(file);
     return 0;

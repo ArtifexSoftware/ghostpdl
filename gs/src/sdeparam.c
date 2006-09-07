@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* DCTEncode filter parameter setting and reading */
 #include "memory_.h"
 #include "jpeglib_.h"
@@ -76,7 +77,7 @@ dcte_get_samples(gs_param_list * plist, gs_param_name key, int num_colors,
 	gs_param_int_array sa;
 
 	if (data == 0)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	sa.data = data;
 	sa.size = num_colors;
 	sa.persistent = true;
@@ -95,12 +96,12 @@ s_DCTE_get_params(gs_param_list * plist, const stream_DCT_state * ss, bool all)
     dcte_scalars_t params;
     const jpeg_compress_data *jcdp = ss->data.compress;
     int code;
-    s_stack_init( dcts_defaults, mem );
+
     if (!all) {
 	jpeg_compress_data *jcdp_default = gs_alloc_struct_immovable(mem,
            jpeg_compress_data, &st_jpeg_compress_data, "s_DCTE_get_params");
 	if (jcdp_default == 0)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	defaults = &dcts_defaults;
 	(*s_DCTE_template.set_defaults) ((stream_state *) & dcts_defaults);
 	dcts_defaults.data.compress = jcdp_default;
@@ -147,8 +148,7 @@ stream_state_proc_put_params(s_DCTE_put_params, stream_DCT_state);	/* check */
 
 /* Put a set of sampling values. */
 private int
-dcte_put_samples(const gs_memory_t *mem,
-		 gs_param_list * plist, gs_param_name key, int num_colors,
+dcte_put_samples(gs_param_list * plist, gs_param_name key, int num_colors,
 		 jpeg_compress_data * jcdp, bool is_vert)
 {
     int code;
@@ -160,7 +160,7 @@ dcte_put_samples(const gs_memory_t *mem,
      * Adobe default is all sampling factors = 1,
      * which is NOT the IJG default, so we must always assign values.
      */
-    switch ((code = s_DCT_byte_params(mem, plist, key, 0, num_colors,
+    switch ((code = s_DCT_byte_params(plist, key, 0, num_colors,
 				      samples))
 	) {
 	default:		/* error */
@@ -172,7 +172,7 @@ dcte_put_samples(const gs_memory_t *mem,
     }
     for (i = 0; i < num_colors; i++) {
 	if (samples[i] < 1 || samples[i] > 4)
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	if (is_vert)
 	    comp_info[i].v_samp_factor = samples[i];
 	else
@@ -204,7 +204,7 @@ s_DCTE_put_params(gs_param_list * plist, stream_DCT_state * pdct)
 	params.Resync < 0 || params.Resync > 0xffff ||
 	params.Blend < 0 || params.Blend > 1
 	)
-	return_error(pdct->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     jcdp->Picky = 0;
     jcdp->Relax = 0;
     if ((code = s_DCT_put_params(plist, pdct)) < 0)
@@ -279,9 +279,9 @@ s_DCTE_put_params(gs_param_list * plist, stream_DCT_state * pdct)
     pdct->Markers.data = params.Markers.data;
     pdct->Markers.size = params.Markers.size;
     pdct->NoMarker = params.NoMarker;
-    if ((code = dcte_put_samples(pdct->memory, plist, "HSamples", params.Colors,
+    if ((code = dcte_put_samples(plist, "HSamples", params.Colors,
 				 jcdp, false)) < 0 ||
-	(code = dcte_put_samples(pdct->memory, plist, "VSamples", params.Colors,
+	(code = dcte_put_samples(plist, "VSamples", params.Colors,
 				 jcdp, true)) < 0
 	)
 	return code;
@@ -297,7 +297,7 @@ s_DCTE_put_params(gs_param_list * plist, stream_DCT_state * pdct)
 	    num_samples += comp_info[i].h_samp_factor *
 		comp_info[i].v_samp_factor;
 	if (num_samples > 10)
-	    return_error(pdct->memory, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	/*
 	 * Note: by default the IJG software does not allow
 	 * num_samples to exceed 10, Relax or no.  For full

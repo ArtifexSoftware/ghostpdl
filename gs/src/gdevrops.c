@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* RasterOp source device */
 #include "gx.h"
 #include "gserrors.h"
@@ -100,7 +101,11 @@ private const gx_device_rop_texture gs_rop_texture_device = {
      gx_forward_decode_color,
      gx_forward_pattern_manage,
      gx_forward_fill_rectangle_hl_color,
-     gx_forward_include_color_space
+     gx_forward_include_color_space,
+     gx_forward_fill_linear_color_scanline,
+     gx_forward_fill_linear_color_trapezoid,
+     gx_forward_fill_linear_color_triangle,
+     gx_forward_update_spot_equivalent_colors
     },
     0,				/* target */
     lop_default			/* log_op */
@@ -114,10 +119,7 @@ gx_alloc_rop_texture_device(gx_device_rop_texture ** prsdev, gs_memory_t * mem,
 {
     *prsdev = gs_alloc_struct(mem, gx_device_rop_texture,
 			      &st_device_rop_texture, cname);
-    if (*prsdev == 0)
-      return_error(mem, gs_error_VMerror);
-    (*prsdev)->memory = mem;
-    return 0;
+    return (*prsdev == 0 ? gs_note_error(gs_error_VMerror) : 0);
 }
 
 /* Initialize a RasterOp source device. */
@@ -127,9 +129,10 @@ gx_make_rop_texture_device(gx_device_rop_texture * dev, gx_device * target,
 {
     gx_device_init((gx_device *) dev,
 		   (const gx_device *)&gs_rop_texture_device,
-		   dev->memory, true);
+		   NULL, true);
     gx_device_set_target((gx_device_forward *)dev, target);
     /* Drawing operations are defaulted, non-drawing are forwarded. */
+    check_device_separable((gx_device *) dev);
     gx_device_fill_in_procs((gx_device *) dev);
     gx_device_copy_params((gx_device *)dev, target);
     dev->log_op = log_op;

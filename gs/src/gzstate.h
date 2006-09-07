@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Private graphics state definition for Ghostscript library */
 
 #ifndef gzstate_INCLUDED
@@ -89,16 +90,13 @@ struct gs_state_s {
     gs_matrix ctm_default;
     bool ctm_default_set;	/* if true, use ctm_default; */
 				/* if false, ask device */
-
     /* Paths: */
 
     gx_path *path;
     gx_clip_path *clip_path;
     gx_clip_stack_t *clip_stack;  /* (LanguageLevel 3 only) */
     gx_clip_path *view_clip;	/* (may be 0, or have rule = 0) */
-    bool clamp_coordinates;	/* if true, clamp out-of-range */
-				/* coordinates; if false, */
-				/* report a limitcheck */
+
     /* Effective clip path cache */
     gs_id effective_clip_id;	/* (key) clip path id */
     gs_id effective_view_clip_id;	/* (key) view clip path id */
@@ -159,5 +157,11 @@ struct gs_state_s {
   m(9,font) m(10,root_font) m(11,show_gstate) /*m(---,device)*/\
   m(12,transparency_group_stack)
 #define gs_state_num_ptrs 13
+
+/* The following macro is used for development purpose for designating places 
+   where current point is changed. Clients must not use it. */
+#define gx_setcurrentpoint(pgs, xx, yy)\
+    (pgs)->current_point.x = xx;\
+    (pgs)->current_point.y = yy;
 
 #endif /* gzstate_INCLUDED */

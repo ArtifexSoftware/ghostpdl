@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* H-P PCL XL driver */
 #include "math_.h"
 #include "memory_.h"
@@ -51,6 +52,10 @@ typedef struct gx_device_pclxl_s {
     gx_device_vector_common;
     /* Additional state information */
     pxeMediaSize_t media_size;
+    bool ManualFeed;            /* map ps setpage commands to pxl */
+    bool ManualFeed_set;         
+    int  MediaPosition;         
+    int  MediaPosition_set;
     gx_path_type_t fill_rule;	/* ...winding_number or ...even_odd  */
     gx_path_type_t clip_rule;	/* ditto */
     pxeColorSpace_t color_space;
@@ -104,6 +109,9 @@ private dev_proc_copy_mono(pclxl_copy_mono);
 private dev_proc_copy_color(pclxl_copy_color);
 private dev_proc_fill_mask(pclxl_fill_mask);
 
+private dev_proc_get_params(pclxl_get_params);
+private dev_proc_put_params(pclxl_put_params);
+
 /*private dev_proc_draw_thin_line(pclxl_draw_thin_line); */
 private dev_proc_begin_image(pclxl_begin_image);
 private dev_proc_strip_copy_rop(pclxl_strip_copy_rop);
@@ -123,8 +131,8 @@ private dev_proc_strip_copy_rop(pclxl_strip_copy_rop);
 	pclxl_copy_color,\
 	NULL,			/* draw_line */\
 	NULL,			/* get_bits */\
-	gdev_vector_get_params,\
-	gdev_vector_put_params,\
+	pclxl_get_params,\
+	pclxl_put_params,\
 	NULL,			/* map_cmyk_color */\
 	NULL,			/* get_xfont_procs */\
 	NULL,			/* get_xfont_device */\
@@ -242,10 +250,10 @@ pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
 	    spputc(s, (byte) color);
 	    px_put_a(s, pxaRGBColor);
 	}
-    } else if (gx_dc_is_null(pdc))
+    } else if (gx_dc_is_null(pdc) || !color_is_set(pdc))
 	px_put_uba(s, 0, null_source);
     else
-	return_error(xdev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     spputc(s, (byte)op);
     return 0;
 }
@@ -276,7 +284,9 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
     gx_path_type_t rule = type & gx_path_type_rule;
 
     if (!(type & gx_path_type_fill) &&
-	!gx_dc_is_null(&xdev->saved_fill_color.saved_dev_color)
+	(color_is_set(&xdev->saved_fill_color.saved_dev_color) ||
+	!gx_dc_is_null(&xdev->saved_fill_color.saved_dev_color) 
+	)
 	) {
 	static const byte nac_[] = {
 	    DUB(0), DA(pxaNullBrush), pxtSetBrushSource
@@ -292,7 +302,9 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
 	}
     }
     if (!(type & gx_path_type_stroke) &&
-	!gx_dc_is_null(&xdev->saved_stroke_color.saved_dev_color)
+	(color_is_set(&xdev->saved_stroke_color.saved_dev_color) ||
+	!gx_dc_is_null(&xdev->saved_fill_color.saved_dev_color)
+	 )
 	) {
 	static const byte nac_[] = {
 	    DUB(0), DA(pxaNullPen), pxtSetPenSource
@@ -418,7 +430,7 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 		op = pxtBezierRelPath;
 		goto useb;
 	    default:		/* can't happen */
-		return_error(xdev->memory, gs_error_unknownerror);
+		return_error(gs_error_unknownerror);
 	}
 	px_put_np(s, count, eSInt16);
 	spputc(s, (byte)op);
@@ -499,21 +511,21 @@ pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
 	    r.ptr = data + i * raster - 1;
 	    r.limit = r.ptr + width_bytes;
 	    if ((*s_RLE_template.process)
-		(xdev->v_memory, (stream_state *) & rlstate, &r, &w, false) != 0 ||
+		((stream_state *) & rlstate, &r, &w, false) != 0 ||
 		r.ptr != r.limit
 		)
 		goto ncfree;
 	    r.ptr = (const byte *)"\000\000\000\000\000";
 	    r.limit = r.ptr + (-(int)width_bytes & 3);
 	    if ((*s_RLE_template.process)
-		(xdev->v_memory, (stream_state *) & rlstate, &r, &w, false) != 0 ||
+		((stream_state *) & rlstate, &r, &w, false) != 0 ||
 		r.ptr != r.limit
 		)
 		goto ncfree;
 	}
 	r.ptr = r.limit;
 	if ((*s_RLE_template.process)
-	    (xdev->v_memory, (stream_state *) & rlstate, &r, &w, true) != 0
+	    ((stream_state *) & rlstate, &r, &w, true) != 0
 	    )
 	    goto ncfree;
 	{
@@ -766,9 +778,17 @@ pclxl_beginpage(gx_device_vector * vdev)
      * from there before in_page is set.
      */
     stream *s = vdev->strm;
+    byte media_source = eAutoSelect; /* default */
 
     px_write_page_header(s, (const gx_device *)vdev);
-    px_write_select_media(s, (const gx_device *)vdev, &xdev->media_size);
+
+    if (xdev->ManualFeed_set && xdev->ManualFeed) 
+	media_source = 2;
+    else if (xdev->MediaPosition_set && xdev->MediaPosition >= 0 )
+	media_source = xdev->MediaPosition;
+ 
+    px_write_select_media(s, (const gx_device *)vdev, &xdev->media_size, &media_source );
+
     spputc(s, pxtBeginPage);
     return 0;
 }
@@ -833,7 +853,7 @@ pclxl_setdash(gx_device_vector * vdev, const float *pattern, uint count,
 
 	PX_PUT_LIT(s, nac_);
     } else if (count > 255)
-	return_error(s->memory, gs_error_limitcheck);
+	return_error(gs_error_limitcheck);
     else {
 	uint i;
 
@@ -911,7 +931,7 @@ pclxl_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
     if (OUT_OF_RANGE(x0) || OUT_OF_RANGE(y0) ||
 	OUT_OF_RANGE(x1) || OUT_OF_RANGE(y1)
 	)
-	return_error(s->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
 #undef OUT_OF_RANGE
     if (type & (gx_path_type_fill | gx_path_type_stroke)) {
 	pclxl_set_paints(xdev, type);
@@ -1130,7 +1150,7 @@ pclxl_output_page(gx_device * dev, int num_copies, int flush)
     sflush(s);
     pclxl_page_init(xdev);
     if (ferror(xdev->file))
-	return_error(s->memory, gs_error_ioerror);
+	return_error(gs_error_ioerror);
     return gx_finish_output_page(dev, num_copies, flush);
 }
 
@@ -1391,7 +1411,7 @@ pclxl_begin_image(gx_device * dev,
      * Check whether we can handle this image.  PCL XL 1.0 and 2.0 only
      * handle orthogonal transformations.
      */
-    gs_matrix_invert(mem, &pim->ImageMatrix, &mat);
+    gs_matrix_invert(&pim->ImageMatrix, &mat);
     gs_matrix_multiply(&mat, &ctm_only(pis), &mat);
     /* Currently we only handle portrait transformations. */
     if (mat.xx <= 0 || mat.xy != 0 || mat.yx != 0 || mat.yy <= 0 ||
@@ -1415,7 +1435,7 @@ pclxl_begin_image(gx_device * dev,
     row_data = gs_alloc_bytes(mem, num_rows * row_raster,
 			      "pclxl_begin_image(rows)");
     if (pie == 0 || row_data == 0) {
-	code = gs_note_error(mem, gs_error_VMerror);
+	code = gs_note_error(gs_error_VMerror);
 	goto fail;
     }
     code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
@@ -1472,7 +1492,7 @@ pclxl_begin_image(gx_device * dev,
 		(*pcs->type->remap_color)
 		    (&cc, pcs, &devc, pis, dev, gs_color_select_source);
 		if (!gx_dc_is_pure(&devc))
-		    return_error(dev->memory, gs_error_Fatal);
+		    return_error(gs_error_Fatal);
 		ci = gx_dc_pure_color(&devc);
 		if (dev->color_info.num_components == 1) {
 		    palette[i] = (byte)ci;
@@ -1555,7 +1575,7 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
 
     /****** SHOULD HANDLE NON-BYTE-ALIGNED DATA ******/
     if (width_bits != pie->bits_per_row || (data_bit & 7) != 0)
-	return_error(pie->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     if (height > pie->height - pie->y)
 	height = pie->height - pie->y;
     for (i = 0; i < height; pie->y++, ++i) {
@@ -1587,5 +1607,63 @@ pclxl_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 	code = pclxl_image_write_rows(pie);
     gs_free_object(pie->memory, pie->rows.data, "pclxl_end_image(rows)");
     gs_free_object(pie->memory, pie, "pclxl_end_image");
+    return code;
+}
+
+/* Get parameters. */
+int
+pclxl_get_params(gx_device *dev, gs_param_list *plist)
+{
+    gx_device_pclxl *pdev = (gx_device_pclxl *) dev;
+    int code = gdev_vector_get_params(dev, plist);
+
+    if (code < 0)
+	return code;
+
+     if (code >= 0)
+	code = param_write_bool(plist, "ManualFeed", &pdev->ManualFeed);
+    return code;
+}
+
+/* Put parameters. */
+int
+pclxl_put_params(gx_device * dev, gs_param_list * plist)
+{
+    gx_device_pclxl *pdev = (gx_device_pclxl *) dev;
+    int code = 0;
+    bool ManualFeed;
+    bool ManualFeed_set = false;
+    int MediaPosition;
+    bool MediaPosition_set = false;
+
+    code = param_read_bool(plist, "ManualFeed", &ManualFeed);
+    if (code == 0) 
+	ManualFeed_set = true;
+    if (code >= 0) {
+	code = param_read_int(plist, "%MediaSource", &MediaPosition);
+	if (code == 0) 
+	    MediaPosition_set = true;
+	else if (code < 0) {
+	    if (param_read_null(plist, "%MediaSource") == 0) {
+		code = 0;
+	    }
+	}
+    }
+
+    /* note this handles not opening/closing the device */
+    code = gdev_vector_put_params(dev, plist);
+    if (code < 0)
+	return code;
+
+    if (code >= 0) {
+	if (ManualFeed_set) {
+	    pdev->ManualFeed = ManualFeed;
+	    pdev->ManualFeed_set = true;
+	}
+	if (MediaPosition_set) {
+	    pdev->MediaPosition = MediaPosition;
+	    pdev->MediaPosition_set = true;
+	}
+    }
     return code;
 }

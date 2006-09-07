@@ -1,15 +1,17 @@
-/*
- * Copyright (C) 2002 artofcode LLC.  All rights reserved.
- * See toolbin/encs2c.ps for the complete license notice.
- *
- * $Id$
- *
- * This file contains substantial parts of toolbin/encs2c.ps,
- * which generated the remainder of the file mechanically from
- *   gs_std_e.ps  gs_il1_e.ps  gs_sym_e.ps  gs_dbt_e.ps
- *   gs_wan_e.ps  gs_mro_e.ps  gs_mex_e.ps  gs_mgl_e.ps
- *   gs_lgo_e.ps  gs_lgx_e.ps  gs_css_e.ps
- */
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+
+/* $Id$ */
 
 #ifndef gscedata_INCLUDED
 #  define gscedata_INCLUDED
@@ -26,6 +28,8 @@ extern const int gs_c_known_encoding_max_length;
 extern const ushort gs_c_known_encoding_offsets[];
 extern const int gs_c_known_encoding_count;
 extern const ushort *const gs_c_known_encodings[];
+extern const ushort *const gs_c_known_encodings_reverse[];
 extern const ushort gs_c_known_encoding_lengths[];
+extern const ushort gs_c_known_encoding_reverse_lengths[];
 
 #endif /* gscedata_INCLUDED */

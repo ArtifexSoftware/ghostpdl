@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Arithmetic operators */
 #include "math_.h"
 #include "ghost.h"
@@ -34,15 +35,15 @@
 /* We make this into a separate procedure because */
 /* the interpreter will almost always call it directly. */
 int
-zop_add(const gs_memory_t *mem, register os_ptr op)
+zop_add(register os_ptr op)
 {
     switch (r_type(op)) {
     default:
-	return_op_typecheck(mem, op);
+	return_op_typecheck(op);
     case t_real:
 	switch (r_type(op - 1)) {
 	default:
-	    return_op_typecheck(mem, op - 1);
+	    return_op_typecheck(op - 1);
 	case t_real:
 	    op[-1].value.realval += op->value.realval;
 	    break;
@@ -53,7 +54,7 @@ zop_add(const gs_memory_t *mem, register os_ptr op)
     case t_integer:
 	switch (r_type(op - 1)) {
 	default:
-	    return_op_typecheck(mem, op - 1);
+	    return_op_typecheck(op - 1);
 	case t_real:
 	    op[-1].value.realval += (double)op->value.intval;
 	    break;
@@ -74,7 +75,7 @@ int
 zadd(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = zop_add(imemory, op);
+    int code = zop_add(op);
 
     if (code == 0) {
 	pop(1);
@@ -93,13 +94,13 @@ zdiv(i_ctx_t *i_ctx_p)
     /* because we have to check explicitly for op == 0. */
     switch (r_type(op)) {
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
 	case t_real:
 	    if (op->value.realval == 0)
-		return_error(imemory, e_undefinedresult);
+		return_error(e_undefinedresult);
 	    switch (r_type(op1)) {
 		default:
-		    return_op_typecheck(imemory, op1);
+		    return_op_typecheck(op1);
 		case t_real:
 		    op1->value.realval /= op->value.realval;
 		    break;
@@ -109,10 +110,10 @@ zdiv(i_ctx_t *i_ctx_p)
 	    break;
 	case t_integer:
 	    if (op->value.intval == 0)
-		return_error(imemory, e_undefinedresult);
+		return_error(e_undefinedresult);
 	    switch (r_type(op1)) {
 		default:
-		    return_op_typecheck(imemory, op1);
+		    return_op_typecheck(op1);
 		case t_real:
 		    op1->value.realval /= (double)op->value.intval;
 		    break;
@@ -132,11 +133,11 @@ zmul(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
     default:
-	return_op_typecheck(imemory, op);
+	return_op_typecheck(op);
     case t_real:
 	switch (r_type(op - 1)) {
 	default:
-	    return_op_typecheck(imemory, op - 1);
+	    return_op_typecheck(op - 1);
 	case t_real:
 	    op[-1].value.realval *= op->value.realval;
 	    break;
@@ -147,7 +148,7 @@ zmul(i_ctx_t *i_ctx_p)
     case t_integer:
 	switch (r_type(op - 1)) {
 	default:
-	    return_op_typecheck(imemory, op - 1);
+	    return_op_typecheck(op - 1);
 	case t_real:
 	    op[-1].value.realval *= (double)op->value.intval;
 	    break;
@@ -182,15 +183,15 @@ zmul(i_ctx_t *i_ctx_p)
 /* We make this into a separate procedure because */
 /* the interpreter will almost always call it directly. */
 int
-zop_sub(const gs_memory_t *mem, register os_ptr op)
+zop_sub(register os_ptr op)
 {
     switch (r_type(op)) {
     default:
-	return_op_typecheck(mem, op);
+	return_op_typecheck(op);
     case t_real:
 	switch (r_type(op - 1)) {
 	default:
-	    return_op_typecheck(mem, op - 1);
+	    return_op_typecheck(op - 1);
 	case t_real:
 	    op[-1].value.realval -= op->value.realval;
 	    break;
@@ -201,7 +202,7 @@ zop_sub(const gs_memory_t *mem, register os_ptr op)
     case t_integer:
 	switch (r_type(op - 1)) {
 	default:
-	    return_op_typecheck(mem, op - 1);
+	    return_op_typecheck(op - 1);
 	case t_real:
 	    op[-1].value.realval -= (double)op->value.intval;
 	    break;
@@ -222,7 +223,7 @@ int
 zsub(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = zop_sub(imemory, op);
+    int code = zop_sub(op);
 
     if (code == 0) {
 	pop(1);
@@ -236,14 +237,14 @@ zidiv(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(imemory, *op, t_integer);
-    check_type(imemory, op[-1], t_integer);
+    check_type(*op, t_integer);
+    check_type(op[-1], t_integer);
     if (op->value.intval == 0)
-	return_error(imemory, e_undefinedresult);
+	return_error(e_undefinedresult);
     if ((op[-1].value.intval /= op->value.intval) ==
 	MIN_INTVAL && op->value.intval == -1
 	) {			/* Anomalous boundary case, fail. */
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     }
     pop(1);
     return 0;
@@ -255,10 +256,10 @@ zmod(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(imemory, *op, t_integer);
-    check_type(imemory, op[-1], t_integer);
+    check_type(*op, t_integer);
+    check_type(op[-1], t_integer);
     if (op->value.intval == 0)
-	return_error(imemory, e_undefinedresult);
+	return_error(e_undefinedresult);
     op[-1].value.intval %= op->value.intval;
     pop(1);
     return 0;
@@ -272,7 +273,7 @@ zneg(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
 	case t_real:
 	    op->value.realval = -op->value.realval;
 	    break;
@@ -293,7 +294,7 @@ zabs(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
 	case t_real:
 	    if (op->value.realval >= 0)
 		return 0;
@@ -314,7 +315,7 @@ zceiling(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
 	case t_real:
 	    op->value.realval = ceil(op->value.realval);
 	case t_integer:;
@@ -330,7 +331,7 @@ zfloor(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
 	case t_real:
 	    op->value.realval = floor(op->value.realval);
 	case t_integer:;
@@ -346,7 +347,7 @@ zround(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
 	case t_real:
 	    op->value.realval = floor(op->value.realval + 0.5);
 	case t_integer:;
@@ -362,7 +363,7 @@ ztruncate(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
 	case t_real:
 	    op->value.realval =
 		(op->value.realval < 0.0 ?
@@ -381,8 +382,8 @@ zbitadd(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(imemory, *op, t_integer);
-    check_type(imemory, op[-1], t_integer);
+    check_type(*op, t_integer);
+    check_type(op[-1], t_integer);
     op[-1].value.intval += op->value.intval;
     pop(1);
     return 0;

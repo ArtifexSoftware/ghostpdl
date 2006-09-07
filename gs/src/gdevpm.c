@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /*
  * OS/2 Presentation manager driver
  *
@@ -613,9 +614,6 @@ pm_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 		return (gx_no_color_index);	/* not found - dither instead */
 	    }
 	case 4:
-	    if ((r == g) && (g == b) && (r >= gx_max_color_value / 3 * 2 - 1)
-		&& (r < gx_max_color_value / 4 * 3))
-		return ((gx_color_index) 8);	/* light gray */
 	    return pc_4bit_map_rgb_color(dev, cv);
     }
     return (gx_default_map_rgb_color(dev, cv));
@@ -648,10 +646,7 @@ pm_map_color_rgb(gx_device * dev, gx_color_index color,
 	    }
 	    break;
 	case 4:
-	    if (color == 8)	/* VGA light gray */
-		prgb[0] = prgb[1] = prgb[2] = (gx_max_color_value / 4 * 3);
-	    else
-		pc_4bit_map_color_rgb(dev, color, prgb);
+	    pc_4bit_map_color_rgb(dev, color, prgb);
 	    break;
 	default:
 	    prgb[0] = prgb[1] = prgb[2] =
@@ -1227,7 +1222,7 @@ pm_set_bits_per_pixel(gx_device_pm * pmdev, int bpp)
 	    pmdev->nColors = 64;
 	    break;
 	case 4:
-	    set_color_info(&dci, 3, 4, 3, 2);
+	    set_color_info(&dci, 3, 4, 1, 1);
 	    set_rgb_color_procs(pdev, pm_map_rgb_color, pm_map_color_rgb);
 	    pmdev->nColors = 16;
 	    break;

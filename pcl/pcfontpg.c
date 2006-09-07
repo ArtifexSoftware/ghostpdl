@@ -75,7 +75,7 @@ pcl_print_font_page(pcl_args_t *pargs, pcl_state_t *pcs)
 	    pl_font_params_t *pfp = &pfs->params;
 	    char buff[150];
 	    if ( pcl_text(alphabet, strlen(alphabet), pcs, false) < 0 ) {
-		dprintf(pcs->memory, "pcl_text failed\n" );
+		dprintf("pcl_text failed\n" );
 		return 1;
 	    }
 	    /* go to approx center of the page */
@@ -88,7 +88,7 @@ pcl_print_font_page(pcl_args_t *pargs, pcl_state_t *pcs)
 	    pcl_decache_font(pcs, -1);
 	    /* reset to default font and print the select font string */
 	    if ( pcl_set_current_font_environment(pcs) < 0 ) {
-		dprintf(pcs->memory, "pcl_set_current_font_environment failed\n");
+		dprintf("pcl_set_current_font_environment failed\n");
 		return -1;
 	    }
 	    pcl_text(buff, strlen(buff), pcs, false);
@@ -106,7 +106,7 @@ pcfontpg_do_registration(
     gs_memory_t *mem
 )
 {
-    DEFINE_ESCAPE_ARGS(mem, 'A', "Print Font Page", pcl_print_font_page, pca_in_rtl);
+    DEFINE_ESCAPE_ARGS('A', "Print Font Page", pcl_print_font_page, pca_in_rtl);
     return 0;
 }
 

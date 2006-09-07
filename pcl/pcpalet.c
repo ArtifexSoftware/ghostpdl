@@ -41,11 +41,11 @@ free_palette(
     pcl_palette_t * ppalet = (pcl_palette_t *)pvpalet;
 
     if (ppalet->pindexed != 0)
-        pcl_cs_indexed_release(pmem, ppalet->pindexed);
+        pcl_cs_indexed_release(ppalet->pindexed);
     if (ppalet->pcrd != 0)
-        pcl_crd_release(pmem, ppalet->pcrd);
+        pcl_crd_release(ppalet->pcrd);
     if (ppalet->pht != 0)
-        pcl_ht_release(pmem, ppalet->pht);
+        pcl_ht_release(ppalet->pht);
     gs_free_object(pmem, pvpalet, cname);
 }
 
@@ -57,22 +57,22 @@ pcl_free_default_objects(
 {
     pcl_palette_t * ppalette = (pcl_palette_t *)pcs->pdflt_palette;
 
-    rc_decrement(mem, pcs->pdflt_cs_indexed, "free_default_palette(pdflt_cs_indexed)");
+    rc_decrement(pcs->pdflt_cs_indexed, "free_default_palette(pdflt_cs_indexed)");
 
     if (ppalette != 0) {
       
-        rc_decrement(mem, ppalette->pindexed, "free_default_palette cs indexed released");
+        rc_decrement(ppalette->pindexed, "free_default_palette cs indexed released");
 	if (ppalette->pht)
-	  rc_decrement(mem, ppalette->pht, "free_default_palette ht released");
+	  rc_decrement(ppalette->pht, "free_default_palette ht released");
 	if (ppalette->pcrd)
-	  rc_decrement(mem, ppalette->pcrd, "free_default_palette pcl_crd_release");
+	  rc_decrement(ppalette->pcrd, "free_default_palette pcl_crd_release");
 	gs_free_object(mem, ppalette, "free_default_palette ppalette free");
 	pcs->pdflt_palette = 0;
     }
-    rc_decrement(mem, pcs->pdflt_ht, "free_default_palette pdflt_ht release");
-    rc_decrement(mem, pcs->pdflt_ht, "free_default_palette pdflt_ht release");
-    rc_decrement(mem, pcs->pdflt_ht, "free_default_palette pdflt_ht release");
-    rc_decrement(mem, pcs->pdflt_ht, "free_default_palette pdflt_ht release");
+    rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
+    rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
+    rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
+    rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
 
     if(pcs->pcl_default_crd)
           free_crd(mem, pcs->pcl_default_crd, "free_default_palette pcl_default_crd free");
@@ -90,7 +90,7 @@ dict_free_palette(
 {
     pcl_palette_t * ppalet = (pcl_palette_t *)pvpalet;
 
-    rc_decrement(pmem, ppalet, cname);
+    rc_decrement(ppalet, cname);
 }
 
 /*
@@ -171,9 +171,9 @@ unshare_palette(
     if ((code = alloc_palette(pcs, &pnew, pcs->memory)) < 0)
         return code;
     if (ppalet != 0) {
-        pcl_cs_indexed_init_from(pcs->memory, pnew->pindexed, ppalet->pindexed);
-        pcl_crd_init_from(pcs->memory, pnew->pcrd, ppalet->pcrd);
-        pcl_ht_init_from(pcs->memory, pnew->pht, ppalet->pht);
+        pcl_cs_indexed_init_from(pnew->pindexed, ppalet->pindexed);
+        pcl_crd_init_from(pnew->pcrd, ppalet->pcrd);
+        pcl_ht_init_from(pnew->pht, ppalet->pht);
     }
 
     /* redefine the current palette id. */
@@ -207,7 +207,7 @@ build_default_palette(
         if ((code == 0) && (pcs->pcl_default_crd == 0))
             code = pcl_crd_build_default_crd(pcs);
         if (code == 0)
-            pcl_crd_init_from(pmem, ppalet->pcrd, pcs->pcl_default_crd);
+            pcl_crd_init_from(ppalet->pcrd, pcs->pcl_default_crd);
         if (code == 0)
             code = pcl_ht_build_default_ht(pcs, &(ppalet->pht), pmem);
         if (code < 0) {
@@ -215,9 +215,9 @@ build_default_palette(
                 free_palette(pmem, ppalet, "build default palette");
             return code;
         }
-        pcl_palette_init_from(pmem, pcs->pdflt_palette, ppalet);
+        pcl_palette_init_from(pcs->pdflt_palette, ppalet);
     } else
-        pcl_palette_init_from(pmem, ppalet, pcs->pdflt_palette);
+        pcl_palette_init_from(ppalet, pcs->pdflt_palette);
 
 
     /* NB: definitions do NOT record a referece */
@@ -225,7 +225,7 @@ build_default_palette(
     code = pl_dict_put(&pcs->palette_store, id_key(key), 2, ppalet);
     if (code < 0)
         return e_Memory;
-    rc_increment(pmem, ppalet);
+    rc_increment(ppalet);
     /* the graphic state pointer does not (yet) amount to a reference */
     pcs->ppalet = ppalet;
     return 0;
@@ -245,7 +245,7 @@ clear_palette_stack(
     while (pentry != 0) {
         pstack_entry_t *    pnext = pentry->pnext;
 
-        pcl_palette_release(pmem, pentry->ppalet);
+        pcl_palette_release(pentry->ppalet);
         gs_free_object(pmem, pentry, "clear palette stack");
         pentry = pnext;
     }
@@ -286,7 +286,7 @@ push_pop_palette(
         if (pentry == 0)
             return e_Memory;
 
-        pcl_palette_init_from(pcs->memory, pentry->ppalet, pcs->ppalet);
+        pcl_palette_init_from(pentry->ppalet, pcs->ppalet);
         pentry->pnext = pcs->palette_stack;
         pcs->palette_stack = pentry;
 
@@ -676,7 +676,7 @@ pcl_palette_set_view_illuminant(
 
     if ((code == 0) && (pcs->ppalet->pcrd == 0)) {
         if ((code = pcl_crd_build_default_crd(pcs)) == 0)
-            pcl_crd_init_from(pcs->memory, pcs->ppalet->pcrd, pcs->pcl_default_crd);
+            pcl_crd_init_from(pcs->ppalet->pcrd, pcs->pcl_default_crd);
     }
     if (code == 0)
         code = pcl_crd_set_view_illuminant(pcs, &(pcs->ppalet->pcrd), pwht_pt);
@@ -716,7 +716,7 @@ pcl_palette_check_complete(
                                                     );
     if ((code == 0) && (ppalet->pcrd == 0)) {
         if ((code = pcl_crd_build_default_crd(pcs)) == 0)
-            pcl_crd_init_from(pcs->memory, pcs->ppalet->pcrd, pcs->pcl_default_crd);
+            pcl_crd_init_from(pcs->ppalet->pcrd, pcs->pcl_default_crd);
     }
     if ((code == 0) && (ppalet->pht == 0))
         code = pcl_ht_build_default_ht(pcs, &(ppalet->pht), pcs->memory);
@@ -851,7 +851,7 @@ palette_control(
             code = pl_dict_put(&pcs->palette_store, id_key(key), 2, pcs->ppalet);
             if (code < 0)
                 return code;
-            rc_increment(pcs->memory, pcs->ppalet);
+            rc_increment(pcs->ppalet);
             
         }
         break;
@@ -942,7 +942,7 @@ palette_do_registration(
     gs_memory_t *    pmem
 )
 {
-    DEFINE_CLASS(pmem, '*')
+    DEFINE_CLASS('*')
     {
         'p', 'P',
         PCL_COMMAND( "Push/Pop Palette",
@@ -959,7 +959,7 @@ palette_do_registration(
     },
     END_CLASS
 
-    DEFINE_CLASS(pmem, '&')
+    DEFINE_CLASS('&')
     {
         'b', 'M',
         PCL_COMMAND( "Monochrome Printing",
@@ -1079,7 +1079,7 @@ palette_do_copy(
 )
 {
     if ((operation & (pcl_copy_before_call | pcl_copy_before_overlay)) != 0)
-        pcl_palette_init_from(pcs->memory, psaved->ppalet, pcs->ppalet);
+        pcl_palette_init_from(psaved->ppalet, pcs->ppalet);
     else if ((operation & pcl_copy_after) != 0) {
 	pcl_id_t    key;
 	/* fix the compiler warning resulting from overuse of const */

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* DeviceN color space support */
 #include "memory_.h"
 #include "ghost.h"
@@ -47,23 +48,23 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
     int code;
 
     /* Verify that we have an array as our input parameter */
-    check_read_type(imemory, *op, t_array);
-    if (r_size(op) != 4)
-	return_error(imemory, e_rangecheck);
+    check_read_type(*op, t_array);
+    if (r_size(op) < 4 || r_size(op) > 5)
+	return_error(e_rangecheck);
 
     /* pcsa is a pointer to the color names array (element 1 in input array) */
     pcsa = op->value.const_refs + 1;
     if (!r_is_array(pcsa))
-	return_error(imemory, e_typecheck);
+	return_error(e_typecheck);
     num_components = r_size(pcsa);
     if (num_components == 0)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     if (num_components > GS_CLIENT_COLOR_MAX_COMPONENTS)
-	return_error(imemory, e_limitcheck);
+	return_error(e_limitcheck);
 
     /* Check tint transform procedure.  Note: Cheap trick to get pointer to it.
        The tint transform procedure is element 3 in the input array */
-    check_proc(imemory, pcsa[2]);
+    check_proc(pcsa[2]);
     
     /* The alternate color space has been selected as the current color space */
     pacs = gs_currentcolorspace(igs);
@@ -71,7 +72,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
     /* See zcsindex.c for why we use memmove here. */
     memmove(&cs.params.device_n.alt_space, &cs,
 	    sizeof(cs.params.device_n.alt_space));
-    gs_cspace_init(&cs, &gs_color_space_type_DeviceN, imemory);
+    gs_cspace_init(&cs, &gs_color_space_type_DeviceN, imemory, false);
     code = gs_build_DeviceN(&cs, num_components, pacs, imemory);
     if (code < 0)
 	return code;
@@ -101,7 +102,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
 		default:
 		    ifree_object(names, ".setdevicenspace(names)");
 		    ifree_object(pmap, ".setdevicenspace(map)");
-		    return_error(imemory, e_typecheck);
+		    return_error(e_typecheck);
 	    }
 	}
     }
@@ -118,7 +119,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
     istate->colorspace.procs.special.device_n.tint_transform = pcsa[2];    
     pfn = ref_function(pcsa + 2);	/* See comment above */
     if (!pfn)
-	code = gs_note_error(imemory, e_rangecheck);
+	code = gs_note_error(e_rangecheck);
 
     if (code < 0) {
 	istate->colorspace = cspace_old;
@@ -126,16 +127,51 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
 	ifree_object(pmap, ".setdevicenspace(map)");
 	return code;
     }
-    gs_cspace_set_devn_function(imemory, &cs, pfn);
+    gs_cspace_set_devn_function(&cs, pfn);
     code = gs_setcolorspace(igs, &cs);
     if (code < 0) {
 	istate->colorspace = cspace_old;
 	return code;
     }
-    rc_decrement(imemory, 
-		 pmap, ".setdevicenspace(map)");  /* build sets rc = 1 */
+    rc_decrement(pmap, ".setdevicenspace(map)");  /* build sets rc = 1 */
     pop(1);
     return 0;
+}
+
+/* <name> .attachdevicenattributespace - */
+/*
+ * DeviceN and NChannel color spaces can have an attributes dict.  In the
+ * attribute dict can be a Colorants dict which contains Separation color
+ * spaces.  If the Colorant dict is present, the PS logic will build each of
+ * the Separation color spaces in a temp gstate and then call this procedure
+ * to attach the Separation color space to the DeviceN color space.
+ * The parameter to this procedure is a colorant name.  The Separation
+ * color space is in the current (temp) gstate.  The DeviceN color space is
+ * in the next gstate down in the gstate list (pgs->saved).
+ */
+private int
+zattachdevicenattributespace(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_separation_name sep_name;
+    int code;
+
+    /* Pick up the names of the component */
+    switch (r_type(op)) {
+	case t_string:
+	    code = name_from_string(imemory, op, op);
+	    if (code < 0) 
+		return code;
+	    /* falls through */
+	case t_name:
+	    sep_name = name_index(imemory, op);
+	    break;
+	default:
+	    return_error(e_typecheck);
+    }
+    code = gs_attachattributecolorspace(sep_name, igs);
+    pop(1);
+    return code;
 }
 
 
@@ -145,5 +181,6 @@ const op_def zcsdevn_op_defs[] =
 {
     op_def_begin_ll3(),
     {"1.setdevicenspace", zsetdevicenspace},
+    {"1.attachdevicenattributespace", zattachdevicenattributespace},
     op_def_end(0)
 };

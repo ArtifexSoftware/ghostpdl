@@ -25,6 +25,7 @@
 #include "gsutil.h"
 #include "gxfont.h"
 #include "gxfont42.h"
+#include "strmio.h"
 #include "plfont.h"
 #include "pldict.h"
 #include "pllfont.h"
@@ -44,24 +45,24 @@
    file, false if not.  Also returns false if there are any I/O
    failures */
 private bool
-is_ttfile(FILE *ttfile)
+is_ttfile(stream *ttfile)
 {
     /* check if an open file a ttfile saving and restoring the file position */
-    fpos_t pos;     /* saved file position */
+    long pos;     /* saved file position */
     byte buffer[4]; /* version number buffer */
     bool is_tt;     /* true if a tt file */
-    if ( fgetpos( ttfile, &pos ) )
+    if ( (pos = sftell( ttfile )) < 0 )
 	return false;
     /* seek to beginning */
-    if ( fseek( ttfile, 0L, SEEK_SET ) )
+    if ( sfseek( ttfile, 0L, SEEK_SET ) )
 	return false;
     /* read 4 byte version number */
     is_tt = false;
-    if ( ( fread( &buffer, 1, 4, ttfile ) == 4 ) &&
+    if ( ( sfread( &buffer, 1, 4, ttfile ) == 4 ) &&
 	 ( pl_get_uint32( buffer ) == 0x10000 ) )
 	    is_tt = true;
     /* restore the file position */
-    if ( fsetpos( ttfile, &pos ) )
+    if ( sfseek( ttfile, pos, SEEK_SET ) < 0 )
 	return false;
     return is_tt;
 }
@@ -73,31 +74,31 @@ is_ttfile(FILE *ttfile)
 #define PSNAME 6
 
 private 
-int get_name_from_tt_file(FILE *tt_file, gs_memory_t *mem, char *pfontfilename, int nameoffset)
+int get_name_from_tt_file(stream *tt_file, gs_memory_t *mem, char *pfontfilename, int nameoffset)
 {
     /* check if an open file a ttfile saving and restoring the file position */
-    fpos_t pos;     /* saved file position */
+    long pos;     /* saved file position */
     unsigned long len;
     char *ptr = pfontfilename;
     byte *ptt_font_data;
 
-    if ( fgetpos( tt_file, &pos ) )
+    if ( (pos = sftell( tt_file )) < 0 )
 	return -1;
     /* seek to end and get the file length and allocate a buffer
        for the entire file */
-    if ( fseek( tt_file, 0L, SEEK_END ) )
+    if ( sfseek( tt_file, 0L, SEEK_END ) )
 	return -1;
-    len = ftell( tt_file );
+    len = sftell( tt_file );
 
     /* allocate a buffer for the entire file */
     ptt_font_data = gs_alloc_bytes( mem, len, "get_name_from_tt_file" );
     if ( ptt_font_data == NULL )
-	return_error(mem, gs_error_VMerror );
+	return_error(gs_error_VMerror );
 
     /* seek back to the beginning of the file and read the data
        into the buffer */
-    if ( ( fseek( tt_file, 0L, SEEK_SET ) == 0 ) &&
-	 ( fread( ptt_font_data, 1, len, tt_file ) == len ) )
+    if ( ( sfseek( tt_file, 0L, SEEK_SET ) == 0 ) &&
+	 ( sfread( ptt_font_data, 1, len, tt_file ) == len ) )
 	; /* ok */
     else {
 	gs_free_object( mem, ptt_font_data, "get_name_from_tt_file" );
@@ -136,7 +137,7 @@ int get_name_from_tt_file(FILE *tt_file, gs_memory_t *mem, char *pfontfilename, 
     }
     /* free up the data and restore the file position */
     gs_free_object( mem, ptt_font_data, "get_name_from_tt_file" );
-    if ( fgetpos( tt_file, &pos ) )
+    if ( sfseek( tt_file, pos, SEEK_SET ) < 0 )
 	return -1;
     /* null terminate the fontname string and return success.  Note
        the string can be 0 length if no fontname was found. */
@@ -179,14 +180,14 @@ check_resident_fonts(pl_dict_t *pfontdict, gs_memory_t *mem)
          strlen(resident_table[i].full_font_name) != 0;
          i ++)
         if (!lookup_pjl_number(pfontdict, i)) {
-            dprintf2(mem, "%s (entry %d) not found\n", resident_table[i].full_font_name, i);
-            dprintf(mem, "pxl unicode name:");
             int j;
+            dprintf2("%s (entry %d) not found\n", resident_table[i].full_font_name, i);
+            dprintf("pxl unicode name:");
             for (j = 0; 
                  j < sizeof(resident_table[i].unicode_fontname); 
                  j++)
-                dprintf1(mem, "'%c'", resident_table[i].unicode_fontname[j]);
-            dprintf(mem, "\n");
+                dprintf1("'%c'", resident_table[i].unicode_fontname[j]);
+            dprintf("\n");
         }
 }
 #endif
@@ -224,7 +225,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 	      tmp_pathp = NULL ) {
 	    int code;
 	    file_enum *fe;
-	    FILE *in = NULL;
+	    stream *in = NULL;
 
             /* handle trailing separator */
             bool append_separator = false;
@@ -238,7 +239,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
             if ( (strlen( pattern ) + 
                   strlen( tmp_pathp) + 1 ) +
                  (append_separator ? separator_length : 0) > sizeof( tmp_path_copy ) ) {
-                dprintf1(mem, "path name %s too long\n", tmp_pathp );
+                dprintf1("path name %s too long\n", tmp_pathp );
                 continue;
             }
 
@@ -255,7 +256,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 					  strlen( tmp_path_copy ), mem );
 
 	    /* loop through the files */
-	    while ( ( code = gp_enumerate_files_next( mem,  fe,
+	    while ( ( code = gp_enumerate_files_next( fe,
 						      tmp_path_copy,
 						      sizeof( tmp_path_copy ) ) ) >= 0 ) {
 		char buffer[1024];
@@ -265,38 +266,37 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 
 		/* loop failed/continued and left the file open */
 		if ( in != NULL )
-		    fclose( in );
+		    sfclose( in );
 
 		if ( code > sizeof( tmp_path_copy ) ) {
-		    dprintf(mem, "filename length exceeds file name storage buffer length\n");
+		    dprintf("filename length exceeds file name storage buffer length\n");
 		    continue;
 		}
 		/* null terminate the string */
 		tmp_path_copy[code] = '\0';
 
-		in = fopen( tmp_path_copy, "rb" );
+		in = sfopen( tmp_path_copy, "rb", mem);
 		if ( in == NULL ) { /* shouldn't happen */
-		    dprintf1(mem, "cannot open file %s\n", tmp_path_copy );
+		    dprintf1("cannot open file %s\n", tmp_path_copy );
 		    continue;
 		}
 
 		if ( !is_ttfile( in ) ) {
                    #ifdef DEBUG
                     if ( gs_debug_c('=') ) {
-                        dprintf1(mem, "%s not a TrueType file\n", tmp_path_copy);
+                      dprintf1("%s not a TrueType file\n", tmp_path_copy);
                     }
                    #endif
 		    continue;
                 }
 		code = get_name_from_tt_file( in, mem, buffer, PSNAME);
 		if ( code < 0 ) {
-		    dprintf1(mem, "input output failure on TrueType File %s\n", tmp_path_copy );
+		    dprintf1("input output failure on TrueType File %s\n", tmp_path_copy );
 		    continue;
 		}
 
 		if ( strlen( buffer ) == 0 ) {
-		    dprintf1(mem,
-			     "could not extract font file name from file %s\n", tmp_path_copy );
+		    dprintf1("could not extract font file name from file %s\n", tmp_path_copy );
 		    continue;
 		}
 
@@ -309,11 +309,11 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 		/* hit sentinnel, nothing found */
 		if ( !strlen(residentp->full_font_name) ) {
                    #ifdef DEBUG
-                    if ( gs_debug_c('=') ) {
-                        dprintf2(mem, "TrueType font %s in file %s not found in table\n", buffer, tmp_path_copy);
-                        code = get_name_from_tt_file( in, mem, buffer, WINDOWSNAME);
-                        dprintf1(mem, "Windows name %s\n", buffer);
-                    }
+                   if ( gs_debug_c('=') ) {
+                    dprintf2("TrueType font %s in file %s not found in table\n", buffer, tmp_path_copy);
+                    code = get_name_from_tt_file( in, mem, buffer, WINDOWSNAME);
+                    dprintf1("Windows name %s\n", buffer);
+                   }
                    #endif
 		    continue;
                 }
@@ -323,7 +323,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 				     gs_next_ids(mem, 1), &plfont,
 				     buffer) < 0 )  {
 		    /* vm error but we continue anyway */
-		    dprintf1(mem, "Failed loading font %s\n", tmp_path_copy);
+		    dprintf1("Failed loading font %s\n", tmp_path_copy);
 		    continue;
 		}
 
@@ -352,7 +352,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 		}
 		/* leave data stored in the file */
 		if ( pl_store_resident_font_data_in_file( tmp_path_copy, mem, plfont ) < 0 ) {
-		    dprintf1(mem, "%s could not store data", tmp_path_copy );
+		    dprintf1("%s could not store data", tmp_path_copy );
 		    continue;
 		}
 		/* mark the font as found */

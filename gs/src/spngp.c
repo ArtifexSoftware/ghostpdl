@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PNG pixel prediction filters */
 #include "memory_.h"
 #include "strimpl.h"
@@ -126,7 +127,7 @@ paeth_predictor(int a, int b, int c)
     return (pa <= pb && pa <= pc ? a : pb <= pc ? b : c);
 }
 private void
-s_pngp_process(const gs_memory_t *mem, stream_state * st, stream_cursor_write * pw,
+s_pngp_process(stream_state * st, stream_cursor_write * pw,
 	       const byte * dprev, stream_cursor_read * pr,
 	       const byte * upprev, const byte * up, uint count)
 {
@@ -213,8 +214,7 @@ optimum_predictor(const stream_state * st, const stream_cursor_read * pr)
     return cSub;
 }
 private int
-s_PNGPE_process(const gs_memory_t *mem, 
-		stream_state * st, stream_cursor_read * pr,
+s_PNGPE_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
     stream_PNGP_state *const ss = (stream_PNGP_state *) st;
@@ -252,7 +252,7 @@ s_PNGPE_process(const gs_memory_t *mem,
 	    uint n = min(count, bpp);
 
 	    /* Process bytes whose predecessors are in prev. */
-	    s_pngp_process(mem, st, pw, ss->prev, pr, up - bpp, up, n);
+	    s_pngp_process(st, pw, ss->prev, pr, up - bpp, up, n);
 	    if (ss->prev_row)
 		memcpy(up - bpp, ss->prev, n);
 	    if (ss->row_left == 0)
@@ -275,7 +275,7 @@ s_PNGPE_process(const gs_memory_t *mem,
 	    /* We know we have at least bpp input and output bytes, */
 	    /* and that n = bpp. */
 	    count -= bpp;
-	    s_pngp_process(mem, st, pw, pr->ptr - (bpp - 1), pr,
+	    s_pngp_process(st, pw, pr->ptr - (bpp - 1), pr,
 			   up, up + bpp, count);
 	    memcpy(ss->prev, pr->ptr - (bpp - 1), bpp);
 	    if (ss->prev_row) {
@@ -300,8 +300,7 @@ s_PNGPE_process(const gs_memory_t *mem,
  *        of the previous output row.
  */
 private int
-s_PNGPD_process(const gs_memory_t *mem,
-		stream_state * st, stream_cursor_read * pr,
+s_PNGPD_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
     stream_PNGP_state *const ss = (stream_PNGP_state *) st;
@@ -335,7 +334,7 @@ s_PNGPD_process(const gs_memory_t *mem,
 	    uint n = min(count, bpp);
 
 	    /* Process bytes whose predecessors are in prev. */
-	    s_pngp_process(mem, st, pw, ss->prev, pr, up - bpp, up, n);
+	    s_pngp_process(st, pw, ss->prev, pr, up - bpp, up, n);
 	    if (ss->prev_row)
 		memcpy(up - bpp, ss->prev, n);
 	    if (ss->row_left == 0)
@@ -358,7 +357,7 @@ s_PNGPD_process(const gs_memory_t *mem,
 	    /* We know we have at least bpp input and output bytes, */
 	    /* and that n = bpp. */
 	    count -= bpp;
-	    s_pngp_process(mem, st, pw, pw->ptr - (bpp - 1), pr,
+	    s_pngp_process(st, pw, pw->ptr - (bpp - 1), pr,
 			   up, up + bpp, count);
 	    memcpy(ss->prev, pw->ptr - (bpp - 1), bpp);
 	    if (ss->prev_row) {

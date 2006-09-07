@@ -110,8 +110,7 @@ pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, g
     pwidth->x = pwidth->y = 0;
     if ( !pwidth ) {
 #ifdef DEBUG    
-        dprintf(plfont->pfont->memory, 
-                "Warning should not call width function without width\n" );
+        dprintf( "Warning should not call width function without width\n" );
 #endif
         return (cdata == 0 ? 1 : 0);
     }
@@ -403,7 +402,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             }
           ienum = gs_image_enum_alloc(pgs->memory, "pl_bitmap_build_char");
           if ( ienum == 0 )
-            return_error(pgs->memory, gs_error_VMerror);
+            return_error(gs_error_VMerror);
           gs_image_t_init_mask(&image, true);
           image.Width = pl_get_uint16(params + 4);
           image.Height = pl_get_uint16(params + 6);
@@ -413,7 +412,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
               bold_lines = alloc_bold_lines(pgs->memory, image.Width, bold,
                                             "pl_bitmap_build_char(bold_line)");
               if ( bold_lines == 0 )
-                { code = gs_note_error(pgs->memory, gs_error_VMerror);
+                { code = gs_note_error(gs_error_VMerror);
                   goto out;
                 }
               image.Width += bold;
@@ -428,8 +427,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
                  It appears in landscape mode the bitmaps account for
                  this, very peculiar */
               gs_matrix_rotate(&image.ImageMatrix, -90, &image.ImageMatrix);
-              gs_matrix_translate(pgs->memory, 
-                                  &image.ImageMatrix, 
+              gs_matrix_translate(&image.ImageMatrix, 
                                   -image.Height, image.Width, &image.ImageMatrix);
               /* for the landscape case apparently we adjust by the
                  width + left offset and height - top offset.  Note
@@ -451,15 +449,14 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
           if ( gs_debug_c('B') ) {
               int i;
               int pixels = round_up(image.Width,8) * image.Height;
-              dprintf7(pgs->memory, 
-                       "bitmap font data chr=%ld, width=%d, height=%d, lsb=%d, ascent=%d, top offset=%d left offset=%d\n",
+              dprintf7("bitmap font data chr=%ld, width=%d, height=%d, lsb=%d, ascent=%d, top offset=%d left offset=%d\n",
                        chr, image.Width, image.Height, lsb, ascent, pl_get_int16(params + 2), pl_get_int16(params));
               for ( i = 0; i < pixels; i++ ) {
                   if ( i % round_up(image.Width, 8) == 0 )
-                      dprintf(pgs->memory, "\n");
-                  dprintf1(pgs->memory, "%d", bitmap_data[i >> 3] & (128 >> (i & 7)) ? 1 : 0);
+                      dprintf("\n");
+                  dprintf1("%d", bitmap_data[i >> 3] & (128 >> (i & 7)) ? 1 : 0);
               }
-              dprintf(pgs->memory, "\n");
+              dprintf("\n");
           }
 #endif
           code = image_bitmap_char(ienum, &image, bitmap_data,
@@ -601,7 +598,7 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
             wmode = 0;
         }
         else {
-            dprintf(pfont->memory, "Found vertical metrics\n");
+            dprintf("Found vertical metrics\n");
         }
     }
     return gs_type42_default_get_metrics(pfont, glyph_index, wmode, sbw);
@@ -701,7 +698,8 @@ typedef struct gx_path_s gx_path;
 /* Imported procedures */
 int gs_type42_append(uint glyph_index, gs_imager_state *pis,
   gx_path *ppath, const gs_log2_scale_point *pscale, bool charpath_flag,
-  int paint_type, gs_font_type42 *pfont);
+  int paint_type,  cached_fm_pair *pair);
+
 int gs_type42_get_metrics(gs_font_type42 *pfont, uint glyph_index, float psbw[4]);
 
 /*
@@ -711,14 +709,14 @@ int gs_type42_get_metrics(gs_font_type42 *pfont, uint glyph_index, float psbw[4]
  * unknown, return gs_error_invalidfont.
  */
 int
-pl_cmap_lookup(const gs_memory_t *mem, const uint key, const byte *table, uint *pvalue)
+pl_cmap_lookup(const uint key, const byte *table, uint *pvalue)
 {       /* Dispatch according to the table type. */
         switch ( pl_get_uint16(table) )
           {
           case 0:
             {   /* Apple standard 1-to-1 mapping. */
                 *pvalue = table[key + 6];
-                if_debug2(mem, 'J', "[J]%u => %u\n", key, *pvalue);
+                if_debug2('J', "[J]%u => %u\n", key, *pvalue);
                 break;
             }
           case 4:
@@ -736,12 +734,12 @@ pl_cmap_lookup(const gs_memory_t *mem, const uint key, const byte *table, uint *
                     uint start = pl_get_uint16(startCount + i2);
                     uint glyph;
 
-                    if_debug4(mem, 'J', "[J]start=%u end=%u delta=%d roff=%d\n",
+                    if_debug4('J', "[J]start=%u end=%u delta=%d roff=%d\n",
                               start, pl_get_uint16(endCount + i2), pl_get_int16(idDelta + i2),
                               pl_get_int16(idRangeOffset + i2));
                     if ( key < start )
-                      { if_debug1(mem, 'J', "[J]%u out of range\n", key);
-                        return_error(mem, gs_error_undefined);
+                      { if_debug1('J', "[J]%u out of range\n", key);
+                        return_error(gs_error_undefined);
                       }
                     if ( key > pl_get_uint16(endCount + i2) )
                       continue;
@@ -749,13 +747,13 @@ pl_cmap_lookup(const gs_memory_t *mem, const uint key, const byte *table, uint *
                     roff = pl_get_int16(idRangeOffset + i2);
                     if ( roff == 0 )
                       { *pvalue = ( key + delta ) & 0xffff; /* mod 65536 */
-                        if_debug2(mem, 'J', "[J]%u => %u\n", key, *pvalue);
+                        if_debug2('J', "[J]%u => %u\n", key, *pvalue);
                         return 0;
                       }
                     glyph = pl_get_uint16(idRangeOffset + i2 + roff +
                                 ((key - start) << 1));
                     *pvalue = (glyph == 0 ? 0 : glyph + delta);
-                    if_debug2(mem, 'J', "[J]%u => %u\n", key, *pvalue);
+                    if_debug2('J', "[J]%u => %u\n", key, *pvalue);
                     return 0;
                   }
                 /*
@@ -763,8 +761,8 @@ pl_cmap_lookup(const gs_memory_t *mem, const uint key, const byte *table, uint *
                  * always supposed to end with 0xffff, so this shouldn't
                  * happen; however, in some real fonts, it does.
                  */
-                if_debug1(mem, 'J', "[J]%u out of range\n", key);
-                return_error(mem, gs_error_undefined);
+                if_debug1('J', "[J]%u out of range\n", key);
+                return_error(gs_error_undefined);
             }
           case 6:
             {   /* Single interval lookup. */
@@ -772,15 +770,15 @@ pl_cmap_lookup(const gs_memory_t *mem, const uint key, const byte *table, uint *
                 uint entryCount = pl_get_uint16(table + 8);
 
                 if ( key < firstCode || key >= firstCode + entryCount )
-                  { if_debug1(mem, 'J', "[J]%u out of range\n", key);
-                    return_error(mem, gs_error_undefined);
+                  { if_debug1('J', "[J]%u out of range\n", key);
+                    return_error(gs_error_undefined);
                   }
                 *pvalue = pl_get_uint16(table + 10 + ((key - firstCode) << 1));
-                if_debug2(mem, 'J', "[J]%u => %u\n", key, *pvalue);
+                if_debug2('J', "[J]%u => %u\n", key, *pvalue);
                 break;
             }
           default:
-            return_error(mem, gs_error_invalidfont);
+            return_error(gs_error_invalidfont);
           }
         return 0;
 }
@@ -803,7 +801,7 @@ pl_tt_cmap_encode_char(gs_font_type42 *pfont, ulong cmap_offset,
         cmap_sub = cmap + 4;
         { uint i;
           for ( i = 0; i < pl_get_uint16(cmap + 2); ++i )
-            { if_debug3(pfont->memory, 'j', "[j]cmap %d: platform %u encoding %u\n",
+            { if_debug3('j', "[j]cmap %d: platform %u encoding %u\n",
                         i, pl_get_uint16(cmap_sub + i * 8), pl_get_uint16(cmap_sub + i * 8 + 2));
               if ( pl_get_uint16(cmap_sub + i * 8) == 3 )
                 { cmap_sub += i * 8;
@@ -814,7 +812,7 @@ pl_tt_cmap_encode_char(gs_font_type42 *pfont, ulong cmap_offset,
         { uint offset = cmap_offset + pl_get_uint32(cmap_sub + 4);
           access(offset, cmap_offset + cmap_len - offset, table);
         }
-        code = pl_cmap_lookup(pfont->memory, (uint)chr, table, &value);
+        code = pl_cmap_lookup((uint)chr, table, &value);
         return (code < 0 ? gs_no_glyph : value);
 }
 
@@ -1055,7 +1053,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             gs_make_scaling(scale, scale, &smat);
             sbox.p.x = w2[2], sbox.p.y = w2[3];
             sbox.q.x = w2[4], sbox.q.y = w2[5];
-            gs_bbox_transform(pgs->memory, &sbox, &smat, &sbox);
+            gs_bbox_transform(&sbox, &smat, &sbox);
             ipx = (int)sbox.p.x, ipy = (int)sbox.p.y;
             iqx = (int)ceil(sbox.q.x), iqy = (int)ceil(sbox.q.y);
             /* Set up the memory device for the bitmap. */
@@ -1094,7 +1092,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
                                 (gs_imager_state *)pgs, pgs->path,
                                 &penum->log2_scale,
                                 gs_show_in_charpath(penum) != cpm_show,
-                                pfont->PaintType, pfont42);
+                                pfont->PaintType, penum->pair); 
         if ( code >= 0 )
           code = (pfont->PaintType ? gs_stroke(pgs) : gs_fill(pgs));
         if (ctm_modified)
@@ -1114,7 +1112,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
                              "pl_tt_build_char(bold_lines)");
 
           if ( ienum == 0 || bold_lines == 0 )
-            { code = gs_note_error(pgs->memory, gs_error_VMerror);
+            { code = gs_note_error(gs_error_VMerror);
               goto out;
             }
           gs_image_t_init_mask(&image, true);
@@ -1228,7 +1226,7 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
           uint i;
           int code;
 
-          if_debug2(pgs->memory, '1', "[1]ifont glyph %lu: loops=%u\n",
+          if_debug2('1', "[1]ifont glyph %lu: loops=%u\n",
                     (ulong)glyph, num_loops);
           for ( i = 0; i < num_loops; ++i )
             { const byte *xyc = cdata + pl_get_uint16(outlines + 4 + i * 8);
@@ -1243,16 +1241,16 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
 
               if ( num_aux_points == 0xffff ) {
                 num_aux_points = 0;
-                if_debug1(pgs->memory, '1', "[1]corrupt intellifont font glyph %ld\n", glyph );
+                if_debug1('1', "[1]corrupt intellifont font glyph %ld\n", glyph );
               }
-              if_debug2(pgs->memory, '1', "[1]num_points=%u num_aux_points=%u\n",
+              if_debug2('1', "[1]num_points=%u num_aux_points=%u\n",
                         num_points, num_aux_points);
               /* For the moment, just draw straight lines. */
               for ( j = 0; j < num_points; x_coords += 2, y_coords += 2, ++j )
                 { int x = pl_get_uint16(x_coords) & 0x3fff;
                   int y = pl_get_uint16(y_coords) & 0x3fff;
 
-                  if_debug4(pgs->memory, '1', "[1]%s (%d,%d) %s\n",
+                  if_debug4('1', "[1]%s (%d,%d) %s\n",
                             (*x_coords & 0x80 ? " line" : "curve"), x, y,
                             (*y_coords & 0x80 ? " line" : "curve"));
                   if ( j == 0 )
@@ -1266,7 +1264,7 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
                       int dx = (*x_aux_coords++ ^ 0x80) - 0x80;
                       int dy = (*y_aux_coords++ ^ 0x80) - 0x80;
 
-                      if_debug2(pgs->memory, '1', "[1]... aux (%d,%d)\n", dx, dy);
+                      if_debug2('1', "[1]... aux (%d,%d)\n", dx, dy);
                       code = gs_lineto(pgs, (x + x_prev) / 2 + dx,
                                        (y + y_prev) / 2 + dy);
                       if ( code < 0 )
@@ -1332,7 +1330,7 @@ pl_intelli_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code
 
     /* compound */
     if ( cdata[3] == 4 ) {
-        dprintf(plfont->pfont->memory, "warning compound intellifont metrics not supported" );
+        dprintf("warning compound intellifont metrics not supported" );
         return 0;
     }
 
@@ -1442,7 +1440,7 @@ pl_tt_finish_init(gs_font_type42 *pfont, bool downloaded)
             access(12, numTables * 16, TableDirectory);
             for ( i = 0; i < numTables; ++i )
               { const byte *tab = TableDirectory + i * 16;
-                dprintf6(pfont->memory, "%c%c%c%c offset = %lu length = %lu\n",
+                dprintf6("%c%c%c%c offset = %lu length = %lu\n",
                          tab[0], tab[1], tab[2], tab[3],
                          (ulong)pl_get_uint32(tab + 8), (ulong)pl_get_uint32(tab + 12));
               }
@@ -1473,7 +1471,7 @@ pl_font_alloc_glyph_table(pl_font_t *plfont, uint num_glyphs, gs_memory_t *mem,
                                 &st_pl_font_glyph_element, cname);
 
         if ( glyphs == 0 )
-          return_error(mem, gs_error_VMerror);
+          return_error(gs_error_VMerror);
         { uint i;
           for ( i = 0; i < size; ++i )
             glyphs[i].glyph = 0, glyphs[i].data = 0;
@@ -1519,7 +1517,7 @@ pl_tt_alloc_char_glyphs(pl_font_t *plfont, uint num_chars, gs_memory_t *mem,
           gs_alloc_byte_array(mem, size, sizeof(pl_tt_char_glyph_t), cname);
 
         if ( char_glyphs == 0 )
-          return_error(mem, gs_error_VMerror);
+          return_error(gs_error_VMerror);
         { uint i;
           for ( i = 0; i < size; ++i )
             char_glyphs[i].chr = gs_no_char, char_glyphs[i].glyph = 0;
@@ -1667,4 +1665,8 @@ pl_font_remove_glyph(pl_font_t *plfont, gs_glyph glyph)
         pfg->glyph = 1;         /* mark as deleted */
         plfont->glyphs.used--;
         return 1;
+}
+
+/* do nothing since its UFST callbacks */
+void plu_set_callbacks() {
 }

@@ -1,18 +1,20 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/*$Id$ */
 /* Extended halftone operators for Ghostscript library */
 #include "memory_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
@@ -187,7 +189,7 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 					     &st_ht_order_component_element,
 					     "gs_sethalftone");
 		if (pocs == 0)
-		    return_error(mem, gs_error_VMerror);
+		    return_error(gs_error_VMerror);
 		for (i = 0; i < 4; i++) {
 		    gs_screen_enum senum;
 		    int ci = cindex[i];
@@ -251,7 +253,7 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 					     &st_ht_order_component_element,
 					     "gs_sethalftone");
 		if (pocs == 0)
-		    return_error(mem, gs_error_VMerror);
+		    return_error(gs_error_VMerror);
 		poc_next = pocs + 1;
 		for (i = 0; i < count; i++, phc++) {
 		    gx_ht_order_component *poc = poc_next;		    
@@ -259,14 +261,14 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 		    if (phc->comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
 			if (have_Default) {
 			    /* Duplicate Default */
-			    code = gs_note_error(mem, gs_error_rangecheck);
+			    code = gs_note_error(gs_error_rangecheck);
 			    break;
 			}
 			poc = pocs;
 			have_Default = true;
 		    } else if (i == count - 1 && !have_Default) {
 			/* No Default */
-			code = gs_note_error(mem, gs_error_rangecheck);
+			code = gs_note_error(gs_error_rangecheck);
 			break;
 		    } else
 			poc = poc_next++;
@@ -291,7 +293,7 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 					    &phc->params.client_order, mem);
 			    break;
 			default:
-			    code = gs_note_error(mem, gs_error_rangecheck);
+			    code = gs_note_error(gs_error_rangecheck);
 			    break;
 		    }
 		    if (code < 0)
@@ -313,7 +315,7 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 	    }
 	    break;
 	default:
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
     }
     if (code < 0)
 	gs_free_object(mem, pocs, "gs_sethalftone");
@@ -337,11 +339,11 @@ process_transfer(gx_ht_order * porder, gs_state * pgs,
      * reference count at 1.
      */
     rc_alloc_struct_1(pmap, gx_transfer_map, &st_transfer_map, mem,
-		      return_error(mem, gs_error_VMerror),
+		      return_error(gs_error_VMerror),
 		      "process_transfer");
     pmap->proc = proc;		/* 0 => use closure */
     pmap->closure = *pmc;
-    pmap->id = gs_next_ids(pgs->memory, 1);
+    pmap->id = gs_next_ids(mem, 1);
     load_transfer_map(pgs, pmap, 0.0);
     porder->transfer = pmap;
     return 0;
@@ -366,7 +368,7 @@ process_spot(gx_ht_order * porder, gs_state * pgs,
 
 /* Construct the halftone order from a threshold array. */
 void
-gx_ht_complete_threshold_order(const gs_memory_t *mem, gx_ht_order * porder)
+gx_ht_complete_threshold_order(gx_ht_order * porder)
 {
     int num_levels = porder->num_levels;
     uint *levels = porder->levels;
@@ -375,12 +377,12 @@ gx_ht_complete_threshold_order(const gs_memory_t *mem, gx_ht_order * porder)
     uint i, j;
 
     /* The caller has set bits[i] = max(1, thresholds[i]). */
-    gx_sort_ht_order(mem, bits, size);
+    gx_sort_ht_order(bits, size);
     /* We want to set levels[j] to the lowest value of i */
     /* such that bits[i].mask > j. */
     for (i = 0, j = 0; i < size; i++) {
 	if (bits[i].mask != j) {
-	    if_debug3(mem, 'h', "[h]levels[%u..%u] = %u\n",
+	    if_debug3('h', "[h]levels[%u..%u] = %u\n",
 		      j, (uint) bits[i].mask, i);
 	    while (j < bits[i].mask)
 		levels[j++] = i;
@@ -388,13 +390,12 @@ gx_ht_complete_threshold_order(const gs_memory_t *mem, gx_ht_order * porder)
     }
     while (j < num_levels)
 	levels[j++] = size;
-    gx_ht_construct_bits(mem, porder);
+    gx_ht_construct_bits(porder);
 }
 int
-gx_ht_construct_threshold_order(const gs_memory_t *mem, 
-				gx_ht_order * porder, const byte * thresholds)
+gx_ht_construct_threshold_order(gx_ht_order * porder, const byte * thresholds)
 {
-    return porder->procs->construct_order(mem, porder, thresholds);
+    return porder->procs->construct_order(porder, thresholds);
 }
 
 /* Process a threshold plane. */
@@ -412,7 +413,7 @@ process_threshold(gx_ht_order * porder, gs_state * pgs,
 				       256, mem);
     if (code < 0)
 	return code;
-    gx_ht_construct_threshold_order(pgs->memory, porder, phtp->thresholds.data);
+    gx_ht_construct_threshold_order(porder, phtp->thresholds.data);
     return process_transfer(porder, pgs, phtp->transfer,
 			    &phtp->transfer_closure, mem);
 }
@@ -493,7 +494,7 @@ process_threshold2(gx_ht_order * porder, gs_state * pgs,
 	gx_ht_bit *bits = (gx_ht_bit *)porder->bit_data;
 	int row, di;
 
-	if_debug7(mem, 'h', "[h]rect1=(%d,%d), rect2=(%d,%d), strip=(%d,%d), shift=%d\n",
+	if_debug7('h', "[h]rect1=(%d,%d), rect2=(%d,%d), strip=(%d,%d), shift=%d\n",
 		  w1, h1, w2, h2, sod, d, shift);
 	for (row = 0, di = 0; row < d; ++row) {
 	    /* Iterate over destination rows. */
@@ -521,13 +522,13 @@ process_threshold2(gx_ht_order * porder, gs_state * pgs,
 			 (data[si * 2] << 8) + data[si * 2 + 1])
 				       >> rshift;
 
-		    if_debug3(mem, 'H', "[H]sy=%d, si=%d, di=%d\n", sy, si, di);
+		    if_debug3('H', "[H]sy=%d, si=%d, di=%d\n", sy, si, di);
 		    bits[di].mask = max(thr, 1);
 		}
 	    }
 	}
     }
-    gx_ht_complete_threshold_order(mem, porder);
+    gx_ht_complete_threshold_order(porder);
     return process_transfer(porder, pgs, NULL, &phtp->transfer_closure, mem);
 #undef LOG2_MAX_HT_LEVELS
 #undef MAX_HT_LEVELS
@@ -573,7 +574,7 @@ gs_sethalftone_try_wts(gs_halftone *pht, gs_state *pgs,
 	   to relax this. */
 	return 1;
 
-    if_debug2(pgs->memory, 'h', "[h]%s, num_comp = %d\n",
+    if_debug2('h', "[h]%s, num_comp = %d\n",
 	      dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN ? "Separable and linear" : "Not separable and linear!",
 	      pht->params.multiple.num_comp);
 
@@ -630,21 +631,21 @@ gs_sethalftone_try_wts(gs_halftone *pht, gs_state *pgs,
 	    if (component->comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
 		if (have_Default) {
 		    /* Duplicate Default */
-		    code = gs_note_error(pgs->memory, gs_error_rangecheck);
+		    code = gs_note_error(gs_error_rangecheck);
 		    break;
 		}
 		poc = pocs;
 		have_Default = true;
 	    } else if (i == num_comp - 1 && !have_Default) {
 		/* No Default */
-		code = gs_note_error(pgs->memory, gs_error_rangecheck);
+		code = gs_note_error(gs_error_rangecheck);
 		break;
 	    } else
 		poc = poc_next++;
 
 	    gs_deviceinitialmatrix(gs_currentdevice(pgs), &imat);
 
-	    wcp = wts_pick_cell_size(pgs->memory, h, &imat);
+	    wcp = wts_pick_cell_size(h, &imat);
 	    wse = gs_wts_screen_enum_new(wcp);
 
 	    poc->corder.wse = wse;

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Memory device creation for Ghostscript library */
 #include "math_.h"		/* for fabs */
 #include "memory_.h"
@@ -78,13 +79,13 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
 	    palette_count = 0;
 	    break;
 	default:
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
     }
     proto_dev = (word_oriented ?
 		 gdev_mem_word_device_for_bits(bits_per_pixel) :
 		 gdev_mem_device_for_bits(bits_per_pixel));
     if (proto_dev == 0)		/* no suitable device */
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     pcount = palette_count * 3;
     /* Check to make sure the palette contains white and black, */
     /* and, if it has any colors, the six primaries. */
@@ -121,11 +122,11 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
 	switch (primary_mask) {
 	    case 129:		/* just black and white */
 		if (has_color)	/* color but no primaries */
-		    return_error(mem, gs_error_rangecheck);
+		    return_error(gs_error_rangecheck);
 	    case 255:		/* full color */
 		break;
 	    default:
-		return_error(mem, gs_error_rangecheck);
+		return_error(gs_error_rangecheck);
 	}
     } else
 	has_color = true;
@@ -148,7 +149,7 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
     else if (is_fzero2(pmat->xx, pmat->yy))
 	x_pixels_per_unit = pmat->yx, y_pixels_per_unit = pmat->xy;
     else
-	return_error(mem, gs_error_undefinedresult);
+	return_error(gs_error_undefinedresult);
     /* All checks done, initialize the device. */
     if (bits_per_pixel == 1) {
 	/* Determine the polarity from the palette. */
@@ -163,7 +164,7 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
 					    "gs_makeimagedevice(palette)");
 
 	if (dev_palette == 0)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	gs_make_mem_device(new_dev, proto_dev, mem,
 			   (page_device ? 1 : -1), 0);
 	new_dev->palette.size = pcount;
@@ -173,8 +174,14 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
 	    new_dev->color_info.num_components = 1;
 	    new_dev->color_info.max_color = 0;
 	    new_dev->color_info.dither_colors = 0;
+	    new_dev->color_info.gray_index = 0;
 	}
     }
+    /* Memory defice is always initialised as an internal device but */
+    /* this is an external device */
+    new_dev->retained = true;
+    rc_init(new_dev, new_dev->memory, 1);
+
     new_dev->initial_matrix = *pmat;
     new_dev->MarginsHWResolution[0] = new_dev->HWResolution[0] =
 	fabs(x_pixels_per_unit) * 72;
@@ -189,7 +196,7 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
 	bbox.p.y = 0;
 	bbox.q.x = width;
 	bbox.q.y = height;
-	gs_bbox_transform_inverse(mem, &bbox, pmat, &bbox);
+	gs_bbox_transform_inverse(&bbox, pmat, &bbox);
 	new_dev->ImagingBBox[0] = bbox.p.x;
 	new_dev->ImagingBBox[1] = bbox.p.y;
 	new_dev->ImagingBBox[2] = bbox.q.x;
@@ -213,7 +220,7 @@ gs_makewordimagedevice(gx_device ** pnew_dev, const gs_matrix * pmat,
 		    "gs_makeimagedevice(device)");
 
     if (pnew == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     code = gs_initialize_wordimagedevice(pnew, pmat, width, height,
 					 colors, num_colors, word_oriented,
 					 page_device, mem);

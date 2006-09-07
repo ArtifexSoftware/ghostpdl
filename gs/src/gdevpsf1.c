@@ -1,19 +1,19 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Write an embedded Type 1 font */
 #include "memory_.h"
-#include <assert.h>
 #include "gx.h"
 #include "gserrors.h"
 #include "gsccode.h"
@@ -241,6 +241,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	gs_glyph_data_t gdata;
 	int code;
 
+	gdata.memory = pfont->memory;
 	for (n = 0;
 	     (code = pdata->procs.subr_data(pfont, n, false, &gdata)) !=
 		 gs_error_rangecheck;
@@ -254,10 +255,12 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	    if ((code = pdata->procs.subr_data(pfont, i, false, &gdata)) >= 0) {
 		char buf[50];
 
-		sprintf(buf, "dup %d %u -| ", i, gdata.bits.size);
-		stream_puts(s, buf);
-		write_CharString(s, gdata.bits.data, gdata.bits.size);
-		stream_puts(s, " |\n");
+		if (gdata.bits.size) {
+		    sprintf(buf, "dup %d %u -| ", i, gdata.bits.size);
+		    stream_puts(s, buf);
+		    write_CharString(s, gdata.bits.data, gdata.bits.size);
+		    stream_puts(s, " |\n");
+		}
 		gs_glyph_data_free(&gdata, "write_Private(Subrs)");
 	    }
 	stream_puts(s, "|-\n");
@@ -274,6 +277,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	gs_glyph_data_t gdata;
 	int code;
 
+	gdata.memory = pfont->memory;
 	psf_enumerate_glyphs_begin(&genum, (gs_font *)pfont, subset_glyphs,
 				    (subset_glyphs ? subset_size : 0),
 				    GLYPH_SPACE_NAME);
@@ -298,7 +302,8 @@ write_Private(stream *s, gs_font_type1 *pfont,
 		int code;
 
 		code = pfont->procs.glyph_name((gs_font *)pfont, glyph, &gstr);
-		assert(code >= 0);
+		if (code < 0)
+		    return code;
 		stream_puts(s, "/");
 		stream_write(s, gstr.data, gstr.size);
 		pprintd1(s, " %d -| ", gdata.bits.size);
@@ -463,13 +468,15 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 	lengths[0] = stell(s) - start;
 	start = stell(s);
 	if (options & WRITE_TYPE1_ASCIIHEX) {
-	    s_init_state((stream_state *)&AXE_state, &s_AXE_template, NULL, s->memory);
+	    s_init(&AXE_stream, s->memory);
+	    s_init_state((stream_state *)&AXE_state, &s_AXE_template, NULL);
 	    AXE_state.EndOfData = false;
 	    s_init_filter(&AXE_stream, (stream_state *)&AXE_state,
 			  AXE_buf, sizeof(AXE_buf), es);
 	    es = &AXE_stream;
 	}
-	s_init_state((stream_state *)&exE_state, &s_exE_template, NULL, s->memory);
+	s_init(&exE_stream, s->memory);
+	s_init_state((stream_state *)&exE_state, &s_exE_template, NULL);
 	exE_state.cstate = 55665;
 	s_init_filter(&exE_stream, (stream_state *)&exE_state,
 		      exE_buf, sizeof(exE_buf), es);

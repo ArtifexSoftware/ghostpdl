@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Graphics-state-aware fill and stroke procedures */
 #include "gx.h"
 #include "gzstate.h"
@@ -18,6 +19,15 @@
 #include "gxhttile.h"
 #include "gxpaint.h"
 #include "gxpath.h"
+#include "gxfont.h"
+
+private bool caching_an_outline_font(const gs_state * pgs)
+{
+    return pgs->in_cachedevice > 1 &&
+	    pgs->font != NULL &&
+	    pgs->font->FontType != ft_user_defined && 
+	    pgs->font->FontType != ft_CID_user_defined;
+}
 
 /* Fill a path. */
 int
@@ -34,7 +44,7 @@ gx_fill_path(gx_path * ppath, gx_device_color * pdevc, gs_state * pgs,
     params.rule = rule;
     params.adjust.x = adjust_x;
     params.adjust.y = adjust_y;
-    params.flatness = (pgs->in_cachedevice > 1 ? 0.0 : pgs->flatness);
+    params.flatness = (caching_an_outline_font(pgs) ? 0.0 : pgs->flatness);
     params.fill_zero_width = (adjust_x | adjust_y) != 0;
     return (*dev_proc(dev, fill_path))
 	(dev, (const gs_imager_state *)pgs, ppath, &params, pdevc, pcpath);
@@ -51,7 +61,7 @@ gx_stroke_fill(gx_path * ppath, gs_state * pgs)
 
     if (code < 0)
 	return code;
-    params.flatness = (pgs->in_cachedevice > 1 ? 0.0 : pgs->flatness);
+    params.flatness = (caching_an_outline_font(pgs) ? 0.0 : pgs->flatness);
     return (*dev_proc(dev, stroke_path))
 	(dev, (const gs_imager_state *)pgs, ppath, &params,
 	 pgs->dev_color, pcpath);
@@ -63,7 +73,7 @@ gx_stroke_add(gx_path * ppath, gx_path * to_path,
 {
     gx_stroke_params params;
 
-    params.flatness = (pgs->in_cachedevice > 1 ? 0.0 : pgs->flatness);
+    params.flatness = (caching_an_outline_font(pgs) ? 0.0 : pgs->flatness);
     return gx_stroke_path_only(ppath, to_path, pgs->device,
 			       (const gs_imager_state *)pgs,
 			       &params, NULL, NULL);

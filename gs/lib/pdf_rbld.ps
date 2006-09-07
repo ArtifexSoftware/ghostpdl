@@ -1,13 +1,17 @@
-%  Portions Copyright (C) 2002, 2004 artofcode LLC.
-%  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-%  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-%  All Rights Reserved.
-%
-%  This software is distributed under license and may not be copied, modified
-%  or distributed except as expressly authorized under the terms of that
-%  license.  Refer to licensing information at http://www.artifex.com/ or
-%  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-%  San Rafael, CA  94903, (415)492-9861, for further information. */
+%    Copyright (C) 2002 artofcode LLC.  All rights reserved.
+% 
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 % $Id$
 % pdf_rbld.ps - Rebuilding of broken PDF files (xref errors)
@@ -69,20 +73,21 @@
   } ifelse
 } bind def
 
-% Print the contents of the xref array.  This actually consists of two
-% arrays (Objects and Generations).  Both are larrays.  larrays are a
-% special Ghostscript object which can be arrays with more than 64k
-% elements.
+% Print the contents of the xref array.  This actually consists of three
+% arrays (Objects, Generations, and ObjectStream).  All three are larrays.
+% larrays are a special Ghostscript object which can be arrays with more
+% than 64k elements.
 /print_xref				% - print_xref -
 { 0 1 Objects llength 1 sub		% stack: 0 1 <number of objects - 1>
   { dup =only				% print object number
     (  ) print
     dup Generations exch lget 1 sub =only % print Generation number
     (  ) print
-    ObjectStream exch lget ===		% print ObjectStream object number
+    dup ObjectStream exch lget ==only	% print ObjectStream object number
     (  ) print
     Objects exch lget ===		% print object location
   } for
+  flush
 } bind def
 
 % This is the same as the postscript token operator except that
@@ -121,7 +126,10 @@
 /search_start_trailer		% - search_start_trailer <trailer loc>
 { % Read the first 300 bytes and check for xref
   PDFfile 0 setfileposition
-  300 string 0 1 299 { 2 copy PDFfile read pop put pop } for
+  PDFfile bytesavailable post_eof_count sub	% location of end of data
+  300 .min			% block size to read
+  dup string 0 1 4 -1 roll 1 sub
+  { 2 copy PDFfile read pop put pop } for
   (xref) search {
     % found 'xref'
     exch pop exch pop length 4 add PDFfile exch setfileposition
@@ -137,7 +145,7 @@
       PDFfile fileposition	% get file position
     } if
   } {
-    pop 0			% no xref - should not happen
+    pop search_end_trailer	% no xref, should not happen, search end of file
   } ifelse
 } bind def
 
@@ -149,7 +157,7 @@
   % anything past the last %%EOF since this is not PDF data.
   PDFfile 0 setfileposition
   PDFfile bytesavailable post_eof_count sub	% location of end of data
-  dup 4096 .min			% block size to read
+  dup 65535 .min		% block size to read
 				% stack: <file end pos> <block size>
   % move file position to the start of the block
   2 copy sub PDFfile exch setfileposition
@@ -186,13 +194,23 @@
   % read block of data
   dup string 0 1 4 -1 roll 1 sub { 2 copy PDFfile read pop put pop } for
   % search for last occurance of 'startxref'
-  (startxref) { search not { exit } if pop } loop
-  % determine where the trailer is in the file
-  %   trailer loc = end loc - remaing string length
-  length sub 9 sub
-  % move the file to this position and read startxref and position
-  PDFfile exch setfileposition
-  PDFfile token pop pop PDFfile token pop
+  false				% Assume that startxref not present
+  exch (startxref) { 
+     search not { exit } if	% Exit loop when no more startxref's
+     pop 3 -1 roll pop true 3 1 roll	% Idicate that we have found starxref
+  } loop
+  exch				% Exch last string and 'found' flag
+  { 
+     % determine where the startxref is in the file
+     %   'startxref' loc = end loc - remaing string length - 9 bytes
+     length sub 9 sub
+     % move the file to this position and read startxref and position
+     PDFfile exch setfileposition PDFfile token
+     pop pop PDFfile token pop
+  } {
+     % startxref not found.  We will search the end of the file for trailer.
+     pop pop PDFfilelen
+  } ifelse
   % compare xref position to 1/2 the length of the file and search for trailer
   exch 2 div lt { search_start_trailer } { search_end_trailer } ifelse
   % get the trailer
@@ -207,8 +225,7 @@
 % stuff when we are scanning for objects.
 /determine_post_eof_count		% - determine_post_eof_count <count>
 { % Position to read block of data from the end of the file. 
-  PDFfile 0 setfileposition
-  PDFfile bytesavailable	% size of file
+  PDFfilelen			% size of file
   dup 4096 .min			% block size to read
   % stack: <file size> <file size> <block size>
   % move file position to the start of the block
@@ -233,8 +250,10 @@
   /post_eof_count determine_post_eof_count def
   % Start at the beginning of the file
   PDFfile 0 setfileposition
-  % Create a working string (and also store its length on stack)
-  1024 dup string
+  % Create a working string (and also store its length on stack).  We are
+  % using a maximum size string size the logic below wants a recovered object
+  % to fit into our working string.
+  65535 dup string
   { % Now loop through the entire file lloking for objects
     PDFfile fileposition		% save current file position
     % When we get near the end of the file, we use a smaller interval of
@@ -261,7 +280,8 @@
 	      1 index 20 add 20 idiv 20 mul
 	      growPDFobjects
 	      % save xref parameters into ObjectStream, Objects and Generations
-	      1 index 0 4 index 3 index	% rearrange parms for setxrefentry
+	      1 index 0			% rearrange parms for setxrefentry
+	      4 index PDFoffset sub 3 index
 	      setxrefentry		% save parameters
 	      pop pop pop pop		% clear parameters
 	    } if			% check if name is 'obj'
@@ -282,7 +302,7 @@
   % Output warning if we have two objects with the same object and generation
   % numbers.
   dup_obj_gen_num {
-    (   **** Warning:  There are objects with matching oject and generation\n)
+    (   **** Warning:  There are objects with matching object and generation\n)
     pdfformaterror
     (   **** numbers.  The accuracy of the resulting image is unknown.\n)
     pdfformaterror

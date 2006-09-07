@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Character cache management routines for Ghostscript library */
 #include "gx.h"
 #include "memory_.h"
@@ -29,11 +30,8 @@
 #include "gxfont.h"
 #include "gxfcache.h"
 #include "gxxfont.h"
-
-#if NEW_TT_INTERPRETER
 #include "gxttfb.h"
-#include <assert.h>
-#endif
+#include "gxfont42.h"
 
 /* Define the descriptors for the cache structures. */
 private_st_cached_fm_pair();
@@ -89,7 +87,7 @@ gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     if (mdata == 0 || chars == 0) {
 	gs_free_object(struct_mem, chars, "font_dir_alloc(chars)");
 	gs_free_object(struct_mem, mdata, "font_dir_alloc(mdata)");
-	return_error(struct_mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     }
     pdir->fmcache.mmax = mmax;
     pdir->fmcache.mdata = mdata;
@@ -117,21 +115,20 @@ gx_char_cache_init(register gs_font_dir * dir)
 			     "initial_chunk");
 
     dir->fmcache.msize = 0;
-    dir->fmcache.mnext = 0;
+    dir->fmcache.used = dir->fmcache.mmax;
+    dir->fmcache.free = dir->fmcache.mmax;
+    dir->fmcache.unused = 0;
     gx_bits_cache_chunk_init(cck, NULL, 0);
     gx_bits_cache_init((gx_bits_cache *) & dir->ccache, cck);
     dir->ccache.bspace = 0;
     memset((char *)dir->ccache.table, 0,
 	   (dir->ccache.table_mask + 1) * sizeof(cached_char *));
     for (i = 0, pair = dir->fmcache.mdata;
-	 i < dir->fmcache.mmax; i++, pair++
-	) {
+	 i < dir->fmcache.mmax; i++, pair++) {
 	pair->index = i;
 	fm_pair_init(pair);
-#if NEW_TT_INTERPRETER
 	pair->ttf = 0;
 	pair->ttr = 0;
-#endif
     }
 }
 
@@ -141,9 +138,8 @@ gx_char_cache_init(register gs_font_dir * dir)
 /* a client-supplied procedure. */
 void
 gx_purge_selected_cached_chars(gs_font_dir * dir,
-			       bool(*proc) (const gs_memory_t *, 
-					    cached_char *, 
-					    void *), 
+			       bool(*proc) (const gs_memory_t *mem, 
+					    cached_char *, void *), 
 			       void *proc_data)
 {
     int chi;
@@ -152,12 +148,63 @@ gx_purge_selected_cached_chars(gs_font_dir * dir,
     for (chi = 0; chi <= cmax;) {
 	cached_char *cc = dir->ccache.table[chi];
 
-	if (cc != 0 && (*proc) (dir->ccache.bits_memory, cc, proc_data)) {
+	if (cc != 0 && (*proc) (dir->memory, cc, proc_data)) {
 	    hash_remove_cached_char(dir, chi);
 	    gx_free_cached_char(dir, cc);
 	} else
 	    chi++;
     }
+}
+
+/* ====== font-matrix pair lists ====== */
+
+private int
+fm_pair_remove_from_list(gs_font_dir * dir, cached_fm_pair *pair, uint *head)
+{
+    if (dir->fmcache.mdata + pair->index != pair)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    if (pair->next == pair->index) {
+	/* The list consists of single element. */
+	if (pair->prev != pair->index)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	*head = dir->fmcache.mmax;
+    } else {
+	cached_fm_pair *next = dir->fmcache.mdata + pair->next;
+	cached_fm_pair *prev = dir->fmcache.mdata + pair->prev;
+
+	if (next->prev != pair->index)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (prev->next != pair->index)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (*head == pair->index)
+	    *head = next->index;
+	next->prev = prev->index;
+	prev->next = next->index;
+    }
+    return 0;
+}
+
+private int
+fm_pair_insert_into_list(gs_font_dir * dir, cached_fm_pair *pair, uint *head)
+{
+    if (dir->fmcache.mdata + pair->index != pair)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    if (*head >= dir->fmcache.mmax) {
+	*head = pair->next = pair->prev = pair->index;
+    } else {
+	cached_fm_pair *first = dir->fmcache.mdata + *head;
+	cached_fm_pair *last = dir->fmcache.mdata + first->prev;
+
+	if (first->prev != last->index)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (last->next != first->index)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	pair->next = first->index;
+	pair->prev = last->index;
+	first->prev = last->next = pair->index;
+	*head = pair->index;	
+    }
+    return 0;
 }
 
 /* ====== Font-level routines ====== */
@@ -170,29 +217,48 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	       bool design_grid, cached_fm_pair **ppair)
 {
     float mxx, mxy, myx, myy;
-    register cached_fm_pair *pair = dir->fmcache.mdata + dir->fmcache.mnext;
-    cached_fm_pair *mend = dir->fmcache.mdata + dir->fmcache.mmax;
+    register cached_fm_pair *pair;
+    int code; 
 
     gx_compute_ccache_key(font, char_tm, log2_scale, design_grid,
 			    &mxx, &mxy, &myx, &myy);
-    if (dir->fmcache.msize == dir->fmcache.mmax) {	/* cache is full *//* Prefer an entry with num_chars == 0, if any. */
-	int count;
-
-	for (count = dir->fmcache.mmax;
-	     --count >= 0 && pair->num_chars != 0;
-	    )
-	    if (++pair == mend)
-		pair = dir->fmcache.mdata;
-	gs_purge_fm_pair(dir, pair, 0);
-    } else {			/* Look for an empty entry.  (We know there is one.) */
-	while (!fm_pair_is_free(pair))
-	    if (++pair == mend)
-		pair = dir->fmcache.mdata;
+    if (dir->fmcache.msize == dir->fmcache.mmax) {	
+	/* cache is full, drop the older entry. */
+	/* gx_touch_fm_pair must be called whenever
+	   a pair is used to move it to the top of the list.
+	   Since we drop a pair from the list bottom,
+	   and since the list is long enough,
+	   with a high probability it won't drop a pair, 
+	   which currently is pointed by an active text enumerator.
+	   
+	   Note that with Type 3 fonts multiple text enumerators
+	   may be active (exist on estack) in same time,
+	   therefore the list length sets a constraint for
+	   the number of font-matrix pairs used within a charproc.
+	   If it uses too many ones, the outer text enumerator
+	   will fail with 'invalidfont' in gx_add_cached_char.
+	*/
+	pair = dir->fmcache.mdata + dir->fmcache.used;
+	pair = dir->fmcache.mdata + pair->prev; /* last touched. */
+	code = gs_purge_fm_pair(dir, pair, 0);
+	if (code < 0)
+	    return code;
+    }
+    if (dir->fmcache.free < dir->fmcache.mmax) {
+	/* use a free entry. */
+	pair = dir->fmcache.mdata + dir->fmcache.free;
+	code = fm_pair_remove_from_list(dir, pair, &dir->fmcache.free);
+	if (code < 0)
+	    return code;
+    } else {
+	/* reserve a new entry. */
+	pair = dir->fmcache.mdata + dir->fmcache.unused;
+	dir->fmcache.unused++;
     }
     dir->fmcache.msize++;
-    dir->fmcache.mnext = pair + 1 - dir->fmcache.mdata;
-    if (dir->fmcache.mnext == dir->fmcache.mmax)
-	dir->fmcache.mnext = 0;
+    code = fm_pair_insert_into_list(dir, pair, &dir->fmcache.used);
+    if (code < 0)
+	return code;
     pair->font = font;
     pair->UID = *puid;
     pair->FontType = font->FontType;
@@ -204,44 +270,56 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     pair->num_chars = 0;
     pair->xfont_tried = false;
     pair->xfont = 0;
-#if NEW_TT_INTERPRETER
     pair->ttf = 0;
     pair->ttr = 0;
     pair->design_grid = false;
-    if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) {
-	int code; 
-	float cxx, cxy, cyx, cyy;
-	gs_matrix m;
-	gx_compute_char_matrix(char_tm, log2_scale, &cxx, &cxy, &cyx, &cyy);
+    if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) 
+	if (((gs_font_type42 *)font)->FAPI==NULL) {
+	    float cxx, cxy, cyx, cyy;
+	    gs_matrix m;
+	    gx_compute_char_matrix(char_tm, log2_scale, &cxx, &cxy, &cyx, &cyy);
 
-	pair->design_grid = design_grid;
-	m.xx = cxx;
-	m.xy = cxy;
-	m.yx = cyx;
-	m.yy = cyy;
-	m.tx = m.ty = 0;
-	pair->ttr = gx_ttfReader__create(dir->memory, (gs_font_type42 *)font);
-	if (!pair->ttr)
-	    return_error(dir->memory, gs_error_VMerror);
-	/*  We could use a single the reader instance for all fonts ... */
-	pair->ttf = ttfFont__create(dir);
-	if (!pair->ttf)
-	    return_error(dir->memory, gs_error_VMerror);
-	code = ttfFont__Open_aux(pair->ttf, dir->tti, pair->ttr, 
-		    (gs_font_type42 *)font, &m, log2_scale, design_grid);
-	if (code < 0)
-	    return code;
-    }
-#endif
+	    pair->design_grid = design_grid;
+	    m.xx = cxx;
+	    m.xy = cxy;
+	    m.yx = cyx;
+	    m.yy = cyy;
+	    m.tx = m.ty = 0;
+	    pair->ttr = gx_ttfReader__create(dir->memory);
+	    if (!pair->ttr)
+		return_error(gs_error_VMerror);
+	    /*  We could use a single the reader instance for all fonts ... */
+	    pair->ttf = ttfFont__create(dir);
+	    if (!pair->ttf)
+		return_error(gs_error_VMerror);
+	    gx_ttfReader__set_font(pair->ttr, (gs_font_type42 *)font);
+	    code = ttfFont__Open_aux(pair->ttf, dir->tti, pair->ttr, 
+			(gs_font_type42 *)font, &m, log2_scale, design_grid);
+	    gx_ttfReader__set_font(pair->ttr, NULL);
+	    if (code < 0)
+		return code;
+	}
     pair->memory = 0;
-#ifdef NEEDS_MEMORY_POINTER
-    if_debug8(dir->memory,
-              'k', "[k]adding pair 0x%lx: font=0x%lx [%g %g %g %g] UID %ld, 0x%lx\n",
+    if_debug8('k', "[k]adding pair 0x%lx: font=0x%lx [%g %g %g %g] UID %ld, 0x%lx\n",
 	      (ulong) pair, (ulong) font,
 	      pair->mxx, pair->mxy, pair->myx, pair->myy,
 	      (long)pair->UID.id, (ulong) pair->UID.xvalues);
-#endif
     *ppair = pair;
+    return 0;
+}
+
+/* Update the pointer to the last used font/matrix pair. */
+int
+gx_touch_fm_pair(gs_font_dir *dir, cached_fm_pair *pair)
+{
+    if (pair->index != dir->fmcache.used) {
+	int code; 
+
+	code = fm_pair_remove_from_list(dir, pair, &dir->fmcache.used);
+	if (code < 0)
+	    return code;
+	return fm_pair_insert_into_list(dir, pair, &dir->fmcache.used);
+    }
     return 0;
 }
 
@@ -325,10 +403,10 @@ purge_fm_pair_char_xfont(const gs_memory_t *mem, cached_char * cc, void *vpair)
     return cc_pair(cc) == cpair && cpair->xfont == 0 && !cc_has_bits(cc);
 }
 #undef cpair
-void
+int
 gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 {
-    if_debug2(pair->memory, 'k', "[k]purging pair 0x%lx%s\n",
+    if_debug2('k', "[k]purging pair 0x%lx%s\n",
 	      (ulong) pair, (xfont_only ? " (xfont only)" : ""));
     if (pair->xfont != 0) {
 	(*pair->xfont->common.procs->release) (pair->xfont,
@@ -340,24 +418,31 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 				   (xfont_only ? purge_fm_pair_char_xfont :
 				    purge_fm_pair_char),
 				   pair);
-#if NEW_TT_INTERPRETER
     if (pair->ttr)
 	gx_ttfReader__destroy(pair->ttr);
     pair->ttr = 0;
     if (pair->ttf)
 	ttfFont__destroy(pair->ttf, dir);
     pair->ttf = 0;
-#endif
     if (!xfont_only) {
+	int code;
+
 #ifdef DEBUG
 	if (pair->num_chars != 0) {
-	    lprintf1(pair->memory, "Error in gs_purge_fm_pair: num_chars =%d\n",
+	    lprintf1("Error in gs_purge_fm_pair: num_chars =%d\n",
 		     pair->num_chars);
 	}
 #endif
 	fm_pair_set_free(pair);
+	code = fm_pair_remove_from_list(dir, pair, &dir->fmcache.used);
+	if (code < 0)
+	    return code;
+	code = fm_pair_insert_into_list(dir, pair, &dir->fmcache.free);
+	if (code < 0)
+	    return code;
 	dir->fmcache.msize--;
     }
+    return 0;
 }
 
 /* Look up an xfont by name. */
@@ -370,13 +455,13 @@ lookup_xfont_by_name(gx_device * fdev, const gx_xfont_procs * procs,
 {
     gx_xfont *xf;
 
-    if_debug5(pair->memory, 'k', "[k]lookup xfont %s [%g %g %g %g]\n",
+    if_debug5('k', "[k]lookup xfont %s [%g %g %g %g]\n",
 	      pfstr->chars, pmat->xx, pmat->xy, pmat->yx, pmat->yy);
     xf = (*procs->lookup_font) (fdev,
 				&pfstr->chars[0], pfstr->size,
 				encoding_index, &pair->UID,
 				pmat, pair->memory);
-    if_debug1(pair->memory, 'k', "[k]... xfont=0x%lx\n", (ulong) xf);
+    if_debug1('k', "[k]... xfont=0x%lx\n", (ulong) xf);
     return xf;
 }
 
@@ -412,11 +497,15 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     gx_device_memory mdev;
     gx_device_memory *pdev = dev;
     gx_device_memory *pdev2;
+    float HWResolution0 = 72, HWResolution1 = 72;  /* default for dev == NULL */
 
     if (dev == NULL) {
 	mdev.memory = 0;
 	mdev.target = 0;
 	pdev = &mdev;
+    } else {
+	HWResolution0 = dev->HWResolution[0];
+	HWResolution1 = dev->HWResolution[1];
     }
     pdev2 = (dev2 == 0 ? pdev : dev2);
 
@@ -425,8 +514,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 
     iraster = bitmap_raster(nwidth_bits);
     if (iraster != 0 && iheight >> log2_yscale > dir->ccache.upper / iraster) {
-	if_debug5(dev->memory, 
-		  'k', "[k]no cache bits: scale=%dx%d, raster/scale=%u, height/scale=%u, upper=%u\n",
+	if_debug5('k', "[k]no cache bits: scale=%dx%d, raster/scale=%u, height/scale=%u, upper=%u\n",
 		  1 << log2_xscale, 1 << log2_yscale,
 		  iraster, iheight, dir->ccache.upper);
 	return 0;		/* too big */
@@ -443,15 +531,19 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 	bool retained = pdev->retained;
 	gx_device *target = pdev->target;
 
+
 	rc = pdev->rc;
 	/* Pass the correct target, but decrement its refct afterwards. */
 	gs_make_mem_mono_device(pdev, pdev->memory, target);
-	rc_decrement_only(pdev->memory, target, "gx_alloc_char_bits"); /* can't go to 0 */
+	rc_decrement_only(target, "gx_alloc_char_bits"); /* can't go to 0 */
 	pdev->rc = rc;
 	pdev->retained = retained;
 	pdev->width = iwidth;
 	pdev->height = iheight;
 	isize = gdev_mem_bitmap_size(pdev);
+	pdev->HWResolution[0] = HWResolution0;
+	pdev->HWResolution[1] = HWResolution1;
+
     } else {
 	/* Use an alpha-buffer device to compress as we go. */
 	/* Preserve the reference counts, if any. */
@@ -470,12 +562,14 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 	dev->height = 2 << log2_yscale;
 	isize = gdev_mem_bitmap_size(dev) +
 	    gdev_mem_bitmap_size(dev2);
+	dev->HWResolution[0] = HWResolution0 * (1 >> log2_xscale);
+	dev->HWResolution[1] = HWResolution1 * (1 >> log2_yscale);
     }
     icdsize = isize + sizeof_cached_char;
     cc = alloc_char(dir, icdsize);
     if (cc == 0)
 	return 0;
-    if_debug4(dev->memory, 'k', "[k]adding char 0x%lx:%u(%u,%u)\n",
+    if_debug4('k', "[k]adding char 0x%lx:%u(%u,%u)\n",
 	      (ulong) cc, (uint) icdsize, iwidth, iheight);
 
     /* Fill in the entry. */
@@ -492,9 +586,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     cc_set_pair_only(cc, 0);	/* not linked in yet */
     cc->id = gx_no_bitmap_id;
     cc->subpix_origin.x = cc->subpix_origin.y = 0;
-#if NEW_TT_INTERPRETER
     cc->linked = false;
-#endif
 
     /* Open the cache device(s). */
 
@@ -535,28 +627,19 @@ gx_free_cached_char(gs_font_dir * dir, cached_char * cc)
 
     dir->ccache.chunks = cck;
     dir->ccache.cnext = (byte *) cc - cck->data;
-#if NEW_TT_INTERPRETER
     if (cc->linked)
 	cc_pair(cc)->num_chars--;
-#else
-    if (cc_pair(cc) != 0) {	/* might be allocated but not added to table yet */
-	cc_pair(cc)->num_chars--;
-    }
-#endif
-#ifdef NEEDS_MEMORY_POINTER
-    if_debug2(dir->memory, 'k', "[k]freeing char 0x%lx, pair=0x%lx\n",
+    if_debug2('k', "[k]freeing char 0x%lx, pair=0x%lx\n",
 	      (ulong) cc, (ulong) cc_pair(cc));
-#endif
     gx_bits_cache_free((gx_bits_cache *) & dir->ccache, &cc->head, cck);
 }
 
 /* Add a character to the cache */
-void
+int
 gx_add_cached_char(gs_font_dir * dir, gx_device_memory * dev,
 cached_char * cc, cached_fm_pair * pair, const gs_log2_scale_point * pscale)
 {
-    if_debug5(dev->memory, 
-	      'k', "[k]chaining char 0x%lx: pair=0x%lx, glyph=0x%lx, wmode=%d, depth=%d\n",
+    if_debug5('k', "[k]chaining char 0x%lx: pair=0x%lx, glyph=0x%lx, wmode=%d, depth=%d\n",
 	      (ulong) cc, (ulong) pair, (ulong) cc->code,
 	      cc->wmode, cc_depth(cc));
     if (dev != NULL) {
@@ -576,13 +659,26 @@ cached_char * cc, cached_fm_pair * pair, const gs_log2_scale_point * pscale)
 	while (dir->ccache.table[chi &= dir->ccache.table_mask] != 0)
 	    chi++;
 	dir->ccache.table[chi] = cc;
-#if NEW_TT_INTERPRETER
-	assert(cc->pair == pair);
+	if (cc->pair == NULL) {
+	    /* gx_show_text_retry could reset it when bbox_draw
+	       discovered an insufficient FontBBox and enlarged it. 
+	       Glyph raster params could change then. */
+	    cc->pair = pair;
+	} else if (cc->pair != pair) {
+	    /* gx_add_fm_pair could drop the active font-matrix pair
+	       due to cache overflow during a charproc interpretation. 
+	       Likely a single charproc renders too many characters
+	       for generating the character image.
+	       We have no mechanizm for locking font-matrix pairs in cache
+	       to avoud their dissipation. Therefore we consider this failure 
+	       as an implementation limitation. */
+	    return_error(gs_error_invalidfont);
+	}
 	cc->linked = true;
-#endif
 	cc_set_pair(cc, pair);
 	pair->num_chars++;
     }
+    return 0;
 }
 
 /* Adjust the bits of a newly-rendered character, by unscaling */
@@ -603,8 +699,7 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
     if (cc->width % (1 << log2_x) != 0 ||
 	cc->height % (1 << log2_y) != 0
 	) {
-	lprintf4(dir->orig_fonts->memory,
-		 "size %d,%d not multiple of scale %d,%d!\n",
+	lprintf4("size %d,%d not multiple of scale %d,%d!\n",
 		 cc->width, cc->height,
 		 1 << log2_x, 1 << log2_y);
 	cc->width &= -1 << log2_x;
@@ -631,13 +726,11 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
      */
 
     if ((log2_x | log2_y) != 0) {
-	if_debug5(dir->orig_fonts->memory,
-		  'k', "[k]compressing %dx%d by %dx%d to depth=%d\n",
+	if_debug5('k', "[k]compressing %dx%d by %dx%d to depth=%d\n",
 		  cc->width, cc->height, 1 << log2_x, 1 << log2_y,
 		  depth);
 	if (gs_debug_c('K'))
-	    debug_dump_bitmap(dir->orig_fonts->memory,
-			      bits, raster, cc->height,
+	    debug_dump_bitmap(bits, raster, cc->height,
 			      "[K]uncompressed bits");
 	/* Truncate/round the bbox to a multiple of the scale. */
 	{
@@ -656,8 +749,7 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
 	cc->height = (bbox.q.y - bbox.p.y) >> log2_y;
 	nwidth_bits = cc->width << log2_depth;
 	nraster = bitmap_raster(nwidth_bits);
-	bits_compress_scaled(dir->orig_fonts->memory,
-			     bits + raster * bbox.p.y, bbox.p.x,
+	bits_compress_scaled(bits + raster * bbox.p.y, bbox.p.x,
 			     cc->width << log2_x,
 			     cc->height << log2_y,
 			     raster,
@@ -709,36 +801,39 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
 
 	if (diff >= sizeof(cached_char_head)) {
 	    shorten_cached_char(dir, cc, diff);
-	    if_debug2(dir->orig_fonts->memory,
-		      'K', "[K]shortening char 0x%lx by %u (adding)\n",
+	    if_debug2('K', "[K]shortening char 0x%lx by %u (adding)\n",
 		      (ulong) cc, diff);
 	}
     }
 
     /* Assign a bitmap id. */
 
-    cc->id = gs_next_ids(dir->orig_fonts->memory, 1);
+    cc->id = gs_next_ids(dir->memory, 1);
 }
 
 /* Purge from the caches all references to a given font. */
-void
+int
 gs_purge_font_from_char_caches(gs_font_dir * dir, const gs_font * font)
 {
     cached_fm_pair *pair = dir->fmcache.mdata;
     int count = dir->fmcache.mmax;
 
-    if_debug1(font->memory, 
-	      'k', "[k]purging font 0x%lx\n",
+    if_debug1('k', "[k]purging font 0x%lx\n",
 	      (ulong) font);
     while (count--) {
 	if (pair->font == font) {
 	    if (uid_is_valid(&pair->UID)) {	/* Keep the entry. */
 		pair->font = 0;
-	    } else
-		gs_purge_fm_pair(dir, pair, 0);
+	    } else {
+		int code = gs_purge_fm_pair(dir, pair, 0);
+
+		if (code < 0)
+		    return code;
+	    }
 	}
 	pair++;
     }
+    return 0;
 }
 
 /* ------ Internal routines ------ */
@@ -761,8 +856,7 @@ alloc_char(gs_font_dir * dir, ulong icdsize)
 	    if (cksize > tsize)
 		cksize = tsize;
 	    if (icdsize + sizeof(cached_char_head) > cksize) {
-		if_debug2(mem,
-			  'k', "[k]no cache bits: cdsize+head=%lu, cksize=%u\n",
+		if_debug2('k', "[k]no cache bits: cdsize+head=%lu, cksize=%u\n",
 			  icdsize + sizeof(cached_char_head),
 			  cksize);
 		return 0;	/* wouldn't fit */
@@ -808,11 +902,11 @@ alloc_char_in_chunk(gs_font_dir * dir, ulong icdsize)
 {
     char_cache_chunk *cck = dir->ccache.chunks;
     cached_char_head *cch;
+    int i;
 
 #define cc ((cached_char *)cch)
 
-    while (gx_bits_cache_alloc(dir->orig_fonts->memory,
-			       (gx_bits_cache *) & dir->ccache,
+    while (gx_bits_cache_alloc((gx_bits_cache *) & dir->ccache,
 			       icdsize, &cch) < 0
 	) {
 	if (cch == 0) {		/* Not enough room to allocate in this chunk. */
@@ -822,9 +916,18 @@ alloc_char_in_chunk(gs_font_dir * dir, ulong icdsize)
 
 	    if (pair != 0) {
 		uint chi = chars_head_index(cc->code, pair);
-
+#ifdef DEBUG
+		/* NB: infinite loop protection on cc not in cache */
+		for (i = 0; 
+		     i < dir->ccache.table_mask && 
+			 dir->ccache.table[chi & dir->ccache.table_mask] != cc; ++i )
+		    chi++;
+		if (i >= dir->ccache.table_mask)
+		    dprintf("Char cache entry missing error is being ignored");
+#else
 		while (dir->ccache.table[chi & dir->ccache.table_mask] != cc)
 		    chi++;
+#endif
 		hash_remove_cached_char(dir, chi);
 	    }
 	    gx_free_cached_char(dir, cc);
@@ -870,7 +973,6 @@ shorten_cached_char(gs_font_dir * dir, cached_char * cc, uint diff)
 {
     gx_bits_cache_shorten((gx_bits_cache *) & dir->ccache, &cc->head,
 			  diff, cc->chunk);
-    if_debug2(dir->orig_fonts->memory,
-	      'K', "[K]shortening creates free block 0x%lx(%u)\n",
+    if_debug2('K', "[K]shortening creates free block 0x%lx(%u)\n",
 	      (ulong) ((byte *) cc + cc->head.size), diff);
 }

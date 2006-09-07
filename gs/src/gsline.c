@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Line parameter operators for Ghostscript library */
 #include "math_.h"
 #include "memory_.h"
@@ -47,7 +48,7 @@ int
 gs_setlinecap(gs_state * pgs, gs_line_cap cap)
 {
     if ((uint) cap > gs_line_cap_max)
-	return_error(pgs->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     pgs_lp->cap = cap;
     return 0;
 }
@@ -64,7 +65,7 @@ int
 gs_setlinejoin(gs_state * pgs, gs_line_join join)
 {
     if ((uint) join > gs_line_join_max)
-	return_error(pgs->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     pgs_lp->join = join;
     return 0;
 }
@@ -78,10 +79,10 @@ gs_currentlinejoin(const gs_state * pgs)
 
 /* setmiterlimit */
 int
-gx_set_miter_limit(const gs_memory_t *mem, gx_line_params * plp, floatp limit)
+gx_set_miter_limit(gx_line_params * plp, floatp limit)
 {
     if (limit < 1.0)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     plp->miter_limit = limit;
     /*
      * Compute the miter check value.  The supplied miter limit is an
@@ -105,7 +106,7 @@ gx_set_miter_limit(const gs_memory_t *mem, gx_line_params * plp, floatp limit)
 int
 gs_setmiterlimit(gs_state * pgs, floatp limit)
 {
-    return gx_set_miter_limit(pgs->memory, pgs_lp, limit);
+    return gx_set_miter_limit(pgs_lp, limit);
 }
 
 /* currentmiterlimit */
@@ -133,7 +134,7 @@ gx_set_dash(gx_dash_params * dash, const float *pattern, uint length,
 	float elt = *dfrom++;
 
 	if (elt < 0)
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	pattern_length += elt;
     }
     if (length == 0) {		/* empty pattern */
@@ -146,7 +147,7 @@ gx_set_dash(gx_dash_params * dash, const float *pattern, uint length,
 	uint size = length * sizeof(float);
 
 	if (pattern_length == 0)
-	    return_error(mem, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	/* Compute the initial index, ink_on, and distance left */
 	/* in the pattern, according to the offset. */
 #define f_mod(a, b) ((a) - floor((a) / (b)) * (b))
@@ -171,7 +172,7 @@ gx_set_dash(gx_dash_params * dash, const float *pattern, uint length,
 		ppat = gs_resize_object(mem, ppat, size,
 					"gx_set_dash(pattern)");
 	    if (ppat == 0)
-		return_error(mem, gs_error_VMerror);
+		return_error(gs_error_VMerror);
 	}
 	memcpy(ppat, pattern, length * sizeof(float));
     }
@@ -284,7 +285,7 @@ int
 gs_setcurvejoin(gs_state * pgs, int join)
 {
     if (join < -1 || join > gs_line_join_max)
-	return_error(pgs->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     pgs_lp->curve_join = join;
     return 0;
 }
@@ -319,10 +320,10 @@ gs_currentaccuratecurves(const gs_state * pgs)
 
 /* setdotlength */
 int
-gx_set_dot_length(const gs_memory_t *mem, gx_line_params * plp, floatp length, bool absolute)
+gx_set_dot_length(gx_line_params * plp, floatp length, bool absolute)
 {
     if (length < 0)
-	return_error(mem, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     plp->dot_length = length;
     plp->dot_length_absolute = absolute;
     return 0;
@@ -330,7 +331,7 @@ gx_set_dot_length(const gs_memory_t *mem, gx_line_params * plp, floatp length, b
 int
 gs_setdotlength(gs_state * pgs, floatp length, bool absolute)
 {
-    return gx_set_dot_length(pgs->memory, pgs_lp, length, absolute);
+    return gx_set_dot_length(pgs_lp, length, absolute);
 }
 
 /* currentdotlength */
@@ -351,7 +352,7 @@ gs_setdotorientation(gs_state *pgs)
 {
     if (is_xxyy(&pgs->ctm) || is_xyyx(&pgs->ctm))
 	return gs_currentmatrix(pgs, &pgs_lp->dot_orientation);
-    return_error(pgs->memory, gs_error_rangecheck);
+    return_error(gs_error_rangecheck);
 }
 
 /* dotorientation */

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Color and halftone operators for Ghostscript library */
 #include "gx.h"
 #include "gserrors.h"
@@ -90,8 +91,7 @@ gx_restrict01_paint_4(gs_client_color * pcc, const gs_color_space * pcs)
 
 /* Null reference count adjustment procedure. */
 void
-gx_no_adjust_color_count(const gs_memory_t *mem, 
-			 const gs_client_color * pcc,
+gx_no_adjust_color_count(const gs_client_color * pcc,
 			 const gs_color_space * pcs, int delta)
 {
 }
@@ -145,7 +145,7 @@ int
 gs_setnullcolor(gs_state * pgs)
 {
     if (pgs->in_cachedevice)
-	return_error(pgs->memory, gs_error_undefined);
+	return_error(gs_error_undefined);
     gs_setgray(pgs, 0.0);	/* set color space to something harmless */
     color_set_null(pgs->dev_color);
     return 0;
@@ -168,9 +168,9 @@ gs_settransfer_remap(gs_state * pgs, gs_mapping_proc tproc, bool remap)
      * of the non-default transfer maps, because
      * if any of them get freed, the rc_unshare can't fail.
      */
-    rc_decrement(pgs->memory, ptran->red, "gs_settransfer");
-    rc_decrement(pgs->memory, ptran->green, "gs_settransfer");
-    rc_decrement(pgs->memory, ptran->blue, "gs_settransfer");
+    rc_decrement(ptran->red, "gs_settransfer");
+    rc_decrement(ptran->green, "gs_settransfer");
+    rc_decrement(ptran->blue, "gs_settransfer");
     rc_unshare_struct(ptran->gray, gx_transfer_map, &st_transfer_map,
 		      pgs->memory, goto fail, "gs_settransfer");
     ptran->gray->proc = tproc;
@@ -186,11 +186,11 @@ gs_settransfer_remap(gs_state * pgs, gs_mapping_proc tproc, bool remap)
 	gx_set_effective_transfer(pgs);
     return 0;
   fail:
-    rc_increment(pgs->memory, ptran->red);
-    rc_increment(pgs->memory, ptran->green);
-    rc_increment(pgs->memory, ptran->blue);
-    rc_increment(pgs->memory, ptran->gray);
-    return_error(pgs->memory, gs_error_VMerror);
+    rc_increment(ptran->red);
+    rc_increment(ptran->green);
+    rc_increment(ptran->blue);
+    rc_increment(ptran->gray);
+    return_error(gs_error_VMerror);
 }
 
 /* currenttransfer */

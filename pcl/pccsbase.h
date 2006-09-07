@@ -87,23 +87,23 @@ typedef struct pcl_cs_base_s {
 /*
  * Macros to init, copy, and release PCL base color spaces.
  */
-#define pcl_cs_base_init_from(mem, pto, pfrom)           \
+#define pcl_cs_base_init_from(pto, pfrom)           \
     BEGIN                                           \
-    rc_increment(mem, pfrom);                            \
+    rc_increment(pfrom);                            \
     (pto) = (pfrom);                                \
     END
 
-#define pcl_cs_base_copy_from(mem, pto, pfrom)           \
+#define pcl_cs_base_copy_from(pto, pfrom)           \
     BEGIN                                           \
     if ((pto) != (pfrom)) {                         \
-        rc_increment(mem, pfrom);                        \
-        rc_decrement(mem, pto, "pcl_cs_base_copy_from"); \
+        rc_increment(pfrom);                        \
+        rc_decrement(pto, "pcl_cs_base_copy_from"); \
         (pto) = (pfrom);                            \
     }                                               \
     END
 
-#define pcl_cs_base_release(mem, pbase)              \
-    rc_decrement(mem, pbase, "pcl_cs_base_release")
+#define pcl_cs_base_release(pbase)              \
+    rc_decrement(pbase, "pcl_cs_base_release")
 
 
 /*

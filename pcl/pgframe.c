@@ -187,7 +187,7 @@ pgframe_do_registration(
    gs_memory_t *mem
 )
 {		/* Register commands */
-	DEFINE_CLASS(mem, '*')
+	DEFINE_CLASS('*')
 	  {'c', 'X',
 	    PCL_COMMAND("Horizontal Picture Frame Size Decipoints",
 			pcl_horiz_pic_frame_size_decipoints,
@@ -209,7 +209,7 @@ pgframe_do_registration(
 			pcl_hpgl_plot_vert_size,
 			pca_neg_error|pca_big_error)},
 	END_CLASS
-	DEFINE_CLASS(mem, '%')
+	DEFINE_CLASS('%')
 	  {0, 'A',
 	    PCL_COMMAND("Enter PCL Mode",
 			pcl_enter_pcl_mode,

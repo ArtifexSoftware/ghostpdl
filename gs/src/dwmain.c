@@ -1,20 +1,19 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$RCSfile$ $Revision$ */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+/* $Id$ */
 /* Ghostscript DLL loader for Windows */
 
-#define STRICT
-#include <windows.h>
+#include "windows_.h"
 #include <shellapi.h>
 #include <stdio.h>
 #include <string.h>
@@ -47,7 +46,7 @@ const LPSTR szIniSection = "Text";
 
 
 GSDLL gsdll;
-gs_main_instance *instance;
+void *instance;
 HWND hwndtext;
 
 char start_string[] = "systemdict /start get exec\n";
@@ -120,7 +119,6 @@ static int display_open(void *handle, void *device)
 /* Device will not be closed until this function returns. */
 static int display_preclose(void *handle, void *device)
 {
-    IMAGE *img;
 #ifdef DISPLAY_DEBUG
     char buf[256];
     sprintf(buf, "display_preclose(0x%x, 0x$x)\n", handle, device);
@@ -223,6 +221,22 @@ static int display_update(void *handle, void *device,
     return poll();
 }
 
+int display_separation(void *handle, void *device, 
+   int comp_num, const char *name,
+   unsigned short c, unsigned short m,
+   unsigned short y, unsigned short k)
+{
+    IMAGE *img;
+#ifdef DISPLAY_DEBUG
+    fprintf(stdout, "display_separation(0x%x, 0x%x, %d '%s' %d,%d,%d,%d)\n", 
+	handle, device, comp_num, name, (int)c, (int)m, (int)y, (int)k);
+#endif
+    img = image_find(handle, device);
+    if (img)
+        image_separation(img, comp_num, name, c, m, y, k);
+    return 0;
+}
+
 display_callback display = { 
     sizeof(display_callback),
     DISPLAY_VERSION_MAJOR,
@@ -236,7 +250,8 @@ display_callback display = {
     display_page,
     display_update,
     NULL,	/* memalloc */
-    NULL	/* memfree */
+    NULL,	/* memfree */
+    display_separation
 };
 
 
@@ -251,6 +266,7 @@ int new_main(int argc, char *argv[])
     int nargc;
     char **nargv;
     char dformat[64];
+    char ddpi[64];
     char buf[256];
 
     memset(buf, 0, sizeof(buf));
@@ -280,6 +296,7 @@ int new_main(int argc, char *argv[])
 		DISPLAY_DEPTH_1 | DISPLAY_LITTLEENDIAN | DISPLAY_BOTTOMFIRST;
 	HDC hdc = GetDC(NULL);	/* get hdc for desktop */
 	int depth = GetDeviceCaps(hdc, PLANES) * GetDeviceCaps(hdc, BITSPIXEL);
+	sprintf(ddpi, "-dDisplayResolution=%d", GetDeviceCaps(hdc, LOGPIXELSY));
         ReleaseDC(NULL, hdc);
 	if (depth == 32)
  	    format = DISPLAY_COLORS_RGB | DISPLAY_UNUSED_LAST | 
@@ -299,18 +316,28 @@ int new_main(int argc, char *argv[])
 		DISPLAY_DEPTH_4 | DISPLAY_LITTLEENDIAN | DISPLAY_BOTTOMFIRST;
         sprintf(dformat, "-dDisplayFormat=%d", format);
     }
-    nargc = argc + 1;
+    nargc = argc + 2;
     nargv = (char **)malloc((nargc + 1) * sizeof(char *));
     nargv[0] = argv[0];
     nargv[1] = dformat;
-    memcpy(&nargv[2], &argv[1], argc * sizeof(char *));
+    nargv[2] = ddpi;
+    memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
 
+#if defined(_MSC_VER) || defined(__BORLANDC__)
+    __try {
+#endif
     code = gsdll.init_with_args(instance, nargc, nargv);
     if (code == 0)
 	code = gsdll.run_string(instance, start_string, 0, &exit_code);
     code1 = gsdll.exit(instance);
     if (code == 0 || (code == e_Quit && code1 != 0))
 	code = code1;
+#if defined(_MSC_VER) || defined(__BORLANDC__)
+    } __except(exception_code() == EXCEPTION_STACK_OVERFLOW) {
+        code = e_Fatal;
+        text_puts(tw, "*** C stack overflow. Quiting...\n");
+    }
+#endif
 
     gsdll.delete_instance(instance);
 
@@ -473,7 +500,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
     
     if (dll_exit_status && !tw->quitnow) {
 	/* display error message in text window */
-	char buf[80];
 	MSG msg;
 	text_puts(tw, "\nClose this window with the close button on the title bar or the system menu.\n");
 	if (IsIconic(text_get_handle(tw)))

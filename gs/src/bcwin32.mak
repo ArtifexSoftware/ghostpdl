@@ -1,16 +1,16 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
-
-# $RCSfile$ $Revision$
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
 # makefile for (MS-Windows 3.1/Win32s / Windows 95 / Windows NT) +
 #   Borland C++ 4.5 platform.
 #   Borland C++Builder 3 platform (need BC++ 4.5 for 16-bit code)
@@ -31,6 +31,7 @@ GLGENDIR=obj
 GLOBJDIR=obj
 PSSRCDIR=src
 PSLIBDIR=lib
+PSRESDIR=Resource
 PSGENDIR=obj
 PSOBJDIR=obj
 
@@ -40,7 +41,9 @@ PSOBJDIR=obj
 AROOTDIR=c:/gs
 !endif
 
+!ifndef GSROOTDIR
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
+!endif
 
 # Define the directory that will hold documentation at runtime.
 
@@ -50,7 +53,9 @@ GS_DOCDIR=$(GSROOTDIR)/doc
 # initialization, resource and font files.  Separate multiple directories with \;.
 # Use / to indicate directories, not a single \.
 
-GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(GSROOTDIR)/Resource\;$(AROOTDIR)/fonts
+!ifndef GS_LIB_DEFAULT
+GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(GSROOTDIR)/Resource/Font\;$(AROOTDIR)/fonts
+!endif
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -66,7 +71,9 @@ SEARCH_HERE_FIRST=1
 # Define the name of the interpreter initialization file.
 # (There is no reason to change this.)
 
+!ifndef GS_INIT
 GS_INIT=gs_init.ps
+!endif
 
 # Choose generic configuration options.
 
@@ -130,33 +137,43 @@ MULTITHREAD=1
 # You may need to change this if the IJG library version changes.
 # See jpeg.mak for more information.
 
+!ifndef JSRCDIR
 JSRCDIR=jpeg
 JVERSION=6
+!endif
 
 # Define the directory where the PNG library sources are stored,
 # and the version of the library that is stored there.
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
+!ifndef PSRCDIR
 PSRCDIR=libpng
-PVERSION=10205
+PVERSION=10208
+!endif
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
+!ifndef ZSRCDIR
 ZSRCDIR=zlib
+!endif
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
+!ifndef ICCSRCDIR
 ICCSRCDIR=icclib
+!endif
 
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
- 
+
+!ifndef IJSSRCDIR
 IJSSRCDIR=ijs
 IJSEXECTYPE=win
+!endif
 
 # Define any other compilation flags.
 
@@ -199,7 +216,9 @@ PSD=$(PSGENDIR)\$(NUL)
 # C++Builder 4 and above all use Make Version 5.2 so point we can no 
 # longer tell the Compiler version from the __MAKE__ version number.
 
+!ifndef BUILDER_VERSION
 BUILDER_VERSION=5
+!endif
 
 !ifndef BUILDER_VERSION
 !if $(__MAKE__) >= 0x520
@@ -304,8 +323,7 @@ COMPILE_INITS=0
 BAND_LIST_STORAGE=file
 
 # Choose which compression method to use when storing band lists in memory.
-# The choices are 'lzw' or 'zlib'.  lzw is not recommended, because the
-# LZW-compatible code in Ghostscript doesn't actually compress its input.
+# The choices are 'lzw' or 'zlib'.
 
 BAND_LIST_COMPRESSOR=zlib
 
@@ -335,8 +353,8 @@ DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.de
 DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev
 DEVICE_DEVS12=$(DD)psmono.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
 DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
-DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
-DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev  $(DD)jpegcmyk.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
 # Overflow for DEVS3,4,5,6,9
 DEVICE_DEVS16=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
 DEVICE_DEVS17=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
@@ -360,8 +378,8 @@ SH=
 
 # Define the arguments for genconf.
 
-CONFILES=-p %s+ -l $(GLGENDIR)\lib.tr
-CONFLDTR=-o
+CONFILES=-p %s+
+CONFLDTR=-ol
 
 # Define the generic compilation flags.
 
@@ -591,7 +609,7 @@ $(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ)\
 	-del $(PSGEN)gswin32.tr
 	copy $(ld_tr) $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0d32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
-	$(LINK) /L$(LIBDIR) $(LCT) /Tpd /aa @$(PSGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(PSOBJ)$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
+	$(LINK) /L$(LIBDIR) $(LCT) /Tpd /aa @$(PSGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(PSOBJ)$(GSDLL),@$(LIBCTR),$(PSSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
 
 !else
 # The big graphical EXE
@@ -601,7 +619,7 @@ $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
 	copy $(ld_tr) $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
 	echo $(DWOBJNO) $(INTASM) >> $(PSGEN)gswin32.tr
-	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /aa @$(PSGEN)gswin32.tr ,$(GS_XE),$(PSOBJ)$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\dwmain32.def,$(GS_OBJ).res
+	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /aa @$(PSGEN)gswin32.tr ,$(GS_XE),$(PSOBJ)$(GS) @$(LIBCTR),$(PSSRCDIR)\dwmain32.def,$(GS_OBJ).res
 
 # The big console mode EXE
 $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
@@ -610,7 +628,7 @@ $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
 	copy $(ld_tr) $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
 	echo $(OBJCNO) $(INTASM) >> $(PSGEN)gswin32.tr
-	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /ap @$(PSGEN)gswin32.tr ,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\dw32c.def,$(GS_OBJ).res
+	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /ap @$(PSGEN)gswin32.tr ,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE) @$(LIBCTR),$(PSSRCDIR)\dw32c.def,$(GS_OBJ).res
 !endif
 
 # Access to 16 spooler from Win32s

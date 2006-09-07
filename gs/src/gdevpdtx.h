@@ -1,10 +1,15 @@
-/* Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Shared implementation definitions for pdfwrite text and fonts */
@@ -84,6 +89,6 @@ typedef struct pdf_font_resource_s pdf_font_resource_t;
 /* Get the object ID of a font resource. */
 long pdf_font_id(const pdf_font_resource_t *pdfont);
 /* Register charproc fonts with the page or substream. */
-int pdf_used_charproc_fonts(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
+int pdf_used_charproc_resources(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
 
 #endif /* gdevpdtx_INCLUDED */

@@ -1,16 +1,17 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
 
-# $RCSfile$ $Revision$
 # makefile for PNG (Portable Network Graphics) code.
 # Users of this makefile must define the following:
 #	ZSRCDIR - the zlib source directory
@@ -66,8 +67,7 @@ PNGO_=$(O_)$(PNGOBJ)
 PZGEN=$(ZGENDIR)$(D)
 
 # PI_ and PF_ are defined in gs.mak.
-PNGCCFLAGS=
-PNGCC=$(CC_) $(I_)$(PI_)$(_I) $(PF_) $(PNGCCFLAGS)
+PNGCC=$(CC_) $(I_)$(PI_)$(_I) $(PF_) -DPNG_NO_ASSEMBLER_CODE
 
 # Define the name of this makefile.
 LIBPNG_MAK=$(GLSRC)libpng.mak
@@ -85,7 +85,7 @@ PDEP=$(AK)
 
 png_1=$(PNGOBJ)png.$(OBJ) $(PNGOBJ)pngmem.$(OBJ) $(PNGOBJ)pngerror.$(OBJ) $(PNGOBJ)pngset.$(OBJ)
 png_2=$(PNGOBJ)pngtrans.$(OBJ) $(PNGOBJ)pngwrite.$(OBJ) $(PNGOBJ)pngwtran.$(OBJ) $(PNGOBJ)pngwutil.$(OBJ)
-png_3=$(PNGOBJ)pngget.$(OBJ) $(PNGOBJ)pngread.$(OBJ) $(PNGOBJ)pngrio.$(OBJ) $(PNGOBJ)pngrutil.$(OBJ) $(PNGOBJ)pngrtran.$(OBJ)
+png_3=$(PNGOBJ)pngread.$(OBJ) $(PNGOBJ)pngrutil.$(OBJ) $(PNGOBJ)pngrtran.$(OBJ) $(PNGOBJ)pngrio.$(OBJ) $(PNGOBJ)pngget.$(OBJ)
 
 # libpng modules
 
@@ -100,12 +100,6 @@ $(PNGOBJ)pngmem.$(OBJ) : $(PNGSRC)pngmem.c $(PDEP)
 
 $(PNGOBJ)pngerror.$(OBJ) : $(PNGSRC)pngerror.c $(PDEP)
 	$(PNGCC) $(PNGO_)pngerror.$(OBJ) $(C_) $(PNGSRC)pngerror.c
-
-$(PNGOBJ)pngrtran.$(OBJ) : $(PNGSRC)pngrtran.c $(PDEP)
-	$(PNGCC) $(PNGO_)pngrtran.$(OBJ) $(C_) $(PNGSRC)pngrtran.c
-
-$(PNGOBJ)pngrutil.$(OBJ) : $(PNGSRC)pngrutil.c $(PDEP)
-	$(PNGCC) $(PNGO_)pngrutil.$(OBJ) $(C_) $(PNGSRC)pngrutil.c
 
 $(PNGOBJ)pngset.$(OBJ) : $(PNGSRC)pngset.c $(PDEP)
 	$(PNGCC) $(PNGO_)pngset.$(OBJ) $(C_) $(PNGSRC)pngset.c
@@ -122,17 +116,20 @@ $(PNGOBJ)pngwtran.$(OBJ) : $(PNGSRC)pngwtran.c $(PDEP)
 $(PNGOBJ)pngwutil.$(OBJ) : $(PNGSRC)pngwutil.c $(PDEP)
 	$(PNGCC) $(PNGO_)pngwutil.$(OBJ) $(C_) $(PNGSRC)pngwutil.c
 
-#libpng read modules
-
-$(PNGOBJ)pngget.$(OBJ) : $(PNGSRC)pngget.c $(PDEP)
-	$(PNGCC) $(PNGO_)pngget.$(OBJ) $(C_) $(PNGSRC)pngget.c
-
 $(PNGOBJ)pngread.$(OBJ) : $(PNGSRC)pngread.c $(PDEP)
 	$(PNGCC) $(PNGO_)pngread.$(OBJ) $(C_) $(PNGSRC)pngread.c
+
+$(PNGOBJ)pngrutil.$(OBJ) : $(PNGSRC)pngrutil.c $(PDEP)
+	$(PNGCC) $(PNGO_)pngrutil.$(OBJ) $(C_) $(PNGSRC)pngrutil.c
+
+$(PNGOBJ)pngrtran.$(OBJ) : $(PNGSRC)pngrtran.c $(PDEP)
+	$(PNGCC) $(PNGO_)pngrtran.$(OBJ) $(C_) $(PNGSRC)pngrtran.c
 
 $(PNGOBJ)pngrio.$(OBJ) : $(PNGSRC)pngrio.c $(PDEP)
 	$(PNGCC) $(PNGO_)pngrio.$(OBJ) $(C_) $(PNGSRC)pngrio.c
 
+$(PNGOBJ)pngget.$(OBJ) : $(PNGSRC)pngget.c $(PDEP)
+	$(PNGCC) $(PNGO_)pngget.$(OBJ) $(C_) $(PNGSRC)pngget.c
 
 
 # Define the version of libpng.dev that we are actually using.

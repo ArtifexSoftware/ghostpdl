@@ -1,24 +1,24 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* DCT encoding filter stream */
 #include "memory_.h"
 #include "stdio_.h"
 #include "jpeglib_.h"
 #include "jerror_.h"
 #include "gdebug.h"
-#include "gsmemory.h"		/* for gsmalloc.h */
-#include "gsmalloc.h"		/* for gs_memory_default */
+#include "gsmemory.h"
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"
@@ -74,15 +74,14 @@ s_DCTE_init(stream_state * st)
 
 /* Process a buffer */
 private int
-s_DCTE_process(const gs_memory_t *mem,
-	       stream_state * st, stream_cursor_read * pr,
+s_DCTE_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     stream_DCT_state *const ss = (stream_DCT_state *) st;
     jpeg_compress_data *jcdp = ss->data.compress;
     struct jpeg_destination_mgr *dest = jcdp->cinfo.dest;
 
-    if_debug2(st->memory, 'w', "[wde]process avail=%u, last=%d\n",
+    if_debug2('w', "[wde]process avail=%u, last=%d\n",
 	      (uint) (pr->limit - pr->ptr), last);
     dest->next_output_byte = pw->ptr + 1;
     dest->free_in_buffer = pw->limit - pw->ptr;
@@ -90,7 +89,7 @@ s_DCTE_process(const gs_memory_t *mem,
 	case 0:		/* not initialized yet */
 	    if (gs_jpeg_start_compress(ss, TRUE) < 0)
 		return ERRC;
-	    if_debug4(st->memory, 'w', "[wde]width=%u, height=%u, components=%d, scan_line_size=%u\n",
+	    if_debug4('w', "[wde]width=%u, height=%u, components=%d, scan_line_size=%u\n",
 		      jcdp->cinfo.image_width,
 		      jcdp->cinfo.image_height,
 		      jcdp->cinfo.input_components,
@@ -143,7 +142,7 @@ s_DCTE_process(const gs_memory_t *mem,
 		 */
 		/*const */ byte *samples = (byte *) (pr->ptr + 1);
 
-		if_debug1(st->memory, 'w', "[wde]next_scanline=%u\n",
+		if_debug1('w', "[wde]next_scanline=%u\n",
 			  jcdp->cinfo.next_scanline);
 		if ((uint) (pr->limit - pr->ptr) < ss->scan_line_size) {
 		    if (last)
@@ -153,7 +152,7 @@ s_DCTE_process(const gs_memory_t *mem,
 		written = gs_jpeg_write_scanlines(ss, &samples, 1);
 		if (written < 0)
 		    return ERRC;
-		if_debug3(st->memory, 'w', "[wde]write returns %d, used=%u, written=%u\n",
+		if_debug3('w', "[wde]write returns %d, used=%u, written=%u\n",
 			  written,
 			  (uint) (samples - 1 - pr->ptr),
 			  (uint) (dest->next_output_byte - 1 - pw->ptr));
@@ -182,7 +181,7 @@ s_DCTE_process(const gs_memory_t *mem,
 		int count = min(jcdp->fcb_size - jcdp->fcb_pos,
 				pw->limit - pw->ptr);
 
-		if_debug1(st->memory, 'w', "[wde]copying final %d\n", count);
+		if_debug1('w', "[wde]copying final %d\n", count);
 		memcpy(pw->ptr + 1, jcdp->finish_compress_buf + jcdp->fcb_pos,
 		       count);
 		jcdp->fcb_pos += count;

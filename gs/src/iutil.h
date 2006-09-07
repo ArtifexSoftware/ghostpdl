@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Interface to interpreter utilities */
 /* Requires imemory.h, ostack.h */
 
@@ -61,7 +62,7 @@ int obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, 
  */
 #define CVP_MAX_STRING 200  /* strings are truncated here if full_print = 1 */
 int obj_cvp(const ref * op, byte *str, uint len, uint * prlen,
-	    int full_print, uint start_pos, gs_memory_t *mem);
+	    int full_print, uint start_pos, const gs_memory_t *mem);
 
 /*
  * Create a printable representation of an object, a la cvs and =.  Return 0
@@ -105,23 +106,23 @@ char *ref_to_string(const ref *, gs_memory_t *, client_name_t);
 /* ------ Operand utilities ------ */
 
 /* Get N numeric operands from the stack or an array. */
-int num_params(const gs_memory_t *mem, const ref *, int, double *);
+int num_params(const ref *, int, double *);
 
 /* float_params can lose accuracy for large integers. */
-int float_params(const gs_memory_t *mem, const ref *, int, float *);
+int float_params(const ref *, int, float *);
 
 /* process_float_array can lose accuracy for large integers */
 int process_float_array(const gs_memory_t *mem, const ref *, int, float *);
 
 /* Get a single real parameter. */
 /* The only possible error is e_typecheck. */
-int real_param(const gs_memory_t *mem, const ref *, double *);
+int real_param(const ref *, double *);
 
 /* float_param can lose accuracy for large integers. */
-int float_param(const gs_memory_t *mem, const ref *, float *);
+int float_param(const ref *, float *);
 
 /* Get an integer parameter in a given range. */
-int int_param(const gs_memory_t *mem, const ref *, int, int *);
+int int_param(const ref *, int, int *);
 
 /* Make real values on the stack. */
 /* Return e_limitcheck for infinities or double->float overflow. */

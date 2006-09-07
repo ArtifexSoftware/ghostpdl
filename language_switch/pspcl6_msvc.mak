@@ -102,6 +102,43 @@ COMPILE_INITS=1
 APP_CCC=$(CC_) -I..\pl -I..\gs\src -I.\obj $(C_)
 !endif
 
+# Define which major version of MSVC is being used (currently, 4, 5, & 6 supported)
+#       default to the latest version
+MSVC_VERSION=6
+
+D=\\
+DD=$(GLGENDIR)
+# note agfa gives it libraries incompatible names so they cannot be
+# properly found by the linker.  Change the library names to reflect the
+# following (i.e. the if library should be named libif.a
+# NB - this should all be done automatically by choosing the device
+# but it ain't.
+
+# The user is responsible for building the agfa or freetype libs.  We
+# don't overload the makefile with nonsense to build these libraries
+# on the fly. If the artifex font scaler is chosen the makefiles will
+# build the scaler automatically.
+
+# Pick a font system technology.  PCL and XL do not need to use the
+# same scaler, but it is necessary to tinker/hack the makefiles to get
+# it to work properly.
+
+# ufst - Agfa universal font scaler.
+# fts  - FreeType font system.
+# afs  - Artifex font scaler.
+# 3 mutually exclusive choices follow, pick one.
+
+PL_SCALER=ufst
+PCL_FONT_SCALER=$(PL_SCALER)
+PXL_FONT_SCALER=$(PL_SCALER)
+
+# specify agfa library locations and includes.  This is ignored
+# if the current scaler is not the AGFA ufst.
+UFST_ROOT=\cygwin\home\Administrator\ufst
+UFST_LIBDIR=$(UFST_ROOT)\rts\lib
+UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray -DMSVC
+
+
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
 # Note that the omission of -Dconst= rules out the use of gcc versions
@@ -139,5 +176,27 @@ FEATURE_DEVS    = \
 !endif
 
 !include $(MAINSRCDIR)\pcl6_msvc.mak
+
+# Main program.
+
+default: $(TARGET_XE).exe
+	echo Done.
+
+clean: config-clean clean-not-config-clean
+
+clean-not-config-clean: pl.clean-not-config-clean pxl.clean-not-config-clean
+	$(RMN_) $(TARGET_XE)$(XE)
+
+config-clean: pl.config-clean pxl.config-clean
+	$(RMN_) *.tr $(GD)devs.tr$(CONFIG) $(GD)ld.tr
+	$(RMN_) $(PXLGEN)pconf.h $(PXLGEN)pconfig.h
+
+
+!include $(COMMONDIR)\msvc_top.mak
+
+# Subsystems
+!include $(PLSRCDIR)\pl.mak
+!include $(PCLSRCDIR)\pcl.mak
+!include $(PXLSRCDIR)\pxl.mak
 !include $(PSISRCDIR)\psi.mak
 

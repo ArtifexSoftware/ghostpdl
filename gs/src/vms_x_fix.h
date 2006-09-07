@@ -1,15 +1,23 @@
-/***************************************************************************
- *                                                                         *
- * Author : Jouk Jansen (joukj@hrem.stm.tudelft.nl)                        *
- *                                                                         *
- * Last revision : 22 August 2000                                          *
- *                                                                         *
- * Repair definitions of Xlib when compileing with /name=(as_is) on VMS    *
- *                                                                         *
- ***************************************************************************/
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
-#ifndef VMS_X_FIX
-#define VMS_X_FIX
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+
+/* $Id$ */
+
+/* Repair definitions of Xlib when compileing with /name=(as_is) on VMS */
+/* contributed by Jouk Jansen (joukj@hrem.stm.tudelft.nl) */
+
+#ifndef vms_x_fix_INCLUDED
+#  define vms_x_fix_INCLUDED
 
 #define DtSaverGetWindows DTSAVERGETWINDOWS
 #define XAddHosts XADDHOSTS

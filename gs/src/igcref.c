@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* ref garbage collector for Ghostscript */
 #include "memory_.h"
 #include "ghost.h"
@@ -32,6 +33,9 @@
 
 /* Forward references */
 ptr_proc_reloc(igc_reloc_ref_ptr, ref_packed);
+#if NO_INVISIBLE_LEVELS
+ptr_proc_reloc(igc_reloc_ref_ptr_nocheck, ref_packed);
+#endif
 refs_proc_reloc(igc_reloc_refs);
 
 /*
@@ -114,9 +118,9 @@ refs_clear_marks(const gs_memory_t *cmem,
 	if (r_is_packed(rp)) {
 #ifdef DEBUG
 	    if (gs_debug_c('8')) {
-		dlprintf1(cmem, "  [8]unmark packed 0x%lx ", (ulong) rp);
+		dlprintf1("  [8]unmark packed 0x%lx ", (ulong) rp);
 		debug_print_ref(cmem, (const ref *)rp);
-		dputs(cmem, "\n");
+		dputs("\n");
 	    }
 #endif
 	    r_clear_pmark(rp);
@@ -126,9 +130,9 @@ refs_clear_marks(const gs_memory_t *cmem,
 
 #ifdef DEBUG
 	    if (gs_debug_c('8')) {
-		dlprintf1(cmem, "  [8]unmark ref 0x%lx ", (ulong) rp);
+		dlprintf1("  [8]unmark ref 0x%lx ", (ulong) rp);
 		debug_print_ref(cmem, pref);
-		dputs(cmem, "\n");
+		dputs("\n");
 	    }
 #endif
 	    r_clear_attrs(pref, l_mark);
@@ -173,7 +177,7 @@ ptr_ref_mark(enum_ptr_t *pep, gc_state_t * ignored)
 
 /* Clear the relocation for a ref object. */
 private void
-refs_clear_reloc(const gs_memory_t *cmem, obj_header_t *hdr, uint size)
+refs_clear_reloc(obj_header_t *hdr, uint size)
 {
     ref_packed *rp = (ref_packed *) (hdr + 1);
     ref_packed *end = (ref_packed *) ((byte *) rp + size);
@@ -186,7 +190,7 @@ refs_clear_reloc(const gs_memory_t *cmem, obj_header_t *hdr, uint size)
 	    ref *const pref = (ref *)rp;
 
 	    if (!ref_type_uses_size_or_null(r_type(pref))) {
-		if_debug1(cmem, '8', "  [8]clearing reloc at 0x%lx\n", (ulong) rp);
+		if_debug1('8', "  [8]clearing reloc at 0x%lx\n", (ulong) rp);
 		r_set_size(pref, 0);
 	    }
 	    rp += packed_per_ref;
@@ -196,7 +200,7 @@ refs_clear_reloc(const gs_memory_t *cmem, obj_header_t *hdr, uint size)
 
 /* Set the relocation for a ref object. */
 private bool
-refs_set_reloc(const gs_memory_t *cmem, obj_header_t * hdr, uint reloc, uint size)
+refs_set_reloc(obj_header_t * hdr, uint reloc, uint size)
 {
     ref_packed *rp = (ref_packed *) (hdr + 1);
     ref_packed *end = (ref_packed *) ((byte *) rp + size);
@@ -214,7 +218,7 @@ refs_set_reloc(const gs_memory_t *cmem, obj_header_t * hdr, uint reloc, uint siz
 	if (r_is_packed(rp)) {
 #if align_packed_per_ref == 1
 	    if (r_has_pmark(rp)) {
-		if_debug1(cmem, '8',
+		if_debug1('8',
 			  "  [8]packed ref 0x%lx is marked\n",
 			  (ulong) rp);
 		rp++;
@@ -258,7 +262,7 @@ refs_set_reloc(const gs_memory_t *cmem, obj_header_t * hdr, uint reloc, uint siz
 	     */
 	    switch (marked) {
 		case all_marked:
-		    if_debug2(cmem, '8',
+		    if_debug2('8',
 			      "  [8]packed refs 0x%lx..0x%lx are marked\n",
 			      (ulong) rp,
 			      (ulong) (rp + (align_packed_per_ref - 1)));
@@ -269,14 +273,14 @@ refs_set_reloc(const gs_memory_t *cmem, obj_header_t * hdr, uint reloc, uint siz
 		    /* is marked: Keep the whole block. */
 		    for (i = align_packed_per_ref; i--; rp++) {
 			r_set_pmark(rp);
-			if_debug1(cmem, '8',
+			if_debug1('8',
 				  "  [8]packed ref 0x%lx is marked\n",
 				  (ulong) rp);
 		    }
 		    break;
 		case 0:
 #endif
-		    if_debug2(cmem, '8', "  [8]%d packed ref(s) at 0x%lx are unmarked\n",
+		    if_debug2('8', "  [8]%d packed ref(s) at 0x%lx are unmarked\n",
 			      align_packed_per_ref, (ulong) rp);
 		    {
 			uint rel = reloc + freed;
@@ -298,7 +302,7 @@ refs_set_reloc(const gs_memory_t *cmem, obj_header_t * hdr, uint reloc, uint siz
 	    ref *pref = (ref *) rp;
 
 	    if (!r_has_attr(pref, l_mark)) {
-		if_debug1(cmem, '8', "  [8]ref 0x%lx is unmarked\n",
+		if_debug1('8', "  [8]ref 0x%lx is unmarked\n",
 			  (ulong) pref);
 		/* Change this to a mark so we can */
 		/* store the relocation. */
@@ -306,11 +310,11 @@ refs_set_reloc(const gs_memory_t *cmem, obj_header_t * hdr, uint reloc, uint siz
 		r_set_size(pref, rel);
 		freed += sizeof(ref);
 	    } else {
-		if_debug1(cmem, '8', "  [8]ref 0x%lx is marked\n",
+		if_debug1('8', "  [8]ref 0x%lx is marked\n",
 			  (ulong) pref);
 		/* Store the relocation here if possible. */
 		if (!ref_type_uses_size_or_null(r_type(pref))) {
-		    if_debug2(cmem, '8', "  [8]storing reloc %u at 0x%lx\n",
+		    if_debug2('8', "  [8]storing reloc %u at 0x%lx\n",
 			      rel, (ulong) pref);
 		    r_set_size(pref, rel);
 		}
@@ -318,7 +322,7 @@ refs_set_reloc(const gs_memory_t *cmem, obj_header_t * hdr, uint reloc, uint siz
 	    rp += packed_per_ref;
 	}
     }
-    if_debug3(cmem, '7', " [7]at end of refs 0x%lx, size = %u, freed = %u\n",
+    if_debug3('7', " [7]at end of refs 0x%lx, size = %u, freed = %u\n",
 	      (ulong) (hdr + 1), size, freed);
     if (freed == size)
 	return false;
@@ -409,7 +413,7 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 	/* The following assignment is logically unnecessary; */
 	/* we do it only for convenience in debugging. */
 	pref = (ref *) rp;
-	if_debug3(cmem, '8', "  [8]relocating %s %d ref at 0x%lx",
+	if_debug3('8', "  [8]relocating %s %d ref at 0x%lx",
 		  (r_has_attr(pref, l_mark) ? "marked" : "unmarked"),
 		  r_btype(pref), (ulong) pref);
 	if ((r_has_attr(pref, l_mark) || do_all) &&
@@ -537,14 +541,124 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 		default:
 		    goto no_reloc; /* don't print trace message */
 	    }
-	    if_debug2(cmem, '8', ", 0x%lx => 0x%lx", (ulong)before, (ulong)after);
+	    if_debug2('8', ", 0x%lx => 0x%lx", (ulong)before, (ulong)after);
 	}
 no_reloc:
-	if_debug0(cmem, '8', "\n");
+	if_debug0('8', "\n");
 	rp += packed_per_ref;
     }
 }
 
+#if NO_INVISIBLE_LEVELS
+/* Relocate a pointer to a ref. */
+/* See gsmemory.h for why the argument is const and the result is not. */
+ref_packed *
+igc_reloc_ref_ptr_nocheck(const ref_packed * prp, gc_state_t *gcst)
+{
+    /*
+     * Search forward for relocation.  This algorithm is intrinsically very
+     * inefficient; we hope eventually to replace it with a better one.
+     */
+    const ref_packed *rp = prp;
+    uint dec = 0;
+#ifdef ALIGNMENT_ALIASING_BUG
+    const ref *rpref;
+# define RP_REF(rp) (rpref = (const ref *)rp, rpref)
+#else
+# define RP_REF(rp) ((const ref *)rp)
+#endif
+    for (;;) {
+
+	if (r_is_packed(rp)) {
+	    /*
+	     * Normally, an unmarked packed ref will be an
+	     * integer whose value is the amount of relocation.
+	     * However, the relocation value might have been
+	     * too large to fit.  If this is the case, for
+	     * each such unmarked packed ref we pass over,
+	     * we have to decrement the final relocation.
+	     */
+	    rputc((*rp & lp_mark ? '1' : '0'));
+	    if (!(*rp & lp_mark)) {
+		if (*rp != pt_tag(pt_integer) + packed_max_value) {
+		    /* This is a stored relocation value. */
+		    rputc('\n');
+		    rp = print_reloc(prp, "ref",
+				     (const ref_packed *)
+				     ((const char *)prp -
+				      (*rp & packed_value_mask) + dec));
+		    break;
+		}
+		/*
+		 * We know this is the first of an aligned block
+		 * of packed refs.  Skip over the entire block,
+		 * decrementing the final relocation.
+		 */
+		dec += sizeof(ref_packed) * align_packed_per_ref;
+		rp += align_packed_per_ref;
+	    } else
+		rp++;
+	    continue;
+	}
+	if (!ref_type_uses_size_or_null(r_type(RP_REF(rp)))) {
+	    /* reloc is in r_size */
+	    rputc('\n');
+	    rp = print_reloc(prp, "ref",
+			     (const ref_packed *)
+			     (r_size(RP_REF(rp)) == 0 ? prp :
+			      (const ref_packed *)((const char *)prp -
+						   r_size(RP_REF(rp)) + dec)));
+	    break;
+	}
+	rputc('u');
+	rp += packed_per_ref;
+    }
+    /* Use a severely deprecated pun to remove the const property. */
+    {
+	union { const ref_packed *r; ref_packed *w; } u;
+
+	u.r = rp;
+	return u.w;
+    }
+#undef RP_REF
+}
+ref_packed *
+igc_reloc_ref_ptr(const ref_packed * prp, gc_state_t *gcst)
+{
+    /*
+     * Search forward for relocation.  This algorithm is intrinsically very
+     * inefficient; we hope eventually to replace it with a better one.
+     */
+    const ref_packed *rp = prp;
+#ifdef ALIGNMENT_ALIASING_BUG
+    const ref *rpref;
+# define RP_REF(rp) (rpref = (const ref *)rp, rpref)
+#else
+# define RP_REF(rp) ((const ref *)rp)
+#endif
+    /*
+     * Iff this pointer points into a space that wasn't traced,
+     * the referent won't be marked.  In this case, we shouldn't
+     * do any relocation.  Check for this first.
+     */
+    if (r_is_packed(rp)) {
+	if (!r_has_pmark(rp))
+	    goto ret_rp;
+    } else {
+	if (!r_has_attr(RP_REF(rp), l_mark))
+	    goto ret_rp;
+    }
+    return igc_reloc_ref_ptr_nocheck(prp, gcst);
+ret_rp:
+    /* Use a severely deprecated pun to remove the const property. */
+    {
+	union { const ref_packed *r; ref_packed *w; } u;
+
+	u.r = rp;
+	return u.w;
+    }
+}
+#else
 /* Relocate a pointer to a ref. */
 /* See gsmemory.h for why the argument is const and the result is not. */
 ref_packed *
@@ -562,9 +676,6 @@ igc_reloc_ref_ptr(const ref_packed * prp, gc_state_t *gcst)
 #else
 # define RP_REF(rp) ((const ref *)rp)
 #endif
-    vm_spaces spaces = gcst->spaces;
-    const gs_memory_t *cmem = space_system->stable_memory;
-
     /*
      * Iff this pointer points into a space that wasn't traced,
      * the referent won't be marked.  In this case, we shouldn't
@@ -593,7 +704,7 @@ igc_reloc_ref_ptr(const ref_packed * prp, gc_state_t *gcst)
 		if (*rp != pt_tag(pt_integer) + packed_max_value) {
 		    /* This is a stored relocation value. */
 		    rputc('\n');
-		    rp = print_reloc(cmem, prp, "ref",
+		    rp = print_reloc(prp, "ref",
 				     (const ref_packed *)
 				     ((const char *)prp -
 				      (*rp & packed_value_mask) + dec));
@@ -613,7 +724,7 @@ igc_reloc_ref_ptr(const ref_packed * prp, gc_state_t *gcst)
 	if (!ref_type_uses_size_or_null(r_type(RP_REF(rp)))) {
 	    /* reloc is in r_size */
 	    rputc('\n');
-	    rp = print_reloc(cmem, prp, "ref",
+	    rp = print_reloc(prp, "ref",
 			     (const ref_packed *)
 			     (r_size(RP_REF(rp)) == 0 ? prp :
 			      (const ref_packed *)((const char *)prp -
@@ -632,33 +743,48 @@ ret_rp:
 	return u.w;
     }
 }
+#endif
 
 /* ------ Compaction phase ------ */
 
 /* Compact a ref object. */
 /* Remove the marks at the same time. */
 private void
-refs_compact(const gs_memory_t *cmem, 
-	     obj_header_t * pre, obj_header_t * dpre, uint size)
+refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, uint size)
 {
     ref_packed *dest;
     ref_packed *src;
     ref_packed *end;
     uint new_size;
 
+   /* The next switch controls an optimization 
+      for the loop termination condition.
+      It was useful during the development,
+      when some assumptions were temporary wrong.
+      We keep it for records. */
+#define LAST_ELEM_MAY_BE_MARKED (0 && NO_INVISIBLE_LEVELS)
+
     src = (ref_packed *) (pre + 1);
     end = (ref_packed *) ((byte *) src + size);
+#if LAST_ELEM_MAY_BE_MARKED
     /*
      * We know that a block of refs always ends with an unmarked
      * full-size ref, so we only need to check for reaching the end
      * of the block when we see one of those.
      */
+#else
+    /*
+     * We know that a block of refs always ends with a
+     * full-size ref, so we only need to check for reaching the end
+     * of the block when we see one of those.
+     */
+#endif
     if (dpre == pre)		/* Loop while we don't need to copy. */
 	for (;;) {
 	    if (r_is_packed(src)) {
 		if (!r_has_pmark(src))
 		    break;
-		if_debug1(cmem, '8', "  [8]packed ref 0x%lx \"copied\"\n",
+		if_debug1('8', "  [8]packed ref 0x%lx \"copied\"\n",
 			  (ulong) src);
 		*src &= ~lp_mark;
 		src++;
@@ -667,9 +793,18 @@ refs_compact(const gs_memory_t *cmem,
 
 		if (!r_has_attr(pref, l_mark))
 		    break;
-		if_debug1(cmem, '8', "  [8]ref 0x%lx \"copied\"\n", (ulong) src);
+		if_debug1('8', "  [8]ref 0x%lx \"copied\"\n", (ulong) src);
 		r_clear_attrs(pref, l_mark);
 		src += packed_per_ref;
+#if LAST_ELEM_MAY_BE_MARKED
+		/* The last (the extra) ref may be marked from 
+		alloc_change_t::offset==AC_OFFSET_ALLOCATED,
+		if the extra ref ends an empty ref array. */
+		if (src >= end) {
+		    src -= packed_per_ref;
+		    break;
+		}
+#endif
 	    }
     } else
 	*dpre = *pre;
@@ -677,7 +812,7 @@ refs_compact(const gs_memory_t *cmem,
     for (;;) {
 	if (r_is_packed(src)) {
 	    if (r_has_pmark(src)) {
-		if_debug2(cmem, '8', "  [8]packed ref 0x%lx copied to 0x%lx\n",
+		if_debug2('8', "  [8]packed ref 0x%lx copied to 0x%lx\n",
 			  (ulong) src, (ulong) dest);
 		*dest++ = *src & ~lp_mark;
 	    }
@@ -686,7 +821,7 @@ refs_compact(const gs_memory_t *cmem,
 	    if (r_has_attr((ref *) src, l_mark)) {
 		ref rtemp;
 
-		if_debug2(cmem, '8', "  [8]ref 0x%lx copied to 0x%lx\n",
+		if_debug2('8', "  [8]ref 0x%lx copied to 0x%lx\n",
 			  (ulong) src, (ulong) dest);
 		/* We can't just use ref_assign_inline, */
 		/* because the source and destination */
@@ -694,8 +829,15 @@ refs_compact(const gs_memory_t *cmem,
 		ref_assign_inline(&rtemp, (ref *) src);
 		r_clear_attrs(&rtemp, l_mark);
 		ref_assign_inline((ref *) dest, &rtemp);
-		dest += packed_per_ref;
 		src += packed_per_ref;
+#if LAST_ELEM_MAY_BE_MARKED
+		/* The last (the extra) ref may be marked from 
+		alloc_change_t::offset==AC_OFFSET_ALLOCATED,
+		if the extra ref ends an empty ref array. */
+		if (src >= end)
+		    break;
+#endif
+		dest += packed_per_ref;
 	    } else {		/* check for end of block */
 		src += packed_per_ref;
 		if (src >= end)
@@ -703,15 +845,16 @@ refs_compact(const gs_memory_t *cmem,
 	    }
 	}
     }
+#undef LAST_ELEM_MAY_BE_MARKED
     new_size = (byte *) dest - (byte *) (dpre + 1) + sizeof(ref);
 #ifdef DEBUG
     /* Check that the relocation came out OK. */
     /* NOTE: this check only works within a single chunk. */
     if ((byte *) src - (byte *) dest != r_size((ref *) src - 1) + sizeof(ref)) {
-	lprintf3(cmem, "Reloc error for refs 0x%lx: reloc = %lu, stored = %u\n",
+	lprintf3("Reloc error for refs 0x%lx: reloc = %lu, stored = %u\n",
 		 (ulong) dpre, (ulong) ((byte *) src - (byte *) dest),
 		 (uint) r_size((ref *) src - 1));
-	gs_abort(cmem);
+	gs_abort(mem);
     }
 #endif
     /* Pad to a multiple of sizeof(ref). */

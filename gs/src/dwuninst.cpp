@@ -1,17 +1,17 @@
-/* Copyright (C) 1999, Ghostgum Software Pty Ltd.
-   Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-// $RCSfile$ $Revision$
+// $Id$
 
 #define STRICT
 #include <windows.h>
@@ -31,9 +31,16 @@
 #define mkdir(x) _mkdir(x)
 #endif
 #define DELAY_STEP 500
-#define DELAY_FILE 5
+#define DELAY_FILE 0
 #define MAXSTR 256
 #define UNINSTALLKEY TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall")
+
+#ifdef _WIN64
+#define DLGRETURN INT_PTR
+#else
+#define DLGRETURN BOOL
+#endif
+
 
 HWND hDlgModeless;
 HWND hText1;
@@ -670,7 +677,7 @@ BOOL shell_old(void)
 #ifdef __BORLANDC__
 #pragma argsused
 #endif
-BOOL CALLBACK _export
+DLGRETURN CALLBACK _export
 RemoveDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
   switch(message) {

@@ -232,7 +232,7 @@ px_save_array(px_value_t *pv, px_state_t *pxs, client_name_t cname,
 	    byte *copy = gs_alloc_byte_array(pxs->memory, num_elements,
 					     elt_size, cname);
 	    if ( copy == 0 )
-	      return_error(pxs->memory, errorInsufficientMemory);
+	      return_error(errorInsufficientMemory);
 	    memcpy(copy, pv->value.array.data, nbytes);
 	    pv->value.array.data = copy;
 	  }
@@ -251,16 +251,16 @@ px_save_array(px_value_t *pv, px_state_t *pxs, client_name_t cname,
 
 /* Define data tracing if debugging. */
 #ifdef DEBUG
-#  define trace_data(mem, format, cast, ptr, count)\
+#  define trace_data(format, cast, ptr, count)\
 		  do\
 		    { uint i_;\
 		      for ( i_ = 0; i_ < count; ++i_ )\
-			dprintf1(mem, format, (cast)((ptr)[i_]));\
-		      dputc(mem, '\n');\
+			dprintf1(format, (cast)((ptr)[i_]));\
+		      dputc('\n');\
 		    }\
 		  while (0)
 private void
-trace_array_data(const gs_memory_t *mem, const char *label, const px_value_t *pav)
+trace_array_data(const char *label, const px_value_t *pav)
 {	px_data_type_t type = pav->type;
 	const byte *ptr = pav->value.array.data;
 	uint count = pav->value.array.size;
@@ -268,46 +268,46 @@ trace_array_data(const gs_memory_t *mem, const char *label, const px_value_t *pa
 	bool text = (type & pxd_ubyte) != 0;
 	uint i;
 
-	dputs(mem, label);
-	dputs(mem, (type & pxd_ubyte ? " <" : " {"));
+	dputs(label);
+	dputs((type & pxd_ubyte ? " <" : " {"));
 	for ( i = 0; i < count; ++i )
 	  { if ( !(i & 15) && i )
 	      { const char *p;
-	        dputs(mem, "\n  ");
+	        dputs("\n  ");
 		for ( p = label; *p; ++p )
-		  dputc(mem, ' ');
+		  dputc(' ');
 	      }
 	    if ( type & pxd_ubyte )
-	      { dprintf1(mem, "%02x ", ptr[i]);
+	      { dprintf1("%02x ", ptr[i]);
 	        if ( ptr[i] < 32 || ptr[i] > 126 )
 		  text = false;
 	      }
 	    else if ( type & pxd_uint16 )
-	      dprintf1(mem, "%u ", uint16at(ptr + i * 2, big_endian));
+	      dprintf1("%u ", uint16at(ptr + i * 2, big_endian));
 	    else if ( type & pxd_sint16 )
-	      dprintf1(mem, "%d ", sint16at(ptr + i * 2, big_endian));
+	      dprintf1("%d ", sint16at(ptr + i * 2, big_endian));
 	    else if ( type & pxd_uint32 )
-	      dprintf1(mem, "%lu ", (ulong)uint32at(ptr + i * 4, big_endian));
+	      dprintf1("%lu ", (ulong)uint32at(ptr + i * 4, big_endian));
 	    else if ( type & pxd_sint32 )
-	      dprintf1(mem, "%ld ", (long)sint32at(ptr + i * 4, big_endian));
+	      dprintf1("%ld ", (long)sint32at(ptr + i * 4, big_endian));
 	    else if ( type & pxd_real32 )
-	      dprintf1(mem, "%g ", real32at(ptr + i * 4, big_endian));
+	      dprintf1("%g ", real32at(ptr + i * 4, big_endian));
 	    else
-	      dputs(mem, "? ");
+	      dputs("? ");
 	  }
-	dputs(mem, (type & pxd_ubyte ? ">\n" : "}\n"));
+	dputs((type & pxd_ubyte ? ">\n" : "}\n"));
 	if ( text )
-	  { dputs(mem, "%chars: \"");
-	    debug_print_string(mem, ptr, count);
-	    dputs(mem, "\"\n");
+	  { dputs("%chars: \"");
+	    debug_print_string(ptr, count);
+	    dputs("\"\n");
 	  }
 }
-#  define trace_array(mem, pav)\
+#  define trace_array(pav)\
      if ( gs_debug_c('I') )\
-       trace_array_data(mem, "array:", pav)
+       trace_array_data("array:", pav)
 #else
-#  define trace_data(mem, format, cast, ptr, count) DO_NOTHING
-#  define trace_array(mem, pav) DO_NOTHING
+#  define trace_data(format, cast, ptr, count) DO_NOTHING
+#  define trace_array(pav) DO_NOTHING
 #endif
 
 /* Process a buffer of PCL XL commands. */
@@ -360,7 +360,7 @@ top:	if ( st->data_left )
 		    data_array.type = pxd_ubyte;
 		    data_array.value.array.data = p + 1;
 		    data_array.value.array.size = used;
-		    trace_array_data(memory, "data:", &data_array);
+		    trace_array_data("data:", &data_array);
 		  }
 #endif
 		p = st->args.source.data - 1;
@@ -377,7 +377,7 @@ top:	if ( st->data_left )
 		  { st->args.source.position = 0;
 		    st->data_proc = 0;
 		    if ( st->data_left != 0 )
-		      { code = gs_note_error(memory, errorExtraData);
+		      { code = gs_note_error(errorExtraData);
 			goto x;
 		      }
 		    clear_stack();
@@ -402,7 +402,7 @@ top:	if ( st->data_left )
 		  }
 		/* Complete the array and continue parsing. */
 		memcpy(dest, p + 1, st->data_left);
-		trace_array(memory, sp);
+		trace_array(sp);
 		p += st->data_left;
 	      }
 	    st->data_left = 0;
@@ -422,7 +422,7 @@ top:	if ( st->data_left )
 		    if ( left < 5 )
 		      goto x;			/* can't look ahead */
 		    st->data_left = get_uint32(st, p + 2);
-		    if_debug3(memory, 'i', "pos=%8ld  tag=  0x%2x  data, length %u\n",
+		    if_debug3('i', "pos=%8ld  tag=  0x%2x  data, length %u\n",
 			      (long)(p - pr->ptr), p[1], st->data_left);
 		    p += 5;
 		    goto top;
@@ -430,12 +430,12 @@ top:	if ( st->data_left )
 		    if ( left < 2 )
 		      goto x;			/* can't look ahead */
 		    st->data_left = p[2];
-		    if_debug3(memory, 'i', "pos=%8ld  tag=  0x%2x  data, length %u\n",
+		    if_debug3('i', "pos=%8ld  tag=  0x%2x  data, length %u\n",
 			      (long)(p - pr->ptr), p[1], st->data_left);
 		    p += 2;
 		    goto top;
 		  default:
-		    { code = gs_note_error(memory, errorMissingData);
+		    { code = gs_note_error(errorMissingData);
 		      goto x;
 		    }
 		  }
@@ -449,15 +449,15 @@ top:	if ( st->data_left )
 	  { int count;
 #ifdef DEBUG
 	    if ( gs_debug_c('i') )
-	      { dprintf2(memory, "pos=%8ld  tag=  0x%02x  ", (long)(p - pr->ptr), tag);
+	      { dprintf2("pos=%8ld  tag=  0x%02x  ", (long)(p - pr->ptr), tag);
 		if ( tag == pxt_attr_ubyte || tag == pxt_attr_uint16 )
 		  { px_attribute_t attr =
 		      (tag == pxt_attr_ubyte ? p[2] : get_uint16(st, p + 2));
 		    const char *aname = px_attribute_names[attr];
 		    if ( aname )
-		      dprintf1(memory, "   @%s\n", aname);
+		      dprintf1("   @%s\n", aname);
 		    else
-		      dprintf1(memory, "   attribute %u ???\n", attr);
+		      dprintf1("   attribute %u ???\n", attr);
 		  }
 		else
 		  { const char *format;
@@ -476,12 +476,12 @@ top:	if ( st->data_left )
 			  format = "%s\n";
 		      }
 		    if ( tname ) {
-		      dprintf1(memory, format, tname);
+		      dprintf1(format, tname);
                       if (operator)
-                          dprintf1(memory, " (%ld)\n", st->operator_count+1);
+                          dprintf1(" (%ld)\n", st->operator_count+1);
                     }
 		    else
-		      dputs(memory, "???\n");
+		      dputs("???\n");
 		  }
 	      }
 #endif
@@ -491,7 +491,7 @@ top:	if ( st->data_left )
 		 * out-of-context operators and illegal tags, but it's too
 		 * much trouble.
 		 */
-		code = gs_note_error(memory, errorIllegalOperatorSequence);
+		code = gs_note_error(errorIllegalOperatorSequence);
 		if ( tag >= 0x40 && tag < 0xc0 )
 		  st->last_operator = tag;
 		goto x;
@@ -524,7 +524,7 @@ top:	if ( st->data_left )
 		    if ( left < 9 )
 		      goto x;		/* need more data */
 		    p += 9;
-		    code = gs_note_error(memory, e_ExitLanguage);
+		    code = gs_note_error(e_ExitLanguage);
 		    goto x;
 		  }
 		break;
@@ -580,7 +580,7 @@ top:	if ( st->data_left )
 			}
 		      if ( (index = st->attribute_indices[attr]) == 0 )
 			{ if ( required )
-			    code = gs_note_error(memory, errorMissingAttribute);
+			    code = gs_note_error(errorMissingAttribute);
 			  else
 			    *ppv = 0;
 			}
@@ -597,9 +597,9 @@ top:	if ( st->data_left )
 				(pv->value.i < 0 || pv->value.i > pavt->limit))
 			     )
 			    { if ( code >= 0 )
-			        code = gs_note_error(memory, errorIllegalAttributeDataType);
+			        code = gs_note_error(errorIllegalAttributeDataType);
 			    }
-			  if ( pavt->proc != 0 && (acode = (*pavt->proc)(memory, pv)) < 0 )
+			  if ( pavt->proc != 0 && (acode = (*pavt->proc)(pv)) < 0 )
 			    { if ( code >= 0 )
 			        code = acode;
 			    }
@@ -609,7 +609,7 @@ top:	if ( st->data_left )
 
 		  /* Make sure there are no attributes left over. */
 		  if ( left )
-		    code = gs_note_error(memory, errorIllegalAttribute);
+		    code = gs_note_error(errorIllegalAttribute);
 		  if ( code >= 0 )
 		    code = (*pod->proc)(&st->args, pxs);
 		  if ( code < 0 )
@@ -617,7 +617,7 @@ top:	if ( st->data_left )
 		  /* Check whether the operator wanted source data. */
 		  if ( code == pxNeedData )
 		    { if ( !pxs->data_source_open )
-			{ code = gs_note_error(memory, errorDataSourceNotOpen);
+			{ code = gs_note_error(errorDataSourceNotOpen);
 			  goto x;
 			}
 		      st->data_proc = pod->proc;
@@ -634,7 +634,7 @@ top:	if ( st->data_left )
 		/* Scalar, point, and box data */
 data:		{ int i;
 		  if ( sp == stack_limit )
-		    { code = gs_note_error(memory, errorInternalOverflow);
+		    { code = gs_note_error(errorInternalOverflow);
 		      goto x;
 		    }
 		  ++sp;
@@ -643,7 +643,7 @@ data:		{ int i;
 #ifdef DEBUG
 #  define trace_scalar(format, cast, alt)\
 		  if ( gs_debug_c('i') )\
-		    trace_data(memory, format, cast, sp->value.alt, count)
+		    trace_data(format, cast, sp->value.alt, count)
 #else
 #  define trace_scalar(format, cast, alt) DO_NOTHING
 #endif
@@ -695,7 +695,7 @@ dsx:		      trace_scalar(" %ld", long, ia);
 		{ const byte *dp;
 		  uint nbytes;
 		  if ( sp == stack_limit )
-		    { code = gs_note_error(memory, errorInternalOverflow);
+		    { code = gs_note_error(errorInternalOverflow);
 		      goto x;
 		    }
 		  switch ( p[2] )
@@ -706,7 +706,7 @@ dsx:		      trace_scalar(" %ld", long, ia);
 		      break;
 		    case pxt_uint16:
 		      if ( left < 4 )
-			{ if_debug0(memory, 'i', "...\n");
+			{ if_debug0('i', "...\n");
 			  /* Undo the state transition. */
 			  st->macro_state ^= syntax->state_transition;
 			  goto x;
@@ -716,11 +716,11 @@ dsx:		      trace_scalar(" %ld", long, ia);
 		      break;
 		    default:
 		      st->last_operator = tag; /* for error message */
-		      code = gs_note_error(memory, errorIllegalTag);
+		      code = gs_note_error(errorIllegalTag);
 		      goto x;
 		    }
 		  nbytes = sp[1].value.array.size;
-		  if_debug1(memory, 'i', "[%u]\n", sp[1].value.array.size);
+		  if_debug1('i', "[%u]\n", sp[1].value.array.size);
 		  switch ( tag )
 		    {
 		    case pxt_ubyte_array:
@@ -747,7 +747,7 @@ array:		      ++sp;
 			  goto x;
 			}
 		      p = dp + nbytes - 1;
-		      trace_array(memory, sp);
+		      trace_array(sp);
 		      continue;
 		    case pxt_uint16_array:
 		      sp[1].type = pxd_array | pxd_uint16;
@@ -840,7 +840,7 @@ a:		      if ( attr >= px_attribute_next )
 	      }
 	    /* Unknown tag value.  Report an error. */
 	    st->last_operator = tag; /* for error message */
-	    code = gs_note_error(memory, errorIllegalTag);
+	    code = gs_note_error(errorIllegalTag);
 	    break;
 	  }
 x:	/* Save any leftover input. */
@@ -868,7 +868,7 @@ x:	/* Save any leftover input. */
 	if ( code >= 0 )
 	  { if ( left + st->saved_count > sizeof(st->saved) )
 	      { /* Fatal error -- shouldn't happen! */
-		code = gs_note_error(memory, errorInternalOverflow);
+		code = gs_note_error(errorInternalOverflow);
 		st->saved_count = 0;
 	      }
 	    else

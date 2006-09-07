@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Graphics state operators */
 #include "math_.h"
 #include "ghost.h"
@@ -36,10 +37,10 @@ zset_real(i_ctx_t *i_ctx_p, int (*set_proc)(gs_state *, floatp))
 {
     os_ptr op = osp;
     double param;
-    int code = real_param(imemory, op, &param);
+    int code = real_param(op, &param);
 
     if (code < 0)
-	return_op_typecheck(imemory, op);
+	return_op_typecheck(op);
     code = set_proc(igs, param);
     if (!code)
 	pop(1);
@@ -51,7 +52,7 @@ zset_bool(i_ctx_t *i_ctx_p, void (*set_proc)(gs_state *, bool))
 {
     os_ptr op = osp;
 
-    check_type(imemory, *op, t_boolean);
+    check_type(*op, t_boolean);
     set_proc(igs, op->value.boolval);
     pop(1);
     return 0;
@@ -62,7 +63,7 @@ zcurrent_bool(i_ctx_t *i_ctx_p, bool (*current_proc)(const gs_state *))
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_bool(op, current_proc(igs));
     return 0;
 }
@@ -72,7 +73,7 @@ zset_uint(i_ctx_t *i_ctx_p, void (*set_proc)(gs_state *, uint))
 {
     os_ptr op = osp;
 
-    check_type(imemory, *op, t_integer);
+    check_type(*op, t_integer);
     set_proc(igs, op->value.intval);
     pop(1);
     return 0;
@@ -83,7 +84,7 @@ zcurrent_uint(i_ctx_t *i_ctx_p, uint (*current_proc)(const gs_state *))
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_int(op, current_proc(igs));
     return 0;
 }
@@ -189,10 +190,10 @@ zsetlinewidth(i_ctx_t *i_ctx_p)
 	 * of the width.
 	 */
     double width;
-    int code = real_param(imemory, op, &width);
+    int code = real_param(op, &width);
 
     if (code < 0)
-	return_op_typecheck(imemory, op);
+	return_op_typecheck(op);
     code = gs_setlinewidth(igs, fabs(width));
     if (code >= 0)
 	pop(1);
@@ -205,7 +206,7 @@ zcurrentlinewidth(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_real(op, gs_currentlinewidth(igs));
     return 0;
 }
@@ -216,7 +217,7 @@ zsetlinecap(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int param;
-    int code = int_param(imemory, op, max_int, &param);
+    int code = int_param(op, max_int, &param);
 
     if (code < 0 || (code = gs_setlinecap(igs, (gs_line_cap) param)) < 0)
 	return code;
@@ -230,7 +231,7 @@ zcurrentlinecap(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_int(op, (int)gs_currentlinecap(igs));
     return 0;
 }
@@ -241,7 +242,7 @@ zsetlinejoin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int param;
-    int code = int_param(imemory, op, max_int, &param);
+    int code = int_param(op, max_int, &param);
 
     if (code < 0 || (code = gs_setlinejoin(igs, (gs_line_join) param)) < 0)
 	return code;
@@ -255,7 +256,7 @@ zcurrentlinejoin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_int(op, (int)gs_currentlinejoin(igs));
     return 0;
 }
@@ -273,7 +274,7 @@ zcurrentmiterlimit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_real(op, gs_currentmiterlimit(igs));
     return 0;
 }
@@ -285,15 +286,15 @@ zsetdash(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     os_ptr op1 = op - 1;
     double offset;
-    int code = real_param(imemory, op, &offset);
+    int code = real_param(op, &offset);
     uint i, n;
     gs_memory_t *mem = imemory;
     float *pattern;
 
     if (code < 0)
-	return_op_typecheck(imemory, op);
+	return_op_typecheck(op);
     if (!r_is_array(op1))
-	return_op_typecheck(imemory, op1);
+	return_op_typecheck(op1);
     /* Adobe interpreters apparently don't check the array for */
     /* read access, so we won't either. */
     /*check_read(*op1); */
@@ -303,12 +304,12 @@ zsetdash(i_ctx_t *i_ctx_p)
 	(float *)gs_alloc_byte_array(mem, n, sizeof(float), "setdash");
 
     if (pattern == 0)
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     for (i = 0, code = 0; i < n && code >= 0; ++i) {
 	ref element;
 
-	array_get(imemory, op1, (long)i, &element);
-	code = float_param(imemory, &element, &pattern[i]);
+	array_get(mem, op1, (long)i, &element);
+	code = float_param(&element, &pattern[i]);
     }
     if (code >= 0)
 	code = gs_setdash(igs, pattern, n, offset);
@@ -326,7 +327,7 @@ zcurrentdash(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 2);
+    push(2);
     ref_assign(op - 1, &istate->dash_pattern);
     make_real(op, gs_currentdash_offset(igs));
     return 0;
@@ -345,7 +346,7 @@ zcurrentflat(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_real(op, gs_currentflat(igs));
     return 0;
 }
@@ -373,9 +374,9 @@ zsetcurvejoin(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_type(imemory, *op, t_integer);
+    check_type(*op, t_integer);
     if (op->value.intval < -1 || op->value.intval > max_int)
-	return_error(imemory, e_rangecheck);
+	return_error(e_rangecheck);
     code = gs_setcurvejoin(igs, (int)op->value.intval);
     if (code < 0)
 	return code;
@@ -389,7 +390,7 @@ zcurrentcurvejoin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 1);
+    push(1);
     make_int(op, gs_currentcurvejoin(igs));
     return 0;
 }
@@ -400,7 +401,7 @@ zsetfilladjust2(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double adjust[2];
-    int code = num_params(imemory, op, 2, adjust);
+    int code = num_params(op, 2, adjust);
 
     if (code < 0)
 	return code;
@@ -418,7 +419,7 @@ zcurrentfilladjust2(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_point adjust;
 
-    push(imemory, 2);
+    push(2);
     gs_currentfilladjust(igs, &adjust);
     make_real(op - 1, adjust.x);
     make_real(op, adjust.y);
@@ -445,11 +446,11 @@ zsetdotlength(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double length;
-    int code = real_param(imemory, op - 1, &length);
+    int code = real_param(op - 1, &length);
 
     if (code < 0)
 	return code;
-    check_type(imemory, *op, t_boolean);
+    check_type(*op, t_boolean);
     code = gs_setdotlength(igs, length, op->value.boolval);
     if (code < 0)
 	return code;
@@ -463,7 +464,7 @@ zcurrentdotlength(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(imemory, 2);
+    push(2);
     make_real(op - 1, gs_currentdotlength(igs));
     make_bool(op, gs_currentdotlength_absolute(igs));
     return 0;

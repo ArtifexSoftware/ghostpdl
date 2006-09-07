@@ -1,13 +1,15 @@
-/* Portions Copyright (C) 2003 artofcode LLC.
-   Portions Copyright (C) 2003 Artifex Software Inc.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /*$Id$ */
 
@@ -16,7 +18,7 @@
  */
 
 /* Capture stdin/out/err before gs.h redefines them. */
-#include <stdio.h>
+#include "stdio_.h"
 
 static void
 gs_lib_ctx_get_real_stdio(FILE **in, FILE **out, FILE **err)
@@ -29,7 +31,6 @@ gs_lib_ctx_get_real_stdio(FILE **in, FILE **out, FILE **err)
 
 #include "gslibctx.h"
 #include "gsmemory.h"
-
 
 static gs_memory_t *mem_err_print = NULL;
 
@@ -49,7 +50,7 @@ int gs_lib_ctx_init( gs_memory_t *mem )
 	return -1;  /* assert mem != 0 */
 
     mem_err_print = mem;
-
+    
     if (mem->gs_lib_ctx) /* one time initialization */
 	return 0;  
 
@@ -59,9 +60,11 @@ int gs_lib_ctx_init( gs_memory_t *mem )
 						"gs_lib_ctx_init");
     if( pio == 0 ) 
 	return -1;
-    
+    pio->memory = mem;
+
     gs_lib_ctx_get_real_stdio(&pio->fstdin, &pio->fstdout, &pio->fstderr );
 
+    pio->fstdout2 = NULL;
     pio->stdout_is_redirected = false;
     pio->stdout_to_stderr = false;
     pio->stdin_is_interactive = true;
@@ -70,7 +73,9 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     pio->stderr_fn = 0;
     pio->poll_fn = 0;
 
-    pio->gs_next_id = 1;
+    pio->gs_next_id = 1;  /* this implies that each thread has its own complete state */
+
+    pio->dict_auto_expand = false;
     return 0;
 }
 
@@ -87,7 +92,7 @@ int outwrite(const gs_memory_t *mem, const char *str, int len)
 	return 0;
     if (pio->stdout_is_redirected) {
 	if (pio->stdout_to_stderr)
-	    return errwrite(mem, str, len);
+	    return errwrite(str, len);
 	fout = pio->fstdout2;
     }
     else if (pio->stdout_fn) {
@@ -101,12 +106,11 @@ int outwrite(const gs_memory_t *mem, const char *str, int len)
     return code;
 }
 
-int errwrite(const gs_memory_t *mem, const char *str, int len)
+int errwrite(const char *str, int len)
 {    
     int code;
     if (len == 0)
 	return 0;
-
     if (mem_err_print->gs_lib_ctx->stderr_fn)
 	return (*mem_err_print->gs_lib_ctx->stderr_fn)(mem_err_print->gs_lib_ctx->caller_handle, str, len);
 
@@ -129,10 +133,10 @@ void outflush(const gs_memory_t *mem)
         fflush(mem->gs_lib_ctx->fstdout);
 }
 
-void errflush(const gs_memory_t *mem)
+void errflush(void)
 {
-    if (!mem->gs_lib_ctx->stderr_fn)
-        fflush(mem->gs_lib_ctx->fstderr);
+    if (!mem_err_print->gs_lib_ctx->stderr_fn)
+        fflush(mem_err_print->gs_lib_ctx->fstderr);
     /* else nothing to flush */
 }
 

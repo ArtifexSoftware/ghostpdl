@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Common utilities for PostScript and PDF writers */
 #include "stdio_.h"		/* for FILE for jpeglib.h */
 #include "jpeglib_.h"		/* for sdct.h */
@@ -143,7 +144,9 @@ psdf_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 	   floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
 	     gx_path_type_t type)
 {
-    if (x1 == x0 && y1 == y0)
+    if (x1 == x0 && y1 == y0 && x2 == x3 && y2 == y3)
+	pprintg2(gdev_vector_stream(vdev), "%g %g l\n", x3, y3);
+    else if (x1 == x0 && y1 == y0)
 	pprintg4(gdev_vector_stream(vdev), "%g %g %g %g v\n",
 		 x2, y2, x3, y3);
     else if (x3 == x2 && y3 == y2)
@@ -212,7 +215,7 @@ psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
     const char *setcolor;
 
     if (!gx_dc_is_pure(pdc))
-	return_error(vdev->memory, gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
     {
 	stream *s = gdev_vector_stream(vdev);
 	gx_color_index color =
@@ -227,7 +230,7 @@ psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
 	switch (vdev->color_info.num_components) {
 	case 4:
 	    /* if (v0 == 0 && v1 == 0 && v2 == 0 && ...) */
-	    if ((color & (0xffffff << 8)) == 0 && ppscc->setgray != 0) {
+	    if ((color & 0xffffff00) == 0 && ppscc->setgray != 0) {
 		v3 = 1.0 - v3;
 		goto g;
 	    }
@@ -250,7 +253,7 @@ psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
 	    setcolor = ppscc->setgray;
 	    break;
 	default:		/* can't happen */
-	    return_error(vdev->memory, gs_error_rangecheck);
+	    return_error(gs_error_rangecheck);
 	}
 	if (setcolor)
 	    pprints1(s, " %s\n", setcolor);
@@ -282,7 +285,7 @@ psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
 	    gs_free_object(mem, s, "psdf_begin_binary(stream)");
 	    gs_free_object(mem, ss, "psdf_begin_binary(stream_state)");
 	    gs_free_object(mem, buf, "psdf_begin_binary(buf)");
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	}
 	ss->template = &s_A85E_template;
 	s_init_filter(s, (stream_state *)ss, buf, BUF_SIZE, pdev->strm);
@@ -301,7 +304,7 @@ psdf_encode_binary(psdf_binary_writer * pbw, const stream_template * template,
 		   stream_state * ss)
 {
     return (s_add_filter(&pbw->strm, template, ss, pbw->memory) == 0 ?
-	    gs_note_error(ss->memory, gs_error_VMerror) : 0);
+	    gs_note_error(gs_error_VMerror) : 0);
 }
 
 /*
@@ -343,13 +346,15 @@ psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
 	jcdp = gs_alloc_struct_immovable(mem, jpeg_compress_data,
            &st_jpeg_compress_data, "zDCTE");
         if (jcdp == 0)
-	    return_error(mem, gs_error_VMerror);
+	    return_error(gs_error_VMerror);
 	ss->data.compress = jcdp;
 	jcdp->memory = ss->jpeg_memory = mem;	/* set now for allocation */
 	if ((code = gs_jpeg_create_compress(ss)) < 0)
 	    goto dcte_fail;	/* correct to do jpeg_destroy here */
 	/* Read parameters from dictionary */
-	s_DCTE_put_params((gs_param_list *)&rcc_list, ss); /* ignore errors */
+	code = s_DCTE_put_params((gs_param_list *)&rcc_list, ss);
+	if (code < 0)
+	    return code;
 	/* Create the filter. */
 	jcdp->template = s_DCTE_template;
 	/* Make sure we get at least a full scan line of input. */
@@ -387,7 +392,7 @@ psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert)
     int code;
 
     if (st == 0)
-	return_error(mem, gs_error_VMerror);
+	return_error(gs_error_VMerror);
     (*template->set_defaults) ((stream_state *) st);
     st->K = -1;
     st->Columns = w;
@@ -406,7 +411,7 @@ psdf_end_binary(psdf_binary_writer * pbw)
 {
     int status = s_close_filters(&pbw->strm, pbw->target);
 
-    return (status >= 0 ? 0 : gs_note_error(pbw->memory, gs_error_ioerror));
+    return (status >= 0 ? 0 : gs_note_error(gs_error_ioerror));
 }
 
 /* ---------------- Overprint, Get Bits ---------------- */
@@ -418,7 +423,10 @@ psdf_end_binary(psdf_binary_writer * pbw)
 int
 psdf_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 {
-    return_error(dev->memory, gs_error_unregistered);
+    if (dev_proc(dev, get_alpha_bits)(dev, go_graphics) > 1)
+	eprintf1("Can't set GraphicsAlphaBits > 1 with a vector device %s.\n",
+	    dev->dname);
+    return_error(gs_error_unregistered);
 }
 
 int
@@ -428,7 +436,7 @@ psdf_get_bits_rectangle(
     gs_get_bits_params_t *  params,
     gs_int_rect **          unread )
 {
-    return_error(dev->memory, gs_error_unregistered);
+    return_error(gs_error_unregistered);
 }
 
 /*
@@ -443,7 +451,7 @@ psdf_create_compositor(
     gx_device *             dev,
     gx_device **            pcdev,
     const gs_composite_t *  pct,
-    const gs_imager_state * pis,
+    gs_imager_state * pis,
     gs_memory_t *           mem )
 {
     if (gs_is_overprint_compositor(pct)) {

@@ -1,3 +1,8 @@
 #!/bin/sh
-# $RCSfile$ $Revision$
-exec gs -q -sDEVICE=bj10e -r180 -dNOPAUSE -sPROGNAME=$0 -- gslp.ps --heading-center "`date`" "$@"
+# $Id$
+
+# This definition is changed on install to match the
+# executable name set in the makefile
+GS_EXECUTABLE=gs
+
+exec $GS_EXECUTABLE -q -sDEVICE=bj10e -r180 -dNOPAUSE -sPROGNAME=$0 -- gslp.ps --heading-center "`date`" "$@"

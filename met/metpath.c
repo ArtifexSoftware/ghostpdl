@@ -235,7 +235,7 @@ Path_action(void *data, met_state_t *ms)
                 }
             } else {
                 *pargs++;
-                dprintf(mem, "unknown operator continuing\n");
+                dprintf("unknown operator continuing\n");
             }
         }
     }
@@ -448,7 +448,7 @@ PolyLineSegment_action(void *data, met_state_t *ms)
             pt.x = atof(*pargs++);
 
             if (!*pargs) {
-                dprintf(mem, "point does not have two coordinate\n");
+                dprintf("point does not have two coordinate\n");
                 break;
             }
 
@@ -729,7 +729,7 @@ ArcSegment_action(void *data, met_state_t *ms)
         gs_matrix rotmat;
         double correction;
         gs_make_rotation(-rot, &rotmat);
-        if ((code = gs_distance_transform(mem, halfdis.x, halfdis.y, &rotmat, &thalfdis)) < 0)
+        if ((code = gs_distance_transform(halfdis.x, halfdis.y, &rotmat, &thalfdis)) < 0)
             gs_rethrow(code, "transform failed");
         /* correct radii if necessary */
         correction = (SQR(thalfdis.x) / SQR(size.x)) + (SQR(thalfdis.y) / SQR(size.y));
@@ -865,7 +865,7 @@ PolyBezierSegment_action(void *data, met_state_t *ms)
             pt[points_parsed % 3].x = atof(*pargs++);
 
             if (!*pargs) {
-                dprintf(mem, "point does not have two coordinate\n");
+                dprintf("point does not have two coordinate\n");
                 break;
             }
             pt[points_parsed % 3].y = atof(*pargs++);
@@ -957,7 +957,7 @@ PolyQuadraticBezierSegment_action(void *data, met_state_t *ms)
             pt[points_parsed % 2].x = atof(*pargs++);
 
             if (!*pargs) {
-                dprintf(mem, "point does not have two coordinate\n");
+                dprintf("point does not have two coordinate\n");
                 break;
             }
             pt[points_parsed % 2].y = atof(*pargs++);

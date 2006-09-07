@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* DataSource definitions */
 
 #ifndef gsdsrc_INCLUDED
@@ -45,7 +46,7 @@ typedef struct stream_s stream;
  */
 #define data_source_proc_access(proc)\
   int proc(const gs_data_source_t *psrc, ulong start, uint length,\
-	   byte *buf, const byte **ptr, const gs_memory_t *mem)
+	   byte *buf, const byte **ptr)
 
 typedef enum {
     data_source_type_string,
@@ -66,17 +67,17 @@ struct gs_data_source_s {
     } data;
 };
 
-#define data_source_access_only(psrc, start, length, buf, ptr, mem)\
-  (*(psrc)->access)(psrc, (ulong)(start), length, buf, ptr, mem)
-#define data_source_access(psrc, start, length, buf, ptr, mem)\
+#define data_source_access_only(psrc, start, length, buf, ptr)\
+  (*(psrc)->access)(psrc, (ulong)(start), length, buf, ptr)
+#define data_source_access(psrc, start, length, buf, ptr)\
   BEGIN\
-    int code_ = data_source_access_only(psrc, start, length, buf, ptr, mem);\
+    int code_ = data_source_access_only(psrc, start, length, buf, ptr);\
     if ( code_ < 0 ) return code_;\
   END
-#define data_source_copy_only(psrc, start, length, buf, mem)\
-  data_source_access_only(psrc, start, length, buf, (const byte **)0, mem)
-#define data_source_copy(psrc, start, length, buf, mem)\
-  data_source_access(psrc, start, length, buf, (const byte **)0, mem)
+#define data_source_copy_only(psrc, start, length, buf)\
+  data_source_access_only(psrc, start, length, buf, (const byte **)0)
+#define data_source_copy(psrc, start, length, buf)\
+  data_source_access(psrc, start, length, buf, (const byte **)0)
 
 /*
  * Data sources are always embedded in other structures, but they do have

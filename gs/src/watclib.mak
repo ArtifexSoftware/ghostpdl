@@ -1,16 +1,16 @@
-# Portions Copyright (C) 2001 artofcode LLC. 
-#  Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-#  Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-#  This software is based in part on the work of the Independent JPEG Group.
+#  Copyright (C) 2001-2006 artofcode LLC.
 #  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
 #
 #  This software is distributed under license and may not be copied, modified
 #  or distributed except as expressly authorized under the terms of that
-#  license.  Refer to licensing information at http://www.artifex.com/ or
-#  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-#  San Rafael, CA  94903, (415)492-9861, for further information.
-
-# $RCSfile$ $Revision$
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
+# $Id$
 # makefile for MS-DOS / Watcom C/C++ library testing.
 
 libdefault: $(GLOBJ)gslib.exe
@@ -19,7 +19,7 @@ libdefault: $(GLOBJ)gslib.exe
 AROOTDIR=c:/gs
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 GS_DOCDIR=$(GSROOTDIR)/doc
-GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(GSROOTDIR)/resource\;$(AROOTDIR)/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(GSROOTDIR)/Resource/Font\;$(AROOTDIR)/fonts
 SEARCH_HERE_FIRST=1
 GS_INIT=gs_init.ps
 
@@ -40,6 +40,9 @@ BINDIR=.\debugobj
 !endif
 !ifndef GLSRCDIR
 GLSRCDIR=.\src
+!endif
+!ifndef PSRESDIR
+PSRESDIR=.\Resource
 !endif
 !ifndef GLGENDIR
 GLGENDIR=.\debugobj
@@ -64,15 +67,19 @@ JVERSION=6
 PSRCDIR=libpng
 !endif
 !ifndef PVERSION
-PVERSION=10205
+PVERSION=10208
 !endif
 
 !ifndef ZSRCDIR
 ZSRCDIR=zlib
 !endif
 
-# Define the jbig2dec library source location.
+# Define the jbig2dec library and source location.
 # See jbig2.mak for more information.
+
+!ifndef JBIG2_LIB
+JBIG2_LIB=jbig2dec
+!endif
 
 !ifndef JBIG2SRCDIR
 JBIG2SRCDIR=jbig2dec
@@ -126,6 +133,7 @@ FEATURE_DEVS=$(GLD)patlib.dev $(GLD)path1lib.dev
 !ifndef DEVICE_DEVS
 DEVICE_DEVS=$(DD)vga.dev
 !endif
+
 !ifndef COMPILE_INITS
 COMPILE_INITS=0
 !endif

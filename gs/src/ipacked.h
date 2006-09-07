@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Packed array format for Ghostscript */
 
 #ifndef ipacked_INCLUDED
@@ -94,7 +95,7 @@ typedef enum {
 
 #define packed_per_ref (sizeof(ref) / sizeof(ref_packed))
 #define align_packed_per_ref\
-  (arch_align_ref_mod / arch_align_short_mod)
+  (ARCH_ALIGN_REF_MOD / ARCH_ALIGN_SHORT_MOD)
 #define pt_tag(pt) ((ref_packed)(pt) << r_packed_type_shift)
 #define packed_value_mask ((1 << r_packed_value_bits) - 1)
 #define packed_max_value packed_value_mask

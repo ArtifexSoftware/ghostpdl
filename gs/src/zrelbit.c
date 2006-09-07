@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Relational, boolean, and bit operators */
 #include "ghost.h"
 #include "oper.h"
@@ -26,25 +27,25 @@
 /* ------ Standard operators ------ */
 
 /* Define the type test for eq and its relatives. */
-#define EQ_CHECK_READ(mem, opp, dflt)\
+#define EQ_CHECK_READ(opp, dflt)\
     switch ( r_type(opp) ) {\
 	case t_string:\
-	    check_read(mem, *(opp));\
+	    check_read(*(opp));\
 	    break;\
 	default:\
 	    dflt;\
   }
 
 /* Forward references */
-private int obj_le(const gs_memory_t *mem, os_ptr, os_ptr);
+private int obj_le(os_ptr, os_ptr);
 
 /* <obj1> <obj2> eq <bool> */
 int
 zeq(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    EQ_CHECK_READ(imemory, op - 1, check_op(imemory, 2));
-    EQ_CHECK_READ(imemory, op, DO_NOTHING);
+    EQ_CHECK_READ(op - 1, check_op(2));
+    EQ_CHECK_READ(op, DO_NOTHING);
     make_bool(op - 1, (obj_eq(imemory, op - 1, op) ? 1 : 0));
     pop(1);
     return 0;
@@ -67,7 +68,7 @@ int
 zge(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = obj_le(imemory, op, op - 1);
+    int code = obj_le(op, op - 1);
 
     if (code < 0)
 	return code;
@@ -82,7 +83,7 @@ int
 zgt(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = obj_le(imemory, op - 1, op);
+    int code = obj_le(op - 1, op);
 
     if (code < 0)
 	return code;
@@ -97,7 +98,7 @@ int
 zle(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = obj_le(imemory, op - 1, op);
+    int code = obj_le(op - 1, op);
 
     if (code < 0)
 	return code;
@@ -112,7 +113,7 @@ int
 zlt(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = obj_le(imemory, op, op - 1);
+    int code = obj_le(op, op - 1);
 
     if (code < 0)
 	return code;
@@ -127,7 +128,7 @@ private int
 zmax(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = obj_le(imemory, op - 1, op);
+    int code = obj_le(op - 1, op);
 
     if (code < 0)
 	return code;
@@ -144,7 +145,7 @@ private int
 zmin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = obj_le(imemory, op - 1, op);
+    int code = obj_le(op - 1, op);
 
     if (code < 0)
 	return code;
@@ -164,15 +165,15 @@ zand(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
 	case t_boolean:
-	    check_type(imemory, op[-1], t_boolean);
+	    check_type(op[-1], t_boolean);
 	    op[-1].value.boolval &= op->value.boolval;
 	    break;
 	case t_integer:
-	    check_type(imemory, op[-1], t_integer);
+	    check_type(op[-1], t_integer);
 	    op[-1].value.intval &= op->value.intval;
 	    break;
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
     }
     pop(1);
     return 0;
@@ -193,7 +194,7 @@ znot(i_ctx_t *i_ctx_p)
 	    op->value.intval = ~op->value.intval;
 	    break;
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
     }
     return 0;
 }
@@ -207,15 +208,15 @@ zor(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
 	case t_boolean:
-	    check_type(imemory, op[-1], t_boolean);
+	    check_type(op[-1], t_boolean);
 	    op[-1].value.boolval |= op->value.boolval;
 	    break;
 	case t_integer:
-	    check_type(imemory, op[-1], t_integer);
+	    check_type(op[-1], t_integer);
 	    op[-1].value.intval |= op->value.intval;
 	    break;
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
     }
     pop(1);
     return 0;
@@ -230,15 +231,15 @@ zxor(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
 	case t_boolean:
-	    check_type(imemory, op[-1], t_boolean);
+	    check_type(op[-1], t_boolean);
 	    op[-1].value.boolval ^= op->value.boolval;
 	    break;
 	case t_integer:
-	    check_type(imemory, op[-1], t_integer);
+	    check_type(op[-1], t_integer);
 	    op[-1].value.intval ^= op->value.intval;
 	    break;
 	default:
-	    return_op_typecheck(imemory, op);
+	    return_op_typecheck(op);
     }
     pop(1);
     return 0;
@@ -251,8 +252,8 @@ zbitshift(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int shift;
 
-    check_type(imemory, *op, t_integer);
-    check_type(imemory, op[-1], t_integer);
+    check_type(*op, t_integer);
+    check_type(op[-1], t_integer);
 #define MAX_SHIFT (arch_sizeof_long * 8 - 1)
     if (op->value.intval < -MAX_SHIFT || op->value.intval > MAX_SHIFT)
 	op[-1].value.intval = 0;
@@ -273,8 +274,8 @@ zidenteq(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    EQ_CHECK_READ(imemory, op - 1, check_op(imemory, 2));
-    EQ_CHECK_READ(imemory, op, DO_NOTHING);
+    EQ_CHECK_READ(op - 1, check_op(2));
+    EQ_CHECK_READ(op, DO_NOTHING);
     make_bool(op - 1, (obj_ident_eq(imemory, op - 1, op) ? 1 : 0));
     pop(1);
     return 0;
@@ -322,7 +323,7 @@ const op_def zrelbit_op_defs[] =
 /* Return 1 if op[-1] <= op[0], 0 if op[-1] > op[0], */
 /* or a (negative) error code. */
 private int
-obj_le(const gs_memory_t *mem, register os_ptr op1, register os_ptr op)
+obj_le(register os_ptr op1, register os_ptr op)
 {
     switch (r_type(op1)) {
 	case t_integer:
@@ -332,7 +333,7 @@ obj_le(const gs_memory_t *mem, register os_ptr op1, register os_ptr op)
 		case t_real:
 		    return ((double)op1->value.intval <= op->value.realval);
 		default:
-		    return_op_typecheck(mem, op);
+		    return_op_typecheck(op);
 	    }
 	case t_real:
 	    switch (r_type(op)) {
@@ -341,14 +342,14 @@ obj_le(const gs_memory_t *mem, register os_ptr op1, register os_ptr op)
 		case t_integer:
 		    return (op1->value.realval <= (double)op->value.intval);
 		default:
-		    return_op_typecheck(mem, op);
+		    return_op_typecheck(op);
 	    }
 	case t_string:
-	    check_read(mem, *op1);
-	    check_read_type(mem, *op, t_string);
+	    check_read(*op1);
+	    check_read_type(*op, t_string);
 	    return (bytes_compare(op1->value.bytes, r_size(op1),
 				  op->value.bytes, r_size(op)) <= 0);
 	default:
-	    return_op_typecheck(mem, op1);
+	    return_op_typecheck(op1);
     }
 }

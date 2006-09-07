@@ -1,10 +1,15 @@
-/* Copyright (C) 2002 artofcode LLC. All rights reserved.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
   
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* $Id$ */
 /* Plugin manager */
@@ -51,12 +56,12 @@ int i_plugin_init(i_ctx_t *i_ctx_p)
     i_plugin_make_memory(&client_mem, mem_raw);
     for (; *p != 0; p++) {
         i_plugin_instance *instance = 0;
-        code = (*p)(i_ctx_p, &client_mem, &instance);
+        code = (*p)(&client_mem, &instance);
         if (code != 0)
             return code;
         h = (i_plugin_holder *)gs_alloc_bytes_immovable(mem_raw, sizeof(i_plugin_holder), "plugin_holder");
         if (h == 0)
-            return_error(imemory, e_Fatal);
+            return_error(e_Fatal);
         h->I = instance;
         h->next = i_ctx_p->plugin_list;
         i_ctx_p->plugin_list = h;

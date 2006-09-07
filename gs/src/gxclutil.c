@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Command list writing utilities. */
 
 #include "memory_.h"
@@ -51,7 +52,7 @@ struct stats_cmd_s {
 } stats_cmd;
 extern ulong stats_cmd_diffs[5];	/* in gxclpath.c */
 int
-cmd_count_op(const gs_memory_t *mem, int op, uint size)
+cmd_count_op(int op, uint size)
 {
     stats_cmd.op_counts[op]++;
     stats_cmd.op_sizes[op] += size;
@@ -59,11 +60,11 @@ cmd_count_op(const gs_memory_t *mem, int op, uint size)
 	const char *const *sub = cmd_sub_op_names[op >> 4];
 
 	if (sub)
-	    dlprintf2(mem, ", %s(%u)\n", sub[op & 0xf], size);
+	    dlprintf2(", %s(%u)\n", sub[op & 0xf], size);
 	else
-	    dlprintf3(mem, ", %s %d(%u)\n", cmd_op_names[op >> 4], op & 0xf,
+	    dlprintf3(", %s %d(%u)\n", cmd_op_names[op >> 4], op & 0xf,
 		      size);
-	dflush(mem);
+	dflush();
     }
     return op;
 }
@@ -78,25 +79,25 @@ cmd_uncount_op(int op, uint size)
 /* Print statistics. */
 #ifdef DEBUG
 void
-cmd_print_stats(const gs_memory_t *mem)
+cmd_print_stats(void)
 {
     int ci, cj;
 
-    dlprintf3(mem, "[l]counts: reset = %lu, found = %lu, added = %lu\n",
+    dlprintf3("[l]counts: reset = %lu, found = %lu, added = %lu\n",
 	      stats_cmd.tile_reset, stats_cmd.tile_found,
 	      stats_cmd.tile_added);
-    dlprintf5(mem, "     diff 2.5 = %lu, 3 = %lu, 4 = %lu, 2 = %lu, >4 = %lu\n",
+    dlprintf5("     diff 2.5 = %lu, 3 = %lu, 4 = %lu, 2 = %lu, >4 = %lu\n",
 	      stats_cmd_diffs[0], stats_cmd_diffs[1], stats_cmd_diffs[2],
 	      stats_cmd_diffs[3], stats_cmd_diffs[4]);
-    dlprintf2(mem, "     same_band = %lu, other_band = %lu\n",
+    dlprintf2("     same_band = %lu, other_band = %lu\n",
 	      stats_cmd.same_band, stats_cmd.other_band);
     for (ci = 0; ci < 0x100; ci += 0x10) {
 	const char *const *sub = cmd_sub_op_names[ci >> 4];
 
 	if (sub != 0) {
-	    dlprintf1(mem, "[l]  %s =", cmd_op_names[ci >> 4]);
+	    dlprintf1("[l]  %s =", cmd_op_names[ci >> 4]);
 	    for (cj = ci; cj < ci + 0x10; cj += 2)
-		dprintf6(mem, "\n\t%s = %lu(%lu), %s = %lu(%lu)",
+		dprintf6("\n\t%s = %lu(%lu), %s = %lu(%lu)",
 			 sub[cj - ci],
 			 stats_cmd.op_counts[cj], stats_cmd.op_sizes[cj],
 			 sub[cj - ci + 1],
@@ -107,16 +108,16 @@ cmd_print_stats(const gs_memory_t *mem)
 	    for (cj = ci; cj < ci + 0x10; cj++)
 		tcounts += stats_cmd.op_counts[cj],
 		    tsizes += stats_cmd.op_sizes[cj];
-	    dlprintf3(mem, "[l]  %s (%lu,%lu) =\n\t",
+	    dlprintf3("[l]  %s (%lu,%lu) =\n\t",
 		      cmd_op_names[ci >> 4], tcounts, tsizes);
 	    for (cj = ci; cj < ci + 0x10; cj++)
 		if (stats_cmd.op_counts[cj] == 0)
-		    dputs(mem, " -");
+		    dputs(" -");
 		else
-		    dprintf2(mem, " %lu(%lu)", stats_cmd.op_counts[cj],
+		    dprintf2(" %lu(%lu)", stats_cmd.op_counts[cj],
 			     stats_cmd.op_sizes[cj]);
 	}
-	dputs(mem, "\n");
+	dputs("\n");
     }
 }
 #endif /* DEBUG */
@@ -136,14 +137,14 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
 	clist_file_ptr cfile = cldev->page_cfile;
 	clist_file_ptr bfile = cldev->page_bfile;
 	cmd_block cb;
-	byte end = cmd_count_op(cldev->memory, cmd_end, 1);
+	byte end = cmd_count_op(cmd_end, 1);
 
 	if (cfile == 0 || bfile == 0)
- 	    return_error(cldev->memory, gs_error_ioerror);
+ 	    return_error(gs_error_ioerror);
 	cb.band_min = band_min;
 	cb.band_max = band_max;
 	cb.pos = clist_ftell(cfile);
-	if_debug3(cldev->memory, 'l', "[l]writing for bands (%d,%d) at %ld\n",
+	if_debug3('l', "[l]writing for bands (%d,%d) at %ld\n",
 		  band_min, band_max, cb.pos);
 	clist_fwrite_chars(&cb, sizeof(cb), bfile);
 	if (cp != 0) {
@@ -154,8 +155,8 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
 		    (const byte *)cp >= cldev->cend ||
 		    cp->size > cldev->cend - (const byte *)cp
 		    ) {
-		    lprintf1(cldev->memory, "cmd_write_band error at 0x%lx\n", (ulong) cp);
-		    return_error(cldev->memory, gs_error_Fatal);
+		    lprintf1("cmd_write_band error at 0x%lx\n", (ulong) cp);
+		    return_error(gs_error_Fatal);
 		}
 #endif
 		clist_fwrite_chars(cp + 1, cp->size, cfile);
@@ -163,13 +164,13 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
 	    pcl->head = pcl->tail = 0;
 	}
 	clist_fwrite_chars(&end, 1, cfile);
-	process_interrupts();
+	process_interrupts(cldev->memory);
 	code_b = clist_ferror_code(bfile);
 	code_c = clist_ferror_code(cfile);
 	if (code_b < 0)
-	    return_error(cldev->memory, code_b);
+	    return_error(code_b);
 	if (code_c < 0)
-	    return_error(cldev->memory, code_c); 
+	    return_error(code_c); 
     }
     return code_b | code_c;
 }
@@ -199,7 +200,7 @@ cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)
     cldev->ccl = 0;
 #ifdef DEBUG
     if (gs_debug_c('l'))
-	cmd_print_stats(cldev->memory);
+	cmd_print_stats();
 #endif
     return_check_interrupt(cldev->memory, code != 0 ? code : warning);
 }
@@ -209,7 +210,7 @@ cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)
  * data.  Return the pointer to the data area.  If an error or (low-memory
  * warning) occurs, set cldev->error_code and return 0.
  */
-#define cmd_headroom (sizeof(cmd_prefix) + arch_align_ptr_mod)
+#define cmd_headroom (sizeof(cmd_prefix) + ARCH_ALIGN_PTR_MOD)
 byte *
 cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 {
@@ -223,7 +224,7 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 	    else {
 		/* upgrade lo-mem warning into an error */
 		if (!cldev->ignore_lo_mem_warnings)
-		    cldev->error_code = gs_note_error(cldev->memory, gs_error_VMerror);
+		    cldev->error_code = gs_note_error(gs_error_VMerror);
 		cldev->error_is_retryable = 1;
 	    }
 	    return 0;
@@ -236,7 +237,7 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 	cmd_count_add1(stats_cmd.same_band);
 #ifdef DEBUG
 	if (pcl->tail->size > dp - (byte *) (pcl->tail + 1)) {
-	    lprintf1(cldev->memory, "cmd_put_list_op error at 0x%lx\n", (ulong) pcl->tail);
+	    lprintf1("cmd_put_list_op error at 0x%lx\n", (ulong) pcl->tail);
 	}
 #endif
 	pcl->tail->size += size;
@@ -244,7 +245,7 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 	/* Skip to an appropriate alignment boundary. */
 	/* (We assume the command buffer itself is aligned.) */
 	cmd_prefix *cp = (cmd_prefix *)
-	    (dp + ((cldev->cbuf - dp) & (arch_align_ptr_mod - 1)));
+	    (dp + ((cldev->cbuf - dp) & (ARCH_ALIGN_PTR_MOD - 1)));
 
 	cmd_count_add1(stats_cmd.other_band);
 	dp = (byte *) (cp + 1);
@@ -253,7 +254,7 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 	    if (pcl->tail < pcl->head ||
 		pcl->tail->size > dp - (byte *) (pcl->tail + 1)
 		) {
-		lprintf1(cldev->memory, "cmd_put_list_op error at 0x%lx\n",
+		lprintf1("cmd_put_list_op error at 0x%lx\n",
 			 (ulong) pcl->tail);
 	    }
 #endif
@@ -271,9 +272,9 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 byte *
 cmd_put_op(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint size)
 {
-    if_debug3(cldev->memory, 'L', "[L]band %d: size=%u, left=%u",
+    if_debug3('L', "[L]band %d: size=%u, left=%u",
 	      (int)(pcls - cldev->states),
-	      size, (uint) (cldev->cend - cldev->cnext));
+	      size, 0);
     return cmd_put_list_op(cldev, &pcls->list, size);
 }
 #endif
@@ -283,9 +284,8 @@ byte *
 cmd_put_range_op(gx_device_clist_writer * cldev, int band_min, int band_max,
 		 uint size)
 {
-    if_debug4(cldev->memory, 'L', "[L]band range(%d,%d): size=%u, left=%u",
-	      band_min, band_max, size,
-	      (uint)(cldev->cend - cldev->cnext));
+    if_debug4('L', "[L]band range(%d,%d): size=%u, left=%u",
+	      band_min, band_max, size, 0);
     if (cldev->ccl != 0 && 
 	(cldev->ccl != &cldev->band_range_list ||
 	 band_min != cldev->band_range_min ||
@@ -633,7 +633,7 @@ cmd_put_params(gx_device_clist_writer *cldev,
 
     /* Get serialized list's length + try to get it into local var if it fits. */
     param_length = code =
-	gs_param_list_serialize(cldev->memory, param_list, local_buf, sizeof(local_buf));
+	gs_param_list_serialize(param_list, local_buf, sizeof(local_buf));
     if (param_length > 0) {
 	/* Get cmd buffer space for serialized */
 	code = set_cmd_put_all_op(dp, cldev, cmd_opv_extend,
@@ -642,7 +642,7 @@ cmd_put_params(gx_device_clist_writer *cldev,
 	    return code;
 
 	/* write param list to cmd list: needs to all fit in cmd buffer */
-	if_debug1(cldev->memory, 'l', "[l]put_params, length=%d\n", param_length);
+	if_debug1('l', "[l]put_params, length=%d\n", param_length);
 	dp[1] = cmd_opv_ext_put_params;
 	dp += 2;
 	memcpy(dp, &param_length, sizeof(unsigned));
@@ -651,10 +651,10 @@ cmd_put_params(gx_device_clist_writer *cldev,
 	    int old_param_length = param_length;
 
 	    param_length = code =
-		gs_param_list_serialize(cldev->memory, param_list, dp, old_param_length);
+		gs_param_list_serialize(param_list, dp, old_param_length);
 	    if (param_length >= 0)
 		code = (old_param_length != param_length ?
-			gs_note_error(cldev->memory, gs_error_unknownerror) : 0);
+			gs_note_error(gs_error_unknownerror) : 0);
 	    if (code < 0) {
 		/* error serializing: back out by writing a 0-length parm list */
 		memset(dp - sizeof(unsigned), 0, sizeof(unsigned));
@@ -678,17 +678,17 @@ clist_cf_init(stream_CF_state *ss, int width)
     ss->DecodedByteAlign = align_bitmap_mod;
 }
 void
-clist_cfe_init(stream_CFE_state *ss, int width, gs_memory_t *mem, const gs_memory_t *cmem)
+clist_cfe_init(stream_CFE_state *ss, int width, gs_memory_t *mem)
 {
-    s_init_state((stream_state *)ss, &s_CFE_template, mem, cmem);
+    s_init_state((stream_state *)ss, &s_CFE_template, mem);
     s_CFE_set_defaults_inline(ss);
     clist_cf_init((stream_CF_state *)ss, width);
     s_CFE_template.init((stream_state *)(ss));
 }
 void
-clist_cfd_init(stream_CFD_state *ss, int width, int height, gs_memory_t *mem, const gs_memory_t *cmem)
+clist_cfd_init(stream_CFD_state *ss, int width, int height, gs_memory_t *mem)
 {
-    s_init_state((stream_state *)ss, &s_CFD_template, mem, cmem);
+    s_init_state((stream_state *)ss, &s_CFD_template, mem);
     s_CFD_template.set_defaults((stream_state *)ss);
     clist_cf_init((stream_CF_state *)ss, width);
     ss->Rows = height;
@@ -697,16 +697,16 @@ clist_cfd_init(stream_CFD_state *ss, int width, int height, gs_memory_t *mem, co
 
 /* Initialize RunLength filters. */
 void
-clist_rle_init(stream_RLE_state *ss, const gs_memory_t *cmem)
+clist_rle_init(stream_RLE_state *ss)
 {
-    s_init_state((stream_state *)ss, &s_RLE_template, (gs_memory_t *)0, cmem);
+    s_init_state((stream_state *)ss, &s_RLE_template, (gs_memory_t *)0);
     s_RLE_set_defaults_inline(ss);
     s_RLE_init_inline(ss);
 }
 void
-clist_rld_init(stream_RLD_state *ss, const gs_memory_t *cmem)
+clist_rld_init(stream_RLD_state *ss)
 {
-    s_init_state((stream_state *)ss, &s_RLD_template, (gs_memory_t *)0, cmem);
+    s_init_state((stream_state *)ss, &s_RLD_template, (gs_memory_t *)0);
     s_RLD_set_defaults_inline(ss);
     s_RLD_init_inline(ss);
 }

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /*
  * Microsoft Windows 3.n driver for Ghostscript,
  * using device-dependent bitmap.
@@ -593,10 +594,10 @@ win_maketools(gx_device_win_ddb * wdev, HDC hdc)
     int i;
 
     wdev->hpensize = (1 << (wdev->color_info.depth)) * sizeof(HPEN);
-    wdev->hpens = (HPEN *) gs_malloc(1, wdev->hpensize,
+    wdev->hpens = (HPEN *) gs_malloc(wdev->memory, 1, wdev->hpensize,
 				     "win_maketools(pens)");
     wdev->hbrushsize = (1 << (wdev->color_info.depth)) * sizeof(HBRUSH);
-    wdev->hbrushs = (HBRUSH *) gs_malloc(1, wdev->hbrushsize,
+    wdev->hbrushs = (HBRUSH *) gs_malloc(wdev->memory, 1, wdev->hbrushsize,
 					 "win_maketools(brushes)");
     if (wdev->hpens && wdev->hbrushs) {
 	for (i = 0; i < wdev->nColors; i++)
@@ -620,8 +621,8 @@ win_destroytools(gx_device_win_ddb * wdev)
 	DeleteObject(wdev->hpens[i]);
 	DeleteObject(wdev->hbrushs[i]);
     }
-    gs_free((char *)wdev->hbrushs, 1, wdev->hbrushsize,
+    gs_free(wdev->memory, (char *)wdev->hbrushs, 1, wdev->hbrushsize,
 	    "win_destroytools(brushes)");
-    gs_free((char *)wdev->hpens, 1, wdev->hpensize,
+    gs_free(wdev->memory, (char *)wdev->hpens, 1, wdev->hpensize,
 	    "win_destroytools(pens)");
 }

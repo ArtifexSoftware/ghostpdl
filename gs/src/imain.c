@@ -1,17 +1,19 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Common support for interpreter front ends */
+#include "malloc_.h"
 #include "memory_.h"
 #include "string_.h"
 #include "ghost.h"
@@ -22,6 +24,7 @@
 #include "gsutil.h"		/* for bytes_compare */
 #include "gxdevice.h"
 #include "gxalloc.h"
+#include "gxiodev.h"		/* for iodev struct */
 #include "gzstate.h"
 #include "ierrors.h"
 #include "oper.h"
@@ -44,6 +47,7 @@
 #include "isave.h"		/* for prototypes */
 #include "interp.h"
 #include "ivmspace.h"
+#include "idisp.h"		/* for setting display device callback */
 #include "iplugin.h"
 
 /* ------ Exported data ------ */
@@ -85,7 +89,7 @@ gs_main_alloc_instance(gs_memory_t *mem)
 /* ------ Forward references ------ */
 
 private int gs_run_init_file(gs_main_instance *, int *, ref *);
-private void print_resource_usage(const gs_main_instance *,
+void print_resource_usage(const gs_main_instance *,
 				  gs_dual_memory_t *, const char *);
 
 /* ------ Initialization ------ */
@@ -111,14 +115,14 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 #   else
        /* plmain settings remain in effect */
 #   endif
-    gp_get_usertime(minst->heap, minst->base_time);
+    gp_get_usertime(minst->base_time);
 
     /* Initialize the file search paths. */
     paths = (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
 					"lib_path array");
     if (paths == 0) {
 	gs_lib_finit(1, e_VMerror, minst->heap);
-	return_error(minst->heap, e_VMerror);
+	return_error(e_VMerror);
     }
     make_array(&minst->lib_path.container, avm_foreign, max_lib_paths,
 	       (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
@@ -137,6 +141,9 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 int
 gs_main_init1(gs_main_instance * minst)
 {
+    i_ctx_t *i_ctx_p;
+    extern init_proc(gs_iodev_init);
+
     if (minst->init_done < 1) {
 	gs_dual_memory_t idmem;
 	int code =
@@ -155,7 +162,7 @@ gs_main_init1(gs_main_instance * minst)
 					idmem.space_system);
 
 	    if (nt == 0)
-		return_error(mem, e_VMerror);
+		return_error(e_VMerror);
 	    mem->gs_lib_ctx->gs_name_table = nt;
 	    code = gs_register_struct_root(mem, NULL,
 					   (void **)&mem->gs_lib_ctx->gs_name_table,
@@ -167,6 +174,10 @@ gs_main_init1(gs_main_instance * minst)
 	if (code < 0)
 	    return code;
         code = i_plugin_init(minst->i_ctx_p);
+	if (code < 0)
+	    return code;
+	i_ctx_p = minst->i_ctx_p;
+	code = gs_iodev_init(imemory);
 	if (code < 0)
 	    return code;
 	minst->init_done = 1;
@@ -188,18 +199,13 @@ init2_make_string_array(i_ctx_t *i_ctx_p, const ref * srefs, const char *aname)
 }
 
 /*
- * Invoke the interpreter, handling stdio callouts
- * e_NeedStdin, e_NeedStdout and e_NeedStderr.
- * We don't yet pass callouts all the way out because they
- * occur within gs_main_init2() and swproc().
+ * Invoke the interpreter. This layer doesn't do much (previously stdio
+ * callouts were handled here instead of in the stream processing.
  */
 private int
 gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors, 
 	int *pexit_code, ref * perror_object)
 {
-    i_ctx_t *i_ctx_p;
-    ref refnul;
-    ref refpop;
     int code;
 
     /* set interpreter pointer to lib_path */
@@ -207,96 +213,6 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 
     code = gs_interpret(&minst->i_ctx_p, pref, 
 		user_errors, pexit_code, perror_object);
-    while ((code == e_NeedStdin) || (code == e_NeedStdout) || 
-	(code == e_NeedStderr)) {
-        i_ctx_p = minst->i_ctx_p;
-	if (code == e_NeedStdout) {
-	    /*
-	     * On entry:
-	     *  esp[0]  = string, data to write to stdout
-	     *  esp[-1] = bool, EOF (ignored)
-	     *  esp[-2] = array, procedure (ignored)
-	     *  esp[-3] = file, stdout stream
-	     * We print the string then pop these 4 items.
-	     */
-	    if (r_type(&esp[0]) == t_string) {
-		const char *str = (const char *)(esp[0].value.const_bytes); 
-		int count = esp[0].tas.rsize;
-		int rcode = 0;
-		if (str != NULL)
-		    rcode = outwrite(imemory, str, count);
-		if (rcode < 0)
-		    return_error(imemory, e_ioerror);
-	    }
-
-	    /* On return, we need to set 
-	     *  osp[-1] = string buffer, 
-	     *  osp[0] = file
-	     */
-	    gs_push_string(minst, (byte *)minst->stdout_buf, 
-		sizeof(minst->stdout_buf), false);
-	    gs_push_integer(minst, 0);	/* push integer */
-	    osp[0] = esp[-3];		/* then replace with file */
-	    /* remove items from execution stack */
-	    esp -= 4;
-	}
-	else if (code == e_NeedStderr) {
-	    if (r_type(&esp[0]) == t_string) {
-		const char *str = (const char *)(esp[0].value.const_bytes); 
-		int count = esp[0].tas.rsize;
-		int rcode = 0;
-		if (str != NULL)
-		    rcode = errwrite(imemory, str, count);
-		if (rcode < 0)
-		    return_error(imemory, e_ioerror);
-	    }
-	    gs_push_string(minst, (byte *)minst->stderr_buf, 
-		sizeof(minst->stderr_buf), false);
-	    gs_push_integer(minst, 0);
-	    osp[0] = esp[-3];
-	    esp -= 4;
-	}
-	else if (code == e_NeedStdin) {
-	    int count = sizeof(minst->stdin_buf);
-	    /*
-	     * On entry:
-	     *  esp[0]  = array, procedure (ignored)
-	     *  esp[-1] = file, stdin stream
-	     * We read from stdin then pop these 2 items.
-	     */
-	    if (minst->heap->gs_lib_ctx->stdin_fn)
-		count = (*minst->heap->gs_lib_ctx->stdin_fn)
-		    (minst->heap->gs_lib_ctx->caller_handle, 
-		     minst->stdin_buf, count);
-	    else
-		count = gp_stdin_read(minst->stdin_buf, count, 
-				      minst->heap->gs_lib_ctx->stdin_is_interactive,
-				      minst->heap->gs_lib_ctx->fstdin);
-	    if (count < 0)
-	        return_error(imemory, e_ioerror);
-
-	    /* On return, we need to set 
-	     *  osp[-1] = string buffer, 
-	     *  osp[0] = file
-	     */
-	    gs_push_string(minst, (byte *)minst->stdin_buf, count, false);
-	    gs_push_integer(minst, 0);	/* push integer */
-	    osp[0] = esp[-1];		/* then replace with file */
-	    /* remove items from execution stack */
-	    esp -= 2;
-	}
-	/*
-	 * To resume the interpreter, we call gs_interpret with a null ref.
-	 * This copies the literal null onto the operand stack.
-	 * To remove this we push a zpop onto the execution stack.
-	 */
-	make_null(&refnul);
-	make_oper(&refpop, 0, zpop); 
-	esp += 1;
-	*esp = refpop;
-	code = gs_interpret(&minst->i_ctx_p, &refnul, 
-		    user_errors, pexit_code, perror_object);
-    }
     return code;
 }
 
@@ -316,19 +232,6 @@ gs_main_init2(gs_main_instance * minst)
 	code = zop_init(i_ctx_p);
 	if (code < 0)
 	    return code;
-	{
-	    /*
-	     * gs_iodev_init has to be called here (late), rather than
-	     * with the rest of the library init procedures, because of
-	     * some hacks specific to MS Windows for patching the
-	     * stdxxx IODevices.
-	     */
-	    extern init_proc(gs_iodev_init);
-
-	    code = gs_iodev_init(imemory);
-	    if (code < 0)
-		return code;
-	}
 	code = op_init(i_ctx_p);	/* requires obj_init */
 	if (code < 0)
 	    return code;
@@ -348,12 +251,22 @@ gs_main_init2(gs_main_instance * minst)
 	    return code;
 	minst->init_done = 2;
 	i_ctx_p = minst->i_ctx_p; /* init file may change it */
-	/* NB this is to be done with device parameters  
-	if (minst->display)
-	    code = display_set_callback(minst, minst->display);
+	/* NB this is to be done with device parameters
+	 * both minst->display and  display_set_callback() are going away
 	*/
-	if (code < 0)
+	if (minst->display)
+	if ((code = display_set_callback(minst, minst->display)) < 0)
 	    return code;
+
+#ifndef PSI_INCLUDED
+	if ((code = gs_main_run_string(minst, 
+		"JOBSERVER "
+		" { false 0 .startnewjob } "
+		" { NOOUTERSAVE not { save pop } if } "
+		"ifelse", 0, &exit_code, 
+		&error_object)) < 0)
+	    return code;
+#endif /* PSI_INCLUDED */
     }
     if (gs_debug_c(':'))
 	print_resource_usage(minst, &gs_imemory, "Start");
@@ -366,7 +279,7 @@ gs_main_init2(gs_main_instance * minst)
 /* Internal routine to add a set of directories to a search list. */
 /* Returns 0 or an error code. */
 private int
-file_path_add(const gs_memory_t *mem, gs_file_path *pfp, const char *dirs)
+file_path_add(gs_file_path * pfp, const char *dirs)
 {
     uint len = r_size(&pfp->list);
     const char *dpath = dirs;
@@ -380,7 +293,7 @@ file_path_add(const gs_memory_t *mem, gs_file_path *pfp, const char *dirs)
 	    npath++;
 	if (npath > dpath) {
 	    if (len == r_size(&pfp->container))
-		return_error(mem, e_limitcheck);
+		return_error(e_limitcheck);
 	    make_const_string(&pfp->container.value.refs[len],
 			      avm_foreign | a_readonly,
 			      npath - dpath, (const byte *)dpath);
@@ -408,7 +321,7 @@ gs_main_add_lib_path(gs_main_instance * minst, const char *lpath)
 
     r_set_size(&minst->lib_path.list, minst->lib_path.count +
 	       first_is_here);
-    code = file_path_add(minst->heap, &minst->lib_path, lpath);
+    code = file_path_add(&minst->lib_path, lpath);
     minst->lib_path.count = r_size(&minst->lib_path.list) - first_is_here;
     if (code < 0)
 	return code;
@@ -417,9 +330,11 @@ gs_main_add_lib_path(gs_main_instance * minst, const char *lpath)
 
 /* ------ Execution ------ */
 
+extern_gx_io_device_table();
+
 /* Complete the list of library search paths. */
-/* This may involve adding or removing the current directory */
-/* as the first element. */
+/* This may involve adding the %rom%lib/ device path (for COMPILE_INITS) as well */
+/* as adding or removing the current directory as the first element. */
 int
 gs_main_set_lib_paths(gs_main_instance * minst)
 {
@@ -427,8 +342,9 @@ gs_main_set_lib_paths(gs_main_instance * minst)
     int first_is_here =
 	(r_size(&minst->lib_path.list) != 0 &&
 	 paths[0].value.bytes == (const byte *)gp_current_directory_name ? 1 : 0);
-    int count = minst->lib_path.count;
     int code = 0;
+    int count = minst->lib_path.count;
+    int i, have_rom_device = 0;
 
     if (minst->search_here_first) {
 	if (!(first_is_here ||
@@ -450,9 +366,21 @@ gs_main_set_lib_paths(gs_main_instance * minst)
     r_set_size(&minst->lib_path.list,
 	       count + (minst->search_here_first ? 1 : 0));
     if (minst->lib_path.env != 0)
-	code = file_path_add(minst->heap, &minst->lib_path, minst->lib_path.env);
+	code = file_path_add(&minst->lib_path, minst->lib_path.env);
+    /* now put the %rom%lib/ device path before the gs_lib_default_path on the list */
+    for (i = 0; i < gx_io_device_table_count; i++) {
+	const gx_io_device *iodev = gx_io_device_table[i];
+	const char *dname = iodev->dname;
+
+	if (dname && strlen(dname) == 5 && !memcmp("%rom%", dname, 5)) {
+	    have_rom_device = 1;
+	    break;
+	}
+    }
+    if (have_rom_device && code >= 0)
+	code = file_path_add(&minst->lib_path, "%rom%lib/");
     if (minst->lib_path.final != 0 && code >= 0)
-	code = file_path_add(minst->heap, &minst->lib_path, minst->lib_path.final);
+	code = file_path_add(&minst->lib_path, minst->lib_path.final);
     return code;
 }
 
@@ -463,15 +391,14 @@ gs_main_lib_open(gs_main_instance * minst, const char *file_name, ref * pfile)
     /* This is a separate procedure only to avoid tying up */
     /* extra stack space while running the file. */
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
-#define maxfn 200
-    byte fn[maxfn];
+#define maxfn 2048
+    char fn[maxfn];
     uint len;
 
-    return lib_file_open( &minst->lib_path,
-			  NULL /* Don't check permissions here, because permlist 
+    return lib_file_open(&minst->lib_path, imemory,
+			 NULL, /* Don't check permissions here, because permlist 
 				  isn't ready running init files. */
-			  , file_name, strlen(file_name), fn, maxfn,
-			  &len, pfile, imemory);
+			  file_name, strlen(file_name), fn, maxfn, &len, pfile);
 }
 
 /* Open and execute a file. */
@@ -491,8 +418,8 @@ gs_main_run_file_open(gs_main_instance * minst, const char *file_name, ref * pfr
 {
     gs_main_set_lib_paths(minst);
     if (gs_main_lib_open(minst, file_name, pfref) < 0) {
-	eprintf1(minst->heap, "Can't find initialization file %s.\n", file_name);
-	return_error(minst->heap, e_Fatal);
+	eprintf1("Can't find initialization file %s.\n", file_name);
+	return_error(e_Fatal);
     }
     r_set_attrs(pfref, a_execute + a_executable);
     return 0;
@@ -525,10 +452,9 @@ gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
     code = scan_token(i_ctx_p, ifile.value.pfile, &first_token,
 		      &state);
     if (code != 0 || !r_has_type(&first_token, t_integer)) {
-	eprintf1(minst->heap, 
-		 "Initialization file %s does not begin with an integer.\n", gs_init_file);
+	eprintf1("Initialization file %s does not begin with an integer.\n", gs_init_file);
 	*pexit_code = 255;
-	return_error(imemory, e_Fatal);
+	return_error(e_Fatal);
     }
     *++osp = first_token;
     r_set_attrs(&ifile, a_executable);
@@ -663,7 +589,7 @@ private int
 pop_value(i_ctx_t *i_ctx_p, ref * pvalue)
 {
     if (!ref_stack_count(&o_stack))
-	return_error(imemory, e_stackunderflow);
+	return_error(e_stackunderflow);
     *pvalue = *ref_stack_index(&o_stack, 0L);
     return 0;
 }
@@ -677,7 +603,7 @@ gs_pop_boolean(gs_main_instance * minst, bool * result)
 
     if (code < 0)
 	return code;
-    check_type_only(imemory, vref, t_boolean);
+    check_type_only(vref, t_boolean);
     *result = vref.value.boolval;
     ref_stack_pop(&o_stack, 1);
     return 0;
@@ -692,7 +618,7 @@ gs_pop_integer(gs_main_instance * minst, long *result)
 
     if (code < 0)
 	return code;
-    check_type_only(imemory, vref, t_integer);
+    check_type_only(vref, t_integer);
     *result = vref.value.intval;
     ref_stack_pop(&o_stack, 1);
     return 0;
@@ -715,7 +641,7 @@ gs_pop_real(gs_main_instance * minst, float *result)
 	    *result = (float)(vref.value.intval);
 	    break;
 	default:
-	    return_error(imemory, e_typecheck);
+	    return_error(e_typecheck);
     }
     ref_stack_pop(&o_stack, 1);
     return 0;
@@ -732,7 +658,7 @@ gs_pop_string(gs_main_instance * minst, gs_string * result)
 	return code;
     switch (r_type(&vref)) {
 	case t_name:
-	    name_string_ref(imemory, &vref, &vref);
+	    name_string_ref(minst->heap, &vref, &vref);
 	    code = 1;
 	    goto rstr;
 	case t_string:
@@ -741,7 +667,7 @@ gs_pop_string(gs_main_instance * minst, gs_string * result)
 	    result->size = r_size(&vref);
 	    break;
 	default:
-	    return_error(imemory, e_typecheck);
+	    return_error(e_typecheck);
     }
     ref_stack_pop(&o_stack, 1);
     return code;
@@ -775,7 +701,7 @@ private char *gs_main_tempnames(gs_main_instance *minst)
 	/* get lengths of temporary filenames */
 	idict = dict_first(tempfiles);
 	while ((idict = dict_next(tempfiles, idict, &keyval[0])) >= 0) {
-	    if (obj_string_data(imemory, &keyval[0], &data, &size) >= 0)
+	    if (obj_string_data(minst->heap, &keyval[0], &data, &size) >= 0)
 		len += size + 1;
 	}
 	if (len != 0)
@@ -786,7 +712,7 @@ private char *gs_main_tempnames(gs_main_instance *minst)
 	    idict = dict_first(tempfiles);
 	    i = 0;
 	    while ((idict = dict_next(tempfiles, idict, &keyval[0])) >= 0) {
-		if (obj_string_data(imemory, &keyval[0], &data, &size) >= 0) {
+	        if (obj_string_data(minst->heap, &keyval[0], &data, &size) >= 0) {
 		    memcpy(tempnames+i, (const char *)data, size);
 		    i+= size;
 		    tempnames[i++] = '\0';
@@ -798,7 +724,7 @@ private char *gs_main_tempnames(gs_main_instance *minst)
 }
 
 /* Free all resources and return. */
-void
+int
 gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 {
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
@@ -806,7 +732,8 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     ref error_object;
     char *tempnames;
 
-    // NB need to free gs_name_table
+    /* NB: need to free gs_name_table
+     */
 
     /*
      * Previous versions of this code closed the devices in the
@@ -820,14 +747,34 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      * data before destruction. pdfwrite needs so.
      */
     if (minst->init_done >= 1) {
+	int code = 0;
+
+	if (idmemory->reclaim != 0) {
+	    code = interp_reclaim(&minst->i_ctx_p, avm_global);
+
+	    if (code < 0) {
+		eprintf1("ERROR %d reclaiming the memory while the interpreter finalization.\n", code);
+		return e_Fatal;
+	    }
+	    i_ctx_p = minst->i_ctx_p; /* interp_reclaim could change it. */
+	}
 	if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
 	    gx_device *pdev = i_ctx_p->pgs->device;
-	    
+
+	    /* make sure device doesn't isn't freed by .uninstalldevice */
+	    rc_adjust(pdev, 1, "gs_main_finit");	
+	    /* deactivate the device just before we close it for the last time */
+	    gs_main_run_string(minst, 
+		/* we need to do the 'quit' so we don't loop for input (double quit) */
+		".uninstallpagedevice "
+		"serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemvar exec",
+		0 , &exit_code, &error_object);
 	    code = gs_closedevice(pdev);
 	    if (code < 0)
-		eprintf2(minst->heap, 
-			 "ERROR %d closing the device.\n", code, i_ctx_p->pgs->device->dname);
-	    if (exit_status == 0)
+		eprintf2("ERROR %d closing %s device. See gs/src/ierrors.h for code explanation.\n",
+		    code, i_ctx_p->pgs->device->dname);
+	    rc_decrement(pdev, "gs_main_finit");		/* device might be freed */
+	    if (exit_status == 0 || exit_status == e_Quit)
 		exit_status = code;
 	}
     }
@@ -845,7 +792,9 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     if (minst->init_done >= 1) {
         gs_memory_t *mem_raw = i_ctx_p->memory.current->non_gc_memory;
         i_plugin_holder *h = i_ctx_p->plugin_list;
-        alloc_restore_all(idmemory);
+        code = alloc_restore_all(idmemory);
+	if (code < 0)
+	    eprintf1("ERROR %d while the final restore. See gs/src/ierrors.h for code explanation.\n", code);
         i_plugin_finit(mem_raw, h);
     }
     /* clean up redirected stdout */
@@ -867,36 +816,39 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	free(tempnames);
     }
     gs_lib_finit(exit_status, code, minst->heap);
+    return exit_status;
 }
-void
+int
 gs_to_exit_with_code(const gs_memory_t *mem, int exit_status, int code)
 {
-    gs_main_finit(get_minst_from_memory(mem), exit_status, code);
+    return gs_main_finit(get_minst_from_memory(mem), exit_status, code);
 }
-void
+int
 gs_to_exit(const gs_memory_t *mem, int exit_status)
 {
-    gs_to_exit_with_code(mem, exit_status, 0);
+    return gs_to_exit_with_code(mem, exit_status, 0);
 }
 void
 gs_abort(const gs_memory_t *mem)
 {
-    gs_to_exit(mem, 1);
-    /* it's fatal calling OS independent exit() */
+    /* In previous versions, we tried to do a cleanup (using gs_to_exit),
+     * but more often than not, that will trip another abort and create
+     * an infinite recursion. So just abort without trying to cleanup.
+     */
     gp_do_exit(1);	
 }
 
 /* ------ Debugging ------ */
 
 /* Print resource usage statistics. */
-private void
+void
 print_resource_usage(const gs_main_instance * minst, gs_dual_memory_t * dmem,
 		     const char *msg)
 {
     ulong allocated = 0, used = 0;
     long utime[2];
 
-    gp_get_usertime(minst->heap, utime);
+    gp_get_usertime(utime);
     {
 	int i;
 
@@ -919,7 +871,7 @@ print_resource_usage(const gs_main_instance * minst, gs_dual_memory_t * dmem,
 	    }
 	}
     }
-    dprintf4(minst->heap, "%% %s time = %g, memory allocated = %lu, used = %lu\n",
+    dprintf4("%% %s time = %g, memory allocated = %lu, used = %lu\n",
 	     msg, utime[0] - minst->base_time[0] +
 	     (utime[1] - minst->base_time[1]) / 1000000000.0,
 	     allocated, used);
@@ -932,11 +884,11 @@ gs_main_dump_stack(gs_main_instance *minst, int code, ref * perror_object)
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
 
     zflush(i_ctx_p);		/* force out buffered output */
-    dprintf1(minst->heap, "\nUnexpected interpreter error %d.\n", code);
+    dprintf1("\nUnexpected interpreter error %d.\n", code);
     if (perror_object != 0) {
-	dputs(minst->heap, "Error object: ");
+	dputs("Error object: ");
 	debug_print_ref(minst->heap, perror_object);
-	dputc(minst->heap, '\n');
+	dputc('\n');
     }
     debug_dump_stack(minst->heap, &o_stack, "Operand stack");
     debug_dump_stack(minst->heap, &e_stack, "Execution stack");

@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Internal definitions for shading rendering */
 
 #ifndef gxshade_INCLUDED
@@ -110,11 +111,13 @@ struct shade_coord_stream_s {
     stream *s;			/* DataSource or &ds */
     uint bits;			/* shifted bits of current byte */
     int left;			/* # of bits left in bits */
+    bool ds_EOF;                /* The 'ds' stream reached EOF. */
     const gs_shading_mesh_params_t *params;
     const gs_matrix_fixed *pctm;
     int (*get_value)(shade_coord_stream_t *cs, int num_bits, uint *pvalue);
     int (*get_decoded)(shade_coord_stream_t *cs, int num_bits,
 		       const float decode[2], float *pvalue);
+    bool (*is_eod)(const shade_coord_stream_t *cs);
 };
 
 /* Define one vertex of a mesh. */
@@ -122,6 +125,9 @@ typedef struct mesh_vertex_s {
     gs_fixed_point p;
     float cc[GS_CLIENT_COLOR_MAX_COMPONENTS];
 } mesh_vertex_t;
+
+/* Define a structure for mesh or patch vertex. */
+typedef struct shading_vertex_s shading_vertex_t;
 
 /* Initialize a packed value stream. */
 void shade_next_init(shade_coord_stream_t * cs,
@@ -139,7 +145,7 @@ int shade_next_coords(shade_coord_stream_t * cs, gs_fixed_point * ppt,
 int shade_next_color(shade_coord_stream_t * cs, float *pc);
 
 /* Get the next vertex for a mesh element. */
-int shade_next_vertex(shade_coord_stream_t * cs, mesh_vertex_t * vertex);
+int shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex);
 
 /*
    Currently, all shading fill procedures follow the same algorithm:
@@ -192,17 +198,12 @@ void shade_init_fill_state(shading_fill_state_t * pfs,
 			   const gs_shading_t * psh, gx_device * dev,
 			   gs_imager_state * pis);
 
-/* Transform a bounding box into device space. */
-int shade_bbox_transform2fixed(const gs_rect * rect,
-			       const gs_imager_state * pis,
-			       gs_fixed_rect * rfixed);
-
 /* Fill one piece of a shading. */
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
 #endif
 int shade_fill_path(const shading_fill_state_t * pfs, gx_path * ppath,
-		    gx_device_color * pdevc);
+		    gx_device_color * pdevc, const gs_fixed_point *fill_adjust);
 
 #endif /* gxshade_INCLUDED */

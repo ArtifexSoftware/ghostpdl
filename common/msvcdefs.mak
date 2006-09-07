@@ -66,6 +66,27 @@ SHAREDBASE=$(DEVSTUDIO)\Vc7\
 !endif
 !endif
 
+!if $(MSVC_VERSION) == 8
+! ifndef DEVSTUDIO
+!ifdef WIN64
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 8
+!else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 8
+!endif
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC
+!ifdef WIN64
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\AMD64"
+!endif
+!endif
+!endif
+
 # Some environments don't want to specify the path names for the tools at all.
 # Typical definitions for such an environment would be:
 #   MSINCDIR= LIBDIR= COMP=cl COMPAUX=cl RCOMP=rc LINK=link

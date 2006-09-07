@@ -1,16 +1,17 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
+  
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PostScript Level 1 additional path operators */
 #include "memory_.h"
 #include "ghost.h"
@@ -49,7 +50,7 @@ common_arc(i_ctx_t *i_ctx_p,
 {
     os_ptr op = osp;
     double xyra[5];		/* x, y, r, ang1, ang2 */
-    int code = num_params(imemory, op, 5, xyra);
+    int code = num_params(op, 5, xyra);
 
     if (code < 0)
 	return code;
@@ -95,7 +96,7 @@ common_arct(i_ctx_t *i_ctx_p, float *tanxy)
 {
     os_ptr op = osp;
     double args[5];		/* x1, y1, x2, y2, r */
-    int code = num_params(imemory, op, 5, args);
+    int code = num_params(op, 5, args);
 
     if (code < 0)
 	return code;
@@ -139,22 +140,42 @@ zclippath(i_ctx_t *i_ctx_p)
 
 /* <bool> .pathbbox <llx> <lly> <urx> <ury> */
 private int
-zpathbbox(i_ctx_t *i_ctx_p)
+z1pathbbox(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_rect box;
     int code;
 
-    check_type(imemory, *op, t_boolean);
+    check_type(*op, t_boolean);
     code = gs_upathbbox(igs, &box, op->value.boolval);
     if (code < 0)
 	return code;
-    push(imemory, 3);
+    push(3);
     make_real(op - 3, box.p.x);
     make_real(op - 2, box.p.y);
     make_real(op - 1, box.q.x);
     make_real(op, box.q.y);
     return 0;
+}
+
+/*
+ * In order to match Adobe output on a Genoa test, pathbbox must be an
+ * operator, not an operator procedure, even though it has a trivial
+ * definition as a procedure.
+ */
+private int
+zpathbbox(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code;
+
+    push(1);
+    make_false(op);
+    code = z1pathbbox(i_ctx_p);
+    if (code < 0) {
+	pop(1);			/* remove the Boolean */
+    }
+    return code;
 }
 
 /* <moveproc> <lineproc> <curveproc> <closeproc> pathforall - */
@@ -167,13 +188,13 @@ zpathforall(i_ctx_t *i_ctx_p)
     gs_path_enum *penum;
     int code;
 
-    check_proc(imemory, op[-3]);
-    check_proc(imemory, op[-2]);
-    check_proc(imemory, op[-1]);
-    check_proc(imemory, *op);
+    check_proc(op[-3]);
+    check_proc(op[-2]);
+    check_proc(op[-1]);
+    check_proc(*op);
     check_estack(8);
     if ((penum = gs_path_enum_alloc(imemory, "pathforall")) == 0)
-	return_error(imemory, e_VMerror);
+	return_error(e_VMerror);
     code = gs_path_enum_init(penum, igs);
     if (code < 0) {
 	ifree_object(penum, "path_cleanup");
@@ -200,7 +221,7 @@ path_continue(i_ctx_t *i_ctx_p)
 
     /* Make sure we have room on the o-stack for the worst case */
     /* before we enumerate the next path element. */
-    check_ostack(imemory, 6);		/* 3 points for curveto */
+    check_ostack(6);		/* 3 points for curveto */
     code = gs_path_enum_next(penum, ppts);
     switch (code) {
 	case 0:		/* all done */
@@ -268,7 +289,8 @@ const op_def zpath1_op_defs[] =
     {"4pathforall", zpathforall},
     {"0reversepath", zreversepath},
     {"0strokepath", zstrokepath},
-    {"1.pathbbox", zpathbbox},
+    {"1.pathbbox", z1pathbbox},
+    {"0pathbbox", zpathbbox},
 		/* Internal operators */
     {"0%path_continue", path_continue},
     op_def_end(0)
