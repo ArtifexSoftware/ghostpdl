@@ -11,8 +11,7 @@
 # Define the name of this makefile.
 MAKEFILE+= ../language_switch/pspcl6_gcc.mak
 
-# Pick (uncomment) one font system technology
-# afs (Artifex/gs native) or ufst (AGFA UFST)
+# Choose Artifex or UFST font scalar
 PL_SCALER?=afs
 #PL_SCALER?=ufst
 
@@ -87,14 +86,13 @@ PSICFLAGS?=-DPSI_INCLUDED
 # based on application build.  PSI_INCLUDED is and example of this.
 EXPERIMENT_CFLAGS?=
 
-GCFLAGS?=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG $(PSICFLAGS) $(EXPERIMENT_CFLAGS)
+GCFLAGS?=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG $(PSICFLAGS) $(EXPERIMENT_CFLAGS) $(HAVE_STDINT_H_DEFINE) $(GX_COLOR_INDEX_DEFINE) $(FAPI_DEFS)
 CFLAGS?=-g -O0 $(GCFLAGS) $(XCFLAGS) $(PSICFLAGS)
 
 ifeq ($(PL_SCALER), ufst)
 FEATURE_DEVS    ?= \
 		  $(DD)psl3.dev		\
 		  $(DD)pdf.dev		\
-	          $(DD)libpng_$(SHARE_LIBPNG).dev \
 		  $(DD)dpsnext.dev	\
                   $(DD)htxlib.dev	\
                   $(DD)roplib.dev	\
