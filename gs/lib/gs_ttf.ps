@@ -493,7 +493,7 @@
     get
   } {
     exch {                % o ()
-      2 copy length gt {
+      2 copy length ge {
         length sub
       } {
         exch get exit
@@ -1374,12 +1374,17 @@ mark
         exch
       } if
       2 index 1 index known
-      1 index /.notdef ne and {	%		ignore extra .notdef glyphs
-		% The same name maps to more than one glyph.
-		% Change the name.
-	pop dup .nname 3 index 2 index 2 index put
-      } if
-      2 index exch 3 -1 roll put
+      { dup /.notdef eq {
+	  pop pop	% discard duplicate .notdef glyphs
+        } {
+	  % The same name maps to more than one glyph. Change the name.
+	  pop dup .nname 3 index 2 index 2 index put
+          2 index exch 3 -1 roll put
+        } 
+        ifelse
+      } {
+        2 index exch 3 -1 roll put	% unique name
+      } ifelse
     } for exch pop
 		% If there is no .notdef entry, map it to glyph 0.
   dup /.notdef known not { dup /.notdef 0 put } if
