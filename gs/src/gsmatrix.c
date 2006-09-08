@@ -124,17 +124,22 @@ gs_matrix_invert(const gs_matrix * pm, gs_matrix * pmr)
 	pmr->yx = 0.0;
 	pmr->ty = -(pmr->yy = 1.0 / pm->yy) * pm->ty;
     } else {
-	double det = pm->xx * pm->yy - pm->xy * pm->yx;
-	double mxx = pm->xx, mtx = pm->tx;
+	float mxx = pm->xx, myy = pm->yy, mxy = pm->xy, myx = pm->yx;
+        float mtx = pm->tx, mty = pm->ty;
+	float det = (float)(mxx * myy) - (float)(mxy * myx);
 
+        /*
+         * We are doing the math as floats instead of doubles to reproduce
+	 * the results in page 1 of CET 10-09.ps
+         */
 	if (det == 0)
 	    return_error(gs_error_undefinedresult);
-	pmr->xx = pm->yy / det;
-	pmr->xy = -pm->xy / det;
-	pmr->yx = -pm->yx / det;
-	pmr->yy = mxx / det;	/* xx is already changed */
-	pmr->tx = -(mtx * pmr->xx + pm->ty * pmr->yx);
-	pmr->ty = -(mtx * pmr->xy + pm->ty * pmr->yy);	/* tx ditto */
+	pmr->xx = myy / det;
+	pmr->xy = -mxy / det;
+	pmr->yx = -myx / det;
+	pmr->yy = mxx / det;
+	pmr->tx = (((float)(mty * myx) - (float)(mtx * myy))) / det;
+	pmr->ty = (((float)(mtx * mxy) - (float)(mty * mxx))) / det;
     }
     return 0;
 }
@@ -200,12 +205,16 @@ int
 gs_point_transform(floatp x, floatp y, const gs_matrix * pmat,
 		   gs_point * ppt)
 {
-    ppt->x = x * pmat->xx + pmat->tx;
-    ppt->y = y * pmat->yy + pmat->ty;
+    /*
+     * The float casts are there to reproduce results in CET 10-01.ps
+     * page 4.
+     */
+    ppt->x = (float)(x * pmat->xx) + pmat->tx;
+    ppt->y = (float)(y * pmat->yy) + pmat->ty;
     if (!is_fzero(pmat->yx))
-	ppt->x += y * pmat->yx;
+	ppt->x += (float)(y * pmat->yx);
     if (!is_fzero(pmat->xy))
-	ppt->y += x * pmat->xy;
+	ppt->y += (float)(x * pmat->xy);
     return 0;
 }
 

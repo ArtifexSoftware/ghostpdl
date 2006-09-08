@@ -27,7 +27,7 @@
 #include "gxdevice.h"
 
 /* Choose whether to enable the rounding code in update_ctm. */
-#define ROUND_CTM_FIXED 1
+#define ROUND_CTM_FIXED 0
 
 /* Forward declarations */
 #ifdef DEBUG
@@ -229,8 +229,8 @@ gs_translate(gs_state * pgs, floatp dx, floatp dy)
 
     if ((code = gs_distance_transform(dx, dy, &ctm_only(pgs), &pt)) < 0)
 	return code;
-    pt.x += pgs->ctm.tx;
-    pt.y += pgs->ctm.ty;
+    pt.x = (float)pt.x + pgs->ctm.tx;
+    pt.y = (float)pt.y + pgs->ctm.ty;
     update_ctm(pgs, pt.x, pt.y);
 #ifdef DEBUG
     if (gs_debug_c('x'))
