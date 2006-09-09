@@ -226,9 +226,10 @@ ps_impl_set_device(
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
     gs_state *pgs = psi->minst->i_ctx_p->pgs;
 
-    gs_opendevice(device);
     /* Set the device into the gstate */
     code = gs_setdevice_no_erase(pgs, device);
+    if (code >= 0 )
+	code = gs_erasepage(pgs);
     return code;
 }
 
