@@ -427,6 +427,8 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
         do i++; while (resident_table[i].params.typeface_family != 0);
         pplfont->params = resident_table[i].params;
         memcpy(pplfont->character_complement, resident_table[i].character_complement, 8);
+        /* make it msl */
+        pplfont->character_complement[7] |= 7;
         if ( use_unicode_names_for_keys )
             pl_dict_put(pfontdict, resident_table[i].unicode_fontname, 32, pplfont );
         else {
@@ -450,10 +452,11 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
         return code;
 
     while (1) {
-        uint width = pl_get_uint16(char_data + 11);
-        uint height = pl_get_uint16(char_data + 13);
-        uint ccode_plus_header_plus_data = 1 + 16 + (((width + 7) >> 3) * height);
-        int code = pl_font_add_glyph(pplfont, *char_data, char_data + 1);
+
+        uint width = pl_get_uint16(char_data + 12);
+        uint height = pl_get_uint16(char_data + 14);
+        uint ccode_plus_header_plus_data = 2 + 16 + (((width + 7) >> 3) * height);
+        int code = pl_font_add_glyph(pplfont, pl_get_uint16(char_data), char_data + 2);
         if (code < 0)
             /* shouldn't happen */
             return -1;
@@ -461,7 +464,7 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
         char_data += ccode_plus_header_plus_data;
 
         /* char code 0 is end of table */
-        if (*char_data == 0)
+        if (pl_get_uint16(char_data) == 0)
             break;
     }
     return 0;
