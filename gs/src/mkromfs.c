@@ -213,7 +213,7 @@ void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len)
 	w2c.c.c2 = p[j++];
 	w2c.c.c3 = p[j++];
 	w2c.c.c4 = p[j++];
-	fprintf(out, "0x%08lx,", w2c.w);
+	fprintf(out, "0x%08x,", w2c.w);
 	if ((i & 7) == 7)
 	    fprintf(out, "\n\t");
     }
@@ -225,7 +225,7 @@ void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len)
         w2c.c.c2 = p[j+1];
       case 1:
         w2c.c.c1 = p[j];
-	fprintf(out, "0x%08lx,", w2c.w);
+	fprintf(out, "0x%08x,", w2c.w);
       default: ;
     }
     fprintf(out, "\n\t");
