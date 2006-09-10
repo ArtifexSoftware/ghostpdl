@@ -156,6 +156,7 @@ file_alloc_stream(gs_memory_t * mem, client_name_t cname)
 	return 0;
     s_init_ids(s);
     s->is_temp = 0;		/* not a temp stream */
+    s->foreign = 0;
     /*
      * Disable the stream now (in case we can't open the file,
      * or a filter init procedure fails) so that `restore' won't
