@@ -26,7 +26,7 @@ while [ $(( $highest_fail + 1 )) -lt $lowest_succeed ]; do
   test_rev=$(( ( ( $lowest_succeed - $highest_fail ) / 2 ) + $highest_fail ))
 
   echo -e "checking rev: $test_rev. svn checkout ...\c"
-  svn co -r$test_rev svn+ssh://svn.ghostscript.com/svn/ghostscript/trunk/gs gs.$test_rev > /dev/null 2>&1
+  svn export -q -r$test_rev svn+ssh://svn.ghostscript.com/svn/ghostscript/trunk/gs gs.$test_rev > /dev/null 2>&1
   cd gs.$test_rev
   echo -e "\b\b\bdone. autogen ...\c"
   ./autogen.sh > /dev/null 2>&1
