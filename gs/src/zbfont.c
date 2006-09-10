@@ -455,11 +455,19 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     gs_uid uid;
     int code;
     gs_font_base *pfont;
+    uint space = ialloc_space(idmemory);
 
     code = font_bbox_param(imemory, op, bbox);
     if (code < 0)
 	return code;
+    /*
+     * Make sure that we allocate uid
+     * in the same VM as the font dictionary
+     * (see build_gs_sub_font).
+     */
+    ialloc_set_space(idmemory, r_space(op));
     code = dict_uid_param(op, &uid, 0, imemory, i_ctx_p);
+    ialloc_set_space(idmemory, space);
     if (code < 0)
 	return code;
     if ((options & bf_UniqueID_ignored) && uid_is_UniqueID(&uid))
