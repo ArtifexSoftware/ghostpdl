@@ -147,6 +147,13 @@ zkshow(i_ctx_t *i_ctx_p)
     int code;
 
     check_proc(op[-1]);
+    /*
+     * Per PLRM Section xx.x, kshow is illegal if the current font is a
+     * composite font.  The graphics library does not have this limitation,
+     * so we check for it here.
+     */
+    if (gs_currentfont(igs)->FontType == ft_composite)
+	return_error(e_invalidfont);
     if ((code = op_show_setup(i_ctx_p, op)) != 0 ||
 	(code = gs_kshow_begin(igs, op->value.bytes, r_size(op),
 			       imemory, &penum)) < 0)
