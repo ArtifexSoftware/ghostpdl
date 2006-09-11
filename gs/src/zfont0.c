@@ -189,6 +189,20 @@ zbuildfont0(i_ctx_t *i_ctx_p)
     /* Fill in the font data */
     pdata = pfont_data(pfont);
     data.encoding_size = r_size(&pdata->Encoding);
+    /*
+     * Adobe interpreters apparently require that Encoding.size >= subs_size
+     * +1 (not sure whether the +1 only applies if the sum of the range
+     * sizes is less than the size of the code space).  The gs library
+     * doesn't require this -- it only gives an error if a show operation
+     * actually would reference beyond the end of the Encoding -- so we
+     * check this here rather than in the library.
+     */
+    if (data.FMapType == fmap_SubsVector) {
+	if (data.subs_size >= r_size(&pdata->Encoding)) {
+	    code = gs_note_error(e_rangecheck);
+	    goto fail;
+	}
+    }
     data.Encoding =
 	(uint *) ialloc_byte_array(data.encoding_size, sizeof(uint),
 				   "buildfont0(Encoding)");
@@ -234,7 +248,10 @@ zbuildfont0(i_ctx_t *i_ctx_p)
     if (code >= 0)
 	return code;
 fail:
-	/* Undo the insertion of the FID entry in the dictionary. */
+	/*
+	 * Undo the insertion of the FID entry in the dictionary.  Note that
+	 * some allocations (Encoding, FDepVector) are not undone.
+	 */
     if (r_has_type(&save_FID, t_null)) {
 	ref rnfid;
 
