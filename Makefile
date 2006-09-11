@@ -61,6 +61,9 @@ ls_clean:
 
 # shortcuts for common build types.
 
+ls_uproduct:
+	make -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" 
+
 ls_udebug:
 	make -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" debug
 
