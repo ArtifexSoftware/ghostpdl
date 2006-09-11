@@ -460,10 +460,17 @@ buildfontdict 3 /.buildfont3 cvx put
         } if
       } if
       exch {
-        dup /FontType get //buildfontdict exch get exec
+        dup /FontType get //buildfontdict exch get
       } {
-        .buildcidfont
+        {.buildcidfont}		% so it gets bound
       } ifelse
+  } stopped { $error /command get /invalidfont signalerror } if
+
+      % Execute the .buildxxxfontx outside the 'stopped', because we don't
+      % want its errors converted to invalidfont.
+      exec
+
+  {
 
       DISKFONTS {
         FontFileDirectory 2 index known {
@@ -475,13 +482,10 @@ buildfontdict 3 /.buildfont3 cvx put
         /ProvideUnicodeDecoding get exec
       } if
       readonly          % stack: name fontdict
-  } stopped { /.completefont cvx /invalidfont signalerror } if
-} bind odef
+  } stopped { $error /command get /invalidfont signalerror } if
+} bind def
 /definefont
- {		% Run .completefont in a stopped context so that we can
-	 	% indicate that any errors come from definefont.
-   /.completefont load stopped
-   { /definefont cvx $error /errorname get signalerror } if
+ { /definefont cvx {.completefont} .errorexec
                 % If the current allocation mode is global, also enter
                 % the font in LocalFontDirectory.
    .currentglobal
@@ -539,11 +543,7 @@ buildfontdict 3 /.buildfont3 cvx put
                 % Don't bind in definefont, since Level 2 redefines it.
       /definefont .systemvar exec
     }
-    {	   % Run .completefont in a stopped context so that we can
-	   % indicate that any errors come from findfont.
-      /.completefont load stopped
-      { /findfont cvx $error /errorname get signalerror } if
-      pop exch pop
+    { /findfont cvx {.completefont} .errorexec pop exch pop
     }
    ifelse
    exch .setglobal
