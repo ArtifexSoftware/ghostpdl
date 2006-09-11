@@ -993,8 +993,8 @@ cmd_put_color_mapping(gx_device_clist_writer * cldev,
     int code;
     const gx_device_halftone *pdht = pis->dev_ht;
 
-    /* Put out the halftone. */
-    if (pdht->id != cldev->device_halftone_id) {
+    /* Put out the halftone, if present. */
+    if (pdht && pdht->id != cldev->device_halftone_id) {
 	code = cmd_put_halftone(cldev, pdht);
 	if (code < 0)
 	    return code;
