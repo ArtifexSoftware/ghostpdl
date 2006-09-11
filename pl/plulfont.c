@@ -29,8 +29,9 @@
 #include "gxfont.h"
 
 /* for UFSTFONTDIR */
+#ifdef PSI_INCLUDED
 #include "uconfig.h"
-
+#endif
 /* agfa includes */
 
 #undef true
@@ -39,7 +40,72 @@
 #include "cgconfig.h"
 #include "ufstport.h"
 #include "shareinc.h"
+#ifdef PSI_INCLUDED
 #include "gxfapiu.h"
+#endif
+
+#ifndef PSI_INCLUDED
+
+private SW16  fcHndlAry[16];
+
+private int
+gx_UFST_open_static_fco(UB8 *pthnm, SW16 *handle)
+{
+    return CGIFfco_Open(FSA pthnm, handle);
+}
+
+#define MAX_OPEN_LIBRARIES  5   /* NB */
+#define BITMAP_WIDTH        1   /* must be 1, 2, 4 or 8 */
+
+private int
+gx_UFST_init(UB8* ufst_root_dir)
+{   
+    IFCONFIG config_block;
+    int status;
+    strcpy(config_block.ufstPath, ufst_root_dir);
+    strcat(config_block.ufstPath, "support");
+    strcpy(config_block.typePath, ufst_root_dir);
+    strcat(config_block.typePath, "support");
+    config_block.num_files = MAX_OPEN_LIBRARIES;  /* max open library files */
+    config_block.bit_map_width = BITMAP_WIDTH;    /* bitmap width 1, 2 or 4 */
+
+    /* the following part should be called only once at the beginning */
+    if ((status = CGIFinit(FSA0)) != 0) {
+        dprintf1 ("CGIFinit() error: %d\n", status);
+        return FALSE;
+    }
+    if ((status = CGIFconfig(FSA &config_block)) != 0) {
+        dprintf1 ("CGIFconfig() error: %d\n", status);
+        return FALSE;
+    }
+    if ((status = CGIFenter(FSA0)) != 0) {
+        dprintf1 ("CGIFenter() error: %u\n",status);
+        return FALSE;
+    }
+    return 1;
+}
+
+private int
+gx_UFST_find_fco_handle_by_name(pthnm)
+{
+    return 1;
+}
+
+private void
+gx_UFST_close_static_fcos(void)
+{
+    int i;
+    for (i = 0; fcHndlAry[i]; i++)
+        if (fcHndlAry[i])
+            CGIFfco_Close(FSA fcHndlAry[i]);
+}
+
+private void
+gx_UFST_fini(void)
+{
+    CGIFexit(FSA0);
+}
+#endif
 
 
 /* the line printer font NB FIXME use a header file. */
@@ -271,6 +337,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
         strcpy((char *)pthnm, ufst_root_dir);
         strcat((char *)pthnm, fcos[k]);
 	
+#ifdef PSI_INCLUDED
 	fcoHandle = gx_UFST_find_fco_handle_by_name(pthnm);
 
 	if (fcoHandle == 0 && 
@@ -278,7 +345,12 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
             dprintf2("CGIFfco_Open error %d for %s\n", status, pthnm);
             continue;
         }
-
+#else
+        if ((status = gx_UFST_open_static_fco(pthnm, &fcHndlAry[k])) != 0) {
+            dprintf2("CGIFfco_Open error %d for %s\n", status, pthnm);
+            continue;
+        }
+#endif
         /* enumerat the files in this fco */
         for ( i = 0;
               CGIFfco_Access(FSA pthnm, i, TFATRIB_KEY, &bSize, NULL) == 0;
@@ -315,11 +387,17 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                     ;
                 if ( strlen(resident_table[j].full_font_name) ) {
                     pl_font_t * plfont;
-                    int         err_cd = pl_load_mt_font( fcoHandle,
-                                                          pdir,
+                    int         err_cd = pl_load_mt_font( 
+#ifdef PSI_INCLUDED
+                                                         fcoHandle,
+#else
+                                                         fcHndlAry[k],
+#endif
+                                                         pdir,
                                                           mem,
                                                           i,
                                                           &plfont );
+
                     if (err_cd != 0)
                         dprintf2("Error %d while loading font %s\n",
                                  err_cd,
@@ -467,7 +545,7 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
         if (pl_get_uint16(char_data) == 0)
             break;
     }
-    return 0;
+    return gs_definefont(pdir, (gs_font *)pfont);
 }
         
     

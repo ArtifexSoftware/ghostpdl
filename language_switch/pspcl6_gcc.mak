@@ -90,25 +90,19 @@ EXPERIMENT_CFLAGS?=
 GCFLAGS?=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG $(PSICFLAGS) $(EXPERIMENT_CFLAGS) $(HAVE_STDINT_H_DEFINE) $(GX_COLOR_INDEX_DEFINE) $(FAPI_DEFS)
 CFLAGS?=-g -O0 $(GCFLAGS) $(XCFLAGS) $(PSICFLAGS)
 
+FEATURE_CORE    ?= \
+          $(DD)psl3.dev		\
+	  $(DD)pdf.dev		\
+	  $(DD)dpsnext.dev	\
+          $(DD)htxlib.dev	\
+          $(DD)roplib.dev	\
+	  $(DD)ttfont.dev	\
+	  $(DD)pipe.dev
+
 ifeq ($(PL_SCALER), ufst)
-FEATURE_DEVS    ?= \
-		  $(DD)psl3.dev		\
-		  $(DD)pdf.dev		\
-		  $(DD)dpsnext.dev	\
-                  $(DD)htxlib.dev	\
-                  $(DD)roplib.dev	\
-		  $(DD)ttfont.dev	\
-		  $(DD)fapi.dev		\
-		  $(DD)pipe.dev
+FEATURE_DEVS    ?= $(FEATURE_CORE) $(DD)fapi.dev
 else
-FEATURE_DEVS    ?= \
-		  $(DD)psl3.dev		\
-		  $(DD)pdf.dev		\
-		  $(DD)dpsnext.dev	\
-                  $(DD)htxlib.dev	\
-                  $(DD)roplib.dev	\
-		  $(DD)ttfont.dev	\
-		  $(DD)pipe.dev
+FEATURE_DEVS    ?= $(FEATURE_CORE)
 endif
 
 # "Subclassed" makefile
