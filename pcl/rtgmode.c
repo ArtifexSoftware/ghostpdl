@@ -352,9 +352,9 @@ pcl_end_graphics_mode(
 /*
  * ESC * t # R
  *
- * Set raster graphics resolution. The value provided will be adjusted to be
- * an integral divisor of 600 that is >= 75. For consistency with HP, the
- * value 120 is not allowed.
+ * Set raster graphics resolution. 
+ * The value provided will be rounded up to the nearest legal value or down to 600dpi. 
+ * 75 100 150 200 300 600 are legal;  120 and 85.7143 are multiples of 75 but not legal.
  */
   private int
 set_graphics_resolution(
@@ -363,11 +363,11 @@ set_graphics_resolution(
 )
 {
     uint            res = arg_is_present(pargs) ? uint_arg(pargs) : 75;
-    uint            qi = (uint)floor(600.0 / (floatp)res);
+    uint            qi = 600 / res;
 
 
-    /* HP does not allow 120 dpi as a resolution */
-    qi = (qi == 0 ? 1 : (qi > 8 ? 8 : (qi == 5 ? 4 : qi)));
+    /* HP does not allow 120 dpi or 85.7 dpi as a resolution */
+    qi = (qi == 0 ? 1 : (qi > 8 ? 8 : (qi == 7 ? 6 : (qi == 5 ? 4 : qi))));
 
     /* ignore if already in graphics mode */
     if (!pcs->raster_state.graphics_mode)
