@@ -261,11 +261,11 @@ inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int 
     put_uint32(out, node->length | (compression ? 0x80000000 : 0));
     fprintf(out, "\t/* compression_flag_bit + file length */\n\t");
     
-    printf("writing node '%s' len=%ld\n", node->name, node->length);
+    printf("writing node '%s' len=%ld", node->name, node->length);
 #ifdef DEBUG
-    printf(" blocks %ld\n", blocks);
-    printf(" compression %d\n", compression);
+    printf(" %ld blocks %s", blocks, compression ? "compressed" : "binary");
 #endif
+    printf("\n");
     
     /* write out data block structures */
     offset = 4 + (8*blocks) + ((namelen+3) & ~3);
