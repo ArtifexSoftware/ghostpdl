@@ -1100,6 +1100,9 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    return_error(gs_error_undefined);
     }
     embed = pdf_font_embed_status(pdev, base_font, &index, cgp->s, cgp->num_all_chars);
+    if (pdev->CompatibilityLevel < 1.3)
+	if (embed != FONT_EMBED_NO && font->FontType == ft_CID_TrueType)
+	    return_error(gs_error_rangecheck);
     if (embed == FONT_EMBED_STANDARD) {
 	pdf_standard_font_t *psf = &psfa[index];
 
