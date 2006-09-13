@@ -45,8 +45,8 @@ gp_gettmpdir(char *ptr, int *plen)
  * Open a temporary file, using O_EXCL and S_I*USR to prevent race
  * conditions and symlink attacks.
  */
-private FILE *
-gp_fopentemp_generic(const char *fname, const char *mode, bool b64)
+FILE *
+gp_fopentemp(const char *fname, const char *mode)
 {
     int flags = O_EXCL;
     /* Scan the mode to construct the flags. */
@@ -54,14 +54,6 @@ gp_fopentemp_generic(const char *fname, const char *mode, bool b64)
     int fildes;
     FILE *file;
 
-#if defined (O_LARGEFILE)
-    /* It works for Linux/gcc. */
-    if (b64)
-	flags |= O_LARGEFILE;
-#else
-    /* fixme : Not sure what to do. Unimplemented. */
-    /* MSVC has no O_LARGEFILE, but MSVC build never calls this function. */
-#endif
     while (*p)
 	switch (*p++) {
 	case 'a':
@@ -93,24 +85,10 @@ gp_fopentemp_generic(const char *fname, const char *mode, bool b64)
      * fdopen as (char *), rather than following the POSIX.1 standard,
      * which defines it as (const char *).  Patch this here.
      */
-#if defined (O_LARGEFILE)
-    file = (b64 ? fdopen64 : fdopen)(fildes, (char *)mode); /* still really const */
-#else
     file = fdopen(fildes, (char *)mode); /* still really const */
-#endif
     if (file == 0)
 	close(fildes);
     return file;
-}
-
-FILE *gp_fopentemp_64(const char *fname, const char *mode)
-{
-    return gp_fopentemp_generic(fname, mode, true);
-}
-
-FILE *gp_fopentemp(const char *fname, const char *mode)
-{
-    return gp_fopentemp_generic(fname, mode, false);
 }
 
 /* Append a string to buffer. */

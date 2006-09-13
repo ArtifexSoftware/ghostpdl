@@ -49,7 +49,6 @@ arch_h=$(GLGEN)arch.h
 stdpn_h=$(GLSRC)stdpn.h
 stdpre_h=$(GLSRC)stdpre.h $(stdpn_h)
 std_h=$(GLSRC)std.h $(arch_h) $(stdpre_h)
-stdint__h=$(GLSRC)stdint_.h $(std_h)
 
 $(GLGEN)arch.h : $(GENARCH_XE)
 	$(EXP)$(GENARCH_XE) $(GLGEN)arch.h
@@ -61,7 +60,7 @@ gstypes_h=$(GLSRC)gstypes.h
 srdline_h=$(GLSRC)srdline.h
 gpgetenv_h=$(GLSRC)gpgetenv.h
 gpmisc_h=$(GLSRC)gpmisc.h
-gp_h=$(GLSRC)gp.h $(gpgetenv_h) $(gstypes_h) $(srdline_h) $(stdint__h)
+gp_h=$(GLSRC)gp.h $(gpgetenv_h) $(gstypes_h) $(srdline_h)
 gpcheck_h=$(GLSRC)gpcheck.h
 gpsync_h=$(GLSRC)gpsync.h
 
@@ -91,6 +90,7 @@ math__h=$(GLSRC)math_.h $(std_h) $(vmsmath_h)
 memory__h=$(GLSRC)memory_.h $(std_h)
 setjmp__h=$(GLSRC)setjmp_.h
 stat__h=$(GLSRC)stat_.h $(std_h)
+stdint__h=$(GLSRC)stdint_.h $(std_h)
 stdio__h=$(GLSRC)stdio_.h $(std_h)
 string__h=$(GLSRC)string_.h $(std_h)
 time__h=$(GLSRC)time_.h $(std_h) $(gconfig__h)
@@ -693,7 +693,7 @@ $(GLOBJ)gxpcopy.$(OBJ) : $(GLSRC)gxpcopy.c $(GXERR) $(math__h) $(gconfigv_h)\
 
 $(GLOBJ)gxpdash.$(OBJ) : $(GLSRC)gxpdash.c $(GX) $(math__h)\
  $(gscoord_h) $(gsline_h) $(gsmatrix_h)\
- $(gxfixed_h) $(gzline_h) $(gzpath_h)
+ $(gxfixed_h) $(gxarith_h) $(gzline_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gxpdash.$(OBJ) $(C_) $(GLSRC)gxpdash.c
 
 $(GLOBJ)gxpflat.$(OBJ) : $(GLSRC)gxpflat.c $(GX)\

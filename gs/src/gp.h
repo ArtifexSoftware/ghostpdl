@@ -36,11 +36,6 @@
  */
 #include "srdline.h"
 
-/*
- * int64_t is used in the 64 bits file access.
- */
-#include "stdint_.h"
-
 /* ------ Initialization/termination ------ */
 
 /*
@@ -408,52 +403,5 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path);
 
 /* clean up and deallocate the iterator */
 void gp_enumerate_fonts_free(void *enum_state);
-
-/* --------- 64 bit file access ----------- */
-
-/* The following functions are analogues of ones with
-   same name without the "_64" suffix. 
-   They perform same function with allowing big files
-   (over 4 gygabytes length).
-
-   If the platform does not allow big files,
-   these functions are mapped to regular file i/o functions.
-   On 64 bits platforms they work same as
-   regular file i/o functions.
-
-   We continue using the old file i/o functions
-   because most files do not need 64 bits access.
-   The upgrading of old code to the new 64 bits access
-   to be done step by step on real necessity,
-   with replacing old function names with 
-   new function names through code,
-   together with providing the int64_t type for storing 
-   file offsets in intermediate structures and variables.
-
-   We assume that the result of 64 bits variant of 'ftell'
-   can be represented in int64_t on all platforms,
-   rather the result type of the native 64 bits function is
-   compiler dependent (__off_t on Linux, _off_t on Cygwin, 
-   __int64 on Windows).
- */
-
-FILE *gp_fopen_64(const char *filename, const char *mode);
-
-FILE *gp_open_scratch_file_64(const char *prefix,
-			   char fname[gp_file_name_sizeof],
-			   const char *mode);
-FILE *gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode);
-
-int64_t gp_ftell_64(FILE *stream);
-
-int gp_fseek_64(FILE *stream, int64_t offset, int origin);
-
-/* We don't define gp_fread_64, gp_fwrite_64,
-   because (1) known platforms allow regular fread, fwrite
-   to be applied to a file opened with O_LARGEFILE, 
-   fopen64, etc.; (2) Ghostscript code does not
-   perform writing/reading a long (over 4gb) block
-   in one operation.
- */
 
 #endif /* gp_INCLUDED */
