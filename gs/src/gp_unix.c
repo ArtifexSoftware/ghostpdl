@@ -154,6 +154,13 @@ gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 
     return (strlen(fname) == 0 ? 0 : fopen(fname, fmode));
 }
+FILE *
+gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode)
+{
+    const char *fmode = (binary_mode ? "wb" : "w");
+
+    return (strlen(fname) == 0 ? 0 : gp_fopen_64(fname, fmode));
+}
 
 /* Close the connection to the printer. */
 void

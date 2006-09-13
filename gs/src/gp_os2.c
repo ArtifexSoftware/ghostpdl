@@ -858,3 +858,39 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 void gp_enumerate_fonts_free(void *enum_state)
 {
 }           
+
+/* --------- 64 bit file access ----------- */
+/* fixme: Not implemented yet.
+ * Currently we stub it with 32 bits access. 
+ */
+
+FILE *gp_fopen_64(const char *filename, const char *mode)
+{
+    return fopen(filename, mode);
+}
+
+FILE *gp_open_scratch_file_64(const char *prefix,
+			   char fname[gp_file_name_sizeof],
+			   const char *mode)
+{
+    return gp_open_scratch_file(prefix, fname, mode);
+}
+
+FILE *gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode)
+{
+    return gp_open_printer(fname, binary_mode);
+}
+
+int64_t gp_ftell_64(FILE *stream)
+{
+    return ftell(stream);
+}
+
+int gp_fseek_64(FILE *stream, int64_t offset, int origin)
+{
+    long offset1 = (long)offset;
+    
+    if (offset != offset1)
+	return -1;
+    return fseek(stream, offset1, origin);
+}
