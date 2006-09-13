@@ -888,7 +888,7 @@ sun-sparc-solaris-pg:	init
 	$(MAKE) $(ARGS) \
 		CC='cc -Xc -xO5 -dalign -xlibmil -fsimple=2 -fns -xsafe=mem -xtarget=ultra1/170 -xpg' \
 		XINCLUDE=-I/usr/openwin/include \
-		XLIBDIRS='-L/usr/local/lib -L/usr/openwin/lib -ldl'
+		XLIBDIRS='-L/usr/local/lib -L/usr/openwin/lib'
 
 # [21-Dec-1998] Add missing $(DD) prefix to sparc.dev
 # [28-Nov-1997] Extra device(s) to be compiled into gs to support
