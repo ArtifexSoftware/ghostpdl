@@ -465,7 +465,7 @@ userdict /.echo.mode true put
 % won't cause nested errors (Unexpected Error conditions).
 /handleerror
 	JOBSERVER {
-	  { //systemdict /.GShandleerror get .internalstopped pop } bind % always use .GShandleerror.
+	  { /.GShandleerror .systemvar .internalstopped pop } bind % always use .GShandleerror.
 	} {
 	  { /errordict .systemvar /handleerror get .internalstopped pop } bind % PLRM standard errorhandling
 	} ifelse def
@@ -950,7 +950,11 @@ userdict /.currentresourcefile //null put
        % Genoa issue of setting /handleerror, and then calling it, without an error
        % being set.  We were erroring in this case, due to /command load failing.
 
-       /errordict .systemvar /handleerror /.GShandleerror .systemvar ne
+        //JOBSERVER {
+	    /errordict .systemvar /handleerror get /.GShandleerror .systemvar ne
+	} {
+	    false
+	} ifelse
          { /errordict .systemvar begin /handleerror load .internalstopped pop end
          }
          if
