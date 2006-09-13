@@ -167,8 +167,11 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
  */
 private const char *const standard_cmap_names[] = {
     /* The following were added in PDF 1.5. */
-    "GBKp-EUC-H", "GBKp-EUC-V", 
+
     "UniGB-UTF16-H", "UniGB-UTF16-V",
+
+
+    "GBKp-EUC-H", "GBKp-EUC-V", 
     "HKscs-B5-H", "HKscs-B5-V",
     "UniCNS-UTF16-H", "UniCNS-UTF16-V",
     "UniJIS-UTF16-H", "UniJIS-UTF16-V",
@@ -179,36 +182,46 @@ private const char *const standard_cmap_names[] = {
     "GBK2K-H", "GBK2K-V",
     "HKscs-B5-H", "HKscs-B5-V",
 #define END_PDF14_CMAP_NAMES_INDEX 18
+    /* The following were added in PDF 1.3. */
 
-    "Identity-H", "Identity-V",
-
-    "GB-EUC-H", "GB-EUC-V",
-    "GBpc-EUC-H", "GBpc-EUC-V",
+    "GBpc-EUC-V",
     "GBK-EUC-H", "GBK-EUC-V",
     "UniGB-UCS2-H", "UniGB-UCS2-V",
 
-    "B5pc-H", "B5pc-V",
-    "ETen-B5-H", "ETen-B5-V",
     "ETenms-B5-H", "ETenms-B5-V",
-    "CNS-EUC-H", "CNS-EUC-V",
+
     "UniCNS-UCS2-H", "UniCNS-UCS2-V",
 
-    "83pv-RKSJ-H",
-    "90ms-RKSJ-H", "90ms-RKSJ-V",
     "90msp-RKSJ-H", "90msp-RKSJ-V",
-    "90pv-RKSJ-H",
-    "Add-RKSJ-H", "Add-RKSJ-V",
     "EUC-H", "EUC-V",
-    "Ext-RKSJ-H", "Ext-RKSJ-V",
-    "H", "V",
     "UniJIS-UCS2-H", "UniJIS-UCS2-V",
     "UniJIS-UCS2-HW-H", "UniJIS-UCS2-HW-V",
 
+    "KSCms-UHC-HW-H", "KSCms-UHC-HW-V",
+    "UniKS-UCS2-H", "UniKS-UCS2-V",
+
+#define END_PDF13_CMAP_NAMES_INDEX 39
+    /* The following were added in PDF 1.2. */
+
+    "GB-EUC-H", "GB-EUC-V",
+    "GBpc-EUC-H"
+    
+    "B5pc-H", "B5pc-V",
+    "ETen-B5-H", "ETen-B5-V",
+    "CNS-EUC-H", "CNS-EUC-V",
+
+    "83pv-RKSJ-H",
+    "90ms-RKSJ-H", "90ms-RKSJ-V",
+    "90pv-RKSJ-H",
+    "Add-RKSJ-H", "Add-RKSJ-V",
+    "Ext-RKSJ-H", "Ext-RKSJ-V",
+    "H", "V",
+
     "KSC-EUC-H", "KSC-EUC-V",
     "KSCms-UHC-H", "KSCms-UHC-V",
-    "KSCms-UHC-HW-H", "KSCms-UHC-HW-V",
     "KSCpc-EUC-H",
-    "UniKS-UCS2-H", "UniKS-UCS2-V",
+
+    "Identity-H", "Identity-V",
 
     0
 };
@@ -219,7 +232,8 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
 {
     const char *const *pcmn =
 	standard_cmap_names +
-	(pdev->CompatibilityLevel < 1.4 ? END_PDF14_CMAP_NAMES_INDEX : 
+	(pdev->CompatibilityLevel < 1.3 ? END_PDF13_CMAP_NAMES_INDEX : 
+	 pdev->CompatibilityLevel < 1.4 ? END_PDF14_CMAP_NAMES_INDEX : 
 	 pdev->CompatibilityLevel < 1.5 ? END_PDF15_CMAP_NAMES_INDEX : 0);
     bool is_identity = false;
     pdf_resource_t *pcmres = 0;	/* CMap */

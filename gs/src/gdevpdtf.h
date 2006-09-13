@@ -266,6 +266,8 @@ struct pdf_font_resource_s {
 	    gs_encoding_index_t preferred_encoding_index;
 	    pdf_encoding_element_t *Encoding; /* [256], not for Type 3 */
 	    gs_point *v; /* [256], glyph origin for WMode 1 */
+	    int last_reserved_char; /* Except for synthesised Type 3, 
+					   which stores such data in LastChar */
 
 	    union {
 

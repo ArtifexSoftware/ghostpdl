@@ -435,6 +435,7 @@ font_resource_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     pfres->u.simple.LastChar = -1;
     pfres->u.simple.BaseEncoding = -1;
     pfres->u.simple.preferred_encoding_index = -1;
+    pfres->u.simple.last_reserved_char = -1;
     *ppfres = pfres;
     return 0;
 }
@@ -680,6 +681,8 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
     if (pdev->PDFX || pdev->PDFA)
 	return FONT_EMBED_YES;
     if (pdev->CompatibilityLevel < 1.3) {
+	if (font->FontType == 11)
+	    return FONT_EMBED_NO;
 	if (index >= 0 && 
 	    (embed_as_standard_called = true,
 		do_embed_as_standard = embed_as_standard(pdev, font, index, pairs, num_glyphs))) {
