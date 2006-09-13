@@ -657,7 +657,7 @@ clist_end_page(gx_device_clist_writer * cldev)
 #ifdef DEBUG
     if (gs_debug_c('l') | gs_debug_c(':'))
 	dlprintf2("[:]clist_end_page at cfile=%ld, bfile=%ld\n",
-		  cb.pos, cldev->page_bfile_end_pos);
+		  (long)cb.pos, (long)cldev->page_bfile_end_pos);
 #endif
     return 0;
 }

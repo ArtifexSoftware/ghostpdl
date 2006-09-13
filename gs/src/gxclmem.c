@@ -863,7 +863,7 @@ memfile_ferror_code(clist_file_ptr cf)
     return (((MEMFILE *) cf)->error_code);	/* errors stored here */
 }
 
-long
+int64_t
 memfile_ftell(clist_file_ptr cf)
 {
     return (((MEMFILE *) cf)->log_curr_pos);
@@ -886,7 +886,7 @@ memfile_rewind(clist_file_ptr cf, bool discard_data, const char *ignore_fname)
 }
 
 int
-memfile_fseek(clist_file_ptr cf, long offset, int mode, const char *ignore_fname)
+memfile_fseek(clist_file_ptr cf, int64_t offset, int mode, const char *ignore_fname)
 {
     MEMFILE *f = (MEMFILE *) cf;
     long i, block_num, new_pos;

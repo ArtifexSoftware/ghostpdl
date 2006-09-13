@@ -77,7 +77,7 @@ int clist_set_memory_warning(clist_file_ptr cf, int bytes_left);
  */
 int clist_ferror_code(clist_file_ptr cf);
 
-long clist_ftell(clist_file_ptr cf);
+int64_t clist_ftell(clist_file_ptr cf);
 
 /*
  * We pass the file name to clist_rewind and clist_fseek in case the
@@ -86,6 +86,6 @@ long clist_ftell(clist_file_ptr cf);
  */
 void clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname);
 
-int clist_fseek(clist_file_ptr cf, long offset, int mode, const char *fname);
+int clist_fseek(clist_file_ptr cf, int64_t offset, int mode, const char *fname);
 
 #endif /* gxclio_INCLUDED */

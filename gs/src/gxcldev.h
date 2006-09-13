@@ -215,7 +215,7 @@ uint clist_bitmap_bytes(uint width_bits, uint height,
 typedef struct cmd_block_s {
     int band_min, band_max;
 #define cmd_band_end (-1)	/* end of band file */
-    long pos;			/* starting position in cfile */
+    int64_t pos;		/* starting position in cfile */
 } cmd_block;
 
 /* ---------------- Band state ---------------- */

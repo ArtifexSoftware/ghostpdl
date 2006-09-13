@@ -88,12 +88,12 @@ typedef struct MEMFILE {
     /* logical file properties */
     LOG_MEMFILE_BLK *log_head;
     LOG_MEMFILE_BLK *log_curr_blk;
-    long log_length;		/* updated during write             */
-    long log_curr_pos;		/* updated during seek, close, read */
+    int64_t log_length;		/* updated during write             */
+    int64_t log_curr_pos;	/* updated during seek, close, read */
     char *pdata;		/* raw data */
     char *pdata_end;
     /* physical file properties */
-    long total_space;		/* so we know when to start compress */
+    int64_t total_space;	/* so we know when to start compress */
     PHYS_MEMFILE_BLK *phys_curr;	/* NULL if not compressing      */
     RAW_BUFFER *raw_head, *raw_tail;
     int error_code;		/* used by CLIST_ferror         */

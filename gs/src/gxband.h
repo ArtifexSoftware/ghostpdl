@@ -62,7 +62,7 @@ typedef struct gx_band_page_info_s {
     char bfname[gp_file_name_sizeof];	/* block file name */
     clist_file_ptr bfile;	/* block file, normally 0 */
     uint tile_cache_size;	/* size of tile cache */
-    long bfile_end_pos;		/* ftell at end of bfile */
+    int64_t bfile_end_pos;		/* ftell at end of bfile */
     gx_band_params_t band_params;  /* parameters used when writing band list */
 				/* (actual values, no 0s) */
     int scan_lines_per_colors_used; /* number of scan lines per colors_used */

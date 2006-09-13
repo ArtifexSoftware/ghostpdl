@@ -106,7 +106,7 @@ rb:
 	} {
 	    int bmin = ss->b_this.band_min;
 	    int bmax = ss->b_this.band_max;
-	    long pos = ss->b_this.pos;
+	    int64_t pos = ss->b_this.pos;
 
 	    clist_fread_chars(&ss->b_this, sizeof(ss->b_this), bfile);
 	    if (!(ss->band_last >= bmin && ss->band_first <= bmax))
@@ -115,8 +115,8 @@ rb:
 	    left = (uint) (ss->b_this.pos - pos);
 	    if_debug5('l', "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u\n",
 		      bmin, bmax,
-		      clist_ftell(bfile) - 2 * sizeof(ss->b_this),
-		      pos, left);
+		      (long)(clist_ftell(bfile) - 2 * sizeof(ss->b_this)),
+		      (long)pos, left);
 	}
     }
     pw->ptr = q;

@@ -36,7 +36,7 @@ clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 	if (fmode[0] == 'r')
 	    return_error(gs_error_invalidfileaccess);
 	*pcf =
-	    (clist_file_ptr) gp_open_scratch_file(gp_scratch_file_name_prefix,
+	    (clist_file_ptr) gp_open_scratch_file_64(gp_scratch_file_name_prefix,
 						  fname, fmode);
     } else
 	*pcf = gp_fopen(fname, fmode);
@@ -123,10 +123,10 @@ clist_ferror_code(clist_file_ptr cf)
     return (ferror((FILE *) cf) ? gs_error_ioerror : 0);
 }
 
-long
+int64_t
 clist_ftell(clist_file_ptr cf)
 {
-    return ftell((FILE *) cf);
+    return gp_ftell_64((FILE *) cf);
 }
 
 void
@@ -154,7 +154,7 @@ clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
 }
 
 int
-clist_fseek(clist_file_ptr cf, long offset, int mode, const char *ignore_fname)
+clist_fseek(clist_file_ptr cf, int64_t offset, int mode, const char *ignore_fname)
 {
-    return fseek((FILE *) cf, offset, mode);
+    return gp_fseek_64((FILE *) cf, offset, mode);
 }

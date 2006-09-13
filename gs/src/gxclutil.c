@@ -145,7 +145,7 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
 	cb.band_max = band_max;
 	cb.pos = clist_ftell(cfile);
 	if_debug3('l', "[l]writing for bands (%d,%d) at %ld\n",
-		  band_min, band_max, cb.pos);
+		  band_min, band_max, (long)cb.pos);
 	clist_fwrite_chars(&cb, sizeof(cb), bfile);
 	if (cp != 0) {
 	    pcl->tail->next = 0;	/* terminate the list */
