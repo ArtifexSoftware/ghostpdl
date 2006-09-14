@@ -14,6 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
+/* $Id$ */
 /* IMDI Device.
  *
  * This is an RGB contone device, that outputs the raster
