@@ -383,6 +383,13 @@ jas_image_t *jp2_decode(jas_stream_t *in, char *optstr)
 	}
 
 	/* Determine the type of each component. */
+	/* work around for gs bug 688869 - RG */
+	if (dec->numchans >= dec->image->numcmpts_) {
+		jas_eprintf("error: too few components in decoded image!"
+			" (%d instead of %d)\n",
+			dec->image->numcmpts_, dec->numchans);
+		goto error;
+	}
 	if (dec->cdef) {
 		for (i = 0; i < dec->numchans; ++i) {
 			jas_image_setcmpttype(dec->image,
