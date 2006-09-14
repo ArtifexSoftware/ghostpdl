@@ -938,9 +938,7 @@ private inline int t1_hinter__add_pole(t1_hinter * this, t1_glyph_space_coord xx
 }
 
 int t1_hinter__sbw(t1_hinter * this, fixed sbx, fixed sby, fixed wx,  fixed wy)
-{   t1_hinter__adjust_matrix_precision(this, sbx, sby);
-    t1_hinter__adjust_matrix_precision(this, wx, wy);
-    this->cx = this->orig_gx = this->subglyph_orig_gx = sbx;
+{   this->cx = this->orig_gx = this->subglyph_orig_gx = sbx;
     this->cy = this->orig_gy = this->subglyph_orig_gy = sby;
     this->width_gx = wx;
     this->width_gy = wy;
@@ -2968,6 +2966,7 @@ int t1_hinter__endglyph(t1_hinter * this)
     if (code < 0)
 	goto exit;
     t1_hinter__paint_glyph(this, false);
+    t1_hinter__adjust_matrix_precision(this, this->orig_gx, this->orig_gy);
     t1_hinter__compute_y_span(this);
     t1_hinter__simplify_representation(this);
     if (!this->disable_hinting && (this->grid_fit_x || this->grid_fit_y)) {
