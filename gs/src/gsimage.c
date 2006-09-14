@@ -312,7 +312,8 @@ gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
     for (i = 0; i < pie->num_planes; ++i) {
 	penum->planes[i].pos = 0;
 	penum->planes[i].source.size = 0;	/* for gs_image_next_planes */
-	penum->planes[i].row.data = 0; /* for GC */
+	penum->planes[i].source.data = 0; /* for GC */
+        penum->planes[i].row.data = 0; /* for GC */
 	penum->planes[i].row.size = 0; /* ditto */
 	penum->image_planes[i].data_x = 0; /* just init once, never changes */
     }
