@@ -317,6 +317,10 @@ if test x$with_jasper != xno; then
       echo "Running jasper configure script..."
       olddir=`pwd`
       cd $JASPERDIR && ./configure
+      status=$?
+      if test "$status" -ne 0 ; then
+        AC_MSG_ERROR([jasper configure script failed], $status)
+      fi
       cd $olddir
       echo
       echo "Continuing with Ghostscript configuration..."
@@ -329,6 +333,10 @@ if test x$with_jasper != xno; then
         echo "Running jasper autogen script..."
         olddir=`pwd`
         cd $JASPERDIR && ./autogen.sh
+        status=$?
+        if test "$status" -ne 0 ; then
+          AC_MSG_ERROR([jasper autogen script failed], $status)
+        fi
         cd $olddir
         echo
         echo "Continuing with Ghostscript configuration..."
