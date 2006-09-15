@@ -596,6 +596,13 @@ hpgl_alternate_line_pattern_offset(hpgl_state_t *pgls, uint lines_filled)
 	pgls->g.line.current.pattern_offset = 0.0;
 }
 
+/* this definition is used to factor out the effect of the orientation
+   of the pcl logical page.  HP printers prior to the 4500 series
+   oriented the hpgl/2 fill lines relative to the logical page
+   orientation (expected result), later printers do not.  Comment out
+   the following definition to support the old (expected) behavior. */
+#define FILL_IGNORES_PCL_ORIENTATION
+
 /*
  * HAS should replicate lines beginning at the anchor corner to +X and
  * +Y.  Not quite right - anchor corner not yet supported.
@@ -623,7 +630,13 @@ hpgl_polyfill(
     const hpgl_hatch_params_t * params = (cross ? &pgls->g.fill.param.crosshatch
                                                 : &pgls->g.fill.param.hatch);
     gs_point                    spacing;
+#ifdef FILL_IGNORES_PCL_ORIENTATION
+    hpgl_real_t                 direction = 
+        params->angle + pgls->xfm_state.lp_orient * 90;
+#else
     hpgl_real_t                 direction = params->angle;
+#endif
+    
     hpgl_real_t                 unscaled_direction;
     float saved_line_pattern_offset = pgls->g.line.current.pattern_offset;
     int lines_filled;
