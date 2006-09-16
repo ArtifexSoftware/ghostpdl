@@ -792,7 +792,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	   1 means no alternative streams.
 	   2 means the main image stream and a mask stream while converting 
 		   an Image Type 4.
-	   3 means the main image steram, alternative image compression stream, 
+	   3 means the main image stream, alternative image compression stream, 
 		   and the compression chooser.
 	   4 meams 3 and a mask stream while convertingh an Image Type 4.
          */

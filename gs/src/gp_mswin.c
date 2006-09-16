@@ -829,9 +829,9 @@ FILE *gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode)
 int64_t gp_ftell_64(FILE *stream)
 {
 #if !defined(_MSC_VER)
-    return ftell(steram);
+    return ftell(stream);
 #elif _MSC_VER < 1400
-    return ftell(steram);
+    return ftell(stream);
 #else
     return _ftelli64(stream);
 #endif
@@ -840,7 +840,7 @@ int64_t gp_ftell_64(FILE *stream)
 int gp_fseek_64(FILE *stream, int64_t offset, int origin)
 {
 #if !defined(_MSC_VER)
-    return fseek(steram, offset, origin);
+    return fseek(stream, offset, origin);
 #elif _MSC_VER < 1400
     long offset1 = (long)offset;
     
