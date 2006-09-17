@@ -364,7 +364,7 @@ enum {
 private inline floatp
 pe_fixed2float(int32 x, int32 fbits)
 {
-    return ((floatp)x * (1.0 / (1 << fbits)));
+    return ((floatp)x * (1.0 / pow(2, fbits)));
 }
 
 private bool pe_args(const gs_memory_t *mem, hpgl_args_t *, int32 *, int);
