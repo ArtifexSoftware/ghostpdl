@@ -26,6 +26,11 @@ clean:
 	make -C main -f pcl6_gcc.mak clean
 	rm -f fonts /usr/local/bin/pcl6
 
+####  UFST LIBRARY DEPENDENCY RULES ####
+
+ufst:
+	make -C ufst/rts/lib -f makefile.artifex
+
 ####  LANGUAGE SWITCHING PRODUCT RULES ####
 
 ls_profile:
@@ -61,14 +66,14 @@ ls_clean:
 
 # shortcuts for common build types.
 
-ls_uproduct:
+ls_uproduct: ufst
 	make -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" 
 
-ls_udebug:
+ls_udebug: ufst
 	make -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" debug
 
 ls_uclean:
 	make -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" clean
+	make -C ufst/rts/lib -f makefile.artifex clean
 
-
-PHONY: clean test install product profile ls_clean ls_test ls_install ls_product ls_profile ls_udebug
+.PHONY: clean test install product profile ls_clean ls_test ls_install ls_product ls_profile ls_udebug ufst
