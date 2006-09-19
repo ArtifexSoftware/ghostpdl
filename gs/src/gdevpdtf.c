@@ -882,6 +882,19 @@ pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 
 /* ------ CID-keyed ------ */
 
+/* Write CIDSystemInfo */
+private int
+pdf_write_cid_systemInfo_separate(gx_device_pdf *pdev, const gs_cid_system_info_t *pcidsi, long *id)
+{   
+    int code;
+
+    *id = pdf_begin_separate(pdev);
+    code = pdf_write_cid_system_info(pdev, pcidsi, *id);
+    pdf_end_separate(pdev);
+    return code;
+}
+
+
 /* Allocate a CIDFont resource. */
 int
 pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
@@ -939,15 +952,9 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
      * Write the CIDSystemInfo now, so we don't try to access it after
      * the font may no longer be available.
      */
-    {
-	long cidsi_id = pdf_begin_separate(pdev);
-
-	code = pdf_write_cid_system_info(pdev, pcidsi, cidsi_id);
-	if (code < 0)
-	    return code;
-	pdf_end_separate(pdev);
-	pdfont->u.cidfont.CIDSystemInfo_id = cidsi_id;
-    }
+    code = pdf_write_cid_systemInfo_separate(pdev, pcidsi, &pdfont->u.cidfont.CIDSystemInfo_id);
+    if (code < 0)
+	return code;
     *ppfres = pdfont;
     return pdf_compute_BaseFont(pdev, pdfont, false);
 }
@@ -1004,16 +1011,49 @@ pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfon
 int 
 pdf_convert_truetype_font(gx_device_pdf *pdev, pdf_resource_t *pres)
 {
-    if (!pdev->PDFA )
+    if (!pdev->PDFA)
 	return 0;
     else {
-	pdf_font_resource_t *pdfont = (pdf_font_resource_t *) pres;
+	pdf_font_resource_t *pdfont = (pdf_font_resource_t *)pres;
 
 	if (pdfont->FontType != ft_TrueType)
 	    return 0;
+	else if (pdf_resource_id(pres) == -1)
+	    return 0; /* An unused font. */
 	else {
-	    /* Reserved for future implementation. */
-	    return 0;
+	    int code = pdf_different_encoding_index(pdfont, 0);
+
+	    if (code < 0)
+		return code;
+	    if (code == 256)
+		return 0;
+	    {	/* The encoding have a difference - do convert. */
+		pdf_font_resource_t *pdfont0;
+		gs_const_string CMapName = {(const byte *)"OneByteIdentityH", 16};
+
+		code = pdf_convert_truetype_font_descriptor(pdev, pdfont);
+		if (code < 0)
+		    return code;
+		code = pdf_font_type0_alloc(pdev, &pdfont0, pres->rid + 1, pdfont, &CMapName);
+		if (code < 0)
+		    return code;
+		/* Pass the font object ID to the type 0 font resource. */
+		pdf_reserve_object_id(pdev, (pdf_resource_t *)pdfont0, pdf_resource_id(pres));
+		pdf_reserve_object_id(pdev, (pdf_resource_t *)pdfont, gs_no_id);
+		/* Set Encoding_name because we won't call attach_cmap_resource for it : */
+		code = pdf_write_OneByteIdentityH(pdev);
+		if (code < 0)
+		    return 0;
+		pdfont->u.cidfont.CIDSystemInfo_id = pdev->IdentityCIDSystemInfo_id;
+		sprintf(pdfont0->u.type0.Encoding_name, "%ld 0 R", pdf_resource_id(pdev->OneByteIdentityH));
+		/* Move ToUnicode : */
+		pdfont0->res_ToUnicode = pdfont->res_ToUnicode; pdfont->res_ToUnicode = 0;
+		pdfont0->cmap_ToUnicode = pdfont->cmap_ToUnicode; pdfont->cmap_ToUnicode = 0;
+		/* Change the font type to CID font : */
+		pdfont->FontType = ft_CID_TrueType;
+		pdfont->write_contents = pdf_write_contents_cid2;
+		return 0;
+	    }
 	}
     }
 }
@@ -1028,4 +1068,79 @@ pdf_cmap_alloc(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 	       pdf_resource_t **ppres, int font_index_only)
 {
     return pdf_write_cmap(pdev, pcmap, ppres, font_index_only);
+}
+
+static const char *OneByteIdentityH[] = {
+    "/CIDInit /ProcSet findresource begin",
+    "12 dict begin",
+    "begincmap",
+    "/CIDSystemInfo 3 dict dup begin",
+      "/Registry (Adobe) def",
+      "/Ordering (Identity) def",
+      "/Supplement 0 def",
+    "end def",
+    "/CMapName /OneByteIdentityH def",
+    "/CMapVersion 1.000 def",
+    "/CMapType 1 def",
+    "/UIDOffset 0 def",
+    "/XUID [1 10 25404 9999] def",
+    "/WMode 0 def",
+    "1 begincodespacerange",
+    "<00> <FF>",
+    "endcodespacerange",
+    "1 begincidrange",
+    "<00> <FF> 0",
+    "endcidrange",
+    "endcmap",
+    "CMapName currentdict /CMap defineresource pop",
+    "end",
+    "end",
+NULL};
+
+/* 
+ * Write OneByteIdentityH CMap. 
+ */
+int
+pdf_write_OneByteIdentityH(gx_device_pdf *pdev)
+{ 
+    int code, i;
+    pdf_data_writer_t writer;
+    cos_dict_t *pcd;
+    char buf[200];
+    static const gs_cid_system_info_t cidsi = {{(const byte *)"Adobe", 5}, {(const byte *)"Identity", 8}, 0};
+    long id;
+
+    if (pdev->IdentityCIDSystemInfo_id == gs_no_id) {
+	code = pdf_write_cid_systemInfo_separate(pdev, &cidsi, &id);
+	if (code < 0)
+	    return code;
+	pdev->IdentityCIDSystemInfo_id = id;
+    }
+    if (pdev->OneByteIdentityH != NULL)
+	return 0;
+    code = pdf_begin_data_stream(pdev, &writer,
+				 DATA_STREAM_NOT_BINARY |
+			    /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
+			       See comment in pdf_begin_encrypt. */
+				 (pdev->CompressFonts ? 
+				  DATA_STREAM_COMPRESS : 0), gs_no_id);
+    if (code < 0)
+	return code;
+    pdev->OneByteIdentityH = writer.pres;
+    pcd = (cos_dict_t *)writer.pres->object;
+    code = cos_dict_put_c_key_string(pcd, "/CMapName", "/OneByteIdentityH", 17);
+    if (code < 0)
+	return code;
+    sprintf(buf, "%ld 0 R", pdev->IdentityCIDSystemInfo_id);
+    code = cos_dict_put_c_key_string(pcd, "/CIDSystemInfo", buf, strlen(buf));
+    if (code < 0)
+	return code;
+    code = cos_dict_put_string_copy(pcd, "/Type", "/CMap");
+    if (code < 0)
+	return code;
+    for (i = 0; OneByteIdentityH[i]; i++) {
+	stream_puts(pdev->strm, OneByteIdentityH[i]);
+	stream_putc(pdev->strm, '\n');
+    }
+    return pdf_end_data(&writer);
 }

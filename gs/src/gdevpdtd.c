@@ -681,7 +681,38 @@ pdf_mark_font_descriptor_used(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
  * Convert True Type font descriptor into CID font descriptor for PDF/A.
  */
 int 
-pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
+pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
+    pdf_font_descriptor_t *pfd = pdfont->FontDescriptor;
+    int num_CIDs = 256;
+    int length_CIDSet = num_CIDs / 8;
+    int length_CIDToGIDMap = num_CIDs * sizeof(ushort);
+    pdf_base_font_t *pbfont = pfd->base_font;
+    gs_font *pfont = (gs_font *)pbfont->copied;
+    gs_char ch;
+    /* Save the simple font descriptor data because CID font data overlap them. */
+    int FirstChar = pdfont->u.simple.FirstChar, LastChar = pdfont->u.simple.LastChar;
+    pdf_encoding_element_t *Encoding = pdfont->u.simple.Encoding;
+
+    pfd->FontType = ft_CID_TrueType;
+    pdfont->u.simple.Encoding = NULL; /* Drop due to overlapping against a garbager problem. */
+    pbfont->CIDSet = gs_alloc_bytes(pdev->pdf_memory, length_CIDSet, 
+			"pdf_convert_truetype_font_descriptor");
+    if (pbfont->CIDSet == NULL)
+	return_error(gs_error_VMerror);
+    memset(pbfont->CIDSet, 0, length_CIDSet);
+    pdfont->u.cidfont.CIDToGIDMap = (ushort *)gs_alloc_bytes(pdev->pdf_memory, 
+			length_CIDToGIDMap, "pdf_convert_truetype_font_descriptor");
+    if (pdfont->u.cidfont.CIDToGIDMap == NULL)
+	return_error(gs_error_VMerror);
+    memset(pdfont->u.cidfont.CIDToGIDMap, 0, length_CIDToGIDMap);
+    for (ch = FirstChar; ch <= LastChar; ch++) {
+	if (Encoding[ch].glyph != GS_NO_GLYPH) {
+	    gs_glyph glyph = pfont->procs.encode_char(pfont, ch, GLYPH_SPACE_INDEX);
+
+	    pbfont->CIDSet[ch / 8] |= 0x80 >> (ch % 8);
+	    pdfont->u.cidfont.CIDToGIDMap[ch] = glyph - GS_MIN_GLYPH_INDEX;
+	}
+    }
     return 0;
 }

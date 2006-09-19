@@ -507,7 +507,7 @@ pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	int i;
 
 	pdf_begin_data_stream(pdev, &writer,
-	    DATA_STREAM_BINARY | DATA_STREAM_COMPRESS,
+	    DATA_STREAM_BINARY | (pdev->CompressFonts ? DATA_STREAM_COMPRESS : 0),
 		    /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
 		       See comment in pdf_begin_encrypt. */
 		    map_id);

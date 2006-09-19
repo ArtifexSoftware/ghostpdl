@@ -178,6 +178,8 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  {0},				/* cs_Patterns */
  {0},				/* Identity_ToUnicode_CMaps */
  0,				/* last_resource */
+ 0,				/* OneByteIdentityH */
+ gs_no_id,			/* IdentityCIDSystemInfo_id */
  {
      {
 	 {0}}},			/* outline_levels */

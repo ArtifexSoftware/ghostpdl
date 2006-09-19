@@ -534,6 +534,8 @@ struct gx_device_pdf_s {
     pdf_resource_t *cs_Patterns[5];
     pdf_resource_t *Identity_ToUnicode_CMaps[2]; /* WMode = 0,1 */
     pdf_resource_t *last_resource;
+    pdf_resource_t *OneByteIdentityH;
+    gs_id IdentityCIDSystemInfo_id;
     pdf_outline_level_t outline_levels[MAX_OUTLINE_DEPTH];
     int outline_depth;
     int closed_outline_depth;
