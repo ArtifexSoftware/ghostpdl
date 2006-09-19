@@ -1009,7 +1009,7 @@ end
    { ColorSpace setgcolorspace currentdict end setfillblend { image } }
   ifelse
   stopped {
-    pop
+    dup type /dicttype eq { pop } if % Sometimes image fails to restore the stack
     $error /errorname get dup /ioerror eq {
       pop (\n   **** Warning: File has insufficient data for an image.\n)
       pdfformaterror
