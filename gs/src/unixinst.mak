@@ -40,8 +40,8 @@ install-scripts: $(PSLIBDIR)/gsnd
 gsbj gsdj gsdj500 gslj gslp gsnd \
 bdftops dumphint dvipdf eps2eps font2c \
 pdf2dsc pdf2ps pdfopt pf2afm pfbtopfa printafm \
-ps2ascii ps2epsi ps2pdf ps2pdf12 ps2pdf13 ps2pdf14 ps2pdfwr ps2ps wftopfa \
-fixmswrd.pl lprsetup.sh pj-gs.sh pv.sh sysvlp.sh unix-lpr.sh ;\
+ps2ascii ps2epsi ps2pdf ps2pdf12 ps2pdf13 ps2pdf14 ps2pdfwr ps2ps ps2ps2 \
+wftopfa fixmswrd.pl lprsetup.sh pj-gs.sh pv.sh sysvlp.sh unix-lpr.sh ;\
 	do if ( test -f $(PSLIBDIR)/$$f ); then \
 	  (cat $(PSLIBDIR)/$$f | sed -e "s/GS_EXECUTABLE=[^ \t]*/GS_EXECUTABLE=$(GS)/" > $(PSOBJDIR)/$$f); \
 	  $(INSTALL_PROGRAM) $(PSOBJDIR)/$$f $(scriptdir)/$$f; \
@@ -70,7 +70,10 @@ acctest.ps addxchar.ps align.ps bdftops.ps \
 caption.ps cid2code.ps decrypt.ps docie.ps dumphint.ps \
 errpage.ps font2c.ps font2pcl.ps gslp.ps gsnup.ps image-qa.ps impath.ps \
 jispaper.ps landscap.ps level1.ps lines.ps markhint.ps markpath.ps \
-packfile.ps pcharstr.ps pf2afm.ps pfbtopfa.ps ppath.ps prfont.ps printafm.ps \
+mkcidfm.ps opdfread.ps \
+packfile.ps pcharstr.ps pf2afm.ps pfbtopfa.ps ppath.ps \
+pphs pphs.ps \
+prfont.ps printafm.ps \
 ps2ai.ps ps2ascii.ps ps2epsi.ps quit.ps rollconv.ps \
 showchar.ps showpage.ps stcinfo.ps stcolor.ps stocht.ps \
 traceimg.ps traceop.ps type1enc.ps type1ops.ps uninfo.ps unprot.ps \
