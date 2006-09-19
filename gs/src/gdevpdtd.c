@@ -22,6 +22,7 @@
 #include "gdevpdfo.h"		/* for object->written */
 #include "gdevpdtb.h"
 #include "gdevpdtd.h"
+#include "gdevpdtf.h"
 
 /* ================ Types and structures ================ */
 
@@ -677,15 +678,10 @@ pdf_mark_font_descriptor_used(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 }
 
 /*
- * Convert True Type fonts into CID fonts for PDF/A.
+ * Convert True Type font descriptor into CID font descriptor for PDF/A.
  */
 int 
-pdf_convert_truetype_font(gx_device_pdf *pdev, pdf_resource_t *pres)
+pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 {
-    if (!pdev->PDFA)
-	return 0;
-    else {
-	/* Reserved for future implementation. */
-	return 0;
-    }
+    return 0;
 }

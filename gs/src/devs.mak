@@ -1012,7 +1012,7 @@ $(GLOBJ)gdevpdte.$(OBJ) : $(GLSRC)gdevpdte.c $(gx_h) $(math__h) $(memory__h) $(s
 $(GLOBJ)gdevpdtd.$(OBJ) : $(GLSRC)gdevpdtd.c $(math__h) $(memory__h) $(gx_h)\
  $(gserrors_h) $(gsrect_h)\
  $(gdevpdfo_h) $(gdevpdfx_h)\
- $(gdevpdtb_h) $(gdevpdtd_h)
+ $(gdevpdtb_h) $(gdevpdtd_h) $(gdevpdtf_h)
 	$(GLCC) $(GLO_)gdevpdtd.$(OBJ) $(C_) $(GLSRC)gdevpdtd.c
 
 $(GLOBJ)gdevpdtf.$(OBJ) : $(GLSRC)gdevpdtf.c $(gx_h) $(memory__h)\

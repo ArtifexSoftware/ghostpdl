@@ -432,6 +432,16 @@ int pdf_close_text_document(gx_device_pdf *pdev); /* in gdevpdtw.c */
  */
 const gs_font_name *pdf_choose_font_name(gs_font *font, bool key_name);
 
+/*
+ * Convert True Type fonts into CID fonts for PDF/A.
+ */
+int pdf_convert_truetype_font(gx_device_pdf *pdev,  pdf_resource_t *pres);
+
+/*
+ * Convert True Type font descriptor into CID font descriptor for PDF/A.
+ */
+int pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd);
+
 /* ---------------- CMap resources ---------------- */
 
 /*

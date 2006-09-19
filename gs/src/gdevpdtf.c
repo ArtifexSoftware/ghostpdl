@@ -998,6 +998,26 @@ pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfon
     return 0;
 }
 
+/*
+ * Convert True Type fonts into CID fonts for PDF/A.
+ */
+int 
+pdf_convert_truetype_font(gx_device_pdf *pdev, pdf_resource_t *pres)
+{
+    if (!pdev->PDFA )
+	return 0;
+    else {
+	pdf_font_resource_t *pdfont = (pdf_font_resource_t *) pres;
+
+	if (pdfont->FontType != ft_TrueType)
+	    return 0;
+	else {
+	    /* Reserved for future implementation. */
+	    return 0;
+	}
+    }
+}
+
 /* ---------------- CMap resources ---------------- */
 
 /*
