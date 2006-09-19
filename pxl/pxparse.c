@@ -524,7 +524,7 @@ top:	if ( st->data_left )
 		    if ( left < 9 )
 		      goto x;		/* need more data */
 		    p += 9;
-		    code = gs_note_error(e_ExitLanguage);
+		    code = e_ExitLanguage;
 		    goto x;
 		  }
 		break;

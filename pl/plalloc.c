@@ -207,11 +207,6 @@ pl_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t c
 {
 
     uint minsize, newsize;
-    /* NB apparently there is code floating around that does 0 size
-       mallocs.  sigh. */
-    if ( size == 0 )
-	return 0;
-
     /* use 2 starting machine words for size and type - assumes
        malloc() returns on max boundary and first 2 words will hold
        two longs.  Doesn't check for overflow - malloc will fail for

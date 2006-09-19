@@ -367,6 +367,7 @@ paint_path(px_state_t *pxs, bool reset)
 		gx_path_assign_preserve(ppath, save_path);
 	    else {
 	        gx_path_assign_free(ppath, save_path);
+                gx_setcurrentpoint_from_path(pgs, ppath);
 		gs_currentpoint(pgs, &cursor);
 	        save_path = 0;
 	      }
@@ -711,7 +712,7 @@ pxRectanglePath(px_args_t *par, px_state_t *pxs)
 	  { floatp t = y1; y1 = y2; y2 = t; }
 	if ( (code = gs_point_transform2fixed(pctm, x1, y1, &p1)) < 0 ||
 	     (code = gs_point_transform2fixed(pctm, x2, y2, &p2)) < 0 ||
-	     (code = gx_path_add_point(ppath, p1.x, p1.y)) < 0
+	     (code = gs_moveto(pgs, x1, y1)) < 0
 	   )
 	  return code;
 #ifdef DRAW_RECTANGLES_CLOCKWISE
