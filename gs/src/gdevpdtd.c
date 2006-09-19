@@ -547,11 +547,11 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
  * writing the associated embedded font if any.
  */
 int
-pdf_finish_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
+pdf_finish_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
 {
+    pdf_font_descriptor_t *pfd = (pdf_font_descriptor_t *)pres;
     int code = 0;
     cos_dict_t *pcd = 0;
-
     if (pfd->common.object->id == -1)
 	return 0;
     if (!pfd->common.object->written &&
@@ -568,8 +568,9 @@ pdf_finish_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 
 /* Write a FontDescriptor. */
 int
-pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
+pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
 {
+    pdf_font_descriptor_t *pfd = (pdf_font_descriptor_t *)pres;
     font_type ftype = pfd->FontType;
     long cidset_id = 0;
     int code = 0;
@@ -654,8 +655,10 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
  * Release a FontDescriptor components.
  */
 int
-pdf_release_FontDescriptor_components(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
+pdf_release_FontDescriptor_components(gx_device_pdf *pdev, pdf_resource_t *pres)
 {
+    pdf_font_descriptor_t *pfd = (pdf_font_descriptor_t *) pres;
+
     gs_free_object(pdev->pdf_memory, pfd->base_font, "pdf_release_FontDescriptor_components");
     pfd->base_font = NULL;
     /* fixme: underimplemented. */
@@ -671,4 +674,18 @@ pdf_mark_font_descriptor_used(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     if (pfd != NULL && pfd->common.object->id == -1)
 	pdf_reserve_object_id(pdev, (pdf_resource_t *)&pfd->common, 0);
     return 0;
+}
+
+/*
+ * Convert True Type fonts into CID fonts for PDF/A.
+ */
+int 
+pdf_convert_truetype_font(gx_device_pdf *pdev, pdf_resource_t *pres)
+{
+    if (!pdev->PDFA)
+	return 0;
+    else {
+	/* Reserved for future implementation. */
+	return 0;
+    }
 }

@@ -610,9 +610,9 @@ write_font_resources(gx_device_pdf *pdev, pdf_resource_list_t *prlist)
     return 0;
 }
 int
-pdf_finish_font_descriptors(gx_device_pdf *pdev,
+pdf_finish_resources(gx_device_pdf *pdev,
 			int (*finish_proc)(gx_device_pdf *,
-					   pdf_font_descriptor_t *))
+					   pdf_resource_t *))
 {
     int j;
     pdf_resource_t *pres;
@@ -621,7 +621,7 @@ pdf_finish_font_descriptors(gx_device_pdf *pdev,
 	for (pres = pdev->resources[resourceFontDescriptor].chains[j];
 	     pres != 0; pres = pres->next
 	     ) {
-	    int code = finish_proc(pdev, (pdf_font_descriptor_t *)pres);
+	    int code = finish_proc(pdev, pres);
 
 	    if (code < 0)
 		return code;
@@ -642,10 +642,11 @@ pdf_close_text_document(gx_device_pdf *pdev)
     pdf_clean_standard_fonts(pdev);
     if ((code = pdf_free_font_cache(pdev)) < 0 ||
 	(code = pdf_write_resource_objects(pdev, resourceCharProc)) < 0 ||
- 	(code = pdf_finish_font_descriptors(pdev, pdf_finish_FontDescriptor)) < 0 ||
+ 	(code = pdf_finish_resources(pdev, pdf_convert_truetype_font)) < 0 ||
+ 	(code = pdf_finish_resources(pdev, pdf_finish_FontDescriptor)) < 0 ||
   	(code = write_font_resources(pdev, &pdev->resources[resourceCIDFont])) < 0 ||
 	(code = write_font_resources(pdev, &pdev->resources[resourceFont])) < 0 ||
-	(code = pdf_finish_font_descriptors(pdev, pdf_write_FontDescriptor)) < 0
+	(code = pdf_finish_resources(pdev, pdf_write_FontDescriptor)) < 0
 	)
 	return code;
 
