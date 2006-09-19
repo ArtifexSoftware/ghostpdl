@@ -1323,7 +1323,6 @@ pdf_reserve_char_code_in_pdfont(pdf_font_resource_t *pdfont, pdf_char_glyph_pair
        which we believe comes from poorly designed documents.
      */
     int j, ch;
-    gs_const_string str;
 
     for (j = 0; j < cgp->num_all_chars; j++)
 	if (cgp->s[j].glyph == glyph)
@@ -1345,7 +1344,6 @@ pdf_reserve_char_code_in_pdfont(pdf_font_resource_t *pdfont, pdf_char_glyph_pair
 	    standard_glyph_code_for_notdef = 
 		    gs_c_name_glyph((const byte *)".notdef", 7) - gs_c_min_std_encoding_glyph;
 	for (ch = 0; ch < 256; ch++) {
-	    gs_glyph glyph1 = enc[ch];
 	    pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
 
 	    if (pet->glyph == GS_NO_GLYPH && enc[ch] == standard_glyph_code_for_notdef) {
@@ -1751,7 +1749,7 @@ pdf_obtain_font_resource_unencoded(pdf_text_enum_t *penum,
     byte *glyph_usage = 0;
     double *real_widths = 0;
     int char_cache_size = 0, width_cache_size = 0;
-    int code, ps_encoding_index;
+    int code, ps_encoding_index = -1;
 
     if (font->FontType == ft_composite) {
 	/* Must not happen, because we always split composite fonts into descendents. */

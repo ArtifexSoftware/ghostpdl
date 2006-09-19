@@ -236,7 +236,7 @@ copy_procsets(stream *s, const gs_param_string *path, bool HaveTrueTypes)
     if (p != NULL) {
 	for (;; i++) {
 	    const byte *c = memchr(p, gp_file_name_list_separator, e - p);
-	    int k;
+	    int k = 0; /* Initializing against a compiler warning only. */
 
 	    if (c == NULL)
 		c = e;
