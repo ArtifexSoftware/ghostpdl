@@ -15,10 +15,6 @@
 /* JPXDecode filter implementation -- hooks in libjasper */
 
 #include "memory_.h"
-#ifdef JPX_DEBUG
-#include "stdio_.h"
-#endif
-
 #include "gserrors.h"
 #include "gserror.h"
 #include "gdebug.h"
@@ -35,6 +31,14 @@
 
 private_st_jpxd_state(); /* creates a gc object for our state,
 			    defined in sjpx.h */
+
+/* error reporting callback for the jpx library */
+private void
+s_jpx_jas_error_cb(jas_error_t err, char *msg)
+{
+  dprintf2("jasper (code %d) %s", (int)err, msg);
+}
+
 
 /* initialize the steam.
    this involves allocating the stream and image structures, and
@@ -55,6 +59,11 @@ s_jpxd_init(stream_state * ss)
     state->jpx_memory = ss->memory ? ss->memory->non_gc_memory : gs_lib_ctx_get_non_gc_memory_t();
             
     status = jas_init();
+    jas_set_error_cb(s_jpx_jas_error_cb);
+#ifdef JPX_DEBUG
+    /* raise the error reporting threshold from the default (0) */
+    jas_setdbglevel(1);
+#endif
 
     if (!status) {
 	state->buffer = gs_malloc(state->jpx_memory, 4096, 1, "JPXDecode temp buffer");
