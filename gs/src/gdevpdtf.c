@@ -882,19 +882,6 @@ pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 
 /* ------ CID-keyed ------ */
 
-/* Write CIDSystemInfo */
-private int
-pdf_write_cid_systemInfo_separate(gx_device_pdf *pdev, const gs_cid_system_info_t *pcidsi, long *id)
-{   
-    int code;
-
-    *id = pdf_begin_separate(pdev);
-    code = pdf_write_cid_system_info(pdev, pcidsi, *id);
-    pdf_end_separate(pdev);
-    return code;
-}
-
-
 /* Allocate a CIDFont resource. */
 int
 pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
@@ -1070,77 +1057,3 @@ pdf_cmap_alloc(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
     return pdf_write_cmap(pdev, pcmap, ppres, font_index_only);
 }
 
-static const char *OneByteIdentityH[] = {
-    "/CIDInit /ProcSet findresource begin",
-    "12 dict begin",
-    "begincmap",
-    "/CIDSystemInfo 3 dict dup begin",
-      "/Registry (Adobe) def",
-      "/Ordering (Identity) def",
-      "/Supplement 0 def",
-    "end def",
-    "/CMapName /OneByteIdentityH def",
-    "/CMapVersion 1.000 def",
-    "/CMapType 1 def",
-    "/UIDOffset 0 def",
-    "/XUID [1 10 25404 9999] def",
-    "/WMode 0 def",
-    "1 begincodespacerange",
-    "<00> <FF>",
-    "endcodespacerange",
-    "1 begincidrange",
-    "<00> <FF> 0",
-    "endcidrange",
-    "endcmap",
-    "CMapName currentdict /CMap defineresource pop",
-    "end",
-    "end",
-NULL};
-
-/* 
- * Write OneByteIdentityH CMap. 
- */
-int
-pdf_write_OneByteIdentityH(gx_device_pdf *pdev)
-{ 
-    int code, i;
-    pdf_data_writer_t writer;
-    cos_dict_t *pcd;
-    char buf[200];
-    static const gs_cid_system_info_t cidsi = {{(const byte *)"Adobe", 5}, {(const byte *)"Identity", 8}, 0};
-    long id;
-
-    if (pdev->IdentityCIDSystemInfo_id == gs_no_id) {
-	code = pdf_write_cid_systemInfo_separate(pdev, &cidsi, &id);
-	if (code < 0)
-	    return code;
-	pdev->IdentityCIDSystemInfo_id = id;
-    }
-    if (pdev->OneByteIdentityH != NULL)
-	return 0;
-    code = pdf_begin_data_stream(pdev, &writer,
-				 DATA_STREAM_NOT_BINARY |
-			    /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
-			       See comment in pdf_begin_encrypt. */
-				 (pdev->CompressFonts ? 
-				  DATA_STREAM_COMPRESS : 0), gs_no_id);
-    if (code < 0)
-	return code;
-    pdev->OneByteIdentityH = writer.pres;
-    pcd = (cos_dict_t *)writer.pres->object;
-    code = cos_dict_put_c_key_string(pcd, "/CMapName", "/OneByteIdentityH", 17);
-    if (code < 0)
-	return code;
-    sprintf(buf, "%ld 0 R", pdev->IdentityCIDSystemInfo_id);
-    code = cos_dict_put_c_key_string(pcd, "/CIDSystemInfo", buf, strlen(buf));
-    if (code < 0)
-	return code;
-    code = cos_dict_put_string_copy(pcd, "/Type", "/CMap");
-    if (code < 0)
-	return code;
-    for (i = 0; OneByteIdentityH[i]; i++) {
-	stream_puts(pdev->strm, OneByteIdentityH[i]);
-	stream_putc(pdev->strm, '\n');
-    }
-    return pdf_end_data(&writer);
-}

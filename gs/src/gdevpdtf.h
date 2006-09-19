@@ -450,11 +450,6 @@ int pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_
 int pdf_cmap_alloc(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 		   pdf_resource_t **ppres /* CMap */, int font_index_only);
 
-/* 
- * Write OneByteIdentityH CMap. 
- */
-int pdf_write_OneByteIdentityH(gx_device_pdf *pdev);
-
 /*
  * Add a CID-to-GID mapping to a CIDFontType 2 font resource.
  */

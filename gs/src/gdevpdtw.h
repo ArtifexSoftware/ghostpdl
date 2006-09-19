@@ -59,11 +59,22 @@ typedef struct gs_cmap_s gs_cmap_t;
 int pdf_write_cid_system_info(gx_device_pdf *pdev,
 			      const gs_cid_system_info_t *pcidsi, gs_id object_id);
 
+/* Write CIDSystemInfo */
+int pdf_write_cid_systemInfo_separate(gx_device_pdf *pdev, 
+		              const gs_cid_system_info_t *pcidsi, long *id);
+
+
+
 /*
  * Write a CMap resource.  We pass the CMap object as well as the resource,
  * because we write CMaps when they are created.
  */
 int pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 		   pdf_resource_t **ppres, int font_index_only);
+
+/* 
+ * Write OneByteIdentityH CMap. 
+ */
+int pdf_write_OneByteIdentityH(gx_device_pdf *pdev);
 
 #endif /* gdevpdtw_INCLUDED */
