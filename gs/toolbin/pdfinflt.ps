@@ -80,7 +80,10 @@
 			    null
 			} ifelse
 		    } forall
-		    %stack: <file> <decode|null> <filter>
+		    %stack: <file> <decode|null> <filter|null>
+		    dup null eq {
+		      pop pop exit
+		    } if
 		    filterstoremove 1 index known {
 			% apply the filter
 			exch dup null eq { pop } { exch } ifelse
