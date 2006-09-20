@@ -481,7 +481,8 @@ gs_screen_enum_init_memory(gs_screen_enum * penum, const gx_ht_order * porder,
                            gs_memory_t * mem)
 {
     penum->pgs = pgs;           /* ensure clean for GC */
-    penum->order = *porder;
+    if (&penum->order != porder) /* Pacify Valgrind */
+        penum->order = *porder;
     penum->halftone.rc.memory = mem;
     penum->halftone.type = ht_type_screen;
     penum->halftone.params.screen = *phsp;

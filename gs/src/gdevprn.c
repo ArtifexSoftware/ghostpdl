@@ -1039,7 +1039,8 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target,
     } else
 	bdev = (gx_device *)mdev;
     /****** QUESTIONABLE, BUT BETTER THAN OMITTING ******/
-    bdev->color_info = target->color_info;
+    if (&bdev->color_info != &target->color_info) /* Pacify Valgrind */
+        bdev->color_info = target->color_info;
     *pbdev = bdev;
     return 0;
 }
