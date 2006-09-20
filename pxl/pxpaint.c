@@ -448,8 +448,10 @@ paint_path(px_state_t *pxs, bool reset)
 	  gs_settexturetransparent(pgs, save_transparent);
 	  gs_setfilladjust(pgs, 0.0, 0.0);
 	}
-rx:	if ( save_path )
-	    gx_path_assign_free(ppath, save_path);
+ rx:	if ( save_path ) {
+	    gx_path_assign_free(ppath, save_path);   /* path without a Current point! */
+	    gx_setcurrentpoint_from_path(pgs, ppath);  
+	}
 	else /* Iff save_path is NULL, set currentpoint back to original */
 	    gs_moveto(pgs, cursor.x, cursor.y);
 	return code;
