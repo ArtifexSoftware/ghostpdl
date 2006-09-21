@@ -1202,6 +1202,32 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	pdfont->mark_glyph = font->dir->ccache.mark_glyph;
     }
 
+    if (pdev->PDFA && font->FontType == ft_TrueType) {
+	/* The Adobe preflight tool for PDF/A
+	   checks whether Widht or W include elements
+	   for all characters in the True Type font.
+	   Due to that we need to provide a width
+	   for .notdef glyph.
+	   (It's a part of the bug 688790).
+	 */
+	gs_font_base *cfont = pdf_font_descriptor_font(pfd, false/*any*/);
+	gs_glyph notdef_glyph = copied_get_notdef((const gs_font *)cfont);
+	pdf_glyph_widths_t widths;
+	double cdevproc_result[10] = {0,0,0,0,0, 0,0,0,0,0};
+	double *real_widths, *w, *v, *w0;
+	int char_cache_size, width_cache_size;
+
+	if (notdef_glyph != GS_NO_GLYPH) {
+	    code = pdf_obtain_cidfont_widths_arrays(pdev, pdfont, font->WMode, &w, &w0, &v);
+	    if (code < 0)
+		return code;
+	    widths.Width.w = 0;
+	    code = pdf_glyph_widths(pdfont, font->WMode, notdef_glyph,
+		 font, &widths, cdevproc_result);
+	    w[0] = widths.Width.w;
+	    pdfont->used[0] |= 0x80;
+	}
+    }
     *ppdfont = pdfont;
     return 1;
 }

@@ -430,7 +430,7 @@ pdf_adjust_font_name(gx_device_pdf *pdev, long id, pdf_base_font_t *pbfont)
  * Write an embedded font.
  */
 int
-pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
+pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type FontType,
 			gs_int_rect *FontBBox, gs_id rid, cos_dict_t **ppcd)
 {
     bool do_subset = pdf_do_subset_font(pdev, pbfont, rid);
@@ -477,7 +477,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
     fnstr.data = pbfont->font_name.data;
     fnstr.size = pbfont->font_name.size;
     /* Now write the font (or subset). */
-    switch (out_font->FontType) {
+    switch (FontType) {
 
     case ft_composite:
 	/* Nothing to embed -- the descendant fonts do it all. */

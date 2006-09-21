@@ -174,4 +174,7 @@ int copied_drop_extension_glyphs(gs_font *cfont);
 */
 int copied_order_font(gs_font *font);
 
+/* Get .nmotdef glyph. */
+gs_glyph copied_get_notdef(const gs_font *font);
+
 #endif /* gxfcopy_INCLUDED */

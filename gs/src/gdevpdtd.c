@@ -559,6 +559,7 @@ pdf_finish_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
 	(code = pdf_compute_font_descriptor(pdev, pfd)) >= 0 &&
 	(!pfd->embed ||
 	 (code = pdf_write_embedded_font(pdev, pfd->base_font, 
+				pfd->FontType,
 				&pfd->common.values.FontBBox, 
 				pfd->common.rid, &pcd)) >= 0)
 	) {

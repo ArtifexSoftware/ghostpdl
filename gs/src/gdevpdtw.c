@@ -343,7 +343,20 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
 		gs_glyph_info_t info;
 
 		if (pdfont != NULL) {
-		    if (pfont->procs.glyph_info((gs_font *)pfont, glyph, NULL, 0, &info) < 0)
+		    if (pfont->FontType == ft_TrueType) {
+			/* We're converting a Type 42 into CIDFontType2. */
+			/* We know that CIDs equal to char codes. */
+			gs_glyph glyph1;
+			int ch = glyph & 0xff;
+
+			glyph1 = pfont->procs.encode_char((gs_font *)pfont, ch, GLYPH_SPACE_NAME);
+			if (cid == 0 && glyph1 == GS_NO_GLYPH)
+			    glyph1 = copied_get_notdef(pdf_font_resource_font(pdfont, false));
+			if (glyph1 == GS_NO_GLYPH)
+			    continue;
+			if (pfont->procs.glyph_info((gs_font *)pfont, glyph1, NULL, 0, &info) < 0)
+			    continue;
+		    } else if (pfont->procs.glyph_info((gs_font *)pfont, glyph, NULL, 0, &info) < 0)
 			continue;
 		}
 	    }
@@ -356,7 +369,7 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
 		    pprintd3(s, "\n%d %d %d", width, vx, vy);
 		} else
 		    pprintd1(s, "\n%d", width);
-	    } else if (width == dw && 
+	    } else if (!pdev->PDFA && width == dw && 
 		    (!wmode || (int)(pdfont->u.cidfont.v[cid * 2 + 0] + 0.5) == 
 				(int)(pdfont->Widths[cid] / 2 + 0.5)) &&
 		    (!wmode || (int)(pdfont->u.cidfont.v[cid * 2 + 1] + 0.5) == dv))

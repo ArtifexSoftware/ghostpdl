@@ -710,9 +710,8 @@ copied_build_char(gs_text_enum_t *pte, gs_state *pgs, gs_font *font,
 
     if (glyph == GS_NO_GLYPH) {
 	glyph = font->procs.encode_char(font, chr, GLYPH_SPACE_INDEX);
-	if (glyph == GS_NO_GLYPH) {
+	if (glyph == GS_NO_GLYPH)
 	    glyph = cf_data(font)->notdef;
-	}
     }
     /*
      * Type 1/2 outlines don't require a current point, but TrueType
@@ -2413,4 +2412,13 @@ copied_order_font(gs_font *font)
 	cfdata->ordered = true;
 	return order_font_data(cfdata, font->memory);
     }
+}
+
+/* Get .nmotdef glyph. */
+gs_glyph
+copied_get_notdef(const gs_font *font)
+{
+    gs_copied_font_data_t * cfdata = cf_data(font);
+
+    return cfdata->notdef;
 }

@@ -131,7 +131,7 @@ int pdf_write_FontFile_entry(gx_device_pdf *pdev, pdf_base_font_t *pbfont);
 /*
  * Write an embedded font, possibly subsetted.
  */
-int pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
+int pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type FontType,
 			gs_int_rect *FontBBox, gs_id rid, cos_dict_t **ppcd);
 
 /*
