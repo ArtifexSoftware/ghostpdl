@@ -688,10 +688,13 @@ pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 #ifdef DUMP_TO_PNG
 /* Dumps a planar RGBA image to	a PNG file. */
 private	int
-dump_planar_rgba(gs_memory_t *mem, 
+dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
 		 const byte *buf, int width, int height, int rowstride, int planestride)
 {
+    int rowstride = pbuf->rowstride, planestride = pbuf->planestride;
     int rowbytes = width << 2;
+    int width = pbuf->rect.q.x - pbuf->rect.p.x;
+    int height = pbuf->rect.q.y - pbuf->rect.p.y;
     byte *row = gs_malloc(mem, rowbytes, 1, "png raster buffer");
     png_struct *png_ptr =
     png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -700,7 +703,7 @@ dump_planar_rgba(gs_memory_t *mem,
     const char *software_key = "Software";
     char software_text[256];
     png_text text_png;
-    const byte *buf_ptr = buf;
+    const byte *buf_ptr = pbuf->data + pbuf->rect.p.y * pbuf->rowstride + pbuf->rect.p.x;;
     FILE *file;
     int code;
     int y;
@@ -802,21 +805,25 @@ pdf14_put_image(pdf14_device *pdev, gs_imager_state *pis, gx_device *target)
     gs_image1_t image;
     gs_matrix pmat;
     gx_image_enum_common_t *info;
-    int width = pdev->width;
-    int height = pdev->height;
-    int y;
     pdf14_buf *buf = pdev->ctx->stack;
+    int x1 = min(pdev->width, buf->rect.q.x);
+    int y1 = min(pdev->height, buf->rect.q.y);
+    int width = x1 - buf->rect.p.x;
+    int height = y1 - buf->rect.p.y;
+    int y;
     int planestride = buf->planestride;
     int num_comp = buf->n_chan - 1;
-    byte *buf_ptr = buf->data;
+    byte *buf_ptr = buf->data + buf->rect.p.y * buf->rowstride + buf->rect.p.x;
     byte *linebuf;
     gs_color_space cs;
     const byte bg = pdev->ctx->additive ? 255 : 0;
 
 #ifdef DUMP_TO_PNG
-    dump_planar_rgba(pdev->memory, buf_ptr, width, height,
-		     buf->rowstride, buf->planestride);
+    dump_planar_rgba(pdev->memory, buf);
 #endif
+
+    if (width <= 0 || height <= 0)
+	return 0;
 
 #if 0
     /* Set graphics state device to target, so that image can set up
@@ -854,8 +861,8 @@ pdf14_put_image(pdf14_device *pdev, gs_imager_state *pis, gx_device *target)
     pmat.xy = 0;
     pmat.yx = 0;
     pmat.yy = (float)height;
-    pmat.tx = 0;
-    pmat.ty = 0;
+    pmat.tx = (float)buf->rect.p.x;
+    pmat.ty = (float)buf->rect.p.y;
     code = dev_proc(target, begin_typed_image) (target,
 						pis, &pmat,
 						(gs_image_common_t *)&image,
