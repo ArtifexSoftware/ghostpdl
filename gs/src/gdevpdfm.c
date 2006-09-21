@@ -2024,17 +2024,17 @@ pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
     const pdfmark_name *pmn;
     int code = 0;
     
-    { char *data = pts[-1].data;
-      int cnt, len = pts[-1].size;
+    {	int cnt, len = pts[-1].size;
+	char buf[200]; /* 6 doubles should fit (%g == -0.14285714285714285e-101 = 25 chars) */
 
-      if (size < 2 || len <= 0 || data[len - 1] != ']') 
-	  return_error(gs_error_rangecheck);
-      data[len - 1] = 0;
-      cnt = sscanf(data, "[%g %g %g %g %g %g",
+	if (len > sizeof(buf) - 1)
+	    return_error(gs_error_rangecheck);
+	memcpy(buf, pts[-1].data, len);
+	buf[len] = 0;
+	cnt = sscanf(buf, "[%g %g %g %g %g %g]",
 		   &ctm.xx, &ctm.xy, &ctm.yx, &ctm.yy, &ctm.tx, &ctm.ty);
-      data[len - 1] = ']';
-      if (cnt != 6)
-	return_error(gs_error_rangecheck);
+	if (cnt != 6)
+	    return_error(gs_error_rangecheck);
     }
     size -= 2;			/* remove CTM & pdfmark name */
     for (pmn = mark_names; pmn->mname != 0; ++pmn)
