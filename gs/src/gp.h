@@ -444,9 +444,9 @@ FILE *gp_open_scratch_file_64(const char *prefix,
 			   const char *mode);
 FILE *gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode);
 
-int64_t gp_ftell_64(FILE *stream);
+int64_t gp_ftell_64(FILE *strm);
 
-int gp_fseek_64(FILE *stream, int64_t offset, int origin);
+int gp_fseek_64(FILE *strm, int64_t offset, int origin);
 
 /* We don't define gp_fread_64, gp_fwrite_64,
    because (1) known platforms allow regular fread, fwrite

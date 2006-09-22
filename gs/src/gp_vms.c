@@ -673,16 +673,16 @@ FILE *gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode)
     return gp_open_printer(fname, binary_mode);
 }
 
-int64_t gp_ftell_64(FILE *stream)
+int64_t gp_ftell_64(FILE *strm)
 {
-    return ftell(stream);
+    return ftell(strm);
 }
 
-int gp_fseek_64(FILE *stream, int64_t offset, int origin)
+int gp_fseek_64(FILE *strm, int64_t offset, int origin)
 {
     long offset1 = (long)offset;
     
     if (offset != offset1)
 	return -1;
-    return fseek(stream, offset1, origin);
+    return fseek(strm, offset1, origin);
 }

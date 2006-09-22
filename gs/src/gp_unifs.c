@@ -496,24 +496,24 @@ FILE *gp_open_scratch_file_64(const char *prefix,
 
 /* gp_open_printer_64 is defined in gp_unix.h */
 
-int64_t gp_ftell_64(FILE *stream)
+int64_t gp_ftell_64(FILE *strm)
 {
 #ifdef _LARGEFILE64_SOURCE
-    return ftello(stream);
+    return ftello(strm);
 #else
-    return ftello64(stream);
+    return ftello64(strm);
 #endif
 }
 
-int gp_fseek_64(FILE *stream, int64_t offset, int origin)
+int gp_fseek_64(FILE *strm, int64_t offset, int origin)
 {
 #ifdef _LARGEFILE64_SOURCE
     long offset1 = (long)offset;
     
     if (offset != offset1)
 	return -1;
-    return fseeko(stream, offset1, origin);
+    return fseeko(strm, offset1, origin);
 #else
-    return fseeko64(stream, offset, origin);
+    return fseeko64(strm, offset, origin);
 #endif
 }
