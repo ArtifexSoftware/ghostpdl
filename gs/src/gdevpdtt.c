@@ -1214,8 +1214,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	gs_glyph notdef_glyph = copied_get_notdef((const gs_font *)cfont);
 	pdf_glyph_widths_t widths;
 	double cdevproc_result[10] = {0,0,0,0,0, 0,0,0,0,0};
-	double *real_widths, *w, *v, *w0;
-	int char_cache_size, width_cache_size;
+	double *w, *v, *w0;
 
 	if (notdef_glyph != GS_NO_GLYPH) {
 	    code = pdf_obtain_cidfont_widths_arrays(pdev, pdfont, font->WMode, &w, &w0, &v);

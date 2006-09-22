@@ -18,6 +18,7 @@
 #include "gserrors.h"
 #include "gxfcmap.h"
 #include "gxfont.h"
+#include "gxfcopy.h"
 #include "gscencs.h"
 #include "gdevpsf.h"
 #include "gdevpdfx.h"
@@ -351,7 +352,7 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
 
 			glyph1 = pfont->procs.encode_char((gs_font *)pfont, ch, GLYPH_SPACE_NAME);
 			if (cid == 0 && glyph1 == GS_NO_GLYPH)
-			    glyph1 = copied_get_notdef(pdf_font_resource_font(pdfont, false));
+			    glyph1 = copied_get_notdef((gs_font *)pdf_font_resource_font(pdfont, false));
 			if (glyph1 == GS_NO_GLYPH)
 			    continue;
 			if (pfont->procs.glyph_info((gs_font *)pfont, glyph1, NULL, 0, &info) < 0)
