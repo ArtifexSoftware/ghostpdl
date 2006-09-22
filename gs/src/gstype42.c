@@ -91,7 +91,7 @@ get_glyph_offset(gs_font_type42 *pfont, uint glyph_index)
  * string_proc, and the font procedures as well.
  */
 int
-gs_type42_font_init(gs_font_type42 * pfont)
+gs_type42_font_init(gs_font_type42 * pfont, bool USE_ttfReader)
 {
     int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
 	pfont->data.string_proc;
@@ -190,13 +190,45 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	pfont->data.numGlyphs = pfont->data.trueNumGlyphs;
 	loca_size = pfont->data.numGlyphs + 1;
     }
+
+    pfont->data.warning_patented = false;
+    pfont->data.warning_bad_instruction = false;
+    pfont->procs.glyph_outline = gs_type42_glyph_outline;
+    pfont->procs.glyph_info = gs_type42_glyph_info;
+    pfont->procs.enumerate_glyph = gs_type42_enumerate_glyph;
+    pfont->procs.font_info = gs_type42_font_info;
+    pfont->data.USE_ttfReader = USE_ttfReader;
+    
+    if( USE_ttfReader == false ) {
+	/* Allows specialization via different pfont->data.* functions.
+	 *
+	 * No extra allocations len_glyphs, 
+	 * the "default" data.get_* procs must be overridden.
+	 * bbox must be provided.
+	 *
+	 * And the ttfReader in gx_add_fm_pair won't be constructed/used.
+	 */
+	pfont->data.get_glyph_index = 0;
+	pfont->data.get_outline = 0;
+	pfont->data.get_metrics = 0;
+	pfont->data.len_glyphs = 0;  /* used below along with a special notify destructor */	
+	/* early exit cures the leak of gs_len_glyphs_release not being called. 
+	 * the return could be removed relying on alloc of size 0 to work.
+	 */
+	return 0; 
+    }
+    /* default data.get routines require a ram version of a ttf file */ 
+    pfont->data.get_glyph_index = default_get_glyph_index;
+    pfont->data.get_outline = default_get_outline;
+    pfont->data.get_metrics = gs_type42_default_get_metrics;
+
     /* Now build the len_glyphs array since 'loca' may not be properly sorted */
     pfont->data.len_glyphs = (uint *)gs_alloc_bytes(pfont->memory, pfont->data.numGlyphs * sizeof(uint),
-	    "gs_type42_font");
+						    "gs_type42_font");
     if (pfont->data.len_glyphs == 0)
 	return_error(gs_error_VMerror);
     gs_font_notify_register((gs_font *)pfont, gs_len_glyphs_release, (void *)pfont);
- 
+    
     /* The 'loca' may not be in order, so we construct a glyph length array */
     /* Since 'loca' is usually sorted, first try the simple linear scan to  */
     /* avoid the need to perform the more expensive process. */
@@ -208,29 +240,31 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	    break;				/* out of order loca */
 	pfont->data.len_glyphs[i - 1] = glyph_length;
 	glyph_start = glyph_offset;
-    }
-    if (i < loca_size) {
-        uint j;
-	ulong trial_glyph_length;
-        /*
-         * loca was out of order, build the len_glyphs the hard way      
-	 * Assume that some of the len_glyphs built so far may be wrong 
-	 * For each starting offset, find the next higher ending offset
-	 * Note that doing this means that there can only be zero length
-	 * glyphs that have loca table offset equal to the last 'dummy'
-         * entry. Otherwise we assume that it is a duplicated entry.
-	 */
-	for (i = 0; i < loca_size - 1; i++) {
-	    glyph_start = get_glyph_offset(pfont, i);
-	    for (j = 1, glyph_length = 0x80000000; j < loca_size; j++) {
-		glyph_offset = get_glyph_offset(pfont, j);
-		trial_glyph_length = glyph_offset - glyph_start;
-		if ((trial_glyph_length > 0) && (trial_glyph_length < glyph_length))
-		    glyph_length = trial_glyph_length;
+	
+	if (i < loca_size) {
+	    uint j;
+	    ulong trial_glyph_length;
+	    /*
+	     * loca was out of order, build the len_glyphs the hard way      
+	     * Assume that some of the len_glyphs built so far may be wrong 
+	     * For each starting offset, find the next higher ending offset
+	     * Note that doing this means that there can only be zero length
+	     * glyphs that have loca table offset equal to the last 'dummy'
+	     * entry. Otherwise we assume that it is a duplicated entry.
+	     */
+	    for (i = 0; i < loca_size - 1; i++) {
+		glyph_start = get_glyph_offset(pfont, i);
+		for (j = 1, glyph_length = 0x80000000; j < loca_size; j++) {
+		    glyph_offset = get_glyph_offset(pfont, j);
+		    trial_glyph_length = glyph_offset - glyph_start;
+		    if ((trial_glyph_length > 0) && (trial_glyph_length < glyph_length))
+			glyph_length = trial_glyph_length;
+		}
+		pfont->data.len_glyphs[i] = glyph_length < 0x80000000 ? glyph_length : 0;
 	    }
-	    pfont->data.len_glyphs[i] = glyph_length < 0x80000000 ? glyph_length : 0;
 	}
     }
+
     /*
      * If the font doesn't have a valid FontBBox, compute one from the
      * 'head' information.  Since the Adobe PostScript driver sometimes
@@ -249,15 +283,6 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	pfont->FontBBox.q.x = S16(head_box + 4) / upem;
 	pfont->FontBBox.q.y = S16(head_box + 6) / upem;
     }
-    pfont->data.warning_patented = false;
-    pfont->data.warning_bad_instruction = false;
-    pfont->data.get_glyph_index = default_get_glyph_index;
-    pfont->data.get_outline = default_get_outline;
-    pfont->data.get_metrics = gs_type42_default_get_metrics;
-    pfont->procs.glyph_outline = gs_type42_glyph_outline;
-    pfont->procs.glyph_info = gs_type42_glyph_info;
-    pfont->procs.enumerate_glyph = gs_type42_enumerate_glyph;
-    pfont->procs.font_info = gs_type42_font_info;
     return 0;
 }
 

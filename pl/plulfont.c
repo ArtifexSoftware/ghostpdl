@@ -479,7 +479,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 #endif
     return TRUE;
 }
-
+  
 int
 pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pdir, 
                          int storage, bool use_unicode_names_for_keys)
@@ -530,7 +530,7 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
         return code;
 
     while (1) {
-
+	
         uint width = pl_get_uint16(char_data + 12);
         uint height = pl_get_uint16(char_data + 14);
         uint ccode_plus_header_plus_data = 2 + 16 + (((width + 7) >> 3) * height);
@@ -540,7 +540,8 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
             return -1;
         /* calculate the offset of the next character code in the table */
         char_data += ccode_plus_header_plus_data;
-
+	if (char_data > (sizeof(pl_ulp_character_data) + &pl_ulp_character_data))
+	    break; /* major problem we have read past end of data */
         /* char code 0 is end of table */
         if (pl_get_uint16(char_data) == 0)
             break;
@@ -548,7 +549,7 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
     return gs_definefont(pdir, (gs_font *)pfont);
 }
         
-    
+     
 
 /*
  * Close the font collection objects for the built-in fonts. This should be

@@ -166,6 +166,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 {
     pl_font_t *plfont;
     ulong header_size;
+
     plfont = (pl_font_t *)gs_alloc_bytes(mem, gs_object_size(mem, src), cname);
     if ( plfont == 0 )
         return 0;
@@ -354,8 +355,10 @@ pl_fill_in_tt_font(gs_font_type42 *pfont, void *data, long unique_id)
 	/* Initialize Type 42 specific data. */
 	pfont->data.proc_data = data;
 	pl_tt_init_procs(pfont);
-	gs_type42_font_init(pfont);
+	gs_type42_font_init(pfont, false /* no ttfReader */);
 	pl_tt_finish_init(pfont, !data);
+	pfont->FAPI = 0;
+	pfont->FAPI_font_data = 0;
 }
 
 /* Fill in Intellifont boilerplate. */

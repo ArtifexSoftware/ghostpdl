@@ -54,6 +54,16 @@ struct gs_type42_data_s {
 		       gs_glyph_data_t *pgd);
     int (*get_metrics)(gs_font_type42 *pfont, uint glyph_index, int wmode,
 		       float sbw[4]);
+
+
+    /* Essentially subclasses gs_type42 into with ttfReader and without ttReader
+     * Set by gs_type42_font_init, 
+     * used by gx_add_fm_pair() to do a ISA inspection and attach a ttfReader to the font
+     * if false no ttfReader is attached and normal font calls are dispatched.
+     * Used to process ttf fonts with UFST without FAPI
+     */
+    bool USE_ttfReader;		
+
     /* The following are cached values. */
     ulong cmap;			/* offset to cmap table (not used by */
 				/* renderer, only here for clients) */
@@ -62,7 +72,7 @@ struct gs_type42_data_s {
     uint indexToLocFormat;	/* from head */
     gs_type42_mtx_t metrics[2];	/* hhea/hmtx, vhea/vmtx (indexed by WMode) */
     ulong loca;			/* offset to loca table */
-    ulong name_offset;		/* offset to name table */		
+    ulong name_offset;		/* offset to name table */
     /*
      * TrueType fonts specify the number of glyphs in two different ways:
      * the size of the loca table, and an explicit value in maxp.  Currently
@@ -101,8 +111,10 @@ extern_st(st_gs_font_type42);
  * we provide a procedure to initialize them from the font data.
  * Note that this initializes the type42_data procedures other than
  * string_proc, and the font procedures as well.
+ * USE_ttfReader subclasses gs_font_type42 with ttfReader or without.
+ * FAPI will disable ttfReader as well. 
  */
-int gs_type42_font_init(gs_font_type42 *);
+int gs_type42_font_init(gs_font_type42 *pfont, bool USE_ttfReader);
 
 /* Append the outline of a TrueType character to a path. */
 int gs_type42_append(uint glyph_index, gs_imager_state * pis,

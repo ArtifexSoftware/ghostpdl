@@ -737,7 +737,7 @@ pl_fill_in_tt_font(gs_font_type42 *pfont, void *data, long unique_id)
 	/* Initialize Type 42 specific data. */
 	pfont->data.proc_data = data;
 	pl_tt_init_procs(pfont);
-	gs_type42_font_init(pfont);
+	gs_type42_font_init(pfont, true/* use ttfReader */);
 	/* disable unused FAPI */
 	pfont->FAPI = 0;
 	pfont->FAPI_font_data = 0;
