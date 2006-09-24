@@ -5,133 +5,178 @@
 # The following are suspected bugs which should be either fixed or
 # identified as non-bugs and moved to vg_okay.supp
 # This file can be used for regression testing with Valgrind.
+#
+# Created with Valgrind - 2.4.0, gcc - 3.3.5 on x86
+# Old versions of gcc and Valgrind report some false positives.
+#
+# Errors, detected in the system calls or CRTL are not suppressed
+# because this cannot be done in the platform-independent way.
+#
 
+# Type 1 to Type 2 conversion issues
+# pdfwrite - Bug687846.ps 401-01.ps
 {
-   <upath_append (zupath.c:707)>
-   Memcheck:Value4
-   fun:upath_append
-   fun:zuappend
-}
-{
-   <t1_hinter(short, bool, wchar_t) (gxhintn.c:582)>
+   <bug 688903.1>
    Memcheck:Cond
-   fun:t1_hinter__sbw
-   fun:type2_sbw
+   fun:psf_convert_type1_to_type2
 }
 {
-   <t1_hinter(short, bool, wchar_t) (gxhintn.c:582)>
+   <bug 688903.2>
    Memcheck:Cond
-   fun:t1_hinter__sbw
-   fun:gs_type1_interpret
+   fun:type2_put_fixed
 }
 {
-   <pdf_process_string (gdevpdte.c:523)>
+   <bug 688903.3>
    Memcheck:Cond
-   fun:pdf_process_string
-   fun:pdf_process_string_aux
-   fun:process_plain_text
+   fun:type2_put_int
 }
+
+# Garbage collection
+# pdfwrite - messenger16.pdf Testform.v1.0.2.pdf 415-01.ps ai2.pdf 86554321.pdf
+#   HeiseiMinStd.pdf laballade.pdf mspro.pdf test.pdf test_multipage_prob.pdf
+#   Popafinalrep.pdf Altona-Testsuite_p2_S_x3.pdf gs.anotherfailure.pdf
 {
-   <gx_general_fill_path (gxfill.c:172)>
+   <bug 688876.1>
    Memcheck:Cond
-   fun:gx_general_fill_path
-   fun:gx_default_fill_path
+   fun:ptr_struct_mark
+   fun:gc_trace
 }
-# 014-01.ps
 {
-   <gc_trace_chunk (igc.c:745)>
+   <bug 688876.2>
    Memcheck:Cond
    fun:gc_trace_chunk
    fun:gs_gc_reclaim
+   fun:gs_vmreclaim
 }
 {
-   <process_composite_text (gdevpdtc.c:154)>
+   <bug 688876.3>
+   Memcheck:Cond
+   fun:gc_trace
+   fun:gc_trace_chunk
+}
+
+
+# CCITTFaxDecode filter
+# pdfwrite - 0.pdf
+{
+   <bug 688905>
+   Memcheck:Cond
+   fun:cf_decode_2d
+   fun:s_CFD_process
+}
+
+# Composite text
+# pdfwrite - 017-01.ps 093-01.ps
+{
+   <bug 688906>
    Memcheck:Cond
    fun:process_composite_text
    fun:pdf_text_process
    fun:gs_text_process
 }
+
+# Find PDF resource 
+# pdfwrite - 093-01.ps
 {
-   <pdf_process_string (gdevpdte.c:523)>
+   <bug 688907>
    Memcheck:Cond
-   fun:pdf_process_string
-   fun:pdf_process_string_aux
-   fun:process_composite_text
+   fun:pdf_find_resource_by_gs_id
 }
+
+# Fill
+# pdfwrite - 246-01.ps 
 {
-   <scan_cmap_text (gdevpdtc.c:531)>
+   <bug 688908>
    Memcheck:Cond
-   fun:scan_cmap_text
-   fun:process_cmap_text
+   fun:prepare_fill_with_clip
+   fun:gdev_pdf_fill_path
+   fun:gx_fill_path
 }
+
+# Transfer
+# pdfwrite - 258-01.ps
 {
-   <image_render_mono (gximono.c:150)>
+   <bug 688909>
+   Memcheck:Cond
+   fun:load_transfer_map
+   fun:process_transfer
+}
+
+# Image render
+# pdfwrite - 405-01.ps 450-01.ps
+{
+   <bug 688910>
    Memcheck:Cond
    fun:image_render_mono
    fun:gx_image1_plane_data
    fun:gx_image_plane_data_rows
+   fun:gs_image_next_planes
 }
+
+# Put name
+# pdfwrite - Bug687698.ps
 {
-   <gs_point_transform2fixed (gsmatrix.c:392)>
-   Memcheck:Cond
-   fun:gs_point_transform2fixed
-   fun:shade_next_coords
-   fun:put_float_mesh_data
-}
-{
-   <pdf_put_name_chars_1_2 (gdevpdfu.c:1400)>
+   <bug 688911>
    Memcheck:Cond
    fun:pdf_put_name_chars_1_2
    fun:pdf_put_name_chars
    fun:pdf_put_name
 }
+
+# Image 3
+# pdfwrite - ai2.pdf
 {
-   <psf_convert_type1_to_type2 (gdevpsfx.c:643)>
+   <bug 688912>
    Memcheck:Cond
-   fun:psf_convert_type1_to_type2
-   fun:cff_write_CharStrings_offsets
-   fun:psf_write_cid0_font
+   fun:gx_image3x_plane_data
+   fun:gx_image_plane_data_rows
 }
+
+# Smooth shading
+# pdfwrite - 483-01.ps
 {
-   <type2_put_fixed (gdevpsfx.c:350)>
+   <bug 688914>
    Memcheck:Cond
-   fun:type2_put_fixed
-   fun:psf_convert_type1_to_type2
-   fun:cff_write_CharStrings_offsets
+   fun:gs_point_transform2fixed
+   fun:shade_next_coords
+   fun:put_float_mesh_data
+   fun:pdf_put_mesh_shading
 }
+
+# DeviceN
+# pdfwrite - Altona-Testsuite_p2_S_x3.pdf
 {
-   <type2_put_int (gdevpsfx.c:323)>
+   <bug 688915>
    Memcheck:Cond
-   fun:type2_put_int
-   fun:type2_put_fixed
-   fun:psf_convert_type1_to_type2
+   fun:gx_install_DeviceN
+   fun:gs_setcolorspace
 }
+
+# Identifying a color space
+# pdfwrite - Altona-Testsuite_p2_S_x3.pdf
 {
-   <type2_put_int (gdevpsfx.c:323)>
+   <bug 688916>
    Memcheck:Cond
-   fun:type2_put_int
-   fun:type2_put_int
-   fun:type2_put_fixed
-   fun:psf_convert_type1_to_type2
+   fun:choose_DCT_params
+   fun:setup_image_compression
+   fun:psdf_setup_image_filters
 }
+
+# Smooth shading 2
+# pdfwrite - 446-01-fixed.ps
 {
-   <psf_convert_type1_to_type2 (gdevpsfx.c:643)>
+   <bug 688917>
    Memcheck:Cond
-   fun:psf_convert_type1_to_type2
-   fun:cff_write_CharStrings_offsets
-   fun:cff_write_CharStrings
+   fun:gs_point_transform2fixed
+   fun:shade_next_coords
+   fun:put_float_mesh_data
 }
+
+# Jbig2 error reporting
+# pdfwrite - 2page-output.jbig2.pdf
 {
-   <memcpy (mac_replace_strmem.c:81)>
+   <bug 688877>
    Memcheck:Cond
-   fun:memcpy
-   fun:sputs
-   fun:pdf_image_plane_data_alt
-   fun:pdf_image_plane_data
-}
-{
-   <jbig2_error (jbig2.c:106)>
-   Memcheck:Value4
    fun:vfprintf
    fun:vsnprintf
    fun:jbig2_error
