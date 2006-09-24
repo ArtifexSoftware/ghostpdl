@@ -80,7 +80,6 @@ pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, byte *used, in
 				  "pdf_add_subset_prefix");
     int len = (count + 7) / 8;
     ulong v = 0;
-    ushort t = 0;
     int i;
 
     if (data == 0)
@@ -88,10 +87,11 @@ pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, byte *used, in
     /* Hash the 'used' array. */
     for (i = 0; i < len; i += sizeof(ushort))
 	v = hash(v, i, *(ushort *)(used + i));
-    if (i < len) {
+    if (i > len) {
+        ushort t = 0;
 	i -= sizeof(ushort);
 	memmove(&t, used + i, len - i);
-	v = hash(v, i, *(ushort *)(used + i));
+	v = hash(v, i, t);
     }
     memmove(data + SUBSET_PREFIX_SIZE, data, size);
     for (i = 0; i < SUBSET_PREFIX_SIZE - 1; ++i, v /= 26)
