@@ -540,15 +540,13 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
             return -1;
         /* calculate the offset of the next character code in the table */
         char_data += ccode_plus_header_plus_data;
-	if (char_data > (sizeof(pl_ulp_character_data) + &pl_ulp_character_data))
-	    break; /* major problem we have read past end of data */
+
         /* char code 0 is end of table */
         if (pl_get_uint16(char_data) == 0)
             break;
     }
     return gs_definefont(pdir, (gs_font *)pfont);
 }
-        
      
 
 /*
