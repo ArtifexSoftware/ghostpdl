@@ -88,15 +88,14 @@ gp_open_scratch_file_generic(const char *prefix, char fname[gp_file_name_sizeof]
 
 	/* save the old filename template in case mkstemp fails */
 	memcpy(ofname, fname, gp_file_name_sizeof);
-
-#ifndef _LARGEFILE64_SOURCE
+#if defined(HAVE_FILE64) && !defined(_LARGEFILE64_SOURCE)
 	if (b64)
 	    file = mkstemp64(fname);
 	else
 #endif
 	    file = mkstemp(fname);
 
-	/* Fixme : what top do with b64 ? Unimplemented. */
+	/* Fixme : what to do with b64 and 32-bit mkstemp? Unimplemented. */
 	if (file < -1) {
 	    eprintf1("**** Could not open temporary file %s\n", ofname);
 	    return NULL;
@@ -480,7 +479,7 @@ gp_enumerate_files_close(file_enum * pfen)
 
 FILE *gp_fopen_64(const char *filename, const char *mode)
 {
-#ifdef _LARGEFILE64_SOURCE
+#if defined(_LARGEFILE64_SOURCE) || !defined(HAVE_FILE64)
     return fopen(filename, mode);
 #else
     return fopen64(filename, mode);
@@ -498,7 +497,7 @@ FILE *gp_open_scratch_file_64(const char *prefix,
 
 int64_t gp_ftell_64(FILE *strm)
 {
-#ifdef _LARGEFILE64_SOURCE
+#if defined(_LARGEFILE64_SOURCE) || !defined(HAVE_FILE64)
     return ftello(strm);
 #else
     return ftello64(strm);
@@ -507,8 +506,8 @@ int64_t gp_ftell_64(FILE *strm)
 
 int gp_fseek_64(FILE *strm, int64_t offset, int origin)
 {
-#ifdef _LARGEFILE64_SOURCE
-    long offset1 = (long)offset;
+#if defined(_LARGEFILE64_SOURCE) || !defined(HAVE_FILE64)
+    off_t offset1 = (off_t)offset;
     
     if (offset != offset1)
 	return -1;

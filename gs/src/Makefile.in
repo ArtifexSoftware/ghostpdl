@@ -109,8 +109,11 @@ GENOPT=
 #		Enable this if it is available on your platform.
 # -DHAVE_HYPOT
 #	use the system hypot() call
+#
+# -DHAVE_FILE64
+#	use marked versions of the stdio FILE calls, fopen64() et al.
 
-CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@
+CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@ @HAVE_FILE64@
 
 # Define the name of the executable file.
 
