@@ -76,4 +76,22 @@ ls_uclean:
 	make -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" clean
 	make -C ufst/rts/lib -f makefile.artifex clean
 
-.PHONY: clean test install product profile ls_clean ls_test ls_install ls_product ls_profile ls_udebug ufst
+uproduct: ufst
+	make -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" 
+
+udebug: ufst
+	make -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" debug
+
+uclean:
+	make -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" clean
+	make -C ufst/rts/lib -f makefile.artifex clean
+
+
+all_debug: debug udebug ls_debug ls_udebug 
+
+
+all_clean: clean uclean ls_uclean ls_clean
+	make -C ufst/rts/lib -f makefile.artifex clean
+
+
+.PHONY: clean test install product profile ls_clean ls_test ls_install ls_product ls_profile ls_udebug udebug ufst
