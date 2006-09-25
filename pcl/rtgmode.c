@@ -137,7 +137,7 @@ get_raster_print_rect( const gs_memory_t *mem,
  *    command) and unit of page space (centi-points). This factor is applied
  *    in both scan directions.
  *
- *    If scaline is employed, the situation is somewhat more complicated. It
+ *    If scaling is employed, the situation is somewhat more complicated. It
  *    is necessary, in this case, to know which of the raster destination
  *    dimensions have been explicitly set:
  *
@@ -146,7 +146,8 @@ get_raster_print_rect( const gs_memory_t *mem,
  *
  *        If only one destination dimension is specified, the ratio of this
  *        dimension to the corresponding source dimension determins the
- *        raster scale for both dimensions
+ *        raster scale for both dimensions; With strange interactions with 
+ *        the 1200centipoint margin and rotated pages (Bug emulation).
  *
  *        If neither dimension is specified, the page printable region is
  *        transformed to raster space, the intersection of this with the
@@ -162,7 +163,7 @@ get_raster_print_rect( const gs_memory_t *mem,
  *    the useable source raster width and height.
  *        
  */
-  int
+   int
 pcl_enter_graphics_mode(
     pcl_state_t *       pcs,
     pcl_gmode_entry_t   mode
@@ -178,11 +179,12 @@ pcl_enter_graphics_mode(
     uint                    src_wid, src_hgt;
     int                     rot;
     int                     code = 0;
-
+    double                  dwid, dhgt;
+    int                     clip_x, clip_y;
     /*
      * Check if the raster is to be clipped fully; see rtrstst.h for details.
      * Since this is a discontinuous effect, the equality checks below
-     * should be made while still in centipoings.
+     * should be made while still in centipoints.
      */
     prstate->clip_all = ( (pcs->cap.x == pxfmst->pd_size.x) ||
                           (pcs->cap.y == pxfmst->pd_size.y)   );
@@ -209,6 +211,16 @@ pcl_enter_graphics_mode(
     gs_matrix_translate(&rst2lp, gmargin_cp, cur_pt.y, &rst2lp);
     prstate->gmargin_cp = gmargin_cp;
 
+    /* isotropic scaling with missing parameter is based on clipped raster dimensions */
+
+    /* transform the clipping window to raster space */
+    get_raster_print_rect(pcs->memory, &(pxfmst->lp_print_rect), &print_rect, &rst2lp);
+    dwid = print_rect.q.x - print_rect.p.x;
+    dhgt = print_rect.q.y - print_rect.p.y;
+
+    clip_x = pxfmst->lp_print_rect.p.x;  /* if neg then: */
+    clip_y = pxfmst->lp_print_rect.p.y;  /* = 1200centipoints */
+
     /* set the matrix scale */
     if ( !prstate->scale_raster       ||
          !prstate->src_width_set      ||
@@ -218,28 +230,32 @@ pcl_enter_graphics_mode(
         scale_y = scale_x;
 
     } else if (prstate->dest_width_set) {
-        scale_x = (floatp)prstate->dest_width_cp / (floatp)prstate->src_width;
-        if (prstate->dest_height_set)
-            scale_y = (floatp)prstate->dest_height_cp
-                       / (floatp)prstate->src_height;
-        else
-            scale_y = scale_x;
+	scale_x = (floatp)prstate->dest_width_cp / (floatp)prstate->src_width;
 
-    } else if (prstate->dest_height_set) {
-        scale_y = (floatp)prstate->dest_height_cp / (floatp)prstate->src_height;
-        scale_x = scale_y;
+	if ( clip_x < 0 && pxfmst->lp_orient == 3 ) { 
+	    scale_y = (floatp)(prstate->dest_width_cp - clip_y ) / (floatp)prstate->src_width;
+	    if ( rot == 2 && scale_y <=  2* prstate->src_width) /* empirical test 1 */
+		scale_y = scale_x;   
+	}
+	else if ( clip_x < 0 && pxfmst->lp_orient == 1 && rot == 3 ) {
+	    scale_y = (floatp)(prstate->dest_width_cp - clip_y) / (floatp)prstate->src_width;
 
+	    if ( prstate->dest_width_cp <= 7200 )  /* empirical test 2 */
+		scale_y = (floatp)(prstate->dest_width_cp + clip_y) / (floatp)prstate->src_width;
+	}
+	else 
+	    scale_y = scale_x;
+
+        if (prstate->dest_height_set) 
+	    scale_y = (floatp)prstate->dest_height_cp / (floatp)prstate->src_height;
+
+    } else if (prstate->dest_height_set) {    	 
+	scale_x = scale_y = (floatp)prstate->dest_height_cp / (floatp)prstate->src_height;
     } else {
-        double  dwid, dhgt;
-
-        /* transform the clipping window to raster space */
-        get_raster_print_rect(pcs->memory, &(pxfmst->lp_print_rect), &print_rect, &rst2lp);
 
         /* select isotropic scaling with no clipping */
-        dwid = print_rect.q.x - print_rect.p.x;
-        dhgt = print_rect.q.y - print_rect.p.y;
-        scale_x = (floatp)dwid / (floatp)prstate->src_width;
-        scale_y = (floatp)dhgt / (floatp)prstate->src_height;
+	scale_x = (floatp)dwid / (floatp)prstate->src_width;
+	scale_y = (floatp)dhgt / (floatp)prstate->src_height;
         if (scale_x > scale_y)
             scale_x = scale_y;
         else
@@ -495,10 +511,14 @@ set_dest_raster_width(
 )
 {
     if (!pcs->raster_state.graphics_mode) {
-        uint    dw = 10 * uint_arg(pargs);
+	if ( arg_is_present(pargs) ) {
+	    uint    dw = 10 * uint_arg(pargs);
 
-        pcs->raster_state.dest_width_cp = dw;
-        pcs->raster_state.dest_width_set = (dw != 0);
+	    pcs->raster_state.dest_width_cp = dw;
+	    pcs->raster_state.dest_width_set = (dw != 0);
+	}
+	else
+	    pcs->raster_state.dest_width_set = false;
     }
     return 0;
 }
@@ -520,11 +540,15 @@ set_dest_raster_height(
     pcl_state_t *   pcs
 )
 {
-    if (!pcs->raster_state.graphics_mode) {
-        uint    dh = 10 * uint_arg(pargs);
+    if (!pcs->raster_state.graphics_mode) {	
+	if ( arg_is_present(pargs) ) {
+	    uint    dh = 10 * uint_arg(pargs);
 
-        pcs->raster_state.dest_height_cp = dh;
-        pcs->raster_state.dest_height_set = (dh != 0);
+	    pcs->raster_state.dest_height_cp = dh;
+	    pcs->raster_state.dest_height_set = (dh != 0);
+	}
+	else
+	    pcs->raster_state.dest_height_set = false;
     }
     return 0;
 }
