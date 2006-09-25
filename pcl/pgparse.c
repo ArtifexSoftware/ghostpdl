@@ -273,7 +273,7 @@ done:		if ( parg->sign < 0 )
 	      case '0': case '1': case '2': case '3': case '4':
 	      case '5': case '6': case '7': case '8': case '9':
 		ch -= '0';
-#define max_i 0x3fffffff
+#define max_i 0x7fffffff
 		switch ( parg->have_value )
 		  {
 		  default:	/* case 2 */
@@ -287,7 +287,7 @@ done:		if ( parg->sign < 0 )
 		    if ( pvalue->v_n.i >= max_i/10 &&
 			 (pvalue->v_n.i > max_i/10 || ch > max_i%10)
 		       )
-		      pvalue->v_n.i = max_i;
+                        return false;
 		    else
 		      pvalue->v_n.i = pvalue->v_n.i * 10 + ch;
 		  }

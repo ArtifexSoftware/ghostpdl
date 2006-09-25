@@ -1167,42 +1167,58 @@ hpgl_add_pcl_point_to_path(hpgl_state_t *pgls, const gs_point *pcl_pt)
 	return 0;
 }
 
+private floatp 
+compute_chord_angle(floatp chord_angle)
+{
+    floatp ca = fmod(chord_angle, 360);
+    if (ca >= 0) {
+        if (ca > 180)
+            ca = 360 - ca;
+        if (ca < 5)
+            ca = 5;
+    } else /* negative ca */ {
+        if (ca > -5)
+            ca = -5;
+    }
+    return ca;
+}
+    
  int
 hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 		     floatp radius, floatp start_angle, floatp sweep_angle,
 		     floatp chord_angle, bool start_moveto, hpgl_plot_function_t draw,
 		     bool set_ctm)
 {
-	/*
-	 * Ensure that the sweep angle is an integral multiple of the
-	 * chord angle, by decreasing the chord angle if necessary.
-	 */
-	int num_chords = (int)ceil(sweep_angle / chord_angle);
-	floatp integral_chord_angle = sweep_angle / num_chords;
-	int i;
-	floatp arccoord_x, arccoord_y;
+    floatp num_chordsf = sweep_angle / compute_chord_angle(chord_angle);
+    int num_chords = (int)(num_chordsf >= 0.0 ? ceil(num_chordsf) : floor(num_chordsf));
+    floatp integral_chord_angle = fabs(sweep_angle / num_chords);
+    int i;
+    floatp arccoord_x, arccoord_y;
+    
+    (void)hpgl_compute_arc_coords(radius, center_x, center_y,
+                                  start_angle,
+                                  &arccoord_x, &arccoord_y);
+    hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y,
+                                     (draw && !start_moveto ?
+                                      hpgl_plot_draw_absolute :
+                                      hpgl_plot_move_absolute), set_ctm));
 
-	(void)hpgl_compute_arc_coords(radius, center_x, center_y,
-				      start_angle,
-				      &arccoord_x, &arccoord_y);
-	hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y,
-					 (draw && !start_moveto ?
-					 hpgl_plot_draw_absolute :
-					 hpgl_plot_move_absolute), set_ctm));
-
-	/* HAS - pen up/down is invariant in the loop */
-	for ( i = 0; i < num_chords; i++ )
-	  {
+    for ( i = 0; i < abs(num_chords); i++ ) {
+        if (sweep_angle > 0)
 	    start_angle += integral_chord_angle;
-	    hpgl_compute_arc_coords(radius, center_x, center_y,
-				    start_angle, &arccoord_x, &arccoord_y);
-	    hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y,
-					     (draw ? hpgl_plot_draw_absolute :
-					     hpgl_plot_move_absolute), set_ctm));
-	  }
-	if (sweep_angle - 360.0  > -0.0001) 
-	    hpgl_call(hpgl_close_current_path(pgls));
-	return 0;
+        else
+            start_angle -= integral_chord_angle;
+        hpgl_compute_arc_coords(radius, center_x, center_y,
+                                start_angle, &arccoord_x, &arccoord_y);
+        hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y,
+                                         (draw ? hpgl_plot_draw_absolute :
+                                          hpgl_plot_move_absolute), set_ctm));
+    }
+    /* NB this is suspicious - why not any +- multiple of 360 if this
+       is correct at all. */
+    if (sweep_angle - 360.0  > -0.0001) 
+        hpgl_call(hpgl_close_current_path(pgls));
+    return 0;
 }
 
 /* add a 3 point arc to the path */

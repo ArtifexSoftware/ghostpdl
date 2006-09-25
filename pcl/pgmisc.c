@@ -17,6 +17,18 @@
 #include "pgmand.h"
 #include "pgmisc.h"
 
+bool
+current_units_in_range(hpgl_real_t x)
+{
+    const hpgl_real_t max = (1 << 30) - 1;
+    const hpgl_real_t min = -(1 << 30);
+    /* Not much to do about the floating point equality checking here
+       The problem is the coordinates should already be in an exact
+       (fixed) representation at this time but they are not so we make
+       due with the following. */
+    return (x <= max && x >= min);
+}
+
 void
 hpgl_set_lost_mode(hpgl_state_t *pgls, hpgl_lost_mode_t lost_mode)
 {
