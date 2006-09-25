@@ -773,6 +773,8 @@ $(PCLOBJ)pctext.$(OBJ): $(PCLSRC)pctext.c   \
                         $(pcdraw_h)         \
                         $(pcfont_h)         \
                         $(pcursor_h)        \
+                        $(pcpage_h)         \
+                        $(pcfrgrnd_h)       \
                         $(gdebug_h)         \
                         $(gscoord_h)        \
                         $(gsline_h)         \

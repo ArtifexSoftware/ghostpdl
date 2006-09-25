@@ -128,4 +128,11 @@ typedef struct pcl_frgrnd_s     pcl_frgrnd_t;
  */
 int pcl_frgrnd_set_default_foreground(pcl_state_t * pcs);
 
+/* checks for: 
+ * (white pattern or white foreground color) and transparent pattern
+ * is a NOP 
+ */
+bool 
+is_invisible_pattern( pcl_state_t *pcs );
+ 
 #endif  /* pcfrgrnd_INCLUDED */

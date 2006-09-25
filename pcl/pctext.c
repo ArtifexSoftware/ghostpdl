@@ -24,6 +24,7 @@
 #include "pcfont.h"
 #include "pcursor.h"
 #include "pcpage.h"
+#include "pcfrgrnd.h"
 #include "gdebug.h"
 #include "gscoord.h"
 #include "gsline.h"
@@ -388,7 +389,7 @@ pcl_get_width(pcl_state_t *pcs, gs_point *advance_vector, const gs_point *pscale
     /* round to nearest integral pcl units */
     return width;
 }
-    
+
 /*
  * Show a string of characters.  Provide a general purpose function
  * that can be used in all cases (pcl_show_chars_slow) and a faster
@@ -458,9 +459,7 @@ pcl_show_chars_slow(
     floatp                  rmargin = pcs->margins.right;
     floatp                  page_size = pcs->xfm_state.pd_size.x;
     bool                    source_opaque = !pcs->source_transparent;
-    bool                    invisible_pattern = 
-        (pcs->pattern_type == pcl_pattern_solid_white &&
-         pcs->pattern_transparent);
+    bool                    invisible_pattern = is_invisible_pattern(pcs);
     bool                    wrap = pcs->end_of_line_wrap;
     bool                    is_space = false;
     bool                    use_rmargin = (pcs->cap.x <= rmargin);

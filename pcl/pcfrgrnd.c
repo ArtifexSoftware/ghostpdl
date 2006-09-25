@@ -24,7 +24,7 @@ private_st_frgrnd_t();
 /*
  * Free a pcl foreground object.
  */
-void
+private void
 free_foreground(
     gs_memory_t *   pmem,
     void *          pvfrgrnd,
@@ -240,5 +240,23 @@ frgrnd_do_copy(
         pcl_frgrnd_release(((pcl_state_t *)pcs)->pfrgrnd);
     return 0;
 }
+
+/* (white pattern or white foreground color) and transparent pattern
+ * is a NOP 
+ */
+bool 
+is_invisible_pattern( pcl_state_t *pcs ) 
+{
+    if ( pcs->pattern_transparent ) {
+	if (pcs->pattern_type == pcl_pattern_solid_white ) 
+	    return true;
+	if ( pcs->pfrgrnd->color[0] == 0xff && 
+	     pcs->pfrgrnd->color[1] == 0xff && 
+	     pcs->pfrgrnd->color[2] == 0xff ) 
+	    return true;  /* NB: depends on CMY conversion to internal RGB */
+    }
+    return false;
+}
+
 
 const pcl_init_t    pcl_frgrnd_init = { frgrnd_do_registration, frgrnd_do_reset, frgrnd_do_copy };
