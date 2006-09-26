@@ -37,6 +37,10 @@ hpgl_rectangle(hpgl_args_t *pargs, hpgl_state_t *pgls, int flags)
 	     !hpgl_arg_units(pgls->memory, pargs, &y2) )
 	  return e_Range;
 
+        if ( current_units_out_of_range(x2) ||
+             current_units_out_of_range(y2) )
+            return e_Range;
+
 	if ( flags & DO_RELATIVE )
 	  {
 	    x2 += pgls->g.pos.x;

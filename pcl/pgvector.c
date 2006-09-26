@@ -42,10 +42,10 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 
 	hpgl_arg_c_real(pgls->memory, pargs, &chord_angle);
 
-        if ((current_units_in_range(x_center) && current_units_in_range(y_center)) == false)
+        if ( current_units_out_of_range(x_center) ||
+             current_units_out_of_range(y_center) )
             return 0;
 
-        
 	x_current = pgls->g.pos.x;
 	y_current = pgls->g.pos.y;
 
@@ -191,8 +191,10 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
     while ( hpgl_arg_units(pgls->memory, pargs, &x) && 
 	    hpgl_arg_units(pgls->memory, pargs, &y) ) {
 
-        if ((current_units_in_range(x) && current_units_in_range(y)) == false)
-            return 0;
+        if ( current_units_out_of_range(x) ||
+             current_units_out_of_range(y) )
+            return e_Range;
+
 	/* move with arguments closes path */
 	if ( pargs->phase == 0 
 	     && (hpgl_plot_is_move(func) || pgls->g.subpolygon_started )) {

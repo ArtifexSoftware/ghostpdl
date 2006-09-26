@@ -337,8 +337,8 @@ do {\
     ((pgls)->g.pos = (save)->pos);\
 } while (0)
 
-/* check if current units are so withing the so-called "functional
-   range" defined to be -2^30 to 2^30 - 1 */
-bool current_units_in_range(hpgl_real_t x);
+/* check if current units are within the so-called "functional range"
+   defined to be -2^30 to 2^30 - 1 */
+bool current_units_out_of_range(hpgl_real_t x);
 
 #endif				/* pgstate_INCLUDED */

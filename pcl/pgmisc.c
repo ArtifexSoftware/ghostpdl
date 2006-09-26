@@ -18,7 +18,7 @@
 #include "pgmisc.h"
 
 bool
-current_units_in_range(hpgl_real_t x)
+current_units_out_of_range(hpgl_real_t x)
 {
     const hpgl_real_t max = (1 << 30) - 1;
     const hpgl_real_t min = -(1 << 30);
@@ -26,7 +26,7 @@ current_units_in_range(hpgl_real_t x)
        The problem is the coordinates should already be in an exact
        (fixed) representation at this time but they are not so we make
        due with the following. */
-    return (x <= max && x >= min);
+    return (x < min || x > max);
 }
 
 void
