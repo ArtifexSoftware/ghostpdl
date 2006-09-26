@@ -1094,7 +1094,6 @@ pcpage_do_reset(
                           );
     } else if ((type & pcl_reset_overlay) != 0) {
 	pcs->perforation_skip = 1;
-        pcs->xfm_state.print_dir = 0;
         update_xfm_state(pcs, 0);
         reset_margins(pcs);
         pcl_xfm_reset_pcl_pat_ref_pt(pcs);
