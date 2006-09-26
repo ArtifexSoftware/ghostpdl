@@ -28,8 +28,11 @@
 #include "gxfont42.h"
 #include "gxttf.h"
 #include "gxttfb.h"
+#include "gxtext.h"
+#include "gxchar.h"
 #include "gxfcache.h"
 #include "gxistate.h"
+#include "gzstate.h"
 #include "stream.h"
 
 /* Structure descriptor */
@@ -827,20 +830,37 @@ gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
 /* Append a TrueType outline to a path. */
 /* Note that this does not append the final moveto for the width. */
 int
-gs_type42_append(uint glyph_index, gs_imager_state * pis,
-		 gx_path * ppath, const gs_log2_scale_point * pscale,
-		 bool charpath_flag, int paint_type, cached_fm_pair *pair)
+gs_type42_append(uint glyph_index, gs_state * pgs,
+		 gx_path * ppath, gs_text_enum_t *penum, gs_font *pfont,
+		 bool charpath_flag)
 {
-    int code = append_outline_fitted(glyph_index, &ctm_only(pis), ppath, 
+    const gs_log2_scale_point * pscale = &penum->log2_scale;
+    cached_fm_pair *pair = penum->pair;
+    int code = append_outline_fitted(glyph_index, &ctm_only(pgs), ppath, 
 			pair, pscale, charpath_flag);
 
-    if (code < 0)
+    if (code < 0) {
+	if (pgs->in_cachedevice == CACHE_DEVICE_CACHING) {
+	    /* Perform the cache cleanup, when the cached character data 
+	       has been allocated (gx_alloc_char_bits) but
+	       the character has not been added to the cache (gx_add_cached_char)
+	       due to a falure in the character renderer.
+	     */
+	    gs_show_enum *const penum_s = (gs_show_enum *)penum;
+
+	    if (penum_s->cc != NULL) {
+		gx_free_cached_char(pfont->dir, penum_s->cc);
+		penum_s->cc = NULL;
+	    }
+	}
 	return code;
-    code = gx_setcurrentpoint_from_path(pis, ppath);
+    }
+    code = gx_setcurrentpoint_from_path((gs_imager_state *)pgs, ppath);
     if (code < 0)
 	return code;
     /* Set the flatness for curve rendering. */
-    return gs_imager_setflat(pis, gs_char_flatness(pis, 1.0));
+    return gs_imager_setflat((gs_imager_state *)pgs, 
+		gs_char_flatness((gs_imager_state *)pgs, 1.0));
 }
 
 /* Add 2nd degree Bezier to the path */

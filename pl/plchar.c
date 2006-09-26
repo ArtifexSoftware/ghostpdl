@@ -696,9 +696,9 @@ typedef struct gx_path_s gx_path;
 #endif
 
 /* Imported procedures */
-int gs_type42_append(uint glyph_index, gs_imager_state *pis,
-  gx_path *ppath, const gs_log2_scale_point *pscale, bool charpath_flag,
-  int paint_type,  cached_fm_pair *pair);
+int gs_type42_append(uint glyph_index, gs_state * pgs,
+                 gx_path * ppath, gs_text_enum_t *penum, gs_font *pfont,
+                 bool charpath_flag);
 
 int gs_type42_get_metrics(gs_font_type42 *pfont, uint glyph_index, float psbw[4]);
 
@@ -1088,11 +1088,9 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             smat.ty = -ipy;
             gs_setmatrix(pgs, &smat);
           }
-        code = gs_type42_append(glyph,
-                                (gs_imager_state *)pgs, pgs->path,
-                                &penum->log2_scale,
-                                gs_show_in_charpath(penum) != cpm_show,
-                                pfont->PaintType, penum->pair); 
+        code = gs_type42_append(glyph, pgs, pgs->path,
+                                penum, pfont,
+                                gs_show_in_charpath(penum) != cpm_show);
         if ( code >= 0 )
           code = (pfont->PaintType ? gs_stroke(pgs) : gs_fill(pgs));
         if (ctm_modified)

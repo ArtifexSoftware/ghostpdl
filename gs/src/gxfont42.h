@@ -117,9 +117,9 @@ extern_st(st_gs_font_type42);
 int gs_type42_font_init(gs_font_type42 *pfont, bool USE_ttfReader);
 
 /* Append the outline of a TrueType character to a path. */
-int gs_type42_append(uint glyph_index, gs_imager_state * pis,
-		 gx_path * ppath, const gs_log2_scale_point * pscale,
-		 bool charpath_flag, int paint_type, cached_fm_pair *pair);
+int gs_type42_append(uint glyph_index, gs_state * pgs,
+		 gx_path * ppath, gs_text_enum_t *penum, gs_font *pfont,
+		 bool charpath_flag);
 
 /* Get the metrics of a TrueType character. */
 int gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,

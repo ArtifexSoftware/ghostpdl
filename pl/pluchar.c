@@ -1064,9 +1064,6 @@ typedef struct gx_path_s gx_path;
 #endif
 
 /* Imported procedures */
-int gs_type42_append(uint glyph_index, gs_imager_state *pis,
-  gx_path *ppath, const gs_log2_scale_point *pscale, bool charpath_flag,
-  int paint_type, cached_fm_pair *pair);
 int gs_type42_get_metrics(gs_font_type42 *pfont, uint glyph_index, float psbw[4]);
 
 /*
