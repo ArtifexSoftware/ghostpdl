@@ -352,7 +352,13 @@ jas_image_t *jp2_decode(jas_stream_t *in, char *optstr)
 		for (channo = 0; channo < cmapd->numchans; ++channo) {
 			cmapent = &cmapd->ents[channo];
 			if (cmapent->map == JP2_CMAP_DIRECT) {
+#if 1
+				newcmptno = jas_image_numcmpts(dec->image);
+				jas_image_dupl_cmpt(dec->image, cmapent->cmptno, newcmptno);
+				dec->chantocmptlut[channo] = newcmptno;
+#else
 				dec->chantocmptlut[channo] = channo;
+#endif
 			} else if (cmapent->map == JP2_CMAP_PALETTE) {
 				lutents = jas_malloc(pclrd->numlutents * sizeof(int_fast32_t));
 				for (i = 0; i < pclrd->numlutents; ++i) {
@@ -382,14 +388,15 @@ jas_image_t *jp2_decode(jas_stream_t *in, char *optstr)
 		jas_image_setcmpttype(dec->image, i, JAS_IMAGE_CT_UNKNOWN);
 	}
 
-	/* Determine the type of each component. */
-	/* work around for gs bug 688869 - RG */
-	if (dec->numchans > dec->image->numcmpts_) {
+	/* From gs bug 688869, should no longer happen - RG */
+	if (dec->numchans > jas_image_numcmpts(dec->image)) {
 		jas_eprintf("error: too few components in decoded image!"
 			" (%d instead of %d)\n",
 			dec->image->numcmpts_, dec->numchans);
 		goto error;
 	}
+
+	/* Determine the type of each component. */
 	if (dec->cdef) {
 		for (i = 0; i < dec->numchans; ++i) {
 			jas_image_setcmpttype(dec->image,

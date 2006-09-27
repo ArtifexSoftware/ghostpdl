@@ -442,6 +442,8 @@ int jas_image_copycmpt(jas_image_t *dstimage, int dstcmptno,
 #define	jas_image_cmptdtype(image, cmptno) \
 	(JAS_IMAGE_CDT_SETSGND((image)->cmpts_[cmptno]->sgnd_) | JAS_IMAGE_CDT_SETPREC((image)->cmpts_[cmptno]->prec_))
 
+int jas_image_dupl_cmpt(jas_image_t *image, int cmptno, int newcmptno);
+
 int jas_image_depalettize(jas_image_t *image, int cmptno, int numlutents,
   int_fast32_t *lutents, int dtype, int newcmptno);
 

@@ -113,6 +113,7 @@ static long convert(long val, int oldsgnd, int oldprec, int newsgnd,
   int newprec);
 static void jas_image_calcbbox2(jas_image_t *image, jas_image_coord_t *tlx,
   jas_image_coord_t *tly, jas_image_coord_t *brx, jas_image_coord_t *bry);
+static void jas_image_dump(jas_image_t *image, FILE *out);
 
 /******************************************************************************\
 * Global data.
@@ -825,7 +826,7 @@ int jas_image_copycmpt(jas_image_t *dstimage, int dstcmptno, jas_image_t *srcima
 	return 0;
 }
 
-void jas_image_dump(jas_image_t *image, FILE *out)
+static void jas_image_dump(jas_image_t *image, FILE *out)
 {
 	long buf[1024];
 	int cmptno;
@@ -865,6 +866,21 @@ void jas_image_dump(jas_image_t *image, FILE *out)
 	}
 }
 
+int jas_image_dupl_cmpt(jas_image_t *image, int cmptno, int newcmptno)
+{
+	if (cmptno >= image->numcmpts_) return -1;
+        if (newcmptno >= image->maxcmpts_) {
+                if (jas_image_growcmpts(image, newcmptno + 3)) {
+                        return -1;
+                }
+        }
+	if (!(image->cmpts_[newcmptno] = jas_image_cmpt_copy(image->cmpts_[cmptno]))) {
+		return -1;
+	}
+        ++image->numcmpts_;
+
+	return 0;
+}
 
 int jas_image_depalettize(jas_image_t *image, int cmptno, int numlutents,
   int_fast32_t *lutents, int dtype, int newcmptno)
