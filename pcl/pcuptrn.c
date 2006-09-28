@@ -424,15 +424,14 @@ download_pcl_pattern(
                 (pixinfo.size.y == 0)            )
         return e_Range;
 
+    if (rsize == 0)
+        return e_Range;
+
     /* allocate space for the array */
     pixinfo.data = gs_alloc_bytes(pcs->memory, rsize, "download PCL pattern");
-    if (pixinfo.data == 0) {
-        if (rsize == 0) {
-            return e_Range;
-        } else {
-            return e_Memory;
-        }
-    }
+
+    if (pixinfo.data == 0)
+        return e_Memory;
 
     if (format == 20) {
         pcl_upattern1_t *   puptrn1 = (pcl_upattern1_t *)puptrn0;
