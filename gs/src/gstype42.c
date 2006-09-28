@@ -243,28 +243,27 @@ gs_type42_font_init(gs_font_type42 * pfont, bool USE_ttfReader)
 	    break;				/* out of order loca */
 	pfont->data.len_glyphs[i - 1] = glyph_length;
 	glyph_start = glyph_offset;
-	
-	if (i < loca_size) {
-	    uint j;
-	    ulong trial_glyph_length;
-	    /*
-	     * loca was out of order, build the len_glyphs the hard way      
-	     * Assume that some of the len_glyphs built so far may be wrong 
-	     * For each starting offset, find the next higher ending offset
-	     * Note that doing this means that there can only be zero length
-	     * glyphs that have loca table offset equal to the last 'dummy'
-	     * entry. Otherwise we assume that it is a duplicated entry.
-	     */
-	    for (i = 0; i < loca_size - 1; i++) {
-		glyph_start = get_glyph_offset(pfont, i);
-		for (j = 1, glyph_length = 0x80000000; j < loca_size; j++) {
-		    glyph_offset = get_glyph_offset(pfont, j);
-		    trial_glyph_length = glyph_offset - glyph_start;
-		    if ((trial_glyph_length > 0) && (trial_glyph_length < glyph_length))
-			glyph_length = trial_glyph_length;
-		}
-		pfont->data.len_glyphs[i] = glyph_length < 0x80000000 ? glyph_length : 0;
+    }
+    if (i < loca_size) {
+	uint j;
+	ulong trial_glyph_length;
+	/*
+	 * loca was out of order, build the len_glyphs the hard way      
+	 * Assume that some of the len_glyphs built so far may be wrong 
+	 * For each starting offset, find the next higher ending offset
+	 * Note that doing this means that there can only be zero length
+	 * glyphs that have loca table offset equal to the last 'dummy'
+	 * entry. Otherwise we assume that it is a duplicated entry.
+	 */
+	for (i = 0; i < loca_size - 1; i++) {
+	    glyph_start = get_glyph_offset(pfont, i);
+	    for (j = 1, glyph_length = 0x80000000; j < loca_size; j++) {
+		glyph_offset = get_glyph_offset(pfont, j);
+		trial_glyph_length = glyph_offset - glyph_start;
+		if ((trial_glyph_length > 0) && (trial_glyph_length < glyph_length))
+		    glyph_length = trial_glyph_length;
 	    }
+	    pfont->data.len_glyphs[i] = glyph_length < 0x80000000 ? glyph_length : 0;
 	}
     }
 
