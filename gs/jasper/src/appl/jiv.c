@@ -180,6 +180,7 @@ static void cmdinfo(void);
 
 static void cleanupandexit(int);
 static void init(void);
+static void errprint(jas_error_t err, char *msg);
 
 /******************************************************************************\
 *
@@ -219,8 +220,12 @@ int main(int argc, char **argv)
 
 	/* Initialize the JasPer library. */
 	if (jas_init()) {
+		errprint(0, "error: cannot initialize jasper library\n");
 		abort();
 	}
+
+	/* set our error callback */
+	jas_set_error_cb(errprint);
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_SINGLE);
@@ -1044,3 +1049,9 @@ static void init()
 	gs.vp.data = 0;
 	gs.dirty = 1;
 }
+
+static void errprint(jas_error_t err, char *msg)
+{
+	fprintf(stderr, "%s", msg);
+}
+

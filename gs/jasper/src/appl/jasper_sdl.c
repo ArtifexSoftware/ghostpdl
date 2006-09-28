@@ -23,8 +23,8 @@ int dump_jas_image(jas_image_t *image);
 int copy_jas_image(jas_image_t * image, SDL_Surface * window);
 int display_jas_image(jas_image_t * image);
 
-void wait_close(void);
-
+static void wait_close(void);
+static void errprint(jas_error_t err, char *msg);
 
 /** implementation **/
 
@@ -141,7 +141,7 @@ int copy_jas_image(jas_image_t * image, SDL_Surface * window)
     return 0;
 }
 
-void wait_close(void)
+static void wait_close(void)
 {
     SDL_Event event;
 
@@ -226,9 +226,10 @@ int main(int argc, char *argv[])
     int i;
 
     if (jas_init()) {
-        jas_eprintf("error: unable to initialize jasper library\n");
+        errprint(0, "error: unable to initialize jasper library\n");
         exit(1);
     }
+    jas_set_error_cb(errprint);
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         jas_eprintf("error: unable to initialize SDL: %s\n", SDL_GetError());
         exit(2);
@@ -243,3 +244,9 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
+static void errprint(jas_error_t err, char *msg)
+{
+       fprintf(stderr, "%s", msg);
+}
+

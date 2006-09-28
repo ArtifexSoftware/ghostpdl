@@ -62,7 +62,7 @@
 /*
  * Image Comparison Program
  *
- * $Id$
+ * $Id: $
  */
 
 /******************************************************************************\
@@ -113,8 +113,9 @@ double pae(jas_matrix_t *x, jas_matrix_t *y);
 double msen(jas_matrix_t *x, jas_matrix_t *y, int n);
 double psnr(jas_matrix_t *x, jas_matrix_t *y, int depth);
 jas_image_t *makediffimage(jas_matrix_t *origdata, jas_matrix_t *recondata);
-void usage(void);
-void cmdinfo(void);
+static void usage(void);
+static void cmdinfo(void);
+static void errprint(jas_error_t err, char *msg);
 
 /******************************************************************************\
 *
@@ -189,8 +190,12 @@ int main(int argc, char **argv)
 	minonly = 0;
 
 	if (jas_init()) {
+		errprint(0, "error: cannot initialize jasper library\n");
 		abort();
 	}
+
+	/* set our error callback */
+	jas_set_error_cb(errprint);
 
 	cmdname = argv[0];
 
@@ -546,7 +551,7 @@ jas_image_t *makediffimage(jas_matrix_t *origdata, jas_matrix_t *recondata)
 *
 \******************************************************************************/
 
-void cmdinfo()
+static void cmdinfo()
 {
 	jas_eprintf("Image Comparison Utility (Version %s).\n",
 	  JAS_VERSION);
@@ -556,7 +561,7 @@ void cmdinfo()
 	  );
 }
 
-void usage()
+static void usage()
 {
 	cmdinfo();
 	jas_eprintf("usage:\n");
@@ -575,3 +580,9 @@ void usage()
 	  );
 	exit(EXIT_FAILURE);
 }
+
+static void errprint(jas_error_t err, char *msg)
+{
+	fprintf(stderr, "%s", msg);
+}
+
