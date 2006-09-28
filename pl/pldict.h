@@ -74,6 +74,9 @@ bool pl_dict_lookup(pl_dict_t *pdict, const byte *kdata, uint ksize,
 #define pl_dict_find(pdict, kdata, ksize, pvalue)\
   pl_dict_lookup(pdict, kdata, ksize, pvalue, true, (pl_dict_t **)0)
 
+#define pl_dict_find_no_stack(pdict, kdata, ksize, pvalue)\
+  pl_dict_lookup(pdict, kdata, ksize, pvalue, false, (pl_dict_t **)0)
+
 /*
  * Add an entry to a dictionary.  Return 1 if it replaces an existing entry.
  * Return -1 if we couldn't allocate memory.

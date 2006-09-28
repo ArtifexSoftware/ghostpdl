@@ -167,6 +167,11 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
     pl_font_t *plfont;
     ulong header_size;
 
+    /* we do not have a mechanism to clone a Microtype ufst font, so
+       punt. */
+    if (src->scaling_technology == plfst_MicroType)
+        return 0;
+
     plfont = (pl_font_t *)gs_alloc_bytes(mem, gs_object_size(mem, src), cname);
     if ( plfont == 0 )
         return 0;

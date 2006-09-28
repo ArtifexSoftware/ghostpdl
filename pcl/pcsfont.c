@@ -51,7 +51,7 @@ pcl_delete_soft_font(pcl_state_t *pcs, const byte *key, uint ksize,
   void *value)
 {
     if ( value == NULL ) {
-        if ( !pl_dict_find(&pcs->soft_fonts, key, ksize, &value) )
+        if ( !pl_dict_find_no_stack(&pcs->soft_fonts, key, ksize, &value) )
             return;             /* not a defined font */
     }
     {
@@ -156,20 +156,20 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
         break;
     case 3:
         /* Delete character <font_id, character_code>. */
-        if ( pl_dict_find(&pcs->soft_fonts, current_font_id, current_font_id_size, &value) )
+        if ( pl_dict_find_no_stack(&pcs->soft_fonts, current_font_id, current_font_id_size, &value) )
             pl_font_remove_glyph((pl_font_t *)value, pcs->character_code);
         return 0;
         
         break;
     case 4:
         /* Make soft font <font_id> temporary. */
-        if ( pl_dict_find(&pcs->soft_fonts, current_font_id, current_font_id_size, &value) )
+        if ( pl_dict_find_no_stack(&pcs->soft_fonts, current_font_id, current_font_id_size, &value) )
             ((pl_font_t *)value)->storage = pcds_temporary;
         
         break;
     case 5:
         /* Make soft font <font_id> permanent. */
-        if ( pl_dict_find(&pcs->soft_fonts, current_font_id, current_font_id_size, &value) ) {
+        if ( pl_dict_find_no_stack(&pcs->soft_fonts, current_font_id, current_font_id_size, &value) ) {
             ((pl_font_t *)value)->storage = pcds_permanent;
             ((pl_font_t *)value)->params.pjl_font_number = 
                 pjl_proc_register_permanent_soft_font_addition(pcs->pjls);
@@ -451,8 +451,8 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
     pcl_font_header_format_t format;
     byte *char_data = 0;
 
-    if ( !pl_dict_find(&pcs->soft_fonts, current_font_id,
-                       current_font_id_size, &value) )
+    if ( !pl_dict_find_no_stack(&pcs->soft_fonts, current_font_id,
+                                current_font_id_size, &value) )
         return 0;               /* font not found */
     if ( count < 4 || data[2] > count - 2 )
         return e_Range;
@@ -736,10 +736,10 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
                  with the string id.  We simply create an alias entry
                  for the current font id entry.  HAS - FIXME. ... */
               void *value;
-              if ( !pl_dict_find(&pcs->soft_fonts,
-                                 alpha_data->string_id,
-                                 string_id_size,
-                                 &value) )
+              if ( !pl_dict_find_no_stack(&pcs->soft_fonts,
+                                          alpha_data->string_id,
+                                          string_id_size,
+                                          &value) )
                 return 0;
               pl_dict_put_synonym(&pcs->soft_fonts, alpha_data->string_id,
                                string_id_size, current_font_id,
@@ -753,10 +753,10 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
                  string key instead of a numerical key */
               void *value;
               pcl_font_selection_t *pfs = &pcs->font_selection[primary];
-              if ( !pl_dict_find(&pcs->soft_fonts,
-                                 alpha_data->string_id,
-                                 string_id_size,
-                                 &value) )
+              if ( !pl_dict_find_no_stack(&pcs->soft_fonts,
+                                          alpha_data->string_id,
+                                          string_id_size,
+                                          &value) )
                 return 1;
               /* NB wrong */
               pcl_set_id_parameters(pcs, pfs, (pl_font_t *)value, 0);
@@ -768,11 +768,11 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
               /* same as case 2 but sets secondary font */
               void *value;
               pcl_font_selection_t *pfs = &pcs->font_selection[secondary];
-              if ( !pl_dict_find(&pcs->soft_fonts,
-                                 alpha_data->string_id,
-                                 string_id_size,
-                                 &value) )
-                return 1;
+              if ( !pl_dict_find_no_stack(&pcs->soft_fonts,
+                                          alpha_data->string_id,
+                                          string_id_size,
+                                          &value) )
+                  return 1;
               /* NB wrong */
               pcl_set_id_parameters(pcs, pfs, (pl_font_t *)value, 0);
               pcl_decache_font(pcs, -1);
