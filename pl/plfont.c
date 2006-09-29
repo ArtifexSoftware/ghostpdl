@@ -63,10 +63,11 @@ pl_free_font(gs_memory_t *mem, void *plf, client_name_t cname)
 	/* Free the font data itself. */
 	gs_free_object(mem, (void *)plfont->char_glyphs.table, cname);
 	gs_free_object(mem, (void *)plfont->glyphs.table, cname);
-	if ( plfont->pfont )	/* might be only partially constructed */
-	  { gs_purge_font(plfont->pfont);
+	if ( plfont->pfont ) {	/* might be only partially constructed */
+	    gs_purge_font(plfont->pfont);
+	    gs_notify_all(&plfont->pfont->notify_list, NULL); 
 	    gs_free_object(mem, plfont->pfont, cname);
-	  }
+	}
 	if ( plfont->font_file ) {
 	    gs_free_object(mem, plfont->font_file, cname);
 	    plfont->font_file = 0;
