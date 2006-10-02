@@ -274,7 +274,7 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     pair->ttr = 0;
     pair->design_grid = false;
     if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) 
-	if (((gs_font_type42 *)font)->FAPI==NULL) {
+	if (((gs_font_type42 *)font)->FAPI==NULL  && ((gs_font_type42 *)font)->data.USE_ttfReader ) {
 	    float cxx, cxy, cyx, cyy;
 	    gs_matrix m;
 	    gx_compute_char_matrix(char_tm, log2_scale, &cxx, &cxy, &cyx, &cyy);
