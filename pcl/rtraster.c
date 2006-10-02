@@ -429,7 +429,6 @@ create_mask_enumerator(
             code = gs_image_common_init( pen,
                                          pie,
                                          (gs_data_image_t *)&image,
-                                         prast->pmem,
                                          gs_currentdevice_inline(pcs->pgs)
                                          );
     }
@@ -538,7 +537,6 @@ create_image_enumerator(
         code = gs_image_common_init( pen,
                                      pie,
                                      (gs_data_image_t *)&image,
-                                     prast->pmem,
                                      gs_currentdevice_inline(prast->pcs->pgs)
                                      );
     if (code < 0) {
