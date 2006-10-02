@@ -1,17 +1,14 @@
-/* Copyright (C) 1991, 2000 Aladdin Enterprises.  All rights reserved.
-  
-  This software is provided AS-IS with no warranty, either express or
-  implied.
-  
-  This software is distributed under license and may not be copied,
-  modified or distributed except as expressly authorized under the terms
-  of the license contained in the file LICENSE in this distribution.
-  
-  For more information about licensing, please refer to
-  http://www.ghostscript.com/licensing/. For information on
-  commercial licensing, go to http://www.artifex.com/licensing/ or
-  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-  San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+/* Copyright (C) 2001-2006 artofcode LLC.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
 /* $Id$ */
@@ -42,17 +39,6 @@ void gx_set_UFST_Callbacks(LPUB8 (*p_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  s
 
 void gx_reset_UFST_Callbacks(void);
 
-#if !UFST_REENTRANT
-/* The following 2 functions provide a locking of a 
-   global static UFST instance, which must be a singleton 
-   when UFST works for embedded multilanguage system. 
-   When setting a lock, the language swithing code
-   must initialize and uninitialize UFST by immediate calls.
- */
-void gs_set_UFST_lock(bool lock);
-bool gs_get_UFST_lock(void);
-#endif /*!UFST_REENTRANT*/
-
 typedef struct fco_list_elem_s fco_list_elem;
 struct fco_list_elem_s {
     int open_count;
@@ -65,8 +51,16 @@ struct fco_list_elem_s {
 /* For the language switch : */
 UW16 gx_UFST_open_static_fco(const char *font_file_path, SW16 *result_fcHandle);
 UW16 gx_UFST_close_static_fco(SW16 fcHandle);
+/* close all open FCO's */
+void gx_UFST_close_static_fcos(void);
+SW16 gx_UFST_find_fco_handle_by_name(const char *font_file_path);
+
 /* For fapiufst.c : */
 fco_list_elem *gx_UFST_find_static_fco(const char *font_file_path);
 fco_list_elem *gx_UFST_find_static_fco_handle(SW16 fcHandle);
+
+int gx_UFST_init(UB8 ufst_root_dir[]);
+
+int gx_UFST_fini(void);
 
 #endif /* gxfapiu_INCLUDED */
