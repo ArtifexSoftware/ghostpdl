@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id: gxfapiu.c,v 1.6 2002/06/16 05:48:56 lpd Exp $ */
+/* $Id$ */
 /* Font API support : UFST callback dispatch. */
 
 /* GS includes : */
