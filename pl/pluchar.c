@@ -439,7 +439,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
           image.Height = pl_get_uint16(params + 6);
           /* Determine the amount of pseudo-bolding. */
           if ( plfont->bold_fraction != 0 ) { 
-              bold = (uint)(image.Height * plfont->bold_fraction + 0.5);
+              bold = (uint)(2 * image.Height * plfont->bold_fraction + 0.5);
               bold_lines = alloc_bold_lines(pgs->memory, image.Width, bold,
                                             "pl_bitmap_build_char(bold_line)");
               if ( bold_lines == 0 )
@@ -926,9 +926,6 @@ pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
 }
 
 
-extern int default_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
-                    float sbw[4]);
-
 /* get metrics with support for XL tt class 1 and 2 
  * pl overrides gstype42_default_get_metrics   
  */
@@ -1073,7 +1070,7 @@ int gs_type42_get_metrics(gs_font_type42 *pfont, uint glyph_index, float psbw[4]
  * unknown, return gs_error_invalidfont.
  */
 int
-pl_cmap_lookup(const gs_memory_t *mem, const uint key, const byte *table, uint *pvalue)
+pl_cmap_lookup(const uint key, const byte *table, uint *pvalue)
 {       /* Dispatch according to the table type. */
         switch ( pl_get_uint16(table) )
           {
@@ -1176,7 +1173,7 @@ pl_tt_cmap_encode_char(gs_font_type42 *pfont, ulong cmap_offset,
         { uint offset = cmap_offset + pl_get_uint32(cmap_sub + 4);
           access(offset, cmap_offset + cmap_len - offset, table);
         }
-        code = pl_cmap_lookup(pfont->memory, (uint)chr, table, &value);
+        code = pl_cmap_lookup((uint)chr, table, &value);
         return (code < 0 ? gs_no_glyph : value);
 }
 
@@ -1467,91 +1464,38 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
         return 0;
 }
 
-/*
- * Set the current UFST font to a an Intellifont font.
- */
-private int
-pl_set_if_font(
-    gs_state            *pgs,
-    const pl_font_t *   plfont,
-    int                 need_outline,
-    FONTCONTEXT *       pfc )
-{
-    pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL);
-    pfc->font_hdr = plfont->header;
-    pfc->format |= FC_NON_Z_WIND | FC_EXTERN_TYPE | FC_IF_TYPE;
-    if_state.CGIFinitstate &= ~not_intellifont; /* enable intellifont  */
-    return pl_set_ufst_font(plfont, pfc);
-}
-
-/* Render a character for an Intellifont. */
-private int
-pl_intelli_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
-  gs_char chr, gs_glyph glyph)
-{
-    const pl_font_t *   plfont = (const pl_font_t *)pfont->client_data;
-    FONTCONTEXT         fc;
-
-    if ( pl_set_if_font( pgs,
-                         plfont,
-                         gs_show_in_charpath(penum),
-                         &fc ) != 0 )
-        return 0;
-    return pl_ufst_make_char(penum, pgs, pfont, chr, &fc);
-}
-
 /* Get character existence and escapement for an Intellifont. */
  private int
 pl_intelli_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
-{
-    FONTCONTEXT fc;
-
-    pwidth->x = pwidth->y = 0;
-    if (pl_set_if_font(NULL /* graphics state */, plfont, false, &fc) != 0)
-        return 0;
-    {
-        const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
+{       const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
         int wx;
 
         if ( !pwidth )
           return (cdata == 0 ? 1 : 0);
         if ( cdata == 0 )
+          { pwidth->x = pwidth->y = 0;
             return 1;
-        switch ( cdata[3] ) {
-        case 3:             /* non-compound character */
-            cdata += 4;             /* skip PCL character header */
-            { 
-#if (BYTEORDER == LOHI)
-                UW16 offset = *(UW16 *)(cdata + 2);
-#else
-                UW16 offset = pl_get_uint16(cdata + 2);
-#endif
-                    
-                const intelli_metrics_t *metrics =
-                    (const intelli_metrics_t *)(cdata + offset);
-                wx =
-#if (BYTEORDER == LOHI)
-                    *(SW16 *)(metrics->charEscapementBox[2]) -
-                    *(SW16 *)(metrics->charEscapementBox[0]);
-#else
+          }
+        switch ( cdata[3] )
+          {
+          case 3:               /* non-compound character */
+            cdata += 4;         /* skip PCL character header */
+            { const intelli_metrics_t *metrics =
+                (const intelli_metrics_t *)(cdata + pl_get_uint16(cdata + 2));
+              wx =
                 pl_get_int16(metrics->charEscapementBox[2]) -
-                    pl_get_int16(metrics->charEscapementBox[0]);
-#endif
+                pl_get_int16(metrics->charEscapementBox[0]);
             }
             break;
-        case 4:             /* compound character */
-#if (BYTEORDER == LOHI)
-            wx = *(SW16 *)(cdata + 4);
-#else
+          case 4:               /* compound character */
             wx = pl_get_int16(cdata + 4);
-#endif
             break;
-        default:            /* shouldn't happen */
+          default:              /* shouldn't happen */
+            pwidth->x = pwidth->y = 0;
             return 0;
-        }
+          }
         pwidth->x = (floatp)wx / 8782.0;
         return 0;
-    }
 }
 
 private int
@@ -1576,29 +1520,45 @@ pl_intelli_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code
     cdata += 4;
     
     {
-
-#if (BYTEORDER == LOHI)
-        UW16 offset = *(UW16 *)(cdata + 2);
-#else
-        UW16 offset = pl_get_uint16(cdata + 2);
-#endif
         const intelli_metrics_t *intelli_metrics =
-            (const intelli_metrics_t *)(cdata + offset);
+            (const intelli_metrics_t *)(cdata + pl_get_uint16(cdata + 2));
 
         /* NB probably not right */
         /* never a vertical substitute, doesn't yet handle compound characters */
-        {
-#if (BYTEORDER == LOHI)
-            metrics[0] = (float)*(SW16 *)(intelli_metrics->charSymbolBox[0]);
-#else
-            metrics[0] = (float)pl_get_int16(intelli_metrics->charSymbolBox[0]);
-#endif
-            metrics[0] /= 8782.0;
-            if ( pl_intelli_char_width(plfont, pgs, char_code, &width) )
-                metrics[2] = width.x;
-            return 0;
-        }
+        metrics[0] = (float)pl_get_int16(intelli_metrics->charSymbolBox[0]);
+        metrics[0] /= 8782.0;
+        pl_intelli_char_width(plfont, pgs, char_code, &width);
+        metrics[2] = width.x;
+        return 0;
     }
+}
+
+/* Render a character for an Intellifont. */
+private int
+pl_intelli_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
+  gs_char chr, gs_glyph glyph)
+{       const pl_font_t *plfont = (const pl_font_t *)pfont->client_data;
+        float wbox[6];
+        int code;
+
+        wbox[0] = wbox[1] = 0;
+        wbox[2] = wbox[3] = 65536.0;
+        wbox[4] = wbox[5] = -65536.0;
+        if ( !pl_intelli_merge_box(wbox, plfont, glyph) )
+          { wbox[2] = wbox[3] = wbox[4] = wbox[5] = 0;
+            code = gs_setcachedevice(penum, pgs, wbox);
+            return (code < 0 ? code : 0);
+          }
+        code = gs_setcachedevice(penum, pgs, wbox);
+        if ( code < 0 )
+          return code;
+        code = pl_intelli_show_char(pgs, plfont, glyph);
+        if ( code < 0 )
+          return code;
+        /* Since we don't take into account which side of the loops is */
+        /* outside, we take the easy way out.... */
+        code = gs_eofill(pgs);
+        return (code < 0 ? code : 0);
 }
 
 /* ---------------- MicroType font support ---------------- */
@@ -2094,10 +2054,6 @@ fg:     pfg = pl_font_lookup_glyph(plfont, key);
           }
         pfg->glyph = key;
         pfg->data = cdata;
-#if (BYTEORDER == LOHI)
-        if ( plfont->scaling_technology == plfst_Intellifont )
-            PCLswapChar(FSA (LPUB8)cdata);
-#endif
         return 0;
 }
 

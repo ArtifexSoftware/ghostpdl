@@ -110,7 +110,7 @@ pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, g
     pwidth->x = pwidth->y = 0;
     if ( !pwidth ) {
 #ifdef DEBUG    
-        dprintf( "Warning should not call width function without width\n" );
+        dprintf("Warning should not call width function without width\n" );
 #endif
         return (cdata == 0 ? 1 : 0);
     }
@@ -503,10 +503,6 @@ pl_tt_string_proc(gs_font_type42 *pfont, ulong offset, uint length,
         return 0;
 }
 
-extern int default_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
-                    float sbw[4]);
-
-
 /* Return the vertical substitute for a glyph, if it has one; */
 /* otherwise return gs_no_glyph. */
 private gs_glyph
@@ -860,7 +856,7 @@ pl_font_galley_character(gs_char chr, const pl_font_t *plfont)
         return default_char;
 }
 
-// NB major hack.  This is used by pl_decode_glyph;
+/* NB major hack.  This is used by pl_decode_glyph; */
 gs_char last_char = 0;
 
 /* Encode a character for a TrueType font. */

@@ -371,7 +371,10 @@ pl_fill_in_tt_font(gs_font_type42 *pfont, void *data, long unique_id)
 void
 pl_fill_in_intelli_font(gs_font_base *pfont, long unique_id)
 {	/* Intellifonts have an 8782-unit design space. */
-	gs_make_identity(&pfont->FontMatrix);
+ 	{ gs_matrix mat;
+	  gs_make_scaling(1.0/8782, 1.0/8782, &mat);
+	  gs_matrix_translate(&mat, -2980.0, -5380.0, &pfont->FontMatrix);
+	}
 	pfont->FontType = ft_user_defined;
 	pfont->BitmapWidths = true;
 	pfont->ExactSize = fbit_use_outlines;
