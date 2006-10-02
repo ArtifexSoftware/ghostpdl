@@ -132,6 +132,11 @@ gs_image_enum *gs_image_enum_alloc(gs_memory_t *, client_name_t);
 typedef struct gx_device_s gx_device;
 #endif
 
+/* Initialize the common part of the image class */
+int gs_image_common_init(gs_image_enum * penum,
+			 gx_image_enum_common_t * pie,
+			 const gs_data_image_t * pim, gx_device * dev);
+
 /* Initialize an enumerator for an ImageType 1 image. */
 int gs_image_init(gs_image_enum * penum, const gs_image_t * pim,
 		  bool MultipleDataSources, gs_state * pgs);
