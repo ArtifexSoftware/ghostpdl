@@ -106,7 +106,8 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 		buf_index++;
 		prev_font = new_font;
 		psmat = &curr.fstack.items[curr.fstack.depth - 1].font->FontMatrix;
-		if (pte->text.space.s_char == char_code)
+		if ((pte->text.operation & TEXT_ADD_TO_SPACE_WIDTH) &&
+			pte->text.space.s_char == char_code)
 		    space_char = chr;
 		continue;
 	    case 2:		/* end of string */
@@ -151,7 +152,8 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 	    break;
 	buf[0] = (byte)chr;
 	buf_index = 1;
-	space_char = (pte->text.space.s_char == char_code ? chr : ~0);
+	space_char = ((pte->text.operation & TEXT_ADD_TO_SPACE_WIDTH) &&
+	              pte->text.space.s_char == char_code ? chr : ~0);
 	psmat = &curr.fstack.items[curr.fstack.depth - 1].font->FontMatrix;
 	prev_font = new_font;
     }
@@ -542,7 +544,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	if (break_index > index) {
 	    pdf_font_resource_t *pdfont;
 	    gs_matrix m3;
-	    int xy_index_step = (pte->text.x_widths != NULL && /* see gs_text_replaced_width */
+	    int xy_index_step = (!(pte->text.operation & TEXT_REPLACE_WIDTHS) ? 0 :
 				 pte->text.x_widths == pte->text.y_widths ? 2 : 1);
 	    gs_text_params_t save_text;
 
@@ -579,17 +581,21 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    save_text = pte->text;
 	    str.data = scan.text.data.bytes + index;
 	    str.size = break_index - index;
-	    if (pte->text.x_widths != NULL)
-		pte->text.x_widths += xy_index * xy_index_step;
-	    if (pte->text.y_widths != NULL)
-		pte->text.y_widths += xy_index * xy_index_step;
+	    if (pte->text.operation & TEXT_REPLACE_WIDTHS) {
+		if (pte->text.x_widths != NULL)
+		    pte->text.x_widths += xy_index * xy_index_step;
+		if (pte->text.y_widths != NULL)
+		    pte->text.y_widths += xy_index * xy_index_step;
+	    }
 	    pte->xy_index = 0;
 	    code = process_text_modify_width((pdf_text_enum_t *)pte, (gs_font *)font,
 				  &text_state, &str, &wxy, NULL, true);
-	    if (pte->text.x_widths != NULL)
-		pte->text.x_widths -= xy_index * xy_index_step;
-	    if (pte->text.y_widths != NULL)
-		pte->text.y_widths -= xy_index * xy_index_step;
+	    if (pte->text.operation & TEXT_REPLACE_WIDTHS) {
+		if (pte->text.x_widths != NULL)
+		    pte->text.x_widths -= xy_index * xy_index_step;
+		if (pte->text.y_widths != NULL)
+		    pte->text.y_widths -= xy_index * xy_index_step;
+	    }
 	    pte->text = save_text;
 	    pte->cdevproc_callout = false;
 	    if (code < 0) {
