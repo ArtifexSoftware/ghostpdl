@@ -1,8 +1,0 @@
-#!/bin/sh
-# $Id$
-
-# This definition is changed on install to match the
-# executable name set in the makefile
-GS_EXECUTABLE=gs
-
-exec $GS_EXECUTABLE -q -dBATCH -dNODISPLAY -- bdftops.ps "$@"
