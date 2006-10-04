@@ -16,17 +16,17 @@
 # Type 1 to Type 2 conversion issues
 # pdfwrite - Bug687846.ps 401-01.ps
 {
-   <bug 688903.1>
+   <bug 688904.1>
    Memcheck:Cond
    fun:psf_convert_type1_to_type2
 }
 {
-   <bug 688903.2>
+   <bug 688904.2>
    Memcheck:Cond
    fun:type2_put_fixed
 }
 {
-   <bug 688903.3>
+   <bug 688904.3>
    Memcheck:Cond
    fun:type2_put_int
 }
