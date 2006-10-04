@@ -113,16 +113,6 @@
    fun:gs_image_next_planes
 }
 
-# Put name
-# pdfwrite - Bug687698.ps
-{
-   <bug 688911>
-   Memcheck:Cond
-   fun:pdf_put_name_chars_1_2
-   fun:pdf_put_name_chars
-   fun:pdf_put_name
-}
-
 # Image 3
 # pdfwrite - ai2.pdf
 {
