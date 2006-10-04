@@ -39,7 +39,6 @@ public_st_device_spot_analyzer();
 private_st_san_trap();
 private_st_san_trap_contact();
 
-private dev_proc_open_device(san_open);
 private dev_proc_close_device(san_close);
 private dev_proc_get_clipping_box(san_get_clipping_box);
 
@@ -273,7 +272,7 @@ private const gx_device_spot_analyzer gx_spot_analyzer_device =
  }
 };
 
-private int
+int
 san_open(register gx_device * dev)
 {
     gx_device_spot_analyzer * const padev = (gx_device_spot_analyzer *)dev;

@@ -136,4 +136,10 @@ int gx_san_generate_stems(gx_device_spot_analyzer *padev,
 		bool overall_hints, void *client_data,
 		int (*handler)(void *client_data, gx_san_sect *ss));
 
+/* -------------- Other external symbols ------------------------ */
+
+/* is_spotan_device() in gxfill.c uses san_open */
+/* to identify the spot analyzer device         */
+dev_proc_open_device(san_open);
+
 #endif /* gzspotan_INCLUDED */
