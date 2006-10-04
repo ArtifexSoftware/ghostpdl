@@ -253,28 +253,23 @@ pl_obj3=$(PLOBJ)plplatf$(PLPLATFORM).$(OBJ) $(PLOBJ)plalloc.$(OBJ)
 # shared objects - non font
 pl_obj=$(pl_obj1) $(pl_obj2) $(pl_obj3)
 
-# artifex font objects
-afs_obj=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)pllfont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
+# common (afs and ufst systems) font objects
+font_common_obj=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
 
-# artifex font objects (romfonts)
-afsr_obj=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)pllrfont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
+# artifex specific objects
+afs_obj=$(font_common_obj) $(PLOBJ)pllfont.$(OBJ) 
 
-# ufst font objects
-ufst_obj=$(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plulfont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
+# ufst specific objects
+ufst_obj=$(font_common_obj) $(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plulfont.$(OBJ)
 
-# generic artifex font device.
-$(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(afs_obj)
+# artifex font device.
+$(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(afs_obj) 
 	$(SETMOD) $(PLOBJ)afs $(afs_obj)
 
-# romfont artifex font device
-$(PLOBJ)afsr.dev: $(PL_MAK) $(ECHOGS_XE) $(afsr_obj)
-	$(SETMOD) $(PLOBJ)afsr $(afsr_obj)
-
-# AGFA ufst font device - the libraries are expected to be linked in
-# the main platform makefile
-$(PLOBJ)ufst.dev: $(PL_MAK) $(ECHOGS_XE) $(ufst_obj)
+# ufst font device.  the libraries are expected to be linked in the
+# main platform makefile.
+$(PLOBJ)ufst.dev: $(PL_MAK) $(ECHOGS_XE)  $(ufst_obj)
 	$(SETMOD) $(PLOBJ)ufst $(ufst_obj)
-
 
 
 ### BROKEN #####

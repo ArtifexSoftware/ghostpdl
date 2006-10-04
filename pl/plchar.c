@@ -268,7 +268,7 @@ on:           switch ( (dbyte = sbyte = *++sp) ) {
 }
 
 /* Image a bitmap character, with or without bolding. */
-private int
+int
 image_bitmap_char(gs_image_enum *ienum, const gs_image_t *pim,
   const byte *bitmap_data, uint sraster, int bold, byte *bold_lines,
   gs_state *pgs)
@@ -1353,8 +1353,8 @@ pl_intelli_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
         int code;
 
         wbox[0] = wbox[1] = 0;
-        wbox[2] = wbox[4] = 65536.0;
-        wbox[3] = wbox[5] = -65536.0;
+        wbox[2] = wbox[3] = 65536.0;
+        wbox[4] = wbox[5] = -65536.0;
         if ( !pl_intelli_merge_box(wbox, plfont, glyph) )
           { wbox[2] = wbox[3] = wbox[4] = wbox[5] = 0;
             code = gs_setcachedevice(penum, pgs, wbox);
@@ -1659,8 +1659,4 @@ pl_font_remove_glyph(pl_font_t *plfont, gs_glyph glyph)
         pfg->glyph = 1;         /* mark as deleted */
         plfont->glyphs.used--;
         return 1;
-}
-
-/* do nothing since its UFST callbacks */
-void plu_set_callbacks() {
 }
