@@ -604,7 +604,7 @@ end readonly def
 		% operations when the CTM is singular.
 		% Work around this here.
 	  {	
-            matrix currentmatrix dup
+            matrix currentmatrix dup dup
             dup 0 get 0 eq 1 index 1 get 0 eq and {
               dup dup 2 get 0 eq { 0 }{ 1 } ifelse 1 put
             } if
@@ -612,10 +612,11 @@ end readonly def
               dup dup 1 get 0 eq { 3 }{ 2 } ifelse 1 put
             } if
             setmatrix
-            1 index setfillstate show % Tr was set to graphic state.
+            2 index setfillstate show % Tr was set to graphic state.
             setmatrix 
 	    % now set the currentpoint using the original matrix
             gsave nulldevice
+            setmatrix
             false charpath currentpoint newpath 
             grestore
             moveto
