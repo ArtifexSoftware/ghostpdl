@@ -1572,49 +1572,52 @@ currentdict /postalias undef
   .defineencoding
 } bind exec
 
-/.addglyph    % <name> <glyph#> .addglyph <name> <glyph#> 
-              % <name> <glyph#> .addglyph -
-{
+/.addglyph {  % <dict> <name> <glyph#> .addglyph -
   dup cmapencoding length lt {
-    cmapencoding exch get dup 0 eq {
-      pop pop
-    } if
+    cmapencoding exch get dup 0 ne {
+      3 copy pop known {
+          pop pop pop
+        } {
+          put 
+        } ifelse
+    } {
+      pop pop pop
+    } ifelse
   } {
-    pop pop
+    pop pop pop
   } ifelse
 } bind def
 
-% <subcmap> <chartoglyphmap> .pdfmapchars
-%   /CharStrings <charstrings>
+% <subcmap> <chartoglyphmap> .pdfmapchars /CharStrings <charstrings>
 /.pdfmapchars {
-  exch cmaparray /cmapencoding exch def
-  /CharStrings mark 
+  exch cmaparray /cmapencoding exch def     % c2g
+  /CharStrings 0 dict                       % c2g /CS <<>>
 
   % Add glyphs of <chartoglyphmap>*<subcmap> :
-  3 2 roll {
-    dup type /arraytype eq {
-      exch /.name exch def
-      { .name exch //.addglyph exec
+  3 2 roll {                               % /CS <<>> v
+    dup type /arraytype eq {               % /CS <<>> /name []
+      { 3 copy //.addglyph exec
+        pop
       } forall
-      currentdict /.name undef
     } {
-      //.addglyph exec
+      3 copy //.addglyph exec pop
     } ifelse
+    pop
   } forall
 
-        % stack: /CharStrings mark /name1 glyph#1 /name2 glyph#2 ... /namen glyph#n
-        % Stack depth is restricted with AdobeGlyphList size.
-
-  % Add glyphs of 'post' (with lower priority, see .dicttomark) :
+  % Add glyphs of 'post' with lower priority :
   0 1 glyphencoding length 1 sub {
     dup glyphencoding exch get exch
-    dup 0 eq {
-      pop pop
+    dup 0 ne {
+      3 copy pop known not {
+        3 copy put
+      } if
     } if
+    pop pop
   } for
 
-  /.notdef 0
-  .dicttomark
+  dup /.notdef 0 put
+
 } bind def
 
 % - .pdfcharkeys /CharStrings <charstrings> /Encoding <encoding>
