@@ -121,10 +121,12 @@ pdf_refer_named(gx_device_pdf * pdev, const gs_param_string * pname_orig,
      * Check for a predefined name.  Map ThisPage, PrevPage, and NextPage
      * to the appropriate Page<#> name.
      */
-    if (pname->size >= 7 &&
-	sscanf((const char *)pname->data, "{Page%d}", &page_number) == 1
-	)
-	goto cpage;
+    if (pname->size >= 7 && pname->size < sizeof(page_name_chars)) {
+        memcpy(page_name_chars, pname->data, pname->size);
+        page_name_chars[pname->size] = 0;
+	if (sscanf(page_name_chars, "{Page%d}", &page_number) == 1)
+	    goto cpage;
+    }
     if (pdf_key_eq(pname, "{ThisPage}"))
 	page_number = pdev->next_page + 1;
     else if (pdf_key_eq(pname, "{NextPage}"))
