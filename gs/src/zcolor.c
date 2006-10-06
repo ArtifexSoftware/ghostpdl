@@ -100,7 +100,7 @@ zcurrentcolor(i_ctx_t * i_ctx_p)
         int     ival = (int)rval;
 
         /* the following handles indexed color spaces */
-        if (rval == ival)
+        if (rval == ival && pcs->type->index == gs_color_space_index_Indexed)
             make_int(op, ival);
         else
             make_real(op, rval);

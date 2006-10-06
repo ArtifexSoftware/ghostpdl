@@ -110,10 +110,10 @@ dup
     /cs_potential_icc_alternate true
     /cs_get_ncomps //ncomps_1
     /cs_get_range  //get_range_1
-    /cs_get_default_color { pop 0 } bind
+    /cs_get_default_color { pop 0.0 } bind
     /cs_get_currentgray //pop_1
     /cs_get_currentrgb { pop dup dup } bind
-    /cs_get_currentcmyk { pop 1 exch sub 0 0 0 4 -1 roll } bind
+    /cs_get_currentcmyk { pop 1.0 exch sub 0.0 0.0 0.0 4 -1 roll } bind
     /cs_validate {}
 
     /cs_substitute
@@ -137,7 +137,7 @@ put
     /cs_potential_icc_alternate true
     /cs_get_ncomps //ncomps_3
     /cs_get_range  //get_range_3
-    /cs_get_default_color { pop 0 0 0 } bind
+    /cs_get_default_color { pop 0.0 0.0 0.0 } bind
     /cs_get_currentgray { pop //rgb_2_gray exec } bind
     /cs_get_currentrgb //pop_1
 
@@ -148,7 +148,7 @@ put
 
         % convert to subtractive (CMY) color space
         3
-          { 1 exch sub 3 1 roll }
+          { 1.0 exch sub 3 1 roll }
         repeat
 
         % find the minimum (initial k component)
@@ -210,17 +210,17 @@ colorspacedict
     /cs_potential_icc_alternate true
     /cs_get_ncomps //ncomps_4
     /cs_get_range  //get_range_4
-    /cs_get_default_color { pop 0 0 0 1 } bind
+    /cs_get_default_color { pop 0.0 0.0 0.0 1.0 } bind
 
     /cs_get_currentgray
-      { pop 4 1 roll //rgb_2_gray exec add 1 exch sub //bound_0_1 exec }
+      { pop 4 1 roll //rgb_2_gray exec add 1.0 exch sub //bound_0_1 exec }
     bind
 
     /cs_get_currentrgb 
       {
         pop
         4 1 roll 3
-          { 3 index add  1 exch sub //bound_0_1 exec 3 1 roll }
+          { 3 index add  1.0 exch sub //bound_0_1 exec 3 1 roll }
         repeat
         4 -1 roll pop
       }
