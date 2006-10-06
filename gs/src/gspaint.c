@@ -297,11 +297,9 @@ fill_with_rule(gs_state * pgs, int rule)
 	      Type 3 charproc streams immediately.
 	 */
         if (gx_device_has_color(gs_currentdevice(pgs))) {
-	    gx_unset_dev_color(pgs);
             gs_set_object_tag(pgs, GS_PATH_TAG);
 	}
 	else {
-	    gx_unset_dev_color(pgs);
             gs_set_object_tag(pgs, GS_TEXT_TAG);
 	}
 	gx_set_dev_color(pgs);
