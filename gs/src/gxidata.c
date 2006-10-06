@@ -428,8 +428,17 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
 	if (code < 0)
 	    return code;
     }
+
+   /* release the reference to the target */
+    if ( penum->rop_dev )
+        gx_device_set_target((gx_device_forward *)penum->rop_dev, NULL);
+    if ( penum->clip_dev )
+        gx_device_set_target((gx_device_forward *)penum->clip_dev, NULL);
+    /* it is not clear (to me) why these are freed explicitly instead
+       of using reference counting */
     gs_free_object(mem, penum->rop_dev, "image RasterOp");
     gs_free_object(mem, penum->clip_dev, "image clipper");
+
     if (scaler != 0) {
 	(*scaler->template->release) ((stream_state *) scaler);
 	gs_free_object(mem, scaler, "image scaler state");
