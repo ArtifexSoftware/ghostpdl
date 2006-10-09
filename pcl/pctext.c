@@ -544,12 +544,6 @@ pcl_show_chars_slow(
             else
                 tmp_x += (pcs->last_width - width) / 2; 
         }
-	if (pcs->text_path) {
-	    /* move to the lower right corner of the glyph to account for rotation without
-	     * translation of axis of rotation.
-	     */
-	    tmp_x += width;
-	}
         gs_moveto(pgs, tmp_x / pscale->x, cpt.y / pscale->y);
 
         if (chr != 0xffff) {
