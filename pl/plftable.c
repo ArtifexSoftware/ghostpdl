@@ -303,14 +303,14 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("TimesNewRoman-BoldItalic", "TimesNewRoman-BoldItalic", "NimbusRomanNo9-Ita"),
+        fontnames("TimesNewRoman-Italic", "TimesNewRoman-Italic", "NimbusRomanNo9-Ita"),
         {'T','i','m','e','s','N','e','w','R','m','n',' ',' ',' ','I','t'},
         {0, 1, {25, 72000.0/25.0}, 0, ITALIC, NOBOLD, 16901, 36},
         cc_alphabetic
     },
 
     {
-        fontnames("TimesNewRoman-Italic", "TimesNewRoman-Italic", "NimbusRomanNo9-MedIta"), 
+        fontnames("TimesNewRoman-BoldItalic", "TimesNewRoman-BoldItalic", "NimbusRomanNo9-MedIta"), 
         {'T','i','m','e','s','N','e','w','R','m','n',' ','B','d','I','t'},
         {0, 1, {25, 72000.0/25.0}, 0, ITALIC, BOLD, 16901, 35},
         cc_alphabetic
@@ -404,15 +404,15 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("AvantGarde-BookOblique", "AvantGarde-BookOblique", "URWGothicL-DemiObli"),
+        fontnames("AvantGarde-BookOblique", "AvantGarde-BookOblique", "URWGothicL-BookObli"),
         {'I','T','C','A','v','a','n','t','G','a','r','d','B','k','O','b'},
-        {0, 1, {27.7, 72000.0/27.7}, 0, ITALIC, TWOBOLD, 24607, 51}, cc_alphabetic
+        {0, 1, {27.7, 72000.0/27.7}, 0, ITALIC, NOBOLD, 24607, 51}, cc_alphabetic
     },
 
     {
-        fontnames("AvantGarde-DemiOblique", "AvantGarde-DemiOblique", "URWGothicL-BookObli"),
+        fontnames("AvantGarde-DemiOblique", "AvantGarde-DemiOblique", "URWGothicL-DemiObli"),
         {'I','T','C','A','v','a','n','t','G','a','r','d','D','b','O','b'},
-        {0, 1, {28.0, 72000.0/28.0}, 0, ITALIC, NOBOLD, 24607, 52}, cc_alphabetic
+        {0, 1, {28.0, 72000.0/28.0}, 0, ITALIC, TWOBOLD, 24607, 52}, cc_alphabetic
     },
 
     {

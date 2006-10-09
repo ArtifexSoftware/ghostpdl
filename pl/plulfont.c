@@ -441,12 +441,12 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                                 8 );
 
                         /* update some parameters from the file */
-                        pl_fp_set_pitch_cp(&plfont->params, pitch_cp);
-                        plfont->params.proportional_spacing =
-                                                         !pfDesc->isFixedPitch;
-                        plfont->params.style = pfDesc->pcltStyle;
-                        plfont->params.stroke_weight = pfDesc->pcltStrokeWt;
-                        plfont->params.typeface_family = pfDesc->pcltTypeFamily;
+                        //                        pl_fp_set_pitch_cp(&plfont->params, pitch_cp);
+                        //                        plfont->params.proportional_spacing =
+                        //                                                         !pfDesc->isFixedPitch;
+                        //                        plfont->params.style = pfDesc->pcltStyle;
+                        //                        plfont->params.stroke_weight = pfDesc->pcltStrokeWt;
+                        //                        plfont->params.typeface_family = pfDesc->pcltTypeFamily;
                         /* store the font in the built-in-fonts dictionary */
 			if ( use_unicode_names_for_keys )
 			    pl_dict_put( pfontdict, resident_table[j].unicode_fontname, 32, plfont );

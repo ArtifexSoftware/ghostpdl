@@ -289,9 +289,6 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
                 /* copy in the compliment while we are here. */
                 memcpy(plfont->character_complement, &data[78], 8);
             }
-            //            code = pl_swap_header(header, pl_get_uint16(header + gifct_offset));
-            //            if ( code != 0 )
-            //  return code;
         }
         plfont->header = header;
         plfont->header_size = count;

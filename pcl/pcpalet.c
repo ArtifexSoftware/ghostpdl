@@ -882,6 +882,43 @@ set_render_algorithm(
     return pcl_palette_set_render_method(pcs, uint_arg(pargs));
 }
 
+static bool swapped_device_color_procs = false;
+static gx_cm_color_map_procs device_cm_procs;
+/* needs type */
+static void *saved_get_color_map_proc;
+
+private void
+pcl_gray_cs_to_cm(gx_device * dev, frac gray, frac out[])
+{
+    /* just pass it along */
+    device_cm_procs.map_gray(dev, gray, out );
+}
+
+private void
+pcl_rgb_cs_to_cm(gx_device * dev, const gs_imager_state * pis, frac r, frac g, frac b, frac out[])
+{
+    frac gray = color_rgb_to_gray(r, g, b, NULL);
+    device_cm_procs.map_rgb(dev, pis, gray, gray, gray, out);
+}
+
+private void
+pcl_cmyk_cs_to_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+{
+    frac gray = color_cmyk_to_gray(c, m, y, k, NULL);
+    device_cm_procs.map_cmyk(dev, gray, gray, gray, gray, out);
+}
+
+private const gx_cm_color_map_procs pcl_mono_procs = {
+    pcl_gray_cs_to_cm, pcl_rgb_cs_to_cm, pcl_cmyk_cs_to_cm
+};
+
+private const gx_cm_color_map_procs *
+pcl_mono_color_mapping_procs(const gx_device * dev)
+{
+    return &pcl_mono_procs;
+}
+
+
 /* set monochrome page device parameter.  NB needs testing.  We don't
    currently have a device that does what we need with
    ProcessColorModel.  We assume non color devices will simply ignore
@@ -889,10 +926,23 @@ set_render_algorithm(
 private int
 pcl_update_mono(pcl_state_t *pcs)
 {
-    if (pcs->monochrome_mode)
-        return put_param1_string(pcs, "ProcessColorModel", "DeviceGray");
-    else
-        return put_param1_string(pcs, "ProcessColorModel", "DeviceRGB");
+    int code;
+    gx_device *dev = gs_currentdevice(pcs->pgs);
+    gx_cm_color_map_procs *cm_procs =  (dev_proc(dev, get_color_mapping_procs)(dev));
+    if (pcs->monochrome_mode) {
+        if (swapped_device_color_procs == false) {
+            device_cm_procs = *cm_procs;
+            saved_get_color_map_proc = dev->procs.get_color_mapping_procs;
+            dev->procs.get_color_mapping_procs = pcl_mono_color_mapping_procs;
+            swapped_device_color_procs = true;
+        }
+    } else {
+        if (swapped_device_color_procs == true) {
+            dev->procs.get_color_mapping_procs = saved_get_color_map_proc;
+            swapped_device_color_procs = false;
+        }
+    }
+    return 0;
 }
             
 /*
@@ -927,10 +977,7 @@ set_print_mode(
     else
         pcs->monochrome_mode = false;
 
-    pcl_update_mono(pcs);
-    return 0;
-    
-
+    return pcl_update_mono(pcs);
 }
 
 /*

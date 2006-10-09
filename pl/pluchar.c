@@ -114,8 +114,8 @@ pl_init_fc(
         /* fixed point scaling */
         floatp mscale = 1L << 16;
         pfc->s.m2.matrix_scale = 16;
-        pfc->s.m2.point_size = (int)((hy * plfont->pts_per_inch / xres) + 0.5) * 8; /* 1/8ths */
-        pfc->s.m2.set_size = (int)((hx * plfont->pts_per_inch / yres) + 0.5) * 8;
+        pfc->s.m2.point_size = (int)((hy * plfont->pts_per_inch / yres) + 0.5) * 8; /* 1/8ths */
+        pfc->s.m2.set_size = (int)((hx * plfont->pts_per_inch / xres) + 0.5) * 8;
         pfc->s.m2.m[0] = mscale * mat.xx / hx;
         pfc->s.m2.m[1] = mscale * -mat.xy / hx;
         pfc->s.m2.m[2] = mscale * mat.yx / hy;
