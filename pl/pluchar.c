@@ -154,7 +154,7 @@ pl_init_fc(
         pfc->pcl6bold = 0;
     /* set the format */
     pfc->format = FC_PCL6_EMU | FC_INCHES_TYPE;
-    pfc->format |= (need_outline ? FC_CUBIC_TYPE : FC_BITMAP_TYPE);
+    pfc->format |= (need_outline ? FC_LINEAR_TYPE : FC_BITMAP_TYPE);
 }
 
 /*
@@ -411,10 +411,7 @@ pl_ufst_make_char(
 
         code = image_outline_char(pols, &pis->ctm, pgs->path, pfont);
         if (code >= 0) {
-            if ((pfc->format & FC_NON_Z_WIND) != 0)
-                code = gs_fill(pgs);    /* for TT we use fill */
-            else
-                code = gs_eofill(pgs);  /* for MT and IF we use eofill */
+            code = gs_fill(pgs);
         }
         MEMfree(FSA CACHE_POOL, memhdl);
         gs_setmatrix(pgs, &sv_ctm);
