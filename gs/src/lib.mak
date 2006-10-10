@@ -693,7 +693,7 @@ $(GLOBJ)gxpcopy.$(OBJ) : $(GLSRC)gxpcopy.c $(GXERR) $(math__h) $(gconfigv_h)\
 
 $(GLOBJ)gxpdash.$(OBJ) : $(GLSRC)gxpdash.c $(GX) $(math__h)\
  $(gscoord_h) $(gsline_h) $(gsmatrix_h)\
- $(gxfixed_h) $(gzline_h) $(gzpath_h)
+ $(gxfixed_h) $(gxpdash_h) $(gzline_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gxpdash.$(OBJ) $(C_) $(GLSRC)gxpdash.c
 
 $(GLOBJ)gxpflat.$(OBJ) : $(GLSRC)gxpflat.c $(GX)\

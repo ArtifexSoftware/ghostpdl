@@ -19,6 +19,7 @@
 #include "gscoord.h"
 #include "gxfixed.h"
 #include "gxarith.h"
+#include "gxistate.h"
 #include "gsline.h"
 #include "gzline.h"
 #include "gzpath.h"
@@ -59,6 +60,7 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
     int wrap = (dash->init_ink_on && psub->is_closed ? -1 : 0);
     int drawing = wrap;
     segment_notes notes = ~sn_not_first;
+    const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
     int code;
 
     if ((code = gx_path_add_point(ppath, x0, y0)) < 0)
@@ -83,7 +85,8 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 	double left;
 
 	if (!(udx | udy)) {	/* degenerate */
-	    if (gs_currentlinecap((const gs_state *)pis) != gs_cap_round) {
+	    if (pgs_lp->dot_length == 0 &&
+		pgs_lp->cap != gs_cap_round) {
 		/* From PLRM, stroke operator :
 		   If a subpath is degenerate (consists of a single-point closed path 
 		   or of two or more points at the same coordinates), 

@@ -534,6 +534,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	fixed y = pseg->pt.y;
 	bool is_closed = ((const subpath *)pseg)->is_closed;
 	partial_line pl, pl_prev, pl_first;
+	bool zero_length = true;
 
 	while ((pseg = pseg->next) != 0 &&
 	       pseg->type != s_start
@@ -557,7 +558,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		udy = pd->tangent.y;
 		is_dash_segment = true;
 	    }
-
+	    zero_length &= ((udx | udy) == 0);
 	    pl.o.p.x = x, pl.o.p.y = y;
 	  d:pl.e.p.x = sx, pl.e.p.y = sy;
 	    if (!(udx | udy) || pseg->type == s_dash) {	/* degenerate or short */
@@ -578,17 +579,12 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 			goto d1;
 		    sx = pseg->pt.x, udx = sx - x;
 		    sy = pseg->pt.y, udy = sy - y;
-		    if (udx | udy)
+		    if (udx | udy) {
+			zero_length = false;
 			goto d;
+		    }
 		}
-		/*
-		 * The entire subpath is either a dash, or degenerate and includes
-		 * more than one point.  If degenerate and the dot length is non-zero,
-		 * draw the caps, otherwise do nothing.
-		 */
-		if (pgs_lp->dot_length != 0 && !is_dash_segment)
-		    break;
-		if (!dash_count && pgs_lp->cap != gs_cap_round) {
+		if (pgs_lp->dot_length == 0 && pgs_lp->cap != gs_cap_round && !is_dash_segment) {
 		    /* From PLRM, stroke operator :
 		       If a subpath is degenerate (consists of a single-point closed path 
 		       or of two or more points at the same coordinates), 
@@ -602,16 +598,16 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		 * according to the specified dot orientation.
 		 */
 		{
-		    const segment *end = psub->prev;
+		    /* When passing here, either pseg == NULL or it points to the
+		       start of the next subpaph. So we can't use pseg 
+		       for determining the segment direction.
+		       In same time, psub->last may help, so use it. */
+		    const segment *end = psub->last;
 
 		    if (is_dash_segment) {
 			/* Nothing. */
 		    } else if (end != 0 && (end->pt.x != x || end->pt.y != y))
 			sx = end->pt.x, sy = end->pt.y,	udx = sx - x, udy = sy - y;
-		    else if (pseg != 0 &&
-			     (pseg->pt.x != x || pseg->pt.y != y)
-			)
-			sx = pseg->pt.x, sy = pseg->pt.y, udx = sx - x, udy = sy - y;
 		}
 		/*
 		 * Compute the properly oriented dot length, and then
@@ -719,7 +715,8 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		if (!pl.thin) {
 		    adjust_stroke(&pl, pis, false, 
 			    (pseg->prev == 0 || pseg->prev->type == s_start) && 
-			    (pseg->next == 0 || pseg->next->type == s_start));
+			    (pseg->next == 0 || pseg->next->type == s_start) &&
+			    (zero_length || !is_closed));
 		    compute_caps(&pl);
 		}
 	    }
@@ -758,7 +755,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	    /* For some reason, the Borland compiler requires the cast */
 	    /* in the following statement. */
 	    pl_ptr lptr =
-		(!is_closed || join == gs_join_none ?
+		(!is_closed || join == gs_join_none || zero_length ?
 		 (pl_ptr) 0 : (pl_ptr) & pl_first);
 
 	    code = (*line_proc) (to_path, index - 1, &pl_prev, lptr, pdevc,
