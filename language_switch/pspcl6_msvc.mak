@@ -136,7 +136,7 @@ PXL_FONT_SCALER=$(PL_SCALER)
 # if the current scaler is not the AGFA ufst.
 UFST_ROOT=\cygwin\home\Administrator\ufst
 UFST_LIBDIR=$(UFST_ROOT)\rts\lib
-UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray -DMSVC
+UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray $(I_)$(UFST_ROOT)\rts\tt -DMSVC
 
 
 # Assorted definitions.  Some of these should probably be factored out....
@@ -195,8 +195,5 @@ config-clean: pl.config-clean pxl.config-clean
 !include $(COMMONDIR)\msvc_top.mak
 
 # Subsystems
-!include $(PLSRCDIR)\pl.mak
-!include $(PCLSRCDIR)\pcl.mak
-!include $(PXLSRCDIR)\pxl.mak
 !include $(PSISRCDIR)\psi.mak
 
