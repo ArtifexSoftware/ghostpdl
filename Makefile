@@ -54,6 +54,8 @@ ls_install:
 ls_test:
 	cd tools; ../language_switch/obj/pspcl6 -dTextAlphaBits=4 owl.pcl tiger.px3 ../gs/examples/tiger.ps
 
+check:
+	tools/smoke_check.sh
 
 
 # NB - this does not remove the fonts.  blowing away /windows/fonts
@@ -94,4 +96,4 @@ all_clean: clean uclean ls_uclean ls_clean
 	make -C ufst/rts/lib -f makefile.artifex clean
 
 
-.PHONY: clean test install product profile ls_clean ls_test ls_install ls_product ls_profile ls_udebug udebug ufst
+.PHONY: clean test install product profile ls_clean ls_test ls_install ls_product ls_profile ls_udebug udebug ufst check
