@@ -482,6 +482,8 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
     pl_font_t *pplfont = pl_alloc_font(mem, "pl_load_ufst_lineprinter pplfont");
     gs_font_base *pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
                                           "pl_load_ufst_lineprinter pfont");
+    int code;
+
     /* these shouldn't happen during system setup */
     if (pplfont == 0 || pfont == 0)
         return -1;
@@ -516,7 +518,7 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
     pplfont->is_xl_format = false;
     pplfont->resolution.x = pplfont->resolution.y = 300;
 
-    int code = pl_font_alloc_glyph_table(pplfont, 256, mem, 
+    code = pl_font_alloc_glyph_table(pplfont, 256, mem, 
                                          "pl_load_ufst_lineprinter pplfont (glyph table)");
     if ( code < 0 )
         return code;
