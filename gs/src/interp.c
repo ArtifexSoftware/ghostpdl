@@ -1715,6 +1715,12 @@ res:
     esp = iesp;
     osp = iosp;
     ref_assign_inline(perror_object, ierror.obj);
+#ifdef DEBUG
+    if (ierror.code == e_InterpreterExit) {
+	/* Do not call gs_log_error to reduce the noise. */
+	return e_InterpreterExit;
+    }
+#endif
     return gs_log_error(ierror.code, __FILE__, ierror.line);
 }
 
