@@ -88,10 +88,17 @@ currentdict end def
 /TranslateCSI   % <record> TranslateCSI <CSI>
 { RESMPDEBUG { (fntem TranslateCSI beg ) = } if
   begin
-  << /Registry (Adobe) 
-     /Ordering CSI aload pop 
-     /Supplement exch 
-  >>
+  CSI length 2 eq {
+    << /Registry (Adobe) 
+       /Ordering CSI aload pop 
+       /Supplement exch 
+    >>
+  } {
+    << /Registry CSI 0 get
+       /Ordering CSI 1 get
+       /Supplement CSI 2 get
+    >>
+  } ifelse
   end
   RESMPDEBUG { (fntem TranslateCSI end ) = } if
 } bind def
@@ -169,6 +176,8 @@ currentpacking false setpacking
   } cvlit
 
   /Identity []
+
+  /Unicode []
 
 >> def
 setpacking

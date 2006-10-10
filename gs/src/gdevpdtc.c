@@ -285,6 +285,7 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
 		if (code < 0)
 		    return code;
 		pidcmap->CMapType = 2;	/* per PDF Reference */
+		pidcmap->ToUnicode = true;
 		code = pdf_cmap_alloc(pdev, pidcmap,
 				&pdev->Identity_ToUnicode_CMaps[pcmap->WMode], -1);
 		if (code < 0)

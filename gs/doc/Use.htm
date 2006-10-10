@@ -52,6 +52,7 @@
 <li><a href="#Font_lookup">Font lookup</a>
 <li><a href="#CIDFonts">CID fonts</a>
 <li><a href="#CIDFontSubstitution">CID font substitution</a>
+<li><a href="#UnicodeTT">Using Unicode True Type fonts</a>
 <li><a href="#Temp_files">Temporary files</a>
 </ul>
 
@@ -1218,10 +1219,17 @@ Where <b><tt>keys&amp;values</tt></b> are explained in the table below.
             The first font in a collection is 0.
             Default value is 0.
 <tr valign="top">       <td><b><tt>/CSI</tt></b>
-        <td>array of 2 elements
+        <td>array of 2 or 3 elements
         <td>(required) Information for building <b><tt>CIDSystemInfo</tt></b>.
-            The first element is a string, which specifies <b><tt>Ordering</tt></b>.
-            The second element is a number, which specifies <b><tt>Supplement</tt></b>.
+            <p>
+            If the array consists of 2 elements,
+            the first element is a string, which specifies <b><tt>Ordering</tt></b>;
+            the second element is a number, which specifies <b><tt>Supplement</tt></b>.
+            <p>
+            If the array consists of 3 elements,
+            the first element is a string, which specifies <b><tt>Registry</tt></b>;
+            the second element is a string, which specifies <b><tt>Ordering</tt></b>;
+            the third element is a number, which specifies <b><tt>Supplement</tt></b>.
 </table>
 
 <p>
@@ -1297,6 +1305,47 @@ Consequently, if you want to handle any PDF document with
 non-embedded CID fonts (which isn't a correct PDF),
 you need to create a suitable <b><tt>lib/cidfmap</tt></b> by hand,
 possibly a specific one for each document.
+
+<h3><a name="UnicodeTT"></a>Using Unicode True Type fonts</h3>
+
+Ghostscript can handle True Type fonts with the full Unicode UTF-16 character set.
+For doing that, a 3d party software should generate a Postscript
+or PDF document with a text, which is encoded with the 
+UTF16 encoding. Ghostscript may be used for converting
+such Postscript documents to PDF and for 
+re-distilling such PDF documents to PDF subsets.
+
+<p>
+To render an UTF-16 encoded text, one must do the following :
+
+<ul>
+
+<li> 
+Provide a True Type font with Unicode Encoding.
+It must have a <b><tt>cmap</tt></b> table with 
+<b><tt>platformID</tt></b> equals to 3 (Windows), 
+and <b><tt>SpecificID</tt></b> eqials to 1 (Unicode).
+
+<li> 
+Describe the font in <b><tt>lib/cidfmap</tt></b>
+with special values for the <b><tt>CSI</tt></b> key :
+<b><tt>[/Artifex /Unicode 0]</tt></b>.
+
+<li> 
+In the PS or PDF document combine the font 
+with one of CMap <b><tt>Identity-UTF16-V</tt></b>
+(for the horizontal writing mode)
+or <b><tt>Identity-UTF16-V</tt></b> 
+(for the vertical writing mode).
+Those CMaps are distributed with Ghostscript
+in <b><tt>Resource/CMap</tt></b>.
+
+</ul>
+
+Please note that <b><tt>/Registry (Adobe) /Ordering (Identity)</tt></b>
+won't properly work for Unicode documents,
+especially for the searchability feature
+(see <a href="#CIDFontSubstitution">CID font substitution</a>).
 
 <h3><a name="Temp_files"></a>Temporary files</h3>
 

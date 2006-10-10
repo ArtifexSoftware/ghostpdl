@@ -457,6 +457,11 @@ zbuildcmap(i_ctx_t *i_ctx_p)
 	goto fail;
     if ((code = acquire_code_map(&pcmap->notdef, &rnotdefs, pcmap, imemory)) < 0)
 	goto fail;
+    if (!bytes_compare(pcmap->CIDSystemInfo->Registry.data, pcmap->CIDSystemInfo->Registry.size,
+		    (const byte *)"Artifex", 7) &&
+	!bytes_compare(pcmap->CIDSystemInfo->Ordering.data, pcmap->CIDSystemInfo->Ordering.size,
+		    (const byte *)"Unicode", 7))
+	pcmap->from_Unicode = true;
     pcmap->mark_glyph = zfont_mark_glyph_name;
     pcmap->mark_glyph_data = 0;
     pcmap->glyph_name = zfcmap_glyph_name;

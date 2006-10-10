@@ -81,6 +81,7 @@ identity_next_range(gs_cmap_ranges_enum_t *penum)
 
 	memset(penum->range.first, 0, pcimap->num_bytes);
 	memset(penum->range.last, 0xff, pcimap->num_bytes);
+	penum->range.size = pcimap->num_bytes;
 	penum->index = 1;
 	return 0;
     }
@@ -360,6 +361,9 @@ gs_cmap_lookups_enum_setup(gs_cmap_lookups_enum_t *penum,
  * For a random CMap, compute whether it is identity.
  * It is not applicable to gs_cmap_ToUnicode_t due to
  * different sizes of domain keys and range values.
+ * Note we reject CMaps with Registry=Artifex
+ * to force embedding special instandard CMaps,
+ * which are not commonly in use yet.
  */
 bool
 gs_cmap_compute_identity(const gs_cmap_t *pcmap, int font_index_only)
@@ -368,6 +372,9 @@ gs_cmap_compute_identity(const gs_cmap_t *pcmap, int font_index_only)
     gs_cmap_lookups_enum_t lenum;
     int code;
 
+    if (!bytes_compare(pcmap->CIDSystemInfo->Registry.data, pcmap->CIDSystemInfo->Registry.size,
+		    (const byte *)"Artifex", 7))
+	return false;
     for (gs_cmap_lookups_enum_init(pcmap, which, &lenum);
 	 (code = gs_cmap_enum_next_lookup(&lenum)) == 0; ) {
 	if (font_index_only >= 0 && lenum.entry.font_index != font_index_only)
