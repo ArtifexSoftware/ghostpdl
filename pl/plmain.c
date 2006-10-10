@@ -448,9 +448,12 @@ pl_main(
 
 #ifdef DEBUG
     if ( gs_debug_c(':') ) {
+#if 0
+/* pulling wrapped memory allocators */
 	gs_malloc_memory_t *rawheap = gs_malloc_wrapped_contents(mem);
         pl_print_usage(&inst, "Final");
 	dprintf1("%% Max allocated = %ld\n", rawheap->max_used);
+#endif
     }
 #endif
 
