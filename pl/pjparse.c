@@ -108,7 +108,7 @@ private const pjl_envir_var_t pjl_factory_defaults[] = {
    there is some unnecessary overlap in the factory default and font
    source table. */
 private const pjl_fontsource_t pjl_fontsource_table[] = {
-    { "I", "fonts/;/windows/system/;/windows/fonts/;/win95/fonts/;/winnt/fonts/" },
+    { "I", "fonts/;urwfonts/;/windows/system/;/windows/fonts/;/win95/fonts/;/winnt/fonts/" },
     { "C", "CART0/", "" },
     { "C1", "CART1/", "" },
     { "C2", "CART2/", "" },
