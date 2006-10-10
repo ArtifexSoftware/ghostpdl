@@ -1234,8 +1234,8 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
               uint j;
 
               if ( num_aux_points == 0xffff ) {
-                num_aux_points = 0;
                 if_debug1('1', "[1]corrupt intellifont font glyph %ld\n", glyph );
+                return 0;
               }
               if_debug2('1', "[1]num_points=%u num_aux_points=%u\n",
                         num_points, num_aux_points);
