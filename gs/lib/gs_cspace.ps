@@ -761,15 +761,15 @@ bind def
 %
 %   <num>   bound_0_1   <num>
 %
-% Bound a number to the range [0, 1]
+% Bound a number to the range [0.0, 1.0]
 %
 /bound_0_1
   {
     dup 0 lt
-      { pop 0 }
+      { pop 0.0 }
       {
         dup 1 gt
-          { pop 1 }
+          { pop 1.0 }
         if
       }
     ifelse
@@ -886,15 +886,15 @@ bind def
   {
     % find the largest and smallest components
     3 copy 3 //max_n exec dup 5 1 roll
-    dup 0 eq
-      { pop pop pop pop 0 0 }
+    dup 0.0 eq
+      { pop pop pop pop 0.0 0.0 }
       {
         4 copy pop 3 //min_n exec 1 index exch sub
         dup 2 index div 7 1 roll
-        dup 0 eq
-          { 5 { pop } repeat 0 3 1 roll }
+        dup 0.0 eq
+          { 5 { pop } repeat 0.0 3 1 roll }
           {
-            6 mul 5 1 roll
+            6.0 mul 5 1 roll
             2 copy eq       % blue == brightness
               { pop pop sub exch div .666667 add }
               {
@@ -903,8 +903,8 @@ bind def
                   {
                     % red == brightness
                     sub exch pop exch div
-                    dup 0 lt
-                      { 1 add }
+                    dup 0.0 lt
+                      { 1.0 add }
                     if
                   }
                 ifelse
@@ -921,9 +921,9 @@ bind def
 
 /.hsb_2_rgb
   {
-    3 { 0 max 1 min 3 1 roll } repeat
-    1 2 index sub 1 index mul      % (1 - s) * br
-    3 -1 roll 2 index mul 6 mul    % 6 * s * br
+    3 { 0.0 max 1.0 min 3 1 roll } repeat
+    1.0 2 index sub 1 index mul      % (1 - s) * br
+    3 -1 roll 2 index mul 6.0 mul    % 6 * s * br
     4 -1 roll                      % stack: <br>  <(1 - s) * br>  <6 * s * br>  <h>
 
     % array of procedures for the 7 hue cases
@@ -944,14 +944,14 @@ bind def
         { 0.666667 sub mul 1 index add 3 1 roll exch }
 
         % 5 ==> r >= b >= g
-        { 1 exch sub mul 1 index add }
+        { 1.0 exch sub mul 1 index add }
 
         % 6 ==> r = br, g = b = mn
 	% Case 6 is the same as case 0 with h = 0.  This also simplifies
 	% the calculations.
         { pop pop dup }
       }
-    1 index 6 mul cvi              % (int)(6 * h)
+    1 index 6.0 mul cvi              % (int)(6 * h)
     get exec    
   }
 bind def
