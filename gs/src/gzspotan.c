@@ -295,6 +295,11 @@ san_close(gx_device * dev)
     free_cont_list(padev->memory, &padev->cont_buffer);
     padev->trap_buffer_last = NULL;
     padev->cont_buffer_last = NULL;
+    padev->trap_free = NULL;
+    padev->cont_free = NULL;
+    padev->top_band = NULL;
+    padev->bot_band = NULL;
+    padev->bot_current = NULL;
     return 0;
 }
 
