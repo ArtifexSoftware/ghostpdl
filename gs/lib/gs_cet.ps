@@ -1,0 +1,33 @@
+%!PS
+% Set defaults for Ghostscript to match Adobe CPSI behaviour for CET
+
+% do this in the server level so it is persistent across jobs
+true 0 startjob not {
+  (*** Warning: CET startup is not in server default) = flush
+} if
+
+300 .sethiresscreen	% needed for language switch build since it
+			% processes gs_init.ps BEFORE setting the resolution
+
+currentglobal true setglobal
+
+/version (3017.102) def			% match CPSI 3017.102
+/product (PhotoPRINT SE 5.0v2) def	% match CPSI 3017.102
+
+{ } bind dup
+setblackgeneration
+setundercolorremoval
+
+setglobal
+
+% Remove all but 'letter' page size
+<<
+currentpagedevice /InputAttributes get
+1 1 2 index length 1 sub {
+  1 index exch undef
+} for
+/InputAttributes exch
+>>
+setpagedevice
+
+false 0 startjob pop		% re-enter encapsulated mode
