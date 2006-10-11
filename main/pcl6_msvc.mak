@@ -184,13 +184,13 @@ PXL_FONT_SCALER=$(PL_SCALER)
 # specify agfa library locations and includes.  This is ignored
 # if the current scaler is not the AGFA ufst.
 !ifndef UFST_ROOT
-UFST_ROOT=\cygwin\home\Administrator\ufst
+UFST_ROOT=..\ufst
 !endif
 !ifndef UFST_LIBDIR
 UFST_LIBDIR=$(UFST_ROOT)\rts\lib
 !endif
 !ifndef UFST_INCLUDES
-UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray -DMSVC
+UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray -DMSVC -DAGFA_FONT_TABLE
 !endif
 
 !if "$(PL_SCALER)" == "ufst"

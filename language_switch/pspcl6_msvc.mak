@@ -154,7 +154,7 @@ UFST_LIB_EXT=.lib
 # specify agfa library locations and includes.  This is ignored
 # if the current scaler is not the AGFA ufst.
 UFST_LIBDIR=$(UFST_ROOT)\rts\lib
-UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray $(I_)$(UFST_ROOT)\rts\tt -DMSVC
+UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray $(I_)$(UFST_ROOT)\rts\tt -DMSVC -DAGFA_FONT_TABLE
 
 
 
