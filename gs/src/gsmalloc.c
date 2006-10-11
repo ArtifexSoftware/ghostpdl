@@ -287,7 +287,7 @@ private void
 gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 {
     gs_malloc_memory_t *mmem = (gs_malloc_memory_t *) mem;
-    gs_malloc_block_t *bp = mmem->allocated;
+    gs_malloc_block_t *bp;
     gs_memory_type_ptr_t pstype;
     struct_proc_finalize((*finalize));
 
@@ -304,6 +304,9 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 		  (ulong) ptr, client_name_string(cname));
 	(*finalize) (ptr);
     }
+    bp = mmem->allocated; /* If 'finalize' releases a memory,
+			     this function could be called recursively and
+			     change mmem->allocated. */
     if (ptr == bp + 1) {
 	mmem->allocated = bp->next;
 	mmem->used -= bp->size + sizeof(gs_malloc_block_t);
