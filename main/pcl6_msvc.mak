@@ -193,6 +193,15 @@ UFST_LIBDIR=$(UFST_ROOT)\rts\lib
 UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray -DMSVC
 !endif
 
+!if "$(PL_SCALER)" == "ufst"
+# fco's are binary (-b), the following is only used if COMPILE_INITS=1
+UFST_ROMFS_ARGS=-b \
+-P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
+-P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
+-c
+!endif
+
+
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
 !ifndef TARGET_DEVS

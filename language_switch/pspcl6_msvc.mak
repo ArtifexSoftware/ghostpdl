@@ -132,11 +132,30 @@ PL_SCALER=ufst
 PCL_FONT_SCALER=$(PL_SCALER)
 PXL_FONT_SCALER=$(PL_SCALER)
 
+# defines for building PSI against UFST
+!if "$(PL_SCALER)" == "ufst"
+
+!if "$(COMPILE_INITS)" == "1"
+UFSTFONTDIR=%rom%fontdata/
+!else
+UFSTFONTDIR=../fontdata/
+!endif
+
+!ifndef UFST_ROOT
+UFST_ROOT="../ufst"
+!endif
+!ifndef FAPI_DEFS
+FAPI_DEFS= -DUFST_BRIDGE=1 -DUFST_LIB_EXT=.lib -DGCCx86 -DUFST_ROOT=$(UFST_ROOT)
+!endif
+UFST_BRIDGE=1
+UFST_LIB_EXT=.lib
+!endif
+
 # specify agfa library locations and includes.  This is ignored
 # if the current scaler is not the AGFA ufst.
-UFST_ROOT=\cygwin\home\Administrator\ufst
 UFST_LIBDIR=$(UFST_ROOT)\rts\lib
 UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray $(I_)$(UFST_ROOT)\rts\tt -DMSVC
+
 
 
 # Assorted definitions.  Some of these should probably be factored out....
