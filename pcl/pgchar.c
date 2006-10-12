@@ -456,18 +456,24 @@ hpgl_SI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return 0;
 }
 
+#define MAX_SL_TANGENT 114.5887 
 /* SL [slant]; */
  int
 hpgl_SL(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t slant = 0;
 
 	hpgl_arg_c_real(pgls->memory, pargs, &slant);
-	/* clamp to 89.99 degrees of char slant, avoids math issues around
-	 * tan 90degrees == infinity.
+	/* clamp to 89.5 degrees of char slant, avoids math issues around
+	 * tan 90degrees == infinity.  Visually close to HP, 
+	 * performance decrease as slant approaches tan(90). 
 	 */
-	pgls->g.character.slant = slant > 5729.0 ? 5729.0 : slant < -5729.0 ?  -5729.0 : slant;
+	
+	pgls->g.character.slant = slant > MAX_SL_TANGENT ? 
+	    MAX_SL_TANGENT : slant < -MAX_SL_TANGENT ?  
+	    -MAX_SL_TANGENT : slant;
 	return 0;
 }
+#undef MAX_SL_TANGENT
 
 /* SR [width,height]; */
  int
