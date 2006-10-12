@@ -462,7 +462,10 @@ hpgl_SL(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t slant = 0;
 
 	hpgl_arg_c_real(pgls->memory, pargs, &slant);
-	pgls->g.character.slant = slant;
+	/* clamp to 89.99 degrees of char slant, avoids math issues around
+	 * tan 90degrees == infinity.
+	 */
+	pgls->g.character.slant = slant > 5729.0 ? 5729.0 : slant < -5729.0 ?  -5729.0 : slant;
 	return 0;
 }
 
