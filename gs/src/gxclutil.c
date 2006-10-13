@@ -673,7 +673,13 @@ clist_cf_init(stream_CF_state *ss, int width)
 {
     ss->K = -1;
     ss->Columns = width;
+#if 0 /* Disabled due to a crash with ppmraw -r216 c327.bin :
+	 the decoding filter overruns in 1 byte.         
+       */
     ss->EndOfBlock = false;
+#else
+    ss->EndOfBlock = true;
+#endif
     ss->BlackIs1 = true;
     ss->DecodedByteAlign = align_bitmap_mod;
 }
