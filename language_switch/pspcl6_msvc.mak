@@ -184,14 +184,20 @@ TARGET_DEVS=$(PXLOBJDIR)\pxl.dev $(PCLOBJDIR)\pcl5c.dev $(PCLOBJDIR)\hpgl2c.dev
 !endif
 
 !ifndef FEATURE_DEVS    
-FEATURE_DEVS    = \
-		  $(DD)\psl3.dev		\
-		  $(DD)\pdf.dev		\
-		  $(DD)\dpsnext.dev	\
-                  $(DD)\htxlib.dev	\
-                  $(DD)\roplib.dev	\
-		  $(DD)\ttfont.dev	\
-		  $(DD)\pipe.dev
+FEATURE_CORE    = \
+          $(DD)\psl3.dev		\
+	  $(DD)\pdf.dev		\
+	  $(DD)\dpsnext.dev	\
+          $(DD)\htxlib.dev	\
+          $(DD)\roplib.dev	\
+	  $(DD)\ttfont.dev	\
+	  $(DD)\pipe.dev
+
+!if "$(PL_SCALER)" == "ufst"
+FEATURE_DEVS    = $(FEATURE_CORE) $(DD)\fapi.dev
+!else
+FEATURE_DEVS    = $(FEATURE_CORE)
+!endif
 !endif
 
 !include $(MAINSRCDIR)\pcl6_msvc.mak
