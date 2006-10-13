@@ -25,7 +25,7 @@ int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
     int wlen;
     byte *wbuf;
 
-    s_init_state((stream_state*)&state, &s_DCTD_template, mem, mem);
+    s_init_state((stream_state*)&state, &s_DCTD_template, mem);
     state.report_error = xps_report_error;
 
     s_DCTD_template.set_defaults((stream_state*)&state);
@@ -49,7 +49,7 @@ int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
     wp.ptr = 0;
     wp.limit = 0;
 
-    code = s_DCTD_template.process(mem, (stream_state*)&state, &rp, &wp, true);
+    code = s_DCTD_template.process((stream_state*)&state, &rp, &wp, true);
     if (code != 1)
         return gs_throw(-1, "premature EOF or error in jpeg");
 
@@ -92,7 +92,7 @@ int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
     wp.ptr = wbuf - 1;
     wp.limit = wbuf + wlen - 1;
 
-    code = s_DCTD_template.process(mem, (stream_state*)&state, &rp, &wp, true);
+    code = s_DCTD_template.process((stream_state*)&state, &rp, &wp, true);
     if (code != EOFC)
         return gs_throw1(-1, "error in jpeg (code = %d)", code);
 

@@ -1,21 +1,21 @@
-METSRC      = $(METSRCDIR)$(D)
-METGEN      = $(METGENDIR)$(D)
-METOBJ      = $(METOBJDIR)$(D)
-METO_       = $(O_)$(METOBJ)
+XPSSRC      = $(XPSSRCDIR)$(D)
+XPSGEN      = $(XPSGENDIR)$(D)
+XPSOBJ      = $(XPSOBJDIR)$(D)
+XPSO_       = $(O_)$(XPSOBJ)
 
-METCCC  = $(CC_) $(I_)$(METSRCDIR)$(_I) $(I_)$(METGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(C_)
+XPSCCC  = $(CC_) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(C_) $(I_)$(EXPATINCDIR)$(_I)
 
 # Define the name of this makefile.
-MET_MAK     = $(METSRC)met.mak
+XPS_MAK     = $(XPSSRC)met.mak
 
 met.clean: met.config-clean met.clean-not-config-clean
 
 met.clean-not-config-clean:
-	$(RM_) $(METOBJ)*.$(OBJ)
+	$(RM_) $(XPSOBJ)*.$(OBJ)
 
 met.config-clean: clean_gs
-	$(RM_) $(METOBJ)*.dev
-	$(RM_) $(METOBJ)devs.tr5
+	$(RM_) $(XPSOBJ)*.dev
+	$(RM_) $(XPSOBJ)devs.tr5
 
 # NB needs expat dependencies.
 
@@ -23,110 +23,110 @@ met.config-clean: clean_gs
 # all .h files dependent and include them in each target...  fix me
 # later
 
-METINCLUDES=$(METSRC)*.h
+XPSINCLUDES=$(XPSSRC)*.h
 
-metgstate_h = $(METSRC)metgstate.h
+metgstate_h = $(XPSSRC)metgstate.h
 
-metparse_h  = $(METSRC)metparse.h \
+metparse_h  = $(XPSSRC)metparse.h \
               $(gx_h)
 
-metstate_h  = $(METSRC)metstate.h \
+metstate_h  = $(XPSSRC)metstate.h \
               $(gx_h)
 
 metsimple_h = $(metsimple.h)
 
-metcomplex_h = $(METSRC)metcomplex.h \
+metcomplex_h = $(XPSSRC)metcomplex.h \
                $(metsimple_h)
 
-metutil_h = $(METSRC)metutil.h
+metutil_h = $(XPSSRC)metutil.h
 
-zipparse_h = $(METSRC)zipparse.h
+zipparse_h = $(XPSSRC)zipparse.h
 
-$(METOBJ)metrecorder.$(OBJ): $(METSRC)metrecorder.c $(METINCLUDES)
-	$(METCCC) $(METSRC)metrecorder.c $(METO_)metrecorder.$(OBJ)
+$(XPSOBJ)metrecorder.$(OBJ): $(XPSSRC)metrecorder.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)metrecorder.c $(XPSO_)metrecorder.$(OBJ)
 
 
-$(METOBJ)metcanvas.$(OBJ): $(METSRC)metcanvas.c $(METINCLUDES)
-	$(METCCC) $(METSRC)metcanvas.c $(METO_)metcanvas.$(OBJ)
+$(XPSOBJ)metcanvas.$(OBJ): $(XPSSRC)metcanvas.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)metcanvas.c $(XPSO_)metcanvas.$(OBJ)
 
-$(METOBJ)metimage.$(OBJ): $(METSRC)metimage.c $(METINCLUDES)
-	$(METCCC) $(METSRC)metimage.c $(METO_)metimage.$(OBJ)
+$(XPSOBJ)metimage.$(OBJ): $(XPSSRC)metimage.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)metimage.c $(XPSO_)metimage.$(OBJ)
 
-$(METOBJ)xps_gradient_brush.$(OBJ): $(METSRC)xps_gradient_brush.c $(METINCLUDES)
-	$(METCCC) $(METSRC)xps_gradient_brush.c $(METO_)xps_gradient_brush.$(OBJ)
+$(XPSOBJ)xps_gradient_brush.$(OBJ): $(XPSSRC)xps_gradient_brush.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xps_gradient_brush.c $(XPSO_)xps_gradient_brush.$(OBJ)
 
-$(METOBJ)xps_visual_brush.$(OBJ): $(METSRC)xps_visual_brush.c $(METINCLUDES)
-	$(METCCC) $(METSRC)xps_visual_brush.c $(METO_)xps_visual_brush.$(OBJ)
+$(XPSOBJ)xps_visual_brush.$(OBJ): $(XPSSRC)xps_visual_brush.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xps_visual_brush.c $(XPSO_)xps_visual_brush.$(OBJ)
 
-$(METOBJ)metpage.$(OBJ): $(METSRC)metpage.c $(METINCLUDES)
-	$(METCCC) $(METSRC)metpage.c $(METO_)metpage.$(OBJ)
+$(XPSOBJ)metpage.$(OBJ): $(XPSSRC)metpage.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)metpage.c $(XPSO_)metpage.$(OBJ)
 
-$(METOBJ)metpath.$(OBJ): $(METSRC)metpath.c $(metutil_h) $(METINCLUDES)
-	$(METCCC) $(METSRC)metpath.c $(METO_)metpath.$(OBJ)
+$(XPSOBJ)metpath.$(OBJ): $(XPSSRC)metpath.c $(metutil_h) $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)metpath.c $(XPSO_)metpath.$(OBJ)
 
-$(METOBJ)metglyphs.$(OBJ): $(METSRC)metglyphs.c $(metutil_h) $(METINCLUDES)
-	$(METCCC) $(METSRC)metglyphs.c $(METO_)metglyphs.$(OBJ)
+$(XPSOBJ)metglyphs.$(OBJ): $(XPSSRC)metglyphs.c $(metutil_h) $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)metglyphs.c $(XPSO_)metglyphs.$(OBJ)
 
-$(METOBJ)metgstate.$(OBJ): $(METSRC)metgstate.c $(metgstate_h) $(METINCLUDES)
-	$(METCCC) $(METSRC)metgstate.c $(METO_)metgstate.$(OBJ)
+$(XPSOBJ)metgstate.$(OBJ): $(XPSSRC)metgstate.c $(metgstate_h) $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)metgstate.c $(XPSO_)metgstate.$(OBJ)
 
-$(METOBJ)metutil.$(OBJ): $(METSRC)metutil.c $(metutil_h) $(METINCLUDES)
-	$(METCCC) $(METSRC)metutil.c $(METO_)metutil.$(OBJ)
+$(XPSOBJ)metutil.$(OBJ): $(XPSSRC)metutil.c $(metutil_h) $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)metutil.c $(XPSO_)metutil.$(OBJ)
 
-$(METOBJ)metparse.$(OBJ): $(METSRC)metparse.c \
+$(XPSOBJ)metparse.$(OBJ): $(XPSSRC)metparse.c \
                           $(metparse_h) $(metcomplex_h) $(metelement_h)\
-                          $(memory__h) $(METINCLUDES)
-	$(METCCC) $(METSRC)metparse.c $(METO_)metparse.$(OBJ)
+                          $(memory__h) $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)metparse.c $(XPSO_)metparse.$(OBJ)
 
-$(METOBJ)metstate.$(OBJ): $(METSRC)metstate.c \
-                          $(metstate_h) $(METINCLUDES)
-	$(METCCC) $(METSRC)metstate.c $(METO_)metstate.$(OBJ)
+$(XPSOBJ)metstate.$(OBJ): $(XPSSRC)metstate.c \
+                          $(metstate_h) $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)metstate.c $(XPSO_)metstate.$(OBJ)
 
-$(METOBJ)metelement.$(OBJ): $(METSRC)metelement.c $(metelement_h) $(METINCLUDES)
-	$(METCCC) $(METSRC)metelement.c $(METO_)metelement.$(OBJ)
+$(XPSOBJ)metelement.$(OBJ): $(XPSSRC)metelement.c $(metelement_h) $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)metelement.c $(XPSO_)metelement.$(OBJ)
 
-$(METOBJ)metundone.$(OBJ): $(METSRC)metundone.c $(METINCLUDES)
-	$(METCCC) $(METSRC)metundone.c $(METO_)metundone.$(OBJ)
+$(XPSOBJ)metundone.$(OBJ): $(XPSSRC)metundone.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)metundone.c $(XPSO_)metundone.$(OBJ)
 
-$(METOBJ)zippart.$(OBJ): $(METSRC)zippart.c $(zipparse_h) $(METINCLUDES)
-	$(METCCC) $(METSRC)zippart.c $(METO_)zippart.$(OBJ)
+$(XPSOBJ)zippart.$(OBJ): $(XPSSRC)zippart.c $(zipparse_h) $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)zippart.c $(XPSO_)zippart.$(OBJ)
 
-$(METOBJ)zipparse.$(OBJ): $(METSRC)zipparse.c $(zipparse_h) $(pltop_h) $(METINCLUDES)
-	$(METCCC) $(METSRC)zipparse.c $(METO_)zipparse.$(OBJ)
+$(XPSOBJ)zipparse.$(OBJ): $(XPSSRC)zipparse.c $(zipparse_h) $(pltop_h) $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)zipparse.c $(XPSO_)zipparse.$(OBJ)
 
-$(METOBJ)xps_image_jpeg.$(OBJ): $(METSRC)xps_image_jpeg.c $(xps_error_h) $(METINCLUDES)
-	$(METCCC) $(METSRC)xps_image_jpeg.c $(METO_)xps_image_jpeg.$(OBJ)
+$(XPSOBJ)xps_image_jpeg.$(OBJ): $(XPSSRC)xps_image_jpeg.c $(xps_error_h) $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xps_image_jpeg.c $(XPSO_)xps_image_jpeg.$(OBJ)
 
-$(METOBJ)xps_image_png.$(OBJ): $(METSRC)xps_image_png.c $(xps_error_h) $(METINCLUDES)
-	$(METCCC) $(I_)$(PSRCDIR)$(_I) $(METSRC)xps_image_png.c $(METO_)xps_image_png.$(OBJ)
+$(XPSOBJ)xps_image_png.$(OBJ): $(XPSSRC)xps_image_png.c $(xps_error_h) $(XPSINCLUDES)
+	$(XPSCCC) $(I_)$(PSRCDIR)$(_I) $(XPSSRC)xps_image_png.c $(XPSO_)xps_image_png.$(OBJ)
 
-$(METOBJ)xps_image_tiff.$(OBJ): $(METSRC)xps_image_tiff.c $(xps_error_h) $(METINCLUDES)
-	$(METCCC) $(METSRC)xps_image_tiff.c $(METO_)xps_image_tiff.$(OBJ)
+$(XPSOBJ)xps_image_tiff.$(OBJ): $(XPSSRC)xps_image_tiff.c $(xps_error_h) $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xps_image_tiff.c $(XPSO_)xps_image_tiff.$(OBJ)
 
-$(METOBJ)xps_gradient_draw.$(OBJ): $(METSRC)xps_gradient_draw.c $(xps_error_h) $(METINCLUDES)
-	$(METCCC) $(METSRC)xps_gradient_draw.c $(METO_)xps_gradient_draw.$(OBJ)
+$(XPSOBJ)xps_gradient_draw.$(OBJ): $(XPSSRC)xps_gradient_draw.c $(xps_error_h) $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xps_gradient_draw.c $(XPSO_)xps_gradient_draw.$(OBJ)
 
-$(MET_TOP_OBJ): $(METSRC)mettop.c \
+$(XPS_TOP_OBJ): $(XPSSRC)mettop.c \
                       $(metstate_h)     \
-                      $(pltop_h) $(METINCLUDES)
-	$(CP_) $(METGEN)pconf.h $(METGEN)pconfig.h
-	$(METCCC) $(METSRC)mettop.c $(METO_)mettop.$(OBJ)
+                      $(pltop_h) $(XPSINCLUDES)
+	$(CP_) $(XPSGEN)pconf.h $(XPSGEN)pconfig.h
+	$(XPSCCC) $(XPSSRC)mettop.c $(XPSO_)mettop.$(OBJ)
 
-MET_OBJS=$(METOBJ)metparse.$(OBJ) $(METOBJ)metstate.$(OBJ) \
-         $(METOBJ)metundone.$(OBJ) $(METOBJ)metpage.$(OBJ) \
-         $(METOBJ)metelement.$(OBJ) $(METOBJ)metpath.$(OBJ)\
-	 $(METOBJ)metglyphs.$(OBJ) $(METOBJ)metutil.$(OBJ) \
-	 $(METOBJ)metimage.$(OBJ) $(METOBJ)xps_gradient_brush.$(OBJ) \
-	 $(METOBJ)xps_visual_brush.$(OBJ) \
-	 $(METOBJ)zipparse.$(OBJ) $(METOBJ)zippart.$(OBJ) \
-	 $(METOBJ)xps_image_jpeg.$(OBJ) \
-	 $(METOBJ)xps_image_png.$(OBJ) \
-	 $(METOBJ)xps_image_tiff.$(OBJ) \
-	 $(METOBJ)xps_gradient_draw.$(OBJ) \
-	 $(METOBJ)metgstate.$(OBJ) \
-	 $(METOBJ)metcanvas.$(OBJ) \
-	 $(METOBJ)metrecorder.$(OBJ)
+XPS_OBJS=$(XPSOBJ)metparse.$(OBJ) $(XPSOBJ)metstate.$(OBJ) \
+         $(XPSOBJ)metundone.$(OBJ) $(XPSOBJ)metpage.$(OBJ) \
+         $(XPSOBJ)metelement.$(OBJ) $(XPSOBJ)metpath.$(OBJ)\
+	 $(XPSOBJ)metglyphs.$(OBJ) $(XPSOBJ)metutil.$(OBJ) \
+	 $(XPSOBJ)metimage.$(OBJ) $(XPSOBJ)xps_gradient_brush.$(OBJ) \
+	 $(XPSOBJ)xps_visual_brush.$(OBJ) \
+	 $(XPSOBJ)zipparse.$(OBJ) $(XPSOBJ)zippart.$(OBJ) \
+	 $(XPSOBJ)xps_image_jpeg.$(OBJ) \
+	 $(XPSOBJ)xps_image_png.$(OBJ) \
+	 $(XPSOBJ)xps_image_tiff.$(OBJ) \
+	 $(XPSOBJ)xps_gradient_draw.$(OBJ) \
+	 $(XPSOBJ)metgstate.$(OBJ) \
+	 $(XPSOBJ)metcanvas.$(OBJ) \
+	 $(XPSOBJ)metrecorder.$(OBJ)
 
-$(METOBJ)met.dev: $(MET_MAK) $(ECHOGS_XE) $(MET_OBJS)
-	$(SETMOD) $(METOBJ)met $(MET_OBJS)
+$(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS)
+	$(SETMOD) $(XPSOBJ)xps $(XPS_OBJS)
 

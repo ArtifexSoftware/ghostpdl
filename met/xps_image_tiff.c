@@ -191,7 +191,7 @@ xps_decode_tiff_packbits(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl,
     stream_cursor_write scw;
     int code;
 
-    s_init_state((stream_state*)&state, &s_RLD_template, mem, mem);
+    s_init_state((stream_state*)&state, &s_RLD_template, mem);
     state.report_error = xps_report_error;
 
     s_RLD_template.set_defaults((stream_state*)&state);
@@ -202,7 +202,7 @@ xps_decode_tiff_packbits(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl,
     scw.ptr = wp - 1;
     scw.limit = wl - 1;
 
-    code = s_RLD_template.process(mem, (stream_state*)&state, &scr, &scw, true);
+    code = s_RLD_template.process((stream_state*)&state, &scr, &scw, true);
     if (code == ERRC)
         return gs_throw1(-1, "error in packbits data (code = %d)", code);
 
@@ -217,7 +217,7 @@ xps_decode_tiff_lzw(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte
     stream_cursor_write scw;
     int code;
 
-    s_init_state((stream_state*)&state, &s_LZWD_template, mem, mem);
+    s_init_state((stream_state*)&state, &s_LZWD_template, mem);
     state.report_error = xps_report_error;
 
     s_LZWD_template.set_defaults((stream_state*)&state);
@@ -243,7 +243,7 @@ xps_decode_tiff_lzw(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte
     scw.ptr = wp - 1;
     scw.limit = wl - 1;
 
-    code = s_LZWD_template.process(mem, (stream_state*)&state, &scr, &scw, true);
+    code = s_LZWD_template.process((stream_state*)&state, &scr, &scw, true);
     if (code == ERRC)
     {
         s_LZWD_template.release((stream_state*)&state);
@@ -263,7 +263,7 @@ xps_decode_tiff_flate(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, by
     stream_cursor_write scw;
     int code;
 
-    s_init_state((stream_state*)&state, &s_zlibD_template, mem, mem);
+    s_init_state((stream_state*)&state, &s_zlibD_template, mem);
     state.report_error = xps_report_error;
 
     s_zlibD_template.set_defaults((stream_state*)&state);
@@ -275,7 +275,7 @@ xps_decode_tiff_flate(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, by
     scw.ptr = wp - 1;
     scw.limit = wl - 1;
 
-    code = s_zlibD_template.process(mem, (stream_state*)&state, &scr, &scw, true);
+    code = s_zlibD_template.process((stream_state*)&state, &scr, &scw, true);
     if (code == ERRC)
     {
         s_zlibD_template.release((stream_state*)&state);
@@ -294,7 +294,7 @@ xps_decode_tiff_fax(gs_memory_t *mem, xps_tiff_t *tiff, int comp, byte *rp, byte
     stream_cursor_write scw;
     int code;
 
-    s_init_state((stream_state*)&state, &s_CFD_template, mem, mem);
+    s_init_state((stream_state*)&state, &s_CFD_template, mem);
     state.report_error = xps_report_error;
 
     s_CFD_template.set_defaults((stream_state*)&state);
@@ -318,7 +318,7 @@ xps_decode_tiff_fax(gs_memory_t *mem, xps_tiff_t *tiff, int comp, byte *rp, byte
     scw.ptr = wp - 1;
     scw.limit = wl - 1;
 
-    code = s_CFD_template.process(mem, (stream_state*)&state, &scr, &scw, true);
+    code = s_CFD_template.process((stream_state*)&state, &scr, &scw, true);
     if (code == ERRC)
     {
         s_CFD_template.release((stream_state*)&state);
@@ -351,7 +351,7 @@ xps_decode_tiff_jpeg(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byt
      * Set up the JPEG and DCT filter voodoo.
      */
 
-    s_init_state((stream_state*)&state, &s_DCTD_template, mem, mem);
+    s_init_state((stream_state*)&state, &s_DCTD_template, mem);
     state.report_error = xps_report_error;
     s_DCTD_template.set_defaults((stream_state*)&state);
 
@@ -988,37 +988,37 @@ xps_debug_tiff(gs_memory_t *mem, xps_tiff_t *tiff)
 {
     int n;
 
-    dputs(mem, "TIFF <<\n");
-    dprintf1(mem, "\t/NewSubfileType %u\n", tiff->subfiletype);
-    dprintf1(mem, "\t/PhotometricInterpretation %u\n", tiff->photometric);
-    dprintf1(mem, "\t/Compression %u\n", tiff->compression);
-    dprintf1(mem, "\t/ImageWidth %u\n", tiff->imagewidth);
-    dprintf1(mem, "\t/ImageLength %u\n", tiff->imagelength);
-    dprintf1(mem, "\t/BitsPerSample %u\n", tiff->bitspersample);
-    dprintf1(mem, "\t/SamplesPerPixel %u\n", tiff->samplesperpixel);
-    dprintf1(mem, "\t/PlanarConfiguration %u\n", tiff->planar);
-    dprintf1(mem, "\t/ExtraSamples %u\n", tiff->extrasamples);
-    dprintf1(mem, "\t/ColorMap $%p\n", tiff->colormap);
-    dprintf1(mem, "\t/XResolution %u\n", tiff->xresolution);
-    dprintf1(mem, "\t/YResolution %u\n", tiff->yresolution);
-    dprintf1(mem, "\t/ResolutionUnit %u\n", tiff->resolutionunit);
-    dprintf1(mem, "\t/FillOrder %u\n", tiff->fillorder);
-    dprintf1(mem, "\t/T4Options %u\n", tiff->g3opts);
-    dprintf1(mem, "\t/T6Options %u\n", tiff->g4opts);
-    dprintf1(mem, "\t/Predictor %u\n", tiff->predictor);
-    dprintf1(mem, "\t/JPEGTables %u\n", tiff->jpegtableslen);
-    dprintf2(mem, "\t/YCbCrSubSampling %u %u\n", tiff->ycbcrsubsamp[0], tiff->ycbcrsubsamp[1]);
+    dputs("TIFF <<\n");
+    dprintf1("\t/NewSubfileType %u\n", tiff->subfiletype);
+    dprintf1("\t/PhotometricInterpretation %u\n", tiff->photometric);
+    dprintf1("\t/Compression %u\n", tiff->compression);
+    dprintf1("\t/ImageWidth %u\n", tiff->imagewidth);
+    dprintf1("\t/ImageLength %u\n", tiff->imagelength);
+    dprintf1("\t/BitsPerSample %u\n", tiff->bitspersample);
+    dprintf1("\t/SamplesPerPixel %u\n", tiff->samplesperpixel);
+    dprintf1("\t/PlanarConfiguration %u\n", tiff->planar);
+    dprintf1("\t/ExtraSamples %u\n", tiff->extrasamples);
+    dprintf1("\t/ColorMap $%p\n", tiff->colormap);
+    dprintf1("\t/XResolution %u\n", tiff->xresolution);
+    dprintf1("\t/YResolution %u\n", tiff->yresolution);
+    dprintf1("\t/ResolutionUnit %u\n", tiff->resolutionunit);
+    dprintf1("\t/FillOrder %u\n", tiff->fillorder);
+    dprintf1("\t/T4Options %u\n", tiff->g3opts);
+    dprintf1("\t/T6Options %u\n", tiff->g4opts);
+    dprintf1("\t/Predictor %u\n", tiff->predictor);
+    dprintf1("\t/JPEGTables %u\n", tiff->jpegtableslen);
+    dprintf2("\t/YCbCrSubSampling %u %u\n", tiff->ycbcrsubsamp[0], tiff->ycbcrsubsamp[1]);
 
     n = (tiff->imagelength + tiff->rowsperstrip - 1) / tiff->rowsperstrip;
 
-    dprintf1(mem, "\t/RowsPerStrip %u\n", tiff->rowsperstrip);
+    dprintf1("\t/RowsPerStrip %u\n", tiff->rowsperstrip);
 
     if (tiff->stripoffsets)
-        dprintf1(mem, "\t/StripOffsets %u\n", n);
+        dprintf1("\t/StripOffsets %u\n", n);
 
     if (tiff->stripbytecounts)
-        dprintf1(mem, "\t/StripByteCounts %u\n", n);
+        dprintf1("\t/StripByteCounts %u\n", n);
 
-    dputs(mem, ">>\n");
+    dputs(">>\n");
 }
 

@@ -157,11 +157,7 @@ xps_draw_one_linear_gradient(gs_memory_t *mem, gs_state *pgs,
     rect.q.x = int2fixed(10000);
     rect.q.y = int2fixed(10000);
 
-#if 0 /* if ghostscript */
     code = gs_shading_fill_path_adjusted(shading, NULL, &rect, dev, pis, false);
-#else /* if ghostpcl */
-    code = gs_shading_fill_path(shading, NULL, &rect, dev, pis, false);
-#endif
     if (code < 0)
     {
 	gs_free_object(mem, shading, "gs_shading_A");
@@ -223,11 +219,7 @@ xps_draw_one_radial_gradient(gs_memory_t *mem, gs_state *pgs,
     rect.q.x = int2fixed(10000);
     rect.q.y = int2fixed(10000);
 
-#if 0 /* if ghostscript */
     code = gs_shading_fill_path_adjusted(shading, NULL, &rect, dev, pis, false);
-#else /* if ghostpcl */
-    code = gs_shading_fill_path(shading, NULL, &rect, dev, pis, false);
-#endif
     if (code < 0)
     {
 	gs_free_object(mem, shading, "gs_shading_R");
