@@ -59,7 +59,7 @@ SW16 gx_UFST_find_fco_handle_by_name(const char *font_file_path);
 fco_list_elem *gx_UFST_find_static_fco(const char *font_file_path);
 fco_list_elem *gx_UFST_find_static_fco_handle(SW16 fcHandle);
 
-int gx_UFST_init(UB8 ufst_root_dir[]);
+int gx_UFST_init(const UB8 *ufst_root_dir);
 
 int gx_UFST_fini(void);
 

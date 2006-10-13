@@ -39,8 +39,6 @@
 
 typedef struct fapi_ufst_server_s fapi_ufst_server;
 
-static SW16 static_fcHandle[3] = { 0, 0, 0 };
-
 #if UFST_REENTRANT
 #define FSA_FROM_SERVER IF_STATE *pIFS = &r->IFS
 #else
@@ -49,9 +47,6 @@ EXTERN IF_STATE if_state;
 private fapi_ufst_server *static_server_ptr_for_ufst_callback = 0;
 #endif
 
-#ifndef PSI_INCLUDED
-GLOBAL const SW16 trace_sw = 0; /* UFST 4.3 wants it. */
-#endif
 GLOBAL UW16  PCLswapHdr( FSP LPUB8 p, UW16 gifct ); /* UFST header doesn't define it. */
 
 typedef struct pcleo_glyph_list_elem_s pcleo_glyph_list_elem;
@@ -88,6 +83,7 @@ struct fapi_ufst_server_s {
     FONTCONTEXT fc;
     void *char_data;
     bool bRaster;
+    bool ufst_is_singleton;
     double tran_xx, tran_xy, tran_yx, tran_yy;
     fco_list_elem *fco_list;
     FAPI_retcode callback_error;
@@ -135,8 +131,6 @@ private inline void release_char_data_inline(fapi_ufst_server *r)
  * disadvantage that the dynamic parameters set in server_param are
  * not available. Thus, it is switched through this compile time option.
 */
-
-#ifdef PSI_INCLUDED
 private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, int server_param_size)
 {
     int code;
@@ -180,9 +174,10 @@ private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, in
 	eprintf("Warning: UFST_SSdir is not specified, will search *.ss files in the curent directory.\n");
     }
 #endif
-
-    gx_UFST_init(ufst_root_dir);
-
+    code = gx_UFST_init((const UB8 *)ufst_root_dir);
+    if (code < 0)
+	return code;
+    r->ufst_is_singleton = (code == 1);
     if (bPlugIn) {
 	if ((code = gx_UFST_open_static_fco(sPlugIn, &fcHandle)) != 0)
 	    return code;
@@ -193,79 +188,8 @@ private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, in
 	eprintf("Warning: UFST_PlugIn is not specified, some characters may be missing.\n");
 #endif
     }
-
     return 0;
 }		      
-#else
-private FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, int server_param_size)
-{   IFCONFIG   config_block;
-    int code;
-    SW16 fcHandle;
-    int l;
-    char sPlugIn[sizeof(config_block.ufstPath)] = "";
-    bool bSSdir = false, bPlugIn = false;
-    const char *keySSdir = "UFST_SSdir=";
-    const int keySSdir_length = strlen(keySSdir);
-    const char *keyPlugIn = "UFST_PlugIn=";
-    const int keyPlugIn_length = strlen(keyPlugIn);
-    const char sep = gp_file_name_list_separator;
-    const byte *p = server_param, *e = server_param + server_param_size, *q;
-    FSA_FROM_SERVER;
-
-    config_block.ufstPath[0] = 0;
-    for (; p < e ; p = q + 1) {
-	for (q = p; q < e && *q != sep; q++)
-	    /* DO_NOTHING */;
-	l = q - p;
-	if (l > keySSdir_length && !memcmp(p, keySSdir, keySSdir_length)) {
-	    l = q - p - keySSdir_length;
-	    if (l > sizeof(config_block.ufstPath) - 1)
-		l = sizeof(config_block.ufstPath) - 1;
-	    memcpy(config_block.ufstPath, p + keySSdir_length, l);
-	    config_block.ufstPath[l] = 0;
-	    bSSdir = true;
-	} else if (l > keyPlugIn_length && !memcmp(p, keyPlugIn, keyPlugIn_length)) {
-	    l = q - p - keyPlugIn_length;
-	    if (l > sizeof(sPlugIn) - 1)
-		l = sizeof(sPlugIn) - 1;
-	    memcpy(sPlugIn, p + keyPlugIn_length, l);
-	    sPlugIn[l] = 0;
-	    bPlugIn = true;
-	} else
-	    eprintf("Warning: Unknown UFST parameter ignored.\n");
-    }
-#if !NO_SYMSET_MAPPING
-    if (!bSSdir) {
-	strcpy(config_block.ufstPath, ".");
-	eprintf("Warning: UFST_SSdir is not specified, will search *.ss files in the curent directory.\n");
-    }
-#endif
-    config_block.bit_map_width = 1;
-    config_block.num_files = 10;
-    config_block.typePath[0] = 0;
-    if ((code = CGIFinit(FSA0)) != 0)
-	return code;
-    config_block.num_files = 10;
-    config_block.bit_map_width = 1;
-    UFST_debug_on(FSA0);
-    if ((code = CGIFconfig(FSA &config_block)) != 0)
-	return code;
-    if ((code = CGIFenter(FSA0)) != 0)
-	return code;
-    if (bPlugIn) {
-	if ((code = CGIFfco_Open(FSA (byte *)sPlugIn, &fcHandle)) != 0)
-	    return code;
-	if ((code = CGIFfco_Plugin(FSA fcHandle)) != 0)
-	    return code;
-    } else {
-#ifdef FCO_RDR
-	eprintf("Warning: UFST_PlugIn is not specified, some characters may be missing.\n");
-#endif
-    }
-
-    return 0;
-}		      
-#endif
 
 private LPUB8 impl_PCLchId2ptr(FSP UW16 chId);
 
@@ -640,8 +564,12 @@ private char *my_strdup(fapi_ufst_server *r, const char *s, const char *cname)
 
 private FAPI_retcode fco_open(fapi_ufst_server *r, const char *font_file_path, fco_list_elem **result)
 {   int code;
-    fco_list_elem *e;
-
+    fco_list_elem *e = gx_UFST_find_static_fco(font_file_path);
+    
+    if (e != NULL) {   
+	*result = e;   
+	return 0;   
+    } 
     for (e = r->fco_list; e != 0; e = e->next) {
         if (!strcmp(e->file_path, font_file_path))
             break;
@@ -650,21 +578,18 @@ private FAPI_retcode fco_open(fapi_ufst_server *r, const char *font_file_path, f
         SW16 fcHandle;
 	FSA_FROM_SERVER;
 
-	fco_list_elem *estatic = gx_UFST_find_static_fco(font_file_path);
-	if (estatic != 0)
-	    fcHandle = estatic->fcHandle;
-	else if ((code = gx_UFST_open_static_fco(font_file_path, &fcHandle)) != 0)
+	if ((code = CGIFfco_Open(FSA (UB8 *)font_file_path, &fcHandle)) != 0)
 	    return code;
         e = (fco_list_elem *)r->client_mem.alloc(&r->client_mem, sizeof(*e), "fco_list_elem");
         if (e == 0) {
-            gx_UFST_close_static_fco(FSA fcHandle);
+            CGIFfco_Close(FSA fcHandle);
             return e_VMerror;
         }
         e->open_count = 0;
         e->fcHandle = fcHandle;
         e->file_path = my_strdup(r, font_file_path, "fco_file_path");
         if (e->file_path == 0) {
-            gx_UFST_close_static_fco(FSA fcHandle);
+            CGIFfco_Close(FSA fcHandle);
             r->client_mem.free(&r->client_mem, e, "fco_list_elem");
             return e_VMerror;
         }
@@ -713,6 +638,13 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
     d->glyphs = 0;
     d->is_disk_font = (ff->font_file_path != NULL);
     if (d->is_disk_font) {
+	 fco_list_elem *e = gx_UFST_find_static_fco(font_file_path);   
+
+	 if (e != NULL) {   
+	     memcpy(d + 1, font_file_path, strlen(font_file_path) + 1);   
+	     d->font_id = (e->fcHandle << 16) | ff->subfont;   
+	     d->font_type = FC_FCO_TYPE;   
+	 } else { 
 	    stream *f = sfopen(font_file_path, "rb", (gs_memory_t *)(r->client_mem.client_data));
 	    if (f == NULL) {
 		eprintf1("fapiufst: Can't open %s\n", font_file_path);
@@ -727,6 +659,7 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
 		    return code;
 		d->font_id = (e->fcHandle << 16) | ff->subfont;
 	    }
+	}
     } else {
         d->font_type = (ff->is_type1 ? FC_PST1_TYPE : FC_TT_TYPE);
 	d->font_id = ff->get_long(ff, FAPI_FONT_FEATURE_UniqueID, 0);
@@ -1301,7 +1234,7 @@ private void release_fco(fapi_ufst_server *r, SW16 fcHandle)
 	    FSA_FROM_SERVER;
 
             *e = ee->next;
-            gx_UFST_close_static_fco(FSA ee->fcHandle);
+            CGIFfco_Close(FSA ee->fcHandle);
             r->client_mem.free(&r->client_mem, ee->file_path, "fco_file_path");
             r->client_mem.free(&r->client_mem, ee, "fco_list_elem");
         } else
@@ -1382,9 +1315,12 @@ private void gs_fapiufst_finit(i_plugin_instance *this, i_plugin_client_memory *
 
     if (r->If.ig.d != &ufst_descriptor)
         return; /* safety */
+#if 0 /* Disabled against a reentrancy problem 
+	 in a single language build for host-based applications. */
+    gx_set_UFST_Callbacks(NULL, NULL, NULL);
+#endif
     release_char_data_inline(r);
-    if (r->bInitialized) {
-	    CGIFexit(FSA0);
-    }
+    if (r->bInitialized && !r->ufst_is_singleton)
+	gx_UFST_fini();
     mem->free(mem, r, "fapi_ufst_server");
 }
