@@ -44,4 +44,19 @@
  } bind def
 
 % Register the font type for definefont.
-buildfontdict 42 /.buildfont42 cvx put
+buildfontdict 42 
+  { % check for bogus sfnts -- this happens in Genoa FTS 421-01.ps
+    dup /sfnts get 0 get length 14 lt {	% smallest valid sfnts is 14 bytes
+      % HACK: Add a BuildGlyph and make this a Type 3 font instead
+      dup /FontType 3 put
+      dup /BuildGlyph {
+  	1 index /CharStrings get exch 2 copy known not { pop /.notdef } if get exec
+      } bind put
+      //.buildfont3 exec
+    } {
+      //.buildfont42 exec
+    } ifelse
+  } bind 
+put
+
+
