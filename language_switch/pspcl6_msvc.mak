@@ -41,6 +41,11 @@ PSLIBDIR=..\gs\lib
 ICCSRCDIR=..\gs\icclib
 !endif
 
+# Path for including gs/Resource into romfs (replaces the gs default) :
+!ifndef PSRESDIR
+PSRESDIR=..\gs\Resource
+!endif
+
 # If you want to build the individual packages in their own directories,
 # you can define this here, although normally you won't need to do this:
 !ifndef GLGENDIR
@@ -80,6 +85,7 @@ PSIOBJDIR=$(GENDIR)
 !ifndef DD
 DD=$(GLGENDIR)
 !endif
+
 
 # Executable path\name w/o the .EXE extension
 !ifndef TARGET_XE
