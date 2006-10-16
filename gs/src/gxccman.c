@@ -209,6 +209,64 @@ fm_pair_insert_into_list(gs_font_dir * dir, cached_fm_pair *pair, uint *head)
 
 /* ====== Font-level routines ====== */
 
+private int 
+gx_attach_tt_interpreter(gs_font_dir * dir,
+	       gs_font_type42 *font, cached_fm_pair *pair,
+	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
+	       bool design_grid)
+{
+    float cxx, cxy, cyx, cyy;
+    gs_matrix m;
+    int code;
+
+    gx_compute_char_matrix(char_tm, log2_scale, &cxx, &cxy, &cyx, &cyy);
+    pair->design_grid = design_grid;
+    m.xx = cxx;
+    m.xy = cxy;
+    m.yx = cyx;
+    m.yy = cyy;
+    m.tx = m.ty = 0;
+    pair->ttr = gx_ttfReader__create(dir->memory);
+    if (!pair->ttr)
+	return_error(gs_error_VMerror);
+    /*  We could use a single the reader instance for all fonts ... */
+    pair->ttf = ttfFont__create(dir);
+    if (!pair->ttf)
+	return_error(gs_error_VMerror);
+    gx_ttfReader__set_font(pair->ttr, (gs_font_type42 *)font);
+    code = ttfFont__Open_aux(pair->ttf, dir->tti, pair->ttr, 
+		(gs_font_type42 *)font, &m, log2_scale, design_grid);
+    gx_ttfReader__set_font(pair->ttr, NULL);
+    return code;
+}
+
+private inline 
+does_font_need_tt_interpreter(gs_font *font)
+{
+    if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) {
+	gs_font_type42 *pfont = (gs_font_type42 *)font;
+
+	if (pfont->FAPI==NULL  && pfont->data.USE_ttfReader)
+	    return true;
+    }
+    return false;
+}
+
+int 
+gx_provide_fm_pair_attributes(gs_font_dir * dir,
+	       gs_font *font, cached_fm_pair *pair,
+	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
+	       bool design_grid)
+{
+    if (does_font_need_tt_interpreter(font)) {
+	if (pair->ttf != NULL)
+	    return 0; /* Already attached. */
+	return gx_attach_tt_interpreter(dir, (gs_font_type42 *)font, pair,
+			char_tm, log2_scale, design_grid);
+    }
+    return 0;
+}
+
 /* Add a font/matrix pair to the cache. */
 /* (This is only exported for gxccache.c.) */
 int
@@ -255,12 +313,21 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	pair = dir->fmcache.mdata + dir->fmcache.unused;
 	dir->fmcache.unused++;
     }
+    font->is_cached = true; /* Set this early to ensure 
+	    gs_purge_font_from_char_caches works for it in case of errors. */
     dir->fmcache.msize++;
     code = fm_pair_insert_into_list(dir, pair, &dir->fmcache.used);
     if (code < 0)
 	return code;
     pair->font = font;
     pair->UID = *puid;
+    /* Copy UID into a stable memory,
+       so that 'restore' may keep this pair. */
+    code = uid_copy(&pair->UID, dir->memory->stable_memory, "gx_add_fm_pair");
+    if (code < 0) {
+	uid_set_invalid(&pair->UID);
+	return code;
+    }
     pair->FontType = font->FontType;
     /* The OSF/1 compiler doesn't like casting a pointer to */
     /* a shorter int.... */
@@ -273,29 +340,9 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     pair->ttf = 0;
     pair->ttr = 0;
     pair->design_grid = false;
-    if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) 
-	if (((gs_font_type42 *)font)->FAPI==NULL  && ((gs_font_type42 *)font)->data.USE_ttfReader ) {
-	    float cxx, cxy, cyx, cyy;
-	    gs_matrix m;
-	    gx_compute_char_matrix(char_tm, log2_scale, &cxx, &cxy, &cyx, &cyy);
-
-	    pair->design_grid = design_grid;
-	    m.xx = cxx;
-	    m.xy = cxy;
-	    m.yx = cyx;
-	    m.yy = cyy;
-	    m.tx = m.ty = 0;
-	    pair->ttr = gx_ttfReader__create(dir->memory);
-	    if (!pair->ttr)
-		return_error(gs_error_VMerror);
-	    /*  We could use a single the reader instance for all fonts ... */
-	    pair->ttf = ttfFont__create(dir);
-	    if (!pair->ttf)
-		return_error(gs_error_VMerror);
-	    gx_ttfReader__set_font(pair->ttr, (gs_font_type42 *)font);
-	    code = ttfFont__Open_aux(pair->ttf, dir->tti, pair->ttr, 
-			(gs_font_type42 *)font, &m, log2_scale, design_grid);
-	    gx_ttfReader__set_font(pair->ttr, NULL);
+    if (does_font_need_tt_interpreter(font)) {
+	    code = gx_attach_tt_interpreter(dir, (gs_font_type42 *)font, pair,
+				char_tm, log2_scale, design_grid);
 	    if (code < 0)
 		return code;
 	}
@@ -403,6 +450,26 @@ purge_fm_pair_char_xfont(const gs_memory_t *mem, cached_char * cc, void *vpair)
     return cc_pair(cc) == cpair && cpair->xfont == 0 && !cc_has_bits(cc);
 }
 #undef cpair
+
+private inline void
+gs_clean_fm_pair_attributes(gs_font_dir * dir, cached_fm_pair * pair)
+{
+    if (pair->ttr)
+	gx_ttfReader__destroy(pair->ttr);
+    pair->ttr = 0;
+    if (pair->ttf)
+	ttfFont__destroy(pair->ttf, dir);
+    pair->ttf = 0;
+}
+
+void
+gs_clean_fm_pair(gs_font_dir * dir, cached_fm_pair * pair)
+{
+    if_debug1('k', "[k]cleaning pair 0x%lx%s\n", (ulong) pair);
+    pair->font = NULL;
+    gs_clean_fm_pair_attributes(dir, pair);
+}
+
 int
 gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 {
@@ -418,12 +485,7 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 				   (xfont_only ? purge_fm_pair_char_xfont :
 				    purge_fm_pair_char),
 				   pair);
-    if (pair->ttr)
-	gx_ttfReader__destroy(pair->ttr);
-    pair->ttr = 0;
-    if (pair->ttf)
-	ttfFont__destroy(pair->ttf, dir);
-    pair->ttf = 0;
+    gs_clean_fm_pair_attributes(dir, pair);
     if (!xfont_only) {
 	int code;
 
@@ -433,6 +495,11 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 		     pair->num_chars);
 	}
 #endif
+	{   /* Free xvalues here because gx_add_fm_pair copied 
+	       them into the stable memory dir->memory. */
+	    gs_free_object(dir->memory->stable_memory, pair->UID.xvalues, "gs_purge_fm_pair");
+	    pair->UID.xvalues = 0;
+	}
 	fm_pair_set_free(pair);
 	code = fm_pair_remove_from_list(dir, pair, &dir->fmcache.used);
 	if (code < 0)
@@ -811,18 +878,27 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
 }
 
 /* Purge from the caches all references to a given font. */
-int
-gs_purge_font_from_char_caches(gs_font_dir * dir, const gs_font * font)
+private int
+gs_purge_font_from_char_caches_forced(gs_font * font, bool force)
 {
-    cached_fm_pair *pair = dir->fmcache.mdata;
-    int count = dir->fmcache.mmax;
+    gs_font_dir * dir;
+    cached_fm_pair *pair;
+    int count;
 
+    if (font->dir == NULL)
+	return 0; /* The font was not properly build due to errors. */
+    if (!font->is_cached)
+	return 0;
+    dir = font->dir;
+    pair = dir->fmcache.mdata;
+    count = dir->fmcache.mmax;
+    font->is_cached = false; /* Prevent redundant execution. */
     if_debug1('k', "[k]purging font 0x%lx\n",
 	      (ulong) font);
-    while (count--) {
+    for (; count--; pair++) {
 	if (pair->font == font) {
-	    if (uid_is_valid(&pair->UID)) {	/* Keep the entry. */
-		pair->font = 0;
+	    if (!force && uid_is_valid(&pair->UID)) {	/* Keep the entry. */
+		gs_clean_fm_pair(dir, pair);
 	    } else {
 		int code = gs_purge_fm_pair(dir, pair, 0);
 
@@ -830,10 +906,49 @@ gs_purge_font_from_char_caches(gs_font_dir * dir, const gs_font * font)
 		    return code;
 	    }
 	}
-	pair++;
     }
     return 0;
 }
+
+/* Purge from the caches all references to a given font,
+   with leaving persistent chars in the cache. */
+int
+gs_purge_font_from_char_caches(gs_font * font)
+{
+    /* This function is called when a font is being released.
+       The purpose is to remove all cache attributes,
+       which may point to the font data.
+       Note : when a font has a valid XUID, 
+       it doesn't release cache entries and cached chars,
+       so that they may be used in future 
+       if a font with same XUID appears again.
+       All this improves the performance when
+       a document executes a sequence like this :
+
+       n {
+          save /fontname findfont 10 scalefont
+	  (xyz) show
+	  restore
+       } repeat
+     */
+    return gs_purge_font_from_char_caches_forced(font, false);
+}
+
+/* Purge from the caches all references to a given font,
+   without leaving persistent chars in the cache. */
+int
+gs_purge_font_from_char_caches_completely(gs_font * font)
+{
+    /* A client should call this finction
+       when it frees a font,
+       and the client doesn't need to leave 
+       persistent cache entries for this font
+       even if the font has a valid XUID.
+     */
+    return gs_purge_font_from_char_caches_forced(font, true);
+}
+
+
 
 /* ------ Internal routines ------ */
 

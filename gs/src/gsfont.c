@@ -161,6 +161,7 @@ gs_font_finalize(void *vptr)
 	    (ulong) pfont, (ulong) pfont->base, (ulong) prev, (ulong) next);
     /* Notify clients that the font is being freed. */
     gs_notify_all(&pfont->notify_list, NULL);
+    gs_purge_font_from_char_caches(pfont);
     if (pfont->dir == 0)
 	ppfirst = 0;
     else if (pfont->base == pfont)
@@ -307,6 +308,7 @@ gs_font_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
     pfont->WMode = 0;
     pfont->PaintType = 0;
     pfont->StrokeWidth = 0;
+    pfont->is_cached = false;
     pfont->procs = *procs;
     memset(&pfont->orig_FontMatrix, 0, sizeof(pfont->orig_FontMatrix));
 #endif
@@ -552,7 +554,7 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
 	     */
 #if 0	    /* We disabled this code portion due to Bug 688392.
 	       The problem was dangling pointers, which appear in fm_pair instances
-	       after uid_free is applied to applied to a font's UID,
+	       after uid_free is applied to a font's UID,
 	       because they share same xvalues array. We're unable to guess 
 	       for which reason uid_free was applied to the font's UID here 
 	       5+ years ago (see gsfont.c revision 1.1).
@@ -722,7 +724,7 @@ gs_purge_font(gs_font * pfont)
 
     /* Purge the font from the font/matrix pair cache, */
     /* including all cached characters rendered with that font. */
-    return gs_purge_font_from_char_caches(pdir, pfont);
+    return gs_purge_font_from_char_caches(pfont);
 }
 
 /* Locate a gs_font by gs_id. */

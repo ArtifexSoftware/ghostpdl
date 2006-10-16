@@ -505,6 +505,11 @@ top:
 	     n > 0; pair++, n--
 	    )
 	    if (!fm_pair_is_free(pair)) {
+#if 0
+		/* We disabled this code portion because
+		   gx_add_fm_pair now copied xvalues
+		   into a stable memory. 
+		 */
 		if ((uid_is_XUID(&pair->UID) &&
 		     alloc_is_since_save((char *)pair->UID.xvalues,
 					 save))
@@ -514,15 +519,12 @@ top:
 			return code;
 		    continue;
 		}
+#endif
 		if (pair->font != 0 &&
 		    alloc_is_since_save((char *)pair->font, save)
 		    ) {
-		    if (!uid_is_valid(&pair->UID)) {
-			code = gs_purge_fm_pair(pdir, pair, 0);
-			if (code < 0)
-			    return code;
-			continue;
-		    }
+		    if (!uid_is_valid(&pair->UID))
+			gs_clean_fm_pair(pdir, pair);
 		    /* Don't discard pairs with a surviving UID. */
 		    pair->font = 0;
 		}

@@ -125,6 +125,10 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
 	    code = gx_touch_fm_pair(dir, pair);
 	    if (code < 0)
 		return code;
+	    code = gx_provide_fm_pair_attributes(dir, pfont, pair,
+				char_tm, log2_scale, design_grid);
+	    if (code < 0)
+		return code;
 	    *ppair = pair;
 	    return 0;
 	}

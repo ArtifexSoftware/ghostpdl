@@ -388,6 +388,10 @@ typedef struct gs_font_name_s {
 					/* 0 for others */\
 	float StrokeWidth;		/* StrokeWidth for Type 1/4/42 */\
 					/* fonts (if present), 0 for others */\
+	bool is_cached;			/* Prevents redundant executions of */\
+					/* gs_purge_font_from_char_caches, */\
+					/* when it is called from 'font_restore' */\
+					/* and from gx_font_finalize. */\
 	gs_font_procs procs;\
 	/* We store both the FontDirectory key (key_name) and, */\
 	/* if present, the FontName (font_name). */\
