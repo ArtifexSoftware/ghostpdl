@@ -494,6 +494,16 @@ pop pop
 	{ forall } 0 get
   	currentdict end 2 .execn begin
 } bind
+/.file_name_is_iodevice_or_absolute
+{ {
+    dup length 0 gt {
+      dup 0 get (%) 0 get eq {
+        pop true exit
+      } if
+    } if
+    .file_name_is_absolute exit
+  } loop
+} bind def
 /ResourceFileName
 	  {                                             % /in (scr)
 	    exch //.rfnstring cvs                       % (scr) (n)
@@ -501,7 +511,7 @@ pop pop
             Category .namestring                        % (scr) (/) (n) (c)
             3 1 roll                                    % (scr) (c) (/) (n)
 	    concatstrings concatstrings                 % (scr) (c/n)
-            /GenericResourceDir getsystemparam .file_name_is_absolute not {
+            /GenericResourceDir getsystemparam //.file_name_is_iodevice_or_absolute exec not {
               /GenericResourceDir getsystemparam exch concatstrings
 	      findlibfile
 	      {                                         % (scr) (p/c/n) file

@@ -885,13 +885,6 @@ make_stream_file(ref * pfile, stream * s, const char *access)
     }
 }
 
-private gp_file_name_combine_result 
-gp_file_name_combine_patch(const char *prefix, uint plen, const char *fname, uint flen, 
-			    bool no_sibling, char *buffer, uint *blen)
-{
-    return gp_file_name_combine(prefix, plen, fname, flen, no_sibling, buffer, blen);
-}
-
 private int
 check_file_permissions_aux(i_ctx_t *i_ctx_p, char *fname, uint flen)
 {   /* i_ctx_p is NULL running init files. */
@@ -985,7 +978,7 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 		*pclen = plen + flen;
 		return 0;
 	    } else {
-		r = gp_file_name_combine_patch(pstr, plen, 
+		r = gp_file_name_combine(pstr, plen, 
 			fname, flen, false, buffer, &blen1);
 		if (r != gp_combine_success)
 		    continue;

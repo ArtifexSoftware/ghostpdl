@@ -73,8 +73,8 @@ zfile_name_is_absolute(i_ctx_t *i_ctx_p)
 {   os_ptr op = osp;
 
     check_type(op[0], t_string);
-    make_bool(op, (gp_file_name_root((const char *)op->value.const_bytes, 
-					r_size(op)) > 0));
+    make_bool(op, gp_file_name_is_absolute((const char *)op->value.const_bytes, 
+					r_size(op)));
     return 0;
 }
 
