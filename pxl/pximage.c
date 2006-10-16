@@ -93,6 +93,8 @@ typedef struct deltarow_state_s {
   uint row_byte_count;
   uint short_cnt; 
   uint short_offset; 
+  byte *seedrow;
+  uint rowwritten;
 } deltarow_state_t;
 
 /* Define the structure for enumerating a bitmap being downloaded. */
@@ -383,19 +385,27 @@ read_deltarow_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
   const byte *pout_start = pout;
   bool end_of_row = false;
 
-  /* return end of image */
-  if ( par->source.position >= benum->data_per_row * par->pv[1]->value.i )
-    return 0;  
+  if ( deltarow->rowwritten == par->pv[1]->value.i && benum->initialized ) {
+    gs_free_object(benum->mem, deltarow->seedrow, "read_deltarow_bitmap_data");
+    benum->initialized = 0;
+    return 0;
+  }
 
   /* initialize at begin of image */
   if ( !benum->initialized ) {	
     /* zero seed row */
-    memset(*pdata, 0, benum->data_per_row); 
+    deltarow->seedrow = gs_alloc_bytes(benum->mem, benum->data_per_row, "read_deltarow_bitmap_data");
+    memset(deltarow->seedrow, 0, benum->data_per_row);
     deltarow->row_byte_count = 0;
     deltarow->short_cnt = 0;
     deltarow->short_offset = 0;
     deltarow->state = next_is_bytecount;
+    deltarow->rowwritten = 0;
     benum->initialized = true;
+  }
+  
+  if (deltarow->row_byte_count == 0) {
+    memcpy(*pdata, deltarow->seedrow, benum->data_per_row);
   }
   
   /* one byte at a time until end of input or end of row */
@@ -474,14 +484,17 @@ read_deltarow_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
     } /* end switch */
   } /* end of while */
     
+
   par->source.available -= pin - par->source.data;  /* subract comressed data used */
   par->source.data = pin;                           /* new compressed data position */
 
-  if (end_of_row) {                         
-    /* uncompressed raster position */
-    par->source.position = 
-      (par->source.position / benum->data_per_row + 1) * benum->data_per_row;
-    return 1;
+  if (end_of_row) {
+      /* uncompressed raster position */
+      par->source.position = 
+          (par->source.position / benum->data_per_row + 1) * benum->data_per_row;
+      deltarow->rowwritten++;
+      memcpy(deltarow->seedrow, *pdata, benum->data_per_row);
+      return 1;
   }
   par->source.position += pout - pout_start;       /* amount of raster written */
   return pxNeedData;                               /* not end of row so request more data */
@@ -737,6 +750,10 @@ pxReadRastPattern(px_args_t *par, px_state_t *pxs)
 	/* Make a quick check for the first call, when no data is available. */
 	if ( par->source.available == 0 && par->pv[1]->value.i != 0 )
 	  return pxNeedData;
+        /* emulate hp bug */
+        if ( par->pv[2]->value.i == eDeltaRowCompression )
+            input_per_row = pxenum->benum.data_per_row;
+
 	for ( ; ; )
 	  { 
 	    byte *data = pxenum->pattern->data +
