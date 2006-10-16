@@ -526,6 +526,11 @@ gs_malloc_init(const gs_memory_t *parent)
 void
 gs_malloc_release(gs_memory_t *mem)
 {
-    gs_malloc_memory_t * malloc_memory_default = mem;
+#ifdef USE_RETRY_AND_LOCKING_MEMORY_WRAPPERS
+    gs_malloc_memory_t * malloc_memory_default = gs_malloc_unwrap(mem);
+#else
+    gs_malloc_memory_t * malloc_memory_default = (gs_malloc_memory_t *)mem;
+#endif
+
     gs_malloc_memory_release(malloc_memory_default);
 }
