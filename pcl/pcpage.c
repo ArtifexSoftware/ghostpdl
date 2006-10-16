@@ -410,11 +410,9 @@ new_logical_page(
 )
 {
     pcl_xfm_state_t *           pxfmst = &(pcs->xfm_state);
-    
-    if (reset_initial) {
-	pcs->hmi_cp = HMI_DEFAULT;
-	pcs->vmi_cp = VMI_DEFAULT;
-    }
+
+    pcs->hmi_cp = HMI_DEFAULT;    
+    pcs->vmi_cp = VMI_DEFAULT;
     pxfmst->lp_orient = lp_orient;
     pxfmst->print_dir = 0;
     new_page_size(pcs, psize, reset_initial);
@@ -717,7 +715,7 @@ set_logical_page_orientation(
        set the flag disabling the orientation command for this page. */
     code = pcl_end_page_if_marked(pcs);
     if ( code >= 0 ) {
-	new_logical_page(pcs, i, pcs->xfm_state.paper_size, false);
+	new_logical_page(pcs, i, pcs->xfm_state.paper_size, false); 
 	pcs->orientation_set = true;
     }
     return code;
