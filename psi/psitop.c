@@ -126,7 +126,7 @@ ps_impl_allocate_interp_instance(
   gs_memory_t            *mem            /* allocator to allocate instance from */
 )
 {
-#ifdef DEBUG_WITH_GS_OPTIONS
+#ifdef DEBUG_WITH_EXPERIMENTAL_GSOPTIONS_FILE
 #   define MAX_ARGS 40
 #else
 #   define MAX_ARGS /* unspecified */
@@ -146,7 +146,7 @@ ps_impl_allocate_interp_instance(
 	    0
 	};
 	int argc = 10;
-#ifdef DEBUG_WITH_GS_OPTIONS
+#ifdef DEBUG_WITH_EXPERIMENTAL_GSOPTIONS_FILE
 	char argbuf[1024];
 #endif
 #   undef MAX_ARGS
@@ -170,11 +170,12 @@ ps_impl_allocate_interp_instance(
 	psi->plmemory = mem;
 	psi->minst = gs_main_alloc_instance(mem);
 
-#ifdef DEBUG_WITH_GS_OPTIONS
-	{   /* Fetch more GS arguments (debug porpose only).
-	       We compile this fragment for the release build
-	       for the case if we need to trace Postscript with 
-	       the release build.
+#ifdef DEBUG_WITH_EXPERIMENTAL_GSOPTIONS_FILE
+	{   /* Fetch more GS arguments (debug purposes only).
+	       Pulling debugging arguments from a file allows easy additions
+	       of postscript arguments to a debug system, it is not recommended for 
+	       production systems since some options will conflict with commandline 
+	       arguments in unpleasant ways.  
 	    */
 	    FILE *f = fopen("gsoptions", "rb"); /* Sorry we handle 
 					          the current directory only.
