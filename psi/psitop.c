@@ -123,8 +123,13 @@ ps_impl_allocate_interp_instance(
   gs_memory_t            *mem            /* allocator to allocate instance from */
 )
 {
+#ifdef DEBUG_WITH_GS_OPTIONS
+#   define MAX_ARGS 40
+#else
+#   define MAX_ARGS /* unspecified */
+#endif
 	int code = 0, exit_code;
-	const char *argv[] = { 
+	const char *argv[MAX_ARGS] = { 
 	    "",
 	    "-dNOPAUSE",
 	    "-dQUIET",
@@ -134,9 +139,14 @@ ps_impl_allocate_interp_instance(
             "-sFCOfontfile=" UFSTFONTDIR "mtfonts/pclps2/mt3/pclp2_xj.fco",
             "-sFCOfontfile2=" UFSTFONTDIR "mtfonts/pcl45/mt3/wd____xh.fco",
 	    "-sFAPIfontmap=FCOfontmap-PCLPS2",
-	    "-sFAPIconfig=FAPIconfig-FCO"
+	    "-sFAPIconfig=FAPIconfig-FCO",
+	    0
 	};
-	int argc = 10;  /* sending extra UFST arguments doesn't bother PS */
+	int argc = 10;
+#ifdef DEBUG_WITH_GS_OPTIONS
+	char argbuf[1024];
+#endif
+#   undef MAX_ARGS
 
 	ps_interp_instance_t *psi  /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
 	    = (ps_interp_instance_t *)
@@ -153,6 +163,45 @@ ps_impl_allocate_interp_instance(
 	/* Setup pointer to mem used by PostScript */
 	psi->plmemory = mem;
 	psi->minst = gs_main_alloc_instance(mem);
+
+#ifdef DEBUG_WITH_GS_OPTIONS
+	{   /* Fetch more GS arguments (debug porpose only).
+	       We compile this fragment for the release build
+	       for the case if we need to trace Postscript with 
+	       the release build.
+	    */
+	    FILE *f = fopen("gsoptions", "rb"); /* Sorry we handle 
+					          the current directory only.
+						  Assuming it always fails with no crash
+						  in a real embedded system. */
+
+	    if (f != NULL) {
+		int i;
+		int l = fread(argbuf, 1, sizeof(argbuf) - 1, f);
+
+		if (l >= sizeof(argbuf) - 1)
+		    errprintf("The gsoptions file is too big. Truncated to the buffer length %d.\n", l - 1);
+		if (l > 0) {
+		    argbuf[l] = 0;
+		    if (argbuf[0] && argbuf[0] != '\r' && argbuf[0] != '\n') /* Silently skip empty lines. */
+			argv[argc++] = argbuf;
+		    for (i = 0; i < l; i++)
+			if (argbuf[i] == '\r' || argbuf[i] == '\n') {
+			    argbuf[i] = 0;
+			    if (argbuf[i + 1] == 0 || argbuf[i + 1] == '\r' || argbuf[i + 1] == '\n')
+				continue; /* Silently skip empty lines. */
+			    if (argc >= count_of(argv)) {
+				errprintf("The gsoptions file contains too many options. "
+					  "Truncated to the buffer length %d.\n", argc);
+				break;
+			    }
+			    argv[argc++] = argbuf + i + 1;
+			}
+		}
+		fclose(f);
+	    }
+	}
+#endif
 
 	*instance = (pl_interp_instance_t *)psi;
 	code = gs_main_init_with_args(psi->minst, argc, (char**)argv);
