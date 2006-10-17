@@ -525,8 +525,6 @@ ps_impl_deallocate_interp_instance(
 	/* do total dnit of interp state */
 	code = gsapi_run_string_end(mem->gs_lib_ctx, 0, &exit_code);
 
-	gsapi_exit(psi->minst);
-
 	gs_free_object(mem, psi, "ps_impl_deallocate_interp_instance(ps_interp_instance_t)");
 
 	return (code < 0) ? exit_code : 0;
