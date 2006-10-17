@@ -297,7 +297,12 @@ ps_impl_get_device_memory(
   gs_memory_t **pmem)
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-    *pmem = (gs_memory_t*)&psi->minst->i_ctx_p->memory;
+    gs_dual_memory_t *dmem = &psi->minst->i_ctx_p->memory;
+    gs_memory_t *mem = dmem->spaces.memories.named.global;
+
+    *pmem = mem->stable_memory;
+    /* Lock against alloc_restore_all to release the device when called from gsapi_exit : */
+    ((gs_ref_memory_t *)mem)->num_contexts++;
     return 0;
 }
 
@@ -518,6 +523,8 @@ ps_impl_deallocate_interp_instance(
 	
 	/* do total dnit of interp state */
 	code = gsapi_run_string_end(mem->gs_lib_ctx, 0, &exit_code);
+
+	gsapi_exit(psi->minst);
 
 	gs_free_object(mem, psi, "ps_impl_deallocate_interp_instance(ps_interp_instance_t)");
 

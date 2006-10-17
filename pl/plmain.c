@@ -363,7 +363,7 @@ pl_main(
 		}
     	    } 
 	    if ( new_job ) {
-		if (mem->gs_lib_ctx->gs_next_id > 0xFFFF0000) {
+		if (mem->gs_lib_ctx->gs_next_id > 0xFF000000) {
 		    dprintf("Once a year reset the gs_next_id.\n");
 		    return -1;
 		}
@@ -746,7 +746,7 @@ pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
 	const gx_device **list;
 	gs_lib_device_list((const gx_device * const **)&list, NULL);
         code = gs_copydevice(&pti->device, list[index],
-                             pti->device_memory->stable_memory);
+                             pti->device_memory);
     }
     return code;
 }
