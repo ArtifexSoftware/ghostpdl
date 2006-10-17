@@ -160,6 +160,9 @@ ps_impl_allocate_interp_instance(
 	if (!psi) {
 	  return gs_error_VMerror;
 	}
+	/* Initialize for pl_main_universe_dnit/pl_deallocate_interp_instance
+	   in case of gs_main_init_with_args returns with error code. */
+	psi->pl.interp = interp;
 	/* Setup pointer to mem used by PostScript */
 	psi->plmemory = mem;
 	psi->minst = gs_main_alloc_instance(mem);
