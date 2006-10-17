@@ -46,6 +46,9 @@
 /******** Language wrapper implementation (see pltop.h) *****/
 /************************************************************/
 
+/* Import operator procedures */
+extern int zflush(i_ctx_t *);
+
 /*
  * PS interpreter instance: derived from pl_interp_instance_t
  */
@@ -385,6 +388,9 @@ ps_impl_process(
     }
     /* update the cursor */
     cursor->ptr += avail;
+    /* flush stdout on error. */
+    if (code < 0)
+	zflush(psi->minst->i_ctx_p);
     /* return the exit code */
     return code;
 }
@@ -482,6 +488,9 @@ ps_impl_dnit_job(
     gsapi_run_string_begin(psi->plmemory->gs_lib_ctx, 0, &exit_code);	/* prepare to send .endjob */
     gsapi_run_string_continue(psi->plmemory->gs_lib_ctx, buf, strlen(buf), 0, &exit_code); /* .endjob */
     /* Note the above will restore to the server save level and will not be encapsulated */
+    
+    /* Flush stdout. */
+    zflush(psi->minst->i_ctx_p);
 
     return 0;
 }
@@ -551,6 +560,9 @@ ps_end_page_top(const gs_memory_t *mem, int num_copies, bool flush)
     code = gs_output_page(psi->minst->i_ctx_p->pgs, num_copies, flush);
     if (code < 0)
         return code;
+
+    /* Flush stdout. */
+    zflush(psi->minst->i_ctx_p);
 
     /* do post-page action */
     if (psi->post_page_action) {
