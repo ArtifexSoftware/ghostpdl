@@ -208,23 +208,6 @@ FEATURE_DEVS    = $(FEATURE_CORE)
 
 !include $(MAINSRCDIR)\pcl6_msvc.mak
 
-# Main program.
-
-default: $(TARGET_XE).exe
-	echo Done.
-
-clean: config-clean clean-not-config-clean
-
-clean-not-config-clean: pl.clean-not-config-clean pxl.clean-not-config-clean
-	$(RMN_) $(TARGET_XE)$(XE)
-
-config-clean: pl.config-clean pxl.config-clean
-	$(RMN_) *.tr $(GD)devs.tr$(CONFIG) $(GD)ld.tr
-	$(RMN_) $(PXLGEN)pconf.h $(PXLGEN)pconfig.h
-
-
-!include $(COMMONDIR)\msvc_top.mak
-
 # Subsystems
 !include $(PSISRCDIR)\psi.mak
 
