@@ -758,6 +758,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	    }
 	    i_ctx_p = minst->i_ctx_p; /* interp_reclaim could change it. */
 	}
+#ifndef PSI_INCLUDED
 	if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
 	    gx_device *pdev = i_ctx_p->pgs->device;
 
@@ -777,6 +778,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	    if (exit_status == 0 || exit_status == e_Quit)
 		exit_status = code;
 	}
+#endif
     }
     /* Flush stdout and stderr */
     if (minst->init_done >= 2)
@@ -797,6 +799,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	    eprintf1("ERROR %d while the final restore. See gs/src/ierrors.h for code explanation.\n", code);
         i_plugin_finit(mem_raw, h);
     }
+#ifndef PSI_INCLUDED
     /* clean up redirected stdout */
     if (minst->heap->gs_lib_ctx->fstdout2 
 	&& (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstdout)
@@ -804,6 +807,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	fclose(minst->heap->gs_lib_ctx->fstdout2);
 	minst->heap->gs_lib_ctx->fstdout2 = (FILE *)NULL;
     }
+#endif
     minst->heap->gs_lib_ctx->stdout_is_redirected = 0;
     minst->heap->gs_lib_ctx->stdout_to_stderr = 0;
     /* remove any temporary files, after ghostscript has closed files */
@@ -815,7 +819,9 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	}
 	free(tempnames);
     }
+#ifndef PSI_INCLUDED
     gs_lib_finit(exit_status, code, minst->heap);
+#endif
     return exit_status;
 }
 int
