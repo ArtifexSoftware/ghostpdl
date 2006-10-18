@@ -75,6 +75,12 @@ Options: -dNOPAUSE -E[#] -h -C -L<PCL|PCLXL> -n -K<maxK> -P<PCL5C|PCL5E|RTL> -Z.
 	 -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
          -J<PJL commands>";
 
+/* ---------------- Static data for memory management ------------------ */
+
+#ifdef PSI_INCLUDED
+static gs_gc_root_t device_root;
+#endif
+
 /* ---------------- Forward decls ------------------ */
 /* Functions to encapsulate pl_main_universe_t */
 int   /* 0 ok, else -1 error */
@@ -179,7 +185,7 @@ get_device_index(const gs_memory_t *mem, const char *value)
 	if ( !strcmp(gs_devicename(dev_list[di]), value) )
 	    break;
     if ( di == num_devs ) {
-	errprintf(mem, "Unknown device name %s.\n", value);
+	errprintf("Unknown device name %s.\n", value);
 	return -1;
     }
     return di;
@@ -570,8 +576,10 @@ pl_main_universe_dnit(
     /* dealloc device if sel'd */
     if (universe->curr_device) {
 #ifdef PSI_INCLUDED
+	gs_unregister_root(universe->curr_device->memory, &device_root, "pl_main_universe_select");
 	/* ps allocator retain's the device, pl_alloc doesn't */
 	gx_device_retain(universe->curr_device, false);
+	universe->curr_device = NULL;
 #else
 	gx_device_finalize(universe->curr_device);
         /* finalize closes, frees stype, now free the rest of the device */
@@ -622,6 +630,7 @@ pl_main_universe_select(
 		return 0;
 	    } else {
 		/* Delete the device. */
+		gs_unregister_root(universe->curr_device->memory, &device_root, "pl_main_universe_select");
 		gs_free_object(universe->curr_device->memory,
 			       universe->curr_device, "pl_main_universe_select(gx_device)");
 		universe->curr_device = 0;
@@ -736,7 +745,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
 /* -------- Command-line processing ------ */
 
 /* Create a default device if not already defined. */
-int
+private int
 pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
 {	
     int code = 0;
@@ -744,9 +753,27 @@ pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
 	return -1;
     if ( !is_default || !pti->device ) { 
 	const gx_device **list;
+
+#	ifdef PSI_INCLUDED
+	/* We assume that nobody else changes pti->device,
+	   and this function is called from this module only.
+	   Due to that device_root is always consistent with pti->device,
+	   and it is regisrtered if and only if pti-<device != NULL. 
+	*/
+	if (pti->device != NULL) {
+	    pti->device = NULL;
+	    gs_unregister_root(pti->device_memory, &device_root, "pl_main_universe_select");
+	}
+#	endif
+
 	gs_lib_device_list((const gx_device * const **)&list, NULL);
-        code = gs_copydevice(&pti->device, list[index],
+	code = gs_copydevice(&pti->device, list[index],
                              pti->device_memory);
+#	ifdef PSI_INCLUDED
+	    if (pti->device != NULL)
+		gs_register_struct_root(pti->device_memory, &device_root,
+				    &pti->device, "pl_top_create_device");
+#	endif
     }
     return code;
 }

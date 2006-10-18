@@ -299,7 +299,7 @@ ps_impl_get_device_memory(
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
     gs_dual_memory_t *dmem = &psi->minst->i_ctx_p->memory;
-    gs_memory_t *mem = dmem->spaces.memories.named.global;
+    gs_ref_memory_t *mem = dmem->spaces.memories.named.global;
 
     *pmem = mem->stable_memory;
     /* Lock against alloc_restore_all to release the device when called from gsapi_exit : */
@@ -507,9 +507,17 @@ ps_impl_remove_device(
   pl_interp_instance_t   *instance     /* interp instance to use */
 )
 {
-	int code = 0;	/* first error status encountered */
+    /* Assuming the interpreter's stack contains a single graphic state.
+       Otherwise this procedure is not effective.
+       The Postscript job server logic must provide that.
+     */
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    gs_state *pgs = psi->minst->i_ctx_p->pgs;
+    int code = gs_nulldevice(pgs);
 
-	return code;
+    if ( code < 0 )
+	dprintf1("error code %d installing nulldevice, continuing\n", code );
+    return 0;
 }
 
 /* Deallocate a interpreter instance */
@@ -524,6 +532,8 @@ ps_impl_deallocate_interp_instance(
 	
 	/* do total dnit of interp state */
 	code = gsapi_run_string_end(mem->gs_lib_ctx, 0, &exit_code);
+
+	gsapi_exit(psi->minst);
 
 	gs_free_object(mem, psi, "ps_impl_deallocate_interp_instance(ps_interp_instance_t)");
 
