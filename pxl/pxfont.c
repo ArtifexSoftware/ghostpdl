@@ -365,8 +365,9 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
             plfont->allow_vertical_substitutes = false;
     }
 
-    /* set bold fraction */
-    plfont->bold_fraction = pxgs->char_bold_value;
+    /* set bold fraction - charpaths are not algorithmically boldened */
+    if (to_path == false )
+        plfont->bold_fraction = pxgs->char_bold_value;
 
     pchr = (gs_char *)gs_alloc_byte_array(mem, len, sizeof(gs_char),
                                           "px_text gs_char[]");
