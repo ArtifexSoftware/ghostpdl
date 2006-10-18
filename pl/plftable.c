@@ -599,12 +599,12 @@ const font_resident_t resident_table[] = {
     },
 
     /************** NB SEMI-WRONG the artifex lineprinter is unbound ****************/
+    {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','0','N'},
+     {0, 0, {43.1, 72000.0/43.1}, 34, REGULAR, NOBOLD, 0, 82}, cc_alphabetic},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','6','N'},
      {0, 0, {43.1, 72000.0/43.1}, 34, REGULAR, NOBOLD, 0, 88}, cc_alphabetic},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','9','N'},
      {0, 0, {43.1, 72000.0/43.1}, 34, REGULAR, NOBOLD, 0, 89}, cc_alphabetic},
-    {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','0','N'},
-     {0, 0, {43.1, 72000.0/43.1}, 34, REGULAR, NOBOLD, 0, 82}, cc_alphabetic},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','0','U'},
      {0, 0, {43.1, 72000.0/43.1}, 34, REGULAR, NOBOLD, 0, 80}, cc_alphabetic},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','1','U'},
