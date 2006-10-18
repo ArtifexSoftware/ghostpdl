@@ -84,7 +84,11 @@ def
 
 % Get length of encryption key in bytes
 /pdf_key_length {    % pdf_key_length <key_length>
-  Trailer /Encrypt oget /Length knownoget { -3 bitshift } { 5 } ifelse
+  Trailer /Encrypt oget
+  dup /V knownoget not { 0 } if 1 eq
+  { pop 5 }	% If V == 1 then always use 40 bits
+  { /Length knownoget { -3 bitshift } { 5 } ifelse }
+  ifelse
 } bind def
 
 % Algorithm 3.2
