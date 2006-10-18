@@ -630,7 +630,9 @@ pl_main_universe_select(
 		return 0;
 	    } else {
 		/* Delete the device. */
+#		ifdef PSI_INCLUDED
 		gs_unregister_root(universe->curr_device->memory, &device_root, "pl_main_universe_select");
+#		endif
 		gs_free_object(universe->curr_device->memory,
 			       universe->curr_device, "pl_main_universe_select(gx_device)");
 		universe->curr_device = 0;
