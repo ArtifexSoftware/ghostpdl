@@ -68,7 +68,7 @@ zgetdevparams(i_ctx_t *i_ctx_p)
     check_read_type(*op, t_string);
     iodev = gs_findiodevice(op->value.bytes, r_size(op));
     if (iodev == 0)
-	return_error(e_undefinedfilename);
+	return_error(e_undefined);
     stack_param_list_write(&list, &o_stack, NULL, iimemory);
     if ((code = gs_getdevparams(iodev, plist)) < 0) {
 	ref_stack_pop(&o_stack, list.count * 2);
