@@ -68,11 +68,11 @@ dprint_cc(const byte *pcc)
 }
 void
 dprint_font_params_t(const pl_font_params_t *pfp)
-{	dprintf7("symset=%u %s pitch=%g ht=%u style=%u wt=%d face=%u\n",
+{	dprintf8("symset=%u %s pitch=%g ht=%u style=%u wt=%d face=%u:%u\n",
 		 pfp->symbol_set,
 		 (pfp->proportional_spacing ? "prop." : "fixed"),
 		 pl_fp_pitch_cp(pfp) / 100.0, pfp->height_4ths / 4, pfp->style,
-		 pfp->stroke_weight, pfp->typeface_family);
+		 pfp->stroke_weight, pfp->typeface_family, (0x07FF &pfp->typeface_family) );
 }
 
 #include "plftable.h"
@@ -237,7 +237,12 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 	  }
 
 	/* 5.  Style. */
-	score[score_style] = pfs->params.style == fp->params.style;
+	if ( pfs->params.style == fp->params.style )
+	    score[score_style] = 2;
+	else if ( fp->params.style == 0 && pfs->params.style != 0 )
+	    score[score_style] = 1;  /* prefer NO style fonts to wrong style */
+	else
+	    score[score_style] = 0;
 
 	/* 6.  Stroke Weight. */
 	/* If not exact match, prefer closest value away from 0 (more
@@ -307,15 +312,19 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 		0;
 	  }
 
-	/* 10. font number - give maximum score if a downloaded font -
-	   not quite right NB NB!!.  What we are trying to stumble
-	   into here is to take table order into account when all
-	   other attributes are equal.  It in not clear if this is
-	   right. */
-	if ( fp->storage == pcds_internal )
-            score[score_fontnumber] = 0x1000000 - fp->params.pjl_font_number;
+	/* 10. Location: 11 in the implementors Guide. 
+	 * lower typeface ID's are better.
+	 * supposed to be ordered by bitmap/scalable and SoftFont ... Internal but
+	 * these didn't seem to have an effect.
+	 *  
+	 * Lineprinter has a special case, making it harder to accidently select.
+	 */
+
+	if (fp->params.typeface_family == 0)
+	    score[score_fontnumber] = 0x100000 - fp->params.typeface_family; 
 	else
-            score[score_fontnumber] = 0x1000000;
+	    score[score_fontnumber] = 0x200000 - fp->params.typeface_family; 
+
 #ifdef DEBUG
 	if ( gs_debug_c('=') )
             dprintf_font_scoring("candidate", fp, score);

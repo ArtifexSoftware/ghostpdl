@@ -40,6 +40,7 @@
 #include "gxstate.h"		/* for gs_state_client_data */
 
 #define STICK_FONT_TYPEFACE 48
+#define ARC_FONT_TYPEFACE 50
 
 /* convert points 2 plu - agfa uses 72.307 points per inch */
 private floatp
@@ -202,7 +203,8 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 {	pcl_font_selection_t *pfs =
 	  &pgls->g.font_selection[pgls->g.font_selected];
 
-	if ( ((pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE
+       if (( ((pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE || 
+	      (pfs->params.typeface_family & 0xfff) == ARC_FONT_TYPEFACE )
 	     && pfs->params.style == 0 /* upright */
 	     && hpgl_stick_font_supports(pgls,
 					 pfs->params.symbol_set))
