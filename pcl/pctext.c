@@ -216,12 +216,6 @@ show_char_foreground(
     gs_font *pfont = plfont->pfont;
     gs_text_params_t text;
 
-    /* it is not clear if vertical substitutes are allowed in mode -1 */ 
-    if (pcs->text_path != 0)
-        plfont->allow_vertical_substitutes = true;
-    else
-        plfont->allow_vertical_substitutes = false;
-
     /* set vertical writing if -1 which requires double bytes or 1 */
     if ((pcs->text_path == -1 && ((pbuff[0] & 0xff00) != 0)) ||
         (pcs->text_path == 1))
@@ -701,6 +695,13 @@ pcl_text(
     /* possibly invert text because HP coordinate system is inverted */
     scale.y *= scale_sign;
     gs_scale(pgs, scale.x, scale.y);
+
+    /* it is not clear if vertical substitutes are allowed in mode -1 */ 
+    if (pcs->text_path != 0)
+        pcs->font->allow_vertical_substitutes = true;
+    else
+        pcs->font->allow_vertical_substitutes = false;
+
 
     /* Print remaining characters, restore the ctm */
     code = pcl_show_chars_slow(pcs, &scale, str, size, literal);

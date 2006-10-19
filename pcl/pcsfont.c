@@ -629,9 +629,10 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
                             return e_Range;
                         {
                             const char *fn =((const pcl_font_header_t *)plfont->header)->FontName;
-                            if (!strncmp(fn, "Park Avenue", 11) && pcs->character_code == 116)
+                            if ( !strncmp(fn, "Park Avenue", 11) && 
+                                 pcs->character_code == 116 &&
+                                 count == (sizeof(pcl_sub_park_avenue_116) - 2) )
                                 data = pcl_sub_park_avenue_116 + 2;
-                                
                         }
                     }
                     break;
