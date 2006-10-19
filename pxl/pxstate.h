@@ -52,6 +52,13 @@ typedef struct px_pattern_enum_s px_pattern_enum_t;
 typedef struct px_state_s px_state_t;
 #endif
 
+/* NB need a separate header file for media */
+typedef struct px_media_s {
+  pxeMediaSize_t ms_enum;
+  short width, height;
+  short m_left, m_top, m_right, m_bottom;
+} px_media_t;
+
 /* This structure captures the entire state of the PCL XL "virtual */
 /* machine", except for graphics state parameters in the gs_state. */
 struct px_state_s {
@@ -75,13 +82,21 @@ struct px_state_s {
 
   pxeOrientation_t orientation;
   pxeMediaSource_t media_source;
+  gs_point media_dims;
   bool duplex;
   int copies;
   pxeDuplexPageMode_t duplex_page_mode;
   bool duplex_back_side;
   pxeMediaDestination_t media_destination;
+
+  /* NB media needs reorganization. */
   pxeMediaType_t media_type;
+  px_media_t media_with_dims;
+  px_media_t *pm;
   pxeMediaSize_t media_size;
+  short media_height;
+  short media_width;
+
   int (*end_page)(px_state_t *pxs, int num_copies, int flush);
 	/* Pattern dictionary */
   px_dict_t page_pattern_dict;

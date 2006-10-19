@@ -52,11 +52,6 @@ px_operator_proc(pxSetPageDefaultCTM);
  * table should obviously be device-dependent.
  */
 #define media_size_scale (72.0 / 300.0)
-typedef struct px_media_s {
-  pxeMediaSize_t ms_enum;
-  short width, height;
-  short m_left, m_top, m_right, m_bottom;
-} px_media_t;
 #define m_default 50, 50, 50, 50
 #define m_data(ms_enum, res, width, height)\
   {ms_enum, width * 300 / (res), height * 300 / (res), m_default},
@@ -303,7 +298,7 @@ pxEndSession(px_args_t *par, px_state_t *pxs)
 }
 
 const byte apxBeginPage[] = {
-  pxaOrientation, 0,
+  0, pxaOrientation,
   pxaMediaSource, pxaMediaSize, pxaCustomMediaSize, pxaCustomMediaSizeUnits,
   pxaSimplexPageMode, pxaDuplexPageMode, pxaDuplexPageSide,
   pxaMediaDestination, pxaMediaType, 0
@@ -312,12 +307,21 @@ int
 pxBeginPage(px_args_t *par, px_state_t *pxs)
 {	gs_state *pgs = pxs->pgs;
 	gx_device *dev = gs_currentdevice(pgs);
-	const px_media_t *pm;
 	gs_point page_size_pixels;
-	gs_point media_size;
 	gs_matrix points2device;
-	short int media_height;
-	short int media_width;
+        /* check for 2.1 no parameter case */
+        {
+            int i;
+            bool have_params = false;
+            for ( i=0; i<sizeof(par->pv)/sizeof(par->pv[0]); i++ ) {
+                if (par->pv[i]) {
+                    have_params = true;
+                    break;
+                }
+            }
+            if ( have_params == false )
+                goto setd;
+        }
 	/* Check parameter presence for legal combinations. */
 	if ( par->pv[2] )
 	  { if ( par->pv[3] || par->pv[4] )
@@ -373,33 +377,33 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 		ms_enum = par->pv[2]->value.i;
 	    }
 	    if ( ms_enum == eDefaultPaperSize ) {
-		pm = px_get_default_media(pxs);
+		pxs->pm = px_get_default_media(pxs);
 	    }
 	    else {
-	        for ( pm = known_media, i = 0; i < countof(known_media); ++pm, ++i )
-		    if ( pm->ms_enum == ms_enum )
+	        for ( pxs->pm = known_media, i = 0; i < countof(known_media); ++pxs->pm, ++i )
+		    if ( pxs->pm->ms_enum == ms_enum )
 		       break;
 		if ( i == countof(known_media) ) { /* No match, select default media. */
-		   pm = px_get_default_media(pxs);
+		   pxs->pm = px_get_default_media(pxs);
 		   px_record_warning("IllegalMediaSize", false, pxs);
 		}
 	    }
-	    pxs->media_size = pm->ms_enum;
-	    media_size.x = pm->width * media_size_scale;
-	    media_size.y = pm->height * media_size_scale;
-	    media_height = pm->height;
-	    media_width = pm->width;
+	    pxs->media_size = pxs->pm->ms_enum;
+	    pxs->media_dims.x = pxs->pm->width * media_size_scale;
+	    pxs->media_dims.y = pxs->pm->height * media_size_scale;
+	    pxs->media_height = pxs->pm->height;
+	    pxs->media_width = pxs->pm->width;
 	} else { /* custom (!par->pv[2]) */ 
 	    double scale = measure_to_points[par->pv[4]->value.i];
-	    media_size.x = real_value(par->pv[3], 0) * scale;
-	    media_size.y = real_value(par->pv[3], 1) * scale;
+	    pxs->media_dims.x = real_value(par->pv[3], 0) * scale;
+	    pxs->media_dims.y = real_value(par->pv[3], 1) * scale;
 	    /*
 	     * Assume the unprintable margins for custom media are the same
 	     * as for the default media.  This may not be right.
 	     */
-	    pm = px_get_default_media(pxs);
-	    media_height = media_size.y / media_size_scale;
-	    media_width = media_size.x / media_size_scale;
+	    pxs->pm = px_get_default_media(pxs);
+	    pxs->media_height = pxs->media_dims.y / media_size_scale;
+	    pxs->media_width = pxs->media_dims.x / media_size_scale;
 	}
 	if ( par->pv[5] )
 	  { pxs->duplex = false;
@@ -416,7 +420,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	  pxs->media_type = par->pv[9]->value.i;
 
 	/* Pass the media parameters to the device. */
-	{ gs_memory_t *mem = pxs->memory;
+setd:	{ gs_memory_t *mem = pxs->memory;
 	  gs_c_param_list list;
 #define plist ((gs_param_list *)&list)
 	  gs_param_float_array fa;
@@ -435,8 +439,8 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	  ecode = px_put1(dev, &list, ecode);
 
 	  gs_c_param_list_write(&list, mem);
-	  fv[0] = media_size.x;
-	  fv[1] = media_size.y;
+	  fv[0] = pxs->media_dims.x;
+	  fv[1] = pxs->media_dims.y;
 	  fa.size = 2;
 	  code = param_write_float_array(plist, ".MediaSize", &fa);
 	  ecode = px_put1(dev, &list, ecode);
@@ -505,7 +509,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 
 	  px_initgraphics(pxs);
 	  gs_currentmatrix(pgs, &points2device);
-	  gs_dtransform(pgs, media_size.x, media_size.y,
+	  gs_dtransform(pgs, pxs->media_dims.x, pxs->media_dims.y,
 			&page_size_pixels);
 	  { /*
 	     * Put the origin at the upper left corner of the page;
@@ -519,7 +523,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	      {
 	      case eDefaultOrientation:
 	      case ePortraitOrientation:
-		code = gs_translate(pgs, 0.0, media_size.y);
+		code = gs_translate(pgs, 0.0, pxs->media_dims.y);
 		orient.xx = 1, orient.yy = -1;
 		break;
 	      case eLandscapeOrientation:
@@ -527,11 +531,11 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 		orient.xy = 1, orient.yx = 1;
 		break;
 	      case eReversePortrait:
-		code = gs_translate(pgs, media_size.x, 0);
+		code = gs_translate(pgs, pxs->media_dims.x, 0);
 		orient.xx = -1, orient.yy = 1;
 		break;
 	      case eReverseLandscape:
-		code = gs_translate(pgs, media_size.x, media_size.y);
+		code = gs_translate(pgs, pxs->media_dims.x, pxs->media_dims.y);
 		orient.xy = -1, orient.yx = -1;
 		break;
 	      default:			/* can't happen */
@@ -571,12 +575,12 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
                  engine's border is larger than 1/6" the XL output
                  will be clipped by the engine and will not behave as
                  expected */
-	      page_bbox.p.x = max(dev->HWMargins[0], pm->m_left * media_size_scale);
-	      page_bbox.p.y = max(dev->HWMargins[1], pm->m_top * media_size_scale);
-	      page_bbox.q.x = (media_width * media_size_scale) -
-		  max(dev->HWMargins[2], pm->m_bottom * media_size_scale);
-	      page_bbox.q.y = (media_height * media_size_scale) - 
-		  max(dev->HWMargins[3], pm->m_right * media_size_scale);
+	      page_bbox.p.x = max(dev->HWMargins[0], pxs->pm->m_left * media_size_scale);
+	      page_bbox.p.y = max(dev->HWMargins[1], pxs->pm->m_top * media_size_scale);
+	      page_bbox.q.x = (pxs->media_width * media_size_scale) -
+		  max(dev->HWMargins[2], pxs->pm->m_bottom * media_size_scale);
+	      page_bbox.q.y = (pxs->media_height * media_size_scale) - 
+		  max(dev->HWMargins[3], pxs->pm->m_right * media_size_scale);
 	      gs_bbox_transform(&page_bbox, &points2device, &device_page_bbox);
 	      /* clip to rectangle takes fixed coordinates */
 	      fixed_bbox.p.x = float2fixed(device_page_bbox.p.x);
