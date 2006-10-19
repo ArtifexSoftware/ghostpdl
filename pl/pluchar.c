@@ -255,7 +255,7 @@ pl_ufst_char_width(
 
     CGIFchIdptr(FSA (VOID *)&chIdloc, NULL);
     fcode.CharType.TT_unicode = char_code;
-    if ((status = CGIFwidth(FSA &fcode, 1, 4, fontWidth)) != 0) {
+    if ((status = CGIFwidth2(FSA &fcode, 1, 4, fontWidth)) != 0) {
         dprintf1("CGIFwidth error %d\n", status);
         return status;
     }
