@@ -553,7 +553,8 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 {
     int code;
 
-    if (gx_dc_is_pattern2_color(pdevc) || pdevc->type == &gx_dc_type_data_ht_colored) {
+    if ((gx_dc_is_pattern2_color(pdevc) || pdevc->type == &gx_dc_type_data_ht_colored) &&
+	params->rule == -1) {
 	/*  Optimization for shading and halftone fill :
 	    The general filling algorithm subdivides the fill region into 
 	    trapezoid or rectangle subregions and then paints each subregion 
