@@ -24,6 +24,7 @@
 #include "store.h"
 
 /* Forward references */
+private int check_for_exec(const_os_ptr);
 private int no_cleanup(i_ctx_t *);
 private uint count_exec_stack(i_ctx_t *, bool);
 private uint count_to_stopped(i_ctx_t *, long);
@@ -99,20 +100,15 @@ int
 zexec(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    int code;
 
     check_op(1);
+    code = check_for_exec(op);
+    if (code < 0) {
+	return code;
+    }
     if (!r_has_attr(op, a_executable)) {
-	/*
-	 * We emulate an apparent bug in Adobe interpreters, which cause an
-	 * invalidaccess error when 'exec'ing a noaccess literal (other than
-	 * dictionaries).
-	 */
-	if (!r_has_attr(op, a_execute) && /* only true if noaccess */
-	    ref_type_uses_access(r_type(op)) &&
-	    !r_has_type(op, t_dictionary)) {
-	    return_error(e_invalidaccess);
-	}
-	return 0;		/* literal object just gets pushed back */
+	return 0;	/* shortcut, literal object just gets pushed back */
     }
     check_estack(1);
     ++esp;
@@ -650,6 +646,7 @@ private int
 zstopped(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+
     check_op(1);
     /* Mark the execution stack, and push the default result */
     /* in case control returns normally. */
@@ -660,9 +657,7 @@ zstopped(i_ctx_t *i_ctx_p)
     ++esp;
     make_int(esp, 1);		/* save the signal mask */
     push_op_estack(stopped_push);
-    *++esp = *op;		/* execute the operand */
-    esfile_check_cache();
-    pop(1);
+    push_op_estack(zexec);	/* execute the operand */
     return o_push_estack;
 }
 
@@ -680,9 +675,8 @@ zzstopped(i_ctx_t *i_ctx_p)
     *++esp = op[-1];		/* save the result */
     *++esp = *op;		/* save the signal mask */
     push_op_estack(stopped_push);
-    *++esp = op[-2];		/* execute the operand */
-    esfile_check_cache();
-    pop(3);
+    push_op_estack(zexec);	/* execute the operand */
+    pop(2);
     return o_push_estack;
 }
 
@@ -964,6 +958,27 @@ const op_def zcontrol3_op_defs[] = {
 };
 
 /* ------ Internal routines ------ */
+
+/*
+ * Check the operand of exec or stopped.  Return 0 if OK to execute, or a
+ * negative error code.  We emulate an apparent bug in Adobe interpreters,
+ * which cause an invalidaccess error when 'exec'ing a noaccess literal
+ * (other than dictionaries).  We also match the Adobe interpreters in that
+ * we catch noaccess executable objects here, rather than waiting for the
+ * interpreter to catch them, so that we can signal the error with the
+ * object still on the operand stack.
+ */
+private bool
+check_for_exec(const_os_ptr op)
+{
+    if (!r_has_attr(op, a_execute) && /* only true if noaccess */
+	ref_type_uses_access(r_type(op)) &&
+	(r_has_attr(op, a_executable) || !r_has_type(op, t_dictionary))
+	) {
+	return_error(e_invalidaccess);
+    }
+    return 0;
+}
 
 /* Vacuous cleanup routine */
 private int
