@@ -16,6 +16,7 @@
 #include "math_.h"
 #include "memory_.h"
 #include "ghost.h"
+#include "opcheck.h"
 #include "ierrors.h"
 #include "stream.h"
 #include "ibnum.h"
@@ -34,12 +35,13 @@ const byte enc_num_bytes[] = {
 int
 num_array_format(const ref * op)
 {
+    int format;
+
     switch (r_type(op)) {
 	case t_string:
 	    {
 		/* Check that this is a legitimate encoded number string. */
 		const byte *bp = op->value.bytes;
-		int format;
 
 		if (r_size(op) < 4 || bp[0] != bt_num_array_value)
 		    return_error(e_typecheck);
@@ -49,15 +51,18 @@ num_array_format(const ref * op)
 		    (r_size(op) - 4) / encoded_number_bytes(format)
 		    )
 		    return_error(e_rangecheck);
-		return format;
 	    }
+	    break;
 	case t_array:
 	case t_mixedarray:
 	case t_shortarray:
-	    return num_array;
+	    format = num_array;
+	    break;
 	default:
 	    return_error(e_typecheck);
     }
+    check_read(*op);
+    return format;
 }
 
 /* Get the number of elements in an encoded number array/string. */

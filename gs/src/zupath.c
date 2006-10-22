@@ -591,6 +591,7 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs)
 	if (code < 0)
 	    return code;
 	format = code;
+	check_read(opcodes);
 	opp = opcodes.value.bytes;
 	ocount = r_size(&opcodes);
 	while (ocount--) {
