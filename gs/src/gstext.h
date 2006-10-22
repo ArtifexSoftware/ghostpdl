@@ -111,11 +111,14 @@ typedef struct gs_text_params_s {
 	gs_char s_char;		/* ADD_TO_SPACE_WIDTH & !FROM_GLYPHS */
 	gs_glyph s_glyph;	/* ADD_TO_SPACE_WIDTH & FROM_GLYPHS */
     } space;
-    /* If x_widths == y_widths, widths are taken in pairs. */
-    /* Either one may be NULL, meaning widths = 0. */
+    /*
+     * If x_widths == y_widths, widths are taken in pairs; note that in this
+     * case, widths_size is the number of widths, not the number of pairs.
+     * Either one may be NULL, meaning widths = 0.
+     */
     const float *x_widths;	/* REPLACE_WIDTHS */
     const float *y_widths;	/* REPLACE_WIDTHS */
-    uint widths_size;		/****** PROBABLY NOT NEEDED ******/
+    uint widths_size;		/* REPLACE_WIDTHS */
 } gs_text_params_t;
 
 #define st_gs_text_params_max_ptrs 3

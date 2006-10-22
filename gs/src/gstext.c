@@ -534,17 +534,19 @@ gs_text_replaced_width(const gs_text_params_t *text, uint index,
     const float *x_widths = text->x_widths;
     const float *y_widths = text->y_widths;
 
-    if (index > text->size)
-	return_error(gs_error_rangecheck);
     if (x_widths == y_widths) {
 	if (x_widths) {
 	    index *= 2;
+	    if (index + 1 >= text->widths_size)
+		return_error(gs_error_rangecheck);
 	    pwidth->x = x_widths[index];
 	    pwidth->y = x_widths[index + 1];
 	}
 	else
 	    pwidth->x = pwidth->y = 0;
     } else {
+	if (index >= text->widths_size)
+	    return_error(gs_error_rangecheck);
 	pwidth->x = (x_widths ? x_widths[index] : 0.0);
 	pwidth->y = (y_widths ? y_widths[index] : 0.0);
     }

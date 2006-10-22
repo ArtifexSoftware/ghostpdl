@@ -871,9 +871,12 @@ show_move(gs_show_enum * penum)
     gs_state *pgs = penum->pgs;
 
     if (SHOW_IS(penum, TEXT_REPLACE_WIDTHS)) {
+	int code;
 	gs_point dpt;
 
-	gs_text_replaced_width(&penum->text, penum->xy_index - 1, &dpt);
+	code = gs_text_replaced_width(&penum->text, penum->xy_index - 1, &dpt);
+	if (code < 0)
+	    return code;
 	gs_distance_transform2fixed(&pgs->ctm, dpt.x, dpt.y, &penum->wxy);
     } else {
 	double dx = 0, dy = 0;
