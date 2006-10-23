@@ -465,7 +465,7 @@ gs_clean_fm_pair_attributes(gs_font_dir * dir, cached_fm_pair * pair)
 void
 gs_clean_fm_pair(gs_font_dir * dir, cached_fm_pair * pair)
 {
-    if_debug1('k', "[k]cleaning pair 0x%lx%s\n", (ulong) pair);
+    if_debug1('k', "[k]cleaning pair 0x%lx\n", (ulong) pair);
     pair->font = NULL;
     gs_clean_fm_pair_attributes(dir, pair);
 }

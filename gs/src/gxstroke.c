@@ -893,7 +893,8 @@ adjust_stroke_transversal(pl_ptr plp, const gs_imager_state * pis, bool thin, bo
     }
 }
 
-void adjust_stroke_longitude(pl_ptr plp, const gs_imager_state * pis, bool thin, bool horiz)
+private void 
+adjust_stroke_longitude(pl_ptr plp, const gs_imager_state * pis, bool thin, bool horiz)
 {
 
     fixed *pow = (horiz ? &plp->o.p.y : &plp->o.p.x);
