@@ -32,7 +32,7 @@ private void gx_clip_list_from_rectangle(gx_clip_list *, gs_fixed_rect *);
 
 /* Other structure types */
 public_st_clip_rect();
-private_st_clip_list();
+public_st_clip_list();
 public_st_clip_path();
 private_st_clip_rect_list();
 public_st_device_clip();

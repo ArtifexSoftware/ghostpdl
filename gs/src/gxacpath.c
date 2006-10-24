@@ -28,16 +28,33 @@
 #include "gzacpath.h"
 
 /* Device procedures */
-private dev_proc_open_device(accum_open);
+private dev_proc_open_device(accum_open_device);
 private dev_proc_close_device(accum_close);
 private dev_proc_fill_rectangle(accum_fill_rectangle);
+private dev_proc_pattern_manage(accum_pattern_manage);
+
+/* GC information */
+extern_st(st_clip_list);
+private
+ENUM_PTRS_WITH(device_cpath_accum_enum_ptrs, gx_device_cpath_accum *pdev)
+    if (index > st_device_max_ptrs)
+	return ENUM_USING(st_clip_list, &pdev->list, sizeof(gx_clip_list), index - st_device_max_ptrs);
+    ENUM_PREFIX(st_device, 0);
+ENUM_PTRS_END
+private
+RELOC_PTRS_WITH(device_cpath_accum_reloc_ptrs, gx_device_cpath_accum *pdev)
+{   RELOC_PREFIX(st_device);
+    RELOC_USING(st_clip_list, &pdev->list, size);
+} RELOC_PTRS_END
+
+public_st_device_cpath_accum();
 
 /* The device descriptor */
 /* Many of these procedures won't be called; they are set to NULL. */
 private const gx_device_cpath_accum gs_cpath_accum_device =
 {std_device_std_body(gx_device_cpath_accum, 0, "clip list accumulator",
 		     0, 0, 1, 1),
- {accum_open,
+ {accum_open_device,
   NULL,
   NULL,
   NULL,
@@ -81,15 +98,16 @@ private const gx_device_cpath_accum gs_cpath_accum_device =
   NULL,
   gx_default_text_begin,
   gx_default_finish_copydevice,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL
+  NULL,	/* begin_transparency_group */
+  NULL,	/* end_transparency_group */
+  NULL,	/* begin_transparency_mask */
+  NULL,	/* end_transparency_mask */
+  NULL,	/* discard_transparency_layer */
+  NULL,	/* get_color_mapping_procs */
+  NULL, /* get_color_comp_index */
+  NULL,	/* encode_color */
+  NULL,	/* decode_color */
+  accum_pattern_manage
  }
 };
 
@@ -229,8 +247,8 @@ clip_list_validate(const gx_clip_list * clp)
 #endif /* DEBUG */
 
 /* Initialize the accumulation device. */
-private int
-accum_open(register gx_device * dev)
+int
+accum_open_device(register gx_device * dev)
 {
     gx_device_cpath_accum * const adev = (gx_device_cpath_accum *)dev;
 
@@ -271,6 +289,21 @@ accum_close(gx_device * dev)
 #endif
     return 0;
 }
+
+
+/*
+   The pattern management device method.
+   See gxdevcli.h about return codes.
+ */
+int
+accum_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
+		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+{   
+    if (function == pattern_manage__is_cpath_accum)
+	return 1;
+    return 0;
+}
+
 
 /* Accumulate one rectangle. */
 /* Allocate a rectangle to be added to the list. */

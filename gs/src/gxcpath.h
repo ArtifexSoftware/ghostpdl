@@ -74,8 +74,8 @@ struct gx_clip_list_s {
 				/* head or tail */
 };
 
-#define private_st_clip_list()	/* in gxcpath.c */\
-  gs_private_st_ptrs2(st_clip_list, gx_clip_list, "clip_list",\
+#define public_st_clip_list()	/* in gxcpath.c */\
+  gs_public_st_ptrs2(st_clip_list, gx_clip_list, "clip_list",\
     clip_list_enum_ptrs, clip_list_reloc_ptrs, head, tail)
 #define st_clip_list_max_ptrs 2	/* head, tail */
 #define clip_list_is_rectangle(clp) ((clp)->count <= 1)

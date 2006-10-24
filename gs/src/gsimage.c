@@ -25,6 +25,9 @@
 #include "gxiparam.h"
 #include "gxpath.h"		/* for gx_effective_clip_path */
 #include "gzstate.h"
+#include "gzacpath.h"
+#include "gzpath.h"
+#include "gzcpath.h"
 
 
 /*
@@ -153,6 +156,7 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
     gx_device *dev = gs_currentdevice(pgs);
     gx_clip_path *pcpath;
     int code = gx_effective_clip_path(pgs, &pcpath);
+    gx_device *dev2 = dev;
 
     if (code < 0)
 	return code;
@@ -162,7 +166,35 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
         if (code < 0)
 	    return code;
     }
-    return gx_device_begin_typed_image(dev, (const gs_imager_state *)pgs,
+    /* Imagemask with shading color needs a special optimization
+       with converting the image into a clipping. 
+       Check for such case after gs_state_color_load is done,
+       because it can cause interpreter callout.
+     */
+    if (pic->type->begin_typed_image == &gx_begin_image1) {
+	gs_image_t *image = (gs_image_t *)pic;
+
+	if(image->ImageMask) {
+	    if (gx_dc_is_pattern2_color(pgs->dev_color)) {
+		if (!dev_proc(pgs->device, pattern_manage)(dev, gs_no_id, NULL, pattern_manage__can_accum)) {
+		    extern_st(st_device_cpath_accum);
+		    gs_memory_t *mem = pgs->memory;
+		    gx_device_cpath_accum *pcdev =  gs_alloc_struct(mem, 
+			    gx_device_cpath_accum, &st_device_cpath_accum, "gs_image_begin_typed");
+		    gs_fixed_rect cbox;
+
+		    if (pcdev == NULL)
+			return_error(gs_error_VMerror);
+		    gx_cpath_accum_begin(pcdev, mem);
+		    gx_cpath_outer_box(pcpath, &cbox);
+		    gx_cpath_accum_set_cbox(pcdev, &cbox);
+		    gx_device_retain((gx_device *)pcdev, true);
+		    dev2 = (gx_device *)pcdev;
+		}
+	    }
+	}
+    }
+    return gx_device_begin_typed_image(dev2, (const gs_imager_state *)pgs,
 		NULL, pic, NULL, pgs->dev_color, pcpath, pgs->memory, ppie);
 }
 
@@ -552,24 +584,53 @@ gs_image_next_planes(gs_image_enum * penum,
 }
 
 /* Clean up after processing an image. */
+/* Public for ghotpcl. */
 int
-gs_image_cleanup(gs_image_enum * penum)
+gs_image_cleanup(gs_image_enum * penum, gs_state *pgs)
 {
-    int code = 0;
+    int code = 0, code1;
 
     free_row_buffers(penum, penum->num_planes, "gs_image_cleanup(row)");
-    if (penum->info != 0)
-        code = gx_image_end(penum->info, !penum->error);
+    if (penum->info != 0) {
+	if (dev_proc(penum->info->dev, pattern_manage)(penum->info->dev, 
+		    gs_no_id, NULL, pattern_manage__is_cpath_accum)) {
+	    /* Performing a conversion of imagemask into a clipping path. */
+	    gx_device_cpath_accum *pcdev = (gx_device_cpath_accum *)penum->info->dev;
+	    gx_clip_path cpath;
+	    gx_device_clip cdev;
+
+	    code = gx_image_end(penum->info, !penum->error); /* Releases penum->info . */
+	    gx_cpath_init_local(&cpath, pcdev->memory);
+	    code1 = gx_cpath_accum_end(pcdev, &cpath);
+	    if (code == 0)
+		code = code1;
+	    gx_make_clip_path_device(&cdev, &cpath);
+	    cdev.target = penum->dev;
+	    (*dev_proc(&cdev, open_device)) ((gx_device *) & cdev);
+	    code1 = gx_device_color_fill_rectangle(pgs->dev_color, 
+			pcdev->bbox.p.x, pcdev->bbox.p.y, 
+			pcdev->bbox.q.x - pcdev->bbox.p.x, 
+			pcdev->bbox.q.y - pcdev->bbox.p.y, 
+			(gx_device *)&cdev, lop_default, 0);
+	    if (code == 0)
+		code = code1;
+	    gx_device_retain((gx_device *)pcdev, false);
+	    gx_cpath_free(&cpath, "s_image_cleanup");
+	} else
+	    code = gx_image_end(penum->info, !penum->error);
+    }
     /* Don't free the local enumerator -- the client does that. */
+
     return code;
 }
 
 /* Clean up after processing an image and free the enumerator. */
 int
-gs_image_cleanup_and_free_enum(gs_image_enum * penum)
+gs_image_cleanup_and_free_enum(gs_image_enum * penum, gs_state *pgs)
 {
-    int code = gs_image_cleanup(penum);
+    int code = gs_image_cleanup(penum, pgs);
 
     gs_free_object(penum->memory, penum, "gs_image_cleanup_and_free_enum");
     return code;
 }
+

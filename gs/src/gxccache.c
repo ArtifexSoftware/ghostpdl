@@ -453,7 +453,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 		    code = gs_image_next(pie, bits + iy * raster,
 					 (w + 7) >> 3, &used);
 	}
-	code1 = gs_image_cleanup_and_free_enum(pie);
+	code1 = gs_image_cleanup_and_free_enum(pie, pgs);
 	if (code >= 0 && code1 < 0)
 	    code = code1;
     }

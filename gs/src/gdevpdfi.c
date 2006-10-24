@@ -1390,6 +1390,8 @@ gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 	    return 1;
 	case pattern_manage__shading_area:
 	    return 0;
+	case pattern_manage__is_cpath_accum:
+	    return 0;
     }
     return_error(gs_error_unregistered);
 }

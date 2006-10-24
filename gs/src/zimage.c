@@ -313,7 +313,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 	return_error(e_VMerror);
     code = gs_image_enum_init(penum, pie, (const gs_data_image_t *)pim, igs);
     if (code != 0) {		/* error, or empty image */
-	int code1 = gs_image_cleanup_and_free_enum(penum);
+	int code1 = gs_image_cleanup_and_free_enum(penum, igs);
 
 	if (code >= 0)		/* empty image */
 	    pop(npop);
@@ -565,7 +565,7 @@ image_cleanup(i_ctx_t *i_ctx_p)
     es_ptr ep_top = esp + NUM_PUSH(EBOT_NUM_SOURCES(esp)->value.intval);
     gs_image_enum *penum = r_ptr(ep_top, gs_image_enum);
     
-    return gs_image_cleanup_and_free_enum(penum);
+    return gs_image_cleanup_and_free_enum(penum, igs);
 }
 
 /* ------ Initialization procedure ------ */

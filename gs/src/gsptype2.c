@@ -224,12 +224,19 @@ gx_dc_pattern2_fill_rectangle(const gx_device_color * pdevc, int x, int y,
                               gs_logical_operation_t lop,
                               const gx_rop_source_t * source)
 {
-    gs_fixed_rect rect;
-    rect.p.x = int2fixed(x);
-    rect.p.y = int2fixed(y);
-    rect.q.x = int2fixed(x + w);
-    rect.q.y = int2fixed(y + h);
-    return gx_dc_pattern2_fill_path(pdevc, NULL, &rect,  dev);
+    if (dev_proc(dev, pattern_manage)(dev, gs_no_id, NULL, pattern_manage__is_cpath_accum)) {
+	/* Performing a conversion of imagemask into a clipping path.
+	   Fall back to the device procedure. */
+	return dev_proc(dev, fill_rectangle)(dev, x, y, w, h, (gx_color_index)0/*any*/);
+    } else {
+	gs_fixed_rect rect;
+
+	rect.p.x = int2fixed(x);
+	rect.p.y = int2fixed(y);
+	rect.q.x = int2fixed(x + w);
+	rect.q.y = int2fixed(y + h);
+	return gx_dc_pattern2_fill_path(pdevc, NULL, &rect,  dev);
+    }
 }
 
 /* Compare two PatternType 2 colors for equality. */

@@ -131,6 +131,10 @@ gs_image_enum *gs_image_enum_alloc(gs_memory_t *, client_name_t);
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
 #endif
+#ifndef gx_device_color_DEFINED
+#  define gx_device_color_DEFINED
+typedef struct gx_device_color_s gx_device_color;
+#endif
 
 /* Initialize the common part of the image class */
 int gs_image_common_init(gs_image_enum * penum,
@@ -190,9 +194,9 @@ int gs_image_next(gs_image_enum * penum, const byte * dbytes,
 		  uint dsize, uint * pused);
 
 /* Clean up after processing an image. */
-int gs_image_cleanup(gs_image_enum * penum);
+int gs_image_cleanup(gs_image_enum * penum, gs_state *pgs);
 
 /* Clean up after processing an image and free the enumerator. */
-int gs_image_cleanup_and_free_enum(gs_image_enum * penum);
+int gs_image_cleanup_and_free_enum(gs_image_enum * penum, gs_state *pgs);
 
 #endif /* gsimage_INCLUDED */
