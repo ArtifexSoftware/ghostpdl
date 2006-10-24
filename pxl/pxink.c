@@ -263,7 +263,7 @@ px_paint_pattern(const gs_client_color *pcc, gs_state *pgs)
 
 		code = gs_image_next(penum, row, bytes_per_row, &used);
 	      }
-	    gs_image_cleanup(penum);
+	    gs_image_cleanup(penum, pgs);
 	  }
 	gs_free_object(gs_state_memory(pgs), penum, "px_paint_pattern");
 	return code;

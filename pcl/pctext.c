@@ -322,7 +322,7 @@ show_char_background(
         code = gs_image_next(pen, cdata + 16, nbytes, &used);
 
         /* clean up */
-        gs_image_cleanup(pen);
+        gs_image_cleanup(pen, pgs);
         gs_free_object(gs_state_memory(pgs), pen, "bitmap font background");
 
     } else {

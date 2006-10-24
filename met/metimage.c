@@ -250,7 +250,7 @@ met_PaintPattern(const gs_client_color *pcc, gs_state *pgs)
     if (imbytes > used)
         return gs_throw2(0, "too much image data (image=%d used=%d)", imbytes, used);
 
-    gs_image_cleanup(penum);
+    gs_image_cleanup(penum, pgs);
     gs_free_object(mem, penum, "px_paint_pattern");
     gs_grestore(pgs);
 

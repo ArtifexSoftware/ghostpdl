@@ -101,7 +101,7 @@ gs_private_st_ptrs2( st_raster_t,
                      );
 
 /* forward declaration */
-private int     process_zero_rows( pcl_raster_t * prast, int nrows );
+private int     process_zero_rows( gs_state * pgs, pcl_raster_t * prast, int nrows );
 
 
 /*
@@ -562,6 +562,7 @@ create_image_enumerator(
  */
   private void
 close_raster(
+    gs_state *      pgs,
     pcl_raster_t *  prast,
     bool            complete
 )
@@ -570,14 +571,14 @@ close_raster(
     if ( complete                                   && 
          (prast->src_height > prast->rows_rendered) &&
          prast->src_height_set                        )
-        (void)process_zero_rows(prast, prast->src_height - prast->rows_rendered);
+        (void)process_zero_rows(pgs, prast, prast->src_height - prast->rows_rendered);
     if (prast->pen != 0) {
-        gs_image_cleanup(prast->pen);
+        gs_image_cleanup(prast->pen, pgs);
         gs_free_object(prast->pmem, prast->pen, "Close PCL raster");
         prast->pen = 0;
     }
     if (prast->mask_pen != 0) {
-        gs_image_cleanup(prast->mask_pen);
+        gs_image_cleanup(prast->mask_pen, pgs);
         gs_free_object(prast->pmem, prast->mask_pen, "Close PCL raster");
         prast->mask_pen = 0;
     }
@@ -701,6 +702,7 @@ process_zero_mask_rows(
  */
   private int
 process_zero_rows(
+    gs_state *          pgs,
     pcl_raster_t *      prast,
     int                 nrows
 )
@@ -738,7 +740,7 @@ process_zero_rows(
          (prast->zero_is_white || prast->zero_is_black)   ) {
         gs_state *  pgs = prast->pcs->pgs;
 
-        close_raster(prast, false);
+        close_raster(pgs, prast, false);
         if ((prast->zero_is_black) || !prast->pcs->source_transparent ) {
             gs_rect tmp_rect;
             bool    invert = prast->zero_is_white;
@@ -910,6 +912,7 @@ process_row(
  */
   private int
 process_adaptive_compress(
+    gs_state *          pgs, 
     pcl_raster_t *      prast,
     const byte *        pin,
     uint                insize
@@ -936,7 +939,7 @@ process_adaptive_compress(
             prast->plane_index = 1;
             code = process_row(prast, 0);
         } else if (cmd == 4)
-            code = process_zero_rows(prast, param);
+            code = process_zero_rows(pgs, prast, param);
         else if (cmd == 5) {
             uint            rem_rows = prast->src_height - prast->rows_rendered;
             gs_image_enum * pen = prast->pen;
@@ -1033,7 +1036,7 @@ add_raster_plane(
 
         prast->plane_index++;
         if (comp_mode == ADAPTIVE_COMPRESS)
-            return process_adaptive_compress(prast, pdata, nbytes);
+            return process_adaptive_compress(pcs->pgs, prast, pdata, nbytes);
         else
             (void)pcl_decomp_proc[comp_mode](pseed, pdata, nbytes);
     }
@@ -1244,7 +1247,7 @@ pcl_complete_raster(pcl_state_t *pcs)
         return;
 
     /* close the current raster */
-    close_raster(prast, true);
+    close_raster(pcs->pgs, prast, true);
 
     /* free associated objects */
     if (prast->remap_ary != 0) {
@@ -1345,7 +1348,7 @@ raster_y_offset(
 
     /* ignored outside of graphics mode */
     if ((prast != 0) && (uint_arg(pargs) > 0)) {
-        return process_zero_rows(prast, uint_arg(pargs));
+        return process_zero_rows(pcs->pgs, prast, uint_arg(pargs));
     } else
         return 0;
 }
