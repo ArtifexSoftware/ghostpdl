@@ -85,10 +85,17 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_args_setup(pargs);
 	hpgl_call(hpgl_PM(pargs, pgls));
 
-	if ( sweep == 360.0 ) /* HAS needs epsilon */
-	  hpgl_call(hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
-					 radius, start, 360.0, chord, true,
-					 hpgl_plot_draw_absolute, true));
+	if ( sweep > 359.9 || sweep < -359.9) {
+	    floatp num_chordsf = 360 / chord;
+	    /* match hp 4600 rounding, precompute since regular arc rounding is different. */
+	    floatp intpart;
+	    int num_chords = (modf(num_chordsf, &intpart) < 0.06) ? intpart : intpart+1;
+	    floatp integral_chord_angle = fabs(sweep / num_chords);	    
+
+	    hpgl_call(hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
+					   radius, start, 360.0, integral_chord_angle, true,
+					   hpgl_plot_draw_absolute, true));
+	}
 	else
 	/* draw the 2 lines and the arc using 3 point this does seem
            convoluted but it does guarantee that the endpoint lines
