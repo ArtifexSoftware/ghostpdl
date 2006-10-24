@@ -658,11 +658,7 @@ pl_mt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, flo
  * id., rather than the unicode. The char_glyphs table in the font maps the
  * latter to the former.
  */
-#ifdef PSI_INCLUDED
 LPUB8 pl_PCLchId2ptr(FSP UW16 chId)
-#else
-LPUB8 PCLchId2ptr(FSP UW16 chId)
-#endif
 {
     const pl_font_t *   plfont = plfont_last;
 
@@ -683,11 +679,7 @@ LPUB8 PCLchId2ptr(FSP UW16 chId)
 /*
  * callback from UFST to pass PCLEO TT character data starting with header.
  */
-#ifdef PSI_INCLUDED
 LPUB8 pl_PCLglyphID2Ptr(FSP UW16 chId)
-#else
-LPUB8 PCLglyphID2Ptr(FSP UW16 chId)
-#endif
 {
     if (plfont_last == NULL)
         return NULL;    /* something wrong */
@@ -699,11 +691,7 @@ LPUB8 PCLglyphID2Ptr(FSP UW16 chId)
  * callback from UFST to pass PCLEO compound character data starting
  * with header.
  */
-#ifdef PSI_INCLUDED
 LPUB8 pl_PCLEO_charptr(LPUB8 pfont_hdr, UW16 char_code)
-#else
-LPUB8 PCLEO_charptr(LPUB8 pfont_hdr, UW16 char_code)
-#endif
 {
     if (plfont_last == NULL || plfont_last->header != pfont_hdr) {
         dprintf2("fontheader active=0x%x requested=0x%x\n",
@@ -711,18 +699,12 @@ LPUB8 PCLEO_charptr(LPUB8 pfont_hdr, UW16 char_code)
                   pfont_hdr );
         return NULL; /* something wrong */
     } else
-#ifdef PSI_INCLUDED
         return pl_PCLchId2ptr(FSA char_code);
-#else
-        return PCLchId2ptr(FSA char_code);
-#endif
 }
 
 void plu_set_callbacks() 
 {
-#ifdef PSI_INCLUDED
    gx_set_UFST_Callbacks(pl_PCLEO_charptr, pl_PCLchId2ptr, pl_PCLglyphID2Ptr);
-#endif
    /* nothing */
 }
 

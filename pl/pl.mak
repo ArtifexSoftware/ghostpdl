@@ -137,7 +137,7 @@ $(PLOBJ)pluchar.$(OBJ): $(PLSRC)pluchar.c $(AK) $(math__h) $(memory__h) $(stdio_
  $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxpath_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
  $(gxchar_h) $(gxfcache_h) $(plfont_h) $(plvalue_h)
-	$(PLCCC) $(UFST_INCLUDES) $(PLSRC)pluchar.c $(PLO_)pluchar.$(OBJ)
+	$(PLCCC) $(UFST_CFLAGS) $(UFST_INCLUDES) $(PLSRC)pluchar.c $(PLO_)pluchar.$(OBJ)
 
 $(PLOBJ)pldict.$(OBJ): $(PLSRC)pldict.c $(AK) $(memory__h)\
  $(gsmemory_h) $(gsstruct_h) $(gstypes_h)\
@@ -175,7 +175,7 @@ $(PLOBJ)plufont.$(OBJ): $(PLSRC)plufont.c $(AK) $(memory__h) $(stdio__h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)\
  $(gxfont_h) $(gxfont42_h)\
  $(plfont_h) $(plvalue_h)
-	$(PLCCC) $(UFST_INCLUDES) $(PLSRC)plufont.c $(PLO_)plufont.$(OBJ)
+	$(PLCCC) $(UFST_CFLAGS) $(UFST_INCLUDES) $(PLSRC)plufont.c $(PLO_)plufont.$(OBJ)
 
 $(PLOBJ)plplatf$(PLPLATFORM).$(OBJ): $(PLSRC)plplatf$(PLPLATFORM).c $(AK) $(string__h)\
  $(string__h)\
@@ -225,11 +225,11 @@ uconfig_h=$(PLOBJ)uconfig.h
 $(uconfig_h): $(PLSRC)pl.mak
 	$(GLGEN)echogs$(XE) -e .h -w $(PLOBJ)uconfig -x 23 "define UFSTFONTDIR" -s -x 22 $(UFSTFONTDIR) -x 22
 
-$(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(pllfont_h) $(AK)\
+$(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(pllfont_h) $(uconfig_h) $(AK)\
 	$(stdio__h) $(string__h) $(gpgetenv_h) $(gsmemory_h) $(gp_h) $(gstypes_h)\
 	$(plfont_h) $(pldict_h) $(pllfont_h) $(plvalue_h)\
 	$(plftable_h) $(uconfig_h)
-	$(PLCCC) $(UFST_INCLUDES) $(PLSRC)plulfont.c $(PLO_)plulfont.$(OBJ)
+	$(PLCCC) $(UFST_CFLAGS) $(UFST_INCLUDES) $(PLSRC)plulfont.c $(PLO_)plulfont.$(OBJ)
 
 # artifex font loading module.
 $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(pllfont_h) $(AK)\

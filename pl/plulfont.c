@@ -27,85 +27,14 @@
 #include "gdebug.h"
 #include "gsstate.h"
 #include "gxfont.h"
-
-/* for UFSTFONTDIR */
-#ifdef PSI_INCLUDED
 #include "uconfig.h"
-#endif
-/* agfa includes */
-
 #undef true
 #undef false
 #undef frac_bits
 #include "cgconfig.h"
 #include "ufstport.h"
 #include "shareinc.h"
-#ifdef PSI_INCLUDED
 #include "gxfapiu.h"
-#endif
-
-#ifndef PSI_INCLUDED
-
-private SW16  fcHndlAry[16];
-
-private int
-gx_UFST_open_static_fco(UB8 *pthnm, SW16 *handle)
-{
-    return CGIFfco_Open(FSA pthnm, handle);
-}
-
-#define MAX_OPEN_LIBRARIES  5   /* NB */
-#define BITMAP_WIDTH        1   /* must be 1, 2, 4 or 8 */
-
-private int
-gx_UFST_init(UB8* ufst_root_dir)
-{   
-    IFCONFIG config_block;
-    int status;
-    strcpy(config_block.ufstPath, ufst_root_dir);
-    strcat(config_block.ufstPath, "support");
-    strcpy(config_block.typePath, ufst_root_dir);
-    strcat(config_block.typePath, "support");
-    config_block.num_files = MAX_OPEN_LIBRARIES;  /* max open library files */
-    config_block.bit_map_width = BITMAP_WIDTH;    /* bitmap width 1, 2 or 4 */
-
-    /* the following part should be called only once at the beginning */
-    if ((status = CGIFinit(FSA0)) != 0) {
-        dprintf1 ("CGIFinit() error: %d\n", status);
-        return FALSE;
-    }
-    if ((status = CGIFconfig(FSA &config_block)) != 0) {
-        dprintf1 ("CGIFconfig() error: %d\n", status);
-        return FALSE;
-    }
-    if ((status = CGIFenter(FSA0)) != 0) {
-        dprintf1 ("CGIFenter() error: %u\n",status);
-        return FALSE;
-    }
-    return 1;
-}
-
-private int
-gx_UFST_find_fco_handle_by_name(pthnm)
-{
-    return 1;
-}
-
-private void
-gx_UFST_close_static_fcos(void)
-{
-    int i;
-    for (i = 0; fcHndlAry[i]; i++)
-        if (fcHndlAry[i])
-            CGIFfco_Close(FSA fcHndlAry[i]);
-}
-
-private void
-gx_UFST_fini(void)
-{
-    CGIFexit(FSA0);
-}
-#endif
 
 
 /* the line printer font NB FIXME use a header file. */
@@ -120,7 +49,7 @@ PIF_STATE pIFS = &IFS;
  * fco and plugin handles which must be freed when the interpreter shuts down
  */
 private SW16  fcHndlPlAry[16];
-
+private bool  plugins_opened = false;
 
 /* NB fixme - we might as well require an environment variable for the
    fco names and plugins, these change every UFST release */
@@ -300,25 +229,26 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     pl_ufst_root_dir(ufst_root_dir, sizeof(ufst_root_dir));
 
     status = gx_UFST_init(ufst_root_dir);
-    if (status < 0)
-	return FALSE;
-    else if (status == 1) {
-	/* the following part should be called only once at the beginning */
-	/* open and register the plug-in font collection object */
-	    plugins = pl_ufst_get_list(mem, "UFSTPLUGINS", UFSTPLUGINS);
-	for (k = 0; plugins[k]; k++) {
-	    strcpy((char *)pthnm, ufst_root_dir);
-	    strcat((char *)pthnm, plugins[k]);
-	    if ((status = gx_UFST_open_static_fco(pthnm, &fcHndlPlAry[k])) != 0) {
-		dprintf2("CGIFfco_Open error %d for %s\n", status, pthnm);
-		return FALSE;
-	    }
-	    if ((status = CGIFfco_Plugin(FSA fcHndlPlAry[k])) != 0) {
-		dprintf1("CGIFfco_Plugin error %d\n", status);
-		return FALSE;
-	    }
-	}
-	free_strs(mem, plugins);
+
+    if (!plugins_opened) {
+
+        plugins = pl_ufst_get_list(mem, "UFSTPLUGINS", UFSTPLUGINS);
+        for (k = 0; plugins[k]; k++) {
+            strcpy((char *)pthnm, ufst_root_dir);
+            strcat((char *)pthnm, plugins[k]);
+            if ((status = gx_UFST_open_static_fco(pthnm, &fcHndlPlAry[k])) != 0) {
+                dprintf2("CGIFfco_Open error %d for %s\n", status, pthnm);
+                return FALSE;
+            }
+            if ((status = CGIFfco_Plugin(FSA fcHndlPlAry[k])) != 0) {
+                dprintf1("CGIFfco_Plugin error %d\n", status);
+                return FALSE;
+            }
+        }
+        free_strs(mem, plugins);
+        /* end of list */
+        fcHndlPlAry[k] = -1;
+        plugins_opened = true;
     }
     /* step on the callback expect FAPI todo the same on language switch */
     plu_set_callbacks();
@@ -337,7 +267,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
         strcpy((char *)pthnm, ufst_root_dir);
         strcat((char *)pthnm, fcos[k]);
 	
-#ifdef PSI_INCLUDED
 	fcoHandle = gx_UFST_find_fco_handle_by_name(pthnm);
 
 	if (fcoHandle == 0 && 
@@ -345,12 +274,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
             dprintf2("CGIFfco_Open error %d for %s\n", status, pthnm);
             continue;
         }
-#else
-        if ((status = gx_UFST_open_static_fco(pthnm, &fcHndlAry[k])) != 0) {
-            dprintf2("CGIFfco_Open error %d for %s\n", status, pthnm);
-            continue;
-        }
-#endif
         /* enumerat the files in this fco */
         for ( i = 0;
               CGIFfco_Access(FSA pthnm, i, TFATRIB_KEY, &bSize, NULL) == 0;
@@ -388,11 +311,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                 if ( strlen(resident_table[j].full_font_name) ) {
                     pl_font_t * plfont;
                     int         err_cd = pl_load_mt_font( 
-#ifdef PSI_INCLUDED
                                                          fcoHandle,
-#else
-                                                         fcHndlAry[k],
-#endif
                                                          pdir,
                                                           mem,
                                                           i,
@@ -548,23 +467,19 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
  * done whenever the built-in font dictionary is released.
  */
   void
-pl_close_built_in_fonts(void)
+pl_close_built_in_fonts(pl_dict_t *builtinfonts)
 {
     int     i;
-    bool    was_open = false;
 
     /* close fco's */
     gx_UFST_close_static_fcos();
 
     /* close plugins */
-    for (i = 0; fcHndlPlAry[i]; i++)
-        if (fcHndlPlAry[i]) {
-            CGIFfco_Close(FSA fcHndlPlAry[i]);
-	    was_open = true;
-	}
-    /* exit ufst */
-    if (was_open)
-	gx_UFST_fini();
+    for ( i = 0; fcHndlPlAry[i] != -1; i++ ) {
+        CGIFfco_Close(FSA fcHndlPlAry[i]);
+        dprintf1("closing handle %d\n", fcHndlPlAry[i]);
+    }
+    gx_UFST_fini();
 }
 
 /* These are not implemented */

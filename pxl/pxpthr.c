@@ -40,6 +40,7 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
     /* retrieve the current pcl state and initialize pcl */
     if ( !pcs ) {
         global_pcs = pcs = pcl_get_gstate(pxs->pcls);
+        pcs->personality = 0; /* default to pcl5c */
         /* do an initial reset to set up a permanent reset.  The
            permanent reset will fail if some common resources
            (i.e. font dictionary are not in the state */
@@ -50,7 +51,6 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
         code = gs_setdevice_no_erase(pcs->pgs, gs_currentdevice(pxs->pgs));
         if ( code < 0 )
             return code;
-        pcs->personality = 0; /* default to pcl5c */
         /* now reset with the new page device and the reset permanent "clean slate" */
         pcl_do_resets(pcs, pcl_reset_initial);
         /* if pxs has dirtied the page - snippet mode */

@@ -99,20 +99,18 @@ PXL_FONT_SCALER=$(PL_SCALER)
 # flags for UFST scaler.
 ifeq ($(PL_SCALER), ufst)
 UFST_ROOT?=../ufst
-UFST_LIB=$(UFST_ROOT)/rts/lib/
-# hack!!! we append this onto TOP_OBJ to avoid creating another
-# makefile variable.
-
-EXTRALIBS?= $(UFST_LIB)if_lib.a $(UFST_LIB)fco_lib.a $(UFST_LIB)tt_lib.a  $(UFST_LIB)if_lib.a
-# agfa does not use normalized library names (ie we expect libif.a not
-# agfa's if_lib.a)
-UFST_INCLUDES?=-I$(UFST_ROOT)/rts/inc/ -I$(UFST_ROOT)/sys/inc/ -I$(UFST_ROOT)/rts/fco/ -I$(UFST_ROOT)/rts/gray/ -I$(UFST_ROOT)/rts/tt/ -DAGFA_FONT_TABLE -DUFST_UNIX_BRIDGE=1 -DUFST_LIB_EXT=.a -DGCCx86 -DUFST_ROOT=$(UFST_ROOT)
-
+UFST_BRIDGE?=1
+UFST_LIB?=$(UFST_ROOT)/rts/lib/
+UFST_CFLAGS?= -DUFST_BRIDGE=$(UFST_BRIDGE) -DUFST_LIB_EXT=.a -DGCCx86 -DUFST_ROOT=$(UFST_ROOT)
+UFST_INCLUDES?=-I$(UFST_ROOT)/rts/inc/ -I$(UFST_ROOT)/sys/inc/ -I$(UFST_ROOT)/rts/fco/ -I$(UFST_ROOT)/rts/gray/ -I$(UFST_ROOT)/rts/tt/ -DAGFA_FONT_TABLE
 # fco's are binary (-b), the following is only used if COMPILE_INITS=1
-UFST_ROMFS_ARGS=-b \
+UFST_ROMFS_ARGS?=-b \
 -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
 -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
 -c
+
+EXTRALIBS?= $(UFST_LIB)if_lib.a $(UFST_LIB)fco_lib.a $(UFST_LIB)tt_lib.a  $(UFST_LIB)if_lib.a
+UFSTFONTDIR?=/usr/local/fontdata5.0/
 endif
 
 # flags for artifex scaler
@@ -176,6 +174,7 @@ DEVICES_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev
 
 FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev\
+	     $(DD)gxfapiu$(UFST_BRIDGE).dev\
              $(DD)ttflib.dev  $(DD)cielib.dev $(DD)pipe.dev $(DD)htxlib.dev\
 	     $(DD)gsnogc.dev $(DD)sdctd.dev $(DD)libpng_$(SHARE_LIBPNG).dev\
 	     $(DD)psl3lib.dev $(DD)seprlib.dev $(DD)translib.dev\

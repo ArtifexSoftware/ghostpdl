@@ -385,7 +385,7 @@ read_deltarow_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
   const byte *pout_start = pout;
   bool end_of_row = false;
 
-  if ( deltarow->rowwritten == par->pv[1]->value.i && benum->initialized ) {
+  if ( benum->initialized && deltarow->rowwritten == par->pv[1]->value.i ) {
     gs_free_object(benum->mem, deltarow->seedrow, "read_deltarow_bitmap_data");
     benum->initialized = 0;
     return 0;
