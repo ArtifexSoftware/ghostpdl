@@ -725,6 +725,33 @@ gs_errorinfo_put_string(i_ctx_t *i_ctx_p, const char *str)
     return 0;
 }
 
+/* Create and store [/key any] array in $error.errorinfo. */
+/* The key must be a permanently allocated C string. */
+/* This routine is here because of the proximity to the error handler. */
+int
+gs_errorinfo_put_pair(i_ctx_t *i_ctx_p, const byte *key, int len, const ref *any)
+{
+    int code;
+    ref pair, *aptr, key_name, *pderror;
+
+    code = name_ref(imemory_local, key, len, &key_name, 0);
+    if (code < 0)
+        return code;
+    code = gs_alloc_ref_array(imemory_local, &pair, a_readonly, 2, "gs_errorinfo_put_pair");
+    if (code < 0)
+        return code;
+    aptr = pair.value.refs;
+    ref_assign_new(aptr, &key_name);
+    ref_assign_new(aptr+1, any);
+    if (dict_find_string(systemdict, "$error", &pderror) <= 0 ||
+	!r_has_type(pderror, t_dictionary) ||
+	idict_put_string(pderror, "errorinfo", &pair) < 0
+	)
+	return_error(e_Fatal);
+    return 0;
+}
+
+
 /* Main interpreter. */
 /* If execution terminates normally, return e_InterpreterExit. */
 /* If an error occurs, leave the current object in *perror_object */

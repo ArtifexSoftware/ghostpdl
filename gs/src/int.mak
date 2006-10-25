@@ -478,7 +478,7 @@ $(PSOBJ)zht.$(OBJ) : $(PSSRC)zht.c $(OP) $(memory__h)\
 
 $(PSOBJ)zimage.$(OBJ) : $(PSSRC)zimage.c $(OP) $(memory__h)\
  $(gscspace_h) $(gscssub_h) $(gsimage_h) $(gsmatrix_h) $(gsstruct_h)\
- $(gxiparam_h)\
+ $(gxiparam_h) $(interp_h)\
  $(estack_h) $(ialloc_h) $(ifilter_h) $(igstate_h) $(iimage_h) $(ilevel_h)\
  $(store_h) $(stream_h)
 	$(PSCC) $(PSO_)zimage.$(OBJ) $(C_) $(PSSRC)zimage.c

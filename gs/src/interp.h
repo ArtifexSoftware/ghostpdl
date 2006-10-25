@@ -61,6 +61,10 @@ int gs_errorname(i_ctx_t *, int, ref *);
 /* Put a string in $error /errorinfo. */
 int gs_errorinfo_put_string(i_ctx_t *, const char *);
 
+/* Create and store [/key any] array in $error /errorinfo. */
+/* The key must be a permanently allocated C string. */
+int gs_errorinfo_put_pair(i_ctx_t *, const byte *key, int len, const ref *any);
+
 /* Initialize the interpreter. */
 int gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict,
 		   gs_dual_memory_t *dmem);
