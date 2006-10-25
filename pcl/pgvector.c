@@ -149,6 +149,7 @@ hpgl_bezier(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	      case 6:
 		break;
 	      default:
+		hpgl_call(hpgl_update_carriage_return_pos(pgls));
 		return e_Range;
 	      }
 
