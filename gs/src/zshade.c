@@ -195,10 +195,21 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
 	params.have_BBox = false;
     else if ((code = dict_floats_param(imemory, op, "BBox", 
 				       4, box, NULL)) == 4) {
-	params.BBox.p.x = box[0];
-	params.BBox.p.y = box[1];
-	params.BBox.q.x = box[2];
-	params.BBox.q.y = box[3];
+	/* Adobe Interpreters accept denormalised BBox - bug 688937 */
+        if (box[0] <= box[2]) {
+            params.BBox.p.x = box[0];
+ 	    params.BBox.q.x = box[2];
+        } else {
+            params.BBox.p.x = box[2];
+ 	    params.BBox.q.x = box[0];
+        }
+	if (box[1] <= box[3]) {
+            params.BBox.p.y = box[1];
+	    params.BBox.q.y = box[3];
+        } else {
+            params.BBox.p.y = box[3];
+	    params.BBox.q.y = box[1];
+        }
 	params.have_BBox = true;
     } else
 	goto fail;
