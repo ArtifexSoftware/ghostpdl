@@ -45,17 +45,29 @@ private RELOC_PTRS_WITH(data_source_reloc_ptrs, gs_data_source_t *psrc)
 RELOC_PTRS_END
 
 /* Access data from a string or a byte object. */
-/* Does *not* check bounds. */
+/* Does check bounds, and returns 0 data oob. Spec calls for rangecheck,
+   but CPSI implementation silently gives (bogus) data. */
 int
 data_source_access_string(const gs_data_source_t * psrc, ulong start,
 			  uint length, byte * buf, const byte ** ptr)
 {
     const byte *p = psrc->data.str.data + start;
 
-    if (ptr)
-	*ptr = p;
-    else
-	memcpy(buf, p, length);
+    if (start + length <= psrc->data.str.size) {
+	if (ptr)
+	    *ptr = p;
+	else
+	    memcpy(buf, p, length);
+    } else {
+	if (start < psrc->data.str.size) {
+	    uint oklen = psrc->data.str.size - start;
+	    memcpy(buf, p, oklen);
+	    memset(buf + oklen, 0, length - oklen);
+	} else {
+	    memset(buf, 0, length);
+	}
+	*ptr = buf;
+    }
     return 0;
 }
 /* access_bytes is identical to access_string, but has a different */
