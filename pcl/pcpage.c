@@ -419,11 +419,13 @@ new_logical_page(
 }
 
 int
-new_logical_page_for_passthrough_snippet(pcl_state_t *pcs, int orient, int psize)
+new_logical_page_for_passthrough_snippet(pcl_state_t *pcs, int orient, int tag)
 {
     int i;
+     pcl_paper_size_t *psize;
+
     for (i = 0; i < countof(paper_sizes); i++) {
-        if (psize == paper_sizes[i].tag) {
+        if (tag == paper_sizes[i].tag) {
             psize = &(paper_sizes[i].psize);
             break;
         }

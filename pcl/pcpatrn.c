@@ -19,6 +19,7 @@
 #include "gspcolor.h"
 #include "gxdcolor.h"
 #include "gxpcolor.h"
+#include "gxstate.h"
 #include "pccid.h"
 #include "pcfont.h"
 #include "pcpalet.h"
@@ -951,7 +952,7 @@ pattern_set_frgrnd(
 	    /* NB: HP forces black foreground, as they can't handle different 
 	     * colorspaces in foreground and raster palette 
 	     */
-	    convert_color_to_paint(&blk, &paint);
+	    convert_color_to_paint(blk, &paint);
 	    code = set_unpatterned_color(pcs, NULL, pfrgrnd->pbase, &paint);
 	    return code;
 	}

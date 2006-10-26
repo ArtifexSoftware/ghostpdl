@@ -287,7 +287,7 @@ done:		if ( parg->sign < 0 )
 		    if ( pvalue->v_n.i >= max_i/10 &&
 			 (pvalue->v_n.i > max_i/10 || ch > max_i%10)
 		       )
-                        return false;
+                        return NULL;
 		    else
 		      pvalue->v_n.i = pvalue->v_n.i * 10 + ch;
 		  }
@@ -306,7 +306,7 @@ out:	pst->source.ptr = p;
 	switch ( parg->have_value )
 	  {
 	  case 0:		/* no argument */
-	    return false;
+	    return NULL;
 	  case 1:		/* integer */
 	    if_debug1('I', "  %ld", (long)pvalue->v_n.i);
 	    pvalue->is_real = false;

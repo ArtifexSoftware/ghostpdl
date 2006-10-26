@@ -4,6 +4,8 @@
 #include "pgmand.h"
 #include "pcstate.h"
 #include "pcparse.h"
+#include "pctop.h"
+#include "pcpage.h"
 #include "pxoper.h"
 #include "pxstate.h"
 

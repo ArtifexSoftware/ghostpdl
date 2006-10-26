@@ -885,7 +885,7 @@ set_render_algorithm(
 static bool swapped_device_color_procs = false;
 static gx_cm_color_map_procs device_cm_procs;
 /* needs type */
-static void *saved_get_color_map_proc;
+static dev_proc_get_color_mapping_procs(*saved_get_color_map_proc);
 
 private void
 pcl_gray_cs_to_cm(gx_device * dev, frac gray, frac out[])
@@ -928,7 +928,7 @@ pcl_update_mono(pcl_state_t *pcs)
 {
     int code;
     gx_device *dev = gs_currentdevice(pcs->pgs);
-    gx_cm_color_map_procs *cm_procs =  (dev_proc(dev, get_color_mapping_procs)(dev));
+    const gx_cm_color_map_procs *cm_procs =  dev_proc(dev, get_color_mapping_procs)(dev);
     if (pcs->monochrome_mode) {
         if (swapped_device_color_procs == false) {
             device_cm_procs = *cm_procs;

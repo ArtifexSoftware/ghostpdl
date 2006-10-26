@@ -199,7 +199,7 @@ pcl_set_unit_of_measure(pcl_args_t *pargs, pcl_state_t *pcs)
 
 /* Initialization */
 private int
-pcjob_do_registration(pcl_parser_state_t *pcl_parser_state)
+pcjob_do_registration(pcl_parser_state_t *pcl_parser_state, gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_ESCAPE_ARGS('E', "Printer Reset", pcl_printer_reset, pca_in_rtl)
 	DEFINE_CLASS('%')

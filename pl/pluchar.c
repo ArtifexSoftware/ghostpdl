@@ -497,7 +497,7 @@ typedef struct gx_path_s gx_path;
  * encoding is necessary.
  */
 private gs_glyph
-pl_mt_encode_char(gs_font * pfont, gs_char pchr, gs_glyph not_used)
+pl_mt_encode_char(gs_font * pfont, gs_char pchr, gs_glyph_space_t not_used)
 {
     return (gs_glyph)pchr;
 }
@@ -710,8 +710,8 @@ void plu_set_callbacks()
 
 void
 pl_mt_init_procs(gs_font_base *pfont)
-{       pfont->procs.encode_char = (void *)pl_mt_encode_char;
-        pfont->procs.build_char = (void *)pl_mt_build_char;
+{       pfont->procs.encode_char = pl_mt_encode_char;
+        pfont->procs.build_char = pl_mt_build_char;
 #define plfont ((pl_font_t *)pfont->client_data)
         plfont->char_width = pl_mt_char_width;
         plfont->char_metrics = pl_mt_char_metrics;

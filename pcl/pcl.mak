@@ -541,6 +541,9 @@ $(PCLOBJ)pcpatrn.$(OBJ): $(PCLSRC)pcpatrn.c \
                          $(gsuid_h)         \
                          $(gsmatrix_h)      \
                          $(gspcolor_h)      \
+                         $(gxdcolor_h)      \
+                         $(gxpcolor_h)      \
+                         $(gxstate_h)       \
                          $(pccid_h)         \
                          $(pcfont_h)        \
                          $(pcpalet_h)       \
