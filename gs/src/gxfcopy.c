@@ -23,10 +23,12 @@
 #include "gspath.h"		/* for gs_moveto in BuildChar */
 #include "gsstruct.h"
 #include "gsutil.h"
+#include "gschar.h"
 #include "stream.h"
 #include "gxfont.h"
 #include "gxfont1.h"
 #include "gxfont42.h"
+#include "gxchar.h"
 #include "gxfcid.h"
 #include "gxfcopy.h"
 #include "gxfcache.h"		/* for gs_font_dir_s */
@@ -731,7 +733,7 @@ copied_build_char(gs_show_enum *pte, gs_state *pgs, gs_font *font,
     wxy[3] = info.bbox.p.y;
     wxy[4] = info.bbox.q.x;
     wxy[5] = info.bbox.q.y;
-    if ((code = gs_text_setcachedevice(pte, wxy)) < 0 ||
+    if ((code = gs_setcachedevice_double(pte, pte->pgs, wxy)) < 0 ||
 	(code = font->procs.glyph_outline(font, wmode, glyph, &ctm_only(pgs),
 					  pgs->path, sbw_stub)) < 0
 	)
