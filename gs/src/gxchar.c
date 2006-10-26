@@ -1235,7 +1235,7 @@ show_proceed(gs_show_enum * penum)
     /* Try using the build procedure in the font. */
     /* < 0 means error, 0 means success, 1 means failure. */
     penum->cc = cc;		/* set this now for build procedure */
-    code = (*pfont->procs.build_char)((gs_text_enum_t *)penum, pgs, pfont,
+    code = (*pfont->procs.build_char)(penum, pgs, pfont,
 				      chr, glyph);
     if (code < 0) {
 	discard(gs_note_error(code));

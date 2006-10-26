@@ -699,7 +699,7 @@ copied_glyph_name(gs_font *font, gs_glyph glyph, gs_const_string *pstr)
 }
 
 private int
-copied_build_char(gs_text_enum_t *pte, gs_state *pgs, gs_font *font,
+copied_build_char(gs_show_enum *pte, gs_state *pgs, gs_font *font,
 		  gs_char chr, gs_glyph glyph)
 {
     int wmode = font->WMode;

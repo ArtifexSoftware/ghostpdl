@@ -662,7 +662,7 @@ gs_default_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 
 /* Dummy (ineffective) BuildChar/BuildGlyph procedure */
 int
-gs_no_build_char(gs_text_enum_t *pte, gs_state *pgs, gs_font *pfont,
+gs_no_build_char(gs_show_enum *pte, gs_state *pgs, gs_font *pfont,
 		 gs_char chr, gs_glyph glyph)
 {
     return 1;			/* failure, but not error */

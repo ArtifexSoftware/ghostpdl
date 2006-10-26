@@ -35,6 +35,11 @@
 typedef struct gs_text_enum_s gs_text_enum_t;
 #endif
 
+#ifndef gs_show_enum_DEFINED
+#  define gs_show_enum_DEFINED
+typedef struct gs_show_enum_s gs_show_enum;
+#endif
+
 #ifndef gx_path_DEFINED
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
@@ -326,7 +331,7 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_build_char(proc)\
-  int proc(gs_text_enum_t *, gs_state *, gs_font *, gs_char, gs_glyph)
+  int proc(gs_show_enum *, gs_state *, gs_font *, gs_char, gs_glyph)
     font_proc_build_char((*build_char));
 
 } gs_font_procs;
