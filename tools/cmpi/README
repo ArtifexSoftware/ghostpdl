@@ -1,0 +1,41 @@
+This collection is a 0.9 version of a fuzzy image comparison GUI
+and command line (batch) tool.
+
+It has only been tested with PPM files, and still has some 'warts'
+and some TBI features, but is stable enough (I hope) to be useful.
+
+I've built this on Windows with VS 2005 -- it probably will build
+on other versions, but I haven't tried it.
+
+This directory is made to be put into the "samples" directory of
+wxWidgets, so FIRST you have to get wxWidgets 2.7.0 or 2.6.3 and
+build the 'base' and 'core' modules.
+
+On Windows, the base and core modules are built by the 'project'.
+
+On linux, I recommend getting the wxWidgets source and doing:
+	./autoconf
+	./configure --disable-shared
+	make
+
+This will build the .a libraries. Then cd to samples/cmpi
+and try 'make'. If you didn't get 2.7.0 then it will probably
+fail -- you need to add 'cmpi' to the list of SAMPLE_SUBDIRS in
+configure.in and re-run autoconf, then configure to get the
+right Makefile in cmpi derived from Makefile.in.
+
+If the build doesn't work, then dig into it. Ralph and I are
+busy on other stuff, but if you beg for help, you might get
+lucky (Ralph for linux or Mac, me for Windows). ;-)
+
+The usage is similar to gs/toolbin/cmpi.py except the command
+line interface has -w# and -c# fuzzy switches (and it aborts if
+you don't give it the two .ppm files as input).
+
+Note that there is also a -b switch to run it in 'batch' mode
+so that the difference count gets appended to a log file
+(cmpi.log by default) which is handy for gathering stats or
+doing regressions.
+
+For the PS CET, I found -w3 -c20 to be reasonable settings.
+
