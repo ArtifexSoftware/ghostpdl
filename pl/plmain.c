@@ -135,9 +135,10 @@ void pl_main_reinit_instance(pl_main_instance_t *pmi);
 /* Process the options on the command line, including making the
    initial device and setting its parameters.  */
 int pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
-			       gs_c_param_list *params,
-                               pl_interp_instance_t *pjl_instance,
-                               pl_interp_implementation_t const * const impl_array[]);
+			    gs_c_param_list *params,
+			    pl_interp_instance_t *pjl_instance,
+			    pl_interp_implementation_t const * const impl_array[],
+			    char **filename);
 
 /* Find default language implementation */
 pl_interp_implementation_t const *
@@ -213,7 +214,7 @@ pl_main(
     gs_memory_t *           pjl_mem;
     pl_main_instance_t      inst;
     arg_list                args;
-    const char *             arg;
+    char *                  filename = NULL;
     char                    err_buf[256];
     pl_interp_t *           pjl_interp;
     pl_interp_instance_t *  pjl_instance;
@@ -283,17 +284,18 @@ pl_main(
 	bool                in_pjl = true;
 	bool                new_job = false;
 
+
         if ( pl_init_job(pjl_instance) < 0 ) {
             errprintf("Unable to init PJL job.\n");
             return -1;
         }
 
 	/* Process any new options. May request new device. */
-	if (argc==1 ||
+	if (argc==1 || 
             pl_main_process_options(&inst, 
                                     &args,
                                     &params, 
-                                    pjl_instance, pdl_implementation) < 0) {
+                                    pjl_instance, pdl_implementation, &filename) < 0) {
             /* Print error verbage and return */
 	    int i;
 	    const gx_device **dev_list;
@@ -316,29 +318,20 @@ pl_main(
 	    return -1;
 	}
 
-	/* Process the next file. process_options leaves next
-           non-option on arg list */
-        {
-            int code = 0;
-            arg = arg_next(&args, &code);
-            /* not sure what to do about this stupidity right now */
-            if (code < 0)
-                errprintf("arg_next failed\n");
-            if (!arg)
-                break;  /* no nore files to process */
-        }
+	if (!filename)
+	    break;  /* no nore files to process */
+
 
 	/* open file for reading - NB we should respect the minimum
            requirements specified by each implementation in the
            characteristics structure */
-        if (pl_main_cursor_open(mem, &r, arg, buf, sizeof(buf)) < 0) {
-            errprintf("Unable to open %s for reading.\n", arg);
+        if (pl_main_cursor_open(mem, &r, filename, buf, sizeof(buf)) < 0) {
+            errprintf("Unable to open %s for reading.\n", filename);
             return -1;
         }
-
 #ifdef DEBUG
         if (gs_debug_c(':'))
-            dprintf1("%% Reading %s:\n", arg);
+            dprintf1("%% Reading %s:\n", filename);
 #endif
 	/* pump data thru PJL/PDL until EOD or error */
 	new_job = false;
@@ -792,7 +785,7 @@ int
 pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                         gs_c_param_list *params,
                         pl_interp_instance_t *pjl_instance,
-                        pl_interp_implementation_t const * const impl_array[])
+                        pl_interp_implementation_t const * const impl_array[], char **filename)
 {
     int code = 0;
     bool help = false;
@@ -1038,9 +1031,9 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
     }
     gs_c_param_list_read(params);
     pl_top_create_device(pmi, 0, true); /* create default device if needed */
-    /* The last argument wasn't a switch, so push it back. */
-    if (arg)
-	arg_push_string(pal, (char*)arg);  /* cast const away for bad prototype */
+
+    /* The last argument wasn't a switch filename else NULL*/
+    *filename = arg; 
     return 0;
 }
 
