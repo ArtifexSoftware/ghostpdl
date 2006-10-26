@@ -686,9 +686,24 @@ if
     dup type /dicttype eq .languagelevel 2 ge and
       { dup /ImageType get
         //.imagemasktypes exch .knownget
-          { exec
+          { 1 index /ImageType get 1 eq
+	    2 index /BitsPerComponent get 1 eq and
+	    2 index /Interpolate .knownget not { false } if and
+	    //filterdict /ImscaleDecode known and {
+	      % Apply interpolated imagemask scaling filter
+	      exch dup length dict .copydict
+	      dup dup /DataSource get
+	      mark /Width 3 index /Width get /Height 5 index /Height get .dicttomark
+	      /ImscaleDecode filter /DataSource exch put
+	      dup dup /Width get 4 mul /Width exch put
+	      dup dup /Height get 4 mul /Height exch put
+	      dup dup /ImageMatrix get
+	        4 4 matrix scale matrix concatmatrix /ImageMatrix exch put
+	      exch
+	    } if
+	    exec
           }
-          { % CET 12-08b.ps wamts /typecheck
+          { % CET 12-08b.ps wants /typecheck
             /imagemask .systemvar /typecheck signalerror
           }
         ifelse

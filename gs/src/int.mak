@@ -1085,12 +1085,14 @@ $(PSD)psl2.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(PSD)dct.dev $(PSD)dpsand2.dev\
  $(PSD)filter.dev $(PSD)iodevice.dev $(PSD)pagedev.dev $(PSD)pattern.dev\
  $(PSD)psl1.dev $(GLD)psl2lib.dev $(PSD)psl2read.dev\
- $(PSD)sepr.dev $(PSD)type32.dev $(PSD)type42.dev
+ $(PSD)sepr.dev $(PSD)type32.dev $(PSD)type42.dev\
+ $(PSD)fimscale.dev
 	$(SETMOD) $(PSD)psl2 -include $(PSD)dpsand2
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)cidfont $(PSD)cie $(PSD)cmapread $(PSD)compfont
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)dct $(PSD)filter $(PSD)iodevice
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)pagedev $(PSD)pattern $(PSD)psl1 $(GLD)psl2lib $(PSD)psl2read
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)sepr $(PSD)type32 $(PSD)type42
+	$(ADDMOD) $(PSD)psl2 -include $(PSD)fimscale
 	$(ADDMOD) $(PSD)psl2 -emulator PostScript PostScriptLevel2
 
 # Define basic Level 2 language support.
@@ -1352,6 +1354,19 @@ $(PSOBJ)zfjpx_luratech.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
  $(store_h) $(stream_h) $(strimpl_h) $(sjpx_luratech_h)
 	$(PSLWFJPXCC) $(PSO_)zfjpx_luratech.$(OBJ) \
 		$(C_) $(PSSRC)zfjpx.c
+
+
+# imagemask scaling filter
+fimscale_=$(PSOBJ)zfimscale.$(OBJ)
+$(PSD)fimscale.dev : $(INT_MAK) $(ECHOGS_XE) $(fimscale_) $(GLD)simscale.dev
+	$(SETMOD) $(PSD)fimscale $(fimscale_)
+	$(ADDMOD) $(PSD)fimscale -include $(GLD)simscale
+	$(ADDMOD) $(PSD)fimscale -oper zfimscale
+
+$(PSOBJ)zfimscale.$(OBJ) : $(PSSRC)zfimscale.c $(OP) $(memory__h)\
+ $(gsstruct_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
+ $(simscale_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)zfimscale.$(OBJ) $(C_) $(PSSRC)zfimscale.c
 
 # ---------------- Binary tokens ---------------- #
 
