@@ -882,6 +882,12 @@ bind def
 %        break;
 %    }
 %
+
+
+% Define 1/3 and 2/3 accurately (don't use literals like 0.333333).
+/.f1_3 1.0 3 div def
+/.f2_3 2.0 3 div def
+
 /.rgb_2_hsb
   {
     % find the largest and smallest components
@@ -896,10 +902,10 @@ bind def
           {
             6.0 mul 5 1 roll
             2 copy eq       % blue == brightness
-              { pop pop sub exch div .666667 add }
+              { pop pop sub exch div //.f2_3 div add }
               {
                 2 index eq  % green == brightness
-                  { exch pop exch sub exch div .3333333 add }
+                  { exch pop exch sub exch div //.f1_3 add }
                   {
                     % red == brightness
                     sub exch pop exch div
@@ -932,16 +938,16 @@ bind def
         { mul 1 index add exch }
 
         % 1 ==> g >= r >= b
-        { 0.333333 exch sub mul 1 index add 3 1 roll }
+        { //.f1_3 exch sub mul 1 index add 3 1 roll }
 
         % 2 ==> g >= b >= r
-        { 0.333333 sub mul 1 index add 3 1 roll exch 3 -1 roll }
+        { //.f1_3 mul 1 index add 3 1 roll exch 3 -1 roll }
 
         % 3 ==> b >= g >= r
-        { 0.666667 exch sub mul 1 index add 3 -1 roll }
+        { //.f2_3 exch sub mul 1 index add 3 -1 roll }
 
         % 4 ==> b >= r >= g
-        { 0.666667 sub mul 1 index add 3 1 roll exch }
+        { //.f2_3 sub mul 1 index add 3 1 roll exch }
 
         % 5 ==> r >= b >= g
         { 1.0 exch sub mul 1 index add }
