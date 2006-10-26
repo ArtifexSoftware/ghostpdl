@@ -737,7 +737,7 @@ gs_errorinfo_put_pair(i_ctx_t *i_ctx_p, const byte *key, int len, const ref *any
     code = name_ref(imemory_local, key, len, &key_name, 0);
     if (code < 0)
         return code;
-    code = gs_alloc_ref_array(imemory_local, &pair, a_readonly, 2, "gs_errorinfo_put_pair");
+    code = gs_alloc_ref_array(iimemory_local, &pair, a_readonly, 2, "gs_errorinfo_put_pair");
     if (code < 0)
         return code;
     aptr = pair.value.refs;
