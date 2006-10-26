@@ -186,19 +186,31 @@ PXL_FONT_SCALER=$(PL_SCALER)
 !ifndef UFST_ROOT
 UFST_ROOT=..\ufst
 !endif
-!ifndef UFST_LIBDIR
-UFST_LIBDIR=$(UFST_ROOT)\rts\lib
+!ifndef UFST_LIB
+UFST_LIB=$(UFST_ROOT)\rts\lib
 !endif
 !ifndef UFST_INCLUDES
 UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray -DMSVC -DAGFA_FONT_TABLE
 !endif
+!ifndef UFST_CFLAGS
+UFST_CFLAGS= -DUFST_BRIDGE=$(UFST_BRIDGE) -DUFST_LIB_EXT=.a -DGCCx86 -DUFST_ROOT=$(UFST_ROOT)
+!endif
 
 !if "$(PL_SCALER)" == "ufst"
 # fco's are binary (-b), the following is only used if COMPILE_INITS=1
+!ifndef UFST_ROMFS_ARGS
 UFST_ROMFS_ARGS=-b \
 -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
 -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
 -c
+!endif
+!ifndef EXTRALIBS
+EXTRALIBS= $(UFST_LIB)if_lib.a $(UFST_LIB)fco_lib.a $(UFST_LIB)tt_lib.a  $(UFST_LIB)if_lib.a
+!endif
+!ifndef UFSTFONTDIR
+UFSTFONTDIR=/usr/local/fontdata5.0/
+!endif
+
 !endif
 
 
