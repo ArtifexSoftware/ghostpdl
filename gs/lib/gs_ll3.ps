@@ -34,7 +34,7 @@ languagelevel dup 2 .max .setlanguagelevel
 % Note that since this definition of `bind' may get bound in,
 % it has to function properly even at lower language levels,
 % where IdiomRecognition may not be defined.
-/.bind {		% <proc> .bind <proc'>
+/.bind_ {		% <proc> .bind <proc'>
   //.bind currentuserparams /IdiomRecognition
   .knownget not { false } if {
     (*) {
@@ -55,12 +55,17 @@ languagelevel dup 2 .max .setlanguagelevel
       } forall { exit } if
     } //.bindscratch /IdiomSet resourceforall
   } if
-} odef
+} def
+/.bind /.bind_ load odef	% note that .bind_ will get bound
 currentdict /.bindscratch .undef
 
 DELAYBIND NOBIND or not { 
-  /bind /.bind load def
+% We can't just do
+%   /bind /.bind load def
+% because then /bind load == prints --.bind-- .
+  /bind {//.bind_ exec} odef
 } if
+currentdict /.bind_ undef
 
 % ------ HalftoneTypes 6, 10, 16 and HalftoneMode ------ %
 
