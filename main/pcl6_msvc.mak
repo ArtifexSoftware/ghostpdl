@@ -243,6 +243,7 @@ DEVICE_DEVS=$(DD)\ljet4.dev\
 FEATURE_DEVS    = $(DD)\dps2lib.dev   \
                   $(DD)\path1lib.dev  \
                   $(DD)\patlib.dev    \
+		  $(DD)gxfapiu$(UFST_BRIDGE).dev\
                   $(DD)\rld.dev       \
                   $(DD)\psl2cs.dev    \
                   $(DD)\roplib.dev    \
