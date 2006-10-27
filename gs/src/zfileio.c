@@ -757,7 +757,7 @@ zwritecvp_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, bool first)
     check_write_file(s, op - 2);
     check_type(*op, t_integer);
     code = obj_cvp(op - 1, str, sizeof(str), &len, (int)op->value.intval,
-		   start, imemory);
+		   start, imemory, true);
     if (code == e_rangecheck) {
         code = obj_string_data(imemory, op - 1, &data, &len);
 	if (len < start)

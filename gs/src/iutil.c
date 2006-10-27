@@ -288,6 +288,11 @@ obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, uint
  * *prlen contains the amount of data returned.  start_pos is the starting
  * output position -- the first start_pos bytes of output are discarded.
  *
+ * When (restart = false) return e_rangecheck the when destination wasn't
+ * large enough without modifying the destination. This is needed for 
+ * compatibility with Adobe implementation of cvs and cvrs, which don't
+ * change the destination string on failure.
+ *
  * The mem argument is only used for getting the type of structures,
  * not for allocating; if it is NULL and full_print != 0, structures will
  * print as --(struct)--.
@@ -299,7 +304,7 @@ obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, uint
 private void ensure_dot(char *);
 int
 obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
-	int full_print, uint start_pos, const gs_memory_t *mem)
+	int full_print, uint start_pos, const gs_memory_t *mem, bool restart)
 {
     char buf[50];  /* big enough for any float, double, or struct name */
     const byte *data = (const byte *)buf;
@@ -342,7 +347,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 	}
 	case t_operator:
 	case t_oparray:  
-	    code = obj_cvp(op, (byte *)buf + 2, sizeof(buf) - 4, &size, 0, 0, mem);
+	    code = obj_cvp(op, (byte *)buf + 2, sizeof(buf) - 4, &size, 0, 0, mem, restart);
 	    if (code < 0) 
 		return code;
 	    buf[0] = buf[1] = buf[size + 2] = buf[size + 3] = '-';
@@ -356,10 +361,10 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 		goto nl;
 	    }
 	    if (start_pos > 0)
-		return obj_cvp(op, str, len, prlen, 0, start_pos - 1, mem);
+		return obj_cvp(op, str, len, prlen, 0, start_pos - 1, mem, restart);
 	    if (len < 1)
 		return_error(e_rangecheck);
-	    code = obj_cvp(op, str + 1, len - 1, prlen, 0, 0, mem);
+	    code = obj_cvp(op, str + 1, len - 1, prlen, 0, 0, mem, restart);
 	    if (code < 0)
 		return code;
 	    str[0] = '/';
@@ -545,6 +550,8 @@ other:
 rs: size = strlen((const char *)data);
 nl: if (size < start_pos)
 	return_error(e_rangecheck);
+    if (!restart && size > len)
+	return_error(e_rangecheck);
     size -= start_pos;
     *prlen = min(size, len);
     memmove(str, data + start_pos, *prlen);
@@ -584,7 +591,7 @@ int
 obj_cvs(const gs_memory_t *mem, const ref * op, byte * str, uint len, uint * prlen,
 	const byte ** pchars)
 {
-    int code = obj_cvp(op, str, len, prlen, 0, 0, mem);  /* NB: NULL memptr */
+    int code = obj_cvp(op, str, len, prlen, 0, 0, mem, false);  /* NB: NULL memptr */
 
     if (code != 1 && pchars) {
 	*pchars = str;
