@@ -269,7 +269,7 @@ romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
     /* we get a buffer that is larger than what we need for decompression */
     /* we need extra space since some filters may leave data in the buffer when */
     /* calling 'read_process' */
-    code = file_prepare_stream(fname, namelen, access, ROMFS_BLOCKSIZE+256, ps, &fmode, mem);
+    code = file_prepare_stream(fname, namelen, access, ROMFS_BLOCKSIZE+256, ps, fmode, mem);
     if (code < 0) 
 	return code;
     sread_block(*ps, (*ps)->cbuf, (*ps)->cbsize, node);
