@@ -134,7 +134,7 @@ pcl_horiz_rect_size_decipoints(
     pcl_state_t *   pcs
 )
 {
-    pcs->rectangle.x = float_arg(pargs) * 10;
+    pcs->rectangle.x = fabs(float_arg(pargs)) * 10;
     return 0;
 }
 
@@ -147,7 +147,7 @@ pcl_horiz_rect_size_units(
     pcl_state_t *   pcs
 )
 {
-    pcs->rectangle.x = int_arg(pargs) * pcs->uom_cp;
+    pcs->rectangle.x = abs(int_arg(pargs)) * pcs->uom_cp;
     return 0;
 }
 
@@ -160,7 +160,7 @@ pcl_vert_rect_size_decipoints(
     pcl_state_t *   pcs
 )
 {
-    pcs->rectangle.y = float_arg(pargs) * 10;
+    pcs->rectangle.y = fabs(float_arg(pargs)) * 10;
     return 0;
 }
 
@@ -173,7 +173,7 @@ pcl_vert_rect_size_units(
     pcl_state_t *   pcs
 )
 {
-    pcs->rectangle.y = int_arg(pargs) * pcs->uom_cp;
+    pcs->rectangle.y = abs(int_arg(pargs)) * pcs->uom_cp;
     return 0;
 }
 
