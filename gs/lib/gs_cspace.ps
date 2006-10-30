@@ -693,17 +693,15 @@ bind def
 % handle resetting the stacks.
 %
 /check_num_stack
-  {
-    dup 2 add copy exch pop
-      {
+  {               % c1 .. cn [] n
+    1 1 3 2 roll  % c1 .. cn [] 1 1 n
+      { index
         type dup /integertype ne exch /realtype ne and
           //setcolor_typecheck
         if
       }
-    repeat
-    pop         % remove the extra op_count
-  }
-bind def
+    for
+  } bind def
 
 %   <c1>  <array>   validate_1   <c1>
 /validate_1 { 1 //check_num_stack exec pop } bind def
