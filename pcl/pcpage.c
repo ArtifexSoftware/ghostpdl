@@ -830,19 +830,23 @@ set_top_margin(
 {
     coord           hgt = pcs->xfm_state.pd_size.y;
     coord           tmarg = uint_arg(pargs) * pcs->vmi_cp;
-    bool floating_cap = (pcs->cap.y == (pcs->margins.top +((3L * pcs->vmi_cp) / 4L)) && 
-			 pcs->cap.x == pcs->margins.left);
 
     if ((pcs->vmi_cp != 0) && (tmarg <= hgt)) {
+	bool was_default = (pcs->margins.top == TOP_MARGIN(hgt, DFLT_TOP_MARGIN) &&
+	                    pcs->margins.left == DFLT_LEFT_MARGIN);
+
         pcs->margins.top = tmarg;
         pcs->margins.length = PAGE_LENGTH(hgt - tmarg, DFLT_BOTTOM_MARGIN);
 	
 	/* If the cursor has been moved then we have a fixed cap and the 
 	   top margin only affects the next page. If the cap is floating,
 	   unmarked and unmoved, then the cap moves to the first line of text. 
-	   Floating/Fixed cap is an approximation, not fool proof.
+           More restrictive than implementor's guide: 
+	   iff a default margin is changed on an unmarked unmoved page to the new margin.
+	   margin_set(A) ^L margin_set(B)  --> use (A)
+	   escE margin_set(B) --> use (B) 
 	 */
-        if ( floating_cap && pcl_page_marked(pcs) == 0 )
+	if (was_default && pcl_page_marked(pcs) == 0 )
             return pcl_set_cap_y(pcs, 0L, false, false, true, false);
     }
     return 0;
