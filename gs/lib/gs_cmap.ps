@@ -525,9 +525,18 @@ dup /DefineResource {
       dup length string copy exch .setglobal exch
     } if dup /CMapName 3 index put
   } if
-  dup /CodeMap get //null eq { .buildcmap } if
+  % Adobe PS CET 23-25 and others define an almost empty CMap. Tolerate this.
+  % With the above, we can actually tolerate: /name << >> defineresource
+  dup /CIDSystemInfo known not {
+    dup wcheck not {
+      .currentglobal exch dup wcheck .setglobal
+      dup length dict .copydict exch .setglobal
+    } if
+    dup /CIDSystemInfo [ //null ] put
+  } if
+  dup /CodeMap .knownget { //null eq { .buildcmap } if } if
   /Generic /Category findresource /DefineResource get exec
-} put
+} bind put
 /Category defineresource pop
 	% We might have loaded CID font support already.
 /CIDInit /ProcSet 2 copy { findresource } .internalstopped
