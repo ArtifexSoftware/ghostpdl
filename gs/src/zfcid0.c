@@ -471,6 +471,18 @@ zbuildfont9(i_ctx_t *i_ctx_p)
 				bf_UniqueID_ignored);
     if (code < 0)
 	goto fail;
+    if (code == 1) {
+	/* The font already has a FID, don't need to build it again. 
+	   Release FDArray and return normally.
+	   fixme: FDArray fonts are thrown for garbager.
+	   We're not safe to build them after 
+	   build_gs_simple_font(..., &pfont, ...),
+	   because a failure in building them would throw
+	   an underbuilt font with unclear consequences.
+	 */
+	ifree_object(FDArray, "buildfont9(FDarray)");
+	return 0;
+    }
     pfont->procs.enumerate_glyph = gs_font_cid0_enumerate_glyph;
     pfont->procs.glyph_outline = z9_glyph_outline;
     pfont->procs.glyph_info = z9_glyph_info;
