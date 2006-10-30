@@ -90,6 +90,14 @@ int dict_floats_param(const gs_memory_t *mem,
 		      const ref * pdict, const char *kstr,
 		      uint len, float *fvec,
 		      const float *defaultvec);
+/* Do dict_floats_param() and store [/key any] array in $error.errorinfo
+ * on failure. The key must be a permanently allocated C string.
+ */
+int
+dict_floats_param_errorinfo(i_ctx_t *i_ctx_p,
+		  const ref * pdict, const char *kstr,
+		  uint maxlen, float *fvec, const float *defaultvec);
+
 
 /*
  * For dict_proc_param,
@@ -107,5 +115,19 @@ int dict_uid_param(const ref * pdict, gs_uid * puid, int defaultval,
 
 /* Check that a UID in a dictionary is equal to an existing, valid UID. */
 bool dict_check_uid_param(const ref * pdict, const gs_uid * puid);
+
+
+/* Create and store [/key any] array in $error.errorinfo.
+ * The key must be a permanently allocated C string.
+ */
+int
+gs_errorinfo_put_pair(i_ctx_t *i_ctx_p, const char *key, int len, const ref *any);
+
+/* Take a key's value from a given dictionary, create [/key any] array,
+ * and store it in $error.errorinfo.
+ * The key must be a permanently allocated C string.
+ */
+void
+gs_errorinfo_put_pair_from_dict(i_ctx_t *i_ctx_p, const ref *op, const char *key);
 
 #endif /* idparam_INCLUDED */

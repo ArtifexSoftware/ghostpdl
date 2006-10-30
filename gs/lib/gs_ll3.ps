@@ -258,8 +258,19 @@ systemdict /.reuseparamdict mark
   } if
 	% The .buildshading operators use the current color space
 	% for ColorSpace.
-  dup /ShadingType get //.shadingtypes exch get
-  1 index /ColorSpace get setcolorspace exec
+  dup /ShadingType .knownget not { % error handling for CET 12-14b conformance
+     /$error .systemvar /errorinfo [ /ShadingType //null ] put
+     /shfill .systemvar /undefined signalerror
+  } if
+  dup type /integertype ne {
+     /$error .systemvar /errorinfo [ /ShadingType 4 index ] put
+     /shfill .systemvar /typecheck signalerror
+  } if
+  //.shadingtypes 1 index .knownget not {
+     /$error .systemvar /errorinfo [ /ShadingType 4 index ] put
+     /shfill .systemvar /rangecheck signalerror
+  } if
+  exch pop 1 index /ColorSpace get setcolorspace exec
 } bind def
 systemdict /.reuseparamdict undef
 

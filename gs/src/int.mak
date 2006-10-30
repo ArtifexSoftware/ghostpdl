@@ -174,8 +174,8 @@ $(PSOBJ)idict.$(OBJ) : $(PSSRC)idict.c $(GH) $(math__h) $(string__h)\
 	$(PSCC) $(PSO_)idict.$(OBJ) $(C_) $(PSSRC)idict.c
 
 $(PSOBJ)idparam.$(OBJ) : $(PSSRC)idparam.c $(GH) $(memory__h) $(string__h) $(ierrors_h)\
- $(gsmatrix_h) $(gsuid_h)\
- $(idict_h) $(idparam_h) $(ilevel_h) $(imemory_h) $(iname_h) $(iutil_h)\
+ $(gsmatrix_h) $(gsuid_h) $(dstack_h)\
+ $(idict_h) $(iddict_h) $(idparam_h) $(ilevel_h) $(imemory_h) $(iname_h) $(iutil_h)\
  $(oper_h) $(store_h)
 	$(PSCC) $(PSO_)idparam.$(OBJ) $(C_) $(PSSRC)idparam.c
 
@@ -478,7 +478,7 @@ $(PSOBJ)zht.$(OBJ) : $(PSSRC)zht.c $(OP) $(memory__h)\
 
 $(PSOBJ)zimage.$(OBJ) : $(PSSRC)zimage.c $(OP) $(memory__h)\
  $(gscspace_h) $(gscssub_h) $(gsimage_h) $(gsmatrix_h) $(gsstruct_h)\
- $(gxiparam_h) $(interp_h)\
+ $(gxiparam_h)\
  $(estack_h) $(ialloc_h) $(ifilter_h) $(igstate_h) $(iimage_h) $(ilevel_h)\
  $(store_h) $(stream_h)
 	$(PSCC) $(PSO_)zimage.$(OBJ) $(C_) $(PSSRC)zimage.c

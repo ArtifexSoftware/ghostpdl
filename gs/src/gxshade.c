@@ -241,16 +241,20 @@ shade_next_color(shade_coord_stream_t * cs, float *pc)
 
     if (index == gs_color_space_index_Indexed) {
 	int ncomp = gs_color_space_num_components(gs_cspace_base_space(pcs));
-	uint ci;
-	int code = cs->get_value(cs, num_bits, &ci);
-	gs_client_color cc;
+	int ci;
+        float cf;
+	int code = cs->get_decoded(cs, num_bits, decode, &cf);
+        gs_client_color cc;
 	int i;
 
 	if (code < 0)
 	    return code;
-	if (ci >= gs_cspace_indexed_num_entries(pcs))
+	if (cf < 0)
 	    return_error(gs_error_rangecheck);
-	code = gs_cspace_indexed_lookup(&pcs->params.indexed, (int)ci, &cc);
+	ci = (int)cf;
+        if (ci >= gs_cspace_indexed_num_entries(pcs))
+	    return_error(gs_error_rangecheck);
+	code = gs_cspace_indexed_lookup(&pcs->params.indexed, ci, &cc);
 	if (code < 0)
 	    return code;
 	for (i = 0; i < ncomp; ++i)

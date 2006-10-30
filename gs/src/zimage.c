@@ -27,7 +27,6 @@
 #include "gxiparam.h"
 #include "idict.h"
 #include "idparam.h"
-#include "interp.h"             /* for gs_errorinfo_put_pair() */
 #include "estack.h"		/* for image[mask] */
 #include "ialloc.h"
 #include "igstate.h"
@@ -298,7 +297,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 		break;
 	    default:
 		if (!r_is_proc(sources)) {
-    		    static const byte ds[] = "DataSource";
+    		    static const char ds[] = "DataSource";
                     if (pie != NULL)
                         gx_image_end(pie, false);    /* Clean up pie */
                     gs_errorinfo_put_pair(i_ctx_p, ds, sizeof(ds) - 1, pp);
