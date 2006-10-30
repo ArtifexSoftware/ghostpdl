@@ -57,6 +57,8 @@ void arg_init(arg_list * pal, const char **argv, int argc,
  * This may also be used (once) to "unread" the last argument.
  * If mem != 0, it is used to free the string when we are done with it.
  * Return 0 on success, non-zero on failure
+ * NB: pushing args has the side effect of changing the parsing algoritm to
+ * space delimited instead of argument string delimited.
  */
 int arg_push_memory_string(arg_list * pal, char *str, gs_memory_t * mem);
 
