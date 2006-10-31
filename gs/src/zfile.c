@@ -421,15 +421,16 @@ file_cleanup(i_ctx_t *i_ctx_p)
 private int
 zrenamefile(i_ctx_t *i_ctx_p)
 {
+    int code;
     os_ptr op = osp;
     gs_parsed_file_name_t pname1, pname2;
-    int code = parse_real_file_name(op - 1, &pname1, imemory,
-				    "renamefile(from)");
 
+    code = parse_real_file_name(op, &pname2, imemory, "renamefile(to)");
     if (code < 0)
 	return code;
-    pname2.fname = 0;
-    code = parse_real_file_name(op, &pname2, imemory, "renamefile(to)");
+
+    pname1.fname = 0;
+    code = parse_real_file_name(op - 1, &pname1, imemory, "renamefile(from)");
     if (code >= 0) {
 	if (pname1.iodev != pname2.iodev ) {
 	    if (pname1.iodev == iodev_default)
