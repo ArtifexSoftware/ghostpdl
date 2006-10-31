@@ -147,11 +147,12 @@ zexp(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if (args[0] == 0.0 && args[1] == 0.0)
-	return_error(e_undefinedresult);
     if (args[0] < 0.0 && modf(args[1], &ipart) != 0.0)
 	return_error(e_undefinedresult);
-    result = pow(args[0], args[1]);
+    if (args[0] == 0.0 && args[1] == 0.0)
+	result = 1.0;		/* match Adobe; can't rely on C library */
+    else
+	result = pow(args[0], args[1]);
     make_real(op - 1, result);
     pop(1);
     return 0;
