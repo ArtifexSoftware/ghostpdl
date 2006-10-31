@@ -839,7 +839,7 @@ process_float_array(const gs_memory_t *mem, const ref * parray, int count, float
 }
 
 /* Get a single real parameter. */
-/* The only possible error is e_typecheck. */
+/* The only possible errors are e_typecheck and e_stackunderflow. */
 /* If an error is returned, the return value is not updated. */
 int
 real_param(const ref * op, double *pparam)
@@ -851,6 +851,8 @@ real_param(const ref * op, double *pparam)
 	case t_real:
 	    *pparam = op->value.realval;
 	    break;
+        case t__invalid:
+	    return_error(e_stackunderflow);
 	default:
 	    return_error(e_typecheck);
     }
