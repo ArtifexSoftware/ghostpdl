@@ -379,8 +379,8 @@ zreadline_at(i_ctx_t *i_ctx_p, os_ptr op, uint count, bool in_eol)
     int status;
     gs_string str;
 
-    check_read_file(s, op - 1);
     check_write_type(*op, t_string);
+    check_read_file(s, op - 1);
     str.data = op->value.bytes;
     str.size = r_size(op);
     status = zreadline_from(s, &str, NULL, &count, &in_eol);
