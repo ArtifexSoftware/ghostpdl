@@ -490,7 +490,7 @@ hpgl_PS(hpgl_args_t *pargs, hpgl_state_t *pgls)
     paper.width = plu_2_coord(page_dims[1]);
     paper.offset_portrait = 0; 
     paper.offset_landscape = 0;
-    new_logical_page(pgls, 0, &paper, false);
+    new_logical_page(pgls, 0, &paper, false, false);
     return 0;
 }
 

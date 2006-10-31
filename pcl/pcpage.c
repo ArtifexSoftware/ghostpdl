@@ -250,6 +250,9 @@ update_xfm_state(
 #define DFLT_RIGHT_MARGIN   inch2coord(0.0)
 #define DFLT_BOTTOM_MARGIN  inch2coord(0.5)
 
+#define DFLT_TOP_MARGIN_PASSTHROUGH inch2coord(1.0/6.0)
+#define DFLT_BOTOM_MARGIN_PASSTHROUGH inch2coord(1.0/6.0)
+
 #define TOP_MARGIN(hgt, tmarg)  ((hgt) > (tmarg) ? (tmarg) : 0)
 #define PAGE_LENGTH(hgt, bmarg) ((hgt) > (bmarg) ? (hgt) - (bmarg) : (hgt))
 
@@ -262,14 +265,19 @@ update_xfm_state(
  */
   private void
 reset_vertical_margins(
-    pcl_state_t *   pcs
+      pcl_state_t *   pcs,
+      bool            for_passthrough
 )
 {
     pcl_margins_t * pmar = &(pcs->margins);
     coord           hgt = pcs->xfm_state.pd_size.y;
+    coord           tm = (for_passthrough ? 
+                          DFLT_TOP_MARGIN_PASSTHROUGH : DFLT_TOP_MARGIN);
+    coord           bm = (for_passthrough ? 
+                          DFLT_BOTOM_MARGIN_PASSTHROUGH : DFLT_BOTTOM_MARGIN);
 
-    pmar->top = TOP_MARGIN(hgt, DFLT_TOP_MARGIN);
-    pmar->length = PAGE_LENGTH(hgt - pmar->top, DFLT_BOTTOM_MARGIN);
+    pmar->top = TOP_MARGIN(hgt, tm);
+    pmar->length = PAGE_LENGTH(hgt - pmar->top, bm);
 }
 
 /*
@@ -295,11 +303,12 @@ reset_horizontal_margins(
  */
   private void
 reset_margins(
-    pcl_state_t *   pcs
+    pcl_state_t *   pcs,
+    bool            for_passthrough
 )
 {
     reset_horizontal_margins(pcs);
-    reset_vertical_margins(pcs);
+    reset_vertical_margins(pcs, for_passthrough);
 }
 
 /*
@@ -313,7 +322,8 @@ reset_margins(
 new_page_size(
     pcl_state_t *               pcs,
     const pcl_paper_size_t *    psize,
-    bool                        reset_initial
+    bool                        reset_initial,
+    bool                        for_passthrough
 )
 {
     floatp                      width_pts = psize->width * 0.01;
@@ -345,7 +355,7 @@ new_page_size(
     pcs->xfm_state.paper_size = psize;
     pcs->overlay_enabled = false;
     update_xfm_state(pcs, reset_initial);
-    reset_margins(pcs);
+    reset_margins(pcs, for_passthrough);
 
     /* 
      * If this is an initial reset, make sure underlining is disabled (homing
@@ -406,7 +416,8 @@ new_logical_page(
     pcl_state_t *               pcs,
     int                         lp_orient,
     const pcl_paper_size_t *    psize,
-    bool                        reset_initial
+    bool                        reset_initial,
+    bool                        for_passthrough
 )
 {
     pcl_xfm_state_t *           pxfmst = &(pcs->xfm_state);
@@ -415,11 +426,11 @@ new_logical_page(
     pcs->vmi_cp = VMI_DEFAULT;
     pxfmst->lp_orient = lp_orient;
     pxfmst->print_dir = 0;
-    new_page_size(pcs, psize, reset_initial);
+    new_page_size(pcs, psize, reset_initial, for_passthrough);
 }
 
 int
-new_logical_page_for_passthrough_snippet(pcl_state_t *pcs, int orient, int tag)
+new_logical_page_for_passthrough(pcl_state_t *pcs, int orient, int tag)
 {
     int i;
      pcl_paper_size_t *psize;
@@ -432,7 +443,7 @@ new_logical_page_for_passthrough_snippet(pcl_state_t *pcs, int orient, int tag)
     }
     if (psize == 0)
         return -1;
-    new_logical_page(pcs, orient, psize, false);
+    new_logical_page(pcs, orient, psize, false, true);
     return 0;
 
 }
@@ -567,7 +578,7 @@ pcl_end_page(
      */
     if (!pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "viewer"), "on")) {
         new_logical_page(pcs, pcs->xfm_state.lp_orient,
-			 pcs->xfm_state.paper_size, false);
+			 pcs->xfm_state.paper_size, false, false);
     }  
 
     /*
@@ -618,9 +629,9 @@ set_page_size(
            a portrait page using the set paper size.  Otherwise select
            the paper using the current orientation. */
 	if ( pcs->orientation_set == false )
-	    new_logical_page(pcs, 0, psize, false);
+	    new_logical_page(pcs, 0, psize, false, false);
 	else
-	    new_page_size(pcs, psize, false);
+	    new_page_size(pcs, psize, false, false);
     }
     return code;
 }
@@ -707,6 +718,12 @@ set_logical_page_orientation(
     if ( i > 3 )
 	return 0;
 
+    /* this command is ignored in pcl xl snippet mode.  NB we need a
+       better flag for snippet mode. */
+    if (pcs->end_page != pcl_end_page_top) {
+        return 0;
+    }
+        
     /* If orientation is same as before ignore the command */
     if ( i == pcs->xfm_state.lp_orient ) {
 	pcs->orientation_set = true;
@@ -717,7 +734,7 @@ set_logical_page_orientation(
        set the flag disabling the orientation command for this page. */
     code = pcl_end_page_if_marked(pcs);
     if ( code >= 0 ) {
-	new_logical_page(pcs, i, pcs->xfm_state.paper_size, false); 
+	new_logical_page(pcs, i, pcs->xfm_state.paper_size, false, false); 
 	pcs->orientation_set = true;
     }
     return code;
@@ -1083,6 +1100,15 @@ pcpage_do_reset(
     pcl_reset_type_t    type
 )
 {
+
+    /* NB hack for snippet mode */
+    if (pcs->end_page != pcl_end_page_top) {
+        pcs->xfm_state.print_dir = 0;
+        update_xfm_state(pcs, 0);
+        reset_margins(pcs, true);
+        return;
+    }
+
     if ((type & (pcl_reset_initial | pcl_reset_printer)) != 0) {
 	pcs->orientation_set = false;
 	pcs->paper_source = 0;		/* ??? */
@@ -1094,12 +1120,13 @@ pcpage_do_reset(
 						 "orientation"),
 				       "portrait") ? 0 : 1,
                           get_default_paper(pcs),
-                          (type & pcl_reset_initial) != 0
+                          (type & pcl_reset_initial) != 0,
+                          false
                           );
     } else if ((type & pcl_reset_overlay) != 0) {
 	pcs->perforation_skip = 1;
         update_xfm_state(pcs, 0);
-        reset_margins(pcs);
+        reset_margins(pcs, false);
         pcl_xfm_reset_pcl_pat_ref_pt(pcs);
     }
 }

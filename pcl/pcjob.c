@@ -36,8 +36,8 @@ pcl_do_printer_reset(pcl_state_t *pcs)
     /* reset the other parser in case we have gotten the
        pcl_printer_reset while in gl/2 mode. */
     pcl_implicit_gl2_finish(pcs);
-    /* Print any partial page. */
-    { 
+    /* Print any partial page if not pclxl snippet mode. */
+    if (pcs->end_page == pcl_end_page_top) {
 	int code = pcl_end_page_if_marked(pcs);
 	if ( code < 0 )
 	    return code;

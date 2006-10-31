@@ -549,6 +549,13 @@ top:	if ( st->data_left )
 		/* optional.  (It's up to the operator to make any */
 		/* more precise checks than this. */
 		st->operator_count++;
+                /* if this is a passthrough operator we have to tell
+                   the passthrough module if this operator was
+                   preceded by another passthrough operator or a
+                   different xl operator */
+                if (tag == pxtPassThrough) {
+                    pxpcl_passthroughcontiguous(st->last_operator == tag);
+                }
 		st->last_operator = tag;
 		{ const px_operator_definition_t *pod =
 		    &px_operator_definitions[tag - 0x40];
@@ -610,8 +617,10 @@ top:	if ( st->data_left )
 		  /* Make sure there are no attributes left over. */
 		  if ( left )
 		    code = gs_note_error(errorIllegalAttribute);
-		  if ( code >= 0 )
+		  if ( code >= 0 ) {
+                    st->args.source.phase = 0;
 		    code = (*pod->proc)(&st->args, pxs);
+                  }
 		  if ( code < 0 )
 		    goto x;
 		  /* Check whether the operator wanted source data. */
@@ -895,3 +904,10 @@ x:	/* Save any leftover input. */
 	  }
 	return code;
 }
+
+uint
+px_parser_data_left(px_parser_state_t *pxp)
+{
+    return pxp->data_left;
+}
+

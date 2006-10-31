@@ -170,6 +170,7 @@ px_end_page_cleanup(px_state_t *pxs)
 	pxPopGS(NULL, pxs);
 	pxNewPath(NULL, pxs);
         px_purge_pattern_cache(pxs, ePagePattern);
+        pxpcl_pagestatereset();
 }
 
 /* Purge all */
@@ -309,18 +310,27 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	gx_device *dev = gs_currentdevice(pgs);
 	gs_point page_size_pixels;
 	gs_matrix points2device;
-        /* check for 2.1 no parameter case */
+        /* check for 2.1 no parameter special cases */
         {
             int i;
             bool have_params = false;
-            for ( i=0; i<sizeof(par->pv)/sizeof(par->pv[0]); i++ ) {
+            for ( i = (par->pv[0] == 0 ? 0 : 1); i<sizeof(par->pv)/sizeof(par->pv[0]); i++ ) {
                 if (par->pv[i]) {
                     have_params = true;
                     break;
                 }
             }
-            if ( have_params == false )
+            if ( have_params == false ) {
+                if (par->pv[0]) { 
+                    integer orientation = par->pv[0]->value.i;
+                    if ( orientation < 0 || orientation >= pxeOrientation_next )
+                        { px_record_warning("IllegalOrientation", true, pxs);
+                            orientation = ePortraitOrientation;
+                        }
+                    pxs->orientation = (pxeOrientation_t)orientation;
+                }
                 goto setd;
+            }
         }
 	/* Check parameter presence for legal combinations. */
 	if ( par->pv[2] )

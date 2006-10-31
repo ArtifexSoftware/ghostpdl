@@ -40,7 +40,8 @@ void new_logical_page(
     pcl_state_t *               pcs,
     int                         lp_orient,
     const pcl_paper_size_t *    psize,
-    bool                        reset_initial
+    bool                        reset_initial,
+    bool                        for_passthrough
 );
 
  int

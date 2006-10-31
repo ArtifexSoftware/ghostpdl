@@ -82,6 +82,7 @@ typedef struct px_args_s {
 				/* provided for the operator's convenience */
     uint count;			/* another variable for the operators */
     uint available;		/* amount of data available in block */
+    bool phase;                 /* upon first call of the operator this will be 0. */
     const byte *data;
   } source;
   /*
