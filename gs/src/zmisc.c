@@ -46,6 +46,9 @@ zbind(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
 	case t_array:
+	    if (!r_has_attr(op, a_write)) {
+		return 0;	/* per PLRM3 */
+	    }
 	case t_mixedarray:
 	case t_shortarray:
 	    defn = *op;
