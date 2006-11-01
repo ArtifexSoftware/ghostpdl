@@ -826,14 +826,19 @@ FILE *gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode)
     return gp_open_printer(fname, binary_mode);
 }
 
+#if defined(_MSC_VER) && _MSC_VER < 1400
+    int64_t _ftelli64( FILE *);
+    int _fseeki64( FILE *, int64_t, int);
+#endif
+
 int64_t gp_ftell_64(FILE *strm)
 {
 #if !defined(_MSC_VER)
     return ftell(strm);
-#elif _MSC_VER < 1400
+#elif _MSC_VER < 1200
     return ftell(strm);
 #else
-    return _ftelli64(strm);
+    return (int64_t)_ftelli64(strm);
 #endif
 }
 
@@ -841,7 +846,7 @@ int gp_fseek_64(FILE *strm, int64_t offset, int origin)
 {
 #if !defined(_MSC_VER)
     return fseek(strm, offset, origin);
-#elif _MSC_VER < 1400
+#elif _MSC_VER < 1200
     long offset1 = (long)offset;
     
     if (offset != offset1)
