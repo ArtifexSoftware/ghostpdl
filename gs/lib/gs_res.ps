@@ -212,8 +212,13 @@ odef
 } bind odef
 /resourcestatus {	% <key> <category> resourcestatus <status> <size> true
 			% <key> <category> resourcestatus false
-	2 copy .findcategory /ResourceStatus .resourceexec
-	 { 4 2 roll pop pop true } { pop pop false } ifelse
+  dup type /nametype ne {
+    % CET 23-26 wants typecheck here, not undefineresource that happens
+    % without the check.
+    /resourcestatus .systemvar /typecheck signalerror
+  } if
+  2 copy .findcategory /ResourceStatus .resourceexec
+  { 4 2 roll pop pop true } { pop pop false } ifelse
 } bind odef
 /undefineresource {	% <key> <category> undefineresource -
 	2 copy .findcategory /UndefineResource .resourceexec pop pop
