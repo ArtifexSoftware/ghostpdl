@@ -417,7 +417,6 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     fo.ymin = ibox.p.y;
     fo.ymax = ibox.q.y;
     fo.dev = dev;
-    fo.lop = lop;
     fo.pbox = &sbox;
     fo.rule = params->rule;
     fo.is_spotan = is_spotan_device(dev);
@@ -553,8 +552,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 {
     int code;
 
-    if ((gx_dc_is_pattern2_color(pdevc) || pdevc->type == &gx_dc_type_data_ht_colored) &&
-	params->rule == -1) {
+    if ((gx_dc_is_pattern2_color(pdevc) || pdevc->type == &gx_dc_type_data_ht_colored)) {
 	/*  Optimization for shading and halftone fill :
 	    The general filling algorithm subdivides the fill region into 
 	    trapezoid or rectangle subregions and then paints each subregion 
@@ -598,8 +596,23 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 			    cb.p.x, cb.p.y, cb.q.x - cb.p.x, cb.q.y - cb.p.y,
 			    dev, pis->log_op, rs);
 	    } else {
-		/* Shading fill algorithm fills an area restricted with a path,
-		   so we need to convert cpath into path .*/
+		/* The shading fill algorithm fills an area restricted with a path,
+		   so we need to convert cpath into path.
+
+		   We can't set a clipping device here like we did for 
+		   gx_dc_type_data_ht_colored, because the shading itself
+		   may add another clipping with its BBox,
+		   which may be transformed into a parallelogram.
+		   We don't want two clipping devices chained consequently.
+		 */
+		if (params->rule != gx_rule_winding_number) {
+		    /* HACK : Rather cpath_intersection contains a valid path,
+		       it is not planarized to a simple winding path,
+		       so we can't use the contained path.
+		       Reset path_valid against using it.
+		    */
+		    cpath_intersection.path_valid = false;
+		}
 		code = gx_cpath_to_path(&cpath_intersection, &path_intersection);
 		if (code >= 0)
 		    code = gx_dc_pattern2_fill_path(pdevc, &path_intersection, NULL,  pdev);

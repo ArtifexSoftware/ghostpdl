@@ -655,6 +655,7 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
 	if (path_valid) {
 	    gx_path_assign_preserve(&pcpath->path, ppath_orig);
 	    pcpath->path_valid = true;
+	    pcpath->rule = rule;
 	} else {
 	    code = gx_cpath_path_list_new(pcpath->path.memory, NULL, rule, 
 					    ppath_orig, next, &pcpath->path_list);
