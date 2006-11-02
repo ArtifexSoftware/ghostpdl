@@ -80,7 +80,7 @@ private const gx_device_cpath_accum gs_cpath_accum_device =
   NULL,
   gx_default_fill_path,
   gx_default_stroke_path,
-  NULL,
+  gx_default_fill_mask,
   gx_default_fill_trapezoid,
   gx_default_fill_parallelogram,
   gx_default_fill_triangle,

@@ -417,6 +417,7 @@ gxfont_h=$(GLSRC)gxfont.h\
  $(gsstype_h) $(gsuid_h)\
  $(gxftype_h)
 gxiparam_h=$(GLSRC)gxiparam.h $(gsstype_h) $(gxdevcli_h)
+gximask_h=$(GLSRC)gximask.h $(gxibitmap_h) $(gsropt_h)
 gscie_h=$(GLSRC)gscie.h $(gconfigv_h) $(gsrefct_h) $(gsstype_h) $(gstypes_h) $(gxctable_h)
 gsicc_h=$(GLSRC)gsicc.h $(gscie_h)
 gscrd_h=$(GLSRC)gscrd.h $(gscie_h)
@@ -448,7 +449,7 @@ gsstate_h=$(GLSRC)gsstate.h\
  $(gscolor_h) $(gscpm_h) $(gscsel_h) $(gsdevice_h) $(gsht_h) $(gsline_h)
 
 gzacpath_h=$(GLSRC)gzacpath.h $(GLSRC)gxcpath.h
-gzcpath_h=$(GLSRC)gzcpath.h $(gxcpath_h)
+gzcpath_h=$(GLSRC)gzcpath.h $(gxcpath_h) $(gzpath_h)
 gzht_h=$(GLSRC)gzht.h $(gscsel_h)\
  $(gxdht_h) $(gxfmap_h) $(gxht_h) $(gxhttile_h)
 gzline_h=$(GLSRC)gzline.h $(gxline_h)
@@ -546,7 +547,7 @@ $(GLOBJ)gxccache.$(OBJ) : $(GLSRC)gxccache.c $(GXERR) $(memory__h)\
  $(gscencs_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gzstate_h) $(gzpath_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gzcpath_h) $(gxchar_h) $(gxfont_h) $(gxfcache_h)\
- $(gxxfont_h) $(gscspace_h) $(gsimage_h) $(gxhttile_h)
+ $(gxxfont_h) $(gximask_h) $(gscspace_h) $(gsimage_h) $(gxhttile_h)
 	$(GLCC) $(GLO_)gxccache.$(OBJ) $(C_) $(GLSRC)gxccache.c
 
 $(GLOBJ)gxccman.$(OBJ) : $(GLSRC)gxccman.c $(GXERR) $(memory__h) $(gpcheck_h)\
@@ -661,6 +662,11 @@ $(GLOBJ)gximono.$(OBJ) : $(GLSRC)gximono.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gximage_h) $(gxistate_h) $(gxmatrix_h)\
  $(gzht_h)
 	$(GLCC) $(GLO_)gximono.$(OBJ) $(C_) $(GLSRC)gximono.c
+
+$(GLOBJ)gximask.$(OBJ) : $(GLSRC)gximask.c $(GXERR) $(memory__h) $(gserrors_h)\
+ $(gxdevice_h) $(gxdcolor_h) $(gxcpath_h) $(gzacpath_h)\
+ $(gzcpath_h) 
+ 	$(GLCC) $(GLO_)gximask.$(OBJ) $(C_) $(GLSRC)gximask.c
 
 $(GLOBJ)gxipixel.$(OBJ) : $(GLSRC)gxipixel.c $(GXERR) $(math__h) $(memory__h)\
  $(gpcheck_h)\
@@ -817,8 +823,7 @@ $(GLOBJ)gshtscr.$(OBJ) : $(GLSRC)gshtscr.c $(GXERR) $(math__h)\
 
 $(GLOBJ)gsimage.$(OBJ) : $(GLSRC)gsimage.c $(GXERR) $(memory__h)\
  $(gscspace_h) $(gsimage_h) $(gsmatrix_h) $(gsstruct_h) $(gsptype2_h)\
- $(gxarith_h) $(gxdevice_h) $(gxiparam_h) $(gxpath_h) $(gzstate_h)\
- $(gzacpath_h) $(gzpath_h) $(gzcpath_h)
+ $(gxarith_h) $(gxdevice_h) $(gxiparam_h) $(gxpath_h) $(gximask_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gsimage.$(OBJ) $(C_) $(GLSRC)gsimage.c
 
 $(GLOBJ)gsimpath.$(OBJ) : $(GLSRC)gsimpath.c $(GXERR)\
@@ -1091,7 +1096,7 @@ LIB3x=$(GLOBJ)gxclip.$(OBJ) $(GLOBJ)gxcmap.$(OBJ) $(GLOBJ)gxcpath.$(OBJ)
 LIB4x=$(GLOBJ)gxdcconv.$(OBJ) $(GLOBJ)gxdcolor.$(OBJ) $(GLOBJ)gxhldevc.$(OBJ)
 LIB5x=$(GLOBJ)gxfill.$(OBJ) $(GLOBJ)gxfdrop.$(OBJ) $(GLOBJ)gxht.$(OBJ) $(GLOBJ)gxhtbit.$(OBJ)
 LIB6x=$(GLOBJ)gxwts.$(OBJ) $(GLOBJ)gxidata.$(OBJ) $(GLOBJ)gxifast.$(OBJ) $(GLOBJ)gximage.$(OBJ)
-LIB7x=$(GLOBJ)gximage1.$(OBJ) $(GLOBJ)gximono.$(OBJ) $(GLOBJ)gxipixel.$(OBJ)
+LIB7x=$(GLOBJ)gximage1.$(OBJ) $(GLOBJ)gximono.$(OBJ) $(GLOBJ)gxipixel.$(OBJ) $(GLOBJ)gximask.$(OBJ)
 LIB8x=$(GLOBJ)gxpaint.$(OBJ) $(GLOBJ)gxpath.$(OBJ) $(GLOBJ)gxpath2.$(OBJ)
 LIB9x=$(GLOBJ)gxpcopy.$(OBJ) $(GLOBJ)gxpdash.$(OBJ) $(GLOBJ)gxpflat.$(OBJ)
 LIB10x=$(GLOBJ)gxsample.$(OBJ) $(GLOBJ)gxstroke.$(OBJ) $(GLOBJ)gxsync.$(OBJ) $(GLOBJ)vdtrace.$(OBJ)
@@ -1654,7 +1659,7 @@ $(GLOBJ)gxclrast.$(OBJ) : $(GLSRC)gxclrast.c $(GXERR)\
  $(gsdevice_h) $(gsiparm4_h)\
  $(gxdevmem_h) $(gxcldev_h) $(gxclpath_h) $(gxcmap_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxdhtres_h) $(gxgetbit_h)\
- $(gxpaint_h) $(gxhttile_h) $(gxiparam_h)\
+ $(gxpaint_h) $(gxhttile_h) $(gxiparam_h) $(gximask_h)\
  $(gzpath_h) $(gxcpath_h) $(gzacpath_h)\
  $(stream_h) $(strimpl_h) $(gxcomp_h)\
  $(gsserial_h) $(gxdhtserial_h) $(gzht_h)

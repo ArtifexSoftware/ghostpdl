@@ -30,6 +30,7 @@
 #include "gxfont.h"
 #include "gxfcache.h"
 #include "gxxfont.h"
+#include "gximask.h"
 #include "gscspace.h"		/* for gsimage.h */
 #include "gsimage.h"
 #include "gxhttile.h"
@@ -385,7 +386,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 
 	code = gx_effective_clip_path(pgs, &pcpath);
 	if (code >= 0) {
-	    code = (*dev_proc(orig_dev, fill_mask))
+	    code = gx_image_fill_masked
 		(orig_dev, bits, 0, cc_raster(cc), cc->id,
 		 x, y, w, h, pdevc, depth, pgs->log_op, pcpath);
 	    if (code >= 0)

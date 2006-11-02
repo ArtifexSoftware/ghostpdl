@@ -27,6 +27,7 @@
 #include "gxpath.h"
 #include "gxfcache.h"
 #include "gxchrout.h"
+#include "gximask.h"
 #include "gscoord.h"
 #include "gspaint.h"
 #include "gsfont.h"
@@ -1208,7 +1209,7 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
 	        const gx_clip_path * pcpath = i_ctx_p->pgs->clip_path; 
                 const gx_drawing_color * pdcolor = penum->pdcolor;
 
-		if ((code = dev_proc(dev, fill_mask)(dev, rast.p, 0, rast.line_step, 0,
+		if ((code = gx_image_fill_masked(dev, rast.p, 0, rast.line_step, 0,
 			          (int)(penum_s->pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + penum_s->fapi_glyph_shift.x + 0.5), 
 			          (int)(penum_s->pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + penum_s->fapi_glyph_shift.y + 0.5), 
 			          rast.width, rast.height,

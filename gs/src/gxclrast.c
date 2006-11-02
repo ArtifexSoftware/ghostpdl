@@ -38,6 +38,7 @@
 #include "gxpaint.h"		/* for gx_fill/stroke_params */
 #include "gxhttile.h"
 #include "gxiparam.h"
+#include "gximask.h"
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gzacpath.h"
@@ -1473,7 +1474,7 @@ idata:			data_size = 0;
 									 * This call of copy_mono originated as a call
 									 * of fill_mask.
 									 */
-		    code = (*dev_proc(tdev, fill_mask))
+		    code = gx_image_fill_masked
 			(tdev, source, data_x, raster, gx_no_bitmap_id,
 			 state.rect.x - x0, state.rect.y - y0,
 			 state.rect.width - data_x, state.rect.height,

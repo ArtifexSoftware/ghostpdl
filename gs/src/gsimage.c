@@ -24,10 +24,8 @@
 #include "gxdevice.h"
 #include "gxiparam.h"
 #include "gxpath.h"		/* for gx_effective_clip_path */
+#include "gximask.h"
 #include "gzstate.h"
-#include "gzacpath.h"
-#include "gzpath.h"
-#include "gzcpath.h"
 
 
 /*
@@ -175,23 +173,9 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
 	gs_image_t *image = (gs_image_t *)pic;
 
 	if(image->ImageMask) {
-	    if (gx_dc_is_pattern2_color(pgs->dev_color)) {
-		if (!dev_proc(pgs->device, pattern_manage)(dev, gs_no_id, NULL, pattern_manage__can_accum)) {
-		    extern_st(st_device_cpath_accum);
-		    gs_memory_t *mem = pgs->memory;
-		    gx_device_cpath_accum *pcdev =  gs_alloc_struct(mem, 
-			    gx_device_cpath_accum, &st_device_cpath_accum, "gs_image_begin_typed");
-		    gs_fixed_rect cbox;
-
-		    if (pcdev == NULL)
-			return_error(gs_error_VMerror);
-		    gx_cpath_accum_begin(pcdev, mem);
-		    gx_cpath_outer_box(pcpath, &cbox);
-		    gx_cpath_accum_set_cbox(pcdev, &cbox);
-		    gx_device_retain((gx_device *)pcdev, true);
-		    dev2 = (gx_device *)pcdev;
-		}
-	    }
+	    code = gx_image_fill_masked_start(dev, pgs->dev_color, pcpath, pgs->memory, &dev2);
+	    if (code < 0)
+		return code;
 	}
     }
     return gx_device_begin_typed_image(dev2, (const gs_imager_state *)pgs,
@@ -595,27 +579,12 @@ gs_image_cleanup(gs_image_enum * penum, gs_state *pgs)
 	if (dev_proc(penum->info->dev, pattern_manage)(penum->info->dev, 
 		    gs_no_id, NULL, pattern_manage__is_cpath_accum)) {
 	    /* Performing a conversion of imagemask into a clipping path. */
-	    gx_device_cpath_accum *pcdev = (gx_device_cpath_accum *)penum->info->dev;
-	    gx_clip_path cpath;
-	    gx_device_clip cdev;
+	    gx_device *cdev = penum->info->dev;
 
 	    code = gx_image_end(penum->info, !penum->error); /* Releases penum->info . */
-	    gx_cpath_init_local(&cpath, pcdev->memory);
-	    code1 = gx_cpath_accum_end(pcdev, &cpath);
+	    code1 = gx_image_fill_masked_end(cdev, penum->dev, pgs->dev_color);
 	    if (code == 0)
 		code = code1;
-	    gx_make_clip_path_device(&cdev, &cpath);
-	    cdev.target = penum->dev;
-	    (*dev_proc(&cdev, open_device)) ((gx_device *) & cdev);
-	    code1 = gx_device_color_fill_rectangle(pgs->dev_color, 
-			pcdev->bbox.p.x, pcdev->bbox.p.y, 
-			pcdev->bbox.q.x - pcdev->bbox.p.x, 
-			pcdev->bbox.q.y - pcdev->bbox.p.y, 
-			(gx_device *)&cdev, lop_default, 0);
-	    if (code == 0)
-		code = code1;
-	    gx_device_retain((gx_device *)pcdev, false);
-	    gx_cpath_free(&cpath, "s_image_cleanup");
 	} else
 	    code = gx_image_end(penum->info, !penum->error);
     }

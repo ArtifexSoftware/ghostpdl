@@ -19,6 +19,7 @@
 #  define gzcpath_INCLUDED
 
 #include "gxcpath.h"
+#include "gzpath.h"
 
 /*
  * The reference counting considerations for clip paths are the same as
