@@ -16,9 +16,11 @@
 #include "gx.h"
 #include "memory_.h"
 #include "gserrors.h"
+#include "gsptype2.h"
 #include "gxdevice.h"
 #include "gxdcolor.h"
 #include "gxcpath.h"
+#include "gximask.h"
 #include "gzacpath.h"
 #include "gzcpath.h"
 

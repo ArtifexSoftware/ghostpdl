@@ -48,6 +48,10 @@
 #  define gs_pattern_type_DEFINED
 typedef struct gs_pattern_type_s gs_pattern_type_t;
 #endif
+#ifndef gs_matrix_DEFINED
+#  define gs_matrix_DEFINED
+typedef struct gs_matrix_s gs_matrix;
+#endif
 
 #define gs_pattern_template_common\
   const gs_pattern_type_t *type;\

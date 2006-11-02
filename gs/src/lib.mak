@@ -664,9 +664,9 @@ $(GLOBJ)gximono.$(OBJ) : $(GLSRC)gximono.c $(GXERR) $(memory__h) $(gpcheck_h)\
 	$(GLCC) $(GLO_)gximono.$(OBJ) $(C_) $(GLSRC)gximono.c
 
 $(GLOBJ)gximask.$(OBJ) : $(GLSRC)gximask.c $(GXERR) $(memory__h) $(gserrors_h)\
- $(gxdevice_h) $(gxdcolor_h) $(gxcpath_h) $(gzacpath_h)\
- $(gzcpath_h) 
- 	$(GLCC) $(GLO_)gximask.$(OBJ) $(C_) $(GLSRC)gximask.c
+ $(gsptype2_h) $(gxdevice_h) $(gxdcolor_h) $(gxcpath_h) $(gximask_h) $(gzacpath_h)\
+ $(gzcpath_h)
+	$(GLCC) $(GLO_)gximask.$(OBJ) $(C_) $(GLSRC)gximask.c
 
 $(GLOBJ)gxipixel.$(OBJ) : $(GLSRC)gxipixel.c $(GXERR) $(math__h) $(memory__h)\
  $(gpcheck_h)\
