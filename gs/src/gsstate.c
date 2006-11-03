@@ -312,13 +312,15 @@ gs_gsave(gs_state * pgs)
 
     if (pnew == 0)
 	return_error(gs_error_VMerror);
-    /*
-     * It isn't clear from the Adobe documentation whether gsave retains
-     * the current clip stack or clears it.  The following statement
-     * bets on the latter.  If it's the former, this should become
-     *	rc_increment(pnew->clip_stack);
+    /* As of PLRM3, the interaction between gsave and the clip stack is
+     * now clear. gsave stores the clip stack into the saved graphics
+     * state, but then clears it in the current graphics state.
+     *
+     * Ordinarily, reference count rules would indicate an rc_decrement()
+     * on pgs->clip_stack, but gstate_clone() has an exception for
+     * the clip_stack and dfilter_stack fields.
      */
-    pnew->clip_stack = 0;
+    pgs->clip_stack = 0;
     rc_increment(pnew->dfilter_stack);
     pgs->saved = pnew;
     if (pgs->show_gstate == pgs)
