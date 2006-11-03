@@ -302,21 +302,27 @@ floatp ax1, floatp ay1, floatp ax2, floatp ay2, floatp arad, float retxy[4])
 
     if (code < 0)
 	return code;
-    {				/* Now we have to compute the tangent points. */
+    {	
+        double dx0, dy0, dx2, dy2, sql0, sql2, num, denom;
+        
+        /* Now we have to compute the tangent points. */
 	/* Basically, the idea is to compute the tangent */
 	/* of the bisector by using tan(x+y) and tan(z/2) */
 	/* formulas, without ever using any trig. */
-	double dx0 = ax0 - ax1, dy0 = ay0 - ay1;
-	double dx2 = ax2 - ax1, dy2 = ay2 - ay1;
+	dx0 = ax0 - ax1; dy0 = ay0 - ay1;
+	dx2 = ax2 - ax1; dy2 = ay2 - ay1;
 
 	/* Compute the squared lengths from p1 to p0 and p2. */
-	double sql0 = dx0 * dx0 + dy0 * dy0;
-	double sql2 = dx2 * dx2 + dy2 * dy2;
+	sql0 = dx0 * dx0 + dy0 * dy0;
+	sql2 = dx2 * dx2 + dy2 * dy2;
+
+        if (sql0 == 0. || sql2 == 0.)
+            return_error(gs_error_undefinedresult); /* for CET 11-04 */
 
 	/* Compute the distance from p1 to the tangent points. */
 	/* This is the only messy part. */
-	double num = dy0 * dx2 - dy2 * dx0;
-	double denom = sqrt(sql0 * sql2) - (dx0 * dx2 + dy0 * dy2);
+	num = dy0 * dx2 - dy2 * dx0;
+	denom = sqrt(sql0 * sql2) - (dx0 * dx2 + dy0 * dy2);
 
 	/* Check for collinear points. */
 	if (denom == 0) {
