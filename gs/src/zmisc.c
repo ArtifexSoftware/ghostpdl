@@ -29,6 +29,14 @@
 #include "ivmspace.h"
 #include "store.h"
 
+/**********************************************************************/
+/*
+ * a global, which we don't really like, but at least it is better
+ * than a compile time #define, as in #USE_ADOBE_CMYK_RGB and allows
+ * us to easily test with/without and not recompile.
+ **********************************************************************
+ */
+
 /* <proc> bind <proc> */
 inline private bool
 r_is_ex_oper(const ref *rp)
@@ -358,6 +366,24 @@ zsetdebug(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* There are a few cases where a customer/user might want CPSI behavior 
+ * instead of the GS default behavior. cmpy_to_rgb and Type 1 char fill
+ * method are two that have come up so far. This operator allows a PS
+ * program to control the behavior without needing to recompile
+ */
+/* <bool> .setCPSImode - */
+extern bool CPSI_mode;		/* not worth polluting a header file */
+
+private int
+zsetCPSImode(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    check_type(*op, t_boolean);
+    CPSI_mode = op->value.boolval;
+    pop(1);
+    return 0;
+}
+
 /* ------ gs persistent cache operators ------ */
 /* these are for testing only. they're disabled in the normal build
  * to prevent access to the cache by malicious postscript files
@@ -447,6 +473,7 @@ const op_def zmisc_op_defs[] =
     {"2.setdebug", zsetdebug},
     {"1.setoserrno", zsetoserrno},
     {"0usertime", zusertime},
+    {"1.setCPSImode", zsetCPSImode},
 #ifdef DEBUG_CACHE
 	/* pcache test */
     {"2.pcacheinsert", zpcacheinsert},

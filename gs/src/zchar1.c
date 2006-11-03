@@ -48,10 +48,10 @@
  * directions, aren't affected by choice of filling rule; but some
  * badly designed fonts in the Genoa test suite seem to require
  * using the even-odd rule to match Adobe interpreters.
+ * 
+ * Properly designed fonts will render correctly with: eofill
+ * (required for Adobe CPSI compliant behavior
  */
-#define GS_CHAR_FILL gs_eofill	/* gs_fill or gs_eofill */
-
-/* ============== PATCH BEG=================== */
 /*
  * On April 4, 2002, we received bug report #539359
  * which we interpret as some Genoa test are now obsolete,
@@ -63,10 +63,11 @@
  * from user responses.
  */
 
-#undef  GS_CHAR_FILL
-#define GS_CHAR_FILL gs_fill	/* gs_fill or gs_eofill */
- 
-/* ============== PATCH END=================== */
+/* *********************************************************************
+ * Make this dynamic via a global (somewhat better than a COMPILE option
+ ***********************************************************************/
+extern bool CPSI_mode;
+#define GS_CHAR_FILL (CPSI_mode ? gs_eofill : gs_fill)
 
 /* ---------------- Utilities ---------------- */
 
