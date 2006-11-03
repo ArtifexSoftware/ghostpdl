@@ -16,9 +16,9 @@
 
 
 /****************************************************************************
- * This should global should be put into either gs_imager_state or gs_device,
+ * This global should be put into either gs_imager_state or gs_device,
  * but the "plumbing" retrofit is more than we need for things that were
- * reviously compile time modifications. CPSI_mode will at least make these
+ * previously compile time modifications. CPSI_mode will at least make these
  * dynamic (but NOT thread safe)!!!
  ****************************************************************************
  */

@@ -30,12 +30,6 @@
 #include "store.h"
 
 /**********************************************************************/
-/*
- * a global, which we don't really like, but at least it is better
- * than a compile time #define, as in #USE_ADOBE_CMYK_RGB and allows
- * us to easily test with/without and not recompile.
- **********************************************************************
- */
 
 /* <proc> bind <proc> */
 inline private bool
@@ -367,13 +361,18 @@ zsetdebug(i_ctx_t *i_ctx_p)
 }
 
 /* There are a few cases where a customer/user might want CPSI behavior 
- * instead of the GS default behavior. cmpy_to_rgb and Type 1 char fill
+ * instead of the GS default behavior. cmyk_to_rgb and Type 1 char fill
  * method are two that have come up so far. This operator allows a PS
  * program to control the behavior without needing to recompile
+ *
+ * While this would better if it were in some context 'state', we use
+ * a global, which we don't really like, but at least it is better
+ * than a compile time #define, as in #USE_ADOBE_CMYK_RGB and allows
+ * us to easily test with/without and not require recompilation.
  */
-/* <bool> .setCPSImode - */
 extern bool CPSI_mode;		/* not worth polluting a header file */
 
+/* <bool> .setCPSImode - */
 private int
 zsetCPSImode(i_ctx_t *i_ctx_p)
 {
