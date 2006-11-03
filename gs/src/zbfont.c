@@ -576,7 +576,7 @@ sub_font_params(const gs_memory_t *mem, const ref *op, gs_matrix *pmat, gs_matri
 	read_matrix(mem, pmatrix, pmat) < 0
 	)
 	return_error(e_invalidfont);
-    if (dict_find_string(op, ".OrigFont", &porigfont) <= 0)
+    if (dict_find_string(op, "OrigFont", &porigfont) <= 0)
 	porigfont = NULL;
     if (pomat!= NULL) {
 	if (porigfont == NULL ||

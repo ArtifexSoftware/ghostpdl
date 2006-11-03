@@ -448,8 +448,8 @@ buildfontdict 3 /.buildfont3 cvx put
          } if
        }
       ifelse
-      dup /.OrigFont known not {
-        dup dup /.OrigFont exch .growput
+      dup /OrigFont known not {
+        dup dup /OrigFont exch .growput
       } if
       true exch
                 % If this is a CIDFont, CIDFontType takes precedence
@@ -539,7 +539,7 @@ buildfontdict 3 /.buildfont3 cvx put
         2 copy /FontName exch put
       } if
       1 index exch /.Alias exch put    % <bool> <name> <dict>
-      dup dup /.OrigFont exch .growput
+      dup dup /OrigFont exch .growput
                 % Don't bind in definefont, since Level 2 redefines it.
       /definefont .systemvar exec
     }

@@ -666,7 +666,7 @@ pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
 	 * (the bug 686970). Also comparefiles\455690.pdf appears to
 	 * have similar problem. Therefore we added a support to lib/gs_fonts.ps,
 	 * src/zbfont.c, src/gsfont.c that provides an acces to the original
-	 * font via a special key .OrigFont added to the font dictionary while definefont.
+	 * font via a special key OrigFont added to the font dictionary while definefont.
 	 * Now we work through this access with PS interpreter, 
 	 * but keep the old heuristic for other clients.
 	 */
