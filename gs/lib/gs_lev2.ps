@@ -235,7 +235,10 @@ end
 
 % Redefine cache parameter setting to interact properly with userparams.
 /setcachelimit {
-  mark /MaxFontItem 2 .argindex .dicttomark setuserparams pop
+    { mark /MaxFontItem 2 .argindex .dicttomark setuserparams pop }
+  stopped
+    {  /setcachelimit .systemvar $error /errorname get signalerror
+    } if
 } .bind odef
 /setcacheparams {
 	% The MaxFontCache parameter is a system parameter, which we might

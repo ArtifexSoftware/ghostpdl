@@ -642,8 +642,8 @@ gs_setcachelower(gs_font_dir * pdir, uint size)
 }
 int
 gs_setcacheupper(gs_font_dir * pdir, uint size)
-{
-    pdir->ccache.upper = size;
+{ 
+    pdir->ccache.upper = ((int)size < 0) ? 0 : size; /* ?: for CET 27-06 */
     return 0;
 }
 int

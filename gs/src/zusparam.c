@@ -56,8 +56,10 @@ typedef struct long_param_def_s {
 
 #if arch_sizeof_long > arch_sizeof_int
 #  define MAX_UINT_PARAM max_uint
+#  define MIN_INT_PARAM min_int
 #else
 #  define MAX_UINT_PARAM max_long
+#  define MIN_INT_PARAM min_long
 #endif
 
 typedef struct bool_param_def_s {
@@ -434,7 +436,7 @@ private const long_param_def_t user_long_params[] =
 {
     {"JobTimeout", 0, MAX_UINT_PARAM,
      current_JobTimeout, set_JobTimeout},
-    {"MaxFontItem", 0, MAX_UINT_PARAM,
+    {"MaxFontItem", MIN_INT_PARAM, MAX_UINT_PARAM,
      current_MaxFontItem, set_MaxFontItem},
     {"MinFontCompress", 0, MAX_UINT_PARAM,
      current_MinFontCompress, set_MinFontCompress},
