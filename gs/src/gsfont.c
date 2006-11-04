@@ -637,7 +637,7 @@ gs_setcachesize(gs_font_dir * pdir, uint size)
 int
 gs_setcachelower(gs_font_dir * pdir, uint size)
 {
-    pdir->ccache.lower = size;
+    pdir->ccache.lower = ((int)size < 0) ? 0 : size; /* ?: for CET 27-07 */;
     return 0;
 }
 int

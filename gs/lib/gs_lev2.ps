@@ -250,8 +250,9 @@ end
     3 -1 roll pop
     /MinFontCompress 3 1 roll
     /MaxFontItem exch
-  .dicttomark setuserparams
-  cleartomark
+  .dicttomark { setuserparams cleartomark } stopped {
+    /setcacheparams .systemvar $error /errorname get signalerror
+  } if
 } .bind odef
 
 % Add bogus user and system parameters to satisfy badly written PostScript

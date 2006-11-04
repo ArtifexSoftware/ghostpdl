@@ -438,7 +438,7 @@ private const long_param_def_t user_long_params[] =
      current_JobTimeout, set_JobTimeout},
     {"MaxFontItem", MIN_INT_PARAM, MAX_UINT_PARAM,
      current_MaxFontItem, set_MaxFontItem},
-    {"MinFontCompress", 0, MAX_UINT_PARAM,
+    {"MinFontCompress", MIN_INT_PARAM, MAX_UINT_PARAM,
      current_MinFontCompress, set_MinFontCompress},
     {"MaxOpStack", 0, MAX_UINT_PARAM,
      current_MaxOpStack, set_MaxOpStack},
