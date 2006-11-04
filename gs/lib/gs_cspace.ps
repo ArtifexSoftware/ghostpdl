@@ -532,7 +532,7 @@ bind def
 %
 %
 /initgraphics
-  { initgraphics { /DeviceGray } cvlit forcesetcolorspace }
+  { initgraphics [ /DeviceGray ] cvlit forcesetcolorspace }
 .bind systemdict begin odef end
 
 systemdict /setcolorspace .undef
@@ -551,7 +551,7 @@ systemdict /setcolorspace .undef
 %
 /setgray
   {
-      { { /DeviceGray } cvlit  //setcolorspace //setcolor }
+      { [ /DeviceGray ] cvlit  //setcolorspace //setcolor }
     stopped
       { /setgray .systemvar $error /errorname get signalerror }
     if
@@ -560,7 +560,7 @@ bind systemdict begin odef end
 
 /setrgbcolor
   {
-      { { /DeviceRGB } cvlit //setcolorspace //setcolor }
+      { [ /DeviceRGB ] cvlit //setcolorspace //setcolor }
     stopped
       { /setrgbcolor .systemvar $error /errorname get signalerror }
     if
@@ -572,7 +572,7 @@ bind systemdict begin odef end
     pop
     /setcmykcolor
       {
-          { { /DeviceCMYK } cvlit //setcolorspace //setcolor }
+          { [ /DeviceCMYK ] cvlit //setcolorspace //setcolor }
         stopped
           { /setcmykcolor .systemvar $error /errorname get signalerror }
         if
