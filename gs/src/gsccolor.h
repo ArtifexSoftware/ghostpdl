@@ -28,10 +28,10 @@ typedef struct gs_pattern_instance_s gs_pattern_instance_t;
 /*
  * Define the maximum number of components in a client color.
  * This must be at least 4, and should be at least 6 to accommodate
- * hexachrome DeviceN color spaces.  It is currently set to the maximum
- * size allowed by the size of a gx_color_index
+ * hexachrome DeviceN color spaces.  It is currently set to the same
+ * value as Adobe CPSI can handle 
  */
-#define GS_CLIENT_COLOR_MAX_COMPONENTS (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
+#define GS_CLIENT_COLOR_MAX_COMPONENTS (252)
 
 /* Paint (non-Pattern) colors */
 typedef struct gs_paint_color_s {

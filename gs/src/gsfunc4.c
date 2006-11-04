@@ -38,7 +38,10 @@ typedef struct gs_function_PtCr_s {
 private_st_function_PtCr();
 
 /* Define the maximum stack depth. */
-#define MAX_VSTACK 100		/* per documentation */
+#define MAX_VSTACK 256		/* Max 100 is enough per PDF spec, but we use this
+				 * for DeviceN handling. Must be at least as large
+				 * as the number of components
+				 */
 
 /* Define the structure of values on the stack. */
 typedef enum {
