@@ -237,6 +237,13 @@
 userdict /.cspace_util 80 dict put
 .cspace_util begin
 
+
+% Global, read-only, unpacked, array-form device color spaces
+%
+/DeviceGray_array /DeviceGray 1 array astore readonly def
+/DeviceRGB_array  /DeviceRGB  1 array astore readonly def
+/DeviceCMYK_array /DeviceCMYK 1 array astore readonly def
+
 %
 % Colorspacedict is initially in .cspace_util; it is copied to level2dict
 % in the Level 2 initialization code to retain compatibility with 
@@ -387,8 +394,7 @@ bind def
 % NB: This should come prior to the redefinition of setcolorspace, and
 %     must use an array operand.
 %
-[ /DeviceGray ] setcolorspace
-
+//DeviceGray_array setcolorspace
 
 %
 %   <c1> ... <cn>   setcolor   -
@@ -461,22 +467,18 @@ systemdict /setcolor .undef
 %
 /_setcolorspace
   {
-      {
-        % see if the operand space is the same as the current space
-        currentcolorspace dup length 1 eq
-          {
-            0 get
-            2 index dup type dup /arraytype eq exch /packedarraytype eq or
-              {
-                dup length 1 eq
-                  { 0 get }
-                if
-              }
-            if
+      { % See if the operand space is the same as the current space.
+        % The test is intentionaly conservative to meet CET 09-06.
+        1 index                       % [/new] bool [/new]
+        type /nametype eq
+          { currentcolorspace 0 get   % [/new] bool /old
+            2 index eq                % [/new] bool bool
           }
-          { 2 index }
+          { currentcolorspace         % [/new] bool [/old] 
+            2 index eq                % [/new] bool eq
+          }
         ifelse
-        eq and dup
+        and dup
           {
             %
             % If PDFfile is defined on the dictionary stack, this is a
@@ -532,7 +534,7 @@ bind def
 %
 %
 /initgraphics
-  { initgraphics [ /DeviceGray ] cvlit forcesetcolorspace }
+  { initgraphics //DeviceGray_array forcesetcolorspace }
 .bind systemdict begin odef end
 
 systemdict /setcolorspace .undef
@@ -551,7 +553,7 @@ systemdict /setcolorspace .undef
 %
 /setgray
   {
-      { [ /DeviceGray ] cvlit  //setcolorspace //setcolor }
+      { //DeviceGray_array //setcolorspace //setcolor }
     stopped
       { /setgray .systemvar $error /errorname get signalerror }
     if
@@ -560,7 +562,7 @@ bind systemdict begin odef end
 
 /setrgbcolor
   {
-      { [ /DeviceRGB ] cvlit //setcolorspace //setcolor }
+      { //DeviceRGB_array //setcolorspace //setcolor }
     stopped
       { /setrgbcolor .systemvar $error /errorname get signalerror }
     if
@@ -572,7 +574,7 @@ bind systemdict begin odef end
     pop
     /setcmykcolor
       {
-          { [ /DeviceCMYK ] cvlit //setcolorspace //setcolor }
+          { //DeviceCMYK_array //setcolorspace //setcolor }
         stopped
           { /setcmykcolor .systemvar $error /errorname get signalerror }
         if
@@ -925,21 +927,21 @@ bind def
 
 /.hsb_2_rgb
   {
-    3 { 0.0 max 1.0 min 3 1 roll } repeat
-    1.0 2 index sub 1 index mul      % (1 - s) * br
-    3 -1 roll 2 index mul 6.0 mul    % 6 * s * br
-    4 -1 roll                      % stack: <br>  <(1 - s) * br>  <6 * s * br>  <h>
+    3 { 0.0 max 1.0 min 3 1 roll } repeat % h s b
+    1.0 2 index sub 1 index mul           % h s b (1-s)*b
+    3 -1 roll 2 index mul 6.0 mul         % h b (1-s)*b 6*s*b 
+    4 -1 roll                             % b (1-s)*b=nm 6*s*b=md h
 
     % array of procedures for the 7 hue cases
       {
-        % 0 ==> r >= g >= b
-        { mul 1 index add exch }
+        % 0 ==> r >= g >= b               % b nm md h
+        { mul 1 index add exch }          
 
         % 1 ==> g >= r >= b
         { //.f1_3 exch sub mul 1 index add 3 1 roll }
 
         % 2 ==> g >= b >= r
-        { //.f1_3 mul 1 index add 3 1 roll exch 3 -1 roll }
+        { //.f1_3 sub mul 1 index add 3 1 roll exch 3 -1 roll }
 
         % 3 ==> b >= g >= r
         { //.f2_3 exch sub mul 1 index add 3 -1 roll }
@@ -955,7 +957,7 @@ bind def
 	% the calculations.
         { pop pop dup }
       }
-    1 index 6.0 mul cvi              % (int)(6 * h)
+    1 index 6.0 mul cvi                   % b (1-s)*b 6*s*b h {} int(6*h)
     get exec    
   }
 bind def
@@ -983,6 +985,10 @@ bind systemdict begin odef end
     if
   }
 bind systemdict begin odef end
+
+currentdict /DeviceGray_array .undef
+currentdict /DeviceRGB_array  .undef
+currentdict /DeviceCMYK_array .undef
 
 end     % .cspace_util
 .setglobal

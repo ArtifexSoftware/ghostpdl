@@ -176,7 +176,8 @@ colorspacedict
       }
     bind
 
-    /cs_prepare_color //validate_1
+    % Adobe implementations accept floating point values
+    /cs_prepare_color { //validate_1 exec cvi } bind
 
     %
     % Adobe implementations always execute a lookup procedure when setcolor
