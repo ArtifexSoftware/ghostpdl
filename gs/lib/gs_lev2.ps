@@ -423,6 +423,7 @@ psuserparams /ProcessDSCComment {.checkprocesscomment} put
 } if
 /.putdevparams where {
   pop /setdevparams {		% <iodevice> <dict> setdevparams -
+    dup type /dicttype ne { /setdevparams .systemvar /typecheck signalerror } if
     mark 1 index { } forall counttomark 2 add index
     .putdevparams pop pop
   } odef

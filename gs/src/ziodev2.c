@@ -93,7 +93,7 @@ zputdevparams(i_ctx_t *i_ctx_p)
     check_read_type(*op, t_string);
     iodev = gs_findiodevice(op->value.bytes, r_size(op));
     if (iodev == 0)
-	return_error(e_undefinedfilename);
+	return_error(e_undefined);
     code = stack_param_list_read(&list, &o_stack, 1, NULL, false, iimemory);
     if (code < 0)
 	return code;
