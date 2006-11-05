@@ -989,7 +989,9 @@ end
 % The Red Book requires that findfont be a procedure, not an operator,
 % but it still needs to restore the stacks reliably if it fails.
 /.findfontop {
-  /Font findresource
+  { /Font findresource } stopped {
+    pop /findfont $error /errorname get signalerror
+  } if
 } bind odef
 /findfont {
   .findfontop
