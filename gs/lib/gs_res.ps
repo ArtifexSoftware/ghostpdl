@@ -409,6 +409,11 @@ pop pop
 % other, the default FindResource must not call ResourceStatus if there is
 % an instance of the desired name already defined in VM.
 /FindResource {
+	dup //null eq {
+          % CET 13-06 wants /typecheck for "null findencoding" but
+          % .knownget doesn't fail on null
+          /findresource .systemvar /typecheck signalerror
+        } if
 	dup .getvminstance {
 	  exch pop 0 get
 	} {
@@ -1006,7 +1011,11 @@ end				% level2dict
       { pop pop }
      ifelse
    } forall
-  /.findencoding { /Encoding findresource } bind def
+  /.findencoding {
+    { /Encoding findresource } stopped {
+      pop /findencoding $error /errorname get signalerror
+    } if
+  } bind def
   /findencoding /.findencoding load def		% must be a procedure
   /.defineencoding { /Encoding defineresource pop } bind def
 	% ColorRendering resources and ProcSet
