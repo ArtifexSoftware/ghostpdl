@@ -644,9 +644,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	)
 	return code;
     code = dict_find_string(op, "FID", &pfid);
-    if (code > 0) {
-	if (!r_has_type(pfid, t_fontID))
-	    return_error(e_invalidfont);
+    if (code > 0 && r_has_type(pfid, t_fontID)) { /* silently ignore invalid FID per CET 13-05.ps */
 	/*
 	 * If this font has a FID entry already, it might be a scaled font
 	 * made by makefont or scalefont; in a Level 2 environment, it might

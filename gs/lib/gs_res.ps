@@ -981,7 +981,9 @@ systemdict begin
   /.origfindfont /findfont load def
 end
 /definefont {
-  /Font defineresource
+  { /Font defineresource } stopped {
+      /definefont cvx $error /errorname get signalerror
+  } if
 } bind odef
 /undefinefont {
   /Font undefineresource

@@ -485,7 +485,10 @@ buildfontdict 3 /.buildfont3 cvx put
   } stopped { $error /command get /invalidfont signalerror } if
 } bind def
 /definefont
- { /definefont cvx {.completefont} .errorexec
+ { dup rcheck not {
+      /definefont cvx /invalidaccess signalerror
+   } if
+   /definefont cvx {.completefont} .errorexec
                 % If the current allocation mode is global, also enter
                 % the font in LocalFontDirectory.
    .currentglobal
