@@ -2237,9 +2237,9 @@ is_quadrangle_color_monotonic(const patch_fill_state_t *pfs, const quadrangle_pa
     if (code <= 0)
 	return code;
     if (code & 1)
-	*not_monotonic_by_v = true;
-    if (code & 2)
 	*not_monotonic_by_u = true;
+    if (code & 2)
+	*not_monotonic_by_v = true;
     return !code;
 }
 

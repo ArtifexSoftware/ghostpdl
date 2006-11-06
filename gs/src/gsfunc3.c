@@ -362,8 +362,10 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
 	    vv1 = b1; /* Ignore a small noise */
 	if (vv0 == vv1)
 	    return 1;
-	if (vv0 < b1 && vv1 > b1)
-	    return 0; /* Consider stitches as monotonity beraks. */
+	if (vv0 < b1 && vv1 > b1) {
+	    *mask = 1;
+	    return 0; /* Consider stitches as monotonity breaks. */
+	}
 	e0 = pfn->params.Encode[2 * i];
 	e1 = pfn->params.Encode[2 * i + 1];
 	esmall = (float)1e-6 * any_abs(e1 - e0);
