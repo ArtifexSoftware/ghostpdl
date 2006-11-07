@@ -303,7 +303,7 @@ floatp ax1, floatp ay1, floatp ax2, floatp ay2, floatp arad, float retxy[4])
     if (code < 0)
 	return code;
     {	
-        double dx0, dy0, dx2, dy2, sql0, sql2, num, denom;
+        double dx0, dy0, dx2, dy2, sql0, sql2;
         
         /* Now we have to compute the tangent points. */
 	/* Basically, the idea is to compute the tangent */
@@ -319,17 +319,17 @@ floatp ax1, floatp ay1, floatp ax2, floatp ay2, floatp arad, float retxy[4])
         if (sql0 == 0. || sql2 == 0.)
             return_error(gs_error_undefinedresult); /* for CET 11-04 */
 
-	/* Compute the distance from p1 to the tangent points. */
-	/* This is the only messy part. */
-	num = dy0 * dx2 - dy2 * dx0;
-	denom = sqrt(sql0 * sql2) - (dx0 * dx2 + dy0 * dy2);
-
 	/* Check for collinear points. */
-	if (denom == 0) {
+	if (dx0*dy2 == dy0*dx2) {
 	    code = gs_lineto(pgs, ax1, ay1);
 	    xt0 = xt2 = ax1;
 	    yt0 = yt2 = ay1;
 	} else {		/* not collinear */
+	    /* Compute the distance from p1 to the tangent points. */
+	    /* This is the only messy part. */
+	    double num = dy0 * dx2 - dy2 * dx0;
+	    double denom = sqrt(sql0 * sql2) - (dx0 * dx2 + dy0 * dy2);
+
 	    double dist = fabs(arad * num / denom);
 	    double l0 = dist / sqrt(sql0), l2 = dist / sqrt(sql2);
 	    arc_curve_params_t arc;
