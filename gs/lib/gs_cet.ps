@@ -33,4 +33,15 @@ currentpagedevice /InputAttributes get
 >>
 setpagedevice
 
+% Patch setsmoothness, currentsmoothness for a better view of shadings :
+userdict /.smoothness currentsmoothness put
+/setsmoothness { 
+   dup type dup /integertype eq exch /realtype eq or {
+     userdict /.smoothness 3 2 roll cvr put 
+   } {
+     /setsmoothness .systemvar /typecheck signalerror
+   } ifelse
+} bind odef
+/currentsmoothness { userdict /.smoothness get } bind odef % for 09-55.PS, 09-%&.PS .
+
 false 0 startjob pop		% re-enter encapsulated mode
