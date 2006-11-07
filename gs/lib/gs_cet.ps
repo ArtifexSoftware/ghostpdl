@@ -21,6 +21,10 @@ setundercolorremoval
 % CPSI doesn't define "Localization" resource.
 /Localization /Category undefineresource
 
+% Some previously compile time options such as USE_ADOBE_CMYK_RGB
+% and GS_CHAR_FILL are now dynamic. Force CPSI compatibility.
+true .setCPSImode
+
 setglobal
 
 % Remove all but 'letter' page size
