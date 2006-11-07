@@ -175,11 +175,17 @@ zcrd1_proc_params(const gs_memory_t *mem,
     int code;
     ref *pRT;
 
-    if ((code = dict_proc3_param(mem, op, "EncodeLMN", &pcprocs->EncodeLMN)) < 0 ||
-      (code = dict_proc3_param(mem, op, "EncodeABC", &pcprocs->EncodeABC)) < 0 ||
-    (code = dict_proc3_param(mem, op, "TransformPQR", &pcprocs->TransformPQR)) < 0
-	)
-	return (code < 0 ? code : gs_note_error(e_rangecheck));
+    code = dict_proc3_param(mem, op, "EncodeLMN", &pcprocs->EncodeLMN);
+    if (code < 0)
+        return code;  
+    code = dict_proc3_param(mem, op, "EncodeABC", &pcprocs->EncodeABC);
+    if (code < 0)
+        return code;  
+    code = dict_proc3_param(mem, op, "TransformPQR", &pcprocs->TransformPQR);
+    if (code < 0)
+        return code;  
+    if (code == 1)
+	return gs_note_error(e_undefined);
     if (dict_find_string(op, "RenderTable", &pRT) > 0) {
 	const ref *prte;
 	int size;

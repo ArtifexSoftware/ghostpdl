@@ -81,10 +81,12 @@ dict_proc_array_param(const gs_memory_t *mem,
 	    check_proc_only(proc);
 	}
 	*pparray = *pvalue;
-    } else
+        return 0;
+    } else {
 	make_const_array(pparray, a_readonly | avm_foreign,
 			 count, &empty_procs[0]);
-    return 0;
+        return 1;
+    }
 }
 
 /* Get 3 ranges from a dictionary. */

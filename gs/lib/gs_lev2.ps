@@ -737,7 +737,15 @@ end
 /.colorrenderingtypes 5 dict def
 
 /setcolorrendering {		% <crd> setcolorrendering -
-  dup /ColorRenderingType get //.colorrenderingtypes exch get exec
+  dup /ColorRenderingType get
+  dup type /integertype ne {
+    /setcolorrendering .systemvar /typecheck signalerror
+  } if
+  //.colorrenderingtypes exch .knownget {
+     exec 
+  } {
+    /setcolorrendering .systemvar /rangecheck signalerror
+  } ifelse
 } odef
 
 /.setcolorrendering1 where { pop } { (%END CRD) .skipeof } ifelse
