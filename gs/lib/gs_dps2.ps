@@ -120,7 +120,14 @@ end
 	% We must create the new dictionary in the same VM as the
 	% operand; otherwise, invalidaccess errors may occur.
   .currentglobal 1 .argindex dup gcheck .setglobal
-  dup //.halftonetypes 1 index /HalftoneType get get exec exec
+  dup //.halftonetypes 1 index /HalftoneType get
+  dup type /integertype ne {
+    /sethalftone .systemvar /typecheck signalerror
+  } if
+  .knownget not {
+    /sethalftone .systemvar /rangecheck signalerror
+  } if
+  exec exec
   .setglobal pop
 } odef
 % Redefine setscreen and setcolorscreen to recognize halftone dictionaries,

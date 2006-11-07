@@ -190,7 +190,8 @@ end
   /HalftoneMode getuserparam 0 eq {
     //sethalftone
   } {
-    pop .getdefaulthalftone
+    gsave //sethalftone grestore
+    .getdefaulthalftone
     { //sethalftone }
     { .setdefaulthalftone }
     ifelse
