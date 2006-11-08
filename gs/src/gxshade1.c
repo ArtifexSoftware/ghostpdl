@@ -503,79 +503,62 @@ R_is_covered(double ax, double ay,
 private int
 R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
 	double x0, double y0, double r0, 
-	double x1, double y1, double r1, double t1, double r)
+	double x1, double y1, double r1, double t0, double r_rect)
 {
     double dx = x1 - x0, dy = y1 - y0, dr = any_abs(r1 - r0);
     double d = hypot(dx, dy);
+    /* Assuming dr > d / 3 && d > dr + 1e-7 * (d + dr), see the caller. */
+    double r = r_rect * 1.4143; /* A few bigger than sqrt(2). */
     double ax, ay, as; /* Cone apex. */
-    gs_point p0, p1; /* Tangent limits. */
-    gs_point cp[4]; /* Corners.. */
-    gs_point rp[4]; /* Covered corners.. */
-    gs_point pb;
-    int rp_count = 0, cp_start, i, code;
-    bool covered[4];
+    double g0; /* The distance from apex to the tangent point of the 0th circle. */
+    int code;
 
     as = r0 / (r0 - r1);
     ax = x0 + (x1 - x0) * as;
     ay = y0 + (y1 - y0) * as;
-
-    if (any_abs(d - dr) < 1e-7 * (d + dr)) {
+    g0 = sqrt(dx * dx + dy * dy - dr * dr) * as;
+    if (g0 < 1e-7 * r0) {
 	/* Nearly degenerate, replace with half-plane. */
+	/* Restrict the half plane with triangle, which covers the rect. */
+	gs_point p0, p1, p2; /* Right tangent limit, apex limit, left tangent linit,
+				(right, left == when looking from the apex). */
+
 	p0.x = ax - dy * r / d;
 	p0.y = ay + dx * r / d;
-	p1.x = ax + dy * r / d;
-	p1.y = ay - dx * r / d;
-    } else {
-	/* Tangent limits by proportional triangles. */
-	double da = hypot(ax - x0, ay - y0);
-	double h = r * r0 / da, g;
-
-	if (h > r)
-	    return_error(gs_error_unregistered); /* Must not happen. */
-	g = sqrt(r * r - h * h);
-	p0.x = ax - dx * g / d - dy * h / d;
-	p0.y = ay - dy * g / d + dx * h / d;
-	p1.x = ax - dx * g / d + dy * h / d;
-	p1.y = ay - dy * g / d - dx * h / d;
-    }
-    /* Now we have 2 limited tangents, and 4 corners of the rect. 
-       Need to know what corners are covered. */
-    cp[0].x = rect->p.x, cp[0].y = rect->p.y;
-    cp[1].x = rect->q.x, cp[1].y = rect->p.y;
-    cp[2].x = rect->q.x, cp[2].y = rect->q.y;
-    cp[3].x = rect->p.x, cp[3].y = rect->q.y;
-    covered[0] = R_is_covered(ax, ay, &p0, &p1, &cp[0]);
-    covered[1] = R_is_covered(ax, ay, &p0, &p1, &cp[1]);
-    covered[2] = R_is_covered(ax, ay, &p0, &p1, &cp[2]);
-    covered[3] = R_is_covered(ax, ay, &p0, &p1, &cp[3]);
-    if (!covered[0] && !covered[1] && !covered[2] && !covered[3]) {
-	return R_fill_triangle_new(pfs, rect, ax, ay, p0.x, p0.y, p1.x, p1.y, t1);
-    } 
-    if (!covered[0] && covered[1])
-	cp_start = 1;
-    else if (!covered[1] && covered[2])
-	cp_start = 2;
-    else if (!covered[2] && covered[3])
-	cp_start = 3;
-    else if (!covered[3] && covered[0])
-	cp_start = 0;
-    else {
-	/* Must not happen, handle somehow for safety. */
-	cp_start = 0;
-    }
-    for (i = cp_start; i < cp_start + 4 && covered[i % 4]; i++) {
-	rp[rp_count] = cp[i % 4];
-	rp_count++;
-    }
-    /* Do paint. */
-    pb = p0;
-    for (i = 0; i < rp_count; i++) {
-	code = R_fill_triangle_new(pfs, rect, ax, ay, pb.x, pb.y, rp[i].x, rp[i].y, t1);
+	p1.x = ax - dx * r / d;
+	p1.y = ay - dy * r / d;
+	p2.x = ax + dy * r / d;
+	p2.y = ay - dx * r / d;
+	/* Split into 2 triangles at the apex,
+	   so that the apex is preciselly covered.
+	   Especially important when it is not exactly degenerate. */
+	code = R_fill_triangle_new(pfs, rect, ax, ay, p0.x, p0.y, p1.x, p1.y, t0);
 	if (code < 0)
 	    return code;
-	pb = rp[i];
+	return R_fill_triangle_new(pfs, rect, ax, ay, p1.x, p1.y, p2.x, p2.y, t0);
+    } else {
+	/* Compute the "limit" circle so that its
+	   tangent points are outside the rect. */
+	/* Note: this branch is executed when the condition above is false :
+	   g0 >= 1e-7 * r0 .
+	   We believe that computing this branch with doubles
+	   provides enough precision after converting coordinates into 'fixed',
+	   and that the limit circle radius is not dramatically big.
+	 */
+	double es, er; /* The limit circle parameter, radius. */
+	double ex, ey; /* The limit circle centrum. */
+
+	es = as - as * r / g0; /* Always negative. */
+	er = r * r0 / g0 ;
+	ex = x0 + dx * es;
+	ey = y0 + dy * es;
+	/* Fill the annulus: */
+	code = R_tensor_annulus(pfs, rect, x0, y0, r0, t0, ex, ey, er, t0);
+	if (code < 0)
+	    return code;
+	/* Fill entire ending circle to ewnsure antire rect is covered : */
+	return R_tensor_annulus(pfs, rect, ex, ey, er, t0, ex, ey, 0, t0);
     }
-    return R_fill_triangle_new(pfs, rect, ax, ay, pb.x, pb.y, p1.x, p1.y, t1);
 }
 
 private int
