@@ -36,6 +36,9 @@ typedef struct gs_pattern_instance_s gs_pattern_instance_t;
 /* Paint (non-Pattern) colors */
 typedef struct gs_paint_color_s {
     float values[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    /* CAUTION: The shading decomposition algorithm may allocate 
+       a smaller space when a small number of color components is in use.
+    */
 } gs_paint_color;
 
 /* General colors */
@@ -45,8 +48,12 @@ typedef struct gs_client_color_s gs_client_color;
 
 #endif
 struct gs_client_color_s {
-    gs_paint_color paint;	/* also color for uncolored pattern */
     gs_pattern_instance_t *pattern;
+    gs_paint_color paint;	/* also color for uncolored pattern */
+    /* CAUTION: gs_paint_color structure must be the last field in 
+       gs_client_color_s to allow allocating a smaller space when 
+       a small number of color components is in use.
+    */
 };
 
 extern_st(st_client_color);
