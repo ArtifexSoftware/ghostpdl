@@ -403,17 +403,27 @@ R_outer_circle(patch_fill_state_t *pfs, const gs_rect *rect,
        so it's not an exact contact, sorry. */
     if (any_abs(dx) > any_abs(dy)) {
 	/* Solving :
-	    x0 + (x1 - x0) * s - r0 - (r1 - r0) * s == bbox_x
-	    (x1 - x0) * s - (r1 - r0) * s == bbox_x - x0 + r0
-	    s = (bbox_x - x0 + r0) / (x1 - x0 - r1 + r0)
+	    x0 + (x1 - x0) * sq + r0 + (r1 - r0) * sq == bbox_px
+	    (x1 - x0) * sp + (r1 - r0) * sp == bbox_px - x0 - r0
+	    sp = (bbox_px - x0 - r0) / (x1 - x0 + r1 - r0)
+
+	    x0 + (x1 - x0) * sq - r0 - (r1 - r0) * sq == bbox_qx
+	    (x1 - x0) * sq - (r1 - r0) * sq == bbox_x - x0 + r0
+	    sq = (bbox_x - x0 + r0) / (x1 - x0 - r1 + r0)
 	 */
 	if (x1 - x0 + r1 - r0 ==  0) /* We checked for obtuse cone. */
 	    return_error(gs_error_unregistered); /* Must not happen. */
-	sp = (rect->p.x - x0 + r0) / (x1 - x0 - r1 + r0);
+	if (x1 - x0 - r1 + r0 ==  0) /* We checked for obtuse cone. */
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	sp = (rect->p.x - x0 - r0) / (x1 - x0 + r1 - r0);
 	sq = (rect->q.x - x0 + r0) / (x1 - x0 - r1 + r0);
     } else {
 	/* Same by Y. */
-	sp = (rect->p.y - y0 + r0) / (y1 - y0 - r1 + r0);
+	if (y1 - y0 + r1 - r0 ==  0) /* We checked for obtuse cone. */
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (y1 - y0 - r1 + r0 ==  0) /* We checked for obtuse cone. */
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	sp = (rect->p.y - y0 - r0) / (y1 - y0 + r1 - r0);
 	sq = (rect->q.y - y0 + r0) / (y1 - y0 - r1 + r0);
     }
     if (sp >= 1 && sq >= 1)
@@ -687,6 +697,8 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     gs_point dev_dr;
     patch_fill_state_t pfs1;
 
+    if (r0 == 0 && r1 == 0)
+	return 0; /* PLRM requires to paint nothing. */
     shade_init_fill_state((shading_fill_state_t *)&state, psh0, dev, pis);
     state.psh = psh;
     state.rect = *rect;
