@@ -189,8 +189,10 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
 	    code = dict_floats_param(imemory, op, "Background",
 				     gs_color_space_num_components(pcs),
 				     pcc->paint.values, NULL);
-	    if (code < 0)
+	    if (code < 0) {
+                gs_errorinfo_put_pair_from_dict(i_ctx_p, op, "Background");
 		goto fail;
+            }
 	}
     }
     if (dict_find_string(op, "BBox", &pvalue) <= 0)
