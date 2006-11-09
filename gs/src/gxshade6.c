@@ -149,6 +149,11 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     pfs->n_color_args = 1;
     pfs->fixed_flat = float2fixed(pfs->pis->flatness);
     pfs->smoothness = pfs->pis->smoothness;
+    pfs->color_stack_size = 0;
+    pfs->color_stack_step = 0;
+    pfs->color_stack = NULL;
+    pfs->color_stack_limit = NULL;
+    pfs->memory = NULL;
 #   if LAZY_WEDGES
 	code = wedge_vertex_list_elem_buffer_alloc(pfs);
 	if (code < 0)
@@ -164,6 +169,8 @@ term_patch_fill_state(patch_fill_state_t *pfs)
 #   if LAZY_WEDGES
 	wedge_vertex_list_elem_buffer_free(pfs);
 #   endif
+    if (pfs->color_stack)
+	gs_free_object(pfs->memory, pfs->color_stack, "term_patch_fill_state");
 }
 
 /* Resolve a patch color using the Function if necessary. */

@@ -93,6 +93,18 @@ typedef struct {
 #define LAZY_WEDGES_MAX_LEVEL 9 /* memory consumption is 
     sizeof(wedge_vertex_list_elem_t) * LAZY_WEDGES_MAX_LEVEL * (1 << LAZY_WEDGES_MAX_LEVEL) */
 
+/* Define a color to be used in curve rendering. */
+/* This may be a real client color, or a parametric function argument. */
+typedef struct patch_color_s {
+    float t[2];			/* parametric value */
+    gs_client_color cc;
+    /* NOTE : The structure gs_client_color ends with a big array, but only few elements
+       are used in most cases. Therefore sometimes we allocate a shorter area,
+       so that ending elements are not allocated and must not be accessed/modified.
+       The number of allocated elements are known from the shading color space
+       and from patch_fill_state_s::num_components. */
+} patch_color_t;
+
 /* Define the common state for rendering Coons and tensor patches. */
 typedef struct patch_fill_state_s {
     mesh_fill_state_common;
@@ -112,13 +124,12 @@ typedef struct patch_fill_state_s {
     bool linear_color;
     bool unlinear;
     bool inside;
+    int color_stack_size;
+    int color_stack_step;
+    byte *color_stack; /* A storage for shortened patch_color_t structures. */
+    byte *color_stack_limit;
+    gs_memory_t *memory; /* Where color_buffer is allocated. */
 } patch_fill_state_t;
-/* Define a color to be used in curve rendering. */
-/* This may be a real client color, or a parametric function argument. */
-typedef struct patch_color_s {
-    float t[2];			/* parametric value */
-    gs_client_color cc;
-} patch_color_t;
 
 /* Define a structure for mesh or patch vertex. */
 struct shading_vertex_s {

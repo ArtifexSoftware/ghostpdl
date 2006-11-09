@@ -152,9 +152,7 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 /* ---------------- Axial shading ---------------- */
 
 typedef struct A_fill_state_s {
-    shading_fill_state_common;
     const gs_shading_A_t *psh;
-    gs_rect rect;		/* bounding rectangle in user space */
     gs_point delta;
     double length;
     double t0, t1;
@@ -165,38 +163,26 @@ typedef struct A_fill_state_s {
 /* Note t0 and t1 vary over [0..1], not the Domain. */
 
 private int
-A_fill_region(A_fill_state_t * pfs, const gs_fixed_rect *rect_clip)
+A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
 {
     const gs_shading_A_t * const psh = pfs->psh;
-    gs_function_t * const pfn = psh->params.Function;
     double x0 = psh->params.Coords[0] + pfs->delta.x * pfs->v0;
     double y0 = psh->params.Coords[1] + pfs->delta.y * pfs->v0;
     double x1 = psh->params.Coords[0] + pfs->delta.x * pfs->v1;
     double y1 = psh->params.Coords[1] + pfs->delta.y * pfs->v1;
     double h0 = pfs->u0, h1 = pfs->u1;
     patch_curve_t curve[4];
-    patch_fill_state_t pfs1;
-    int code;
 
-    memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
-    pfs1.Function = pfn;
-    code = init_patch_fill_state(&pfs1);
-    if (code < 0)
-	return code;
-    pfs1.rect = *rect_clip;
-    pfs1.maybe_self_intersecting = false;
-    gs_point_transform2fixed(&pfs->pis->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
-    gs_point_transform2fixed(&pfs->pis->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
-    gs_point_transform2fixed(&pfs->pis->ctm, x1 + pfs->delta.y * h1, y1 - pfs->delta.x * h1, &curve[2].vertex.p);
-    gs_point_transform2fixed(&pfs->pis->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[3].vertex.p);
+    gs_point_transform2fixed(&pfs1->pis->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
+    gs_point_transform2fixed(&pfs1->pis->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
+    gs_point_transform2fixed(&pfs1->pis->ctm, x1 + pfs->delta.y * h1, y1 - pfs->delta.x * h1, &curve[2].vertex.p);
+    gs_point_transform2fixed(&pfs1->pis->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[3].vertex.p);
     curve[0].vertex.cc[0] = curve[0].vertex.cc[1] = pfs->t0; /* The element cc[1] is set to a dummy value against */
     curve[1].vertex.cc[0] = curve[1].vertex.cc[1] = pfs->t1; /* interrupts while an idle priocessing in gxshade.6.c .  */
     curve[2].vertex.cc[0] = curve[2].vertex.cc[1] = pfs->t1;
     curve[3].vertex.cc[0] = curve[3].vertex.cc[1] = pfs->t0;
     make_other_poles(curve);
-    code = patch_fill(&pfs1, curve, NULL, NULL);
-    term_patch_fill_state(&pfs1);
-    return code;
+    return patch_fill(pfs1, curve, NULL, NULL);
 }
 
 private inline int
@@ -205,18 +191,25 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 			    gx_device * dev, gs_imager_state * pis)
 {
     const gs_shading_A_t *const psh = (const gs_shading_A_t *)psh0;
+    gs_function_t * const pfn = psh->params.Function;
     gs_matrix cmat;
     gs_rect t_rect;
     A_fill_state_t state;
+    patch_fill_state_t pfs1;
     float d0 = psh->params.Domain[0], d1 = psh->params.Domain[1];
     float dd = d1 - d0;
     double t0, t1;
     gs_point dist;
-    int code = 0;
+    int code;
 
-    shade_init_fill_state((shading_fill_state_t *)&state, psh0, dev, pis);
     state.psh = psh;
-    state.rect = *rect;
+    shade_init_fill_state((shading_fill_state_t *)&pfs1, psh0, dev, pis);
+    pfs1.Function = pfn;
+    pfs1.rect = *clip_rect;
+    code = init_patch_fill_state(&pfs1);
+    if (code < 0)
+	return code;
+    pfs1.maybe_self_intersecting = false;
     /*
      * Compute the parameter range.  We construct a matrix in which
      * (0,0) corresponds to t = 0 and (0,1) corresponds to t = 1,
@@ -242,7 +235,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     gs_distance_transform(state.delta.x, state.delta.y, &ctm_only(pis),
 			  &dist);
     state.length = hypot(dist.x, dist.y);	/* device space line length */
-    code = A_fill_region(&state, clip_rect);
+    code = A_fill_region(&state, &pfs1);
     if (psh->params.Extend[0] && t0 > t_rect.p.y) {
 	if (code < 0)
 	    return code;
@@ -250,7 +243,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	state.v0 = t_rect.p.y;
 	state.v1 = t0;
 	state.t0 = state.t1 = t0 * dd + d0;
-	code = A_fill_region(&state, clip_rect);
+	code = A_fill_region(&state, &pfs1);
     }
     if (psh->params.Extend[1] && t1 < t_rect.q.y) {
 	if (code < 0)
@@ -259,8 +252,9 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	state.v0 = t1;
 	state.v1 = t_rect.q.y;
 	state.t0 = state.t1 = t1 * dd + d0;
-	code = A_fill_region(&state, clip_rect);
+	code = A_fill_region(&state, &pfs1);
     }
+    term_patch_fill_state(&pfs1);
     return code;
 }
 
@@ -487,19 +481,6 @@ R_fill_triangle_new(patch_fill_state_t *pfs, const gs_rect *rect,
     return mesh_triangle(pfs, &p0, &p1, &p2);
 }
 
-private bool 
-R_is_covered(double ax, double ay, 
-	const gs_point *p0, const gs_point *p1, const gs_point *p)
-{
-    double dx0 = p0->x - ax, dy0 = p0->y - ay;
-    double dx1 = p1->x - ax, dy1 = p1->y - ay;
-    double dx = p->x - ax, dy = p->y - ay;
-    double vp0 = dx0 * dy - dy0 * dx;
-    double vp1 = dx * dy1 - dy * dx1;
-
-    return vp0 >= 0 && vp1 >= 0;
-}
-
 private int
 R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
 	double x0, double y0, double r0, 
@@ -712,19 +693,18 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     pfs1.rect = *clip_rect;
     pfs1.maybe_self_intersecting = false;
     code = R_extensions(&pfs1, psh, rect, d0, d1, psh->params.Extend[0], false);
-    if (code < 0)
-	return code;
-    {
+    if (code >= 0) {
 	float x0 = psh->params.Coords[0], y0 = psh->params.Coords[1];
 	floatp r0 = psh->params.Coords[2];
 	float x1 = psh->params.Coords[3], y1 = psh->params.Coords[4];
 	floatp r1 = psh->params.Coords[5];
 	
 	code = R_tensor_annulus(&pfs1, rect, x0, y0, r0, d0, x1, y1, r1, d1);
-	if (code < 0)
-	    return code;
     }
-    return R_extensions(&pfs1, psh, rect, d0, d1, false, psh->params.Extend[1]);
+    if (code >= 0)
+	code = R_extensions(&pfs1, psh, rect, d0, d1, false, psh->params.Extend[1]);
+    term_patch_fill_state(&pfs1);
+    return code;
 }
 
 int
