@@ -202,8 +202,6 @@ zimagemask1(i_ctx_t *i_ctx_p)
 			     &ip, true, 1, 1, false);
     if (code < 0)
 	return code;
-    if (ip.MultipleDataSources)
-	return_error(e_rangecheck);
     return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image, &ip.DataSource[0],
 			true, 1);
 }
