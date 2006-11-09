@@ -20,6 +20,7 @@
 #include "gscrd.h"
 #include "gscrdp.h"
 #include "gxlum.h"
+#include "gxdcconv.h"
 #include "gdevdcrd.h"
 #include "gsutil.h" /* for bittags hack */
 

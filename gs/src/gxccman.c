@@ -244,7 +244,7 @@ gx_attach_tt_interpreter(gs_font_dir * dir,
     return code;
 }
 
-private inline 
+private inline bool
 does_font_need_tt_interpreter(gs_font *font)
 {
     if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) {
