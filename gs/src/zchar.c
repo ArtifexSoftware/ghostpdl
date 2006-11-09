@@ -146,6 +146,7 @@ zkshow(i_ctx_t *i_ctx_p)
     gs_text_enum_t *penum;
     int code;
 
+    check_read_type(*op, t_string);
     check_proc(op[-1]);
     /*
      * Per PLRM Section xx.x, kshow is illegal if the current font is a
