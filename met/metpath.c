@@ -170,7 +170,6 @@ Path_action(void *data, met_state_t *ms)
 {
     CT_Path *aPath = data;
     int code = 0;
-    gs_memory_t *mem = ms->memory;
 
     met_setstrokecolor(ms->pgs, aPath->Stroke);
     met_setfillcolor(ms->pgs, aPath->Fill);
@@ -433,7 +432,6 @@ PolyLineSegment_action(void *data, met_state_t *ms)
 {
     CT_PolyLineSegment *aPolyLineSegment = data;
     gs_state *pgs = ms->pgs;
-    gs_memory_t *mem = ms->memory;
     int code = 0;
     if (aPolyLineSegment->Points) {
         char pstr[strlen(aPolyLineSegment->Points) + 1];
@@ -689,7 +687,6 @@ ArcSegment_action(void *data, met_state_t *ms)
 {
     CT_ArcSegment *aArcSegment = data;
     gs_state *pgs = ms->pgs;
-    gs_memory_t *mem = ms->memory;
     gs_point start, end, size, midpoint, halfdis, thalfdis, tcenter, center;
     double sign, rot, start_angle, delta_angle;
     int code;
@@ -848,7 +845,6 @@ PolyBezierSegment_action(void *data, met_state_t *ms)
 {
     CT_PolyBezierSegment *aPolyBezierSegment = data;
     gs_state *pgs = ms->pgs;
-    gs_memory_t *mem = ms->memory;
     int code = 0;
     if (aPolyBezierSegment->Points) {
         char pstr[strlen(aPolyBezierSegment->Points) + 1];
@@ -940,7 +936,6 @@ PolyQuadraticBezierSegment_action(void *data, met_state_t *ms)
 {
     CT_PolyQuadraticBezierSegment *aPolyQuadraticBezierSegment = data;
     gs_state *pgs = ms->pgs;
-    gs_memory_t *mem = ms->memory;
     int code = 0;
     if (aPolyQuadraticBezierSegment->Points) {
         char pstr[strlen(aPolyQuadraticBezierSegment->Points) + 1];

@@ -91,7 +91,7 @@ met_get_element_definition(const char *element)
         *pelstr = '_';
 
     while (true) {
-        met_element_t *metdef = met_element_table[index];
+        const met_element_t *metdef = met_element_table[index];
         if (!metdef) 
             /* end of table, element not found */
             return NULL;

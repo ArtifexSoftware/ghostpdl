@@ -97,6 +97,7 @@ typedef struct CT_LinearGradientBrush_s {
     ST_ClrIntMode ColorInterpolationMode;
     ST_SpreadMethod SpreadMethod;
     ST_Name MappingMode;
+    struct CT_GradientStop_s *GradientStops;
     ST_RscRefMatrix Transform;
     ST_Point StartPoint;
     ST_Point EndPoint;
@@ -108,6 +109,7 @@ typedef struct CT_RadialGradientBrush_s {
     ST_ClrIntMode ColorInterpolationMode;
     ST_SpreadMethod SpreadMethod;
     ST_Name MappingMode;
+    struct CT_GradientStop_s *GradientStops;
     ST_RscRefMatrix Transform;
     ST_Point Center;
     ST_Point GradientOrigin;
@@ -215,8 +217,9 @@ typedef struct CT_FixedDocumentSequence_s {
 
     
 typedef struct CT_GradientStop_s {
-    char * Color;
-    char * Offset;
+    ST_Color Color;
+    ST_ZeroOne Offset;
+    struct CT_GradientStop_s *next;
 } CT_GradientStop;
 
 /* nb line segment variants have the same structure */

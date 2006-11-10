@@ -55,6 +55,9 @@ $(XPSOBJ)metimage.$(OBJ): $(XPSSRC)metimage.c $(XPSINCLUDES)
 $(XPSOBJ)xps_gradient_brush.$(OBJ): $(XPSSRC)xps_gradient_brush.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xps_gradient_brush.c $(XPSO_)xps_gradient_brush.$(OBJ)
 
+$(XPSOBJ)xps_gradient_stop.$(OBJ): $(XPSSRC)xps_gradient_stop.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xps_gradient_stop.c $(XPSO_)xps_gradient_stop.$(OBJ)
+
 $(XPSOBJ)xps_visual_brush.$(OBJ): $(XPSSRC)xps_visual_brush.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xps_visual_brush.c $(XPSO_)xps_visual_brush.$(OBJ)
 
@@ -116,7 +119,9 @@ XPS_OBJS=$(XPSOBJ)metparse.$(OBJ) $(XPSOBJ)metstate.$(OBJ) \
          $(XPSOBJ)metundone.$(OBJ) $(XPSOBJ)metpage.$(OBJ) \
          $(XPSOBJ)metelement.$(OBJ) $(XPSOBJ)metpath.$(OBJ)\
 	 $(XPSOBJ)metglyphs.$(OBJ) $(XPSOBJ)metutil.$(OBJ) \
-	 $(XPSOBJ)metimage.$(OBJ) $(XPSOBJ)xps_gradient_brush.$(OBJ) \
+	 $(XPSOBJ)metimage.$(OBJ) \
+	 $(XPSOBJ)xps_gradient_brush.$(OBJ) \
+	 $(XPSOBJ)xps_gradient_stop.$(OBJ) \
 	 $(XPSOBJ)xps_visual_brush.$(OBJ) \
 	 $(XPSOBJ)zipparse.$(OBJ) $(XPSOBJ)zippart.$(OBJ) \
 	 $(XPSOBJ)xps_image_jpeg.$(OBJ) \

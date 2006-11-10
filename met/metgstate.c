@@ -16,6 +16,7 @@
 
 #include "std.h"
 #include "metsimple.h"
+#include "metstate.h"
 #include "metgstate.h"
 #include "metutil.h"
 #include "gxstate.h" /* for gs_state_copy_reason_t */
@@ -33,6 +34,7 @@ typedef struct metgstate_s {
     met_path_child_t child;
     void *VisualBrush;
     gs_memory_t *pmem;
+    met_state_t *ms;
 } metgstate_t;
 
 private void *
@@ -67,8 +69,8 @@ met_gstate_free(void *pold, gs_memory_t *pmem)
     gs_free_object(pmem, pmetgs->Stroke, "met_gstate_free");
     gs_free_object(pmem, pmetgs->FillRule, "met_gstate_free");
     gs_free_object(pmem, pmetgs->CharFill, "met_gstate_free");
+    // TODO free gradientstops
     gs_free_object(pmem, pmetgs, "met_gstate_free");
-
 }
 
 private const ST_RscRefColor met_pattern = "xxx";
@@ -252,7 +254,7 @@ private const gs_state_client_procs met_gstate_procs = {
 
 /* constructor for gstate */
 void
-met_gstate_init(gs_state *pgs, gs_memory_t *pmem)
+met_gstate_init(gs_state *pgs, gs_memory_t *pmem, met_state_t *ms)
 {
     metgstate_t *pmg = met_gstate_alloc(pmem);
     pmg->Stroke = 0;
@@ -264,6 +266,13 @@ met_gstate_init(gs_state *pgs, gs_memory_t *pmem)
     pmg->child = met_none;
     pmg->pmem = pmem;
     pmg->VisualBrush = 0;
+    pmg->ms = ms;
     gs_state_set_client(pgs, pmg, &met_gstate_procs, false);
+}
+
+met_state_t *
+met_state_from_gstate(gs_state *pgs)
+{
+    return client_data(pgs)->ms;
 }
 

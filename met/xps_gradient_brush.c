@@ -82,7 +82,9 @@ LinearGradientBrush_cook(void **ppdata, met_state_t *ms,
     }
 
     /* what about child LinearGradientBrush.Transform */
-    /* what about child LinearGradientBrush.GradientStops */
+
+    /* for child LinearGradientBrush.GradientStops*/
+    met_cleargradientstops(ms);
 
     *ppdata = brush;
     return gs_okay;
@@ -131,7 +133,11 @@ RadialGradientBrush_cook(void **ppdata, met_state_t *ms,
     }
 
     /* what about child RadialGradientBrush.Transform */
-    /* what about child RadialGradientBrush.GradientStops */
+
+    /* for child RadialGradientBrush.GradientStops */
+    met_cleargradientstops(ms);
+
+    dputs("radial gradient cook\n");
 
     *ppdata = brush;
     return gs_okay;
@@ -148,6 +154,7 @@ private int RadialGradientBrush_done(void *data, met_state_t *ms)
 {
     // no you don't! we're still around inside the pattern
     // gs_free_object(ms->memory, data, "RadialGradientBrush_done");
+    dputs("radial gradient done\n");
     return gs_okay;
 }
 
@@ -160,24 +167,25 @@ private int RadialGradientBrush_done(void *data, met_state_t *ms)
 int LinearGradientBrush_paint(void *data, gs_state *pgs)
 {
     CT_LinearGradientBrush *brush = data;
+    CT_GradientStop *stop;
+    int nstops;
 
-    double stops[8];
+    double stops[4 * 32];
     double start[2];
     double end[2];
     int spread;
     int code;
 
-    stops[0] = 0.0;
-    stops[1] = 1.0;
-    stops[2] = 0.0;
-    stops[3] = 0.0;
-
-    stops[4] = 1.0;
-    stops[5] = 0.0;
-    stops[6] = 0.0;
-    stops[7] = 0.5;
-
-    dputs("i'm painting linear\n");
+    nstops = 0;
+    for (stop = met_currentgradientstops(met_state_from_gstate(pgs)); stop; stop = stop->next)
+    {
+	rgb_t rgb = met_hex2rgb(stop->Color);
+	stops[nstops * 4 + 0] = stop->Offset;
+	stops[nstops * 4 + 1] = rgb.r;
+	stops[nstops * 4 + 2] = rgb.g;
+	stops[nstops * 4 + 3] = rgb.b;
+	nstops ++;
+    }
 
     sscanf(brush->StartPoint, "%lg,%lg", &start[0], &start[1]);
     sscanf(brush->EndPoint, "%lg,%lg", &end[0], &end[1]);
@@ -194,7 +202,7 @@ int LinearGradientBrush_paint(void *data, gs_state *pgs)
 	spread = XPS_PAD;
 
     code = xps_draw_linear_gradient(gs_state_memory(pgs), pgs,
-	    start, end, spread, stops, 2);
+	    start, end, spread, stops, nstops);
     if (code < 0)
 	return gs_rethrow(code, "could not draw linear gradient brush");
 
@@ -204,33 +212,32 @@ int LinearGradientBrush_paint(void *data, gs_state *pgs)
 int RadialGradientBrush_paint(void *data, gs_state *pgs)
 {
     CT_RadialGradientBrush *brush = data;
-
-    int code;
-
-    double stops[8];
-    {
-	stops[0] = 0.0;
-	stops[1] = 0.9;
-	stops[2] = 0.5;
-	stops[3] = 0.1;
-	stops[4] = 1.0;
-	stops[5] = 0.1;
-	stops[6] = 0.9;
-	stops[7] = 0.5;
-    }
-
+    CT_GradientStop *stop;
+    double stops[4 * 32];
+    int nstops;
     double center[2];
     double origin[2];
     double radiusx, radiusy;
     int spread;
+
+    int code;
+
+    nstops = 0;
+    for (stop = met_currentgradientstops(met_state_from_gstate(pgs)); stop; stop = stop->next)
+    {
+	rgb_t rgb = met_hex2rgb(stop->Color);
+	stops[nstops * 4 + 0] = stop->Offset;
+	stops[nstops * 4 + 1] = rgb.r;
+	stops[nstops * 4 + 2] = rgb.g;
+	stops[nstops * 4 + 3] = rgb.b;
+	nstops ++;
+    }
 
     sscanf(brush->Center, "%lg,%lg", &center[0], &center[1]);
     sscanf(brush->GradientOrigin, "%lg,%lg", &origin[0], &origin[1]);
 
     radiusx = brush->RadiusX;
     radiusy = brush->RadiusY;
-
-    dputs("i'm painting radial\n");
 
     if (!brush->SpreadMethod)
 	spread = XPS_PAD;
@@ -245,7 +252,7 @@ int RadialGradientBrush_paint(void *data, gs_state *pgs)
 
     code = xps_draw_radial_gradient(gs_state_memory(pgs), pgs,
 	    center, origin, radiusx, radiusy,
-	    spread, stops, 2);
+	    spread, stops, nstops);
     if (code < 0)
 	return gs_rethrow(code, "could not draw radial gradient brush");
 
@@ -322,6 +329,8 @@ private int CommonGradientBrush_action(void *data, met_state_t *ms, int type)
 	else
 	    return gs_throw(-1, "pattern has no context");
     }
+
+    dputs("xxx gradient action\n");
 
     return gs_okay;
 }

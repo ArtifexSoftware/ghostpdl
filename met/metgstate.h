@@ -22,8 +22,10 @@
 #include "gsstate.h"
 #include "metsimple.h"
 
+met_state_t *met_state_from_gstate(gs_state *pgs);
+
 /* constructor */
-void met_gstate_init(gs_state *pgs, gs_memory_t *mem);
+void met_gstate_init(gs_state *pgs, gs_memory_t *pmem, met_state_t *ms);
 
 /* operators */
 

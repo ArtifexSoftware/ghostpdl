@@ -12,7 +12,11 @@
 
 /*$Id$*/
 
+#include "std.h"
+#include "metsimple.h"
+#include "metcomplex.h"
 #include "metstate.h"
+#include "metutil.h"
 #include "metgstate.h"
 #include "plfont.h"
 
@@ -32,6 +36,7 @@ met_state_alloc(gs_memory_t *mem)
     pl_dict_init(&pmets->font_dict, mem, pl_free_font);
     pmets->font_dir = gs_font_dir_alloc(mem);
     pmets->current_resource = 0;
+    pmets->GradientStops = NULL;
     return pmets;
 }
 
@@ -46,5 +51,35 @@ void
 met_state_init(met_state_t *pmet, gs_state *pgs)
 {
     pmet->pgs = pgs;
-    met_gstate_init(pgs, pmet->memory);
+    met_gstate_init(pgs, pmet->memory, pmet);
 }
+
+
+/* nb where should this really belong? */
+
+void met_cleargradientstops(met_state_t *ms)
+{
+    ms->GradientStops = NULL;
+}
+
+void met_appendgradientstop(met_state_t *ms, void *stop)
+{
+    CT_GradientStop *iter;
+    iter = ms->GradientStops;
+    if (!iter)
+    {
+	ms->GradientStops = stop;
+    }
+    else
+    {
+	while (iter->next)
+	    iter = iter->next;
+	iter->next = stop;
+    }
+}
+
+void *met_currentgradientstops(met_state_t *ms)
+{
+    return ms->GradientStops;
+}
+

@@ -94,7 +94,7 @@ met_strdup(gs_memory_t *mem, const char *str)
 {
     char *s = NULL;   
     if ( str )
-        s = gs_alloc_bytes(mem, strlen(str) + 1, "met strdup");
+        s = (char*) gs_alloc_bytes(mem, strlen(str) + 1, "met strdup");
     if ( s )
         strcpy(s, str);
     return s;

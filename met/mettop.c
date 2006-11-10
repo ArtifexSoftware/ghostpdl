@@ -444,7 +444,7 @@ met_impl_deallocate_interp(
 
 
 /* Parser implementation descriptor */
-const pl_interp_implementation_t met_implementation = {
+const pl_interp_implementation_t xps_implementation = {
   met_impl_characteristics,
   met_impl_allocate_interp,
   met_impl_allocate_interp_instance,

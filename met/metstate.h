@@ -40,6 +40,7 @@ struct met_state_s {
     pl_dict_t pattern_dict;
     gs_font_dir *font_dir;
     void *current_resource;
+    void *GradientStops;
 };
 
 /* allocate a metro state */
@@ -50,5 +51,9 @@ void met_state_release(met_state_t *met);
 
 /* inialize the metro state */
 void met_state_init(met_state_t *met, gs_state *gs_state);
+
+void *met_currentgradientstops(met_state_t *ms);
+void met_cleargradientstops(met_state_t *ms);
+void met_appendgradientstop(met_state_t *ms, void *stop);
 
 #endif				/* metstate_INCLUDED */
