@@ -753,9 +753,9 @@ bind def
 % 0 0 0 1.0 (this varies from Adobe's documentation but is consistent
 % with their impelementations).
 %
-/no_currentgray { //.cs_get_ncomps exec //clear_n_objs exec 0 } bind def
-/no_currentrgb { //.cs_get_ncomps exec //clear_n_objs exec 0 0 0 } bind def
-/no_currentcmyk { //.cs_get_ncomps exec //clear_n_objs exec 0 0 0 1.0 } bind def
+/no_currentgray { //.cs_get_ncomps exec //clear_n_objs exec 0. } bind def
+/no_currentrgb { //.cs_get_ncomps exec //clear_n_objs exec 0. 0. 0. } bind def
+/no_currentcmyk { //.cs_get_ncomps exec //clear_n_objs exec 0. 0. 0. 1.} bind def
 
 
 %
