@@ -109,6 +109,9 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
     calc_value_t *vstack = &vstack_buf[1];
     calc_value_t *vsp = vstack + pfn->params.m;
     const byte *p = pfn->params.ops.data;
+    int repeat_count[MAX_PSC_FUNCTION_NESTING];
+    int repeat_proc_size[MAX_PSC_FUNCTION_NESTING];
+    int repeat_nesting_level = -1;
     int i;
 
     /*
@@ -211,8 +214,9 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 
 	OP1(PtCr_if, E, E),		/* if */
 	OP_NONE(PtCr_else),		/* else */
-	OP_NONE(PtCr_return)		/* return */
-
+	OP_NONE(PtCr_return),		/* return */
+	OP1(E, PtCr_repeat, E),		/* repeat */
+	OP_NONE(PtCr_repeat_end)	/* repeat_end */
     };
 
     vstack[-1].type = CVT_NONE;  /* for type dispatch in empty stack case */
@@ -517,10 +521,23 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	    }
 	    /* falls through */
 	case PtCr_else:
-	    p += 2 + (p[0] << 8) + p[1];
+	    p += 2 + (p[0] << 8) + p[1];	/* skip the past body */
 	    continue;
 	case PtCr_return:
 	    goto fin;
+	case PtCr_repeat:
+	    repeat_nesting_level++;
+	    repeat_count[repeat_nesting_level] = vsp->value.i;
+	    repeat_proc_size[repeat_nesting_level] = 1 + (p[0] << 8) + p[1];	/* body size */
+	    --vsp;		/* pop the counter */
+	    p += 3 + (p[0] <<8) + p[1];		    /* advance just past the repeat_end */
+	    /* falls through */
+	case PtCr_repeat_end:
+	    if ((repeat_count[repeat_nesting_level])-- <= 0)
+		repeat_nesting_level--;
+	    else
+		p -= repeat_proc_size[repeat_nesting_level];
+	    continue;
 	}
     }
  fin:
@@ -825,9 +842,11 @@ gs_function_PtCr_init(gs_function_t ** ppfn,
 		p += sizeof(int); break;
 	    case PtCr_float:
 		p += sizeof(float); break;
+	    case PtCr_repeat:
 	    case PtCr_if:
 	    case PtCr_else:
 		p += 2;
+	    case PtCr_repeat_end:
 	    case PtCr_true:
 	    case PtCr_false:
 		break;

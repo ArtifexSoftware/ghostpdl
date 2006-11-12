@@ -24,6 +24,8 @@
 /* Define the Function type. */
 #define function_type_PostScript_Calculator 4
 
+#define MAX_PSC_FUNCTION_NESTING 10
+
 /* Define the opcodes. */
 typedef enum {
 
@@ -50,11 +52,12 @@ typedef enum {
 
     /* Special operators */
 
-    PtCr_if, PtCr_else, PtCr_return
-
+    PtCr_if, PtCr_else, PtCr_return,
+    PtCr_repeat, PtCr_repeat_end,		/* Ghostscript extension */
+    PtCr_end			/* dummy to make it easier to insert opcodes above */
 } gs_PtCr_opcode_t;
 #define PtCr_NUM_OPS ((int)PtCr_byte)
-#define PtCr_NUM_OPCODES ((int)PtCr_return + 1)
+#define PtCr_NUM_OPCODES ((int)PtCr_end + 1)
 
 /* Define PostScript Calculator functions. */
 typedef struct gs_function_PtCr_params_s {

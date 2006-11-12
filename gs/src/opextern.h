@@ -39,6 +39,7 @@ int zif(i_ctx_t *);
 int zifelse(i_ctx_t *);
 int zindex(i_ctx_t *);
 int zpop(i_ctx_t *);
+int zrepeat(i_ctx_t *);
 int zroll(i_ctx_t *);
 int zsub(i_ctx_t *);
 /* Internal entry points for the interpreter. */

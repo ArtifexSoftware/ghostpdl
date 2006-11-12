@@ -467,7 +467,7 @@ for_samples_continue(i_ctx_t *i_ctx_p)
 
 /* <int> <proc> repeat - */
 private int repeat_continue(i_ctx_t *);
-private int
+int
 zrepeat(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

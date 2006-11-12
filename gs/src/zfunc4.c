@@ -148,7 +148,6 @@ resolves_to_oper(i_ctx_t *i_ctx_p, const ref *pref, const op_proc_t proc)
  * Note that we arbitrarily limit the depth of procedure nesting.  pref is
  * known to be a procedure.
  */
-#define MAX_PSC_FUNCTION_NESTING 10
 private int
 check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int *psize)
 {
@@ -241,8 +240,16 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 	    code = check_psc_function(i_ctx_p, &elt, depth + 1, ops, psize);
 	    if (code < 0)
 		return code;
-	    /* Check for {proc} if | {proc1} {proc2} ifelse */
-	    if (resolves_to_oper(i_ctx_p, &elt2, zif)) {
+	    /* Check for { proc } repeat | {proc} if | {proc1} {proc2} ifelse */
+	    if (resolves_to_oper(i_ctx_p, &elt2, zrepeat)) {
+		if (ops) {
+		    *p = PtCr_repeat;
+		    psc_fixup(p, ops + *psize);
+		    p = ops + *psize;
+		    *p++ = PtCr_repeat_end;
+		}
+		*psize += 1;	/* extra room for repeat_end */
+	    } else if (resolves_to_oper(i_ctx_p, &elt2, zif)) {
 		if (ops) {
 		    *p = PtCr_if;
 		    psc_fixup(p, ops + *psize);
@@ -264,9 +271,9 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 		    return code;
 		if (ops)
 		    psc_fixup(p, ops + *psize);
-	    } else
+	    } else 
 		return_error(e_rangecheck);
-	}
+	    }	 /* end 'default' */
 	}
     next:
 	DO_NOTHING;
