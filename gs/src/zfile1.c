@@ -24,6 +24,7 @@
 #include "opdef.h"
 #include "opcheck.h"
 #include "store.h"
+#include "gpmisc.h"
 
 /* <string> <string> <bool> .file_name_combine <string> true */
 /* <string> <string> <bool> .file_name_combine <string> <string> false */
