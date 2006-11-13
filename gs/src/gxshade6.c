@@ -1125,7 +1125,7 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
     /* Assuming a very narrow trapezoid - ignore the transversal color variation. */
     /* Assuming the XY span is restricted with curve_samples. 
        It is important for intersection_of_small_bars to compute faster. */
-    int code;
+    int code = 0;
     patch_color_t *c;
     byte *color_stack_ptr1 = reserve_colors_inline(pfs, color_stack_ptr0, &c, 1);
 
@@ -2071,7 +2071,7 @@ constant_color_triangle(patch_fill_state_t *pfs,
     gs_fixed_edge le, re;
     fixed dx0, dy0, dx1, dy1;
     const shading_vertex_t *pp;
-    int i, code;
+    int i, code = 0;
     byte *color_stack_ptr1 = reserve_colors_inline(pfs, color_stack_ptr0, c, 2);
 
     if (color_stack_ptr1 == NULL)
@@ -2299,6 +2299,7 @@ constant_color_quadrangle_aux(patch_fill_state_t *pfs, const quadrangle_patch *p
     }
 }
 
+private int
 constant_color_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool self_intersecting,
 	byte *color_stack_ptr0)
 {
