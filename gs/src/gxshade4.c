@@ -147,6 +147,7 @@ v2:		if ((code = Gt_next_vertex(pshm, &cs, &vc, cc)) < 0)
     }
     if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s'))
 	vd_release_dc;
+    release_colors(&pfs, pfs.color_stack, 3);
     term_patch_fill_state(&pfs);
     if (!cs.is_eod(&cs))
 	return_error(gs_error_rangecheck);
@@ -242,6 +243,7 @@ out:
     gs_free_object(pis->memory, vertex, "gs_shading_LfGt_render");
     gs_free_object(pis->memory, color_buffer, "gs_shading_LfGt_render");
     gs_free_object(pis->memory, color_buffer_ptrs, "gs_shading_LfGt_render");
+    release_colors(&pfs, pfs.color_stack, 1);
     term_patch_fill_state(&pfs);
     return code;
 }

@@ -469,17 +469,17 @@ R_fill_triangle_new(patch_fill_state_t *pfs, const gs_rect *rect,
     p1.c = c;
     p2.c = c;
     code = gs_point_transform2fixed(&pfs->pis->ctm, x0, y0, &p0.p);
-    if (code < 0)
-	return code;
-    code = gs_point_transform2fixed(&pfs->pis->ctm, x1, y1, &p1.p);
-    if (code < 0)
-	return code;
-    code = gs_point_transform2fixed(&pfs->pis->ctm, x2, y2, &p2.p);
-    if (code < 0)
-	return code;
-    c->t[0] = c->t[1] = t;
-    patch_resolve_color(c, pfs);
-    return mesh_triangle(pfs, &p0, &p1, &p2, color_stack_ptr1);
+    if (code >= 0)
+	code = gs_point_transform2fixed(&pfs->pis->ctm, x1, y1, &p1.p);
+    if (code >= 0)
+	code = gs_point_transform2fixed(&pfs->pis->ctm, x2, y2, &p2.p);
+    if (code >= 0) {
+	c->t[0] = c->t[1] = t;
+	patch_resolve_color(c, pfs);
+	code = mesh_triangle(pfs, &p0, &p1, &p2, color_stack_ptr1);
+    }
+    release_colors(pfs, pfs->color_stack, 1);
+    return code;
 }
 
 private int

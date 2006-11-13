@@ -135,6 +135,7 @@ typedef struct patch_fill_state_s {
     bool inside;
     int color_stack_size;
     int color_stack_step;
+    byte *color_stack_ptr;
     byte *color_stack; /* A storage for shortened patch_color_t structures. */
     byte *color_stack_limit;
     gs_memory_t *memory; /* Where color_buffer is allocated. */
@@ -182,5 +183,6 @@ int gx_shade_background(gx_device *pdev, const gs_fixed_rect *rect,
 	const gx_device_color *pdevc, gs_logical_operation_t log_op);
 
 byte *reserve_colors(patch_fill_state_t *pfs, byte *ptr, patch_color_t *c0[], int n);
+void release_colors(patch_fill_state_t *pfs, byte *ptr, int n);
 
 #endif /* gxshade4_INCLUDED */
