@@ -73,7 +73,7 @@ private inline byte *
 reserve_colors_inline(patch_fill_state_t *pfs, patch_color_t *c[], int n)
 {
     int i;
-    byte *ptr = pfs->color_stack_ptr;
+    byte *ptr0 = pfs->color_stack_ptr, *ptr = ptr0;
 
     for (i = 0; i < n; i++, ptr += pfs->color_stack_step)
 	c[i] = (patch_color_t *)ptr;
@@ -82,7 +82,7 @@ reserve_colors_inline(patch_fill_state_t *pfs, patch_color_t *c[], int n)
 	return NULL;
     }
     pfs->color_stack_ptr = ptr;
-    return ptr;
+    return ptr0;
 }
 
 byte *
