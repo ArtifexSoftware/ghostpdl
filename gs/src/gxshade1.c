@@ -135,6 +135,10 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	y[0] = max(pbox.p.y, psh->params.Domain[2]);
 	y[1] = min(pbox.q.y, psh->params.Domain[3]);
     }
+    if (x[0] > x[1] || y[0] > y[1]) {
+	/* The region is outside the shading area. */
+	return 0;
+    }
     for (xi = 0; xi < 2; ++xi)
 	for (yi = 0; yi < 2; ++yi) {
 	    float v[2];
