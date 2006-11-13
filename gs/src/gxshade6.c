@@ -151,8 +151,8 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     pfs->smoothness = pfs->pis->smoothness;
     pfs->color_stack_size = 0;
     pfs->color_stack_step = 0;
+    pfs->color_stack_ptr = 0;
     pfs->color_stack = NULL;
-    pfs->color_stack_limit = NULL;
     pfs->memory = NULL;
 #   if LAZY_WEDGES
 	code = wedge_vertex_list_elem_buffer_alloc(pfs);
@@ -1993,9 +1993,9 @@ constant_color_triangle(patch_fill_state_t *pfs,
 	    dx1 = re.end.x - re.start.x;
 	    dy1 = re.end.y - re.start.y;
 	    if ((int64_t)dx0 * dy1 < (int64_t)dy0 * dx1)
-    		return ordered_triangle(pfs, &le, &re, &c);
+    		return ordered_triangle(pfs, &le, &re, &cc);
 	    else
-    		return ordered_triangle(pfs, &re, &le, &c);
+    		return ordered_triangle(pfs, &re, &le, &cc);
 	}
 	pp = p0; p0 = p1; p1 = p2; p2 = pp;
     }
