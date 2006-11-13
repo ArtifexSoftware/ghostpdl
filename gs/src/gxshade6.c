@@ -1101,7 +1101,7 @@ is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const pa
 	return 1; /* Disable this check. */
     else {
 	const gs_direct_color_space *cs = 
-		    (gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
+		    (const gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
 	int code;
 	float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades);
 	/* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
@@ -1164,7 +1164,6 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
 	    gs_fill_attributes fa;
 	    gx_device_color dc[2];
 	    gs_fixed_rect clip;
-	    int code;
 
 	    clip = pfs->rect;
 	    if (swap_axes) {
@@ -1657,7 +1656,7 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 	return 2;
     if (!wedge) {
 	const gs_direct_color_space *cs = 
-		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
+		(const gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
 	float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades);
 	/* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
 	   can't provide a better precision due to the color
@@ -2069,7 +2068,7 @@ constant_color_triangle(patch_fill_state_t *pfs,
     gs_fixed_edge le, re;
     fixed dx0, dy0, dx1, dy1;
     const shading_vertex_t *pp;
-    int i, code;
+    int i, code = 0;
     byte *color_stack_ptr = reserve_colors_inline(pfs, c, 2);
 
     if (color_stack_ptr == NULL)
@@ -2297,6 +2296,7 @@ constant_color_quadrangle_aux(patch_fill_state_t *pfs, const quadrangle_patch *p
     }
 }
 
+private int
 constant_color_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool self_intersecting)
 {
     patch_color_t *c[3];
@@ -3729,6 +3729,6 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
 	code = fill_wedges(pfs, ku[3], kum, p.pole[3], 1, p.c[1][0], p.c[1][1], 
 		interpatch_padding | inpatch_wedge);
 out:
-    release_colors_inline(pfs, pfs->color_stack, 4);
+    release_colors_inline(pfs, color_stack_ptr, 4);
     return code;
 }
