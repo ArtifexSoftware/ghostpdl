@@ -100,7 +100,8 @@ Fb_fill_region(Fb_fill_state_t * pfs, const gs_fixed_rect *rect)
     curve[2].vertex.cc[0] = fp->region.q.x;   curve[2].vertex.cc[1] = fp->region.q.y;
     curve[3].vertex.cc[0] = fp->region.p.x;   curve[3].vertex.cc[1] = fp->region.q.y;
     code = patch_fill(&pfs1, curve, NULL, NULL);
-    term_patch_fill_state(&pfs1);
+    if (term_patch_fill_state(&pfs1))
+	return_error(gs_error_unregistered); /* Must not happen. */
     if (VD_TRACE_FUNCTIONAL_PATCH && vd_allowed('s'))
 	vd_release_dc;
     return code;
@@ -254,7 +255,8 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	state.t0 = state.t1 = t1 * dd + d0;
 	code = A_fill_region(&state, &pfs1);
     }
-    term_patch_fill_state(&pfs1);
+    if (term_patch_fill_state(&pfs1))
+	return_error(gs_error_unregistered); /* Must not happen. */
     return code;
 }
 
@@ -704,7 +706,8 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     }
     if (code >= 0)
 	code = R_extensions(&pfs1, psh, rect, d0, d1, false, psh->params.Extend[1]);
-    term_patch_fill_state(&pfs1);
+    if (term_patch_fill_state(&pfs1))
+	return_error(gs_error_unregistered); /* Must not happen. */
     return code;
 }
 

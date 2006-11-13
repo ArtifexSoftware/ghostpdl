@@ -161,7 +161,7 @@ int mesh_init_fill_state(mesh_fill_state_t * pfs,
 			  gx_device * dev, gs_imager_state * pis);
 
 int init_patch_fill_state(patch_fill_state_t *pfs);
-void term_patch_fill_state(patch_fill_state_t *pfs);
+bool term_patch_fill_state(patch_fill_state_t *pfs);
 
 int mesh_triangle(patch_fill_state_t *pfs, 
     const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2);

@@ -33,7 +33,6 @@
 #include "stdint_.h"
 #include "math_.h"
 #include "vdtrace.h"
-#include <assert.h>
 
 #define VD_TRACE_TENSOR_PATCH 1
 
@@ -76,13 +75,13 @@ reserve_colors_inline(patch_fill_state_t *pfs, patch_color_t *c[], int n)
     int i;
     byte *ptr = pfs->color_stack_ptr;
 
-    if (pfs->color_stack_limit - ptr < pfs->color_stack_step * n) {
+    for (i = 0; i < n; i++, ptr += pfs->color_stack_step)
+	c[i] = (patch_color_t *)ptr;
+    if (ptr > pfs->color_stack_limit) {
 	c[0] = NULL; /* safety. */
 	return NULL;
     }
-    for (i = 0; i < n; i++)
-	c[i] = (patch_color_t *)(ptr + i * pfs->color_stack_step);
-    pfs->color_stack_ptr += pfs->color_stack_step * n;
+    pfs->color_stack_ptr = ptr;
     return ptr;
 }
 
@@ -95,8 +94,12 @@ reserve_colors(patch_fill_state_t *pfs, patch_color_t *c[], int n)
 private inline void
 release_colors_inline(patch_fill_state_t *pfs, byte *ptr, int n)
 {
-    pfs->color_stack_ptr -= pfs->color_stack_step * n;
+#if 0 /* Saving the invariant for records. */
+    pfs->color_stack_ptr = pfs->color_stack_step * n;
     assert((byte *)pfs->color_stack_ptr == ptr);
+#else
+    pfs->color_stack_ptr = ptr;
+#endif
 }
 void
 release_colors(patch_fill_state_t *pfs, byte *ptr, int n)
@@ -217,15 +220,16 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     return allocate_color_stack(pfs, pfs->pis->memory);
 }
 
-void
+bool
 term_patch_fill_state(patch_fill_state_t *pfs)
 {
+    bool b = (pfs->color_stack_ptr != pfs->color_stack);
 #   if LAZY_WEDGES
 	wedge_vertex_list_elem_buffer_free(pfs);
 #   endif
-    assert(pfs->color_stack_ptr == pfs->color_stack);
     if (pfs->color_stack)
 	gs_free_object(pfs->memory, pfs->color_stack, "term_patch_fill_state");
+    return b;
 }
 
 /* Resolve a patch color using the Function if necessary. */
@@ -391,7 +395,8 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     }
     if (VD_TRACE_TENSOR_PATCH && vd_allowed('s'))
 	vd_release_dc;
-    term_patch_fill_state(&state);
+    if (term_patch_fill_state(&state))
+	return_error(gs_error_unregistered); /* Must not happen. */
     return min(code, 0);
 }
 
@@ -491,7 +496,8 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	if (code < 0)
 	    break;
     }
-    term_patch_fill_state(&state);
+    if (term_patch_fill_state(&state))
+	return_error(gs_error_unregistered); /* Must not happen. */
     if (VD_TRACE_TENSOR_PATCH && vd_allowed('s'))
 	vd_release_dc;
     return min(code, 0);
