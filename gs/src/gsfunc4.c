@@ -633,6 +633,9 @@ calc_put_ops(stream *s, const byte *ops, uint size)
 	    spputc(s, '}');
 	    return 1;
 	/*case PtCr_return:*/	/* not possible */
+	case PtCr_repeat:		/* We shouldn't encounter this, but just in case */
+	case PtCr_repeat_end:
+	    return_error(gs_error_rangecheck);
 	default: {		/* must be < PtCr_NUM_OPS */
 		static const char *const op_names[] = {
 		    /* Keep this consistent with opcodes in gsfunc4.h! */

@@ -25,6 +25,9 @@
 #include "iname.h"
 #include "dstack.h"
 #include "ialloc.h"
+#include "gzstate.h"	    /* these are needed to check if device is pdfwrite */
+#include "gxdevcli.h"	    /* these are needed to check if device is pdfwrite */
+#include "string_.h"	    /* these are needed to check if device is pdfwrite */
 /*
  * FunctionType 4 functions are not defined in the PostScript language.  We
  * provide support for them because they are needed for PDF 1.3.  In
@@ -242,6 +245,9 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 		return code;
 	    /* Check for { proc } repeat | {proc} if | {proc1} {proc2} ifelse */
 	    if (resolves_to_oper(i_ctx_p, &elt2, zrepeat)) {
+		/* We can't handle 'repeat' with pdfwrite since it emits FunctionType 4 */
+		if (strcmp(i_ctx_p->pgs->device->dname, "pdfwrite") == 0)
+		    return_error(e_rangecheck);
 		if (ops) {
 		    *p = PtCr_repeat;
 		    psc_fixup(p, ops + *psize);
