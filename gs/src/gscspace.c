@@ -458,7 +458,7 @@ gx_no_adjust_cspace_count(const gs_color_space * pcs, int delta)
 
 /* A stub for a color mapping linearity check, when it is inapplicable. */
 int
-gx_cspace_no_linear(gs_direct_color_space *cs, const gs_imager_state * pis,
+gx_cspace_no_linear(const gs_direct_color_space *cs, const gs_imager_state * pis,
 		gx_device * dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
 		const gs_client_color *c2, const gs_client_color *c3,
@@ -468,7 +468,7 @@ gx_cspace_no_linear(gs_direct_color_space *cs, const gs_imager_state * pis,
 }
 
 private inline int
-cc2dc(gs_direct_color_space *cs, const gs_imager_state * pis, gx_device *dev,
+cc2dc(const gs_direct_color_space *cs, const gs_imager_state * pis, gx_device *dev,
 	    gx_device_color *dc, const gs_client_color *cc)
 {
     return cs->type->remap_color(cc, (const gs_color_space *)cs, dc, pis, dev, gs_color_select_texture);
@@ -516,7 +516,7 @@ is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c,
 
 /* Default color mapping linearity check, a 2-points case. */
 private int
-gx_cspace_is_linear_in_line(gs_direct_color_space *cs, const gs_imager_state * pis,
+gx_cspace_is_linear_in_line(const gs_direct_color_space *cs, const gs_imager_state * pis,
 		gx_device *dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
 		float smoothness)
@@ -549,7 +549,7 @@ gx_cspace_is_linear_in_line(gs_direct_color_space *cs, const gs_imager_state * p
 
 /* Default color mapping linearity check, a triangle case. */
 private int
-gx_cspace_is_linear_in_triangle(gs_direct_color_space *cs, const gs_imager_state * pis,
+gx_cspace_is_linear_in_triangle(const gs_direct_color_space *cs, const gs_imager_state * pis,
 		gx_device *dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
 		const gs_client_color *c2, float smoothness)
@@ -604,7 +604,7 @@ gx_cspace_is_linear_in_triangle(gs_direct_color_space *cs, const gs_imager_state
 
 /* Default color mapping linearity check. */
 int
-gx_cspace_is_linear_default(gs_direct_color_space *cs, const gs_imager_state * pis,
+gx_cspace_is_linear_default(const gs_direct_color_space *cs, const gs_imager_state * pis,
 		gx_device *dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
 		const gs_client_color *c2, const gs_client_color *c3,

@@ -213,7 +213,7 @@ struct gs_color_space_type_s {
     /* A color mapping linearity check. */
 
 #define cs_proc_is_linear(proc)\
-  int proc(gs_direct_color_space *cs, const gs_imager_state * pis,\
+  int proc(const gs_direct_color_space *cs, const gs_imager_state * pis,\
 		gx_device *dev,\
 		const gs_client_color *c0, const gs_client_color *c1,\
 		const gs_client_color *c2, const gs_client_color *c3,\

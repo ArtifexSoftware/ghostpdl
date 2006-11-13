@@ -129,6 +129,11 @@ typedef struct mesh_vertex_s {
 /* Define a structure for mesh or patch vertex. */
 typedef struct shading_vertex_s shading_vertex_t;
 
+#ifndef patch_color_t_DEFINED
+#  define patch_color_t_DEFINED
+typedef struct patch_color_s patch_color_t;
+#endif
+
 /* Initialize a packed value stream. */
 void shade_next_init(shade_coord_stream_t * cs,
 		     const gs_shading_mesh_params_t * params,
@@ -145,7 +150,7 @@ int shade_next_coords(shade_coord_stream_t * cs, gs_fixed_point * ppt,
 int shade_next_color(shade_coord_stream_t * cs, float *pc);
 
 /* Get the next vertex for a mesh element. */
-int shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex);
+int shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex, patch_color_t *c);
 
 /*
    Currently, all shading fill procedures follow the same algorithm:

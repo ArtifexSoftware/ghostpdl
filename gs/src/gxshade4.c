@@ -48,35 +48,36 @@ mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
 
 private int
 Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
-	       shading_vertex_t * vertex)
+	       shading_vertex_t * vertex, patch_color_t *c)
 {
-    int code = shade_next_vertex(cs, vertex);
-
+    int code = shade_next_vertex(cs, vertex, c);
+ 
     if (code >= 0 && psh->params.Function) {
-	vertex->c.t[0] = vertex->c.cc.paint.values[0];
-	vertex->c.t[1] = 0;
+	c->t[0] = c->cc.paint.values[0];
+	c->t[1] = 0;
 	/* Decode the color with the function. */
-	code = gs_function_evaluate(psh->params.Function, vertex->c.t,
-				    vertex->c.cc.paint.values);
+	code = gs_function_evaluate(psh->params.Function, c->t,
+				    c->cc.paint.values);
     }
     return code;
 }
 
 inline private int
 Gt_fill_triangle(patch_fill_state_t * pfs, const shading_vertex_t * va,
-		 const shading_vertex_t * vb, const shading_vertex_t * vc)
+		 const shading_vertex_t * vb, const shading_vertex_t * vc,
+		 byte *color_stack_ptr0)
 {
     int code = 0;
 
     if (INTERPATCH_PADDING) {
-	code = mesh_padding(pfs, &va->p, &vb->p, &va->c, &vb->c);
+	code = mesh_padding(pfs, &va->p, &vb->p, va->c, vb->c, color_stack_ptr0);
 	if (code >= 0)
-	    code = mesh_padding(pfs, &vb->p, &vc->p, &vb->c, &vc->c);
+	    code = mesh_padding(pfs, &vb->p, &vc->p, vb->c, vc->c, color_stack_ptr0);
 	if (code >= 0)
-	    code = mesh_padding(pfs, &vc->p, &va->p, &vc->c, &va->c);
+	    code = mesh_padding(pfs, &vc->p, &va->p, vc->c, va->c, color_stack_ptr0);
     }
     if (code >= 0)
-	code = mesh_triangle(pfs, va, vb, vc);
+	code = mesh_triangle(pfs, va, vb, vc, color_stack_ptr0);
     return code;
 }
 
@@ -92,6 +93,9 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     int num_bits = psh->params.BitsPerFlag;
     int flag;
     shading_vertex_t va, vb, vc;
+    patch_color_t *c, *C[3], *ca, *cb, *cc; /* va.c == ca && vb.c == cb && vc.c == cc always, 
+				        provides a non-const access. */
+    byte *color_stack_ptr1;
     int code;
 
     if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s')) {
@@ -107,6 +111,10 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     code = init_patch_fill_state(&pfs);
     if (code < 0)
 	return code;
+    color_stack_ptr1 = reserve_colors(&pfs, pfs.color_stack, C, 3); /* Can't fail */
+    va.c = ca = C[0];
+    vb.c = cb = C[1];
+    vc.c = cc = C[2];
     shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
 		    pis);
     while ((flag = shade_next_flag(&cs, num_bits)) >= 0) {
@@ -114,20 +122,26 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	    default:
 		return_error(gs_error_rangecheck);
 	    case 0:
-		if ((code = Gt_next_vertex(pshm, &cs, &va)) < 0 ||
+		if ((code = Gt_next_vertex(pshm, &cs, &va, ca)) < 0 ||
 		    (code = shade_next_flag(&cs, num_bits)) < 0 ||
-		    (code = Gt_next_vertex(pshm, &cs, &vb)) < 0 ||
+		    (code = Gt_next_vertex(pshm, &cs, &vb, cb)) < 0 ||
 		    (code = shade_next_flag(&cs, num_bits)) < 0
 		    )
 		    break;
 		goto v2;
 	    case 1:
+		c = ca;
 		va = vb;
+		ca = cb;
+		vb.c = cb = c;
 	    case 2:
+		c = cb;
 		vb = vc;
-v2:		if ((code = Gt_next_vertex(pshm, &cs, &vc)) < 0)
+		cb = cc;
+		vc.c = cc = c;
+v2:		if ((code = Gt_next_vertex(pshm, &cs, &vc, cc)) < 0)
 		    break;
-		if ((code = Gt_fill_triangle(&pfs, &va, &vb, &vc)) < 0)
+		if ((code = Gt_fill_triangle(&pfs, &va, &vb, &vc, color_stack_ptr1)) < 0)
 		    break;
 	}
     }
@@ -148,9 +162,13 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     patch_fill_state_t pfs;
     const gs_shading_mesh_t *pshm = (const gs_shading_mesh_t *)psh;
     shade_coord_stream_t cs;
-    shading_vertex_t *vertex;
+    shading_vertex_t *vertex = NULL;
+    byte *color_buffer = NULL;
+    patch_color_t **color_buffer_ptrs = NULL; /* non-const access to vertex[i].c */
     shading_vertex_t next;
     int per_row = psh->params.VerticesPerRow;
+    patch_color_t *c, *cn; /* cn == next.c always, provides a non-contst access. */
+    byte *color_stack_ptr1;
     int i, code;
 
     if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s')) {
@@ -165,39 +183,65 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     pfs.rect = *rect_clip;
     code = init_patch_fill_state(&pfs);
     if (code < 0)
-	return code;
+	goto out;
+    color_stack_ptr1 = reserve_colors(&pfs, pfs.color_stack, &cn, 1); /* Can't fail. */
+    next.c = cn;
     shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
 		    pis);
     vertex = (shading_vertex_t *)
 	gs_alloc_byte_array(pis->memory, per_row, sizeof(*vertex),
 			    "gs_shading_LfGt_render");
-    if (vertex == 0)
-	return_error(gs_error_VMerror);
-    for (i = 0; i < per_row; ++i)
-	if ((code = Gt_next_vertex(pshm, &cs, &vertex[i])) < 0)
+    if (vertex == NULL) {
+	code = gs_note_error(gs_error_VMerror);
+	goto out;
+    }
+    color_buffer = gs_alloc_bytes(pis->memory, pfs.color_stack_step * per_row, "gs_shading_LfGt_fill_rectangle");
+    if (color_buffer == NULL) {
+	code = gs_note_error(gs_error_VMerror);
+	goto out;
+    }
+    color_buffer_ptrs = (patch_color_t **)gs_alloc_bytes(pis->memory, 
+			    sizeof(patch_color_t *) * per_row, "gs_shading_LfGt_fill_rectangle");
+    if (color_buffer_ptrs == NULL) {
+	code = gs_note_error(gs_error_VMerror);
+	goto out;
+    }
+    for (i = 0; i < per_row; ++i) {
+	color_buffer_ptrs[i] = (patch_color_t *)(color_buffer + pfs.color_stack_step * i);
+	vertex[i].c = color_buffer_ptrs[i];
+	if ((code = Gt_next_vertex(pshm, &cs, &vertex[i], color_buffer_ptrs[i])) < 0)
 	    goto out;
+    }
     while (!seofp(cs.s)) {
-	code = Gt_next_vertex(pshm, &cs, &next);
+	code = Gt_next_vertex(pshm, &cs, &next, cn);
 	if (code < 0)
 	    goto out;
 	for (i = 1; i < per_row; ++i) {
-	    code = Gt_fill_triangle(&pfs, &vertex[i - 1], &vertex[i], &next);
+	    code = Gt_fill_triangle(&pfs, &vertex[i - 1], &vertex[i], &next, color_stack_ptr1);
 	    if (code < 0)
 		goto out;
+	    c = color_buffer_ptrs[i - 1];
 	    vertex[i - 1] = next;
-	    code = Gt_next_vertex(pshm, &cs, &next);
+	    color_buffer_ptrs[i - 1] = cn;
+	    next.c = cn = c;
+	    code = Gt_next_vertex(pshm, &cs, &next, cn);
 	    if (code < 0)
 		goto out;
-	    code = Gt_fill_triangle(&pfs, &vertex[i], &vertex[i - 1], &next);
+	    code = Gt_fill_triangle(&pfs, &vertex[i], &vertex[i - 1], &next, color_stack_ptr1);
 	    if (code < 0)
 		goto out;
 	}
+	c = color_buffer_ptrs[per_row - 1];
 	vertex[per_row - 1] = next;
+	color_buffer_ptrs[per_row - 1] = cn;
+	next.c = cn = c;
     }
 out:
     if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s'))
 	vd_release_dc;
     gs_free_object(pis->memory, vertex, "gs_shading_LfGt_render");
+    gs_free_object(pis->memory, color_buffer, "gs_shading_LfGt_render");
+    gs_free_object(pis->memory, color_buffer_ptrs, "gs_shading_LfGt_render");
     term_patch_fill_state(&pfs);
     return code;
 }
