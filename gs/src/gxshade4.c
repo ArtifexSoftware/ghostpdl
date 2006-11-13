@@ -64,20 +64,19 @@ Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
 
 inline private int
 Gt_fill_triangle(patch_fill_state_t * pfs, const shading_vertex_t * va,
-		 const shading_vertex_t * vb, const shading_vertex_t * vc,
-		 byte *color_stack_ptr0)
+		 const shading_vertex_t * vb, const shading_vertex_t * vc)
 {
     int code = 0;
 
     if (INTERPATCH_PADDING) {
-	code = mesh_padding(pfs, &va->p, &vb->p, va->c, vb->c, color_stack_ptr0);
+	code = mesh_padding(pfs, &va->p, &vb->p, va->c, vb->c);
 	if (code >= 0)
-	    code = mesh_padding(pfs, &vb->p, &vc->p, vb->c, vc->c, color_stack_ptr0);
+	    code = mesh_padding(pfs, &vb->p, &vc->p, vb->c, vc->c);
 	if (code >= 0)
-	    code = mesh_padding(pfs, &vc->p, &va->p, vc->c, va->c, color_stack_ptr0);
+	    code = mesh_padding(pfs, &vc->p, &va->p, vc->c, va->c);
     }
     if (code >= 0)
-	code = mesh_triangle(pfs, va, vb, vc, color_stack_ptr0);
+	code = mesh_triangle(pfs, va, vb, vc);
     return code;
 }
 
@@ -95,7 +94,6 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     shading_vertex_t va, vb, vc;
     patch_color_t *c, *C[3], *ca, *cb, *cc; /* va.c == ca && vb.c == cb && vc.c == cc always, 
 				        provides a non-const access. */
-    byte *color_stack_ptr1;
     int code;
 
     if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s')) {
@@ -111,7 +109,7 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     code = init_patch_fill_state(&pfs);
     if (code < 0)
 	return code;
-    color_stack_ptr1 = reserve_colors(&pfs, pfs.color_stack, C, 3); /* Can't fail */
+    reserve_colors(&pfs, C, 3); /* Can't fail */
     va.c = ca = C[0];
     vb.c = cb = C[1];
     vc.c = cc = C[2];
@@ -141,7 +139,7 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 		vc.c = cc = c;
 v2:		if ((code = Gt_next_vertex(pshm, &cs, &vc, cc)) < 0)
 		    break;
-		if ((code = Gt_fill_triangle(&pfs, &va, &vb, &vc, color_stack_ptr1)) < 0)
+		if ((code = Gt_fill_triangle(&pfs, &va, &vb, &vc)) < 0)
 		    break;
 	}
     }
@@ -169,7 +167,6 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     shading_vertex_t next;
     int per_row = psh->params.VerticesPerRow;
     patch_color_t *c, *cn; /* cn == next.c always, provides a non-contst access. */
-    byte *color_stack_ptr1;
     int i, code;
 
     if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s')) {
@@ -185,7 +182,7 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     code = init_patch_fill_state(&pfs);
     if (code < 0)
 	goto out;
-    color_stack_ptr1 = reserve_colors(&pfs, pfs.color_stack, &cn, 1); /* Can't fail. */
+    reserve_colors(&pfs, &cn, 1); /* Can't fail. */
     next.c = cn;
     shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
 		    pis);
@@ -218,7 +215,7 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	if (code < 0)
 	    goto out;
 	for (i = 1; i < per_row; ++i) {
-	    code = Gt_fill_triangle(&pfs, &vertex[i - 1], &vertex[i], &next, color_stack_ptr1);
+	    code = Gt_fill_triangle(&pfs, &vertex[i - 1], &vertex[i], &next);
 	    if (code < 0)
 		goto out;
 	    c = color_buffer_ptrs[i - 1];
@@ -228,7 +225,7 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	    code = Gt_next_vertex(pshm, &cs, &next, cn);
 	    if (code < 0)
 		goto out;
-	    code = Gt_fill_triangle(&pfs, &vertex[i], &vertex[i - 1], &next, color_stack_ptr1);
+	    code = Gt_fill_triangle(&pfs, &vertex[i], &vertex[i - 1], &next);
 	    if (code < 0)
 		goto out;
 	}

@@ -164,10 +164,10 @@ int init_patch_fill_state(patch_fill_state_t *pfs);
 void term_patch_fill_state(patch_fill_state_t *pfs);
 
 int mesh_triangle(patch_fill_state_t *pfs, 
-    const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2, byte *color_stack_ptr);
+    const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2);
 
 int mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
-	    const patch_color_t *c0, const patch_color_t *c1, byte *color_stack_ptr);
+	    const patch_color_t *c0, const patch_color_t *c1);
 
 int patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	   const gs_fixed_point interior[4],
@@ -182,7 +182,7 @@ void patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t *pfs);
 int gx_shade_background(gx_device *pdev, const gs_fixed_rect *rect, 
 	const gx_device_color *pdevc, gs_logical_operation_t log_op);
 
-byte *reserve_colors(patch_fill_state_t *pfs, byte *ptr, patch_color_t *c0[], int n);
+byte *reserve_colors(patch_fill_state_t *pfs, patch_color_t *c0[], int n);
 void release_colors(patch_fill_state_t *pfs, byte *ptr, int n);
 
 #endif /* gxshade4_INCLUDED */
