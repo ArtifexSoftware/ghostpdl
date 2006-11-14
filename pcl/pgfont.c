@@ -129,6 +129,7 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
     int width;
     gs_matrix save_ctm;
     int code;
+    pl_font_t *plfont = (pl_font_t *)pfont->client_data;
 
     /* we assert the font is present at this point */
     width = hpgl_stick_arc_width(uni_code, font_type);
@@ -143,10 +144,11 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
     gs_scale(pgs, 1.0 / 1024.0 * .667, 1.0 / 1024.0 * .667);
     gs_moveto(pgs, 0.0, 0.0);
     code = hpgl_stick_arc_segments(pfont->memory, (void *)pgs, uni_code, font_type);
-    gs_setmatrix(pgs, &save_ctm);
     if ( code < 0 )
 	return code;
-    /* Set reasonable join, cap, miter and dash styles. */
+    gs_setdefaultmatrix(pgs, NULL);
+    gs_initmatrix(pgs);
+    /* Set predictable join and cap styles. */
     gs_setlinejoin(pgs, gs_join_round);
     gs_setmiterlimit(pgs, 2.61); /* start beveling at 45 degrees */
     gs_setlinecap(pgs, gs_cap_round);
@@ -154,7 +156,9 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
         float pattern[1];
         gs_setdash(pgs, pattern, 0, 0);
     }
-    return gs_stroke(pgs);
+    gs_stroke(pgs);
+    gs_setmatrix(pgs, &save_ctm);
+    return 0;
 }
 
 private int

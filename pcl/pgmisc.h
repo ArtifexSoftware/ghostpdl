@@ -82,4 +82,7 @@ do {						\
 #define hpgl_call_check_lost(call)\
   hpgl_call_and_check(pgls->memory, call, hpgl_limitcheck_set_lost)
 
+/* needs a better home */
+gs_point hpgl_current_char_scale(const hpgl_state_t *pgls);
+
 #endif                       /* pgmisc_INCLUDED */

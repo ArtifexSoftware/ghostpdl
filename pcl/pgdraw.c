@@ -1477,8 +1477,11 @@ hpgl_draw_current_path(
                 if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), false)) < 0)
                     return code;
 		hpgl_call(hpgl_set_plu_ctm(pgls));
-		hpgl_call(gs_setlinewidth(pgls->pgs, 
-         		  pgls->g.font_selection[pgls->g.font_selected].params.height_4ths * 0.0375));
+                {
+                    gs_point scale = hpgl_current_char_scale(pgls);
+                    /* NB fix and comment */
+                    hpgl_call(gs_setlinewidth(pgls->pgs, min(scale.x, scale.y) * 0.0375 * 0.2835));
+                }
                 pcl_mark_page_for_path(pgls);
 		hpgl_call(gs_stroke(pgls->pgs));
 		break;

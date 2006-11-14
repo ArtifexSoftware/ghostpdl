@@ -40,7 +40,32 @@
 #include "gxstate.h"		/* for gs_state_client_data */
 
 #define STICK_FONT_TYPEFACE 48
+
+/* NB this next constant is not quite right.  The STICK_FONT_TYPEFACE
+   definition is used in the code to cover both stick and arc fonts.
+   Typically the prescription was to choose the stick font typeface
+   (48) and enable proportional spacing to get the arc font.  More
+   recently we discovered a new typeface family number that can be
+   used for the proportionally spaced arc fonts (50).  This has been
+   reflected in the hpgl/2 selection code but nowhere else. */
 #define ARC_FONT_TYPEFACE 50
+
+/* currently selected font */
+private pl_font_t *
+hpgl_currentfont(const hpgl_state_t *pgls)
+{
+    return pgls->g.font_selection[pgls->g.font_selected].font;
+}
+
+private bool
+hpgl_is_currentfont_stick(const hpgl_state_t *pgls)
+{
+    pl_font_t *plfont = hpgl_currentfont(pgls);
+    if (!plfont)
+        return false;
+    return ( ((plfont->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE) &&
+            (plfont->params.proportional_spacing == false) );
+}
 
 /* convert points 2 plu - agfa uses 72.307 points per inch */
 private floatp
@@ -86,7 +111,7 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
     
     return pl_map_symbol(psm, chr,
                          pfs->font->storage == pcds_internal,
-                         false);
+                         pl_complement_to_vocab(pfs->font->character_complement) == plgv_MSL);
 }
 
 /* ------ Font selection ------- */
@@ -309,25 +334,38 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 /* Get the cell height or character height in the current font, */
 /* plus extra space if any. */
 private int
-hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height,
-  bool cell_height)
+hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height)
 {
 	const pcl_font_selection_t *pfs =
 	  &pgls->g.font_selection[pgls->g.font_selected];
 
-	if ( pgls->g.character.size_mode == hpgl_size_not_set ) {
-	    *height =
-		(pfs->params.proportional_spacing ?
-		 hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0) :
-		 1.667 * inches_2_plu(pl_fp_pitch_cp(&pfs->params) / 7200.0));
-	    if ( !cell_height )
-		*height *= 0.75;	/****** HACK ******/
-	} else {
-	    /* character size is actually the cap height see 23-6 */
-	    *height = pgls->g.character.size.y * 1.5;
-	    if (pgls->g.character.size_mode == hpgl_size_relative)
-		*height *= pgls->g.P2.y - pgls->g.P1.y;
-	}
+        if ( pfs->font->scaling_technology != plfst_bitmap ) {
+            gs_point scale = hpgl_current_char_scale(pgls);
+            *height = fabs(scale.y);
+        } else { 
+            /* NB temporary not correct */
+            *height = hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0);
+        }
+
+        /* the HP manual says linefeed distance or cell height is 1.33
+           times point size for stick fonts and "about" 1.2 times the
+           point size for "most" fonts.  Empirical results suggest the
+           stick font value is 1.28.  NB This value appears to be
+           slightly different for the proportional arc font. */
+        if (pgls->g.character.text_path == hpgl_text_right || pgls->g.character.text_path == hpgl_text_left) {
+            if ( hpgl_is_currentfont_stick(pgls) )
+                *height *= 1.28;
+            else
+                *height *= 1.2;
+        } else {
+            /* INC */
+            if ( hpgl_is_currentfont_stick(pgls) )
+                *height *= .96;
+            else
+                *height *= .898;
+        }
+            
+
 	*height *= 1.0 + hpgl_get_character_extra_space_y(pgls);
 	return 0;
 }
@@ -402,13 +440,8 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
     }
     if ( ny ) {
 	hpgl_real_t height;
-	pcl_font_selection_t *pfs =
-		&pgls->g.font_selection[pgls->g.font_selected];
-	hpgl_call(hpgl_get_current_cell_height(pgls, &height, true));
-	if ( (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE )
-	    dy = ny * height * 1.15;
-	else
-	    dy = ny * height * 1.2;
+	hpgl_call(hpgl_get_current_cell_height(pgls, &height));
+        dy = ny * height;
     }
 
     /*
@@ -553,6 +586,60 @@ hpgl_use_show(hpgl_state_t *pgls)
 	return false;
 }
  
+/* get the scaling factors for a gl/2 character */
+gs_point
+hpgl_current_char_scale(const hpgl_state_t *pgls)
+{
+    const pcl_font_selection_t *pfs =
+        &pgls->g.font_selection[pgls->g.font_selected];
+    pl_font_t *font = pfs->font;
+    bool bitmaps_allowed = pgls->g.bitmap_fonts_allowed;
+
+    gs_point scale;
+    
+    if (pgls->g.character.size_mode == hpgl_size_not_set) {
+        if (font->scaling_technology == plfst_bitmap) {
+             scale.x = inches_2_plu(1.0 / font->resolution.x);
+             scale.y = -inches_2_plu(1.0 / font->resolution.y);
+        /* Scale fixed-width fonts by pitch, variable-width by height. */
+        } else if (pfs->params.proportional_spacing) {
+            if (pl_font_is_scalable(font)) {
+                scale.x = hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0);
+                scale.y = scale.x;
+            } else {
+                double  ratio = (double)pfs->params.height_4ths
+                    / font->params.height_4ths;
+
+                scale.x = ratio * inches_2_plu(1.0 / font->resolution.x);
+
+                /*
+                 * Bitmap fonts use the PCL coordinate system,
+                 * so we must invert the Y coordinate.
+                 */
+                scale.y = -(ratio * inches_2_plu(1.0 / font->resolution.y));
+            }
+        } else {
+#define PERCENT_OF_EM ((pl_fp_pitch_cp(&pfs->font->params) / 100.0))
+            scale.x = scale.y = (1.0/PERCENT_OF_EM) * hpgl_points_2_plu(pgls, pl_fp_pitch_cp(&pfs->params) / 100);
+        }
+    } else {
+        /*
+         * Note that the CTM takes P1/P2 into account unless
+         * an absolute character size is in effect.
+         */
+        /* HP is really scaling the cap height not the point size.
+           We assume point size is 1.5 times the point size */
+        scale.x = pgls->g.character.size.x * 1.5 * 1.25;
+        scale.y = pgls->g.character.size.y * 1.5;
+        if (pgls->g.character.size_mode == hpgl_size_relative)
+            scale.x *= pgls->g.P2.x - pgls->g.P1.x,
+		scale.y *= pgls->g.P2.y - pgls->g.P1.y;
+        if (bitmaps_allowed)    /* no mirroring */
+            scale.x = fabs(scale.x), scale.y = fabs(scale.y);
+    }
+    return scale;
+
+}
 /*
  * build the path and render it
  */
@@ -565,38 +652,59 @@ hpgl_print_char(
     int                             text_path = pgls->g.character.text_path;
     const pcl_font_selection_t *    pfs =
 	                      &pgls->g.font_selection[pgls->g.font_selected];
-    const pl_font_t *               font = pfs->font;
+    pl_font_t *               font = pfs->font;
     gs_state *                      pgs = pgls->pgs;
-    gs_point                        pos;
     gs_matrix                       save_ctm;
-
-    /* Set up the graphics state. */
-    pos = pgls->g.pos;
-
-    /*
-     * Reset the 'have path' flag so that the CTM gets reset.
-     * This is a hack; doing things properly requires a more subtle
-     * approach to handling pen up/down and path construction.
-     */
-    hpgl_call(hpgl_clear_current_path(pgls));
-
+    gs_font *       pfont = pgls->g.font->pfont;
+    gs_point scale = hpgl_current_char_scale(pgls);
     /*
      * All character data is relative, but we have to start at
      * the right place.
      */
     hpgl_call( hpgl_add_point_to_path( pgls,
-                                       pos.x,
-                                       pos.y,
+                                       pgls->g.pos.x,
+                                       pgls->g.pos.y,
 				       hpgl_plot_move_absolute,
                                        true
                                        ) );
     hpgl_call(gs_currentmatrix(pgs, &save_ctm));
 
     /*
-     * Reset the CTM if GL/2 scaling is on but we aren't using
-     * relative-size characters (SR).
+     * Use plotter unit ctm.
      */
     hpgl_call(hpgl_set_plu_ctm(pgls));
+
+    /* ?? WRONG and UGLY */
+    {
+        float metrics[4];
+        if ( (pl_font_char_metrics(font, (void *)(pgls->pgs), 
+                                   hpgl_map_symbol(ch, pgls), metrics)) == 1)
+            ch = ' ';
+    }
+
+	/*
+	 * If we're using a stroked font, patch the pen width to reflect
+	 * the stroke weight.  Note that when the font's build_char
+	 * procedure calls stroke, the CTM is still scaled.
+	 ****** WHAT IF scale.x != scale.y? ****** this should be unnecessary.
+	 */
+
+    if (pfont->PaintType != 0) {
+        const float *   widths = pcl_palette_get_pen_widths(pgls->ppalet);
+        float           save_width = widths[hpgl_get_selected_pen(pgls)];
+        int             weight = pfs->params.stroke_weight;
+        floatp  nwidth;
+
+        if (weight == 9999)
+            nwidth = save_width;
+        else {
+            nwidth = 0.06 + weight * (weight < 0 ? 0.005 : 0.010);
+            nwidth *= min(scale.x, scale.y);
+        }
+        /* in points */
+        gs_setlinewidth(pgs, nwidth * (72.0/1016.0));
+    }
+
 
     /*
      * We know that the drawing machinery only sets the CTM
@@ -606,15 +714,10 @@ hpgl_print_char(
      */
     {
         gs_font *       pfont = pgls->g.font->pfont;
-        const float *   widths = pcl_palette_get_pen_widths(pgls->ppalet);
-        float           save_width = widths[hpgl_get_selected_pen(pgls)];
-        bool            save_relative = pgls->g.pen.width_relative;
-        gs_point        scale;
         bool            bitmaps_allowed = pgls->g.bitmap_fonts_allowed;
         bool            use_show = hpgl_use_show(pgls);
         gs_matrix       pre_rmat, rmat, advance_mat;
         int             angle = -1;	/* a multiple of 90 if used */
-        int             weight = pfs->params.stroke_weight;
 	gs_text_enum_t *penum;
         byte            str[2];
         int             code;
@@ -622,61 +725,8 @@ hpgl_print_char(
 	hpgl_real_t     space_width;
 	int             space_code;
 	hpgl_real_t     width;
-	hpgl_real_t     lsb;
 
-	/* get the left side bearing, gl/2 left justifies everything in
-           the character cell */
-	{
-	    float metrics[4];
-	    /* undefined characters are treated as a space */
-	    if ( (pl_font_char_metrics(font, (void *)(pgls->pgs), 
-				       hpgl_map_symbol(ch, pgls), metrics)) == 1 ) {
-		ch = ' ';
-		lsb = 0;
-	    } else
-	        lsb = metrics[0];
-	}
 	/* Handle size. */
-	if (pgls->g.character.size_mode == hpgl_size_not_set) {
-
-            /* Scale fixed-width fonts by pitch, variable-width by height. */
-	    if (pfs->params.proportional_spacing) {
-	        if (pl_font_is_scalable(font)) {
-		    scale.x = hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0);
-                    scale.y = scale.x;
-		} else {
-                    double  ratio = (double)pfs->params.height_4ths
-                                      / font->params.height_4ths;
-
-		    scale.x = ratio * inches_2_plu(1.0 / font->resolution.x);
-
-		    /*
-                     * Bitmap fonts use the PCL coordinate system,
-		     * so we must invert the Y coordinate.
-                     */
-		    scale.y = -(ratio * inches_2_plu(1.0 / font->resolution.y));
-		}
-            } else {
-                double ratio = (double)pl_fp_pitch_cp(&pfs->params) / 
-                    pl_fp_pitch_cp(&pfs->font->params);
-                scale.y = scale.x = hpgl_points_2_plu(pgls, ratio);
-	    }
-
-        } else {
-            /*
-	     * Note that the CTM takes P1/P2 into account unless
-	     * an absolute character size is in effect.
-	     */
-	    /* HP is really scaling the cap height not the point size.
-               We assume point size is 1.5 times the point size */
-	    scale.x = pgls->g.character.size.x * 1.5 * 1.25;
-	    scale.y = pgls->g.character.size.y * 1.5;
-	    if (pgls->g.character.size_mode == hpgl_size_relative)
-		scale.x *= pgls->g.P2.x - pgls->g.P1.x,
-		scale.y *= pgls->g.P2.y - pgls->g.P1.y;
-	    if (bitmaps_allowed)    /* no mirroring */
-		scale.x = fabs(scale.x), scale.y = fabs(scale.y);
-	}
 
 	gs_scale(pgs, scale.x, scale.y);
 	/* Handle rotation. */
@@ -748,10 +798,6 @@ hpgl_print_char(
 
 	}
 
-	/* the plu ctm should be in effect */
-	hpgl_call(hpgl_add_point_to_path( pgls, -lsb, 0,
-		hpgl_plot_move_relative, false));
-
 	/*
 	 * Reset the rotation if we're using a bitmap font.
 	 */
@@ -759,31 +805,6 @@ hpgl_print_char(
 	if (angle >= 0) {
             gs_setmatrix(pgs, &pre_rmat);
 	    gs_rotate(pgs, (floatp)angle);
-	}
-
-	/*
-	 * If we're using a stroked font, patch the pen width to reflect
-	 * the stroke weight.  Note that when the font's build_char
-	 * procedure calls stroke, the CTM is still scaled.
-	 ****** WHAT IF scale.x != scale.y? ****** this should be unnecessary.
-	 */
-	if (pfont->PaintType != 0) {
-            int     code = 0;
-            int     pen = hpgl_get_selected_pen(pgls);
-            floatp  nwidth;
-
-            if (weight == 9999)
-                nwidth = save_width / scale.y;
-            else {
-                nwidth = 0.06 + weight * (weight < 0 ? 0.005 : 0.010);
-	        pgls->g.pen.width_relative = true;
-            }
-            if ((code = pcl_palette_PW(pgls, pen, nwidth)) < 0) {
-	        pgls->g.pen.width_relative = save_relative;
-                return code;
-            }
-
-            gs_setlinewidth(pgs, nwidth);
 	}
 
 	str[0] = ch;
@@ -862,10 +883,10 @@ hpgl_print_char(
             }
 	    hpgl_call(gs_currentpoint(pgs, &end_pt));
 	    if ( start_pt.x == end_pt.x && start_pt.y == end_pt.y ) { 
-		/* freetype doesn't move currentpoint in gs_show(), 
-		 * since gs cache is not used.  
+		/* freetype doesn't move currentpoint in gs_show(),
+		 * since gs cache is not used.  NB we don't support
+		 * freetype anymore is this necessary?
 		 */
-		
 		hpgl_get_char_width(pgls, ch, &width);
 		hpgl_call(hpgl_add_point_to_path(pgls,  width / scale.x, 0.0,
 						 hpgl_plot_move_relative, false));
@@ -889,16 +910,8 @@ hpgl_print_char(
 	    {
                 hpgl_real_t     height;
 
-	        hpgl_call( hpgl_get_current_cell_height( pgls,
-                                                         &height,
-                                                         true
-                                                         ) );
-		/* magic number nonsense */
-		if ( (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE )
-		    height *= (13.8/16.0);
-		else
-		    height *= (14.375/16.0);
-		hpgl_call( hpgl_add_point_to_path(pgls, start_pt.x, end_pt.y - height / scale.y,
+	        hpgl_call(hpgl_get_current_cell_height(pgls, &height));
+                hpgl_call( hpgl_add_point_to_path(pgls, start_pt.x, end_pt.y - height / scale.y,
 						  hpgl_plot_move_absolute, false) );
 
 	    }
@@ -912,31 +925,18 @@ hpgl_print_char(
 	    {
                 hpgl_real_t height;
 
-	        hpgl_call(hpgl_get_current_cell_height( pgls,
-							&height,
-							true
-							));
-		if ( (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE )
-		    height *= (13.8/16.0);
-		else
-		    height *= (14.375/16.0);
+	        hpgl_call(hpgl_get_current_cell_height(pgls, &height));
 		hpgl_call(hpgl_add_point_to_path(pgls, start_pt.x, 
 						 end_pt.y + height / scale.y, hpgl_plot_move_absolute, false));
 	    }
 	    break;
 	}
 
-	hpgl_call(hpgl_add_point_to_path( pgls, lsb, 0,
-		hpgl_plot_move_relative, false));
-
-
 	gs_setmatrix(pgs, &save_ctm);
 	hpgl_call(gs_currentpoint(pgs, &end_pt));
 	if (!use_show)
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_character));
-        (void )pcl_palette_PW(pgls, hpgl_get_selected_pen(pgls), save_width);
 
-	pgls->g.pen.width_relative = save_relative;
 	hpgl_call( hpgl_add_point_to_path( pgls,
                                            end_pt.x,
                                            end_pt.y,
@@ -972,6 +972,15 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 {
     double pos_x = 0.0, pos_y = 0.0;
     double off_x, off_y;
+
+#ifdef CHECK_UNIMPLEMENTED
+    if (pgls->g.character.extra_space.x != 0 || pgls->g.character.extra_space.y != 0)
+        dprintf("warning origin offset with non zero extra space not supported\n");
+#endif
+    height /= 1.6;
+    if (hpgl_is_currentfont_stick(pgls))
+        height /= 1.4;
+    
     /* stickfonts are offset by 16 grid units or .33 times the
        point size.  HAS need to support other font types. */
     if ( origin > 10 )
@@ -1089,7 +1098,7 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 		  if ( width == 0.0 ) /* BS as first char of string */
 		    { hpgl_call(hpgl_ensure_font(pgls));
 		      hpgl_get_char_width(pgls, ' ', &width);
-		      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
+		      hpgl_call(hpgl_get_current_cell_height(pgls, &height));
 		    }
 		  if ( vertical )
 		    { /* Vertical text path, back up in Y. */
@@ -1127,16 +1136,9 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 		}
 	      hpgl_call(hpgl_ensure_font(pgls));
 	      hpgl_get_char_width(pgls, ch, &width);
-acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
+acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height));
 	      if ( vertical )
-		{ /* Vertical text path: sum heights, take max of widths. */
-		    const pcl_font_selection_t *    pfs =
-			&pgls->g.font_selection[pgls->g.font_selected];
-		    if ( !pfs->params.proportional_spacing &&
-			 (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE )
-			height *= (13.80/16.0);
-		    else
-			height *= (14.375/16.0);
+		{
 		    if ( width > label_length )
 			label_length = width;
 		    if ( !first_char_on_line )
@@ -1242,7 +1244,6 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 		    case CR :
 		      hpgl_call(hpgl_do_CR(pgls));
 		      continue;
-		    case VERT_TAB :
 		    case FF :
 		      /* does nothing */
 		      spaces = 0, lines = 0;
@@ -1265,20 +1266,21 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 		  continue;
 		}
 print:	     {
-		  const pcl_font_selection_t *pfs =
-		      &pgls->g.font_selection[pgls->g.font_selected];
-		  hpgl_call(hpgl_ensure_font(pgls));
 		  /* if this a printable character print it
 		     otherwise continue, a character can be
 		     printable and undefined in which case
 		     it is printed as a space character */
+		  const pcl_font_selection_t *pfs =
+		      &pgls->g.font_selection[pgls->g.font_selected];
 		  if ( !hpgl_is_printable(pfs->map, ch, 
-					  (pgls->g.font->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE ) )
+					  (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE ) )
 		      continue;
-		  hpgl_call(hpgl_print_char(pgls, ch));
+	      }
+	      hpgl_call(hpgl_ensure_font(pgls));
+	      hpgl_call(hpgl_print_char(pgls, ch));
 	    }
-	  }
 	}
+
 	pgls->g.label.char_count = 0;
 	return 0;
 }
