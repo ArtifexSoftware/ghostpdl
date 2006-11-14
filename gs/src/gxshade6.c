@@ -2819,7 +2819,8 @@ typedef enum {
 
 private inline color_change_type_t
 quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p, 
-			bool is_big_u, bool is_big_v, bool *divide_u, bool *divide_v)
+			bool is_big_u, bool is_big_v, double size_u, double size_v, 
+			bool *divide_u, bool *divide_v)
 {
     patch_color_t d0001, d1011, d;
     double D, D0001, D1011, D0010, D0111, D0011, D0110;
@@ -2867,10 +2868,14 @@ quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p
     D = color_norm(pfs, &d);
     if (D <= pfs->smoothness)
 	return color_change_bilinear;
-#if 0 /* Disabled due to a 0.5% slowdown with the test file of the Bug 687948. */
+#if 1
     if (Du > Dv && is_big_u)
 	*divide_u = true;
     else if (Du < Dv && is_big_v)
+	*divide_v = true;
+    else if (is_big_u && size_u > size_v)
+	*divide_u = true;
+    else if (is_big_v && size_v > size_u)
 	*divide_v = true;
     else if (is_big_u)
 	*divide_u = true;
@@ -2880,7 +2885,8 @@ quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p
 	/* The color function looks uncontiguous. */
 	return color_change_small;
     }
-#else
+#else /* Disabled due to infinite recursion with -r200 09-57.PS 
+	 (Standard Test 6.4  - Range 6) (Test05). */
     if (Du > Dv)
 	*divide_u = true;
     else
@@ -2951,10 +2957,12 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	double d0111x = any_abs(p->p[0][1]->p.x - p->p[1][1]->p.x);
 	double d0010y = any_abs(p->p[0][0]->p.y - p->p[1][0]->p.y);
 	double d0111y = any_abs(p->p[0][1]->p.y - p->p[1][1]->p.y);
+	double size_u = max(max(d0001x, d1011x), max(d0001y, d1011y));
+	double size_v = max(max(d0010x, d0111x), max(d0010y, d0111y));
 
-	if (d0001x > fixed_1 || d1011x > fixed_1 || d0001y > fixed_1 || d1011y > fixed_1)
+	if (size_u > fixed_1)
 	    is_big_u = true;
-	if (d0010x > fixed_1 || d0111x > fixed_1 || d0010y > fixed_1 || d0111y > fixed_1)
+	if (size_v > fixed_1)
 	    is_big_v = true;
 	else if (!is_big_u)
 	    return (QUADRANGLES || !pfs->maybe_self_intersecting ? 
@@ -2975,12 +2983,12 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	}
 	if (pfs->monotonic_color && !pfs->linear_color) {
 	    if (divide_v && divide_u) {
-		if (d0001x + d1011x + d0001y + d1011y > d0010x + d0111x + d0010y + d0111y)
+		if (size_u > size_v)
 		    divide_v = false;
 		else
 		    divide_u = false;
 	    } else if (!divide_u && !divide_v && !pfs->unlinear) {
-		if (is_big_u) {
+		if (d0001x + d1011x + d0001y + d1011y > d0010x + d0111x + d0010y + d0111y) { /* fixme: use size_u, size_v */
 		    code = is_quadrangle_color_linear_by_u(pfs, p);
 		    if (code < 0)
 			return code;
@@ -2997,7 +3005,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 		    if (code < 0)
 			return code;
 		    if (!code) {
-			if (d0001x + d1011x + d0001y + d1011y > d0010x + d0111x + d0010y + d0111y) {
+			if (d0001x + d1011x + d0001y + d1011y > d0010x + d0111x + d0010y + d0111y) { /* fixme: use size_u, size_v */
 			    divide_u = true;
 			    divide_v = false;
 			} else {
@@ -3012,7 +3020,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	}
 	if (!pfs->linear_color) {
 	    /* go to divide. */
-	} else switch(quadrangle_color_change(pfs, p, is_big_u, is_big_v, &divide_u, &divide_v)) {
+	} else switch(quadrangle_color_change(pfs, p, is_big_u, is_big_v, size_u, size_v, &divide_u, &divide_v)) {
 	    case color_change_small: 
 		code = (QUADRANGLES || !pfs->maybe_self_intersecting ? 
 			    constant_color_quadrangle : triangles4)(pfs, p, 
