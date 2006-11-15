@@ -37,6 +37,7 @@ ifelse
   {
     exch //bound_0_1 exec
     mark exch 2 index 3 get exec
+    counttomark { cvr counttomark -1 roll } repeat % for CET, make all tints real.
     counttomark 2 add -2 roll pop
   }
 bind def
