@@ -159,7 +159,7 @@ end
 /.fixcurrenthalftonescreen	% <dict> .fix... <freq> <angle> <proc>
  { dup /HalftoneType get 1 eq
     { dup /Frequency get 1 index /Angle get }
-    { 60 0 }
+    { 60.0 0.0 }	% Adobe returns these as reals
    ifelse 3 2 roll
  } bind def
 /currentscreen		% - currentscreen 60 0 <dict>
