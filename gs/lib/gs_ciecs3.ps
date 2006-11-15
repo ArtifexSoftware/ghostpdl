@@ -47,7 +47,15 @@
           }
         bind
 
-        /cs_get_default_color { pop 0 0 0 } bind
+	% per Page 233 of the PLRM, default color should be as close to 0.0 as possible
+	% within the RangeDEF
+        /cs_get_default_color { pop 0.0 0.0 0.0 } bind
+        /cs_get_default_color { 1 get /RangeDEF .knownget {
+	    aload pop pop 5 1 roll pop 4 1 roll pop 3 1 roll
+	  } {
+	    0.0 0.0 0.0 
+	  } ifelse 
+	} bind
         /cs_get_currentgray //no_currentgray
         /cs_get_currentrgb //no_currentrgb
         /cs_get_currentcmyk //no_currentcmyk
@@ -92,7 +100,14 @@ if
           }
         bind
 
-        /cs_get_default_color { pop 0 0 0 0 } bind
+	% per Page 233 of the PLRM, default color should be as close to 0.0 as possible
+	% within the RangeDEFG
+        /cs_get_default_color { 1 get /RangeDEFG .knownget {
+	    aload pop pop 7 1 roll pop 6 1 roll pop 5 1 roll pop 4 1 roll
+	  } {
+	    0.0 0.0 0.0 0.0
+	  } ifelse 
+	} bind
         /cs_get_currentgray //no_currentgray
         /cs_get_currentrgb //no_currentrgb
         /cs_get_currentcmyk //no_currentcmyk

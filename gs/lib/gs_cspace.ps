@@ -497,7 +497,8 @@ systemdict /setcolor .undef
             //.cs_substitute exec
             //.cs_prepare exec
             //.cs_install exec
-            //make_array1 exec //setcolorspace
+            dup //make_array1 exec //setcolorspace
+	    //.cs_get_default_color exec setcolor
           }
         ifelse
       }
