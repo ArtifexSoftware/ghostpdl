@@ -411,7 +411,7 @@ private int
 hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
   hpgl_real_t lines, const hpgl_real_t *pwidth)
 {
-    int nx, ny;
+    double nx, ny;
     double dx = 0, dy = 0;
 
     hpgl_call(hpgl_ensure_font(pgls));
@@ -430,7 +430,7 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
 	    nx = -lines, ny = spaces; break;
 	}
     /* calculate the next label position in relative coordinates. */
-    if ( nx ) {
+    if ( nx != 0 ) {
 	hpgl_real_t width;
 	if ( pwidth != 0 )
 	    width = *pwidth;
@@ -438,7 +438,7 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
 	    hpgl_get_char_width(pgls, ' ', &width);
 	dx = width * nx;
     }
-    if ( ny ) {
+    if ( ny != 0 ) {
 	hpgl_real_t height;
 	hpgl_call(hpgl_get_current_cell_height(pgls, &height));
         dy = ny * height;
@@ -972,94 +972,101 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 {
     double pos_x = 0.0, pos_y = 0.0;
     double off_x, off_y;
+    hpgl_real_t adjusted_height = height;
 
 #ifdef CHECK_UNIMPLEMENTED
     if (pgls->g.character.extra_space.x != 0 || pgls->g.character.extra_space.y != 0)
         dprintf("warning origin offset with non zero extra space not supported\n");
 #endif
-    height /= 1.6;
+    adjusted_height /= 1.6;
     if (hpgl_is_currentfont_stick(pgls))
-        height /= 1.4;
+        adjusted_height /= 1.4;
     
-    /* stickfonts are offset by 16 grid units or .33 times the
-       point size.  HAS need to support other font types. */
-    if ( origin > 10 )
-	off_x = off_y = 0.33 * height;
-    switch ( origin )
-	{
-	case 11:
-	    pos_x = -off_x;
-	    pos_y = -off_y;
-	case 1:
-	    break;
-	case 12:
-	    pos_x = -off_x;
-	case 2:
-	    pos_y = .5 * height;
-	    break;
-	case 13:
-	    pos_x = -off_x;
-	    pos_y = off_y;
-	case 3:
-	    pos_y += height;
-	    break;
-	case 14:
-	    pos_y = -off_y;
-	case 4:
-	    pos_x = .5 * width;
-	    break;
-	case 15:
-	case 5:
-	    pos_x = .5 * width;
-	    pos_y = .5 * height;
-	    break;
-	case 16:
-	    pos_y = off_y;
-	case 6:
-	    pos_x = .5 * width;
-	    pos_y += height;
-	    break;
-	case 17:
-	    pos_x = off_x;
-	    pos_y = -off_y;
-	case 7:
-	    pos_x += width;
-	    break;
-	case 18:
-	    pos_x = off_x;
-	case 8:
-	    pos_x += width;
-	    pos_y = .5 * height;
-	    break;
-	case 19:
-	    pos_x = off_x;
-	    pos_y = off_y;
-	case 9:
-	    pos_x += width;
-	    pos_y += height;
-	    break;
-	case 21:
-	    {
-		/* // LO21 prints at the current position  not pcl CAP.
-		gs_matrix save_ctm;
-		gs_point pcl_pos_dev, label_origin;
+    /* offset values specified by the documentation */
+    if ( (origin >= 11 && origin <= 14) || (origin >= 16 && origin <= 19) ) {
+        if (hpgl_is_currentfont_stick(pgls)) {
+            off_x = off_y = 0.33 * adjusted_height;
+        } else {
+            /* the documentation says this should be .25, experiments
+               indicate .33 like stick fonts. */
+            off_x = off_y = 0.33 * adjusted_height;
+        }
+    }
 
-		gs_currentmatrix(pgls->pgs, &save_ctm);
-		pcl_set_ctm(pgls, false);
-		hpgl_call(gs_transform(pgls->pgs, (floatp)pgls->cap.x,
-				       (floatp)pgls->cap.y, &pcl_pos_dev));
-		gs_setmatrix(pgls->pgs, &save_ctm);
-		hpgl_call(gs_itransform(pgls->pgs, (floatp)pcl_pos_dev.x,
-					(floatp)pcl_pos_dev.y, &label_origin));
-		pos_x = -(pgls->g.pos.x - label_origin.x);
-	        pos_y = (pgls->g.pos.y - label_origin.y);
-		*/
-	    }
-	    break;
-	default:
-	    dprintf("unknown label parameter");
+    switch ( origin ) {
+    case 11:
+        pos_x = -off_x;
+        pos_y = -off_y;
+    case 1:
+        break;
+    case 12:
+        pos_x = -off_x;
+    case 2:
+        pos_y = .5 * adjusted_height;
+        break;
+    case 13:
+        pos_x = -off_x;
+        pos_y = off_y;
+    case 3:
+        pos_y += adjusted_height;
+        break;
+    case 14:
+        pos_y = -off_y;
+    case 4:
+        pos_x = .5 * width;
+        break;
+    case 15:
+    case 5:
+        pos_x = .5 * width;
+        pos_y = .5 * adjusted_height;
+        break;
+    case 16:
+        pos_y = off_y;
+    case 6:
+        pos_x = .5 * width;
+        pos_y += adjusted_height;
+        break;
+    case 17:
+        pos_x = off_x;
+        pos_y = -off_y;
+    case 7:
+        pos_x += width;
+        break;
+    case 18:
+        pos_x = off_x;
+    case 8:
+        pos_x += width;
+        pos_y = .5 * adjusted_height;
+        break;
+    case 19:
+        pos_x = off_x;
+        pos_y = off_y;
+    case 9:
+        pos_x += width;
+        pos_y += adjusted_height;
+        break;
+    case 21:
+        {
+            /* // LO21 prints at the current position  not pcl CAP.
+               gs_matrix save_ctm;
+               gs_point pcl_pos_dev, label_origin;
 
-	}
+               gs_currentmatrix(pgls->pgs, &save_ctm);
+               pcl_set_ctm(pgls, false);
+               hpgl_call(gs_transform(pgls->pgs, (floatp)pgls->cap.x,
+               (floatp)pgls->cap.y, &pcl_pos_dev));
+               gs_setmatrix(pgls->pgs, &save_ctm);
+               hpgl_call(gs_itransform(pgls->pgs, (floatp)pcl_pos_dev.x,
+               (floatp)pcl_pos_dev.y, &label_origin));
+               pos_x = -(pgls->g.pos.x - label_origin.x);
+               pos_y = (pgls->g.pos.y - label_origin.y);
+            */
+        }
+        break;
+    default:
+        dprintf("unknown label parameter");
+
+    }
     /* a relative move to the new position */
     offset->x = pos_x;
     offset->y = pos_y;
@@ -1067,222 +1074,212 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
     /* account for character direction and slant */
     hpgl_rotation_transform_distance(pgls, offset, offset);
     hpgl_slant_transform_distance(pgls, offset, offset);
+
+    switch ( pgls->g.character.text_path ) {
+    case hpgl_text_left:
+        offset->x -= width;
+        break;
+    case hpgl_text_down:
+        offset->y -= height;
+        break;
+    default:
+        DO_NOTHING;
+    }
+
+    {  
+        gs_matrix mat;
+        hpgl_compute_user_units_to_plu_ctm(pgls, &mat);
+        offset->x /= mat.xx;
+        offset->y /= mat.yy;
+    }
+    /* convert to user units */
     return 0;
 }
 			  
 /* Prints a buffered line of characters. */
 /* If there is a CR, it is the last character in the buffer. */
 private int
-hpgl_process_buffer(hpgl_state_t *pgls)
+hpgl_process_buffer(hpgl_state_t *pgls, gs_point *offset)
 {
-	gs_point offset;
-	hpgl_real_t label_length = 0.0, label_height = 0.0;
-	bool vertical = hpgl_text_is_vertical(pgls->g.character.text_path);
-	/*
-	 * NOTE: the two loops below must be consistent with each other!
-	 */
+    hpgl_real_t label_length = 0.0, label_height = 0.0;
+    bool vertical = hpgl_text_is_vertical(pgls->g.character.text_path);
+    /*
+     * NOTE: the two loops below must be consistent with each other!
+     */
 
-	{
-	  hpgl_real_t width = 0.0, height = 0.0;
-	  int save_index = pgls->g.font_selected;
-	  int i = 0;
-	  bool first_char_on_line = true;
-	  while ( i < pgls->g.label.char_count )
-	    {
-	      byte ch = pgls->g.label.buffer[i++];
+    {
+        hpgl_real_t width = 0.0, height = 0.0;
+        int save_index = pgls->g.font_selected;
+        int i = 0;
+        bool first_char_on_line = true;
+        while ( i < pgls->g.label.char_count ) {
+            byte ch = pgls->g.label.buffer[i++];
 
-	      if ( ch < 0x20 && !pgls->g.transparent_data )
-		switch (ch)
-		{
+            if ( ch < 0x20 && !pgls->g.transparent_data )
+		switch (ch) {
 		case BS :
-		  if ( width == 0.0 ) /* BS as first char of string */
-		    { hpgl_call(hpgl_ensure_font(pgls));
-		      hpgl_get_char_width(pgls, ' ', &width);
-		      hpgl_call(hpgl_get_current_cell_height(pgls, &height));
+                    if ( width == 0.0 ) { /* BS as first char of string */
+                        hpgl_call(hpgl_ensure_font(pgls));
+                        hpgl_get_char_width(pgls, ' ', &width);
+                        hpgl_call(hpgl_get_current_cell_height(pgls, &height));
 		    }
-		  if ( vertical )
-		    { /* Vertical text path, back up in Y. */
-		      label_height -= height;
-		      if ( label_height < 0.0 )
-			label_height = 0.0;
-		    }
-		  else
-		    { /* Horizontal text path, back up in X. */
-		      label_length -= width;
-		      if ( label_length < 0.0 )
-			label_length = 0.0;
-		    }
-		  continue;
+                    if ( vertical ) { /* Vertical text path, back up in Y. */
+                        label_height -= height;
+                        if ( label_height < 0.0 )
+                            label_height = 0.0;
+		    } else { /* Horizontal text path, back up in X. */
+                        label_length -= width;
+                        if ( label_length < 0.0 )
+                            label_length = 0.0;
+                    }
+                    continue;
 		case LF :
 		    first_char_on_line = true;
 		    continue;
 		case CR :
-		  continue;
+                    continue;
 		case FF :
-		  continue;
+                    continue;
 		case HT :
-		  hpgl_call(hpgl_ensure_font(pgls));
-		  hpgl_get_char_width(pgls, ' ', &width);
-		  width *= 5;
-		  goto acc_ht;
+                    hpgl_call(hpgl_ensure_font(pgls));
+                    hpgl_get_char_width(pgls, ' ', &width);
+                    width *= 5;
+                    goto acc_ht;
 		case SI :
-		  hpgl_select_font_pri_alt(pgls, 0);
-		  continue;
+                    hpgl_select_font_pri_alt(pgls, 0);
+                    continue;
 		case SO :
-		  hpgl_select_font_pri_alt(pgls, 1);
-		  continue;
+                    hpgl_select_font_pri_alt(pgls, 1);
+                    continue;
 		default :
-		  break;
+                    break;
 		}
-	      hpgl_call(hpgl_ensure_font(pgls));
-	      hpgl_get_char_width(pgls, ch, &width);
-acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height));
-	      if ( vertical )
-		{
-		    if ( width > label_length )
-			label_length = width;
-		    if ( !first_char_on_line )
-			label_height += height;
-		    else
-			first_char_on_line = false;
-		}
-	      else
-		{ /* Horizontal text path: sum widths, take max of heights. */
-		  label_length += width;
-		  if ( height > label_height )
+            hpgl_call(hpgl_ensure_font(pgls));
+            hpgl_get_char_width(pgls, ch, &width);
+acc_ht:	    hpgl_call(hpgl_get_current_cell_height(pgls, &height));
+            if ( vertical ) {
+                if ( width > label_length )
+                    label_length = width;
+                if ( !first_char_on_line )
+                    label_height += height;
+                else
+                    first_char_on_line = false;
+            } else { /* Horizontal text path: sum widths, take max of heights. */
+                label_length += width;
+                if ( height > label_height )
 		    label_height = height;
-		}
-	    }
-	  hpgl_select_font_pri_alt(pgls, save_index);
-	}
-	hpgl_call(hpgl_get_character_origin_offset(pgls, pgls->g.label.origin,
-						   label_length, label_height,
-						   &offset));
-	switch ( pgls->g.character.text_path )
-	  {
-	  case hpgl_text_left:
-	    offset.x -= label_length;
-	    break;
-	  case hpgl_text_down:
-	    offset.y -= label_height;
-	    break;
-	  default:
-	    DO_NOTHING;
-	  }
-	
-	/* these units should be strictly plu except for LO 21 */
-	if ( pgls->g.label.origin != 21 ) {  
-	    gs_matrix mat;
-	    hpgl_compute_user_units_to_plu_ctm(pgls, &mat);
-	    offset.x /= mat.xx;
-	    offset.y /= mat.yy;
-	}
-	/* now add the offsets in relative plu coordinates */
-	hpgl_call(hpgl_add_point_to_path(pgls, -offset.x, -offset.y,
-					 hpgl_plot_move_relative, false));
-	{
-	  int i;
-	  for ( i = 0; i < pgls->g.label.char_count; ++i )
-	    { byte ch = pgls->g.label.buffer[i];
+            }
+        }
+        hpgl_select_font_pri_alt(pgls, save_index);
+    }
+    hpgl_call(hpgl_get_character_origin_offset(pgls, pgls->g.label.origin,
+                                               label_length, label_height,
+                                               offset));
 
-	      if ( ch < 0x20 && !pgls->g.transparent_data )
-		{ hpgl_real_t spaces, lines;
+    /* now add the offsets in relative plu coordinates */
+    hpgl_call(hpgl_add_point_to_path(pgls, -offset->x, -offset->y,
+                                     hpgl_plot_move_relative, false));
 
-		  switch (ch)
-		    {
-		    case BS :
-		      spaces = -1, lines = 0;
-		      break;
-		    case LF :
-		      /*
-		       * If the text path is vertical, we must use the
-		       * computed label (horizontal) width, not the width
-		       * of a space.
-		       */
-		      if ( vertical ) { 
-			  const pcl_font_selection_t *    pfs =
-			      &pgls->g.font_selection[pgls->g.font_selected];
-			  hpgl_real_t label_advance;
-			  /* Handle size. */
-			  if (pgls->g.character.size_mode == hpgl_size_not_set) {
+    {
+        int i;
+        for ( i = 0; i < pgls->g.label.char_count; ++i ) { 
+            byte ch = pgls->g.label.buffer[i];
 
-			      /* Scale fixed-width fonts by pitch, variable-width by height. */
-			      if (pfs->params.proportional_spacing) {
-				  if (pl_font_is_scalable(pfs->font))
-				      label_advance = hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0);
-				  else {
-				      double  ratio = (double)pfs->params.height_4ths
-					  / pfs->font->params.height_4ths;
-				      label_advance = ratio * inches_2_plu(1.0 / pfs->font->resolution.x);
-				  }
-			      } else
-  				  label_advance = hpgl_points_2_plu(pgls, pl_fp_pitch_cp(&pfs->params) /
-								    pl_fp_pitch_cp(&pfs->font->params) );
-			      if ( hpgl_get_character_extra_space_x(pgls) != 0 ) 
-				  label_advance *= 1.0 + hpgl_get_character_extra_space_x(pgls);
-			  } else {
-			      /*
-			       * Note that the CTM takes P1/P2 into account unless
-			       * an absolute character size is in effect.
-			       *
-			       *
-			       * HACKS - I am not sure what this should be the
-			       * actual values ??? 
-			       */
-			      label_advance = pgls->g.character.size.x * 1.5 * 1.25;
-			      if (pgls->g.character.size_mode == hpgl_size_relative)
-				  label_advance *= pgls->g.P2.x - pgls->g.P1.x;
-			      if (pgls->g.bitmap_fonts_allowed)    /* no mirroring */
-				  label_advance = fabs(label_advance);
-			  }
-			  hpgl_move_cursor_by_characters(pgls, 0, -1,
-							 &label_advance);
-			  continue;
-		      }
-		      spaces = 0, lines = -1;
-		      break;
-		    case CR :
-		      hpgl_call(hpgl_do_CR(pgls));
-		      continue;
-		    case FF :
-		      /* does nothing */
-		      spaces = 0, lines = 0;
-		      break;
-		    case HT :
-		      /* appears to expand to 5 spaces */
-		      spaces = 5, lines = 0;
-		      break;
-		    case SI :
-		      hpgl_select_font_pri_alt(pgls, 0);
-		      continue;
-		    case SO :
-		      hpgl_select_font_pri_alt(pgls, 1);
-		      continue;
-		    default :
-			goto print;
-		    }
-		  hpgl_move_cursor_by_characters(pgls, spaces, lines,
-						 (const hpgl_real_t *)0);
-		  continue;
-		}
+            if ( ch < 0x20 && !pgls->g.transparent_data ) { 
+                hpgl_real_t spaces, lines;
+
+                switch (ch) {
+                case BS :
+                    spaces = -1, lines = 0;
+                    break;
+                case LF :
+                    /*
+                     * If the text path is vertical, we must use the
+                     * computed label (horizontal) width, not the width
+                     * of a space.
+                     */
+                    if ( vertical ) { 
+                        const pcl_font_selection_t *    pfs =
+                            &pgls->g.font_selection[pgls->g.font_selected];
+                        hpgl_real_t label_advance;
+                        /* Handle size. */
+                        if (pgls->g.character.size_mode == hpgl_size_not_set) {
+                            /* Scale fixed-width fonts by pitch, variable-width by height. */
+                            if (pfs->params.proportional_spacing) {
+                                if (pl_font_is_scalable(pfs->font))
+                                    label_advance = hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0);
+                                else {
+                                    double  ratio = (double)pfs->params.height_4ths
+                                        / pfs->font->params.height_4ths;
+                                    label_advance = ratio * inches_2_plu(1.0 / pfs->font->resolution.x);
+                                }
+                            } else
+                                label_advance = hpgl_points_2_plu(pgls, pl_fp_pitch_cp(&pfs->params) /
+                                                                  pl_fp_pitch_cp(&pfs->font->params) );
+                            if ( hpgl_get_character_extra_space_x(pgls) != 0 ) 
+                                label_advance *= 1.0 + hpgl_get_character_extra_space_x(pgls);
+                        } else {
+                            /*
+                             * Note that the CTM takes P1/P2 into account unless
+                             * an absolute character size is in effect.
+                             *
+                             *
+                             * HACKS - I am not sure what this should be the
+                             * actual values ??? 
+                             */
+                            label_advance = pgls->g.character.size.x * 1.5 * 1.25;
+                            if (pgls->g.character.size_mode == hpgl_size_relative)
+                                label_advance *= pgls->g.P2.x - pgls->g.P1.x;
+                            if (pgls->g.bitmap_fonts_allowed)    /* no mirroring */
+                                label_advance = fabs(label_advance);
+                        }
+                        hpgl_move_cursor_by_characters(pgls, 0, -1,
+                                                       &label_advance);
+                        continue;
+                    }
+                    spaces = 0, lines = -1;
+                    break;
+                case CR :
+                    hpgl_call(hpgl_do_CR(pgls));
+                    continue;
+                case FF :
+                    /* does nothing */
+                    spaces = 0, lines = 0;
+                    break;
+                case HT :
+                    /* appears to expand to 5 spaces */
+                    spaces = 5, lines = 0;
+                    break;
+                case SI :
+                    hpgl_select_font_pri_alt(pgls, 0);
+                    continue;
+                case SO :
+                    hpgl_select_font_pri_alt(pgls, 1);
+                    continue;
+                default :
+                    goto print;
+                }
+                hpgl_move_cursor_by_characters(pgls, spaces, lines,
+                                               (const hpgl_real_t *)0);
+                continue;
+            }
 print:	     {
-		  /* if this a printable character print it
-		     otherwise continue, a character can be
-		     printable and undefined in which case
-		     it is printed as a space character */
-		  const pcl_font_selection_t *pfs =
-		      &pgls->g.font_selection[pgls->g.font_selected];
-		  if ( !hpgl_is_printable(pfs->map, ch, 
-					  (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE ) )
-		      continue;
-	      }
-	      hpgl_call(hpgl_ensure_font(pgls));
-	      hpgl_call(hpgl_print_char(pgls, ch));
-	    }
-	}
-
-	pgls->g.label.char_count = 0;
-	return 0;
+                /* if this a printable character print it
+                   otherwise continue, a character can be
+                   printable and undefined in which case
+                   it is printed as a space character */
+                const pcl_font_selection_t *pfs =
+                    &pgls->g.font_selection[pgls->g.font_selected];
+                if ( !hpgl_is_printable(pfs->map, ch, 
+                                        (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE ) )
+                    continue;
+            }
+            hpgl_call(hpgl_ensure_font(pgls));
+            hpgl_call(hpgl_print_char(pgls, ch));
+        }
+    }
+    pgls->g.label.char_count = 0;
+    return 0;
 }
 
 
@@ -1336,30 +1333,34 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      {
 		if ( !print_terminator )
 		  {
-		    hpgl_call(hpgl_process_buffer(pgls));
+                    gs_point lo_offsets;
+		    hpgl_call(hpgl_process_buffer(pgls, &lo_offsets));
 		    hpgl_call(hpgl_destroy_label_buffer(pgls));
 		    pargs->source.ptr = p;
 		    /*
 		     * Depending on the DV/LO combination, conditionally
 		     * restore the initial position, per TRM 23-78.
 		     */
-		    if ( !hpgl_can_concat_labels(pgls) )
-		      { 
+		    if ( !hpgl_can_concat_labels(pgls) )  { 
 			  hpgl_call(hpgl_add_point_to_path(pgls,
 					pgls->g.carriage_return_pos.x,
 					pgls->g.carriage_return_pos.y,
 					hpgl_plot_move_absolute, true));
-		      }
- 		    /* always clear the current path since terminating
-		       carriage returns and linefeeds will leave
-		       "moveto's" in the path */
- 		    hpgl_call(hpgl_clear_current_path(pgls));
-		    /* also clean up stick fonts - they are likely to
+                    } else {
+                        /* undo the label origin offsets */
+                        hpgl_call(hpgl_add_point_to_path(pgls, lo_offsets.x, lo_offsets.y,
+                                                         hpgl_plot_move_relative, false));
+                    }
+                    /* clear the current path terminating carriage
+                       returns and linefeeds will leave "moveto's" in
+                       the path */
+                    hpgl_call(hpgl_clear_current_path(pgls));
+                    /* also clean up stick fonts - they are likely to
                        become dangling references in the current font
                        scheme since they don't have a dictionary entry */
-		    hpgl_free_stick_fonts(pgls);
-		    return 0;
-		  }
+                    hpgl_free_stick_fonts(pgls);
+                    return 0;
+                  }
 		/*
 		 * Process the character in the ordinary way, then come here
 		 * again.  We do things this way to simplify the case where
@@ -1375,8 +1376,9 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	    hpgl_call(hpgl_buffer_char(pgls, ch));
 	    if ( ch == CR && !pgls->g.transparent_data )
-	      {
-		hpgl_call(hpgl_process_buffer(pgls));
+            {
+                gs_point lo_offsets;
+		hpgl_call(hpgl_process_buffer(pgls, &lo_offsets));
 		hpgl_call(hpgl_destroy_label_buffer(pgls));
 		hpgl_call(hpgl_init_label_buffer(pgls));
 	      }
@@ -1409,6 +1411,7 @@ hpgl_print_symbol_mode_char(hpgl_state_t *pgls)
            always centered */
 	int saved_origin = pgls->g.label.origin;
 	gs_point save_pos = pgls->g.pos;
+        gs_point lo_offsets;
 	hpgl_call(hpgl_gsave(pgls));
 	/* HAS this need checking.  I don't know how text direction
            and label origin interact in symbol mode */
@@ -1417,7 +1420,7 @@ hpgl_print_symbol_mode_char(hpgl_state_t *pgls)
 	hpgl_call(hpgl_clear_current_path(pgls));
 	hpgl_call(hpgl_init_label_buffer(pgls));
 	hpgl_call(hpgl_buffer_char(pgls, pgls->g.symbol_mode));
-	hpgl_call(hpgl_process_buffer(pgls));
+	hpgl_call(hpgl_process_buffer(pgls, &lo_offsets));
 	hpgl_call(hpgl_destroy_label_buffer(pgls));
 	hpgl_call(hpgl_grestore(pgls));
 	/* restore the origin */

@@ -1497,8 +1497,6 @@ hpgl_draw_current_path(
 		    hpgl_call(hpgl_clear_current_path(pgls));
 		break;
 	    case hpgl_char_fill_edge:
-		if (pgls->g.bitmap_fonts_allowed)
-		    break;	/* no edging */
 		/* the fill has already been done if the fill type is
                    hpgl/2 vector fills.  This was handled when we set
                    the drawing color.  gsave to preserve the path for
@@ -1511,17 +1509,22 @@ hpgl_draw_current_path(
 		    hpgl_call((*fill)(pgs));
 		    hpgl_call(hpgl_grestore(pgls));
 		}
-		set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
-		if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), false)) < 0)
-		    return code;
-		hpgl_call(hpgl_set_plu_ctm(pgls));
-		/* use the default raster operation for the edge.  It
-                   is automaticall restored next drawing operation */
-		hpgl_call(gs_setrasterop(pgls->pgs, (gs_rop3_t)252));
-		hpgl_call(gs_setlinewidth(pgls->pgs,
-			  pgls->g.font_selection[pgls->g.font_selected].params.height_4ths * 0.0375));
-		hpgl_call(gs_stroke(pgls->pgs));
+                if (pgls->g.bitmap_fonts_allowed) /* no edging */
+		    hpgl_call(hpgl_clear_current_path(pgls));
+                else {
+                    set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
+                    if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), false)) < 0)
+                        return code;
+                    hpgl_call(hpgl_set_plu_ctm(pgls));
+                    /* use the default raster operation for the edge.  It
+                       is automaticall restored next drawing operation */
+                    hpgl_call(gs_setrasterop(pgls->pgs, (gs_rop3_t)252));
+                    hpgl_call(gs_setlinewidth(pgls->pgs,
+                                              pgls->g.font_selection[pgls->g.font_selected].params.height_4ths * 0.0375));
+                    hpgl_call(gs_stroke(pgls->pgs));
+                }
 		break;
+                
 	    }
 	    break;
 	}
