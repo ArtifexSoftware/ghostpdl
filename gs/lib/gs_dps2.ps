@@ -35,7 +35,7 @@ level2dict begin
 	   { { exch pop }		% halftone
 	     { /HalftoneType 1		% screen
 		{ /Frequency /Angle /SpotFunction }
-	       .makestackdict
+	       .makestackdict readonly
 	     }
 	     { /HalftoneType 2		% colorscreen
 		{ /RedFrequency /RedAngle /RedSpotFunction
@@ -43,7 +43,7 @@ level2dict begin
 		  /BlueFrequency /BlueAngle /BlueSpotFunction
 		  /GrayFrequency /GrayAngle /GraySpotFunction
 		}
-	       .makestackdict
+	       .makestackdict readonly
 	     }
 	   }
 	  exch get exec
