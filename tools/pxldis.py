@@ -704,9 +704,7 @@ class pxl_dis:
 
     def process_EmbeddedInfo(self, name):
         if ( name == 'embedded_data' ):
-            # can't index into the data with a long - have to make it
-            # an int.
-            length = int(self.unpack('I', self.data[self.index:self.index+4])[0])
+            length = self.unpack('I', self.data[self.index:self.index+4])[0]
             self.index = self.index + 4
         if ( name == 'embedded_data_byte' ):
             length = int(self.unpack('B', self.data[self.index:self.index+1])[0])
