@@ -145,7 +145,7 @@ pl_init_fc(
     pfc->ExtndFlags |= EF_NOUSBOUNDBOX; /* UFST 5.0+ addition */
 
     /* handle artificial emboldening */
-    if (plfont->bold_fraction) {
+    if (plfont->bold_fraction && !need_outline) {
         pfc->pcl6bold = 32768 * plfont->bold_fraction;
     }
     else
