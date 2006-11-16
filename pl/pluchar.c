@@ -138,17 +138,15 @@ pl_init_fc(
             pfc->ExtndFlags |= EF_VERTSUBS_TYPE;
     }
     else if (plfont->scaling_technology == plfst_TrueType && plfont->large_sizes) {
-        pfc->ExtndFlags = EF_FORMAT16_TYPE | EF_GALLEYSEG_TYPE;
-        if ((pfont->WMode & 0x1) != 0)  /* vertical substitution */
-            pfc->ExtndFlags |= EF_VERTSUBS_TYPE;
+	 pfc->ExtndFlags = EF_FORMAT16_TYPE | EF_GALLEYSEG_TYPE;
+	 if ((pfont->WMode & 0x1) != 0)  /* vertical substitution */
+	     pfc->ExtndFlags |= EF_VERTSUBS_TYPE;
     }
-    // Stefan Disabling because it bit compares with ufst 4.0 that way and looks better.
-    // 
     pfc->ExtndFlags |= EF_NOUSBOUNDBOX; /* UFST 5.0+ addition */
 
     /* handle artificial emboldening */
     if (plfont->bold_fraction) {
-        pfc->pcl6bold = 32768 * plfont->bold_fraction + 0.5;
+        pfc->pcl6bold = 32768 * plfont->bold_fraction;
     }
     else
         pfc->pcl6bold = 0;
