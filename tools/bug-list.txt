@@ -1,0 +1,150 @@
+001 -- OK? check colorspace
+002 -- fixed
+003 -- fixed
+004 -- fixed
+005 -- missing lines; retest at 600dpi
+006 -- fixed
+007 -- fixed
+008 -- fixed
+010 -- fixed
+011 -- nofix Position 2 vs 61 on a pxl error message is uninteresting.
+012 -- fixed
+013 -- fixed
+014 -- fixed
+015 -- fixed
+016 -- color trapping isn't supported color diff of cyan -> green is extreme.
+017 -- fixed
+018 -- fixed
+019 -- fixed
+021 -- fixed
+022 -- fixed
+023 -- fixed
+024 -- fixed
+026 -- fixed
+027 -- fixed
+028 -- fixed
+030 -- fixed
+031 -- fixed
+032 -- fixed
+033 -- fixed 
+034 -- fixed
+035 -- nofix we only print the first warning instead of a list on pxl error page
+036 -- fixed
+037 -- fixed
+039 -- fixed
+041 -- fixed
+042 -- transparency rops, fill difference HP not treating 0 as transparent?
+043 -- same as 42
+044 -- Better still some transparent white issues.
+045 -- same as 44
+046 -- same as 44
+050 -- top margin immediate vs delayed -- fixed hpclj4550 doesn't match implguide; floating cap+pagemarked&topmargin
+051 -- fixed
+052 -- HMI font selection interaction
+053 -- fixed
+054 -- fixed
+056 -- font selection lineprinter instead of courier
+057 -- fixed
+058 -- symbolset foo possible Nofix -- HP error
+059 -- Nofix -- symbol set byte limit of 0x7fff same as 160
+060 -- UV downloaded chars are missing
+061 -- symbol set glyphs
+062 -- symbol set selection 
+063 -- char color black instead of red
+064 -- adaptive raster extra black missing 
+065 -- Nofix -- HP error as printed on the test page.
+066 -- Direct by plane missing black raster fill 0 
+067 -- Raster height no width range testing
+068 -- same as 67
+069 -- same as 67
+070 -- same as 66
+071 -- HP not supporting 3bit per index ? double check.
+072 -- Raster pattern anchor corner
+073 -- Overlay off page?
+074 -- Monochrome mode error
+076 -- palette selection error
+077 -- raster scaling height leading to text reflow.
+078 -- transparent rops
+079 -- pattern white zero instead of black zero
+080 -- fixed
+081 -- fixed
+082 -- macro is offset by a tab width
+083 -- macro fg text color wrong
+084 -- fixed
+085 -- underline of spaces vs not.
+087 -- fixed
+088 -- backspace beyond printable area should be blocked.
+089 -- HT too small
+092 -- arc scaling at the extreme scale factors.
+093 -- possible HP scaling error
+094 -- polygon fills missing, winding?
+095 -- polygon arc join error
+096 -- MC missing arc polygon
+097 -- pu subpolygon fill missing
+098 -- butt or triangle join rounding 
+099 -- lost line
+100 -- LP stick scaling
+102 -- missing polyline segment.
+103 -- rectangle missing on 4600?
+104 -- fixed.
+105 -- graphics
+106 -- graphics
+107 -- cross hatch alignment 
+108 -- fixed
+109 -- polygon fill extreme scaling
+110 -- polygon fill
+111 -- hpgl LB
+112 -- LB fill 
+113 -- Font Selection Bitmap font deletion
+114 -- Symbol Set glyphs 458
+115 -- fixed
+116 -- fixed
+117 -- hpgl label bitmaps CP rotation.
+118 -- fixed
+119 -- SB font selection interaction
+120 -- fixed
+121 -- fixed
+122 -- hpgl LB 
+123 -- hpgl LB
+124 -- fixed.
+125 -- hpgl LB
+126 -- hpgl LB
+128 -- hpgl LB - scaling artifact test
+131 -- hpgl LB
+133 -- fixed
+135 -- fixed
+136 -- fixed
+137 -- hpgl LB DV
+138 -- same as 136
+139 -- HT tab size
+
+140 -- LA line join attributes rounding.
+
+141 -- Fill wrong.  dashed triangle not filled vs filled.
+142 -- HP no fills on stick/arc fonts.
+143 -- hatch fill arg rounding.?
+144 -- hp fill issues with RT defined patterns.
+145 -- same as 142
+146 -- hatch pattern fill ? pen scaling issues perhaps
+147 -- symbol mode ?
+148 -- IW scaling LB
+149 -- fixed
+150 -- LB char scaling
+151 -- hpgl LB
+152 -- LB symbol mode line missing
+153 -- LB placement
+154 -- fixed
+155 -- fixed
+
+156 -- OK? color transfer function perhaps
+157 -- Fill differences
+
+158 -- PD circle PD ???
+
+159 -- pf scaling hell.
+160 -- symbol set too much data
+       We read all the data, HP stop reading at 0x7fff and starts parser here.  BS. 
+163 -- fixed 
+164 -- fixed
+
+

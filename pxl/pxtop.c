@@ -502,7 +502,7 @@ pxl_impl_report_errors(
 	px_state_t *pxs = pxli->pxs;
 	int report = pxs->error_report;
 	const char *subsystem =
-	  (code <= px_error_next ? "MAIN" : "GRAPHICS");
+	  (code <= px_error_next ? "KERNEL" : "GRAPHICS");
 	char message[px_max_error_line+1];
 	int N = 0;
 	int y;
