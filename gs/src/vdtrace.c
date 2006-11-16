@@ -163,7 +163,6 @@ void vd_impl_curve(double x0, double y0, double x1, double y1, double x2, double
     vd_trace1->setcolor(vd_trace1, c);
     vd_trace1->setlinewidth(vd_trace1, w);
     vd_trace1->beg_path(vd_trace1);
-    vd_trace1->beg_path(vd_trace1);
     vd_trace1->moveto(vd_trace1, SX(x0), SY(y0));
     vd_impl_curveto(x1, y1, x2, y2, x3, y3);
     vd_trace1->end_path(vd_trace1);
