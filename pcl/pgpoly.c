@@ -71,15 +71,15 @@ hpgl_rectangle(hpgl_args_t *pargs, hpgl_state_t *pgls, int flags)
 /* Fill or edge a wedge (EW, WG). */
 private int
 hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	hpgl_real_t radius, start, sweep, chord = 5;
+{	hpgl_real_t radius, start, sweep, chord = 5.0;
 
 	if ( !hpgl_arg_units(pgls->memory, pargs, &radius) ||
 	     !hpgl_arg_c_real(pgls->memory, pargs, &start) ||
-	     !hpgl_arg_c_real(pgls->memory, pargs, &sweep) || sweep < -360 || sweep > 360 ||
-	     (hpgl_arg_c_real(pgls->memory, pargs, &chord) && (chord < 0.5 || chord > 180))
+	     !hpgl_arg_c_real(pgls->memory, pargs, &sweep) || sweep < -360 || sweep > 360
 	   )
 	  return e_Range;
 
+        hpgl_arg_c_real(pgls->memory, pargs, &chord);
 
 	/* enter polygon mode */
 	hpgl_args_setup(pargs);
