@@ -291,7 +291,7 @@ hpgl_DT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      pgls->g.label.terminator = 3;
 	      pgls->g.label.print_terminator = false;
 	      return 0;
-	    case 0: case 10: case 27:
+	    case 0: case 5: case 27:
 	      return e_Range;
 	    default:
 	      if ( p >= rlimit )
