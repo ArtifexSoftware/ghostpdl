@@ -555,7 +555,10 @@ top:	if ( st->data_left )
                    different xl operator */
                 if (tag == pxtPassThrough) {
                     pxpcl_passthroughcontiguous(st->last_operator == tag);
-                }
+                } else if ( st->last_operator == pxtPassThrough ) {
+		    pxpcl_endpassthroughcontiguous(pxs);
+		}
+
 		st->last_operator = tag;
 		{ const px_operator_definition_t *pod =
 		    &px_operator_definitions[tag - 0x40];

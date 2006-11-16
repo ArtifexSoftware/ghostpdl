@@ -8,28 +8,39 @@
 #include "pcpage.h"
 #include "pxoper.h"
 #include "pxstate.h"
+#include "pxgstate.h"
 
 const byte apxPassthrough[] = {0, 0};
 
-/* NB - what to do with this? */
-pcl_state_t *global_pcs = NULL;
-pcl_parser_state_t state;
-hpgl_parser_state_t glstate;
-
-void pxpcl_release(void);
-void pxpcl_pagestatereset(void);
-
+/* NB - globals needing cleanup 
+ */
+static pcl_state_t *global_pcs = NULL;
+static pcl_parser_state_t global_pcl_parser_state;
+static hpgl_parser_state_t global_gl_parser_state;
 
 /* if this is a contiguous passthrough meaning that 2 passtrough
    operators have been given back to back and pxl should not regain
    control. */
-bool global_this_pass_contiguous = false;
+static bool global_this_pass_contiguous = false;
 
 /* this is the first passthrough on this page */
-bool global_pass_first = true;
+static bool global_pass_first = true;
 
-bool global_first_time_this_operator = false;
+static bool global_first_time_this_operator = false;
 
+/* store away the current font attributes PCL can't set these,
+ * they persist for XL, rotation is missing */
+gs_point global_char_shear;
+float global_char_bold_value;
+
+/* forward decl */
+void pxpcl_release(void);
+void pxpcl_pagestatereset(void);
+
+
+
+/* NB: tests for this function are used to flag pxl snippet mode 
+ */
 private int
 pcl_end_page_noop(pcl_state_t *pcs, int num_copies, int flush)
 {
@@ -43,6 +54,9 @@ pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs)
 {
     /* xl cursor -> pcl cursor position */
     gs_point xlcp, pclcp, dp;
+    int code1 = 0;
+    int code2 = 0;
+    int code3 = 0;
 
     /* make the pcl ctm is active - After resets the hpgl/2 ctm is
        active. */
@@ -51,22 +65,34 @@ pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs)
        point.  If anything fails we assume the current
        point is not valid and use the cap from the pcl
        state initialization - pcl's origin */
-    if ( (gs_currentpoint(pxs->pgs, &xlcp) >= 0) &&
-         (gs_transform(pxs->pgs, xlcp.x, xlcp.y, &dp) >= 0) &&
-         (gs_itransform(global_pcs->pgs, dp.x, dp.y, &pclcp) >= 0) ) {
-        if (gs_debug_c('i'))
-            dprintf4("passthrough: changing cap from (%d,%d) (%d,%d)\n",
-                     global_pcs->cap.x, global_pcs->cap.y,
-                     (coord)pclcp.x, (coord)pclcp.y);
-        global_pcs->cap.x = (coord)pclcp.x;
-        global_pcs->cap.y = (coord)pclcp.y;
+    if ((code1 = gs_currentpoint(pxs->pgs, &xlcp)) ||
+	(code2 = gs_transform(pxs->pgs, xlcp.x, xlcp.y, &dp)) ||
+	(code3 = gs_itransform(global_pcs->pgs, dp.x, dp.y, &pclcp)) ) {
+	global_pcs->cap.x = 0;
+	global_pcs->cap.y = inch2coord(2.0/6.0); /* 1/6" off by 2x in resolution. */
+	if (gs_debug_c('i'))
+	    dprintf2("passthrough: changing cap NO currentpoint (%d, %d) \n", 
+		     global_pcs->cap.x, global_pcs->cap.y);
     } else {
-        /* NB not tested */
-        global_pcs->cap.x = global_pcs->cap.y = 0;
+      if (gs_debug_c('i'))
+	dprintf8("passthrough: changing cap from (%d,%d) (%d,%d) (%d, %d) (%d, %d) \n",
+		 global_pcs->cap.x, global_pcs->cap.y,
+		 (coord)xlcp.x, (coord)xlcp.y, 
+		 (coord)dp.x, (coord)dp.y, 
+		 (coord)pclcp.x, (coord)pclcp.y);
+      global_pcs->cap.x = (coord)pclcp.x;
+      global_pcs->cap.y = (coord)pclcp.y;
     }
+    if (global_pcs->underline_enabled)			
+        global_pcs->underline_start = global_pcs->cap;
 
-    /* NB fixme - should inherit xl's user units - assume 600 */
-    global_pcs->uom_cp = 7200L / 600L;
+    /* Hacked copy of font state; rotation doesn't copy? */
+    if ( pxs->pxgs->char_shear.x || pxs->pxgs->char_shear.y ) {
+	global_char_shear.x = pxs->pxgs->char_shear.x;
+	global_char_shear.y = pxs->pxgs->char_shear.y;
+    }
+    if ( pxs->pxgs->char_bold_value > 0.001 )
+    	global_char_bold_value = pxs->pxgs->char_bold_value; 
 }
 
 /* retrieve the current pcl state and initialize pcl */
@@ -74,6 +100,7 @@ private int
 pxPassthrough_init(px_state_t *pxs) 
 {
     int code;
+
     if (gs_debug_c('i'))
         dprintf("passthrough: initalizing global pcl state\n");
     global_pcs = pcl_get_gstate(pxs->pcls);
@@ -97,9 +124,11 @@ pxPassthrough_init(px_state_t *pxs)
     /* yet another reset with the new page device */
     pcl_do_resets(global_pcs, pcl_reset_initial);
     /* set the parser state and initialize the pcl parser */
-    state.definitions = global_pcs->pcl_commands;
-    state.hpgl_parser_state=&glstate;
-    pcl_process_init(&state);
+    global_pcl_parser_state.definitions = global_pcs->pcl_commands;
+    global_pcl_parser_state.hpgl_parser_state=&global_gl_parser_state;
+    pcl_process_init(&global_pcl_parser_state);
+    /* default 600 to match XL allow PCL to override */
+    global_pcs->uom_cp = 7200L / 600L;
     return 0;
 }
 
@@ -111,7 +140,7 @@ pxPassthrough_setpagestate(px_state_t *pxs)
     if ( pxs->have_page ) {
         if (gs_debug_c('i'))
             dprintf("passthrough: snippet mode\n");
-        /* disable an end page in pcl */
+        /* disable an end page in pcl, also used to flag in snippet mode */
         global_pcs->end_page = pcl_end_page_noop;
         /* set the page size and orientation.  Really just sets
            the page tranformation does not feed a page (see noop
@@ -129,7 +158,7 @@ pxPassthrough_setpagestate(px_state_t *pxs)
         /* clean the pcl page if it was marked by a previous snippet
            and set to full page mode. */
         global_pcs->page_marked = 0;
-        new_logical_page_for_passthrough(global_pcs, (int)pxs->orientation, 2 /* letter NB FIXME */, 0);
+        new_logical_page_for_passthrough(global_pcs, (int)pxs->orientation, 2 /* letter NB FIXME */);
         if (gs_debug_c('i')) 
             dprintf("passthrough: full page mode\n");
     }
@@ -186,7 +215,7 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
     /* set pcl data stream pointers to xl's and process this batch of data. */
     r.ptr = par->source.data - 1;
     r.limit = par->source.data + par->source.available - 1;
-    code = pcl_process(&state, global_pcs, &r);
+    code = pcl_process(&global_pcl_parser_state, global_pcs, &r);
     /* updata xl's parser position to reflect what pcl has consumed. */
     used = (r.ptr + 1 - par->source.data);
     par->source.available -= used;
@@ -211,10 +240,17 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
     }
 }
 
+
 void
 pxpcl_pagestatereset()
 {
     global_pass_first = true;
+    if ( global_pcs ) {
+	global_pcs->xfm_state.left_offset_cp = 0.0;
+	global_pcs->xfm_state.top_offset_cp = 0.0;
+	global_pcs->margins.top = 0;
+	global_pcs->margins.left = 0;
+    }
 }
 
 void
@@ -231,7 +267,9 @@ pxpcl_release(void)
         pxpcl_pagestatereset();
         global_this_pass_contiguous = false;
         global_pass_first = true;
-
+	global_char_shear.x = 0;
+	global_char_shear.y = 0;
+	global_char_bold_value = 0.0;
     }
 }
 
@@ -240,4 +278,23 @@ void
 pxpcl_passthroughcontiguous(bool cont)
 {
     global_this_pass_contiguous = cont;
+}
+
+/* copy state from pcl to pxl after a non-snippet passthrough
+ */
+void
+pxpcl_endpassthroughcontiguous(px_state_t *pxs)
+{ 
+    if ( global_pcs->end_page == pcl_end_page_top &&  
+	 global_pcs->page_marked &&
+	 pxs->orientation != global_pcs->xfm_state.lp_orient ) {
+
+	/* end of pcl whole job; need to reflect pcl orientation changes */
+	pxs->orientation = global_pcs->xfm_state.lp_orient;
+	pxBeginPageFromPassthrough(pxs);
+    }
+
+    pxs->pxgs->char_shear.x = global_char_shear.x;
+    pxs->pxgs->char_shear.y = global_char_shear.y;
+    pxs->pxgs->char_bold_value = global_char_bold_value;
 }

@@ -635,6 +635,104 @@ setd:	{ gs_memory_t *mem = pxs->memory;
 	}
 }
 
+
+int
+pxBeginPageFromPassthrough(px_state_t *pxs)
+{ 
+    int code;
+    gs_state *pgs = pxs->pgs;
+    gx_device *dev = gs_currentdevice(pgs);
+    gs_point page_size_pixels;
+    gs_matrix points2device;
+
+    px_initgraphics(pxs);
+    gs_currentmatrix(pgs, &points2device);
+    gs_dtransform(pgs, pxs->media_dims.x, pxs->media_dims.y,
+		  &page_size_pixels);
+    { /*
+       * Put the origin at the upper left corner of the page;
+       * also account for the orientation.
+       */
+	gs_matrix orient;
+
+	orient.xx = orient.xy = orient.yx = orient.yy =
+	    orient.tx = orient.ty = 0;
+	switch ( pxs->orientation )
+	    {
+	    case eDefaultOrientation:
+	    case ePortraitOrientation:
+		code = gs_translate(pgs, 0.0, pxs->media_dims.y);
+		orient.xx = 1, orient.yy = -1;
+		break;
+	    case eLandscapeOrientation:
+		code = 0;
+		orient.xy = 1, orient.yx = 1;
+		break;
+	    case eReversePortrait:
+		code = gs_translate(pgs, pxs->media_dims.x, 0);
+		orient.xx = -1, orient.yy = 1;
+		break;
+	    case eReverseLandscape:
+		code = gs_translate(pgs, pxs->media_dims.x, pxs->media_dims.y);
+		orient.xy = -1, orient.yx = -1;
+		break;
+	    default:			/* can't happen */
+		return_error(errorIllegalAttributeValue);
+	    }
+	if ( code < 0 ||
+	     (code = gs_concat(pgs, &orient)) < 0
+	     )
+	    return code;
+    }
+    { /* Scale according to session parameters. */
+	/* If we can make the scale integral safely, we do. */
+	double scale = measure_to_points[pxs->measure];
+	gs_matrix mat;
+	
+	if ( (code = gs_scale(pgs, scale / pxs->units_per_measure.x,
+			      scale / pxs->units_per_measure.y)) < 0
+	     )
+	    return code;
+	gs_currentmatrix(pgs, &mat);
+	mat.xx = px_adjust_scale(mat.xx, page_size_pixels.x);
+	mat.xy = px_adjust_scale(mat.xy, page_size_pixels.y);
+	mat.yx = px_adjust_scale(mat.yx, page_size_pixels.x);
+	mat.yy = px_adjust_scale(mat.yy, page_size_pixels.y);
+	gs_setmatrix(pgs, &mat);
+	pxs->initial_matrix = mat;
+    }
+    {
+	/* note we don't expect errors here since the
+	   coordinates are functions of media sizes known at
+	   compile time */
+	gs_rect page_bbox, device_page_bbox;
+	gs_fixed_rect fixed_bbox;
+	/* XL requires a 1/6" border to print correctly, this
+	   will set up the border as long as we do not exceed
+	   the boundary of the hardware margins.  If the
+	   engine's border is larger than 1/6" the XL output
+	   will be clipped by the engine and will not behave as
+	   expected */
+	page_bbox.p.x = max(dev->HWMargins[0], pxs->pm->m_left * media_size_scale);
+	page_bbox.p.y = max(dev->HWMargins[1], pxs->pm->m_top * media_size_scale);
+	page_bbox.q.x = (pxs->media_width * media_size_scale) -
+	    max(dev->HWMargins[2], pxs->pm->m_bottom * media_size_scale);
+	page_bbox.q.y = (pxs->media_height * media_size_scale) - 
+	    max(dev->HWMargins[3], pxs->pm->m_right * media_size_scale);
+	gs_bbox_transform(&page_bbox, &points2device, &device_page_bbox);
+	/* clip to rectangle takes fixed coordinates */
+	fixed_bbox.p.x = float2fixed(device_page_bbox.p.x);
+	fixed_bbox.p.y = float2fixed(device_page_bbox.p.y);
+	fixed_bbox.q.x = float2fixed(device_page_bbox.q.x);
+	fixed_bbox.q.y = float2fixed(device_page_bbox.q.y);
+	gx_clip_to_rectangle(pgs, &fixed_bbox);
+	pxs->pxgs->initial_clip_rect = fixed_bbox;
+    }
+
+    pxs->have_page = true;
+    return 0;
+}
+
 const byte apxEndPage[] = {
   0,
   pxaPageCopies, 0

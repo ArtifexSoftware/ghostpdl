@@ -301,7 +301,7 @@ reset_horizontal_margins(
 /*
  * Reset both the horizontal and vertical margins
  */
-  private void
+private void
 reset_margins(
     pcl_state_t *   pcs,
     bool            for_passthrough
@@ -1104,8 +1104,11 @@ pcpage_do_reset(
     /* NB hack for snippet mode */
     if (pcs->end_page != pcl_end_page_top) {
         pcs->xfm_state.print_dir = 0;
-        update_xfm_state(pcs, 0);
-        reset_margins(pcs, true);
+	pcs->xfm_state.left_offset_cp = 0.0;
+        pcs->xfm_state.top_offset_cp = 0.0;
+        update_xfm_state(pcs, 0);       
+
+        reset_margins(pcs, !pcl_reset_printer); /* esc E in snippet mode */
         return;
     }
 
