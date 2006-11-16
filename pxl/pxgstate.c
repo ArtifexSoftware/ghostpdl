@@ -1060,9 +1060,15 @@ int
 pxSetCharBoldValue(px_args_t *par, px_state_t *pxs)
 {	
     float arg = real_value(par->pv[0], 0);
-    /* NB document me */
-    if ((pxs->pxgs->char_bold_value == 0) && (arg != 0))
-        px_purge_character_cache(pxs);
+
+    /* afs only needs to clear the original glyph
+     * if ((pxs->pxgs->char_bold_value == 0) && (arg != 0))
+     *   px_purge_character_cache(pxs);
+     *
+     * ufst bolding we always clear the cache on every change
+     * caching of the same glyph with different boldness
+     */
+    px_purge_character_cache(pxs);
     pxs->pxgs->char_bold_value = arg;
     return 0;
 }
