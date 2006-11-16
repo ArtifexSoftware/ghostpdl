@@ -9,6 +9,8 @@ true 0 startjob not {
 300 .sethiresscreen	% needed for language switch build since it
 			% processes gs_init.ps BEFORE setting the resolution
 
+0 array 0 setdash % CET 09-08 wants local setdash
+
 currentglobal true setglobal
 
 /version (3017.102) def			% match CPSI 3017.102
@@ -19,6 +21,7 @@ currentglobal true setglobal
 { } bind dup
 setblackgeneration
 setundercolorremoval
+0 array cvx readonly dup dup dup setcolortransfer
 
 % CPSI doesn't define "Localization" resource.
 /Localization /Category undefineresource
