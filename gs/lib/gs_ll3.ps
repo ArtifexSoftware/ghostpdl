@@ -271,7 +271,16 @@ systemdict /.reuseparamdict mark
      /$error .systemvar /errorinfo [ /ShadingType 4 index ] put
      /shfill .systemvar /rangecheck signalerror
   } if
-  exch pop 1 index /ColorSpace get setcolorspace exec
+  exch pop 1 index /ColorSpace .knownget {
+    { setcolorspace } stopped {
+       /$error .systemvar /errorinfo [ /ColorSpace 4 index ] put
+       /shfill .systemvar /$error .systemvar /errorname get signalerror
+    } if
+    exec
+  } { 
+    /$error .systemvar /errorinfo [ /ColorSpace //null ] put
+    /shfill .systemvar /undefined signalerror
+  } ifelse
 } bind def
 systemdict /.reuseparamdict undef
 

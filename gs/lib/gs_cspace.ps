@@ -467,7 +467,18 @@ systemdict /setcolor .undef
 %
 /_setcolorspace
   {
-      { % See if the operand space is the same as the current space.
+      { % Early validation the argument. The code below fails in unpredictable ways
+        % when it is exposed to the garbage.
+        1 index
+        dup type dup /arraytype eq exch /packedarraytype eq or { 0 get } if
+        dup type /nametype ne {
+          //.cspace_util /setcolorspace get /typecheck signalerror 
+        } if
+        //colorspacedict exch known not {
+          //.cspace_util /setcolorspace get /undefined signalerror 
+        } if
+
+        % See if the operand space is the same as the current space.
         % The test is intentionaly conservative to meet CET 09-06.
         1 index                       % [/new] bool [/new]
         type /nametype eq
