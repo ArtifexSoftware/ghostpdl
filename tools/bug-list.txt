@@ -142,8 +142,7 @@
 158 -- PD circle PD ???
 
 159 -- pf scaling hell.
-160 -- symbol set too much data
-       We read all the data, HP stop reading at 0x7fff and starts parser here.  BS. 
+160 -- fixed
 163 -- fixed 
 164 -- fixed
 

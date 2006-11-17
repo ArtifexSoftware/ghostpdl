@@ -276,7 +276,7 @@ pcsymbol_do_registration(
 				  pcl_symbol_set_id_code,
 				  pca_neg_error|pca_big_error)
 	DEFINE_CLASS_COMMAND_ARGS('(', 'f', 'W', "Define Symbol Set",
-				  pcl_define_symbol_set, pca_bytes)
+				  pcl_define_symbol_set, pca_bytes|pca_big_ok|pca_big_clamp)
 	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'S', "Symbol Set Control",
 				  pcl_symbol_set_control,
 				  pca_neg_ignore|pca_big_ignore)
