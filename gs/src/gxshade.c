@@ -264,9 +264,18 @@ shade_next_color(shade_coord_stream_t * cs, float *pc)
 	int ncomp = (cs->params->Function != 0 ? 1 :
 		     gs_color_space_num_components(pcs));
 
-	for (i = 0; i < ncomp; ++i)
+	for (i = 0; i < ncomp; ++i) {
 	    if ((code = cs->get_decoded(cs, num_bits, decode + i * 2, &pc[i])) < 0)
 		return code;
+	    if (cs->params->Function) {
+		gs_function_params_t *params = &cs->params->Function->params;
+
+		if (pc[i] < params->Domain[i + i])
+		    pc[i] = params->Domain[i + i];
+		else if (pc[i] > params->Domain[i + i + 1])
+		    pc[i] = params->Domain[i + i + 1];
+	    }
+	}
     }
     return 0;
 }

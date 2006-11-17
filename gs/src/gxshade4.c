@@ -58,7 +58,8 @@ Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
 	/* Decode the color with the function. */
 	code = gs_function_evaluate(psh->params.Function, c->t,
 				    c->cc.paint.values);
-    }
+    } else
+	psh->params.ColorSpace->type->restrict_color(&c->cc, psh->params.ColorSpace);
     return code;
 }
 
