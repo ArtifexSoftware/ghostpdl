@@ -949,11 +949,13 @@ scan_contour(line_list *ll, contour_cursor *q)
 	    code = init_contour_cursor(ll, &p);
 	    if (code < 0)
 		return code;
-	    code = gx_flattened_iterator__next(p.fi);
-	    if (code < 0)
-		return code;
-	    p.more_flattened = code;
-	    p.dir = compute_dir(fo, p.fi->ly0, p.fi->ly1);
+	    do {
+		code = gx_flattened_iterator__next(p.fi);
+		if (code < 0)
+		    return code;
+		p.more_flattened = code;
+		p.dir = compute_dir(fo, p.fi->ly0, p.fi->ly1);
+	    } while (p.more_flattened && p.dir == 2);
 	    if (p.fi->ly0 > fo->ymax && ll->y_break > p.fi->ly0)
 		ll->y_break = p.fi->ly0;
 	    if (p.fi->ly1 > fo->ymax && ll->y_break > p.fi->ly1)
