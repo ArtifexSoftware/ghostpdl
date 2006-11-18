@@ -117,6 +117,7 @@ struct shade_coord_stream_s {
     int (*get_value)(shade_coord_stream_t *cs, int num_bits, uint *pvalue);
     int (*get_decoded)(shade_coord_stream_t *cs, int num_bits,
 		       const float decode[2], float *pvalue);
+    void (*align)(shade_coord_stream_t *cs, int radix);
     bool (*is_eod)(const shade_coord_stream_t *cs);
 };
 
@@ -150,7 +151,8 @@ int shade_next_coords(shade_coord_stream_t * cs, gs_fixed_point * ppt,
 int shade_next_color(shade_coord_stream_t * cs, float *pc);
 
 /* Get the next vertex for a mesh element. */
-int shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex, patch_color_t *c);
+int shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex, 
+		      patch_color_t *c, bool align_color_data);
 
 /*
    Currently, all shading fill procedures follow the same algorithm:

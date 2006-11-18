@@ -177,6 +177,7 @@ vx:	    if ((code = shade_next_coords(cs, curve[1].control, 2)) < 0 ||
 					  num_colors)) < 0
 		)
 		return code;
+	    cs->align(cs, 8); /* See shade_next_vertex. */
     }
     return 0;
 }

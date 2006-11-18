@@ -41,6 +41,8 @@ private int cs_next_packed_decoded(shade_coord_stream_t *, int,
 				   const float[2], float *);
 private int cs_next_array_decoded(shade_coord_stream_t *, int,
 				  const float[2], float *);
+private void cs_packed_align(shade_coord_stream_t *cs, int radix);
+private void cs_array_align(shade_coord_stream_t *cs, int radix);
 private bool cs_eod(const shade_coord_stream_t * cs);
 
 /* Initialize a packed value stream. */
@@ -71,9 +73,11 @@ shade_next_init(shade_coord_stream_t * cs,
     if (data_source_is_array(params->DataSource)) {
 	cs->get_value = cs_next_array_value;
 	cs->get_decoded = cs_next_array_decoded;
+	cs->align = cs_array_align;
     } else {
 	cs->get_value = cs_next_packed_value;
 	cs->get_decoded = cs_next_packed_decoded;
+	cs->align = cs_packed_align;
     }
     cs->is_eod = cs_eod;
     cs->left = 0;
@@ -195,6 +199,17 @@ cs_next_array_decoded(shade_coord_stream_t * cs, int num_bits,
     return 0;
 }
 
+private void
+cs_packed_align(shade_coord_stream_t *cs, int radix)
+{
+    cs->left = cs->left / radix * radix;
+}
+
+private void
+cs_array_align(shade_coord_stream_t *cs, int radix)
+{
+}
+
 /* Get the next flag value. */
 /* Note that this always starts a new data byte. */
 int
@@ -282,12 +297,16 @@ shade_next_color(shade_coord_stream_t * cs, float *pc)
 
 /* Get the next vertex for a mesh element. */
 int
-shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex, patch_color_t *c)
+shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex, patch_color_t *c, bool align_color_data)
 {   /* Assuming p->c == c, provides a non-const access. */
     int code = shade_next_coords(cs, &vertex->p, 1);
 
+    if (code >= 0 && align_color_data)
+	cs->align(cs, 8);
     if (code >= 0)
 	code = shade_next_color(cs, c->cc.paint.values);
+    if (code >= 0)
+	cs->align(cs, 8); /* CET 09-47J.PS SpecialTestI04Test01. */
     return code;
 }
 
