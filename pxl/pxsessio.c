@@ -274,6 +274,13 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 	    pxs->media_type = eDefaultType;
             pxs->useciecolor =  !pjl_proc_compare(pxs->pjls,
                   pjl_proc_get_envvar(pxs->pjls, "useciecolor"), "on");
+	    
+	    if (!pjl_proc_compare(pxs->pjls, pjl_proc_get_envvar(pxs->pjls, "orientation"), "LANDSCAPE"))
+		pxs->orientation = eLandscapeOrientation;
+	    if (!pjl_proc_compare(pxs->pjls, pjl_proc_get_envvar(pxs->pjls, "orientation"), "PORTRAIT"))
+		pxs->orientation = ePortraitOrientation;
+	    /* NB reverse orientations missing */
+
 	    /* install the built in fonts */
 	    if ( pl_load_built_in_fonts(pjl_proc_fontsource_to_path(pxs->pjls, "I"),
 					pxs->memory,
@@ -310,6 +317,8 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	gx_device *dev = gs_currentdevice(pgs);
 	gs_point page_size_pixels;
 	gs_matrix points2device;
+	bool no_pv_2 = false;
+
         /* check for 2.1 no parameter special cases */
         {
             int i;
@@ -341,8 +350,10 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	  { if ( par->pv[2] )
 	      return_error(errorIllegalAttributeCombination);
 	  }
-	else
-	  return_error(errorMissingAttribute);
+	else {
+	    pxs->pm = px_get_default_media(pxs);
+	    no_pv_2 = true;
+	}
 	if ( par->pv[5] )
 	  { if ( par->pv[6] || par->pv[7] )
 	      return_error(errorIllegalAttributeCombination);
@@ -352,15 +363,18 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	      return_error(errorIllegalAttributeCombination);
 	  }
 
+
 	/* Copy parameters to the PCL XL state. */
-	{ /* For some reason, invalid Orientations only produce a warning. */
-	  integer orientation = par->pv[0]->value.i;
-	  if ( orientation < 0 || orientation >= pxeOrientation_next )
-	    { px_record_warning("IllegalOrientation", true, pxs);
-	      orientation = ePortraitOrientation;
+	/* For some reason, invalid Orientations only produces a warning. */
+	if ( par->pv[0] ) {
+	    integer orientation = par->pv[0]->value.i;
+	    if ( orientation < 0 || orientation >= pxeOrientation_next ) { 
+		px_record_warning("IllegalOrientation", true, pxs);
+		orientation = ePortraitOrientation;
 	    }
-	  pxs->orientation = (pxeOrientation_t)orientation;
+	    pxs->orientation = (pxeOrientation_t)orientation;
 	}
+
 	if ( par->pv[1] )
 	  pxs->media_source = par->pv[1]->value.i;
 	if ( par->pv[2] ) {
@@ -398,11 +412,13 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 		   px_record_warning("IllegalMediaSize", false, pxs);
 		}
 	    }
-	    pxs->media_size = pxs->pm->ms_enum;
+media:	    pxs->media_size = pxs->pm->ms_enum;
 	    pxs->media_dims.x = pxs->pm->width * media_size_scale;
 	    pxs->media_dims.y = pxs->pm->height * media_size_scale;
 	    pxs->media_height = pxs->pm->height;
 	    pxs->media_width = pxs->pm->width;
+	} else if ( no_pv_2 ) {
+	    goto media;
 	} else { /* custom (!par->pv[2]) */ 
 	    double scale = measure_to_points[par->pv[4]->value.i];
 	    pxs->media_dims.x = real_value(par->pv[3], 0) * scale;
