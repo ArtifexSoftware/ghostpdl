@@ -699,7 +699,7 @@ hpgl_print_char(
             nwidth = save_width;
         else {
             nwidth = 0.06 + weight * (weight < 0 ? 0.005 : 0.010);
-            nwidth *= min(scale.x, scale.y);
+            nwidth *= min(scale.x, scale.y) * (hpgl_width_scale(pgls));
         }
         /* in points */
         gs_setlinewidth(pgs, nwidth * (72.0/1016.0));

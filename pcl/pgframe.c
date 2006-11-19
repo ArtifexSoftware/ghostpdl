@@ -142,6 +142,7 @@ pcl_hpgl_plot_horiz_size(pcl_args_t *pargs, pcl_state_t *pcs)
 	pcs->g.plot_size_horizontal_specified = true;
 
     pcs->g.plot_width = (coord)size;
+    pcl_set_picture_frame_side_effects(pcs);
     return 0;
 }
 
@@ -157,6 +158,7 @@ pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcs)
     else
 	pcs->g.plot_size_vertical_specified = true;
     pcs->g.plot_height = (coord)size;
+    pcl_set_picture_frame_side_effects(pcs);
     return 0;
 }
 

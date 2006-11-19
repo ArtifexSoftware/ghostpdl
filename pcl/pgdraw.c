@@ -45,30 +45,46 @@ extern  int     abs( int );
 #define round(x)    (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
 
 
- int
-hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
+private inline gs_point
+hpgl_picture_frame_scale(hpgl_state_t *pgls)
 {
+    gs_point scale;
+    scale.x = scale.y = 0;
+
+    /* this should not happen in a real system */
     if ( (pgls->g.picture_frame_height == 0) ||
 	 (pgls->g.picture_frame_width == 0) ||
 	 (pgls->g.plot_width == 0) ||
 	 (pgls->g.plot_height == 0) ) {
 	dprintf("bad picture frame coordinates\n");
-	return 0;
-    } else if ( pgls->g.scaling_type != hpgl_scaling_point_factor ) {
-	hpgl_real_t vert_scale = (pgls->g.plot_size_vertical_specified) ?
- 	    ((hpgl_real_t)pgls->g.picture_frame_height /
- 	     (hpgl_real_t)pgls->g.plot_height) :
- 	    1.0;
-	hpgl_real_t horz_scale = (pgls->g.plot_size_horizontal_specified) ?
+    } else {
+        scale.x = (pgls->g.plot_size_horizontal_specified) ?
  	    ((hpgl_real_t)pgls->g.picture_frame_width /
  	     (hpgl_real_t)pgls->g.plot_width) :
  	    1.0;
-	hpgl_call(gs_scale(pgls->pgs, horz_scale, vert_scale));
+        scale.y = (pgls->g.plot_size_vertical_specified) ?
+ 	    ((hpgl_real_t)pgls->g.picture_frame_height /
+ 	     (hpgl_real_t)pgls->g.plot_height) :
+ 	    1.0;
     }
-    else 
-	hpgl_call(gs_scale(pgls->pgs, 1.0, 1.0));
+    return scale;
+}
+ 
+private int
+hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
+{
+    if ( pgls->g.scaling_type != hpgl_scaling_point_factor ) {
+        gs_point scale = hpgl_picture_frame_scale(pgls);
+	hpgl_call(gs_scale(pgls->pgs, scale.x, scale.y));
+    }
     return 0;
+}
 
+hpgl_real_t
+hpgl_width_scale(hpgl_state_t *pgls)
+{
+    gs_point sc = hpgl_picture_frame_scale(pgls);
+    return min(sc.x, sc.y);
 }
 
 /* ctm to translate from pcl space to plu space */
@@ -265,7 +281,8 @@ hpgl_get_line_pattern_length(hpgl_state_t *pgls)
 	     hpgl_compute_distance(pgls->g.P1.x,
 				   pgls->g.P1.y,
 				   pgls->g.P2.x,
-				   pgls->g.P2.y)) :
+				   pgls->g.P2.y) *
+             hpgl_width_scale(pgls)) :
 	    (mm_2_plu(pgls->g.line.current.pattern_length)));
 }
 

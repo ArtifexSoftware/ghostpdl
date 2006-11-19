@@ -112,4 +112,6 @@ int hpgl_add_pcl_point_to_path(hpgl_state_t *pgls, const gs_point *pcl_point);
 /* closes a subpolygon; PM1 or CI */
 int hpgl_close_subpolygon(hpgl_state_t *pgls);
 
+hpgl_real_t hpgl_width_scale(hpgl_state_t *pgls);
+
 #endif                          /* pgdraw_INCLUDED */

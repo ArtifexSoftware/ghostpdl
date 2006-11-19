@@ -441,11 +441,8 @@ hpgl_PW(
     hpgl_real_t     width_plu;
     int             pmin = 0;
     int             pmax = pcl_palette_get_num_entries(pgls->ppalet) - 1;
-    hpgl_real_t     pf_factor = min( (hpgl_real_t)pgls->g.picture_frame_height
-				     / (hpgl_real_t)pgls->g.plot_height,
-				     (hpgl_real_t)pgls->g.picture_frame_width
-				     / (hpgl_real_t)pgls->g.plot_width
-				     );
+    hpgl_real_t     pf_factor = hpgl_width_scale(pgls);
+
     /*
      * we maintain the line widths in plotter units, irrespective
      * of current units (WU).
@@ -478,12 +475,6 @@ hpgl_PW(
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     {
 	int   i;
-	/* HACK: 0.1 should work up 9600dpi but should min really be 1 plu ?
-	 * Min pen width of 0.1 plotter unit, works around Graphics engine drop 
-	 * of zero width lines at some placements
-	 * gs_set_filladjust(0.5,0.5) also works around this.
-	 */
-	width_plu = width_plu == 0 ? 0.1 : width_plu;
 	for (i = pmin; i <= pmax; ++i)
             pcl_palette_PW(pgls, i, width_plu);
     }

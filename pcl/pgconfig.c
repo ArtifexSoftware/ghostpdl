@@ -243,7 +243,7 @@ hpgl_IN_implicit(
     hpgl_args_setup(&args);
     hpgl_IP(&args, pgls);
 
-    /* pen width units - metric */
+    /* pen width units - metric, also resets pen widths.   */
     hpgl_args_setup(&args);
     hpgl_WU(&args, pgls);
 
@@ -273,6 +273,7 @@ hpgl_IN(
 )
 {	
     int             code = 0;
+    hpgl_args_t     args;
 
     /* handle the work or an implicit reset */
     code = hpgl_IN_implicit(pgls);
@@ -280,6 +281,15 @@ hpgl_IN(
     /* set up the default palette (8 entries, not-fixed) */
     if (code == 0)
         code = pcl_palette_IN(pgls);
+
+    /* pen width units - metric, also reset pen widths.  This is also
+       done in hpgl_IN_implicit() above but we have to set the pen
+       widths again in the case a new palette was created.  The
+       default width values in a fresh palette do not account for
+       scaling effects of the hpgl/2 picture frame. */
+    hpgl_args_setup(&args);
+    hpgl_WU(&args, pgls);
+
     return code;
 }
 
