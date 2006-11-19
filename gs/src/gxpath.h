@@ -195,6 +195,7 @@ bool gx_path_has_curves(const gx_path *),
     gx_path_is_void(const gx_path *),	/* no segments */
     gx_path_is_null(const gx_path *),	/* nothing at all */
     gx_path__check_curves(const gx_path * ppath, gx_path_copy_options options, fixed fixed_flat);
+    gx_path_has_long_segments(const gx_path * ppath);
 typedef enum {
     prt_none = 0,
     prt_open = 1,		/* only 3 sides */

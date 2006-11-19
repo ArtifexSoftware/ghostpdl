@@ -403,4 +403,7 @@ bool curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3,
 		    fixed *ay, fixed *by, fixed *cy, 
 		    int k);
 
+bool gx_check_fixed_diff_overflow(fixed v0, fixed v1);
+bool gx_check_fixed_sum_overflow(fixed v0, fixed v1);
+
 #endif /* gzpath_INCLUDED */

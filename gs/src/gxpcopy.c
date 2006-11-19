@@ -26,6 +26,35 @@
 /* Forward declarations */
 private void adjust_point_to_tangent(segment *, const segment *,
 				     const gs_fixed_point *);
+
+private inline int
+break_line_if_long(gx_path *ppath, const segment *pseg)
+{
+    fixed x0 = ppath->position.x;
+    fixed y0 = ppath->position.y;
+
+    if (gx_check_fixed_diff_overflow(pseg->pt.x, x0) ||
+	gx_check_fixed_diff_overflow(pseg->pt.y, y0)) {
+	fixed x, y;
+
+	if (gx_check_fixed_sum_overflow(pseg->pt.x, x0))
+	    x = (pseg->pt.x >> 1) + (x0 >> 1);
+	else
+	    x = (pseg->pt.x + x0) >> 1;
+	if (gx_check_fixed_sum_overflow(pseg->pt.y, y0))
+	    y = (pseg->pt.y >> 1) + (y0 >> 1);
+	else
+	    y = (pseg->pt.y + y0) >> 1;
+	return gx_path_add_line_notes(ppath, x, y, pseg->notes);
+	/* WARNING: Stringly speaking, the next half segment must get
+	   the sn_not_first flag. We don't bother, because that flag 
+	   has no important meaning with colinear segments.
+	 */
+    }
+    return 0;
+}
+
+
 /* Copy a path, optionally flattening or monotonizing it. */
 /* If the copy fails, free the new path. */
 int
@@ -177,6 +206,9 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 		    break;
 		}
 	    case s_line:
+		code = break_line_if_long(ppath, pseg);
+		if (code < 0)
+		    break;
 		code = gx_path_add_line_notes(ppath,
 				       pseg->pt.x, pseg->pt.y, pseg->notes);
 		vd_lineto(pseg->pt.x, pseg->pt.y);
@@ -190,6 +222,9 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 		    break;
 		}
 	    case s_line_close:
+		code = break_line_if_long(ppath, pseg);
+		if (code < 0)
+		    break;
 		code = gx_path_close_subpath(ppath);
 		vd_closepath;
 		break;
@@ -303,6 +338,11 @@ gx_path__check_curves(const gx_path * ppath, gx_path_copy_options options, fixed
 			pseg = psub->last;
 		}
 		break;
+	    case s_line:
+		if (gx_check_fixed_diff_overflow(pseg->pt.x, pt0.x) ||
+		    gx_check_fixed_diff_overflow(pseg->pt.y, pt0.y))
+		    return true;
+		break;
 	    case s_curve:
 		{
 		    const curve_segment *pc = (const curve_segment *)pseg;
@@ -337,6 +377,35 @@ gx_path__check_curves(const gx_path * ppath, gx_path_copy_options options, fixed
 	pseg = pseg->next;
     }
     return true;
+}
+
+/* Test whether a path is free of long segments. */
+/* WARNING : This function checks the distance between
+ * the starting point and the ending point of a segment.
+ * When they are not too far, a curve nevertheless may be too long.
+ * Don't worry about it here, because we assume
+ * this function is never called with paths which have curves.
+ */
+bool
+gx_path_has_long_segments(const gx_path * ppath)
+{
+    const segment *pseg = (const segment *)(ppath->first_subpath);
+    gs_fixed_point pt0;
+
+    while (pseg) {
+	switch (pseg->type) {
+	    case s_start:
+		break;
+	    default:
+		if (gx_check_fixed_diff_overflow(pseg->pt.x, pt0.x) ||
+		    gx_check_fixed_diff_overflow(pseg->pt.y, pt0.y))
+		    return true;
+		break;
+	}
+	pt0 = pseg->pt;
+	pseg = pseg->next;
+    }
+    return false;
 }
 
 /* Monotonize a curve, by splitting it if necessary. */

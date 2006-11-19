@@ -503,7 +503,8 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	device_dot_length *= fabs(pmat->xy) + fabs(pmat->yy);
     }
     /* Start by flattening the path.  We should do this on-the-fly.... */
-    if (!gx_path_has_curves(ppath)) {	/* don't need to flatten */
+    if (!gx_path_has_curves(ppath) && !gx_path_has_long_segments(ppath)) {	
+	/* don't need to flatten */
 	if (!ppath->first_subpath)
 	    return 0;
 	spath = ppath;

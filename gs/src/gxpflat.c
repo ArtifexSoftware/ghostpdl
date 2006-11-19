@@ -278,6 +278,20 @@ check_diff_overflow(fixed v0, fixed v1)
     return false;
 }
 
+bool
+gx_check_fixed_diff_overflow(fixed v0, fixed v1)
+{
+    return check_diff_overflow(v0, v1);
+}
+bool
+gx_check_fixed_sum_overflow(fixed v0, fixed v1)
+{
+    /* We assume that clamp_point_aux have been applied to v1,
+       thus -v alweays exists.
+     */
+    return check_diff_overflow(v0, -v1);
+}
+
 /*  Initialize the iterator with a line. */
 bool
 gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
