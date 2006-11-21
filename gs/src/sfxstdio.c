@@ -135,6 +135,8 @@ file_open_stream(const char *fname, uint len, const char *file_access,
 	return code;
     if (fname == 0)
 	return 0;
+    if (fname[0] == 0)		/* fopen_proc gets NUL terminated string, not len */
+	return 0;		/* so this is the same as len == 0, so return NULL */
     code = (*fopen_proc)(iodev, (char *)(*ps)->cbuf, fmode, &file,
 			 (char *)(*ps)->cbuf, (*ps)->bsize);
     if (code < 0)
