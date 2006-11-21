@@ -914,7 +914,7 @@ bind def
           {
             6.0 mul 5 1 roll
             2 copy eq       % blue == brightness
-              { pop pop sub exch div //.f2_3 div add }
+              { pop pop sub exch div //.f2_3 add }
               {
                 2 index eq  % green == brightness
                   { exch pop exch sub exch div //.f1_3 add }
