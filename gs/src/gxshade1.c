@@ -427,7 +427,7 @@ R_outer_circle(patch_fill_state_t *pfs, const gs_rect *rect,
 	sq = (rect->q.y - y0 + r0) / (y1 - y0 - r1 + r0);
     }
     if (sp >= 1 && sq >= 1)
-	s = min(sp, sq);
+	s = max(sp, sq);
     else if(sp >= 1)
 	s = sp;
     else if (sq >= 1)
