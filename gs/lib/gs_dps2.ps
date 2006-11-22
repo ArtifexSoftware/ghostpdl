@@ -175,7 +175,7 @@ end
 /currentcolorscreen	% - currentcolorscreen (60 0 <dict>)*4
 	{ .currenthalftone
 	   { { .fixcurrenthalftonescreen 3 copy 6 copy }	% halftone
-	     { 3 copy 6 copy }			% screen
+	     { dup length array copy 3 copy 6 copy }			% screen
 	     { }				% colorscreen
 	   }
 	  exch get exec
