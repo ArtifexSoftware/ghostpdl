@@ -163,13 +163,13 @@ put
         repeat
 
         % apply undercolorremoval
-        dup 5 1 roll currentundercolorremoval exec 4 1 roll
+        dup 5 1 roll currentundercolorremoval exec cvr 4 1 roll
         3
           { 3 index sub //bound_0_1 exec 3 1 roll }
         repeat
 
         % apply blackgeneration
-        5 3 roll pop currentblackgeneration exec //bound_0_1 exec
+        5 3 roll pop currentblackgeneration exec cvr //bound_0_1 exec
       }
     bind
 
