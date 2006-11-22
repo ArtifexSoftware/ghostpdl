@@ -836,11 +836,15 @@ pdfdict begin
 % JBIG2Decode filter implementation looks for in the parm dict.
 /jbig2cachectx { % <parmdict> jbig2cachectx <parmdict>
   dup /JBIG2Globals knownoget {
-    dup /Length oget
     % make global ctx
-    PDFfile fileposition 3 1 roll % resolvestream is not reentrant
-    exch true resolvestream exch .bytestring
-    .readbytestring pop .jbig2makeglobalctx
+    PDFfile fileposition exch % resolvestream is not reentrant
+    true resolvestream 		% stack after: PDFfileposition -file-
+    % Read the data in a loop until EOF to so we can move the strings into a bytestring
+    [ { counttomark 1 add index 60000 string readstring not { exit } if } loop ]
+    exch pop 0 1 index { length add } forall	% compute the total length
+    % now copy the data from the array of strings into a bytestring
+    .bytestring exch 0 exch { 3 copy putinterval length add } forall pop
+    .jbig2makeglobalctx
     PDFfile 3 -1 roll setfileposition
     1 index exch
     /.jbig2globalctx exch put
