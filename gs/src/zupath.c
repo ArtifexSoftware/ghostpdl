@@ -680,9 +680,12 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs)
 			return_error(e_typecheck);
 		    ups = data.state_after;
 		    code = (*oproc)(i_ctx_p);
-		    if (code < 0)
-			return code;
-		    argcount = 0;
+		    if (code < 0) {
+			if (code == e_nocurrentpoint)
+                            return_error(e_rangecheck); /* CET 11-22 */
+                        return code;
+		    }
+                    argcount = 0;
 		    break;
 		default:
 		    return_error(e_typecheck);
