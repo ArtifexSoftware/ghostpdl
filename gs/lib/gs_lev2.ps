@@ -860,9 +860,12 @@ def
 } odef
 
 /setpattern {			% [<comp1> ...] <pattern> setpattern -
-  currentcolorspace 0 get /Pattern ne {
-    [ /Pattern currentcolorspace ] setcolorspace
-  } if setcolor
+  { currentcolorspace 0 get /Pattern ne {
+      [ /Pattern currentcolorspace ] setcolorspace
+    } if setcolor
+  } stopped {
+    /setpattern .systemvar $error /errorname get signalerror
+  } if
 } odef
 
 % The following functions emulate the actions of findcmykcustomcolor and
