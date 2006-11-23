@@ -248,6 +248,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
     gs_image_enum *penum;
     int px;
     const ref *pp;
+    bool string_sources = true;
 
     check_estack(inumpush + 2);	/* stuff above, + continuation + proc */
     make_int(EBOT_NUM_SOURCES(esp), num_sources);
@@ -284,6 +285,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 			    break;
 			}
 		}
+		string_sources = false;
 		/* falls through */
 	    case t_string:
 		if (r_type(pp) != r_type(sources)) {
@@ -302,6 +304,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 		    return_error(e_typecheck);
 		}
 		check_proc(*pp);
+		string_sources = false;
 	}
 	*ep = *pp;
     }
@@ -312,7 +315,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
     if ((penum = gs_image_enum_alloc(imemory_local, "image_setup")) == 0)
 	return_error(e_VMerror);
     code = gs_image_enum_init(penum, pie, (const gs_data_image_t *)pim, igs);
-    if (code != 0) {		/* error, or empty image */
+    if (code != 0 || pie->skipping && string_sources) {		/* error, or empty image */
 	int code1 = gs_image_cleanup_and_free_enum(penum, igs);
 
 	if (code >= 0)		/* empty image */

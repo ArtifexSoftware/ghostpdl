@@ -984,6 +984,36 @@ gx_clip_list_free(gx_clip_list * clp, gs_memory_t * mem)
     gx_clip_list_init(clp);
 }
 
+/* Check whether a rectangle has a non-empty intersection with a clipping patch. */
+bool 
+gx_cpath_rect_visible(gx_clip_path * pcpath, gs_int_rect *prect)
+{
+    const gx_clip_rect *pr;
+    const gx_clip_list *list = &pcpath->rect_list->list;
+
+    switch (list->count) {
+	case 0:
+	    return false;
+	case 1:
+	    pr = &list->single;
+	    break;
+	default:
+	    pr = list->head;
+    }
+    for (; pr != 0; pr = pr->next) {
+	if (pr->xmin > prect->q.x)
+	    continue;
+	if (pr->xmax < prect->p.x)
+	    continue;
+	if (pr->ymin > prect->q.y)
+	    continue;
+	if (pr->ymax < prect->p.y)
+	    continue;
+	return true;
+    }
+    return false;
+}
+
 /* ------ Debugging printout ------ */
 
 #ifdef DEBUG

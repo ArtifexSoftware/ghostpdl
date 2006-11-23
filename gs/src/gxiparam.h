@@ -214,6 +214,7 @@ typedef struct gx_image_enum_procs_s {
 	const gx_image_enum_procs_t *procs;\
 	gx_device *dev;\
 	gs_id id;\
+	bool skipping; /* don't render, just consume image streams. */\
 	int num_planes;\
 	int plane_depths[gs_image_max_planes];	/* [num_planes] */\
 	int plane_widths[gs_image_max_planes]	/* [num_planes] */

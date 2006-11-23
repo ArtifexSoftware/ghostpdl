@@ -14,6 +14,7 @@
 /* $Id$ */
 /* Image setup procedures for Ghostscript library */
 #include "memory_.h"
+#include "math_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
@@ -146,6 +147,43 @@ private RELOC_PTRS_WITH(gs_image_enum_reloc_ptrs, gs_image_enum *eptr)
 }
 RELOC_PTRS_END
 
+private int
+is_image_visible(const gs_image_common_t * pic, gs_state * pgs, gx_clip_path *pcpath)
+{
+    /* HACK : We need the source image size here, 
+       but gs_image_common_t doesn't pass it.
+       We would like to move Width, Height to gs_image_common,
+       but gs_image2_t appears to have those fields of double type.
+     */
+    if (pic->type->begin_typed_image == gx_begin_image1) {
+	gs_image1_t *pim = (gs_image1_t *) pic;
+	gs_rect image_rect = {{0, 0}, {0, 0}};
+	gs_rect device_rect;
+	gs_int_rect device_int_rect;
+	gs_matrix mat;
+	int code;
+
+	image_rect.q.x = pim->Width;
+	image_rect.q.y = pim->Height;
+	code = gs_matrix_invert(&pic->ImageMatrix, &mat);
+	if (code < 0)
+	    return code;
+	code = gs_matrix_multiply(&mat, &ctm_only(pgs), &mat);
+	if (code < 0)
+	    return code;
+	code = gs_bbox_transform(&image_rect, &mat, &device_rect);
+	if (code < 0)
+	    return code;
+	device_int_rect.p.x = (int)floor(device_rect.p.x);
+	device_int_rect.p.y = (int)floor(device_rect.p.y);
+	device_int_rect.q.x = (int)ceil(device_rect.q.x);
+	device_int_rect.q.y = (int)ceil(device_rect.q.y);
+	if (!gx_cpath_rect_visible(pcpath, &device_int_rect))
+	    return 0;
+    }
+    return 1;
+}
+
 /* Create an image enumerator given image parameters and a graphics state. */
 int
 gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
@@ -178,8 +216,16 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
 		return code;
 	}
     }
-    return gx_device_begin_typed_image(dev2, (const gs_imager_state *)pgs,
+    code = gx_device_begin_typed_image(dev2, (const gs_imager_state *)pgs,
 		NULL, pic, NULL, pgs->dev_color, pcpath, pgs->memory, ppie);
+    if (code < 0)
+	return code;
+    code = is_image_visible(pic, pgs, pcpath);
+    if (code < 0)
+	return code;
+    if (!code)	
+	(*ppie)->skipping = true;
+    return 0;
 }
 
 /* Allocate an image enumerator. */
