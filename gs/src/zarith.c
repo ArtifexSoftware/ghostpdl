@@ -241,7 +241,7 @@ zidiv(i_ctx_t *i_ctx_p)
     check_type(op[-1], t_integer);
     if (op->value.intval == 0)
 	return_error(e_undefinedresult);
-    if ((op[-1].value.intval ==	MIN_INTVAL && op->value.intval == -1) {
+    if (op[-1].value.intval ==	MIN_INTVAL && op->value.intval == -1) {
 	/* Anomalous boundary case: -MININT / -1, fail. */
 	return_error(e_rangecheck);
     }
