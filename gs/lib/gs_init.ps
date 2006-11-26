@@ -391,7 +391,7 @@ userdict /#copies 1 put
 /setcolorscreen where { pop		% not in all Level 1 configurations
    /currentcolorscreen
 	{ .currenthalftone
-	   { { 60 exch 0 exch 3 copy 6 copy }	% halftone - not possible
+	   { { 60.0 exch 0.0 exch 3 copy 6 copy }	% halftone - not possible
 	     { 3 copy 6 copy }			% screen
 	     { }				% colorscreen
 	   }
@@ -400,7 +400,7 @@ userdict /#copies 1 put
 } if
 /currentscreen
 	{ .currenthalftone
-	   { { 60 exch 0 exch }			% halftone - not possible
+	   { { 60.0 exch 0.0 exch }			% halftone - not possible
 	     { }				% screen
 	     { 12 3 roll 9 { pop } repeat }	% colorscreen
 	   }
@@ -523,6 +523,9 @@ userdict /.echo.mode true put
 } bind def
 % The following is only for compatibility with Adobe interpreters.
 /setdash {
+	0 .argindex type dup /integertype eq exch /realtype eq or not {
+	  /setdash .systemvar /typecheck signalerror
+	} if
 	1 .argindex length 11 gt { /setdash .systemvar /limitcheck signalerror } if
 	//setdash
 } odef
