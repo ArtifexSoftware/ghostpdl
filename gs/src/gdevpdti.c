@@ -670,7 +670,7 @@ pdf_exit_substream(gx_device_pdf *pdev)
 }
 
 private bool 
-pdf_is_same_charproc_attars1(gx_device_pdf *pdev, pdf_char_proc_t *pcp0, pdf_char_proc_t *pcp1)
+pdf_is_same_charproc_attrs1(gx_device_pdf *pdev, pdf_char_proc_t *pcp0, pdf_char_proc_t *pcp1)
 {
     if (pcp0->real_width.x != pcp1->real_width.x)
 	return false;
@@ -691,6 +691,19 @@ typedef struct charproc_compatibility_data_s {
     gs_font *font;
 } charproc_compatibility_data_t;
 
+private bool
+is_char_code_used(pdf_font_resource_t *pdfont, gs_char char_code)
+{
+    pdf_char_proc_ownership_t *pcpo;
+
+    for (pcpo = pdfont->u.simple.s.type3.char_procs; pcpo != NULL; pcpo = pcpo->char_next) {
+	if (pcpo->char_code == char_code) {
+	    return true;
+	}
+    }
+    return false;
+}
+
 private int 
 pdf_is_charproc_compatible(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
 {
@@ -700,39 +713,58 @@ pdf_is_charproc_compatible(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_reso
     pdf_font_resource_t *pdfont = data->pdfont;
     pdf_char_proc_ownership_t *pcpo;
     pdf_font_cache_elem_t **e;
+    bool can_add_to_current_font, computed_can_add_to_current_font = false;
 
     /* Does it have same attributes ? */
-    if (!pdf_is_same_charproc_attars1(pdev, pcp0, pcp1))
+    if (!pdf_is_same_charproc_attrs1(pdev, pcp0, pcp1))
 	return 0;
     /* Is it from same font ? */
     for (pcpo = pcp1->owner_fonts; pcpo != NULL; pcpo = pcpo->char_next) {
-	if (pdfont == pcpo->font)
-	    return 1;
+	if (pdfont == pcpo->font) {
+	    /* Check for encoding conflict. */
+	    if (pcpo->char_code == data->char_code && pcpo->glyph == data->glyph)
+		return 1; /* Same char code. */
+	    if (!computed_can_add_to_current_font) {
+		can_add_to_current_font = !is_char_code_used(pdfont, data->char_code);
+		computed_can_add_to_current_font = true;
+	    }
+	    if (can_add_to_current_font)
+		return 1; /* No conflict. */
+	}
     }
     /* Look for another font with same encoding,
        because we want to reduce the number of new fonts. 
-       We restrict with ones attached to same PS font,
+       We also restrict with ones attached to same PS font,
        otherwise it creates too mixed fonts and disturbs word breaks.
      */
-    for (pcpo = pcp1->owner_fonts; pcpo != NULL; pcpo = pcpo->char_next) {
-	if (pcpo->char_code != data->char_code || pcpo->glyph != data->glyph)
-	    continue; /* Need same Encoding to generate a proper ToUnicode. */
-	if (pdfont->u.simple.s.type3.bitmap_font != pcpo->font->u.simple.s.type3.bitmap_font)
-	    continue;
-	if (memcmp(&pdfont->u.simple.s.type3.FontMatrix, &pcpo->font->u.simple.s.type3.FontMatrix,
-		    sizeof(pdfont->u.simple.s.type3.FontMatrix)))
-	    continue;
-	if (data->cgp != NULL) {
-	    if (!pdf_check_encoding_compatibility(pcpo->font, data->cgp->s, data->cgp->num_all_chars))
+    e = pdf_locate_font_cache_elem(pdev, data->font);
+    if (e != NULL) {
+	for (pcpo = pcp1->owner_fonts; pcpo != NULL; pcpo = pcpo->char_next) {
+	    if (pcpo->char_code != data->char_code || pcpo->glyph != data->glyph)
+		continue; /* Need same Encoding to generate a proper ToUnicode. */
+	    if (pdfont->u.simple.s.type3.bitmap_font != pcpo->font->u.simple.s.type3.bitmap_font)
 		continue;
+	    if (memcmp(&pdfont->u.simple.s.type3.FontMatrix, &pcpo->font->u.simple.s.type3.FontMatrix,
+			sizeof(pdfont->u.simple.s.type3.FontMatrix)))
+		continue;
+	    if (data->cgp != NULL) {
+		if (!pdf_check_encoding_compatibility(pcpo->font, data->cgp->s, data->cgp->num_all_chars))
+		    continue;
+	    }
+	    if ((*e)->pdfont != pcpo->font)
+		continue;
+	    data->pdfont = pcpo->font; /* Switch to the other font. */
+	    return 1;
 	}
-	e = pdf_locate_font_cache_elem(pdev, data->font);
-	if (e == NULL || (*e)->pdfont != pdfont)
-	    continue;
-	data->pdfont = (*e)->pdfont;
-	return 1;
     }
-    /* Wil share with another font. */
+    /* Check whether it can be added into the current font. */
+    if (!computed_can_add_to_current_font)
+	can_add_to_current_font = !is_char_code_used(pdfont, data->char_code);
+    if (!can_add_to_current_font) {
+	/* Can't substitute due to encoding conflict. */
+	return 0;
+    }
+    /* The current font will share it with another font. */
     return 1;
 }
 
@@ -750,7 +782,7 @@ pdf_find_same_charproc_aux(gx_device_pdf *pdev,
     for (pcpo = (*ppdfont)->u.simple.s.type3.char_procs; pcpo != NULL; pcpo = pcpo->char_next) {
 	pdf_char_proc_t *pcp = pcpo->char_proc;
 
-	if (*ppcp != pcp && pdf_is_same_charproc_attars1(pdev, *ppcp, pcp)) {
+	if (*ppcp != pcp && pdf_is_same_charproc_attrs1(pdev, *ppcp, pcp)) {
     	    cos_object_t *pco0 = pcp->object;
     	    cos_object_t *pco1 = (*ppcp)->object;
 
