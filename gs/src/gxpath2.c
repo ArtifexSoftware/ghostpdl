@@ -319,11 +319,14 @@ gx_path_scale_exp2_shared(gx_path * ppath, int log2_scale_x, int log2_scale_y,
  * 5.02, the code follows the Adobe implementation (and LanguageLevel 3
  * specification), in which this line becomes the *last* segment of the
  * reversed path.  This can produce some quite unintuitive results.
+ *
+ * The order of the subpaths is unspecified in the PLRM, but the CPSI
+ * reverses the subpaths, and the CET (11-05 p6, test 3) tests for it.
  */
 int
 gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 {
-    const subpath *psub = ppath_old->first_subpath;
+    const subpath *psub = ppath_old->current_subpath;
 
 #ifdef DEBUG
     if (gs_debug_c('P'))
@@ -367,7 +370,9 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 			if (code < 0)
 			    return code;
 		    }
-		    psub = (const subpath *)psub->last->next;
+		    do {
+			psub = (const subpath *)psub->prev;
+		    } while (psub && psub->type != s_start);
 		    goto nsp;
 		case s_curve:
 		    {
