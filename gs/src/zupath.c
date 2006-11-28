@@ -38,6 +38,8 @@
 extern const gx_device gs_hit_device;
 extern const int gs_hit_detected;
 
+extern bool CPSI_mode;
+
 /* Forward references */
 private int upath_append(os_ptr, i_ctx_t *);
 private int upath_stroke(i_ctx_t *, gs_matrix *);
@@ -605,9 +607,15 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs)
 		const up_data_t data = up_data[opx];
 
 		*pnargs = data.num_args; /* in case of error */
-		if (!(ups & data.states_before))
-		    return_error(e_typecheck);
-		ups = data.state_after;
+		if (CPSI_mode && opx == upath_op_ucache) {
+		    /* CPSI does not complain about incorrect ucache
+		       placement, even though PLRM3 says it's illegal. */
+		    ups = ups == UPS_PATH ? ups : data.state_after;
+		} else {
+		    if (!(ups & data.states_before))
+			return_error(e_typecheck);
+		    ups = data.state_after;
+		}
 		do {
 		    os_ptr op = osp;
 		    byte opargs = data.num_args;
@@ -676,9 +684,15 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs)
 		    data = up_data[opx];
 		    if (argcount != data.num_args)
 			return_error(e_typecheck);
-		    if (!(ups & data.states_before))
-			return_error(e_typecheck);
-		    ups = data.state_after;
+		    if (CPSI_mode && opx == upath_op_ucache) {
+			/* CPSI does not complain about incorrect ucache
+			   placement, even though PLRM3 says it's illegal. */
+			ups = ups == UPS_PATH ? ups : data.state_after;
+		    } else {
+			if (!(ups & data.states_before))
+			    return_error(e_typecheck);
+			ups = data.state_after;
+		    }
 		    code = (*oproc)(i_ctx_p);
 		    if (code < 0) {
 			if (code == e_nocurrentpoint)
