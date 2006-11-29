@@ -334,7 +334,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     int fixed_width = 0;
     int small_descent = 0, small_height = 0;
     bool small_present = false;
-    int x_height = min_int;
+    int x_height = 0;
     int cap_height = 0;
     gs_rect bbox_colon, bbox_period, bbox_I;
     bool is_cid = (bfont->FontType == ft_CID_encrypted ||
