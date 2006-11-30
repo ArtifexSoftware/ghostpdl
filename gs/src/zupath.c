@@ -41,8 +41,8 @@ extern const int gs_hit_detected;
 extern bool CPSI_mode;
 
 /* Forward references */
-private int upath_append(os_ptr, i_ctx_t *);
-private int upath_stroke(i_ctx_t *, gs_matrix *);
+private int upath_append(os_ptr, i_ctx_t *, bool);
+private int upath_stroke(i_ctx_t *, gs_matrix *, bool);
 
 /* ---------------- Insideness testing ---------------- */
 
@@ -109,7 +109,7 @@ zinustroke(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if ((spop = upath_stroke(i_ctx_p, &mat)) < 0) {
+    if ((spop = upath_stroke(i_ctx_p, &mat, false)) < 0) {
 	gs_grestore(igs);
 	return spop;
     }
@@ -176,7 +176,7 @@ in_path(os_ptr oppath, i_ctx_t *i_ctx_p, gx_device * phdev)
 	gx_path_init_local(&save, imemory);
 	gx_path_assign_preserve(&save, ipath);
 	gs_newpath(igs);
-	code = upath_append(oppath, i_ctx_p);
+	code = upath_append(oppath, i_ctx_p, false);
 	if (code >= 0)
 	    code = gx_clip_to_path(igs);
 	gx_path_assign_free(igs->path, &save);
@@ -243,7 +243,7 @@ in_upath(i_ctx_t *i_ctx_p, gx_device * phdev)
 
     if (code < 0)
 	return code;
-    if ((code = upath_append(op, i_ctx_p)) < 0 ||
+    if ((code = upath_append(op, i_ctx_p, false)) < 0 ||
 	(code = npop = in_path(op - 1, i_ctx_p, phdev)) < 0
 	) {
 	gs_grestore(igs);
@@ -337,7 +337,7 @@ zuappend(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if ((code = upath_append(op, i_ctx_p)) >= 0)
+    if ((code = upath_append(op, i_ctx_p, false)) >= 0)
 	code = gs_upmergepath(igs);
     gs_grestore(igs);
     if (code < 0)
@@ -355,7 +355,7 @@ zueofill(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if ((code = upath_append(op, i_ctx_p)) >= 0)
+    if ((code = upath_append(op, i_ctx_p, CPSI_mode)) >= 0)
 	code = gs_eofill(igs);
     gs_grestore(igs);
     if (code < 0)
@@ -373,7 +373,7 @@ zufill(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if ((code = upath_append(op, i_ctx_p)) >= 0)
+    if ((code = upath_append(op, i_ctx_p, CPSI_mode)) >= 0)
 	code = gs_fill(igs);
     gs_grestore(igs);
     if (code < 0)
@@ -392,7 +392,7 @@ zustroke(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if ((code = npop = upath_stroke(i_ctx_p, NULL)) >= 0)
+    if ((code = npop = upath_stroke(i_ctx_p, NULL, CPSI_mode)) >= 0)
 	code = gs_stroke(igs);
     gs_grestore(igs);
     if (code < 0)
@@ -415,7 +415,7 @@ zustrokepath(i_ctx_t *i_ctx_p)
     /* Save and reset the path. */
     gx_path_init_local(&save, imemory);
     gx_path_assign_preserve(&save, igs->path);
-    if ((code = npop = upath_stroke(i_ctx_p, NULL)) < 0 ||
+    if ((code = npop = upath_stroke(i_ctx_p, NULL, false)) < 0 ||
 	(code = gs_strokepath(igs)) < 0
 	) {
 	gx_path_assign_free(igs->path, &save);
@@ -565,7 +565,7 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 
 /* Append a user path to the current path. */
 private inline int
-upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs)
+upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool ucache_kludge)
 {
     upath_state ups = UPS_INITIAL;
     ref opcodes;
@@ -607,7 +607,7 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs)
 		const up_data_t data = up_data[opx];
 
 		*pnargs = data.num_args; /* in case of error */
-		if (CPSI_mode && opx == upath_op_ucache) {
+		if (ucache_kludge && opx == upath_op_ucache) {
 		    /* CPSI does not complain about incorrect ucache
 		       placement, even though PLRM3 says it's illegal. */
 		    ups = ups == UPS_PATH ? ups : data.state_after;
@@ -684,7 +684,7 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs)
 		    data = up_data[opx];
 		    if (argcount != data.num_args)
 			return_error(e_typecheck);
-		    if (CPSI_mode && opx == upath_op_ucache) {
+		    if (ucache_kludge && opx == upath_op_ucache) {
 			/* CPSI does not complain about incorrect ucache
 			   placement, even though PLRM3 says it's illegal. */
 			ups = ups == UPS_PATH ? ups : data.state_after;
@@ -713,10 +713,10 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs)
     return 0;
 }
 private int
-upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
+upath_append(os_ptr oppath, i_ctx_t *i_ctx_p, bool ucache_kludge)
 {
     int nargs = 0;
-    int code = upath_append_aux(oppath, i_ctx_p, &nargs);
+    int code = upath_append_aux(oppath, i_ctx_p, &nargs, ucache_kludge);
 
     if (code < 0) {
 	/* Pop args on error, to match Adobe interpreters. */
@@ -731,14 +731,14 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 /* Append a user path to the current path, and then apply or return */
 /* a transformation if one is supplied. */
 private int
-upath_stroke(i_ctx_t *i_ctx_p, gs_matrix *pmat)
+upath_stroke(i_ctx_t *i_ctx_p, gs_matrix *pmat, bool ucache_kludge)
 {
     os_ptr op = osp;
     int code, npop;
     gs_matrix mat;
 
     if ((code = read_matrix(imemory, op, &mat)) >= 0) {
-	if ((code = upath_append(op - 1, i_ctx_p)) >= 0) {
+	if ((code = upath_append(op - 1, i_ctx_p, ucache_kludge)) >= 0) {
 	    if (pmat)
 		*pmat = mat;
 	    else
@@ -746,7 +746,7 @@ upath_stroke(i_ctx_t *i_ctx_p, gs_matrix *pmat)
 	}
 	npop = 2;
     } else {
-	if ((code = upath_append(op, i_ctx_p)) >= 0)
+	if ((code = upath_append(op, i_ctx_p, ucache_kludge)) >= 0)
 	    if (pmat)
 		gs_make_identity(pmat);
 	npop = 1;
