@@ -276,19 +276,28 @@ cntdict /dicttype {
 	% Stack: -mark- file
   pop pop
 
-} odef
+} .bind def
 
 /printobject {		% <obj> <tag> printobject -
-  (%stdout) (w) file 2 index 2 index writeobject pop pop
+  currentobjectformat 0 eq {
+      /printobject .systemvar /undefined signalerror
+  } if
+  (%stdout) (w) file 2 index 2 index .writeobject pop pop
 } odef
 /writeobject {		% <file> <obj> <tag> writeobject -
+  currentobjectformat 0 eq {
+      /writeobject .systemvar /undefined signalerror
+  } if
   2 .argindex pop	% check # of args
+  .writeobject
+} odef
+/.writeobject {
   3 copy exch
 		% We must allocate the array in local VM
 		% to avoid a possible invalidaccess.
   .currentglobal false .setglobal exch 1 array astore exch .setglobal
   .writeobjects pop pop pop
-} odef
+} .bind def
 
 % Implement binary error message output.
 /.objectprinttest {		% <obj> .objectprinttest -
