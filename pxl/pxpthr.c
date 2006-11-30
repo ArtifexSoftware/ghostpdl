@@ -31,6 +31,7 @@ static bool global_first_time_this_operator = false;
 /* store away the current font attributes PCL can't set these,
  * they persist for XL, rotation is missing */
 gs_point global_char_shear;
+gs_point global_char_scale;
 float global_char_bold_value;
 
 /* forward decl */
@@ -91,8 +92,13 @@ pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs)
 	global_char_shear.x = pxs->pxgs->char_shear.x;
 	global_char_shear.y = pxs->pxgs->char_shear.y;
     }
+    if ( pxs->pxgs->char_scale.x != 1.0 || pxs->pxgs->char_scale.y != 1.0 ) {
+	global_char_scale.x = pxs->pxgs->char_scale.x;
+	global_char_scale.y = pxs->pxgs->char_scale.y;
+    }
     if ( pxs->pxgs->char_bold_value > 0.001 )
     	global_char_bold_value = pxs->pxgs->char_bold_value; 
+
 }
 
 /* retrieve the current pcl state and initialize pcl */
@@ -269,6 +275,8 @@ pxpcl_release(void)
         global_pass_first = true;
 	global_char_shear.x = 0;
 	global_char_shear.y = 0;
+	global_char_scale.x = 1.0;
+	global_char_scale.y = 1.0;
 	global_char_bold_value = 0.0;
     }
 }
@@ -295,6 +303,8 @@ pxpcl_endpassthroughcontiguous(px_state_t *pxs)
     }
 
     pxs->pxgs->char_shear.x = global_char_shear.x;
-    pxs->pxgs->char_shear.y = global_char_shear.y;
+    pxs->pxgs->char_shear.y = global_char_shear.y;  
+    pxs->pxgs->char_scale.x = global_char_scale.x;
+    pxs->pxgs->char_scale.y = global_char_scale.y;
     pxs->pxgs->char_bold_value = global_char_bold_value;
 }

@@ -7,7 +7,7 @@
 007 -- fixed
 008 -- fixed
 010 -- fixed
-011 -- nofix Position 2 vs 61 on a pxl error message is uninteresting.
+011 -- fixed r2684
 012 -- fixed
 013 -- fixed
 014 -- fixed
@@ -20,36 +20,42 @@
 022 -- fixed
 023 -- fixed
 024 -- fixed
+025 -- passthrough - C705-36  extra blank page 38
 026 -- fixed
 027 -- fixed
 028 -- fixed
 030 -- fixed
-031 -- fixed
-032 -- fixed
-033 -- fixed 
-034 -- fixed
+031 -- passthrough - C705-66 pcl palette entry 8 Blk vs White. Raster color wrong.
+032 -- fixed - SK verified in r2685
+033 -- fixed - SK verified in r2685
+034 -- fixed 
 035 -- nofix we only print the first warning instead of a list on pxl error page
 036 -- fixed
-037 -- fixed
+037 -- fixed - SK verified in r2685
+038 -- fixed
 039 -- fixed
-041 -- fixed
+041 -- fixed - SK verified in r2685
 042 -- transparency rops, fill difference HP not treating 0 as transparent?
 043 -- same as 42
 044 -- Better still some transparent white issues.
 045 -- same as 44
 046 -- same as 44
-050 -- top margin immediate vs delayed -- fixed hpclj4550 doesn't match implguide; floating cap+pagemarked&topmargin
+047 -- fixed
+048 -- fixed
+049 -- fixed
+050 -- fixed
 051 -- fixed
 052 -- HMI font selection interaction
-053 -- fixed
+053 -- fixed - SK verified in r2685
 054 -- fixed
+055 -- fixed
 056 -- font selection lineprinter instead of courier
 057 -- fixed
 058 -- symbolset foo possible Nofix -- HP error
-059 -- Nofix -- symbol set byte limit of 0x7fff same as 160
+059 -- Nofix -- symbol se,t byte limit of 0x7fff same as 160
 060 -- UV downloaded chars are missing
 061 -- symbol set glyphs
-062 -- symbol set selection 
+a0a62 -- symbol set selection 
 063 -- char color black instead of red
 064 -- adaptive raster extra black missing 
 065 -- Nofix -- HP error as printed on the test page.
@@ -59,9 +65,10 @@
 069 -- same as 67
 070 -- same as 66
 071 -- HP not supporting 3bit per index ? double check.
-072 -- Raster pattern anchor corner
+072 -- Raster pattern anchor corner page based?
 073 -- Overlay off page?
 074 -- Monochrome mode error
+075 -- fixed
 076 -- palette selection error
 077 -- raster scaling height leading to text reflow.
 078 -- transparent rops
@@ -72,9 +79,12 @@
 083 -- macro fg text color wrong
 084 -- fixed
 085 -- underline of spaces vs not.
-087 -- fixed
+086 -- fixed
+087 -- cap difference on entry to macro
 088 -- backspace beyond printable area should be blocked.
 089 -- HT too small
+090 -- fixed
+091 -- fixed
 092 -- arc scaling at the extreme scale factors.
 093 -- possible HP scaling error
 094 -- polygon fills missing, winding?
@@ -94,8 +104,8 @@
 109 -- polygon fill extreme scaling
 110 -- polygon fill
 111 -- hpgl LB
-112 -- LB fill 
-113 -- Font Selection Bitmap font deletion
+112 -- fixed
+113 -- fixed
 114 -- Symbol Set glyphs 458
 115 -- fixed
 116 -- fixed
@@ -106,20 +116,22 @@
 121 -- fixed
 122 -- hpgl LB 
 123 -- hpgl LB
-124 -- fixed.
+124 -- hpgl LB
 125 -- hpgl LB
 126 -- hpgl LB
+127 -- fixed
 128 -- hpgl LB - scaling artifact test
+129 -- fixed
+130 -- fixed
 131 -- hpgl LB
+132 -- fixed
 133 -- fixed
 135 -- fixed
-136 -- fixed
+136 -- fixed SK verified in r2685
 137 -- hpgl LB DV
-138 -- same as 136
+138 -- fixed
 139 -- HT tab size
-
 140 -- LA line join attributes rounding.
-
 141 -- Fill wrong.  dashed triangle not filled vs filled.
 142 -- HP no fills on stick/arc fonts.
 143 -- hatch fill arg rounding.?
@@ -135,15 +147,23 @@
 153 -- LB placement
 154 -- fixed
 155 -- fixed
-
 156 -- OK? color transfer function perhaps
 157 -- Fill differences
-
 158 -- PD circle PD ???
-
 159 -- pf scaling hell.
-160 -- fixed
-163 -- fixed 
+160 -- too much data in symbolset download is truncated by HP swallowed by our parser.
+161 -- pages missing because of 160 data swallowed.
+162 -- Requires a device that supports multiple page output.
+163 -- fixed SK verified in r2685
 164 -- fixed
 
+321 -- passthrough missing hpgl wedges in passthrough
+322 -- fixed r2680
+323 -- fixed r2680
+430 -- passthrough space between middle rectangle and "This" text.
+431 -- C705-50 text white source transparency
+432 -- fixed r2681
+433 -- open: vivid treatment test is only valid with device color devices.
+434 -- C705-4 transparency rop using merge control  
+435 -- fixed r2682
 
