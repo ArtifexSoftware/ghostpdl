@@ -196,10 +196,15 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 		}
 		if (size < hsize)
 		    return_error(e_syntaxerror);
-		/* Preallocate an array large enough for the worst case, */
-		/* namely, all objects and no strings. */
+		/*
+		 * Preallocate an array large enough for the worst case,
+		 * namely, all objects and no strings.  Note that we must
+		 * divide size by 8, not sizeof(ref), since array elements
+		 * in binary tokens always occupy 8 bytes regardless of the
+		 * size of a ref.
+		 */
 		code = ialloc_ref_array(&pbs->bin_array,
-				   a_all + a_executable, size / sizeof(ref),
+					a_all + a_executable, size / 8,
 					"binary object sequence(objects)");
 		if (code < 0)
 		    return code;
