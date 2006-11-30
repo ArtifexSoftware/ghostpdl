@@ -1251,8 +1251,7 @@ Test	 Status	Comments
 09-56-1  DIFF	Device Dependent: Tek and Adobe show '/findcolorrendering' instead
 		of '--findcolorrendering--' with errors. Assign: Peter
 
-09-56-2  DIFF	GS returns string instead of name: (Lighter.Default.Default) vs.
-		/Lighter.Default.Default of CPSI and Tek. Assign: Peter
+09-56-2  OK	revisin 7234 (peter)
 
 09-56-3  DIFF	Device Dependent: GS missing '1' for GRAY 33. Tek has '1' for
 		MEMO 3 & 4 (GS and CPSI do not). further analysis. assign: Ray
@@ -4036,11 +4035,21 @@ Test	 Status	Comments
 
 23-12A-2  OK	
 
-23-12A-3  DIFF	GS shows "508" vs. "509" SYNTAX 6 third line up from bottom.
-		assign: Peter
+23-12A-3  AOK   The discrepancies are in the length of the encoded
+                string produced by the ASCII85Encode and
+                RunLengthEncode filter respectively.  These filters
+                have some discretion in their output -- ASCII85Encode
+                must insert a \n at least every 80 characters, but may
+                insert one more often, and RunLengthEncode is not
+                required to produce maximum-length runs -- and it
+                appears that gs's implementation of these filters
+                produces output that is 1 byte shorter than Adobe's in
+                some cases.  gs's output is (also) correct -- the CET
+                verifies it by decoding it and comparing against the
+                original. (peter)
+		
+23-12A-4  AOK	same resolution as 23-12A-3.
 
-23-12A-4  DIFF	GS shows "405" vs. "406" SYNTAX 8 third line up from bottom.
-		assign: Peter
 
 23-12B-1  DIFF	GS gets "-file- ( ioerror --readstring--" on FAX_6 test. Last
 		image of top row missing, others may be shifted. assign: Ray
@@ -5017,7 +5026,11 @@ Test	 Status	Comments
 
 30-02-2  OK	
 
-30-03-1  DIFF	show load gcheck T vs. F assign Peter.
+30-03-1  AOK	These discrepancies occur because
+         	/show load gcheck
+                returns true in gs and false in the reference output.  This is an unarguable
+                bug in the reference interpreters: see the documentation for gcheck in the
+                PLRM3. (peter)
 
 30-03-2  OK	
 
@@ -5037,7 +5050,11 @@ Test	 Status	Comments
 
 30-05-2  OK	
 
-30-06-1  DIFF	Probably same as 30-03-1 assign Peter.
+30-06-1  AOK	These discrepancies occur because
+         	/show load gcheck
+                returns true in gs and false in the reference output.  This is an unarguable
+                bug in the reference interpreters: see the documentation for gcheck in the
+                PLRM3. (peter)
 
 30-06-2  OK	
 
@@ -5209,7 +5226,7 @@ Test	 Status	Comments
 
 34_all-1  DIFF	CPSI has OrigFont, PaintType in a CID font dictionary. Assign: Ray
 
-34_all-2  DIFF	(/key CIDFont definefont) not conforming. Analyzed by Igor. sssign: Igor.
+34_all-2  DIFF	(/key CIDFont definefont) not conforming. Analyzed by Igor. assign: Igor.
 
 34_all-3  OK	Minor differences visually reviewed by RJJ
 
