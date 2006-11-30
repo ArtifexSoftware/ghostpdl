@@ -125,7 +125,9 @@ end
 /currentuserparams {		% - currentuserparams <dict>
   /userparams .systemvar dup length dict .copydict
 } odef
-/setuserparams {		% <dict> setuserparams -
+% We break out setuserparams into a separate procedure so that setvmxxx
+% can use it without affecting the command in case of an error.
+/.setuserparams2 {
 	% Check that we will be able to set the PostScript-level
 	% user parameters.
   /setuserparams /psuserparams .systemvar .checksetparams
@@ -162,6 +164,9 @@ end
 	% Set them again to the new values.  From here on, we are safe,
 	% since a context switch will consult userparams.
   .setuserparams
+} .bind def
+/setuserparams {		% <dict> setuserparams -
+    .setuserparams2
 } .bind odef
 % Initialize user parameters managed here.
 /JobName () .definepsuserparam
@@ -403,13 +408,13 @@ psuserparams /ProcessDSCComment {.checkprocesscomment} put
 
 % VMReclaim and VMThreshold are user parameters.
 /setvmthreshold {		% <int> setvmthreshold -
-  mark /VMThreshold 2 .argindex .dicttomark setuserparams pop
+  mark /VMThreshold 2 .argindex .dicttomark .setuserparams2 pop
 } odef
 /vmreclaim {			% <int> vmreclaim -
   dup 0 gt {
     .vmreclaim
   } {
-    mark /VMReclaim 2 index .dicttomark setuserparams pop
+    mark /VMReclaim 2 index .dicttomark .setuserparams2 pop
   } ifelse
 } odef
 -1 setvmthreshold
