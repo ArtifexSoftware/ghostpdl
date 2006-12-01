@@ -54,8 +54,8 @@
 058 -- fixed in r2688
 059 -- fixed in r2687
 060 -- 'V' from Park Avenue font is missing
-061 -- symbol set glyphs
-a0a62 -- symbol set selection 
+061 -- 5e and 5f aren't downloaded HP pulls from the 'linedraw' common glyph set
+062 -- symbol set selection 
 063 -- char color black instead of red
 064 -- adaptive raster extra black missing 
 065 -- Nofix -- HP error as printed on the test page.
@@ -151,8 +151,8 @@ a0a62 -- symbol set selection
 157 -- Fill differences
 158 -- PD circle PD ???
 159 -- pf scaling hell.
-160 -- too much data in symbolset download is truncated by HP swallowed by our parser.
-161 -- pages missing because of 160 data swallowed.
+160 -- fixed r2687
+161 -- fixed r2687
 162 -- Requires a device that supports multiple page output.
 163 -- fixed SK verified in r2685
 164 -- fixed
