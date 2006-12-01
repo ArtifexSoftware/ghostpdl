@@ -114,7 +114,7 @@ extern_st(st_gs_font_type42);
  * USE_ttfReader subclasses gs_font_type42 with ttfReader or without.
  * FAPI will disable ttfReader as well. 
  */
-int gs_type42_font_init(gs_font_type42 *pfont, bool USE_ttfReader);
+int gs_type42_font_init(gs_font_type42 *pfont, int subfontid, bool USE_ttfReader);
 
 /* Append the outline of a TrueType character to a path. */
 int gs_type42_append(uint glyph_index, gs_state * pgs,

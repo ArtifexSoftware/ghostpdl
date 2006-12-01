@@ -94,7 +94,7 @@ get_glyph_offset(gs_font_type42 *pfont, uint glyph_index)
  * string_proc, and the font procedures as well.
  */
 int
-gs_type42_font_init(gs_font_type42 * pfont, bool USE_ttfReader)
+gs_type42_font_init(gs_font_type42 * pfont, int subfontID, bool USE_ttfReader)
 {
     int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
 	pfont->data.string_proc;
@@ -106,16 +106,28 @@ gs_type42_font_init(gs_font_type42 * pfont, bool USE_ttfReader)
     byte head_box[8];
     ulong loca_size = 0;
     ulong glyph_start, glyph_offset, glyph_length;
+    uint numFonts;
+    uint OffsetTableOffset;
+
+    static const byte version1_0[4] = {0, 1, 0, 0};
+    static const byte version_true[4] = {'t', 'r', 'u', 'e'};
+    static const byte version_ttcf[4] = {'t', 't', 'c', 'f'};
 
     ACCESS(0, 12, OffsetTable);
+    if (!memcmp(OffsetTable, version_ttcf, 4))
     {
-	static const byte version1_0[4] = {0, 1, 0, 0};
-	static const byte version_true[4] = {'t', 'r', 'u', 'e'};
-
-	if (memcmp(OffsetTable, version1_0, 4) &&
-	    memcmp(OffsetTable, version_true, 4))
-	    return_error(gs_error_invalidfont);
+	numFonts = U16(OffsetTable + 8);
+	if (subfontID < 0 || subfontID >= numFonts)
+	    return_error(gs_error_rangecheck);
+	ACCESS(8, numFonts * 4, OffsetTable);
+	OffsetTableOffset = u32(OffsetTable + subfontID * 4);
+	ACCESS(OffsetTableOffset, 12, OffsetTable);
     }
+
+    if (memcmp(OffsetTable, version1_0, 4) &&
+	    memcmp(OffsetTable, version_true, 4))
+	return_error(gs_error_invalidfont);
+
     numTables = U16(OffsetTable + 4);
     ACCESS(12, numTables * 16, TableDirectory);
     /* Clear all non-client-supplied data. */
