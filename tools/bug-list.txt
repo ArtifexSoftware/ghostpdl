@@ -51,9 +51,9 @@
 055 -- fixed
 056 -- font selection lineprinter instead of courier
 057 -- fixed
-058 -- symbolset foo possible Nofix -- HP error
-059 -- Nofix -- symbol se,t byte limit of 0x7fff same as 160
-060 -- UV downloaded chars are missing
+058 -- fixed in r2688
+059 -- fixed in r2687
+060 -- 'V' from Park Avenue font is missing
 061 -- symbol set glyphs
 a0a62 -- symbol set selection 
 063 -- char color black instead of red
@@ -65,7 +65,7 @@ a0a62 -- symbol set selection
 069 -- same as 67
 070 -- same as 66
 071 -- HP not supporting 3bit per index ? double check.
-072 -- Raster pattern anchor corner page based?
+072 -- fixed, HP clj bug.  clj's move the pattern anchor incorrectly when print direction is 180
 073 -- Overlay off page?
 074 -- Monochrome mode error
 075 -- fixed
@@ -100,7 +100,7 @@ a0a62 -- symbol set selection
 105 -- graphics
 106 -- graphics
 107 -- cross hatch alignment 
-108 -- fixed
+108 -- regression polygon close
 109 -- polygon fill extreme scaling
 110 -- polygon fill
 111 -- hpgl LB
@@ -160,10 +160,11 @@ a0a62 -- symbol set selection
 321 -- passthrough missing hpgl wedges in passthrough
 322 -- fixed r2680
 323 -- fixed r2680
+
 430 -- passthrough space between middle rectangle and "This" text.
 431 -- C705-50 text white source transparency
 432 -- fixed r2681
 433 -- open: vivid treatment test is only valid with device color devices.
 434 -- C705-4 transparency rop using merge control  
-435 -- fixed r2682
+435 -- fixed r2686
 
