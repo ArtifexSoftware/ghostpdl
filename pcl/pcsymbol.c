@@ -63,7 +63,7 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 	{ int num_codes = last_code - first_code + 1;
 	  int i;
 
-	  if ( num_codes <= 0 || num_codes > 256 || count < psm_header_size + num_codes * 2 )
+	  if ( num_codes <= 0 || num_codes > 256 || (count != psm_header_size + num_codes * 2) )
 	    return e_Range;
 	  header =
 	    (pl_symbol_map_t *)gs_alloc_bytes(mem,
@@ -276,7 +276,7 @@ pcsymbol_do_registration(
 				  pcl_symbol_set_id_code,
 				  pca_neg_error|pca_big_error)
 	DEFINE_CLASS_COMMAND_ARGS('(', 'f', 'W', "Define Symbol Set",
-				  pcl_define_symbol_set, pca_bytes|pca_big_ok|pca_big_clamp)
+				  pcl_define_symbol_set, pca_byte_data|pca_neg_error|pca_big_clamp)
 	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'S', "Symbol Set Control",
 				  pcl_symbol_set_control,
 				  pca_neg_ignore|pca_big_ignore)
