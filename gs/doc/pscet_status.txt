@@ -4461,7 +4461,12 @@ Test	 Status	Comments
 
 25-13-1  DIFF	GS gets different 'mul' results from some boundary conditions
 		CPSI matches Tek hardcopy.
-		Error messages in ILLEGAL section match (rev 7140 ?). Assign: Peter.
+		Error messages in ILLEGAL section match (rev 7140 ?).
+                These CET files will not run on my 64-bit build (they expect to be able to
+                'cvs' any integer into a 12-character string), and I don't seem to be able
+                to get gcc to produce 32-bit output, even with Ralph's help.  Please
+                reassign these files.
+                Assign: (reassign) Alex.
 
 25-13-2  OK	
 
@@ -4596,7 +4601,12 @@ Test	 Status	Comments
 
 27-05-2  DIFF	memo36 - setvmthreshold; cash18 ucachestatus;
 		Igor assigns this to Ray for further analyzis.
-		more15 - same as currentstrokeadjust in 09-49D-3  assigned to Peter.
+		more15 - same as currentstrokeadjust in 09-49D-3
+                peter writes:
+                These CET files will not run on my 64-bit build (they expect to be able to
+                'cvs' any integer into a 12-character string), and I don't seem to be able
+                to get gcc to produce 32-bit output, even with Ralph's help.  Please
+                reassign these files.  Assign Alex.
 
 27-06-1  OK  	Fixed in rev. 7157 - Alex.
 
@@ -5031,7 +5041,7 @@ Test	 Status	Comments
 
 30-06-2  OK	
 
-30-07-1  DIFF	Probably same as 30-03-1 assign Peter.
+30-07-1  DIFF	Probably same as 30-08-1 assign Peter.
 
 30-07-2  DIFF	/GlobalFontDirectory /Type3Font1 known gs=true, cpsi=false. assign Peter.
 
@@ -5044,16 +5054,11 @@ Test	 Status	Comments
 
 30-08-3  DIFF	same as 30-07-3 assign Peter
 
-30-09-1  DIFF	setuserparams instead of setvmthreshold.
-                Originally ok'd incorrectly by HAS - Ray
-                corrected... back to DIFF.
-                assign Peter.
+30-09-1  OK	fixed in Revision 7233
 
 30-09-2  OK	
 
-30-10-1  DIFF	Originally ok'd incorrectly by HAS - Ray
-                corrected... back to DIFF.  same as 30-09-1.  assign
-                Peter.
+30-10-1  OK	fixed in Revision 7233
 
 30-10-2  OK	
 
