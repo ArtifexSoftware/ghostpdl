@@ -124,9 +124,9 @@ row:
      * Nevertheless, the loop structures are similar enough that
      * we put the code for both functions in the same place.
      *
-     * We only optimize BitsPerComponent = 1, 3, and 4, which
-     * correspond to the common color spaces.  (In some cases, it's still
-     * simpler to provide a separate loop for BPC = 2.)
+     * We only optimize Colors = 1, 3, and 4, which correspond to the common
+     * color spaces.  (In some cases, it's still simpler to provide a
+     * separate loop for Colors = 2.)
      */
 
 #define LOOP_BY(n, body)\
