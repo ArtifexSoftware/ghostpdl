@@ -135,6 +135,7 @@ private int copy_stack(i_ctx_t *, const ref_stack_t *, ref *);
 private int oparray_pop(i_ctx_t *);
 private int oparray_cleanup(i_ctx_t *);
 private int zerrorexec(i_ctx_t *);
+private int zfinderrorobject(i_ctx_t *);
 private int errorexec_find(i_ctx_t *, ref *);
 private int errorexec_pop(i_ctx_t *);
 private int errorexec_cleanup(i_ctx_t *);
@@ -271,6 +272,7 @@ const op_def interp2_op_defs[] = {
     {"0.currentstackprotect", zcurrentstackprotect},
     {"1.setstackprotect", zsetstackprotect},
     {"2.errorexec", zerrorexec},
+    {"0.finderrorobject", zfinderrorobject},
     {"0%interp_exit", interp_exit},
     {"0%oparray_pop", oparray_pop},
     {"0%errorexec_pop", errorexec_pop},
@@ -1794,6 +1796,27 @@ zerrorexec(i_ctx_t *i_ctx_p)
     if (code >= 0)
 	pop(1);
     return code;
+}
+
+/* - .finderrorobject <errorobj> true */
+/* - .finderrorobject false */
+/* If we are within an .errorexec or oparray, return the error object */
+/* and true, otherwise return false. */
+private int
+zfinderrorobject(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    ref errobj;
+
+    if (errorexec_find(i_ctx_p, &errobj)) {
+	push(2);
+	op[-1] = errobj;
+	make_true(op);
+    } else {
+	push(1);
+	make_false(op);
+    }
+    return 0;
 }
 
 /*

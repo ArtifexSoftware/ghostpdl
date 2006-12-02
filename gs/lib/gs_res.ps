@@ -95,12 +95,25 @@ setglobal
 % category definition dictionary.
 
 % .findcategory and .resourceexec are only called from within the
-% implementation of the resource 'operators', so they doesn't have to worry
+% implementation of the resource 'operators', so they don't have to worry
 % about cleaning up the stack if they fail (the interpreter's stack
 % protection machinery for pseudo-operators takes care of this).
+% Note that all places that look up categories must use .findcategory
+% so that the command in case of error will be correct rather than an
+% internal invocation of findresource.
 /.findcategory {	% <name> .findcategory -
 			%   (pushes the category on the dstack)
-  /Category findresource begin
+    /Category .findresource begin	% note: *not* findresource
+} bind def
+
+% The Category resource signals /undefined rather than /undefinedresource,
+% both when referenced implicitly (to look up the category for a general
+% resource operation) and when it is accessed directly (/Category /xxx
+% findresource).  Because of this, all resource operators must use
+% .undefinedresource rather than signalling undefinedresource directly.
+/.undefinedresource {	% <command> .undefinedresource -
+    Category /Category eq { /undefined } { /undefinedresource } ifelse
+    signaloperror
 } bind def
 
 /.resourceexec {	% <key> /xxxResource .resourceexec -
@@ -135,7 +148,7 @@ setglobal
 		% empty .Instances dictionary with the real one later.
 	  readonly
 	} {
-	  /defineresource .systemvar /typecheck signalerror
+	  /defineresource .systemvar /typecheck signaloperror
 	} ifelse
 } bind def
 /FindResource		% (redefined below)
@@ -157,7 +170,7 @@ setglobal
 	     /UndefineResource }
 	   { 2 index exch known and }
 	  forall
-	  not { /defineresource .systemvar /invalidaccess signalerror } if
+	  not { /defineresource .systemvar /invalidaccess signaloperror } if
 	  true
 	} bind def
 
@@ -174,20 +187,23 @@ setglobal
 % the others.
 
 % findresource is the only operator that needs to bind //Category.
-/findresource {		% <key> <category> findresource <instance>
+% We define its contents as a separate procedure so that .findcategory
+% can use it without entering another level of pseudo-operator.
+/.findresource {		% <key> <category> findresource <instance>
 	2 copy dup /Category eq
 	  { pop //Category 0 get begin } { .findcategory } ifelse
 	/FindResource .resourceexec exch pop exch pop
 } bind
 end		% .Instances of Category
-odef
+def
+/findresource { //.findresource exec } odef
 
 /defineresource {	% <key> <instance> <category> defineresource <instance>
 	3 copy .findcategory
 	currentdict /InstanceType known {
 	  dup type InstanceType ne {
 	    dup type /packedarraytype eq InstanceType /arraytype eq and
-	    not { /defineresource .systemvar /typecheck signalerror } if
+	    not { /defineresource .systemvar /typecheck signaloperror } if
 	  } if
 	} if
 	/DefineResource .resourceexec
@@ -201,7 +217,7 @@ odef
 % calls, so stack protection doesn't apply to the very last token of an
 % operator procedure.
 /resourceforall1 {	% <template> <proc> <scratch> <category> resourceforall1 -
-	dup /Category findresource begin
+	dup .findcategory
 	/ResourceForAll load
 	% Stack: <template> <proc> <scratch> <category> proc
 	exch pop		% pop the category
@@ -215,7 +231,7 @@ odef
   dup type /nametype ne {
     % CET 23-26 wants typecheck here, not undefineresource that happens
     % without the check.
-    /resourcestatus .systemvar /typecheck signalerror
+    /resourcestatus .systemvar /typecheck signaloperror
   } if
   2 copy .findcategory /ResourceStatus .resourceexec
   { 4 2 roll pop pop true } { pop pop false } ifelse
@@ -256,7 +272,7 @@ systemdict begin
     } if
     2 index exch false .file_name_combine not {
       (Error: .default_resource_dir returned ) print exch print ( that can't combine with ) print =
-      /.default_resource_dir cvx /configurationerror .signalerror
+      /.default_resource_dir cvx /configurationerror signalerror
     } if
   } ifelse
 } bind def
@@ -289,13 +305,13 @@ pssystemparams /GenericResourceDir get dup length exch  % (x]y) l1 l2 (dir)
 3 index true .file_name_combine not {
   exch
   (File name ) print print ( cant combine with ) print =
-  /GenericResourceDir cvx /configurationerror signalerror
+  /GenericResourceDir cvx /configurationerror signaloperror
 } if
 dup length                                              % (x]y) l1 l2 (dir.x]y) l
 4 2 roll add                                            % (x]y) (dir.x]y) l ll
 ne {
   (GenericResourceDir value does not end with directory separator.\n) =
-  /GenericResourceDir cvx /configurationerror signalerror
+  /GenericResourceDir cvx /configurationerror signaloperror
 } if
 pop pop
 
@@ -384,7 +400,7 @@ pop pop
 	     0 2 copy get { readonly } .internalstopped pop
 	     dup 4 1 roll put exch pop exch pop
 	   }
-	   { /defineresource .systemvar /typecheck signalerror
+	   { /defineresource .systemvar /typecheck signaloperror
 	   }
 	ifelse
 } .bind executeonly		% executeonly to prevent access to .forcedef
@@ -412,7 +428,7 @@ pop pop
 	dup //null eq {
           % CET 13-06 wants /typecheck for "null findencoding" but
           % .knownget doesn't fail on null
-          /findresource .systemvar /typecheck signalerror
+          /findresource .systemvar /typecheck signaloperror
         } if
 	dup .getvminstance {
 	  exch pop 0 get
@@ -420,13 +436,13 @@ pop pop
 	  dup ResourceStatus {
 	    pop 1 gt {
 	      .DoLoadResource .getvminstance not {
-		/findresource .systemvar /undefinedresource signalerror
+		/findresource .systemvar .undefinedresource
 	      } if 0 get
 	    } {
 	      .GetInstance pop 0 get
 	    } ifelse
 	  } {
-	   /findresource .systemvar /undefinedresource signalerror
+	   /findresource .systemvar .undefinedresource
 	  } ifelse
 	} ifelse
 } bind
@@ -591,7 +607,7 @@ pop pop
 		% Stack: ... count key memused
 	.vmused exch sub
 	1 index .getvminstance not {
-	  pop dup /undefinedresource signalerror	% didn't load
+	  pop dup .undefinedresource	% didn't load
 	} if
 	dup 1 1 put
 	2 3 -1 roll put
@@ -605,7 +621,7 @@ pop pop
 	      { true setglobal { .runresource } stopped false setglobal { stop } if }
 	     ifelse
 	   }
-	   { dup /undefinedresource signalerror
+	   { dup .undefinedresource
 	   }
 	 ifelse
 	} bind
@@ -704,26 +720,26 @@ counttomark 2 idiv
 		% We can at least require that the key and value match.
    /DefineResource
 	{ currentglobal not
-	   { /defineresource .systemvar /invalidaccess signalerror }
+	   { /defineresource .systemvar /invalidaccess signaloperror }
 	   { 2 copy ne
-	      { /defineresource .systemvar /rangecheck signalerror }
+	      { /defineresource .systemvar /rangecheck signaloperror }
 	      { dup .Instances 4 -2 roll .growput }
 	     ifelse
 	   }
 	  ifelse
 	} bind
    /UndefineResource
-	{ /undefineresource .systemvar /invalidaccess signalerror } bind
+	{ /undefineresource .systemvar /invalidaccess signaloperror } bind
    /FindResource
 	{ .Instances 1 index .knownget
 	   { exch pop }
-	   { /findresource .systemvar /undefinedresource signalerror }
+	   { /findresource .systemvar .undefinedresource }
 	  ifelse
 	} bind
    /ResourceStatus
 	{ .Instances exch known { 0 0 true } { false } ifelse } bind
    /ResourceForAll
-	/Generic /Category findresource /ResourceForAll get
+	/Generic .findcategory /ResourceForAll load end
 
 		% Additional entries
 
