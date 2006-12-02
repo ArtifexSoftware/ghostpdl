@@ -97,7 +97,7 @@ zsave(i_ctx_t *i_ctx_p)
 
 /* <save> restore - */
 private int restore_check_operand(os_ptr, alloc_save_t **, gs_dual_memory_t *);
-private int restore_check_stack(const ref_stack_t *, const alloc_save_t *, bool);
+private int restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t *, const alloc_save_t *, bool);
 private void restore_fix_stack(ref_stack_t *, const alloc_save_t *, bool);
 int
 zrestore(i_ctx_t *i_ctx_p)
@@ -120,9 +120,9 @@ zrestore(i_ctx_t *i_ctx_p)
     {
 	int code;
 
-	if ((code = restore_check_stack(&o_stack, asave, false)) < 0 ||
-	    (code = restore_check_stack(&e_stack, asave, true)) < 0 ||
-	    (code = restore_check_stack(&d_stack, asave, false)) < 0
+	if ((code = restore_check_stack(i_ctx_p, &o_stack, asave, false)) < 0 ||
+	    (code = restore_check_stack(i_ctx_p, &e_stack, asave, true)) < 0 ||
+	    (code = restore_check_stack(i_ctx_p, &d_stack, asave, false)) < 0
 	    ) {
 	    osp++;
 	    return code;
@@ -195,8 +195,8 @@ restore_check_operand(os_ptr op, alloc_save_t ** pasave,
 }
 /* Check a stack to make sure all its elements are older than a save. */
 private int
-restore_check_stack(const ref_stack_t * pstack, const alloc_save_t * asave,
-		    bool is_estack)
+restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t * pstack,
+		    const alloc_save_t * asave, bool is_estack)
 {
     ref_stack_enum_t rsenum;
 
@@ -210,6 +210,14 @@ restore_check_stack(const ref_stack_t * pstack, const alloc_save_t * asave,
 
 	    switch (r_type(stkp)) {
 		case t_array:
+		    /*
+		     * Zero-length arrays are a special case: see the
+		     * t_*array case (label rr:) in igc.c:gc_trace.
+		     */
+		    if (r_size(stkp) == 0) {
+			/*stkp->value.refs = (void *)0;*/
+			continue;
+		    }
 		    ptr = stkp->value.refs;
 		    break;
 		case t_dictionary:
@@ -246,6 +254,11 @@ restore_check_stack(const ref_stack_t * pstack, const alloc_save_t * asave,
 		    break;
 		case t_mixedarray:
 		case t_shortarray:
+		    /* See the t_array case above. */
+		    if (r_size(stkp) == 0) {
+			/*stkp->value.packed = (void *)0;*/
+			continue;
+		    }
 		    ptr = stkp->value.packed;
 		    break;
 		case t_device:
@@ -255,6 +268,20 @@ restore_check_stack(const ref_stack_t * pstack, const alloc_save_t * asave,
 		case t_struct:
 		case t_astruct:
 		    ptr = stkp->value.pstruct;
+		    break;
+		case t_save:
+		    /* See the comment in isave.h regarding the following. */
+		    if (i_ctx_p->language_level <= 2)
+			continue;
+		    ptr = alloc_find_save(&gs_imemory, stkp->value.saveid);
+		    /*
+		     * Invalid save objects aren't supposed to be possible
+		     * in LL3, but just in case....
+		     */
+		    if (ptr == 0)
+			return_error(e_invalidrestore);
+		    if (ptr == asave)
+			continue;
 		    break;
 		default:
 		    continue;

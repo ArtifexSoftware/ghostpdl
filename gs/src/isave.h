@@ -21,15 +21,20 @@
 #include "idosave.h"
 
 /*
- * According to the PostScript language definition, save objects are simple,
- * not composite.  Consequently, we cannot use their natural representation,
- * namely a t_struct pointing to an alloc_save_t, since we aren't willing to
- * allocate them all in global VM and rely on garbage collection to clean
- * them up.  Instead, we assign each one a unique "save ID", and store this
- * in the alloc_save_t object.  Mapping the number to the object requires
- * at most searching the local save chain for the current gs_dual_memory_t,
- * and this approach means we don't have to do anything to invalidate
- * save objects when we do a restore.
+ * In PLRM2, save objects are simple, not composite.  Consequently, we
+ * cannot use their natural representation, namely a t_struct pointing to an
+ * alloc_save_t, since we aren't willing to allocate them all in global VM
+ * and rely on garbage collection to clean them up.  Instead, we assign each
+ * one a unique "save ID", and store this in the alloc_save_t object.
+ * Mapping the number to the object requires at most searching the local
+ * save chain for the current gs_dual_memory_t, and this approach means we
+ * don't have to do anything to invalidate save objects when we do a
+ * restore.
+ *
+ * In PLRM3, Adobe did the reasonable thing and changed save objects to
+ * composite.  However, this means that 'restore' must treat save objects on
+ * the stack differently in LL2 vs. LL3 (yes, the Genoa LL2 and LL3 tests
+ * require this!).  See zvmem.c:restore_check_stack.
  */
 #ifndef alloc_save_t_DEFINED	/* also in inamedef.h */
 typedef struct alloc_save_s alloc_save_t;
