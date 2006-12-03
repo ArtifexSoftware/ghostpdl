@@ -209,7 +209,7 @@ private inline void double_matrix__set(double_matrix * this, const gs_matrix_fix
 private inline int double_matrix__invert_to(const double_matrix * this, double_matrix * m)
 {   double det = this->xx * this->yy - this->xy * this->yx;
 
-    if (fabs(det) * 1000000 < fabs(this->xx) + fabs(this->xy) + fabs(this->yx) + fabs(this->yy))
+    if (fabs(det) * 1000000 <= fabs(this->xx) + fabs(this->xy) + fabs(this->yx) + fabs(this->yy))
 	return_error(gs_error_rangecheck);
     m->xx =  this->yy / det;
     m->xy = -this->xy / det;
