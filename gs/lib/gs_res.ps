@@ -106,13 +106,19 @@ setglobal
     /Category .findresource begin	% note: *not* findresource
 } bind def
 
+% If an error occurs within the logic of a resource operator (after operand
+% acquisition and checking), the Adobe interpreters report the operator name,
+% not the operator object, as the command in $error.  For this reason, and
+% this reason only, all resource operators must wrap their logic code in
+%	/<opername> cvx { ...logic... } .errorexec
+
 % The Category resource signals /undefined rather than /undefinedresource,
 % both when referenced implicitly (to look up the category for a general
 % resource operation) and when it is accessed directly (/Category /xxx
 % findresource).  Because of this, all resource operators must use
 % .undefinedresource rather than signalling undefinedresource directly.
 /.undefinedresource {	% <command> .undefinedresource -
-    Category /Category eq { /undefined } { /undefinedresource } ifelse
+    /Category dup load eq { /undefined } { /undefinedresource } ifelse
     signaloperror
 } bind def
 
@@ -148,7 +154,7 @@ setglobal
 		% empty .Instances dictionary with the real one later.
 	  readonly
 	} {
-	  /defineresource .systemvar /typecheck signaloperror
+	  /defineresource cvx /typecheck signaloperror
 	} ifelse
 } bind def
 /FindResource		% (redefined below)
@@ -170,7 +176,7 @@ setglobal
 	     /UndefineResource }
 	   { 2 index exch known and }
 	  forall
-	  not { /defineresource .systemvar /invalidaccess signaloperror } if
+	  not { /defineresource cvx /invalidaccess signaloperror } if
 	  true
 	} bind def
 
@@ -196,18 +202,26 @@ setglobal
 } bind
 end		% .Instances of Category
 def
-/findresource { //.findresource exec } odef
+/findresource {
+    % See above re .errorexec.
+    1 .argindex pop	% catch stackunderflow
+    /findresource cvx //.findresource .errorexec
+} odef
 
 /defineresource {	% <key> <instance> <category> defineresource <instance>
-	3 copy .findcategory
+    2 .argindex 2 index 2 index	% catch stackunderflow
+    % See above re .errorexec.
+    /defineresource cvx {
+	.findcategory
 	currentdict /InstanceType known {
 	  dup type InstanceType ne {
 	    dup type /packedarraytype eq InstanceType /arraytype eq and
-	    not { /defineresource .systemvar /typecheck signaloperror } if
+	    not { /defineresource cvx /typecheck signaloperror } if
 	  } if
 	} if
 	/DefineResource .resourceexec
 	4 1 roll pop pop pop
+    } .errorexec
 } bind odef
 % We must prevent resourceforall from automatically restoring the stacks,
 % because we don't want the stacks restored if proc causes an error or
@@ -228,16 +242,17 @@ def
 } bind odef
 /resourcestatus {	% <key> <category> resourcestatus <status> <size> true
 			% <key> <category> resourcestatus false
-  dup type /nametype ne {
+  0 .argindex type /nametype ne {
     % CET 23-26 wants typecheck here, not undefineresource that happens
     % without the check.
-    /resourcestatus .systemvar /typecheck signaloperror
+    /resourcestatus cvx /typecheck signaloperror
   } if
   2 copy .findcategory /ResourceStatus .resourceexec
   { 4 2 roll pop pop true } { pop pop false } ifelse
 } bind odef
 /undefineresource {	% <key> <category> undefineresource -
-	2 copy .findcategory /UndefineResource .resourceexec pop pop
+    1 .argindex 1 index		% catch stackunderflow
+    .findcategory /UndefineResource .resourceexec pop pop
 } bind odef
 
 % Define the system parameters used for the Generic implementation of
@@ -400,7 +415,7 @@ pop pop
 	     0 2 copy get { readonly } .internalstopped pop
 	     dup 4 1 roll put exch pop exch pop
 	   }
-	   { /defineresource .systemvar /typecheck signaloperror
+	   { /defineresource cvx /typecheck signaloperror
 	   }
 	ifelse
 } .bind executeonly		% executeonly to prevent access to .forcedef
@@ -428,7 +443,7 @@ pop pop
 	dup //null eq {
           % CET 13-06 wants /typecheck for "null findencoding" but
           % .knownget doesn't fail on null
-          /findresource .systemvar /typecheck signaloperror
+          /findresource cvx /typecheck signaloperror
         } if
 	dup .getvminstance {
 	  exch pop 0 get
@@ -436,13 +451,13 @@ pop pop
 	  dup ResourceStatus {
 	    pop 1 gt {
 	      .DoLoadResource .getvminstance not {
-		/findresource .systemvar .undefinedresource
+		/findresource cvx .undefinedresource
 	      } if 0 get
 	    } {
 	      .GetInstance pop 0 get
 	    } ifelse
 	  } {
-	   /findresource .systemvar .undefinedresource
+	   /findresource cvx .undefinedresource
 	  } ifelse
 	} ifelse
 } bind
@@ -720,20 +735,20 @@ counttomark 2 idiv
 		% We can at least require that the key and value match.
    /DefineResource
 	{ currentglobal not
-	   { /defineresource .systemvar /invalidaccess signaloperror }
+	   { /defineresource cvx /invalidaccess signaloperror }
 	   { 2 copy ne
-	      { /defineresource .systemvar /rangecheck signaloperror }
+	      { /defineresource cvx /rangecheck signaloperror }
 	      { dup .Instances 4 -2 roll .growput }
 	     ifelse
 	   }
 	  ifelse
 	} bind
    /UndefineResource
-	{ /undefineresource .systemvar /invalidaccess signaloperror } bind
+	{ /undefineresource cvx /invalidaccess signaloperror } bind
    /FindResource
 	{ .Instances 1 index .knownget
 	   { exch pop }
-	   { /findresource .systemvar .undefinedresource }
+	   { /findresource cvx .undefinedresource }
 	  ifelse
 	} bind
    /ResourceStatus
