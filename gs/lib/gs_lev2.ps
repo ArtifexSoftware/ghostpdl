@@ -702,16 +702,20 @@ level2dict /colorspacedict .cspace_util 1 index get put
 
 /findcolorrendering {		% <intentname> findcolorrendering
 				%   <crdname> <found>
-  /ColorRendering /ProcSet findresource
-  1 .argindex dup type /nametype eq { .namestring } if (.) concatstrings
-  1 index /GetPageDeviceName get exec dup type /nametype eq { .namestring } if (.) concatstrings
-  2 index /GetHalftoneName get exec dup type /nametype eq { .namestring } if
-  concatstrings concatstrings cvn	% stack: intentname procset crdname
-  dup /ColorRendering resourcestatus {
-    pop pop exch pop exch pop true
-  } {
-    pop /GetSubstituteCRD get exec false
-  } ifelse
+    % Adobe interpreters report /findcolorrendering (literal name), not the
+    % operator itself, if an error occurs in findcolorrendering.
+    /findcolorrendering {
+	/ColorRendering /ProcSet findresource
+	1 .argindex dup type /nametype eq { .namestring } if (.) concatstrings
+	1 index /GetPageDeviceName get exec dup type /nametype eq { .namestring } if (.) concatstrings
+	2 index /GetHalftoneName get exec dup type /nametype eq { .namestring } if
+	concatstrings concatstrings cvn	% stack: intentname procset crdname
+	dup /ColorRendering resourcestatus {
+	    pop pop exch pop exch pop true
+	} {
+	    pop /GetSubstituteCRD get exec false
+	} ifelse
+    } .errorexec
 } odef
 
 5 dict dup begin
