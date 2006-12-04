@@ -551,11 +551,19 @@ Test	 Status	Comments
 
 09-36-7  DIFF	LOOK 14 has minor differences.  Assign: Ray
 
-09-37-1  DIFF	CPSI has setflat always 1.0. GS similar to Tek, but the value
-		at which polygon edges changes from 16 to 8 differs (GS at 53,
-		Tek at 19). Also Tek changes from 'smooth' to 16 at 5, GS at 13.
-		May be resolution dependent (spec is 'output device pixels').
-		assign: Ray
+09-37-1  AOK	GS similar to Tek, but the value at which polygon edges changes from
+		16 to 8 differs (GS at 53, Tek at 19). Also Tek changes from 'smooth'
+		to 16 at 5, GS at 13. CPSI fixed to implement setflat changes from
+		smooth to 16 sides at 9 (GS at 13), CPSI never has less than 16 sides.
+		Resolution dependent (spec is 'output device pixels') and PLRM 3rd ed
+		states "If the flatness parameter is large enough to cause visible
+		straight line segments to appear, the result is unpredictable."
+		When GS is run at 300 dpi (same resolution as Tek), the transition
+		from smooth to 16 sides is at 7 (vs. 5 on the Tek) and from 16 to 8
+		sides at 27 (vs. 19 on the Tek).
+		-
+		Since Tek and CPSI differ, and GS generally uses more line segments,
+		the GS output conforms and is superior to the Tek output.
 
 09-37-10  OK	GS matches Tek and CPSI output now matches Tek (12/04/06).
 		Imagemask turkey fixed by r7123.
@@ -566,11 +574,15 @@ Test	 Status	Comments
 
 09-37-3  OK	Matches Tek hardcopy output. RJJ
 
-09-37-4  DIFF	CPSI has setflat always 1.0. GS similar to Tek, but the value
-		at which polygon edges changes to very coarse differs (GS at 73,
-		Tek at 23). Also Tek changes from 'smooth' to bumpy at 5, GS at 19.
-		May be resolution dependent (spec is 'output device pixels').
-		assign: Ray
+09-37-4  AOK	GS similar to Tek, but the value at which polygon edges changes to
+		very coarse differs (GS at 73, Tek at 23). Also Tek changes from 'smooth'
+		to bumpy at 5, GS at 19. When GS is run at 300 dpi, the transitions
+		from smooth to bumpy is at 11, and from bumpy to very coarse at 39.
+		Resolution dependent (spec is 'output device pixels'). CPSI fixed to
+		implement setflat transitions to bumpy at 13 and to coarse at 33.
+		-
+		Since Tek and CPSI differ, and GS generally uses more line segments,
+		the GS output conforms and is superior to the Tek output.
 
 09-37-5  OK	Matches Tek hardcopy output. RJJ
 
@@ -579,18 +591,18 @@ Test	 Status	Comments
 09-37-7  OK	Very small fill differences. RJJ (CPSI ignores setflat, GS
 		similar to Tek hardcopy)
 
-09-37-8  DIFF	CPSI has setflat always 1.0. GS similar to Tek, but GS differs
-		in the exact polygon shapes.
-		May be resolution dependent (spec is 'output device pixels').
+09-37-8  DIFF	GS similar to Tek, but GS differs in the exact polygon shapes.
+		Resolution dependent (spec is 'output device pixels'). GS at 300
+		dpi has less edges on large outline in top two images. CPSI (at
+		600 dpi) also smoother than GS on top two outlines.
 		assign: Ray
 
-09-37-9  DIFF	CPSI has setflat always 1.0. Tek hardcopy shows setflat does
-		NOT apply to line cap/join (GS has polygonal round cap/join).
-		"Stroked_Objects" and "Filled_Objects" differ slightly with
+09-37-9  DIFF	"Stroked_Objects" and "Filled_Objects" differ slightly with
 		number of polygonal edges. Tek shows strokepath of "Technical
-		Paths" IS subject to setflat -- GS has smooth round cap/join.
-		May be resolution dependent (spec is 'output device pixels').
-		assign: Ray
+		Paths" IS subject to setflat -- GS has smoother round cap/join.
+		Resolution dependent (spec is 'output device pixels'). CPSI fixed
+		to implement setflat matches Tek ouptut for "Technical paths".
+		Also has same issue as 09-24-2.  assign: Ray
 
 09-38-1  OK	Minor differences visually reviewed by RJJ
 
