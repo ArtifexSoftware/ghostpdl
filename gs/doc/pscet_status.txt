@@ -557,9 +557,8 @@ Test	 Status	Comments
 		May be resolution dependent (spec is 'output device pixels').
 		assign: Ray
 
-09-37-10  AOK	GS matches Tek in "Character Outlines" area where setflat
-		apparently has a high value. CPSI differs. Imagemask turkey fixed
-		by r7123.
+09-37-10  OK	GS matches Tek and CPSI output now matches Tek (12/04/06).
+		Imagemask turkey fixed by r7123.
 
 09-37-11  OK	Matches Tek hardcopy output. RJJ
 
@@ -1519,7 +1518,7 @@ Test	 Status	Comments
 
 11-03-6  OK	Minor differences visually reviewed by RJJ
 
-11-03-7  DIFF	Matches Tek hardcopy and 'fixed' CPSI output. RJJ
+11-03-7  OK	Matches Tek hardcopy and 'fixed' CPSI output. RJJ
 
 11-04-1  OK	Minor differences visually reviewed by RJJ
 
@@ -1533,7 +1532,7 @@ Test	 Status	Comments
 
 11-04-6  OK	Minor differences visually reviewed by RJJ
 
-11-04-7  DIFF	same as 11-01-6 assign: Raph
+11-04-7  OK	Matches Tek hardcopy and 'fixed' CPSI output. RJJ
 
 11-05-1  OK	Minor differences visually reviewed by RJJ
 
@@ -5143,6 +5142,8 @@ Test	 Status	Comments
 31-11-2  OK	
 
 31-12-1  OK	Minor differences visually reviewed by RJJ
+		Note: This test draws different length line depending on timing
+		(number of loops depends on 'realtime' resolution and results).
 
 31-12-2  OK	
 
