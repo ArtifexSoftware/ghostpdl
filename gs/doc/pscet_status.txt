@@ -5097,8 +5097,7 @@ Test	 Status	Comments
 
 31-01-5  DIFF	Test 03 graphic incorrect assign Ray.
 
-31-01-6  DIFF	Missing lots of data probably because shfill is
-                typechecking in gs assign: Igor
+31-01-6  OK  	Fixed - Alex
 
 31-01-7  OK	Minor differences visually reviewed by RJJ
 

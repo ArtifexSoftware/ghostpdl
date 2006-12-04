@@ -313,7 +313,7 @@ cube_build_func0(const ref * pdict, gs_function_Sd_params_t * params,
 	    goto fail;
 	}
 	params->Size = ptr;
-	code = dict_ints_param(pdict, "Size", params->m, ptr);
+	code = dict_ints_param(mem, pdict, "Size", params->m, ptr);
         if (code < 0)
 	    goto fail;
         if (code == 0) {

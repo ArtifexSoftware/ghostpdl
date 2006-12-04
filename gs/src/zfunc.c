@@ -208,7 +208,8 @@ int
 fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
 		      int depth, gs_memory_t *mem)
 {
-    int code, type, i;
+    int code, type;
+    uint i;
     gs_function_params_t params;
 
     if (depth > MAX_SUB_FUNCTION_DEPTH)
@@ -226,8 +227,10 @@ fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
     params.Domain = 0;
     params.Range = 0;
     code = fn_build_float_array(op, "Domain", true, true, &params.Domain, mem);
-    if (code < 0)
+    if (code < 0) {
+        gs_errorinfo_put_pair_from_dict(i_ctx_p, op, "Domain"); 
 	goto fail;
+    }
     params.m = code >> 1;
     code = fn_build_float_array(op, "Range", false, true, &params.Range, mem);
     if (code < 0)

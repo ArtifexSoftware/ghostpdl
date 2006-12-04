@@ -79,7 +79,7 @@ gs_build_function_0(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
 	    goto fail;
 	}
 	params.Size = ptr;
-	code = dict_ints_param(op, "Size", params.m, ptr);
+	code = dict_ints_param(mem, op, "Size", params.m, ptr);
 	if (code != params.m)
 	    goto fail;
     }

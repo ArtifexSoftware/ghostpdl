@@ -57,7 +57,7 @@ bhc_setup(os_ptr op, stream_BHC_state * pbhcs)
 				256, &pbhcs->EncodeZeroRuns)) < 0 ||
     /* Note: the code returned from the following call */
     /* is actually the number of elements in the array. */
-	(code = dict_int_array_param(op, "Tables", countof(data),
+	(code = dict_int_array_param(imemory, op, "Tables", countof(data),
 				     data)) <= 0
 	)
 	return (code < 0 ? code : gs_note_error(e_rangecheck));

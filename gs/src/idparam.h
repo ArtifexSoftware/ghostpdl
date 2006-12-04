@@ -65,13 +65,12 @@ int dict_float_param(const ref * pdict, const char *kstr,
  *	  Equivalent to _xxx_check_param(..., rangecheck, rangecheck).
  * All can return other error codes (e.g., typecheck).
  */
-int dict_int_array_check_param(const ref * pdict, const char *kstr,
-			       uint len, int *ivec,
-			       int under_error, int over_error);
-int dict_int_array_param(const ref * pdict, const char *kstr,
-			 uint maxlen, int *ivec);
-int dict_ints_param(const ref * pdict, const char *kstr,
-		    uint len, int *ivec);
+int dict_int_array_check_param(const gs_memory_t *mem, const ref * pdict,
+   const char *kstr, uint len, int *ivec, int under_error, int over_error);
+int dict_int_array_param(const gs_memory_t *mem, const ref * pdict,
+   const char *kstr, uint maxlen, int *ivec);
+int dict_ints_param(const gs_memory_t *mem, const ref * pdict,
+   const char *kstr, uint len, int *ivec);
 /*
  * For _float_array_param, if the parameter is missing and defaultvec is
  * not NULL, copy (max)len elements from defaultvec to fvec and return

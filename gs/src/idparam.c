@@ -166,38 +166,38 @@ dict_float_param(const ref * pdict, const char *kstr,
 /* Get an integer array from a dictionary. */
 /* See idparam.h for specification. */
 int
-dict_int_array_check_param(const ref * pdict, const char *kstr, uint len,
-			   int *ivec, int under_error, int over_error)
+dict_int_array_check_param(const gs_memory_t *mem, const ref * pdict,
+   const char *kstr, uint len, int *ivec, int under_error, int over_error)
 {
-    ref *pdval;
-    const ref *pa;
-    int *pi = ivec;
+    ref pa, *pdval;
     uint size;
-    int i;
+    int i, code;
 
     if (pdict == 0 || dict_find_string(pdict, kstr, &pdval) <= 0)
 	return 0;
-    if (!r_has_type(pdval, t_array))
+    if (!r_is_array(pdval))
 	return_error(e_typecheck);
     size = r_size(pdval);
     if (size > len)
 	return_error(over_error);
-    pa = pdval->value.const_refs;
-    for (i = 0; i < size; i++, pa++, pi++) {
-	/* See dict_int_param above for why we allow reals here. */
-	switch (r_type(pa)) {
+    for (i = 0; i < size; i++) {
+	code = array_get(mem, pdval, i, &pa);
+        if (code < 0)
+            return code;
+        /* See dict_int_param above for why we allow reals here. */
+	switch (r_type(&pa)) {
 	    case t_integer:
-		if (pa->value.intval != (int)pa->value.intval)
+		if (pa.value.intval != (int)pa.value.intval)
 		    return_error(e_rangecheck);
-		*pi = (int)pa->value.intval;
+		ivec[i] = (int)pa.value.intval;
 		break;
 	    case t_real:
-		if (pa->value.realval < min_int ||
-		    pa->value.realval > max_int ||
-		    pa->value.realval != (int)pa->value.realval
+		if (pa.value.realval < min_int ||
+		    pa.value.realval > max_int ||
+		    pa.value.realval != (int)pa.value.realval
 		    )
 		    return_error(e_rangecheck);
-		*pi = (int)pa->value.realval;
+		ivec[i] = (int)pa.value.realval;
 		break;
 	    default:
 		return_error(e_typecheck);
@@ -207,17 +207,17 @@ dict_int_array_check_param(const ref * pdict, const char *kstr, uint len,
 	    gs_note_error(under_error));
 }
 int
-dict_int_array_param(const ref * pdict, const char *kstr,
-		     uint maxlen, int *ivec)
+dict_int_array_param(const gs_memory_t *mem, const ref * pdict,
+   const char *kstr, uint maxlen, int *ivec)
 {
-    return dict_int_array_check_param(pdict, kstr, maxlen, ivec,
+    return dict_int_array_check_param(mem, pdict, kstr, maxlen, ivec,
 				      0, e_limitcheck);
 }
 int
-dict_ints_param(const ref * pdict, const char *kstr,
-		uint len, int *ivec)
+dict_ints_param(const gs_memory_t *mem, const ref * pdict,
+   const char *kstr, uint len, int *ivec)
 {
-    return dict_int_array_check_param(pdict, kstr, len, ivec,
+    return dict_int_array_check_param(mem, pdict, kstr, len, ivec,
 				      e_rangecheck, e_rangecheck);
 }
 
