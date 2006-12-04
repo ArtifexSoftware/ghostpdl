@@ -1491,8 +1491,7 @@ Test	 Status	Comments
 
 11-01-5  OK	
 
-11-01-6  DIFF	Column "more" row 21 possible setflat problem assign Raph
-	 (*JS) <- depends on setting -dJOBSERVER, needs further analysis
+11-01-6  OK	Matches Tek hardcopy and 'fixed' CPSI output. RJJ
 
 11-02-1  DIFF	gs_arc_add_inline sets current point from fixed point coords in
 	 path. Need to implement PRECISE_CURRENTPOINT logic here. - assign Raph
@@ -1506,8 +1505,7 @@ Test	 Status	Comments
 
 11-02-5  OK	
 
-11-02-6  DIFF	same as 11-01-6 assign: Raph
-	 (*JS)
+11-02-6  OK	Matches Tek hardcopy and 'fixed' CPSI output. RJJ
 
 11-03-1  OK	Minor differences visually reviewed by RJJ
 
@@ -1521,15 +1519,13 @@ Test	 Status	Comments
 
 11-03-6  OK	Minor differences visually reviewed by RJJ
 
-11-03-7  DIFF	same as 11-01-6 assign: Raph
-	 (*JS)
+11-03-7  DIFF	Matches Tek hardcopy and 'fixed' CPSI output. RJJ
 
 11-04-1  OK	Minor differences visually reviewed by RJJ
 
 11-04-2  OK	
 
 11-04-3  OK  	Fixed iv rev. 7154. - Alex.
-	 Likely same as 11-02-01
 
 11-04-4  OK	
 
@@ -1552,7 +1548,6 @@ Test	 Status	Comments
 11-05-6  OK	fixed in r7228 - Raph
 
 11-05-7  OK	Minor differences visually reviewed by HAS. Color corrected by rev 7172.
-	 (*JS)
 
 11-06-1  OK	Minor differences visually reviewed by RJJ
 
@@ -1563,7 +1558,6 @@ Test	 Status	Comments
 11-06-4  OK	Minor differences visually reviewed by RJJ
 
 11-06-5  DIFF	GS has extra line: MUCH 15, 30, 31 assign: Raph.
-	 (*JS)
 
 11-07-1  DIFF	some arcs wrong gs has a nocurrentpoint error assign: Raph.
 	 Circles being drawn in wrong place. Elements missing - Raph
@@ -1575,7 +1569,6 @@ Test	 Status	Comments
 11-07-4  OK	Minor differences visually reviewed by RJJ
 
 11-07-5  OK	Minor differences visually reviewed by HAS
-	 (*JS)
 
 11-08-1  OK	Minor differences visually reviewed by RJJ
 
@@ -1587,7 +1580,6 @@ Test	 Status	Comments
 
 11-08-5  DIFF	'1' and '2' differences in the much and cash column
                  assign Alex
-	 (*JS)
 
 11-09-1  AOK	a better stroke adjustment; not important. Analyzed by Igor.
 
@@ -4050,7 +4042,6 @@ Test	 Status	Comments
 		
 23-12A-4  AOK	same resolution as 23-12A-3.
 
-
 23-12B-1  DIFF	GS gets "-file- ( ioerror --readstring--" on FAX_6 test. Last
 		image of top row missing, others may be shifted. assign: Ray
 
@@ -5082,8 +5073,8 @@ Test	 Status	Comments
 30-11-1  OK	
 
 30-11-2  AOK	GS prints different numbers for every test in GLOBINT.
-		Peter explained why matching the results is unreasonable
-		in an Oct. 21 email.
+		The number printed is the VM usage for the test. This is entirely
+		implementation dependent.
 
 31-01-1  DIFF	Attributes differ (bottom of page filetype). Assign: Ray
 
