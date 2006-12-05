@@ -4011,13 +4011,12 @@ Test	 Status	Comments
 
 23-06-2  OK	
 
-23-07-1  DIFF	SYNTAX 2 test is different. CPSI and Tek match. assign: Peter
+23-07-1  OK	Fixed by rev. 7442
 
 23-07-2  DIFF	GS shows command error as '--defineresource--' and '--findresource--'
 		Tek and CPSI return 'defineresource' and 'findresource'. assign: Peter
 
-23-07-3  DIFF	GS shows command error as '--findresource--' Tek and CPSI return
-		'findresource'. (see 23-07-2) assign: Peter
+23-07-3  OK	Fixed by rev. 7442
 
 23-07-4  OK	
 
@@ -4185,8 +4184,7 @@ Test	 Status	Comments
 		Special Test A, GS shows --findresource-- instead of findresource.
 		(.OrigFont issue should be fixed in r7156, other issues not reanalyzed yet - Raph)
 
-23-13-5  DIFF	GS gets --findresource-- instead of findresource. see 23-07-3
-		Assign: Peter
+23-13-5  OK	Fixed by rev 7442.
 
 23-13-6  OK	
 
@@ -5038,8 +5036,7 @@ Test	 Status	Comments
 
 30-04-1  OK	
 
-30-04-2 DIFF	gs returns invalidrestore where cpsi returns a null proc
-                and array (mid page). assign Peter.
+30-04-2  OK	Fixed by rev 7439.
 
 30-04-3  OK	
 
