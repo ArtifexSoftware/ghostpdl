@@ -355,19 +355,28 @@ currentdict end def
   } ifelse
 } bind def
 
+% Define a local-VM equivalent of ].  It should be called
+% .localvmarraytomark, but we're going to be using it a lot....
+/.la2mark {
+    counttomark .localvmarray astore exch pop
+} bind def
+
 /ResourceForAll { % <template> <proc> <scratch> ResourceForAll - 
 
   % We suppose that the resourceforall procedure does not 
   % define or install new fonts, CMaps, and/or CIDFonts.
 
+  % Note that all temporary objects that might reference fonts, CMaps,
+  % or CIDFonts must be created in local VM, since these objects might be
+  % in local VM themselves.
+
   % First we create 3 temporary dictionaries to store temporary data
   % about fonts, CMaps and CIDFonts.
   % These dictionaries must be created dynamically, to allow for a possible 
   % recursive call to resourceforall from the resourceforall procedure.
-  currentglobal false setglobal
-  20 dict 20 dict 20 dict
 
-  4 -1 roll setglobal                     % (templ) proc (scr) <<CIDFont>> <<CMap>> <<Fonts>>
+  20 .localvmdict 20 .localvmdict 20 .localvmdict
+			% (templ) proc (scr) <<CIDFont>> <<CMap>> <<Fonts>>
 
   % Store resource identifiers into local dictionaries
   % A resource instance can have a key that is not a name or a string. In this
@@ -380,13 +389,15 @@ currentdict end def
 
   { /.DisableResourceOrdering pop % gs_resmp accesses this through execstack - don't remove !
 
-    5 index [ 2 index {exch //null put} aload pop ] cvx bind 5 index //ResourceForAll exec
+    5 index [
+	2 index {exch //null put} aload pop
+    .la2mark cvx bind 5 index //ResourceForAll exec
 
     (*) [ 3 index {exch dup type /stringtype eq { cvn dup put } { pop pop } ifelse } aload pop
-        ] cvx bind 5 index /CMap resourceforall
+        .la2mark cvx bind 5 index /CMap resourceforall
 
     (*) [ 4 index {exch dup type /stringtype eq { cvn dup put } { pop pop } ifelse } aload pop
-        ] cvx bind 5 index /CIDFont resourceforall
+        .la2mark cvx bind 5 index /CIDFont resourceforall
 
     exit
   } loop % This loop is a pattern for execstack_lookup - don't remove !
