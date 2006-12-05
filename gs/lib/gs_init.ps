@@ -1364,6 +1364,15 @@ devicedict /Default devicedict .defaultdevicename get put
   /setstrokeadjust where { pop true setstrokeadjust } if
 } bind def
 % Use a 45-degree spot screen for high-resolution devices.
+% The PS3 CET insists that the screen be an array and not a packedarray (!).
+currentpacking false setpacking
+/.linescreen
+% The following screen algorithm is used by permission of the author.
+    { 1 add 180 mul cos 1 0.08 add mul exch 2 add 180 mul cos 
+      1 0.08 sub mul add 2 div % (C) 1989 Berthold K.P. Horn
+    }
+bind executeonly def
+setpacking
 /.sethireshalftone {	% <dpi> .sethireshalftone <doscreen>
 	% According to information published by Hewlett-Packard,
 	% they use a 60 line screen on 300 DPI printers and
@@ -1383,11 +1392,7 @@ devicedict /Default devicedict .defaultdevicename get put
    ifelse
    1 index 4.01 div .min	% at least a 4x4 cell
    45
-	% The following screen algorithm is used by permission of the author.
-    { 1 add 180 mul cos 1 0.08 add mul exch 2 add 180 mul cos 
-      1 0.08 sub mul add 2 div % (C) 1989 Berthold K.P. Horn
-    }
-   bind
+   //.linescreen
 	% Determine whether we have lots of process colors.
 	% If so, don't bother with color screening or gamma correction.
 	% Also don't do gamma correction on very high-resolution devices.
