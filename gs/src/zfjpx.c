@@ -13,8 +13,8 @@
 
 /* $Id$ */
 
-/* this is the ps interpreter interface to the jbig2decode filter
-   used for (1bpp) scanned image compression. PDF only specifies
+/* this is the ps interpreter interface to the JPXDecode filter
+   used for (JPEG2000) scanned image compression. PDF only specifies
    a decoder filter, and we don't currently implement anything else */
 
 #include "memory_.h"
@@ -28,6 +28,8 @@
 #include "stream.h"
 #include "strimpl.h"
 #include "ifilter.h"
+#include "iname.h"
+#include "gdebug.h"
 
 #ifdef USE_LWF_JP2
 #include "sjpx_luratech.h"
@@ -42,13 +44,33 @@ z_jpx_decode(i_ctx_t * i_ctx_p)
 {
     os_ptr op = osp;
     ref *sop = NULL;
+    ref *csname = NULL;
     stream_jpxd_state state;
 
     state.jpx_memory = imemory->non_gc_memory;
     if (r_has_type(op, t_dictionary)) {
         check_dict_read(*op);
-        if ( dict_find_string(op, "Colorspace", &sop) > 0) {
-	    dlprintf("found Colorspace parameter (NYI)\n");
+        if ( dict_find_string(op, "ColorSpace", &sop) > 0) {
+	    /* parse the value */
+	    if (r_is_array(sop)) {
+		/* assume it's the first array element */
+		csname =  sop->value.refs;
+	    } else if (r_has_type(sop,t_name)) {
+		/* use the name directly */
+		csname = sop;
+	    } else {
+		dprintf("warning: JPX ColorSpace value is an unhandled type!\n");
+	    }
+	    if (csname != NULL) {
+		ref sref;
+		/* get a reference to the name's string value */
+		name_string_ref(imemory, csname, &sref);
+		/* request raw index values if the colorspace is /Indexed */
+		if (!memcmp(sref.value.const_bytes, "Indexed", min(7,r_size(&sref))))
+		    state.colorspace = gs_jpx_cs_indexed;
+	    } else {
+		if_debug0('w', "[w] Couldn't read JPX ColorSpace key!\n");
+	    }
         }
     }
     	

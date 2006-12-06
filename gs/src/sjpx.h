@@ -23,6 +23,15 @@
 #include "scommon.h"
 #include <jasper/jasper.h>
 
+/* define colorspace enumeration for the input image data */
+typedef enum {
+  gs_jpx_cs_unset,  /* colorspace hasn't been set */
+  gs_jpx_cs_gray,   /* single component grayscale image */ 
+  gs_jpx_cs_rgb,    /* three component (s)RGB image */
+  gs_jpx_cs_cmyk,   /* four component CMYK image */
+  gs_jpx_cs_indexed /* PDF image wants raw index values */
+} gs_jpx_cs;
+
 /* Our local state consists of pointers to the JasPer library's
  * stream and image structs for sending and retrieving the
  * image data. There's no way to feed a jasper stream with
@@ -42,6 +51,7 @@ typedef struct stream_jpxd_state_s
     unsigned char *buffer; /* temporary buffer for compressed data */
     long bufsize; /* total size of the buffer */
     long buffill; /* number of bytes written into the buffer */
+    gs_jpx_cs colorspace; /* external colorspace setting */
 }
 stream_jpxd_state;
 

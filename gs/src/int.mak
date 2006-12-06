@@ -1341,7 +1341,8 @@ fjpx_luratech=$(PSOBJ)zfjpx_luratech.$(OBJ)
 
 $(PSOBJ)zfjpx.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
  $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
- $(store_h) $(stream_h) $(strimpl_h) $(sjpx_h)
+ $(store_h) $(stream_h) $(strimpl_h) $(ialloc_h) $(iname_h)\
+ $(gdebug_h) $(sjpx_h)
 	$(PSJASCC) $(PSO_)zfjpx.$(OBJ) $(C_) $(PSSRC)zfjpx.c
 
 $(PSD)jpx_luratech.dev : $(INT_MAK) $(ECHOGS_XE) $(fjpx_luratech) $(GLD)sjpx.dev

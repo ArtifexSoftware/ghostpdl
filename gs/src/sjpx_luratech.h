@@ -23,6 +23,15 @@
 #include "scommon.h"
 #include <lwf_jp2.h>
 
+/* define colorspace enumeration for the decompressed image data */
+typedef enum {
+  gs_jpx_cs_unset,  /* colorspace hasn't been set */
+  gs_jpx_cs_gray,   /* single component grayscale image */ 
+  gs_jpx_cs_rgb,    /* three component (s)RGB image */
+  gs_jpx_cs_cmyk    /* four component CMYK image */
+  gs_jpx_cs_indexed /* PDF image wants raw index values */
+} gs_jpx_cs;
+
 /* Stream state for the Luratech jp2 codec
  * We rely on our finalization call to free the
  * associated handle and pointers.
@@ -35,6 +44,7 @@ typedef struct stream_jpxd_state_s
     unsigned char *inbuf;	/* input data buffer */
     unsigned long inbuf_size;
     unsigned long inbuf_fill;
+    gs_jpx_cs colorspace;	/* requested output colorspace */
     int ncomp;			/* number of image components */
     int bpc;			/* sample bits per component */
     unsigned long width, height;
@@ -49,13 +59,6 @@ stream_jpxd_state;
   gs_private_st_simple(st_jpxd_state, stream_jpxd_state,\
     "JPXDecode filter state")
 extern const stream_template s_jpxd_template;
-
-/* define colorspace enumeration for the input image data */
-typedef enum {
-  gs_jpx_cs_gray, /* single component grayscale image */
-  gs_jpx_cs_rgb,  /* three component (s)RGB image */
-  gs_jpx_cs_cmyk  /* four component CMYK image */
-} gs_jpx_cs;
 
 /* JPX encoder internal state */
 typedef struct stream_jpxe_state_s {

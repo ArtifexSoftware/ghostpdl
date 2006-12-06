@@ -291,10 +291,17 @@ s_jpxd_decode_image(stream_jpxd_state * state)
 {
     jas_stream_t *stream = state->stream;
     jas_image_t *image = NULL;
+    char *optstr = NULL;
 
+    /* if the external Colorspace key is indexed, we need to ask
+       for raw index values so the external palette can be applied */
+    if (state->colorspace == gs_jpx_cs_indexed) {
+	if_debug0('w', "[w] got indexed colorspace in s_jpxd_decode_image\n");
+	optstr = (char *)"raw";
+    }
     /* see if an image is available */
     if (stream != NULL) {
-	image = jas_image_decode(stream, -1, 0);
+	image = jas_image_decode(stream, -1, optstr);
 	if (image == NULL) {
 	    dprintf("unable to decode JPX image data.\n");
 	    return ERRC;
@@ -377,15 +384,21 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 	    x = x/numcmpts;               /* now samples */
 	    /* copy data out of the decoded image data */
 	    /* be lazy and only write the rest of the current row */
+	    if (state->colorspace == gs_jpx_cs_indexed) {
+		/* we've passed 'raw' but the palette is the same pixel
+		   format as a grayscale image. The PDF interpreter will
+		   know to handle it differently. */
+		done = copy_row_gray(pw->ptr, image, x, y, usable);
+	    } else /* use the stream's colorspace */
 	    switch (jas_clrspc_fam(clrspc)) {
+		case JAS_CLRSPC_FAM_GRAY:
+		    done = copy_row_gray(pw->ptr, image, x, y, usable);
+		    break;
 		case JAS_CLRSPC_FAM_RGB:
 		    done = copy_row_rgb(pw->ptr, image, x, y, usable);
 		    break;
 		case JAS_CLRSPC_FAM_YCBCR:
 		    done = copy_row_yuv(pw->ptr, image, x, y, usable);
-		    break;
-		case JAS_CLRSPC_FAM_GRAY:
-		    done = copy_row_gray(pw->ptr, image, x, y, usable);
 		    break;
 		case JAS_CLRSPC_FAM_XYZ:
 		case JAS_CLRSPC_FAM_LAB:
@@ -435,6 +448,7 @@ s_jpxd_set_defaults(stream_state *ss)
     state->buffer = NULL;
     state->bufsize = 0;
     state->buffill = 0;
+    state->colorspace = gs_jpx_cs_unset;
 }
 
 
