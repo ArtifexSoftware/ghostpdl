@@ -64,7 +64,7 @@
 /*
  * JP2 Library
  *
- * $Id$
+ * $Id: $
  */
 
 /******************************************************************************\
@@ -74,6 +74,7 @@
 #include "jasper/jas_image.h"
 #include "jasper/jas_stream.h"
 #include "jasper/jas_math.h"
+#include "jasper/jas_tvp.h"
 #include "jasper/jas_debug.h"
 #include "jasper/jas_malloc.h"
 #include "jasper/jas_version.h"
@@ -81,10 +82,32 @@
 #include "jp2_cod.h"
 #include "jp2_dec.h"
 
+/******************************************************************************\
+* Local types for option parsing.
+\******************************************************************************/
+
+typedef struct {
+	jas_bool raw;
+} jp2_decopts_t;
+
+typedef enum {
+	OPT_RAW_PALETTE
+} jp2_optid_t;
+
+jas_taginfo_t jp2_opttab[] = {
+	{OPT_RAW_PALETTE, "raw"}, /* needed for PDF */
+	{-1, 0}
+};
+
+/******************************************************************************\
+* Local function prototypes.
+\******************************************************************************/
+
 #define	JP2_VALIDATELEN	(JAS_MIN(JP2_JP_LEN + 16, JAS_STREAM_MAXPUTBACK))
 
 static jp2_dec_t *jp2_dec_create(void);
 static void jp2_dec_destroy(jp2_dec_t *dec);
+static int jp2_parsedecopts(char *optstr, jp2_decopts_t *decopts);
 static int jp2_getcs(jp2_colr_t *colr);
 static int fromiccpcs(int cs);
 static int jp2_getct(int colorspace, int type, int assoc);
@@ -101,6 +124,7 @@ jas_image_t *jp2_decode(jas_stream_t *in, char *optstr)
 	jp2_dec_t *dec;
 	jas_bool samedtype;
 	int dtype;
+	jp2_decopts_t decopts;
 	unsigned int i;
 	jp2_cmap_t *cmapd;
 	jp2_pclr_t *pclrd;
@@ -120,6 +144,16 @@ jas_image_t *jp2_decode(jas_stream_t *in, char *optstr)
 	box = 0;
 	image = 0;
 
+	/* Parse the decoder option string. */
+	if (jp2_parsedecopts(optstr, &decopts)) {
+		jas_eprintf("invalid jp2 decoder options specified\n");
+		goto error;
+	}
+	if (decopts.raw) {
+		jas_eprintf("got raw palette key\n");
+	}
+
+	/* Create our decoder context. */
 	if (!(dec = jp2_dec_create())) {
 		goto error;
 	}
@@ -246,7 +280,7 @@ jas_image_t *jp2_decode(jas_stream_t *in, char *optstr)
 	}
 
 	/* Is the component data type indicated in the IHDR box consistent
-	  with the data in the code stream? */
+	   with the data in the code stream? */
 	if ((samedtype && dec->ihdr->data.ihdr.bpc != JP2_DTYPETOBPC(dtype)) ||
 	  (!samedtype && dec->ihdr->data.ihdr.bpc != JP2_IHDR_BPCNULL)) {
 		jas_eprintf("warning: component data type mismatch\n");
@@ -315,6 +349,13 @@ jas_image_t *jp2_decode(jas_stream_t *in, char *optstr)
 		dec->pclr = 0;
 	}
 
+	/* If the client passed the raw option, just return the raw 
+	   palette index data as returned by jpc_decode(). */
+	if (decopts.raw) {
+		goto done;
+	}
+	/* otherwise, sort out the decoded channels */
+	
 	/* Determine the number of channels (which is essentially the number
 	  of components after any palette mappings have been applied). */
 	dec->numchans = dec->cmap ? dec->cmap->data.cmap.numchans : JAS_CAST(uint, jas_image_numcmpts(dec->image));
@@ -360,6 +401,7 @@ jas_image_t *jp2_decode(jas_stream_t *in, char *optstr)
 				dec->chantocmptlut[channo] = channo;
 #endif
 			} else if (cmapent->map == JP2_CMAP_PALETTE) {
+			    if (!decopts.raw) {
 				lutents = jas_malloc(pclrd->numlutents * sizeof(int_fast32_t));
 				for (i = 0; i < pclrd->numlutents; ++i) {
 					lutents[i] = pclrd->lutdata[cmapent->pcol + i * pclrd->numchans];
@@ -378,6 +420,7 @@ jas_image_t *jp2_decode(jas_stream_t *in, char *optstr)
 				jas_image_setcmpttype(dec->image, newcmptno, jp2_getct(jas_image_clrspc(dec->image), 0, channo + 1));
 				}
 #endif
+			    }
 			}
 		}
 	}
@@ -427,6 +470,7 @@ jas_image_t *jp2_decode(jas_stream_t *in, char *optstr)
 jas_eprintf("no of components is %d\n", jas_image_numcmpts(dec->image));
 #endif
 
+done:
 	/* Prevent the image from being destroyed later. */
 	image = dec->image;
 	dec->image = 0;
@@ -531,6 +575,42 @@ static void jp2_dec_destroy(jp2_dec_t *dec)
 		jas_free(dec->chantocmptlut);
 	}
 	jas_free(dec);
+}
+
+/* parse the encoder options strig. */
+static int jp2_parsedecopts(char *optstr, jp2_decopts_t *decopts)
+{
+	jas_tvparser_t *tvp;
+	int ret;
+
+	tvp = 0;
+
+	/* Initialize default values for decoder options */
+	decopts->raw = jas_false;
+
+	/* Create the tag-value parser. */
+	if (!(tvp = jas_tvparser_create(optstr ? optstr : ""))) {
+		return -1;
+	}
+
+	/* Get tag-value pairs, and process as necessary. */
+	while (!(ret = jas_tvparser_next(tvp))) {
+		switch (jas_taginfo_nonull(jas_taginfos_lookup(jp2_opttab,
+		  jas_tvparser_gettag(tvp)))->id) {
+		case OPT_RAW_PALETTE:
+                        decopts->raw = jas_true;
+			break;
+		default:
+			jas_eprintf("warning: ignoring invalid option %s\n",
+			  jas_tvparser_gettag(tvp));
+			break;
+		}
+	}
+
+	if (tvp) {
+		jas_tvparser_destroy(tvp);
+	}
+	return (ret < 0) ? -1 : 0;
 }
 
 static int jp2_getct(int colorspace, int type, int assoc)
