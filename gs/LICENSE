@@ -1,23 +1,25 @@
 
   The files in the src, lib, toolbin, examples, doc and man
   directories (folders) and any subdirectories (sub-folders)
-  thereof are part of AFPL Ghostscript.
+  thereof are part of GPL Ghostscript.
 
   The files in the Resource directory and any subdirectories thereof
-  are also part of AFPL Ghostscript, with the explicit exception of
+  are also part of GPL Ghostscript, with the explicit exception of
   the files in the CMap subdirectory. The CMap files are copyright
   Adobe Systems Incorporated and covered by a separate license
   which permits only verbatim distribution.
 
-  AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
-  distributor accepts any responsibility for the consequences of using it, or
-  for whether it serves any particular purpose or works at all, unless he or
-  she says so in writing.  Refer to the Aladdin Free Public License (the
-  "License") for full details.
+  GPL Ghostscript is free software; you can redistribute it and/or
+  modify it under the terms of version 2 of the GNU General Public
+  License as published by the Free Software Foundation.
 
-  Every copy of AFPL Ghostscript must include a copy of the Aladdin Free
-  Public License, normally in a plain ASCII text file named
-  doc/PUBLIC.  The License grants you the right to copy, modify and
-  redistribute AFPL Ghostscript, but only under certain conditions
-  described in the License.  Among other things, the License requires
-  that the copyright notice and this notice be preserved on all copies.
+  GPL Ghostscript is distributed in the hope that it will be
+  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program so you can know your rights and responsibilities.
+  It should be in a file named doc/COPYING. If not, write to the
+  Free Software Foundation, Inc., 59 Temple Place Suite 330, Boston, MA
+  02111-1307, USA.
