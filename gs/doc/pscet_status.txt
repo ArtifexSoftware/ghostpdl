@@ -4411,7 +4411,8 @@ Test	 Status	Comments
 
 24-13-2  OK	
 
-24-13-3  DIFF	Many conformity tests fail. Analyzed by Igor. Assigned to Alex.
+24-13-3  DIFF	All failures are caused by writable FontDirectory.
+		Assigned to Alex.
 
 24-14-1  OK	
 
