@@ -37,7 +37,7 @@ const char *CONFIG_CONST gs_copyright = GS_COPYRIGHT;
 
 #ifndef GS_PRODUCTFAMILY
 #  define GS_PRODUCTFAMILY\
-	"AFPL Ghostscript"
+	"GPL Ghostscript"
 #endif
 const char *CONFIG_CONST gs_productfamily = GS_PRODUCTFAMILY;
 
