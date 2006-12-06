@@ -173,13 +173,17 @@ end
 	  exch get exec
 	} odef
 /currentcolorscreen	% - currentcolorscreen (60 0 <dict>)*4
-	{ .currenthalftone
-	   { { .fixcurrenthalftonescreen 3 copy 6 copy }	% halftone
-	     { dup length array copy 3 copy 6 copy }			% screen
-	     { }				% colorscreen
-	   }
-	  exch get exec
-	} odef
+{ .currenthalftone
+   { { .fixcurrenthalftonescreen 3 copy 6 copy }	% halftone
+     {					% screen
+	 % The procedure might not be readable....
+	 dup rcheck { dup length array copy } if
+	 3 copy 6 copy
+     }
+     { }				% colorscreen
+   }
+  exch get exec
+} odef
 
 % ------ User objects ------ %
 
