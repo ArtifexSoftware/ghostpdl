@@ -149,7 +149,7 @@ jas_image_t *jp2_decode(jas_stream_t *in, char *optstr)
 		jas_eprintf("invalid jp2 decoder options specified\n");
 		goto error;
 	}
-	if (decopts.raw) {
+	if (decopts.raw && jas_getdbglevel() >= 1) {
 		jas_eprintf("got raw palette key\n");
 	}
 
