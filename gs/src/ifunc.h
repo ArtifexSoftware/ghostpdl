@@ -35,9 +35,9 @@ extern const uint build_function_type_table_count;
 
 /* Build a function structure from a PostScript dictionary. */
 int fn_build_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
-		      gs_memory_t *mem);
+      gs_memory_t *mem, const float *shading_domain, const int num_inputs);
 int fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
-			  int depth, gs_memory_t *mem);
+  int depth, gs_memory_t *mem, const float *shading_domain, const int num_inputs);
 
 /*
  * Collect a heap-allocated array of floats.  If the key is missing, set

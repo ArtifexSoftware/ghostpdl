@@ -2513,8 +2513,7 @@ Test	 Status	Comments
 
 12-14B-1  OK	All test report errors now match CPSI and the test. - Alex
 
-12-14C-1  DIFF	GS error inconformity.
-		assign: Alex.
+12-14C-1  OK  	Fixed - Alex.
 
 12-14D-1  OK  	Fixed in rev. 7209. - Alex
 

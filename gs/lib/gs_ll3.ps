@@ -240,6 +240,11 @@ systemdict /.reuseparamdict mark
   /CloseSource true
 .dicttomark readonly put
 /.buildshading {	% <shadingdict> .buildshading <shading>
+  dup rcheck not {
+      % Adobe seems to access ColorSpace first and CET 12-14c checks this.
+      /$error .systemvar /errorinfo [ /ColorSpace null ] put
+      /shfill .systemvar /invalidaccess signalerror
+  } if
         % Unfortunately, we always need to make the DataSource reusable,
         % because if clipping is involved, even shfill may need to read
         % the source data multiple times.  If it weren't for this,
@@ -306,9 +311,15 @@ systemdict /.reuseparamdict undef
 	% Currently, .shfill requires that the color space
 	% in the pattern be the current color space.
 	% Disable overprintmode for shfill
-  dup gsave
-  0 .setoverprintmode { .buildshading .shfill } stopped
-  grestore { stop } if
+  { dup gsave 0 .setoverprintmode .buildshading .shfill } stopped
+  grestore {
+    /$error .systemvar /errorinfo 2 copy known {
+      pop pop
+    } {
+      //null put  % CET 12-14c
+    } ifelse
+    stop
+  } if
   pop
 } odef
 

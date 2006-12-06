@@ -242,7 +242,7 @@ fail:
 /* Collect a Function value. */
 private int
 build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
-		       int num_inputs, gs_memory_t *mem)
+	         int num_inputs, gs_memory_t *mem, const float *shading_domain)
 {
     ref *pFunction;
     int code;
@@ -266,7 +266,8 @@ build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
 	    ref rsubfn;
 
 	    array_get(imemory, pFunction, (long)i, &rsubfn);
-	    code = fn_build_function(i_ctx_p, &rsubfn, &Functions[i], mem);
+	    code = fn_build_function(i_ctx_p, &rsubfn, &Functions[i], mem,
+               shading_domain, num_inputs);
 	    if (code < 0)
 		break;
 	}
@@ -280,7 +281,8 @@ build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
 	if (code < 0)
 	    gs_function_AdOt_free_params(&params, mem);
     } else {
-	code = fn_build_function(i_ctx_p, pFunction, ppfn, mem);
+	code = fn_build_function(i_ctx_p, pFunction, ppfn, mem,
+            shading_domain, num_inputs);
 	if (code < 0)
 	    return code;
 	if ((*ppfn)->params.m != num_inputs) {
@@ -340,11 +342,9 @@ build_shading_1(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
             goto out;
         }
     }
-    code = build_shading_function(i_ctx_p, op, &params.Function, 2, mem);
-    if (code < 0) {
-	gs_errorinfo_put_pair_from_dict(i_ctx_p, op, "Function");
+    code = build_shading_function(i_ctx_p, op, &params.Function, 2, mem, params.Domain);
+    if (code < 0)
         goto out;
-    }
     if (params.Function == 0) {  /* Function is required */
 	code = gs_note_error(e_undefined);
 	gs_errorinfo_put_pair_from_dict(i_ctx_p, op, "Function");
@@ -381,7 +381,7 @@ build_directional_shading(i_ctx_t *i_ctx_p, const ref * op, float *Coords, int n
     if (code < 0 ||
 	(code = dict_floats_param_errorinfo(i_ctx_p, op, "Domain", 2, Domain,
 				  default_Domain)) < 0 ||
-	(code = build_shading_function(i_ctx_p, op, pFunction, 1, mem)) < 0
+	(code = build_shading_function(i_ctx_p, op, pFunction, 1, mem, Domain)) < 0
 	)
 	return code;
     if (!*pFunction)
@@ -506,7 +506,7 @@ build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
 	    default:
 		return_error(e_typecheck);
 	}
-    code = build_shading_function(i_ctx_p, op, pFunction, 1, mem);
+    code = build_shading_function(i_ctx_p, op, pFunction, 1, mem, NULL);
     if (code < 0) {
 	gs_free_object(mem, data, "build_mesh_shading");
 	return code;

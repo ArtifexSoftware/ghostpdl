@@ -92,7 +92,7 @@ gs_build_function_3(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
 	    ref subfn;
 
 	    array_get(mem, pFunctions, (long)i, &subfn);
-	    code = fn_build_sub_function(i_ctx_p, &subfn, &ptr[i], depth, mem);
+	    code = fn_build_sub_function(i_ctx_p, &subfn, &ptr[i], depth, mem, 0, 0);
 	    if (code < 0)
 		goto fail;
 	}

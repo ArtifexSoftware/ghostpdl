@@ -55,7 +55,7 @@ zbuildfunction(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_function_t *pfn;
-    int code = fn_build_function(i_ctx_p, op, &pfn, imemory);
+    int code = fn_build_function(i_ctx_p, op, &pfn, imemory, 0, 0);
 
     if (code < 0)
 	return code;
@@ -200,15 +200,16 @@ zisencapfunction(i_ctx_t *i_ctx_p)
 
 /* Build a function structure from a PostScript dictionary. */
 int
-fn_build_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn, gs_memory_t *mem)
+fn_build_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn, gs_memory_t *mem,
+    const float *shading_domain, const int num_inputs)
 {
-    return fn_build_sub_function(i_ctx_p, op, ppfn, 0, mem);
+    return fn_build_sub_function(i_ctx_p, op, ppfn, 0, mem, shading_domain, num_inputs);
 }
 int
 fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
-		      int depth, gs_memory_t *mem)
+    int depth, gs_memory_t *mem, const float *shading_domain, const int num_inputs)
 {
-    int code, type;
+    int j, code, type;
     uint i;
     gs_function_params_t params;
 
@@ -232,6 +233,32 @@ fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
 	goto fail;
     }
     params.m = code >> 1;
+    for (j = 0; j < params.m << 1; j += 2) {
+        if (params.Domain[j] > params.Domain[j + 1]) {
+          code = gs_note_error(e_rangecheck);
+          gs_errorinfo_put_pair_from_dict(i_ctx_p, op, "Domain"); 
+  	  goto fail;
+        }
+    }
+    if (shading_domain) {
+        /* Each function dictionary’s domain must be a superset of that of
+         * the shading dictionary. PLRM3 p.265. CET 12-14c. We do this check
+         * here because Adobe checks Domain before checking other parameters.
+         */
+        if (num_inputs != params.m)
+            code = gs_note_error(e_rangecheck);
+        for (j = 0; j < 2*num_inputs && code >= 0; j += 2) {
+            if (params.Domain[j] > shading_domain[j] ||
+                params.Domain[j+1] < shading_domain[j+1]
+               ) {
+                code = gs_note_error(e_rangecheck);
+            }
+        }
+        if (code < 0) {
+            gs_errorinfo_put_pair_from_dict(i_ctx_p, op, "Domain");
+            goto fail;
+        }
+    }
     code = fn_build_float_array(op, "Range", false, true, &params.Range, mem);
     if (code < 0)
 	goto fail;
