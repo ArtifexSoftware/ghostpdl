@@ -856,7 +856,9 @@ def
   .currentglobal false .setglobal exch
 		% Stack: proto matrix global buildproc
   3 index dup length 1 add dict .copydict
-  3 index 3 -1 roll exec 3 -1 roll .setglobal
+		% Stack: proto matrix global buildproc newdict
+  3 index 3 -1 roll exec
+		% Stack: proto matrix global newdict instance
   % Create an 'Implementation' entry for the pattern dict.  The PRLM 3rd says
   % this about the contents of Implementation:  "The type and value of this
   % entry are implementation-dependent."  The CET (page 2 of 18-02f) expects
@@ -865,7 +867,8 @@ def
   % array.
   1 index /Implementation 3 -1 roll gstate 2 array astore
   put				% put Implementation into the pattern dict.
-  readonly exch pop exch pop
+		% Stack: proto matrix global newdict
+  readonly exch .setglobal exch pop exch pop
 } odef
 
 /setpattern {			% [<comp1> ...] <pattern> setpattern -
