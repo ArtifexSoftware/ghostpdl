@@ -4468,14 +4468,7 @@ Test	 Status	Comments
 
 25-12-2  OK	
 
-25-13-1  DIFF	GS gets different 'mul' results from some boundary conditions
-		CPSI matches Tek hardcopy.
-		Error messages in ILLEGAL section match (rev 7140 ?).
-                These CET files will not run on my 64-bit build (they expect to be able to
-                'cvs' any integer into a 12-character string), and I don't seem to be able
-                to get gcc to produce 32-bit output, even with Ralph's help.  Please
-                reassign these files.
-                Assign: (reassign) Alex.
+25-13-1  OK  	Fixed - Alex.
 
 25-13-2  OK	
 
