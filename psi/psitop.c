@@ -137,6 +137,7 @@ ps_impl_allocate_interp_instance(
 	    "-dNOPAUSE",
 	    "-dQUIET",
 	    "-dJOBSERVER", 
+	    "-dOSTACKPRINT", // NB: debuggging postscript Needs to be removed. 
 	    "-dESTACKPRINT", // NB: debuggging postscript Needs to be removed. 
 	    "-sUFST_PlugIn=" UFSTFONTDIR "mtfonts/pcl45/mt3/plug__xi.fco",
             "-sFCOfontfile=" UFSTFONTDIR "mtfonts/pclps2/mt3/pclp2_xj.fco",
@@ -145,7 +146,7 @@ ps_impl_allocate_interp_instance(
 	    "-sFAPIconfig=FAPIconfig-FCO",
 	    0
 	};
-	int argc = 10;
+	int argc = 11;
 #ifdef DEBUG_WITH_EXPERIMENTAL_GSOPTIONS_FILE
 	char argbuf[1024];
 #endif
