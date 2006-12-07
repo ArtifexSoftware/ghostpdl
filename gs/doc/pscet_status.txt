@@ -1704,7 +1704,10 @@ Test	 Status	Comments
 
 11-13-3  OK	
 
-11-13-4  DIFF	missing 4's in the look and much column assign Alex
+11-13-4  DIFF	missing 4's in the look and much column
+                because Ghostscript upath doesn't require
+                current point.
+                assign Alex
 
 11-14-1  OK	Fixed with rev 7213.
 
