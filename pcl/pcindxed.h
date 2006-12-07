@@ -136,6 +136,7 @@ struct pcl_cs_indexed_s {
     int                     original_cspace;
     int                     num_entries;
     gs_string               palette;
+    bool                    is_GL;
     float                   pen_widths[pcl_cs_indexed_palette_size];
     pcl_cs_indexed_norm_t   norm[3];
     float                   Decode[6];

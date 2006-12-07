@@ -25,7 +25,7 @@
 027 -- fixed
 028 -- fixed
 030 -- fixed
-031 -- passthrough - C705-66 pcl palette entry 8 Blk vs White. Raster color wrong.
+031 -- fixed r2691
 032 -- fixed - SK verified in r2685
 033 -- fixed - SK verified in r2685
 034 -- fixed 

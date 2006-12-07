@@ -125,6 +125,7 @@ alloc_indexed_cspace(
                        );
     pindexed->rc.free = free_indexed_cspace;
     pindexed->pfixed = false;
+    pindexed->is_GL = false;
     pcl_cs_base_init_from(pindexed->pbase, pbase);
     pindexed->pcspace = 0;
     pindexed->num_entries = 0;
@@ -691,6 +692,8 @@ pcl_cs_indexed_set_num_entries(
     /* ignore request if palette is fixed */
     if (pindexed->pfixed)
         return 0;
+
+    pindexed->is_GL = gl2;
 
     /*
      * Set new_num to the smallest larger power of 2 less than

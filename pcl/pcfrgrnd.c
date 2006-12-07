@@ -124,9 +124,15 @@ build_foreground(
 
     /* pal_entry is interpreted modulo the current palette size */
     if ((pal_entry < 0) || (pal_entry >= num_entries)) {
-        pal_entry %= num_entries;
-        if (pal_entry < 0)
-            pal_entry += num_entries;
+	if (pindexed->is_GL) {
+	    int max_pen = num_entries -1;
+	    while (pal_entry > max_pen)
+		pal_entry -= max_pen;
+	} else {
+	    pal_entry %= num_entries;
+	    if (pal_entry < 0)
+		pal_entry += num_entries;
+	}
     }
 
     pfrgrnd->is_cmy = (ppalet->pindexed->original_cspace == 1);
