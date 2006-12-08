@@ -215,10 +215,17 @@ end
   .UserObjects get 2 .argindex 2 index put pop pop
 } odef
 /execuserobject {		% <index> execuserobject -
+  dup type /integertype ne {
+    % Adobe validates the argument before accessing UserObjects - CET 31-03
+    /execuserobject .systemvar /typecheck signalerror 
+  } if
   .UserObjects get 1 .argindex get exch pop exec
 } odef
 /undefineuserobject {		% <index> undefineuserobject -
-  .UserObjects get 1 .argindex null put pop
+  dup type /integertype ne {
+    /undefineuserobject .systemvar /typecheck signalerror
+  } if
+  .UserObjects get 1 .argindex //null put pop
 } odef
 
 % ------ Cache control ------ %
