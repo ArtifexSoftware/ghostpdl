@@ -4753,7 +4753,9 @@ Test	 Status	Comments
 
 29-03-3  DIFF	Device Dependent. currentpagedevice different. Analyzed by Igor. Assigned to Ray or Dan ?
 
-29-03-4  DIFF	Many conformity tests fail. Analyzed by Igor. Assigned to Alex.
+29-03-4  DIFF	Many conformity tests fail. Analyzed by Igor.
+                The test expects currentpagedevice to return the same dictionaty each time. 
+                Assigned to Alex.
 
 29-05-1  OK  	Works for me in rev. 7149 - Alex.
 
@@ -5078,23 +5080,26 @@ Test	 Status	Comments
                 GS prints different numbers for every test in GLOBINT.
 		The number printed is the VM usage for the test.
 
-31-01-1  DIFF	Attributes differ (bottom of page filetype). Assign: Ray
+31-01-1  DIFF	Attributes differ (bottom of page filetype).
+                (%stdin)(r) file is global on GS and local on Adobe.
+                Also see bug 687682, where a similar problem was reported earlier.
+                Assign: Ray
 
 31-01-10  OK	
 
-31-01-2  DIFF	exec output does not conform (3 lines). assign Peter.
+31-01-2  OK  	Works for me in rev. 7453. - Alex
 
 31-01-3  OK	Minor differences visually reviewed by RJJ
 
 31-01-4  OK	
 
-31-01-5  DIFF	Test 03 graphic incorrect due to idioms. assign Alex.
+31-01-5  OK  	MAX_DEPTH parameter is adjusted to match Adobe. - Alex
 
 31-01-6  OK  	Fixed - Alex
 
 31-01-7  OK	Minor differences visually reviewed by RJJ
 
-31-01-8  DIFF	Test 03 and 07 wrong same as 31-01-5 assign Alex.
+31-01-8  DIFF	Test 03 and 07 wrong. assign Alex.
 
 31-01-9  DIFF	same as 31-01-8 assign Alex.
 

@@ -41,7 +41,9 @@ zcliprestore(i_ctx_t *i_ctx_p)
  * Test whether two procedures are equal to depth 10.
  * This is the equality test used by idiom recognition in 'bind'.
  */
-#define MAX_DEPTH 10		/* depth is per Adobe specification */
+/* Adobe specifies maximum depth of 10 but 12 is needed */
+/* to reproduce the observed behavior. CET 31-01-05 */
+#define MAX_DEPTH 12 
 typedef struct ref2_s {
     ref proc1, proc2;
 } ref2_t;
