@@ -5099,9 +5099,12 @@ Test	 Status	Comments
 
 31-01-7  OK	Minor differences visually reviewed by RJJ
 
-31-01-8  DIFF	Test 03 and 07 wrong. assign Alex.
+31-01-8  DIFF	Test 03 and 07 wrong.
+		The test defines 2 or more idioms that match the target and expects
+                the last definition to be used. PLRM (p. 121) says that the order is
+                undefined. assign Alex.
 
-31-01-9  DIFF	same as 31-01-8 assign Alex.
+31-01-9  DIFF	same as 31-01-8 but in the global VM. assign Alex.
 
 31-02-1  DIFF	limitcheck vs. typecheck assign Ray
 
