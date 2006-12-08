@@ -1590,7 +1590,7 @@ Test	 Status	Comments
 11-08-4  OK	Minor differences visually reviewed by RJJ
 
 11-08-5  DIFF	'1' and '2' differences in the much and cash column
-                 assign Alex
+		related to upath, assign: Raph.
 
 11-09-1  AOK	a better stroke adjustment; not important. Analyzed by Igor.
 
@@ -1789,7 +1789,7 @@ Test	 Status	Comments
 11-19-5  OK	Minor differences visually reviewed by RJJ
 
 11-19-6  DIFF	missing 4's in the look and much column similar to 11-08-5 
-                assign Alex
+                upath problems - assign Raph
 
 11-20-1  OK	Minor differences visually reviewed by HAS
 
@@ -1882,7 +1882,7 @@ Test	 Status	Comments
 
 11-21-9  AOK	similar to issues in 11-21-8. Tek and CPSI differ.
 
-11-22-1  DIFF	misplaced text graphics wrong assign: Igor
+11-22-1  OK
 
 11-22-2  OK	Minor differences visually reviewed by RJJ
 
@@ -1894,7 +1894,7 @@ Test	 Status	Comments
                 be classified as AOK. Reassigning the case to Raph who owns all
                 other upath cases. - Alex 
 
-11-22-4  DIFF	paths differ assign: Igor
+11-22-4  OK
 
 11-22-5  DIFF	GS has different number. Although this is resolution dependent,
 		the test comment indicates what should happen. Tek has 0.12
@@ -1905,7 +1905,7 @@ Test	 Status	Comments
 
 11-22-7  OK	fixed in r7228 - Raph
 
-11-22-8  DIFF	same as 11-21-10 assign Ray
+11-22-8  OK
 
 11-23-1  AOK	GS (apparently) does not implement upath caching. Tek and CPSI
 		do, but differ. Device Dependent (as comment says).
@@ -2952,7 +2952,7 @@ Test	 Status	Comments
                 a number of operatord. IMHO this can be AOK
                 assign Raph
 
-13-16-9  DIFF	uappend, usrtokepath glyph positioning. assign: Raph.
+13-16-9  DIFF	clippath, usrtokepath. assign: Raph.
 
 13-17-1  OK	Corrected by 7152 and 7162.  ADC
 
@@ -4593,7 +4593,8 @@ Test	 Status	Comments
 	filt18 is an invocation of filenameforall.
 		Analyzed by Igor, then Peter.
 
-27-04-1  DIFF	Inconforming currentsystemparams. Analyzed by Igor.
+27-04-1  DIFF	Installation dependent (FontResourceDir).
+		Inconforming currentsystemparams. Analyzed by Igor.
 		Igor assigns this to Ray for further analyzis.
 
 27-04-2  OK	
@@ -5073,9 +5074,9 @@ Test	 Status	Comments
 
 30-11-1  OK	
 
-30-11-2  AOK	GS prints different numbers for every test in GLOBINT.
-		The number printed is the VM usage for the test. This is entirely
-		implementation dependent.
+30-11-2  AOK	Environment dependent.
+                GS prints different numbers for every test in GLOBINT.
+		The number printed is the VM usage for the test.
 
 31-01-1  DIFF	Attributes differ (bottom of page filetype). Assign: Ray
 
