@@ -1845,17 +1845,13 @@ Test	 Status	Comments
 11-21-1  DIFF?	Circle has small 'points' with CPSI -- Ghostscript is smooth.
                 assign: Raph.
 
-11-21-10  DIFF	positioning of 'O' and 'GT' wrong (see column 1)
-		The test executes "10 setlinewidth x 10 add y 10 add lineto strokepath".
-		(see GlobInterProc1).
-		It gives a rectangle rotated in 45 degrees.
-		However PLRM doesn't specify from which vertex
-		the path starts from.
-		Later 'O' and 'GT' are positioned at that vertex.
-		Our stroking algorithm is pretty complex,
-		so providing CPSI compatibility isn't simple.
-		Passing to Ray to decide what to do with it.
-		assign: Ray.
+11-21-10  AOK	Differences in look20, look30, look33 are caused by CPSI problem :
+		rlineto, rcurveto count wrong coordinates after strokepath.
+		It looks as the starting point for relative coordinate is not equal to
+		the current point. CPSI paints a self-intersecting curve with
+		"9 0 9 -9 0 -9 rcurveto stroke", which must not self-intersect.
+		A simplified test is placed to 
+		peeves:/home/igor/pscet/mytests/11-21-10-Igor01.ps 
 
 11-21-2  OK	Minor differences visually reviewed by RJJ
 
@@ -1863,10 +1859,9 @@ Test	 Status	Comments
 
 11-21-4  DIFF	Analyzed by Igor.
 		There are several stroking problems.
-		1. The stroke starting point - same as 11-21-10.
-		2. linewidth - same as 11-09-4.
-		3. setflat - same as 09-09-1.
-		4. CPSI doesn't roll a dash pattern at some corners.
+		1. linewidth - same as 11-09-4.
+		2. setflat - same as 09-09-1.
+		3. CPSI doesn't roll a dash pattern at some corners.
 		An example is at the lower right corner of the page.
 		The dash at one corner looks longer than the distance to the corner.
 		IMO it's another CPSI bug.
@@ -1885,7 +1880,7 @@ Test	 Status	Comments
 11-21-8  AOK	Device Dependent / Resolution Dependent. CPSI ignores setflat
 		Tek and CPSI differ.
 
-11-21-9  DIFF	similar to issues in 11-21-8 assign Raph. Tek and CPSI differ.
+11-21-9  AOK	similar to issues in 11-21-8. Tek and CPSI differ.
 
 11-22-1  DIFF	misplaced text graphics wrong assign: Igor
 
@@ -1994,17 +1989,17 @@ Test	 Status	Comments
 
 11-28-1  OK	Minor differences visually reviewed by HAS
 
-11-28-10  DIFF	same as 11-21-8 assign: Raph
+11-28-10  AOK	same as 11-21-8.
 
-11-28-11  OK	fixed in r7228 - Raph
+11-28-11  AOK	same as 11-21-9.
 
-11-28-12  DIFF	same as 11-21-10 assign Ray
+11-28-12  AOK	same as 11-21-10.
 
 11-28-2  OK	Minor differences visually reviewed by HAS
 
 11-28-3  DIFF	Some elements are in the wrong place with GS. assign: Ray
 
-11-28-4  DIFF	paths differ assign: Igor
+11-28-4  AOK	CPSI stroking problem. CPSI and Tek differ.
 
 11-28-5  OK  	Fixed as of r7231.
 
@@ -2811,7 +2806,7 @@ Test	 Status	Comments
 13-03-8  DIFF	gs has an extra 2 in column 1 and 7.  Squinting
                 x's overwrite o's row 1 col. 30 and a few other places
                 best to look at a digital diff.
-                assign Alex.
+                assign Igor.
 
 13-04-1  DIFF	Likely a CPSI problem. Analyzed by Igor.
                 Device dependent file
@@ -2887,7 +2882,7 @@ Test	 Status	Comments
 
 13-12-4  DIFF	I don't know how to restore stack when the continuation
                 operator is used. - Alex
-                assign Raph
+                assign Peter
 
 13-12-5  OK	Minor differences visually reviewed by RJJ
 
@@ -3076,7 +3071,7 @@ Test	 Status	Comments
 		location.  Different location of 'Script' in items 19, 20, and 25
 		in the 'CASH' column.  GS has 'cript' in item 13 in the 'MUCH'
 		column. - ADC
-                Assign: Ray.
+                Assign: Igor.
 
 13-23-1  DIFF	Extra line under /ordfeminine and /ordmasculine characters. - ADC
 	Might be a font issue: some fonts use underbars, others don't.
@@ -5090,15 +5085,15 @@ Test	 Status	Comments
 
 31-01-4  OK	
 
-31-01-5  DIFF	Test 03 graphic incorrect assign Ray.
+31-01-5  DIFF	Test 03 graphic incorrect due to idioms. assign Alex.
 
 31-01-6  OK  	Fixed - Alex
 
 31-01-7  OK	Minor differences visually reviewed by RJJ
 
-31-01-8  DIFF	Test 03 and 07 wrong same as 31-01-5 assign Ray.
+31-01-8  DIFF	Test 03 and 07 wrong same as 31-01-5 assign Alex.
 
-31-01-9  DIFF	same as 31-01-8 assign Ray.
+31-01-9  DIFF	same as 31-01-8 assign Alex.
 
 31-02-1  DIFF	limitcheck vs. typecheck assign Ray
 
@@ -5120,7 +5115,9 @@ Test	 Status	Comments
 
 31-06-2  OK	Minor differences in positions and character shapes - ADC
 
-31-07-1  OK	
+31-07-1  OK	Minor differences visually reviewed by Igor.
+		Note: This test draws different length line depending on timing
+		(number of loops depends on 'realtime' resolution and results).
 
 31-07-2  OK	
 

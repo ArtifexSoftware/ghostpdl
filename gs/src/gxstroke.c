@@ -217,7 +217,7 @@ private int line_join_points(const gx_line_params * pgs_lp,
 private void compute_caps(pl_ptr);
 private int add_points(gx_path *, const gs_fixed_point *,
 		       int, bool);
-private int add_round_cap(gx_path *, const_ep_ptr);
+private int add_round_cap(gx_path *, const_ep_ptr, bool last_line);
 private int cap_points(gs_line_cap, const_ep_ptr,
 		       gs_fixed_point * /*[3] */ );
 
@@ -1140,9 +1140,8 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 {
     const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
     gs_fixed_point points[8];
-    int npoints;
+    int npoints = 0, initial_cap_points = 0;
     int code;
-    bool moveto_first = true;
 
     if (plp->thin) {
 	/* We didn't set up the endpoint parameters before, */
@@ -1151,49 +1150,71 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	adjust_stroke(plp, pis, true, first == 0 && nplp == 0);
 	compute_caps(plp);
     }
-    /* Create an initial cap if desired. */
     if (first == 0 && pgs_lp->cap == gs_cap_round) {
-	vd_moveto(plp->o.co.x, plp->o.co.y);
-	if ((code = gx_path_add_point(ppath, plp->o.co.x, plp->o.co.y)) < 0 ||
-	    (code = add_round_cap(ppath, &plp->o)) < 0
-	    )
+	/* Initial moveto. */
+	code = gx_path_add_point(ppath, plp->o.ce.x, plp->o.ce.y);
+	if (code < 0)
 	    return code;
-	npoints = 0;
-	moveto_first = false;
+	vd_moveto(plp->o.ce.x, plp->o.ce.y);
     } else {
-	if ((npoints = cap_points((first == 0 ? pgs_lp->cap : gs_cap_butt), &plp->o, points)) < 0)
-	    return npoints;
-    }
-    if (nplp == 0) {
-	/* Add a final cap. */
-	if (pgs_lp->cap == gs_cap_round) {
-	    ASSIGN_POINT(&points[npoints], plp->e.co);
-	    vd_lineto(points[npoints].x, points[npoints].y);
-	    ++npoints;
-	    if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
-		return code;
-	    code = add_round_cap(ppath, &plp->e);
-	    goto done;
-	}
-	code = cap_points(pgs_lp->cap, &plp->e, points + npoints);
-    } else if (join == gs_join_round) {
-	ASSIGN_POINT(&points[npoints], plp->e.co);
-	vd_lineto(points[npoints].x, points[npoints].y);
-	++npoints;
-	if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
+	/* With initial non-round cap the path must start with
+	   the cap's point for CPSI compatibility. So first compute
+	   the initial cap points and store them temporary at the end of array. */
+	int last_point_index; 
+
+	code = cap_points((first == 0 ? pgs_lp->cap : gs_cap_butt), &plp->o, points + 4);
+	if (code < 0)
 	    return code;
-	code = add_round_cap(ppath, &plp->e);
-	goto done;
+	initial_cap_points = code;
+	last_point_index = 4 + initial_cap_points - 1;
+	/* Initial moveto. */
+	code = gx_path_add_point(ppath, points[last_point_index].x, points[last_point_index].y);
+	if (code < 0)
+	    return code;
+	vd_moveto(points[last_point_index].x, points[last_point_index].y);
+    }
+    /* The end cap. */
+    if ((nplp == 0 && pgs_lp->cap == gs_cap_round) || (nplp != 0 && join == gs_join_round)) {
+	/* The right side. */
+	code = gx_path_add_line(ppath, plp->e.co.x, plp->e.co.y);
+	if (code < 0)
+	    return code;
+	vd_lineto(plp->e.co.x, plp->e.co.y);
+	/* The end cap. */
+	code = add_round_cap(ppath, &plp->e, true);
+    } else if (nplp == 0) {
+	code = cap_points(pgs_lp->cap, &plp->e, points);
     } else if (nplp->thin)	/* no join */
-	code = cap_points(gs_cap_butt, &plp->e, points + npoints);
+	code = cap_points(gs_cap_butt, &plp->e, points);
     else			/* non-round join */
 	code = line_join_points(pgs_lp, plp, nplp, points + npoints,
 				(uniform ? (gs_matrix *) 0 : &ctm_only(pis)),
 				join, reflected);
     if (code < 0)
 	return code;
-    code = add_points(ppath, points, npoints + code, moveto_first);
-  done:
+    npoints += code;
+    /* Create an initial cap if desired. */
+    if (first == 0 && pgs_lp->cap == gs_cap_round) {
+	/* Left side. */
+	ASSIGN_POINT(&points[npoints], plp->o.co);
+	npoints++;
+	vd_lineto(plp->e.co.x, plp->e.co.y);
+	code = add_points(ppath, points, npoints, false);
+	if (code < 0)
+	    return code;
+	/* The initial cap. */
+	/* Skip the last line because closepath below works instead it. */
+	code = add_round_cap(ppath, &plp->o, false);
+	if (code < 0)
+	    return code;
+	npoints = 0;
+    } else if (initial_cap_points > 1) {
+	/* Skip the last point because closepath below works instead it. */
+	if (npoints < 4)
+	    memcpy(points + npoints, points + 4, sizeof(*points) * (initial_cap_points - 1));
+	npoints += initial_cap_points - 1;
+    }
+    code = add_points(ppath, points, npoints, false);
     if (code < 0)
 	return code;
     vd_closepath;
@@ -1470,7 +1491,7 @@ compute_caps(pl_ptr plp)
 /* Add a round cap to a path. */
 /* Assume the current point is the cap origin (endp->co). */
 private int
-add_round_cap(gx_path * ppath, const_ep_ptr endp)
+add_round_cap(gx_path * ppath, const_ep_ptr endp, bool last_line)
 {
     int code;
 
@@ -1489,7 +1510,7 @@ add_round_cap(gx_path * ppath, const_ep_ptr endp)
 	(code = gx_path_add_partial_arc(ppath, xo, yo, xo - cdx, yo - cdy,
 					quarter_arc_fraction)) < 0 ||
 	/* The final point must be (xe,ye). */
-	(code = gx_path_add_line(ppath, xe, ye)) < 0
+	last_line && (code = gx_path_add_line(ppath, xe, ye)) < 0
 	)
 	return code;
     vd_lineto(xe, ye);
