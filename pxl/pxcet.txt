@@ -180,3 +180,26 @@ apparently cannot use the referenced pattern.  We print page 13
 without an error.
 
 
+               Report on HP-PCL XL 3.0 4600
+               ============================
+
+
+C318.BIN page 33: On the HP 4600 the 4th patterned box has a filled
+black area.  On the artifex interpreter the black area is the same as
+the other patterned boxes.  This is certainly a bug in the HP
+firmware.  The black area in each patterned box is a rectangle edged
+with a dashed line stroke.  The rectangle is then filled with the null
+brush which should produce no output.  However for raster operations
+0, 17, 68, 85, 136, 153, 204, 221, 250, 255 it appears the null brush
+is "locked out" and the previous pattern (in this case the fill for
+the patterned box) is used.  We don't think it worthwhile to emulate
+this bug.
+
+C420.BIN page 9 and C703 page 1.  Rectangles' color incorrect.  In the
+current architecture the result of combining image (source) and
+pattern (texture) may not work correctly using the default
+"UseCIEColor" mode.  To print these rectangles correctly run the
+interpreter with -J"@PJL SET USECIECOLOR=OFF" as a workaround.
+
+
+
