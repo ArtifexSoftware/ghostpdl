@@ -116,12 +116,16 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID, bool USE_ttfReader)
     ACCESS(0, 12, OffsetTable);
     if (!memcmp(OffsetTable, version_ttcf, 4))
     {
-	numFonts = U16(OffsetTable + 8);
+	numFonts = u32(OffsetTable + 8);
 	if (subfontID < 0 || subfontID >= numFonts)
 	    return_error(gs_error_rangecheck);
-	ACCESS(8, numFonts * 4, OffsetTable);
+	ACCESS(12, numFonts * 4, OffsetTable);
 	OffsetTableOffset = u32(OffsetTable + subfontID * 4);
 	ACCESS(OffsetTableOffset, 12, OffsetTable);
+    }
+    else
+    {
+	OffsetTableOffset = 0;
     }
 
     if (memcmp(OffsetTable, version1_0, 4) &&
@@ -129,7 +133,7 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID, bool USE_ttfReader)
 	return_error(gs_error_invalidfont);
 
     numTables = U16(OffsetTable + 4);
-    ACCESS(12, numTables * 16, TableDirectory);
+    ACCESS(OffsetTableOffset + 12, numTables * 16, TableDirectory);
     /* Clear all non-client-supplied data. */
     {
 	void *proc_data = pfont->data.proc_data;
