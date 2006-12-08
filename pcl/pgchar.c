@@ -156,6 +156,9 @@ hpgl_label_direction(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	return 0;
 }
 
+/* forward declaration */
+private int hpgl_select_font(hpgl_state_t *pgls, int index);
+
 /* Select font by ID (FI, FN). */
 private int
 hpgl_select_font_by_id(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
@@ -175,27 +178,34 @@ hpgl_select_font_by_id(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	  case 0:		/* ID found */
 	    break;
 	  }
-	pgls->g.font = pfs->font;
-	pgls->g.map = pfs->map;
+        pgls->g.font_selection[index].font = pfs->font;
+        pgls->g.font_selection[index].map = pfs->map;
 	/*
 	 * If we just selected a bitmap font, force the equivalent of SB1.
 	 * See TRM 23-65 and 23-81.
 	 */
-	if ( pfs->font->scaling_technology == plfst_bitmap )
-	  pgls->g.bitmap_fonts_allowed = true;
-	return 0;
+        if ( pfs->font->scaling_technology == plfst_bitmap ) {
+            hpgl_args_t args;
+            hpgl_args_setup(&args);
+            hpgl_args_add_int(&args, 1);
+            hpgl_SB(&args, pgls);
+        }
+        /* note pcltrm 23-54 - only select if the table (primary or
+           secondary) matches the currently selected table. */
+        if (index == pgls->g.font_selected) {
+            hpgl_select_font(pgls, index);
+        }
+        return 0;
 }
 
 /* Select font (SA, SS). */
 private int
 hpgl_select_font(hpgl_state_t *pgls, int index)
 {
-	if ( pgls->g.font_selected != index )
-	  { pgls->g.font_selected = index;
-	    pgls->g.font = pgls->g.font_selection[index].font;
-	    pgls->g.map = pgls->g.font_selection[index].map;
-	  }
-	return 0;
+    pgls->g.font_selected = index;
+    pgls->g.font = pgls->g.font_selection[index].font;
+    pgls->g.map = pgls->g.font_selection[index].map;
+    return 0;
 }
 
 /* ------ Commands ------ */
@@ -402,7 +412,6 @@ hpgl_SB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	if ( hpgl_arg_c_int(pgls->memory, pargs, &mode) && (mode & ~1) )
 	  return e_Range;
-	if ( pgls->g.bitmap_fonts_allowed != mode )
 	  { int i;
 
 	    pgls->g.bitmap_fonts_allowed = mode;
@@ -412,17 +421,16 @@ hpgl_SB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	     * and bitmap fonts selected by ID if bitmap fonts are now
 	     * disallowed.
 	     */
-	    for ( i = 0; i < countof(pgls->g.font_selection); ++i )
-	      { pcl_font_selection_t *pfs = &pgls->g.font_selection[i];
+	    for ( i = 0; i < countof(pgls->g.font_selection); ++i ) { 
+                pcl_font_selection_t *pfs = &pgls->g.font_selection[i];
 	        if ( ((int)pfs->selected_id < 0) ||
 		     (!mode && pfs->font != 0 &&
 		      pfs->font->scaling_technology == plfst_bitmap)
 		   )
 		  { pfs->font = 0;
-		    if ( i == pgls->g.font_selected )
-		      pgls->g.font = 0;
 		  }
 	      }
+            pgls->g.font = pgls->g.map = 0;
 	  }
 	return 0;
 }

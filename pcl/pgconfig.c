@@ -203,6 +203,8 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
     hpgl_SV(&args, pgls);
     hpgl_args_setup(&args);
     hpgl_UL(&args, pgls);
+    hpgl_args_setup(&args);
+    hpgl_SB(&args, pgls);
     return 0;
 }
 
