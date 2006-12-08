@@ -3041,8 +3041,8 @@ Test	 Status	Comments
 
 13-20-1  OK	Minor differences in positions and character shapes - ADC
 
-13-20-2  DIFF	Different error message in typecheck in setfont. - ADC
-                assign Alex.
+13-20-2  OK  	Ghostscript matches Tek hardcopy. The CPSI-based product tested
+		has CSL installed, which redefines operator setfont.
 
 13-20-3  OK	Minor differences visually reviewed by RJJ
 
