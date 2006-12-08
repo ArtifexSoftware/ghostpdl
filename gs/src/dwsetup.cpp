@@ -14,7 +14,7 @@
 // $Id$
 //
 //
-// This is the setup program for Win32 AFPL Ghostscript
+// This is the setup program for Win32 GPL Ghostscript
 //
 // The starting point is a self extracting zip archive
 // with the following contents:
@@ -34,12 +34,12 @@
 // uninstall log files are to be placed.  
 // Subsequent lines contain files to be copied (but not directories).
 // For example, filelist.txt might contain:
-//   AFPL Ghostscript 6.50
-//   gs6.50
-//   gs6.50\bin\gsdll32.dll
-//   gs6.50\lib\gs_init.ps
+//   GPL Ghostscript 8.55
+//   gs8.55
+//   gs8.55\bin\gsdll32.dll
+//   gs8.55\lib\gs_init.ps
 // The file fontlist.txt might contain:
-//   AFPL Ghostscript Fonts
+//   GPL Ghostscript Fonts
 //   fonts
 //   fonts\n019003l.pfb
 //   fonts\n019023l.pfb
@@ -714,7 +714,7 @@ install_all()
 BOOL
 install_prog()
 {
-	char *regkey1 = "AFPL Ghostscript";
+	char *regkey1 = "GPL Ghostscript";
 	char regkey2[16];
 	char szDLL[MAXSTR];
 	char szLIB[MAXSTR+MAXSTR];
@@ -1182,7 +1182,7 @@ BOOL make_filelist(int argc, char *argv[])
 		    if ((title == NULL) || (strlen(title) == 0) ||
 			(dir == NULL) || (strlen(dir) == 0) ||
 			(list == NULL) || (strlen(list) == 0)) {
-			message_box("Usage: setupgs -title \042AFPL Ghostscript #.##\042 -dir \042gs#.##\042 -list \042filelist.txt\042 spec1 spec2 specn\n");
+			message_box("Usage: setupgs -title \042GPL Ghostscript #.##\042 -dir \042gs#.##\042 -list \042filelist.txt\042 spec1 spec2 specn\n");
 			return FALSE;
 		    }
 		    if (fList == (FILE *)NULL) {

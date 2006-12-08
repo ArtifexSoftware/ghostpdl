@@ -789,7 +789,7 @@ init(void)
 	}
 	if (strlen(szLogFile) == 0) {
 		MessageBox(HWND_DESKTOP, "Usage: uninstgs logfile.txt", 
-			"AFPL Ghostscript Uninstall", MB_OK);
+			"GPL Ghostscript Uninstall", MB_OK);
 		return FALSE;
 	}
 	
