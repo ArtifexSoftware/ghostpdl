@@ -195,6 +195,10 @@ end
 % The code below faithfully duplicates the apparent array-growing
 % behavior of Adobe interpreters.
 /defineuserobject {		% <index> <value> defineuserobject -
+  1 index 65535 gt {
+    % .localvmarray throws limitcheck but CET 31-02 wants rangecheck
+    /defineuserobject .systemvar /rangecheck signalerror 
+  } if
   .UserObjects .knownget {
     length dup 3 .argindex le {
 		% Stack: index value len

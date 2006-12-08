@@ -5111,7 +5111,7 @@ Test	 Status	Comments
 
 31-01-9  DIFF	same as 31-01-8 but in the global VM. assign Alex.
 
-31-02-1  DIFF	limitcheck vs. typecheck assign Ray
+31-02-1  OK  	Fixed in rev. 7473 - Alex
 
 31-02-2  OK	
 
