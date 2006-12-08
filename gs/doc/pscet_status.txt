@@ -2088,8 +2088,13 @@ Test	 Status	Comments
 12-04-4  DIFF	Magenta in pattern at lower right in GS.  Not present in CPSI.
 		See 12-01-5. Assign: raph
 
-12-04-5  DIFF	GS has extra center line on symbols: LOOK 3, 12 , MUCH 9, MORE 19
-		Assign: Igor
+12-04-5  AOK	GS has extra center line on symbols: LOOK 3, 12 , MUCH 9, MORE 19
+		Analyzed by Igor :
+		I believe it is a CPSI problem.
+		eofill is applied to two overlapping horizontal lines.
+		In most cases CPSI paints them, and sometimes doesn't.
+		Tek paints always.
+		GS matches Tek.
 
 12-05-1  OK	Minor differences in positions and character shapes - ADC
 
