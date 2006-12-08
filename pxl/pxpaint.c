@@ -323,6 +323,17 @@ setup_arc(px_arc_params_t *params, const px_value_t *pbox,
 	  }
 }
 
+/* per the nonsense in 5.7.3 (The ROP3 Operands) from the pxl
+   reference manual the following rops are allowed for stroking. */
+private bool
+pxl_allow_rop_for_stroke(gs_state *pgs)
+{
+    gs_rop3_t rop = gs_currentrasterop(pgs);
+    if ( rop == 0 || rop == 160 || rop == 170 || rop == 240 || rop == 250 || rop == 255 )
+        return true;
+    return false;
+}
+
 /* Paint the current path, optionally resetting it afterwards. */
 private int
 paint_path(px_state_t *pxs, bool reset)
@@ -419,35 +430,43 @@ paint_path(px_state_t *pxs, bool reset)
 	 * Per the description in the PCL XL reference documentation,
 	 * set a standard logical operation and transparency for stroking.
 	 */
-	{ gs_rop3_t save_rop = gs_currentrasterop(pgs);
-	  bool save_transparent = gs_currenttexturetransparent(pgs);
+        {  
+            gs_rop3_t save_rop = gs_currentrasterop(pgs);
+            bool save_transparent = gs_currenttexturetransparent(pgs);
+            bool need_restore_rop = false;
 
-	  gs_setrasterop(pgs, rop3_T);
-	  gs_settexturetransparent(pgs, false);
-	  pxs->have_page = true;
-	  /*
-	   * The H-P printers thicken very thin strokes slightly.
-	   * We do the same here.
-	   */
-	  { float width = gs_currentlinewidth(pgs);
-	    gs_matrix mat;
-	    float sx, sy;
+            if (pxl_allow_rop_for_stroke(pgs) == false) {
+                gs_setrasterop(pgs, rop3_T);
+                gs_settexturetransparent(pgs, false);
+                need_restore_rop = true;
+            }
+            pxs->have_page = true;
+            /*
+             * The H-P printers thicken very thin strokes slightly.
+             * We do the same here.
+             */
+            { 
+                float width = gs_currentlinewidth(pgs);
+                gs_matrix mat;
+                float sx, sy;
 
-	    gs_currentmatrix(pgs, &mat);
-	    sx = fabs(mat.xx) + fabs(mat.xy);
-	    sy = fabs(mat.yx) + fabs(mat.yy);
-	    width *= min(sx, sy);
-	    if ( width < 5 )
-	      gs_setfilladjust(pgs, 0.5, 0.5);
-	  }
-	  if ( (code = px_set_paint(&pxgs->pen, pxs)) < 0 ||
-	       (code = gs_stroke(pgs)) < 0
-	     )
-	    DO_NOTHING;
-	  gs_setrasterop(pgs, save_rop);
-	  gs_settexturetransparent(pgs, save_transparent);
-	  gs_setfilladjust(pgs, 0.0, 0.0);
-	}
+                gs_currentmatrix(pgs, &mat);
+                sx = fabs(mat.xx) + fabs(mat.xy);
+                sy = fabs(mat.yx) + fabs(mat.yy);
+                width *= min(sx, sy);
+                if ( width < 5 )
+                    gs_setfilladjust(pgs, 0.5, 0.5);
+            }
+            if ( (code = px_set_paint(&pxgs->pen, pxs)) < 0 ||
+                 (code = gs_stroke(pgs)) < 0
+                 )
+                DO_NOTHING;
+            if ( need_restore_rop ) {
+                gs_setrasterop(pgs, save_rop);
+                gs_settexturetransparent(pgs, save_transparent);
+            }
+            gs_setfilladjust(pgs, 0.0, 0.0);
+        }
  rx:	if ( save_path ) {
 	    gx_path_assign_free(ppath, save_path);   /* path without a Current point! */
 	    gx_setcurrentpoint_from_path(pgs, ppath);  
