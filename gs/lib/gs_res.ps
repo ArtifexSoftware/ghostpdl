@@ -1011,18 +1011,35 @@ systemdict begin
   /.origfindfont /findfont load def
 end
 /definefont {
-  { /Font defineresource } stopped {
-      /definefont cvx $error /errorname get signalerror
+  { 1 index pop    % Unlike other operators, check the stack depth first.
+    dup /CIDFontType known { /CIDFont } { /Font } ifelse
+    defineresource
+  } stopped {
+    /definefont cvx $error /errorname get signalerror
   } if
 } bind odef
 /undefinefont {
-  /Font undefineresource
+  { dup /Font resourcestatus {
+       pop pop /Font
+    } {
+       dup /CIDFont resourcestatus { pop pop /CIDFont } { /Font } ifelse
+    } ifelse
+    undefineresource
+  } stopped {
+    /undefinefont $error /errorname get signalerror
+  } if
 } bind odef
 % The Red Book requires that findfont be a procedure, not an operator,
 % but it still needs to restore the stacks reliably if it fails.
 /.findfontop {
-  { /Font findresource } stopped {
-    pop /findfont $error /errorname get signalerror
+  { dup /Font resourcestatus {
+      pop pop /Font
+    } {
+      dup /CIDFont resourcestatus { pop pop /CIDFont } { /Font } ifelse
+    } ifelse
+    findresource
+  } stopped {
+    /findfont $error /errorname get signalerror
   } if
 } bind odef
 /findfont {

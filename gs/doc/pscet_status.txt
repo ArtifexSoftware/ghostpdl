@@ -5194,12 +5194,8 @@ Test	 Status	Comments
 
 32_all-16 OK
 
-32_all-2  DIFF	"<key> <cidfont> definefont <cidfont>" is required by PLRM but fails with GS.
-		Igor assigns this to Alex.
-		Check for /CIDFontType presents and dispatch to /CIDFont defineresource.
-		Note : the /Font resource category is being redefined multiple times.
-		IMO this change should go to 'definefont' operator,
-		which also is being redefined at once at least.
+32_all-2  OK	Fixed in rev. 7478. findfont, definefont, undefinefont also
+		handle /CIDFont resource instances now. - Alex
 
 32_all-3  OK	
 
@@ -5217,7 +5213,7 @@ Test	 Status	Comments
 
 33_all-1  DIFF	CIDFont dictionary key OrigFont is present in CPSI and not in GS. assign: Igor
 
-33_all-2  DIFF	CIDFontName differs. assign: Igor
+33_all-2  OK  	Fixed in rev. 7478. See 32_all-2. - Alex 
 
 33_all-3  OK	Minor differences visually reviewed by RJJ
 
@@ -5233,7 +5229,7 @@ Test	 Status	Comments
 
 34_all-1  DIFF	CPSI has OrigFont, PaintType in a CID font dictionary. Assign: Ray
 
-34_all-2  DIFF	(/key CIDFont definefont) not conforming. Analyzed by Igor. assign: Igor.
+34_all-2  OK  	Fixed in rev. 7478. See 32_all-2. - Alex 
 
 34_all-3  OK	Minor differences visually reviewed by RJJ
 
@@ -5255,7 +5251,7 @@ Test	 Status	Comments
 
 35_all-12  DIFF	glyphshow : Different error reporting. Analyzed by Igor. assign: Alex.
 
-35_all-2  DIFF	Same as 34_all-2. Analyzed by Igor. Assign: Igor.
+35_all-2  OK  	Fixed in rev. 7478. See 32_all-2. - Alex 
 
 35_all-3  OK	Minor differences visually reviewed by RJJ
 
