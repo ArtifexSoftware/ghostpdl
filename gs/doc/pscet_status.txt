@@ -5115,7 +5115,7 @@ Test	 Status	Comments
 
 31-02-2  OK	
 
-31-03-1  DIFF	typecheck vs undefined (bottom of page) assign Ray
+31-03-1  OK  	Fixed in rev 7474. - Alex
 
 31-03-2  OK	
 
@@ -5153,9 +5153,7 @@ Test	 Status	Comments
 
 31-10-3  OK	
 
-31-11-1  DIFF	undefineduserobject returns undefined error in gs and
-                stackunderflow in cpsi also gs returns undefined and
-                cpsi typecheck on last 3 lines.  assign Ray.
+31-11-1  OK  	Fixed in rev 7474. - Alex
 
 31-11-2  OK	
 

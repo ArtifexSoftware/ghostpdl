@@ -216,13 +216,14 @@ end
 } odef
 /execuserobject {		% <index> execuserobject -
   dup type /integertype ne {
-    % Adobe validates the argument before accessing UserObjects - CET 31-03
+    % Adobe validates the argument before accessing UserObjects - CET 31-03 
     /execuserobject .systemvar /typecheck signalerror 
   } if
   .UserObjects get 1 .argindex get exch pop exec
 } odef
 /undefineuserobject {		% <index> undefineuserobject -
   dup type /integertype ne {
+    % Adobe validates the argument before accessing UserObjects - CET 31-11 
     /undefineuserobject .systemvar /typecheck signalerror
   } if
   .UserObjects get 1 .argindex //null put pop
