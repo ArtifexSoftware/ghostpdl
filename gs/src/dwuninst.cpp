@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <direct.h>
 #include "dwuninst.h"
 
@@ -35,13 +36,6 @@
 #define MAXSTR 256
 #define UNINSTALLKEY TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall")
 
-#ifdef _WIN64
-#define DLGRETURN INT_PTR
-#else
-#define DLGRETURN BOOL
-#endif
-
-
 HWND hDlgModeless;
 HWND hText1;
 HWND hText2;
@@ -52,6 +46,7 @@ HINSTANCE phInstance;
 char szSection[] = "////////////////////////////////";
 BOOL bQuit = FALSE;
 BOOL gError = FALSE;	// set TRUE if an uninstall was not successful 
+BOOL bSilent = FALSE;
 
 char szTitle[MAXSTR];
 char szLogFile[MAXSTR];
@@ -66,9 +61,21 @@ BOOL shell_new(void);
 BOOL shell_old(void);
 BOOL doEOF(void);
 
+#ifdef _WIN64
+#define DLGRETURN INT_PTR
+#else
+#define DLGRETURN BOOL
+#endif
+
 // #define gs_addmess(str) fputs(str, stdout)	// for debug 
 #define gs_addmess(str)
 
+int message_box(LPCTSTR message, LPCTSTR title, int nType)
+{
+    if (bSilent)
+	return 0;
+    return MessageBox(HWND_DESKTOP, message, title, nType);
+}
 
 // linked list for deleting registry entries in reverse order
 typedef struct tagKEY {
@@ -123,7 +130,8 @@ BOOL ReadSection(void)
 	}
 	else if (strcmp(szLine, "FileNew")==0) {
 		SetWindowText(hText1, "Removing Files");
-		Sleep(DELAY_STEP);
+		if (!bSilent)
+		    Sleep(DELAY_STEP);
 		if (!dofiles())
 			return FALSE;
 		SetWindowText(hText1, "");
@@ -131,7 +139,8 @@ BOOL ReadSection(void)
 	}
 	else if (strcmp(szLine, "RegistryNew")==0) {
 		SetWindowText(hText1, "Removing Registry entries");
-		Sleep(DELAY_STEP);
+		if (!bSilent)
+		    Sleep(DELAY_STEP);
 		if (!registry_delete())
 			return FALSE;
 		SetWindowText(hText1, "");
@@ -139,7 +148,8 @@ BOOL ReadSection(void)
 	}
 	else if (strcmp(szLine, "RegistryOld")==0) {
 		SetWindowText(hText1, "Restoring Registry entries");
-		Sleep(DELAY_STEP);
+		if (!bSilent)
+		    Sleep(DELAY_STEP);
 		if (!registry_import())
 			return FALSE;
 		SetWindowText(hText1, "");
@@ -147,7 +157,8 @@ BOOL ReadSection(void)
 	}
 	else if (strcmp(szLine, "ShellNew")==0) {
 		SetWindowText(hText1, "Removing Start Menu items");
-		Sleep(DELAY_STEP);
+		if (!bSilent)
+		    Sleep(DELAY_STEP);
 		if (!shell_new())
 			return FALSE;
 		SetWindowText(hText1, "");
@@ -155,7 +166,8 @@ BOOL ReadSection(void)
 	}
 	else if (strcmp(szLine, "ShellOld")==0) {
 		SetWindowText(hText1, "Restoring Start Menu items");
-		Sleep(DELAY_STEP);
+		if (!bSilent)
+		    Sleep(DELAY_STEP);
 		if (!shell_old())
 			return FALSE;
 		SetWindowText(hText1, "");
@@ -178,7 +190,8 @@ dofiles(void)
 	}
 	if (szLine[0] != '\0') {
 	    SetWindowText(hText2, szLine);
-	    Sleep(DELAY_FILE);
+	    if (!bSilent)
+		Sleep(DELAY_FILE);
 	    gs_addmess("Deleting File: ");
 	    gs_addmess(szLine);
 	    gs_addmess("\n");
@@ -256,11 +269,36 @@ DWORD dwResult;
 	    gs_addmess("\n");
 	}
     }
+
+    // Find out if key has subkeys or values
+    TCHAR szClass[MAXSTR];
+    DWORD cchClass;
+    DWORD cSubKeys;
+    DWORD cchMaxSubKey;
+    DWORD cchMaxClass;
+    DWORD cValues;
+    DWORD cchMaxValueName;
+    DWORD cbMaxValueData;
+    DWORD cbSecurityDescriptor;
+    FILETIME ftLastWriteTime;
+    cchClass = sizeof(szClass) / sizeof(TCHAR);
+    cSubKeys = 0;
+    cValues = 0;
+    RegQueryInfoKey(hkey, szClass, &cchClass, NULL,
+    	&cSubKeys, &cchMaxSubKey, &cchMaxClass, 
+    	&cValues, &cchMaxValueName, &cbMaxValueData,
+    	&cbSecurityDescriptor, &ftLastWriteTime);
+
     // close key
     if (hkey != HKEY_CLASSES_ROOT)
 	RegCloseKey(hkey);
     // delete the key
-    if (strlen(keyname)) {
+    if ((cSubKeys != 0) || (cValues != 0)) {
+    	gs_addmess("Not deleting non empty registry key\n   ");
+	gs_addmess(keyname);
+	gs_addmess("\n");
+    }
+    else if (strlen(keyname)) {
 	gs_addmess("Deleting registry key\n   ");
 	gs_addmess(keyname);
 	gs_addmess("\n");
@@ -274,33 +312,32 @@ DWORD dwResult;
 BOOL
 registry_delete()
 {
-	long logindex;
-	KEY *key;
+    long logindex;
+    KEY *key;
 	
     // scan log file
     // so we can remove keys in reverse order
     logindex = 0;
     while (GetLine() && !IsSection()) {
-		KEY *key;
-		if (szLine[0] == '[') {
-			if ((key = (KEY *)malloc(sizeof(KEY)))
-				!= (KEY *)NULL) {
-				key->previous = last_key;
-				key->index = logindex;
-				last_key = key;
-			}
+	KEY *key;
+	if (szLine[0] == '[') {
+		if ((key = (KEY *)malloc(sizeof(KEY)))
+			!= (KEY *)NULL) {
+			key->previous = last_key;
+			key->index = logindex;
+			last_key = key;
 		}
-		logindex = ftell(fLog);
+	}
+	logindex = ftell(fLog);
     }
 	
     // Remove keys
-    for (key = last_key; key != NULL; 
-	key = key->previous) {
-		if (key != last_key)
-			free(last_key);
-		fseek(fLog, key->index, SEEK_SET);
-		registry_delete_key();
-		last_key = key;
+    for (key = last_key; key != NULL; key = key->previous) {
+	if (key != last_key)
+		free(last_key);
+	fseek(fLog, key->index, SEEK_SET);
+	registry_delete_key();
+	last_key = key;
     }
     free(last_key);
 	
@@ -349,84 +386,84 @@ int value;
 BOOL
 registry_import()
 {
-	HKEY hkey = HKEY_CLASSES_ROOT;
-	HKEY hrkey;
-	char *rkey, *skey;
-	char *value;
-	char *name;
-	DWORD dwResult;
+    HKEY hkey = HKEY_CLASSES_ROOT;
+    HKEY hrkey;
+    char *rkey, *skey;
+    char *value;
+    char *name;
+    DWORD dwResult;
     GetLine();
     if (strncmp(szLine, "REGEDIT4", 8) != 0)
-		return FALSE;
+	return FALSE;
 	
     while (GetLine()) {
-		if (IsSection())
-			break;
-		if ((szLine[0] == '\0') || (szLine[0] == '\r') || (szLine[0] == '\n'))
-			continue;
-		if (szLine[0] == '[') {
-			// key name
-			if (hkey != HKEY_CLASSES_ROOT) {
-				RegCloseKey(hkey);
-				hkey = HKEY_CLASSES_ROOT;
-			}
-			rkey = strtok(szLine+1, "\\]\n\r");
-			if (rkey == (char *)NULL)
-				return FALSE;
-			skey = strtok(NULL, "]\n\r");
-			if (strcmp(rkey, "HKEY_CLASSES_ROOT")==0)
-				hrkey = HKEY_CLASSES_ROOT;
-			else if (strcmp(rkey, "HKEY_CURRENT_USER")==0)
-				hrkey = HKEY_CURRENT_USER;
-			else if (strcmp(rkey, "HKEY_LOCAL_MACHINE")==0)
-				hrkey = HKEY_LOCAL_MACHINE;
-			else if (strcmp(rkey, "HKEY_USERS")==0)
-				hrkey = HKEY_USERS;
-			else
-				return FALSE;
-			if (skey == (char *)NULL)
-				return FALSE;
-			gs_addmess("Creating registry key\n   ");
-			gs_addmess(rkey);
-			gs_addmess("\\");
-			gs_addmess("skey");
-			gs_addmess("\n");
-			if (RegCreateKeyEx(hrkey, skey, 0, "", 0, KEY_ALL_ACCESS, 
-				NULL, &hkey, &dwResult)
-				!= ERROR_SUCCESS)
-				return FALSE;
-		}
-		else if (szLine[0] == '@') {
-			// default value
-			if (strlen(szLine) < 4)
-				return FALSE;
-			value = strtok(szLine+3, "\042\r\n");
-			if (value) {
-				registry_unquote(value);
-				gs_addmess("Setting registry key value\n   ");
-				gs_addmess(value);
-				gs_addmess("\n");
-				if (RegSetValueEx(hkey, NULL, 0, REG_SZ, 
-					(CONST BYTE *)value, strlen(value)+1)
-					!= ERROR_SUCCESS)
-					return FALSE;
-			}
-		}
-		else if (szLine[0] == '\042') {
-			// named value
-			name = strtok(szLine+1, "\042\r\n");
-			strtok(NULL, "\042\r\n");
-			value = strtok(NULL, "\042\r\n");
-			registry_unquote(value);
-			gs_addmess("Setting registry key value\n   ");
-			gs_addmess(name);
-			gs_addmess("=");
-			gs_addmess(value);
-			gs_addmess("\n");
-			if (RegSetValueEx(hkey, name, 0, REG_SZ, (CONST BYTE *)value, strlen(value)+1)
-				!= ERROR_SUCCESS)
-				return FALSE;
-		}
+	if (IsSection())
+	    break;
+	if ((szLine[0] == '\0') || (szLine[0] == '\r') || (szLine[0] == '\n'))
+	    continue;
+	if (szLine[0] == '[') {
+	    // key name
+	    if (hkey != HKEY_CLASSES_ROOT) {
+		    RegCloseKey(hkey);
+		    hkey = HKEY_CLASSES_ROOT;
+	    }
+	    rkey = strtok(szLine+1, "\\]\n\r");
+	    if (rkey == (char *)NULL)
+		    return FALSE;
+	    skey = strtok(NULL, "]\n\r");
+	    if (strcmp(rkey, "HKEY_CLASSES_ROOT")==0)
+		    hrkey = HKEY_CLASSES_ROOT;
+	    else if (strcmp(rkey, "HKEY_CURRENT_USER")==0)
+		    hrkey = HKEY_CURRENT_USER;
+	    else if (strcmp(rkey, "HKEY_LOCAL_MACHINE")==0)
+		    hrkey = HKEY_LOCAL_MACHINE;
+	    else if (strcmp(rkey, "HKEY_USERS")==0)
+		    hrkey = HKEY_USERS;
+	    else
+		    return FALSE;
+	    if (skey == (char *)NULL)
+		    return FALSE;
+	    gs_addmess("Creating registry key\n   ");
+	    gs_addmess(rkey);
+	    gs_addmess("\\");
+	    gs_addmess("skey");
+	    gs_addmess("\n");
+	    if (RegCreateKeyEx(hrkey, skey, 0, "", 0, KEY_ALL_ACCESS, 
+		    NULL, &hkey, &dwResult)
+		    != ERROR_SUCCESS)
+		    return FALSE;
+	}
+	else if (szLine[0] == '@') {
+	    // default value
+	    if (strlen(szLine) < 4)
+		    return FALSE;
+	    value = strtok(szLine+3, "\042\r\n");
+	    if (value) {
+		    registry_unquote(value);
+		    gs_addmess("Setting registry key value\n   ");
+		    gs_addmess(value);
+		    gs_addmess("\n");
+		    if (RegSetValueEx(hkey, NULL, 0, REG_SZ, 
+			    (CONST BYTE *)value, strlen(value)+1)
+			    != ERROR_SUCCESS)
+			    return FALSE;
+	    }
+	}
+	else if (szLine[0] == '\042') {
+	    // named value
+	    name = strtok(szLine+1, "\042\r\n");
+	    strtok(NULL, "\042\r\n");
+	    value = strtok(NULL, "\042\r\n");
+	    registry_unquote(value);
+	    gs_addmess("Setting registry key value\n   ");
+	    gs_addmess(name);
+	    gs_addmess("=");
+	    gs_addmess(value);
+	    gs_addmess("\n");
+	    if (RegSetValueEx(hkey, name, 0, REG_SZ, (CONST BYTE *)value, 
+		strlen(value)+1) != ERROR_SUCCESS)
+		return FALSE;
+	}
     }
     if (hkey != HKEY_CLASSES_ROOT)
 		RegCloseKey(hkey);
@@ -500,176 +537,176 @@ char *p;
 BOOL shell_new(void)
 {
 
-	char *p, *q;
-	char group[MAXSTR];
-	// remove shell items added by Ghostscript
-	// We can only delete one group with this code
-	group[0] = '\0';
-	while (GetLine()) {
-		if (IsSection()) {
-			if (strlen(group) != 0) {
-				gs_addmess("Removing shell folder\n  ");
-				gs_addmess(group);
-				gs_addmess("\n");
-				RemoveDirectory(group);
-			}
-			return TRUE;
-		}
-		p = strtok(szLine, "=");
-		q = strtok(NULL, "");
-		if (p == NULL) {
-			continue;
-		}
-		else if (strcmp(p, "Group")==0) {
-			if (q)
-				strncpy(group, q, sizeof(group)-1);
-			// defer this until we have remove contents
-		}
-		else if (strcmp(p, "Name") == 0) {
-			if (q) {
-				gs_addmess("Removing shell link\n  ");
-				gs_addmess(q);
-				gs_addmess("\n");
-				DeleteFile(q);
-			}
-		}
+    char *p, *q;
+    char group[MAXSTR];
+    // remove shell items added by Ghostscript
+    // We can only delete one group with this code
+    group[0] = '\0';
+    while (GetLine()) {
+	if (IsSection()) {
+	    if (strlen(group) != 0) {
+		    gs_addmess("Removing shell folder\n  ");
+		    gs_addmess(group);
+		    gs_addmess("\n");
+		    RemoveDirectory(group);
+	    }
+	    return TRUE;
 	}
+	p = strtok(szLine, "=");
+	q = strtok(NULL, "");
+	if (p == NULL) {
+	    continue;
+	}
+	else if (strcmp(p, "Group")==0) {
+	    if (q)
+		strncpy(group, q, sizeof(group)-1);
+	    // defer this until we have remove contents
+	}
+	else if (strcmp(p, "Name") == 0) {
+	    if (q) {
+		gs_addmess("Removing shell link\n  ");
+		gs_addmess(q);
+		gs_addmess("\n");
+		DeleteFile(q);
+	    }
+	}
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 
 BOOL CreateShellLink(LPCSTR name, LPCSTR description, LPCSTR program, 
 	LPCSTR arguments, LPCSTR directory, LPCSTR icon, int nIconIndex)
 {
-	HRESULT hres;    
-	IShellLink* psl;
+    HRESULT hres;    
+    IShellLink* psl;
 
-	// Ensure string is UNICODE.
-	WCHAR wsz[MAX_PATH];
-	MultiByteToWideChar(CP_ACP, 0, name, -1, wsz, MAX_PATH);
+    // Ensure string is UNICODE.
+    WCHAR wsz[MAX_PATH];
+    MultiByteToWideChar(CP_ACP, 0, name, -1, wsz, MAX_PATH);
 
-	// Save new shell link
+    // Save new shell link
 
-	// Get a pointer to the IShellLink interface.
-	hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER,
-		IID_IShellLink, (void **)&psl);
-	if (SUCCEEDED(hres))    {
-		IPersistFile* ppf;
-		// Query IShellLink for the IPersistFile interface for 
-		// saving the shell link in persistent storage.
-		hres = psl->QueryInterface(IID_IPersistFile, (void **)&ppf);
-		if (SUCCEEDED(hres)) {            
-			gs_addmess("Adding shell link\n  ");
-			gs_addmess(name);
-			gs_addmess("\n");
+    // Get a pointer to the IShellLink interface.
+    hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER,
+	    IID_IShellLink, (void **)&psl);
+    if (SUCCEEDED(hres))    {
+	IPersistFile* ppf;
+	// Query IShellLink for the IPersistFile interface for 
+	// saving the shell link in persistent storage.
+	hres = psl->QueryInterface(IID_IPersistFile, (void **)&ppf);
+	if (SUCCEEDED(hres)) {            
+	    gs_addmess("Adding shell link\n  ");
+	    gs_addmess(name);
+	    gs_addmess("\n");
 
-			// Set the path to the shell link target.
-			hres = psl->SetPath(program);         
-			if (!SUCCEEDED(hres)) {
-				gs_addmess("SetPath failed!");
-				gError = TRUE;
-			}
-			// Set the description of the shell link.
-			hres = psl->SetDescription(description);         
-			if (!SUCCEEDED(hres)) {
-				gs_addmess("SetDescription failed!");
-				gError = TRUE;
-			}
-			if ((arguments != (LPCSTR)NULL) && *arguments) {
-				// Set the arguments of the shell link target.
-				hres = psl->SetArguments(arguments);         
-				if (!SUCCEEDED(hres)) {
-					gs_addmess("SetArguments failed!");
-					gError = TRUE;
-				}
-			}
-			if ((directory != (LPCSTR)NULL) && *directory) {
-				// Set the arguments of the shell link target.
-				hres = psl->SetWorkingDirectory(directory);         
-				if (!SUCCEEDED(hres)) {
-					gs_addmess("SetWorkingDirectory failed!");
-					gError = TRUE;
-				}
-			}
-			if ((icon != (LPCSTR)NULL) && *icon) {
-				// Set the arguments of the shell link target.
-				hres = psl->SetIconLocation(icon, nIconIndex);         
-				if (!SUCCEEDED(hres)) {
-					gs_addmess("SetIconLocation failed!");
-					gError = TRUE;
-				}
-			}
+	    // Set the path to the shell link target.
+	    hres = psl->SetPath(program);         
+	    if (!SUCCEEDED(hres)) {
+		    gs_addmess("SetPath failed!");
+		    gError = TRUE;
+	    }
+	    // Set the description of the shell link.
+	    hres = psl->SetDescription(description);         
+	    if (!SUCCEEDED(hres)) {
+		    gs_addmess("SetDescription failed!");
+		    gError = TRUE;
+	    }
+	    if ((arguments != (LPCSTR)NULL) && *arguments) {
+		    // Set the arguments of the shell link target.
+		    hres = psl->SetArguments(arguments);         
+		    if (!SUCCEEDED(hres)) {
+			    gs_addmess("SetArguments failed!");
+			    gError = TRUE;
+		    }
+	    }
+	    if ((directory != (LPCSTR)NULL) && *directory) {
+		    // Set the arguments of the shell link target.
+		    hres = psl->SetWorkingDirectory(directory);         
+		    if (!SUCCEEDED(hres)) {
+			    gs_addmess("SetWorkingDirectory failed!");
+			    gError = TRUE;
+		    }
+	    }
+	    if ((icon != (LPCSTR)NULL) && *icon) {
+		    // Set the arguments of the shell link target.
+		    hres = psl->SetIconLocation(icon, nIconIndex);         
+		    if (!SUCCEEDED(hres)) {
+			    gs_addmess("SetIconLocation failed!");
+			    gError = TRUE;
+		    }
+	    }
 
-			// Save the link via the IPersistFile::Save method.
-			hres = ppf->Save(wsz, TRUE);    
-			// Release pointer to IPersistFile.         
-			ppf->Release();
-		}
-		// Release pointer to IShellLink.       
-		psl->Release();    
+	    // Save the link via the IPersistFile::Save method.
+	    hres = ppf->Save(wsz, TRUE);    
+	    // Release pointer to IPersistFile.         
+	    ppf->Release();
 	}
+	// Release pointer to IShellLink.       
+	psl->Release();    
+    }
 
-	return (hres == 0);
+    return (hres == 0);
 }
 
 
 
 BOOL shell_old(void)
 {
-	// Add shell items removed by Ghostscript
-	char *p, *q;
-	char name[MAXSTR];
-	char description[MAXSTR];
-	char program[MAXSTR];
-	char arguments[MAXSTR];
-	char directory[MAXSTR];
-	char icon[MAXSTR];
-	int nIconIndex;
-	// Remove shell items added by Ghostscript
-	name[0] = description[0] = program[0] = arguments[0] 
-		= directory[0] = icon[0] = '\0';
-	nIconIndex = 0;
-	
-	while (GetLine()) {
-		if (IsSection())
-			return TRUE;
-		p = strtok(szLine, "=");
-		q = strtok(NULL, "");
-		if (strlen(szLine) == 0) {
-			if (name[0] != '\0') {
-				// add start menu item
-				CreateShellLink(name, description, program, arguments, 
-					directory, icon, nIconIndex);
-			}
-			name[0] = description[0] = program[0] = arguments[0] 
-				= directory[0] = icon[0] = '\0';
-			nIconIndex = 0;
-			continue;
+    // Add shell items removed by Ghostscript
+    char *p, *q;
+    char name[MAXSTR];
+    char description[MAXSTR];
+    char program[MAXSTR];
+    char arguments[MAXSTR];
+    char directory[MAXSTR];
+    char icon[MAXSTR];
+    int nIconIndex;
+    // Remove shell items added by Ghostscript
+    name[0] = description[0] = program[0] = arguments[0] 
+	    = directory[0] = icon[0] = '\0';
+    nIconIndex = 0;
+    
+    while (GetLine()) {
+	if (IsSection())
+		return TRUE;
+	p = strtok(szLine, "=");
+	q = strtok(NULL, "");
+	if (strlen(szLine) == 0) {
+		if (name[0] != '\0') {
+			// add start menu item
+			CreateShellLink(name, description, program, arguments, 
+				directory, icon, nIconIndex);
 		}
-		else if (p == (char *)NULL) {
-			continue;
-		}
-		else if (strcmp(p, "Group")==0) {
-			MakeDir(q);
-		}
-		else if (strcmp(p, "Name") == 0)
-			strncpy(name, q, sizeof(name)-1);
-		else if (strcmp(p, "Description") == 0)
-			strncpy(description, q, sizeof(description)-1);
-		else if (strcmp(p, "Program") == 0)
-			strncpy(program, q, sizeof(program)-1);
-		else if (strcmp(p, "Arguments") == 0)
-			strncpy(arguments, q, sizeof(arguments)-1);
-		else if (strcmp(p, "Directory") == 0)
-			strncpy(directory, q, sizeof(directory)-1);
-		else if (strcmp(p, "IconLocation") == 0)
-			strncpy(icon, q, sizeof(icon)-1);
-		else if (strcmp(p, "IconIndex") == 0)
-			nIconIndex = atoi(q);
+		name[0] = description[0] = program[0] = arguments[0] 
+			= directory[0] = icon[0] = '\0';
+		nIconIndex = 0;
+		continue;
 	}
-	
-	return TRUE;
+	else if (p == (char *)NULL) {
+		continue;
+	}
+	else if (strcmp(p, "Group")==0) {
+		MakeDir(q);
+	}
+	else if (strcmp(p, "Name") == 0)
+		strncpy(name, q, sizeof(name)-1);
+	else if (strcmp(p, "Description") == 0)
+		strncpy(description, q, sizeof(description)-1);
+	else if (strcmp(p, "Program") == 0)
+		strncpy(program, q, sizeof(program)-1);
+	else if (strcmp(p, "Arguments") == 0)
+		strncpy(arguments, q, sizeof(arguments)-1);
+	else if (strcmp(p, "Directory") == 0)
+		strncpy(directory, q, sizeof(directory)-1);
+	else if (strcmp(p, "IconLocation") == 0)
+		strncpy(icon, q, sizeof(icon)-1);
+	else if (strcmp(p, "IconIndex") == 0)
+		nIconIndex = atoi(q);
+    }
+    
+    return TRUE;
 }
 
 
@@ -683,6 +720,8 @@ RemoveDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
   switch(message) {
     case WM_INITDIALOG:
 	    SetWindowText(hwnd, szTitle);
+	    if (bSilent)
+		PostMessage(hwnd, WM_COMMAND, IDOK, 0);
 	    return TRUE;
 	case WM_COMMAND:
 	    switch(LOWORD(wParam)) {
@@ -704,6 +743,8 @@ RemoveDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		    EnableWindow(GetDlgItem(hwnd, IDCANCEL), TRUE);
 		    SetDlgItemText(hwnd, IDCANCEL, "Exit");
 		    SetFocus(GetDlgItem(hwnd, IDCANCEL));
+		    if (bSilent)
+			PostMessage(hwnd, WM_COMMAND, IDCANCEL, 0);
 		    return TRUE;
 		case IDOK:
 		    // Start removal
@@ -753,72 +794,87 @@ MSG msg;
 BOOL
 init(void)
 {
-	DWORD version = GetVersion();
-	char *p, *s;
+    DWORD version = GetVersion();
+    char *p, *s;
+    int len;
+    BOOL inquote = FALSE;
     // get location of uninstall log from command line as argv[1]
     p = GetCommandLine();
-	s = p;
-	if (*s == '\042') {
-		// skip over program name
-		s++;
-		while (*s && *s!='\042')
-			s++;
-		if (*s)
-			s++;
-	}
-	else if (*s != ' ') {
-		// skip over program name
-		s++;
-		while (*s && *s!=' ')
-			s++;
-		if (*s)
-			s++;
-	}
-	while (*s && *s==' ')
-		s++;
-	if (*s == '\042')
-		s++;
-	strncpy(szLogFile, s, sizeof(szLogFile));
-	s = szLogFile;
-	while (*s) {
-		if (*s == '\042') {
-			*s = '\0';
-			break;
-		}
-		s++;
-	}
-	if (strlen(szLogFile) == 0) {
-		MessageBox(HWND_DESKTOP, "Usage: uninstgs logfile.txt", 
-			"GPL Ghostscript Uninstall", MB_OK);
-		return FALSE;
-	}
-	
-	// read first few lines of file to get title
-	fLog = fopen(szLogFile, "r");
-	if (fLog == (FILE *)NULL) {
-		MessageBox(HWND_DESKTOP, szLogFile, "Can't find file", MB_OK);
-		return FALSE;
-	}
-	GetLine();
-	if (!IsSection()) {
-		MessageBox(HWND_DESKTOP, szLogFile, "Not valid uninstall log", 
-			MB_OK);
-		return FALSE;
-	}
-	GetLine();
-	if (strcmp(szLine, "UninstallName") != 0) {
-		MessageBox(HWND_DESKTOP, szLogFile, "Not valid uninstall log", 
-			MB_OK);
-		return FALSE;
-	}
-	GetLine();
-	strcpy(szTitle, szLine);
-	
-	NextSection();
-	
-	if (LOBYTE(LOWORD(version)) >= 4)
-		is_win4 = TRUE;
-	return TRUE;
+    s = p;
+    if (*s == '\042') {
+	    // skip over program name
+	    s++;
+	    while (*s && *s!='\042')
+		    s++;
+	    if (*s)
+		    s++;
+    }
+    else if (*s != ' ') {
+	    // skip over program name
+	    s++;
+	    while (*s && *s!=' ')
+		    s++;
+	    if (*s)
+		    s++;
+    }
+    while (*s && *s==' ')
+	    s++;
+    if (*s == '\042') {
+	s++;
+	inquote = TRUE;
+    }
+    p = s;
+    if (inquote) {
+	while (*s && (*s != '\042'))
+	    s++;
+    }
+    else {
+	while (*s && (*s != ' '))
+	    s++;
+    }
+    len = s - p;
+    strncpy(szLogFile, p, min(len, sizeof(szLogFile)-1));
+    szLogFile[len] = '\0';
+    if (inquote && (*s == '\042')) {
+	s++;
+	inquote = FALSE;
+    }
+
+    if (strlen(szLogFile) == 0) {
+	    message_box("Usage: uninstgs logfile.txt [-q]", 
+		    "GPL Ghostscript Uninstall", MB_OK);
+	    return FALSE;
+    }
+
+    while (*s && *s==' ')
+	    s++;
+    if (strncmp(s, "-q", 2) == 0)
+	bSilent = TRUE;
+    
+    // read first few lines of file to get title
+    fLog = fopen(szLogFile, "r");
+    if (fLog == (FILE *)NULL) {
+	    message_box(szLogFile, "Can't find file", MB_OK);
+	    return FALSE;
+    }
+    GetLine();
+    if (!IsSection()) {
+	    message_box(szLogFile, "Not valid uninstall log", MB_OK);
+	    return FALSE;
+    }
+    GetLine();
+    if (strcmp(szLine, "UninstallName") != 0) {
+	    message_box(szLogFile, "Not valid uninstall log", MB_OK);
+	    return FALSE;
+    }
+    GetLine();
+    strcpy(szTitle, szLine);
+    
+    NextSection();
+    
+    if (LOBYTE(LOWORD(version)) >= 4)
+	is_win4 = TRUE;
+    return TRUE;
 }
 
 #ifdef __BORLANDC__
@@ -843,7 +899,7 @@ MSG msg;
     hText2 = GetDlgItem(hDlgModeless, IDC_T2);
 
     SetWindowPos(hDlgModeless, HWND_TOP, 0, 0, 0, 0, 
-	SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+	(bSilent ? SWP_HIDEWINDOW : SWP_SHOWWINDOW) | SWP_NOMOVE | SWP_NOSIZE);
 
     while (hDlgModeless && GetMessage(&msg, (HWND)NULL, 0, 0)) {
 	if ((hDlgModeless == 0) || !IsDialogMessage(hDlgModeless, &msg)) {
@@ -852,10 +908,10 @@ MSG msg;
 	}
     }
 
-	if (fLog)
-		fclose(fLog);
-	
-	CoUninitialize();
+    if (fLog)
+	fclose(fLog);
+
+    CoUninitialize();
 
     return 0;
 }
