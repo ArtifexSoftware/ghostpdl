@@ -597,7 +597,7 @@ hpgl_current_char_scale(const hpgl_state_t *pgls)
 
     gs_point scale;
     
-    if (pgls->g.character.size_mode == hpgl_size_not_set) {
+    if (pgls->g.character.size_mode == hpgl_size_not_set || font->scaling_technology == plfst_bitmap) {
         if (font->scaling_technology == plfst_bitmap) {
              scale.x = inches_2_plu(1.0 / font->resolution.x);
              scale.y = -inches_2_plu(1.0 / font->resolution.y);
