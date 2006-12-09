@@ -71,7 +71,7 @@ typedef union {
     long all[LONGS_PER_COLOR_FRACS];	/* for fast comparison */
 } color_fracs;
 
-#define LONGS_PER_4_FRACS ((FRACS_PER_LONG + 3) / 4)
+#define LONGS_PER_4_FRACS ((arch_sizeof_frac * 4 + arch_sizeof_long - 1) / arch_sizeof_long)
 #if LONGS_PER_4_FRACS == 1
 #  define COLOR_FRACS_4_EQ(f1, f2)\
      ((f1).all[0] == (f2).all[0])
