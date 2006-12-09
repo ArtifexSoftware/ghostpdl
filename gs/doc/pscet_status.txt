@@ -2258,13 +2258,9 @@ Test	 Status	Comments
 
 12-08A-4  OK	Color corrected by rev 7172.
 
-12-08A-5  DIFF	Minor differences in positions and character shapes.  Some
-		differences in shading in three rectangles. - ADC
-                assign: Igor.
+12-08A-5  AOK	Minor differences in positions and character shapes.
 
-12-08A-6  DIFF	Minor differences in positions and character shapes.  Some
-		difference in the shade of one object. - ADC
-                assign: Igor.
+12-08A-6  AOK	Minor differences in positions and character shapes.
 
 12-08A-7  OK	Color corrected by rev 7172.
 
@@ -2325,9 +2321,7 @@ Test	 Status	Comments
 
 12-11-3  OK	Minor differences in positions and character shapes - ADC
 
-12-11-4  DIFF	Minor differences in positions and character shapes.  Some
-		difference in the shades of some objects. - ADC
-                assign: Igor.
+12-11-4  DIFF	Minor differences in positions and character shapes.
 
 12-11-5  OK	Minor differences in positions and character shapes - ADC
 
