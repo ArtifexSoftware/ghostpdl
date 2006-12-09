@@ -880,6 +880,21 @@ hpgl_polyfill_using_current_line_type(
     return 0;
 }
 
+private gs_rop3_t
+hpgl_rop(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
+{
+    gs_rop3_t rop = pgls->logical_op;
+    if ( render_mode ==  hpgl_rm_vector || render_mode == hpgl_rm_vector_fill) {
+        if ( rop == 0 || rop == 160 || rop == 170 || rop == 240 || rop == 250 || rop == 255 ) {
+            return rop;
+        } else {
+            return rop3_default;
+        }
+    }
+    return rop;
+}
+
+
  int
 hpgl_set_drawing_color(
     hpgl_state_t *          pgls,
@@ -1039,8 +1054,7 @@ fill:
     }
 
     if (code >= 0) {
-        /* PCL and GL/2 no longer use graphic library transparency */
-        gs_setrasterop(pgls->pgs, (gs_rop3_t)pgls->logical_op);
+        gs_setrasterop(pgls->pgs, hpgl_rop(pgls, render_mode));
     }
     return code;
 }
