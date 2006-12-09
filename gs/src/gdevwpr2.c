@@ -863,7 +863,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     char *output;
     char *devcap;
     int devcapsize;
-    int size;
+    int devmode_size;
 
     int i, n;
     POINT *pp;
@@ -873,11 +873,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     int papersize;
     char papername[64];
     char drvname[32];
-    HINSTANCE hlib;
-    LPFNDEVMODE pfnExtDeviceMode;
-    LPFNDEVCAPS pfnDeviceCapabilities;
     LPDEVMODE podevmode, pidevmode;
-
     HANDLE hprinter;
 
     /* first try to derive the printer name from -sOutputFile= */
@@ -912,66 +908,28 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     GetProfileString("Devices", device, "", driverbuf, sizeof(driverbuf));
     driver = strtok(driverbuf, ",");
     output = strtok(NULL, ",");
-    if (is_win32s)
-    {
-	strcpy(drvname, driver);
-	strcat(drvname, ".drv");
-	driver = drvname;
-    }
 
-    if (!is_win32s) {		/* Win32 */
-	if (!OpenPrinter(device, &hprinter, NULL))
-	    return FALSE;
-	size = DocumentProperties(NULL, hprinter, device, NULL, NULL, 0);
-	if ((podevmode = gs_malloc(wdev->memory, size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
-	    ClosePrinter(hprinter);
-	    return FALSE;
-	}
-	if ((pidevmode = gs_malloc(wdev->memory, size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
-	    gs_free(wdev->memory, podevmode, size, 1, "win_pr2_getdc");
-	    ClosePrinter(hprinter);
-	    return FALSE;
-	}
-	DocumentProperties(NULL, hprinter, device, podevmode, NULL, DM_OUT_BUFFER);
-	pfnDeviceCapabilities = (LPFNDEVCAPS) DeviceCapabilities;
-    } else
-    {				/* Win16 and Win32s */
-	/* now load the printer driver */
-	hlib = LoadLibrary(driver);
-	if (hlib < (HINSTANCE) HINSTANCE_ERROR)
-	    return FALSE;
-
-	/* call ExtDeviceMode() to get default parameters */
-	pfnExtDeviceMode = (LPFNDEVMODE) GetProcAddress(hlib, "ExtDeviceMode");
-	if (pfnExtDeviceMode == (LPFNDEVMODE) NULL) {
-	    FreeLibrary(hlib);
-	    return FALSE;
-	}
-	pfnDeviceCapabilities = (LPFNDEVCAPS) GetProcAddress(hlib, "DeviceCapabilities");
-	if (pfnDeviceCapabilities == (LPFNDEVCAPS) NULL) {
-	    FreeLibrary(hlib);
-	    return FALSE;
-	}
-	size = pfnExtDeviceMode(NULL, hlib, NULL, device, output, NULL, NULL, 0);
-	if ((podevmode = gs_malloc(wdev->memory, size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
-	    FreeLibrary(hlib);
-	    return FALSE;
-	}
-	if ((pidevmode = gs_malloc(wdev->memory, size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
-	    gs_free(wdev->memory, podevmode, size, 1, "win_pr2_getdc");
-	    FreeLibrary(hlib);
-	    return FALSE;
-	}
-	pfnExtDeviceMode(NULL, hlib, podevmode, device, output,
-			 NULL, NULL, DM_OUT_BUFFER);
+    if (!OpenPrinter(device, &hprinter, NULL))
+	return FALSE;
+    devmode_size = DocumentProperties(NULL, hprinter, device, NULL, NULL, 0);
+    if ((podevmode = gs_malloc(wdev->memory, devmode_size, 1, "win_pr2_getdc"))
+	== (LPDEVMODE) NULL) {
+	ClosePrinter(hprinter);
+	return FALSE;
     }
+    if ((pidevmode = gs_malloc(wdev->memory, devmode_size, 1, "win_pr2_getdc"))		== (LPDEVMODE) NULL) {
+	gs_free(wdev->memory, podevmode, devmode_size, 1, "win_pr2_getdc");
+	ClosePrinter(hprinter);
+	return FALSE;
+    }
+    DocumentProperties(NULL, hprinter, device, podevmode, NULL, DM_OUT_BUFFER);
 
     /* now find out what paper sizes are available */
-    devcapsize = pfnDeviceCapabilities(device, output, DC_PAPERSIZE, NULL, NULL);
+    devcapsize = DeviceCapabilities(device, output, DC_PAPERSIZE, NULL, NULL);
     devcapsize *= sizeof(POINT);
     if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
 	return FALSE;
-    n = pfnDeviceCapabilities(device, output, DC_PAPERSIZE, devcap, NULL);
+    n = DeviceCapabilities(device, output, DC_PAPERSIZE, devcap, NULL);
     paperwidth = (int)(wdev->MediaSize[0] * 254 / 72);
     paperheight = (int)(wdev->MediaSize[1] * 254 / 72);
     papername[0] = '\0';
@@ -1006,26 +964,26 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
     
     /* get the dmPaperSize */
-    devcapsize = pfnDeviceCapabilities(device, output, DC_PAPERS, NULL, NULL);
+    devcapsize = DeviceCapabilities(device, output, DC_PAPERS, NULL, NULL);
     devcapsize *= sizeof(WORD);
     if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
 	return FALSE;
-    n = pfnDeviceCapabilities(device, output, DC_PAPERS, devcap, NULL);
+    n = DeviceCapabilities(device, output, DC_PAPERS, devcap, NULL);
     if ((paperindex >= 0) && (paperindex < n))
 	papersize = ((WORD *) devcap)[paperindex];
     gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
 
     /* get the paper name */
-    devcapsize = pfnDeviceCapabilities(device, output, DC_PAPERNAMES, NULL, NULL);
+    devcapsize = DeviceCapabilities(device, output, DC_PAPERNAMES, NULL, NULL);
     devcapsize *= 64;
     if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
 	return FALSE;
-    n = pfnDeviceCapabilities(device, output, DC_PAPERNAMES, devcap, NULL);
+    n = DeviceCapabilities(device, output, DC_PAPERNAMES, devcap, NULL);
     if ((paperindex >= 0) && (paperindex < n))
 	strcpy(papername, devcap + paperindex * 64);
     gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
 
-    memcpy(pidevmode, podevmode, size);
+    memcpy(pidevmode, podevmode, devmode_size);
 
     pidevmode->dmFields = 0;
     
@@ -1068,40 +1026,26 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     
     win_pr2_update_win(wdev, pidevmode);
     
-    if (!is_win32s) {
-	
-	/* merge the entries */
-	DocumentProperties(NULL, hprinter, device, podevmode, pidevmode, DM_IN_BUFFER | DM_OUT_BUFFER);
-	ClosePrinter(hprinter);
-	
-	/* now get a DC */
-	wdev->hdcprn = CreateDC(driver, device, NULL, podevmode);
-    } else
-    {				/* Win16 and Win32s */
-	pfnExtDeviceMode(NULL, hlib, podevmode, device, output,
-			 pidevmode, NULL, DM_IN_BUFFER | DM_OUT_BUFFER);
-	/* release the printer driver */
-	FreeLibrary(hlib);
-	/* now get a DC */
-	if (is_win32s)
-	    strtok(driver, ".");	/* remove .drv */
-	wdev->hdcprn = CreateDC(driver, device, output, podevmode);
-    }
+    /* merge the entries */
+    DocumentProperties(NULL, hprinter, device, podevmode, pidevmode, DM_IN_BUFFER | DM_OUT_BUFFER);
+    ClosePrinter(hprinter);
     
-    if (wdev->win32_hdevmode == NULL) {
-	wdev->win32_hdevmode = GlobalAlloc(0, sizeof(DEVMODE));
-    }
+    /* now get a DC */
+    wdev->hdcprn = CreateDC(driver, device, NULL, podevmode);
+    
+    if (wdev->win32_hdevmode == NULL)
+	wdev->win32_hdevmode = GlobalAlloc(0, devmode_size);
     
     if (wdev->win32_hdevmode) {
 	LPDEVMODE pdevmode = (LPDEVMODE) GlobalLock(wdev->win32_hdevmode);
 	if (pdevmode) {
-	    memcpy(pdevmode, podevmode, sizeof(DEVMODE));
+	    memcpy(pdevmode, podevmode, devmode_size);
 	    GlobalUnlock(wdev->win32_hdevmode);
 	}
     }
 
-    gs_free(wdev->memory, pidevmode, size, 1, "win_pr2_getdc");
-    gs_free(wdev->memory, podevmode, size, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, pidevmode, devmode_size, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, podevmode, devmode_size, 1, "win_pr2_getdc");
 
     if (wdev->hdcprn != (HDC) NULL)
 	return TRUE;		/* success */
