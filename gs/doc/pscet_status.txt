@@ -2211,14 +2211,11 @@ Test	 Status	Comments
 
 12-07C-14  OK	Minor differences in positions and character shapes - ADC
 
-12-07C-15  DIFF	Minor differences in positions and character shapes.  Some dark
-		squares missing in GS output. - ADC assign: Igor.
+12-07C-15  OK
 
-12-07C-16  DIFF	Minor differences in positions and character shapes.  Some dark
-		squares missing in GS output. - ADC assign: Igor.
+12-07C-16  OK
 
-12-07C-17  DIFF	Minor differences in positions and character shapes.  Some dark
-		squares missing in GS output. - ADC assign: Igor.
+12-07C-17  OK
 
 12-07C-2  OK	Minor differences in positions and character shapes - ADC
 
