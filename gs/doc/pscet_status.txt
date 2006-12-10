@@ -1185,7 +1185,7 @@ Test	 Status	Comments
 
 09-49D-2  OK	Fixed by r7123. Color corrected by rev 7172.
 
-09-49D-3  DIFF	GS gets '1' status, MEMO 3 & 4. assign: Peter.
+09-49D-3  OK	Fixed by r7450
 
 09-50-1  DIFF	GS has different line spacing. CPSI and Tek agree. GS gets same
 		results for "false setstrokeadjust" "true setstrokeadjust".
@@ -1260,7 +1260,10 @@ Test	 Status	Comments
 09-55-2  OK	
 
 09-56-1  DIFF	Device Dependent: Tek and Adobe show '/findcolorrendering' instead
-		of '--findcolorrendering--' with errors. Assign: Peter
+		of '--findcolorrendering--' with errors.I've checked in a fix for 
+                the setcolorrendering issue.  There is still a discrepancy in that 
+                the reference output shows additional built-in color rendering names 
+                /GenericImagesetter and /AppleMonitor (peter).  Assign ray
 
 09-56-2  OK	revisin 7234 (peter)
 
@@ -1474,7 +1477,17 @@ Test	 Status	Comments
 
 10-15-2  DIFF	DIfferences in the column labeled 'MUCH'.  CPSI and Distiller/
 		Acrobat render a '1' in item 22.  GS does not.  GS renders a '1'
-		in item 24.  CPSI and Distiller/Acrobat do not. Assign: Peter
+		in item 24.  CPSI and Distiller/Acrobat do not.
+                -
+                The diffs in items 'much22' and 'much24' are graphics-related (user paths /
+                insideness testing), not interpreter-related.  Please assign them to someone
+                else.
+                -
+                The diff in item 'gray05' (reference = blank, gs = 4)
+                does appear to be interpreter-related (the same diff
+                occurs in 13-24-6): I'll continue to work on
+                this. (peter) Assign (much 22 and 24): Igor
+                (other issues fixed with r7452 Peter).
 
 10-16-1  OK	
 
@@ -2746,9 +2759,9 @@ Test	 Status	Comments
 
 13-01-1  OK	Minor differences visually reviewed by RJJ
 
-13-01-2  DIFF	in cpsi the ashow output is produced before the
-                rangecheck.  Also gs is missing the 'A' to the right
-                of the first rangecheck problem.
+13-01-2  DIFF	cpsi keeps the operands on the stack for the last 4 errors (one
+                nocurrentpoint, 3 rangecheck), gs does not.  Also, gs displays 
+                an 'A' for the first rangecheck error, cpsi does not.
                 assign Peter.
 
 13-01-3  OK	Minor differences visually reviewed by RJJ
@@ -4008,8 +4021,12 @@ Test	 Status	Comments
 
 23-07-1  OK	Fixed by rev. 7442
 
-23-07-2  DIFF	GS shows command error as '--defineresource--' and '--findresource--'
-		Tek and CPSI return 'defineresource' and 'findresource'. assign: Peter
+23-07-2  AOK	There is still a diff in 23-07-2 in that the contents of our resource 
+                category dictionaries (in this case, the Generic dictionary) are different
+                from the Adobe interpreters: we and Adobe have different implementation-specific
+                (non-PLRM) entries, and the PLRM-documented procedures (FindResource, etc.)
+                are different.  This is inherently implementation-dependent and does not
+                affect any real program, so no further changes are needed. (Peter)
 
 23-07-3  OK	Fixed by rev. 7442
 
@@ -4017,9 +4034,21 @@ Test	 Status	Comments
 
 23-08-1  OK	
 
-23-09-1  DIFF	GS shows -1 for bytesavailable (Device Dependent). GS get errors
-		'undefinedfilename' and 'ioerror' vs. CSPI and Tek 'invalidaccess',
-		and in other places 'undefinedfilename'. assign: Peter
+23-09-1  DIFF	The first bytesavailable diff is identified as "highly device dependent".
+                As such, I recommend discounting it.  No real program will rely on the
+                result.
+                -
+                The two invalidaccess diffs occur because the reference implementation does
+                not allow PostScript programs to open files for writing.  This is not a gs
+                bug, but it does suggest that gs should provide some way to indicate/detect
+                that it is running in an embedded environment with no (writable) filesystem.
+                Does this exist already?
+                -
+                The remaining 3 diffs occur because gs implements %null as a special file
+                name and the reference implementation apparently doesn't, per a previous
+                e-mail.
+                -
+                assign: ray
 
 23-10-1  AOK	Device Dependent: GS looks like it is working similar to CPSI ot
 		Tek, but all three differ. RJJ
@@ -4197,12 +4226,9 @@ Test	 Status	Comments
 
 23-17-1  OK	Minor differences visually reviewed by RJJ
 
-23-17-2  DIFF	GS doesn't get errors on some ILLEGAL tests -- (null 0 printobject flush)
-		and after. Tek and CPSI return --printobject-- instead of --writeobject--
-		or --.writeobjects--. GS shows 'undefined' instead of 'typecheck' on
-		several lines. Assign: Ray
+23-17-2  AOK	Probably fixed with 23-17-3
 
-23-17-3  DIFF	GS has blank for MORE 27, CPSI and Tek return '2'. Assign: Peter
+23-17-3  AOK	Fixed see 23-29-2, 23-36-3 and 23-36-4
 
 23-18-1  OK	Minor differences visually reviewed by RJJ
 
@@ -4270,7 +4296,7 @@ Test	 Status	Comments
 
 23-29-1  OK	
 
-23-29-2  DIFF	GS missing error from printobject when objectformat == 0: Assign Peter
+23-29-2  OK	fixed in rev. 7232 (Peter)
 
 23-29-3  OK	
 
@@ -4326,11 +4352,9 @@ Test	 Status	Comments
 		This causes a the end of the string to shift to the right on lines that
 		mismatch.  Assign: Igor.
 
-23-36-3  DIFF	GS not detecting errors when objectformat == 0. Similar to 23-29-2 with
-		writeobject. Assign: Peter
+23-36-3  AOK    fixed in rev. 7232 (Peter)
 
-23-36-4  DIFF	more 27: problem with "0 setobjectformat" not detected by GS. Tek and
-		CPSI agree and print '2' (similar to 23-17-3).  Assign: Peter
+23-36-4  OK	fixed in rev. 7232 (Peter)
 
 23-37-1  OK	
 
@@ -4455,8 +4479,8 @@ Test	 Status	Comments
 
 25-10-2  OK	
 
-25-11-1  DIFF	GS gets 'typecheck' instead of 'stackunderflow' from ( log )
-                Igor assigns this to Peter.
+25-11-1  OK	GS matches Tek hardcopy. Fixed by rev 7140.
+		GS has more accurate (and correct) sin/cos functions than CPSI
 
 25-11-2  OK	
 
@@ -4585,9 +4609,20 @@ Test	 Status	Comments
 27-03-1  DIFF	Error messages differ. Ghostscript gives "undefinedfilename" 
 		CPSI gives "undefined".
 
-27-03-2  DIFF	CPSI has ten '1' instances, but GS has none.
-	filt18 is an invocation of filenameforall.
-		Analyzed by Igor, then Peter.
+27-03-2  AOK	test unreasonable:
+                This page enumerates all the IODevices, arbitrarily selects the last one,
+                and then runs the GIF test, checking whether the currentdevparams values for
+                that IODevice change as a result of running the test procedures.  This is
+                dependent both on the set of IODevices (which is implementation-dependent,
+                although gs could be expected to include at least the non-hardware-dependent
+                ones documented in the PLRM3, which I believe it does) and the order in
+                which they are enumerated by /IODevice resourceforall (which is totally
+                implementation-dependent).
+                -
+                It appears that in the reference output, the last-enumerated IODevice is one
+                whose devparams values change somewhat unpredictably -- probably %Calendar%.
+                In the gs output, it's one whose devparams values don't change -- i.e. any
+                of the others! (peter)
 
 27-04-1  DIFF	Installation dependent (FontResourceDir).
 		Inconforming currentsystemparams. Analyzed by Igor.
@@ -5032,8 +5067,7 @@ Test	 Status	Comments
 
 30-04-3  OK	
 
-30-04-4 DIFF	currentcolorspace output is [:/DeviceGray:] (packed) in gs.
-                assign Peter
+30-04-4  OK	fixed in packed array colorspace fix (ray) don't recall the rev.
 
 30-04-5  OK	
 
