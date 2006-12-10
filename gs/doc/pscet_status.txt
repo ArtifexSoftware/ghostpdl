@@ -2334,9 +2334,10 @@ Test	 Status	Comments
 
 12-12-1  OK	Minor differences in positions and character shapes - ADC
 
-12-12-10  DIFF	Minor differences in short line patterns (dashes) around 20
+12-12-10  AOK	Minor differences in short line patterns (dashes) around 20
 		in column 8.  Diferences between all three (CPSI, GS, Adobe)
-		- ADC assign: Igor.
+		Analyzed by Igor : The dashing of the rectangles must 
+		have the central symmetry. CPSI is wrong.
 
 12-12-2  OK	Minor differences in positions and character shapes - ADC
 
@@ -2350,12 +2351,11 @@ Test	 Status	Comments
 
 12-12-7  OK	Color corrected by rev 7172.
 
-12-12-8  DIFF	Some differences in locations of dashed line patterns - ADC
-                assign: Igor.
+12-12-8  AOK	Some differences in locations of dashed line patterns - ADC
+		Analyzed by Igor : The dashing of the rectangles must 
+		have the central symmetry. CPSI is wrong.
 
-12-12-9  DIFF	Minor differences in short line patterns (dashes) around 20
-		in column 8.  Diferences between all three (CPSI, GS, Adobe)
-		- ADC assign: Igor.
+12-12-9  DIFF	A pattern phase difference. assign: Raph.
 
 12-13-1  OK	Minor differences in positions and character shapes - ADC
 
