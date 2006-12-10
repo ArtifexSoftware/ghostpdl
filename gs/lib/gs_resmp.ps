@@ -44,11 +44,6 @@
 languagelevel 2 .setlanguagelevel
 currentglobal true setglobal
 
-% See BindWithCurrentdict for the explanation of .bwcdarray.
-% We can't use /array load, because we don't want this to be bound,
-% and we can't make it executable, because bind would make it readonly.
-/.bwcdarray [/array load] def
-
 /MappedCategoryRedefiner 10 dict begin % The procset.
 
 currentpacking false setpacking
@@ -102,13 +97,8 @@ setpacking
   %            bound recursively.
   % Caution2 : this code don't bind packedarrays. This was done
   %            intentionally for a termination of the procedure tree.
-  % Note that we must create the copy in local VM, because some of the
-  % values in currentdict might be in local VM.  However, during
-  % initialization we must create the copy in current (global) VM.
-  % We handle this by changing the definition of .bwcdarray after
-  % initialization.
 
-  dup length //.bwcdarray cvx exec copy
+  dup length array copy
   dup length 1 sub -1 0 {                      
     2 copy get                            % {precopy} i {elem}
     dup dup type /arraytype eq exch xcheck and {
@@ -144,11 +134,9 @@ setpacking
   % To work around this, we create a copy of the enumeration procedure and
   % bind it dynamically with a temporary dictionary, which contains
   % local variables for the currently executing instance of resourceforall.
-  % Note that this dictionary must be in local VM, since some of its
-  % values may be in local VM.
 
   currentdict                    % Category
-  6 .localvmdict begin % the temporary dictionary
+  6 dict begin % the temporary dictionary
     /Category exch def           %
     /InstancesStatus exch def
     /scr exch def
@@ -394,7 +382,7 @@ setpacking
 
 /Redefine     % <OptionsDict> Redefine -
 { % Before calling this proc, the OptionsDict must specify options for
-  % the category to be redefined :
+  % the catregory to be redefined :
   % CategoryName - a name of category to redefine;
   % MapFileName - a string for the resource map file name;
   % VerifyMap - a procedure :
@@ -429,6 +417,7 @@ setpacking
   % the scanning until all redefinitions are done, but it requires
   % to implement a queue of "refinish" methods and execute it
   % at very end of the prelude.
+
   begin % OptionsDict
   CategoryName /Category findresource /OldCategory exch def
   OldCategory /.IsRedefinedWithMap known {
@@ -514,8 +503,6 @@ setpacking
     //MethodsToRedefine {
       //BindWithCurrentdict exec NewCategory 3 1 roll put  
     } forall
-    % Switch BindWithCurrentdict to local VM for actual use.
-    //.bwcdarray 0 /.localvmarray load put
     CategoryName /CIDFont ne {
       NewCategory /GetCIDSystemInfoFromMap undef
       % This is some ugly, sorry.
