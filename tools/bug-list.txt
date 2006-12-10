@@ -35,8 +35,8 @@
 038 -- fixed
 039 -- fixed
 041 -- fixed - SK verified in r2685
-042 -- transparency rops, fill difference HP not treating 0 as transparent?
-043 -- same as 42
+042 -- NOFIX see pxl/pxcet.txt C318, C420
+043 -- NOFIX same as 42
 044 -- Better still some transparent white issues.
 045 -- same as 44
 046 -- same as 44
@@ -89,7 +89,7 @@
 093 -- possible HP scaling error
 094 -- polygon fills missing, winding?
 095 -- polygon arc join error
-096 -- MC missing arc polygon
+096 -- fixed r2697
 097 -- pu subpolygon fill missing
 098 -- butt or triangle join rounding 
 099 -- lost line
@@ -111,7 +111,7 @@
 116 -- fixed
 117 -- hpgl label bitmaps CP rotation.
 118 -- fixed
-119 -- SB font selection interaction
+119 -- fixed r2695
 120 -- fixed
 121 -- fixed
 122 -- hpgl LB 
@@ -167,4 +167,8 @@
 433 -- open: vivid treatment test is only valid with device color devices.
 434 -- C705-4 transparency rop using merge control  
 435 -- fixed r2686
-
+436 -- fixed r2696
+437 -- fixed r2696
+438 -- LB char size
+439 -- LB char size placement
+440 -- fixed r2697
