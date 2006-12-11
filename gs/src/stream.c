@@ -907,7 +907,7 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
 		    break;
 	    }
 	    status = strm->end_status;
-	    if (status < 0)
+	    if (status < 0 && (status != EOFC || !end))
 		break;
 	    if (!curr->is_temp)
 		++depth;
