@@ -292,7 +292,7 @@ zpp_setup(os_ptr op, stream_PNGP_state * ppps)
 
     check_type(*op, t_dictionary);
     check_dict_read(*op);
-    if ((code = dict_int_param(op, "Colors", 1, 16, 1,
+    if ((code = dict_int_param(op, "Colors", 1, s_PNG_max_Colors, 1,
 			       &ppps->Colors)) < 0 ||
 	(code = dict_int_param(op, "BitsPerComponent", 1, 16, 8,
 			       &bpc)) < 0 ||

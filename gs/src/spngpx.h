@@ -18,11 +18,18 @@
 #ifndef spngpx_INCLUDED
 #  define spngpx_INCLUDED
 
+/*
+ * Define the maximum value for Colors.  The PNG specification probably
+ * defines this as 16, but some PS3 CET files require it to be as large as
+ * 53.  The only cost of larger values is a larger stream state structure.
+ */
+#define s_PNG_max_Colors 60
+
 /* PNGPredictorDecode / PNGPredictorEncode */
 typedef struct stream_PNGP_state_s {
     stream_state_common;
     /* The client sets the following before initialization. */
-    int Colors;			/* # of colors, 1..16 */
+    int Colors;			/* # of colors, 1..s_PNG_max_Colors */
     int BitsPerComponent;	/* 1, 2, 4, 8, 16 */
     uint Columns;		/* >0 */
     int Predictor;		/* 10-15, only relevant for Encode */
@@ -35,7 +42,7 @@ typedef struct stream_PNGP_state_s {
 				/* set dynamically when decoding */
     /* The following are updated dynamically. */
     long row_left;		/* # of bytes left in row */
-    byte prev[32];		/* previous samples */
+    byte prev[2 * s_PNG_max_Colors]; /* previous samples */
 } stream_PNGP_state;
 
 #define private_st_PNGP_state()	/* in sPNGP.c */\

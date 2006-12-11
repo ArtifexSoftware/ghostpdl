@@ -21,8 +21,9 @@
 /*
  * Define the maximum value for Colors.  This must be at least 4, but can
  * be arbitrarily large: the only cost is a larger stream state structure.
+ * Some PS3 CET files require this to be at least 57.
  */
-#define s_PDiff_max_Colors 16
+#define s_PDiff_max_Colors 60
 
 /* PixelDifferenceDecode / PixelDifferenceEncode */
 typedef struct stream_PDiff_state_s {
