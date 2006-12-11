@@ -4155,15 +4155,12 @@ Test	 Status	Comments
 23-12O-1  DIFF	GS has much different filter byte counts FlateEncode/Decode (similar
 		to 23-12M-1) Assign: Peter
 
-23-12O-2  DIFF	GS has much different filter byte counts LZWEncode/Decode (similar
-		to 23-12M-1) Assign: Peter
+23-12O-2  OK	Fixed by rev 7489.
 
 23-12P-1  DIFF	GS has much different filter byte counts FlateEncode/Decode. Also
 		GS gets 'rangecheck' on Colors_18 and Colors_53 tests. Assign: Peter
 
-23-12P-2  DIFF	GS has much different filter byte counts FlateEncode/Decode. Also
-		GS gets 'rangecheck' on Colors_17 and Colors_57 tests. Similar to
-		23-12P-1. Assign: Peter
+23-12P-2  OK	Fixed by rev 7489.
 
 23-12Q-1  OK	
 
