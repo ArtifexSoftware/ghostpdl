@@ -26,6 +26,12 @@ clean:
 	make -C main -f pcl6_gcc.mak clean
 	rm -f fonts /usr/local/bin/pcl6
 
+
+xps_debug: 
+	make -C main -f pcl6_gcc.mak XPS_INCLUDED=TRUE debug
+
+xps: 
+	make -C main -f pcl6_gcc.mak XPS_INCLUDED=TRUE 
 ####  UFST LIBRARY DEPENDENCY RULES ####
 
 ufst:

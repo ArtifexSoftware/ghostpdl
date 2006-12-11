@@ -23,7 +23,7 @@ GLSRCDIR?=../gs/src
 PCLSRCDIR?=../pcl
 PLSRCDIR?=../pl
 PXLSRCDIR?=../pxl
-METSRCDIR?=../met
+XPSSRCDIR?=../met
 COMMONDIR?=../common
 MAINSRCDIR?=../main
 
@@ -58,21 +58,30 @@ PLGENDIR?=$(GENDIR)
 PLOBJDIR?=$(GENDIR)
 PXLGENDIR?=$(GENDIR)
 PCLGENDIR?=$(GENDIR)
-METGENDIR?=$(GENDIR)
+XPSGENDIR?=$(GENDIR)
 PXLOBJDIR?=$(GENDIR)
 PCLOBJDIR?=$(GENDIR)
-METOBJDIR?=$(GENDIR)
+XPSOBJDIR?=$(GENDIR)
 
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
-TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev
+ifeq ($(XPS_INCLUDED), TRUE)
+TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev $(XPSOBJDIR)/xps.dev
+else 
+TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev 
+endif
 TARGET_XE?=$(GENDIR)/pcl6
 TARGET_LIB?=$(GENDIR)/pcl6.a
 MAIN_OBJ?=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
 PCL_TOP_OBJ?=$(PCLOBJDIR)/pctop.$(OBJ)
 PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
-MET_TOP_OBJ?=$(METOBJDIR)/mettop.$(OBJ)
+XPS_TOP_OBJ?=$(XPSOBJDIR)/mettop.$(OBJ)
+ifeq ($(XPS_INCLUDED), TRUE)
+TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(XPS_TOP_OBJ)
+XCFLAGS?=-DXPS_INCLUDED
+else
 TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
+endif
 
 # note agfa gives its libraries incompatible names so they cannot be
 # properly found by the linker.  Change the library names to reflect the
@@ -123,15 +132,18 @@ XLDFLAGS=
 EXTRALIBS=
 UFST_OBJ=
 ifeq ($(ROMFONTS), true)
-PL_SCALER=afsr
+PL_SCALER=afs
 XLDFLAGS=-L../pl/ 
 EXTRALIBS=-lttffont
 endif
 
 endif
 
+
+ifeq ($(XPS_INCLUDED), TRUE)
 # include the xml parser library
 EXTRALIBS+=-lexpat
+endif 
 
 # a 64 bit type is needed for devicen color space/model support but
 # carries a performance burden.  Use this definition (uncomment) for
@@ -203,6 +215,9 @@ include $(COMMONDIR)/ugcc_top.mak
 include $(PLSRCDIR)/pl.mak
 include $(PXLSRCDIR)/pxl.mak
 include $(PCLSRCDIR)/pcl.mak
+ifeq ($(XPS_INCLUDED), TRUE)
+include $(XPSSRCDIR)/met.mak
+endif
 
 # Main program.
 
