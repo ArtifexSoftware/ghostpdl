@@ -14,6 +14,7 @@
 /* $Id$ */
 /* Path stroking procedures for Ghostscript library */
 #include "math_.h"
+#include "memory_.h"		/* for memcpy */
 #include "gx.h"
 #include "gpcheck.h"
 #include "gserrors.h"
@@ -1510,7 +1511,7 @@ add_round_cap(gx_path * ppath, const_ep_ptr endp, bool last_line)
 	(code = gx_path_add_partial_arc(ppath, xo, yo, xo - cdx, yo - cdy,
 					quarter_arc_fraction)) < 0 ||
 	/* The final point must be (xe,ye). */
-	last_line && (code = gx_path_add_line(ppath, xe, ye)) < 0
+	(last_line && (code = gx_path_add_line(ppath, xe, ye)) < 0)
 	)
 	return code;
     vd_lineto(xe, ye);
