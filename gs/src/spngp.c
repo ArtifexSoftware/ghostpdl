@@ -113,8 +113,10 @@ s_PNGP_release(stream_state *st)
  * Process a partial buffer.  We pass in current and previous pointers
  * to both the current and preceding scan line.  Note that dprev is
  * p - bpp for encoding, q - bpp for decoding; similarly, the 'up' row
- * is the raw data for encoding, the filtered data for decoding.
+ * is the raw data for encoding, the filtered (encoded) data for decoding.
  * Note also that the case_index cannot be cOptimum.
+ *
+ * Uses ss->case_index; uses and updates ss->row_left, pr->ptr, pw->ptr.
  */
 private int
 paeth_predictor(int a, int b, int c)
@@ -207,6 +209,9 @@ s_pngp_count(const stream_state * st_const, const stream_cursor_read * pr,
  *        of the current input row.
  *      prev_row[P .. N + B - 1] contain bytes P - B .. N - 1
  *        of the previous input row.
+ * We must handle the edges of each row specially, by clearing ss->prev at
+ * the beginning of each row, and copying trailing bytes from ss->prev (and
+ * possibly the input) to prev_row at the end of each row.
  */
 private int
 optimum_predictor(const stream_state * st, const stream_cursor_read * pr)
@@ -253,10 +258,15 @@ s_PNGPE_process(stream_state * st, stream_cursor_read * pr,
 
 	    /* Process bytes whose predecessors are in prev. */
 	    s_pngp_process(st, pw, ss->prev, pr, up - bpp, up, n);
+	    if (ss->row_left == 0) {
+		if (ss->prev_row) {
+		    memcpy(up - bpp, ss->prev, bpp);
+		    memcpy(up, pr->ptr - (n - 1), n);
+		}
+		continue;
+	    }
 	    if (ss->prev_row)
 		memcpy(up - bpp, ss->prev, n);
-	    if (ss->row_left == 0)
-		continue;
 	    if (n < bpp) {
 		/*
 		 * We didn't have both enough input data and enough output
@@ -298,6 +308,9 @@ s_PNGPE_process(stream_state * st, stream_cursor_read * pr,
  *        of the current output row.
  *      prev_row[P .. N + B - 1] contain bytes P - B .. N - 1
  *        of the previous output row.
+ * We must handle the edges of each row specially, by clearing ss->prev at
+ * the beginning of each row, and copying trailing bytes from ss->prev (and
+ * possibly the output) to prev_row at the end of each row.
  */
 private int
 s_PNGPD_process(stream_state * st, stream_cursor_read * pr,
@@ -335,10 +348,15 @@ s_PNGPD_process(stream_state * st, stream_cursor_read * pr,
 
 	    /* Process bytes whose predecessors are in prev. */
 	    s_pngp_process(st, pw, ss->prev, pr, up - bpp, up, n);
+	    if (ss->row_left == 0) {
+		if (ss->prev_row) {
+		    memcpy(up - bpp, ss->prev, bpp);
+		    memcpy(up, pw->ptr - (n - 1), n);
+		}
+		continue;
+	    }
 	    if (ss->prev_row)
 		memcpy(up - bpp, ss->prev, n);
-	    if (ss->row_left == 0)
-		continue;
 	    if (n < bpp) {
 		/*
 		 * We didn't have both enough input data and enough output
