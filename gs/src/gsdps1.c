@@ -96,13 +96,24 @@ gs_setbbox(gs_state * pgs, floatp llx, floatp lly, floatp urx, floatp ury)
 int
 gs_rectappend(gs_state * pgs, const gs_rect * pr, uint count)
 {
+    extern bool CPSI_mode;
+
     for (; count != 0; count--, pr++) {
 	floatp px = pr->p.x, py = pr->p.y, qx = pr->q.x, qy = pr->q.y;
 	int code;
 
-	/* Ensure counter-clockwise drawing. */
-	if ((qx >= px) != (qy >= py))
-	    qx = px, px = pr->q.x;	/* swap x values */
+	if (CPSI_mode) {
+	    if (px > qx) {
+		px = qx; qx = pr->p.x;
+	    }
+	    if (py > qy) {
+		py = qy; qy = pr->p.y;
+	    }
+	} else {
+	    /* Ensure counter-clockwise drawing. */
+	    if ((qx >= px) != (qy >= py))
+		qx = px, px = pr->q.x;	/* swap x values */
+	}
 	if ((code = gs_moveto(pgs, px, py)) < 0 ||
 	    (code = gs_lineto(pgs, qx, py)) < 0 ||
 	    (code = gs_lineto(pgs, qx, qy)) < 0 ||
