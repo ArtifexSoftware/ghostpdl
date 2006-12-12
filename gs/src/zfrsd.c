@@ -43,7 +43,7 @@ zrsdparams(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref *pFilter;
     ref *pDecodeParms;
-    int Intent;
+    int Intent = 0;
     bool AsyncRead;
     ref empty_array, filter1_array, parms1_array;
     uint i;
@@ -89,8 +89,10 @@ zrsdparams(i_ctx_t *i_ctx_p)
 		return_error(e_typecheck);
 	}
     }
-    if ((code = dict_int_param(op, "Intent", 0, 3, 0, &Intent)) < 0 ||
-	(code = dict_bool_param(op, "AsyncRead", false, &AsyncRead)) < 0
+    code = dict_int_param(op, "Intent", 0, 3, 0, &Intent);
+    if (code < 0 && code != e_rangecheck) /* out-of-range int is ok, use 0 */
+	return code;
+    if ((code = dict_bool_param(op, "AsyncRead", false, &AsyncRead)) < 0
 	)
 	return code;
     push(1);
