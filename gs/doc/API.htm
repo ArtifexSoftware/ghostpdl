@@ -93,10 +93,9 @@ The Ghostscript interpreter library's name and characteristics differ
 for each platform:
 
 <ul>
-<li>The Win32 DLL <b><tt>gsdll32.dll</tt></b> has
-MULTIPLE NONSHARED data segments.  Under Win32s it can be used by only one
-program at a time, but under Windows 95/98 or Windows NT it can be called by
-multiple programs simultaneously.
+<li>The Win32 DLL <b><tt>gsdll32.dll</tt></b>
+can be used by multiple programs simultaneously, but only once 
+within each process.
 
 <li>The OS/2 DLL <b><tt>gsdll2.dll</tt></b> has
 MULTIPLE NONSHARED data segments and can be called by multiple programs
