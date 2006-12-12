@@ -1198,7 +1198,7 @@ end
   //.delayed_init_queue 3 1 roll .growput
 } bind def
 
-/.execute_schedulled_inits %   - .execute_schedulled_inits -
+/.execute_scheduled_inits %   - .execute_scheduled_inits -
 {
   { 0 //null //.delayed_init_queue {     % maxp {} p {}
       3 index 2 index lt {
@@ -2249,10 +2249,9 @@ $error /.nosetlocal false put
   .definefakefonts	% current VM is local
 } ifelse
 
-% Execude schedilled inits :
-//.execute_schedulled_inits exec
-currentdict /.execute_schedulled_inits undef
-currentdict /.delayed_init_queue undef
+% Execute scheduled inits :
+//.execute_scheduled_inits exec
+currentdict /.execute_scheduled_inits undef
 currentdict /.delayed_init_queue undef
 
 % Remove systemdict entries for things that have been bound in where used
