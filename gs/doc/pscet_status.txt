@@ -4121,7 +4121,7 @@ Test	 Status	Comments
 
 23-12I-1  DIFF	GS get 'stackunderflow' instead of 'typecheck' on 3rd and 4th line.
 		GS shows '--.writeobjects--' instead of '--writeobjects--' on
-		both ILLEGAL 8 and 9. assign: Ray
+		both ILLEGAL 8 and 9. assign: Peter
 
 23-12I-2  DIFF	Same as 23-12I-1.
 
@@ -4170,11 +4170,11 @@ Test	 Status	Comments
 23-12V-1  DIFF	GS gets 'rangecheck' on Intent_4 and Intent_987, ResuseableStreamDecode.
 		Assign: Peter
 
-23-12W-1  DIFF	GS gets 'T' instead of 'F', last line (DecoFilt status). Assign: Ray
+23-12W-1  DIFF	GS gets 'T' instead of 'F', last line (DecoFilt status). Assign: Peter
 
 23-12W-2  DIFF	GS gets 'F' instead of 'T' from (globalstring /ResusableStreamDecode
 		filter gcheck), GS gets 'T' instead of false from last line (Deco status)
-		Assign: Ray
+		Assign: Peter
 
 23-12W-3  OK	Minor differences visually reviewed by RJJ
 
@@ -4182,7 +4182,7 @@ Test	 Status	Comments
 
 23-12W-5  OK	Fixed by rev 7149.
 
-23-12W-6  DIFF	GS shows --.writeobjects-- instead of --writeobjects--. Assign: Ray
+23-12W-6  DIFF	GS shows --.writeobjects-- instead of --writeobjects--. Assign: Peter
 
 23-13-1  DIFF	GS has 'T' instead of 'F' in last column. Assign: Peter
 
