@@ -61,6 +61,7 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
     int drawing = wrap;
     segment_notes notes = ~sn_not_first;
     const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
+    bool zero_length = true;
     int code;
 
     if ((code = gx_path_add_point(ppath, x0, y0)) < 0)
@@ -91,12 +92,14 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 		   If a subpath is degenerate (consists of a single-point closed path 
 		   or of two or more points at the same coordinates), 
 		   stroke paints it only if round line caps have been specified */
-		continue;
+		if (zero_length || pseg->type != s_line_close)
+		    continue;
 	    }
 	    dx = 0, dy = 0, length = 0;
 	} else {
   	    gs_point d;
 
+	    zero_length = false;
 	    dx = udx, dy = udy;	/* scaled as fixed */
 	    gs_imager_idtransform(pis, dx, dy, &d);
 	    length = hypot(d.x, d.y) * (1.0 / fixed_1);
