@@ -2367,9 +2367,7 @@ Test	 Status	Comments
 
 12-13-1  OK	Minor differences in positions and character shapes - ADC
 
-12-13-2  DIFF	Differences in patterns at lower right.  Possible another
-		version of dashed line differences. - ADC
-                assign: Igor.
+12-13-2  OK
 
 12-13-3  OK	Minor differences visually reviewed by RJJ
 
@@ -4303,6 +4301,7 @@ Test	 Status	Comments
 23-32-1  OK	
 
 23-32-2  DIFF	'token' error inconformity. Igor assigns this to Peter.
+		Environment dependent (a virtual address in the printing).
 
 23-32-3  AOK	The character \004 has a different width. Analyzed by Igor.
 
@@ -5295,14 +5294,17 @@ Test	 Status	Comments
 
 99-01-1  AOK	Implementation Dependent: Different default system parameters can be set
 		if customer desires.
+		Environment dependent (GenericResourceDir).
 
 99-01-2  AOK	Implementation Dependent: Different default device parameters can be set
 		if customer desires.
+		Environment dependent (OutputFile).
 
 99-01-3  OK	
 
 99-02-1  OK	GS OK visually reviewed by RJJ
 		cpsi/99-02-1  missing
+		Environment dependent (GenericResourceDir).
 
 99-03-1  OK  	
 
