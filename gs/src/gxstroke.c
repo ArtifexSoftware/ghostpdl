@@ -1142,6 +1142,7 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
     const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
     gs_fixed_point points[8];
     int npoints = 0, initial_cap_points = 0;
+    const int initial_cap_offset = 5; /* gs_join_triangle generates 5 points. */
     int code;
 
     if (plp->thin) {
@@ -1163,11 +1164,11 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	   the initial cap points and store them temporary at the end of array. */
 	int last_point_index; 
 
-	code = cap_points((first == 0 ? pgs_lp->cap : gs_cap_butt), &plp->o, points + 4);
+	code = cap_points((first == 0 ? pgs_lp->cap : gs_cap_butt), &plp->o, points + initial_cap_offset);
 	if (code < 0)
 	    return code;
 	initial_cap_points = code;
-	last_point_index = 4 + initial_cap_points - 1;
+	last_point_index = initial_cap_offset + initial_cap_points - 1;
 	/* Initial moveto. */
 	code = gx_path_add_point(ppath, points[last_point_index].x, points[last_point_index].y);
 	if (code < 0)
@@ -1211,8 +1212,8 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	npoints = 0;
     } else if (initial_cap_points > 1) {
 	/* Skip the last point because closepath below works instead it. */
-	if (npoints < 4)
-	    memcpy(points + npoints, points + 4, sizeof(*points) * (initial_cap_points - 1));
+	if (npoints < initial_cap_offset)
+	    memcpy(points + npoints, points + initial_cap_offset, sizeof(*points) * (initial_cap_points - 1));
 	npoints += initial_cap_points - 1;
     }
     code = add_points(ppath, points, npoints, false);
