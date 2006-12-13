@@ -171,4 +171,9 @@
 437 -- fixed r2696
 438 -- LB char size
 439 -- LB char size placement
-440 -- fixed r2697
+440 -- polygon fill difference MC or winding.
+
+451 -- define symbol set char complement - char requirements test.
+452 -- LB negative character width, we apply, hp is positive
+453 -- MC 17 our black text vs HP's green
+454 -- black white HP vs gray output
