@@ -21,6 +21,7 @@
 #include "strimpl.h"
 
 /* Forward declarations */
+int s_close_disable(stream *);
 private int sreadbuf(stream *, stream_cursor_write *);
 private int swritebuf(stream *, stream_cursor_read *, bool);
 private void stream_compact(stream *, bool);
@@ -1020,9 +1021,13 @@ s_string_reusable_flush(stream *s)
 void
 sread_string_reusable(stream *s, const byte *ptr, uint len)
 {
+    /*
+     * Note that s->procs.close is s_close_disable, to parallel
+     * file_close_disable.
+     */
     static const stream_procs p = {
 	 s_string_available, s_string_read_seek, s_string_reusable_reset,
-	 s_string_reusable_flush, s_std_null, s_string_read_process
+	 s_string_reusable_flush, s_close_disable, s_string_read_process
     };
 
     sread_string(s, ptr, len);
@@ -1238,9 +1243,16 @@ file_close_finish(stream * s)
  * close procedure for %lineedit and %statementedit.  (This is WRONG: these
  * streams should allocate a new buffer each time they are opened, but that
  * would overstress the allocator right now.)  This is exported for ziodev.c.
- * This also replaces the close procedure for the string-reading stream
- * created for gs_run_string.
+ * This also replaces the close procedure for the string-reading streams
+ * created for gs_run_string and for reusable streams.
  */
+int
+s_close_disable(stream *s)
+{
+    /* Increment the IDs to prevent further access. */
+    s->read_id = s->write_id = (s->read_id | s->write_id) + 1;
+    return 0;
+}
 int
 file_close_disable(stream * s)
 {
@@ -1248,8 +1260,7 @@ file_close_disable(stream * s)
 
     if (code)
 	return code;
-    /* Increment the IDs to prevent further access. */
-    s->read_id = s->write_id = (s->read_id | s->write_id) + 1;
+    s_close_disable(s);
     return file_close_finish(s);
 }
 
