@@ -856,16 +856,22 @@ pdfdict begin
 % the image stream itself. We therefore propagate any such key into
 % a filter's DecodeParms.
 /jpxparmfix {	% <streamdict> <readdata?> jpxparmfix <streamdict <readdata?>
-  1 index /ColorSpace knownoget {
-    2 index /DecodeParms knownoget {
-      % insert in the existing DecodeParms dict
-      /ColorSpace 3 -1 roll put
-    }{
-      1 dict % need to create a custom DecodeParms dict
-      dup /ColorSpace 4 -1 roll put
-      2 index exch /DecodeParms exch put
-    } ifelse
-  } if
+  1 index /Filter .knownget
+    { /JPXDecode eq % we only need to do this for JPXDecode filters
+	% TODO: handle filter arrays
+      {
+	1 index /ColorSpace knownoget {
+	  2 index /DecodeParms knownoget {
+	    % insert in the existing DecodeParms dict
+	    /ColorSpace 3 -1 roll put
+	  }{
+	    1 dict % need to create a custom DecodeParms dict
+	    dup /ColorSpace 4 -1 roll put
+	    2 index exch /DecodeParms exch put
+	  } ifelse
+	} if
+      } if
+    } if
 } bind def
 
 % Resolve a stream dictionary to a PostScript stream.
@@ -876,7 +882,7 @@ pdfdict begin
 % Note that, in general, resolving a stream repositions PDFfile.
 % Clients must save and restore the position of PDFfile themselves.
 /resolvestream {	% <streamdict> <readdata?> resolvestream <stream>
-  %%%%	DISABLED UNTIL THIS IS FIXED	%%%%	jpxparmfix
+  jpxparmfix
   1 index /F knownoget {
 		% This stream is stored on an external file.
     (r) file 3 -1 roll
