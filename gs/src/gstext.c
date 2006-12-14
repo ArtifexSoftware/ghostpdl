@@ -228,6 +228,15 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
     gx_clip_path *pcpath = 0;
     int code;
 
+    /*
+     * Detect nocurrentpoint now, even if the string is empty, for Adobe
+     * compatibility.
+     */
+    if (text->operation & (TEXT_DO_DRAW | TEXT_DO_ANY_CHARPATH)) {
+	if (!pgs->current_point_valid)
+	    return_error(gs_error_nocurrentpoint);
+    }
+
     if (text->operation & TEXT_DO_DRAW) {
 	code = gx_effective_clip_path(pgs, &pcpath);
         gs_set_object_tag(pgs, GS_TEXT_TAG);
