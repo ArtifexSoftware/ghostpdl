@@ -347,6 +347,8 @@ gs_xyshow_begin(gs_state * pgs, const byte * str, uint size,
 		uint widths_size, gs_memory_t * mem, gs_text_enum_t ** ppte)
 {
     gs_text_params_t text;
+    uint widths_needed;
+    font_proc_next_char_glyph((*next_proc)) = pgs->font->procs.next_char_glyph;
 
     text.operation = TEXT_FROM_STRING | TEXT_REPLACE_WIDTHS |
 	text_do_draw(pgs) | TEXT_RETURN_WIDTH;
@@ -354,6 +356,42 @@ gs_xyshow_begin(gs_state * pgs, const byte * str, uint size,
     text.x_widths = x_widths;
     text.y_widths = y_widths;
     text.widths_size = widths_size;
+
+    /*
+     * Check that the widths array is large enough.  gs_text_replaced_width
+     * checks this step-by-step, but Adobe's interpreters check it ahead of
+     * time, and for CET compliance, we must also.  This is very easy for
+     * font types that always have 8-bit characters, but for others, we
+     * must use the font's next_char_glyph procedure to determine how many
+     * characters there are in the string.
+     */
+    if (next_proc == gs_default_next_char_glyph) {
+	widths_needed = size;
+    } else {
+	/* Do it the hard way. */
+	gs_text_enum_t *pte;	/* use a separate enumerator */
+	gs_char tchr;
+	gs_glyph tglyph;
+	int code;
+
+	widths_needed = 0;
+	code = gs_text_begin(pgs, &text, mem, &pte);
+	if (code < 0)
+	    return code;
+	while ((code = (*next_proc)(pte, &tchr, &tglyph)) != 2) {
+	    if (code < 0)
+		break;
+	    ++widths_needed;
+	}
+	gs_free_object(mem, pte, "gs_xyshow_begin");
+	if (code < 0)
+	    return code;
+    }
+    if (x_widths && y_widths)
+	widths_needed <<= 1;
+    if (widths_size < widths_needed)
+	return_error(gs_error_rangecheck);
+
     return gs_text_begin(pgs, &text, mem, ppte);
 }
 
