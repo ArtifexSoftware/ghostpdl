@@ -27,6 +27,8 @@ clean:
 	rm -f fonts /usr/local/bin/pcl6
 
 
+.PHONY: xps
+
 xps_debug: 
 	make -C main -f pcl6_gcc.mak XPS_INCLUDED=TRUE debug
 
