@@ -1,13 +1,15 @@
 0001 AOK C420 p 9 PatternBrushError Update - (useciecolor = no).
 0016 AOK C703 p 1 ColorError - (useciecolor = no).
+0025 OPEN C705 p 36  extra blank page 38.
 0035 NF C206 p 2 Error Message Difference.
-0075 OPEN C705 p 36  extra blank page 38.
+0041 OPEN C316 HP doesn't print zero length dots in dashed lines 
 0042 NF C318 p 33 see pxl/pxcet.txt.
 0043 NF C326 p 25 see pxl/pxcet.txt.
 0044 OPEN C327 p 5 banding rop problem.
 0045 OPEN C327 P 6 rop difference.
 0046 OPEN C328 p 22 rop difference.
 0052 OPEN 16-09 p 13 HMI font selection interaction.
+0053 FIXED verified in r2685, r2700
 0056 NF 19-10 p 10 font selection lineprinter instead of courier.
 This requires redesigning the alias facility in the shared language
 dictionary which will be a considerable amount of work.
@@ -30,6 +32,7 @@ dictionary which will be a considerable amount of work.
 0079 OPEN 23-08 p 6 pattern white zero instead of black zero.
 0082 OPEN 25-01 p 8 macro is offset by a tab width.
 0083 OPEN 25-04 p 18 macro fg text color wrong.
+0084 OPEN 25-05 p HP kicks page after exiting macro we don't
 0085 OPEN 25-05 p 11 underline of spaces vs not.
 0087 OPEN 25-06 p 37 cap difference on entry to macro.
 0088 OPEN 27-02 p 1 backspace beyond printable area should be blocked.
@@ -77,7 +80,13 @@ dictionary which will be a considerable amount of work.
 0157 OPEN 34-04 p 1 Fill differences
 0158 OPEN 35-01 p 1 PD circle PD
 0159 OPEN 35-02 p 6 scaling picture frame interaction.
+0160 FIXED 36-01 p 10 verified r2687 r2700
+0161 FIXED same as 0160 verified r2687 r2700
+0162 DeviceDependent Device must support number of pages, no raster devices do this.
+0163 FIXED 36-02 p 20 verified r2685 r2700
 0321 OPEN C705 p 19 passthrough missing wedges
+0322 FIXED r2680 C425 p 33 Set Char Bold
+0323 FIXED r2680 C426 p 42 Set Char Bold
 0431 OPEN C705 p 49 text white source transparency
 0433 NF C605 p 1-4 vivid treatment is device dependent
 0434 OPEN C705 p 3 merge control in passthrough context.
