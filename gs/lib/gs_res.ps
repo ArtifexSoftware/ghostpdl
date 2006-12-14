@@ -336,12 +336,6 @@ pop pop
  { 3 -1 roll //.rfnstring cvs concatstrings exch copy
  } bind def
 
-% Define a procedure for making a packed array in local VM.
-/.localpackedarray {	% <obj1> ... <objn> <n> .localpackedarray <packedarray>
-  .currentglobal false .setglobal 1 index 2 add 1 roll
-  packedarray exch .setglobal
-} bind def
-
 % Define the Generic category.
 
 /Generic mark
@@ -478,19 +472,19 @@ pop pop
 		% Construct a new procedure to hold the arguments.
 		% All objects constructed here must be in local VM to avoid
 		% a possible invalidaccess.
-	currentdict 4 .localpackedarray	% [template proc scratch resdict]
+	currentdict 4 .localvmpackedarray	% [template proc scratch resdict]
 		% We must pop the resource dictionary off the dict stack
 		% when doing the actual iteration, and restore it afterwards.
 	.currentglobal not {
 	  .LocalInstances length 0 ne {
 		% We must do local instances, and do them first.
-	    //.localresourceforall {exec} 0 get 3 .localpackedarray cvx
+	    //.localresourceforall {exec} 0 get 3 .localvmpackedarray cvx
 	    .LocalInstances exch {forall} 0 get 1 index 0 get
 	    currentdict end 3 .execn begin
 	  } if
 	} if
 		% Do global instances next.
-	//.globalresourceforall {exec} 0 get 3 .localpackedarray cvx
+	//.globalresourceforall {exec} 0 get 3 .localvmpackedarray cvx
 	.Instances exch cvx {forall} 0 get 1 index 0 get
 	currentdict end 3 .execn begin
         mark                                             % args [
@@ -530,7 +524,7 @@ pop pop
           2 index 2 get { cvs 0 } aload pop 5 index
           //.externalresourceforall {exec} 0 get
           % }
-        7 .localpackedarray cvx
+        7 .localvmpackedarray cvx
         3 2 roll pop % args
 	{ forall } 0 get
   	currentdict end 2 .execn begin

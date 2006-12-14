@@ -135,9 +135,14 @@ setpacking
   % bind it dynamically with a temporary dictionary, which contains
   % local variables for the currently executing instance of resourceforall.
 
+  % Always place the enumerator in local VM,
+  % because its elements may be in local VM.
+
+  currentglobal 4 1 roll
+  false setglobal
   currentdict                    % Category
   6 dict begin % the temporary dictionary
-    /Category exch def           %
+    /Category exch def
     /InstancesStatus exch def
     /scr exch def
     /proc exch def
@@ -145,7 +150,7 @@ setpacking
     //InstanceEnumeratorPattern //BindWithCurrentdict exec     % Enumerator
     /status 0 def % variable for the current status to enumerate - do not bind with it !
   end
-
+  exch setglobal
 } bind def
 
 /execstack_lookup     % <object> execstack_lookup <object1>
@@ -309,13 +314,13 @@ currentpacking false setpacking
     } bind def
 
     /ResourceForAll  % <template> <proc> <scratch> ResourceForAll -
-    { RESMPDEBUG { (resmp ResourceForAll beg ) print 2 index = } if
+    { RESMPDEBUG { (resmp ResourceForAll beg ) print CategoryName =string cvs print ( ) print 2 index = } if
       % Create InstancesStatus dictionary :
       20 dict % IS - Instances Status
       4 1 roll                            % <<IS>> (templ) {proc} (sctarch)
-                                          % <<IS>> bOrder (templ) {proc} (sctarch)
       % Check if we are under another ResourceForAll :
       /.DisableResourceOrdering //execstack_lookup exec null eq 4 1 roll
+                                          % <<IS>> bOrder (templ) {proc} (sctarch)
 
       % Put underlying resources to the InstancesStatus dictionary :
       currentdict % the category

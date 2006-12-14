@@ -365,9 +365,8 @@ currentdict end def
   % These dictionaries must be created dynamically, to allow for a possible 
   % recursive call to resourceforall from the resourceforall procedure.
   currentglobal false setglobal
-  20 dict 20 dict 20 dict
-
-  4 -1 roll setglobal                     % (templ) proc (scr) <<CIDFont>> <<CMap>> <<Fonts>>
+  20 dict 20 dict 20 dict                  % (templ) proc (scr) g <<CIDFont>> <<CMap>> <<Fonts>>
+  
 
   % Store resource identifiers into local dictionaries
   % A resource instance can have a key that is not a name or a string. In this
@@ -375,21 +374,22 @@ currentdict end def
   % into the scratch string. This case can arise only for a resource instance
   % defined in virtual memory by a previous defineresource
 
-  % Discard non-string keys of CIDFont and CMap because <CIDFontName>- -<CMapName>
+  % Discard non-string keys of CIDFont and CMap because <CIDFontName>-<CMapName>
   % is only defined for names.
 
   { /.DisableResourceOrdering pop % gs_resmp accesses this through execstack - don't remove !
 
-    5 index [ 2 index {exch //null put} aload pop ] cvx bind 5 index //ResourceForAll exec
+    6 index [ 2 index {exch //null put} aload pop ] cvx bind 6 index //ResourceForAll exec
 
     (*) [ 3 index {exch dup type /stringtype eq { cvn dup put } { pop pop } ifelse } aload pop
-        ] cvx bind 5 index /CMap resourceforall
+        ] cvx bind 6 index /CMap resourceforall
 
     (*) [ 4 index {exch dup type /stringtype eq { cvn dup put } { pop pop } ifelse } aload pop
-        ] cvx bind 5 index /CIDFont resourceforall
+        ] cvx bind 6 index /CIDFont resourceforall
 
     exit
   } loop % This loop is a pattern for execstack_lookup - don't remove !
+  4 -1 roll setglobal                     % (templ) proc (scr) <<CIDFont>> <<CMap>> <<Fonts>>
 
   %% Make the list of fonts in the form (/Name status) :
 
@@ -435,7 +435,6 @@ currentdict end def
 
   % Make the enumerator and apply it :
   /MappedCategoryRedefiner /ProcSet findresource /MakeResourceEnumerator get exec exec
-
 } bind def
 
 
