@@ -1306,7 +1306,10 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
     if (pdev->state.soft_mask_id != pis->soft_mask_id) {
 	char buf[20];
 
-	sprintf(buf, "%ld 0 R", pis->soft_mask_id);
+	if (pis->soft_mask_id == 0)
+	    strcpy(buf, "/None");
+	else
+	    sprintf(buf, "%ld 0 R", pis->soft_mask_id);
 	code = pdf_open_gstate(pdev, ppres);
 	if (code < 0)
 	    return code;
