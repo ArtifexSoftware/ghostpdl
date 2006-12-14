@@ -297,12 +297,10 @@ shade_next_color(shade_coord_stream_t * cs, float *pc)
 
 /* Get the next vertex for a mesh element. */
 int
-shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex, patch_color_t *c, bool align_color_data)
+shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex, patch_color_t *c)
 {   /* Assuming p->c == c, provides a non-const access. */
     int code = shade_next_coords(cs, &vertex->p, 1);
 
-    if (code >= 0 && align_color_data)
-	cs->align(cs, 8);
     if (code >= 0)
 	code = shade_next_color(cs, c->cc.paint.values);
     if (code >= 0)

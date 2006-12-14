@@ -48,9 +48,9 @@ mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
 
 private int
 Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
-	       shading_vertex_t * vertex, patch_color_t *c, bool align_color_data)
+	       shading_vertex_t * vertex, patch_color_t *c)
 {
-    int code = shade_next_vertex(cs, vertex, c, align_color_data);
+    int code = shade_next_vertex(cs, vertex, c);
  
     if (code >= 0 && psh->params.Function) {
 	c->t[0] = c->cc.paint.values[0];
@@ -122,9 +122,9 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	    default:
 		return_error(gs_error_rangecheck);
 	    case 0:
-		if ((code = Gt_next_vertex(pshm, &cs, &va, ca, false)) < 0 ||
+		if ((code = Gt_next_vertex(pshm, &cs, &va, ca)) < 0 ||
 		    (code = shade_next_flag(&cs, num_bits)) < 0 ||
-		    (code = Gt_next_vertex(pshm, &cs, &vb, cb, false)) < 0 ||
+		    (code = Gt_next_vertex(pshm, &cs, &vb, cb)) < 0 ||
 		    (code = shade_next_flag(&cs, num_bits)) < 0
 		    )
 		    break;
@@ -139,11 +139,12 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 		vb = vc;
 		cb = cc;
 		vc.c = cc = c;
-v2:		if ((code = Gt_next_vertex(pshm, &cs, &vc, cc, false)) < 0)
+v2:		if ((code = Gt_next_vertex(pshm, &cs, &vc, cc)) < 0)
 		    break;
 		if ((code = Gt_fill_triangle(&pfs, &va, &vb, &vc)) < 0)
 		    break;
 	}
+	cs.align(&cs, 8); /* Debugged with 12-14O.PS page 2. */
     }
     if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s'))
 	vd_release_dc;
@@ -211,11 +212,11 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     for (i = 0; i < per_row; ++i) {
 	color_buffer_ptrs[i] = (patch_color_t *)(color_buffer + pfs.color_stack_step * i);
 	vertex[i].c = color_buffer_ptrs[i];
-	if ((code = Gt_next_vertex(pshm, &cs, &vertex[i], color_buffer_ptrs[i], true)) < 0)
+	if ((code = Gt_next_vertex(pshm, &cs, &vertex[i], color_buffer_ptrs[i])) < 0)
 	    goto out;
     }
     while (!seofp(cs.s)) {
-	code = Gt_next_vertex(pshm, &cs, &next, cn, true);
+	code = Gt_next_vertex(pshm, &cs, &next, cn);
 	if (code < 0)
 	    goto out;
 	for (i = 1; i < per_row; ++i) {
@@ -226,7 +227,7 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	    vertex[i - 1] = next;
 	    color_buffer_ptrs[i - 1] = cn;
 	    next.c = cn = c;
-	    code = Gt_next_vertex(pshm, &cs, &next, cn, true);
+	    code = Gt_next_vertex(pshm, &cs, &next, cn);
 	    if (code < 0)
 		goto out;
 	    code = Gt_fill_triangle(&pfs, &vertex[i], &vertex[i - 1], &next);

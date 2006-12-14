@@ -1062,13 +1062,17 @@ Test	 Status	Comments
 		-		- 
 		Test12: ok	Fixed by rev 7175.
 
-09-47J-1  DIFF	graphic column 1 row 1 different clipping Assign: Ray
+09-47J-1  AOK	Analyzed by Igor.
+                Tek misses an imagemask or a character with a shading color.
+                See explanation in 09-47J-6.
 		cpsi/09-47J-1  missing
 
 09-47J-10 OK	Verified visually against Tek hardcopy by Sabrina
 		cpsi/09-47J-10  missing
 
-09-47J-2  DIFF	graphic column 1 row 1 different clipping Assign: Ray
+09-47J-2  AOK	Analyzed by Igor.
+                Tek misses an imagemask or a character with a shading color.
+                See explanation in 09-47J-6.
 		cpsi/09-47J-2  missing
 
 09-47J-3  OK	Verified visually against Tek hardcopy by Sabrina
@@ -1077,30 +1081,54 @@ Test	 Status	Comments
 09-47J-4  OK	Verified visually against Tek hardcopy by Sabrina
 		cpsi/09-47J-4  missing
 
-09-47J-5  DIFF	missing several graphics Assign: Ray
+09-47J-5  AOK	Analyzed by Igor.
+                Tek misses an imagemask or a character with a shading color.
+                The bug is well visible in Test03 : The triangle is painted with the shading color,
+                then the character is painted with the shading Background,
+                which overlaps a part of the triangle, and then the character is 
+                not painted with the shading color.
 		cpsi/09-47J-5  missing
 
-09-47J-6  DIFF	missing several graphics Assign: Ray
+09-47J-6  AOK	Analyzed by Igor.
+                Tek misses an imagemask or a character with a shading color.
+                The bug is well visible in Test03 : The triangle is painted with the shading color,
+                then the character is painted with the shading Background,
+                which overlaps a part of the triangle, and then the character is 
+                not painted with the shading color.
 		cpsi/09-47J-6  missing
 
 09-47J-4  OK	Verified visually against Tek hardcopy by Sabrina
 		cpsi/09-47J-7  missing
 
-09-47J-8  DIFF	graphic column 1 row 1 different clipping Assign: Ray
+09-47J-8  AOK	Analyzed by Igor.
+                Tek misses an imagemaskmask or a character with a shading color.
 		cpsi/09-47J-8  missing
 
 09-47J-4  OK	Verified visually against Tek hardcopy by Sabrina
 		cpsi/09-47J-9  missing
 
-09-47K-1  DIFF	graphic column 1 row 1 different clipping Assign: Ray
+09-47K-1  AOK	Analyzed by Igor.
+                Tek yields a rangecheck while rendering 
+                an imagemask or a character with a shading color.
+                and misses the rest of graphics.
+                I don't see any legal reason for rangecheck. 
+                See explanation in 09-47J-6.
 		cpsi/09-47K-1  missing
 
-09-47K-2  DIFF	graphic column 1 row 1 different clipping Assign: Ray
-		Improved with rev 7211, still needs to veryfy with Tek.
+09-47K-2  AOK	Analyzed by Igor.
+                Tek yields a rangecheck while rendering 
+                an imagemask or a character with a shading color.
+                and misses the rest of graphics.
+                I don't see any legal reason for rangecheck.
+                See explanation in 09-47J-6.
 		cpsi/09-47K-2  missing
 
-09-47K-3  DIFF	graphic column 1 row 1 different clipping Assign: Ray
-		Improved with rev 7211, still needs to veryfy with Tek.
+09-47K-3  AOK	Analyzed by Igor.
+                Tek yields a rangecheck while rendering 
+                an imagemask or a character with a shading color.
+                and misses the rest of graphics.
+                I don't see any legal reason for rangecheck.
+                See explanation in 09-47J-6.
 		cpsi/09-47K-3  missing
 
 09-47K-4  OK	Verified visually against Tek hardcopy by Sabrina
@@ -2646,8 +2674,8 @@ Test	 Status	Comments
 
 12-14O-1  OK	Minor differences in positions and character shapes - ADC
 
-12-14O-2  DIFF	GS has wrong colors, Test05, Test06. GS has red-green shading
-		CPSI has green-blue shading. (as of rev 7211) Assign: Igor
+12-14O-2  DIFF  test12: The yellow horizontal bar must not appear.
+		Assigned to Igor.
 
 12-14O-3  OK	Fixed with rev 7211.
 

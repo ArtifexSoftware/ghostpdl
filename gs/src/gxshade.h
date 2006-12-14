@@ -152,7 +152,7 @@ int shade_next_color(shade_coord_stream_t * cs, float *pc);
 
 /* Get the next vertex for a mesh element. */
 int shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex, 
-		      patch_color_t *c, bool align_color_data);
+		      patch_color_t *c);
 
 /*
    Currently, all shading fill procedures follow the same algorithm:
