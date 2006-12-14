@@ -43,7 +43,7 @@ dictionary which will be a considerable amount of work.
 0095 OPEN 28-04 p 18 polygon arc join error
 0097 OPEN 28-06 p 6 pu subpolygon fill missing
 0098 OPEN 28-06 p 8 butt or triangle join rounding 
-0099 OPEN 28-07 p 6 lost line
+0099 FIXED 28-07 p 6 lost line
 0100 OPEN 28-08 p 8 character scaling.
 0102 OPEN 28-10 p 5 -- missing polyline segment.
 0103 OPEN 28-10 p 11 rectangle missing on 4600?
@@ -78,7 +78,7 @@ dictionary which will be a considerable amount of work.
 0153 OPEN 32-07 p 4 LB placement.
 0156 OPEN 34-03 p 1 OK? color transfer function perhaps.
 0157 OPEN 34-04 p 1 Fill differences
-0158 OPEN 35-01 p 1 PD circle PD
+0158 FIXED 35-01 p 1 PD circle PD
 0159 OPEN 35-02 p 6 scaling picture frame interaction.
 0160 FIXED 36-01 p 10 verified r2687 r2700
 0161 FIXED same as 0160 verified r2687 r2700
