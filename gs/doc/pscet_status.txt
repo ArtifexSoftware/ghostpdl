@@ -549,7 +549,7 @@ Test	 Status	Comments
 
 09-36-6  OK	Fixed by r7123.
 
-09-36-7  DIFF	LOOK 14 has minor differences.  Assign: Ray
+09-36-7  OK	Fixed as of r7500.
 
 09-37-1  AOK	GS similar to Tek, but the value at which polygon edges changes from
 		16 to 8 differs (GS at 53, Tek at 19). Also Tek changes from 'smooth'
@@ -4133,7 +4133,7 @@ Test	 Status	Comments
 
 23-12J-4  OK	
 
-23-12K-1  DIFF	GS has 'T' where CPSI has 'F' on the last four lines. assign: Peter
+23-12K-1  OK	Fixed as of r7500.
 
 23-12K-2  DIFF	GS has 'T' where CPSI has 'F' on one of the DCTEncode. Assign: Peter
 
@@ -4163,18 +4163,16 @@ Test	 Status	Comments
 
 23-12T-1  OK	
 
-23-12U-1  DIFF	GS gets 'rangecheck' on Colors_17 and Colors_57 tests, Colors_18,
+23-12U-1  OK	Fixed as of r7500.
 		Colors_53. Similar to 23-12P-[1-2]. LZW_Colors all different -- GS
 		has info, CPSI and Tek are blank. Assign: Peter.
 
-23-12V-1  DIFF	GS gets 'rangecheck' on Intent_4 and Intent_987, ResuseableStreamDecode.
-		Assign: Peter
+23-12V-1  OK	Fixed as of r7500.
 
-23-12W-1  DIFF	GS gets 'T' instead of 'F', last line (DecoFilt status). Assign: Peter
+23-12W-1  OK	Fixed as of r7500.
 
 23-12W-2  DIFF	GS gets 'F' instead of 'T' from (globalstring /ResusableStreamDecode
-		filter gcheck), GS gets 'T' instead of false from last line (Deco status)
-		Assign: Peter
+		filter gcheck).  Assign: Peter
 
 23-12W-3  OK	Minor differences visually reviewed by RJJ
 
@@ -4182,7 +4180,7 @@ Test	 Status	Comments
 
 23-12W-5  OK	Fixed by rev 7149.
 
-23-12W-6  DIFF	GS shows --.writeobjects-- instead of --writeobjects--. Assign: Peter
+23-12W-6  OK	Fixed as of r7500.
 
 23-13-1  DIFF	GS has 'T' instead of 'F' in last column. Assign: Peter
 
