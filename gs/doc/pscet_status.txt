@@ -2674,8 +2674,7 @@ Test	 Status	Comments
 
 12-14O-1  OK	Minor differences in positions and character shapes - ADC
 
-12-14O-2  DIFF  test12: The yellow horizontal bar must not appear.
-		Assigned to Igor.
+12-14O-2  OK
 
 12-14O-3  OK	Fixed with rev 7211.
 

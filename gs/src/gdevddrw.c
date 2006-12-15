@@ -272,8 +272,9 @@ set_x_gradient_nowedge(trap_gradient *xg, const trap_gradient *lg, const trap_gr
 	   which drops the fraction anyway. */
 	int32_t cl = lg->c[i];
 	int32_t cr = rg->c[i];
-	int32_t c0 = (int32_t)(cl + ((int64_t)cr - cl) * (x0 - xl) / (xr - xl));
-	int32_t c1 = (int32_t)(cl + ((int64_t)cr - cl) * (x1 - xl) / (xr - xl));
+	/* Use half color values against c1 overflow : */
+	int32_t c0 = (int32_t)((cl + ((int64_t)cr - cl) * (x0 - xl) / (xr - xl)) / 2);
+	int32_t c1 = (int32_t)((cl + ((int64_t)cr - cl) * (x1 - xl) / (xr - xl)) / 2);
 
 	xg->c[i] = c0;
 	xg->f[i] = 0; /* Insufficient bits to compute it better. 
@@ -297,7 +298,9 @@ set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *
 
 	xg->den = 1;
 	for (i = 0; i < num_components; i++) {
-	    xg->c[i] = (lg->den == 0 ? rg->c[i] : lg->c[i]);
+	    /* set_x_gradient_nowedge passes half color values against an overflow. 
+	       Set half value here for compatibility. */
+	    xg->c[i] = (lg->den == 0 ? rg->c[i] : lg->c[i]) / 2;
 	    xg->f[i] = 0; /* Compatible to set_x_gradient_nowedge. */
 	    xg->num[i] = 0;
 	}

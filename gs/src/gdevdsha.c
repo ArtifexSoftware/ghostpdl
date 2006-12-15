@@ -41,13 +41,15 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
     if (j < fixed2int(fa->clip->p.y) ||
 	    j > fixed2int_ceiling(fa->clip->q.y)) /* Must be compatible to the clipping logic. */
 	return 0;
+    /* set_x_gradient_nowedge passes half color values against an overflow. 
+       Compensate that here with subtracting 1 from the bits shift below (2 occurances). */
     for (k = 0; k < n; k++) {
 	int shift = cinfo->comp_shift[k];
 	int bits = cinfo->comp_bits[k];
 
 	c[k] = c0[k];
 	f[k] = c0f[k];
-	ci0 |= (gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - 1 - bits)) << shift;
+	ci0 |= (gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - 2 - bits)) << shift;
     }
     for (i = i0 + 1; i < i1; i++) {
 	ci1 = 0;
@@ -63,7 +65,7 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
 		m += cg_den;
 	    }
 	    f[k] = m;
-	    ci1 |= (gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - 1 - bits)) << shift;
+	    ci1 |= (gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - 2 - bits)) << shift;
 	}
 	if (ci1 != ci0) {
 	    si = max(bi, fixed2int(fa->clip->p.x));	    /* Must be compatible to the clipping logic. */
