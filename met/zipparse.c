@@ -311,7 +311,7 @@ zip_decompress_data(zip_state_t *pzip, stream_cursor_read *pin )
 	if (left == 0)
 	    return eEndOfStream;
 	rlen = min(left, min(rlen, wlen));
-	memcpy(wptr, pin->ptr, rlen);
+	memcpy(wptr, pin->ptr+1, rlen);
 	part->tail->writeoffset += rlen;
 	part->csaved += rlen;
 	pin->ptr += rlen;    
