@@ -1,8 +1,9 @@
 #include "ghostxps.h"
 
 #define ZIP_LOCAL_FILE_SIG 0x04034b50
+#define ZIP_DATA_DESC_SIG 0x08074b50
 
-struct xps_zip_part_s
+struct xps_part_s
 {
     char *name;
     int size;
@@ -10,15 +11,25 @@ struct xps_zip_part_s
     byte *data;
     void *resource;
     void (*free)(xps_context_t*,void*);
-    xps_zip_part_t *next;
+    xps_part_t *next;
 };
 
-xps_zip_part_t *
-xps_new_zip_part(xps_context_t *ctx)
+void xps_debug_parts(xps_context_t *ctx)
 {
-    xps_zip_part_t *part;
+    xps_part_t *part = ctx->root;
+    while (part)
+    {
+	dprintf2("part '%s' size=%d\n", part->name, part->size);
+	part = part->next;
+    }
+}
 
-    part = xps_alloc(ctx, sizeof(xps_zip_part_t));
+xps_part_t *
+xps_new_part(xps_context_t *ctx)
+{
+    xps_part_t *part;
+
+    part = xps_alloc(ctx, sizeof(xps_part_t));
     if (!part)
 	return NULL;
 
@@ -34,7 +45,7 @@ xps_new_zip_part(xps_context_t *ctx)
 }
 
 void
-xps_free_zip_part(xps_context_t *ctx, xps_zip_part_t *part)
+xps_free_part(xps_context_t *ctx, xps_part_t *part)
 {
     if (part->name) xps_free(ctx, part->name);
     if (part->data) xps_free(ctx, part->data);
@@ -82,28 +93,55 @@ xps_alloc_items(xps_context_t *ctx, int items, int size)
 }
 
 static int
-xps_init_zip_part(xps_context_t *ctx)
+xps_init_part(xps_context_t *ctx)
 {
+    xps_part_t *part;
     int code;
 
-    // TODO: XPS part name munging for interleaved parts
+    // TODO: XPS part name munging for interleaved parts.
+    // find existing part to bring forward and append to instead
+    // of creating a new part.
 
-    ctx->last = xps_new_zip_part(ctx);
-    if (!ctx->last)
+    part = xps_new_part(ctx);
+    if (!part)
 	return gs_throw(-1, "cannot allocate part");
 
-    ctx->last->name = xps_strdup(ctx, ctx->zip_file_name);
-    if (!ctx->last->name)
+    part->name = xps_strdup(ctx, ctx->zip_file_name);
+    if (!part->name)
 	return gs_throw(-1, "cannot strdup part name");
 
-    dprintf1("unzipping part '%s'\n", ctx->last->name);
+    dprintf1("unzipping part '%s'\n", part->name);
 
     /* setup data buffer */
-    ctx->last->data = xps_alloc(ctx, ctx->zip_uncompressed_size);
-    ctx->last->capacity = ctx->zip_uncompressed_size;
-    ctx->last->size = 0;
-    if (!ctx->last->data)
+    if (ctx->zip_uncompressed_size == 0)
+    {
+	dputs("data of unknown size\n");
+	part->size = 0;
+	part->capacity = 1024;
+	part->data = xps_alloc(ctx, part->capacity);
+    }
+    else
+    {
+	dprintf2("data of known size: %d/%d\n",
+		ctx->zip_compressed_size, ctx->zip_uncompressed_size);
+	part->size = 0;
+	part->capacity = ctx->zip_uncompressed_size;
+	part->data = xps_alloc(ctx, part->capacity);
+    }
+    if (!part->data)
 	return gs_throw(-1, "cannot allocate part buffer");
+
+    /* add it to the list and make it current */
+    if (!ctx->root)
+    {
+	ctx->root = part;
+    }
+    else
+    {
+	part->next = ctx->root;
+	ctx->root = part;
+    }
+    ctx->last = part;
 
     /* init decompression */
     if (ctx->zip_method == 8)
@@ -116,6 +154,7 @@ xps_init_zip_part(xps_context_t *ctx)
 	code = inflateInit2(&ctx->zip_stream, -15);
 	if (code != Z_OK)
 	    return gs_throw1(-1, "cannot inflateInit2(): %d", code);
+	return 0;
     }
     else if (ctx->zip_method == 0)
     {
@@ -129,38 +168,69 @@ xps_init_zip_part(xps_context_t *ctx)
 
 /* return -1 = fail, 0 = need more data, 1 = finished */
 static int
-xps_read_zip_part(xps_context_t *ctx, stream_cursor_read *buf)
+xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 {
+    xps_part_t *part = ctx->last;
+    int code;
+
+    if (part->size >= part->capacity)
+    {
+	dprintf2("growing buffer (%d/%d)\n", part->size, part->capacity);
+	part->capacity += 8192;
+	part->data = xps_realloc(ctx, part->data, part->capacity);
+	if (!part->data)
+	    return gs_throw(-1, "out of memory");
+    }
+
     if (ctx->zip_method == 8)
     {
-	if (ctx->zip_uncompressed_size == 0)
+	ctx->zip_stream.next_in = buf->ptr + 1;
+	ctx->zip_stream.avail_in = buf->limit - buf->ptr;
+	ctx->zip_stream.next_out = part->data + part->size;
+	ctx->zip_stream.avail_out = part->capacity - part->size;
+	code = inflate(&ctx->zip_stream, Z_NO_FLUSH);
+	buf->ptr = ctx->zip_stream.next_in - 1;
+	part->size = part->capacity - ctx->zip_stream.avail_out;
+
+	if (code == Z_STREAM_END)
 	{
-	    dputs("flated data of unknown size\n");
+	    dputs("at end.\n");
+	    return 1;
+	}
+	else if (code == Z_OK)
+	{
+	    dputs("chunk okay.\n");
+	    return 0;
 	}
 	else
-	{
-	    dprintf2("flated data of known size: %d/%d\n",
-		    ctx->zip_compressed_size, ctx->zip_uncompressed_size);
-	}
+	    return gs_throw(-1, "inflate() error");
     }
     else
     {
-	dprintf1("stored data of known size: %d\n", ctx->zip_compressed_size);
+	dprintf1("stored data of known size: %d\n", ctx->zip_uncompressed_size);
 	int avail = buf->limit - buf->ptr;
-	int remain = ctx->last->capacity - ctx->last->size;
+	int remain = part->capacity - part->size;
 	int count = avail;
 	if (count > remain)
 	    count = remain;
-	readall(ctx, buf, ctx->last->data + ctx->last->size, count);
+	dprintf1("  reading %d bytes\n", count);
+	readall(ctx, buf, part->data + part->size, count);
+	part->size += count;
+	if (part->size == ctx->zip_uncompressed_size)
+	    return 1;
+	return 0;
     }
 }
 
 int
 xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 {
+    unsigned int signature;
+    int code;
+
     while (1)
     {
-	int code;
+	dprintf1("process state=%d\n", ctx->zip_state);
 
 	switch (ctx->zip_state)
 	{
@@ -170,16 +240,32 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 	    return 1;
 
 	case 0: /* between parts looking for a signature */
-	    if (buf->limit - buf->ptr < 4)
-		return 0;
-
-	    unsigned int signature = read4(ctx, buf);
-	    if (signature != ZIP_LOCAL_FILE_SIG)
+	    do
 	    {
-		/* some other unknown part. we're done with the files. quit. */
-		ctx->zip_state = -1;
-		return 0;
+		if (buf->limit - buf->ptr < 4 + 12)
+		    return 0;
+
+		signature = read4(ctx, buf);
+		if (signature == ZIP_LOCAL_FILE_SIG)
+		{
+		    dputs("local file signature\n");
+		}
+		else if (signature == ZIP_DATA_DESC_SIG)
+		{
+		    dputs("data desc signature\n");
+		    unsigned int dd_crc32 = read4(ctx, buf);
+		    unsigned int dd_csize = read4(ctx, buf);
+		    unsigned int dd_usize = read4(ctx, buf);
+		}
+		else
+		{
+		    dprintf1("unknown signature %x\n", signature);
+		    /* some other unknown part. we're done with the file. quit. */
+		    ctx->zip_state = -1;
+		    return 0;
+		}
 	    }
+	    while (signature != ZIP_LOCAL_FILE_SIG);
 
 	    ctx->zip_state ++;
 
@@ -206,7 +292,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		ctx->zip_compressed_size = csize;
 		ctx->zip_uncompressed_size = usize;
 	    }
-	    ctx->zip_state = 1;
+	    ctx->zip_state ++;
 
 	case 2: /* file name */
 	    if (buf->limit - buf->ptr < ctx->zip_name_length)
@@ -224,22 +310,27 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 	    ctx->zip_state ++;
 
 	    /* prepare the correct part for receiving data */
-	    code = xps_init_zip_part(ctx);
+	    code = xps_init_part(ctx);
 	    if (code < 0)
 		return gs_throw(-1, "cannot create part");
 
 	case 4: /* file data */
 
-	    code = xps_read_zip_part(ctx, buf);
-	    if (code < 0)
-		return gs_throw(-1, "cannot read part");
-	    if (code == 0)
-		return 0;
-	    ctx->zip_state ++;
+	    while (ctx->zip_state == 4)
+	    {
+		code = xps_read_part(ctx, buf);
+		if (code < 0)
+		    return gs_throw(-1, "cannot read part");
+		if (code == 0)
+		    return 0;
+		if (code == 1)
+		    ctx->zip_state ++;
+	    }
 
 	case 5: /* data descriptor */
 	    if (ctx->zip_general & 4)
 	    {
+		dputs("data descriptor by flag\n");
 		if (buf->limit - buf->ptr < 12)
 		    return 0;
 		unsigned int dd_crc32 = read4(ctx, buf);
@@ -298,7 +389,7 @@ read4(stream_cursor_read *pr, unsigned long *a)
 
 
 private int 
-zip_new_block(zip_state_t *pzip, zip_part_t *part)
+zip_new_block(zip_state_t *pzip, part_t *part)
 {
     int code = 0;
     zip_block_t *blk;
@@ -333,7 +424,7 @@ zip_new_block(zip_state_t *pzip, zip_part_t *part)
 private int 
 zip_init_part(zip_state_t *pzip)
 {
-    zip_part_t *part = (zip_part_t *)gs_alloc_bytes(pzip->memory, size_of(zip_part_t), 
+    part_t *part = (part_t *)gs_alloc_bytes(pzip->memory, size_of(part_t), 
 						    "zip_init_part");
 
     part->parent = pzip;  /* back pointer */
@@ -361,7 +452,7 @@ zip_read_part(zip_state_t *pzip, stream_cursor_read *pr)
     unsigned short shortInt;
     unsigned long longInt;
     int code = 0;
-    zip_part_t *part =0;
+    part_t *part =0;
     int i;
 
     switch( pzip->part_read_state ) {
@@ -515,7 +606,7 @@ zip_read_part(zip_state_t *pzip, stream_cursor_read *pr)
 
 
 private int 
-zip_init_write_stream(zip_state_t *pzip, zip_part_t *part)
+zip_init_write_stream(zip_state_t *pzip, part_t *part)
 {
     if (part->zs == NULL) {
 	part->zs = gs_alloc_bytes(pzip->memory, size_of(z_stream), "zip z_stream");
@@ -532,7 +623,7 @@ private int
 zip_decompress_data(zip_state_t *pzip, stream_cursor_read *pin )
 {
     int code = 0;
-    zip_part_t *part = pzip->parts[pzip->read_part];
+    part_t *part = pzip->parts[pzip->read_part];
     z_stream *zs = 0;
     long rlen = pin->limit - pin->ptr - 1;
     long wlen = 0;
@@ -620,7 +711,7 @@ zip_decomp_process(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip,
 		   stream_cursor_read *pr)
 {
     int code = 0;
-    zip_part_t *rpart = NULL;
+    part_t *rpart = NULL;
 
     /* update reading pointer 
      * NB: client should be able to choose a different file to read
@@ -670,8 +761,8 @@ int
 zip_process(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip, stream_cursor_read *pr)
 {
     int code = 0;
-    zip_part_t *rpart = NULL;
-    zip_part_t *wpart = NULL;
+    part_t *rpart = NULL;
+    part_t *wpart = NULL;
     int last_len = pr->limit - pr->ptr;
 
     while (pr->limit - pr->ptr > 4 && code == 0) {
@@ -812,13 +903,13 @@ zip_end_job(met_parser_state_t *st, met_state_t *mets, zip_state_t *pzip)
 		buf[strlen(pzip->parts[i]->name) + 1] = 0;
 		pl_dict_undef(&mets->font_dict, buf, strlen(buf));
 	    }
-	    zip_part_free_all(pzip->parts[i]);
+	    part_free_all(pzip->parts[i]);
 
 	    // need destructor here.
-	    gs_free_object(pzip->memory, pzip->parts[i]->name, "zip_part_free struct");
-	    gs_free_object(pzip->memory, pzip->parts[i]->buf, "zip_part_free struct");
-	    gs_free_object(pzip->memory, pzip->parts[i]->zs, "zip_part_free struct");
-	    gs_free_object(pzip->memory, pzip->parts[i], "zip_part_free struct");
+	    gs_free_object(pzip->memory, pzip->parts[i]->name, "part_free struct");
+	    gs_free_object(pzip->memory, pzip->parts[i]->buf, "part_free struct");
+	    gs_free_object(pzip->memory, pzip->parts[i]->zs, "part_free struct");
+	    gs_free_object(pzip->memory, pzip->parts[i], "part_free struct");
 	    pzip->parts[i] = 0;
 	}
     }

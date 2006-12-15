@@ -9,7 +9,7 @@
 #include "zlib.h"
 
 typedef struct xps_context_s xps_context_t;
-typedef struct xps_zip_part_s xps_zip_part_t;
+typedef struct xps_part_s xps_part_t;
 
 struct xps_context_s
 {
@@ -17,8 +17,8 @@ struct xps_context_s
     gs_memory_t *memory;
     gs_state *pgs;
 
-    xps_zip_part_t *root;
-    xps_zip_part_t *last;
+    xps_part_t *root;
+    xps_part_t *last;
 
     unsigned int zip_state;
     unsigned int zip_general;

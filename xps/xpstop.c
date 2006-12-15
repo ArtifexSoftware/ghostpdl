@@ -284,6 +284,10 @@ xps_imp_deallocate_interp_instance(pl_interp_instance_t *pinstance)
     xps_context_t *ctx = instance->ctx;
     gs_memory_t *mem = ctx->memory;
 
+dputs("xps_imp_deallocate_interp_instance!\n");
+
+    xps_debug_parts(ctx);
+
     // free gstate?
     gs_free_object(mem, ctx, "xps_imp_deallocate_interp_instance");
     gs_free_object(mem, instance, "xps_imp_deallocate_interp_instance");
