@@ -50,7 +50,23 @@ gs_closepath(gs_state * pgs)
 int
 gs_upmergepath(gs_state * pgs)
 {
-    return gx_path_add_path(pgs->saved->path, pgs->path);
+    /*
+     * We really should be able to implement this as simply
+     *   return gx_path_add_path(pgs->saved->path, pgs->path);
+     * But because of the current_point members in the imager state,
+     * we can't.
+     */
+    gs_state *saved = pgs->saved;
+    int code;
+
+    code = gx_path_add_path(saved->path, pgs->path);
+    if (code < 0)
+	return code;
+    if (pgs->current_point_valid) {
+	saved->current_point = pgs->current_point;
+	saved->current_point_valid = true;
+    }
+    return code;
 }
 
 /* Get the current path (for internal use only). */
