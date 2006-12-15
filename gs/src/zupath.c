@@ -38,6 +38,17 @@
 extern const gx_device gs_hit_device;
 extern const int gs_hit_detected;
 
+/*
+ * CPSI mode affects two algorithms in this file:
+ * - CPSI allows ucache to appear anywhere in user paths, even though the
+ *   PLRM says ucache must appear (if at all) at the beginning
+ *   (PLRM3 p, 199);
+ * - After appending an empty user path, in CPSI the current point is
+ *   defined, even though the PLRM strongly implies this is incorrect
+ *   (PLRM3 p. 712).
+ * The 'upath_compat' Boolean controls this behavior.
+ */
+
 extern bool CPSI_mode;
 
 /* Forward references */
@@ -313,12 +324,32 @@ static const up_data_t up_data[UPATH_MAX_OP + 1] = {
 int zsetbbox(i_ctx_t *);
 private int zucache(i_ctx_t *);
 
+/* Forward references */
+private int upath_setbbox(i_ctx_t *);
+
 #undef zp
 static const op_proc_t up_ops[UPATH_MAX_OP + 1] = {
     zsetbbox, zmoveto, zrmoveto, zlineto, zrlineto,
     zcurveto, zrcurveto, zarc, zarcn, zarct,
     zclosepath, zucache
 };
+static const op_proc_t up_ops_compat[UPATH_MAX_OP + 1] = {
+    upath_setbbox, zmoveto, zrmoveto, zlineto, zrlineto,
+    zcurveto, zrcurveto, zarc, zarcn, zarct,
+    zclosepath, zucache
+};
+
+/* In CPSI compatibility mode, setbbox must also do a moveto. */
+private int
+upath_setbbox(i_ctx_t *i_ctx_p)
+{
+    int code = zsetbbox(i_ctx_p);
+
+    if (code < 0) return code;
+    /* "Restore" the first two stack operands. */
+    osp += 2;
+    return zmoveto(i_ctx_p);
+}
 
 /* - ucache - */
 private int
@@ -337,7 +368,7 @@ zuappend(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if ((code = upath_append(op, i_ctx_p, false)) >= 0)
+    if ((code = upath_append(op, i_ctx_p, CPSI_mode)) >= 0)
 	code = gs_upmergepath(igs);
     gs_grestore(igs);
     igs->current_point.x = fixed2float(igs->path->position.x);
@@ -456,9 +487,24 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 {
     int size = (with_ucache ? 6 : 5);
     gs_path_enum penum;
+    gs_rect bbox;
     int op;
     ref *next;
     int code;
+
+
+    /* Compute the bounding box. */
+    if ((code = gs_upathbbox(pgs, &bbox, true)) < 0) {
+	/*
+	 * Note: Adobe throws 'nocurrentpoint' error, but the PLRM does
+	 * not list this as a possible error from 'upath', so if we are
+	 * not in CPSI compatibility mode, we set a reasonable default
+	 * bbox instead.
+	 */
+	if (code != e_nocurrentpoint || CPSI_mode)
+	    return code;
+	bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0;
+    }
 
     /* Compute the size of the user path array. */
     {
@@ -493,29 +539,16 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 	    return code;
 	r_set_attrs(next, a_executable | l_new);
 	++next;
-    } {
-	gs_rect bbox;
-
-	if ((code = gs_upathbbox(pgs, &bbox, true)) < 0) {
-	    /*
-	     * Note: Adobe throws 'nocurrentpoint' error, but the PLRM
-	     * not list this as a possible error from 'upath', so we
-	     * set a reasonable default bbox instead.
-	     */
-	    if (code != e_nocurrentpoint)
-		return code;
-	    bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0;
-	}
-	make_real_new(next, bbox.p.x);
-	make_real_new(next + 1, bbox.p.y);
-	make_real_new(next + 2, bbox.q.x);
-	make_real_new(next + 3, bbox.q.y);
-	next += 4;
-	if ((code = name_enter_string(pgs->memory, "setbbox", next)) < 0)
-	    return code;
-	r_set_attrs(next, a_executable | l_new);
-	++next;
     }
+    make_real_new(next, bbox.p.x);
+    make_real_new(next + 1, bbox.p.y);
+    make_real_new(next + 2, bbox.q.x);
+    make_real_new(next + 3, bbox.q.y);
+    next += 4;
+    if ((code = name_enter_string(pgs->memory, "setbbox", next)) < 0)
+	return code;
+    r_set_attrs(next, a_executable | l_new);
+    ++next;
     {
 	gs_point pts[3];
 
@@ -567,9 +600,10 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 
 /* Append a user path to the current path. */
 private inline int
-upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool ucache_kludge)
+upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool upath_compat)
 {
     upath_state ups = UPS_INITIAL;
+    const op_proc_t *ops = (upath_compat ? up_ops_compat : up_ops);
     ref opcodes;
 
     if (r_has_type(oppath, t__invalid))
@@ -609,7 +643,7 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool ucache_kludg
 		const up_data_t data = up_data[opx];
 
 		*pnargs = data.num_args; /* in case of error */
-		if (ucache_kludge && opx == upath_op_ucache) {
+		if (upath_compat && opx == upath_op_ucache) {
 		    /* CPSI does not complain about incorrect ucache
 		       placement, even though PLRM3 says it's illegal. */
 		    ups = ups == UPS_PATH ? ups : data.state_after;
@@ -636,7 +670,7 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool ucache_kludg
 				return_error(e_typecheck);
 			}
 		    }
-		    code = (*up_ops[opx])(i_ctx_p);
+		    code = (*ops[opx])(i_ctx_p);
 		    if (code < 0)
 			return code;
 		}
@@ -686,7 +720,7 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool ucache_kludg
 		    data = up_data[opx];
 		    if (argcount != data.num_args)
 			return_error(e_typecheck);
-		    if (ucache_kludge && opx == upath_op_ucache) {
+		    if (upath_compat && opx == upath_op_ucache) {
 			/* CPSI does not complain about incorrect ucache
 			   placement, even though PLRM3 says it's illegal. */
 			ups = ups == UPS_PATH ? ups : data.state_after;
@@ -695,7 +729,8 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool ucache_kludg
 			    return_error(e_typecheck);
 			ups = data.state_after;
 		    }
-		    code = (*oproc)(i_ctx_p);
+		    /* If in compat mode, use up_ops_compat */
+		    code = (*ops[opx])(i_ctx_p);
 		    if (code < 0) {
 			if (code == e_nocurrentpoint)
                             return_error(e_rangecheck); /* CET 11-22 */
@@ -715,10 +750,10 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool ucache_kludg
     return 0;
 }
 private int
-upath_append(os_ptr oppath, i_ctx_t *i_ctx_p, bool ucache_kludge)
+upath_append(os_ptr oppath, i_ctx_t *i_ctx_p, bool upath_compat)
 {
     int nargs = 0;
-    int code = upath_append_aux(oppath, i_ctx_p, &nargs, ucache_kludge);
+    int code = upath_append_aux(oppath, i_ctx_p, &nargs, upath_compat);
 
     if (code < 0) {
 	/* Pop args on error, to match Adobe interpreters. */
@@ -733,14 +768,14 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p, bool ucache_kludge)
 /* Append a user path to the current path, and then apply or return */
 /* a transformation if one is supplied. */
 private int
-upath_stroke(i_ctx_t *i_ctx_p, gs_matrix *pmat, bool ucache_kludge)
+upath_stroke(i_ctx_t *i_ctx_p, gs_matrix *pmat, bool upath_compat)
 {
     os_ptr op = osp;
     int code, npop;
     gs_matrix mat;
 
     if ((code = read_matrix(imemory, op, &mat)) >= 0) {
-	if ((code = upath_append(op - 1, i_ctx_p, ucache_kludge)) >= 0) {
+	if ((code = upath_append(op - 1, i_ctx_p, upath_compat)) >= 0) {
 	    if (pmat)
 		*pmat = mat;
 	    else
@@ -748,7 +783,7 @@ upath_stroke(i_ctx_t *i_ctx_p, gs_matrix *pmat, bool ucache_kludge)
 	}
 	npop = 2;
     } else {
-	if ((code = upath_append(op, i_ctx_p, ucache_kludge)) >= 0)
+	if ((code = upath_append(op, i_ctx_p, upath_compat)) >= 0)
 	    if (pmat)
 		gs_make_identity(pmat);
 	npop = 1;
