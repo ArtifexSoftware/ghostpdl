@@ -510,9 +510,9 @@ level2dict begin
   } bind
   1 {		% Roll back the failed request to its previous status.
 SETPDDEBUG { (Rolling back.) = pstack flush } if
-	3 index 2 index 3 -1 roll put
+	3 index 2 index 3 -1 roll .forceput
 	4 index 1 index .knownget
-	 { 4 index 3 1 roll put }
+	 { 4 index 3 1 roll .forceput }
 	 { 3 index exch .undef }
 	ifelse
   } bind
@@ -817,7 +817,18 @@ SETPDDEBUG { (Installing.) = pstack flush } if
   dup .setpagedevice
   .setdefaulthalftone	% Set the default screen before calling Install.
   dup /Install .knownget {
-    { .execinstall } stopped { .postinstall stop } { .postinstall } ifelse
+    { .execinstall } stopped {
+      pop % Install procedure failed. One element will have been left on the stack.
+      % stack: mark <orig> <request> <failed> <merged>
+      1 index /Install $error /errorname get put	% Put it in the "failed" dict
+      % .applypolicies needs stack: <orig> <merged> <failed>
+      exch 4 2 roll exch 4 2 roll .applypolicies exch 4 2 roll exch 4 2 roll
+      % Now execute the old Install -- failures after this are not handled
+      dup /Install .knownget { { .execinstall } stopped { pop } if } if
+      .postinstall stop
+    } {
+      .postinstall
+    } ifelse
   } {
     .postinstall
   } ifelse
@@ -826,18 +837,21 @@ SETPDDEBUG { (Installing.) = pstack flush } if
 % We break out the code after calling the Install procedure into a
 % separate procedure, since it is executed even if Install causes an error.
 % By making .execinstall a separate operator procedure, we get the stacks
-% restored if it fails.
+% mostly restored if it fails, except for one element (the operand).
+% Thus if it fails, there will be one element left on the op stack.
 
 /.execinstall {		% <proc> .execinstall -
+  dup	% element left on the stack if the exec fails.
+
 	% Because the interpreter optimizes tail calls, we can't just let
 	% the body of this procedure be 'exec', because that would lose
 	% the stack protection that is the whole reason for having the
-	% procedure in the first place.  We hack this by adding a couple
-	% of extra tokens to ensure that the operator procedure is still
-	% on the stack during the exec.
+	% procedure in the first place. The 'pop' for the dummy element 
+	% on the op stack suffices.
   exec
-  0 pop	% See above.
+  pop	% See above.
 } odef
+
 /.postinstall {		% mark ... <failed> <merged> .postinstall -
    matrix currentmatrix .setdefaultmatrix
 		% Erase and initialize the page.
