@@ -1027,7 +1027,7 @@ All Ghostscript builds in PC (DOS and MS Windows) environments are 32- or
 	<td>&nbsp;
 	<td valign=top><a href="#Borland_build">Borland/Inprise C++ 4.x</a>
 	<td>&nbsp;
-	<td valign=top>32-bit MS Windows 3.1 + Win32s, 95, 98, NT
+	<td valign=top>Windows 95, 98, NT and later
 <tr>	<td valign=top><b><tt>msvc32.mak</tt></b>
 	<td>&nbsp;
 	<td valign=top><a href="#Microsoft_build">Microsoft Visual C++ 4 to 8</a>
@@ -1189,12 +1189,6 @@ this bug to Borland, send them the result of compiling
 <b><tt>file_is_valid()</tt></b> and <b><tt>!file_is_valid()</tt></b>.  We
 don't know whether Borland C++ 5.02 still has this problem. The problem 
 does not appear to exist in Borland C++Builder 4 or 5.</li>
-
-<li>When building for the MS Windows Win32s environment, the make
-process will stop after it has created <b><tt>genarch.exe</tt></b>.
-You should then run "<b><tt>_genarch.bat</tt></b>", wait until
-<b><tt>genarch</tt></b> has finished and then exit MS Windows.  Then type
-"<b><tt>make</tt></b>" again to restart the make process.
 
 <li>Borland C++Builder 5 and above require <strong><tt>BUILDER_VERSION</tt></strong>
 to be set explicitly&nbsp; to 5 in the make file because the version of MAKE which ships
