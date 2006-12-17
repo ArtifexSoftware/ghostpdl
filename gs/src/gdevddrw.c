@@ -256,14 +256,24 @@ set_x_gradient_nowedge(trap_gradient *xg, const trap_gradient *lg, const trap_gr
     int32_t xr = r->x - (r->xf == -r->h ? 1 : 0) - fixed_half; /* Revert the GX_FILL_TRAPEZOID shift. */
     /* The pixel span boundaries : */
     int32_t x0 = int2fixed(il) + fixed_half; /* Shift to the pixel center. */
-    int32_t x1 = int2fixed(ir) + fixed_half; /* Shift to the pixel center. */
+    int32_t x1 = int2fixed(ir) - fixed_half; /* The center of the last pixel to paint. */
     int i;
 
 #   ifdef DEBUG
 	if (arith_rshift_1(xr) - arith_rshift_1(xl) >= 0x3FFFFFFE) /* Can overflow ? */
 	    return_error(gs_error_unregistered); /* Must not happen. */
 #   endif
+    /* We cannot compute the color of the 'ir' pixel 
+       because it can overflow 'c1' due to the pixel ir center
+       may be greater that r->x .
+       Therefore we base the proportion on the pixel index ir-1 (see comment to 'x1').
+       Debugged with CET 12-14O.PS SpecialTestJ02Test12.
+     */
     xg->den = fixed2int(x1 - x0);
+    if (xg->den <= 0) {
+	/* The span contains a single pixel, will construct a degenerate gradient. */
+	xg->den = 1; /* Safety (against zerodivide). */
+    }
     for (i = 0; i < num_components; i++) {
 	/* Ignoring the ending colors fractions, 
 	   so the color gets a slightly smaller value
@@ -272,9 +282,8 @@ set_x_gradient_nowedge(trap_gradient *xg, const trap_gradient *lg, const trap_gr
 	   which drops the fraction anyway. */
 	int32_t cl = lg->c[i];
 	int32_t cr = rg->c[i];
-	/* Use half color values against c1 overflow : */
-	int32_t c0 = (int32_t)((cl + ((int64_t)cr - cl) * (x0 - xl) / (xr - xl)) / 2);
-	int32_t c1 = (int32_t)((cl + ((int64_t)cr - cl) * (x1 - xl) / (xr - xl)) / 2);
+	int32_t c0 = (int32_t)(cl + ((int64_t)cr - cl) * (x0 - xl) / (xr - xl));
+	int32_t c1 = (int32_t)(cl + ((int64_t)cr - cl) * (x1 - xl) / (xr - xl));
 
 	xg->c[i] = c0;
 	xg->f[i] = 0; /* Insufficient bits to compute it better. 
@@ -298,9 +307,7 @@ set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *
 
 	xg->den = 1;
 	for (i = 0; i < num_components; i++) {
-	    /* set_x_gradient_nowedge passes half color values against an overflow. 
-	       Set half value here for compatibility. */
-	    xg->c[i] = (lg->den == 0 ? rg->c[i] : lg->c[i]) / 2;
+	    xg->c[i] = (lg->den == 0 ? rg->c[i] : lg->c[i]);
 	    xg->f[i] = 0; /* Compatible to set_x_gradient_nowedge. */
 	    xg->num[i] = 0;
 	}
