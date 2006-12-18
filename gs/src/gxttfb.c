@@ -191,9 +191,35 @@ void gx_ttfReader__destroy(gx_ttfReader *this)
     gs_free_object(this->memory, this, "gx_ttfReader__destroy");
 }
 
+private int 
+gx_ttfReader__default_get_metrics(const ttfReader *ttf, uint glyph_index, bool bVertical, 
+				  short *sideBearing, unsigned short *nAdvance)
+{
+    gx_ttfReader *this = (gx_ttfReader *)ttf;
+    float sbw[4];
+    int sbw_offset = bVertical;
+    int code;
+    int factor = this->pfont->data.unitsPerEm;
+
+    if (bVertical)
+	factor = factor; /* See simple_glyph_metrics */    
+    code = this->pfont->data.get_metrics(this->pfont, glyph_index, bVertical, sbw);
+    if (code < 0)
+	return code;
+    /* Due to an obsolete convention, simple_glyph_metrics scales
+       the metrics into 1x1 rectangle as Postscript like.
+       In same time, the True Type interpreter needs 
+       the original design units.
+       Undo the scaling here with accurate rounding. */
+    *sideBearing = (short)floor(sbw[0 + sbw_offset] * factor + 0.5);
+    *nAdvance = (short)floor(sbw[2 + sbw_offset] * factor + 0.5);
+    return 0;
+}
+
 void gx_ttfReader__set_font(gx_ttfReader *this, gs_font_type42 *pfont)
 {
     this->pfont = pfont;
+    this->super.get_metrics = gx_ttfReader__default_get_metrics;
 }
 
 

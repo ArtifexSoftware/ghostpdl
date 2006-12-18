@@ -488,31 +488,10 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
     const byte *glyph = NULL;
     int glyph_size;
 
-    if(this->bVertical && pFont->t_vhea.nPos && pFont->t_vmtx.nPos) {
-	nLongMetrics = pFont->nLongMetricsVert;
-	nMtxPos = pFont->t_vmtx.nPos;
-    } else {
-	nLongMetrics = pFont->nLongMetricsHorz;
-	nMtxPos = pFont->t_hmtx.nPos;
-    }
-    if (this->bVertical && (!pFont->t_vhea.nPos || pFont->t_vmtx.nPos) && nMtxGlyph < nLongMetrics) {
-	/* A bad font fix. */
-	nMtxGlyph = nLongMetrics;
-	if(nMtxGlyph >= pFont->nNumGlyphs)
-	    nMtxGlyph = pFont->nNumGlyphs - 1;
-    }
-    if (nMtxGlyph < nLongMetrics) {
-	r->Seek(r, nMtxPos + 4 * nMtxGlyph);
-	nAdvance = ttfReader__Short(r);
-	sideBearing = ttfReader__Short(r);
-    } else {
-	r->Seek(r, nMtxPos + 4 * (nLongMetrics - 1));
-	nAdvance = ttfReader__Short(r);
-	r->Seek(r, nMtxPos + 4 * nLongMetrics + 2 * (nMtxGlyph - nLongMetrics));
-	sideBearing = ttfReader__Short(r);
-    }
-    if (r->Error(r))
+    if (r->get_metrics(r, glyphIndex, this->bVertical, &sideBearing, &nAdvance) < 0) {
+	/* fixme: the error code is missing due to interface restrictions. */
 	goto errex;
+    }
     gOutline->sideBearing = shortToF26Dot6(sideBearing);
     gOutline->advance.x = shortToF26Dot6(nAdvance);
     gOutline->advance.y = 0;

@@ -106,6 +106,8 @@ struct ttfReader_s {
     bool   (*Error)(ttfReader *);
     int    (*LoadGlyph)(ttfReader *, int nIndex, const byte **, int *);
     void   (*ReleaseGlyph)(ttfReader *, int nIndex);
+    int    (*get_metrics)(const ttfReader *ttf, uint glyph_index, bool bVertical, 
+			  short *sideBearing, unsigned short *nAdvance);
 };
 
 /* Define an auxiliary structure for ttfFont. */
