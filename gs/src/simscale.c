@@ -8340,6 +8340,10 @@ s_imscale_process(stream_state *st, stream_cursor_read *pr,
 	    uint rleft = pr->limit - pr->ptr;
 	    uint ncopy = min(rleft, ss->src_size - ss->src_offset);
 
+	    if (ss->src_y >= ss->params.HeightIn) {
+		last = true;
+		ncopy = 0;
+	    }
 	    if (rleft == 0 && !last)
 		return 0; /* need more input */
 	    if (ss->src_offset == 0) {
