@@ -250,7 +250,7 @@ does_font_need_tt_interpreter(gs_font *font)
     if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) {
 	gs_font_type42 *pfont = (gs_font_type42 *)font;
 
-	if (pfont->FAPI==NULL  && pfont->data.USE_ttfReader)
+	if (pfont->FAPI==NULL)
 	    return true;
     }
     return false;

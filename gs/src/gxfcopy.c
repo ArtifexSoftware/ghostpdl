@@ -1292,7 +1292,7 @@ copy_font_type42(gs_font *font, gs_font *copied)
 	psf_write_cid2_stripped(&fs, (gs_font_cid2 *)font42);
     copied42->data.string_proc = copied_type42_string_proc;
     copied42->data.proc_data = cfdata;
-    code = gs_type42_font_init(copied42, 0, font42->data.USE_ttfReader);
+    code = gs_type42_font_init(copied42, 0);
     if (code < 0)
 	goto fail2;
     /* gs_type42_font_init overwrites font_info. */

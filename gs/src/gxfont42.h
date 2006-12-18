@@ -55,15 +55,6 @@ struct gs_type42_data_s {
     int (*get_metrics)(gs_font_type42 *pfont, uint glyph_index, int wmode,
 		       float sbw[4]);
 
-
-    /* Essentially subclasses gs_type42 into with ttfReader and without ttReader
-     * Set by gs_type42_font_init, 
-     * used by gx_add_fm_pair() to do a ISA inspection and attach a ttfReader to the font
-     * if false no ttfReader is attached and normal font calls are dispatched.
-     * Used to process ttf fonts with UFST without FAPI
-     */
-    bool USE_ttfReader;		
-
     /* The following are cached values. */
     ulong cmap;			/* offset to cmap table (not used by */
 				/* renderer, only here for clients) */
@@ -114,7 +105,7 @@ extern_st(st_gs_font_type42);
  * USE_ttfReader subclasses gs_font_type42 with ttfReader or without.
  * FAPI will disable ttfReader as well. 
  */
-int gs_type42_font_init(gs_font_type42 *pfont, int subfontid, bool USE_ttfReader);
+int gs_type42_font_init(gs_font_type42 *pfont, int subfontid);
 
 /* Append the outline of a TrueType character to a path. */
 int gs_type42_append(uint glyph_index, gs_state * pgs,
