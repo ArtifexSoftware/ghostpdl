@@ -3,11 +3,22 @@
 #define ZIP_LOCAL_FILE_SIG 0x04034b50
 #define ZIP_DATA_DESC_SIG 0x08074b50
 
+typedef struct xps_relation_s xps_relation_t;
+
+struct xps_relation_s
+{
+    char *source;
+    char *type;
+    char *target;
+    xps_relation_t *next;
+};
+
 struct xps_part_s
 {
     char *name;
     int size;
     int capacity;
+    int complete;
     byte *data;
     void *resource;
     void (*free)(xps_context_t*,void*);
@@ -36,6 +47,7 @@ xps_new_part(xps_context_t *ctx)
     part->name = NULL;
     part->size = 0;
     part->capacity = 0;
+    part->complete = 0;
     part->data = NULL;
     part->resource = NULL;
     part->free = NULL;
@@ -92,15 +104,20 @@ xps_alloc_items(xps_context_t *ctx, int items, int size)
     return xps_alloc(ctx, items * size);
 }
 
-static int
-xps_init_part(xps_context_t *ctx)
+static xps_part_t *
+xps_find_part(xps_context_t *ctx, char *name)
 {
     xps_part_t *part;
-    int code;
+    for (part = ctx->root; part; part = part->next)
+	if (!strcmp(part->name, name))
+	    return part;
+    return NULL;
+}
 
-    // TODO: XPS part name munging for interleaved parts.
-    // find existing part to bring forward and append to instead
-    // of creating a new part.
+static int
+xps_create_part(xps_context_t *ctx)
+{
+    xps_part_t *part;
 
     part = xps_new_part(ctx);
     if (!part)
@@ -110,20 +127,15 @@ xps_init_part(xps_context_t *ctx)
     if (!part->name)
 	return gs_throw(-1, "cannot strdup part name");
 
-    dprintf1("unzipping part '%s'\n", part->name);
-
     /* setup data buffer */
     if (ctx->zip_uncompressed_size == 0)
     {
-	dputs("data of unknown size\n");
 	part->size = 0;
 	part->capacity = 1024;
 	part->data = xps_alloc(ctx, part->capacity);
     }
     else
     {
-	dprintf2("data of known size: %d/%d\n",
-		ctx->zip_compressed_size, ctx->zip_uncompressed_size);
 	part->size = 0;
 	part->capacity = ctx->zip_uncompressed_size;
 	part->data = xps_alloc(ctx, part->capacity);
@@ -131,7 +143,7 @@ xps_init_part(xps_context_t *ctx)
     if (!part->data)
 	return gs_throw(-1, "cannot allocate part buffer");
 
-    /* add it to the list and make it current */
+    /* add it to the list of parts */
     if (!ctx->root)
     {
 	ctx->root = part;
@@ -141,7 +153,66 @@ xps_init_part(xps_context_t *ctx)
 	part->next = ctx->root;
 	ctx->root = part;
     }
+
+    /* make it the current */
     ctx->last = part;
+
+    return 0;
+}
+
+static int
+xps_prepare_part(xps_context_t *ctx)
+{
+    xps_part_t *part;
+    int piece;
+    int last_piece;
+    int code;
+
+    dprintf1("unzipping part '%s'\n", ctx->zip_file_name);
+
+    if (strstr(ctx->zip_file_name, ".piece"))
+    {
+	piece = 1;
+	if (strstr(ctx->zip_file_name, ".last.piece"))
+	    last_piece = 1;
+	else
+	    last_piece = 0;
+    }
+    else
+    {
+	piece = 0;
+	last_piece = 1;
+    }
+
+    if (piece)
+    {
+	char *p = strrchr(ctx->zip_file_name, '/');
+	if (p)
+	    *p = 0;
+    }
+
+    dprintf3("  to part '%s' (piece=%d) (last=%d)\n", ctx->zip_file_name, piece, last_piece);
+
+    part = xps_find_part(ctx, ctx->zip_file_name);
+    if (!part)
+    {
+	code = xps_create_part(ctx);
+	if (code < 0)
+	    return gs_rethrow(code, "cannot create part buffer");
+    }
+    else
+    {
+	if (ctx->zip_uncompressed_size != 0)
+	{
+	    part->capacity += ctx->zip_uncompressed_size;
+	    part->data = xps_realloc(ctx, part->data, part->capacity);
+	    if (!part->data)
+		return gs_throw(-1, "cannot extend part buffer");
+	}
+	ctx->last = part;
+    }
+
+    ctx->last->complete = last_piece;
 
     /* init decompression */
     if (ctx->zip_method == 8)
@@ -194,12 +265,10 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 
 	if (code == Z_STREAM_END)
 	{
-	    dputs("at end.\n");
 	    return 1;
 	}
 	else if (code == Z_OK)
 	{
-	    dputs("chunk okay.\n");
 	    return 0;
 	}
 	else
@@ -230,8 +299,6 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 
     while (1)
     {
-	dprintf1("process state=%d\n", ctx->zip_state);
-
 	switch (ctx->zip_state)
 	{
 	case -1:
@@ -310,7 +377,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 	    ctx->zip_state ++;
 
 	    /* prepare the correct part for receiving data */
-	    code = xps_init_part(ctx);
+	    code = xps_prepare_part(ctx);
 	    if (code < 0)
 		return gs_throw(-1, "cannot create part");
 
