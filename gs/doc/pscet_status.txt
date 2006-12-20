@@ -2824,7 +2824,7 @@ Test	 Status	Comments
 
 13-03-3  OK	Minor differences visually reviewed by RJJ
 
-13-03-4  DIFF	first column of numbers wrong. assign: Igor
+13-03-4  DIFF	GS error inconformity. assign: Alex
 
 13-03-5  OK	Minor differences visually reviewed by RJJ
 
@@ -2837,12 +2837,11 @@ Test	 Status	Comments
                 best to look at a digital diff.
                 assign Igor.
 
-13-04-1  DIFF	Likely a CPSI problem. Analyzed by Igor.
-                Device dependent file
-                font dictionaries keys differ.
-                not sure why this would be a cpsi problem.
-                maybe classiffied incorrectly.
-                assign: Igor.
+13-04-1  AOK	Analyzed by Igor.
+		CPSI prints an incomplete page.
+		GS raster matches Tek except (1) different order 
+		of keys in a dictionary forall (implementation dependent),
+		and (2) tek has an incorrect value FontType -1.
 
 13-04-2  OK	
 
