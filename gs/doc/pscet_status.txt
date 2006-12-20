@@ -2915,7 +2915,7 @@ Test	 Status	Comments
 13-12-5  OK	Minor differences visually reviewed by RJJ
 
 13-12-6  DIFF	same as 13-03-4
-                assign: Igor.
+                assign: Alex.
 
 13-12-7  OK	Minor differences visually reviewed by RJJ
 
@@ -2952,9 +2952,10 @@ Test	 Status	Comments
 
 13-15-2  OK	Color corrected by rev 7172. 
 
-13-15-3  DIFF	cpsi gives an undefinedresult for scaling a font by 0.
+13-15-3  DIFF	GS error inconformity.
+		cpsi gives an undefinedresult for scaling a font by 0.
                 also typecheck vs. stackunderflow.
-                assign: Igor.
+                assign: Alex.
 
 13-15-4  OK	
 
