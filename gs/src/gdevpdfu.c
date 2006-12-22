@@ -328,7 +328,6 @@ pdf_open_document(gx_device_pdf * pdev)
 	    pdev->OPDFRead_procset_length = stell(s);
 	}
 	pprintd2(s, "%%PDF-%d.%d\n", level / 10, level % 10);
-	pdev->binary_ok = !pdev->params.ASCII85EncodePages;
 	if (pdev->binary_ok)
 	    stream_puts(s, "%\307\354\217\242\n");
     }
@@ -537,8 +536,12 @@ none_to_stream(gx_device_pdf * pdev)
 	pdev->contents_length_id = pdf_obj_ref(pdev);
 	s = pdev->strm;
 	pprintld1(s, "<</Length %ld 0 R", pdev->contents_length_id);
-	if (pdev->compression == pdf_compress_Flate)
-	    pprints1(s, "/Filter /%s", compression_filter_name);
+	if (pdev->compression == pdf_compress_Flate) {
+	    if (pdev->binary_ok)
+		pprints1(s, "/Filter /%s", compression_filter_name);
+	    else 
+		pprints1(s, "/Filter [/ASCII85Decode /%s]", compression_filter_name);
+	}
 	stream_puts(s, ">>\nstream\n");
 	pdev->contents_pos = pdf_stell(pdev);
 	code = pdf_begin_encrypt(pdev, &s, pdev->contents_id);
@@ -546,14 +549,36 @@ none_to_stream(gx_device_pdf * pdev)
 	    return code;
 	pdev->strm = s;
 	if (pdev->compression == pdf_compress_Flate) {	/* Set up the Flate filter. */
-	    const stream_template *template = &compression_filter_template;
-	    stream *es = s_alloc(pdev->pdf_memory, "PDF compression stream");
-	    byte *buf = gs_alloc_bytes(pdev->pdf_memory, sbuf_size,
-				       "PDF compression buffer");
-	    compression_filter_state *st =
-		gs_alloc_struct(pdev->pdf_memory, compression_filter_state,
-				template->stype, "PDF compression state");
+	    const stream_template *template;
+	    stream *es;
+	    byte *buf;
+	    compression_filter_state *st;
 
+	    if (!pdev->binary_ok) {	/* Set up the A85 filter */
+		const stream_template *template = &s_A85E_template;
+		stream *as = s_alloc(pdev->pdf_memory, "PDF contents stream");
+		byte *buf = gs_alloc_bytes(pdev->pdf_memory, sbuf_size,
+					   "PDF contents buffer");
+		stream_A85E_state *ast = gs_alloc_struct(pdev->pdf_memory, stream_A85E_state,
+				template->stype, "PDF contents state");
+		if (as == 0 || ast == 0 || buf == 0)
+		    return_error(gs_error_VMerror);
+		s_std_init(as, buf, sbuf_size, &s_filter_write_procs,
+			   s_mode_write);
+		ast->memory = pdev->pdf_memory;
+		ast->template = template;
+		as->state = (stream_state *) ast;
+		as->procs.process = template->process;
+		as->strm = s;
+		(*template->init) ((stream_state *) ast);
+		pdev->strm = s = as;
+	    }
+	    template = &compression_filter_template;
+	    es = s_alloc(pdev->pdf_memory, "PDF compression stream");
+	    buf = gs_alloc_bytes(pdev->pdf_memory, sbuf_size,
+				       "PDF compression buffer");
+	    st = gs_alloc_struct(pdev->pdf_memory, compression_filter_state,
+				template->stype, "PDF compression state");
 	    if (es == 0 || st == 0 || buf == 0)
 		return_error(gs_error_VMerror);
 	    s_std_init(es, buf, sbuf_size, &s_filter_write_procs,
@@ -646,10 +671,17 @@ stream_to_none(gx_device_pdf * pdev)
     } else {
 	if (pdev->vgstack_depth)
 	    pdf_restore_viewer_state(pdev, s);
-	if (pdev->compression_at_page_start == pdf_compress_Flate) {	/* Terminate the Flate filter. */
+	if (pdev->compression_at_page_start == pdf_compress_Flate) {	/* Terminate the filters. */
 	    stream *fs = s->strm;
 
-	    sclose(s);
+	    if (!pdev->binary_ok) {
+		sclose(s);	/* Terminate the ASCII85 filter. */
+		gs_free_object(pdev->pdf_memory, s->cbuf, "A85E contents buffer");
+		gs_free_object(pdev->pdf_memory, s, "A85E contents stream");
+		pdev->strm = s = fs;
+		fs = s->strm;
+	    }
+	    sclose(s);		/* Next terminate the compression filter */
 	    gs_free_object(pdev->pdf_memory, s->cbuf, "zlib buffer");
 	    gs_free_object(pdev->pdf_memory, s, "zlib stream");
 	    pdev->strm = s = fs;
