@@ -1611,8 +1611,7 @@ Test	 Status	Comments
 
 11-06-5  DIFF	GS has extra line: MUCH 15, 30, 31 assign: Raph.
 
-11-07-1  DIFF	some arcs wrong gs has a nocurrentpoint error assign: Raph.
-	 Circles being drawn in wrong place. Elements missing - Raph
+11-07-1  DIFF	Circles being drawn in wrong place. Elements missing - Raph
 
 11-07-2  OK	Minor differences visually reviewed by RJJ
 
@@ -1630,7 +1629,7 @@ Test	 Status	Comments
 
 11-08-4  OK	Minor differences visually reviewed by RJJ
 
-11-08-5  DIFF	'1' and '2' differences in the much and cash column
+11-08-5  DIFF	'1' difference in the much column
 		related to upath, assign: Raph.
 
 11-09-1  AOK	a better stroke adjustment; not important. Analyzed by Igor.
@@ -1795,9 +1794,13 @@ Test	 Status	Comments
 
 11-16-8  OK	Minor differences visually reviewed by HAS
 
-11-17-1  OK	
+11-17-1  DIFF   REGRESION.
+		strokes recently appeared near circles.
+                Don't know which patch caused it,
+                likely one related to upath and current point.
+                assign: Igor.	
 
-11-17-2  OK	
+11-17-2  DIFF   Same as 11-17-1, assign: Igor.	
 
 11-17-3  OK	Minor differences visually reviewed by RJJ
 
@@ -1805,7 +1808,7 @@ Test	 Status	Comments
 
 11-17-5  OK	fixed in r7228 - Raph
 
-11-17-6  OK	Minor differences visually reviewed by HAS
+11-17-6  DIFF   Same as 11-17-1, assign: Igor.	
 
 11-18-1  OK	Fixed with rev 7212.
 
