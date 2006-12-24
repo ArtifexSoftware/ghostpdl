@@ -566,8 +566,8 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	    cdim.y > max_cdim[log2_scale.y]
 	    )
 	    return 0;		/* much too big */
-	iwidth = ((ushort) fixed2int_var(cdim.x) + 2) << log2_scale.x;
-	iheight = ((ushort) fixed2int_var(cdim.y) + 2) << log2_scale.y;
+	iwidth = ((ushort) fixed2int_var(cdim.x) + 3) << log2_scale.x;
+	iheight = ((ushort) fixed2int_var(cdim.y) + 3) << log2_scale.y;
 	if_debug3('k', "[k]iwidth=%u iheight=%u dev_cache %s\n",
 		  (uint) iwidth, (uint) iheight,
 		  (penum->dev_cache == 0 ? "not set" : "set"));
@@ -617,8 +617,8 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	}
 	/* The mins handle transposed coordinate systems.... */
 	/* Truncate the offsets to avoid artifacts later. */
-	cc->offset.x = fixed_ceiling(-cll.x);
-	cc->offset.y = fixed_ceiling(-cll.y);
+	cc->offset.x = fixed_ceiling(-cll.x) + fixed_1;
+	cc->offset.y = fixed_ceiling(-cll.y) + fixed_1;
 	if_debug4('k', "[k]width=%u, height=%u, offset=[%g %g]\n",
 		  (uint) iwidth, (uint) iheight,
 		  fixed2float(cc->offset.x),

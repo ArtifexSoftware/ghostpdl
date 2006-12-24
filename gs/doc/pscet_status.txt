@@ -3015,8 +3015,7 @@ Test	 Status	Comments
 		square in item 13 in the column labeled 'MUCH'. - ADC
                 assign Alex (initial analysis).
 
-13-18-1  DIFF	The top line in several squares are missing. - ADC
-                assign: Igor.
+13-18-1  OK
 
 13-18-10  OK	Minor differences in positions and character shapes - ADC
 
@@ -3028,28 +3027,21 @@ Test	 Status	Comments
 		position of both square in item 25 in she same column.a  GS shows
 		a square in item 13 in the column labeled 'MUCH'. - ADC
 
-13-18-2  DIFF	The top line in several squares are missing, etc. - ADC
-                assign: Igor.
+13-18-2  OK
 
-13-18-3  DIFF	The top line in several squares are missing, etc. - ADC
-                assign: Igor.
+13-18-3  OK
 
-13-18-4  DIFF	The top line in several squares are missing, etc. - ADC
-                assign: Igor.
+13-18-4  OK
 
 13-18-5  OK	
 
-13-18-6  DIFF	The top line in several squares are missing, etc. - ADC
-                assign: Igor.
+13-18-6  OK
 
-13-18-7  DIFF	The top line in several squares are missing, etc. - ADC
-                assign: Igor.
+13-18-7  OK
 
-13-18-8  DIFF	The top line in several squares are missing, etc. - ADC
-                assign: Igor.
+13-18-8  OK
 
-13-18-9  DIFF	The top line in several squares are missing, etc. - ADC
-                assign: Igor.
+13-18-9  OK
 
 13-19-1  AOK	GS has a better stroke adjustment. not impotant. Analyzed by Igor.
 
