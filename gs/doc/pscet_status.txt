@@ -1795,12 +1795,15 @@ Test	 Status	Comments
 11-16-8  OK	Minor differences visually reviewed by HAS
 
 11-17-1  DIFF   REGRESION.
-		strokes recently appeared near circles.
-                Don't know which patch caused it,
-                likely one related to upath and current point.
-                assign: Igor.	
+		Strokes appeared near circles.
+		The reason is the patch 7512,
+		which introduced this behavior :
+		/* In CPSI compatibility mode, setbbox must also do a moveto. */
+		The stroke appears due to 'arc' connects the current point with the arc.
+		From CPSI raster, the current point must not be set.
+                assign: Peter	
 
-11-17-2  DIFF   Same as 11-17-1, assign: Igor.	
+11-17-2  DIFF   Same as 11-17-1, assign: Peter	
 
 11-17-3  OK	Minor differences visually reviewed by RJJ
 
@@ -1808,7 +1811,7 @@ Test	 Status	Comments
 
 11-17-5  OK	fixed in r7228 - Raph
 
-11-17-6  DIFF   Same as 11-17-1, assign: Igor.	
+11-17-6  DIFF   Same as 11-17-1, assign: Peter	
 
 11-18-1  OK	Fixed with rev 7212.
 
