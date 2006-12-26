@@ -78,7 +78,7 @@ gs_setbbox(gs_state * pgs, floatp llx, floatp lly, floatp urx, floatp ury)
 	(fixed) ceil(dbox.q.x * fixed_scale) + box_rounding_slop_fixed;
     bbox.q.y =
 	(fixed) ceil(dbox.q.y * fixed_scale) + box_rounding_slop_fixed;
-    if (gx_path_bbox(ppath, &obox) >= 0) {	/* Take the union of the bboxes. */
+    if (gx_path_bbox_set(ppath, &obox) >= 0) {	/* Take the union of the bboxes. */
 	ppath->bbox.p.x = min(obox.p.x, bbox.p.x);
 	ppath->bbox.p.y = min(obox.p.y, bbox.p.y);
 	ppath->bbox.q.x = max(obox.q.x, bbox.q.x);
