@@ -422,8 +422,12 @@ gs_clippath(gs_state * pgs)
 
     gx_path_init_local(&cpath, pgs->path->memory);
     code = gx_cpath_to_path(pgs->clip_path, &cpath);
-    if (code >= 0)
+    if (code >= 0) {
 	code = gx_path_assign_free(pgs->path, &cpath);
+	pgs->current_point.x = fixed2float(pgs->path->position.x);
+	pgs->current_point.y = fixed2float(pgs->path->position.y);
+	pgs->current_point_valid = true;
+    }
     if (code < 0)
 	gx_path_free(&cpath, "gs_clippath");
     return code;
