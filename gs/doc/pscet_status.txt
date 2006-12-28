@@ -3077,8 +3077,16 @@ Test	 Status	Comments
 
 13-20-5  OK	Corrected by 7152 and 7162.  ADC
 
-13-20-6  DIFF	Same as 13-22-6.
-		Assign: Igor.
+13-20-6  DIFF	cash25 : The placement of "Script" depends on
+                the 'strokepath' ending point.
+                CPSI generates more contours for 'strokepath',
+                so Ghostscript ending point can't be same 
+                while it does lesser contours,
+                because the starting point was fixed for other CET tests.
+                assign: Ray.
+                .
+                much13 : 'S' falls to the lower left corner.
+                Assign: Igor.
 
 13-21-1  DIFF	CPSI indicates [F] for ( SharedFontDirectory xcheck).  GS
 		indicates [T]. - ADC
@@ -3096,18 +3104,11 @@ Test	 Status	Comments
 
 13-22-5  OK	Color corrected by rev 7172.
 
-13-22-6  DIFF	cash25 : The placement of "Script" depends on
-                'strokepath' ending point.
-                CPSI generates more contours for 'strokepath',
-                so Ghostscript ending point can't be same 
-                while it does lesser contours,
-                because the starting point was fixed for other tests.
-                .
-                much13 : 'S' falls to the lower left corner.
-                Assign: Igor.
+13-22-6  DIFF	cash25 : Same as 13-22-6 cahs25. assign: Ray.
+		much13 : Same as 13-22-6 much13. Assign: Igor.
 
 13-23-1  DIFF	Extra line under /ordfeminine and /ordmasculine characters. - ADC
-	Might be a font issue: some fonts use underbars, others don't.
+		Might be a font issue: some fonts use underbars, others don't.
                 assign: Igor.
 
 13-24-1  DIFF	An inconforming ostack after an error in 'show'. Analyzed by Igor.
