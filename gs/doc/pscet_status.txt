@@ -3085,8 +3085,14 @@ Test	 Status	Comments
                 because the starting point was fixed for other CET tests.
                 assign: Ray.
                 .
-                much13 : 'S' falls to the lower left corner.
-                Assign: Igor.
+                much13 : 'Script' falls to the lower left corner.
+                With CPSI it falls outside the clipping path.
+                The reason is the 'clippath' strating point :
+                CPSI starts a rectangle with the upper left corner,
+                Ghostscript does with the lower right corner.
+                However Ghostscript's algirithm is pretty complicated
+                with uniting contacring rectangles.
+                Assign: Ray.
 
 13-21-1  DIFF	CPSI indicates [F] for ( SharedFontDirectory xcheck).  GS
 		indicates [T]. - ADC
@@ -3104,8 +3110,8 @@ Test	 Status	Comments
 
 13-22-5  OK	Color corrected by rev 7172.
 
-13-22-6  DIFF	cash25 : Same as 13-22-6 cahs25. assign: Ray.
-		much13 : Same as 13-22-6 much13. Assign: Igor.
+13-22-6  DIFF	cash25 : strokepath - Same as 13-20-6 cahs25. assign: Ray.
+		much13 : clippath - Same as 13-20-6 much13. Assign: Ray.
 
 13-23-1  DIFF	Extra line under /ordfeminine and /ordmasculine characters. - ADC
 		Might be a font issue: some fonts use underbars, others don't.
@@ -3125,8 +3131,7 @@ Test	 Status	Comments
 
 13-24-5  OK	Minor differences visually reviewed by Igor.
 
-13-24-6  DIFF	same as currentstrokeadjust in 09-49D-3 assigned to Peter
-		A different glyph placement assign: Igor. 
+13-24-6  DIFF	A different glyph placement - strokepath - same as 13-20-6 assign: Ray. 
 
 13-25-1  OK	
 
@@ -3152,10 +3157,7 @@ Test	 Status	Comments
 
 13-26-8  AOK	Minor differences in colors - ADC
 
-13-26-9  DIFF	GS has 'O' in the lower left corner.  This is not present in
-		CPSI.  Distiller/Acrobat 7.0 shows 'OAOA'.  Different positions
-		of strings in several places. - ADC
-                assign: Igor.
+13-26-9  DIFF	Same as 13-20-6 strokepath. Assign: Ray.
 
 13-27-1  OK	Minor differences visually reviewed by RJJ
 
@@ -3173,9 +3175,7 @@ Test	 Status	Comments
 
 13-27-7  AOK	Minor differences in colors - ADC
 
-13-27-8  DIFF	Underlines differ in items 19 and 20 'CASH' column.  GS looks
-		more reasonable but CPSI matches Distiller/Acrobat 7.0. - ADC
-                assign: Igor.
+13-27-8  DIFF	Underlines differ - strokepath - same as 13-20-6 cash25 assign: Ray.
 
 13-28-1  OK	Minor differences visually reviewed by RJJ
 
@@ -3198,9 +3198,7 @@ Test	 Status	Comments
 
 13-28-8  AOK	Minor differences in colors - ADC
 
-13-28-9  DIFF	Different underline positions in items 20 and 25 in 'CASH'
-		column. - ADC
-                assign: Igor.
+13-28-9  DIFF	Underlines differ - strokepath - same as 13-20-6 cash25 assign: Ray.
 
 13-29-1  OK	Minor differences visually reviewed by RJJ
 
@@ -3220,7 +3218,7 @@ Test	 Status	Comments
 
 13-29-7  OK	Minor differences visually reviewed by Igor.
 
-13-29-8  DIFF	Same as 13-24-6. Analyzed by Igor. assign: Igor.
+13-29-8  DIFF	A different glyph placement - strokepath - same as 13-20-6 assign: Ray. 
 
 14-01-1  OK	Minor differences visually reviewed by RJJ
 
