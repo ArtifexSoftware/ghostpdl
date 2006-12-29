@@ -2800,11 +2800,11 @@ Test	 Status	Comments
 
 13-01-6  OK	Minor differences visually reviewed by HAS
 
-13-01-7  OK	Minor differences visually reviewed by HAS
+13-01-7  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
 
 13-02-1  OK	Minor differences visually reviewed by RJJ
 
-13-02-10  OK	Minor differences visually reviewed by HAS
+13-02-10  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
 
 13-02-2  OK	Minor differences visually reviewed by RJJ
 
@@ -2904,13 +2904,13 @@ Test	 Status	Comments
 
 13-10-8  OK	Minor differences visually reviewed by HAS. Color corrected by rev 7172.
 
-13-10-9  OK	Minor differences visually reviewed by HAS
+13-10-9  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
 
 13-11-1  OK	
 
 13-12-1  OK	
 
-13-12-10  OK	Minor differences visually reviewed by HAS
+13-12-10  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
 
 13-12-2  OK	
 
@@ -2992,7 +2992,7 @@ Test	 Status	Comments
                 a number of operatord. IMHO this can be AOK
                 assign Raph
 
-13-16-9  DIFF	clippath, usrtokepath. assign: Raph.
+13-16-9  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
 
 13-17-1  OK	Corrected by 7152 and 7162.  ADC
 
@@ -3008,29 +3008,13 @@ Test	 Status	Comments
 
 13-17-7  OK	Minor differences in positions and character shapes - ADC
 
-13-17-8  DIFF	GS has an extra black square a bottom left (above black bar
-		that says 'Standard test 6.7').  CPSI shows no squre.
-		Distiiler/Acrobat 7.0 shows two squares.  Minor difference
-		in the position of two small squres in item 30 of the first
-		column.  (The difference is small enough that I cannot tell
-		which one is closer to the output for Distiller/Acrobat.)
-		Differences in positions of the second square in items 19
-		and 20 in the column labeled 'CASH'.  Difference in position
-		of both square in item 25 in she same column.a  GS shows a
-		square in item 13 in the column labeled 'MUCH'. - ADC
-                assign Alex (initial analysis).
+13-17-8  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
 
 13-18-1  OK
 
 13-18-10  OK	Minor differences in positions and character shapes - ADC
 
-13-18-11  DIFF	Minor difference in the position of two small square outlines
-		in item 30 of the first column.  (The difference is small enough
-		that I cannot tell which one is closer to the output for
-		Distiller/Acrobat.) Differences in positions of the second square
-		in items 19 and 20 in the column labeled 'CASH'.  Difference in
-		position of both square in item 25 in she same column.a  GS shows
-		a square in item 13 in the column labeled 'MUCH'. - ADC
+13-18-11  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
 
 13-18-2  OK
 
@@ -3060,11 +3044,7 @@ Test	 Status	Comments
 
 13-19-6  OK	Minor differences in positions and character shapes - ADC
 
-13-19-7  DIFF	GS has an extra black square a bottom left (above black bar
-		that says 'Stnadard test 6.7').  CPSI shows no squre.
-		Distiiler/Acrobat 7.0 shows two squares.  Major difference
-		in position of squares in item 25 of the column labeled 'CASH'
-		Minor differences in positions of some other squares. - ADC
+13-19-7  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
 
 13-20-1  OK	Minor differences in positions and character shapes - ADC
 
@@ -3077,22 +3057,13 @@ Test	 Status	Comments
 
 13-20-5  OK	Corrected by 7152 and 7162.  ADC
 
-13-20-6  DIFF	cash25 : The placement of "Script" depends on
+13-20-6  DIFF	cash25 : The placement of "GENOA" depends on
                 the 'strokepath' ending point.
                 CPSI generates more contours for 'strokepath',
                 so Ghostscript ending point can't be same 
                 while it does lesser contours,
                 because the starting point was fixed for other CET tests.
                 assign: Ray.
-                .
-                much13 : 'Script' falls to the lower left corner.
-                With CPSI it falls outside the clipping path.
-                The reason is the 'clippath' strating point :
-                CPSI starts a rectangle with the upper left corner,
-                Ghostscript does with the lower right corner.
-                However Ghostscript's algirithm is pretty complicated
-                with uniting contacring rectangles.
-                Assign: Ray.
 
 13-21-1  DIFF	CPSI indicates [F] for ( SharedFontDirectory xcheck).  GS
 		indicates [T]. - ADC
@@ -3111,7 +3082,6 @@ Test	 Status	Comments
 13-22-5  OK	Color corrected by rev 7172.
 
 13-22-6  DIFF	cash25 : strokepath - Same as 13-20-6 cahs25. assign: Ray.
-		much13 : clippath - Same as 13-20-6 much13. Assign: Ray.
 
 13-23-1  DIFF	Extra line under /ordfeminine and /ordmasculine characters. - ADC
 		Might be a font issue: some fonts use underbars, others don't.

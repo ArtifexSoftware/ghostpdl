@@ -94,7 +94,7 @@ gs_setbbox(gs_state * pgs, floatp llx, floatp lly, floatp urx, floatp ury)
 
 /* Append a list of rectangles to a path. */
 int
-gs_rectappend(gs_state * pgs, const gs_rect * pr, uint count)
+gs_rectappend_compat(gs_state * pgs, const gs_rect * pr, uint count, bool clip)
 {
     extern bool CPSI_mode;
 
@@ -103,26 +103,58 @@ gs_rectappend(gs_state * pgs, const gs_rect * pr, uint count)
 	int code;
 
 	if (CPSI_mode) {
-	    if (px > qx) {
-		px = qx; qx = pr->p.x;
-	    }
-	    if (py > qy) {
-		py = qy; qy = pr->p.y;
+	    /* We believe that the result must be independent
+	       on the device initial matrix. 
+	       Particularly for the correct dashing 
+	       the starting point and the contour direction 
+	       must be same with any device initial matrix.
+	       Only way to provide it is to choose the starting point 
+	       and the direction in the user space. */
+	    if (clip) {
+		/* CPSI starts a clippath with the upper right corner. */
+		/* Debugged with CET 11-11.PS page 6 item much13.*/
+		if ((code = gs_moveto(pgs, qx, qy)) < 0 ||
+		    (code = gs_lineto(pgs, qx, py)) < 0 ||
+		    (code = gs_lineto(pgs, px, py)) < 0 ||
+		    (code = gs_lineto(pgs, px, qy)) < 0 ||
+		    (code = gs_closepath(pgs)) < 0
+		    )
+		    return code;
+	    } else {
+		/* Debugged with CET 12-12.PS page 10 item more20.*/
+		if (px > qx) {
+		    px = qx; qx = pr->p.x;
+		}
+		if (py > qy) {
+		    py = qy; qy = pr->p.y;
+		}
+		if ((code = gs_moveto(pgs, px, py)) < 0 ||
+		    (code = gs_lineto(pgs, qx, py)) < 0 ||
+		    (code = gs_lineto(pgs, qx, qy)) < 0 ||
+		    (code = gs_lineto(pgs, px, qy)) < 0 ||
+		    (code = gs_closepath(pgs)) < 0
+		    )
+		    return code;
 	    }
 	} else {
 	    /* Ensure counter-clockwise drawing. */
 	    if ((qx >= px) != (qy >= py))
 		qx = px, px = pr->q.x;	/* swap x values */
+	    if ((code = gs_moveto(pgs, px, py)) < 0 ||
+		(code = gs_lineto(pgs, qx, py)) < 0 ||
+		(code = gs_lineto(pgs, qx, qy)) < 0 ||
+		(code = gs_lineto(pgs, px, qy)) < 0 ||
+		(code = gs_closepath(pgs)) < 0
+		)
+		return code;
 	}
-	if ((code = gs_moveto(pgs, px, py)) < 0 ||
-	    (code = gs_lineto(pgs, qx, py)) < 0 ||
-	    (code = gs_lineto(pgs, qx, qy)) < 0 ||
-	    (code = gs_lineto(pgs, px, qy)) < 0 ||
-	    (code = gs_closepath(pgs)) < 0
-	    )
-	    return code;
     }
     return 0;
+}
+int
+gs_rectappend(gs_state * pgs, const gs_rect * pr, uint count)
+{
+    return gs_rectappend_compat(pgs, pr, count, false);
 }
 
 /* Clip to a list of rectangles. */
@@ -135,7 +167,7 @@ gs_rectclip(gs_state * pgs, const gs_rect * pr, uint count)
     gx_path_init_local(&save, pgs->memory);
     gx_path_assign_preserve(&save, pgs->path);
     gs_newpath(pgs);
-    if ((code = gs_rectappend(pgs, pr, count)) < 0 ||
+    if ((code = gs_rectappend_compat(pgs, pr, count, true)) < 0 ||
 	(code = gs_clip(pgs)) < 0
 	) {
 	gx_path_assign_free(pgs->path, &save);
