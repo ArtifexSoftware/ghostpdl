@@ -1895,9 +1895,11 @@ Test	 Status	Comments
 11-20-9  DIFF	'4's and '1's added in gs output.
                 The problem (at least partly) is caused by a small bounding box
                 set by setbbox operator that cannot accomodate long strings of text.
-                It is not clear yet how does this work on Adobe. My attempts to
-                create a small example did not succeed.  assign Alex
-
+                Adobe appears to extend path bounding box on demand instead of
+                enforcingwhen the limits when the current point comes from a
+                different gstate, for instance:
+                "0 0 moveto gsave 0 0 5 5 setbbox 10 10 lineto stroke showpage"
+                assign Alex
 
 11-21-1  DIFF?	Circle has small 'points' with CPSI -- Ghostscript is smooth.
                 assign: Raph.
