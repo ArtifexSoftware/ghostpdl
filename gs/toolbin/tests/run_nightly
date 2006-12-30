@@ -29,8 +29,9 @@ from popen2 import Popen4
 
 # configuration variables
 
-YESTERDAY = time.strftime("%Y%m%d", time.localtime(time.time() - (24*60*60)))
-YESTERDAY_CTIME = time.ctime(time.time() - (24*60*60))
+NOW = time.time()
+YESTERDAY = time.strftime("%Y%m%d", time.localtime(NOW - (24*60*60)))
+YESTERDAY_CTIME = time.ctime(NOW - (24*60*60))
 
 def change_gsproduct(file):
     tmpfile = "%s.tmp" % (file,)
@@ -264,6 +265,7 @@ baselines += "\n\n"
 # Prepend checkout times
 times = "SVN checkout for this report started at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(starttime)) + "\n"
 times += "SVN checkout ended at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(endtime)) + "\n"
+times += "complete regression run took %.0f seconds.\n" % (time.time()-NOW)
 times += "Testing revision " + revision + "\n"
 times += "\n"
 
