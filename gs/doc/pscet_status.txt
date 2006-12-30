@@ -1503,19 +1503,8 @@ Test	 Status	Comments
 
 10-15-1  OK	
 
-10-15-2  DIFF	DIfferences in the column labeled 'MUCH'.  CPSI and Distiller/
-		Acrobat render a '1' in item 22.  GS does not.  GS renders a '1'
-		in item 24.  CPSI and Distiller/Acrobat do not.
-                -
-                The diffs in items 'much22' and 'much24' are graphics-related (user paths /
-                insideness testing), not interpreter-related.  Please assign them to someone
-                else.
-                -
-                The diff in item 'gray05' (reference = blank, gs = 4)
-                does appear to be interpreter-related (the same diff
-                occurs in 13-24-6): I'll continue to work on
-                this. (peter) Assign (much 22 and 24): Igor
-                (other issues fixed with r7452 Peter).
+10-15-2  DIFF	The diffs in items 'much22' and 'much24' (user paths / insideness testing)
+                assign: Igor.
 
 10-16-1  OK	
 
