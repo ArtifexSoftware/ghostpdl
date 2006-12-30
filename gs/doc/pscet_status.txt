@@ -1503,8 +1503,28 @@ Test	 Status	Comments
 
 10-15-1  OK	
 
-10-15-2  DIFF	The diffs in items 'much22' and 'much24' (user paths / insideness testing)
-                assign: Igor.
+10-15-2  AOK	The diffs in items 'much22' and 'much24' (user paths / insideness testing)
+                Analyzed by Igor.
+                This is a CPSI problem : the insideness testing operators
+                slightly disturb CTM.ty .
+                A simplified test case is placed to
+                peeves:/home/igor/pscet/mytests/10-15-2-Igor01.PS . 
+                .
+                With this test CPSI prints :
+			GlobInterProc1=2467.17
+			GIFBoundProc1=false
+			{749.8 1433.41 749.8 1433.41 setbbox 749.8 1433.41 moveto}
+			false
+			iff in : gif_assertion=true
+			iff out : gif_assertion=true
+			GifProcInstance=false
+			1
+			GlobInterProc2=2467.17
+			GlobInterProc2=false
+		.
+		Note the value 2467.17 looks same due to rounding,
+		but the equality test fails (GlobInterProc2=false).
+		The effect is resolution dependent and the page size dependent.
 
 10-16-1  OK	
 
