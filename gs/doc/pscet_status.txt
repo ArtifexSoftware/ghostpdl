@@ -3092,8 +3092,12 @@ Test	 Status	Comments
 13-22-6  DIFF	cash25 : strokepath - Same as 13-20-6 cahs25. assign: Ray.
 
 13-23-1  DIFF	Extra line under /ordfeminine and /ordmasculine characters. - ADC
-		Might be a font issue: some fonts use underbars, others don't.
-                assign: Igor.
+		Analyzed by Igor. This is a font issue.
+		Both URW and UFST Helvetica has underbars in these 2 characters.
+		Some other fonts do not have it.
+		PLRM3 defines these characters with no underbars.
+		I don't know what to do with it, so passing to Ray.
+                assign: Ray.
 
 13-24-1  DIFF	An inconforming ostack after an error in 'show'. Analyzed by Igor.
 		Igor assigns this to Raph.
