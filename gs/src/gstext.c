@@ -350,6 +350,46 @@ gs_kshow_begin(gs_state * pgs, const byte * str, uint size,
     text.data.bytes = str, text.size = size;
     return gs_text_begin(pgs, &text, mem, ppte);
 }
+
+/* Compute the number of characters in a text. */
+int
+gs_text_size(gs_state * pgs, gs_text_params_t *text, gs_memory_t * mem)
+{
+    font_proc_next_char_glyph((*next_proc)) = pgs->font->procs.next_char_glyph;
+
+    if (next_proc == gs_default_next_char_glyph)
+	return text->size;
+    else {
+	/* Do it the hard way. */
+	gs_text_enum_t *pte;	/* use a separate enumerator */
+	gs_char tchr;
+	gs_glyph tglyph;
+	int size = 0;
+	int code;
+
+	size = 0;
+	code = gs_text_begin(pgs, text, mem, &pte);
+	if (code < 0)
+	    return code;
+	while ((code = (*next_proc)(pte, &tchr, &tglyph)) != 2) {
+	    if (code < 0)
+		break;
+	    ++size;
+	}
+	gs_free_object(mem, pte, "gs_xyshow_begin");
+	if (code < 0)
+	    return code;
+	return size;
+    }
+}
+
+/* Retrieve text params from enumerator. */
+gs_text_params_t *
+gs_get_text_params(gs_text_enum_t *pte)
+{
+    return &pte->text;
+}
+
 int
 gs_xyshow_begin(gs_state * pgs, const byte * str, uint size,
 		const float *x_widths, const float *y_widths,
@@ -357,7 +397,7 @@ gs_xyshow_begin(gs_state * pgs, const byte * str, uint size,
 {
     gs_text_params_t text;
     uint widths_needed;
-    font_proc_next_char_glyph((*next_proc)) = pgs->font->procs.next_char_glyph;
+    int code;
 
     text.operation = TEXT_FROM_STRING | TEXT_REPLACE_WIDTHS |
 	text_do_draw(pgs) | TEXT_RETURN_WIDTH;
@@ -374,33 +414,14 @@ gs_xyshow_begin(gs_state * pgs, const byte * str, uint size,
      * must use the font's next_char_glyph procedure to determine how many
      * characters there are in the string.
      */
-    if (next_proc == gs_default_next_char_glyph) {
-	widths_needed = size;
-    } else {
-	/* Do it the hard way. */
-	gs_text_enum_t *pte;	/* use a separate enumerator */
-	gs_char tchr;
-	gs_glyph tglyph;
-	int code;
-
-	widths_needed = 0;
-	code = gs_text_begin(pgs, &text, mem, &pte);
-	if (code < 0)
-	    return code;
-	while ((code = (*next_proc)(pte, &tchr, &tglyph)) != 2) {
-	    if (code < 0)
-		break;
-	    ++widths_needed;
-	}
-	gs_free_object(mem, pte, "gs_xyshow_begin");
-	if (code < 0)
-	    return code;
-    }
+    code = gs_text_size(pgs, &text, mem);
+    if (code < 0)
+	return code;
+    widths_needed = code;
     if (x_widths && y_widths)
 	widths_needed <<= 1;
     if (widths_size < widths_needed)
 	return_error(gs_error_rangecheck);
-
     return gs_text_begin(pgs, &text, mem, ppte);
 }
 

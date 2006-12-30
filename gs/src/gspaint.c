@@ -295,6 +295,8 @@ fill_with_rule(gs_state * pgs, int rule)
 	      This case is not important for low level devices
 	      (which a printer is), because low level device doesn't accept
 	      Type 3 charproc streams immediately.
+	   6. It doesn't work properly while an insiding testing,
+	      which sets gs_hit_device, which is uncolored.
 	 */
         if (gx_device_has_color(gs_currentdevice(pgs))) {
             gs_set_object_tag(pgs, GS_PATH_TAG);

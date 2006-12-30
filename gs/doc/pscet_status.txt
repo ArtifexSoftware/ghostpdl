@@ -3145,7 +3145,7 @@ Test	 Status	Comments
 
 13-27-1  OK	Minor differences visually reviewed by RJJ
 
-13-27-2  DIFF	GS shows typecheck in --xshow-- for all 'Range 3' tests. - ADC
+13-27-2  OK
 
 13-27-3  DIFF	Two ILLEGAL tests succeed with GS. Different error messages,
 		different stack contents after error. Tek matches CPSI
@@ -3165,9 +3165,7 @@ Test	 Status	Comments
 
 13-28-2  OK	Minor differences visually reviewed by RJJ
 
-13-28-3  DIFF	GS shows a typecheck in --xyshow-- in all tests in the 'Range4'
-		section of the page. - ADC
-                assign Alex.
+13-28-3  OK
 
 13-28-4  DIFF	Same as 13-27-3
 		Two ILLEGAL tests succeed with GS. Different error messages,
@@ -3186,8 +3184,7 @@ Test	 Status	Comments
 
 13-29-1  OK	Minor differences visually reviewed by RJJ
 
-13-29-2  DIFF	Dots missing in GS output in the second section of the test. - ADC
-                assign: Igor.
+13-29-2  OK
 
 13-29-3  DIFF	Same as 13-27-3
 		Two ILLEGAL tests succeed with GS. Different error messages,
