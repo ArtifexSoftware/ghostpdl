@@ -1629,8 +1629,7 @@ Test	 Status	Comments
 
 11-08-4  OK	Minor differences visually reviewed by RJJ
 
-11-08-5  DIFF	'1' difference in the much column
-		related to upath, assign: Raph.
+11-08-5  OK	Fixed as of rev. 7531. 
 
 11-09-1  AOK	a better stroke adjustment; not important. Analyzed by Igor.
 
@@ -1837,7 +1836,7 @@ Test	 Status	Comments
 
 11-20-1  OK	Minor differences visually reviewed by HAS
 
-11-20-2  OK	Minor differences visually reviewed by HAS
+11-20-2  OK	Differences resolved as of rev 7531.
 
 11-20-3  OK	Minor differences visually reviewed by RJJ
 
