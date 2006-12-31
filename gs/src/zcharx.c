@@ -94,6 +94,7 @@ moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
     int format;
     uint i, size, widths_needed;
     float *values;
+    extern bool CPSI_mode;
 
     if (code != 0)
 	return code;
@@ -104,7 +105,8 @@ moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
     values = (float *)ialloc_byte_array(size, sizeof(float), "moveshow");
     if (values == 0)
 	return_error(e_VMerror);
-    memset(values, 0, size * sizeof(values[0]));
+    if (CPSI_mode)
+	memset(values, 0, size * sizeof(values[0])); /* Safety. */
     if ((code = gs_xyshow_begin(igs, op[-1].value.bytes, r_size(op - 1),
 				(have_x ? values : (float *)0),
 				(have_y ? values : (float *)0),
@@ -112,16 +114,19 @@ moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
 	ifree_object(values, "moveshow");
 	return code;
     }
-    /* CET 13-29.PS page 2 defines a longer width array
-       then the text requires, and CPSI silently ignores extra elements.
-       So we need to compute exact number of characters 
-       to know how many elements to load and type check. */
-    code = gs_text_size(igs, gs_get_text_params(penum), imemory);
-    if (code < 0)
-	return code;
-    widths_needed = code;
-    if (have_x && have_y)
-	widths_needed <<= 1;
+    if (CPSI_mode) {
+	/* CET 13-29.PS page 2 defines a longer width array
+	   then the text requires, and CPSI silently ignores extra elements.
+	   So we need to compute exact number of characters 
+	   to know how many elements to load and type check. */
+	code = gs_text_count_chars(igs, gs_get_text_params(penum), imemory);
+	if (code < 0)
+	    return code;
+	widths_needed = code;
+	if (have_x && have_y)
+	    widths_needed <<= 1;
+    } else
+	widths_needed = size;
     for (i = 0; i < widths_needed; ++i) {
 	ref value;
 

@@ -401,7 +401,17 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
     gs_text_enum_t *osenum = op_show_find(i_ctx_p);
     es_ptr ep = esp + snumpush;
     gs_glyph glyph;
+    extern bool CPSI_mode;
 
+    if (CPSI_mode) {
+	/* CET 14-03.PS page 2 emits rangecheck before rendering a character.
+	   Early check the text to font compatibility 
+	   with decomposing the text into characters.*/
+	int code = gs_text_count_chars(igs, gs_get_text_params(penum), imemory);
+
+	if (code < 0)
+	    return code;
+    }
     /*
      * If we are in the procedure of a cshow for a CID font and this is
      * a show operator, do something special, per the Red Book.

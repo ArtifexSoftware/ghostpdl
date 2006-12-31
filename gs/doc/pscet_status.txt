@@ -2797,10 +2797,7 @@ Test	 Status	Comments
 
 13-01-1  OK	Minor differences visually reviewed by RJJ
 
-13-01-2  DIFF	cpsi keeps the operands on the stack for the last 4 errors (one
-                nocurrentpoint, 3 rangecheck), gs does not.  Also, gs displays 
-                an 'A' for the first rangecheck error, cpsi does not.
-                assign Peter.
+13-01-2  OK
 
 13-01-3  OK	Minor differences visually reviewed by RJJ
 
@@ -2822,8 +2819,7 @@ Test	 Status	Comments
 
 13-02-4  OK	
 
-13-02-5  DIFF	same as 13-01-2
-                assign Peter.
+13-02-5  DIFF	awidthshow error incomformity. assign: Alex.
 
 13-02-6  OK	Minor differences visually reviewed by RJJ
 
@@ -2835,10 +2831,7 @@ Test	 Status	Comments
 
 13-03-1  OK	
 
-13-03-2  DIFF	Last 2 tests missing in cpsi.  Perhaps the output of
-                the previous test (different than gs) pushes the
-                missing text out of the clipping region.
-                assign Ray.
+13-03-2  DIFF	show error incomformity. assign: Alex.
 
 13-03-3  OK	Minor differences visually reviewed by RJJ
 
@@ -3079,9 +3072,7 @@ Test	 Status	Comments
 		indicates [T]. - ADC
                 assign Alex.
 
-13-22-1  DIFF	Different error messages.  CPSI indicates errors are in
-		--show--.  GS indicates various local functions. - ADC
-                assign Raph.
+13-22-1  OK
 
 13-22-2  OK	Minor differences visually reviewed by RJJ
 
@@ -3101,11 +3092,7 @@ Test	 Status	Comments
 		I don't know what to do with it, so passing to Ray.
                 assign: Ray.
 
-13-24-1  DIFF	An inconforming ostack after an error in 'show'. Analyzed by Igor.
-		Igor assigns this to Raph.
-	Patch for fixing ostack is in the pipeline. Still need to report
-	error object as cshow rather than %op_show_continue. Assigning
-	the latter problem to Peter. - Raph
+13-24-1  OK
 
 13-24-2  AOK	An unimportant difference in the character cache logics. Analyzed by Igor.
 
@@ -3237,8 +3224,7 @@ Test	 Status	Comments
 
 14-03-1  OK	Minor differences visually reviewed by RJJ
 
-14-03-2  DIFF	We paint glyphs when CPSI doesn't.
-                assign: Igor.
+14-03-2  OK
 
 14-03-3  OK	Minor differences visually reviewed by RJJ
 

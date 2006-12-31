@@ -213,6 +213,40 @@ gx_default_text_begin(gx_device * dev, gs_imager_state * pis,
     return 0;
 }
 
+/* Compute the number of characters in a text. */
+int
+gs_text_count_chars(gs_state * pgs, gs_text_params_t *text, gs_memory_t * mem)
+{
+    font_proc_next_char_glyph((*next_proc)) = pgs->font->procs.next_char_glyph;
+
+    if (next_proc == gs_default_next_char_glyph)
+	return text->size;
+    else {
+	/* Do it the hard way. */
+	gs_text_enum_t tenum;	/* use a separate enumerator */
+	gs_char tchr;
+	gs_glyph tglyph;
+	int size = 0;
+	int code;
+
+	size = 0;
+
+        code = gs_text_enum_init(&tenum, &default_text_procs,
+			     NULL, NULL, text, pgs->root_font, 
+			     NULL, NULL, NULL, mem);
+	if (code < 0)
+	    return code;
+	while ((code = (*next_proc)(&tenum, &tchr, &tglyph)) != 2) {
+	    if (code < 0)
+		break;
+	    ++size;
+	}
+	if (code < 0)
+	    return code;
+	return size;
+    }
+}
+
 /* An auxiliary functions for pdfwrite to process type 3 fonts. */
 int
 gx_hld_stringwidth_begin(gs_imager_state * pis, gx_path **path)
@@ -781,6 +815,7 @@ show_update(gs_show_enum * penum)
 	    /* We have to check for this by comparing levels. */
 	    switch (pgs->level - penum->level) {
 		default:
+		    gx_free_cached_char(penum->orig_font->dir, penum->cc);
 		    return_error(gs_error_invalidfont);		/* WRONG */
 		case 2:
 		    code = gs_grestore(pgs);

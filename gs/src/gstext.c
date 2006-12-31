@@ -351,38 +351,6 @@ gs_kshow_begin(gs_state * pgs, const byte * str, uint size,
     return gs_text_begin(pgs, &text, mem, ppte);
 }
 
-/* Compute the number of characters in a text. */
-int
-gs_text_size(gs_state * pgs, gs_text_params_t *text, gs_memory_t * mem)
-{
-    font_proc_next_char_glyph((*next_proc)) = pgs->font->procs.next_char_glyph;
-
-    if (next_proc == gs_default_next_char_glyph)
-	return text->size;
-    else {
-	/* Do it the hard way. */
-	gs_text_enum_t *pte;	/* use a separate enumerator */
-	gs_char tchr;
-	gs_glyph tglyph;
-	int size = 0;
-	int code;
-
-	size = 0;
-	code = gs_text_begin(pgs, text, mem, &pte);
-	if (code < 0)
-	    return code;
-	while ((code = (*next_proc)(pte, &tchr, &tglyph)) != 2) {
-	    if (code < 0)
-		break;
-	    ++size;
-	}
-	gs_free_object(mem, pte, "gs_xyshow_begin");
-	if (code < 0)
-	    return code;
-	return size;
-    }
-}
-
 /* Retrieve text params from enumerator. */
 gs_text_params_t *
 gs_get_text_params(gs_text_enum_t *pte)
@@ -414,7 +382,7 @@ gs_xyshow_begin(gs_state * pgs, const byte * str, uint size,
      * must use the font's next_char_glyph procedure to determine how many
      * characters there are in the string.
      */
-    code = gs_text_size(pgs, &text, mem);
+    code = gs_text_count_chars(pgs, &text, mem);
     if (code < 0)
 	return code;
     widths_needed = code;
