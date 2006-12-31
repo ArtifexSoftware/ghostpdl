@@ -47,11 +47,10 @@
  * This is implemented by returning the file pointer
  * for the write end of a pipe, and starting a thread
  * which reads the pipe and writes to a Windows printer.
- * This will not work in Win32s.
  *
  * The old method provided by gp_open_printer()
  *  -sOutputFile="\\spool\HP DeskJet 500"
- * should not be used except on Win32s.
+ * should not be used.
  * The "\\spool\" is not a UNC name and causes confusion.
  */
 

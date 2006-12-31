@@ -11,7 +11,7 @@
 #  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 #
 # $Id$
-# makefile for (MS-Windows 3.1/Win32s / Windows 95 / Windows NT) +
+# makefile for (Windows 95 / Windows NT) +
 #   Borland C++ 4.5 platform.
 #   Borland C++Builder 3 platform (need BC++ 4.5 for 16-bit code)
 
@@ -390,12 +390,8 @@ PCFBASM=
 
 # Make sure we get the right default target for make.
 
-# Rod Webster (rodw)
-# CBuilder 5 does not support 16 bit compilation 
-# so add conditional to skip attempts to build 16 bit version
-!if $(BUILDER_VERSION) !=5
-dosdefault: default $(BINDIR)\gs16spl.exe
-!endif
+dosdefault: default
+
 # Define the switches for the compilers.
 
 C_=-c
@@ -495,7 +491,7 @@ CCWINFLAGS=
 # so this must precede the !include statements.
 
 # ****** HACK ****** *.tr is still created in the current directory.
-BEGINFILES2=$(BINDIR)\gs16spl.exe *.tr
+BEGINFILES2=*.tr
 
 # Include the generic makefiles.
 
@@ -631,31 +627,6 @@ $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
 	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /ap @$(PSGEN)gswin32.tr ,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE) @$(LIBCTR),$(PSSRCDIR)\dw32c.def,$(GS_OBJ).res
 !endif
 
-# Access to 16 spooler from Win32s
-# Rod Webster (rodw)
-# CBuilder 5 does not support 16 bit compilation 
-# so add conditional to skip attempts to build 16 bit version
-!if $(BUILDER_VERSION !=5)
-
-GSSPL_XE=$(BINDIR)\gs16spl.exe
-
-$(GSSPL_XE): $(GLSRCDIR)\gs16spl.c $(GLSRCDIR)\gs16spl.rc $(GLGENDIR)/gswin.ico
-	$(ECHOGS_XE) -w $(GLGEN)_spl.rc -x 23 define -s gstext_ico $(GLGENDIR)/gswin.ico
-	$(ECHOGS_XE) -a $(GLGEN)_spl.rc -x 23 define -s gsgraph_ico $(GLGENDIR)/gswin.ico
-	$(ECHOGS_XE) -a $(GLGEN)_spl.rc -R $(GLSRC)gs16spl.rc
-	$(COMPBASE16)\bin\bcc -W -ms -v -I$(COMPBASE16)\include $(GLO_)gs16spl.obj -c $(GLSRCDIR)\gs16spl.c
-	$(COMPBASE16)\bin\brcc -i$(COMPBASE16)\include -r -fo$(GLOBJ)gs16spl.res $(GLGEN)_spl.rc
-	$(COMPBASE16)\bin\tlink /Twe /c /m /s /l @&&!
-$(COMPBASE16)\lib\c0ws +
-$(GLOBJ)gs16spl.obj, +
-$(GSSPL_XE),$(GLOBJ)gs16spl, +
-$(COMPBASE16)\lib\import +
-$(COMPBASE16)\lib\mathws +
-$(COMPBASE16)\lib\cws, +
-$(GLSRCDIR)\gs16spl.def
-!
-	$(COMPBASE16)\bin\rlink -t $(GLOBJ)gs16spl.res $(GSSPL_XE)
-!endif
 
 # ---------------------- Setup and uninstall programs ---------------------- #
 

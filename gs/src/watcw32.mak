@@ -13,9 +13,6 @@
 # $Id$
 # watcw32.mak
 # makefile for Watcom C++ v??, Windows NT or Windows 95 platform.
-#   Does NOT build gs16spl.exe, which is 16-bit and is used under Win32s.
-#   Someone with access to the Watcom 16-bit documentation will need to 
-#   do this.
 # Created 1997-02-23 by Russell Lang from MSVC++ 4.0 makefile.
 # Major revisions 1999-07-26 by Ray Johnston.
 

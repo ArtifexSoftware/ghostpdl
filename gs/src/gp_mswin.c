@@ -224,71 +224,42 @@ is_printer(const char *name)
 /* Print File to port or queue */
 /* port==NULL means prompt for port or queue with dialog box */
 
-/* This is messy because Microsoft changed the spooler interface */
-/* between Windows 3.1 and Windows 95/NT */
-/* and didn't provide the spooler interface in Win32s */
+/* This is messy because of past support for old version of Windows. */
 
 /* Win95, WinNT: Use OpenPrinter, WritePrinter etc. */
 private int gp_printfile_win32(const char *filename, char *port);
 
-/* Win32s: Pass to Win16 spooler via gs16spl.exe */
-private int gp_printfile_gs16spl(const char *filename, const char *port);
-
 /*
  * Valid values for pmport are:
  *   ""
- *      action: WinNT and Win95 use default queue, Win32s prompts for port
- *   "LPT1:" (or other port that appears in win.ini [ports]
- *      action: start gs16spl.exe to print to the port
+ *      action: WinNT and Win95 use default queue
  *   "\\spool\printer name"
- *      action: send to printer using WritePrinter (WinNT and Win95).
- *      action: translate to port name using win.ini [Devices]
- *              then use gs16spl.exe (Win32s).
+ *      action: send to printer using WritePrinter.
+ *              Using "%printer%printer name" is preferred
  *   "\\spool"
- *      action: prompt for queue name then send to printer using 
- *              WritePrinter (WinNT and Win95).
- *      action: prompt for port then use gs16spl.exe (Win32s).
+ *      action: prompt for queue name then send to printer using WritePrinter.
  */
 /* Print File */
 private int
 gp_printfile(const char *filename, const char *pmport)
 {
-    /* treat WinNT and Win95 differently to Win32s */
-    if (!is_win32s) {
-	if (strlen(pmport) == 0) {	/* get default printer */
-	    char buf[256];
-	    char *p;
+    if (strlen(pmport) == 0) {	/* get default printer */
+	char buf[256];
+	char *p;
 
-	    /* WinNT stores default printer in registry and win.ini */
-	    /* Win95 stores default printer in win.ini */
-	    GetProfileString("windows", "device", "", buf, sizeof(buf));
-	    if ((p = strchr(buf, ',')) != NULL)
-		*p = '\0';
-	    return gp_printfile_win32(filename, buf);
-	} else if (is_spool(pmport)) {
-	    if (strlen(pmport) >= 8)
-		return gp_printfile_win32(filename, (char *)pmport + 8);
-	    else
-		return gp_printfile_win32(filename, (char *)NULL);
-	} else
-	    return gp_printfile_gs16spl(filename, pmport);
-    } else {
-	/* Win32s */
-	if (is_spool(pmport)) {
-	    if (strlen(pmport) >= 8) {
-		/* extract port name from win.ini */
-		char driverbuf[256];
-		char *output;
-
-		GetProfileString("Devices", pmport + 8, "", driverbuf, sizeof(driverbuf));
-		strtok(driverbuf, ",");
-		output = strtok(NULL, ",");
-		return gp_printfile_gs16spl(filename, output);
-	    } else
-		return gp_printfile_gs16spl(filename, (char *)NULL);
-	} else
-	    return gp_printfile_gs16spl(filename, pmport);
-    }
+	/* WinNT stores default printer in registry and win.ini */
+	/* Win95 stores default printer in win.ini */
+	GetProfileString("windows", "device", "", buf, sizeof(buf));
+	if ((p = strchr(buf, ',')) != NULL)
+	    *p = '\0';
+	return gp_printfile_win32(filename, buf);
+    } else if (is_spool(pmport)) {
+	if (strlen(pmport) >= 8)
+	    return gp_printfile_win32(filename, (char *)pmport + 8);
+	else
+	    return gp_printfile_win32(filename, (char *)NULL);
+    } else
+	return gs_error_undefinedfilename;
 }
 
 #define PRINT_BUF_SIZE 16384u
@@ -343,21 +314,6 @@ get_queues(void)
     return buffer;
 }
 
-
-char *
-get_ports(void)
-{
-    char *buffer;
-
-    if (!is_win32s)
-	return get_queues();
-
-    if ((buffer = malloc(PORT_BUF_SIZE)) == (char *)NULL)
-	return NULL;
-    GetProfileString("ports", NULL, "", buffer, PORT_BUF_SIZE);
-    return buffer;
-}
-
 /* return TRUE if queuename available */
 /* return FALSE if cancelled or error */
 /* if queue non-NULL, use as suggested queue */
@@ -393,59 +349,6 @@ get_queuename(char *portname, const char *queue)
     free(buffer);
     return TRUE;
 }
-
-/* return TRUE if portname available */
-/* return FALSE if cancelled or error */
-/* if port non-NULL, use as suggested port */
-BOOL
-get_portname(char *portname, const char *port)
-{
-    char *buffer;
-    char *p;
-    int i, iport;
-    char filename[MAXSTR];
-
-    buffer = get_ports();
-    if (buffer == NULL)
-	return FALSE;
-    if ((port == (char *)NULL) || (strlen(port) == 0)) {
-	if (buffer == (char *)NULL)
-	    return FALSE;
-	/* select a port */
-	iport = DialogBoxParam(phInstance, "SpoolDlgBox", (HWND) NULL, SpoolDlgProc, (LPARAM) buffer);
-	if (!iport) {
-	    free(buffer);
-	    return FALSE;
-	}
-	p = buffer;
-	for (i = 1; i < iport && strlen(p) != 0; i++)
-	    p += lstrlen(p) + 1;
-	strcpy(portname, p);
-    } else
-	strcpy(portname, port);
-
-    if (strlen(portname) == 0)
-	return FALSE;
-    if (strcmp(portname, "FILE:") == 0) {
-	OPENFILENAME ofn;
-
-	filename[0] = '\0';
-	memset(&ofn, 0, sizeof(OPENFILENAME));
-	ofn.lStructSize = sizeof(OPENFILENAME);
-	ofn.hwndOwner = (HWND) NULL;
-	ofn.lpstrFile = filename;
-	ofn.nMaxFile = sizeof(filename);
-	ofn.Flags = OFN_PATHMUSTEXIST;
-	if (!GetSaveFileName(&ofn)) {
-	    free(buffer);
-	    return FALSE;
-	}
-	strcpy(portname, filename);
-    }
-    free(buffer);
-    return TRUE;
-}
-
 
 /* True Win32 method, using OpenPrinter, WritePrinter etc. */
 private int
@@ -524,48 +427,6 @@ gp_printfile_win32(const char *filename, char *port)
 }
 
 
-/* Start a 16-bit application gs16spl.exe to print a file */
-/* Intended for Win32s where 16-bit spooler functions are not available */
-/* and Win32 spooler functions are not implemented. */
-int
-gp_printfile_gs16spl(const char *filename, const char *port)
-{
-/* Get printer port list from win.ini */
-    char portname[MAXSTR];
-    HINSTANCE hinst;
-    char command[MAXSTR];
-    char *p;
-    HWND hwndspl;
-
-    if (!get_portname(portname, port))
-	return FALSE;
-
-    /* get path to EXE - same as DLL */
-    GetModuleFileName(phInstance, command, sizeof(command));
-    if ((p = strrchr(command, '\\')) != (char *)NULL)
-	p++;
-    else
-	p = command;
-    *p = '\0';
-    sprintf(command + strlen(command), "gs16spl.exe %s %s",
-	    portname, filename);
-
-    hinst = (HINSTANCE) WinExec(command, SW_SHOWNORMAL);
-    if (hinst < (HINSTANCE) HINSTANCE_ERROR) {
-	char buf[MAXSTR];
-
-	sprintf(buf, "Can't run: %s", command);
-	MessageBox((HWND) NULL, buf, szAppName, MB_OK | MB_ICONSTOP);
-	return FALSE;
-    }
-    hwndspl = FindWindow(NULL, "GS Win32s/Win16 spooler");
-
-    while (IsWindow(hwndspl)) {
-	gp_check_interrupts(NULL);
-    }
-
-    return 0;
-}
 
 
 /******************************************************************/
