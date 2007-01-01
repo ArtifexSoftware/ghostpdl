@@ -128,6 +128,8 @@ gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 	return pfile;
     } else if (fname[0] == '|') 	/* pipe */
 	return popen(fname + 1, (binary_mode ? "wb" : "w"));
+    else if (strcmp(fname, "LPT1:") == 0)
+	return NULL;	/* not supported, use %printer%name instead  */
     else
 	return fopen(fname, (binary_mode ? "wb" : "w"));
 }
@@ -207,11 +209,6 @@ is_printer(const char *name)
     if (strlen(name) == 0)
 	return TRUE;
 
-    /*  is printer if name appears in win.ini [ports] section */
-    GetProfileString("ports", name, "XYZ", buf, sizeof(buf));
-    if (strlen(name) == 0 || strcmp(buf, "XYZ"))
-	return TRUE;
-
     /* is printer if name prefixed by \\spool\ */
     if (is_spool(name))
 	return TRUE;
@@ -232,12 +229,13 @@ private int gp_printfile_win32(const char *filename, char *port);
 /*
  * Valid values for pmport are:
  *   ""
- *      action: WinNT and Win95 use default queue
+ *      action: Use default queue
  *   "\\spool\printer name"
  *      action: send to printer using WritePrinter.
  *              Using "%printer%printer name" is preferred
  *   "\\spool"
  *      action: prompt for queue name then send to printer using WritePrinter.
+ *              THIS IS CURRENTLY BROKEN
  */
 /* Print File */
 private int
@@ -328,6 +326,7 @@ get_queuename(char *portname, const char *queue)
     if (buffer == NULL)
 	return FALSE;
     if ((queue == (char *)NULL) || (strlen(queue) == 0)) {
+        /* PROMPTING FOR A QUEUE IS CURRENTLY BROKEN */
 	/* select a queue */
 	iport = DialogBoxParam(phInstance, "QueueDlgBox", (HWND) NULL, SpoolDlgProc, (LPARAM) buffer);
 	if (!iport) {

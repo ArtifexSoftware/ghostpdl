@@ -1550,7 +1550,8 @@ The name of the Ghostscript command line executable on MS Windows is
 the quickstart examples.
 
 <p>
-You must add <em>gs\</em><tt>bin</tt> and
+To run the batch files in the ghostscript <tt>lib</tt> directory,
+you must add <em>gs\</em><tt>bin</tt> and
 <em>gs\</em><tt>lib</tt> to the <b><tt>PATH</tt></b>, where
 <em>gs</em> is the top-level Ghostscript directory.
 
@@ -1570,6 +1571,19 @@ There is also an older version for MS Windows called just <tt>gswin32</tt>
 that provides its own window for the interactive postscript prompt.
 The executable <tt>gswin32c</tt> is usually the better option since 
 it uses the native command prompt window.
+
+<p>
+For printer devices, the default output is the default printer.
+This can be modified as follows.
+
+<blockquote>
+<dl>
+<dt><b><tt>-sOutputFile="%printer%printer name"</tt></b>
+<dd>Output to the named printer.  If your printer is named "HP DeskJet 500"
+then you would use <tt>-sOutputFile="%printer%HP DeskJet 500"</tt>.
+
+</dl>
+</blockquote>
 
 <hr>
 
