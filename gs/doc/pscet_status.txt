@@ -3311,13 +3311,66 @@ Test	 Status	Comments
 
 14-12-2  OK	
 
-14-12-3  DIFF	A glyph positioning difference. assign: Igor.
+14-12-3  AOK	A glyph positioning difference. 
+		Analyzed by Igor.
+		I believe it is CPSI problem.
+		A simplified test is placed to 
+		peeves:/home/igor/pscet/mytests/14-12-3-Igor01.PS 
+		With this test CPSI prints :
+		.
+		aaaa1:
+		Helvetica
+		has WMode
+		def:/Helvetica-Oblique
+		1
+		defined:1
+		aaaa2:
+		Helvetica
+		nas no WMode
+		.
+		Thus the redefinition of the font Helvetica
+		is dropped when Helvetica-Oblique is redefined.
+		It is an incorrect behavior.
+		Due to that the cshow procedure prints 
+		currentfont /WMode like this :
+		[1 1 /U /U /U /U 1 1 0 0 0 0] 
+		The right result must be :
+		[1 1 1 1 0 0 1 1 0 0 0 0]
+		Using the wrong WMode, glyph placements
+		are wrong with CPSI.
+		Tek paints something different,
+		which is closer to Ghostscript,
+		but looks wrong again.
+		.
+		Some tips for those who wants to analyze it :
+		1. Font_Dict is a FMap 2 font with 8 descendents :
+		1.0. Times-Roman
+		1.1. Type3WMode0  (paints rectangles with size depending on char code);
+		1.2. Type3WMode1  (same as above but with WMode 1)
+		1.3. Type0Font1 2 scalefont - the test doesn't use it.
+		1.4. FMAP2 - a FMap 2 font [ Helvetica, Helvetica-Bold, Helvetica-Oblique, Helvetica-BoldOblique]
+		1.5. FMAP4 [Symbol, Symbol 2 scalefont] - the test doesn't use it.
+		1.6. FMAP5 [Courier, , , ]  - the test doesn't use it.
+		1.7. FMap6 [Helvetica, ...]  - the test doesn't use it.
+		2. All 1st level descendent fonts above has WMode = DescendentWMode = 1
+		3. Helvetica, Helvetica-Bold, Helvetica-Oblique, Helvetica-BoldOblique
+		   are built into the font above aftyer redefinition with find&mod,
+		   which changes WMode like this :
+		   Helvetica WMode 1 
+		   Helvetica-Bold WMode 0
+		   Helvetica-Oblique WMode 1
+		   Helvetica-BoldOblique WMode 0
+		4. The text string is decomposed like this :
+		   2A 2a 40A 40a 41A 41a 42A 42a 43A 43a 1A 1A
+		   The 1st byte selects the 1st level descendent,
+		   then it tripples the 2nd byte selects the 2nd level descendent.
+		5. We believe that WMode of the leaf font only have sence.
 
 14-12-4  OK	
 
-14-12-5  DIFF	A glyph positioning difference. assign:  Igor.
+14-12-5  AOK	Same as 14-12-3.
 
-14-12-6  DIFF	A glyph positioning difference. assign:  Igor.
+14-12-6  AOK	Same as 14-12-3.
 
 14-13-1  OK	Minor differences visually reviewed by RJJ
 
