@@ -2898,8 +2898,7 @@ Test	 Status	Comments
 
 13-10-4  OK	
 
-13-10-5  DIFF	nocurrentpoint output differs.
-                assign Alex.
+13-10-5  OK  	Works for me in rev. 7543 - Alex.
 
 13-10-6  OK	Minor differences visually reviewed by RJJ
 
