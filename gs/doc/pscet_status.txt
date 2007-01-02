@@ -3459,7 +3459,7 @@ Test	 Status	Comments
                 with a dynamic filling rule in the trapezoid filling algorithm.
                 I will need a month for this improvement.
                 -
-		Remaining issues : assign: Igor.
+		Remaining issues : assign:-Igor.
 
 16-02-1  DIFF	butterfly shapes: CPSI has bevel line caps, gs has
                 miter circle tests: positioning error looks similar to
@@ -3501,14 +3501,14 @@ Test	 Status	Comments
                 196-206 - positioning similar to 16-01-1, glyph 195
                 207-208 - reverse video similar to 16-01-1, glyph 207-208
                 Ray will address eofill issue per conversation with Raph, Henry.
-		Remaining issues : assign: Igor.
+		Remaining issues : assign:-Igor.
 
 16-10-2  DIFF	21-22: Ok, same analysis as 16-01-1
                 207-208 - reverse video similar to 16-01-1, glyph 207-208
                 6-10, 192, 193, 195, 203-206: fill
                 196-202: positioning, similar to 16-01-1, glyph 196
                 Ray will address eofill issue per conversation with Raph, Henry.
-		Remaining issues : assign: Igor.
+		Remaining issues : assig:-Igor.
 
 16-10-3  DIFF	many instances of glyph 208, similar to 16-01-1, glyph 208
                 Ray will address eofill issue per conversation with Raph, Henry.
@@ -3533,7 +3533,7 @@ Test	 Status	Comments
 
 17-01-5  OK	
 
-17-01-6  DIFF	Graphical incorrect dashes. Assign: Igor.
+17-01-6  AOK	Matches Tek. CPSI different.
 
 17-01-7  DIFF	Same as 17-01-6 
 
@@ -3700,8 +3700,8 @@ Test	 Status	Comments
 
 18-02F-5  DIFF	18-02A-4 repeat
 
-18-02G-1  DIFF	gs missing stroke in last graphic of technical paths 
-                (middle right box)
+18-02G-1  DIFF	strokepath different - assign: Ray.
+		-
                 pattern differs in 4th column of stars in the last box.
                 assign: Igor.
 
@@ -5289,7 +5289,7 @@ Test	 Status	Comments
 
 33_all-5  OK	
 
-33_all-6  DIFF	CID's Black rectangles printing (gs only) no typecheck messages assign: Igor
+33_all-6  DIFF	'show' error inconformity. assign: Alex.
 
 33_all-7  AOK	CMAP names differ implementation dependent analyzed by Ray.
 
@@ -5303,7 +5303,7 @@ Test	 Status	Comments
 
 34_all-4  DIFF	Truncated glyphs. Assign: Igor.
 
-34_all-5  DIFF	*show operand check is too weak. Analyzed by Igor. Assigned to Alex.
+34_all-5  DIFF	Same as 33_all-6. Assign: Alex.
 
 34_all-6  AOK	GS has more CMap resources. Not important. Analyzed by Igor.
 
@@ -5329,7 +5329,7 @@ Test	 Status	Comments
 
 35_all-6  DIFF	Same as 34_all-5. Analyzed by Igor. Assigned to Alex.
 
-35_all-7  AOK	Same as 33_all-7. Analyzed by Igor. Assign: Igor.
+35_all-7  AOK	Same as 33_all-7. Analyzed by Igor.
 
 35_all-8  OK	Minor differences visually reviewed by RJJ
 
