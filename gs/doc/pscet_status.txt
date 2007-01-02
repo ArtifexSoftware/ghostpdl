@@ -1720,19 +1720,7 @@ Test	 Status	Comments
 
 11-11-5  OK	Minor differences visually reviewed by RJJ
 
-11-11-6  DIFF	This test depends on the order of vertices in clippath.
-		It first generates a clipping for the page printing area
-		(which is a rectangle), then applies clippath, 
-		and then catenates a line segment to it.
-		What we observe is the line segment end. 
-		Its beginning appears at(near) a corner of the page.
-		The implementation dependent thing is which corner
-		to choose. It is the corner, from which the clippath starts.
-		I believe that PLRM doesn't specify that.
-		Someone must deside whether we need to implement 
-		a compatible result. 
-		I guess it is important for this page only.
-		assign: Ray.
+11-11-6  OK	Fixed as of rev 7534.
 
 11-12-1  OK	
 
@@ -1766,10 +1754,7 @@ Test	 Status	Comments
 
 11-14-6  OK	Color corrected as of rev 7172.
 
-11-15-1  DIFF	GS has half circle at left edge of separator line, CPSI
-		has no half circles, Tektronix hardcopy has half circle at
-		right edge of separator line (Device Dependent ???)
-                Assign: Ray.
+11-15-1  OK	Fixed as of rev 7534.
 
 11-15-2  OK	Minor differences visually reviewed by RJJ
 
