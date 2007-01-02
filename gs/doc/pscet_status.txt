@@ -2835,7 +2835,9 @@ Test	 Status	Comments
 
 13-03-3  OK	Minor differences visually reviewed by RJJ
 
-13-03-4  DIFF	GS error inconformity. assign: Alex
+13-03-4  DIFF	GS error inconformity.
+                {{/a /b add } (abc) cshow} stopped
+                returns only true on the stack. assign: Alex
 
 13-03-5  OK	Minor differences visually reviewed by RJJ
 
@@ -4671,14 +4673,17 @@ Test	 Status	Comments
 27-05-1  DIFF	Inconforming currentuserparams. Analyzed by Igor.
 		Igor assigns this to Ray for further analyzis.
 
-27-05-2  DIFF	memo36 - setvmthreshold; cash18 ucachestatus;
+27-05-2  OK  	memo36 - setvmthreshold; cash18 ucachestatus;
 		Igor assigns this to Ray for further analyzis.
 		more15 - same as currentstrokeadjust in 09-49D-3
                 peter writes:
                 These CET files will not run on my 64-bit build (they expect to be able to
                 'cvs' any integer into a 12-character string), and I don't seem to be able
                 to get gcc to produce 32-bit output, even with Ralph's help.  Please
-                reassign these files.  Assign Alex.
+                reassign these files.
+                -
+                After implementing setucacheparams, ucachestatus using MaxUPathItem user
+                parameter the test results match Tek 360 hard copy. - Alex
 
 27-06-1  OK  	Fixed in rev. 7157 - Alex.
 
