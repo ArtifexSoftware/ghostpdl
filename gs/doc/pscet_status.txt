@@ -3602,7 +3602,8 @@ Test	 Status	Comments
 
 17-06-4  OK	
 
-18-01A-1  DIFF	line patterns on rows 1 and 4 don't match.  assign: Igor
+18-01A-1  AOK	Minor difference in the font size.
+		Note: patterns are resolution dependent,
 
 18-01A-2  OK    Minor differences visually reviewed by HAS.
 
