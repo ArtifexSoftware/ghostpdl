@@ -3705,6 +3705,8 @@ Test	 Status	Comments
 		-
                 pattern differs in 4th column of stars in the last box.
                 Analyzed by Igor.
+                A simplified test case is placed to
+                peeves:/home/igor/pscet/mytests/18-02G-1-Igor01.PS .
                 This is a general pattern implementation problem.
                 The test defines a pattern with TESTPROC,
                 and then pallyes this pattern for creating another pattern 
