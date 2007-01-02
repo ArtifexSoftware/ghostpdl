@@ -845,6 +845,17 @@ pdfdict begin
 /pdfpagecount		% - pdfpagecount <int>
  { Trailer /Root oget /Pages oget
    dup /Count knownoget {
+     dup 0 le {
+       pop (   **** Warning:  Invalid Page count.\n) pdfformaterror
+       % find the last page and use that as the Count
+       1 1 999999999 {
+         dup pdffindpage?
+	 exch pop
+         //null eq { exit } { pop } ifelse
+       } for
+       1 sub		% decrement to last page that we were able to find
+       2 copy /Count exch put
+     } if
      exch pop
    } {
        dup /Type oget /Page eq {
@@ -861,10 +872,10 @@ pdfdict begin
    } ifelse
  } bind def
 
-% Find the N'th page of the document by iterating through the Pages tree.
-% The first page is numbered 1.
-/pdffindpageref {		% <int> pdffindpage <objref>
-  dup Trailer /Root oget /Pages get
+/pdffindpage? {		% <int> pdffindpage? 1 null 	(page not found)
+			%  <int> pdffindpage? 1 noderef (page found)
+			%  <int> pdffindpage? 0 null	(Error: page not found)
+  Trailer /Root oget /Pages get
     {		% We should be able to tell when we reach a leaf
 		% by finding a Type unequal to /Pages.  Unfortunately,
 		% some files distributed by Adobe lack the Type key
@@ -881,6 +892,12 @@ pdfdict begin
 		% Stack: index null|noderef
       dup null eq { pop pop 1 null exit } if
     } loop
+} bind def
+
+% Find the N'th page of the document by iterating through the Pages tree.
+% The first page is numbered 1.
+/pdffindpageref {		% <int> pdffindpage <objref>
+  dup pdffindpage?
 		% Stack: index countleft noderef
    1 index 1 ne { pop pop /pdffindpage cvx /rangecheck signalerror } if
    exch pop
