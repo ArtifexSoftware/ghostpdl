@@ -1,117 +1,93 @@
-gslt (gs lite)
 
-graphics library client, sans pdl's, based on Peter's gslib.c in gs/src/.
+Tue Jan  2 14:04:44 MST 2007
 
-simple APIs for image and font loading have been built on top of this
-stripped down Ghostscript build.
+The gslite library temporarily requires a patch to gs/src.  See 
+"Patch for ghostscript" attached below.
 
-File descriptions:
+Build and test gslite library with Microsoft Visual Studio 8 with
+Microsoft Platform SDK for Windows Server 2003 R2.
 
-gslt.h is a header that allows basic use of the Ghostscript graphics 
-library without including the discipline of all the general headers.
+   # install the free visual C++ 2005 and SDK.
+   # modify vsvars32.bat so visual c can find the SDK (vsvars32.bat
+   # patch below) and open the Visual Studio 2005 command prompt.
+   # go to the gslite directory
+   cd tools\gslite
+   # build the library see DEBUG options in the makefile
+   make /f gslt_lib_msvc.mak DEVSTUDIO=
+   # build and run the the test files.
+   make /f gslt_lib_msvc.mak test
 
-gslt_font_api.h declares the simplified OpenType font loading API.
-gslt_image.h declares the simplified image loading API.
+build and test gslite library with Linux 2.6.12 and gcc version 3.4.4 20050721 (Red Hat 3.4.4-2)
 
-Currently only JPEG, PNG, and an appropriate subset of TIFF image 
-formats are supported.
+   # go to the glite directory and build the library.
+   make -f gslt_lib_gcc.mak
+   # test the library.
+   make test
 
-There are three test and example clients for the three APIs that show
-how they can be used and verify that the implementation works.
+Note the linux makefile supports a threads test
+(gslt_image_threads_test), it is the same as gslt_image_test except it
+tests rendering 2 images in 2 concurrent threads of execution.  To get
+this to run on windows wouuld require installing POSIX threads.
 
-gslt_test.c - test general drawing routines. Invoke with an output 
-              device name and test number to run.
-gslt_font_api_test.c - OpenType font load and draw example. The
-              test font name is hardcoded in the file.
-gslt_image_test.c - test image loading routines. Invoke with an
-              image filename on the commandline.
 
-While these are intended to work on a stripped-down Ghostscript build,
-any recent version will work. Note that $(GLD)roplib.dev may need to
-be added to FEATURE_DEVS in the top-level Ghostscript makefile for 
-gslt_test.c to link properly; this example used PCL-style Raster 
-Operations in one test and these are not normally included in the main 
-Ghostscript build.
+vsvars32.bat patch
+------------------
+--- vsvars32.bat	2006-12-27 23:48:11.578125000 -0700
++++ vsvars32.bat.bak	2006-12-27 21:14:42.312500000 -0700
+@@ -14,8 +14,8 @@
+ @set DevEnvDir=C:\Program Files\Microsoft Visual Studio 8\Common7\IDE
+ 
+ @set PATH=C:\Program Files\Microsoft Visual Studio 8\Common7\IDE;C:\Program Files\Microsoft Visual Studio 8\VC\BIN;C:\Program Files\Microsoft Visual Studio 8\Common7\Tools;C:\Program Files\Microsoft Visual Studio 8\SDK\v2.0\bin;C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727;C:\Program Files\Microsoft Visual Studio 8\VC\VCPackages;%PATH%
+-@set INCLUDE=C:\Program Files\Microsoft Visual Studio 8\VC\INCLUDE;%INCLUDE%;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include
+-@set LIB=C:\Program Files\Microsoft Visual Studio 8\VC\LIB;C:\Program Files\Microsoft Visual Studio 8\SDK\v2.0\lib;%LIB%;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Lib
++@set INCLUDE=C:\Program Files\Microsoft Visual Studio 8\VC\INCLUDE;%INCLUDE%
++@set LIB=C:\Program Files\Microsoft Visual Studio 8\VC\LIB;C:\Program Files\Microsoft Visual Studio 8\SDK\v2.0\lib;%LIB%
+ @set LIBPATH=C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727
+ 
+ @goto end
 
-BUILD
------
 
-Build a shared library object of ghostscript.
+Patch for ghostscript
+---------------------
 
-On *nix:
-
-   cd gs   # relative to the gslite directory.
-
-   ln -s src/unix-gcc.mak Makefile
- or
-   ./configure
-
-   make sodebug # make so for a production build.
-   
-   cd .. # back to the gslite directory
-   make depend
-   make
-   make check # verify implementation
-
-On MS Windows and other systems:
-
-   build a libgs.dll as usual
-   create a new project with:
-	gslt.h
-	gslt_init.c
-	gslt_alloc.h
-	gslt_alloc.c
-	gslt_font_api.h
-	gslt_font_api.c
-	gslt_image.h
-	gslt_image.c
-	gslt_image_jpeg.c
-	gslt_image_png.c
-	gslt_image_tiff.c
-    link this with libgs.dll to create a gslt library.
-
-    compile each of the *_test.c examples, linking against
-    gslt and libgs.dll to verify the implementation.
-
-RUN
----
-
-On Unix-like systems, the shared library can either be put in a well 
-defined place or something like this will work if you run the client 
-from the same directory each time:
-
-export LD_LIBRARY_PATH=./gs/sobin/
-
-Take care to avoid a common problem: use `ldd gslt' to verify the
-shared library (libgs.so.n) is the one you built above and not one
-installed say in /usr/lib/
-
-./gslt_test <device> <testnumber>
-
-example:
-
-./gslt_test x11 5
-
-The first argument is the device, see the ghostscript library makefile
-for supported devices.
-
-example 2:
-
-run all of the tests:
-
-for x in 1 2 3 4 5 6 7 8 9; do gslt_test x11 $x; done
-
-Likewise, to run the font_api test, edit the source file to set a valid 
-path to a test font, recompile and run:
-
-./gslt_font_api_test
-
-To test the image loading library run for example:
-
-./gslt_image_test tiger.jpeg
-./gslt_image_test tiger.png
-./gslt_image_test tiger.tiff
-
-Each invokation will try to load the specified image file and save the 
-output to 'out.pnm' which can be examined with an image editor.
-
+svn diff
+Index: gs.mak
+===================================================================
+--- gs.mak	(revision 7517)
++++ gs.mak	(working copy)
+@@ -377,7 +377,7 @@
+  $(DEVICE_DEVS10) $(DEVICE_DEVS11) $(DEVICE_DEVS12) $(DEVICE_DEVS13) \
+  $(DEVICE_DEVS14) $(DEVICE_DEVS15) $(DEVICE_DEVS16) $(DEVICE_DEVS17) \
+  $(DEVICE_DEVS18) $(DEVICE_DEVS19) $(DEVICE_DEVS20) $(DEVICE_DEVS21) \
+- $(DEVICE_DEVS_EXTRA) $(PSD)romfs$(COMPILE_INITS).dev 
++ $(DEVICE_DEVS_EXTRA)
+ 
+ devs_tr=$(GLGENDIR)$(D)devs.tr
+ $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
+@@ -407,7 +407,6 @@
+ 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS20)
+ 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS21)
+ 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS_EXTRA)
+-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(PSD)romfs$(COMPILE_INITS).dev
+ 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) - $(GLGENDIR)$(D)libcore
+ 
+ # GCONFIG_EXTRAS can be set on the command line.
+@@ -423,7 +422,7 @@
+ 
+ $(gconfig_h) : $(ld_tr)
+ 	$(NO_OP)
+-	
++
+ # The line above is an empty command; don't delete.
+ 
+ # save our set of makefile variables that are defined in every build (paths, etc.)
+Index: sjpegc.c
+===================================================================
+--- sjpegc.c	(revision 7517)
++++ sjpegc.c	(working copy)
+@@ -34,7 +34,6 @@
+   unix-aux.mak, and written to gconfig_.h
+  */
+ 
+-#include "gconfig_.h"
+ #ifdef DONT_HAVE_JMEMSYS_H

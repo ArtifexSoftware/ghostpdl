@@ -166,9 +166,19 @@ gs_state *gslt_init_state(gs_memory_t *mem, gx_device *dev)
     return pgs;
 }
 
-void gslt_free_library(gs_memory_t *mem, gx_device *dev, gs_state *pgs)
+void gslt_free_state(gs_memory_t *mem, gs_state *pgs)
 {
-    gs_lib_finit(0, 0, mem);
+    gs_state_free(pgs);
+}
+
+void gslt_free_device(gs_memory_t *mem, gx_device *dev)
+{
+    gs_free_object(mem, dev, "gslt device"); // TODO: how do i free devices?
+}
+
+void gslt_free_library(gs_memory_t *mem)
+{
+    // TODO: how do i free the allocator?
 }
 
 #if 0

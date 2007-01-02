@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: gslt.h 2461 2006-07-14 18:54:03Z giles $ */
+/* $Id$ */
 /* gslt "Ghostscript Lite" convenience header */
 
 /*
@@ -55,7 +55,9 @@ gs_memory_t *gslt_alloc_init(void);
 gs_memory_t * gslt_init_library();
 gx_device * gslt_init_device(gs_memory_t *mem, char *name);
 gs_state *gslt_init_state(gs_memory_t *mem, gx_device *dev);
-void gslt_free_library(gs_memory_t *mem, gx_device *dev, gs_state *pgs);
+void gslt_free_state(gs_memory_t *mem, gs_state *pgs);
+void gslt_free_device(gs_memory_t *mem, gx_device *dev);
+void gslt_free_library(gs_memory_t *mem);
 
 void gslt_get_device_param(gs_memory_t *mem, gx_device *dev, char *key);
 void gslt_set_device_param(gs_memory_t *mem, gx_device *dev, char *key, char *val);

@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: gslt_test.c 2453 2006-07-14 17:08:19Z giles $ */
+/* $Id$ */
 /* Test program for Ghostscript library */
 
 /* Capture stdin/out/err before gsio.h redefines them. */
@@ -208,11 +208,12 @@ main(int argc, const char *argv[])
     gs_erasepage(pgs);
 
     if (tests[achar - '1']) {
+	dprintf1("gslt test case = %d\n", achar - '1');
         code = (*tests[achar - '1']) (pgs, mem);
         gs_output_page(pgs, 1, 1);
         if (code)
             dprintf1("**** Test returned code = %d.\n", code);
-        dputs("Done.  Press <enter> to exit.");
+        dputs("Done.  Press <enter> to exit.\n");
         fgetc(gs_stdin);
     } else {
         dputs("test not defined\n");
@@ -938,14 +939,14 @@ test8(gs_state * pgs, gs_memory_t * mem)
 	gs_setrgbcolor(pgs, 1.0, 1.0, 0.0);
 	gs_rectfill(pgs, &r, 1);
 	gs_setpattern(pgs, &ccolor);
-	gs_settexturetransparent(pgs, true);
+	// gs_settexturetransparent(pgs, true);
 	gs_rectfill(pgs, &r, 1);
 	r.p.x += 150;
 	r.q.x += 150;
 	gs_setrgbcolor(pgs, 1.0, 1.0, 0.0);
 	gs_rectfill(pgs, &r, 1);
 	gs_setpattern(pgs, &ccolor);
-	gs_settexturetransparent(pgs, false);
+	// gs_settexturetransparent(pgs, false);
 	gs_rectfill(pgs, &r, 1);
     }
     return 0;

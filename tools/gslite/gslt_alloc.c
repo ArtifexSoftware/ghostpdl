@@ -8,6 +8,10 @@
 #include "gsstype.h"
 #include "gslt_alloc.h"
 
+static int num_alloc_called = 0;
+static int num_resize_called = 0;
+static int num_free_called = 0;
+
 /* a screwed up mess, we try to make it manageable here */
 extern const gs_memory_struct_type_t st_bytes;
 
@@ -84,6 +88,7 @@ gslt_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t
 	byte *ptr = (byte *)malloc(newsize);
 	if ( !ptr )
 	    return NULL;
+	num_alloc_called ++;
 #ifdef DEBUG
 	if_debug2('A', "[da]:malloc:%p:%s\n", &ptr[minsize * 2], cname );
 #endif
@@ -171,6 +176,8 @@ gslt_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_n
     if ( !ptr ) 
 	return NULL;
 
+    num_resize_called ++;
+
     /* da for debug allocator - so scripts can parse the trace */
     if_debug2('A', "[da]:realloc:%p:%s\n", ptr, cname );
     /* we reset size and type - the type in case realloc moved us */
@@ -191,6 +198,8 @@ gslt_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	    memset(bptr-header_size, 0xee, header_size + get_size(ptr));
 #endif
 	free(bptr-header_size);
+
+	num_free_called ++;
 	
 #ifdef DEBUG
 	    /* da for debug allocator - so scripts can parse the trace */
@@ -386,5 +395,14 @@ gslt_alloc_init()
     gslt_mem.non_gc_memory = (gs_memory_t *)&gslt_mem;
 
     return (gs_memory_t *)&gslt_mem;
+}
+
+void
+gslt_alloc_print_leaks(void)
+{
+    dprintf1("number of allocs: %d\n", num_alloc_called);
+    dprintf1("number of frees: %d\n", num_free_called);
+    dprintf1("number of resizes: %d\n", num_resize_called);
+    dprintf1("number of leaked chunks: %d\n", num_alloc_called - num_free_called);
 }
 

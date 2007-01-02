@@ -11,11 +11,12 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id$ */
+/* $Id: gslt_image_test.c 2666 2006-10-27 10:25:54Z tor $ */
 /* example client for the gslt image loading library */
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
 
 typedef unsigned char byte;
 #include "gslt.h"
@@ -135,13 +136,15 @@ write_image_filename(gslt_image_t *image, const char *filename)
     return error;
 }
 
-int
-main(int argc, const char *argv[])
+/* global input filename. */
+char *filename;
+
+void *
+print_image(void *threadid)
 {
     gs_memory_t *mem;
     gx_device *dev;
     gs_state *gs;
-    const char *filename;
     gslt_image_t *image;
     char *s;
     int code = 0;
@@ -163,17 +166,20 @@ main(int argc, const char *argv[])
     gs_erasepage(gs);
     gs_moveto(gs, 72.0, 72.0);
 
-    filename = argv[argc-1];
-    fprintf(stderr, "loading '%s'\n", filename);
 
     /* load and decode the image */
-    image = decode_image_filename(mem, argv[argc-1]);
+    image = decode_image_filename(mem, filename);
     if (image == NULL) {
 	fprintf(stderr, "reading image failed.\n");
 	code = -1;
     }
     /* save an uncompressed copy for verification */
-    write_image_filename(image, "out.pnm");
+    {
+        char outname[50];
+        sprintf(outname, "out_%d.pnm", (int)threadid);
+        fprintf(stderr, "writing %s\n", outname);
+        write_image_filename(image, outname);
+    }
 
     /* image could be drawn to the page here */
 
@@ -187,6 +193,27 @@ main(int argc, const char *argv[])
     gslt_free_state(mem, gs);
     gslt_free_device(mem, dev);
     gslt_free_library(mem);
-    return code;
+
+    pthread_exit(NULL);
+}
+
+int
+main(int argc, const char *argv[])
+{
+
+    pthread_t thread1, thread2;
+    int ret;
+    int t1 = 1;
+    int t2 = 2;
+
+    filename = argv[argc-1];
+    fprintf(stderr, "loading '%s'\n", filename);
+    
+    if ( ((ret=pthread_create(&thread1, NULL, print_image, (void *)t1)) != 0) ||
+         ((ret=pthread_create(&thread2, NULL, print_image, (void *)t2)) != 0) ) {
+        fprintf(stderr, "Error creating thread code=%d", ret);
+        exit(-1);
+    }
+    pthread_exit(NULL);
 }
 
