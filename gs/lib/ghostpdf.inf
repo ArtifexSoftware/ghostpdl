@@ -1,4 +1,4 @@
-; GHOSTPDF.INF (for Windows XP)
+; GHOSTPDF.INF (for Windows 2k, XP and XP x64 edition)
 
 [Version]
 Signature="$Windows NT$"
@@ -7,14 +7,20 @@ ClassGUID={4D36E979-E325-11CE-BFC1-08002BE10318}
 Class=Printer
 CatalogFile=oemprint.cat
 
-DriverVer=08/19/2004,1.0.0.0
+DriverVer=01/02/2007,1.0.0.1
 
 ; Manufacturer section
 [Manufacturer]
-"Ghostscript"
+"Ghostscript"=Ghostscript,NTamd64,NTia64
 
-; Model section
+; Model sections
 [Ghostscript]
+"Ghostscript PDF" = GHOSTPDF.PPD, Ghostscript_PDF, Ghostscript_PDF_Writer
+
+[Ghostscript.NTamd64]
+"Ghostscript PDF" = GHOSTPDF.PPD, Ghostscript_PDF, Ghostscript_PDF_Writer
+
+[Ghostscript.NTia64]
 "Ghostscript PDF" = GHOSTPDF.PPD, Ghostscript_PDF, Ghostscript_PDF_Writer
 
 ; Installer section
