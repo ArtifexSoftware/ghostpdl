@@ -4410,7 +4410,13 @@ Test	 Status	Comments
 
 23-36-2  DIFF	GS has a '?' character in some lines that doesn't render on Tek or CPSI,
 		This causes a the end of the string to shift to the right on lines that
-		mismatch.  Assign: Igor.
+		mismatch.  
+		.
+		Analyzed by Igor.
+		This is a difference in writeobject output data.
+		writeobject is implemented in lib/gs_btokn.ps .
+		Don't know whom to assign it, so passing to Ray.
+		Assign: Ray.
 
 23-36-3  AOK    fixed in rev. 7232 (Peter)
 
