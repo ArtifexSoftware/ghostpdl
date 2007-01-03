@@ -343,6 +343,12 @@ languagelevel exch 2 .setlanguagelevel
 dup /InstanceType /dicttype put
 dup /DefineResource {
   .buildcidfont
+  dup /OrigFont known not {
+     dup dup /OrigFont exch .growput  % CPSI does it. Adding just for CET 33_all.PS conformity.
+  } if
+  dup /PaintType known not {
+     dup /PaintType 0 .growput  % CPSI does it. Adding just for CET 33_all.PS conformity.
+  } if
   /Generic /Category findresource /DefineResource get exec
 } put
 % CIDFonts may be defined in CFF OpenType files.

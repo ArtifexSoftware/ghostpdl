@@ -3382,10 +3382,10 @@ Test	 Status	Comments
 		font dictionary debug for GS has one more key: /OrigFont.
 	 I think these differences are harmless, and are not particularly easy to fix. If we do decide it needs fixing, Peter is a good choice. - Raph
 
-15-04-2  AOK	Different checksum. The font dictionary debug for GS has more keys: /.OrigFont and /FontInfo.
+15-04-2  AOK	Different checksum. The font dictionary debug for GS has more keys: /OrigFont and /FontInfo.
 	 See 15-04-1 - Raph
 
-15-04-3  AOK	Different checksum. The font dictionary debug for GS has one more key: /.OrigFont.
+15-04-3  AOK	Different checksum. The font dictionary debug for GS has one more key: /OrigFont.
 	 See 15-04-1 - Raph
 
 15-05-1  OK	Fixed when tested with 7210
@@ -5305,7 +5305,7 @@ Test	 Status	Comments
 
 32_all-9  OK	
 
-33_all-1  DIFF	CIDFont dictionary key OrigFont is present in CPSI and not in GS. assign: Igor
+33_all-1  OK
 
 33_all-2  OK  	Fixed in rev. 7478. See 32_all-2. - Alex 
 
@@ -5321,7 +5321,7 @@ Test	 Status	Comments
 
 33_all-8  OK	Minor differences visually reviewed by RJJ
 
-34_all-1  DIFF	CPSI has OrigFont, PaintType in a CID font dictionary. Assign: Ray
+34_all-1  OK
 
 34_all-2  OK  	Fixed in rev. 7478. See 32_all-2. - Alex 
 
