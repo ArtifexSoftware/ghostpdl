@@ -29,7 +29,7 @@
 
 UNDONE_STUB(Canvas_Clip);
 UNDONE_STUB(Canvas_OpacityMask);
-UNDONE_STUB(Canvas_RenderTransform);
+//UNDONE_STUB(Canvas_RenderTransform);
 UNDONE_STUB(Canvas_Resources);
 UNDONE_STUB(DocumentReference);
 UNDONE_STUB(FixedDocument);
@@ -45,7 +45,7 @@ UNDONE_STUB(ImageBrush_Transform);
 UNDONE_STUB(LinearGradientBrush_GradientStops);
 UNDONE_STUB(LinearGradientBrush_Transform);
 UNDONE_STUB(LinkTarget);
-UNDONE_STUB(MatrixTransform);
+//UNDONE_STUB(MatrixTransform);
 UNDONE_STUB(PageContent);
 UNDONE_STUB(PageContent_LinkTargets);
 UNDONE_STUB(Path_Clip);

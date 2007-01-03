@@ -97,13 +97,10 @@ Canvas_action(void *data, met_state_t *ms)
 
     if ((code = gs_gsave(pgs)) < 0)
         return gs_rethrow(code, "gsave failed");
-
     if ((code = met_get_transform(&canvas_mat, aCanvas->RenderTransform)) < 0)
         return gs_rethrow(code, "transform failed");
-
     if ((code = gs_concat(pgs, &canvas_mat)) < 0)
         return gs_rethrow(code, "concat failed");
-
     return 0;
 }
 
@@ -163,4 +160,127 @@ const met_element_t met_element_procs_Canvas = {
     }
 };
 
+private int
+Canvas_RenderTransform_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
+{
+    CT_MatrixTransform *aRenderTransform = 
+        (CT_MatrixTransform *)gs_alloc_bytes(ms->memory,
+                                     sizeof(CT_MatrixTransform),
+                                       "Canvas_RenderTransform_cook");
+    int i;
+
+    memset(aRenderTransform, 0, sizeof(CT_MatrixTransform));
+
+#define MYSET(field, value)                                                   \
+    met_cmp_and_set((field), attr[i], attr[i+1], (value))
+
+    /* parse attributes, filling in the zeroed out C struct */
+    for(i = 0; attr[i]; i += 2) {
+
+	if(!MYSET(&aRenderTransform, "MatrixTransform"))
+	    ;
+        else
+            gs_warn2("unsupported attribute %s=%s",
+                     attr[i], attr[i+1]);
+    }
+    /* parse attributes, filling in the zeroed out C struct */
+
+#undef MYSET
+    /* copy back the data for the parser. */
+    *ppdata = aRenderTransform;
+    return 0;
+}
+
+private int
+Canvas_RenderTransform_action(void *data, met_state_t *ms)
+{
+    /*  nothing here
+    CT_MatrixTransform *aRenderTransform = data;
+    gs_state *pgs = ms->pgs;
+    int code;
+    gs_matrix canvas_mat;
+    */
+    return 0;
+}
+
+private int
+Canvas_RenderTransform_done(void *data, met_state_t *ms)
+{
+    gs_free_object(ms->memory, data, "Canvas_RenderTransform_done");
+    return 0; /* incomplete */
+}
+
+const met_element_t met_element_procs_Canvas_RenderTransform = {
+    "Canvas_RenderTransform",
+    {
+        Canvas_RenderTransform_cook,
+        Canvas_RenderTransform_action,
+        Canvas_RenderTransform_done
+    }
+};
+
+private int
+MatrixTransform_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
+{
+    CT_MatrixTransform *aMatrixTransform = 
+        (CT_MatrixTransform *)gs_alloc_bytes(ms->memory,
+                                     sizeof(CT_MatrixTransform),
+                                       "MatrixTransform_cook");
+    int i;
+
+    memset(aMatrixTransform, 0, sizeof(CT_MatrixTransform));
+
+#define MYSET(field, value)                                                   \
+    met_cmp_and_set((field), attr[i], attr[i+1], (value))
+
+    /* parse attributes, filling in the zeroed out C struct */
+    for(i = 0; attr[i]; i += 2) {
+
+	if(!MYSET(&aMatrixTransform, "Matrix"))
+	    ;
+	// NB: x:Key iff in a Resource Dictionary
+        else
+            gs_warn2("unsupported attribute %s=%s",
+                     attr[i], attr[i+1]);
+    }
+    /* parse attributes, filling in the zeroed out C struct */
+
+#undef MYSET
+    /* copy back the data for the parser. */
+    *ppdata = aMatrixTransform;
+    return 0;
+}
+
+private int
+MatrixTransform_action(void *data, met_state_t *ms)
+{
+    CT_MatrixTransform *aMatrixTransform = data;
+    gs_state *pgs = ms->pgs;
+    int code;
+    gs_matrix canvas_mat;
+
+    if ((code = met_get_transform(&canvas_mat, aMatrixTransform)) < 0)
+        return gs_rethrow(code, "transform failed");
+
+    if ((code = gs_concat(pgs, &canvas_mat)) < 0)
+        return gs_rethrow(code, "concat failed");
+
+    return 0;
+}
+
+private int
+MatrixTransform_done(void *data, met_state_t *ms)
+{
+    gs_free_object(ms->memory, data, "MatrixTransform_done");
+    return 0; /* incomplete */
+}
+
+const met_element_t met_element_procs_MatrixTransform = {
+    "MatrixTransform",
+    {
+        MatrixTransform_cook,
+        MatrixTransform_action,
+        MatrixTransform_done
+    }
+};
 
