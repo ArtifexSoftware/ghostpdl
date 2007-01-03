@@ -5327,8 +5327,33 @@ Test	 Status	Comments
 
 34_all-3  OK	Minor differences visually reviewed by RJJ
 
-34_all-4  DIFF	Truncated glyphs. Assign: Igor.
-
+34_all-4  DIFF	Truncated glyphs. 
+		Analyzed by Igor.
+		A simplified test case is placed to 
+		peeves:/home/igor/pscet/mytests/34_all-4-Igor01.PS 
+		- it paints a single glyph.
+		The embedded TrueType CID font named CID_TTF
+		has an incorrect FontBBox [ 0 0 1 1 ].
+		Some glyphs are defined with negative coordinated.
+		PLRM defines an undefined result for this case.
+		A right rendering may be obtained with -dNOCACHE .
+		.
+		Rather improving Ghostscript for this case would be useful,
+		the improvement is pretty hard. One idea is to delay the cache
+		device bitmap bufer allocation until the 
+		outline is generated and its bbox is known.
+		I mean to install the cache device as usual
+		(because the outliner needs its parameters such as alpha),
+		and delay the bitmap allocation.
+		It would also simplify the type 1,2 
+		rendering due to dropping nobbox_finish.
+		By another hand, we never meet such case
+		with Type 42 in practice,
+		so CET test looks far-fetched.
+		.
+		Passing to Ray to decide what to do with it.
+		Assign: Ray.
+		                                               	
 34_all-5  DIFF	Same as 33_all-6. Assign: Alex.
 
 34_all-6  AOK	GS has more CMap resources. Not important. Analyzed by Igor.
