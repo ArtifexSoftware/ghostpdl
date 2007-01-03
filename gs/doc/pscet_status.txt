@@ -3694,11 +3694,11 @@ Test	 Status	Comments
                 peeves:/home/igor/pscet/mytests/18-02G-1-Igor01.PS .
                 This is a general pattern implementation problem.
                 The test defines a pattern with TESTPROC,
-                and then pallyes this pattern for creating another pattern 
+                and then applyes this pattern for creating another pattern 
                 Inf71ColorPattern. Doing the 2nd step, Ghostscript 
                 instantiates the 1st pattern in the 2nd pattern's space.
                 Contrary to that, CPSI instantiates the 1st pattern
-                in the device space when instantiating the 1st pattern.
+                in the device space when instantiating the 2st pattern.
                 Thus the overall pattern period with CPSI is a multiple
                 of periods of the 1st and the 2nd patterns.
                 This problem may be fixed for Ghostscript
