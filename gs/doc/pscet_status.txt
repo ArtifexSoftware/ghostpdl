@@ -3967,9 +3967,25 @@ Test	 Status	Comments
 
 21-11-1  OK	
 
-21-11-2  DIFF	Space in GS between 'b' and 'c' in string 'abcdef103' - ADC
-		Assign: Igor.
-
+21-11-2  DIFF	A bigger space between characters "b" and "c" in the 5th line.
+		Analyzed by Igor.
+		'token' inconformity about the character code 0x04.
+		.
+		A simplified test case is placed to
+		peeves:/home/igor/pscet/mytests/21-11-2-Igor01.PS .
+		Use diff 21-11.ps to know how it was moditied.
+		.
+		While executing (a\\001b\\004c\\010d\\033e\\177f\\210g)token
+		CPSI considers (a\\001b\\004c\\010d\\033e\\177f) as a name.
+		Ghostscript breaks it because 
+		the character 0x04 is self delimiting.
+		A possible resolution is to consider
+		0x04 to be self-delimiting for non-string data sources only.
+		However it requires to patch the static scanner table
+		scan_char_array - I don't like that.
+		Passing to Peter who handles interpreter issues.
+		assign: Peter.
+		
 21-11-3  DIFF	GS says '{ /A /add }', CPSI says '{ 567 --add-- }' - ADC
 
 21-11-4  OK	
