@@ -5365,8 +5365,14 @@ Test	 Status	Comments
 
 37-01-1  OK	
 
-38-01-1  DIFF	stringwidth results differ assign: Igor.
-                -0.0 vs 0.0 assign Dan.
+38-01-1  DIFF	CPSI has more fonts, particularly more Type 42 fonts.
+		Analyzed by Igor.
+		This test prints some data about installed Type 42 fonts :
+		Chicago, Geneva, HoeflerText-Black,  HoeflerText-BlackItalic, HoeflerText-Italic.
+		Neither URW nor UFST PCLPS2 provide them.
+		UFST PCLPS3 does provide.
+		Passing to Ray to decide what to do with it.
+		Assign: Ray.
 
 38-01-2  OK	
 
