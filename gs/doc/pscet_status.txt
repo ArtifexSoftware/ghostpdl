@@ -5358,7 +5358,7 @@ Test	 Status	Comments
 
 34_all-6  AOK	GS has more CMap resources. Not important. Analyzed by Igor.
 
-34_all-7  DIFF	Same as 34_all-4 Assign: Igor.
+34_all-7  DIFF	Same as 34_all-4 Assign: Ray.
 
 35_all-1  DIFF	Same as 34_all-1. Assign: Ray
 
