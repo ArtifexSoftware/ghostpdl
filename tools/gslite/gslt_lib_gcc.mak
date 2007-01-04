@@ -1,6 +1,9 @@
 # gslite library makefile.
 MAKEFILE=gslt_lib_gcc.mak
 
+# needed to tell how to build the shared library 
+PLATFORM := $(shell uname)
+
 # this is where we build everything.  The ghostscript makefiles will
 # need all of these set to work properly.
 GENDIR=./obj
@@ -17,8 +20,8 @@ GX_COLOR_INDEX_DEFINE=-DGX_COLOR_INDEX_TYPE="unsigned long long"
 # below and figure out how best to set up GCFLAGS, XCFLAGS, and
 # .*FLAGS
 
-GCFLAGS=-DGSLITE -Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG  $(GX_COLOR_INDEX_DEFINE) -fPIC
-XCFLAGS=-DGSLITE -Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG  $(GX_COLOR_INDEX_DEFINE) -fPIC
+GCFLAGS=-DGSLITE -Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG  $(GX_COLOR_INDEX_DEFINE) -fPIC -fno-common
+XCFLAGS=-DGSLITE -Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG  $(GX_COLOR_INDEX_DEFINE) -fPIC -fno-common
 
 DD=$(GLGENDIR)/
 
@@ -81,7 +84,7 @@ $(GSLIB_PARTS): $(MAKEFILE)
 	  SHARE_ZLIB=$(SHARE_ZLIB) SHARE_LIBPNG=$(SHARE_LIBPNG) SHARE_JPEG=$(SHARE_JPEG)\
 	  -f $(GLSRCDIR)/ugcclib.mak \
 	  $(GLOBJDIR)/ld.tr \
-	  $(GSXLIBS)
+	  $(GSXLIBS) \
 	  $(GLOBJDIR)/jpeglib_.h
 
 # ---------------------------------
@@ -105,10 +108,16 @@ include gslt.mak
 
 LIBS = -lgslt -lpthread -L./
 
+LD_OBJ_FILE := $(shell cat obj/ld.tr | sed 's/\\//g')
+
 
 # NB missing soname, version business.
 $(GSLITE_LIB): $(GSLIB_PARTS) $(GSLT_OBJS) $(MAKEFILE)
-	gcc -Xlinker -V -shared -Wl `cat obj/ld.tr | sed 's/\\\\//g'` $(GSXLIBS) $(GSLT_OBJS) -o $(GSLITE_LIB) $(STDLIBS)
+ifeq ($(PLATFORM), Darwin)
+	gcc -dynamiclib -o libgslt.dylib $(LD_OBJ_FILE) $(GSXLIBS) $(GSLT_OBJS) $(STDLIBS)
+else
+	gcc -Xlinker -V -shared -Wl $(LD_OBJ_FILE) $(GSXLIBS) $(GSLT_OBJS) -o $(GSLITE_LIB) $(STDLIBS)
+endif
 
 $(GSLTOBJ)gslt_image_test.$(OBJ) : $(GSLITE_LIB) $(GSLTSRC)gslt_image_test.c
 	$(GSLT_CC) $(GSLTO_)gslt_image_test.$(OBJ) $(C_) $(GSLTSRC)gslt_image_test.c
@@ -130,8 +139,8 @@ gslt_image_threads_test: $(GSLTOBJ)gslt_image_threads_test.$(OBJ) $(gslt_OBJS)
 
 
 test: $(GSLITE_LIB) gslt_image_test gslt_font_test gslt_image_threads_test
-	(export LD_LIBRARY_PATH=.; ./gslt_image_test tiger.jpg; \
-	./gslt_font_test CenturySchL-Bold.ttf; ./gslt_image_threads_test tiger.jpg)
+      (export LD_LIBRARY_PATH=.; ./gslt_image_test tiger.jpg; \
+      ./gslt_font_test CenturySchL-Bold.ttf; ./gslt_image_threads_test tiger.jpg)
 
 
 clean:
