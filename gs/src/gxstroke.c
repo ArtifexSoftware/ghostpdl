@@ -1062,7 +1062,7 @@ stroke_fill(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
 	    && (pis->fill_adjust.x | pis->fill_adjust.y) == 0
 	    && lop_is_idempotent(pis->log_op)
 	    ) {
-	    gs_fixed_point points[6];
+	    gs_fixed_point points[14];
 	    int npoints, code;
 	    fixed ax, ay, bx, by;
 
@@ -1140,9 +1140,9 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	   bool reflected)
 {
     const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
-    gs_fixed_point points[8];
+    gs_fixed_point points[16];
     int npoints = 0, initial_cap_points = 0;
-    const int initial_cap_offset = 5; /* gs_join_triangle generates 5 points. */
+    const int initial_cap_offset = 7; /* gs_join_triangle generates 5 points. */
     int code;
 
     if (plp->thin) {
@@ -1293,8 +1293,24 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 	(double)(nplp->width.x) /* x2 */ * (plp->width.y) /* y1 */;
     bool ccw0 = ccw;
     p_ptr outp, np;
+    bool jp1Reassigned = false;
+    int  totalPoints = 0;
+    int  i;
+
 
     ccw ^= reflected;
+#ifdef DEBUG
+       if_debug4('O', "[o]In line_join_points co=(%f,%f) ce=(%f,%f)\n",
+                 fixed2float(plp->e.co.x), fixed2float(plp->e.co.y),
+                 fixed2float(plp->e.ce.x), fixed2float(plp->e.ce.y));
+
+       if_debug4('O', "[o]In line_join_points nplp=(%f,%f) ce=(%f,%f)\n",
+                 fixed2float(nplp->o.co.x), fixed2float(nplp->o.co.y),
+                 fixed2float(nplp->o.p.x), fixed2float(nplp->o.p.y));
+
+       if_debug2('O', "[o]In line_join_points nplp->o.ce=(%f,%f)\n",
+                 fixed2float(nplp->o.ce.x), fixed2float(nplp->o.ce.y));
+#endif
 
     /* Initialize for a bevel join. */
     ASSIGN_POINT(&jp1, plp->e.co);
@@ -1333,8 +1349,10 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 	    ASSIGN_POINT(&np2, np1);
 	    np1.x = tpx, np1.y = tpy;
 	}
-	return 5;
-    }
+        totalPoints = 5;
+    } else
+        totalPoints = 4;
+
     /*
      * Don't bother with the miter check if the two
      * points to be joined are very close together,
@@ -1448,9 +1466,35 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 			       &nplp->o.cdelta, &mpt) == 0
 		)
 		ASSIGN_POINT(outp, mpt);
+
+            jp1Reassigned = ccw;
 	}
     }
-    return 4;
+
+    if ( jp1Reassigned ) {
+       /* New line segment goes at end in this case */
+       join_points[4] = plp->e.co;
+       join_points[5] = join_points[3];
+    } else {
+       /* Make room for line segment insertion */
+       for ( i = totalPoints + 1; i > 2; i-- )
+           join_points[i] = join_points[i-2];
+       join_points[1] = plp->e.ce;
+       join_points[2] = plp->e.co;
+    }
+
+    totalPoints +=2;
+
+#ifdef DEBUG
+    if (gs_debug_c('O'))
+       for ( i=0; i<totalPoints; i++ )
+           dlprintf3("[o]join_points num=%ld x=%f, y=%f\n", i,
+                     fixed2float(join_points[i].x),
+                     fixed2float(join_points[i].y));
+#endif
+
+    return totalPoints;
+
 }
 /* ---------------- Cap computations ---------------- */
 
@@ -1532,9 +1576,12 @@ cap_points(gs_line_cap type, const_ep_ptr endp, gs_fixed_point *pts /*[3]*/)
 	    PUT_POINT(1, xe, ye);
 	    return 2;
 	case gs_cap_square:
-	    PUT_POINT(0, xo + cdx, yo + cdy);
-	    PUT_POINT(1, xe + cdx, ye + cdy);
-	    return 2;
+           PUT_POINT(0, xo, yo);
+           PUT_POINT(1, xe, ye);
+           PUT_POINT(2, xo, yo);
+           PUT_POINT(3, xo + cdx, yo + cdy);
+           PUT_POINT(4, xe + cdx, ye + cdy);
+           return 5;
 	case gs_cap_triangle:	/* (not supported by PostScript) */
 	    PUT_POINT(0, xo, yo);
 	    PUT_POINT(1, px + cdx, py + cdy);
