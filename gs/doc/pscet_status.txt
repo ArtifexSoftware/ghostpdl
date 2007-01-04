@@ -3103,8 +3103,7 @@ Test	 Status	Comments
 
 13-26-3  OK	
 
-13-26-4  DIFF	Different error messages for several tests. - ADC
-                assign Alex.
+13-26-4  OK  	Fixed in rev. 7562. - Alex
 
 13-26-5  OK	Minor differences visually reviewed by RJJ
 
