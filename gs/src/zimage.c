@@ -315,7 +315,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
     if ((penum = gs_image_enum_alloc(imemory_local, "image_setup")) == 0)
 	return_error(e_VMerror);
     code = gs_image_enum_init(penum, pie, (const gs_data_image_t *)pim, igs);
-    if (code != 0 || pie->skipping && string_sources) {		/* error, or empty image */
+    if (code != 0 || (pie->skipping && string_sources)) {		/* error, or empty image */
 	int code1 = gs_image_cleanup_and_free_enum(penum, igs);
 
 	if (code >= 0)		/* empty image */

@@ -1234,18 +1234,19 @@ copied_type42_get_outline(gs_font_type42 *font, uint glyph_index,
 
 private int
 copied_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
-			  int wmode, float sbw[4])
+			  gs_type42_metrics_options_t options, float sbw[4])
 {
     /* Check whether we have metrics for this (glyph,wmode) pair. */
     gs_copied_font_data_t *const cfdata = pfont->data.proc_data;
     gs_copied_glyph_t *pcg;
+    int wmode = gs_type42_metrics_options_wmode(options);
 
     if (glyph_index >= cfdata->glyphs_size)
 	return_error(gs_error_rangecheck);
     pcg = &cfdata->glyphs[glyph_index];
     if (!(pcg->used & (HAS_SBW0 << wmode)))
 	return_error(gs_error_undefined);
-    return gs_type42_default_get_metrics(pfont, glyph_index, wmode, sbw);
+    return gs_type42_default_get_metrics(pfont, glyph_index, options, sbw);
 }
 
 private uint

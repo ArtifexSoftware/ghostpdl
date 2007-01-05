@@ -24,6 +24,7 @@
 #include "igstate.h"
 #include "iname.h"
 #include "ibnum.h"
+#include "memory_.h"
 
 /* Common setup for glyphshow and .glyphwidth. */
 private int

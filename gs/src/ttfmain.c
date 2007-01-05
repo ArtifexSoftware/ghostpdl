@@ -477,7 +477,7 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
     FontError error = fNoError;
     short arg1, arg2;
     short count;
-    unsigned int nMtxPos, nMtxGlyph = glyphIndex, nLongMetrics, i;
+    unsigned int i;
     unsigned short nAdvance;
     unsigned int nNextGlyphPtr = 0;
     unsigned int nPosBeg;

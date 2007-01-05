@@ -713,7 +713,7 @@ pdf_is_charproc_compatible(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_reso
     pdf_font_resource_t *pdfont = data->pdfont;
     pdf_char_proc_ownership_t *pcpo;
     pdf_font_cache_elem_t **e;
-    bool can_add_to_current_font, computed_can_add_to_current_font = false;
+    bool can_add_to_current_font = false, computed_can_add_to_current_font = false;
 
     /* Does it have same attributes ? */
     if (!pdf_is_same_charproc_attrs1(pdev, pcp0, pcp1))

@@ -1439,7 +1439,7 @@ $(PSOBJ)ibnum.$(OBJ) : $(PSSRC)ibnum.c $(GH) $(math__h) $(memory__h)\
 
 $(PSOBJ)zcharx.$(OBJ) : $(PSSRC)zcharx.c $(OP)\
  $(gsmatrix_h) $(gstext_h) $(gxfixed_h) $(gxfont_h)\
- $(ialloc_h) $(ibnum_h) $(ichar_h) $(iname_h) $(igstate_h)
+ $(ialloc_h) $(ibnum_h) $(ichar_h) $(iname_h) $(igstate_h) $(memory__h)
 	$(PSCC) $(PSO_)zcharx.$(OBJ) $(C_) $(PSSRC)zcharx.c
 
 $(PSOBJ)zdps1.$(OBJ) : $(PSSRC)zdps1.c $(OP)\
