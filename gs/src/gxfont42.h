@@ -36,6 +36,26 @@ typedef struct gs_type42_data_s gs_type42_data;
 #  define gs_font_type42_DEFINED
 typedef struct gs_font_type42_s gs_font_type42;
 #endif
+
+
+typedef enum gs_type42_metrics_options_s {
+    gs_type42_metrics_options_WMODE0 = 0,
+    gs_type42_metrics_options_WMODE1 = 1,
+    gs_type42_metrics_options_BBOX = 2,
+    gs_type42_metrics_options_WMODE0_AND_BBOX = 4,
+    gs_type42_metrics_options_WMODE1_AND_BBOX = 5,
+} gs_type42_metrics_options_t;
+#define gs_type42_metrics_options_wmode(a)         ((a)&gs_type42_metrics_options_WMODE1)
+#define gs_type42_metrics_options_sbw_requested(a) (~(a)&gs_type42_metrics_options_BBOX)
+#define gs_type42_metrics_options_bbox_requested(a)((a)&6)
+
+/* Export the default get_metrics procedure. 
+   The length of sbw is >=4 when bbox in not requested,
+   and 8 otherwise.
+ */
+int gs_type42_default_get_metrics(gs_font_type42 *pfont, uint glyph_index,
+				  gs_type42_metrics_options_t options, float *sbw);
+
 typedef struct gs_type42_mtx_s {
     uint numMetrics;		/* num*Metrics from [hv]hea */
     ulong offset;		/* offset to [hv]mtx table */
@@ -52,8 +72,9 @@ struct gs_type42_data_s {
     uint (*get_glyph_index)(gs_font_type42 *pfont, gs_glyph glyph);
     int (*get_outline)(gs_font_type42 *pfont, uint glyph_index,
 		       gs_glyph_data_t *pgd);
-    int (*get_metrics)(gs_font_type42 *pfont, uint glyph_index, int wmode,
-		       float sbw[4]);
+    int (*get_metrics)(gs_font_type42 *pfont, uint glyph_index, 
+			gs_type42_metrics_options_t options,
+			float *sbw_bbox/* See comment for gs_type42_default_get_metrics */);
 
     /* The following are cached values. */
     ulong cmap;			/* offset to cmap table (not used by */
@@ -115,11 +136,6 @@ int gs_type42_append(uint glyph_index, gs_state * pgs,
 /* Get the metrics of a TrueType character. */
 int gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
 			  float psbw[4]);
-int gs_type42_wmode_metrics(gs_font_type42 * pfont, uint glyph_index,
-			    int wmode, float psbw[4]);
-/* Export the default get_metrics procedure. */
-int gs_type42_default_get_metrics(gs_font_type42 *pfont, uint glyph_index,
-				  int wmode, float sbw[4]);
 
 int gs_type42_get_outline_from_TT_file(gs_font_type42 * pfont, stream *s, uint glyph_index,
 		gs_glyph_data_t *pgd);

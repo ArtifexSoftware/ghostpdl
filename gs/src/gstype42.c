@@ -650,7 +650,7 @@ gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *pmat
 	    if (members & (GLYPH_INFO_WIDTH0 << i)) {
 		float sbw[4];
 
-		code = gs_type42_wmode_metrics(pfont, glyph_index, i, sbw);
+		code = pfont->data.get_metrics(pfont, glyph_index, i, sbw);
 		if (code < 0) {
 		    code = 0;
 		    continue;
@@ -772,53 +772,69 @@ simple_glyph_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
     return 0;
 }
 
-/* Get the metrics of a glyph. */
+/* Export the default get_metrics procedure. 
+   The length of sbw is >=4 when bbox in not requested,
+   and 8 otherwise.
+ */
 int
 gs_type42_default_get_metrics(gs_font_type42 * pfont, uint glyph_index,
-			      int wmode, float sbw[4])
+			      gs_type42_metrics_options_t options, float sbw[4])
 {
     gs_glyph_data_t glyph_data;
     int code;
-    int result;
+    int result = 0;
+    int wmode = gs_type42_metrics_options_wmode(options);
+    int sbw_requested  = gs_type42_metrics_options_sbw_requested(options);
+    int bbox_requested = gs_type42_metrics_options_bbox_requested(options);
 
     glyph_data.memory = pfont->memory;
     code = pfont->data.get_outline(pfont, glyph_index, &glyph_data);
     if (code < 0)
 	return code;
-    if (glyph_data.bits.size != 0 && S16(glyph_data.bits.data) == -1) {
-	/* This is a composite glyph. */
-	uint flags;
-	const byte *gdata = glyph_data.bits.data + 10;
-	gs_matrix_fixed mat;
+    if (bbox_requested) {
+	if (glyph_data.bits.size >= 10 && bbox_requested) {
+	    /* Note: The glyph bbox usn't useful for Dynalab fonts,
+	       which stretch subglyphs. Therefore we don't 
+	       process subglyphs here. */
+	    double factor = 1.0 / pfont->data.unitsPerEm;
 
-	memset(&mat, 0, sizeof(mat)); /* arbitrary */
-	do {
-	    uint comp_index = U16(gdata + 2);
-
-	    parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
-	    if (flags & TT_CG_USE_MY_METRICS) {
-		result = gs_type42_wmode_metrics(pfont, comp_index, wmode, sbw);
-		goto done;
-	    }
-	}
-	while (flags & TT_CG_MORE_COMPONENTS);
+	    sbw[4] = S16(glyph_data.bits.data + 2) * factor;
+	    sbw[5] = S16(glyph_data.bits.data + 4) * factor;
+	    sbw[6] = S16(glyph_data.bits.data + 6) * factor;
+	    sbw[7] = S16(glyph_data.bits.data + 8) * factor;
+	} else
+	    sbw[4] = sbw[5] = sbw[6] = sbw[7] = 0;
     }
-    result = simple_glyph_metrics(pfont, glyph_index, wmode, sbw);
+    if (sbw_requested) {
+	if (glyph_data.bits.size != 0 && S16(glyph_data.bits.data) == -1) {
+	    /* This is a composite glyph. */
+	    uint flags;
+	    const byte *gdata = glyph_data.bits.data + 10;
+	    gs_matrix_fixed mat;
+
+	    memset(&mat, 0, sizeof(mat)); /* arbitrary */
+	    do {
+		uint comp_index = U16(gdata + 2);
+
+		parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
+		if (flags & TT_CG_USE_MY_METRICS) {
+		    result = pfont->data.get_metrics(pfont, comp_index, wmode, sbw);
+		    goto done;
+		}
+	    }
+	    while (flags & TT_CG_MORE_COMPONENTS);
+	}
+	result = simple_glyph_metrics(pfont, glyph_index, wmode, sbw);
+    }
  done:
     gs_glyph_data_free(&glyph_data, "gs_type42_default_get_metrics");
     return result;
 }
 int
-gs_type42_wmode_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
-			float sbw[4])
-{
-    return pfont->data.get_metrics(pfont, glyph_index, wmode, sbw);
-}
-int
 gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
 		      float sbw[4])
 {
-    return gs_type42_wmode_metrics(pfont, glyph_index, pfont->WMode, sbw);
+    return pfont->data.get_metrics(pfont, glyph_index, pfont->WMode, sbw);
 }
 
 /* Define the bits in the glyph flags. */

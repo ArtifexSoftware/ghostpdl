@@ -127,7 +127,8 @@ typedef struct gs_font_cid2_data_s {
      */
     struct o_ {
 	int (*get_outline)(gs_font_type42 *, uint, gs_glyph_data_t *);
-	int (*get_metrics)(gs_font_type42 *, uint, int, float [4]);
+	int (*get_metrics)(gs_font_type42 *, uint, gs_type42_metrics_options_t, 
+		float * /* See comment for gs_type42_default_get_metrics. */);
     } orig_procs;
 } gs_font_cid2_data;
 struct gs_font_cid2_s {

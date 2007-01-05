@@ -41,50 +41,79 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
 {   double sbw[4];
     double w[2];
     int present;
+    gs_font_type42 *pfont42 = (gs_font_type42 *)pbfont;
     int code = zchar_get_metrics(pbfont, cnref, sbw);
+    gs_rect bbox;
+    int vertical = gs_rootfont(igs)->WMode;
+    float sbw_bbox[8];
 
     if (code < 0)
 	return code;
     present = code;
-    if (present == metricsNone) {
-	float sbw42[4];
-	int i;
-
-	code = gs_type42_wmode_metrics((gs_font_type42 *)pbfont,
-				       glyph_index, false, sbw42);
-	if (code < 0)
-	    return code;
-	present = metricsSideBearingAndWidth;
-	for (i = 0; i < 4; ++i)
-	    sbw[i] = sbw42[i];
-	w[0] = sbw[2];
-	w[1] = sbw[3];
-	if (gs_rootfont(igs)->WMode) { /* for vertically-oriented metrics */
-	    code = gs_type42_wmode_metrics((gs_font_type42 *)pbfont,
-					   glyph_index,
-					   true, sbw42);
-	    if (code < 0) { /* no vertical metrics */
+    if (vertical) { /* for vertically-oriented metrics */
+	code = pfont42->data.get_metrics(pfont42, glyph_index, 
+		gs_type42_metrics_options_WMODE1_AND_BBOX, sbw_bbox);
+	if (code < 0) { 
+	    /* No vertical metrics in the font, compose from horizontal. 
+	       Still need bbox also. */
+	    code = pfont42->data.get_metrics(pfont42, glyph_index, 
+		    gs_type42_metrics_options_WMODE0_AND_BBOX, sbw_bbox);
+	    if (code < 0)
+		return code;
+	    if (present == metricsNone) {
 		if (pbfont->FontType == ft_CID_TrueType) {
-		    sbw[0] = sbw[2] / 2;
+		    sbw[0] = sbw_bbox[2] / 2;
 		    sbw[1] = pbfont->FontBBox.q.y;
 		    sbw[2] = 0;
 		    sbw[3] = pbfont->FontBBox.p.y - pbfont->FontBBox.q.y;
+		} else {
+		    sbw[0] = sbw_bbox[0];
+		    sbw[1] = sbw_bbox[1];
+		    sbw[2] = sbw_bbox[2];
+		    sbw[3] = sbw_bbox[3];
 		}
-	    } else {
-		sbw[0] = sbw[2] / 2;
-		sbw[1] = (pbfont->FontBBox.q.y + pbfont->FontBBox.p.y - sbw42[3]) / 2;
-		sbw[2] = sbw42[2];
-		sbw[3] = sbw42[3];
+		present = metricsSideBearingAndWidth;
+	    }
+	} else {
+	    if (present == metricsNone) {
+		sbw[0] = sbw_bbox[2] / 2;
+		sbw[1] = (pbfont->FontBBox.q.y + pbfont->FontBBox.p.y - sbw_bbox[3]) / 2;
+		sbw[2] = sbw_bbox[2];
+		sbw[3] = sbw_bbox[3];
+		present = metricsSideBearingAndWidth;
 	    }
 	}
     } else {
-        w[0] = sbw[2];
-        w[1] = sbw[3];
+	code = pfont42->data.get_metrics(pfont42, glyph_index, 
+		    gs_type42_metrics_options_WMODE0_AND_BBOX, sbw_bbox);
+	if (code < 0)
+	    return code;
+	if (present == metricsNone) {
+	    sbw[0] = sbw_bbox[0];
+	    sbw[1] = sbw_bbox[1];
+	    sbw[2] = sbw_bbox[2];
+	    sbw[3] = sbw_bbox[3];
+	    present = metricsSideBearingAndWidth;
+	}
     }
+    w[0] = sbw[2];
+    w[1] = sbw[3];
+    if (!vertical) {
+	sbw_bbox[6] = (sbw_bbox[6] - sbw_bbox[4]) + sbw_bbox[0];
+	sbw_bbox[4] = sbw_bbox[0];
+    }
+    /* Note: The glyph bbox usn't useful for Dynalab fonts,
+       which stretch subglyphs. Uniting with FontBBox helps.
+       In same time, FontBBox with no glyph bbox
+       doesn't work for 34_all.PS page 4. */
+    bbox.p.x = min(sbw_bbox[4], pbfont->FontBBox.p.y);
+    bbox.p.y = min(sbw_bbox[5], pbfont->FontBBox.p.y);
+    bbox.q.x = max(sbw_bbox[6], pbfont->FontBBox.q.x);
+    bbox.q.y = max(sbw_bbox[7], pbfont->FontBBox.q.y);
     return zchar_set_cache(i_ctx_p, pbfont, cnref,
 			   (put_lsb && present == metricsSideBearingAndWidth ?
 			    sbw : NULL),
-			   w, &pbfont->FontBBox,
+			   w, &bbox,
 			   cont, exec_cont,
 			   gs_rootfont(igs)->WMode ? sbw : NULL);
 }
