@@ -81,6 +81,7 @@ $(GSLIB_PARTS): $(MAKEFILE)
 	  JSRCDIR=$(JSRCDIR) JGENDIR=$(JGENDIR) JOBJDIR=$(JOBJDIR)\
 	  ZSRCDIR=$(ZSRCDIR) ZGENDIR=$(ZGENDIR) ZOBJDIR=$(ZOBJDIR)\
 	  PSRCDIR=$(PSRCDIR) PGENDIR=$(PGENDIR) POBJDIR=$(POBJDIR)\
+          PSD='$(GENDIR)/'\
 	  SHARE_ZLIB=$(SHARE_ZLIB) SHARE_LIBPNG=$(SHARE_LIBPNG) SHARE_JPEG=$(SHARE_JPEG)\
 	  -f $(GLSRCDIR)/ugcclib.mak \
 	  $(GLOBJDIR)/ld.tr \
@@ -108,15 +109,12 @@ include gslt.mak
 
 LIBS = -lgslt -lpthread -L./
 
-LD_OBJ_FILE := $(shell cat obj/ld.tr | sed 's/\\//g')
-
-
 # NB missing soname, version business.
 $(GSLITE_LIB): $(GSLIB_PARTS) $(GSLT_OBJS) $(MAKEFILE)
 ifeq ($(PLATFORM), Darwin)
-	gcc -dynamiclib -o libgslt.dylib $(LD_OBJ_FILE) $(GSXLIBS) $(GSLT_OBJS) $(STDLIBS)
+	gcc -dynamiclib -o libgslt.dylib $(shell cat obj/ld.tr | sed 's/\\//g') $(GSXLIBS) $(GSLT_OBJS) $(STDLIBS)
 else
-	gcc -Xlinker -V -shared -Wl $(LD_OBJ_FILE) $(GSXLIBS) $(GSLT_OBJS) -o $(GSLITE_LIB) $(STDLIBS)
+	gcc -Xlinker -V -shared -Wl $(shell cat obj/ld.tr | sed 's/\\//g') $(GSXLIBS) $(GSLT_OBJS) -o $(GSLITE_LIB) $(STDLIBS)
 endif
 
 $(GSLTOBJ)gslt_image_test.$(OBJ) : $(GSLITE_LIB) $(GSLTSRC)gslt_image_test.c
@@ -144,6 +142,6 @@ test: $(GSLITE_LIB) gslt_image_test gslt_font_test gslt_image_threads_test
 
 
 clean:
-	$(RM) *.pnm *.pbm *.so *.o *~ obj/*
+	$(RM) *.pnm *.pbm *.so *.o *~ obj/* gslt_image_test gslt_font_test gslt_image_threads_test
 
 .PHONY: clean test all

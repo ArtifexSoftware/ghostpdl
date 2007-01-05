@@ -21,10 +21,6 @@ typedef unsigned char byte;
 #include "gslt.h"
 #include "gslt_image.h"
 
-extern void gs_erasepage(gs_state *gs);
-extern void gs_moveto(gs_state *gs, double, double);
-extern void gs_output_page(gs_state *gs, int, int);
-
 gslt_image_t *
 decode_image_file(gs_memory_t *mem, FILE *in)
 {
@@ -159,10 +155,6 @@ main(int argc, const char *argv[])
     gslt_get_device_param(mem, dev, "Name");
     gslt_set_device_param(mem, dev, "OutputFile", "gslt.out");
 
-    /* prepare page for drawing (unused) */
-    gs_erasepage(gs);
-    gs_moveto(gs, 72.0, 72.0);
-
     filename = argv[argc-1];
     fprintf(stderr, "loading '%s'\n", filename);
 
@@ -180,9 +172,6 @@ main(int argc, const char *argv[])
     /* release the image */
     gslt_image_free(mem, image);
 
-    /* output the page (unused) */
-    gs_output_page(gs, 1, 1);
-    
     /* clean up the library */
     gslt_free_state(mem, gs);
     gslt_free_device(mem, dev);

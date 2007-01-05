@@ -64,7 +64,7 @@ SHARE_JPEG=0
 
 STDLIBS=-lm
 
-GSLITE_LIB=libgslt.lib
+GSLITE_LIB=libgslt.dll
 all: $(GSLITE_LIB)
 
 # invoke the gs *library* makefile to build needed
@@ -86,6 +86,7 @@ $(GSLIB_PARTS): $(MAKEFILE)
 	  JSRCDIR=$(JSRCDIR) JGENDIR=$(JGENDIR) JOBJDIR=$(JOBJDIR)\
 	  ZSRCDIR=$(ZSRCDIR) ZGENDIR=$(ZGENDIR) ZOBJDIR=$(ZOBJDIR)\
 	  PSRCDIR=$(PSRCDIR) PGENDIR=$(PGENDIR) POBJDIR=$(POBJDIR)\
+	  PSD="$(GENDIR)/"\
 	  SHARE_ZLIB=$(SHARE_ZLIB) SHARE_LIBPNG=$(SHARE_LIBPNG) SHARE_JPEG=$(SHARE_JPEG)\
 	  /f $(GLSRCDIR)\msvclib.mak \
 	  $(GLOBJDIR)\ld.tr \
@@ -120,7 +121,8 @@ MSXLIBS=shell32.lib comdlg32.lib gdi32.lib user32.lib winspool.lib advapi32.lib
 GSXLIBS=$(GLOBJDIR)\gsargs.obj $(GLOBJDIR)\gsfemu.obj $(GLOBJDIR)\gconfig.obj $(GLOBJDIR)\gscdefs.obj
 
 $(GSLITE_LIB): $(GSLIB_PARTS) $(GSLT_OBJS) $(GSXLIBS) $(MAKEFILE)
-	lib /out:$(GSLITE_LIB) @obj\ld.tr $(GSLT_OBJS) $(MSXLIBS) $(GSXLIBS)
+	link -dll -out:$(GSLITE_LIB) -def:gslt.def \
+	-implib:gsltimp.lib $(GSLT_OBJS) $(MSXLIBS) $(GSXLIBS) @obj\ld.tr 
 
 # the dependency on GSLIB_LIB is needed because the c compiler line
 # @ccf32.tr is a needed side effect from building the library.
@@ -131,10 +133,10 @@ $(GSLTOBJ)gslt_font_test.$(OBJ) : $(GSLITE_LIB) $(GSLTSRC)gslt_font_test.c
 	$(GSLT_CC) $(GSLTO_)gslt_font_test.$(OBJ) $(C_) $(GSLTSRC)gslt_font_test.c
 
 gslt_image_test.exe: $(GSLTOBJ)gslt_image_test.$(OBJ) $(GSLT_OBJS) $(GSLITE_LIB)
-	link $(GSLTOBJ)gslt_image_test.$(OBJ) $(GSLITE_LIB)
+	link $(GSLTOBJ)gslt_image_test.$(OBJ) gsltimp.lib
 
 gslt_font_test.exe: $(GSLTOBJ)gslt_font_test.$(OBJ) $(GSLT_OBJS) $(GSLITE_LIB)
-	link $(GSLTOBJ)gslt_font_test.$(OBJ) $(GSLITE_LIB)
+	link $(GSLTOBJ)gslt_font_test.$(OBJ) gsltimp.lib
 
 
 test: gslt_font_test.exe gslt_image_test.exe

@@ -22,12 +22,6 @@
 #include "gslt.h"
 #include "gslt_font.h"
 
-/* these are not strictly needed */
-extern void gs_erasepage(gs_state *pgs);
-extern void gs_moveto(gs_state *pgs, double, double);
-extern void gs_output_page(gs_state *pgs, int, int);
-extern char gs_debug[];
-
 /*
  * Read a file from disk into memory.
  */
@@ -39,35 +33,40 @@ int readfile(char *filename, char **datap, int *lengthp)
     char *p;
 
     fp = fopen(filename, "rb");
-    if (!fp)
-        return gs_throw(-1, "cannot open font file");
-
+    if (!fp) {
+        printf("cannot open font file\n");
+	return 1;
+    }
     t = fseek(fp, 0, 2);
     if (t < 0)
     {
         fclose(fp);
-        return gs_throw(-1, "cannot seek in font file");
+	printf("cannot seek in font file\n");
+	return 1;
     }
 
     n = ftell(fp);
     if (n < 0)
     {
         fclose(fp);
-        return gs_throw(-1, "cannot tell in font file");
+	printf("cannot tell in font file\n");
+	return 1;
     }
 
     t = fseek(fp, 0, 0);
     if (t < 0)
     {
         fclose(fp);
-        return gs_throw(-1, "cannot seek in font file");
+        printf("cannot seek in font file\n");
+	return 1;
     }
 
     p = malloc(n);
     if (!p)
     {
         fclose(fp);
-        return gs_throw(-1, "out of memory");
+	printf("out of memory\n");
+	return 1;
     }
 
     t = fread(p, 1, n, fp);
@@ -75,13 +74,14 @@ int readfile(char *filename, char **datap, int *lengthp)
     {
         free(p);
         fclose(fp);
-        return gs_throw(-1, "cannot read font file data");
+	printf("cannot read font file data\n");
+	return 1;
     }
 
     t = fclose(fp);
     if (t < 0)
     {
-        gs_throw(-1, "cannot close font file");
+      printf("cannot close font file\n");
         /* ... continue anyway */
     }
 
@@ -166,10 +166,10 @@ main(int argc, const char *argv[])
     }
     
     n = readfile(filename, &buf, &len);
-    if (n < 0)
-        return gs_rethrow1(1, "cannot read font file '%s'", filename);
-
-    gs_debug['k'] = 1; /* debug character cache machinery */
+    if (n < 0) {
+        printf("cannot read font file '%s'", filename);
+	return 1;
+    }
 
     /*
      * Set up ghostscript library
@@ -178,25 +178,26 @@ main(int argc, const char *argv[])
     // gslt_get_device_param(mem, dev, "Name");
     gslt_set_device_param(mem, dev, "OutputFile", "-");
 
-    // so we see what device calls are made
-    gs_erasepage(pgs);
-    gs_moveto(pgs, 5.0, 20.0);
 
     /*
      * Create a font cache
      */
 
     cache = gslt_new_font_cache(mem);
-    if (!cache)
-        return gs_rethrow(1, "cannot create font cache");
+    if (!cache) {
+        printf("cannot create font cache\n");
+	return 1;
+    }
 
     /*
      * Create the font and select an encoding
      */
 
     font = gslt_new_font(mem, cache, buf, len, 0);
-    if (!font)
-        return gs_rethrow(1, "cannot create font");
+    if (!font) {
+        printf("cannot create font");
+	return 1;
+    }
 
     n = gslt_count_font_encodings(font);
     for (best = 0, i = 0; i < n; i++)
@@ -277,10 +278,6 @@ text = "ii";
     /*
      * Clean up.
      */
-
-    // show device.
-    gs_output_page(pgs, 1, 1);
-
     gslt_free_font(mem, font);
     gslt_free_font_cache(mem, cache);
     free(buf);
