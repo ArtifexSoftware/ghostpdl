@@ -126,13 +126,21 @@ zawidthshow(i_ctx_t *i_ctx_p)
     double cxy[2], axy[2];
     int code;
 
+    if ((code = op_show_setup(i_ctx_p, op)) != 0 )
+	return code;
+    if ((code = num_params(op - 1, 2, axy)) < 0 )
+	return code;
     check_type(op[-3], t_integer);
-    if ((gs_char) (op[-3].value.intval) != op[-3].value.intval)
-	return_error(e_rangecheck);
-    if ((code = num_params(op - 4, 2, cxy)) < 0 ||
-	(code = num_params(op - 1, 2, axy)) < 0 ||
-	(code = op_show_setup(i_ctx_p, op)) != 0 ||
-	(code = gs_awidthshow_begin(igs, cxy[0], cxy[1],
+    if (gs_currentfont(igs)->FontType == ft_composite) {
+        if ((gs_char) (op[-3].value.intval) != op[-3].value.intval)
+	    return_error(e_rangecheck);
+    } else {
+        if (op[-3].value.intval < 0 || op[-3].value.intval > 255)
+	    return_error(e_rangecheck); /* per PLRM and CET 13-02 */
+    }
+    if ((code = num_params(op - 4, 2, cxy)) < 0 )
+	return code;
+    if ((code = gs_awidthshow_begin(igs, cxy[0], cxy[1],
 				    (gs_char) op[-3].value.intval,
 				    axy[0], axy[1],
 				    op->value.bytes, r_size(op),

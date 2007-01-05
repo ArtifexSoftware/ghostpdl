@@ -2804,7 +2804,7 @@ Test	 Status	Comments
 
 13-02-4  OK	
 
-13-02-5  DIFF	awidthshow error incomformity. assign: Alex.
+13-02-5  OK  	Fixed in rev. 7564. - Alex
 
 13-02-6  OK	Minor differences visually reviewed by RJJ
 
