@@ -24,10 +24,12 @@ int gs_log_error(int, const char *, int);
 #define gs_note_error(err) gs_log_error(err, __FILE__, __LINE__)
 #define return_error(err) return gs_note_error(err)
 
-
+# if defined(__WIN32__)
+#define __func__ __FUNCTION__
+# endif
 
 /*
- * Error reporting macros
+ * Error reporting macros.
  * 
  */
 

@@ -25,6 +25,9 @@
  * This is called frequently - it must be quick!
  */
 #ifdef CHECK_INTERRUPTS
+
+#include "gx.h"
+
 int
 gp_check_interrupts(const gs_memory_t *mem)
 {
