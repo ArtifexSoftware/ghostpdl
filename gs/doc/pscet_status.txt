@@ -2817,12 +2817,14 @@ Test	 Status	Comments
 13-03-1  OK	
 
 13-03-2  DIFF	show error incomformity. assign: Alex.
+		{{/a /b add } (abc) cshow} stopped
+                returns only true on the stack. assign: Alex
 
 13-03-3  OK	Minor differences visually reviewed by RJJ
 
-13-03-4  DIFF	GS error inconformity.
-                {{/a /b add } (abc) cshow} stopped
-                returns only true on the stack. assign: Alex
+13-03-4  OK  	Matches Tek hardcopy. PhotoPRINT appication we use for testing
+		redefines halftone operations as no-op, which is wrong and
+                cannot be considered a reference implementation. - Alex
 
 13-03-5  OK	Minor differences visually reviewed by RJJ
 
@@ -2911,8 +2913,7 @@ Test	 Status	Comments
 
 13-12-5  OK	Minor differences visually reviewed by RJJ
 
-13-12-6  DIFF	same as 13-03-4
-                assign: Alex.
+13-12-6  OK  	Matches Tek hardcopy, same as 13-03-4
 
 13-12-7  OK	Minor differences visually reviewed by RJJ
 
