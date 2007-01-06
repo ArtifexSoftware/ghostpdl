@@ -123,7 +123,7 @@ class GSCheckDoubleInclusion(GSTestCase):
 
 gsSourceSets = [
     ('doc', ['*'], ['Changes.htm', 'gsdoc.el', 'FTL.txt']),
-    ('lib', ['eps', 'ps'], []),
+    ('lib', ['eps', 'ps'], [jobseparator.ps]),
     ('man', ['*'], []),
     ('src', ['c', 'cpp', 'h', 'mak'], []),
     ('toolbin', ['*'], ['pre.chk'])
