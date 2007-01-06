@@ -5271,11 +5271,7 @@ Test	 Status	Comments
 
 32_all-13  OK	
 
-32_all-14  DIFF	GS handles *show with no error when the current font is a CIDFont resource
-		(rather than a CIDFont-CMap font resource), and likely
-		it renders nothing in this case. CPSI and Distiller throws an error.
-		Not sure whether it's a bug or feature.
-		assign: Igor.
+32_all-14  OK
 
 32_all-15  AOK	Same as 34_all-6
 
