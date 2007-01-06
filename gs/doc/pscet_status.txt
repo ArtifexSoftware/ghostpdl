@@ -4343,9 +4343,9 @@ Test	 Status	Comments
 23-26-3  AOK	Device Dependent: GS has more entries for Filter, ColorSpace
 		page fills before ImageType and PatternType shown. Same as 23-13-2.
 
-23-26-4  DIFF	resourcestatus errors are compliant now but Ghostscript
-                has resourcestatus operator, not procedure the test seems to expect.
-                Igor assigns this to Ray for comparing with Tek hardcopy.
+23-26-4  DIFF	A difference in stack content on a resoursestatus error :
+		Likely CPSI places an executable name but GS does the operator.
+		Tek matches CPSI. Assign: Alex.
 
 23-26-5  OK	
 
@@ -4369,8 +4369,9 @@ Test	 Status	Comments
 
 23-32-1  OK	
 
-23-32-2  DIFF	'token' error inconformity. Igor assigns this to Peter.
+23-32-2  DIFF	'token' error inconformity. 
 		Environment dependent (a virtual address in the printing).
+		assign: Peter or assign: Alex.
 
 23-32-3  AOK	The character \004 has a different width. Analyzed by Igor.
 
@@ -4389,9 +4390,9 @@ Test	 Status	Comments
 
 23-33-3  DIFF	Same as 23-25-2.  Assign: Ray
 
-23-33-4  DIFF	'undefineresource' error inconformity. Igor assigns this to Alex.
+23-33-4  DIFF	'undefineresource' error inconformity. assign: Alex.
 
-23-33-5  DIFF   'resourcestatus' error inconformity. Igor assigns this to Alex.
+23-33-5  DIFF   'resourcestatus' error inconformity. assign: Alex.
 		PLRM3: "However, the resource category must exist, or else an undefined error occurs."
 
 23-33-6  OK	
@@ -4668,7 +4669,7 @@ Test	 Status	Comments
 27-01-2  OK	
 
 27-02-1  DIFF	Device Dependent : GS has a reasonable cache limit.
-                Igor assignes this to Ray.
+                assign: Ray.
 
 27-02-2  OK	
 
@@ -4692,24 +4693,21 @@ Test	 Status	Comments
 
 27-04-1  DIFF	Installation dependent (FontResourceDir).
 		Inconforming currentsystemparams. Analyzed by Igor.
-		Igor assigns this to Ray for further analyzis.
+		assign: Ray for further analyzis.
 
 27-04-2  OK	
 
 27-05-1  DIFF	Inconforming currentuserparams. Analyzed by Igor.
-		Igor assigns this to Ray for further analyzis.
+		assign: Ray for further analyzis.
 
 27-05-2  OK  	memo36 - setvmthreshold; cash18 ucachestatus;
-		Igor assigns this to Ray for further analyzis.
+		assign: Ray for further analyzis.
 		more15 - same as currentstrokeadjust in 09-49D-3
                 peter writes:
                 These CET files will not run on my 64-bit build (they expect to be able to
                 'cvs' any integer into a 12-character string), and I don't seem to be able
                 to get gcc to produce 32-bit output, even with Ralph's help.  Please
                 reassign these files.
-                -
-                After implementing setucacheparams, ucachestatus using MaxUPathItem user
-                parameter the test results match Tek 360 hard copy. - Alex
 
 27-06-1  OK  	Fixed in rev. 7157 - Alex.
 
@@ -4728,10 +4726,10 @@ Test	 Status	Comments
 27-08-2  OK	
 
 27-09-1  DIFF	Same as 27-04-1. Analyzed by Igor.
-		Igor assigns this to Ray for further analyzis.
+		assign: Ray for further analyzis.
 
 27-09-2  DIFF	Same as 27-04-1. Analyzed by Igor.
-		Igor assigns this to Ray for further analyzis.
+		assign: Ray for further analyzis.
 
 27-09-3  OK	Minor differences visually reviewed by RJJ
 
@@ -4742,16 +4740,16 @@ Test	 Status	Comments
 27-10-2  OK	
 
 27-11-1  DIFF	Inconforming currentuserparams. See 27-05-1. Analyzed by Igor.
-		Igor assigns this to Ray for further analyzis.
+		assign: Ray for further analyzis.
 
 27-11-2  OK	Minor differences visually reviewed by RJJ
 
 27-11-3  OK	
 
 27-12-1  DIFF	ucachestatus differs. Analyzed by Igor.
-		Igor assigns this to Ray for further analyzis.
+		assign: Raph.
 
-27-12-2  DIFF	Same as 27-05-2.  Analyzed by Igor. assign: see 27-05-2.
+27-12-2  DIFF	Same as 27-05-2.  Analyzed by Igor. assign: Ray..
 
 28-01-1  OK	
 
@@ -4847,15 +4845,15 @@ Test	 Status	Comments
 29-02-8  DIFF	Ghostscript shows "1,2" Tek shows "5,2" in center
 		cpsi/29-02-8  missing (CPSI ignored #copies on page 2).
 
-29-03-1  DIFF	Device Dependent. Too many InputAttributed. Analyzed by Igor. Assigned to Ray.
+29-03-1  DIFF	Device Dependent. Too many InputAttributed. Analyzed by Igor. assign: Ray.
 
-29-03-2  DIFF	Device Dependent. OutputPage not known. Analyzed by Igor. Assigned to Ray or Alex ?
+29-03-2  DIFF	Device Dependent. OutputPage not known. Analyzed by Igor. assign: Ray
 
-29-03-3  DIFF	Device Dependent. currentpagedevice different. Analyzed by Igor. Assigned to Ray or Dan ?
+29-03-3  DIFF	Device Dependent. currentpagedevice different. Analyzed by Igor. assign: Ray
 
 29-03-4  DIFF	Many conformity tests fail. Analyzed by Igor.
                 The test expects currentpagedevice to return the same dictionaty each time. 
-                Assigned to Alex.
+                assign: Alex.
 
 29-05-1  OK  	Works for me in rev. 7149 - Alex.
 
@@ -5261,10 +5259,9 @@ Test	 Status	Comments
 
 31-13-2  OK	
 
-32_all-1  DIFF	CPSI inserts CDevProc while /CIDFont defineresource.
+32_all-1  AOK	CPSI inserts CDevProc while /CIDFont defineresource.
 		That is not required by PLRM3.
-		Igor's opinion is aok.
-		Igor assignes this to Ray to compare with hardcopy.
+		Inserting a CDevProc is unnecessary and would impackt performance.
 
 32_all-10  OK	
 
@@ -5274,15 +5271,11 @@ Test	 Status	Comments
 
 32_all-13  OK	
 
-32_all-14  DIFF	GS handles *show when the current font is a CIDFont resource
-		(rather than a CIDFont-CMap font resource).
-		It is an undocumented Adobe Acrobat and Distiler feature, 
-		which was implemented to Ghostscript on order of fixing a set of bugs
-		with a difficult change to the C code of the font machinery.
-		If we want it be compatible to CPSI,
-		a special check to be added to gs_cet.ps .
-		Note : It may be related to 13-16-8 .
-		Igor assigns this to Ray for checking with hardcopy.
+32_all-14  DIFF	GS handles *show with no error when the current font is a CIDFont resource
+		(rather than a CIDFont-CMap font resource), and likely
+		it renders nothing in this case. CPSI and Distiller throws an error.
+		Not sure whether it's a bug or feature.
+		assign: Igor.
 
 32_all-15  AOK	Same as 34_all-6
 
@@ -5353,7 +5346,7 @@ Test	 Status	Comments
 
 35_all-5  OK	
 
-35_all-6  DIFF	Same as 34_all-5. Analyzed by Igor. Assigned to Alex.
+35_all-6  DIFF	Same as 34_all-5. Analyzed by Igor. assign: Alex.
 
 35_all-7  AOK	Same as 33_all-7. Analyzed by Igor.
 
