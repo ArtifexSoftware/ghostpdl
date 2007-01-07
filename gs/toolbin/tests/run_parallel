@@ -1,21 +1,45 @@
 #!/usr/bin/env python
 
+#    Copyright (C) 2006-2007 artofcode LLC.
+#
+# This software is provided AS-IS with no warranty, either express or
+# implied.
+#
+# This software is distributed under license and may not be copied,
+# modified or distributed except as expressly authorized under the terms
+# of the license contained in the file LICENSE in this distribution.
+#
+# For more information about licensing, visit http://www.artifex.com/
+# or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+# San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+# This is a script to parallelize the regression runs "by hand"
+# for running on a batch-mode cluster under the PBS queue system.
+# it generates a custom testing.cfg and comparefiles directory
+# for each node, creates a set of job description files, and runs them.
+ 
 import os
 import string
 import re
 
-# globals 
-run=True
+## globals -- edit these to make it work
+run=True	# whether to submit the job after creating it
 try:
   home=os.environ["HOME"]
 except KeyError:
   home=''
-testdir=home+"/tests/ps/ps3fts"
-configfile="testing.cfg"
-files=os.listdir(testdir)
+base=os.getcwd()
+testdir=home+"/tests/ps/ps3fts"	# directory of files to run
+configfile="testing.cfg"	# template config file
+files=os.listdir(testdir)	# list of files to run
 
+
+## helper functions
 
 def choosecluster():
+  '''Decide how many nodes of which cluster to run on.
+     returns a (cluster_name, node_count) tuple.'''
+
   # figure out how many nodes are free
   upnodes = os.popen("upnodes")
   r = re.compile('^\s+(?P<cluster>\w+).*\s+(?P<procs>\d+)\s+(?P<free>\d+)\s*$')
@@ -34,11 +58,40 @@ def choosecluster():
       clusters.append((name,procs,free))
   return (cluster, nodes)
 
-# create a config file from the template for node
-configfiles=[]
-comparefiledirs=[]
+def makepbs(filename):
+   '''Make a pbs job description file for a command.'''
+   outfile=open(filename+".pbs","w")
+   if cluster == 'red' and nodes > 1:
+     # upnodes reports dual-core nodes twice
+     outfile.write("#PBS -l nodes=%d:run:%s:ppn=2\n" % (nodes/2,cluster))
+   else:
+     outfile.write("#PBS -l nodes=%d:run:%s\n" % (nodes,cluster))
+   outfile.write("cd %s\n" % base)
+   outfile.write("mpiexec -comm none ./%s\n" % filename)
+   outfile.close()
+
+def makepbscleanup(configfiles, comparefiledirs, jobid=None):
+   '''Make a pbs job to cleanup after another.
+      Pass in sequences of the files and directories to be removed
+      and the jobid, if any, that the cleanup should run after.'''
+   outfile=open("run_regression_cleanup.pbs","w")
+   # run this on nina by default since it's trivial
+   if jobid:
+     outfile.write("#PBS -l nodes=1:run:nina -W depend=afterany:%s\n" % jobid)
+   else:
+     outfile.write("#PBS -l nodes=1:run:nina\n")
+   outfile.write("cd %s\n" % base)
+   for node in range(nodes):
+     outfile.write("rm -rf " + comparefiledirs[node] + "\n")
+     outfile.write("rm " + configfiles[node] + "\n")
+   outfile.close()
+
+## create a config files from the template for each node
 (cluster, nodes) = choosecluster()
 print "choosing %s with %d nodes free" % (cluster, nodes)
+
+configfiles=[]
+comparefiledirs=[]
 print "configuring job..."
 for node in range(nodes):
   infile=open(configfile)
@@ -55,7 +108,6 @@ for node in range(nodes):
         comparefiledirs.append(value)
       if key == "log_stderr": value=value[:-4]+"."+str(node)+".log"
       if key == "log_stdout": value=value[:-4]+"."+str(node)+".log"
-      #print key,value
       outfile.write(key+"\t"+value+"\n")
     except ValueError:
       outfile.write(line)
@@ -72,37 +124,21 @@ for file in files:
   node=node+1
   if node >= len(comparefiledirs): node=0
    
-def makepbs(filename):
-   'Make a pbs file for a command'
-   outfile=open(filename+".pbs","w")
-   if cluster == 'red' and nodes > 1:
-     # upnodes reports dual-core nodes twice
-     outfile.write("#PBS -l nodes=%d:run:%s:ppn=2\n" % (nodes/2,cluster))
-   else:
-     outfile.write("#PBS -l nodes=%d:run:%s\n" % (nodes,cluster))
-   outfile.write("cd $HOME/regression\n")
-   outfile.write("mpiexec -comm none ./"+filename+"\n")
-   outfile.close()
-
 # create our job description files
 makepbs("run_regression")
 makepbs("make_testdb")
 
+## submit the actual jobs
 if run:
    # qsub the pbs file
 
+   #job= os.popen("qsub make_testdb.pbs")
    job= os.popen("qsub run_regression.pbs")
    jobid=string.strip(job.readline())
    print "run submitted as", jobid 
 
    # append a follow-up job to do the cleanup
-   outfile=open("run_regression_cleanup.pbs","w")
-   outfile.write("#PBS -l nodes=1:run:nina -W depend=afterany:%s\n" % jobid)
-   outfile.write("cd " + home + "/regression" + "\n")
-   for node in range(nodes):
-     outfile.write("rm -rf " + comparefiledirs[node] + "\n")
-     outfile.write("rm " + configfiles[node] + "\n")
-   outfile.close()
+   makepbscleanup(configfiles,comparefiledirs,jobid)
    job = os.popen("qsub run_regression_cleanup.pbs")
    jobid = string.strip(job.readline())
    print "cleanup job is", jobid
