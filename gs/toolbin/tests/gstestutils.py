@@ -132,13 +132,19 @@ class GSTestCase(unittest.TestCase):
 # Define a TestResult class that recognizes the GSTestFailure exception
 # as described above, and a TestRunner class that uses it.
 # The TestResult class also accepts a list or tuple of strings as the
-# error message.
+# error message, and prints the verbose log in a single line to
+# reduce mangling in parallel runs.
 
 class _GSTextTestResult(unittest._TextTestResult):
+
+    def startTest(self, test):
+	unittest.TestResult.startTest(self, test)
 
     def addFailure(self, test, err):
         self.failures.append((test, err))
         if self.showAll:
+	    self.stream.write(self.getDescription(test))
+	    self.stream.write(" ... ")
 	    lines = err[1].args[0]
 	    if (len(lines) > 18) & (lines[0:18] == "non-zero exit code"):
 		self.stream.writeln("ERROR")
@@ -146,7 +152,13 @@ class _GSTextTestResult(unittest._TextTestResult):
 		self.stream.writeln("DIFFER")
         elif self.dots:
             self.stream.write("D")
-    
+
+    def addSuccess(self, test):
+	unittest.TestResult.addSuccess(self, test)
+	self.stream.write(self.getDescription(test))
+	self.stream.write(" ... ")
+	self.stream.writeln("ok")
+
     def printErrorList(self, flavor, errors):
         handoff = []
         for test, err in errors:

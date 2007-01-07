@@ -66,17 +66,17 @@ class GSCompareTestCase(gstestgs.GhostscriptTestCase):
 	gs.dpi = self.dpi
 	gs.band = self.band
 	gs.infile = self.file
-	gs.outfile = file
+	gs.outfile = gsconf.scratchdir+file
 	if self.log_stdout:
 	    gs.log_stdout = self.log_stdout
 	if self.log_stderr:
 	    gs.log_stderr = self.log_stderr
 
 	if gs.process():
-	    sum = gssum.make_sum(file)
+	    sum = gssum.make_sum(gsconf.scratchdir+file)
         else:
 	    sum = ''
-	os.unlink(file)
+	os.unlink(gsconf.scratchdir+file)
 
 	# add test result to daily database
 	if self.track_daily:

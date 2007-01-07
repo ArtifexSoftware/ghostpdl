@@ -23,7 +23,7 @@
 #
 # runs ghostscript regression tests
 
-import sys
+import os,sys
 import anydbm
 import gstestutils, gsconf
 import check_all
@@ -43,7 +43,15 @@ suite = gstestutils.GSTestSuite()
 gscheck_all.addTests(suite, gsroot=gsconf.gsroot, track=track)
 
 # Add tests not based on actually running Ghostscript.
-check_all.addTests(suite, gsroot=gsconf.gsroot)
+try:
+  # see if we're running a parallel job
+  node = int(os.environ["PBS_NODENUM"])
+except KeyError:
+  # always run
+  node = 0
+# run these tests only once in a parallel job
+if node == 0:
+  check_all.addTests(suite, gsroot=gsconf.gsroot)
 
 # run all the tests
 runner = gstestutils.GSTestRunner(verbosity=2)

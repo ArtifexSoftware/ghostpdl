@@ -54,4 +54,11 @@ def parse_config(file=configdir+"testing.cfg"):
 def get_dailydb_name():
     return dailydir + time.strftime("%Y%m%d", time.localtime()) + ".db"
 
-parse_config()
+try:
+  # MPI version - node specific config
+  node=os.environ["PBS_NODENUM"]
+  parse_config(configdir+"testing.cfg."+node)
+except KeyError:
+  # normal version
+  parse_config()
+

@@ -77,7 +77,7 @@ class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
 
 	gs.device = 'pdfwrite'
         gs.dpi = None
-	gs.outfile = file1
+	gs.outfile = gsconf.scratchdir+file1
 	if not gs.process():
 	    self.fail("non-zero exit code trying to create pdf file from " + self.file)
 
@@ -85,17 +85,17 @@ class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
 		
 	gs.device = self.device
         gs.dpi = self.dpi
-	gs.infile = file1
-	gs.outfile = file2
+	gs.infile = gsconf.scratchdir+file1
+	gs.outfile = gsconf.scratchdir+file2
 	if not gs.process():
 	    self.fail("non-zero exit code trying to"\
 		      " rasterize " + file1)
 
 	# compare baseline
 		
-	sum = gssum.make_sum(file2)
-	os.unlink(file1)
-	os.unlink(file2)
+	sum = gssum.make_sum(gsconf.scratchdir+file2)
+	os.unlink(gsconf.scratchdir+file1)
+	os.unlink(gsconf.scratchdir+file2)
 	
 	# add test result to daily database
 	if self.track_daily:
