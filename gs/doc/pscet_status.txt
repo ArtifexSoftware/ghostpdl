@@ -247,21 +247,7 @@ Test	 Status	Comments
 
 09-24-1  OK	
 
-09-24-2  DIFF	In "Technical Paths", Ghostscript is missing some line segments
-		generated from 'strokepath' on a wide line with some cap/join
-		settings. assigned: Ray (actually Nori is looking into this)
-		-
-		Note the path generated with 'strokepath' is implementation dependent.
-		Here is what PLRM says :
-					[beg quote]
-		The path produced by strokepath is suitable for use as the implicit operand to a
-		subsequent fill, clip, or pathbbox operation. In general, it is not suitable for
-		stroke, as it may contain interior segments or disconnected subpaths produced by
-		strokepath's conversion from stroke to outline.
-					[end quote]
-		What we observe with Adobe CPSI and Tek hardcopy is "disconnected subpaths".
-		If the implementation of a fix for this proves too messy, we may have to
-		classify the 28 DIFF files as 'aok'.
+09-24-2  OK	Fixed by rev 7563.
 
 09-24-3  OK	Fixed by r7123.
 
@@ -269,7 +255,7 @@ Test	 Status	Comments
 
 09-25-1  OK	
 
-09-25-2  DIFF	Same as 09-24-2 Assign: Ray (Nori)
+09-25-2  OK	Fixed by rev 7563.
 
 09-25-3  OK	Fixed by r7123.
 
@@ -277,7 +263,7 @@ Test	 Status	Comments
 
 09-26-1  OK	Minor differences visually reviewed by RJJ
 
-09-26-2  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-26-2  OK	Fixed by rev 7563.
 
 09-26-3  OK	Fixed by r7123. Color corrected by rev 7172.
 
@@ -288,7 +274,7 @@ Test	 Status	Comments
 
 09-27-2  OK	Minor differences visually reviewed by RJJ
 
-09-27-3  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-27-3  OK	Fixed by rev 7563.
 
 09-27-4  OK	Fixed by r7123. Color corrected by rev 7172.
 
@@ -300,7 +286,7 @@ Test	 Status	Comments
 09-28-2  OK	Fixed as of rev. 7211
 		cpsi/09-28-2  missing. Acrobat 7 output obtained.
 
-09-28-3  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-28-3  OK	Fixed by rev 7563.
 		cpsi/09-28-3  missing. Acrobat 7 output obtained.
 
 09-28-4  OK	Imagemask -- Fixed by r7123. Tek and AD7 output differ.
@@ -314,7 +300,7 @@ Test	 Status	Comments
 		forced to /DeviceCMY. DeviceRGB values fixed in rev. 7216
 		cpsi/09-29-1  missing
 
-09-29-2  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-29-2  OK	Fixed by rev 7563.
 		cpsi/09-29-2  missing
 
 09-29-3  OK	Imagemask -- Fixed by r7123. Tek and AD7 output differ.
@@ -328,7 +314,7 @@ Test	 Status	Comments
 
 09-30-2  OK  	Error reports are fixed in rev. 7138. - Alex
 
-09-30-3  DIFF	Colors corrected by rev 7172., otherwise same as 09-24-2. Assign: Ray (Nori)
+09-30-3  OK	Colors corrected by rev 7172.	Fixed by rev 7563.
 
 09-30-4  OK	Fixed by r7123. Color corrected by rev 7172.
 
@@ -360,7 +346,7 @@ Test	 Status	Comments
 09-31-7  OK	Matches Tek hardcopy output. RJJ
 		cpsi/09-31-7  missing. Acrobat 7 output obtained.
 
-09-31-8  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-31-8  OK	Fixed by rev 7563.
 		cpsi/09-31-8  missing. Acrobat 7 output obtained.
 
 09-31-9  OK	Matches Tek hardcopy output. RJJ
@@ -372,7 +358,7 @@ Test	 Status	Comments
 09-32-2  OK  	Error codes are adjusted to match the checksum. rev. 7167 - Alex
 		cpsi/09-32-2  missing. Acrobat 7 output obtained.
 
-09-32-3	 DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-32-3	 OK	Fixed by rev 7563.
 		cpsi/09-32-3  missing. Acrobat 7 output obtained.
 
 09-32-4  OK	Matches Tek hardcopy output. RJJ
@@ -385,7 +371,7 @@ Test	 Status	Comments
 
 09-33-2  OK	Matches Tek hardcopy output. RJJ
 
-09-33-3  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-33-3  OK	Fixed by rev 7563.
 
 09-33-4  OK	Fixed by r7123. Color corrected by rev 7172.
 
@@ -443,7 +429,7 @@ Test	 Status	Comments
 		'missing' graphics then appear.
 		cpsi/09-34-16  missing
 
-09-34-17  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-34-17  OK	Fixed by rev 7563.
 		cpsi/09-34-17  missing
 
 09-34-18  OK	Fixed by r7123.
@@ -511,7 +497,10 @@ Test	 Status	Comments
 
 09-35-1  OK	Matches Tek hardcopy output. RJJ
 
-09-35-2  DIFF	Minor color difference, but also Same as 09-24-2. Assign: Ray (Nori)
+09-35-2  OK	Color difference (cmpi -c25 is OK, -c24 detects all pixels differ), 
+		otherwise fixed by rev 7563.
+		Presumed to match Tek (different inks, etc.) since this test uses
+		'setcolortransfer' which is ignored by CPSI. RJJ
 
 09-35-3  OK	Fixed by r7123.
 
@@ -606,7 +595,7 @@ Test	 Status	Comments
 
 09-38-1  OK	Minor differences visually reviewed by RJJ
 
-09-38-2  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-38-2  OK	Fixed by rev 7563.
 
 09-38-3  OK	Fixed by r7123.
 
@@ -615,8 +604,8 @@ Test	 Status	Comments
 09-39-1  OK	Matches Tek hardcopy output. RJJ
 		cpsi/09-39-1  missing
 
-09-39-2  DIFF	Same as 09-24-2. GS is contone, Tek is dithered with coarse pattern.
-		cpsi/09-39-2  missing. Assign: Ray (Nori)
+09-39-2  AOK	Fixed by rev 7563. GS is contone, Tek is dithered with coarse pattern.
+		cpsi/09-39-2 missing.
 
 09-39-3  AOK	GS is contone, Tek is dithered with coarse pattern. GS with 4-bit
 		CMYK device matches Tek patterns. Imagemask fixed by r7123.
@@ -658,7 +647,7 @@ Test	 Status	Comments
 
 09-40-22  OK	
 
-09-40-23  DIFF	Same as 09-24-2. Minor color difference. RJJ. Assign: Ray (Nori)
+09-40-23  OK	Fixed by rev 7563.
 
 09-40-24  OK	Fixed by r7123. Color corrected by rev 7172.
 
@@ -680,7 +669,7 @@ Test	 Status	Comments
 
 09-41-1  OK	
 
-09-41-2  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-41-2  OK	Fixed by rev 7563.
 
 09-41-3  OK	Fixed by r7123.
 
@@ -694,7 +683,7 @@ Test	 Status	Comments
 
 09-42-4  OK	
 
-09-42-5  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-42-5  OK	Fixed by rev 7563.
 
 09-42-6  OK	Fixed by r7123.
 
@@ -708,7 +697,7 @@ Test	 Status	Comments
 
 09-43-4  OK	
 
-09-43-5  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-43-5  OK	Fixed by rev 7563.
 
 09-43-6  OK	Fixed by r7123.
 
@@ -722,7 +711,7 @@ Test	 Status	Comments
 
 09-44-4  OK	
 
-09-44-5  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-44-5  OK	Fixed by rev 7563.
 
 09-44-6  OK	Fixed by r7123.
 
@@ -739,7 +728,8 @@ Test	 Status	Comments
 
 09-45-4  OK	
 
-09-45-5  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-45-5  DIFF	Partly fixed by rev 7563. Remaining diff is width of miter
+		extension in "Stroked Objects". Assign: Ray
 
 09-45-6  OK	Fixed by r7123.
 
@@ -1191,7 +1181,7 @@ Test	 Status	Comments
 
 09-48-1  OK  	Fixed in rev. 7138 - Alex
 
-09-48-2  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-48-2  OK	Fixed by rev 7563.
 
 09-48-3  OK	Fixed by r7123.
 
@@ -1209,7 +1199,7 @@ Test	 Status	Comments
 09-49C-1  OK	Matches Tek hardcopy and checksum. RJJ (CPSI differs because it
 		ignores setscreen).
 
-09-49D-1  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-49D-1  OK	Fixed by rev 7563.
 
 09-49D-2  OK	Fixed by r7123. Color corrected by rev 7172.
 
@@ -1222,7 +1212,7 @@ Test	 Status	Comments
 09-50-2  OK	
 
 09-50-3  DIFF	GS missing radial lines filling arcs. Tek and CPSI agree. May
-		be related to 09-24-2. Assign: Ray (Nori)
+		be related to 09-24-2. Assign: Ray
 
 09-50-4  OK	Fixed by r7123.
 
@@ -1230,8 +1220,8 @@ Test	 Status	Comments
 
 09-51-1  OK	Matches Tek hardcopy. RJJ (CPSI ignores settransfer).
 
-09-51-2  DIFF	Same as 09-24-2. GS matches colors of Tek hardcopy, CPSI
-		shows MUCH different colors. Assign: Ray (Nori)
+09-51-2  OK	Fiexd by rev 7563. GS matches colors of Tek hardcopy, CPSI
+		shows MUCH different colors.
 
 09-51-3  OK	Fixed by r7123.  GS matches colors of Tek hardcopy, CPSI
 		shows MUCH different colors.
@@ -1242,7 +1232,7 @@ Test	 Status	Comments
 09-52-1  AOK	Device Dependent: GS has default ProcessColorModel /DeviceRGB
 		CPSI has /DeviceN, Tek has /DeviceCMY (not a standard one??)
 
-09-52-2  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-52-2  OK	Fixed by rev 7563.
 
 09-52-3  OK	Fixed by r7123.
 
@@ -1258,7 +1248,7 @@ Test	 Status	Comments
 		to cliprestore.
 	 Fixed by r7155 - Raph
 
-09-53-5  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-53-5  OK	Fixed by rev 7563.
 
 09-53-6  OK	Fixed by r7123. Color corrected by rev 7172.
 
@@ -1275,7 +1265,7 @@ Test	 Status	Comments
 
 09-54-5  OK	Fixed in r7155 - Raph
 
-09-54-6  DIFF	Same as 09-24-2. USE_ADOBE_CMYK_RGB issue . Assign: Ray (Nori)
+09-54-6  OK	Fixed by rev 7563.
 		assign: Ray
 
 09-54-7  OK	Fixed by r7123. Color corrected by rev 7172.
@@ -1311,7 +1301,7 @@ Test	 Status	Comments
 09-57-13  AOK	Test 09-12: With bad smoothness CPSI shadings are worse.
 		Analyzed by Igor.
 
-09-57-14  DIFF	Same as 09-24-2. Assign: Ray (Nori)
+09-57-14  OK	Fixed by rev 7563.
 
 09-57-15  OK	Fixed by r7123.
 
@@ -1628,7 +1618,7 @@ Test	 Status	Comments
 
 11-07-4  OK	Minor differences visually reviewed by RJJ
 
-11-07-5  OK	Minor differences visually reviewed by HAS
+11-07-5  OK	Fixed by rev 7563.
 
 11-08-1  OK	Minor differences visually reviewed by RJJ
 
@@ -1899,7 +1889,7 @@ Test	 Status	Comments
 
 11-21-2  OK	Minor differences visually reviewed by RJJ
 
-11-21-3  OK	Minor differences visually reviewed by HAS
+11-21-3  OK	Fixed by rev 7563.
 
 11-21-4  DIFF	Analyzed by Igor.
 		There are several stroking problems.
@@ -2039,7 +2029,7 @@ Test	 Status	Comments
 
 11-28-12  AOK	same as 11-21-10.
 
-11-28-2  OK	Minor differences visually reviewed by HAS
+11-28-2  OK	Fixed by rev 7563.
 
 11-28-3  DIFF	Some elements are in the wrong place with GS. assign: Ray
 
@@ -2941,7 +2931,7 @@ Test	 Status	Comments
 
 13-13-7  OK	
 
-13-13-8  OK	Color corrected by rev 7172.
+13-13-8  OK	Color corrected by rev 7172. Fixed by rev 7563.
 
 13-14-1  AOK	same as 13-04-1
 
