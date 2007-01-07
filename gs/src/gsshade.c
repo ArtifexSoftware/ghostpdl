@@ -485,17 +485,22 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 		    code = gs_note_error(gs_error_VMerror);
 		    goto out;
 		}
-		if ((code = gx_cpath_from_rectangle(path_clip, &path_box)) < 0 ||
-		    (code = shading_path_add_box(box_path, &psh->params.BBox,
-						pmat)) < 0 ||
-		    (code = gx_cpath_intersect(path_clip, box_path,
-					    gx_rule_winding_number, pis)) < 0
-		    )
-		    DO_NOTHING;
+		code = gx_cpath_from_rectangle(path_clip, &path_box);
+		if (code >= 0) {
+		    code = shading_path_add_box(box_path, &psh->params.BBox, pmat);
+		    if (code == gs_error_limitcheck) {
+			/* Ignore huge BBox - bug 689027. */
+			code = 0;
+		    } else if (code >= 0) {
+			code = gx_cpath_intersect(path_clip, box_path,
+					    gx_rule_winding_number, pis);
+			if (code >= 0)
+			    path_clip_set = true;
+		    }
+		}
 		gx_path_free(box_path, "shading_fill_path(box_path)");
 		if (code < 0)
 		    goto out;
-		path_clip_set = true;
 	    }
 	}
 	if (!path_clip_set) {
