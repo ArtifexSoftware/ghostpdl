@@ -37,6 +37,7 @@ typedef struct gx_path_s gx_path;
 #define T1_MAX_STEM_SNAPS 12
 #define T1_MAX_ALIGNMENT_ZONES 6
 #define T1_MAX_CONTOURS 10
+#define T1_MAX_SUBGLYPHS 3
 #define T1_MAX_POLES (100 + T1_MAX_CONTOURS) /* Must be grater than 8 for 'flex'. */
 #define T1_MAX_HINTS 30
 
@@ -140,6 +141,7 @@ typedef struct t1_hinter_s
     t1_hint hint0[T1_MAX_HINTS], *hint;
     t1_zone zone0[T1_MAX_ALIGNMENT_ZONES], *zone;
     int contour0[T1_MAX_CONTOURS], *contour;
+    int subglyph0[T1_MAX_CONTOURS], *subglyph;
     t1_glyph_space_coord stem_snap0[2][T1_MAX_STEM_SNAPS + 1]; /* StdWH + StemSnapH, StdWV + StemSnapV */
     t1_glyph_space_coord *stem_snap[2];
     int stem_snap_vote0[T1_MAX_STEM_SNAPS + 1];
@@ -148,6 +150,7 @@ typedef struct t1_hinter_s
     t1_hint_applying hint_applying0[T1_MAX_HINTS * 4], *hint_applying;
     int stem_snap_count[2], max_stem_snap_count[2]; /* H, V */
     int stem_snap_vote_count, max_stem_snap_vote_count;
+    int subglyph_count, max_subglyph_count;
     int contour_count, max_contour_count;
     int zone_count, max_zone_count;
     int pole_count, max_pole_count;
@@ -197,6 +200,7 @@ int  t1_hinter__rlineto(t1_hinter *, fixed xx, fixed yy);
 int  t1_hinter__rcurveto(t1_hinter * this, fixed xx0, fixed yy0, fixed xx1, fixed yy1, fixed xx2, fixed yy2);
 void t1_hinter__setcurrentpoint(t1_hinter * this, fixed xx, fixed yy);
 int  t1_hinter__closepath(t1_hinter * this);
+int  t1_hinter__end_subglyph(t1_hinter * this);
 
 int  t1_hinter__flex_beg(t1_hinter * this);
 int  t1_hinter__flex_end(t1_hinter * this, fixed flex_height);

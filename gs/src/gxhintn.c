@@ -136,6 +136,7 @@ static const char *s_pole_array = "t1_hinter pole array";
 static const char *s_zone_array = "t1_hinter zone array";
 static const char *s_hint_array = "t1_hinter hint array";
 static const char *s_contour_array = "t1_hinter contour array";
+static const char *s_subglyph_array = "t1_hinter subglyph array";
 static const char *s_hint_range_array = "t1_hinter hint_range array";
 static const char *s_hint_applying_array = "t1_hinter hint_applying array";
 static const char *s_stem_snap_array = "t1_hinter stem_snap array";
@@ -474,10 +475,12 @@ void t1_hinter__init(t1_hinter * this, gx_path *output_path)
     this->pole_count = 0;
     this->hint_count = 0;
     this->contour_count = 0;
+    this->subglyph_count = 0;
     this->hint_range_count = 0;
     this->flex_count = 0;
     this->have_flex = false;
 
+    this->max_subglyph_count = count_of(this->subglyph0);
     this->max_contour_count = count_of(this->contour0);
     this->max_zone_count = count_of(this->zone0);
     this->max_pole_count = count_of(this->pole0);
@@ -492,6 +495,7 @@ void t1_hinter__init(t1_hinter * this, gx_path *output_path)
     this->hint = this->hint0;
     this->zone = this->zone0;
     this->contour = this->contour0;
+    this->subglyph = this->subglyph0;
     this->hint_range = this->hint_range0;
     this->hint_applying = this->hint_applying0;
     this->stem_snap[0] = this->stem_snap0[0];
@@ -507,6 +511,7 @@ void t1_hinter__init(t1_hinter * this, gx_path *output_path)
     this->heigt_transform_coef_inv = this->width_transform_coef_inv = 0;
     this->cx = this->cy = 0;
     this->contour[0] = 0;
+    this->subglyph[0] = 0;
     this->keep_stem_width = false;
     this->charpath_flag = false;
     this->grid_fit_x = this->grid_fit_y = true;
@@ -529,6 +534,8 @@ private inline void t1_hinter__free_arrays(t1_hinter * this)
 	gs_free_object(this->memory, this->zone, s_zone_array);
     if (this->contour != this->contour0)
 	gs_free_object(this->memory, this->contour, s_contour_array);
+    if (this->subglyph != this->subglyph0)
+	gs_free_object(this->memory, this->subglyph, s_subglyph_array);
     if (this->hint_range != this->hint_range0)
 	gs_free_object(this->memory, this->hint_range, s_hint_range_array);
     if (this->hint_applying != this->hint_applying0)
@@ -1384,6 +1391,19 @@ int t1_hinter__closepath(t1_hinter * this)
 	this->contour[this->contour_count] = this->pole_count;
         return 0;
     }
+}
+
+int t1_hinter__end_subglyph(t1_hinter * this)
+{
+    if (this->pass_through)
+	return 0;
+    this->subglyph_count++;
+    if (this->subglyph_count >= this->max_subglyph_count)
+	if(t1_hinter__realloc_array(this->memory, (void **)&this->subglyph, this->subglyph0, &this->max_subglyph_count, 
+				    sizeof(this->subglyph0) / count_of(this->subglyph0), T1_MAX_SUBGLYPHS, s_subglyph_array))
+	    return_error(gs_error_VMerror);
+    this->subglyph[this->subglyph_count] = this->contour_count;
+    return 0;
 }
 
 private inline int t1_hinter__can_add_hint(t1_hinter * this, t1_hint **hint)
@@ -2957,9 +2977,33 @@ private int t1_hinter__add_trailing_moveto(t1_hinter * this)
     return t1_hinter__rmoveto(this, gx - this->cx, gy - this->cy);
 }
 
-private void t1_hinter__fix_contour_signs(t1_hinter * this)
+private void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_contour, int last_contour)
 {
     /* fixme: todo. */
+}
+
+private void t1_hinter__fix_contour_signs(t1_hinter * this)
+{
+    int i;
+
+    if (this->subglyph_count >= 3) {
+	/* 3 or more subglyphs.
+	   We didn't meet so complex characters with wrong contours signs. 
+	   Skip it for saving the CPU time. */
+	return;
+    }
+    for (i = 1; i < this->subglyph_count; i++) {
+	int first_contour = this->subglyph[i - 1];
+	int last_contour  = this->subglyph[i] - 1;
+
+	if (last_contour - last_contour >= 3) { 
+	    /* 4 or more contours.
+	       We didn't meet so complex characters with wrong contours signs. 
+	       Skip it for saving the CPU time. */
+	    continue;
+	}
+	t1_hinter__fix_subglyph_contour_signs(this, first_contour, last_contour);
+    }
 }
 
 int t1_hinter__endglyph(t1_hinter * this)
@@ -2976,6 +3020,9 @@ int t1_hinter__endglyph(t1_hinter * this)
     if (vd_enabled && this->g2o_fraction != 0 && !this->disable_hinting)
 	t1_hinter__paint_raster_grid(this);
     code = t1_hinter__add_trailing_moveto(this);
+    if (code < 0)
+	goto exit;
+    code = t1_hinter__end_subglyph(this);
     if (code < 0)
 	goto exit;
     t1_hinter__paint_glyph(this, false);
