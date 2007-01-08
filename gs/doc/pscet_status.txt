@@ -2395,8 +2395,8 @@ Test	 Status	Comments
 12-13-4  DIFF	Magenta in pattern at lower right in GS.  Not present in CPSI.
 		See 12-01-5. Assign: raph
 
-12-13-5  DIFF	Differences around 30 and 31 in left column. - ADC
-                assign Alex.
+12-13-5  OK  	Works for me in rev. 7579. There's no differences around 30
+		and 31 in left column. The checksum matches too. - Alex.
 
 12-14A-1  OK	Test03: ok - fixed.
 		rangecheck error is fixed - Alex.
