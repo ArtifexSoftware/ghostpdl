@@ -513,7 +513,9 @@ void t1_hinter__init(t1_hinter * this, gx_path *output_path)
     this->output_path = output_path;
     this->memory = (output_path == 0 ? 0 : output_path->memory);
     this->disable_hinting = (this->memory == NULL);
+    this->pass_through = this->disable_hinting;
     this->autohinting = false;
+    this->fix_contour_sign = false;
 
     this->stem_snap[0][0] = this->stem_snap[1][0] = 100; /* default */
 }
@@ -625,6 +627,7 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
     int code;
 
     this->disable_hinting |= (scale < 1/1024. || scale > 4);
+    this->pass_through |= this->disable_hinting;
     this->log2_pixels_x = log2_pixels_x;
     this->log2_pixels_y = log2_pixels_y;
     this->log2_subpixels_x = log2_subpixels_x;
@@ -649,6 +652,7 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
     if (this->ctmf.denominator == 0 || this->ctmi.denominator == 0) {
 	/* ctmf should be degenerate. */
     	this->disable_hinting = true;
+	this->pass_through = true;
 	this->ctmf.denominator = 1;
     }
     this->transposed = (any_abs(this->ctmf.xy) * 10 > any_abs(this->ctmf.xx));
@@ -705,7 +709,7 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
 	 * The ADOBE_OVERSHOOT_COMPATIBILIY build needs to fix them.
 	 */
     }
-    if (1 || /* Doesn't work - see comment above. Using this->disable_hinting instead. */
+    if (1 || /* Doesn't work - see comment above. */
 	    this->resolution * this->font_size >= 2) {	
 	/* Enable the grid fitting separately for axes : */
 	this->grid_fit_y = (any_abs(this->ctmf.xy) * 10 < any_abs(this->ctmf.xx) ||
@@ -851,7 +855,7 @@ private void enable_draw_import(void)
     vd_setlinewidth(0);
 }
 
-int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, bool no_grid_fitting)
+int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, bool no_grid_fitting, bool is_resource)
 {   int code;
 
     t1_hinter__init_outline(this);
@@ -863,10 +867,14 @@ int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdat
     this->overshoot_threshold = (this->heigt_transform_coef != 0 ? (t1_glyph_space_coord)(fixed_half * (1 << this->log2_pixels_y) / this->heigt_transform_coef) : 0);
     this->ForceBold = pdata->ForceBold;
     this->disable_hinting |= no_grid_fitting;
+    this->pass_through |= no_grid_fitting;
     this->charpath_flag = no_grid_fitting;
-    if (!vd_enabled && (VD_DRAW_IMPORT || this->disable_hinting))
+    this->fix_contour_sign = (!is_resource && this->memory != NULL);
+    if (this->fix_contour_sign)
+	this->pass_through = false;
+    if (!vd_enabled && (VD_DRAW_IMPORT || this->pass_through))
 	enable_draw_import();
-    if (this->disable_hinting)
+    if (this->pass_through)
 	return 0;
     code = t1_hinter__set_alignment_zones(this, pdata->OtherBlues.values, pdata->OtherBlues.count, botzone, false);
     if (code >= 0)
@@ -900,12 +908,12 @@ int t1_hinter__set_font42_data(t1_hinter * this, int FontType, gs_type42_data *p
     this->suppress_overshoots = (this->BlueScale > this->heigt_transform_coef / (1 << this->log2_pixels_y) - 0.00020417);
     this->overshoot_threshold = (this->heigt_transform_coef != 0 ? (t1_glyph_space_coord)(fixed_half * (1 << this->log2_pixels_y) / this->heigt_transform_coef) : 0);
     this->ForceBold = false;
-    this->disable_hinting |= no_grid_fitting;
+    this->pass_through |= no_grid_fitting;
     this->charpath_flag = no_grid_fitting;
     this->autohinting = true;
-    if (!vd_enabled && (VD_DRAW_IMPORT || this->disable_hinting))
+    if (!vd_enabled && (VD_DRAW_IMPORT || this->pass_through))
 	enable_draw_import();
-    if (this->disable_hinting)
+    if (this->pass_through)
 	return 0;
     /* Currently we don't provice alignments zones or stem snap. */
     return 0;
@@ -1043,7 +1051,7 @@ private bool t1_hinter__find_flex(t1_hinter * this, int k, int contour_beg, int 
 		}
 	    }
 	}
-	/* Leave the loop here because t1_hinter_fix_missed_flex
+	/* Leave the loop here because t1_hinter__fix_missed_flex
 	   will try the interval starting with the next pole. 
 	   We reserve the 'i' cycle for fonding a "best" flex
 	   within the interval. */
@@ -1116,7 +1124,7 @@ private void t1_hinter__adjust_stem_hints_by_missed_flex(t1_hinter * this, t1_gl
 	}
 }
 
-private void t1_hinter_fix_missed_flex(t1_hinter * this)
+private void t1_hinter__fix_missed_flex(t1_hinter * this)
 {
     int contour_beg, contour_end;
     int i, j, k, pj, n, j0, j1;
@@ -1200,7 +1208,7 @@ int t1_hinter__rmoveto(t1_hinter * this, fixed xx, fixed yy)
 
     t1_hinter__adjust_matrix_precision(this, xx, yy);
     if (this->flex_count == 0) {
-	if (this->disable_hinting) {
+	if (this->pass_through) {
 	    t1_glyph_space_coord gx = this->cx += xx;
 	    t1_glyph_space_coord gy = this->cy += yy;
 	    fixed fx, fy;
@@ -1229,7 +1237,7 @@ int t1_hinter__rmoveto(t1_hinter * this, fixed xx, fixed yy)
 		return code;
 	}
 	if (!this->have_flex)
-	    t1_hinter_fix_missed_flex(this);
+	    t1_hinter__fix_missed_flex(this);
     }
     code = t1_hinter__add_pole(this, xx, yy, moveto);
     if (this->flex_count == 0) {
@@ -1256,7 +1264,7 @@ private inline void t1_hinter__skip_degenerate_segnment(t1_hinter * this, int np
 int t1_hinter__rlineto(t1_hinter * this, fixed xx, fixed yy)
 {   
     t1_hinter__adjust_matrix_precision(this, xx, yy);
-    if (this->disable_hinting) {
+    if (this->pass_through) {
 	t1_glyph_space_coord gx = this->cx += xx;
 	t1_glyph_space_coord gy = this->cy += yy;
 	fixed fx, fy;
@@ -1281,7 +1289,7 @@ int t1_hinter__rcurveto(t1_hinter * this, fixed xx0, fixed yy0, fixed xx1, fixed
     t1_hinter__adjust_matrix_precision(this, xx0, yy0);
     t1_hinter__adjust_matrix_precision(this, xx1, yy1);
     t1_hinter__adjust_matrix_precision(this, xx2, yy2);
-    if (this->disable_hinting) {
+    if (this->pass_through) {
 	t1_glyph_space_coord gx0 = this->cx += xx0;
 	t1_glyph_space_coord gy0 = this->cy += yy0;
 	t1_glyph_space_coord gx1 = this->cx += xx1;
@@ -1340,7 +1348,7 @@ void t1_hinter__setcurrentpoint(t1_hinter * this, fixed xx, fixed yy)
 }
 
 int t1_hinter__closepath(t1_hinter * this)
-{   if (this->disable_hinting) {
+{   if (this->pass_through) {
 	vd_lineto(this->bx, this->by);
 	this->path_opened = false;
         return gx_path_close_subpath(this->output_path);
@@ -1349,7 +1357,7 @@ int t1_hinter__closepath(t1_hinter * this)
 
 	if (contour_beg == this->pole_count)
 	    return 0; /* maybe a single trailing moveto */
-	if (vd_enabled && (VD_DRAW_IMPORT || this->disable_hinting)) {
+	if (vd_enabled && (VD_DRAW_IMPORT || this->pass_through)) {
 	    vd_setcolor(VD_IMPORT_COLOR);
 	    vd_setlinewidth(0);
 	    vd_lineto(this->bx, this->by);
@@ -1392,7 +1400,7 @@ int t1_hinter__flex_beg(t1_hinter * this)
 	return_error(gs_error_invalidfont);
     this->flex_count++;
     this->have_flex = true;
-    if (this->disable_hinting)
+    if (this->pass_through)
 	return t1_hinter__rmoveto(this, 0, 0);
     return 0;
 }
@@ -1423,7 +1431,7 @@ int t1_hinter__flex_end(t1_hinter * this, fixed flex_height)
 	vd_moveto (pole0[0].gx, pole0[0].gy);
 	vd_curveto(pole0[2].gx, pole0[2].gy, pole0[3].gx, pole0[3].gy, pole0[4].gx, pole0[4].gy);
 	vd_curveto(pole0[5].gx, pole0[5].gy, pole0[6].gx, pole0[6].gy, pole0[7].gx, pole0[7].gy);
-	if (this->disable_hinting) {
+	if (this->pass_through) {
 	    fixed fx0, fy0, fx1, fy1, fx2, fy2;
 	    int code;
 
@@ -1451,7 +1459,7 @@ int t1_hinter__flex_end(t1_hinter * this, fixed flex_height)
 	/* do with line */
 	vd_moveto(pole0[0].gx, pole0[0].gy);
 	vd_lineto(pole0[7].gx, pole0[7].gy);
-	if (this->disable_hinting) {
+	if (this->pass_through) {
 	    fixed fx, fy;
 
 	    g2d(this, pole0[7].gx, pole0[7].gy, &fx, &fy);
@@ -2949,6 +2957,11 @@ private int t1_hinter__add_trailing_moveto(t1_hinter * this)
     return t1_hinter__rmoveto(this, gx - this->cx, gy - this->cy);
 }
 
+private void t1_hinter__fix_contour_signs(t1_hinter * this)
+{
+    /* fixme: todo. */
+}
+
 int t1_hinter__endglyph(t1_hinter * this)
 {   int code = 0;
 
@@ -2997,8 +3010,11 @@ int t1_hinter__endglyph(t1_hinter * this)
 	    Current implementation paints exported rotated glyph in wrong coordinates.
 	*/
     }
-    if (this->pole_count)
+    if (this->pole_count) {
+	if (this->fix_contour_sign)
+	    t1_hinter__fix_contour_signs(this);
 	code = t1_hinter__export(this);
+    }
 exit:
     t1_hinter__free_arrays(this);
     vd_release_dc;

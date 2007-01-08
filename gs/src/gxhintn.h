@@ -129,10 +129,12 @@ typedef struct t1_hinter_s
     bool transposed;
     bool align_to_pixels; /* false == "align to (integral) pixels" */
     bool disable_hinting;
+    bool pass_through;
     bool grid_fit_x, grid_fit_y;
     bool charpath_flag;
     bool path_opened;
     bool autohinting;
+    bool fix_contour_sign;
     t1_glyph_space_coord blue_shift, blue_fuzz;
     t1_pole pole0[T1_MAX_POLES], *pole;
     t1_hint hint0[T1_MAX_HINTS], *hint;
@@ -154,7 +156,7 @@ typedef struct t1_hinter_s
     int hint_applying_count, max_hint_applying_count;
     int primary_hint_count;
     int flex_count;
-    int FontType; /* 1 or 2 */
+    int FontType; /* 1 or 2 or 42 */
     bool have_flex;
     bool ForceBold;
     bool keep_stem_width;
@@ -184,7 +186,7 @@ int  t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
 			int log2_subpixels_x, int log2_subpixels_y,
 			fixed origin_x, fixed origin_y, bool align_to_pixels);
 int  t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, 
-			bool no_grid_fitting);
+			bool no_grid_fitting, bool is_resource);
 int  t1_hinter__set_font42_data(t1_hinter * this, int FontType, gs_type42_data *pdata, 
 			bool no_grid_fitting);
 
