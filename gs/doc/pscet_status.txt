@@ -134,7 +134,7 @@ Test	 Status	Comments
 
 09-11-9  OK	
 
-09-12-1  DIFF 	Device Dependent. Every device has its own initial halftone. 
+09-12-1  AOK	Device Dependent. Every device has its own initial halftone. 
 		Rev. 7208 makes currenthalftone return a read-only dictionary.
 		Adding a HalftoneType 9 as the Default entry to Resource/Halftone
 		path allows us to match Tek. Halftone isn't used with contone anyway.
@@ -1610,7 +1610,8 @@ Test	 Status	Comments
 
 11-06-5  DIFF	GS has extra line: MUCH 15, 30, 31 assign: Raph.
 
-11-07-1  DIFF	Circles being drawn in wrong place. Elements missing - Raph
+11-07-1  DIFF	Circles being drawn in wrong place. Elements missing. Tek matches
+		CPSI. Assign: Ray (Tim)
 
 11-07-2  OK	Minor differences visually reviewed by RJJ
 
@@ -2355,7 +2356,7 @@ Test	 Status	Comments
 
 12-11-3  OK	Minor differences in positions and character shapes - ADC
 
-12-11-4  DIFF	Minor differences in positions and character shapes.
+12-11-4  OK	reviewed by RJJ.
 
 12-11-5  OK	Minor differences in positions and character shapes - ADC
 
@@ -2794,7 +2795,7 @@ Test	 Status	Comments
 
 13-02-4  OK	
 
-13-02-5  OK  	Fixed in rev. 7564. - Alex
+13-02-5  OK  	Fixed as of rev. 7583.
 
 13-02-6  OK	Minor differences visually reviewed by RJJ
 
@@ -3443,10 +3444,10 @@ Test	 Status	Comments
 16-03-1  OK	Fixed by rev 7172.
 
 16-03-2  DIFF	distorted shapes, needs further analysis.
-	Distortion happens when contents of Metrics dict don't match
-	metrics information in charstring. - Raph
+		Distortion happens when contents of Metrics dict don't match
+		metrics information in charstring. Assign: Ray (Tim)
 
-16-03-3  DIFF	distorted shapes, looks similar to p2
+16-03-3  DIFF	distorted shapes, looks similar to 16-03-2. Assign: Ray (Tim)
 
 16-03-4  OK	Now appears correct - Raph
 
@@ -3975,7 +3976,7 @@ Test	 Status	Comments
 		scan_char_array - I don't like that.
 		Passing to Peter who handles interpreter issues.
 		assign: Peter.
-		
+
 21-11-3  DIFF	GS says '{ /A /add }', CPSI says '{ 567 --add-- }' - ADC
 
 21-11-4  OK	
@@ -4127,7 +4128,7 @@ Test	 Status	Comments
                 some cases.  gs's output is (also) correct -- the CET
                 verifies it by decoding it and comparing against the
                 original. (peter)
-		
+
 23-12A-4  AOK	same resolution as 23-12A-3.
 
 23-12B-1  DIFF	GS gets "-file- ( ioerror --readstring--" on FAX_6 test. Last
@@ -5247,7 +5248,7 @@ Test	 Status	Comments
 
 31-13-1  OK	
 
-31-13-2  OK	
+31-13-2  OK	Fixed as of rev 7583.
 
 32_all-1  AOK	CPSI inserts CDevProc while /CIDFont defineresource.
 		That is not required by PLRM3.
@@ -5261,7 +5262,7 @@ Test	 Status	Comments
 
 32_all-13  OK	
 
-32_all-14  OK
+32_all-14  OK	Fixed as of rev 7583.
 
 32_all-15  AOK	Same as 34_all-6
 
@@ -5284,9 +5285,9 @@ Test	 Status	Comments
 
 32_all-9  OK	
 
-33_all-1  OK
+33_all-1  OK	Fixed as of rev 7583.
 
-33_all-2  OK  	Fixed in rev. 7478. See 32_all-2. - Alex 
+33_all-2  OK  	Fixed as of rev 7583.
 
 33_all-3  OK	Minor differences visually reviewed by RJJ
 
@@ -5294,27 +5295,30 @@ Test	 Status	Comments
 
 33_all-5  OK	
 
-33_all-6  DIFF	'show' error inconformity. assign: Alex.
+33_all-6  OK	Fixed as of rev 7583.
 
 33_all-7  AOK	CMAP names differ implementation dependent analyzed by Ray.
 
 33_all-8  OK	Minor differences visually reviewed by RJJ
 
-34_all-1  OK
+34_all-1  OK	Fixed as of rev 7583.
 
-34_all-2  OK  	Fixed in rev. 7478. See 32_all-2. - Alex 
+34_all-2  OK  	Fixed as of rev 7583.
 
-34_all-3  OK	Minor differences visually reviewed by RJJ
+34_all-3  OK	Fixed as of rev 7583.
 
-34_all-4  OK
-		                                               	
-34_all-5  DIFF	Same as 33_all-6. Assign: Alex.
+34_all-4  DIFF	Improved by rev 7583, but still has mismatch for glyph 222.
+		Assign: Ray
+
+34_all-5  OK	Fixed as of rev 7583.
 
 34_all-6  AOK	GS has more CMap resources. Not important. Analyzed by Igor.
 
-34_all-7  OK
+34_all-7  OK	Fixed as of rev 7583.
 
-35_all-1  DIFF	Same as 34_all-1. Assign: Ray
+35_all-1  DIFF	Even as of rev 7583, CID Font has /CharStrings array. Tek
+		and CPSI do not have this key. Tek has CDevProc that CPSI does
+		not. Assign: Ray
 
 35_all-10  OK	
 
@@ -5324,7 +5328,7 @@ Test	 Status	Comments
 
 35_all-12  DIFF	glyphshow : Different error reporting. Analyzed by Igor. assign: Alex.
 
-35_all-2  OK  	Fixed in rev. 7478. See 32_all-2. - Alex 
+35_all-2  OK  	Fixed as of rev 7583.
 
 35_all-3  OK	Minor differences visually reviewed by RJJ
 
