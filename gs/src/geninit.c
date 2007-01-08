@@ -178,7 +178,6 @@ private void
 wsc(FILE * out, const byte *str, int len)
 {
     int n = 0;
-    const byte *p = str;
     int i;
 
     for (i = 0; i < len; ++i) {
@@ -290,7 +289,7 @@ hex_string_to_binary(FILE *out, FILE *in, bool to_c)
 #define MAX_STR 0xffff	/* longest possible PostScript string token */
     byte *strbuf = (byte *)malloc(MAX_STR);
     byte *q = strbuf;
-    int c, digit;
+    int c;
     bool which = false;
     int len;
     byte prefix[3];
