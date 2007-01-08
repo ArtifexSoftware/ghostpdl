@@ -150,6 +150,10 @@ CPCH=/Fp$(GLOBJDIR)\gs.pch
 CPCH=/YX /Fp$(GLOBJDIR)\gs.pch
 !endif
 
+!ifndef DEBUGSYM
+DEBUGSYM=0
+!endif
+
 !if $(TDEBUG)!=0
 # /Fd designates the directory for the .pdb file.
 # Note that it must be followed by a space.
