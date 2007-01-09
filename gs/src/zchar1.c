@@ -66,7 +66,8 @@
 /* *********************************************************************
  * Make this dynamic via a global (somewhat better than a COMPILE option
  ***********************************************************************/
-#define GS_CHAR_FILL gs_fill
+extern bool CPSI_mode;
+#define GS_CHAR_FILL (CPSI_mode ? gs_eofill : gs_fill)
 
 /* ---------------- Utilities ---------------- */
 

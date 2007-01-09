@@ -43,7 +43,7 @@ private void t1_hinter__reverse_contour(t1_hinter * this, int c)
 {
     int b = this->contour[c];
     int e = this->contour[c + 1] - 1; /* Skip 'close'. */
-    int e2 = (b + e) / 2;
+    int e2 = (b + e + 1) / 2;
     int i;
     t1_pole p;
 
@@ -82,6 +82,9 @@ curve_winding_angle_rec(int k, fixed x0, fixed y0, fixed x1, fixed y1, fixed x2,
     if (k <= 1)
 	return bar_winding_angle(x0, y0, x3, y3);
     else {
+	/* Assuming the trapezoid is not self-intersecting and 
+	   the curve is inside the trapezoid 
+	   due to Type 1 constraints. */
 	double a0 = bar_winding_angle(x0, y0, x1, y1);
 	double a1 = bar_winding_angle(x1, y1, x2, y2);
 	double a2 = bar_winding_angle(x2, y2, x3, y3);
@@ -524,18 +527,20 @@ private bool t1_hinter__contour_intersection(t1_hinter * this, int c0, int c1)
 private void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_contour, int last_contour)
 {
     double area[MAX_NORMALIZING_CONTOURS];
-    int i, j, k = 0, l, m;
+    int i, j, k, l, m;
     double a = 0;
     byte inside[MAX_NORMALIZING_CONTOURS][MAX_NORMALIZING_CONTOURS];
     int nesting[MAX_NORMALIZING_CONTOURS];
     gs_rect bbox[MAX_NORMALIZING_CONTOURS];
     byte isolated[MAX_NORMALIZING_CONTOURS];
+    int nesting_sum;
 
     if (first_contour == last_contour) {
 	/* Don't fix a single contour. */
 	return;
     }
     /* Compute contour bboxes : */
+    k = 0;
     for(i =  first_contour; i <= last_contour; i++) {
 	int b = this->contour[i];
 	int e = this->contour[i + 1] - 1;
@@ -656,7 +661,22 @@ private void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_c
 	}
     } while(m);
     /* Compute nesting numbers : */
+    nesting_sum = 0;
     memset(nesting, 0, sizeof(nesting));
+    for (i = 0; i < k; i++) {
+	for (j = 0; j < k; j++) {
+	    if (inside[i][j]) {
+		nesting[i]++;
+		nesting_sum++;
+	    }
+	}
+    }
+    if (nesting_sum == 0) {
+	/* No nesting contours - don't fix. 
+	   We want to save time from computing contour intersections. */
+	return;
+    }
+    /* Check contour intersections : */
     for (i = 0; i < k; i++) {
 	for (j = 0; j < k; j++) {
 	    if (inside[i][j]) {
@@ -664,7 +684,6 @@ private void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_c
 		    /* Contours intersect - don't fix. */
 		    return;
 		}
-		nesting[i]++;
 	    }
 	}
     }
@@ -681,10 +700,6 @@ void t1_hinter__fix_contour_signs(t1_hinter * this)
 {
     int i;
 
-    if (this->subglyph_count <= 1)  {
-	/* Nothing to adjust. */
-	return;
-    }
     if (this->subglyph_count >= 3) {
 	/* 3 or more subglyphs.
 	   We didn't meet so complex characters with wrong contours signs. 
