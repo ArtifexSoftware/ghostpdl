@@ -386,7 +386,7 @@ Test	 Status	Comments
 		cpsi/09-34-11  missing
 
 09-34-12  DIFF	GS has smooth gradients, Tek hardcopy has dark gray stripe up
-		middle of gradients. GS matches AD7	assign: Dan
+		middle of gradients. GS matches AD7	assign: Raph
 		cpsi/09-34-12  missing
 
 09-34-13  OK	Fixed revs 7159 and 7187.
@@ -396,7 +396,7 @@ Test	 Status	Comments
 		cpsi/09-34-14  missing
 
 09-34-15 DIFF	Mostly matches Tek hardcopy output. GS has smooth gradients, Tek
-		has dark gray stripe in middle of 8th row. GS matched AD7 assign: Dan
+		has dark gray stripe in middle of 8th row. GS matched AD7 assign: Raph
 		cpsi/09-34-15  missing
 
 09-34-16  AOK	GS missing some graphics seen on Tek hardcopy. 
@@ -439,17 +439,17 @@ Test	 Status	Comments
 		cpsi/09-34-19  missing
 
 09-34-2  DIFF	GS has Yellow graphic, Tek shows Red for 'SeparateUnBlue setcolorspace'
-		(right of "1.0" text). Probably RGB vs. CMYK device color  assign: Dan
+		(right of "1.0" text). Probably RGB vs. CMYK device color  assign: Raph
 		NOTE: AD7 and Tek hardcopy output differ in same areas. - RJJ
 		Distiller/Acrobat 7.0 differ on four graphics.  These are the five below
 		the text that says "( /HIVAL 4095 def )".  Distiller/Acrobat shows the
 		first four of these as a grayish shade.  The fifth is a paler shade of
 		gray.  GS shows these as black, gray, burgandy, brown, and red respectively.
 		- ADC. 
-		cps/09-34-2  missing  Assign Dan
+		cps/09-34-2  missing  Assign Raph
 
 09-34-3  DIFF	GS has missing graphic, Tek shows Cyan for 'SeparateUncyan setcolorspace'
-		(right of "1.0" text). Probably RGB vs. CMYK device color  assign: Dan
+		(right of "1.0" text). Probably RGB vs. CMYK device color  assign: Raph
 		NOTE: AD7 and Tek hardcopy output differ in same areas.a - RJJ
 		There are two things happening with this page.  The 'SeparateUncyan'
 		issue is another example of a separation color space which has a
@@ -461,7 +461,7 @@ Test	 Status	Comments
 		The second issue (which is a problem) is a difference in the appearance
 		of the color spaces below the text that says "( /HIVAL 4095 def )" 
 		(Apparently a similar problem as the one seen in 09-34-02). - ADC
-		cpsi/09-34-3  missing  Assign Dan
+		cpsi/09-34-3  missing  Assign Raph
 
 09-34-4  OK	Matches Tek hardcopy output. RJJ
 		cpsi/09-34-4  missing
@@ -476,7 +476,7 @@ Test	 Status	Comments
 		cpsi/09-34-6  missing
 
 09-34-7  DIFF	GS has different 'currentcolor' results and different color graphics
-		Probably RGB vs. CMYK device color  assign: Dan
+		Probably RGB vs. CMYK device color  assign: Raph
 		NOTE: AD7 and Tek hardcopy output differ in same areas. - RJJ
 		Thre are two issues with this page.  The first issue is the colors of
 		of the various graphics on the page.   The page has spot colors.  It
@@ -781,7 +781,7 @@ Test	 Status	Comments
 		I guess something is wrong with WhitePoint in GS,
 		because an assimmetry red|blue must come from it.
 		The assymmetry is observing with CPSI and not wiuth GS.
-		Assign to Dan.
+		Assign to Raph.
 		-
 		Test10:
 		A color mapping problem in GS.
@@ -792,7 +792,7 @@ Test	 Status	Comments
 		and Table specifies the "reverse".
 		So the result must be convex.
 		With GS it looks linear.
-		Assign to Dan.
+		Assign to Raph.
 		-
 		Test11:
 		A problem with color mapping in GS.
@@ -809,7 +809,7 @@ Test	 Status	Comments
 		It appears a linear mapping with precision 1/255.
 		But DecodeLMN is x^2.22222, 
 		so the color mapping must not be linear.
-		Assign to Dan.
+		Assign to Raph.
 
 09-47B-11  DIFF	Test02, Test03 :
                 Analyzed by Igor.
@@ -835,24 +835,24 @@ Test	 Status	Comments
                 Analyzed by Igor.
                 A bad color CMYK=[1 1 1 1] in the test.
                 GPSI and GS differently convert [v v v v] CMYK colors to RGB.
-                Assign to Dan.
+                Assign to Raph.
                 -
                 Test06:
                 Analyzed by Igor.
                 A bad color CMYK=[0.7 0.7 0.7 0.7] in the test.
                 GPSI and GS differently convert [v v v v] CMYK colors to RGB.
-                Assign to Dan.
+                Assign to Raph.
                 -
                 Test11:
                 A color mapping problem.
                 The upper side of the gradient looks a dark red with GS, and a dark blue with CPSI.
                 Not sure who is wrong.
                 Maybe the WhitePoint isn't correctly accounted ?
-                Assign to Dan.
+                Assign to Raph.
                 -
                 Test12:
                 Same as test05.
-                Assign to Dan.
+                Assign to Raph.
 
 09-47B-12  AOK	GS has wrong color Test06 GS not smooth Test07, Test08.
 		NOTE: Tek gets rangecheck error on Test03 Test10, CPSI and GS do not.
@@ -878,7 +878,7 @@ Test	 Status	Comments
 		Briefly analyzed by Igor.
 		Looks similar to 09-47B-10 Test11.
 		To be revised after fixing 09-47B-10 Test11.
-		Assign to Dan.
+		Assign to Raph.
 		-
 		Test10: aok
 		CPSI problem : a non-monotonic color space is rendered as monotonic.
@@ -1033,7 +1033,7 @@ Test	 Status	Comments
 09-47I-3  DIFF	Test01, Test02, Test03, Test04, Test05, Test06, Test07: ok
 		Fixed by rev 7175.
 		-
-		Test11: Same as 09-47B-11 Test05. Assign to Dan.
+		Test11: Same as 09-47B-11 Test05. Assign to Raph.
 
 09-47I-4  OK	Fixed as of rev 7211.
 
@@ -2081,7 +2081,7 @@ Test	 Status	Comments
 
 12-02-17  OK	Minor differences in positions and character shapes - ADC
 
-12-02-18  DIFF	Squares in the top row are darker in GS vs CPSI.  Assign Dan
+12-02-18  DIFF	Squares in the top row are darker in GS vs CPSI.  Assign Raph
 
 12-02-19  OK	Minor differences in positions and character shapes - ADC
 
@@ -2135,7 +2135,7 @@ Test	 Status	Comments
 
 12-05-2  OK	
 
-12-05-3  DIFF	Page is gray in GS.  White in CPSI. - Assign Dan
+12-05-3  DIFF	Page is gray in GS.  White in CPSI. - Assign Raph
 		This "{.75 mul} settransfer erasepage showpage" gives
 		a gray page in GS.
 		
@@ -2153,7 +2153,7 @@ Test	 Status	Comments
 
 12-07A-1  DIFF?	Different blurring in squares in 7th column compared to CPSI.
 		GS blurring matches appearance of Distiller/Acrobat 7.0
-                assign: Dan.
+                assign: Raph.
 
 12-07A-10  OK	Minor differences visually reviewed by RJJ
 
@@ -2172,13 +2172,13 @@ Test	 Status	Comments
 
 12-07A-3  DIFF	Squares are blurred in GS.  No blurring in CPSI.  Distiller/Acrobat
 		7.0 shows blurring similar to GS.
-                assign: Dan
+                assign: Raph
 
 12-07A-4  OK	Minor differences in positions and character shapes - ADC
 
 12-07A-5  DIFF	Page consists of blurred squares.  GS position shifted down slight
 		at the top of the page vs CPSI and Distiller/Acrobat 7.0. - ADC
-                assign: Dan
+                assign: Raph
 
 12-07A-6  OK	Minor differences in positions and character shapes - ADC
 
@@ -2191,25 +2191,25 @@ Test	 Status	Comments
 12-07B-1  OK	Minor differences in positions and character shapes - ADC
 
 12-07B-10  DIFF	Some grays in the top row are lighter in GS versus CPSI
-		(after 7152). - ADC Assign Dan
+		(after 7152). - ADC Assign Raph
 
 12-07B-11  DIFF	Some grays in the top row are lighter in GS versus CPSI
-		(after 7152). - ADC Assign Dan
+		(after 7152). - ADC Assign Raph
 
 12-07B-12  DIFF	Blurred images render a slight position shift relative to CPSI and
-		Distiller/Acrobat 7.0 - ADC assign: Dan.
+		Distiller/Acrobat 7.0 - ADC assign: Raph.
 
 12-07B-13  DIFF	Several differences.  Color squares are missing in GS.  The
 		Distiller/Acrobat 7.0 shows these squares blurred.  They are not
-		in both BS and CPSI. - ADC assign: Dan.
+		in both BS and CPSI. - ADC assign: Raph.
 
 12-07B-14  DIFF	Several differences.  Color squares are missing in GS.  The
 		Distiller/Acrobat 7.0 shows these squares blurred.  They are not
-		in both BS and CPSI. - ADC assign: Dan.
+		in both BS and CPSI. - ADC assign: Raph.
 
 12-07B-15  DIFF	Several differences.  Dark squares are missing in GS.  There are
 		dfferences in the blurring between Distiller/Acrobat 7.0 vs GS
-		and CPSI. - ADC assign: Dan
+		and CPSI. - ADC assign: Raph
 
 12-07B-2  OK	Minor differences in positions and character shapes - ADC
 
@@ -2233,16 +2233,16 @@ Test	 Status	Comments
 12-07C-1  OK	Minor differences in positions and character shapes - ADC
 
 12-07C-10  DIFF	White and black rectangles missing in GS.  Differences between
-		CPSi and Distiller/Acrobat 7.0 - ADC assign Dan.
+		CPSi and Distiller/Acrobat 7.0 - ADC assign Raph.
 
 12-07C-11  DIFF	White and black rectangles missing in GS.  Differences between
-		CPSi and Distiller/Acrobat 7.0 - ADC assign Dan.
+		CPSi and Distiller/Acrobat 7.0 - ADC assign Raph.
 
 12-07C-12  DIFF	White and black rectangles missing in GS.  Differences between
-		CPSi and Distiller/Acrobat 7.0 - ADC assign Dan.
+		CPSi and Distiller/Acrobat 7.0 - ADC assign Raph.
 
 12-07C-13  DIFF	White, black, and cyan rectangles missing in GS.  Differences
-		between CPSi and Distiller/Acrobat 7.0 - ADC assign Dan.
+		between CPSi and Distiller/Acrobat 7.0 - ADC assign Raph.
 
 12-07C-14  OK	Minor differences in positions and character shapes - ADC
 
@@ -2268,7 +2268,7 @@ Test	 Status	Comments
                 Assign: Ray - check against Tek.
 
 12-07C-8  DIFF	GS missing leftmost vertical column of shaded data in the
-		test block at the lower right of the page - ADC.  assign Dan
+		test block at the lower right of the page - ADC.  assign Raph
 
 12-07C-9  OK	Color corrected by rev 7172. Something fixed the error message.
 
@@ -2281,7 +2281,7 @@ Test	 Status	Comments
 12-08A-1  DIFF	Differences in the second and third test pattern in the rightmost
 		column.  GS pattern matches Distiller/Acrobat.  CPSI is different.
 		Adobe shows these a blurred.  Both CPSI and GS are crisp. - ADC
-                assign Dan.
+                assign Raph.
 
 12-08A-2  OK	Minor differences in positions and character shapes - ADC
 
@@ -2289,7 +2289,7 @@ Test	 Status	Comments
 		the same pattern as GS.  Adobe shows the image blurred.  Both
 		CPSI and GS shows a crisp image.  (The page says interpolate
 		true in the upper left corner.) - ADC
-                assign Dan
+                assign Raph
 
 12-08A-4  OK	Color corrected by rev 7172.
 
@@ -2406,9 +2406,9 @@ Test	 Status	Comments
 		differences in shading gradients. - ADC
 
 12-14A-11  DIFF	Analyzed by Igor.
-		Test03: diff - same as 09-47B-11 Test05. Assign: Dan.
+		Test03: diff - same as 09-47B-11 Test05. Assign: Raph.
 		-
-		Test04: Similar to 09-47B-10 test11. assign: Dan.
+		Test04: Similar to 09-47B-10 test11. assign: Raph.
 		-
 		Test05, Test12: aok
 		A bug in the test : insufficient data.
@@ -2423,20 +2423,20 @@ Test	 Status	Comments
 		black black black   --- looks correct.
 		-
 		Test08, Test09: ?
-		same as 09-47B-11 Test05. Assign: Dan.
+		same as 09-47B-11 Test05. Assign: Raph.
 		Please pay attention to the vertical diagonal of the rhombus.
 		With CPSI it looks as a linear gradient, and does not with GS.
 		Looks that CMYK colors [v v v v] differently convert to RGB.
 		Not sure who is wrong, but CPSI looks more pleasant.
 
 12-14A-12  DIFF	Test03, 04, 10,11 :
-		same as 09-47B-11 Test05. Assign: Dan.
+		same as 09-47B-11 Test05. Assign: Raph.
 		-
 		Test07: aok - same as 12-14A-11 Test05.
 
 12-14A-13  DIFF	Test02:aok -  same as 12-14A-11 Test05.
 		-
-		Test03: likely same as 09-47B-10 Test11. assign: Dan.
+		Test03: likely same as 09-47B-10 Test11. assign: Raph.
 		-
 		Test04:
 		GS problem with non-contigous function.
@@ -2476,7 +2476,7 @@ Test	 Status	Comments
 		.
 		Assign to Ray to deside whether we should do this change.
 		-
-		Test05, 06, 07, 08, 12 : same as 09-47B-11 Test05. Assign: Dan.
+		Test05, 06, 07, 08, 12 : same as 09-47B-11 Test05. Assign: Raph.
 		-
 		Test09: aok - same as 09-47B-11 Test04.
                 Likely CPSI problem.
@@ -2528,7 +2528,7 @@ Test	 Status	Comments
 		GS appears tolerant to it.
 		IMO it should be aok.
 		Passing to Dan for confirmation.
-		assign: Dan.
+		assign: Raph.
 
 12-14A-9  OK	Minor differences in positions and character shapes and minor
 		differences in shading gradients. - ADC
@@ -3595,9 +3595,9 @@ Test	 Status	Comments
 
 18-01B-1  DIFF	The word "FORM" in the magenta oval throughout the test
                 is white with cpsi and gray with gs.  (repeats). - color saturation problem.
-                assign Dan.
+                assign Raph.
 
-18-01B-2  DIFF	(18-01B-1) lower right graphic cpsi has red lines where gs has white. (assign Dan).
+18-01B-2  DIFF	(18-01B-1) lower right graphic cpsi has red lines where gs has white. (assign Raph).
 		The locations of squares are shifted in this pattern.  Distiller/Acrobat
 		7.0 reports error 'incorrect number of values for setcolor operator'.
 		This is probaly related to the problem for 12-01-5.  See Jan's
@@ -4181,11 +4181,9 @@ Test	 Status	Comments
 
 23-12H-1  OK	
 
-23-12I-1  DIFF	GS get 'stackunderflow' instead of 'typecheck' on 3rd and 4th line.
-		GS shows '--.writeobjects--' instead of '--writeobjects--' on
-		both ILLEGAL 8 and 9. assign: Peter
+23-12I-1  OK.	Fix from Peter
 
-23-12I-2  DIFF	Same as 23-12I-1.
+23-12I-2  OK.   Fix from Peter
 
 23-12J-1  OK	
 
@@ -4199,21 +4197,17 @@ Test	 Status	Comments
 
 23-12K-2  DIFF	GS has 'T' where CPSI has 'F' on one of the DCTEncode. Assign: Peter
 
-23-12L-1  DIFF	GS has length 0 for Predictor 11 FlateEncode/Decode filters. Assign: Peter
+23-12L-1  AOK	same as 23-12A-3
 
-23-12M-1  DIFF	GS has much different filter byte counts FlateEncode/Decode and
-		LZW filters. Assign: Peter
+23-12M-1  AOK	same as 23-12A-3
 
-23-12N-1  DIFF	GS has much different filter byte counts FlateEncode/Decode and
-		LZW filters. (similar to 23-12M-1) Assign: Peter
+23-12N-1  AOK	same as 23-12A-3
 
-23-12O-1  DIFF	GS has much different filter byte counts FlateEncode/Decode (similar
-		to 23-12M-1) Assign: Peter
+23-12O-1  AOK	same as 23-12A-3
 
 23-12O-2  OK	Fixed by rev 7489.
 
-23-12P-1  DIFF	GS has much different filter byte counts FlateEncode/Decode. Also
-		GS gets 'rangecheck' on Colors_18 and Colors_53 tests. Assign: Peter
+23-12P-1  AOK	same as 23-12A-3
 
 23-12P-2  OK	Fixed by rev 7489.
 
