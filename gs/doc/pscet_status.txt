@@ -4220,8 +4220,6 @@ Test	 Status	Comments
 23-12T-1  OK	
 
 23-12U-1  OK	Fixed as of r7500.
-		Colors_53. Similar to 23-12P-[1-2]. LZW_Colors all different -- GS
-		has info, CPSI and Tek are blank. Assign: Peter.
 
 23-12V-1  OK	Fixed as of r7500.
 
