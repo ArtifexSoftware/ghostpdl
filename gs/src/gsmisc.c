@@ -1376,10 +1376,13 @@ gx_intersect_small_bars(fixed q0x, fixed q0y, fixed q1x, fixed q1y, fixed q2x, f
 		    return false;
 		}
 	    }
-	    if (dy1 > 0 && iy >= dy1)
-		return false; /* Outside the bar 1. */
-	    if (dy1 < 0 && iy <= dy1)
-		return false; /* Outside the bar 1. */
+	    if (dy1 > 0) {
+		if (iy < 0 || iy >= dy1)
+		    return false; /* Outside the bar 1. */
+	    } else {
+		if (iy > 0 || iy <= dy1)
+		    return false; /* Outside the bar 1. */
+	    }
 	    if (dy2 < dy3) {
 		if (iy <= dy2 || iy >= dy3)
 		    return false; /* Outside the bar 2. */

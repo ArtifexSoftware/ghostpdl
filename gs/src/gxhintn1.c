@@ -339,7 +339,7 @@ private bool t1_hinter__intersect_curve_bar(t1_hinter * this, int i, int j)
     fixed x2 = this->pole[i + 2].gx - X0;
     fixed y2 = this->pole[i + 2].gy - Y0;
     fixed x3 = this->pole[i + 3].gx - X0;
-    fixed y3 = this->pole[i + 4].gy - Y0;
+    fixed y3 = this->pole[i + 3].gy - Y0;
     int k = curve_log2_samples(0, 0, x1, y1, x2, y2, x3, y3);
     int m = bar_samples(X1, Y1);
 
@@ -494,9 +494,9 @@ private bool t1_hinter__contour_intersection(t1_hinter * this, int c0, int c1)
 	if (this->pole[i + 1].type != offcurve) {  /* line or close. */
 	    for (j = b1; j < e1;) {
 		if (this->pole[j + 1].type != offcurve) {  /* line or close. */
-		    j++;
 		    if (t1_hinter__intersect_bar_bar(this, i, j))
 			return true;
+		    j++;
 		} else {
 		    if (t1_hinter__intersect_curve_bar(this, j, i))
 			return true;
@@ -522,7 +522,7 @@ private bool t1_hinter__contour_intersection(t1_hinter * this, int c0, int c1)
     return false;
 }
 
-#define MAX_NORMALIZING_CONTOURS 4
+#define MAX_NORMALIZING_CONTOURS 5
 
 private void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_contour, int last_contour)
 {
@@ -710,7 +710,7 @@ void t1_hinter__fix_contour_signs(t1_hinter * this)
 	int first_contour = this->subglyph[i - 1];
 	int last_contour  = this->subglyph[i] - 1;
 
-	if (last_contour - first_contour >= MAX_NORMALIZING_CONTOURS - 1) { 
+	if (last_contour - first_contour >= MAX_NORMALIZING_CONTOURS) { 
 	    /* 4 or more contours.
 	       We didn't meet so complex characters with wrong contours signs. 
 	       Skip it for saving the CPU time. */
