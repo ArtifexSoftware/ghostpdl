@@ -201,5 +201,7 @@ pattern (texture) may not work correctly using the default
 "UseCIEColor" mode.  To print these rectangles correctly run the
 interpreter with -J"@PJL SET USECIECOLOR=OFF" as a workaround.
 
-
-
+C705.BIN page 36. Extra blank page.  We assume this is a bug in the HP
+firmware.  In full page passthrough mode the blank page is suppressed,
+but extracting the relevant embedded pcl produces a blank page on the
+Color Laserjet.

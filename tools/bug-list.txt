@@ -1,6 +1,6 @@
 0001 AOK C420 p 9 PatternBrushError Update - (useciecolor = no).
 0016 AOK C703 p 1 ColorError - (useciecolor = no).
-0025 OPEN C705 p 36  extra blank page 38.
+0025 NF C705 p 36  see pxl/pxcet.txt
 0035 NF C206 p 2 Error Message Difference.
 0041 OPEN C316 HP doesn't print zero length dots in dashed lines 
 0042 NF C318 p 33 see pxl/pxcet.txt.
