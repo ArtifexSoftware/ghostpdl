@@ -414,7 +414,13 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
   if ( osp >= osbot ) osp--;\
   else ref_stack_pop(&o_stack, 1)
     int max_name_ctype =
-    (recognize_btokens()? ctype_name : ctype_btoken);
+	(recognize_btokens()? ctype_name : ctype_btoken);
+    /*
+     * The following is a hack so that ^D will be self-delimiting in files
+     * (to compensate for bugs in some PostScript-generating applications)
+     * but not in strings (to match CPSI on the CET).
+     */
+    int ctrld = (pstate->s_options & SCAN_FROM_STRING ? 0x04 : 0xffff);
 
 #define scan_sign(sign, ptr)\
   switch ( *ptr ) {\
@@ -503,7 +509,9 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	case char_EOL:
 	case char_NULL:
 	    goto top;
-        case 0x4:	/* ^D is a self-delimiting token */
+	case 0x04:		/* see ctrld above */
+	    if (c == ctrld)	/* treat as ordinary name char */
+		goto begin_name;
 	case '[':
 	case ']':
 	    s1[0] = (byte) c;
@@ -709,6 +717,8 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		     * that handled these specially.)
 		     */
 		case ctype_other:
+		    if (c == ctrld) /* see above */
+			goto do_name;
 		    da.base = da.limit = daptr = 0;
 		    da.is_dynamic = false;
 		    goto nx;
@@ -956,10 +966,11 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	case 'z':
 	case '|':
 	case '~':
+	  begin_name:
 	    /* Common code for scanning a name. */
 	    /* try_number and name_type are already set. */
-	    /* We know c has ctype_name (or maybe ctype_btoken) */
-	    /* or is a digit. */
+	    /* We know c has ctype_name (or maybe ctype_btoken, */
+	    /* or is ^D) or is a digit. */
 	    name_type = 0;
 	    try_number = false;
 	  do_name:
@@ -975,7 +986,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		    if (sptr >= endp1)	/* stop 1 early! */
 			goto dyn_name;
 		}
-		while (decoder[*++sptr] <= max_name_ctype);	/* digit or name */
+		while (decoder[*++sptr] <= max_name_ctype || *sptr == ctrld);	/* digit or name */
 	    }
 	    /* Name ended within the buffer. */
 	    daptr = (byte *) sptr;
@@ -1000,7 +1011,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	    /* Enter here to continue scanning a name. */
 	    /* daptr must be set. */
 	  cont_name:scan_begin_inline();
-	    while (decoder[c = scan_getc()] <= max_name_ctype) {
+	    while (decoder[c = scan_getc()] <= max_name_ctype || c == ctrld) {
 		if (daptr == da.limit) {
 		    retcode = dynamic_grow(&da, daptr,
 					   name_max_string);
@@ -1017,8 +1028,10 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		*daptr++ = c;
 	    }
 	  nx:switch (decoder[c]) {
-		case ctype_btoken:
 		case ctype_other:
+		    if (c == ctrld) /* see above */
+			break;
+		case ctype_btoken:
 		    scan_putback();
 		    break;
 		case ctype_space:

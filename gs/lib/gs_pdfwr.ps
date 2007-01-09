@@ -360,7 +360,8 @@
     % no way to do this.  The pdf_scan_token procedure in the C code of
     % the pdfwrite driver is currently the only place that recognizes
     % this convention.
-    dup .namestring (\000\011\012\014\015 %()/<>[]{}) .stringbreak null ne {
+    % Note that \004 may be self-delimiting in gs, but is not in standard PS.
+    dup .namestring (\000\004\011\012\014\015 %()/<>[]{}) .stringbreak null ne {
       dup .namestring (\000) .stringbreak null ne {
 	/rangecheck signalerror
       } if
