@@ -55,6 +55,7 @@ orig_sqrt(double x)
 #include "gconfigv.h"		/* for USE_ASM */
 #include "gxfarith.h"
 #include "gxfixed.h"
+#include "stdint_.h"
 
 /* ------ Redirected stdout and stderr  ------ */
 
@@ -1284,4 +1285,114 @@ gs_atan2_degrees(double y, double x, double *pangle)
 	*pangle = result;
     }
     return 0;
+}
+
+/*
+ * Define a function for finding intersection of small bars.
+ * Coordinates must be so small that their cubes fit into 60 bits.
+ * This function doesn't check intersections at end of bars,
+ * so  the caller must care of them on necessity.
+ * Returns : *ry is the Y-coordinate of the intersection
+ * truncated to 'fixed'; *ey is 1 iff the precise Y coordinate of
+ * the intersection is greater than *ry (used by the shading algorithm).
+ */
+bool 
+gx_intersect_small_bars(fixed q0x, fixed q0y, fixed q1x, fixed q1y, fixed q2x, fixed q2y, 
+			fixed q3x, fixed q3y, fixed *ry, fixed *ey)
+{
+    fixed dx1 = q1x - q0x, dy1 = q1y - q0y;
+    fixed dx2 = q2x - q0x, dy2 = q2y - q0y;
+    fixed dx3 = q3x - q0x, dy3 = q3y - q0y;
+
+    int64_t vp2a, vp2b, vp3a, vp3b;
+    int s2, s3;
+
+    if (dx1 == 0 && dy1 == 0)
+	return false; /* Zero length bars are out of interest. */
+    if (dx2 == 0 && dy2 == 0)
+	return false; /* Contacting ends are out of interest. */
+    if (dx3 == 0 && dy3 == 0)
+	return false; /* Contacting ends are out of interest. */
+    if (dx2 == dx1 && dy2 == dy1)
+	return false; /* Contacting ends are out of interest. */
+    if (dx3 == dx1 && dy3 == dy1)
+	return false; /* Contacting ends are out of interest. */
+    if (dx2 == dx3 && dy2 == dy3)
+	return false; /* Zero length bars are out of interest. */
+    vp2a = (int64_t)dx1 * dy2;
+    vp2b = (int64_t)dy1 * dx2; 
+    /* vp2 = vp2a - vp2b; It can overflow int64_t, but we only need the sign. */
+    if (vp2a > vp2b)
+	s2 = 1;
+    else if (vp2a < vp2b)
+	s2 = -1;
+    else 
+	s2 = 0;
+    vp3a = (int64_t)dx1 * dy3;
+    vp3b = (int64_t)dy1 * dx3; 
+    /* vp3 = vp3a - vp3b; It can overflow int64_t, but we only need the sign. */
+    if (vp3a > vp3b)
+	s3 = 1;
+    else if (vp3a < vp3b)
+	s3 = -1;
+    else 
+	s3 = 0;
+    if (s2 == 0) {
+	if (s3 == 0)
+	    return false; /* Collinear bars - out of interest. */
+	if (0 <= dx2 && dx2 <= dx1 && 0 <= dy2 && dy2 <= dy1) {
+	    /* The start of the bar 2 is in the bar 1. */
+	    *ry = q2y;
+	    *ey = 0;
+	    return true;
+	}
+    } else if (s3 == 0) {
+	if (0 <= dx3 && dx3 <= dx1 && 0 <= dy3 && dy3 <= dy1) {
+	    /* The end of the bar 2 is in the bar 1. */
+	    *ry = q3y;
+	    *ey = 0;
+	    return true;
+	}
+    } else if (s2 * s3 < 0) {
+	/* The intersection definitely exists, so the determinant isn't zero.  */
+	fixed d23x = dx3 - dx2, d23y = dy3 - dy2;
+	int64_t det = (int64_t)dx1 * d23y - (int64_t)dy1 * d23x;
+	int64_t mul = (int64_t)dx2 * d23y - (int64_t)dy2 * d23x;
+	{
+	    /* Assuming small bars : cubes of coordinates must fit into int64_t.
+	       curve_samples must provide that.  */
+	    int64_t num = dy1 * mul, iiy;
+	    fixed iy;
+	    fixed pry, pey;
+
+	    {	/* Likely when called form wedge_trap_decompose or constant_color_quadrangle,
+		   we always have det > 0 && num >= 0, but we check here for a safety reason. */
+		if (det < 0)
+		    num = -num, det = -det;
+		iiy = (num >= 0 ? num / det : (num - det + 1) / det);
+		iy = (fixed)iiy;
+		if (iy != iiy) {
+		    /* If it is inside the bars, it must fit into fixed. */
+		    return false;
+		}
+	    }
+	    if (dy1 > 0 && iy >= dy1)
+		return false; /* Outside the bar 1. */
+	    if (dy1 < 0 && iy <= dy1)
+		return false; /* Outside the bar 1. */
+	    if (dy2 < dy3) {
+		if (iy <= dy2 || iy >= dy3)
+		    return false; /* Outside the bar 2. */
+	    } else {
+		if (iy >= dy2 || iy <= dy3)
+		    return false; /* Outside the bar 2. */
+	    }
+	    pry = q0y + (fixed)iy;
+	    pey = (iy * det < num ? 1 : 0);
+	    *ry = pry;
+	    *ey = pey;
+	}
+	return true;
+    }
+    return false;
 }

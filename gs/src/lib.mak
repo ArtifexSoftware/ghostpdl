@@ -252,7 +252,7 @@ $(GLOBJ)gsfemu.$(OBJ) : $(GLSRC)gsfemu.c $(AK) $(std_h)
 $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(GXERR)\
  $(gconfigv_h) $(std_h) $(vmsmath_h)\
  $(ctype__h) $(malloc__h) $(math__h) $(memory__h) $(string__h)\
- $(gpcheck_h) $(gserror_h) $(gxfarith_h) $(gxfixed_h)
+ $(gpcheck_h) $(gserror_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h)
 	$(GLCC) $(GLO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
 
 $(GLOBJ)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(GXERR)\

@@ -168,6 +168,19 @@ fixed fixed_mult_quo(fixed A, fixed B, fixed C);
  */
 
 /*
+ * Define a function for finding intersection of small bars.
+ * Coordinates must be so small that their cubes fit into 60 bits.
+ * This function doesn't check intersections at end of bars,
+ * so  the caller must care of them on necessity.
+ * Returns : *ry is the Y-coordinate of the intersection
+ * truncated to 'fixed'; *ey is 1 iff the precise Y coordinate of
+ * the intersection is greater than *ry (used by the shading algorithm).
+ */
+bool 
+gx_intersect_small_bars(fixed q0x, fixed q0y, fixed q1x, fixed q1y, fixed q2x, fixed q2y, 
+			fixed q3x, fixed q3y, fixed *ry, fixed *ey);
+
+/*
  * The macros all use R for the (fixed) result, FB for the second (float)
  * operand, and dtemp for a temporary double variable.  The work is divided
  * between the two macros of each set in order to avoid bogus "possibly

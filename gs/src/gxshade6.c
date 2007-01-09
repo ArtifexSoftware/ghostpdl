@@ -781,104 +781,11 @@ curve_samples(patch_fill_state_t *pfs,
     return 1 << k;
 }
 
-private bool 
+private inline bool
 intersection_of_small_bars(const gs_fixed_point q[4], int i0, int i1, int i2, int i3, fixed *ry, fixed *ey)
 {
     /* This function is only used with QUADRANGLES. */
-    fixed dx1 = q[i1].x - q[i0].x, dy1 = q[i1].y - q[i0].y;
-    fixed dx2 = q[i2].x - q[i0].x, dy2 = q[i2].y - q[i0].y;
-    fixed dx3 = q[i3].x - q[i0].x, dy3 = q[i3].y - q[i0].y;
-    int64_t vp2a, vp2b, vp3a, vp3b;
-    int s2, s3;
-
-    if (dx1 == 0 && dy1 == 0)
-	return false; /* Zero length bars are out of interest. */
-    if (dx2 == 0 && dy2 == 0)
-	return false; /* Contacting ends are out of interest. */
-    if (dx3 == 0 && dy3 == 0)
-	return false; /* Contacting ends are out of interest. */
-    if (dx2 == dx1 && dy2 == dy1)
-	return false; /* Contacting ends are out of interest. */
-    if (dx3 == dx1 && dy3 == dy1)
-	return false; /* Contacting ends are out of interest. */
-    if (dx2 == dx3 && dy2 == dy3)
-	return false; /* Zero length bars are out of interest. */
-    vp2a = (int64_t)dx1 * dy2;
-    vp2b = (int64_t)dy1 * dx2; 
-    /* vp2 = vp2a - vp2b; It can overflow int64_t, but we only need the sign. */
-    if (vp2a > vp2b)
-	s2 = 1;
-    else if (vp2a < vp2b)
-	s2 = -1;
-    else 
-	s2 = 0;
-    vp3a = (int64_t)dx1 * dy3;
-    vp3b = (int64_t)dy1 * dx3; 
-    /* vp3 = vp3a - vp3b; It can overflow int64_t, but we only need the sign. */
-    if (vp3a > vp3b)
-	s3 = 1;
-    else if (vp3a < vp3b)
-	s3 = -1;
-    else 
-	s3 = 0;
-    if (s2 == 0) {
-	if (s3 == 0)
-	    return false; /* Collinear bars - out of interest. */
-	if (0 <= dx2 && dx2 <= dx1 && 0 <= dy2 && dy2 <= dy1) {
-	    /* The start of the bar 2 is in the bar 1. */
-	    *ry = q[i2].y;
-	    *ey = 0;
-	    return true;
-	}
-    } else if (s3 == 0) {
-	if (0 <= dx3 && dx3 <= dx1 && 0 <= dy3 && dy3 <= dy1) {
-	    /* The end of the bar 2 is in the bar 1. */
-	    *ry = q[i3].y;
-	    *ey = 0;
-	    return true;
-	}
-    } else if (s2 * s3 < 0) {
-	/* The intersection definitely exists, so the determinant isn't zero.  */
-	fixed d23x = dx3 - dx2, d23y = dy3 - dy2;
-	int64_t det = (int64_t)dx1 * d23y - (int64_t)dy1 * d23x;
-	int64_t mul = (int64_t)dx2 * d23y - (int64_t)dy2 * d23x;
-	{
-	    /* Assuming small bars : cubes of coordinates must fit into int64_t.
-	       curve_samples must provide that.  */
-	    int64_t num = dy1 * mul, iiy;
-	    fixed iy;
-	    fixed pry, pey;
-
-	    {	/* Likely when called form wedge_trap_decompose or constant_color_quadrangle,
-		   we always have det > 0 && num >= 0, but we check here for a safety reason. */
-		if (det < 0)
-		    num = -num, det = -det;
-		iiy = (num >= 0 ? num / det : (num - det + 1) / det);
-		iy = (fixed)iiy;
-		if (iy != iiy) {
-		    /* If it is inside the bars, it must fit into fixed. */
-		    return false;
-		}
-	    }
-	    if (dy1 > 0 && iy >= dy1)
-		return false; /* Outside the bar 1. */
-	    if (dy1 < 0 && iy <= dy1)
-		return false; /* Outside the bar 1. */
-	    if (dy2 < dy3) {
-		if (iy <= dy2 || iy >= dy3)
-		    return false; /* Outside the bar 2. */
-	    } else {
-		if (iy >= dy2 || iy <= dy3)
-		    return false; /* Outside the bar 2. */
-	    }
-	    pry = q[i0].y + (fixed)iy;
-	    pey = (iy * det < num ? 1 : 0);
-	    *ry = pry;
-	    *ey = pey;
-	}
-	return true;
-    }
-    return false;
+    return gx_intersect_small_bars(q[i0].x, q[i0].y, q[i1].x, q[i1].y, q[i2].x, q[i2].y, q[i3].x, q[i3].y, ry, ey);
 }
 
 private inline void
