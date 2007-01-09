@@ -2977,35 +2977,6 @@ private int t1_hinter__add_trailing_moveto(t1_hinter * this)
     return t1_hinter__rmoveto(this, gx - this->cx, gy - this->cy);
 }
 
-private void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_contour, int last_contour)
-{
-    /* fixme: todo. */
-}
-
-private void t1_hinter__fix_contour_signs(t1_hinter * this)
-{
-    int i;
-
-    if (this->subglyph_count >= 3) {
-	/* 3 or more subglyphs.
-	   We didn't meet so complex characters with wrong contours signs. 
-	   Skip it for saving the CPU time. */
-	return;
-    }
-    for (i = 1; i < this->subglyph_count; i++) {
-	int first_contour = this->subglyph[i - 1];
-	int last_contour  = this->subglyph[i] - 1;
-
-	if (last_contour - last_contour >= 3) { 
-	    /* 4 or more contours.
-	       We didn't meet so complex characters with wrong contours signs. 
-	       Skip it for saving the CPU time. */
-	    continue;
-	}
-	t1_hinter__fix_subglyph_contour_signs(this, first_contour, last_contour);
-    }
-}
-
 int t1_hinter__endglyph(t1_hinter * this)
 {   int code = 0;
 
@@ -3047,19 +3018,21 @@ int t1_hinter__endglyph(t1_hinter * this)
         t1_hinter__interpolate_other_poles(this);
         t1_hinter__paint_glyph(this, true);
     }
-    if (vd_enabled) {
-        double_matrix m;
-
-        fraction_matrix__to_double(&this->ctmi, &m);
-        vd_set_scaleXY(vd_get_scale_x * m.xx, vd_get_scale_y * m.yy);
-        vd_set_origin(this->orig_dx, this->orig_dy);
-        /*  fixme : general transform requires changes to vdtrace.
-	    Current implementation paints exported rotated glyph in wrong coordinates.
-	*/
-    }
     if (this->pole_count) {
-	if (this->fix_contour_sign)
+	if (this->fix_contour_sign) {
 	    t1_hinter__fix_contour_signs(this);
+	    t1_hinter__paint_glyph(this, true);
+	}
+	if (vd_enabled) {
+	    double_matrix m;
+
+	    fraction_matrix__to_double(&this->ctmi, &m);
+	    vd_set_scaleXY(vd_get_scale_x * m.xx, vd_get_scale_y * m.yy);
+	    vd_set_origin(this->orig_dx, this->orig_dy);
+	    /*  fixme : general transform requires changes to vdtrace.
+		Current implementation paints exported rotated glyph in wrong coordinates.
+	    */
+	}
 	code = t1_hinter__export(this);
     }
 exit:

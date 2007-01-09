@@ -2065,7 +2065,7 @@ $(GLOBJ)gxpcmap.$(OBJ) : $(GLSRC)gxpcmap.c $(GXERR) $(math__h) $(memory__h)\
 # ---------------- PostScript Type 1 (and Type 4) fonts ---------------- #
 
 type1lib_=$(GLOBJ)gxtype1.$(OBJ)\
- $(GLOBJ)gxhintn.$(OBJ) $(GLOBJ)gscrypt1.$(OBJ) $(GLOBJ)gxchrout.$(OBJ)
+ $(GLOBJ)gxhintn.$(OBJ) $(GLOBJ)gxhintn1.$(OBJ) $(GLOBJ)gscrypt1.$(OBJ) $(GLOBJ)gxchrout.$(OBJ)
 
 gscrypt1_h=$(GLSRC)gscrypt1.h
 gstype1_h=$(GLSRC)gstype1.h
@@ -2080,10 +2080,17 @@ $(GLOBJ)gxtype1.$(OBJ) : $(GLSRC)gxtype1.c $(GXERR) $(math__h)\
 	$(GLCC) $(GLO_)gxtype1.$(OBJ) $(C_) $(GLSRC)gxtype1.c
 
 $(GLOBJ)gxhintn.$(OBJ) : $(GLSRC)gxhintn.c $(GXERR)\
+ $(memory__h) $(math__h)\
  $(gxfixed_h) $(gxarith_h) $(gstypes_h) $(gxmatrix_h)\
  $(gxpath_h) $(gzpath_h) $(gxhintn_h) $(gxfont_h) $(gxfont1_h) $(gxtype1_h)\
  $(vdtrace_h)
 	$(GLCC) $(GLO_)gxhintn.$(OBJ) $(C_) $(GLSRC)gxhintn.c
+
+$(GLOBJ)gxhintn1.$(OBJ) : $(GLSRC)gxhintn1.c $(GXERR)\
+ $(memory__h) $(math__h)\
+ $(gxfixed_h) $(gxarith_h) $(gstypes_h) $(gxmatrix_h)\
+ $(gzpath_h) $(gxhintn_h) $(vdtrace_h)
+	$(GLCC) $(GLO_)gxhintn1.$(OBJ) $(C_) $(GLSRC)gxhintn1.c
 
 # CharString and eexec encryption
 
