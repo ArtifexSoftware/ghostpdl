@@ -73,6 +73,6 @@ int sdecode_number(const byte *, int, ref *);
 int sdecodeshort(const byte *, int);
 uint sdecodeushort(const byte *, int);
 long sdecodelong(const byte *, int);
-float sdecodefloat(const byte *, int);
+int sdecode_float(const byte *, int, float *);
 
 #endif /* ibnum_INCLUDED */

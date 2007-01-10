@@ -194,8 +194,8 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 		    size = sdecodeushort(p + 2, num_format);
 		    hsize = 4;
 		}
-		if (size < hsize)
-		    return_error(e_syntaxerror);
+		if (size < hsize || (size - hsize) >> 3 < top_size)
+		    return_error(e_syntaxerror); /* size too small */
 		/*
 		 * Preallocate an array large enough for the worst case,
 		 * namely, all objects and no strings.  Note that we must
@@ -360,9 +360,10 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 private int
 scan_bin_get_name(const gs_memory_t *mem, const ref *pnames /*t_array*/, int index, ref *pref)
 {
-    if (pnames == 0)
-	return_error(e_rangecheck);
-    return array_get(mem, pnames, (long)index, pref);
+    /* Convert all errors to e_undefined to match Adobe. */
+    if (pnames == 0 || array_get(mem, pnames, (long)index, pref) < 0)
+	return_error(e_undefined);
+    return 0;
 }
 
 /* Continue collecting a binary string. */
@@ -468,32 +469,45 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 	if (p[2] != 0) /* reserved, must be 0 */
 	    return_error(e_syntaxerror);
 	attrs = (p[1] & 128 ? a_executable : 0);
+	/*
+	 * We always decode all 8 bytes of the object, so we can signal
+	 * syntaxerror if any unused field is non-zero (per PLRM).
+	 */
+  	osize = sdecodeushort(p + 3, num_format);
+	value = sdecodelong(p + 5, num_format);
 	switch (p[1] & 0x7f) {
 	    case BS_TYPE_NULL:
+		if (osize | value) /* unused */
+		    return_error(e_syntaxerror);
 		make_null(op);
 		break;
 	    case BS_TYPE_INTEGER:
-		make_int(op, sdecodelong(p + 5, num_format));
+		if (osize)	/* unused */
+		    return_error(e_syntaxerror);
+		make_int(op, value);
 		break;
 	    case BS_TYPE_REAL:{
 		    float vreal;
 
-		    osize = sdecodeushort(p + 3, num_format);
 		    if (osize != 0) {	/* fixed-point number */
-			value = sdecodelong(p + 5, num_format);
+			if (osize > 31)
+			    return_error(e_syntaxerror);
 			/* ldexp requires a signed 2nd argument.... */
 			vreal = (float)ldexp((double)value, -(int)osize);
 		    } else {
-			vreal = sdecodefloat(p + 5, num_format);
+			code = sdecode_float(p + 5, num_format, &vreal);
+			if (code < 0)
+			    return code;
 		    }
 		    make_real(op, vreal);
 		    break;
 		}
 	    case BS_TYPE_BOOLEAN:
-		make_bool(op, sdecodelong(p + 5, num_format) != 0);
+		if (osize)	/* unused */
+		    return_error(e_syntaxerror);
+		make_bool(op, value != 0);
 		break;
 	    case BS_TYPE_STRING:
-		osize = sdecodeushort(p + 3, num_format);
 		attrs |= a_all;
 	      str:
 		if (osize == 0) {
@@ -502,7 +516,6 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		    make_empty_string(op, attrs);
 		    break;
 		}
-		value = sdecodelong(p + 5, num_format);
 		if (value < max_array_index * SIZEOF_BIN_SEQ_OBJ ||
 		    value + osize > size
 		    )
@@ -533,8 +546,6 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		attrs |= a_readonly;	/* mark as executable for later */
 		/* falls through */
 	    case BS_TYPE_NAME:
-		osize = sdecodeushort(p + 3, num_format);
-		value = sdecodelong(p + 5, num_format);
 		switch (osize) {
 		    case 0:
 			if (user_names_p == NULL)
@@ -555,10 +566,8 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		}
 		break;
 	    case BS_TYPE_ARRAY:
-		osize = sdecodeushort(p + 3, num_format);
 		atype = t_array;
 	      arr:
-		value = sdecodelong(p + 5, num_format);
 		if (value + osize > min_string_index ||
 		    value & (SIZEOF_BIN_SEQ_OBJ - 1)
 		    )
@@ -574,12 +583,13 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		}
 		break;
 	    case BS_TYPE_DICTIONARY:	/* EXTENSION */
-		osize = sdecodeushort(p + 3, num_format);
 		if ((osize & 1) != 0 && osize != 1)
 		    return_error(e_syntaxerror);
 		atype = t_mixedarray;	/* mark as dictionary */
 		goto arr;
 	    case BS_TYPE_MARK:
+		if (osize | value) /* unused */
+		    return_error(e_syntaxerror);
 		make_mark(op);
 		break;
 	    default:
