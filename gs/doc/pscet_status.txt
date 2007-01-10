@@ -2783,11 +2783,11 @@ Test	 Status	Comments
 
 13-01-6  OK	Minor differences visually reviewed by HAS
 
-13-01-7  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
+13-01-7  DIFF	Same as 13-20-6 - strokepath - Assign: Igor.
 
 13-02-1  OK	Minor differences visually reviewed by RJJ
 
-13-02-10  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
+13-02-10  DIFF	Same as 13-20-6 - strokepath - Assign: Igor.
 
 13-02-2  OK	Minor differences visually reviewed by RJJ
 
@@ -2886,13 +2886,13 @@ Test	 Status	Comments
 
 13-10-8  OK	Minor differences visually reviewed by HAS. Color corrected by rev 7172.
 
-13-10-9  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
+13-10-9  DIFF	Same as 13-20-6 - strokepath - Assign: Igor.
 
 13-11-1  OK	
 
 13-12-1  OK	
 
-13-12-10  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
+13-12-10  DIFF	Same as 13-20-6 - strokepath - Assign: Igor.
 
 13-12-2  OK	
 
@@ -2973,7 +2973,7 @@ Test	 Status	Comments
                 a number of operatord. IMHO this can be AOK
                 assign Raph
 
-13-16-9  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
+13-16-9  DIFF	Same as 13-20-6 - strokepath - Assign: Igor.
 
 13-17-1  OK	Corrected by 7152 and 7162.  ADC
 
@@ -2989,13 +2989,13 @@ Test	 Status	Comments
 
 13-17-7  OK	Minor differences in positions and character shapes - ADC
 
-13-17-8  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
+13-17-8  DIFF	Same as 13-20-6 - strokepath - Assign: Igor.
 
 13-18-1  OK
 
 13-18-10  OK	Minor differences in positions and character shapes - ADC
 
-13-18-11  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
+13-18-11  DIFF	Same as 13-20-6 - strokepath - Assign: Igor.
 
 13-18-2  OK
 
@@ -3025,7 +3025,7 @@ Test	 Status	Comments
 
 13-19-6  OK	Minor differences in positions and character shapes - ADC
 
-13-19-7  DIFF	Same as 13-20-6 - strokepath - Assigned to Ray.
+13-19-7  DIFF	Same as 13-20-6 - strokepath - Assign: Igor.
 
 13-20-1  OK	Minor differences in positions and character shapes - ADC
 
@@ -3044,7 +3044,7 @@ Test	 Status	Comments
                 so Ghostscript ending point can't be same 
                 while it does lesser contours,
                 because the starting point was fixed for other CET tests.
-                assign: Ray.
+                Assign: Igor.
 
 13-21-1  DIFF	CPSI indicates [F] for ( SharedFontDirectory xcheck).  GS
 		indicates [T]. - ADC
@@ -3060,7 +3060,7 @@ Test	 Status	Comments
 
 13-22-5  OK	Color corrected by rev 7172.
 
-13-22-6  DIFF	cash25 : strokepath - Same as 13-20-6 cahs25. assign: Ray.
+13-22-6  DIFF	cash25 : strokepath - Same as 13-20-6 cahs25. Assign: Igor.
 
 13-23-1  DIFF	Extra line under /ordfeminine and /ordmasculine characters. - ADC
 		Analyzed by Igor. This is a font issue.
@@ -3080,7 +3080,7 @@ Test	 Status	Comments
 
 13-24-5  OK	Minor differences visually reviewed by Igor.
 
-13-24-6  DIFF	A different glyph placement - strokepath - same as 13-20-6 assign: Ray. 
+13-24-6  DIFF	A different glyph placement - strokepath - same as 13-20-6 Assign: Igor.
 
 13-25-1  OK	
 
@@ -3105,7 +3105,7 @@ Test	 Status	Comments
 
 13-26-8  AOK	Minor differences in colors - ADC
 
-13-26-9  DIFF	Same as 13-20-6 strokepath. Assign: Ray.
+13-26-9  DIFF	Same as 13-20-6 strokepath. Assign: Igor.
 
 13-27-1  OK	Minor differences visually reviewed by RJJ
 
@@ -3123,7 +3123,7 @@ Test	 Status	Comments
 
 13-27-7  AOK	Minor differences in colors - ADC
 
-13-27-8  DIFF	Underlines differ - strokepath - same as 13-20-6 cash25 assign: Ray.
+13-27-8  DIFF	Underlines differ - strokepath - same as 13-20-6 cash25 Assign: Igor.
 
 13-28-1  OK	Minor differences visually reviewed by RJJ
 
@@ -3144,7 +3144,7 @@ Test	 Status	Comments
 
 13-28-8  AOK	Minor differences in colors - ADC
 
-13-28-9  DIFF	Underlines differ - strokepath - same as 13-20-6 cash25 assign: Ray.
+13-28-9  DIFF	Underlines differ - strokepath - same as 13-20-6 cash25 Assign: Igor.
 
 13-29-1  OK	Minor differences visually reviewed by RJJ
 
@@ -3163,7 +3163,7 @@ Test	 Status	Comments
 
 13-29-7  OK	Minor differences visually reviewed by Igor.
 
-13-29-8  DIFF	A different glyph placement - strokepath - same as 13-20-6 assign: Ray. 
+13-29-8  DIFF	A different glyph placement - strokepath - same as 13-20-6 Assign: Igor.
 
 14-01-1  OK	Minor differences visually reviewed by RJJ
 
@@ -3474,7 +3474,7 @@ Test	 Status	Comments
 		Remaining issues : assig: Igor.
 
 16-10-3  DIFF	many instances of glyph 208, similar to 16-01-1, glyph 208
-                Ray will address eofill issue per conversation with Raph, Henry.
+		Remaining issues : assig: Igor.
 
 16-11-1  OK	Fixed by rev 7172.
 
