@@ -2159,8 +2159,8 @@ Test	 Status	Comments
 
 12-07A-11  OK	Minor differences visually reviewed by RJJ
 
-12-07A-12  DIFF	GS reports one more rangecheck in image than CPSI.  Square
-		pattern missing in GS output.  assign Alex (initially).
+12-07A-12  OK  	Adobe acceptts images in the pattern color space.
+		Since rev. 7597 we do the same in the compatibility mode. - Alex
 
 12-07A-13  OK	Minor differences in positions and character shapes - ADC
 

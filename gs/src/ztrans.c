@@ -365,8 +365,8 @@ zimage3x(i_ctx_t *i_ctx_p)
     if (dict_find_string(op, "DataDict", &pDataDict) <= 0)
 	return_error(e_rangecheck);
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
-				   (gs_pixel_image_t *)&image, &ip_data,
-				   16, false)) < 0 ||
+		   (gs_pixel_image_t *)&image, &ip_data,
+		   16, false, gs_currentcolorspace(igs))) < 0 ||
 	(code = dict_int_param(pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0
 	)
 	return code;

@@ -35,6 +35,7 @@
 #include "stream.h"
 #include "ifilter.h"		/* for stream exception handling */
 #include "iimage.h"
+#include "gxcspace.h"
 
 /* Forward references */
 private int zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
@@ -116,15 +117,15 @@ data_image_params(const gs_memory_t *mem,
 int
 pixel_image_params(i_ctx_t *i_ctx_p, const ref *op, gs_pixel_image_t *pim,
 		   image_params *pip, int max_bits_per_component,
-		   bool has_alpha)
+		   bool has_alpha, const gs_color_space *csp)
 {
     int num_components =
-	gs_color_space_num_components(gs_currentcolorspace(igs));
+	gs_color_space_num_components(csp);
     int code;
 
     if (num_components < 1)
 	return_error(e_rangecheck);	/* Pattern space not allowed */
-    pim->ColorSpace = gs_currentcolorspace(igs);
+    pim->ColorSpace = csp;
     code = data_image_params(imemory, op, (gs_data_image_t *) pim, pip, true,
 			     num_components, max_bits_per_component,
 			     has_alpha);
@@ -161,14 +162,28 @@ image1_setup(i_ctx_t * i_ctx_p, bool has_alpha)
     gs_image_t      image;
     image_params    ip;
     int             code;
+    const gs_color_space *csp = gs_currentcolorspace(igs);
+    extern bool CPSI_mode;
 
-    gs_image_t_init(&image, gs_currentcolorspace(igs));
+    /* Adobe interpreters accept sampled images when the current color
+     * space is a pattern color space using the base color space instead
+     * of the pattern space. CET 12-07a-12
+     * If all conditions are not met the pattern color space goes through
+     * triggering a rangecheck error.
+     */
+    if (CPSI_mode && gs_color_space_num_components(csp) < 1) {
+       const gs_color_space *bsp = cs_base_space(csp);
+       if (bsp)
+         csp = bsp;
+    }
+
+    gs_image_t_init(&image, csp);
     code = pixel_image_params( i_ctx_p,
                                op,
                                (gs_pixel_image_t *)&image,
                                &ip,
 			       (level2_enabled ? 16 : 8),
-                               has_alpha );
+                               has_alpha, csp);
     if (code < 0)
 	return code;
 
