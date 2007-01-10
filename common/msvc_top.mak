@@ -57,21 +57,6 @@ GLGEN=$(GLGENDIR)$(D)
 GLOBJ=$(GLOBJDIR)$(D)
 #**************** END PATCHES
 
-#**************** from gs/lib/msvc32.mak
-# 1 --> Use 64 bits for gx_color_index.  This is required only for
-# non standard devices or DeviceN process color model devices.
-USE_LARGE_COLOR_INDEX=1
-
-!if $(USE_LARGE_COLOR_INDEX) == 1
-# Definitions to force gx_color_index to 64 bits
-LARGEST_UINTEGER_TYPE=unsigned __int64
-GX_COLOR_INDEX_TYPE=$(LARGEST_UINTEGER_TYPE)
-
-CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
-!endif
-#**************** END from gs/lib/msvc32.mak
-
-
 !include $(COMMONDIR)\msvcdefs.mak
 !include $(COMMONDIR)\pcdefs.mak
 !include $(COMMONDIR)\generic.mak
@@ -137,7 +122,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	DEVSTUDIO="$(DEVSTUDIO)" \
         COMPILE_INITS=$(COMPILE_INITS) PCLXL_ROMFS_ARGS="$(PCLXL_ROMFS_ARGS)" PJL_ROMFS_ARGS="$(PJL_ROMFS_ARGS)" \
 	UFST_ROOT=$(UFST_ROOT) UFST_BRIDGE=$(UFST_BRIDGE) UFST_LIB_EXT=$(UFST_LIB_EXT) \
-	UFST_ROMFS_ARGS="$(UFST_ROMFS_ARGS)" \
+	UFST_ROMFS_ARGS="$(UFST_ROMFS_ARGS)" PSD="$(GENDIR)/" \
 	FEATURE_DEVS="$(FEATURE_DEVS)" DEVICE_DEVS="$(DEVICE_DEVS)" \
 	BAND_LIST_STORAGE=$(BAND_LIST_STORAGE) BAND_LIST_COMPRESSOR=$(BAND_LIST_COMPRESSOR) \
 	GLOBJ=$(GLOBJ) GLGEN=$(GLGEN) \

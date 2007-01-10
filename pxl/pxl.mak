@@ -60,26 +60,6 @@ pxoper_h=$(PXLSRC)pxoper.h $(gserror_h) $(pxattr_h) $(pxerrors_h) $(pxvalue_h)
 pxparse_h=$(PXLSRC)pxparse.h $(pxoper_h)
 pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h) $(pltop_h)
 
-# To avoid having to build the Ghostscript interpreter to generate pxbfont.c,
-# we normally ship a pre-constructed pxbfont.psc with the source code.
-# If the following rule doesn't work, try:
-#    /usr/bin/gs -I/usr/lib/ghostscript -q -dNODISPLAY pxbfont.ps >pxbfont.psc
-# .psc is an intermediate .c file created by executing PostScript code.
-# In order to avoid creating a partial or empty file, we create this file
-# under a different name and then rename it (by copying and deleting,
-# since non-Unix operating systems typically don't support rename on files
-# with directory names included).  Normally 'make' would delete the file
-# if the rule fails, but in this case for some reason it doesn't.
-
-$(PXLSRC)pxbfont.psc: $(PXLSRC)pxbfont.ps
-	$(GS_XE) -q -dNODISPLAY $(PXLSRC)pxbfont.ps >$(PXLGEN)pxbfont_.psc
-	$(CP_) $(PXLGEN)pxbfont_.psc $(PXLSRC)pxbfont.psc
-	$(RM_) $(PXLGEN)pxbfont_.psc
-
-$(PXLGEN)pxbfont.c: $(PXLSRC)pxbfont.psc\
-        $(stdpre_h) $(pxbfont_h)
-	$(CP_) $(PXLSRC)pxbfont.psc $(PXLGEN)pxbfont.c
-
 $(PXLOBJ)pxbfont.$(OBJ): $(PXLGEN)pxbfont.c $(AK) $(stdpre_h)\
  $(pxbfont_h)
 	$(PXLCCC) $(PXLGEN)pxbfont.c $(PXLO_)pxbfont.$(OBJ)

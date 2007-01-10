@@ -45,6 +45,10 @@ ZSRCDIR=..\gs\zlib
 SHARE_ZLIB=0
 !endif
 
+!ifndef COMPILE_INITS
+COMPILE_INITS=0
+!endif
+
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.
 !ifndef PLPLATFORM
@@ -106,11 +110,15 @@ TARGET_XE=$(GENDIR)\pcl6
 
 # Debugging options
 !ifndef DEBUG
-DEBUG=0
+DEBUG=1
 !endif
 !ifndef TDEBUG
-TDEBUG=0
+TDEBUG=1
 !endif
+!ifndef DEBUGSYM
+DEBUGSYM=1
+!endif
+
 !ifndef NOPRIVATE
 NOPRIVATE=0
 !endif
@@ -243,7 +251,7 @@ DEVICE_DEVS=$(DD)\ljet4.dev\
 FEATURE_DEVS    = $(DD)\dps2lib.dev   \
                   $(DD)\path1lib.dev  \
                   $(DD)\patlib.dev    \
-		  $(DD)gxfapiu$(UFST_BRIDGE).dev\
+		  $(DD)\gxfapiu$(UFST_BRIDGE).dev\
                   $(DD)\rld.dev       \
                   $(DD)\psl2cs.dev    \
                   $(DD)\roplib.dev    \
