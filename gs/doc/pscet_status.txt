@@ -3412,15 +3412,12 @@ Test	 Status	Comments
 
 15-15-1  OK	Minor rasterizing differences. -Tor
 
-16-01-1  DIFF	differences in glyphs 6-10, 66-68, 192-194, 203-206,
-                209 can be resolved by changing GS_CHAR_FILL from
-                gs_fill to gs_eofill (zchar1.c, line 67).  glyph 21,
-                22: Ok. tiny gaps between almost adjoining black
+16-01-1  DIFF	Tiny gaps between almost adjoining black
                 rectangles; output will vary from device to device to
-                device, and our rendering is valid glyphs 195-202:
-                difference in positioning, needs more analysis glyphs
+                device, and our rendering is valid. Glyphs 195-202:
+                difference in positioning, needs more analysis. Glyphs
                 207, 208: reverse video in Adobe output, needs more
-                analysis Positioning errors (glyph 196 confirmed) are
+                analysis. Positioning errors (glyph 196 confirmed) are
                 due to font violating type1 spec. Type1 spec says that
                 lsb in seac command must match lsb of base
                 character. See also this patch to FontForge, which
@@ -3428,14 +3425,8 @@ Test	 Status	Comments
                 seac. 
                 http://fontforge.cvs.sourceforge.net/fontforge/fontforge/fontforge/splinesave.c?r1=1.57&r2=1.58
                 Raph
-                What Raph suggests contradicts old bug fixes done for customers.
-                Ray will address eofill issue per conversation with Raph, Henry.
-                .
-                A comment from Igor : the glyph eofill problem to be fixed forever 
-                with a dynamic filling rule in the trapezoid filling algorithm.
-                I will need a month for this improvement.
                 -
-		Remaining issues : assign:-Igor.
+		Remaining issues : assign: Igor.
 
 16-02-1  DIFF	butterfly shapes: CPSI has bevel line caps, gs has
                 miter circle tests: positioning error looks similar to
@@ -3472,19 +3463,15 @@ Test	 Status	Comments
 
 16-09-1  DIFF	Distorted shapes, may be similar to 16-03-2. Needs further analysis - Raph
 
-16-10-1  DIFF	6-10, 192, 193, 209: eofill
-                21-22: Ok, same analysis as 16-01-1
+16-10-1  DIFF	21-22: Ok, same analysis as 16-01-1
                 196-206 - positioning similar to 16-01-1, glyph 195
                 207-208 - reverse video similar to 16-01-1, glyph 207-208
-                Ray will address eofill issue per conversation with Raph, Henry.
-		Remaining issues : assign:-Igor.
+		Remaining issues : assign: Igor.
 
 16-10-2  DIFF	21-22: Ok, same analysis as 16-01-1
                 207-208 - reverse video similar to 16-01-1, glyph 207-208
-                6-10, 192, 193, 195, 203-206: fill
                 196-202: positioning, similar to 16-01-1, glyph 196
-                Ray will address eofill issue per conversation with Raph, Henry.
-		Remaining issues : assig:-Igor.
+		Remaining issues : assig: Igor.
 
 16-10-3  DIFF	many instances of glyph 208, similar to 16-01-1, glyph 208
                 Ray will address eofill issue per conversation with Raph, Henry.

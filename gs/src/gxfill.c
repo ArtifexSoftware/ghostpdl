@@ -306,6 +306,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     bool big_path = ppath->subpath_count > 50;
     fill_options fo;
     line_list lst;
+    extern bool CPSI_mode;
 
     *(const fill_options **)&lst.fo = &fo; /* break 'const'. */
     /*
@@ -328,6 +329,8 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	adjust = params->adjust;
     if (params->fill_zero_width && !pseudo_rasterization)
 	gx_adjust_if_empty(&ibox, &adjust);
+    lst.contour_count = 0;
+    lst.windings = NULL;
     lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
     lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
     if (vd_enabled) {
@@ -497,7 +500,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	     * wider than 100 pixels.
 	     */
 	    lst.margin_set0.sect = (section *)gs_alloc_struct_array(pdev->memory, lst.bbox_width * 2, 
-						   section, &st_section, "section");
+						   section, &st_section, "gx_general_fill_path");
 	    if (lst.margin_set0.sect == 0)
 		return_error(gs_error_VMerror);
 	    lst.margin_set1.sect = lst.margin_set0.sect + lst.bbox_width;
@@ -506,11 +509,21 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    init_section(lst.margin_set0.sect, 0, lst.bbox_width);
 	    init_section(lst.margin_set1.sect, 0, lst.bbox_width);
 	}
+	if (CPSI_mode && is_character) {
+	    if (lst.contour_count > countof(lst.local_windings)) {
+		lst.windings = (int *)gs_alloc_byte_array(pdev->memory, lst.contour_count, 
+				sizeof(int), "gx_general_fill_path");
+	    } else
+		lst.windings = lst.local_windings;
+	    memset(lst.windings, 0, sizeof(lst.windings[0]) * lst.contour_count);
+	}
 	code = (*fill_loop)
 	    (&lst, (max_fill_band == 0 ? NO_BAND_MASK : int2fixed(-max_fill_band)));
 	if (lst.margin_set0.sect != lst.local_section0 && 
 	    lst.margin_set0.sect != lst.local_section1)
-	    gs_free_object(pdev->memory, min(lst.margin_set0.sect, lst.margin_set1.sect), "section");
+	    gs_free_object(pdev->memory, min(lst.margin_set0.sect, lst.margin_set1.sect), "gx_general_fill_path");
+	if (lst.windings != NULL && lst.windings != lst.local_windings)
+	    gs_free_object(pdev->memory, lst.windings, "gx_general_fill_path");
     }
   nope:if (lst.close_count != 0)
 	unclose_path(pfpath, lst.close_count);
@@ -677,6 +690,7 @@ make_al(line_list *ll)
 	INCR(fill_alloc);
     } else
 	ll->next_active++;
+    alp->contour_count = ll->contour_count;
     return alp;
 }
 
@@ -1075,6 +1089,7 @@ add_y_list(gx_path * ppath, line_list *ll)
 	code = scan_contour(ll, &q);
 	if (code < 0)
 	    return code;
+	ll->contour_count++;
     }
     return close_count;
 }
@@ -1836,94 +1851,185 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
     *y_top = y1;
 }
 
+static inline int sign(int a) 
+{
+    return a < 0 ? -1 : a > 0 ? 1 : 0;
+}
+
 /* ---------------- Trapezoid filling loop ---------------- */
 
 /* Generate specialized algorythms for the most important cases : */
 
+/* The smart winding counter advance operator : */
+#define signed_eo(a) ((a) < 0 ? -((a) & 1) : (a) > 0 ? ((a) & 1) : 0)
+#define ADVANCE_WINDING(inside, alp, ll) \
+		{   int k = alp->contour_count; \
+		    int v = ll->windings[k]; \
+		    inside -= signed_eo(v); \
+		    v = ll->windings[k] += alp->direction; \
+		    inside += signed_eo(v); \
+		}
+
+#define IS_SPOTAN 0
+#define PSEUDO_RASTERIZATION 1
+#define SMART_WINDING 1
+#define FILL_ADJUST 0
+#define FILL_DIRECT 1
+#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__pr_fd_sw
+#include "gxfilltr.h"
+#undef IS_SPOTAN
+#undef PSEUDO_RASTERIZATION
+#undef SMART_WINDING
+#undef FILL_ADJUST
+#undef FILL_DIRECT
+#undef TEMPLATE_spot_into_trapezoids
+
+#define IS_SPOTAN 0
+#define PSEUDO_RASTERIZATION 1
+#define SMART_WINDING 1
+#define FILL_ADJUST 0
+#define FILL_DIRECT 0
+#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__pr_nd_sw
+#include "gxfilltr.h"
+#undef IS_SPOTAN
+#undef PSEUDO_RASTERIZATION
+#undef SMART_WINDING
+#undef FILL_ADJUST
+#undef FILL_DIRECT
+#undef TEMPLATE_spot_into_trapezoids
+
+#define IS_SPOTAN 0
+#define PSEUDO_RASTERIZATION 0
+#define SMART_WINDING 1
+#define FILL_ADJUST 0
+#define FILL_DIRECT 1
+#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__nj_fd_sw
+#include "gxfilltr.h"
+#undef IS_SPOTAN
+#undef PSEUDO_RASTERIZATION
+#undef SMART_WINDING
+#undef FILL_ADJUST
+#undef FILL_DIRECT
+#undef TEMPLATE_spot_into_trapezoids
+
+#define IS_SPOTAN 0
+#define PSEUDO_RASTERIZATION 0
+#define SMART_WINDING 1
+#define FILL_ADJUST 0
+#define FILL_DIRECT 0
+#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__nj_nd_sw
+#include "gxfilltr.h"
+#undef IS_SPOTAN
+#undef PSEUDO_RASTERIZATION
+#undef SMART_WINDING
+#undef FILL_ADJUST
+#undef FILL_DIRECT
+#undef TEMPLATE_spot_into_trapezoids
+
+#undef signed_eo
+#undef ADVANCE_WINDING
+/* The simple winding counter advance operator : */
+#define ADVANCE_WINDING(inside, alp, ll) inside += alp->direction
+
 #define IS_SPOTAN 1
 #define PSEUDO_RASTERIZATION 0
+#define SMART_WINDING 0
 #define FILL_ADJUST 0
 #define FILL_DIRECT 1
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__spotan
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
+#undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
 #undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
 #define PSEUDO_RASTERIZATION 1
+#define SMART_WINDING 0
 #define FILL_ADJUST 0
 #define FILL_DIRECT 1
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__pr_fd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
+#undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
 #undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
 #define PSEUDO_RASTERIZATION 1
+#define SMART_WINDING 0
 #define FILL_ADJUST 0
 #define FILL_DIRECT 0
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__pr_nd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
+#undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
 #undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
 #define PSEUDO_RASTERIZATION 0
+#define SMART_WINDING 0
 #define FILL_ADJUST 1
 #define FILL_DIRECT 1
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__aj_fd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
+#undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
 #undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
 #define PSEUDO_RASTERIZATION 0
+#define SMART_WINDING 0
 #define FILL_ADJUST 1
 #define FILL_DIRECT 0
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__aj_nd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
+#undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
 #undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
 #define PSEUDO_RASTERIZATION 0
+#define SMART_WINDING 0
 #define FILL_ADJUST 0
 #define FILL_DIRECT 1
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__nj_fd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
+#undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
 #undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
 #define PSEUDO_RASTERIZATION 0
+#define SMART_WINDING 0
 #define FILL_ADJUST 0
 #define FILL_DIRECT 0
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__nj_nd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
+#undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
 #undef TEMPLATE_spot_into_trapezoids
 
+#undef ADVANCE_WINDING
 
 /* Main filling loop.  Takes lines off of y_list and adds them to */
 /* x_list as needed.  band_mask limits the size of each band, */
@@ -1937,16 +2043,28 @@ spot_into_trapezoids(line_list *ll, fixed band_mask)
     if (fo->is_spotan)
 	return spot_into_trapezoids__spotan(ll, band_mask);
     if (fo->pseudo_rasterization) {
-	if (fo->fill_direct)
-	    return spot_into_trapezoids__pr_fd(ll, band_mask);
-	else
-	    return spot_into_trapezoids__pr_nd(ll, band_mask);
+	if (ll->windings != NULL) {
+	    if (fo->fill_direct)
+		return spot_into_trapezoids__pr_fd_sw(ll, band_mask);
+	    else
+		return spot_into_trapezoids__pr_nd_sw(ll, band_mask);
+	} else {
+	    if (fo->fill_direct)
+		return spot_into_trapezoids__pr_fd(ll, band_mask);
+	    else
+		return spot_into_trapezoids__pr_nd(ll, band_mask);
+	}
     }
     if (fo->adjust_below | fo->adjust_above | fo->adjust_left | fo->adjust_right) {
 	if (fo->fill_direct)
 	    return spot_into_trapezoids__aj_fd(ll, band_mask);
 	else
 	    return spot_into_trapezoids__aj_nd(ll, band_mask);
+    } else if (ll->windings != NULL) {
+	if (fo->fill_direct)
+	    return spot_into_trapezoids__nj_fd_sw(ll, band_mask);
+	else
+	    return spot_into_trapezoids__nj_nd_sw(ll, band_mask);
     } else {
 	if (fo->fill_direct)
 	    return spot_into_trapezoids__nj_fd(ll, band_mask);

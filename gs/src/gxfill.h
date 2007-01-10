@@ -76,6 +76,7 @@ struct active_line_s {
     bool monotonic_y;		/* "false" means "don't know"; only for scanline. */
     gx_flattened_iterator fi;
     bool more_flattened;
+    int contour_count;
 /*
  * "Pending" lines (not reached in the Y ordering yet) use next and prev
  * to order lines by increasing starting Y.  "Active" lines (being scanned)
@@ -123,11 +124,13 @@ struct line_list_s {
     active_line *h_list0, *h_list1; /* lists of horizontal lines for y, y1 */
     margin_set margin_set0, margin_set1;
     margin *free_margin_list; 
+    int *windings;
     int local_margin_alloc_count;
     int bbox_left, bbox_width;
     int main_dir;
     fixed y_break;
     const fill_options * const fo;
+    int contour_count;
     /* Put the arrays last so the scalars will have */
     /* small displacements. */
     /* Allocate a few active_lines locally */
@@ -143,6 +146,7 @@ struct line_list_s {
     margin local_margins[MAX_LOCAL_ACTIVE];
     section local_section0[MAX_LOCAL_SECTION];
     section local_section1[MAX_LOCAL_SECTION];
+    int local_windings[MAX_LOCAL_ACTIVE];
 };
 
 #define LOOP_FILL_RECTANGLE_DIRECT(fo, x, y, w, h)\

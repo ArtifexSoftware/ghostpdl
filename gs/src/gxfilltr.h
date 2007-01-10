@@ -21,9 +21,12 @@
  * 
  *  IS_SPOTAN - is the target device a spot analyzer ("spotan").
  *  PSEUDO_RASTERIZATION - use pseudo-rasterization.
+ *  SMART_WINDING - even-odd filling rule for each contour independently.
  *  FILL_ADJUST - fill adjustment is not zero
  *  FILL_DIRECT - See LOOP_FILL_RECTANGLE_DIRECT.
  *  TEMPLATE_spot_into_trapezoids - the name of the procedure to generate.
+ *  ADVANCE_WINDING(inside, alp, ll) - a macro for advancing the winding counter.
+ *  INSIDE_PATH_P(inside, rule) - a macro for checking the winding rule.
 */
 
 /* ---------------- Trapezoid decomposition loop ---------------- */
@@ -165,6 +168,8 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
 	    int inside = 0;
 	    active_line *flp = NULL;
 
+	    if (SMART_WINDING)
+		memset(ll->windings, 0, sizeof(ll->windings[0]) * ll->contour_count);
 	    INCR(band);
 	    /* Generate trapezoids */
 	    for (alp = ll->x_list; alp != 0; alp = alp->next) {
@@ -173,13 +178,13 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
 		print_al("step", alp);
 		INCR(band_step);
 		if (!INSIDE_PATH_P(inside, rule)) { 	/* i.e., outside */
-		    inside += alp->direction;
+		    ADVANCE_WINDING(inside, alp, ll);
 		    if (INSIDE_PATH_P(inside, rule))	/* about to go in */
 			flp = alp;
 		    continue;
 		}
 		/* We're inside a region being filled. */
-		inside += alp->direction;
+		ADVANCE_WINDING(inside, alp, ll);
 		if (INSIDE_PATH_P(inside, rule))	/* not about to go out */
 		    continue;
 		/* We just went from inside to outside, 
@@ -201,7 +206,7 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
 		       it may cause a shift when choosing a pixel 
 		       to paint with a narrow trapezoid. */
 		    alp = alp->next;
-		    inside += alp->direction;
+		    ADVANCE_WINDING(inside, alp, ll);
 		    continue;
 		}
 		/* We just went from inside to outside, so fill the region. */
@@ -303,15 +308,17 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
 		active_line *flp = NULL;
 		int inside = 0;
 
+		if (SMART_WINDING)
+		    memset(ll->windings, 0, sizeof(ll->windings[0]) * ll->contour_count);
 		for (alp = ll->x_list; alp != 0; alp = alp->next) {
 		    if (!INSIDE_PATH_P(inside, rule)) {		/* i.e., outside */
-			inside += alp->direction;
+			ADVANCE_WINDING(inside, alp, ll);
 			if (INSIDE_PATH_P(inside, rule))	/* about to go in */
 			    flp = alp;
 			continue;
 		    }
 		    /* We're inside a region being filled. */
-		    inside += alp->direction;
+		    ADVANCE_WINDING(inside, alp, ll);
 		    if (INSIDE_PATH_P(inside, rule))	/* not about to go out */
 			continue;
 		    code = continue_margin(ll, flp, alp, y, y1);
