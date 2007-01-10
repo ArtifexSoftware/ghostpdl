@@ -4825,7 +4825,9 @@ Test	 Status	Comments
                 The test expects currentpagedevice to return the same dictionaty each time. 
                 assign: Alex.
 
-29-05-1  OK  	Works for me in rev. 7149 - Alex.
+29-05-1  DIFF  	Rev 7595 MSVC8 debug build fails with no output pages.
+		Error: /invalidaccess in --forall--, likely in a halftone.
+		Assign: Alex.
 
 29-05-2  OK	
 
