@@ -60,9 +60,9 @@ pxoper_h=$(PXLSRC)pxoper.h $(gserror_h) $(pxattr_h) $(pxerrors_h) $(pxvalue_h)
 pxparse_h=$(PXLSRC)pxparse.h $(pxoper_h)
 pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h) $(pltop_h)
 
-$(PXLOBJ)pxbfont.$(OBJ): $(PXLGEN)pxbfont.c $(AK) $(stdpre_h)\
+$(PXLOBJ)pxbfont.$(OBJ): $(PXLSRC)pxbfont.c $(AK) $(stdpre_h)\
  $(pxbfont_h)
-	$(PXLCCC) $(PXLGEN)pxbfont.c $(PXLO_)pxbfont.$(OBJ)
+	$(PXLCCC) $(PXLSRC)pxbfont.c $(PXLO_)pxbfont.$(OBJ)
 
 $(PXLOBJ)pxerrors.$(OBJ): $(PXLSRC)pxerrors.c $(AK)\
  $(memory__h) $(stdio__h) $(string__h)\
