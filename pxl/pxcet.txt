@@ -205,3 +205,14 @@ C705.BIN page 36. Extra blank page.  We assume this is a bug in the HP
 firmware.  In full page passthrough mode the blank page is suppressed,
 but extracting the relevant embedded pcl produces a blank page on the
 Color Laserjet.
+
+C705.BIN page 19. Passthrough missing wedges.  We think this is a bug
+in the Color Laserjet 4600 firmware.  Full page passthrough is used to
+send a partially initialized hpgl/2 job to the pcl interpreter.
+Without any commands to indicate gl/2 should reset the color space
+(IN, DF) gl/2 will use the color space in the graphics state.  In
+order to print this job correctly it would be necessary to have
+different initialization routines for gl/2 depending on whether it was
+invoked from pcl or pclxl.  We do not think this is desirable nor is
+it what HP intended.
+
