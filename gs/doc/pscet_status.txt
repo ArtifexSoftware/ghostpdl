@@ -3111,9 +3111,7 @@ Test	 Status	Comments
 
 13-27-2  OK
 
-13-27-3  DIFF	Two ILLEGAL tests succeed with GS. Different error messages,
-		different stack contents after error. Tek matches CPSI
-		RJJ assign: Peter ???
+13-27-3  OK	rev 7542.
 
 13-27-4  OK	Minor differences visually reviewed by RJJ
 
@@ -3131,10 +3129,7 @@ Test	 Status	Comments
 
 13-28-3  OK
 
-13-28-4  DIFF	Same as 13-27-3
-		Two ILLEGAL tests succeed with GS. Different error messages,
-		different stack contents after error. Tek matches CPSI
-		RJJ assign: Peter ???
+13-28-4  OK	rev 7542.
 
 13-28-5  OK	Minor differences visually reviewed by RJJ
 
@@ -3150,10 +3145,7 @@ Test	 Status	Comments
 
 13-29-2  OK
 
-13-29-3  DIFF	Same as 13-27-3
-		Two ILLEGAL tests succeed with GS. Different error messages,
-		different stack contents after error. Tek matches CPSI
-		RJJ assign: Peter ???
+13-29-3  OK	rev 7542.
 
 13-29-4  OK	Minor differences visually reviewed by RJJ
 
