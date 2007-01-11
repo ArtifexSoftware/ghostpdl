@@ -224,6 +224,9 @@ pjl_set(pjl_parser_state_t *pst, char *variable, char *value, bool defaults)
     pjl_envir_var_t *table = (defaults ? pst->defaults : pst->envir);
     int i;
 
+    if (defaults) /* default also sets current environment. */
+	pjl_set( pst, variable, value, false );
+
     for (i = 0; table[i].var[0]; i++)
 	if (!pjl_compare(table[i].var, variable)) {
 	    /* set the value */

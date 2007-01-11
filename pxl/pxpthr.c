@@ -117,6 +117,7 @@ pxPassthrough_init(px_state_t *pxs)
     /* do an initial reset to set up a permanent reset.  The
        motivation here is to avoid tracking down a slew of memory
        leaks */
+    global_pcs->xfm_state.paper_size = get_default_paper(global_pcs); /* pxl paper ? */
     pcl_do_resets(global_pcs, pcl_reset_initial);
     pcl_do_resets(global_pcs, pcl_reset_permanent);
 

@@ -329,11 +329,20 @@ new_page_size(
     floatp                      width_pts = psize->width * 0.01;
     floatp                      height_pts = psize->height * 0.01;
     float                       page_size[2];
+    static float                old_page_size[2] = { 0, 0 };
     gs_state *                  pgs = pcs->pgs;
     gs_matrix                   mat;
 
     page_size[0] = width_pts;
     page_size[1] = height_pts;
+
+    /* NB: save off the page size for the case where set device page size
+     * doesn't match the PJL page size and no escE reset occurs, and we are not coming from PXL.
+     * A direct query, reset initial erasepage or a erasepage with notmarked don't do it 
+     * would all be preferable... 
+     */
+    old_page_size[0] = pcs->xfm_state.paper_size ? pcs->xfm_state.paper_size->width : 0;
+    old_page_size[1] = pcs->xfm_state.paper_size ? pcs->xfm_state.paper_size->height : 0;
 
     put_param1_float_array(pcs, "PageSize", page_size);
 
@@ -369,11 +378,17 @@ new_page_size(
     pcl_xfm_reset_pcl_pat_ref_pt(pcs);
 
     if (!reset_initial) {
-        hpgl_do_reset(pcs, pcl_reset_page_params);
-        /* HACK don't erase unless we are using end_page_top */
-        if ( pcs->end_page == pcl_end_page_top )
-            gs_erasepage(pcs->pgs);
-        pcs->page_marked = false;
+	hpgl_do_reset(pcs, pcl_reset_page_params);
+	if ( pcs->end_page == pcl_end_page_top )   /* don't erase in snippet mode */
+	    gs_erasepage(pcs->pgs);
+	pcs->page_marked = false;
+    }
+    else if ( pcs->end_page == pcl_end_page_top && 
+	      !(old_page_size[0] == pcs->xfm_state.paper_size->width &&
+		old_page_size[1] == pcs->xfm_state.paper_size->height)) {
+	    /* PJL paper size change without escE case. */
+	gs_erasepage(pcs->pgs);
+	pcs->page_marked = false;
     }
 }
 
@@ -1075,7 +1090,7 @@ pcpage_do_registration(
     return 0;
 }
 
- private pcl_paper_size_t *
+pcl_paper_size_t *
 get_default_paper(
     pcl_state_t *      pcs
 )

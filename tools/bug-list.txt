@@ -23,9 +23,11 @@ dictionary which will be a considerable amount of work.
 0067 OPEN 21-10 P 10 raster height no width range testing.
 0068 OPEN 21-11 p 7 raster height no width range testing.
 0069 OPEN 21-12 p 5 raster height no width range testing.
+0070 OPEN 21-12 p 16 CMY raster missing data black vs. white zero fill same as 66
 0071 OPEN 22-05 p 13 HP not supporting 3bit per index ? double check.
 0072 NF 22-08 p 7 The 4600 moves the pattern anchor incorrectly when print direction is 180.
 0073 OPEN 22-09 p 15 overlay off page?
+0074 OPEN 22-13 p 22 monochrome mode text is red not BW
 0076 OPEN 22-18 p 5 palette selection error.
 0077 OPEN 22-22 p 5 raster scaling height leading to text reflow.
 0078 OPEN 23-02 p 11 transparency-rop error.
@@ -41,6 +43,7 @@ dictionary which will be a considerable amount of work.
 0093 OPEN 28-04 p 10 possible HP scaling error.
 0094 OPEN 28-04 p 17 polygon fills missing, winding.
 0095 OPEN 28-04 p 18 polygon arc join error
+0096 FIXED verified r2697 r2700
 0097 OPEN 28-06 p 6 pu subpolygon fill missing
 0098 OPEN 28-06 p 8 butt or triangle join rounding 
 0099 FIXED 28-07 p 6 lost line
@@ -50,6 +53,7 @@ dictionary which will be a considerable amount of work.
 0105 OPEN 29-03 p 10 graphics
 0106 OPEN 29-05 p 6 graphics
 0107 OPEN 29-07 p 14 cross hatch alignment
+0108 OPEN ? regression polygon close
 0109 OPEN 29-11 p 1 polygon fill extreme scaling
 0110 OPEN 29-11 p 2 polygon fill
 0111 OPEN 30-01 p 1 hpgl LB
@@ -84,6 +88,7 @@ dictionary which will be a considerable amount of work.
 0161 FIXED same as 0160 verified r2687 r2700
 0162 DeviceDependent Device must support number of pages, no raster devices do this.
 0163 FIXED 36-02 p 20 verified r2685 r2700
+0163 OPEN 36-02 p 22 macro returning -1 is leaking char size out of the macro
 0321 NF C705 p 19 passthrough missing wedges.
 0322 FIXED r2680 C425 p 33 Set Char Bold
 0323 FIXED r2680 C426 p 42 Set Char Bold

@@ -262,6 +262,7 @@ pcl_impl_allocate_interp_instance(
     pcl_init_state(&pcli->pcs, mem);
     pcli->pcs.client_data = pcli;
     pcli->pcs.pgs = pgs;
+    pcli->pcs.xfm_state.paper_size = 0; 
     /* provide an end page procedure */
     pcli->pcs.end_page = pcl_end_page_top;
     /* Init gstate to point to pcl state */

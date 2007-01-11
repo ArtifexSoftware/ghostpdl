@@ -185,9 +185,7 @@ pjl_impl_process(
 )
 {
 	pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)instance;
-	int code = pjl_process(pjli->state, NULL, cursor);
-	if (code == 1)
-	    pjl_set_init_from_defaults(pjli->state);
+	int code = pjl_process(pjli->state, NULL, cursor);      
 	return code == 1 ? e_ExitLanguage : code;
 }
 
