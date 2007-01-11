@@ -591,7 +591,7 @@ Test	 Status	Comments
 		Paths" IS subject to setflat -- GS has smoother round cap/join.
 		Resolution dependent (spec is 'output device pixels'). CPSI fixed
 		to implement setflat matches Tek ouptut for "Technical paths".
-		Also has same issue as 09-24-2.  assign: Ray
+		Assign: Ray
 
 09-38-1  OK	Minor differences visually reviewed by RJJ
 
@@ -1254,7 +1254,7 @@ Test	 Status	Comments
 
 09-53-7  OK	
 
-09-54-1  OK	GS has > 1000 limit on clipsave. Tek and CPSI limit at 34.
+09-54-1  AOK	GS has > 1000 limit on clipsave. Tek and CPSI limit at 34.
 		Device Dependent.
 
 09-54-2  OK	Fixed in r7155 - Raph
@@ -1775,16 +1775,9 @@ Test	 Status	Comments
 
 11-16-8  OK	Minor differences visually reviewed by HAS
 
-11-17-1  DIFF   REGRESION.
-		Strokes appeared near circles.
-		The reason is the patch 7512,
-		which introduced this behavior :
-		/* In CPSI compatibility mode, setbbox must also do a moveto. */
-		The stroke appears due to 'arc' connects the current point with the arc.
-		From CPSI raster, the current point must not be set.
-                assign: Peter	
+11-17-1  OK	Fixed as of rev 7598.
 
-11-17-2  DIFF   Same as 11-17-1, assign: Peter	
+11-17-2  OK	Fixed as of rev 7598.
 
 11-17-3  OK	Minor differences visually reviewed by RJJ
 
@@ -1792,7 +1785,7 @@ Test	 Status	Comments
 
 11-17-5  OK	fixed in r7228 - Raph
 
-11-17-6  DIFF   Same as 11-17-1, assign: Peter	
+11-17-6  OK	Fixed as of rev 7598.
 
 11-18-1  OK	Fixed with rev 7212.
 
@@ -3478,13 +3471,12 @@ Test	 Status	Comments
 
 17-01-1  OK	
 
-17-01-2  OK	Minor differences visually reviewed by RJJ
+17-01-2  OK	Fixed as of rev 7598.
 
 17-01-3  DIFF	GS leaves extra '2' on the stack from "1 [ 2 ] ineofill"
 		'in_path' calls 'num_params' which gets confused by the array.
 
-17-01-4  DIFF?	small circles in lines 4, 13, 22, 31, 40 and 58 have small point with CPSI,
-		Ghostscript shows smooth circles.
+17-01-4  OK	Fixed as of rev 7598.
 
 17-01-5  OK	
 
@@ -3496,12 +3488,11 @@ Test	 Status	Comments
 
 17-02-1  OK	
 
-17-02-2  OK	Minor differences visually reviewed by RJJ
+17-02-2  OK	Fixed as of rev. 7598.
 
 17-02-3  DIFF	Same as 17-01-3: GS leaves extra '2' on the stack from "1 [ 2 ] ineofill"
 
-17-02-4  DIFF?	small circles in lines 4, 13, 22, 31, 40 and 58 have small point with CPSI,
-		Ghostscript shows smooth circles.
+17-02-4  OK	Fixed as of rev 7598.
 
 17-02-5  OK	
 
@@ -3937,24 +3928,7 @@ Test	 Status	Comments
 
 21-11-1  OK	
 
-21-11-2  DIFF	A bigger space between characters "b" and "c" in the 5th line.
-		Analyzed by Igor.
-		'token' inconformity about the character code 0x04.
-		.
-		A simplified test case is placed to
-		peeves:/home/igor/pscet/mytests/21-11-2-Igor01.PS .
-		Use diff 21-11.ps to know how it was moditied.
-		.
-		While executing (a\\001b\\004c\\010d\\033e\\177f\\210g)token
-		CPSI considers (a\\001b\\004c\\010d\\033e\\177f) as a name.
-		Ghostscript breaks it because 
-		the character 0x04 is self delimiting.
-		A possible resolution is to consider
-		0x04 to be self-delimiting for non-string data sources only.
-		However it requires to patch the static scanner table
-		scan_char_array - I don't like that.
-		Passing to Peter who handles interpreter issues.
-		assign: Peter.
+21-11-2  OK	Fixed as of rev 7598.
 
 21-11-3  DIFF	GS says '{ /A /add }', CPSI says '{ 567 --add-- }' - ADC
 
@@ -4335,7 +4309,7 @@ Test	 Status	Comments
 		Environment dependent (a virtual address in the printing).
 		assign: Peter or assign: Alex.
 
-23-32-3  AOK	The character \004 has a different width. Analyzed by Igor.
+23-32-3  OK	Fixed as of rev 7598.
 
 23-32-4  DIFF	Binary token parser problem. CPSI matches Tek. Assign: Peter
 
