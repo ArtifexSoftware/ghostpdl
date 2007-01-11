@@ -291,9 +291,10 @@ typedef enum {
 
 /* User path interpretation states */
 typedef enum {
-    UPS_INITIAL = 1,
-    UPS_UCACHE = 2,
-    UPS_PATH = 4
+    UPS_INITIAL = 1,		/* (no ops yet) */
+    UPS_UCACHE = 2,		/* ucache */
+    UPS_SETBBOX = 4,		/* [ucache] setbbox */
+    UPS_PATH = 8		/* (within path) */
 } upath_state;
 
 typedef struct up_data_s {
@@ -301,12 +302,12 @@ typedef struct up_data_s {
     byte states_before;
     byte state_after;
 } up_data_t;
-#define UP_DATA_PATH(n) {n, UPS_PATH, UPS_PATH}
+#define UP_DATA_PATH(n) {n, UPS_SETBBOX | UPS_PATH, UPS_PATH}
 
 #define UPATH_MAX_OP 11
 #define UPATH_REPEAT 32
 static const up_data_t up_data[UPATH_MAX_OP + 1] = {
-    {4, UPS_INITIAL | UPS_UCACHE, UPS_PATH}, /* setbbox */
+    {4, UPS_INITIAL | UPS_UCACHE, UPS_SETBBOX}, /* setbbox */
     UP_DATA_PATH(2),
     UP_DATA_PATH(2),
     UP_DATA_PATH(2),
@@ -324,32 +325,12 @@ static const up_data_t up_data[UPATH_MAX_OP + 1] = {
 int zsetbbox(i_ctx_t *);
 private int zucache(i_ctx_t *);
 
-/* Forward references */
-private int upath_setbbox(i_ctx_t *);
-
 #undef zp
 static const op_proc_t up_ops[UPATH_MAX_OP + 1] = {
     zsetbbox, zmoveto, zrmoveto, zlineto, zrlineto,
     zcurveto, zrcurveto, zarc, zarcn, zarct,
     zclosepath, zucache
 };
-static const op_proc_t up_ops_compat[UPATH_MAX_OP + 1] = {
-    upath_setbbox, zmoveto, zrmoveto, zlineto, zrlineto,
-    zcurveto, zrcurveto, zarc, zarcn, zarct,
-    zclosepath, zucache
-};
-
-/* In CPSI compatibility mode, setbbox must also do a moveto. */
-private int
-upath_setbbox(i_ctx_t *i_ctx_p)
-{
-    int code = zsetbbox(i_ctx_p);
-
-    if (code < 0) return code;
-    /* "Restore" the first two stack operands. */
-    osp += 2;
-    return zmoveto(i_ctx_p);
-}
 
 /* - ucache - */
 private int
@@ -603,7 +584,6 @@ private inline int
 upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool upath_compat)
 {
     upath_state ups = UPS_INITIAL;
-    const op_proc_t *ops = (upath_compat ? up_ops_compat : up_ops);
     ref opcodes;
 
     if (r_has_type(oppath, t__invalid))
@@ -646,7 +626,7 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool upath_compat
 		if (upath_compat && opx == upath_op_ucache) {
 		    /* CPSI does not complain about incorrect ucache
 		       placement, even though PLRM3 says it's illegal. */
-		    ups = ups == UPS_PATH ? ups : data.state_after;
+		    ups = ups > UPS_UCACHE ? ups : data.state_after;
 		} else {
 		    if (!(ups & data.states_before))
 			return_error(e_typecheck);
@@ -670,7 +650,7 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool upath_compat
 				return_error(e_typecheck);
 			}
 		    }
-		    code = (*ops[opx])(i_ctx_p);
+		    code = (*up_ops[opx])(i_ctx_p);
 		    if (code < 0)
 			return code;
 		}
@@ -723,14 +703,13 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool upath_compat
 		    if (upath_compat && opx == upath_op_ucache) {
 			/* CPSI does not complain about incorrect ucache
 			   placement, even though PLRM3 says it's illegal. */
-			ups = ups == UPS_PATH ? ups : data.state_after;
+			ups = ups > UPS_UCACHE ? ups : data.state_after;
 		    } else {
 			if (!(ups & data.states_before))
 			    return_error(e_typecheck);
 			ups = data.state_after;
 		    }
-		    /* If in compat mode, use up_ops_compat */
-		    code = (*ops[opx])(i_ctx_p);
+		    code = (*up_ops[opx])(i_ctx_p);
 		    if (code < 0) {
 			if (code == e_nocurrentpoint)
                             return_error(e_rangecheck); /* CET 11-22 */
@@ -745,8 +724,17 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool upath_compat
 	if (argcount)
 	    return_error(e_typecheck);	/* leftover args */
     }
-    if (ups != UPS_PATH)
+    if (ups < UPS_SETBBOX)
 	return_error(e_typecheck);	/* no setbbox */
+    if (ups == UPS_SETBBOX && upath_compat) {
+	/*
+	 * In CPSI compatibility mode, an empty path with a setbbox also
+	 * does a moveto (but only if the path is empty).  Since setbbox
+	 * was the last operator, its operands are still on the o-stack.
+	 */
+	osp += 2;
+	return zmoveto(i_ctx_p);
+    }
     return 0;
 }
 private int
