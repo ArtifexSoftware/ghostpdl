@@ -1,6 +1,6 @@
 Test	 Status	Comments
 
-08-04-*	 AOK	This test is intentionally printer specific and is for information
+08-04-	 AOK	This test is intentionally printer specific and is for information
 		only. Ghostscript completes all pages properly.
 
 09-01-1  OK	Fixed with gs_cet.ps initialization file
@@ -1870,8 +1870,7 @@ Test	 Status	Comments
                 "0 0 moveto gsave 0 0 5 5 setbbox 10 10 lineto stroke showpage"
                 assign Alex
 
-11-21-1  DIFF?	Circle has small 'points' with CPSI -- Ghostscript is smooth.
-                assign: Raph.
+11-21-1  OK	Fixed as of rev 7598.
 
 11-21-10  AOK	Differences in look20, look30, look33 are caused by CPSI problem :
 		rlineto, rcurveto count wrong coordinates after strokepath.
@@ -1981,7 +1980,7 @@ Test	 Status	Comments
 
 11-26A-2  OK	Minor differences visually reviewed by RJJ
 
-11-26A-3  DIFF	upath cpsi reports nocurrentpoint assign Raph
+11-26A-3  OK	Fixed as of rev 7598.
 
 11-26B-1  OK	Minor differences visually reviewed by RJJ
 
@@ -2255,10 +2254,7 @@ Test	 Status	Comments
 
 12-07C-6  OK	Minor differences in positions and character shapes - ADC
 
-12-07C-7  DIFF?	GS missing some thin vertical line segments - RJJ?.  Acrobat
-		shows thin lines at high zoom factors (2400%).  Acrobat shows
-		some thin lines which are not present in CPSI output. - ADC
-                Assign: Ray - check against Tek.
+12-07C-7  OK	GS matches Tek -- no thin vertical lines.
 
 12-07C-8  DIFF	GS missing leftmost vertical column of shaded data in the
 		test block at the lower right of the page - ADC.  assign Raph
@@ -3346,8 +3342,7 @@ Test	 Status	Comments
 
 15-01-2  OK	Minor rasterizing differences. -Tor
 
-15-02-1  DIFF	GS has -12dict- and CPSI has -11dict- in debug text. Different checksum.
-                Assign: Ray.
+15-02-1  OK	Fixed as of rev 7598.
 
 15-02-2  OK	Minor differences visually reviewed by RJJ
 
@@ -4591,8 +4586,7 @@ Test	 Status	Comments
 
 27-02-2  OK	
 
-27-03-1  DIFF	Error messages differ. Ghostscript gives "undefinedfilename" 
-		CPSI gives "undefined".
+27-03-1  OK	Fixed as of rev 7598.
 
 27-03-2  AOK	test unreasonable:
                 This page enumerates all the IODevices, arbitrarily selects the last one,
