@@ -56,7 +56,7 @@ met_record(gs_memory_t *mem, const data_element_t *data, const char *xmlel, bool
     el->cooked_data = cooked_data;
     node->data = el;
     node->open = open;
-    node->element = met_strdup(mem, xmlel);
+    node->element = met_strdup(mem, xmlel, "met_record");
     node->depth = depth;
     if (head == NULL) {
         head = tail = node;

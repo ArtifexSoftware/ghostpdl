@@ -56,7 +56,7 @@ GradientStop_cook(void **ppdata, met_state_t *ms,
     for (i = 0; attr[i]; i += 2)
     {
 	if (!strcmp(attr[i], "Color"))
-	    stop->Color = met_strdup(ms->memory, attr[i+1]);
+	    stop->Color = met_strdup(ms->memory, attr[i+1], "Gradient color");
 	if (!strcmp(attr[i], "Offset"))
 	    stop->Offset = atof(attr[i+1]);
     }

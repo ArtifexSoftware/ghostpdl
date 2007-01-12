@@ -24,13 +24,13 @@
 #include "ctype_.h"
 
 typedef struct metgstate_s {
-    ST_RscRefColor Stroke;
-    ST_RscRefColor Fill;
+    char *Stroke;
+    char *Fill;
     ST_ZeroOne Opacity;
-    ST_FillRule FillRule;
+    char *FillRule;
     bool isClosed;
     bool charpathmode;
-    ST_RscRefColor CharFill;
+    char *CharFill;
     met_path_child_t child;
     void *VisualBrush;
     gs_memory_t *pmem;
@@ -43,6 +43,8 @@ met_gstate_alloc(gs_memory_t *pmem)
     metgstate_t *pmg = (metgstate_t *)gs_alloc_bytes(pmem,
                                sizeof(metgstate_t),
                                "met_gstate_alloc");
+    memset(pmg, 0, sizeof(metgstate_t));
+    pmg->pmem = pmem;
     return pmg;
 }
 
@@ -52,13 +54,22 @@ met_gstate_copy_for(void *pto, void *pfrom, gs_state_copy_reason_t reason)
     /* reason is ignored for now */
     metgstate_t *pt = pto;
     metgstate_t *pf = pfrom;
-    
+
+    /* free old prior to deep copy */
+    gs_free_object(pf->pmem, pt->Stroke, "met_gstate_free");
+    gs_free_object(pf->pmem, pt->Fill, "met_gstate_free");
+    gs_free_object(pf->pmem, pt->FillRule, "met_gstate_free");
+    gs_free_object(pf->pmem, pt->CharFill, "met_gstate_free");
+
     /* struct copy */
     *pt = *pf;
-    /* deep copy */
-    pt->Stroke = met_strdup(pf->pmem, pf->Stroke);
-    pt->FillRule = met_strdup(pf->pmem, pf->FillRule);
-    pt->CharFill = met_strdup(pf->pmem, pf->FillRule);
+    
+    /* deep copy */    
+    pt->Stroke = met_strdup(pf->pmem, pf->Stroke, "met_gstate_copy_for");
+    pt->Fill = met_strdup(pf->pmem, pf->Fill, "met_gstate_copy_for");
+    pt->FillRule = met_strdup(pf->pmem, pf->FillRule, "met_gstate_copy_for");
+    pt->CharFill = met_strdup(pf->pmem, pf->CharFill, "met_gstate_copy_for");
+
     return 0;
 }
 
@@ -67,6 +78,7 @@ met_gstate_free(void *pold, gs_memory_t *pmem)
 {
     metgstate_t *pmetgs = (metgstate_t *)pold;
     gs_free_object(pmem, pmetgs->Stroke, "met_gstate_free");
+    gs_free_object(pmem, pmetgs->Fill, "met_gstate_free");
     gs_free_object(pmem, pmetgs->FillRule, "met_gstate_free");
     gs_free_object(pmem, pmetgs->CharFill, "met_gstate_free");
     // TODO free gradientstops
@@ -86,7 +98,9 @@ void
 met_setstrokecolor(gs_state *pgs, const ST_RscRefColor color)
 {
     metgstate_t *pmg = gs_state_client_data(pgs);
-    pmg->Stroke = met_strdup(pmg->pmem, color);
+
+    gs_free_object(pmg->pmem, pmg->Stroke, "met_setstrokecolor");
+    pmg->Stroke = met_strdup(pmg->pmem, color, "met_setstrokecolor");
 }
 
 ST_RscRefColor
@@ -100,7 +114,8 @@ void
 met_setfillcolor(gs_state *pgs, const ST_RscRefColor color)
 {
     metgstate_t *pmg = gs_state_client_data(pgs);
-    pmg->Fill = met_strdup(pmg->pmem, color);
+    gs_free_object(pmg->pmem, pmg->Fill, "met_setfillcolor");
+    pmg->Fill = met_strdup(pmg->pmem, color, "met_setfillcolor");
 }
 
 void
@@ -120,7 +135,8 @@ void
 met_setfillrule(gs_state *pgs, const ST_FillRule fill)
 {
     metgstate_t *pmg = gs_state_client_data(pgs);
-    pmg->FillRule = met_strdup(pmg->pmem, fill);
+    gs_free_object(pmg->pmem, pmg->FillRule, "met_setfillrulecolor");
+    pmg->FillRule = met_strdup(pmg->pmem, fill, "met_setfillrulecolor");
 }
 
 ST_FillRule

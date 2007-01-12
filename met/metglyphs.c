@@ -1,4 +1,4 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
+/* Portions Copyright (C) 2007 artofcode LLC.
    Portions Copyright (C) 1996, 2001, 2005 Artifex Software Inc.
    Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
    This software is based in part on the work of the Independent JPEG Group.
@@ -617,7 +617,18 @@ Glyphs_done(void *data, met_state_t *ms)
            
    /* restore the ctm */
    gs_grestore(pgs);
-   gs_free_object(ms->memory, data, "Glyphs_done");
+
+
+   gs_free_object(ms->memory, aGlyphs->CaretStops, "Glyphs_done");
+   gs_free_object(ms->memory, aGlyphs->Fill, "Glyphs_done");
+   gs_free_object(ms->memory, aGlyphs->FontUri, "Glyphs_done");
+   gs_free_object(ms->memory, aGlyphs->Indices, "Glyphs_done");
+   gs_free_object(ms->memory, aGlyphs->UnicodeString, "Glyphs_done");
+   gs_free_object(ms->memory, aGlyphs->StyleSimulations, "Glyphs_done");
+   gs_free_object(ms->memory, aGlyphs->RenderTransform, "Glyphs_done");
+   gs_free_object(ms->memory, aGlyphs->Clip, "Glyphs_done");
+   gs_free_object(ms->memory, aGlyphs->OpacityMask, "Glyphs_done");
+   gs_free_object(ms->memory, aGlyphs, "Glyphs_done");
    return 0; /* incomplete */
 }
 

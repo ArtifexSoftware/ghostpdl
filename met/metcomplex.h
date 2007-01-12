@@ -21,11 +21,11 @@
 #include "metsimple.h"
 
 typedef struct CT_ArcSegment_s {
-    ST_Point Point;
-    ST_Point Size;
+    char *Point;
+    char *Size;
     ST_Double RotationAngle;
     ST_Boolean IsLargeArc;
-    ST_SweepDirection SweepDirection;
+    char *SweepDirection;
     ST_Boolean IsStroked;
 } CT_ArcSegment;
 
@@ -55,21 +55,21 @@ typedef struct CT_Canvas_s {
 
 typedef struct CT_Glyphs_s {
     int BidiLevel;
-    ST_CaretStops CaretStops;
+    char *CaretStops;
     ST_UnicodeString DeviceFontName;
-    ST_RscRefColor Fill;
+    char *Fill;
     ST_GEZero FontRenderingEmSize;
-    ST_Name FontUri; /* NB wrong see schema */
+    char *FontUri; /* NB wrong see schema */
     ST_Double OriginX;
     ST_Double OriginY;
     ST_Boolean IsSideWays;
-    ST_Indices Indices;
-    ST_UnicodeString UnicodeString;
-    ST_StyleSimulations StyleSimulations;
-    ST_RscRefMatrix RenderTransform;
-    ST_RscRefAbbrGeomF Clip;
+    char *Indices;
+    char *UnicodeString;
+    char *StyleSimulations;
+    char *RenderTransform;
+    char *Clip;
     ST_ZeroOne Opacity;
-    ST_RscRef OpacityMask;
+    char *OpacityMask;
     struct {
         unsigned BidiLevel : 1;
         unsigned OriginX : 1;
@@ -88,7 +88,7 @@ typedef struct CT_MatrixTransform_s {
 typedef struct CT_SolidColorBrush_s {
     ST_ZeroOne Opacity;
     ST_Name Key;  /* NB wrong see schema */
-    ST_Color Color;
+    char *Color;
 } CT_SolidColorBrush;
 
 typedef struct CT_LinearGradientBrush_s {
@@ -133,20 +133,20 @@ typedef struct CT_VisualBrush_s {
 /* NB refactor common fields in brushes */
 typedef struct CT_ImageBrush_s {
     ST_ZeroOne Opacity;
-    ST_Name Key;  /* NB wrong see schema */
-    ST_RscRefMatrix Transform;
-    ST_ViewBox Viewbox;
-    ST_ViewBox Viewport;
+    char *Key;  /* NB wrong see schema */
+    char *Transform;
+    char *Viewbox;
+    char *Viewport;
     ST_Stretch Fill; /* NB check this */
-    ST_TileMode TileMode;
-    ST_ViewUnits ViewboxUnits;
-    ST_ViewUnits ViewportUnits;
-    ST_Name ImageSource; /* NB wrong */
+    char *TileMode;
+    char *ViewboxUnits;
+    char *ViewportUnits;
+    char *ImageSource; /* NB wrong */
 } CT_ImageBrush;
 
 typedef struct CT_PathGeometry_s {
     ST_AbbrGeom Figures;
-    ST_FillRule FillRule;
+    char *FillRule;
     ST_RscRefMatrix Transform;
     /* nb incomplete */
 } CT_PathGeometry;
@@ -224,7 +224,7 @@ typedef struct CT_GradientStop_s {
 
 /* nb line segment variants have the same structure */
 typedef struct CT_PolyLineSegment_s {
-    ST_Points Points;
+    char *Points;
     ST_Boolean isStroked;
     struct {
         unsigned Points : 1;
@@ -233,18 +233,18 @@ typedef struct CT_PolyLineSegment_s {
 } CT_PolyLineSegment;
 
 typedef struct CT_PolyQuadraticBezierSegment_s {
-    ST_Points Points;
+    char *Points;
     ST_Boolean isStroked;
 } CT_PolyQuadraticBezierSegment;
 
 typedef struct CT_PolyBezierSegment_s {
-    ST_Points Points;
+    char *Points;
     ST_Boolean isStroked;
 } CT_PolyBezierSegment;
 
 typedef struct CT_PathFigure_s {
     ST_Boolean isClosed;
-    ST_Point StartPoint;
+    char *StartPoint;
     ST_Boolean isFilled;
     union {
         CT_ArcSegment ArcSegment;
@@ -260,13 +260,13 @@ typedef struct CT_CP_Geometry {
 } CT_CP_Geometry;
 
 typedef struct CT_Path_s {
-    ST_RscRefAbbrGeomF Data; 
-    ST_RscRefColor Fill;
+    char *Data; 
+    char *Fill;
     ST_RscRefMatrix RenderTransform;
     ST_RscRefAbbrGeomF Clip;
     ST_ZeroOne Opacity;
     ST_RscRef OpacityMask;
-    ST_RscRefColor Stroke;
+    char *Stroke;
     ST_EvenArrayPos StrokeDashArray;
     ST_DashCap StrokeDashCap;
     ST_Double StrokeDashOffset;
@@ -312,8 +312,8 @@ typedef struct CT_Path_s {
 typedef struct CT_FixedPage_s {
     ST_GEOne Width;
     ST_GEOne Height;
-    ST_ContentBox ContentBox;
-    ST_BleedBox BleedBox;
+    char *ContentBox;
+    char *BleedBox;
     ST_Matrix RenderTransform;
     /* nb - not sure about xml:lang */
     ST_Name Name;

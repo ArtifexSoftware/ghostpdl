@@ -103,11 +103,13 @@ FixedPage_action(void *data, met_state_t *ms)
 private int
 FixedPage_done(void *data, met_state_t *ms)
 {
-    /* CT_FixedPage *aFixedPage = data; */
+    CT_FixedPage *aFixedPage = data;
     (ms->end_page)(ms, 1 /* Copies */, true /* flush */);
 
-    gs_free_object(ms->memory, data, "FixedPage_done");
-    return 0; /* incomplete */
+    gs_free_object(ms->memory, aFixedPage->ContentBox, "FixedPage_done");
+    gs_free_object(ms->memory, aFixedPage->BleedBox, "FixedPage_done");
+    gs_free_object(ms->memory, aFixedPage, "FixedPage_done");
+    return 0; 
 }
 
 

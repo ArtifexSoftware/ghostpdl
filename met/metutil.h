@@ -54,7 +54,7 @@ typedef struct rgb_s {
 
 rgb_t met_hex2rgb(char *hexstring);
 
-char *met_strdup(gs_memory_t *mem, const char *str);
+char *met_strdup(gs_memory_t *mem, const char *str, const char *client);
 
 int met_get_transform(gs_matrix *gsmat, ST_RscRefMatrix metmat);
 #endif /* metutil_INCLUDED */

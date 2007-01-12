@@ -116,8 +116,10 @@ PathFigure_action(void *data, met_state_t *ms)
 private int
 PathFigure_done(void *data, met_state_t *ms)
 {
-    gs_free_object(ms->memory, data, "PathFigure_done");
-    return 0; /* incomplete */
+    CT_PathFigure *aPathFigure = data;
+    gs_free_object(ms->memory, aPathFigure->StartPoint, "PathFigure_done");
+    gs_free_object(ms->memory, aPathFigure, "PathFigure_done");
+    return 0; 
 }
 
 const met_element_t met_element_procs_PathFigure = {
@@ -282,9 +284,11 @@ PathGeometry_action(void *data, met_state_t *ms)
 private int
 PathGeometry_done(void *data, met_state_t *ms)
 {
-        
-    gs_free_object(ms->memory, data, "PathGeometry_done");
-    return 0; /* incomplete */
+    CT_PathGeometry *aPathGeometry = data;  
+      
+    gs_free_object(ms->memory, aPathGeometry->FillRule, "PathGeometry_done");
+    gs_free_object(ms->memory, aPathGeometry, "PathGeometry_done");
+    return 0;
 }
 
 const met_element_t met_element_procs_PathGeometry = {
@@ -331,6 +335,7 @@ Path_done(void *data, met_state_t *ms)
 {
     gs_state *pgs = ms->pgs;
     int code;
+    CT_Path *aPath = (CT_Path *)data;
     met_path_t pathtype = met_currentpathtype(pgs);
     /* this loop executes once */
     int (*fill)(gs_state *);
@@ -381,7 +386,11 @@ Path_done(void *data, met_state_t *ms)
             
 
     } while (0);
-    gs_free_object(ms->memory, data, "Path_done");
+
+    gs_free_object(ms->memory, aPath->Stroke, "Path_done");
+    gs_free_object(ms->memory, aPath->Data, "Path_done");
+    gs_free_object(ms->memory, aPath->Fill, "Path_done");
+    gs_free_object(ms->memory, aPath, "Path_done");
     if (code < 0)
         return gs_rethrow(code, "Path done failed");
     else
@@ -464,8 +473,11 @@ PolyLineSegment_action(void *data, met_state_t *ms)
 private int
 PolyLineSegment_done(void *data, met_state_t *ms)
 {
-    gs_free_object(ms->memory, data, "PolyLineSegment_done");
-    return 0; /* incomplete */
+    CT_PolyLineSegment *aPolyLineSegment = data;
+
+    gs_free_object(ms->memory, aPolyLineSegment->Points, "PolyLineSegment_done");
+    gs_free_object(ms->memory, aPolyLineSegment, "PolyLineSegment_done");
+    return 0;
 }
 
 const met_element_t met_element_procs_PolyLineSegment = {
@@ -512,7 +524,7 @@ private int
 Path_Fill_done(void *data, met_state_t *ms)
 {
     gs_free_object(ms->memory, data, "Path_Fill_done");
-    return 0; /* incomplete */
+    return 0; 
 }
 
 const met_element_t met_element_procs_Path_Fill = {
@@ -563,8 +575,11 @@ SolidColorBrush_action(void *data, met_state_t *ms)
 private int
 SolidColorBrush_done(void *data, met_state_t *ms)
 {
-    gs_free_object(ms->memory, data, "SolidColorBrush_done");
-    return 0; /* incomplete */
+    CT_SolidColorBrush *aSolidColorBrush = data;
+
+    gs_free_object(ms->memory, aSolidColorBrush->Color, "SolidColorBrush_done");
+    gs_free_object(ms->memory, aSolidColorBrush, "SolidColorBrush_done");
+    return 0;
 }
 
 const met_element_t met_element_procs_SolidColorBrush = {
@@ -796,9 +811,13 @@ ArcSegment_action(void *data, met_state_t *ms)
 private int
 ArcSegment_done(void *data, met_state_t *ms)
 {
-        
-    gs_free_object(ms->memory, data, "ArcSegment_done");
-    return 0; /* incomplete */
+    CT_ArcSegment *aArcSegment = (CT_ArcSegment *)data;
+
+    gs_free_object(ms->memory, aArcSegment->Point, "ArcSegment_done");
+    gs_free_object(ms->memory, aArcSegment->Size, "ArcSegment_done");
+    gs_free_object(ms->memory, aArcSegment->SweepDirection, "ArcSegment_done");
+    gs_free_object(ms->memory, aArcSegment, "ArcSegment_done");
+    return 0; 
 }
 
 
@@ -883,10 +902,11 @@ PolyBezierSegment_action(void *data, met_state_t *ms)
 private int
 PolyBezierSegment_done(void *data, met_state_t *ms)
 {
-        
+    CT_PolyBezierSegment *aPolyBezierSegment = data;        
 
-    gs_free_object(ms->memory, data, "PolyBezierSegment_done");
-    return 0; /* incomplete */
+    gs_free_object(ms->memory, aPolyBezierSegment->Points, "PolyBezierSegment_done");
+    gs_free_object(ms->memory, aPolyBezierSegment, "PolyBezierSegment_done");
+    return 0;
 }
 
 
@@ -981,9 +1001,12 @@ PolyQuadraticBezierSegment_action(void *data, met_state_t *ms)
 private int
 PolyQuadraticBezierSegment_done(void *data, met_state_t *ms)
 {
-        
-    gs_free_object(ms->memory, data, "PolyQuadraticBezierSegment_done");
-    return 0; /* incomplete */
+    CT_PolyQuadraticBezierSegment *aPolyQuadraticBezierSegment = data;  
+      
+    gs_free_object(ms->memory, aPolyQuadraticBezierSegment->Points, 
+		   "PolyQuadraticBezierSegment_done");
+    gs_free_object(ms->memory, aPolyQuadraticBezierSegment, "PolyQuadraticBezierSegment_done");
+    return 0;
 }
 
 

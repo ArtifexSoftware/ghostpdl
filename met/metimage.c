@@ -507,8 +507,19 @@ ImageBrush_action(void *data, met_state_t *ms)
 private int
 ImageBrush_done(void *data, met_state_t *ms)
 {
-        
-    gs_free_object(ms->memory, data, "ImageBrush_done");
+    CT_ImageBrush *aImageBrush = (CT_ImageBrush *)data;
+
+    gs_free_object(ms->memory, aImageBrush->Key, "ImageBrush_done");
+    gs_free_object(ms->memory, aImageBrush->Transform, "ImageBrush_done");
+    gs_free_object(ms->memory, aImageBrush->Viewbox, "ImageBrush_done");
+    gs_free_object(ms->memory, aImageBrush->Viewport, "ImageBrush_done");
+    gs_free_object(ms->memory, aImageBrush->Fill, "ImageBrush_done");
+    gs_free_object(ms->memory, aImageBrush->TileMode, "ImageBrush_done");
+    gs_free_object(ms->memory, aImageBrush->ViewboxUnits, "ImageBrush_done");
+    gs_free_object(ms->memory, aImageBrush->ViewportUnits, "ImageBrush_done");
+    gs_free_object(ms->memory, aImageBrush->ImageSource, "ImageBrush_done");
+    gs_free_object(ms->memory, aImageBrush, "ImageBrush_done");
+
     return 0; /* incomplete */
 }
 

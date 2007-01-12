@@ -19,6 +19,17 @@
 #include "ctype_.h"
 #include "gserror.h"
 
+char *
+met_strdup(gs_memory_t *mem, const char *str, const char *client)
+{
+    char *s = NULL;   
+    if ( str )
+        s = (char*) gs_alloc_bytes(mem, strlen(str) + 1, client);
+    if ( s )
+        strcpy(s, str);
+    return s;
+}
+
 int
 met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *attr_name) 
 {
@@ -26,7 +37,7 @@ met_cmp_and_set(char **field, const char *lhs, const char *rhs, const char *attr
     extern gs_memory_t *gs_mem_ptr;
     int cmp = strcmp(lhs, attr_name);
     if (cmp == 0)
-        *field = met_strdup(gs_mem_ptr, rhs);
+        *field = met_strdup(gs_mem_ptr, rhs, attr_name);
     return cmp;
 }
 
@@ -89,17 +100,6 @@ met_hex2rgb(char *hexstring)
     return rgb;
 }
 
-
-char *
-met_strdup(gs_memory_t *mem, const char *str)
-{
-    char *s = NULL;   
-    if ( str )
-        s = (char*) gs_alloc_bytes(mem, strlen(str) + 1, "met strdup");
-    if ( s )
-        strcpy(s, str);
-    return s;
-}
 
 /* these operators set the gs graphics state and don't effect the
    metro client state */
