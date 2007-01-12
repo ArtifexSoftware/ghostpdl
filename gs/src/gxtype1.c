@@ -174,6 +174,7 @@ gs_type1_finish_init(gs_type1_state * pcis)
 
     /* Initialize hint-related scalars. */
     pcis->asb_diff = pcis->adxy.x = pcis->adxy.y = 0;
+    pcis->base_lsb = 0;
     pcis->flex_count = flex_max;	/* not in Flex */
     pcis->vs_offset.x = pcis->vs_offset.y = 0;
 

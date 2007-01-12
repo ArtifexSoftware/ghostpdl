@@ -300,10 +300,15 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			    wx = pcis->width.x;
 			    wy = pcis->width.y;
 			}
-		    }
+		    } else
+			pcis->base_lsb = sbx;
 		    code = t1_hinter__sbw(h, sbx, sby, wx, wy);
-                } else
-                    code = t1_hinter__sbw_seac(h, pcis->adxy.x, pcis->adxy.y);
+		} else {
+		    fixed accent_lsb = cs0;
+		    fixed overall_x_offset = pcis->save_lsb.x + pcis->save_adxy.x - pcis->save_asb + accent_lsb - pcis->base_lsb;
+
+                    code = t1_hinter__sbw_seac(h, overall_x_offset, pcis->adxy.y);
+		}
 		if (code < 0)
 		    return code;
 		gs_type1_sbw(pcis, cs0, fixed_0, cs1, fixed_0);
@@ -317,29 +322,6 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 		if (pcis->init_done < 0) {
 		    /* Finish init when we return. */
 		    pcis->init_done = 0;
-		} else {
-		    /*
-		     * Accumulate the side bearing now, but don't do it
-		     * a second time for the base character of a seac.
-		     */
-		    if (pcis->seac_accent >= 0) {
-			/*
-			 * As a special hack to work around a bug in
-			 * Fontographer, we deal with the (illegal)
-			 * situation in which the side bearing of the
-			 * accented character (save_lsbx) is different from
-			 * the side bearing of the base character (cs0/cs1).
-			 */
-			fixed dsbx = cs0 - pcis->save_lsb.x;
-			fixed dsby = cs1 - pcis->save_lsb.y;
-
-			if (dsbx | dsby) {
-			    pcis->lsb.x += dsbx;
-			    pcis->lsb.y += dsby;
-			    pcis->save_adxy.x -= dsbx;
-			    pcis->save_adxy.y -= dsby;
-			}
-		    }
 		}
 		return type1_result_sbw;
 	    case cx_escape:
@@ -386,7 +368,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 		    case ce1_sbw:
                         if (!pcis->seac_flag)
                             code = t1_hinter__sbw(h, cs0, cs1, cs2, cs3);
-                        else
+                        else 
                             code = t1_hinter__sbw_seac(h, cs0 + pcis->adxy.x , cs1 + pcis->adxy.y);
 			if (code < 0)
 			    return code;

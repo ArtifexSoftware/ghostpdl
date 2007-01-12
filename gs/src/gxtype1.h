@@ -125,6 +125,7 @@ struct gs_type1_state_s {
 				/* needed to adjust Flex endpoint */
     gs_fixed_point adxy;	/* seac accent displacement, */
 				/* needed to adjust currentpoint */
+    fixed base_lsb;		/* The lsb of the base character for 'seac'. */
     int flex_path_state_flags;	/* record whether path was open */
 				/* at start of Flex section */
 #define flex_max 8
