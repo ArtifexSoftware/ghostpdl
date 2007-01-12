@@ -3399,23 +3399,11 @@ Test	 Status	Comments
 
 16-01-1  DIFF	Tiny gaps between almost adjoining black
                 rectangles; output will vary from device to device to
-                device, and our rendering is valid. Glyphs 195-202:
-                difference in positioning, needs more analysis. Glyphs
+                device, and our rendering is valid. Glyphs
                 207, 208: reverse video in Adobe output, needs more
-                analysis. Positioning errors (glyph 196 confirmed) are
-                due to font violating type1 spec. Type1 spec says that
-                lsb in seac command must match lsb of base
-                character. See also this patch to FontForge, which
-                fixes a bug where it generated exactly such an invalid
-                seac. 
-                http://fontforge.cvs.sourceforge.net/fontforge/fontforge/fontforge/splinesave.c?r1=1.57&r2=1.58
-                Raph
-                -
-		Remaining issues : assign: Igor.
+                analysis. Remaining issues : assign: Igor.
 
-16-02-1  DIFF	butterfly shapes: CPSI has bevel line caps, gs has
-                miter circle tests: positioning error looks similar to
-                glyph 195 et al of 16-01 - Raph
+16-02-1  DIFF	Same as 16-01-1 assign: Igor.
 
 16-03-1  OK	Fixed by rev 7172.
 
@@ -3448,15 +3436,9 @@ Test	 Status	Comments
 
 16-09-1  DIFF	Distorted shapes, may be similar to 16-03-2. Needs further analysis - Raph
 
-16-10-1  DIFF	21-22: Ok, same analysis as 16-01-1
-                196-206 - positioning similar to 16-01-1, glyph 195
-                207-208 - reverse video similar to 16-01-1, glyph 207-208
-		Remaining issues : assign: Igor.
+16-10-1  DIFF	DIFF	Same as 16-01-1 assign: Igor.
 
-16-10-2  DIFF	21-22: Ok, same analysis as 16-01-1
-                207-208 - reverse video similar to 16-01-1, glyph 207-208
-                196-202: positioning, similar to 16-01-1, glyph 196
-		Remaining issues : assig: Igor.
+16-10-2  DIFF	DIFF	Same as 16-01-1 assign: Igor.
 
 16-10-3  DIFF	many instances of glyph 208, similar to 16-01-1, glyph 208
 		Remaining issues : assig: Igor.
