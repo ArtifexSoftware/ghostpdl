@@ -27,7 +27,7 @@
     const met_element_t met_element_procs_ ## element = {\
         #element, { NULL, NULL, NULL } }
 
-UNDONE_STUB(Canvas_Clip);
+//UNDONE_STUB(Canvas_Clip);
 UNDONE_STUB(Canvas_OpacityMask);
 //UNDONE_STUB(Canvas_RenderTransform);
 UNDONE_STUB(Canvas_Resources);

@@ -51,6 +51,9 @@ $(XPSOBJ)metrecorder.$(OBJ): $(XPSSRC)metrecorder.c $(XPSINCLUDES)
 $(XPSOBJ)metcanvas.$(OBJ): $(XPSSRC)metcanvas.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)metcanvas.c $(XPSO_)metcanvas.$(OBJ)
 
+$(XPSOBJ)xps_clip.$(OBJ): $(XPSSRC)xps_clip.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xps_clip.c $(XPSO_)xps_clip.$(OBJ)
+
 $(XPSOBJ)metimage.$(OBJ): $(XPSSRC)metimage.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)metimage.c $(XPSO_)metimage.$(OBJ)
 
@@ -122,6 +125,7 @@ XPS_OBJS=$(XPSOBJ)metparse.$(OBJ) $(XPSOBJ)metstate.$(OBJ) \
          $(XPSOBJ)metelement.$(OBJ) $(XPSOBJ)metpath.$(OBJ)\
 	 $(XPSOBJ)metglyphs.$(OBJ) $(XPSOBJ)metutil.$(OBJ) \
 	 $(XPSOBJ)metimage.$(OBJ) \
+	 $(XPSOBJ)xps_clip.$(OBJ) \
 	 $(XPSOBJ)xps_gradient_brush.$(OBJ) \
 	 $(XPSOBJ)xps_gradient_stop.$(OBJ) \
 	 $(XPSOBJ)xps_visual_brush.$(OBJ) \

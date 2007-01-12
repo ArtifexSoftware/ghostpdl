@@ -42,14 +42,14 @@ typedef struct CT_CP_LinkTargets_s {
 } CT_CP_LinkTarget;
 
 typedef struct CT_Canvas_s {
-    ST_RscRefMatrix RenderTransform;
-    ST_RscRefAbbrGeomF Clip;
-    ST_ZeroOne Opacity;
-    ST_RscRef OpacityMask;
-    ST_Name Name;
-    ST_EdgeMode EdgeMode;
-    ST_Name FixedPage; /* NB wrong see schema */
-    ST_Name Key;  /* NB wrong see schema */
+    char *RenderTransform;
+    char *Clip;
+    double Opacity;
+    char *OpacityMask;
+    char *Name;
+    char *EdgeMode;
+    char *FixedPage; /* NB wrong see schema */
+    char *Key;  /* NB wrong see schema */
     /* NB missing fields see schema */
 } CT_Canvas;
 
@@ -82,7 +82,7 @@ typedef struct CT_Glyphs_s {
 } CT_Glyphs;
 
 typedef struct CT_MatrixTransform_s {
-    ST_MatrixBare Matrix;
+    char *Matrix;
 } CT_MatrixTransform;
 
 typedef struct CT_SolidColorBrush_s {

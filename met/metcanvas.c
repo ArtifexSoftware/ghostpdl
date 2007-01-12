@@ -1,4 +1,4 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
+/* Portions Copyright (C) 2007 artofcode LLC.
    Portions Copyright (C) 1996, 2001, 2005 Artifex Software Inc.
    Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
    This software is based in part on the work of the Independent JPEG Group.
@@ -10,16 +10,7 @@
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
 
-/*$Id: */
-
-/* the following is a template for an element implemenation.  Copy the
-   template and then replace the word ELEMENT (case matters) with the
-   name of the element - i.e. FixedPage, Path, etc.  This fills in the
-   boilerplate of the template
-
-   -------------  BEGIN TEMPLATE --------------- */
-
-/* element constructor */
+/*$Id:$ */
 
 #include <stdlib.h>  /* NB for atof */
 #include "memory_.h"
@@ -107,7 +98,8 @@ Canvas_action(void *data, met_state_t *ms)
 private int
 Canvas_done(void *data, met_state_t *ms)
 {
-        
+    CT_Canvas *aCanvas =   (CT_Canvas *)data;
+
     gs_grestore(ms->pgs);
 #ifdef NOT_YET
     int i;
@@ -146,8 +138,18 @@ Canvas_done(void *data, met_state_t *ms)
     gs_grestore(pgs);
     gs_free_object(ms->memory, ds[0].data, "Canvas_done");
 #endif
-    gs_free_object(ms->memory, data, "Canvas_done");
-    return 0; /* incomplete */
+
+    
+    gs_free_object(ms->memory, aCanvas->RenderTransform, "Canvas_done");
+    gs_free_object(ms->memory, aCanvas->Clip, "Canvas_done");
+    gs_free_object(ms->memory, aCanvas->OpacityMask, "Canvas_done");
+    gs_free_object(ms->memory, aCanvas->Name, "Canvas_done");
+    gs_free_object(ms->memory, aCanvas->EdgeMode, "Canvas_done");
+    gs_free_object(ms->memory, aCanvas->FixedPage, "Canvas_done");
+    gs_free_object(ms->memory, aCanvas->Key, "Canvas_done");
+    gs_free_object(ms->memory, aCanvas, "Canvas_done");
+
+    return 0;
 }
 
 
@@ -163,50 +165,21 @@ const met_element_t met_element_procs_Canvas = {
 private int
 Canvas_RenderTransform_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
 {
-    CT_MatrixTransform *aRenderTransform = 
-        (CT_MatrixTransform *)gs_alloc_bytes(ms->memory,
-                                     sizeof(CT_MatrixTransform),
-                                       "Canvas_RenderTransform_cook");
-    int i;
-
-    memset(aRenderTransform, 0, sizeof(CT_MatrixTransform));
-
-#define MYSET(field, value)                                                   \
-    met_cmp_and_set((field), attr[i], attr[i+1], (value))
-
-    /* parse attributes, filling in the zeroed out C struct */
-    for(i = 0; attr[i]; i += 2) {
-
-	if(!MYSET(&aRenderTransform, "MatrixTransform"))
-	    ;
-        else
-            gs_warn2("unsupported attribute %s=%s",
-                     attr[i], attr[i+1]);
-    }
-    /* parse attributes, filling in the zeroed out C struct */
-
-#undef MYSET
-    /* copy back the data for the parser. */
-    *ppdata = aRenderTransform;
+    *ppdata = NULL;
     return 0;
 }
 
 private int
 Canvas_RenderTransform_action(void *data, met_state_t *ms)
 {
-    /*  nothing here
-    CT_MatrixTransform *aRenderTransform = data;
-    gs_state *pgs = ms->pgs;
-    int code;
-    gs_matrix canvas_mat;
-    */
     return 0;
 }
 
 private int
 Canvas_RenderTransform_done(void *data, met_state_t *ms)
 {
-    gs_free_object(ms->memory, data, "Canvas_RenderTransform_done");
+    if (data != 0)
+	return gs_throw(-1, "bad food"); 
     return 0; /* incomplete */
 }
 
@@ -230,22 +203,16 @@ MatrixTransform_cook(void **ppdata, met_state_t *ms, const char *el, const char 
 
     memset(aMatrixTransform, 0, sizeof(CT_MatrixTransform));
 
-#define MYSET(field, value)                                                   \
-    met_cmp_and_set((field), attr[i], attr[i+1], (value))
-
     /* parse attributes, filling in the zeroed out C struct */
     for(i = 0; attr[i]; i += 2) {
 
-	if(!MYSET(&aMatrixTransform, "Matrix"))
+	if(!met_cmp_and_set(&aMatrixTransform->Matrix, attr[i], attr[i+1], "Matrix"))
 	    ;
 	// NB: x:Key iff in a Resource Dictionary
         else
             gs_warn2("unsupported attribute %s=%s",
                      attr[i], attr[i+1]);
     }
-    /* parse attributes, filling in the zeroed out C struct */
-
-#undef MYSET
     /* copy back the data for the parser. */
     *ppdata = aMatrixTransform;
     return 0;
@@ -259,7 +226,10 @@ MatrixTransform_action(void *data, met_state_t *ms)
     int code;
     gs_matrix canvas_mat;
 
-    if ((code = met_get_transform(&canvas_mat, aMatrixTransform)) < 0)
+    if (aMatrixTransform->Matrix == 0)
+	return gs_throw(-1, "Matix missing");
+
+    if ((code = met_get_transform(&canvas_mat, aMatrixTransform->Matrix)) < 0)
         return gs_rethrow(code, "transform failed");
 
     if ((code = gs_concat(pgs, &canvas_mat)) < 0)
@@ -271,8 +241,10 @@ MatrixTransform_action(void *data, met_state_t *ms)
 private int
 MatrixTransform_done(void *data, met_state_t *ms)
 {
-    gs_free_object(ms->memory, data, "MatrixTransform_done");
-    return 0; /* incomplete */
+    CT_MatrixTransform *aMatrixTransform = data;
+    gs_free_object(ms->memory, aMatrixTransform->Matrix, "MatrixTransform_done");
+    gs_free_object(ms->memory, aMatrixTransform, "MatrixTransform_done");
+    return 0; 
 }
 
 const met_element_t met_element_procs_MatrixTransform = {
