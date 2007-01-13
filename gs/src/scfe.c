@@ -266,10 +266,10 @@ s_CFE_process(stream_state * st, stream_cursor_read * pr,
 	}
 #ifdef DEBUG
 	if (ss->K > 0) {
-	    if_debug1('w', "[w]new row, k_left=%d\n",
-		      ss->k_left);
+	    if_debug2('w', "[w2]new %d-D row, k_left=%d\n",
+		      (ss->k_left == 1 ? 1 : 2), ss->k_left);
 	} else {
-	    if_debug0('w', "[w]new row\n");
+	    if_debug1('w', "[w%d]new row\n", (ss->K < 0 ? 2 : 1));
 	}
 #endif
 	/*

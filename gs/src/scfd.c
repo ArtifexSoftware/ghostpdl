@@ -46,19 +46,18 @@ s_CFD_init(stream_state * st)
     /* Because skip_white_pixels can look as many as 4 bytes ahead, */
     /* we need to allow 4 extra bytes at the end of the row buffers. */
     ss->lbuf = gs_alloc_bytes(st->memory, raster + 4, "CFD lbuf");
+    memset(ss->lbuf, white, raster);
     ss->lprev = 0;
     if (ss->lbuf == 0)
-	return ERRC;
-/****** WRONG ******/
+	return ERRC;		/****** WRONG ******/
     if (ss->K != 0) {
 	ss->lprev = gs_alloc_bytes(st->memory, raster + 4, "CFD lprev");
 	if (ss->lprev == 0)
-	    return ERRC;
-/****** WRONG ******/
+	    return ERRC;	/****** WRONG ******/
 	/* Clear the initial reference line for 2-D encoding. */
-	memset(ss->lbuf, white, raster);
+	memset(ss->lprev, white, raster);
 	/* Ensure that the scan of the reference line will stop. */
-	ss->lbuf[raster] = 0xa0;
+	ss->lprev[raster] = 0xa0;
     }
     ss->k_left = min(ss->K, 0);
     ss->run_color = 0;
@@ -66,9 +65,9 @@ s_CFD_init(stream_state * st)
     ss->skipping_damage = false;
     ss->cbit = 0;
     ss->uncomp_run = 0;
-    ss->rows_left = (ss->Rows <= 0 || ss->EndOfBlock ? -1 : ss->Rows + 1);
+    ss->rows_left = (ss->Rows <= 0 || ss->EndOfBlock ? -1 : ss->Rows);
     ss->row = 0;
-    ss->rpos = ss->wpos = raster - 1;
+    ss->rpos = ss->wpos = -1;
     ss->eol_count = 0;
     ss->invert = white;
     ss->min_left = 1;
@@ -357,7 +356,7 @@ ck_eol:
 	if_debug0('w', "[w1]new row\n");
 	status = cf_decode_1d(ss, pr);
     } else {
-	if_debug1('w', "[w1]new 2-D row, %d left\n", k_left);
+	if_debug1('w', "[w1]new 2-D row, k_left=%d\n", k_left);
 	status = cf_decode_2d(ss, pr);
     }
     if_debug3('w', "[w]CFD status = %d, wpos = %d, cbit = %d\n",
@@ -372,7 +371,7 @@ ck_eol:
 		)
 		break;
 	    /* Substitute undamaged data if appropriate. */
-/****** NOT IMPLEMENTED YET ******/
+	    /****** NOT IMPLEMENTED YET ******/
 	    {
 		ss->wpos = wstop;
 		ss->cbit = -ss->Columns & 7;
@@ -490,7 +489,7 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
     get_run(cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
 	    bcnt, "[w1]black", dbl, out1);
     if (bcnt < 0) {		/* All exceptional codes are invalid here. */
-/****** WRONG, uncompressed IS ALLOWED ******/
+	/****** WRONG, uncompressed IS ALLOWED ******/
 	status = ERRC;
 	goto out;
     }
@@ -812,8 +811,7 @@ cf_decode_uncompressed(stream * s)
 	    qbit += 8, q++;
 	rlen &= 1;
     }
-  out:
-/******* WRONG ******/
+  out:				/******* WRONG ******/
     cfd_store_state();
     return rlen;
 }

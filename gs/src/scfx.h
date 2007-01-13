@@ -87,31 +87,30 @@ extern const stream_template s_CFE_template;
 /* CCITTFaxDecode */
 typedef struct stream_CFD_state_s {
     stream_CF_state_common;
-    int cbit;			/* bits left to fill in current decoded */
-    /* byte at lbuf[wpos] (0..7) */
+    int cbit;			/* bits left to fill in current decoded
+				   byte at lbuf[wpos] (0..7) */
     int rows_left;		/* number of rows left */
     int row;			/* current row, first is 0 */
     int rpos;			/* rptr for copying lbuf to client */
-    int wpos;			/* rlimit/wptr for filling lbuf or */
-    /* copying to client */
+    int wpos;			/* rlimit/wptr for filling lbuf or
+				   copying to client */
     int eol_count;		/* number of EOLs seen so far */
-    byte invert;		/* current value of 'white' */
-    /* for 2-D decoding */
-    int run_color;		/* -1 if processing white run, */
-    /* 0 if between runs but white is next, */
-    /* 1 if between runs and black is next, */
-    /* 2 if processing black run */
-    int damaged_rows;		/* # of consecutive damaged rows preceding */
-    /* the current row */
-    bool skipping_damage;	/* true if skipping a damaged row looking */
-    /* for EOL */
+    byte invert;		/* current value of 'white' for 2-D decoding */
+    int run_color;		/* -1 if processing white run,
+				   0 if between runs but white is next,
+				   1 if between runs and black is next,
+				   2 if processing black run */
+    int damaged_rows;		/* # of consecutive damaged rows preceding
+				   the current row */
+    bool skipping_damage;	/* true if skipping a damaged row looking
+				   for EOL */
     /* The following are not used yet. */
-    int uncomp_run;		/* non-0 iff we are in an uncompressed */
-    /* run straddling a scan line (-1 if white, */
-    /* 1 if black) */
+    int uncomp_run;		/* non-0 iff we are in an uncompressed
+				   run straddling a scan line (-1 if white,
+				   1 if black) */
     int uncomp_left;		/* # of bits left in the run */
-    int uncomp_exit;		/* non-0 iff this is an exit run */
-    /* (-1 if next run white, 1 if black) */
+    int uncomp_exit;		/* non-0 iff this is an exit run
+				   (-1 if next run white, 1 if black) */
 } stream_CFD_state;
 
 #define private_st_CFD_state()	/* in scfd.c */\
