@@ -118,13 +118,17 @@ struct gs_type1_state_s {
     gs_fixed_point lsb;		/* left side bearing (char coords) */
     gs_fixed_point width;	/* character width (char coords) */
     int seac_accent;		/* accent character code for seac, or -1 */
-    fixed save_asb;		/* save seac asb */
+    fixed asb;			/* seac asb */
     gs_fixed_point save_lsb;	/* save seac accented lsb */
     gs_fixed_point save_adxy;	/* save seac adx/ady */
-    fixed asb_diff;		/* save_asb - save_lsb.x, */
-				/* needed to adjust Flex endpoint */
-    gs_fixed_point adxy;	/* seac accent displacement, */
-				/* needed to adjust currentpoint */
+    fixed asb_diff;		/* asb - save_lsb.x, */
+				/* needed to adjust Flex endpoint
+				   when processing the accent character;
+				   Zero when processing the base character. */
+    gs_fixed_point adxy;	/* seac accent displacement,
+				   needed to adjust currentpoint
+				   when processing the accent character;
+				   Zero when processing the base character. */
     fixed base_lsb;		/* The lsb of the base character for 'seac'. */
     int flex_path_state_flags;	/* record whether path was open */
 				/* at start of Flex section */
